@@ -1,0 +1,56 @@
+cpu占用1200%
+
+root@ubuntu3:~# ab  -c 5000 -n 1000000 http://8.0.184.100:9980/
+This is ApacheBench, Version 2.3 <$Revision: 1528965 $>
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+Licensed to The Apache Software Foundation, http://www.apache.org/
+
+Benchmarking 8.0.184.100 (be patient)
+Completed 100000 requests
+Completed 200000 requests
+Completed 300000 requests
+Completed 400000 requests
+Completed 500000 requests
+Completed 600000 requests
+Completed 700000 requests
+Completed 800000 requests
+Completed 900000 requests
+Completed 1000000 requests
+Finished 1000000 requests
+
+
+Server Software:
+Server Hostname:        8.0.184.100
+Server Port:            9980
+
+Document Path:          /
+Document Length:        0 bytes
+
+Concurrency Level:      5000
+Time taken for tests:   23.586 seconds
+Complete requests:      1000000
+Failed requests:        0
+Total transferred:      116000000 bytes
+HTML transferred:       0 bytes
+Requests per second:    42397.79 [#/sec] (mean)
+Time per request:       117.931 [ms] (mean)
+Time per request:       0.024 [ms] (mean, across all concurrent requests)
+Transfer rate:          4802.87 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:       27   54  47.2     52    3061
+Processing:    23   63  25.4     61     474
+Waiting:       12   43  26.5     40     449
+Total:         67  117  51.6    114    3117
+
+Percentage of the requests served within a certain time (ms)
+  50%    114
+  66%    116
+  75%    116
+  80%    117
+  90%    118
+  95%    119
+  98%    136
+  99%    301
+ 100%   3117 (longest request)

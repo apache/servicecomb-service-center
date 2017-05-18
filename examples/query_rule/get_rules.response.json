@@ -1,0 +1,10 @@
+[
+  {
+    "id": 1,
+    "service_uuid": "822dc214-3e62-4bae-8411-7e1261e2c328",
+    "attribute": "ServiceName",
+    "pattern": "user.*8",
+    "description": "test",
+    "rule_type": "white"
+  }
+]

@@ -1,0 +1,1 @@
+curl -X PUT -H "Content-Type: application/json" -H "Cache-Control: no-cache" -H "Postman-Token: 1cf6c07b-41e9-2602-3326-81739650be5f" -d '' "http://localhost:9980/registry/v2/mservices/18320599-38ea-4005-a0f5-929dd3ff245c/lfgy11"

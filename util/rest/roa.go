@@ -1,0 +1,74 @@
+//Copyright 2017 Huawei Technologies Co., Ltd
+//
+//Licensed under the Apache License, Version 2.0 (the "License");
+//you may not use this file except in compliance with the License.
+//You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+//Unless required by applicable law or agreed to in writing, software
+//distributed under the License is distributed on an "AS IS" BASIS,
+//WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//See the License for the specific language governing permissions and
+//limitations under the License.
+package rest
+
+import (
+	"github.com/servicecomb/service-center/util"
+	"reflect"
+)
+
+var (
+	serverHandler *ROAServerHandler
+)
+
+type ROAServantService interface {
+	URLPatterns() []Route
+}
+
+func InitROAServerHandler() *ROAServerHandler {
+	serverHandler = NewROAServerHander()
+	return serverHandler
+}
+
+// servant must be an pointer to service object
+func RegisterServent(servant interface{}) {
+	val := reflect.ValueOf(servant)
+	ind := reflect.Indirect(val)
+	typ := ind.Type()
+	name := typ.PkgPath() + "." + typ.Name()
+	if val.Kind() != reflect.Ptr {
+		util.LOGGER.Errorf(nil, "<rest.RegisterServent> cannot use non-ptr servant struct `%s`", name)
+		return
+	}
+
+	urlPatternFunc := val.MethodByName("URLPatterns")
+	if !urlPatternFunc.IsValid() {
+		util.LOGGER.Errorf(nil, "<rest.RegisterServent> no 'URLPatterns' function in servant struct `%s`", name)
+		return
+	}
+
+	vals := urlPatternFunc.Call([]reflect.Value{})
+	if len(vals) <= 0 {
+		util.LOGGER.Errorf(nil, "<rest.RegisterServent> call 'URLPatterns' function failed in servant struct `%s`", name)
+		return
+	}
+
+	val0 := vals[0]
+	if !val.CanInterface() {
+		util.LOGGER.Errorf(nil, "<rest.RegisterServent> result of 'URLPatterns' function not interface type in servant struct `%s`", name)
+		return
+	}
+
+	if routes, ok := val0.Interface().([]Route); ok {
+		util.LOGGER.Warnf(nil, "register servant %s", name)
+		for _, route := range routes {
+			err := serverHandler.addRoute(&route)
+			if err != nil {
+				util.LOGGER.Errorf(err, "register route failed.")
+			}
+		}
+	} else {
+		util.LOGGER.Errorf(nil, "<rest.RegisterServent> result of 'URLPatterns' function not []*Route type in servant struct `%s`", name)
+	}
+}

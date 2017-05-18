@@ -1,0 +1,26 @@
+{
+  "action": "registerd",
+  "instance": {
+    "hostName": "lfgy11",
+    "serviceUuid": "0b2b537b-a23c-4166-8322-15aabb707e40",
+    "ipAddr": "10.130.158.159",
+    "status": "UP",
+    "overriddenstatus": "UNKNOWN",
+    "port": {
+      "$": 9980,
+      "@enabled": "true"
+    },
+    "securePort": {
+      "@enabled": "false"
+    },
+    "healthCheckUrl": "v2/version",
+    "dataCenterInfo": {
+      "name": "MyOwn",
+      "metadata": {}
+    },
+    "leaseInfo": {},
+    "metadata": {
+      "test": "value"
+    }
+  }
+}
