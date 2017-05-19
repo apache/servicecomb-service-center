@@ -1,5 +1,4 @@
 bin/
-pkg/
 output
 **/*.coverprofile
 src/github.com/*
