@@ -1,0 +1,38 @@
+{
+  "microServices": [
+    {
+      "serviceUuid": "0b2b537b-a23c-4166-8322-15aabb707e40",
+      "instances": [
+        {
+          "hostName": "lfgy11",
+          "serviceUuid": "",
+          "ipAddr": "10.130.158.159",
+          "status": "UP",
+          "overriddenstatus": "UNKNOWN",
+          "port": {
+            "$": 9980,
+            "@enabled": "true"
+          },
+          "securePort": {
+            "@enabled": "false"
+          },
+          "healthCheckUrl": "v2/version",
+          "dataCenterInfo": {
+            "name": "MyOwn",
+            "metadata": {}
+          },
+          "leaseInfo": {
+            "renewalIntervalInSecs": 30,
+            "durationInSecs": 90,
+            "registrationTimestamp": 1474189131268,
+            "lastRenewalTimestamp": 1474189131268,
+            "serviceUpTimestamp": 1474189130757
+          },
+          "metadata": {
+            "key1": "value"
+          }
+        }
+      ]
+    }
+  ]
+}

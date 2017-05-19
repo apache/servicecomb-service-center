@@ -1,0 +1,26 @@
+{
+  "action": "dead",
+  "instance": {
+    "hostName": "lfgy11",
+    "serviceUuid": "01838e00-d022-4b0f-b495-67f5a16d8182",
+    "port": {},
+    "securePort": {},
+    "dataCenterInfo": {
+      "metadata": {
+        "ami-launch-index": "",
+        "local-hostname": "",
+        "availability-zone": "",
+        "instance-id": "",
+        "public-ipv4": "",
+        "public-hostname": "",
+        "ami-manifest-path": "",
+        "local-ipv4": "",
+        "hostname": "",
+        "ami-id": "",
+        "instance-type": ""
+      }
+    },
+    "leaseInfo": {},
+    "metadata": {}
+  }
+}

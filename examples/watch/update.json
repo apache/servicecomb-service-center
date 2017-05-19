@@ -1,0 +1,17 @@
+{
+  "action": "update",
+  "instance": {
+    "hostName": "lfgy11",
+    "serviceUuid": "0b2b537b-a23c-4166-8322-15aabb707e40",
+    "port": {},
+    "securePort": {},
+    "dataCenterInfo": {
+      "metadata": {}
+    },
+    "leaseInfo": {},
+    "metadata": {
+      "a1": "a2",
+      "test": "test2"
+    }
+  }
+}

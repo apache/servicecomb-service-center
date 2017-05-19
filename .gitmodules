@@ -1,0 +1,3 @@
+[submodule "src/paas-sdk"]
+	path = src/paas-sdk
+	url = http://code.huawei.com/paas/paas-sdk.git

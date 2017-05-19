@@ -1,0 +1,1 @@
+curl -X GET -H "Content-Type: application/json" "http://127.0.0.1:9980/service_center/v2/dependency/0d7eae6e-aa81-4fcc-aeea-09f83a46e3d8/providers"

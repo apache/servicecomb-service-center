@@ -1,0 +1,58 @@
+sc cpu 500% eureka cpu 200%
+root@ubuntu3:~# ab   -c 5000 -n 100000 -T "application/json" -p json3 http://8.0.184.100:9980/registry/v2/mservices/59317982-8fd2-41a2-8e52-5377d93818ce
+This is ApacheBench, Version 2.3 <$Revision: 1528965 $>
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+Licensed to The Apache Software Foundation, http://www.apache.org/
+
+Benchmarking 8.0.184.100 (be patient)
+Completed 10000 requests
+Completed 20000 requests
+Completed 30000 requests
+Completed 40000 requests
+Completed 50000 requests
+Completed 60000 requests
+Completed 70000 requests
+Completed 80000 requests
+Completed 90000 requests
+Completed 100000 requests
+Finished 100000 requests
+
+
+Server Software:
+Server Hostname:        8.0.184.100
+Server Port:            9980
+
+Document Path:          /registry/v2/mservices/59317982-8fd2-41a2-8e52-5377d93818ce
+Document Length:        0 bytes
+
+Concurrency Level:      5000
+Time taken for tests:   43.035 seconds
+Complete requests:      100000
+Failed requests:        0
+Total transferred:      6348160 bytes
+Total body sent:        75800000
+HTML transferred:       0 bytes
+Requests per second:    2323.68 [#/sec] (mean)
+Time per request:       2151.764 [ms] (mean)
+Time per request:       0.430 [ms] (mean, across all concurrent requests)
+Transfer rate:          144.05 [Kbytes/sec] received
+                        1720.06 kb/s sent
+                        1864.12 kb/s total
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        0    2   8.7      0      54
+Processing:     2 2041 914.7   1932   12951
+Waiting:        0 1994 866.0   1925    5018
+Total:          3 2043 914.0   1933   12951
+
+Percentage of the requests served within a certain time (ms)
+  50%   1933
+  66%   2240
+  75%   2463
+  80%   2602
+  90%   3229
+  95%   3721
+  98%   4304
+  99%   4827
+ 100%  12951 (longest request)

@@ -1,0 +1,13 @@
+[
+  {
+    "service_uuid": "519d7463-d4b4-4d11-b54d-8f66786970d9",
+    "dependencies": [
+      {
+        "Id": 4,
+        "service_uuid": "0d7eae6e-aa81-4fcc-aeea-09f83a46e3d8",
+        "depend_on": "519d7463-d4b4-4d11-b54d-8f66786970d9",
+        "comment": ""
+      }
+    ]
+  }
+]

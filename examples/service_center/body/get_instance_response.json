@@ -1,0 +1,42 @@
+{
+    "instance": {
+        "hostName": "lfgy11",
+        "app": "532C8EE3-2C2D-46F5-AFCC-E2CA4A89F183",
+        "ipAddr": "10.130.158.159",
+        "status": "UP",
+        "overriddenstatus": "UNKNOWN",
+        "port": {
+            "$": 0,
+            "@enabled": "true"
+        },
+        "securePort": {
+            "$": 0,
+            "@enabled": "false"
+        },
+        "countryId": 0,
+        "dataCenterInfo": {
+            "@class": "com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo",
+            "name": "MyOwn"
+        },
+        "leaseInfo": {
+            "renewalIntervalInSecs": 30,
+            "durationInSecs": 90,
+            "registrationTimestamp": 1470638438323,
+            "lastRenewalTimestamp": 1470638438323,
+            "evictionTimestamp": 0,
+            "serviceUpTimestamp": 1470638431351
+        },
+        "metadata": {
+            "test": "test"
+        },
+        "homePageUrl": "",
+        "statusPageUrl": "",
+        "healthCheckUrl": "v2/version",
+        "vipAddress": "",
+        "secureVipAddress": "",
+        "isCoordinatingDiscoveryServer": "true",
+        "lastUpdatedTimestamp": "1470638438323",
+        "lastDirtyTimestamp": "1470638437810",
+        "actionType": "ADDED"
+    }
+}

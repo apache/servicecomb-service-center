@@ -1,0 +1,1 @@
+curl -X DELETE -H "Content-Type: application/json" -H "Cache-Control: no-cache" -d '' "http://localhost:9980/registry/v2/mservices/3a6a04e4-7e6c-401e-9235-91ac99e0ba2f/lfgy11"
