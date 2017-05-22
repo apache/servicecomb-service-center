@@ -14,10 +14,10 @@
 package service_test
 
 import (
-	pb "github.com/servicecomb/service-center/server/core/proto"
 	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	pb "github.com/servicecomb/service-center/server/core/proto"
 )
 
 var consumerId string
@@ -262,7 +262,7 @@ var _ = Describe("ServiceController", func() {
 						Schemas: []string{
 							"xxxxxxxx",
 						},
-						Status: "UP",
+						Status:     "UP",
 						Properties: map[string]string{"allowCrossApp": "true"},
 					},
 				})
@@ -300,7 +300,7 @@ var _ = Describe("ServiceController", func() {
 						Schemas: []string{
 							"xxxxxxxx",
 						},
-						Status: "UP",
+						Status:     "UP",
 						Properties: map[string]string{"allowCrossApp": "true"},
 					},
 				})
@@ -621,7 +621,7 @@ var _ = Describe("ServiceController", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
-                                //重复find
+				//重复find
 				resp, err = insResource.Find(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: consumerId,
 					AppId:             "service_group_provider",

@@ -14,18 +14,18 @@
 package notification
 
 import (
-	"time"
-	"github.com/servicecomb/service-center/util"
-	pb "github.com/servicecomb/service-center/server/core/proto"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/gorilla/websocket"
-	"errors"
 	apt "github.com/servicecomb/service-center/server/core"
+	pb "github.com/servicecomb/service-center/server/core/proto"
+	"github.com/servicecomb/service-center/util"
 	"golang.org/x/net/context"
+	"time"
 )
 
-func WatchJobHandler(watcher *Watcher,stream pb.ServiceInstanceCtrl_WatchServer, timeout time.Duration) (error){
+func WatchJobHandler(watcher *Watcher, stream pb.ServiceInstanceCtrl_WatchServer, timeout time.Duration) error {
 	for {
 		select {
 		case <-time.After(timeout):
@@ -103,7 +103,7 @@ func WatchWebSocketJobHandler(conn *websocket.Conn, watcher *Watcher, timeout ti
 	}
 }
 
-func WatchPreOpera(in *pb.WatchInstanceRequest, ctx context.Context, server *NotifyService) (error, *Watcher){
+func WatchPreOpera(in *pb.WatchInstanceRequest, ctx context.Context, server *NotifyService) (error, *Watcher) {
 	if in == nil || len(in.SelfServiceId) == 0 {
 		return errors.New("request format invalid"), nil
 	}

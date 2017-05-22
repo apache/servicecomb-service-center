@@ -14,11 +14,12 @@
 package helper
 
 import (
-	"fmt"
-	"net/http"
-	"github.com/servicecomb/service-center/util"
 	"errors"
+	"fmt"
+	"github.com/servicecomb/service-center/util"
+	"net/http"
 )
+
 const (
 	DEFAULT_PROJECT = "default"
 )

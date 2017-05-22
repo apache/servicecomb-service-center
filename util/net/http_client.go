@@ -15,8 +15,8 @@ package net
 
 import (
 	//"code.google.com/p/go.net/websocket"
-	"github.com/servicecomb/service-center/util/errors"
 	"crypto/x509"
+	"github.com/servicecomb/service-center/util/errors"
 	"net"
 	"net/http"
 	"net/url"

@@ -17,9 +17,9 @@ import (
 	"context"
 	"github.com/astaxie/beego"
 	"github.com/coreos/etcd/mvcc/mvccpb"
+	"reflect"
 	"sync"
 	"time"
-	"reflect"
 	"unsafe"
 )
 

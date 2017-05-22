@@ -17,10 +17,10 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	ms "github.com/servicecomb/service-center/server/service/microservice"
 	"fmt"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/onsi/ginkgo/reporters"
+	ms "github.com/servicecomb/service-center/server/service/microservice"
 	"testing"
 )
 

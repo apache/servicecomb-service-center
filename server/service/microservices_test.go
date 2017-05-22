@@ -14,10 +14,10 @@
 package service_test
 
 import (
-	pb "github.com/servicecomb/service-center/server/core/proto"
 	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	pb "github.com/servicecomb/service-center/server/core/proto"
 )
 
 var _ = Describe("ServiceController", func() {
@@ -118,11 +118,11 @@ var _ = Describe("ServiceController", func() {
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
 
 				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
-					Type:      "microservice",
-					ServiceId: serviceId,
+					Type:        "microservice",
+					ServiceId:   serviceId,
 					ServiceName: TOO_LONG_SERVICENAME,
-					Version:  "2.0.0",
-					AppId:   "default",
+					Version:     "2.0.0",
+					AppId:       "default",
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT=============" + resp.String())

@@ -18,10 +18,10 @@ import (
 	"github.com/astaxie/beego"
 	"os"
 
-	"strings"
-	"time"
 	"github.com/servicecomb/service-center/lager"
 	"github.com/servicecomb/service-center/lager/core"
+	"strings"
+	"time"
 )
 
 //log var

@@ -23,8 +23,6 @@ import (
 	"reflect"
 )
 
-
-
 const (
 	REGISTRY_DEFAULT_LEASE_RENEWALINTERVAL int32 = 30
 	REGISTRY_DEFAULT_LEASE_RETRYTIMES      int32 = 3
@@ -55,10 +53,10 @@ var (
 
 func init() {
 	// 非map/slice的validator
-	nameRegex           := `^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]*[a-zA-Z0-9]$`
+	nameRegex := `^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]*[a-zA-Z0-9]$`
 	serviceNameForFindRegex := `^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.:]*[a-zA-Z0-9]$`
 	//name模糊规则: name, *
-	nameFuzzyRegex      := `^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]*[a-zA-Z0-9]$|^\*$`
+	nameFuzzyRegex := `^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]*[a-zA-Z0-9]$|^\*$`
 	versionRegex := `^[0-9]*$|^[0-9]+(\.[0-9]+)*$`
 	// version模糊规则: 1.0, 1.0+, 1.0-2.0, latest
 	versionFuzzyRegex := `^[0-9]*$|^[0-9]+(\.[0-9]+)*\+{0,1}$|^[0-9]+(\.[0-9]+)*-[0-9]+(\.[0-9]+)*$|^latest$`
@@ -151,7 +149,7 @@ func init() {
 
 	FindInstanceReqValidator.AddRule("ConsumerServiceId", ServiceIdRule)
 	FindInstanceReqValidator.AddRule("AppId", MicroServiceKeyValidator.GetRule("AppId"))
-	FindInstanceReqValidator.AddRule("ServiceName", &validate.ValidateRule{Min:1, Max: 128, Regexp: serviceNameForFindRegex})
+	FindInstanceReqValidator.AddRule("ServiceName", &validate.ValidateRule{Min: 1, Max: 128, Regexp: serviceNameForFindRegex})
 	FindInstanceReqValidator.AddRule("VersionRule", versionFuzzyRule)
 	FindInstanceReqValidator.AddRule("Tags", tagRule)
 	FindInstanceReqValidator.AddRule("Stage", stageRule)

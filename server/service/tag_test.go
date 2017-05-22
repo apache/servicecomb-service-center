@@ -14,10 +14,10 @@
 package service_test
 
 import (
-	pb "github.com/servicecomb/service-center/server/core/proto"
 	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	pb "github.com/servicecomb/service-center/server/core/proto"
 )
 
 var serviceId string
@@ -101,8 +101,7 @@ var _ = Describe("ServiceController", func() {
 
 				respAddTags, _ = serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
 					ServiceId: serviceId,
-					Tags: map[string]string{
-					},
+					Tags:      map[string]string{},
 				})
 				Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_FAIL))
 
@@ -217,7 +216,6 @@ var _ = Describe("ServiceController", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_FAIL))
-
 
 				respAddTags, err = serviceResource.DeleteTags(getContext(), &pb.DeleteServiceTagsRequest{
 					ServiceId: serviceId2,

@@ -14,11 +14,11 @@
 package domain
 
 import (
+	"github.com/servicecomb/service-center/server/helper"
 	"github.com/servicecomb/service-center/util"
 	"github.com/servicecomb/service-center/util/errors"
 	"golang.org/x/net/context"
 	"net/http"
-	"github.com/servicecomb/service-center/server/helper"
 )
 
 const (

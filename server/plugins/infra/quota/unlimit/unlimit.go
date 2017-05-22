@@ -14,27 +14,24 @@
 package unlimit
 
 import (
-	"github.com/servicecomb/service-center/server/infra/quota"
 	"context"
+	"github.com/servicecomb/service-center/server/infra/quota"
 )
 
 type Unlimit struct {
-
 }
 
 func New() quota.QuotaManager {
-	return &Unlimit{
-
-	}
+	return &Unlimit{}
 }
 func init() {
 	quota.QuotaPlugins["unlimit"] = New
 }
 
-func (q *Unlimit)Apply4Quotas(ctx context.Context, quotaType int, quotaSize int16) (bool, error) {
+func (q *Unlimit) Apply4Quotas(ctx context.Context, quotaType int, quotaSize int16) (bool, error) {
 	return true, nil
 }
 
-func (q *Unlimit)ReportCurrentQuotasUsage(ctx context.Context,quotaType int, usedQuotaSize int16) bool {
+func (q *Unlimit) ReportCurrentQuotasUsage(ctx context.Context, quotaType int, usedQuotaSize int16) bool {
 	return false
 }

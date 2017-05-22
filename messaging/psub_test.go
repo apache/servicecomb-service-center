@@ -14,10 +14,9 @@
 package messaging
 
 import (
-	"testing"
 	"fmt"
+	"testing"
 )
-
 
 func TestPSub(t *testing.T) {
 	go pub()
@@ -27,9 +26,9 @@ func TestPSub(t *testing.T) {
 
 func psub() {
 	ch := Subscribe("test.*")
-	for{
-		msg :=<- ch
-		fmt.Println(fmt.Sprintf("psub %s",msg))
+	for {
+		msg := <-ch
+		fmt.Println(fmt.Sprintf("psub %s", msg))
 	}
 
 }

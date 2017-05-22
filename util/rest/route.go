@@ -14,9 +14,9 @@
 package rest
 
 import (
+	"fmt"
 	"github.com/servicecomb/service-center/util"
 	"github.com/servicecomb/service-center/util/errors"
-	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -46,7 +46,7 @@ type Route struct {
 //   1. not thread-safe, must be initialized completely before serve http request
 //   2. redirect not supported
 type ROAServerHandler struct {
-	handler http.Handler
+	handler  http.Handler
 	handlers map[string][]*urlPatternHandler
 }
 

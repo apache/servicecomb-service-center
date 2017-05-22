@@ -14,20 +14,20 @@
 package service_test
 
 import (
+	"context"
+	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/reporters"
+	. "github.com/onsi/gomega"
 	pb "github.com/servicecomb/service-center/server/core/proto"
 	_ "github.com/servicecomb/service-center/server/core/registry"
 	_ "github.com/servicecomb/service-center/server/core/registry/etcd"
 	_ "github.com/servicecomb/service-center/server/plugins/infra/quota/buildin"
 	"github.com/servicecomb/service-center/server/service"
-	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/reporters"
-	. "github.com/onsi/gomega"
 	"testing"
-	"context"
 )
 
-const(
-	TOO_LONG_SERVICEID = "addasdfasaddasdfasaddasdfasaddasdfasaddasdfasaddasdfasaddasdfasadafd"
+const (
+	TOO_LONG_SERVICEID   = "addasdfasaddasdfasaddasdfasaddasdfasaddasdfasaddasdfasaddasdfasadafd"
 	TOO_LONG_SERVICENAME = "addasdfasaddasdfasaddasdfasaddasdfasaddasdfasaddasdfasaddasdfasadafd"
 )
 

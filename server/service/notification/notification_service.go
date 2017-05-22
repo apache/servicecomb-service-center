@@ -14,6 +14,11 @@
 package notification
 
 import (
+	"container/list"
+	"context"
+	"encoding/json"
+	"errors"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 	apt "github.com/servicecomb/service-center/server/core"
 	pb "github.com/servicecomb/service-center/server/core/proto"
 	"github.com/servicecomb/service-center/server/core/registry"
@@ -21,11 +26,6 @@ import (
 	"github.com/servicecomb/service-center/server/service/microservice"
 	"github.com/servicecomb/service-center/server/service/tenant"
 	"github.com/servicecomb/service-center/util"
-	"container/list"
-	"context"
-	"encoding/json"
-	"errors"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"strings"
 	"sync"
 	"time"
@@ -108,7 +108,7 @@ func (s *NotifyService) AddJob(job NotifyJob) error {
 	case s.queue <- job:
 		return nil
 	case <-time.After(s.Config.AddTimeout):
-	        util.LOGGER.Errorf(nil, "Add job failed.%s", )
+		util.LOGGER.Errorf(nil, "Add job failed.%s")
 		return errors.New("add notify job timeout")
 	}
 }

@@ -22,13 +22,13 @@ import (
 	pb "github.com/servicecomb/service-center/server/core/proto"
 	"github.com/servicecomb/service-center/server/core/registry"
 	"github.com/servicecomb/service-center/server/infra/quota"
+	"github.com/servicecomb/service-center/server/service/dependency"
 	ms "github.com/servicecomb/service-center/server/service/microservice"
 	"github.com/servicecomb/service-center/util"
 	"golang.org/x/net/context"
 	"strconv"
 	"strings"
 	"time"
-	"github.com/servicecomb/service-center/server/service/dependency"
 )
 
 type ServiceController struct {
@@ -476,7 +476,7 @@ func (s *ServiceController) Delete(ctx context.Context, in *pb.DeleteServiceRequ
 	}, nil
 }
 
-func refreshDependencyCache(tenant string, providerId string, provider *pb.MicroService) (error){
+func refreshDependencyCache(tenant string, providerId string, provider *pb.MicroService) error {
 	key := apt.GenerateProviderDependencyKey(tenant, providerId, "")
 	resp, err := registry.GetRegisterCenter().Do(context.TODO(), &registry.PluginOp{
 		Action:     registry.GET,

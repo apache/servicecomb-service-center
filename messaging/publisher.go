@@ -23,13 +23,13 @@ func Publish(topic string, message string) {
 		subscriptionsMutex.Lock()
 		topic_pattern := regexp.MustCompile(existingTopic)
 
-		if topic_pattern.MatchString(topic){
+		if topic_pattern.MatchString(topic) {
 			subscriptionsMutex.Unlock()
 			for _, s := range subs {
 				select {
 				case s <- []byte(message):
 				default:
-				// drop the message if nobody is ready to receive it
+					// drop the message if nobody is ready to receive it
 				}
 			}
 		}

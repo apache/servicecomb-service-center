@@ -16,16 +16,16 @@ package ratelimiter
 import (
 	"errors"
 	"github.com/astaxie/beego"
-	"github.com/servicecomb/service-center/util"
 	"github.com/didip/tollbooth"
 	"github.com/didip/tollbooth/config"
+	"github.com/servicecomb/service-center/util"
 	"net/http"
 	"strings"
 	"time"
 )
 
 type Limiter struct {
-	conns     int64
+	conns int64
 
 	tbLimiter *config.Limiter
 }

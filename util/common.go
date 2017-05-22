@@ -17,10 +17,11 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"unsafe"
-	"regexp"
 )
+
 const (
 	INIT_FAIL_EXIT = 2
 )
@@ -77,10 +78,10 @@ func ParaseTenant(ctx context.Context) string {
 }
 
 //format : https://10.21.119.167:30100 or http://10.21.119.167:30100
-func URLChecker(url string) (bool, error){
+func URLChecker(url string) (bool, error) {
 	ipPatten := "((?:(?:25[0-5]|2[0-4]\\d|((1\\d{2})|([1-9]?\\d)))\\.){3}(?:25[0-5]|2[0-4]\\d|((1\\d{2})|([1-9]?\\d))))"
 	patten := "^(https|http):\\/\\/" + ipPatten + ":([0-9]+)$"
-	ok, err :=regexp.MatchString(patten, url)
+	ok, err := regexp.MatchString(patten, url)
 	if err != nil {
 		return false, err
 	}
@@ -101,11 +102,11 @@ func MapChecker(data map[string]string) bool {
 		if len(value) == 0 {
 			return false
 		}
- 	}
+	}
 	return true
 }
 
-func GetIPFromContext(ctx context.Context) string{
+func GetIPFromContext(ctx context.Context) string {
 	remoteIp := ""
 	remoteIp, _ = ctx.Value("x-remote-ip").(string)
 	return remoteIp

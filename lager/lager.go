@@ -19,27 +19,27 @@ import (
 	"os"
 	"strings"
 
-	"github.com/servicecomb/service-center/lager/syslog"
 	"github.com/servicecomb/service-center/lager/core"
+	"github.com/servicecomb/service-center/lager/syslog"
 )
 
 const (
 	DEBUG = "DEBUG"
-	INFO = "INFO"
-	WARN = "WARN"
+	INFO  = "INFO"
+	WARN  = "WARN"
 	ERROR = "ERROR"
 	FATAL = "FATAL"
 )
 
 type Config struct {
-	LoggerLevel    string
-	LoggerFile     string
+	LoggerLevel string
+	LoggerFile  string
 
 	EnableRsyslog  bool
 	RsyslogNetwork string
 	RsyslogAddr    string
 
-	LogFormatText  bool
+	LogFormatText bool
 }
 
 func GetConfig() *Config {
@@ -108,7 +108,7 @@ func NewLoggerExt(component string, app_guid string) core.Logger {
 	sink := core.NewReconfigurableSink(core.NewWriterSink(os.Stdout, core.DEBUG), lagerLogLevel)
 	logger.RegisterSink(sink)
 	if config.LoggerFile != "" {
-		file, err := os.OpenFile(config.LoggerFile, os.O_APPEND | os.O_CREATE | os.O_WRONLY, 0600)
+		file, err := os.OpenFile(config.LoggerFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 		if err != nil {
 			panic(err)
 		}

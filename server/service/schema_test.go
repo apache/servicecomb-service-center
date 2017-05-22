@@ -14,15 +14,16 @@
 package service_test
 
 import (
-	pb "github.com/servicecomb/service-center/server/core/proto"
 	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	pb "github.com/servicecomb/service-center/server/core/proto"
 )
 
-const(
+const (
 	invalidSchemaId = "@"
 )
+
 var _ = Describe("ServiceController", func() {
 	Describe("Schema", func() {
 		Context("normal", func() {
@@ -122,12 +123,12 @@ var _ = Describe("ServiceController", func() {
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
 				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
-					Type:           "schema",
-					ServiceId:      serviceId,
-					SchemaId:       "com.huawei.test",
-					AppId:          "()",
-					ServiceName:    "",
-					Version:        "()",
+					Type:        "schema",
+					ServiceId:   serviceId,
+					SchemaId:    "com.huawei.test",
+					AppId:       "()",
+					ServiceName: "",
+					Version:     "()",
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))

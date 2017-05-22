@@ -145,7 +145,7 @@ func (governService *GovernService) GetAllServicesInfo(w http.ResponseWriter, r 
 	ctx := r.Context()
 	optsStr := r.URL.Query().Get("options")
 	request.Options = strings.Split(optsStr, ",")
-	resp,err := GovernServiceAPI.GetServicesInfo(ctx, request)
+	resp, err := GovernServiceAPI.GetServicesInfo(ctx, request)
 
 	respInternal := resp.Response
 	resp.Response = nil

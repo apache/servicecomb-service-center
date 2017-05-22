@@ -14,10 +14,6 @@
 package embededetcd
 
 import (
-	"github.com/servicecomb/service-center/common"
-	"github.com/servicecomb/service-center/server/core/registry"
-	"github.com/servicecomb/service-center/util"
-	"github.com/servicecomb/service-center/util/rest"
 	"context"
 	"crypto/tls"
 	"errors"
@@ -27,6 +23,10 @@ import (
 	"github.com/coreos/etcd/etcdserver/etcdserverpb"
 	"github.com/coreos/etcd/lease"
 	"github.com/coreos/etcd/mvcc/mvccpb"
+	"github.com/servicecomb/service-center/common"
+	"github.com/servicecomb/service-center/server/core/registry"
+	"github.com/servicecomb/service-center/util"
+	"github.com/servicecomb/service-center/util/rest"
 	"net/url"
 	"strings"
 	"time"

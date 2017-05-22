@@ -15,18 +15,18 @@ package rest
 
 import (
 	"bytes"
-	"github.com/servicecomb/service-center/util"
 	"compress/gzip"
 	"encoding/json"
+	"fmt"
 	"github.com/astaxie/beego"
+	"github.com/servicecomb/service-center/util"
+	"github.com/servicecomb/service-center/util/errors"
 	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"reflect"
 	"time"
-	"github.com/servicecomb/service-center/util/errors"
-	"fmt"
 )
 
 type HttpClient struct {
