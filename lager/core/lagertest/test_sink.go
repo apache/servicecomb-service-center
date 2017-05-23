@@ -21,7 +21,7 @@ import (
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega/gbytes"
 
-	"../..//lager"
+	"github.com/servicecomb/service-center/lager"
 )
 
 type TestLogger struct {
