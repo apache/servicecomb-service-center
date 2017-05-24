@@ -14,8 +14,8 @@
 package messaging
 
 import (
-	"testing"
 	"fmt"
+	"testing"
 	"time"
 )
 
@@ -26,9 +26,9 @@ func TestSub(t *testing.T) {
 }
 func sub() {
 	ch := Subscribe("test.1")
-	for{
-		msg :=<- ch
-		fmt.Println(fmt.Sprintf("sub %s",msg))
+	for {
+		msg := <-ch
+		fmt.Println(fmt.Sprintf("sub %s", msg))
 	}
 
 }

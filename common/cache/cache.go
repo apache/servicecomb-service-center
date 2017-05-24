@@ -85,6 +85,7 @@ func (c *Cache) Keys() []string {
 	}
 	return keys
 }
+
 // Set add a new key or replace an exist key. If the dur is 0, we will
 // use the defaultExpiration.
 func (c *Cache) Set(key string, val interface{}, dur time.Duration) {

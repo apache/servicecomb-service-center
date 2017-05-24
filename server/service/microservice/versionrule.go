@@ -15,8 +15,8 @@ package microservice
 
 import (
 	"bytes"
-	"github.com/servicecomb/service-center/server/core/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
+	"github.com/servicecomb/service-center/server/core/registry"
 	"sort"
 	"strconv"
 	"strings"
@@ -100,7 +100,7 @@ func Range(sorted []string, kvs map[string]string, start, end string) []string {
 		start, end = end, start
 	}
 
-	if len(sorted) == 0 || Larger(start, sorted[0]) || Larger(sorted[len(sorted) - 1], end) {
+	if len(sorted) == 0 || Larger(start, sorted[0]) || Larger(sorted[len(sorted)-1], end) {
 		return []string{}
 	}
 

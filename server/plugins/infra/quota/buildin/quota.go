@@ -14,37 +14,35 @@
 package buildin
 
 import (
-	"fmt"
-	"github.com/servicecomb/service-center/server/infra/quota"
 	"context"
+	"fmt"
 	"github.com/servicecomb/service-center/server/core"
 	"github.com/servicecomb/service-center/server/core/registry"
+	"github.com/servicecomb/service-center/server/infra/quota"
 	"github.com/servicecomb/service-center/util"
 )
 
 type BuildInQuota struct {
-
 }
 
 func New() quota.QuotaManager {
-	return &BuildInQuota{
-
-	}
+	return &BuildInQuota{}
 }
 func init() {
 	quota.QuotaPlugins["buildin"] = New
 }
 
 const (
-	SERVICE_MAX_NUMBER = 12000
+	SERVICE_MAX_NUMBER  = 12000
 	INSTANCE_MAX_NUMBER = 150000
 )
+
 //申请配额sourceType serviceinstance servicetype
-func (q *BuildInQuota)Apply4Quotas(ctx context.Context, quotaType int, quotaSize int16) (bool, error) {
+func (q *BuildInQuota) Apply4Quotas(ctx context.Context, quotaType int, quotaSize int16) (bool, error) {
 	var key string = ""
 	var max int64 = 0
 	tenant := ctx.Value("tenant").(string)
-	switch quotaType{
+	switch quotaType {
 	case quota.MicroServiceInstanceQuotaType:
 		key = core.GetInstanceRootKey(tenant)
 		max = INSTANCE_MAX_NUMBER
@@ -72,7 +70,7 @@ func (q *BuildInQuota)Apply4Quotas(ctx context.Context, quotaType int, quotaSize
 }
 
 //向配额中心上报配额使用量
-func (q *BuildInQuota)ReportCurrentQuotasUsage(ctx context.Context,quotaType int, usedQuotaSize int16) bool {
+func (q *BuildInQuota) ReportCurrentQuotasUsage(ctx context.Context, quotaType int, usedQuotaSize int16) bool {
 
 	return false
 }

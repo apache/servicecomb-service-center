@@ -14,10 +14,10 @@
 package rest
 
 import (
+	"github.com/gorilla/websocket"
 	pb "github.com/servicecomb/service-center/server/core/proto"
 	"github.com/servicecomb/service-center/util"
 	"github.com/servicecomb/service-center/util/rest"
-	"github.com/gorilla/websocket"
 	"net/http"
 )
 

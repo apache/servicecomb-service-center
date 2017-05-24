@@ -35,7 +35,7 @@ var interceptors map[Phase][]*Interception
 
 type InterceptorFunc func(http.ResponseWriter, *http.Request) error
 
-func (f InterceptorFunc)Name() string {
+func (f InterceptorFunc) Name() string {
 	return runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
 }
 

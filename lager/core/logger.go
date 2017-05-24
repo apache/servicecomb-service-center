@@ -14,14 +14,14 @@
 package core
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
-	"bytes"
-	"strconv"
 )
 
 const STACK_TRACE_BUFFER_SIZE = 1024 * 100

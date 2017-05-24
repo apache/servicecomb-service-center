@@ -20,11 +20,10 @@ package main
 
 // plugins
 import (
-	_ "github.com/servicecomb/service-center/server/bootstrap"
 	"github.com/servicecomb/service-center/server"
+	_ "github.com/servicecomb/service-center/server/bootstrap"
 )
 
 func main() {
 	server.Init()
 }
-

@@ -17,18 +17,18 @@ import "github.com/servicecomb/service-center/util"
 
 //Notifier 健康检查
 type NotifyServiceHealthChecker struct {
-        BaseNotifier
+	BaseNotifier
 }
 
 type NotifyServiceHealthCheckJob struct {
-        BaseNotifyJob
-        ErrorNotifier Notifier
+	BaseNotifyJob
+	ErrorNotifier Notifier
 }
 
 func (s *NotifyServiceHealthChecker) Notify(job NotifyJob) {
-        j := job.(*NotifyServiceHealthCheckJob)
-        err := j.ErrorNotifier.Err()
-        util.LOGGER.Warnf(err, "notify server remove watcher %s %s, %s",
-                j.ErrorNotifier.GetSubject(), j.ErrorNotifier.GetId(), err.Error())
-        s.Server.RemoveNotifier(j.ErrorNotifier)
+	j := job.(*NotifyServiceHealthCheckJob)
+	err := j.ErrorNotifier.Err()
+	util.LOGGER.Warnf(err, "notify server remove watcher %s %s, %s",
+		j.ErrorNotifier.GetSubject(), j.ErrorNotifier.GetId(), err.Error())
+	s.Server.RemoveNotifier(j.ErrorNotifier)
 }

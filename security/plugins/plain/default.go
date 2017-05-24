@@ -26,14 +26,13 @@ func init() {
 }
 func New() security.Cipher {
 
-	return &DefaultCipher{
-	}
+	return &DefaultCipher{}
 }
 
-func (c *DefaultCipher)Encrypt(src string) (string, error) {
-	return src,nil
+func (c *DefaultCipher) Encrypt(src string) (string, error) {
+	return src, nil
 }
 
-func (c *DefaultCipher)Decrypt(src string) (string, error) {
-	return src,nil
+func (c *DefaultCipher) Decrypt(src string) (string, error) {
+	return src, nil
 }

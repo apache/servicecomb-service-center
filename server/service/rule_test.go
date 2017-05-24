@@ -14,10 +14,10 @@
 package service_test
 
 import (
-	pb "github.com/servicecomb/service-center/server/core/proto"
 	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	pb "github.com/servicecomb/service-center/server/core/proto"
 )
 
 var _ = Describe("ServiceController", func() {
@@ -52,7 +52,6 @@ var _ = Describe("ServiceController", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respAddRule.GetResponse().Code).To(Equal(pb.Response_FAIL))
-
 
 				respAddRule, err = serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
 					ServiceId: "",
@@ -101,7 +100,7 @@ var _ = Describe("ServiceController", func() {
 				Expect(respAddRule.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 				ruleId = respAddRule.RuleIds[0]
 
-                                //添加重复rule
+				//添加重复rule
 				respAddRule, err = serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
 					ServiceId: serviceId,
 					Rules: []*pb.AddOrUpdateServiceRule{
@@ -171,7 +170,7 @@ var _ = Describe("ServiceController", func() {
 				fmt.Println("UT===========修改rule,参数校验")
 				respAddRule, err := serviceResource.UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
 					ServiceId: "",
-					RuleId: ruleId,
+					RuleId:    ruleId,
 					Rule: &pb.AddOrUpdateServiceRule{
 						RuleType:    "BLACK",
 						Attribute:   "ServiceName",
@@ -184,7 +183,7 @@ var _ = Describe("ServiceController", func() {
 
 				respAddRule, err = serviceResource.UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
 					ServiceId: "notexistservice",
-					RuleId: ruleId,
+					RuleId:    ruleId,
 					Rule: &pb.AddOrUpdateServiceRule{
 						RuleType:    "BLACK",
 						Attribute:   "ServiceName",
@@ -197,7 +196,7 @@ var _ = Describe("ServiceController", func() {
 
 				respAddRule, err = serviceResource.UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
 					ServiceId: serviceId,
-					RuleId: ruleId,
+					RuleId:    ruleId,
 					Rule: &pb.AddOrUpdateServiceRule{
 						RuleType:    "notType",
 						Attribute:   "ServiceName",
@@ -210,7 +209,7 @@ var _ = Describe("ServiceController", func() {
 
 				respAddRule, err = serviceResource.UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
 					ServiceId: serviceId,
-					RuleId: ruleId,
+					RuleId:    ruleId,
 					Rule: &pb.AddOrUpdateServiceRule{
 						RuleType:    "notType",
 						Attribute:   "noattribute",
@@ -225,7 +224,7 @@ var _ = Describe("ServiceController", func() {
 				fmt.Println("UT===========修改rule")
 				respAddRule, err := serviceResource.UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
 					ServiceId: serviceId,
-					RuleId: ruleId,
+					RuleId:    ruleId,
 					Rule: &pb.AddOrUpdateServiceRule{
 						RuleType:    "BLACK",
 						Attribute:   "AppId",
@@ -238,7 +237,7 @@ var _ = Describe("ServiceController", func() {
 
 				respAddRule, err = serviceResource.UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
 					ServiceId: serviceId,
-					RuleId: ruleId,
+					RuleId:    ruleId,
 					Rule: &pb.AddOrUpdateServiceRule{
 						RuleType:    "BLACK",
 						Attribute:   "AppId",
@@ -251,7 +250,7 @@ var _ = Describe("ServiceController", func() {
 
 				respAddRule, err = serviceResource.UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
 					ServiceId: serviceId,
-					RuleId: ruleId,
+					RuleId:    ruleId,
 					Rule: &pb.AddOrUpdateServiceRule{
 						RuleType:    "WHITE",
 						Attribute:   "AppId",
@@ -263,7 +262,7 @@ var _ = Describe("ServiceController", func() {
 
 				respAddRule, err = serviceResource.UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
 					ServiceId: serviceId,
-					RuleId: "notExistRuleId",
+					RuleId:    "notExistRuleId",
 					Rule: &pb.AddOrUpdateServiceRule{
 						RuleType:    "BLACK",
 						Attribute:   "AppId",

@@ -16,7 +16,7 @@ package messaging
 import "sync"
 
 var (
-	subscriptions = map[string][]chan []byte{}
+	subscriptions      = map[string][]chan []byte{}
 	subscriptionsMutex sync.Mutex
 )
 

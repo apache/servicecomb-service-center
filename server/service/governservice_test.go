@@ -14,10 +14,10 @@
 package service_test
 
 import (
-	pb "github.com/servicecomb/service-center/server/core/proto"
 	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	pb "github.com/servicecomb/service-center/server/core/proto"
 )
 
 var _ = Describe("GovernServiceController", func() {
@@ -75,23 +75,21 @@ var _ = Describe("GovernServiceController", func() {
 					},
 				})
 
-
-
 				Expect(err).To(BeNil())
 				serviceId := resp.ServiceId
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 				fmt.Println("UT===========服务治理获取单个服务信息")
 
-				serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest {
+				serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
 					ServiceId: serviceId,
-					SchemaId: "schemaId",
-					Schema: "detail",
+					SchemaId:  "schemaId",
+					Schema:    "detail",
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
-				insResource.Register(getContext(), &pb.RegisterInstanceRequest {
-					Instance: &pb.MicroServiceInstance {
+				insResource.Register(getContext(), &pb.RegisterInstanceRequest{
+					Instance: &pb.MicroServiceInstance{
 						ServiceId: serviceId,
 						Endpoints: []string{
 							"rest:127.0.0.1:8080",
@@ -113,7 +111,7 @@ var _ = Describe("GovernServiceController", func() {
 
 				respDelete, err := serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{
 					ServiceId: serviceId,
-					Force : true,
+					Force:     true,
 				})
 
 				Expect(err).To(BeNil())

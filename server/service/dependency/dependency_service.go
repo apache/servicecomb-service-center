@@ -14,17 +14,16 @@
 package dependency
 
 import (
+	"context"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/servicecomb/service-center/common/cache"
 	apt "github.com/servicecomb/service-center/server/core"
 	"github.com/servicecomb/service-center/server/core/registry"
 	"github.com/servicecomb/service-center/util"
-	"context"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"time"
 )
 
 var consumerCache *cache.Cache
-
 
 func ConsumerCache() *cache.Cache {
 	return consumerCache
@@ -36,12 +35,13 @@ func ConsumerCache() *cache.Cache {
 当发现新查询到的consumers列表变成0时则不做cache set操作
 这样当consumers关系完全被删除也有1分钟的时间窗让实例变化推送到相应的consumers里 1分鐘后緩存也會自動清理
 实例推送中的依赖发现实时性为T+1分钟
- */
+*/
 func init() {
 	d, _ := time.ParseDuration("2m")
 	consumerCache = cache.New(d, d)
 	go autoSyncConsumers()
 }
+
 //TODO
 func autoSyncConsumers() {
 	//ticker := time.NewTicker(time.Minute * 1)

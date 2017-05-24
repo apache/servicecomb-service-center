@@ -14,15 +14,16 @@
 package server
 
 import (
-	"time"
+	"fmt"
+	"github.com/astaxie/beego"
 	"os"
 	"os/signal"
-	"syscall"
 	"strings"
-	"github.com/astaxie/beego"
-	"fmt"
+	"syscall"
+	"time"
 )
 import (
+	"context"
 	"github.com/servicecomb/service-center/common"
 	"github.com/servicecomb/service-center/server/api"
 	"github.com/servicecomb/service-center/server/core/registry"
@@ -30,7 +31,6 @@ import (
 	"github.com/servicecomb/service-center/server/service"
 	nf "github.com/servicecomb/service-center/server/service/notification"
 	"github.com/servicecomb/service-center/util"
-	"context"
 )
 
 var (

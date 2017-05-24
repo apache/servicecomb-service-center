@@ -16,8 +16,8 @@ package proto
 import (
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/gorilla/websocket"
-	"strings"
 	"golang.org/x/net/context"
+	"strings"
 )
 
 const (
@@ -82,14 +82,14 @@ func EventToResponse(evt *mvccpb.Event) (keys []string, action string, data []by
 	return
 }
 
-func GetInfoFromInstChangedEvent(evt *mvccpb.Event)  (serviceId, instanceId, tenantProject, action string, data []byte) {
+func GetInfoFromInstChangedEvent(evt *mvccpb.Event) (serviceId, instanceId, tenantProject, action string, data []byte) {
 	keys, action, data := EventToResponse(evt)
 	if len(keys) < 7 {
 		return
 	}
 	serviceId = keys[len(keys)-2]
 	instanceId = keys[len(keys)-1]
-	tenantProject = strings.Join([]string{keys[len(keys) - 4 ], keys[len(keys)-3]}, "/")
+	tenantProject = strings.Join([]string{keys[len(keys)-4], keys[len(keys)-3]}, "/")
 	keys, action, data = EventToResponse(evt)
 	return
 }

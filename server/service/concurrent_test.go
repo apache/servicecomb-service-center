@@ -19,16 +19,16 @@ import (
 )
 
 import (
+	"encoding/json"
+	"fmt"
+	"github.com/servicecomb/service-center/etcdsync"
 	apt "github.com/servicecomb/service-center/server/core"
 	pb "github.com/servicecomb/service-center/server/core/proto"
 	"github.com/servicecomb/service-center/server/core/registry"
 	"github.com/servicecomb/service-center/server/service"
 	"github.com/servicecomb/service-center/util"
-	"encoding/json"
-	"fmt"
 	"testing"
 	"time"
-	"github.com/servicecomb/service-center/etcdsync"
 )
 
 func init() {
@@ -85,9 +85,9 @@ func TestServiceController_CreateDependenciesForMircServices(t *testing.T) {
 	for {
 		time.Sleep(5 * time.Second)
 		key := apt.GenerateProviderDependencyRuleKey("default/default", &pb.MicroServiceKey{
-                        AppId:       "test_deps",
-                        ServiceName: "service0",
-                        Version:     "1.0.0",
+			AppId:       "test_deps",
+			ServiceName: "service0",
+			Version:     "1.0.0",
 		})
 		resp, err := registry.GetRegisterCenter().Do(getContext(), &registry.PluginOp{
 			Action: registry.GET,

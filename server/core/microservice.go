@@ -14,8 +14,8 @@
 package core
 
 import (
-	pb "github.com/servicecomb/service-center/server/core/proto"
 	"context"
+	pb "github.com/servicecomb/service-center/server/core/proto"
 	"os"
 )
 

@@ -14,11 +14,11 @@
 package ratelimiter
 
 import (
+	"github.com/didip/tollbooth"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"net/http"
 	"net/http/httptest"
-	"github.com/didip/tollbooth"
 	"time"
 )
 

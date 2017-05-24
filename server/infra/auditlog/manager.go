@@ -16,11 +16,11 @@ package auditlog
 import "net/http"
 
 type AuditLogger interface {
-        Record(r *http.Request, responseHeaders http.Header)
+	Record(r *http.Request, responseHeaders http.Header)
 }
 
 var AuditLogPlugins map[string]func() AuditLogger
 
 func init() {
-        AuditLogPlugins = make(map[string]func() AuditLogger)
+	AuditLogPlugins = make(map[string]func() AuditLogger)
 }

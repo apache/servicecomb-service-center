@@ -13,7 +13,7 @@ func main() {
 		{Name: "get_pet", Method: "GET", Path: "/"},
 	}
 	petHandlers := rata.Handlers{
-		"get_pet":    http.HandlerFunc(handler2),
+		"get_pet": http.HandlerFunc(handler2),
 	}
 	router, err := rata.NewRouter(petRoutes, petHandlers)
 	if err != nil {

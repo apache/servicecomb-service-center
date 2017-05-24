@@ -14,10 +14,10 @@
 package rest
 
 import (
-	pb "github.com/servicecomb/service-center/server/core/proto"
-	"github.com/servicecomb/service-center/util"
 	"encoding/json"
 	"fmt"
+	pb "github.com/servicecomb/service-center/server/core/proto"
+	"github.com/servicecomb/service-center/util"
 	"net/http"
 	"strconv"
 )
@@ -25,7 +25,6 @@ import (
 var ServiceAPI pb.ServiceCtrlServer
 var InstanceAPI pb.SerivceInstanceCtrlServerEx
 var GovernServiceAPI pb.GovernServiceCtrlServerEx
-
 
 func WriteJsonObject(status int, obj interface{}, w http.ResponseWriter) {
 	serviceJSON, err := json.Marshal(obj)

@@ -21,7 +21,7 @@ import (
 func AssembleResources(notifyService *nf.NotifyService) (pb.ServiceCtrlServer, pb.SerivceInstanceCtrlServerEx, pb.GovernServiceCtrlServerEx) {
 	var serviceController ServiceController
 	var instanceController InstanceController
-	var governServiceAPI   GovernServiceController
+	var governServiceAPI GovernServiceController
 	instanceController.serviceCtrl = serviceController
 	instanceController.NotifyService = notifyService
 	return &serviceController, &instanceController, &governServiceAPI

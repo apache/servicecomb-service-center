@@ -53,7 +53,7 @@ func IsRequestURI(uri string) bool {
 	if uri == "" || len(uri) >= 2048 || len(uri) <= 3 || strings.HasPrefix(uri, ".") {
 		return false
 	}
-	if strings.HasSuffix(uri, ";") || strings.HasSuffix(uri, "&") || strings.HasSuffix(uri, "?") || strings.HasSuffix(uri, "+") || strings.HasSuffix(uri, "@")||strings.Contains(uri,"//") {
+	if strings.HasSuffix(uri, ";") || strings.HasSuffix(uri, "&") || strings.HasSuffix(uri, "?") || strings.HasSuffix(uri, "+") || strings.HasSuffix(uri, "@") || strings.Contains(uri, "//") {
 		return false
 	}
 	return !rxURI.MatchString(uri)

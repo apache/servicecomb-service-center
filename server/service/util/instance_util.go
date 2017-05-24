@@ -1,17 +1,17 @@
 package util
 
 import (
-	"strconv"
-	"github.com/servicecomb/service-center/server/core/registry"
 	"encoding/json"
-	pb "github.com/servicecomb/service-center/server/core/proto"
-	"golang.org/x/net/context"
 	apt "github.com/servicecomb/service-center/server/core"
-	"strings"
+	pb "github.com/servicecomb/service-center/server/core/proto"
+	"github.com/servicecomb/service-center/server/core/registry"
 	"github.com/servicecomb/service-center/util"
+	"golang.org/x/net/context"
+	"strconv"
+	"strings"
 )
 
-func GetLeaseId(ctx context.Context, tenant string, serviceId string, instanceId string) (int64, error){
+func GetLeaseId(ctx context.Context, tenant string, serviceId string, instanceId string) (int64, error) {
 	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
 		Action: registry.GET,
 		Key:    []byte(apt.GenerateInstanceLeaseKey(tenant, serviceId, instanceId)),
@@ -26,7 +26,7 @@ func GetLeaseId(ctx context.Context, tenant string, serviceId string, instanceId
 	return leaseID, nil
 }
 
-func GetInstance(ctx context.Context, tenant string, serviceId string, instanceId string) (*pb.MicroServiceInstance, error){
+func GetInstance(ctx context.Context, tenant string, serviceId string, instanceId string) (*pb.MicroServiceInstance, error) {
 	key := apt.GenerateInstanceKey(tenant, serviceId, instanceId)
 	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
 		Action: registry.GET,
@@ -47,11 +47,10 @@ func GetInstance(ctx context.Context, tenant string, serviceId string, instanceI
 	return instance, nil
 }
 
-
-func InstanceExist(ctx context.Context, tenant string, serviceId string, instanceId string) (bool, error){
+func InstanceExist(ctx context.Context, tenant string, serviceId string, instanceId string) (bool, error) {
 	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action:  registry.GET,
-		Key:     []byte(apt.GenerateInstanceKey(tenant, serviceId, instanceId)),
+		Action:    registry.GET,
+		Key:       []byte(apt.GenerateInstanceKey(tenant, serviceId, instanceId)),
 		CountOnly: true,
 	})
 	if err != nil {

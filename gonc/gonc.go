@@ -14,13 +14,13 @@
 package main
 
 import (
-	"net"
-	"fmt"
-	"time"
 	"flag"
+	"fmt"
+	"net"
 	"os"
-	"strings"
 	"strconv"
+	"strings"
+	"time"
 )
 
 const DEFAULT_TCP_CONNCET_TIMEOUT = 3
@@ -30,7 +30,7 @@ func tcpConnect(ip string, port int16, timeout int, verbose bool) error {
 	if verbose {
 		fmt.Printf("Test connection to %s(timeout: %d)...\n", address, timeout)
 	}
-	conn, err := net.DialTimeout("tcp", address, time.Duration(timeout) * time.Second)
+	conn, err := net.DialTimeout("tcp", address, time.Duration(timeout)*time.Second)
 	if err != nil {
 		fmt.Printf("connect to %s failed, err: %+v\n", address, err)
 		return err

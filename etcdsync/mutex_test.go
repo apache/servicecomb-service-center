@@ -16,8 +16,8 @@ package etcdsync_test
 import (
 	. "github.com/servicecomb/service-center/etcdsync"
 
-	. "github.com/onsi/ginkgo"
 	"fmt"
+	. "github.com/onsi/ginkgo"
 )
 
 var _ = Describe("Mutex", func() {

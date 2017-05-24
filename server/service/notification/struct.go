@@ -16,57 +16,57 @@ package notification
 import "errors"
 
 type Notifier interface {
-        Err() error
-        SetError(err error)
-        GetId() string
-        GetSubject() string
-        GetServer() *NotifyService
-        Notify(job NotifyJob)
-        Close()
+	Err() error
+	SetError(err error)
+	GetId() string
+	GetSubject() string
+	GetServer() *NotifyService
+	Notify(job NotifyJob)
+	Close()
 }
 
 type NotifyJob interface {
-        GetId() string
-        GetSubject() string
+	GetId() string
+	GetSubject() string
 }
 
 type BaseNotifier struct {
-        Id      string
-        Subject string
-        Server  *NotifyService
-        err     error
+	Id      string
+	Subject string
+	Server  *NotifyService
+	err     error
 }
 
 func (s *BaseNotifier) Err() error {
-        return s.err
+	return s.err
 }
 
 func (s *BaseNotifier) SetError(err error) {
-        s.err = err
-        // 触发清理job
-        s.Server.AddJob(&NotifyServiceHealthCheckJob{
-                BaseNotifyJob: BaseNotifyJob{
-                        Id:      NOTIFY_SERVER_CHECKER_NAME,
-                        Subject: NOTIFY_SERVER_CHECK_SUBJECT,
-                },
-                ErrorNotifier: s,
-        })
+	s.err = err
+	// 触发清理job
+	s.Server.AddJob(&NotifyServiceHealthCheckJob{
+		BaseNotifyJob: BaseNotifyJob{
+			Id:      NOTIFY_SERVER_CHECKER_NAME,
+			Subject: NOTIFY_SERVER_CHECK_SUBJECT,
+		},
+		ErrorNotifier: s,
+	})
 }
 
 func (s *BaseNotifier) GetId() string {
-        return s.Id
+	return s.Id
 }
 
 func (s *BaseNotifier) GetSubject() string {
-        return s.Subject
+	return s.Subject
 }
 
 func (s *BaseNotifier) GetServer() *NotifyService {
-        return s.Server
+	return s.Server
 }
 
 func (s *BaseNotifier) Notify(job NotifyJob) {
-        s.SetError(errors.New("do not call base notifier notify method"))
+	s.SetError(errors.New("do not call base notifier notify method"))
 }
 
 func (s *BaseNotifier) Close() {
@@ -74,14 +74,14 @@ func (s *BaseNotifier) Close() {
 }
 
 type BaseNotifyJob struct {
-        Id      string
-        Subject string
+	Id      string
+	Subject string
 }
 
 func (s *BaseNotifyJob) GetId() string {
-        return s.Id
+	return s.Id
 }
 
 func (s *BaseNotifyJob) GetSubject() string {
-        return s.Subject
+	return s.Subject
 }

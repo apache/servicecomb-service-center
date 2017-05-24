@@ -17,6 +17,7 @@ import (
 	pb "github.com/servicecomb/service-center/server/core/proto"
 	"strings"
 )
+
 const (
 	REGISTRY_ROOT_KEY        = "cse-sr"
 	REGISTRY_SERVICE_KEY     = "ms"
@@ -25,6 +26,7 @@ const (
 	REGISTRY_TENANT_KEY      = "tenant"
 	REGISTRY_ENDPOINTS_INDEX = "epsindex"
 )
+
 func GetRootKey() string {
 	return strings.Join([]string{
 		"",
@@ -238,7 +240,7 @@ func GenerateInstanceLeaseKey(tenant string, serviceId string, instanceId string
 	}, "/")
 }
 
-func generateServiceDependencyRuleKey(serviceType string,  tenant string, in *pb.MicroServiceKey) string {
+func generateServiceDependencyRuleKey(serviceType string, tenant string, in *pb.MicroServiceKey) string {
 	if in.ServiceName == "*" {
 		return strings.Join([]string{
 			GenerateServiceDependencyRuleRootKey(tenant),

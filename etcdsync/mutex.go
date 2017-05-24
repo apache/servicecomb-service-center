@@ -14,11 +14,11 @@
 package etcdsync
 
 import (
-	"github.com/servicecomb/service-center/server/core/registry"
-	"github.com/servicecomb/service-center/util"
 	"fmt"
 	"github.com/coreos/etcd/client"
 	"github.com/coreos/etcd/mvcc/mvccpb"
+	"github.com/servicecomb/service-center/server/core/registry"
+	"github.com/servicecomb/service-center/util"
 	"golang.org/x/net/context"
 	"io"
 	"os"
@@ -140,7 +140,7 @@ func (m *Locker) Lock() error {
 		}
 		util.LOGGER.Warnf(err, "Key %s is locked, waiting for other node releases it, id=%s", m.builder.key, m.id)
 
-		ctx, cancel := context.WithTimeout(m.builder.ctx, defaultTTL * time.Second)
+		ctx, cancel := context.WithTimeout(m.builder.ctx, defaultTTL*time.Second)
 		go func() {
 			err := registry.GetRegisterCenter().Watch(ctx, &registry.PluginOp{
 				Action:     registry.GET,

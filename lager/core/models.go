@@ -14,8 +14,8 @@
 package core
 
 import (
-	"encoding/json"
 	"bytes"
+	"encoding/json"
 )
 
 type LogLevel int
@@ -83,6 +83,7 @@ type LogFormat struct {
 	LineNo    int      `json:"lineno"`
 	Method    string   `json:"method"`
 }
+
 func prettyPrint(in []byte) []byte {
 	var out bytes.Buffer
 	err := json.Indent(&out, in, "", "\t")
@@ -92,6 +93,6 @@ func prettyPrint(in []byte) []byte {
 	return out.Bytes()
 }
 func (log LogFormat) ToJSON() ([]byte, error) {
-	j,err:=json.Marshal(log)
-	return prettyPrint(j),err
+	j, err := json.Marshal(log)
+	return prettyPrint(j), err
 }

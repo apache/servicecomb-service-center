@@ -14,17 +14,17 @@
 package microservice
 
 import (
-	"time"
+	"context"
+	"encoding/json"
+	"fmt"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/servicecomb/service-center/common/cache"
+	"github.com/servicecomb/service-center/server/core"
 	"github.com/servicecomb/service-center/server/core/proto"
 	"github.com/servicecomb/service-center/server/core/registry"
 	"github.com/servicecomb/service-center/util"
-	"encoding/json"
-	"context"
-	"github.com/servicecomb/service-center/server/core"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"strings"
-	"fmt"
+	"time"
 )
 
 var msCache *cache.Cache
@@ -37,20 +37,21 @@ func init() {
 	d, _ := time.ParseDuration("1m")
 	msCache = cache.New(d, d)
 }
+
 /*
 	get Service by service id
- */
+*/
 func GetById(domain string, id string) (*proto.MicroService, error) {
 	key := core.GenerateServiceKey(domain, id)
 	serviceResp, err := registry.GetRegisterCenter().Do(context.TODO(), &registry.PluginOp{
 		Action: registry.GET,
 		Key:    []byte(key),
-	}); if err != nil || len(serviceResp.Kvs) == 0 {
+	})
+	if err != nil || len(serviceResp.Kvs) == 0 {
 		util.LOGGER.Errorf(err, "query provider service %s file failed", id)
 		return nil, err
 	}
-	service := &proto.MicroService{
-	}
+	service := &proto.MicroService{}
 	err = json.Unmarshal(serviceResp.Kvs[0].Value, &service)
 	if err != nil || len(serviceResp.Kvs) == 0 {
 		util.LOGGER.Errorf(err, "unmarshal provider service %s file failed", id)
@@ -61,8 +62,10 @@ func GetById(domain string, id string) (*proto.MicroService, error) {
 
 func GetByIdInCache(domain string, id string) (*proto.MicroService, error) {
 	uid := domain + ":::" + id
-	ms, ok := msCache.Get(uid); if !ok {
-		ms, err := GetById(domain, id); if err != nil {
+	ms, ok := msCache.Get(uid)
+	if !ok {
+		ms, err := GetById(domain, id)
+		if err != nil {
 			return nil, err
 		}
 		msCache.Set(uid, ms, 0)
@@ -71,7 +74,7 @@ func GetByIdInCache(domain string, id string) (*proto.MicroService, error) {
 
 	return ms.(*proto.MicroService), nil
 }
-func GetServicesRawData(ctx  context.Context, tenant string) ([]*mvccpb.KeyValue, error) {
+func GetServicesRawData(ctx context.Context, tenant string) ([]*mvccpb.KeyValue, error) {
 	key := strings.Join([]string{
 		core.GetServiceRootKey(tenant),
 		"",
@@ -84,19 +87,21 @@ func GetServicesRawData(ctx  context.Context, tenant string) ([]*mvccpb.KeyValue
 	})
 	return resp.Kvs, err
 }
-func GetServicesByTenent(ctx  context.Context, tenant string) ([]*proto.MicroService, error) {
-	kvs, err := GetServicesRawData(ctx, tenant); if err != nil {
+func GetServicesByTenent(ctx context.Context, tenant string) ([]*proto.MicroService, error) {
+	kvs, err := GetServicesRawData(ctx, tenant)
+	if err != nil {
 		return nil, err
 	}
 	services := []*proto.MicroService{}
 	for _, kvs := range kvs {
 		util.LOGGER.Debugf("start unmarshal service file: %s", string(kvs.Value))
 		service := &proto.MicroService{}
-		err := json.Unmarshal(kvs.Value, service); if err != nil {
+		err := json.Unmarshal(kvs.Value, service)
+		if err != nil {
 			util.LOGGER.Error(fmt.Sprintf("Can not unmarshal %s", err), err)
 			return nil, err
 		}
 		services = append(services, service)
 	}
-	return services,nil
+	return services, nil
 }

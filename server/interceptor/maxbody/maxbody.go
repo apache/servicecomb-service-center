@@ -14,13 +14,13 @@
 package maxbody
 
 import (
+	"context"
 	"fmt"
+	"github.com/astaxie/beego"
 	. "github.com/servicecomb/service-center/server/core"
 	"github.com/servicecomb/service-center/util/url"
 	"net/http"
-	"github.com/astaxie/beego"
 	"strings"
-	"context"
 )
 
 type MaxBytesHandler struct {
@@ -63,7 +63,7 @@ func Intercept(w http.ResponseWriter, r *http.Request) error {
 	return maxBodyHandler.ServeHTTP(w, r)
 }
 
-func GetRealIP(r *http.Request) (string){
+func GetRealIP(r *http.Request) string {
 	addrs := strings.Split(r.RemoteAddr, ":")
 	if len(addrs) > 0 {
 		return addrs[0]

@@ -14,9 +14,9 @@
 package rest
 
 import (
-	"github.com/servicecomb/service-center/util/rest"
 	"encoding/json"
 	"github.com/astaxie/beego"
+	"github.com/servicecomb/service-center/util/rest"
 	"net/http"
 )
 
