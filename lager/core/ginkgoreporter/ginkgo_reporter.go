@@ -18,9 +18,9 @@ import (
 	"io"
 	"time"
 
-	"../..//lager"
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/types"
+	"github.com/servicecomb/service-center/lager"
 )
 
 type SuiteStartSummary struct {
