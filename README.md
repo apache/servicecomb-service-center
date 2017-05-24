@@ -2,7 +2,6 @@
 
 A standalone Service Center to allow services to register their instance information and to discover providers of a given service
 
-- [http://www.servicecomb.io/service-center](http://www.servicecomb.io/service-center)
 
 ## Quick Start
 
@@ -25,7 +24,6 @@ This will bring up Service Center listening on port 30100 for service communicat
 
 Project documentation is available on the ServiceComb website.
 
-http://www.servicecomb.io/service-center/documentation
 
 ## Building
 
