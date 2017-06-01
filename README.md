@@ -12,7 +12,7 @@ The easiest way to get Service Center is to use one of the pre-built release bin
 
 ### Running Service Center
 
-First, you need to run a etcd(version: 3.x) as a database service£¬and then modify the etcd IP and port in the Service Center configuration file (./conf/app.conf : manager_cluster).
+First, you need to run a etcd(version: 3.x) as a database serviceÂ£Â¬and then modify the etcd IP and port in the Service Center configuration file (./conf/app.conf : manager_cluster).
 
 ```sh
 ./bin/start.sh
@@ -26,7 +26,7 @@ Project documentation is available on the ServiceComb website.
 
 ## Building
 
-You don¡¯t need to build from source to use Service Center (binaries on the [GitHub releases page][github-release]), but if you want to try out the latest and greatest, Service Center can be easily built.  You can refer to this compilation script([.travis.yml][travis.yml]).
+You donÂ¡Â¯t need to build from source to use Service Center (binaries on the [GitHub releases page][github-release]), but if you want to try out the latest and greatest, Service Center can be easily built.  You can refer to this compilation script([.travis.yml][travis.yml]).
 
 [github-release]: https://github.com/servicecomb/service-center/releases/
 [travis.yml]: https://github.com/ServiceComb/service-center/blob/master/.travis.yml
