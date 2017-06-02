@@ -31,7 +31,7 @@ script:
   - bash +x scripts/prepare_env_ut.sh
   - bash -x scripts/ut.sh common
   - bash -x scripts/ut.sh etcdsync
-  - bash -x scripts/ut.sh server/interceptor
+  - bash -x scripts/ut.sh server
   - $HOME/gopath/bin/goveralls -coverprofile=coverage.txt -service=travis-ci
 
     
