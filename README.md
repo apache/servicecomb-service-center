@@ -1,20 +1,36 @@
 # service-center [![Build Status](https://travis-ci.org/ServiceComb/service-center.svg?branch=master)](https://travis-ci.org/ServiceComb/service-center)[![Coverage Status](https://coveralls.io/repos/github/ServiceComb/service-center/badge.svg?branch=master)](https://coveralls.io/github/ServiceComb/service-center?branch=master)
 
-A standalone service center to allow services to register their instance information and to discover providers of a given service
+A standalone service center allows services to register their instance information and to discover providers of a given service.
 
 ## Quick Start
 
 ### Getting Service Center
 
-The easiest way to get Service Center is to use one of the pre-built release binaries which are available for OSX, Linux, Windows, and Docker. Instructions for using these binaries are on the [GitHub releases page][github-release].
+The easiest way to get Service Center is to use one of the pre-built release binaries which are available for Linux, Windows and Docker. Instructions for using these binaries are on the [GitHub releases page][github-release].
 
 [github-release]: https://github.com/servicecomb/service-center/releases/
 
 ### Building and Running Service Center
 
-You don't need to build from source to use Service Center (binaries on the [GitHub releases page][github-release]), but if you want to try out the latest and greatest, Service Center can be easily built. 
+You don't need to build from source to use Service Center (binaries on the [GitHub releases page][github-release]).When you get these binaries, you can execute the start script to run Service Center.
 
-First, you need to run a etcd(version: 3.x) as a database service and then modify the etcd IP and port in the Service Center configuration file (./conf/app.conf : manager_cluster).
+Windows(service-center-xxx-windows-amd64.zip):
+```
+start.bat
+```
+
+Linux(service-center-xxx-linux-amd64.tar.gz):
+```sh
+./start.sh
+```
+Docker:
+```sh
+docker pull tank2428/servicecenter:xxx
+docker run -d -p 30100:30100 tank2428/servicecenter:xxx
+```
+
+
+If you want to try out the latest and greatest, Service Center can be easily built. First, you need to run a etcd(version: 3.x) as a database service and then modify the etcd IP and port in the Service Center configuration file (./conf/app.conf : manager_cluster).
 
 ```sh
 wget https://github.com/coreos/etcd/releases/download/v3.1.8/etcd-v3.1.8-linux-amd64.tar.gz
@@ -28,24 +44,19 @@ go build
 cp -r ./etc/conf .
 ./service-center
 ```
-This will bring up Service Center listening on port 30100 for service communication.
+This will bring up Service Center listening on ip/port 127.0.0.1:30100 for service communication.If you want to change the listening ip/port, you can modify it in the Service Center configuration file (./conf/app.conf : httpaddr,httpport).
 
 [github-release]: https://github.com/servicecomb/service-center/releases/
 
 ## Documentation
 
-Project documentation is available on the ServiceComb website.
+Project documentation is available on the [ServiceComb website][servicecomb-website].
 
-## Automated Testing
-
+[servicecomb-website]: http://servicecomb.io/
       
 ## Contact
 
-Mailing list: 
-
-Planning/Roadmap: milestones, roadmap
-
-Bugs: issues
+Bugs: [issues](https://github.com/servicecomb/service-center/issues)
 
 ## Contributing
 
