@@ -26,7 +26,7 @@ Linux(service-center-xxx-linux-amd64.tar.gz):
 Docker:
 ```sh
 docker pull servicecomb/service-center
-docker run -d -p 30100:30100 servicecomb/servicecenter
+docker run -d -p 30100:30100 servicecomb/service-center
 ```
 
 
