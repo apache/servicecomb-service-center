@@ -20,7 +20,7 @@ before_install:
   - go get github.com/astaxie/beego
   - go get github.com/onsi/gomega
   - go get github.com/onsi/gomega/gbytes		
-  - go get github.com/mattn/gom
+  - go get github.com/FiloSottile/gvt
   
 install: true
 
@@ -29,8 +29,8 @@ script:
   - rsync -az ${TRAVIS_BUILD_DIR}/ $HOME/gopath/src/github.com/servicecomb/service-center/
   - export TRAVIS_BUILD_DIR=$HOME/gopath/src/github.com/servicecomb/service-center
   - cd $HOME/gopath/src/github.com/servicecomb/service-center
-  - gom install
-  - CGO_ENABLED=0 GO_EXTLINK_ENABLED=0 gom build --ldflags '-w -extldflags "-static"' -o servicecenter
+  - gvt restore
+  - CGO_ENABLED=0 GO_EXTLINK_ENABLED=0 go build --ldflags '-w -extldflags "-static"' -o servicecenter
   - bash +x scripts/prepare_env_ut.sh
   - bash -x scripts/ut.sh common
   - bash -x scripts/ut.sh etcdsync

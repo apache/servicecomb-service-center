@@ -1,7 +1,0 @@
-gom 'github.com/golang/protobuf', :commit => '7b8002443fd4a3ce5f25ef93087c524546799a56'
-gom 'github.com/onsi/ginkgo', :commit => 'a1f616c97771e46da1722d3aa9dcde0a43f55682'
-gom 'github.com/onsi/gomega', :commit => '00acfa9d92a386415bd235ab069c52063f925998'
-gom 'gopkg.in/yaml.v2', :commit => 'cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b'
-gom 'github.com/astaxie/beego', :command => 'git clone https://github.com/astaxie/beego.git'
-gom 'github.com/coreos/etcd', :command => 'git clone https://github.com/coreos/etcd.git --branch v3.1.0'
-gom 'github.com/gorilla/websocket'
