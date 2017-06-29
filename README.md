@@ -30,9 +30,7 @@ docker run -d -p 30100:30100 servicecomb/service-center
 ```
 
 
-If you want to try out the latest and greatest, Service Center can be easily built. 
-
-#### Build
+##### If you want to try out the latest and greatest, Service Center can be easily built. 
 
 Download the Code
 ```sh
@@ -55,8 +53,6 @@ Build the Service-Center
 ```sh
 go build -o service-center
 ```
-
-#### Run
 
 First, you need to run a etcd(version: 3.x) as a database service and then modify the etcd IP and port in the Service Center configuration file (./etc/conf/app.conf : manager_cluster).
 
