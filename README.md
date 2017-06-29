@@ -30,7 +30,30 @@ docker run -d -p 30100:30100 servicecomb/service-center
 ```
 
 
-If you want to try out the latest and greatest, Service Center can be easily built. First, you need to run a etcd(version: 3.x) as a database service and then modify the etcd IP and port in the Service Center configuration file (./conf/app.conf : manager_cluster).
+##### If you want to try out the latest and greatest, Service Center can be easily built. 
+
+Download the Code
+```sh
+git clone https://github.com/ServiceComb/service-center.git $GOPATH/src/github.com/servicecomb/service-center
+cd $GOPATH/src/github.com/servicecomb/service-center
+```
+
+Dependencies
+
+We use gvt for dependency management, please follow below steps to download all the dependency.
+```sh
+go get github.com/FiloSottile/gvt
+gvt restore
+```
+If you face any issue in downloading the dependency because of insecure connection then you can use ```gvt restore -precaire```
+
+Build the Service-Center
+
+```sh
+go build -o service-center
+```
+
+First, you need to run a etcd(version: 3.x) as a database service and then modify the etcd IP and port in the Service Center configuration file (./etc/conf/app.conf : manager_cluster).
 
 ```sh
 wget https://github.com/coreos/etcd/releases/download/v3.1.8/etcd-v3.1.8-linux-amd64.tar.gz
@@ -38,9 +61,7 @@ tar -xvf etcd-v3.1.8-linux-amd64.tar.gz
 cd etcd-v3.1.8-linux-amd64
 ./etcd
 
-go get github.com/ServiceComb/service-center
-cd $GOPATH/src/github.com/ServiceComb/service-center
-go build
+cd $GOPATH/src/github.com/servicecomb/service-center
 cp -r ./etc/conf .
 ./service-center
 ```
