@@ -16,3 +16,8 @@ service-center.iml
 **/*junit.xml
 **/*.exe
 src/code.huawei.com/cse/servicecenter/conf/
+vendor/**
+!vendor/manifest
+!vendor/manifest/github.com/didip/tollbooth
+!vendor/manifest/github.com/grpc-ecosystem/go-grpc-prometheus
+!vendor/manifest/github.com/grpc-ecosystem/grpc-gateway
