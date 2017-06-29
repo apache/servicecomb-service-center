@@ -46,6 +46,8 @@ We use gvt for dependency management, please follow below steps to download all 
 ```sh
 go get github.com/FiloSottile/gvt
 gvt restore
+
+If you face any issue in downloading the dependency because of insecure connection then you can use "gvt restore -precaire"
 ```
 
 Build the Service-Center
