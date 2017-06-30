@@ -58,13 +58,6 @@ const (
 	REQUEST_TIMEOUT = 300
 )
 
-type PluginResponse struct {
-	Kvs       []*mvccpb.KeyValue
-	PrevKv    *mvccpb.KeyValue
-	Count     int64
-	Revision  int64
-	Succeeded bool
-}
 type Registry interface {
 	Err() <-chan error
 	Ready() <-chan int
@@ -75,7 +68,12 @@ type Registry interface {
 	LeaseGrant(ctx context.Context, TTL int64) (leaseID int64, err error)
 	LeaseRenew(ctx context.Context, leaseID int64) (TTL int64, err error)
 	LeaseRevoke(ctx context.Context, leaseID int64) error
-	Watch(ctx context.Context, op *PluginOp, send func(message string, evt *mvccpb.Event) error) error
+	// this function block util:
+	// 1. connection error
+	// 2. call send function failed
+	// 3. response.Err()
+	// 4. time out to watch, but return nil
+	Watch(ctx context.Context, op *PluginOp, send func(message string, evt *PluginResponse) error) error
 	Close()
 	CompactCluster(ctx context.Context)
 	Compact(ctx context.Context, revision int64) error
@@ -97,6 +95,16 @@ type PluginOp struct {
 	KeyOnly    bool
 	CountOnly  bool
 	SortOrder  SortOrder
+	WithRev    int64
+}
+
+type PluginResponse struct {
+	Action    ActionType
+	Kvs       []*mvccpb.KeyValue
+	PrevKv    *mvccpb.KeyValue
+	Count     int64
+	Revision  int64
+	Succeeded bool
 }
 
 type CompareOp struct {

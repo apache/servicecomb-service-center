@@ -14,12 +14,13 @@
 package service
 
 import (
-	"encoding/json"
-	apt "github.com/servicecomb/service-center/server/core"
 	pb "github.com/servicecomb/service-center/server/core/proto"
-	"github.com/servicecomb/service-center/server/core/registry"
-	"github.com/servicecomb/service-center/util"
 	"golang.org/x/net/context"
+	"github.com/servicecomb/service-center/util"
+	"github.com/servicecomb/service-center/server/core/registry"
+	apt "github.com/servicecomb/service-center/server/core"
+	"encoding/json"
+	"strings"
 )
 
 type GovernServiceController struct {
@@ -42,7 +43,7 @@ func (governServiceController *GovernServiceController) GetServicesInfo(ctx cont
 			break
 		}
 	}
-	allServiceDetails := []*pb.ServiceDetail{}
+	allServiceDetails := [] *pb.ServiceDetail{}
 	tenant := util.ParaseTenant(ctx)
 	serviceId := ""
 	for _, service := range services {
@@ -58,7 +59,7 @@ func (governServiceController *GovernServiceController) GetServicesInfo(ctx cont
 	}
 
 	return &pb.GetServicesInfoResponse{
-		Response:          pb.CreateResponse(pb.Response_SUCCESS, "register service instance successfully"),
+		Response: pb.CreateResponse(pb.Response_SUCCESS, "register service instance successfully"),
 		AllServicesDetail: allServiceDetails,
 	}, nil
 }
@@ -85,6 +86,14 @@ func (governServiceController *GovernServiceController) GetServiceDetail(ctx con
 		}, err
 	}
 
+	versions, err := getServiceAllVersions(ctx, tenant, service.AppId, service.ServiceName)
+	if err != nil {
+		util.LOGGER.Errorf(err, "Get service all version fialed.")
+		return &pb.GetServiceDetailResponse{
+			Response: pb.CreateResponse(pb.Response_FAIL, "Get service detail failed."),
+		}, err
+	}
+
 	serviceInfo, err := getServiceDetailUtil(ctx, opts, tenant, in.ServiceId)
 	if err != nil {
 		return &pb.GetServiceDetailResponse{
@@ -93,13 +102,43 @@ func (governServiceController *GovernServiceController) GetServiceDetail(ctx con
 	}
 
 	serviceInfo.MicroSerivce = service
+	serviceInfo.MicroServiceVersions = versions
 	return &pb.GetServiceDetailResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Get service successful."),
-		Service:  serviceInfo,
+		Service : serviceInfo,
 	}, nil
 }
 
-func getAllInstancesForOneService(ctx context.Context, tenant string, serviceId string) ([]*pb.MicroServiceInstance, error) {
+func getServiceAllVersions(ctx context.Context, tenant string, appId string, serviceName string) ([]string, error) {
+	versions := []string{}
+	key := apt.GenerateServiceIndexKey(&pb.MicroServiceKey{
+		Tenant:      tenant,
+		AppId:       appId,
+		ServiceName: serviceName,
+		Version:     "",
+	})
+
+	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+		Action:     registry.GET,
+		Key:        []byte(key),
+		WithPrefix: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if resp == nil || len(resp.Kvs) == 0 {
+		return versions, nil
+	}
+	version := ""
+	for _, kvs := range resp.Kvs {
+		tmpArr := strings.Split(string(kvs.Key), "/")
+		version = tmpArr[len(tmpArr) - 1]
+		versions = append(versions, version)
+	}
+	return versions, nil
+}
+
+func getAllInstancesForOneService(ctx context.Context, tenant string, serviceId string) ([]*pb.MicroServiceInstance, error){
 	key := apt.GenerateInstanceKey(tenant, serviceId, "")
 
 	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
@@ -125,13 +164,14 @@ func getAllInstancesForOneService(ctx context.Context, tenant string, serviceId 
 	return instances, nil
 }
 
-func getSchemaInfoUtil(ctx context.Context, tenant string, serviceId string) ([]*pb.SchemaInfos, error) {
+
+
+func getSchemaInfoUtil(ctx context.Context, tenant string, serviceId string) ([]*pb.SchemaInfos , error){
 	key := apt.GenerateServiceSchemaKey(tenant, serviceId, "")
 	schemas := []*pb.SchemaInfos{}
-	schemaInfo := &pb.SchemaInfos{}
 	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action:     registry.GET,
-		Key:        []byte(key),
+		Action: registry.GET,
+		Key:    []byte(key),
 		WithPrefix: true,
 	})
 	if err != nil {
@@ -141,6 +181,7 @@ func getSchemaInfoUtil(ctx context.Context, tenant string, serviceId string) ([]
 	schemaId := ""
 	schema := ""
 	for _, kv := range resp.Kvs {
+		schemaInfo := &pb.SchemaInfos{}
 		schemaId = string(kv.Key[len(key):])
 		schema = string(kv.Value)
 		schemaInfo.Schema = schema
@@ -150,7 +191,7 @@ func getSchemaInfoUtil(ctx context.Context, tenant string, serviceId string) ([]
 	return schemas, nil
 }
 
-func getServiceDetailUtil(ctx context.Context, opts []string, tenant string, serviceId string) (*pb.ServiceDetail, error) {
+func getServiceDetailUtil(ctx context.Context, opts []string, tenant string, serviceId string) (*pb.ServiceDetail, error){
 	serviceDetail := &pb.ServiceDetail{}
 	for _, opt := range opts {
 		expr := opt
@@ -187,7 +228,7 @@ func getServiceDetailUtil(ctx context.Context, opts []string, tenant string, ser
 				return nil, err
 			}
 			serviceDetail.SchemaInfos = schemas
-		case "dependencies":
+		case  "dependencies":
 			util.LOGGER.Debugf("is dependencies")
 			keyProDependency := apt.GenerateProviderDependencyKey(tenant, serviceId, "")
 			consumers, err := GetDependencies(ctx, keyProDependency, tenant)
@@ -220,5 +261,5 @@ func deleteSelfDenpendency(services []*pb.MicroService, serviceId string) []*pb.
 			services = append(services[:key], services[key+1:]...)
 		}
 	}
-	return services
+	return  services
 }

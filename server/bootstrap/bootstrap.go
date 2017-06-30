@@ -14,18 +14,18 @@
 package bootstrap
 
 import (
-	_ "github.com/servicecomb/service-center/common/logrotate"
 	_ "github.com/servicecomb/service-center/security"
+	_ "github.com/servicecomb/service-center/common/logrotate"
 	_ "github.com/servicecomb/service-center/security/plugins/plain"
 	_ "github.com/servicecomb/service-center/server/core/registry/embededetcd"
 	_ "github.com/servicecomb/service-center/server/core/registry/etcd"
+	_ "github.com/servicecomb/service-center/server/plugins/infra/quota/buildin"
+	_ "github.com/servicecomb/service-center/server/plugins/infra/quota/unlimit"
 	"github.com/servicecomb/service-center/server/interceptor"
+	"github.com/servicecomb/service-center/util"
 	"github.com/servicecomb/service-center/server/interceptor/domain"
 	"github.com/servicecomb/service-center/server/interceptor/maxbody"
 	"github.com/servicecomb/service-center/server/interceptor/ratelimiter"
-	_ "github.com/servicecomb/service-center/server/plugins/infra/quota/buildin"
-	_ "github.com/servicecomb/service-center/server/plugins/infra/quota/unlimit"
-	"github.com/servicecomb/service-center/util"
 )
 
 func init() {

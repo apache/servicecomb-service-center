@@ -14,6 +14,10 @@
 package embededetcd
 
 import (
+	"github.com/servicecomb/service-center/common"
+	"github.com/servicecomb/service-center/server/core/registry"
+	"github.com/servicecomb/service-center/util"
+	"github.com/servicecomb/service-center/util/rest"
 	"context"
 	"crypto/tls"
 	"errors"
@@ -23,10 +27,6 @@ import (
 	"github.com/coreos/etcd/etcdserver/etcdserverpb"
 	"github.com/coreos/etcd/lease"
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"github.com/servicecomb/service-center/common"
-	"github.com/servicecomb/service-center/server/core/registry"
-	"github.com/servicecomb/service-center/util"
-	"github.com/servicecomb/service-center/util/rest"
 	"net/url"
 	"strings"
 	"time"
@@ -81,6 +81,7 @@ func (s *EtcdEmbed) toGetRequest(op *registry.PluginOp) *etcdserverpb.RangeReque
 		CountOnly:  op.CountOnly,
 		SortOrder:  order,
 		SortTarget: etcdserverpb.RangeRequest_KEY,
+		Revision:   op.WithRev,
 	}
 }
 
@@ -230,7 +231,7 @@ func (s *EtcdEmbed) PutNoOverride(ctx context.Context, op *registry.PluginOp) (b
 			Value:  0,
 		},
 	}, nil)
-	util.LOGGER.Infof("response %s %v %v", op.Key, resp.Succeeded, resp.Revision)
+	util.LOGGER.Debugf("response %s %v %v", op.Key, resp.Succeeded, resp.Revision)
 	if err != nil {
 		return false, err
 	}
@@ -353,7 +354,7 @@ func (s *EtcdEmbed) LeaseRevoke(ctx context.Context, leaseID int64) error {
 	return nil
 }
 
-func (s *EtcdEmbed) Watch(ctx context.Context, op *registry.PluginOp, send func(message string, evt *mvccpb.Event) error) (err error) {
+func (s *EtcdEmbed) Watch(ctx context.Context, op *registry.PluginOp, send func(message string, evt *registry.PluginResponse) error) (err error) {
 	if len(op.Key) > 0 {
 		watchable := s.Server.Server.Watchable()
 		ws := watchable.NewWatchStream()
@@ -365,20 +366,30 @@ func (s *EtcdEmbed) Watch(ctx context.Context, op *registry.PluginOp, send func(
 			key += "/"
 			keyBytes = append([]byte(key), 127)
 		}
-		watchID := ws.Watch(op.Key, keyBytes, 0)
+		watchID := ws.Watch(op.Key, keyBytes, op.WithRev)
 		// defer ws.Cancel(watchID)
-		util.LOGGER.Debugf("start to watch key %s, id is %d", key, watchID)
+		util.LOGGER.Infof("start to watch key %s, id is %d", key, watchID)
 
 		responses := ws.Chan()
 		for {
 			select {
 			case <-ctx.Done():
-				err = fmt.Errorf("time out to watch key %s", key)
-				util.LOGGER.Errorf(nil, err.Error())
+				util.LOGGER.Warnf(nil, "time out to watch key %s", key)
 				return
 			case resp := <-responses:
 				for _, evt := range resp.Events {
-					err = send("key information changed", &evt)
+					pbEvent := &registry.PluginResponse{
+						Action:    registry.PUT,
+						Kvs:       []*mvccpb.KeyValue{evt.Kv},
+						PrevKv:    evt.PrevKv,
+						Count:     1,
+						Revision:  resp.Revision,
+						Succeeded: true,
+					}
+					if evt.Type == mvccpb.DELETE {
+						pbEvent.Action = registry.DELETE
+					}
+					err = send("key information changed", pbEvent)
 					if err != nil {
 						util.LOGGER.Errorf(err, "stop to watch key %s, id is %d", key, watchID)
 						return

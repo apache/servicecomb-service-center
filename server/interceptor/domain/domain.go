@@ -26,7 +26,7 @@ const (
 )
 
 func Intercept(w http.ResponseWriter, r *http.Request) error {
-	util.LOGGER.Info("Intercept Domain")
+	util.LOGGER.Debugf("Intercept Domain")
 
 	request := r
 	tenant := ""

@@ -20,12 +20,15 @@ import (
 	"strings"
 )
 
+type EventType string
+
 const (
-	EVT_CREATE string = "CREATE"
-	EVT_UPDATE string = "UPDATE"
-	EVT_DELETE string = "DELETE"
-	MS_UP      string = "UP"
-	MS_DOWN    string = "DOWN"
+	EVT_CREATE EventType = "CREATE"
+	EVT_UPDATE EventType = "UPDATE"
+	EVT_DELETE EventType = "DELETE"
+	EVT_ERROR  EventType = "ERROR"
+	MS_UP      string    = "UP"
+	MS_DOWN    string    = "DOWN"
 
 	MSI_UP           string = "UP"
 	MSI_DOWN         string = "DOWN"
@@ -45,6 +48,7 @@ type SerivceInstanceCtrlServerEx interface {
 	ServiceInstanceCtrlServer
 
 	WebSocketWatch(ctx context.Context, in *WatchInstanceRequest, conn *websocket.Conn)
+	CluterHealth(ctx context.Context) (*GetInstancesResponse, error)
 }
 
 type GovernServiceCtrlServerEx interface {
@@ -59,43 +63,25 @@ func CreateResponse(code Response_Code, message string) *Response {
 	return resp
 }
 
-func EventToResponse(evt *mvccpb.Event) (keys []string, action string, data []byte) {
-	keys = strings.Split(string(evt.Kv.Key), "/")
-	switch {
-	case evt.Type == mvccpb.PUT && evt.Kv.Version == 1:
-		action = EVT_CREATE
-		data = evt.Kv.Value
-		return
-	case evt.Type == mvccpb.PUT:
-		action = EVT_UPDATE
-		data = evt.Kv.Value
-		return
-	case evt.Type == mvccpb.DELETE:
-		action = EVT_DELETE
-		if evt.PrevKv == nil {
-			// TODO 内嵌无法获取
-			return
-		}
-		data = evt.PrevKv.Value
-		return
-	}
+func KvToResponse(kv *mvccpb.KeyValue) (keys []string, data []byte) {
+	keys = strings.Split(string(kv.Key), "/")
+	data = kv.Value
 	return
 }
 
-func GetInfoFromInstChangedEvent(evt *mvccpb.Event) (serviceId, instanceId, tenantProject, action string, data []byte) {
-	keys, action, data := EventToResponse(evt)
+func GetInfoFromInstChangedEvent(kv *mvccpb.KeyValue) (serviceId, instanceId, tenantProject string, data []byte) {
+	keys, data := KvToResponse(kv)
 	if len(keys) < 7 {
 		return
 	}
 	serviceId = keys[len(keys)-2]
 	instanceId = keys[len(keys)-1]
 	tenantProject = strings.Join([]string{keys[len(keys)-4], keys[len(keys)-3]}, "/")
-	keys, action, data = EventToResponse(evt)
 	return
 }
 
-func GetInfoFromTenantChangeEvent(evt *mvccpb.Event) (tenant string, action string, data []byte) {
-	keys, action, data := EventToResponse(evt)
+func GetInfoFromTenantChangeEvent(kv *mvccpb.KeyValue) (tenant string) {
+	keys, _ := KvToResponse(kv)
 	if len(keys) < 3 {
 		return
 	}

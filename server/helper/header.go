@@ -14,15 +14,17 @@
 package helper
 
 import (
-	"errors"
 	"fmt"
-	"github.com/servicecomb/service-center/util"
 	"net/http"
+	"github.com/servicecomb/service-center/util"
+	"errors"
+	"github.com/servicecomb/service-center/server/core"
 )
-
 const (
 	DEFAULT_PROJECT = "default"
 )
+
+var NO_CHEACK_URL = map[string]bool {"/version": true, "/health": true}
 
 func GetTenantProjectFromHeader(r *http.Request) (string, string, error) {
 	var domain, project string
@@ -30,6 +32,9 @@ func GetTenantProjectFromHeader(r *http.Request) (string, string, error) {
 	if len(domain) == 0 {
 		domain = r.Header.Get("x-domain-name")
 		if len(domain) == 0 {
+			if _, ok := NO_CHEACK_URL[r.RequestURI]; ok {
+				return core.REGISTRY_TENANT, core.REGISTRY_PROJECT, nil
+			}
 			util.LOGGER.Errorf(nil, "%s does not contain domain.", r.RequestURI)
 			return "", "", errors.New(fmt.Sprintf("Header does not contain tenant.Invalid Request URI %s", r.RequestURI))
 		}

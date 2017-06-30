@@ -14,26 +14,28 @@
 package mux
 
 import (
-	"github.com/servicecomb/service-center/etcdsync"
-	"reflect"
-	"unsafe"
+        "github.com/servicecomb/service-center/etcdsync"
+        "unsafe"
+        "reflect"
 )
 
 type MuxType string
 
 func (m *MuxType) String() (s string) {
-	pMT := (*reflect.StringHeader)(unsafe.Pointer(m))
-	pStr := (*reflect.StringHeader)(unsafe.Pointer(&s))
-	pStr.Data = pMT.Data
-	pStr.Len = pMT.Len
-	return
+        pMT := (*reflect.StringHeader)(unsafe.Pointer(m))
+        pStr := (*reflect.StringHeader)(unsafe.Pointer(&s))
+        pStr.Data = pMT.Data
+        pStr.Len = pMT.Len
+        return
 }
 
 const (
-	SERVICE_LOCK MuxType = "/microservices"
-	PROCESS_LOCK MuxType = "/servicecenter"
+        SERVICE_LOCK MuxType = "/microservices"
+        PROCESS_LOCK MuxType = "/servicecenter"
 )
 
 func Lock(t MuxType) (*etcdsync.Locker, error) {
-	return etcdsync.Lock(t.String())
+        return etcdsync.Lock(t.String())
 }
+
+
