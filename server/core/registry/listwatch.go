@@ -1,0 +1,185 @@
+//Copyright 2017 Huawei Technologies Co., Ltd
+//
+//Licensed under the Apache License, Version 2.0 (the "License");
+//you may not use this file except in compliance with the License.
+//You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+//Unless required by applicable law or agreed to in writing, software
+//distributed under the License is distributed on an "AS IS" BASIS,
+//WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//See the License for the specific language governing permissions and
+//limitations under the License.
+package registry
+
+import (
+	"context"
+	"fmt"
+	"github.com/servicecomb/service-center/server/core/proto"
+	"sync"
+	"time"
+)
+
+const EVENT_BUS_MAX_SIZE = 1000
+
+type Event struct {
+	Type     proto.EventType
+	WatchKey string
+	Object   interface{}
+}
+
+type Watcher interface {
+	EventBus() <-chan *Event
+	Stop()
+}
+
+type ListOptions struct {
+	Timeout time.Duration
+}
+
+type ListWatcher interface {
+	Revision() int64
+	List(op *ListOptions) ([]interface{}, error)
+	Watch(op *ListOptions) Watcher
+}
+
+type KvListWatcher struct {
+	Client Registry
+	Key    string
+
+	rev int64
+}
+
+func (lw *KvListWatcher) Revision() int64 {
+	return lw.rev
+}
+
+func (lw *KvListWatcher) List(op *ListOptions) ([]interface{}, error) {
+	otCtx, _ := context.WithTimeout(context.Background(), op.Timeout)
+	resp, err := lw.Client.Do(otCtx, WithWatchPrefix(lw.Key))
+	if err != nil {
+		return nil, err
+	}
+	lw.UpgradeRevision(resp.Revision)
+	if len(resp.Kvs) == 0 {
+		return nil, nil
+	}
+	itfs := make([]interface{}, len(resp.Kvs))
+	for idx, kv := range resp.Kvs {
+		itfs[idx] = kv
+	}
+	return itfs, nil
+}
+
+func (lw *KvListWatcher) Watch(op *ListOptions) Watcher {
+	return newKvWatcher(lw, op)
+}
+
+func (lw *KvListWatcher) UpgradeRevision(rev int64) {
+	lw.rev = rev
+}
+
+func (lw *KvListWatcher) doWatch(ctx context.Context, f func(evt *Event)) error {
+	ops := WithWatchPrefix(lw.Key)
+	ops.WithRev = lw.Revision() + 1
+	max := lw.Revision()
+	err := lw.Client.Watch(ctx, ops, func(message string, evt *PluginResponse) error {
+		if max < evt.Revision {
+			max = evt.Revision
+		}
+		sendEvt := &Event{
+			Type:     proto.EVT_ERROR,
+			WatchKey: lw.Key,
+			Object:   fmt.Errorf("unknown event %+v", evt),
+		}
+		if evt != nil && len(evt.Kvs) > 0 {
+			switch {
+			case evt.Action == PUT && evt.Kvs[0].Version == 1:
+				sendEvt.Type, sendEvt.Object = proto.EVT_CREATE, evt.Kvs[0]
+			case evt.Action == PUT:
+				sendEvt.Type, sendEvt.Object = proto.EVT_UPDATE, evt.Kvs[0]
+			case evt.Action == DELETE:
+				kv := evt.PrevKv
+				if kv == nil {
+					// TODO 内嵌无法获取
+					kv = evt.Kvs[0]
+				}
+				sendEvt.Type, sendEvt.Object = proto.EVT_DELETE, kv
+			}
+		}
+		f(sendEvt)
+		return nil
+	})
+	if err != nil {
+		max = 0 // compact可能会导致watch失败
+		f(errEvent(lw.Key, err))
+	}
+	lw.UpgradeRevision(max)
+	return err
+}
+
+type KvWatcher struct {
+	ListOps *ListOptions
+	lw      *KvListWatcher
+	bus     chan *Event
+	stopCh  chan struct{}
+	stop    bool
+	mux     sync.Mutex
+}
+
+func (w *KvWatcher) EventBus() <-chan *Event {
+	return w.bus
+}
+
+func (w *KvWatcher) process() {
+	stopCh := make(chan struct{})
+	ctx, cancel := context.WithTimeout(context.Background(), w.ListOps.Timeout)
+	go func() {
+		defer close(stopCh)
+		w.lw.doWatch(ctx, w.sendEvent)
+	}()
+
+	select {
+	case <-stopCh:
+		// time out
+		w.Stop()
+	case <-w.stopCh:
+		cancel()
+	}
+}
+
+func (w *KvWatcher) sendEvent(evt *Event) {
+	w.bus <- evt
+	// LOG ignore event
+}
+
+func (w *KvWatcher) Stop() {
+	w.mux.Lock()
+	defer w.mux.Unlock()
+	if w.stop {
+		return
+	}
+	w.stop = true
+	close(w.stopCh)
+	close(w.bus)
+}
+
+func errEvent(watchKey string, err error) *Event {
+	return &Event{
+		Type:     proto.EVT_ERROR,
+		WatchKey: watchKey,
+		Object:   err,
+	}
+}
+
+func newKvWatcher(lw *KvListWatcher, listOps *ListOptions) Watcher {
+	w := &KvWatcher{
+		ListOps: listOps,
+		lw:      lw,
+		bus:     make(chan *Event, EVENT_BUS_MAX_SIZE),
+		stopCh:  make(chan struct{}),
+	}
+	go w.process()
+	return w
+}

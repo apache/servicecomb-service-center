@@ -15,7 +15,6 @@ package notification
 
 import (
 	"container/list"
-	"context"
 	"encoding/json"
 	"errors"
 	"github.com/coreos/etcd/mvcc/mvccpb"
@@ -34,12 +33,10 @@ import (
 const (
 	DEFAULT_MAX_QUEUE           = 100
 	DEFAULT_TIMEOUT             = 30 * time.Second
-	DEFAULT_RETRY_TIMEOUT       = 5 * time.Second
+	DEFAULT_LISTWATCH_TIMEOUT   = 30 * time.Second
 	NOTIFY_SERVER_CHECKER_NAME  = "__HealthChecker__"
 	NOTIFY_SERVER_CHECK_SUBJECT = "__NotifyServerHealthCheck__"
 )
-
-var NotifyServiceInst *NotifyService
 
 type NotifyServerConfig struct {
 	AddTimeout    time.Duration
@@ -172,7 +169,7 @@ func (s *NotifyService) StartNotifyService() {
 			Server:  s,
 		},
 	})
-	s.WatchInstanceWhenStart()
+	s.WatchTenants()
 	util.LOGGER.Info("notify service is ready")
 }
 
@@ -192,118 +189,103 @@ func (s *NotifyService) WatchInstanceWhenStart() {
 			tenant = arrTmp[len(arrTmp)-1]
 			instByTenant = apt.GetInstanceRootKey(tenant)
 			// 实例监听
-			go s.WatchInstance(instByTenant)
-
+			s.WatchInstance(instByTenant)
 		}
 	}
-	go s.WatchTenants()
 }
 
 func (s *NotifyService) WatchTenants() {
 	key := apt.GenerateTenantKey("")
-	for {
-		err := registry.GetRegisterCenter().Watch(context.Background(), registry.WithWatchPrefix(key[:len(key)-1]),
-			func(message string, evt *mvccpb.Event) error {
-				if evt == nil {
-					util.LOGGER.Error(message, errors.New("event is nil"))
-					return nil // 不能返回error，watch连接只有一个
-				}
-				tenant, action, _ := pb.GetInfoFromTenantChangeEvent(evt)
-				if len(tenant) == 0 {
-					util.LOGGER.Errorf(nil,
-						"unmarshal tenant info failed, key %s [%s] event", string(evt.Kv.Key), action)
-					return nil
-				}
-				if action != pb.EVT_CREATE {
-					return nil
-				}
 
-				util.LOGGER.Warnf(nil, "new tenant %s instances watcher is created", tenant)
-				go s.WatchInstance(apt.GetInstanceRootKey(tenant))
+	registry.NewKvCacher(&registry.KvCacherConfig{
+		Key:     key[:len(key)-1],
+		Timeout: DEFAULT_LISTWATCH_TIMEOUT,
+		Period:  time.Second,
+		OnEvent: func(action pb.EventType, kv *mvccpb.KeyValue) error {
+			tenant := pb.GetInfoFromTenantChangeEvent(kv)
+			if len(tenant) == 0 {
+				util.LOGGER.Errorf(nil,
+					"unmarshal tenant info failed, key %s [%s] event", string(kv.Key), action)
 				return nil
-			})
-		util.LOGGER.Errorf(err,
-			"watching tenant infos caught an exception, retry to watch these after, key %s",
-			key, DEFAULT_RETRY_TIMEOUT)
-		time.Sleep(DEFAULT_RETRY_TIMEOUT)
-	}
+			}
+			if action != pb.EVT_CREATE {
+				return nil
+			}
+
+			util.LOGGER.Warnf(nil, "new tenant %s instances watcher is created", tenant)
+			s.WatchInstance(apt.GetInstanceRootKey(tenant))
+			return nil
+		},
+	}).Run()
 }
 
 //SC 负责监控所有实例变化
 func (s *NotifyService) WatchInstance(instanceWatchByTenantKey string) {
-	//todo 多个租户，通过数组传入，进行watch
-	for {
-		err := registry.GetRegisterCenter().Watch(context.Background(),
-			registry.WithWatchPrefix(instanceWatchByTenantKey),
-			func(message string, evt *mvccpb.Event) error {
-				if evt == nil {
-					util.LOGGER.Error(message, errors.New("event is nil"))
-					return nil // 不能返回error，watch连接只有一个
-				}
-				providerId, providerInstanceId, tenantProject, action, data := pb.GetInfoFromInstChangedEvent(evt)
-				if data == nil {
-					util.LOGGER.Errorf(nil,
-						"unmarshal provider service instance file failed, instance %s/%s [%s] event, data is nil",
-						providerId, providerInstanceId, action)
-					return nil
-				}
-				util.LOGGER.Warnf(nil, "notification service catch instance %s/%s [%s] event, msg: %s",
-					providerId, providerInstanceId, action, message)
-
-				var instance pb.MicroServiceInstance
-				err := json.Unmarshal(data, &instance)
-				if err != nil {
-					util.LOGGER.Errorf(err, "unmarshal provider service instance %s/%s file failed",
-						providerId, providerInstanceId)
-					return nil
-				}
-				// 查询服务版本信息
-				ms, err := microservice.GetByIdInCache(tenantProject, providerId)
-				if ms == nil {
-					util.LOGGER.Errorf(err, "get provider service %s/%s id in cache failed",
-						providerId, providerInstanceId)
-					return nil
-				}
-
-				// 查询所有consumer
-				Kvs, err := dependency.GetConsumersInCache(tenantProject, providerId)
-				if err != nil {
-					util.LOGGER.Errorf(err, "query service %s consumers failed", providerId)
-					return nil
-				}
-
-				response := &pb.WatchInstanceResponse{
-					Response: pb.CreateResponse(pb.Response_SUCCESS, "watch instance successfully"),
-					Action:   action,
-					Key: &pb.MicroServiceKey{
-						AppId:       ms.AppId,
-						ServiceName: ms.ServiceName,
-						Version:     ms.Version,
-					},
-					Instance: &instance,
-				}
-				for _, dependence := range Kvs {
-					consumer := string(dependence.Key)
-					consumer = consumer[strings.LastIndex(consumer, "/")+1:]
-					job := &WatchJob{
-						BaseNotifyJob: BaseNotifyJob{
-							Id:      consumer,
-							Subject: apt.GetInstanceRootKey(tenantProject) + "/",
-						},
-						Response: response,
-					}
-					util.LOGGER.Debugf("publish event to notify server, %v", job)
-
-					// TODO add超时怎么处理？
-					s.AddJob(job)
-				}
+	registry.NewKvCacher(&registry.KvCacherConfig{
+		Key: instanceWatchByTenantKey,
+		Timeout:     DEFAULT_LISTWATCH_TIMEOUT,
+		Period:      time.Second,
+		OnEvent: func(action pb.EventType, kv *mvccpb.KeyValue) error {
+			providerId, providerInstanceId, tenantProject, data := pb.GetInfoFromInstChangedEvent(kv)
+			if data == nil {
+				util.LOGGER.Errorf(nil,
+					"unmarshal provider service instance file failed, instance %s/%s [%s] event, data is nil",
+					providerId, providerInstanceId, action)
 				return nil
-			})
-		util.LOGGER.Errorf(err,
-			"watching instance info caught an exception, retry to watch these, key %s",
-			instanceWatchByTenantKey, DEFAULT_RETRY_TIMEOUT)
-		time.Sleep(DEFAULT_RETRY_TIMEOUT)
-	}
+			}
+			util.LOGGER.Warnf(nil, "notification service catch instance %s/%s [%s] event",
+				providerId, providerInstanceId, action)
+
+			var instance pb.MicroServiceInstance
+			err := json.Unmarshal(data, &instance)
+			if err != nil {
+				util.LOGGER.Errorf(err, "unmarshal provider service instance %s/%s file failed",
+					providerId, providerInstanceId)
+				return nil
+			}
+			// 查询服务版本信息
+			ms, err := microservice.GetByIdInCache(tenantProject, providerId)
+			if ms == nil {
+				util.LOGGER.Errorf(err, "get provider service %s/%s id in cache failed",
+					providerId, providerInstanceId)
+				return nil
+			}
+
+			// 查询所有consumer
+			Kvs, err := dependency.GetConsumersInCache(tenantProject, providerId)
+			if err != nil {
+				util.LOGGER.Errorf(err, "query service %s consumers failed", providerId)
+				return nil
+			}
+
+			response := &pb.WatchInstanceResponse{
+				Response: pb.CreateResponse(pb.Response_SUCCESS, "watch instance successfully"),
+				Action:   string(action),
+				Key: &pb.MicroServiceKey{
+					AppId:       ms.AppId,
+					ServiceName: ms.ServiceName,
+					Version:     ms.Version,
+				},
+				Instance: &instance,
+			}
+			for _, dependence := range Kvs {
+				consumer := string(dependence.Key)
+				consumer = consumer[strings.LastIndex(consumer, "/")+1:]
+				job := &WatchJob{
+					BaseNotifyJob: BaseNotifyJob{
+						Id:      consumer,
+						Subject: apt.GetInstanceRootKey(tenantProject) + "/",
+					},
+					Response: response,
+				}
+				util.LOGGER.Debugf("publish event to notify server, %v", job)
+
+				// TODO add超时怎么处理？
+				s.AddJob(job)
+			}
+			return nil
+		},
+	}).Run()
 }
 
 func (s *NotifyService) Close() {

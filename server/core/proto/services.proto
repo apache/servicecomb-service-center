@@ -42,6 +42,7 @@ service ServiceInstanceCtrl {
     rpc updateStatus (UpdateInstanceStatusRequest) returns (UpdateInstanceStatusResponse);
     rpc updateInstanceProperties (UpdateInstancePropsRequest) returns (UpdateInstancePropsResponse);
     rpc watch (WatchInstanceRequest) returns (stream WatchInstanceResponse);
+    rpc heartbeatSet (HeartbeatSetRequest) returns (HeartbeatSetResponse);
 }
 
 //治理相关的接口和数据结构
@@ -49,6 +50,26 @@ service GovernServiceCtrl {
     rpc getServiceDetail (GetServiceRequest) returns (GetServiceDetailResponse);
 
     rpc getServicesInfo (GetServicesInfoRequest) returns (GetServicesInfoResponse);
+}
+
+message HeartbeatSetRequest {
+    repeated HeartbeatSetElement instances = 1;
+}
+
+message HeartbeatSetElement {
+    string serviceId = 1;
+    string instanceId = 2;
+}
+
+message HeartbeatSetResponse {
+    Response response = 1;
+    repeated InstanceHbRst instances = 2;
+}
+
+message InstanceHbRst {
+    string serviceId = 1;
+    string instanceId = 2;
+    string errMessage = 3;
 }
 
 message GetServicesInfoRequest{
@@ -477,6 +498,7 @@ message ServiceDetail {
     repeated MicroService providers = 5;
     repeated MicroService consumers = 6;
     map<string, string> tags = 7;
+    repeated string microServiceVersions = 8;
 }
 
 //服务详情返回信息

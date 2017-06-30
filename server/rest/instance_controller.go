@@ -37,6 +37,7 @@ func (this *MicroServiceInstanceService) URLPatterns() []rest.Route {
 		{rest.HTTP_METHOD_PUT, "/registry/v3/microservices/:serviceId/instances/:instanceId/properties", this.UpdateMetadata},
 		{rest.HTTP_METHOD_PUT, "/registry/v3/microservices/:serviceId/instances/:instanceId/status", this.UpdateStatus},
 		{rest.HTTP_METHOD_PUT, "/registry/v3/microservices/:serviceId/instances/:instanceId/heartbeat", this.Heartbeat},
+		{rest.HTTP_METHOD_PUT, "/registry/v3/heartbeats", this.HeartbeatSet},
 	}
 }
 func (this *MicroServiceInstanceService) RegisterInstance(w http.ResponseWriter, r *http.Request) {
@@ -72,6 +73,41 @@ func (this *MicroServiceInstanceService) Heartbeat(w http.ResponseWriter, r *htt
 	}
 	resp, err := InstanceAPI.Heartbeat(r.Context(), request)
 	WriteTextResponse(resp.GetResponse(), err, "", w)
+}
+
+func (this *MicroServiceInstanceService) HeartbeatSet(w http.ResponseWriter, r *http.Request) {
+	message, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		util.LOGGER.Error("register instance failed, body err", err)
+		WriteText(http.StatusBadRequest, err.Error(), w)
+		return
+	}
+
+	request := &pb.HeartbeatSetRequest{}
+	err = json.Unmarshal(message, request)
+	if err != nil {
+		util.LOGGER.Error("register instance failed, Unmarshal error", err)
+		WriteText(http.StatusInternalServerError, "Unmarshal error", w)
+		return
+	}
+	resp, _ := InstanceAPI.HeartbeatSet(r.Context(), request)
+
+	if resp.Response.Code == pb.Response_SUCCESS {
+		WriteText(http.StatusOK, "", w)
+		return
+	}
+	if resp.Instances == nil || len(resp.Instances) == 0 {
+		WriteText(http.StatusBadRequest, resp.Response.Message, w)
+		return
+	}
+	resp.Response = nil
+	objJson, err := json.Marshal(resp)
+	if err != nil {
+		WriteText(http.StatusInternalServerError, err.Error(), w)
+		return
+	}
+	WriteJson(http.StatusBadRequest, objJson, w)
+	return
 }
 
 func (this *MicroServiceInstanceService) UnregisterInstance(w http.ResponseWriter, r *http.Request) {

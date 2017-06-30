@@ -16,7 +16,6 @@ package etcdsync
 import (
 	"fmt"
 	"github.com/coreos/etcd/client"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/servicecomb/service-center/server/core/registry"
 	"github.com/servicecomb/service-center/util"
 	"golang.org/x/net/context"
@@ -147,8 +146,8 @@ func (m *Locker) Lock() error {
 				Key:        []byte(m.builder.key),
 				WithPrefix: false,
 				WithPrevKV: false,
-			}, func(message string, evt *mvccpb.Event) error {
-				if evt != nil && evt.Type == mvccpb.DELETE {
+			}, func(message string, evt *registry.PluginResponse) error {
+				if evt != nil && evt.Action == registry.DELETE {
 					// break this for-loop, and try to create the node again.
 					return fmt.Errorf("Lock released, id=%s", m.id)
 				}
@@ -163,6 +162,7 @@ func (m *Locker) Lock() error {
 		case <-ctx.Done():
 			continue // 可以重新尝试获取锁
 		case <-m.builder.ctx.Done():
+			cancel()
 			return m.builder.ctx.Err() // 机制错误，不应该超时的
 		}
 	}

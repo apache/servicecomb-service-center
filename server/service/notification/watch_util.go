@@ -14,18 +14,18 @@
 package notification
 
 import (
+	"time"
+	"github.com/servicecomb/service-center/util"
+	pb "github.com/servicecomb/service-center/server/core/proto"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/gorilla/websocket"
+	"errors"
 	apt "github.com/servicecomb/service-center/server/core"
-	pb "github.com/servicecomb/service-center/server/core/proto"
-	"github.com/servicecomb/service-center/util"
 	"golang.org/x/net/context"
-	"time"
 )
 
-func WatchJobHandler(watcher *Watcher, stream pb.ServiceInstanceCtrl_WatchServer, timeout time.Duration) error {
+func WatchJobHandler(watcher *Watcher,stream pb.ServiceInstanceCtrl_WatchServer, timeout time.Duration) (error){
 	for {
 		select {
 		case <-time.After(timeout):
@@ -48,14 +48,14 @@ func WatchJobHandler(watcher *Watcher, stream pb.ServiceInstanceCtrl_WatchServer
 
 func WatchWebSocketJobHandler(conn *websocket.Conn, watcher *Watcher, timeout time.Duration) {
 	conn.SetPongHandler(func(message string) error {
-		util.LOGGER.Infof("receive heartbeat message %s from watcher %s %s",
+		util.LOGGER.Debugf("receive heartbeat message %s from watcher %s %s",
 			message, watcher.GetSubject(), watcher.GetId())
 		return nil
 	})
 	for {
 		select {
 		case <-time.After(timeout):
-			util.LOGGER.Infof("send heartbeat to watcher %s %s", watcher.GetSubject(), watcher.GetId())
+			util.LOGGER.Debugf("send heartbeat to watcher %s %s", watcher.GetSubject(), watcher.GetId())
 			err := conn.WriteControl(websocket.PingMessage, []byte("heartbeat"), time.Now().Add(timeout))
 			if err != nil {
 				util.LOGGER.Errorf(err, "watcher missing heartbeat, watcher %s %s",
@@ -66,9 +66,9 @@ func WatchWebSocketJobHandler(conn *websocket.Conn, watcher *Watcher, timeout ti
 		case job := <-watcher.Job:
 			if job == nil {
 				err := conn.WriteMessage(websocket.TextMessage,
-					[]byte("watcher quit for server shutdown"))
+					[]byte("watch catch a err: watcher quit for server shutdown"))
 				if err != nil {
-					util.LOGGER.Errorf(err, "write message error, watcher %s %s",
+					util.LOGGER.Errorf(err, "watch catch a err: write message error, watcher %s %s",
 						watcher.GetSubject(), watcher.GetId())
 				}
 				return
@@ -80,21 +80,21 @@ func WatchWebSocketJobHandler(conn *websocket.Conn, watcher *Watcher, timeout ti
 			resp.Response = nil
 			data, err := json.Marshal(resp)
 			if err != nil {
-				util.LOGGER.Errorf(err, "marshal output file error, watcher %s %s",
+				util.LOGGER.Errorf(err, "watch catch a err: marshal output file error, watcher %s %s",
 					watcher.GetSubject(), watcher.GetId())
 				watcher.SetError(err)
 
 				message := fmt.Sprintf("marshal output file error, %s", err.Error())
 				err = conn.WriteMessage(websocket.TextMessage, []byte(message))
 				if err != nil {
-					util.LOGGER.Errorf(err, "write message error, watcher %s %s",
+					util.LOGGER.Errorf(err, "watch catch a err: write message error, watcher %s %s",
 						watcher.GetSubject(), watcher.GetId())
 				}
 				return
 			}
 			err = conn.WriteMessage(websocket.TextMessage, data)
 			if err != nil {
-				util.LOGGER.Errorf(err, "write message error, watcher %s %s",
+				util.LOGGER.Errorf(err, "watch catch a err: write message error, watcher %s %s",
 					watcher.GetSubject(), watcher.GetId())
 				watcher.SetError(err)
 				return
@@ -103,7 +103,7 @@ func WatchWebSocketJobHandler(conn *websocket.Conn, watcher *Watcher, timeout ti
 	}
 }
 
-func WatchPreOpera(in *pb.WatchInstanceRequest, ctx context.Context, server *NotifyService) (error, *Watcher) {
+func WatchPreOpera(in *pb.WatchInstanceRequest, ctx context.Context, server *NotifyService) (error, *Watcher){
 	if in == nil || len(in.SelfServiceId) == 0 {
 		return errors.New("request format invalid"), nil
 	}

@@ -15,9 +15,8 @@ package traceutils
 
 import (
 	"archive/zip"
-	"fmt"
-	"github.com/astaxie/beego"
 	"github.com/servicecomb/service-center/util"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -48,7 +47,7 @@ func removeFile(path string) error {
 	return nil
 }
 
-func removeExceededFiles(path string, baseFileName string,
+func  removeExceededFiles(path string, baseFileName string,
 	maxKeptCount int, rotateStage string) {
 	if maxKeptCount < 0 {
 		return
@@ -285,6 +284,22 @@ func CopyFile(srcFile, destFile string) error {
 	return err
 }
 
+type LogRotateConfig struct {
+	Dir         string
+	Period      time.Duration
+	MaxFileSize int
+	BackupCount int
+}
+
+func RunLogRotate(cfg *LogRotateConfig) {
+	go func() {
+		for {
+			LogRotate(cfg.Dir, cfg.MaxFileSize, cfg.BackupCount)
+			time.Sleep(cfg.Period)
+		}
+	}()
+}
+
 func init() {
 	pathReplacer = strings.NewReplacer(
 		os.ExpandEnv("${APP_ROOT}"), "APP_ROOT",
@@ -294,20 +309,4 @@ func init() {
 		os.ExpandEnv("${CIPHER_ROOT}"), "CIPHER_ROOT",
 		os.ExpandEnv("${_APP_LOG_DIR}"), "_APP_LOG_DIR",
 		os.ExpandEnv("${INSTALL_ROOT}"), "INSTALL_ROOT")
-	logDir := os.ExpandEnv(beego.AppConfig.String("logfile"))
-	rotatePeriod := 30 * time.Second
-	maxFileSize := beego.AppConfig.DefaultInt("log_rotate_size", 20)
-	if maxFileSize <= 0 || maxFileSize > 50 {
-		maxFileSize = 20
-	}
-	maxBackupCount := beego.AppConfig.DefaultInt("log_backup_count", 5)
-	if maxBackupCount < 0 || maxBackupCount > 100 {
-		maxBackupCount = 5
-	}
-	go func() {
-		for {
-			LogRotate(filepath.Dir(logDir), maxFileSize, maxBackupCount)
-			time.Sleep(rotatePeriod)
-		}
-	}()
 }

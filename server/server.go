@@ -31,19 +31,94 @@ import (
 	"github.com/servicecomb/service-center/server/service"
 	nf "github.com/servicecomb/service-center/server/service/notification"
 	"github.com/servicecomb/service-center/util"
+	"runtime"
 )
 
 var (
-	apiServer *api.APIServer
-	exit      chan struct{}
+	apiServer     *api.APIServer
+	notifyService *nf.NotifyService
+	exit          chan struct{}
 )
 
 const CLEAN_UP_TIMEOUT = 5
 
 func init() {
+	util.LOGGER.Infof("service center have running simultaneously with %d CPU cores", runtime.GOMAXPROCS(0))
+
 	exit = make(chan struct{})
+
+	notifyService = &nf.NotifyService{}
+
+	rs.ServiceAPI, rs.InstanceAPI, rs.GovernServiceAPI = service.AssembleResources(notifyService)
+
+	go handleSignal()
 }
-func Init() {
+
+func Run() {
+	startNotifyService()
+
+	startApiServer()
+
+	waitForQuit()
+}
+
+func handleSignal() {
+	sc := make(chan os.Signal, 1)
+	signal.Notify(sc, os.Interrupt)
+	signal.Ignore(syscall.SIGQUIT) // when uses jstack to dump stack
+
+	s := <-sc
+	util.LOGGER.Errorf(nil, "Caught signal '%v', now service center quit...", s)
+
+	if apiServer != nil {
+		apiServer.Close()
+	}
+
+	if notifyService != nil {
+		notifyService.Close()
+	}
+
+	registry.GetRegisterCenter().Close()
+
+	close(exit)
+}
+
+func waitForQuit() {
+	var err error
+	select {
+	case err = <-apiServer.Err():
+	case err = <-notifyService.Err():
+	}
+	if err != nil {
+		util.LOGGER.Errorf(err, "service center catch errors, %s", err.Error())
+	}
+	util.LOGGER.Errorf(nil, "waiting for %ds to clean up resources...", CLEAN_UP_TIMEOUT)
+	select {
+	case <-exit:
+	case <-time.After(CLEAN_UP_TIMEOUT * time.Second):
+	}
+	util.LOGGER.Error("service center quit", nil)
+}
+
+func autoCompact() {
+	compactTicker := time.NewTicker(time.Minute * 5)
+	defer compactTicker.Stop()
+	for t := range compactTicker.C {
+		util.LOGGER.Debug(fmt.Sprintf("Compact at %s", t))
+		registry.GetRegisterCenter().CompactCluster(context.TODO())
+	}
+}
+
+func startNotifyService() {
+	notifyService.Config = &nf.NotifyServerConfig{
+		AddTimeout:    30 * time.Second,
+		NotifyTimeout: 30 * time.Second,
+		MaxQueue:      100,
+	}
+	notifyService.StartNotifyService()
+}
+
+func startApiServer() {
 	sslMode := common.GetServerSSLConfig().SSLEnabled
 	verifyClient := common.GetServerSSLConfig().VerifyClient
 	restIp := beego.AppConfig.String("httpaddr")
@@ -53,19 +128,6 @@ func Init() {
 	cmpName := beego.AppConfig.String("ComponentName")
 	hostName := fmt.Sprintf("%s_%s", cmpName, strings.Replace(util.GetLocalIP(), ".", "_", -1))
 	util.LOGGER.Warnf(nil, "Local listen address: %s:%s, host: %s.", restIp, restPort, hostName)
-
-	go handleSignal()
-
-	//init ws server
-	nf.NotifyServiceInst = &nf.NotifyService{
-		Config: &nf.NotifyServerConfig{
-			AddTimeout:    30 * time.Second,
-			NotifyTimeout: 30 * time.Second,
-			MaxQueue:      100,
-		},
-	}
-	nf.NotifyServiceInst.StartNotifyService()
-	rs.ServiceAPI, rs.InstanceAPI, rs.GovernServiceAPI = service.AssembleResources(nf.NotifyServiceInst)
 
 	eps := map[api.APIType]string{}
 	if len(restIp) > 0 && len(restPort) > 0 {
@@ -83,51 +145,4 @@ func Init() {
 		},
 	}
 	apiServer.StartAPIServer()
-	go autoCompact()
-	waitForQuit()
-}
-func handleSignal() {
-	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, os.Interrupt)
-	signal.Ignore(syscall.SIGQUIT) // when uses jstack to dump stack
-
-	s := <-sc
-	util.LOGGER.Errorf(nil, "Caught signal '%v', now service center quit...", s)
-
-	if apiServer != nil {
-		apiServer.Close()
-	}
-
-	if nf.NotifyServiceInst != nil {
-		nf.NotifyServiceInst.Close()
-	}
-
-	registry.GetRegisterCenter().Close()
-
-	close(exit)
-}
-
-func waitForQuit() {
-	var err error
-	select {
-	case err = <-apiServer.Err():
-	case err = <-nf.NotifyServiceInst.Err():
-	}
-	if err != nil {
-		util.LOGGER.Errorf(err, "service center catch errors, %s", err.Error())
-	}
-	util.LOGGER.Errorf(nil, "waiting for %ds to clean up resources...", CLEAN_UP_TIMEOUT)
-	select {
-	case <-exit:
-	case <-time.After(CLEAN_UP_TIMEOUT * time.Second):
-	}
-	util.LOGGER.Error("service center quit", nil)
-}
-func autoCompact() {
-	compactTicker := time.NewTicker(time.Minute * 5)
-	defer compactTicker.Stop()
-	for t := range compactTicker.C {
-		util.LOGGER.Debug(fmt.Sprintf("Compact at %s", t))
-		registry.GetRegisterCenter().CompactCluster(context.TODO())
-	}
 }

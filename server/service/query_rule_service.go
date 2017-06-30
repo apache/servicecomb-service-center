@@ -14,19 +14,21 @@
 package service
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
 	apt "github.com/servicecomb/service-center/server/core"
 	pb "github.com/servicecomb/service-center/server/core/proto"
 	"github.com/servicecomb/service-center/server/core/registry"
 	"github.com/servicecomb/service-center/util"
+	"context"
+	"encoding/json"
+	"fmt"
 	"reflect"
 	"regexp"
 	"strings"
+	"github.com/servicecomb/service-center/util/errors"
 )
 
-func Accessible(ctx context.Context, tenant string, consumerID string, providerID string) (bool, error, bool) {
+
+func Accessible(ctx context.Context, tenant string, consumerID string, providerID string) (ok bool, err error, isInnerErr bool) {
 	consumerService, err := getServiceByServiceId(ctx, tenant, consumerID)
 	if err != nil {
 		return false, err, true
@@ -44,20 +46,19 @@ func Accessible(ctx context.Context, tenant string, consumerID string, providerI
 		return false, fmt.Errorf("provider invalid"), false
 	}
 
+	providerFlag := strings.Join([]string{providerService.AppId, providerService.ServiceName, providerService.Version}, "--")
+	consumerFlag := strings.Join([]string{consumerService.AppId, consumerService.ServiceName, consumerService.Version}, "--")
 	if providerService.AppId != consumerService.AppId {
 		if len(providerService.Properties) == 0 {
-			util.LOGGER.Warnf(nil, "provider service %s/%s/%s is not defined whether allowed to invoked by other AppId or not, consumer service is %s/%s/%s",
-				providerService.AppId, providerService.ServiceName, providerService.Version,
-				consumerService.AppId, consumerService.ServiceName, consumerService.Version)
-			return false, nil, false
+			util.LOGGER.Warnf(nil, "consumer %s can't access provider %s, different appid",
+				consumerFlag, providerFlag)
+			return false, errors.New("different appID can't access"), false
 		}
 
 		if allowCrossApp, ok := providerService.Properties[pb.PROP_ALLOW_CROSS_APP]; !ok || strings.ToLower(allowCrossApp) != "true" {
-			util.LOGGER.Warnf(nil, "provider service %s/%s/%s is not allowed to be invoked by other AppId, consumer service is %s/%s/%s, %s=%s",
-				providerService.AppId, providerService.ServiceName, providerService.Version,
-				consumerService.AppId, consumerService.ServiceName, consumerService.Version,
-				pb.PROP_ALLOW_CROSS_APP, allowCrossApp)
-			return false, nil, false
+			util.LOGGER.Warnf(nil, "consumer %s can't access provider %s, different appid, no allowCrossApp defined in property",
+				consumerFlag, providerFlag)
+			return false, errors.New("different appID can't access"), false
 		}
 	}
 
@@ -95,12 +96,16 @@ func Accessible(ctx context.Context, tenant string, consumerID string, providerI
 			key := reflect.Indirect(v).FieldByName(rule.Attribute)
 			value = key.String()
 		}
+		if len(value) == 0 {
+			util.LOGGER.Errorf(nil, "get attribute %s matched value is empty.", rule.Attribute)
+			return false, errors.New("can't access, get attribute matched value is empty"), false
+		}
 
 		switch rule.RuleType {
 		case "WHITE":
 			hasWhite = true
 			match, _ := regexp.MatchString(rule.Pattern, value)
-			util.LOGGER.Debugf("match is %s, rule.Pattern is %s, value is %s", match, rule.Pattern, value)
+			util.LOGGER.Debugf("match is %t, rule.Pattern is %s, value is %s", match, rule.Pattern, value)
 			if match {
 				return true, nil, false
 			}
@@ -108,14 +113,15 @@ func Accessible(ctx context.Context, tenant string, consumerID string, providerI
 		case "BLACK":
 			match, _ := regexp.MatchString(rule.Pattern, value)
 			if match {
-				return false, nil, false
+				util.LOGGER.Warnf(nil, "match black list %s, can't access.consumer %s, provider %s", rule.Pattern, consumerFlag, providerFlag)
+				return false, errors.New("match black list,can't access."), false
 			}
 		}
 
 	}
 	if hasWhite {
-		return false, nil, false
+		util.LOGGER.Warnf(nil, "not match white list , can't access.consumer %s, provider %s", consumerFlag, providerFlag)
+		return false, errors.New("not match white list,can't access."), false
 	}
 	return true, nil, false
-
 }

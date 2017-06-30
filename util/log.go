@@ -15,13 +15,12 @@ package util
 
 import (
 	"fmt"
-	"github.com/astaxie/beego"
 	"os"
 
-	"github.com/servicecomb/service-center/lager"
-	"github.com/servicecomb/service-center/lager/core"
 	"strings"
 	"time"
+	"github.com/servicecomb/service-center/lager"
+	"github.com/servicecomb/service-center/lager/core"
 )
 
 //log var
@@ -30,24 +29,9 @@ var (
 	lagerLogLevel core.LogLevel
 )
 
-func init() {
-	var LoggerFile string
-	EnableRsyslog, err := beego.AppConfig.Bool("EnableRsyslog")
-	LogFormatText, err := beego.AppConfig.Bool("LogFormatText")
-	if err != nil {
-		EnableRsyslog = false
-	}
-
-	LoggerFile = os.ExpandEnv(beego.AppConfig.String("logfile"))
-
-	lager.Init(lager.Config{
-		LoggerLevel:   beego.AppConfig.String("loglevel"),
-		LoggerFile:    LoggerFile,
-		EnableRsyslog: EnableRsyslog,
-		LogFormatText: LogFormatText,
-	})
-
-	LOGGER = lager.NewLogger(beego.AppConfig.String("ComponentName"))
+func InitLogger(loggerName string, cfg *lager.Config) {
+	lager.Init(*cfg)
+	LOGGER = lager.NewLogger(loggerName)
 	LOGGER.Debug("init logger")
 
 	switch strings.ToUpper(lager.GetConfig().LoggerLevel) {
@@ -66,7 +50,6 @@ func init() {
 	}
 
 	go monitorLogFile()
-
 }
 
 func monitorLogFile() {
@@ -86,5 +69,4 @@ func monitorLogFile() {
 			LOGGER.Errorf(nil, "log file is removed, create again.")
 		}
 	}
-
 }
