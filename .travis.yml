@@ -6,10 +6,9 @@ services:
   - docker
 
 go:
-  - 1.7.3
+  - 1.8.3
 
 before_install:
-  - docker run -d -v /usr/share/ca-certificates/:/etc/ssl/certs -p 40010:40010 -p 23800:23800 -p 2379:2379 --name etcd quay.io/coreos/etcd etcd -name etcd0 -advertise-client-urls http://127.0.0.1:2379,http://127.0.0.1:40010 -listen-client-urls http://0.0.0.0:2379,http://0.0.0.0:40010 -initial-advertise-peer-urls http://127.0.0.1:23800 -listen-peer-urls http://0.0.0.0:23800 -initial-cluster-token etcd-cluster-1 -initial-cluster etcd0=http://127.0.0.1:23800 -initial-cluster-state new
   - go get github.com/mattn/goveralls
   - go get golang.org/x/tools/cmd/cover
   - go get github.com/tedsuo/rata
@@ -31,10 +30,7 @@ script:
   - cd $HOME/gopath/src/github.com/servicecomb/service-center
   - gvt restore
   - CGO_ENABLED=0 GO_EXTLINK_ENABLED=0 go build --ldflags '-w -extldflags "-static"' -o servicecenter
-  - bash +x scripts/prepare_env_ut.sh
-  - bash -x scripts/ut.sh common
-  - bash -x scripts/ut.sh etcdsync
-  - bash -x scripts/ut.sh server
+  - bash -x tests/scripts/ut_test_in_docker.sh
   - $HOME/gopath/bin/goveralls -coverprofile=coverage.txt -service=travis-ci
 
     
