@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"bytes"
-	"fmt"
 	. "github.com/servicecomb/service-center/tests/integrationtest"
 	"io/ioutil"
 )
@@ -308,6 +307,166 @@ var _ = Describe("MicroService Api Test", func() {
 				req.Header.Set("X-tenant-name", "default")
 				req.Header.Set("X-ConsumerId", serviceId)
 				resp, _ := scclient.Do(req)
+				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
+			})
+		})
+		By("Update Micro-Service Instance Information API's", func() {
+			It("Update Micro-Service Instance Properties", func() {
+				propertiesInstance := map[string]interface{}{
+					"_TAGS":  "A,B",
+					"attr1":  "NewValue",
+					"nodeIP": "two",
+				}
+				bodyParams := map[string]interface{}{
+					"properties": propertiesInstance,
+				}
+				url := strings.Replace(UPDATEINSTANCEMETADATA, ":serviceId", serviceId, 1)
+				url = strings.Replace(url, ":instanceId", serviceInstanceID, 1)
+				body, _ := json.Marshal(bodyParams)
+				bodyBuf := bytes.NewReader(body)
+				req, _ := http.NewRequest(UPDATE, SCURL+url, bodyBuf)
+				req.Header.Set("X-tenant-name", "default")
+				resp, err := scclient.Do(req)
+				Expect(err).To(BeNil())
+				defer resp.Body.Close()
+
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+
+				//Verify the updated properties
+				url = strings.Replace(GETINSTANCE, ":serviceId", serviceId, 1)
+				req, _ = http.NewRequest(GET, SCURL+url, nil)
+				req.Header.Set("X-tenant-name", "default")
+				req.Header.Set("X-ConsumerId", serviceId)
+				resp, _ = scclient.Do(req)
+				respbody, _ := ioutil.ReadAll(resp.Body)
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				servicesStruct := map[string][]map[string]interface{}{}
+				json.Unmarshal(respbody, &servicesStruct)
+				for _, services := range servicesStruct["instances"] {
+					if services["instanceId"] == serviceInstanceID {
+						newproperties := services["properties"]
+						Expect(newproperties).To(Equal(propertiesInstance))
+						break
+					}
+				}
+
+			})
+
+			It("Update Micro-Service Instance Properties with invalid params", func() {
+				propertiesInstance := map[string]interface{}{}
+				bodyParams := map[string]interface{}{
+					"properties": propertiesInstance,
+				}
+				url := strings.Replace(UPDATEINSTANCEMETADATA, ":serviceId", serviceId, 1)
+				url = strings.Replace(url, ":instanceId", "WRONGINSTANCEID", 1)
+				body, _ := json.Marshal(bodyParams)
+				bodyBuf := bytes.NewReader(body)
+				req, _ := http.NewRequest(UPDATE, SCURL+url, bodyBuf)
+				req.Header.Set("X-tenant-name", "default")
+				resp, err := scclient.Do(req)
+				Expect(err).To(BeNil())
+				defer resp.Body.Close()
+
+				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
+			})
+
+			It("Update Micro-Service Instance Status", func() {
+				url := strings.Replace(UPDATEINSTANCESTATUS, ":serviceId", serviceId, 1)
+				url = strings.Replace(url, ":instanceId", serviceInstanceID, 1)
+				req, _ := http.NewRequest(UPDATE, SCURL+url+"?value=DOWN", nil)
+				req.Header.Set("X-tenant-name", "default")
+				resp, err := scclient.Do(req)
+				Expect(err).To(BeNil())
+				defer resp.Body.Close()
+
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+
+				//Verify the Instance Status
+				url = strings.Replace(GETINSTANCE, ":serviceId", serviceId, 1)
+				req, _ = http.NewRequest(GET, SCURL+url, nil)
+				req.Header.Set("X-tenant-name", "default")
+				req.Header.Set("X-ConsumerId", serviceId)
+				resp, _ = scclient.Do(req)
+				respbody, _ := ioutil.ReadAll(resp.Body)
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				servicesStruct := map[string][]map[string]interface{}{}
+				json.Unmarshal(respbody, &servicesStruct)
+				for _, services := range servicesStruct["instances"] {
+					if services["instanceId"] == serviceInstanceID {
+						newSTATUS := services["status"]
+						Expect(newSTATUS).To(Equal("DOWN"))
+						break
+					}
+				}
+			})
+
+			It("Update Micro-Service Instance Status with invalid Status", func() {
+				url := strings.Replace(UPDATEINSTANCESTATUS, ":serviceId", serviceId, 1)
+				url = strings.Replace(url, ":instanceId", serviceInstanceID, 1)
+				req, _ := http.NewRequest(UPDATE, SCURL+url+"?value=INVALID", nil)
+				req.Header.Set("X-tenant-name", "default")
+				resp, err := scclient.Do(req)
+				Expect(err).To(BeNil())
+				defer resp.Body.Close()
+
+				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
+
+				//Verify the Instance Status does not change the value
+				url = strings.Replace(GETINSTANCE, ":serviceId", serviceId, 1)
+				req, _ = http.NewRequest(GET, SCURL+url, nil)
+				req.Header.Set("X-tenant-name", "default")
+				req.Header.Set("X-ConsumerId", serviceId)
+				resp, _ = scclient.Do(req)
+				respbody, _ := ioutil.ReadAll(resp.Body)
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				servicesStruct := map[string][]map[string]interface{}{}
+				json.Unmarshal(respbody, &servicesStruct)
+				for _, services := range servicesStruct["instances"] {
+					if services["instanceId"] == serviceInstanceID {
+						newSTATUS := services["status"]
+						Expect(newSTATUS).To(Equal("UP"))
+						break
+					}
+				}
+			})
+		})
+		By("Micro-Service Instance heartbeat API", func() {
+			It("Send HeartBeat for micro-service instance", func() {
+				url := strings.Replace(INSTANCEHEARTBEAT, ":serviceId", serviceId, 1)
+				url = strings.Replace(url, ":instanceId", serviceInstanceID, 1)
+				req, _ := http.NewRequest(UPDATE, SCURL+url, nil)
+				req.Header.Set("X-tenant-name", "default")
+				resp, err := scclient.Do(req)
+				Expect(err).To(BeNil())
+				defer resp.Body.Close()
+
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+			})
+
+			It("Send HeartBeat for wrong micro-service instance", func() {
+				url := strings.Replace(INSTANCEHEARTBEAT, ":serviceId", serviceId, 1)
+				url = strings.Replace(url, ":instanceId", "XXX", 1)
+				req, _ := http.NewRequest(UPDATE, SCURL+url, nil)
+				req.Header.Set("X-tenant-name", "default")
+				resp, err := scclient.Do(req)
+				Expect(err).To(BeNil())
+				defer resp.Body.Close()
+
+				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
+			})
+		})
+
+		By("Micro-Sevrice Instance Watchern Api", func() {
+			It("Call the watcher API ", func() {
+				//This api gives 400 bad request for the integration test
+				// as integration test is not able to make ws connection
+				url := strings.Replace(INSTANCEWATCHER, ":serviceId", serviceId, 1)
+				req, _ := http.NewRequest(GET, SCURL+url, nil)
+				req.Header.Set("X-tenant-name", "default")
+				resp, err := scclient.Do(req)
+				Expect(err).To(BeNil())
+				defer resp.Body.Close()
+
 				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
 			})
 		})

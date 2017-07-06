@@ -4,7 +4,7 @@ package integrationtest
 var HEALTH = "/health"
 var VERSION = "/version"
 
-// Micro-Service Api's
+// Micro-Service API's
 var CHECKEXISTENCE = "/registry/v3/existence"
 var GETALLSERVICE = "/registry/v3/microservices"
 var GETSERVICEBYID = "/registry/v3/microservices/:serviceId"
@@ -18,7 +18,7 @@ var CREATEDEPENDENCIES = "/registry/v3/dependencies"
 var GETCONPRODEPENDENCY = "/registry/v3/microservices/:consumerId/providers"
 var GETPROCONDEPENDENCY = "/registry/v3/microservices/:providerId/consumers"
 
-// Instance APi's
+// Instance API's
 var FINDINSTANCE = "/registry/v3/instances"
 var GETINSTANCE = "/registry/v3/microservices/:serviceId/instances"
 var GETINSTANCEBYINSTANCEID = "/registry/v3/microservices/:serviceId/instances/:instanceId"
@@ -27,6 +27,24 @@ var UNREGISTERINSTANCE = "/registry/v3/microservices/:serviceId/instances/:insta
 var UPDATEINSTANCEMETADATA = "/registry/v3/microservices/:serviceId/instances/:instanceId/properties"
 var UPDATEINSTANCESTATUS = "/registry/v3/microservices/:serviceId/instances/:instanceId/status"
 var INSTANCEHEARTBEAT = "/registry/v3/microservices/:serviceId/instances/:instanceId/heartbeat"
+var INSTANCEWATCHER = "/registry/v3/microservices/:serviceId/watcher"
+
+//Governance API's
+var GETSERVICEDETAILS = "/registry/v3/govern/service/:serviceId"
+var GETRELATIONGRAPH = "/registry/v3/govern/relation"
+var GETALLSERVICEGOVERNANCEINFO = "/registry/v3/govern/services"
+
+//Rules API's
+var ADDRULE = "/registry/v3/microservices/:serviceId/rules"
+var GETRULES = "/registry/v3/microservices/:serviceId/rules"
+var UPDATERULES = "/registry/v3/microservices/:serviceId/rules/:rule_id"
+var DELETERULES = "/registry/v3/microservices/:serviceId/rules/:rule_id"
+
+//Tag API's
+var ADDTAGE = "/registry/v3/microservices/:serviceId/tags"
+var UPDATETAG = "/registry/v3/microservices/:serviceId/tags/:key"
+var GETTAGS = "/registry/v3/microservices/:serviceId/tags"
+var DELETETAG = "/registry/v3/microservices/:serviceId/tags/:key"
 
 // HTTP METHODS
 var GET = "GET"
