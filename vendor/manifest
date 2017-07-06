@@ -491,6 +491,14 @@
 			"notests": true
 		},
 		{
+			"importpath": "github.com/widuu/gojson",
+			"repository": "https://github.com/widuu/gojson",
+			"vcs": "git",
+			"revision": "7da9d2cd949b3f1b4e3039dd985773df8cf68a99",
+			"branch": "master",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/xiang90/probing",
 			"repository": "https://github.com/xiang90/probing",
 			"vcs": "git",
