@@ -22,7 +22,7 @@ echo "${green}Preparing the env for UT....${reset}"
 ./scripts/prepare_env_ut.sh
 
 echo "${green}Running UT for Service-Center server"
-bash -x ./scripts/ut.sh server
+bash -x ./scripts/ut.sh server/service
   
 if [ $? == 0 ]; then
 	echo "${green}All the unit test passed..${reset}"
