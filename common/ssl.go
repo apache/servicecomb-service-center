@@ -24,7 +24,6 @@ import (
 )
 
 var TLS_CIPHER_SUITE_MAP = map[string]uint16{
-	"TLS_RSA_WITH_AES_128_CBC_SHA":          tls.TLS_RSA_WITH_AES_128_CBC_SHA,
 	"TLS_RSA_WITH_AES_128_GCM_SHA256":       tls.TLS_RSA_WITH_AES_128_GCM_SHA256,
 	"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256": tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
 	"TLS_RSA_WITH_AES_256_GCM_SHA384":       tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
@@ -71,11 +70,6 @@ var sslClientConfig *SSLConfig = &SSLConfig{
 	CertFile:     getSSLPath("server.cer"),
 	KeyFile:      getSSLPath("server_key.pem"),
 	KeyPassphase: "",
-}
-
-func init() {
-	loadServerSSLConfig()
-	loadClientSSLConfig()
 }
 
 func getSSLPath(path string) string {

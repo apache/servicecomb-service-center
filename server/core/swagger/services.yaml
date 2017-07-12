@@ -286,7 +286,7 @@ paths:
         200:
           description: 创建成功
           schema:
-            type: string
+            $ref: '#/definitions/AddRuleResponse'
         400:
           description: 错误的请求
           schema:
@@ -855,6 +855,31 @@ paths:
           description: 内部错误
           schema:
             type: string
+  /heartbeats:
+    put:
+      description: |
+        服务提供端需要向服务中心发送心跳信息，以保证服务中心知道服务实例是否健康。该接口为批量接口
+      operationId: HeartbeatSet
+      parameters:
+        - name: Instances
+          in: body
+          description: 批量上报心跳的实例的标识。
+          required: true
+          schema:
+            $ref: '#/definitions/HeartbeatSetRequest'
+      tags:
+        - instances
+      responses:
+        200:
+          description: 更新成功
+        400:
+          description: 错误的请求
+          schema:
+            $ref: '#/definitions/InstancesHbRst'
+        500:
+          description: 内部错误
+          schema:
+            type: string
   /instances:
     get:
       description: |
@@ -1036,6 +1061,9 @@ definitions:
       level:
         type: string
         description: 微服务层级，FRONT/MIDDLE/BACK
+      timestamp:
+        type: string
+        description: post 或者 put 不带该参数，timestamp是内部生成的，只有get 接口才返回该值
       schemas:
         type: array
         description: 微服务访问契约内容的外键ID
@@ -1232,6 +1260,9 @@ definitions:
       pattern:
         description:  匹配规则，正则表达式，长度1到64
         type: string
+      timestamp:
+        description:  只有获取rule时返回使用，创建rule的时间
+        type: string
       description:
         description:  rule描述
         type: string
@@ -1281,5 +1312,46 @@ definitions:
         description: 路由地址
       Property:
           $ref: '#/definitions/Properties'
-
-
+  AddRuleResponse:
+    type: object
+    properties:
+      RuleIds:
+        description: 生成的ruleId集合
+        type: array
+        items:
+          type: string
+  HeartbeatSetRequest:
+    type: object
+    properties:
+      Instances:
+        type: array
+        items:
+          $ref: "#/definitions/HeartbeatSetElement"
+  HeartbeatSetElement:
+    type: object
+    properties:
+      serviceId:
+        description: 微服务id
+        type: string
+      instanceId:
+        description: 微服务实例id
+        type: string
+  InstancesHbRst:
+    type: object
+    properties:
+      instances:
+        type: array
+        items:
+          $ref: "#/definitions/InstanceHbRst"
+  InstanceHbRst:
+    type: object
+    properties:
+      serviceId:
+        description: 微服务id
+        type: string
+      instanceId:
+        description: 微服务实例id
+        type: string
+      errMessage:
+        description: 错误信息，成功为空，不成功，则为错误，在部分成功的场景使用
+        type: string

@@ -22,6 +22,7 @@ import (
 	pb "github.com/servicecomb/service-center/server/core/proto"
 	"github.com/servicecomb/service-center/server/core/registry"
 	"github.com/servicecomb/service-center/server/infra/quota"
+	"github.com/servicecomb/service-center/server/plugins/dynamic"
 	"github.com/servicecomb/service-center/server/service/dependency"
 	ms "github.com/servicecomb/service-center/server/service/microservice"
 	"github.com/servicecomb/service-center/util"
@@ -151,18 +152,20 @@ func (s *ServiceController) ServiceExist(ctx context.Context, tenant string, ser
 }
 
 func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequest) (*pb.CreateServiceResponse, error) {
+	remoteIP := util.GetIPFromContext(ctx)
 	if in == nil || in.Service == nil {
-		util.LOGGER.Errorf(nil, "create microservice failed for service empty.")
+		util.LOGGER.Errorf(nil, "create microservice failed: param empty.operator:%s", remoteIP)
 		return &pb.CreateServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "request format invalid"),
 		}, nil
 	}
 	service := in.Service
-
 	err := apt.Validate(service)
+
+	serviceFlag := strings.Join([]string{service.AppId, service.ServiceName, service.Version}, "--")
 	if err != nil {
-		util.LOGGER.Errorf(err, "create microservice %s-%s(app:%s) failed for validating parameters failed.",
-			service.ServiceName, service.Version, service.AppId)
+		util.LOGGER.Errorf(err, "create microservice failed, %s: invalid parameters.operator:%s",
+			serviceFlag, remoteIP)
 		return &pb.CreateServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
@@ -170,13 +173,13 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 
 	ok, err := quota.QuotaPlugins[beego.AppConfig.DefaultString("quota_plugin", "buildin")]().Apply4Quotas(ctx, quota.MicroServiceQuotaType, 0)
 	if err != nil {
-		util.LOGGER.Errorf(err, "Check apply quota to create service failed.")
+		util.LOGGER.Errorf(err, "create microservice failed, %s: check apply quota.operator:%s", serviceFlag, remoteIP)
 		return &pb.CreateServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, err
 	}
 	if !ok {
-		util.LOGGER.Errorf(err, "No quota to create service,service name is %s", in.Service.ServiceName)
+		util.LOGGER.Errorf(err, "create microservice failed, %s: no quota to apply.operator:%s", serviceFlag, remoteIP)
 		return &pb.CreateServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, fmt.Sprintf("No quota to create service,service name is %s", in.Service.ServiceName)),
 		}, nil
@@ -195,8 +198,8 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 	lockMutex := mux.MuxType(apt.GenerateServiceIndexKey(consumer))
 	lock, err := mux.Lock(lockMutex)
 	if err != nil {
-		util.LOGGER.Errorf(err, "create microservice %s-%s(app:%s) failed for begining transaction.",
-			service.ServiceName, service.Version, service.AppId)
+		util.LOGGER.Errorf(err, "create microservice failed, %s:internel err,create lock failed.operator:%s",
+			serviceFlag, remoteIP)
 		return &pb.CreateServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "begining transaction failed"),
 		}, err
@@ -204,16 +207,16 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 
 	serviceId, err := GetServiceId(ctx, consumer)
 	if err != nil {
-		util.LOGGER.Errorf(err, "create microservice %s-%s(app:%s) failed for querying service failed.",
-			service.ServiceName, service.Version, service.AppId)
+		util.LOGGER.Errorf(err, "create microservice failed, %s:internel err,query service failed.operator:%s",
+			serviceFlag, remoteIP)
 		lock.Unlock()
 		return &pb.CreateServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "query service key failed"),
 		}, err
 	}
 	if len(serviceId) > 0 {
-		util.LOGGER.Errorf(nil, "create microservice %s-%s(app:%s) failed for service %s already exist.",
-			service.ServiceName, service.Version, service.AppId, serviceId)
+		util.LOGGER.Errorf(nil, "create microservice failed, %s:service already exist.operator:%s",
+			serviceFlag, remoteIP)
 		lock.Unlock()
 		return &pb.CreateServiceResponse{
 			Response:  pb.CreateResponse(pb.Response_FAIL, "register service already exists"),
@@ -222,31 +225,14 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 	}
 
 	// 产生全局service id
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action:     registry.PUT,
-		Key:        []byte(apt.GetServiceSequenceKey()),
-		WithPrevKV: true,
-	})
-	if err != nil {
-		util.LOGGER.Errorf(err, "create microservice %s-%s(app:%s) failed for generating service id failed.",
-			service.ServiceName, service.Version, service.AppId)
-		lock.Unlock()
-		return &pb.CreateServiceResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "generate service id error"),
-		}, err
-	}
-
-	serviceId = "1"
-	if resp.PrevKv != nil {
-		serviceId = strconv.FormatInt(resp.PrevKv.Version+1, 10)
-	}
+	serviceId = dynamic.GetServiceId()
 	service.ServiceId = serviceId
 	service.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
 
 	data, err := json.Marshal(service)
 	if err != nil {
-		util.LOGGER.Errorf(err, "create microservice %s-%s(app:%s) failed for marshalling service failed.",
-			service.ServiceName, service.Version, service.AppId)
+		util.LOGGER.Errorf(err, "create microservice failed, %s: json marshal service failed.operator:%s",
+			serviceFlag, remoteIP)
 		lock.Unlock()
 		return &pb.CreateServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "body error "+err.Error()),
@@ -280,8 +266,8 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 
 	_, err = registry.GetRegisterCenter().Txn(ctx, opts)
 	if err != nil {
-		util.LOGGER.Errorf(err, "create microservice %s-%s(app:%s) failed for committing operations failed.",
-			service.ServiceName, service.Version, service.AppId)
+		util.LOGGER.Errorf(err, "create microservice failed, %s: commit data into etcd failed.operator:%s",
+			serviceFlag, remoteIP)
 		lock.Unlock()
 		return &pb.CreateServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "commit operations failed"),
@@ -289,18 +275,18 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 	}
 	lock.Unlock()
 	//创建服务间的依赖
-	util.LOGGER.Warnf(nil, "Start add dependency for %s.", consumer.ServiceName)
+	util.LOGGER.Infof("create microservice: add dependency for %s.operator:%s", serviceFlag, remoteIP)
 	err = s.updateAsProviderDependency(ctx, serviceId, consumer)
 	if err != nil {
-		util.LOGGER.Errorf(nil, "Dependency update,as provider,update it's consumer list failed. %s", err.Error())
+		util.LOGGER.Errorf(err, "create microservice failed: dependency update,as provider failed.%s.operator:%s", serviceFlag, remoteIP)
 		return &pb.CreateServiceResponse{
 			Response:  pb.CreateResponse(pb.Response_FAIL, err.Error()),
 			ServiceId: "",
 		}, err
 	}
 
-	util.LOGGER.Warnf(nil, "create microservice %s-%s(app:%s) successfully, serviceId: %s. from remote %s",
-		service.ServiceName, service.Version, service.AppId, service.ServiceId, util.GetIPFromContext(ctx))
+	util.LOGGER.Infof("create microservice successful, %s, serviceId: %s. from remote %s",
+		serviceFlag, service.ServiceId, util.GetIPFromContext(ctx))
 	return &pb.CreateServiceResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "register service successfully"),
 		ServiceId: serviceId,
@@ -309,14 +295,14 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 
 func (s *ServiceController) Delete(ctx context.Context, in *pb.DeleteServiceRequest) (*pb.DeleteServiceResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 || in.ServiceId == apt.Service.ServiceId {
-		util.LOGGER.Errorf(nil, "delete microservice failed for service empty.")
+		util.LOGGER.Errorf(nil, "delete microservice failed: service empty.")
 		return &pb.DeleteServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "request format invalid"),
 		}, nil
 	}
 	err := apt.Validate(in)
 	if err != nil {
-		util.LOGGER.Errorf(err, "delete microservice failed for validating parameters failed.")
+		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: invalid parameters.", in.ServiceId)
 		return &pb.DeleteServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
@@ -325,28 +311,35 @@ func (s *ServiceController) Delete(ctx context.Context, in *pb.DeleteServiceRequ
 	force := in.Force
 	tenant := util.ParaseTenant(ctx)
 
-	serviceResp, err := s.GetOne(ctx, &pb.GetServiceRequest{
-		ServiceId: in.ServiceId,
-	})
-	if err != nil || serviceResp.GetResponse().Code != pb.Response_SUCCESS {
-		util.LOGGER.Errorf(err, "delete microservice %s failed for query service failed.", in.ServiceId)
+	service, err := getServiceByServiceId(ctx, tenant, in.ServiceId)
+	if err != nil {
+		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: get service failed.", in.ServiceId)
 		return &pb.DeleteServiceResponse{
-			Response: serviceResp.GetResponse(),
+			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, err
 	}
 
-	util.LOGGER.Debugf("start delete service %s", in.ServiceId)
+	if service == nil {
+		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: service not exist.", in.ServiceId)
+		return &pb.DeleteServiceResponse{
+			Response: pb.CreateResponse(pb.Response_FAIL, "service not exist"),
+		}, nil
+	}
+
+	util.LOGGER.Infof("start delete service %s", in.ServiceId)
 
 	// 强制删除，则与该服务相关的信息删除，非强制删除： 如果作为该被依赖（作为provider，提供服务,且不是只存在自依赖）或者存在实例，则不能删除
 	if !force {
 		keyConDependency := apt.GenerateProviderDependencyKey(tenant, in.ServiceId, "")
 		services, err := GetDependencies(ctx, keyConDependency, tenant)
 		if err != nil {
+			util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s:(unforce) inner err, get service dependency failed.", in.ServiceId)
 			return &pb.DeleteServiceResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "Get dependency info failed."),
 			}, err
 		}
 		if len(services) > 1 || (len(services) == 1 && services[0].ServiceId != in.ServiceId) {
+			util.LOGGER.Errorf(nil, "delete microservice failed, serviceId is %s:(unforce) can't delete, other services rely it.", in.ServiceId)
 			return &pb.DeleteServiceResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "Can not delete this service, other service rely it."),
 			}, err
@@ -360,12 +353,14 @@ func (s *ServiceController) Delete(ctx context.Context, in *pb.DeleteServiceRequ
 			CountOnly:  true,
 		})
 		if err != nil {
+			util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s:(unforce) inner err,get instances failed.", in.ServiceId)
 			return &pb.DeleteServiceResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "Get instance failed."),
 			}, err
 		}
 
 		if rsp.Count > 0 {
+			util.LOGGER.Errorf(nil, "delete microservice failed, serviceId is %s:(unforce) can't delete, exist instance.", in.ServiceId)
 			return &pb.DeleteServiceResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "Can not delete this service, exist instance."),
 			}, err
@@ -373,17 +368,17 @@ func (s *ServiceController) Delete(ctx context.Context, in *pb.DeleteServiceRequ
 	}
 
 	consumer := &pb.MicroServiceKey{
-		AppId:       serviceResp.GetService().AppId,
-		ServiceName: serviceResp.GetService().ServiceName,
-		Version:     serviceResp.GetService().Version,
-		Alias:       serviceResp.GetService().Alias,
+		AppId:       service.AppId,
+		ServiceName: service.ServiceName,
+		Version:     service.Version,
+		Alias:       service.Alias,
 		Tenant:      tenant,
 	}
 
 	//refresh msCache consumerCache, ensure that watch can notify consumers when no cache.
-	err = refreshDependencyCache(tenant, in.ServiceId, serviceResp.Service)
+	err = refreshDependencyCache(tenant, in.ServiceId, service)
 	if err != nil {
-		util.LOGGER.Errorf(err, "Refresh service %s dependency cache failed.", in.ServiceId)
+		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: inner err, refresh service dependency cache failed.", in.ServiceId)
 		return &pb.DeleteServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Refresh dependency cache failed."),
 		}, err
@@ -415,6 +410,7 @@ func (s *ServiceController) Delete(ctx context.Context, in *pb.DeleteServiceRequ
 	//删除依赖规则
 	optsTmp, err := s.deteleDependencyForService(ctx, consumer, in.ServiceId)
 	if err != nil {
+		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: inner err, delete dependency failed.", in.ServiceId)
 		return &pb.DeleteServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, err
@@ -456,7 +452,7 @@ func (s *ServiceController) Delete(ctx context.Context, in *pb.DeleteServiceRequ
 	//删除实例
 	err = deleteServiceAllInstances(ctx, in)
 	if err != nil {
-		util.LOGGER.Errorf(err, "Delete all instances failed for %s service.", in.ServiceId)
+		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: delete all instances failed.", in.ServiceId)
 		return &pb.DeleteServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Delete all instances failed for service."),
 		}, err
@@ -464,13 +460,13 @@ func (s *ServiceController) Delete(ctx context.Context, in *pb.DeleteServiceRequ
 
 	_, err = registry.GetRegisterCenter().Txn(ctx, opts)
 	if err != nil {
-		util.LOGGER.Errorf(err, "delete microservice %s(force) failed for commiting operations failed.", in.ServiceId)
+		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: commit data into etcd failed.", in.ServiceId)
 		return &pb.DeleteServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "commit operations failed"),
 		}, nil
 	}
 
-	util.LOGGER.Warnf(nil, "delete microservice %s successfully from remote %s.", in.ServiceId, util.GetIPFromContext(ctx))
+	util.LOGGER.Infof("delete microservice successful: serviceid is %s,operator is %s.", in.ServiceId, util.GetIPFromContext(ctx))
 	return &pb.DeleteServiceResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "unregister service successfully"),
 	}, nil
@@ -485,11 +481,11 @@ func refreshDependencyCache(tenant string, providerId string, provider *pb.Micro
 		KeyOnly:    true,
 	})
 	if err != nil {
-		util.LOGGER.Errorf(err, "query service consumers failed, provider id %s", providerId)
+		util.LOGGER.Errorf(err, "refresh dependency cache failed: query service consumers failed, provider id %s", providerId)
 		return err
 	}
 	if resp == nil || len(resp.Kvs) == 0 {
-		util.LOGGER.Warnf(nil, "This services %s has no consumer dependency.", providerId)
+		util.LOGGER.Infof("refresh dependency cache: this services %s has no consumer dependency.", providerId)
 	} else {
 		ms.MsCache().Set(providerId, provider, 5*time.Minute)
 		dependency.ConsumerCache().Set(providerId, resp.Kvs, 5*time.Minute)
@@ -508,11 +504,11 @@ func deleteServiceAllInstances(ctx context.Context, in *pb.DeleteServiceRequest)
 		WithPrefix: true,
 	})
 	if err != nil {
-		util.LOGGER.Errorf(err, "Get instance lease failed.")
+		util.LOGGER.Errorf(err, "delete service all instance failed: get instance lease failed.")
 		return err
 	}
 	if resp.Count <= 0 {
-		util.LOGGER.Errorf(nil, "No instances to revoke.")
+		util.LOGGER.Warnf(nil, "No instances to revoke.")
 		return nil
 	}
 	for _, v := range resp.Kvs {
@@ -632,20 +628,23 @@ func (s *ServiceController) deleteDependencyUtil(ctx context.Context, serviceTyp
 	if rsp != nil {
 		serviceTmpId := ""
 		serviceTmpKey := ""
+		deleteKey := ""
 		for _, kv := range rsp.Kvs {
 			tmpKeyArr := strings.Split(string(kv.Key), "/")
 			serviceTmpId = tmpKeyArr[len(tmpKeyArr)-1]
 			if serviceType == "p" {
 				serviceTmpKey = apt.GenerateConsumerDependencyKey(tenant, serviceTmpId, serviceId)
+				deleteKey = strings.Join([]string{"c", serviceTmpId, serviceId}, "/")
 			} else {
 				serviceTmpKey = apt.GenerateProviderDependencyKey(tenant, serviceTmpId, serviceId)
+				deleteKey = strings.Join([]string{"p", serviceTmpId, serviceId}, "/")
 			}
 			if _, ok := flag[serviceTmpKey]; ok {
 				util.LOGGER.Debugf("serviceTmpKey is more exist.%s", serviceTmpKey)
 				continue
 			}
 			flag[serviceTmpKey] = true
-			util.LOGGER.Debugf("providerKey is %s", serviceTmpKey)
+			util.LOGGER.Infof("delete dependency %s", deleteKey)
 			opt = &registry.PluginOp{
 				Action: registry.DELETE,
 				Key:    []byte(serviceTmpKey),
@@ -657,7 +656,7 @@ func (s *ServiceController) deleteDependencyUtil(ctx context.Context, serviceTyp
 			Key:        []byte(serviceKey),
 			WithPrefix: true,
 		}
-		util.LOGGER.Debugf("serviceKey is %s", serviceKey)
+		util.LOGGER.Infof("delete dependency serviceKey is %s", serviceType+"/"+serviceId)
 		opts = append(opts, opt)
 	}
 	return opts, nil
@@ -671,7 +670,7 @@ func (s *ServiceController) GetOne(ctx context.Context, in *pb.GetServiceRequest
 	}
 	err := apt.Validate(in)
 	if err != nil {
-		util.LOGGER.Errorf(err, "get microservice (serviceId:%s) failed for validating parameters failed.",
+		util.LOGGER.Errorf(err, "get microservice failed, serviceId is %s: invalid parameters.",
 			in.ServiceId)
 		return &pb.GetServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
@@ -681,13 +680,13 @@ func (s *ServiceController) GetOne(ctx context.Context, in *pb.GetServiceRequest
 	service, err := getServiceByServiceId(ctx, tenant, in.ServiceId)
 
 	if err != nil {
-		util.LOGGER.Errorf(nil, "Get service failed.%s", err.Error())
+		util.LOGGER.Errorf(err, "get microservice failed, serviceId is %s: inner err,get service failed.", in.ServiceId)
 		return &pb.GetServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "get service file failed"),
 		}, err
 	}
 	if service == nil {
-		util.LOGGER.Errorf(nil, "The service is empty.")
+		util.LOGGER.Errorf(nil, "get microservice failed, serviceId is %s: service not exist.", in.ServiceId)
 		return &pb.GetServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "There is no this service."),
 		}, nil
@@ -700,12 +699,14 @@ func (s *ServiceController) GetOne(ctx context.Context, in *pb.GetServiceRequest
 
 func (s *ServiceController) GetServices(ctx context.Context, in *pb.GetServicesRequest) (*pb.GetServicesResponse, error) {
 	if in == nil {
+		util.LOGGER.Errorf(nil, "get services failed: invalid params.")
 		return &pb.GetServicesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid"),
 		}, nil
 	}
 	services, err := GetAllServiceUtil(ctx)
 	if err != nil {
+		util.LOGGER.Errorf(err, "get services failed: inner err.")
 		return &pb.GetServicesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Get all service failed."),
 		}, err
@@ -719,14 +720,14 @@ func (s *ServiceController) GetServices(ctx context.Context, in *pb.GetServicesR
 
 func (s *ServiceController) UpdateProperties(ctx context.Context, in *pb.UpdateServicePropsRequest) (*pb.UpdateServicePropsResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 || in.Properties == nil {
-		util.LOGGER.Errorf(nil, "update service properties failed for service id or properties empty.")
+		util.LOGGER.Errorf(nil, "update service properties failed: invalid params.")
 		return &pb.UpdateServicePropsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "request format invalid"),
 		}, nil
 	}
 	err := apt.Validate(in)
 	if err != nil {
-		util.LOGGER.Errorf(err, "update service properties failed for validating parameters failed.")
+		util.LOGGER.Errorf(err, "update service properties failed, serviceId is %s: invalid parameters.", in.ServiceId)
 		return &pb.UpdateServicePropsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
@@ -740,13 +741,13 @@ func (s *ServiceController) UpdateProperties(ctx context.Context, in *pb.UpdateS
 		Key:    []byte(key),
 	})
 	if err != nil {
-		util.LOGGER.Errorf(err, "update properties of service %s failed for querying service failed.", in.ServiceId)
+		util.LOGGER.Errorf(err, "update service properties failed, serviceId is %s: query service failed.", in.ServiceId)
 		return &pb.UpdateServicePropsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "query service file failed"),
 		}, err
 	}
 	if len(resp.Kvs) == 0 {
-		util.LOGGER.Errorf(nil, "update properties of service %s failed for service not exist.", in.ServiceId)
+		util.LOGGER.Errorf(nil, "update service properties failed, serviceId is %s: service not exist.", in.ServiceId)
 		return &pb.UpdateServicePropsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "service does not exist"),
 		}, nil
@@ -756,7 +757,7 @@ func (s *ServiceController) UpdateProperties(ctx context.Context, in *pb.UpdateS
 
 	err = json.Unmarshal(resp.Kvs[0].Value, &service)
 	if err != nil {
-		util.LOGGER.Errorf(err, "update properties of service %s failed for unmarshalling service failed.", in.ServiceId)
+		util.LOGGER.Errorf(err, "update service properties failed, serviceId is %s: json unmarshal service failed.", in.ServiceId)
 		return &pb.UpdateServicePropsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "service file unmarshal error"),
 		}, err
@@ -768,7 +769,7 @@ func (s *ServiceController) UpdateProperties(ctx context.Context, in *pb.UpdateS
 
 	data, err := json.Marshal(service)
 	if err != nil {
-		util.LOGGER.Errorf(err, "update properties of service %s failed for marshalling service failed.", in.ServiceId)
+		util.LOGGER.Errorf(err, "update service properties failed, serviceId is %s: json marshal service failed.", in.ServiceId)
 		return &pb.UpdateServicePropsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "service file marshal error"),
 		}, err
@@ -781,13 +782,13 @@ func (s *ServiceController) UpdateProperties(ctx context.Context, in *pb.UpdateS
 		Value:  data,
 	})
 	if err != nil {
-		util.LOGGER.Errorf(err, "update properties of service %s failed for committing operations failed.", in.ServiceId)
+		util.LOGGER.Errorf(err, "update service properties failed, serviceId is %s: commit data into etcd failed.", in.ServiceId)
 		return &pb.UpdateServicePropsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "commit operations failed"),
 		}, err
 	}
 
-	util.LOGGER.Warnf(nil, "update properties of service %s successfully.", in.ServiceId)
+	util.LOGGER.Infof("update service properties successful: serviceId is %s.", in.ServiceId)
 	return &pb.UpdateServicePropsResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "update service successfully"),
 	}, nil
@@ -807,7 +808,7 @@ func (s *ServiceController) RuleExist(ctx context.Context, tenant string, servic
 
 func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesRequest) (*pb.AddServiceRulesResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 || len(in.GetRules()) == 0 {
-		util.LOGGER.Errorf(nil, "add rule failed for parameters invalid.")
+		util.LOGGER.Errorf(nil, "add rule failed: invalid parameters.")
 		return &pb.AddServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "request format invalid"),
 		}, nil
@@ -817,7 +818,7 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 
 	// service id存在性校验
 	if !s.ServiceExist(ctx, tenant, in.ServiceId) {
-		util.LOGGER.Errorf(nil, "add rule for service %s failed for service not exist.", in.ServiceId)
+		util.LOGGER.Errorf(nil, "add rule failed, serviceId is %s: service not exist.", in.ServiceId)
 		return &pb.AddServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "service does not exist"),
 		}, nil
@@ -835,7 +836,7 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 	for _, rule := range in.Rules {
 		err := apt.Validate(rule)
 		if err != nil {
-			util.LOGGER.Errorf(err, "add rule for service %s failed for validating rule failed.", in.ServiceId)
+			util.LOGGER.Errorf(err, "add rule failed, serviceId is %s: invalid rule.", in.ServiceId)
 			return &pb.AddServiceRulesResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 			}, nil
@@ -845,9 +846,9 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 			ruleType = rule.RuleType
 		} else {
 			if ruleType != rule.RuleType {
-				util.LOGGER.Errorf(nil, "Service %s can only contain one type, BLACK or WHITE.", in.ServiceId)
+				util.LOGGER.Errorf(nil, "add rule failed, serviceId is %s:can only exist one type, BLACK or WHITE.", in.ServiceId)
 				return &pb.AddServiceRulesResponse{
-					Response: pb.CreateResponse(pb.Response_FAIL, "Service can only contain one rule type, black or white."),
+					Response: pb.CreateResponse(pb.Response_FAIL, "Service can only contain one rule type, BLACK or WHITE."),
 				}, nil
 			}
 		}
@@ -865,7 +866,7 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 			WithPrevKV: true,
 		})
 		if err != nil {
-			util.LOGGER.Errorf(err, "")
+			util.LOGGER.Errorf(err, "add rule failed, serviceId is %s:generate ruleId failed.", in.ServiceId)
 			return &pb.AddServiceRulesResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "generate service id error"),
 			}, err
@@ -891,7 +892,7 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 		util.LOGGER.Debugf("start add service rule file: %s", key)
 		data, err := json.Marshal(ruleAdd)
 		if err != nil {
-			util.LOGGER.Errorf(err, "add rule for service %s failed for marshalling rule failed.", in.ServiceId)
+			util.LOGGER.Errorf(err, "add rule failed, serviceId is %s: marshal rule failed.", in.ServiceId)
 			return &pb.AddServiceRulesResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "service rule file marshal error"),
 			}, err
@@ -909,20 +910,20 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 		})
 	}
 	if len(opts) <= 0 {
-		util.LOGGER.Errorf(nil, "add rule for service %s failed for no valid rules.", in.ServiceId)
+		util.LOGGER.Infof("add rule successful, serviceId is %s: rule more exists,no rules to add.", in.ServiceId)
 		return &pb.AddServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_SUCCESS, "service rules has been added"),
 		}, nil
 	}
 	_, err = registry.GetRegisterCenter().Txn(ctx, opts)
 	if err != nil {
-		util.LOGGER.Errorf(err, "add rule for service %s failed for committing operations failed.", in.ServiceId)
+		util.LOGGER.Errorf(err, "add rule failed, serviceId is %s:commit date into etcd failed.", in.ServiceId)
 		return &pb.AddServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "commit operations failed"),
 		}, err
 	}
 
-	util.LOGGER.Warnf(nil, "add rule for service %s successfully.", in.ServiceId)
+	util.LOGGER.Infof("add rule successful, serviceId  %s.", in.ServiceId)
 	return &pb.AddServiceRulesResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "add service rules successfully"),
 		RuleIds:  ruleIds,
@@ -953,7 +954,7 @@ func getServiceRuleType(ctx context.Context, tenant string, serviceId string) (s
 
 func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateServiceRuleRequest) (*pb.UpdateServiceRuleResponse, error) {
 	if in == nil || in.GetRule() == nil || len(in.ServiceId) == 0 || len(in.RuleId) == 0 {
-		util.LOGGER.Errorf(nil, "update rule failed for invalid parameters.")
+		util.LOGGER.Errorf(nil, "update rule failed: invalid parameters.")
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "request format invalid"),
 		}, nil
@@ -963,14 +964,14 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 
 	// service id存在性校验
 	if !s.ServiceExist(ctx, tenant, in.ServiceId) {
-		util.LOGGER.Errorf(nil, "update rule for service %s failed for service not exist.", in.ServiceId)
+		util.LOGGER.Errorf(nil, "update rule failed, serviceId is %s, ruleId is %s: service not exist.", in.ServiceId, in.RuleId)
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "service does not exist"),
 		}, nil
 	}
 	err := apt.Validate(in.Rule)
 	if err != nil {
-		util.LOGGER.Errorf(err, "update rule for service %s failed for validating service rule failed.", in.ServiceId)
+		util.LOGGER.Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: invalid service rule.", in.ServiceId, in.RuleId)
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
@@ -979,11 +980,13 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 	//是否能改变ruleType
 	ruleType, ruleNum, err := getServiceRuleType(ctx, tenant, in.ServiceId)
 	if err != nil {
+		util.LOGGER.Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: get rule type failed.", in.ServiceId, in.RuleId)
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, err
 	}
 	if ruleNum >= 1 && ruleType != in.Rule.RuleType {
+		util.LOGGER.Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: rule type can exist one type, BLACK or WHITE.rule type is %s", in.ServiceId, in.RuleId, in.Rule.RuleType)
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Exist multiple rules,can not change rule type.Rule type is "+ruleType),
 		}, nil
@@ -995,14 +998,14 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 		Key:    []byte(key),
 	})
 	if err != nil {
-		util.LOGGER.Errorf(err, "update rule for service %s failed for querying service rule failed.", in.ServiceId)
+		util.LOGGER.Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: query service rule failed.", in.ServiceId, in.RuleId)
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "get service rule file failed"),
 		}, err
 	}
 
 	if len(resp.Kvs) == 0 {
-		util.LOGGER.Errorf(err, "update rule for service %s failed for this rule %s does not exist.", in.ServiceId, in.RuleId)
+		util.LOGGER.Errorf(err, "update rule failed, serviceId is %s, ruleId is %s:this rule does not exist,can't update.", in.ServiceId, in.RuleId)
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "This rule does not exist."),
 		}, err
@@ -1010,7 +1013,7 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 	rule := &pb.ServiceRule{}
 	err = json.Unmarshal(resp.Kvs[0].Value, rule)
 	if err != nil {
-		util.LOGGER.Errorf(err, "update rule for service %s failed for unmarshalling service rule failed.", in.ServiceId)
+		util.LOGGER.Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: unmarshal service rule failed.", in.ServiceId, in.RuleId)
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "unmarshal service rule file failed"),
 		}, err
@@ -1034,7 +1037,7 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 	util.LOGGER.Debugf("start update service rule file: %s", key)
 	data, err := json.Marshal(rule)
 	if err != nil {
-		util.LOGGER.Errorf(err, "update rule for service %s failed for marshalling service rule failed.", in.ServiceId)
+		util.LOGGER.Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: marshal service rule failed.", in.ServiceId, in.RuleId)
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "service rule file marshal error"),
 		}, err
@@ -1067,13 +1070,13 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 	opts = append(opts, opt)
 	_, err = registry.GetRegisterCenter().Txn(ctx, opts)
 	if err != nil {
-		util.LOGGER.Errorf(err, "update rule for service %s failed for committing operations failed.", in.ServiceId)
+		util.LOGGER.Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: commit date into etcd failed.", in.ServiceId, in.RuleId)
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "commit operations failed"),
 		}, err
 	}
 
-	util.LOGGER.Warnf(nil, "update rule for service %s successfully.", in.ServiceId)
+	util.LOGGER.Infof("update rule successful: servieId is , ruleId is %s.", in.ServiceId, in.RuleId)
 	return &pb.UpdateServiceRuleResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "get service rules successfully"),
 	}, nil
@@ -1081,6 +1084,7 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 
 func (s *ServiceController) GetRule(ctx context.Context, in *pb.GetServiceRulesRequest) (*pb.GetServiceRulesResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 {
+		util.LOGGER.Errorf(nil, "get service rule failed, serviceId is %s: invalid params.", in.ServiceId)
 		return &pb.GetServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "request format invalid"),
 		}, nil
@@ -1089,6 +1093,7 @@ func (s *ServiceController) GetRule(ctx context.Context, in *pb.GetServiceRulesR
 	tenant := util.ParaseTenant(ctx)
 	// service id存在性校验
 	if !s.ServiceExist(ctx, tenant, in.ServiceId) {
+		util.LOGGER.Errorf(nil, "get service rule failed, serviceId is %s: service not exist.", in.ServiceId)
 		return &pb.GetServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "service does not exist"),
 		}, nil
@@ -1096,6 +1101,7 @@ func (s *ServiceController) GetRule(ctx context.Context, in *pb.GetServiceRulesR
 
 	rules, err := GetRulesUtil(ctx, tenant, in.ServiceId)
 	if err != nil {
+		util.LOGGER.Errorf(nil, "get service rule failed, serviceId is %s: get rule failed.", in.ServiceId)
 		return &pb.GetServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "get service rules faild."),
 		}, nil
@@ -1109,7 +1115,7 @@ func (s *ServiceController) GetRule(ctx context.Context, in *pb.GetServiceRulesR
 
 func (s *ServiceController) DeleteRule(ctx context.Context, in *pb.DeleteServiceRulesRequest) (*pb.DeleteServiceRulesResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 {
-		util.LOGGER.Errorf(nil, "delete service rule failed for invalid parameters.")
+		util.LOGGER.Errorf(nil, "delete service rule failed: invalid parameters.")
 		return &pb.DeleteServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "request format invalid"),
 		}, nil
@@ -1118,7 +1124,7 @@ func (s *ServiceController) DeleteRule(ctx context.Context, in *pb.DeleteService
 	tenant := util.ParaseTenant(ctx)
 	// service id存在性校验
 	if !s.ServiceExist(ctx, tenant, in.ServiceId) {
-		util.LOGGER.Errorf(nil, "delete rule for service %s failed for service not exist.", in.ServiceId)
+		util.LOGGER.Errorf(nil, "delete service rule failed, serviceId is %s, rule is %v: service not exist.", in.ServiceId, in.RuleIds)
 		return &pb.DeleteServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "service does not exist"),
 		}, nil
@@ -1132,12 +1138,13 @@ func (s *ServiceController) DeleteRule(ctx context.Context, in *pb.DeleteService
 		util.LOGGER.Debugf("start delete service rule file: %s", key)
 		data, err := s.getOneRule(ctx, key, ruleId)
 		if err != nil {
+			util.LOGGER.Errorf(err, "delete service rule failed, serviceId is %s, rule is %v: get rule of ruleId %s failed.", in.ServiceId, in.RuleIds, ruleId)
 			return &pb.DeleteServiceRulesResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 			}, err
 		}
 		if data == nil {
-			util.LOGGER.Errorf(nil, "This rule does not exist.ServiceId is %s, rule id is %s", in.ServiceId, ruleId)
+			util.LOGGER.Errorf(nil, "delete service rule failed, serviceId is %s, rule is %v: ruleId %s not exist.", in.ServiceId, in.RuleIds, ruleId)
 			return &pb.DeleteServiceRulesResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "This rule does not exist"),
 			}, nil
@@ -1153,20 +1160,20 @@ func (s *ServiceController) DeleteRule(ctx context.Context, in *pb.DeleteService
 		})
 	}
 	if len(opts) <= 0 {
-		util.LOGGER.Errorf(nil, "delete rule for service %s failed for no valied rules.", in.ServiceId)
+		util.LOGGER.Errorf(nil, "delete service rule failed, serviceId is %s, rule is %v: rule has been deleted.", in.ServiceId, in.RuleIds)
 		return &pb.DeleteServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "no service rule has been deleted"),
 		}, nil
 	}
 	_, err := registry.GetRegisterCenter().Txn(ctx, opts)
 	if err != nil {
-		util.LOGGER.Errorf(err, "delete rule for service %s failed for committing operations failed.", in.ServiceId)
+		util.LOGGER.Errorf(err, "delete service rule failed, serviceId is %s, rule is %v: commit data into etcd failed.", in.ServiceId, in.RuleIds)
 		return &pb.DeleteServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "commit operations failed"),
 		}, err
 	}
 
-	util.LOGGER.Warnf(nil, "delete rule for service %s successfully.", in.ServiceId)
+	util.LOGGER.Infof("delete rule successful: serviceId %s, ruleIds %v", in.ServiceId, in.RuleIds)
 	return &pb.DeleteServiceRulesResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "delete service rules successfully"),
 	}, nil
@@ -1197,6 +1204,7 @@ func (s *ServiceController) getOneRule(ctx context.Context, key string, ruleId s
 
 func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceRequest) (*pb.GetExistenceResponse, error) {
 	if in == nil {
+		util.LOGGER.Errorf(nil, "exist failed: invalid params.")
 		return &pb.GetExistenceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "request format invalid"),
 		}, nil
@@ -1206,13 +1214,15 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 	switch in.Type {
 	case "microservice":
 		if len(in.AppId) == 0 || len(in.ServiceName) == 0 || len(in.Version) == 0 {
+			util.LOGGER.Errorf(nil, "microservice exist failed: invalid params.")
 			return &pb.GetExistenceResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "Invalid request."),
 			}, nil
 		}
 		err := apt.GetMSExistsReqValidator.Validate(in)
+		serviceFlag := strings.Join([]string{in.AppId, in.ServiceName, in.Version}, "--")
 		if err != nil {
-			util.LOGGER.Errorf(err, "get service failed for validating parameters failed.")
+			util.LOGGER.Errorf(err, "microservice exist failed, service %s: invalid params.", serviceFlag)
 			return &pb.GetExistenceResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 			}, nil
@@ -1226,11 +1236,13 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 			Tenant:      tenant,
 		})
 		if err != nil {
+			util.LOGGER.Errorf(err, "microservice exist failed, service %s: find serviceIds failed.", serviceFlag)
 			return &pb.GetExistenceResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "get service file failed"),
 			}, err
 		}
 		if len(ids) <= 0 {
+			util.LOGGER.Errorf(nil, "microservice exist failed, service %s: service not exist.", serviceFlag)
 			return &pb.GetExistenceResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "service does not exist"),
 			}, nil
@@ -1241,6 +1253,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 		}, nil
 	case "schema":
 		if len(in.SchemaId) == 0 || len(in.ServiceId) == 0 {
+			util.LOGGER.Errorf(nil, "schema exist failed, serviceId %s, schemaId : invalid params.", in.ServiceId, in.SchemaId)
 			return &pb.GetExistenceResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "Invalid request."),
 			}, nil
@@ -1248,13 +1261,13 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 
 		err := apt.GetSchemaExistsReqValidator.Validate(in)
 		if err != nil {
-			util.LOGGER.Errorf(err, "get service failed for validating parameters failed.")
+			util.LOGGER.Errorf(err, "schema exist failed, serviceId %s, schemaId : invalid params.", in.ServiceId, in.SchemaId)
 			return &pb.GetExistenceResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 			}, nil
 		}
 		if !s.ServiceExist(ctx, tenant, in.ServiceId) {
-			util.LOGGER.Errorf(nil, "Service does not exist,%s", in.SchemaId)
+			util.LOGGER.Errorf(nil, "schema exist failed, serviceId %s, schemaId : service not exist.", in.ServiceId, in.SchemaId)
 			return &pb.GetExistenceResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist"),
 			}, nil
@@ -1263,13 +1276,13 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 		key := apt.GenerateServiceSchemaKey(tenant, in.ServiceId, in.SchemaId)
 		err, exist := s.checkSchemaInfoExist(ctx, key)
 		if err != nil {
-			util.LOGGER.Errorf(nil, "Get schema info failded,%s", err.Error())
+			util.LOGGER.Errorf(err, "schema exist failed, serviceId %s, schemaId : get schema failed.", in.ServiceId, in.SchemaId)
 			return &pb.GetExistenceResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 			}, err
 		}
 		if !exist {
-			util.LOGGER.Errorf(nil, "Schema does not exist,%s", in.SchemaId)
+			util.LOGGER.Errorf(nil, "schema exist failed, serviceId %s, schemaId %s: schema not exist.", in.ServiceId, in.SchemaId)
 			return &pb.GetExistenceResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "Schema does not exist"),
 			}, nil
@@ -1287,7 +1300,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 
 func (s *ServiceController) AddTags(ctx context.Context, in *pb.AddServiceTagsRequest) (*pb.AddServiceTagsResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 || len(in.GetTags()) == 0 {
-		util.LOGGER.Errorf(nil, "add service tags failed for invalid parameters.")
+		util.LOGGER.Errorf(nil, "add service tags failed: invalid parameters.")
 		return &pb.AddServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "request format invalid"),
 		}, nil
@@ -1295,7 +1308,7 @@ func (s *ServiceController) AddTags(ctx context.Context, in *pb.AddServiceTagsRe
 
 	err := apt.Validate(in)
 	if err != nil {
-		util.LOGGER.Errorf(err, "add tags for service %s failed for validating parameters failed.", in.ServiceId)
+		util.LOGGER.Errorf(err, "add service tags failed, serviceId %s, tags %v: invalid parameters.", in.ServiceId, in.Tags)
 		return &pb.AddServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
@@ -1304,7 +1317,7 @@ func (s *ServiceController) AddTags(ctx context.Context, in *pb.AddServiceTagsRe
 	tenant := util.ParaseTenant(ctx)
 	// service id存在性校验
 	if !s.ServiceExist(ctx, tenant, in.ServiceId) {
-		util.LOGGER.Errorf(nil, "add tags for service %s failed for service not exist.", in.ServiceId)
+		util.LOGGER.Errorf(nil, "add service tags failed, serviceId %s, tags %v: service not exist.", in.ServiceId, in.Tags)
 		return &pb.AddServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "service does not exist"),
 		}, nil
@@ -1319,7 +1332,7 @@ func (s *ServiceController) AddTags(ctx context.Context, in *pb.AddServiceTagsRe
 		Key:    []byte(key),
 	})
 	if err != nil {
-		util.LOGGER.Errorf(err, "Get tags failed when adding tags for service %s.", in.ServiceId)
+		util.LOGGER.Errorf(err, "add service tags failed, serviceId %s, tags %v: get existed tag failed.", in.ServiceId, in.Tags)
 		return &pb.AddServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Get tags failed."),
 		}, err
@@ -1329,7 +1342,7 @@ func (s *ServiceController) AddTags(ctx context.Context, in *pb.AddServiceTagsRe
 	if len(resp.Kvs) > 0 {
 		err = json.Unmarshal(resp.Kvs[0].Value, &dataTags)
 		if err != nil {
-			util.LOGGER.Errorf(err, "Unmarshal tags failed.")
+			util.LOGGER.Errorf(err, "add service tags failed, serviceId %s, tags %v: json unmarshal tag data failed.", in.ServiceId, in.Tags)
 			return &pb.AddServiceTagsResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "Unmarshal tags failed."),
 			}, nil
@@ -1345,28 +1358,15 @@ func (s *ServiceController) AddTags(ctx context.Context, in *pb.AddServiceTagsRe
 		dataTags = addTags
 	}
 
-	data, err := json.Marshal(dataTags)
+	err = addTagIntoETCD(ctx, tenant, in.ServiceId, dataTags)
 	if err != nil {
-		util.LOGGER.Errorf(err, "add tags for service %s failed for marshalling service tags failed.", in.ServiceId)
-		return &pb.AddServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "marshal service tags file failed"),
-		}, err
-	}
-
-	util.LOGGER.Debugf("start put service tags file: %s", key)
-	_, err = registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action: registry.PUT,
-		Key:    []byte(key),
-		Value:  data,
-	})
-	if err != nil {
-		util.LOGGER.Errorf(err, "add tags for service %s failed for committing operations failed.", in.ServiceId)
+		util.LOGGER.Errorf(err, "add service tags failed, serviceId %s, tags %v: commit tag data into etcd failed.", in.ServiceId, in.Tags)
 		return &pb.AddServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "commit operations failed"),
 		}, err
 	}
 
-	util.LOGGER.Warnf(nil, "add tags for service %s successfully.", in.ServiceId)
+	util.LOGGER.Infof("add service tags successful, serviceId %s, tags %v.", in.ServiceId, in.Tags)
 	return &pb.AddServiceTagsResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "add service tags successfully"),
 	}, nil
@@ -1374,14 +1374,15 @@ func (s *ServiceController) AddTags(ctx context.Context, in *pb.AddServiceTagsRe
 
 func (s *ServiceController) UpdateTag(ctx context.Context, in *pb.UpdateServiceTagRequest) (*pb.UpdateServiceTagResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 || len(in.Key) == 0 || len(in.Value) == 0 {
-		util.LOGGER.Errorf(nil, "update service tag failed for invalid parameters.")
+		util.LOGGER.Errorf(nil, "update service tag failed: invalid parameters.")
 		return &pb.UpdateServiceTagResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "request format invalid"),
 		}, nil
 	}
+	tagFlag := strings.Join([]string{in.Key, in.Value}, "--")
 	err := apt.Validate(in)
 	if err != nil {
-		util.LOGGER.Errorf(err, "update service tag for service %s failed for validating parameters failed.", in.ServiceId)
+		util.LOGGER.Errorf(err, "update service tag failed, serviceId %s, tag %s: invalid params.", in.ServiceId, tagFlag)
 		return &pb.UpdateServiceTagResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
@@ -1390,7 +1391,7 @@ func (s *ServiceController) UpdateTag(ctx context.Context, in *pb.UpdateServiceT
 	tenant := util.ParaseTenant(ctx)
 
 	if !s.ServiceExist(ctx, tenant, in.ServiceId) {
-		util.LOGGER.Errorf(nil, "update service tags failed for service not exist.")
+		util.LOGGER.Errorf(err, "update service tag failed, serviceId %s, tag %s: service not exist.", in.ServiceId, tagFlag)
 		return &pb.UpdateServiceTagResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
 		}, nil
@@ -1398,48 +1399,65 @@ func (s *ServiceController) UpdateTag(ctx context.Context, in *pb.UpdateServiceT
 
 	tags, err := GetTagsUtils(ctx, tenant, in.ServiceId)
 	if err != nil {
-		util.LOGGER.Errorf(err, "Update tags failed for getting tags for service %s failed.", in.ServiceId)
+		util.LOGGER.Errorf(err, "update service tag failed, serviceId %s, tag %s: get tag failed.", in.ServiceId, tagFlag)
 		return &pb.UpdateServiceTagResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Get tags for serivce failed."),
 		}, err
 	}
 	//check tag 是否存在
 	if _, ok := tags[in.Key]; !ok {
-		util.LOGGER.Errorf(nil, "Update tag for service %s failed for update tags not exist,please add first.", in.ServiceId)
+		util.LOGGER.Errorf(nil, "update service tag failed, serviceId %s, tag %s: tag not exist,please add first.", in.ServiceId, tagFlag)
 		return &pb.UpdateServiceTagResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Update tag for service failed for update tags not exist,please add first."),
 		}, err
 	}
 	tags[in.Key] = in.Value
 
-	addResp, err := s.AddTags(ctx, &pb.AddServiceTagsRequest{
-		ServiceId: in.ServiceId,
-		Tags:      tags,
-	})
+	err = addTagIntoETCD(ctx, tenant, in.ServiceId, tags)
 
 	if err != nil {
-		util.LOGGER.Errorf(err, "update tag for service %s failed for adding service tags failed.", in.ServiceId)
+		util.LOGGER.Errorf(err, "update service tag failed, serviceId %s, tag %s: adding service tags failed.", in.ServiceId, tagFlag)
 		return &pb.UpdateServiceTagResponse{
-			Response: addResp.GetResponse(),
+			Response: pb.CreateResponse(pb.Response_FAIL, "Commit into etcd failed."),
 		}, err
 	}
 
-	util.LOGGER.Warnf(nil, "update tag for service %s successfully.", in.ServiceId)
+	util.LOGGER.Infof("update tag successful, serviceId %s, tag %s.", in.ServiceId, tagFlag)
 	return &pb.UpdateServiceTagResponse{
-		Response: addResp.GetResponse(),
+		Response: pb.CreateResponse(pb.Response_SUCCESS, "update service tag success."),
 	}, nil
+}
+
+func addTagIntoETCD(ctx context.Context, tenant string, serviceId string, dataTags map[string]string) error {
+	key := apt.GenerateServiceTagKey(tenant, serviceId)
+	data, err := json.Marshal(dataTags)
+	if err != nil {
+		util.LOGGER.Errorf(err, "add tag into etcd,serviceId %s:json marshal tag data failed.", serviceId)
+		return err
+	}
+
+	_, err = registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+		Action: registry.PUT,
+		Key:    []byte(key),
+		Value:  data,
+	})
+	if err != nil {
+		util.LOGGER.Errorf(err, "add tag into etcd,serviceId %s: commit tag data into etcd failed.", serviceId)
+		return err
+	}
+	return nil
 }
 
 func (s *ServiceController) DeleteTags(ctx context.Context, in *pb.DeleteServiceTagsRequest) (*pb.DeleteServiceTagsResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 || len(in.Keys) == 0 {
-		util.LOGGER.Errorf(nil, "delete service tags failed for invalid parameters.")
+		util.LOGGER.Errorf(nil, "delete service tags failed: invalid parameters.")
 		return &pb.DeleteServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "request format invalid"),
 		}, nil
 	}
 	err := apt.Validate(in)
 	if err != nil {
-		util.LOGGER.Errorf(err, "delete tags for service %s failed for validating parameters failed.", in.ServiceId)
+		util.LOGGER.Errorf(err, "delete service tags failed, serviceId %s, tags %v: invalid params.", in.ServiceId, in.Keys)
 		return &pb.DeleteServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
@@ -1448,7 +1466,7 @@ func (s *ServiceController) DeleteTags(ctx context.Context, in *pb.DeleteService
 	tenant := util.ParaseTenant(ctx)
 
 	if !s.ServiceExist(ctx, tenant, in.ServiceId) {
-		util.LOGGER.Errorf(nil, "delete service tags failed for service not exist.")
+		util.LOGGER.Errorf(nil, "delete service tags failed, serviceId %s, tags %v: service not exist.", in.ServiceId, in.Keys)
 		return &pb.DeleteServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
 		}, nil
@@ -1459,13 +1477,13 @@ func (s *ServiceController) DeleteTags(ctx context.Context, in *pb.DeleteService
 		Key:    []byte(apt.GenerateServiceTagKey(tenant, in.ServiceId)),
 	})
 	if err != nil {
-		util.LOGGER.Errorf(err, "delete tags for service %s failed for querying service tags failed.", in.ServiceId)
+		util.LOGGER.Errorf(err, "delete service tags failed, serviceId %s, tags %v: query service failed.", in.ServiceId, in.Keys)
 		return &pb.DeleteServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "get service tags file failed"),
 		}, err
 	}
 	if len(resp.Kvs) == 0 {
-		util.LOGGER.Errorf(nil, "delete tags for service %s failed for service tags not exist.", in.ServiceId)
+		util.LOGGER.Errorf(err, "delete service tags failed, serviceId %s, tags %v: tag not exist,can't delete.", in.ServiceId, in.Keys)
 		return &pb.DeleteServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "tags do not exist"),
 		}, nil
@@ -1474,14 +1492,14 @@ func (s *ServiceController) DeleteTags(ctx context.Context, in *pb.DeleteService
 	var tags map[string]string
 	err = json.Unmarshal(resp.Kvs[0].Value, &tags)
 	if err != nil {
-		util.LOGGER.Errorf(err, "delete tags for service %s failed for unmarshalling service tags failed.", in.ServiceId)
+		util.LOGGER.Errorf(err, "delete service tags failed, serviceId %s, tags %v: unmarshal tag data failed.", in.ServiceId, in.Keys)
 		return &pb.DeleteServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "unmarshal tags file failed"),
 		}, err
 	}
 	for _, key := range in.Keys {
 		if _, ok := tags[key]; !ok {
-			util.LOGGER.Errorf(err, "delete tags for service %s failed for this key %s does not exist.", in.ServiceId, key)
+			util.LOGGER.Errorf(nil, "delete service tags failed, serviceId %s, tags %v: tag %s not exist.", in.ServiceId, in.Keys, key)
 			return &pb.DeleteServiceTagsResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "Delete tags for service failed.for this key "+key+" does not exist"),
 			}, nil
@@ -1492,7 +1510,7 @@ func (s *ServiceController) DeleteTags(ctx context.Context, in *pb.DeleteService
 	// tags 可能size == 0
 	data, err := json.Marshal(tags)
 	if err != nil {
-		util.LOGGER.Errorf(err, "delete tags for service %s failed for marshalling service tags failed.", in.ServiceId)
+		util.LOGGER.Errorf(err, "delete service tags failed, serviceId %s, tags %v: marshall service tag failed.", in.ServiceId, in.Keys)
 		return &pb.DeleteServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "marshal service tags file failed"),
 		}, err
@@ -1507,13 +1525,13 @@ func (s *ServiceController) DeleteTags(ctx context.Context, in *pb.DeleteService
 		Value:  data,
 	})
 	if err != nil {
-		util.LOGGER.Errorf(err, "delete tags for service %s failed for committing operations failed.", in.ServiceId)
+		util.LOGGER.Errorf(err, "delete service tags failed, serviceId %s, tags %v: commit tag data into etcd failed.", in.ServiceId, in.Keys)
 		return &pb.DeleteServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "commit operations failed"),
 		}, err
 	}
 
-	util.LOGGER.Warnf(nil, "delete tags for service %s successfully.", in.ServiceId)
+	util.LOGGER.Infof("delete service tags successful: serviceId %s, tag %v.", in.ServiceId, in.Keys)
 	return &pb.DeleteServiceTagsResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "delete service tags successfully"),
 	}, nil
@@ -1521,13 +1539,14 @@ func (s *ServiceController) DeleteTags(ctx context.Context, in *pb.DeleteService
 
 func (s *ServiceController) GetTags(ctx context.Context, in *pb.GetServiceTagsRequest) (*pb.GetServiceTagsResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 {
+		util.LOGGER.Errorf(nil, "get service tags failed: invalid params.")
 		return &pb.GetServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "request format invalid"),
 		}, nil
 	}
 	err := apt.Validate(in)
 	if err != nil {
-		util.LOGGER.Errorf(err, "Get tags for service %s failed for validating parameters failed.", in.ServiceId)
+		util.LOGGER.Errorf(err, "get service tags failed, serviceId %s: invalid parameters.", in.ServiceId)
 		return &pb.GetServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
@@ -1536,7 +1555,7 @@ func (s *ServiceController) GetTags(ctx context.Context, in *pb.GetServiceTagsRe
 	tenant := util.ParaseTenant(ctx)
 
 	if !s.ServiceExist(ctx, tenant, in.ServiceId) {
-		util.LOGGER.Errorf(nil, "Get tags for service %s failed for service not exist.", in.ServiceId)
+		util.LOGGER.Errorf(err, "get service tags failed, serviceId %s: service not exist.", in.ServiceId)
 		return &pb.GetServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist"),
 		}, nil
@@ -1544,7 +1563,7 @@ func (s *ServiceController) GetTags(ctx context.Context, in *pb.GetServiceTagsRe
 
 	tags, err := GetTagsUtils(ctx, tenant, in.ServiceId)
 	if err != nil {
-		util.LOGGER.Errorf(err, "Get tags for service %s failed.", in.ServiceId)
+		util.LOGGER.Errorf(err, "get service tags failed, serviceId %s: get tag failed.", in.ServiceId)
 		return &pb.GetServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Get tags for serivce failed."),
 		}, err
@@ -1558,7 +1577,7 @@ func (s *ServiceController) GetTags(ctx context.Context, in *pb.GetServiceTagsRe
 
 func (s *ServiceController) GetSchemaInfo(ctx context.Context, request *pb.GetSchemaRequest) (*pb.GetSchemaResponse, error) {
 	if request == nil || len(request.ServiceId) == 0 || len(request.SchemaId) == 0 {
-		util.LOGGER.Errorf(nil, "Get schema failded,invalid request path.")
+		util.LOGGER.Errorf(nil, "get schema failed: invalid params.")
 		return &pb.GetSchemaResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Invalid request path."),
 		}, nil
@@ -1566,8 +1585,7 @@ func (s *ServiceController) GetSchemaInfo(ctx context.Context, request *pb.GetSc
 
 	err := apt.Validate(request)
 	if err != nil {
-		util.LOGGER.Errorf(err, "get schemas (serviceId:%s,schemaId:%s) failed for validating parameters failed.",
-			request.ServiceId, request.SchemaId)
+		util.LOGGER.Errorf(nil, "get schema failed, serviceId %s, schemaId %s: invalid params.", request.ServiceId, request.SchemaId)
 		return &pb.GetSchemaResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
@@ -1576,7 +1594,7 @@ func (s *ServiceController) GetSchemaInfo(ctx context.Context, request *pb.GetSc
 	tenant := util.ParaseTenant(ctx)
 
 	if !s.ServiceExist(ctx, tenant, request.ServiceId) {
-		util.LOGGER.Errorf(nil, "Get schema for service %s failed for service not exist.", request.ServiceId)
+		util.LOGGER.Errorf(nil, "get schema failed, serviceId %s, schemaId %s: service not exist.", request.ServiceId, request.SchemaId)
 		return &pb.GetSchemaResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist"),
 		}, nil
@@ -1588,13 +1606,13 @@ func (s *ServiceController) GetSchemaInfo(ctx context.Context, request *pb.GetSc
 		Key:    []byte(key),
 	})
 	if errDo != nil {
-		util.LOGGER.Errorf(nil, "Get schema failded,%s", errDo.Error())
+		util.LOGGER.Errorf(errDo, "get schema failed, serviceId %s, schemaId %s: get schema info failed.", request.ServiceId, request.SchemaId)
 		return &pb.GetSchemaResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Get schema info failded."),
 		}, errDo
 	}
 	if resp.Count == 0 {
-		util.LOGGER.Errorf(nil, "Get schema failded,do not have this schema info.%s", request.SchemaId)
+		util.LOGGER.Errorf(errDo, "get schema failed, serviceId %s, schemaId %s: schema not exists.", request.ServiceId, request.SchemaId)
 		return &pb.GetSchemaResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Do not have this schema info."),
 		}, nil
@@ -1607,15 +1625,14 @@ func (s *ServiceController) GetSchemaInfo(ctx context.Context, request *pb.GetSc
 
 func (s *ServiceController) DeleteSchema(ctx context.Context, request *pb.DeleteSchemaRequest) (*pb.DeleteSchemaResponse, error) {
 	if request == nil || len(request.ServiceId) == 0 || len(request.SchemaId) == 0 {
-		util.LOGGER.Errorf(nil, "Delete schema info failded,invalid request path.")
+		util.LOGGER.Errorf(nil, "delete schema failded: invalid params.")
 		return &pb.DeleteSchemaResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Invalid request path."),
 		}, nil
 	}
 	err := apt.Validate(request)
 	if err != nil {
-		util.LOGGER.Errorf(err, "Delete schema info [ serviceId: %s, schemaId: %s ] failed for validating param failed.",
-			request.ServiceId, request.SchemaId)
+		util.LOGGER.Errorf(err, "delete schema failded, serviceId %s, schemaId %s: invalid params.", request.ServiceId, request.SchemaId)
 		return &pb.DeleteSchemaResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
@@ -1623,7 +1640,7 @@ func (s *ServiceController) DeleteSchema(ctx context.Context, request *pb.Delete
 	tenant := util.ParaseTenant(ctx)
 
 	if !s.ServiceExist(ctx, tenant, request.ServiceId) {
-		util.LOGGER.Errorf(nil, "Delete schema for service %s failed for service not exist.", request.ServiceId)
+		util.LOGGER.Errorf(nil, "delete schema failded, serviceId %s, schemaId %s: service not exist.", request.ServiceId, request.SchemaId)
 		return &pb.DeleteSchemaResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist"),
 		}, nil
@@ -1632,13 +1649,13 @@ func (s *ServiceController) DeleteSchema(ctx context.Context, request *pb.Delete
 	key := apt.GenerateServiceSchemaKey(tenant, request.ServiceId, request.SchemaId)
 	err, exist := s.checkSchemaInfoExist(ctx, key)
 	if err != nil {
-		util.LOGGER.Errorf(nil, "Delete schema info failded.%s", err.Error())
+		util.LOGGER.Errorf(err, "delete schema failded, serviceId %s, schemaId %s: get schema failed.", request.ServiceId, request.SchemaId)
 		return &pb.DeleteSchemaResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Schema info does not exist."),
 		}, err
 	}
 	if !exist {
-		util.LOGGER.Errorf(nil, "Delete schema info failded.Invalid request.")
+		util.LOGGER.Errorf(nil, "delete schema failded, serviceId %s, schemaId %s: schema not exist.", request.ServiceId, request.SchemaId)
 		return &pb.DeleteSchemaResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Schema info does not exist."),
 		}, nil
@@ -1648,22 +1665,27 @@ func (s *ServiceController) DeleteSchema(ctx context.Context, request *pb.Delete
 		Key:    []byte(key),
 	})
 	if errDo != nil {
-		util.LOGGER.Errorf(nil, "Delete schema info failded.%s", errDo.Error())
+		util.LOGGER.Errorf(errDo, "delete schema failded, serviceId %s, schemaId %s: delete schema from etcd faild.", request.ServiceId, request.SchemaId)
 		return &pb.DeleteSchemaResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Delete schema info failded."),
 		}, errDo
 	}
-	util.LOGGER.Warnf(nil, "Delete schema info successfully.%s", request.SchemaId)
+	util.LOGGER.Infof("delete schema info successfully.%s", request.SchemaId)
 	return &pb.DeleteSchemaResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Delete schema info successfully."),
 	}, nil
 }
 
 func (s *ServiceController) ModifySchema(ctx context.Context, request *pb.ModifySchemaRequest) (*pb.ModifySchemaResponse, error) {
-	resp, rst := s.canModifySchema(ctx, request)
+	err, rst := s.canModifySchema(ctx, request)
+	if err != nil {
+		return &pb.ModifySchemaResponse{
+			Response: pb.CreateResponse(pb.Response_FAIL, "Modify schema info failded."),
+		}, err
+	}
 	if !rst {
 		return &pb.ModifySchemaResponse{
-			Response: resp,
+			Response: pb.CreateResponse(pb.Response_FAIL, "Modify schema info failded,service or schemaId not exist."),
 		}, nil
 	}
 
@@ -1675,46 +1697,43 @@ func (s *ServiceController) ModifySchema(ctx context.Context, request *pb.Modify
 		Value:  []byte(request.Schema),
 	})
 	if errDo != nil {
-		util.LOGGER.Errorf(nil, "Modify schema info failded.%s", errDo.Error())
+		util.LOGGER.Errorf(errDo, "update schema failded, serviceId %s, schemaId %s: commit schema into etcd failed.", request.ServiceId, request.SchemaId)
 		return &pb.ModifySchemaResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Modify schema info failded."),
 		}, errDo
 	}
-	util.LOGGER.Warnf(nil, "Modify schema info success.")
+	util.LOGGER.Infof("update schema success: serviceId %s, schemaId %s.", request.ServiceId, request.SchemaId)
 	return &pb.ModifySchemaResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Modify schema info success."),
 	}, nil
 
 }
 
-func (s *ServiceController) canModifySchema(ctx context.Context, request *pb.ModifySchemaRequest) (*pb.Response, bool) {
+func (s *ServiceController) canModifySchema(ctx context.Context, request *pb.ModifySchemaRequest) (error, bool) {
 	if request == nil || len(request.Schema) == 0 || len(request.SchemaId) == 0 || len(request.ServiceId) == 0 {
-		util.LOGGER.Errorf(nil, "Upload schema failded,Request format invalid.")
-		return pb.CreateResponse(pb.Response_FAIL, "Request format invalid"), false
+		util.LOGGER.Errorf(nil, "update schema failded: invalid params.")
+		return nil, false
 	}
 	err := apt.Validate(request)
 	if err != nil {
-		util.LOGGER.Errorf(err, "Upload schema [ serviceId: %s, schemaId: %s, schema: %s ] failed for validating param failed.",
-			request.ServiceId, request.SchemaId, request.Schema)
-		return pb.CreateResponse(pb.Response_FAIL, err.Error()), false
+		util.LOGGER.Errorf(err, "update schema failded, serviceId %s, schemaId %s: invalid params.", request.ServiceId, request.SchemaId)
+		return err, false
 	}
-	var serviceRequest pb.GetServiceRequest
-	serviceRequest.ServiceId = request.ServiceId
-	response, _ := s.GetOne(ctx, &serviceRequest)
-	if response.GetResponse().Code == pb.Response_FAIL {
-		util.LOGGER.Errorf(nil, response.GetResponse().Message)
-		return response.GetResponse(), false
+	tenant := util.ParaseTenant(ctx)
+	service, err := getServiceByServiceId(ctx, tenant, request.ServiceId)
+	if err != nil {
+		util.LOGGER.Errorf(err, "update schema failded, serviceId %s, schemaId %s: get service failed.", request.ServiceId, request.SchemaId)
+		return err, false
 	}
-	service := response.GetService()
 	if service == nil {
-		util.LOGGER.Errorf(nil, "Upload schema failded,get service faild,%s", request.SchemaId)
-		return pb.CreateResponse(pb.Response_FAIL, "Get service faild."), false
+		util.LOGGER.Errorf(nil, "update schema failded, serviceId %s, schemaId %s: service not exist,%s", request.ServiceId, request.SchemaId)
+		return nil, false
 	}
 	schemas := service.Schemas
 	if !containsValueInSlice(schemas, request.SchemaId) {
 		message := "Do not contain " + request.SchemaId + "Schema in service file."
-		util.LOGGER.Errorf(nil, "Upload schema failded.%s", message)
-		return pb.CreateResponse(pb.Response_FAIL, message), false
+		util.LOGGER.Errorf(nil, "update schema failded, serviceId %s, schemaId %s:%s", request.ServiceId, request.SchemaId, message)
+		return nil, false
 	}
 	return nil, true
 }

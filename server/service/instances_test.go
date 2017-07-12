@@ -14,10 +14,11 @@
 package service_test
 
 import (
+	pb "github.com/servicecomb/service-center/server/core/proto"
 	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	pb "github.com/servicecomb/service-center/server/core/proto"
+	"github.com/servicecomb/service-center/server/core"
 )
 
 var instanceId string
@@ -76,9 +77,9 @@ var _ = Describe("InstanceController", func() {
 						Endpoints: []string{
 							"rest:127.0.0.1:8080",
 						},
-						HostName:   "UT-HOST",
-						Status:     pb.MSI_UP,
-						Stage:      "prod",
+						HostName: "UT-HOST",
+						Status:   pb.MSI_UP,
+						Stage:    "prod",
 						Properties: map[string]string{"nodeIP": "test"},
 					},
 				})
@@ -111,6 +112,28 @@ var _ = Describe("InstanceController", func() {
 				Expect(respUpdateStatus.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 			})
 
+			It("批量心跳接口", func() {
+				fmt.Println("UT===========实例心跳上报批量接口， 参数校验")
+				resp, err := insResource.HeartbeatSet(getContext(), &pb.HeartbeatSetRequest{
+					Instances: []*pb.HeartbeatSetElement{
+
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+
+				fmt.Println("UT===========实例心跳上报批量接口")
+				resp, err = insResource.HeartbeatSet(getContext(), &pb.HeartbeatSetRequest{
+					Instances: []*pb.HeartbeatSetElement{
+						&pb.HeartbeatSetElement {
+							ServiceId: consumerId,
+							InstanceId: instanceId,
+						},
+					},
+				})
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			})
+
 			It("创建实例,参数校验", func() {
 				fmt.Println("UT===========创建实例， 参数校验")
 				resp, err := insResource.Register(getContext(), &pb.RegisterInstanceRequest{
@@ -126,6 +149,39 @@ var _ = Describe("InstanceController", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+			})
+
+			It("health", func() {
+				//注册sc
+				fmt.Println("UT===========health")
+
+				respCluterhealth, err := insResource.CluterHealth(getContext())
+				Expect(err).To(BeNil())
+				Expect(respCluterhealth.GetResponse().Code).To(Equal(pb.Response_FAIL))
+
+				resp, err := serviceResource.Create(getContext(), core.CreateServiceRequest())
+				Expect(err).To(BeNil())
+				scServiceId := resp.ServiceId
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+
+				//注册实例
+				respIns, err := insResource.Register(getContext(), &pb.RegisterInstanceRequest{
+					Instance: &pb.MicroServiceInstance{
+						ServiceId: scServiceId,
+						Endpoints: []string{
+							"rest:127.0.0.1:8080",
+						},
+						HostName: "UT-HOST",
+						Status:   pb.MSI_UP,
+						Stage:    "prod",
+					},
+				})
+				Expect(respIns.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+				respCluterhealth, err = insResource.CluterHealth(getContext())
+				Expect(err).To(BeNil())
+				Expect(respCluterhealth.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 			})
 
 			It("修改实例的status，参数校验", func() {
@@ -216,7 +272,7 @@ var _ = Describe("InstanceController", func() {
 						AppId:       "instance_validate",
 						Version:     "1.0.0",
 						Level:       "FRONT",
-						Status:      "UP",
+						Status: "UP",
 					},
 				})
 				Expect(err).To(BeNil())
@@ -225,9 +281,9 @@ var _ = Describe("InstanceController", func() {
 				resp, err := insResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						ServiceId: respCreate.ServiceId,
-						HostName:  "UT-HOST",
-						Status:    pb.MSI_UP,
-						Stage:     "prod",
+						HostName: "UT-HOST",
+						Status:   pb.MSI_UP,
+						Stage:    "prod",
 					},
 				})
 				Expect(err).To(BeNil())
@@ -254,8 +310,8 @@ var _ = Describe("InstanceController", func() {
 						Endpoints: []string{
 							"rest:127.0.0.1:8080",
 						},
-						Status: pb.MSI_UP,
-						Stage:  "prod",
+						Status:   pb.MSI_UP,
+						Stage:    "prod",
 					},
 				})
 				Expect(err).To(BeNil())
@@ -304,13 +360,13 @@ var _ = Describe("InstanceController", func() {
 				resp, err := insResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						ServiceId: consumerId,
-						HostName:  "UT-HOST",
-						Status:    pb.MSI_UP,
-						Stage:     "prod",
+						HostName: "UT-HOST",
+						Status:   pb.MSI_UP,
+						Stage:    "prod",
 						HealthCheck: &pb.HealthCheck{
-							Mode:     "push",
+							Mode: "push",
 							Interval: 30,
-							Times:    1,
+							Times: 1,
 						},
 					},
 				})
@@ -321,14 +377,14 @@ var _ = Describe("InstanceController", func() {
 				resp, err = insResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						ServiceId: consumerId,
-						HostName:  "UT-HOST",
-						Status:    pb.MSI_UP,
-						Stage:     "prod",
+						HostName: "UT-HOST",
+						Status:   pb.MSI_UP,
+						Stage:    "prod",
 						HealthCheck: &pb.HealthCheck{
-							Mode:     "pull",
+							Mode: "pull",
 							Interval: 30,
-							Times:    1,
-							Url:      "/abc/d",
+							Times: 1,
+							Url: "/abc/d",
 						},
 					},
 				})
@@ -339,13 +395,13 @@ var _ = Describe("InstanceController", func() {
 				resp, err = insResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						ServiceId: consumerId,
-						HostName:  "UT-HOST",
-						Status:    pb.MSI_UP,
-						Stage:     "prod",
+						HostName: "UT-HOST",
+						Status:   pb.MSI_UP,
+						Stage:    "prod",
 						HealthCheck: &pb.HealthCheck{
-							Mode:     "push",
+							Mode: "push",
 							Interval: 30,
-							Times:    0,
+							Times: 0,
 						},
 					},
 				})
@@ -356,14 +412,14 @@ var _ = Describe("InstanceController", func() {
 				resp, err = insResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						ServiceId: consumerId,
-						HostName:  "UT-HOST",
-						Status:    pb.MSI_UP,
-						Stage:     "prod",
+						HostName: "UT-HOST",
+						Status:   pb.MSI_UP,
+						Stage:    "prod",
 						HealthCheck: &pb.HealthCheck{
-							Mode:     "pull",
+							Mode: "pull",
 							Interval: 30,
-							Times:    1,
-							Url:      "*",
+							Times: 1,
+							Url: "*",
 						},
 					},
 				})
@@ -400,7 +456,7 @@ var _ = Describe("InstanceController", func() {
 					ServiceName:       "service_name_provider",
 					VersionRule:       "1.0.0+",
 					Tags:              []string{},
-					Stage:             "nonestage",
+					Stage:    "nonestage",
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + respFind.GetResponse().Message)
@@ -412,7 +468,7 @@ var _ = Describe("InstanceController", func() {
 					ServiceName:       "service_name_provider",
 					VersionRule:       "1.0.0+",
 					Tags:              []string{},
-					Stage:             "dev",
+					Stage:    "dev",
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + respFind.GetResponse().Message)
@@ -424,7 +480,7 @@ var _ = Describe("InstanceController", func() {
 					ServiceName:       "noneservice",
 					VersionRule:       "latest",
 					Tags:              []string{},
-					Stage:             "dev",
+					Stage:    "dev",
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + respFind.GetResponse().Message)
@@ -436,7 +492,7 @@ var _ = Describe("InstanceController", func() {
 					ServiceName:       "service_name_provider",
 					VersionRule:       "3.0.0+",
 					Tags:              []string{},
-					Stage:             "dev",
+					Stage:    "dev",
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + respFind.GetResponse().Message)
@@ -448,7 +504,7 @@ var _ = Describe("InstanceController", func() {
 					ServiceName:       "service_name_provider",
 					VersionRule:       "2.0.0-2.0.1",
 					Tags:              []string{},
-					Stage:             "dev",
+					Stage:    "dev",
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + respFind.GetResponse().Message)
@@ -460,7 +516,7 @@ var _ = Describe("InstanceController", func() {
 					ServiceName:       "service_name_provider",
 					VersionRule:       "2.0.0",
 					Tags:              []string{},
-					Stage:             "dev",
+					Stage:    "dev",
 				})
 				Expect(err).To(BeNil())
 
@@ -473,7 +529,7 @@ var _ = Describe("InstanceController", func() {
 					ServiceName:       "service_name_provider",
 					VersionRule:       "2.0.0",
 					Tags:              []string{},
-					Stage:             "dev",
+					Stage:    "dev",
 				})
 				Expect(err).To(BeNil())
 
@@ -504,7 +560,7 @@ var _ = Describe("InstanceController", func() {
 					ServiceName:       "service_name_provider",
 					VersionRule:       "latest",
 					Tags:              []string{},
-					Stage:             "dev",
+					Stage:    "dev",
 				})
 				fmt.Println("test resp.GetResponse() ", respFind.GetResponse())
 				Expect(err).To(BeNil())
@@ -517,7 +573,7 @@ var _ = Describe("InstanceController", func() {
 					ServiceName:       "service_name_provider",
 					VersionRule:       "1.0.0+",
 					Tags:              []string{},
-					Stage:             "dev",
+					Stage:    "dev",
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + respFind.GetResponse().Message)
@@ -529,7 +585,7 @@ var _ = Describe("InstanceController", func() {
 					ServiceName:       "service_name_provider",
 					VersionRule:       "1.0.0-1.0.1",
 					Tags:              []string{},
-					Stage:             "dev",
+					Stage:    "dev",
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp.GetResponse().Message)
@@ -541,7 +597,7 @@ var _ = Describe("InstanceController", func() {
 					ServiceName:       "service_name_provider",
 					VersionRule:       "1.0.0",
 					Tags:              []string{},
-					Stage:             "dev",
+					Stage:    "dev",
 				})
 				Expect(err).To(BeNil())
 
@@ -638,7 +694,6 @@ var _ = Describe("InstanceController", func() {
 					ServiceId:  consumerId,
 					InstanceId: "100000000000",
 				})
-				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
 			})
 
@@ -659,7 +714,7 @@ var _ = Describe("InstanceController", func() {
 				fmt.Println("UT===========查找实例，参数校验")
 				resp, err := insResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
 					ConsumerServiceId:  consumerId,
-					ProviderServiceId:  "",
+					ProviderServiceId: "",
 					ProviderInstanceId: instanceId,
 				})
 				Expect(err).To(BeNil())
@@ -669,7 +724,7 @@ var _ = Describe("InstanceController", func() {
 				fmt.Println("UT===========查找实例，参数校验,")
 				resp, err = insResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
 					ConsumerServiceId:  consumerId,
-					ProviderServiceId:  consumerId,
+					ProviderServiceId: consumerId,
 					ProviderInstanceId: instanceId,
 					Stage:              "dev",
 				})
@@ -697,7 +752,7 @@ var _ = Describe("InstanceController", func() {
 				fmt.Println("UT===========查找实例，参数校验")
 				resp, err := insResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
 					ConsumerServiceId:  crossAppId,
-					ProviderServiceId:  consumerId,
+					ProviderServiceId: consumerId,
 					ProviderInstanceId: instanceId,
 				})
 				Expect(err).To(BeNil())
@@ -709,7 +764,7 @@ var _ = Describe("InstanceController", func() {
 				fmt.Println("UT===========查找实例，参数校验")
 				resp, err := insResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
 					ConsumerServiceId:  consumerId,
-					ProviderServiceId:  consumerId,
+					ProviderServiceId: consumerId,
 					ProviderInstanceId: instanceId,
 				})
 				Expect(err).To(BeNil())
@@ -721,7 +776,7 @@ var _ = Describe("InstanceController", func() {
 			It("查找实例，参数校验", func() {
 				fmt.Println("UT===========查找实例，参数校验")
 				resp, err := insResource.GetInstances(getContext(), &pb.GetInstancesRequest{
-					ConsumerServiceId: "",
+					ConsumerServiceId:  "",
 					ProviderServiceId: instanceId,
 				})
 				Expect(err).To(BeNil())
@@ -729,19 +784,20 @@ var _ = Describe("InstanceController", func() {
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
 
 				resp, err = insResource.GetInstances(getContext(), &pb.GetInstancesRequest{
-					ConsumerServiceId: "noneservice",
+					ConsumerServiceId:  "noneservice",
 					ProviderServiceId: "noneservice",
-					Tags:              []string{},
-					Stage:             "prod",
+					Tags : []string {},
+					Stage: "prod",
+
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp.GetResponse().Message)
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
 
 				resp, err = insResource.GetInstances(getContext(), &pb.GetInstancesRequest{
-					ConsumerServiceId: consumerId,
+					ConsumerServiceId:  consumerId,
 					ProviderServiceId: providerId,
-					Tags:              []string{},
+					Tags : []string {},
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp.GetResponse().Message)
@@ -750,7 +806,7 @@ var _ = Describe("InstanceController", func() {
 		})
 	})
 
-	/*	Describe("getInstances", func() {
+/*	Describe("getInstances", func() {
 		Context("normal", func() {
 			It("WebSocketWatch", func() {
 				fmt.Println("UT===========WebSocketWatch")
@@ -783,8 +839,8 @@ var _ = Describe("InstanceController", func() {
 				//Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
 				respDeleteService, err := serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{
-					ServiceId: consumerId,
-					Force:     true,
+					ServiceId:  consumerId,
+					Force:      true,
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp.GetResponse().Message)

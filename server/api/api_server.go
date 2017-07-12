@@ -14,22 +14,22 @@
 package api
 
 import (
-	"errors"
-	"fmt"
-	"github.com/servicecomb/service-center/common/cron"
 	"github.com/servicecomb/service-center/server/core"
-	"github.com/servicecomb/service-center/server/core/mux"
 	pb "github.com/servicecomb/service-center/server/core/proto"
 	rs "github.com/servicecomb/service-center/server/rest"
-	"github.com/servicecomb/service-center/server/rest/handlers"
 	"github.com/servicecomb/service-center/util"
 	"github.com/servicecomb/service-center/util/rest"
+	"errors"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"net"
 	"net/http"
 	"strings"
+	"fmt"
+	"github.com/servicecomb/service-center/server/core/mux"
+	"github.com/servicecomb/service-center/server/rest/handlers"
+	"time"
 )
 
 var (
@@ -46,7 +46,7 @@ type APIServerConfig struct {
 }
 
 type APIServer struct {
-	Config *APIServerConfig
+	Config  *APIServerConfig
 
 	isClose bool
 	err     chan error
@@ -91,7 +91,7 @@ func (s *APIServer) startGrpcServer() {
 	util.LOGGER.Infof("listen on server %s", ipAddr)
 	ls, err := net.Listen("tcp", ipAddr)
 	if err != nil {
-		util.LOGGER.Error("error to start Grpc API server "+ipAddr, err)
+		util.LOGGER.Error("error to start Grpc API server " + ipAddr, err)
 		s.err <- err
 		return
 	}
@@ -115,22 +115,20 @@ func (s *APIServer) startRESTfulServer() {
 	}
 
 	if err != nil {
-		util.LOGGER.Error("error to start RESTful API server "+ipAddr, err)
+		util.LOGGER.Error("error to start RESTful API server " + ipAddr, err)
 		s.err <- err
 		return
 	}
 }
 
 func (s *APIServer) registerAPIServer() {
-	err := s.registryService()
-	if err != nil {
+	err := s.registryService(); if err != nil {
 		s.err <- err
 		return
 	}
 	// 实例信息
-	err = s.registryInstance()
-	if err != nil {
-		util.LOGGER.Error(fmt.Sprintf("error register sc instance %s", err), err)
+	err = s.registryInstance(); if err != nil {
+		util.LOGGER.Error(fmt.Sprintf("error register sc instance %s", err),err)
 		s.err <- err
 	}
 }
@@ -227,9 +225,8 @@ func (s *APIServer) doAPIServerHeartBeat() {
 		s.registryInstance()
 		return
 	}
-	util.LOGGER.Infof("update service center %s heartbeat %s successfully",
+	util.LOGGER.Debugf("update service center %s heartbeat %s successfully",
 		core.Instance.ServiceId, core.Instance.InstanceId)
-
 }
 
 // 需保证ETCD启动成功后才执行该方法
@@ -249,9 +246,12 @@ func (s *APIServer) StartAPIServer() {
 		go s.startGrpcServer()
 
 		// 心跳
-		cron.Every(uint64(core.Instance.HealthCheck.Interval)).Seconds().
-			Do(s.doAPIServerHeartBeat)
-		cron.Start()
+		go func () {
+			for {
+				<-time.After(time.Duration(core.Instance.HealthCheck.Interval) * time.Second)
+				s.doAPIServerHeartBeat()
+			}
+		} ()
 
 		util.LOGGER.Info("api server is ready")
 	}()

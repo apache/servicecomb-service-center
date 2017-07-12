@@ -14,10 +14,11 @@
 package rest
 
 import (
+	"github.com/servicecomb/service-center/util/rest"
 	"encoding/json"
 	"github.com/astaxie/beego"
-	"github.com/servicecomb/service-center/util/rest"
 	"net/http"
+	"github.com/servicecomb/service-center/util"
 )
 
 type Version struct {
@@ -37,17 +38,21 @@ type MainService struct {
 func (this *MainService) URLPatterns() []rest.Route {
 	return []rest.Route{
 		{rest.HTTP_METHOD_GET, "/version", this.GetVersion},
-		{rest.HTTP_METHOD_GET, "/health", this.CheckHealth},
+		{rest.HTTP_METHOD_GET, "/health", this.CluterHealth},
 	}
 }
 
-func (this *MainService) CheckHealth(w http.ResponseWriter, r *http.Request) {
-	result := Result{"Tenant mode:" + beego.AppConfig.String("tenant_mode"), http.StatusOK}
-	resultJSON, _ := json.Marshal(result)
+func (this *MainService) CluterHealth(w http.ResponseWriter, r *http.Request) {
+	resp, err := InstanceAPI.CluterHealth(r.Context())
+	if err != nil {
+		util.LOGGER.Error("health check failed", err)
+		WriteText(http.StatusInternalServerError, "health check failed", w)
+		return
+	}
 
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json;charset=utf-8")
-	w.Write([]byte(resultJSON))
+	respInternal := resp.Response
+	resp.Response = nil
+	WriteJsonResponse(respInternal, resp, err, w)
 }
 
 func (this *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {

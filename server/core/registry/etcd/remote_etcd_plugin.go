@@ -90,7 +90,7 @@ func (c *EtcdClient) Compact(ctx context.Context, revision int64) error {
 	if err != nil {
 		return err
 	}
-	util.LOGGER.Info(fmt.Sprintf("Compacted %v", resp))
+	util.LOGGER.Debugf(fmt.Sprintf("Compacted %v", resp))
 	return nil
 }
 
@@ -116,6 +116,9 @@ func (s *EtcdClient) toGetRequest(op *registry.PluginOp) []clientv3.OpOption {
 	}
 	if op.CountOnly {
 		opts = append(opts, clientv3.WithCountOnly())
+	}
+	if op.WithRev > 0 {
+		opts = append(opts, clientv3.WithRev(op.WithRev))
 	}
 	switch op.SortOrder {
 	case registry.SORT_ASCEND:
@@ -331,7 +334,7 @@ func (c *EtcdClient) LeaseRevoke(ctx context.Context, leaseID int64) error {
 	return nil
 }
 
-func (c *EtcdClient) Watch(ctx context.Context, op *registry.PluginOp, send func(message string, evt *mvccpb.Event) error) (err error) {
+func (c *EtcdClient) Watch(ctx context.Context, op *registry.PluginOp, send func(message string, evt *registry.PluginResponse) error) (err error) {
 	n := len(op.Key)
 	if n > 0 {
 		// 必须创建新的client连接
@@ -358,8 +361,7 @@ func (c *EtcdClient) Watch(ctx context.Context, op *registry.PluginOp, send func
 		for {
 			select {
 			case <-ctx.Done():
-				err = fmt.Errorf("time out to watch key %s", key)
-				util.LOGGER.Errorf(nil, err.Error())
+				util.LOGGER.Debugf("time out to watch key %s", key)
 				return
 			case resp = <-ws:
 				if err = resp.Err(); err != nil {
@@ -367,11 +369,18 @@ func (c *EtcdClient) Watch(ctx context.Context, op *registry.PluginOp, send func
 					return err
 				}
 				for _, evt := range resp.Events {
-					pbEvent := &mvccpb.Event{
-						Type:   evt.Type,
-						Kv:     evt.Kv,
-						PrevKv: evt.PrevKv,
+					pbEvent := &registry.PluginResponse{
+						Action:    registry.PUT,
+						Kvs:       []*mvccpb.KeyValue{evt.Kv},
+						PrevKv:    evt.PrevKv,
+						Count:     1,
+						Revision:  resp.Header.Revision,
+						Succeeded: true,
 					}
+					if evt.Type == mvccpb.DELETE {
+						pbEvent.Action = registry.DELETE
+					}
+
 					err = send("key information changed", pbEvent)
 					if err != nil {
 						util.LOGGER.Errorf(err, "stop to watch key %s", key)
