@@ -462,7 +462,7 @@ var _ = Describe("MicroService Api Test", func() {
 				Expect(err).To(BeNil())
 				defer resp.Body.Close()
 
-				Expect(resp.StatusCode).To(Equal(http.StatusInternalServerError))
+				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
 			})
 		})
 
