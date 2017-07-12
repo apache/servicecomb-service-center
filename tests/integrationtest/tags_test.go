@@ -22,7 +22,6 @@ import (
 	"github.com/widuu/gojson"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 	"strings"
 )
 
@@ -60,8 +59,7 @@ var _ = Describe("MicroService Api Test", func() {
 			Expect(resp.StatusCode).To(Equal(http.StatusOK))
 			respbody, _ := ioutil.ReadAll(resp.Body)
 			serviceId = gojson.Json(string(respbody)).Get("serviceId").Tostring()
-			serviceIdInt, _ := strconv.Atoi(serviceId)
-			Expect(serviceIdInt).Should(BeNumerically(">", 1))
+			Expect(len(serviceId)).Should(BeNumerically("==", 32))
 		})
 
 		AfterEach(func() {
