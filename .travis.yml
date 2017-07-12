@@ -21,18 +21,23 @@ before_install:
   - go get github.com/onsi/gomega/gbytes		
   - go get github.com/FiloSottile/gvt
   
-install: true
-
-script:
+before_script:
   - mkdir -p $HOME/gopath/src/github.com/servicecomb/service-center
   - rsync -az ${TRAVIS_BUILD_DIR}/ $HOME/gopath/src/github.com/servicecomb/service-center/
   - export TRAVIS_BUILD_DIR=$HOME/gopath/src/github.com/servicecomb/service-center
   - cd $HOME/gopath/src/github.com/servicecomb/service-center
   - gvt restore
-  - CGO_ENABLED=0 GO_EXTLINK_ENABLED=0 go build --ldflags '-w -extldflags "-static"' -o servicecenter
-  - bash -x tests/scripts/ut_test_in_docker.sh
-  - $HOME/gopath/bin/goveralls -coverprofile=coverage.txt -service=travis-ci
+  
+install: true
 
-    
+jobs:
+  include:
+    - stage: Building Service Center
+      script: CGO_ENABLED=0 GO_EXTLINK_ENABLED=0 go build --ldflags '-w -extldflags "-static"' -o servicecenter
+    - stage: Unit Testing
+      script: bash -x tests/scripts/ut_test_in_docker.sh && $HOME/gopath/bin/goveralls -coverprofile=coverage.txt -service=travis-ci
+    - stage: Integration Testing
+      script: bash -x tests/scripts/integration_test.sh    
+
 after_success:
   - bash <(curl -s https://codecov.io/bash)
