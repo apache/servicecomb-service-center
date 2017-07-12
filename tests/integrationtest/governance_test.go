@@ -19,7 +19,6 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/widuu/gojson"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"bytes"
@@ -62,8 +61,7 @@ var _ = Describe("MicroService Api Test", func() {
 			Expect(resp.StatusCode).To(Equal(http.StatusOK))
 			respbody, _ := ioutil.ReadAll(resp.Body)
 			serviceId = gojson.Json(string(respbody)).Get("serviceId").Tostring()
-			serviceIdInt, _ := strconv.Atoi(serviceId)
-			Expect(serviceIdInt).Should(BeNumerically(">", 1))
+			Expect(len(serviceId)).Should(BeNumerically("==", 32))
 
 			//Register MicroService Instance
 			endpoints := []string{"cse://127.0.0.1:9984"}
@@ -102,8 +100,7 @@ var _ = Describe("MicroService Api Test", func() {
 			Expect(resp.StatusCode).To(Equal(http.StatusOK))
 			respbody, _ = ioutil.ReadAll(resp.Body)
 			serviceInstanceID = gojson.Json(string(respbody)).Get("instanceId").Tostring()
-			serviceIdInt, _ = strconv.Atoi(serviceInstanceID)
-			Expect(serviceIdInt).Should(BeNumerically(">", 1))
+			Expect(len(serviceId)).Should(BeNumerically("==", 32))
 
 		})
 
