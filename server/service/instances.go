@@ -315,7 +315,7 @@ func heartbeatUtil(ctx context.Context, tenant string, serviceId string, instanc
 	}
 	if leaseID == -1 {
 		util.LOGGER.Errorf(err, "heartbeat failed, %s: instance not exist.", instanceFlag)
-		return errors.New("leaseId not exist, instance not exist."), false
+		return errors.New("leaseId not exist, instance not exist."), true
 	}
 	ttl, err := registry.GetRegisterCenter().LeaseRenew(ctx, leaseID)
 	if err != nil {
