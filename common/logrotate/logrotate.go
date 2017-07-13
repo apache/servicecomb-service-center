@@ -15,8 +15,8 @@ package traceutils
 
 import (
 	"archive/zip"
-	"github.com/servicecomb/service-center/util"
 	"fmt"
+	"github.com/servicecomb/service-center/util"
 	"io"
 	"os"
 	"path/filepath"
@@ -47,7 +47,7 @@ func removeFile(path string) error {
 	return nil
 }
 
-func  removeExceededFiles(path string, baseFileName string,
+func removeExceededFiles(path string, baseFileName string,
 	maxKeptCount int, rotateStage string) {
 	if maxKeptCount < 0 {
 		return
