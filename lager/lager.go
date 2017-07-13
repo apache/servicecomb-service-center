@@ -40,6 +40,8 @@ type Config struct {
 	RsyslogAddr    string
 
 	LogFormatText bool
+
+	EnableStdOut  bool
 }
 
 func GetConfig() *Config {
@@ -56,6 +58,7 @@ func DefaultConfig() *Config {
 		RsyslogNetwork: "udp",
 		RsyslogAddr:    "127.0.0.1:5140",
 		LogFormatText:  false,
+		EnableStdOut:   false,
 	}
 }
 
@@ -80,6 +83,7 @@ func Init(c Config) {
 		config.RsyslogAddr = c.RsyslogAddr
 	}
 
+	config.EnableStdOut = c.EnableStdOut
 	config.LogFormatText = c.LogFormatText
 }
 
@@ -105,8 +109,10 @@ func NewLoggerExt(component string, app_guid string) core.Logger {
 	}
 
 	logger := core.NewLoggerExt(component, config.LogFormatText)
-	sink := core.NewReconfigurableSink(core.NewWriterSink(os.Stdout, core.DEBUG), lagerLogLevel)
-	logger.RegisterSink(sink)
+	if config.EnableStdOut {
+		sink := core.NewReconfigurableSink(core.NewWriterSink(os.Stdout, core.DEBUG), lagerLogLevel)
+		logger.RegisterSink(sink)
+	}
 	if config.LoggerFile != "" {
 		file, err := os.OpenFile(config.LoggerFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 		if err != nil {

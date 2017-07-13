@@ -81,7 +81,7 @@ func init() {
 	nameRule := &validate.ValidateRule{Min: 1, Max: 128, Regexp: nameRegex}
 	nameFuzzyRule := &validate.ValidateRule{Min: 1, Max: 128, Regexp: nameFuzzyRegex}
 	versionFuzzyRule := &validate.ValidateRule{Min: 1, Max: 128, Regexp: versionFuzzyRegex}
-	tagRule := &validate.ValidateRule{Regexp: `^.+$`}
+	tagRule := &validate.ValidateRule{Regexp: `^[a-zA-Z][a-zA-Z0-9_\-\.]{0,63}$`}
 
 	MicroServiceKeyValidator.AddRule("AppId", &validate.ValidateRule{Min: 1, Max: 160, Regexp: nameRegex})
 	MicroServiceKeyValidator.AddRule("ServiceName", nameRule)

@@ -55,7 +55,7 @@ func (c *KvCacher) ListAndWatch() error {
 	}
 
 	watcher := c.lw.Watch(listOps)
-	util.LOGGER.Infof("finish to new watcher, key %s, list options: %+v, start rev: %d+1",
+	util.LOGGER.Debugf("finish to new watcher, key %s, list options: %+v, start rev: %d+1",
 		c.Cfg.Key, listOps, c.lw.Revision())
 	err := c.handleWatcher(watcher)
 	if err != nil {

@@ -74,7 +74,7 @@ func (this *RuleService) DeleteRule(w http.ResponseWriter, r *http.Request) {
 func (this *RuleService) UpdateRule(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		util.LOGGER.Error("bory err", err)
+		util.LOGGER.Error("body err", err)
 		WriteText(http.StatusBadRequest, "body error", w)
 		return
 	}

@@ -205,9 +205,11 @@ func (m *Locker) Unlock() (err error) {
 
 func Lock(key string) (*Locker, error) {
 	globalMux.Lock()
-	if _, ok := globalMap[key]; !ok {
-		globalMap[key] = New(fmt.Sprintf("%s%s", ROOT_PATH, key), -1)
+	lc, ok := globalMap[key]
+	if !ok {
+		lc = New(fmt.Sprintf("%s%s", ROOT_PATH, key), -1)
+		globalMap[key] = lc
 	}
 	globalMux.Unlock()
-	return globalMap[key].Lock()
+	return lc.Lock()
 }

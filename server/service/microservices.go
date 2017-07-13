@@ -171,20 +171,6 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 		}, nil
 	}
 
-	ok, err := quota.QuotaPlugins[beego.AppConfig.DefaultString("quota_plugin", "buildin")]().Apply4Quotas(ctx, quota.MicroServiceQuotaType, 0)
-	if err != nil {
-		util.LOGGER.Errorf(err, "create microservice failed, %s: check apply quota.operator:%s", serviceFlag, remoteIP)
-		return &pb.CreateServiceResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
-		}, err
-	}
-	if !ok {
-		util.LOGGER.Errorf(err, "create microservice failed, %s: no quota to apply.operator:%s", serviceFlag, remoteIP)
-		return &pb.CreateServiceResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, fmt.Sprintf("No quota to create service,service name is %s", in.Service.ServiceName)),
-		}, nil
-	}
-
 	tenant := util.ParaseTenant(ctx)
 
 	consumer := &pb.MicroServiceKey{
@@ -205,7 +191,8 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 		}, err
 	}
 
-	serviceId, err := GetServiceId(ctx, consumer)
+	serviceId := in.Service.ServiceId
+	serviceIdInner, err := GetServiceId(ctx, consumer)
 	if err != nil {
 		util.LOGGER.Errorf(err, "create microservice failed, %s:internel err,query service failed.operator:%s",
 			serviceFlag, remoteIP)
@@ -214,7 +201,7 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 			Response: pb.CreateResponse(pb.Response_FAIL, "query service key failed"),
 		}, err
 	}
-	if len(serviceId) > 0 {
+	if len(serviceIdInner) > 0 {
 		util.LOGGER.Errorf(nil, "create microservice failed, %s:service already exist.operator:%s",
 			serviceFlag, remoteIP)
 		lock.Unlock()
@@ -224,8 +211,24 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 		}, nil
 	}
 
+	ok, err := quota.QuotaPlugins[beego.AppConfig.DefaultString("quota_plugin", "buildin")]().Apply4Quotas(ctx, quota.MicroServiceQuotaType, 0)
+	if err != nil {
+		util.LOGGER.Errorf(err, "create microservice failed, %s: check apply quota.operator:%s", serviceFlag, remoteIP)
+		return &pb.CreateServiceResponse{
+			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
+		}, err
+	}
+	if !ok {
+		util.LOGGER.Errorf(err, "create microservice failed, %s: no quota to apply.operator:%s", serviceFlag, remoteIP)
+		return &pb.CreateServiceResponse{
+			Response: pb.CreateResponse(pb.Response_FAIL, fmt.Sprintf("No quota to create service,service name is %s", in.Service.ServiceName)),
+		}, nil
+	}
+
 	// 产生全局service id
-	serviceId = dynamic.GetServiceId()
+	if len(serviceId) == 0 {
+		serviceId = dynamic.GetServiceId()
+	}
 	service.ServiceId = serviceId
 	service.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
 
