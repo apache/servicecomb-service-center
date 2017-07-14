@@ -251,32 +251,39 @@ func (s *InstanceController) Unregister(ctx context.Context, in *pb.UnregisterIn
 		}, nil
 	}
 
-	leaseID, err := serviceUtil.GetLeaseId(ctx, tenant, serviceId, instanceId)
-	if leaseID == -1 && err == nil {
-		util.LOGGER.Errorf(nil, "unregister instance failed, instance %s, operator %s: instance not exist.", instanceFlag, remoteIP)
+	err, isInnerErr := revokeInstance(ctx, tenant, serviceId, instanceId)
+	if err != nil {
+		util.LOGGER.Errorf(nil, "unregister instance failed, instance %s, operator %s: revoke instance failed.", instanceFlag, remoteIP)
+		if isInnerErr {
+			return &pb.UnregisterInstanceResponse{
+				Response: pb.CreateResponse(pb.Response_FAIL, "revoke instance failed"),
+			}, err
+		}
 		return &pb.UnregisterInstanceResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "service instance does not exist"),
+			Response: pb.CreateResponse(pb.Response_FAIL, "revoke instance failed"),
 		}, nil
-	}
-	if err != nil {
-		util.LOGGER.Errorf(err, "unregister instance failed, instance %s, operator %s: query instance lease failed.", instanceFlag, remoteIP)
-		return &pb.UnregisterInstanceResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "query service instance lease failed"),
-		}, err
-	}
-
-	err = registry.GetRegisterCenter().LeaseRevoke(ctx, leaseID)
-	if err != nil {
-		util.LOGGER.Errorf(err, "unregister instance failed, instance %s, operator %s: commit lease rovoke failed.", instanceFlag, remoteIP)
-		return &pb.UnregisterInstanceResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "commit operations failed"),
-		}, err
 	}
 
 	util.LOGGER.Infof("unregister instance successful isntance %s, operator %s.", instanceFlag, remoteIP)
 	return &pb.UnregisterInstanceResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "unregister service instance successfully"),
 	}, nil
+}
+
+func revokeInstance(ctx context.Context, tenant string, serviceId string, instanceId string) (err error, isInnerErr bool) {
+	leaseID, err := serviceUtil.GetLeaseId(ctx, tenant, serviceId, instanceId)
+	if err != nil {
+		return err, true
+	}
+	if leaseID == -1 {
+		return errors.New("instance's leaseId not exist."), false
+	}
+
+	err = registry.GetRegisterCenter().LeaseRevoke(ctx, leaseID)
+	if err != nil {
+		return err, true
+	}
+	return nil, false
 }
 
 func (s *InstanceController) Heartbeat(ctx context.Context, in *pb.HeartbeatRequest) (*pb.HeartbeatResponse, error) {
@@ -292,7 +299,7 @@ func (s *InstanceController) Heartbeat(ctx context.Context, in *pb.HeartbeatRequ
 	err, isInnerErr := heartbeatUtil(ctx, tenant, in.ServiceId, in.InstanceId)
 	if err != nil {
 		util.LOGGER.Errorf(nil, "heartbeat failed,instance %s: instance not exist.", instanceFlag)
-		if !isInnerErr {
+		if isInnerErr {
 			return &pb.HeartbeatResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "service instance does not exist"),
 			}, err
@@ -315,7 +322,7 @@ func heartbeatUtil(ctx context.Context, tenant string, serviceId string, instanc
 	}
 	if leaseID == -1 {
 		util.LOGGER.Errorf(err, "heartbeat failed, %s: instance not exist.", instanceFlag)
-		return errors.New("leaseId not exist, instance not exist."), true
+		return errors.New("leaseId not exist, instance not exist."), false
 	}
 	ttl, err := registry.GetRegisterCenter().LeaseRenew(ctx, leaseID)
 	if err != nil {
@@ -391,7 +398,7 @@ func (s *InstanceController) HeartbeatSet(ctx context.Context, in *pb.HeartbeatS
 }
 
 func (s *InstanceController) GetOneInstance(ctx context.Context, in *pb.GetOneInstanceRequest) (*pb.GetOneInstanceResponse, error) {
-	ok, err, isInternalErr := s.getInstancePreCheck(ctx, in)
+	err, isInternalErr := s.getInstancePreCheck(ctx, in)
 	if err != nil {
 		if isInternalErr {
 			util.LOGGER.Errorf(err, "get instance failed: pre check failed.")
@@ -405,12 +412,6 @@ func (s *InstanceController) GetOneInstance(ctx context.Context, in *pb.GetOneIn
 		}, nil
 	}
 	conPro := strings.Join([]string{in.ConsumerServiceId, in.ProviderServiceId, in.ProviderInstanceId}, "--")
-	if !ok {
-		util.LOGGER.Errorf(err, "get instance failed, consId--proviId--proInsId:%s:can't access this service's instance for this consumer.", conPro)
-		return &pb.GetOneInstanceResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Can not access this service's instance for your consumer."),
-		}, nil
-	}
 
 	tenant := util.ParaseTenant(ctx)
 
@@ -451,17 +452,15 @@ func (s *InstanceController) GetOneInstance(ctx context.Context, in *pb.GetOneIn
 	}, nil
 }
 
-func (s *InstanceController) getInstancePreCheck(ctx context.Context, in interface{}) (ok bool, err error, IsInnerErr bool) {
+func (s *InstanceController) getInstancePreCheck(ctx context.Context, in interface{}) (err error, IsInnerErr bool) {
 	err = apt.Validate(in)
 	if err != nil {
-		return false, err, false
+		return err, false
 	}
 	var providerServiceId, consumerServiceId string
 	var tags []string
 	tenant := util.ParaseTenant(ctx)
-	if in == nil {
-		return false, errors.New("Request format invalid."), false
-	}
+
 	switch in.(type) {
 	case *pb.GetOneInstanceRequest:
 		providerServiceId = in.(*pb.GetOneInstanceRequest).ProviderServiceId
@@ -474,18 +473,18 @@ func (s *InstanceController) getInstancePreCheck(ctx context.Context, in interfa
 	}
 
 	if !s.serviceCtrl.ServiceExist(ctx, tenant, providerServiceId) {
-		return false, errors.New(fmt.Sprintf("Service does not exist.Service id is %s", providerServiceId)), false
+		return errors.New(fmt.Sprintf("Service does not exist.Service id is %s", providerServiceId)), false
 	}
 
 	// Tag过滤
 	if len(tags) > 0 {
 		tagsFromETCD, err := GetTagsUtils(ctx, tenant, providerServiceId)
 		if err != nil {
-			return false, err, true
+			return err, true
 		}
 		for _, tag := range tags {
 			if _, ok := tagsFromETCD[tag]; !ok {
-				return false, errors.New(fmt.Sprintf("provider's tag not contain %s", tag)), false
+				return errors.New(fmt.Sprintf("provider's tag not contain %s", tag)), false
 			}
 		}
 	}
@@ -496,7 +495,7 @@ func (s *InstanceController) getInstancePreCheck(ctx context.Context, in interfa
 }
 
 func (s *InstanceController) GetInstances(ctx context.Context, in *pb.GetInstancesRequest) (*pb.GetInstancesResponse, error) {
-	ok, err, isInternalErr := s.getInstancePreCheck(ctx, in)
+	err, isInternalErr := s.getInstancePreCheck(ctx, in)
 	if err != nil {
 		if isInternalErr {
 			util.LOGGER.Errorf(err, "get instances failed: pre check failed.")
@@ -510,12 +509,6 @@ func (s *InstanceController) GetInstances(ctx context.Context, in *pb.GetInstanc
 		}, nil
 	}
 	conPro := strings.Join([]string{in.ConsumerServiceId, in.ProviderServiceId}, "--")
-	if !ok {
-		util.LOGGER.Errorf(nil, "get instances failed, con--pro %s: can't access instances.", conPro)
-		return &pb.GetInstancesResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Can not access this service's instances for your consumer."),
-		}, nil
-	}
 
 	tenant := util.ParaseTenant(ctx)
 	errAddDependence := s.addDependenceForService(ctx, tenant, in.ConsumerServiceId, in.ProviderServiceId)
@@ -523,7 +516,7 @@ func (s *InstanceController) GetInstances(ctx context.Context, in *pb.GetInstanc
 		util.LOGGER.Errorf(errAddDependence, "get instances failed, con--pro %s: add dependency failed.", conPro)
 		return &pb.GetInstancesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, errAddDependence.Error()),
-		}, nil
+		}, errAddDependence
 	}
 
 	instances := []*pb.MicroServiceInstance{}
@@ -532,7 +525,7 @@ func (s *InstanceController) GetInstances(ctx context.Context, in *pb.GetInstanc
 		util.LOGGER.Errorf(err, "get instances failed, con--pro %s: get instances from etcd failed.", conPro)
 		return &pb.GetInstancesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, errAddDependence.Error()),
-		}, nil
+		}, err
 	}
 	return &pb.GetInstancesResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "query service instances successfully"),
@@ -662,7 +655,7 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 			Tags:              in.Tags,
 			Stage:             in.Stage,
 		})
-		if err != nil || resp.GetResponse().Code != pb.Response_SUCCESS {
+		if err != nil {
 			util.LOGGER.Errorf(err, "find instance failed, %s: get service %s 's instance failed.", findFlag, serviceId)
 			return &pb.FindInstancesResponse{
 				Response: resp.GetResponse(),
@@ -724,7 +717,6 @@ func (s *InstanceController) UpdateStatus(ctx context.Context, in *pb.UpdateInst
 			Response: pb.CreateResponse(pb.Response_FAIL, "request format invalid"),
 		}, nil
 	}
-	//project := in.Project
 	tenant := util.ParaseTenant(ctx)
 	updateStatusFlag := strings.Join([]string{in.ServiceId, in.InstanceId, in.Status}, "--")
 	if !apt.InstanseStatusRule.Match(in.Status) {
@@ -734,12 +726,7 @@ func (s *InstanceController) UpdateStatus(ctx context.Context, in *pb.UpdateInst
 		}, nil
 	}
 
-	// query lease
 	var err error
-	var leaseID int64
-	//project := in.Project
-	serviceId := in.ServiceId
-	instanceId := in.InstanceId
 
 	var instance *pb.MicroServiceInstance
 	instance, err = serviceUtil.GetInstance(ctx, tenant, in.ServiceId, in.InstanceId)
@@ -756,51 +743,18 @@ func (s *InstanceController) UpdateStatus(ctx context.Context, in *pb.UpdateInst
 		}, nil
 	}
 
-	// query lease
-	leaseID, err = serviceUtil.GetLeaseId(ctx, tenant, serviceId, instanceId)
-	if err != nil {
-		util.LOGGER.Errorf(err, "update instance status failed, %s: get instance leaseId failed.", in.ServiceId, in.InstanceId)
-		return &pb.UpdateInstanceStatusResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Update service instance properties failed"),
-		}, err
-	}
-
-	if leaseID == -1 {
-		util.LOGGER.Errorf(nil, "update instance status failed, %s: leaseId not exist, instance not exist.", updateStatusFlag)
-		return &pb.UpdateInstanceStatusResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Update service instance properties failed"),
-		}, nil
-	}
-
-	key := apt.GenerateInstanceKey(tenant, in.ServiceId, in.InstanceId)
 	instance.Status = in.Status
 
-	data, err := json.Marshal(instance)
+	err, isInnerErr := updateInstanceLease(ctx, tenant, instance)
 	if err != nil {
-		util.LOGGER.Errorf(err, "update instance status failed, %s: marshal instance failed.", updateStatusFlag)
+		util.LOGGER.Errorf(err, "update instance status failed, %s: update instance lease failed.", updateStatusFlag)
+		if isInnerErr {
+			return &pb.UpdateInstanceStatusResponse{
+				Response: pb.CreateResponse(pb.Response_FAIL, "update instance status failed"),
+			}, err
+		}
 		return &pb.UpdateInstanceStatusResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "service instance file marshal failed"),
-		}, err
-	}
-	_, err = registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action: registry.PUT,
-		Key:    []byte(key),
-		Value:  data,
-		Lease:  leaseID,
-	})
-	if err != nil {
-		util.LOGGER.Errorf(err, "update instance status failed, %s: commit data into etcd failed.", updateStatusFlag)
-		return &pb.UpdateInstanceStatusResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "update service instance information failed"),
-		}, err
-	}
-
-	_, err = registry.GetRegisterCenter().LeaseRenew(ctx, leaseID)
-	if err != nil {
-		util.LOGGER.Errorf(err, "update instance status failed, %s: renew leaseId failed.", updateStatusFlag)
-		return &pb.UpdateInstanceStatusResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL,
-				fmt.Sprintf("service instance does not exist(%s)", err.Error())),
+			Response: pb.CreateResponse(pb.Response_FAIL, "update instance status failed"),
 		}, nil
 	}
 
@@ -819,11 +773,7 @@ func (s *InstanceController) UpdateInstanceProperties(ctx context.Context, in *p
 	}
 
 	var err error
-	var leaseID int64
-	//project := in.Project
 	tenant := util.ParaseTenant(ctx)
-	serviceId := in.ServiceId
-	instanceId := in.InstanceId
 	instanceFlag := strings.Join([]string{in.ServiceId, in.InstanceId}, "--")
 
 	var instance *pb.MicroServiceInstance
@@ -842,48 +792,21 @@ func (s *InstanceController) UpdateInstanceProperties(ctx context.Context, in *p
 		}, nil
 	}
 
-	// query lease
-	leaseID, err = serviceUtil.GetLeaseId(ctx, tenant, serviceId, instanceId)
-	if err != nil {
-		util.LOGGER.Errorf(err, "update instance properties failed, %s: get leaseId from etcd failed.", instanceFlag)
-		return &pb.UpdateInstancePropsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Update service instance properties failed"),
-		}, err
-	}
-
-	key := apt.GenerateInstanceKey(tenant, in.ServiceId, in.InstanceId)
-
 	instance.Properties = map[string]string{}
 	for property := range in.Properties {
 		instance.Properties[property] = in.Properties[property]
 	}
 
-	data, err := json.Marshal(instance)
+	err, isInnerErr := updateInstanceLease(ctx, tenant, instance)
 	if err != nil {
-		util.LOGGER.Errorf(err, "update instance properties failed, %s: json marshal instance failed.", instanceFlag)
+		util.LOGGER.Errorf(err, "update instance properties failed, %s: update instance lease failed.", instanceFlag)
+		if isInnerErr {
+			return &pb.UpdateInstancePropsResponse{
+				Response: pb.CreateResponse(pb.Response_FAIL, "update instance lease failed"),
+			}, err
+		}
 		return &pb.UpdateInstancePropsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "service instance file marshal failed"),
-		}, err
-	}
-	_, err = registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action: registry.PUT,
-		Key:    []byte(key),
-		Value:  data,
-		Lease:  leaseID,
-	})
-	if err != nil {
-		util.LOGGER.Errorf(err, "update instance properties failed, %s: commit data into etcd failed.", instanceFlag)
-		return &pb.UpdateInstancePropsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "update service instance information failed"),
-		}, err
-	}
-
-	_, err = registry.GetRegisterCenter().LeaseRenew(ctx, leaseID)
-	if err != nil {
-		util.LOGGER.Errorf(err, "update instance properties failed, %s: renew lease failed.", instanceFlag)
-		return &pb.UpdateInstancePropsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL,
-				fmt.Sprintf("service instance does not exist(%s)", err.Error())),
+			Response: pb.CreateResponse(pb.Response_FAIL, "update instance lease failed"),
 		}, nil
 	}
 
@@ -891,6 +814,38 @@ func (s *InstanceController) UpdateInstanceProperties(ctx context.Context, in *p
 	return &pb.UpdateInstancePropsResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "update service instance information successfully"),
 	}, nil
+}
+
+func updateInstanceLease(ctx context.Context, tenant string, instance *pb.MicroServiceInstance) (err error, isInnerErr bool){
+	leaseID, err := serviceUtil.GetLeaseId(ctx, tenant, instance.ServiceId, instance.InstanceId)
+	if err != nil {
+		return err, true
+	}
+	if leaseID == -1 {
+		return errors.New("Instance's leaseId not exist."), false
+	}
+
+	data, err := json.Marshal(instance)
+	if err != nil {
+		return err, true
+	}
+
+	key := apt.GenerateInstanceKey(tenant, instance.ServiceId, instance.InstanceId)
+	_, err = registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+		Action: registry.PUT,
+		Key:    []byte(key),
+		Value:  data,
+		Lease:  leaseID,
+	})
+	if err != nil {
+		return err, true
+	}
+
+	_, err = registry.GetRegisterCenter().LeaseRenew(ctx, leaseID)
+	if err != nil {
+		return err, true
+	}
+	return nil, false
 }
 
 func (s *InstanceController) Watch(in *pb.WatchInstanceRequest, stream pb.ServiceInstanceCtrl_WatchServer) error {

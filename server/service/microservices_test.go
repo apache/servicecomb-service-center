@@ -78,6 +78,24 @@ var _ = Describe("ServiceController", func() {
 				Expect(err).To(BeNil())
 				fmt.Println("UT=============" + resp.String())
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+
+				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceId:   "custom_Id",
+						ServiceName: "some-relay1",
+						Alias:       "sr",
+						AppId:       "default",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Schemas: []string{
+							"xxxxxxxx",
+						},
+						Status: "UP",
+					},
+				})
+				Expect(err).To(BeNil())
+				fmt.Println("UT=============" + resp.String())
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
 			})
 
 			It("微服务是否存在,参数校验", func() {

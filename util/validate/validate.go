@@ -20,6 +20,7 @@ import (
 	"reflect"
 	"regexp"
 	"strconv"
+	"unicode/utf8"
 )
 
 type ValidateRule struct {
@@ -68,7 +69,7 @@ func (v *ValidateRule) Match(s interface{}) bool {
 	if v.Max > 0 && !invalid {
 		switch sv.Kind() {
 		case reflect.String:
-			invalid = len(sv.String()) > v.Max
+			invalid = utf8.RuneCountInString(sv.String()) > v.Max
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 			invalid = sv.Int() > int64(v.Max)
 		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
@@ -86,7 +87,7 @@ func (v *ValidateRule) Match(s interface{}) bool {
 		case reflect.Slice, reflect.Map, reflect.Array:
 			invalid = sv.Len() > v.Length
 		case reflect.String:
-			invalid = len(sv.String()) > v.Length
+			invalid = utf8.RuneCountInString(sv.String()) > v.Length
 		default:
 			invalid = false
 		}

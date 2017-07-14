@@ -26,11 +26,13 @@ func initLogger() {
                 enableRsyslog = false
         }
 
+        enableStdOut := beego.AppConfig.DefaultString("runmode", "prod") == "dev"
         util.InitLogger(loggerName, &lager.Config{
                 LoggerLevel:   beego.AppConfig.String("loglevel"),
                 LoggerFile:    loggerFile,
                 EnableRsyslog: enableRsyslog,
                 LogFormatText: logFormatText,
+		EnableStdOut:  enableStdOut,
         })
 }
 

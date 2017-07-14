@@ -40,7 +40,7 @@ func (this *TagService) URLPatterns() []rest.Route {
 func (this *TagService) AddTags(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		util.LOGGER.Error("bory err", err)
+		util.LOGGER.Error("body err", err)
 		WriteText(http.StatusInternalServerError, fmt.Sprintf("body error %s", err.Error()), w)
 		return
 	}

@@ -74,7 +74,7 @@ var _ = Describe("ServiceController", func() {
 					ServiceId: serviceId,
 					Tags: map[string]string{
 						"a": "test",
-						"b": "is b",
+						"b": "b",
 					},
 				})
 				Expect(err).To(BeNil())

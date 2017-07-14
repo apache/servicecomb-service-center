@@ -28,22 +28,22 @@ import (
 )
 
 
-func Accessible(ctx context.Context, tenant string, consumerID string, providerID string) (ok bool, err error, isInnerErr bool) {
+func Accessible(ctx context.Context, tenant string, consumerID string, providerID string) (err error, isInnerErr bool) {
 	consumerService, err := getServiceByServiceId(ctx, tenant, consumerID)
 	if err != nil {
-		return false, err, true
+		return err, true
 	}
 	if consumerService == nil {
-		return false, fmt.Errorf("consumer invalid"), false
+		return fmt.Errorf("consumer invalid"), false
 	}
 
 	// 跨应用权限
 	providerService, err := getServiceByServiceId(ctx, tenant, providerID)
 	if err != nil {
-		return false, err, true
+		return err, true
 	}
 	if providerService == nil {
-		return false, fmt.Errorf("provider invalid"), false
+		return fmt.Errorf("provider invalid"), false
 	}
 
 	providerFlag := strings.Join([]string{providerService.AppId, providerService.ServiceName, providerService.Version}, "--")
@@ -52,20 +52,20 @@ func Accessible(ctx context.Context, tenant string, consumerID string, providerI
 		if len(providerService.Properties) == 0 {
 			util.LOGGER.Warnf(nil, "consumer %s can't access provider %s, different appid",
 				consumerFlag, providerFlag)
-			return false, errors.New("different appID can't access"), false
+			return errors.New("different appID can't access"), false
 		}
 
 		if allowCrossApp, ok := providerService.Properties[pb.PROP_ALLOW_CROSS_APP]; !ok || strings.ToLower(allowCrossApp) != "true" {
 			util.LOGGER.Warnf(nil, "consumer %s can't access provider %s, different appid, no allowCrossApp defined in property",
 				consumerFlag, providerFlag)
-			return false, errors.New("different appID can't access"), false
+			return errors.New("different appID can't access"), false
 		}
 	}
 
 	// 黑白名单
 	validateTags, err := GetTagsUtils(ctx, tenant, consumerService.ServiceId)
 	if err != nil {
-		return false, err, true
+		return err, true
 	}
 
 	ruleResp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
@@ -74,7 +74,7 @@ func Accessible(ctx context.Context, tenant string, consumerID string, providerI
 		WithPrefix: true,
 	})
 	if err != nil {
-		return false, fmt.Errorf("query service rules failed,%s", err), true
+		return fmt.Errorf("query service rules failed,%s", err), true
 	}
 
 	tagPattern := "tag_(.*)"
@@ -85,7 +85,7 @@ func Accessible(ctx context.Context, tenant string, consumerID string, providerI
 		var value string
 		err := json.Unmarshal(kv.Value, &rule)
 		if err != nil {
-			return false, fmt.Errorf("unmarshal service rules failed,%s", err), true
+			return fmt.Errorf("unmarshal service rules failed,%s", err), true
 		}
 		tagRule, _ := regexp.MatchString(tagPattern, rule.Attribute)
 		if tagRule {
@@ -98,7 +98,7 @@ func Accessible(ctx context.Context, tenant string, consumerID string, providerI
 		}
 		if len(value) == 0 {
 			util.LOGGER.Errorf(nil, "get attribute %s matched value is empty.", rule.Attribute)
-			return false, errors.New("can't access, get attribute matched value is empty"), false
+			return errors.New("can't access, get attribute matched value is empty"), false
 		}
 
 		switch rule.RuleType {
@@ -107,21 +107,21 @@ func Accessible(ctx context.Context, tenant string, consumerID string, providerI
 			match, _ := regexp.MatchString(rule.Pattern, value)
 			util.LOGGER.Debugf("match is %t, rule.Pattern is %s, value is %s", match, rule.Pattern, value)
 			if match {
-				return true, nil, false
+				return nil, false
 			}
 
 		case "BLACK":
 			match, _ := regexp.MatchString(rule.Pattern, value)
 			if match {
 				util.LOGGER.Warnf(nil, "match black list %s, can't access.consumer %s, provider %s", rule.Pattern, consumerFlag, providerFlag)
-				return false, errors.New("match black list,can't access."), false
+				return errors.New("match black list,can't access."), false
 			}
 		}
 
 	}
 	if hasWhite {
 		util.LOGGER.Warnf(nil, "not match white list , can't access.consumer %s, provider %s", consumerFlag, providerFlag)
-		return false, errors.New("not match white list,can't access."), false
+		return errors.New("not match white list,can't access."), false
 	}
-	return true, nil, false
+	return nil, false
 }
