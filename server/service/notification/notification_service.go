@@ -222,9 +222,9 @@ func (s *NotifyService) WatchTenants() {
 //SC 负责监控所有实例变化
 func (s *NotifyService) WatchInstance(instanceWatchByTenantKey string) {
 	registry.NewKvCacher(&registry.KvCacherConfig{
-		Key: instanceWatchByTenantKey,
-		Timeout:     DEFAULT_LISTWATCH_TIMEOUT,
-		Period:      time.Second,
+		Key:     instanceWatchByTenantKey,
+		Timeout: DEFAULT_LISTWATCH_TIMEOUT,
+		Period:  time.Second,
 		OnEvent: func(action pb.EventType, kv *mvccpb.KeyValue) error {
 			providerId, providerInstanceId, tenantProject, data := pb.GetInfoFromInstChangedEvent(kv)
 			if data == nil {

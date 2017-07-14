@@ -17,10 +17,10 @@ import (
 	"fmt"
 	"os"
 
-	"strings"
-	"time"
 	"github.com/servicecomb/service-center/lager"
 	"github.com/servicecomb/service-center/lager/core"
+	"strings"
+	"time"
 )
 
 //log var

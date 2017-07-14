@@ -32,16 +32,16 @@ type ValidateRule struct {
 
 func (v *ValidateRule) String() string {
 	toString := "rule: {"
-	if (v.Min != 0) {
+	if v.Min != 0 {
 		toString = fmt.Sprintf("%s Min: %d,", toString, v.Min)
 	}
-	if (v.Max != 0) {
+	if v.Max != 0 {
 		toString = fmt.Sprintf("%s Max: %d,", toString, v.Max)
 	}
-	if (v.Length != 0) {
+	if v.Length != 0 {
 		toString = fmt.Sprintf("%s Length: %d,", toString, v.Length)
 	}
-	if (len(v.Regexp) != 0) {
+	if len(v.Regexp) != 0 {
 		toString = fmt.Sprintf("%s RegEx: %s }", toString, v.Regexp)
 	}
 	return toString

@@ -41,7 +41,7 @@ type Config struct {
 
 	LogFormatText bool
 
-	EnableStdOut  bool
+	EnableStdOut bool
 }
 
 func GetConfig() *Config {
