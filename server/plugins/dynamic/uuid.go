@@ -4,7 +4,7 @@ import (
 	"github.com/servicecomb/service-center/plugins"
 	"github.com/servicecomb/service-center/util"
 	"github.com/servicecomb/service-center/util/uuid"
-        "strings"
+	"strings"
 )
 
 func buildinUnidFunc() string {

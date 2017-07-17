@@ -815,8 +815,8 @@ var _ = Describe("InstanceController", func() {
 
 				fmt.Println("UT===========查找实例，含有不存在的tag")
 				respAddTag, err := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
-					ServiceId:  consumerId,
-					Tags:  map[string]string{
+					ServiceId: consumerId,
+					Tags: map[string]string{
 						"test": "test",
 					},
 				})

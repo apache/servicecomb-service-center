@@ -14,23 +14,23 @@
 package service
 
 import (
+	"encoding/json"
 	apt "github.com/servicecomb/service-center/server/core"
 	"github.com/servicecomb/service-center/server/core/mux"
 	pb "github.com/servicecomb/service-center/server/core/proto"
 	"github.com/servicecomb/service-center/server/core/registry"
 	"github.com/servicecomb/service-center/util"
 	"github.com/servicecomb/service-center/util/errors"
-	"encoding/json"
 	"golang.org/x/net/context"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
-	"regexp"
 )
 
 const (
 	MAX_TXN_NUMBER_ONE_TIME = 128
-	VESION_RULE_REGEX = `^[0-9\.]+$`
+	VESION_RULE_REGEX       = `^[0-9\.]+$`
 )
 
 func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Context, in *pb.CreateDependenciesRequest) (*pb.CreateDependenciesResponse, error) {
@@ -721,7 +721,7 @@ func compareVersion(version1 string, version2 string) bool {
 	return true
 }
 
-func equalServiceDependency(serviceA *pb.MicroServiceKey, serviceB *pb.MicroServiceKey) (bool) {
+func equalServiceDependency(serviceA *pb.MicroServiceKey, serviceB *pb.MicroServiceKey) bool {
 	stringA := tostring(serviceA)
 	stringB := tostring(serviceB)
 	if stringA == stringB {
@@ -863,8 +863,7 @@ func batchCommit(ctx context.Context, opts []*registry.PluginOp) error {
 	return nil
 }
 
-
-func AddServiceVersionRule(ctx context.Context, provider *pb.MicroServiceKey, tenant string, consumer *pb.MicroServiceKey) (error, bool){
+func AddServiceVersionRule(ctx context.Context, provider *pb.MicroServiceKey, tenant string, consumer *pb.MicroServiceKey) (error, bool) {
 	reg := regexp.MustCompile(VESION_RULE_REGEX)
 	if reg.Match([]byte(provider.Version)) {
 		return nil, false
@@ -872,7 +871,7 @@ func AddServiceVersionRule(ctx context.Context, provider *pb.MicroServiceKey, te
 
 	providerKey := apt.GenerateProviderDependencyRuleKey(tenant, provider)
 	err, consumers := transferToMircroServiceDependency(ctx, providerKey)
-	if err !=nil {
+	if err != nil {
 		return err, false
 	}
 	if len(consumers.Dependency) != 0 {
@@ -887,7 +886,7 @@ func AddServiceVersionRule(ctx context.Context, provider *pb.MicroServiceKey, te
 	}
 	//添加依赖
 	consumers.Dependency = append(consumers.Dependency, consumer)
-	data, err  := json.Marshal(consumers)
+	data, err := json.Marshal(consumers)
 	if err != nil {
 		util.LOGGER.Errorf(err, "Marshal dependency of find failed.")
 		return err, false
@@ -895,17 +894,17 @@ func AddServiceVersionRule(ctx context.Context, provider *pb.MicroServiceKey, te
 	opt := &registry.PluginOp{
 		Action: registry.PUT,
 		Key:    []byte(providerKey),
-		Value: []byte(data),
+		Value:  []byte(data),
 	}
 	_, err = registry.GetRegisterCenter().Do(ctx, opt)
 	return err, false
 }
 
-func toMicroServiceKey(tenant string, in *pb.MicroService) *pb.MicroServiceKey{
+func toMicroServiceKey(tenant string, in *pb.MicroService) *pb.MicroServiceKey {
 	return &pb.MicroServiceKey{
-		Tenant: tenant,
-		AppId: in.AppId,
+		Tenant:      tenant,
+		AppId:       in.AppId,
 		ServiceName: in.ServiceName,
-		Version: in.Version,
+		Version:     in.Version,
 	}
 }

@@ -14,19 +14,18 @@
 package service
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
 	apt "github.com/servicecomb/service-center/server/core"
 	pb "github.com/servicecomb/service-center/server/core/proto"
 	"github.com/servicecomb/service-center/server/core/registry"
 	"github.com/servicecomb/service-center/util"
-	"context"
-	"encoding/json"
-	"fmt"
+	"github.com/servicecomb/service-center/util/errors"
 	"reflect"
 	"regexp"
 	"strings"
-	"github.com/servicecomb/service-center/util/errors"
 )
-
 
 func Accessible(ctx context.Context, tenant string, consumerID string, providerID string) (err error, isInnerErr bool) {
 	consumerService, err := getServiceByServiceId(ctx, tenant, consumerID)

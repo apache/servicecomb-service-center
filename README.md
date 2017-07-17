@@ -1,4 +1,4 @@
-# service-center [![Build Status](https://travis-ci.org/ServiceComb/service-center.svg?branch=master)](https://travis-ci.org/ServiceComb/service-center)[![Coverage Status](https://coveralls.io/repos/github/ServiceComb/service-center/badge.svg?branch=master)](https://coveralls.io/github/ServiceComb/service-center?branch=master)
+# service-center [![Build Status](https://travis-ci.org/ServiceComb/service-center.svg?branch=master)](https://travis-ci.org/ServiceComb/service-center)[![Coverage Status](https://coveralls.io/repos/github/ServiceComb/service-center/badge.svg?branch=master)](https://coveralls.io/github/ServiceComb/service-center?branch=master)[![Go Report Card](https://goreportcard.com/badge/github.com/ServiceComb/service-center)](https://goreportcard.com/report/github.com/ServiceComb/service-center)
 
 A standalone service center allows services to register their instance information and to discover providers of a given service.
 

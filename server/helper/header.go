@@ -14,17 +14,18 @@
 package helper
 
 import (
-	"fmt"
-	"net/http"
-	"github.com/servicecomb/service-center/util"
 	"errors"
+	"fmt"
 	"github.com/servicecomb/service-center/server/core"
+	"github.com/servicecomb/service-center/util"
+	"net/http"
 )
+
 const (
 	DEFAULT_PROJECT = "default"
 )
 
-var NO_CHEACK_URL = map[string]bool {"/version": true, "/health": true}
+var NO_CHEACK_URL = map[string]bool{"/version": true, "/health": true}
 
 func GetTenantProjectFromHeader(r *http.Request) (string, string, error) {
 	var domain, project string

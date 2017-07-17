@@ -14,11 +14,11 @@
 package rest
 
 import (
-	"github.com/servicecomb/service-center/util/rest"
 	"encoding/json"
 	"github.com/astaxie/beego"
-	"net/http"
 	"github.com/servicecomb/service-center/util"
+	"github.com/servicecomb/service-center/util/rest"
+	"net/http"
 )
 
 type Version struct {
