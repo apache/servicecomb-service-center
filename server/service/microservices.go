@@ -214,12 +214,14 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 	ok, err := quota.QuotaPlugins[beego.AppConfig.DefaultString("quota_plugin", "buildin")]().Apply4Quotas(ctx, quota.MicroServiceQuotaType, 0)
 	if err != nil {
 		util.LOGGER.Errorf(err, "create microservice failed, %s: check apply quota.operator:%s", serviceFlag, remoteIP)
+		lock.Unlock()
 		return &pb.CreateServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, err
 	}
 	if !ok {
 		util.LOGGER.Errorf(err, "create microservice failed, %s: no quota to apply.operator:%s", serviceFlag, remoteIP)
+		lock.Unlock()
 		return &pb.CreateServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, fmt.Sprintf("No quota to create service,service name is %s", in.Service.ServiceName)),
 		}, nil
