@@ -19,10 +19,8 @@
 package main
 
 // plugins
-import (
-	"github.com/servicecomb/service-center/server"
-	_ "github.com/servicecomb/service-center/server/bootstrap"
-)
+import _ "github.com/servicecomb/service-center/server/bootstrap"
+import "github.com/servicecomb/service-center/server"
 
 func main() {
 	server.Run()
