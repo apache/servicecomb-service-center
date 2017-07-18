@@ -2,8 +2,8 @@ package common
 
 import (
 	"github.com/astaxie/beego"
-	"github.com/servicecomb/service-center/common/logrotate"
-	"github.com/servicecomb/service-center/lager"
+	"github.com/servicecomb/service-center/pkg/common/logrotate"
+	"github.com/servicecomb/service-center/pkg/lager"
 	"github.com/servicecomb/service-center/util"
 	"os"
 	"path/filepath"

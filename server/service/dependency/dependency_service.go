@@ -16,7 +16,7 @@ package dependency
 import (
 	"context"
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"github.com/servicecomb/service-center/common/cache"
+	"github.com/servicecomb/service-center/pkg/common/cache"
 	apt "github.com/servicecomb/service-center/server/core"
 	"github.com/servicecomb/service-center/server/core/registry"
 	"github.com/servicecomb/service-center/util"

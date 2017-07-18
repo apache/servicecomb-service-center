@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/servicecomb/service-center/lager"
+	"github.com/servicecomb/service-center/pkg/lager"
 )
 
 type Entry struct {

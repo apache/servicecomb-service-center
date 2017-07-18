@@ -20,7 +20,7 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"github.com/servicecomb/service-center/common"
+	"github.com/servicecomb/service-center/pkg/common"
 	"github.com/servicecomb/service-center/server/core/registry"
 	"github.com/servicecomb/service-center/util"
 	"github.com/servicecomb/service-center/util/rest"

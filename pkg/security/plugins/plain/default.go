@@ -14,7 +14,7 @@
 package plain
 
 import (
-	"github.com/servicecomb/service-center/security"
+	"github.com/servicecomb/service-center/pkg/security"
 )
 
 type DefaultCipher struct {

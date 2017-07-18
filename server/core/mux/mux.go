@@ -14,7 +14,7 @@
 package mux
 
 import (
-	"github.com/servicecomb/service-center/etcdsync"
+	"github.com/servicecomb/service-center/pkg/etcdsync"
 	"reflect"
 	"unsafe"
 )

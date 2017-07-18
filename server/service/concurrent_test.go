@@ -21,7 +21,7 @@ import (
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/servicecomb/service-center/etcdsync"
+	"github.com/servicecomb/service-center/pkg/etcdsync"
 	apt "github.com/servicecomb/service-center/server/core"
 	pb "github.com/servicecomb/service-center/server/core/proto"
 	"github.com/servicecomb/service-center/server/core/registry"

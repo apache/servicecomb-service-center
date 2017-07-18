@@ -18,7 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"github.com/servicecomb/service-center/common/cache"
+	"github.com/servicecomb/service-center/pkg/common/cache"
 	"github.com/servicecomb/service-center/server/core"
 	"github.com/servicecomb/service-center/server/core/proto"
 	"github.com/servicecomb/service-center/server/core/registry"

@@ -13,9 +13,9 @@
 //limitations under the License.
 package bootstrap
 
-import _ "github.com/servicecomb/service-center/security"
-import _ "github.com/servicecomb/service-center/common/logrotate"
-import _ "github.com/servicecomb/service-center/security/plugins/plain"
+import _ "github.com/servicecomb/service-center/pkg/security"
+import _ "github.com/servicecomb/service-center/pkg/common/logrotate"
+import _ "github.com/servicecomb/service-center/pkg/security/plugins/plain"
 import _ "github.com/servicecomb/service-center/server/core/registry/embededetcd"
 import _ "github.com/servicecomb/service-center/server/core/registry/etcd"
 import _ "github.com/servicecomb/service-center/server/plugins/infra/quota/buildin"
