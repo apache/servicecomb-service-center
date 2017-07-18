@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	"bytes"
-	. "github.com/servicecomb/service-center/tests/integrationtest"
+	. "github.com/servicecomb/service-center/integration"
 	"io/ioutil"
 )
 
