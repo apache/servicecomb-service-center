@@ -35,7 +35,7 @@ fi
 
 echo "${green}Starting the integration test now....${reset}"
 
-cd tests/integrationtest
+cd integration
 go test -v
 
 if [ $? == 0 ]; then
