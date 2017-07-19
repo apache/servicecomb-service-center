@@ -22,8 +22,11 @@ import (
 	. "github.com/servicecomb/service-center/integration"
 	"github.com/widuu/gojson"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
+	"strconv"
 	"strings"
+	"testing"
 )
 
 var _ = Describe("MicroService Api Test", func() {
@@ -469,3 +472,69 @@ var _ = Describe("MicroService Api Test", func() {
 	})
 
 })
+
+func BenchmarkRegisterMicroServiceAndDelete(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		schema := []string{"testSchema"}
+		properties := map[string]string{"attr1": "aa"}
+		servicemap := map[string]interface{}{
+			"serviceName": "test" + strconv.Itoa(i),
+			"appId":       "testApp" + strconv.Itoa(i),
+			"version":     "1.0",
+			"description": "examples",
+			"level":       "FRONT",
+			"schemas":     schema,
+			"status":      "UP",
+			"properties":  properties,
+		}
+		bodyParams := map[string]interface{}{
+			"service": servicemap,
+		}
+		body, _ := json.Marshal(bodyParams)
+		bodyBuf := bytes.NewReader(body)
+		req, _ := http.NewRequest(POST, SCURL+REGISTERMICROSERVICE, bodyBuf)
+		req.Header.Set("X-tenant-name", "default")
+		resp, err := scclient.Do(req)
+		Expect(err).To(BeNil())
+		defer resp.Body.Close()
+
+		// Validate the service creation
+		Expect(resp.StatusCode).To(Equal(http.StatusOK))
+		respbody, _ := ioutil.ReadAll(resp.Body)
+		serviceId := gojson.Json(string(respbody)).Get("serviceId").Tostring()
+		Expect(len(serviceId)).Should(BeNumerically("==", 32))
+		if serviceId != "" {
+			url := strings.Replace(UNREGISTERMICROSERVICE, ":serviceId", serviceId, 1)
+			req, _ := http.NewRequest(DELETE, SCURL+url, nil)
+			req.Header.Set("X-tenant-name", "default")
+			resp, _ := scclient.Do(req)
+			Expect(resp.StatusCode).To(Equal(http.StatusOK))
+		}
+	}
+}
+
+func BenchmarkRegisterMicroService(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		schema := []string{"testSchema"}
+		properties := map[string]string{"attr1": "aa"}
+		servicemap := map[string]interface{}{
+			"serviceName": "testnd" + strconv.Itoa(rand.Int()) + strconv.Itoa(i),
+			"appId":       "nd" + strconv.Itoa(rand.Int()) + strconv.Itoa(i),
+			"version":     "1.0",
+			"description": "examples",
+			"level":       "FRONT",
+			"schemas":     schema,
+			"status":      "UP",
+			"properties":  properties,
+		}
+		bodyParams := map[string]interface{}{
+			"service": servicemap,
+		}
+		body, _ := json.Marshal(bodyParams)
+		bodyBuf := bytes.NewReader(body)
+		req, _ := http.NewRequest(POST, SCURL+REGISTERMICROSERVICE, bodyBuf)
+		req.Header.Set("X-tenant-name", "default")
+		_, err := scclient.Do(req)
+		Expect(err).To(BeNil())
+	}
+}
