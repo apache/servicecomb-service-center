@@ -21,7 +21,7 @@ import (
 )
 import (
 	"fmt"
-	"github.com/servicecomb/service-center/etcdsync"
+	"github.com/servicecomb/service-center/pkg/etcdsync"
 	"testing"
 )
 

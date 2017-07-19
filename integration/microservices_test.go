@@ -19,7 +19,7 @@ import (
 
 	"bytes"
 	"encoding/json"
-	. "github.com/servicecomb/service-center/tests/integrationtest"
+	. "github.com/servicecomb/service-center/integration"
 	"github.com/widuu/gojson"
 	"io/ioutil"
 	"net/http"

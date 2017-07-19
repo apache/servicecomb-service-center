@@ -20,7 +20,7 @@ import (
 
 	"github.com/onsi/ginkgo/config"
 	"github.com/onsi/ginkgo/types"
-	"github.com/servicecomb/service-center/lager"
+	"github.com/servicecomb/service-center/pkg/lager"
 )
 
 type SuiteStartSummary struct {

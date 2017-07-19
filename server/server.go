@@ -24,7 +24,7 @@ import (
 )
 import (
 	"context"
-	"github.com/servicecomb/service-center/common"
+	"github.com/servicecomb/service-center/pkg/common"
 	"github.com/servicecomb/service-center/server/api"
 	"github.com/servicecomb/service-center/server/core/registry"
 	rs "github.com/servicecomb/service-center/server/rest"

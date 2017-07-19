@@ -11,36 +11,37 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package etcdsync_test
+package main
 
 import (
-	. "github.com/servicecomb/service-center/etcdsync"
-
 	"fmt"
-	. "github.com/onsi/ginkgo"
+
+	"github.com/servicecomb/service-center/pkg/lager"
 )
 
-var _ = Describe("Mutex", func() {
-	Context("normal", func() {
-		It("TestLockTimeout", func() {
-			m1 := New("key1", 10)
-			m2 := New("key1", 2)
-			m1.Lock()
-			fmt.Println("UT===================m1 locked")
-			ch := make(chan bool)
-			go func() {
-				l, _ := m2.Lock()
-				fmt.Println("UT===================m2 locked")
-				l.Unlock()
-				ch <- true
-			}()
-			<-ch
-			fmt.Println("lock m1 timeout")
-			m3 := New("key1", 2)
-			l, _ := m3.Lock()
-			fmt.Println("UT===================m3 locked")
-			l.Unlock()
-
-		})
+func main() {
+	logger.Init(logger.Config{
+		LoggerLevel:   "DEBUG",
+		LoggerFile:    "",
+		EnableRsyslog: false,
+		LogFormatText: false,
 	})
-})
+
+	logger := logger.NewLogger("example")
+
+	logger.Infof("Hi %s, system is starting up ...", "paas-bot")
+
+	logger.Debug("check-info", lager.Data{
+		"info": "something",
+	})
+
+	err := fmt.Errorf("Oops, error occurred!")
+	logger.Warn("failed-to-do-somthing", err, lager.Data{
+		"info": "something",
+	})
+
+	err = fmt.Errorf("This is an error")
+	logger.Error("failed-to-do-somthing", err)
+
+	logger.Info("shutting-down")
+}

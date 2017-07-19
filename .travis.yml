@@ -35,9 +35,9 @@ jobs:
     - stage: Building Service Center
       script: CGO_ENABLED=0 GO_EXTLINK_ENABLED=0 go build --ldflags '-w -extldflags "-static"' -o servicecenter
     - stage: Unit Testing
-      script: bash -x tests/scripts/ut_test_in_docker.sh && $HOME/gopath/bin/goveralls -coverprofile=coverage.txt -service=travis-ci
+      script: bash -x scripts/ut_test_in_docker.sh && $HOME/gopath/bin/goveralls -coverprofile=coverage.txt -service=travis-ci
     - stage: Integration Testing
-      script: bash -x tests/scripts/integration_test.sh    
+      script: bash -x scripts/integration_test.sh    
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
