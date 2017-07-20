@@ -1,2 +1,7 @@
 #!/usr/bin/env bash
-curl -X DELETE -H "Content-Type: application/json" "http://127.0.0.1:9980/service_center/v2/mservices/08a8db3c-c267-48f1-9582-f314fb8a2f4d"
+DELETE /registry/v3/microservices/63cc69716a8f11e79855286ed488ca3e?force=1 HTTP/1.1
+Host: localhost:30100
+Content-Type: application/json
+x-domain-name: default
+Cache-Control: no-cache
+Postman-Token: dc802a83-cdf0-2f97-eb2f-e359e740da68
