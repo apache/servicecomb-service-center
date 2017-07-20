@@ -1,1 +1,6 @@
-curl -X GET -H "Content-Type: application/json" "http://127.0.0.1:9980/service_center/v2/dependency/519d7463-d4b4-4d11-b54d-8f66786970d9/consumers"
+#!/usr/bin/env bash
+GET /registry/v3/microservices/3/consumers HTTP/1.1
+Host: localhost:30100
+x-domain-name: default
+Cache-Control: no-cache
+Postman-Token: 72e2a726-ca59-15cd-0579-c74562a2aa21

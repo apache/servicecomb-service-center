@@ -1,16 +1,1 @@
-{
-  "service_uuid": "08a8db3c-c267-48f1-9582-f314fb8a2f4d",
-  "service_name": "billingsystem",
-  "service_level": "front",
-  "desc": "this is a test content",
-  "status": "In Service",
-  "service_type": "billing system",
-  "namespace": "default",
-  "version": "v1",
-  "domain": "billingsystem.default.1.paas",
-  "instance_num": "",
-  "running_num": "",
-  "create_at": "2016-09-02T03:26:17.4788725Z",
-  "update_at": "2016-09-02T03:26:17.4788725Z",
-  "app_id": "1"
-}
+{"serviceId":"160ec1686cf911e7b7bc286ed488ff40"}

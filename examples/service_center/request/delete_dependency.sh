@@ -1,2 +1,0 @@
-#!/usr/bin/env bash
-curl -X DELETE -H "Content-Type: application/json" "http://127.0.0.1:9980/service_center/v2/dependency/0d7eae6e-aa81-4fcc-aeea-09f83a46e3d8/1bd77a5b-e89a-4361-8ba1-0254bcb012f0,519d7463-d4b4-4d11-b54d-8f66786970d9"

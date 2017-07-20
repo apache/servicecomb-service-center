@@ -1,1 +1,8 @@
-curl -X PUT -H "Content-Type: application/json" -H "Cache-Control: no-cache" -H "Postman-Token: 582359f1-223f-fc1e-3c6f-c1008fefb54f" -d '' "http://localhost:9980/registry/v2/mservices/18220f73-563b-4d87-91ab-c4a65439e51f/lfgy11?status=DOWN"
+#!/usr/bin/env bash
+PUT /registry/v3/microservices/serviceID/instances/instanceID/status?value=UP HTTP/1.1
+Host: localhost:30100
+Content-Type: application/json
+x-domain-name: default
+Cache-Control: no-cache
+Postman-Token: ceec0671-e415-804d-ce80-886c64159317
+
