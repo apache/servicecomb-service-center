@@ -1,42 +1,31 @@
+GET /registry/v3/microservices/349524856cf811e7b7bc286ed488ff40/instances/838942c26cf911e7b7bc286ed488ff40 HTTP/1.1
+Host: 127.0.0.1:30100
+X-tenant-name: default
+Content-Type: application/json
+X-ConsumerId: 349524856cf811e7b7bc286ed488ff40
+Cache-Control: no-cache
+Postman-Token: f1179ffa-5156-88f2-04c6-bd41b9312928
+
 {
     "instance": {
-        "hostName": "lfgy11",
-        "app": "532C8EE3-2C2D-46F5-AFCC-E2CA4A89F183",
-        "ipAddr": "10.130.158.159",
+        "instanceId": "838942c26cf911e7b7bc286ed488ff40",
+        "serviceId": "349524856cf811e7b7bc286ed488ff40",
+        "endpoints": [
+            "cse://127.0.0.1:9986"
+        ],
+        "hostName": "cse",
         "status": "UP",
-        "overriddenstatus": "UNKNOWN",
-        "port": {
-            "$": 0,
-            "@enabled": "true"
+        "properties": {
+            "_TAGS": "A,B",
+            "attr1": "a",
+            "nodeIP": "one"
         },
-        "securePort": {
-            "$": 0,
-            "@enabled": "false"
+        "healthCheck": {
+            "mode": "push",
+            "interval": 30,
+            "times": 2
         },
-        "countryId": 0,
-        "dataCenterInfo": {
-            "@class": "com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo",
-            "name": "MyOwn"
-        },
-        "leaseInfo": {
-            "renewalIntervalInSecs": 30,
-            "durationInSecs": 90,
-            "registrationTimestamp": 1470638438323,
-            "lastRenewalTimestamp": 1470638438323,
-            "evictionTimestamp": 0,
-            "serviceUpTimestamp": 1470638431351
-        },
-        "metadata": {
-            "test": "test"
-        },
-        "homePageUrl": "",
-        "statusPageUrl": "",
-        "healthCheckUrl": "v2/version",
-        "vipAddress": "",
-        "secureVipAddress": "",
-        "isCoordinatingDiscoveryServer": "true",
-        "lastUpdatedTimestamp": "1470638438323",
-        "lastDirtyTimestamp": "1470638437810",
-        "actionType": "ADDED"
+        "timestamp": "1500520456",
+        "stage": "prod"
     }
 }

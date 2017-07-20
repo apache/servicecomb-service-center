@@ -1,0 +1,20 @@
+{
+   "providers":[
+      {
+         "serviceId":"484a9fc16cf811e7b7bc286ed488ff40",
+         "appId":"integrationtestAppId",
+         "serviceName":"integrationtest",
+         "version":"0.0.1",
+         "description":"examples",
+         "level":"FRONT",
+         "schemas":[
+            "testSchema"
+         ],
+         "status":"UP",
+         "properties":{
+            "attr1":"aa"
+         },
+         "timestamp":"1500519927"
+      }
+   ]
+}
