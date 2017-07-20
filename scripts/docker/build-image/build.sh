@@ -21,6 +21,7 @@ chmod 755 $SCRIPT_DIR/service-center/service-center
 
 # copy the conf folder to build-image/service-center 
 cp -r $BASE_DIR/etc/conf $SCRIPT_DIR/service-center
+sed -i "s|httpaddr = 127.0.0.1|httpaddr = 0.0.0.0|g" $SCRIPT_DIR/service-center/conf/app.conf
 
 #go to the script directory
 cd $SCRIPT_DIR
