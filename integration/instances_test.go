@@ -24,6 +24,9 @@ import (
 	"bytes"
 	. "github.com/servicecomb/service-center/integration"
 	"io/ioutil"
+	"math/rand"
+	"strconv"
+	"testing"
 )
 
 var _ = Describe("MicroService Api Test", func() {
@@ -483,3 +486,91 @@ var _ = Describe("MicroService Api Test", func() {
 	})
 
 })
+
+func BenchmarkRegisterMicroServiceInstance(b *testing.B) {
+	schema := []string{"testSchema"}
+	properties := map[string]string{"attr1": "aa"}
+	servicemap := map[string]interface{}{
+		"serviceName": "testInstance" + strconv.Itoa(rand.Int()),
+		"appId":       "testApp",
+		"version":     "1.0",
+		"description": "examples",
+		"level":       "FRONT",
+		"schemas":     schema,
+		"status":      "UP",
+		"properties":  properties,
+	}
+	bodyParams := map[string]interface{}{
+		"service": servicemap,
+	}
+	body, _ := json.Marshal(bodyParams)
+	bodyBuf := bytes.NewReader(body)
+	req, _ := http.NewRequest(POST, SCURL+REGISTERMICROSERVICE, bodyBuf)
+	req.Header.Set("X-tenant-name", "default")
+	resp, err := scclient.Do(req)
+	Expect(err).To(BeNil())
+	defer resp.Body.Close()
+
+	// Validate the service creation
+	Expect(resp.StatusCode).To(Equal(http.StatusOK))
+	respbody, _ := ioutil.ReadAll(resp.Body)
+	serviceId := gojson.Json(string(respbody)).Get("serviceId").Tostring()
+	Expect(len(serviceId)).Should(BeNumerically("==", 32))
+
+	for i := 0; i < b.N; i++ {
+		//Register MicroService Instance
+		endpoints := []string{"cse://127.0.0.1:9984"}
+		propertiesInstance := map[string]interface{}{
+			"_TAGS":  "A,B",
+			"attr1":  "a",
+			"nodeIP": "one",
+		}
+		healthcheck := map[string]interface{}{
+			"mode":     "push",
+			"interval": 30,
+			"times":    2,
+		}
+		instance := map[string]interface{}{
+			"endpoints":   endpoints,
+			"hostName":    "cse",
+			"status":      "UP",
+			"stage":       "prod",
+			"properties":  propertiesInstance,
+			"healthCheck": healthcheck,
+		}
+
+		bodyParams = map[string]interface{}{
+			"instance": instance,
+		}
+		url := strings.Replace(REGISTERINSTANCE, ":serviceId", serviceId, 1)
+		body, _ = json.Marshal(bodyParams)
+		bodyBuf = bytes.NewReader(body)
+		req, _ = http.NewRequest(POST, SCURL+url, bodyBuf)
+		req.Header.Set("X-tenant-name", "default")
+		resp, err = scclient.Do(req)
+		Expect(err).To(BeNil())
+		defer resp.Body.Close()
+
+		// Validate the instance registration
+		Expect(resp.StatusCode).To(Equal(http.StatusOK))
+		respbody, _ = ioutil.ReadAll(resp.Body)
+		serviceInstanceID := gojson.Json(string(respbody)).Get("instanceId").Tostring()
+		Expect(len(serviceId)).Should(BeNumerically("==", 32))
+
+		if serviceInstanceID != "" {
+			url := strings.Replace(UNREGISTERINSTANCE, ":serviceId", serviceId, 1)
+			url = strings.Replace(url, ":instanceId", serviceInstanceID, 1)
+			req, _ := http.NewRequest(DELETE, SCURL+url, nil)
+			req.Header.Set("X-tenant-name", "default")
+			resp, _ := scclient.Do(req)
+			Expect(resp.StatusCode).To(Equal(http.StatusOK))
+		}
+	}
+	if serviceId != "" {
+		url := strings.Replace(UNREGISTERMICROSERVICE, ":serviceId", serviceId, 1)
+		req, _ := http.NewRequest(DELETE, SCURL+url, nil)
+		req.Header.Set("X-tenant-name", "default")
+		resp, _ := scclient.Do(req)
+		Expect(resp.StatusCode).To(Equal(http.StatusOK))
+	}
+}
