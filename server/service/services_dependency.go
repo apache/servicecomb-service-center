@@ -38,7 +38,7 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 	if dependencyInfos == nil {
 		return BadParamsResponse("Invalid request body."), nil
 	}
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 	for _, dependencyInfo := range dependencyInfos {
 		consumerInfo := transferToMicroServiceKeys([]*pb.DependencyMircroService{dependencyInfo.Consumer}, tenant)[0]
 		providersInfo := transferToMicroServiceKeys(dependencyInfo.Providers, tenant)
@@ -182,7 +182,7 @@ func getServiceByServiceId(ctx context.Context, tenant string, serviceId string)
 }
 
 func (s *ServiceController) createDependencyRule(ctx context.Context, consumerServiceid string, consumer *pb.MicroServiceKey, providers []*pb.MicroServiceKey) error {
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 	//更新consumer的providers的值,consumer的版本是确定的
 	conKey := apt.GenerateConsumerDependencyRuleKey(tenant, consumer)
 	consumerFlag := strings.Join([]string{consumer.AppId, consumer.ServiceName, consumer.Version}, "--")
@@ -326,7 +326,7 @@ func (s *ServiceController) createDependencyRule(ctx context.Context, consumerSe
 
 func (s *ServiceController) updateAsProviderDependency(ctx context.Context, providerServiseId string, provider *pb.MicroServiceKey) error {
 	//查询etcd里是否存在带*的情况，则添加与对应的consumer与该provider的依赖关系
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 	allConsumers := []*pb.MicroServiceKey{}
 	relyAllKey := apt.GenerateProviderDependencyRuleKey(tenant, &pb.MicroServiceKey{
 		ServiceName: "*",
@@ -795,7 +795,7 @@ func (s *ServiceController) GetProviderDependencies(ctx context.Context, in *pb.
 		}, nil
 	}
 	providerId := in.ServiceId
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 	if !s.ServiceExist(ctx, tenant, providerId) {
 		return &pb.GetProDependenciesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "This provider does not exist."),
@@ -824,7 +824,7 @@ func (s *ServiceController) GetConsumerDependencies(ctx context.Context, in *pb.
 		}, nil
 	}
 	consumerId := in.ServiceId
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 	if !s.ServiceExist(ctx, tenant, consumerId) {
 		return &pb.GetConDependenciesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "This consumer does not exist."),

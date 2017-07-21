@@ -70,11 +70,15 @@ func ClearByteMemory(src []byte) {
 	}
 }
 
-func ParaseTenant(ctx context.Context) string {
+func ParaseTenantProject(ctx context.Context) string {
 	tenant := ctx.Value("tenant").(string)
 	project := ctx.Value("project").(string)
 	tenant = strings.Join([]string{tenant, project}, "/")
 	return tenant
+}
+
+func ParaseTenant(ctx context.Context) string {
+	return ctx.Value("tenant").(string)
 }
 
 //format : https://10.21.119.167:30100 or http://10.21.119.167:30100

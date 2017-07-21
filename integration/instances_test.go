@@ -15,14 +15,11 @@ package integrationtest_test
 
 import (
 	"encoding/json"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"github.com/widuu/gojson"
 	"net/http"
 	"strings"
 
 	"bytes"
-	. "github.com/servicecomb/service-center/integration"
 	"io/ioutil"
 )
 
@@ -471,6 +468,18 @@ var _ = Describe("MicroService Api Test", func() {
 				//This api gives 400 bad request for the integration test
 				// as integration test is not able to make ws connection
 				url := strings.Replace(INSTANCEWATCHER, ":serviceId", serviceId, 1)
+				req, _ := http.NewRequest(GET, SCURL+url, nil)
+				req.Header.Set("X-tenant-name", "default")
+				resp, err := scclient.Do(req)
+				Expect(err).To(BeNil())
+				defer resp.Body.Close()
+
+				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
+			})
+			It("Call the listwatcher API ", func() {
+				//This api gives 400 bad request for the integration test
+				// as integration test is not able to make ws connection
+				url := strings.Replace(INSTANCELISTWATCHER, ":serviceId", serviceId, 1)
 				req, _ := http.NewRequest(GET, SCURL+url, nil)
 				req.Header.Set("X-tenant-name", "default")
 				resp, err := scclient.Do(req)

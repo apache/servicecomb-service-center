@@ -171,7 +171,7 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 		}, nil
 	}
 
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 
 	consumer := &pb.MicroServiceKey{
 		AppId:       service.AppId,
@@ -314,7 +314,7 @@ func (s *ServiceController) Delete(ctx context.Context, in *pb.DeleteServiceRequ
 	}
 
 	force := in.Force
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 
 	service, err := getServiceByServiceId(ctx, tenant, in.ServiceId)
 	if err != nil {
@@ -499,7 +499,7 @@ func refreshDependencyCache(tenant string, providerId string, provider *pb.Micro
 }
 
 func deleteServiceAllInstances(ctx context.Context, in *pb.DeleteServiceRequest) error {
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 
 	instanceLeaseKey := apt.GenerateInstanceLeaseKey(tenant, in.ServiceId, "")
 
@@ -681,7 +681,7 @@ func (s *ServiceController) GetOne(ctx context.Context, in *pb.GetServiceRequest
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
 	}
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 	service, err := getServiceByServiceId(ctx, tenant, in.ServiceId)
 
 	if err != nil {
@@ -738,7 +738,7 @@ func (s *ServiceController) UpdateProperties(ctx context.Context, in *pb.UpdateS
 		}, nil
 	}
 
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 
 	key := apt.GenerateServiceKey(tenant, in.ServiceId)
 	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
@@ -819,7 +819,7 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 		}, nil
 	}
 
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 
 	// service id存在性校验
 	if !s.ServiceExist(ctx, tenant, in.ServiceId) {
@@ -965,7 +965,7 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 		}, nil
 	}
 
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 
 	// service id存在性校验
 	if !s.ServiceExist(ctx, tenant, in.ServiceId) {
@@ -1095,7 +1095,7 @@ func (s *ServiceController) GetRule(ctx context.Context, in *pb.GetServiceRulesR
 		}, nil
 	}
 
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 	// service id存在性校验
 	if !s.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.LOGGER.Errorf(nil, "get service rule failed, serviceId is %s: service not exist.", in.ServiceId)
@@ -1126,7 +1126,7 @@ func (s *ServiceController) DeleteRule(ctx context.Context, in *pb.DeleteService
 		}, nil
 	}
 
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 	// service id存在性校验
 	if !s.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.LOGGER.Errorf(nil, "delete service rule failed, serviceId is %s, rule is %v: service not exist.", in.ServiceId, in.RuleIds)
@@ -1215,7 +1215,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 		}, nil
 	}
 
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 	switch in.Type {
 	case "microservice":
 		if len(in.AppId) == 0 || len(in.ServiceName) == 0 || len(in.Version) == 0 {
@@ -1319,7 +1319,7 @@ func (s *ServiceController) AddTags(ctx context.Context, in *pb.AddServiceTagsRe
 		}, nil
 	}
 
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 	// service id存在性校验
 	if !s.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.LOGGER.Errorf(nil, "add service tags failed, serviceId %s, tags %v: service not exist.", in.ServiceId, in.Tags)
@@ -1393,7 +1393,7 @@ func (s *ServiceController) UpdateTag(ctx context.Context, in *pb.UpdateServiceT
 		}, nil
 	}
 
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 
 	if !s.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.LOGGER.Errorf(err, "update service tag failed, serviceId %s, tag %s: service not exist.", in.ServiceId, tagFlag)
@@ -1468,7 +1468,7 @@ func (s *ServiceController) DeleteTags(ctx context.Context, in *pb.DeleteService
 		}, nil
 	}
 
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 
 	if !s.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.LOGGER.Errorf(nil, "delete service tags failed, serviceId %s, tags %v: service not exist.", in.ServiceId, in.Keys)
@@ -1557,7 +1557,7 @@ func (s *ServiceController) GetTags(ctx context.Context, in *pb.GetServiceTagsRe
 		}, nil
 	}
 
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 
 	if !s.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.LOGGER.Errorf(err, "get service tags failed, serviceId %s: service not exist.", in.ServiceId)
@@ -1596,7 +1596,7 @@ func (s *ServiceController) GetSchemaInfo(ctx context.Context, request *pb.GetSc
 		}, nil
 	}
 
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 
 	if !s.ServiceExist(ctx, tenant, request.ServiceId) {
 		util.LOGGER.Errorf(nil, "get schema failed, serviceId %s, schemaId %s: service not exist.", request.ServiceId, request.SchemaId)
@@ -1642,7 +1642,7 @@ func (s *ServiceController) DeleteSchema(ctx context.Context, request *pb.Delete
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
 	}
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 
 	if !s.ServiceExist(ctx, tenant, request.ServiceId) {
 		util.LOGGER.Errorf(nil, "delete schema failded, serviceId %s, schemaId %s: service not exist.", request.ServiceId, request.SchemaId)
@@ -1694,7 +1694,7 @@ func (s *ServiceController) ModifySchema(ctx context.Context, request *pb.Modify
 		}, nil
 	}
 
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 	key := apt.GenerateServiceSchemaKey(tenant, request.ServiceId, request.SchemaId)
 	_, errDo := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
 		Action: registry.PUT,
@@ -1724,7 +1724,7 @@ func (s *ServiceController) canModifySchema(ctx context.Context, request *pb.Mod
 		util.LOGGER.Errorf(err, "update schema failded, serviceId %s, schemaId %s: invalid params.", request.ServiceId, request.SchemaId)
 		return err, false
 	}
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 	service, err := getServiceByServiceId(ctx, tenant, request.ServiceId)
 	if err != nil {
 		util.LOGGER.Errorf(err, "update schema failded, serviceId %s, schemaId %s: get service failed.", request.ServiceId, request.SchemaId)
@@ -1771,7 +1771,7 @@ func (s *ServiceController) checkSchemaInfoExist(ctx context.Context, key string
 }
 
 func GetAllServiceUtil(ctx context.Context) ([]*pb.MicroService, error) {
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 	services, err := ms.GetServicesByTenent(ctx, tenant)
 	if err != nil {
 		return nil, err

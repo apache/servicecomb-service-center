@@ -24,6 +24,7 @@ import (
 const EVENT_BUS_MAX_SIZE = 1000
 
 type Event struct {
+	Revision int64
 	Type     proto.EventType
 	WatchKey string
 	Object   interface{}
@@ -61,7 +62,7 @@ func (lw *KvListWatcher) List(op *ListOptions) ([]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	lw.UpgradeRevision(resp.Revision)
+	lw.upgradeRevision(resp.Revision)
 	if len(resp.Kvs) == 0 {
 		return nil, nil
 	}
@@ -76,19 +77,19 @@ func (lw *KvListWatcher) Watch(op *ListOptions) Watcher {
 	return newKvWatcher(lw, op)
 }
 
-func (lw *KvListWatcher) UpgradeRevision(rev int64) {
+func (lw *KvListWatcher) upgradeRevision(rev int64) {
 	lw.rev = rev
 }
 
 func (lw *KvListWatcher) doWatch(ctx context.Context, f func(evt *Event)) error {
 	ops := WithWatchPrefix(lw.Key)
 	ops.WithRev = lw.Revision() + 1
-	max := lw.Revision()
 	err := lw.Client.Watch(ctx, ops, func(message string, evt *PluginResponse) error {
-		if max < evt.Revision {
-			max = evt.Revision
+		if lw.Revision() < evt.Revision {
+			lw.upgradeRevision(evt.Revision)
 		}
 		sendEvt := &Event{
+			Revision: evt.Revision,
 			Type:     proto.EVT_ERROR,
 			WatchKey: lw.Key,
 			Object:   fmt.Errorf("unknown event %+v", evt),
@@ -111,11 +112,9 @@ func (lw *KvListWatcher) doWatch(ctx context.Context, f func(evt *Event)) error 
 		f(sendEvt)
 		return nil
 	})
-	if err != nil {
-		max = 0 // compact可能会导致watch失败
+	if err != nil { // compact可能会导致watch失败
 		f(errEvent(lw.Key, err))
 	}
-	lw.UpgradeRevision(max)
 	return err
 }
 

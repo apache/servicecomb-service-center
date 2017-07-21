@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/astaxie/beego"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/gorilla/websocket"
 	"github.com/servicecomb/service-center/server/core"
 	apt "github.com/servicecomb/service-center/server/core"
@@ -60,7 +61,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 		}, nil
 	}
 	//先以tenant/project的方式组装
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 
 	// service id存在性校验
 	if !s.serviceCtrl.ServiceExist(ctx, tenant, instance.ServiceId) {
@@ -201,7 +202,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 		}, err
 	}
 
-	tenant = ctx.Value("tenant").(string)
+	tenant = util.ParaseTenant(ctx)
 
 	//新租户，则进行监听
 	opt := &registry.PluginOp{
@@ -231,7 +232,7 @@ func (s *InstanceController) Unregister(ctx context.Context, in *pb.UnregisterIn
 		}, nil
 	}
 
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 	serviceId := in.ServiceId
 	instanceId := in.InstanceId
 
@@ -270,7 +271,7 @@ func (s *InstanceController) Unregister(ctx context.Context, in *pb.UnregisterIn
 	}, nil
 }
 
-func revokeInstance(ctx context.Context, tenant string, serviceId string, instanceId string) (err error, isInnerErr bool) {
+func revokeInstance(ctx context.Context, tenant string, serviceId string, instanceId string) (error, bool) {
 	leaseID, err := serviceUtil.GetLeaseId(ctx, tenant, serviceId, instanceId)
 	if err != nil {
 		return err, true
@@ -293,7 +294,7 @@ func (s *InstanceController) Heartbeat(ctx context.Context, in *pb.HeartbeatRequ
 		}, nil
 	}
 
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 	instanceFlag := strings.Join([]string{in.ServiceId, in.InstanceId}, "--")
 
 	err, isInnerErr := heartbeatUtil(ctx, tenant, in.ServiceId, in.InstanceId)
@@ -340,7 +341,7 @@ func (s *InstanceController) HeartbeatSet(ctx context.Context, in *pb.HeartbeatS
 			Response: pb.CreateResponse(pb.Response_FAIL, "heartbeats failed, invalid request.Body not contain Instances or is empty"),
 		}, nil
 	}
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 	instanceHbRstArr := []*pb.InstanceHbRst{}
 	existFlag := map[string]bool{}
 	instancesHbRst := make(chan *pb.InstanceHbRst, len(in.Instances))
@@ -413,7 +414,7 @@ func (s *InstanceController) GetOneInstance(ctx context.Context, in *pb.GetOneIn
 	}
 	conPro := strings.Join([]string{in.ConsumerServiceId, in.ProviderServiceId, in.ProviderInstanceId}, "--")
 
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 
 	serviceId := in.ProviderServiceId
 	instanceId := in.ProviderInstanceId
@@ -459,7 +460,7 @@ func (s *InstanceController) getInstancePreCheck(ctx context.Context, in interfa
 	}
 	var providerServiceId, consumerServiceId string
 	var tags []string
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 
 	switch in.(type) {
 	case *pb.GetOneInstanceRequest:
@@ -510,7 +511,7 @@ func (s *InstanceController) GetInstances(ctx context.Context, in *pb.GetInstanc
 	}
 	conPro := strings.Join([]string{in.ConsumerServiceId, in.ProviderServiceId}, "--")
 
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 	errAddDependence := s.addDependenceForService(ctx, tenant, in.ConsumerServiceId, in.ProviderServiceId)
 	if errAddDependence != nil {
 		util.LOGGER.Errorf(errAddDependence, "get instances failed, con--pro %s: add dependency failed.", conPro)
@@ -610,7 +611,7 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 		}, nil
 	}
 
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 
 	findFlag := strings.Join([]string{in.ConsumerServiceId, in.AppId, in.ServiceName, in.VersionRule}, "--")
 	service, err := getServiceByServiceId(ctx, tenant, in.ConsumerServiceId)
@@ -717,7 +718,7 @@ func (s *InstanceController) UpdateStatus(ctx context.Context, in *pb.UpdateInst
 			Response: pb.CreateResponse(pb.Response_FAIL, "request format invalid"),
 		}, nil
 	}
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 	updateStatusFlag := strings.Join([]string{in.ServiceId, in.InstanceId, in.Status}, "--")
 	if !apt.InstanseStatusRule.Match(in.Status) {
 		util.LOGGER.Errorf(nil, "update instance status failed, %s: status must be UP|DOWN|STARTING|OUTOFSERVICE.", updateStatusFlag)
@@ -773,7 +774,7 @@ func (s *InstanceController) UpdateInstanceProperties(ctx context.Context, in *p
 	}
 
 	var err error
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 	instanceFlag := strings.Join([]string{in.ServiceId, in.InstanceId}, "--")
 
 	var instance *pb.MicroServiceInstance
@@ -848,32 +849,122 @@ func updateInstanceLease(ctx context.Context, tenant string, instance *pb.MicroS
 	return nil, false
 }
 
+func (s *InstanceController) WatchPreOpera(ctx context.Context, in *pb.WatchInstanceRequest) error {
+	if in == nil || len(in.SelfServiceId) == 0 {
+		return errors.New("request format invalid")
+	}
+	tenant := util.ParaseTenantProject(ctx)
+	if !s.serviceCtrl.ServiceExist(ctx, tenant, in.SelfServiceId) {
+		return errors.New("service does not exist")
+	}
+	return nil
+}
+
 func (s *InstanceController) Watch(in *pb.WatchInstanceRequest, stream pb.ServiceInstanceCtrl_WatchServer) error {
-	var watcher *nf.Watcher
 	var err error
-	if err, watcher = nf.WatchPreOpera(in, stream.Context(), s.NotifyService); err != nil {
+	if err = s.WatchPreOpera(stream.Context(), in); err != nil {
 		util.LOGGER.Errorf(err, "establish watch failed: invalid params.")
 		return err
 	}
+	tenant := util.ParaseTenant(stream.Context())
+	watcher := nf.NewServiceWatcher(in.SelfServiceId, apt.GetInstanceRootKey(tenant)+"/")
 	err = s.NotifyService.AddNotifier(watcher)
-	util.LOGGER.Infof("start watch instance status, watcher %s %s", watcher.GetSubject(), watcher.GetId())
-	return nf.WatchJobHandler(watcher, stream, s.NotifyService.Config.NotifyTimeout)
+	util.LOGGER.Infof("start watch instance status, watcher %s %s", watcher.Subject(), watcher.Id())
+	return serviceUtil.WatchJobHandler(watcher, stream, s.NotifyService.Config.NotifyTimeout)
 }
 
 func (s *InstanceController) WebSocketWatch(ctx context.Context, in *pb.WatchInstanceRequest, conn *websocket.Conn) {
-	var watcher *nf.Watcher
-	var err error
-	if err, watcher = nf.WatchPreOpera(in, ctx, s.NotifyService); err != nil {
-		util.LOGGER.Errorf(err, "establish web socket watch failed: invalid params.")
-		err := conn.WriteMessage(websocket.TextMessage, []byte(err.Error()))
-		if err != nil {
-			util.LOGGER.Errorf(err, "establish web socket watch failed: write message failed.")
-		}
+	if err := s.WatchPreOpera(ctx, in); err != nil {
+		serviceUtil.EstablishWebSocketError(conn, err)
 		return
 	}
-	err = s.NotifyService.AddNotifier(watcher)
-	util.LOGGER.Infof("start watching instance status, watcher %s %s", watcher.GetSubject(), watcher.GetId())
-	nf.WatchWebSocketJobHandler(conn, watcher, s.NotifyService.Config.NotifyTimeout)
+	tenant := util.ParaseTenant(ctx)
+	watcher := nf.NewServiceWatcher(in.SelfServiceId, apt.GetInstanceRootKey(tenant)+"/")
+	serviceUtil.DoWebSocketWatch(s.NotifyService, watcher, conn)
+}
+
+func (s *InstanceController) WebSocketListAndWatch(ctx context.Context, in *pb.WatchInstanceRequest, conn *websocket.Conn) {
+	if err := s.WatchPreOpera(ctx, in); err != nil {
+		serviceUtil.EstablishWebSocketError(conn, err)
+		return
+	}
+	tenant := util.ParaseTenant(ctx)
+	watcher := nf.NewServiceListWatcher(in.SelfServiceId, apt.GetInstanceRootKey(tenant)+"/",
+		func(rev int64) []*pb.WatchInstanceResponse {
+			return queryAllProvidersIntances(ctx, in.SelfServiceId, rev)
+		})
+	serviceUtil.DoWebSocketWatch(s.NotifyService, watcher, conn)
+}
+
+func queryAllProvidersIntances(ctx context.Context, selfServiceId string, rev int64) []*pb.WatchInstanceResponse {
+	tenant := util.ParaseTenantProject(ctx)
+	key := apt.GenerateConsumerDependencyKey(tenant, selfServiceId, "")
+	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+		Action:     registry.GET,
+		Key:        []byte(key),
+		WithPrefix: true,
+		KeyOnly:    true,
+		//WithRev:    rev,
+	})
+	if err != nil {
+		util.LOGGER.Errorf(err, "Get %s providers id set with revision %d failed.", selfServiceId, rev)
+		return nil
+	}
+	results := []*pb.WatchInstanceResponse{}
+	for _, depsKv := range resp.Kvs {
+		providerDepsKey := string(depsKv.Key)
+		providerId := providerDepsKey[strings.LastIndex(providerDepsKey, "/")+1:]
+
+		service, err := getServiceByServiceId(ctx, tenant, providerId)
+		if err != nil {
+			return nil
+		}
+		util.LOGGER.Debugf("Get provider service %v with revision %d.", service, rev)
+
+		kvs, err := queryServiceInstancesKvs(ctx, providerId, rev)
+		if err != nil {
+			util.LOGGER.Errorf(err, "Get instance of service %s with revision %d from etcd failed.",
+				providerId, rev)
+			return nil
+		}
+
+		util.LOGGER.Debugf("Get provider service %s instances[%d] with revision %d.", providerId, len(kvs), rev)
+		for _, kv := range kvs {
+			util.LOGGER.Debugf("start unmarshal service instance file: %s", string(kv.Key))
+			instance := &pb.MicroServiceInstance{}
+			err := json.Unmarshal(kv.Value, instance)
+			if err != nil {
+				util.LOGGER.Errorf(err, "Unmarshal instance of service %s failed.", providerId)
+				return nil
+			}
+			results = append(results, &pb.WatchInstanceResponse{
+				Response: pb.CreateResponse(pb.Response_SUCCESS, "list instance successfully"),
+				Action:   string(pb.EVT_CREATE),
+				Key: &pb.MicroServiceKey{
+					AppId:       service.AppId,
+					ServiceName: service.ServiceName,
+					Version:     service.Version,
+				},
+				Instance: instance,
+			})
+		}
+	}
+	return results
+}
+
+func queryServiceInstancesKvs(ctx context.Context, serviceId string, rev int64) ([]*mvccpb.KeyValue, error) {
+	tenant := util.ParaseTenantProject(ctx)
+	key := apt.GenerateInstanceKey(tenant, serviceId, "")
+	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+		Action:     registry.GET,
+		Key:        []byte(key),
+		WithPrefix: true,
+		WithRev:    rev,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return resp.Kvs, nil
 }
 
 func (s *InstanceController) CluterHealth(ctx context.Context) (*pb.GetInstancesResponse, error) {

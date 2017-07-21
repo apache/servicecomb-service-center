@@ -63,7 +63,7 @@ func InstanceExist(ctx context.Context, tenant string, serviceId string, instanc
 }
 
 func CheckEndPoints(ctx context.Context, in *pb.RegisterInstanceRequest) (string, error) {
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 	allInstancesKey := apt.GenerateInstanceKey(tenant, in.Instance.ServiceId, "")
 	rsp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
 		Action:     registry.GET,
