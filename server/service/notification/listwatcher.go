@@ -29,7 +29,7 @@ type ListWatcher struct {
 	BaseWorker
 	Job          chan NotifyJob
 	ListRevision int64
-	ListFunc     func(rev int64) []*pb.WatchInstanceResponse
+	ListFunc     func() (results []*pb.WatchInstanceResponse, rev int64)
 
 	listCh chan struct{}
 }
@@ -38,9 +38,6 @@ func (w *ListWatcher) OnAccept() {
 	if w.Err() != nil {
 		return
 	}
-
-	lw := w.Service().ListWatcher(w.Subject())
-	w.ListRevision = lw.CacheRevision()
 
 	util.LOGGER.Debugf("accepted by notify service, current revsion is %v", w.ListRevision)
 	go w.listAndPublishJobs()
@@ -51,7 +48,8 @@ func (w *ListWatcher) listAndPublishJobs() {
 	if w.ListFunc == nil {
 		return
 	}
-	results := w.ListFunc(w.ListRevision)
+	results, rev := w.ListFunc()
+	w.ListRevision = rev
 	for _, response := range results {
 		w.sendMessage(NewWatchJob(w.Id(), w.Subject(), w.ListRevision, response))
 	}
@@ -72,6 +70,7 @@ func (w *ListWatcher) OnMessage(job NotifyJob) {
 
 	if job.(*WatchJob).Revision <= w.ListRevision {
 		util.LOGGER.Warnf(nil, "unexpected notify job is coming in, job is %v", job)
+		return
 	}
 	w.sendMessage(job)
 }
@@ -101,7 +100,7 @@ func NewServiceWatcher(id string, subject string) *ListWatcher {
 }
 
 func NewServiceListWatcher(id string, subject string,
-	listFunc func(rev int64) []*pb.WatchInstanceResponse) *ListWatcher {
+	listFunc func() (results []*pb.WatchInstanceResponse, rev int64)) *ListWatcher {
 	watcher := &ListWatcher{
 		BaseWorker: BaseWorker{
 			id:      id,

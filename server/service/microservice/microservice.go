@@ -41,20 +41,24 @@ func init() {
 /*
 	get Service by service id
 */
-func GetById(domain string, id string) (*proto.MicroService, error) {
+func GetById(domain string, id string, rev int64) (*proto.MicroService, error) {
 	key := core.GenerateServiceKey(domain, id)
 	serviceResp, err := registry.GetRegisterCenter().Do(context.TODO(), &registry.PluginOp{
 		Action: registry.GET,
 		Key:    []byte(key),
 	})
-	if err != nil || len(serviceResp.Kvs) == 0 {
-		util.LOGGER.Errorf(err, "query provider service %s file failed", id)
+	if err != nil {
+		util.LOGGER.Errorf(err, "query service %s file with revision %d failed", id, rev)
 		return nil, err
+	}
+	if len(serviceResp.Kvs) == 0 {
+		util.LOGGER.Errorf(nil, "service %s with revision %d does not exist.", id, rev)
+		return nil, nil
 	}
 	service := &proto.MicroService{}
 	err = json.Unmarshal(serviceResp.Kvs[0].Value, &service)
-	if err != nil || len(serviceResp.Kvs) == 0 {
-		util.LOGGER.Errorf(err, "unmarshal provider service %s file failed", id)
+	if err != nil {
+		util.LOGGER.Errorf(err, "unmarshal provider service %s file with revision %d failed", id, rev)
 		return nil, err
 	}
 	return service, nil
@@ -64,8 +68,8 @@ func GetByIdInCache(domain string, id string) (*proto.MicroService, error) {
 	uid := domain + ":::" + id
 	ms, ok := msCache.Get(uid)
 	if !ok {
-		ms, err := GetById(domain, id)
-		if err != nil {
+		ms, err := GetById(domain, id, 0)
+		if ms == nil {
 			return nil, err
 		}
 		msCache.Set(uid, ms, 0)
@@ -74,6 +78,7 @@ func GetByIdInCache(domain string, id string) (*proto.MicroService, error) {
 
 	return ms.(*proto.MicroService), nil
 }
+
 func GetServicesRawData(ctx context.Context, tenant string) ([]*mvccpb.KeyValue, error) {
 	key := strings.Join([]string{
 		core.GetServiceRootKey(tenant),
@@ -87,7 +92,8 @@ func GetServicesRawData(ctx context.Context, tenant string) ([]*mvccpb.KeyValue,
 	})
 	return resp.Kvs, err
 }
-func GetServicesByTenent(ctx context.Context, tenant string) ([]*proto.MicroService, error) {
+
+func GetServicesByTenant(ctx context.Context, tenant string) ([]*proto.MicroService, error) {
 	kvs, err := GetServicesRawData(ctx, tenant)
 	if err != nil {
 		return nil, err

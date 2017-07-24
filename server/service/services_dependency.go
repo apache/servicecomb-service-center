@@ -19,6 +19,7 @@ import (
 	"github.com/servicecomb/service-center/server/core/mux"
 	pb "github.com/servicecomb/service-center/server/core/proto"
 	"github.com/servicecomb/service-center/server/core/registry"
+	"github.com/servicecomb/service-center/server/service/microservice"
 	"github.com/servicecomb/service-center/util"
 	"github.com/servicecomb/service-center/util/errors"
 	"golang.org/x/net/context"
@@ -158,27 +159,7 @@ func transferToMicroServiceKeys(in []*pb.DependencyMircroService, tenant string)
 }
 
 func getServiceByServiceId(ctx context.Context, tenant string, serviceId string) (*pb.MicroService, error) {
-	serviceKey := apt.GenerateServiceKey(tenant, serviceId)
-	service := &pb.MicroService{}
-	opt := &registry.PluginOp{
-		Action: registry.GET,
-		Key:    []byte(serviceKey),
-	}
-	rsp, err := registry.GetRegisterCenter().Do(ctx, opt)
-	if err != nil {
-		util.LOGGER.Errorf(nil, "Get service failed.ServiceId is %s", serviceId)
-		return nil, err
-	}
-	if len(rsp.Kvs) == 0 {
-		util.LOGGER.Errorf(nil, "Get service is empty.")
-		return nil, nil
-	}
-	err = json.Unmarshal(rsp.Kvs[0].Value, service)
-	if err != nil {
-		util.LOGGER.Errorf(nil, "unmarshal service failed.%s", err.Error())
-		return nil, err
-	}
-	return service, nil
+	return microservice.GetById(tenant, serviceId, 0)
 }
 
 func (s *ServiceController) createDependencyRule(ctx context.Context, consumerServiceid string, consumer *pb.MicroServiceKey, providers []*pb.MicroServiceKey) error {

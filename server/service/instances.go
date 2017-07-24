@@ -18,7 +18,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/astaxie/beego"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/gorilla/websocket"
 	"github.com/servicecomb/service-center/server/core"
 	apt "github.com/servicecomb/service-center/server/core"
@@ -866,7 +865,7 @@ func (s *InstanceController) Watch(in *pb.WatchInstanceRequest, stream pb.Servic
 		util.LOGGER.Errorf(err, "establish watch failed: invalid params.")
 		return err
 	}
-	tenant := util.ParaseTenant(stream.Context())
+	tenant := util.ParaseTenantProject(stream.Context())
 	watcher := nf.NewServiceWatcher(in.SelfServiceId, apt.GetInstanceRootKey(tenant)+"/")
 	err = s.NotifyService.AddNotifier(watcher)
 	util.LOGGER.Infof("start watch instance status, watcher %s %s", watcher.Subject(), watcher.Id())
@@ -878,7 +877,7 @@ func (s *InstanceController) WebSocketWatch(ctx context.Context, in *pb.WatchIns
 		serviceUtil.EstablishWebSocketError(conn, err)
 		return
 	}
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 	watcher := nf.NewServiceWatcher(in.SelfServiceId, apt.GetInstanceRootKey(tenant)+"/")
 	serviceUtil.DoWebSocketWatch(s.NotifyService, watcher, conn)
 }
@@ -888,83 +887,12 @@ func (s *InstanceController) WebSocketListAndWatch(ctx context.Context, in *pb.W
 		serviceUtil.EstablishWebSocketError(conn, err)
 		return
 	}
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 	watcher := nf.NewServiceListWatcher(in.SelfServiceId, apt.GetInstanceRootKey(tenant)+"/",
-		func(rev int64) []*pb.WatchInstanceResponse {
-			return queryAllProvidersIntances(ctx, in.SelfServiceId, rev)
+		func() ([]*pb.WatchInstanceResponse, int64) {
+			return serviceUtil.QueryAllProvidersIntances(ctx, in.SelfServiceId)
 		})
 	serviceUtil.DoWebSocketWatch(s.NotifyService, watcher, conn)
-}
-
-func queryAllProvidersIntances(ctx context.Context, selfServiceId string, rev int64) []*pb.WatchInstanceResponse {
-	tenant := util.ParaseTenantProject(ctx)
-	key := apt.GenerateConsumerDependencyKey(tenant, selfServiceId, "")
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action:     registry.GET,
-		Key:        []byte(key),
-		WithPrefix: true,
-		KeyOnly:    true,
-		//WithRev:    rev,
-	})
-	if err != nil {
-		util.LOGGER.Errorf(err, "Get %s providers id set with revision %d failed.", selfServiceId, rev)
-		return nil
-	}
-	results := []*pb.WatchInstanceResponse{}
-	for _, depsKv := range resp.Kvs {
-		providerDepsKey := string(depsKv.Key)
-		providerId := providerDepsKey[strings.LastIndex(providerDepsKey, "/")+1:]
-
-		service, err := getServiceByServiceId(ctx, tenant, providerId)
-		if err != nil {
-			return nil
-		}
-		util.LOGGER.Debugf("Get provider service %v with revision %d.", service, rev)
-
-		kvs, err := queryServiceInstancesKvs(ctx, providerId, rev)
-		if err != nil {
-			util.LOGGER.Errorf(err, "Get instance of service %s with revision %d from etcd failed.",
-				providerId, rev)
-			return nil
-		}
-
-		util.LOGGER.Debugf("Get provider service %s instances[%d] with revision %d.", providerId, len(kvs), rev)
-		for _, kv := range kvs {
-			util.LOGGER.Debugf("start unmarshal service instance file: %s", string(kv.Key))
-			instance := &pb.MicroServiceInstance{}
-			err := json.Unmarshal(kv.Value, instance)
-			if err != nil {
-				util.LOGGER.Errorf(err, "Unmarshal instance of service %s failed.", providerId)
-				return nil
-			}
-			results = append(results, &pb.WatchInstanceResponse{
-				Response: pb.CreateResponse(pb.Response_SUCCESS, "list instance successfully"),
-				Action:   string(pb.EVT_CREATE),
-				Key: &pb.MicroServiceKey{
-					AppId:       service.AppId,
-					ServiceName: service.ServiceName,
-					Version:     service.Version,
-				},
-				Instance: instance,
-			})
-		}
-	}
-	return results
-}
-
-func queryServiceInstancesKvs(ctx context.Context, serviceId string, rev int64) ([]*mvccpb.KeyValue, error) {
-	tenant := util.ParaseTenantProject(ctx)
-	key := apt.GenerateInstanceKey(tenant, serviceId, "")
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action:     registry.GET,
-		Key:        []byte(key),
-		WithPrefix: true,
-		WithRev:    rev,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return resp.Kvs, nil
 }
 
 func (s *InstanceController) CluterHealth(ctx context.Context) (*pb.GetInstancesResponse, error) {

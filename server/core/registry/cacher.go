@@ -22,7 +22,6 @@ import (
 )
 
 type Cacher interface {
-	CacheRevision() int64
 	Run()
 }
 
@@ -31,10 +30,6 @@ type KvCacher struct {
 	lw  ListWatcher
 
 	store map[string]*mvccpb.KeyValue
-}
-
-func (c *KvCacher) CacheRevision() int64 {
-	return c.lw.Revision()
 }
 
 func (c *KvCacher) ListAndWatch() error {

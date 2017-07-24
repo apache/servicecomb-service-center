@@ -16,10 +16,16 @@ package util
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/gorilla/websocket"
+	apt "github.com/servicecomb/service-center/server/core"
 	pb "github.com/servicecomb/service-center/server/core/proto"
+	"github.com/servicecomb/service-center/server/core/registry"
+	"github.com/servicecomb/service-center/server/service/microservice"
 	nf "github.com/servicecomb/service-center/server/service/notification"
 	"github.com/servicecomb/service-center/util"
+	"golang.org/x/net/context"
+	"strings"
 	"time"
 )
 
@@ -121,4 +127,81 @@ func EstablishWebSocketError(conn *websocket.Conn, err error) {
 	if err := conn.WriteMessage(websocket.TextMessage, []byte(err.Error())); err != nil {
 		util.LOGGER.Errorf(err, "establish web socket watch failed: write message failed.")
 	}
+}
+
+func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (results []*pb.WatchInstanceResponse, rev int64) {
+	results = []*pb.WatchInstanceResponse{}
+
+	tenant := util.ParaseTenantProject(ctx)
+
+	key := apt.GenerateConsumerDependencyKey(tenant, selfServiceId, "")
+	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+		Action:     registry.GET,
+		Key:        []byte(key),
+		WithPrefix: true,
+		KeyOnly:    true,
+	})
+	if err != nil {
+		util.LOGGER.Errorf(err, "Get %s providers id set failed.", selfServiceId)
+		return
+	}
+
+	rev = resp.Revision
+
+	for _, depsKv := range resp.Kvs {
+		providerDepsKey := string(depsKv.Key)
+		providerId := providerDepsKey[strings.LastIndex(providerDepsKey, "/")+1:]
+
+		service, err := microservice.GetById(tenant, providerId, rev)
+		if service == nil {
+			return
+		}
+		util.LOGGER.Debugf("query provider service %v with revision %d.", service, rev)
+
+		kvs, err := queryServiceInstancesKvs(ctx, providerId, rev)
+		if err != nil {
+			return
+		}
+
+		util.LOGGER.Debugf("query provider service %s instances[%d] with revision %d.", providerId, len(kvs), rev)
+		for _, kv := range kvs {
+			util.LOGGER.Debugf("start unmarshal service instance file with revision %d: %s",
+				rev, string(kv.Key))
+			instance := &pb.MicroServiceInstance{}
+			err := json.Unmarshal(kv.Value, instance)
+			if err != nil {
+				util.LOGGER.Errorf(err, "unmarshal instance of service %s with revision %d failed.",
+					providerId, rev)
+				return
+			}
+			results = append(results, &pb.WatchInstanceResponse{
+				Response: pb.CreateResponse(pb.Response_SUCCESS, "list instance successfully"),
+				Action:   string(pb.EVT_CREATE),
+				Key: &pb.MicroServiceKey{
+					AppId:       service.AppId,
+					ServiceName: service.ServiceName,
+					Version:     service.Version,
+				},
+				Instance: instance,
+			})
+		}
+	}
+	return
+}
+
+func queryServiceInstancesKvs(ctx context.Context, serviceId string, rev int64) ([]*mvccpb.KeyValue, error) {
+	tenant := util.ParaseTenantProject(ctx)
+	key := apt.GenerateInstanceKey(tenant, serviceId, "")
+	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+		Action:     registry.GET,
+		Key:        []byte(key),
+		WithPrefix: true,
+		WithRev:    rev,
+	})
+	if err != nil {
+		util.LOGGER.Errorf(err, "query instance of service %s with revision %d from etcd failed.",
+			serviceId, rev)
+		return nil, err
+	}
+	return resp.Kvs, nil
 }

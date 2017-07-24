@@ -46,7 +46,6 @@ type NotifyService struct {
 	Config *NotifyServerConfig
 
 	cacherMap map[string]registry.Cacher
-
 	notifiers map[string]map[string]*list.List
 	queue     chan NotifyJob
 	err       chan error

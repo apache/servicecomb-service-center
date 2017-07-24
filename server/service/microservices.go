@@ -1772,7 +1772,7 @@ func (s *ServiceController) checkSchemaInfoExist(ctx context.Context, key string
 
 func GetAllServiceUtil(ctx context.Context) ([]*pb.MicroService, error) {
 	tenant := util.ParaseTenantProject(ctx)
-	services, err := ms.GetServicesByTenent(ctx, tenant)
+	services, err := ms.GetServicesByTenant(ctx, tenant)
 	if err != nil {
 		return nil, err
 	}

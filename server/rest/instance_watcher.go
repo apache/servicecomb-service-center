@@ -32,7 +32,7 @@ func (this *WatchService) URLPatterns() []rest.Route {
 	}
 }
 
-func (this *WatchService) Watch(w http.ResponseWriter, r *http.Request) {
+func upgrade(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error) {
 	var upgrader = websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
 			return true
@@ -43,7 +43,15 @@ func (this *WatchService) Watch(w http.ResponseWriter, r *http.Request) {
 	}
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		util.LOGGER.Error("upgrade:"+err.Error(), err)
+		util.LOGGER.Error("upgrade failed.", err)
+		WriteText(http.StatusInternalServerError, "Upgrade error", w)
+	}
+	return conn, err
+}
+
+func (this *WatchService) Watch(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrade(w, r)
+	if err != nil {
 		return
 	}
 	defer conn.Close()
@@ -53,17 +61,8 @@ func (this *WatchService) Watch(w http.ResponseWriter, r *http.Request) {
 }
 
 func (this *WatchService) ListAndWatch(w http.ResponseWriter, r *http.Request) {
-	var upgrader = websocket.Upgrader{
-		CheckOrigin: func(r *http.Request) bool {
-			return true
-		},
-		/*Error: func(w http.ResponseWriter, r *http.Request, status int, reason error) {
-
-		  },*/
-	}
-	conn, err := upgrader.Upgrade(w, r, nil)
+	conn, err := upgrade(w, r)
 	if err != nil {
-		util.LOGGER.Error("upgrade:"+err.Error(), err)
 		return
 	}
 	defer conn.Close()
