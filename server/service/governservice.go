@@ -44,7 +44,7 @@ func (governServiceController *GovernServiceController) GetServicesInfo(ctx cont
 		}
 	}
 	allServiceDetails := []*pb.ServiceDetail{}
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 	serviceId := ""
 	for _, service := range services {
 		serviceId = service.ServiceId
@@ -65,7 +65,7 @@ func (governServiceController *GovernServiceController) GetServicesInfo(ctx cont
 }
 
 func (governServiceController *GovernServiceController) GetServiceDetail(ctx context.Context, in *pb.GetServiceRequest) (*pb.GetServiceDetailResponse, error) {
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParaseTenantProject(ctx)
 	opts := []string{"tags", "rules", "instances", "schemas", "dependencies"}
 
 	if len(in.ServiceId) == 0 {

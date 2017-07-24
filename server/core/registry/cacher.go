@@ -26,8 +26,9 @@ type Cacher interface {
 }
 
 type KvCacher struct {
-	Cfg   *KvCacherConfig
-	lw    ListWatcher
+	Cfg *KvCacherConfig
+	lw  ListWatcher
+
 	store map[string]*mvccpb.KeyValue
 }
 
@@ -36,13 +37,15 @@ func (c *KvCacher) ListAndWatch() error {
 	listOps := &ListOptions{
 		Timeout: c.Cfg.Timeout,
 	}
-	if c.lw.Revision() == 0 {
+	rev := c.lw.Revision()
+	if rev == 0 {
 		kvs, err := c.lw.List(listOps)
 		if err != nil {
 			util.LOGGER.Errorf(err, "list key %s failed, list options: %+v", c.Cfg.Key, listOps)
 			return err
 		}
-		c.sync(c.filter(kvs))
+		rev = c.lw.Revision()
+		c.sync(c.filter(rev, kvs))
 		syncDuration := time.Now().Sub(start)
 
 		if syncDuration > 5*time.Second {
@@ -56,7 +59,7 @@ func (c *KvCacher) ListAndWatch() error {
 
 	watcher := c.lw.Watch(listOps)
 	util.LOGGER.Debugf("finish to new watcher, key %s, list options: %+v, start rev: %d+1",
-		c.Cfg.Key, listOps, c.lw.Revision())
+		c.Cfg.Key, listOps, rev)
 	err := c.handleWatcher(watcher)
 	if err != nil {
 		util.LOGGER.Errorf(err, "handle watcher failed, watch key %s, list options: %+v", c.Cfg.Key, listOps)
@@ -97,12 +100,20 @@ func (c *KvCacher) sync(evts []*Event) {
 					evt.Type, proto.EVT_UPDATE, key)
 				t = proto.EVT_UPDATE
 			}
-			c.Cfg.OnEvent(t, kv)
+			c.Cfg.OnEvent(&KvEvent{
+				Revision: evt.Revision,
+				Action:   t,
+				KV:       kv,
+			})
 		case proto.EVT_DELETE:
 			if ok {
 				util.LOGGER.Debugf("remove key %s and notify watcher, %+v", key, kv)
 				delete(c.store, key)
-				c.Cfg.OnEvent(evt.Type, prevKv)
+				c.Cfg.OnEvent(&KvEvent{
+					Revision: evt.Revision,
+					Action:   evt.Type,
+					KV:       prevKv,
+				})
 				continue
 			}
 			util.LOGGER.Warnf(nil, "unexpected %s event! nonexistent key %s", evt.Type, key)
@@ -110,7 +121,7 @@ func (c *KvCacher) sync(evts []*Event) {
 	}
 }
 
-func (c *KvCacher) filter(items []interface{}) []*Event {
+func (c *KvCacher) filter(rev int64, items []interface{}) []*Event {
 	oc, nc := len(c.store), len(items)
 	tc := oc + nc
 	if tc == 0 {
@@ -126,7 +137,6 @@ func (c *KvCacher) filter(items []interface{}) []*Event {
 		kv := itf.(*mvccpb.KeyValue)
 		newStore[BytesToStringWithNoCopy(kv.Key)] = kv
 	}
-
 	filterStopCh := make(chan struct{})
 	eventsCh := make(chan *Event, max)
 	go func() {
@@ -134,6 +144,7 @@ func (c *KvCacher) filter(items []interface{}) []*Event {
 			_, ok := newStore[k]
 			if !ok {
 				eventsCh <- &Event{
+					Revision: rev,
 					Type:     proto.EVT_DELETE,
 					WatchKey: c.Cfg.Key,
 					Object:   v,
@@ -148,6 +159,7 @@ func (c *KvCacher) filter(items []interface{}) []*Event {
 			ov, ok := c.store[k]
 			if !ok {
 				eventsCh <- &Event{
+					Revision: rev,
 					Type:     proto.EVT_CREATE,
 					WatchKey: c.Cfg.Key,
 					Object:   v,
@@ -156,6 +168,7 @@ func (c *KvCacher) filter(items []interface{}) []*Event {
 			}
 			if ov.ModRevision < v.ModRevision {
 				eventsCh <- &Event{
+					Revision: rev,
 					Type:     proto.EVT_UPDATE,
 					WatchKey: c.Cfg.Key,
 					Object:   v,
@@ -194,11 +207,17 @@ func (c *KvCacher) Run() {
 	}()
 }
 
+type KvEvent struct {
+	Revision int64
+	Action   proto.EventType
+	KV       *mvccpb.KeyValue
+}
+
 type KvCacherConfig struct {
 	Key     string
 	Timeout time.Duration
 	Period  time.Duration
-	OnEvent func(action proto.EventType, kv *mvccpb.KeyValue) error
+	OnEvent func(evt *KvEvent) error
 }
 
 func (cfg *KvCacherConfig) String() string {

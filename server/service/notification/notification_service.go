@@ -17,13 +17,11 @@ import (
 	"container/list"
 	"encoding/json"
 	"errors"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	apt "github.com/servicecomb/service-center/server/core"
 	pb "github.com/servicecomb/service-center/server/core/proto"
 	"github.com/servicecomb/service-center/server/core/registry"
 	"github.com/servicecomb/service-center/server/service/dependency"
 	"github.com/servicecomb/service-center/server/service/microservice"
-	"github.com/servicecomb/service-center/server/service/tenant"
 	"github.com/servicecomb/service-center/util"
 	"strings"
 	"sync"
@@ -45,7 +43,9 @@ type NotifyServerConfig struct {
 }
 
 type NotifyService struct {
-	Config    *NotifyServerConfig
+	Config *NotifyServerConfig
+
+	cacherMap map[string]registry.Cacher
 	notifiers map[string]map[string]*list.List
 	queue     chan NotifyJob
 	err       chan error
@@ -57,37 +57,46 @@ func (s *NotifyService) Err() <-chan error {
 	return s.err
 }
 
-func (s *NotifyService) AddNotifier(n Notifier) error {
+func (s *NotifyService) ListWatcher(key string) registry.Cacher {
+	return s.cacherMap[key]
+}
+
+func (s *NotifyService) AddNotifier(n Worker) error {
 	if s.isClose {
 		return errors.New("server is shutting down")
 	}
+
 	s.mux.Lock()
-	_, ok := s.notifiers[n.GetSubject()]
+	_, ok := s.notifiers[n.Subject()]
 	if !ok {
-		s.notifiers[n.GetSubject()] = map[string]*list.List{}
+		s.notifiers[n.Subject()] = map[string]*list.List{}
 	}
 
-	m := s.notifiers[n.GetSubject()]
-	ns, ok := m[n.GetId()]
+	m := s.notifiers[n.Subject()]
+	ns, ok := m[n.Id()]
 	if !ok {
 		ns = list.New()
 	}
 	ns.PushBack(n)
-	m[n.GetId()] = ns
+	m[n.Id()] = ns
+
+	n.SetService(s)
 	s.mux.Unlock()
 
+	n.OnAccept()
 	return nil
 }
 
-func (s *NotifyService) RemoveNotifier(r Notifier) {
+func (s *NotifyService) RemoveNotifier(r Worker) {
 	s.mux.Lock()
-	m, ok := s.notifiers[r.GetSubject()]
+	m, ok := s.notifiers[r.Subject()]
 	if ok {
-		ns, ok := m[r.GetId()]
+		ns, ok := m[r.Id()]
 		if ok {
 			for n := ns.Front(); n != nil; n = n.Next() {
 				if n.Value == r {
 					ns.Remove(n)
+					r.Close()
 					break
 				}
 			}
@@ -112,18 +121,18 @@ func (s *NotifyService) AddJob(job NotifyJob) error {
 
 func (s *NotifyService) publish2Subscriber() {
 	for job := range s.queue {
-		util.LOGGER.Infof("notification server got a job %s %s", job.GetSubject(), job.GetId())
+		util.LOGGER.Infof("notification server got a job %s %s", job.Subject(), job.Id())
 
 		s.mux.Lock()
 
-		m, ok := s.notifiers[job.GetSubject()]
+		m, ok := s.notifiers[job.Subject()]
 		if ok {
 			// publish的subject如果带上id，则单播，否则广播
-			if len(job.GetId()) != 0 {
-				ns, ok := m[job.GetId()]
+			if len(job.Id()) != 0 {
+				ns, ok := m[job.Id()]
 				if ok {
 					for n := ns.Front(); n != nil; n = n.Next() {
-						go n.Value.(Notifier).Notify(job)
+						go n.Value.(Worker).OnMessage(job)
 					}
 				}
 				s.mux.Unlock()
@@ -132,7 +141,7 @@ func (s *NotifyService) publish2Subscriber() {
 			for key := range m {
 				ns := m[key]
 				for n := ns.Front(); n != nil; n = n.Next() {
-					go n.Value.(Notifier).Notify(job)
+					go n.Value.(Worker).OnMessage(job)
 				}
 			}
 		}
@@ -154,6 +163,7 @@ func (s *NotifyService) StartNotifyService() {
 		s.Config.MaxQueue = DEFAULT_MAX_QUEUE
 	}
 
+	s.cacherMap = make(map[string]registry.Cacher)
 	s.notifiers = map[string]map[string]*list.List{}
 	s.err = make(chan error, 1)
 	s.queue = make(chan NotifyJob, s.Config.MaxQueue)
@@ -162,46 +172,21 @@ func (s *NotifyService) StartNotifyService() {
 	go s.publish2Subscriber()
 
 	// 错误notifier清理
-	s.AddNotifier(&NotifyServiceHealthChecker{
-		BaseNotifier: BaseNotifier{
-			Id:      NOTIFY_SERVER_CHECKER_NAME,
-			Subject: NOTIFY_SERVER_CHECK_SUBJECT,
-			Server:  s,
-		},
-	})
+	s.AddNotifier(NewNotifyServiceHealthChecker())
 	s.WatchTenants()
 	util.LOGGER.Info("notify service is ready")
-}
-
-func (s *NotifyService) WatchInstanceWhenStart() {
-	kvs, err := tenant.GetAllTenantRawData()
-	if err != nil {
-		util.LOGGER.Errorf(err, "Get all tenants failed.")
-		s.err <- err
-		return
-	}
-	if len(kvs) != 0 {
-		tenant := ""
-		instByTenant := ""
-		arrTmp := []string{}
-		for _, kv := range kvs {
-			arrTmp = strings.Split(string(kv.Key), "/")
-			tenant = arrTmp[len(arrTmp)-1]
-			instByTenant = apt.GetInstanceRootKey(tenant)
-			// 实例监听
-			s.WatchInstance(instByTenant)
-		}
-	}
 }
 
 func (s *NotifyService) WatchTenants() {
 	key := apt.GenerateTenantKey("")
 
-	registry.NewKvCacher(&registry.KvCacherConfig{
+	c := registry.NewKvCacher(&registry.KvCacherConfig{
 		Key:     key[:len(key)-1],
 		Timeout: DEFAULT_LISTWATCH_TIMEOUT,
 		Period:  time.Second,
-		OnEvent: func(action pb.EventType, kv *mvccpb.KeyValue) error {
+		OnEvent: func(evt *registry.KvEvent) error {
+			kv := evt.KV
+			action := evt.Action
 			tenant := pb.GetInfoFromTenantChangeEvent(kv)
 			if len(tenant) == 0 {
 				util.LOGGER.Errorf(nil,
@@ -216,16 +201,20 @@ func (s *NotifyService) WatchTenants() {
 			s.WatchInstance(apt.GetInstanceRootKey(tenant))
 			return nil
 		},
-	}).Run()
+	})
+	s.cacherMap[key] = c
+	c.Run()
 }
 
 //SC 负责监控所有实例变化
 func (s *NotifyService) WatchInstance(instanceWatchByTenantKey string) {
-	registry.NewKvCacher(&registry.KvCacherConfig{
+	c := registry.NewKvCacher(&registry.KvCacherConfig{
 		Key:     instanceWatchByTenantKey,
 		Timeout: DEFAULT_LISTWATCH_TIMEOUT,
 		Period:  time.Second,
-		OnEvent: func(action pb.EventType, kv *mvccpb.KeyValue) error {
+		OnEvent: func(evt *registry.KvEvent) error {
+			kv := evt.KV
+			action := evt.Action
 			providerId, providerInstanceId, tenantProject, data := pb.GetInfoFromInstChangedEvent(kv)
 			if data == nil {
 				util.LOGGER.Errorf(nil,
@@ -271,13 +260,8 @@ func (s *NotifyService) WatchInstance(instanceWatchByTenantKey string) {
 			for _, dependence := range Kvs {
 				consumer := string(dependence.Key)
 				consumer = consumer[strings.LastIndex(consumer, "/")+1:]
-				job := &WatchJob{
-					BaseNotifyJob: BaseNotifyJob{
-						Id:      consumer,
-						Subject: apt.GetInstanceRootKey(tenantProject) + "/",
-					},
-					Response: response,
-				}
+				job := NewWatchJob(consumer, apt.GetInstanceRootKey(tenantProject)+"/",
+					evt.Revision, response)
 				util.LOGGER.Debugf("publish event to notify server, %v", job)
 
 				// TODO add超时怎么处理？
@@ -285,7 +269,9 @@ func (s *NotifyService) WatchInstance(instanceWatchByTenantKey string) {
 			}
 			return nil
 		},
-	}).Run()
+	})
+	s.cacherMap[instanceWatchByTenantKey+"/"] = c
+	c.Run()
 }
 
 func (s *NotifyService) Close() {
@@ -293,14 +279,16 @@ func (s *NotifyService) Close() {
 
 	close(s.queue)
 
+	s.mux.Lock()
 	for subject := range s.notifiers {
 		for key := range s.notifiers[subject] {
 			ns := s.notifiers[subject][key]
 			for n := ns.Front(); n != nil; n = n.Next() {
-				n.Value.(Notifier).Close()
+				n.Value.(Worker).Close()
 			}
 		}
 	}
+	s.mux.Unlock()
 
 	close(s.err)
 }
