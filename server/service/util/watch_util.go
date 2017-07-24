@@ -15,6 +15,7 @@ package util
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/gorilla/websocket"
@@ -29,22 +30,28 @@ import (
 	"time"
 )
 
-func WatchJobHandler(watcher *nf.ListWatcher, stream pb.ServiceInstanceCtrl_WatchServer, timeout time.Duration) error {
+func WatchJobHandler(watcher *nf.ListWatcher, stream pb.ServiceInstanceCtrl_WatchServer, timeout time.Duration) (err error) {
 	for {
 		select {
 		case <-time.After(timeout):
 		// TODO grpc 长连接心跳？
 		case job := <-watcher.Job:
+			if job == nil {
+				err = errors.New("channel is closed")
+				util.LOGGER.Errorf(err, "watcher %s %s caught an exception",
+					watcher.Subject(), watcher.Id())
+				return
+			}
 			resp := job.(*nf.WatchJob).Response
 			util.LOGGER.Infof("event is coming in, watcher %s %s",
 				watcher.Subject(), watcher.Id())
 
-			err := stream.Send(resp)
+			err = stream.Send(resp)
 			if err != nil {
 				util.LOGGER.Errorf(err, "send message error, watcher %s %s",
 					watcher.Subject(), watcher.Id())
 				watcher.SetError(err)
-				return err
+				return
 			}
 		}
 	}

@@ -48,8 +48,10 @@ type NotifyService struct {
 	cacherMap map[string]registry.Cacher
 	notifiers map[string]map[string]*list.List
 	queue     chan NotifyJob
+	wait      chan struct{}
 	err       chan error
 	mux       sync.Mutex
+	closeMux  sync.RWMutex
 	isClose   bool
 }
 
@@ -62,7 +64,7 @@ func (s *NotifyService) ListWatcher(key string) registry.Cacher {
 }
 
 func (s *NotifyService) AddNotifier(n Worker) error {
-	if s.isClose {
+	if s.canClose() {
 		return errors.New("server is shutting down")
 	}
 
@@ -105,9 +107,22 @@ func (s *NotifyService) RemoveNotifier(r Worker) {
 	s.mux.Unlock()
 }
 
+func (s *NotifyService) RemoveAllNotifiers() {
+	s.mux.Lock()
+	for subject := range s.notifiers {
+		for key := range s.notifiers[subject] {
+			ns := s.notifiers[subject][key]
+			for n := ns.Front(); n != nil; n = n.Next() {
+				n.Value.(Worker).Close()
+			}
+		}
+	}
+	s.mux.Unlock()
+}
+
 //通知内容塞到队列里
 func (s *NotifyService) AddJob(job NotifyJob) error {
-	if s.isClose {
+	if s.canClose() {
 		return errors.New("add notify job failed for server shutdown")
 	}
 	select {
@@ -120,10 +135,16 @@ func (s *NotifyService) AddJob(job NotifyJob) error {
 }
 
 func (s *NotifyService) publish2Subscriber() {
+	defer close(s.wait)
 	for job := range s.queue {
 		util.LOGGER.Infof("notification server got a job %s %s", job.Subject(), job.Id())
 
 		s.mux.Lock()
+
+		if s.canClose() && len(s.notifiers) == 0 {
+			s.mux.Unlock()
+			return
+		}
 
 		m, ok := s.notifiers[job.Subject()]
 		if ok {
@@ -167,6 +188,7 @@ func (s *NotifyService) StartNotifyService() {
 	s.notifiers = map[string]map[string]*list.List{}
 	s.err = make(chan error, 1)
 	s.queue = make(chan NotifyJob, s.Config.MaxQueue)
+	s.wait = make(chan struct{})
 	s.isClose = false
 
 	go s.publish2Subscriber()
@@ -274,21 +296,28 @@ func (s *NotifyService) WatchInstance(instanceWatchByTenantKey string) {
 	c.Run()
 }
 
+func (s *NotifyService) canClose() (b bool) {
+	s.closeMux.RLock()
+	b = s.isClose
+	s.closeMux.RUnlock()
+	return
+}
+
 func (s *NotifyService) Close() {
+	if s.canClose() {
+		return
+	}
+	util.LOGGER.Info("stopping notify service...")
+
+	s.closeMux.Lock()
 	s.isClose = true
+	s.closeMux.Unlock()
 
 	close(s.queue)
 
-	s.mux.Lock()
-	for subject := range s.notifiers {
-		for key := range s.notifiers[subject] {
-			ns := s.notifiers[subject][key]
-			for n := ns.Front(); n != nil; n = n.Next() {
-				n.Value.(Worker).Close()
-			}
-		}
-	}
-	s.mux.Unlock()
+	<-s.wait
+
+	s.RemoveAllNotifiers()
 
 	close(s.err)
 }

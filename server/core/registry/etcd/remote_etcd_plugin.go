@@ -16,6 +16,7 @@ package etcd
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"github.com/astaxie/beego"
 	"github.com/coreos/etcd/clientv3"
@@ -357,13 +358,19 @@ func (c *EtcdClient) Watch(ctx context.Context, op *registry.PluginOp, send func
 		// 不能设置超时context，内部判断了连接超时和watch超时
 		ws := client.Watch(context.Background(), key, c.toGetRequest(op)...)
 
-		var resp clientv3.WatchResponse
+		//var ok bool
+		//var resp clientv3.WatchResponse
 		for {
 			select {
 			case <-ctx.Done():
 				util.LOGGER.Debugf("time out to watch key %s", key)
 				return
-			case resp = <-ws:
+			case resp, ok := <-ws:
+				if !ok {
+					err := errors.New("channel is closed")
+					util.LOGGER.Errorf(err, "watching key %s caught an exception", key)
+					return err
+				}
 				if err = resp.Err(); err != nil {
 					util.LOGGER.Errorf(err, "watching key %s caught an exception", key)
 					return err
