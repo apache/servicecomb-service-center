@@ -15,11 +15,14 @@ package integrationtest_test
 
 import (
 	"encoding/json"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"github.com/widuu/gojson"
 	"net/http"
 	"strings"
 
 	"bytes"
+	. "github.com/servicecomb/service-center/integration"
 	"io/ioutil"
 )
 
