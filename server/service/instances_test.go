@@ -19,6 +19,9 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/servicecomb/service-center/server/core"
 	pb "github.com/servicecomb/service-center/server/core/proto"
+	"github.com/servicecomb/service-center/server/service"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
 )
 
 var instanceId string
@@ -916,4 +919,63 @@ var _ = Describe("InstanceController", func() {
 			})
 		})
 	})
+
+	Describe("Watcher", func() {
+		Context("normal", func() {
+			It("参数校验，不存在", func() {
+				fmt.Println("UT===========参数校验，不存在")
+				IC := insResource.(*service.InstanceController)
+				err := IC.WatchPreOpera(getContext(), &pb.WatchInstanceRequest{
+					SelfServiceId: "-1",
+				})
+				fmt.Println("UT============" + err.Error())
+				Expect(err).NotTo(BeNil())
+
+				err = IC.Watch(&pb.WatchInstanceRequest{
+					SelfServiceId: "-1",
+				}, &grpcWatchServer{})
+				fmt.Println("UT============" + err.Error())
+				Expect(err).NotTo(BeNil())
+			})
+			It("参数校验，非法", func() {
+				fmt.Println("UT===========参数校验，非法")
+				err := insResource.(*service.InstanceController).WatchPreOpera(getContext(), &pb.WatchInstanceRequest{
+					SelfServiceId: "",
+				})
+				fmt.Println("UT============" + err.Error())
+				Expect(err).NotTo(BeNil())
+			})
+			It("参数校验，OK", func() {
+				fmt.Println("UT===========参数校验，OK")
+				respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceName: "service_name_watch",
+						AppId:       "watch",
+						Version:     "1.0.0",
+						Level:       "BACK",
+						Status:      "UP",
+					},
+				})
+				Expect(err).To(BeNil())
+
+				err = insResource.(*service.InstanceController).WatchPreOpera(getContext(),
+					&pb.WatchInstanceRequest{
+						SelfServiceId: respCreate.ServiceId,
+					})
+				Expect(err).To(BeNil())
+			})
+		})
+	})
 })
+
+type grpcWatchServer struct {
+	grpc.ServerStream
+}
+
+func (x *grpcWatchServer) Send(m *pb.WatchInstanceResponse) error {
+	return nil
+}
+
+func (x *grpcWatchServer) Context() context.Context {
+	return getContext()
+}
