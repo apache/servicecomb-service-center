@@ -1,0 +1,6 @@
+FROM {{.BASE_IMAGE}}:{{.BASE_IMAGE_VERSION}}
+
+COPY ./service-center ./start.sh /root/
+
+ENTRYPOINT ["/root/start.sh"]
+
