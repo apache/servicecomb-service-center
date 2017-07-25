@@ -16,8 +16,8 @@ package helper
 import (
 	"errors"
 	"fmt"
-	"github.com/servicecomb/service-center/server/core"
-	"github.com/servicecomb/service-center/util"
+	"github.com/ServiceComb/service-center/server/core"
+	"github.com/ServiceComb/service-center/util"
 	"net/http"
 )
 

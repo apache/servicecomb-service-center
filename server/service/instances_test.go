@@ -17,8 +17,8 @@ import (
 	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/servicecomb/service-center/server/core"
-	pb "github.com/servicecomb/service-center/server/core/proto"
+	"github.com/ServiceComb/service-center/server/core"
+	pb "github.com/ServiceComb/service-center/server/core/proto"
 )
 
 var instanceId string

@@ -17,8 +17,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/servicecomb/service-center/pkg/lager"
-	"github.com/servicecomb/service-center/pkg/lager/core"
+	"github.com/ServiceComb/service-center/pkg/lager"
+	"github.com/ServiceComb/service-center/pkg/lager/core"
 	"strings"
 	"time"
 )
