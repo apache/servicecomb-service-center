@@ -4,18 +4,15 @@ output
 src/github.com/*
 src/**/*.key
 src/**/*.conf
-!src/github.com/servicecomb/service-center/conf/app.conf
+!src/github.com/ServiceComb/service-center/conf/app.conf
 src/*
 !src/github.com
-!src/code.huawei.com/cse/servicecenter
-!src/github.com/servicecomb
-!code.huawei.com
+!src/github.com/ServiceComb
 
 service-center.iml
 .idea/
 **/*junit.xml
 **/*.exe
-src/code.huawei.com/cse/servicecenter/conf/
 vendor/**
 !vendor/manifest
 !vendor/manifest/github.com/didip/tollbooth

@@ -16,7 +16,7 @@ package registry
 import (
 	"context"
 	"fmt"
-	"github.com/servicecomb/service-center/server/core/proto"
+	"github.com/ServiceComb/service-center/server/core/proto"
 	"sync"
 	"time"
 )

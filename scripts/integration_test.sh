@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 echo "${green}Building Service-center${reset}"
 
-go build -o service-center github.com/servicecomb/service-center
+go build -o service-center github.com/ServiceComb/service-center
 if [ $? == 0 ]; then
 	echo "${green}Service-center built successfully..${reset}"
 else

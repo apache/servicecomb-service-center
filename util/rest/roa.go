@@ -14,7 +14,7 @@
 package rest
 
 import (
-	"github.com/servicecomb/service-center/util"
+	"github.com/ServiceComb/service-center/util"
 	"reflect"
 )
 

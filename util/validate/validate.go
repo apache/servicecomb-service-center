@@ -16,7 +16,7 @@ package validate
 import (
 	"errors"
 	"fmt"
-	"github.com/servicecomb/service-center/util"
+	"github.com/ServiceComb/service-center/util"
 	"reflect"
 	"regexp"
 	"strconv"
