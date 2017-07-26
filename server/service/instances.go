@@ -130,7 +130,8 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 		switch instance.HealthCheck.Mode {
 		case pb.CHECK_BY_HEARTBEAT:
 			if instance.HealthCheck.Interval <= 0 || instance.HealthCheck.Interval >= math.MaxInt32 ||
-				instance.HealthCheck.Times <= 0 || instance.HealthCheck.Times >= math.MaxInt32 {
+				instance.HealthCheck.Times <= 0 || instance.HealthCheck.Times >= math.MaxInt32 ||
+				instance.HealthCheck.Interval*(instance.HealthCheck.Times+1) >= math.MaxInt32 {
 				util.LOGGER.Errorf(err, "register instance %s(%s) failed for invalid health check settings.", instance.ServiceId, instance.HostName)
 				return &pb.RegisterInstanceResponse{
 					Response: pb.CreateResponse(pb.Response_FAIL, "invalid health check settings"),

@@ -224,7 +224,7 @@ func (s *EtcdEmbed) Compact(ctx context.Context, revision int64) error {
 
 func (s *EtcdEmbed) PutNoOverride(ctx context.Context, op *registry.PluginOp) (bool, error) {
 	resp, err := s.TxnWithCmp(ctx, []*registry.PluginOp{op}, []*registry.CompareOp{
-		&registry.CompareOp{
+		{
 			Key:    op.Key,
 			Type:   registry.CMP_CREATE,
 			Result: registry.CMP_EQUAL,
@@ -376,7 +376,11 @@ func (s *EtcdEmbed) Watch(ctx context.Context, op *registry.PluginOp, send func(
 			case <-ctx.Done():
 				util.LOGGER.Warnf(nil, "time out to watch key %s", key)
 				return
-			case resp := <-responses:
+			case resp, ok := <-responses:
+				if !ok {
+					util.LOGGER.Errorf(nil, "stop to watch key %s, id is %d, channel is closed", key, watchID)
+					return
+				}
 				for _, evt := range resp.Events {
 					pbEvent := &registry.PluginResponse{
 						Action:    registry.PUT,

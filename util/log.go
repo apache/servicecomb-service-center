@@ -49,24 +49,30 @@ func InitLogger(loggerName string, cfg *lager.Config) {
 		panic(fmt.Errorf("unknown logger level: %s", lager.GetConfig().LoggerLevel))
 	}
 
-	go monitorLogFile()
+	monitorLogFile()
 }
 
 func monitorLogFile() {
-	ticker := time.NewTicker(time.Minute * 1)
-	for t := range ticker.C {
-		LOGGER.Debug(fmt.Sprintf("Check log file at %s", t))
-
-		if lager.GetConfig().LoggerFile != "" && !PathExist(lager.GetConfig().LoggerFile) {
-			file, err := os.OpenFile(lager.GetConfig().LoggerFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
-			if err != nil {
-				LOGGER.Errorf(err, "Create log file failed.")
+	Go(func(stopCh <-chan struct{}) {
+		for {
+			select {
+			case <-stopCh:
 				return
-			}
+			case <-time.After(time.Minute):
+				LOGGER.Debug(fmt.Sprintf("Check log file at %s", time.Now()))
 
-			sink := core.NewReconfigurableSink(core.NewWriterSink(file, core.DEBUG), lagerLogLevel)
-			LOGGER.RegisterSink(sink)
-			LOGGER.Errorf(nil, "log file is removed, create again.")
+				if lager.GetConfig().LoggerFile != "" && !PathExist(lager.GetConfig().LoggerFile) {
+					file, err := os.OpenFile(lager.GetConfig().LoggerFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+					if err != nil {
+						LOGGER.Errorf(err, "Create log file failed.")
+						return
+					}
+
+					sink := core.NewReconfigurableSink(core.NewWriterSink(file, core.DEBUG), lagerLogLevel)
+					LOGGER.RegisterSink(sink)
+					LOGGER.Errorf(nil, "log file is removed, create again.")
+				}
+			}
 		}
-	}
+	})
 }

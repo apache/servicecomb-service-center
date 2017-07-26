@@ -190,21 +190,23 @@ func (c *KvCacher) filter(rev int64, items []interface{}) []*Event {
 }
 
 func (c *KvCacher) Run() {
-	go func() {
+	util.Go(func(stopCh <-chan struct{}) {
 		util.LOGGER.Warnf(nil, "start to list and watch %s", c.Cfg)
 		for {
 			start := time.Now()
 			c.ListAndWatch()
 			watchDuration := time.Now().Sub(start)
-			if watchDuration < 0 {
-				continue
+			nextPeriod := 0 * time.Second
+			if watchDuration > 0 && c.Cfg.Period > watchDuration {
+				nextPeriod = c.Cfg.Period - watchDuration
 			}
-			nextPeriod := c.Cfg.Period - watchDuration
-			if nextPeriod > 0 {
-				time.Sleep(nextPeriod)
+			select {
+			case <-stopCh:
+				return
+			case <-time.After(nextPeriod):
 			}
 		}
-	}()
+	})
 }
 
 type KvEvent struct {

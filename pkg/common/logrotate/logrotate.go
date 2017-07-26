@@ -292,12 +292,16 @@ type LogRotateConfig struct {
 }
 
 func RunLogRotate(cfg *LogRotateConfig) {
-	go func() {
+	util.Go(func(stopCh <-chan struct{}) {
 		for {
-			LogRotate(cfg.Dir, cfg.MaxFileSize, cfg.BackupCount)
-			time.Sleep(cfg.Period)
+			select {
+			case <-stopCh:
+				return
+			case <-time.After(cfg.Period):
+				LogRotate(cfg.Dir, cfg.MaxFileSize, cfg.BackupCount)
+			}
 		}
-	}()
+	})
 }
 
 func init() {

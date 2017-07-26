@@ -21,6 +21,8 @@ import (
 	"time"
 )
 
+var defaultRESTfulServer *http.Server
+
 func ListenAndServeTLS(addr string, handler http.Handler) error {
 	verifyClient := common.GetServerSSLConfig().VerifyClient
 	tlsConfig, err := GetServerTLSConfig(verifyClient)
@@ -30,7 +32,7 @@ func ListenAndServeTLS(addr string, handler http.Handler) error {
 	readTimeout, _ := time.ParseDuration(beego.AppConfig.DefaultString("read_timeout", "5s"))
 	writeTimeout, _ := time.ParseDuration(beego.AppConfig.DefaultString("write_timeout", "5s"))
 	maxHeaderBytes := beego.AppConfig.DefaultInt("max_header_bytes", 16384)
-	server := &http.Server{
+	defaultRESTfulServer = &http.Server{
 		Addr:           addr,
 		Handler:        handler,
 		TLSConfig:      tlsConfig,
@@ -41,13 +43,13 @@ func ListenAndServeTLS(addr string, handler http.Handler) error {
 
 	util.LOGGER.Warnf(nil, "listen on server %s.", addr)
 	// 证书已经在config里加载，这里不需要再重新加载
-	return server.ListenAndServeTLS("", "")
+	return defaultRESTfulServer.ListenAndServeTLS("", "")
 }
 func ListenAndServe(addr string, handler http.Handler) error {
 	readTimeout, _ := time.ParseDuration(beego.AppConfig.DefaultString("read_timeout", "5s"))
 	writeTimeout, _ := time.ParseDuration(beego.AppConfig.DefaultString("write_timeout", "5s"))
 	maxHeaderBytes := beego.AppConfig.DefaultInt("max_header_bytes", 16384)
-	server := &http.Server{
+	defaultRESTfulServer = &http.Server{
 		Addr:           addr,
 		Handler:        handler,
 		ReadTimeout:    readTimeout,
@@ -56,5 +58,14 @@ func ListenAndServe(addr string, handler http.Handler) error {
 	}
 
 	util.LOGGER.Warnf(nil, "listen on server %s.", addr)
-	return server.ListenAndServe()
+	return defaultRESTfulServer.ListenAndServe()
+}
+
+func CloseServer() {
+	if defaultRESTfulServer != nil {
+		err := defaultRESTfulServer.Close()
+		if err != nil {
+			util.LOGGER.Errorf(err, "close RESTful server failed.")
+		}
+	}
 }

@@ -80,6 +80,8 @@ func handleSignal() {
 
 	registry.GetRegisterCenter().Close()
 
+	util.GoCloseAndWait()
+
 	close(exit)
 }
 
