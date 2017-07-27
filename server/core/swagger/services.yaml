@@ -12,6 +12,44 @@ basePath: /registry/v3
 produces:
   - application/json
 paths:
+  /version:
+    get:
+      description: |
+        查询服务中心版本信息。
+      tags:
+        - base
+      responses:
+        200:
+          description: 版本信息结构体
+          schema:
+            $ref: '#/definitions/Version'
+        400:
+          description: 错误的请求
+          schema:
+            type: string
+        500:
+          description: 内部错误
+          schema:
+            type: string
+  /health:
+    get:
+      description: |
+        查询服务中心集群信息。
+      tags:
+        - base
+      responses:
+        200:
+          description: 服务中心实例集群信息列表
+          schema:
+            $ref: '#/definitions/GetInstancesResponse'
+        400:
+          description: 错误的请求
+          schema:
+            type: string
+        500:
+          description: 内部错误
+          schema:
+            type: string
   /microservices/{serviceId}:
     get:
       description: |
@@ -955,7 +993,39 @@ paths:
           description: 内部错误
           schema:
             type: string
+  /microservices/{serviceId}/listwatcher:
+    get:
+      description: |
+        watch成功后返回完整的微服务提供者的实例信息，且服务在心跳消失，注册，注销，状态更新时，将这些变化主动推送到客户端。
+      parameters:
+        - name: serviceId
+          in: path
+          description: 微服务消费者的微服务唯一标识。
+          required: true
+          type: string
+      tags:
+        - microservices
+      responses:
+        200:
+          description: 推送给watcher实例变化信息
+          schema:
+            $ref: '#/definitions/WatchInstanceResponse'
+        400:
+          description: 错误的请求
+          schema:
+            type: string
+        500:
+          description: 内部错误
+          schema:
+            type: string
 definitions:
+  Version:
+    type: object
+    properties:
+      apiVersion:
+        type: string
+      buildTag:
+        type: string
   Properties:
     type: object
     description: 扩展属性

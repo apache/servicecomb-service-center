@@ -22,8 +22,8 @@ import (
 )
 
 type Version struct {
-	Api_version string `json:"api_version"`
-	Build_tag   string `json:"build_tag"`
+	ApiVersion string `json:"apiVersion"`
+	BuildTag   string `json:"buildTag"`
 }
 
 type Result struct {
@@ -56,9 +56,9 @@ func (this *MainService) CluterHealth(w http.ResponseWriter, r *http.Request) {
 }
 
 func (this *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
-	api_version := beego.AppConfig.String("version")
-	build_tag := beego.AppConfig.String("build_tag")
-	version := Version{api_version, build_tag}
+	apiVersion := beego.AppConfig.String("version")
+	buildTag := beego.AppConfig.String("build_tag")
+	version := Version{apiVersion, buildTag}
 	versionJSON, _ := json.Marshal(version)
 	w.Header().Set("Content-Type", "application/json;charset=utf-8")
 	w.Write([]byte(versionJSON))

@@ -64,7 +64,7 @@ func (s *NotifyService) ListWatcher(key string) registry.Cacher {
 }
 
 func (s *NotifyService) AddNotifier(n Worker) error {
-	if s.canClose() {
+	if s.closed() {
 		return errors.New("server is shutting down")
 	}
 
@@ -122,7 +122,7 @@ func (s *NotifyService) RemoveAllNotifiers() {
 
 //通知内容塞到队列里
 func (s *NotifyService) AddJob(job NotifyJob) error {
-	if s.canClose() {
+	if s.closed() {
 		return errors.New("add notify job failed for server shutdown")
 	}
 	select {
@@ -141,7 +141,7 @@ func (s *NotifyService) publish2Subscriber() {
 
 		s.mux.Lock()
 
-		if s.canClose() && len(s.notifiers) == 0 {
+		if s.closed() && len(s.notifiers) == 0 {
 			s.mux.Unlock()
 			return
 		}
@@ -219,6 +219,12 @@ func (s *NotifyService) WatchTenants() {
 				return nil
 			}
 
+			if s.closed() {
+				util.LOGGER.Warnf(nil,
+					"caught tenant info %s [%] event, but service closed", string(kv.Key), action)
+				return nil
+			}
+
 			util.LOGGER.Warnf(nil, "new tenant %s instances watcher is created", tenant)
 			s.WatchInstance(apt.GetInstanceRootKey(tenant))
 			return nil
@@ -244,8 +250,15 @@ func (s *NotifyService) WatchInstance(instanceWatchByTenantKey string) {
 					providerId, providerInstanceId, action)
 				return nil
 			}
-			util.LOGGER.Warnf(nil, "notification service catch instance %s/%s [%s] event",
-				providerId, providerInstanceId, action)
+
+			if s.closed() {
+				util.LOGGER.Warnf(nil, "caught instance %s/%s [%] event, but service closed",
+					providerId, providerInstanceId, action)
+				return nil
+			} else {
+				util.LOGGER.Warnf(nil, "caught instance %s/%s [%s] event",
+					providerId, providerInstanceId, action)
+			}
 
 			var instance pb.MicroServiceInstance
 			err := json.Unmarshal(data, &instance)
@@ -296,7 +309,7 @@ func (s *NotifyService) WatchInstance(instanceWatchByTenantKey string) {
 	c.Run()
 }
 
-func (s *NotifyService) canClose() (b bool) {
+func (s *NotifyService) closed() (b bool) {
 	s.closeMux.RLock()
 	b = s.isClose
 	s.closeMux.RUnlock()
@@ -304,10 +317,9 @@ func (s *NotifyService) canClose() (b bool) {
 }
 
 func (s *NotifyService) Close() {
-	if s.canClose() {
+	if s.closed() {
 		return
 	}
-	util.LOGGER.Info("stopping notify service...")
 
 	s.closeMux.Lock()
 	s.isClose = true
@@ -320,4 +332,6 @@ func (s *NotifyService) Close() {
 	s.RemoveAllNotifiers()
 
 	close(s.err)
+
+	util.LOGGER.Info("notify service stopped.")
 }

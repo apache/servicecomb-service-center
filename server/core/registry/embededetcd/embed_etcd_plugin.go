@@ -374,11 +374,10 @@ func (s *EtcdEmbed) Watch(ctx context.Context, op *registry.PluginOp, send func(
 		for {
 			select {
 			case <-ctx.Done():
-				util.LOGGER.Warnf(nil, "time out to watch key %s", key)
 				return
 			case resp, ok := <-responses:
 				if !ok {
-					util.LOGGER.Errorf(nil, "stop to watch key %s, id is %d, channel is closed", key, watchID)
+					err = errors.New("channel is closed")
 					return
 				}
 				for _, evt := range resp.Events {
@@ -395,7 +394,6 @@ func (s *EtcdEmbed) Watch(ctx context.Context, op *registry.PluginOp, send func(
 					}
 					err = send("key information changed", pbEvent)
 					if err != nil {
-						util.LOGGER.Errorf(err, "stop to watch key %s, id is %d", key, watchID)
 						return
 					}
 				}
@@ -403,7 +401,6 @@ func (s *EtcdEmbed) Watch(ctx context.Context, op *registry.PluginOp, send func(
 		}
 	}
 	err = fmt.Errorf("no key has been watched")
-	util.LOGGER.Errorf(nil, err.Error())
 	return
 }
 
