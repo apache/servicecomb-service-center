@@ -23,22 +23,36 @@ import (
 
 var defaultRESTfulServer *http.Server
 
+type httpServerCfg struct {
+	ReadTimeout       time.Duration
+	ReadHeaderTimeout time.Duration
+	WriteTimeout      time.Duration
+	MaxHeaderBytes    int
+}
+
+func loadCfg() *httpServerCfg {
+	readHeaderTimeout, _ := time.ParseDuration(beego.AppConfig.DefaultString("read_header_timeout", "60s"))
+	readTimeout, _ := time.ParseDuration(beego.AppConfig.DefaultString("read_timeout", "60s"))
+	writeTimeout, _ := time.ParseDuration(beego.AppConfig.DefaultString("write_timeout", "60s"))
+	maxHeaderBytes := beego.AppConfig.DefaultInt("max_header_bytes", 16384)
+	return &httpServerCfg{readTimeout, readHeaderTimeout, writeTimeout, maxHeaderBytes}
+}
+
 func ListenAndServeTLS(addr string, handler http.Handler) error {
 	verifyClient := common.GetServerSSLConfig().VerifyClient
 	tlsConfig, err := GetServerTLSConfig(verifyClient)
 	if err != nil {
 		return err
 	}
-	readTimeout, _ := time.ParseDuration(beego.AppConfig.DefaultString("read_timeout", "5s"))
-	writeTimeout, _ := time.ParseDuration(beego.AppConfig.DefaultString("write_timeout", "5s"))
-	maxHeaderBytes := beego.AppConfig.DefaultInt("max_header_bytes", 16384)
+	svrCfg := loadCfg()
 	defaultRESTfulServer = &http.Server{
-		Addr:           addr,
-		Handler:        handler,
-		TLSConfig:      tlsConfig,
-		ReadTimeout:    readTimeout,
-		WriteTimeout:   writeTimeout,
-		MaxHeaderBytes: maxHeaderBytes,
+		Addr:              addr,
+		Handler:           handler,
+		TLSConfig:         tlsConfig,
+		ReadTimeout:       svrCfg.ReadTimeout,
+		ReadHeaderTimeout: svrCfg.ReadHeaderTimeout,
+		WriteTimeout:      svrCfg.WriteTimeout,
+		MaxHeaderBytes:    svrCfg.MaxHeaderBytes,
 	}
 
 	util.LOGGER.Warnf(nil, "listen on server %s.", addr)
@@ -46,15 +60,14 @@ func ListenAndServeTLS(addr string, handler http.Handler) error {
 	return defaultRESTfulServer.ListenAndServeTLS("", "")
 }
 func ListenAndServe(addr string, handler http.Handler) error {
-	readTimeout, _ := time.ParseDuration(beego.AppConfig.DefaultString("read_timeout", "5s"))
-	writeTimeout, _ := time.ParseDuration(beego.AppConfig.DefaultString("write_timeout", "5s"))
-	maxHeaderBytes := beego.AppConfig.DefaultInt("max_header_bytes", 16384)
+	svrCfg := loadCfg()
 	defaultRESTfulServer = &http.Server{
-		Addr:           addr,
-		Handler:        handler,
-		ReadTimeout:    readTimeout,
-		WriteTimeout:   writeTimeout,
-		MaxHeaderBytes: maxHeaderBytes,
+		Addr:              addr,
+		Handler:           handler,
+		ReadTimeout:       svrCfg.ReadTimeout,
+		ReadHeaderTimeout: svrCfg.ReadHeaderTimeout,
+		WriteTimeout:      svrCfg.WriteTimeout,
+		MaxHeaderBytes:    svrCfg.MaxHeaderBytes,
 	}
 
 	util.LOGGER.Warnf(nil, "listen on server %s.", addr)
