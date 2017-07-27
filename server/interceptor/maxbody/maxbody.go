@@ -17,8 +17,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/astaxie/beego"
-	. "github.com/servicecomb/service-center/server/core"
-	"github.com/servicecomb/service-center/util/url"
+	. "github.com/ServiceComb/service-center/server/core"
+	"github.com/ServiceComb/service-center/util/url"
 	"net/http"
 	"strings"
 )

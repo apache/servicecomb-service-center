@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	"bytes"
-	. "github.com/servicecomb/service-center/integration"
+	. "github.com/ServiceComb/service-center/integration"
 	"io/ioutil"
 	"math/rand"
 	"strconv"

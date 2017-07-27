@@ -16,7 +16,7 @@ package plugins
 import (
 	"fmt"
 	"github.com/astaxie/beego"
-	"github.com/servicecomb/service-center/util"
+	"github.com/ServiceComb/service-center/util"
 	"io/ioutil"
 	"os"
 	"path/filepath"

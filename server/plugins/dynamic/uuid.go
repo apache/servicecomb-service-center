@@ -1,9 +1,9 @@
 package dynamic
 
 import (
-	"github.com/servicecomb/service-center/pkg/plugins"
-	"github.com/servicecomb/service-center/util"
-	"github.com/servicecomb/service-center/util/uuid"
+	"github.com/ServiceComb/service-center/pkg/plugins"
+	"github.com/ServiceComb/service-center/util"
+	"github.com/ServiceComb/service-center/util/uuid"
 	"strings"
 )
 

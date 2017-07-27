@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/onsi/ginkgo/reporters"
-	ms "github.com/servicecomb/service-center/server/service/microservice"
+	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	"testing"
 )
 

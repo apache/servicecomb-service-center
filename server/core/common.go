@@ -16,9 +16,9 @@ package core
 import (
 	"errors"
 	"github.com/astaxie/beego"
-	pb "github.com/servicecomb/service-center/server/core/proto"
-	"github.com/servicecomb/service-center/util"
-	"github.com/servicecomb/service-center/util/validate"
+	pb "github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/ServiceComb/service-center/util"
+	"github.com/ServiceComb/service-center/util/validate"
 	"math"
 	"reflect"
 )

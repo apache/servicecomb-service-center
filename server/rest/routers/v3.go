@@ -16,9 +16,9 @@ package routers
 import (
 	"net/http"
 
-	rs "github.com/servicecomb/service-center/server/rest"
-	"github.com/servicecomb/service-center/util"
-	roa "github.com/servicecomb/service-center/util/rest"
+	rs "github.com/ServiceComb/service-center/server/rest"
+	"github.com/ServiceComb/service-center/util"
+	roa "github.com/ServiceComb/service-center/util/rest"
 )
 
 func initRouter() {

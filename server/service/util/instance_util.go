@@ -2,10 +2,10 @@ package util
 
 import (
 	"encoding/json"
-	apt "github.com/servicecomb/service-center/server/core"
-	pb "github.com/servicecomb/service-center/server/core/proto"
-	"github.com/servicecomb/service-center/server/core/registry"
-	"github.com/servicecomb/service-center/util"
+	apt "github.com/ServiceComb/service-center/server/core"
+	pb "github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
 	"strconv"
 	"strings"

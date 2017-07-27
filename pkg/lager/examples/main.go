@@ -16,7 +16,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/servicecomb/service-center/pkg/lager"
+	"github.com/ServiceComb/service-center/pkg/lager"
 )
 
 func main() {

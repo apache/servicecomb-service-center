@@ -16,7 +16,7 @@ package traceutils
 import (
 	"archive/zip"
 	"fmt"
-	"github.com/servicecomb/service-center/util"
+	"github.com/ServiceComb/service-center/util"
 	"io"
 	"os"
 	"path/filepath"

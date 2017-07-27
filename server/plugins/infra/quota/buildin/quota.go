@@ -16,10 +16,10 @@ package buildin
 import (
 	"context"
 	"fmt"
-	"github.com/servicecomb/service-center/server/core"
-	"github.com/servicecomb/service-center/server/core/registry"
-	"github.com/servicecomb/service-center/server/infra/quota"
-	"github.com/servicecomb/service-center/util"
+	"github.com/ServiceComb/service-center/server/core"
+	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/server/infra/quota"
+	"github.com/ServiceComb/service-center/util"
 )
 
 type BuildInQuota struct {

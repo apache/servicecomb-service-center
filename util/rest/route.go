@@ -15,8 +15,8 @@ package rest
 
 import (
 	"fmt"
-	"github.com/servicecomb/service-center/util"
-	"github.com/servicecomb/service-center/util/errors"
+	"github.com/ServiceComb/service-center/util"
+	"github.com/ServiceComb/service-center/util/errors"
 	"net/http"
 	"net/url"
 	"strings"

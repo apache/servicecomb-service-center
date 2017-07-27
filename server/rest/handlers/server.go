@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"github.com/servicecomb/service-center/server/interceptor"
-	"github.com/servicecomb/service-center/server/rest/routers"
+	"github.com/ServiceComb/service-center/server/interceptor"
+	"github.com/ServiceComb/service-center/server/rest/routers"
 	"net/http"
 )
 
