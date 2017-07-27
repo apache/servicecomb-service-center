@@ -14,7 +14,7 @@
 package etcdsync_test
 
 import (
-	. "github.com/servicecomb/service-center/pkg/etcdsync"
+	. "github.com/ServiceComb/service-center/pkg/etcdsync"
 
 	"fmt"
 	. "github.com/onsi/ginkgo"

@@ -24,13 +24,13 @@ import (
 )
 import (
 	"context"
-	"github.com/servicecomb/service-center/pkg/common"
-	"github.com/servicecomb/service-center/server/api"
-	"github.com/servicecomb/service-center/server/core/registry"
-	rs "github.com/servicecomb/service-center/server/rest"
-	"github.com/servicecomb/service-center/server/service"
-	nf "github.com/servicecomb/service-center/server/service/notification"
-	"github.com/servicecomb/service-center/util"
+	"github.com/ServiceComb/service-center/pkg/common"
+	"github.com/ServiceComb/service-center/server/api"
+	"github.com/ServiceComb/service-center/server/core/registry"
+	rs "github.com/ServiceComb/service-center/server/rest"
+	"github.com/ServiceComb/service-center/server/service"
+	nf "github.com/ServiceComb/service-center/server/service/notification"
+	"github.com/ServiceComb/service-center/util"
 	"runtime"
 )
 

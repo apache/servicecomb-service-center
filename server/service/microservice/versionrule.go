@@ -16,7 +16,7 @@ package microservice
 import (
 	"bytes"
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"github.com/servicecomb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/server/core/registry"
 	"sort"
 	"strconv"
 	"strings"

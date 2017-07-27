@@ -14,8 +14,8 @@
 package service
 
 import (
-	pb "github.com/servicecomb/service-center/server/core/proto"
-	nf "github.com/servicecomb/service-center/server/service/notification"
+	pb "github.com/ServiceComb/service-center/server/core/proto"
+	nf "github.com/ServiceComb/service-center/server/service/notification"
 )
 
 func AssembleResources(notifyService *nf.NotifyService) (pb.ServiceCtrlServer, pb.SerivceInstanceCtrlServerEx, pb.GovernServiceCtrlServerEx) {

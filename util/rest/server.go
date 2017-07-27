@@ -15,8 +15,8 @@ package rest
 
 import (
 	"github.com/astaxie/beego"
-	"github.com/servicecomb/service-center/pkg/common"
-	"github.com/servicecomb/service-center/util"
+	"github.com/ServiceComb/service-center/pkg/common"
+	"github.com/ServiceComb/service-center/util"
 	"net/http"
 	"time"
 )
