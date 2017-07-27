@@ -221,7 +221,7 @@ func (s *NotifyService) WatchTenants() {
 
 			if s.closed() {
 				util.LOGGER.Warnf(nil,
-					"caught tenant info %s [%] event, but service closed", string(kv.Key), action)
+					"caught tenant info %s [%s] event, but service closed", string(kv.Key), action)
 				return nil
 			}
 
@@ -252,7 +252,7 @@ func (s *NotifyService) WatchInstance(instanceWatchByTenantKey string) {
 			}
 
 			if s.closed() {
-				util.LOGGER.Warnf(nil, "caught instance %s/%s [%] event, but service closed",
+				util.LOGGER.Warnf(nil, "caught instance %s/%s [%s] event, but service closed",
 					providerId, providerInstanceId, action)
 				return nil
 			} else {
