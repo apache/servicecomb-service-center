@@ -18,11 +18,11 @@ import (
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
-	pb "github.com/servicecomb/service-center/server/core/proto"
-	_ "github.com/servicecomb/service-center/server/core/registry"
-	_ "github.com/servicecomb/service-center/server/core/registry/etcd"
-	_ "github.com/servicecomb/service-center/server/plugins/infra/quota/buildin"
-	"github.com/servicecomb/service-center/server/service"
+	pb "github.com/ServiceComb/service-center/server/core/proto"
+	_ "github.com/ServiceComb/service-center/server/core/registry"
+	_ "github.com/ServiceComb/service-center/server/core/registry/etcd"
+	_ "github.com/ServiceComb/service-center/server/plugins/infra/quota/buildin"
+	"github.com/ServiceComb/service-center/server/service"
 	"testing"
 )
 

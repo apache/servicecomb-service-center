@@ -22,10 +22,10 @@ before_install:
   - go get github.com/FiloSottile/gvt
   
 before_script:
-  - mkdir -p $HOME/gopath/src/github.com/servicecomb/service-center
-  - rsync -az ${TRAVIS_BUILD_DIR}/ $HOME/gopath/src/github.com/servicecomb/service-center/
-  - export TRAVIS_BUILD_DIR=$HOME/gopath/src/github.com/servicecomb/service-center
-  - cd $HOME/gopath/src/github.com/servicecomb/service-center
+  - mkdir -p $HOME/gopath/src/github.com/ServiceComb/service-center
+  - rsync -az ${TRAVIS_BUILD_DIR}/ $HOME/gopath/src/github.com/ServiceComb/service-center/
+  - export TRAVIS_BUILD_DIR=$HOME/gopath/src/github.com/ServiceComb/service-center
+  - cd $HOME/gopath/src/github.com/ServiceComb/service-center
   - gvt restore
   
 install: true

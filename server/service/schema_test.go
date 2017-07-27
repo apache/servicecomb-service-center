@@ -17,7 +17,7 @@ import (
 	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	pb "github.com/servicecomb/service-center/server/core/proto"
+	pb "github.com/ServiceComb/service-center/server/core/proto"
 )
 
 const (

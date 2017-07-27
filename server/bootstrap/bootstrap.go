@@ -13,18 +13,18 @@
 //limitations under the License.
 package bootstrap
 
-import _ "github.com/servicecomb/service-center/pkg/security"
-import _ "github.com/servicecomb/service-center/pkg/common/logrotate"
-import _ "github.com/servicecomb/service-center/pkg/security/plugins/plain"
-import _ "github.com/servicecomb/service-center/server/core/registry/embededetcd"
-import _ "github.com/servicecomb/service-center/server/core/registry/etcd"
-import _ "github.com/servicecomb/service-center/server/plugins/infra/quota/buildin"
-import _ "github.com/servicecomb/service-center/server/plugins/infra/quota/unlimit"
-import "github.com/servicecomb/service-center/server/interceptor"
-import "github.com/servicecomb/service-center/util"
-import "github.com/servicecomb/service-center/server/interceptor/domain"
-import "github.com/servicecomb/service-center/server/interceptor/maxbody"
-import "github.com/servicecomb/service-center/server/interceptor/ratelimiter"
+import _ "github.com/ServiceComb/service-center/pkg/security"
+import _ "github.com/ServiceComb/service-center/pkg/common/logrotate"
+import _ "github.com/ServiceComb/service-center/pkg/security/plugins/plain"
+import _ "github.com/ServiceComb/service-center/server/core/registry/embededetcd"
+import _ "github.com/ServiceComb/service-center/server/core/registry/etcd"
+import _ "github.com/ServiceComb/service-center/server/plugins/infra/quota/buildin"
+import _ "github.com/ServiceComb/service-center/server/plugins/infra/quota/unlimit"
+import "github.com/ServiceComb/service-center/server/interceptor"
+import "github.com/ServiceComb/service-center/util"
+import "github.com/ServiceComb/service-center/server/interceptor/domain"
+import "github.com/ServiceComb/service-center/server/interceptor/maxbody"
+import "github.com/ServiceComb/service-center/server/interceptor/ratelimiter"
 
 func init() {
 	util.LOGGER.Info("BootStrap Huawei Enterprise Edition")

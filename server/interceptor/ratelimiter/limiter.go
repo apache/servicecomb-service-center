@@ -18,7 +18,7 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/didip/tollbooth"
 	"github.com/didip/tollbooth/config"
-	"github.com/servicecomb/service-center/util"
+	"github.com/ServiceComb/service-center/util"
 	"net/http"
 	"strings"
 	"time"

@@ -14,19 +14,19 @@
 package service_test
 
 import (
-	_ "github.com/servicecomb/service-center/server/core/registry/embededetcd"
-	_ "github.com/servicecomb/service-center/server/core/registry/etcd"
+	_ "github.com/ServiceComb/service-center/server/core/registry/embededetcd"
+	_ "github.com/ServiceComb/service-center/server/core/registry/etcd"
 )
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/servicecomb/service-center/pkg/etcdsync"
-	apt "github.com/servicecomb/service-center/server/core"
-	pb "github.com/servicecomb/service-center/server/core/proto"
-	"github.com/servicecomb/service-center/server/core/registry"
-	"github.com/servicecomb/service-center/server/service"
-	"github.com/servicecomb/service-center/util"
+	"github.com/ServiceComb/service-center/pkg/etcdsync"
+	apt "github.com/ServiceComb/service-center/server/core"
+	pb "github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/server/service"
+	"github.com/ServiceComb/service-center/util"
 	"testing"
 	"time"
 )

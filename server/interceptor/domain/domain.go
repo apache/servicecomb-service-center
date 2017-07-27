@@ -14,9 +14,9 @@
 package domain
 
 import (
-	"github.com/servicecomb/service-center/server/helper"
-	"github.com/servicecomb/service-center/util"
-	"github.com/servicecomb/service-center/util/errors"
+	"github.com/ServiceComb/service-center/server/helper"
+	"github.com/ServiceComb/service-center/util"
+	"github.com/ServiceComb/service-center/util/errors"
 	"golang.org/x/net/context"
 	"net/http"
 )

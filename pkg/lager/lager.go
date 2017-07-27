@@ -19,8 +19,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/servicecomb/service-center/pkg/lager/core"
-	"github.com/servicecomb/service-center/pkg/lager/syslog"
+	"github.com/ServiceComb/service-center/pkg/lager/core"
+	"github.com/ServiceComb/service-center/pkg/lager/syslog"
 )
 
 const (

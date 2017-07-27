@@ -13,7 +13,7 @@
 //limitations under the License.
 package notification
 
-import "github.com/servicecomb/service-center/util"
+import "github.com/ServiceComb/service-center/util"
 
 //Notifier 健康检查
 type NotifyServiceHealthChecker struct {

@@ -18,7 +18,7 @@ import (
 	"encoding/json"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	. "github.com/servicecomb/service-center/integration"
+	. "github.com/ServiceComb/service-center/integration"
 	"github.com/widuu/gojson"
 	"io/ioutil"
 	"net/http"

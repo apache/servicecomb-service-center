@@ -14,8 +14,8 @@
 package notification
 
 import (
-	pb "github.com/servicecomb/service-center/server/core/proto"
-	"github.com/servicecomb/service-center/util"
+	pb "github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/ServiceComb/service-center/util"
 )
 
 // 状态变化推送
