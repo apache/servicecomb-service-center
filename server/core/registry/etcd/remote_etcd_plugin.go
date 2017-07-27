@@ -204,7 +204,7 @@ func (c *EtcdClient) toCompares(cmps []*registry.CompareOp) []clientv3.Cmp {
 
 func (c *EtcdClient) PutNoOverride(ctx context.Context, op *registry.PluginOp) (bool, error) {
 	resp, err := c.TxnWithCmp(ctx, []*registry.PluginOp{op}, []*registry.CompareOp{
-		&registry.CompareOp{
+		{
 			Key:    op.Key,
 			Type:   registry.CMP_CREATE,
 			Result: registry.CMP_EQUAL,
@@ -363,16 +363,13 @@ func (c *EtcdClient) Watch(ctx context.Context, op *registry.PluginOp, send func
 		for {
 			select {
 			case <-ctx.Done():
-				util.LOGGER.Debugf("time out to watch key %s", key)
 				return
 			case resp, ok := <-ws:
 				if !ok {
 					err := errors.New("channel is closed")
-					util.LOGGER.Errorf(err, "watching key %s caught an exception", key)
 					return err
 				}
 				if err = resp.Err(); err != nil {
-					util.LOGGER.Errorf(err, "watching key %s caught an exception", key)
 					return err
 				}
 				for _, evt := range resp.Events {
@@ -390,7 +387,6 @@ func (c *EtcdClient) Watch(ctx context.Context, op *registry.PluginOp, send func
 
 					err = send("key information changed", pbEvent)
 					if err != nil {
-						util.LOGGER.Errorf(err, "stop to watch key %s", key)
 						return
 					}
 				}
@@ -398,7 +394,6 @@ func (c *EtcdClient) Watch(ctx context.Context, op *registry.PluginOp, send func
 		}
 	}
 	err = fmt.Errorf("no key has been watched")
-	util.LOGGER.Errorf(nil, err.Error())
 	return
 }
 

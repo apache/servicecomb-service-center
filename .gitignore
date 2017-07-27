@@ -1,20 +1,17 @@
 bin/
 output
 **/*.coverprofile
-src/github.com/*
-src/**/*.key
-src/**/*.conf
-!src/github.com/ServiceComb/service-center/conf/app.conf
-src/*
-!src/github.com
-!src/github.com/ServiceComb
 
 service-center.iml
 .idea/
 **/*junit.xml
 **/*.exe
+
 vendor/**
 !vendor/manifest
 !vendor/manifest/github.com/didip/tollbooth
 !vendor/manifest/github.com/grpc-ecosystem/go-grpc-prometheus
 !vendor/manifest/github.com/grpc-ecosystem/grpc-gateway
+
+# for local UT
+server/service/conf/

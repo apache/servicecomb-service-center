@@ -68,7 +68,7 @@ func handleSignal() {
 	signal.Ignore(syscall.SIGQUIT) // when uses jstack to dump stack
 
 	s := <-sc
-	util.LOGGER.Errorf(nil, "Caught signal '%v', now service center quit...", s)
+	util.LOGGER.Warnf(nil, "Caught signal '%v', now service center quit...", s)
 
 	if apiServer != nil {
 		apiServer.Close()
@@ -94,12 +94,12 @@ func waitForQuit() {
 	if err != nil {
 		util.LOGGER.Errorf(err, "service center catch errors, %s", err.Error())
 	}
-	util.LOGGER.Errorf(nil, "waiting for %ds to clean up resources...", CLEAN_UP_TIMEOUT)
+	util.LOGGER.Warnf(nil, "waiting for %ds to clean up resources...", CLEAN_UP_TIMEOUT)
 	select {
 	case <-exit:
 	case <-time.After(CLEAN_UP_TIMEOUT * time.Second):
 	}
-	util.LOGGER.Error("service center quit", nil)
+	util.LOGGER.Warn("service center quit", nil)
 }
 
 func autoCompact() {

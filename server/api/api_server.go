@@ -272,7 +272,6 @@ func (s *APIServer) Close() {
 	if s.isClose {
 		return
 	}
-	util.LOGGER.Info("stopping api server...")
 
 	s.unregisterInstance()
 
@@ -285,4 +284,6 @@ func (s *APIServer) Close() {
 	}
 
 	close(s.err)
+
+	util.LOGGER.Info("api server stopped.")
 }
