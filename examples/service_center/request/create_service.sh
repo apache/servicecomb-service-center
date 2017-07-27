@@ -1,11 +1,26 @@
-curl -X POST -H "Content-Type: application/json" -H "Cache-Control: no-cache"  -d '{
-  "service_level": "front",
-  "desc": "this is a test content",
-  "status": "In Service",
-  "service_type": "billing system",
-  "service_name": "billingsystem",
-  "namespace": "default",
-  "version": "v1",
-  "domain": "",
-  "app_id": "1"
-}' "http://127.0.0.1:9980/service_center/v2/mservices"
+#!/usr/bin/env bash
+POST /registry/v3/microservices HTTP/1.1
+Host: localhost:30100
+Content-Type: application/json
+x-domain-name: default
+Cache-Control: no-cache
+Postman-Token: 8378df39-dfac-4f9d-205b-981e367c6b05
+
+{
+	"service":
+	{
+		"serviceName": "Test10",
+		"appId": "TestApp10",
+		"version":"11.0.0",
+		"asdasddescription":"examplfsdsfe",
+		"level": "FRONT",
+		"schemas": [
+			"TestService1212"
+		],
+		"status": "DOWN",
+		"properties": {
+			"attr2": "a"
+		},
+		"description":"中文asdfadads。”"
+	}
+}

@@ -21,6 +21,7 @@ import (
 	"github.com/widuu/gojson"
 	"io/ioutil"
 	"net/http"
+	"testing"
 )
 
 var _ = Describe("Basic Api Test", func() {
@@ -52,3 +53,25 @@ var _ = Describe("Basic Api Test", func() {
 	})
 
 })
+
+func BenchmarkHealthTest(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		req, _ := http.NewRequest(GET, SCURL+HEALTH, nil)
+		req.Header.Set("X-tenant-name", "default")
+		resp, err := scclient.Do(req)
+		Expect(err).To(BeNil())
+		defer resp.Body.Close()
+		Expect(resp.StatusCode).To(Equal(http.StatusOK))
+	}
+}
+
+func BenchmarkVersionTest(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		req, _ := http.NewRequest(GET, SCURL+VERSION, nil)
+		req.Header.Set("X-tenant-name", "default")
+		resp, err := scclient.Do(req)
+		Expect(err).To(BeNil())
+		defer resp.Body.Close()
+		Expect(resp.StatusCode).To(Equal(http.StatusOK))
+	}
+}
