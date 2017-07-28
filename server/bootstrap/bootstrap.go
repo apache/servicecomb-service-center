@@ -27,12 +27,14 @@ import (
 	"github.com/ServiceComb/service-center/server/interceptor/maxbody"
 	"github.com/ServiceComb/service-center/server/interceptor/ratelimiter"
 	"github.com/ServiceComb/service-center/util"
+	"github.com/ServiceComb/service-center/server/interceptor/access"
 )
 
 func init() {
 	util.LOGGER.Info("BootStrap Huawei Enterprise Edition")
 
 	interceptor.InterceptFunc(interceptor.ACCESS_PHASE, ratelimiter.Intercept)
+	interceptor.InterceptFunc(interceptor.ACCESS_PHASE, access.Intercept)
 	interceptor.InterceptFunc(interceptor.ACCESS_PHASE, cors.Intercept)
 	interceptor.InterceptFunc(interceptor.ACCESS_PHASE, domain.Intercept)
 
