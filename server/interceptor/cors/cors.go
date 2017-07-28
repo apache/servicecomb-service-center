@@ -1,12 +1,12 @@
 package cors
 
 import (
+	"errors"
+	"github.com/ServiceComb/service-center/util"
 	"io"
 	"net/http"
 	"strconv"
 	"strings"
-	"errors"
-	"github.com/ServiceComb/service-center/util"
 )
 
 var cors *CORS
@@ -17,8 +17,8 @@ func init() {
 
 type CORS struct {
 	allowOrigin      string
-	allowMethods     map[string]bool
-	allowHeaders     map[string]bool
+	allowMethods     map[string]struct{}
+	allowHeaders     map[string]struct{}
 	allowCredentials bool
 	exposeHeaders    string
 	maxAge           int
@@ -29,33 +29,41 @@ func New() *CORS {
 	c := new(CORS)
 	c.allowOrigin = "*"
 	c.allowCredentials = false
-	c.allowHeaders = map[string]bool{"origin": true}
-	c.allowMethods = map[string]bool{"GET": true, "POST": true, "PUT": true, "DELETE": true, "UPDATE": true}
+	c.allowHeaders = map[string]struct{}{"origin": {}, "x-domain-name": {}, "x-consumerid": {}}
+	c.allowMethods = map[string]struct{}{"GET": {}, "POST": {}, "PUT": {}, "DELETE": {}, "UPDATE": {}}
 	c.maxAge = 1500
 	return c
 }
 
-func setToArray(set map[string]bool) []string {
-	ret := make([]string, 0, len(set))
-	for k := range set {
+func listToMap(list []string) map[string]struct{} {
+	ret := make(map[string]struct{}, len(list))
+	for _, v := range list {
+		ret[v] = struct{}{}
+	}
+	return ret
+}
+
+func mapToList(dict map[string]struct{}) []string {
+	ret := make([]string, 0, len(dict))
+	for k := range dict {
 		ret = append(ret, k)
 	}
 	return ret
 }
 
 func (cors *CORS) AllowMethods() []string {
-	return setToArray(cors.allowMethods)
+	return mapToList(cors.allowMethods)
 }
 
 func (cors *CORS) AllowHeaders() []string {
-	return setToArray(cors.allowHeaders)
+	return mapToList(cors.allowHeaders)
 }
 
 func (cors *CORS) handlePreflightRequest(w http.ResponseWriter, r *http.Request) {
 	acrm := r.Header.Get("Access-Control-Request-Method")
 	if acrm == "" {
 		cors.invalid(w, r)
-		util.LOGGER.Warnf(nil,"header 'Access-Control-Request-Method' is empty")
+		util.LOGGER.Warnf(nil, "header 'Access-Control-Request-Method' is empty")
 		return
 	}
 	methods := strings.Split(strings.TrimSpace(acrm), ",")
@@ -63,7 +71,7 @@ func (cors *CORS) handlePreflightRequest(w http.ResponseWriter, r *http.Request)
 		m = strings.TrimSpace(m)
 		if _, ok := cors.allowMethods[m]; !ok {
 			cors.invalid(w, r)
-			util.LOGGER.Warnf(nil,"only supported methods: %v", cors.allowMethods)
+			util.LOGGER.Warnf(nil, "only supported methods: %v", mapToList(cors.allowMethods))
 			return
 		}
 	}
@@ -74,7 +82,7 @@ func (cors *CORS) handlePreflightRequest(w http.ResponseWriter, r *http.Request)
 			h = strings.ToLower(strings.TrimSpace(h))
 			if _, ok := cors.allowHeaders[h]; !ok {
 				cors.invalid(w, r)
-				util.LOGGER.Warnf(nil,"only supported headers: %v", cors.allowHeaders)
+				util.LOGGER.Warnf(nil, "only supported headers: %v", mapToList(cors.allowHeaders))
 				return
 			}
 		}
@@ -112,6 +120,14 @@ func (cors *CORS) addAllowCookiesHeader(w http.ResponseWriter, r *http.Request) 
 	if cors.allowCredentials {
 		w.Header().Add("Access-Control-Allow-Credentials", "true")
 	}
+}
+
+func SetAllowMethods(methods []string) {
+	cors.allowMethods = listToMap(methods)
+}
+
+func SetAllowHeaders(headers []string) {
+	cors.allowHeaders = listToMap(headers)
 }
 
 func Intercept(w http.ResponseWriter, r *http.Request) (err error) {
