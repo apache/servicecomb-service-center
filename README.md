@@ -34,7 +34,7 @@ docker run -d -p 30100:30100 servicecomb/service-center
 
 Download the Code
 ```sh
-go get github.com/ServiceComb/service-center
+git clone https://github.com/ServiceComb/service-center.git $GOPATH/src/github.com/ServiceComb/service-center
 cd $GOPATH/src/github.com/ServiceComb/service-center
 ```
 
