@@ -22,12 +22,12 @@ import _ "github.com/ServiceComb/service-center/server/plugins/infra/quota/build
 import _ "github.com/ServiceComb/service-center/server/plugins/infra/quota/unlimit"
 import (
 	"github.com/ServiceComb/service-center/server/interceptor"
+	"github.com/ServiceComb/service-center/server/interceptor/access"
 	"github.com/ServiceComb/service-center/server/interceptor/cors"
 	"github.com/ServiceComb/service-center/server/interceptor/domain"
 	"github.com/ServiceComb/service-center/server/interceptor/maxbody"
 	"github.com/ServiceComb/service-center/server/interceptor/ratelimiter"
 	"github.com/ServiceComb/service-center/util"
-	"github.com/ServiceComb/service-center/server/interceptor/access"
 )
 
 func init() {
