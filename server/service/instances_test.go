@@ -15,11 +15,11 @@ package service_test
 
 import (
 	"fmt"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/service"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
@@ -816,15 +816,15 @@ var _ = Describe("InstanceController", func() {
 				fmt.Println("UT============" + resp.GetResponse().Message)
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
 
-				fmt.Println("UT===========查找实例，含有不存在的tag")
-				respAddTag, err := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
+				fmt.Println("UT===========查找实例，含有存在的tag")
+				respAddTags, err := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
 					ServiceId: consumerId,
 					Tags: map[string]string{
 						"test": "test",
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddTag.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
 				resp, err = insResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
 					ConsumerServiceId:  consumerId,
