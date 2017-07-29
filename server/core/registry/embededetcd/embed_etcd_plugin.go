@@ -18,15 +18,15 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"github.com/ServiceComb/service-center/pkg/common"
+	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/util"
+	"github.com/ServiceComb/service-center/util/rest"
 	"github.com/astaxie/beego"
 	"github.com/coreos/etcd/embed"
 	"github.com/coreos/etcd/etcdserver/etcdserverpb"
 	"github.com/coreos/etcd/lease"
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"github.com/ServiceComb/service-center/pkg/common"
-	"github.com/ServiceComb/service-center/server/core/registry"
-	"github.com/ServiceComb/service-center/util"
-	"github.com/ServiceComb/service-center/util/rest"
 	"net/url"
 	"strings"
 	"time"
@@ -386,7 +386,7 @@ func (s *EtcdEmbed) Watch(ctx context.Context, op *registry.PluginOp, send func(
 						Kvs:       []*mvccpb.KeyValue{evt.Kv},
 						PrevKv:    evt.PrevKv,
 						Count:     1,
-						Revision:  resp.Revision,
+						Revision:  evt.Kv.ModRevision,
 						Succeeded: true,
 					}
 					if evt.Type == mvccpb.DELETE {

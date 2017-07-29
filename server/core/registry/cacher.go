@@ -15,11 +15,14 @@ package registry
 
 import (
 	"fmt"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/util"
+	"github.com/coreos/etcd/mvcc/mvccpb"
+	"sync"
 	"time"
 )
+
+const DEFAULT_MAX_NO_EVENT_INTERVAL = 4
 
 type Cacher interface {
 	Run()
@@ -27,40 +30,83 @@ type Cacher interface {
 
 type KvCacher struct {
 	Cfg *KvCacherConfig
-	lw  ListWatcher
 
+	lastRev            int64
+	noEventInterval    int
+	noEventMaxInterval int
+
+	lw    ListWatcher
+	mux   sync.Mutex
+	once  sync.Once
 	store map[string]*mvccpb.KeyValue
 }
 
-func (c *KvCacher) ListAndWatch() error {
+func (c *KvCacher) needList() bool {
+	rev := c.lw.Revision()
+	defer func() { c.lastRev = rev }()
+
+	if rev == 0 {
+		c.noEventInterval = 0
+		return true
+	}
+	if c.lastRev != rev {
+		c.noEventInterval = 0
+		return false
+	}
+	c.noEventInterval++
+	if c.noEventInterval < c.noEventMaxInterval {
+		return false
+	}
+
+	util.LOGGER.Warnf(nil, "no events come in more then %s, need to list key %s",
+		time.Duration(c.noEventInterval)*c.Cfg.Timeout, c.Cfg.Key)
+	c.noEventInterval = 0
+	return true
+}
+
+func (c *KvCacher) doList(listOps *ListOptions) error {
 	start := time.Now()
+	kvs, err := c.lw.List(listOps)
+	if err != nil {
+		return err
+	}
+	c.lastRev = c.lw.Revision()
+	c.sync(c.filter(c.lastRev, kvs))
+	syncDuration := time.Now().Sub(start)
+
+	if syncDuration > 5*time.Second {
+		util.LOGGER.Warnf(nil, "finish to cache key %s, %d items took %s! list options: %+v, rev: %d",
+			c.Cfg.Key, len(kvs), syncDuration, listOps, c.lw.Revision())
+	} else {
+		util.LOGGER.Infof("finish to cache key %s, %d items took %s, list options: %+v, rev: %d",
+			c.Cfg.Key, len(kvs), syncDuration, listOps, c.lw.Revision())
+	}
+	return nil
+}
+
+func (c *KvCacher) doWatch(listOps *ListOptions) error {
+	watcher := c.lw.Watch(listOps)
+	util.LOGGER.Debugf("finish to new watcher, key %s, list options: %+v, start rev: %d+1",
+		c.Cfg.Key, listOps, c.lastRev)
+	return c.handleWatcher(watcher)
+}
+
+func (c *KvCacher) ListAndWatch() error {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+
 	listOps := &ListOptions{
 		Timeout: c.Cfg.Timeout,
 	}
-	rev := c.lw.Revision()
-	if rev == 0 {
-		kvs, err := c.lw.List(listOps)
+	if c.needList() {
+		err := c.doList(listOps)
 		if err != nil {
 			util.LOGGER.Errorf(err, "list key %s failed, list options: %+v", c.Cfg.Key, listOps)
 			return err
 		}
-		rev = c.lw.Revision()
-		c.sync(c.filter(rev, kvs))
-		syncDuration := time.Now().Sub(start)
-
-		if syncDuration > 5*time.Second {
-			util.LOGGER.Warnf(nil, "finish to cache key %s, %d items took %s! list options: %+v, rev: %d",
-				c.Cfg.Key, len(kvs), syncDuration, listOps, c.lw.Revision())
-		} else {
-			util.LOGGER.Infof("finish to cache key %s, %d items took %s, list options: %+v, rev: %d",
-				c.Cfg.Key, len(kvs), syncDuration, listOps, c.lw.Revision())
-		}
 	}
 
-	watcher := c.lw.Watch(listOps)
-	util.LOGGER.Debugf("finish to new watcher, key %s, list options: %+v, start rev: %d+1",
-		c.Cfg.Key, listOps, rev)
-	err := c.handleWatcher(watcher)
+	err := c.doWatch(listOps)
 	if err != nil {
 		util.LOGGER.Errorf(err, "handle watcher failed, watch key %s, list options: %+v", c.Cfg.Key, listOps)
 		return err
@@ -189,7 +235,7 @@ func (c *KvCacher) filter(rev int64, items []interface{}) []*Event {
 	return evts
 }
 
-func (c *KvCacher) Run() {
+func (c *KvCacher) run() {
 	util.Go(func(stopCh <-chan struct{}) {
 		util.LOGGER.Warnf(nil, "start to list and watch %s", c.Cfg)
 		for {
@@ -207,6 +253,10 @@ func (c *KvCacher) Run() {
 			}
 		}
 	})
+}
+
+func (c *KvCacher) Run() {
+	c.once.Do(c.run)
 }
 
 type KvEvent struct {
@@ -234,7 +284,8 @@ func NewKvCacher(cfg *KvCacherConfig) Cacher {
 			Client: GetRegisterCenter(),
 			Key:    cfg.Key,
 		},
-		store: make(map[string]*mvccpb.KeyValue),
+		store:              make(map[string]*mvccpb.KeyValue),
+		noEventMaxInterval: DEFAULT_MAX_NO_EVENT_INTERVAL,
 	}
 	return cacher
 }

@@ -18,13 +18,13 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/astaxie/beego"
-	"github.com/coreos/etcd/clientv3"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/ServiceComb/service-center/pkg/common"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/util"
 	"github.com/ServiceComb/service-center/util/rest"
+	"github.com/astaxie/beego"
+	"github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 	"strings"
 	"time"
 )
@@ -358,13 +358,13 @@ func (c *EtcdClient) Watch(ctx context.Context, op *registry.PluginOp, send func
 		// 不能设置超时context，内部判断了连接超时和watch超时
 		ws := client.Watch(context.Background(), key, c.toGetRequest(op)...)
 
-		//var ok bool
-		//var resp clientv3.WatchResponse
+		var ok bool
+		var resp clientv3.WatchResponse
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case resp, ok := <-ws:
+			case resp, ok = <-ws:
 				if !ok {
 					err := errors.New("channel is closed")
 					return err
@@ -378,7 +378,7 @@ func (c *EtcdClient) Watch(ctx context.Context, op *registry.PluginOp, send func
 						Kvs:       []*mvccpb.KeyValue{evt.Kv},
 						PrevKv:    evt.PrevKv,
 						Count:     1,
-						Revision:  resp.Header.Revision,
+						Revision:  evt.Kv.ModRevision,
 						Succeeded: true,
 					}
 					if evt.Type == mvccpb.DELETE {
