@@ -113,6 +113,7 @@ func (lw *KvListWatcher) doWatch(ctx context.Context, f func(evt *Event)) error 
 		return nil
 	})
 	if err != nil { // compact可能会导致watch失败
+		lw.upgradeRevision(0)
 		f(errEvent(lw.Key, err))
 	}
 	return err
