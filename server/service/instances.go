@@ -17,8 +17,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/astaxie/beego"
-	"github.com/gorilla/websocket"
 	"github.com/ServiceComb/service-center/server/core"
 	apt "github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/server/core/mux"
@@ -29,6 +27,8 @@ import (
 	nf "github.com/ServiceComb/service-center/server/service/notification"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
+	"github.com/astaxie/beego"
+	"github.com/gorilla/websocket"
 	"golang.org/x/net/context"
 	"math"
 	"strconv"
@@ -613,7 +613,7 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 
 	tenant := util.ParaseTenantProject(ctx)
 
-	findFlag := strings.Join([]string{in.ConsumerServiceId, in.AppId, in.ServiceName, in.VersionRule}, "--")
+	findFlag := strings.Join([]string{in.ConsumerServiceId, in.AppId, in.ServiceName, in.VersionRule}, "/")
 	service, err := getServiceByServiceId(ctx, tenant, in.ConsumerServiceId)
 	if err != nil {
 		util.LOGGER.Errorf(err, "find instance failed, %s: get consumer failed.", findFlag)
@@ -668,10 +668,17 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 	}
 	consumer := toMicroServiceKey(tenant, service)
 	//维护version的规则
+	providerService, _ := getServiceByServiceId(ctx, tenant, ids[0])
+	if providerService == nil {
+		util.LOGGER.Errorf(nil, "find instance failed, %s: no provider matched.", findFlag)
+		return &pb.FindInstancesResponse{
+			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist"),
+		}, nil
+	}
 	provider := &pb.MicroServiceKey{
 		Tenant:      tenant,
 		AppId:       in.AppId,
-		ServiceName: in.ServiceName,
+		ServiceName: providerService.ServiceName,
 		Version:     in.VersionRule,
 	}
 	lock, err := mux.Lock(mux.SERVICE_LOCK)
