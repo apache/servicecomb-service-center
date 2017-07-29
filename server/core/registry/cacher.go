@@ -76,10 +76,10 @@ func (c *KvCacher) doList(listOps *ListOptions) error {
 
 	if syncDuration > 5*time.Second {
 		util.LOGGER.Warnf(nil, "finish to cache key %s, %d items took %s! list options: %+v, rev: %d",
-			c.Cfg.Key, len(kvs), syncDuration, listOps, c.lw.Revision())
+			c.Cfg.Key, len(kvs), syncDuration, listOps, c.lastRev)
 	} else {
 		util.LOGGER.Infof("finish to cache key %s, %d items took %s, list options: %+v, rev: %d",
-			c.Cfg.Key, len(kvs), syncDuration, listOps, c.lw.Revision())
+			c.Cfg.Key, len(kvs), syncDuration, listOps, c.lastRev)
 	}
 	return nil
 }
