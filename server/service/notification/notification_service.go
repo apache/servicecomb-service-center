@@ -23,6 +23,7 @@ import (
 	"github.com/ServiceComb/service-center/server/service/dependency"
 	"github.com/ServiceComb/service-center/server/service/microservice"
 	"github.com/ServiceComb/service-center/util"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -39,6 +40,11 @@ const (
 
 var notifyService *NotifyService
 
+var notifyTypeNames = []string{
+	NOTIFTY:  "NOTIFTY",
+	INSTANCE: "INSTANCE",
+}
+
 func init() {
 	notifyService = &NotifyService{
 		isClose: true,
@@ -47,6 +53,13 @@ func init() {
 }
 
 type NotifyType int
+
+func (nt NotifyType) String() string {
+	if int(nt) < len(notifyTypeNames) {
+		return notifyTypeNames[nt]
+	}
+	return "NotifyType" + strconv.Itoa(int(nt))
+}
 
 type subscriberIndex map[string]*list.List
 
