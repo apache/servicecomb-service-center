@@ -14,7 +14,6 @@
 package api
 
 import (
-	"errors"
 	"fmt"
 	"github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/server/core/mux"
@@ -42,7 +41,7 @@ type APIServerConfig struct {
 }
 
 type APIServer struct {
-	Config *APIServerConfig
+	Config APIServerConfig
 
 	grpcSvr *grpc.Server
 	isClose bool
@@ -123,7 +122,7 @@ func (s *APIServer) startRESTfulServer() {
 	}()
 }
 
-func (s *APIServer) registerAPIServer() {
+func (s *APIServer) registerServiceCenter() {
 	err := s.registryService()
 	if err != nil {
 		s.err <- err
@@ -247,28 +246,26 @@ func (s *APIServer) startHeartBeatService() {
 }
 
 // 需保证ETCD启动成功后才执行该方法
-func (s *APIServer) StartAPIServer() {
+func (s *APIServer) Start() {
+	if !s.isClose {
+		return
+	}
 	s.isClose = false
 	s.err = make(chan error, 1)
-	go func() {
-		if s.Config == nil {
-			s.err <- errors.New("do not find any config for APIServer")
-			return
-		}
-		// 自注册
-		s.registerAPIServer()
 
-		s.startRESTfulServer()
+	// 自注册
+	s.registerServiceCenter()
 
-		s.startGrpcServer()
-		// 心跳
-		s.startHeartBeatService()
+	s.startRESTfulServer()
 
-		util.LOGGER.Info("api server is ready")
-	}()
+	s.startGrpcServer()
+	// 心跳
+	s.startHeartBeatService()
+
+	util.LOGGER.Info("api server is ready")
 }
 
-func (s *APIServer) Close() {
+func (s *APIServer) Stop() {
 	if s.isClose {
 		return
 	}
@@ -286,4 +283,16 @@ func (s *APIServer) Close() {
 	close(s.err)
 
 	util.LOGGER.Info("api server stopped.")
+}
+
+var apiServer *APIServer
+
+func init() {
+	apiServer = &APIServer{
+		isClose: true,
+	}
+}
+
+func GetAPIServer() *APIServer {
+	return apiServer
 }

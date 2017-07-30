@@ -11,11 +11,12 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package registry
+package store
 
 import (
 	"fmt"
 	"github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/util"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"sync"
@@ -129,7 +130,7 @@ func (c *KvCacher) handleWatcher(watcher Watcher) error {
 func (c *KvCacher) sync(evts []*Event) {
 	for _, evt := range evts {
 		kv := evt.Object.(*mvccpb.KeyValue)
-		key := BytesToStringWithNoCopy(kv.Key)
+		key := registry.BytesToStringWithNoCopy(kv.Key)
 		prevKv, ok := c.store[key]
 		switch evt.Type {
 		case proto.EVT_CREATE, proto.EVT_UPDATE:
@@ -181,7 +182,7 @@ func (c *KvCacher) filter(rev int64, items []interface{}) []*Event {
 	newStore := make(map[string]*mvccpb.KeyValue)
 	for _, itf := range items {
 		kv := itf.(*mvccpb.KeyValue)
-		newStore[BytesToStringWithNoCopy(kv.Key)] = kv
+		newStore[registry.BytesToStringWithNoCopy(kv.Key)] = kv
 	}
 	filterStopCh := make(chan struct{})
 	eventsCh := make(chan *Event, max)
@@ -265,11 +266,13 @@ type KvEvent struct {
 	KV       *mvccpb.KeyValue
 }
 
+type KvEventFunc func(evt *KvEvent)
+
 type KvCacherConfig struct {
 	Key     string
 	Timeout time.Duration
 	Period  time.Duration
-	OnEvent func(evt *KvEvent) error
+	OnEvent KvEventFunc
 }
 
 func (cfg *KvCacherConfig) String() string {
@@ -281,7 +284,7 @@ func NewKvCacher(cfg *KvCacherConfig) Cacher {
 	cacher := &KvCacher{
 		Cfg: cfg,
 		lw: &KvListWatcher{
-			Client: GetRegisterCenter(),
+			Client: registry.GetRegisterCenter(),
 			Key:    cfg.Key,
 		},
 		store:              make(map[string]*mvccpb.KeyValue),

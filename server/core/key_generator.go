@@ -41,20 +41,6 @@ func GetTenantRootKey(tenant string) string {
 	}, "/")
 }
 
-func GetServiceSequenceKey() string {
-	return strings.Join([]string{
-		GetRootKey(),
-		"ms_seq",
-	}, "/")
-}
-
-func GetInstanceSequenceKey() string {
-	return strings.Join([]string{
-		GetRootKey(),
-		"inst_seq",
-	}, "/")
-}
-
 func GetServiceRootKey(tenant string) string {
 	return strings.Join([]string{
 		GetRootKey(),

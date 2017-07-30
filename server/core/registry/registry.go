@@ -78,6 +78,10 @@ type Registry interface {
 	CompactCluster(ctx context.Context)
 	Compact(ctx context.Context, revision int64) error
 }
+
+type Store interface {
+}
+
 type Config struct {
 	EmbedMode        string
 	ClusterAddresses string

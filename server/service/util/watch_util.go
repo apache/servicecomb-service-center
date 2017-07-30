@@ -17,14 +17,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/coreos/etcd/mvcc/mvccpb"
-	"github.com/gorilla/websocket"
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/service/microservice"
 	nf "github.com/ServiceComb/service-center/server/service/notification"
 	"github.com/ServiceComb/service-center/util"
+	"github.com/coreos/etcd/mvcc/mvccpb"
+	"github.com/gorilla/websocket"
 	"golang.org/x/net/context"
 	"strings"
 	"time"
@@ -57,21 +57,39 @@ func WatchJobHandler(watcher *nf.ListWatcher, stream pb.ServiceInstanceCtrl_Watc
 	}
 }
 
+func websocketHeartbeat(conn *websocket.Conn, messageType int, watcher *nf.ListWatcher, timeout time.Duration) error {
+	err := conn.WriteControl(messageType, []byte("heartbeat"), time.Now().Add(timeout))
+	if err != nil {
+		messageTypeName := "Ping"
+		if messageType == websocket.PongMessage {
+			messageTypeName = "Pong"
+		}
+		util.LOGGER.Errorf(err, "fail to send '%s' to watcher[%s] %s %s",
+			messageTypeName, conn.RemoteAddr(), watcher.Subject(), watcher.Id())
+		watcher.SetError(err)
+		return err
+	}
+	return nil
+}
+
 func WatchWebSocketJobHandler(conn *websocket.Conn, watcher *nf.ListWatcher, timeout time.Duration) {
+	remoteAddr := conn.RemoteAddr().String()
 	conn.SetPongHandler(func(message string) error {
-		util.LOGGER.Debugf("receive heartbeat message %s from watcher %s %s",
-			message, watcher.Subject(), watcher.Id())
+		util.LOGGER.Debugf("receive heartbeat feedback message %s from watcher[%s] %s %s",
+			message, remoteAddr, watcher.Subject(), watcher.Id())
 		return nil
+	})
+	conn.SetPingHandler(func(message string) error {
+		util.LOGGER.Debugf("receive heartbeat message %s from watcher[%s] %s %s, now give it a reply",
+			message, remoteAddr, watcher.Subject(), watcher.Id())
+		return websocketHeartbeat(conn, websocket.PongMessage, watcher, timeout)
 	})
 	for {
 		select {
 		case <-time.After(timeout):
-			util.LOGGER.Debugf("send heartbeat to watcher %s %s", watcher.Subject(), watcher.Id())
-			err := conn.WriteControl(websocket.PingMessage, []byte("heartbeat"), time.Now().Add(timeout))
+			util.LOGGER.Debugf("send heartbeat to watcher[%s] %s %s", remoteAddr, watcher.Subject(), watcher.Id())
+			err := websocketHeartbeat(conn, websocket.PingMessage, watcher, timeout)
 			if err != nil {
-				util.LOGGER.Errorf(err, "watcher missing heartbeat, watcher %s %s",
-					watcher.Subject(), watcher.Id())
-				watcher.SetError(err)
 				return
 			}
 		case job := <-watcher.Job:
@@ -79,34 +97,34 @@ func WatchWebSocketJobHandler(conn *websocket.Conn, watcher *nf.ListWatcher, tim
 				err := conn.WriteMessage(websocket.TextMessage,
 					[]byte("watch catch a err: watcher quit for server shutdown"))
 				if err != nil {
-					util.LOGGER.Errorf(err, "watch catch a err: write message error, watcher %s %s",
-						watcher.Subject(), watcher.Id())
+					util.LOGGER.Errorf(err, "watch catch a err: write message error, watcher[%s] %s %s",
+						remoteAddr, watcher.Subject(), watcher.Id())
 				}
 				return
 			}
 			resp := job.(*nf.WatchJob).Response
-			util.LOGGER.Warnf(nil, "event is coming in, watcher %s %s, providers' info %s %s",
-				watcher.Subject(), watcher.Id(), resp.Instance.ServiceId, resp.Instance.InstanceId)
+			util.LOGGER.Warnf(nil, "event is coming in, watcher[%s] %s %s, providers' info %s %s",
+				remoteAddr, watcher.Subject(), watcher.Id(), resp.Instance.ServiceId, resp.Instance.InstanceId)
 
 			resp.Response = nil
 			data, err := json.Marshal(resp)
 			if err != nil {
-				util.LOGGER.Errorf(err, "watch catch a err: marshal output file error, watcher %s %s",
-					watcher.Subject(), watcher.Id())
+				util.LOGGER.Errorf(err, "watch catch a err: marshal output file error, watcher[%s] %s %s",
+					remoteAddr, watcher.Subject(), watcher.Id())
 				watcher.SetError(err)
 
 				message := fmt.Sprintf("marshal output file error, %s", err.Error())
 				err = conn.WriteMessage(websocket.TextMessage, []byte(message))
 				if err != nil {
-					util.LOGGER.Errorf(err, "watch catch a err: write message error, watcher %s %s",
-						watcher.Subject(), watcher.Id())
+					util.LOGGER.Errorf(err, "watch catch a err: write message error, watcher[%s] %s %s",
+						remoteAddr, watcher.Subject(), watcher.Id())
 				}
 				return
 			}
 			err = conn.WriteMessage(websocket.TextMessage, data)
 			if err != nil {
-				util.LOGGER.Errorf(err, "watch catch a err: write message error, watcher %s %s",
-					watcher.Subject(), watcher.Id())
+				util.LOGGER.Errorf(err, "watch catch a err: write message error, watcher[%s] %s %s",
+					remoteAddr, watcher.Subject(), watcher.Id())
 				watcher.SetError(err)
 				return
 			}
@@ -115,24 +133,27 @@ func WatchWebSocketJobHandler(conn *websocket.Conn, watcher *nf.ListWatcher, tim
 }
 
 func DoWebSocketWatch(service *nf.NotifyService, watcher *nf.ListWatcher, conn *websocket.Conn) {
-	if err := service.AddNotifier(watcher); err != nil {
-		err = fmt.Errorf("establish web socket watch failed: notify service error, %s.", err.Error())
+	remoteAddr := conn.RemoteAddr().String()
+	if err := service.AddSubscriber(watcher); err != nil {
+		err = fmt.Errorf("establish[%s] websocket watch failed: notify service error, %s.",
+			remoteAddr, err.Error())
 		util.LOGGER.Errorf(nil, err.Error())
 
 		err = conn.WriteMessage(websocket.TextMessage, []byte(err.Error()))
 		if err != nil {
-			util.LOGGER.Errorf(err, "establish web socket watch failed: write message failed.")
+			util.LOGGER.Errorf(err, "establish[%s] websocket watch failed: write message failed.", remoteAddr)
 		}
 		return
 	}
-	util.LOGGER.Infof("start watching instance status, watcher %s %s", watcher.Subject(), watcher.Id())
+	util.LOGGER.Infof("start watching instance status, watcher[%s] %s %s", remoteAddr, watcher.Subject(), watcher.Id())
 	WatchWebSocketJobHandler(conn, watcher, service.Config.NotifyTimeout)
 }
 
 func EstablishWebSocketError(conn *websocket.Conn, err error) {
-	util.LOGGER.Errorf(err, "establish web socket watch failed.")
+	remoteAddr := conn.RemoteAddr().String()
+	util.LOGGER.Errorf(err, "establish[%s] websocket watch failed.", remoteAddr)
 	if err := conn.WriteMessage(websocket.TextMessage, []byte(err.Error())); err != nil {
-		util.LOGGER.Errorf(err, "establish web socket watch failed: write message failed.")
+		util.LOGGER.Errorf(err, "establish[%s] websocket watch failed: write message failed.", remoteAddr)
 	}
 }
 

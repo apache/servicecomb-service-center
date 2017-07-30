@@ -70,7 +70,7 @@ func KvToResponse(kv *mvccpb.KeyValue) (keys []string, data []byte) {
 	return
 }
 
-func GetInfoFromInstChangedEvent(kv *mvccpb.KeyValue) (serviceId, instanceId, tenantProject string, data []byte) {
+func GetInfoFromInstKV(kv *mvccpb.KeyValue) (serviceId, instanceId, tenantProject string, data []byte) {
 	keys, data := KvToResponse(kv)
 	if len(keys) < 7 {
 		return
@@ -81,7 +81,7 @@ func GetInfoFromInstChangedEvent(kv *mvccpb.KeyValue) (serviceId, instanceId, te
 	return
 }
 
-func GetInfoFromTenantChangeEvent(kv *mvccpb.KeyValue) (tenant string) {
+func GetInfoFromTenantKV(kv *mvccpb.KeyValue) (tenant string) {
 	keys, _ := KvToResponse(kv)
 	if len(keys) < 3 {
 		return

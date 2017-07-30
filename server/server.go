@@ -27,6 +27,7 @@ import (
 	"github.com/ServiceComb/service-center/pkg/common"
 	"github.com/ServiceComb/service-center/server/api"
 	"github.com/ServiceComb/service-center/server/core/registry"
+	st "github.com/ServiceComb/service-center/server/core/registry/store"
 	rs "github.com/ServiceComb/service-center/server/rest"
 	"github.com/ServiceComb/service-center/server/service"
 	nf "github.com/ServiceComb/service-center/server/service/notification"
@@ -37,6 +38,7 @@ import (
 var (
 	apiServer     *api.APIServer
 	notifyService *nf.NotifyService
+	store         *st.KvStore
 	exit          chan struct{}
 )
 
@@ -47,17 +49,23 @@ func init() {
 
 	exit = make(chan struct{})
 
-	notifyService = &nf.NotifyService{}
+	store = st.Store()
 
-	rs.ServiceAPI, rs.InstanceAPI, rs.GovernServiceAPI = service.AssembleResources(notifyService)
+	notifyService = nf.GetNotifyService()
+
+	apiServer = api.GetAPIServer()
+
+	rs.ServiceAPI, rs.InstanceAPI, rs.GovernServiceAPI = service.AssembleResources()
 
 	go handleSignal()
 }
 
 func Run() {
-	startNotifyService()
+	go startStoreDeamon()
 
-	startApiServer()
+	go startNotifyService()
+
+	go startApiServer()
 
 	waitForQuit()
 }
@@ -71,11 +79,15 @@ func handleSignal() {
 	util.LOGGER.Warnf(nil, "Caught signal '%v', now service center quit...", s)
 
 	if apiServer != nil {
-		apiServer.Close()
+		apiServer.Stop()
+	}
+
+	if store != nil {
+		store.Stop()
 	}
 
 	if notifyService != nil {
-		notifyService.Close()
+		notifyService.Stop()
 	}
 
 	registry.GetRegisterCenter().Close()
@@ -111,13 +123,17 @@ func autoCompact() {
 	}
 }
 
+func startStoreDeamon() {
+	store.Run()
+}
+
 func startNotifyService() {
-	notifyService.Config = &nf.NotifyServerConfig{
+	notifyService.Config = nf.NotifyServiceConfig{
 		AddTimeout:    30 * time.Second,
 		NotifyTimeout: 30 * time.Second,
 		MaxQueue:      100,
 	}
-	notifyService.StartNotifyService()
+	notifyService.Start()
 }
 
 func startApiServer() {
@@ -138,13 +154,11 @@ func startApiServer() {
 	if len(grpcIp) > 0 && len(grpcPort) > 0 {
 		eps[api.GRPC] = strings.Join([]string{grpcIp, grpcPort}, ":")
 	}
-	apiServer = &api.APIServer{
-		Config: &api.APIServerConfig{
-			HostName:     hostName,
-			Endpoints:    eps,
-			SSL:          sslMode,
-			VerifyClient: verifyClient,
-		},
+	apiServer.Config = api.APIServerConfig{
+		HostName:     hostName,
+		Endpoints:    eps,
+		SSL:          sslMode,
+		VerifyClient: verifyClient,
 	}
-	apiServer.StartAPIServer()
+	apiServer.Start()
 }
