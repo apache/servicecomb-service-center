@@ -129,12 +129,13 @@ func (s *KvStore) storeServiceIndex(indexWatchByTenantKey string) {
 func (s *KvStore) onDomainCreate(evt *KvEvent) {
 	kv := evt.KV
 	action := evt.Action
+	tenant := pb.GetInfoFromTenantKV(kv)
 
 	if action != pb.EVT_CREATE {
+		util.LOGGER.Infof("tenant '%s' is %s", tenant, action)
 		return
 	}
 
-	tenant := pb.GetInfoFromTenantKV(kv)
 	if len(tenant) == 0 {
 		util.LOGGER.Errorf(nil,
 			"unmarshal tenant info failed, key %s [%s] event", string(kv.Key), action)

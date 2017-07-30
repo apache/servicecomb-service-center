@@ -15,6 +15,11 @@ package notification
 
 import "github.com/ServiceComb/service-center/util"
 
+const (
+	NOTIFY_SERVER_CHECKER_NAME  = "__HealthChecker__"
+	NOTIFY_SERVER_CHECK_SUBJECT = "__NotifyServerHealthCheck__"
+)
+
 //Notifier 健康检查
 type NotifyServiceHealthChecker struct {
 	BaseSubscriber

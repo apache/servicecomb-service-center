@@ -29,10 +29,8 @@ import (
 )
 
 const (
-	DEFAULT_MAX_QUEUE           = 100
-	DEFAULT_TIMEOUT             = 30 * time.Second
-	NOTIFY_SERVER_CHECKER_NAME  = "__HealthChecker__"
-	NOTIFY_SERVER_CHECK_SUBJECT = "__NotifyServerHealthCheck__"
+	DEFAULT_MAX_QUEUE = 100
+	DEFAULT_TIMEOUT   = 30 * time.Second
 
 	NOTIFTY NotifyType = iota
 	INSTANCE
@@ -170,8 +168,8 @@ func (s *NotifyService) AddJob(job NotifyJob) error {
 func (s *NotifyService) publish2Subscriber(t NotifyType) {
 	defer close(s.waits[t])
 	for job := range s.queues[t] {
-		util.LOGGER.Infof("notification server got a job '%s' to notify subscriber '%s'",
-			job.Subject(), job.SubscriberId())
+		util.LOGGER.Infof("notification server got a job %s: %s to notify subscriber %s",
+			job.Type(), job.Subject(), job.SubscriberId())
 
 		s.mutexes[t].Lock()
 

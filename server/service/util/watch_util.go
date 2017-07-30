@@ -99,12 +99,15 @@ func WatchWebSocketJobHandler(conn *websocket.Conn, watcher *nf.ListWatcher, tim
 				if err != nil {
 					util.LOGGER.Errorf(err, "watch catch a err: write message error, watcher[%s] %s %s",
 						remoteAddr, watcher.Subject(), watcher.Id())
+					return
 				}
+				util.LOGGER.Warnf(nil, "watch catch a err: server shutdown, watcher[%s] %s %s",
+					remoteAddr, watcher.Subject(), watcher.Id())
 				return
 			}
 			resp := job.(*nf.WatchJob).Response
-			util.LOGGER.Warnf(nil, "event is coming in, watcher[%s] %s %s, providers' info %s %s",
-				remoteAddr, watcher.Subject(), watcher.Id(), resp.Instance.ServiceId, resp.Instance.InstanceId)
+			util.LOGGER.Warnf(nil, "event[%s] is coming in, watcher[%s] %s %s, providers' info %s %s",
+				resp.Action, remoteAddr, watcher.Subject(), watcher.Id(), resp.Instance.ServiceId, resp.Instance.InstanceId)
 
 			resp.Response = nil
 			data, err := json.Marshal(resp)
@@ -145,7 +148,8 @@ func DoWebSocketWatch(service *nf.NotifyService, watcher *nf.ListWatcher, conn *
 		}
 		return
 	}
-	util.LOGGER.Infof("start watching instance status, watcher[%s] %s %s", remoteAddr, watcher.Subject(), watcher.Id())
+	util.LOGGER.Debugf("start watching instance status, watcher[%s] %s %s",
+		remoteAddr, watcher.Subject(), watcher.Id())
 	WatchWebSocketJobHandler(conn, watcher, service.Config.NotifyTimeout)
 }
 

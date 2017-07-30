@@ -59,7 +59,7 @@ func (c *KvCacher) needList() bool {
 		return false
 	}
 
-	util.LOGGER.Warnf(nil, "no events come in more then %s, need to list key %s",
+	util.LOGGER.Debugf("no events come in more then %s, need to list key %s",
 		time.Duration(c.noEventInterval)*c.Cfg.Timeout, c.Cfg.Key)
 	c.noEventInterval = 0
 	return true
@@ -78,10 +78,11 @@ func (c *KvCacher) doList(listOps *ListOptions) error {
 	if syncDuration > 5*time.Second {
 		util.LOGGER.Warnf(nil, "finish to cache key %s, %d items took %s! list options: %+v, rev: %d",
 			c.Cfg.Key, len(kvs), syncDuration, listOps, c.lastRev)
-	} else {
-		util.LOGGER.Infof("finish to cache key %s, %d items took %s, list options: %+v, rev: %d",
-			c.Cfg.Key, len(kvs), syncDuration, listOps, c.lastRev)
+		return nil
 	}
+
+	util.LOGGER.Debugf("finish to cache key %s, %d items took %s, list options: %+v, rev: %d",
+		c.Cfg.Key, len(kvs), syncDuration, listOps, c.lastRev)
 	return nil
 }
 
@@ -238,7 +239,7 @@ func (c *KvCacher) filter(rev int64, items []interface{}) []*Event {
 
 func (c *KvCacher) run() {
 	util.Go(func(stopCh <-chan struct{}) {
-		util.LOGGER.Warnf(nil, "start to list and watch %s", c.Cfg)
+		util.LOGGER.Debugf("start to list and watch %s", c.Cfg)
 		for {
 			start := time.Now()
 			c.ListAndWatch()
