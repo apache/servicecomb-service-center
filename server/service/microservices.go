@@ -16,7 +16,6 @@ package service
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/astaxie/beego"
 	apt "github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/server/core/mux"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
@@ -26,6 +25,7 @@ import (
 	"github.com/ServiceComb/service-center/server/service/dependency"
 	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	"github.com/ServiceComb/service-center/util"
+	"github.com/astaxie/beego"
 	"golang.org/x/net/context"
 	"strconv"
 	"strings"
@@ -865,28 +865,14 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 		}
 
 		// 产生全局rule id
-		resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-			Action:     registry.PUT,
-			Key:        []byte(apt.GetRuleSequenceKey()),
-			WithPrevKV: true,
-		})
-		if err != nil {
-			util.LOGGER.Errorf(err, "add rule failed, serviceId is %s:generate ruleId failed.", in.ServiceId)
-			return &pb.AddServiceRulesResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, "generate service id error"),
-			}, err
-		}
 		timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 		ruleAdd := &pb.ServiceRule{
-			RuleId:      "1",
+			RuleId:      dynamic.GenerateUuid(),
 			RuleType:    rule.RuleType,
 			Attribute:   rule.Attribute,
 			Pattern:     rule.Pattern,
 			Description: rule.Description,
 			Timestamp:   timestamp,
-		}
-		if resp.PrevKv != nil {
-			ruleAdd.RuleId = strconv.FormatInt(resp.PrevKv.Version+1, 10)
 		}
 
 		key := apt.GenerateServiceRuleKey(tenant, in.ServiceId, ruleAdd.RuleId)
