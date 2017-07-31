@@ -14,7 +14,6 @@
 package service
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	apt "github.com/ServiceComb/service-center/server/core"
@@ -22,6 +21,7 @@ import (
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/util"
 	"github.com/ServiceComb/service-center/util/errors"
+	"golang.org/x/net/context"
 	"reflect"
 	"regexp"
 	"strings"

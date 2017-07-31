@@ -14,8 +14,8 @@
 package core
 
 import (
-	"context"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
+	"golang.org/x/net/context"
 	"os"
 )
 

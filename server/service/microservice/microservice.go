@@ -14,15 +14,15 @@
 package microservice
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/ServiceComb/service-center/pkg/common/cache"
 	"github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/util"
+	"github.com/coreos/etcd/mvcc/mvccpb"
+	"golang.org/x/net/context"
 	"strings"
 	"time"
 )

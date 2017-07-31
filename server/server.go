@@ -23,7 +23,6 @@ import (
 	"time"
 )
 import (
-	"context"
 	"github.com/ServiceComb/service-center/pkg/common"
 	"github.com/ServiceComb/service-center/server/api"
 	"github.com/ServiceComb/service-center/server/core/registry"
@@ -32,6 +31,7 @@ import (
 	"github.com/ServiceComb/service-center/server/service"
 	nf "github.com/ServiceComb/service-center/server/service/notification"
 	"github.com/ServiceComb/service-center/util"
+	"golang.org/x/net/context"
 	"runtime"
 )
 

@@ -1,8 +1,8 @@
 package store
 
 import (
-	"context"
 	"github.com/ServiceComb/service-center/server/core/registry"
+	"golang.org/x/net/context"
 )
 
 type Indexer interface {
