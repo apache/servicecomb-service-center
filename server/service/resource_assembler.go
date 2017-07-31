@@ -21,6 +21,5 @@ func AssembleResources() (pb.ServiceCtrlServer, pb.SerivceInstanceCtrlServerEx, 
 	var serviceController ServiceController
 	var instanceController InstanceController
 	var governServiceAPI GovernServiceController
-	instanceController.serviceCtrl = serviceController
 	return &serviceController, &instanceController, &governServiceAPI
 }

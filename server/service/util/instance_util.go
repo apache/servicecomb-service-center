@@ -14,8 +14,9 @@ import (
 
 func GetLeaseId(ctx context.Context, tenant string, serviceId string, instanceId string) (int64, error) {
 	resp, err := store.Store().Lease().Search(ctx, &registry.PluginOp{
-		Action: registry.GET,
-		Key:    []byte(apt.GenerateInstanceLeaseKey(tenant, serviceId, instanceId)),
+		Action:    registry.GET,
+		Key:       []byte(apt.GenerateInstanceLeaseKey(tenant, serviceId, instanceId)),
+		WithCache: true,
 	})
 	if err != nil {
 		return -1, err
@@ -29,7 +30,7 @@ func GetLeaseId(ctx context.Context, tenant string, serviceId string, instanceId
 
 func GetInstance(ctx context.Context, tenant string, serviceId string, instanceId string) (*pb.MicroServiceInstance, error) {
 	key := apt.GenerateInstanceKey(tenant, serviceId, instanceId)
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+	resp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
 		Action: registry.GET,
 		Key:    []byte(key),
 	})
@@ -49,7 +50,7 @@ func GetInstance(ctx context.Context, tenant string, serviceId string, instanceI
 }
 
 func InstanceExist(ctx context.Context, tenant string, serviceId string, instanceId string) (bool, error) {
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+	resp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
 		Action:    registry.GET,
 		Key:       []byte(apt.GenerateInstanceKey(tenant, serviceId, instanceId)),
 		CountOnly: true,

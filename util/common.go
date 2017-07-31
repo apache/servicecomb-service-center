@@ -14,6 +14,8 @@
 package util
 
 import (
+	"bytes"
+	"encoding/gob"
 	"golang.org/x/net/context"
 	"os"
 	"path/filepath"
@@ -114,4 +116,12 @@ func GetIPFromContext(ctx context.Context) string {
 	remoteIp := ""
 	remoteIp, _ = ctx.Value("x-remote-ip").(string)
 	return remoteIp
+}
+
+func DeepCopy(dst, src interface{}) error {
+	var buf bytes.Buffer
+	if err := gob.NewEncoder(&buf).Encode(src); err != nil {
+		return err
+	}
+	return gob.NewDecoder(bytes.NewBuffer(buf.Bytes())).Decode(dst)
 }

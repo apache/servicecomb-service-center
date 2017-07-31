@@ -19,7 +19,7 @@ import (
 	"github.com/ServiceComb/service-center/server/core/mux"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
-	"github.com/ServiceComb/service-center/server/service/microservice"
+	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	"github.com/ServiceComb/service-center/util"
 	"github.com/ServiceComb/service-center/util/errors"
 	"golang.org/x/net/context"
@@ -50,7 +50,7 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 			return rsp, nil
 		}
 
-		consumerId, err := GetServiceId(ctx, consumerInfo)
+		consumerId, err := ms.GetServiceId(ctx, consumerInfo, false)
 		util.LOGGER.Debugf("consumerId is %s", consumerId)
 		if err != nil {
 			util.LOGGER.Errorf(err, "create dependency faild, conusmer %s: get consumer failed.", consumerFlag)
@@ -159,7 +159,7 @@ func transferToMicroServiceKeys(in []*pb.DependencyMircroService, tenant string)
 }
 
 func getServiceByServiceId(ctx context.Context, tenant string, serviceId string) (*pb.MicroService, error) {
-	return microservice.GetById(tenant, serviceId, 0)
+	return ms.GetService(tenant, serviceId, 0)
 }
 
 func (s *ServiceController) createDependencyRule(ctx context.Context, consumerServiceid string, consumer *pb.MicroServiceKey, providers []*pb.MicroServiceKey) error {
@@ -213,7 +213,7 @@ func (s *ServiceController) createDependencyRule(ctx context.Context, consumerSe
 						}
 						flag = true
 					default:
-						serviceIds, err := FindServiceIds(ctx, versionRule, &pb.MicroServiceKey{
+						serviceIds, err := ms.FindServiceIds(ctx, versionRule, &pb.MicroServiceKey{
 							Tenant:      tenant,
 							AppId:       appId,
 							ServiceName: serviceName,
@@ -361,7 +361,7 @@ func (s *ServiceController) updateAsProviderDependency(ctx context.Context, prov
 			providerETCD := strings.Split(string(kv.Key), "/")
 			providerVersionETCD := providerETCD[len(providerETCD)-1]
 			if providerVersionETCD == "latest" {
-				latestServiceId, err := FindServiceIds(ctx, providerVersionETCD, &pb.MicroServiceKey{
+				latestServiceId, err := ms.FindServiceIds(ctx, providerVersionETCD, &pb.MicroServiceKey{
 					Tenant:      tenant,
 					AppId:       provider.AppId,
 					ServiceName: provider.ServiceName,
@@ -404,7 +404,7 @@ func (s *ServiceController) updateAsProviderDependency(ctx context.Context, prov
 	//标记相同的serviceId是否被加入
 	flag := map[string]bool{}
 	for _, consumer := range allConsumers {
-		consumerServiceid, err := GetServiceId(ctx, consumer)
+		consumerServiceid, err := ms.GetServiceId(ctx, consumer, false)
 		if err != nil {
 			util.LOGGER.Errorf(nil, "Get consumer's serviceId failed.")
 			return err
@@ -485,7 +485,7 @@ func (s *ServiceController) updateAsConsumerDependency(ctx context.Context, cons
 				optPros = append(optPros, optProsTmps...)
 			}
 		default:
-			serviceIds, err := FindServiceIds(ctx, provider.Version, &pb.MicroServiceKey{
+			serviceIds, err := ms.FindServiceIds(ctx, provider.Version, &pb.MicroServiceKey{
 				Tenant:      tenant,
 				AppId:       provider.AppId,
 				ServiceName: provider.ServiceName,
@@ -777,7 +777,7 @@ func (s *ServiceController) GetProviderDependencies(ctx context.Context, in *pb.
 	}
 	providerId := in.ServiceId
 	tenant := util.ParaseTenantProject(ctx)
-	if !s.ServiceExist(ctx, tenant, providerId) {
+	if !ms.ServiceExist(ctx, tenant, providerId) {
 		return &pb.GetProDependenciesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "This provider does not exist."),
 		}, nil
@@ -806,7 +806,7 @@ func (s *ServiceController) GetConsumerDependencies(ctx context.Context, in *pb.
 	}
 	consumerId := in.ServiceId
 	tenant := util.ParaseTenantProject(ctx)
-	if !s.ServiceExist(ctx, tenant, consumerId) {
+	if !ms.ServiceExist(ctx, tenant, consumerId) {
 		return &pb.GetConDependenciesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "This consumer does not exist."),
 		}, nil

@@ -100,6 +100,7 @@ type PluginOp struct {
 	CountOnly  bool
 	SortOrder  SortOrder
 	WithRev    int64
+	WithCache  bool
 }
 
 type PluginResponse struct {

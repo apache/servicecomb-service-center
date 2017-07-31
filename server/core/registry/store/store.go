@@ -29,18 +29,20 @@ const (
 	TAG
 	SCHEMA
 	LEASE
-	INDEX
+	SERVICE_INDEX
+	SERVICE_ALIAS
 	typeEnd
 )
 
 var typeNames = []string{
-	SERVICE:  "SERVICE",
-	INSTANCE: "INSTANCE",
-	DOMAIN:   "DOMAIN",
-	TAG:      "TAG",
-	SCHEMA:   "SCHEMA",
-	LEASE:    "LEASE",
-	INDEX:    "INDEX",
+	SERVICE:       "SERVICE",
+	INSTANCE:      "INSTANCE",
+	DOMAIN:        "DOMAIN",
+	TAG:           "TAG",
+	SCHEMA:        "SCHEMA",
+	LEASE:         "LEASE",
+	SERVICE_INDEX: "SERVICE_INDEX",
+	SERVICE_ALIAS: "SERVICE_ALIAS",
 }
 
 var (
@@ -125,7 +127,11 @@ func (s *KvStore) storeLease(leaseWatchByTenantKey string) {
 }
 
 func (s *KvStore) storeServiceIndex(indexWatchByTenantKey string) {
-	s.newStoreCacher(INDEX, indexWatchByTenantKey).Run()
+	s.newStoreCacher(SERVICE_INDEX, indexWatchByTenantKey).Run()
+}
+
+func (s *KvStore) storeServiceAlias(aliasWatchByTenantKey string) {
+	s.newStoreCacher(SERVICE_ALIAS, aliasWatchByTenantKey).Run()
 }
 
 func (s *KvStore) onDomainCreate(evt *KvEvent) {
@@ -149,6 +155,7 @@ func (s *KvStore) onDomainCreate(evt *KvEvent) {
 	s.storeInstance(apt.GetInstanceRootKey(tenant))
 	s.storeLease(apt.GetInstanceLeaseRootKey(tenant))
 	s.storeServiceIndex(apt.GetServiceIndexRootKey(tenant))
+	s.storeServiceAlias(apt.GetServiceAliasRootKey(tenant))
 	return
 }
 
@@ -165,6 +172,7 @@ func (s *KvStore) Stop() {
 	for _, c := range s.cachers {
 		c.Stop()
 	}
+	util.LOGGER.Debugf("store daemon stopped.")
 }
 
 func (s *KvStore) Service() Indexer {
@@ -177,6 +185,14 @@ func (s *KvStore) Instance() Indexer {
 
 func (s *KvStore) Lease() Indexer {
 	return s.indexers[LEASE]
+}
+
+func (s *KvStore) ServiceIndex() Indexer {
+	return s.indexers[SERVICE_INDEX]
+}
+
+func (s *KvStore) ServiceAlias() Indexer {
+	return s.indexers[SERVICE_ALIAS]
 }
 
 func Store() *KvStore {

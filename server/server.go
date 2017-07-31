@@ -102,6 +102,7 @@ func waitForQuit() {
 	select {
 	case err = <-apiServer.Err():
 	case err = <-notifyService.Err():
+	case <-exit:
 	}
 	if err != nil {
 		util.LOGGER.Errorf(err, "service center catch errors, %s", err.Error())

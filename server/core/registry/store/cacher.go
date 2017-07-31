@@ -19,6 +19,7 @@ import (
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/util"
 	"github.com/coreos/etcd/mvcc/mvccpb"
+	"golang.org/x/net/context"
 	"sync"
 	"time"
 )
@@ -28,6 +29,7 @@ const DEFAULT_MAX_NO_EVENT_INTERVAL = 4
 type Cache interface {
 	Version() int64
 	Data(interface{}) interface{}
+	Have(interface{}) bool
 }
 
 type Cacher interface {
@@ -51,7 +53,20 @@ func (c *KvCache) Version() int64 {
 func (c *KvCache) Data(k interface{}) interface{} {
 	c.rwMux.RLock()
 	defer c.rwMux.RUnlock()
-	return c.store[k.(string)]
+	kv, ok := c.store[k.(string)]
+	if !ok {
+		return nil
+	}
+	var copy mvccpb.KeyValue
+	util.DeepCopy(&copy, kv)
+	return &copy
+}
+
+func (c *KvCache) Have(k interface{}) (ok bool) {
+	c.rwMux.RLock()
+	defer c.rwMux.RUnlock()
+	_, ok = c.store[k.(string)]
+	return
 }
 
 func (c *KvCache) Lock() map[string]*mvccpb.KeyValue {
@@ -128,12 +143,13 @@ func (c *KvCacher) doWatch(listOps *ListOptions) error {
 	return c.handleWatcher(watcher)
 }
 
-func (c *KvCacher) ListAndWatch() error {
+func (c *KvCacher) ListAndWatch(ctx context.Context) error {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 
 	listOps := &ListOptions{
 		Timeout: c.Cfg.Timeout,
+		Context: ctx,
 	}
 	if c.needList() {
 		err := c.doList(listOps)
@@ -281,9 +297,14 @@ func (c *KvCacher) filter(rev int64, items []interface{}) []*Event {
 func (c *KvCacher) run() {
 	c.goroute.Do(func(stopCh <-chan struct{}) {
 		util.LOGGER.Debugf("start to list and watch %s", c.Cfg)
+		ctx, cancel := context.WithCancel(context.Background())
+		c.goroute.Do(func(stopCh <-chan struct{}) {
+			defer cancel()
+			<-stopCh
+		})
 		for {
 			start := time.Now()
-			c.ListAndWatch()
+			c.ListAndWatch(ctx)
 			watchDuration := time.Now().Sub(start)
 			nextPeriod := 0 * time.Second
 			if watchDuration > 0 && c.Cfg.Period > watchDuration {
@@ -291,6 +312,7 @@ func (c *KvCacher) run() {
 			}
 			select {
 			case <-stopCh:
+				util.LOGGER.Warnf(nil, "stop to list and watch %s", c.Cfg)
 				return
 			case <-time.After(nextPeriod):
 			}
@@ -308,6 +330,7 @@ func (c *KvCacher) Run() {
 
 func (c *KvCacher) Stop() {
 	c.goroute.Close(true)
+	util.LOGGER.Debugf("cacher is stopped, %s", c.Cfg)
 }
 
 type KvEvent struct {

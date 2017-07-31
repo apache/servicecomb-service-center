@@ -59,6 +59,7 @@ func (s *EtcdClient) Close() {
 	if s.Client != nil {
 		s.Client.Close()
 	}
+	util.LOGGER.Debugf("etcd client stopped.")
 }
 
 func (c *EtcdClient) CompactCluster(ctx context.Context) {

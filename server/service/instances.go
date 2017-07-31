@@ -24,6 +24,7 @@ import (
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/infra/quota"
 	"github.com/ServiceComb/service-center/server/plugins/dynamic"
+	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	nf "github.com/ServiceComb/service-center/server/service/notification"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
@@ -37,7 +38,6 @@ import (
 )
 
 type InstanceController struct {
-	serviceCtrl ServiceController
 }
 
 func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstanceRequest) (*pb.RegisterInstanceResponse, error) {
@@ -61,7 +61,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 	tenant := util.ParaseTenantProject(ctx)
 
 	// service id存在性校验
-	if !s.serviceCtrl.ServiceExist(ctx, tenant, instance.ServiceId) {
+	if !ms.ServiceExist(ctx, tenant, instance.ServiceId) {
 		util.LOGGER.Errorf(nil, "register instance failed, service %s, operator %s: service not exist.", instanceFlag, remoteIP)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "service does not exist"),
@@ -471,7 +471,7 @@ func (s *InstanceController) getInstancePreCheck(ctx context.Context, in interfa
 		tags = in.(*pb.GetInstancesRequest).Tags
 	}
 
-	if !s.serviceCtrl.ServiceExist(ctx, tenant, providerServiceId) {
+	if !ms.ServiceExist(ctx, tenant, providerServiceId) {
 		return errors.New(fmt.Sprintf("Service does not exist.Service id is %s", providerServiceId)), false
 	}
 
@@ -523,7 +523,7 @@ func (s *InstanceController) GetInstances(ctx context.Context, in *pb.GetInstanc
 	if err != nil {
 		util.LOGGER.Errorf(err, "get instances failed, con--pro %s: get instances from etcd failed.", conPro)
 		return &pb.GetInstancesResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, errAddDependence.Error()),
+			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, err
 	}
 	return &pb.GetInstancesResponse{
@@ -627,7 +627,7 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 	}
 
 	// 版本规则
-	ids, err := FindServiceIds(ctx, in.VersionRule, &pb.MicroServiceKey{
+	ids, err := ms.FindServiceIds(ctx, in.VersionRule, &pb.MicroServiceKey{
 		Tenant:      tenant,
 		AppId:       in.AppId,
 		ServiceName: in.ServiceName,
@@ -751,7 +751,7 @@ func (s *InstanceController) UpdateStatus(ctx context.Context, in *pb.UpdateInst
 
 	instance.Status = in.Status
 
-	err, isInnerErr := updateInstanceLease(ctx, tenant, instance)
+	err, isInnerErr := updateInstance(ctx, tenant, instance)
 	if err != nil {
 		util.LOGGER.Errorf(err, "update instance status failed, %s: update instance lease failed.", updateStatusFlag)
 		if isInnerErr {
@@ -803,7 +803,7 @@ func (s *InstanceController) UpdateInstanceProperties(ctx context.Context, in *p
 		instance.Properties[property] = in.Properties[property]
 	}
 
-	err, isInnerErr := updateInstanceLease(ctx, tenant, instance)
+	err, isInnerErr := updateInstance(ctx, tenant, instance)
 	if err != nil {
 		util.LOGGER.Errorf(err, "update instance properties failed, %s: update instance lease failed.", instanceFlag)
 		if isInnerErr {
@@ -822,7 +822,7 @@ func (s *InstanceController) UpdateInstanceProperties(ctx context.Context, in *p
 	}, nil
 }
 
-func updateInstanceLease(ctx context.Context, tenant string, instance *pb.MicroServiceInstance) (err error, isInnerErr bool) {
+func updateInstance(ctx context.Context, tenant string, instance *pb.MicroServiceInstance) (err error, isInnerErr bool) {
 	leaseID, err := serviceUtil.GetLeaseId(ctx, tenant, instance.ServiceId, instance.InstanceId)
 	if err != nil {
 		return err, true
@@ -859,7 +859,7 @@ func (s *InstanceController) WatchPreOpera(ctx context.Context, in *pb.WatchInst
 		return errors.New("request format invalid")
 	}
 	tenant := util.ParaseTenantProject(ctx)
-	if !s.serviceCtrl.ServiceExist(ctx, tenant, in.SelfServiceId) {
+	if !ms.ServiceExist(ctx, tenant, in.SelfServiceId) {
 		return errors.New("service does not exist")
 	}
 	return nil
@@ -903,13 +903,13 @@ func (s *InstanceController) WebSocketListAndWatch(ctx context.Context, in *pb.W
 
 func (s *InstanceController) CluterHealth(ctx context.Context) (*pb.GetInstancesResponse, error) {
 	tenant := strings.Join([]string{core.REGISTRY_TENANT, core.REGISTRY_PROJECT}, "/")
-	serviceId, err := GetServiceId(ctx, &pb.MicroServiceKey{
+	serviceId, err := ms.GetServiceId(ctx, &pb.MicroServiceKey{
 		AppId:       core.REGISTRY_APP_ID,
 		ServiceName: core.REGISTRY_SERVICE_NAME,
 		Version:     core.REGISTRY_VERSION,
 		Tenant:      tenant,
 		Project:     core.REGISTRY_PROJECT,
-	})
+	}, false)
 
 	if err != nil {
 		util.LOGGER.Errorf(nil, "health check failed: get service center serviceId failed.")

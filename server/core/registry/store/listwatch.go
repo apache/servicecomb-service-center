@@ -38,6 +38,7 @@ type Watcher interface {
 
 type ListOptions struct {
 	Timeout time.Duration
+	Context context.Context
 }
 
 type ListWatcher interface {
@@ -58,7 +59,7 @@ func (lw *KvListWatcher) Revision() int64 {
 }
 
 func (lw *KvListWatcher) List(op *ListOptions) ([]interface{}, error) {
-	otCtx, _ := context.WithTimeout(context.Background(), op.Timeout)
+	otCtx, _ := context.WithTimeout(op.Context, op.Timeout)
 	resp, err := lw.Client.Do(otCtx, registry.WithWatchPrefix(lw.Key))
 	if err != nil {
 		return nil, err
@@ -135,7 +136,7 @@ func (w *KvWatcher) EventBus() <-chan *Event {
 
 func (w *KvWatcher) process() {
 	stopCh := make(chan struct{})
-	ctx, cancel := context.WithTimeout(context.Background(), w.ListOps.Timeout)
+	ctx, cancel := context.WithTimeout(w.ListOps.Context, w.ListOps.Timeout)
 	go func() {
 		defer close(stopCh)
 		w.lw.doWatch(ctx, w.sendEvent)

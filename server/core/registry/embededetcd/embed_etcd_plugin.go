@@ -60,6 +60,7 @@ func (s *EtcdEmbed) Close() {
 	if s.Server != nil {
 		s.Server.Close()
 	}
+	util.LOGGER.Debugf("embedded etcd client stopped.")
 }
 
 func (s *EtcdEmbed) toGetRequest(op *registry.PluginOp) *etcdserverpb.RangeRequest {

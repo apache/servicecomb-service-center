@@ -35,122 +35,6 @@ import (
 type ServiceController struct {
 }
 
-// TODO 支持扩展
-func GetServiceId(ctx context.Context, key *pb.MicroServiceKey) (string, error) {
-
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action: registry.GET,
-		Key:    []byte(apt.GenerateServiceIndexKey(key)),
-	})
-	if err != nil {
-		return "", err
-	}
-	if len(resp.Kvs) == 0 {
-		if len(key.Alias) == 0 {
-			return "", nil
-		}
-		// 别名查询
-		util.LOGGER.Debugf("could not search microservice %s/%s/%s id by field 'serviceName', now try field 'alias'.",
-			key.AppId, key.ServiceName, key.Version)
-		resp, err = registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-			Action: registry.GET,
-			Key:    []byte(apt.GenerateServiceAliasKey(key)),
-		})
-		if err != nil {
-			return "", err
-		}
-		if len(resp.Kvs) == 0 {
-			return "", nil
-		}
-	}
-	return string(resp.Kvs[0].Value), nil
-}
-
-func FindServiceIds(ctx context.Context, versionRule string, key *pb.MicroServiceKey) ([]string, error) {
-	// 版本规则
-	ids := []string{}
-	rangeIdx := strings.Index(versionRule, "-")
-
-	alsoFindAlias := len(key.Alias) > 0
-	keyGenerator := func(key *pb.MicroServiceKey) string { return apt.GenerateServiceIndexKey(key) }
-	versionsFunc := func(key *pb.MicroServiceKey) (*registry.PluginResponse, error) {
-		key.Version = ""
-		prefix := keyGenerator(key)
-		resp, err := registry.GetRegisterCenter().Do(context.TODO(), &registry.PluginOp{
-			Action:     registry.GET,
-			Key:        []byte(prefix),
-			WithPrefix: true,
-			SortOrder:  registry.SORT_DESCEND,
-		})
-		return resp, err
-	}
-
-FIND_RULE:
-	switch {
-	case versionRule == "latest":
-		resp, err := versionsFunc(key)
-		if err != nil {
-			return nil, err
-		}
-		if len(resp.Kvs) == 0 {
-			break
-		}
-		ids = ms.VersionRule(ms.Latest).GetServicesIds(resp.Kvs)
-	case versionRule[len(versionRule)-1:] == "+":
-		// 取最低版本及高版本集合
-		start := versionRule[:len(versionRule)-1]
-		resp, err := versionsFunc(key)
-		if err != nil {
-			return nil, err
-		}
-		if len(resp.Kvs) == 0 {
-			break
-		}
-		ids = ms.VersionRule(ms.AtLess).GetServicesIds(resp.Kvs, start)
-	case rangeIdx > 0:
-		// 取版本范围集合
-		start := versionRule[:rangeIdx]
-		end := versionRule[rangeIdx+1:]
-		resp, err := versionsFunc(key)
-		if err != nil {
-			return nil, err
-		}
-		if len(resp.Kvs) == 0 {
-			break
-		}
-		ids = ms.VersionRule(ms.Range).GetServicesIds(resp.Kvs, start, end)
-	default:
-		// 精确匹配
-		key.Version = versionRule
-		serviceId, err := GetServiceId(ctx, key)
-		if err != nil {
-			return nil, err
-		}
-		if len(serviceId) <= 0 {
-			break
-		}
-		ids = append(ids, serviceId)
-	}
-	if len(ids) == 0 && alsoFindAlias {
-		alsoFindAlias = false
-		keyGenerator = func(key *pb.MicroServiceKey) string { return apt.GenerateServiceAliasKey(key) }
-		goto FIND_RULE
-	}
-	return ids, nil
-}
-
-func (s *ServiceController) ServiceExist(ctx context.Context, tenant string, serviceId string) bool {
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action:    registry.GET,
-		Key:       []byte(apt.GenerateServiceKey(tenant, serviceId)),
-		CountOnly: true,
-	})
-	if err != nil || resp.Count == 0 {
-		return false
-	}
-	return true
-}
-
 func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequest) (*pb.CreateServiceResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	if in == nil || in.Service == nil {
@@ -192,7 +76,7 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 	}
 
 	serviceId := in.Service.ServiceId
-	serviceIdInner, err := GetServiceId(ctx, consumer)
+	serviceIdInner, err := ms.GetServiceId(ctx, consumer, true)
 	if err != nil {
 		util.LOGGER.Errorf(err, "create microservice failed, %s:internel err,query service failed.operator:%s",
 			serviceFlag, remoteIP)
@@ -822,7 +706,7 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 	tenant := util.ParaseTenantProject(ctx)
 
 	// service id存在性校验
-	if !s.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.LOGGER.Errorf(nil, "add rule failed, serviceId is %s: service not exist.", in.ServiceId)
 		return &pb.AddServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "service does not exist"),
@@ -954,7 +838,7 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 	tenant := util.ParaseTenantProject(ctx)
 
 	// service id存在性校验
-	if !s.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.LOGGER.Errorf(nil, "update rule failed, serviceId is %s, ruleId is %s: service not exist.", in.ServiceId, in.RuleId)
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "service does not exist"),
@@ -1083,7 +967,7 @@ func (s *ServiceController) GetRule(ctx context.Context, in *pb.GetServiceRulesR
 
 	tenant := util.ParaseTenantProject(ctx)
 	// service id存在性校验
-	if !s.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.LOGGER.Errorf(nil, "get service rule failed, serviceId is %s: service not exist.", in.ServiceId)
 		return &pb.GetServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "service does not exist"),
@@ -1114,7 +998,7 @@ func (s *ServiceController) DeleteRule(ctx context.Context, in *pb.DeleteService
 
 	tenant := util.ParaseTenantProject(ctx)
 	// service id存在性校验
-	if !s.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.LOGGER.Errorf(nil, "delete service rule failed, serviceId is %s, rule is %v: service not exist.", in.ServiceId, in.RuleIds)
 		return &pb.DeleteServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "service does not exist"),
@@ -1219,7 +1103,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 			}, nil
 		}
 
-		ids, err := FindServiceIds(ctx, in.Version, &pb.MicroServiceKey{
+		ids, err := ms.FindServiceIds(ctx, in.Version, &pb.MicroServiceKey{
 			AppId:       in.AppId,
 			ServiceName: in.ServiceName,
 			Alias:       in.ServiceName,
@@ -1257,7 +1141,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 			}, nil
 		}
-		if !s.ServiceExist(ctx, tenant, in.ServiceId) {
+		if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
 			util.LOGGER.Errorf(nil, "schema exist failed, serviceId %s, schemaId : service not exist.", in.ServiceId, in.SchemaId)
 			return &pb.GetExistenceResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist"),
@@ -1307,7 +1191,7 @@ func (s *ServiceController) AddTags(ctx context.Context, in *pb.AddServiceTagsRe
 
 	tenant := util.ParaseTenantProject(ctx)
 	// service id存在性校验
-	if !s.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.LOGGER.Errorf(nil, "add service tags failed, serviceId %s, tags %v: service not exist.", in.ServiceId, in.Tags)
 		return &pb.AddServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "service does not exist"),
@@ -1381,7 +1265,7 @@ func (s *ServiceController) UpdateTag(ctx context.Context, in *pb.UpdateServiceT
 
 	tenant := util.ParaseTenantProject(ctx)
 
-	if !s.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.LOGGER.Errorf(err, "update service tag failed, serviceId %s, tag %s: service not exist.", in.ServiceId, tagFlag)
 		return &pb.UpdateServiceTagResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
@@ -1456,7 +1340,7 @@ func (s *ServiceController) DeleteTags(ctx context.Context, in *pb.DeleteService
 
 	tenant := util.ParaseTenantProject(ctx)
 
-	if !s.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.LOGGER.Errorf(nil, "delete service tags failed, serviceId %s, tags %v: service not exist.", in.ServiceId, in.Keys)
 		return &pb.DeleteServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
@@ -1545,7 +1429,7 @@ func (s *ServiceController) GetTags(ctx context.Context, in *pb.GetServiceTagsRe
 
 	tenant := util.ParaseTenantProject(ctx)
 
-	if !s.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.LOGGER.Errorf(err, "get service tags failed, serviceId %s: service not exist.", in.ServiceId)
 		return &pb.GetServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist"),
@@ -1584,7 +1468,7 @@ func (s *ServiceController) GetSchemaInfo(ctx context.Context, request *pb.GetSc
 
 	tenant := util.ParaseTenantProject(ctx)
 
-	if !s.ServiceExist(ctx, tenant, request.ServiceId) {
+	if !ms.ServiceExist(ctx, tenant, request.ServiceId) {
 		util.LOGGER.Errorf(nil, "get schema failed, serviceId %s, schemaId %s: service not exist.", request.ServiceId, request.SchemaId)
 		return &pb.GetSchemaResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist"),
@@ -1630,7 +1514,7 @@ func (s *ServiceController) DeleteSchema(ctx context.Context, request *pb.Delete
 	}
 	tenant := util.ParaseTenantProject(ctx)
 
-	if !s.ServiceExist(ctx, tenant, request.ServiceId) {
+	if !ms.ServiceExist(ctx, tenant, request.ServiceId) {
 		util.LOGGER.Errorf(nil, "delete schema failded, serviceId %s, schemaId %s: service not exist.", request.ServiceId, request.SchemaId)
 		return &pb.DeleteSchemaResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist"),

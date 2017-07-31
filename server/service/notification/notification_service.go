@@ -78,7 +78,7 @@ type NotifyService struct {
 
 	services serviceIndex
 	queues   map[NotifyType]chan NotifyJob
-	waits    map[NotifyType]chan struct{}
+	waits    sync.WaitGroup
 	mutexes  map[NotifyType]*sync.Mutex
 	err      chan error
 	closeMux sync.RWMutex
@@ -179,7 +179,7 @@ func (s *NotifyService) AddJob(job NotifyJob) error {
 }
 
 func (s *NotifyService) publish2Subscriber(t NotifyType) {
-	defer close(s.waits[t])
+	defer s.waits.Done()
 	for job := range s.queues[t] {
 		util.LOGGER.Infof("notification server got a job %s: %s to notify subscriber %s",
 			job.Type(), job.Subject(), job.SubscriberId())
@@ -230,13 +230,12 @@ func (s *NotifyService) init() {
 	s.services = make(serviceIndex)
 	s.err = make(chan error, 1)
 	s.queues = make(map[NotifyType]chan NotifyJob)
-	s.waits = make(map[NotifyType]chan struct{})
 	s.mutexes = make(map[NotifyType]*sync.Mutex)
 	for i := NotifyType(0); i != typeEnd; i++ {
 		s.services[i] = make(subscriberSubjectIndex)
 		s.queues[i] = make(chan NotifyJob, s.Config.MaxQueue)
-		s.waits[i] = make(chan struct{})
 		s.mutexes[i] = &sync.Mutex{}
+		s.waits.Add(1)
 	}
 }
 
@@ -288,7 +287,7 @@ func (s *NotifyService) WatchInstance(evt *store.KvEvent) {
 		return
 	}
 	// 查询服务版本信息
-	ms, err := microservice.GetByIdInCache(tenantProject, providerId)
+	ms, err := microservice.GetServiceInCache(tenantProject, providerId)
 	if ms == nil {
 		util.LOGGER.Errorf(err, "get provider service %s/%s id in cache failed",
 			providerId, providerInstanceId)
@@ -342,9 +341,7 @@ func (s *NotifyService) Stop() {
 	for _, c := range s.queues {
 		close(c)
 	}
-	for _, c := range s.waits {
-		<-c
-	}
+	s.waits.Wait()
 
 	s.RemoveAllSubscribers()
 

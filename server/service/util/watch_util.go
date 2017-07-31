@@ -20,7 +20,7 @@ import (
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
-	"github.com/ServiceComb/service-center/server/service/microservice"
+	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	nf "github.com/ServiceComb/service-center/server/service/notification"
 	"github.com/ServiceComb/service-center/util"
 	"github.com/coreos/etcd/mvcc/mvccpb"
@@ -184,7 +184,7 @@ func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (resul
 		providerDepsKey := string(depsKv.Key)
 		providerId := providerDepsKey[strings.LastIndex(providerDepsKey, "/")+1:]
 
-		service, err := microservice.GetById(tenant, providerId, rev)
+		service, err := ms.GetService(tenant, providerId, rev)
 		if service == nil {
 			return
 		}
