@@ -14,11 +14,11 @@
 package helper
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/util"
+	"golang.org/x/net/context"
 	"net/http"
 	"strings"
 )

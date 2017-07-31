@@ -55,7 +55,8 @@ func init() {
 	}
 
 	store = &KvStore{
-		cachers: make(map[StoreType]Cacher),
+		cachers:  make(map[StoreType]Cacher),
+		indexers: make(map[StoreType]Indexer),
 	}
 	AddKvStoreEventFunc(DOMAIN, store.onDomainCreate)
 }
@@ -70,9 +71,9 @@ func (st StoreType) String() string {
 }
 
 type KvStore struct {
-	cachers map[StoreType]Cacher
-
-	isClose bool
+	cachers  map[StoreType]Cacher
+	indexers map[StoreType]Indexer
+	isClose  bool
 }
 
 func (s *KvStore) newCache(prefix string, callback KvEventFunc) Cacher {
@@ -91,6 +92,7 @@ func (s *KvStore) newTimeoutCache(ot time.Duration, prefix string, callback KvEv
 func (s *KvStore) newStoreCacher(t StoreType, prefix string) Cacher {
 	c := s.newCache(prefix, func(evt *KvEvent) { s.onEvent(t, evt) })
 	s.cachers[t] = c
+	s.indexers[t] = NewKvCacheIndexer(c.Cache())
 	return c
 }
 
@@ -158,7 +160,23 @@ func (s *KvStore) Stop() {
 	if s.isClose {
 		return
 	}
-	s.isClose = true // TODO really stop?
+	s.isClose = true
+
+	for _, c := range s.cachers {
+		c.Stop()
+	}
+}
+
+func (s *KvStore) Service() Indexer {
+	return s.indexers[SERVICE]
+}
+
+func (s *KvStore) Instance() Indexer {
+	return s.indexers[INSTANCE]
+}
+
+func (s *KvStore) Lease() Indexer {
+	return s.indexers[LEASE]
 }
 
 func Store() *KvStore {

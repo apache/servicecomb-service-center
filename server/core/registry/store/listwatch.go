@@ -14,10 +14,10 @@
 package store
 
 import (
-	"context"
 	"fmt"
 	"github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
+	"golang.org/x/net/context"
 	"sync"
 	"time"
 )

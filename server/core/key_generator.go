@@ -137,13 +137,6 @@ func GenerateRuleIndexKey(tenant string, serviceId string, attr string, pattern 
 	}, "/")
 }
 
-func GetRuleSequenceKey() string {
-	return strings.Join([]string{
-		GetRootKey(),
-		"rule_seq",
-	}, "/")
-}
-
 func GenerateServiceIndexKey(key *pb.MicroServiceKey) string {
 	appId := key.AppId
 	if len(strings.TrimSpace(appId)) == 0 {

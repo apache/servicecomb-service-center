@@ -14,9 +14,9 @@
 package registry
 
 import (
-	"context"
 	"github.com/astaxie/beego"
 	"github.com/coreos/etcd/mvcc/mvccpb"
+	"golang.org/x/net/context"
 	"reflect"
 	"sync"
 	"time"

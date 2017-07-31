@@ -5,6 +5,7 @@ import (
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/server/core/registry/store"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
 	"strconv"
@@ -12,7 +13,7 @@ import (
 )
 
 func GetLeaseId(ctx context.Context, tenant string, serviceId string, instanceId string) (int64, error) {
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+	resp, err := store.Store().Lease().Search(ctx, &registry.PluginOp{
 		Action: registry.GET,
 		Key:    []byte(apt.GenerateInstanceLeaseKey(tenant, serviceId, instanceId)),
 	})

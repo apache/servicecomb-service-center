@@ -13,7 +13,7 @@
 //limitations under the License.
 package quota
 
-import "context"
+import "golang.org/x/net/context"
 
 type QuotaManager interface {
 	Apply4Quotas(ctx context.Context, quotaType int, quotaSize int16) (bool, error)
