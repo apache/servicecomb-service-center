@@ -27,7 +27,7 @@ const DEFAULT_MAX_NO_EVENT_INTERVAL = 4
 
 type Cache interface {
 	Version() int64
-	Data() map[string]*mvccpb.KeyValue
+	Data(interface{}) interface{}
 }
 
 type Cacher interface {
@@ -36,17 +36,31 @@ type Cacher interface {
 	Stop()
 }
 
+type KvCacheSafeRFunc func()
+
 type KvCache struct {
 	owner *KvCacher
 	store map[string]*mvccpb.KeyValue
+	rwMux sync.RWMutex
 }
 
 func (c *KvCache) Version() int64 {
 	return c.owner.lw.Revision()
 }
 
-func (c *KvCache) Data() map[string]*mvccpb.KeyValue {
+func (c *KvCache) Data(k interface{}) interface{} {
+	c.rwMux.RLock()
+	defer c.rwMux.RUnlock()
+	return c.store[k.(string)]
+}
+
+func (c *KvCache) Lock() map[string]*mvccpb.KeyValue {
+	c.rwMux.Lock()
 	return c.store
+}
+
+func (c *KvCache) Unlock() {
+	c.rwMux.Unlock()
 }
 
 type KvCacher struct {
@@ -150,7 +164,9 @@ func (c *KvCacher) handleWatcher(watcher Watcher) error {
 }
 
 func (c *KvCacher) sync(evts []*Event) {
-	store := c.Cache().Data()
+	cache := c.Cache().(*KvCache)
+	store := cache.Lock()
+	defer cache.Unlock()
 	for _, evt := range evts {
 		kv := evt.Object.(*mvccpb.KeyValue)
 		key := registry.BytesToStringWithNoCopy(kv.Key)
@@ -192,7 +208,9 @@ func (c *KvCacher) sync(evts []*Event) {
 }
 
 func (c *KvCacher) filter(rev int64, items []interface{}) []*Event {
-	store := c.Cache().Data()
+	cache := c.Cache().(*KvCache)
+	store := cache.Lock()
+	defer cache.Unlock()
 	oc, nc := len(store), len(items)
 	tc := oc + nc
 	if tc == 0 {
