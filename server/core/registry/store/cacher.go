@@ -25,8 +25,28 @@ import (
 
 const DEFAULT_MAX_NO_EVENT_INTERVAL = 4
 
+type Cache interface {
+	Version() int64
+	Data() map[string]*mvccpb.KeyValue
+}
+
 type Cacher interface {
+	Cache() Cache
 	Run()
+	Stop()
+}
+
+type KvCache struct {
+	owner *KvCacher
+	store map[string]*mvccpb.KeyValue
+}
+
+func (c *KvCache) Version() int64 {
+	return c.owner.lw.Revision()
+}
+
+func (c *KvCache) Data() map[string]*mvccpb.KeyValue {
+	return c.store
 }
 
 type KvCacher struct {
@@ -36,10 +56,11 @@ type KvCacher struct {
 	noEventInterval    int
 	noEventMaxInterval int
 
-	lw    ListWatcher
-	mux   sync.Mutex
-	once  sync.Once
-	store map[string]*mvccpb.KeyValue
+	lw      ListWatcher
+	mux     sync.Mutex
+	once    sync.Once
+	cache   *KvCache
+	goroute *util.GoRoutine
 }
 
 func (c *KvCacher) needList() bool {
@@ -81,7 +102,7 @@ func (c *KvCacher) doList(listOps *ListOptions) error {
 		return nil
 	}
 
-	util.LOGGER.Debugf("finish to cache key %s, %d items took %s, list options: %+v, rev: %d",
+	util.LOGGER.Infof("finish to cache key %s, %d items took %s, list options: %+v, rev: %d",
 		c.Cfg.Key, len(kvs), syncDuration, listOps, c.lastRev)
 	return nil
 }
@@ -129,14 +150,15 @@ func (c *KvCacher) handleWatcher(watcher Watcher) error {
 }
 
 func (c *KvCacher) sync(evts []*Event) {
+	store := c.Cache().Data()
 	for _, evt := range evts {
 		kv := evt.Object.(*mvccpb.KeyValue)
 		key := registry.BytesToStringWithNoCopy(kv.Key)
-		prevKv, ok := c.store[key]
+		prevKv, ok := store[key]
 		switch evt.Type {
 		case proto.EVT_CREATE, proto.EVT_UPDATE:
 			util.LOGGER.Debugf("sync %s event and notify watcher, cache key %s, %+v", evt.Type, key, kv)
-			c.store[key] = kv
+			store[key] = kv
 			t := evt.Type
 			if !ok && evt.Type != proto.EVT_CREATE {
 				util.LOGGER.Warnf(nil, "unexpected %s event! it should be %s key %s",
@@ -156,7 +178,7 @@ func (c *KvCacher) sync(evts []*Event) {
 		case proto.EVT_DELETE:
 			if ok {
 				util.LOGGER.Debugf("remove key %s and notify watcher, %+v", key, kv)
-				delete(c.store, key)
+				delete(store, key)
 				c.Cfg.OnEvent(&KvEvent{
 					Revision: evt.Revision,
 					Action:   evt.Type,
@@ -170,7 +192,8 @@ func (c *KvCacher) sync(evts []*Event) {
 }
 
 func (c *KvCacher) filter(rev int64, items []interface{}) []*Event {
-	oc, nc := len(c.store), len(items)
+	store := c.Cache().Data()
+	oc, nc := len(store), len(items)
 	tc := oc + nc
 	if tc == 0 {
 		return nil
@@ -188,7 +211,7 @@ func (c *KvCacher) filter(rev int64, items []interface{}) []*Event {
 	filterStopCh := make(chan struct{})
 	eventsCh := make(chan *Event, max)
 	go func() {
-		for k, v := range c.store {
+		for k, v := range store {
 			_, ok := newStore[k]
 			if !ok {
 				eventsCh <- &Event{
@@ -204,7 +227,7 @@ func (c *KvCacher) filter(rev int64, items []interface{}) []*Event {
 
 	go func() {
 		for k, v := range newStore {
-			ov, ok := c.store[k]
+			ov, ok := store[k]
 			if !ok {
 				eventsCh <- &Event{
 					Revision: rev,
@@ -238,7 +261,7 @@ func (c *KvCacher) filter(rev int64, items []interface{}) []*Event {
 }
 
 func (c *KvCacher) run() {
-	util.Go(func(stopCh <-chan struct{}) {
+	c.goroute.Do(func(stopCh <-chan struct{}) {
 		util.LOGGER.Debugf("start to list and watch %s", c.Cfg)
 		for {
 			start := time.Now()
@@ -257,8 +280,16 @@ func (c *KvCacher) run() {
 	})
 }
 
+func (c *KvCacher) Cache() Cache {
+	return c.cache
+}
+
 func (c *KvCacher) Run() {
 	c.once.Do(c.run)
+}
+
+func (c *KvCacher) Stop() {
+	c.goroute.Close(true)
 }
 
 type KvEvent struct {
@@ -281,6 +312,13 @@ func (cfg *KvCacherConfig) String() string {
 		cfg.Key, cfg.Timeout, cfg.Period)
 }
 
+func NewKvCache(c *KvCacher) *KvCache {
+	return &KvCache{
+		owner: c,
+		store: make(map[string]*mvccpb.KeyValue),
+	}
+}
+
 func NewKvCacher(cfg *KvCacherConfig) Cacher {
 	cacher := &KvCacher{
 		Cfg: cfg,
@@ -288,8 +326,9 @@ func NewKvCacher(cfg *KvCacherConfig) Cacher {
 			Client: registry.GetRegisterCenter(),
 			Key:    cfg.Key,
 		},
-		store:              make(map[string]*mvccpb.KeyValue),
+		goroute:            util.NewGo(make(chan struct{})),
 		noEventMaxInterval: DEFAULT_MAX_NO_EVENT_INTERVAL,
 	}
+	cacher.cache = NewKvCache(cacher)
 	return cacher
 }

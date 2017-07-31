@@ -82,17 +82,17 @@ func handleSignal() {
 		apiServer.Stop()
 	}
 
-	if store != nil {
-		store.Stop()
-	}
-
 	if notifyService != nil {
 		notifyService.Stop()
 	}
 
-	registry.GetRegisterCenter().Close()
+	if store != nil {
+		store.Stop()
+	}
 
 	util.GoCloseAndWait()
+
+	registry.GetRegisterCenter().Close()
 
 	close(exit)
 }
