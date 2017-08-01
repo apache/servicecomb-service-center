@@ -24,7 +24,15 @@ import (
 	"time"
 )
 
-const DEFAULT_MAX_NO_EVENT_INTERVAL = 4
+const (
+	DEFAULT_MAX_NO_EVENT_INTERVAL = 4
+	DEFAULT_LISTWATCH_TIMEOUT     = 30 * time.Second
+)
+
+var (
+	NullCache  = &nullCache{}
+	NullCacher = &nullCacher{}
+)
 
 type Cache interface {
 	Version() int64
@@ -37,6 +45,32 @@ type Cacher interface {
 	Run()
 	Stop()
 }
+
+type nullCache struct {
+}
+
+func (n *nullCache) Version() int64 {
+	return 0
+}
+
+func (n *nullCache) Data(interface{}) interface{} {
+	return nil
+}
+
+func (n *nullCache) Have(interface{}) bool {
+	return false
+}
+
+type nullCacher struct {
+}
+
+func (n *nullCacher) Cache() Cache {
+	return NullCache
+}
+
+func (n *nullCacher) Run() {}
+
+func (n *nullCacher) Stop() {}
 
 type KvCacheSafeRFunc func()
 
@@ -372,4 +406,17 @@ func NewKvCacher(cfg *KvCacherConfig) Cacher {
 	}
 	cacher.cache = NewKvCache(cacher)
 	return cacher
+}
+
+func NewCacher(prefix string, callback KvEventFunc) Cacher {
+	return NewTimeoutCacher(DEFAULT_LISTWATCH_TIMEOUT, prefix, callback)
+}
+
+func NewTimeoutCacher(ot time.Duration, prefix string, callback KvEventFunc) Cacher {
+	return NewKvCacher(&KvCacherConfig{
+		Key:     prefix,
+		Timeout: ot,
+		Period:  time.Second,
+		OnEvent: callback,
+	})
 }

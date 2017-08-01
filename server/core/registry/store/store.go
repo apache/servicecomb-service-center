@@ -18,12 +18,10 @@ import (
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/util"
 	"strconv"
-	"time"
 )
 
 const (
-	DEFAULT_LISTWATCH_TIMEOUT           = 30 * time.Second
-	SERVICE                   StoreType = iota
+	SERVICE StoreType = iota
 	INSTANCE
 	DOMAIN
 	TAG
@@ -51,14 +49,15 @@ var (
 )
 
 func init() {
-	kvStoreEventFuncMap = make(map[StoreType][]KvEventFunc)
-	for i := StoreType(0); i != typeEnd; i++ {
-		kvStoreEventFuncMap[i] = make([]KvEventFunc, 0, 5)
-	}
-
 	store = &KvStore{
 		cachers:  make(map[StoreType]Cacher),
 		indexers: make(map[StoreType]Indexer),
+		ready:    make(chan struct{}),
+	}
+	kvStoreEventFuncMap = make(map[StoreType][]KvEventFunc)
+	for i := StoreType(0); i != typeEnd; i++ {
+		kvStoreEventFuncMap[i] = make([]KvEventFunc, 0, 5)
+		store.newNullStore(i)
 	}
 	AddKvStoreEventFunc(DOMAIN, store.onDomainCreate)
 }
@@ -76,26 +75,20 @@ type KvStore struct {
 	cachers  map[StoreType]Cacher
 	indexers map[StoreType]Indexer
 	isClose  bool
+	ready    chan struct{}
 }
 
-func (s *KvStore) newCache(prefix string, callback KvEventFunc) Cacher {
-	return s.newTimeoutCache(DEFAULT_LISTWATCH_TIMEOUT, prefix, callback)
-}
-
-func (s *KvStore) newTimeoutCache(ot time.Duration, prefix string, callback KvEventFunc) Cacher {
-	return NewKvCacher(&KvCacherConfig{
-		Key:     prefix,
-		Timeout: ot,
-		Period:  time.Second,
-		OnEvent: callback,
-	})
-}
-
-func (s *KvStore) newStoreCacher(t StoreType, prefix string) Cacher {
-	c := s.newCache(prefix, func(evt *KvEvent) { s.onEvent(t, evt) })
+func (s *KvStore) newStore(t StoreType, prefix string) {
+	c := NewCacher(prefix, func(evt *KvEvent) { s.onEvent(t, evt) })
 	s.cachers[t] = c
+	c.Run()
+
 	s.indexers[t] = NewKvCacheIndexer(c.Cache())
-	return c
+}
+
+func (s *KvStore) newNullStore(t StoreType) {
+	s.cachers[t] = NullCacher
+	s.indexers[t] = NewKvCacheIndexer(NullCacher.Cache())
 }
 
 func (s *KvStore) onEvent(t StoreType, evt *KvEvent) {
@@ -107,31 +100,32 @@ func (s *KvStore) onEvent(t StoreType, evt *KvEvent) {
 
 func (s *KvStore) Run() {
 	s.storeDomain()
+	<-s.ready
 }
 
 func (s *KvStore) storeDomain() {
 	key := apt.GenerateTenantKey("")
-	s.newStoreCacher(DOMAIN, key[:len(key)-1]).Run()
+	s.newStore(DOMAIN, key[:len(key)-1])
 }
 
-func (s *KvStore) storeService(serviceWatchByTenantKey string) {
-	s.newStoreCacher(SERVICE, serviceWatchByTenantKey).Run()
+func (s *KvStore) storeService(key string) {
+	s.newStore(SERVICE, key)
 }
 
-func (s *KvStore) storeInstance(instanceWatchByTenantKey string) {
-	s.newStoreCacher(INSTANCE, instanceWatchByTenantKey).Run()
+func (s *KvStore) storeInstance(key string) {
+	s.newStore(INSTANCE, key)
 }
 
-func (s *KvStore) storeLease(leaseWatchByTenantKey string) {
-	s.newStoreCacher(LEASE, leaseWatchByTenantKey).Run()
+func (s *KvStore) storeLease(key string) {
+	s.newStore(LEASE, key)
 }
 
-func (s *KvStore) storeServiceIndex(indexWatchByTenantKey string) {
-	s.newStoreCacher(SERVICE_INDEX, indexWatchByTenantKey).Run()
+func (s *KvStore) storeServiceIndex(key string) {
+	s.newStore(SERVICE_INDEX, key)
 }
 
-func (s *KvStore) storeServiceAlias(aliasWatchByTenantKey string) {
-	s.newStoreCacher(SERVICE_ALIAS, aliasWatchByTenantKey).Run()
+func (s *KvStore) storeServiceAlias(key string) {
+	s.newStore(SERVICE_ALIAS, key)
 }
 
 func (s *KvStore) onDomainCreate(evt *KvEvent) {
