@@ -44,7 +44,8 @@ func init() {
 */
 func GetService(domain string, id string, rev int64) (*pb.MicroService, error) {
 	key := apt.GenerateServiceKey(domain, id)
-	serviceResp, err := registry.GetRegisterCenter().Do(context.TODO(), &registry.PluginOp{
+	ctx, _ := registry.WithTimeout(context.Background())
+	serviceResp, err := store.Store().Service().Search(ctx, &registry.PluginOp{
 		Action:  registry.GET,
 		Key:     []byte(key),
 		WithRev: rev,
@@ -114,11 +115,10 @@ func GetServicesByTenant(ctx context.Context, tenant string) ([]*pb.MicroService
 	return services, nil
 }
 
-func GetServiceId(ctx context.Context, key *pb.MicroServiceKey, noCache bool) (string, error) {
+func GetServiceId(ctx context.Context, key *pb.MicroServiceKey) (string, error) {
 	resp, err := store.Store().ServiceIndex().Search(ctx, &registry.PluginOp{
-		Action:    registry.GET,
-		Key:       []byte(apt.GenerateServiceIndexKey(key)),
-		WithCache: !noCache,
+		Action: registry.GET,
+		Key:    []byte(apt.GenerateServiceIndexKey(key)),
 	})
 	if err != nil {
 		return "", err
@@ -131,9 +131,8 @@ func GetServiceId(ctx context.Context, key *pb.MicroServiceKey, noCache bool) (s
 		util.LOGGER.Debugf("could not search microservice %s/%s/%s id by field 'serviceName', now try field 'alias'.",
 			key.AppId, key.ServiceName, key.Version)
 		resp, err := store.Store().ServiceAlias().Search(ctx, &registry.PluginOp{
-			Action:    registry.GET,
-			Key:       []byte(apt.GenerateServiceAliasKey(key)),
-			WithCache: !noCache,
+			Action: registry.GET,
+			Key:    []byte(apt.GenerateServiceAliasKey(key)),
 		})
 		if err != nil {
 			return "", err
@@ -201,7 +200,7 @@ FIND_RULE:
 	default:
 		// 精确匹配
 		key.Version = versionRule
-		serviceId, err := GetServiceId(ctx, key, false)
+		serviceId, err := GetServiceId(ctx, key)
 		if err != nil {
 			return nil, err
 		}
@@ -223,7 +222,6 @@ func ServiceExist(ctx context.Context, tenant string, serviceId string) bool {
 		Action:    registry.GET,
 		Key:       []byte(apt.GenerateServiceKey(tenant, serviceId)),
 		CountOnly: true,
-		WithCache: true,
 	})
 	if err != nil || resp.Count == 0 {
 		return false

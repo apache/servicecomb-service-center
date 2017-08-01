@@ -76,7 +76,7 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 	}
 
 	serviceId := in.Service.ServiceId
-	serviceIdInner, err := ms.GetServiceId(ctx, consumer, true)
+	serviceIdInner, err := ms.GetServiceId(ctx, consumer)
 	if err != nil {
 		util.LOGGER.Errorf(err, "create microservice failed, %s:internel err,query service failed.operator:%s",
 			serviceFlag, remoteIP)
@@ -297,7 +297,15 @@ func (s *ServiceController) Delete(ctx context.Context, in *pb.DeleteServiceRequ
 	}
 
 	//删除依赖规则
+	lock, err := mux.Lock(mux.GLOBAL_LOCK)
+	if err != nil {
+		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: inner err, create lock failed.", in.ServiceId)
+		return &pb.DeleteServiceResponse{
+			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
+		}, err
+	}
 	optsTmp, err := s.deteleDependencyForService(ctx, consumer, in.ServiceId)
+	lock.Unlock()
 	if err != nil {
 		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: inner err, delete dependency failed.", in.ServiceId)
 		return &pb.DeleteServiceResponse{

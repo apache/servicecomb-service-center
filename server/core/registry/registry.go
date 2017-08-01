@@ -89,18 +89,18 @@ type Config struct {
 }
 
 type PluginOp struct {
-	Action     ActionType
-	Key        []byte
-	EndKey     []byte
-	Value      []byte
-	WithPrefix bool
-	WithPrevKV bool
-	Lease      int64
-	KeyOnly    bool
-	CountOnly  bool
-	SortOrder  SortOrder
-	WithRev    int64
-	WithCache  bool
+	Action      ActionType
+	Key         []byte
+	EndKey      []byte
+	Value       []byte
+	WithPrefix  bool
+	WithPrevKV  bool
+	Lease       int64
+	KeyOnly     bool
+	CountOnly   bool
+	SortOrder   SortOrder
+	WithRev     int64
+	WithNoCache bool
 }
 
 type PluginResponse struct {

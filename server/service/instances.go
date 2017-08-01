@@ -679,7 +679,7 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 		ServiceName: providerService.ServiceName,
 		Version:     in.VersionRule,
 	}
-	lock, err := mux.Lock(mux.SERVICE_LOCK)
+	lock, err := mux.Lock(mux.GLOBAL_LOCK)
 	err, _ = AddServiceVersionRule(ctx, provider, tenant, consumer)
 	if err != nil {
 		lock.Unlock()
@@ -909,7 +909,7 @@ func (s *InstanceController) CluterHealth(ctx context.Context) (*pb.GetInstances
 		Version:     core.REGISTRY_VERSION,
 		Tenant:      tenant,
 		Project:     core.REGISTRY_PROJECT,
-	}, false)
+	})
 
 	if err != nil {
 		util.LOGGER.Errorf(nil, "health check failed: get service center serviceId failed.")

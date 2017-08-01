@@ -14,9 +14,8 @@ import (
 
 func GetLeaseId(ctx context.Context, tenant string, serviceId string, instanceId string) (int64, error) {
 	resp, err := store.Store().Lease().Search(ctx, &registry.PluginOp{
-		Action:    registry.GET,
-		Key:       []byte(apt.GenerateInstanceLeaseKey(tenant, serviceId, instanceId)),
-		WithCache: true,
+		Action: registry.GET,
+		Key:    []byte(apt.GenerateInstanceLeaseKey(tenant, serviceId, instanceId)),
 	})
 	if err != nil {
 		return -1, err

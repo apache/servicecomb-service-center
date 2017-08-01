@@ -251,8 +251,6 @@ func (s *APIServer) Start() {
 		return
 	}
 	s.isClose = false
-	s.err = make(chan error, 1)
-
 	// 自注册
 	s.registerServiceCenter()
 
@@ -290,6 +288,7 @@ var apiServer *APIServer
 func init() {
 	apiServer = &APIServer{
 		isClose: true,
+		err:     make(chan error, 1),
 	}
 }
 

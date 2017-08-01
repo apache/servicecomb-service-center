@@ -30,7 +30,7 @@ func (m *MuxType) String() (s string) {
 }
 
 const (
-	SERVICE_LOCK MuxType = "/microservices"
+	GLOBAL_LOCK  MuxType = "/global"
 	PROCESS_LOCK MuxType = "/servicecenter"
 )
 

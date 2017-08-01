@@ -33,7 +33,7 @@ func (i *KvCacheIndexer) Search(ctx context.Context, op *registry.PluginOp) (*re
 		return nil, errors.New("unexpected action")
 	}
 
-	if !op.WithCache {
+	if op.WithNoCache || op.WithRev > 0 {
 		return registry.GetRegisterCenter().Do(ctx, op)
 	}
 

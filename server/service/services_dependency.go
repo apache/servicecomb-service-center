@@ -50,7 +50,7 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 			return rsp, nil
 		}
 
-		consumerId, err := ms.GetServiceId(ctx, consumerInfo, false)
+		consumerId, err := ms.GetServiceId(ctx, consumerInfo)
 		util.LOGGER.Debugf("consumerId is %s", consumerId)
 		if err != nil {
 			util.LOGGER.Errorf(err, "create dependency faild, conusmer %s: get consumer failed.", consumerFlag)
@@ -74,7 +74,7 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 		}
 
 		//建立依赖规则，用于维护依赖关系
-		lock, err := mux.Lock(mux.SERVICE_LOCK)
+		lock, err := mux.Lock(mux.GLOBAL_LOCK)
 		if err != nil {
 			util.LOGGER.Errorf(err, "create dependency faild, conusmer %s: create lock failed.", consumerFlag)
 			return &pb.CreateDependenciesResponse{
@@ -404,7 +404,7 @@ func (s *ServiceController) updateAsProviderDependency(ctx context.Context, prov
 	//标记相同的serviceId是否被加入
 	flag := map[string]bool{}
 	for _, consumer := range allConsumers {
-		consumerServiceid, err := ms.GetServiceId(ctx, consumer, false)
+		consumerServiceid, err := ms.GetServiceId(ctx, consumer)
 		if err != nil {
 			util.LOGGER.Errorf(nil, "Get consumer's serviceId failed.")
 			return err
