@@ -1,3 +1,3 @@
 ## Contents
 
-#### Api Documentation [here](http://htmlpreview.github.io/?https://github.com/asifdxtreme/service-center/blob/master/docs/api-docs.html)
+#### Api Documentation [here](https://rawgit.com/ServiceComb/service-center/master/docs/api-docs.html)
