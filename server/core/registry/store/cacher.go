@@ -155,6 +155,7 @@ func (c *KvCacher) doList(listOps *ListOptions) error {
 	if err != nil {
 		return err
 	}
+	lastRev := c.lastRev
 	c.lastRev = c.lw.Revision()
 	c.sync(c.filter(c.lastRev, kvs))
 	syncDuration := time.Now().Sub(start)
@@ -164,9 +165,10 @@ func (c *KvCacher) doList(listOps *ListOptions) error {
 			c.Cfg.Key, len(kvs), syncDuration, listOps, c.lastRev)
 		return nil
 	}
-
-	util.LOGGER.Infof("finish to cache key %s, %d items took %s, list options: %+v, rev: %d",
-		c.Cfg.Key, len(kvs), syncDuration, listOps, c.lastRev)
+	if lastRev != c.lastRev {
+		util.LOGGER.Infof("finish to cache key %s, %d items took %s, list options: %+v, rev: %d",
+			c.Cfg.Key, len(kvs), syncDuration, listOps, c.lastRev)
+	}
 	return nil
 }
 

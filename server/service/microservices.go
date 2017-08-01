@@ -633,31 +633,18 @@ func (s *ServiceController) UpdateProperties(ctx context.Context, in *pb.UpdateS
 	tenant := util.ParaseTenantProject(ctx)
 
 	key := apt.GenerateServiceKey(tenant, in.ServiceId)
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action: registry.GET,
-		Key:    []byte(key),
-	})
+	service, err := getServiceByServiceId(ctx, tenant, in.ServiceId)
 	if err != nil {
 		util.LOGGER.Errorf(err, "update service properties failed, serviceId is %s: query service failed.", in.ServiceId)
 		return &pb.UpdateServicePropsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "query service file failed"),
 		}, err
 	}
-	if len(resp.Kvs) == 0 {
+	if service == nil {
 		util.LOGGER.Errorf(nil, "update service properties failed, serviceId is %s: service not exist.", in.ServiceId)
 		return &pb.UpdateServicePropsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "service does not exist"),
 		}, nil
-	}
-
-	service := pb.MicroService{}
-
-	err = json.Unmarshal(resp.Kvs[0].Value, &service)
-	if err != nil {
-		util.LOGGER.Errorf(err, "update service properties failed, serviceId is %s: json unmarshal service failed.", in.ServiceId)
-		return &pb.UpdateServicePropsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "service file unmarshal error"),
-		}, err
 	}
 	service.Properties = make(map[string]string)
 	for propertyKey := range in.Properties {

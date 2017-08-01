@@ -740,9 +740,10 @@ func GetDependencies(ctx context.Context, dependencyKey string, tenant string) (
 	if len(data.Kvs) == 0 {
 		util.LOGGER.Errorf(nil, "data.Kvs len is 0.")
 		return nil, nil
-	} else {
-		util.LOGGER.Debugf("data.Kvs[0].Value is %s.", data.Kvs[0].Value)
 	}
+
+	util.LOGGER.Debugf("data.Kvs[0].Value is %s.", data.Kvs[0].Value)
+
 	key := ""
 	keySplilt := []string{}
 	providerId := ""
