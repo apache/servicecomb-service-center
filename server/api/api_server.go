@@ -167,6 +167,7 @@ func (s *APIServer) registryService() error {
 		return err
 	}
 	core.Service.ServiceId = respS.ServiceId
+	util.LOGGER.Infof("register service center service successfully, service id %s", respE.ServiceId)
 	return nil
 }
 
@@ -190,6 +191,8 @@ func (s *APIServer) registryInstance() error {
 		return err
 	}
 	core.Instance.InstanceId = respI.InstanceId
+	util.LOGGER.Infof("register service center instance successfully, instance %s/%s, endpoints %s",
+		core.Service.ServiceId, respI.InstanceId, endpoints)
 	return nil
 }
 
@@ -204,6 +207,8 @@ func (s *APIServer) unregisterInstance() error {
 		util.LOGGER.Error(err.Error(), nil)
 		return err
 	}
+	util.LOGGER.Warnf(nil, "unregister service center instance successfully, %s/%s",
+		core.Service.ServiceId, core.Instance.InstanceId)
 	return nil
 }
 

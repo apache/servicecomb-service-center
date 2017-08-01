@@ -1125,7 +1125,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 			}, err
 		}
 		if len(ids) <= 0 {
-			util.LOGGER.Errorf(nil, "microservice exist failed, service %s: service not exist.", serviceFlag)
+			util.LOGGER.Infof("microservice exist failed, service %s: service not exist.", serviceFlag)
 			return &pb.GetExistenceResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "service does not exist"),
 			}, nil
@@ -1150,7 +1150,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 			}, nil
 		}
 		if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
-			util.LOGGER.Errorf(nil, "schema exist failed, serviceId %s, schemaId : service not exist.", in.ServiceId, in.SchemaId)
+			util.LOGGER.Warnf(nil, "schema exist failed, serviceId %s, schemaId : service not exist.", in.ServiceId, in.SchemaId)
 			return &pb.GetExistenceResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist"),
 			}, nil
@@ -1165,7 +1165,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 			}, err
 		}
 		if !exist {
-			util.LOGGER.Errorf(nil, "schema exist failed, serviceId %s, schemaId %s: schema not exist.", in.ServiceId, in.SchemaId)
+			util.LOGGER.Infof("schema exist failed, serviceId %s, schemaId %s: schema not exist.", in.ServiceId, in.SchemaId)
 			return &pb.GetExistenceResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "Schema does not exist"),
 			}, nil
@@ -1175,6 +1175,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 			SchemaId: in.SchemaId,
 		}, nil
 	default:
+		util.LOGGER.Warnf(nil, "unexpected type '%s' for query.", in.Type)
 		return &pb.GetExistenceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Only microservice and schema can be used as type."),
 		}, nil

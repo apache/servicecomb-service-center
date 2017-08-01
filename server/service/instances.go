@@ -297,7 +297,7 @@ func (s *InstanceController) Heartbeat(ctx context.Context, in *pb.HeartbeatRequ
 
 	err, isInnerErr := heartbeatUtil(ctx, tenant, in.ServiceId, in.InstanceId)
 	if err != nil {
-		util.LOGGER.Errorf(nil, "heartbeat failed,instance %s: instance not exist.", instanceFlag)
+		util.LOGGER.Debugf("heartbeat failed, instance %s, %s, internal error '%v'.", instanceFlag, err, isInnerErr)
 		if isInnerErr {
 			return &pb.HeartbeatResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "service instance does not exist"),
@@ -571,7 +571,7 @@ func (s *InstanceController) addDependenceForService(ctx context.Context, tenant
 		return err
 	}
 	if exist {
-		util.LOGGER.Warnf(nil, "consumerServiceId:%s , providerServiceId:%s dependency more exists", consumerServiceId, providerServiceId)
+		util.LOGGER.Infof("consumerServiceId:%s , providerServiceId:%s dependency more exists", consumerServiceId, providerServiceId)
 		return nil
 	}
 	dependenceConKey := apt.GenerateConsumerDependencyKey(tenant, consumerServiceId, providerServiceId)

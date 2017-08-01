@@ -37,7 +37,7 @@ const (
 var clientTLSConfig *tls.Config
 
 func init() {
-	util.LOGGER.Warnf(nil, "etcd plugin init.")
+	util.LOGGER.Infof("etcd plugin init.")
 	registry.RegistryPlugins[REGISTRY_PLUGIN_ETCD] = NewRegistry
 }
 

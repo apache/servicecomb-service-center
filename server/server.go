@@ -146,7 +146,7 @@ func startApiServer() {
 	grpcPort := beego.AppConfig.DefaultString("grpcport", "")
 	cmpName := beego.AppConfig.String("ComponentName")
 	hostName := fmt.Sprintf("%s_%s", cmpName, strings.Replace(util.GetLocalIP(), ".", "_", -1))
-	util.LOGGER.Warnf(nil, "Local listen address: %s:%s, host: %s.", restIp, restPort, hostName)
+	util.LOGGER.Infof("Local listen address: %s:%s, host: %s.", restIp, restPort, hostName)
 
 	eps := map[api.APIType]string{}
 	if len(restIp) > 0 && len(restPort) > 0 {

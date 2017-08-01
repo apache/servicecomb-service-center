@@ -38,7 +38,7 @@ const START_MANAGER_SERVER_TIMEOUT = 60
 const REGISTRY_PLUGIN_EMBEDED_ETCD = "embeded_etcd"
 
 func init() {
-	util.LOGGER.Warnf(nil, "embed etcd plugin init.")
+	util.LOGGER.Infof("embed etcd plugin init.")
 	registry.RegistryPlugins[REGISTRY_PLUGIN_EMBEDED_ETCD] = getEmbedInstance
 }
 

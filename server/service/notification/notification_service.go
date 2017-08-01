@@ -276,7 +276,7 @@ func (s *NotifyService) WatchInstance(evt *store.KvEvent) {
 			providerId, providerInstanceId, action)
 		return
 	}
-	util.LOGGER.Warnf(nil, "caught instance %s/%s [%s] event",
+	util.LOGGER.Infof("caught instance %s/%s [%s] event",
 		providerId, providerInstanceId, action)
 
 	var instance pb.MicroServiceInstance

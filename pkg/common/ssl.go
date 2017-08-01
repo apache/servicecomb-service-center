@@ -15,8 +15,8 @@ package common
 
 import (
 	"crypto/tls"
-	"github.com/astaxie/beego"
 	"github.com/ServiceComb/service-center/util"
+	"github.com/astaxie/beego"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -113,7 +113,7 @@ func parseSSLProtocol(sprotocol string) uint16 {
 }
 
 func loadServerSSLConfig() {
-	util.LOGGER.Warnf(nil, "load server ssl configurations.")
+	util.LOGGER.Debugf("load server ssl configurations.")
 	sslServerConfig.SSLEnabled = beego.AppConfig.DefaultInt("ssl_mode", 1) != 0
 	sslServerConfig.VerifyClient = beego.AppConfig.DefaultInt("ssl_verify_client", 1) != 0
 	sslServerProtocol := beego.AppConfig.DefaultString("ssl_protocols", "TLSv1.2")
@@ -129,7 +129,7 @@ func loadServerSSLConfig() {
 		sslServerConfig.KeyPassphase = string(keyPassphase)
 	}
 
-	util.LOGGER.Warnf(nil, "server ssl configs enabled %t, verifyclient %t, minv %#x, cipers %d, pphase %d.",
+	util.LOGGER.Infof("server ssl configs enabled %t, verifyclient %t, minv %#x, cipers %d, pphase %d.",
 		sslServerConfig.SSLEnabled,
 		sslServerConfig.VerifyClient,
 		sslServerConfig.MinVersion,
@@ -138,7 +138,7 @@ func loadServerSSLConfig() {
 }
 
 func loadClientSSLConfig() {
-	util.LOGGER.Warnf(nil, "load client ssl configurations.")
+	util.LOGGER.Debugf("load client ssl configurations.")
 	sslClientConfig.SSLEnabled = sslServerConfig.SSLEnabled
 	sslClientConfig.VerifyClient = sslServerConfig.VerifyClient
 	sslClientProtocol := beego.AppConfig.DefaultString("ssl_client_protocols", "")
@@ -159,7 +159,7 @@ func loadClientSSLConfig() {
 
 	sslClientConfig.KeyPassphase = sslServerConfig.KeyPassphase
 
-	util.LOGGER.Warnf(nil, "client ssl configs enabled %t, verifyclient %t, minv %#x, cipers %d, pphase %d.",
+	util.LOGGER.Infof("client ssl configs enabled %t, verifyclient %t, minv %#x, cipers %d, pphase %d.",
 		sslClientConfig.SSLEnabled,
 		sslClientConfig.VerifyClient,
 		sslClientConfig.MinVersion,

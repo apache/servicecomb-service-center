@@ -33,7 +33,7 @@ func initRouter() {
 
 //GetRouter return the router fo REST service
 func GetRouter() (router http.Handler) {
-	util.LOGGER.Warn("init router", nil)
+	util.LOGGER.Debugf("init router", nil)
 	router = roa.InitROAServerHandler()
 	initRouter()
 
