@@ -1,10 +1,10 @@
 package common
 
 import (
-	"github.com/astaxie/beego"
 	"github.com/ServiceComb/service-center/pkg/common/logrotate"
 	"github.com/ServiceComb/service-center/pkg/lager"
 	"github.com/ServiceComb/service-center/util"
+	"github.com/astaxie/beego"
 	"os"
 	"path/filepath"
 	"time"

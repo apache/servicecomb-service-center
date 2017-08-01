@@ -15,8 +15,8 @@ package common
 
 import (
 	"crypto/tls"
-	"github.com/astaxie/beego"
 	"github.com/ServiceComb/service-center/util"
+	"github.com/astaxie/beego"
 	"io/ioutil"
 	"os"
 	"path/filepath"

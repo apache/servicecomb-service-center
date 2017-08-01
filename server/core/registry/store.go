@@ -25,8 +25,8 @@ type Store interface {
 }
 
 type KvStore struct {
-	kvs map[string]*mvccpb.KeyValue
-	rev int64
+	kvs    map[string]*mvccpb.KeyValue
+	rev    int64
 	kvsMux sync.RWMutex
 	revMux sync.RWMutex
 }

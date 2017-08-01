@@ -16,7 +16,6 @@ package service
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/astaxie/beego"
 	apt "github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/server/core/mux"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
@@ -26,6 +25,7 @@ import (
 	"github.com/ServiceComb/service-center/server/service/dependency"
 	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	"github.com/ServiceComb/service-center/util"
+	"github.com/astaxie/beego"
 	"golang.org/x/net/context"
 	"strconv"
 	"strings"

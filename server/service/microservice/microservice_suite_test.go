@@ -18,9 +18,9 @@ import (
 	. "github.com/onsi/gomega"
 
 	"fmt"
+	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/onsi/ginkgo/reporters"
-	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	"testing"
 )
 

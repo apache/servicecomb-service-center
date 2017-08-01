@@ -15,14 +15,14 @@ package service_test
 
 import (
 	"context"
-	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/reporters"
-	. "github.com/onsi/gomega"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	_ "github.com/ServiceComb/service-center/server/core/registry"
 	_ "github.com/ServiceComb/service-center/server/core/registry/etcd"
 	_ "github.com/ServiceComb/service-center/server/plugins/infra/quota/buildin"
 	"github.com/ServiceComb/service-center/server/service"
+	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/reporters"
+	. "github.com/onsi/gomega"
 	"testing"
 )
 
