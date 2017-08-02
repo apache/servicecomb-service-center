@@ -14,10 +14,10 @@
 package etcdsync_test
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	_ "github.com/ServiceComb/service-center/server/core/registry/embededetcd"
 	_ "github.com/ServiceComb/service-center/server/core/registry/etcd"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 import (
 	"fmt"

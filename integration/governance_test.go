@@ -203,7 +203,6 @@ var _ = Describe("MicroService Api Test", func() {
 
 })
 
-
 func BenchmarkGovernance(b *testing.B) {
 	schema := []string{"testSchema"}
 	properties := map[string]string{"attr1": "aa"}
@@ -234,7 +233,7 @@ func BenchmarkGovernance(b *testing.B) {
 	serviceId := gojson.Json(string(respbody)).Get("serviceId").Tostring()
 	Expect(len(serviceId)).Should(BeNumerically("==", 32))
 
-	for i:=0; i<b.N; i++ {
+	for i := 0; i < b.N; i++ {
 		url := strings.Replace(GETGOVERNANCESERVICEDETAILS, ":serviceId", serviceId, 1)
 		req, _ := http.NewRequest(GET, SCURL+url, nil)
 		req.Header.Set("X-tenant-name", "default")

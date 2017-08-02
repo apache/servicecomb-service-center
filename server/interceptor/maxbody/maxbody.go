@@ -16,9 +16,9 @@ package maxbody
 import (
 	"context"
 	"fmt"
-	"github.com/astaxie/beego"
 	. "github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/util/url"
+	"github.com/astaxie/beego"
 	"net/http"
 	"strings"
 )

@@ -15,9 +15,9 @@ package tenant
 
 import (
 	"context"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 	"strings"
 )
 

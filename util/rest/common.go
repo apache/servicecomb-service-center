@@ -17,10 +17,10 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
-	"github.com/astaxie/beego"
 	"github.com/ServiceComb/service-center/pkg/common"
 	"github.com/ServiceComb/service-center/pkg/security"
 	"github.com/ServiceComb/service-center/util"
+	"github.com/astaxie/beego"
 	"io/ioutil"
 	"time"
 )

@@ -15,9 +15,9 @@ package etcdsync
 
 import (
 	"fmt"
-	"github.com/coreos/etcd/client"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/util"
+	"github.com/coreos/etcd/client"
 	"golang.org/x/net/context"
 	"io"
 	"os"

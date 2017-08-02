@@ -15,9 +15,9 @@ package registry
 
 import (
 	"fmt"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/util"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 	"time"
 )
 
