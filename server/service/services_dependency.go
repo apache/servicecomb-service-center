@@ -29,7 +29,7 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 	if dependencyInfos == nil {
 		return dependency.BadParamsResponse("Invalid request body."), nil
 	}
-	tenant := util.ParaseTenantProject(ctx)
+	tenant := util.ParseTenantProject(ctx)
 	for _, dependencyInfo := range dependencyInfos {
 		consumerInfo := pb.TransferToMicroServiceKeys([]*pb.DependencyMircroService{dependencyInfo.Consumer}, tenant)[0]
 		providersInfo := pb.TransferToMicroServiceKeys(dependencyInfo.Providers, tenant)
@@ -113,7 +113,7 @@ func (s *ServiceController) GetProviderDependencies(ctx context.Context, in *pb.
 		}, nil
 	}
 	providerId := in.ServiceId
-	tenant := util.ParaseTenantProject(ctx)
+	tenant := util.ParseTenantProject(ctx)
 	if !ms.ServiceExist(ctx, tenant, providerId) {
 		return &pb.GetProDependenciesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "This provider does not exist."),
@@ -142,7 +142,7 @@ func (s *ServiceController) GetConsumerDependencies(ctx context.Context, in *pb.
 		}, nil
 	}
 	consumerId := in.ServiceId
-	tenant := util.ParaseTenantProject(ctx)
+	tenant := util.ParseTenantProject(ctx)
 	if !ms.ServiceExist(ctx, tenant, consumerId) {
 		return &pb.GetConDependenciesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "This consumer does not exist."),

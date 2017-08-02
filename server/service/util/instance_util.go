@@ -64,7 +64,7 @@ func InstanceExist(ctx context.Context, tenant string, serviceId string, instanc
 }
 
 func CheckEndPoints(ctx context.Context, in *pb.RegisterInstanceRequest) (string, error) {
-	tenant := util.ParaseTenantProject(ctx)
+	tenant := util.ParseTenantProject(ctx)
 	allInstancesKey := apt.GenerateInstanceKey(tenant, in.Instance.ServiceId, "")
 	rsp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
 		Action:     registry.GET,
@@ -124,7 +124,7 @@ func isContain(endpoints []string, endpoint string) bool {
 }
 
 func DeleteServiceAllInstances(ctx context.Context, in *pb.DeleteServiceRequest) error {
-	tenant := util.ParaseTenantProject(ctx)
+	tenant := util.ParseTenantProject(ctx)
 
 	instanceLeaseKey := apt.GenerateInstanceLeaseKey(tenant, in.ServiceId, "")
 

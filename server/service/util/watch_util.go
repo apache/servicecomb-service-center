@@ -164,7 +164,7 @@ func EstablishWebSocketError(conn *websocket.Conn, err error) {
 func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (results []*pb.WatchInstanceResponse, rev int64) {
 	results = []*pb.WatchInstanceResponse{}
 
-	tenant := util.ParaseTenantProject(ctx)
+	tenant := util.ParseTenantProject(ctx)
 
 	key := apt.GenerateConsumerDependencyKey(tenant, selfServiceId, "")
 	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
@@ -222,7 +222,7 @@ func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (resul
 }
 
 func queryServiceInstancesKvs(ctx context.Context, serviceId string, rev int64) ([]*mvccpb.KeyValue, error) {
-	tenant := util.ParaseTenantProject(ctx)
+	tenant := util.ParseTenantProject(ctx)
 	key := apt.GenerateInstanceKey(tenant, serviceId, "")
 	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
 		Action:     registry.GET,

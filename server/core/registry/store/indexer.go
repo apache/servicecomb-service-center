@@ -35,7 +35,7 @@ func (i *KvCacheIndexer) Search(ctx context.Context, op *registry.PluginOp) (*re
 	}
 
 	if op.WithNoCache || op.WithRev > 0 {
-		util.LOGGER.Debugf("match WitchNoCache or WitchRev, request etcd server, op: %v", op)
+		util.LOGGER.Debugf("match WitchNoCache or WitchRev, request etcd server, op: %s", op)
 		return registry.GetRegisterCenter().Do(ctx, op)
 	}
 
@@ -52,13 +52,13 @@ func (i *KvCacheIndexer) Search(ctx context.Context, op *registry.PluginOp) (*re
 			resp.Count = 1
 			return resp, nil
 		}
-		util.LOGGER.Debugf("cache does not store this key, request etcd server, op: %v", op)
+		util.LOGGER.Debugf("cache does not store this key, request etcd server, op: %s", op)
 		return registry.GetRegisterCenter().Do(ctx, op)
 	}
 
 	cacheData := i.cache.Data(key)
 	if cacheData == nil {
-		util.LOGGER.Debugf("do not match any key in cache store, request etcd server, op: %v", op)
+		util.LOGGER.Debugf("do not match any key in cache store, request etcd server, op: %s", op)
 		return registry.GetRegisterCenter().Do(ctx, op)
 	}
 

@@ -72,15 +72,16 @@ func ClearByteMemory(src []byte) {
 	}
 }
 
-func ParaseTenantProject(ctx context.Context) string {
-	tenant := ctx.Value("tenant").(string)
-	project := ctx.Value("project").(string)
-	tenant = strings.Join([]string{tenant, project}, "/")
-	return tenant
+func ParseTenantProject(ctx context.Context) string {
+	return strings.Join([]string{ParseTenant(ctx), ParseProject(ctx)}, "/")
 }
 
-func ParaseTenant(ctx context.Context) string {
+func ParseTenant(ctx context.Context) string {
 	return ctx.Value("tenant").(string)
+}
+
+func ParseProject(ctx context.Context) string {
+	return ctx.Value("project").(string)
 }
 
 //format : https://10.21.119.167:30100 or http://10.21.119.167:30100

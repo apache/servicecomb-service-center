@@ -205,7 +205,7 @@ func putServiceDependency(consumerId string, providerId string, tenant string) [
 
 func UpdateAsProviderDependency(ctx context.Context, providerServiseId string, provider *pb.MicroServiceKey) error {
 	//查询etcd里是否存在带*的情况，则添加与对应的consumer与该provider的依赖关系
-	tenant := util.ParaseTenantProject(ctx)
+	tenant := util.ParseTenantProject(ctx)
 	allConsumers := []*pb.MicroServiceKey{}
 	relyAllKey := apt.GenerateProviderDependencyRuleKey(tenant, &pb.MicroServiceKey{
 		ServiceName: "*",
@@ -549,7 +549,7 @@ func deleteDependencyUtil(ctx context.Context, serviceType string, tenant string
 }
 
 func CreateDependencyRule(ctx context.Context, consumerServiceid string, consumer *pb.MicroServiceKey, providers []*pb.MicroServiceKey) error {
-	tenant := util.ParaseTenantProject(ctx)
+	tenant := util.ParseTenantProject(ctx)
 	//更新consumer的providers的值,consumer的版本是确定的
 	conKey := apt.GenerateConsumerDependencyRuleKey(tenant, consumer)
 	consumerFlag := strings.Join([]string{consumer.AppId, consumer.ServiceName, consumer.Version}, "--")

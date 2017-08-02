@@ -60,7 +60,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 		}, nil
 	}
 	//先以tenant/project的方式组装
-	tenant := util.ParaseTenantProject(ctx)
+	tenant := util.ParseTenantProject(ctx)
 
 	// service id存在性校验
 	if !ms.ServiceExist(ctx, tenant, instance.ServiceId) {
@@ -204,7 +204,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 	}
 
 	//新租户，则进行监听
-	err = domain.NewDomain(ctx, util.ParaseTenant(ctx))
+	err = domain.NewDomain(ctx, util.ParseTenant(ctx))
 	if err != nil {
 		util.LOGGER.Errorf(err, "register instance failed, service %s, instanceId %s, operator %s: new tenant failed.",
 			instanceFlag, instanceId, remoteIP)
@@ -228,7 +228,7 @@ func (s *InstanceController) Unregister(ctx context.Context, in *pb.UnregisterIn
 		}, nil
 	}
 
-	tenant := util.ParaseTenantProject(ctx)
+	tenant := util.ParseTenantProject(ctx)
 	serviceId := in.ServiceId
 	instanceId := in.InstanceId
 
@@ -290,7 +290,7 @@ func (s *InstanceController) Heartbeat(ctx context.Context, in *pb.HeartbeatRequ
 		}, nil
 	}
 
-	tenant := util.ParaseTenantProject(ctx)
+	tenant := util.ParseTenantProject(ctx)
 	instanceFlag := strings.Join([]string{in.ServiceId, in.InstanceId}, "--")
 
 	_, err, isInnerErr := heartbeatUtil(ctx, tenant, in.ServiceId, in.InstanceId)
@@ -359,7 +359,7 @@ func (s *InstanceController) HeartbeatSet(ctx context.Context, in *pb.HeartbeatS
 			Response: pb.CreateResponse(pb.Response_FAIL, "heartbeats failed, invalid request.Body not contain Instances or is empty"),
 		}, nil
 	}
-	tenant := util.ParaseTenantProject(ctx)
+	tenant := util.ParseTenantProject(ctx)
 	instanceHbRstArr := []*pb.InstanceHbRst{}
 	existFlag := map[string]bool{}
 	instancesHbRst := make(chan *pb.InstanceHbRst, len(in.Instances))
@@ -432,7 +432,7 @@ func (s *InstanceController) GetOneInstance(ctx context.Context, in *pb.GetOneIn
 	}
 	conPro := strings.Join([]string{in.ConsumerServiceId, in.ProviderServiceId, in.ProviderInstanceId}, "--")
 
-	tenant := util.ParaseTenantProject(ctx)
+	tenant := util.ParseTenantProject(ctx)
 
 	serviceId := in.ProviderServiceId
 	instanceId := in.ProviderInstanceId
@@ -478,7 +478,7 @@ func (s *InstanceController) getInstancePreCheck(ctx context.Context, in interfa
 	}
 	var providerServiceId, consumerServiceId string
 	var tags []string
-	tenant := util.ParaseTenantProject(ctx)
+	tenant := util.ParseTenantProject(ctx)
 
 	switch in.(type) {
 	case *pb.GetOneInstanceRequest:
@@ -529,7 +529,7 @@ func (s *InstanceController) GetInstances(ctx context.Context, in *pb.GetInstanc
 	}
 	conPro := strings.Join([]string{in.ConsumerServiceId, in.ProviderServiceId}, "--")
 
-	tenant := util.ParaseTenantProject(ctx)
+	tenant := util.ParseTenantProject(ctx)
 	errAddDependence := s.addDependenceForService(ctx, tenant, in.ConsumerServiceId, in.ProviderServiceId)
 	if errAddDependence != nil {
 		util.LOGGER.Errorf(errAddDependence, "get instances failed, con--pro %s: add dependency failed.", conPro)
@@ -629,7 +629,7 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 		}, nil
 	}
 
-	tenant := util.ParaseTenantProject(ctx)
+	tenant := util.ParseTenantProject(ctx)
 
 	findFlag := strings.Join([]string{in.ConsumerServiceId, in.AppId, in.ServiceName, in.VersionRule}, "/")
 	service, err := ms.GetServiceByServiceId(ctx, tenant, in.ConsumerServiceId)
@@ -743,7 +743,7 @@ func (s *InstanceController) UpdateStatus(ctx context.Context, in *pb.UpdateInst
 			Response: pb.CreateResponse(pb.Response_FAIL, "request format invalid"),
 		}, nil
 	}
-	tenant := util.ParaseTenantProject(ctx)
+	tenant := util.ParseTenantProject(ctx)
 	updateStatusFlag := strings.Join([]string{in.ServiceId, in.InstanceId, in.Status}, "--")
 	if !apt.InstanseStatusRule.Match(in.Status) {
 		util.LOGGER.Errorf(nil, "update instance status failed, %s: status must be UP|DOWN|STARTING|OUTOFSERVICE.", updateStatusFlag)
@@ -799,7 +799,7 @@ func (s *InstanceController) UpdateInstanceProperties(ctx context.Context, in *p
 	}
 
 	var err error
-	tenant := util.ParaseTenantProject(ctx)
+	tenant := util.ParseTenantProject(ctx)
 	instanceFlag := strings.Join([]string{in.ServiceId, in.InstanceId}, "--")
 
 	var instance *pb.MicroServiceInstance
@@ -878,7 +878,7 @@ func (s *InstanceController) WatchPreOpera(ctx context.Context, in *pb.WatchInst
 	if in == nil || len(in.SelfServiceId) == 0 {
 		return errors.New("request format invalid")
 	}
-	tenant := util.ParaseTenantProject(ctx)
+	tenant := util.ParseTenantProject(ctx)
 	if !ms.ServiceExist(ctx, tenant, in.SelfServiceId) {
 		return errors.New("service does not exist")
 	}
@@ -891,7 +891,7 @@ func (s *InstanceController) Watch(in *pb.WatchInstanceRequest, stream pb.Servic
 		util.LOGGER.Errorf(err, "establish watch failed: invalid params.")
 		return err
 	}
-	tenant := util.ParaseTenantProject(stream.Context())
+	tenant := util.ParseTenantProject(stream.Context())
 	watcher := nf.NewInstanceWatcher(in.SelfServiceId, apt.GetInstanceRootKey(tenant)+"/")
 	err = nf.GetNotifyService().AddSubscriber(watcher)
 	util.LOGGER.Infof("start watch instance status, watcher %s %s", watcher.Subject(), watcher.Id())
@@ -903,7 +903,7 @@ func (s *InstanceController) WebSocketWatch(ctx context.Context, in *pb.WatchIns
 		serviceUtil.EstablishWebSocketError(conn, err)
 		return
 	}
-	tenant := util.ParaseTenantProject(ctx)
+	tenant := util.ParseTenantProject(ctx)
 	watcher := nf.NewInstanceWatcher(in.SelfServiceId, apt.GetInstanceRootKey(tenant)+"/")
 	serviceUtil.DoWebSocketWatch(nf.GetNotifyService(), watcher, conn)
 }
@@ -913,7 +913,7 @@ func (s *InstanceController) WebSocketListAndWatch(ctx context.Context, in *pb.W
 		serviceUtil.EstablishWebSocketError(conn, err)
 		return
 	}
-	tenant := util.ParaseTenantProject(ctx)
+	tenant := util.ParseTenantProject(ctx)
 	watcher := nf.NewInstanceListWatcher(in.SelfServiceId, apt.GetInstanceRootKey(tenant)+"/",
 		func() ([]*pb.WatchInstanceResponse, int64) {
 			return serviceUtil.QueryAllProvidersIntances(ctx, in.SelfServiceId)

@@ -133,7 +133,7 @@ func GetServiceId(ctx context.Context, key *pb.MicroServiceKey) (string, error) 
 		// 别名查询
 		util.LOGGER.Debugf("could not search microservice %s/%s/%s id by field 'serviceName', now try field 'alias'.",
 			key.AppId, key.ServiceName, key.Version)
-		resp, err := store.Store().ServiceAlias().Search(ctx, &registry.PluginOp{
+		resp, err = store.Store().ServiceAlias().Search(ctx, &registry.PluginOp{
 			Action: registry.GET,
 			Key:    []byte(apt.GenerateServiceAliasKey(key)),
 		})
@@ -233,7 +233,7 @@ func ServiceExist(ctx context.Context, tenant string, serviceId string) bool {
 }
 
 func GetAllServiceUtil(ctx context.Context) ([]*pb.MicroService, error) {
-	tenant := util.ParaseTenantProject(ctx)
+	tenant := util.ParseTenantProject(ctx)
 	services, err := GetServicesByTenant(ctx, tenant)
 	if err != nil {
 		return nil, err

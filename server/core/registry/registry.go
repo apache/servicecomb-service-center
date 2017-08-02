@@ -14,10 +14,12 @@
 package registry
 
 import (
+	"encoding/json"
 	"github.com/astaxie/beego"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"reflect"
+	"strconv"
 	"sync"
 	"time"
 	"unsafe"
@@ -30,7 +32,35 @@ var (
 )
 
 type ActionType int
+
+func (at ActionType) String() string {
+	switch at {
+	case GET:
+		return "GET"
+	case PUT:
+		return "PUT"
+	case DELETE:
+		return "DELETE"
+	default:
+		return "ACTION" + strconv.Itoa(int(at))
+	}
+}
+
 type SortOrder int
+
+func (so SortOrder) String() string {
+	switch so {
+	case SORT_NONE:
+		return "SORT_NONE"
+	case SORT_ASCEND:
+		return "SORT_ASCEND"
+	case SORT_DESCEND:
+		return "SORT_DESCEND"
+	default:
+		return "SORT" + strconv.Itoa(int(so))
+	}
+}
+
 type CompareType int
 type CompareResult int
 
@@ -91,19 +121,24 @@ type Config struct {
 }
 
 type PluginOp struct {
-	Action          ActionType
-	Key             []byte
-	EndKey          []byte
-	Value           []byte
-	WithPrefix      bool
-	WithPrevKV      bool
-	Lease           int64
-	KeyOnly         bool
-	CountOnly       bool
-	SortOrder       SortOrder
-	WithRev         int64
-	WithNoCache     bool
-	WithIgnoreLease bool
+	Action          ActionType `json:"action"`
+	Key             []byte     `json:"key,omitempty"`
+	EndKey          []byte     `json:"endKey,omitempty"`
+	Value           []byte     `json:"value,omitempty"`
+	WithPrefix      bool       `json:"prefix,omitempty"`
+	WithPrevKV      bool       `json:"prevKV,omitempty"`
+	Lease           int64      `json:"leaseId,omitempty"`
+	KeyOnly         bool       `json:"keyOnly,omitempty"`
+	CountOnly       bool       `json:"countOnly,omitempty"`
+	SortOrder       SortOrder  `json:"sort,omitempty"`
+	WithRev         int64      `json:"rev,omitempty"`
+	WithNoCache     bool       `json:"noCache,omitempty"`
+	WithIgnoreLease bool       `json:"ignoreLease,omitempty"`
+}
+
+func (op *PluginOp) String() string {
+	b, _ := json.Marshal(op)
+	return BytesToStringWithNoCopy(b)
 }
 
 type PluginResponse struct {

@@ -139,7 +139,7 @@ func (s *KvStore) storeDomainData(domain string) {
 	s.newStore(LEASE, apt.GetInstanceLeaseRootKey(domain))
 	s.newStore(SERVICE_INDEX, apt.GetServiceIndexRootKey(domain))
 	s.newStore(SERVICE_ALIAS, apt.GetServiceAliasRootKey(domain))
-	// current key design does not support cache store.
+	// TODO current key design does not support cache store.
 	// s.newStore(SERVICE_TAG, apt.GetServiceTagRootKey(domain))
 	// s.newStore(RULE, apt.GetServiceRuleRootKey(domain))
 	// s.newStore(RULE_INDEX, apt.GetServiceRuleIndexRootKey(domain))
