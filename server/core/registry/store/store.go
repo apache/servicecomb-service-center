@@ -24,11 +24,13 @@ const (
 	SERVICE StoreType = iota
 	INSTANCE
 	DOMAIN
-	TAG
-	SCHEMA
+	SCHEMA // big data should not be stored in memory.
+	RULE
 	LEASE
 	SERVICE_INDEX
 	SERVICE_ALIAS
+	SERVICE_TAG
+	RULE_INDEX
 	typeEnd
 )
 
@@ -36,11 +38,13 @@ var typeNames = []string{
 	SERVICE:       "SERVICE",
 	INSTANCE:      "INSTANCE",
 	DOMAIN:        "DOMAIN",
-	TAG:           "TAG",
 	SCHEMA:        "SCHEMA",
+	RULE:          "RULE",
 	LEASE:         "LEASE",
 	SERVICE_INDEX: "SERVICE_INDEX",
 	SERVICE_ALIAS: "SERVICE_ALIAS",
+	SERVICE_TAG:   "SERVICE_TAG",
+	RULE_INDEX:    "RULE_INDEX",
 }
 
 var (
@@ -108,26 +112,6 @@ func (s *KvStore) storeDomain() {
 	s.newStore(DOMAIN, key[:len(key)-1])
 }
 
-func (s *KvStore) storeService(key string) {
-	s.newStore(SERVICE, key)
-}
-
-func (s *KvStore) storeInstance(key string) {
-	s.newStore(INSTANCE, key)
-}
-
-func (s *KvStore) storeLease(key string) {
-	s.newStore(LEASE, key)
-}
-
-func (s *KvStore) storeServiceIndex(key string) {
-	s.newStore(SERVICE_INDEX, key)
-}
-
-func (s *KvStore) storeServiceAlias(key string) {
-	s.newStore(SERVICE_ALIAS, key)
-}
-
 func (s *KvStore) onDomainCreate(evt *KvEvent) {
 	kv := evt.KV
 	action := evt.Action
@@ -145,12 +129,20 @@ func (s *KvStore) onDomainCreate(evt *KvEvent) {
 	}
 
 	util.LOGGER.Infof("new tenant %s is created", tenant)
-	s.storeService(apt.GetServiceRootKey(tenant))
-	s.storeInstance(apt.GetInstanceRootKey(tenant))
-	s.storeLease(apt.GetInstanceLeaseRootKey(tenant))
-	s.storeServiceIndex(apt.GetServiceIndexRootKey(tenant))
-	s.storeServiceAlias(apt.GetServiceAliasRootKey(tenant))
+	s.storeDomainData(tenant)
 	return
+}
+
+func (s *KvStore) storeDomainData(domain string) {
+	s.newStore(SERVICE, apt.GetServiceRootKey(domain))
+	s.newStore(INSTANCE, apt.GetInstanceRootKey(domain))
+	s.newStore(LEASE, apt.GetInstanceLeaseRootKey(domain))
+	s.newStore(SERVICE_INDEX, apt.GetServiceIndexRootKey(domain))
+	s.newStore(SERVICE_ALIAS, apt.GetServiceAliasRootKey(domain))
+	// current key design does not support cache store.
+	// s.newStore(SERVICE_TAG, apt.GetServiceTagRootKey(domain))
+	// s.newStore(RULE, apt.GetServiceRuleRootKey(domain))
+	// s.newStore(RULE_INDEX, apt.GetServiceRuleIndexRootKey(domain))
 }
 
 func (s *KvStore) closed() bool {
@@ -187,6 +179,22 @@ func (s *KvStore) ServiceIndex() Indexer {
 
 func (s *KvStore) ServiceAlias() Indexer {
 	return s.indexers[SERVICE_ALIAS]
+}
+
+func (s *KvStore) ServiceTag() Indexer {
+	return s.indexers[SERVICE_TAG]
+}
+
+func (s *KvStore) Rule() Indexer {
+	return s.indexers[RULE]
+}
+
+func (s *KvStore) RuleIndex() Indexer {
+	return s.indexers[RULE_INDEX]
+}
+
+func (s *KvStore) Schema() Indexer {
+	return s.indexers[SCHEMA]
 }
 
 func Store() *KvStore {

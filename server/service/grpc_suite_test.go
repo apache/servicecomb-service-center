@@ -19,7 +19,9 @@ import (
 	_ "github.com/ServiceComb/service-center/server/core/registry/etcd"
 	_ "github.com/ServiceComb/service-center/server/plugins/infra/quota/buildin"
 	"github.com/ServiceComb/service-center/server/service"
+	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
+	. "github.com/onsi/gomega"
 	"golang.org/x/net/context"
 	"testing"
 )
@@ -41,7 +43,7 @@ var governService pb.GovernServiceCtrlServerEx
 
 var _ = BeforeSuite(func() {
 	//init plugin
-	serviceResource, insResource, governService = service.AssembleResources(nil)
+	serviceResource, insResource, governService = service.AssembleResources()
 
 })
 

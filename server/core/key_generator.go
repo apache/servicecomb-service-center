@@ -76,6 +76,14 @@ func GetServiceRuleRootKey(tenant string) string {
 	}, "/")
 }
 
+func GetServiceRuleIndexRootKey(tenant string) string {
+	return strings.Join([]string{
+		GetTenantRootKey(tenant),
+		REGISTRY_SERVICERULE_KEY,
+		"indexes",
+	}, "/")
+}
+
 func GetServiceTagRootKey(tenant string) string {
 	return strings.Join([]string{
 		GetTenantRootKey(tenant),
@@ -128,9 +136,7 @@ func GenerateServiceKey(tenant string, serviceId string) string {
 
 func GenerateRuleIndexKey(tenant string, serviceId string, attr string, pattern string) string {
 	return strings.Join([]string{
-		GetTenantRootKey(tenant),
-		REGISTRY_SERVICERULE_KEY,
-		"indexes",
+		GetServiceRuleIndexRootKey(tenant),
 		serviceId,
 		attr,
 		pattern,

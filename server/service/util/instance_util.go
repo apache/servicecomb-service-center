@@ -122,3 +122,28 @@ func isContain(endpoints []string, endpoint string) bool {
 	}
 	return false
 }
+
+func DeleteServiceAllInstances(ctx context.Context, in *pb.DeleteServiceRequest) error {
+	tenant := util.ParaseTenantProject(ctx)
+
+	instanceLeaseKey := apt.GenerateInstanceLeaseKey(tenant, in.ServiceId, "")
+
+	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+		Action:     registry.GET,
+		Key:        []byte(instanceLeaseKey),
+		WithPrefix: true,
+	})
+	if err != nil {
+		util.LOGGER.Errorf(err, "delete service all instance failed: get instance lease failed.")
+		return err
+	}
+	if resp.Count <= 0 {
+		util.LOGGER.Warnf(nil, "No instances to revoke.")
+		return nil
+	}
+	for _, v := range resp.Kvs {
+		leaseID, _ := strconv.ParseInt(string(v.Value), 10, 64)
+		registry.GetRegisterCenter().LeaseRevoke(ctx, leaseID)
+	}
+	return nil
+}

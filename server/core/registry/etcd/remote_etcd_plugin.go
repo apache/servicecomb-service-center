@@ -139,6 +139,9 @@ func (s *EtcdClient) toPutRequest(op *registry.PluginOp) []clientv3.OpOption {
 	if op.Lease > 0 {
 		opts = append(opts, clientv3.WithLease(clientv3.LeaseID(op.Lease)))
 	}
+	if op.WithIgnoreLease {
+		// TODO WithIgnoreLease support
+	}
 	return opts
 }
 

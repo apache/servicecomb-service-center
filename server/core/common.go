@@ -15,10 +15,10 @@ package core
 
 import (
 	"errors"
-	"github.com/astaxie/beego"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/util"
 	"github.com/ServiceComb/service-center/util/validate"
+	"github.com/astaxie/beego"
 	"math"
 	"reflect"
 )
@@ -186,7 +186,7 @@ func Validate(v interface{}) error {
 		return TagReqValidator.Validate(v)
 	case *pb.GetSchemaRequest, *pb.ModifySchemaRequest, *pb.DeleteSchemaRequest:
 		return GetSchemaReqValidator.Validate(v)
-	case *pb.MircroServiceDependency:
+	case *pb.MicroServiceDependency:
 		return DependencyMSValidator.Validate(v)
 	case *pb.FindInstancesRequest:
 		return FindInstanceReqValidator.Validate(v)

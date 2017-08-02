@@ -24,8 +24,10 @@ import (
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/infra/quota"
 	"github.com/ServiceComb/service-center/server/plugins/dynamic"
+	"github.com/ServiceComb/service-center/server/service/dependency"
 	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	nf "github.com/ServiceComb/service-center/server/service/notification"
+	domain "github.com/ServiceComb/service-center/server/service/tenant"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
 	"github.com/astaxie/beego"
@@ -141,24 +143,21 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 			// 默认120s
 		}
 	}
-
 	ttl := int64(renewalInterval * (retryTimes + 1))
-	var leaseID int64 = 0
-	if ttl > 0 {
-		leaseID, err = registry.GetRegisterCenter().LeaseGrant(ctx, ttl)
-		if err != nil {
-			util.LOGGER.Errorf(err, "register instance failed, service %s, instanceId %s, operator %s: lease grant failed.", instanceFlag, instanceId, remoteIP)
-			return &pb.RegisterInstanceResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, "grant lease ID failed"),
-			}, err
-		}
-	}
 
 	data, err := json.Marshal(instance)
 	if err != nil {
-		util.LOGGER.Errorf(err, "register instance failed, service %s, instanceId %s, operator %s: json marshal data failed.", instanceFlag, instanceId, remoteIP)
+		util.LOGGER.Errorf(err, "register instance failed, service %s, instanceId %s, operator %s: json marshal data failed.",
+			instanceFlag, instanceId, remoteIP)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "instance file marshal error"),
+		}, err
+	}
+
+	leaseID, err := grantOrRenewLease(ctx, tenant, instance.ServiceId, instanceId, ttl)
+	if err != nil {
+		return &pb.RegisterInstanceResponse{
+			Response: pb.CreateResponse(pb.Response_FAIL, "lease grant or renew failed"),
 		}, err
 	}
 
@@ -170,46 +169,45 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 
 	opts := []*registry.PluginOp{
 		{
-			Action: registry.PUT,
-			Key:    []byte(key),
-			Value:  data,
-			Lease:  leaseID,
+			Action:          registry.PUT,
+			Key:             []byte(key),
+			Value:           data,
+			Lease:           leaseID,
+			WithIgnoreLease: true,
 		},
 		{
-			Action: registry.PUT,
-			Key:    []byte(index),
-			Value:  []byte(instance.ServiceId),
-			Lease:  leaseID,
+			Action:          registry.PUT,
+			Key:             []byte(index),
+			Value:           []byte(instance.ServiceId),
+			Lease:           leaseID,
+			WithIgnoreLease: true,
 		},
 	}
 	if leaseID != 0 {
 		opts = append(opts, &registry.PluginOp{
-			Action: registry.PUT,
-			Key:    []byte(hbKey),
-			Value:  []byte(fmt.Sprintf("%d", leaseID)),
-			Lease:  leaseID,
+			Action:          registry.PUT,
+			Key:             []byte(hbKey),
+			Value:           []byte(fmt.Sprintf("%d", leaseID)),
+			Lease:           leaseID,
+			WithIgnoreLease: true,
 		})
 	}
 
 	// Set key file
 	_, err = registry.GetRegisterCenter().Txn(ctx, opts)
 	if err != nil {
-		util.LOGGER.Errorf(err, "register instance failed, service %s, instanceId %s, operator %s: commit data into etcd failed.", instanceFlag, instanceId, remoteIP)
+		util.LOGGER.Errorf(err, "register instance failed, service %s, instanceId %s, operator %s: commit data into etcd failed.",
+			instanceFlag, instanceId, remoteIP)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "commit operations failed"),
 		}, err
 	}
 
-	tenant = util.ParaseTenant(ctx)
-
 	//新租户，则进行监听
-	opt := &registry.PluginOp{
-		Key:    []byte(apt.GenerateTenantKey(tenant)),
-		Action: registry.PUT,
-	}
-	_, err = registry.GetRegisterCenter().PutNoOverride(ctx, opt)
+	err = domain.NewDomain(ctx, util.ParaseTenant(ctx))
 	if err != nil {
-		util.LOGGER.Errorf(err, "register instance failed, service %s, instanceId %s, operator %s: add tenant failed.", instanceFlag, instanceId, remoteIP)
+		util.LOGGER.Errorf(err, "register instance failed, service %s, instanceId %s, operator %s: new tenant failed.",
+			instanceFlag, instanceId, remoteIP)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "commit operations failed"),
 		}, err
@@ -295,7 +293,7 @@ func (s *InstanceController) Heartbeat(ctx context.Context, in *pb.HeartbeatRequ
 	tenant := util.ParaseTenantProject(ctx)
 	instanceFlag := strings.Join([]string{in.ServiceId, in.InstanceId}, "--")
 
-	err, isInnerErr := heartbeatUtil(ctx, tenant, in.ServiceId, in.InstanceId)
+	_, err, isInnerErr := heartbeatUtil(ctx, tenant, in.ServiceId, in.InstanceId)
 	if err != nil {
 		util.LOGGER.Debugf("heartbeat failed, instance %s, %s, internal error '%v'.", instanceFlag, err, isInnerErr)
 		if isInnerErr {
@@ -312,24 +310,46 @@ func (s *InstanceController) Heartbeat(ctx context.Context, in *pb.HeartbeatRequ
 	}, nil
 }
 
-func heartbeatUtil(ctx context.Context, tenant string, serviceId string, instanceId string) (err error, isInnerErr bool) {
+func grantOrRenewLease(ctx context.Context, tenant string, serviceId string, instanceId string, ttl int64) (leaseID int64, err error) {
+	remoteIP := util.GetIPFromContext(ctx)
 	instanceFlag := strings.Join([]string{serviceId, instanceId}, "--")
-	leaseID, err := serviceUtil.GetLeaseId(ctx, tenant, serviceId, instanceId)
+
+	var inner bool
+	leaseID, err, inner = heartbeatUtil(ctx, tenant, serviceId, instanceId)
+	if inner {
+		util.LOGGER.Errorf(err, "grant or renew lease failed, service %s, instanceId %s, operator %s",
+			instanceFlag, instanceId, remoteIP)
+		return
+	}
+
+	if leaseID < 0 {
+		leaseID, err = registry.GetRegisterCenter().LeaseGrant(ctx, ttl)
+		if err != nil {
+			util.LOGGER.Errorf(err, "grant or renew lease failed, service %s, instanceId %s, operator %s: lease grant failed.",
+				instanceFlag, instanceId, remoteIP)
+		}
+	}
+	return
+}
+
+func heartbeatUtil(ctx context.Context, tenant string, serviceId string, instanceId string) (leaseID int64, err error, isInnerErr bool) {
+	instanceFlag := strings.Join([]string{serviceId, instanceId}, "--")
+	leaseID, err = serviceUtil.GetLeaseId(ctx, tenant, serviceId, instanceId)
 	if err != nil {
 		util.LOGGER.Errorf(err, "Heart beat failed, %s: get leaseId failed.", instanceFlag)
-		return err, true
+		return leaseID, err, true
 	}
 	if leaseID == -1 {
 		util.LOGGER.Errorf(err, "heartbeat failed, %s: instance not exist.", instanceFlag)
-		return errors.New("leaseId not exist, instance not exist."), false
+		return leaseID, errors.New("leaseId not exist, instance not exist."), false
 	}
 	ttl, err := registry.GetRegisterCenter().LeaseRenew(ctx, leaseID)
 	if err != nil {
 		util.LOGGER.Errorf(err, "heartbeat failed, %s: lease renew failed.", instanceFlag)
-		return err, true
+		return leaseID, err, true
 	}
 	util.LOGGER.Debugf("heartbeat successful: %s renew ttl to %d", instanceFlag, ttl)
-	return nil, false
+	return leaseID, nil, false
 }
 
 func (s *InstanceController) HeartbeatSet(ctx context.Context, in *pb.HeartbeatSetRequest) (*pb.HeartbeatSetResponse, error) {
@@ -358,7 +378,7 @@ func (s *InstanceController) HeartbeatSet(ctx context.Context, in *pb.HeartbeatS
 				InstanceId: element.InstanceId,
 				ErrMessage: "",
 			}
-			err, _ := heartbeatUtil(ctx, tenant, element.ServiceId, element.InstanceId)
+			_, err, _ := heartbeatUtil(ctx, tenant, element.ServiceId, element.InstanceId)
 			if err != nil {
 				hbRst.ErrMessage = err.Error()
 				util.LOGGER.Errorf(err, "heartbeatset failed, %s--%s", element.ServiceId, element.InstanceId)
@@ -477,7 +497,7 @@ func (s *InstanceController) getInstancePreCheck(ctx context.Context, in interfa
 
 	// Tag过滤
 	if len(tags) > 0 {
-		tagsFromETCD, err := GetTagsUtils(ctx, tenant, providerServiceId)
+		tagsFromETCD, err := serviceUtil.GetTagsUtils(ctx, tenant, providerServiceId)
 		if err != nil {
 			return err, true
 		}
@@ -612,7 +632,7 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 	tenant := util.ParaseTenantProject(ctx)
 
 	findFlag := strings.Join([]string{in.ConsumerServiceId, in.AppId, in.ServiceName, in.VersionRule}, "/")
-	service, err := getServiceByServiceId(ctx, tenant, in.ConsumerServiceId)
+	service, err := ms.GetServiceByServiceId(ctx, tenant, in.ConsumerServiceId)
 	if err != nil {
 		util.LOGGER.Errorf(err, "find instance failed, %s: get consumer failed.", findFlag)
 		return &pb.FindInstancesResponse{
@@ -664,9 +684,9 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 			instances = append(instances, resp.GetInstances()...)
 		}
 	}
-	consumer := toMicroServiceKey(tenant, service)
+	consumer := pb.ToMicroServiceKey(tenant, service)
 	//维护version的规则
-	providerService, _ := getServiceByServiceId(ctx, tenant, ids[0])
+	providerService, _ := ms.GetServiceByServiceId(ctx, tenant, ids[0])
 	if providerService == nil {
 		util.LOGGER.Errorf(nil, "find instance failed, %s: no provider matched.", findFlag)
 		return &pb.FindInstancesResponse{
@@ -680,7 +700,7 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 		Version:     in.VersionRule,
 	}
 	lock, err := mux.Lock(mux.GLOBAL_LOCK)
-	err, _ = AddServiceVersionRule(ctx, provider, tenant, consumer)
+	err, _ = dependency.AddServiceVersionRule(ctx, provider, tenant, consumer)
 	if err != nil {
 		lock.Unlock()
 		util.LOGGER.Errorf(err, "find instance failed, %s: add service version rule failed.", findFlag)

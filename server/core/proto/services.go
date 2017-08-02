@@ -56,6 +56,10 @@ type GovernServiceCtrlServerEx interface {
 	GovernServiceCtrlServer
 }
 
+type MicroServiceDependency struct {
+	Dependency []*MicroServiceKey
+}
+
 func CreateResponse(code Response_Code, message string) *Response {
 	resp := &Response{
 		Code:    code,
@@ -88,4 +92,26 @@ func GetInfoFromTenantKV(kv *mvccpb.KeyValue) (tenant string) {
 	}
 	tenant = keys[len(keys)-1]
 	return
+}
+
+func TransferToMicroServiceKeys(in []*DependencyMircroService, tenant string) []*MicroServiceKey {
+	rst := []*MicroServiceKey{}
+	for _, value := range in {
+		rst = append(rst, &MicroServiceKey{
+			Tenant:      tenant,
+			AppId:       value.AppId,
+			ServiceName: value.ServiceName,
+			Version:     value.Version,
+		})
+	}
+	return rst
+}
+
+func ToMicroServiceKey(tenant string, in *MicroService) *MicroServiceKey {
+	return &MicroServiceKey{
+		Tenant:      tenant,
+		AppId:       in.AppId,
+		ServiceName: in.ServiceName,
+		Version:     in.Version,
+	}
 }

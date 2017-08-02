@@ -19,6 +19,8 @@ import (
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
+	ms "github.com/ServiceComb/service-center/server/service/microservice"
+	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
 	"github.com/ServiceComb/service-center/util/errors"
 	"golang.org/x/net/context"
@@ -28,7 +30,7 @@ import (
 )
 
 func Accessible(ctx context.Context, tenant string, consumerID string, providerID string) (err error, isInnerErr bool) {
-	consumerService, err := getServiceByServiceId(ctx, tenant, consumerID)
+	consumerService, err := ms.GetServiceByServiceId(ctx, tenant, consumerID)
 	if err != nil {
 		return err, true
 	}
@@ -37,7 +39,7 @@ func Accessible(ctx context.Context, tenant string, consumerID string, providerI
 	}
 
 	// 跨应用权限
-	providerService, err := getServiceByServiceId(ctx, tenant, providerID)
+	providerService, err := ms.GetServiceByServiceId(ctx, tenant, providerID)
 	if err != nil {
 		return err, true
 	}
@@ -62,7 +64,7 @@ func Accessible(ctx context.Context, tenant string, consumerID string, providerI
 	}
 
 	// 黑白名单
-	validateTags, err := GetTagsUtils(ctx, tenant, consumerService.ServiceId)
+	validateTags, err := serviceUtil.GetTagsUtils(ctx, tenant, consumerService.ServiceId)
 	if err != nil {
 		return err, true
 	}

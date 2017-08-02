@@ -42,9 +42,8 @@ func init() {
 /*
 	get Service by service id
 */
-func GetService(domain string, id string, rev int64) (*pb.MicroService, error) {
+func GetService(ctx context.Context, domain string, id string, rev int64) (*pb.MicroService, error) {
 	key := apt.GenerateServiceKey(domain, id)
-	ctx, _ := registry.WithTimeout(context.Background())
 	serviceResp, err := store.Store().Service().Search(ctx, &registry.PluginOp{
 		Action:  registry.GET,
 		Key:     []byte(key),
@@ -67,11 +66,11 @@ func GetService(domain string, id string, rev int64) (*pb.MicroService, error) {
 	return service, nil
 }
 
-func GetServiceInCache(domain string, id string) (*pb.MicroService, error) {
+func GetServiceInCache(ctx context.Context, domain string, id string) (*pb.MicroService, error) {
 	uid := domain + ":::" + id
 	ms, ok := msCache.Get(uid)
 	if !ok {
-		ms, err := GetService(domain, id, 0)
+		ms, err := GetService(ctx, domain, id, 0)
 		if ms == nil {
 			return nil, err
 		}
@@ -80,6 +79,10 @@ func GetServiceInCache(domain string, id string) (*pb.MicroService, error) {
 	}
 
 	return ms.(*pb.MicroService), nil
+}
+
+func GetServiceByServiceId(ctx context.Context, tenant string, serviceId string) (*pb.MicroService, error) {
+	return GetService(ctx, tenant, serviceId, 0)
 }
 
 func GetServicesRawData(ctx context.Context, tenant string) ([]*mvccpb.KeyValue, error) {
@@ -227,4 +230,13 @@ func ServiceExist(ctx context.Context, tenant string, serviceId string) bool {
 		return false
 	}
 	return true
+}
+
+func GetAllServiceUtil(ctx context.Context) ([]*pb.MicroService, error) {
+	tenant := util.ParaseTenantProject(ctx)
+	services, err := GetServicesByTenant(ctx, tenant)
+	if err != nil {
+		return nil, err
+	}
+	return services, nil
 }

@@ -15,10 +15,12 @@ package notification
 
 import (
 	"container/list"
+	"context"
 	"encoding/json"
 	"errors"
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
 	"github.com/ServiceComb/service-center/server/service/dependency"
 	"github.com/ServiceComb/service-center/server/service/microservice"
@@ -287,7 +289,8 @@ func (s *NotifyService) WatchInstance(evt *store.KvEvent) {
 		return
 	}
 	// 查询服务版本信息
-	ms, err := microservice.GetServiceInCache(tenantProject, providerId)
+	ctx, _ := registry.WithTimeout(context.Background())
+	ms, err := microservice.GetServiceInCache(ctx, tenantProject, providerId)
 	if ms == nil {
 		util.LOGGER.Errorf(err, "get provider service %s/%s id in cache failed",
 			providerId, providerInstanceId)
@@ -295,7 +298,8 @@ func (s *NotifyService) WatchInstance(evt *store.KvEvent) {
 	}
 
 	// 查询所有consumer
-	Kvs, err := dependency.GetConsumersInCache(tenantProject, providerId)
+	ctx, _ = registry.WithTimeout(context.Background())
+	Kvs, err := dependency.GetConsumersInCache(ctx, tenantProject, providerId)
 	if err != nil {
 		util.LOGGER.Errorf(err, "query service %s consumers failed", providerId)
 		return

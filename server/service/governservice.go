@@ -18,6 +18,9 @@ import (
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/server/service/dependency"
+	ms "github.com/ServiceComb/service-center/server/service/microservice"
+	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
 	"strings"
@@ -29,7 +32,7 @@ type GovernServiceController struct {
 func (governServiceController *GovernServiceController) GetServicesInfo(ctx context.Context, in *pb.GetServicesInfoRequest) (*pb.GetServicesInfoResponse, error) {
 	opts := in.Options
 	//获取所有服务
-	services, err := GetAllServiceUtil(ctx)
+	services, err := ms.GetAllServiceUtil(ctx)
 	if err != nil {
 		util.LOGGER.Errorf(err, "Get all services for govern service faild.")
 		return &pb.GetServicesInfoResponse{
@@ -74,7 +77,7 @@ func (governServiceController *GovernServiceController) GetServiceDetail(ctx con
 		}, nil
 	}
 
-	service, err := getServiceByServiceId(ctx, tenant, in.ServiceId)
+	service, err := ms.GetServiceByServiceId(ctx, tenant, in.ServiceId)
 	if service == nil {
 		return &pb.GetServiceDetailResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service is not exist."),
@@ -196,7 +199,7 @@ func getServiceDetailUtil(ctx context.Context, opts []string, tenant string, ser
 		switch expr {
 		case "tags":
 			util.LOGGER.Debugf("is tags")
-			tags, err := GetTagsUtils(ctx, tenant, serviceId)
+			tags, err := serviceUtil.GetTagsUtils(ctx, tenant, serviceId)
 			if err != nil {
 				util.LOGGER.Errorf(err, "Get all tags for govern service faild.")
 				return nil, err
@@ -204,7 +207,7 @@ func getServiceDetailUtil(ctx context.Context, opts []string, tenant string, ser
 			serviceDetail.Tags = tags
 		case "rules":
 			util.LOGGER.Debugf("is rules")
-			rules, err := GetRulesUtil(ctx, tenant, serviceId)
+			rules, err := serviceUtil.GetRulesUtil(ctx, tenant, serviceId)
 			if err != nil {
 				util.LOGGER.Errorf(err, "Get all rules for govern service faild.")
 				return nil, err
@@ -229,14 +232,14 @@ func getServiceDetailUtil(ctx context.Context, opts []string, tenant string, ser
 		case "dependencies":
 			util.LOGGER.Debugf("is dependencies")
 			keyProDependency := apt.GenerateProviderDependencyKey(tenant, serviceId, "")
-			consumers, err := GetDependencies(ctx, keyProDependency, tenant)
+			consumers, err := dependency.GetDependencies(ctx, keyProDependency, tenant)
 			if err != nil {
 				util.LOGGER.Errorf(err, "Get service's all consumers for govern service faild.")
 				return nil, err
 			}
 			consumers = deleteSelfDenpendency(consumers, serviceId)
 			keyConDependency := apt.GenerateConsumerDependencyKey(tenant, serviceId, "")
-			providers, err := GetDependencies(ctx, keyConDependency, tenant)
+			providers, err := dependency.GetDependencies(ctx, keyConDependency, tenant)
 			if err != nil {
 				util.LOGGER.Errorf(err, "Get service's all providers for govern service faild.")
 				return nil, err

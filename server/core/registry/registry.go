@@ -56,6 +56,8 @@ const (
 	REFRESH_MANAGER_CLUSTER_INTERVAL = 30
 
 	REQUEST_TIMEOUT = 300
+
+	MAX_TXN_NUMBER_ONE_TIME = 128
 )
 
 type Registry interface {
@@ -89,18 +91,19 @@ type Config struct {
 }
 
 type PluginOp struct {
-	Action      ActionType
-	Key         []byte
-	EndKey      []byte
-	Value       []byte
-	WithPrefix  bool
-	WithPrevKV  bool
-	Lease       int64
-	KeyOnly     bool
-	CountOnly   bool
-	SortOrder   SortOrder
-	WithRev     int64
-	WithNoCache bool
+	Action          ActionType
+	Key             []byte
+	EndKey          []byte
+	Value           []byte
+	WithPrefix      bool
+	WithPrevKV      bool
+	Lease           int64
+	KeyOnly         bool
+	CountOnly       bool
+	SortOrder       SortOrder
+	WithRev         int64
+	WithNoCache     bool
+	WithIgnoreLease bool
 }
 
 type PluginResponse struct {
@@ -166,4 +169,24 @@ func BytesToStringWithNoCopy(bytes []byte) (s string) {
 	pstring.Data = pbytes.Data
 	pstring.Len = pbytes.Len
 	return
+}
+
+func BatchCommit(ctx context.Context, opts []*PluginOp) error {
+	lenOpts := len(opts)
+	tmpLen := lenOpts
+	tmpOpts := []*PluginOp{}
+	var err error
+	for i := 0; tmpLen > 0; i++ {
+		tmpLen = lenOpts - (i+1)*MAX_TXN_NUMBER_ONE_TIME
+		if tmpLen > 0 {
+			tmpOpts = opts[i*MAX_TXN_NUMBER_ONE_TIME : (i+1)*MAX_TXN_NUMBER_ONE_TIME]
+		} else {
+			tmpOpts = opts[i*MAX_TXN_NUMBER_ONE_TIME : lenOpts]
+		}
+		_, err = GetRegisterCenter().Txn(ctx, tmpOpts)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

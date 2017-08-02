@@ -184,7 +184,7 @@ func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (resul
 		providerDepsKey := string(depsKv.Key)
 		providerId := providerDepsKey[strings.LastIndex(providerDepsKey, "/")+1:]
 
-		service, err := ms.GetService(tenant, providerId, rev)
+		service, err := ms.GetService(ctx, tenant, providerId, rev)
 		if service == nil {
 			return
 		}

@@ -96,6 +96,7 @@ func (s *EtcdEmbed) toPutRequest(op *registry.PluginOp) *etcdserverpb.PutRequest
 		Value:  valueBytes,
 		PrevKv: op.WithPrevKV,
 		Lease:  op.Lease,
+		// TODO WithIgnoreLease support
 	}
 }
 
