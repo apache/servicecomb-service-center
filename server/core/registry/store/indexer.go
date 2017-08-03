@@ -19,14 +19,20 @@ import (
 	"github.com/ServiceComb/service-center/util"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
+	"sync"
 )
 
 type Indexer interface {
 	Search(ctx context.Context, op *registry.PluginOp) (*registry.PluginResponse, error)
+	KeepAlive(ctx context.Context, op *registry.PluginOp) (ttl int64, err error)
 }
 
 type KvCacheIndexer struct {
-	cache Cache
+	cache       Cache
+	localCache  Cache             // TODO
+	prefixIndex map[string]string // TODO
+	asyncs      map[int64]AsyncTasker
+	lock        sync.Mutex
 }
 
 func (i *KvCacheIndexer) Search(ctx context.Context, op *registry.PluginOp) (*registry.PluginResponse, error) {
@@ -67,8 +73,42 @@ func (i *KvCacheIndexer) Search(ctx context.Context, op *registry.PluginOp) (*re
 	return resp, nil
 }
 
+func (i *KvCacheIndexer) KeepAlive(ctx context.Context, op *registry.PluginOp) (ttl int64, err error) {
+	t := NewLeaseAsyncTask(op.Lease)
+	if op.WithNoCache {
+		util.LOGGER.Debugf("keep alive lease WitchNoCache, request etcd server, op: %s", op)
+		err = t.Do(ctx)
+		ttl = t.TTL
+		return
+	}
+
+	i.lock.Lock()
+	at, ok := i.asyncs[op.Lease]
+	if !ok {
+		at = NewLeaseAsyncTasker(registry.BytesToStringWithNoCopy(op.Key))
+		at.Run()
+		i.asyncs[op.Lease] = at
+	}
+	i.lock.Unlock()
+
+	err = at.AddTask(ctx, t)
+	ttl = at.(*LeaseAsyncTasker).TTL
+	return
+}
+
+func (i *KvCacheIndexer) RemoveAsyncLeaseTasker(leaseID int64) {
+	i.lock.Lock()
+	at, ok := i.asyncs[leaseID]
+	if ok {
+		at.Stop()
+		delete(i.asyncs, leaseID)
+	}
+	i.lock.Unlock()
+}
+
 func NewKvCacheIndexer(c Cache) *KvCacheIndexer {
 	return &KvCacheIndexer{
-		cache: c,
+		cache:  c,
+		asyncs: make(map[int64]AsyncTasker),
 	}
 }

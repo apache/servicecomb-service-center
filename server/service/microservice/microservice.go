@@ -150,7 +150,18 @@ func GetServiceId(ctx context.Context, key *pb.MicroServiceKey) (string, error) 
 func FindServiceIds(ctx context.Context, versionRule string, key *pb.MicroServiceKey) ([]string, error) {
 	// 版本规则
 	ids := []string{}
-	rangeIdx := strings.Index(versionRule, "-")
+	match := ParseVersionRule(versionRule)
+	if match == nil {
+		key.Version = versionRule
+		serviceId, err := GetServiceId(ctx, key)
+		if err != nil {
+			return nil, err
+		}
+		if len(serviceId) > 0 {
+			ids = append(ids, serviceId)
+		}
+		return ids, nil
+	}
 
 	alsoFindAlias := len(key.Alias) > 0
 	keyGenerator := func(key *pb.MicroServiceKey) string { return apt.GenerateServiceIndexKey(key) }
@@ -167,50 +178,12 @@ func FindServiceIds(ctx context.Context, versionRule string, key *pb.MicroServic
 	}
 
 FIND_RULE:
-	switch {
-	case versionRule == "latest":
-		resp, err := versionsFunc(key)
-		if err != nil {
-			return nil, err
-		}
-		if len(resp.Kvs) == 0 {
-			break
-		}
-		ids = VersionRule(Latest).GetServicesIds(resp.Kvs)
-	case versionRule[len(versionRule)-1:] == "+":
-		// 取最低版本及高版本集合
-		start := versionRule[:len(versionRule)-1]
-		resp, err := versionsFunc(key)
-		if err != nil {
-			return nil, err
-		}
-		if len(resp.Kvs) == 0 {
-			break
-		}
-		ids = VersionRule(AtLess).GetServicesIds(resp.Kvs, start)
-	case rangeIdx > 0:
-		// 取版本范围集合
-		start := versionRule[:rangeIdx]
-		end := versionRule[rangeIdx+1:]
-		resp, err := versionsFunc(key)
-		if err != nil {
-			return nil, err
-		}
-		if len(resp.Kvs) == 0 {
-			break
-		}
-		ids = VersionRule(Range).GetServicesIds(resp.Kvs, start, end)
-	default:
-		// 精确匹配
-		key.Version = versionRule
-		serviceId, err := GetServiceId(ctx, key)
-		if err != nil {
-			return nil, err
-		}
-		if len(serviceId) <= 0 {
-			break
-		}
-		ids = append(ids, serviceId)
+	resp, err := versionsFunc(key)
+	if err != nil {
+		return nil, err
+	}
+	if len(resp.Kvs) > 0 {
+		ids = match(resp.Kvs)
 	}
 	if len(ids) == 0 && alsoFindAlias {
 		alsoFindAlias = false

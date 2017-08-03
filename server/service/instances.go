@@ -293,9 +293,9 @@ func (s *InstanceController) Heartbeat(ctx context.Context, in *pb.HeartbeatRequ
 	tenant := util.ParseTenantProject(ctx)
 	instanceFlag := strings.Join([]string{in.ServiceId, in.InstanceId}, "--")
 
-	_, err, isInnerErr := heartbeatUtil(ctx, tenant, in.ServiceId, in.InstanceId)
+	_, ttl, err, isInnerErr := serviceUtil.HeartbeatUtil(ctx, tenant, in.ServiceId, in.InstanceId)
 	if err != nil {
-		util.LOGGER.Debugf("heartbeat failed, instance %s, %s, internal error '%v'.", instanceFlag, err, isInnerErr)
+		util.LOGGER.Errorf(err, "heartbeat failed, instance %s, %s, internal error '%v'.", instanceFlag, err, isInnerErr)
 		if isInnerErr {
 			return &pb.HeartbeatResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "service instance does not exist"),
@@ -305,6 +305,7 @@ func (s *InstanceController) Heartbeat(ctx context.Context, in *pb.HeartbeatRequ
 			Response: pb.CreateResponse(pb.Response_FAIL, "service instance does not exist"),
 		}, nil
 	}
+	util.LOGGER.Debugf("heartbeat successful: %s renew ttl to %d", instanceFlag, ttl)
 	return &pb.HeartbeatResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "update service instance heartbeat successfully"),
 	}, nil
@@ -314,42 +315,30 @@ func grantOrRenewLease(ctx context.Context, tenant string, serviceId string, ins
 	remoteIP := util.GetIPFromContext(ctx)
 	instanceFlag := strings.Join([]string{serviceId, instanceId}, "--")
 
-	var inner bool
-	leaseID, err, inner = heartbeatUtil(ctx, tenant, serviceId, instanceId)
+	var (
+		oldTTL int64
+		inner  bool
+	)
+
+	leaseID, oldTTL, err, inner = serviceUtil.HeartbeatUtil(ctx, tenant, serviceId, instanceId)
 	if inner {
 		util.LOGGER.Errorf(err, "grant or renew lease failed, service %s, instanceId %s, operator %s",
 			instanceFlag, instanceId, remoteIP)
 		return
 	}
 
-	if leaseID < 0 {
+	if leaseID < 0 || (oldTTL > 0 && oldTTL != ttl) {
 		leaseID, err = registry.GetRegisterCenter().LeaseGrant(ctx, ttl)
 		if err != nil {
 			util.LOGGER.Errorf(err, "grant or renew lease failed, service %s, instanceId %s, operator %s: lease grant failed.",
 				instanceFlag, instanceId, remoteIP)
+			return
 		}
+		util.LOGGER.Infof("lease grant %d->%d successfully, service %s, instanceId %s, operator %s.",
+			oldTTL, ttl, instanceFlag, instanceId, remoteIP)
+		return
 	}
 	return
-}
-
-func heartbeatUtil(ctx context.Context, tenant string, serviceId string, instanceId string) (leaseID int64, err error, isInnerErr bool) {
-	instanceFlag := strings.Join([]string{serviceId, instanceId}, "--")
-	leaseID, err = serviceUtil.GetLeaseId(ctx, tenant, serviceId, instanceId)
-	if err != nil {
-		util.LOGGER.Errorf(err, "Heart beat failed, %s: get leaseId failed.", instanceFlag)
-		return leaseID, err, true
-	}
-	if leaseID == -1 {
-		util.LOGGER.Errorf(err, "heartbeat failed, %s: instance not exist.", instanceFlag)
-		return leaseID, errors.New("leaseId not exist, instance not exist."), false
-	}
-	ttl, err := registry.GetRegisterCenter().LeaseRenew(ctx, leaseID)
-	if err != nil {
-		util.LOGGER.Errorf(err, "heartbeat failed, %s: lease renew failed.", instanceFlag)
-		return leaseID, err, true
-	}
-	util.LOGGER.Debugf("heartbeat successful: %s renew ttl to %d", instanceFlag, ttl)
-	return leaseID, nil, false
 }
 
 func (s *InstanceController) HeartbeatSet(ctx context.Context, in *pb.HeartbeatSetRequest) (*pb.HeartbeatSetResponse, error) {
@@ -378,7 +367,7 @@ func (s *InstanceController) HeartbeatSet(ctx context.Context, in *pb.HeartbeatS
 				InstanceId: element.InstanceId,
 				ErrMessage: "",
 			}
-			_, err, _ := heartbeatUtil(ctx, tenant, element.ServiceId, element.InstanceId)
+			_, _, err, _ := serviceUtil.HeartbeatUtil(ctx, tenant, element.ServiceId, element.InstanceId)
 			if err != nil {
 				hbRst.ErrMessage = err.Error()
 				util.LOGGER.Errorf(err, "heartbeatset failed, %s--%s", element.ServiceId, element.InstanceId)

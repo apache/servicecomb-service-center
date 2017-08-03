@@ -256,10 +256,10 @@ func UpdateAsProviderDependency(ctx context.Context, providerServiseId string, p
 			consumers := &pb.MicroServiceDependency{
 				Dependency: []*pb.MicroServiceKey{},
 			}
-			providerETCD := strings.Split(string(kv.Key), "/")
-			providerVersionETCD := providerETCD[len(providerETCD)-1]
-			if providerVersionETCD == "latest" {
-				latestServiceId, err := ms.FindServiceIds(ctx, providerVersionETCD, &pb.MicroServiceKey{
+			providerVersionRuleArr := strings.Split(string(kv.Key), "/")
+			providerVersionRule := providerVersionRuleArr[len(providerVersionRuleArr)-1]
+			if providerVersionRule == "latest" {
+				latestServiceId, err := ms.FindServiceIds(ctx, providerVersionRule, &pb.MicroServiceKey{
 					Tenant:      tenant,
 					AppId:       provider.AppId,
 					ServiceName: provider.ServiceName,
@@ -277,19 +277,19 @@ func UpdateAsProviderDependency(ctx context.Context, providerServiseId string, p
 				}
 			} else {
 				//当版本号一样，或者存在+（版本不确定）且版本小于当前版本，则将其consumer，加入allConsumers
-				if !compareVersion(providerVersion, providerVersionETCD) {
+				if !ms.VersionMatchRule(providerVersion, providerVersionRule) {
 					continue
 				}
 			}
 
-			util.LOGGER.Debugf("providerETCD is %s", providerETCD)
+			util.LOGGER.Debugf("providerETCD is %s", providerVersionRuleArr)
 			err = json.Unmarshal(kv.Value, consumers)
 			if err != nil {
 				util.LOGGER.Errorf(nil, "Unmarshal consumers failed.")
 				return err
 			}
 			//fmt.Println("kv.Value is ", consumers)
-			util.LOGGER.Infof("Add dependency as provider, provider: serviecName(%s), version(%s) .consumer is", provider.ServiceName, providerVersionETCD, consumers.Dependency)
+			util.LOGGER.Infof("Add dependency as provider, provider: serviecName(%s), version(%s) .consumer is", provider.ServiceName, providerVersionRule, consumers.Dependency)
 			allConsumers = append(allConsumers, consumers.Dependency...)
 		}
 	}
@@ -330,34 +330,6 @@ func UpdateAsProviderDependency(ctx context.Context, providerServiseId string, p
 		return err
 	}
 	return nil
-}
-
-func compareVersion(version1 string, version2 string) bool {
-	version1Array := strings.Split(version1, ".")
-	version2Array := version1Array
-	util.LOGGER.Debugf("version1 is %s", version1)
-	util.LOGGER.Debugf("version2 is %s", version2)
-	flagPlus := false
-	if version2[len(version2)-1:] == "+" {
-		flagPlus = true
-		tmpVersion2 := version2[:len(version2)-1]
-		version2Array = strings.Split(tmpVersion2, ".")
-
-	} else {
-		version2Array = strings.Split(version2, ".")
-	}
-	util.LOGGER.Debugf("version1Array is %s", version1Array)
-	util.LOGGER.Debugf("version2Array is %s", version2Array)
-	for key, value := range version1Array {
-		if value == version2Array[key] {
-			continue
-		} else if flagPlus && value > version2Array[key] {
-			return true
-		} else {
-			return false
-		}
-	}
-	return true
 }
 
 func DeleteDependencyForService(ctx context.Context, consumer *pb.MicroServiceKey, serviceId string) ([]*registry.PluginOp, error) {
@@ -815,7 +787,7 @@ func GetDependencies(ctx context.Context, dependencyKey string, tenant string) (
 }
 
 // fuzzyMatch: 是否使用模糊规则
-func vilidateMicroServiceKey(in *pb.MicroServiceKey, fuzzyMatch bool) error {
+func validateMicroServiceKey(in *pb.MicroServiceKey, fuzzyMatch bool) error {
 	var err error
 	if fuzzyMatch {
 		// provider的ServiceName, Version支持模糊规则
@@ -843,7 +815,7 @@ func BadParamsResponse(detailErr string) *pb.CreateDependenciesResponse {
 }
 
 func ParamsChecker(ctx context.Context, consumerInfo *pb.MicroServiceKey, providersInfo []*pb.MicroServiceKey, tenant string) *pb.CreateDependenciesResponse {
-	if err := vilidateMicroServiceKey(consumerInfo, false); err != nil {
+	if err := validateMicroServiceKey(consumerInfo, false); err != nil {
 		return BadParamsResponse(err.Error())
 	}
 	if providersInfo == nil {
@@ -859,7 +831,7 @@ func ParamsChecker(ctx context.Context, consumerInfo *pb.MicroServiceKey, provid
 		if len(providerInfo.AppId) == 0 {
 			providerInfo.AppId = consumerInfo.AppId
 		}
-		if err := vilidateMicroServiceKey(providerInfo, true); err != nil {
+		if err := validateMicroServiceKey(providerInfo, true); err != nil {
 			return BadParamsResponse(err.Error())
 		}
 		if _, ok := flag[toString(providerInfo)]; ok {

@@ -14,22 +14,28 @@
 package util
 
 import (
+	"errors"
+	apt "github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
 	"golang.org/x/net/context"
 )
 
-func CheckSchemaInfoExist(ctx context.Context, key string) (error, bool) {
-	resp, errDo := store.Store().Schema().Search(ctx, &registry.PluginOp{
-		Action:    registry.GET,
-		Key:       []byte(key),
-		CountOnly: true,
+func HeartbeatUtil(ctx context.Context, tenant string, serviceId string, instanceId string) (leaseID int64, ttl int64, err error, isInnerErr bool) {
+	leaseID, err = GetLeaseId(ctx, tenant, serviceId, instanceId)
+	if err != nil {
+		return leaseID, ttl, err, true
+	}
+	if leaseID == -1 {
+		return leaseID, ttl, errors.New("leaseId not exist, instance not exist."), false
+	}
+	ttl, err = store.Store().Lease().KeepAlive(ctx, &registry.PluginOp{
+		Action: registry.PUT,
+		Key:    []byte(apt.GenerateInstanceLeaseKey(tenant, serviceId, instanceId)),
+		Lease:  leaseID,
 	})
-	if errDo != nil {
-		return errDo, false
+	if err != nil {
+		return leaseID, ttl, err, true
 	}
-	if resp.Count == 0 {
-		return nil, false
-	}
-	return nil, true
+	return leaseID, ttl, nil, false
 }

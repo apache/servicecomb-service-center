@@ -122,18 +122,13 @@ func (s *APIServer) startRESTfulServer() {
 	}()
 }
 
-func (s *APIServer) registerServiceCenter() {
+func (s *APIServer) registerServiceCenter() error {
 	err := s.registryService()
 	if err != nil {
-		s.err <- err
-		return
+		return err
 	}
 	// 实例信息
-	err = s.registryInstance()
-	if err != nil {
-		util.LOGGER.Error(fmt.Sprintf("error register sc instance %s", err), err)
-		s.err <- err
-	}
+	return s.registryInstance()
 }
 
 func (s *APIServer) registryService() error {
@@ -154,9 +149,9 @@ func (s *APIServer) registryService() error {
 	if respE.Response.Code == pb.Response_SUCCESS {
 		util.LOGGER.Warnf(nil, "service center service already registered, service id %s", respE.ServiceId)
 		respG, err := rs.ServiceAPI.GetOne(ctx, core.GetServiceRequest(respE.ServiceId))
-		if err != nil {
-			util.LOGGER.Error("query service center service info failed", err)
-			return err
+		if respE.Response.Code != pb.Response_SUCCESS {
+			return fmt.Errorf("query service center service info failed, service id %s(%s)",
+				respE.ServiceId, err)
 		}
 		core.Service = respG.Service
 		return nil
@@ -218,23 +213,20 @@ func (s *APIServer) doAPIServerHeartBeat() {
 	}
 	ctx := core.AddDefaultContextValue(context.TODO())
 	respI, err := rs.InstanceAPI.Heartbeat(ctx, core.HeartbeatRequest())
-	if respI.GetResponse().Code != pb.Response_SUCCESS && err == nil {
-		util.LOGGER.Errorf(err, "update service center %s instance %s heartbeat failed",
+	if respI.GetResponse().Code == pb.Response_SUCCESS {
+		util.LOGGER.Debugf("update service center %s heartbeat %s successfully",
 			core.Instance.ServiceId, core.Instance.InstanceId)
-
-		//服务不存在，创建服务
-		err := s.registryService()
-		if err != nil {
-			util.LOGGER.Errorf(err, "Service %s/%s/%s does not exist, and retry to create it failed.",
-				core.REGISTRY_APP_ID, core.REGISTRY_SERVICE_NAME, core.REGISTRY_VERSION)
-			return
-		}
-		// 重新注册实例信息
-		s.registryInstance()
 		return
 	}
-	util.LOGGER.Debugf("update service center %s heartbeat %s successfully",
+	util.LOGGER.Errorf(err, "update service center %s instance %s heartbeat failed",
 		core.Instance.ServiceId, core.Instance.InstanceId)
+
+	//服务不存在，创建服务
+	err = s.registerServiceCenter()
+	if err != nil {
+		util.LOGGER.Errorf(err, "Service %s/%s/%s does not exist, and retry to register it failed.",
+			core.REGISTRY_APP_ID, core.REGISTRY_SERVICE_NAME, core.REGISTRY_VERSION)
+	}
 }
 
 func (s *APIServer) startHeartBeatService() {
@@ -257,7 +249,10 @@ func (s *APIServer) Start() {
 	}
 	s.isClose = false
 	// 自注册
-	s.registerServiceCenter()
+	err := s.registerServiceCenter()
+	if err != nil {
+		s.err <- err
+	}
 
 	s.startRESTfulServer()
 

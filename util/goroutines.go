@@ -75,7 +75,6 @@ func GoInit() {
 
 func GoCloseAndWait() {
 	defaultGo.Close(true)
-	LOGGER.Debugf("all goroutines stopped.")
 }
 
 func NewGo(stopCh chan struct{}) *GoRoutine {

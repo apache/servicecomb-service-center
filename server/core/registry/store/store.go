@@ -63,7 +63,8 @@ func init() {
 		kvStoreEventFuncMap[i] = make([]KvEventFunc, 0, 5)
 		store.newNullStore(i)
 	}
-	AddKvStoreEventFunc(DOMAIN, store.onDomainCreate)
+	AddKvStoreEventFunc(DOMAIN, store.onDomainEvent)
+	AddKvStoreEventFunc(LEASE, store.onLeaseEvent)
 }
 
 type StoreType int
@@ -112,7 +113,7 @@ func (s *KvStore) storeDomain() {
 	s.newStore(DOMAIN, key[:len(key)-1])
 }
 
-func (s *KvStore) onDomainCreate(evt *KvEvent) {
+func (s *KvStore) onDomainEvent(evt *KvEvent) {
 	kv := evt.KV
 	action := evt.Action
 	tenant := pb.GetInfoFromTenantKV(kv)
@@ -131,6 +132,27 @@ func (s *KvStore) onDomainCreate(evt *KvEvent) {
 	util.LOGGER.Infof("new tenant %s is created", tenant)
 	s.storeDomainData(tenant)
 	return
+}
+
+func (s *KvStore) onLeaseEvent(evt *KvEvent) {
+	if evt.Action != pb.EVT_DELETE {
+		return
+	}
+
+	switch evt.Action {
+	case pb.EVT_CREATE:
+	case pb.EVT_DELETE:
+		temp := string(evt.KV.Value)
+		leaseID, err := strconv.ParseInt(temp, 10, 64)
+		if err != nil {
+			util.LOGGER.Errorf(err,
+				"remove async lease tasker failed, key %s %s [%s] event",
+				string(evt.KV.Key), temp, evt.Action)
+		}
+		s.Lease().(*KvCacheIndexer).RemoveAsyncLeaseTasker(leaseID)
+		util.LOGGER.Debugf("remove async lease tasker successfully, key %s %s [%s] event",
+			string(evt.KV.Key), temp, evt.Action)
+	}
 }
 
 func (s *KvStore) storeDomainData(domain string) {
