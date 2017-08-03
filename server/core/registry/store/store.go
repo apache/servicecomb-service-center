@@ -31,6 +31,7 @@ const (
 	SERVICE_ALIAS
 	SERVICE_TAG
 	RULE_INDEX
+	DEPENDENCY
 	typeEnd
 )
 
@@ -45,6 +46,7 @@ var typeNames = []string{
 	SERVICE_ALIAS: "SERVICE_ALIAS",
 	SERVICE_TAG:   "SERVICE_TAG",
 	RULE_INDEX:    "RULE_INDEX",
+	DEPENDENCY:         "DEPENDENCY",
 }
 
 var (
@@ -161,6 +163,7 @@ func (s *KvStore) storeDomainData(domain string) {
 	s.newStore(LEASE, apt.GetInstanceLeaseRootKey(domain))
 	s.newStore(SERVICE_INDEX, apt.GetServiceIndexRootKey(domain))
 	s.newStore(SERVICE_ALIAS, apt.GetServiceAliasRootKey(domain))
+	s.newStore(DEPENDENCY, apt.GetServiceDependencyRootKey(domain))
 	// TODO current key design does not support cache store.
 	// s.newStore(SERVICE_TAG, apt.GetServiceTagRootKey(domain))
 	// s.newStore(RULE, apt.GetServiceRuleRootKey(domain))
@@ -217,6 +220,10 @@ func (s *KvStore) RuleIndex() Indexer {
 
 func (s *KvStore) Schema() Indexer {
 	return s.indexers[SCHEMA]
+}
+
+func (s *KvStore) Dependency() Indexer {
+	return s.indexers[DEPENDENCY]
 }
 
 func Store() *KvStore {

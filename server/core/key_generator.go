@@ -274,7 +274,7 @@ func GenerateConsumerDependencyKey(tenant string, consumerId string, providerId 
 
 func GenerateServiceDependencyKey(serviceType string, tenant string, serviceId1 string, serviceId2 string) string {
 	return strings.Join([]string{
-		GenerateServiceDependencyRootKey(tenant),
+		GetServiceDependencyRootKey(tenant),
 		serviceType,
 		serviceId1,
 		serviceId2,
@@ -285,7 +285,7 @@ func GenerateProviderDependencyKey(tenant string, providerId string, consumerId 
 	return GenerateServiceDependencyKey("p", tenant, providerId, consumerId)
 }
 
-func GenerateServiceDependencyRootKey(tenant string) string {
+func GetServiceDependencyRootKey(tenant string) string {
 	return strings.Join([]string{
 		GetTenantRootKey(tenant),
 		REGISTRY_SERVICE_KEY,

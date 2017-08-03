@@ -37,6 +37,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"github.com/ServiceComb/service-center/server/core/registry/store"
 )
 
 type InstanceController struct {
@@ -709,7 +710,7 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 func (s *InstanceController) existDependence(ctx context.Context, tenant string, consumerServiceId string, providerServiceId string) (bool, error) {
 	dependenceKey := apt.GenerateConsumerDependencyKey(tenant, consumerServiceId, providerServiceId)
 	util.LOGGER.Debugf("add service dependence, %s", dependenceKey)
-	rsp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+	rsp, err := store.Store().Dependency().Search(ctx, &registry.PluginOp{
 		Action:    registry.GET,
 		Key:       []byte(dependenceKey),
 		CountOnly: true,
