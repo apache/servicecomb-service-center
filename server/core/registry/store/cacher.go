@@ -191,7 +191,7 @@ func (c *KvCacher) ListAndWatch(ctx context.Context) error {
 		err := c.doList(listOps)
 		if err != nil {
 			util.LOGGER.Errorf(err, "list key %s failed, list options: %+v", c.Cfg.Key, listOps)
-			return err
+			// do not return err, continue to watch
 		}
 	}
 

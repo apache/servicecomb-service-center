@@ -16,8 +16,11 @@ package store
 import (
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/util"
+	"golang.org/x/net/context"
 	"strconv"
+	"sync"
 )
 
 const (
@@ -46,7 +49,7 @@ var typeNames = []string{
 	SERVICE_ALIAS: "SERVICE_ALIAS",
 	SERVICE_TAG:   "SERVICE_TAG",
 	RULE_INDEX:    "RULE_INDEX",
-	DEPENDENCY:         "DEPENDENCY",
+	DEPENDENCY:    "DEPENDENCY",
 }
 
 var (
@@ -56,9 +59,9 @@ var (
 
 func init() {
 	store = &KvStore{
-		cachers:  make(map[StoreType]Cacher),
-		indexers: make(map[StoreType]Indexer),
-		ready:    make(chan struct{}),
+		cachers:     make(map[StoreType]Cacher),
+		indexers:    make(map[StoreType]Indexer),
+		asyncTasker: NewAsyncTasker(),
 	}
 	kvStoreEventFuncMap = make(map[StoreType][]KvEventFunc)
 	for i := StoreType(0); i != typeEnd; i++ {
@@ -67,6 +70,36 @@ func init() {
 	}
 	AddKvStoreEventFunc(DOMAIN, store.onDomainEvent)
 	AddKvStoreEventFunc(LEASE, store.onLeaseEvent)
+}
+
+type LeaseAsyncTask struct {
+	key     string
+	LeaseID int64
+	TTL     int64
+	err     error
+}
+
+func (lat *LeaseAsyncTask) Key() string {
+	return lat.key
+}
+
+func (lat *LeaseAsyncTask) Do(ctx context.Context) error {
+	lat.TTL, lat.err = registry.GetRegisterCenter().LeaseRenew(ctx, lat.LeaseID)
+	if lat.err != nil {
+		util.LOGGER.Errorf(lat.err, "renew lease %d failed, key %s", lat.LeaseID, lat.Key)
+	}
+	return lat.err
+}
+
+func (lat *LeaseAsyncTask) Err() error {
+	return lat.err
+}
+
+func NewLeaseAsyncTask(op *registry.PluginOp) *LeaseAsyncTask {
+	return &LeaseAsyncTask{
+		key:     registry.BytesToStringWithNoCopy(op.Key),
+		LeaseID: op.Lease,
+	}
 }
 
 type StoreType int
@@ -79,10 +112,11 @@ func (st StoreType) String() string {
 }
 
 type KvStore struct {
-	cachers  map[StoreType]Cacher
-	indexers map[StoreType]Indexer
-	isClose  bool
-	ready    chan struct{}
+	cachers     map[StoreType]Cacher
+	indexers    map[StoreType]Indexer
+	asyncTasker AsyncTasker
+	lock        sync.Mutex
+	isClose     bool
 }
 
 func (s *KvStore) newStore(t StoreType, prefix string) {
@@ -107,7 +141,7 @@ func (s *KvStore) onEvent(t StoreType, evt *KvEvent) {
 
 func (s *KvStore) Run() {
 	s.storeDomain()
-	<-s.ready
+	s.asyncTasker.Run()
 }
 
 func (s *KvStore) storeDomain() {
@@ -151,10 +185,13 @@ func (s *KvStore) onLeaseEvent(evt *KvEvent) {
 				"remove async lease tasker failed, key %s %s [%s] event",
 				string(evt.KV.Key), temp, evt.Action)
 		}
-		s.Lease().(*KvCacheIndexer).RemoveAsyncLeaseTasker(leaseID)
+		s.removeAsyncTasker(leaseID)
 		util.LOGGER.Debugf("remove async lease tasker successfully, key %s %s [%s] event",
 			string(evt.KV.Key), temp, evt.Action)
 	}
+}
+
+func (s *KvStore) removeAsyncTasker(leaseID int64) {
 }
 
 func (s *KvStore) storeDomainData(domain string) {
@@ -224,6 +261,23 @@ func (s *KvStore) Schema() Indexer {
 
 func (s *KvStore) Dependency() Indexer {
 	return s.indexers[DEPENDENCY]
+}
+
+func (s *KvStore) KeepAlive(ctx context.Context, op *registry.PluginOp) (int64, error) {
+	t := NewLeaseAsyncTask(op)
+	if op.WithNoCache {
+		util.LOGGER.Debugf("keep alive lease WitchNoCache, request etcd server, op: %s", op)
+		err := t.Do(ctx)
+		ttl := t.TTL
+		return ttl, err
+	}
+
+	err := s.asyncTasker.AddTask(ctx, t)
+	if err != nil {
+		return 0, err
+	}
+	t = s.asyncTasker.LatestHandled(t.Key()).(*LeaseAsyncTask)
+	return t.TTL, t.Err()
 }
 
 func Store() *KvStore {

@@ -29,7 +29,7 @@ func HeartbeatUtil(ctx context.Context, tenant string, serviceId string, instanc
 	if leaseID == -1 {
 		return leaseID, ttl, errors.New("leaseId not exist, instance not exist."), false
 	}
-	ttl, err = store.Store().Lease().KeepAlive(ctx, &registry.PluginOp{
+	ttl, err = store.Store().KeepAlive(ctx, &registry.PluginOp{
 		Action: registry.PUT,
 		Key:    []byte(apt.GenerateInstanceLeaseKey(tenant, serviceId, instanceId)),
 		Lease:  leaseID,

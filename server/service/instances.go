@@ -22,6 +22,7 @@ import (
 	"github.com/ServiceComb/service-center/server/core/mux"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/server/core/registry/store"
 	"github.com/ServiceComb/service-center/server/infra/quota"
 	"github.com/ServiceComb/service-center/server/plugins/dynamic"
 	"github.com/ServiceComb/service-center/server/service/dependency"
@@ -37,7 +38,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"github.com/ServiceComb/service-center/server/core/registry/store"
 )
 
 type InstanceController struct {
@@ -296,7 +296,7 @@ func (s *InstanceController) Heartbeat(ctx context.Context, in *pb.HeartbeatRequ
 
 	_, ttl, err, isInnerErr := serviceUtil.HeartbeatUtil(ctx, tenant, in.ServiceId, in.InstanceId)
 	if err != nil {
-		util.LOGGER.Errorf(err, "heartbeat failed, instance %s, %s, internal error '%v'.", instanceFlag, err, isInnerErr)
+		util.LOGGER.Errorf(err, "heartbeat failed, instance %s, internal error '%v'.", instanceFlag, isInnerErr)
 		if isInnerErr {
 			return &pb.HeartbeatResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "service instance does not exist"),

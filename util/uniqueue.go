@@ -42,6 +42,10 @@ func (uq *UniQueue) Get(ctx context.Context) interface{} {
 	}
 }
 
+func (uq *UniQueue) Chan() <-chan interface{} {
+	return uq.queue
+}
+
 func (uq *UniQueue) Put(ctx context.Context, value interface{}) error {
 	uq.once.Do(func() {
 		go uq.do()

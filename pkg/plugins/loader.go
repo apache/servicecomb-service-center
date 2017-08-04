@@ -15,8 +15,8 @@ package plugins
 
 import (
 	"fmt"
-	"github.com/astaxie/beego"
 	"github.com/ServiceComb/service-center/util"
+	"github.com/astaxie/beego"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -70,7 +70,7 @@ func (pm *PluginManager) ReloadPlugins() error {
 		}
 		submatchs := regex.FindStringSubmatch(file.Name())
 		if len(submatchs) >= 2 {
-			// goland 1.8+ feature
+			// golang 1.8+ feature
 			pluginFileFullPath := filepath.Join(dir, file.Name())
 			p, err := plugin.Open(pluginFileFullPath)
 			util.LOGGER.Debugf("load plugin '%s'. path: %s, result: %s",
