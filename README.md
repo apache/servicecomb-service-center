@@ -82,7 +82,7 @@ Bugs: [issues](https://github.com/servicecomb/service-center/issues)
 
 ## Contributing
 
-See CONTRIBUTING for details on submitting patches and the contribution workflow.
+See [Contribution guide](/docs/contribution.md) for details on submitting patches and the contribution workflow.
 
 ## Reporting Issues
 
