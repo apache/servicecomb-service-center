@@ -86,7 +86,7 @@ func (lat *LeaseAsyncTask) Key() string {
 func (lat *LeaseAsyncTask) Do(ctx context.Context) error {
 	lat.TTL, lat.err = registry.GetRegisterCenter().LeaseRenew(ctx, lat.LeaseID)
 	if lat.err != nil {
-		util.LOGGER.Errorf(lat.err, "renew lease %d failed, key %s", lat.LeaseID, lat.Key)
+		util.LOGGER.Errorf(lat.err, "renew lease %d failed, key %s", lat.LeaseID, lat.Key())
 	}
 	return lat.err
 }

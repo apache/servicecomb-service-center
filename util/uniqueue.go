@@ -59,7 +59,7 @@ func (uq *UniQueue) Put(ctx context.Context, value interface{}) error {
 		select {
 		case <-ctx.Done():
 			uq.lock.RUnlock()
-			return errors.New("timed out")
+			return ctx.Err()
 		case uq.buffer <- value:
 		}
 	}

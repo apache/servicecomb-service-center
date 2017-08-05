@@ -66,7 +66,10 @@ func (s *EtcdEmbed) Close() {
 func (s *EtcdEmbed) toGetRequest(op *registry.PluginOp) *etcdserverpb.RangeRequest {
 	endBytes := op.EndKey
 	if op.WithPrefix {
-		endBytes = append(op.Key, 127)
+		l := len(op.Key)
+		endBytes = make([]byte, l)
+		copy(endBytes, op.Key)
+		endBytes[l-1] = endBytes[l-1] + 1
 	}
 	order := etcdserverpb.RangeRequest_NONE
 	switch op.SortOrder {

@@ -35,7 +35,7 @@ func HeartbeatUtil(ctx context.Context, tenant string, serviceId string, instanc
 		Lease:  leaseID,
 	})
 	if err != nil {
-		return leaseID, ttl, err, true
+		return leaseID, ttl, err, false
 	}
 	return leaseID, ttl, nil, false
 }

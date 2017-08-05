@@ -32,6 +32,7 @@ import (
 const (
 	REGISTRY_PLUGIN_ETCD           = "etcd"
 	CONNECT_MANAGER_SERVER_TIMEOUT = 10
+	DEFAULT_PAGE_COUNT             = 5000 // grpc does not allow to transport a large body in a request.
 )
 
 var clientTLSConfig *tls.Config
@@ -108,7 +109,7 @@ func (s *EtcdClient) toGetRequest(op *registry.PluginOp) []clientv3.OpOption {
 	if op.WithPrefix {
 		opts = append(opts, clientv3.WithPrefix())
 	} else if len(op.EndKey) > 0 {
-		opts = append(opts, clientv3.WithRange(registry.BytesToStringWithNoCopy(op.EndKey)))
+		opts = append(opts, clientv3.WithRange(clientv3.GetPrefixRangeEnd(registry.BytesToStringWithNoCopy(op.EndKey))))
 	}
 	if op.WithPrevKV {
 		opts = append(opts, clientv3.WithPrevKV())
@@ -223,6 +224,76 @@ func (c *EtcdClient) PutNoOverride(ctx context.Context, op *registry.PluginOp) (
 	return resp.Succeeded, nil
 }
 
+func (c *EtcdClient) paging(ctx context.Context, op *registry.PluginOp, countPerPage int) (*clientv3.GetResponse, error) {
+	var etcdResp *clientv3.GetResponse
+	key := registry.BytesToStringWithNoCopy(op.Key)
+
+	tempOp := *op
+	tempOp.CountOnly = true
+	coutResp, err := c.Client.Get(ctx, key, c.toGetRequest(&tempOp)...)
+	if err != nil {
+		return nil, err
+	}
+
+	recordCount := int(coutResp.Count)
+	if recordCount < countPerPage {
+		return nil, nil // no paging
+	}
+
+	util.LOGGER.Debugf("get too many KeyValues from etcdserver, now paging.(%d vs %d)",
+		recordCount, DEFAULT_PAGE_COUNT)
+
+	tempOp.KeyOnly = false
+	tempOp.CountOnly = false
+	tempOp.WithPrefix = false
+	tempOp.SortOrder = registry.SORT_ASCEND
+	tempOp.EndKey = op.Key
+	tempOp.WithRev = coutResp.Header.Revision
+
+	etcdResp = coutResp
+	etcdResp.Kvs = make([]*mvccpb.KeyValue, 0, etcdResp.Count)
+
+	pageCount := recordCount / countPerPage
+	remainCount := recordCount % countPerPage
+	if remainCount > 0 {
+		pageCount++
+	}
+
+	baseOps := []clientv3.OpOption{}
+	baseOps = append(baseOps, c.toGetRequest(&tempOp)...)
+
+	for i := 0; i < pageCount; i++ {
+		limit := countPerPage
+		if i == pageCount-1 {
+			limit = remainCount
+		}
+		ops := append(baseOps, clientv3.WithLimit(int64(limit)))
+		recordResp, err := c.Client.Get(ctx, key, ops...)
+		if err != nil {
+			return nil, err
+		}
+		l := int64(len(recordResp.Kvs))
+		nextKey := recordResp.Kvs[l-1].Key
+		key = clientv3.GetPrefixRangeEnd(registry.BytesToStringWithNoCopy(nextKey))
+		etcdResp.Kvs = append(etcdResp.Kvs, recordResp.Kvs...)
+	}
+
+	// too slow
+	if op.SortOrder == registry.SORT_DESCEND {
+		t := time.Now()
+		var last int
+		for i := 0; i < recordCount; i++ {
+			last = recordCount - i - 1
+			if last <= i {
+				break
+			}
+			etcdResp.Kvs[i], etcdResp.Kvs[last] = etcdResp.Kvs[last], etcdResp.Kvs[i]
+		}
+		util.LOGGER.Debugf("sorted %d KeyValues spend %s", recordCount, time.Now().Sub(t))
+	}
+	return etcdResp, nil
+}
+
 func (c *EtcdClient) Do(ctx context.Context, op *registry.PluginOp) (*registry.PluginResponse, error) {
 	otCtx, cancel := registry.WithTimeout(ctx)
 	defer cancel()
@@ -231,10 +302,22 @@ func (c *EtcdClient) Do(ctx context.Context, op *registry.PluginOp) (*registry.P
 	switch op.Action {
 	case registry.GET:
 		var etcdResp *clientv3.GetResponse
-		etcdResp, err = c.Client.Get(otCtx, registry.BytesToStringWithNoCopy(op.Key), c.toGetRequest(op)...)
-		if err != nil {
-			break
+		key := registry.BytesToStringWithNoCopy(op.Key)
+
+		if op.WithPrefix && !op.CountOnly && !op.KeyOnly {
+			etcdResp, err = c.paging(ctx, op, DEFAULT_PAGE_COUNT)
+			if err != nil {
+				break
+			}
 		}
+
+		if etcdResp == nil {
+			etcdResp, err = c.Client.Get(otCtx, key, c.toGetRequest(op)...)
+			if err != nil {
+				break
+			}
+		}
+
 		resp = &registry.PluginResponse{
 			Kvs:      etcdResp.Kvs,
 			Count:    etcdResp.Count,
