@@ -237,3 +237,11 @@ func queryServiceInstancesKvs(ctx context.Context, serviceId string, rev int64) 
 	}
 	return resp.Kvs, nil
 }
+
+func NewInstanceWatcher(selfServiceId, instanceRoot string) *nf.ListWatcher {
+	return nf.NewWatcher(nf.INSTANCE, selfServiceId, instanceRoot)
+}
+
+func NewInstanceListWatcher(selfServiceId, instanceRoot string, listFunc func() (results []*pb.WatchInstanceResponse, rev int64)) *nf.ListWatcher {
+	return nf.NewListWatcher(nf.INSTANCE, selfServiceId, instanceRoot, listFunc)
+}

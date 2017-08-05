@@ -178,20 +178,16 @@ func (s *KvStore) onLeaseEvent(evt *KvEvent) {
 	switch evt.Action {
 	case pb.EVT_CREATE:
 	case pb.EVT_DELETE:
-		temp := string(evt.KV.Value)
-		leaseID, err := strconv.ParseInt(temp, 10, 64)
-		if err != nil {
-			util.LOGGER.Errorf(err,
-				"remove async lease tasker failed, key %s %s [%s] event",
-				string(evt.KV.Key), temp, evt.Action)
-		}
-		s.removeAsyncTasker(leaseID)
-		util.LOGGER.Debugf("remove async lease tasker successfully, key %s %s [%s] event",
-			string(evt.KV.Key), temp, evt.Action)
+		key := registry.BytesToStringWithNoCopy(evt.KV.Key)
+		leaseID := registry.BytesToStringWithNoCopy(evt.KV.Value)
+		s.removeAsyncTasker(key)
+		util.LOGGER.Debugf("push task to async remove queue successfully, key %s %s [%s] event",
+			key, leaseID, evt.Action)
 	}
 }
 
-func (s *KvStore) removeAsyncTasker(leaseID int64) {
+func (s *KvStore) removeAsyncTasker(key string) {
+	s.asyncTasker.RemoveTask(key)
 }
 
 func (s *KvStore) storeDomainData(domain string) {
@@ -220,6 +216,9 @@ func (s *KvStore) Stop() {
 	for _, c := range s.cachers {
 		c.Stop()
 	}
+
+	s.asyncTasker.Stop()
+
 	util.LOGGER.Debugf("store daemon stopped.")
 }
 

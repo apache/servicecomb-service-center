@@ -882,7 +882,7 @@ func (s *InstanceController) Watch(in *pb.WatchInstanceRequest, stream pb.Servic
 		return err
 	}
 	tenant := util.ParseTenantProject(stream.Context())
-	watcher := nf.NewInstanceWatcher(in.SelfServiceId, apt.GetInstanceRootKey(tenant)+"/")
+	watcher := serviceUtil.NewInstanceWatcher(in.SelfServiceId, apt.GetInstanceRootKey(tenant)+"/")
 	err = nf.GetNotifyService().AddSubscriber(watcher)
 	util.LOGGER.Infof("start watch instance status, watcher %s %s", watcher.Subject(), watcher.Id())
 	return serviceUtil.WatchJobHandler(watcher, stream, nf.GetNotifyService().Config.NotifyTimeout)
@@ -894,7 +894,7 @@ func (s *InstanceController) WebSocketWatch(ctx context.Context, in *pb.WatchIns
 		return
 	}
 	tenant := util.ParseTenantProject(ctx)
-	watcher := nf.NewInstanceWatcher(in.SelfServiceId, apt.GetInstanceRootKey(tenant)+"/")
+	watcher := serviceUtil.NewInstanceWatcher(in.SelfServiceId, apt.GetInstanceRootKey(tenant)+"/")
 	serviceUtil.DoWebSocketWatch(nf.GetNotifyService(), watcher, conn)
 }
 
@@ -904,7 +904,7 @@ func (s *InstanceController) WebSocketListAndWatch(ctx context.Context, in *pb.W
 		return
 	}
 	tenant := util.ParseTenantProject(ctx)
-	watcher := nf.NewInstanceListWatcher(in.SelfServiceId, apt.GetInstanceRootKey(tenant)+"/",
+	watcher := serviceUtil.NewInstanceListWatcher(in.SelfServiceId, apt.GetInstanceRootKey(tenant)+"/",
 		func() ([]*pb.WatchInstanceResponse, int64) {
 			return serviceUtil.QueryAllProvidersIntances(ctx, in.SelfServiceId)
 		})
