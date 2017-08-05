@@ -72,7 +72,7 @@ This will bring up Service Center listening on ip/port 127.0.0.1:30100 for servi
 
 ## Documentation
 
-Project documentation is available on the [ServiceComb website][servicecomb-website].
+Project documentation is available on the [ServiceComb website][servicecomb-website]. You can also find some development guide [here](/docs)
 
 [servicecomb-website]: http://servicecomb.io/
       
@@ -82,7 +82,7 @@ Bugs: [issues](https://github.com/servicecomb/service-center/issues)
 
 ## Contributing
 
-See CONTRIBUTING for details on submitting patches and the contribution workflow.
+See [Contribution guide](/docs/contribution.md) for details on submitting patches and the contribution workflow.
 
 ## Reporting Issues
 
