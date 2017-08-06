@@ -59,7 +59,9 @@ func (tt *testTask) Err() error {
 }
 
 func (tt *testTask) Do(ctx context.Context) error {
-	defer tt.done()
+	if tt.done != nil {
+		defer tt.done()
+	}
 	wait := tt.wait
 	if wait == 0 {
 		<-time.After(time.Second)
@@ -137,8 +139,8 @@ func TestBaseAsyncTasker_Stop(t *testing.T) {
 	at.Stop()
 
 	err = at.AddTask(context.Background(), &testTask{result: true})
-	if err == nil {
-		fail(t, "add task should be error when Tasker is stopped")
+	if err != nil {
+		fail(t, "add task should be ok when Tasker is stopped")
 	}
 
 	at.Stop()

@@ -24,7 +24,6 @@ import (
 	. "github.com/onsi/gomega"
 	"golang.org/x/net/context"
 	"testing"
-	"github.com/ServiceComb/service-center/server/core/registry/store"
 )
 
 const (
@@ -45,7 +44,6 @@ var governService pb.GovernServiceCtrlServerEx
 var _ = BeforeSuite(func() {
 	//init plugin
 	serviceResource, insResource, governService = service.AssembleResources()
-	store.Store().Run()
 
 })
 

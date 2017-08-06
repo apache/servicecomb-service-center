@@ -54,10 +54,6 @@ func (lat *BaseAsyncTasker) AddTask(ctx context.Context, task AsyncTask) error {
 		return errors.New("invalid parameters")
 	}
 	lat.queueLock.RLock()
-	if lat.isClose {
-		lat.queueLock.RUnlock()
-		return errors.New("AsyncTasker is stopped")
-	}
 	queue, ok := lat.queues[task.Key()]
 	latestTask := lat.latestTasks[task.Key()]
 	lat.queueLock.RUnlock()
@@ -71,11 +67,11 @@ func (lat *BaseAsyncTasker) AddTask(ctx context.Context, task AsyncTask) error {
 			lat.latestTasks[task.Key()] = latestTask
 		}
 		lat.queueLock.Unlock()
+	}
 
-		if !ok {
-			// do immediately at first time
-			return task.Do(ctx)
-		}
+	if !ok || lat.isClose {
+		// do immediately at first time
+		return task.Do(ctx)
 	}
 
 	err := queue.Put(ctx, task)
