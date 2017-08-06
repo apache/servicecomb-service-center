@@ -89,7 +89,8 @@ func TestBaseAsyncTasker_AddTask(t *testing.T) {
 	if testCtx1.Err() == nil || err == nil || err.Error() != "test1" {
 		fail(t, "first time add task should be sync")
 	}
-	if at.LatestHandled("test").Err().Error() != "test1" {
+	lt, _ := at.LatestHandled("test")
+	if lt.Err().Error() != "test1" {
 		fail(t, "should get first handled task 'test1'")
 	}
 
@@ -102,7 +103,8 @@ func TestBaseAsyncTasker_AddTask(t *testing.T) {
 		fail(t, "second time add task should return prev result")
 	}
 	<-testCtx2.Done()
-	if at.LatestHandled("test").Err().Error() != "test2" {
+	lt, _ = at.LatestHandled("test")
+	if lt.Err().Error() != "test2" {
 		fail(t, "should get second handled task 'test2'")
 	}
 }

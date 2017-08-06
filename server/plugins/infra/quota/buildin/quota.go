@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/server/core/registry/store"
 	"github.com/ServiceComb/service-center/server/infra/quota"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
@@ -52,7 +53,7 @@ func (q *BuildInQuota) Apply4Quotas(ctx context.Context, quotaType int, quotaSiz
 	default:
 		return false, fmt.Errorf("Unsurported Type %d", quotaType)
 	}
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+	resp, err := store.Store().Service().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
 		Key:        []byte(key),
 		CountOnly:  true,

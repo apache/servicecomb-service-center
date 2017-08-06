@@ -47,8 +47,8 @@ func Accessible(ctx context.Context, tenant string, consumerID string, providerI
 		return fmt.Errorf("provider invalid"), false
 	}
 
-	providerFlag := strings.Join([]string{providerService.AppId, providerService.ServiceName, providerService.Version}, "--")
-	consumerFlag := strings.Join([]string{consumerService.AppId, consumerService.ServiceName, consumerService.Version}, "--")
+	providerFlag := strings.Join([]string{providerService.AppId, providerService.ServiceName, providerService.Version}, "/")
+	consumerFlag := strings.Join([]string{consumerService.AppId, consumerService.ServiceName, consumerService.Version}, "/")
 	if providerService.AppId != consumerService.AppId {
 		if len(providerService.Properties) == 0 {
 			util.LOGGER.Warnf(nil, "consumer %s can't access provider %s, different appid",

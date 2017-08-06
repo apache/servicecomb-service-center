@@ -91,9 +91,10 @@ func (c *KvCache) Data(k interface{}) interface{} {
 	if !ok {
 		return nil
 	}
-	var copy mvccpb.KeyValue
-	util.DeepCopy(&copy, kv)
-	return &copy
+	var copied mvccpb.KeyValue
+	// util.DeepCopy(&copy, kv)
+	copied = *kv
+	return &copied
 }
 
 func (c *KvCache) Have(k interface{}) (ok bool) {

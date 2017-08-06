@@ -24,7 +24,6 @@ import (
 	"github.com/ServiceComb/service-center/util"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
-	"strings"
 	"time"
 )
 
@@ -86,12 +85,8 @@ func GetServiceByServiceId(ctx context.Context, tenant string, serviceId string)
 }
 
 func GetServicesRawData(ctx context.Context, tenant string) ([]*mvccpb.KeyValue, error) {
-	key := strings.Join([]string{
-		apt.GetServiceRootKey(tenant),
-		"",
-	}, "/")
-
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+	key := apt.GenerateServiceKey(tenant, "")
+	resp, err := store.Store().Service().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
 		Key:        []byte(key),
 		WithPrefix: true,
@@ -168,7 +163,7 @@ func FindServiceIds(ctx context.Context, versionRule string, key *pb.MicroServic
 	versionsFunc := func(key *pb.MicroServiceKey) (*registry.PluginResponse, error) {
 		key.Version = ""
 		prefix := keyGenerator(key)
-		resp, err := registry.GetRegisterCenter().Do(context.TODO(), &registry.PluginOp{
+		resp, err := store.Store().Service().Search(ctx, &registry.PluginOp{
 			Action:     registry.GET,
 			Key:        []byte(prefix),
 			WithPrefix: true,

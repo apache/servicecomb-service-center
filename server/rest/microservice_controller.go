@@ -243,7 +243,6 @@ func (this *MicroServiceService) GetConProDependencies(w http.ResponseWriter, r 
 	request := &pb.GetDependenciesRequest{
 		ServiceId: r.URL.Query().Get(":consumerId"),
 	}
-	util.LOGGER.Errorf(nil, "cunsumerId is %s.", request.ServiceId)
 	resp, err := ServiceAPI.GetConsumerDependencies(r.Context(), request)
 	if err != nil {
 		util.LOGGER.Error("get Dependency failed.", err)
@@ -264,7 +263,6 @@ func (this *MicroServiceService) GetProConDependencies(w http.ResponseWriter, r 
 	request := &pb.GetDependenciesRequest{
 		ServiceId: r.URL.Query().Get(":providerId"),
 	}
-	util.LOGGER.Errorf(nil, "providerId is %s.", request.ServiceId)
 	resp, err := ServiceAPI.GetProviderDependencies(r.Context(), request)
 	if err != nil {
 		util.LOGGER.Error("get Dependency failed.", err)

@@ -79,7 +79,7 @@ func InstanceExist(ctx context.Context, tenant string, serviceId string, instanc
 func CheckEndPoints(ctx context.Context, in *pb.RegisterInstanceRequest) (string, error) {
 	tenant := util.ParseTenantProject(ctx)
 	allInstancesKey := apt.GenerateInstanceKey(tenant, in.Instance.ServiceId, "")
-	rsp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+	rsp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
 		Key:        []byte(allInstancesKey),
 		WithPrefix: true,
@@ -140,11 +140,11 @@ func DeleteServiceAllInstances(ctx context.Context, in *pb.DeleteServiceRequest)
 	tenant := util.ParseTenantProject(ctx)
 
 	instanceLeaseKey := apt.GenerateInstanceLeaseKey(tenant, in.ServiceId, "")
-
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action:     registry.GET,
-		Key:        []byte(instanceLeaseKey),
-		WithPrefix: true,
+	resp, err := store.Store().Lease().Search(ctx, &registry.PluginOp{
+		Action:      registry.GET,
+		Key:         []byte(instanceLeaseKey),
+		WithPrefix:  true,
+		WithNoCache: true,
 	})
 	if err != nil {
 		util.LOGGER.Errorf(err, "delete service all instance failed: get instance lease failed.")

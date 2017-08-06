@@ -22,8 +22,15 @@ const (
 	REGISTRY_ROOT_KEY        = "cse-sr"
 	REGISTRY_SERVICE_KEY     = "ms"
 	REGISTRY_INSTANCE_KEY    = "inst"
-	REGISTRY_SERVICERULE_KEY = "rules"
+	REGISTRY_FILE            = "files"
+	REGISTRY_INDEX           = "indexes"
+	REGISTRY_RULE_KEY        = "rules"
 	REGISTRY_TENANT_KEY      = "tenant"
+	REGISTRY_ALIAS_KEY       = "alias"
+	REGISTRY_TAG_KEY         = "tags"
+	REGISTRY_SCHEMA_KEY      = "schemas"
+	REGISTRY_LEASE_KEY       = "leases"
+	REGISTRY_DEPENDENCY_KEY  = "deps"
 	REGISTRY_ENDPOINTS_INDEX = "epsindex"
 )
 
@@ -34,7 +41,7 @@ func GetRootKey() string {
 	}, "/")
 }
 
-func GetTenantRootKey(tenant string) string {
+func GetDomainProjectRootKey(tenant string) string {
 	return strings.Join([]string{
 		GetRootKey(),
 		tenant,
@@ -45,7 +52,7 @@ func GetServiceRootKey(tenant string) string {
 	return strings.Join([]string{
 		GetRootKey(),
 		REGISTRY_SERVICE_KEY,
-		"files",
+		REGISTRY_FILE,
 		tenant,
 	}, "/")
 }
@@ -54,7 +61,7 @@ func GetServiceIndexRootKey(tenant string) string {
 	return strings.Join([]string{
 		GetRootKey(),
 		REGISTRY_SERVICE_KEY,
-		"indexes",
+		REGISTRY_INDEX,
 		tenant,
 	}, "/")
 }
@@ -63,40 +70,40 @@ func GetServiceAliasRootKey(tenant string) string {
 	return strings.Join([]string{
 		GetRootKey(),
 		REGISTRY_SERVICE_KEY,
-		"alias",
+		REGISTRY_ALIAS_KEY,
 		tenant,
 	}, "/")
 }
 
 func GetServiceRuleRootKey(tenant string) string {
 	return strings.Join([]string{
-		GetTenantRootKey(tenant),
+		GetDomainProjectRootKey(tenant),
 		REGISTRY_SERVICE_KEY,
-		REGISTRY_SERVICERULE_KEY,
+		REGISTRY_RULE_KEY,
 	}, "/")
 }
 
 func GetServiceRuleIndexRootKey(tenant string) string {
 	return strings.Join([]string{
-		GetTenantRootKey(tenant),
-		REGISTRY_SERVICERULE_KEY,
-		"indexes",
+		GetDomainProjectRootKey(tenant),
+		REGISTRY_RULE_KEY,
+		REGISTRY_INDEX,
 	}, "/")
 }
 
 func GetServiceTagRootKey(tenant string) string {
 	return strings.Join([]string{
-		GetTenantRootKey(tenant),
+		GetDomainProjectRootKey(tenant),
 		REGISTRY_SERVICE_KEY,
-		"tags",
+		REGISTRY_TAG_KEY,
 	}, "/")
 }
 
 func GetServiceSchemaRootKey(tenant string) string {
 	return strings.Join([]string{
-		GetTenantRootKey(tenant),
+		GetDomainProjectRootKey(tenant),
 		REGISTRY_SERVICE_KEY,
-		"schemas",
+		REGISTRY_SCHEMA_KEY,
 	}, "/")
 }
 
@@ -104,7 +111,7 @@ func GetInstanceIndexRootKey(tenant string) string {
 	return strings.Join([]string{
 		GetRootKey(),
 		REGISTRY_INSTANCE_KEY,
-		"indexes",
+		REGISTRY_INDEX,
 		tenant,
 	}, "/")
 }
@@ -113,7 +120,7 @@ func GetInstanceRootKey(tenant string) string {
 	return strings.Join([]string{
 		GetRootKey(),
 		REGISTRY_INSTANCE_KEY,
-		"files",
+		REGISTRY_FILE,
 		tenant,
 	}, "/")
 }
@@ -122,7 +129,15 @@ func GetInstanceLeaseRootKey(tenant string) string {
 	return strings.Join([]string{
 		GetRootKey(),
 		REGISTRY_INSTANCE_KEY,
-		"leases",
+		REGISTRY_LEASE_KEY,
+		tenant,
+	}, "/")
+}
+
+func GetInstancesEndpointsIndexRootKey(tenant string) string {
+	return strings.Join([]string{
+		GetRootKey(),
+		REGISTRY_ENDPOINTS_INDEX,
 		tenant,
 	}, "/")
 }
@@ -261,9 +276,9 @@ func GenerateProviderDependencyRuleKey(tenant string, in *pb.MicroServiceKey) st
 
 func GenerateServiceDependencyRuleRootKey(tenant string) string {
 	return strings.Join([]string{
-		GetTenantRootKey(tenant),
+		GetDomainProjectRootKey(tenant),
 		REGISTRY_SERVICE_KEY,
-		"deps",
+		REGISTRY_DEPENDENCY_KEY,
 		"rule",
 	}, "/")
 }
@@ -287,9 +302,9 @@ func GenerateProviderDependencyKey(tenant string, providerId string, consumerId 
 
 func GetServiceDependencyRootKey(tenant string) string {
 	return strings.Join([]string{
-		GetTenantRootKey(tenant),
+		GetDomainProjectRootKey(tenant),
 		REGISTRY_SERVICE_KEY,
-		"deps",
+		REGISTRY_DEPENDENCY_KEY,
 	}, "/")
 }
 
@@ -303,9 +318,7 @@ func GenerateTenantKey(tenant string) string {
 
 func GenerateInsEpsIndex(tenant string, serviceId string, inEpsIndex string) string {
 	return strings.Join([]string{
-		GetRootKey(),
-		REGISTRY_ENDPOINTS_INDEX,
-		tenant,
+		GetInstancesEndpointsIndexRootKey(tenant),
 		serviceId,
 		inEpsIndex,
 	}, "/")

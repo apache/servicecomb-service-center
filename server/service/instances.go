@@ -52,7 +52,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 	}
 	instance := in.GetInstance()
 	remoteIP := util.GetIPFromContext(ctx)
-	instanceFlag := strings.Join([]string{instance.ServiceId, instance.HostName}, "--")
+	instanceFlag := strings.Join([]string{instance.ServiceId, instance.HostName}, "/")
 	err := apt.Validate(instance)
 	if err != nil {
 		util.LOGGER.Errorf(err, "register instance failed, service %s, operator %s: invalid instance parameters.", instanceFlag, remoteIP)
@@ -233,7 +233,7 @@ func (s *InstanceController) Unregister(ctx context.Context, in *pb.UnregisterIn
 	serviceId := in.ServiceId
 	instanceId := in.InstanceId
 
-	instanceFlag := strings.Join([]string{serviceId, instanceId}, "--")
+	instanceFlag := strings.Join([]string{serviceId, instanceId}, "/")
 	remoteIP := util.GetIPFromContext(ctx)
 	isExist, err := serviceUtil.InstanceExist(ctx, tenant, serviceId, instanceId)
 	if err != nil {
@@ -292,7 +292,7 @@ func (s *InstanceController) Heartbeat(ctx context.Context, in *pb.HeartbeatRequ
 	}
 
 	tenant := util.ParseTenantProject(ctx)
-	instanceFlag := strings.Join([]string{in.ServiceId, in.InstanceId}, "--")
+	instanceFlag := strings.Join([]string{in.ServiceId, in.InstanceId}, "/")
 
 	_, ttl, err, isInnerErr := serviceUtil.HeartbeatUtil(ctx, tenant, in.ServiceId, in.InstanceId)
 	if err != nil {
@@ -314,7 +314,7 @@ func (s *InstanceController) Heartbeat(ctx context.Context, in *pb.HeartbeatRequ
 
 func grantOrRenewLease(ctx context.Context, tenant string, serviceId string, instanceId string, ttl int64) (leaseID int64, err error) {
 	remoteIP := util.GetIPFromContext(ctx)
-	instanceFlag := strings.Join([]string{serviceId, instanceId}, "--")
+	instanceFlag := strings.Join([]string{serviceId, instanceId}, "/")
 
 	var (
 		oldTTL int64
@@ -356,7 +356,7 @@ func (s *InstanceController) HeartbeatSet(ctx context.Context, in *pb.HeartbeatS
 	noMultiCounter := 0
 	for _, heartbeatElement := range in.Instances {
 		if _, ok := existFlag[heartbeatElement.ServiceId+heartbeatElement.InstanceId]; ok {
-			util.LOGGER.Warnf(nil, "heartbeatset %s--%s multiple", heartbeatElement.ServiceId, heartbeatElement.InstanceId)
+			util.LOGGER.Warnf(nil, "heartbeatset %s/%s multiple", heartbeatElement.ServiceId, heartbeatElement.InstanceId)
 			continue
 		} else {
 			existFlag[heartbeatElement.ServiceId+heartbeatElement.InstanceId] = true
@@ -371,7 +371,7 @@ func (s *InstanceController) HeartbeatSet(ctx context.Context, in *pb.HeartbeatS
 			_, _, err, _ := serviceUtil.HeartbeatUtil(ctx, tenant, element.ServiceId, element.InstanceId)
 			if err != nil {
 				hbRst.ErrMessage = err.Error()
-				util.LOGGER.Errorf(err, "heartbeatset failed, %s--%s", element.ServiceId, element.InstanceId)
+				util.LOGGER.Errorf(err, "heartbeatset failed, %s/%s", element.ServiceId, element.InstanceId)
 			}
 			instancesHbRst <- hbRst
 		}(heartbeatElement)
@@ -420,7 +420,7 @@ func (s *InstanceController) GetOneInstance(ctx context.Context, in *pb.GetOneIn
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
 	}
-	conPro := strings.Join([]string{in.ConsumerServiceId, in.ProviderServiceId, in.ProviderInstanceId}, "--")
+	conPro := strings.Join([]string{in.ConsumerServiceId, in.ProviderServiceId, in.ProviderInstanceId}, "/")
 
 	tenant := util.ParseTenantProject(ctx)
 
@@ -428,20 +428,20 @@ func (s *InstanceController) GetOneInstance(ctx context.Context, in *pb.GetOneIn
 	instanceId := in.ProviderInstanceId
 	instance, err := serviceUtil.GetInstance(ctx, tenant, serviceId, instanceId)
 	if err != nil {
-		util.LOGGER.Errorf(err, "get instance failed, cons--provi:%s: get instance failed.", conPro)
+		util.LOGGER.Errorf(err, "get instance failed, %s(consumer/provider): get instance failed.", conPro)
 		return &pb.GetOneInstanceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Update service instance properties failed"),
 		}, err
 	}
 	if instance == nil {
-		util.LOGGER.Errorf(nil, "get instance failed, cons--provi:%s: instance not exist.", conPro)
+		util.LOGGER.Errorf(nil, "get instance failed, %s(consumer/provider): instance not exist.", conPro)
 		return &pb.GetOneInstanceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "No this instance"),
 		}, nil
 	}
 
 	if len(in.Stage) != 0 && in.Stage != instance.Stage {
-		util.LOGGER.Errorf(nil, "get instance failed, cons--provi:%s: stage not match, can't access.", conPro)
+		util.LOGGER.Errorf(nil, "get instance failed, %s(consumer/provider): stage not match, can't access.", conPro)
 		return &pb.GetOneInstanceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Stage does not match, can't access this instance."),
 		}, nil
@@ -449,7 +449,7 @@ func (s *InstanceController) GetOneInstance(ctx context.Context, in *pb.GetOneIn
 
 	errAddDependence := s.addDependenceForService(ctx, tenant, in.ConsumerServiceId, in.ProviderServiceId)
 	if errAddDependence != nil {
-		util.LOGGER.Errorf(err, "get instance failed, cons--provi:%s:add dependency failed.", conPro)
+		util.LOGGER.Errorf(err, "get instance failed, %s(consumer/provider): add dependency failed.", conPro)
 		return &pb.GetOneInstanceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Add dependency failed."),
 		}, err
@@ -517,12 +517,12 @@ func (s *InstanceController) GetInstances(ctx context.Context, in *pb.GetInstanc
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
 	}
-	conPro := strings.Join([]string{in.ConsumerServiceId, in.ProviderServiceId}, "--")
+	conPro := strings.Join([]string{in.ConsumerServiceId, in.ProviderServiceId}, "/")
 
 	tenant := util.ParseTenantProject(ctx)
 	errAddDependence := s.addDependenceForService(ctx, tenant, in.ConsumerServiceId, in.ProviderServiceId)
 	if errAddDependence != nil {
-		util.LOGGER.Errorf(errAddDependence, "get instances failed, con--pro %s: add dependency failed.", conPro)
+		util.LOGGER.Errorf(errAddDependence, "get instances failed, %s(consumer/provider): add dependency failed.", conPro)
 		return &pb.GetInstancesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, errAddDependence.Error()),
 		}, errAddDependence
@@ -531,7 +531,7 @@ func (s *InstanceController) GetInstances(ctx context.Context, in *pb.GetInstanc
 	instances := []*pb.MicroServiceInstance{}
 	instances, err = getAllInstancesOfOneService(ctx, tenant, in.ProviderServiceId, in.Stage)
 	if err != nil {
-		util.LOGGER.Errorf(err, "get instances failed, con--pro %s: get instances from etcd failed.", conPro)
+		util.LOGGER.Errorf(err, "get instances failed, %s(consumer/provider): get instances from etcd failed.", conPro)
 		return &pb.GetInstancesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, err
@@ -544,8 +544,7 @@ func (s *InstanceController) GetInstances(ctx context.Context, in *pb.GetInstanc
 
 func getAllInstancesOfOneService(ctx context.Context, tenant string, serviceId string, stage string) ([]*pb.MicroServiceInstance, error) {
 	key := apt.GenerateInstanceKey(tenant, serviceId, "")
-
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+	resp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
 		Key:        []byte(key),
 		WithPrefix: true,
@@ -734,7 +733,7 @@ func (s *InstanceController) UpdateStatus(ctx context.Context, in *pb.UpdateInst
 		}, nil
 	}
 	tenant := util.ParseTenantProject(ctx)
-	updateStatusFlag := strings.Join([]string{in.ServiceId, in.InstanceId, in.Status}, "--")
+	updateStatusFlag := strings.Join([]string{in.ServiceId, in.InstanceId, in.Status}, "/")
 	if !apt.InstanseStatusRule.Match(in.Status) {
 		util.LOGGER.Errorf(nil, "update instance status failed, %s: status must be UP|DOWN|STARTING|OUTOFSERVICE.", updateStatusFlag)
 		return &pb.UpdateInstanceStatusResponse{
@@ -790,7 +789,7 @@ func (s *InstanceController) UpdateInstanceProperties(ctx context.Context, in *p
 
 	var err error
 	tenant := util.ParseTenantProject(ctx)
-	instanceFlag := strings.Join([]string{in.ServiceId, in.InstanceId}, "--")
+	instanceFlag := strings.Join([]string{in.ServiceId, in.InstanceId}, "/")
 
 	var instance *pb.MicroServiceInstance
 

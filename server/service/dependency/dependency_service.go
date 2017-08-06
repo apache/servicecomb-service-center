@@ -20,6 +20,7 @@ import (
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/server/core/registry/store"
 	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	"github.com/ServiceComb/service-center/util"
 	"github.com/coreos/etcd/mvcc/mvccpb"
@@ -132,11 +133,8 @@ func UpdateAsConsumerDependency(ctx context.Context, consumerId string, provider
 		switch {
 		case provider.ServiceName == "*":
 			util.LOGGER.Infof("Add dependency, *: rely all service, consumerId %s", consumerId)
-			allServiceKey := strings.Join([]string{
-				apt.GetServiceRootKey(tenant),
-				"",
-			}, "/")
-			resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+			allServiceKey := apt.GenerateServiceKey(tenant, "")
+			resp, err := store.Store().Service().Search(ctx, &registry.PluginOp{
 				Action:     registry.GET,
 				Key:        []byte(allServiceKey),
 				WithPrefix: true,
@@ -524,7 +522,7 @@ func CreateDependencyRule(ctx context.Context, consumerServiceid string, consume
 	tenant := util.ParseTenantProject(ctx)
 	//更新consumer的providers的值,consumer的版本是确定的
 	conKey := apt.GenerateConsumerDependencyRuleKey(tenant, consumer)
-	consumerFlag := strings.Join([]string{consumer.AppId, consumer.ServiceName, consumer.Version}, "--")
+	consumerFlag := strings.Join([]string{consumer.AppId, consumer.ServiceName, consumer.Version}, "/")
 	err, oldProviderRules := transferToMicroServiceDependency(ctx, conKey)
 	if err != nil {
 		util.LOGGER.Errorf(err, "maintain dependency rule failed, consumer %s: get consumer depedency rule failed.", consumerFlag)
@@ -545,7 +543,7 @@ func CreateDependencyRule(ctx context.Context, consumerServiceid string, consume
 			if ok, _ := containerServiceDependency(providers, oldProviderRule); ok {
 				continue
 			}
-			oldProviderRuleFlag := strings.Join([]string{oldProviderRule.AppId, oldProviderRule.ServiceName, oldProviderRule.Version}, "--")
+			oldProviderRuleFlag := strings.Join([]string{oldProviderRule.AppId, oldProviderRule.ServiceName, oldProviderRule.Version}, "/")
 			util.LOGGER.Infof("old dependency rule %s not exist, delete", oldProviderRuleFlag)
 			proProkey = apt.GenerateProviderDependencyRuleKey(tenant, oldProviderRule)
 			util.LOGGER.Debugf("This proProkey is %s.", proProkey)
@@ -745,9 +743,8 @@ func addDependencyRuleOfProvider(ctx context.Context, consumer *pb.MicroServiceK
 func GetDependencies(ctx context.Context, dependencyKey string, tenant string) ([]*pb.MicroService, error) {
 	util.LOGGER.Errorf(nil, "GetDependencies start.")
 	opt := &registry.PluginOp{
-		Action: registry.GET,
-		Key:    []byte(dependencyKey),
-
+		Action:     registry.GET,
+		Key:        []byte(dependencyKey),
 		WithPrefix: true,
 	}
 	data, err := registry.GetRegisterCenter().Do(ctx, opt)
@@ -768,17 +765,17 @@ func GetDependencies(ctx context.Context, dependencyKey string, tenant string) (
 	microServices := []*pb.MicroService{}
 	for _, kv := range data.Kvs {
 		key = string(kv.Key)
-		util.LOGGER.Errorf(nil, "key is %s", key)
+		util.LOGGER.Debugf("key is %s", key)
 		keySplilt = strings.Split(key, "/")
 		providerId = keySplilt[len(keySplilt)-1]
 
 		provider, err := ms.GetServiceByServiceId(ctx, tenant, providerId)
 		if err != nil {
-			util.LOGGER.Errorf(nil, "Get service failed,%s", err.Error())
+			util.LOGGER.Errorf(nil, "Get service failed, %s", err.Error())
 			return nil, err
 		}
 		if provider == nil {
-			util.LOGGER.Errorf(nil, "Get service is empty,serviceId is %s", providerId)
+			util.LOGGER.Errorf(nil, "Get service is empty, serviceId is %s", providerId)
 			return nil, errors.New("Get service is empty.")
 		}
 		microServices = append(microServices, provider)

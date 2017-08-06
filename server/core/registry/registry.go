@@ -144,7 +144,7 @@ func (op *PluginOp) String() string {
 type PluginResponse struct {
 	Action    ActionType
 	Kvs       []*mvccpb.KeyValue
-	PrevKv    *mvccpb.KeyValue
+	PrevKv    *mvccpb.KeyValue // TODO do not support now
 	Count     int64
 	Revision  int64
 	Succeeded bool

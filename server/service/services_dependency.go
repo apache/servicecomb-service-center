@@ -33,7 +33,7 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 	for _, dependencyInfo := range dependencyInfos {
 		consumerInfo := pb.TransferToMicroServiceKeys([]*pb.DependencyMircroService{dependencyInfo.Consumer}, tenant)[0]
 		providersInfo := pb.TransferToMicroServiceKeys(dependencyInfo.Providers, tenant)
-		consumerFlag := strings.Join([]string{consumerInfo.AppId, consumerInfo.ServiceName, consumerInfo.Version}, "--")
+		consumerFlag := strings.Join([]string{consumerInfo.AppId, consumerInfo.ServiceName, consumerInfo.Version}, "/")
 		rsp := dependency.ParamsChecker(ctx, consumerInfo, providersInfo, tenant)
 		if rsp != nil {
 			util.LOGGER.Errorf(nil, "create dependency faild, conusmer %s: invalid params.%s", consumerFlag, rsp.Response.Message)
@@ -107,7 +107,7 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 func (s *ServiceController) GetProviderDependencies(ctx context.Context, in *pb.GetDependenciesRequest) (*pb.GetProDependenciesResponse, error) {
 	err := apt.Validate(in)
 	if err != nil {
-		util.LOGGER.Errorf(err, "GetProConDependencies failed for validating parameters failed.")
+		util.LOGGER.Errorf(err, "GetProviderDependencies failed for validating parameters failed.")
 		return &pb.GetProDependenciesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
@@ -115,6 +115,8 @@ func (s *ServiceController) GetProviderDependencies(ctx context.Context, in *pb.
 	providerId := in.ServiceId
 	tenant := util.ParseTenantProject(ctx)
 	if !ms.ServiceExist(ctx, tenant, providerId) {
+		util.LOGGER.Errorf(nil, "GetProviderDependencies failed, providerId is %s: service not exist.",
+			providerId)
 		return &pb.GetProDependenciesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "This provider does not exist."),
 		}, nil
@@ -122,11 +124,13 @@ func (s *ServiceController) GetProviderDependencies(ctx context.Context, in *pb.
 	keyProDependency := apt.GenerateProviderDependencyKey(tenant, providerId, "")
 	services, err := dependency.GetDependencies(ctx, keyProDependency, tenant)
 	if err != nil {
+		util.LOGGER.Errorf(err, "GetProviderDependencies failed, providerId is %s.", providerId)
 		return &pb.GetProDependenciesResponse{
 			Response:  pb.CreateResponse(pb.Response_FAIL, err.Error()),
 			Consumers: nil,
 		}, err
 	}
+	util.LOGGER.Infof("GetProviderDependencies successfully, providerId is %s.", providerId)
 	return &pb.GetProDependenciesResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Get all consumers successful."),
 		Consumers: services,
@@ -144,6 +148,8 @@ func (s *ServiceController) GetConsumerDependencies(ctx context.Context, in *pb.
 	consumerId := in.ServiceId
 	tenant := util.ParseTenantProject(ctx)
 	if !ms.ServiceExist(ctx, tenant, consumerId) {
+		util.LOGGER.Errorf(nil, "GetConsumerDependencies failed, consumerId is %s: service not exist.",
+			consumerId)
 		return &pb.GetConDependenciesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "This consumer does not exist."),
 		}, nil
@@ -151,10 +157,12 @@ func (s *ServiceController) GetConsumerDependencies(ctx context.Context, in *pb.
 	keyConDependency := apt.GenerateConsumerDependencyKey(tenant, consumerId, "")
 	services, err := dependency.GetDependencies(ctx, keyConDependency, tenant)
 	if err != nil {
+		util.LOGGER.Errorf(err, "GetConsumerDependencies failed, consumerId is %s.", consumerId)
 		return &pb.GetConDependenciesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, err
 	}
+	util.LOGGER.Infof("GetConsumerDependencies successfully, consumerId is %s.", consumerId)
 	return &pb.GetConDependenciesResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Get all providers successful."),
 		Providers: services,

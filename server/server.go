@@ -61,7 +61,7 @@ func init() {
 }
 
 func Run() {
-	go startStoreDeamon()
+	startStoreDeamon()
 
 	go startNotifyService()
 

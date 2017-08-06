@@ -48,7 +48,7 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 	service := in.Service
 	err := apt.Validate(service)
 
-	serviceFlag := strings.Join([]string{service.AppId, service.ServiceName, service.Version}, "--")
+	serviceFlag := strings.Join([]string{service.AppId, service.ServiceName, service.Version}, "/")
 	if err != nil {
 		util.LOGGER.Errorf(err, "create microservice failed, %s: invalid parameters.operator:%s",
 			serviceFlag, remoteIP)
@@ -237,7 +237,7 @@ func (s *ServiceController) Delete(ctx context.Context, in *pb.DeleteServiceRequ
 		}
 
 		instancesKey := apt.GenerateInstanceKey(tenant, in.ServiceId, "")
-		rsp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+		rsp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
 			Action:     registry.GET,
 			Key:        []byte(instancesKey),
 			WithPrefix: true,
@@ -833,7 +833,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 			}, nil
 		}
 		err := apt.GetMSExistsReqValidator.Validate(in)
-		serviceFlag := strings.Join([]string{in.AppId, in.ServiceName, in.Version}, "--")
+		serviceFlag := strings.Join([]string{in.AppId, in.ServiceName, in.Version}, "/")
 		if err != nil {
 			util.LOGGER.Errorf(err, "microservice exist failed, service %s: invalid params.", serviceFlag)
 			return &pb.GetExistenceResponse{
@@ -974,7 +974,7 @@ func (s *ServiceController) UpdateTag(ctx context.Context, in *pb.UpdateServiceT
 			Response: pb.CreateResponse(pb.Response_FAIL, "request format invalid"),
 		}, nil
 	}
-	tagFlag := strings.Join([]string{in.Key, in.Value}, "--")
+	tagFlag := strings.Join([]string{in.Key, in.Value}, "/")
 	err := apt.Validate(in)
 	if err != nil {
 		util.LOGGER.Errorf(err, "update service tag failed, serviceId %s, tag %s: invalid params.", in.ServiceId, tagFlag)

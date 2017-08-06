@@ -35,7 +35,7 @@ type AsyncTask interface {
 type AsyncTasker interface {
 	AddTask(ctx context.Context, task AsyncTask) error
 	RemoveTask(key string) error
-	LatestHandled(key string) AsyncTask
+	LatestHandled(key string) (AsyncTask, error)
 	Run()
 	Stop()
 }
@@ -43,7 +43,6 @@ type AsyncTasker interface {
 type BaseAsyncTasker struct {
 	queues      map[string]*util.UniQueue
 	latestTasks map[string]AsyncTask
-	firstReadys map[string]chan struct{}
 	removeTasks map[string]struct{}
 	goroutine   *util.GoRoutine
 	queueLock   sync.RWMutex
@@ -61,7 +60,6 @@ func (lat *BaseAsyncTasker) AddTask(ctx context.Context, task AsyncTask) error {
 	}
 	queue, ok := lat.queues[task.Key()]
 	latestTask := lat.latestTasks[task.Key()]
-	firstReady := lat.firstReadys[task.Key()]
 	lat.queueLock.RUnlock()
 	if !ok {
 		lat.queueLock.Lock()
@@ -71,22 +69,24 @@ func (lat *BaseAsyncTasker) AddTask(ctx context.Context, task AsyncTask) error {
 			lat.queues[task.Key()] = queue
 			latestTask = task
 			lat.latestTasks[task.Key()] = latestTask
-			firstReady = make(chan struct{})
-			lat.firstReadys[task.Key()] = firstReady
 		}
 		lat.queueLock.Unlock()
+
+		if !ok {
+			// do immediately at first time
+			return task.Do(ctx)
+		}
 	}
 
 	err := queue.Put(ctx, task)
 	if err != nil {
 		return err
 	}
-	<-firstReady // sync firstly
 	util.LOGGER.Debugf("task done! key is %s", task.Key())
 
-	handled := lat.LatestHandled(task.Key())
-	if handled == nil {
-		return nil
+	handled, err := lat.LatestHandled(task.Key())
+	if err != nil {
+		return err
 	}
 	return handled.Err()
 }
@@ -105,21 +105,20 @@ func (lat *BaseAsyncTasker) RemoveTask(key string) error {
 func (lat *BaseAsyncTasker) removeTask(key string) {
 	lat.queueLock.Lock()
 	delete(lat.queues, key)
-	ready, ok := lat.firstReadys[key]
-	if ok {
-		delete(lat.firstReadys, key)
-		lat.closeCh(ready)
-	}
 	delete(lat.latestTasks, key)
 	delete(lat.removeTasks, key)
 	lat.queueLock.Unlock()
 	util.LOGGER.Debugf("remove task, key is %s", key)
 }
 
-func (lat *BaseAsyncTasker) LatestHandled(key string) AsyncTask {
+func (lat *BaseAsyncTasker) LatestHandled(key string) (AsyncTask, error) {
 	lat.queueLock.RLock()
 	defer lat.queueLock.RUnlock()
-	return lat.latestTasks[key]
+	at, ok := lat.latestTasks[key]
+	if !ok {
+		return nil, errors.New("expired behavior")
+	}
+	return at, nil
 }
 
 func (lat *BaseAsyncTasker) schedule(stopCh <-chan struct{}) {
@@ -221,7 +220,7 @@ func (lat *BaseAsyncTasker) scheduleTask(at AsyncTask) {
 			defer cancel()
 
 			lat.queueLock.RLock()
-			ready, ok := lat.firstReadys[at.Key()]
+			_, ok := lat.latestTasks[at.Key()]
 			if !ok {
 				lat.queueLock.RUnlock()
 				util.LOGGER.Debugf("task is removed, key is %s", at.Key())
@@ -233,7 +232,6 @@ func (lat *BaseAsyncTasker) scheduleTask(at AsyncTask) {
 
 			lat.queueLock.Lock()
 			lat.latestTasks[at.Key()] = at
-			lat.closeCh(ready)
 			lat.queueLock.Unlock()
 		}()
 		select {
@@ -264,10 +262,6 @@ func (lat *BaseAsyncTasker) Stop() {
 	for key, queue := range lat.queues {
 		queue.Close()
 		delete(lat.queues, key)
-
-		c := lat.firstReadys[key]
-		lat.closeCh(c)
-		delete(lat.firstReadys, key)
 		delete(lat.latestTasks, key)
 	}
 	for key := range lat.removeTasks {
@@ -281,7 +275,6 @@ func NewAsyncTasker() AsyncTasker {
 	return &BaseAsyncTasker{
 		latestTasks: make(map[string]AsyncTask),
 		queues:      make(map[string]*util.UniQueue),
-		firstReadys: make(map[string]chan struct{}),
 		removeTasks: make(map[string]struct{}),
 		goroutine:   util.NewGo(make(chan struct{})),
 		isClose:     true,

@@ -35,21 +35,23 @@ const (
 	SERVICE_TAG
 	RULE_INDEX
 	DEPENDENCY
+	ENDPOINTS_INDEX
 	typeEnd
 )
 
 var typeNames = []string{
-	SERVICE:       "SERVICE",
-	INSTANCE:      "INSTANCE",
-	DOMAIN:        "DOMAIN",
-	SCHEMA:        "SCHEMA",
-	RULE:          "RULE",
-	LEASE:         "LEASE",
-	SERVICE_INDEX: "SERVICE_INDEX",
-	SERVICE_ALIAS: "SERVICE_ALIAS",
-	SERVICE_TAG:   "SERVICE_TAG",
-	RULE_INDEX:    "RULE_INDEX",
-	DEPENDENCY:    "DEPENDENCY",
+	SERVICE:         "SERVICE",
+	INSTANCE:        "INSTANCE",
+	DOMAIN:          "DOMAIN",
+	SCHEMA:          "SCHEMA",
+	RULE:            "RULE",
+	LEASE:           "LEASE",
+	SERVICE_INDEX:   "SERVICE_INDEX",
+	SERVICE_ALIAS:   "SERVICE_ALIAS",
+	SERVICE_TAG:     "SERVICE_TAG",
+	RULE_INDEX:      "RULE_INDEX",
+	DEPENDENCY:      "DEPENDENCY",
+	ENDPOINTS_INDEX: "ENDPOINTS_INDEX",
 }
 
 var (
@@ -59,7 +61,6 @@ var (
 
 func init() {
 	store = &KvStore{
-		cachers:     make(map[StoreType]Cacher),
 		indexers:    make(map[StoreType]Indexer),
 		asyncTasker: NewAsyncTasker(),
 	}
@@ -112,7 +113,6 @@ func (st StoreType) String() string {
 }
 
 type KvStore struct {
-	cachers     map[StoreType]Cacher
 	indexers    map[StoreType]Indexer
 	asyncTasker AsyncTasker
 	lock        sync.Mutex
@@ -120,16 +120,17 @@ type KvStore struct {
 }
 
 func (s *KvStore) newStore(t StoreType, prefix string) {
-	c := NewCacher(prefix, func(evt *KvEvent) { s.onEvent(t, evt) })
-	s.cachers[t] = c
-	c.Run()
+	indexer := NewKvCacheIndexer(t, NewCacher(prefix,
+		func(evt *KvEvent) {
+			s.onEvent(t, evt)
+		}))
+	indexer.Run()
 
-	s.indexers[t] = NewKvCacheIndexer(c.Cache())
+	s.indexers[t] = indexer
 }
 
 func (s *KvStore) newNullStore(t StoreType) {
-	s.cachers[t] = NullCacher
-	s.indexers[t] = NewKvCacheIndexer(NullCacher.Cache())
+	s.indexers[t] = NewKvCacheIndexer(t, NullCacher)
 }
 
 func (s *KvStore) onEvent(t StoreType, evt *KvEvent) {
@@ -175,18 +176,16 @@ func (s *KvStore) onLeaseEvent(evt *KvEvent) {
 		return
 	}
 
-	switch evt.Action {
-	case pb.EVT_CREATE:
-	case pb.EVT_DELETE:
-		key := registry.BytesToStringWithNoCopy(evt.KV.Key)
-		leaseID := registry.BytesToStringWithNoCopy(evt.KV.Value)
-		s.removeAsyncTasker(key)
-		util.LOGGER.Debugf("push task to async remove queue successfully, key %s %s [%s] event",
-			key, leaseID, evt.Action)
-	}
+	key := registry.BytesToStringWithNoCopy(evt.KV.Key)
+	leaseID := registry.BytesToStringWithNoCopy(evt.KV.Value)
+
+	s.removeAsyncTaske(key)
+
+	util.LOGGER.Debugf("push task to async remove queue successfully, key %s %s [%s] event",
+		key, leaseID, evt.Action)
 }
 
-func (s *KvStore) removeAsyncTasker(key string) {
+func (s *KvStore) removeAsyncTaske(key string) {
 	s.asyncTasker.RemoveTask(key)
 }
 
@@ -196,8 +195,9 @@ func (s *KvStore) storeDomainData(domain string) {
 	s.newStore(LEASE, apt.GetInstanceLeaseRootKey(domain))
 	s.newStore(SERVICE_INDEX, apt.GetServiceIndexRootKey(domain))
 	s.newStore(SERVICE_ALIAS, apt.GetServiceAliasRootKey(domain))
-	s.newStore(DEPENDENCY, apt.GetServiceDependencyRootKey(domain))
+	s.newStore(ENDPOINTS_INDEX, apt.GetInstancesEndpointsIndexRootKey(domain))
 	// TODO current key design does not support cache store.
+	// s.newStore(DEPENDENCY, apt.GetServiceDependencyRootKey(domain))
 	// s.newStore(SERVICE_TAG, apt.GetServiceTagRootKey(domain))
 	// s.newStore(RULE, apt.GetServiceRuleRootKey(domain))
 	// s.newStore(RULE_INDEX, apt.GetServiceRuleIndexRootKey(domain))
@@ -213,8 +213,8 @@ func (s *KvStore) Stop() {
 	}
 	s.isClose = true
 
-	for _, c := range s.cachers {
-		c.Stop()
+	for _, i := range s.indexers {
+		i.Stop()
 	}
 
 	s.asyncTasker.Stop()
@@ -262,6 +262,10 @@ func (s *KvStore) Dependency() Indexer {
 	return s.indexers[DEPENDENCY]
 }
 
+func (s *KvStore) EndpointsIndex() Indexer {
+	return s.indexers[ENDPOINTS_INDEX]
+}
+
 func (s *KvStore) KeepAlive(ctx context.Context, op *registry.PluginOp) (int64, error) {
 	t := NewLeaseAsyncTask(op)
 	if op.WithNoCache {
@@ -275,7 +279,11 @@ func (s *KvStore) KeepAlive(ctx context.Context, op *registry.PluginOp) (int64, 
 	if err != nil {
 		return 0, err
 	}
-	t = s.asyncTasker.LatestHandled(t.Key()).(*LeaseAsyncTask)
+	itf, err := s.asyncTasker.LatestHandled(t.Key())
+	if err != nil {
+		return 0, err
+	}
+	t = itf.(*LeaseAsyncTask)
 	return t.TTL, t.Err()
 }
 
