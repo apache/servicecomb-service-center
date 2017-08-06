@@ -22,6 +22,7 @@ import (
 	. "github.com/onsi/gomega"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"time"
 )
 
 var instanceId string
@@ -686,6 +687,7 @@ var _ = Describe("InstanceController", func() {
 				})
 				Expect(err).To(BeNil())
 
+				<-time.After(time.Second)
 				UTFunc(pb.Response_SUCCESS)
 
 				_, err = serviceResource.UpdateProperties(getContext(), &pb.UpdateServicePropsRequest{

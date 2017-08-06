@@ -19,6 +19,8 @@ import (
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/onsi/ginkgo/reporters"
 	"testing"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 func init() {

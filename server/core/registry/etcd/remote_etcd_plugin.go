@@ -32,7 +32,7 @@ import (
 const (
 	REGISTRY_PLUGIN_ETCD           = "etcd"
 	CONNECT_MANAGER_SERVER_TIMEOUT = 10
-	DEFAULT_PAGE_COUNT             = 5000 // grpc does not allow to transport a large body in a request.
+	DEFAULT_PAGE_COUNT             = 5000 // grpc does not allow to transport a large body more then 4MB in a request.
 )
 
 var clientTLSConfig *tls.Config

@@ -18,6 +18,7 @@ import (
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"time"
 )
 
 var _ = Describe("GovernServiceController", func() {
@@ -117,6 +118,7 @@ var _ = Describe("GovernServiceController", func() {
 				Expect(err).To(BeNil())
 				Expect(respDelete.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
+				<-time.After(time.Second)
 				respGetServiceDetail, err = governService.GetServiceDetail(getContext(), &pb.GetServiceRequest{
 					ServiceId: serviceId,
 				})
