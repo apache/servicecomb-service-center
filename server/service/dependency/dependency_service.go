@@ -306,8 +306,8 @@ func UpdateAsProviderDependency(ctx context.Context, providerServiseId string, p
 			return err
 		}
 		if len(consumerServiceid) == 0 {
-			util.LOGGER.Errorf(nil, "Get consumer's serviceId is empty.serviceName: %s, appId: %s, version: %s", consumer.ServiceName, consumer.AppId, consumer.Version)
-			return errors.New("Get consumer's serviceId is empty.")
+			util.LOGGER.Errorf(nil, "Get consumer's serviceId is empty. skip serviceName: %s, appId: %s, version: %s", consumer.ServiceName, consumer.AppId, consumer.Version)
+			continue
 		}
 		if _, ok := flag[consumerServiceid]; ok {
 			util.LOGGER.Errorf(nil, "consumerServiceid %s more exists.", consumerServiceid)
@@ -741,7 +741,7 @@ func addDependencyRuleOfProvider(ctx context.Context, consumer *pb.MicroServiceK
 }
 
 func GetDependencies(ctx context.Context, dependencyKey string, tenant string) ([]*pb.MicroService, error) {
-	util.LOGGER.Errorf(nil, "GetDependencies start.")
+	util.LOGGER.Debugf("GetDependencies start.")
 	opt := &registry.PluginOp{
 		Action:     registry.GET,
 		Key:        []byte(dependencyKey),
