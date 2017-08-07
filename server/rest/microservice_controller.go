@@ -39,7 +39,7 @@ func (this *MicroServiceService) URLPatterns() []rest.Route {
 		{rest.HTTP_METHOD_PUT, "/registry/v3/microservices/:serviceId/schemas/:schemaId", this.ModifySchemas},
 		{rest.HTTP_METHOD_DELETE, "/registry/v3/microservices/:serviceId/schemas/:schemaId", this.DeleteSchemas},
 
-		{rest.HTTP_METHOD_PUT, "/registry/v3/dependencies", this.CreateDependenciesForMircServices},
+		{rest.HTTP_METHOD_PUT, "/registry/v3/dependencies", this.CreateDependenciesForMicroServices},
 		{rest.HTTP_METHOD_GET, "/registry/v3/microservices/:consumerId/providers", this.GetConProDependencies},
 		{rest.HTTP_METHOD_GET, "/registry/v3/microservices/:providerId/consumers", this.GetProConDependencies},
 	}
@@ -207,7 +207,7 @@ func (this *MicroServiceService) GetServiceOne(w http.ResponseWriter, r *http.Re
 	WriteJsonObject(http.StatusOK, resp, w)
 }
 
-func (this *MicroServiceService) CreateDependenciesForMircServices(w http.ResponseWriter, r *http.Request) {
+func (this *MicroServiceService) CreateDependenciesForMicroServices(w http.ResponseWriter, r *http.Request) {
 	requestBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		util.LOGGER.Error("body err", err)
@@ -226,14 +226,14 @@ func (this *MicroServiceService) CreateDependenciesForMircServices(w http.Respon
 	//fmt.Println("rsp is ", rsp)
 	//请求错误
 	if err != nil {
-		util.LOGGER.Error("create dependency failed for request invalid.", err)
-		WriteText(http.StatusBadRequest, err.Error(), w)
+		util.LOGGER.Errorf(err, "create dependency failed for service internal reason.")
+		WriteText(http.StatusInternalServerError, err.Error(), w)
 		return
 	}
 	//服务内部错误
 	if rsp.Response.Code == pb.Response_FAIL {
-		util.LOGGER.Errorf(nil, "create dependency failed  for service internal reasion.%s", rsp.Response.Message)
-		WriteText(http.StatusInternalServerError, rsp.Response.Message, w)
+		util.LOGGER.Errorf(nil, "create dependency failed for request invalid. %s", rsp.Response.Message)
+		WriteText(http.StatusBadRequest, rsp.Response.Message, w)
 		return
 	}
 	WriteText(http.StatusOK, "add dependency success.", w)
