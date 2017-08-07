@@ -669,4 +669,158 @@ var _ = Describe("ServiceController", func() {
 			})
 		})
 	})
+
+	Describe("DeleteServices", func() {
+		Context("normal", func() {
+			var serviceId3 string
+			var serviceId4 string
+			var serviceId5 string
+			var serviceId6 string
+			var instanceId6 string
+			// 创建服务4，服务5，服务6，其中服务6创建了实例关系
+			It("批量删除服务，创建依赖的服务4", func() {
+				resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceName: "test-services-03",
+						Alias:       "ts_03",
+						AppId:       "default_03",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Schemas: []string{
+							"xxxxxxxxxx",
+						},
+						Status: "UP",
+					},
+				})
+				Expect(err).To(BeNil())
+				serviceId3 = resp.ServiceId
+				fmt.Println("UT=========ServiceId" + serviceId3)
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			})
+
+			It("批量删除服务，创建依赖的服务4", func() {
+				resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceName: "test-services-04",
+						Alias:       "ts_04",
+						AppId:       "default_04",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Schemas: []string{
+							"xxxxxxxxxx",
+						},
+						Status: "UP",
+					},
+				})
+				Expect(err).To(BeNil())
+				serviceId4 = resp.ServiceId
+				fmt.Println("UT=========ServiceId" + serviceId4)
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			})
+			It("批量删除服务，创建依赖的服务5", func() {
+				resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceName: "test-services-05",
+						Alias:       "ts_05",
+						AppId:       "default_05",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Schemas: []string{
+							"xxxxxxxx11",
+						},
+						Status: "UP",
+					},
+				})
+				Expect(err).To(BeNil())
+				serviceId5 = resp.ServiceId
+				fmt.Println("UT=========ServiceId5 " + serviceId5)
+				fmt.Printf("TEST CREATE service %d", resp.GetResponse().Code)
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			})
+			It("批量删除服务，创建依赖的服务6", func() {
+				resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceName: "test-services-06",
+						Alias:       "ts_06",
+						AppId:       "default_06",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Schemas: []string{
+							"xxxxxxxxxxxxx",
+						},
+						Status: "UP",
+					},
+				})
+				Expect(err).To(BeNil())
+				serviceId6 = resp.ServiceId
+				fmt.Println("UT=========ServiceId" + serviceId6)
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			})
+
+			It("批量删除服务，创建依赖的服务6", func() {
+				respReg, err := insResource.Register(getContext(), &pb.RegisterInstanceRequest{
+					Instance: &pb.MicroServiceInstance{
+						ServiceId: serviceId6,
+						Endpoints: []string{
+							"rest:127.0.0.1:8081",
+						},
+						HostName: "UT-HOST",
+						Status:   pb.MSI_UP,
+						Stage:    "prod",
+					},
+				})
+				instanceId6  = respReg.InstanceId
+				Expect(err).To(BeNil())
+				fmt.Println("UT============" + respReg.GetResponse().Message)
+				Expect(respReg.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			})
+
+			It("批量删除服务3和服务4", func() {
+				resp, err := serviceResource.DeleteServices(getContext(), &pb.DelServicesRequest{
+					ServiceIds: []string{serviceId3,serviceId4},
+					Force: false ,
+					},
+				)
+				Expect(err).To(BeNil())
+				fmt.Println("UT============" + resp.GetResponse().Message)
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			})
+
+			It("批量删除服务5和服务6", func() {
+				resp, err := serviceResource.DeleteServices(getContext(), &pb.DelServicesRequest{
+					ServiceIds: []string{serviceId5,serviceId6},
+					Force: false ,
+				},
+				)
+				Expect(err).To(BeNil())
+				//期待结果失败
+				fmt.Println("UT============" + resp.GetResponse().Message)
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+			})
+
+			It("删除服务6的实例，删除服务5和服务6", func() {
+
+				respReg, err := insResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
+						ServiceId: serviceId6,
+					        InstanceId:instanceId6,
+				})
+
+				Expect(err).To(BeNil())
+				Expect(respReg.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+				resp, err := serviceResource.DeleteServices(getContext(), &pb.DelServicesRequest{
+					ServiceIds: []string{serviceId6},
+					Force: false ,
+				},
+				)
+				Expect(err).To(BeNil())
+				//期待结果失败
+				fmt.Println("UT============" + resp.GetResponse().Message)
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			})
+
+
+
+		})
+	})
 })
