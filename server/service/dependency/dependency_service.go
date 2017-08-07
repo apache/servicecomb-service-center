@@ -158,11 +158,13 @@ func UpdateAsConsumerDependency(ctx context.Context, consumerId string, provider
 				ServiceName: provider.ServiceName,
 			})
 			if err != nil {
-				util.LOGGER.Errorf(nil, "Get providerIds failed.")
+				util.LOGGER.Errorf(err, "Get providerIds failed, service: %s/%s/%s",
+					provider.AppId, provider.ServiceName, provider.Version)
 				return err
 			}
 			if len(serviceIds) == 0 {
-				util.LOGGER.Errorf(nil, "Get providerIds is empty.")
+				util.LOGGER.Errorf(nil, "Get providerIds failed, service: %s/%s/%s does not exist",
+					provider.AppId, provider.ServiceName, provider.Version)
 				continue
 			}
 			for _, serviceId := range serviceIds {
