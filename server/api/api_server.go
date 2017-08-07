@@ -14,7 +14,6 @@
 package api
 
 import (
-	"errors"
 	"fmt"
 	"github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/server/core/mux"
@@ -42,7 +41,7 @@ type APIServerConfig struct {
 }
 
 type APIServer struct {
-	Config *APIServerConfig
+	Config APIServerConfig
 
 	grpcSvr *grpc.Server
 	isClose bool
@@ -123,18 +122,13 @@ func (s *APIServer) startRESTfulServer() {
 	}()
 }
 
-func (s *APIServer) registerAPIServer() {
+func (s *APIServer) registerServiceCenter() error {
 	err := s.registryService()
 	if err != nil {
-		s.err <- err
-		return
+		return err
 	}
 	// 实例信息
-	err = s.registryInstance()
-	if err != nil {
-		util.LOGGER.Error(fmt.Sprintf("error register sc instance %s", err), err)
-		s.err <- err
-	}
+	return s.registryInstance()
 }
 
 func (s *APIServer) registryService() error {
@@ -155,9 +149,9 @@ func (s *APIServer) registryService() error {
 	if respE.Response.Code == pb.Response_SUCCESS {
 		util.LOGGER.Warnf(nil, "service center service already registered, service id %s", respE.ServiceId)
 		respG, err := rs.ServiceAPI.GetOne(ctx, core.GetServiceRequest(respE.ServiceId))
-		if err != nil {
-			util.LOGGER.Error("query service center service info failed", err)
-			return err
+		if respE.Response.Code != pb.Response_SUCCESS {
+			return fmt.Errorf("query service center service info failed, service id %s(%s)",
+				respE.ServiceId, err)
 		}
 		core.Service = respG.Service
 		return nil
@@ -168,6 +162,7 @@ func (s *APIServer) registryService() error {
 		return err
 	}
 	core.Service.ServiceId = respS.ServiceId
+	util.LOGGER.Infof("register service center service successfully, service id %s", respE.ServiceId)
 	return nil
 }
 
@@ -191,6 +186,8 @@ func (s *APIServer) registryInstance() error {
 		return err
 	}
 	core.Instance.InstanceId = respI.InstanceId
+	util.LOGGER.Infof("register service center instance successfully, instance %s/%s, endpoints %s",
+		core.Service.ServiceId, respI.InstanceId, endpoints)
 	return nil
 }
 
@@ -205,6 +202,8 @@ func (s *APIServer) unregisterInstance() error {
 		util.LOGGER.Error(err.Error(), nil)
 		return err
 	}
+	util.LOGGER.Warnf(nil, "unregister service center instance successfully, %s/%s",
+		core.Service.ServiceId, core.Instance.InstanceId)
 	return nil
 }
 
@@ -214,23 +213,20 @@ func (s *APIServer) doAPIServerHeartBeat() {
 	}
 	ctx := core.AddDefaultContextValue(context.TODO())
 	respI, err := rs.InstanceAPI.Heartbeat(ctx, core.HeartbeatRequest())
-	if respI.GetResponse().Code != pb.Response_SUCCESS && err == nil {
-		util.LOGGER.Errorf(err, "update service center %s instance %s heartbeat failed",
+	if respI.GetResponse().Code == pb.Response_SUCCESS {
+		util.LOGGER.Debugf("update service center %s heartbeat %s successfully",
 			core.Instance.ServiceId, core.Instance.InstanceId)
-
-		//服务不存在，创建服务
-		err := s.registryService()
-		if err != nil {
-			util.LOGGER.Errorf(err, "Service %s/%s/%s does not exist, and retry to create it failed.",
-				core.REGISTRY_APP_ID, core.REGISTRY_SERVICE_NAME, core.REGISTRY_VERSION)
-			return
-		}
-		// 重新注册实例信息
-		s.registryInstance()
 		return
 	}
-	util.LOGGER.Debugf("update service center %s heartbeat %s successfully",
+	util.LOGGER.Errorf(err, "update service center %s instance %s heartbeat failed",
 		core.Instance.ServiceId, core.Instance.InstanceId)
+
+	//服务不存在，创建服务
+	err = s.registerServiceCenter()
+	if err != nil {
+		util.LOGGER.Errorf(err, "Service %s/%s/%s does not exist, and retry to register it failed.",
+			core.REGISTRY_APP_ID, core.REGISTRY_SERVICE_NAME, core.REGISTRY_VERSION)
+	}
 }
 
 func (s *APIServer) startHeartBeatService() {
@@ -247,28 +243,27 @@ func (s *APIServer) startHeartBeatService() {
 }
 
 // 需保证ETCD启动成功后才执行该方法
-func (s *APIServer) StartAPIServer() {
+func (s *APIServer) Start() {
+	if !s.isClose {
+		return
+	}
 	s.isClose = false
-	s.err = make(chan error, 1)
-	go func() {
-		if s.Config == nil {
-			s.err <- errors.New("do not find any config for APIServer")
-			return
-		}
-		// 自注册
-		s.registerAPIServer()
+	// 自注册
+	err := s.registerServiceCenter()
+	if err != nil {
+		s.err <- err
+	}
 
-		s.startRESTfulServer()
+	s.startRESTfulServer()
 
-		s.startGrpcServer()
-		// 心跳
-		s.startHeartBeatService()
+	s.startGrpcServer()
+	// 心跳
+	s.startHeartBeatService()
 
-		util.LOGGER.Info("api server is ready")
-	}()
+	util.LOGGER.Info("api server is ready")
 }
 
-func (s *APIServer) Close() {
+func (s *APIServer) Stop() {
 	if s.isClose {
 		return
 	}
@@ -286,4 +281,17 @@ func (s *APIServer) Close() {
 	close(s.err)
 
 	util.LOGGER.Info("api server stopped.")
+}
+
+var apiServer *APIServer
+
+func init() {
+	apiServer = &APIServer{
+		isClose: true,
+		err:     make(chan error, 1),
+	}
+}
+
+func GetAPIServer() *APIServer {
+	return apiServer
 }

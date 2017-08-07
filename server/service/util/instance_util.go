@@ -1,3 +1,16 @@
+//Copyright 2017 Huawei Technologies Co., Ltd
+//
+//Licensed under the Apache License, Version 2.0 (the "License");
+//you may not use this file except in compliance with the License.
+//You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+//Unless required by applicable law or agreed to in writing, software
+//distributed under the License is distributed on an "AS IS" BASIS,
+//WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//See the License for the specific language governing permissions and
+//limitations under the License.
 package util
 
 import (
@@ -5,6 +18,7 @@ import (
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/server/core/registry/store"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
 	"strconv"
@@ -12,7 +26,7 @@ import (
 )
 
 func GetLeaseId(ctx context.Context, tenant string, serviceId string, instanceId string) (int64, error) {
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+	resp, err := store.Store().Lease().Search(ctx, &registry.PluginOp{
 		Action: registry.GET,
 		Key:    []byte(apt.GenerateInstanceLeaseKey(tenant, serviceId, instanceId)),
 	})
@@ -28,7 +42,7 @@ func GetLeaseId(ctx context.Context, tenant string, serviceId string, instanceId
 
 func GetInstance(ctx context.Context, tenant string, serviceId string, instanceId string) (*pb.MicroServiceInstance, error) {
 	key := apt.GenerateInstanceKey(tenant, serviceId, instanceId)
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+	resp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
 		Action: registry.GET,
 		Key:    []byte(key),
 	})
@@ -48,7 +62,7 @@ func GetInstance(ctx context.Context, tenant string, serviceId string, instanceI
 }
 
 func InstanceExist(ctx context.Context, tenant string, serviceId string, instanceId string) (bool, error) {
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+	resp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
 		Action:    registry.GET,
 		Key:       []byte(apt.GenerateInstanceKey(tenant, serviceId, instanceId)),
 		CountOnly: true,
@@ -63,9 +77,9 @@ func InstanceExist(ctx context.Context, tenant string, serviceId string, instanc
 }
 
 func CheckEndPoints(ctx context.Context, in *pb.RegisterInstanceRequest) (string, error) {
-	tenant := util.ParaseTenantProject(ctx)
+	tenant := util.ParseTenantProject(ctx)
 	allInstancesKey := apt.GenerateInstanceKey(tenant, in.Instance.ServiceId, "")
-	rsp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+	rsp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
 		Key:        []byte(allInstancesKey),
 		WithPrefix: true,
@@ -120,4 +134,29 @@ func isContain(endpoints []string, endpoint string) bool {
 		}
 	}
 	return false
+}
+
+func DeleteServiceAllInstances(ctx context.Context, in *pb.DeleteServiceRequest) error {
+	tenant := util.ParseTenantProject(ctx)
+
+	instanceLeaseKey := apt.GenerateInstanceLeaseKey(tenant, in.ServiceId, "")
+	resp, err := store.Store().Lease().Search(ctx, &registry.PluginOp{
+		Action:      registry.GET,
+		Key:         []byte(instanceLeaseKey),
+		WithPrefix:  true,
+		WithNoCache: true,
+	})
+	if err != nil {
+		util.LOGGER.Errorf(err, "delete service all instance failed: get instance lease failed.")
+		return err
+	}
+	if resp.Count <= 0 {
+		util.LOGGER.Warnf(nil, "No instances to revoke.")
+		return nil
+	}
+	for _, v := range resp.Kvs {
+		leaseID, _ := strconv.ParseInt(string(v.Value), 10, 64)
+		registry.GetRegisterCenter().LeaseRevoke(ctx, leaseID)
+	}
+	return nil
 }

@@ -33,3 +33,7 @@ func GetInstanceId() string {
 	f := findUuidFunc("GetInstanceId")
 	return f()
 }
+
+func GenerateUuid() string {
+	return buildinUnidFunc()
+}

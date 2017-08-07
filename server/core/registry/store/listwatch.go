@@ -11,12 +11,13 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package registry
+package store
 
 import (
-	"context"
 	"fmt"
 	"github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/ServiceComb/service-center/server/core/registry"
+	"golang.org/x/net/context"
 	"sync"
 	"time"
 )
@@ -37,6 +38,7 @@ type Watcher interface {
 
 type ListOptions struct {
 	Timeout time.Duration
+	Context context.Context
 }
 
 type ListWatcher interface {
@@ -46,7 +48,7 @@ type ListWatcher interface {
 }
 
 type KvListWatcher struct {
-	Client Registry
+	Client registry.Registry
 	Key    string
 
 	rev int64
@@ -57,8 +59,8 @@ func (lw *KvListWatcher) Revision() int64 {
 }
 
 func (lw *KvListWatcher) List(op *ListOptions) ([]interface{}, error) {
-	otCtx, _ := context.WithTimeout(context.Background(), op.Timeout)
-	resp, err := lw.Client.Do(otCtx, WithWatchPrefix(lw.Key))
+	otCtx, _ := context.WithTimeout(op.Context, op.Timeout)
+	resp, err := lw.Client.Do(otCtx, registry.WithWatchPrefix(lw.Key))
 	if err != nil {
 		return nil, err
 	}
@@ -82,9 +84,9 @@ func (lw *KvListWatcher) upgradeRevision(rev int64) {
 }
 
 func (lw *KvListWatcher) doWatch(ctx context.Context, f func(evt *Event)) error {
-	ops := WithWatchPrefix(lw.Key)
+	ops := registry.WithWatchPrefix(lw.Key)
 	ops.WithRev = lw.Revision() + 1
-	err := lw.Client.Watch(ctx, ops, func(message string, evt *PluginResponse) error {
+	err := lw.Client.Watch(ctx, ops, func(message string, evt *registry.PluginResponse) error {
 		if lw.Revision() < evt.Revision {
 			lw.upgradeRevision(evt.Revision)
 		}
@@ -96,11 +98,11 @@ func (lw *KvListWatcher) doWatch(ctx context.Context, f func(evt *Event)) error 
 		}
 		if evt != nil && len(evt.Kvs) > 0 {
 			switch {
-			case evt.Action == PUT && evt.Kvs[0].Version == 1:
+			case evt.Action == registry.PUT && evt.Kvs[0].Version == 1:
 				sendEvt.Type, sendEvt.Object = proto.EVT_CREATE, evt.Kvs[0]
-			case evt.Action == PUT:
+			case evt.Action == registry.PUT:
 				sendEvt.Type, sendEvt.Object = proto.EVT_UPDATE, evt.Kvs[0]
-			case evt.Action == DELETE:
+			case evt.Action == registry.DELETE:
 				kv := evt.PrevKv
 				if kv == nil {
 					// TODO 内嵌无法获取
@@ -113,6 +115,7 @@ func (lw *KvListWatcher) doWatch(ctx context.Context, f func(evt *Event)) error 
 		return nil
 	})
 	if err != nil { // compact可能会导致watch失败
+		lw.upgradeRevision(0)
 		f(errEvent(lw.Key, err))
 	}
 	return err
@@ -133,7 +136,7 @@ func (w *KvWatcher) EventBus() <-chan *Event {
 
 func (w *KvWatcher) process() {
 	stopCh := make(chan struct{})
-	ctx, cancel := context.WithTimeout(context.Background(), w.ListOps.Timeout)
+	ctx, cancel := context.WithTimeout(w.ListOps.Context, w.ListOps.Timeout)
 	go func() {
 		defer close(stopCh)
 		w.lw.doWatch(ctx, w.sendEvent)

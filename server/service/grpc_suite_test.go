@@ -14,7 +14,6 @@
 package service_test
 
 import (
-	"context"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	_ "github.com/ServiceComb/service-center/server/core/registry"
 	_ "github.com/ServiceComb/service-center/server/core/registry/etcd"
@@ -23,6 +22,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
+	"golang.org/x/net/context"
 	"testing"
 )
 
@@ -43,7 +43,7 @@ var governService pb.GovernServiceCtrlServerEx
 
 var _ = BeforeSuite(func() {
 	//init plugin
-	serviceResource, insResource, governService = service.AssembleResources(nil)
+	serviceResource, insResource, governService = service.AssembleResources()
 
 })
 

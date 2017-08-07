@@ -15,11 +15,12 @@ package notification
 
 import "errors"
 
-type Worker interface {
+type Subscriber interface {
 	Err() error
 	SetError(err error)
 	Id() string
 	Subject() string
+	Type() NotifyType
 	Service() *NotifyService
 	SetService(*NotifyService)
 	OnAccept()
@@ -28,69 +29,74 @@ type Worker interface {
 }
 
 type NotifyJob interface {
-	Id() string
+	SubscriberId() string
 	Subject() string
+	Type() NotifyType
 }
 
-type BaseWorker struct {
+type BaseSubscriber struct {
 	id      string
 	subject string
+	nType   NotifyType
 	service *NotifyService
 	err     error
 }
 
-func (s *BaseWorker) Err() error {
+func (s *BaseSubscriber) Err() error {
 	return s.err
 }
 
-func (s *BaseWorker) SetError(err error) {
+func (s *BaseSubscriber) SetError(err error) {
 	s.err = err
 	// 触发清理job
-	s.Service().AddJob(&NotifyServiceHealthCheckJob{
-		BaseNotifyJob: BaseNotifyJob{
-			id:      NOTIFY_SERVER_CHECKER_NAME,
-			subject: NOTIFY_SERVER_CHECK_SUBJECT,
-		},
-		ErrorWorker: s,
-	})
+	s.Service().AddJob(NewNotifyServiceHealthCheckJob(s))
 }
 
-func (s *BaseWorker) Id() string {
+func (s *BaseSubscriber) Id() string {
 	return s.id
 }
 
-func (s *BaseWorker) Subject() string {
+func (s *BaseSubscriber) Subject() string {
 	return s.subject
 }
 
-func (s *BaseWorker) Service() *NotifyService {
+func (s *BaseSubscriber) Type() NotifyType {
+	return s.nType
+}
+
+func (s *BaseSubscriber) Service() *NotifyService {
 	return s.service
 }
 
-func (s *BaseWorker) SetService(svc *NotifyService) {
+func (s *BaseSubscriber) SetService(svc *NotifyService) {
 	s.service = svc
 }
 
-func (s *BaseWorker) OnAccept() {
+func (s *BaseSubscriber) OnAccept() {
 }
 
-func (s *BaseWorker) OnMessage(job NotifyJob) {
+func (s *BaseSubscriber) OnMessage(job NotifyJob) {
 	s.SetError(errors.New("do not call base notifier OnMessage method"))
 }
 
-func (s *BaseWorker) Close() {
+func (s *BaseSubscriber) Close() {
 
 }
 
 type BaseNotifyJob struct {
-	id      string
-	subject string
+	subscriberId string
+	subject      string
+	nType        NotifyType
 }
 
-func (s *BaseNotifyJob) Id() string {
-	return s.id
+func (s *BaseNotifyJob) SubscriberId() string {
+	return s.subscriberId
 }
 
 func (s *BaseNotifyJob) Subject() string {
 	return s.subject
+}
+
+func (s *BaseNotifyJob) Type() NotifyType {
+	return s.nType
 }

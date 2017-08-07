@@ -186,7 +186,7 @@ func Validate(v interface{}) error {
 		return TagReqValidator.Validate(v)
 	case *pb.GetSchemaRequest, *pb.ModifySchemaRequest, *pb.DeleteSchemaRequest:
 		return GetSchemaReqValidator.Validate(v)
-	case *pb.MircroServiceDependency:
+	case *pb.MicroServiceDependency:
 		return DependencyMSValidator.Validate(v)
 	case *pb.FindInstancesRequest:
 		return FindInstanceReqValidator.Validate(v)

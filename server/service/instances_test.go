@@ -652,7 +652,7 @@ var _ = Describe("InstanceController", func() {
 
 				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
-						ServiceName: "service_name_app_provider",
+						ServiceName: "service_name_app_provider_fail",
 						AppId:       "service_group_app_provider",
 						Version:     "1.0.0",
 						Level:       "FRONT",
@@ -663,9 +663,27 @@ var _ = Describe("InstanceController", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				providerId := resp.ServiceId
+				providerFailId := resp.ServiceId
 
-				UTFunc := func(code pb.Response_Code) {
+				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceName: "service_name_app_provider_ok",
+						AppId:       "service_group_app_provider",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Schemas: []string{
+							"xxxxxxxx",
+						},
+						Status: "UP",
+						Properties: map[string]string {
+							pb.PROP_ALLOW_CROSS_APP: "true",
+						},
+					},
+				})
+				Expect(err).To(BeNil())
+				providerOkId := resp.ServiceId
+
+				UTFunc := func(providerId string, code pb.Response_Code) {
 					respFind, err := insResource.GetInstances(getContext(), &pb.GetInstancesRequest{
 						ConsumerServiceId: consumerId,
 						ProviderServiceId: providerId,
@@ -676,27 +694,9 @@ var _ = Describe("InstanceController", func() {
 					Expect(respFind.GetResponse().Code).To(Equal(code))
 				}
 
-				UTFunc(pb.Response_FAIL)
+				UTFunc(providerFailId, pb.Response_FAIL)
 
-				_, err = serviceResource.UpdateProperties(getContext(), &pb.UpdateServicePropsRequest{
-					ServiceId: providerId,
-					Properties: map[string]string{
-						pb.PROP_ALLOW_CROSS_APP: "true",
-					},
-				})
-				Expect(err).To(BeNil())
-
-				UTFunc(pb.Response_SUCCESS)
-
-				_, err = serviceResource.UpdateProperties(getContext(), &pb.UpdateServicePropsRequest{
-					ServiceId: providerId,
-					Properties: map[string]string{
-						"test": "true",
-					},
-				})
-				Expect(err).To(BeNil())
-
-				UTFunc(pb.Response_FAIL)
+				UTFunc(providerOkId, pb.Response_SUCCESS)
 			})
 
 			It("实例心跳", func() {
@@ -816,15 +816,15 @@ var _ = Describe("InstanceController", func() {
 				fmt.Println("UT============" + resp.GetResponse().Message)
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
 
-				fmt.Println("UT===========查找实例，含有不存在的tag")
-				respAddTag, err := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
+				fmt.Println("UT===========查找实例，含有存在的tag")
+				respAddTags, err := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
 					ServiceId: consumerId,
 					Tags: map[string]string{
 						"test": "test",
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddTag.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
 				resp, err = insResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
 					ConsumerServiceId:  consumerId,

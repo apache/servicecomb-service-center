@@ -26,7 +26,7 @@ type WatchJob struct {
 }
 
 type ListWatcher struct {
-	BaseWorker
+	BaseSubscriber
 	Job          chan NotifyJob
 	ListRevision int64
 	ListFunc     func() (results []*pb.WatchInstanceResponse, rev int64)
@@ -39,7 +39,7 @@ func (w *ListWatcher) OnAccept() {
 		return
 	}
 
-	util.LOGGER.Debugf("accepted by notify service, current revsion is %v", w.ListRevision)
+	util.LOGGER.Debugf("accepted by notify service, current revision is %v", w.ListRevision)
 	go w.listAndPublishJobs()
 }
 
@@ -51,7 +51,7 @@ func (w *ListWatcher) listAndPublishJobs() {
 	results, rev := w.ListFunc()
 	w.ListRevision = rev
 	for _, response := range results {
-		w.sendMessage(NewWatchJob(w.Id(), w.Subject(), w.ListRevision, response))
+		w.sendMessage(NewWatchJob(w.Type(), w.Id(), w.Subject(), w.ListRevision, response))
 	}
 }
 
@@ -69,14 +69,15 @@ func (w *ListWatcher) OnMessage(job NotifyJob) {
 	}
 
 	if job.(*WatchJob).Revision <= w.ListRevision {
-		util.LOGGER.Warnf(nil, "unexpected notify job is coming in, job is %v", job)
+		util.LOGGER.Warnf(nil, "unexpected notify job is coming in, job is %v, current revision is %v",
+			job, w.ListRevision)
 		return
 	}
 	w.sendMessage(job)
 }
 
 func (w *ListWatcher) sendMessage(job NotifyJob) {
-	util.LOGGER.Debugf("start notify watcher, job is %v", job)
+	util.LOGGER.Debugf("start notify watcher, job is %v, current revision is %v", job)
 	w.Job <- job
 }
 
@@ -84,27 +85,29 @@ func (w *ListWatcher) Close() {
 	close(w.Job)
 }
 
-func NewWatchJob(id, subject string, rev int64, response *pb.WatchInstanceResponse) *WatchJob {
+func NewWatchJob(nType NotifyType, subscriberId, subject string, rev int64, response *pb.WatchInstanceResponse) *WatchJob {
 	return &WatchJob{
 		BaseNotifyJob: BaseNotifyJob{
-			id:      id,
-			subject: subject,
+			subscriberId: subscriberId,
+			subject:      subject,
+			nType:        nType,
 		},
 		Revision: rev,
 		Response: response,
 	}
 }
 
-func NewServiceWatcher(id string, subject string) *ListWatcher {
-	return NewServiceListWatcher(id, subject, nil)
+func NewWatcher(nType NotifyType, id string, subject string) *ListWatcher {
+	return NewListWatcher(nType, id, subject, nil)
 }
 
-func NewServiceListWatcher(id string, subject string,
+func NewListWatcher(nType NotifyType, id string, subject string,
 	listFunc func() (results []*pb.WatchInstanceResponse, rev int64)) *ListWatcher {
 	watcher := &ListWatcher{
-		BaseWorker: BaseWorker{
+		BaseSubscriber: BaseSubscriber{
 			id:      id,
 			subject: subject,
+			nType:   nType,
 		},
 		Job:      make(chan NotifyJob, DEFAULT_MAX_QUEUE),
 		ListFunc: listFunc,

@@ -15,29 +15,46 @@ package notification
 
 import "github.com/ServiceComb/service-center/util"
 
+const (
+	NOTIFY_SERVER_CHECKER_NAME  = "__HealthChecker__"
+	NOTIFY_SERVER_CHECK_SUBJECT = "__NotifyServerHealthCheck__"
+)
+
 //Notifier 健康检查
 type NotifyServiceHealthChecker struct {
-	BaseWorker
+	BaseSubscriber
 }
 
 type NotifyServiceHealthCheckJob struct {
 	BaseNotifyJob
-	ErrorWorker Worker
+	ErrorSubscriber Subscriber
 }
 
 func (s *NotifyServiceHealthChecker) OnMessage(job NotifyJob) {
 	j := job.(*NotifyServiceHealthCheckJob)
-	err := j.ErrorWorker.Err()
-	util.LOGGER.Warnf(err, "notify server remove watcher %s %s, %s",
-		j.ErrorWorker.Subject(), j.ErrorWorker.Id(), err.Error())
-	s.Service().RemoveNotifier(j.ErrorWorker)
+	err := j.ErrorSubscriber.Err()
+	util.LOGGER.Warnf(err, "notify server remove watcher %s %s",
+		j.ErrorSubscriber.Subject(), j.ErrorSubscriber.Id())
+	s.Service().RemoveSubscriber(j.ErrorSubscriber)
 }
 
 func NewNotifyServiceHealthChecker() *NotifyServiceHealthChecker {
 	return &NotifyServiceHealthChecker{
-		BaseWorker: BaseWorker{
+		BaseSubscriber: BaseSubscriber{
 			id:      NOTIFY_SERVER_CHECKER_NAME,
 			subject: NOTIFY_SERVER_CHECK_SUBJECT,
+			nType:   NOTIFTY,
 		},
+	}
+}
+
+func NewNotifyServiceHealthCheckJob(s Subscriber) *NotifyServiceHealthCheckJob {
+	return &NotifyServiceHealthCheckJob{
+		BaseNotifyJob: BaseNotifyJob{
+			subscriberId: NOTIFY_SERVER_CHECKER_NAME,
+			subject:      NOTIFY_SERVER_CHECK_SUBJECT,
+			nType:        NOTIFTY,
+		},
+		ErrorSubscriber: s,
 	}
 }

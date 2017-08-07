@@ -134,7 +134,7 @@ func (m *Locker) Lock() error {
 		}
 		success, err := registry.GetRegisterCenter().PutNoOverride(m.builder.ctx, ops)
 		if err == nil && success {
-			util.LOGGER.Warnf(nil, "Create Lock OK, key=%s, id=%s", m.builder.key, m.id)
+			util.LOGGER.Infof("Create Lock OK, key=%s, id=%s", m.builder.key, m.id)
 			return nil
 		}
 		util.LOGGER.Warnf(err, "Key %s is locked, waiting for other node releases it, id=%s", m.builder.key, m.id)
@@ -185,7 +185,7 @@ func (m *Locker) Unlock() (err error) {
 			if !IsDebug {
 				m.builder.mutex.Unlock()
 			}
-			util.LOGGER.Warnf(nil, "Delete lock OK, key=%s, id=%s", m.builder.key, m.id)
+			util.LOGGER.Infof("Delete lock OK, key=%s, id=%s", m.builder.key, m.id)
 			return nil
 		}
 		util.LOGGER.Errorf(err, "Delete lock falied, key=%s, id=%s", m.builder.key, m.id)

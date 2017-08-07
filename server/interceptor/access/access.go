@@ -11,20 +11,30 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package maxbody
+package access
 
 import (
-	"github.com/astaxie/beego"
+	"fmt"
+	. "github.com/ServiceComb/service-center/server/core"
+	"github.com/ServiceComb/service-center/server/helper"
+	"github.com/ServiceComb/service-center/util/url"
 	"net/http"
 )
 
-var maxBytes int64
-
-func init() {
-	maxBytes = beego.AppConfig.DefaultInt64("max_body_bytes", 2097152)
+func addCommonResponseHeaders(w http.ResponseWriter) {
+	w.Header().Add("server", REGISTRY_SERVICE_NAME+"/"+REGISTRY_VERSION)
 }
 
 func Intercept(w http.ResponseWriter, r *http.Request) error {
-	r.Body = http.MaxBytesReader(w, r.Body, maxBytes)
+	helper.InitContext(r)
+
+	addCommonResponseHeaders(w)
+
+	if !urlvalidator.IsRequestURI(r.RequestURI) {
+		err := fmt.Errorf("Invalid Request URI %s", r.RequestURI)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return err
+	}
 	return nil
 }

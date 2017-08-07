@@ -11,27 +11,25 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package unlimit
+package util
 
 import (
-	"github.com/ServiceComb/service-center/server/infra/quota"
+	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/server/core/registry/store"
 	"golang.org/x/net/context"
 )
 
-type Unlimit struct {
-}
-
-func New() quota.QuotaManager {
-	return &Unlimit{}
-}
-func init() {
-	quota.QuotaPlugins["unlimit"] = New
-}
-
-func (q *Unlimit) Apply4Quotas(ctx context.Context, quotaType int, quotaSize int16) (bool, error) {
-	return true, nil
-}
-
-func (q *Unlimit) ReportCurrentQuotasUsage(ctx context.Context, quotaType int, usedQuotaSize int16) bool {
-	return false
+func CheckSchemaInfoExist(ctx context.Context, key string) (error, bool) {
+	resp, errDo := store.Store().Schema().Search(ctx, &registry.PluginOp{
+		Action:    registry.GET,
+		Key:       []byte(key),
+		CountOnly: true,
+	})
+	if errDo != nil {
+		return errDo, false
+	}
+	if resp.Count == 0 {
+		return nil, false
+	}
+	return nil, true
 }

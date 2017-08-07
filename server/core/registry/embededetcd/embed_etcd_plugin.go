@@ -14,7 +14,6 @@
 package embededetcd
 
 import (
-	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -27,6 +26,7 @@ import (
 	"github.com/coreos/etcd/etcdserver/etcdserverpb"
 	"github.com/coreos/etcd/lease"
 	"github.com/coreos/etcd/mvcc/mvccpb"
+	"golang.org/x/net/context"
 	"net/url"
 	"strings"
 	"time"
@@ -38,7 +38,7 @@ const START_MANAGER_SERVER_TIMEOUT = 60
 const REGISTRY_PLUGIN_EMBEDED_ETCD = "embeded_etcd"
 
 func init() {
-	util.LOGGER.Warnf(nil, "embed etcd plugin init.")
+	util.LOGGER.Infof("embed etcd plugin init.")
 	registry.RegistryPlugins[REGISTRY_PLUGIN_EMBEDED_ETCD] = getEmbedInstance
 }
 
@@ -60,12 +60,16 @@ func (s *EtcdEmbed) Close() {
 	if s.Server != nil {
 		s.Server.Close()
 	}
+	util.LOGGER.Debugf("embedded etcd client stopped.")
 }
 
 func (s *EtcdEmbed) toGetRequest(op *registry.PluginOp) *etcdserverpb.RangeRequest {
 	endBytes := op.EndKey
 	if op.WithPrefix {
-		endBytes = append(op.Key, 127)
+		l := len(op.Key)
+		endBytes = make([]byte, l)
+		copy(endBytes, op.Key)
+		endBytes[l-1] = endBytes[l-1] + 1
 	}
 	order := etcdserverpb.RangeRequest_NONE
 	switch op.SortOrder {
@@ -95,6 +99,7 @@ func (s *EtcdEmbed) toPutRequest(op *registry.PluginOp) *etcdserverpb.PutRequest
 		Value:  valueBytes,
 		PrevKv: op.WithPrevKV,
 		Lease:  op.Lease,
+		// TODO WithIgnoreLease support
 	}
 }
 
@@ -386,7 +391,7 @@ func (s *EtcdEmbed) Watch(ctx context.Context, op *registry.PluginOp, send func(
 						Kvs:       []*mvccpb.KeyValue{evt.Kv},
 						PrevKv:    evt.PrevKv,
 						Count:     1,
-						Revision:  resp.Revision,
+						Revision:  evt.Kv.ModRevision,
 						Succeeded: true,
 					}
 					if evt.Type == mvccpb.DELETE {

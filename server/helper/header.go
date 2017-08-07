@@ -18,7 +18,9 @@ import (
 	"fmt"
 	"github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/util"
+	"golang.org/x/net/context"
 	"net/http"
+	"strings"
 )
 
 const (
@@ -45,4 +47,24 @@ func GetTenantProjectFromHeader(r *http.Request) (string, string, error) {
 		project = DEFAULT_PROJECT
 	}
 	return domain, project, nil
+}
+
+func GetRealIP(r *http.Request) string {
+	addrs := strings.Split(r.RemoteAddr, ":")
+	if len(addrs) > 0 {
+		return addrs[0]
+	}
+	return ""
+}
+
+func addIPToContext(r *http.Request) {
+	terminalIP := GetRealIP(r)
+	ctx := r.Context()
+	ctx = context.WithValue(ctx, "x-remote-ip", terminalIP)
+	request := r.WithContext(ctx)
+	*r = *request
+}
+
+func InitContext(r *http.Request) {
+	addIPToContext(r)
 }
