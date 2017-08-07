@@ -55,7 +55,8 @@ func (i *KvCacheIndexer) Search(ctx context.Context, op *registry.PluginOp) (*re
 	}
 
 	if op.WithNoCache || op.WithRev > 0 {
-		util.LOGGER.Debugf("match WitchNoCache or WitchRev, request etcd server, op: %s", op)
+		util.LOGGER.Debugf("search %s match WitchNoCache or WitchRev, request etcd server, op: %s",
+			i.cacheType, op)
 		return registry.GetRegisterCenter().Do(ctx, op)
 	}
 
@@ -78,13 +79,14 @@ func (i *KvCacheIndexer) Search(ctx context.Context, op *registry.PluginOp) (*re
 			resp.Count = 1
 			return resp, nil
 		}
-		util.LOGGER.Debugf("cache does not store this key, request etcd server, op: %s", op)
+		util.LOGGER.Debugf("%s cache does not store this key, request etcd server, op: %s", i.cacheType, op)
 		return registry.GetRegisterCenter().Do(ctx, op)
 	}
 
 	cacheData := i.Cache().Data(key)
 	if cacheData == nil {
-		util.LOGGER.Debugf("do not match any key in cache store, request etcd server, op: %s", op)
+		util.LOGGER.Debugf("do not match any key in %s cache store, request etcd server, op: %s",
+			i.cacheType, op)
 		return registry.GetRegisterCenter().Do(ctx, op)
 	}
 
@@ -112,7 +114,8 @@ func (i *KvCacheIndexer) searchPrefixKeyFromCacheOrRemote(ctx context.Context, o
 	keys, ok := i.prefixIndex[prefix]
 	i.prefixLock.RUnlock()
 	if !ok {
-		util.LOGGER.Debugf("can not find any key from cache with prefix, request etcd server, op: %s", op)
+		util.LOGGER.Debugf("can not find any key from %s cache with prefix, request etcd server, op: %s",
+			i.cacheType, op)
 		prefixResp, err := registry.GetRegisterCenter().Do(ctx, op)
 		if err != nil {
 			return nil, err
@@ -174,8 +177,8 @@ func (i *KvCacheIndexer) onCacheEvent(evt *KvEvent) {
 func (i *KvCacheIndexer) buildIndex() {
 	i.goroutine.Do(func(stopCh <-chan struct{}) {
 		util.SafeCloseChan(i.ready)
-		util.LOGGER.Debugf("build index goroutine is running")
-		defer util.LOGGER.Debugf("build index goroutine is stopped")
+		util.LOGGER.Debugf("build %s index goroutine is running", i.cacheType)
+		defer util.LOGGER.Debugf("build %s index goroutine is stopped", i.cacheType)
 		for {
 			select {
 			case <-stopCh:

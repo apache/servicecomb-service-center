@@ -63,13 +63,22 @@ func (s *EtcdEmbed) Close() {
 	util.LOGGER.Debugf("embedded etcd client stopped.")
 }
 
+func (s *EtcdEmbed) getPrefixEndKey(prefix []byte) []byte {
+	l := len(prefix)
+	endBytes := make([]byte, l+1)
+	copy(endBytes, prefix)
+	if endBytes[l-1] == 0xff {
+		endBytes[l] = 1
+		return endBytes
+	}
+	endBytes[l-1] += 1
+	return endBytes[:l]
+}
+
 func (s *EtcdEmbed) toGetRequest(op *registry.PluginOp) *etcdserverpb.RangeRequest {
 	endBytes := op.EndKey
 	if op.WithPrefix {
-		l := len(op.Key)
-		endBytes = make([]byte, l)
-		copy(endBytes, op.Key)
-		endBytes[l-1] = endBytes[l-1] + 1
+		endBytes = s.getPrefixEndKey(op.Key)
 	}
 	order := etcdserverpb.RangeRequest_NONE
 	switch op.SortOrder {
@@ -104,9 +113,9 @@ func (s *EtcdEmbed) toPutRequest(op *registry.PluginOp) *etcdserverpb.PutRequest
 }
 
 func (s *EtcdEmbed) toDeleteRequest(op *registry.PluginOp) *etcdserverpb.DeleteRangeRequest {
-	var endBytes []byte
+	endBytes := op.EndKey
 	if op.WithPrefix {
-		endBytes = append(op.Key, 127)
+		endBytes = s.getPrefixEndKey(op.Key)
 	}
 	return &etcdserverpb.DeleteRangeRequest{
 		Key:      op.Key,
@@ -368,8 +377,10 @@ func (s *EtcdEmbed) Watch(ctx context.Context, op *registry.PluginOp, send func(
 		key := registry.BytesToStringWithNoCopy(op.Key)
 		var keyBytes []byte
 		if op.WithPrefix {
-			key += "/"
-			keyBytes = append([]byte(key), 127)
+			if key[len(key)-1] != '/' {
+				key += "/"
+			}
+			keyBytes = s.getPrefixEndKey([]byte(key))
 		}
 		watchID := ws.Watch(op.Key, keyBytes, op.WithRev)
 		// defer ws.Cancel(watchID)

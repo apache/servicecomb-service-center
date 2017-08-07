@@ -437,7 +437,7 @@ func (c *EtcdClient) Watch(ctx context.Context, op *registry.PluginOp, send func
 		defer client.Close()
 
 		key := registry.BytesToStringWithNoCopy(op.Key)
-		if op.WithPrefix {
+		if op.WithPrefix && key[len(key)-1] != '/' {
 			key += "/"
 		}
 		util.LOGGER.Debugf("start to watch key %s", key)
