@@ -34,6 +34,7 @@ type Indexer interface {
 	Search(ctx context.Context, op *registry.PluginOp) (*registry.PluginResponse, error)
 	Run()
 	Stop()
+	Ready() <-chan struct{}
 }
 
 type KvCacheIndexer struct {
@@ -44,6 +45,7 @@ type KvCacheIndexer struct {
 	prefixLock       sync.RWMutex
 	prefixBuildQueue chan *KvEvent
 	goroutine        *util.GoRoutine
+	ready            chan struct{}
 	isClose          bool
 }
 
@@ -171,6 +173,7 @@ func (i *KvCacheIndexer) onCacheEvent(evt *KvEvent) {
 
 func (i *KvCacheIndexer) buildIndex() {
 	i.goroutine.Do(func(stopCh <-chan struct{}) {
+		util.SafeCloseChan(i.ready)
 		util.LOGGER.Debugf("build index goroutine is running")
 		defer util.LOGGER.Debugf("build index goroutine is stopped")
 		for {
@@ -232,6 +235,15 @@ func (i *KvCacheIndexer) Stop() {
 
 	close(i.prefixBuildQueue)
 	i.goroutine.Close(true)
+
+	util.SafeCloseChan(i.ready)
+
+	util.LOGGER.Debugf("%s indexer is stopped", i.cacheType)
+}
+
+func (i *KvCacheIndexer) Ready() <-chan struct{} {
+	<-i.cacher.Ready()
+	return i.ready
 }
 
 func NewKvCacheIndexer(t StoreType, cr Cacher) *KvCacheIndexer {
@@ -242,6 +254,7 @@ func NewKvCacheIndexer(t StoreType, cr Cacher) *KvCacheIndexer {
 		prefixIndex:      make(map[string]map[string]struct{}),
 		prefixBuildQueue: make(chan *KvEvent, DEFAULT_MAX_EVENT_COUNT),
 		goroutine:        util.NewGo(make(chan struct{})),
+		ready:            make(chan struct{}),
 		isClose:          true,
 	}
 }

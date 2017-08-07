@@ -61,11 +61,11 @@ func init() {
 }
 
 func Run() {
-	startStoreDeamon()
+	waitStoreReady()
 
-	go startNotifyService()
+	startNotifyService()
 
-	go startApiServer()
+	startApiServer()
 
 	waitForQuit()
 }
@@ -124,8 +124,9 @@ func autoCompact() {
 	}
 }
 
-func startStoreDeamon() {
+func waitStoreReady() {
 	store.Run()
+	<-store.Ready()
 }
 
 func startNotifyService() {
