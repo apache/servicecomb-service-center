@@ -72,7 +72,7 @@ func (this *MicroServiceService) ModifySchemas(w http.ResponseWriter, r *http.Re
 	}
 	err = json.Unmarshal(message, request)
 	if err != nil {
-		util.LOGGER.Error("Unmarshal error", err)
+		util.LOGGER.Error("Unmarshal error123", err)
 		WriteText(http.StatusBadRequest, err.Error(), w)
 		return
 	}
