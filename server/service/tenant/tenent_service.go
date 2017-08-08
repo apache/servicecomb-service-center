@@ -23,7 +23,7 @@ import (
 
 func GetAllTenantRawData() ([]*mvccpb.KeyValue, error) {
 	opt := &registry.PluginOp{
-		Key:        []byte(apt.GenerateTenantKey("")),
+		Key:        []byte(apt.GenerateDomainKey("")),
 		Action:     registry.GET,
 		WithPrefix: true,
 	}
@@ -57,7 +57,7 @@ func GetAllTenent() ([]string, error) {
 
 func NewDomain(ctx context.Context, tenant string) error {
 	opt := &registry.PluginOp{
-		Key:    []byte(apt.GenerateTenantKey(tenant)),
+		Key:    []byte(apt.GenerateDomainKey(tenant)),
 		Action: registry.PUT,
 	}
 	_, err := registry.GetRegisterCenter().PutNoOverride(ctx, opt)

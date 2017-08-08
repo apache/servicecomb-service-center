@@ -44,6 +44,7 @@ type Cacher interface {
 	Cache() Cache
 	Run()
 	Stop()
+	Ready() <-chan struct{}
 }
 
 type nullCache struct {
@@ -71,6 +72,12 @@ func (n *nullCacher) Cache() Cache {
 func (n *nullCacher) Run() {}
 
 func (n *nullCacher) Stop() {}
+
+func (n *nullCacher) Ready() <-chan struct{} {
+	c := make(chan struct{})
+	close(c)
+	return c
+}
 
 type KvCacheSafeRFunc func()
 
@@ -120,6 +127,7 @@ type KvCacher struct {
 	noEventInterval    int
 	noEventMaxInterval int
 
+	ready   chan struct{}
 	lw      ListWatcher
 	mux     sync.Mutex
 	once    sync.Once
@@ -194,6 +202,7 @@ func (c *KvCacher) ListAndWatch(ctx context.Context) error {
 			util.LOGGER.Errorf(err, "list key %s failed, list options: %+v", c.Cfg.Key, listOps)
 			// do not return err, continue to watch
 		}
+		util.SafeCloseChan(c.ready)
 	}
 
 	err := c.doWatch(listOps)
@@ -367,7 +376,14 @@ func (c *KvCacher) Run() {
 
 func (c *KvCacher) Stop() {
 	c.goroute.Close(true)
+
+	util.SafeCloseChan(c.ready)
+
 	util.LOGGER.Debugf("cacher is stopped, %s", c.Cfg)
+}
+
+func (c *KvCacher) Ready() <-chan struct{} {
+	return c.ready
 }
 
 type KvEvent struct {
@@ -399,7 +415,8 @@ func NewKvCache(c *KvCacher) *KvCache {
 
 func NewKvCacher(cfg *KvCacherConfig) Cacher {
 	cacher := &KvCacher{
-		Cfg: cfg,
+		Cfg:   cfg,
+		ready: make(chan struct{}),
 		lw: &KvListWatcher{
 			Client: registry.GetRegisterCenter(),
 			Key:    cfg.Key,

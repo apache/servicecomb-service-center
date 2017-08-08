@@ -131,7 +131,7 @@ func init() {
 
 	MicroServiceInstanceValidator.AddRule("InstanceId", &validate.ValidateRule{Length: 64, Regexp: instanceIdRegex})
 	MicroServiceInstanceValidator.AddRule("ServiceId", ServiceIdRule)
-	MicroServiceInstanceValidator.AddRule("Endpoints", &validate.ValidateRule{Regexp: `^[A-Za-z0-9:/?=&.]+$`})
+	MicroServiceInstanceValidator.AddRule("Endpoints", &validate.ValidateRule{Regexp: `^[A-Za-z0-9:/?=&%_.-]+$`})
 	MicroServiceInstanceValidator.AddRule("HostName", &validate.ValidateRule{Length: 64, Regexp: `^[A-Za-z0-9_.-]+$`})
 	MicroServiceInstanceValidator.AddSub("HealthCheck", &HealthCheckInfoValidator)
 	MicroServiceInstanceValidator.AddRule("Status", InstanseStatusRule)

@@ -126,3 +126,14 @@ func DeepCopy(dst, src interface{}) error {
 	}
 	return gob.NewDecoder(bytes.NewBuffer(buf.Bytes())).Decode(dst)
 }
+
+func SafeCloseChan(c chan struct{}) {
+	select {
+	case _, ok := <-c:
+		if ok {
+			close(c)
+		}
+	default:
+		close(c)
+	}
+}

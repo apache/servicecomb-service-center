@@ -308,10 +308,16 @@ func GetServiceDependencyRootKey(tenant string) string {
 	}, "/")
 }
 
-func GenerateTenantKey(tenant string) string {
+func GetDomainRootKey() string {
 	return strings.Join([]string{
 		GetRootKey(),
 		REGISTRY_TENANT_KEY,
+	}, "/")
+}
+
+func GenerateDomainKey(tenant string) string {
+	return strings.Join([]string{
+		GetDomainRootKey(),
 		tenant,
 	}, "/")
 }

@@ -690,15 +690,14 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 	}
 	lock, err := mux.Lock(mux.GLOBAL_LOCK)
 	err, _ = dependency.AddServiceVersionRule(ctx, provider, tenant, consumer)
+	lock.Unlock()
 	if err != nil {
-		lock.Unlock()
 		util.LOGGER.Errorf(err, "find instance failed, %s: add service version rule failed.", findFlag)
 		return &pb.FindInstancesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
 	}
 	util.LOGGER.Infof("find instance: add dependency susscess, %s", findFlag)
-	lock.Unlock()
 
 	return &pb.FindInstancesResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "query service instances successfully"),
