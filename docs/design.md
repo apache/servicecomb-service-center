@@ -14,7 +14,7 @@ Here we assume that micro-services are written using [java-chassis](https://gith
 
 ![Onstartup](/docs/onStartup.PNG)
 
-#### Communication between Provider -> Consumer
+#### Communication between Consumer -> Provider
 Once the bootup is successful then the consumer can communicate with providers flawlessly, below is the diagram illustrating the communication between provider and consumer.
 
 ![Commuication](/docs/communication.PNG)
