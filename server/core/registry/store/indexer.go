@@ -176,9 +176,7 @@ func (i *KvCacheIndexer) onCacheEvent(evt *KvEvent) {
 
 func (i *KvCacheIndexer) buildIndex() {
 	i.goroutine.Do(func(stopCh <-chan struct{}) {
-		util.LOGGER.Debugf("build %s index goroutine is running", i.cacheType)
 		util.SafeCloseChan(i.ready)
-		defer util.LOGGER.Debugf("build %s index goroutine is stopped", i.cacheType)
 		for {
 			select {
 			case <-stopCh:
@@ -206,6 +204,7 @@ func (i *KvCacheIndexer) buildIndex() {
 
 			}
 		}
+		util.LOGGER.Debugf("build %s index goroutine is stopped", i.cacheType)
 	})
 }
 
