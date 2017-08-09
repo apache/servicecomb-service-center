@@ -61,6 +61,8 @@ func init() {
 }
 
 func Run() {
+	beforeRun()
+
 	waitStoreReady()
 
 	startNotifyService()
@@ -68,6 +70,20 @@ func Run() {
 	startApiServer()
 
 	waitForQuit()
+}
+
+func beforeRun() {
+	var client registry.Registry
+	wait := []int{1, 1, 1, 5, 10, 20, 30, 60}
+	for i := 0; client == nil; i++ {
+		client = registry.GetRegisterCenter()
+		if i >= len(wait) {
+			i = len(wait) - 1
+		}
+		t := time.Duration(wait[i]) * time.Second
+		util.LOGGER.Errorf(nil, "initialize service center failed, retry after %s", t)
+		<-time.After(t)
+	}
 }
 
 func handleSignal() {

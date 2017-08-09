@@ -421,7 +421,7 @@ func (s *EtcdEmbed) Watch(ctx context.Context, op *registry.PluginOp, send func(
 }
 
 func getEmbedInstance(cfg *registry.Config) registry.Registry {
-	util.LOGGER.Warnf(nil, "starting manager server in embed mode")
+	util.LOGGER.Warnf(nil, "starting service center in embed mode")
 
 	hostName := beego.AppConfig.DefaultString("manager_name", util.GetLocalHostname())
 	addrs := beego.AppConfig.String("manager_addr")
@@ -435,7 +435,7 @@ func getEmbedInstance(cfg *registry.Config) registry.Registry {
 		var err error
 		embedTLSConfig, err = rest.GetServerTLSConfig(common.GetServerSSLConfig().VerifyClient)
 		if err != nil {
-			util.LOGGER.Error("get manager server tls config failed", err)
+			util.LOGGER.Error("get service center tls config failed", err)
 			inst.err <- err
 			return inst
 		}

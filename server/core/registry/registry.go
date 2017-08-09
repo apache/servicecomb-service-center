@@ -161,24 +161,30 @@ func init() {
 	RegistryPlugins = make(map[string]func(cfg *Config) Registry)
 }
 
+func RegisterCenterClient() (Registry, error) {
+	registryFunc := RegistryPlugins[beego.AppConfig.String("registry_plugin")]
+	autoSyncInterval, _ := beego.AppConfig.Int64("auto_sync_interval")
+	if autoSyncInterval <= 0 {
+		autoSyncInterval = REFRESH_MANAGER_CLUSTER_INTERVAL
+	}
+	instance := registryFunc(&Config{
+		ClusterAddresses: beego.AppConfig.String("manager_cluster"),
+		AutoSyncInterval: autoSyncInterval,
+	})
+	select {
+	case err := <-instance.Err():
+		return nil, err
+	case <-instance.Ready():
+	}
+	return instance, nil
+}
+
 func GetRegisterCenter() Registry {
 	if registryInstance == nil {
 		singletonLock.Lock()
 		if registryInstance == nil {
-			registryFunc := RegistryPlugins[beego.AppConfig.String("registry_plugin")]
-			autoSyncInterval, _ := beego.AppConfig.Int64("auto_sync_interval")
-			if autoSyncInterval <= 0 {
-				autoSyncInterval = REFRESH_MANAGER_CLUSTER_INTERVAL
-			}
-			registryInstance = registryFunc(&Config{
-				ClusterAddresses: beego.AppConfig.String("manager_cluster"),
-				AutoSyncInterval: autoSyncInterval,
-			})
-			select {
-			case err := <-registryInstance.Err():
-				panic(err)
-			case <-registryInstance.Ready():
-			}
+			inst, _ := RegisterCenterClient()
+			registryInstance = inst
 		}
 		singletonLock.Unlock()
 	}
