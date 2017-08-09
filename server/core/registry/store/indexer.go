@@ -158,9 +158,9 @@ func (i *KvCacheIndexer) onCacheEvent(evt *KvEvent) {
 	}
 
 	i.prefixLock.RLock()
-	defer i.prefixLock.RUnlock()
 
 	if i.isClose {
+		i.prefixLock.RUnlock()
 		return
 	}
 
@@ -172,6 +172,8 @@ func (i *KvCacheIndexer) onCacheEvent(evt *KvEvent) {
 			i.BuildTimeout, key, evt.Action)
 	case i.prefixBuildQueue <- evt:
 	}
+
+	i.prefixLock.RUnlock()
 }
 
 func (i *KvCacheIndexer) buildIndex() {
@@ -235,8 +237,9 @@ func (i *KvCacheIndexer) Stop() {
 
 	i.cacher.Stop()
 
-	close(i.prefixBuildQueue)
 	i.goroutine.Close(true)
+
+	close(i.prefixBuildQueue)
 
 	util.SafeCloseChan(i.ready)
 

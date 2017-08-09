@@ -158,13 +158,14 @@ func (w *KvWatcher) sendEvent(evt *Event) {
 
 func (w *KvWatcher) Stop() {
 	w.mux.Lock()
-	defer w.mux.Unlock()
 	if w.stop {
+		w.mux.Unlock()
 		return
 	}
 	w.stop = true
 	close(w.stopCh)
 	close(w.bus)
+	w.mux.Unlock()
 }
 
 func errEvent(watchKey string, err error) *Event {

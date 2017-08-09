@@ -93,8 +93,8 @@ func (c *KvCache) Version() int64 {
 
 func (c *KvCache) Data(k interface{}) interface{} {
 	c.rwMux.RLock()
-	defer c.rwMux.RUnlock()
 	kv, ok := c.store[k.(string)]
+	c.rwMux.RUnlock()
 	if !ok {
 		return nil
 	}
@@ -106,8 +106,8 @@ func (c *KvCache) Data(k interface{}) interface{} {
 
 func (c *KvCache) Have(k interface{}) (ok bool) {
 	c.rwMux.RLock()
-	defer c.rwMux.RUnlock()
 	_, ok = c.store[k.(string)]
+	c.rwMux.RUnlock()
 	return
 }
 
@@ -190,7 +190,6 @@ func (c *KvCacher) doWatch(listOps *ListOptions) error {
 
 func (c *KvCacher) ListAndWatch(ctx context.Context) error {
 	c.mux.Lock()
-	defer c.mux.Unlock()
 
 	listOps := &ListOptions{
 		Timeout: c.Cfg.Timeout,
@@ -206,6 +205,9 @@ func (c *KvCacher) ListAndWatch(ctx context.Context) error {
 	}
 
 	err := c.doWatch(listOps)
+
+	c.mux.Unlock()
+
 	if err != nil {
 		util.LOGGER.Errorf(err, "handle watcher failed, watch key %s, list options: %+v", c.Cfg.Key, listOps)
 		return err
