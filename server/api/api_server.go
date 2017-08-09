@@ -225,7 +225,7 @@ func (s *APIServer) doAPIServerHeartBeat() {
 	err = s.registerServiceCenter()
 	if err != nil {
 		util.LOGGER.Errorf(err, "Service %s/%s/%s does not exist, and retry to register it failed.",
-			core.REGISTRY_APP_ID, core.REGISTRY_SERVICE_NAME, core.REGISTRY_VERSION)
+			core.Service.AppId, core.Service.ServiceName, core.Service.Version)
 	}
 }
 

@@ -912,11 +912,10 @@ func (s *InstanceController) WebSocketListAndWatch(ctx context.Context, in *pb.W
 func (s *InstanceController) CluterHealth(ctx context.Context) (*pb.GetInstancesResponse, error) {
 	tenant := strings.Join([]string{core.REGISTRY_TENANT, core.REGISTRY_PROJECT}, "/")
 	serviceId, err := ms.GetServiceId(ctx, &pb.MicroServiceKey{
-		AppId:       core.REGISTRY_APP_ID,
-		ServiceName: core.REGISTRY_SERVICE_NAME,
-		Version:     core.REGISTRY_VERSION,
+		AppId:       core.Service.AppId,
+		ServiceName: core.Service.ServiceName,
+		Version:     core.Service.Version,
 		Tenant:      tenant,
-		Project:     core.REGISTRY_PROJECT,
 	})
 
 	if err != nil {
