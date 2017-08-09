@@ -308,7 +308,7 @@ func UpdateAsProviderDependency(ctx context.Context, providerServiseId string, p
 			return err
 		}
 		if len(consumerServiceid) == 0 {
-			util.LOGGER.Errorf(nil, "Get consumer's serviceId is empty. skip serviceName: %s, appId: %s, version: %s", consumer.ServiceName, consumer.AppId, consumer.Version)
+			util.LOGGER.Errorf(nil, "Get consumer's serviceId is empty, skip serviceName: %s, appId: %s, version: %s", consumer.ServiceName, consumer.AppId, consumer.Version)
 			continue
 		}
 		if _, ok := flag[consumerServiceid]; ok {

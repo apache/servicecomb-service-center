@@ -158,9 +158,9 @@ func (i *KvCacheIndexer) onCacheEvent(evt *KvEvent) {
 	}
 
 	i.prefixLock.RLock()
-	defer i.prefixLock.RUnlock()
 
 	if i.isClose {
+		i.prefixLock.RUnlock()
 		return
 	}
 
@@ -172,13 +172,13 @@ func (i *KvCacheIndexer) onCacheEvent(evt *KvEvent) {
 			i.BuildTimeout, key, evt.Action)
 	case i.prefixBuildQueue <- evt:
 	}
+
+	i.prefixLock.RUnlock()
 }
 
 func (i *KvCacheIndexer) buildIndex() {
 	i.goroutine.Do(func(stopCh <-chan struct{}) {
 		util.SafeCloseChan(i.ready)
-		util.LOGGER.Debugf("build %s index goroutine is running", i.cacheType)
-		defer util.LOGGER.Debugf("build %s index goroutine is stopped", i.cacheType)
 		for {
 			select {
 			case <-stopCh:
@@ -206,6 +206,7 @@ func (i *KvCacheIndexer) buildIndex() {
 
 			}
 		}
+		util.LOGGER.Debugf("build %s index goroutine is stopped", i.cacheType)
 	})
 }
 
@@ -236,8 +237,9 @@ func (i *KvCacheIndexer) Stop() {
 
 	i.cacher.Stop()
 
-	close(i.prefixBuildQueue)
 	i.goroutine.Close(true)
+
+	close(i.prefixBuildQueue)
 
 	util.SafeCloseChan(i.ready)
 

@@ -111,8 +111,8 @@ func (lat *BaseAsyncTasker) removeTask(key string) {
 
 func (lat *BaseAsyncTasker) LatestHandled(key string) (AsyncTask, error) {
 	lat.queueLock.RLock()
-	defer lat.queueLock.RUnlock()
 	at, ok := lat.latestTasks[key]
+	lat.queueLock.RUnlock()
 	if !ok {
 		return nil, errors.New("expired behavior")
 	}

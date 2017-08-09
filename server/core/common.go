@@ -23,11 +23,6 @@ import (
 	"reflect"
 )
 
-const (
-	REGISTRY_DEFAULT_LEASE_RENEWALINTERVAL int32 = 30
-	REGISTRY_DEFAULT_LEASE_RETRYTIMES      int32 = 3
-)
-
 var (
 	MicroServiceValidator         validate.Validator
 	MicroServiceInstanceValidator validate.Validator

@@ -122,19 +122,20 @@ type KvStore struct {
 }
 
 func (s *KvStore) newStore(t StoreType, prefix string) {
-	indexer := NewKvCacheIndexer(t, NewCacher(prefix,
+	s.newCacherStore(t, NewCacher(prefix,
 		func(evt *KvEvent) {
 			s.onEvent(t, evt)
 		}))
-	s.indexers[t] = indexer
-
-	indexer.Run()
-
-	<-indexer.Ready()
 }
 
 func (s *KvStore) newNullStore(t StoreType) {
-	s.indexers[t] = NewKvCacheIndexer(t, NullCacher)
+	s.newCacherStore(t, NullCacher)
+}
+
+func (s *KvStore) newCacherStore(t StoreType, cacher Cacher) {
+	indexer := NewKvCacheIndexer(t, cacher)
+	s.indexers[t] = indexer
+	indexer.Run()
 }
 
 func (s *KvStore) onEvent(t StoreType, evt *KvEvent) {
@@ -163,7 +164,12 @@ func (s *KvStore) store() {
 	// s.newStore(SERVICE_TAG, apt.GetServiceTagRootKey(domain))
 	// s.newStore(RULE, apt.GetServiceRuleRootKey(domain))
 	// s.newStore(RULE_INDEX, apt.GetServiceRuleIndexRootKey(domain))
+	for _, i := range s.indexers {
+		<-i.Ready()
+	}
 	util.SafeCloseChan(s.ready)
+
+	util.LOGGER.Debugf("all indexers are ready")
 }
 
 func (s *KvStore) onDomainEvent(evt *KvEvent) {
@@ -183,7 +189,6 @@ func (s *KvStore) onDomainEvent(evt *KvEvent) {
 	}
 
 	util.LOGGER.Infof("new tenant %s is created", tenant)
-	return
 }
 
 func (s *KvStore) onLeaseEvent(evt *KvEvent) {
