@@ -16,3 +16,4 @@ vendor/**
 # for local UT
 server/service/conf/
 etc/data
+conf/

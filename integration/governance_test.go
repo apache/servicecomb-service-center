@@ -14,16 +14,17 @@
 package integrationtest_test
 
 import (
+	"bytes"
 	"encoding/json"
+	. "github.com/ServiceComb/service-center/integration"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/widuu/gojson"
-	"net/http"
-	"strings"
-
-	"bytes"
-	. "github.com/ServiceComb/service-center/integration"
 	"io/ioutil"
+	"math/rand"
+	"net/http"
+	"strconv"
+	"strings"
 	"testing"
 )
 
@@ -38,8 +39,8 @@ var _ = Describe("MicroService Api Test", func() {
 			schema := []string{"testSchema"}
 			properties := map[string]string{"attr1": "aa"}
 			servicemap := map[string]interface{}{
-				"serviceName": serviceName,
-				"appId":       serviceAppId,
+				"serviceName": serviceName + strconv.Itoa(rand.Int()),
+				"appId":       serviceAppId + strconv.Itoa(rand.Int()),
 				"version":     serviceVersion,
 				"description": "examples",
 				"level":       "FRONT",

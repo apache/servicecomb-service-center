@@ -16,9 +16,9 @@ package microservice
 import (
 	"fmt"
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"sort"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"sort"
 )
 
 var _ = Describe("Version Rule sorter", func() {
