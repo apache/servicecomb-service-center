@@ -30,6 +30,7 @@ import (
 	rs "github.com/ServiceComb/service-center/server/rest"
 	"github.com/ServiceComb/service-center/server/service"
 	nf "github.com/ServiceComb/service-center/server/service/notification"
+	"github.com/ServiceComb/service-center/server/upgrade"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
 	"runtime"
@@ -63,6 +64,8 @@ func init() {
 func Run() {
 	beforeRun()
 
+	upgradeVersion()
+
 	waitStoreReady()
 
 	startNotifyService()
@@ -72,11 +75,22 @@ func Run() {
 	waitForQuit()
 }
 
+func upgradeVersion() {
+	err := upgrade.Upgrade()
+	if err != nil {
+		panic(err)
+	}
+}
+
 func beforeRun() {
 	var client registry.Registry
 	wait := []int{1, 1, 1, 5, 10, 20, 30, 60}
 	for i := 0; client == nil; i++ {
 		client = registry.GetRegisterCenter()
+		if client != nil {
+			return
+		}
+
 		if i >= len(wait) {
 			i = len(wait) - 1
 		}
