@@ -54,10 +54,7 @@ var typeNames = []string{
 	ENDPOINTS_INDEX: "ENDPOINTS_INDEX",
 }
 
-var (
-	kvStoreEventFuncMap map[StoreType][]KvEventFunc
-	store               *KvStore
-)
+var store *KvStore
 
 func init() {
 	store = &KvStore{
@@ -65,13 +62,11 @@ func init() {
 		asyncTasker: NewAsyncTasker(),
 		ready:       make(chan struct{}),
 	}
-	kvStoreEventFuncMap = make(map[StoreType][]KvEventFunc)
 	for i := StoreType(0); i != typeEnd; i++ {
-		kvStoreEventFuncMap[i] = make([]KvEventFunc, 0, 5)
 		store.newNullStore(i)
 	}
-	AddKvStoreEventFunc(DOMAIN, store.onDomainEvent)
-	AddKvStoreEventFunc(LEASE, store.onLeaseEvent)
+	AddEventHandleFunc(DOMAIN, store.onDomainEvent)
+	AddEventHandleFunc(LEASE, store.onLeaseEvent)
 }
 
 type LeaseAsyncTask struct {
@@ -124,7 +119,7 @@ type KvStore struct {
 func (s *KvStore) newStore(t StoreType, prefix string) {
 	s.newCacherStore(t, NewCacher(prefix,
 		func(evt *KvEvent) {
-			s.onEvent(t, evt)
+			EventHandler(t).OnEvent(evt)
 		}))
 }
 
@@ -136,13 +131,6 @@ func (s *KvStore) newCacherStore(t StoreType, cacher Cacher) {
 	indexer := NewKvCacheIndexer(t, cacher)
 	s.indexers[t] = indexer
 	indexer.Run()
-}
-
-func (s *KvStore) onEvent(t StoreType, evt *KvEvent) {
-	fs := kvStoreEventFuncMap[t]
-	for _, f := range fs {
-		f(evt) // TODO how to be parallel?
-	}
 }
 
 func (s *KvStore) Run() {
@@ -302,8 +290,4 @@ func (s *KvStore) KeepAlive(ctx context.Context, op *registry.PluginOp) (int64, 
 
 func Store() *KvStore {
 	return store
-}
-
-func AddKvStoreEventFunc(t StoreType, f KvEventFunc) {
-	kvStoreEventFuncMap[t] = append(kvStoreEventFuncMap[t], f)
 }

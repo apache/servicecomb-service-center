@@ -485,7 +485,7 @@ func (c *EtcdClient) Watch(ctx context.Context, op *registry.PluginOp, send func
 }
 
 func NewRegistry(cfg *registry.Config) registry.Registry {
-	util.LOGGER.Warnf(nil, "starting manager server in proxy mode")
+	util.LOGGER.Warnf(nil, "starting service center in proxy mode")
 
 	inst := &EtcdClient{
 		err:   make(chan error, 1),

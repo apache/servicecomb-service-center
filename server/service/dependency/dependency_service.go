@@ -304,7 +304,7 @@ func UpdateAsProviderDependency(ctx context.Context, providerServiseId string, p
 	for _, consumer := range allConsumers {
 		consumerServiceid, err := ms.GetServiceId(ctx, consumer)
 		if err != nil {
-			util.LOGGER.Errorf(nil, "Get consumer's serviceId failed.")
+			util.LOGGER.Errorf(err, "Get consumer's serviceId failed.")
 			return err
 		}
 		if len(consumerServiceid) == 0 {

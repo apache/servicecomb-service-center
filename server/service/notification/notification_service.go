@@ -51,7 +51,7 @@ func init() {
 	notifyService = &NotifyService{
 		isClose: true,
 	}
-	store.AddKvStoreEventFunc(store.INSTANCE, notifyService.WatchInstance)
+	store.AddEventHandleFunc(store.INSTANCE, notifyService.WatchInstance)
 }
 
 type NotifyType int
