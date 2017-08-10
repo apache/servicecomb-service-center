@@ -21,7 +21,9 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/widuu/gojson"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -35,7 +37,7 @@ var _ = Describe("MicroService Api Test", func() {
 			schema := []string{"testSchema"}
 			properties := map[string]string{"attr1": "aa"}
 			servicemap := map[string]interface{}{
-				"serviceName": serviceName,
+				"serviceName": serviceName + strconv.Itoa(rand.Int()),
 				"appId":       serviceAppId,
 				"version":     serviceVersion,
 				"description": "examples",
