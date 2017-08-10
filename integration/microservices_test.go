@@ -29,8 +29,9 @@ import (
 	"testing"
 )
 
+var serviceName = ""
+
 var _ = Describe("MicroService Api Test", func() {
-	var serviceName = "integrationtest"
 	var serviceId = ""
 	var serviceAppId = "integrationtestAppId"
 	var serviceVersion = "0.0.1"
@@ -39,6 +40,7 @@ var _ = Describe("MicroService Api Test", func() {
 			It("Register MicroService", func() {
 				schema := []string{"testSchema"}
 				properties := map[string]string{"attr1": "aa"}
+				serviceName = strconv.Itoa(rand.Intn(15))
 				servicemap := map[string]interface{}{
 					"serviceName": serviceName,
 					"appId":       serviceAppId,
@@ -80,6 +82,7 @@ var _ = Describe("MicroService Api Test", func() {
 			BeforeEach(func() {
 				schema := []string{"testSchema"}
 				properties := map[string]string{"attr1": "aa"}
+				serviceName = strconv.Itoa(rand.Intn(15))
 				servicemap := map[string]interface{}{
 					"serviceName": serviceName,
 					"appId":       serviceAppId,
@@ -139,6 +142,7 @@ var _ = Describe("MicroService Api Test", func() {
 
 			By("Test if Service Exsist", func() {
 				It("test valid scenario", func() {
+					getServiceName(serviceId)
 					req, _ := http.NewRequest(GET, SCURL+CHECKEXISTENCE+"?type=microservice&appId="+serviceAppId+"&serviceName="+serviceName+"&version="+serviceVersion, nil)
 					req.Header.Set("X-tenant-name", "default")
 					resp, _ := scclient.Do(req)
@@ -157,6 +161,7 @@ var _ = Describe("MicroService Api Test", func() {
 
 			By("Test Get Service by ServiceID", func() {
 				It("test valid scenario", func() {
+					getServiceName(serviceId)
 					url := strings.Replace(GETSERVICEBYID, ":serviceId", serviceId, 1)
 					req, _ := http.NewRequest(GET, SCURL+url, nil)
 					req.Header.Set("X-tenant-name", "default")
@@ -178,6 +183,7 @@ var _ = Describe("MicroService Api Test", func() {
 
 			By("Test Get All Services in SC", func() {
 				It("test valid scenario", func() {
+					getServiceName(serviceId)
 					req, _ := http.NewRequest(GET, SCURL+GETALLSERVICE, nil)
 					req.Header.Set("X-tenant-name", "default")
 					resp, _ := scclient.Do(req)
@@ -252,10 +258,12 @@ var _ = Describe("MicroService Api Test", func() {
 			By("Test Dependency API for Provider and Consumer", func() {
 				It("test Valid dependency creation", func() {
 					//Register second microservice
+					getServiceName(serviceId)
 					schema := []string{"testSchema"}
 					properties := map[string]string{"attr1": "aa"}
+					consumerApp := strconv.Itoa(rand.Intn(15))
 					servicemap := map[string]interface{}{
-						"serviceName": "consumerApp",
+						"serviceName": consumerApp,
 						"appId":       "consumerAppId",
 						"version":     "2.0.0",
 						"description": "examples",
@@ -283,7 +291,7 @@ var _ = Describe("MicroService Api Test", func() {
 					//Create Dependency
 					consumer := map[string]string{
 						"appId":       "consumerAppId",
-						"serviceName": "consumerApp",
+						"serviceName": consumerApp,
 						"version":     "2.0.0",
 					}
 					provider := map[string]string{
@@ -336,10 +344,12 @@ var _ = Describe("MicroService Api Test", func() {
 				})
 
 				It("Get Dependencies for providers and consumers", func() {
+					getServiceName(serviceId)
 					schema := []string{"testSchema"}
 					properties := map[string]string{"attr1": "aa"}
+					consumerAppName := strconv.Itoa(rand.Intn(15))
 					servicemap := map[string]interface{}{
-						"serviceName": "consumerApp",
+						"serviceName": consumerAppName,
 						"appId":       "consumerAppId",
 						"version":     "2.0.0",
 						"description": "examples",
@@ -367,7 +377,7 @@ var _ = Describe("MicroService Api Test", func() {
 					//Create Dependency
 					consumer := map[string]string{
 						"appId":       "consumerAppId",
-						"serviceName": "consumerApp",
+						"serviceName": consumerAppName,
 						"version":     "2.0.0",
 					}
 					provider := map[string]string{
@@ -427,7 +437,7 @@ var _ = Describe("MicroService Api Test", func() {
 					json.Unmarshal(respbody, &servicesStruct)
 					foundMicroService = false
 					for _, services := range servicesStruct["consumers"] {
-						if services["serviceName"] == "consumerApp" {
+						if services["serviceName"] == consumerAppName {
 							foundMicroService = true
 							break
 						}
@@ -537,4 +547,15 @@ func BenchmarkRegisterMicroService(b *testing.B) {
 		_, err := scclient.Do(req)
 		Expect(err).To(BeNil())
 	}
+}
+
+func getServiceName(serviceId string) {
+	url := strings.Replace(GETSERVICEBYID, ":serviceId", serviceId, 1)
+	req, _ := http.NewRequest(GET, SCURL+url, nil)
+	req.Header.Set("X-tenant-name", "default")
+	resp, _ := scclient.Do(req)
+	respbody, _ := ioutil.ReadAll(resp.Body)
+	Expect(resp.StatusCode).To(Equal(http.StatusOK))
+	serviceRetrived := (gojson.Json(string(respbody)).Get("service")).Getdata()
+	serviceName = serviceRetrived["serviceName"].(string)
 }

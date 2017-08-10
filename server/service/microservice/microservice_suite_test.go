@@ -17,10 +17,10 @@ import (
 	"fmt"
 	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"github.com/onsi/ginkgo/reporters"
-	"testing"
 	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
+	"testing"
 )
 
 func init() {
