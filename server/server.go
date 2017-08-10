@@ -94,6 +94,8 @@ func handleSignal() {
 	s := <-sc
 	util.LOGGER.Warnf(nil, "Caught signal '%v', now service center quit...", s)
 
+	close(exit)
+
 	if apiServer != nil {
 		apiServer.Stop()
 	}
@@ -109,8 +111,6 @@ func handleSignal() {
 	util.GoCloseAndWait()
 
 	registry.GetRegisterCenter().Close()
-
-	close(exit)
 }
 
 func waitForQuit() {
@@ -123,10 +123,12 @@ func waitForQuit() {
 	if err != nil {
 		util.LOGGER.Errorf(err, "service center catch errors, %s", err.Error())
 	}
-	util.LOGGER.Warnf(nil, "waiting for %ds to clean up resources...", CLEAN_UP_TIMEOUT)
 	select {
 	case <-exit:
-	case <-time.After(CLEAN_UP_TIMEOUT * time.Second):
+		util.LOGGER.Warnf(nil, "waiting for %ds to clean up resources...", CLEAN_UP_TIMEOUT)
+		<-time.After(CLEAN_UP_TIMEOUT * time.Second)
+	default:
+		close(exit)
 	}
 	util.LOGGER.Warn("service center quit", nil)
 }

@@ -299,7 +299,7 @@ func (c *KvCacher) filter(rev int64, items []interface{}) []*Event {
 				eventsCh <- &Event{
 					Revision: rev,
 					Type:     proto.EVT_DELETE,
-					WatchKey: c.Cfg.Key,
+					Key:      c.Cfg.Key,
 					Object:   v,
 				}
 			}
@@ -314,7 +314,7 @@ func (c *KvCacher) filter(rev int64, items []interface{}) []*Event {
 				eventsCh <- &Event{
 					Revision: rev,
 					Type:     proto.EVT_CREATE,
-					WatchKey: c.Cfg.Key,
+					Key:      c.Cfg.Key,
 					Object:   v,
 				}
 				continue
@@ -323,7 +323,7 @@ func (c *KvCacher) filter(rev int64, items []interface{}) []*Event {
 				eventsCh <- &Event{
 					Revision: rev,
 					Type:     proto.EVT_UPDATE,
-					WatchKey: c.Cfg.Key,
+					Key:      c.Cfg.Key,
 					Object:   v,
 				}
 				continue
@@ -387,14 +387,6 @@ func (c *KvCacher) Stop() {
 func (c *KvCacher) Ready() <-chan struct{} {
 	return c.ready
 }
-
-type KvEvent struct {
-	Revision int64
-	Action   proto.EventType
-	KV       *mvccpb.KeyValue
-}
-
-type KvEventFunc func(evt *KvEvent)
 
 type KvCacherConfig struct {
 	Key     string

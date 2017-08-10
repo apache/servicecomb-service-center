@@ -27,7 +27,7 @@ const EVENT_BUS_MAX_SIZE = 1000
 type Event struct {
 	Revision int64
 	Type     proto.EventType
-	WatchKey string
+	Key      string
 	Object   interface{}
 }
 
@@ -90,12 +90,10 @@ func (lw *KvListWatcher) doWatch(ctx context.Context, f func(evt *Event)) error 
 		if lw.Revision() < evt.Revision {
 			lw.upgradeRevision(evt.Revision)
 		}
-		sendEvt := &Event{
-			Revision: evt.Revision,
-			Type:     proto.EVT_ERROR,
-			WatchKey: lw.Key,
-			Object:   fmt.Errorf("unknown event %+v", evt),
-		}
+
+		sendEvt := errEvent(lw.Key, fmt.Errorf("unknown event %+v", evt))
+		sendEvt.Revision = evt.Revision
+
 		if evt != nil && len(evt.Kvs) > 0 {
 			switch {
 			case evt.Action == registry.PUT && evt.Kvs[0].Version == 1:
@@ -168,11 +166,11 @@ func (w *KvWatcher) Stop() {
 	w.mux.Unlock()
 }
 
-func errEvent(watchKey string, err error) *Event {
+func errEvent(key string, err error) *Event {
 	return &Event{
-		Type:     proto.EVT_ERROR,
-		WatchKey: watchKey,
-		Object:   err,
+		Type:   proto.EVT_ERROR,
+		Key:    key,
+		Object: err,
 	}
 }
 

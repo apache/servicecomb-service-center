@@ -219,7 +219,7 @@ func (i *KvCacheIndexer) Run() {
 	i.isClose = false
 	i.prefixLock.Unlock()
 
-	AddKvStoreEventFunc(i.cacheType, i.onCacheEvent)
+	AddEventHandleFunc(i.cacheType, i.onCacheEvent)
 
 	i.buildIndex()
 
