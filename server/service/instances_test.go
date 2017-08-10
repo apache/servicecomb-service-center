@@ -675,7 +675,7 @@ var _ = Describe("InstanceController", func() {
 							"xxxxxxxx",
 						},
 						Status: "UP",
-						Properties: map[string]string {
+						Properties: map[string]string{
 							pb.PROP_ALLOW_CROSS_APP: "true",
 						},
 					},
