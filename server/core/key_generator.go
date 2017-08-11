@@ -92,11 +92,20 @@ func GetServiceRuleIndexRootKey(tenant string) string {
 	}, "/")
 }
 
-func GetServiceTagRootKey(tenant string) string {
+func GetOldServiceTagRootKey(tenant string) string {
 	return strings.Join([]string{
 		GetDomainProjectRootKey(tenant),
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_TAG_KEY,
+	}, "/")
+}
+
+func GetServiceTagRootKey(tenant string) string {
+	return strings.Join([]string{
+		GetRootKey(),
+		REGISTRY_SERVICE_KEY,
+		REGISTRY_TAG_KEY,
+		tenant,
 	}, "/")
 }
 
