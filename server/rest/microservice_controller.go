@@ -42,6 +42,7 @@ func (this *MicroServiceService) URLPatterns() []rest.Route {
 		{rest.HTTP_METHOD_PUT, "/registry/v3/dependencies", this.CreateDependenciesForMicroServices},
 		{rest.HTTP_METHOD_GET, "/registry/v3/microservices/:consumerId/providers", this.GetConProDependencies},
 		{rest.HTTP_METHOD_GET, "/registry/v3/microservices/:providerId/consumers", this.GetProConDependencies},
+		{rest.HTTP_METHOD_DELETE, "/registry/v3/microservices", this.UnregisterServices},
 	}
 }
 
@@ -278,3 +279,41 @@ func (this *MicroServiceService) GetProConDependencies(w http.ResponseWriter, r 
 	resp.Response = nil
 	WriteJsonObject(http.StatusOK, resp, w)
 }
+
+func (this *MicroServiceService) UnregisterServices(w http.ResponseWriter, r *http.Request) {
+	request_body,err := ioutil.ReadAll(r.Body)
+	if err != nil{
+		util.LOGGER.Error("body ,err",err)
+		WriteText(http.StatusBadRequest, err.Error(), w)
+		return
+	}
+
+	request := &pb.DelServicesRequest{}
+
+	err = json.Unmarshal(request_body, request)
+	if err  != nil {
+		util.LOGGER.Error("unmarshal ,err ", err)
+		WriteText(http.StatusBadRequest, err.Error(), w)
+		return
+	}
+
+	resp, err := ServiceAPI.DeleteServices(r.Context(), request)
+
+	if resp.Response.Code == pb.Response_SUCCESS {
+		WriteText(http.StatusOK, "", w)
+		return
+	}
+	if resp.Services == nil || len(resp.Services) == 0 {
+		WriteText(http.StatusBadRequest, resp.Response.Message, w)
+		return
+	}
+	resp.Response = nil
+	objJson, err := json.Marshal(resp)
+	if err != nil {
+		WriteText(http.StatusInternalServerError, err.Error(), w)
+		return
+	}
+	WriteJson(http.StatusBadRequest, objJson, w)
+	return
+}
+

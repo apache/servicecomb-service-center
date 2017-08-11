@@ -30,6 +30,7 @@ service ServiceCtrl {
     rpc createDependenciesForMircServices (CreateDependenciesRequest) returns (CreateDependenciesResponse);
     rpc getProviderDependencies (GetDependenciesRequest) returns (GetProDependenciesResponse);
     rpc getConsumerDependencies (GetDependenciesRequest) returns (GetConDependenciesResponse);
+    rpc deleteServices (DelServicesRequest) returns (DelServicesResponse);
 }
 
 service ServiceInstanceCtrl {
@@ -506,3 +507,23 @@ message GetServiceDetailResponse {
     Response response = 1;
     ServiceDetail service = 2;
 }
+
+
+
+//删除服务请求
+message DelServicesRequest {
+    repeated string serviceIds = 1;
+    bool  force = 2;
+}
+//删除服务响应内容
+message DelServicesRspInfo {
+    string  errMessage = 1;
+    string  serviceId = 2;
+}
+
+//删除服务响应
+message DelServicesResponse {
+    Response response = 1;
+    repeated DelServicesRspInfo  services = 2;
+}
+

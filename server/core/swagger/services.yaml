@@ -170,6 +170,30 @@ paths:
           description: 内部错误
           schema:
             type: string
+    delete:
+      description: |
+        批量删除指定的微服务定义及其相关信息，同时注销其所有实例信息。
+      operationId: deleteServices
+      parameters:
+        - name: serviceIds
+          in: body
+          description: 批量删除服务的服务ID列表
+          required: true
+          schema:
+            $ref: '#/definitions/DelServicesRequest'
+      tags:
+        - microservices
+      responses:
+        200:
+          description: 更新成功
+        400:
+          description: 错误的请求
+          schema:
+            $ref: '#/definitions/DelServicesResponse'
+        500:
+          description: 内部错误
+          schema:
+            type: string
   /registry/v3/microservices/{serviceId}/properties:
     put:
       description: |
@@ -1568,6 +1592,35 @@ definitions:
         type: string
       instanceId:
         description: 微服务实例id
+        type: string
+      errMessage:
+        description: 错误信息，成功为空，不成功，则为错误，在部分成功的场景使用
+        type: string
+        
+  DelServicesRequest:
+    type: object
+    properties:
+      serviceIds:
+        type: array
+        items:
+          type: string
+      force:
+        description: 不传即默认为false。 强制删除，则与该服务相关的信息删除，非强制删除： 如果作为该被依赖（作为provider，提供服务,且不是只存在自依赖）或者存在实例，则不能删除,其它均删除。
+        type: string
+        
+  DelServicesResponse:
+    type: object
+    properties:
+      services:
+        type: array
+        items:
+          $ref: "#/definitions/DelServicesRspInfo"
+        
+  DelServicesRspInfo:
+    type: object
+    properties:
+      serviceId:
+        description: 微服务id
         type: string
       errMessage:
         description: 错误信息，成功为空，不成功，则为错误，在部分成功的场景使用

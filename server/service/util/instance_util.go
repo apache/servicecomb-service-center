@@ -136,10 +136,10 @@ func isContain(endpoints []string, endpoint string) bool {
 	return false
 }
 
-func DeleteServiceAllInstances(ctx context.Context, in *pb.DeleteServiceRequest) error {
+func DeleteServiceAllInstances(ctx context.Context, ServiceId string) error {
 	tenant := util.ParseTenantProject(ctx)
 
-	instanceLeaseKey := apt.GenerateInstanceLeaseKey(tenant, in.ServiceId, "")
+	instanceLeaseKey := apt.GenerateInstanceLeaseKey(tenant, ServiceId, "")
 	resp, err := store.Store().Lease().Search(ctx, &registry.PluginOp{
 		Action:      registry.GET,
 		Key:         []byte(instanceLeaseKey),

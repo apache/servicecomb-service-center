@@ -184,6 +184,154 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 	}, nil
 }
 
+func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId string, force bool) (*pb.Response, error) {
+	tenant := util.ParseTenantProject(ctx)
+
+	service, err := ms.GetServiceByServiceId(ctx, tenant, ServiceId)
+	if err != nil {
+		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: get service failed.", ServiceId)
+		return pb.CreateResponse(pb.Response_FAIL, err.Error()), err
+	}
+
+	if service == nil {
+		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: service not exist.", ServiceId)
+		return  pb.CreateResponse(pb.Response_FAIL, "service not exist"), nil
+	}
+
+	util.LOGGER.Infof("start delete service %s", ServiceId)
+
+	// 强制删除，则与该服务相关的信息删除，非强制删除： 如果作为该被依赖（作为provider，提供服务,且不是只存在自依赖）或者存在实例，则不能删除
+	if !force {
+		keyConDependency := apt.GenerateProviderDependencyKey(tenant, ServiceId, "")
+		services, err := dependency.GetDependencies(ctx, keyConDependency, tenant)
+		if err != nil {
+			util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s:(unforce) inner err, get service dependency failed.", ServiceId)
+			return  pb.CreateResponse(pb.Response_FAIL, "Get dependency info failed."), err
+		}
+		if len(services) > 1 || (len(services) == 1 && services[0].ServiceId != ServiceId) {
+			util.LOGGER.Errorf(nil, "delete microservice failed, serviceId is %s:(unforce) can't delete, other services rely it.", ServiceId)
+			return  pb.CreateResponse(pb.Response_FAIL, "Can not delete this service, other service rely it."), err
+		}
+
+		instancesKey := apt.GenerateInstanceKey(tenant, ServiceId, "")
+		rsp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
+			Action:     registry.GET,
+			Key:        []byte(instancesKey),
+			WithPrefix: true,
+			CountOnly:  true,
+		})
+		if err != nil {
+			util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s:(unforce) inner err,get instances failed.", ServiceId)
+			return  pb.CreateResponse(pb.Response_FAIL, "Get instance failed."), err
+		}
+
+		if rsp.Count > 0 {
+			util.LOGGER.Errorf(nil, "delete microservice failed, serviceId is %s:(unforce) can't delete, exist instance.", ServiceId)
+			return  pb.CreateResponse(pb.Response_FAIL, "Can not delete this service, exist instance."), err
+		}
+	}
+
+	consumer := &pb.MicroServiceKey{
+		AppId:       service.AppId,
+		ServiceName: service.ServiceName,
+		Version:     service.Version,
+		Alias:       service.Alias,
+		Tenant:      tenant,
+	}
+
+	//refresh msCache consumerCache, ensure that watch can notify consumers when no cache.
+	err = dependency.RefreshDependencyCache(tenant, ServiceId, service)
+	if err != nil {
+		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: inner err, refresh service dependency cache failed.", ServiceId)
+		return  pb.CreateResponse(pb.Response_FAIL, "Refresh dependency cache failed."), err
+	}
+
+	opts := []*registry.PluginOp{
+		{
+			Action: registry.DELETE,
+			Key:    []byte(apt.GenerateServiceIndexKey(consumer)),
+		},
+		{
+			Action: registry.DELETE,
+			Key:    []byte(apt.GenerateServiceAliasKey(consumer)),
+		},
+		{
+			Action: registry.DELETE,
+			Key:    []byte(apt.GenerateServiceKey(tenant, ServiceId)),
+		},
+		{
+			Action: registry.DELETE,
+			Key: []byte(strings.Join([]string{
+				apt.GetServiceRuleRootKey(tenant),
+				ServiceId,
+				"",
+			}, "/")),
+		},
+	}
+
+	//删除依赖规则
+	lock, err := mux.Lock(mux.GLOBAL_LOCK)
+	if err != nil {
+		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: inner err, create lock failed.", ServiceId)
+		return  pb.CreateResponse(pb.Response_FAIL, err.Error()), err
+	}
+	optsTmp, err := dependency.DeleteDependencyForService(ctx, consumer, ServiceId)
+	lock.Unlock()
+	if err != nil {
+		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: inner err, delete dependency failed.", ServiceId)
+		return  pb.CreateResponse(pb.Response_FAIL, err.Error()), err
+	}
+	opts = append(opts, optsTmp...)
+
+	//删除黑白名单
+	rulekey := apt.GenerateServiceRuleKey(tenant, ServiceId, "")
+	opt := &registry.PluginOp{
+		Action:     registry.DELETE,
+		Key:        []byte(rulekey),
+		WithPrefix: true,
+	}
+	opts = append(opts, opt)
+	indexKey := apt.GenerateRuleIndexKey(tenant, ServiceId, "", "")
+	opts = append(opts, &registry.PluginOp{
+		Action: registry.DELETE,
+		Key:    []byte(indexKey),
+	})
+	opts = append(opts, opt)
+
+	//删除shemas
+	schemaKey := apt.GenerateServiceSchemaKey(tenant, ServiceId, "")
+	opt = &registry.PluginOp{
+		Action:     registry.DELETE,
+		Key:        []byte(schemaKey),
+		WithPrefix: true,
+	}
+	opts = append(opts, opt)
+
+	//删除tags
+	tagsKey := apt.GenerateServiceTagKey(tenant, ServiceId)
+	opt = &registry.PluginOp{
+		Action: registry.DELETE,
+		Key:    []byte(tagsKey),
+	}
+	opts = append(opts, opt)
+
+	//删除实例
+	err = serviceUtil.DeleteServiceAllInstances(ctx, ServiceId)
+	if err != nil {
+		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: delete all instances failed.", ServiceId)
+		return  pb.CreateResponse(pb.Response_FAIL, "Delete all instances failed for service."), err
+	}
+
+	_, err = registry.GetRegisterCenter().Txn(ctx, opts)
+	if err != nil {
+		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: commit data into etcd failed.", ServiceId)
+		return  pb.CreateResponse(pb.Response_FAIL, "commit operations failed"), nil
+	}
+
+	util.LOGGER.Infof("delete microservice successful: serviceid is %s,operator is %s.", ServiceId, util.GetIPFromContext(ctx))
+	return pb.CreateResponse(pb.Response_SUCCESS, "unregister service successfully"), nil
+}
+
 func (s *ServiceController) Delete(ctx context.Context, in *pb.DeleteServiceRequest) (*pb.DeleteServiceResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 || in.ServiceId == apt.Service.ServiceId {
 		util.LOGGER.Errorf(nil, "delete microservice failed: service empty.")
@@ -199,176 +347,88 @@ func (s *ServiceController) Delete(ctx context.Context, in *pb.DeleteServiceRequ
 		}, nil
 	}
 
-	force := in.Force
-	tenant := util.ParseTenantProject(ctx)
+	resp, err := s.DeleteServicePri(ctx, in.ServiceId,in.Force)
 
-	service, err := ms.GetServiceByServiceId(ctx, tenant, in.ServiceId)
-	if err != nil {
-		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: get service failed.", in.ServiceId)
-		return &pb.DeleteServiceResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
-		}, err
-	}
-
-	if service == nil {
-		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: service not exist.", in.ServiceId)
-		return &pb.DeleteServiceResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "service not exist"),
-		}, nil
-	}
-
-	util.LOGGER.Infof("start delete service %s", in.ServiceId)
-
-	// 强制删除，则与该服务相关的信息删除，非强制删除： 如果作为该被依赖（作为provider，提供服务,且不是只存在自依赖）或者存在实例，则不能删除
-	if !force {
-		keyConDependency := apt.GenerateProviderDependencyKey(tenant, in.ServiceId, "")
-		services, err := dependency.GetDependencies(ctx, keyConDependency, tenant)
-		if err != nil {
-			util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s:(unforce) inner err, get service dependency failed.", in.ServiceId)
-			return &pb.DeleteServiceResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, "Get dependency info failed."),
-			}, err
-		}
-		if len(services) > 1 || (len(services) == 1 && services[0].ServiceId != in.ServiceId) {
-			util.LOGGER.Errorf(nil, "delete microservice failed, serviceId is %s:(unforce) can't delete, other services rely it.", in.ServiceId)
-			return &pb.DeleteServiceResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, "Can not delete this service, other service rely it."),
-			}, err
-		}
-
-		instancesKey := apt.GenerateInstanceKey(tenant, in.ServiceId, "")
-		rsp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
-			Action:     registry.GET,
-			Key:        []byte(instancesKey),
-			WithPrefix: true,
-			CountOnly:  true,
-		})
-		if err != nil {
-			util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s:(unforce) inner err,get instances failed.", in.ServiceId)
-			return &pb.DeleteServiceResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, "Get instance failed."),
-			}, err
-		}
-
-		if rsp.Count > 0 {
-			util.LOGGER.Errorf(nil, "delete microservice failed, serviceId is %s:(unforce) can't delete, exist instance.", in.ServiceId)
-			return &pb.DeleteServiceResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, "Can not delete this service, exist instance."),
-			}, err
-		}
-	}
-
-	consumer := &pb.MicroServiceKey{
-		AppId:       service.AppId,
-		ServiceName: service.ServiceName,
-		Version:     service.Version,
-		Alias:       service.Alias,
-		Tenant:      tenant,
-	}
-
-	//refresh msCache consumerCache, ensure that watch can notify consumers when no cache.
-	err = dependency.RefreshDependencyCache(tenant, in.ServiceId, service)
-	if err != nil {
-		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: inner err, refresh service dependency cache failed.", in.ServiceId)
-		return &pb.DeleteServiceResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Refresh dependency cache failed."),
-		}, err
-	}
-
-	opts := []*registry.PluginOp{
-		{
-			Action: registry.DELETE,
-			Key:    []byte(apt.GenerateServiceIndexKey(consumer)),
-		},
-		{
-			Action: registry.DELETE,
-			Key:    []byte(apt.GenerateServiceAliasKey(consumer)),
-		},
-		{
-			Action: registry.DELETE,
-			Key:    []byte(apt.GenerateServiceKey(tenant, in.ServiceId)),
-		},
-		{
-			Action: registry.DELETE,
-			Key: []byte(strings.Join([]string{
-				apt.GetServiceRuleRootKey(tenant),
-				in.ServiceId,
-				"",
-			}, "/")),
-		},
-	}
-
-	//删除依赖规则
-	lock, err := mux.Lock(mux.GLOBAL_LOCK)
-	if err != nil {
-		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: inner err, create lock failed.", in.ServiceId)
-		return &pb.DeleteServiceResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
-		}, err
-	}
-	optsTmp, err := dependency.DeleteDependencyForService(ctx, consumer, in.ServiceId)
-	lock.Unlock()
-	if err != nil {
-		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: inner err, delete dependency failed.", in.ServiceId)
-		return &pb.DeleteServiceResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
-		}, err
-	}
-	opts = append(opts, optsTmp...)
-
-	//删除黑白名单
-	rulekey := apt.GenerateServiceRuleKey(tenant, in.ServiceId, "")
-	opt := &registry.PluginOp{
-		Action:     registry.DELETE,
-		Key:        []byte(rulekey),
-		WithPrefix: true,
-	}
-	opts = append(opts, opt)
-	indexKey := apt.GenerateRuleIndexKey(tenant, in.ServiceId, "", "")
-	opts = append(opts, &registry.PluginOp{
-		Action: registry.DELETE,
-		Key:    []byte(indexKey),
-	})
-	opts = append(opts, opt)
-
-	//删除shemas
-	schemaKey := apt.GenerateServiceSchemaKey(tenant, in.ServiceId, "")
-	opt = &registry.PluginOp{
-		Action:     registry.DELETE,
-		Key:        []byte(schemaKey),
-		WithPrefix: true,
-	}
-	opts = append(opts, opt)
-
-	//删除tags
-	tagsKey := apt.GenerateServiceTagKey(tenant, in.ServiceId)
-	opt = &registry.PluginOp{
-		Action: registry.DELETE,
-		Key:    []byte(tagsKey),
-	}
-	opts = append(opts, opt)
-
-	//删除实例
-	err = serviceUtil.DeleteServiceAllInstances(ctx, in)
-	if err != nil {
-		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: delete all instances failed.", in.ServiceId)
-		return &pb.DeleteServiceResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Delete all instances failed for service."),
-		}, err
-	}
-
-	_, err = registry.GetRegisterCenter().Txn(ctx, opts)
-	if err != nil {
-		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: commit data into etcd failed.", in.ServiceId)
-		return &pb.DeleteServiceResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "commit operations failed"),
-		}, nil
-	}
-
-	util.LOGGER.Infof("delete microservice successful: serviceid is %s,operator is %s.", in.ServiceId, util.GetIPFromContext(ctx))
 	return &pb.DeleteServiceResponse{
-		Response: pb.CreateResponse(pb.Response_SUCCESS, "unregister service successfully"),
-	}, nil
+		Response:resp,
+	},err
+}
+
+func (s *ServiceController)DeleteServices(ctx context.Context, request *pb.DelServicesRequest)(*pb.DelServicesResponse, error){
+	// 合法性检查
+	if request == nil || request.ServiceIds == nil || len(request.ServiceIds) == 0 {
+		return &pb.DelServicesResponse{
+			Response: pb.CreateResponse(pb.Response_FAIL, "Invalid request param"),
+			Services:nil,
+		},nil
+	}
+
+	existFlag := map[string]bool{}
+	nuoMultilCount := 0
+	// 批量删除服务
+	serviceRespChan := make(chan *pb.DelServicesRspInfo , len(request.ServiceIds))
+	for _, serviceId := range request.ServiceIds{
+		//ServiceId重复性检查
+		if _ ,ok := existFlag[serviceId]; ok {
+			util.LOGGER.Warnf(nil, "delete microservice %s , multiple.", serviceId)
+			continue
+		} else {
+			existFlag[serviceId] = true
+			nuoMultilCount++
+		}
+
+	        serviceRst := &pb.DelServicesRspInfo{
+			ServiceId : serviceId,
+			ErrMessage:"",
+		}
+
+		//检查服务ID合法性
+		in := &pb.DeleteServiceRequest{
+			ServiceId : serviceId,
+			Force : request.Force,
+		}
+		err := apt.Validate(in)
+		if err != nil {
+			util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: invalid parameters.", in.ServiceId)
+			serviceRst.ErrMessage = err.Error()
+			serviceRespChan <- serviceRst
+			continue
+		}
+
+		//执行删除服务操作
+		go func(serviceItem string){
+			 resp , err := s.DeleteServicePri(ctx, serviceItem, request.Force)
+			if err != nil {
+				serviceRst.ErrMessage = err.Error()
+			}else if resp.Code != pb.Response_SUCCESS{
+				serviceRst.ErrMessage  = resp.Message
+			}
+
+			serviceRespChan <- serviceRst
+		}(serviceId)
+	}
+
+	//获取批量删除服务的结果
+	count := 0
+	responseCode  := pb.Response_SUCCESS
+        delServiceRspInfo := []*pb.DelServicesRspInfo{}
+	for serviceRespItem := range serviceRespChan{
+		count++
+		if len(serviceRespItem.ErrMessage) != 0{
+			responseCode = pb.Response_FAIL
+		}
+		delServiceRspInfo = append(delServiceRspInfo, serviceRespItem)
+		//结果收集over，关闭通道
+		if count == nuoMultilCount{
+			close(serviceRespChan)
+		}
+	}
+
+	util.LOGGER.Infof("Batch DeleteServices servicid = %v , result = %d, ", request.ServiceIds, responseCode)
+        return &pb.DelServicesResponse{
+		Response: pb.CreateResponse(responseCode, "Delservices"),
+		Services: delServiceRspInfo,
+	},nil
 }
 
 func (s *ServiceController) GetOne(ctx context.Context, in *pb.GetServiceRequest) (*pb.GetServiceResponse, error) {
