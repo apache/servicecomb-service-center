@@ -60,7 +60,6 @@ func ChangeIncompatibleKeysStore() error {
 			}
 		}
 	}
-
 	for domain := range domainProject {
 		// tag
 		resp, err := registry.GetRegisterCenter().Do(context.Background(), &registry.PluginOp{
