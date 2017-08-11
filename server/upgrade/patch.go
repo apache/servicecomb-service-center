@@ -15,6 +15,7 @@ package upgrade
 
 import (
 	"github.com/ServiceComb/service-center/server/core"
+	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
@@ -27,37 +28,24 @@ func init() {
 
 func ChangeIncompatibleKeysStore() error {
 	// get all domain/project
-	resp, err := registry.GetRegisterCenter().Do(context.Background(), &registry.PluginOp{
+	domainProject := map[string]struct{}{}
+
+	projResp, err := registry.GetRegisterCenter().Do(context.Background(), &registry.PluginOp{
 		Action:     registry.GET,
-		Key:        []byte(core.GetDomainRootKey()),
+		Key:        []byte(core.GetServiceRootKey("")),
 		WithPrefix: true,
 		KeyOnly:    true,
 	})
 	if err != nil {
-		util.LOGGER.Errorf(err, "get all domains failed")
+		util.LOGGER.Errorf(err, "get all domain/projects failed")
 		return err
 	}
-
-	domainProject := map[string]struct{}{}
-	for _, kv := range resp.Kvs {
-		key := registry.BytesToStringWithNoCopy(kv.Key)
-		projResp, err := registry.GetRegisterCenter().Do(context.Background(), &registry.PluginOp{
-			Action:     registry.GET,
-			Key:        []byte(core.GetDomainProjectRootKey(key[strings.LastIndex(key, "/")+1:])),
-			WithPrefix: true,
-			KeyOnly:    true,
-		})
-		if err != nil {
-			util.LOGGER.Errorf(err, "get all domain/projects failed")
-			return err
-		}
-		for _, projKv := range projResp.Kvs {
-			key := registry.BytesToStringWithNoCopy(projKv.Key)
-			arr := strings.Split(key, "/")
-			str := arr[1] + "/" + arr[2]
-			if _, ok := domainProject[str]; !ok {
-				domainProject[str] = struct{}{}
-			}
+	for _, projKv := range projResp.Kvs {
+		key := registry.BytesToStringWithNoCopy(projKv.Key)
+		arr := strings.Split(key, "/")
+		str := arr[4] + "/" + arr[5]
+		if _, ok := domainProject[str]; !ok {
+			domainProject[str] = struct{}{}
 		}
 	}
 
@@ -83,6 +71,111 @@ func ChangeIncompatibleKeysStore() error {
 			})
 			if err != nil {
 				util.LOGGER.Errorf(err, "put new tags failed")
+				return err
+			}
+		}
+		// rule
+		resp, err = registry.GetRegisterCenter().Do(context.Background(), &registry.PluginOp{
+			Action:     registry.GET,
+			Key:        []byte(core.GetOldServiceRuleRootKey(domain)),
+			WithPrefix: true,
+		})
+		if err != nil {
+			util.LOGGER.Errorf(err, "get all old rules failed")
+			return err
+		}
+
+		for _, kv := range resp.Kvs {
+			key := registry.BytesToStringWithNoCopy(kv.Key)
+			arr := strings.Split(key, "/")
+			l := len(arr)
+			_, err := registry.GetRegisterCenter().Do(context.Background(), &registry.PluginOp{
+				Action: registry.PUT,
+				Key:    []byte(core.GenerateServiceRuleKey(domain, arr[l-2], arr[l-1])),
+				Value:  kv.Value,
+			})
+			if err != nil {
+				util.LOGGER.Errorf(err, "put new rules failed")
+				return err
+			}
+		}
+		// rule index
+		resp, err = registry.GetRegisterCenter().Do(context.Background(), &registry.PluginOp{
+			Action:     registry.GET,
+			Key:        []byte(core.GetOldServiceRuleIndexRootKey(domain)),
+			WithPrefix: true,
+		})
+		if err != nil {
+			util.LOGGER.Errorf(err, "get all old rule indexes failed")
+			return err
+		}
+
+		for _, kv := range resp.Kvs {
+			key := registry.BytesToStringWithNoCopy(kv.Key)
+			arr := strings.Split(key, "/")
+			l := len(arr)
+			_, err := registry.GetRegisterCenter().Do(context.Background(), &registry.PluginOp{
+				Action: registry.PUT,
+				Key:    []byte(core.GenerateRuleIndexKey(domain, arr[l-3], arr[l-2], arr[l-1])),
+				Value:  kv.Value,
+			})
+			if err != nil {
+				util.LOGGER.Errorf(err, "put new rule indexes failed")
+				return err
+			}
+		}
+		// dependency
+		resp, err = registry.GetRegisterCenter().Do(context.Background(), &registry.PluginOp{
+			Action:     registry.GET,
+			Key:        []byte(core.GetOldServiceDependencyRootKey(domain)),
+			WithPrefix: true,
+		})
+		if err != nil {
+			util.LOGGER.Errorf(err, "get all old dependencies failed")
+			return err
+		}
+
+		for _, kv := range resp.Kvs {
+			key := registry.BytesToStringWithNoCopy(kv.Key)
+			arr := strings.Split(key, "/")
+			l := len(arr)
+			_, err := registry.GetRegisterCenter().Do(context.Background(), &registry.PluginOp{
+				Action: registry.PUT,
+				Key:    []byte(core.GenerateServiceDependencyKey(arr[l-3], domain, arr[l-2], arr[l-1])),
+				Value:  kv.Value,
+			})
+			if err != nil {
+				util.LOGGER.Errorf(err, "put new dependencies failed")
+				return err
+			}
+		}
+		// dependency rule
+		resp, err = registry.GetRegisterCenter().Do(context.Background(), &registry.PluginOp{
+			Action:     registry.GET,
+			Key:        []byte(core.GetOldServiceDependencyRuleRootKey(domain)),
+			WithPrefix: true,
+		})
+		if err != nil {
+			util.LOGGER.Errorf(err, "get all old dependency rules failed")
+			return err
+		}
+
+		for _, kv := range resp.Kvs {
+			key := registry.BytesToStringWithNoCopy(kv.Key)
+			arr := strings.Split(key, "/")
+			l := len(arr)
+			_, err := registry.GetRegisterCenter().Do(context.Background(), &registry.PluginOp{
+				Action: registry.PUT,
+				Key: []byte(core.GenerateServiceDependencyRuleKey(arr[l-5], domain, &pb.MicroServiceKey{
+					AppId:       arr[l-4],
+					Stage:       arr[l-3],
+					ServiceName: arr[l-2],
+					Version:     arr[l-1],
+				})),
+				Value: kv.Value,
+			})
+			if err != nil {
+				util.LOGGER.Errorf(err, "put new dependency rules failed")
 				return err
 			}
 		}
