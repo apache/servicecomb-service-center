@@ -11,27 +11,15 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package version
+package upgrade
 
-import "github.com/astaxie/beego"
-
-const VERSION = "0.1.1"
-const API_VERSION = "3.0.0"
-
-type VersionSet struct {
-	Version    string `json:"version"`
-	ApiVersion string `json:"apiVersion"`
-	BuildTag   string `json:"buildTag"`
-}
-
-var version VersionSet
+import "github.com/ServiceComb/service-center/util"
 
 func init() {
-	version.Version = VERSION
-	version.ApiVersion = API_VERSION
-	version.BuildTag = beego.AppConfig.String("build_tag")
+	AddPatch("0-0.1.1", ChangeIncompatibleKeysStore)
 }
 
-func Ver() VersionSet {
-	return version
+func ChangeIncompatibleKeysStore() error {
+	util.LOGGER.Infof("patch ChangeIncompatibleKeysStore(0.1.1) install [OK]")
+	return nil
 }

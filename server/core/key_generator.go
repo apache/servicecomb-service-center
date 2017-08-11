@@ -20,6 +20,7 @@ import (
 
 const (
 	REGISTRY_ROOT_KEY        = "cse-sr"
+	REGISTRY_SYS_KEY         = "sys"
 	REGISTRY_SERVICE_KEY     = "ms"
 	REGISTRY_INSTANCE_KEY    = "inst"
 	REGISTRY_FILE            = "files"
@@ -327,5 +328,12 @@ func GenerateInsEpsIndex(tenant string, serviceId string, inEpsIndex string) str
 		GetInstancesEndpointsIndexRootKey(tenant),
 		serviceId,
 		inEpsIndex,
+	}, "/")
+}
+
+func GetSystemKey() string {
+	return strings.Join([]string{
+		GetRootKey(),
+		REGISTRY_SYS_KEY,
 	}, "/")
 }
