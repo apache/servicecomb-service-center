@@ -62,7 +62,7 @@ func (governServiceController *GovernServiceController) GetServicesInfo(ctx cont
 	}
 
 	return &pb.GetServicesInfoResponse{
-		Response:          pb.CreateResponse(pb.Response_SUCCESS, "register service instance successfully"),
+		Response:          pb.CreateResponse(pb.Response_SUCCESS, "Register service instance successfully."),
 		AllServicesDetail: allServiceDetails,
 	}, nil
 }
@@ -80,7 +80,7 @@ func (governServiceController *GovernServiceController) GetServiceDetail(ctx con
 	service, err := ms.GetServiceByServiceId(ctx, tenant, in.ServiceId)
 	if service == nil {
 		return &pb.GetServiceDetailResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Service is not exist."),
+			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
 		}, nil
 	}
 	if err != nil {
