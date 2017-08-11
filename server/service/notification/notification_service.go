@@ -32,7 +32,7 @@ import (
 )
 
 const (
-	DEFAULT_MAX_QUEUE = 100
+	DEFAULT_MAX_QUEUE = 1000
 	DEFAULT_TIMEOUT   = 30 * time.Second
 
 	NOTIFTY NotifyType = iota
@@ -51,7 +51,7 @@ func init() {
 	notifyService = &NotifyService{
 		isClose: true,
 	}
-	store.AddKvStoreEventFunc(store.INSTANCE, notifyService.WatchInstance)
+	store.AddEventHandleFunc(store.INSTANCE, notifyService.WatchInstance)
 }
 
 type NotifyType int
@@ -183,7 +183,7 @@ func (s *NotifyService) AddJob(job NotifyJob) error {
 func (s *NotifyService) publish2Subscriber(t NotifyType) {
 	defer s.waits.Done()
 	for job := range s.queues[t] {
-		util.LOGGER.Infof("notification server got a job %s: %s to notify subscriber %s",
+		util.LOGGER.Infof("notification service got a job %s: %s to notify subscriber %s",
 			job.Type(), job.Subject(), job.SubscriberId())
 
 		s.mutexes[t].Lock()
@@ -320,7 +320,7 @@ func (s *NotifyService) WatchInstance(evt *store.KvEvent) {
 		consumer = consumer[strings.LastIndex(consumer, "/")+1:]
 		job := NewWatchJob(INSTANCE, consumer, apt.GetInstanceRootKey(tenantProject)+"/",
 			evt.Revision, response)
-		util.LOGGER.Debugf("publish event to notify server, %v", job)
+		util.LOGGER.Debugf("publish event to notify service, %v", job)
 
 		// TODO add超时怎么处理？
 		s.AddJob(job)

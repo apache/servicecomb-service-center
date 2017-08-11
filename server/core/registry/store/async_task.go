@@ -38,6 +38,7 @@ type AsyncTasker interface {
 	LatestHandled(key string) (AsyncTask, error)
 	Run()
 	Stop()
+	Ready() <-chan struct{}
 }
 
 type BaseAsyncTasker struct {
@@ -46,6 +47,7 @@ type BaseAsyncTasker struct {
 	removeTasks map[string]struct{}
 	goroutine   *util.GoRoutine
 	queueLock   sync.RWMutex
+	ready       chan struct{}
 	isClose     bool
 }
 
@@ -109,8 +111,8 @@ func (lat *BaseAsyncTasker) removeTask(key string) {
 
 func (lat *BaseAsyncTasker) LatestHandled(key string) (AsyncTask, error) {
 	lat.queueLock.RLock()
-	defer lat.queueLock.RUnlock()
 	at, ok := lat.latestTasks[key]
+	lat.queueLock.RUnlock()
 	if !ok {
 		return nil, errors.New("expired behavior")
 	}
@@ -118,6 +120,7 @@ func (lat *BaseAsyncTasker) LatestHandled(key string) (AsyncTask, error) {
 }
 
 func (lat *BaseAsyncTasker) schedule(stopCh <-chan struct{}) {
+	util.SafeCloseChan(lat.ready)
 	ready := make(chan AsyncTask, DEFAULT_MAX_TASK_COUNT)
 	defer func() {
 		close(ready)
@@ -240,14 +243,6 @@ func (lat *BaseAsyncTasker) scheduleTask(at AsyncTask) {
 	})
 }
 
-func (lat *BaseAsyncTasker) closeCh(c chan struct{}) {
-	select {
-	case <-c:
-	default:
-		close(c)
-	}
-}
-
 func (lat *BaseAsyncTasker) Stop() {
 	lat.queueLock.Lock()
 	if lat.isClose {
@@ -265,6 +260,14 @@ func (lat *BaseAsyncTasker) Stop() {
 	}
 	lat.queueLock.Unlock()
 	lat.goroutine.Close(true)
+
+	util.SafeCloseChan(lat.ready)
+
+	util.LOGGER.Debugf("AsyncTasker is stopped")
+}
+
+func (lat *BaseAsyncTasker) Ready() <-chan struct{} {
+	return lat.ready
 }
 
 func NewAsyncTasker() AsyncTasker {
@@ -273,6 +276,7 @@ func NewAsyncTasker() AsyncTasker {
 		queues:      make(map[string]*util.UniQueue),
 		removeTasks: make(map[string]struct{}),
 		goroutine:   util.NewGo(make(chan struct{})),
+		ready:       make(chan struct{}),
 		isClose:     true,
 	}
 }

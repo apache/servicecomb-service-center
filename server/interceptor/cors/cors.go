@@ -42,7 +42,7 @@ func New() *CORS {
 	c := new(CORS)
 	c.allowOrigin = "*"
 	c.allowCredentials = false
-	c.allowHeaders = map[string]struct{}{"origin": {}, "x-domain-name": {}, "x-consumerid": {}}
+	c.allowHeaders = map[string]struct{}{"origin": {}, "content-type": {}, "x-domain-name": {}, "x-consumerid": {}}
 	c.allowMethods = map[string]struct{}{"GET": {}, "POST": {}, "PUT": {}, "DELETE": {}, "UPDATE": {}}
 	c.maxAge = 1500
 	return c
@@ -150,6 +150,7 @@ func Intercept(w http.ResponseWriter, r *http.Request) (err error) {
 	} else if acrm := r.Header.Get("Access-Control-Request-Method"); acrm == "" {
 		cors.handleActualRequest(w, r)
 	} else {
+		util.LOGGER.Debugf("identify the current request is a CORS")
 		cors.handlePreflightRequest(w, r)
 		err = errors.New("Handle preflight request")
 	}

@@ -3,12 +3,12 @@ info:
   title: Service Center API
   version: "3.0.0"
 # the domain of the service
-host: 127.0.0.1
+host: 127.0.0.1:30100
 # array of all schemes that your API supports
 schemes:
+  - http
   - https
 # will be prefixed to all paths
-basePath: /registry/v3
 produces:
   - application/json
 paths:
@@ -50,12 +50,17 @@ paths:
           description: 内部错误
           schema:
             type: string
-  /microservices/{serviceId}:
+  /registry/v3/microservices/{serviceId}:
     get:
       description: |
         根据serviceId查询微服务定义信息。
       operationId: getOne
       parameters:
+        - name: x-domain-name
+          in: header
+          required: true
+          type: string
+          default: default
         - name: serviceId
           in: path
           description: 微服务唯一标识。
@@ -81,6 +86,11 @@ paths:
         删除一个微服务定义及其相关信息，同时注销其所有实例信息。
       operationId: delete
       parameters:
+        - name: x-domain-name
+          in: header
+          required: true
+          type: string
+          default: default
         - name: serviceId
           in: path
           description: 微服务唯一标识。
@@ -103,13 +113,19 @@ paths:
           description: 内部错误
           schema:
             type: string
-  /microservices:
+  /registry/v3/microservices:
     get:
       description: |
         根据条件组合，查询满足所有条件的微服务定义信息。
       operationId: getServices
       tags:
         - microservices
+      parameters:
+        - name: x-domain-name
+          in: header
+          required: true
+          type: string
+          default: default
       responses:
         200:
           description: 查询成功
@@ -128,6 +144,11 @@ paths:
         在注册微服务实例前需要创建服务静态信息，之后注册的微服务实例根据service id这个字段与静态信息关联，一个服务对应对多个实例。
       operationId: create
       parameters:
+        - name: x-domain-name
+          in: header
+          required: true
+          type: string
+          default: default
         - name: service
           in: body
           description: 创建微服务请求结构体。
@@ -173,13 +194,17 @@ paths:
           description: 内部错误
           schema:
             type: string
-            
-  /microservices/{serviceId}/properties:
+  /registry/v3/microservices/{serviceId}/properties:
     put:
       description: |
         创建微服务静态信息后可对服务部分字段进行更新，每次更新都需要传入完整的服务静态信息json，也就是说，即便不更新部分的字段也要作为json的属性传过去。
       operationId: updateProperties
       parameters:
+        - name: x-domain-name
+          in: header
+          required: true
+          type: string
+          default: default
         - name: serviceId
           in: path
           description: 微服务唯一标识。
@@ -204,12 +229,17 @@ paths:
           description: 内部错误
           schema:
             type: string
-  /microservices/{serviceId}/tags:
+  /registry/v3/microservices/{serviceId}/tags:
     post:
       description: |
         为serviceId的微服务创建tag。
       operationId: addTags
       parameters:
+        - name: x-domain-name
+          in: header
+          required: true
+          type: string
+          default: default
         - name: serviceId
           in: path
           description: 微服务唯一标识。
@@ -240,6 +270,11 @@ paths:
         获取serviceId的微服务的tag
       operationId: getTags
       parameters:
+        - name: x-domain-name
+          in: header
+          required: true
+          type: string
+          default: default
         - name: serviceId
           in: path
           description: 微服务唯一标识。
@@ -261,12 +296,17 @@ paths:
           description: 内部错误
           schema:
                 type: string
-  /microservices/{serviceId}/tags/{key}:
+  /registry/v3/microservices/{serviceId}/tags/{key}:
     put:
       description: |
         为serviceId的微服务更新key对应的value值
       operationId: updateTag
       parameters:
+        - name: x-domain-name
+          in: header
+          required: true
+          type: string
+          default: default
         - name: serviceId
           in: path
           description: 微服务唯一标识。
@@ -301,6 +341,11 @@ paths:
         为serviceId的微服务删除tags
       operationId: deleteTags
       parameters:
+        - name: x-domain-name
+          in: header
+          required: true
+          type: string
+          default: default
         - name: serviceId
           in: path
           description: 微服务唯一标识。
@@ -325,12 +370,17 @@ paths:
           description: 内部错误
           schema:
             type: string
-  /microservices/{serviceId}/rules:
+  /registry/v3/microservices/{serviceId}/rules:
     post:
       description: |
         为serviceId的服务新增黑白名单，同一服务，attribute和pattern唯一标识一份黑白名单。
       operationId: addRule
       parameters:
+        - name: x-domain-name
+          in: header
+          required: true
+          type: string
+          default: default
         - name: serviceId
           in: path
           description: 微服务唯一标识。
@@ -363,6 +413,11 @@ paths:
         获取serviceId的服务的黑白名单信息。
       operationId: getRule
       parameters:
+        - name: x-domain-name
+          in: header
+          required: true
+          type: string
+          default: default
         - name: serviceId
           in: path
           description: 微服务唯一标识。
@@ -390,6 +445,11 @@ paths:
         为serviceId的服务更新黑白名单。
       operationId: updateRule
       parameters:
+        - name: x-domain-name
+          in: header
+          required: true
+          type: string
+          default: default
         - name: serviceId
           in: path
           description: 微服务唯一标识。
@@ -427,6 +487,11 @@ paths:
         为serviceId的服务删除黑白名单。
       operationId: deleteRule
       parameters:
+        - name: x-domain-name
+          in: header
+          required: true
+          type: string
+          default: default
         - name: serviceId
           in: path
           description: 微服务唯一标识。
@@ -453,12 +518,17 @@ paths:
           description: 内部错误
           schema:
             type: string
-  /microservices/{serviceId}/schemas/{schemaId}:
+  /registry/v3/microservices/{serviceId}/schemas/{schemaId}:
     get:
       description: |
         根据serviceId和schemaId查询微服务的schema信息。
       operationId: getSchemaInfo
       parameters:
+        - name: x-domain-name
+          in: header
+          required: true
+          type: string
+          default: default
         - name: serviceId
           in: path
           description: 微服务唯一标识。
@@ -490,6 +560,11 @@ paths:
         根据schemaId更新微服务的访问契约内容。
       operationId: modifySchema
       parameters:
+        - name: x-domain-name
+          in: header
+          required: true
+          type: string
+          default: default
         - name: serviceId
           in: path
           description: 微服务唯一标识。
@@ -525,6 +600,11 @@ paths:
         删除微服务的一个schema信息。
       operationId: deleteSchema
       parameters:
+        - name: x-domain-name
+          in: header
+          required: true
+          type: string
+          default: default
         - name: serviceId
           in: path
           description: 微服务唯一标识。
@@ -549,12 +629,17 @@ paths:
           description: 内部错误
           schema:
             type: string
-  /dependencies:
+  /registry/v3/dependencies:
     put:
       description: |
         创建服务间的依赖关系，consumer的version必须是确定的版本，serviceName不能为*，consumer必须是已存在的服务，provider可以是还未创建的。
       operationId: createDependenciesForMircServices
       parameters:
+        - name: x-domain-name
+          in: header
+          required: true
+          type: string
+          default: default
         - name: type
           in: body
           description: 创建服务间的依赖关系的请求体。
@@ -576,12 +661,17 @@ paths:
           description: 内部错误
           schema:
             type: string
-  /microservices/{consumerId}/providers:
+  /registry/v3/microservices/{consumerId}/providers:
     get:
       description: |
         根据consumerId获取该服务的所有providers
       operationId: getConsumerDependencies
       parameters:
+        - name: x-domain-name
+          in: header
+          required: true
+          type: string
+          default: default
         - name: consumerId
           in: path
           description: 消费者的服务id。
@@ -602,12 +692,17 @@ paths:
           description: 内部错误
           schema:
             type: string
-  /microservices/{providerId}/consumers:
+  /registry/v3/microservices/{providerId}/consumers:
     get:
       description: |
         根据providerId获取该服务的所有consumers
       operationId: getProviderDependencies
       parameters:
+        - name: x-domain-name
+          in: header
+          required: true
+          type: string
+          default: default
         - name: providerId
           in: path
           description: 提供者的服务id。
@@ -628,12 +723,17 @@ paths:
           description: 内部错误
           schema:
             type: string
-  /existence:
+  /registry/v3/existence:
     get:
       description: |
         可通过指定条件，查询微服务serviceId或schema的唯一标识信息。
       operationId: exist
       parameters:
+        - name: x-domain-name
+          in: header
+          required: true
+          type: string
+          default: default
         - name: type
           in: query
           description: 资源类型 microservice微服务 schema微服务访问契约。
@@ -680,13 +780,18 @@ paths:
           description: 内部错误
           schema:
             type: string
-  /microservices/{serviceId}/instances:
+  /registry/v3/microservices/{serviceId}/instances:
     post:
       description: |
         创建微服务后就可以注册该微服务的实例了。 注册微服务实例时，需提供该微服务实例相关的信息。
         instanceID可定制,如果定制了，再次注册就直接全内容覆盖。如果没定制，逻辑如下：系统自动生成id，如果endpoints内容重复，则使用原来的id
       operationId: register
       parameters:
+        - name: x-domain-name
+          in: header
+          required: true
+          type: string
+          default: default
         - name: serviceId
           in: path
           description: 微服务唯一标识。
@@ -718,6 +823,11 @@ paths:
         实例注册后可以根据 service_id 发现该微服务的所有实例。
       operationId: getInstances
       parameters:
+        - name: x-domain-name
+          in: header
+          required: true
+          type: string
+          default: default
         - name: X-ConsumerId
           in: header
           description: 微服务消费者的微服务唯一标识。
@@ -747,12 +857,17 @@ paths:
           description: 内部错误
           schema:
             type: string
-  /microservices/{serviceId}/instances/{instanceId}:
+  /registry/v3/microservices/{serviceId}/instances/{instanceId}:
     delete:
       description: |
         实例注册后可以根据 instance_id 进行实例注销。
       operationId: unregister
       parameters:
+        - name: x-domain-name
+          in: header
+          required: true
+          type: string
+          default: default
         - name: serviceId
           in: path
           description: 微服务唯一标识。
@@ -781,6 +896,11 @@ paths:
         实例注册后可以根据 service_id和serviceId获取该实例的详细信息。
       operationId: GetOneInstance
       parameters:
+        - name: x-domain-name
+          in: header
+          required: true
+          type: string
+          default: default
         - name: X-ConsumerId
           in: header
           description: 微服务消费者的微服务唯一标识。
@@ -804,7 +924,6 @@ paths:
           in: query
           description: 实例的stage。
           type: string
-
       tags:
         - instances
       responses:
@@ -820,12 +939,17 @@ paths:
           description: 内部错误
           schema:
             type: string
-  /microservices/{serviceId}/instances/{instanceId}/properties:
+  /registry/v3/microservices/{serviceId}/instances/{instanceId}/properties:
     put:
       description: |
         实例注册后可以根据 instance_id 进行添加/更新一个微服务实例扩展信息。
       operationId: updateInstanceProperties
       parameters:
+        - name: x-domain-name
+          in: header
+          required: true
+          type: string
+          default: default
         - name: serviceId
           in: path
           description: 微服务唯一标识。
@@ -855,12 +979,17 @@ paths:
           description: 内部错误
           schema:
             type: string
-  /microservices/{serviceId}/instances/{instanceId}/status:
+  /registry/v3/microservices/{serviceId}/instances/{instanceId}/status:
     put:
       description: |
         实例注册后可以根据 instance_id 进行更新一个微服务实例状态。
       operationId: updateStatus
       parameters:
+        - name: x-domain-name
+          in: header
+          required: true
+          type: string
+          default: default
         - name: serviceId
           in: path
           description: 微服务唯一标识。
@@ -889,12 +1018,17 @@ paths:
           description: 内部错误
           schema:
             type: string
-  /microservices/{serviceId}/instances/{instanceId}/heartbeat:
+  /registry/v3/microservices/{serviceId}/instances/{instanceId}/heartbeat:
     put:
       description: |
         服务提供端需要向服务中心发送心跳信息，以保证服务中心知道服务实例是否健康。
       operationId: heartbeat
       parameters:
+        - name: x-domain-name
+          in: header
+          required: true
+          type: string
+          default: default
         - name: serviceId
           in: path
           description: 微服务唯一标识。
@@ -918,12 +1052,17 @@ paths:
           description: 内部错误
           schema:
             type: string
-  /heartbeats:
+  /registry/v3/heartbeats:
     put:
       description: |
         服务提供端需要向服务中心发送心跳信息，以保证服务中心知道服务实例是否健康。该接口为批量接口
       operationId: HeartbeatSet
       parameters:
+        - name: x-domain-name
+          in: header
+          required: true
+          type: string
+          default: default
         - name: Instances
           in: body
           description: 批量上报心跳的实例的标识。
@@ -943,12 +1082,17 @@ paths:
           description: 内部错误
           schema:
             type: string
-  /instances:
+  /registry/v3/instances:
     get:
       description: |
         实例注册后可以根据微服务版本规则或字段条件 发现该微服务的实例。
       operationId: find
       parameters:
+        - name: x-domain-name
+          in: header
+          required: true
+          type: string
+          default: default
         - name: X-ConsumerId
           in: header
           description: 微服务消费者的微服务唯一标识。
@@ -992,7 +1136,7 @@ paths:
           description: 内部错误
           schema:
             type: string
-  /microservices/{serviceId}/watcher:
+  /registry/v3/microservices/{serviceId}/watcher:
     get:
       description: |
         当服务在心跳消失，注册，注销，状态更新时， 将这些变化主动推送到客户端。
@@ -1018,7 +1162,7 @@ paths:
           description: 内部错误
           schema:
             type: string
-  /microservices/{serviceId}/listwatcher:
+  /registry/v3/microservices/{serviceId}/listwatcher:
     get:
       description: |
         watch成功后返回完整的微服务提供者的实例信息，且服务在心跳消失，注册，注销，状态更新时，将这些变化主动推送到客户端。
@@ -1047,6 +1191,8 @@ definitions:
   Version:
     type: object
     properties:
+      version:
+        type: string
       apiVersion:
         type: string
       buildTag:

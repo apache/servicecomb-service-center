@@ -54,23 +54,19 @@ var typeNames = []string{
 	ENDPOINTS_INDEX: "ENDPOINTS_INDEX",
 }
 
-var (
-	kvStoreEventFuncMap map[StoreType][]KvEventFunc
-	store               *KvStore
-)
+var store *KvStore
 
 func init() {
 	store = &KvStore{
 		indexers:    make(map[StoreType]Indexer),
 		asyncTasker: NewAsyncTasker(),
+		ready:       make(chan struct{}),
 	}
-	kvStoreEventFuncMap = make(map[StoreType][]KvEventFunc)
 	for i := StoreType(0); i != typeEnd; i++ {
-		kvStoreEventFuncMap[i] = make([]KvEventFunc, 0, 5)
 		store.newNullStore(i)
 	}
-	AddKvStoreEventFunc(DOMAIN, store.onDomainEvent)
-	AddKvStoreEventFunc(LEASE, store.onLeaseEvent)
+	AddEventHandleFunc(DOMAIN, store.onDomainEvent)
+	AddEventHandleFunc(LEASE, store.onLeaseEvent)
 }
 
 type LeaseAsyncTask struct {
@@ -115,39 +111,53 @@ func (st StoreType) String() string {
 type KvStore struct {
 	indexers    map[StoreType]Indexer
 	asyncTasker AsyncTasker
-	lock        sync.Mutex
+	lock        sync.RWMutex
+	ready       chan struct{}
 	isClose     bool
 }
 
 func (s *KvStore) newStore(t StoreType, prefix string) {
-	indexer := NewKvCacheIndexer(t, NewCacher(prefix,
+	s.newCacherStore(t, NewCacher(prefix,
 		func(evt *KvEvent) {
-			s.onEvent(t, evt)
+			EventHandler(t).OnEvent(evt)
 		}))
-	indexer.Run()
-
-	s.indexers[t] = indexer
 }
 
 func (s *KvStore) newNullStore(t StoreType) {
-	s.indexers[t] = NewKvCacheIndexer(t, NullCacher)
+	s.newCacherStore(t, NullCacher)
 }
 
-func (s *KvStore) onEvent(t StoreType, evt *KvEvent) {
-	fs := kvStoreEventFuncMap[t]
-	for _, f := range fs {
-		f(evt) // TODO how to be parallel?
-	}
+func (s *KvStore) newCacherStore(t StoreType, cacher Cacher) {
+	indexer := NewKvCacheIndexer(t, cacher)
+	s.indexers[t] = indexer
+	indexer.Run()
 }
 
 func (s *KvStore) Run() {
-	s.storeDomain()
+	go s.store()
 	s.asyncTasker.Run()
 }
 
-func (s *KvStore) storeDomain() {
-	key := apt.GenerateTenantKey("")
-	s.newStore(DOMAIN, key[:len(key)-1])
+func (s *KvStore) store() {
+	// TODO should cache data group by domain.
+	s.newStore(DOMAIN, apt.GetDomainRootKey())
+	s.newStore(SERVICE, apt.GetServiceRootKey(""))
+	s.newStore(INSTANCE, apt.GetInstanceRootKey(""))
+	s.newStore(LEASE, apt.GetInstanceLeaseRootKey(""))
+	s.newStore(SERVICE_INDEX, apt.GetServiceIndexRootKey(""))
+	s.newStore(SERVICE_ALIAS, apt.GetServiceAliasRootKey(""))
+	s.newStore(ENDPOINTS_INDEX, apt.GetInstancesEndpointsIndexRootKey(""))
+	// TODO current key design does not support cache store.
+	// s.newStore(DEPENDENCY, apt.GetServiceDependencyRootKey(domain))
+	// s.newStore(SERVICE_TAG, apt.GetServiceTagRootKey(domain))
+	// s.newStore(RULE, apt.GetServiceRuleRootKey(domain))
+	// s.newStore(RULE_INDEX, apt.GetServiceRuleIndexRootKey(domain))
+	for _, i := range s.indexers {
+		<-i.Ready()
+	}
+	util.SafeCloseChan(s.ready)
+
+	util.LOGGER.Debugf("all indexers are ready")
 }
 
 func (s *KvStore) onDomainEvent(evt *KvEvent) {
@@ -167,8 +177,6 @@ func (s *KvStore) onDomainEvent(evt *KvEvent) {
 	}
 
 	util.LOGGER.Infof("new tenant %s is created", tenant)
-	s.storeDomainData(tenant)
-	return
 }
 
 func (s *KvStore) onLeaseEvent(evt *KvEvent) {
@@ -189,20 +197,6 @@ func (s *KvStore) removeAsyncTaske(key string) {
 	s.asyncTasker.RemoveTask(key)
 }
 
-func (s *KvStore) storeDomainData(domain string) {
-	s.newStore(SERVICE, apt.GetServiceRootKey(domain))
-	s.newStore(INSTANCE, apt.GetInstanceRootKey(domain))
-	s.newStore(LEASE, apt.GetInstanceLeaseRootKey(domain))
-	s.newStore(SERVICE_INDEX, apt.GetServiceIndexRootKey(domain))
-	s.newStore(SERVICE_ALIAS, apt.GetServiceAliasRootKey(domain))
-	s.newStore(ENDPOINTS_INDEX, apt.GetInstancesEndpointsIndexRootKey(domain))
-	// TODO current key design does not support cache store.
-	// s.newStore(DEPENDENCY, apt.GetServiceDependencyRootKey(domain))
-	// s.newStore(SERVICE_TAG, apt.GetServiceTagRootKey(domain))
-	// s.newStore(RULE, apt.GetServiceRuleRootKey(domain))
-	// s.newStore(RULE_INDEX, apt.GetServiceRuleIndexRootKey(domain))
-}
-
 func (s *KvStore) closed() bool {
 	return s.isClose
 }
@@ -219,7 +213,14 @@ func (s *KvStore) Stop() {
 
 	s.asyncTasker.Stop()
 
+	util.SafeCloseChan(s.ready)
+
 	util.LOGGER.Debugf("store daemon stopped.")
+}
+
+func (s *KvStore) Ready() <-chan struct{} {
+	<-s.asyncTasker.Ready()
+	return s.ready
 }
 
 func (s *KvStore) Service() Indexer {
@@ -289,8 +290,4 @@ func (s *KvStore) KeepAlive(ctx context.Context, op *registry.PluginOp) (int64, 
 
 func Store() *KvStore {
 	return store
-}
-
-func AddKvStoreEventFunc(t StoreType, f KvEventFunc) {
-	kvStoreEventFuncMap[t] = append(kvStoreEventFuncMap[t], f)
 }

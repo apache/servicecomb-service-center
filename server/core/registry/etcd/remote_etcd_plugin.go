@@ -437,7 +437,7 @@ func (c *EtcdClient) Watch(ctx context.Context, op *registry.PluginOp, send func
 		defer client.Close()
 
 		key := registry.BytesToStringWithNoCopy(op.Key)
-		if op.WithPrefix {
+		if op.WithPrefix && key[len(key)-1] != '/' {
 			key += "/"
 		}
 		util.LOGGER.Debugf("start to watch key %s", key)
@@ -485,7 +485,7 @@ func (c *EtcdClient) Watch(ctx context.Context, op *registry.PluginOp, send func
 }
 
 func NewRegistry(cfg *registry.Config) registry.Registry {
-	util.LOGGER.Warnf(nil, "starting manager server in proxy mode")
+	util.LOGGER.Warnf(nil, "starting service center in proxy mode")
 
 	inst := &EtcdClient{
 		err:   make(chan error, 1),

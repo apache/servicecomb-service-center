@@ -34,6 +34,7 @@ type Indexer interface {
 	Search(ctx context.Context, op *registry.PluginOp) (*registry.PluginResponse, error)
 	Run()
 	Stop()
+	Ready() <-chan struct{}
 }
 
 type KvCacheIndexer struct {
@@ -44,6 +45,7 @@ type KvCacheIndexer struct {
 	prefixLock       sync.RWMutex
 	prefixBuildQueue chan *KvEvent
 	goroutine        *util.GoRoutine
+	ready            chan struct{}
 	isClose          bool
 }
 
@@ -53,7 +55,8 @@ func (i *KvCacheIndexer) Search(ctx context.Context, op *registry.PluginOp) (*re
 	}
 
 	if op.WithNoCache || op.WithRev > 0 {
-		util.LOGGER.Debugf("match WitchNoCache or WitchRev, request etcd server, op: %s", op)
+		util.LOGGER.Debugf("search %s match WitchNoCache or WitchRev, request etcd server, op: %s",
+			i.cacheType, op)
 		return registry.GetRegisterCenter().Do(ctx, op)
 	}
 
@@ -76,13 +79,14 @@ func (i *KvCacheIndexer) Search(ctx context.Context, op *registry.PluginOp) (*re
 			resp.Count = 1
 			return resp, nil
 		}
-		util.LOGGER.Debugf("cache does not store this key, request etcd server, op: %s", op)
+		util.LOGGER.Debugf("%s cache does not store this key, request etcd server, op: %s", i.cacheType, op)
 		return registry.GetRegisterCenter().Do(ctx, op)
 	}
 
 	cacheData := i.Cache().Data(key)
 	if cacheData == nil {
-		util.LOGGER.Debugf("do not match any key in cache store, request etcd server, op: %s", op)
+		util.LOGGER.Debugf("do not match any key in %s cache store, request etcd server, op: %s",
+			i.cacheType, op)
 		return registry.GetRegisterCenter().Do(ctx, op)
 	}
 
@@ -110,7 +114,8 @@ func (i *KvCacheIndexer) searchPrefixKeyFromCacheOrRemote(ctx context.Context, o
 	keys, ok := i.prefixIndex[prefix]
 	i.prefixLock.RUnlock()
 	if !ok {
-		util.LOGGER.Debugf("can not find any key from cache with prefix, request etcd server, op: %s", op)
+		util.LOGGER.Debugf("can not find any key from %s cache with prefix, request etcd server, op: %s",
+			i.cacheType, op)
 		prefixResp, err := registry.GetRegisterCenter().Do(ctx, op)
 		if err != nil {
 			return nil, err
@@ -153,9 +158,9 @@ func (i *KvCacheIndexer) onCacheEvent(evt *KvEvent) {
 	}
 
 	i.prefixLock.RLock()
-	defer i.prefixLock.RUnlock()
 
 	if i.isClose {
+		i.prefixLock.RUnlock()
 		return
 	}
 
@@ -167,12 +172,13 @@ func (i *KvCacheIndexer) onCacheEvent(evt *KvEvent) {
 			i.BuildTimeout, key, evt.Action)
 	case i.prefixBuildQueue <- evt:
 	}
+
+	i.prefixLock.RUnlock()
 }
 
 func (i *KvCacheIndexer) buildIndex() {
 	i.goroutine.Do(func(stopCh <-chan struct{}) {
-		util.LOGGER.Debugf("build index goroutine is running")
-		defer util.LOGGER.Debugf("build index goroutine is stopped")
+		util.SafeCloseChan(i.ready)
 		for {
 			select {
 			case <-stopCh:
@@ -200,6 +206,7 @@ func (i *KvCacheIndexer) buildIndex() {
 
 			}
 		}
+		util.LOGGER.Debugf("build %s index goroutine is stopped", i.cacheType)
 	})
 }
 
@@ -212,7 +219,7 @@ func (i *KvCacheIndexer) Run() {
 	i.isClose = false
 	i.prefixLock.Unlock()
 
-	AddKvStoreEventFunc(i.cacheType, i.onCacheEvent)
+	AddEventHandleFunc(i.cacheType, i.onCacheEvent)
 
 	i.buildIndex()
 
@@ -230,8 +237,18 @@ func (i *KvCacheIndexer) Stop() {
 
 	i.cacher.Stop()
 
-	close(i.prefixBuildQueue)
 	i.goroutine.Close(true)
+
+	close(i.prefixBuildQueue)
+
+	util.SafeCloseChan(i.ready)
+
+	util.LOGGER.Debugf("%s indexer is stopped", i.cacheType)
+}
+
+func (i *KvCacheIndexer) Ready() <-chan struct{} {
+	<-i.cacher.Ready()
+	return i.ready
 }
 
 func NewKvCacheIndexer(t StoreType, cr Cacher) *KvCacheIndexer {
@@ -242,6 +259,7 @@ func NewKvCacheIndexer(t StoreType, cr Cacher) *KvCacheIndexer {
 		prefixIndex:      make(map[string]map[string]struct{}),
 		prefixBuildQueue: make(chan *KvEvent, DEFAULT_MAX_EVENT_COUNT),
 		goroutine:        util.NewGo(make(chan struct{})),
+		ready:            make(chan struct{}),
 		isClose:          true,
 	}
 }

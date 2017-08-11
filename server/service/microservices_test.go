@@ -15,6 +15,7 @@ package service_test
 
 import (
 	"fmt"
+	"github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -652,15 +653,15 @@ var _ = Describe("ServiceController", func() {
 			It("删除微服务4，删除SC自身", func() {
 				respExist, err := serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
 					Type:        "microservice",
-					AppId:       "default",
-					ServiceName: "SERVICECENTER",
-					Version:     "3.0.0",
+					AppId:       core.Service.AppId,
+					ServiceName: core.Service.ServiceName,
+					Version:     core.Service.Version,
 				})
 				Expect(err).To(BeNil())
-				serviceId := respExist.ServiceId
-				fmt.Println("UT=================serviceId is ", serviceId)
+				core.Service.ServiceId = respExist.ServiceId
+				fmt.Println("UT=================serviceId is ", core.Service.ServiceId)
 				resp, err := serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{
-					ServiceId: serviceId,
+					ServiceId: core.Service.ServiceId,
 					Force:     true,
 				})
 				fmt.Println("UT============" + resp.GetResponse().Message)

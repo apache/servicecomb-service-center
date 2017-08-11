@@ -44,6 +44,7 @@ type Cacher interface {
 	Cache() Cache
 	Run()
 	Stop()
+	Ready() <-chan struct{}
 }
 
 type nullCache struct {
@@ -72,6 +73,12 @@ func (n *nullCacher) Run() {}
 
 func (n *nullCacher) Stop() {}
 
+func (n *nullCacher) Ready() <-chan struct{} {
+	c := make(chan struct{})
+	close(c)
+	return c
+}
+
 type KvCacheSafeRFunc func()
 
 type KvCache struct {
@@ -86,8 +93,8 @@ func (c *KvCache) Version() int64 {
 
 func (c *KvCache) Data(k interface{}) interface{} {
 	c.rwMux.RLock()
-	defer c.rwMux.RUnlock()
 	kv, ok := c.store[k.(string)]
+	c.rwMux.RUnlock()
 	if !ok {
 		return nil
 	}
@@ -99,8 +106,8 @@ func (c *KvCache) Data(k interface{}) interface{} {
 
 func (c *KvCache) Have(k interface{}) (ok bool) {
 	c.rwMux.RLock()
-	defer c.rwMux.RUnlock()
 	_, ok = c.store[k.(string)]
+	c.rwMux.RUnlock()
 	return
 }
 
@@ -120,6 +127,7 @@ type KvCacher struct {
 	noEventInterval    int
 	noEventMaxInterval int
 
+	ready   chan struct{}
 	lw      ListWatcher
 	mux     sync.Mutex
 	once    sync.Once
@@ -182,7 +190,6 @@ func (c *KvCacher) doWatch(listOps *ListOptions) error {
 
 func (c *KvCacher) ListAndWatch(ctx context.Context) error {
 	c.mux.Lock()
-	defer c.mux.Unlock()
 
 	listOps := &ListOptions{
 		Timeout: c.Cfg.Timeout,
@@ -194,9 +201,13 @@ func (c *KvCacher) ListAndWatch(ctx context.Context) error {
 			util.LOGGER.Errorf(err, "list key %s failed, list options: %+v", c.Cfg.Key, listOps)
 			// do not return err, continue to watch
 		}
+		util.SafeCloseChan(c.ready)
 	}
 
 	err := c.doWatch(listOps)
+
+	c.mux.Unlock()
+
 	if err != nil {
 		util.LOGGER.Errorf(err, "handle watcher failed, watch key %s, list options: %+v", c.Cfg.Key, listOps)
 		return err
@@ -288,7 +299,7 @@ func (c *KvCacher) filter(rev int64, items []interface{}) []*Event {
 				eventsCh <- &Event{
 					Revision: rev,
 					Type:     proto.EVT_DELETE,
-					WatchKey: c.Cfg.Key,
+					Key:      c.Cfg.Key,
 					Object:   v,
 				}
 			}
@@ -303,7 +314,7 @@ func (c *KvCacher) filter(rev int64, items []interface{}) []*Event {
 				eventsCh <- &Event{
 					Revision: rev,
 					Type:     proto.EVT_CREATE,
-					WatchKey: c.Cfg.Key,
+					Key:      c.Cfg.Key,
 					Object:   v,
 				}
 				continue
@@ -312,7 +323,7 @@ func (c *KvCacher) filter(rev int64, items []interface{}) []*Event {
 				eventsCh <- &Event{
 					Revision: rev,
 					Type:     proto.EVT_UPDATE,
-					WatchKey: c.Cfg.Key,
+					Key:      c.Cfg.Key,
 					Object:   v,
 				}
 				continue
@@ -367,16 +378,15 @@ func (c *KvCacher) Run() {
 
 func (c *KvCacher) Stop() {
 	c.goroute.Close(true)
+
+	util.SafeCloseChan(c.ready)
+
 	util.LOGGER.Debugf("cacher is stopped, %s", c.Cfg)
 }
 
-type KvEvent struct {
-	Revision int64
-	Action   proto.EventType
-	KV       *mvccpb.KeyValue
+func (c *KvCacher) Ready() <-chan struct{} {
+	return c.ready
 }
-
-type KvEventFunc func(evt *KvEvent)
 
 type KvCacherConfig struct {
 	Key     string
@@ -399,7 +409,8 @@ func NewKvCache(c *KvCacher) *KvCache {
 
 func NewKvCacher(cfg *KvCacherConfig) Cacher {
 	cacher := &KvCacher{
-		Cfg: cfg,
+		Cfg:   cfg,
+		ready: make(chan struct{}),
 		lw: &KvListWatcher{
 			Client: registry.GetRegisterCenter(),
 			Key:    cfg.Key,
