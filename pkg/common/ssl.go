@@ -123,8 +123,7 @@ func loadServerSSLConfig() {
 		// 如果配置了SSL模式，SSL参数必须配置
 		keyPassphase, err := ioutil.ReadFile(getSSLPath("cert_pwd"))
 		if err != nil {
-			util.LOGGER.Error("read file cert_pwd failed.", err)
-			return
+			util.LOGGER.Warn("read file cert_pwd failed.", err)
 		}
 		sslServerConfig.KeyPassphase = string(keyPassphase)
 	}
