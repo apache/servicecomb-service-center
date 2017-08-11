@@ -194,7 +194,7 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 
 	if service == nil {
 		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: service not exist.", ServiceId)
-		return  pb.CreateResponse(pb.Response_FAIL, "Service does not exist."), nil
+		return pb.CreateResponse(pb.Response_FAIL, "Service does not exist."), nil
 	}
 
 	util.LOGGER.Infof("start delete service %s", ServiceId)
@@ -205,11 +205,11 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 		services, err := dependency.GetDependencies(ctx, keyConDependency, tenant)
 		if err != nil {
 			util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s:(unforce) inner err, get service dependency failed.", ServiceId)
-			return  pb.CreateResponse(pb.Response_FAIL, "Get dependency info failed."), err
+			return pb.CreateResponse(pb.Response_FAIL, "Get dependency info failed."), err
 		}
 		if len(services) > 1 || (len(services) == 1 && services[0].ServiceId != ServiceId) {
 			util.LOGGER.Errorf(nil, "delete microservice failed, serviceId is %s:(unforce) can't delete, other services rely it.", ServiceId)
-			return  pb.CreateResponse(pb.Response_FAIL, "Can not delete this service, other service rely it."), err
+			return pb.CreateResponse(pb.Response_FAIL, "Can not delete this service, other service rely it."), err
 		}
 
 		instancesKey := apt.GenerateInstanceKey(tenant, ServiceId, "")
@@ -221,12 +221,12 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 		})
 		if err != nil {
 			util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s:(unforce) inner err,get instances failed.", ServiceId)
-			return  pb.CreateResponse(pb.Response_FAIL, "Get instance failed."), err
+			return pb.CreateResponse(pb.Response_FAIL, "Get instance failed."), err
 		}
 
 		if rsp.Count > 0 {
 			util.LOGGER.Errorf(nil, "delete microservice failed, serviceId is %s:(unforce) can't delete, exist instance.", ServiceId)
-			return  pb.CreateResponse(pb.Response_FAIL, "Can not delete this service, exist instance."), err
+			return pb.CreateResponse(pb.Response_FAIL, "Can not delete this service, exist instance."), err
 		}
 	}
 
@@ -242,7 +242,7 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 	err = dependency.RefreshDependencyCache(tenant, ServiceId, service)
 	if err != nil {
 		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: inner err, refresh service dependency cache failed.", ServiceId)
-		return  pb.CreateResponse(pb.Response_FAIL, "Refresh dependency cache failed."), err
+		return pb.CreateResponse(pb.Response_FAIL, "Refresh dependency cache failed."), err
 	}
 
 	opts := []*registry.PluginOp{
@@ -272,13 +272,13 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 	lock, err := mux.Lock(mux.GLOBAL_LOCK)
 	if err != nil {
 		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: inner err, create lock failed.", ServiceId)
-		return  pb.CreateResponse(pb.Response_FAIL, err.Error()), err
+		return pb.CreateResponse(pb.Response_FAIL, err.Error()), err
 	}
 	optsTmp, err := dependency.DeleteDependencyForService(ctx, consumer, ServiceId)
 	lock.Unlock()
 	if err != nil {
 		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: inner err, delete dependency failed.", ServiceId)
-		return  pb.CreateResponse(pb.Response_FAIL, err.Error()), err
+		return pb.CreateResponse(pb.Response_FAIL, err.Error()), err
 	}
 	opts = append(opts, optsTmp...)
 
@@ -318,13 +318,13 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 	err = serviceUtil.DeleteServiceAllInstances(ctx, ServiceId)
 	if err != nil {
 		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: delete all instances failed.", ServiceId)
-		return  pb.CreateResponse(pb.Response_FAIL, "Delete all instances failed for service."), err
+		return pb.CreateResponse(pb.Response_FAIL, "Delete all instances failed for service."), err
 	}
 
 	_, err = registry.GetRegisterCenter().Txn(ctx, opts)
 	if err != nil {
 		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: commit data into etcd failed.", ServiceId)
-		return  pb.CreateResponse(pb.Response_FAIL, "Commit operations failed."), nil
+		return pb.CreateResponse(pb.Response_FAIL, "Commit operations failed."), nil
 	}
 
 	util.LOGGER.Infof("delete microservice successful: serviceid is %s,operator is %s.", ServiceId, util.GetIPFromContext(ctx))
@@ -346,29 +346,29 @@ func (s *ServiceController) Delete(ctx context.Context, in *pb.DeleteServiceRequ
 		}, nil
 	}
 
-	resp, err := s.DeleteServicePri(ctx, in.ServiceId,in.Force)
+	resp, err := s.DeleteServicePri(ctx, in.ServiceId, in.Force)
 
 	return &pb.DeleteServiceResponse{
-		Response:resp,
-	},err
+		Response: resp,
+	}, err
 }
 
-func (s *ServiceController)DeleteServices(ctx context.Context, request *pb.DelServicesRequest)(*pb.DelServicesResponse, error){
+func (s *ServiceController) DeleteServices(ctx context.Context, request *pb.DelServicesRequest) (*pb.DelServicesResponse, error) {
 	// 合法性检查
 	if request == nil || request.ServiceIds == nil || len(request.ServiceIds) == 0 {
 		return &pb.DelServicesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Invalid request param."),
-			Services:nil,
-		},nil
+			Services: nil,
+		}, nil
 	}
 
 	existFlag := map[string]bool{}
 	nuoMultilCount := 0
 	// 批量删除服务
-	serviceRespChan := make(chan *pb.DelServicesRspInfo , len(request.ServiceIds))
-	for _, serviceId := range request.ServiceIds{
+	serviceRespChan := make(chan *pb.DelServicesRspInfo, len(request.ServiceIds))
+	for _, serviceId := range request.ServiceIds {
 		//ServiceId重复性检查
-		if _ ,ok := existFlag[serviceId]; ok {
+		if _, ok := existFlag[serviceId]; ok {
 			util.LOGGER.Warnf(nil, "delete microservice %s , multiple.", serviceId)
 			continue
 		} else {
@@ -376,15 +376,15 @@ func (s *ServiceController)DeleteServices(ctx context.Context, request *pb.DelSe
 			nuoMultilCount++
 		}
 
-	        serviceRst := &pb.DelServicesRspInfo{
-			ServiceId : serviceId,
-			ErrMessage:"",
+		serviceRst := &pb.DelServicesRspInfo{
+			ServiceId:  serviceId,
+			ErrMessage: "",
 		}
 
 		//检查服务ID合法性
 		in := &pb.DeleteServiceRequest{
-			ServiceId : serviceId,
-			Force : request.Force,
+			ServiceId: serviceId,
+			Force:     request.Force,
 		}
 		err := apt.Validate(in)
 		if err != nil {
@@ -395,12 +395,12 @@ func (s *ServiceController)DeleteServices(ctx context.Context, request *pb.DelSe
 		}
 
 		//执行删除服务操作
-		go func(serviceItem string){
-			 resp , err := s.DeleteServicePri(ctx, serviceItem, request.Force)
+		go func(serviceItem string) {
+			resp, err := s.DeleteServicePri(ctx, serviceItem, request.Force)
 			if err != nil {
 				serviceRst.ErrMessage = err.Error()
-			}else if resp.Code != pb.Response_SUCCESS{
-				serviceRst.ErrMessage  = resp.Message
+			} else if resp.Code != pb.Response_SUCCESS {
+				serviceRst.ErrMessage = resp.Message
 			}
 
 			serviceRespChan <- serviceRst
@@ -409,25 +409,25 @@ func (s *ServiceController)DeleteServices(ctx context.Context, request *pb.DelSe
 
 	//获取批量删除服务的结果
 	count := 0
-	responseCode  := pb.Response_SUCCESS
-        delServiceRspInfo := []*pb.DelServicesRspInfo{}
-	for serviceRespItem := range serviceRespChan{
+	responseCode := pb.Response_SUCCESS
+	delServiceRspInfo := []*pb.DelServicesRspInfo{}
+	for serviceRespItem := range serviceRespChan {
 		count++
-		if len(serviceRespItem.ErrMessage) != 0{
+		if len(serviceRespItem.ErrMessage) != 0 {
 			responseCode = pb.Response_FAIL
 		}
 		delServiceRspInfo = append(delServiceRspInfo, serviceRespItem)
 		//结果收集over，关闭通道
-		if count == nuoMultilCount{
+		if count == nuoMultilCount {
 			close(serviceRespChan)
 		}
 	}
 
 	util.LOGGER.Infof("Batch DeleteServices serviceId = %v , result = %d, ", request.ServiceIds, responseCode)
-        return &pb.DelServicesResponse{
+	return &pb.DelServicesResponse{
 		Response: pb.CreateResponse(responseCode, "Delete services successfully."),
 		Services: delServiceRspInfo,
-	},nil
+	}, nil
 }
 
 func (s *ServiceController) GetOne(ctx context.Context, in *pb.GetServiceRequest) (*pb.GetServiceResponse, error) {
