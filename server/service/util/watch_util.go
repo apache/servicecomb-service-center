@@ -208,7 +208,7 @@ func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (resul
 				return
 			}
 			results = append(results, &pb.WatchInstanceResponse{
-				Response: pb.CreateResponse(pb.Response_SUCCESS, "list instance successfully"),
+				Response: pb.CreateResponse(pb.Response_SUCCESS, "List instance successfully."),
 				Action:   string(pb.EVT_CREATE),
 				Key: &pb.MicroServiceKey{
 					AppId:       service.AppId,

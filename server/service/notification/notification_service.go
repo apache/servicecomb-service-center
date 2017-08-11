@@ -306,7 +306,7 @@ func (s *NotifyService) WatchInstance(evt *store.KvEvent) {
 	}
 
 	response := &pb.WatchInstanceResponse{
-		Response: pb.CreateResponse(pb.Response_SUCCESS, "watch instance successfully"),
+		Response: pb.CreateResponse(pb.Response_SUCCESS, "Watch instance successfully."),
 		Action:   string(action),
 		Key: &pb.MicroServiceKey{
 			AppId:       ms.AppId,
