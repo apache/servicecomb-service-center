@@ -39,7 +39,7 @@ var _ = Describe("MicroService Api Test", func() {
 		BeforeEach(func() {
 			schema := []string{"testSchema"}
 			properties := map[string]string{"attr1": "aa"}
-			serviceName = strconv.Itoa(rand.Int())
+			serviceName = strconv.Itoa(rand.Intn(15))
 			servicemap := map[string]interface{}{
 				"serviceName": serviceName,
 				"appId":       serviceAppId,
