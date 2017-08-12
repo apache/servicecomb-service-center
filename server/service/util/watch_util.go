@@ -168,7 +168,7 @@ func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (resul
 	tenant := util.ParseTenantProject(ctx)
 
 	key := apt.GenerateConsumerDependencyKey(tenant, selfServiceId, "")
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+	resp, err := store.Store().Dependency().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
 		Key:        []byte(key),
 		WithPrefix: true,

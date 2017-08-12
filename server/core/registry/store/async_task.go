@@ -80,7 +80,7 @@ func (lat *BaseAsyncTasker) AddTask(ctx context.Context, task AsyncTask) error {
 	if err != nil {
 		return err
 	}
-	util.LOGGER.Debugf("task done! key is %s", task.Key())
+	util.LOGGER.Debugf("add task done! key is %s", task.Key())
 
 	handled, err := lat.LatestHandled(task.Key())
 	if err != nil {
