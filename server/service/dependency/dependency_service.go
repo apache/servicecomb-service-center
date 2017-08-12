@@ -80,7 +80,7 @@ func autoSyncConsumers() {
 func GetConsumersInCache(ctx context.Context, tenant string, providerId string) ([]*mvccpb.KeyValue, error) {
 	// 查询所有consumer
 	key := apt.GenerateProviderDependencyKey(tenant, providerId, "")
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+	resp, err := store.Store().Dependency().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
 		Key:        []byte(key),
 		WithPrefix: true,
@@ -107,7 +107,7 @@ func GetConsumersInCache(ctx context.Context, tenant string, providerId string) 
 
 func RefreshDependencyCache(tenant string, providerId string, provider *pb.MicroService) error {
 	key := apt.GenerateProviderDependencyKey(tenant, providerId, "")
-	resp, err := registry.GetRegisterCenter().Do(context.TODO(), &registry.PluginOp{
+	resp, err := store.Store().Dependency().Search(context.Background(), &registry.PluginOp{
 		Action:     registry.GET,
 		Key:        []byte(key),
 		WithPrefix: true,
@@ -203,7 +203,7 @@ func putServiceDependency(consumerId string, providerId string, tenant string) [
 	return optPros
 }
 
-func UpdateAsProviderDependency(ctx context.Context, providerServiseId string, provider *pb.MicroServiceKey) error {
+func UpdateAsProviderDependency(ctx context.Context, providerServiceId string, provider *pb.MicroServiceKey) error {
 	//查询etcd里是否存在带*的情况，则添加与对应的consumer与该provider的依赖关系
 	tenant := util.ParseTenantProject(ctx)
 	allConsumers := []*pb.MicroServiceKey{}
@@ -214,7 +214,7 @@ func UpdateAsProviderDependency(ctx context.Context, providerServiseId string, p
 		Action: registry.GET,
 		Key:    []byte(relyAllKey),
 	}
-	rsp, err := registry.GetRegisterCenter().Do(ctx, opt)
+	rsp, err := store.Store().DependencyRule().Search(ctx, opt)
 	if err != nil {
 		util.LOGGER.Errorf(err, "get consumer that rely all service failed.")
 		return err
@@ -242,7 +242,7 @@ func UpdateAsProviderDependency(ctx context.Context, providerServiseId string, p
 		Key:        []byte(proKey),
 		WithPrefix: true,
 	}
-	rsp, err = registry.GetRegisterCenter().Do(ctx, opt)
+	rsp, err = store.Store().DependencyRule().Search(ctx, opt)
 
 	if err != nil {
 		util.LOGGER.Errorf(err, "get all dependency rule failed: provider rule key %v.", tempProvider)
@@ -272,7 +272,7 @@ func UpdateAsProviderDependency(ctx context.Context, providerServiseId string, p
 					util.LOGGER.Infof("%s 's providerId is empty,no this service.", provider.ServiceName)
 					continue
 				}
-				if providerServiseId != latestServiceId[0] {
+				if providerServiceId != latestServiceId[0] {
 					continue
 				}
 			} else {
@@ -317,7 +317,7 @@ func UpdateAsProviderDependency(ctx context.Context, providerServiseId string, p
 		} else {
 			flag[consumerServiceid] = true
 		}
-		optsTmp := putServiceDependency(consumerServiceid, providerServiseId, tenant)
+		optsTmp := putServiceDependency(consumerServiceid, providerServiceId, tenant)
 		opts = append(opts, optsTmp...)
 	}
 	if len(opts) == 0 {
@@ -397,7 +397,7 @@ func transferToMicroServiceDependency(ctx context.Context, key string) (error, *
 		Action: registry.GET,
 		Key:    []byte(key),
 	}
-	res, err := registry.GetRegisterCenter().Do(ctx, opt)
+	res, err := store.Store().DependencyRule().Search(ctx, opt)
 	if err != nil {
 		util.LOGGER.Errorf(nil, "Get dependency rule failed.")
 		return err, nil
@@ -409,7 +409,7 @@ func transferToMicroServiceDependency(ctx context.Context, key string) (error, *
 			return err, nil
 		}
 	} else {
-		util.LOGGER.Errorf(nil, "Can not get mircroServiceDependency")
+		util.LOGGER.Errorf(nil, "Can not get microservice dependency rule.")
 	}
 	return nil, microServiceDependency
 }
@@ -478,7 +478,7 @@ func deleteDependencyUtil(ctx context.Context, serviceType string, tenant string
 		Key:        []byte(serviceKey),
 		WithPrefix: true,
 	}
-	rsp, err := registry.GetRegisterCenter().Do(ctx, opt)
+	rsp, err := store.Store().Dependency().Search(ctx, opt)
 	if err != nil {
 		return nil, err
 	}
@@ -749,7 +749,7 @@ func GetDependencies(ctx context.Context, dependencyKey string, tenant string) (
 		Key:        []byte(dependencyKey),
 		WithPrefix: true,
 	}
-	data, err := registry.GetRegisterCenter().Do(ctx, opt)
+	data, err := store.Store().Dependency().Search(ctx, opt)
 	if err != nil {
 		util.LOGGER.Errorf(nil, "Get dependency failed,%s", err.Error())
 		return nil, err

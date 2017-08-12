@@ -19,6 +19,7 @@ import (
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/server/core/registry/store"
 	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
@@ -69,7 +70,7 @@ func Accessible(ctx context.Context, tenant string, consumerID string, providerI
 		return err, true
 	}
 
-	ruleResp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+	ruleResp, err := store.Store().Rule().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
 		Key:        []byte(apt.GenerateServiceRuleKey(tenant, providerID, "")),
 		WithPrefix: true,

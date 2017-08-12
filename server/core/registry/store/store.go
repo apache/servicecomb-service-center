@@ -35,6 +35,7 @@ const (
 	SERVICE_TAG
 	RULE_INDEX
 	DEPENDENCY
+	DEPENDENCY_RULE
 	ENDPOINTS_INDEX
 	typeEnd
 )
@@ -51,6 +52,7 @@ var typeNames = []string{
 	SERVICE_TAG:     "SERVICE_TAG",
 	RULE_INDEX:      "RULE_INDEX",
 	DEPENDENCY:      "DEPENDENCY",
+	DEPENDENCY_RULE: "DEPENDENCY_RULE",
 	ENDPOINTS_INDEX: "ENDPOINTS_INDEX",
 }
 
@@ -148,6 +150,7 @@ func (s *KvStore) store() {
 	s.newStore(SERVICE_ALIAS, apt.GetServiceAliasRootKey(""))
 	s.newStore(ENDPOINTS_INDEX, apt.GetInstancesEndpointsIndexRootKey(""))
 	s.newStore(DEPENDENCY, apt.GetServiceDependencyRootKey(""))
+	s.newStore(DEPENDENCY_RULE, apt.GetServiceDependencyRuleRootKey(""))
 	s.newStore(SERVICE_TAG, apt.GetServiceTagRootKey(""))
 	s.newStore(RULE, apt.GetServiceRuleRootKey(""))
 	s.newStore(RULE_INDEX, apt.GetServiceRuleIndexRootKey(""))
@@ -186,13 +189,13 @@ func (s *KvStore) onLeaseEvent(evt *KvEvent) {
 	key := registry.BytesToStringWithNoCopy(evt.KV.Key)
 	leaseID := registry.BytesToStringWithNoCopy(evt.KV.Value)
 
-	s.removeAsyncTaske(key)
+	s.removeAsyncTask(key)
 
 	util.LOGGER.Debugf("push task to async remove queue successfully, key %s %s [%s] event",
 		key, leaseID, evt.Action)
 }
 
-func (s *KvStore) removeAsyncTaske(key string) {
+func (s *KvStore) removeAsyncTask(key string) {
 	s.asyncTasker.RemoveTask(key)
 }
 
@@ -262,8 +265,16 @@ func (s *KvStore) Dependency() Indexer {
 	return s.indexers[DEPENDENCY]
 }
 
+func (s *KvStore) DependencyRule() Indexer {
+	return s.indexers[DEPENDENCY_RULE]
+}
+
 func (s *KvStore) EndpointsIndex() Indexer {
 	return s.indexers[ENDPOINTS_INDEX]
+}
+
+func (s *KvStore) Domain() Indexer {
+	return s.indexers[DOMAIN]
 }
 
 func (s *KvStore) KeepAlive(ctx context.Context, op *registry.PluginOp) (int64, error) {
