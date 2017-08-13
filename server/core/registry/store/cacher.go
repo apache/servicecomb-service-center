@@ -257,7 +257,7 @@ func (c *KvCacher) sync(evts []*Event) {
 			})
 		case proto.EVT_DELETE:
 			if ok {
-				util.LOGGER.Debugf("remove key %s and notify watcher, %+v", key, kv)
+				util.LOGGER.Debugf("sync %s event and notify watcher, remove key %s, %+v", evt.Type, key, kv)
 				delete(store, key)
 				c.Cfg.OnEvent(&KvEvent{
 					Revision: evt.Revision,

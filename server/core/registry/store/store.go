@@ -165,7 +165,7 @@ func (s *KvStore) store() {
 func (s *KvStore) onDomainEvent(evt *KvEvent) {
 	kv := evt.KV
 	action := evt.Action
-	tenant := pb.GetInfoFromTenantKV(kv)
+	tenant, _ := pb.GetInfoFromDomainKV(kv)
 
 	if action != pb.EVT_CREATE {
 		util.LOGGER.Infof("tenant '%s' is %s", tenant, action)

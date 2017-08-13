@@ -14,6 +14,7 @@
 package proto
 
 import (
+	"fmt"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/gorilla/websocket"
 	"golang.org/x/net/context"
@@ -76,21 +77,34 @@ func KvToResponse(kv *mvccpb.KeyValue) (keys []string, data []byte) {
 
 func GetInfoFromInstKV(kv *mvccpb.KeyValue) (serviceId, instanceId, tenantProject string, data []byte) {
 	keys, data := KvToResponse(kv)
-	if len(keys) < 7 {
+	if len(keys) < 4 {
 		return
 	}
-	serviceId = keys[len(keys)-2]
-	instanceId = keys[len(keys)-1]
-	tenantProject = strings.Join([]string{keys[len(keys)-4], keys[len(keys)-3]}, "/")
+	l := len(keys)
+	serviceId = keys[l-2]
+	instanceId = keys[l-1]
+	tenantProject = fmt.Sprintf("%s/%s", keys[l-4], keys[l-3])
 	return
 }
 
-func GetInfoFromTenantKV(kv *mvccpb.KeyValue) (tenant string) {
-	keys, _ := KvToResponse(kv)
-	if len(keys) < 3 {
+func GetInfoFromDomainKV(kv *mvccpb.KeyValue) (tenant string, data []byte) {
+	keys, data := KvToResponse(kv)
+	if len(keys) < 1 {
 		return
 	}
 	tenant = keys[len(keys)-1]
+	return
+}
+
+func GetInfoFromRuleKV(kv *mvccpb.KeyValue) (serviceId, ruleId, tenantProject string, data []byte) {
+	keys, data := KvToResponse(kv)
+	if len(keys) < 4 {
+		return
+	}
+	l := len(keys)
+	serviceId = keys[l-2]
+	ruleId = keys[l-1]
+	tenantProject = fmt.Sprintf("%s/%s", keys[l-4], keys[l-3])
 	return
 }
 
