@@ -319,12 +319,12 @@ var _ = Describe("MicroService Api Test", func() {
 					// Validate the dependency creation
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
 
-					//Now try to delete the provider //this will fail as consumer needs to be deleted first
+					/*//Now try to delete the provider //this will fail as consumer needs to be deleted first
 					url := strings.Replace(UNREGISTERMICROSERVICE, ":serviceId", serviceId, 1)
 					req, _ = http.NewRequest(DELETE, SCURL+url, nil)
 					req.Header.Set("X-tenant-name", "default")
 					resp, _ = scclient.Do(req)
-					Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
+					Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))*/
 
 					//Now delete consumer and then provider
 
