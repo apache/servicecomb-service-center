@@ -53,7 +53,7 @@ func getTLSTransport(verifyPeer bool, supplyCert bool, verifyCN bool) (transport
 */
 var httpClient = &http.Client{
 	Transport: transport,
-	Timeout:   30 * time.Second,
+	Timeout:   300 * time.Second,
 }
 
 var maxIdleConnsPerHost = beego.AppConfig.DefaultInt("max_idle_conns_per_host", 200)
@@ -90,7 +90,7 @@ func getHttpsClient(gzip, verifyPeer, supplyCert, verifyCN bool) (client *HttpCl
 		gzip: gzip,
 		client: &http.Client{
 			Transport: transport,
-			Timeout:   30 * time.Second,
+			Timeout:   300 * time.Second,
 		},
 	}
 
