@@ -30,7 +30,6 @@ import (
 	rs "github.com/ServiceComb/service-center/server/rest"
 	"github.com/ServiceComb/service-center/server/service"
 	nf "github.com/ServiceComb/service-center/server/service/notification"
-	"github.com/ServiceComb/service-center/server/upgrade"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
 	"runtime"
@@ -43,7 +42,7 @@ var (
 	exit          chan struct{}
 )
 
-const CLEAN_UP_TIMEOUT = 5
+const CLEAN_UP_TIMEOUT = 3
 
 func init() {
 	util.LOGGER.Infof("service center have running simultaneously with %d CPU cores", runtime.GOMAXPROCS(0))
@@ -64,8 +63,6 @@ func init() {
 func Run() {
 	beforeRun()
 
-	upgradeVersion()
-
 	waitStoreReady()
 
 	startNotifyService()
@@ -73,13 +70,6 @@ func Run() {
 	startApiServer()
 
 	waitForQuit()
-}
-
-func upgradeVersion() {
-	err := upgrade.Upgrade()
-	if err != nil {
-		panic(err)
-	}
 }
 
 func beforeRun() {

@@ -20,20 +20,17 @@ import (
 
 const (
 	REGISTRY_ROOT_KEY        = "cse-sr"
-	REGISTRY_SYS_KEY         = "sys"
 	REGISTRY_SERVICE_KEY     = "ms"
 	REGISTRY_INSTANCE_KEY    = "inst"
 	REGISTRY_FILE            = "files"
 	REGISTRY_INDEX           = "indexes"
 	REGISTRY_RULE_KEY        = "rules"
-	REGISTRY_RULE_INDEX_KEY  = "rule-indexes"
 	REGISTRY_TENANT_KEY      = "tenant"
 	REGISTRY_ALIAS_KEY       = "alias"
 	REGISTRY_TAG_KEY         = "tags"
 	REGISTRY_SCHEMA_KEY      = "schemas"
 	REGISTRY_LEASE_KEY       = "leases"
 	REGISTRY_DEPENDENCY_KEY  = "deps"
-	REGISTRY_DEPS_RULE_KEY   = "dep-rules"
 	REGISTRY_ENDPOINTS_INDEX = "epsindex"
 )
 
@@ -78,7 +75,7 @@ func GetServiceAliasRootKey(tenant string) string {
 	}, "/")
 }
 
-func GetOldServiceRuleRootKey(tenant string) string {
+func GetServiceRuleRootKey(tenant string) string {
 	return strings.Join([]string{
 		GetDomainProjectRootKey(tenant),
 		REGISTRY_SERVICE_KEY,
@@ -86,16 +83,7 @@ func GetOldServiceRuleRootKey(tenant string) string {
 	}, "/")
 }
 
-func GetServiceRuleRootKey(tenant string) string {
-	return strings.Join([]string{
-		GetRootKey(),
-		REGISTRY_SERVICE_KEY,
-		REGISTRY_RULE_KEY,
-		tenant,
-	}, "/")
-}
-
-func GetOldServiceRuleIndexRootKey(tenant string) string {
+func GetServiceRuleIndexRootKey(tenant string) string {
 	return strings.Join([]string{
 		GetDomainProjectRootKey(tenant),
 		REGISTRY_RULE_KEY,
@@ -103,29 +91,11 @@ func GetOldServiceRuleIndexRootKey(tenant string) string {
 	}, "/")
 }
 
-func GetServiceRuleIndexRootKey(tenant string) string {
-	return strings.Join([]string{
-		GetRootKey(),
-		REGISTRY_SERVICE_KEY,
-		REGISTRY_RULE_INDEX_KEY,
-		tenant,
-	}, "/")
-}
-
-func GetOldServiceTagRootKey(tenant string) string {
+func GetServiceTagRootKey(tenant string) string {
 	return strings.Join([]string{
 		GetDomainProjectRootKey(tenant),
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_TAG_KEY,
-	}, "/")
-}
-
-func GetServiceTagRootKey(tenant string) string {
-	return strings.Join([]string{
-		GetRootKey(),
-		REGISTRY_SERVICE_KEY,
-		REGISTRY_TAG_KEY,
-		tenant,
 	}, "/")
 }
 
@@ -304,21 +274,12 @@ func GenerateProviderDependencyRuleKey(tenant string, in *pb.MicroServiceKey) st
 	return GenerateServiceDependencyRuleKey("p", tenant, in)
 }
 
-func GetOldServiceDependencyRuleRootKey(tenant string) string {
+func GetServiceDependencyRuleRootKey(tenant string) string {
 	return strings.Join([]string{
 		GetDomainProjectRootKey(tenant),
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_DEPENDENCY_KEY,
 		"rule",
-	}, "/")
-}
-
-func GetServiceDependencyRuleRootKey(tenant string) string {
-	return strings.Join([]string{
-		GetRootKey(),
-		REGISTRY_SERVICE_KEY,
-		REGISTRY_DEPS_RULE_KEY,
-		tenant,
 	}, "/")
 }
 
@@ -339,20 +300,11 @@ func GenerateProviderDependencyKey(tenant string, providerId string, consumerId 
 	return GenerateServiceDependencyKey("p", tenant, providerId, consumerId)
 }
 
-func GetOldServiceDependencyRootKey(tenant string) string {
+func GetServiceDependencyRootKey(tenant string) string {
 	return strings.Join([]string{
 		GetDomainProjectRootKey(tenant),
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_DEPENDENCY_KEY,
-	}, "/")
-}
-
-func GetServiceDependencyRootKey(tenant string) string {
-	return strings.Join([]string{
-		GetRootKey(),
-		REGISTRY_SERVICE_KEY,
-		REGISTRY_DEPENDENCY_KEY,
-		tenant,
 	}, "/")
 }
 
@@ -375,12 +327,5 @@ func GenerateInsEpsIndex(tenant string, serviceId string, inEpsIndex string) str
 		GetInstancesEndpointsIndexRootKey(tenant),
 		serviceId,
 		inEpsIndex,
-	}, "/")
-}
-
-func GetSystemKey() string {
-	return strings.Join([]string{
-		GetRootKey(),
-		REGISTRY_SYS_KEY,
 	}, "/")
 }

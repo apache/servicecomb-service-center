@@ -31,6 +31,7 @@ import (
 	domain "github.com/ServiceComb/service-center/server/service/tenant"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
+	errorsEx "github.com/ServiceComb/service-center/util/errors"
 	"github.com/astaxie/beego"
 	"github.com/gorilla/websocket"
 	"golang.org/x/net/context"
@@ -497,10 +498,15 @@ func (s *InstanceController) getInstancePreCheck(ctx context.Context, in interfa
 			}
 		}
 	}
-	// TODO 服务分层管理
 	// 黑白名单
 	// 跨应用调用
-	return Accessible(ctx, tenant, consumerServiceId, providerServiceId)
+	err = Accessible(ctx, tenant, consumerServiceId, providerServiceId)
+	switch err.(type) {
+	case errorsEx.InternalError:
+		return err, true
+	default:
+		return err, false
+	}
 }
 
 func (s *InstanceController) GetInstances(ctx context.Context, in *pb.GetInstancesRequest) (*pb.GetInstancesResponse, error) {
