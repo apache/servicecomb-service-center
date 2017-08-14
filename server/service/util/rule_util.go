@@ -31,7 +31,7 @@ func GetRulesUtil(ctx context.Context, tenant string, serviceId string) ([]*pb.S
 		"",
 	}, "/")
 
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+	resp, err := store.Store().Rule().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
 		Key:        []byte(key),
 		WithPrefix: true,
@@ -67,7 +67,7 @@ func RuleExist(ctx context.Context, tenant string, serviceId string, attr string
 
 func GetServiceRuleType(ctx context.Context, tenant string, serviceId string) (string, int, error) {
 	key := apt.GenerateServiceRuleKey(tenant, serviceId, "")
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+	resp, err := store.Store().Rule().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
 		Key:        []byte(key),
 		WithPrefix: true,

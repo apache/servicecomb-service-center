@@ -18,6 +18,7 @@ import (
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/server/core/registry/store"
 	"github.com/ServiceComb/service-center/server/service/dependency"
 	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
@@ -62,7 +63,7 @@ func (governServiceController *GovernServiceController) GetServicesInfo(ctx cont
 	}
 
 	return &pb.GetServicesInfoResponse{
-		Response:          pb.CreateResponse(pb.Response_SUCCESS, "register service instance successfully"),
+		Response:          pb.CreateResponse(pb.Response_SUCCESS, "Register service instance successfully."),
 		AllServicesDetail: allServiceDetails,
 	}, nil
 }
@@ -80,7 +81,7 @@ func (governServiceController *GovernServiceController) GetServiceDetail(ctx con
 	service, err := ms.GetServiceByServiceId(ctx, tenant, in.ServiceId)
 	if service == nil {
 		return &pb.GetServiceDetailResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Service is not exist."),
+			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
 		}, nil
 	}
 	if err != nil {
@@ -121,7 +122,7 @@ func getServiceAllVersions(ctx context.Context, tenant string, appId string, ser
 		Version:     "",
 	})
 
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+	resp, err := store.Store().ServiceIndex().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
 		Key:        []byte(key),
 		WithPrefix: true,
@@ -144,7 +145,7 @@ func getServiceAllVersions(ctx context.Context, tenant string, appId string, ser
 func getAllInstancesForOneService(ctx context.Context, tenant string, serviceId string) ([]*pb.MicroServiceInstance, error) {
 	key := apt.GenerateInstanceKey(tenant, serviceId, "")
 
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+	resp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
 		Key:        []byte(key),
 		WithPrefix: true,
@@ -170,7 +171,7 @@ func getAllInstancesForOneService(ctx context.Context, tenant string, serviceId 
 func getSchemaInfoUtil(ctx context.Context, tenant string, serviceId string) ([]*pb.SchemaInfos, error) {
 	key := apt.GenerateServiceSchemaKey(tenant, serviceId, "")
 	schemas := []*pb.SchemaInfos{}
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+	resp, err := store.Store().Schema().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
 		Key:        []byte(key),
 		WithPrefix: true,

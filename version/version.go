@@ -13,5 +13,25 @@
 //limitations under the License.
 package version
 
-const Version = "0.1.1"
-const ApiVersion = "3.0.0"
+import "github.com/astaxie/beego"
+
+const VERSION = "0.1.1"
+const API_VERSION = "3.0.0"
+
+type VersionSet struct {
+	Version    string `json:"version"`
+	ApiVersion string `json:"apiVersion"`
+	BuildTag   string `json:"buildTag"`
+}
+
+var version VersionSet
+
+func init() {
+	version.Version = VERSION
+	version.ApiVersion = API_VERSION
+	version.BuildTag = beego.AppConfig.String("build_tag")
+}
+
+func Ver() VersionSet {
+	return version
+}

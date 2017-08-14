@@ -42,7 +42,7 @@ var (
 	exit          chan struct{}
 )
 
-const CLEAN_UP_TIMEOUT = 5
+const CLEAN_UP_TIMEOUT = 3
 
 func init() {
 	util.LOGGER.Infof("service center have running simultaneously with %d CPU cores", runtime.GOMAXPROCS(0))
@@ -77,6 +77,10 @@ func beforeRun() {
 	wait := []int{1, 1, 1, 5, 10, 20, 30, 60}
 	for i := 0; client == nil; i++ {
 		client = registry.GetRegisterCenter()
+		if client != nil {
+			return
+		}
+
 		if i >= len(wait) {
 			i = len(wait) - 1
 		}

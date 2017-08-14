@@ -43,13 +43,13 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 		consumerId, err := ms.GetServiceId(ctx, consumerInfo)
 		util.LOGGER.Debugf("consumerId is %s", consumerId)
 		if err != nil {
-			util.LOGGER.Errorf(err, "create dependency faild, conusmer %s: get consumer failed.", consumerFlag)
+			util.LOGGER.Errorf(err, "create dependency faild, consumer %s: get consumer failed.", consumerFlag)
 			return &pb.CreateDependenciesResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 			}, err
 		}
 		if len(consumerId) == 0 {
-			util.LOGGER.Errorf(nil, "create dependency faild, conusmer %s: consumer not exist.", consumerFlag)
+			util.LOGGER.Errorf(nil, "create dependency failed, consumer %s: consumer not exist.", consumerFlag)
 			return &pb.CreateDependenciesResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "Get consumer's serviceId is empty."),
 			}, nil
@@ -57,7 +57,7 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 		//更新服务的内容，把providers加入
 		err = dependency.UpdateServiceForAddDependency(ctx, consumerId, dependencyInfo.Providers, tenant)
 		if err != nil {
-			util.LOGGER.Errorf(err, "create dependency faild, conusmer %s: Update service failed.", consumerFlag)
+			util.LOGGER.Errorf(err, "create dependency failed, consumer %s: Update service failed.", consumerFlag)
 			return &pb.CreateDependenciesResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 			}, err
@@ -66,7 +66,7 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 		//建立依赖规则，用于维护依赖关系
 		lock, err := mux.Lock(mux.GLOBAL_LOCK)
 		if err != nil {
-			util.LOGGER.Errorf(err, "create dependency faild, conusmer %s: create lock failed.", consumerFlag)
+			util.LOGGER.Errorf(err, "create dependency failed, consumer %s: create lock failed.", consumerFlag)
 			return &pb.CreateDependenciesResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 			}, err
@@ -100,7 +100,7 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 		util.LOGGER.Infof("Create dependency success: consumer %s, %s  from remote %s", consumerFlag, consumerId, util.GetIPFromContext(ctx))
 	}
 	return &pb.CreateDependenciesResponse{
-		Response: pb.CreateResponse(pb.Response_SUCCESS, "create dependency success"),
+		Response: pb.CreateResponse(pb.Response_SUCCESS, "Create dependency successfully."),
 	}, nil
 }
 
@@ -164,7 +164,7 @@ func (s *ServiceController) GetConsumerDependencies(ctx context.Context, in *pb.
 	}
 	util.LOGGER.Infof("GetConsumerDependencies successfully, consumerId is %s.", consumerId)
 	return &pb.GetConDependenciesResponse{
-		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Get all providers successful."),
+		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Get all providers successfully."),
 		Providers: services,
 	}, nil
 }

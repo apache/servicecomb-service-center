@@ -240,10 +240,10 @@ func GenerateInstanceLeaseKey(tenant string, serviceId string, instanceId string
 	}, "/")
 }
 
-func generateServiceDependencyRuleKey(serviceType string, tenant string, in *pb.MicroServiceKey) string {
+func GenerateServiceDependencyRuleKey(serviceType string, tenant string, in *pb.MicroServiceKey) string {
 	if in.ServiceName == "*" {
 		return strings.Join([]string{
-			GenerateServiceDependencyRuleRootKey(tenant),
+			GetServiceDependencyRuleRootKey(tenant),
 			serviceType,
 			in.ServiceName,
 		}, "/")
@@ -257,7 +257,7 @@ func generateServiceDependencyRuleKey(serviceType string, tenant string, in *pb.
 		stage = "dev"
 	}
 	return strings.Join([]string{
-		GenerateServiceDependencyRuleRootKey(tenant),
+		GetServiceDependencyRuleRootKey(tenant),
 		serviceType,
 		appId,
 		stage,
@@ -267,14 +267,14 @@ func generateServiceDependencyRuleKey(serviceType string, tenant string, in *pb.
 }
 
 func GenerateConsumerDependencyRuleKey(tenant string, in *pb.MicroServiceKey) string {
-	return generateServiceDependencyRuleKey("c", tenant, in)
+	return GenerateServiceDependencyRuleKey("c", tenant, in)
 }
 
 func GenerateProviderDependencyRuleKey(tenant string, in *pb.MicroServiceKey) string {
-	return generateServiceDependencyRuleKey("p", tenant, in)
+	return GenerateServiceDependencyRuleKey("p", tenant, in)
 }
 
-func GenerateServiceDependencyRuleRootKey(tenant string) string {
+func GetServiceDependencyRuleRootKey(tenant string) string {
 	return strings.Join([]string{
 		GetDomainProjectRootKey(tenant),
 		REGISTRY_SERVICE_KEY,

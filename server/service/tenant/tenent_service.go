@@ -16,6 +16,7 @@ package tenant
 import (
 	apt "github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/server/core/registry/store"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"strings"
@@ -27,7 +28,7 @@ func GetAllTenantRawData() ([]*mvccpb.KeyValue, error) {
 		Action:     registry.GET,
 		WithPrefix: true,
 	}
-	rsp, err := registry.GetRegisterCenter().Do(context.TODO(), opt)
+	rsp, err := store.Store().Domain().Search(context.Background(), opt)
 	if err != nil {
 		return nil, err
 	}

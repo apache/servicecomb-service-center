@@ -15,52 +15,16 @@ package notification
 
 import (
 	"container/list"
-	"context"
-	"encoding/json"
 	"errors"
-	apt "github.com/ServiceComb/service-center/server/core"
-	pb "github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
-	"github.com/ServiceComb/service-center/server/service/dependency"
-	"github.com/ServiceComb/service-center/server/service/microservice"
 	"github.com/ServiceComb/service-center/util"
-	"strconv"
-	"strings"
 	"sync"
 	"time"
 )
 
-const (
-	DEFAULT_MAX_QUEUE = 1000
-	DEFAULT_TIMEOUT   = 30 * time.Second
-
-	NOTIFTY NotifyType = iota
-	INSTANCE
-	typeEnd
-)
-
-var notifyService *NotifyService
-
 var notifyTypeNames = []string{
 	NOTIFTY:  "NOTIFTY",
 	INSTANCE: "INSTANCE",
-}
-
-func init() {
-	notifyService = &NotifyService{
-		isClose: true,
-	}
-	store.AddEventHandleFunc(store.INSTANCE, notifyService.WatchInstance)
-}
-
-type NotifyType int
-
-func (nt NotifyType) String() string {
-	if int(nt) < len(notifyTypeNames) {
-		return notifyTypeNames[nt]
-	}
-	return "NotifyType" + strconv.Itoa(int(nt))
 }
 
 type subscriberIndex map[string]*list.List
@@ -68,12 +32,6 @@ type subscriberIndex map[string]*list.List
 type subscriberSubjectIndex map[string]subscriberIndex
 
 type serviceIndex map[NotifyType]subscriberSubjectIndex
-
-type NotifyServiceConfig struct {
-	AddTimeout    time.Duration
-	NotifyTimeout time.Duration
-	MaxQueue      int64
-}
 
 type NotifyService struct {
 	Config NotifyServiceConfig
@@ -91,8 +49,12 @@ func (s *NotifyService) Err() <-chan error {
 	return s.err
 }
 
+func (s *NotifyService) AddEventHandler(h EventHandler) {
+	store.AddEventHandleFunc(h.Type(), h.OnEvent)
+}
+
 func (s *NotifyService) AddSubscriber(n Subscriber) error {
-	if s.closed() {
+	if s.Closed() {
 		return errors.New("server is shutting down")
 	}
 
@@ -168,7 +130,7 @@ func (s *NotifyService) RemoveAllSubscribers() {
 
 //通知内容塞到队列里
 func (s *NotifyService) AddJob(job NotifyJob) error {
-	if s.closed() {
+	if s.Closed() {
 		return errors.New("add notify job failed for server shutdown")
 	}
 	select {
@@ -188,7 +150,7 @@ func (s *NotifyService) publish2Subscriber(t NotifyType) {
 
 		s.mutexes[t].Lock()
 
-		if s.closed() && len(s.services[t]) == 0 {
+		if s.Closed() && len(s.services[t]) == 0 {
 			s.mutexes[t].Unlock()
 			return
 		}
@@ -242,7 +204,7 @@ func (s *NotifyService) init() {
 }
 
 func (s *NotifyService) Start() {
-	if !s.closed() {
+	if !s.Closed() {
 		util.LOGGER.Warnf(nil, "notify service is already running with config %v", s.Config)
 		return
 	}
@@ -261,73 +223,7 @@ func (s *NotifyService) Start() {
 	}
 }
 
-//SC 负责监控所有实例变化
-func (s *NotifyService) WatchInstance(evt *store.KvEvent) {
-	kv := evt.KV
-	action := evt.Action
-	providerId, providerInstanceId, tenantProject, data := pb.GetInfoFromInstKV(kv)
-	if data == nil {
-		util.LOGGER.Errorf(nil,
-			"unmarshal provider service instance file failed, instance %s/%s [%s] event, data is nil",
-			providerId, providerInstanceId, action)
-		return
-	}
-
-	if s.closed() {
-		util.LOGGER.Warnf(nil, "caught instance %s/%s [%s] event, but notify service is closed",
-			providerId, providerInstanceId, action)
-		return
-	}
-	util.LOGGER.Infof("caught instance %s/%s [%s] event",
-		providerId, providerInstanceId, action)
-
-	var instance pb.MicroServiceInstance
-	err := json.Unmarshal(data, &instance)
-	if err != nil {
-		util.LOGGER.Errorf(err, "unmarshal provider service instance %s/%s file failed",
-			providerId, providerInstanceId)
-		return
-	}
-	// 查询服务版本信息
-	ctx, _ := registry.WithTimeout(context.Background())
-	ms, err := microservice.GetServiceInCache(ctx, tenantProject, providerId)
-	if ms == nil {
-		util.LOGGER.Errorf(err, "get provider service %s/%s id in cache failed",
-			providerId, providerInstanceId)
-		return
-	}
-
-	// 查询所有consumer
-	ctx, _ = registry.WithTimeout(context.Background())
-	Kvs, err := dependency.GetConsumersInCache(ctx, tenantProject, providerId)
-	if err != nil {
-		util.LOGGER.Errorf(err, "query service %s consumers failed", providerId)
-		return
-	}
-
-	response := &pb.WatchInstanceResponse{
-		Response: pb.CreateResponse(pb.Response_SUCCESS, "watch instance successfully"),
-		Action:   string(action),
-		Key: &pb.MicroServiceKey{
-			AppId:       ms.AppId,
-			ServiceName: ms.ServiceName,
-			Version:     ms.Version,
-		},
-		Instance: &instance,
-	}
-	for _, dependence := range Kvs {
-		consumer := string(dependence.Key)
-		consumer = consumer[strings.LastIndex(consumer, "/")+1:]
-		job := NewWatchJob(INSTANCE, consumer, apt.GetInstanceRootKey(tenantProject)+"/",
-			evt.Revision, response)
-		util.LOGGER.Debugf("publish event to notify service, %v", job)
-
-		// TODO add超时怎么处理？
-		s.AddJob(job)
-	}
-}
-
-func (s *NotifyService) closed() (b bool) {
+func (s *NotifyService) Closed() (b bool) {
 	s.closeMux.RLock()
 	b = s.isClose
 	s.closeMux.RUnlock()
@@ -335,7 +231,7 @@ func (s *NotifyService) closed() (b bool) {
 }
 
 func (s *NotifyService) Stop() {
-	if s.closed() {
+	if s.Closed() {
 		return
 	}
 	s.closeMux.Lock()
