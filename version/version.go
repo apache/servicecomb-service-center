@@ -13,5 +13,5 @@
 //limitations under the License.
 package version
 
-const Version = "0.1.0"
+const Version = "0.1.1"
 const ApiVersion = "3.0.0"
