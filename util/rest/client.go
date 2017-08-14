@@ -91,6 +91,7 @@ func getHttpsClient(gzip, verifyPeer, supplyCert, verifyCN bool) (client *HttpCl
 		gzip: gzip,
 		client: &http.Client{
 			Transport: transport,
+			Timeout:   30 * time.Second,
 		},
 	}
 
