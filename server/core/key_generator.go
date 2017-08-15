@@ -20,17 +20,20 @@ import (
 
 const (
 	REGISTRY_ROOT_KEY        = "cse-sr"
+	REGISTRY_SYS_KEY         = "sys"
 	REGISTRY_SERVICE_KEY     = "ms"
 	REGISTRY_INSTANCE_KEY    = "inst"
 	REGISTRY_FILE            = "files"
 	REGISTRY_INDEX           = "indexes"
 	REGISTRY_RULE_KEY        = "rules"
+	REGISTRY_RULE_INDEX_KEY  = "rule-indexes"
 	REGISTRY_TENANT_KEY      = "tenant"
 	REGISTRY_ALIAS_KEY       = "alias"
 	REGISTRY_TAG_KEY         = "tags"
 	REGISTRY_SCHEMA_KEY      = "schemas"
 	REGISTRY_LEASE_KEY       = "leases"
 	REGISTRY_DEPENDENCY_KEY  = "deps"
+	REGISTRY_DEPS_RULE_KEY   = "dep-rules"
 	REGISTRY_ENDPOINTS_INDEX = "epsindex"
 )
 
@@ -77,25 +80,28 @@ func GetServiceAliasRootKey(tenant string) string {
 
 func GetServiceRuleRootKey(tenant string) string {
 	return strings.Join([]string{
-		GetDomainProjectRootKey(tenant),
+		GetRootKey(),
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_RULE_KEY,
+		tenant,
 	}, "/")
 }
 
 func GetServiceRuleIndexRootKey(tenant string) string {
 	return strings.Join([]string{
-		GetDomainProjectRootKey(tenant),
-		REGISTRY_RULE_KEY,
-		REGISTRY_INDEX,
+		GetRootKey(),
+		REGISTRY_SERVICE_KEY,
+		REGISTRY_RULE_INDEX_KEY,
+		tenant,
 	}, "/")
 }
 
 func GetServiceTagRootKey(tenant string) string {
 	return strings.Join([]string{
-		GetDomainProjectRootKey(tenant),
+		GetRootKey(),
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_TAG_KEY,
+		tenant,
 	}, "/")
 }
 
@@ -276,10 +282,10 @@ func GenerateProviderDependencyRuleKey(tenant string, in *pb.MicroServiceKey) st
 
 func GetServiceDependencyRuleRootKey(tenant string) string {
 	return strings.Join([]string{
-		GetDomainProjectRootKey(tenant),
+		GetRootKey(),
 		REGISTRY_SERVICE_KEY,
-		REGISTRY_DEPENDENCY_KEY,
-		"rule",
+		REGISTRY_DEPS_RULE_KEY,
+		tenant,
 	}, "/")
 }
 
@@ -302,9 +308,10 @@ func GenerateProviderDependencyKey(tenant string, providerId string, consumerId 
 
 func GetServiceDependencyRootKey(tenant string) string {
 	return strings.Join([]string{
-		GetDomainProjectRootKey(tenant),
+		GetRootKey(),
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_DEPENDENCY_KEY,
+		tenant,
 	}, "/")
 }
 
@@ -327,5 +334,12 @@ func GenerateInsEpsIndex(tenant string, serviceId string, inEpsIndex string) str
 		GetInstancesEndpointsIndexRootKey(tenant),
 		serviceId,
 		inEpsIndex,
+	}, "/")
+}
+
+func GetSystemKey() string {
+	return strings.Join([]string{
+		GetRootKey(),
+		REGISTRY_SYS_KEY,
 	}, "/")
 }

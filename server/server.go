@@ -25,54 +25,56 @@ import (
 import (
 	"github.com/ServiceComb/service-center/pkg/common"
 	"github.com/ServiceComb/service-center/server/api"
+	"github.com/ServiceComb/service-center/server/core"
+	"github.com/ServiceComb/service-center/server/core/mux"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	st "github.com/ServiceComb/service-center/server/core/registry/store"
 	rs "github.com/ServiceComb/service-center/server/rest"
 	"github.com/ServiceComb/service-center/server/service"
+	"github.com/ServiceComb/service-center/server/service/microservice"
 	nf "github.com/ServiceComb/service-center/server/service/notification"
 	"github.com/ServiceComb/service-center/util"
-	"golang.org/x/net/context"
+	"github.com/ServiceComb/service-center/version"
 	"runtime"
-)
-
-var (
-	apiServer     *api.APIServer
-	notifyService *nf.NotifyService
-	store         *st.KvStore
-	exit          chan struct{}
 )
 
 const CLEAN_UP_TIMEOUT = 3
 
+var server *ServiceCenterServer
+
 func init() {
-	util.LOGGER.Infof("service center have running simultaneously with %d CPU cores", runtime.GOMAXPROCS(0))
-
-	exit = make(chan struct{})
-
-	store = st.Store()
-
-	notifyService = nf.GetNotifyService()
-
-	apiServer = api.GetAPIServer()
-
 	rs.ServiceAPI, rs.InstanceAPI, rs.GovernServiceAPI = service.AssembleResources()
 
-	go handleSignal()
+	server = &ServiceCenterServer{
+		exit:          make(chan struct{}),
+		store:         st.Store(),
+		notifyService: nf.GetNotifyService(),
+		apiService:    api.GetAPIService(),
+	}
 }
 
-func Run() {
-	beforeRun()
-
-	waitStoreReady()
-
-	startNotifyService()
-
-	startApiServer()
-
-	waitForQuit()
+type ServiceCenterServer struct {
+	apiService    *api.APIService
+	notifyService *nf.NotifyService
+	store         *st.KvStore
+	exit          chan struct{}
 }
 
-func beforeRun() {
+func (s *ServiceCenterServer) Run() {
+	util.LOGGER.Infof("service center have running simultaneously with %d CPU cores", runtime.GOMAXPROCS(0))
+
+	go server.handleSignal()
+
+	s.waitForReady()
+
+	s.startNotifyService()
+
+	s.startApiServer()
+
+	s.waitForQuit()
+}
+
+func (s *ServiceCenterServer) checkBackendReady() {
 	var client registry.Registry
 	wait := []int{1, 1, 1, 5, 10, 20, 30, 60}
 	for i := 0; client == nil; i++ {
@@ -90,26 +92,26 @@ func beforeRun() {
 	}
 }
 
-func handleSignal() {
+func (s *ServiceCenterServer) handleSignal() {
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, os.Interrupt)
 	signal.Ignore(syscall.SIGQUIT) // when uses jstack to dump stack
 
-	s := <-sc
-	util.LOGGER.Warnf(nil, "Caught signal '%v', now service center quit...", s)
+	sgn := <-sc
+	util.LOGGER.Warnf(nil, "Caught signal '%v', now service center quit...", sgn)
 
-	close(exit)
+	close(s.exit)
 
-	if apiServer != nil {
-		apiServer.Stop()
+	if s.apiService != nil {
+		s.apiService.Stop()
 	}
 
-	if notifyService != nil {
-		notifyService.Stop()
+	if s.notifyService != nil {
+		s.notifyService.Stop()
 	}
 
-	if store != nil {
-		store.Stop()
+	if s.store != nil {
+		s.store.Stop()
 	}
 
 	util.GoCloseAndWait()
@@ -117,50 +119,65 @@ func handleSignal() {
 	registry.GetRegisterCenter().Close()
 }
 
-func waitForQuit() {
+func (s *ServiceCenterServer) waitForQuit() {
 	var err error
 	select {
-	case err = <-apiServer.Err():
-	case err = <-notifyService.Err():
-	case <-exit:
+	case err = <-s.apiService.Err():
+	case err = <-s.notifyService.Err():
+	case <-s.exit:
 	}
 	if err != nil {
 		util.LOGGER.Errorf(err, "service center catch errors, %s", err.Error())
 	}
 	select {
-	case <-exit:
+	case <-s.exit:
 		util.LOGGER.Warnf(nil, "waiting for %ds to clean up resources...", CLEAN_UP_TIMEOUT)
 		<-time.After(CLEAN_UP_TIMEOUT * time.Second)
 	default:
-		close(exit)
+		close(s.exit)
 	}
 	util.LOGGER.Warn("service center quit", nil)
 }
 
-func autoCompact() {
-	compactTicker := time.NewTicker(time.Minute * 5)
-	defer compactTicker.Stop()
-	for t := range compactTicker.C {
-		util.LOGGER.Debug(fmt.Sprintf("Compact at %s", t))
-		registry.GetRegisterCenter().CompactCluster(context.TODO())
+func (s *ServiceCenterServer) needUpgrade() bool {
+	if core.GetSystemConfig() == nil {
+		err := core.LoadSystemConfig()
+		if err != nil {
+			util.LOGGER.Errorf(err, "check version failed, can not load the system config")
+			return false
+		}
 	}
+	return !microservice.VersionMatchRule(core.GetSystemConfig().Version,
+		fmt.Sprintf("%s+", version.Ver().Version))
 }
 
-func waitStoreReady() {
-	store.Run()
-	<-store.Ready()
+func (s *ServiceCenterServer) waitForReady() {
+	s.checkBackendReady()
+
+	lock, err := mux.Lock(mux.GLOBAL_LOCK)
+	if err != nil {
+		util.LOGGER.Errorf(err, "wait for server ready failed")
+		os.Exit(1)
+	}
+	if s.needUpgrade() {
+		core.UpgradeSystemConfig()
+	}
+	lock.Unlock()
+
+	s.store.Run()
+	<-s.store.Ready()
 }
 
-func startNotifyService() {
-	notifyService.Config = nf.NotifyServiceConfig{
+func (s *ServiceCenterServer) startNotifyService() {
+	s.notifyService.Config = nf.NotifyServiceConfig{
 		AddTimeout:    30 * time.Second,
 		NotifyTimeout: 30 * time.Second,
 		MaxQueue:      100,
 	}
-	notifyService.Start()
+	s.notifyService.Start()
 }
 
-func startApiServer() {
+func (s *ServiceCenterServer) startApiServer() {
 	sslMode := common.GetServerSSLConfig().SSLEnabled
 	verifyClient := common.GetServerSSLConfig().VerifyClient
 	restIp := beego.AppConfig.String("httpaddr")
@@ -178,11 +195,15 @@ func startApiServer() {
 	if len(grpcIp) > 0 && len(grpcPort) > 0 {
 		eps[api.GRPC] = strings.Join([]string{grpcIp, grpcPort}, ":")
 	}
-	apiServer.Config = api.APIServerConfig{
+	s.apiService.Config = api.APIServerConfig{
 		HostName:     hostName,
 		Endpoints:    eps,
 		SSL:          sslMode,
 		VerifyClient: verifyClient,
 	}
-	apiServer.Start()
+	s.apiService.Start()
+}
+
+func Run() {
+	server.Run()
 }

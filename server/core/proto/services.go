@@ -61,6 +61,10 @@ type MicroServiceDependency struct {
 	Dependency []*MicroServiceKey
 }
 
+type SystemConfig struct {
+	Version string `json:"version"`
+}
+
 func CreateResponse(code Response_Code, message string) *Response {
 	resp := &Response{
 		Code:    code,

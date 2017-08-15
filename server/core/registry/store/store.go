@@ -149,12 +149,11 @@ func (s *KvStore) store() {
 	s.newStore(SERVICE_INDEX, apt.GetServiceIndexRootKey(""))
 	s.newStore(SERVICE_ALIAS, apt.GetServiceAliasRootKey(""))
 	s.newStore(ENDPOINTS_INDEX, apt.GetInstancesEndpointsIndexRootKey(""))
-	// TODO current key design does not support cache store.
-	// s.newStore(DEPENDENCY, apt.GetServiceDependencyRootKey(""))
-	// s.newStore(DEPENDENCY_RULE, apt.GetServiceDependencyRuleRootKey(""))
-	// s.newStore(SERVICE_TAG, apt.GetServiceTagRootKey(""))
-	// s.newStore(RULE, apt.GetServiceRuleRootKey(""))
-	// s.newStore(RULE_INDEX, apt.GetServiceRuleIndexRootKey(""))
+	s.newStore(DEPENDENCY, apt.GetServiceDependencyRootKey(""))
+	s.newStore(DEPENDENCY_RULE, apt.GetServiceDependencyRuleRootKey(""))
+	s.newStore(SERVICE_TAG, apt.GetServiceTagRootKey(""))
+	s.newStore(RULE, apt.GetServiceRuleRootKey(""))
+	s.newStore(RULE_INDEX, apt.GetServiceRuleIndexRootKey(""))
 	for _, i := range s.indexers {
 		<-i.Ready()
 	}
