@@ -80,9 +80,10 @@ func GetServiceAliasRootKey(tenant string) string {
 
 func GetOldServiceRuleRootKey(tenant string) string {
 	return strings.Join([]string{
-		GetDomainProjectRootKey(tenant),
+		GetRootKey(),
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_RULE_KEY,
+		tenant,
 	}, "/")
 }
 
@@ -97,9 +98,10 @@ func GetServiceRuleRootKey(tenant string) string {
 
 func GetOldServiceRuleIndexRootKey(tenant string) string {
 	return strings.Join([]string{
-		GetDomainProjectRootKey(tenant),
-		REGISTRY_RULE_KEY,
-		REGISTRY_INDEX,
+		GetRootKey(),
+		REGISTRY_SERVICE_KEY,
+		REGISTRY_RULE_INDEX_KEY,
+		tenant,
 	}, "/")
 }
 
@@ -114,9 +116,10 @@ func GetServiceRuleIndexRootKey(tenant string) string {
 
 func GetOldServiceTagRootKey(tenant string) string {
 	return strings.Join([]string{
-		GetDomainProjectRootKey(tenant),
+		GetRootKey(),
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_TAG_KEY,
+		tenant,
 	}, "/")
 }
 
@@ -306,10 +309,10 @@ func GenerateProviderDependencyRuleKey(tenant string, in *pb.MicroServiceKey) st
 
 func GetOldServiceDependencyRuleRootKey(tenant string) string {
 	return strings.Join([]string{
-		GetDomainProjectRootKey(tenant),
+		GetRootKey(),
 		REGISTRY_SERVICE_KEY,
-		REGISTRY_DEPENDENCY_KEY,
-		"rule",
+		REGISTRY_DEPS_RULE_KEY,
+		tenant,
 	}, "/")
 }
 
@@ -341,9 +344,10 @@ func GenerateProviderDependencyKey(tenant string, providerId string, consumerId 
 
 func GetOldServiceDependencyRootKey(tenant string) string {
 	return strings.Join([]string{
-		GetDomainProjectRootKey(tenant),
+		GetRootKey(),
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_DEPENDENCY_KEY,
+		tenant,
 	}, "/")
 }
 

@@ -40,7 +40,7 @@ type APIServerConfig struct {
 	Endpoints    map[APIType]string
 }
 
-type APIServer struct {
+type APIService struct {
 	Config APIServerConfig
 
 	grpcSvr *grpc.Server
@@ -53,11 +53,11 @@ const (
 	REST APIType = 1
 )
 
-func (s *APIServer) Err() <-chan error {
+func (s *APIService) Err() <-chan error {
 	return s.err
 }
 
-func (s *APIServer) startGrpcServer() {
+func (s *APIService) startGrpcServer() {
 	var err error
 
 	ipAddr, ok := s.Config.Endpoints[GRPC]
@@ -98,7 +98,7 @@ func (s *APIServer) startGrpcServer() {
 	}()
 }
 
-func (s *APIServer) startRESTfulServer() {
+func (s *APIService) startRESTfulServer() {
 	var err error
 
 	ipAddr, ok := s.Config.Endpoints[REST]
@@ -122,7 +122,7 @@ func (s *APIServer) startRESTfulServer() {
 	}()
 }
 
-func (s *APIServer) registerServiceCenter() error {
+func (s *APIService) registerServiceCenter() error {
 	err := s.registryService()
 	if err != nil {
 		return err
@@ -131,7 +131,7 @@ func (s *APIServer) registerServiceCenter() error {
 	return s.registryInstance()
 }
 
-func (s *APIServer) registryService() error {
+func (s *APIService) registryService() error {
 	//分布式sc 都会一起抢注，导致注册了多个sc微服务静态信息，需要使用分布式同步锁解决
 	lock, err := mux.Lock(mux.PROCESS_LOCK)
 	if err != nil {
@@ -166,7 +166,7 @@ func (s *APIServer) registryService() error {
 	return nil
 }
 
-func (s *APIServer) registryInstance() error {
+func (s *APIService) registryInstance() error {
 	core.Instance.ServiceId = core.Service.ServiceId
 
 	endpoints := []string{}
@@ -191,7 +191,7 @@ func (s *APIServer) registryInstance() error {
 	return nil
 }
 
-func (s *APIServer) unregisterInstance() error {
+func (s *APIService) unregisterInstance() error {
 	if len(core.Instance.InstanceId) == 0 {
 		return nil
 	}
@@ -207,7 +207,7 @@ func (s *APIServer) unregisterInstance() error {
 	return nil
 }
 
-func (s *APIServer) doAPIServerHeartBeat() {
+func (s *APIService) doAPIServerHeartBeat() {
 	if s.isClose {
 		return
 	}
@@ -229,7 +229,7 @@ func (s *APIServer) doAPIServerHeartBeat() {
 	}
 }
 
-func (s *APIServer) startHeartBeatService() {
+func (s *APIService) startHeartBeatService() {
 	go func() {
 		for {
 			select {
@@ -243,7 +243,7 @@ func (s *APIServer) startHeartBeatService() {
 }
 
 // 需保证ETCD启动成功后才执行该方法
-func (s *APIServer) Start() {
+func (s *APIService) Start() {
 	if !s.isClose {
 		return
 	}
@@ -263,7 +263,7 @@ func (s *APIServer) Start() {
 	util.LOGGER.Info("api server is ready")
 }
 
-func (s *APIServer) Stop() {
+func (s *APIService) Stop() {
 	if s.isClose {
 		return
 	}
@@ -283,15 +283,15 @@ func (s *APIServer) Stop() {
 	util.LOGGER.Info("api server stopped.")
 }
 
-var apiServer *APIServer
+var apiServer *APIService
 
 func init() {
-	apiServer = &APIServer{
+	apiServer = &APIService{
 		isClose: true,
 		err:     make(chan error, 1),
 	}
 }
 
-func GetAPIServer() *APIServer {
+func GetAPIService() *APIService {
 	return apiServer
 }

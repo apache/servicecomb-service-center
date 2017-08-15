@@ -11,7 +11,7 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package util
+package notification
 
 import (
 	"encoding/json"
@@ -22,7 +22,6 @@ import (
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
 	ms "github.com/ServiceComb/service-center/server/service/microservice"
-	nf "github.com/ServiceComb/service-center/server/service/notification"
 	"github.com/ServiceComb/service-center/util"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/gorilla/websocket"
@@ -31,7 +30,7 @@ import (
 	"time"
 )
 
-func WatchJobHandler(watcher *nf.ListWatcher, stream pb.ServiceInstanceCtrl_WatchServer, timeout time.Duration) (err error) {
+func WatchJobHandler(watcher *ListWatcher, stream pb.ServiceInstanceCtrl_WatchServer, timeout time.Duration) (err error) {
 	for {
 		select {
 		case <-time.After(timeout):
@@ -43,7 +42,7 @@ func WatchJobHandler(watcher *nf.ListWatcher, stream pb.ServiceInstanceCtrl_Watc
 					watcher.Subject(), watcher.Id())
 				return
 			}
-			resp := job.(*nf.WatchJob).Response
+			resp := job.(*WatchJob).Response
 			util.LOGGER.Infof("event is coming in, watcher %s %s",
 				watcher.Subject(), watcher.Id())
 
@@ -58,7 +57,7 @@ func WatchJobHandler(watcher *nf.ListWatcher, stream pb.ServiceInstanceCtrl_Watc
 	}
 }
 
-func websocketHeartbeat(conn *websocket.Conn, messageType int, watcher *nf.ListWatcher, timeout time.Duration) error {
+func websocketHeartbeat(conn *websocket.Conn, messageType int, watcher *ListWatcher, timeout time.Duration) error {
 	err := conn.WriteControl(messageType, []byte("heartbeat"), time.Now().Add(timeout))
 	if err != nil {
 		messageTypeName := "Ping"
@@ -73,7 +72,7 @@ func websocketHeartbeat(conn *websocket.Conn, messageType int, watcher *nf.ListW
 	return nil
 }
 
-func WatchWebSocketJobHandler(conn *websocket.Conn, watcher *nf.ListWatcher, timeout time.Duration) {
+func WatchWebSocketJobHandler(conn *websocket.Conn, watcher *ListWatcher, timeout time.Duration) {
 	remoteAddr := conn.RemoteAddr().String()
 	conn.SetPongHandler(func(message string) error {
 		util.LOGGER.Debugf("receive heartbeat feedback message %s from watcher[%s] %s %s",
@@ -106,7 +105,7 @@ func WatchWebSocketJobHandler(conn *websocket.Conn, watcher *nf.ListWatcher, tim
 					remoteAddr, watcher.Subject(), watcher.Id())
 				return
 			}
-			resp := job.(*nf.WatchJob).Response
+			resp := job.(*WatchJob).Response
 			util.LOGGER.Warnf(nil, "event[%s] is coming in, watcher[%s] %s %s, providers' info %s %s",
 				resp.Action, remoteAddr, watcher.Subject(), watcher.Id(), resp.Instance.ServiceId, resp.Instance.InstanceId)
 
@@ -136,7 +135,7 @@ func WatchWebSocketJobHandler(conn *websocket.Conn, watcher *nf.ListWatcher, tim
 	}
 }
 
-func DoWebSocketWatch(service *nf.NotifyService, watcher *nf.ListWatcher, conn *websocket.Conn) {
+func DoWebSocketWatch(service *NotifyService, watcher *ListWatcher, conn *websocket.Conn) {
 	remoteAddr := conn.RemoteAddr().String()
 	if err := service.AddSubscriber(watcher); err != nil {
 		err = fmt.Errorf("establish[%s] websocket watch failed: notify service error, %s.",
@@ -239,10 +238,10 @@ func queryServiceInstancesKvs(ctx context.Context, serviceId string, rev int64) 
 	return resp.Kvs, nil
 }
 
-func NewInstanceWatcher(selfServiceId, instanceRoot string) *nf.ListWatcher {
-	return nf.NewWatcher(nf.INSTANCE, selfServiceId, instanceRoot)
+func NewInstanceWatcher(selfServiceId, instanceRoot string) *ListWatcher {
+	return NewWatcher(INSTANCE, selfServiceId, instanceRoot)
 }
 
-func NewInstanceListWatcher(selfServiceId, instanceRoot string, listFunc func() (results []*pb.WatchInstanceResponse, rev int64)) *nf.ListWatcher {
-	return nf.NewListWatcher(nf.INSTANCE, selfServiceId, instanceRoot, listFunc)
+func NewInstanceListWatcher(selfServiceId, instanceRoot string, listFunc func() (results []*pb.WatchInstanceResponse, rev int64)) *ListWatcher {
+	return NewListWatcher(INSTANCE, selfServiceId, instanceRoot, listFunc)
 }

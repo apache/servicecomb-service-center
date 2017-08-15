@@ -886,33 +886,33 @@ func (s *InstanceController) Watch(in *pb.WatchInstanceRequest, stream pb.Servic
 		return err
 	}
 	tenant := util.ParseTenantProject(stream.Context())
-	watcher := serviceUtil.NewInstanceWatcher(in.SelfServiceId, apt.GetInstanceRootKey(tenant)+"/")
+	watcher := nf.NewInstanceWatcher(in.SelfServiceId, apt.GetInstanceRootKey(tenant)+"/")
 	err = nf.GetNotifyService().AddSubscriber(watcher)
 	util.LOGGER.Infof("start watch instance status, watcher %s %s", watcher.Subject(), watcher.Id())
-	return serviceUtil.WatchJobHandler(watcher, stream, nf.GetNotifyService().Config.NotifyTimeout)
+	return nf.WatchJobHandler(watcher, stream, nf.GetNotifyService().Config.NotifyTimeout)
 }
 
 func (s *InstanceController) WebSocketWatch(ctx context.Context, in *pb.WatchInstanceRequest, conn *websocket.Conn) {
 	if err := s.WatchPreOpera(ctx, in); err != nil {
-		serviceUtil.EstablishWebSocketError(conn, err)
+		nf.EstablishWebSocketError(conn, err)
 		return
 	}
 	tenant := util.ParseTenantProject(ctx)
-	watcher := serviceUtil.NewInstanceWatcher(in.SelfServiceId, apt.GetInstanceRootKey(tenant)+"/")
-	serviceUtil.DoWebSocketWatch(nf.GetNotifyService(), watcher, conn)
+	watcher := nf.NewInstanceWatcher(in.SelfServiceId, apt.GetInstanceRootKey(tenant)+"/")
+	nf.DoWebSocketWatch(nf.GetNotifyService(), watcher, conn)
 }
 
 func (s *InstanceController) WebSocketListAndWatch(ctx context.Context, in *pb.WatchInstanceRequest, conn *websocket.Conn) {
 	if err := s.WatchPreOpera(ctx, in); err != nil {
-		serviceUtil.EstablishWebSocketError(conn, err)
+		nf.EstablishWebSocketError(conn, err)
 		return
 	}
 	tenant := util.ParseTenantProject(ctx)
-	watcher := serviceUtil.NewInstanceListWatcher(in.SelfServiceId, apt.GetInstanceRootKey(tenant)+"/",
+	watcher := nf.NewInstanceListWatcher(in.SelfServiceId, apt.GetInstanceRootKey(tenant)+"/",
 		func() ([]*pb.WatchInstanceResponse, int64) {
-			return serviceUtil.QueryAllProvidersIntances(ctx, in.SelfServiceId)
+			return nf.QueryAllProvidersIntances(ctx, in.SelfServiceId)
 		})
-	serviceUtil.DoWebSocketWatch(nf.GetNotifyService(), watcher, conn)
+	nf.DoWebSocketWatch(nf.GetNotifyService(), watcher, conn)
 }
 
 func (s *InstanceController) CluterHealth(ctx context.Context) (*pb.GetInstancesResponse, error) {

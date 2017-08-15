@@ -15,16 +15,14 @@ package core
 
 import (
 	"encoding/json"
+	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/util"
+	"github.com/ServiceComb/service-center/version"
 	"golang.org/x/net/context"
 )
 
-var systemConfig *SystemConfig
-
-type SystemConfig struct {
-	Version string `json:"version"`
-}
+var systemConfig *pb.SystemConfig
 
 func LoadSystemConfig() error {
 	resp, err := registry.GetRegisterCenter().Do(context.Background(), &registry.PluginOp{
@@ -35,12 +33,12 @@ func LoadSystemConfig() error {
 		return err
 	}
 	if len(resp.Kvs) == 0 {
-		systemConfig = &SystemConfig{
+		systemConfig = &pb.SystemConfig{
 			Version: "0",
 		}
 		return nil
 	}
-	systemConfig = &SystemConfig{
+	systemConfig = &pb.SystemConfig{
 		Version: "0",
 	}
 	err = json.Unmarshal(resp.Kvs[0].Value, systemConfig)
@@ -52,6 +50,8 @@ func LoadSystemConfig() error {
 }
 
 func UpgradeSystemConfig() error {
+	GetSystemConfig().Version = version.Ver().Version
+
 	bytes, err := json.Marshal(GetSystemConfig())
 	if err != nil {
 		return err
@@ -67,6 +67,6 @@ func UpgradeSystemConfig() error {
 	return nil
 }
 
-func GetSystemConfig() *SystemConfig {
+func GetSystemConfig() *pb.SystemConfig {
 	return systemConfig
 }
