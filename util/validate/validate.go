@@ -16,7 +16,6 @@ package validate
 import (
 	"errors"
 	"fmt"
-	"github.com/ServiceComb/service-center/util"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -27,7 +26,7 @@ type ValidateRule struct {
 	Min    int
 	Max    int
 	Length int
-	Regexp string
+	Regexp *regexp.Regexp
 }
 
 func (v *ValidateRule) String() string {
@@ -41,7 +40,7 @@ func (v *ValidateRule) String() string {
 	if v.Length != 0 {
 		toString = fmt.Sprintf("%s Length: %d,", toString, v.Length)
 	}
-	if len(v.Regexp) != 0 {
+	if v.Regexp != nil {
 		toString = fmt.Sprintf("%s RegEx: %s }", toString, v.Regexp)
 	}
 	return toString
@@ -92,7 +91,7 @@ func (v *ValidateRule) Match(s interface{}) bool {
 			invalid = false
 		}
 	}
-	if len(v.Regexp) > 0 && !invalid {
+	if v.Regexp != nil && !invalid {
 		switch sv.Kind() {
 		case reflect.Map:
 			itemV := &ValidateRule{
@@ -131,21 +130,11 @@ func (v *ValidateRule) Match(s interface{}) bool {
 			case reflect.Float32, reflect.Float64:
 				str = strconv.FormatFloat(sv.Float(), 'f', -1, 64)
 			}
-			reg, err := regexp.Compile(v.Regexp)
-			if err != nil {
-				util.LOGGER.Error("compile regular expression failed", err)
-				return false
-			}
-			invalid = !reg.MatchString(str)
+			invalid = !v.Regexp.MatchString(str)
 		default:
 			str, ok := s.(string)
 			if ok {
-				reg, err := regexp.Compile(v.Regexp)
-				if err != nil {
-					util.LOGGER.Error("compile regular expression failed", err)
-					return false
-				}
-				invalid = !reg.MatchString(str)
+				invalid = !v.Regexp.MatchString(str)
 			} else {
 				invalid = true
 			}
