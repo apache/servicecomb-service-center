@@ -739,10 +739,10 @@ func (s *InstanceController) UpdateStatus(ctx context.Context, in *pb.UpdateInst
 	}
 	tenant := util.ParseTenantProject(ctx)
 	updateStatusFlag := strings.Join([]string{in.ServiceId, in.InstanceId, in.Status}, "/")
-	if !apt.InstanseStatusRule.Match(in.Status) {
-		util.LOGGER.Errorf(nil, "update instance status failed, %s: status must be UP|DOWN|STARTING|OUTOFSERVICE.", updateStatusFlag)
+	if err := apt.Validate(in); err != nil {
+		util.LOGGER.Errorf(nil, "update instance status failed, %s.", updateStatusFlag)
 		return &pb.UpdateInstanceStatusResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Status must be UP|DOWN|STARTING|OUTOFSERVICE."),
+			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
 	}
 
