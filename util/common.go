@@ -147,3 +147,19 @@ func StringToBytesWithNoCopy(s string) []byte {
 	h := [3]uintptr{x[0], x[1], x[1]}
 	return *(*[]byte)(unsafe.Pointer(&h))
 }
+
+func ListToMap(list []string) map[string]struct{} {
+	ret := make(map[string]struct{}, len(list))
+	for _, v := range list {
+		ret[v] = struct{}{}
+	}
+	return ret
+}
+
+func MapToList(dict map[string]struct{}) []string {
+	ret := make([]string, 0, len(dict))
+	for k := range dict {
+		ret = append(ret, k)
+	}
+	return ret
+}
