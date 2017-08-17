@@ -104,7 +104,8 @@ func (i *Indexer) searchPrefixKeyFromCacheOrRemote(ctx context.Context, op *regi
 	prefix := util.BytesToStringWithNoCopy(op.Key)
 
 	i.prefixLock.RLock()
-	keys, ok := i.prefixIndex[prefix]
+	keysRef, ok := i.prefixIndex[prefix]
+	keys := util.MapToList(keysRef)
 	i.prefixLock.RUnlock()
 	if !ok {
 		util.LOGGER.Debugf("can not find any key from %s cache with prefix, request etcd server, key: %s",
@@ -128,7 +129,7 @@ func (i *Indexer) searchPrefixKeyFromCacheOrRemote(ctx context.Context, op *regi
 	t := time.Now()
 	kvs := make([]*mvccpb.KeyValue, len(keys))
 	idx := 0
-	for key := range keys {
+	for _, key := range keys {
 		c := i.Cache().Data(key) // TODO too slow when big data is requested
 		if c == nil {
 			// it means resp.Count is not equal to len(keys)

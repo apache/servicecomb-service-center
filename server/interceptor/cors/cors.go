@@ -48,28 +48,12 @@ func New() *CORS {
 	return c
 }
 
-func listToMap(list []string) map[string]struct{} {
-	ret := make(map[string]struct{}, len(list))
-	for _, v := range list {
-		ret[v] = struct{}{}
-	}
-	return ret
-}
-
-func mapToList(dict map[string]struct{}) []string {
-	ret := make([]string, 0, len(dict))
-	for k := range dict {
-		ret = append(ret, k)
-	}
-	return ret
-}
-
 func (cors *CORS) AllowMethods() []string {
-	return mapToList(cors.allowMethods)
+	return util.MapToList(cors.allowMethods)
 }
 
 func (cors *CORS) AllowHeaders() []string {
-	return mapToList(cors.allowHeaders)
+	return util.MapToList(cors.allowHeaders)
 }
 
 func (cors *CORS) handlePreflightRequest(w http.ResponseWriter, r *http.Request) {
@@ -84,7 +68,7 @@ func (cors *CORS) handlePreflightRequest(w http.ResponseWriter, r *http.Request)
 		m = strings.TrimSpace(m)
 		if _, ok := cors.allowMethods[m]; !ok {
 			cors.invalid(w, r)
-			util.LOGGER.Warnf(nil, "only supported methods: %v", mapToList(cors.allowMethods))
+			util.LOGGER.Warnf(nil, "only supported methods: %v", util.MapToList(cors.allowMethods))
 			return
 		}
 	}
@@ -95,7 +79,7 @@ func (cors *CORS) handlePreflightRequest(w http.ResponseWriter, r *http.Request)
 			h = strings.ToLower(strings.TrimSpace(h))
 			if _, ok := cors.allowHeaders[h]; !ok {
 				cors.invalid(w, r)
-				util.LOGGER.Warnf(nil, "only supported headers: %v", mapToList(cors.allowHeaders))
+				util.LOGGER.Warnf(nil, "only supported headers: %v", util.MapToList(cors.allowHeaders))
 				return
 			}
 		}
@@ -136,11 +120,11 @@ func (cors *CORS) addAllowCookiesHeader(w http.ResponseWriter, r *http.Request) 
 }
 
 func SetAllowMethods(methods []string) {
-	cors.allowMethods = listToMap(methods)
+	cors.allowMethods = util.ListToMap(methods)
 }
 
 func SetAllowHeaders(headers []string) {
-	cors.allowHeaders = listToMap(headers)
+	cors.allowHeaders = util.ListToMap(headers)
 }
 
 func Intercept(w http.ResponseWriter, r *http.Request) (err error) {

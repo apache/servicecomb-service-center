@@ -306,99 +306,104 @@ func (c *KvCacher) filter(rev int64, items []*mvccpb.KeyValue) []*Event {
 		newStore[util.BytesToStringWithNoCopy(kv.Key)] = kv
 	}
 	filterStopCh := make(chan struct{})
-	eventsCh := make(chan [event_block_size]*Event, max)
-	go func() {
-		var block [event_block_size]*Event
-		i := 0
-		for k, v := range store {
-			_, ok := newStore[k]
-			if ok {
-				continue
-			}
+	eventsCh := make(chan [event_block_size]*Event, max/event_block_size+2)
 
-			if i >= event_block_size {
-				eventsCh <- block
-				block = [event_block_size]*Event{}
-				i = 0
-			}
+	go c.filterDelete(store, newStore, rev, eventsCh, filterStopCh)
 
-			block[i] = &Event{
-				Revision: rev,
-				Type:     proto.EVT_DELETE,
-				Key:      c.Cfg.Key,
-				Object:   v,
-			}
-			i++
-		}
-
-		if i > 0 {
-			eventsCh <- block
-		}
-
-		close(filterStopCh)
-	}()
-
-	go func() {
-		var block [event_block_size]*Event
-		i := 0
-		for k, v := range newStore {
-			ov, ok := store[k]
-			if !ok {
-				if i >= event_block_size {
-					eventsCh <- block
-					block = [event_block_size]*Event{}
-					i = 0
-				}
-
-				block[i] = &Event{
-					Revision: rev,
-					Type:     proto.EVT_CREATE,
-					Key:      c.Cfg.Key,
-					Object:   v,
-				}
-				i++
-				continue
-			}
-
-			if ov.ModRevision >= v.ModRevision {
-				continue
-			}
-
-			if i >= event_block_size {
-				eventsCh <- block
-				block = [event_block_size]*Event{}
-				i = 0
-			}
-
-			block[i] = &Event{
-				Revision: rev,
-				Type:     proto.EVT_UPDATE,
-				Key:      c.Cfg.Key,
-				Object:   v,
-			}
-			i++
-		}
-
-		if i > 0 {
-			eventsCh <- block
-		}
-
-		select {
-		case <-filterStopCh:
-			close(eventsCh)
-		}
-	}()
+	go c.filterCreateOrUpdate(store, newStore, rev, eventsCh, filterStopCh)
 
 	evts := make([]*Event, 0, max)
 	for block := range eventsCh {
 		for _, evt := range block {
 			if evt == nil {
-				continue
+				break
 			}
 			evts = append(evts, evt)
 		}
 	}
 	return evts
+}
+
+func (c *KvCacher) filterDelete(store map[string]*mvccpb.KeyValue, newStore map[string]*mvccpb.KeyValue, rev int64, eventsCh chan [event_block_size]*Event, filterStopCh chan struct{}) {
+	var block [event_block_size]*Event
+	i := 0
+	for k, v := range store {
+		_, ok := newStore[k]
+		if ok {
+			continue
+		}
+
+		if i >= event_block_size {
+			eventsCh <- block
+			block = [event_block_size]*Event{}
+			i = 0
+		}
+
+		block[i] = &Event{
+			Revision: rev,
+			Type:     proto.EVT_DELETE,
+			Key:      c.Cfg.Key,
+			Object:   v,
+		}
+		i++
+	}
+
+	if i > 0 {
+		eventsCh <- block
+	}
+
+	close(filterStopCh)
+}
+
+func (c *KvCacher) filterCreateOrUpdate(store map[string]*mvccpb.KeyValue, newStore map[string]*mvccpb.KeyValue, rev int64, eventsCh chan [event_block_size]*Event, filterStopCh chan struct{}) {
+	var block [event_block_size]*Event
+	i := 0
+	for k, v := range newStore {
+		ov, ok := store[k]
+		if !ok {
+			if i >= event_block_size {
+				eventsCh <- block
+				block = [event_block_size]*Event{}
+				i = 0
+			}
+
+			block[i] = &Event{
+				Revision: rev,
+				Type:     proto.EVT_CREATE,
+				Key:      c.Cfg.Key,
+				Object:   v,
+			}
+			i++
+			continue
+		}
+
+		if ov.ModRevision >= v.ModRevision {
+			continue
+		}
+
+		if i >= event_block_size {
+			eventsCh <- block
+			block = [event_block_size]*Event{}
+			i = 0
+		}
+
+		block[i] = &Event{
+			Revision: rev,
+			Type:     proto.EVT_UPDATE,
+			Key:      c.Cfg.Key,
+			Object:   v,
+		}
+		i++
+	}
+
+	if i > 0 {
+		eventsCh <- block
+	}
+
+	select {
+	case <-filterStopCh:
+		close(eventsCh)
+	}
 }
 
 func (c *KvCacher) run() {

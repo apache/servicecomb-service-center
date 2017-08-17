@@ -931,7 +931,7 @@ func (s *InstanceController) CluterHealth(ctx context.Context) (*pb.GetInstances
 	})
 
 	if err != nil {
-		util.LOGGER.Errorf(nil, "health check failed: get service center serviceId failed.")
+		util.LOGGER.Errorf(err, "health check failed: get service center serviceId failed.")
 		return &pb.GetInstancesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service center serviceId failed."),
 		}, err
@@ -945,7 +945,7 @@ func (s *InstanceController) CluterHealth(ctx context.Context) (*pb.GetInstances
 	instances := []*pb.MicroServiceInstance{}
 	instances, err = getAllInstancesOfOneService(ctx, tenant, serviceId, "")
 	if err != nil {
-		util.LOGGER.Errorf(nil, "health check failed: get service center instances failed.")
+		util.LOGGER.Errorf(err, "health check failed: get service center instances failed.")
 		return &pb.GetInstancesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service center instances failed."),
 		}, err
