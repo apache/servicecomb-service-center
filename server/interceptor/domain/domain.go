@@ -36,12 +36,12 @@ func Intercept(w http.ResponseWriter, r *http.Request) error {
 	tenant, project, err = helper.GetTenantProjectFromHeader(r)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
+		w.Write(util.StringToBytesWithNoCopy(err.Error()))
 		return err
 	}
 	if len(tenant) == 0 || len(project) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(errors.New("Domain or project from token is empty.").Error()))
+		w.Write(util.StringToBytesWithNoCopy("Domain or project from token is empty."))
 		return errors.New("Domain or project from token is empty.")
 	}
 

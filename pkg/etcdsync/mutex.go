@@ -120,8 +120,8 @@ func (m *Locker) ID() string {
 func (m *Locker) Lock() error {
 	ops := &registry.PluginOp{
 		Action: registry.PUT,
-		Key:    []byte(m.builder.key),
-		Value:  []byte(m.id),
+		Key:    util.StringToBytesWithNoCopy(m.builder.key),
+		Value:  util.StringToBytesWithNoCopy(m.id),
 	}
 	for {
 		util.LOGGER.Infof("Trying to create a lock: key=%s, id=%s", m.builder.key, m.id)
@@ -143,7 +143,7 @@ func (m *Locker) Lock() error {
 		go func() {
 			err := registry.GetRegisterCenter().Watch(ctx, &registry.PluginOp{
 				Action:     registry.GET,
-				Key:        []byte(m.builder.key),
+				Key:        util.StringToBytesWithNoCopy(m.builder.key),
 				WithPrefix: false,
 				WithPrevKV: false,
 			}, func(message string, evt *registry.PluginResponse) error {
@@ -177,7 +177,7 @@ func (m *Locker) Lock() error {
 func (m *Locker) Unlock() (err error) {
 	ops := &registry.PluginOp{
 		Action: registry.DELETE,
-		Key:    []byte(m.builder.key),
+		Key:    util.StringToBytesWithNoCopy(m.builder.key),
 	}
 	for i := 1; i <= defaultTry; i++ {
 		_, err = registry.GetRegisterCenter().Do(m.builder.ctx, ops)

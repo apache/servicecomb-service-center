@@ -17,6 +17,7 @@ import (
 	apt "github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
+	"github.com/ServiceComb/service-center/util"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"strings"
@@ -24,7 +25,7 @@ import (
 
 func GetAllTenantRawData() ([]*mvccpb.KeyValue, error) {
 	opt := &registry.PluginOp{
-		Key:        []byte(apt.GenerateDomainKey("")),
+		Key:        util.StringToBytesWithNoCopy(apt.GenerateDomainKey("")),
 		Action:     registry.GET,
 		WithPrefix: true,
 	}
@@ -58,7 +59,7 @@ func GetAllTenent() ([]string, error) {
 
 func NewDomain(ctx context.Context, tenant string) error {
 	opt := &registry.PluginOp{
-		Key:    []byte(apt.GenerateDomainKey(tenant)),
+		Key:    util.StringToBytesWithNoCopy(apt.GenerateDomainKey(tenant)),
 		Action: registry.PUT,
 	}
 	_, err := registry.GetRegisterCenter().PutNoOverride(ctx, opt)

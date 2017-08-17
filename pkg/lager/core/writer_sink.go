@@ -49,6 +49,5 @@ func (sink *writerSink) Log(level LogLevel, log []byte) {
 	log = append(log, '\n')
 	sink.writeL.Lock()
 	sink.writer.Write(log)
-	// sink.writer.Write([]byte("\n"))
 	sink.writeL.Unlock()
 }

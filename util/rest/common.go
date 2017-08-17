@@ -89,7 +89,7 @@ func loadTLSCertificate() (tlsCert []tls.Certificate, err error) {
 	}
 
 	if x509.IsEncryptedPEMBlock(keyBlock) {
-		plainPassphaseBytes := []byte(plainPassphase)
+		plainPassphaseBytes := util.StringToBytesWithNoCopy(plainPassphase)
 		keyData, err := x509.DecryptPEMBlock(keyBlock, plainPassphaseBytes)
 		util.ClearStringMemory(&plainPassphase)
 		util.ClearByteMemory(plainPassphaseBytes)

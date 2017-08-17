@@ -16,13 +16,14 @@ package util
 import (
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
+	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
 )
 
 func CheckSchemaInfoExist(ctx context.Context, key string) (error, bool) {
 	resp, errDo := store.Store().Schema().Search(ctx, &registry.PluginOp{
 		Action:    registry.GET,
-		Key:       []byte(key),
+		Key:       util.StringToBytesWithNoCopy(key),
 		CountOnly: true,
 	})
 	if errDo != nil {

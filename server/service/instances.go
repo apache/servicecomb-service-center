@@ -172,15 +172,15 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 	opts := []*registry.PluginOp{
 		{
 			Action:          registry.PUT,
-			Key:             []byte(key),
+			Key:             util.StringToBytesWithNoCopy(key),
 			Value:           data,
 			Lease:           leaseID,
 			WithIgnoreLease: true,
 		},
 		{
 			Action:          registry.PUT,
-			Key:             []byte(index),
-			Value:           []byte(instance.ServiceId),
+			Key:             util.StringToBytesWithNoCopy(index),
+			Value:           util.StringToBytesWithNoCopy(instance.ServiceId),
 			Lease:           leaseID,
 			WithIgnoreLease: true,
 		},
@@ -188,8 +188,8 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 	if leaseID != 0 {
 		opts = append(opts, &registry.PluginOp{
 			Action:          registry.PUT,
-			Key:             []byte(hbKey),
-			Value:           []byte(fmt.Sprintf("%d", leaseID)),
+			Key:             util.StringToBytesWithNoCopy(hbKey),
+			Value:           util.StringToBytesWithNoCopy(fmt.Sprintf("%d", leaseID)),
 			Lease:           leaseID,
 			WithIgnoreLease: true,
 		})
@@ -552,7 +552,7 @@ func getAllInstancesOfOneService(ctx context.Context, tenant string, serviceId s
 	key := apt.GenerateInstanceKey(tenant, serviceId, "")
 	resp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
-		Key:        []byte(key),
+		Key:        util.StringToBytesWithNoCopy(key),
 		WithPrefix: true,
 	})
 	if err != nil {
@@ -596,13 +596,13 @@ func (s *InstanceController) addDependenceForService(ctx context.Context, tenant
 	util.LOGGER.Debugf("add service dependenceProKey, %s", dependenceProKey)
 	optCon := &registry.PluginOp{
 		Action: registry.PUT,
-		Key:    []byte(dependenceConKey),
-		Value:  []byte(timeStamp),
+		Key:    util.StringToBytesWithNoCopy(dependenceConKey),
+		Value:  util.StringToBytesWithNoCopy(timeStamp),
 	}
 	optPro := &registry.PluginOp{
 		Action: registry.PUT,
-		Key:    []byte(dependenceProKey),
-		Value:  []byte(timeStamp),
+		Key:    util.StringToBytesWithNoCopy(dependenceProKey),
+		Value:  util.StringToBytesWithNoCopy(timeStamp),
 	}
 	opts := []*registry.PluginOp{}
 	opts = append(opts, optCon)
@@ -695,6 +695,12 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 		Version:     in.VersionRule,
 	}
 	lock, err := mux.Lock(mux.GLOBAL_LOCK)
+	if err != nil {
+		util.LOGGER.Errorf(err, "find instance failed, %s: create lock failed.", findFlag)
+		return &pb.FindInstancesResponse{
+			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
+		}, err
+	}
 	err, _ = dependency.AddServiceVersionRule(ctx, provider, tenant, consumer)
 	lock.Unlock()
 	if err != nil {
@@ -716,7 +722,7 @@ func (s *InstanceController) existDependence(ctx context.Context, tenant string,
 	util.LOGGER.Debugf("add service dependence, %s", dependenceKey)
 	rsp, err := store.Store().Dependency().Search(ctx, &registry.PluginOp{
 		Action:    registry.GET,
-		Key:       []byte(dependenceKey),
+		Key:       util.StringToBytesWithNoCopy(dependenceKey),
 		CountOnly: true,
 	})
 	if err != nil {
@@ -853,7 +859,7 @@ func updateInstance(ctx context.Context, tenant string, instance *pb.MicroServic
 	key := apt.GenerateInstanceKey(tenant, instance.ServiceId, instance.InstanceId)
 	_, err = registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
 		Action: registry.PUT,
-		Key:    []byte(key),
+		Key:    util.StringToBytesWithNoCopy(key),
 		Value:  data,
 		Lease:  leaseID,
 	})

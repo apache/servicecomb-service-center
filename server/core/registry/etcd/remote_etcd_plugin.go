@@ -109,7 +109,7 @@ func (s *EtcdClient) toGetRequest(op *registry.PluginOp) []clientv3.OpOption {
 	if op.WithPrefix {
 		opts = append(opts, clientv3.WithPrefix())
 	} else if len(op.EndKey) > 0 {
-		opts = append(opts, clientv3.WithRange(clientv3.GetPrefixRangeEnd(registry.BytesToStringWithNoCopy(op.EndKey))))
+		opts = append(opts, clientv3.WithRange(clientv3.GetPrefixRangeEnd(util.BytesToStringWithNoCopy(op.EndKey))))
 	}
 	if op.WithPrevKV {
 		opts = append(opts, clientv3.WithPrevKV())
@@ -162,15 +162,15 @@ func (c *EtcdClient) toTxnRequest(opts []*registry.PluginOp) []clientv3.Op {
 	for _, op := range opts {
 		switch op.Action {
 		case registry.GET:
-			etcdOps = append(etcdOps, clientv3.OpGet(registry.BytesToStringWithNoCopy(op.Key), c.toGetRequest(op)...))
+			etcdOps = append(etcdOps, clientv3.OpGet(util.BytesToStringWithNoCopy(op.Key), c.toGetRequest(op)...))
 		case registry.PUT:
 			var value string = ""
 			if len(op.Value) > 0 {
-				value = registry.BytesToStringWithNoCopy(op.Value)
+				value = util.BytesToStringWithNoCopy(op.Value)
 			}
-			etcdOps = append(etcdOps, clientv3.OpPut(registry.BytesToStringWithNoCopy(op.Key), value, c.toPutRequest(op)...))
+			etcdOps = append(etcdOps, clientv3.OpPut(util.BytesToStringWithNoCopy(op.Key), value, c.toPutRequest(op)...))
 		case registry.DELETE:
-			etcdOps = append(etcdOps, clientv3.OpDelete(registry.BytesToStringWithNoCopy(op.Key), c.toDeleteRequest(op)...))
+			etcdOps = append(etcdOps, clientv3.OpDelete(util.BytesToStringWithNoCopy(op.Key), c.toDeleteRequest(op)...))
 		}
 	}
 	return etcdOps
@@ -181,7 +181,7 @@ func (c *EtcdClient) toCompares(cmps []*registry.CompareOp) []clientv3.Cmp {
 	for _, cmp := range cmps {
 		var cmpType clientv3.Cmp
 		var cmpResult string
-		key := registry.BytesToStringWithNoCopy(cmp.Key)
+		key := util.BytesToStringWithNoCopy(cmp.Key)
 		switch cmp.Type {
 		case registry.CMP_VERSION:
 			cmpType = clientv3.Version(key)
@@ -226,7 +226,7 @@ func (c *EtcdClient) PutNoOverride(ctx context.Context, op *registry.PluginOp) (
 
 func (c *EtcdClient) paging(ctx context.Context, op *registry.PluginOp, countPerPage int) (*clientv3.GetResponse, error) {
 	var etcdResp *clientv3.GetResponse
-	key := registry.BytesToStringWithNoCopy(op.Key)
+	key := util.BytesToStringWithNoCopy(op.Key)
 
 	tempOp := *op
 	tempOp.CountOnly = true
@@ -274,7 +274,7 @@ func (c *EtcdClient) paging(ctx context.Context, op *registry.PluginOp, countPer
 		}
 		l := int64(len(recordResp.Kvs))
 		nextKey := recordResp.Kvs[l-1].Key
-		key = clientv3.GetPrefixRangeEnd(registry.BytesToStringWithNoCopy(nextKey))
+		key = clientv3.GetPrefixRangeEnd(util.BytesToStringWithNoCopy(nextKey))
 		etcdResp.Kvs = append(etcdResp.Kvs, recordResp.Kvs...)
 	}
 
@@ -302,7 +302,7 @@ func (c *EtcdClient) Do(ctx context.Context, op *registry.PluginOp) (*registry.P
 	switch op.Action {
 	case registry.GET:
 		var etcdResp *clientv3.GetResponse
-		key := registry.BytesToStringWithNoCopy(op.Key)
+		key := util.BytesToStringWithNoCopy(op.Key)
 
 		if op.WithPrefix && !op.CountOnly && !op.KeyOnly {
 			etcdResp, err = c.paging(ctx, op, DEFAULT_PAGE_COUNT)
@@ -326,10 +326,10 @@ func (c *EtcdClient) Do(ctx context.Context, op *registry.PluginOp) (*registry.P
 	case registry.PUT:
 		var value string = ""
 		if len(op.Value) > 0 {
-			value = registry.BytesToStringWithNoCopy(op.Value)
+			value = util.BytesToStringWithNoCopy(op.Value)
 		}
 		var etcdResp *clientv3.PutResponse
-		etcdResp, err = c.Client.Put(otCtx, registry.BytesToStringWithNoCopy(op.Key), value, c.toPutRequest(op)...)
+		etcdResp, err = c.Client.Put(otCtx, util.BytesToStringWithNoCopy(op.Key), value, c.toPutRequest(op)...)
 		if err != nil {
 			break
 		}
@@ -339,7 +339,7 @@ func (c *EtcdClient) Do(ctx context.Context, op *registry.PluginOp) (*registry.P
 		}
 	case registry.DELETE:
 		var etcdResp *clientv3.DeleteResponse
-		etcdResp, err = c.Client.Delete(otCtx, registry.BytesToStringWithNoCopy(op.Key), c.toDeleteRequest(op)...)
+		etcdResp, err = c.Client.Delete(otCtx, util.BytesToStringWithNoCopy(op.Key), c.toDeleteRequest(op)...)
 		if err != nil {
 			break
 		}
@@ -436,7 +436,7 @@ func (c *EtcdClient) Watch(ctx context.Context, op *registry.PluginOp, send func
 		client := clientv3.NewWatcher(c.Client)
 		defer client.Close()
 
-		key := registry.BytesToStringWithNoCopy(op.Key)
+		key := util.BytesToStringWithNoCopy(op.Key)
 		if op.WithPrefix && key[len(key)-1] != '/' {
 			key += "/"
 		}

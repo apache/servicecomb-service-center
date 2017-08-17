@@ -124,7 +124,7 @@ func getServiceAllVersions(ctx context.Context, tenant string, appId string, ser
 
 	resp, err := store.Store().ServiceIndex().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
-		Key:        []byte(key),
+		Key:        util.StringToBytesWithNoCopy(key),
 		WithPrefix: true,
 	})
 	if err != nil {
@@ -147,7 +147,7 @@ func getAllInstancesForOneService(ctx context.Context, tenant string, serviceId 
 
 	resp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
-		Key:        []byte(key),
+		Key:        util.StringToBytesWithNoCopy(key),
 		WithPrefix: true,
 	})
 	if err != nil {
@@ -173,7 +173,7 @@ func getSchemaInfoUtil(ctx context.Context, tenant string, serviceId string) ([]
 	schemas := []*pb.SchemaInfos{}
 	resp, err := store.Store().Schema().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
-		Key:        []byte(key),
+		Key:        util.StringToBytesWithNoCopy(key),
 		WithPrefix: true,
 	})
 	if err != nil {

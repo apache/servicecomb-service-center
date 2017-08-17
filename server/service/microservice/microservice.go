@@ -45,7 +45,7 @@ func GetService(ctx context.Context, domain string, id string, rev int64) (*pb.M
 	key := apt.GenerateServiceKey(domain, id)
 	serviceResp, err := store.Store().Service().Search(ctx, &registry.PluginOp{
 		Action:  registry.GET,
-		Key:     []byte(key),
+		Key:     util.StringToBytesWithNoCopy(key),
 		WithRev: rev,
 	})
 	if err != nil {
@@ -88,7 +88,7 @@ func GetServicesRawData(ctx context.Context, tenant string) ([]*mvccpb.KeyValue,
 	key := apt.GenerateServiceKey(tenant, "")
 	resp, err := store.Store().Service().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
-		Key:        []byte(key),
+		Key:        util.StringToBytesWithNoCopy(key),
 		WithPrefix: true,
 	})
 	return resp.Kvs, err
@@ -116,7 +116,7 @@ func GetServicesByTenant(ctx context.Context, tenant string) ([]*pb.MicroService
 func GetServiceId(ctx context.Context, key *pb.MicroServiceKey) (string, error) {
 	resp, err := store.Store().ServiceIndex().Search(ctx, &registry.PluginOp{
 		Action: registry.GET,
-		Key:    []byte(apt.GenerateServiceIndexKey(key)),
+		Key:    util.StringToBytesWithNoCopy(apt.GenerateServiceIndexKey(key)),
 	})
 	if err != nil {
 		return "", err
@@ -130,7 +130,7 @@ func GetServiceId(ctx context.Context, key *pb.MicroServiceKey) (string, error) 
 			key.AppId, key.ServiceName, key.Version)
 		resp, err = store.Store().ServiceAlias().Search(ctx, &registry.PluginOp{
 			Action: registry.GET,
-			Key:    []byte(apt.GenerateServiceAliasKey(key)),
+			Key:    util.StringToBytesWithNoCopy(apt.GenerateServiceAliasKey(key)),
 		})
 		if err != nil {
 			return "", err
@@ -165,7 +165,7 @@ func FindServiceIds(ctx context.Context, versionRule string, key *pb.MicroServic
 		prefix := keyGenerator(key)
 		resp, err := store.Store().Service().Search(ctx, &registry.PluginOp{
 			Action:     registry.GET,
-			Key:        []byte(prefix),
+			Key:        util.StringToBytesWithNoCopy(prefix),
 			WithPrefix: true,
 			SortOrder:  registry.SORT_DESCEND,
 		})
@@ -191,7 +191,7 @@ FIND_RULE:
 func ServiceExist(ctx context.Context, tenant string, serviceId string) bool {
 	resp, err := store.Store().Service().Search(ctx, &registry.PluginOp{
 		Action:    registry.GET,
-		Key:       []byte(apt.GenerateServiceKey(tenant, serviceId)),
+		Key:       util.StringToBytesWithNoCopy(apt.GenerateServiceKey(tenant, serviceId)),
 		CountOnly: true,
 	})
 	if err != nil || resp.Count == 0 {

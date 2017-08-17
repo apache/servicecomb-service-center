@@ -28,7 +28,7 @@ import (
 func GetLeaseId(ctx context.Context, tenant string, serviceId string, instanceId string) (int64, error) {
 	resp, err := store.Store().Lease().Search(ctx, &registry.PluginOp{
 		Action: registry.GET,
-		Key:    []byte(apt.GenerateInstanceLeaseKey(tenant, serviceId, instanceId)),
+		Key:    util.StringToBytesWithNoCopy(apt.GenerateInstanceLeaseKey(tenant, serviceId, instanceId)),
 	})
 	if err != nil {
 		return -1, err
@@ -44,7 +44,7 @@ func GetInstance(ctx context.Context, tenant string, serviceId string, instanceI
 	key := apt.GenerateInstanceKey(tenant, serviceId, instanceId)
 	resp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
 		Action: registry.GET,
-		Key:    []byte(key),
+		Key:    util.StringToBytesWithNoCopy(key),
 	})
 	if err != nil {
 		return nil, err
@@ -64,7 +64,7 @@ func GetInstance(ctx context.Context, tenant string, serviceId string, instanceI
 func InstanceExist(ctx context.Context, tenant string, serviceId string, instanceId string) (bool, error) {
 	resp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
 		Action:    registry.GET,
-		Key:       []byte(apt.GenerateInstanceKey(tenant, serviceId, instanceId)),
+		Key:       util.StringToBytesWithNoCopy(apt.GenerateInstanceKey(tenant, serviceId, instanceId)),
 		CountOnly: true,
 	})
 	if err != nil {
@@ -81,7 +81,7 @@ func CheckEndPoints(ctx context.Context, in *pb.RegisterInstanceRequest) (string
 	allInstancesKey := apt.GenerateInstanceKey(tenant, in.Instance.ServiceId, "")
 	rsp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
-		Key:        []byte(allInstancesKey),
+		Key:        util.StringToBytesWithNoCopy(allInstancesKey),
 		WithPrefix: true,
 	})
 	if err != nil {
@@ -142,7 +142,7 @@ func DeleteServiceAllInstances(ctx context.Context, ServiceId string) error {
 	instanceLeaseKey := apt.GenerateInstanceLeaseKey(tenant, ServiceId, "")
 	resp, err := store.Store().Lease().Search(ctx, &registry.PluginOp{
 		Action:      registry.GET,
-		Key:         []byte(instanceLeaseKey),
+		Key:         util.StringToBytesWithNoCopy(instanceLeaseKey),
 		WithPrefix:  true,
 		WithNoCache: true,
 	})

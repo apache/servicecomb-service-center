@@ -136,21 +136,21 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 		// Set key file
 		{
 			Action: registry.PUT,
-			Key:    []byte(key),
+			Key:    util.StringToBytesWithNoCopy(key),
 			Value:  data,
 		},
 		{
 			Action: registry.PUT,
-			Key:    []byte(index),
-			Value:  []byte(serviceId),
+			Key:    util.StringToBytesWithNoCopy(index),
+			Value:  util.StringToBytesWithNoCopy(serviceId),
 		},
 	}
 
 	if len(consumer.Alias) > 0 {
 		opts = append(opts, &registry.PluginOp{
 			Action: registry.PUT,
-			Key:    []byte(apt.GenerateServiceAliasKey(consumer)),
-			Value:  []byte(serviceId),
+			Key:    util.StringToBytesWithNoCopy(apt.GenerateServiceAliasKey(consumer)),
+			Value:  util.StringToBytesWithNoCopy(serviceId),
 		})
 	}
 
@@ -215,7 +215,7 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 		instancesKey := apt.GenerateInstanceKey(tenant, ServiceId, "")
 		rsp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
 			Action:     registry.GET,
-			Key:        []byte(instancesKey),
+			Key:        util.StringToBytesWithNoCopy(instancesKey),
 			WithPrefix: true,
 			CountOnly:  true,
 		})
@@ -248,19 +248,19 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 	opts := []*registry.PluginOp{
 		{
 			Action: registry.DELETE,
-			Key:    []byte(apt.GenerateServiceIndexKey(consumer)),
+			Key:    util.StringToBytesWithNoCopy(apt.GenerateServiceIndexKey(consumer)),
 		},
 		{
 			Action: registry.DELETE,
-			Key:    []byte(apt.GenerateServiceAliasKey(consumer)),
+			Key:    util.StringToBytesWithNoCopy(apt.GenerateServiceAliasKey(consumer)),
 		},
 		{
 			Action: registry.DELETE,
-			Key:    []byte(apt.GenerateServiceKey(tenant, ServiceId)),
+			Key:    util.StringToBytesWithNoCopy(apt.GenerateServiceKey(tenant, ServiceId)),
 		},
 		{
 			Action: registry.DELETE,
-			Key: []byte(strings.Join([]string{
+			Key: util.StringToBytesWithNoCopy(strings.Join([]string{
 				apt.GetServiceRuleRootKey(tenant),
 				ServiceId,
 				"",
@@ -286,14 +286,14 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 	rulekey := apt.GenerateServiceRuleKey(tenant, ServiceId, "")
 	opt := &registry.PluginOp{
 		Action:     registry.DELETE,
-		Key:        []byte(rulekey),
+		Key:        util.StringToBytesWithNoCopy(rulekey),
 		WithPrefix: true,
 	}
 	opts = append(opts, opt)
 	indexKey := apt.GenerateRuleIndexKey(tenant, ServiceId, "", "")
 	opts = append(opts, &registry.PluginOp{
 		Action: registry.DELETE,
-		Key:    []byte(indexKey),
+		Key:    util.StringToBytesWithNoCopy(indexKey),
 	})
 	opts = append(opts, opt)
 
@@ -301,7 +301,7 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 	schemaKey := apt.GenerateServiceSchemaKey(tenant, ServiceId, "")
 	opt = &registry.PluginOp{
 		Action:     registry.DELETE,
-		Key:        []byte(schemaKey),
+		Key:        util.StringToBytesWithNoCopy(schemaKey),
 		WithPrefix: true,
 	}
 	opts = append(opts, opt)
@@ -310,7 +310,7 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 	tagsKey := apt.GenerateServiceTagKey(tenant, ServiceId)
 	opt = &registry.PluginOp{
 		Action: registry.DELETE,
-		Key:    []byte(tagsKey),
+		Key:    util.StringToBytesWithNoCopy(tagsKey),
 	}
 	opts = append(opts, opt)
 
@@ -533,7 +533,7 @@ func (s *ServiceController) UpdateProperties(ctx context.Context, in *pb.UpdateS
 	// Set key file
 	_, err = registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
 		Action: registry.PUT,
-		Key:    []byte(key),
+		Key:    util.StringToBytesWithNoCopy(key),
 		Value:  data,
 	})
 	if err != nil {
@@ -629,13 +629,13 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 
 		opts = append(opts, &registry.PluginOp{
 			Action: registry.PUT,
-			Key:    []byte(key),
+			Key:    util.StringToBytesWithNoCopy(key),
 			Value:  data,
 		})
 		opts = append(opts, &registry.PluginOp{
 			Action: registry.PUT,
-			Key:    []byte(indexKey),
-			Value:  []byte(ruleAdd.RuleId),
+			Key:    util.StringToBytesWithNoCopy(indexKey),
+			Value:  util.StringToBytesWithNoCopy(ruleAdd.RuleId),
 		})
 	}
 	if len(opts) <= 0 {
@@ -743,8 +743,8 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 		indexKey := apt.GenerateRuleIndexKey(tenant, in.ServiceId, rule.Attribute, rule.Pattern)
 		opt := &registry.PluginOp{
 			Action: registry.PUT,
-			Key:    []byte(indexKey),
-			Value:  []byte(rule.RuleId),
+			Key:    util.StringToBytesWithNoCopy(indexKey),
+			Value:  util.StringToBytesWithNoCopy(rule.RuleId),
 		}
 		opts = append(opts, opt)
 
@@ -752,14 +752,14 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 		oldIndexKey := apt.GenerateRuleIndexKey(tenant, in.ServiceId, oldRuleAttr, oldRulePatten)
 		opt = &registry.PluginOp{
 			Action: registry.DELETE,
-			Key:    []byte(oldIndexKey),
+			Key:    util.StringToBytesWithNoCopy(oldIndexKey),
 		}
 
 		opts = append(opts, opt)
 	}
 	opt := &registry.PluginOp{
 		Action: registry.PUT,
-		Key:    []byte(key),
+		Key:    util.StringToBytesWithNoCopy(key),
 		Value:  data,
 	}
 	opts = append(opts, opt)
@@ -847,11 +847,11 @@ func (s *ServiceController) DeleteRule(ctx context.Context, in *pb.DeleteService
 		indexKey = apt.GenerateRuleIndexKey(tenant, in.ServiceId, data.Attribute, data.Pattern)
 		opts = append(opts, &registry.PluginOp{
 			Action: registry.DELETE,
-			Key:    []byte(key),
+			Key:    util.StringToBytesWithNoCopy(key),
 		})
 		opts = append(opts, &registry.PluginOp{
 			Action: registry.DELETE,
-			Key:    []byte(indexKey),
+			Key:    util.StringToBytesWithNoCopy(indexKey),
 		})
 	}
 	if len(opts) <= 0 {
@@ -1137,7 +1137,7 @@ func (s *ServiceController) DeleteTags(ctx context.Context, in *pb.DeleteService
 	util.LOGGER.Debugf("start delete service tags file: %s %v", key, in.Keys)
 	_, err = registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
 		Action: registry.PUT,
-		Key:    []byte(key),
+		Key:    util.StringToBytesWithNoCopy(key),
 		Value:  data,
 	})
 	if err != nil {
@@ -1219,7 +1219,7 @@ func (s *ServiceController) GetSchemaInfo(ctx context.Context, request *pb.GetSc
 	key := apt.GenerateServiceSchemaKey(tenant, request.ServiceId, request.SchemaId)
 	resp, errDo := store.Store().Schema().Search(ctx, &registry.PluginOp{
 		Action: registry.GET,
-		Key:    []byte(key),
+		Key:    util.StringToBytesWithNoCopy(key),
 	})
 	if errDo != nil {
 		util.LOGGER.Errorf(errDo, "get schema failed, serviceId %s, schemaId %s: get schema info failed.", request.ServiceId, request.SchemaId)
@@ -1278,7 +1278,7 @@ func (s *ServiceController) DeleteSchema(ctx context.Context, request *pb.Delete
 	}
 	_, errDo := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
 		Action: registry.DELETE,
-		Key:    []byte(key),
+		Key:    util.StringToBytesWithNoCopy(key),
 	})
 	if errDo != nil {
 		util.LOGGER.Errorf(errDo, "delete schema failded, serviceId %s, schemaId %s: delete schema from etcd faild.", request.ServiceId, request.SchemaId)
@@ -1309,8 +1309,8 @@ func (s *ServiceController) ModifySchema(ctx context.Context, request *pb.Modify
 	key := apt.GenerateServiceSchemaKey(tenant, request.ServiceId, request.SchemaId)
 	_, errDo := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
 		Action: registry.PUT,
-		Key:    []byte(key),
-		Value:  []byte(request.Schema),
+		Key:    util.StringToBytesWithNoCopy(key),
+		Value:  util.StringToBytesWithNoCopy(request.Schema),
 	})
 	if errDo != nil {
 		util.LOGGER.Errorf(errDo, "update schema failded, serviceId %s, schemaId %s: commit schema into etcd failed.", request.ServiceId, request.SchemaId)
