@@ -14,10 +14,10 @@
 package rest
 
 import (
+	pb "github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/ServiceComb/service-center/util"
+	"github.com/ServiceComb/service-center/util/rest"
 	"github.com/gorilla/websocket"
-	pb "github.com/servicecomb/service-center/server/core/proto"
-	"github.com/servicecomb/service-center/util"
-	"github.com/servicecomb/service-center/util/rest"
 	"net/http"
 )
 
@@ -27,11 +27,12 @@ type WatchService struct {
 
 func (this *WatchService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTP_METHOD_GET, "/registry/v3/microservices/:serviceId/watcher", this.ListAndWatch},
+		{rest.HTTP_METHOD_GET, "/registry/v3/microservices/:serviceId/watcher", this.Watch},
+		{rest.HTTP_METHOD_GET, "/registry/v3/microservices/:serviceId/listwatcher", this.ListAndWatch},
 	}
 }
 
-func (this *WatchService) ListAndWatch(w http.ResponseWriter, r *http.Request) {
+func upgrade(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error) {
 	var upgrader = websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
 			return true
@@ -42,11 +43,30 @@ func (this *WatchService) ListAndWatch(w http.ResponseWriter, r *http.Request) {
 	}
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		util.LOGGER.Error("upgrade:"+err.Error(), err)
+		util.LOGGER.Error("upgrade failed.", err)
+		WriteText(http.StatusInternalServerError, "Upgrade error", w)
+	}
+	return conn, err
+}
+
+func (this *WatchService) Watch(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrade(w, r)
+	if err != nil {
 		return
 	}
 	defer conn.Close()
 	InstanceAPI.WebSocketWatch(r.Context(), &pb.WatchInstanceRequest{
+		SelfServiceId: r.URL.Query().Get(":serviceId"),
+	}, conn)
+}
+
+func (this *WatchService) ListAndWatch(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrade(w, r)
+	if err != nil {
+		return
+	}
+	defer conn.Close()
+	InstanceAPI.WebSocketListAndWatch(r.Context(), &pb.WatchInstanceRequest{
 		SelfServiceId: r.URL.Query().Get(":serviceId"),
 	}, conn)
 }

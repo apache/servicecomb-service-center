@@ -14,16 +14,16 @@
 package tenant
 
 import (
-	"context"
+	apt "github.com/ServiceComb/service-center/server/core"
+	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"github.com/servicecomb/service-center/server/core"
-	"github.com/servicecomb/service-center/server/core/registry"
+	"golang.org/x/net/context"
 	"strings"
 )
 
 func GetAllTenantRawData() ([]*mvccpb.KeyValue, error) {
 	opt := &registry.PluginOp{
-		Key:        []byte(core.GenerateTenantKey("")),
+		Key:        []byte(apt.GenerateDomainKey("")),
 		Action:     registry.GET,
 		WithPrefix: true,
 	}
@@ -48,9 +48,21 @@ func GetAllTenent() ([]string, error) {
 		for _, kv := range kvs {
 			arrTmp = strings.Split(string(kv.Key), "/")
 			tenant = arrTmp[len(arrTmp)-1]
-			instByTenant = core.GetInstanceRootKey(tenant)
+			instByTenant = apt.GetInstanceRootKey(tenant)
 			insWatherByTenantKeys = append(insWatherByTenantKeys, instByTenant)
 		}
 	}
 	return insWatherByTenantKeys, err
+}
+
+func NewDomain(ctx context.Context, tenant string) error {
+	opt := &registry.PluginOp{
+		Key:    []byte(apt.GenerateDomainKey(tenant)),
+		Action: registry.PUT,
+	}
+	_, err := registry.GetRegisterCenter().PutNoOverride(ctx, opt)
+	if err != nil {
+		return err
+	}
+	return nil
 }

@@ -16,9 +16,9 @@ package rest
 import (
 	"encoding/json"
 	"fmt"
-	pb "github.com/servicecomb/service-center/server/core/proto"
-	"github.com/servicecomb/service-center/util"
-	"github.com/servicecomb/service-center/util/rest"
+	pb "github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/ServiceComb/service-center/util"
+	"github.com/ServiceComb/service-center/util/rest"
 	"io/ioutil"
 	"net/http"
 	"strings"

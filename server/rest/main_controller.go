@@ -14,16 +14,18 @@
 package rest
 
 import (
-	"github.com/servicecomb/service-center/util/rest"
 	"encoding/json"
+	"github.com/ServiceComb/service-center/util"
+	"github.com/ServiceComb/service-center/util/rest"
+	"github.com/ServiceComb/service-center/version"
 	"github.com/astaxie/beego"
 	"net/http"
-	"github.com/servicecomb/service-center/util"
 )
 
 type Version struct {
-	Api_version string `json:"api_version"`
-	Build_tag   string `json:"build_tag"`
+	Version    string `json:"version"`
+	ApiVersion string `json:"apiVersion"`
+	BuildTag   string `json:"buildTag"`
 }
 
 type Result struct {
@@ -56,10 +58,13 @@ func (this *MainService) CluterHealth(w http.ResponseWriter, r *http.Request) {
 }
 
 func (this *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
-	api_version := beego.AppConfig.String("version")
-	build_tag := beego.AppConfig.String("build_tag")
-	version := Version{api_version, build_tag}
+	buildTag := beego.AppConfig.String("build_tag")
+	version := Version{
+		version.Version,
+		version.ApiVersion,
+		buildTag,
+	}
 	versionJSON, _ := json.Marshal(version)
 	w.Header().Set("Content-Type", "application/json;charset=utf-8")
-	w.Write([]byte(versionJSON))
+	w.Write(versionJSON)
 }

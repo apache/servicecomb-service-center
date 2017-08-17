@@ -15,10 +15,13 @@ package service_test
 
 import (
 	"fmt"
+	"github.com/ServiceComb/service-center/server/core"
+	pb "github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/ServiceComb/service-center/server/service"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/servicecomb/service-center/server/core"
-	pb "github.com/servicecomb/service-center/server/core/proto"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
 )
 
 var instanceId string
@@ -649,7 +652,7 @@ var _ = Describe("InstanceController", func() {
 
 				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
-						ServiceName: "service_name_app_provider",
+						ServiceName: "service_name_app_provider_fail",
 						AppId:       "service_group_app_provider",
 						Version:     "1.0.0",
 						Level:       "FRONT",
@@ -660,9 +663,27 @@ var _ = Describe("InstanceController", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				providerId := resp.ServiceId
+				providerFailId := resp.ServiceId
 
-				UTFunc := func(code pb.Response_Code) {
+				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceName: "service_name_app_provider_ok",
+						AppId:       "service_group_app_provider",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Schemas: []string{
+							"xxxxxxxx",
+						},
+						Status: "UP",
+						Properties: map[string]string{
+							pb.PROP_ALLOW_CROSS_APP: "true",
+						},
+					},
+				})
+				Expect(err).To(BeNil())
+				providerOkId := resp.ServiceId
+
+				UTFunc := func(providerId string, code pb.Response_Code) {
 					respFind, err := insResource.GetInstances(getContext(), &pb.GetInstancesRequest{
 						ConsumerServiceId: consumerId,
 						ProviderServiceId: providerId,
@@ -673,27 +694,9 @@ var _ = Describe("InstanceController", func() {
 					Expect(respFind.GetResponse().Code).To(Equal(code))
 				}
 
-				UTFunc(pb.Response_FAIL)
+				UTFunc(providerFailId, pb.Response_FAIL)
 
-				_, err = serviceResource.UpdateProperties(getContext(), &pb.UpdateServicePropsRequest{
-					ServiceId: providerId,
-					Properties: map[string]string{
-						pb.PROP_ALLOW_CROSS_APP: "true",
-					},
-				})
-				Expect(err).To(BeNil())
-
-				UTFunc(pb.Response_SUCCESS)
-
-				_, err = serviceResource.UpdateProperties(getContext(), &pb.UpdateServicePropsRequest{
-					ServiceId: providerId,
-					Properties: map[string]string{
-						"test": "true",
-					},
-				})
-				Expect(err).To(BeNil())
-
-				UTFunc(pb.Response_FAIL)
+				UTFunc(providerOkId, pb.Response_SUCCESS)
 			})
 
 			It("实例心跳", func() {
@@ -813,15 +816,15 @@ var _ = Describe("InstanceController", func() {
 				fmt.Println("UT============" + resp.GetResponse().Message)
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
 
-				fmt.Println("UT===========查找实例，含有不存在的tag")
-				respAddTag, err := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
-					ServiceId:  consumerId,
-					Tags:  map[string]string{
+				fmt.Println("UT===========查找实例，含有存在的tag")
+				respAddTags, err := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
+					ServiceId: consumerId,
+					Tags: map[string]string{
 						"test": "test",
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddTag.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
 				resp, err = insResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
 					ConsumerServiceId:  consumerId,
@@ -916,4 +919,63 @@ var _ = Describe("InstanceController", func() {
 			})
 		})
 	})
+
+	Describe("Watcher", func() {
+		Context("normal", func() {
+			It("参数校验，不存在", func() {
+				fmt.Println("UT===========参数校验，不存在")
+				IC := insResource.(*service.InstanceController)
+				err := IC.WatchPreOpera(getContext(), &pb.WatchInstanceRequest{
+					SelfServiceId: "-1",
+				})
+				fmt.Println("UT============" + err.Error())
+				Expect(err).NotTo(BeNil())
+
+				err = IC.Watch(&pb.WatchInstanceRequest{
+					SelfServiceId: "-1",
+				}, &grpcWatchServer{})
+				fmt.Println("UT============" + err.Error())
+				Expect(err).NotTo(BeNil())
+			})
+			It("参数校验，非法", func() {
+				fmt.Println("UT===========参数校验，非法")
+				err := insResource.(*service.InstanceController).WatchPreOpera(getContext(), &pb.WatchInstanceRequest{
+					SelfServiceId: "",
+				})
+				fmt.Println("UT============" + err.Error())
+				Expect(err).NotTo(BeNil())
+			})
+			It("参数校验，OK", func() {
+				fmt.Println("UT===========参数校验，OK")
+				respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceName: "service_name_watch",
+						AppId:       "watch",
+						Version:     "1.0.0",
+						Level:       "BACK",
+						Status:      "UP",
+					},
+				})
+				Expect(err).To(BeNil())
+
+				err = insResource.(*service.InstanceController).WatchPreOpera(getContext(),
+					&pb.WatchInstanceRequest{
+						SelfServiceId: respCreate.ServiceId,
+					})
+				Expect(err).To(BeNil())
+			})
+		})
+	})
 })
+
+type grpcWatchServer struct {
+	grpc.ServerStream
+}
+
+func (x *grpcWatchServer) Send(m *pb.WatchInstanceResponse) error {
+	return nil
+}
+
+func (x *grpcWatchServer) Context() context.Context {
+	return getContext()
+}

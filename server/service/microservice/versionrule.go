@@ -15,8 +15,8 @@ package microservice
 
 import (
 	"bytes"
+	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"github.com/servicecomb/service-center/server/core/registry"
 	"sort"
 	"strconv"
 	"strings"
@@ -24,7 +24,7 @@ import (
 
 type VersionRule func(sorted []string, kvs map[string]string, start, end string) []string
 
-func (vr VersionRule) GetServicesIds(kvs []*mvccpb.KeyValue, ops ...string) []string {
+func (vr VersionRule) Match(kvs []*mvccpb.KeyValue, ops ...string) []string {
 	sorter := &serviceKeySorter{
 		sortArr: make([]string, len(kvs)),
 		kvs:     make(map[string]string),
@@ -138,4 +138,41 @@ func AtLess(sorted []string, kvs map[string]string, start, end string) []string 
 		result[i] = kvs[k]
 	}
 	return result[:]
+}
+
+func ParseVersionRule(versionRule string) func(kvs []*mvccpb.KeyValue) []string {
+	rangeIdx := strings.Index(versionRule, "-")
+	switch {
+	case versionRule == "latest":
+		return func(kvs []*mvccpb.KeyValue) []string {
+			return VersionRule(Latest).Match(kvs)
+		}
+	case versionRule[len(versionRule)-1:] == "+":
+		// 取最低版本及高版本集合
+		start := versionRule[:len(versionRule)-1]
+		return func(kvs []*mvccpb.KeyValue) []string {
+			return VersionRule(AtLess).Match(kvs, start)
+		}
+	case rangeIdx > 0:
+		// 取版本范围集合
+		start := versionRule[:rangeIdx]
+		end := versionRule[rangeIdx+1:]
+		return func(kvs []*mvccpb.KeyValue) []string {
+			return VersionRule(Range).Match(kvs, start, end)
+		}
+	default:
+		// 精确匹配
+		return nil
+	}
+}
+
+func VersionMatchRule(version string, versionRule string) bool {
+	match := ParseVersionRule(versionRule)
+	if match == nil {
+		return version == versionRule
+	}
+
+	return len(match([]*mvccpb.KeyValue{
+		{Key: []byte("/" + version)},
+	})) > 0
 }

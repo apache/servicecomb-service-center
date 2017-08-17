@@ -15,8 +15,8 @@ package rest
 
 import (
 	"fmt"
-	"github.com/servicecomb/service-center/util"
-	"github.com/servicecomb/service-center/util/errors"
+	"github.com/ServiceComb/service-center/util"
+	"github.com/ServiceComb/service-center/util/errors"
 	"net/http"
 	"net/url"
 	"strings"
@@ -64,7 +64,7 @@ func (this *ROAServerHandler) addRoute(route *Route) (err error) {
 	}
 
 	this.handlers[method] = append(this.handlers[method], &urlPatternHandler{route.Path, http.HandlerFunc(route.Func)})
-	util.LOGGER.Warnf(nil, "register route %s(%s).", route.Path, method)
+	util.LOGGER.Infof("register route %s(%s).", route.Path, method)
 
 	return nil
 }

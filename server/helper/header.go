@@ -14,17 +14,20 @@
 package helper
 
 import (
-	"fmt"
-	"net/http"
-	"github.com/servicecomb/service-center/util"
 	"errors"
-	"github.com/servicecomb/service-center/server/core"
+	"fmt"
+	"github.com/ServiceComb/service-center/server/core"
+	"github.com/ServiceComb/service-center/util"
+	"golang.org/x/net/context"
+	"net/http"
+	"strings"
 )
+
 const (
 	DEFAULT_PROJECT = "default"
 )
 
-var NO_CHEACK_URL = map[string]bool {"/version": true, "/health": true}
+var NO_CHEACK_URL = map[string]bool{"/version": true, "/health": true}
 
 func GetTenantProjectFromHeader(r *http.Request) (string, string, error) {
 	var domain, project string
@@ -44,4 +47,24 @@ func GetTenantProjectFromHeader(r *http.Request) (string, string, error) {
 		project = DEFAULT_PROJECT
 	}
 	return domain, project, nil
+}
+
+func GetRealIP(r *http.Request) string {
+	addrs := strings.Split(r.RemoteAddr, ":")
+	if len(addrs) > 0 {
+		return addrs[0]
+	}
+	return ""
+}
+
+func addIPToContext(r *http.Request) {
+	terminalIP := GetRealIP(r)
+	ctx := r.Context()
+	ctx = context.WithValue(ctx, "x-remote-ip", terminalIP)
+	request := r.WithContext(ctx)
+	*r = *request
+}
+
+func InitContext(r *http.Request) {
+	addIPToContext(r)
 }

@@ -14,15 +14,12 @@
 package service
 
 import (
-	pb "github.com/servicecomb/service-center/server/core/proto"
-	nf "github.com/servicecomb/service-center/server/service/notification"
+	pb "github.com/ServiceComb/service-center/server/core/proto"
 )
 
-func AssembleResources(notifyService *nf.NotifyService) (pb.ServiceCtrlServer, pb.SerivceInstanceCtrlServerEx, pb.GovernServiceCtrlServerEx) {
+func AssembleResources() (pb.ServiceCtrlServer, pb.SerivceInstanceCtrlServerEx, pb.GovernServiceCtrlServerEx) {
 	var serviceController ServiceController
 	var instanceController InstanceController
 	var governServiceAPI GovernServiceController
-	instanceController.serviceCtrl = serviceController
-	instanceController.NotifyService = notifyService
 	return &serviceController, &instanceController, &governServiceAPI
 }

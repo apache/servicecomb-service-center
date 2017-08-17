@@ -15,73 +15,88 @@ package notification
 
 import "errors"
 
-type Notifier interface {
+type Subscriber interface {
 	Err() error
 	SetError(err error)
-	GetId() string
-	GetSubject() string
-	GetServer() *NotifyService
-	Notify(job NotifyJob)
+	Id() string
+	Subject() string
+	Type() NotifyType
+	Service() *NotifyService
+	SetService(*NotifyService)
+	OnAccept()
+	OnMessage(job NotifyJob)
 	Close()
 }
 
 type NotifyJob interface {
-	GetId() string
-	GetSubject() string
+	SubscriberId() string
+	Subject() string
+	Type() NotifyType
 }
 
-type BaseNotifier struct {
-	Id      string
-	Subject string
-	Server  *NotifyService
+type BaseSubscriber struct {
+	id      string
+	subject string
+	nType   NotifyType
+	service *NotifyService
 	err     error
 }
 
-func (s *BaseNotifier) Err() error {
+func (s *BaseSubscriber) Err() error {
 	return s.err
 }
 
-func (s *BaseNotifier) SetError(err error) {
+func (s *BaseSubscriber) SetError(err error) {
 	s.err = err
 	// 触发清理job
-	s.Server.AddJob(&NotifyServiceHealthCheckJob{
-		BaseNotifyJob: BaseNotifyJob{
-			Id:      NOTIFY_SERVER_CHECKER_NAME,
-			Subject: NOTIFY_SERVER_CHECK_SUBJECT,
-		},
-		ErrorNotifier: s,
-	})
+	s.Service().AddJob(NewNotifyServiceHealthCheckJob(s))
 }
 
-func (s *BaseNotifier) GetId() string {
-	return s.Id
+func (s *BaseSubscriber) Id() string {
+	return s.id
 }
 
-func (s *BaseNotifier) GetSubject() string {
-	return s.Subject
+func (s *BaseSubscriber) Subject() string {
+	return s.subject
 }
 
-func (s *BaseNotifier) GetServer() *NotifyService {
-	return s.Server
+func (s *BaseSubscriber) Type() NotifyType {
+	return s.nType
 }
 
-func (s *BaseNotifier) Notify(job NotifyJob) {
-	s.SetError(errors.New("do not call base notifier notify method"))
+func (s *BaseSubscriber) Service() *NotifyService {
+	return s.service
 }
 
-func (s *BaseNotifier) Close() {
+func (s *BaseSubscriber) SetService(svc *NotifyService) {
+	s.service = svc
+}
+
+func (s *BaseSubscriber) OnAccept() {
+}
+
+func (s *BaseSubscriber) OnMessage(job NotifyJob) {
+	s.SetError(errors.New("do not call base notifier OnMessage method"))
+}
+
+func (s *BaseSubscriber) Close() {
 
 }
 
 type BaseNotifyJob struct {
-	Id      string
-	Subject string
+	subscriberId string
+	subject      string
+	nType        NotifyType
 }
 
-func (s *BaseNotifyJob) GetId() string {
-	return s.Id
+func (s *BaseNotifyJob) SubscriberId() string {
+	return s.subscriberId
 }
 
-func (s *BaseNotifyJob) GetSubject() string {
-	return s.Subject
+func (s *BaseNotifyJob) Subject() string {
+	return s.subject
+}
+
+func (s *BaseNotifyJob) Type() NotifyType {
+	return s.nType
 }

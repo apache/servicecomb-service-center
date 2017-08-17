@@ -14,19 +14,19 @@
 package embededetcd
 
 import (
-	"github.com/servicecomb/service-center/common"
-	"github.com/servicecomb/service-center/server/core/registry"
-	"github.com/servicecomb/service-center/util"
-	"github.com/servicecomb/service-center/util/rest"
-	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"github.com/ServiceComb/service-center/pkg/common"
+	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/util"
+	"github.com/ServiceComb/service-center/util/rest"
 	"github.com/astaxie/beego"
 	"github.com/coreos/etcd/embed"
 	"github.com/coreos/etcd/etcdserver/etcdserverpb"
 	"github.com/coreos/etcd/lease"
 	"github.com/coreos/etcd/mvcc/mvccpb"
+	"golang.org/x/net/context"
 	"net/url"
 	"strings"
 	"time"
@@ -38,7 +38,7 @@ const START_MANAGER_SERVER_TIMEOUT = 60
 const REGISTRY_PLUGIN_EMBEDED_ETCD = "embeded_etcd"
 
 func init() {
-	util.LOGGER.Warnf(nil, "embed etcd plugin init.")
+	util.LOGGER.Infof("embed etcd plugin init.")
 	registry.RegistryPlugins[REGISTRY_PLUGIN_EMBEDED_ETCD] = getEmbedInstance
 }
 
@@ -60,12 +60,25 @@ func (s *EtcdEmbed) Close() {
 	if s.Server != nil {
 		s.Server.Close()
 	}
+	util.LOGGER.Debugf("embedded etcd client stopped.")
+}
+
+func (s *EtcdEmbed) getPrefixEndKey(prefix []byte) []byte {
+	l := len(prefix)
+	endBytes := make([]byte, l+1)
+	copy(endBytes, prefix)
+	if endBytes[l-1] == 0xff {
+		endBytes[l] = 1
+		return endBytes
+	}
+	endBytes[l-1] += 1
+	return endBytes[:l]
 }
 
 func (s *EtcdEmbed) toGetRequest(op *registry.PluginOp) *etcdserverpb.RangeRequest {
 	endBytes := op.EndKey
 	if op.WithPrefix {
-		endBytes = append(op.Key, 127)
+		endBytes = s.getPrefixEndKey(op.Key)
 	}
 	order := etcdserverpb.RangeRequest_NONE
 	switch op.SortOrder {
@@ -95,13 +108,14 @@ func (s *EtcdEmbed) toPutRequest(op *registry.PluginOp) *etcdserverpb.PutRequest
 		Value:  valueBytes,
 		PrevKv: op.WithPrevKV,
 		Lease:  op.Lease,
+		// TODO WithIgnoreLease support
 	}
 }
 
 func (s *EtcdEmbed) toDeleteRequest(op *registry.PluginOp) *etcdserverpb.DeleteRangeRequest {
-	var endBytes []byte
+	endBytes := op.EndKey
 	if op.WithPrefix {
-		endBytes = append(op.Key, 127)
+		endBytes = s.getPrefixEndKey(op.Key)
 	}
 	return &etcdserverpb.DeleteRangeRequest{
 		Key:      op.Key,
@@ -224,7 +238,7 @@ func (s *EtcdEmbed) Compact(ctx context.Context, revision int64) error {
 
 func (s *EtcdEmbed) PutNoOverride(ctx context.Context, op *registry.PluginOp) (bool, error) {
 	resp, err := s.TxnWithCmp(ctx, []*registry.PluginOp{op}, []*registry.CompareOp{
-		&registry.CompareOp{
+		{
 			Key:    op.Key,
 			Type:   registry.CMP_CREATE,
 			Result: registry.CMP_EQUAL,
@@ -363,8 +377,10 @@ func (s *EtcdEmbed) Watch(ctx context.Context, op *registry.PluginOp, send func(
 		key := registry.BytesToStringWithNoCopy(op.Key)
 		var keyBytes []byte
 		if op.WithPrefix {
-			key += "/"
-			keyBytes = append([]byte(key), 127)
+			if key[len(key)-1] != '/' {
+				key += "/"
+			}
+			keyBytes = s.getPrefixEndKey([]byte(key))
 		}
 		watchID := ws.Watch(op.Key, keyBytes, op.WithRev)
 		// defer ws.Cancel(watchID)
@@ -374,16 +390,19 @@ func (s *EtcdEmbed) Watch(ctx context.Context, op *registry.PluginOp, send func(
 		for {
 			select {
 			case <-ctx.Done():
-				util.LOGGER.Warnf(nil, "time out to watch key %s", key)
 				return
-			case resp := <-responses:
+			case resp, ok := <-responses:
+				if !ok {
+					err = errors.New("channel is closed")
+					return
+				}
 				for _, evt := range resp.Events {
 					pbEvent := &registry.PluginResponse{
 						Action:    registry.PUT,
 						Kvs:       []*mvccpb.KeyValue{evt.Kv},
 						PrevKv:    evt.PrevKv,
 						Count:     1,
-						Revision:  resp.Revision,
+						Revision:  evt.Kv.ModRevision,
 						Succeeded: true,
 					}
 					if evt.Type == mvccpb.DELETE {
@@ -391,7 +410,6 @@ func (s *EtcdEmbed) Watch(ctx context.Context, op *registry.PluginOp, send func(
 					}
 					err = send("key information changed", pbEvent)
 					if err != nil {
-						util.LOGGER.Errorf(err, "stop to watch key %s, id is %d", key, watchID)
 						return
 					}
 				}
@@ -399,12 +417,11 @@ func (s *EtcdEmbed) Watch(ctx context.Context, op *registry.PluginOp, send func(
 		}
 	}
 	err = fmt.Errorf("no key has been watched")
-	util.LOGGER.Errorf(nil, err.Error())
 	return
 }
 
 func getEmbedInstance(cfg *registry.Config) registry.Registry {
-	util.LOGGER.Warnf(nil, "starting manager server in embed mode")
+	util.LOGGER.Warnf(nil, "starting service center in embed mode")
 
 	hostName := beego.AppConfig.DefaultString("manager_name", util.GetLocalHostname())
 	addrs := beego.AppConfig.String("manager_addr")
@@ -418,7 +435,7 @@ func getEmbedInstance(cfg *registry.Config) registry.Registry {
 		var err error
 		embedTLSConfig, err = rest.GetServerTLSConfig(common.GetServerSSLConfig().VerifyClient)
 		if err != nil {
-			util.LOGGER.Error("get manager server tls config failed", err)
+			util.LOGGER.Error("get service center tls config failed", err)
 			inst.err <- err
 			return inst
 		}

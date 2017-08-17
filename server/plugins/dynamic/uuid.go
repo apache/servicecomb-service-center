@@ -1,10 +1,10 @@
 package dynamic
 
 import (
-	"github.com/servicecomb/service-center/plugins"
-	"github.com/servicecomb/service-center/util"
-	"github.com/servicecomb/service-center/util/uuid"
-        "strings"
+	"github.com/ServiceComb/service-center/pkg/plugins"
+	"github.com/ServiceComb/service-center/util"
+	"github.com/ServiceComb/service-center/util/uuid"
+	"strings"
 )
 
 func buildinUnidFunc() string {
@@ -32,4 +32,8 @@ func GetServiceId() string {
 func GetInstanceId() string {
 	f := findUuidFunc("GetInstanceId")
 	return f()
+}
+
+func GenerateUuid() string {
+	return buildinUnidFunc()
 }

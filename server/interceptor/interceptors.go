@@ -14,7 +14,7 @@
 package interceptor
 
 import (
-	"github.com/servicecomb/service-center/util"
+	"github.com/ServiceComb/service-center/util"
 	"net/http"
 	"reflect"
 	"runtime"
@@ -69,7 +69,7 @@ func InterceptFunc(phase Phase, intc InterceptorFunc) {
 
 	interceptors[phase] = iters
 
-	util.LOGGER.Warnf(nil, "Intercept %s at %s", intc.Name(), phase)
+	util.LOGGER.Infof("Intercept %s at %s", intc.Name(), phase)
 }
 
 func InvokeInterceptors(phase Phase, w http.ResponseWriter, req *http.Request) error {

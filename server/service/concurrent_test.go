@@ -14,19 +14,19 @@
 package service_test
 
 import (
-	_ "github.com/servicecomb/service-center/server/core/registry/embededetcd"
-	_ "github.com/servicecomb/service-center/server/core/registry/etcd"
+	_ "github.com/ServiceComb/service-center/server/core/registry/embededetcd"
+	_ "github.com/ServiceComb/service-center/server/core/registry/etcd"
 )
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/servicecomb/service-center/etcdsync"
-	apt "github.com/servicecomb/service-center/server/core"
-	pb "github.com/servicecomb/service-center/server/core/proto"
-	"github.com/servicecomb/service-center/server/core/registry"
-	"github.com/servicecomb/service-center/server/service"
-	"github.com/servicecomb/service-center/util"
+	"github.com/ServiceComb/service-center/pkg/etcdsync"
+	apt "github.com/ServiceComb/service-center/server/core"
+	pb "github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/server/service"
+	"github.com/ServiceComb/service-center/util"
 	"testing"
 	"time"
 )
@@ -38,7 +38,7 @@ func init() {
 func TestServiceController_CreateDependenciesForMircServices(t *testing.T) {
 	tryTimes := 3
 	testCount := 10
-	serviceResource, _, _ := service.AssembleResources(nil)
+	serviceResource, _, _ := service.AssembleResources()
 	for i := 0; i < testCount; i++ {
 		_, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
@@ -60,7 +60,7 @@ func TestServiceController_CreateDependenciesForMircServices(t *testing.T) {
 			serviceName := fmt.Sprintf("service%d", i)
 			_, err := serviceResource.CreateDependenciesForMircServices(getContext(), &pb.CreateDependenciesRequest{
 				Dependencies: []*pb.MircroServiceDependency{
-					&pb.MircroServiceDependency{
+					{
 						Consumer: &pb.DependencyMircroService{
 							AppId:       "test_deps",
 							ServiceName: serviceName,
@@ -101,7 +101,7 @@ func TestServiceController_CreateDependenciesForMircServices(t *testing.T) {
 			util.LOGGER.Warnf(nil, "%s: 0.", key)
 			continue
 		}
-		d := &service.MircroServiceDependency{}
+		d := &pb.MicroServiceDependency{}
 		err = json.Unmarshal(resp.Kvs[0].Value, d)
 		if err != nil {
 			util.LOGGER.Errorf(err, "%s failed.", key)

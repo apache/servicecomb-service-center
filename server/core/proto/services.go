@@ -48,11 +48,16 @@ type SerivceInstanceCtrlServerEx interface {
 	ServiceInstanceCtrlServer
 
 	WebSocketWatch(ctx context.Context, in *WatchInstanceRequest, conn *websocket.Conn)
+	WebSocketListAndWatch(ctx context.Context, in *WatchInstanceRequest, conn *websocket.Conn)
 	CluterHealth(ctx context.Context) (*GetInstancesResponse, error)
 }
 
 type GovernServiceCtrlServerEx interface {
 	GovernServiceCtrlServer
+}
+
+type MicroServiceDependency struct {
+	Dependency []*MicroServiceKey
 }
 
 func CreateResponse(code Response_Code, message string) *Response {
@@ -69,7 +74,7 @@ func KvToResponse(kv *mvccpb.KeyValue) (keys []string, data []byte) {
 	return
 }
 
-func GetInfoFromInstChangedEvent(kv *mvccpb.KeyValue) (serviceId, instanceId, tenantProject string, data []byte) {
+func GetInfoFromInstKV(kv *mvccpb.KeyValue) (serviceId, instanceId, tenantProject string, data []byte) {
 	keys, data := KvToResponse(kv)
 	if len(keys) < 7 {
 		return
@@ -80,11 +85,33 @@ func GetInfoFromInstChangedEvent(kv *mvccpb.KeyValue) (serviceId, instanceId, te
 	return
 }
 
-func GetInfoFromTenantChangeEvent(kv *mvccpb.KeyValue) (tenant string) {
+func GetInfoFromTenantKV(kv *mvccpb.KeyValue) (tenant string) {
 	keys, _ := KvToResponse(kv)
 	if len(keys) < 3 {
 		return
 	}
 	tenant = keys[len(keys)-1]
 	return
+}
+
+func TransferToMicroServiceKeys(in []*DependencyMircroService, tenant string) []*MicroServiceKey {
+	rst := []*MicroServiceKey{}
+	for _, value := range in {
+		rst = append(rst, &MicroServiceKey{
+			Tenant:      tenant,
+			AppId:       value.AppId,
+			ServiceName: value.ServiceName,
+			Version:     value.Version,
+		})
+	}
+	return rst
+}
+
+func ToMicroServiceKey(tenant string, in *MicroService) *MicroServiceKey {
+	return &MicroServiceKey{
+		Tenant:      tenant,
+		AppId:       in.AppId,
+		ServiceName: in.ServiceName,
+		Version:     in.Version,
+	}
 }

@@ -14,22 +14,23 @@
 package service
 
 import (
-	apt "github.com/servicecomb/service-center/server/core"
-	pb "github.com/servicecomb/service-center/server/core/proto"
-	"github.com/servicecomb/service-center/server/core/registry"
-	"github.com/servicecomb/service-center/util"
-	"context"
 	"encoding/json"
 	"fmt"
+	apt "github.com/ServiceComb/service-center/server/core"
+	pb "github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/ServiceComb/service-center/server/core/registry"
+	ms "github.com/ServiceComb/service-center/server/service/microservice"
+	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
+	"github.com/ServiceComb/service-center/util"
+	"github.com/ServiceComb/service-center/util/errors"
+	"golang.org/x/net/context"
 	"reflect"
 	"regexp"
 	"strings"
-	"github.com/servicecomb/service-center/util/errors"
 )
 
-
 func Accessible(ctx context.Context, tenant string, consumerID string, providerID string) (err error, isInnerErr bool) {
-	consumerService, err := getServiceByServiceId(ctx, tenant, consumerID)
+	consumerService, err := ms.GetServiceByServiceId(ctx, tenant, consumerID)
 	if err != nil {
 		return err, true
 	}
@@ -38,7 +39,7 @@ func Accessible(ctx context.Context, tenant string, consumerID string, providerI
 	}
 
 	// 跨应用权限
-	providerService, err := getServiceByServiceId(ctx, tenant, providerID)
+	providerService, err := ms.GetServiceByServiceId(ctx, tenant, providerID)
 	if err != nil {
 		return err, true
 	}
@@ -46,8 +47,8 @@ func Accessible(ctx context.Context, tenant string, consumerID string, providerI
 		return fmt.Errorf("provider invalid"), false
 	}
 
-	providerFlag := strings.Join([]string{providerService.AppId, providerService.ServiceName, providerService.Version}, "--")
-	consumerFlag := strings.Join([]string{consumerService.AppId, consumerService.ServiceName, consumerService.Version}, "--")
+	providerFlag := strings.Join([]string{providerService.AppId, providerService.ServiceName, providerService.Version}, "/")
+	consumerFlag := strings.Join([]string{consumerService.AppId, consumerService.ServiceName, consumerService.Version}, "/")
 	if providerService.AppId != consumerService.AppId {
 		if len(providerService.Properties) == 0 {
 			util.LOGGER.Warnf(nil, "consumer %s can't access provider %s, different appid",
@@ -63,7 +64,7 @@ func Accessible(ctx context.Context, tenant string, consumerID string, providerI
 	}
 
 	// 黑白名单
-	validateTags, err := GetTagsUtils(ctx, tenant, consumerService.ServiceId)
+	validateTags, err := serviceUtil.GetTagsUtils(ctx, tenant, consumerService.ServiceId)
 	if err != nil {
 		return err, true
 	}

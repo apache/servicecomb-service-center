@@ -16,16 +16,18 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	apt "github.com/ServiceComb/service-center/server/core"
+	"github.com/ServiceComb/service-center/server/core/mux"
+	pb "github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/server/core/registry/store"
+	"github.com/ServiceComb/service-center/server/infra/quota"
+	"github.com/ServiceComb/service-center/server/plugins/dynamic"
+	"github.com/ServiceComb/service-center/server/service/dependency"
+	ms "github.com/ServiceComb/service-center/server/service/microservice"
+	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
+	"github.com/ServiceComb/service-center/util"
 	"github.com/astaxie/beego"
-	apt "github.com/servicecomb/service-center/server/core"
-	"github.com/servicecomb/service-center/server/core/mux"
-	pb "github.com/servicecomb/service-center/server/core/proto"
-	"github.com/servicecomb/service-center/server/core/registry"
-	"github.com/servicecomb/service-center/server/infra/quota"
-	"github.com/servicecomb/service-center/server/plugins/dynamic"
-	"github.com/servicecomb/service-center/server/service/dependency"
-	ms "github.com/servicecomb/service-center/server/service/microservice"
-	"github.com/servicecomb/service-center/util"
 	"golang.org/x/net/context"
 	"strconv"
 	"strings"
@@ -33,122 +35,6 @@ import (
 )
 
 type ServiceController struct {
-}
-
-// TODO 支持扩展
-func GetServiceId(ctx context.Context, key *pb.MicroServiceKey) (string, error) {
-
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action: registry.GET,
-		Key:    []byte(apt.GenerateServiceIndexKey(key)),
-	})
-	if err != nil {
-		return "", err
-	}
-	if len(resp.Kvs) == 0 {
-		if len(key.Alias) == 0 {
-			return "", nil
-		}
-		// 别名查询
-		util.LOGGER.Debugf("could not search microservice %s/%s/%s id by field 'serviceName', now try field 'alias'.",
-			key.AppId, key.ServiceName, key.Version)
-		resp, err = registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-			Action: registry.GET,
-			Key:    []byte(apt.GenerateServiceAliasKey(key)),
-		})
-		if err != nil {
-			return "", err
-		}
-		if len(resp.Kvs) == 0 {
-			return "", nil
-		}
-	}
-	return string(resp.Kvs[0].Value), nil
-}
-
-func FindServiceIds(ctx context.Context, versionRule string, key *pb.MicroServiceKey) ([]string, error) {
-	// 版本规则
-	ids := []string{}
-	rangeIdx := strings.Index(versionRule, "-")
-
-	alsoFindAlias := len(key.Alias) > 0
-	keyGenerator := func(key *pb.MicroServiceKey) string { return apt.GenerateServiceIndexKey(key) }
-	versionsFunc := func(key *pb.MicroServiceKey) (*registry.PluginResponse, error) {
-		key.Version = ""
-		prefix := keyGenerator(key)
-		resp, err := registry.GetRegisterCenter().Do(context.TODO(), &registry.PluginOp{
-			Action:     registry.GET,
-			Key:        []byte(prefix),
-			WithPrefix: true,
-			SortOrder:  registry.SORT_DESCEND,
-		})
-		return resp, err
-	}
-
-FIND_RULE:
-	switch {
-	case versionRule == "latest":
-		resp, err := versionsFunc(key)
-		if err != nil {
-			return nil, err
-		}
-		if len(resp.Kvs) == 0 {
-			break
-		}
-		ids = ms.VersionRule(ms.Latest).GetServicesIds(resp.Kvs)
-	case versionRule[len(versionRule)-1:] == "+":
-		// 取最低版本及高版本集合
-		start := versionRule[:len(versionRule)-1]
-		resp, err := versionsFunc(key)
-		if err != nil {
-			return nil, err
-		}
-		if len(resp.Kvs) == 0 {
-			break
-		}
-		ids = ms.VersionRule(ms.AtLess).GetServicesIds(resp.Kvs, start)
-	case rangeIdx > 0:
-		// 取版本范围集合
-		start := versionRule[:rangeIdx]
-		end := versionRule[rangeIdx+1:]
-		resp, err := versionsFunc(key)
-		if err != nil {
-			return nil, err
-		}
-		if len(resp.Kvs) == 0 {
-			break
-		}
-		ids = ms.VersionRule(ms.Range).GetServicesIds(resp.Kvs, start, end)
-	default:
-		// 精确匹配
-		key.Version = versionRule
-		serviceId, err := GetServiceId(ctx, key)
-		if err != nil {
-			return nil, err
-		}
-		if len(serviceId) <= 0 {
-			break
-		}
-		ids = append(ids, serviceId)
-	}
-	if len(ids) == 0 && alsoFindAlias {
-		alsoFindAlias = false
-		keyGenerator = func(key *pb.MicroServiceKey) string { return apt.GenerateServiceAliasKey(key) }
-		goto FIND_RULE
-	}
-	return ids, nil
-}
-
-func (s *ServiceController) ServiceExist(ctx context.Context, tenant string, serviceId string) bool {
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action:    registry.GET,
-		Key:       []byte(apt.GenerateServiceKey(tenant, serviceId)),
-		CountOnly: true,
-	})
-	if err != nil || resp.Count == 0 {
-		return false
-	}
-	return true
 }
 
 func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequest) (*pb.CreateServiceResponse, error) {
@@ -162,7 +48,7 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 	service := in.Service
 	err := apt.Validate(service)
 
-	serviceFlag := strings.Join([]string{service.AppId, service.ServiceName, service.Version}, "--")
+	serviceFlag := strings.Join([]string{service.AppId, service.ServiceName, service.Version}, "/")
 	if err != nil {
 		util.LOGGER.Errorf(err, "create microservice failed, %s: invalid parameters.operator:%s",
 			serviceFlag, remoteIP)
@@ -171,7 +57,7 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 		}, nil
 	}
 
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParseTenantProject(ctx)
 
 	consumer := &pb.MicroServiceKey{
 		AppId:       service.AppId,
@@ -192,7 +78,7 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 	}
 
 	serviceId := in.Service.ServiceId
-	serviceIdInner, err := GetServiceId(ctx, consumer)
+	serviceIdInner, err := ms.GetServiceId(ctx, consumer)
 	if err != nil {
 		util.LOGGER.Errorf(err, "create microservice failed, %s:internel err,query service failed.operator:%s",
 			serviceFlag, remoteIP)
@@ -214,12 +100,14 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 	ok, err := quota.QuotaPlugins[beego.AppConfig.DefaultString("quota_plugin", "buildin")]().Apply4Quotas(ctx, quota.MicroServiceQuotaType, 0)
 	if err != nil {
 		util.LOGGER.Errorf(err, "create microservice failed, %s: check apply quota.operator:%s", serviceFlag, remoteIP)
+		lock.Unlock()
 		return &pb.CreateServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, err
 	}
 	if !ok {
 		util.LOGGER.Errorf(err, "create microservice failed, %s: no quota to apply.operator:%s", serviceFlag, remoteIP)
+		lock.Unlock()
 		return &pb.CreateServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, fmt.Sprintf("No quota to create service,service name is %s", in.Service.ServiceName)),
 		}, nil
@@ -279,7 +167,7 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 	lock.Unlock()
 	//创建服务间的依赖
 	util.LOGGER.Infof("create microservice: add dependency for %s.operator:%s", serviceFlag, remoteIP)
-	err = s.updateAsProviderDependency(ctx, serviceId, consumer)
+	err = dependency.UpdateAsProviderDependency(ctx, serviceId, consumer)
 	if err != nil {
 		util.LOGGER.Errorf(err, "create microservice failed: dependency update,as provider failed.%s.operator:%s", serviceFlag, remoteIP)
 		return &pb.CreateServiceResponse{
@@ -294,6 +182,154 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "register service successfully"),
 		ServiceId: serviceId,
 	}, nil
+}
+
+func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId string, force bool) (*pb.Response, error) {
+	tenant := util.ParseTenantProject(ctx)
+
+	service, err := ms.GetServiceByServiceId(ctx, tenant, ServiceId)
+	if err != nil {
+		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: get service failed.", ServiceId)
+		return pb.CreateResponse(pb.Response_FAIL, err.Error()), err
+	}
+
+	if service == nil {
+		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: service not exist.", ServiceId)
+		return  pb.CreateResponse(pb.Response_FAIL, "service not exist"), nil
+	}
+
+	util.LOGGER.Infof("start delete service %s", ServiceId)
+
+	// 强制删除，则与该服务相关的信息删除，非强制删除： 如果作为该被依赖（作为provider，提供服务,且不是只存在自依赖）或者存在实例，则不能删除
+	if !force {
+		keyConDependency := apt.GenerateProviderDependencyKey(tenant, ServiceId, "")
+		services, err := dependency.GetDependencies(ctx, keyConDependency, tenant)
+		if err != nil {
+			util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s:(unforce) inner err, get service dependency failed.", ServiceId)
+			return  pb.CreateResponse(pb.Response_FAIL, "Get dependency info failed."), err
+		}
+		if len(services) > 1 || (len(services) == 1 && services[0].ServiceId != ServiceId) {
+			util.LOGGER.Errorf(nil, "delete microservice failed, serviceId is %s:(unforce) can't delete, other services rely it.", ServiceId)
+			return  pb.CreateResponse(pb.Response_FAIL, "Can not delete this service, other service rely it."), err
+		}
+
+		instancesKey := apt.GenerateInstanceKey(tenant, ServiceId, "")
+		rsp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
+			Action:     registry.GET,
+			Key:        []byte(instancesKey),
+			WithPrefix: true,
+			CountOnly:  true,
+		})
+		if err != nil {
+			util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s:(unforce) inner err,get instances failed.", ServiceId)
+			return  pb.CreateResponse(pb.Response_FAIL, "Get instance failed."), err
+		}
+
+		if rsp.Count > 0 {
+			util.LOGGER.Errorf(nil, "delete microservice failed, serviceId is %s:(unforce) can't delete, exist instance.", ServiceId)
+			return  pb.CreateResponse(pb.Response_FAIL, "Can not delete this service, exist instance."), err
+		}
+	}
+
+	consumer := &pb.MicroServiceKey{
+		AppId:       service.AppId,
+		ServiceName: service.ServiceName,
+		Version:     service.Version,
+		Alias:       service.Alias,
+		Tenant:      tenant,
+	}
+
+	//refresh msCache consumerCache, ensure that watch can notify consumers when no cache.
+	err = dependency.RefreshDependencyCache(tenant, ServiceId, service)
+	if err != nil {
+		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: inner err, refresh service dependency cache failed.", ServiceId)
+		return  pb.CreateResponse(pb.Response_FAIL, "Refresh dependency cache failed."), err
+	}
+
+	opts := []*registry.PluginOp{
+		{
+			Action: registry.DELETE,
+			Key:    []byte(apt.GenerateServiceIndexKey(consumer)),
+		},
+		{
+			Action: registry.DELETE,
+			Key:    []byte(apt.GenerateServiceAliasKey(consumer)),
+		},
+		{
+			Action: registry.DELETE,
+			Key:    []byte(apt.GenerateServiceKey(tenant, ServiceId)),
+		},
+		{
+			Action: registry.DELETE,
+			Key: []byte(strings.Join([]string{
+				apt.GetServiceRuleRootKey(tenant),
+				ServiceId,
+				"",
+			}, "/")),
+		},
+	}
+
+	//删除依赖规则
+	lock, err := mux.Lock(mux.GLOBAL_LOCK)
+	if err != nil {
+		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: inner err, create lock failed.", ServiceId)
+		return  pb.CreateResponse(pb.Response_FAIL, err.Error()), err
+	}
+	optsTmp, err := dependency.DeleteDependencyForService(ctx, consumer, ServiceId)
+	lock.Unlock()
+	if err != nil {
+		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: inner err, delete dependency failed.", ServiceId)
+		return  pb.CreateResponse(pb.Response_FAIL, err.Error()), err
+	}
+	opts = append(opts, optsTmp...)
+
+	//删除黑白名单
+	rulekey := apt.GenerateServiceRuleKey(tenant, ServiceId, "")
+	opt := &registry.PluginOp{
+		Action:     registry.DELETE,
+		Key:        []byte(rulekey),
+		WithPrefix: true,
+	}
+	opts = append(opts, opt)
+	indexKey := apt.GenerateRuleIndexKey(tenant, ServiceId, "", "")
+	opts = append(opts, &registry.PluginOp{
+		Action: registry.DELETE,
+		Key:    []byte(indexKey),
+	})
+	opts = append(opts, opt)
+
+	//删除shemas
+	schemaKey := apt.GenerateServiceSchemaKey(tenant, ServiceId, "")
+	opt = &registry.PluginOp{
+		Action:     registry.DELETE,
+		Key:        []byte(schemaKey),
+		WithPrefix: true,
+	}
+	opts = append(opts, opt)
+
+	//删除tags
+	tagsKey := apt.GenerateServiceTagKey(tenant, ServiceId)
+	opt = &registry.PluginOp{
+		Action: registry.DELETE,
+		Key:    []byte(tagsKey),
+	}
+	opts = append(opts, opt)
+
+	//删除实例
+	err = serviceUtil.DeleteServiceAllInstances(ctx, ServiceId)
+	if err != nil {
+		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: delete all instances failed.", ServiceId)
+		return  pb.CreateResponse(pb.Response_FAIL, "Delete all instances failed for service."), err
+	}
+
+	_, err = registry.GetRegisterCenter().Txn(ctx, opts)
+	if err != nil {
+		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: commit data into etcd failed.", ServiceId)
+		return  pb.CreateResponse(pb.Response_FAIL, "commit operations failed"), nil
+	}
+
+	util.LOGGER.Infof("delete microservice successful: serviceid is %s,operator is %s.", ServiceId, util.GetIPFromContext(ctx))
+	return pb.CreateResponse(pb.Response_SUCCESS, "unregister service successfully"), nil
 }
 
 func (s *ServiceController) Delete(ctx context.Context, in *pb.DeleteServiceRequest) (*pb.DeleteServiceResponse, error) {
@@ -311,358 +347,88 @@ func (s *ServiceController) Delete(ctx context.Context, in *pb.DeleteServiceRequ
 		}, nil
 	}
 
-	force := in.Force
-	tenant := util.ParaseTenant(ctx)
+	resp, err := s.DeleteServicePri(ctx, in.ServiceId,in.Force)
 
-	service, err := getServiceByServiceId(ctx, tenant, in.ServiceId)
-	if err != nil {
-		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: get service failed.", in.ServiceId)
-		return &pb.DeleteServiceResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
-		}, err
-	}
-
-	if service == nil {
-		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: service not exist.", in.ServiceId)
-		return &pb.DeleteServiceResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "service not exist"),
-		}, nil
-	}
-
-	util.LOGGER.Infof("start delete service %s", in.ServiceId)
-
-	// 强制删除，则与该服务相关的信息删除，非强制删除： 如果作为该被依赖（作为provider，提供服务,且不是只存在自依赖）或者存在实例，则不能删除
-	if !force {
-		keyConDependency := apt.GenerateProviderDependencyKey(tenant, in.ServiceId, "")
-		services, err := GetDependencies(ctx, keyConDependency, tenant)
-		if err != nil {
-			util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s:(unforce) inner err, get service dependency failed.", in.ServiceId)
-			return &pb.DeleteServiceResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, "Get dependency info failed."),
-			}, err
-		}
-		if len(services) > 1 || (len(services) == 1 && services[0].ServiceId != in.ServiceId) {
-			util.LOGGER.Errorf(nil, "delete microservice failed, serviceId is %s:(unforce) can't delete, other services rely it.", in.ServiceId)
-			return &pb.DeleteServiceResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, "Can not delete this service, other service rely it."),
-			}, err
-		}
-
-		instancesKey := apt.GenerateInstanceKey(tenant, in.ServiceId, "")
-		rsp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-			Action:     registry.GET,
-			Key:        []byte(instancesKey),
-			WithPrefix: true,
-			CountOnly:  true,
-		})
-		if err != nil {
-			util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s:(unforce) inner err,get instances failed.", in.ServiceId)
-			return &pb.DeleteServiceResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, "Get instance failed."),
-			}, err
-		}
-
-		if rsp.Count > 0 {
-			util.LOGGER.Errorf(nil, "delete microservice failed, serviceId is %s:(unforce) can't delete, exist instance.", in.ServiceId)
-			return &pb.DeleteServiceResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, "Can not delete this service, exist instance."),
-			}, err
-		}
-	}
-
-	consumer := &pb.MicroServiceKey{
-		AppId:       service.AppId,
-		ServiceName: service.ServiceName,
-		Version:     service.Version,
-		Alias:       service.Alias,
-		Tenant:      tenant,
-	}
-
-	//refresh msCache consumerCache, ensure that watch can notify consumers when no cache.
-	err = refreshDependencyCache(tenant, in.ServiceId, service)
-	if err != nil {
-		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: inner err, refresh service dependency cache failed.", in.ServiceId)
-		return &pb.DeleteServiceResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Refresh dependency cache failed."),
-		}, err
-	}
-
-	opts := []*registry.PluginOp{
-		{
-			Action: registry.DELETE,
-			Key:    []byte(apt.GenerateServiceIndexKey(consumer)),
-		},
-		{
-			Action: registry.DELETE,
-			Key:    []byte(apt.GenerateServiceAliasKey(consumer)),
-		},
-		{
-			Action: registry.DELETE,
-			Key:    []byte(apt.GenerateServiceKey(tenant, in.ServiceId)),
-		},
-		{
-			Action: registry.DELETE,
-			Key: []byte(strings.Join([]string{
-				apt.GetServiceRuleRootKey(tenant),
-				in.ServiceId,
-				"",
-			}, "/")),
-		},
-	}
-
-	//删除依赖规则
-	optsTmp, err := s.deteleDependencyForService(ctx, consumer, in.ServiceId)
-	if err != nil {
-		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: inner err, delete dependency failed.", in.ServiceId)
-		return &pb.DeleteServiceResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
-		}, err
-	}
-	opts = append(opts, optsTmp...)
-
-	//删除黑白名单
-	rulekey := apt.GenerateServiceRuleKey(tenant, in.ServiceId, "")
-	opt := &registry.PluginOp{
-		Action:     registry.DELETE,
-		Key:        []byte(rulekey),
-		WithPrefix: true,
-	}
-	opts = append(opts, opt)
-	indexKey := apt.GenerateRuleIndexKey(tenant, in.ServiceId, "", "")
-	opts = append(opts, &registry.PluginOp{
-		Action: registry.DELETE,
-		Key:    []byte(indexKey),
-	})
-	opts = append(opts, opt)
-
-	//删除shemas
-	schemaKey := apt.GenerateServiceSchemaKey(tenant, in.ServiceId, "")
-	opt = &registry.PluginOp{
-		Action:     registry.DELETE,
-		Key:        []byte(schemaKey),
-		WithPrefix: true,
-	}
-	opts = append(opts, opt)
-
-	//删除tags
-	tagsKey := apt.GenerateServiceTagKey(tenant, in.ServiceId)
-	opt = &registry.PluginOp{
-		Action: registry.DELETE,
-		Key:    []byte(tagsKey),
-	}
-	opts = append(opts, opt)
-
-	//删除实例
-	err = deleteServiceAllInstances(ctx, in)
-	if err != nil {
-		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: delete all instances failed.", in.ServiceId)
-		return &pb.DeleteServiceResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Delete all instances failed for service."),
-		}, err
-	}
-
-	_, err = registry.GetRegisterCenter().Txn(ctx, opts)
-	if err != nil {
-		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: commit data into etcd failed.", in.ServiceId)
-		return &pb.DeleteServiceResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "commit operations failed"),
-		}, nil
-	}
-
-	util.LOGGER.Infof("delete microservice successful: serviceid is %s,operator is %s.", in.ServiceId, util.GetIPFromContext(ctx))
 	return &pb.DeleteServiceResponse{
-		Response: pb.CreateResponse(pb.Response_SUCCESS, "unregister service successfully"),
-	}, nil
+		Response:resp,
+	},err
 }
 
-func refreshDependencyCache(tenant string, providerId string, provider *pb.MicroService) error {
-	key := apt.GenerateProviderDependencyKey(tenant, providerId, "")
-	resp, err := registry.GetRegisterCenter().Do(context.TODO(), &registry.PluginOp{
-		Action:     registry.GET,
-		Key:        []byte(key),
-		WithPrefix: true,
-		KeyOnly:    true,
-	})
-	if err != nil {
-		util.LOGGER.Errorf(err, "refresh dependency cache failed: query service consumers failed, provider id %s", providerId)
-		return err
+func (s *ServiceController)DeleteServices(ctx context.Context, request *pb.DelServicesRequest)(*pb.DelServicesResponse, error){
+	// 合法性检查
+	if request == nil || request.ServiceIds == nil || len(request.ServiceIds) == 0 {
+		return &pb.DelServicesResponse{
+			Response: pb.CreateResponse(pb.Response_FAIL, "Invalid request param"),
+			Services:nil,
+		},nil
 	}
-	if resp == nil || len(resp.Kvs) == 0 {
-		util.LOGGER.Infof("refresh dependency cache: this services %s has no consumer dependency.", providerId)
-	} else {
-		ms.MsCache().Set(providerId, provider, 5*time.Minute)
-		dependency.ConsumerCache().Set(providerId, resp.Kvs, 5*time.Minute)
-	}
-	return nil
-}
 
-func deleteServiceAllInstances(ctx context.Context, in *pb.DeleteServiceRequest) error {
-	tenant := util.ParaseTenant(ctx)
-
-	instanceLeaseKey := apt.GenerateInstanceLeaseKey(tenant, in.ServiceId, "")
-
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action:     registry.GET,
-		Key:        []byte(instanceLeaseKey),
-		WithPrefix: true,
-	})
-	if err != nil {
-		util.LOGGER.Errorf(err, "delete service all instance failed: get instance lease failed.")
-		return err
-	}
-	if resp.Count <= 0 {
-		util.LOGGER.Warnf(nil, "No instances to revoke.")
-		return nil
-	}
-	for _, v := range resp.Kvs {
-		leaseID, _ := strconv.ParseInt(string(v.Value), 10, 64)
-		registry.GetRegisterCenter().LeaseRevoke(ctx, leaseID)
-	}
-	return nil
-}
-
-func (s *ServiceController) deteleDependencyForService(ctx context.Context, consumer *pb.MicroServiceKey, serviceId string) ([]*registry.PluginOp, error) {
-	opts := []*registry.PluginOp{}
-	optsTmps := []*registry.PluginOp{}
-	tenant := consumer.Tenant
-	flag := map[string]bool{}
-	//删除依赖规则
-	conKey := apt.GenerateConsumerDependencyRuleKey(tenant, consumer)
-	err, providerValue := transferToMircroServiceDependency(ctx, conKey)
-	if err != nil {
-		return nil, err
-	}
-	if providerValue != nil && len(providerValue.Dependency) != 0 {
-		proProkey := ""
-		for _, providerRule := range providerValue.Dependency {
-			proProkey = apt.GenerateProviderDependencyRuleKey(tenant, providerRule)
-			err, consumers := transferToMircroServiceDependency(ctx, proProkey)
-			if err != nil {
-				return nil, err
-			}
-			err = deleteDependencyRuleUtil(ctx, consumers, consumer, proProkey)
-			if err != nil {
-				return nil, err
-			}
+	existFlag := map[string]bool{}
+	nuoMultilCount := 0
+	// 批量删除服务
+	serviceRespChan := make(chan *pb.DelServicesRspInfo , len(request.ServiceIds))
+	for _, serviceId := range request.ServiceIds{
+		//ServiceId重复性检查
+		if _ ,ok := existFlag[serviceId]; ok {
+			util.LOGGER.Warnf(nil, "delete microservice %s , multiple.", serviceId)
+			continue
+		} else {
+			existFlag[serviceId] = true
+			nuoMultilCount++
 		}
 
-		opt := &registry.PluginOp{
-			Action: registry.DELETE,
-			Key:    []byte(conKey),
+	        serviceRst := &pb.DelServicesRspInfo{
+			ServiceId : serviceId,
+			ErrMessage:"",
 		}
-		util.LOGGER.Debugf("conKey is %s.", conKey)
-		opts = append(opts, opt)
-	}
-	//作为provider的依赖规则
-	providerKey := apt.GenerateProviderDependencyRuleKey(tenant, consumer)
-	opt := &registry.PluginOp{
-		Action: registry.DELETE,
-		Key:    []byte(providerKey),
-	}
-	util.LOGGER.Debugf("providerKey is %s", providerKey)
-	opts = append(opts, opt)
 
-	//删除依赖关系
-	optsTmps, err = s.deleteDependencyUtil(ctx, "c", tenant, serviceId, flag)
-	if err != nil {
-		return nil, err
-	}
-	opts = append(opts, optsTmps...)
-	util.LOGGER.Debugf("flag is %s", flag)
-	optsTmps, err = s.deleteDependencyUtil(ctx, "p", tenant, serviceId, flag)
-	if err != nil {
-		return nil, err
-	}
-	util.LOGGER.Debugf("flag is %s", flag)
-	opts = append(opts, optsTmps...)
-	return opts, nil
-}
-
-func deleteDependencyRuleUtil(ctx context.Context, mircroServiceDependency *MircroServiceDependency, service *pb.MicroServiceKey, serviceKey string) error {
-	for key, serviceTmp := range mircroServiceDependency.Dependency {
-		if ok := equalServiceDependency(serviceTmp, service); ok {
-			mircroServiceDependency.Dependency = append(mircroServiceDependency.Dependency[:key], mircroServiceDependency.Dependency[key+1:]...)
-			util.LOGGER.Debugf("delete versionRule from %s", serviceTmp.ServiceName)
-			break
+		//检查服务ID合法性
+		in := &pb.DeleteServiceRequest{
+			ServiceId : serviceId,
+			Force : request.Force,
 		}
-	}
-	opt := &registry.PluginOp{}
-	if len(mircroServiceDependency.Dependency) == 0 {
-		opt = &registry.PluginOp{
-			Action: registry.DELETE,
-			Key:    []byte(serviceKey),
-		}
-		util.LOGGER.Debugf("serviceKey is .", serviceKey)
-		util.LOGGER.Debugf("After deleting versionRule from %s,provider's consumer is empty.", serviceKey)
-
-	} else {
-		data, err := json.Marshal(mircroServiceDependency)
+		err := apt.Validate(in)
 		if err != nil {
-			util.LOGGER.Errorf(nil, "Marshal tmpValue failed.")
-			return err
+			util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: invalid parameters.", in.ServiceId)
+			serviceRst.ErrMessage = err.Error()
+			serviceRespChan <- serviceRst
+			continue
 		}
-		opt = &registry.PluginOp{
-			Action: registry.PUT,
-			Key:    []byte(serviceKey),
-			Value:  []byte(data),
-		}
-		util.LOGGER.Debugf("serviceKey is %s.", serviceKey)
-	}
-	_, err := registry.GetRegisterCenter().Do(ctx, opt)
-	if err != nil {
-		util.LOGGER.Errorf(err, "Submit update dependency failed.")
-		return err
-	}
-	return nil
-}
 
-func (s *ServiceController) deleteDependencyUtil(ctx context.Context, serviceType string, tenant string, serviceId string, flag map[string]bool) ([]*registry.PluginOp, error) {
-	serviceKey := apt.GenerateServiceDependencyKey(serviceType, tenant, serviceId, "")
-	opt := &registry.PluginOp{
-		Action:     registry.GET,
-		Key:        []byte(serviceKey),
-		WithPrefix: true,
+		//执行删除服务操作
+		go func(serviceItem string){
+			 resp , err := s.DeleteServicePri(ctx, serviceItem, request.Force)
+			if err != nil {
+				serviceRst.ErrMessage = err.Error()
+			}else if resp.Code != pb.Response_SUCCESS{
+				serviceRst.ErrMessage  = resp.Message
+			}
+
+			serviceRespChan <- serviceRst
+		}(serviceId)
 	}
-	rsp, err := registry.GetRegisterCenter().Do(ctx, opt)
-	if err != nil {
-		return nil, err
-	}
-	opts := []*registry.PluginOp{}
-	if rsp != nil {
-		serviceTmpId := ""
-		serviceTmpKey := ""
-		deleteKey := ""
-		for _, kv := range rsp.Kvs {
-			tmpKeyArr := strings.Split(string(kv.Key), "/")
-			serviceTmpId = tmpKeyArr[len(tmpKeyArr)-1]
-			if serviceType == "p" {
-				serviceTmpKey = apt.GenerateConsumerDependencyKey(tenant, serviceTmpId, serviceId)
-				deleteKey = strings.Join([]string{"c", serviceTmpId, serviceId}, "/")
-			} else {
-				serviceTmpKey = apt.GenerateProviderDependencyKey(tenant, serviceTmpId, serviceId)
-				deleteKey = strings.Join([]string{"p", serviceTmpId, serviceId}, "/")
-			}
-			if _, ok := flag[serviceTmpKey]; ok {
-				util.LOGGER.Debugf("serviceTmpKey is more exist.%s", serviceTmpKey)
-				continue
-			}
-			flag[serviceTmpKey] = true
-			util.LOGGER.Infof("delete dependency %s", deleteKey)
-			opt = &registry.PluginOp{
-				Action: registry.DELETE,
-				Key:    []byte(serviceTmpKey),
-			}
-			opts = append(opts, opt)
+
+	//获取批量删除服务的结果
+	count := 0
+	responseCode  := pb.Response_SUCCESS
+        delServiceRspInfo := []*pb.DelServicesRspInfo{}
+	for serviceRespItem := range serviceRespChan{
+		count++
+		if len(serviceRespItem.ErrMessage) != 0{
+			responseCode = pb.Response_FAIL
 		}
-		opt = &registry.PluginOp{
-			Action:     registry.DELETE,
-			Key:        []byte(serviceKey),
-			WithPrefix: true,
+		delServiceRspInfo = append(delServiceRspInfo, serviceRespItem)
+		//结果收集over，关闭通道
+		if count == nuoMultilCount{
+			close(serviceRespChan)
 		}
-		util.LOGGER.Infof("delete dependency serviceKey is %s", serviceType+"/"+serviceId)
-		opts = append(opts, opt)
 	}
-	return opts, nil
+
+	util.LOGGER.Infof("Batch DeleteServices servicid = %v , result = %d, ", request.ServiceIds, responseCode)
+        return &pb.DelServicesResponse{
+		Response: pb.CreateResponse(responseCode, "Delservices"),
+		Services: delServiceRspInfo,
+	},nil
 }
 
 func (s *ServiceController) GetOne(ctx context.Context, in *pb.GetServiceRequest) (*pb.GetServiceResponse, error) {
@@ -679,8 +445,8 @@ func (s *ServiceController) GetOne(ctx context.Context, in *pb.GetServiceRequest
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
 	}
-	tenant := util.ParaseTenant(ctx)
-	service, err := getServiceByServiceId(ctx, tenant, in.ServiceId)
+	tenant := util.ParseTenantProject(ctx)
+	service, err := ms.GetServiceByServiceId(ctx, tenant, in.ServiceId)
 
 	if err != nil {
 		util.LOGGER.Errorf(err, "get microservice failed, serviceId is %s: inner err,get service failed.", in.ServiceId)
@@ -707,7 +473,7 @@ func (s *ServiceController) GetServices(ctx context.Context, in *pb.GetServicesR
 			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid"),
 		}, nil
 	}
-	services, err := GetAllServiceUtil(ctx)
+	services, err := ms.GetAllServiceUtil(ctx)
 	if err != nil {
 		util.LOGGER.Errorf(err, "get services failed: inner err.")
 		return &pb.GetServicesResponse{
@@ -736,34 +502,21 @@ func (s *ServiceController) UpdateProperties(ctx context.Context, in *pb.UpdateS
 		}, nil
 	}
 
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParseTenantProject(ctx)
 
 	key := apt.GenerateServiceKey(tenant, in.ServiceId)
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action: registry.GET,
-		Key:    []byte(key),
-	})
+	service, err := ms.GetServiceByServiceId(ctx, tenant, in.ServiceId)
 	if err != nil {
 		util.LOGGER.Errorf(err, "update service properties failed, serviceId is %s: query service failed.", in.ServiceId)
 		return &pb.UpdateServicePropsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "query service file failed"),
 		}, err
 	}
-	if len(resp.Kvs) == 0 {
+	if service == nil {
 		util.LOGGER.Errorf(nil, "update service properties failed, serviceId is %s: service not exist.", in.ServiceId)
 		return &pb.UpdateServicePropsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "service does not exist"),
 		}, nil
-	}
-
-	service := pb.MicroService{}
-
-	err = json.Unmarshal(resp.Kvs[0].Value, &service)
-	if err != nil {
-		util.LOGGER.Errorf(err, "update service properties failed, serviceId is %s: json unmarshal service failed.", in.ServiceId)
-		return &pb.UpdateServicePropsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "service file unmarshal error"),
-		}, err
 	}
 	service.Properties = make(map[string]string)
 	for propertyKey := range in.Properties {
@@ -797,18 +550,6 @@ func (s *ServiceController) UpdateProperties(ctx context.Context, in *pb.UpdateS
 	}, nil
 }
 
-func (s *ServiceController) RuleExist(ctx context.Context, tenant string, serviceId string, attr string, pattern string) bool {
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action:    registry.GET,
-		Key:       []byte(apt.GenerateRuleIndexKey(tenant, serviceId, attr, pattern)),
-		CountOnly: true,
-	})
-	if err != nil || resp.Count == 0 {
-		return false
-	}
-	return true
-}
-
 func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesRequest) (*pb.AddServiceRulesResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 || len(in.GetRules()) == 0 {
 		util.LOGGER.Errorf(nil, "add rule failed: invalid parameters.")
@@ -817,10 +558,10 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 		}, nil
 	}
 
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParseTenantProject(ctx)
 
 	// service id存在性校验
-	if !s.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.LOGGER.Errorf(nil, "add rule failed, serviceId is %s: service not exist.", in.ServiceId)
 		return &pb.AddServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "service does not exist"),
@@ -828,7 +569,7 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 	}
 
 	opts := []*registry.PluginOp{}
-	ruleType, _, err := getServiceRuleType(ctx, tenant, in.ServiceId)
+	ruleType, _, err := serviceUtil.GetServiceRuleType(ctx, tenant, in.ServiceId)
 	util.LOGGER.Debugf("ruleType is %s", ruleType)
 	if err != nil {
 		return &pb.AddServiceRulesResponse{
@@ -857,34 +598,20 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 		}
 
 		//同一服务，attribute和pattern确定一个rule
-		if s.RuleExist(ctx, tenant, in.ServiceId, rule.Attribute, rule.Pattern) {
+		if serviceUtil.RuleExist(ctx, tenant, in.ServiceId, rule.Attribute, rule.Pattern) {
 			util.LOGGER.Infof("This rule more exists, %s ", in.ServiceId)
 			continue
 		}
 
 		// 产生全局rule id
-		resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-			Action:     registry.PUT,
-			Key:        []byte(apt.GetRuleSequenceKey()),
-			WithPrevKV: true,
-		})
-		if err != nil {
-			util.LOGGER.Errorf(err, "add rule failed, serviceId is %s:generate ruleId failed.", in.ServiceId)
-			return &pb.AddServiceRulesResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, "generate service id error"),
-			}, err
-		}
 		timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 		ruleAdd := &pb.ServiceRule{
-			RuleId:      "1",
+			RuleId:      dynamic.GenerateUuid(),
 			RuleType:    rule.RuleType,
 			Attribute:   rule.Attribute,
 			Pattern:     rule.Pattern,
 			Description: rule.Description,
 			Timestamp:   timestamp,
-		}
-		if resp.PrevKv != nil {
-			ruleAdd.RuleId = strconv.FormatInt(resp.PrevKv.Version+1, 10)
 		}
 
 		key := apt.GenerateServiceRuleKey(tenant, in.ServiceId, ruleAdd.RuleId)
@@ -933,28 +660,6 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 	}, nil
 }
 
-func getServiceRuleType(ctx context.Context, tenant string, serviceId string) (string, int, error) {
-	key := apt.GenerateServiceRuleKey(tenant, serviceId, "")
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action:     registry.GET,
-		Key:        []byte(key),
-		WithPrefix: true,
-	})
-	if err != nil {
-		util.LOGGER.Errorf(err, "Get rule failed.%s", err.Error())
-		return "", 0, err
-	}
-	if len(resp.Kvs) == 0 {
-		return "", 0, nil
-	}
-	rule := &pb.ServiceRule{}
-	err = json.Unmarshal(resp.Kvs[0].Value, rule)
-	if err != nil {
-		util.LOGGER.Errorf(err, "Unmarshal rule data failed.%s", err.Error())
-	}
-	return rule.RuleType, len(resp.Kvs), nil
-}
-
 func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateServiceRuleRequest) (*pb.UpdateServiceRuleResponse, error) {
 	if in == nil || in.GetRule() == nil || len(in.ServiceId) == 0 || len(in.RuleId) == 0 {
 		util.LOGGER.Errorf(nil, "update rule failed: invalid parameters.")
@@ -963,10 +668,10 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 		}, nil
 	}
 
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParseTenantProject(ctx)
 
 	// service id存在性校验
-	if !s.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.LOGGER.Errorf(nil, "update rule failed, serviceId is %s, ruleId is %s: service not exist.", in.ServiceId, in.RuleId)
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "service does not exist"),
@@ -981,7 +686,7 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 	}
 
 	//是否能改变ruleType
-	ruleType, ruleNum, err := getServiceRuleType(ctx, tenant, in.ServiceId)
+	ruleType, ruleNum, err := serviceUtil.GetServiceRuleType(ctx, tenant, in.ServiceId)
 	if err != nil {
 		util.LOGGER.Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: get rule type failed.", in.ServiceId, in.RuleId)
 		return &pb.UpdateServiceRuleResponse{
@@ -995,31 +700,18 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 		}, nil
 	}
 
-	key := apt.GenerateServiceRuleKey(tenant, in.ServiceId, in.RuleId)
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action: registry.GET,
-		Key:    []byte(key),
-	})
+	rule, err := serviceUtil.GetOneRule(ctx, tenant, in.ServiceId, in.RuleId)
 	if err != nil {
 		util.LOGGER.Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: query service rule failed.", in.ServiceId, in.RuleId)
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "get service rule file failed"),
 		}, err
 	}
-
-	if len(resp.Kvs) == 0 {
+	if rule == nil {
 		util.LOGGER.Errorf(err, "update rule failed, serviceId is %s, ruleId is %s:this rule does not exist,can't update.", in.ServiceId, in.RuleId)
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "This rule does not exist."),
-		}, err
-	}
-	rule := &pb.ServiceRule{}
-	err = json.Unmarshal(resp.Kvs[0].Value, rule)
-	if err != nil {
-		util.LOGGER.Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: unmarshal service rule failed.", in.ServiceId, in.RuleId)
-		return &pb.UpdateServiceRuleResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "unmarshal service rule file failed"),
-		}, err
+		}, nil
 	}
 
 	oldRulePatten := rule.Pattern
@@ -1037,6 +729,7 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 	rule.Description = in.GetRule().Description
 	rule.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
 
+	key := apt.GenerateServiceRuleKey(tenant, in.ServiceId, in.RuleId)
 	util.LOGGER.Debugf("start update service rule file: %s", key)
 	data, err := json.Marshal(rule)
 	if err != nil {
@@ -1079,7 +772,7 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 		}, err
 	}
 
-	util.LOGGER.Infof("update rule successful: servieId is , ruleId is %s.", in.ServiceId, in.RuleId)
+	util.LOGGER.Infof("update rule successful: servieId is %s, ruleId is %s.", in.ServiceId, in.RuleId)
 	return &pb.UpdateServiceRuleResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "get service rules successfully"),
 	}, nil
@@ -1093,16 +786,16 @@ func (s *ServiceController) GetRule(ctx context.Context, in *pb.GetServiceRulesR
 		}, nil
 	}
 
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParseTenantProject(ctx)
 	// service id存在性校验
-	if !s.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.LOGGER.Errorf(nil, "get service rule failed, serviceId is %s: service not exist.", in.ServiceId)
 		return &pb.GetServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "service does not exist"),
 		}, nil
 	}
 
-	rules, err := GetRulesUtil(ctx, tenant, in.ServiceId)
+	rules, err := serviceUtil.GetRulesUtil(ctx, tenant, in.ServiceId)
 	if err != nil {
 		util.LOGGER.Errorf(nil, "get service rule failed, serviceId is %s: get rule failed.", in.ServiceId)
 		return &pb.GetServiceRulesResponse{
@@ -1124,9 +817,9 @@ func (s *ServiceController) DeleteRule(ctx context.Context, in *pb.DeleteService
 		}, nil
 	}
 
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParseTenantProject(ctx)
 	// service id存在性校验
-	if !s.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.LOGGER.Errorf(nil, "delete service rule failed, serviceId is %s, rule is %v: service not exist.", in.ServiceId, in.RuleIds)
 		return &pb.DeleteServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "service does not exist"),
@@ -1139,7 +832,7 @@ func (s *ServiceController) DeleteRule(ctx context.Context, in *pb.DeleteService
 	for _, ruleId := range in.RuleIds {
 		key = apt.GenerateServiceRuleKey(tenant, in.ServiceId, ruleId)
 		util.LOGGER.Debugf("start delete service rule file: %s", key)
-		data, err := s.getOneRule(ctx, key, ruleId)
+		data, err := serviceUtil.GetOneRule(ctx, tenant, in.ServiceId, ruleId)
 		if err != nil {
 			util.LOGGER.Errorf(err, "delete service rule failed, serviceId is %s, rule is %v: get rule of ruleId %s failed.", in.ServiceId, in.RuleIds, ruleId)
 			return &pb.DeleteServiceRulesResponse{
@@ -1182,29 +875,6 @@ func (s *ServiceController) DeleteRule(ctx context.Context, in *pb.DeleteService
 	}, nil
 }
 
-func (s *ServiceController) getOneRule(ctx context.Context, key string, ruleId string) (*pb.ServiceRule, error) {
-	opt := &registry.PluginOp{
-		Action: registry.GET,
-		Key:    []byte(key),
-	}
-	resp, err := registry.GetRegisterCenter().Do(ctx, opt)
-	if err != nil {
-		util.LOGGER.Errorf(nil, "Get rule for service failed for %s.", err.Error())
-		return nil, err
-	}
-	rule := &pb.ServiceRule{}
-	if len(resp.Kvs) == 0 {
-		util.LOGGER.Errorf(nil, "Get rule failed, ruleId is %s.", ruleId)
-		return nil, nil
-	}
-	err = json.Unmarshal(resp.Kvs[0].Value, rule)
-	if err != nil {
-		util.LOGGER.Errorf(nil, "unmarshal resp failed for %s.", err.Error())
-		return nil, err
-	}
-	return rule, nil
-}
-
 func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceRequest) (*pb.GetExistenceResponse, error) {
 	if in == nil {
 		util.LOGGER.Errorf(nil, "exist failed: invalid params.")
@@ -1213,7 +883,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 		}, nil
 	}
 
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParseTenantProject(ctx)
 	switch in.Type {
 	case "microservice":
 		if len(in.AppId) == 0 || len(in.ServiceName) == 0 || len(in.Version) == 0 {
@@ -1223,7 +893,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 			}, nil
 		}
 		err := apt.GetMSExistsReqValidator.Validate(in)
-		serviceFlag := strings.Join([]string{in.AppId, in.ServiceName, in.Version}, "--")
+		serviceFlag := strings.Join([]string{in.AppId, in.ServiceName, in.Version}, "/")
 		if err != nil {
 			util.LOGGER.Errorf(err, "microservice exist failed, service %s: invalid params.", serviceFlag)
 			return &pb.GetExistenceResponse{
@@ -1231,7 +901,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 			}, nil
 		}
 
-		ids, err := FindServiceIds(ctx, in.Version, &pb.MicroServiceKey{
+		ids, err := ms.FindServiceIds(ctx, in.Version, &pb.MicroServiceKey{
 			AppId:       in.AppId,
 			ServiceName: in.ServiceName,
 			Alias:       in.ServiceName,
@@ -1245,7 +915,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 			}, err
 		}
 		if len(ids) <= 0 {
-			util.LOGGER.Errorf(nil, "microservice exist failed, service %s: service not exist.", serviceFlag)
+			util.LOGGER.Infof("microservice exist failed, service %s: service not exist.", serviceFlag)
 			return &pb.GetExistenceResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "service does not exist"),
 			}, nil
@@ -1269,15 +939,15 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 			}, nil
 		}
-		if !s.ServiceExist(ctx, tenant, in.ServiceId) {
-			util.LOGGER.Errorf(nil, "schema exist failed, serviceId %s, schemaId : service not exist.", in.ServiceId, in.SchemaId)
+		if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
+			util.LOGGER.Warnf(nil, "schema exist failed, serviceId %s, schemaId : service not exist.", in.ServiceId, in.SchemaId)
 			return &pb.GetExistenceResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist"),
 			}, nil
 		}
 
 		key := apt.GenerateServiceSchemaKey(tenant, in.ServiceId, in.SchemaId)
-		err, exist := s.checkSchemaInfoExist(ctx, key)
+		err, exist := serviceUtil.CheckSchemaInfoExist(ctx, key)
 		if err != nil {
 			util.LOGGER.Errorf(err, "schema exist failed, serviceId %s, schemaId : get schema failed.", in.ServiceId, in.SchemaId)
 			return &pb.GetExistenceResponse{
@@ -1285,7 +955,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 			}, err
 		}
 		if !exist {
-			util.LOGGER.Errorf(nil, "schema exist failed, serviceId %s, schemaId %s: schema not exist.", in.ServiceId, in.SchemaId)
+			util.LOGGER.Infof("schema exist failed, serviceId %s, schemaId %s: schema not exist.", in.ServiceId, in.SchemaId)
 			return &pb.GetExistenceResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "Schema does not exist"),
 			}, nil
@@ -1295,6 +965,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 			SchemaId: in.SchemaId,
 		}, nil
 	default:
+		util.LOGGER.Warnf(nil, "unexpected type '%s' for query.", in.Type)
 		return &pb.GetExistenceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Only microservice and schema can be used as type."),
 		}, nil
@@ -1317,9 +988,9 @@ func (s *ServiceController) AddTags(ctx context.Context, in *pb.AddServiceTagsRe
 		}, nil
 	}
 
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParseTenantProject(ctx)
 	// service id存在性校验
-	if !s.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.LOGGER.Errorf(nil, "add service tags failed, serviceId %s, tags %v: service not exist.", in.ServiceId, in.Tags)
 		return &pb.AddServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "service does not exist"),
@@ -1327,41 +998,22 @@ func (s *ServiceController) AddTags(ctx context.Context, in *pb.AddServiceTagsRe
 	}
 
 	addTags := in.GetTags()
-
-	key := apt.GenerateServiceTagKey(tenant, in.ServiceId)
-
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action: registry.GET,
-		Key:    []byte(key),
-	})
+	dataTags, err := serviceUtil.GetTagsUtils(ctx, tenant, in.ServiceId)
 	if err != nil {
 		util.LOGGER.Errorf(err, "add service tags failed, serviceId %s, tags %v: get existed tag failed.", in.ServiceId, in.Tags)
 		return &pb.AddServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Get tags failed."),
 		}, err
 	}
-
-	dataTags := map[string]string{}
-	if len(resp.Kvs) > 0 {
-		err = json.Unmarshal(resp.Kvs[0].Value, &dataTags)
-		if err != nil {
-			util.LOGGER.Errorf(err, "add service tags failed, serviceId %s, tags %v: json unmarshal tag data failed.", in.ServiceId, in.Tags)
-			return &pb.AddServiceTagsResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, "Unmarshal tags failed."),
-			}, nil
-		}
-		if len(dataTags) > 0 {
-			for key, value := range addTags {
-				dataTags[key] = value
-			}
-		} else {
-			dataTags = addTags
+	if len(dataTags) > 0 {
+		for key, value := range addTags {
+			dataTags[key] = value
 		}
 	} else {
 		dataTags = addTags
 	}
 
-	err = addTagIntoETCD(ctx, tenant, in.ServiceId, dataTags)
+	err = serviceUtil.AddTagIntoETCD(ctx, tenant, in.ServiceId, dataTags)
 	if err != nil {
 		util.LOGGER.Errorf(err, "add service tags failed, serviceId %s, tags %v: commit tag data into etcd failed.", in.ServiceId, in.Tags)
 		return &pb.AddServiceTagsResponse{
@@ -1382,7 +1034,7 @@ func (s *ServiceController) UpdateTag(ctx context.Context, in *pb.UpdateServiceT
 			Response: pb.CreateResponse(pb.Response_FAIL, "request format invalid"),
 		}, nil
 	}
-	tagFlag := strings.Join([]string{in.Key, in.Value}, "--")
+	tagFlag := strings.Join([]string{in.Key, in.Value}, "/")
 	err := apt.Validate(in)
 	if err != nil {
 		util.LOGGER.Errorf(err, "update service tag failed, serviceId %s, tag %s: invalid params.", in.ServiceId, tagFlag)
@@ -1391,16 +1043,16 @@ func (s *ServiceController) UpdateTag(ctx context.Context, in *pb.UpdateServiceT
 		}, nil
 	}
 
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParseTenantProject(ctx)
 
-	if !s.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.LOGGER.Errorf(err, "update service tag failed, serviceId %s, tag %s: service not exist.", in.ServiceId, tagFlag)
 		return &pb.UpdateServiceTagResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
 		}, nil
 	}
 
-	tags, err := GetTagsUtils(ctx, tenant, in.ServiceId)
+	tags, err := serviceUtil.GetTagsUtils(ctx, tenant, in.ServiceId)
 	if err != nil {
 		util.LOGGER.Errorf(err, "update service tag failed, serviceId %s, tag %s: get tag failed.", in.ServiceId, tagFlag)
 		return &pb.UpdateServiceTagResponse{
@@ -1416,7 +1068,7 @@ func (s *ServiceController) UpdateTag(ctx context.Context, in *pb.UpdateServiceT
 	}
 	tags[in.Key] = in.Value
 
-	err = addTagIntoETCD(ctx, tenant, in.ServiceId, tags)
+	err = serviceUtil.AddTagIntoETCD(ctx, tenant, in.ServiceId, tags)
 
 	if err != nil {
 		util.LOGGER.Errorf(err, "update service tag failed, serviceId %s, tag %s: adding service tags failed.", in.ServiceId, tagFlag)
@@ -1429,26 +1081,6 @@ func (s *ServiceController) UpdateTag(ctx context.Context, in *pb.UpdateServiceT
 	return &pb.UpdateServiceTagResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "update service tag success."),
 	}, nil
-}
-
-func addTagIntoETCD(ctx context.Context, tenant string, serviceId string, dataTags map[string]string) error {
-	key := apt.GenerateServiceTagKey(tenant, serviceId)
-	data, err := json.Marshal(dataTags)
-	if err != nil {
-		util.LOGGER.Errorf(err, "add tag into etcd,serviceId %s:json marshal tag data failed.", serviceId)
-		return err
-	}
-
-	_, err = registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action: registry.PUT,
-		Key:    []byte(key),
-		Value:  data,
-	})
-	if err != nil {
-		util.LOGGER.Errorf(err, "add tag into etcd,serviceId %s: commit tag data into etcd failed.", serviceId)
-		return err
-	}
-	return nil
 }
 
 func (s *ServiceController) DeleteTags(ctx context.Context, in *pb.DeleteServiceTagsRequest) (*pb.DeleteServiceTagsResponse, error) {
@@ -1466,38 +1098,20 @@ func (s *ServiceController) DeleteTags(ctx context.Context, in *pb.DeleteService
 		}, nil
 	}
 
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParseTenantProject(ctx)
 
-	if !s.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.LOGGER.Errorf(nil, "delete service tags failed, serviceId %s, tags %v: service not exist.", in.ServiceId, in.Keys)
 		return &pb.DeleteServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
 		}, nil
 	}
 
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action: registry.GET,
-		Key:    []byte(apt.GenerateServiceTagKey(tenant, in.ServiceId)),
-	})
+	tags, err := serviceUtil.GetTagsUtils(ctx, tenant, in.ServiceId)
 	if err != nil {
 		util.LOGGER.Errorf(err, "delete service tags failed, serviceId %s, tags %v: query service failed.", in.ServiceId, in.Keys)
 		return &pb.DeleteServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "get service tags file failed"),
-		}, err
-	}
-	if len(resp.Kvs) == 0 {
-		util.LOGGER.Errorf(err, "delete service tags failed, serviceId %s, tags %v: tag not exist,can't delete.", in.ServiceId, in.Keys)
-		return &pb.DeleteServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "tags do not exist"),
-		}, nil
-	}
-
-	var tags map[string]string
-	err = json.Unmarshal(resp.Kvs[0].Value, &tags)
-	if err != nil {
-		util.LOGGER.Errorf(err, "delete service tags failed, serviceId %s, tags %v: unmarshal tag data failed.", in.ServiceId, in.Keys)
-		return &pb.DeleteServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "unmarshal tags file failed"),
 		}, err
 	}
 	for _, key := range in.Keys {
@@ -1555,16 +1169,16 @@ func (s *ServiceController) GetTags(ctx context.Context, in *pb.GetServiceTagsRe
 		}, nil
 	}
 
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParseTenantProject(ctx)
 
-	if !s.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.LOGGER.Errorf(err, "get service tags failed, serviceId %s: service not exist.", in.ServiceId)
 		return &pb.GetServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist"),
 		}, nil
 	}
 
-	tags, err := GetTagsUtils(ctx, tenant, in.ServiceId)
+	tags, err := serviceUtil.GetTagsUtils(ctx, tenant, in.ServiceId)
 	if err != nil {
 		util.LOGGER.Errorf(err, "get service tags failed, serviceId %s: get tag failed.", in.ServiceId)
 		return &pb.GetServiceTagsResponse{
@@ -1594,9 +1208,9 @@ func (s *ServiceController) GetSchemaInfo(ctx context.Context, request *pb.GetSc
 		}, nil
 	}
 
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParseTenantProject(ctx)
 
-	if !s.ServiceExist(ctx, tenant, request.ServiceId) {
+	if !ms.ServiceExist(ctx, tenant, request.ServiceId) {
 		util.LOGGER.Errorf(nil, "get schema failed, serviceId %s, schemaId %s: service not exist.", request.ServiceId, request.SchemaId)
 		return &pb.GetSchemaResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist"),
@@ -1604,7 +1218,7 @@ func (s *ServiceController) GetSchemaInfo(ctx context.Context, request *pb.GetSc
 	}
 
 	key := apt.GenerateServiceSchemaKey(tenant, request.ServiceId, request.SchemaId)
-	resp, errDo := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+	resp, errDo := store.Store().Schema().Search(ctx, &registry.PluginOp{
 		Action: registry.GET,
 		Key:    []byte(key),
 	})
@@ -1640,9 +1254,9 @@ func (s *ServiceController) DeleteSchema(ctx context.Context, request *pb.Delete
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
 	}
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParseTenantProject(ctx)
 
-	if !s.ServiceExist(ctx, tenant, request.ServiceId) {
+	if !ms.ServiceExist(ctx, tenant, request.ServiceId) {
 		util.LOGGER.Errorf(nil, "delete schema failded, serviceId %s, schemaId %s: service not exist.", request.ServiceId, request.SchemaId)
 		return &pb.DeleteSchemaResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist"),
@@ -1650,7 +1264,7 @@ func (s *ServiceController) DeleteSchema(ctx context.Context, request *pb.Delete
 	}
 
 	key := apt.GenerateServiceSchemaKey(tenant, request.ServiceId, request.SchemaId)
-	err, exist := s.checkSchemaInfoExist(ctx, key)
+	err, exist := serviceUtil.CheckSchemaInfoExist(ctx, key)
 	if err != nil {
 		util.LOGGER.Errorf(err, "delete schema failded, serviceId %s, schemaId %s: get schema failed.", request.ServiceId, request.SchemaId)
 		return &pb.DeleteSchemaResponse{
@@ -1692,7 +1306,7 @@ func (s *ServiceController) ModifySchema(ctx context.Context, request *pb.Modify
 		}, nil
 	}
 
-	tenant := util.ParaseTenant(ctx)
+	tenant := util.ParseTenantProject(ctx)
 	key := apt.GenerateServiceSchemaKey(tenant, request.ServiceId, request.SchemaId)
 	_, errDo := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
 		Action: registry.PUT,
@@ -1722,8 +1336,8 @@ func (s *ServiceController) canModifySchema(ctx context.Context, request *pb.Mod
 		util.LOGGER.Errorf(err, "update schema failded, serviceId %s, schemaId %s: invalid params.", request.ServiceId, request.SchemaId)
 		return err, false
 	}
-	tenant := util.ParaseTenant(ctx)
-	service, err := getServiceByServiceId(ctx, tenant, request.ServiceId)
+	tenant := util.ParseTenantProject(ctx)
+	service, err := ms.GetServiceByServiceId(ctx, tenant, request.ServiceId)
 	if err != nil {
 		util.LOGGER.Errorf(err, "update schema failded, serviceId %s, schemaId %s: get service failed.", request.ServiceId, request.SchemaId)
 		return err, false
@@ -1751,78 +1365,4 @@ func containsValueInSlice(in []string, value string) bool {
 		}
 	}
 	return false
-}
-
-func (s *ServiceController) checkSchemaInfoExist(ctx context.Context, key string) (error, bool) {
-	resp, errDo := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action:    registry.GET,
-		Key:       []byte(key),
-		CountOnly: true,
-	})
-	if errDo != nil {
-		return errDo, false
-	}
-	if resp.Count == 0 {
-		return nil, false
-	}
-	return nil, true
-}
-
-func GetAllServiceUtil(ctx context.Context) ([]*pb.MicroService, error) {
-	tenant := util.ParaseTenant(ctx)
-	services, err := ms.GetServicesByTenent(ctx, tenant)
-	if err != nil {
-		return nil, err
-	}
-	return services, nil
-}
-
-func GetTagsUtils(ctx context.Context, tenant string, serviceId string) (map[string]string, error) {
-	tags := map[string]string{}
-
-	key := apt.GenerateServiceTagKey(tenant, serviceId)
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action: registry.GET,
-		Key:    []byte(key),
-	})
-	if err != nil {
-		return tags, err
-	}
-	if len(resp.Kvs) != 0 {
-		util.LOGGER.Debugf("start unmarshal service tags file: %s", key)
-		err = json.Unmarshal(resp.Kvs[0].Value, &tags)
-		if err != nil {
-			return tags, err
-		}
-	}
-	return tags, nil
-}
-
-func GetRulesUtil(ctx context.Context, tenant string, serviceId string) ([]*pb.ServiceRule, error) {
-	key := strings.Join([]string{
-		apt.GetServiceRuleRootKey(tenant),
-		serviceId,
-		"",
-	}, "/")
-
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action:     registry.GET,
-		Key:        []byte(key),
-		WithPrefix: true,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	rules := []*pb.ServiceRule{}
-	for _, kvs := range resp.Kvs {
-		util.LOGGER.Debugf("start unmarshal service rule file: %s", string(kvs.Key))
-		rule := &pb.ServiceRule{}
-		err := json.Unmarshal(kvs.Value, rule)
-		if err != nil {
-			return nil, err
-		}
-		rules = append(rules, rule)
-	}
-	return rules, nil
 }

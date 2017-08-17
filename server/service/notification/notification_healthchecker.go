@@ -13,22 +13,48 @@
 //limitations under the License.
 package notification
 
-import "github.com/servicecomb/service-center/util"
+import "github.com/ServiceComb/service-center/util"
+
+const (
+	NOTIFY_SERVER_CHECKER_NAME  = "__HealthChecker__"
+	NOTIFY_SERVER_CHECK_SUBJECT = "__NotifyServerHealthCheck__"
+)
 
 //Notifier 健康检查
 type NotifyServiceHealthChecker struct {
-	BaseNotifier
+	BaseSubscriber
 }
 
 type NotifyServiceHealthCheckJob struct {
 	BaseNotifyJob
-	ErrorNotifier Notifier
+	ErrorSubscriber Subscriber
 }
 
-func (s *NotifyServiceHealthChecker) Notify(job NotifyJob) {
+func (s *NotifyServiceHealthChecker) OnMessage(job NotifyJob) {
 	j := job.(*NotifyServiceHealthCheckJob)
-	err := j.ErrorNotifier.Err()
-	util.LOGGER.Warnf(err, "notify server remove watcher %s %s, %s",
-		j.ErrorNotifier.GetSubject(), j.ErrorNotifier.GetId(), err.Error())
-	s.Server.RemoveNotifier(j.ErrorNotifier)
+	err := j.ErrorSubscriber.Err()
+	util.LOGGER.Warnf(err, "notify server remove watcher %s %s",
+		j.ErrorSubscriber.Subject(), j.ErrorSubscriber.Id())
+	s.Service().RemoveSubscriber(j.ErrorSubscriber)
+}
+
+func NewNotifyServiceHealthChecker() *NotifyServiceHealthChecker {
+	return &NotifyServiceHealthChecker{
+		BaseSubscriber: BaseSubscriber{
+			id:      NOTIFY_SERVER_CHECKER_NAME,
+			subject: NOTIFY_SERVER_CHECK_SUBJECT,
+			nType:   NOTIFTY,
+		},
+	}
+}
+
+func NewNotifyServiceHealthCheckJob(s Subscriber) *NotifyServiceHealthCheckJob {
+	return &NotifyServiceHealthCheckJob{
+		BaseNotifyJob: BaseNotifyJob{
+			subscriberId: NOTIFY_SERVER_CHECKER_NAME,
+			subject:      NOTIFY_SERVER_CHECK_SUBJECT,
+			nType:        NOTIFTY,
+		},
+		ErrorSubscriber: s,
+	}
 }

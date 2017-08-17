@@ -14,7 +14,7 @@
 package rest
 
 import (
-	"github.com/servicecomb/service-center/util"
+	"github.com/ServiceComb/service-center/util"
 	"reflect"
 )
 
@@ -61,7 +61,7 @@ func RegisterServent(servant interface{}) {
 	}
 
 	if routes, ok := val0.Interface().([]Route); ok {
-		util.LOGGER.Warnf(nil, "register servant %s", name)
+		util.LOGGER.Infof("register servant %s", name)
 		for _, route := range routes {
 			err := serverHandler.addRoute(&route)
 			if err != nil {

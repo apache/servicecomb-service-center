@@ -15,17 +15,12 @@ package core
 
 import (
 	"errors"
+	pb "github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/ServiceComb/service-center/util"
+	"github.com/ServiceComb/service-center/util/validate"
 	"github.com/astaxie/beego"
-	pb "github.com/servicecomb/service-center/server/core/proto"
-	"github.com/servicecomb/service-center/util"
-	"github.com/servicecomb/service-center/util/validate"
 	"math"
 	"reflect"
-)
-
-const (
-	REGISTRY_DEFAULT_LEASE_RENEWALINTERVAL int32 = 30
-	REGISTRY_DEFAULT_LEASE_RETRYTIMES      int32 = 3
 )
 
 var (
@@ -131,7 +126,7 @@ func init() {
 
 	MicroServiceInstanceValidator.AddRule("InstanceId", &validate.ValidateRule{Length: 64, Regexp: instanceIdRegex})
 	MicroServiceInstanceValidator.AddRule("ServiceId", ServiceIdRule)
-	MicroServiceInstanceValidator.AddRule("Endpoints", &validate.ValidateRule{Regexp: `^[A-Za-z0-9:/?=&.]+$`})
+	MicroServiceInstanceValidator.AddRule("Endpoints", &validate.ValidateRule{Regexp: `^[A-Za-z0-9:/?=&%_.-]+$`})
 	MicroServiceInstanceValidator.AddRule("HostName", &validate.ValidateRule{Length: 64, Regexp: `^[A-Za-z0-9_.-]+$`})
 	MicroServiceInstanceValidator.AddSub("HealthCheck", &HealthCheckInfoValidator)
 	MicroServiceInstanceValidator.AddRule("Status", InstanseStatusRule)
@@ -186,7 +181,7 @@ func Validate(v interface{}) error {
 		return TagReqValidator.Validate(v)
 	case *pb.GetSchemaRequest, *pb.ModifySchemaRequest, *pb.DeleteSchemaRequest:
 		return GetSchemaReqValidator.Validate(v)
-	case *pb.MircroServiceDependency:
+	case *pb.MicroServiceDependency:
 		return DependencyMSValidator.Validate(v)
 	case *pb.FindInstancesRequest:
 		return FindInstanceReqValidator.Validate(v)

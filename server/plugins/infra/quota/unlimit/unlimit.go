@@ -14,8 +14,8 @@
 package unlimit
 
 import (
-	"context"
-	"github.com/servicecomb/service-center/server/infra/quota"
+	"github.com/ServiceComb/service-center/server/infra/quota"
+	"golang.org/x/net/context"
 )
 
 type Unlimit struct {

@@ -15,9 +15,9 @@ package rest
 
 import (
 	"encoding/json"
-	pb "github.com/servicecomb/service-center/server/core/proto"
-	"github.com/servicecomb/service-center/util"
-	"github.com/servicecomb/service-center/util/rest"
+	pb "github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/ServiceComb/service-center/util"
+	"github.com/ServiceComb/service-center/util/rest"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -39,9 +39,10 @@ func (this *MicroServiceService) URLPatterns() []rest.Route {
 		{rest.HTTP_METHOD_PUT, "/registry/v3/microservices/:serviceId/schemas/:schemaId", this.ModifySchemas},
 		{rest.HTTP_METHOD_DELETE, "/registry/v3/microservices/:serviceId/schemas/:schemaId", this.DeleteSchemas},
 
-		{rest.HTTP_METHOD_PUT, "/registry/v3/dependencies", this.CreateDependenciesForMircServices},
+		{rest.HTTP_METHOD_PUT, "/registry/v3/dependencies", this.CreateDependenciesForMicroServices},
 		{rest.HTTP_METHOD_GET, "/registry/v3/microservices/:consumerId/providers", this.GetConProDependencies},
 		{rest.HTTP_METHOD_GET, "/registry/v3/microservices/:providerId/consumers", this.GetProConDependencies},
+		{rest.HTTP_METHOD_DELETE, "/registry/v3/microservices", this.UnregisterServices},
 	}
 }
 
@@ -207,7 +208,7 @@ func (this *MicroServiceService) GetServiceOne(w http.ResponseWriter, r *http.Re
 	WriteJsonObject(http.StatusOK, resp, w)
 }
 
-func (this *MicroServiceService) CreateDependenciesForMircServices(w http.ResponseWriter, r *http.Request) {
+func (this *MicroServiceService) CreateDependenciesForMicroServices(w http.ResponseWriter, r *http.Request) {
 	requestBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		util.LOGGER.Error("body err", err)
@@ -226,14 +227,14 @@ func (this *MicroServiceService) CreateDependenciesForMircServices(w http.Respon
 	//fmt.Println("rsp is ", rsp)
 	//请求错误
 	if err != nil {
-		util.LOGGER.Error("create dependency failed for request invalid.", err)
-		WriteText(http.StatusBadRequest, err.Error(), w)
+		util.LOGGER.Errorf(err, "create dependency failed for service internal reason.")
+		WriteText(http.StatusInternalServerError, err.Error(), w)
 		return
 	}
 	//服务内部错误
 	if rsp.Response.Code == pb.Response_FAIL {
-		util.LOGGER.Errorf(nil, "create dependency failed  for service internal reasion.%s", rsp.Response.Message)
-		WriteText(http.StatusInternalServerError, rsp.Response.Message, w)
+		util.LOGGER.Errorf(nil, "create dependency failed for request invalid. %s", rsp.Response.Message)
+		WriteText(http.StatusBadRequest, rsp.Response.Message, w)
 		return
 	}
 	WriteText(http.StatusOK, "add dependency success.", w)
@@ -243,7 +244,6 @@ func (this *MicroServiceService) GetConProDependencies(w http.ResponseWriter, r 
 	request := &pb.GetDependenciesRequest{
 		ServiceId: r.URL.Query().Get(":consumerId"),
 	}
-	util.LOGGER.Errorf(nil, "cunsumerId is %s.", request.ServiceId)
 	resp, err := ServiceAPI.GetConsumerDependencies(r.Context(), request)
 	if err != nil {
 		util.LOGGER.Error("get Dependency failed.", err)
@@ -264,7 +264,6 @@ func (this *MicroServiceService) GetProConDependencies(w http.ResponseWriter, r 
 	request := &pb.GetDependenciesRequest{
 		ServiceId: r.URL.Query().Get(":providerId"),
 	}
-	util.LOGGER.Errorf(nil, "providerId is %s.", request.ServiceId)
 	resp, err := ServiceAPI.GetProviderDependencies(r.Context(), request)
 	if err != nil {
 		util.LOGGER.Error("get Dependency failed.", err)
@@ -280,3 +279,41 @@ func (this *MicroServiceService) GetProConDependencies(w http.ResponseWriter, r 
 	resp.Response = nil
 	WriteJsonObject(http.StatusOK, resp, w)
 }
+
+func (this *MicroServiceService) UnregisterServices(w http.ResponseWriter, r *http.Request) {
+	request_body,err := ioutil.ReadAll(r.Body)
+	if err != nil{
+		util.LOGGER.Error("body ,err",err)
+		WriteText(http.StatusBadRequest, err.Error(), w)
+		return
+	}
+
+	request := &pb.DelServicesRequest{}
+
+	err = json.Unmarshal(request_body, request)
+	if err  != nil {
+		util.LOGGER.Error("unmarshal ,err ", err)
+		WriteText(http.StatusBadRequest, err.Error(), w)
+		return
+	}
+
+	resp, err := ServiceAPI.DeleteServices(r.Context(), request)
+
+	if resp.Response.Code == pb.Response_SUCCESS {
+		WriteText(http.StatusOK, "", w)
+		return
+	}
+	if resp.Services == nil || len(resp.Services) == 0 {
+		WriteText(http.StatusBadRequest, resp.Response.Message, w)
+		return
+	}
+	resp.Response = nil
+	objJson, err := json.Marshal(resp)
+	if err != nil {
+		WriteText(http.StatusInternalServerError, err.Error(), w)
+		return
+	}
+	WriteJson(http.StatusBadRequest, objJson, w)
+	return
+}
+

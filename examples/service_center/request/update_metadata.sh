@@ -1,1 +1,0 @@
-curl -X PUT -H "Cache-Control: no-cache" -H "Postman-Token: cffc8faf-e042-3e48-b976-dceda3c1e68a" -d '' "http://localhost:9980/registry/v2/mservices/05410e82-1927-4653-8ffb-6e00f98f491a/lfgy11/metadata?test=test2&a1=a2"

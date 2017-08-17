@@ -1,1 +1,8 @@
-curl -X PUT -H "Content-Type: application/json" -H "Cache-Control: no-cache" -H "Postman-Token: 1cf6c07b-41e9-2602-3326-81739650be5f" -d '' "http://localhost:9980/registry/v2/mservices/18320599-38ea-4005-a0f5-929dd3ff245c/lfgy11"
+#!/usr/bin/env bash
+PUT /registry/v3/microservices/2/instances/36/heartbeat HTTP/1.1
+Host: localhost:30100
+Content-Type: application/json
+x-domain-name: default
+Cache-Control: no-cache
+Postman-Token: 9c3abef4-c3c5-a7f8-af6b-33e3731fff40
+

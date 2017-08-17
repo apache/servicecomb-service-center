@@ -102,7 +102,7 @@
 			"importpath": "github.com/coreos/etcd",
 			"repository": "https://github.com/coreos/etcd",
 			"vcs": "git",
-			"revision": "8ba2897a21e4fc51b298ca553d251318425f93ae",
+			"revision": "0f4a535c2fb7a2920e13e2e19b9eaf6b2e9285e5",
 			"branch": "HEAD",
 			"notests": true
 		},

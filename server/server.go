@@ -23,20 +23,22 @@ import (
 	"time"
 )
 import (
-	"context"
-	"github.com/servicecomb/service-center/common"
-	"github.com/servicecomb/service-center/server/api"
-	"github.com/servicecomb/service-center/server/core/registry"
-	rs "github.com/servicecomb/service-center/server/rest"
-	"github.com/servicecomb/service-center/server/service"
-	nf "github.com/servicecomb/service-center/server/service/notification"
-	"github.com/servicecomb/service-center/util"
+	"github.com/ServiceComb/service-center/pkg/common"
+	"github.com/ServiceComb/service-center/server/api"
+	"github.com/ServiceComb/service-center/server/core/registry"
+	st "github.com/ServiceComb/service-center/server/core/registry/store"
+	rs "github.com/ServiceComb/service-center/server/rest"
+	"github.com/ServiceComb/service-center/server/service"
+	nf "github.com/ServiceComb/service-center/server/service/notification"
+	"github.com/ServiceComb/service-center/util"
+	"golang.org/x/net/context"
 	"runtime"
 )
 
 var (
 	apiServer     *api.APIServer
 	notifyService *nf.NotifyService
+	store         *st.KvStore
 	exit          chan struct{}
 )
 
@@ -47,19 +49,41 @@ func init() {
 
 	exit = make(chan struct{})
 
-	notifyService = &nf.NotifyService{}
+	store = st.Store()
 
-	rs.ServiceAPI, rs.InstanceAPI, rs.GovernServiceAPI = service.AssembleResources(notifyService)
+	notifyService = nf.GetNotifyService()
+
+	apiServer = api.GetAPIServer()
+
+	rs.ServiceAPI, rs.InstanceAPI, rs.GovernServiceAPI = service.AssembleResources()
 
 	go handleSignal()
 }
 
 func Run() {
+	beforeRun()
+
+	waitStoreReady()
+
 	startNotifyService()
 
 	startApiServer()
 
 	waitForQuit()
+}
+
+func beforeRun() {
+	var client registry.Registry
+	wait := []int{1, 1, 1, 5, 10, 20, 30, 60}
+	for i := 0; client == nil; i++ {
+		client = registry.GetRegisterCenter()
+		if i >= len(wait) {
+			i = len(wait) - 1
+		}
+		t := time.Duration(wait[i]) * time.Second
+		util.LOGGER.Errorf(nil, "initialize service center failed, retry after %s", t)
+		<-time.After(t)
+	}
 }
 
 func handleSignal() {
@@ -68,19 +92,25 @@ func handleSignal() {
 	signal.Ignore(syscall.SIGQUIT) // when uses jstack to dump stack
 
 	s := <-sc
-	util.LOGGER.Errorf(nil, "Caught signal '%v', now service center quit...", s)
+	util.LOGGER.Warnf(nil, "Caught signal '%v', now service center quit...", s)
+
+	close(exit)
 
 	if apiServer != nil {
-		apiServer.Close()
+		apiServer.Stop()
 	}
 
 	if notifyService != nil {
-		notifyService.Close()
+		notifyService.Stop()
 	}
 
-	registry.GetRegisterCenter().Close()
+	if store != nil {
+		store.Stop()
+	}
 
-	close(exit)
+	util.GoCloseAndWait()
+
+	registry.GetRegisterCenter().Close()
 }
 
 func waitForQuit() {
@@ -88,16 +118,19 @@ func waitForQuit() {
 	select {
 	case err = <-apiServer.Err():
 	case err = <-notifyService.Err():
+	case <-exit:
 	}
 	if err != nil {
 		util.LOGGER.Errorf(err, "service center catch errors, %s", err.Error())
 	}
-	util.LOGGER.Errorf(nil, "waiting for %ds to clean up resources...", CLEAN_UP_TIMEOUT)
 	select {
 	case <-exit:
-	case <-time.After(CLEAN_UP_TIMEOUT * time.Second):
+		util.LOGGER.Warnf(nil, "waiting for %ds to clean up resources...", CLEAN_UP_TIMEOUT)
+		<-time.After(CLEAN_UP_TIMEOUT * time.Second)
+	default:
+		close(exit)
 	}
-	util.LOGGER.Error("service center quit", nil)
+	util.LOGGER.Warn("service center quit", nil)
 }
 
 func autoCompact() {
@@ -109,13 +142,18 @@ func autoCompact() {
 	}
 }
 
+func waitStoreReady() {
+	store.Run()
+	<-store.Ready()
+}
+
 func startNotifyService() {
-	notifyService.Config = &nf.NotifyServerConfig{
+	notifyService.Config = nf.NotifyServiceConfig{
 		AddTimeout:    30 * time.Second,
 		NotifyTimeout: 30 * time.Second,
 		MaxQueue:      100,
 	}
-	notifyService.StartNotifyService()
+	notifyService.Start()
 }
 
 func startApiServer() {
@@ -127,7 +165,7 @@ func startApiServer() {
 	grpcPort := beego.AppConfig.DefaultString("grpcport", "")
 	cmpName := beego.AppConfig.String("ComponentName")
 	hostName := fmt.Sprintf("%s_%s", cmpName, strings.Replace(util.GetLocalIP(), ".", "_", -1))
-	util.LOGGER.Warnf(nil, "Local listen address: %s:%s, host: %s.", restIp, restPort, hostName)
+	util.LOGGER.Infof("Local listen address: %s:%s, host: %s.", restIp, restPort, hostName)
 
 	eps := map[api.APIType]string{}
 	if len(restIp) > 0 && len(restPort) > 0 {
@@ -136,13 +174,11 @@ func startApiServer() {
 	if len(grpcIp) > 0 && len(grpcPort) > 0 {
 		eps[api.GRPC] = strings.Join([]string{grpcIp, grpcPort}, ":")
 	}
-	apiServer = &api.APIServer{
-		Config: &api.APIServerConfig{
-			HostName:     hostName,
-			Endpoints:    eps,
-			SSL:          sslMode,
-			VerifyClient: verifyClient,
-		},
+	apiServer.Config = api.APIServerConfig{
+		HostName:     hostName,
+		Endpoints:    eps,
+		SSL:          sslMode,
+		VerifyClient: verifyClient,
 	}
-	apiServer.StartAPIServer()
+	apiServer.Start()
 }

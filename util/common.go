@@ -14,7 +14,9 @@
 package util
 
 import (
-	"context"
+	"bytes"
+	"encoding/gob"
+	"golang.org/x/net/context"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -70,11 +72,16 @@ func ClearByteMemory(src []byte) {
 	}
 }
 
-func ParaseTenant(ctx context.Context) string {
-	tenant := ctx.Value("tenant").(string)
-	project := ctx.Value("project").(string)
-	tenant = strings.Join([]string{tenant, project}, "/")
-	return tenant
+func ParseTenantProject(ctx context.Context) string {
+	return strings.Join([]string{ParseTenant(ctx), ParseProject(ctx)}, "/")
+}
+
+func ParseTenant(ctx context.Context) string {
+	return ctx.Value("tenant").(string)
+}
+
+func ParseProject(ctx context.Context) string {
+	return ctx.Value("project").(string)
 }
 
 //format : https://10.21.119.167:30100 or http://10.21.119.167:30100
@@ -110,4 +117,23 @@ func GetIPFromContext(ctx context.Context) string {
 	remoteIp := ""
 	remoteIp, _ = ctx.Value("x-remote-ip").(string)
 	return remoteIp
+}
+
+func DeepCopy(dst, src interface{}) error {
+	var buf bytes.Buffer
+	if err := gob.NewEncoder(&buf).Encode(src); err != nil {
+		return err
+	}
+	return gob.NewDecoder(bytes.NewBuffer(buf.Bytes())).Decode(dst)
+}
+
+func SafeCloseChan(c chan struct{}) {
+	select {
+	case _, ok := <-c:
+		if ok {
+			close(c)
+		}
+	default:
+		close(c)
+	}
 }

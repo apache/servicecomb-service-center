@@ -1,0 +1,27 @@
+{
+   "consumers":[
+      {
+         "serviceId":"484d04616cf811e7b7bc286ed488ff40",
+         "appId":"consumerAppId",
+         "serviceName":"consumerApp",
+         "version":"2.0.0",
+         "description":"examples",
+         "level":"FRONT",
+         "schemas":[
+            "testSchema"
+         ],
+         "status":"UP",
+         "properties":{
+            "attr1":"aa"
+         },
+         "timestamp":"1500519927",
+         "providers":[
+            {
+               "appId":"integrationtestAppId",
+               "serviceName":"integrationtest",
+               "version":"0.0.1"
+            }
+         ]
+      }
+   ]
+}

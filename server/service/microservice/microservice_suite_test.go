@@ -14,13 +14,12 @@
 package microservice_test
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
 	"fmt"
+	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	"github.com/coreos/etcd/mvcc/mvccpb"
+	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
-	ms "github.com/servicecomb/service-center/server/service/microservice"
+	. "github.com/onsi/gomega"
 	"testing"
 )
 
@@ -33,6 +32,10 @@ func TestMicroservice(t *testing.T) {
 	RunSpecsWithDefaultAndCustomReporters(t, "model Suite", []Reporter{junitReporter})
 }
 
+func TestFindServiceIds(t *testing.T) {
+
+}
+
 func BenchmarkVersionRule_Latest_GetServicesIds(b *testing.B) {
 	var kvs = make([]*mvccpb.KeyValue, b.N)
 	for i := 1; i <= b.N; i++ {
@@ -43,7 +46,7 @@ func BenchmarkVersionRule_Latest_GetServicesIds(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ms.VersionRule(ms.Latest).GetServicesIds(kvs)
+		ms.VersionRule(ms.Latest).Match(kvs)
 	}
 	// 5000	  13191856 ns/op
 }
@@ -58,7 +61,7 @@ func BenchmarkVersionRule_Range_GetServicesIds(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ms.VersionRule(ms.Range).GetServicesIds(kvs, fmt.Sprintf("1.%d", i), fmt.Sprintf("1.%d", i+b.N/10))
+		ms.VersionRule(ms.Range).Match(kvs, fmt.Sprintf("1.%d", i), fmt.Sprintf("1.%d", i+b.N/10))
 	}
 	// 5000	  19754095 ns/op
 }
@@ -73,7 +76,7 @@ func BenchmarkVersionRule_AtLess_GetServicesIds(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ms.VersionRule(ms.AtLess).GetServicesIds(kvs, fmt.Sprintf("1.%d", i))
+		ms.VersionRule(ms.AtLess).Match(kvs, fmt.Sprintf("1.%d", i))
 	}
 	// 5000	  18701493 ns/op
 }
