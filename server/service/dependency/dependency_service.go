@@ -25,14 +25,9 @@ import (
 	"github.com/ServiceComb/service-center/util"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
-)
-
-const (
-	VESION_RULE_REGEX = `^[0-9\.]+$`
 )
 
 var consumerCache *cache.Cache
@@ -63,7 +58,7 @@ func autoSyncConsumers() {
 	//		key := apt.GenerateProviderDependencyKey(domainAndId[0], domainAndId[1], "")
 	//		resp, err := registry.GetRegisterCenter().Do(context.TODO(), &registry.PluginOp{
 	//			Action:     registry.GET,
-	//			Key:        []byte(key),
+	//			Key:        util.StringToBytesWithNoCopy(key),
 	//			WithPrefix: true,
 	//			KeyOnly:    true,
 	//		})
@@ -82,7 +77,7 @@ func GetConsumersInCache(ctx context.Context, tenant string, providerId string) 
 	key := apt.GenerateProviderDependencyKey(tenant, providerId, "")
 	resp, err := store.Store().Dependency().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
-		Key:        []byte(key),
+		Key:        util.StringToBytesWithNoCopy(key),
 		WithPrefix: true,
 		KeyOnly:    true,
 	})
@@ -109,7 +104,7 @@ func RefreshDependencyCache(tenant string, providerId string, provider *pb.Micro
 	key := apt.GenerateProviderDependencyKey(tenant, providerId, "")
 	resp, err := store.Store().Dependency().Search(context.Background(), &registry.PluginOp{
 		Action:     registry.GET,
-		Key:        []byte(key),
+		Key:        util.StringToBytesWithNoCopy(key),
 		WithPrefix: true,
 		KeyOnly:    true,
 	})
@@ -136,7 +131,7 @@ func UpdateAsConsumerDependency(ctx context.Context, consumerId string, provider
 			allServiceKey := apt.GenerateServiceKey(tenant, "")
 			resp, err := store.Store().Service().Search(ctx, &registry.PluginOp{
 				Action:     registry.GET,
-				Key:        []byte(allServiceKey),
+				Key:        util.StringToBytesWithNoCopy(allServiceKey),
 				WithPrefix: true,
 			})
 			if err != nil {
@@ -188,13 +183,13 @@ func putServiceDependency(consumerId string, providerId string, tenant string) [
 	util.LOGGER.Debugf("%s %s %s", conProKey, " timeStamp is ", timestamp)
 	optPro := &registry.PluginOp{
 		Action: registry.PUT,
-		Key:    []byte(conProKey),
-		Value:  []byte(timestamp),
+		Key:    util.StringToBytesWithNoCopy(conProKey),
+		Value:  util.StringToBytesWithNoCopy(timestamp),
 	}
 	optCon := &registry.PluginOp{
 		Action: registry.PUT,
-		Key:    []byte(proProKey),
-		Value:  []byte(timestamp),
+		Key:    util.StringToBytesWithNoCopy(proProKey),
+		Value:  util.StringToBytesWithNoCopy(timestamp),
 	}
 	optPros := []*registry.PluginOp{}
 	optPros = append(optPros, optPro)
@@ -212,7 +207,7 @@ func UpdateAsProviderDependency(ctx context.Context, providerServiceId string, p
 	})
 	opt := &registry.PluginOp{
 		Action: registry.GET,
-		Key:    []byte(relyAllKey),
+		Key:    util.StringToBytesWithNoCopy(relyAllKey),
 	}
 	rsp, err := store.Store().DependencyRule().Search(ctx, opt)
 	if err != nil {
@@ -239,7 +234,7 @@ func UpdateAsProviderDependency(ctx context.Context, providerServiceId string, p
 	util.LOGGER.Debugf("proKey is %s", proKey)
 	opt = &registry.PluginOp{
 		Action:     registry.GET,
-		Key:        []byte(proKey),
+		Key:        util.StringToBytesWithNoCopy(proKey),
 		WithPrefix: true,
 	}
 	rsp, err = store.Store().DependencyRule().Search(ctx, opt)
@@ -359,7 +354,7 @@ func DeleteDependencyForService(ctx context.Context, consumer *pb.MicroServiceKe
 
 		opt := &registry.PluginOp{
 			Action: registry.DELETE,
-			Key:    []byte(conKey),
+			Key:    util.StringToBytesWithNoCopy(conKey),
 		}
 		util.LOGGER.Debugf("conKey is %s.", conKey)
 		opts = append(opts, opt)
@@ -368,7 +363,7 @@ func DeleteDependencyForService(ctx context.Context, consumer *pb.MicroServiceKe
 	providerKey := apt.GenerateProviderDependencyRuleKey(tenant, consumer)
 	opt := &registry.PluginOp{
 		Action: registry.DELETE,
-		Key:    []byte(providerKey),
+		Key:    util.StringToBytesWithNoCopy(providerKey),
 	}
 	util.LOGGER.Debugf("providerKey is %s", providerKey)
 	opts = append(opts, opt)
@@ -395,7 +390,7 @@ func transferToMicroServiceDependency(ctx context.Context, key string) (error, *
 	}
 	opt := &registry.PluginOp{
 		Action: registry.GET,
-		Key:    []byte(key),
+		Key:    util.StringToBytesWithNoCopy(key),
 	}
 	res, err := store.Store().DependencyRule().Search(ctx, opt)
 	if err != nil {
@@ -426,7 +421,7 @@ func deleteDependencyRuleUtil(ctx context.Context, microServiceDependency *pb.Mi
 	if len(microServiceDependency.Dependency) == 0 {
 		opt = &registry.PluginOp{
 			Action: registry.DELETE,
-			Key:    []byte(serviceKey),
+			Key:    util.StringToBytesWithNoCopy(serviceKey),
 		}
 		util.LOGGER.Debugf("serviceKey is .", serviceKey)
 		util.LOGGER.Debugf("After deleting versionRule from %s,provider's consumer is empty.", serviceKey)
@@ -439,8 +434,8 @@ func deleteDependencyRuleUtil(ctx context.Context, microServiceDependency *pb.Mi
 		}
 		opt = &registry.PluginOp{
 			Action: registry.PUT,
-			Key:    []byte(serviceKey),
-			Value:  []byte(data),
+			Key:    util.StringToBytesWithNoCopy(serviceKey),
+			Value:  data,
 		}
 		util.LOGGER.Debugf("serviceKey is %s.", serviceKey)
 	}
@@ -475,7 +470,7 @@ func deleteDependencyUtil(ctx context.Context, serviceType string, tenant string
 	serviceKey := apt.GenerateServiceDependencyKey(serviceType, tenant, serviceId, "")
 	opt := &registry.PluginOp{
 		Action:     registry.GET,
-		Key:        []byte(serviceKey),
+		Key:        util.StringToBytesWithNoCopy(serviceKey),
 		WithPrefix: true,
 	}
 	rsp, err := store.Store().Dependency().Search(ctx, opt)
@@ -505,13 +500,13 @@ func deleteDependencyUtil(ctx context.Context, serviceType string, tenant string
 			util.LOGGER.Infof("delete dependency %s", deleteKey)
 			opt = &registry.PluginOp{
 				Action: registry.DELETE,
-				Key:    []byte(serviceTmpKey),
+				Key:    util.StringToBytesWithNoCopy(serviceTmpKey),
 			}
 			opts = append(opts, opt)
 		}
 		opt = &registry.PluginOp{
 			Action:     registry.DELETE,
-			Key:        []byte(serviceKey),
+			Key:        util.StringToBytesWithNoCopy(serviceKey),
 			WithPrefix: true,
 		}
 		util.LOGGER.Infof("delete dependency serviceKey is %s", serviceType+"/"+serviceId)
@@ -600,7 +595,7 @@ func CreateDependencyRule(ctx context.Context, consumerServiceid string, consume
 					if len(consumerValue.Dependency) == 0 {
 						opt := &registry.PluginOp{
 							Action: registry.DELETE,
-							Key:    []byte(proProkey),
+							Key:    util.StringToBytesWithNoCopy(proProkey),
 						}
 						_, err = registry.GetRegisterCenter().Do(ctx, opt)
 						if err != nil {
@@ -616,8 +611,8 @@ func CreateDependencyRule(ctx context.Context, consumerServiceid string, consume
 					}
 					opt := &registry.PluginOp{
 						Action: registry.PUT,
-						Key:    []byte(proProkey),
-						Value:  []byte(data),
+						Key:    util.StringToBytesWithNoCopy(proProkey),
+						Value:  data,
 					}
 					_, err = registry.GetRegisterCenter().Do(ctx, opt)
 					if err != nil {
@@ -643,8 +638,8 @@ func CreateDependencyRule(ctx context.Context, consumerServiceid string, consume
 	}
 	opt := &registry.PluginOp{
 		Action: registry.PUT,
-		Key:    []byte(conKey),
-		Value:  []byte(data),
+		Key:    util.StringToBytesWithNoCopy(conKey),
+		Value:  data,
 	}
 	_, err = registry.GetRegisterCenter().Do(ctx, opt)
 	if err != nil {
@@ -682,11 +677,11 @@ func deleteDependency(tenant string, consumerId string, providerId string) []*re
 	opts := []*registry.PluginOp{}
 	optPro := &registry.PluginOp{
 		Action: registry.DELETE,
-		Key:    []byte(proKey),
+		Key:    util.StringToBytesWithNoCopy(proKey),
 	}
 	optCon := &registry.PluginOp{
 		Action: registry.DELETE,
-		Key:    []byte(conKey),
+		Key:    util.StringToBytesWithNoCopy(conKey),
 	}
 	opts = append(opts, optPro)
 	opts = append(opts, optCon)
@@ -720,7 +715,7 @@ func addDependencyRuleOfProvider(ctx context.Context, consumer *pb.MicroServiceK
 			}
 			opt := &registry.PluginOp{
 				Action: registry.PUT,
-				Key:    []byte(proProkey),
+				Key:    util.StringToBytesWithNoCopy(proProkey),
 				Value:  data,
 			}
 			opts = append(opts, opt)
@@ -746,7 +741,7 @@ func GetDependencies(ctx context.Context, dependencyKey string, tenant string) (
 	util.LOGGER.Debugf("GetDependencies start.")
 	opt := &registry.PluginOp{
 		Action:     registry.GET,
-		Key:        []byte(dependencyKey),
+		Key:        util.StringToBytesWithNoCopy(dependencyKey),
 		WithPrefix: true,
 	}
 	data, err := store.Store().Dependency().Search(ctx, opt)
@@ -843,8 +838,7 @@ func ParamsChecker(ctx context.Context, consumerInfo *pb.MicroServiceKey, provid
 }
 
 func AddServiceVersionRule(ctx context.Context, provider *pb.MicroServiceKey, tenant string, consumer *pb.MicroServiceKey) (error, bool) {
-	reg := regexp.MustCompile(VESION_RULE_REGEX)
-	if reg.Match([]byte(provider.Version)) {
+	if apt.VersionRegex.Match(util.StringToBytesWithNoCopy(provider.Version)) {
 		return nil, false
 	}
 
@@ -872,8 +866,8 @@ func AddServiceVersionRule(ctx context.Context, provider *pb.MicroServiceKey, te
 	}
 	opt := &registry.PluginOp{
 		Action: registry.PUT,
-		Key:    []byte(providerKey),
-		Value:  []byte(data),
+		Key:    util.StringToBytesWithNoCopy(providerKey),
+		Value:  data,
 	}
 	_, err = registry.GetRegisterCenter().Do(ctx, opt)
 	return err, false
@@ -899,7 +893,7 @@ func UpdateServiceForAddDependency(ctx context.Context, consumerId string, provi
 	}
 	opt := &registry.PluginOp{
 		Action: registry.PUT,
-		Key:    []byte(conServiceKey),
+		Key:    util.StringToBytesWithNoCopy(conServiceKey),
 		Value:  data,
 	}
 	_, err = registry.GetRegisterCenter().Do(ctx, opt)

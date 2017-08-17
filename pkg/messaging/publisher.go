@@ -14,6 +14,7 @@
 package messaging
 
 import (
+	"github.com/ServiceComb/service-center/util"
 	"regexp"
 )
 
@@ -27,7 +28,7 @@ func Publish(topic string, message string) {
 			subscriptionsMutex.Unlock()
 			for _, s := range subs {
 				select {
-				case s <- []byte(message):
+				case s <- util.StringToBytesWithNoCopy(message):
 				default:
 					// drop the message if nobody is ready to receive it
 				}

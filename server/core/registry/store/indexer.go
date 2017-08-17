@@ -30,14 +30,7 @@ const (
 	DEFAULT_ADD_QUEUE_TIMEOUT = 5 * time.Second
 )
 
-type Indexer interface {
-	Search(ctx context.Context, op *registry.PluginOp) (*registry.PluginResponse, error)
-	Run()
-	Stop()
-	Ready() <-chan struct{}
-}
-
-type KvCacheIndexer struct {
+type Indexer struct {
 	BuildTimeout     time.Duration
 	cacher           Cacher
 	cacheType        StoreType
@@ -49,12 +42,12 @@ type KvCacheIndexer struct {
 	isClose          bool
 }
 
-func (i *KvCacheIndexer) Search(ctx context.Context, op *registry.PluginOp) (*registry.PluginResponse, error) {
+func (i *Indexer) Search(ctx context.Context, op *registry.PluginOp) (*registry.PluginResponse, error) {
 	if op.Action != registry.GET {
 		return nil, errors.New("unexpected action")
 	}
 
-	key := registry.BytesToStringWithNoCopy(op.Key)
+	key := util.BytesToStringWithNoCopy(op.Key)
 
 	if op.WithNoCache || op.WithRev > 0 {
 		util.LOGGER.Debugf("search %s match WitchNoCache or WitchRev, request etcd server, key: %s",
@@ -95,11 +88,11 @@ func (i *KvCacheIndexer) Search(ctx context.Context, op *registry.PluginOp) (*re
 	return resp, nil
 }
 
-func (i *KvCacheIndexer) Cache() Cache {
+func (i *Indexer) Cache() Cache {
 	return i.cacher.Cache()
 }
 
-func (i *KvCacheIndexer) searchPrefixKeyFromCacheOrRemote(ctx context.Context, op *registry.PluginOp) (*registry.PluginResponse, error) {
+func (i *Indexer) searchPrefixKeyFromCacheOrRemote(ctx context.Context, op *registry.PluginOp) (*registry.PluginResponse, error) {
 	resp := &registry.PluginResponse{
 		Action:    op.Action,
 		Kvs:       []*mvccpb.KeyValue{},
@@ -108,7 +101,7 @@ func (i *KvCacheIndexer) searchPrefixKeyFromCacheOrRemote(ctx context.Context, o
 		Succeeded: true,
 	}
 
-	prefix := registry.BytesToStringWithNoCopy(op.Key)
+	prefix := util.BytesToStringWithNoCopy(op.Key)
 
 	i.prefixLock.RLock()
 	keys, ok := i.prefixIndex[prefix]
@@ -152,7 +145,7 @@ func (i *KvCacheIndexer) searchPrefixKeyFromCacheOrRemote(ctx context.Context, o
 	return resp, nil
 }
 
-func (i *KvCacheIndexer) onCacheEvent(evt *KvEvent) {
+func (i *Indexer) onCacheEvent(evt *KvEvent) {
 	if evt.Action != pb.EVT_DELETE && evt.Action != pb.EVT_CREATE {
 		return
 	}
@@ -167,7 +160,7 @@ func (i *KvCacheIndexer) onCacheEvent(evt *KvEvent) {
 	ctx, _ := context.WithTimeout(context.Background(), i.BuildTimeout)
 	select {
 	case <-ctx.Done():
-		key := registry.BytesToStringWithNoCopy(evt.KV.Key)
+		key := util.BytesToStringWithNoCopy(evt.KV.Key)
 		util.LOGGER.Warnf(nil, "add event to build index queue timed out(%s), key is %s [%s] event",
 			i.BuildTimeout, key, evt.Action)
 	case i.prefixBuildQueue <- evt:
@@ -176,7 +169,7 @@ func (i *KvCacheIndexer) onCacheEvent(evt *KvEvent) {
 	i.prefixLock.RUnlock()
 }
 
-func (i *KvCacheIndexer) buildIndex() {
+func (i *Indexer) buildIndex() {
 	i.goroutine.Do(func(stopCh <-chan struct{}) {
 		util.SafeCloseChan(i.ready)
 		for {
@@ -187,7 +180,7 @@ func (i *KvCacheIndexer) buildIndex() {
 				if !ok {
 					return
 				}
-				key := registry.BytesToStringWithNoCopy(evt.KV.Key)
+				key := util.BytesToStringWithNoCopy(evt.KV.Key)
 
 				i.prefixLock.Lock()
 				prefix := key[:strings.LastIndex(key, "/")+1]
@@ -210,7 +203,7 @@ func (i *KvCacheIndexer) buildIndex() {
 	})
 }
 
-func (i *KvCacheIndexer) Run() {
+func (i *Indexer) Run() {
 	i.prefixLock.Lock()
 	if !i.isClose {
 		i.prefixLock.Unlock()
@@ -226,7 +219,7 @@ func (i *KvCacheIndexer) Run() {
 	i.cacher.Run()
 }
 
-func (i *KvCacheIndexer) Stop() {
+func (i *Indexer) Stop() {
 	i.prefixLock.Lock()
 	if i.isClose {
 		i.prefixLock.Unlock()
@@ -246,13 +239,13 @@ func (i *KvCacheIndexer) Stop() {
 	util.LOGGER.Debugf("%s indexer is stopped", i.cacheType)
 }
 
-func (i *KvCacheIndexer) Ready() <-chan struct{} {
+func (i *Indexer) Ready() <-chan struct{} {
 	<-i.cacher.Ready()
 	return i.ready
 }
 
-func NewKvCacheIndexer(t StoreType, cr Cacher) *KvCacheIndexer {
-	return &KvCacheIndexer{
+func NewCacheIndexer(t StoreType, cr Cacher) *Indexer {
+	return &Indexer{
 		BuildTimeout:     DEFAULT_ADD_QUEUE_TIMEOUT,
 		cacher:           cr,
 		cacheType:        t,

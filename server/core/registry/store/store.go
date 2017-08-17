@@ -60,7 +60,7 @@ var store *KvStore
 
 func init() {
 	store = &KvStore{
-		indexers:    make(map[StoreType]Indexer),
+		indexers:    make(map[StoreType]*Indexer),
 		asyncTasker: NewAsyncTasker(),
 		ready:       make(chan struct{}),
 	}
@@ -96,7 +96,7 @@ func (lat *LeaseAsyncTask) Err() error {
 
 func NewLeaseAsyncTask(op *registry.PluginOp) *LeaseAsyncTask {
 	return &LeaseAsyncTask{
-		key:     registry.BytesToStringWithNoCopy(op.Key),
+		key:     util.BytesToStringWithNoCopy(op.Key),
 		LeaseID: op.Lease,
 	}
 }
@@ -111,15 +111,15 @@ func (st StoreType) String() string {
 }
 
 type KvStore struct {
-	indexers    map[StoreType]Indexer
-	asyncTasker AsyncTasker
+	indexers    map[StoreType]*Indexer
+	asyncTasker *AsyncTasker
 	lock        sync.RWMutex
 	ready       chan struct{}
 	isClose     bool
 }
 
-func (s *KvStore) newStore(t StoreType, prefix string) {
-	s.newCacherStore(t, NewCacher(prefix,
+func (s *KvStore) newStore(t StoreType, initSize int, prefix string) {
+	s.newCacherStore(t, NewCacher(initSize, prefix,
 		func(evt *KvEvent) {
 			EventHandler(t).OnEvent(evt)
 		}))
@@ -130,7 +130,7 @@ func (s *KvStore) newNullStore(t StoreType) {
 }
 
 func (s *KvStore) newCacherStore(t StoreType, cacher Cacher) {
-	indexer := NewKvCacheIndexer(t, cacher)
+	indexer := NewCacheIndexer(t, cacher)
 	s.indexers[t] = indexer
 	indexer.Run()
 }
@@ -142,18 +142,18 @@ func (s *KvStore) Run() {
 
 func (s *KvStore) store() {
 	// TODO should cache data group by domain.
-	s.newStore(DOMAIN, apt.GetDomainRootKey())
-	s.newStore(SERVICE, apt.GetServiceRootKey(""))
-	s.newStore(INSTANCE, apt.GetInstanceRootKey(""))
-	s.newStore(LEASE, apt.GetInstanceLeaseRootKey(""))
-	s.newStore(SERVICE_INDEX, apt.GetServiceIndexRootKey(""))
-	s.newStore(SERVICE_ALIAS, apt.GetServiceAliasRootKey(""))
-	s.newStore(ENDPOINTS_INDEX, apt.GetInstancesEndpointsIndexRootKey(""))
-	s.newStore(DEPENDENCY, apt.GetServiceDependencyRootKey(""))
-	s.newStore(DEPENDENCY_RULE, apt.GetServiceDependencyRuleRootKey(""))
-	s.newStore(SERVICE_TAG, apt.GetServiceTagRootKey(""))
-	s.newStore(RULE, apt.GetServiceRuleRootKey(""))
-	s.newStore(RULE_INDEX, apt.GetServiceRuleIndexRootKey(""))
+	s.newStore(DOMAIN, 10, apt.GetDomainRootKey())
+	s.newStore(SERVICE, 100, apt.GetServiceRootKey(""))
+	s.newStore(INSTANCE, 1000, apt.GetInstanceRootKey(""))
+	s.newStore(LEASE, 1000, apt.GetInstanceLeaseRootKey(""))
+	s.newStore(SERVICE_INDEX, 100, apt.GetServiceIndexRootKey(""))
+	s.newStore(SERVICE_ALIAS, 100, apt.GetServiceAliasRootKey(""))
+	s.newStore(ENDPOINTS_INDEX, 1000, apt.GetInstancesEndpointsIndexRootKey(""))
+	s.newStore(DEPENDENCY, 100, apt.GetServiceDependencyRootKey(""))
+	s.newStore(DEPENDENCY_RULE, 100, apt.GetServiceDependencyRuleRootKey(""))
+	s.newStore(SERVICE_TAG, 100, apt.GetServiceTagRootKey(""))
+	s.newStore(RULE, 100, apt.GetServiceRuleRootKey(""))
+	s.newStore(RULE_INDEX, 100, apt.GetServiceRuleIndexRootKey(""))
 	for _, i := range s.indexers {
 		<-i.Ready()
 	}
@@ -186,8 +186,8 @@ func (s *KvStore) onLeaseEvent(evt *KvEvent) {
 		return
 	}
 
-	key := registry.BytesToStringWithNoCopy(evt.KV.Key)
-	leaseID := registry.BytesToStringWithNoCopy(evt.KV.Value)
+	key := util.BytesToStringWithNoCopy(evt.KV.Key)
+	leaseID := util.BytesToStringWithNoCopy(evt.KV.Value)
 
 	s.removeAsyncTask(key)
 
@@ -225,55 +225,55 @@ func (s *KvStore) Ready() <-chan struct{} {
 	return s.ready
 }
 
-func (s *KvStore) Service() Indexer {
+func (s *KvStore) Service() *Indexer {
 	return s.indexers[SERVICE]
 }
 
-func (s *KvStore) Instance() Indexer {
+func (s *KvStore) Instance() *Indexer {
 	return s.indexers[INSTANCE]
 }
 
-func (s *KvStore) Lease() Indexer {
+func (s *KvStore) Lease() *Indexer {
 	return s.indexers[LEASE]
 }
 
-func (s *KvStore) ServiceIndex() Indexer {
+func (s *KvStore) ServiceIndex() *Indexer {
 	return s.indexers[SERVICE_INDEX]
 }
 
-func (s *KvStore) ServiceAlias() Indexer {
+func (s *KvStore) ServiceAlias() *Indexer {
 	return s.indexers[SERVICE_ALIAS]
 }
 
-func (s *KvStore) ServiceTag() Indexer {
+func (s *KvStore) ServiceTag() *Indexer {
 	return s.indexers[SERVICE_TAG]
 }
 
-func (s *KvStore) Rule() Indexer {
+func (s *KvStore) Rule() *Indexer {
 	return s.indexers[RULE]
 }
 
-func (s *KvStore) RuleIndex() Indexer {
+func (s *KvStore) RuleIndex() *Indexer {
 	return s.indexers[RULE_INDEX]
 }
 
-func (s *KvStore) Schema() Indexer {
+func (s *KvStore) Schema() *Indexer {
 	return s.indexers[SCHEMA]
 }
 
-func (s *KvStore) Dependency() Indexer {
+func (s *KvStore) Dependency() *Indexer {
 	return s.indexers[DEPENDENCY]
 }
 
-func (s *KvStore) DependencyRule() Indexer {
+func (s *KvStore) DependencyRule() *Indexer {
 	return s.indexers[DEPENDENCY_RULE]
 }
 
-func (s *KvStore) EndpointsIndex() Indexer {
+func (s *KvStore) EndpointsIndex() *Indexer {
 	return s.indexers[ENDPOINTS_INDEX]
 }
 
-func (s *KvStore) Domain() Indexer {
+func (s *KvStore) Domain() *Indexer {
 	return s.indexers[DOMAIN]
 }
 
@@ -294,8 +294,8 @@ func (s *KvStore) KeepAlive(ctx context.Context, op *registry.PluginOp) (int64, 
 	if err != nil {
 		return 0, err
 	}
-	t = itf.(*LeaseAsyncTask)
-	return t.TTL, t.Err()
+	pt := itf.(*LeaseAsyncTask)
+	return pt.TTL, pt.Err()
 }
 
 func Store() *KvStore {

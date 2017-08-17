@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/server/helper"
+	"github.com/ServiceComb/service-center/util"
 	"github.com/ServiceComb/service-center/util/url"
 	"net/http"
 )
@@ -33,7 +34,7 @@ func Intercept(w http.ResponseWriter, r *http.Request) error {
 	if !urlvalidator.IsRequestURI(r.RequestURI) {
 		err := fmt.Errorf("Invalid Request URI %s", r.RequestURI)
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
+		w.Write(util.StringToBytesWithNoCopy(err.Error()))
 		return err
 	}
 	return nil

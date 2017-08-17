@@ -105,7 +105,28 @@ func (l *logger) WithData(data Data) Logger {
 	}
 }
 
+func (l *logger) activeSinks(loglevel LogLevel) []Sink {
+	ss := make([]Sink, len(l.sinks))
+	idx := 0
+	for _, itf := range l.sinks {
+		if s, ok := itf.(*writerSink); ok && loglevel < s.minLogLevel {
+			continue
+		}
+		if s, ok := itf.(*ReconfigurableSink); ok && loglevel < LogLevel(atomic.LoadInt32(&s.minLogLevel)) {
+			continue
+		}
+		ss[idx] = itf
+		idx++
+	}
+	return ss[:idx]
+}
+
 func (l *logger) log(loglevel LogLevel, action string, err error, data ...Data) {
+	ss := l.activeSinks(loglevel)
+	if len(ss) == 0 {
+		return
+	}
+
 	logData := l.baseData(data...)
 
 	if err != nil {
@@ -131,7 +152,7 @@ func (l *logger) log(loglevel LogLevel, action string, err error, data ...Data) 
 	// add process_id, file, lineno, method to log data
 	addExtLogInfo(&log)
 
-	for _, sink := range l.sinks {
+	for _, sink := range ss {
 		if !(l.logFormatText) {
 			jsondata, jserr := log.ToJSON()
 			if jserr != nil {

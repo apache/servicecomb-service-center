@@ -32,7 +32,7 @@ func AddTagIntoETCD(ctx context.Context, tenant string, serviceId string, dataTa
 
 	_, err = registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
 		Action: registry.PUT,
-		Key:    []byte(key),
+		Key:    util.StringToBytesWithNoCopy(key),
 		Value:  data,
 	})
 	if err != nil {
@@ -48,7 +48,7 @@ func GetTagsUtils(ctx context.Context, tenant string, serviceId string) (map[str
 	key := apt.GenerateServiceTagKey(tenant, serviceId)
 	resp, err := store.Store().ServiceTag().Search(ctx, &registry.PluginOp{
 		Action: registry.GET,
-		Key:    []byte(key),
+		Key:    util.StringToBytesWithNoCopy(key),
 	})
 	if err != nil {
 		return tags, err

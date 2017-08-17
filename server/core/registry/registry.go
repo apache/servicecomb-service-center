@@ -15,14 +15,13 @@ package registry
 
 import (
 	"encoding/json"
+	"github.com/ServiceComb/service-center/util"
 	"github.com/astaxie/beego"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
-	"reflect"
 	"strconv"
 	"sync"
 	"time"
-	"unsafe"
 )
 
 var (
@@ -138,7 +137,7 @@ type PluginOp struct {
 
 func (op *PluginOp) String() string {
 	b, _ := json.Marshal(op)
-	return BytesToStringWithNoCopy(b)
+	return util.BytesToStringWithNoCopy(b)
 }
 
 type PluginResponse struct {
@@ -183,7 +182,10 @@ func GetRegisterCenter() Registry {
 	if registryInstance == nil {
 		singletonLock.Lock()
 		if registryInstance == nil {
-			inst, _ := RegisterCenterClient()
+			inst, err := RegisterCenterClient()
+			if err != nil {
+				util.LOGGER.Errorf(err, "get register center client failed")
+			}
 			registryInstance = inst
 		}
 		singletonLock.Unlock()
@@ -198,18 +200,10 @@ func WithTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
 func WithWatchPrefix(key string) *PluginOp {
 	return &PluginOp{
 		Action:     GET,
-		Key:        []byte(key),
+		Key:        util.StringToBytesWithNoCopy(key),
 		WithPrefix: true,
 		WithPrevKV: true,
 	}
-}
-
-func BytesToStringWithNoCopy(bytes []byte) (s string) {
-	pbytes := (*reflect.SliceHeader)(unsafe.Pointer(&bytes))
-	pstring := (*reflect.StringHeader)(unsafe.Pointer(&s))
-	pstring.Data = pbytes.Data
-	pstring.Len = pbytes.Len
-	return
 }
 
 func BatchCommit(ctx context.Context, opts []*PluginOp) error {

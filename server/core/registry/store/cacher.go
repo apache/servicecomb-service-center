@@ -27,6 +27,8 @@ import (
 const (
 	DEFAULT_MAX_NO_EVENT_INTERVAL = 1 // TODO it should be set to 1 for prevent etcd data is lost accidentally.
 	DEFAULT_LISTWATCH_TIMEOUT     = 30 * time.Second
+	DEFAULT_COMPACT_TIMEOUT       = 5 * time.Minute
+	event_block_size              = 1000
 )
 
 var (
@@ -82,9 +84,12 @@ func (n *nullCacher) Ready() <-chan struct{} {
 type KvCacheSafeRFunc func()
 
 type KvCache struct {
-	owner *KvCacher
-	store map[string]*mvccpb.KeyValue
-	rwMux sync.RWMutex
+	owner       *KvCacher
+	size        int
+	store       map[string]*mvccpb.KeyValue
+	rwMux       sync.RWMutex
+	lastRefresh time.Time
+	lastMaxSize int
 }
 
 func (c *KvCache) Version() int64 {
@@ -98,9 +103,8 @@ func (c *KvCache) Data(k interface{}) interface{} {
 	if !ok {
 		return nil
 	}
-	var copied mvccpb.KeyValue
 	// util.DeepCopy(&copy, kv)
-	copied = *kv
+	copied := *kv
 	return &copied
 }
 
@@ -117,6 +121,18 @@ func (c *KvCache) Lock() map[string]*mvccpb.KeyValue {
 }
 
 func (c *KvCache) Unlock() {
+	l := len(c.store)
+	if l > c.lastMaxSize {
+		c.lastMaxSize = l
+	}
+	if l == 0 && c.lastMaxSize > c.size && time.Now().Sub(c.lastRefresh) >= DEFAULT_COMPACT_TIMEOUT {
+		util.LOGGER.Infof("cache is empty and not in use over %s, compact capacity to size %d->%d",
+			DEFAULT_COMPACT_TIMEOUT, c.lastMaxSize, c.size)
+		// gc
+		c.store = make(map[string]*mvccpb.KeyValue, c.size)
+		c.lastMaxSize = c.size
+		c.lastRefresh = time.Now()
+	}
 	c.rwMux.Unlock()
 }
 
@@ -215,7 +231,7 @@ func (c *KvCacher) ListAndWatch(ctx context.Context) error {
 	return nil
 }
 
-func (c *KvCacher) handleWatcher(watcher Watcher) error {
+func (c *KvCacher) handleWatcher(watcher *Watcher) error {
 	defer watcher.Stop()
 	for evt := range watcher.EventBus() {
 		if evt.Type == proto.EVT_ERROR {
@@ -233,7 +249,7 @@ func (c *KvCacher) sync(evts []*Event) {
 	defer cache.Unlock()
 	for _, evt := range evts {
 		kv := evt.Object.(*mvccpb.KeyValue)
-		key := registry.BytesToStringWithNoCopy(kv.Key)
+		key := util.BytesToStringWithNoCopy(kv.Key)
 		prevKv, ok := store[key]
 		switch evt.Type {
 		case proto.EVT_CREATE, proto.EVT_UPDATE:
@@ -271,7 +287,7 @@ func (c *KvCacher) sync(evts []*Event) {
 	}
 }
 
-func (c *KvCacher) filter(rev int64, items []interface{}) []*Event {
+func (c *KvCacher) filter(rev int64, items []*mvccpb.KeyValue) []*Event {
 	cache := c.Cache().(*KvCache)
 	store := cache.Lock()
 	defer cache.Unlock()
@@ -286,49 +302,87 @@ func (c *KvCacher) filter(rev int64, items []interface{}) []*Event {
 	}
 
 	newStore := make(map[string]*mvccpb.KeyValue)
-	for _, itf := range items {
-		kv := itf.(*mvccpb.KeyValue)
-		newStore[registry.BytesToStringWithNoCopy(kv.Key)] = kv
+	for _, kv := range items {
+		newStore[util.BytesToStringWithNoCopy(kv.Key)] = kv
 	}
 	filterStopCh := make(chan struct{})
-	eventsCh := make(chan *Event, max)
+	eventsCh := make(chan [event_block_size]*Event, max)
 	go func() {
+		var block [event_block_size]*Event
+		i := 0
 		for k, v := range store {
 			_, ok := newStore[k]
-			if !ok {
-				eventsCh <- &Event{
-					Revision: rev,
-					Type:     proto.EVT_DELETE,
-					Key:      c.Cfg.Key,
-					Object:   v,
-				}
+			if ok {
+				continue
 			}
+
+			if i >= event_block_size {
+				eventsCh <- block
+				block = [event_block_size]*Event{}
+				i = 0
+			}
+
+			block[i] = &Event{
+				Revision: rev,
+				Type:     proto.EVT_DELETE,
+				Key:      c.Cfg.Key,
+				Object:   v,
+			}
+			i++
 		}
+
+		if i > 0 {
+			eventsCh <- block
+		}
+
 		close(filterStopCh)
 	}()
 
 	go func() {
+		var block [event_block_size]*Event
+		i := 0
 		for k, v := range newStore {
 			ov, ok := store[k]
 			if !ok {
-				eventsCh <- &Event{
+				if i >= event_block_size {
+					eventsCh <- block
+					block = [event_block_size]*Event{}
+					i = 0
+				}
+
+				block[i] = &Event{
 					Revision: rev,
 					Type:     proto.EVT_CREATE,
 					Key:      c.Cfg.Key,
 					Object:   v,
 				}
+				i++
 				continue
 			}
-			if ov.ModRevision < v.ModRevision {
-				eventsCh <- &Event{
-					Revision: rev,
-					Type:     proto.EVT_UPDATE,
-					Key:      c.Cfg.Key,
-					Object:   v,
-				}
+
+			if ov.ModRevision >= v.ModRevision {
 				continue
 			}
+
+			if i >= event_block_size {
+				eventsCh <- block
+				block = [event_block_size]*Event{}
+				i = 0
+			}
+
+			block[i] = &Event{
+				Revision: rev,
+				Type:     proto.EVT_UPDATE,
+				Key:      c.Cfg.Key,
+				Object:   v,
+			}
+			i++
 		}
+
+		if i > 0 {
+			eventsCh <- block
+		}
+
 		select {
 		case <-filterStopCh:
 			close(eventsCh)
@@ -336,8 +390,13 @@ func (c *KvCacher) filter(rev int64, items []interface{}) []*Event {
 	}()
 
 	evts := make([]*Event, 0, max)
-	for evt := range eventsCh {
-		evts = append(evts, evt)
+	for block := range eventsCh {
+		for _, evt := range block {
+			if evt == nil {
+				continue
+			}
+			evts = append(evts, evt)
+		}
 	}
 	return evts
 }
@@ -389,10 +448,11 @@ func (c *KvCacher) Ready() <-chan struct{} {
 }
 
 type KvCacherConfig struct {
-	Key     string
-	Timeout time.Duration
-	Period  time.Duration
-	OnEvent KvEventFunc
+	Key      string
+	InitSize int
+	Timeout  time.Duration
+	Period   time.Duration
+	OnEvent  KvEventFunc
 }
 
 func (cfg *KvCacherConfig) String() string {
@@ -400,10 +460,13 @@ func (cfg *KvCacherConfig) String() string {
 		cfg.Key, cfg.Timeout, cfg.Period)
 }
 
-func NewKvCache(c *KvCacher) *KvCache {
+func NewKvCache(c *KvCacher, size int) *KvCache {
 	return &KvCache{
-		owner: c,
-		store: make(map[string]*mvccpb.KeyValue),
+		owner:       c,
+		size:        size,
+		lastMaxSize: size,
+		store:       make(map[string]*mvccpb.KeyValue, size),
+		lastRefresh: time.Now(),
 	}
 }
 
@@ -411,26 +474,27 @@ func NewKvCacher(cfg *KvCacherConfig) Cacher {
 	cacher := &KvCacher{
 		Cfg:   cfg,
 		ready: make(chan struct{}),
-		lw: &KvListWatcher{
+		lw: ListWatcher{
 			Client: registry.GetRegisterCenter(),
 			Key:    cfg.Key,
 		},
 		goroute:            util.NewGo(make(chan struct{})),
 		noEventMaxInterval: DEFAULT_MAX_NO_EVENT_INTERVAL,
 	}
-	cacher.cache = NewKvCache(cacher)
+	cacher.cache = NewKvCache(cacher, cfg.InitSize)
 	return cacher
 }
 
-func NewCacher(prefix string, callback KvEventFunc) Cacher {
-	return NewTimeoutCacher(DEFAULT_LISTWATCH_TIMEOUT, prefix, callback)
+func NewCacher(initSize int, prefix string, callback KvEventFunc) Cacher {
+	return NewTimeoutCacher(DEFAULT_LISTWATCH_TIMEOUT, initSize, prefix, callback)
 }
 
-func NewTimeoutCacher(ot time.Duration, prefix string, callback KvEventFunc) Cacher {
+func NewTimeoutCacher(ot time.Duration, initSize int, prefix string, callback KvEventFunc) Cacher {
 	return NewKvCacher(&KvCacherConfig{
-		Key:     prefix,
-		Timeout: ot,
-		Period:  time.Second,
-		OnEvent: callback,
+		Key:      prefix,
+		InitSize: initSize,
+		Timeout:  ot,
+		Period:   time.Second,
+		OnEvent:  callback,
 	})
 }

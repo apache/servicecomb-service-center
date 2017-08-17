@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"sync"
 	"time"
@@ -31,34 +32,23 @@ type Event struct {
 	Object   interface{}
 }
 
-type Watcher interface {
-	EventBus() <-chan *Event
-	Stop()
-}
-
 type ListOptions struct {
 	Timeout time.Duration
 	Context context.Context
 }
 
-type ListWatcher interface {
-	Revision() int64
-	List(op *ListOptions) ([]interface{}, error)
-	Watch(op *ListOptions) Watcher
-}
-
-type KvListWatcher struct {
+type ListWatcher struct {
 	Client registry.Registry
 	Key    string
 
 	rev int64
 }
 
-func (lw *KvListWatcher) Revision() int64 {
+func (lw *ListWatcher) Revision() int64 {
 	return lw.rev
 }
 
-func (lw *KvListWatcher) List(op *ListOptions) ([]interface{}, error) {
+func (lw *ListWatcher) List(op *ListOptions) ([]*mvccpb.KeyValue, error) {
 	otCtx, _ := context.WithTimeout(op.Context, op.Timeout)
 	resp, err := lw.Client.Do(otCtx, registry.WithWatchPrefix(lw.Key))
 	if err != nil {
@@ -68,22 +58,18 @@ func (lw *KvListWatcher) List(op *ListOptions) ([]interface{}, error) {
 	if len(resp.Kvs) == 0 {
 		return nil, nil
 	}
-	itfs := make([]interface{}, len(resp.Kvs))
-	for idx, kv := range resp.Kvs {
-		itfs[idx] = kv
-	}
-	return itfs, nil
+	return resp.Kvs, nil
 }
 
-func (lw *KvListWatcher) Watch(op *ListOptions) Watcher {
-	return newKvWatcher(lw, op)
+func (lw *ListWatcher) Watch(op *ListOptions) *Watcher {
+	return newWatcher(lw, op)
 }
 
-func (lw *KvListWatcher) upgradeRevision(rev int64) {
+func (lw *ListWatcher) upgradeRevision(rev int64) {
 	lw.rev = rev
 }
 
-func (lw *KvListWatcher) doWatch(ctx context.Context, f func(evt *Event)) error {
+func (lw *ListWatcher) doWatch(ctx context.Context, f func(evt *Event)) error {
 	ops := registry.WithWatchPrefix(lw.Key)
 	ops.WithRev = lw.Revision() + 1
 	err := lw.Client.Watch(ctx, ops, func(message string, evt *registry.PluginResponse) error {
@@ -119,20 +105,20 @@ func (lw *KvListWatcher) doWatch(ctx context.Context, f func(evt *Event)) error 
 	return err
 }
 
-type KvWatcher struct {
+type Watcher struct {
 	ListOps *ListOptions
-	lw      *KvListWatcher
+	lw      *ListWatcher
 	bus     chan *Event
 	stopCh  chan struct{}
 	stop    bool
 	mux     sync.Mutex
 }
 
-func (w *KvWatcher) EventBus() <-chan *Event {
+func (w *Watcher) EventBus() <-chan *Event {
 	return w.bus
 }
 
-func (w *KvWatcher) process() {
+func (w *Watcher) process() {
 	stopCh := make(chan struct{})
 	ctx, cancel := context.WithTimeout(w.ListOps.Context, w.ListOps.Timeout)
 	go func() {
@@ -149,12 +135,12 @@ func (w *KvWatcher) process() {
 	}
 }
 
-func (w *KvWatcher) sendEvent(evt *Event) {
+func (w *Watcher) sendEvent(evt *Event) {
 	w.bus <- evt
 	// LOG ignore event
 }
 
-func (w *KvWatcher) Stop() {
+func (w *Watcher) Stop() {
 	w.mux.Lock()
 	if w.stop {
 		w.mux.Unlock()
@@ -174,8 +160,8 @@ func errEvent(key string, err error) *Event {
 	}
 }
 
-func newKvWatcher(lw *KvListWatcher, listOps *ListOptions) Watcher {
-	w := &KvWatcher{
+func newWatcher(lw *ListWatcher, listOps *ListOptions) *Watcher {
+	w := &Watcher{
 		ListOps: listOps,
 		lw:      lw,
 		bus:     make(chan *Event, EVENT_BUS_MAX_SIZE),
