@@ -103,7 +103,6 @@ func (c *KvCache) Data(k interface{}) interface{} {
 	if !ok {
 		return nil
 	}
-	// util.DeepCopy(&copy, kv)
 	copied := *kv
 	return &copied
 }

@@ -27,6 +27,8 @@ import (
 
 const STACK_TRACE_BUFFER_SIZE = 1024 * 100
 
+var processID = os.Getpid()
+
 type Logger interface {
 	RegisterSink(Sink)
 	Session(task string, data ...Data) Logger
@@ -127,7 +129,10 @@ func (l *logger) log(loglevel LogLevel, action string, err error, data ...Data) 
 	if len(ss) == 0 {
 		return
 	}
+	l.logs(ss, loglevel, action, err, data...)
+}
 
+func (l *logger) logs(ss []Sink, loglevel LogLevel, action string, err error, data ...Data) {
 	logData := l.baseData(data...)
 
 	if err != nil {
@@ -145,7 +150,7 @@ func (l *logger) log(loglevel LogLevel, action string, err error, data ...Data) 
 	log := LogFormat{
 		Timestamp: currentTimestamp(),
 		Source:    l.component,
-		Message:   fmt.Sprintf("%s.%s", l.task, strconv.QuoteToGraphic(action)),
+		Message:   l.task + "." + strconv.QuoteToGraphic(action),
 		LogLevel:  loglevel,
 		Data:      logData,
 	}
@@ -208,8 +213,12 @@ func (l *logger) Fatal(action string, err error, data ...Data) {
 }
 
 func (l *logger) logf(loglevel LogLevel, err error, format string, args ...interface{}) {
+	ss := l.activeSinks(loglevel)
+	if len(ss) == 0 {
+		return
+	}
 	logmsg := fmt.Sprintf(format, args...)
-	l.log(loglevel, logmsg, err)
+	l.logs(ss, loglevel, logmsg, err)
 }
 
 func (l *logger) Debugf(format string, args ...interface{}) {
@@ -259,7 +268,7 @@ func currentTimestamp() string {
 }
 
 func addExtLogInfo(logf *LogFormat) {
-	logf.ProcessID = os.Getpid()
+	logf.ProcessID = processID
 
 	for i := 3; i <= 5; i++ {
 		pc, file, line, ok := runtime.Caller(i)
