@@ -101,7 +101,7 @@ func GetServicesByTenant(ctx context.Context, tenant string) ([]*pb.MicroService
 	}
 	services := []*pb.MicroService{}
 	for _, kvs := range kvs {
-		util.LOGGER.Debugf("start unmarshal service file: %s", string(kvs.Value))
+		util.LOGGER.Debugf("start unmarshal service file: %s", util.BytesToStringWithNoCopy(kvs.Value))
 		service := &pb.MicroService{}
 		err := json.Unmarshal(kvs.Value, service)
 		if err != nil {
@@ -139,7 +139,7 @@ func GetServiceId(ctx context.Context, key *pb.MicroServiceKey) (string, error) 
 			return "", nil
 		}
 	}
-	return string(resp.Kvs[0].Value), nil
+	return util.BytesToStringWithNoCopy(resp.Kvs[0].Value), nil
 }
 
 func FindServiceIds(ctx context.Context, versionRule string, key *pb.MicroServiceKey) ([]string, error) {

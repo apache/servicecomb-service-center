@@ -20,6 +20,7 @@ import (
 	"net"
 	"sync"
 	"time"
+	"unsafe"
 )
 
 // UUID layout variants.
@@ -105,7 +106,7 @@ func (u UUID) String() string {
 	buf[23] = DASH
 	hex.Encode(buf[24:], u[10:])
 
-	return string(buf)
+	return *(*string)(unsafe.Pointer(&buf))
 }
 
 func (u *UUID) SetVersion(v byte) {

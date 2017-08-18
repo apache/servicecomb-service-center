@@ -1234,7 +1234,7 @@ func (s *ServiceController) GetSchemaInfo(ctx context.Context, request *pb.GetSc
 	}
 	return &pb.GetSchemaResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Get schema info successfully."),
-		Schema:   string(resp.Kvs[0].Value),
+		Schema:   util.BytesToStringWithNoCopy(resp.Kvs[0].Value),
 	}, nil
 }
 

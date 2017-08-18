@@ -48,7 +48,7 @@ func GetAllTenent() ([]string, error) {
 		instByTenant := ""
 		arrTmp := []string{}
 		for _, kv := range kvs {
-			arrTmp = strings.Split(string(kv.Key), "/")
+			arrTmp = strings.Split(util.BytesToStringWithNoCopy(kv.Key), "/")
 			tenant = arrTmp[len(arrTmp)-1]
 			instByTenant = apt.GetInstanceRootKey(tenant)
 			insWatherByTenantKeys = append(insWatherByTenantKeys, instByTenant)

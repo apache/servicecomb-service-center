@@ -22,6 +22,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"time"
+	"unsafe"
 )
 
 const STACK_TRACE_BUFFER_SIZE = 1024 * 100
@@ -138,7 +139,7 @@ func (l *logger) log(loglevel LogLevel, action string, err error, data ...Data) 
 		stackSize := runtime.Stack(stackTrace, false)
 		stackTrace = stackTrace[:stackSize]
 
-		logData["trace"] = string(stackTrace)
+		logData["trace"] = *(*string)(unsafe.Pointer(&stackTrace))
 	}
 
 	log := LogFormat{
