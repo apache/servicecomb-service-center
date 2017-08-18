@@ -125,7 +125,7 @@ func loadServerSSLConfig() {
 		if err != nil {
 			util.LOGGER.Warn("read file cert_pwd failed.", err)
 		}
-		sslServerConfig.KeyPassphase = string(keyPassphase)
+		sslServerConfig.KeyPassphase = util.BytesToStringWithNoCopy(keyPassphase)
 	}
 
 	util.LOGGER.Infof("server ssl configs enabled %t, verifyclient %t, minv %#x, cipers %d, pphase %d.",

@@ -36,7 +36,7 @@ func GetLeaseId(ctx context.Context, tenant string, serviceId string, instanceId
 	if len(resp.Kvs) <= 0 {
 		return -1, nil
 	}
-	leaseID, _ := strconv.ParseInt(string(resp.Kvs[0].Value), 10, 64)
+	leaseID, _ := strconv.ParseInt(util.BytesToStringWithNoCopy(resp.Kvs[0].Value), 10, 64)
 	return leaseID, nil
 }
 
@@ -120,7 +120,7 @@ func CheckEndPoints(ctx context.Context, in *pb.RegisterInstanceRequest) (string
 			}
 		}
 		if isEqual {
-			arr := strings.Split(string(kv.Key), "/")
+			arr := strings.Split(util.BytesToStringWithNoCopy(kv.Key), "/")
 			return arr[len(arr)-1], nil
 		}
 	}
@@ -155,7 +155,7 @@ func DeleteServiceAllInstances(ctx context.Context, ServiceId string) error {
 		return nil
 	}
 	for _, v := range resp.Kvs {
-		leaseID, _ := strconv.ParseInt(string(v.Value), 10, 64)
+		leaseID, _ := strconv.ParseInt(util.BytesToStringWithNoCopy(v.Value), 10, 64)
 		registry.GetRegisterCenter().LeaseRevoke(ctx, leaseID)
 	}
 	return nil

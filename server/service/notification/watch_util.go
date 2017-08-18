@@ -181,7 +181,7 @@ func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (resul
 	rev = resp.Revision
 
 	for _, depsKv := range resp.Kvs {
-		providerDepsKey := string(depsKv.Key)
+		providerDepsKey := util.BytesToStringWithNoCopy(depsKv.Key)
 		providerId := providerDepsKey[strings.LastIndex(providerDepsKey, "/")+1:]
 
 		service, err := ms.GetService(ctx, tenant, providerId, rev)
@@ -198,7 +198,7 @@ func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (resul
 		util.LOGGER.Debugf("query provider service %s instances[%d] with revision %d.", providerId, len(kvs), rev)
 		for _, kv := range kvs {
 			util.LOGGER.Debugf("start unmarshal service instance file with revision %d: %s",
-				rev, string(kv.Key))
+				rev, util.BytesToStringWithNoCopy(kv.Key))
 			instance := &pb.MicroServiceInstance{}
 			err := json.Unmarshal(kv.Value, instance)
 			if err != nil {

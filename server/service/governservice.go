@@ -135,7 +135,7 @@ func getServiceAllVersions(ctx context.Context, tenant string, appId string, ser
 	}
 	version := ""
 	for _, kvs := range resp.Kvs {
-		tmpArr := strings.Split(string(kvs.Key), "/")
+		tmpArr := strings.Split(util.BytesToStringWithNoCopy(kvs.Key), "/")
 		version = tmpArr[len(tmpArr)-1]
 		versions = append(versions, version)
 	}
@@ -156,7 +156,7 @@ func getAllInstancesForOneService(ctx context.Context, tenant string, serviceId 
 	}
 	instances := []*pb.MicroServiceInstance{}
 	for _, kvs := range resp.Kvs {
-		util.LOGGER.Debugf("start unmarshal service instance file: %s", string(kvs.Key))
+		util.LOGGER.Debugf("start unmarshal service instance file: %s", util.BytesToStringWithNoCopy(kvs.Key))
 		instance := &pb.MicroServiceInstance{}
 		err := json.Unmarshal(kvs.Value, instance)
 		if err != nil {
@@ -184,8 +184,8 @@ func getSchemaInfoUtil(ctx context.Context, tenant string, serviceId string) ([]
 	schema := ""
 	for _, kv := range resp.Kvs {
 		schemaInfo := &pb.SchemaInfos{}
-		schemaId = string(kv.Key[len(key):])
-		schema = string(kv.Value)
+		schemaId = util.BytesToStringWithNoCopy(kv.Key[len(key):])
+		schema = util.BytesToStringWithNoCopy(kv.Value)
 		schemaInfo.Schema = schema
 		schemaInfo.SchemaId = schemaId
 		schemas = append(schemas, schemaInfo)

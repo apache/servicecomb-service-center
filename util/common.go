@@ -171,13 +171,16 @@ func StringJoin(args []string, sep string) string {
 	case 1:
 		return args[0]
 	default:
-		b := bytes.Buffer{}
-		for i, s := range args {
-			if i != 0 {
-				b.WriteString(sep)
-			}
-			b.WriteString(s)
+		n := len(sep) * (l - 1)
+		for i := 0; i < l; i++ {
+			n += len(args[i])
 		}
-		return b.String()
+		b := make([]byte, n)
+		sl := copy(b, args[0])
+		for i := 1; i < l; i++ {
+			sl += copy(b[sl:], sep)
+			sl += copy(b[sl:], args[i])
+		}
+		return BytesToStringWithNoCopy(b)
 	}
 }

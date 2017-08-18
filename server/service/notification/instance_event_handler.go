@@ -85,7 +85,7 @@ func (h *InstanceEventHandler) OnEvent(evt *store.KvEvent) {
 		Instance: &instance,
 	}
 	for _, dependence := range Kvs {
-		consumer := string(dependence.Key)
+		consumer := util.BytesToStringWithNoCopy(dependence.Key)
 		consumer = consumer[strings.LastIndex(consumer, "/")+1:]
 		job := NewWatchJob(INSTANCE, consumer, apt.GetInstanceRootKey(tenantProject)+"/",
 			evt.Revision, response)

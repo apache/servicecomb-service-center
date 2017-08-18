@@ -174,7 +174,7 @@ func (s *KvStore) onDomainEvent(evt *KvEvent) {
 
 	if len(tenant) == 0 {
 		util.LOGGER.Errorf(nil,
-			"unmarshal tenant info failed, key %s [%s] event", string(kv.Key), action)
+			"unmarshal tenant info failed, key %s [%s] event", util.BytesToStringWithNoCopy(kv.Key), action)
 		return
 	}
 

@@ -219,7 +219,7 @@ func (client *HttpClient) httpDo(method string, url string, headers map[string]s
 	} else {
 		respBody, _ = ioutil.ReadAll(resp.Body)
 	}
-	result = string(respBody)
+	result = util.BytesToStringWithNoCopy(respBody)
 
 	return status, result
 }

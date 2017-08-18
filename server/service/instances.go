@@ -561,7 +561,7 @@ func getAllInstancesOfOneService(ctx context.Context, tenant string, serviceId s
 
 	instances := []*pb.MicroServiceInstance{}
 	for _, kvs := range resp.Kvs {
-		util.LOGGER.Debugf("start unmarshal service instance file: %s", string(kvs.Key))
+		util.LOGGER.Debugf("start unmarshal service instance file: %s", util.BytesToStringWithNoCopy(kvs.Key))
 		instance := &pb.MicroServiceInstance{}
 		err := json.Unmarshal(kvs.Value, instance)
 		if err != nil {

@@ -141,7 +141,7 @@ func UpdateAsConsumerDependency(ctx context.Context, consumerId string, provider
 			keyArr := []string{}
 			providerId := ""
 			for _, kvs := range resp.Kvs {
-				keyArr = strings.Split(string(kvs.Key), "/")
+				keyArr = strings.Split(util.BytesToStringWithNoCopy(kvs.Key), "/")
 				providerId = keyArr[len(keyArr)-1]
 				optProsTmps = putServiceDependency(consumerId, providerId, tenant)
 				optPros = append(optPros, optProsTmps...)
@@ -251,7 +251,7 @@ func UpdateAsProviderDependency(ctx context.Context, providerServiceId string, p
 			consumers := &pb.MicroServiceDependency{
 				Dependency: []*pb.MicroServiceKey{},
 			}
-			providerVersionRuleArr := strings.Split(string(kv.Key), "/")
+			providerVersionRuleArr := strings.Split(util.BytesToStringWithNoCopy(kv.Key), "/")
 			providerVersionRule := providerVersionRuleArr[len(providerVersionRuleArr)-1]
 			if providerVersionRule == "latest" {
 				latestServiceId, err := ms.FindServiceIds(ctx, providerVersionRule, &pb.MicroServiceKey{
@@ -483,7 +483,7 @@ func deleteDependencyUtil(ctx context.Context, serviceType string, tenant string
 		serviceTmpKey := ""
 		deleteKey := ""
 		for _, kv := range rsp.Kvs {
-			tmpKeyArr := strings.Split(string(kv.Key), "/")
+			tmpKeyArr := strings.Split(util.BytesToStringWithNoCopy(kv.Key), "/")
 			serviceTmpId = tmpKeyArr[len(tmpKeyArr)-1]
 			if serviceType == "p" {
 				serviceTmpKey = apt.GenerateConsumerDependencyKey(tenant, serviceTmpId, serviceId)
@@ -761,7 +761,7 @@ func GetDependencies(ctx context.Context, dependencyKey string, tenant string) (
 	providerId := ""
 	microServices := []*pb.MicroService{}
 	for _, kv := range data.Kvs {
-		key = string(kv.Key)
+		key = util.BytesToStringWithNoCopy(kv.Key)
 		util.LOGGER.Debugf("key is %s", key)
 		keySplilt = strings.Split(key, "/")
 		providerId = keySplilt[len(keySplilt)-1]
