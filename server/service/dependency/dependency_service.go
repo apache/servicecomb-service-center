@@ -457,7 +457,7 @@ func equalServiceDependency(serviceA *pb.MicroServiceKey, serviceB *pb.MicroServ
 }
 
 func toString(in *pb.MicroServiceKey) string {
-	return strings.Join([]string{
+	return util.StringJoin([]string{
 		in.Tenant,
 		in.AppId,
 		in.Stage,
@@ -487,10 +487,10 @@ func deleteDependencyUtil(ctx context.Context, serviceType string, tenant string
 			serviceTmpId = tmpKeyArr[len(tmpKeyArr)-1]
 			if serviceType == "p" {
 				serviceTmpKey = apt.GenerateConsumerDependencyKey(tenant, serviceTmpId, serviceId)
-				deleteKey = strings.Join([]string{"c", serviceTmpId, serviceId}, "/")
+				deleteKey = util.StringJoin([]string{"c", serviceTmpId, serviceId}, "/")
 			} else {
 				serviceTmpKey = apt.GenerateProviderDependencyKey(tenant, serviceTmpId, serviceId)
-				deleteKey = strings.Join([]string{"p", serviceTmpId, serviceId}, "/")
+				deleteKey = util.StringJoin([]string{"p", serviceTmpId, serviceId}, "/")
 			}
 			if _, ok := flag[serviceTmpKey]; ok {
 				util.LOGGER.Debugf("serviceTmpKey is more exist.%s", serviceTmpKey)
@@ -519,7 +519,7 @@ func CreateDependencyRule(ctx context.Context, consumerServiceid string, consume
 	tenant := util.ParseTenantProject(ctx)
 	//更新consumer的providers的值,consumer的版本是确定的
 	conKey := apt.GenerateConsumerDependencyRuleKey(tenant, consumer)
-	consumerFlag := strings.Join([]string{consumer.AppId, consumer.ServiceName, consumer.Version}, "/")
+	consumerFlag := util.StringJoin([]string{consumer.AppId, consumer.ServiceName, consumer.Version}, "/")
 	err, oldProviderRules := transferToMicroServiceDependency(ctx, conKey)
 	if err != nil {
 		util.LOGGER.Errorf(err, "maintain dependency rule failed, consumer %s: get consumer depedency rule failed.", consumerFlag)
@@ -540,7 +540,7 @@ func CreateDependencyRule(ctx context.Context, consumerServiceid string, consume
 			if ok, _ := containerServiceDependency(providers, oldProviderRule); ok {
 				continue
 			}
-			oldProviderRuleFlag := strings.Join([]string{oldProviderRule.AppId, oldProviderRule.ServiceName, oldProviderRule.Version}, "/")
+			oldProviderRuleFlag := util.StringJoin([]string{oldProviderRule.AppId, oldProviderRule.ServiceName, oldProviderRule.Version}, "/")
 			util.LOGGER.Infof("old dependency rule %s not exist, delete", oldProviderRuleFlag)
 			proProkey = apt.GenerateProviderDependencyRuleKey(tenant, oldProviderRule)
 			util.LOGGER.Debugf("This proProkey is %s.", proProkey)

@@ -47,7 +47,7 @@ func (e MatchBlackListError) Error() string {
 }
 
 func GetRulesUtil(ctx context.Context, tenant string, serviceId string) ([]*pb.ServiceRule, error) {
-	key := strings.Join([]string{
+	key := util.StringJoin([]string{
 		apt.GetServiceRuleRootKey(tenant),
 		serviceId,
 		"",

@@ -190,10 +190,10 @@ func (s *ServiceCenterServer) startApiServer() {
 
 	eps := map[api.APIType]string{}
 	if len(restIp) > 0 && len(restPort) > 0 {
-		eps[api.REST] = strings.Join([]string{restIp, restPort}, ":")
+		eps[api.REST] = util.StringJoin([]string{restIp, restPort}, ":")
 	}
 	if len(grpcIp) > 0 && len(grpcPort) > 0 {
-		eps[api.GRPC] = strings.Join([]string{grpcIp, grpcPort}, ":")
+		eps[api.GRPC] = util.StringJoin([]string{grpcIp, grpcPort}, ":")
 	}
 	s.apiService.Config = api.APIServerConfig{
 		HostName:     hostName,

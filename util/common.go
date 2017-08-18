@@ -20,7 +20,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strings"
 	"unsafe"
 )
 
@@ -73,7 +72,7 @@ func ClearByteMemory(src []byte) {
 }
 
 func ParseTenantProject(ctx context.Context) string {
-	return strings.Join([]string{ParseTenant(ctx), ParseProject(ctx)}, "/")
+	return StringJoin([]string{ParseTenant(ctx), ParseProject(ctx)}, "/")
 }
 
 func ParseTenant(ctx context.Context) string {
@@ -162,4 +161,23 @@ func MapToList(dict map[string]struct{}) []string {
 		ret = append(ret, k)
 	}
 	return ret
+}
+
+func StringJoin(args []string, sep string) string {
+	l := len(args)
+	switch l {
+	case 0:
+		return ""
+	case 1:
+		return args[0]
+	default:
+		b := bytes.Buffer{}
+		for i, s := range args {
+			if i != 0 {
+				b.WriteString(sep)
+			}
+			b.WriteString(s)
+		}
+		return b.String()
+	}
 }

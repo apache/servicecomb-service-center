@@ -21,7 +21,6 @@ import (
 	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
-	"strings"
 )
 
 func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Context, in *pb.CreateDependenciesRequest) (*pb.CreateDependenciesResponse, error) {
@@ -33,7 +32,7 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 	for _, dependencyInfo := range dependencyInfos {
 		consumerInfo := pb.TransferToMicroServiceKeys([]*pb.DependencyMircroService{dependencyInfo.Consumer}, tenant)[0]
 		providersInfo := pb.TransferToMicroServiceKeys(dependencyInfo.Providers, tenant)
-		consumerFlag := strings.Join([]string{consumerInfo.AppId, consumerInfo.ServiceName, consumerInfo.Version}, "/")
+		consumerFlag := util.StringJoin([]string{consumerInfo.AppId, consumerInfo.ServiceName, consumerInfo.Version}, "/")
 		rsp := dependency.ParamsChecker(ctx, consumerInfo, providersInfo, tenant)
 		if rsp != nil {
 			util.LOGGER.Errorf(nil, "create dependency faild, conusmer %s: invalid params.%s", consumerFlag, rsp.Response.Message)
