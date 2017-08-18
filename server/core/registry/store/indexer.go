@@ -61,7 +61,6 @@ func (i *Indexer) Search(ctx context.Context, op *registry.PluginOp) (*registry.
 
 	resp := &registry.PluginResponse{
 		Action:    op.Action,
-		Kvs:       []*mvccpb.KeyValue{},
 		Count:     0,
 		Revision:  i.Cache().Version(),
 		Succeeded: true,

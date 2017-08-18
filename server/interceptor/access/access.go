@@ -22,8 +22,13 @@ import (
 	"net/http"
 )
 
+var serverName string
+
 func addCommonResponseHeaders(w http.ResponseWriter) {
-	w.Header().Add("server", core.Service.ServiceName+"/"+core.Service.Version)
+	if len(serverName) == 0 {
+		serverName = core.Service.ServiceName + "/" + core.Service.Version
+	}
+	w.Header().Add("server", serverName)
 }
 
 func Intercept(w http.ResponseWriter, r *http.Request) error {
