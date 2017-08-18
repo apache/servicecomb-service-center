@@ -29,7 +29,6 @@ import (
 	"github.com/astaxie/beego"
 	"golang.org/x/net/context"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -47,7 +46,7 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 	service := in.Service
 	err := apt.Validate(service)
 
-	serviceFlag := strings.Join([]string{service.AppId, service.ServiceName, service.Version}, "/")
+	serviceFlag := util.StringJoin([]string{service.AppId, service.ServiceName, service.Version}, "/")
 	if err != nil {
 		util.LOGGER.Errorf(err, "create microservice failed, %s: invalid parameters.operator:%s",
 			serviceFlag, remoteIP)
@@ -260,7 +259,7 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 		},
 		{
 			Action: registry.DELETE,
-			Key: util.StringToBytesWithNoCopy(strings.Join([]string{
+			Key: util.StringToBytesWithNoCopy(util.StringJoin([]string{
 				apt.GetServiceRuleRootKey(tenant),
 				ServiceId,
 				"",
@@ -892,7 +891,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 			}, nil
 		}
 		err := apt.GetMSExistsReqValidator.Validate(in)
-		serviceFlag := strings.Join([]string{in.AppId, in.ServiceName, in.Version}, "/")
+		serviceFlag := util.StringJoin([]string{in.AppId, in.ServiceName, in.Version}, "/")
 		if err != nil {
 			util.LOGGER.Errorf(err, "microservice exist failed, service %s: invalid params.", serviceFlag)
 			return &pb.GetExistenceResponse{
@@ -1033,7 +1032,7 @@ func (s *ServiceController) UpdateTag(ctx context.Context, in *pb.UpdateServiceT
 			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
 		}, nil
 	}
-	tagFlag := strings.Join([]string{in.Key, in.Value}, "/")
+	tagFlag := util.StringJoin([]string{in.Key, in.Value}, "/")
 	err := apt.Validate(in)
 	if err != nil {
 		util.LOGGER.Errorf(err, "update service tag failed, serviceId %s, tag %s: invalid params.", in.ServiceId, tagFlag)

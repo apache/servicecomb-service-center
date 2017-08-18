@@ -85,8 +85,8 @@ func (cors *CORS) handlePreflightRequest(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	w.Header().Add("Access-Control-Allow-Methods", strings.Join(cors.AllowMethods(), ","))
-	w.Header().Add("Access-Control-Allow-Headers", strings.Join(cors.AllowHeaders(), ","))
+	w.Header().Add("Access-Control-Allow-Methods", util.StringJoin(cors.AllowMethods(), ","))
+	w.Header().Add("Access-Control-Allow-Headers", util.StringJoin(cors.AllowHeaders(), ","))
 	w.Header().Add("Access-Control-Max-Age", strconv.Itoa(cors.maxAge))
 	cors.addAllowOriginHeader(w, r)
 	cors.addAllowCookiesHeader(w, r)

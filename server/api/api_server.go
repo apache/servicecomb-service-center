@@ -27,7 +27,6 @@ import (
 	"google.golang.org/grpc/credentials"
 	"net"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -171,10 +170,10 @@ func (s *APIService) registryInstance() error {
 
 	endpoints := []string{}
 	if address, ok := s.Config.Endpoints[GRPC]; ok {
-		endpoints = append(endpoints, strings.Join([]string{"grpc", address}, "://"))
+		endpoints = append(endpoints, util.StringJoin([]string{"grpc", address}, "://"))
 	}
 	if address, ok := s.Config.Endpoints[REST]; ok {
-		endpoints = append(endpoints, strings.Join([]string{"rest", address}, "://"))
+		endpoints = append(endpoints, util.StringJoin([]string{"rest", address}, "://"))
 	}
 
 	ctx := core.AddDefaultContextValue(context.TODO())
