@@ -42,7 +42,7 @@ const (
 func (q *BuildInQuota) Apply4Quotas(ctx context.Context, quotaType int, quotaSize int16) (bool, error) {
 	var key string = ""
 	var max int64 = 0
-	tenant := ctx.Value("tenant").(string)
+	tenant := util.ParseTenant(ctx)
 	switch quotaType {
 	case quota.MicroServiceInstanceQuotaType:
 		key = core.GetInstanceRootKey(tenant)
