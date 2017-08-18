@@ -20,6 +20,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"time"
 	"unsafe"
 )
 
@@ -71,16 +72,69 @@ func ClearByteMemory(src []byte) {
 	}
 }
 
+type StringContext struct {
+	parentCtx context.Context
+	kv        map[string]interface{}
+}
+
+func (c *StringContext) Deadline() (deadline time.Time, ok bool) {
+	return c.parentCtx.Deadline()
+}
+
+func (c *StringContext) Done() <-chan struct{} {
+	return c.parentCtx.Done()
+}
+
+func (c *StringContext) Err() error {
+	return c.parentCtx.Err()
+}
+
+func (c *StringContext) Value(key interface{}) interface{} {
+	k, ok := key.(string)
+	if !ok {
+		return c.parentCtx.Value(key)
+	}
+	return c.kv[k]
+}
+
+func (c *StringContext) SetKV(key string, val interface{}) {
+	c.kv[key] = val
+}
+
+func NewContext(ctx context.Context, key string, val interface{}) context.Context {
+	strCtx, ok := ctx.(*StringContext)
+	if !ok {
+		strCtx = &StringContext{
+			parentCtx: ctx,
+			kv:        make(map[string]interface{}, 10),
+		}
+	}
+	strCtx.SetKV(key, val)
+	return strCtx
+}
+
+func FromContext(ctx context.Context, key string) interface{} {
+	return ctx.Value(key)
+}
+
 func ParseTenantProject(ctx context.Context) string {
 	return StringJoin([]string{ParseTenant(ctx), ParseProject(ctx)}, "/")
 }
 
 func ParseTenant(ctx context.Context) string {
-	return ctx.Value("tenant").(string)
+	v, ok := FromContext(ctx, "tenant").(string)
+	if !ok {
+		return ""
+	}
+	return v
 }
 
 func ParseProject(ctx context.Context) string {
-	return ctx.Value("project").(string)
+	v, ok := FromContext(ctx, "project").(string)
+	if !ok {
+		return ""
+	}
+	return v
 }
 
 //format : https://10.21.119.167:30100 or http://10.21.119.167:30100

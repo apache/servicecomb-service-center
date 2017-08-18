@@ -19,6 +19,7 @@ import (
 	_ "github.com/ServiceComb/service-center/server/core/registry/etcd"
 	_ "github.com/ServiceComb/service-center/server/plugins/infra/quota/buildin"
 	"github.com/ServiceComb/service-center/server/service"
+	"github.com/ServiceComb/service-center/util"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
@@ -49,7 +50,7 @@ var _ = BeforeSuite(func() {
 
 func getContext() context.Context {
 	ctx := context.TODO()
-	ctx = context.WithValue(ctx, "tenant", "default")
-	ctx = context.WithValue(ctx, "project", "default")
+	ctx = util.NewContext(ctx, "tenant", "default")
+	ctx = util.NewContext(ctx, "project", "default")
 	return ctx
 }
