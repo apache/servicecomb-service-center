@@ -57,12 +57,25 @@ func GetAllTenent() ([]string, error) {
 	return insWatherByTenantKeys, err
 }
 
+func DomainExist(ctx context.Context, domain string) (bool, error) {
+	opt := &registry.PluginOp{
+		Key:       util.StringToBytesWithNoCopy(apt.GenerateDomainKey(domain)),
+		Action:    registry.GET,
+		CountOnly: true,
+	}
+	rsp, err := store.Store().Domain().Search(context.Background(), opt)
+	if err != nil {
+		return false, err
+	}
+	return rsp.Count > 0, nil
+}
+
 func NewDomain(ctx context.Context, tenant string) error {
 	opt := &registry.PluginOp{
-		Key:    util.StringToBytesWithNoCopy(apt.GenerateDomainKey(tenant)),
 		Action: registry.PUT,
+		Key:    util.StringToBytesWithNoCopy(apt.GenerateDomainKey(tenant)),
 	}
-	_, err := registry.GetRegisterCenter().PutNoOverride(ctx, opt)
+	_, err := registry.GetRegisterCenter().Do(ctx, opt)
 	if err != nil {
 		return err
 	}

@@ -205,13 +205,25 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 	}
 
 	//新租户，则进行监听
-	err = domain.NewDomain(ctx, util.ParseTenant(ctx))
+	newDomain := util.ParseTenant(ctx)
+	ok, err := domain.DomainExist(ctx, newDomain)
 	if err != nil {
-		util.LOGGER.Errorf(err, "register instance failed, service %s, instanceId %s, operator %s: new tenant failed.",
+		util.LOGGER.Errorf(err, "register instance failed, service %s, instanceId %s, operator %s: find domain failed.",
 			instanceFlag, instanceId, remoteIP)
 		return &pb.RegisterInstanceResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Commit operations failed."),
+			Response: pb.CreateResponse(pb.Response_FAIL, "Find domain failed."),
 		}, err
+	}
+
+	if !ok {
+		err = domain.NewDomain(ctx, util.ParseTenant(ctx))
+		if err != nil {
+			util.LOGGER.Errorf(err, "register instance failed, service %s, instanceId %s, operator %s: new tenant failed.",
+				instanceFlag, instanceId, remoteIP)
+			return &pb.RegisterInstanceResponse{
+				Response: pb.CreateResponse(pb.Response_FAIL, "Commit operations failed."),
+			}, err
+		}
 	}
 
 	util.LOGGER.Infof("register instance successful service %s, instanceId %s, operator %s.", instanceFlag, instanceId, remoteIP)

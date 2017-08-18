@@ -21,6 +21,7 @@ import (
 	"github.com/didip/tollbooth/config"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -31,12 +32,18 @@ type Limiter struct {
 }
 
 var limiter *Limiter
+var mux sync.Mutex
 
 func GetLimiter() *Limiter {
 	if limiter == nil {
-		limiter = new(Limiter)
-		limiter.LoadConfig()
+		mux.Lock()
+		if limiter == nil {
+			limiter = new(Limiter)
+			limiter.LoadConfig()
+		}
+		mux.Unlock()
 	}
+
 	return limiter
 }
 
