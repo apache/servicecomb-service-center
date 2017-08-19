@@ -104,7 +104,6 @@ func (i *Indexer) searchPrefixKeyFromCacheOrRemote(ctx context.Context, op *regi
 
 	i.prefixLock.RLock()
 	keysRef, ok := i.prefixIndex[prefix]
-	keys := util.MapToList(keysRef)
 	i.prefixLock.RUnlock()
 	if !ok {
 		util.LOGGER.Debugf("can not find any key from %s cache with prefix, request etcd server, key: %s",
@@ -120,6 +119,7 @@ func (i *Indexer) searchPrefixKeyFromCacheOrRemote(ctx context.Context, op *regi
 		return resp, nil
 	}
 
+	keys := util.MapToList(keysRef)
 	resp.Count = int64(len(keys))
 	if op.CountOnly {
 		return resp, nil
@@ -150,12 +150,10 @@ func (i *Indexer) onCacheEvent(evt *KvEvent) {
 		return
 	}
 
-	i.prefixLock.RLock()
-
 	if i.isClose {
-		i.prefixLock.RUnlock()
 		return
 	}
+	defer util.RecoverAndReport()
 
 	ctx, _ := context.WithTimeout(context.Background(), i.BuildTimeout)
 	select {
@@ -165,8 +163,6 @@ func (i *Indexer) onCacheEvent(evt *KvEvent) {
 			i.BuildTimeout, key, evt.Action)
 	case i.prefixBuildQueue <- evt:
 	}
-
-	i.prefixLock.RUnlock()
 }
 
 func (i *Indexer) buildIndex() {

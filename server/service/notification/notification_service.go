@@ -133,6 +133,8 @@ func (s *NotifyService) AddJob(job NotifyJob) error {
 	if s.Closed() {
 		return errors.New("add notify job failed for server shutdown")
 	}
+
+	defer util.RecoverAndReport()
 	select {
 	case s.queues[job.Type()] <- job:
 		return nil

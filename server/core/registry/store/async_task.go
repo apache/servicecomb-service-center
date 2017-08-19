@@ -186,7 +186,8 @@ func (lat *AsyncTasker) scheduleReadyTasks(ready <-chan AsyncTask) {
 }
 
 func (lat *AsyncTasker) collectReadyTasks(ready chan<- AsyncTask) {
-	lat.queueLock.RLock()
+	defer util.RecoverAndReport()
+
 	for key, queue := range lat.queues {
 		select {
 		case task, ok := <-queue.Chan():
@@ -199,7 +200,6 @@ func (lat *AsyncTasker) collectReadyTasks(ready chan<- AsyncTask) {
 			util.LOGGER.Debugf("no task in queue, key is %s", key)
 		}
 	}
-	lat.queueLock.RUnlock()
 }
 
 func (lat *AsyncTasker) scheduleTask(at AsyncTask) {
@@ -211,18 +211,15 @@ func (lat *AsyncTasker) scheduleTask(at AsyncTask) {
 
 			lat.queueLock.RLock()
 			_, ok := lat.latestTasks[at.Key()]
+			lat.queueLock.RUnlock()
 			if !ok {
-				lat.queueLock.RUnlock()
 				util.LOGGER.Debugf("task is removed, key is %s", at.Key())
 				return
 			}
-			lat.queueLock.RUnlock()
 
 			at.Do(ctx)
 
-			lat.queueLock.Lock()
-			lat.latestTasks[at.Key()] = at
-			lat.queueLock.Unlock()
+			lat.UpdateLatestTask(at)
 		}()
 		select {
 		case <-ctx.Done():
@@ -232,6 +229,22 @@ func (lat *AsyncTasker) scheduleTask(at AsyncTask) {
 			util.LOGGER.Debugf("cancelled task for AsyncTasker is stopped, key is %s", at.Key())
 		}
 	})
+}
+
+func (lat *AsyncTasker) UpdateLatestTask(at AsyncTask) {
+	lat.queueLock.RLock()
+	_, ok := lat.latestTasks[at.Key()]
+	lat.queueLock.RUnlock()
+	if !ok {
+		return
+	}
+
+	lat.queueLock.Lock()
+	_, ok = lat.latestTasks[at.Key()]
+	if ok {
+		lat.latestTasks[at.Key()] = at
+	}
+	lat.queueLock.Unlock()
 }
 
 func (lat *AsyncTasker) Stop() {
