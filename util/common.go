@@ -238,3 +238,9 @@ func StringJoin(args []string, sep string) string {
 		return BytesToStringWithNoCopy(b)
 	}
 }
+
+func RecoverAndReport() {
+	if r := recover(); r != nil {
+		LOGGER.Errorf(nil, "recover! %v", r)
+	}
+}
