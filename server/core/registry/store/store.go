@@ -56,17 +56,17 @@ var TypeNames = []string{
 	ENDPOINTS_INDEX: "ENDPOINTS_INDEX",
 }
 
-var TypeRoots = map[StoreType]string {
-	SERVICE:         apt.GetServiceRootKey(""),
-	INSTANCE:        apt.GetInstanceRootKey(""),
-	DOMAIN:          apt.GetDomainRootKey()+"/",
+var TypeRoots = map[StoreType]string{
+	SERVICE:  apt.GetServiceRootKey(""),
+	INSTANCE: apt.GetInstanceRootKey(""),
+	DOMAIN:   apt.GetDomainRootKey() + "/",
 	// SCHEMA:
 	RULE:            apt.GetServiceRuleRootKey(""),
 	LEASE:           apt.GetInstanceLeaseRootKey(""),
 	SERVICE_INDEX:   apt.GetServiceIndexRootKey(""),
 	SERVICE_ALIAS:   apt.GetServiceAliasRootKey(""),
 	SERVICE_TAG:     apt.GetServiceTagRootKey(""),
-	RULE_INDEX:       apt.GetServiceRuleIndexRootKey(""),
+	RULE_INDEX:      apt.GetServiceRuleIndexRootKey(""),
 	DEPENDENCY:      apt.GetServiceDependencyRootKey(""),
 	DEPENDENCY_RULE: apt.GetServiceDependencyRuleRootKey(""),
 	ENDPOINTS_INDEX: apt.GetInstancesEndpointsIndexRootKey(""),

@@ -45,10 +45,10 @@ func (q *BuildInQuota) Apply4Quotas(ctx context.Context, quotaType int, quotaSiz
 	tenant := util.ParseTenant(ctx)
 	switch quotaType {
 	case quota.MicroServiceInstanceQuotaType:
-		key = core.GetInstanceRootKey(tenant)+"/"
+		key = core.GetInstanceRootKey(tenant) + "/"
 		max = INSTANCE_MAX_NUMBER
 	case quota.MicroServiceQuotaType:
-		key = core.GetServiceRootKey(tenant)+"/"
+		key = core.GetServiceRootKey(tenant) + "/"
 		max = SERVICE_MAX_NUMBER
 	default:
 		return false, fmt.Errorf("Unsurported Type %d", quotaType)
@@ -58,7 +58,7 @@ func (q *BuildInQuota) Apply4Quotas(ctx context.Context, quotaType int, quotaSiz
 		Key:        util.StringToBytesWithNoCopy(key),
 		CountOnly:  true,
 		WithPrefix: true,
-		Mode: registry.MODE_CACHE,
+		Mode:       registry.MODE_CACHE,
 	})
 	if err != nil {
 		return false, err

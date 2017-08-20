@@ -79,13 +79,13 @@ type CompareType int
 type CompareResult int
 
 const (
-	GET    ActionType = iota
+	GET ActionType = iota
 	PUT
 	DELETE
 )
 
 const (
-	SORT_NONE    SortOrder = iota
+	SORT_NONE SortOrder = iota
 	SORT_ASCEND
 	SORT_DESCEND
 )
@@ -98,14 +98,14 @@ const (
 )
 
 const (
-	CMP_EQUAL     CompareResult = iota
+	CMP_EQUAL CompareResult = iota
 	CMP_GREATER
 	CMP_LESS
 	CMP_NOT_EQUAL
 )
 
 const (
-	MODE_BOTH     CacheMode = iota
+	MODE_BOTH CacheMode = iota
 	MODE_CACHE
 	MODE_NO_CACHE
 )
@@ -161,7 +161,7 @@ type PluginOp struct {
 	SortOrder       SortOrder  `json:"sort,omitempty"`
 	WithRev         int64      `json:"rev,omitempty"`
 	WithIgnoreLease bool       `json:"ignoreLease,omitempty"`
-	Mode            CacheMode       `json:"mode,omitempty"`
+	Mode            CacheMode  `json:"mode,omitempty"`
 }
 
 func (op *PluginOp) String() string {
