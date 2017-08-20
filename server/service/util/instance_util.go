@@ -141,10 +141,10 @@ func DeleteServiceAllInstances(ctx context.Context, ServiceId string) error {
 
 	instanceLeaseKey := apt.GenerateInstanceLeaseKey(tenant, ServiceId, "")
 	resp, err := store.Store().Lease().Search(ctx, &registry.PluginOp{
-		Action:      registry.GET,
-		Key:         util.StringToBytesWithNoCopy(instanceLeaseKey),
-		WithPrefix:  true,
-		WithNoCache: true,
+		Action:     registry.GET,
+		Key:        util.StringToBytesWithNoCopy(instanceLeaseKey),
+		WithPrefix: true,
+		Mode:       registry.MODE_NO_CACHE,
 	})
 	if err != nil {
 		util.LOGGER.Errorf(err, "delete service all instance failed: get instance lease failed.")

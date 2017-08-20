@@ -40,7 +40,7 @@ const (
 	typeEnd
 )
 
-var typeNames = []string{
+var TypeNames = []string{
 	SERVICE:         "SERVICE",
 	INSTANCE:        "INSTANCE",
 	DOMAIN:          "DOMAIN",
@@ -54,6 +54,22 @@ var typeNames = []string{
 	DEPENDENCY:      "DEPENDENCY",
 	DEPENDENCY_RULE: "DEPENDENCY_RULE",
 	ENDPOINTS_INDEX: "ENDPOINTS_INDEX",
+}
+
+var TypeRoots = map[StoreType]string {
+	SERVICE:         apt.GetServiceRootKey(""),
+	INSTANCE:        apt.GetInstanceRootKey(""),
+	DOMAIN:          apt.GetDomainRootKey()+"/",
+	// SCHEMA:
+	RULE:            apt.GetServiceRuleRootKey(""),
+	LEASE:           apt.GetInstanceLeaseRootKey(""),
+	SERVICE_INDEX:   apt.GetServiceIndexRootKey(""),
+	SERVICE_ALIAS:   apt.GetServiceAliasRootKey(""),
+	SERVICE_TAG:     apt.GetServiceTagRootKey(""),
+	RULE_INDEX:       apt.GetServiceRuleIndexRootKey(""),
+	DEPENDENCY:      apt.GetServiceDependencyRootKey(""),
+	DEPENDENCY_RULE: apt.GetServiceDependencyRuleRootKey(""),
+	ENDPOINTS_INDEX: apt.GetInstancesEndpointsIndexRootKey(""),
 }
 
 var store *KvStore
@@ -104,8 +120,8 @@ func NewLeaseAsyncTask(op *registry.PluginOp) *LeaseAsyncTask {
 type StoreType int
 
 func (st StoreType) String() string {
-	if int(st) < len(typeNames) {
-		return typeNames[st]
+	if int(st) < len(TypeNames) {
+		return TypeNames[st]
 	}
 	return "TYPE" + strconv.Itoa(int(st))
 }
@@ -118,10 +134,15 @@ type KvStore struct {
 	isClose     bool
 }
 
-func (s *KvStore) newStore(t StoreType, initSize int, prefix string) {
-	s.newCacherStore(t, NewCacher(initSize, prefix,
+func (s *KvStore) newStore(t StoreType, initSize int) {
+	s.newCacherStore(t, NewCacher(initSize, TypeRoots[t],
 		func(evt *KvEvent) {
-			EventHandler(t).OnEvent(evt)
+			s.indexers[t].OnCacheEvent(evt)
+			select {
+			case <-s.Ready():
+				EventHandler(t).OnEvent(evt)
+			default:
+			}
 		}))
 }
 
@@ -141,19 +162,18 @@ func (s *KvStore) Run() {
 }
 
 func (s *KvStore) store() {
-	// TODO should cache data group by domain.
-	s.newStore(DOMAIN, 10, apt.GetDomainRootKey())
-	s.newStore(SERVICE, 100, apt.GetServiceRootKey(""))
-	s.newStore(INSTANCE, 1000, apt.GetInstanceRootKey(""))
-	s.newStore(LEASE, 1000, apt.GetInstanceLeaseRootKey(""))
-	s.newStore(SERVICE_INDEX, 100, apt.GetServiceIndexRootKey(""))
-	s.newStore(SERVICE_ALIAS, 100, apt.GetServiceAliasRootKey(""))
-	s.newStore(ENDPOINTS_INDEX, 1000, apt.GetInstancesEndpointsIndexRootKey(""))
-	s.newStore(DEPENDENCY, 100, apt.GetServiceDependencyRootKey(""))
-	s.newStore(DEPENDENCY_RULE, 100, apt.GetServiceDependencyRuleRootKey(""))
-	s.newStore(SERVICE_TAG, 100, apt.GetServiceTagRootKey(""))
-	s.newStore(RULE, 100, apt.GetServiceRuleRootKey(""))
-	s.newStore(RULE_INDEX, 100, apt.GetServiceRuleIndexRootKey(""))
+	s.newStore(DOMAIN, 10)
+	s.newStore(SERVICE, 100)
+	s.newStore(INSTANCE, 1000)
+	s.newStore(LEASE, 1000)
+	s.newStore(SERVICE_INDEX, 100)
+	s.newStore(SERVICE_ALIAS, 100)
+	s.newStore(ENDPOINTS_INDEX, 1000)
+	s.newStore(DEPENDENCY, 100)
+	s.newStore(DEPENDENCY_RULE, 100)
+	s.newStore(SERVICE_TAG, 100)
+	s.newStore(RULE, 100)
+	s.newStore(RULE_INDEX, 100)
 	for _, i := range s.indexers {
 		<-i.Ready()
 	}
@@ -279,7 +299,7 @@ func (s *KvStore) Domain() *Indexer {
 
 func (s *KvStore) KeepAlive(ctx context.Context, op *registry.PluginOp) (int64, error) {
 	t := NewLeaseAsyncTask(op)
-	if op.WithNoCache {
+	if op.Mode == registry.MODE_NO_CACHE {
 		util.LOGGER.Debugf("keep alive lease WitchNoCache, request etcd server, op: %s", op)
 		err := t.Do(ctx)
 		ttl := t.TTL
@@ -296,6 +316,10 @@ func (s *KvStore) KeepAlive(ctx context.Context, op *registry.PluginOp) (int64, 
 	}
 	pt := itf.(*LeaseAsyncTask)
 	return pt.TTL, pt.Err()
+}
+
+func (s *KvStore) AsyncTasker() *AsyncTasker {
+	return s.asyncTasker
 }
 
 func Store() *KvStore {

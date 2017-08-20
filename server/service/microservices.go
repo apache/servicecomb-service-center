@@ -15,6 +15,7 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	apt "github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/server/core/mux"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
@@ -26,6 +27,7 @@ import (
 	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
+	errorsEx "github.com/ServiceComb/service-center/util/errors"
 	"github.com/astaxie/beego"
 	"golang.org/x/net/context"
 	"strconv"
@@ -38,17 +40,16 @@ type ServiceController struct {
 func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequest) (*pb.CreateServiceResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	if in == nil || in.Service == nil {
-		util.LOGGER.Errorf(nil, "create microservice failed: param empty.operator:%s", remoteIP)
+		util.LOGGER.Errorf(nil, "create microservice failed: param empty. operator: %s", remoteIP)
 		return &pb.CreateServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
 		}, nil
 	}
 	service := in.Service
 	err := apt.Validate(service)
-
 	serviceFlag := util.StringJoin([]string{service.AppId, service.ServiceName, service.Version}, "/")
 	if err != nil {
-		util.LOGGER.Errorf(err, "create microservice failed, %s: invalid parameters.operator:%s",
+		util.LOGGER.Errorf(err, "create microservice failed, %s: invalid parameters. operator: %s",
 			serviceFlag, remoteIP)
 		return &pb.CreateServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
@@ -68,50 +69,30 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 	lockMutex := mux.MuxType(apt.GenerateServiceIndexKey(consumer))
 	lock, err := mux.Lock(lockMutex)
 	if err != nil {
-		util.LOGGER.Errorf(err, "create microservice failed, %s:internal err,create lock failed.operator:%s",
+		util.LOGGER.Errorf(err, "create microservice failed, %s: create lock failed. operator: %s",
 			serviceFlag, remoteIP)
-		return &pb.CreateServiceResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Beginning transaction failed."),
-		}, err
-	}
-
-	serviceId := in.Service.ServiceId
-	serviceIdInner, err := ms.GetServiceId(ctx, consumer)
-	if err != nil {
-		util.LOGGER.Errorf(err, "create microservice failed, %s:internal err,query service failed.operator:%s",
-			serviceFlag, remoteIP)
-		lock.Unlock()
-		return &pb.CreateServiceResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Query service key failed."),
-		}, err
-	}
-	if len(serviceIdInner) > 0 {
-		util.LOGGER.Errorf(nil, "create microservice failed, %s:service already exist.operator:%s",
-			serviceFlag, remoteIP)
-		lock.Unlock()
-		return &pb.CreateServiceResponse{
-			Response:  pb.CreateResponse(pb.Response_FAIL, "Register service already exists."),
-			ServiceId: serviceId,
-		}, nil
-	}
-
-	ok, err := quota.QuotaPlugins[beego.AppConfig.DefaultString("quota_plugin", "buildin")]().Apply4Quotas(ctx, quota.MicroServiceQuotaType, 0)
-	if err != nil {
-		util.LOGGER.Errorf(err, "create microservice failed, %s: check apply quota.operator:%s", serviceFlag, remoteIP)
-		lock.Unlock()
 		return &pb.CreateServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, err
 	}
-	if !ok {
-		util.LOGGER.Errorf(err, "create microservice failed, %s: no quota to apply.operator:%s", serviceFlag, remoteIP)
+	err = checkBeforeCreate(ctx, consumer)
+	if err != nil {
 		lock.Unlock()
-		return &pb.CreateServiceResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "No quota to create service."),
-		}, nil
+		util.LOGGER.Errorf(err, "create microservice failed, %s: check service failed before create. operator: %s",
+			serviceFlag, remoteIP)
+		resp := &pb.CreateServiceResponse{
+			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
+		}
+		switch err.(type) {
+		case errorsEx.InternalError:
+			return resp, err
+		default:
+			return resp, nil
+		}
 	}
 
 	// 产生全局service id
+	serviceId := in.Service.ServiceId
 	if len(serviceId) == 0 {
 		serviceId = dynamic.GetServiceId()
 	}
@@ -120,9 +101,8 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 
 	data, err := json.Marshal(service)
 	if err != nil {
-		util.LOGGER.Errorf(err, "create microservice failed, %s: json marshal service failed.operator:%s",
+		util.LOGGER.Errorf(err, "create microservice failed, %s: json marshal service failed. operator: %s",
 			serviceFlag, remoteIP)
-		lock.Unlock()
 		return &pb.CreateServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Body error "+err.Error()),
 		}, nil
@@ -154,32 +134,49 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 	}
 
 	_, err = registry.GetRegisterCenter().Txn(ctx, opts)
+	lock.Unlock()
 	if err != nil {
-		util.LOGGER.Errorf(err, "create microservice failed, %s: commit data into etcd failed.operator:%s",
+		util.LOGGER.Errorf(err, "create microservice failed, %s: commit data into etcd failed. operator: %s",
 			serviceFlag, remoteIP)
-		lock.Unlock()
 		return &pb.CreateServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Commit operations failed."),
 		}, err
 	}
-	lock.Unlock()
-	//创建服务间的依赖
-	util.LOGGER.Infof("create microservice: add dependency for %s.operator:%s", serviceFlag, remoteIP)
-	err = dependency.UpdateAsProviderDependency(ctx, serviceId, consumer)
-	if err != nil {
-		util.LOGGER.Errorf(err, "create microservice failed: dependency update,as provider failed.%s.operator:%s", serviceFlag, remoteIP)
-		return &pb.CreateServiceResponse{
-			Response:  pb.CreateResponse(pb.Response_FAIL, err.Error()),
-			ServiceId: "",
-		}, err
-	}
 
-	util.LOGGER.Infof("create microservice successful, %s, serviceId: %s. from remote %s",
-		serviceFlag, service.ServiceId, util.GetIPFromContext(ctx))
+	util.LOGGER.Infof("create microservice successful, %s, serviceId: %s. operator: %s",
+		serviceFlag, service.ServiceId, remoteIP)
 	return &pb.CreateServiceResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Register service successfully."),
 		ServiceId: serviceId,
 	}, nil
+}
+
+func checkBeforeCreate(ctx context.Context, serviceKey *pb.MicroServiceKey) error {
+	serviceIdInner, err := ms.SearchServiceId(ctx, serviceKey, registry.MODE_CACHE)
+	if err != nil {
+		return errorsEx.InternalError(err.Error())
+	}
+	if len(serviceIdInner) > 0 {
+		return fmt.Errorf("Service already exists.")
+	}
+
+	serviceIdInner, err = ms.SearchServiceId(ctx, serviceKey, registry.MODE_NO_CACHE)
+	if err != nil {
+		return errorsEx.InternalError(err.Error())
+	}
+
+	if len(serviceIdInner) > 0 {
+		return fmt.Errorf("Service already exists.")
+	}
+
+	ok, err := quota.QuotaPlugins[beego.AppConfig.DefaultString("quota_plugin", "buildin")]().Apply4Quotas(ctx, quota.MicroServiceQuotaType, 0)
+	if err != nil {
+		return errorsEx.InternalError(err.Error())
+	}
+	if !ok {
+		return fmt.Errorf("No quota to create service.")
+	}
+	return nil
 }
 
 func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId string, force bool) (*pb.Response, error) {

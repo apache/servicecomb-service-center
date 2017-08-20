@@ -186,8 +186,7 @@ func (lat *AsyncTasker) scheduleReadyTasks(ready <-chan AsyncTask) {
 }
 
 func (lat *AsyncTasker) collectReadyTasks(ready chan<- AsyncTask) {
-	defer util.RecoverAndReport()
-
+	lat.queueLock.RLock()
 	for key, queue := range lat.queues {
 		select {
 		case task, ok := <-queue.Chan():
@@ -200,6 +199,7 @@ func (lat *AsyncTasker) collectReadyTasks(ready chan<- AsyncTask) {
 			util.LOGGER.Debugf("no task in queue, key is %s", key)
 		}
 	}
+	lat.queueLock.RUnlock()
 }
 
 func (lat *AsyncTasker) scheduleTask(at AsyncTask) {

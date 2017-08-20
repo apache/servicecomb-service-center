@@ -11,7 +11,7 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package notification
+package event
 
 import (
 	"encoding/json"
@@ -23,10 +23,11 @@ import (
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
 	"strings"
+	nf "github.com/ServiceComb/service-center/server/service/notification"
 )
 
 type RuleEventHandler struct {
-	service *NotifyService
+	service *nf.NotifyService
 }
 
 func (h *RuleEventHandler) Type() store.StoreType {
@@ -112,7 +113,7 @@ func (h *RuleEventHandler) OnEvent(evt *store.KvEvent) {
 	}
 }
 
-func NewRuleEventHandler(s *NotifyService) EventHandler {
+func NewRuleEventHandler(s *nf.NotifyService) *RuleEventHandler {
 	h := &RuleEventHandler{
 		service: s,
 	}

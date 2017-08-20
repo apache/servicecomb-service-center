@@ -114,9 +114,14 @@ func GetServicesByTenant(ctx context.Context, tenant string) ([]*pb.MicroService
 }
 
 func GetServiceId(ctx context.Context, key *pb.MicroServiceKey) (string, error) {
+	return SearchServiceId(ctx, key, registry.MODE_BOTH)
+}
+
+func SearchServiceId(ctx context.Context, key *pb.MicroServiceKey, mode registry.CacheMode) (string, error) {
 	resp, err := store.Store().ServiceIndex().Search(ctx, &registry.PluginOp{
 		Action: registry.GET,
 		Key:    util.StringToBytesWithNoCopy(apt.GenerateServiceIndexKey(key)),
+		Mode:   mode,
 	})
 	if err != nil {
 		return "", err
@@ -131,6 +136,7 @@ func GetServiceId(ctx context.Context, key *pb.MicroServiceKey) (string, error) 
 		resp, err = store.Store().ServiceAlias().Search(ctx, &registry.PluginOp{
 			Action: registry.GET,
 			Key:    util.StringToBytesWithNoCopy(apt.GenerateServiceAliasKey(key)),
+			Mode:   mode,
 		})
 		if err != nil {
 			return "", err
