@@ -30,6 +30,15 @@ const (
 	DEFAULT_ADD_QUEUE_TIMEOUT = 5 * time.Second
 )
 
+var defaultRootKeys map[string]struct{}
+
+func init() {
+	defaultRootKeys = make(map[string]struct{}, len(defaultRootKeys))
+	for _, root := range TypeRoots {
+		defaultRootKeys[root] = struct{}{}
+	}
+}
+
 type Indexer struct {
 	BuildTimeout     time.Duration
 	cacher           Cacher
@@ -49,7 +58,7 @@ func (i *Indexer) Search(ctx context.Context, op *registry.PluginOp) (*registry.
 
 	key := util.BytesToStringWithNoCopy(op.Key)
 
-	if op.WithNoCache || op.WithRev > 0 {
+	if op.Mode == registry.MODE_NO_CACHE || op.WithRev > 0 {
 		util.LOGGER.Debugf("search %s match WitchNoCache or WitchRev, request etcd server, key: %s",
 			i.cacheType, key)
 		return registry.GetRegisterCenter().Do(ctx, op)
@@ -71,12 +80,20 @@ func (i *Indexer) Search(ctx context.Context, op *registry.PluginOp) (*registry.
 			resp.Count = 1
 			return resp, nil
 		}
+		if op.Mode == registry.MODE_CACHE {
+			return resp, nil
+		}
+
 		util.LOGGER.Debugf("%s cache does not store this key, request etcd server, key: %s", i.cacheType, key)
 		return registry.GetRegisterCenter().Do(ctx, op)
 	}
 
 	cacheData := i.Cache().Data(key)
 	if cacheData == nil {
+		if op.Mode == registry.MODE_CACHE {
+			return resp, nil
+		}
+
 		util.LOGGER.Debugf("do not match any key in %s cache store, request etcd server, key: %s",
 			i.cacheType, key)
 		return registry.GetRegisterCenter().Do(ctx, op)
@@ -106,26 +123,22 @@ func (i *Indexer) searchPrefixKeyFromCacheOrRemote(ctx context.Context, op *regi
 	keysRef, ok := i.prefixIndex[prefix]
 	i.prefixLock.RUnlock()
 	if !ok {
-		util.LOGGER.Debugf("can not find any key from %s cache with prefix, request etcd server, key: %s",
-			i.cacheType, prefix)
-		prefixResp, err := registry.GetRegisterCenter().Do(ctx, op)
-		if err != nil {
-			return nil, err
+		if op.Mode == registry.MODE_CACHE {
+			return resp, nil
 		}
 
-		resp.Kvs = prefixResp.Kvs
-		resp.Count = prefixResp.Count
-		resp.Revision = prefixResp.Revision
-		return resp, nil
+		util.LOGGER.Debugf("can not find any key from %s cache with prefix, request etcd server, key: %s",
+			i.cacheType, prefix)
+		return registry.GetRegisterCenter().Do(ctx, op)
 	}
 
-	keys := util.MapToList(keysRef)
-	resp.Count = int64(len(keys))
+	resp.Count = int64(len(keysRef))
 	if op.CountOnly {
 		return resp, nil
 	}
 
 	t := time.Now()
+	keys := util.MapToList(keysRef)
 	kvs := make([]*mvccpb.KeyValue, len(keys))
 	idx := 0
 	for _, key := range keys {
@@ -145,7 +158,7 @@ func (i *Indexer) searchPrefixKeyFromCacheOrRemote(ctx context.Context, op *regi
 	return resp, nil
 }
 
-func (i *Indexer) onCacheEvent(evt *KvEvent) {
+func (i *Indexer) OnCacheEvent(evt *KvEvent) {
 	if evt.Action != pb.EVT_DELETE && evt.Action != pb.EVT_CREATE {
 		return
 	}
@@ -177,19 +190,15 @@ func (i *Indexer) buildIndex() {
 					return
 				}
 				key := util.BytesToStringWithNoCopy(evt.KV.Key)
+				prefix := key[:strings.LastIndex(key, "/")+1]
 
 				i.prefixLock.Lock()
-				prefix := key[:strings.LastIndex(key, "/")+1]
-				keys, ok := i.prefixIndex[prefix]
-				if !ok {
-					keys = make(map[string]struct{})
-					i.prefixIndex[prefix] = keys
-				}
+
 				switch evt.Action {
 				case pb.EVT_CREATE:
-					keys[key] = struct{}{}
+					i.addPrefixKey(prefix, key)
 				case pb.EVT_DELETE:
-					delete(keys, key)
+					i.deletePrefixKey(prefix, key)
 				}
 				i.prefixLock.Unlock()
 
@@ -197,6 +206,35 @@ func (i *Indexer) buildIndex() {
 		}
 		util.LOGGER.Debugf("build %s index goroutine is stopped", i.cacheType)
 	})
+}
+
+func (i *Indexer) addPrefixKey(prefix, key string) {
+	for {
+		_, ok := defaultRootKeys[key]
+		if ok {
+			return
+		}
+
+		keys, ok := i.prefixIndex[prefix]
+		if !ok {
+			keys = make(map[string]struct{})
+			i.prefixIndex[prefix] = keys
+		}
+		keys[key], key = struct{}{}, prefix
+		prefix = key[:strings.LastIndex(key[:len(key)-1], "/")+1]
+	}
+}
+
+func (i *Indexer) deletePrefixKey(prefix, key string) {
+	m, ok := i.prefixIndex[prefix]
+	if !ok {
+		return
+	}
+
+	for k := range i.prefixIndex[key] {
+		i.deletePrefixKey(key, k)
+	}
+	delete(m, key)
 }
 
 func (i *Indexer) Run() {
@@ -207,8 +245,6 @@ func (i *Indexer) Run() {
 	}
 	i.isClose = false
 	i.prefixLock.Unlock()
-
-	AddEventHandleFunc(i.cacheType, i.onCacheEvent)
 
 	i.buildIndex()
 

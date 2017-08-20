@@ -16,7 +16,6 @@ package notification
 import (
 	"container/list"
 	"errors"
-	"github.com/ServiceComb/service-center/server/core/registry/store"
 	"github.com/ServiceComb/service-center/util"
 	"sync"
 	"time"
@@ -25,6 +24,14 @@ import (
 var notifyTypeNames = []string{
 	NOTIFTY:  "NOTIFTY",
 	INSTANCE: "INSTANCE",
+}
+
+var notifyService *NotifyService
+
+func init() {
+	notifyService = &NotifyService{
+		isClose: true,
+	}
 }
 
 type subscriberIndex map[string]*list.List
@@ -47,10 +54,6 @@ type NotifyService struct {
 
 func (s *NotifyService) Err() <-chan error {
 	return s.err
-}
-
-func (s *NotifyService) AddEventHandler(h EventHandler) {
-	store.AddEventHandleFunc(h.Type(), h.OnEvent)
 }
 
 func (s *NotifyService) AddSubscriber(n Subscriber) error {

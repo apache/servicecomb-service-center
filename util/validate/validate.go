@@ -184,7 +184,6 @@ func (v *Validator) GetRules() map[string](*ValidateRule) {
 
 func (v *Validator) Validate(s interface{}) error {
 	sv := reflect.ValueOf(s)
-	st := reflect.TypeOf(s)
 	if sv.Kind() == reflect.Ptr && !sv.IsNil() {
 		return v.Validate(sv.Elem().Interface())
 	}
@@ -201,9 +200,10 @@ func (v *Validator) Validate(s interface{}) error {
 		return errors.New("not support validate type")
 	}
 
+	st := LoadStruct(s)
 	for i, l := 0, sv.NumField(); i < l; i++ {
 		field := sv.Field(i)
-		fieldName := st.Field(i).Name
+		fieldName := st.Fields[i].Name
 		validator, ok := v.subs[fieldName]
 		if ok {
 			if (field.Kind() != reflect.Ptr && field.Kind() != reflect.Slice) || field.IsNil() {

@@ -45,6 +45,21 @@ func (at ActionType) String() string {
 	}
 }
 
+type CacheMode int
+
+func (cm CacheMode) String() string {
+	switch cm {
+	case MODE_BOTH:
+		return "MODE_BOTH"
+	case MODE_CACHE:
+		return "MODE_CACHE"
+	case MODE_NO_CACHE:
+		return "MODE_NO_CACHE"
+	default:
+		return "MODE" + strconv.Itoa(int(cm))
+	}
+}
+
 type SortOrder int
 
 func (so SortOrder) String() string {
@@ -64,24 +79,38 @@ type CompareType int
 type CompareResult int
 
 const (
-	GET    ActionType = 0
-	PUT    ActionType = 1
-	DELETE ActionType = 2
+	GET    ActionType = iota
+	PUT
+	DELETE
+)
 
-	SORT_NONE    SortOrder = 0
-	SORT_ASCEND  SortOrder = 1
-	SORT_DESCEND SortOrder = 2
+const (
+	SORT_NONE    SortOrder = iota
+	SORT_ASCEND
+	SORT_DESCEND
+)
 
-	CMP_VERSION CompareType = 0
-	CMP_CREATE  CompareType = 1
-	CMP_MOD     CompareType = 2
-	CMP_VALUE   CompareType = 3
+const (
+	CMP_VERSION CompareType = iota
+	CMP_CREATE
+	CMP_MOD
+	CMP_VALUE
+)
 
-	CMP_EQUAL     CompareResult = 0
-	CMP_GREATER   CompareResult = 1
-	CMP_LESS      CompareResult = 2
-	CMP_NOT_EQUAL CompareResult = 3
+const (
+	CMP_EQUAL     CompareResult = iota
+	CMP_GREATER
+	CMP_LESS
+	CMP_NOT_EQUAL
+)
 
+const (
+	MODE_BOTH     CacheMode = iota
+	MODE_CACHE
+	MODE_NO_CACHE
+)
+
+const (
 	REFRESH_MANAGER_CLUSTER_INTERVAL = 30
 
 	REQUEST_TIMEOUT = 300
@@ -131,8 +160,8 @@ type PluginOp struct {
 	CountOnly       bool       `json:"countOnly,omitempty"`
 	SortOrder       SortOrder  `json:"sort,omitempty"`
 	WithRev         int64      `json:"rev,omitempty"`
-	WithNoCache     bool       `json:"noCache,omitempty"`
 	WithIgnoreLease bool       `json:"ignoreLease,omitempty"`
+	Mode            CacheMode       `json:"mode,omitempty"`
 }
 
 func (op *PluginOp) String() string {

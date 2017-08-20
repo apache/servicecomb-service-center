@@ -80,6 +80,17 @@ func KvToResponse(kv *mvccpb.KeyValue) (keys []string, data []byte) {
 	return
 }
 
+func GetInfoFromSvcKV(kv *mvccpb.KeyValue) (serviceId, tenantProject string, data []byte) {
+	keys, data := KvToResponse(kv)
+	if len(keys) < 4 {
+		return
+	}
+	l := len(keys)
+	serviceId = keys[l-1]
+	tenantProject = fmt.Sprintf("%s/%s", keys[l-3], keys[l-2])
+	return
+}
+
 func GetInfoFromInstKV(kv *mvccpb.KeyValue) (serviceId, instanceId, tenantProject string, data []byte) {
 	keys, data := KvToResponse(kv)
 	if len(keys) < 4 {

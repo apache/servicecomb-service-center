@@ -11,14 +11,15 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package notification
+package event
 
-var notifyService *NotifyService
+import (
+	"github.com/ServiceComb/service-center/server/core/registry/store"
+	nf "github.com/ServiceComb/service-center/server/service/notification"
+)
 
 func init() {
-	notifyService = &NotifyService{
-		isClose: true,
-	}
-	notifyService.AddEventHandler(NewInstanceEventHandler(notifyService))
-	notifyService.AddEventHandler(NewRuleEventHandler(notifyService))
+	store.AddEventHandler(NewInstanceEventHandler(nf.GetNotifyService()))
+	store.AddEventHandler(NewRuleEventHandler(nf.GetNotifyService()))
+	store.AddEventHandler(NewServiceEventHandler())
 }

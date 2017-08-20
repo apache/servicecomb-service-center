@@ -66,3 +66,12 @@ func EventHandler(t StoreType) *KvEventHandler {
 func AddEventHandleFunc(t StoreType, f KvEventFunc) {
 	EventHandler(t).AddHandleFunc(f)
 }
+
+type StoreEventHandler interface {
+	Type() StoreType
+	OnEvent(evt *KvEvent)
+}
+
+func AddEventHandler(h StoreEventHandler) {
+	AddEventHandleFunc(h.Type(), h.OnEvent)
+}

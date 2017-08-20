@@ -15,7 +15,6 @@ package notification
 
 import (
 	"errors"
-	"github.com/ServiceComb/service-center/server/core/registry/store"
 	"strconv"
 	"time"
 )
@@ -42,11 +41,6 @@ type NotifyServiceConfig struct {
 	AddTimeout    time.Duration
 	NotifyTimeout time.Duration
 	MaxQueue      int64
-}
-
-type EventHandler interface {
-	Type() store.StoreType
-	OnEvent(evt *store.KvEvent)
 }
 
 type Subscriber interface {
