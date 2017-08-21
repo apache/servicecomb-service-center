@@ -143,6 +143,17 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 		}, err
 	}
 
+	//创建服务间的依赖
+	util.LOGGER.Infof("create microservice: add dependency for %s(%s). operator: %s", serviceId, serviceFlag, remoteIP)
+	err = dependency.UpdateAsProviderDependency(ctx, serviceId, consumer)
+	if err != nil {
+		util.LOGGER.Errorf(err, "create microservice: update dependency as provider %s(%s) failed. operator: %s",
+			serviceId, serviceFlag, remoteIP)
+		return &pb.CreateServiceResponse{
+			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
+		}, err
+	}
+
 	util.LOGGER.Infof("create microservice successful, %s, serviceId: %s. operator: %s",
 		serviceFlag, service.ServiceId, remoteIP)
 	return &pb.CreateServiceResponse{
