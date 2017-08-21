@@ -99,6 +99,7 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 	key := apt.GenerateServiceKey(tenant, serviceId)
 	index := apt.GenerateServiceIndexKey(consumer)
 	indexBytes := util.StringToBytesWithNoCopy(index)
+	aliasBytes := util.StringToBytesWithNoCopy(apt.GenerateServiceAliasKey(consumer))
 	util.LOGGER.Debugf("start register service: %s %v", key, service)
 	util.LOGGER.Debugf("start register service index: %s %v", index, serviceId)
 	opts := []*registry.PluginOp{
@@ -114,15 +115,6 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 			Value:  util.StringToBytesWithNoCopy(serviceId),
 		},
 	}
-
-	if len(consumer.Alias) > 0 {
-		opts = append(opts, &registry.PluginOp{
-			Action: registry.PUT,
-			Key:    util.StringToBytesWithNoCopy(apt.GenerateServiceAliasKey(consumer)),
-			Value:  util.StringToBytesWithNoCopy(serviceId),
-		})
-	}
-
 	uniqueCmpOpts := []*registry.CompareOp{
 		{
 			Key:    indexBytes,
@@ -130,6 +122,20 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 			Result: registry.CMP_EQUAL,
 			Value:  0,
 		},
+	}
+
+	if len(consumer.Alias) > 0 {
+		opts = append(opts, &registry.PluginOp{
+			Action: registry.PUT,
+			Key:    aliasBytes,
+			Value:  util.StringToBytesWithNoCopy(serviceId),
+		})
+		uniqueCmpOpts = append(uniqueCmpOpts, &registry.CompareOp{
+			Key:    aliasBytes,
+			Type:   registry.CMP_VERSION,
+			Result: registry.CMP_EQUAL,
+			Value:  0,
+		})
 	}
 
 	resp, err := registry.GetRegisterCenter().TxnWithCmp(ctx, opts, uniqueCmpOpts, nil)
