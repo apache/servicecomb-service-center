@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/util"
-	"golang.org/x/net/context"
 	"net/http"
 	"strings"
 )
@@ -60,7 +59,7 @@ func GetRealIP(r *http.Request) string {
 func addIPToContext(r *http.Request) {
 	terminalIP := GetRealIP(r)
 	ctx := r.Context()
-	ctx = context.WithValue(ctx, "x-remote-ip", terminalIP)
+	ctx = util.NewContext(ctx, "x-remote-ip", terminalIP)
 	request := r.WithContext(ctx)
 	*r = *request
 }

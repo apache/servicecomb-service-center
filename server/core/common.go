@@ -25,6 +25,7 @@ import (
 )
 
 var (
+	VersionRegex                  *regexp.Regexp
 	MicroServiceValidator         validate.Validator
 	MicroServiceInstanceValidator validate.Validator
 	ServiceRuleValidator          validate.Validator
@@ -50,7 +51,7 @@ func init() {
 	serviceNameForFindRegex, _ := regexp.Compile(`^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.:]*[a-zA-Z0-9]$`)
 	//name模糊规则: name, *
 	nameFuzzyRegex, _ := regexp.Compile(`^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]*[a-zA-Z0-9]$|^\*$`)
-	versionRegex, _ := regexp.Compile(`^[0-9]*$|^[0-9]+(\.[0-9]+)*$`)
+	VersionRegex, _ = regexp.Compile(`^[0-9]+(\.[0-9]+)*$`)
 	// version模糊规则: 1.0, 1.0+, 1.0-2.0, latest
 	versionFuzzyRegex, _ := regexp.Compile(`^[0-9]*$|^[0-9]+(\.[0-9]+)*\+{0,1}$|^[0-9]+(\.[0-9]+)*-[0-9]+(\.[0-9]+)*$|^latest$`)
 	pathRegex, _ := regexp.Compile(`^[A-Za-z0-9\.\,\?\'\\/\+&amp;%\$#\=~_\-@\{}]*$`)
@@ -86,7 +87,7 @@ func init() {
 
 	MicroServiceKeyValidator.AddRule("AppId", &validate.ValidateRule{Min: 1, Max: 160, Regexp: nameRegex})
 	MicroServiceKeyValidator.AddRule("ServiceName", nameRule)
-	MicroServiceKeyValidator.AddRule("Version", &validate.ValidateRule{Min: 1, Max: 64, Regexp: versionRegex})
+	MicroServiceKeyValidator.AddRule("Version", &validate.ValidateRule{Min: 1, Max: 64, Regexp: VersionRegex})
 
 	ServicePathValidator.AddRule("Path", &validate.ValidateRule{Regexp: pathRegex})
 

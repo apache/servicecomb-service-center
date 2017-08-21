@@ -27,7 +27,7 @@ var systemConfig *pb.SystemConfig
 func LoadSystemConfig() error {
 	resp, err := registry.GetRegisterCenter().Do(context.Background(), &registry.PluginOp{
 		Action: registry.GET,
-		Key:    []byte(GetSystemKey()),
+		Key:    util.StringToBytesWithNoCopy(GetSystemKey()),
 	})
 	if err != nil {
 		return err
@@ -58,7 +58,7 @@ func UpgradeSystemConfig() error {
 	}
 	_, err = registry.GetRegisterCenter().Do(context.Background(), &registry.PluginOp{
 		Action: registry.PUT,
-		Key:    []byte(GetSystemKey()),
+		Key:    util.StringToBytesWithNoCopy(GetSystemKey()),
 		Value:  bytes,
 	})
 	if err != nil {

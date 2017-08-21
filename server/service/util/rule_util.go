@@ -15,17 +15,17 @@ package util
 
 import (
 	"encoding/json"
+	"fmt"
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
 	"github.com/ServiceComb/service-center/util"
+	errorsEx "github.com/ServiceComb/service-center/util/errors"
 	"golang.org/x/net/context"
-	"strings"
 	"reflect"
 	"regexp"
-	"fmt"
-	errorsEx "github.com/ServiceComb/service-center/util/errors"
+	"strings"
 )
 
 type NotAllowAcrossAppError string
@@ -47,7 +47,7 @@ func (e MatchBlackListError) Error() string {
 }
 
 func GetRulesUtil(ctx context.Context, tenant string, serviceId string) ([]*pb.ServiceRule, error) {
-	key := strings.Join([]string{
+	key := util.StringJoin([]string{
 		apt.GetServiceRuleRootKey(tenant),
 		serviceId,
 		"",
@@ -55,7 +55,7 @@ func GetRulesUtil(ctx context.Context, tenant string, serviceId string) ([]*pb.S
 
 	resp, err := store.Store().Rule().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
-		Key:        []byte(key),
+		Key:        util.StringToBytesWithNoCopy(key),
 		WithPrefix: true,
 	})
 	if err != nil {
@@ -64,7 +64,7 @@ func GetRulesUtil(ctx context.Context, tenant string, serviceId string) ([]*pb.S
 
 	rules := []*pb.ServiceRule{}
 	for _, kvs := range resp.Kvs {
-		util.LOGGER.Debugf("start unmarshal service rule file: %s", string(kvs.Key))
+		util.LOGGER.Debugf("start unmarshal service rule file: %s", util.BytesToStringWithNoCopy(kvs.Key))
 		rule := &pb.ServiceRule{}
 		err := json.Unmarshal(kvs.Value, rule)
 		if err != nil {
@@ -78,7 +78,7 @@ func GetRulesUtil(ctx context.Context, tenant string, serviceId string) ([]*pb.S
 func RuleExist(ctx context.Context, tenant string, serviceId string, attr string, pattern string) bool {
 	resp, err := store.Store().RuleIndex().Search(ctx, &registry.PluginOp{
 		Action:    registry.GET,
-		Key:       []byte(apt.GenerateRuleIndexKey(tenant, serviceId, attr, pattern)),
+		Key:       util.StringToBytesWithNoCopy(apt.GenerateRuleIndexKey(tenant, serviceId, attr, pattern)),
 		CountOnly: true,
 	})
 	if err != nil || resp.Count == 0 {
@@ -91,7 +91,7 @@ func GetServiceRuleType(ctx context.Context, tenant string, serviceId string) (s
 	key := apt.GenerateServiceRuleKey(tenant, serviceId, "")
 	resp, err := store.Store().Rule().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
-		Key:        []byte(key),
+		Key:        util.StringToBytesWithNoCopy(key),
 		WithPrefix: true,
 	})
 	if err != nil {
@@ -112,7 +112,7 @@ func GetServiceRuleType(ctx context.Context, tenant string, serviceId string) (s
 func GetOneRule(ctx context.Context, tenant, serviceId, ruleId string) (*pb.ServiceRule, error) {
 	opt := &registry.PluginOp{
 		Action: registry.GET,
-		Key:    []byte(apt.GenerateServiceRuleKey(tenant, serviceId, ruleId)),
+		Key:    util.StringToBytesWithNoCopy(apt.GenerateServiceRuleKey(tenant, serviceId, ruleId)),
 	}
 	resp, err := store.Store().Rule().Search(ctx, opt)
 	if err != nil {

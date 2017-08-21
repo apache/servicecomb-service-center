@@ -374,13 +374,13 @@ func (s *EtcdEmbed) Watch(ctx context.Context, op *registry.PluginOp, send func(
 		ws := watchable.NewWatchStream()
 		defer ws.Close()
 
-		key := registry.BytesToStringWithNoCopy(op.Key)
+		key := util.BytesToStringWithNoCopy(op.Key)
 		var keyBytes []byte
 		if op.WithPrefix {
 			if key[len(key)-1] != '/' {
 				key += "/"
 			}
-			keyBytes = s.getPrefixEndKey([]byte(key))
+			keyBytes = s.getPrefixEndKey(util.StringToBytesWithNoCopy(key))
 		}
 		watchID := ws.Watch(op.Key, keyBytes, op.WithRev)
 		// defer ws.Cancel(watchID)

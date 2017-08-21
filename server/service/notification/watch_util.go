@@ -58,7 +58,7 @@ func WatchJobHandler(watcher *ListWatcher, stream pb.ServiceInstanceCtrl_WatchSe
 }
 
 func websocketHeartbeat(conn *websocket.Conn, messageType int, watcher *ListWatcher, timeout time.Duration) error {
-	err := conn.WriteControl(messageType, []byte("heartbeat"), time.Now().Add(timeout))
+	err := conn.WriteControl(messageType, util.StringToBytesWithNoCopy("heartbeat"), time.Now().Add(timeout))
 	if err != nil {
 		messageTypeName := "Ping"
 		if messageType == websocket.PongMessage {
@@ -95,7 +95,7 @@ func WatchWebSocketJobHandler(conn *websocket.Conn, watcher *ListWatcher, timeou
 		case job := <-watcher.Job:
 			if job == nil {
 				err := conn.WriteMessage(websocket.TextMessage,
-					[]byte("watch catch a err: watcher quit for server shutdown"))
+					util.StringToBytesWithNoCopy("watch catch a err: watcher quit for server shutdown"))
 				if err != nil {
 					util.LOGGER.Errorf(err, "watch catch a err: write message error, watcher[%s] %s %s",
 						remoteAddr, watcher.Subject(), watcher.Id())
@@ -117,7 +117,7 @@ func WatchWebSocketJobHandler(conn *websocket.Conn, watcher *ListWatcher, timeou
 				watcher.SetError(err)
 
 				message := fmt.Sprintf("marshal output file error, %s", err.Error())
-				err = conn.WriteMessage(websocket.TextMessage, []byte(message))
+				err = conn.WriteMessage(websocket.TextMessage, util.StringToBytesWithNoCopy(message))
 				if err != nil {
 					util.LOGGER.Errorf(err, "watch catch a err: write message error, watcher[%s] %s %s",
 						remoteAddr, watcher.Subject(), watcher.Id())
@@ -142,7 +142,7 @@ func DoWebSocketWatch(service *NotifyService, watcher *ListWatcher, conn *websoc
 			remoteAddr, err.Error())
 		util.LOGGER.Errorf(nil, err.Error())
 
-		err = conn.WriteMessage(websocket.TextMessage, []byte(err.Error()))
+		err = conn.WriteMessage(websocket.TextMessage, util.StringToBytesWithNoCopy(err.Error()))
 		if err != nil {
 			util.LOGGER.Errorf(err, "establish[%s] websocket watch failed: write message failed.", remoteAddr)
 		}
@@ -156,7 +156,7 @@ func DoWebSocketWatch(service *NotifyService, watcher *ListWatcher, conn *websoc
 func EstablishWebSocketError(conn *websocket.Conn, err error) {
 	remoteAddr := conn.RemoteAddr().String()
 	util.LOGGER.Errorf(err, "establish[%s] websocket watch failed.", remoteAddr)
-	if err := conn.WriteMessage(websocket.TextMessage, []byte(err.Error())); err != nil {
+	if err := conn.WriteMessage(websocket.TextMessage, util.StringToBytesWithNoCopy(err.Error())); err != nil {
 		util.LOGGER.Errorf(err, "establish[%s] websocket watch failed: write message failed.", remoteAddr)
 	}
 }
@@ -169,7 +169,7 @@ func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (resul
 	key := apt.GenerateConsumerDependencyKey(tenant, selfServiceId, "")
 	resp, err := store.Store().Dependency().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
-		Key:        []byte(key),
+		Key:        util.StringToBytesWithNoCopy(key),
 		WithPrefix: true,
 		KeyOnly:    true,
 	})
@@ -181,7 +181,7 @@ func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (resul
 	rev = resp.Revision
 
 	for _, depsKv := range resp.Kvs {
-		providerDepsKey := string(depsKv.Key)
+		providerDepsKey := util.BytesToStringWithNoCopy(depsKv.Key)
 		providerId := providerDepsKey[strings.LastIndex(providerDepsKey, "/")+1:]
 
 		service, err := ms.GetService(ctx, tenant, providerId, rev)
@@ -198,7 +198,7 @@ func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (resul
 		util.LOGGER.Debugf("query provider service %s instances[%d] with revision %d.", providerId, len(kvs), rev)
 		for _, kv := range kvs {
 			util.LOGGER.Debugf("start unmarshal service instance file with revision %d: %s",
-				rev, string(kv.Key))
+				rev, util.BytesToStringWithNoCopy(kv.Key))
 			instance := &pb.MicroServiceInstance{}
 			err := json.Unmarshal(kv.Value, instance)
 			if err != nil {
@@ -226,7 +226,7 @@ func queryServiceInstancesKvs(ctx context.Context, serviceId string, rev int64) 
 	key := apt.GenerateInstanceKey(tenant, serviceId, "")
 	resp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
-		Key:        []byte(key),
+		Key:        util.StringToBytesWithNoCopy(key),
 		WithPrefix: true,
 		WithRev:    rev,
 	})

@@ -11,22 +11,23 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package notification
+package event
 
 import (
 	"encoding/json"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
+	"github.com/ServiceComb/service-center/server/service/dependency"
+	"github.com/ServiceComb/service-center/server/service/microservice"
+	nf "github.com/ServiceComb/service-center/server/service/notification"
+	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
-	"github.com/ServiceComb/service-center/server/service/dependency"
 	"strings"
-	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
-	"github.com/ServiceComb/service-center/server/service/microservice"
 )
 
 type RuleEventHandler struct {
-	service *NotifyService
+	service *nf.NotifyService
 }
 
 func (h *RuleEventHandler) Type() store.StoreType {
@@ -69,11 +70,11 @@ func (h *RuleEventHandler) OnEvent(evt *store.KvEvent) {
 
 	type serviceInfo struct {
 		Service *pb.MicroService
-		Tags map[string]string
+		Tags    map[string]string
 	}
 	consumers := make([]*serviceInfo, 0, len(kvs))
 	for _, kv := range kvs {
-		consumerId := string(kv.Key)
+		consumerId := util.BytesToStringWithNoCopy(kv.Key)
 		consumerId = consumerId[strings.LastIndex(consumerId, "/")+1:]
 
 		ms, err := microservice.GetServiceByServiceId(context.Background(), tenant, consumerId)
@@ -94,12 +95,12 @@ func (h *RuleEventHandler) OnEvent(evt *store.KvEvent) {
 		switch matchErr.(type) {
 		case serviceUtil.NotMatchWhiteListError:
 			switch evt.Action {
-			case pb.EVT_CREATE,pb.EVT_UPDATE:
+			case pb.EVT_CREATE, pb.EVT_UPDATE:
 			case pb.EVT_DELETE:
 			}
 		case serviceUtil.MatchBlackListError:
 			switch evt.Action {
-			case pb.EVT_CREATE,pb.EVT_UPDATE:
+			case pb.EVT_CREATE, pb.EVT_UPDATE:
 			case pb.EVT_DELETE:
 			}
 		default:
@@ -112,7 +113,7 @@ func (h *RuleEventHandler) OnEvent(evt *store.KvEvent) {
 	}
 }
 
-func NewRuleEventHandler(s *NotifyService) EventHandler {
+func NewRuleEventHandler(s *nf.NotifyService) *RuleEventHandler {
 	h := &RuleEventHandler{
 		service: s,
 	}

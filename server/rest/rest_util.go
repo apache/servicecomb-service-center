@@ -46,7 +46,7 @@ func WriteJson(status int, json []byte, w http.ResponseWriter) {
 func WriteText(status int, text string, w http.ResponseWriter) {
 	w.Header().Add("x-response-status", strconv.Itoa(status))
 	w.WriteHeader(status)
-	w.Write([]byte(text))
+	w.Write(util.StringToBytesWithNoCopy(text))
 }
 
 func WriteTextResponse(resp *pb.Response, err error, textIfSuccess string, w http.ResponseWriter) {

@@ -15,6 +15,7 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	apt "github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/server/core/mux"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
@@ -26,10 +27,10 @@ import (
 	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
+	errorsEx "github.com/ServiceComb/service-center/util/errors"
 	"github.com/astaxie/beego"
 	"golang.org/x/net/context"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -39,17 +40,16 @@ type ServiceController struct {
 func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequest) (*pb.CreateServiceResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	if in == nil || in.Service == nil {
-		util.LOGGER.Errorf(nil, "create microservice failed: param empty.operator:%s", remoteIP)
+		util.LOGGER.Errorf(nil, "create microservice failed: param empty. operator: %s", remoteIP)
 		return &pb.CreateServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
 		}, nil
 	}
 	service := in.Service
 	err := apt.Validate(service)
-
-	serviceFlag := strings.Join([]string{service.AppId, service.ServiceName, service.Version}, "/")
+	serviceFlag := util.StringJoin([]string{service.AppId, service.ServiceName, service.Version}, "/")
 	if err != nil {
-		util.LOGGER.Errorf(err, "create microservice failed, %s: invalid parameters.operator:%s",
+		util.LOGGER.Errorf(err, "create microservice failed, %s: invalid parameters. operator: %s",
 			serviceFlag, remoteIP)
 		return &pb.CreateServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
@@ -65,54 +65,23 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 		Version:     service.Version,
 		Tenant:      tenant,
 	}
-
-	lockMutex := mux.MuxType(apt.GenerateServiceIndexKey(consumer))
-	lock, err := mux.Lock(lockMutex)
+	err = checkBeforeCreate(ctx, consumer)
 	if err != nil {
-		util.LOGGER.Errorf(err, "create microservice failed, %s:internal err,create lock failed.operator:%s",
+		util.LOGGER.Errorf(err, "create microservice failed, %s: check service failed before create. operator: %s",
 			serviceFlag, remoteIP)
-		return &pb.CreateServiceResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Beginning transaction failed."),
-		}, err
-	}
-
-	serviceId := in.Service.ServiceId
-	serviceIdInner, err := ms.GetServiceId(ctx, consumer)
-	if err != nil {
-		util.LOGGER.Errorf(err, "create microservice failed, %s:internal err,query service failed.operator:%s",
-			serviceFlag, remoteIP)
-		lock.Unlock()
-		return &pb.CreateServiceResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Query service key failed."),
-		}, err
-	}
-	if len(serviceIdInner) > 0 {
-		util.LOGGER.Errorf(nil, "create microservice failed, %s:service already exist.operator:%s",
-			serviceFlag, remoteIP)
-		lock.Unlock()
-		return &pb.CreateServiceResponse{
-			Response:  pb.CreateResponse(pb.Response_FAIL, "Register service already exists."),
-			ServiceId: serviceId,
-		}, nil
-	}
-
-	ok, err := quota.QuotaPlugins[beego.AppConfig.DefaultString("quota_plugin", "buildin")]().Apply4Quotas(ctx, quota.MicroServiceQuotaType, 0)
-	if err != nil {
-		util.LOGGER.Errorf(err, "create microservice failed, %s: check apply quota.operator:%s", serviceFlag, remoteIP)
-		lock.Unlock()
-		return &pb.CreateServiceResponse{
+		resp := &pb.CreateServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
-		}, err
-	}
-	if !ok {
-		util.LOGGER.Errorf(err, "create microservice failed, %s: no quota to apply.operator:%s", serviceFlag, remoteIP)
-		lock.Unlock()
-		return &pb.CreateServiceResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "No quota to create service."),
-		}, nil
+		}
+		switch err.(type) {
+		case errorsEx.InternalError:
+			return resp, err
+		default:
+			return resp, nil
+		}
 	}
 
 	// 产生全局service id
+	serviceId := in.Service.ServiceId
 	if len(serviceId) == 0 {
 		serviceId = dynamic.GetServiceId()
 	}
@@ -121,66 +90,92 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 
 	data, err := json.Marshal(service)
 	if err != nil {
-		util.LOGGER.Errorf(err, "create microservice failed, %s: json marshal service failed.operator:%s",
+		util.LOGGER.Errorf(err, "create microservice failed, %s: json marshal service failed. operator: %s",
 			serviceFlag, remoteIP)
-		lock.Unlock()
 		return &pb.CreateServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Body error "+err.Error()),
 		}, nil
 	}
 	key := apt.GenerateServiceKey(tenant, serviceId)
 	index := apt.GenerateServiceIndexKey(consumer)
+	indexBytes := util.StringToBytesWithNoCopy(index)
 	util.LOGGER.Debugf("start register service: %s %v", key, service)
 	util.LOGGER.Debugf("start register service index: %s %v", index, serviceId)
 	opts := []*registry.PluginOp{
 		// Set key file
 		{
 			Action: registry.PUT,
-			Key:    []byte(key),
+			Key:    util.StringToBytesWithNoCopy(key),
 			Value:  data,
 		},
 		{
 			Action: registry.PUT,
-			Key:    []byte(index),
-			Value:  []byte(serviceId),
+			Key:    indexBytes,
+			Value:  util.StringToBytesWithNoCopy(serviceId),
 		},
 	}
 
 	if len(consumer.Alias) > 0 {
 		opts = append(opts, &registry.PluginOp{
 			Action: registry.PUT,
-			Key:    []byte(apt.GenerateServiceAliasKey(consumer)),
-			Value:  []byte(serviceId),
+			Key:    util.StringToBytesWithNoCopy(apt.GenerateServiceAliasKey(consumer)),
+			Value:  util.StringToBytesWithNoCopy(serviceId),
 		})
 	}
 
-	_, err = registry.GetRegisterCenter().Txn(ctx, opts)
+	uniqueCmpOpts := []*registry.CompareOp{
+		{
+			Key:    indexBytes,
+			Type:   registry.CMP_VERSION,
+			Result: registry.CMP_EQUAL,
+			Value:  0,
+		},
+	}
+
+	resp, err := registry.GetRegisterCenter().TxnWithCmp(ctx, opts, uniqueCmpOpts, nil)
 	if err != nil {
-		util.LOGGER.Errorf(err, "create microservice failed, %s: commit data into etcd failed.operator:%s",
+		util.LOGGER.Errorf(err, "create microservice failed, %s: commit data into etcd failed. operator: %s",
 			serviceFlag, remoteIP)
-		lock.Unlock()
 		return &pb.CreateServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Commit operations failed."),
 		}, err
 	}
-	lock.Unlock()
+	if !resp.Succeeded {
+		util.LOGGER.Warnf(nil, "create microservice failed, %s: service already exists. operator: %s",
+			serviceFlag, remoteIP)
+		return &pb.CreateServiceResponse{
+			Response: pb.CreateResponse(pb.Response_FAIL, "Service already exists."),
+		}, nil
+	}
+
 	//创建服务间的依赖
-	util.LOGGER.Infof("create microservice: add dependency for %s.operator:%s", serviceFlag, remoteIP)
+	util.LOGGER.Infof("create microservice: add dependency for %s(%s). operator: %s", serviceId, serviceFlag, remoteIP)
 	err = dependency.UpdateAsProviderDependency(ctx, serviceId, consumer)
 	if err != nil {
-		util.LOGGER.Errorf(err, "create microservice failed: dependency update,as provider failed.%s.operator:%s", serviceFlag, remoteIP)
+		util.LOGGER.Errorf(err, "create microservice: update dependency as provider %s(%s) failed. operator: %s",
+			serviceId, serviceFlag, remoteIP)
 		return &pb.CreateServiceResponse{
-			Response:  pb.CreateResponse(pb.Response_FAIL, err.Error()),
-			ServiceId: "",
+			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, err
 	}
 
-	util.LOGGER.Infof("create microservice successful, %s, serviceId: %s. from remote %s",
-		serviceFlag, service.ServiceId, util.GetIPFromContext(ctx))
+	util.LOGGER.Infof("create microservice successful, %s, serviceId: %s. operator: %s",
+		serviceFlag, service.ServiceId, remoteIP)
 	return &pb.CreateServiceResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Register service successfully."),
 		ServiceId: serviceId,
 	}, nil
+}
+
+func checkBeforeCreate(ctx context.Context, serviceKey *pb.MicroServiceKey) error {
+	ok, err := quota.QuotaPlugins[beego.AppConfig.DefaultString("quota_plugin", "buildin")]().Apply4Quotas(ctx, quota.MicroServiceQuotaType, 0)
+	if err != nil {
+		return errorsEx.InternalError(err.Error())
+	}
+	if !ok {
+		return fmt.Errorf("No quota to create service.")
+	}
+	return nil
 }
 
 func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId string, force bool) (*pb.Response, error) {
@@ -215,7 +210,7 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 		instancesKey := apt.GenerateInstanceKey(tenant, ServiceId, "")
 		rsp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
 			Action:     registry.GET,
-			Key:        []byte(instancesKey),
+			Key:        util.StringToBytesWithNoCopy(instancesKey),
 			WithPrefix: true,
 			CountOnly:  true,
 		})
@@ -248,19 +243,19 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 	opts := []*registry.PluginOp{
 		{
 			Action: registry.DELETE,
-			Key:    []byte(apt.GenerateServiceIndexKey(consumer)),
+			Key:    util.StringToBytesWithNoCopy(apt.GenerateServiceIndexKey(consumer)),
 		},
 		{
 			Action: registry.DELETE,
-			Key:    []byte(apt.GenerateServiceAliasKey(consumer)),
+			Key:    util.StringToBytesWithNoCopy(apt.GenerateServiceAliasKey(consumer)),
 		},
 		{
 			Action: registry.DELETE,
-			Key:    []byte(apt.GenerateServiceKey(tenant, ServiceId)),
+			Key:    util.StringToBytesWithNoCopy(apt.GenerateServiceKey(tenant, ServiceId)),
 		},
 		{
 			Action: registry.DELETE,
-			Key: []byte(strings.Join([]string{
+			Key: util.StringToBytesWithNoCopy(util.StringJoin([]string{
 				apt.GetServiceRuleRootKey(tenant),
 				ServiceId,
 				"",
@@ -286,14 +281,14 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 	rulekey := apt.GenerateServiceRuleKey(tenant, ServiceId, "")
 	opt := &registry.PluginOp{
 		Action:     registry.DELETE,
-		Key:        []byte(rulekey),
+		Key:        util.StringToBytesWithNoCopy(rulekey),
 		WithPrefix: true,
 	}
 	opts = append(opts, opt)
 	indexKey := apt.GenerateRuleIndexKey(tenant, ServiceId, "", "")
 	opts = append(opts, &registry.PluginOp{
 		Action: registry.DELETE,
-		Key:    []byte(indexKey),
+		Key:    util.StringToBytesWithNoCopy(indexKey),
 	})
 	opts = append(opts, opt)
 
@@ -301,7 +296,7 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 	schemaKey := apt.GenerateServiceSchemaKey(tenant, ServiceId, "")
 	opt = &registry.PluginOp{
 		Action:     registry.DELETE,
-		Key:        []byte(schemaKey),
+		Key:        util.StringToBytesWithNoCopy(schemaKey),
 		WithPrefix: true,
 	}
 	opts = append(opts, opt)
@@ -310,7 +305,7 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 	tagsKey := apt.GenerateServiceTagKey(tenant, ServiceId)
 	opt = &registry.PluginOp{
 		Action: registry.DELETE,
-		Key:    []byte(tagsKey),
+		Key:    util.StringToBytesWithNoCopy(tagsKey),
 	}
 	opts = append(opts, opt)
 
@@ -533,7 +528,7 @@ func (s *ServiceController) UpdateProperties(ctx context.Context, in *pb.UpdateS
 	// Set key file
 	_, err = registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
 		Action: registry.PUT,
-		Key:    []byte(key),
+		Key:    util.StringToBytesWithNoCopy(key),
 		Value:  data,
 	})
 	if err != nil {
@@ -629,13 +624,13 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 
 		opts = append(opts, &registry.PluginOp{
 			Action: registry.PUT,
-			Key:    []byte(key),
+			Key:    util.StringToBytesWithNoCopy(key),
 			Value:  data,
 		})
 		opts = append(opts, &registry.PluginOp{
 			Action: registry.PUT,
-			Key:    []byte(indexKey),
-			Value:  []byte(ruleAdd.RuleId),
+			Key:    util.StringToBytesWithNoCopy(indexKey),
+			Value:  util.StringToBytesWithNoCopy(ruleAdd.RuleId),
 		})
 	}
 	if len(opts) <= 0 {
@@ -743,8 +738,8 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 		indexKey := apt.GenerateRuleIndexKey(tenant, in.ServiceId, rule.Attribute, rule.Pattern)
 		opt := &registry.PluginOp{
 			Action: registry.PUT,
-			Key:    []byte(indexKey),
-			Value:  []byte(rule.RuleId),
+			Key:    util.StringToBytesWithNoCopy(indexKey),
+			Value:  util.StringToBytesWithNoCopy(rule.RuleId),
 		}
 		opts = append(opts, opt)
 
@@ -752,14 +747,14 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 		oldIndexKey := apt.GenerateRuleIndexKey(tenant, in.ServiceId, oldRuleAttr, oldRulePatten)
 		opt = &registry.PluginOp{
 			Action: registry.DELETE,
-			Key:    []byte(oldIndexKey),
+			Key:    util.StringToBytesWithNoCopy(oldIndexKey),
 		}
 
 		opts = append(opts, opt)
 	}
 	opt := &registry.PluginOp{
 		Action: registry.PUT,
-		Key:    []byte(key),
+		Key:    util.StringToBytesWithNoCopy(key),
 		Value:  data,
 	}
 	opts = append(opts, opt)
@@ -847,11 +842,11 @@ func (s *ServiceController) DeleteRule(ctx context.Context, in *pb.DeleteService
 		indexKey = apt.GenerateRuleIndexKey(tenant, in.ServiceId, data.Attribute, data.Pattern)
 		opts = append(opts, &registry.PluginOp{
 			Action: registry.DELETE,
-			Key:    []byte(key),
+			Key:    util.StringToBytesWithNoCopy(key),
 		})
 		opts = append(opts, &registry.PluginOp{
 			Action: registry.DELETE,
-			Key:    []byte(indexKey),
+			Key:    util.StringToBytesWithNoCopy(indexKey),
 		})
 	}
 	if len(opts) <= 0 {
@@ -892,7 +887,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 			}, nil
 		}
 		err := apt.GetMSExistsReqValidator.Validate(in)
-		serviceFlag := strings.Join([]string{in.AppId, in.ServiceName, in.Version}, "/")
+		serviceFlag := util.StringJoin([]string{in.AppId, in.ServiceName, in.Version}, "/")
 		if err != nil {
 			util.LOGGER.Errorf(err, "microservice exist failed, service %s: invalid params.", serviceFlag)
 			return &pb.GetExistenceResponse{
@@ -1033,7 +1028,7 @@ func (s *ServiceController) UpdateTag(ctx context.Context, in *pb.UpdateServiceT
 			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
 		}, nil
 	}
-	tagFlag := strings.Join([]string{in.Key, in.Value}, "/")
+	tagFlag := util.StringJoin([]string{in.Key, in.Value}, "/")
 	err := apt.Validate(in)
 	if err != nil {
 		util.LOGGER.Errorf(err, "update service tag failed, serviceId %s, tag %s: invalid params.", in.ServiceId, tagFlag)
@@ -1137,7 +1132,7 @@ func (s *ServiceController) DeleteTags(ctx context.Context, in *pb.DeleteService
 	util.LOGGER.Debugf("start delete service tags file: %s %v", key, in.Keys)
 	_, err = registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
 		Action: registry.PUT,
-		Key:    []byte(key),
+		Key:    util.StringToBytesWithNoCopy(key),
 		Value:  data,
 	})
 	if err != nil {
@@ -1219,7 +1214,7 @@ func (s *ServiceController) GetSchemaInfo(ctx context.Context, request *pb.GetSc
 	key := apt.GenerateServiceSchemaKey(tenant, request.ServiceId, request.SchemaId)
 	resp, errDo := store.Store().Schema().Search(ctx, &registry.PluginOp{
 		Action: registry.GET,
-		Key:    []byte(key),
+		Key:    util.StringToBytesWithNoCopy(key),
 	})
 	if errDo != nil {
 		util.LOGGER.Errorf(errDo, "get schema failed, serviceId %s, schemaId %s: get schema info failed.", request.ServiceId, request.SchemaId)
@@ -1235,7 +1230,7 @@ func (s *ServiceController) GetSchemaInfo(ctx context.Context, request *pb.GetSc
 	}
 	return &pb.GetSchemaResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Get schema info successfully."),
-		Schema:   string(resp.Kvs[0].Value),
+		Schema:   util.BytesToStringWithNoCopy(resp.Kvs[0].Value),
 	}, nil
 }
 
@@ -1278,7 +1273,7 @@ func (s *ServiceController) DeleteSchema(ctx context.Context, request *pb.Delete
 	}
 	_, errDo := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
 		Action: registry.DELETE,
-		Key:    []byte(key),
+		Key:    util.StringToBytesWithNoCopy(key),
 	})
 	if errDo != nil {
 		util.LOGGER.Errorf(errDo, "delete schema failded, serviceId %s, schemaId %s: delete schema from etcd faild.", request.ServiceId, request.SchemaId)
@@ -1309,8 +1304,8 @@ func (s *ServiceController) ModifySchema(ctx context.Context, request *pb.Modify
 	key := apt.GenerateServiceSchemaKey(tenant, request.ServiceId, request.SchemaId)
 	_, errDo := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
 		Action: registry.PUT,
-		Key:    []byte(key),
-		Value:  []byte(request.Schema),
+		Key:    util.StringToBytesWithNoCopy(key),
+		Value:  util.StringToBytesWithNoCopy(request.Schema),
 	})
 	if errDo != nil {
 		util.LOGGER.Errorf(errDo, "update schema failded, serviceId %s, schemaId %s: commit schema into etcd failed.", request.ServiceId, request.SchemaId)

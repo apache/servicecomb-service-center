@@ -15,6 +15,7 @@ package proto
 
 import (
 	"fmt"
+	"github.com/ServiceComb/service-center/util"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/gorilla/websocket"
 	"golang.org/x/net/context"
@@ -74,8 +75,19 @@ func CreateResponse(code Response_Code, message string) *Response {
 }
 
 func KvToResponse(kv *mvccpb.KeyValue) (keys []string, data []byte) {
-	keys = strings.Split(string(kv.Key), "/")
+	keys = strings.Split(util.BytesToStringWithNoCopy(kv.Key), "/")
 	data = kv.Value
+	return
+}
+
+func GetInfoFromSvcKV(kv *mvccpb.KeyValue) (serviceId, tenantProject string, data []byte) {
+	keys, data := KvToResponse(kv)
+	if len(keys) < 4 {
+		return
+	}
+	l := len(keys)
+	serviceId = keys[l-1]
+	tenantProject = fmt.Sprintf("%s/%s", keys[l-3], keys[l-2])
 	return
 }
 

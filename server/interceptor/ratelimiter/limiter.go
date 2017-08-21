@@ -21,6 +21,7 @@ import (
 	"github.com/didip/tollbooth/config"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -31,12 +32,18 @@ type Limiter struct {
 }
 
 var limiter *Limiter
+var mux sync.Mutex
 
 func GetLimiter() *Limiter {
 	if limiter == nil {
-		limiter = new(Limiter)
-		limiter.LoadConfig()
+		mux.Lock()
+		if limiter == nil {
+			limiter = new(Limiter)
+			limiter.LoadConfig()
+		}
+		mux.Unlock()
 	}
+
 	return limiter
 }
 
@@ -69,7 +76,7 @@ func (this *Limiter) Handle(w http.ResponseWriter, r *http.Request) error {
 	if httpError != nil {
 		w.Header().Add("Content-Type", this.tbLimiter.MessageContentType)
 		w.WriteHeader(httpError.StatusCode)
-		w.Write([]byte(httpError.Message))
+		w.Write(util.StringToBytesWithNoCopy(httpError.Message))
 		util.LOGGER.Warn("Reached maximum request limit!", nil)
 		return errors.New(httpError.Message)
 	}

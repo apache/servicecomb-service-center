@@ -15,6 +15,7 @@ package core
 
 import (
 	pb "github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/ServiceComb/service-center/util"
 	"strings"
 )
 
@@ -38,21 +39,21 @@ const (
 )
 
 func GetRootKey() string {
-	return strings.Join([]string{
+	return util.StringJoin([]string{
 		"",
 		REGISTRY_ROOT_KEY,
 	}, "/")
 }
 
 func GetDomainProjectRootKey(tenant string) string {
-	return strings.Join([]string{
+	return util.StringJoin([]string{
 		GetRootKey(),
 		tenant,
 	}, "/")
 }
 
 func GetServiceRootKey(tenant string) string {
-	return strings.Join([]string{
+	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_FILE,
@@ -61,7 +62,7 @@ func GetServiceRootKey(tenant string) string {
 }
 
 func GetServiceIndexRootKey(tenant string) string {
-	return strings.Join([]string{
+	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_INDEX,
@@ -70,7 +71,7 @@ func GetServiceIndexRootKey(tenant string) string {
 }
 
 func GetServiceAliasRootKey(tenant string) string {
-	return strings.Join([]string{
+	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_ALIAS_KEY,
@@ -79,7 +80,7 @@ func GetServiceAliasRootKey(tenant string) string {
 }
 
 func GetServiceRuleRootKey(tenant string) string {
-	return strings.Join([]string{
+	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_RULE_KEY,
@@ -88,7 +89,7 @@ func GetServiceRuleRootKey(tenant string) string {
 }
 
 func GetServiceRuleIndexRootKey(tenant string) string {
-	return strings.Join([]string{
+	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_RULE_INDEX_KEY,
@@ -97,7 +98,7 @@ func GetServiceRuleIndexRootKey(tenant string) string {
 }
 
 func GetServiceTagRootKey(tenant string) string {
-	return strings.Join([]string{
+	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_TAG_KEY,
@@ -106,7 +107,7 @@ func GetServiceTagRootKey(tenant string) string {
 }
 
 func GetServiceSchemaRootKey(tenant string) string {
-	return strings.Join([]string{
+	return util.StringJoin([]string{
 		GetDomainProjectRootKey(tenant),
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_SCHEMA_KEY,
@@ -114,7 +115,7 @@ func GetServiceSchemaRootKey(tenant string) string {
 }
 
 func GetInstanceIndexRootKey(tenant string) string {
-	return strings.Join([]string{
+	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_INSTANCE_KEY,
 		REGISTRY_INDEX,
@@ -123,7 +124,7 @@ func GetInstanceIndexRootKey(tenant string) string {
 }
 
 func GetInstanceRootKey(tenant string) string {
-	return strings.Join([]string{
+	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_INSTANCE_KEY,
 		REGISTRY_FILE,
@@ -132,7 +133,7 @@ func GetInstanceRootKey(tenant string) string {
 }
 
 func GetInstanceLeaseRootKey(tenant string) string {
-	return strings.Join([]string{
+	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_INSTANCE_KEY,
 		REGISTRY_LEASE_KEY,
@@ -141,7 +142,7 @@ func GetInstanceLeaseRootKey(tenant string) string {
 }
 
 func GetInstancesEndpointsIndexRootKey(tenant string) string {
-	return strings.Join([]string{
+	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_ENDPOINTS_INDEX,
 		tenant,
@@ -149,14 +150,14 @@ func GetInstancesEndpointsIndexRootKey(tenant string) string {
 }
 
 func GenerateServiceKey(tenant string, serviceId string) string {
-	return strings.Join([]string{
+	return util.StringJoin([]string{
 		GetServiceRootKey(tenant),
 		serviceId,
 	}, "/")
 }
 
 func GenerateRuleIndexKey(tenant string, serviceId string, attr string, pattern string) string {
-	return strings.Join([]string{
+	return util.StringJoin([]string{
 		GetServiceRuleIndexRootKey(tenant),
 		serviceId,
 		attr,
@@ -173,7 +174,7 @@ func GenerateServiceIndexKey(key *pb.MicroServiceKey) string {
 	if len(strings.TrimSpace(stage)) == 0 {
 		key.Stage = "dev"
 	}
-	return strings.Join([]string{
+	return util.StringJoin([]string{
 		GetServiceIndexRootKey(key.Tenant),
 		key.AppId,
 		key.Stage,
@@ -191,7 +192,7 @@ func GenerateServiceAliasKey(key *pb.MicroServiceKey) string {
 	if len(strings.TrimSpace(stage)) == 0 {
 		key.Stage = "dev"
 	}
-	return strings.Join([]string{
+	return util.StringJoin([]string{
 		GetServiceAliasRootKey(key.Tenant),
 		key.AppId,
 		key.Stage,
@@ -201,7 +202,7 @@ func GenerateServiceAliasKey(key *pb.MicroServiceKey) string {
 }
 
 func GenerateServiceRuleKey(tenant string, serviceId string, ruleId string) string {
-	return strings.Join([]string{
+	return util.StringJoin([]string{
 		GetServiceRuleRootKey(tenant),
 		serviceId,
 		ruleId,
@@ -209,14 +210,14 @@ func GenerateServiceRuleKey(tenant string, serviceId string, ruleId string) stri
 }
 
 func GenerateServiceTagKey(tenant string, serviceId string) string {
-	return strings.Join([]string{
+	return util.StringJoin([]string{
 		GetServiceTagRootKey(tenant),
 		serviceId,
 	}, "/")
 }
 
 func GenerateServiceSchemaKey(tenant string, serviceId string, schemaId string) string {
-	return strings.Join([]string{
+	return util.StringJoin([]string{
 		GetServiceSchemaRootKey(tenant),
 		serviceId,
 		schemaId,
@@ -224,14 +225,14 @@ func GenerateServiceSchemaKey(tenant string, serviceId string, schemaId string) 
 }
 
 func GenerateInstanceIndexKey(tenant string, instanceId string) string {
-	return strings.Join([]string{
+	return util.StringJoin([]string{
 		GetInstanceIndexRootKey(tenant),
 		instanceId,
 	}, "/")
 }
 
 func GenerateInstanceKey(tenant string, serviceId string, instanceId string) string {
-	return strings.Join([]string{
+	return util.StringJoin([]string{
 		GetInstanceRootKey(tenant),
 		serviceId,
 		instanceId,
@@ -239,7 +240,7 @@ func GenerateInstanceKey(tenant string, serviceId string, instanceId string) str
 }
 
 func GenerateInstanceLeaseKey(tenant string, serviceId string, instanceId string) string {
-	return strings.Join([]string{
+	return util.StringJoin([]string{
 		GetInstanceLeaseRootKey(tenant),
 		serviceId,
 		instanceId,
@@ -248,7 +249,7 @@ func GenerateInstanceLeaseKey(tenant string, serviceId string, instanceId string
 
 func GenerateServiceDependencyRuleKey(serviceType string, tenant string, in *pb.MicroServiceKey) string {
 	if in.ServiceName == "*" {
-		return strings.Join([]string{
+		return util.StringJoin([]string{
 			GetServiceDependencyRuleRootKey(tenant),
 			serviceType,
 			in.ServiceName,
@@ -262,7 +263,7 @@ func GenerateServiceDependencyRuleKey(serviceType string, tenant string, in *pb.
 	if len(strings.TrimSpace(stage)) == 0 {
 		stage = "dev"
 	}
-	return strings.Join([]string{
+	return util.StringJoin([]string{
 		GetServiceDependencyRuleRootKey(tenant),
 		serviceType,
 		appId,
@@ -281,7 +282,7 @@ func GenerateProviderDependencyRuleKey(tenant string, in *pb.MicroServiceKey) st
 }
 
 func GetServiceDependencyRuleRootKey(tenant string) string {
-	return strings.Join([]string{
+	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_DEPS_RULE_KEY,
@@ -294,7 +295,7 @@ func GenerateConsumerDependencyKey(tenant string, consumerId string, providerId 
 }
 
 func GenerateServiceDependencyKey(serviceType string, tenant string, serviceId1 string, serviceId2 string) string {
-	return strings.Join([]string{
+	return util.StringJoin([]string{
 		GetServiceDependencyRootKey(tenant),
 		serviceType,
 		serviceId1,
@@ -307,7 +308,7 @@ func GenerateProviderDependencyKey(tenant string, providerId string, consumerId 
 }
 
 func GetServiceDependencyRootKey(tenant string) string {
-	return strings.Join([]string{
+	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_DEPENDENCY_KEY,
@@ -316,21 +317,21 @@ func GetServiceDependencyRootKey(tenant string) string {
 }
 
 func GetDomainRootKey() string {
-	return strings.Join([]string{
+	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_TENANT_KEY,
 	}, "/")
 }
 
 func GenerateDomainKey(tenant string) string {
-	return strings.Join([]string{
+	return util.StringJoin([]string{
 		GetDomainRootKey(),
 		tenant,
 	}, "/")
 }
 
 func GenerateInsEpsIndex(tenant string, serviceId string, inEpsIndex string) string {
-	return strings.Join([]string{
+	return util.StringJoin([]string{
 		GetInstancesEndpointsIndexRootKey(tenant),
 		serviceId,
 		inEpsIndex,
@@ -338,7 +339,7 @@ func GenerateInsEpsIndex(tenant string, serviceId string, inEpsIndex string) str
 }
 
 func GetSystemKey() string {
-	return strings.Join([]string{
+	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_SYS_KEY,
 	}, "/")

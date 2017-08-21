@@ -11,7 +11,7 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package notification
+package event
 
 import (
 	"encoding/json"
@@ -20,13 +20,14 @@ import (
 	"github.com/ServiceComb/service-center/server/core/registry/store"
 	"github.com/ServiceComb/service-center/server/service/dependency"
 	"github.com/ServiceComb/service-center/server/service/microservice"
+	nf "github.com/ServiceComb/service-center/server/service/notification"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
 	"strings"
 )
 
 type InstanceEventHandler struct {
-	service *NotifyService
+	service *nf.NotifyService
 }
 
 func (h *InstanceEventHandler) Type() store.StoreType {
@@ -85,9 +86,9 @@ func (h *InstanceEventHandler) OnEvent(evt *store.KvEvent) {
 		Instance: &instance,
 	}
 	for _, dependence := range Kvs {
-		consumer := string(dependence.Key)
+		consumer := util.BytesToStringWithNoCopy(dependence.Key)
 		consumer = consumer[strings.LastIndex(consumer, "/")+1:]
-		job := NewWatchJob(INSTANCE, consumer, apt.GetInstanceRootKey(tenantProject)+"/",
+		job := nf.NewWatchJob(nf.INSTANCE, consumer, apt.GetInstanceRootKey(tenantProject)+"/",
 			evt.Revision, response)
 		util.LOGGER.Debugf("publish event to notify service, %v", job)
 
@@ -96,7 +97,7 @@ func (h *InstanceEventHandler) OnEvent(evt *store.KvEvent) {
 	}
 }
 
-func NewInstanceEventHandler(s *NotifyService) EventHandler {
+func NewInstanceEventHandler(s *nf.NotifyService) *InstanceEventHandler {
 	return &InstanceEventHandler{
 		service: s,
 	}

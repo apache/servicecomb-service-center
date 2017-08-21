@@ -139,4 +139,5 @@ func BenchmarkUniQueue_Get(b *testing.B) {
 	})
 	uq.Close()
 	<-closed
+	b.ReportAllocs()
 }
