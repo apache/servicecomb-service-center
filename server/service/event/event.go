@@ -21,5 +21,4 @@ import (
 func init() {
 	store.AddEventHandler(NewInstanceEventHandler(nf.GetNotifyService()))
 	store.AddEventHandler(NewRuleEventHandler(nf.GetNotifyService()))
-	store.AddEventHandler(NewServiceEventHandler())
 }
