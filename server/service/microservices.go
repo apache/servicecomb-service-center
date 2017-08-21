@@ -65,19 +65,8 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 		Version:     service.Version,
 		Tenant:      tenant,
 	}
-
-	lockMutex := mux.MuxType(apt.GenerateServiceIndexKey(consumer))
-	lock, err := mux.Lock(lockMutex)
-	if err != nil {
-		util.LOGGER.Errorf(err, "create microservice failed, %s: create lock failed. operator: %s",
-			serviceFlag, remoteIP)
-		return &pb.CreateServiceResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
-		}, err
-	}
 	err = checkBeforeCreate(ctx, consumer)
 	if err != nil {
-		lock.Unlock()
 		util.LOGGER.Errorf(err, "create microservice failed, %s: check service failed before create. operator: %s",
 			serviceFlag, remoteIP)
 		resp := &pb.CreateServiceResponse{
@@ -109,6 +98,7 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 	}
 	key := apt.GenerateServiceKey(tenant, serviceId)
 	index := apt.GenerateServiceIndexKey(consumer)
+	indexBytes := util.StringToBytesWithNoCopy(index)
 	util.LOGGER.Debugf("start register service: %s %v", key, service)
 	util.LOGGER.Debugf("start register service index: %s %v", index, serviceId)
 	opts := []*registry.PluginOp{
@@ -120,7 +110,7 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 		},
 		{
 			Action: registry.PUT,
-			Key:    util.StringToBytesWithNoCopy(index),
+			Key:    indexBytes,
 			Value:  util.StringToBytesWithNoCopy(serviceId),
 		},
 	}
@@ -133,14 +123,29 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 		})
 	}
 
-	_, err = registry.GetRegisterCenter().Txn(ctx, opts)
-	lock.Unlock()
+	uniqueCmpOpts := []*registry.CompareOp{
+		{
+			Key:    indexBytes,
+			Type:   registry.CMP_VERSION,
+			Result: registry.CMP_EQUAL,
+			Value:  0,
+		},
+	}
+
+	resp, err := registry.GetRegisterCenter().TxnWithCmp(ctx, opts, uniqueCmpOpts, nil)
 	if err != nil {
 		util.LOGGER.Errorf(err, "create microservice failed, %s: commit data into etcd failed. operator: %s",
 			serviceFlag, remoteIP)
 		return &pb.CreateServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Commit operations failed."),
 		}, err
+	}
+	if !resp.Succeeded {
+		util.LOGGER.Warnf(nil, "create microservice failed, %s: service already exists. operator: %s",
+			serviceFlag, remoteIP)
+		return &pb.CreateServiceResponse{
+			Response: pb.CreateResponse(pb.Response_FAIL, "Service already exists."),
+		}, nil
 	}
 
 	//创建服务间的依赖
@@ -163,23 +168,6 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 }
 
 func checkBeforeCreate(ctx context.Context, serviceKey *pb.MicroServiceKey) error {
-	serviceIdInner, err := ms.SearchServiceId(ctx, serviceKey, registry.MODE_CACHE)
-	if err != nil {
-		return errorsEx.InternalError(err.Error())
-	}
-	if len(serviceIdInner) > 0 {
-		return fmt.Errorf("Service already exists.")
-	}
-
-	serviceIdInner, err = ms.SearchServiceId(ctx, serviceKey, registry.MODE_NO_CACHE)
-	if err != nil {
-		return errorsEx.InternalError(err.Error())
-	}
-
-	if len(serviceIdInner) > 0 {
-		return fmt.Errorf("Service already exists.")
-	}
-
 	ok, err := quota.QuotaPlugins[beego.AppConfig.DefaultString("quota_plugin", "buildin")]().Apply4Quotas(ctx, quota.MicroServiceQuotaType, 0)
 	if err != nil {
 		return errorsEx.InternalError(err.Error())

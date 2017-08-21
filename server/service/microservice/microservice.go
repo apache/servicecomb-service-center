@@ -113,8 +113,18 @@ func GetServicesByTenant(ctx context.Context, tenant string) ([]*pb.MicroService
 	return services, nil
 }
 
-func GetServiceId(ctx context.Context, key *pb.MicroServiceKey) (string, error) {
-	return SearchServiceId(ctx, key, registry.MODE_BOTH)
+func GetServiceId(ctx context.Context, key *pb.MicroServiceKey) (serviceId string, err error) {
+	serviceId, err = SearchServiceId(ctx, key, registry.MODE_BOTH)
+	if err != nil {
+		return
+	}
+	if len(serviceId) == 0 {
+		// 别名查询
+		util.LOGGER.Debugf("could not search microservice %s/%s/%s id by field 'serviceName', now try field 'alias'.",
+			key.AppId, key.ServiceName, key.Version)
+		return SearchServiceIdFromAlias(ctx, key, registry.MODE_BOTH)
+	}
+	return
 }
 
 func SearchServiceId(ctx context.Context, key *pb.MicroServiceKey, mode registry.CacheMode) (string, error) {
@@ -127,23 +137,22 @@ func SearchServiceId(ctx context.Context, key *pb.MicroServiceKey, mode registry
 		return "", err
 	}
 	if len(resp.Kvs) == 0 {
-		if len(key.Alias) == 0 {
-			return "", nil
-		}
-		// 别名查询
-		util.LOGGER.Debugf("could not search microservice %s/%s/%s id by field 'serviceName', now try field 'alias'.",
-			key.AppId, key.ServiceName, key.Version)
-		resp, err = store.Store().ServiceAlias().Search(ctx, &registry.PluginOp{
-			Action: registry.GET,
-			Key:    util.StringToBytesWithNoCopy(apt.GenerateServiceAliasKey(key)),
-			Mode:   mode,
-		})
-		if err != nil {
-			return "", err
-		}
-		if len(resp.Kvs) == 0 {
-			return "", nil
-		}
+		return "", nil
+	}
+	return util.BytesToStringWithNoCopy(resp.Kvs[0].Value), nil
+}
+
+func SearchServiceIdFromAlias(ctx context.Context, key *pb.MicroServiceKey, mode registry.CacheMode) (string, error) {
+	resp, err := store.Store().ServiceAlias().Search(ctx, &registry.PluginOp{
+		Action: registry.GET,
+		Key:    util.StringToBytesWithNoCopy(apt.GenerateServiceAliasKey(key)),
+		Mode:   mode,
+	})
+	if err != nil {
+		return "", err
+	}
+	if len(resp.Kvs) == 0 {
+		return "", nil
 	}
 	return util.BytesToStringWithNoCopy(resp.Kvs[0].Value), nil
 }
