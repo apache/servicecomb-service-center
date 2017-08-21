@@ -131,7 +131,6 @@ func (lat *AsyncTasker) schedule(stopCh <-chan struct{}) {
 				lat.scheduleTask(task.(AsyncTask))
 				lat.scheduleReadyTasks(ready)
 			case <-ctx.Done():
-				util.LOGGER.Debugf("timed out to collect ready tasks")
 			}
 		}
 	}
@@ -196,7 +195,6 @@ func (lat *AsyncTasker) collectReadyTasks(ready chan<- AsyncTask) {
 			}
 			ready <- task.(AsyncTask) // will block when a lot of tasks coming in.
 		default:
-			util.LOGGER.Debugf("no task in queue, key is %s", key)
 		}
 	}
 	lat.queueLock.RUnlock()

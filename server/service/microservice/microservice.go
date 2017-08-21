@@ -101,7 +101,6 @@ func GetServicesByTenant(ctx context.Context, tenant string) ([]*pb.MicroService
 	}
 	services := []*pb.MicroService{}
 	for _, kvs := range kvs {
-		util.LOGGER.Debugf("start unmarshal service file: %s", util.BytesToStringWithNoCopy(kvs.Value))
 		service := &pb.MicroService{}
 		err := json.Unmarshal(kvs.Value, service)
 		if err != nil {
@@ -178,7 +177,7 @@ func FindServiceIds(ctx context.Context, versionRule string, key *pb.MicroServic
 	versionsFunc := func(key *pb.MicroServiceKey) (*registry.PluginResponse, error) {
 		key.Version = ""
 		prefix := keyGenerator(key)
-		resp, err := store.Store().Service().Search(ctx, &registry.PluginOp{
+		resp, err := store.Store().ServiceIndex().Search(ctx, &registry.PluginOp{
 			Action:     registry.GET,
 			Key:        util.StringToBytesWithNoCopy(prefix),
 			WithPrefix: true,
