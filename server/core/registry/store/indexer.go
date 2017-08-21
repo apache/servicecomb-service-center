@@ -120,9 +120,9 @@ func (i *Indexer) searchPrefixKeyFromCacheOrRemote(ctx context.Context, op *regi
 	prefix := util.BytesToStringWithNoCopy(op.Key)
 
 	i.prefixLock.RLock()
-	keysRef, ok := i.prefixIndex[prefix]
-	i.prefixLock.RUnlock()
-	if !ok {
+	resp.Count = int64(i.getPrefixKey(nil, prefix))
+	if resp.Count == 0 {
+		i.prefixLock.RUnlock()
 		if op.Mode == registry.MODE_CACHE {
 			return resp, nil
 		}
@@ -132,14 +132,17 @@ func (i *Indexer) searchPrefixKeyFromCacheOrRemote(ctx context.Context, op *regi
 		return registry.GetRegisterCenter().Do(ctx, op)
 	}
 
-	resp.Count = int64(len(keysRef))
 	if op.CountOnly {
+		i.prefixLock.RUnlock()
 		return resp, nil
 	}
 
 	t := time.Now()
-	keys := util.MapToList(keysRef)
-	kvs := make([]*mvccpb.KeyValue, len(keys))
+	keys := make([]string, 0, resp.Count)
+	i.getPrefixKey(&keys, prefix)
+	i.prefixLock.RUnlock()
+
+	kvs := make([]*mvccpb.KeyValue, resp.Count)
 	idx := 0
 	for _, key := range keys {
 		c := i.Cache().Data(key) // TODO too slow when big data is requested
@@ -193,7 +196,6 @@ func (i *Indexer) buildIndex() {
 				prefix := key[:strings.LastIndex(key, "/")+1]
 
 				i.prefixLock.Lock()
-
 				switch evt.Action {
 				case pb.EVT_CREATE:
 					i.addPrefixKey(prefix, key)
@@ -208,21 +210,51 @@ func (i *Indexer) buildIndex() {
 	})
 }
 
-func (i *Indexer) addPrefixKey(prefix, key string) {
-	for {
-		_, ok := defaultRootKeys[key]
-		if ok {
-			return
-		}
-
-		keys, ok := i.prefixIndex[prefix]
-		if !ok {
-			keys = make(map[string]struct{})
-			i.prefixIndex[prefix] = keys
-		}
-		keys[key], key = struct{}{}, prefix
-		prefix = key[:strings.LastIndex(key[:len(key)-1], "/")+1]
+func (i *Indexer) getPrefixKey(arr *[]string, prefix string) (count int) {
+	keysRef, ok := i.prefixIndex[prefix]
+	if !ok {
+		return 0
 	}
+
+	for key := range keysRef {
+		var childs []string
+		if arr != nil {
+			childs = []string{}
+		}
+		n := i.getPrefixKey(&childs, key)
+		if n == 0 {
+			count += len(keysRef)
+			if arr != nil {
+				*arr = append(*arr, util.MapToList(keysRef)...)
+			}
+			break
+		}
+		count += n
+		if arr != nil {
+			*arr = append(*arr, childs...)
+		}
+	}
+	return count
+}
+
+func (i *Indexer) addPrefixKey(prefix, key string) {
+	_, ok := defaultRootKeys[key]
+	if ok {
+		return
+	}
+
+	keys, ok := i.prefixIndex[prefix]
+	if !ok {
+		keys = make(map[string]struct{})
+		i.prefixIndex[prefix] = keys
+	} else if _, ok := keys[key]; ok {
+		return
+	}
+
+	keys[key], key = struct{}{}, prefix
+	prefix = key[:strings.LastIndex(key[:len(key)-1], "/")+1]
+
+	i.addPrefixKey(prefix, key)
 }
 
 func (i *Indexer) deletePrefixKey(prefix, key string) {

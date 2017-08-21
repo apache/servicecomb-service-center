@@ -21,6 +21,7 @@ import (
 	"github.com/ServiceComb/service-center/util"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
+	"strings"
 	"time"
 )
 
@@ -69,7 +70,12 @@ func (at *UpdateDependencyAsyncTask) do(ctx context.Context) (err error) {
 	//创建服务间的依赖
 	serviceFlag := util.StringJoin([]string{service.AppId, service.ServiceName, service.Version}, "/")
 	util.LOGGER.Infof("create microservice: add dependency for %s(%s)", serviceId, serviceFlag)
-	err = dependency.UpdateAsProviderDependency(context.Background(), serviceId, &pb.MicroServiceKey{
+
+	arr := strings.Split(tenantProject, "/")
+	ctx = util.NewContext(ctx, "tenant", arr[0])
+	ctx = util.NewContext(ctx, "project", arr[1])
+
+	err = dependency.UpdateAsProviderDependency(ctx, serviceId, &pb.MicroServiceKey{
 		AppId:       service.AppId,
 		ServiceName: service.ServiceName,
 		Alias:       service.Alias,
