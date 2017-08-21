@@ -16,6 +16,8 @@ package tenant
 import (
 	apt "github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/server/core/registry/store"
+	"github.com/ServiceComb/service-center/util"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"strings"
@@ -23,11 +25,11 @@ import (
 
 func GetAllTenantRawData() ([]*mvccpb.KeyValue, error) {
 	opt := &registry.PluginOp{
-		Key:        []byte(apt.GenerateDomainKey("")),
+		Key:        util.StringToBytesWithNoCopy(apt.GenerateDomainKey("")),
 		Action:     registry.GET,
 		WithPrefix: true,
 	}
-	rsp, err := registry.GetRegisterCenter().Do(context.TODO(), opt)
+	rsp, err := store.Store().Domain().Search(context.Background(), opt)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +48,7 @@ func GetAllTenent() ([]string, error) {
 		instByTenant := ""
 		arrTmp := []string{}
 		for _, kv := range kvs {
-			arrTmp = strings.Split(string(kv.Key), "/")
+			arrTmp = strings.Split(util.BytesToStringWithNoCopy(kv.Key), "/")
 			tenant = arrTmp[len(arrTmp)-1]
 			instByTenant = apt.GetInstanceRootKey(tenant)
 			insWatherByTenantKeys = append(insWatherByTenantKeys, instByTenant)
@@ -55,12 +57,25 @@ func GetAllTenent() ([]string, error) {
 	return insWatherByTenantKeys, err
 }
 
+func DomainExist(ctx context.Context, domain string) (bool, error) {
+	opt := &registry.PluginOp{
+		Key:       util.StringToBytesWithNoCopy(apt.GenerateDomainKey(domain)),
+		Action:    registry.GET,
+		CountOnly: true,
+	}
+	rsp, err := store.Store().Domain().Search(context.Background(), opt)
+	if err != nil {
+		return false, err
+	}
+	return rsp.Count > 0, nil
+}
+
 func NewDomain(ctx context.Context, tenant string) error {
 	opt := &registry.PluginOp{
-		Key:    []byte(apt.GenerateDomainKey(tenant)),
 		Action: registry.PUT,
+		Key:    util.StringToBytesWithNoCopy(apt.GenerateDomainKey(tenant)),
 	}
-	_, err := registry.GetRegisterCenter().PutNoOverride(ctx, opt)
+	_, err := registry.GetRegisterCenter().Do(ctx, opt)
 	if err != nil {
 		return err
 	}

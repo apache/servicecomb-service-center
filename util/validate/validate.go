@@ -16,7 +16,6 @@ package validate
 import (
 	"errors"
 	"fmt"
-	"github.com/ServiceComb/service-center/util"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -27,7 +26,7 @@ type ValidateRule struct {
 	Min    int
 	Max    int
 	Length int
-	Regexp string
+	Regexp *regexp.Regexp
 }
 
 func (v *ValidateRule) String() string {
@@ -41,7 +40,7 @@ func (v *ValidateRule) String() string {
 	if v.Length != 0 {
 		toString = fmt.Sprintf("%s Length: %d,", toString, v.Length)
 	}
-	if len(v.Regexp) != 0 {
+	if v.Regexp != nil {
 		toString = fmt.Sprintf("%s RegEx: %s }", toString, v.Regexp)
 	}
 	return toString
@@ -92,7 +91,7 @@ func (v *ValidateRule) Match(s interface{}) bool {
 			invalid = false
 		}
 	}
-	if len(v.Regexp) > 0 && !invalid {
+	if v.Regexp != nil && !invalid {
 		switch sv.Kind() {
 		case reflect.Map:
 			itemV := &ValidateRule{
@@ -131,21 +130,11 @@ func (v *ValidateRule) Match(s interface{}) bool {
 			case reflect.Float32, reflect.Float64:
 				str = strconv.FormatFloat(sv.Float(), 'f', -1, 64)
 			}
-			reg, err := regexp.Compile(v.Regexp)
-			if err != nil {
-				util.LOGGER.Error("compile regular expression failed", err)
-				return false
-			}
-			invalid = !reg.MatchString(str)
+			invalid = !v.Regexp.MatchString(str)
 		default:
 			str, ok := s.(string)
 			if ok {
-				reg, err := regexp.Compile(v.Regexp)
-				if err != nil {
-					util.LOGGER.Error("compile regular expression failed", err)
-					return false
-				}
-				invalid = !reg.MatchString(str)
+				invalid = !v.Regexp.MatchString(str)
 			} else {
 				invalid = true
 			}
@@ -195,7 +184,6 @@ func (v *Validator) GetRules() map[string](*ValidateRule) {
 
 func (v *Validator) Validate(s interface{}) error {
 	sv := reflect.ValueOf(s)
-	st := reflect.TypeOf(s)
 	if sv.Kind() == reflect.Ptr && !sv.IsNil() {
 		return v.Validate(sv.Elem().Interface())
 	}
@@ -212,9 +200,10 @@ func (v *Validator) Validate(s interface{}) error {
 		return errors.New("not support validate type")
 	}
 
+	st := LoadStruct(s)
 	for i, l := 0, sv.NumField(); i < l; i++ {
 		field := sv.Field(i)
-		fieldName := st.Field(i).Name
+		fieldName := st.Fields[i].Name
 		validator, ok := v.subs[fieldName]
 		if ok {
 			if (field.Kind() != reflect.Ptr && field.Kind() != reflect.Slice) || field.IsNil() {
@@ -241,7 +230,7 @@ func (v *Validator) Validate(s interface{}) error {
 			}
 			// TODO null pointer如何校验
 			if field.Kind() != reflect.Ptr && !validate.Match(fi) {
-				return errors.New(fmt.Sprintf("%s validate failed, %s", fieldName, validate))
+				return fmt.Errorf("%s validate failed, %s", fieldName, validate)
 			}
 		}
 	}

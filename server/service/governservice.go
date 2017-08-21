@@ -18,6 +18,7 @@ import (
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/server/core/registry/store"
 	"github.com/ServiceComb/service-center/server/service/dependency"
 	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
@@ -62,7 +63,7 @@ func (governServiceController *GovernServiceController) GetServicesInfo(ctx cont
 	}
 
 	return &pb.GetServicesInfoResponse{
-		Response:          pb.CreateResponse(pb.Response_SUCCESS, "register service instance successfully"),
+		Response:          pb.CreateResponse(pb.Response_SUCCESS, "Register service instance successfully."),
 		AllServicesDetail: allServiceDetails,
 	}, nil
 }
@@ -80,7 +81,7 @@ func (governServiceController *GovernServiceController) GetServiceDetail(ctx con
 	service, err := ms.GetServiceByServiceId(ctx, tenant, in.ServiceId)
 	if service == nil {
 		return &pb.GetServiceDetailResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Service is not exist."),
+			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
 		}, nil
 	}
 	if err != nil {
@@ -121,9 +122,9 @@ func getServiceAllVersions(ctx context.Context, tenant string, appId string, ser
 		Version:     "",
 	})
 
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+	resp, err := store.Store().ServiceIndex().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
-		Key:        []byte(key),
+		Key:        util.StringToBytesWithNoCopy(key),
 		WithPrefix: true,
 	})
 	if err != nil {
@@ -134,7 +135,7 @@ func getServiceAllVersions(ctx context.Context, tenant string, appId string, ser
 	}
 	version := ""
 	for _, kvs := range resp.Kvs {
-		tmpArr := strings.Split(string(kvs.Key), "/")
+		tmpArr := strings.Split(util.BytesToStringWithNoCopy(kvs.Key), "/")
 		version = tmpArr[len(tmpArr)-1]
 		versions = append(versions, version)
 	}
@@ -144,9 +145,9 @@ func getServiceAllVersions(ctx context.Context, tenant string, appId string, ser
 func getAllInstancesForOneService(ctx context.Context, tenant string, serviceId string) ([]*pb.MicroServiceInstance, error) {
 	key := apt.GenerateInstanceKey(tenant, serviceId, "")
 
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+	resp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
-		Key:        []byte(key),
+		Key:        util.StringToBytesWithNoCopy(key),
 		WithPrefix: true,
 	})
 	if err != nil {
@@ -155,7 +156,7 @@ func getAllInstancesForOneService(ctx context.Context, tenant string, serviceId 
 	}
 	instances := []*pb.MicroServiceInstance{}
 	for _, kvs := range resp.Kvs {
-		util.LOGGER.Debugf("start unmarshal service instance file: %s", string(kvs.Key))
+		util.LOGGER.Debugf("start unmarshal service instance file: %s", util.BytesToStringWithNoCopy(kvs.Key))
 		instance := &pb.MicroServiceInstance{}
 		err := json.Unmarshal(kvs.Value, instance)
 		if err != nil {
@@ -170,9 +171,9 @@ func getAllInstancesForOneService(ctx context.Context, tenant string, serviceId 
 func getSchemaInfoUtil(ctx context.Context, tenant string, serviceId string) ([]*pb.SchemaInfos, error) {
 	key := apt.GenerateServiceSchemaKey(tenant, serviceId, "")
 	schemas := []*pb.SchemaInfos{}
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+	resp, err := store.Store().Schema().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
-		Key:        []byte(key),
+		Key:        util.StringToBytesWithNoCopy(key),
 		WithPrefix: true,
 	})
 	if err != nil {
@@ -183,8 +184,8 @@ func getSchemaInfoUtil(ctx context.Context, tenant string, serviceId string) ([]
 	schema := ""
 	for _, kv := range resp.Kvs {
 		schemaInfo := &pb.SchemaInfos{}
-		schemaId = string(kv.Key[len(key):])
-		schema = string(kv.Value)
+		schemaId = util.BytesToStringWithNoCopy(kv.Key[len(key):])
+		schema = util.BytesToStringWithNoCopy(kv.Value)
 		schemaInfo.Schema = schema
 		schemaInfo.SchemaId = schemaId
 		schemas = append(schemas, schemaInfo)

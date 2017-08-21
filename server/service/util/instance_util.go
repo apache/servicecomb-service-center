@@ -28,7 +28,7 @@ import (
 func GetLeaseId(ctx context.Context, tenant string, serviceId string, instanceId string) (int64, error) {
 	resp, err := store.Store().Lease().Search(ctx, &registry.PluginOp{
 		Action: registry.GET,
-		Key:    []byte(apt.GenerateInstanceLeaseKey(tenant, serviceId, instanceId)),
+		Key:    util.StringToBytesWithNoCopy(apt.GenerateInstanceLeaseKey(tenant, serviceId, instanceId)),
 	})
 	if err != nil {
 		return -1, err
@@ -36,7 +36,7 @@ func GetLeaseId(ctx context.Context, tenant string, serviceId string, instanceId
 	if len(resp.Kvs) <= 0 {
 		return -1, nil
 	}
-	leaseID, _ := strconv.ParseInt(string(resp.Kvs[0].Value), 10, 64)
+	leaseID, _ := strconv.ParseInt(util.BytesToStringWithNoCopy(resp.Kvs[0].Value), 10, 64)
 	return leaseID, nil
 }
 
@@ -44,7 +44,7 @@ func GetInstance(ctx context.Context, tenant string, serviceId string, instanceI
 	key := apt.GenerateInstanceKey(tenant, serviceId, instanceId)
 	resp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
 		Action: registry.GET,
-		Key:    []byte(key),
+		Key:    util.StringToBytesWithNoCopy(key),
 	})
 	if err != nil {
 		return nil, err
@@ -64,7 +64,7 @@ func GetInstance(ctx context.Context, tenant string, serviceId string, instanceI
 func InstanceExist(ctx context.Context, tenant string, serviceId string, instanceId string) (bool, error) {
 	resp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
 		Action:    registry.GET,
-		Key:       []byte(apt.GenerateInstanceKey(tenant, serviceId, instanceId)),
+		Key:       util.StringToBytesWithNoCopy(apt.GenerateInstanceKey(tenant, serviceId, instanceId)),
 		CountOnly: true,
 	})
 	if err != nil {
@@ -81,7 +81,7 @@ func CheckEndPoints(ctx context.Context, in *pb.RegisterInstanceRequest) (string
 	allInstancesKey := apt.GenerateInstanceKey(tenant, in.Instance.ServiceId, "")
 	rsp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
-		Key:        []byte(allInstancesKey),
+		Key:        util.StringToBytesWithNoCopy(allInstancesKey),
 		WithPrefix: true,
 	})
 	if err != nil {
@@ -120,7 +120,7 @@ func CheckEndPoints(ctx context.Context, in *pb.RegisterInstanceRequest) (string
 			}
 		}
 		if isEqual {
-			arr := strings.Split(string(kv.Key), "/")
+			arr := strings.Split(util.BytesToStringWithNoCopy(kv.Key), "/")
 			return arr[len(arr)-1], nil
 		}
 	}
@@ -141,10 +141,10 @@ func DeleteServiceAllInstances(ctx context.Context, ServiceId string) error {
 
 	instanceLeaseKey := apt.GenerateInstanceLeaseKey(tenant, ServiceId, "")
 	resp, err := store.Store().Lease().Search(ctx, &registry.PluginOp{
-		Action:      registry.GET,
-		Key:         []byte(instanceLeaseKey),
-		WithPrefix:  true,
-		WithNoCache: true,
+		Action:     registry.GET,
+		Key:        util.StringToBytesWithNoCopy(instanceLeaseKey),
+		WithPrefix: true,
+		Mode:       registry.MODE_NO_CACHE,
 	})
 	if err != nil {
 		util.LOGGER.Errorf(err, "delete service all instance failed: get instance lease failed.")
@@ -155,7 +155,7 @@ func DeleteServiceAllInstances(ctx context.Context, ServiceId string) error {
 		return nil
 	}
 	for _, v := range resp.Kvs {
-		leaseID, _ := strconv.ParseInt(string(v.Value), 10, 64)
+		leaseID, _ := strconv.ParseInt(util.BytesToStringWithNoCopy(v.Value), 10, 64)
 		registry.GetRegisterCenter().LeaseRevoke(ctx, leaseID)
 	}
 	return nil

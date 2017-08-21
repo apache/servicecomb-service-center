@@ -17,7 +17,6 @@ import (
 	"github.com/ServiceComb/service-center/server/helper"
 	"github.com/ServiceComb/service-center/util"
 	"github.com/ServiceComb/service-center/util/errors"
-	"golang.org/x/net/context"
 	"net/http"
 )
 
@@ -36,17 +35,17 @@ func Intercept(w http.ResponseWriter, r *http.Request) error {
 	tenant, project, err = helper.GetTenantProjectFromHeader(r)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
+		w.Write(util.StringToBytesWithNoCopy(err.Error()))
 		return err
 	}
 	if len(tenant) == 0 || len(project) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(errors.New("Domain or project from token is empty.").Error()))
+		w.Write(util.StringToBytesWithNoCopy("Domain or project from token is empty."))
 		return errors.New("Domain or project from token is empty.")
 	}
 
-	ctx = context.WithValue(ctx, "tenant", tenant)
-	ctx = context.WithValue(ctx, "project", project)
+	ctx = util.NewContext(ctx, "tenant", tenant)
+	ctx = util.NewContext(ctx, "project", project)
 	request = r.WithContext(ctx)
 	*r = *request
 	return nil

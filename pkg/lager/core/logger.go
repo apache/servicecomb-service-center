@@ -22,9 +22,12 @@ import (
 	"strings"
 	"sync/atomic"
 	"time"
+	"unsafe"
 )
 
 const STACK_TRACE_BUFFER_SIZE = 1024 * 100
+
+var processID = os.Getpid()
 
 type Logger interface {
 	RegisterSink(Sink)
@@ -105,7 +108,31 @@ func (l *logger) WithData(data Data) Logger {
 	}
 }
 
+func (l *logger) activeSinks(loglevel LogLevel) []Sink {
+	ss := make([]Sink, len(l.sinks))
+	idx := 0
+	for _, itf := range l.sinks {
+		if s, ok := itf.(*writerSink); ok && loglevel < s.minLogLevel {
+			continue
+		}
+		if s, ok := itf.(*ReconfigurableSink); ok && loglevel < LogLevel(atomic.LoadInt32(&s.minLogLevel)) {
+			continue
+		}
+		ss[idx] = itf
+		idx++
+	}
+	return ss[:idx]
+}
+
 func (l *logger) log(loglevel LogLevel, action string, err error, data ...Data) {
+	ss := l.activeSinks(loglevel)
+	if len(ss) == 0 {
+		return
+	}
+	l.logs(ss, loglevel, action, err, data...)
+}
+
+func (l *logger) logs(ss []Sink, loglevel LogLevel, action string, err error, data ...Data) {
 	logData := l.baseData(data...)
 
 	if err != nil {
@@ -117,13 +144,13 @@ func (l *logger) log(loglevel LogLevel, action string, err error, data ...Data) 
 		stackSize := runtime.Stack(stackTrace, false)
 		stackTrace = stackTrace[:stackSize]
 
-		logData["trace"] = string(stackTrace)
+		logData["trace"] = *(*string)(unsafe.Pointer(&stackTrace))
 	}
 
 	log := LogFormat{
 		Timestamp: currentTimestamp(),
 		Source:    l.component,
-		Message:   fmt.Sprintf("%s.%s", l.task, strconv.QuoteToGraphic(action)),
+		Message:   l.task + "." + strconv.QuoteToGraphic(action),
 		LogLevel:  loglevel,
 		Data:      logData,
 	}
@@ -131,7 +158,7 @@ func (l *logger) log(loglevel LogLevel, action string, err error, data ...Data) 
 	// add process_id, file, lineno, method to log data
 	addExtLogInfo(&log)
 
-	for _, sink := range l.sinks {
+	for _, sink := range ss {
 		if !(l.logFormatText) {
 			jsondata, jserr := log.ToJSON()
 			if jserr != nil {
@@ -186,8 +213,12 @@ func (l *logger) Fatal(action string, err error, data ...Data) {
 }
 
 func (l *logger) logf(loglevel LogLevel, err error, format string, args ...interface{}) {
+	ss := l.activeSinks(loglevel)
+	if len(ss) == 0 {
+		return
+	}
 	logmsg := fmt.Sprintf(format, args...)
-	l.log(loglevel, logmsg, err)
+	l.logs(ss, loglevel, logmsg, err)
 }
 
 func (l *logger) Debugf(format string, args ...interface{}) {
@@ -237,7 +268,7 @@ func currentTimestamp() string {
 }
 
 func addExtLogInfo(logf *LogFormat) {
-	logf.ProcessID = os.Getpid()
+	logf.ProcessID = processID
 
 	for i := 3; i <= 5; i++ {
 		pc, file, line, ok := runtime.Caller(i)

@@ -14,115 +14,82 @@
 package service
 
 import (
-	"encoding/json"
 	"fmt"
-	apt "github.com/ServiceComb/service-center/server/core"
-	pb "github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/server/core/registry"
 	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
-	"github.com/ServiceComb/service-center/util/errors"
+	errorsEx "github.com/ServiceComb/service-center/util/errors"
 	"golang.org/x/net/context"
-	"reflect"
-	"regexp"
-	"strings"
 )
 
-func Accessible(ctx context.Context, tenant string, consumerID string, providerID string) (err error, isInnerErr bool) {
-	consumerService, err := ms.GetServiceByServiceId(ctx, tenant, consumerID)
+func Accessible(ctx context.Context, tenant string, consumerId string, providerId string) error {
+	consumerService, err := ms.GetServiceByServiceId(ctx, tenant, consumerId)
 	if err != nil {
-		return err, true
+		util.LOGGER.Errorf(err,
+			"consumer %s can't access provider %s for internal error", consumerId, providerId)
+		return errorsEx.InternalError(err.Error())
 	}
 	if consumerService == nil {
-		return fmt.Errorf("consumer invalid"), false
+		util.LOGGER.Warnf(nil,
+			"consumer %s can't access provider %s for invalid consumer", consumerId, providerId)
+		return fmt.Errorf("consumer invalid")
 	}
+
+	consumerFlag := fmt.Sprintf("%s/%s/%s", consumerService.AppId, consumerService.ServiceName, consumerService.Version)
 
 	// 跨应用权限
-	providerService, err := ms.GetServiceByServiceId(ctx, tenant, providerID)
+	providerService, err := ms.GetServiceByServiceId(ctx, tenant, providerId)
 	if err != nil {
-		return err, true
+		util.LOGGER.Errorf(err, "consumer %s can't access provider %s for internal error",
+			consumerFlag, providerId)
+		return errorsEx.InternalError(err.Error())
 	}
 	if providerService == nil {
-		return fmt.Errorf("provider invalid"), false
+		util.LOGGER.Warnf(nil, "consumer %s can't access provider %s for invalid provider",
+			consumerFlag, providerId)
+		return fmt.Errorf("provider invalid")
 	}
 
-	providerFlag := strings.Join([]string{providerService.AppId, providerService.ServiceName, providerService.Version}, "/")
-	consumerFlag := strings.Join([]string{consumerService.AppId, consumerService.ServiceName, consumerService.Version}, "/")
-	if providerService.AppId != consumerService.AppId {
-		if len(providerService.Properties) == 0 {
-			util.LOGGER.Warnf(nil, "consumer %s can't access provider %s, different appid",
-				consumerFlag, providerFlag)
-			return errors.New("different appID can't access"), false
-		}
+	providerFlag := fmt.Sprintf("%s/%s/%s", providerService.AppId, providerService.ServiceName, providerService.Version)
 
-		if allowCrossApp, ok := providerService.Properties[pb.PROP_ALLOW_CROSS_APP]; !ok || strings.ToLower(allowCrossApp) != "true" {
-			util.LOGGER.Warnf(nil, "consumer %s can't access provider %s, different appid, no allowCrossApp defined in property",
-				consumerFlag, providerFlag)
-			return errors.New("different appID can't access"), false
-		}
+	err = serviceUtil.AllowAcrossApp(providerService, consumerService)
+	if err != nil {
+		util.LOGGER.Warnf(nil,
+			"consumer %s can't access provider %s which property 'allowCrossApp' is not true or does not exist",
+			consumerFlag, providerFlag)
+		return err
 	}
 
 	// 黑白名单
+	rules, err := serviceUtil.GetRulesUtil(ctx, tenant, providerId)
+	if err != nil {
+		util.LOGGER.Errorf(err, "consumer %s can't access provider %s for internal error",
+			consumerFlag, providerFlag)
+		return errorsEx.InternalError(err.Error())
+	}
+
+	if len(rules) == 0 {
+		return nil
+	}
+
 	validateTags, err := serviceUtil.GetTagsUtils(ctx, tenant, consumerService.ServiceId)
 	if err != nil {
-		return err, true
+		util.LOGGER.Errorf(err, "consumer %s can't access provider %s for internal error",
+			consumerFlag, providerFlag)
+		return errorsEx.InternalError(err.Error())
 	}
 
-	ruleResp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action:     registry.GET,
-		Key:        []byte(apt.GenerateServiceRuleKey(tenant, providerID, "")),
-		WithPrefix: true,
-	})
+	err = serviceUtil.MatchRules(rules, consumerService, validateTags)
 	if err != nil {
-		return fmt.Errorf("query service rules failed,%s", err), true
+		switch err.(type) {
+		case errorsEx.InternalError:
+			util.LOGGER.Errorf(err, "consumer %s can't access provider %s for internal error",
+				consumerFlag, providerFlag)
+		default:
+			util.LOGGER.Warnf(err, "consumer %s can't access provider %s", consumerFlag, providerFlag)
+		}
+		return err
 	}
 
-	tagPattern := "tag_(.*)"
-	tagRegEx, _ := regexp.Compile(tagPattern)
-	hasWhite := false
-	for _, kv := range ruleResp.Kvs {
-		var rule pb.ServiceRule
-		var value string
-		err := json.Unmarshal(kv.Value, &rule)
-		if err != nil {
-			return fmt.Errorf("unmarshal service rules failed,%s", err), true
-		}
-		tagRule, _ := regexp.MatchString(tagPattern, rule.Attribute)
-		if tagRule {
-			key := tagRegEx.FindStringSubmatch(rule.Attribute)[1]
-			value = validateTags[key]
-		} else {
-			v := reflect.ValueOf(consumerService)
-			key := reflect.Indirect(v).FieldByName(rule.Attribute)
-			value = key.String()
-		}
-		if len(value) == 0 {
-			util.LOGGER.Errorf(nil, "get attribute %s matched value is empty.", rule.Attribute)
-			return errors.New("can't access, get attribute matched value is empty"), false
-		}
-
-		switch rule.RuleType {
-		case "WHITE":
-			hasWhite = true
-			match, _ := regexp.MatchString(rule.Pattern, value)
-			util.LOGGER.Debugf("match is %t, rule.Pattern is %s, value is %s", match, rule.Pattern, value)
-			if match {
-				return nil, false
-			}
-
-		case "BLACK":
-			match, _ := regexp.MatchString(rule.Pattern, value)
-			if match {
-				util.LOGGER.Warnf(nil, "match black list %s, can't access.consumer %s, provider %s", rule.Pattern, consumerFlag, providerFlag)
-				return errors.New("match black list,can't access."), false
-			}
-		}
-
-	}
-	if hasWhite {
-		util.LOGGER.Warnf(nil, "not match white list , can't access.consumer %s, provider %s", consumerFlag, providerFlag)
-		return errors.New("not match white list,can't access."), false
-	}
-	return nil, false
+	return nil
 }

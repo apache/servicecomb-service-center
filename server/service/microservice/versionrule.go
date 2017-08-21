@@ -15,7 +15,7 @@ package microservice
 
 import (
 	"bytes"
-	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/util"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"sort"
 	"strconv"
@@ -31,9 +31,9 @@ func (vr VersionRule) Match(kvs []*mvccpb.KeyValue, ops ...string) []string {
 		cmp:     Larger,
 	}
 	for i, kv := range kvs {
-		key := registry.BytesToStringWithNoCopy(kv.Key)
+		key := util.BytesToStringWithNoCopy(kv.Key)
 		sorter.sortArr[i] = key[strings.LastIndex(key, "/")+1:]
-		sorter.kvs[sorter.sortArr[i]] = registry.BytesToStringWithNoCopy(kv.Value)
+		sorter.kvs[sorter.sortArr[i]] = util.BytesToStringWithNoCopy(kv.Value)
 	}
 	sort.Sort(sorter)
 
@@ -173,6 +173,6 @@ func VersionMatchRule(version string, versionRule string) bool {
 	}
 
 	return len(match([]*mvccpb.KeyValue{
-		{Key: []byte("/" + version)},
+		{Key: util.StringToBytesWithNoCopy("/" + version)},
 	})) > 0
 }

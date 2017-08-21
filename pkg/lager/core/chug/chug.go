@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/ServiceComb/service-center/pkg/lager"
+	"github.com/ServiceComb/service-center/util"
 )
 
 type Entry struct {
@@ -61,7 +62,7 @@ func entry(raw []byte) (entry Entry) {
 		Raw:     copiedBytes,
 	}
 
-	rawString := string(raw)
+	rawString := util.BytesToStringWithNoCopy(raw)
 	idx := strings.Index(rawString, "{")
 	if idx == -1 {
 		return

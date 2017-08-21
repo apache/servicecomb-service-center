@@ -30,14 +30,16 @@ const (
 	DEFAULT_ADD_QUEUE_TIMEOUT = 5 * time.Second
 )
 
-type Indexer interface {
-	Search(ctx context.Context, op *registry.PluginOp) (*registry.PluginResponse, error)
-	Run()
-	Stop()
-	Ready() <-chan struct{}
+var defaultRootKeys map[string]struct{}
+
+func init() {
+	defaultRootKeys = make(map[string]struct{}, len(defaultRootKeys))
+	for _, root := range TypeRoots {
+		defaultRootKeys[root] = struct{}{}
+	}
 }
 
-type KvCacheIndexer struct {
+type Indexer struct {
 	BuildTimeout     time.Duration
 	cacher           Cacher
 	cacheType        StoreType
@@ -49,18 +51,18 @@ type KvCacheIndexer struct {
 	isClose          bool
 }
 
-func (i *KvCacheIndexer) Search(ctx context.Context, op *registry.PluginOp) (*registry.PluginResponse, error) {
+func (i *Indexer) Search(ctx context.Context, op *registry.PluginOp) (*registry.PluginResponse, error) {
 	if op.Action != registry.GET {
 		return nil, errors.New("unexpected action")
 	}
 
-	if op.WithNoCache || op.WithRev > 0 {
-		util.LOGGER.Debugf("search %s match WitchNoCache or WitchRev, request etcd server, op: %s",
-			i.cacheType, op)
+	key := util.BytesToStringWithNoCopy(op.Key)
+
+	if op.Mode == registry.MODE_NO_CACHE || op.WithRev > 0 {
+		util.LOGGER.Debugf("search %s match WitchNoCache or WitchRev, request etcd server, key: %s",
+			i.cacheType, key)
 		return registry.GetRegisterCenter().Do(ctx, op)
 	}
-
-	key := registry.BytesToStringWithNoCopy(op.Key)
 
 	if op.WithPrefix {
 		return i.searchPrefixKeyFromCacheOrRemote(ctx, op)
@@ -68,7 +70,6 @@ func (i *KvCacheIndexer) Search(ctx context.Context, op *registry.PluginOp) (*re
 
 	resp := &registry.PluginResponse{
 		Action:    op.Action,
-		Kvs:       []*mvccpb.KeyValue{},
 		Count:     0,
 		Revision:  i.Cache().Version(),
 		Succeeded: true,
@@ -79,14 +80,22 @@ func (i *KvCacheIndexer) Search(ctx context.Context, op *registry.PluginOp) (*re
 			resp.Count = 1
 			return resp, nil
 		}
-		util.LOGGER.Debugf("%s cache does not store this key, request etcd server, op: %s", i.cacheType, op)
+		if op.Mode == registry.MODE_CACHE {
+			return resp, nil
+		}
+
+		util.LOGGER.Debugf("%s cache does not store this key, request etcd server, key: %s", i.cacheType, key)
 		return registry.GetRegisterCenter().Do(ctx, op)
 	}
 
 	cacheData := i.Cache().Data(key)
 	if cacheData == nil {
-		util.LOGGER.Debugf("do not match any key in %s cache store, request etcd server, op: %s",
-			i.cacheType, op)
+		if op.Mode == registry.MODE_CACHE {
+			return resp, nil
+		}
+
+		util.LOGGER.Debugf("do not match any key in %s cache store, request etcd server, key: %s",
+			i.cacheType, key)
 		return registry.GetRegisterCenter().Do(ctx, op)
 	}
 
@@ -95,11 +104,11 @@ func (i *KvCacheIndexer) Search(ctx context.Context, op *registry.PluginOp) (*re
 	return resp, nil
 }
 
-func (i *KvCacheIndexer) Cache() Cache {
+func (i *Indexer) Cache() Cache {
 	return i.cacher.Cache()
 }
 
-func (i *KvCacheIndexer) searchPrefixKeyFromCacheOrRemote(ctx context.Context, op *registry.PluginOp) (*registry.PluginResponse, error) {
+func (i *Indexer) searchPrefixKeyFromCacheOrRemote(ctx context.Context, op *registry.PluginOp) (*registry.PluginResponse, error) {
 	resp := &registry.PluginResponse{
 		Action:    op.Action,
 		Kvs:       []*mvccpb.KeyValue{},
@@ -108,34 +117,34 @@ func (i *KvCacheIndexer) searchPrefixKeyFromCacheOrRemote(ctx context.Context, o
 		Succeeded: true,
 	}
 
-	prefix := registry.BytesToStringWithNoCopy(op.Key)
+	prefix := util.BytesToStringWithNoCopy(op.Key)
 
 	i.prefixLock.RLock()
-	keys, ok := i.prefixIndex[prefix]
-	i.prefixLock.RUnlock()
-	if !ok {
-		util.LOGGER.Debugf("can not find any key from %s cache with prefix, request etcd server, op: %s",
-			i.cacheType, op)
-		prefixResp, err := registry.GetRegisterCenter().Do(ctx, op)
-		if err != nil {
-			return nil, err
+	resp.Count = int64(i.getPrefixKey(nil, prefix))
+	if resp.Count == 0 {
+		i.prefixLock.RUnlock()
+		if op.Mode == registry.MODE_CACHE {
+			return resp, nil
 		}
 
-		resp.Kvs = prefixResp.Kvs
-		resp.Count = prefixResp.Count
-		resp.Revision = prefixResp.Revision
-		return resp, nil
+		util.LOGGER.Debugf("can not find any key from %s cache with prefix, request etcd server, key: %s",
+			i.cacheType, prefix)
+		return registry.GetRegisterCenter().Do(ctx, op)
 	}
 
-	resp.Count = int64(len(keys))
 	if op.CountOnly {
+		i.prefixLock.RUnlock()
 		return resp, nil
 	}
 
 	t := time.Now()
-	kvs := make([]*mvccpb.KeyValue, len(keys))
+	keys := make([]string, 0, resp.Count)
+	i.getPrefixKey(&keys, prefix)
+	i.prefixLock.RUnlock()
+
+	kvs := make([]*mvccpb.KeyValue, resp.Count)
 	idx := 0
-	for key := range keys {
+	for _, key := range keys {
 		c := i.Cache().Data(key) // TODO too slow when big data is requested
 		if c == nil {
 			// it means resp.Count is not equal to len(keys)
@@ -152,31 +161,27 @@ func (i *KvCacheIndexer) searchPrefixKeyFromCacheOrRemote(ctx context.Context, o
 	return resp, nil
 }
 
-func (i *KvCacheIndexer) onCacheEvent(evt *KvEvent) {
+func (i *Indexer) OnCacheEvent(evt *KvEvent) {
 	if evt.Action != pb.EVT_DELETE && evt.Action != pb.EVT_CREATE {
 		return
 	}
 
-	i.prefixLock.RLock()
-
 	if i.isClose {
-		i.prefixLock.RUnlock()
 		return
 	}
+	defer util.RecoverAndReport()
 
 	ctx, _ := context.WithTimeout(context.Background(), i.BuildTimeout)
 	select {
 	case <-ctx.Done():
-		key := registry.BytesToStringWithNoCopy(evt.KV.Key)
+		key := util.BytesToStringWithNoCopy(evt.KV.Key)
 		util.LOGGER.Warnf(nil, "add event to build index queue timed out(%s), key is %s [%s] event",
 			i.BuildTimeout, key, evt.Action)
 	case i.prefixBuildQueue <- evt:
 	}
-
-	i.prefixLock.RUnlock()
 }
 
-func (i *KvCacheIndexer) buildIndex() {
+func (i *Indexer) buildIndex() {
 	i.goroutine.Do(func(stopCh <-chan struct{}) {
 		util.SafeCloseChan(i.ready)
 		for {
@@ -187,20 +192,15 @@ func (i *KvCacheIndexer) buildIndex() {
 				if !ok {
 					return
 				}
-				key := registry.BytesToStringWithNoCopy(evt.KV.Key)
+				key := util.BytesToStringWithNoCopy(evt.KV.Key)
+				prefix := key[:strings.LastIndex(key, "/")+1]
 
 				i.prefixLock.Lock()
-				prefix := key[:strings.LastIndex(key, "/")+1]
-				keys, ok := i.prefixIndex[prefix]
-				if !ok {
-					keys = make(map[string]struct{})
-					i.prefixIndex[prefix] = keys
-				}
 				switch evt.Action {
 				case pb.EVT_CREATE:
-					keys[key] = struct{}{}
+					i.addPrefixKey(prefix, key)
 				case pb.EVT_DELETE:
-					delete(keys, key)
+					i.deletePrefixKey(prefix, key)
 				}
 				i.prefixLock.Unlock()
 
@@ -210,7 +210,68 @@ func (i *KvCacheIndexer) buildIndex() {
 	})
 }
 
-func (i *KvCacheIndexer) Run() {
+func (i *Indexer) getPrefixKey(arr *[]string, prefix string) (count int) {
+	keysRef, ok := i.prefixIndex[prefix]
+	if !ok {
+		return 0
+	}
+
+	for key := range keysRef {
+		var childs *[]string = nil
+		if arr != nil {
+			childs = &[]string{}
+		}
+		n := i.getPrefixKey(childs, key)
+		if n == 0 {
+			count += len(keysRef)
+			if arr != nil {
+				for k := range keysRef {
+					*arr = append(*arr, k)
+				}
+			}
+			break
+		}
+		count += n
+		if arr != nil {
+			*arr = append(*arr, *childs...)
+		}
+	}
+	return count
+}
+
+func (i *Indexer) addPrefixKey(prefix, key string) {
+	_, ok := defaultRootKeys[key]
+	if ok {
+		return
+	}
+
+	keys, ok := i.prefixIndex[prefix]
+	if !ok {
+		keys = make(map[string]struct{})
+		i.prefixIndex[prefix] = keys
+	} else if _, ok := keys[key]; ok {
+		return
+	}
+
+	keys[key], key = struct{}{}, prefix
+	prefix = key[:strings.LastIndex(key[:len(key)-1], "/")+1]
+
+	i.addPrefixKey(prefix, key)
+}
+
+func (i *Indexer) deletePrefixKey(prefix, key string) {
+	m, ok := i.prefixIndex[prefix]
+	if !ok {
+		return
+	}
+
+	for k := range i.prefixIndex[key] {
+		i.deletePrefixKey(key, k)
+	}
+	delete(m, key)
+}
+
+func (i *Indexer) Run() {
 	i.prefixLock.Lock()
 	if !i.isClose {
 		i.prefixLock.Unlock()
@@ -219,14 +280,12 @@ func (i *KvCacheIndexer) Run() {
 	i.isClose = false
 	i.prefixLock.Unlock()
 
-	AddEventHandleFunc(i.cacheType, i.onCacheEvent)
-
 	i.buildIndex()
 
 	i.cacher.Run()
 }
 
-func (i *KvCacheIndexer) Stop() {
+func (i *Indexer) Stop() {
 	i.prefixLock.Lock()
 	if i.isClose {
 		i.prefixLock.Unlock()
@@ -246,13 +305,13 @@ func (i *KvCacheIndexer) Stop() {
 	util.LOGGER.Debugf("%s indexer is stopped", i.cacheType)
 }
 
-func (i *KvCacheIndexer) Ready() <-chan struct{} {
+func (i *Indexer) Ready() <-chan struct{} {
 	<-i.cacher.Ready()
 	return i.ready
 }
 
-func NewKvCacheIndexer(t StoreType, cr Cacher) *KvCacheIndexer {
-	return &KvCacheIndexer{
+func NewCacheIndexer(t StoreType, cr Cacher) *Indexer {
+	return &Indexer{
 		BuildTimeout:     DEFAULT_ADD_QUEUE_TIMEOUT,
 		cacher:           cr,
 		cacheType:        t,

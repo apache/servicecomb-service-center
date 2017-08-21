@@ -42,20 +42,23 @@ const (
 func (q *BuildInQuota) Apply4Quotas(ctx context.Context, quotaType int, quotaSize int16) (bool, error) {
 	var key string = ""
 	var max int64 = 0
-	tenant := ctx.Value("tenant").(string)
+	var indexer *store.Indexer
+	tenant := util.ParseTenant(ctx)
 	switch quotaType {
 	case quota.MicroServiceInstanceQuotaType:
-		key = core.GetInstanceRootKey(tenant)
+		key = core.GetInstanceRootKey(tenant) + "/"
 		max = INSTANCE_MAX_NUMBER
+		indexer = store.Store().Instance()
 	case quota.MicroServiceQuotaType:
-		key = core.GetServiceRootKey(tenant)
+		key = core.GetServiceRootKey(tenant) + "/"
 		max = SERVICE_MAX_NUMBER
+		indexer = store.Store().Service()
 	default:
 		return false, fmt.Errorf("Unsurported Type %d", quotaType)
 	}
-	resp, err := store.Store().Service().Search(ctx, &registry.PluginOp{
+	resp, err := indexer.Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
-		Key:        []byte(key),
+		Key:        util.StringToBytesWithNoCopy(key),
 		CountOnly:  true,
 		WithPrefix: true,
 	})
