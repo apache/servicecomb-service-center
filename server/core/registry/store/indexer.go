@@ -217,21 +217,23 @@ func (i *Indexer) getPrefixKey(arr *[]string, prefix string) (count int) {
 	}
 
 	for key := range keysRef {
-		var childs []string
+		var childs *[]string = nil
 		if arr != nil {
-			childs = []string{}
+			childs = &[]string{}
 		}
-		n := i.getPrefixKey(&childs, key)
+		n := i.getPrefixKey(childs, key)
 		if n == 0 {
 			count += len(keysRef)
 			if arr != nil {
-				*arr = append(*arr, util.MapToList(keysRef)...)
+				for k := range keysRef {
+					*arr = append(*arr, k)
+				}
 			}
 			break
 		}
 		count += n
 		if arr != nil {
-			*arr = append(*arr, childs...)
+			*arr = append(*arr, *childs...)
 		}
 	}
 	return count
