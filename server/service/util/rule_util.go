@@ -28,6 +28,12 @@ import (
 	"strings"
 )
 
+var tagRegEx *regexp.Regexp
+
+func init() {
+	tagRegEx, _ = regexp.Compile("tag_(.*)")
+}
+
 type NotAllowAcrossAppError string
 
 func (e NotAllowAcrossAppError) Error() string {
@@ -148,8 +154,6 @@ func AllowAcrossApp(providerService *pb.MicroService, consumerService *pb.MicroS
 func MatchRules(rules []*pb.ServiceRule, service *pb.MicroService, serviceTags map[string]string) error {
 	v := reflect.Indirect(reflect.ValueOf(service))
 
-	tagPattern := "tag_(.*)"
-	tagRegEx, _ := regexp.Compile(tagPattern)
 	hasWhite := false
 	for _, rule := range rules {
 		var value string
