@@ -26,6 +26,14 @@ import (
 	"strings"
 )
 
+type RuleFilter struct {
+	Provider *pb.MicroService
+}
+
+func (rf *RuleFilter) Filter(consumer *pb.MicroService) bool {
+	return true
+}
+
 type RuleEventHandler struct {
 	service *nf.NotifyService
 }
@@ -111,6 +119,34 @@ func (h *RuleEventHandler) OnEvent(evt *store.KvEvent) {
 
 		consumers = append(consumers, &serviceInfo{ms, tags})
 	}
+}
+
+func GetConsumersWithFilter(ctx context.Context, tenant, providerId string,
+	filter func(consumer *pb.MicroService) bool) (consumers []*pb.MicroService, err error) {
+	kvs, err := dependency.GetConsumersInCache(ctx, tenant, providerId)
+	if err != nil {
+		return nil, err
+	}
+	l := len(kvs)
+	if l == 0 {
+		return nil, nil
+	}
+	idx := 0
+	consumers = make([]*pb.MicroService, l)
+	for _, kv := range kvs {
+		var consumer pb.MicroService
+		err = json.Unmarshal(kv.Value, &consumer)
+		if err != nil {
+			util.LOGGER.Errorf(err, "unmarshal service consumer file failed, provider id %s", providerId)
+			return nil, err
+		}
+		if !filter(&consumer) {
+			continue
+		}
+		consumers[idx] = &consumer
+		idx++
+	}
+	return consumers[:idx], nil
 }
 
 func NewRuleEventHandler(s *nf.NotifyService) *RuleEventHandler {
