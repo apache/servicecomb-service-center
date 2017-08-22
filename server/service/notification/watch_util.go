@@ -238,6 +238,22 @@ func queryServiceInstancesKvs(ctx context.Context, serviceId string, rev int64) 
 	return resp.Kvs, nil
 }
 
+func PublishInstanceEvent(service *NotifyService, tenant string, action pb.EventType, serviceKey *pb.MicroServiceKey, instance *pb.MicroServiceInstance, rev int64, subscribers []string) {
+	response := &pb.WatchInstanceResponse{
+		Response: pb.CreateResponse(pb.Response_SUCCESS, "Watch instance successfully."),
+		Action:   string(action),
+		Key:      serviceKey,
+		Instance: instance,
+	}
+	for _, consumerId := range subscribers {
+		job := NewWatchJob(INSTANCE, consumerId, apt.GetInstanceRootKey(tenant)+"/", rev, response)
+		util.LOGGER.Debugf("publish event to notify service, %v", job)
+
+		// TODO add超时怎么处理？
+		service.AddJob(job)
+	}
+}
+
 func NewInstanceWatcher(selfServiceId, instanceRoot string) *ListWatcher {
 	return NewWatcher(INSTANCE, selfServiceId, instanceRoot)
 }

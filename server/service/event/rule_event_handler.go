@@ -18,7 +18,7 @@ import (
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
 	"github.com/ServiceComb/service-center/server/service/dependency"
-	"github.com/ServiceComb/service-center/server/service/microservice"
+	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	nf "github.com/ServiceComb/service-center/server/service/notification"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
@@ -27,11 +27,25 @@ import (
 )
 
 type RuleFilter struct {
-	Provider *pb.MicroService
+	Tenant       string
+	Provider     *pb.MicroService
+	ProviderRule *pb.ServiceRule
 }
 
-func (rf *RuleFilter) Filter(consumer *pb.MicroService) bool {
-	return true
+func (rf *RuleFilter) Filter(ctx context.Context, consumerId string) (bool, error) {
+	consumer, err := ms.GetServiceByServiceId(ctx, rf.Tenant, consumerId)
+
+	tags, err := serviceUtil.GetTagsUtils(context.Background(), rf.Tenant, consumerId)
+	if err != nil {
+		return false, err
+	}
+	matchErr := serviceUtil.MatchRules([]*pb.ServiceRule{rf.ProviderRule}, consumer, tags)
+	switch matchErr.(type) {
+	case serviceUtil.NotMatchWhiteListError, serviceUtil.MatchBlackListError:
+		return false, nil
+	default:
+	}
+	return true, nil
 }
 
 type RuleEventHandler struct {
@@ -58,8 +72,7 @@ func (h *RuleEventHandler) OnEvent(evt *store.KvEvent) {
 			providerId, ruleId, action)
 		return
 	}
-	util.LOGGER.Infof("caught service %s rule %s [%s] event",
-		providerId, ruleId, action)
+	util.LOGGER.Infof("caught service %s rule %s [%s] event", providerId, ruleId, action)
 
 	var rule pb.ServiceRule
 	err := json.Unmarshal(data, &rule)
@@ -69,84 +82,78 @@ func (h *RuleEventHandler) OnEvent(evt *store.KvEvent) {
 		return
 	}
 
-	kvs, err := dependency.GetConsumersInCache(context.Background(), tenant, providerId)
+	h.publish(context.Background(), tenant, providerId, &rule, evt.Action, evt.Revision)
+}
+
+func (h *RuleEventHandler) publish(ctx context.Context, tenant, providerId string, rule *pb.ServiceRule, action pb.EventType, rev int64) {
+	provider, err := ms.GetServiceByServiceId(ctx, tenant, providerId)
+	if provider == nil {
+		util.LOGGER.Errorf(err, "get service %s file failed", providerId)
+		return
+	}
+	providerKey := &pb.MicroServiceKey{
+		AppId:       provider.AppId,
+		ServiceName: provider.ServiceName,
+		Version:     provider.Version,
+	}
+
+	instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, tenant, providerId, "")
 	if err != nil {
-		util.LOGGER.Errorf(err, "get consumer services failed, provider %s rule %s",
-			providerId, ruleId)
+		util.LOGGER.Errorf(err, "get provider service %s instance failed", providerId)
+		return
+	}
+	if len(instances) == 0 {
 		return
 	}
 
-	type serviceInfo struct {
-		Service *pb.MicroService
-		Tags    map[string]string
+	rf := RuleFilter{
+		Tenant:       tenant,
+		Provider:     provider,
+		ProviderRule: rule,
 	}
-	consumers := make([]*serviceInfo, 0, len(kvs))
+
+	allow, deny, err := GetConsumerIdsWithFilter(ctx, tenant, providerId, rf.Filter)
+	if err != nil {
+		util.LOGGER.Errorf(err, "get consumer services failed, provider %s rule %s",
+			providerId, rule.RuleId)
+		return
+	}
+
+	for _, instance := range instances {
+		nf.PublishInstanceEvent(h.service, tenant, pb.EVT_UPDATE, providerKey, instance, rev, allow)
+		nf.PublishInstanceEvent(h.service, tenant, pb.EVT_DELETE, providerKey, instance, rev, deny)
+	}
+}
+
+func GetConsumerIdsWithFilter(ctx context.Context, tenant, providerId string,
+	filter func(ctx context.Context, consumerId string) (bool, error)) (allow []string, deny []string, err error) {
+	kvs, err := dependency.GetConsumersInCache(ctx, tenant, providerId)
+	if err != nil {
+		return nil, nil, err
+	}
+	l := len(kvs)
+	if l == 0 {
+		return nil, nil, nil
+	}
+	allowIdx, denyIdx := 0, l
+	consumers := make([]string, l)
 	for _, kv := range kvs {
 		consumerId := util.BytesToStringWithNoCopy(kv.Key)
 		consumerId = consumerId[strings.LastIndex(consumerId, "/")+1:]
 
-		ms, err := microservice.GetServiceByServiceId(context.Background(), tenant, consumerId)
+		ok, err := filter(ctx, consumerId)
 		if err != nil {
-			util.LOGGER.Errorf(err, "get consumer %s service file failed, provider %s rule %s",
-				consumerId, providerId, ruleId)
-			return
+			return nil, nil, err
 		}
-
-		tags, err := serviceUtil.GetTagsUtils(context.Background(), tenant, consumerId)
-		if err != nil {
-			util.LOGGER.Errorf(err, "get consumer %s service tag failed, provider %s rule %s",
-				consumerId, providerId, ruleId)
-			return
+		if ok {
+			consumers[allowIdx] = consumerId
+			allowIdx++
+		} else {
+			denyIdx--
+			consumers[denyIdx] = consumerId
 		}
-
-		matchErr := serviceUtil.MatchRules([]*pb.ServiceRule{&rule}, ms, tags)
-		switch matchErr.(type) {
-		case serviceUtil.NotMatchWhiteListError:
-			switch evt.Action {
-			case pb.EVT_CREATE, pb.EVT_UPDATE:
-			case pb.EVT_DELETE:
-			}
-		case serviceUtil.MatchBlackListError:
-			switch evt.Action {
-			case pb.EVT_CREATE, pb.EVT_UPDATE:
-			case pb.EVT_DELETE:
-			}
-		default:
-			util.LOGGER.Errorf(err, "match service %s rules %s failed",
-				consumerId, providerId, ruleId)
-			return
-		}
-
-		consumers = append(consumers, &serviceInfo{ms, tags})
 	}
-}
-
-func GetConsumersWithFilter(ctx context.Context, tenant, providerId string,
-	filter func(consumer *pb.MicroService) bool) (consumers []*pb.MicroService, err error) {
-	kvs, err := dependency.GetConsumersInCache(ctx, tenant, providerId)
-	if err != nil {
-		return nil, err
-	}
-	l := len(kvs)
-	if l == 0 {
-		return nil, nil
-	}
-	idx := 0
-	consumers = make([]*pb.MicroService, l)
-	for _, kv := range kvs {
-		var consumer pb.MicroService
-		err = json.Unmarshal(kv.Value, &consumer)
-		if err != nil {
-			util.LOGGER.Errorf(err, "unmarshal service consumer file failed, provider id %s", providerId)
-			return nil, err
-		}
-		if !filter(&consumer) {
-			continue
-		}
-		consumers[idx] = &consumer
-		idx++
-	}
-	return consumers[:idx], nil
+	return consumers[:allowIdx], consumers[denyIdx:], nil
 }
 
 func NewRuleEventHandler(s *nf.NotifyService) *RuleEventHandler {
