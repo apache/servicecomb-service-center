@@ -1,5 +1,5 @@
-# service-center 
-[![Build Status](https://travis-ci.org/ServiceComb/service-center.svg?branch=master)](https://travis-ci.org/ServiceComb/service-center)   [![Coverage Status](https://coveralls.io/repos/github/ServiceComb/service-center/badge.svg?branch=master)](https://coveralls.io/github/ServiceComb/service-center?branch=master)  [![Go Report Card](https://goreportcard.com/badge/github.com/ServiceComb/service-center)](https://goreportcard.com/report/github.com/ServiceComb/service-center)  [![GoDoc](https://godoc.org/github.com/ServiceComb/service-center?status.svg)](https://godoc.org/github.com/ServiceComb/service-center)
+# service-center
+[![Build Status](https://travis-ci.org/ServiceComb/ServiceComb-Service-Center.svg?branch=master)](https://travis-ci.org/ServiceComb/SServiceComb-Service-Center)   [![Coverage Status](https://coveralls.io/repos/github/ServiceComb/ServiceComb-Service-Center/badge.svg?branch=master)](https://coveralls.io/github/ServiceComb/ServiceComb-Service-Center?branch=master)  [![Go Report Card](https://goreportcard.com/badge/github.com/ServiceComb/ServiceComb-Service-Center)](https://goreportcard.com/report/github.com/ServiceComb/ServiceComb-Service-Center)  [![GoDoc](https://godoc.org/github.com/ServiceComb/ServiceComb-Service-Center?status.svg)](https://godoc.org/github.com/ServiceComb/ServiceComb-Service-Center)
 
 A standalone service center allows services to register their instance information and to discover providers of a given service.
 
@@ -31,7 +31,7 @@ docker run -d -p 30100:30100 servicecomb/service-center
 ```
 
 
-##### If you want to try out the latest and greatest, Service Center can be easily built. 
+##### If you want to try out the latest and greatest, Service Center can be easily built.
 
 Download the Code
 ```sh
@@ -75,7 +75,7 @@ This will bring up Service Center listening on ip/port 127.0.0.1:30100 for servi
 Project documentation is available on the [ServiceComb website][servicecomb-website]. You can also find some development guide [here](/docs)
 
 [servicecomb-website]: http://servicecomb.io/
-      
+
 ## Contact
 
 Bugs: [issues](https://github.com/servicecomb/service-center/issues)
