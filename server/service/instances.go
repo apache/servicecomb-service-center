@@ -900,7 +900,7 @@ func (s *InstanceController) WebSocketListAndWatch(ctx context.Context, in *pb.W
 	nf.DoWebSocketWatch(nf.GetNotifyService(), watcher, conn)
 }
 
-func (s *InstanceController) CluterHealth(ctx context.Context) (*pb.GetInstancesResponse, error) {
+func (s *InstanceController) ClusterHealth(ctx context.Context) (*pb.GetInstancesResponse, error) {
 	tenant := util.StringJoin([]string{core.REGISTRY_TENANT, core.REGISTRY_PROJECT}, "/")
 	serviceId, err := ms.GetServiceId(ctx, &pb.MicroServiceKey{
 		AppId:       core.Service.AppId,
