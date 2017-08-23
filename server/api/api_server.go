@@ -238,15 +238,15 @@ func (s *APIService) Start() {
 		return
 	}
 	s.isClose = false
+
+	s.startRESTfulServer()
+
+	s.startGrpcServer()
 	// 自注册
 	err := s.registerServiceCenter()
 	if err != nil {
 		s.err <- err
 	}
-
-	s.startRESTfulServer()
-
-	s.startGrpcServer()
 	// 心跳
 	s.startHeartBeatService()
 

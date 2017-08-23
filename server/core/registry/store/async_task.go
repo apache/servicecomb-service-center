@@ -221,7 +221,7 @@ func (lat *AsyncTasker) scheduleTask(at AsyncTask) {
 		}()
 		select {
 		case <-ctx.Done():
-			util.LOGGER.Debugf("finish to handle task, key is %s", at.Key())
+			util.LOGGER.Debugf("finish to handle task, key is %s, result: %s", at.Key(), at.Err())
 		case <-stopCh:
 			cancel()
 			util.LOGGER.Debugf("cancelled task for AsyncTasker is stopped, key is %s", at.Key())
