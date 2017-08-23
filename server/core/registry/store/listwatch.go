@@ -59,6 +59,10 @@ type ListOptions struct {
 	Context context.Context
 }
 
+func (lo *ListOptions) String() string {
+	return fmt.Sprintf("{timeout: %s}", lo.Timeout)
+}
+
 type ListWatcher struct {
 	Client registry.Registry
 	Key    string

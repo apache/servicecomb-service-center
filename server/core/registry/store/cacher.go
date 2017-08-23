@@ -138,7 +138,7 @@ func (c *KvCache) Unlock() {
 type KvCacher struct {
 	Cfg *KvCacherConfig
 
-	lastModRev         int64
+	lastRev            int64
 	noEventInterval    int
 	noEventMaxInterval int
 
@@ -152,13 +152,13 @@ type KvCacher struct {
 
 func (c *KvCacher) needList() bool {
 	rev := c.lw.ModRevision()
-	defer func() { c.lastModRev = rev }()
+	defer func() { c.lastRev = rev }()
 
 	if rev == 0 {
 		c.noEventInterval = 0
 		return true
 	}
-	if c.lastModRev != rev {
+	if c.lastRev != rev {
 		c.noEventInterval = 0
 		return false
 	}
@@ -179,27 +179,26 @@ func (c *KvCacher) doList(listOps *ListOptions) error {
 	if err != nil {
 		return err
 	}
-	lastRev := c.lastModRev
-	c.lastModRev = c.lw.ModRevision()
-	c.sync(c.filter(c.lastModRev, kvs))
+	lastRev := c.lastRev
+	c.lastRev = c.lw.ModRevision()
+	c.sync(c.filter(c.lastRev, kvs))
 	syncDuration := time.Now().Sub(start)
 
 	if syncDuration > 5*time.Second {
-		util.LOGGER.Warnf(nil, "finish to cache key %s, %d items took %s! list options: %+v, rev: %d",
-			c.Cfg.Key, len(kvs), syncDuration, listOps, c.lastModRev)
+		util.LOGGER.Warnf(nil, "finish to cache key %s, %d items took %s! opts: %s, rev: %d",
+			c.Cfg.Key, len(kvs), syncDuration, listOps, c.lastRev)
 		return nil
 	}
-	if lastRev != c.lastModRev {
-		util.LOGGER.Infof("finish to cache key %s, %d items took %s, list options: %+v, rev: %d",
-			c.Cfg.Key, len(kvs), syncDuration, listOps, c.lastModRev)
+	if lastRev != c.lastRev {
+		util.LOGGER.Infof("finish to cache key %s, %d items took %s, opts: %s, rev: %d",
+			c.Cfg.Key, len(kvs), syncDuration, listOps, c.lastRev)
 	}
 	return nil
 }
 
 func (c *KvCacher) doWatch(listOps *ListOptions) error {
 	watcher := c.lw.Watch(listOps)
-	util.LOGGER.Debugf("finish to new watcher, key %s, list options: %+v, start rev: %d+1",
-		c.Cfg.Key, listOps, c.lastModRev)
+	util.LOGGER.Debugf("finish to new watcher, key %s, opts: %s, start rev: %d+1", c.Cfg.Key, listOps, c.lastRev)
 	return c.handleWatcher(watcher)
 }
 
@@ -213,7 +212,8 @@ func (c *KvCacher) ListAndWatch(ctx context.Context) error {
 	if c.needList() {
 		err := c.doList(listOps)
 		if err != nil {
-			util.LOGGER.Errorf(err, "list key %s failed, list options: %+v", c.Cfg.Key, listOps)
+			util.LOGGER.Errorf(err, "list key %s failed, opts: %s, rev: %d",
+				c.Cfg.Key, listOps, c.lastRev)
 			// do not return err, continue to watch
 		}
 		util.SafeCloseChan(c.ready)
@@ -224,7 +224,8 @@ func (c *KvCacher) ListAndWatch(ctx context.Context) error {
 	c.mux.Unlock()
 
 	if err != nil {
-		util.LOGGER.Errorf(err, "handle watcher failed, watch key %s, list options: %+v", c.Cfg.Key, listOps)
+		util.LOGGER.Errorf(err, "handle watcher failed, watch key %s, opts: %s, start rev: %d+1",
+			c.Cfg.Key, listOps, c.lastRev)
 		return err
 	}
 	return nil
