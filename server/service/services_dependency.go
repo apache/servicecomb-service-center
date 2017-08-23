@@ -30,19 +30,29 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 	}
 	tenant := util.ParseTenantProject(ctx)
 	for _, dependencyInfo := range dependencyInfos {
+		consumerFlag := util.StringJoin([]string{dependencyInfo.Consumer.AppId, dependencyInfo.Consumer.ServiceName, dependencyInfo.Consumer.Version}, "/")
+
+		dep := new(dependency.Dependency)
+		dep.Tenant = tenant
+
+		util.LOGGER.Infof("start create dependency, data info %v", dependencyInfo)
+
 		consumerInfo := pb.TransferToMicroServiceKeys([]*pb.DependencyMircroService{dependencyInfo.Consumer}, tenant)[0]
 		providersInfo := pb.TransferToMicroServiceKeys(dependencyInfo.Providers, tenant)
-		consumerFlag := util.StringJoin([]string{consumerInfo.AppId, consumerInfo.ServiceName, consumerInfo.Version}, "/")
-		rsp := dependency.ParamsChecker(ctx, consumerInfo, providersInfo, tenant)
+
+		dep.Consumer = consumerInfo
+		dep.ProvidersRule = providersInfo
+
+		rsp := dependency.ParamsChecker(consumerInfo, providersInfo)
 		if rsp != nil {
-			util.LOGGER.Errorf(nil, "create dependency faild, conusmer %s: invalid params.%s", consumerFlag, rsp.Response.Message)
+			util.LOGGER.Errorf(nil, "create dependency failed, conusmer %s: invalid params.%s", consumerFlag, rsp.Response.Message)
 			return rsp, nil
 		}
 
 		consumerId, err := ms.GetServiceId(ctx, consumerInfo)
 		util.LOGGER.Debugf("consumerId is %s", consumerId)
 		if err != nil {
-			util.LOGGER.Errorf(err, "create dependency faild, consumer %s: get consumer failed.", consumerFlag)
+			util.LOGGER.Errorf(err, "create dependency failed, consumer %s: get consumer failed.", consumerFlag)
 			return &pb.CreateDependenciesResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 			}, err
@@ -53,6 +63,8 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 				Response: pb.CreateResponse(pb.Response_FAIL, "Get consumer's serviceId is empty."),
 			}, nil
 		}
+
+		dep.ConsumerId = consumerId
 		//更新服务的内容，把providers加入
 		err = dependency.UpdateServiceForAddDependency(ctx, consumerId, dependencyInfo.Providers, tenant)
 		if err != nil {
@@ -71,7 +83,7 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 			}, err
 		}
 
-		err = dependency.CreateDependencyRule(ctx, consumerId, consumerInfo, providersInfo)
+		err = dependency.CreateDependencyRule(ctx, dep)
 		lock.Unlock()
 
 		if err != nil {
@@ -80,16 +92,8 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 			}, err
 		}
-		//更新consumer作为provider的依赖关系
-		err = dependency.UpdateAsProviderDependency(ctx, consumerId, consumerInfo)
-		if err != nil {
-			util.LOGGER.Errorf(nil, "Dependency update,as provider,update it's consumer list failed. %s", err.Error())
-			return &pb.CreateDependenciesResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
-			}, err
-		}
-		//更新consumer作为consumer的依赖关系
-		err = dependency.UpdateAsConsumerDependency(ctx, consumerId, providersInfo, tenant)
+
+		err = dependency.UpdateDependency(dep)
 		if err != nil {
 			util.LOGGER.Errorf(nil, "Dependency update,as consumer,update it's provider list failed. %s", err.Error())
 			return &pb.CreateDependenciesResponse{
