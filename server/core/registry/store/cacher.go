@@ -243,9 +243,14 @@ func (c *KvCacher) handleWatcher(watcher *Watcher) error {
 }
 
 func (c *KvCacher) sync(evts []*Event) {
+	if len(evts) == 0 {
+		return
+	}
+
 	cache := c.Cache().(*KvCache)
+	idx := 0
+	kvEvts := make([]*KvEvent, len(evts))
 	store := cache.Lock()
-	defer cache.Unlock()
 	for _, evt := range evts {
 		kv := evt.Object.(*mvccpb.KeyValue)
 		key := util.BytesToStringWithNoCopy(kv.Key)
@@ -265,25 +270,30 @@ func (c *KvCacher) sync(evts []*Event) {
 					evt.Type, proto.EVT_UPDATE, key)
 				t = proto.EVT_UPDATE
 			}
-			c.Cfg.OnEvent(&KvEvent{
+			kvEvts[idx] = &KvEvent{
 				Revision: evt.Revision,
 				Action:   t,
 				KV:       kv,
-			})
+			}
+			idx++
 		case proto.EVT_DELETE:
 			if ok {
 				util.LOGGER.Debugf("sync %s event and notify watcher, remove key %s, %+v", evt.Type, key, kv)
 				delete(store, key)
-				c.Cfg.OnEvent(&KvEvent{
+				kvEvts[idx] = &KvEvent{
 					Revision: evt.Revision,
 					Action:   evt.Type,
 					KV:       prevKv,
-				})
+				}
+				idx++
 				continue
 			}
 			util.LOGGER.Warnf(nil, "unexpected %s event! nonexistent key %s", evt.Type, key)
 		}
 	}
+	cache.Unlock()
+
+	c.onKvEvents(kvEvts[:idx])
 }
 
 func (c *KvCacher) filter(rev int64, items []*mvccpb.KeyValue) []*Event {
@@ -402,6 +412,12 @@ func (c *KvCacher) filterCreateOrUpdate(store map[string]*mvccpb.KeyValue, newSt
 	select {
 	case <-filterStopCh:
 		close(eventsCh)
+	}
+}
+
+func (c *KvCacher) onKvEvents(evts []*KvEvent) {
+	for _, evt := range evts {
+		c.Cfg.OnEvent(evt)
 	}
 }
 

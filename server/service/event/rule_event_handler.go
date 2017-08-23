@@ -17,35 +17,76 @@ import (
 	"encoding/json"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
-	"github.com/ServiceComb/service-center/server/service/dependency"
 	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	nf "github.com/ServiceComb/service-center/server/service/notification"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
-	"strings"
 )
 
-type RuleFilter struct {
-	Tenant       string
-	Provider     *pb.MicroService
-	ProviderRule *pb.ServiceRule
+type RulesChangedAsyncTask struct {
+	key string
+	err error
+
+	Tenant     string
+	ProviderId string
+	Rev        int64
+	Service    *nf.NotifyService
 }
 
-func (rf *RuleFilter) Filter(ctx context.Context, consumerId string) (bool, error) {
-	consumer, err := ms.GetServiceByServiceId(ctx, rf.Tenant, consumerId)
+func (apt *RulesChangedAsyncTask) Key() string {
+	return apt.key
+}
 
-	tags, err := serviceUtil.GetTagsUtils(context.Background(), rf.Tenant, consumerId)
+func (apt *RulesChangedAsyncTask) Do(ctx context.Context) error {
+	defer store.Store().AsyncTasker().DeferRemoveTask(apt.Key())
+	apt.err = publish(ctx, apt.Service, apt.Tenant, apt.ProviderId, apt.Rev)
+	return apt.err
+}
+
+func (apt *RulesChangedAsyncTask) Err() error {
+	return apt.err
+}
+
+func publish(ctx context.Context, service *nf.NotifyService, tenant, providerId string, rev int64) error {
+	provider, err := ms.GetServiceByServiceId(ctx, tenant, providerId)
+	if provider == nil {
+		util.LOGGER.Errorf(err, "get service %s file failed", providerId)
+		return err
+	}
+	providerRules, err := serviceUtil.GetRulesUtil(ctx, tenant, providerId)
+	if err != nil || len(providerRules) == 0 {
+		util.LOGGER.Errorf(err, "get provider service %s rules failed", providerId)
+		return err
+	}
+	instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, tenant, providerId, "")
+	if err != nil || len(instances) == 0 {
+		util.LOGGER.Errorf(err, "get provider service %s instance failed", providerId)
+		return err
+	}
+
+	providerKey := &pb.MicroServiceKey{
+		AppId:       provider.AppId,
+		ServiceName: provider.ServiceName,
+		Version:     provider.Version,
+	}
+	rf := serviceUtil.RuleFilter{
+		Tenant:        tenant,
+		Provider:      provider,
+		ProviderRules: providerRules,
+	}
+
+	allow, deny, err := serviceUtil.GetConsumerIdsWithFilter(ctx, tenant, providerId, rf.Filter)
 	if err != nil {
-		return false, err
+		util.LOGGER.Errorf(err, "get consumer services by provider %s failed", providerId)
+		return err
 	}
-	matchErr := serviceUtil.MatchRules([]*pb.ServiceRule{rf.ProviderRule}, consumer, tags)
-	switch matchErr.(type) {
-	case serviceUtil.NotMatchWhiteListError, serviceUtil.MatchBlackListError:
-		return false, nil
-	default:
+
+	for _, instance := range instances {
+		nf.PublishInstanceEvent(service, tenant, pb.EVT_UPDATE, providerKey, instance, rev, allow)
+		nf.PublishInstanceEvent(service, tenant, pb.EVT_DELETE, providerKey, instance, rev, deny)
 	}
-	return true, nil
+	return nil
 }
 
 type RuleEventHandler struct {
@@ -82,78 +123,8 @@ func (h *RuleEventHandler) OnEvent(evt *store.KvEvent) {
 		return
 	}
 
-	h.publish(context.Background(), tenant, providerId, &rule, evt.Action, evt.Revision)
-}
-
-func (h *RuleEventHandler) publish(ctx context.Context, tenant, providerId string, rule *pb.ServiceRule, action pb.EventType, rev int64) {
-	provider, err := ms.GetServiceByServiceId(ctx, tenant, providerId)
-	if provider == nil {
-		util.LOGGER.Errorf(err, "get service %s file failed", providerId)
-		return
-	}
-	providerKey := &pb.MicroServiceKey{
-		AppId:       provider.AppId,
-		ServiceName: provider.ServiceName,
-		Version:     provider.Version,
-	}
-
-	instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, tenant, providerId, "")
-	if err != nil {
-		util.LOGGER.Errorf(err, "get provider service %s instance failed", providerId)
-		return
-	}
-	if len(instances) == 0 {
-		return
-	}
-
-	rf := RuleFilter{
-		Tenant:       tenant,
-		Provider:     provider,
-		ProviderRule: rule,
-	}
-
-	allow, deny, err := GetConsumerIdsWithFilter(ctx, tenant, providerId, rf.Filter)
-	if err != nil {
-		util.LOGGER.Errorf(err, "get consumer services failed, provider %s rule %s",
-			providerId, rule.RuleId)
-		return
-	}
-
-	for _, instance := range instances {
-		nf.PublishInstanceEvent(h.service, tenant, pb.EVT_UPDATE, providerKey, instance, rev, allow)
-		nf.PublishInstanceEvent(h.service, tenant, pb.EVT_DELETE, providerKey, instance, rev, deny)
-	}
-}
-
-func GetConsumerIdsWithFilter(ctx context.Context, tenant, providerId string,
-	filter func(ctx context.Context, consumerId string) (bool, error)) (allow []string, deny []string, err error) {
-	kvs, err := dependency.GetConsumersInCache(ctx, tenant, providerId)
-	if err != nil {
-		return nil, nil, err
-	}
-	l := len(kvs)
-	if l == 0 {
-		return nil, nil, nil
-	}
-	allowIdx, denyIdx := 0, l
-	consumers := make([]string, l)
-	for _, kv := range kvs {
-		consumerId := util.BytesToStringWithNoCopy(kv.Key)
-		consumerId = consumerId[strings.LastIndex(consumerId, "/")+1:]
-
-		ok, err := filter(ctx, consumerId)
-		if err != nil {
-			return nil, nil, err
-		}
-		if ok {
-			consumers[allowIdx] = consumerId
-			allowIdx++
-		} else {
-			denyIdx--
-			consumers[denyIdx] = consumerId
-		}
-	}
-	return consumers[:allowIdx], consumers[denyIdx:], nil
+	store.Store().AsyncTasker().AddTask(context.Background(),
+		NewRulesChangedAsyncTask(h.service, tenant, providerId, evt.Revision))
 }
 
 func NewRuleEventHandler(s *nf.NotifyService) *RuleEventHandler {
@@ -161,4 +132,14 @@ func NewRuleEventHandler(s *nf.NotifyService) *RuleEventHandler {
 		service: s,
 	}
 	return h
+}
+
+func NewRulesChangedAsyncTask(service *nf.NotifyService, tenant, providerId string, rev int64) *RulesChangedAsyncTask {
+	return &RulesChangedAsyncTask{
+		key:        "RulesChangedAsyncTask_" + providerId,
+		Tenant:     tenant,
+		ProviderId: providerId,
+		Rev:        rev,
+		Service:    service,
+	}
 }

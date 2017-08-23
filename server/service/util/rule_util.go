@@ -20,6 +20,8 @@ import (
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
+	"github.com/ServiceComb/service-center/server/service/dependency"
+	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	"github.com/ServiceComb/service-center/util"
 	errorsEx "github.com/ServiceComb/service-center/util/errors"
 	"golang.org/x/net/context"
@@ -50,6 +52,31 @@ type MatchBlackListError string
 
 func (e MatchBlackListError) Error() string {
 	return string(e)
+}
+
+type RuleFilter struct {
+	Tenant        string
+	Provider      *pb.MicroService
+	ProviderRules []*pb.ServiceRule
+}
+
+func (rf *RuleFilter) Filter(ctx context.Context, consumerId string) (bool, error) {
+	consumer, err := ms.GetServiceByServiceId(ctx, rf.Tenant, consumerId)
+	if consumer == nil {
+		return false, err
+	}
+
+	tags, err := GetTagsUtils(context.Background(), rf.Tenant, consumerId)
+	if err != nil {
+		return false, err
+	}
+	matchErr := MatchRules(rf.ProviderRules, consumer, tags)
+	switch matchErr.(type) {
+	case NotMatchWhiteListError, MatchBlackListError:
+		return false, nil
+	default:
+	}
+	return true, nil
 }
 
 func GetRulesUtil(ctx context.Context, tenant string, serviceId string) ([]*pb.ServiceRule, error) {
@@ -195,4 +222,35 @@ func MatchRules(rules []*pb.ServiceRule, service *pb.MicroService, serviceTags m
 		return NotMatchWhiteListError("Not found in white list")
 	}
 	return nil
+}
+
+func GetConsumerIdsWithFilter(ctx context.Context, tenant, providerId string,
+	filter func(ctx context.Context, consumerId string) (bool, error)) (allow []string, deny []string, err error) {
+	kvs, err := dependency.GetConsumersInCache(ctx, tenant, providerId)
+	if err != nil {
+		return nil, nil, err
+	}
+	l := len(kvs)
+	if l == 0 {
+		return nil, nil, nil
+	}
+	allowIdx, denyIdx := 0, l
+	consumers := make([]string, l)
+	for _, kv := range kvs {
+		consumerId := util.BytesToStringWithNoCopy(kv.Key)
+		consumerId = consumerId[strings.LastIndex(consumerId, "/")+1:]
+
+		ok, err := filter(ctx, consumerId)
+		if err != nil {
+			return nil, nil, err
+		}
+		if ok {
+			consumers[allowIdx] = consumerId
+			allowIdx++
+		} else {
+			denyIdx--
+			consumers[denyIdx] = consumerId
+		}
+	}
+	return consumers[:allowIdx], consumers[denyIdx:], nil
 }
