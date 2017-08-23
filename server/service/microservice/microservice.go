@@ -45,7 +45,7 @@ func GetService(ctx context.Context, domain string, id string, rev int64) (*pb.M
 	key := apt.GenerateServiceKey(domain, id)
 	serviceResp, err := store.Store().Service().Search(ctx, &registry.PluginOp{
 		Action:  registry.GET,
-		Key:     []byte(key),
+		Key:     util.StringToBytesWithNoCopy(key),
 		WithRev: rev,
 	})
 	if err != nil {
@@ -88,7 +88,7 @@ func GetServicesRawData(ctx context.Context, tenant string) ([]*mvccpb.KeyValue,
 	key := apt.GenerateServiceKey(tenant, "")
 	resp, err := store.Store().Service().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
-		Key:        []byte(key),
+		Key:        util.StringToBytesWithNoCopy(key),
 		WithPrefix: true,
 	})
 	return resp.Kvs, err
@@ -101,7 +101,6 @@ func GetServicesByTenant(ctx context.Context, tenant string) ([]*pb.MicroService
 	}
 	services := []*pb.MicroService{}
 	for _, kvs := range kvs {
-		util.LOGGER.Debugf("start unmarshal service file: %s", string(kvs.Value))
 		service := &pb.MicroService{}
 		err := json.Unmarshal(kvs.Value, service)
 		if err != nil {
@@ -113,33 +112,48 @@ func GetServicesByTenant(ctx context.Context, tenant string) ([]*pb.MicroService
 	return services, nil
 }
 
-func GetServiceId(ctx context.Context, key *pb.MicroServiceKey) (string, error) {
+func GetServiceId(ctx context.Context, key *pb.MicroServiceKey) (serviceId string, err error) {
+	serviceId, err = SearchServiceId(ctx, key, registry.MODE_BOTH)
+	if err != nil {
+		return
+	}
+	if len(serviceId) == 0 {
+		// 别名查询
+		util.LOGGER.Debugf("could not search microservice %s/%s/%s id by field 'serviceName', now try field 'alias'.",
+			key.AppId, key.ServiceName, key.Version)
+		return SearchServiceIdFromAlias(ctx, key, registry.MODE_BOTH)
+	}
+	return
+}
+
+func SearchServiceId(ctx context.Context, key *pb.MicroServiceKey, mode registry.CacheMode) (string, error) {
 	resp, err := store.Store().ServiceIndex().Search(ctx, &registry.PluginOp{
 		Action: registry.GET,
-		Key:    []byte(apt.GenerateServiceIndexKey(key)),
+		Key:    util.StringToBytesWithNoCopy(apt.GenerateServiceIndexKey(key)),
+		Mode:   mode,
 	})
 	if err != nil {
 		return "", err
 	}
 	if len(resp.Kvs) == 0 {
-		if len(key.Alias) == 0 {
-			return "", nil
-		}
-		// 别名查询
-		util.LOGGER.Debugf("could not search microservice %s/%s/%s id by field 'serviceName', now try field 'alias'.",
-			key.AppId, key.ServiceName, key.Version)
-		resp, err = store.Store().ServiceAlias().Search(ctx, &registry.PluginOp{
-			Action: registry.GET,
-			Key:    []byte(apt.GenerateServiceAliasKey(key)),
-		})
-		if err != nil {
-			return "", err
-		}
-		if len(resp.Kvs) == 0 {
-			return "", nil
-		}
+		return "", nil
 	}
-	return string(resp.Kvs[0].Value), nil
+	return util.BytesToStringWithNoCopy(resp.Kvs[0].Value), nil
+}
+
+func SearchServiceIdFromAlias(ctx context.Context, key *pb.MicroServiceKey, mode registry.CacheMode) (string, error) {
+	resp, err := store.Store().ServiceAlias().Search(ctx, &registry.PluginOp{
+		Action: registry.GET,
+		Key:    util.StringToBytesWithNoCopy(apt.GenerateServiceAliasKey(key)),
+		Mode:   mode,
+	})
+	if err != nil {
+		return "", err
+	}
+	if len(resp.Kvs) == 0 {
+		return "", nil
+	}
+	return util.BytesToStringWithNoCopy(resp.Kvs[0].Value), nil
 }
 
 func FindServiceIds(ctx context.Context, versionRule string, key *pb.MicroServiceKey) ([]string, error) {
@@ -163,9 +177,9 @@ func FindServiceIds(ctx context.Context, versionRule string, key *pb.MicroServic
 	versionsFunc := func(key *pb.MicroServiceKey) (*registry.PluginResponse, error) {
 		key.Version = ""
 		prefix := keyGenerator(key)
-		resp, err := store.Store().Service().Search(ctx, &registry.PluginOp{
+		resp, err := store.Store().ServiceIndex().Search(ctx, &registry.PluginOp{
 			Action:     registry.GET,
-			Key:        []byte(prefix),
+			Key:        util.StringToBytesWithNoCopy(prefix),
 			WithPrefix: true,
 			SortOrder:  registry.SORT_DESCEND,
 		})
@@ -191,7 +205,7 @@ FIND_RULE:
 func ServiceExist(ctx context.Context, tenant string, serviceId string) bool {
 	resp, err := store.Store().Service().Search(ctx, &registry.PluginOp{
 		Action:    registry.GET,
-		Key:       []byte(apt.GenerateServiceKey(tenant, serviceId)),
+		Key:       util.StringToBytesWithNoCopy(apt.GenerateServiceKey(tenant, serviceId)),
 		CountOnly: true,
 	})
 	if err != nil || resp.Count == 0 {

@@ -11,7 +11,7 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package util
+package notification
 
 import (
 	"encoding/json"
@@ -22,7 +22,6 @@ import (
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
 	ms "github.com/ServiceComb/service-center/server/service/microservice"
-	nf "github.com/ServiceComb/service-center/server/service/notification"
 	"github.com/ServiceComb/service-center/util"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/gorilla/websocket"
@@ -31,7 +30,7 @@ import (
 	"time"
 )
 
-func WatchJobHandler(watcher *nf.ListWatcher, stream pb.ServiceInstanceCtrl_WatchServer, timeout time.Duration) (err error) {
+func WatchJobHandler(watcher *ListWatcher, stream pb.ServiceInstanceCtrl_WatchServer, timeout time.Duration) (err error) {
 	for {
 		select {
 		case <-time.After(timeout):
@@ -43,7 +42,7 @@ func WatchJobHandler(watcher *nf.ListWatcher, stream pb.ServiceInstanceCtrl_Watc
 					watcher.Subject(), watcher.Id())
 				return
 			}
-			resp := job.(*nf.WatchJob).Response
+			resp := job.(*WatchJob).Response
 			util.LOGGER.Infof("event is coming in, watcher %s %s",
 				watcher.Subject(), watcher.Id())
 
@@ -58,8 +57,8 @@ func WatchJobHandler(watcher *nf.ListWatcher, stream pb.ServiceInstanceCtrl_Watc
 	}
 }
 
-func websocketHeartbeat(conn *websocket.Conn, messageType int, watcher *nf.ListWatcher, timeout time.Duration) error {
-	err := conn.WriteControl(messageType, []byte("heartbeat"), time.Now().Add(timeout))
+func websocketHeartbeat(conn *websocket.Conn, messageType int, watcher *ListWatcher, timeout time.Duration) error {
+	err := conn.WriteControl(messageType, util.StringToBytesWithNoCopy("heartbeat"), time.Now().Add(timeout))
 	if err != nil {
 		messageTypeName := "Ping"
 		if messageType == websocket.PongMessage {
@@ -73,7 +72,7 @@ func websocketHeartbeat(conn *websocket.Conn, messageType int, watcher *nf.ListW
 	return nil
 }
 
-func WatchWebSocketJobHandler(conn *websocket.Conn, watcher *nf.ListWatcher, timeout time.Duration) {
+func WatchWebSocketJobHandler(conn *websocket.Conn, watcher *ListWatcher, timeout time.Duration) {
 	remoteAddr := conn.RemoteAddr().String()
 	conn.SetPongHandler(func(message string) error {
 		util.LOGGER.Debugf("receive heartbeat feedback message %s from watcher[%s] %s %s",
@@ -96,7 +95,7 @@ func WatchWebSocketJobHandler(conn *websocket.Conn, watcher *nf.ListWatcher, tim
 		case job := <-watcher.Job:
 			if job == nil {
 				err := conn.WriteMessage(websocket.TextMessage,
-					[]byte("watch catch a err: watcher quit for server shutdown"))
+					util.StringToBytesWithNoCopy("watch catch a err: watcher quit for server shutdown"))
 				if err != nil {
 					util.LOGGER.Errorf(err, "watch catch a err: write message error, watcher[%s] %s %s",
 						remoteAddr, watcher.Subject(), watcher.Id())
@@ -106,7 +105,7 @@ func WatchWebSocketJobHandler(conn *websocket.Conn, watcher *nf.ListWatcher, tim
 					remoteAddr, watcher.Subject(), watcher.Id())
 				return
 			}
-			resp := job.(*nf.WatchJob).Response
+			resp := job.(*WatchJob).Response
 			util.LOGGER.Warnf(nil, "event[%s] is coming in, watcher[%s] %s %s, providers' info %s %s",
 				resp.Action, remoteAddr, watcher.Subject(), watcher.Id(), resp.Instance.ServiceId, resp.Instance.InstanceId)
 
@@ -118,7 +117,7 @@ func WatchWebSocketJobHandler(conn *websocket.Conn, watcher *nf.ListWatcher, tim
 				watcher.SetError(err)
 
 				message := fmt.Sprintf("marshal output file error, %s", err.Error())
-				err = conn.WriteMessage(websocket.TextMessage, []byte(message))
+				err = conn.WriteMessage(websocket.TextMessage, util.StringToBytesWithNoCopy(message))
 				if err != nil {
 					util.LOGGER.Errorf(err, "watch catch a err: write message error, watcher[%s] %s %s",
 						remoteAddr, watcher.Subject(), watcher.Id())
@@ -136,14 +135,14 @@ func WatchWebSocketJobHandler(conn *websocket.Conn, watcher *nf.ListWatcher, tim
 	}
 }
 
-func DoWebSocketWatch(service *nf.NotifyService, watcher *nf.ListWatcher, conn *websocket.Conn) {
+func DoWebSocketWatch(service *NotifyService, watcher *ListWatcher, conn *websocket.Conn) {
 	remoteAddr := conn.RemoteAddr().String()
 	if err := service.AddSubscriber(watcher); err != nil {
 		err = fmt.Errorf("establish[%s] websocket watch failed: notify service error, %s.",
 			remoteAddr, err.Error())
 		util.LOGGER.Errorf(nil, err.Error())
 
-		err = conn.WriteMessage(websocket.TextMessage, []byte(err.Error()))
+		err = conn.WriteMessage(websocket.TextMessage, util.StringToBytesWithNoCopy(err.Error()))
 		if err != nil {
 			util.LOGGER.Errorf(err, "establish[%s] websocket watch failed: write message failed.", remoteAddr)
 		}
@@ -157,7 +156,7 @@ func DoWebSocketWatch(service *nf.NotifyService, watcher *nf.ListWatcher, conn *
 func EstablishWebSocketError(conn *websocket.Conn, err error) {
 	remoteAddr := conn.RemoteAddr().String()
 	util.LOGGER.Errorf(err, "establish[%s] websocket watch failed.", remoteAddr)
-	if err := conn.WriteMessage(websocket.TextMessage, []byte(err.Error())); err != nil {
+	if err := conn.WriteMessage(websocket.TextMessage, util.StringToBytesWithNoCopy(err.Error())); err != nil {
 		util.LOGGER.Errorf(err, "establish[%s] websocket watch failed: write message failed.", remoteAddr)
 	}
 }
@@ -168,9 +167,9 @@ func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (resul
 	tenant := util.ParseTenantProject(ctx)
 
 	key := apt.GenerateConsumerDependencyKey(tenant, selfServiceId, "")
-	resp, err := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
+	resp, err := store.Store().Dependency().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
-		Key:        []byte(key),
+		Key:        util.StringToBytesWithNoCopy(key),
 		WithPrefix: true,
 		KeyOnly:    true,
 	})
@@ -182,7 +181,7 @@ func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (resul
 	rev = resp.Revision
 
 	for _, depsKv := range resp.Kvs {
-		providerDepsKey := string(depsKv.Key)
+		providerDepsKey := util.BytesToStringWithNoCopy(depsKv.Key)
 		providerId := providerDepsKey[strings.LastIndex(providerDepsKey, "/")+1:]
 
 		service, err := ms.GetService(ctx, tenant, providerId, rev)
@@ -199,7 +198,7 @@ func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (resul
 		util.LOGGER.Debugf("query provider service %s instances[%d] with revision %d.", providerId, len(kvs), rev)
 		for _, kv := range kvs {
 			util.LOGGER.Debugf("start unmarshal service instance file with revision %d: %s",
-				rev, string(kv.Key))
+				rev, util.BytesToStringWithNoCopy(kv.Key))
 			instance := &pb.MicroServiceInstance{}
 			err := json.Unmarshal(kv.Value, instance)
 			if err != nil {
@@ -208,7 +207,7 @@ func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (resul
 				return
 			}
 			results = append(results, &pb.WatchInstanceResponse{
-				Response: pb.CreateResponse(pb.Response_SUCCESS, "list instance successfully"),
+				Response: pb.CreateResponse(pb.Response_SUCCESS, "List instance successfully."),
 				Action:   string(pb.EVT_CREATE),
 				Key: &pb.MicroServiceKey{
 					AppId:       service.AppId,
@@ -227,7 +226,7 @@ func queryServiceInstancesKvs(ctx context.Context, serviceId string, rev int64) 
 	key := apt.GenerateInstanceKey(tenant, serviceId, "")
 	resp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
-		Key:        []byte(key),
+		Key:        util.StringToBytesWithNoCopy(key),
 		WithPrefix: true,
 		WithRev:    rev,
 	})
@@ -239,10 +238,10 @@ func queryServiceInstancesKvs(ctx context.Context, serviceId string, rev int64) 
 	return resp.Kvs, nil
 }
 
-func NewInstanceWatcher(selfServiceId, instanceRoot string) *nf.ListWatcher {
-	return nf.NewWatcher(nf.INSTANCE, selfServiceId, instanceRoot)
+func NewInstanceWatcher(selfServiceId, instanceRoot string) *ListWatcher {
+	return NewWatcher(INSTANCE, selfServiceId, instanceRoot)
 }
 
-func NewInstanceListWatcher(selfServiceId, instanceRoot string, listFunc func() (results []*pb.WatchInstanceResponse, rev int64)) *nf.ListWatcher {
-	return nf.NewListWatcher(nf.INSTANCE, selfServiceId, instanceRoot, listFunc)
+func NewInstanceListWatcher(selfServiceId, instanceRoot string, listFunc func() (results []*pb.WatchInstanceResponse, rev int64)) *ListWatcher {
+	return NewListWatcher(INSTANCE, selfServiceId, instanceRoot, listFunc)
 }

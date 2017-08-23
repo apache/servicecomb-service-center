@@ -78,6 +78,7 @@ func (w *ListWatcher) OnMessage(job NotifyJob) {
 
 func (w *ListWatcher) sendMessage(job NotifyJob) {
 	util.LOGGER.Debugf("start notify watcher, job is %v, current revision is %v", job)
+	defer util.RecoverAndReport()
 	w.Job <- job
 }
 

@@ -17,3 +17,4 @@ vendor/**
 server/service/conf/
 etc/data
 conf/
+integration/conf

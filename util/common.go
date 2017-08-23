@@ -20,7 +20,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strings"
+	"time"
 	"unsafe"
 )
 
@@ -72,16 +72,69 @@ func ClearByteMemory(src []byte) {
 	}
 }
 
+type StringContext struct {
+	parentCtx context.Context
+	kv        map[string]interface{}
+}
+
+func (c *StringContext) Deadline() (deadline time.Time, ok bool) {
+	return c.parentCtx.Deadline()
+}
+
+func (c *StringContext) Done() <-chan struct{} {
+	return c.parentCtx.Done()
+}
+
+func (c *StringContext) Err() error {
+	return c.parentCtx.Err()
+}
+
+func (c *StringContext) Value(key interface{}) interface{} {
+	k, ok := key.(string)
+	if !ok {
+		return c.parentCtx.Value(key)
+	}
+	return c.kv[k]
+}
+
+func (c *StringContext) SetKV(key string, val interface{}) {
+	c.kv[key] = val
+}
+
+func NewContext(ctx context.Context, key string, val interface{}) context.Context {
+	strCtx, ok := ctx.(*StringContext)
+	if !ok {
+		strCtx = &StringContext{
+			parentCtx: ctx,
+			kv:        make(map[string]interface{}, 10),
+		}
+	}
+	strCtx.SetKV(key, val)
+	return strCtx
+}
+
+func FromContext(ctx context.Context, key string) interface{} {
+	return ctx.Value(key)
+}
+
 func ParseTenantProject(ctx context.Context) string {
-	return strings.Join([]string{ParseTenant(ctx), ParseProject(ctx)}, "/")
+	return StringJoin([]string{ParseTenant(ctx), ParseProject(ctx)}, "/")
 }
 
 func ParseTenant(ctx context.Context) string {
-	return ctx.Value("tenant").(string)
+	v, ok := FromContext(ctx, "tenant").(string)
+	if !ok {
+		return ""
+	}
+	return v
 }
 
 func ParseProject(ctx context.Context) string {
-	return ctx.Value("project").(string)
+	v, ok := FromContext(ctx, "project").(string)
+	if !ok {
+		return ""
+	}
+	return v
 }
 
 //format : https://10.21.119.167:30100 or http://10.21.119.167:30100
@@ -135,5 +188,59 @@ func SafeCloseChan(c chan struct{}) {
 		}
 	default:
 		close(c)
+	}
+}
+
+func BytesToStringWithNoCopy(bytes []byte) string {
+	return *(*string)(unsafe.Pointer(&bytes))
+}
+
+func StringToBytesWithNoCopy(s string) []byte {
+	x := (*[2]uintptr)(unsafe.Pointer(&s))
+	h := [3]uintptr{x[0], x[1], x[1]}
+	return *(*[]byte)(unsafe.Pointer(&h))
+}
+
+func ListToMap(list []string) map[string]struct{} {
+	ret := make(map[string]struct{}, len(list))
+	for _, v := range list {
+		ret[v] = struct{}{}
+	}
+	return ret
+}
+
+func MapToList(dict map[string]struct{}) []string {
+	ret := make([]string, 0, len(dict))
+	for k := range dict {
+		ret = append(ret, k)
+	}
+	return ret
+}
+
+func StringJoin(args []string, sep string) string {
+	l := len(args)
+	switch l {
+	case 0:
+		return ""
+	case 1:
+		return args[0]
+	default:
+		n := len(sep) * (l - 1)
+		for i := 0; i < l; i++ {
+			n += len(args[i])
+		}
+		b := make([]byte, n)
+		sl := copy(b, args[0])
+		for i := 1; i < l; i++ {
+			sl += copy(b[sl:], sep)
+			sl += copy(b[sl:], args[i])
+		}
+		return BytesToStringWithNoCopy(b)
+	}
+}
+
+func RecoverAndReport() {
+	if r := recover(); r != nil {
+		LOGGER.Errorf(nil, "recover! %v", r)
 	}
 }

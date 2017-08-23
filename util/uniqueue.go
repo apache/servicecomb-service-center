@@ -27,7 +27,6 @@ type UniQueue struct {
 	buffer chan interface{}
 	queue  chan interface{}
 	close  chan struct{}
-	lock   sync.RWMutex
 	once   sync.Once
 }
 
@@ -50,20 +49,17 @@ func (uq *UniQueue) Put(ctx context.Context, value interface{}) error {
 	uq.once.Do(func() {
 		go uq.do()
 	})
-	uq.lock.RLock()
 	select {
 	case <-uq.close:
-		uq.lock.RUnlock()
 		return errors.New("channel is closed")
 	default:
+		defer RecoverAndReport()
 		select {
 		case <-ctx.Done():
-			uq.lock.RUnlock()
 			return ctx.Err()
 		case uq.buffer <- value:
 		}
 	}
-	uq.lock.RUnlock()
 	return nil
 }
 
@@ -79,38 +75,36 @@ func (uq *UniQueue) do() {
 				if !ok {
 					return
 				}
-				uq.sendToQueue(item)
 			default:
-				uq.sendToQueue(item)
 			}
+			// 1. drop the old item
+			// 2. if queue is empty
+			uq.sendToQueue(item)
 		}
 	}
 }
 
 func (uq *UniQueue) sendToQueue(item interface{}) {
-	uq.lock.RLock()
+	defer RecoverAndReport()
 	select {
 	case <-uq.close:
-		uq.lock.RUnlock()
 		return
 	default:
 		select {
 		case uq.queue <- item:
 		default:
+			// drop item
 		}
 	}
-	uq.lock.RUnlock()
 }
 
 func (uq *UniQueue) Close() {
 	select {
 	case <-uq.close:
 	default:
-		uq.lock.Lock()
 		close(uq.close)
 		close(uq.queue)
 		close(uq.buffer)
-		uq.lock.Unlock()
 	}
 }
 

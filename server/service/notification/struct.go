@@ -13,7 +13,35 @@
 //limitations under the License.
 package notification
 
-import "errors"
+import (
+	"errors"
+	"strconv"
+	"time"
+)
+
+const (
+	DEFAULT_MAX_QUEUE = 1000
+	DEFAULT_TIMEOUT   = 30 * time.Second
+
+	NOTIFTY NotifyType = iota
+	INSTANCE
+	typeEnd
+)
+
+type NotifyType int
+
+func (nt NotifyType) String() string {
+	if int(nt) < len(notifyTypeNames) {
+		return notifyTypeNames[nt]
+	}
+	return "NotifyType" + strconv.Itoa(int(nt))
+}
+
+type NotifyServiceConfig struct {
+	AddTimeout    time.Duration
+	NotifyTimeout time.Duration
+	MaxQueue      int64
+}
 
 type Subscriber interface {
 	Err() error

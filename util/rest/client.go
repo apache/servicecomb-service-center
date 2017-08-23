@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/ServiceComb/service-center/util"
-	"github.com/ServiceComb/service-center/util/errors"
 	"github.com/astaxie/beego"
 	"io"
 	"io/ioutil"
@@ -220,7 +219,7 @@ func (client *HttpClient) httpDo(method string, url string, headers map[string]s
 	} else {
 		respBody, _ = ioutil.ReadAll(resp.Body)
 	}
-	result = string(respBody)
+	result = util.BytesToStringWithNoCopy(respBody)
 
 	return status, result
 }
@@ -242,7 +241,8 @@ func (client *HttpClient) HttpDo(method string, url string, headers map[string]s
 			var ok bool = false
 			bodyBytes, ok = body.([]byte)
 			if !ok {
-				err := errors.New(fmt.Sprintf("invalid body type '%s'(%s), body must type of byte array if Content-Type specified.", reflect.TypeOf(body), headers["Content-Type"]))
+				err := fmt.Errorf("invalid body type '%s'(%s), body must type of byte array if Content-Type specified.",
+					reflect.TypeOf(body), headers["Content-Type"])
 				util.LOGGER.Errorf(err, "")
 				return nil, err
 			}
@@ -274,7 +274,7 @@ func (client *HttpClient) HttpDo(method string, url string, headers map[string]s
 	}
 	if resp.StatusCode != 200 && resp.StatusCode != 201 {
 		util.LOGGER.Errorf(nil, "Request -----> %s not ok, status is %s", url, resp.Status)
-		return resp, errors.New(fmt.Sprintf("Request failed, status is %s", resp.Status))
+		return resp, fmt.Errorf("Request failed, status is %s", resp.Status)
 	}
 	return resp, err
 }

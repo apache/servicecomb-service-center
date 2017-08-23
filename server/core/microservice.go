@@ -15,6 +15,7 @@ package core
 
 import (
 	pb "github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/ServiceComb/service-center/util"
 	"github.com/ServiceComb/service-center/version"
 	"golang.org/x/net/context"
 	"os"
@@ -39,7 +40,7 @@ func init() {
 	Service = &pb.MicroService{
 		AppId:       registry_app_id,
 		ServiceName: registry_service_name,
-		Version:     version.ApiVersion,
+		Version:     version.Ver().ApiVersion,
 		Status:      pb.MS_UP,
 		Level:       "BACK",
 		Schemas: []string{
@@ -62,8 +63,8 @@ func init() {
 }
 
 func AddDefaultContextValue(ctx context.Context) context.Context {
-	ctx = context.WithValue(ctx, "tenant", REGISTRY_TENANT)
-	ctx = context.WithValue(ctx, "project", REGISTRY_PROJECT)
+	ctx = util.NewContext(ctx, "tenant", REGISTRY_TENANT)
+	ctx = util.NewContext(ctx, "project", REGISTRY_PROJECT)
 	return ctx
 }
 
@@ -72,7 +73,7 @@ func GetExistenceRequest() *pb.GetExistenceRequest {
 		Type:        pb.EXISTENCE_MS,
 		AppId:       registry_app_id,
 		ServiceName: registry_service_name,
-		Version:     version.ApiVersion,
+		Version:     version.Ver().ApiVersion,
 	}
 }
 

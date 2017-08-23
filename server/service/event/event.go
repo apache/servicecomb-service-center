@@ -11,27 +11,14 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package errors
+package event
 
 import (
-	original "errors"
-	"fmt"
+	"github.com/ServiceComb/service-center/server/core/registry/store"
+	nf "github.com/ServiceComb/service-center/server/service/notification"
 )
 
-func New(message string) error {
-	return original.New(message)
-}
-
-func NewWithFmt(message string, args ...interface{}) error {
-	return original.New(fmt.Sprintf(message, args...))
-}
-
-func NewWithError(message string, err error) error {
-	return NewWithFmt("%s: %s", message, err.Error())
-}
-
-type InternalError string
-
-func (e InternalError) Error() string {
-	return string(e)
+func init() {
+	store.AddEventHandler(NewInstanceEventHandler(nf.GetNotifyService()))
+	store.AddEventHandler(NewRuleEventHandler(nf.GetNotifyService()))
 }

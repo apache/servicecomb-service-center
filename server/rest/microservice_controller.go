@@ -155,7 +155,7 @@ func (this *MicroServiceService) Unregister(w http.ResponseWriter, r *http.Reque
 
 func (this *MicroServiceService) GetServices(w http.ResponseWriter, r *http.Request) {
 	request := &pb.GetServicesRequest{}
-	util.LOGGER.Debugf("tenant is %s", r.Context().Value("tenant").(string))
+	util.LOGGER.Debugf("tenant is %s", util.ParseTenant(r.Context()))
 	resp, err := ServiceAPI.GetServices(r.Context(), request)
 	if err != nil {
 		WriteText(http.StatusInternalServerError, err.Error(), w)
@@ -281,9 +281,9 @@ func (this *MicroServiceService) GetProConDependencies(w http.ResponseWriter, r 
 }
 
 func (this *MicroServiceService) UnregisterServices(w http.ResponseWriter, r *http.Request) {
-	request_body,err := ioutil.ReadAll(r.Body)
-	if err != nil{
-		util.LOGGER.Error("body ,err",err)
+	request_body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		util.LOGGER.Error("body ,err", err)
 		WriteText(http.StatusBadRequest, err.Error(), w)
 		return
 	}
@@ -291,7 +291,7 @@ func (this *MicroServiceService) UnregisterServices(w http.ResponseWriter, r *ht
 	request := &pb.DelServicesRequest{}
 
 	err = json.Unmarshal(request_body, request)
-	if err  != nil {
+	if err != nil {
 		util.LOGGER.Error("unmarshal ,err ", err)
 		WriteText(http.StatusBadRequest, err.Error(), w)
 		return
@@ -316,4 +316,3 @@ func (this *MicroServiceService) UnregisterServices(w http.ResponseWriter, r *ht
 	WriteJson(http.StatusBadRequest, objJson, w)
 	return
 }
-

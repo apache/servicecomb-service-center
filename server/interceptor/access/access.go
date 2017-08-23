@@ -17,12 +17,18 @@ import (
 	"fmt"
 	"github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/server/helper"
+	"github.com/ServiceComb/service-center/util"
 	"github.com/ServiceComb/service-center/util/url"
 	"net/http"
 )
 
+var serverName string
+
 func addCommonResponseHeaders(w http.ResponseWriter) {
-	w.Header().Add("server", core.Service.ServiceName+"/"+core.Service.Version)
+	if len(serverName) == 0 {
+		serverName = core.Service.ServiceName + "/" + core.Service.Version
+	}
+	w.Header().Add("server", serverName)
 }
 
 func Intercept(w http.ResponseWriter, r *http.Request) error {
@@ -33,7 +39,7 @@ func Intercept(w http.ResponseWriter, r *http.Request) error {
 	if !urlvalidator.IsRequestURI(r.RequestURI) {
 		err := fmt.Errorf("Invalid Request URI %s", r.RequestURI)
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
+		w.Write(util.StringToBytesWithNoCopy(err.Error()))
 		return err
 	}
 	return nil

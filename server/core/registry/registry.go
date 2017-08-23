@@ -15,14 +15,13 @@ package registry
 
 import (
 	"encoding/json"
+	"github.com/ServiceComb/service-center/util"
 	"github.com/astaxie/beego"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
-	"reflect"
 	"strconv"
 	"sync"
 	"time"
-	"unsafe"
 )
 
 var (
@@ -46,6 +45,21 @@ func (at ActionType) String() string {
 	}
 }
 
+type CacheMode int
+
+func (cm CacheMode) String() string {
+	switch cm {
+	case MODE_BOTH:
+		return "MODE_BOTH"
+	case MODE_CACHE:
+		return "MODE_CACHE"
+	case MODE_NO_CACHE:
+		return "MODE_NO_CACHE"
+	default:
+		return "MODE" + strconv.Itoa(int(cm))
+	}
+}
+
 type SortOrder int
 
 func (so SortOrder) String() string {
@@ -65,24 +79,38 @@ type CompareType int
 type CompareResult int
 
 const (
-	GET    ActionType = 0
-	PUT    ActionType = 1
-	DELETE ActionType = 2
+	GET ActionType = iota
+	PUT
+	DELETE
+)
 
-	SORT_NONE    SortOrder = 0
-	SORT_ASCEND  SortOrder = 1
-	SORT_DESCEND SortOrder = 2
+const (
+	SORT_NONE SortOrder = iota
+	SORT_ASCEND
+	SORT_DESCEND
+)
 
-	CMP_VERSION CompareType = 0
-	CMP_CREATE  CompareType = 1
-	CMP_MOD     CompareType = 2
-	CMP_VALUE   CompareType = 3
+const (
+	CMP_VERSION CompareType = iota
+	CMP_CREATE
+	CMP_MOD
+	CMP_VALUE
+)
 
-	CMP_EQUAL     CompareResult = 0
-	CMP_GREATER   CompareResult = 1
-	CMP_LESS      CompareResult = 2
-	CMP_NOT_EQUAL CompareResult = 3
+const (
+	CMP_EQUAL CompareResult = iota
+	CMP_GREATER
+	CMP_LESS
+	CMP_NOT_EQUAL
+)
 
+const (
+	MODE_BOTH CacheMode = iota
+	MODE_CACHE
+	MODE_NO_CACHE
+)
+
+const (
 	REFRESH_MANAGER_CLUSTER_INTERVAL = 30
 
 	REQUEST_TIMEOUT = 300
@@ -132,13 +160,13 @@ type PluginOp struct {
 	CountOnly       bool       `json:"countOnly,omitempty"`
 	SortOrder       SortOrder  `json:"sort,omitempty"`
 	WithRev         int64      `json:"rev,omitempty"`
-	WithNoCache     bool       `json:"noCache,omitempty"`
 	WithIgnoreLease bool       `json:"ignoreLease,omitempty"`
+	Mode            CacheMode  `json:"mode,omitempty"`
 }
 
 func (op *PluginOp) String() string {
 	b, _ := json.Marshal(op)
-	return BytesToStringWithNoCopy(b)
+	return util.BytesToStringWithNoCopy(b)
 }
 
 type PluginResponse struct {
@@ -183,7 +211,10 @@ func GetRegisterCenter() Registry {
 	if registryInstance == nil {
 		singletonLock.Lock()
 		if registryInstance == nil {
-			inst, _ := RegisterCenterClient()
+			inst, err := RegisterCenterClient()
+			if err != nil {
+				util.LOGGER.Errorf(err, "get register center client failed")
+			}
 			registryInstance = inst
 		}
 		singletonLock.Unlock()
@@ -198,18 +229,10 @@ func WithTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
 func WithWatchPrefix(key string) *PluginOp {
 	return &PluginOp{
 		Action:     GET,
-		Key:        []byte(key),
+		Key:        util.StringToBytesWithNoCopy(key),
 		WithPrefix: true,
 		WithPrevKV: true,
 	}
-}
-
-func BytesToStringWithNoCopy(bytes []byte) (s string) {
-	pbytes := (*reflect.SliceHeader)(unsafe.Pointer(&bytes))
-	pstring := (*reflect.StringHeader)(unsafe.Pointer(&s))
-	pstring.Data = pbytes.Data
-	pstring.Len = pbytes.Len
-	return
 }
 
 func BatchCommit(ctx context.Context, opts []*PluginOp) error {

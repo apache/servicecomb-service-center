@@ -46,7 +46,6 @@ type Route struct {
 //   1. not thread-safe, must be initialized completely before serve http request
 //   2. redirect not supported
 type ROAServerHandler struct {
-	handler  http.Handler
 	handlers map[string][]*urlPatternHandler
 }
 
@@ -77,9 +76,6 @@ func (this *ROAServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 			}
 
 			ph.ServeHTTP(w, r)
-			if this.handler != nil {
-				this.handler.ServeHTTP(w, r)
-			}
 			return
 		}
 	}
@@ -102,12 +98,11 @@ func (this *ROAServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	w.Header().Add("Allow", strings.Join(allowed, ", "))
+	w.Header().Add("Allow", util.StringJoin(allowed, ", "))
 	http.Error(w, "Method Not Allowed", 405)
 }
 
-func (this *urlPatternHandler) try(path string) (url.Values, bool) {
-	p := make(url.Values)
+func (this *urlPatternHandler) try(path string) (p map[string][]string, _ bool) {
 	var i, j int
 	for i < len(path) {
 		switch {
@@ -117,11 +112,16 @@ func (this *urlPatternHandler) try(path string) (url.Values, bool) {
 			}
 			return nil, false
 		case this.Path[j] == ':':
-			var name, val string
+			var val string
 			var nextc byte
-			name, nextc, j = match(this.Path, isAlnum, j+1)
-			val, _, i = match(path, matchParticial(nextc), i)
-			p.Add(":"+name, val)
+			o := j
+			_, nextc, j = match(this.Path, isAlnum, 0, j+1)
+			val, _, i = match(path, matchParticial, nextc, i)
+
+			if p == nil {
+				p = make(map[string][]string)
+			}
+			p[this.Path[o:j]] = []string{val}
 		case path[i] == this.Path[j]:
 			i++
 			j++
@@ -135,9 +135,9 @@ func (this *urlPatternHandler) try(path string) (url.Values, bool) {
 	return p, true
 }
 
-func match(s string, f func(byte) bool, i int) (matched string, next byte, j int) {
+func match(s string, f func(c byte) bool, exclude byte, i int) (matched string, next byte, j int) {
 	j = i
-	for j < len(s) && f(s[j]) {
+	for j < len(s) && f(s[j]) && s[j] != exclude {
 		j++
 	}
 
@@ -147,10 +147,8 @@ func match(s string, f func(byte) bool, i int) (matched string, next byte, j int
 	return s[i:j], next, j
 }
 
-func matchParticial(b byte) func(byte) bool {
-	return func(c byte) bool {
-		return c != b && c != '/'
-	}
+func matchParticial(c byte) bool {
+	return c != '/'
 }
 
 func isAlpha(ch byte) bool {
