@@ -26,6 +26,27 @@ import (
 
 const EVENT_BUS_MAX_SIZE = 1000
 
+var globalRevision int64 = 0
+var revisionMux sync.RWMutex
+
+func SetRevision(rev int64) {
+	if globalRevision >= rev {
+		return
+	}
+	revisionMux.Lock()
+	if globalRevision < rev {
+		globalRevision = rev
+	}
+	revisionMux.Unlock()
+}
+
+func Revision() (rev int64) {
+	revisionMux.RLock()
+	rev = globalRevision
+	revisionMux.RUnlock()
+	return
+}
+
 type Event struct {
 	Revision int64
 	Type     proto.EventType
@@ -42,11 +63,11 @@ type ListWatcher struct {
 	Client registry.Registry
 	Key    string
 
-	rev int64
+	modRev int64
 }
 
-func (lw *ListWatcher) Revision() int64 {
-	return lw.rev
+func (lw *ListWatcher) ModRevision() int64 {
+	return lw.modRev
 }
 
 func (lw *ListWatcher) List(op *ListOptions) ([]*mvccpb.KeyValue, error) {
@@ -55,7 +76,7 @@ func (lw *ListWatcher) List(op *ListOptions) ([]*mvccpb.KeyValue, error) {
 	if err != nil {
 		return nil, err
 	}
-	lw.upgradeRevision(resp.Revision)
+	lw.setModRevision(resp.Revision)
 	if len(resp.Kvs) == 0 {
 		return nil, nil
 	}
@@ -66,16 +87,17 @@ func (lw *ListWatcher) Watch(op *ListOptions) *Watcher {
 	return newWatcher(lw, op)
 }
 
-func (lw *ListWatcher) upgradeRevision(rev int64) {
-	lw.rev = rev
+func (lw *ListWatcher) setModRevision(rev int64) {
+	lw.modRev = rev
+	SetRevision(rev)
 }
 
 func (lw *ListWatcher) doWatch(ctx context.Context, f func(evt *Event)) error {
 	ops := registry.WithWatchPrefix(lw.Key)
-	ops.WithRev = lw.Revision() + 1
+	ops.WithRev = lw.ModRevision() + 1
 	err := lw.Client.Watch(ctx, ops, func(message string, evt *registry.PluginResponse) error {
-		if lw.Revision() < evt.Revision {
-			lw.upgradeRevision(evt.Revision)
+		if lw.ModRevision() < evt.Revision {
+			lw.setModRevision(evt.Revision)
 		}
 
 		sendEvt := errEvent(lw.Key, fmt.Errorf("unknown event %+v", evt))
@@ -100,7 +122,7 @@ func (lw *ListWatcher) doWatch(ctx context.Context, f func(evt *Event)) error {
 		return nil
 	})
 	if err != nil { // compact可能会导致watch失败
-		lw.upgradeRevision(0)
+		lw.setModRevision(0)
 		f(errEvent(lw.Key, err))
 	}
 	return err

@@ -93,7 +93,7 @@ type KvCache struct {
 }
 
 func (c *KvCache) Version() int64 {
-	return c.owner.lw.Revision()
+	return c.owner.lw.ModRevision()
 }
 
 func (c *KvCache) Data(k interface{}) interface{} {
@@ -138,7 +138,7 @@ func (c *KvCache) Unlock() {
 type KvCacher struct {
 	Cfg *KvCacherConfig
 
-	lastRev            int64
+	lastModRev         int64
 	noEventInterval    int
 	noEventMaxInterval int
 
@@ -151,14 +151,14 @@ type KvCacher struct {
 }
 
 func (c *KvCacher) needList() bool {
-	rev := c.lw.Revision()
-	defer func() { c.lastRev = rev }()
+	rev := c.lw.ModRevision()
+	defer func() { c.lastModRev = rev }()
 
 	if rev == 0 {
 		c.noEventInterval = 0
 		return true
 	}
-	if c.lastRev != rev {
+	if c.lastModRev != rev {
 		c.noEventInterval = 0
 		return false
 	}
@@ -179,19 +179,19 @@ func (c *KvCacher) doList(listOps *ListOptions) error {
 	if err != nil {
 		return err
 	}
-	lastRev := c.lastRev
-	c.lastRev = c.lw.Revision()
-	c.sync(c.filter(c.lastRev, kvs))
+	lastRev := c.lastModRev
+	c.lastModRev = c.lw.ModRevision()
+	c.sync(c.filter(c.lastModRev, kvs))
 	syncDuration := time.Now().Sub(start)
 
 	if syncDuration > 5*time.Second {
 		util.LOGGER.Warnf(nil, "finish to cache key %s, %d items took %s! list options: %+v, rev: %d",
-			c.Cfg.Key, len(kvs), syncDuration, listOps, c.lastRev)
+			c.Cfg.Key, len(kvs), syncDuration, listOps, c.lastModRev)
 		return nil
 	}
-	if lastRev != c.lastRev {
+	if lastRev != c.lastModRev {
 		util.LOGGER.Infof("finish to cache key %s, %d items took %s, list options: %+v, rev: %d",
-			c.Cfg.Key, len(kvs), syncDuration, listOps, c.lastRev)
+			c.Cfg.Key, len(kvs), syncDuration, listOps, c.lastModRev)
 	}
 	return nil
 }
@@ -199,7 +199,7 @@ func (c *KvCacher) doList(listOps *ListOptions) error {
 func (c *KvCacher) doWatch(listOps *ListOptions) error {
 	watcher := c.lw.Watch(listOps)
 	util.LOGGER.Debugf("finish to new watcher, key %s, list options: %+v, start rev: %d+1",
-		c.Cfg.Key, listOps, c.lastRev)
+		c.Cfg.Key, listOps, c.lastModRev)
 	return c.handleWatcher(watcher)
 }
 

@@ -166,10 +166,13 @@ func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (resul
 
 	tenant := util.ParseTenantProject(ctx)
 
+	rev = store.Revision()
+
 	key := apt.GenerateConsumerDependencyKey(tenant, selfServiceId, "")
 	resp, err := store.Store().Dependency().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
 		Key:        util.StringToBytesWithNoCopy(key),
+		WithRev:    rev,
 		WithPrefix: true,
 		KeyOnly:    true,
 	})
@@ -177,8 +180,6 @@ func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (resul
 		util.LOGGER.Errorf(err, "Get %s providers id set failed.", selfServiceId)
 		return
 	}
-
-	rev = resp.Revision
 
 	for _, depsKv := range resp.Kvs {
 		providerDepsKey := util.BytesToStringWithNoCopy(depsKv.Key)
