@@ -166,10 +166,13 @@ func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (resul
 
 	tenant := util.ParseTenantProject(ctx)
 
+	rev = store.Revision()
+
 	key := apt.GenerateConsumerDependencyKey(tenant, selfServiceId, "")
 	resp, err := store.Store().Dependency().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
 		Key:        util.StringToBytesWithNoCopy(key),
+		WithRev:    rev,
 		WithPrefix: true,
 		KeyOnly:    true,
 	})
@@ -177,8 +180,6 @@ func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (resul
 		util.LOGGER.Errorf(err, "Get %s providers id set failed.", selfServiceId)
 		return
 	}
-
-	rev = resp.Revision
 
 	for _, depsKv := range resp.Kvs {
 		providerDepsKey := util.BytesToStringWithNoCopy(depsKv.Key)
@@ -236,6 +237,22 @@ func queryServiceInstancesKvs(ctx context.Context, serviceId string, rev int64) 
 		return nil, err
 	}
 	return resp.Kvs, nil
+}
+
+func PublishInstanceEvent(service *NotifyService, tenant string, action pb.EventType, serviceKey *pb.MicroServiceKey, instance *pb.MicroServiceInstance, rev int64, subscribers []string) {
+	response := &pb.WatchInstanceResponse{
+		Response: pb.CreateResponse(pb.Response_SUCCESS, "Watch instance successfully."),
+		Action:   string(action),
+		Key:      serviceKey,
+		Instance: instance,
+	}
+	for _, consumerId := range subscribers {
+		job := NewWatchJob(INSTANCE, consumerId, apt.GetInstanceRootKey(tenant)+"/", rev, response)
+		util.LOGGER.Debugf("publish event to notify service, %v", job)
+
+		// TODO add超时怎么处理？
+		service.AddJob(job)
+	}
 }
 
 func NewInstanceWatcher(selfServiceId, instanceRoot string) *ListWatcher {

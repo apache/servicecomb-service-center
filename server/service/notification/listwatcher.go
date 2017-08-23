@@ -61,12 +61,7 @@ func (w *ListWatcher) OnMessage(job NotifyJob) {
 		return
 	}
 
-	select {
-	case _, ok := <-w.listCh:
-		if !ok {
-			// means list operation is over
-		}
-	}
+	<-w.listCh
 
 	if job.(*WatchJob).Revision <= w.ListRevision {
 		util.LOGGER.Warnf(nil, "unexpected notify job is coming in, job is %v, current revision is %v",

@@ -546,7 +546,7 @@ func (s *InstanceController) GetInstances(ctx context.Context, in *pb.GetInstanc
 	}
 
 	instances := []*pb.MicroServiceInstance{}
-	instances, err = getAllInstancesOfOneService(ctx, tenant, in.ProviderServiceId, in.Stage)
+	instances, err = serviceUtil.GetAllInstancesOfOneService(ctx, tenant, in.ProviderServiceId, in.Stage)
 	if err != nil {
 		util.LOGGER.Errorf(err, "get instances failed, %s(consumer/provider): get instances from etcd failed.", conPro)
 		return &pb.GetInstancesResponse{
@@ -557,38 +557,6 @@ func (s *InstanceController) GetInstances(ctx context.Context, in *pb.GetInstanc
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Query service instances successfully."),
 		Instances: instances,
 	}, nil
-}
-
-func getAllInstancesOfOneService(ctx context.Context, tenant string, serviceId string, stage string) ([]*pb.MicroServiceInstance, error) {
-	key := apt.GenerateInstanceKey(tenant, serviceId, "")
-	resp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
-		Action:     registry.GET,
-		Key:        util.StringToBytesWithNoCopy(key),
-		WithPrefix: true,
-	})
-	if err != nil {
-		util.LOGGER.Errorf(err, "Get instance of service %s from etcd failed.", serviceId)
-		return nil, err
-	}
-
-	instances := []*pb.MicroServiceInstance{}
-	for _, kvs := range resp.Kvs {
-		util.LOGGER.Debugf("start unmarshal service instance file: %s", util.BytesToStringWithNoCopy(kvs.Key))
-		instance := &pb.MicroServiceInstance{}
-		err := json.Unmarshal(kvs.Value, instance)
-		if err != nil {
-			util.LOGGER.Errorf(err, "Unmarshal instance of service %s failed.", serviceId)
-			return nil, err
-		}
-		if len(stage) != 0 {
-			if stage == instance.Stage {
-				instances = append(instances, instance)
-			}
-		} else {
-			instances = append(instances, instance)
-		}
-	}
-	return instances, nil
 }
 
 func (s *InstanceController) addDependenceForService(ctx context.Context, tenant string, consumerServiceId string, providerServiceId string) error {
@@ -954,7 +922,7 @@ func (s *InstanceController) CluterHealth(ctx context.Context) (*pb.GetInstances
 		}, nil
 	}
 	instances := []*pb.MicroServiceInstance{}
-	instances, err = getAllInstancesOfOneService(ctx, tenant, serviceId, "")
+	instances, err = serviceUtil.GetAllInstancesOfOneService(ctx, tenant, serviceId, "")
 	if err != nil {
 		util.LOGGER.Errorf(err, "health check failed: get service center instances failed.")
 		return &pb.GetInstancesResponse{

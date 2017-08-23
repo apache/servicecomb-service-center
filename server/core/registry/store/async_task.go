@@ -80,7 +80,7 @@ func (lat *AsyncTasker) AddTask(ctx context.Context, task AsyncTask) error {
 	return handled.Err()
 }
 
-func (lat *AsyncTasker) RemoveTask(key string) error {
+func (lat *AsyncTasker) DeferRemoveTask(key string) error {
 	lat.queueLock.Lock()
 	if lat.isClose {
 		lat.queueLock.Unlock()
