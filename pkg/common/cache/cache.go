@@ -79,7 +79,7 @@ func (c *Cache) Get(key string) (interface{}, bool) {
 func (c *Cache) Keys() []string {
 	c.RLock()
 	defer c.RUnlock()
-	keys := make([]string, len(c.items))
+	keys := make([]string, 0, len(c.items))
 	for k := range c.items {
 		keys = append(keys, k)
 	}

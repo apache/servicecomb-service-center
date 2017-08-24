@@ -218,7 +218,7 @@ func (this *MicroServiceService) CreateDependenciesForMicroServices(w http.Respo
 	request := &pb.CreateDependenciesRequest{}
 	err = json.Unmarshal(requestBody, request)
 	if err != nil {
-		util.LOGGER.Error("Unmarshal error", err)
+		util.LOGGER.Error("Invalid json", err)
 		WriteText(http.StatusInternalServerError, "Unmarshal error", w)
 		return
 	}
