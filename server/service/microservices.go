@@ -103,7 +103,6 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 	util.LOGGER.Debugf("start register service: %s %v", key, service)
 	util.LOGGER.Debugf("start register service index: %s %v", index, serviceId)
 	opts := []*registry.PluginOp{
-		// Set key file
 		{
 			Action: registry.PUT,
 			Key:    util.StringToBytesWithNoCopy(key),
