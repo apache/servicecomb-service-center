@@ -601,7 +601,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 		}, nil
 	case "schema":
 		if len(in.SchemaId) == 0 || len(in.ServiceId) == 0 {
-			util.LOGGER.Errorf(nil, "schema exist failed, serviceId %s, schemaId : invalid params.", in.ServiceId, in.SchemaId)
+			util.LOGGER.Errorf(nil, "schema exist failed, serviceId %s, schemaId %s: invalid params.", in.ServiceId, in.SchemaId)
 			return &pb.GetExistenceResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "Invalid request."),
 			}, nil
@@ -609,13 +609,13 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 
 		err := apt.GetSchemaExistsReqValidator.Validate(in)
 		if err != nil {
-			util.LOGGER.Errorf(err, "schema exist failed, serviceId %s, schemaId : invalid params.", in.ServiceId, in.SchemaId)
+			util.LOGGER.Errorf(err, "schema exist failed, serviceId %s, schemaId %s: invalid params.", in.ServiceId, in.SchemaId)
 			return &pb.GetExistenceResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 			}, nil
 		}
 		if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
-			util.LOGGER.Warnf(nil, "schema exist failed, serviceId %s, schemaId : service not exist.", in.ServiceId, in.SchemaId)
+			util.LOGGER.Warnf(nil, "schema exist failed, serviceId %s, schemaId %s: service not exist.", in.ServiceId, in.SchemaId)
 			return &pb.GetExistenceResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
 			}, nil
@@ -624,7 +624,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 		key := apt.GenerateServiceSchemaKey(tenant, in.ServiceId, in.SchemaId)
 		err, exist := serviceUtil.CheckSchemaInfoExist(ctx, key)
 		if err != nil {
-			util.LOGGER.Errorf(err, "schema exist failed, serviceId %s, schemaId : get schema failed.", in.ServiceId, in.SchemaId)
+			util.LOGGER.Errorf(err, "schema exist failed, serviceId %s, schemaId %s: get schema failed.", in.ServiceId, in.SchemaId)
 			return &pb.GetExistenceResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 			}, err

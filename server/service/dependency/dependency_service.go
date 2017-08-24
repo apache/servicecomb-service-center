@@ -284,7 +284,8 @@ func UpdateAsProviderDependency(ctx context.Context, providerServiceId string, p
 				return err
 			}
 			//fmt.Println("kv.Value is ", consumers)
-			util.LOGGER.Infof("Add dependency as provider, provider: serviecName(%s), version(%s) .consumer is", provider.ServiceName, providerVersionRule, consumers.Dependency)
+			util.LOGGER.Infof("Add dependency as provider, provider: serviecName(%s), version(%s) .consumers are %v",
+				provider.ServiceName, providerVersionRule, consumers.Dependency)
 			allConsumers = append(allConsumers, consumers.Dependency...)
 		}
 	}
