@@ -32,7 +32,7 @@ import (
 const (
 	REGISTRY_PLUGIN_ETCD           = "etcd"
 	CONNECT_MANAGER_SERVER_TIMEOUT = 10
-	DEFAULT_PAGE_COUNT             = 5000 // grpc does not allow to transport a large body more then 4MB in a request.
+	DEFAULT_PAGE_COUNT             = 4096 // grpc does not allow to transport a large body more then 4MB in a request.
 )
 
 var clientTLSConfig *tls.Config
@@ -241,7 +241,7 @@ func (c *EtcdClient) paging(ctx context.Context, op *registry.PluginOp, countPer
 	}
 
 	util.LOGGER.Debugf("get too many KeyValues from etcdserver, now paging.(%d vs %d)",
-		recordCount, DEFAULT_PAGE_COUNT)
+		recordCount, countPerPage)
 
 	tempOp.KeyOnly = false
 	tempOp.CountOnly = false
@@ -304,7 +304,7 @@ func (c *EtcdClient) Do(ctx context.Context, op *registry.PluginOp) (*registry.P
 		var etcdResp *clientv3.GetResponse
 		key := util.BytesToStringWithNoCopy(op.Key)
 
-		if op.WithPrefix && !op.CountOnly && !op.KeyOnly {
+		if op.WithPrefix && !op.CountOnly {
 			etcdResp, err = c.paging(ctx, op, DEFAULT_PAGE_COUNT)
 			if err != nil {
 				break
