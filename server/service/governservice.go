@@ -78,7 +78,7 @@ func (governServiceController *GovernServiceController) GetServiceDetail(ctx con
 		}, nil
 	}
 
-	service, err := ms.GetServiceByServiceId(ctx, tenant, in.ServiceId)
+	service, err := ms.GetService(ctx, tenant, in.ServiceId)
 	if service == nil {
 		return &pb.GetServiceDetailResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),

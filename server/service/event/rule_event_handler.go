@@ -49,19 +49,15 @@ func (apt *RulesChangedAsyncTask) Err() error {
 }
 
 func publish(ctx context.Context, service *nf.NotifyService, tenant, providerId string, rev int64) error {
-	provider, err := ms.GetServiceByServiceId(ctx, tenant, providerId)
+	provider, err := ms.GetService(ctx, tenant, providerId)
 	if provider == nil {
 		util.LOGGER.Errorf(err, "get service %s file failed", providerId)
 		return err
 	}
-	providerRules, err := serviceUtil.GetRulesUtil(ctx, tenant, providerId)
-	if err != nil || len(providerRules) == 0 {
-		util.LOGGER.Errorf(err, "get provider service %s rules failed", providerId)
-		return err
-	}
-	instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, tenant, providerId, "")
-	if err != nil || len(instances) == 0 {
-		util.LOGGER.Errorf(err, "get provider service %s instance failed", providerId)
+
+	allow, deny, err := serviceUtil.GetConsumerIds(ctx, tenant, provider)
+	if err != nil {
+		util.LOGGER.Errorf(err, "get consumer services by provider %s failed", providerId)
 		return err
 	}
 
@@ -70,15 +66,10 @@ func publish(ctx context.Context, service *nf.NotifyService, tenant, providerId 
 		ServiceName: provider.ServiceName,
 		Version:     provider.Version,
 	}
-	rf := serviceUtil.RuleFilter{
-		Tenant:        tenant,
-		Provider:      provider,
-		ProviderRules: providerRules,
-	}
 
-	allow, deny, err := serviceUtil.GetConsumerIdsWithFilter(ctx, tenant, providerId, rf.Filter)
-	if err != nil {
-		util.LOGGER.Errorf(err, "get consumer services by provider %s failed", providerId)
+	instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, tenant, providerId, "")
+	if err != nil || len(instances) == 0 {
+		util.LOGGER.Errorf(err, "get provider service %s instance failed", providerId)
 		return err
 	}
 

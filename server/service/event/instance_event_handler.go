@@ -17,12 +17,11 @@ import (
 	"encoding/json"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
-	"github.com/ServiceComb/service-center/server/service/dependency"
 	"github.com/ServiceComb/service-center/server/service/microservice"
 	nf "github.com/ServiceComb/service-center/server/service/notification"
+	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
-	"strings"
 )
 
 type InstanceEventHandler struct {
@@ -68,22 +67,17 @@ func (h *InstanceEventHandler) OnEvent(evt *store.KvEvent) {
 	}
 
 	// 查询所有consumer
-	Kvs, err := dependency.GetConsumersInCache(context.Background(), tenantProject, providerId)
+	consumerIds, _, err := serviceUtil.GetConsumerIds(context.Background(), tenantProject, ms)
 	if err != nil {
 		util.LOGGER.Errorf(err, "query service %s consumers failed", providerId)
 		return
 	}
 
-	for _, dependence := range Kvs {
-		consumerId := util.BytesToStringWithNoCopy(dependence.Key)
-		consumerId = consumerId[strings.LastIndex(consumerId, "/")+1:]
-
-		nf.PublishInstanceEvent(h.service, tenantProject, action, &pb.MicroServiceKey{
-			AppId:       ms.AppId,
-			ServiceName: ms.ServiceName,
-			Version:     ms.Version,
-		}, &instance, evt.Revision, []string{consumerId})
-	}
+	nf.PublishInstanceEvent(h.service, tenantProject, action, &pb.MicroServiceKey{
+		AppId:       ms.AppId,
+		ServiceName: ms.ServiceName,
+		Version:     ms.Version,
+	}, &instance, evt.Revision, consumerIds)
 }
 
 func NewInstanceEventHandler(s *nf.NotifyService) *InstanceEventHandler {

@@ -42,22 +42,29 @@ func AddTagIntoETCD(ctx context.Context, tenant string, serviceId string, dataTa
 	return nil
 }
 
-func GetTagsUtils(ctx context.Context, tenant string, serviceId string) (map[string]string, error) {
-	tags := map[string]string{}
+func GetTagsUtils(ctx context.Context, tenant, serviceId string) (map[string]string, error) {
+	return SearchTags(ctx, tenant, serviceId, registry.MODE_BOTH)
+}
 
+func SearchTags(ctx context.Context, tenant, serviceId string, mode registry.CacheMode) (tags map[string]string, _ error) {
 	key := apt.GenerateServiceTagKey(tenant, serviceId)
 	resp, err := store.Store().ServiceTag().Search(ctx, &registry.PluginOp{
 		Action: registry.GET,
 		Key:    util.StringToBytesWithNoCopy(key),
+		Mode:   mode,
 	})
 	if err != nil {
+		util.LOGGER.Errorf(err, "get service %s tags file failed", key)
 		return tags, err
 	}
-	if len(resp.Kvs) != 0 {
-		util.LOGGER.Debugf("start unmarshal service tags file: %s", key)
+
+	l := len(resp.Kvs)
+	if l != 0 {
+		tags = make(map[string]string, l)
 		err = json.Unmarshal(resp.Kvs[0].Value, &tags)
 		if err != nil {
-			return tags, err
+			util.LOGGER.Errorf(err, "unmarshal service %s tags file failed", key)
+			return nil, err
 		}
 	}
 	return tags, nil

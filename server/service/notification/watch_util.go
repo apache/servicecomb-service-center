@@ -73,26 +73,51 @@ func websocketHeartbeat(conn *websocket.Conn, messageType int, watcher *ListWatc
 }
 
 func WatchWebSocketJobHandler(conn *websocket.Conn, watcher *ListWatcher, timeout time.Duration) {
+	needPingWatcher := true
 	remoteAddr := conn.RemoteAddr().String()
+	// PONG
 	conn.SetPongHandler(func(message string) error {
 		util.LOGGER.Debugf("receive heartbeat feedback message %s from watcher[%s] %s %s",
 			message, remoteAddr, watcher.Subject(), watcher.Id())
 		return nil
 	})
+	// PING
 	conn.SetPingHandler(func(message string) error {
 		util.LOGGER.Debugf("receive heartbeat message %s from watcher[%s] %s %s, now give it a reply",
 			message, remoteAddr, watcher.Subject(), watcher.Id())
+		if needPingWatcher {
+			util.LOGGER.Infof("receive heartbeat message '%s' from watcher[%s] %s %s, no longer send 'Ping' to it")
+		}
+		needPingWatcher = false
 		return websocketHeartbeat(conn, websocket.PongMessage, watcher, timeout)
 	})
+	// CLOSE
+	conn.SetCloseHandler(func(code int, text string) error {
+		watcher.SetError(fmt.Errorf("watcher[%s] %s %s active closed", remoteAddr, watcher.Subject(), watcher.Id()))
+		return nil
+	})
+
 	for {
 		select {
 		case <-time.After(timeout):
+			if watcher.Err() != nil {
+				return
+			}
+
+			if !needPingWatcher {
+				continue
+			}
+
 			util.LOGGER.Debugf("send heartbeat to watcher[%s] %s %s", remoteAddr, watcher.Subject(), watcher.Id())
 			err := websocketHeartbeat(conn, websocket.PingMessage, watcher, timeout)
 			if err != nil {
 				return
 			}
 		case job := <-watcher.Job:
+			if watcher.Err() != nil {
+				return
+			}
+
 			if job == nil {
 				err := conn.WriteMessage(websocket.TextMessage,
 					util.StringToBytesWithNoCopy("watch catch a err: watcher quit for server shutdown"))
@@ -105,7 +130,9 @@ func WatchWebSocketJobHandler(conn *websocket.Conn, watcher *ListWatcher, timeou
 					remoteAddr, watcher.Subject(), watcher.Id())
 				return
 			}
+
 			resp := job.(*WatchJob).Response
+
 			util.LOGGER.Warnf(nil, "event[%s] is coming in, watcher[%s] %s %s, providers' info %s %s",
 				resp.Action, remoteAddr, watcher.Subject(), watcher.Id(), resp.Instance.ServiceId, resp.Instance.InstanceId)
 
@@ -185,7 +212,7 @@ func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (resul
 		providerDepsKey := util.BytesToStringWithNoCopy(depsKv.Key)
 		providerId := providerDepsKey[strings.LastIndex(providerDepsKey, "/")+1:]
 
-		service, err := ms.GetService(ctx, tenant, providerId, rev)
+		service, err := ms.GetServiceWithRev(ctx, tenant, providerId, rev)
 		if service == nil {
 			return
 		}

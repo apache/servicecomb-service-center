@@ -606,7 +606,7 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 	tenant := util.ParseTenantProject(ctx)
 
 	findFlag := util.StringJoin([]string{in.ConsumerServiceId, in.AppId, in.ServiceName, in.VersionRule}, "/")
-	service, err := ms.GetServiceByServiceId(ctx, tenant, in.ConsumerServiceId)
+	service, err := ms.GetService(ctx, tenant, in.ConsumerServiceId)
 	if err != nil {
 		util.LOGGER.Errorf(err, "find instance failed, %s: get consumer failed.", findFlag)
 		return &pb.FindInstancesResponse{
@@ -660,7 +660,7 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 	}
 	consumer := pb.ToMicroServiceKey(tenant, service)
 	//维护version的规则
-	providerService, _ := ms.GetServiceByServiceId(ctx, tenant, ids[0])
+	providerService, _ := ms.GetService(ctx, tenant, ids[0])
 	if providerService == nil {
 		util.LOGGER.Errorf(nil, "find instance failed, %s: no provider matched.", findFlag)
 		return &pb.FindInstancesResponse{

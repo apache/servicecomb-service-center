@@ -50,7 +50,7 @@ func autoSyncConsumers() {
 	//ticker := time.NewTicker(time.Minute * 1)
 	//for t := range ticker.C {
 	//	util.LOGGER.Debug(fmt.Sprintf("sync consumers at %s", t))
-	//	keys := microservice.GetService(context.TODO())
+	//	keys := microservice.GetServiceWithRev(context.TODO())
 	//	for _, v := range keys {
 	//		util.LOGGER.Debug(fmt.Sprintf("sync consumers for %s", v))
 	//		domainAndId := strings.Split(v, ":::")
@@ -80,6 +80,7 @@ func GetConsumersInCache(ctx context.Context, tenant string, providerId string) 
 		Key:        util.StringToBytesWithNoCopy(key),
 		WithPrefix: true,
 		KeyOnly:    true,
+		Mode:       registry.MODE_CACHE,
 	})
 	if err != nil {
 		util.LOGGER.Errorf(err, "query service consumers failed, provider id %s", providerId)
@@ -107,6 +108,7 @@ func RefreshDependencyCache(tenant string, providerId string, provider *pb.Micro
 		Key:        util.StringToBytesWithNoCopy(key),
 		WithPrefix: true,
 		KeyOnly:    true,
+		Mode:       registry.MODE_CACHE,
 	})
 	if err != nil {
 		util.LOGGER.Errorf(err, "refresh dependency cache failed: query service consumers failed, provider id %s", providerId)
@@ -714,7 +716,7 @@ func GetDependencies(ctx context.Context, dependencyKey string, tenant string) (
 		keySplilt = strings.Split(key, "/")
 		providerId = keySplilt[len(keySplilt)-1]
 
-		provider, err := ms.GetServiceByServiceId(ctx, tenant, providerId)
+		provider, err := ms.GetService(ctx, tenant, providerId)
 		if err != nil {
 			util.LOGGER.Errorf(nil, "Get service failed, %s", err.Error())
 			return nil, err
@@ -827,7 +829,7 @@ func AddServiceVersionRule(ctx context.Context, provider *pb.MicroServiceKey, te
 
 func UpdateServiceForAddDependency(ctx context.Context, consumerId string, providers []*pb.DependencyMircroService, tenant string) error {
 	conServiceKey := apt.GenerateServiceKey(tenant, consumerId)
-	service, err := ms.GetServiceByServiceId(ctx, tenant, consumerId)
+	service, err := ms.GetService(ctx, tenant, consumerId)
 	if err != nil {
 		util.LOGGER.Errorf(err, "create dependency faild: get service failed. consumerId %s", consumerId)
 		return err

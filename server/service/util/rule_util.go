@@ -61,12 +61,12 @@ type RuleFilter struct {
 }
 
 func (rf *RuleFilter) Filter(ctx context.Context, consumerId string) (bool, error) {
-	consumer, err := ms.GetServiceByServiceId(ctx, rf.Tenant, consumerId)
+	consumer, err := ms.SearchService(ctx, rf.Tenant, consumerId, registry.MODE_CACHE)
 	if consumer == nil {
 		return false, err
 	}
 
-	tags, err := GetTagsUtils(context.Background(), rf.Tenant, consumerId)
+	tags, err := SearchTags(context.Background(), rf.Tenant, consumerId, registry.MODE_CACHE)
 	if err != nil {
 		return false, err
 	}
@@ -219,6 +219,7 @@ func MatchRules(rules []*pb.ServiceRule, service *pb.MicroService, serviceTags m
 
 	}
 	if hasWhite {
+		util.LOGGER.Infof("service %s do not match white list", service.ServiceId)
 		return NotMatchWhiteListError("Not found in white list")
 	}
 	return nil
@@ -253,4 +254,42 @@ func GetConsumerIdsWithFilter(ctx context.Context, tenant, providerId string,
 		}
 	}
 	return consumers[:allowIdx], consumers[denyIdx:], nil
+}
+
+func noFilter(_ context.Context, _ string) (bool, error) {
+	return true, nil
+}
+
+func GetConsumerIdsByProviderId(ctx context.Context, tenant, providerId string) (allow []string, deny []string, _ error) {
+	provider, err := ms.GetService(ctx, tenant, providerId)
+	if provider == nil {
+		return nil, nil, err
+	}
+	return GetConsumerIds(ctx, tenant, provider)
+}
+
+func GetConsumerIds(ctx context.Context, tenant string, provider *pb.MicroService) (allow []string, deny []string, _ error) {
+	if provider == nil || len(provider.ServiceId) == 0 {
+		return nil, nil, fmt.Errorf("invalid provider")
+	}
+
+	providerRules, err := GetRulesUtil(ctx, tenant, provider.ServiceId)
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(providerRules) == 0 {
+		return GetConsumerIdsWithFilter(ctx, tenant, provider.ServiceId, noFilter)
+	}
+
+	rf := RuleFilter{
+		Tenant:        tenant,
+		Provider:      provider,
+		ProviderRules: providerRules,
+	}
+
+	allow, deny, err = GetConsumerIdsWithFilter(ctx, tenant, provider.ServiceId, rf.Filter)
+	if err != nil {
+		return nil, nil, err
+	}
+	return allow, deny, nil
 }

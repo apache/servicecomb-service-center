@@ -186,7 +186,7 @@ func checkBeforeCreate(ctx context.Context, serviceKey *pb.MicroServiceKey) erro
 func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId string, force bool) (*pb.Response, error) {
 	tenant := util.ParseTenantProject(ctx)
 
-	service, err := ms.GetServiceByServiceId(ctx, tenant, ServiceId)
+	service, err := ms.GetService(ctx, tenant, ServiceId)
 	if err != nil {
 		util.LOGGER.Errorf(err, "delete microservice failed, serviceId is %s: get service failed.", ServiceId)
 		return pb.CreateResponse(pb.Response_FAIL, err.Error()), err
@@ -445,7 +445,7 @@ func (s *ServiceController) GetOne(ctx context.Context, in *pb.GetServiceRequest
 		}, nil
 	}
 	tenant := util.ParseTenantProject(ctx)
-	service, err := ms.GetServiceByServiceId(ctx, tenant, in.ServiceId)
+	service, err := ms.GetService(ctx, tenant, in.ServiceId)
 
 	if err != nil {
 		util.LOGGER.Errorf(err, "get microservice failed, serviceId is %s: inner err,get service failed.", in.ServiceId)
@@ -504,7 +504,7 @@ func (s *ServiceController) UpdateProperties(ctx context.Context, in *pb.UpdateS
 	tenant := util.ParseTenantProject(ctx)
 
 	key := apt.GenerateServiceKey(tenant, in.ServiceId)
-	service, err := ms.GetServiceByServiceId(ctx, tenant, in.ServiceId)
+	service, err := ms.GetService(ctx, tenant, in.ServiceId)
 	if err != nil {
 		util.LOGGER.Errorf(err, "update service properties failed, serviceId is %s: query service failed.", in.ServiceId)
 		return &pb.UpdateServicePropsResponse{
@@ -1011,7 +1011,7 @@ func (s *ServiceController) canModifySchema(ctx context.Context, request *pb.Mod
 		return err, false
 	}
 	tenant := util.ParseTenantProject(ctx)
-	service, err := ms.GetServiceByServiceId(ctx, tenant, request.ServiceId)
+	service, err := ms.GetService(ctx, tenant, request.ServiceId)
 	if err != nil {
 		util.LOGGER.Errorf(err, "update schema failded, serviceId %s, schemaId %s: get service failed.", request.ServiceId, request.SchemaId)
 		return err, false

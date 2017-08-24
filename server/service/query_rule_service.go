@@ -30,7 +30,7 @@ import (
 )
 
 func Accessible(ctx context.Context, tenant string, consumerId string, providerId string) error {
-	consumerService, err := ms.GetServiceByServiceId(ctx, tenant, consumerId)
+	consumerService, err := ms.GetService(ctx, tenant, consumerId)
 	if err != nil {
 		util.LOGGER.Errorf(err,
 			"consumer %s can't access provider %s for internal error", consumerId, providerId)
@@ -45,7 +45,7 @@ func Accessible(ctx context.Context, tenant string, consumerId string, providerI
 	consumerFlag := fmt.Sprintf("%s/%s/%s", consumerService.AppId, consumerService.ServiceName, consumerService.Version)
 
 	// 跨应用权限
-	providerService, err := ms.GetServiceByServiceId(ctx, tenant, providerId)
+	providerService, err := ms.GetService(ctx, tenant, providerId)
 	if err != nil {
 		util.LOGGER.Errorf(err, "consumer %s can't access provider %s for internal error",
 			consumerFlag, providerId)
