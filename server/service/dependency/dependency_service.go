@@ -130,7 +130,7 @@ func UpdateDependency(dep *Dependency) error {
 	if err != nil {
 		return err
 	}
-	opts := make([]*registry.PluginOp, 0, 2*(len(addDepencyList) + len(deleteDepencyList)))
+	opts := make([]*registry.PluginOp, 0, 2*(len(addDepencyList)+len(deleteDepencyList)))
 	var isEqual bool
 	sameServiceIdList := make([]string, 0, len(addDepencyList))
 	for _, addDepencyProviderId := range addDepencyList {
@@ -207,7 +207,7 @@ func UpdateAsProviderDependency(ctx context.Context, providerServiseId string, p
 		return err
 	}
 
-	allConsumers := make([]*pb.MicroServiceKey, 0, len(consumerDependAllList) + len(consumerDependList))
+	allConsumers := make([]*pb.MicroServiceKey, 0, len(consumerDependAllList)+len(consumerDependList))
 	allConsumers = append(allConsumers, consumerDependAllList...)
 	allConsumers = append(allConsumers, consumerDependList...)
 
@@ -216,8 +216,8 @@ func UpdateAsProviderDependency(ctx context.Context, providerServiseId string, p
 		return nil
 	}
 	//更新作为provider的依赖关系
-	opts :=  make([]*registry.PluginOp, 0 , 2*len(allConsumers))
-	flag := make(map[string] bool, len(allConsumers))
+	opts := make([]*registry.PluginOp, 0, 2*len(allConsumers))
+	flag := make(map[string]bool, len(allConsumers))
 	for _, consumer := range allConsumers {
 		consumerServiceid, err := ms.GetServiceId(ctx, consumer)
 		if err != nil {
@@ -247,7 +247,7 @@ func UpdateAsProviderDependency(ctx context.Context, providerServiseId string, p
 	return nil
 }
 
-func getConsumersFromAllVersionRuleOfOne(tenant string, providerServiceId string, provider *pb.MicroServiceKey) ([]*pb.MicroServiceKey, error){
+func getConsumersFromAllVersionRuleOfOne(tenant string, providerServiceId string, provider *pb.MicroServiceKey) ([]*pb.MicroServiceKey, error) {
 	providerVersion := provider.Version
 	provider.Version = ""
 	proKey := apt.GenerateProviderDependencyRuleKey(tenant, provider)
@@ -349,13 +349,14 @@ func getConsumersFromAllVersionRuleOfOne(tenant string, providerServiceId string
 				return nil, err
 			}
 		}
-		util.LOGGER.Infof("Add dependency as provider, provider: serviecName(%s), version(%s) .consumer is", provider.ServiceName, providerVersionRule, dependency.Dependency)
+		util.LOGGER.Infof("Add dependency as provider, provider: serviecName(%s), version(%s) .consumer is %v",
+			provider.ServiceName, providerVersionRule, dependency.Dependency)
 		allConsumers = append(allConsumers, dependency.Dependency...)
 	}
 	return allConsumers, nil
 }
 
-func getAllVersionServicesForOne(service *pb.MicroServiceKey) (*registry.PluginResponse, error){
+func getAllVersionServicesForOne(service *pb.MicroServiceKey) (*registry.PluginResponse, error) {
 	key := apt.GenerateServiceIndexKey(service)
 	opt := &registry.PluginOp{
 		Action:     registry.GET,
@@ -366,7 +367,7 @@ func getAllVersionServicesForOne(service *pb.MicroServiceKey) (*registry.PluginR
 	return resp, err
 }
 
-func getAllVersionServiceIdsForOne(service *pb.MicroServiceKey) ([]string, error){
+func getAllVersionServiceIdsForOne(service *pb.MicroServiceKey) ([]string, error) {
 	resp, err := getAllVersionServicesForOne(service)
 	if err != nil {
 		return nil, err
@@ -379,7 +380,7 @@ func getAllVersionServiceIdsForOne(service *pb.MicroServiceKey) ([]string, error
 	return serviceIdList, nil
 }
 
-func getConsumerOfDependAllServices(tenant string, provider *pb.MicroServiceKey) ([]*pb.MicroServiceKey, error){
+func getConsumerOfDependAllServices(tenant string, provider *pb.MicroServiceKey) ([]*pb.MicroServiceKey, error) {
 
 	relyAllKey := apt.GenerateProviderDependencyRuleKey(tenant, &pb.MicroServiceKey{
 		ServiceName: "*",
@@ -624,13 +625,13 @@ func CreateDependencyRule(ctx context.Context, dep *Dependency) error {
 	dep.err = make(chan error, 5)
 	dep.chanNum = 0
 	if len(unExistDependencyRuleList) != 0 {
-		util.LOGGER.Infof("Unexist dependency rule remove for consumer %s, %v, ",consumerFlag ,unExistDependencyRuleList)
+		util.LOGGER.Infof("Unexist dependency rule remove for consumer %s, %v, ", consumerFlag, unExistDependencyRuleList)
 		dep.removedDependencyRuleList = unExistDependencyRuleList
 		dep.RemoveConsumerOfProviderRule()
 	}
 
 	if len(newDependencyRuleList) != 0 {
-		util.LOGGER.Infof("New dependency rule add for consumer %s, %v, ",consumerFlag ,newDependencyRuleList)
+		util.LOGGER.Infof("New dependency rule add for consumer %s, %v, ", consumerFlag, newDependencyRuleList)
 		dep.NewDependencyRuleList = newDependencyRuleList
 		dep.AddConsumerOfProviderRule()
 	}
@@ -882,7 +883,7 @@ func (dep *Dependency) removeConsumerOfProviderRule() {
 			dep.err <- err
 			return
 		}
-		for key, tmp :=  range consumerValue.Dependency {
+		for key, tmp := range consumerValue.Dependency {
 			if ok := equalServiceDependency(tmp, dep.Consumer); ok {
 				consumerValue.Dependency = append(consumerValue.Dependency[:key], consumerValue.Dependency[key+1:]...)
 				break
@@ -944,9 +945,9 @@ func (dep *Dependency) addConsumerOfProviderRule() {
 			return
 		}
 		opts = append(opts, &registry.PluginOp{
-		        Action: registry.PUT,
-		        Key:    util.StringToBytesWithNoCopy(proProkey),
-		        Value:  data,
+			Action: registry.PUT,
+			Key:    util.StringToBytesWithNoCopy(proProkey),
+			Value:  data,
 		})
 		if prividerRule.ServiceName == "*" {
 			break
@@ -962,7 +963,7 @@ func (dep *Dependency) addConsumerOfProviderRule() {
 	dep.err <- nil
 }
 
-func (dep *Dependency)updateProvidersRuleOfConsumer(conKey string) error{
+func (dep *Dependency) updateProvidersRuleOfConsumer(conKey string) error {
 	dependency := &pb.MicroServiceDependency{
 		Dependency: dep.ProvidersRule,
 	}
@@ -984,20 +985,19 @@ func (dep *Dependency)updateProvidersRuleOfConsumer(conKey string) error{
 	return nil
 }
 
-func (dep *Dependency)UpdateProvidersRuleOfConsumer(conKey string) error {
+func (dep *Dependency) UpdateProvidersRuleOfConsumer(conKey string) error {
 	return dep.updateProvidersRuleOfConsumer(conKey)
 }
 
-
-func (dep *Dependency)GetAddDependencyProviderIds() ([]string, error) {
+func (dep *Dependency) GetAddDependencyProviderIds() ([]string, error) {
 	return dep.getDependencyProviderIds(dep.NewDependencyRuleList)
 }
 
-func (dep *Dependency)GetDeleteDependencyProviderIds() ([]string, error) {
+func (dep *Dependency) GetDeleteDependencyProviderIds() ([]string, error) {
 	return dep.getDependencyProviderIds(dep.removedDependencyRuleList)
 }
 
-func (dep *Dependency)getDependencyProviderIds(providerRules []*pb.MicroServiceKey) ([]string, error) {
+func (dep *Dependency) getDependencyProviderIds(providerRules []*pb.MicroServiceKey) ([]string, error) {
 	tenant := dep.Tenant
 	provideServiceIds := make([]string, 0)
 	for _, provider := range providerRules {

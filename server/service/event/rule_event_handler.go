@@ -17,14 +17,77 @@ import (
 	"encoding/json"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
-	"github.com/ServiceComb/service-center/server/service/dependency"
-	"github.com/ServiceComb/service-center/server/service/microservice"
+	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	nf "github.com/ServiceComb/service-center/server/service/notification"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
-	"strings"
 )
+
+type RulesChangedAsyncTask struct {
+	key string
+	err error
+
+	Tenant     string
+	ProviderId string
+	Rev        int64
+	Service    *nf.NotifyService
+}
+
+func (apt *RulesChangedAsyncTask) Key() string {
+	return apt.key
+}
+
+func (apt *RulesChangedAsyncTask) Do(ctx context.Context) error {
+	defer store.Store().AsyncTasker().DeferRemoveTask(apt.Key())
+	apt.err = publish(ctx, apt.Service, apt.Tenant, apt.ProviderId, apt.Rev)
+	return apt.err
+}
+
+func (apt *RulesChangedAsyncTask) Err() error {
+	return apt.err
+}
+
+func publish(ctx context.Context, service *nf.NotifyService, tenant, providerId string, rev int64) error {
+	provider, err := ms.GetServiceByServiceId(ctx, tenant, providerId)
+	if provider == nil {
+		util.LOGGER.Errorf(err, "get service %s file failed", providerId)
+		return err
+	}
+	providerRules, err := serviceUtil.GetRulesUtil(ctx, tenant, providerId)
+	if err != nil || len(providerRules) == 0 {
+		util.LOGGER.Errorf(err, "get provider service %s rules failed", providerId)
+		return err
+	}
+	instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, tenant, providerId, "")
+	if err != nil || len(instances) == 0 {
+		util.LOGGER.Errorf(err, "get provider service %s instance failed", providerId)
+		return err
+	}
+
+	providerKey := &pb.MicroServiceKey{
+		AppId:       provider.AppId,
+		ServiceName: provider.ServiceName,
+		Version:     provider.Version,
+	}
+	rf := serviceUtil.RuleFilter{
+		Tenant:        tenant,
+		Provider:      provider,
+		ProviderRules: providerRules,
+	}
+
+	allow, deny, err := serviceUtil.GetConsumerIdsWithFilter(ctx, tenant, providerId, rf.Filter)
+	if err != nil {
+		util.LOGGER.Errorf(err, "get consumer services by provider %s failed", providerId)
+		return err
+	}
+
+	for _, instance := range instances {
+		nf.PublishInstanceEvent(service, tenant, pb.EVT_UPDATE, providerKey, instance, rev, allow)
+		nf.PublishInstanceEvent(service, tenant, pb.EVT_DELETE, providerKey, instance, rev, deny)
+	}
+	return nil
+}
 
 type RuleEventHandler struct {
 	service *nf.NotifyService
@@ -50,8 +113,7 @@ func (h *RuleEventHandler) OnEvent(evt *store.KvEvent) {
 			providerId, ruleId, action)
 		return
 	}
-	util.LOGGER.Infof("caught service %s rule %s [%s] event",
-		providerId, ruleId, action)
+	util.LOGGER.Infof("caught service %s rule %s [%s] event", providerId, ruleId, action)
 
 	var rule pb.ServiceRule
 	err := json.Unmarshal(data, &rule)
@@ -61,56 +123,8 @@ func (h *RuleEventHandler) OnEvent(evt *store.KvEvent) {
 		return
 	}
 
-	kvs, err := dependency.GetConsumersInCache(context.Background(), tenant, providerId)
-	if err != nil {
-		util.LOGGER.Errorf(err, "get consumer services failed, provider %s rule %s",
-			providerId, ruleId)
-		return
-	}
-
-	type serviceInfo struct {
-		Service *pb.MicroService
-		Tags    map[string]string
-	}
-	consumers := make([]*serviceInfo, 0, len(kvs))
-	for _, kv := range kvs {
-		consumerId := util.BytesToStringWithNoCopy(kv.Key)
-		consumerId = consumerId[strings.LastIndex(consumerId, "/")+1:]
-
-		ms, err := microservice.GetServiceByServiceId(context.Background(), tenant, consumerId)
-		if err != nil {
-			util.LOGGER.Errorf(err, "get consumer %s service file failed, provider %s rule %s",
-				consumerId, providerId, ruleId)
-			return
-		}
-
-		tags, err := serviceUtil.GetTagsUtils(context.Background(), tenant, consumerId)
-		if err != nil {
-			util.LOGGER.Errorf(err, "get consumer %s service tag failed, provider %s rule %s",
-				consumerId, providerId, ruleId)
-			return
-		}
-
-		matchErr := serviceUtil.MatchRules([]*pb.ServiceRule{&rule}, ms, tags)
-		switch matchErr.(type) {
-		case serviceUtil.NotMatchWhiteListError:
-			switch evt.Action {
-			case pb.EVT_CREATE, pb.EVT_UPDATE:
-			case pb.EVT_DELETE:
-			}
-		case serviceUtil.MatchBlackListError:
-			switch evt.Action {
-			case pb.EVT_CREATE, pb.EVT_UPDATE:
-			case pb.EVT_DELETE:
-			}
-		default:
-			util.LOGGER.Errorf(err, "match service %s rules %s failed",
-				consumerId, providerId, ruleId)
-			return
-		}
-
-		consumers = append(consumers, &serviceInfo{ms, tags})
-	}
+	store.Store().AsyncTasker().AddTask(context.Background(),
+		NewRulesChangedAsyncTask(h.service, tenant, providerId, evt.Revision))
 }
 
 func NewRuleEventHandler(s *nf.NotifyService) *RuleEventHandler {
@@ -118,4 +132,14 @@ func NewRuleEventHandler(s *nf.NotifyService) *RuleEventHandler {
 		service: s,
 	}
 	return h
+}
+
+func NewRulesChangedAsyncTask(service *nf.NotifyService, tenant, providerId string, rev int64) *RulesChangedAsyncTask {
+	return &RulesChangedAsyncTask{
+		key:        "RulesChangedAsyncTask_" + providerId,
+		Tenant:     tenant,
+		ProviderId: providerId,
+		Rev:        rev,
+		Service:    service,
+	}
 }

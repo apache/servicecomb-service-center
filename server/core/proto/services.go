@@ -51,7 +51,7 @@ type SerivceInstanceCtrlServerEx interface {
 
 	WebSocketWatch(ctx context.Context, in *WatchInstanceRequest, conn *websocket.Conn)
 	WebSocketListAndWatch(ctx context.Context, in *WatchInstanceRequest, conn *websocket.Conn)
-	CluterHealth(ctx context.Context) (*GetInstancesResponse, error)
+	ClusterHealth(ctx context.Context) (*GetInstancesResponse, error)
 }
 
 type GovernServiceCtrlServerEx interface {

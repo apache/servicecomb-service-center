@@ -150,7 +150,7 @@ func TestBaseAsyncTasker_RemoveTask(t *testing.T) {
 	at := NewAsyncTasker()
 	at.Run()
 
-	err := at.RemoveTask("test")
+	err := at.DeferRemoveTask("test")
 	if err != nil {
 		fail(t, "remove task should be ok")
 	}
@@ -166,13 +166,13 @@ func TestBaseAsyncTasker_RemoveTask(t *testing.T) {
 	}
 	fmt.Println("OK")
 
-	err = at.RemoveTask("test")
+	err = at.DeferRemoveTask("test")
 	if err != nil {
 		fail(t, "remove task should be ok")
 	}
 	at.Stop()
 
-	err = at.RemoveTask("test")
+	err = at.DeferRemoveTask("test")
 	if err == nil {
 		fail(t, "remove task should be error when Tasker is stopped")
 	}

@@ -93,7 +93,7 @@ type KvCache struct {
 }
 
 func (c *KvCache) Version() int64 {
-	return c.owner.lw.Revision()
+	return c.owner.lw.ModRevision()
 }
 
 func (c *KvCache) Data(k interface{}) interface{} {
@@ -151,7 +151,7 @@ type KvCacher struct {
 }
 
 func (c *KvCacher) needList() bool {
-	rev := c.lw.Revision()
+	rev := c.lw.ModRevision()
 	defer func() { c.lastRev = rev }()
 
 	if rev == 0 {
@@ -180,17 +180,17 @@ func (c *KvCacher) doList(listOps *ListOptions) error {
 		return err
 	}
 	lastRev := c.lastRev
-	c.lastRev = c.lw.Revision()
+	c.lastRev = c.lw.ModRevision()
 	c.sync(c.filter(c.lastRev, kvs))
 	syncDuration := time.Now().Sub(start)
 
 	if syncDuration > 5*time.Second {
-		util.LOGGER.Warnf(nil, "finish to cache key %s, %d items took %s! list options: %+v, rev: %d",
+		util.LOGGER.Warnf(nil, "finish to cache key %s, %d items took %s! opts: %s, rev: %d",
 			c.Cfg.Key, len(kvs), syncDuration, listOps, c.lastRev)
 		return nil
 	}
 	if lastRev != c.lastRev {
-		util.LOGGER.Infof("finish to cache key %s, %d items took %s, list options: %+v, rev: %d",
+		util.LOGGER.Infof("finish to cache key %s, %d items took %s, opts: %s, rev: %d",
 			c.Cfg.Key, len(kvs), syncDuration, listOps, c.lastRev)
 	}
 	return nil
@@ -198,8 +198,7 @@ func (c *KvCacher) doList(listOps *ListOptions) error {
 
 func (c *KvCacher) doWatch(listOps *ListOptions) error {
 	watcher := c.lw.Watch(listOps)
-	util.LOGGER.Debugf("finish to new watcher, key %s, list options: %+v, start rev: %d+1",
-		c.Cfg.Key, listOps, c.lastRev)
+	util.LOGGER.Debugf("finish to new watcher, key %s, opts: %s, start rev: %d+1", c.Cfg.Key, listOps, c.lastRev)
 	return c.handleWatcher(watcher)
 }
 
@@ -213,7 +212,8 @@ func (c *KvCacher) ListAndWatch(ctx context.Context) error {
 	if c.needList() {
 		err := c.doList(listOps)
 		if err != nil {
-			util.LOGGER.Errorf(err, "list key %s failed, list options: %+v", c.Cfg.Key, listOps)
+			util.LOGGER.Errorf(err, "list key %s failed, opts: %s, rev: %d",
+				c.Cfg.Key, listOps, c.lastRev)
 			// do not return err, continue to watch
 		}
 		util.SafeCloseChan(c.ready)
@@ -224,7 +224,8 @@ func (c *KvCacher) ListAndWatch(ctx context.Context) error {
 	c.mux.Unlock()
 
 	if err != nil {
-		util.LOGGER.Errorf(err, "handle watcher failed, watch key %s, list options: %+v", c.Cfg.Key, listOps)
+		util.LOGGER.Errorf(err, "handle watcher failed, watch key %s, opts: %s, start rev: %d+1",
+			c.Cfg.Key, listOps, c.lastRev)
 		return err
 	}
 	return nil
@@ -243,9 +244,14 @@ func (c *KvCacher) handleWatcher(watcher *Watcher) error {
 }
 
 func (c *KvCacher) sync(evts []*Event) {
+	if len(evts) == 0 {
+		return
+	}
+
 	cache := c.Cache().(*KvCache)
+	idx := 0
+	kvEvts := make([]*KvEvent, len(evts))
 	store := cache.Lock()
-	defer cache.Unlock()
 	for _, evt := range evts {
 		kv := evt.Object.(*mvccpb.KeyValue)
 		key := util.BytesToStringWithNoCopy(kv.Key)
@@ -265,25 +271,30 @@ func (c *KvCacher) sync(evts []*Event) {
 					evt.Type, proto.EVT_UPDATE, key)
 				t = proto.EVT_UPDATE
 			}
-			c.Cfg.OnEvent(&KvEvent{
+			kvEvts[idx] = &KvEvent{
 				Revision: evt.Revision,
 				Action:   t,
 				KV:       kv,
-			})
+			}
+			idx++
 		case proto.EVT_DELETE:
 			if ok {
 				util.LOGGER.Debugf("sync %s event and notify watcher, remove key %s, %+v", evt.Type, key, kv)
 				delete(store, key)
-				c.Cfg.OnEvent(&KvEvent{
+				kvEvts[idx] = &KvEvent{
 					Revision: evt.Revision,
 					Action:   evt.Type,
 					KV:       prevKv,
-				})
+				}
+				idx++
 				continue
 			}
 			util.LOGGER.Warnf(nil, "unexpected %s event! nonexistent key %s", evt.Type, key)
 		}
 	}
+	cache.Unlock()
+
+	c.onKvEvents(kvEvts[:idx])
 }
 
 func (c *KvCacher) filter(rev int64, items []*mvccpb.KeyValue) []*Event {
@@ -402,6 +413,12 @@ func (c *KvCacher) filterCreateOrUpdate(store map[string]*mvccpb.KeyValue, newSt
 	select {
 	case <-filterStopCh:
 		close(eventsCh)
+	}
+}
+
+func (c *KvCacher) onKvEvents(evts []*KvEvent) {
+	for _, evt := range evts {
+		c.Cfg.OnEvent(evt)
 	}
 }
 

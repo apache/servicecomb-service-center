@@ -110,13 +110,6 @@ func (lat *LeaseAsyncTask) Err() error {
 	return lat.err
 }
 
-func NewLeaseAsyncTask(op *registry.PluginOp) *LeaseAsyncTask {
-	return &LeaseAsyncTask{
-		key:     util.BytesToStringWithNoCopy(op.Key),
-		LeaseID: op.Lease,
-	}
-}
-
 type StoreType int
 
 func (st StoreType) String() string {
@@ -216,7 +209,7 @@ func (s *KvStore) onLeaseEvent(evt *KvEvent) {
 }
 
 func (s *KvStore) removeAsyncTask(key string) {
-	s.asyncTasker.RemoveTask(key)
+	s.asyncTasker.DeferRemoveTask(key)
 }
 
 func (s *KvStore) closed() bool {
@@ -324,4 +317,11 @@ func (s *KvStore) AsyncTasker() *AsyncTasker {
 
 func Store() *KvStore {
 	return store
+}
+
+func NewLeaseAsyncTask(op *registry.PluginOp) *LeaseAsyncTask {
+	return &LeaseAsyncTask{
+		key:     "LeaseAsyncTask_" + util.BytesToStringWithNoCopy(op.Key),
+		LeaseID: op.Lease,
+	}
 }

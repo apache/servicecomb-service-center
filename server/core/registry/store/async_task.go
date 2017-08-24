@@ -80,7 +80,7 @@ func (lat *AsyncTasker) AddTask(ctx context.Context, task AsyncTask) error {
 	return handled.Err()
 }
 
-func (lat *AsyncTasker) RemoveTask(key string) error {
+func (lat *AsyncTasker) DeferRemoveTask(key string) error {
 	lat.queueLock.Lock()
 	if lat.isClose {
 		lat.queueLock.Unlock()
@@ -221,7 +221,7 @@ func (lat *AsyncTasker) scheduleTask(at AsyncTask) {
 		}()
 		select {
 		case <-ctx.Done():
-			util.LOGGER.Debugf("finish to handle task, key is %s", at.Key())
+			util.LOGGER.Debugf("finish to handle task, key is %s, result: %s", at.Key(), at.Err())
 		case <-stopCh:
 			cancel()
 			util.LOGGER.Debugf("cancelled task for AsyncTasker is stopped, key is %s", at.Key())

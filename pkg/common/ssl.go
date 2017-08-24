@@ -128,7 +128,7 @@ func loadServerSSLConfig() {
 		sslServerConfig.KeyPassphase = util.BytesToStringWithNoCopy(keyPassphase)
 	}
 
-	util.LOGGER.Infof("server ssl configs enabled %t, verifyclient %t, minv %#x, cipers %d, pphase %d.",
+	util.LOGGER.Infof("server ssl configs enabled %t, verifyClient %t, minv %#x, ciphers %d, phase %d.",
 		sslServerConfig.SSLEnabled,
 		sslServerConfig.VerifyClient,
 		sslServerConfig.MinVersion,

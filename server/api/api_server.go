@@ -16,7 +16,6 @@ package api
 import (
 	"fmt"
 	"github.com/ServiceComb/service-center/server/core"
-	"github.com/ServiceComb/service-center/server/core/mux"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	rs "github.com/ServiceComb/service-center/server/rest"
 	"github.com/ServiceComb/service-center/server/rest/handlers"
@@ -131,14 +130,6 @@ func (s *APIService) registerServiceCenter() error {
 }
 
 func (s *APIService) registryService() error {
-	//分布式sc 都会一起抢注，导致注册了多个sc微服务静态信息，需要使用分布式同步锁解决
-	lock, err := mux.Lock(mux.PROCESS_LOCK)
-	if err != nil {
-		util.LOGGER.Errorf(err, "could not create global lock %s", mux.PROCESS_LOCK)
-		return err
-	}
-	defer lock.Unlock()
-
 	ctx := core.AddDefaultContextValue(context.TODO())
 	respE, err := rs.ServiceAPI.Exist(ctx, core.GetExistenceRequest())
 	if err != nil {
@@ -247,15 +238,15 @@ func (s *APIService) Start() {
 		return
 	}
 	s.isClose = false
+
+	s.startRESTfulServer()
+
+	s.startGrpcServer()
 	// 自注册
 	err := s.registerServiceCenter()
 	if err != nil {
 		s.err <- err
 	}
-
-	s.startRESTfulServer()
-
-	s.startGrpcServer()
 	// 心跳
 	s.startHeartBeatService()
 

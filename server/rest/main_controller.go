@@ -33,12 +33,12 @@ type MainService struct {
 func (this *MainService) URLPatterns() []rest.Route {
 	return []rest.Route{
 		{rest.HTTP_METHOD_GET, "/version", this.GetVersion},
-		{rest.HTTP_METHOD_GET, "/health", this.CluterHealth},
+		{rest.HTTP_METHOD_GET, "/health", this.ClusterHealth},
 	}
 }
 
-func (this *MainService) CluterHealth(w http.ResponseWriter, r *http.Request) {
-	resp, err := InstanceAPI.CluterHealth(r.Context())
+func (this *MainService) ClusterHealth(w http.ResponseWriter, r *http.Request) {
+	resp, err := InstanceAPI.ClusterHealth(r.Context())
 	if err != nil {
 		util.LOGGER.Error("health check failed", err)
 		WriteText(http.StatusInternalServerError, "health check failed", w)

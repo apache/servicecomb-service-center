@@ -15,7 +15,6 @@ package event
 
 import (
 	"encoding/json"
-	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
 	"github.com/ServiceComb/service-center/server/service/dependency"
@@ -75,25 +74,15 @@ func (h *InstanceEventHandler) OnEvent(evt *store.KvEvent) {
 		return
 	}
 
-	response := &pb.WatchInstanceResponse{
-		Response: pb.CreateResponse(pb.Response_SUCCESS, "Watch instance successfully."),
-		Action:   string(action),
-		Key: &pb.MicroServiceKey{
+	for _, dependence := range Kvs {
+		consumerId := util.BytesToStringWithNoCopy(dependence.Key)
+		consumerId = consumerId[strings.LastIndex(consumerId, "/")+1:]
+
+		nf.PublishInstanceEvent(h.service, tenantProject, action, &pb.MicroServiceKey{
 			AppId:       ms.AppId,
 			ServiceName: ms.ServiceName,
 			Version:     ms.Version,
-		},
-		Instance: &instance,
-	}
-	for _, dependence := range Kvs {
-		consumer := util.BytesToStringWithNoCopy(dependence.Key)
-		consumer = consumer[strings.LastIndex(consumer, "/")+1:]
-		job := nf.NewWatchJob(nf.INSTANCE, consumer, apt.GetInstanceRootKey(tenantProject)+"/",
-			evt.Revision, response)
-		util.LOGGER.Debugf("publish event to notify service, %v", job)
-
-		// TODO add超时怎么处理？
-		h.service.AddJob(job)
+		}, &instance, evt.Revision, []string{consumerId})
 	}
 }
 
