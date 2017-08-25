@@ -325,7 +325,7 @@ func GetProviderIdsByConsumerId(ctx context.Context, tenant, consumerId string) 
 	providerIds := make([]string, l)
 	for _, kv := range resp.Kvs {
 		providerId := util.BytesToStringWithNoCopy(kv.Key)
-		providerId = providerId[strings.LastIndex(consumerId, "/")+1:]
+		providerId = providerId[strings.LastIndex(providerId, "/")+1:]
 
 		provider, err := ms.GetService(ctx, tenant, providerId)
 		if provider == nil {

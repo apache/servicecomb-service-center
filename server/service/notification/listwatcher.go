@@ -39,7 +39,7 @@ func (w *ListWatcher) OnAccept() {
 		return
 	}
 
-	util.LOGGER.Debugf("accepted by notify service, current revision is %v", w.ListRevision)
+	util.LOGGER.Debugf("accepted by notify service, %s watcher %s %s", w.Type(), w.Id(), w.Subject())
 	go w.listAndPublishJobs()
 }
 
@@ -64,15 +64,17 @@ func (w *ListWatcher) OnMessage(job NotifyJob) {
 	<-w.listCh
 
 	if job.(*WatchJob).Revision <= w.ListRevision {
-		util.LOGGER.Warnf(nil, "unexpected notify job is coming in, job is %v, current revision is %v",
-			job, w.ListRevision)
+		util.LOGGER.Warnf(nil,
+			"unexpected notify %s job is coming in, watcher %s %s, job is %v, current revision is %v",
+			w.Type(), w.Id(), w.Subject(), job, w.ListRevision)
 		return
 	}
 	w.sendMessage(job)
 }
 
 func (w *ListWatcher) sendMessage(job NotifyJob) {
-	util.LOGGER.Debugf("start notify watcher, job is %v, current revision is %v", job)
+	util.LOGGER.Debugf("start notify %s watcher %s %s, job is %v, current revision is %v", w.Type(),
+		w.Id(), w.Subject(), job, w.ListRevision)
 	defer util.RecoverAndReport()
 	w.Job <- job
 }

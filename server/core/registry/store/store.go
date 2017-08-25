@@ -325,3 +325,12 @@ func NewLeaseAsyncTask(op *registry.PluginOp) *LeaseAsyncTask {
 		LeaseID: op.Lease,
 	}
 }
+
+func Revision() (rev int64) {
+	for _, i := range Store().indexers {
+		if rev < i.Cache().Version() {
+			rev = i.Cache().Version()
+		}
+	}
+	return
+}

@@ -15,10 +15,9 @@ package event
 
 import (
 	"github.com/ServiceComb/service-center/server/core/registry/store"
-	nf "github.com/ServiceComb/service-center/server/service/notification"
 )
 
 func init() {
-	store.AddEventHandler(NewInstanceEventHandler(nf.GetNotifyService()))
-	store.AddEventHandler(NewRuleEventHandler(nf.GetNotifyService()))
+	store.AddEventHandler(NewInstanceEventHandler())
+	store.AddEventHandler(NewRuleEventHandler())
 }

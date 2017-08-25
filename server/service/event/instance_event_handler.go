@@ -25,7 +25,6 @@ import (
 )
 
 type InstanceEventHandler struct {
-	service *nf.NotifyService
 }
 
 func (h *InstanceEventHandler) Type() store.StoreType {
@@ -43,7 +42,7 @@ func (h *InstanceEventHandler) OnEvent(evt *store.KvEvent) {
 		return
 	}
 
-	if h.service.Closed() {
+	if nf.GetNotifyService().Closed() {
 		util.LOGGER.Warnf(nil, "caught instance %s/%s [%s] event, but notify service is closed",
 			providerId, providerInstanceId, action)
 		return
@@ -73,15 +72,13 @@ func (h *InstanceEventHandler) OnEvent(evt *store.KvEvent) {
 		return
 	}
 
-	nf.PublishInstanceEvent(h.service, tenantProject, action, &pb.MicroServiceKey{
+	nf.PublishInstanceEvent(tenantProject, action, &pb.MicroServiceKey{
 		AppId:       ms.AppId,
 		ServiceName: ms.ServiceName,
 		Version:     ms.Version,
 	}, &instance, evt.Revision, consumerIds)
 }
 
-func NewInstanceEventHandler(s *nf.NotifyService) *InstanceEventHandler {
-	return &InstanceEventHandler{
-		service: s,
-	}
+func NewInstanceEventHandler() *InstanceEventHandler {
+	return &InstanceEventHandler{}
 }

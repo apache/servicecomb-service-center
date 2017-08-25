@@ -93,7 +93,7 @@ type KvCache struct {
 }
 
 func (c *KvCache) Version() int64 {
-	return c.owner.lw.ModRevision()
+	return c.owner.lw.Revision()
 }
 
 func (c *KvCache) Data(k interface{}) interface{} {
@@ -151,7 +151,7 @@ type KvCacher struct {
 }
 
 func (c *KvCacher) needList() bool {
-	rev := c.lw.ModRevision()
+	rev := c.lw.Revision()
 	defer func() { c.lastRev = rev }()
 
 	if rev == 0 {
@@ -180,7 +180,7 @@ func (c *KvCacher) doList(listOps *ListOptions) error {
 		return err
 	}
 	lastRev := c.lastRev
-	c.lastRev = c.lw.ModRevision()
+	c.lastRev = c.lw.Revision()
 	c.sync(c.filter(c.lastRev, kvs))
 	syncDuration := time.Now().Sub(start)
 

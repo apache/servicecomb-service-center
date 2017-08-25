@@ -874,7 +874,7 @@ func (s *InstanceController) Watch(in *pb.WatchInstanceRequest, stream pb.Servic
 	watcher := nf.NewInstanceWatcher(in.SelfServiceId, apt.GetInstanceRootKey(tenant)+"/")
 	err = nf.GetNotifyService().AddSubscriber(watcher)
 	util.LOGGER.Infof("start watch instance status, watcher %s %s", watcher.Subject(), watcher.Id())
-	return nf.WatchJobHandler(watcher, stream, nf.GetNotifyService().Config.NotifyTimeout)
+	return nf.HandleWatchJob(watcher, stream, nf.GetNotifyService().Config.NotifyTimeout)
 }
 
 func (s *InstanceController) WebSocketWatch(ctx context.Context, in *pb.WatchInstanceRequest, conn *websocket.Conn) {
@@ -882,9 +882,7 @@ func (s *InstanceController) WebSocketWatch(ctx context.Context, in *pb.WatchIns
 		nf.EstablishWebSocketError(conn, err)
 		return
 	}
-	tenant := util.ParseTenantProject(ctx)
-	watcher := nf.NewInstanceWatcher(in.SelfServiceId, apt.GetInstanceRootKey(tenant)+"/")
-	nf.DoWebSocketWatch(nf.GetNotifyService(), watcher, conn)
+	nf.DoWebSocketWatch(ctx, in.SelfServiceId, conn)
 }
 
 func (s *InstanceController) WebSocketListAndWatch(ctx context.Context, in *pb.WatchInstanceRequest, conn *websocket.Conn) {
@@ -892,12 +890,9 @@ func (s *InstanceController) WebSocketListAndWatch(ctx context.Context, in *pb.W
 		nf.EstablishWebSocketError(conn, err)
 		return
 	}
-	tenant := util.ParseTenantProject(ctx)
-	watcher := nf.NewInstanceListWatcher(in.SelfServiceId, apt.GetInstanceRootKey(tenant)+"/",
-		func() ([]*pb.WatchInstanceResponse, int64) {
-			return nf.QueryAllProvidersIntances(ctx, in.SelfServiceId)
-		})
-	nf.DoWebSocketWatch(nf.GetNotifyService(), watcher, conn)
+	nf.DoWebSocketListAndWatch(ctx, in.SelfServiceId, func() ([]*pb.WatchInstanceResponse, int64) {
+		return serviceUtil.QueryAllProvidersIntances(ctx, in.SelfServiceId)
+	}, conn)
 }
 
 func (s *InstanceController) ClusterHealth(ctx context.Context) (*pb.GetInstancesResponse, error) {

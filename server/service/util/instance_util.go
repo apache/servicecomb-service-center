@@ -19,7 +19,9 @@ import (
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
+	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	"github.com/ServiceComb/service-center/util"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"strconv"
 	"strings"
@@ -191,4 +193,77 @@ func DeleteServiceAllInstances(ctx context.Context, ServiceId string) error {
 		registry.GetRegisterCenter().LeaseRevoke(ctx, leaseID)
 	}
 	return nil
+}
+
+func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (results []*pb.WatchInstanceResponse, rev int64) {
+	results = []*pb.WatchInstanceResponse{}
+
+	tenant := util.ParseTenantProject(ctx)
+
+	providerIds, _, err := GetProviderIdsByConsumerId(ctx, tenant, selfServiceId)
+	if err != nil {
+		util.LOGGER.Errorf(err, "get service %s providers id set failed.", selfServiceId)
+		return
+	}
+
+	rev = store.Revision()
+
+	for _, providerId := range providerIds {
+		service, err := ms.GetServiceWithRev(ctx, tenant, providerId, rev)
+		if err != nil {
+			util.LOGGER.Errorf(err, "get service %s provider service %s file failed.", selfServiceId, providerId)
+			return
+		}
+		if service == nil {
+			continue
+		}
+		util.LOGGER.Debugf("query provider service %v with revision %d.", service, rev)
+
+		kvs, err := queryServiceInstancesKvs(ctx, providerId, rev)
+		if err != nil {
+			util.LOGGER.Errorf(err, "get service %s provider %s instances failed.", selfServiceId, providerId)
+			return
+		}
+
+		util.LOGGER.Debugf("query provider service %s instances[%d] with revision %d.", providerId, len(kvs), rev)
+		for _, kv := range kvs {
+			util.LOGGER.Debugf("start unmarshal service instance file with revision %d: %s",
+				rev, util.BytesToStringWithNoCopy(kv.Key))
+			instance := &pb.MicroServiceInstance{}
+			err := json.Unmarshal(kv.Value, instance)
+			if err != nil {
+				util.LOGGER.Errorf(err, "unmarshal instance of service %s with revision %d failed.",
+					providerId, rev)
+				return
+			}
+			results = append(results, &pb.WatchInstanceResponse{
+				Response: pb.CreateResponse(pb.Response_SUCCESS, "List instance successfully."),
+				Action:   string(pb.EVT_CREATE),
+				Key: &pb.MicroServiceKey{
+					AppId:       service.AppId,
+					ServiceName: service.ServiceName,
+					Version:     service.Version,
+				},
+				Instance: instance,
+			})
+		}
+	}
+	return
+}
+
+func queryServiceInstancesKvs(ctx context.Context, serviceId string, rev int64) ([]*mvccpb.KeyValue, error) {
+	tenant := util.ParseTenantProject(ctx)
+	key := apt.GenerateInstanceKey(tenant, serviceId, "")
+	resp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
+		Action:     registry.GET,
+		Key:        util.StringToBytesWithNoCopy(key),
+		WithPrefix: true,
+		WithRev:    rev,
+	})
+	if err != nil {
+		util.LOGGER.Errorf(err, "query instance of service %s with revision %d from etcd failed.",
+			serviceId, rev)
+		return nil, err
+	}
+	return resp.Kvs, nil
 }
