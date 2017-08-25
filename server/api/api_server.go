@@ -152,7 +152,7 @@ func (s *APIService) registryService() error {
 		return err
 	}
 	core.Service.ServiceId = respS.ServiceId
-	util.LOGGER.Infof("register service center service successfully, service id %s", respE.ServiceId)
+	util.LOGGER.Infof("register service center service successfully, service id %s", respS.ServiceId)
 	return nil
 }
 
@@ -214,7 +214,7 @@ func (s *APIService) doAPIServerHeartBeat() {
 	//服务不存在，创建服务
 	err = s.registerServiceCenter()
 	if err != nil {
-		util.LOGGER.Errorf(err, "Service %s/%s/%s does not exist, and retry to register it failed.",
+		util.LOGGER.Errorf(err, "retry to register %s/%s/%s failed.",
 			core.Service.AppId, core.Service.ServiceName, core.Service.Version)
 	}
 }

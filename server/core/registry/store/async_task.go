@@ -42,27 +42,39 @@ type AsyncTasker struct {
 	isClose     bool
 }
 
+func (lat *AsyncTasker) getOrNewQueue(key string, task AsyncTask) (*util.UniQueue, bool) {
+	lat.queueLock.RLock()
+	queue, ok := lat.queues[key]
+	_, remove := lat.removeTasks[key]
+	lat.queueLock.RUnlock()
+	if !ok {
+		lat.queueLock.Lock()
+		queue, ok = lat.queues[key]
+		if !ok {
+			queue = util.NewUniQueue()
+			lat.queues[key] = queue
+			lat.latestTasks[key] = task
+		}
+		lat.queueLock.Unlock()
+	}
+	if remove && ok {
+		lat.queueLock.Lock()
+		_, remove = lat.removeTasks[key]
+		if remove {
+			delete(lat.removeTasks, key)
+		}
+		lat.queueLock.Unlock()
+	}
+	return queue, !ok
+}
+
 func (lat *AsyncTasker) AddTask(ctx context.Context, task AsyncTask) error {
 	if task == nil || ctx == nil {
 		return errors.New("invalid parameters")
 	}
-	lat.queueLock.RLock()
-	queue, ok := lat.queues[task.Key()]
-	latestTask := lat.latestTasks[task.Key()]
-	lat.queueLock.RUnlock()
-	if !ok {
-		lat.queueLock.Lock()
-		queue, ok = lat.queues[task.Key()]
-		if !ok {
-			queue = util.NewUniQueue()
-			lat.queues[task.Key()] = queue
-			latestTask = task
-			lat.latestTasks[task.Key()] = latestTask
-		}
-		lat.queueLock.Unlock()
-	}
 
-	if !ok || lat.isClose {
+	queue, isNew := lat.getOrNewQueue(task.Key(), task)
+	if isNew || lat.isClose {
 		// do immediately at first time
 		return task.Do(ctx)
 	}
@@ -85,6 +97,11 @@ func (lat *AsyncTasker) DeferRemoveTask(key string) error {
 	if lat.isClose {
 		lat.queueLock.Unlock()
 		return errors.New("AsyncTasker is stopped")
+	}
+	_, exist := lat.queues[key]
+	if !exist {
+		lat.queueLock.Unlock()
+		return nil
 	}
 	lat.removeTasks[key] = struct{}{}
 	lat.queueLock.Unlock()

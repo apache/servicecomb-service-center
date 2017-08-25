@@ -240,7 +240,7 @@ func (c *EtcdClient) paging(ctx context.Context, op *registry.PluginOp, countPer
 		return nil, nil // no paging
 	}
 
-	util.LOGGER.Debugf("get too many KeyValues from etcdserver, now paging.(%d vs %d)",
+	util.LOGGER.Infof("get too many KeyValues from etcdserver, now paging.(%d vs %d)",
 		recordCount, countPerPage)
 
 	tempOp.KeyOnly = false

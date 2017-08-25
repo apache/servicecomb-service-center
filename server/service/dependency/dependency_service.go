@@ -93,7 +93,7 @@ func GetConsumersInCache(ctx context.Context, tenant string, providerId string) 
 		if found && len(consumerList.([]*mvccpb.KeyValue)) > 0 {
 			return consumerList.([]*mvccpb.KeyValue), nil
 		}
-		return []*mvccpb.KeyValue{}, nil
+		return nil, nil
 	}
 	consumerCache.Set(providerId, resp.Kvs, 0)
 

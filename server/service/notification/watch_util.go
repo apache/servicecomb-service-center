@@ -22,11 +22,11 @@ import (
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
 	ms "github.com/ServiceComb/service-center/server/service/microservice"
+	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/gorilla/websocket"
 	"golang.org/x/net/context"
-	"strings"
 	"time"
 )
 
@@ -193,33 +193,28 @@ func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (resul
 
 	tenant := util.ParseTenantProject(ctx)
 
-	rev = store.Revision()
-
-	key := apt.GenerateConsumerDependencyKey(tenant, selfServiceId, "")
-	resp, err := store.Store().Dependency().Search(ctx, &registry.PluginOp{
-		Action:     registry.GET,
-		Key:        util.StringToBytesWithNoCopy(key),
-		WithRev:    rev,
-		WithPrefix: true,
-		KeyOnly:    true,
-	})
+	providerIds, _, err := serviceUtil.GetProviderIdsByConsumerId(ctx, tenant, selfServiceId)
 	if err != nil {
-		util.LOGGER.Errorf(err, "Get %s providers id set failed.", selfServiceId)
+		util.LOGGER.Errorf(err, "get service %s providers id set failed.", selfServiceId)
 		return
 	}
 
-	for _, depsKv := range resp.Kvs {
-		providerDepsKey := util.BytesToStringWithNoCopy(depsKv.Key)
-		providerId := providerDepsKey[strings.LastIndex(providerDepsKey, "/")+1:]
+	rev = store.Revision()
 
+	for _, providerId := range providerIds {
 		service, err := ms.GetServiceWithRev(ctx, tenant, providerId, rev)
-		if service == nil {
+		if err != nil {
+			util.LOGGER.Errorf(err, "get service %s provider service %s file failed.", selfServiceId, providerId)
 			return
+		}
+		if service == nil {
+			continue
 		}
 		util.LOGGER.Debugf("query provider service %v with revision %d.", service, rev)
 
 		kvs, err := queryServiceInstancesKvs(ctx, providerId, rev)
 		if err != nil {
+			util.LOGGER.Errorf(err, "get service %s provider %s instances failed.", selfServiceId, providerId)
 			return
 		}
 

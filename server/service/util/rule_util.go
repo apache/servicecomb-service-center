@@ -24,6 +24,7 @@ import (
 	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	"github.com/ServiceComb/service-center/util"
 	errorsEx "github.com/ServiceComb/service-center/util/errors"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"reflect"
 	"regexp"
@@ -225,12 +226,17 @@ func MatchRules(rules []*pb.ServiceRule, service *pb.MicroService, serviceTags m
 	return nil
 }
 
-func GetConsumerIdsWithFilter(ctx context.Context, tenant, providerId string,
+func getConsumerIdsWithFilter(ctx context.Context, tenant, providerId string,
 	filter func(ctx context.Context, consumerId string) (bool, error)) (allow []string, deny []string, err error) {
 	kvs, err := dependency.GetConsumersInCache(ctx, tenant, providerId)
 	if err != nil {
 		return nil, nil, err
 	}
+	return filterConsumerIds(ctx, kvs, filter)
+}
+
+func filterConsumerIds(ctx context.Context, kvs []*mvccpb.KeyValue,
+	filter func(ctx context.Context, consumerId string) (bool, error)) (allow []string, deny []string, err error) {
 	l := len(kvs)
 	if l == 0 {
 		return nil, nil, nil
@@ -278,7 +284,7 @@ func GetConsumerIds(ctx context.Context, tenant string, provider *pb.MicroServic
 		return nil, nil, err
 	}
 	if len(providerRules) == 0 {
-		return GetConsumerIdsWithFilter(ctx, tenant, provider.ServiceId, noFilter)
+		return getConsumerIdsWithFilter(ctx, tenant, provider.ServiceId, noFilter)
 	}
 
 	rf := RuleFilter{
@@ -287,9 +293,71 @@ func GetConsumerIds(ctx context.Context, tenant string, provider *pb.MicroServic
 		ProviderRules: providerRules,
 	}
 
-	allow, deny, err = GetConsumerIdsWithFilter(ctx, tenant, provider.ServiceId, rf.Filter)
+	allow, deny, err = getConsumerIdsWithFilter(ctx, tenant, provider.ServiceId, rf.Filter)
 	if err != nil {
 		return nil, nil, err
 	}
 	return allow, deny, nil
+}
+
+func GetProviderIdsByConsumerId(ctx context.Context, tenant, consumerId string) (allow []string, deny []string, _ error) {
+	// 查询所有consumer
+	key := apt.GenerateProviderDependencyKey(tenant, consumerId, "")
+	resp, err := store.Store().Dependency().Search(ctx, &registry.PluginOp{
+		Action:     registry.GET,
+		Key:        util.StringToBytesWithNoCopy(key),
+		WithPrefix: true,
+		KeyOnly:    true,
+	})
+	if err != nil {
+		util.LOGGER.Errorf(err, "query service providers failed, consumer id %s", consumerId)
+		return nil, nil, err
+	}
+	l := len(resp.Kvs)
+	if l == 0 {
+		return nil, nil, nil
+	}
+
+	rf := RuleFilter{
+		Tenant: tenant,
+	}
+	allowIdx, denyIdx := 0, l
+	providerIds := make([]string, l)
+	for _, kv := range resp.Kvs {
+		providerId := util.BytesToStringWithNoCopy(kv.Key)
+		providerId = providerId[strings.LastIndex(consumerId, "/")+1:]
+
+		provider, err := ms.GetService(ctx, tenant, providerId)
+		if provider == nil {
+			continue
+		}
+		providerRules, err := GetRulesUtil(ctx, tenant, provider.ServiceId)
+		if err != nil {
+			return nil, nil, err
+		}
+		if len(providerRules) == 0 {
+			providerIds[allowIdx] = providerId
+			allowIdx++
+			continue
+		}
+		rf.Provider = provider
+		rf.ProviderRules = providerRules
+		ok, err := rf.Filter(ctx, consumerId)
+		if err != nil {
+			return nil, nil, err
+		}
+		if ok {
+			providerIds[allowIdx] = providerId
+			allowIdx++
+		} else {
+			denyIdx--
+			providerIds[denyIdx] = providerId
+		}
+	}
+	return providerIds[:allowIdx], providerIds[denyIdx:], nil
+}
+
+func GetProviderIds(ctx context.Context, tenant string, consumer *pb.MicroService) (allow []string, deny []string, _ error) {
+	consumerId := consumer.ServiceId
+	return GetProviderIdsByConsumerId(ctx, tenant, consumerId)
 }
