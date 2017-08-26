@@ -58,6 +58,7 @@ type WebSocketHandler struct {
 	conn            *websocket.Conn
 	watcher         *ListWatcher
 	needPingWatcher bool
+	closed          chan struct{}
 }
 
 func (wh *WebSocketHandler) Init() error {
@@ -98,6 +99,8 @@ func (wh *WebSocketHandler) websocketHeartbeat(messageType int) error {
 }
 
 func (wh *WebSocketHandler) HandleWatchWebSocketControlMessage() {
+	defer close(wh.closed)
+
 	remoteAddr := wh.conn.RemoteAddr().String()
 	// PING
 	wh.conn.SetPingHandler(func(message string) error {
@@ -135,6 +138,8 @@ func (wh *WebSocketHandler) HandleWatchWebSocketJob() {
 
 	for {
 		select {
+		case <-wh.closed:
+			return
 		case <-wh.ctx.Done():
 			util.LOGGER.Warnf(nil, "handle timed out, watcher[%s] %s %s", remoteAddr,
 				wh.watcher.Subject(), wh.watcher.Id())
@@ -150,7 +155,7 @@ func (wh *WebSocketHandler) HandleWatchWebSocketJob() {
 				util.LOGGER.Warnf(err, "watcher[%s] %s %s exit", remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
 				err = wh.conn.WriteMessage(websocket.TextMessage, util.StringToBytesWithNoCopy(err.Error()))
 				if err != nil {
-					util.LOGGER.Errorf(err, "watch catch a err: write message error, watcher[%s] %s %s",
+					util.LOGGER.Errorf(err, "watcher[%s] %s %s catch an err: write message error",
 						remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
 				}
 				return
@@ -160,7 +165,7 @@ func (wh *WebSocketHandler) HandleWatchWebSocketJob() {
 				continue
 			}
 
-			util.LOGGER.Debugf("send heartbeat to watcher[%s] %s %s", remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
+			util.LOGGER.Debugf("send 'Ping' message to watcher[%s] %s %s", remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
 			err := wh.websocketHeartbeat(websocket.PingMessage)
 			if err != nil {
 				return
@@ -172,13 +177,13 @@ func (wh *WebSocketHandler) HandleWatchWebSocketJob() {
 
 			if job == nil {
 				err := wh.conn.WriteMessage(websocket.TextMessage,
-					util.StringToBytesWithNoCopy("watch catch a err: watcher quit for server shutdown"))
+					util.StringToBytesWithNoCopy("watcher catch an err: server shutdown"))
 				if err != nil {
-					util.LOGGER.Errorf(err, "watch catch a err: write message error, watcher[%s] %s %s",
+					util.LOGGER.Errorf(err, "watcher[%s] %s %s catch an err: write message error",
 						remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
 					return
 				}
-				util.LOGGER.Warnf(nil, "watch catch a err: server shutdown, watcher[%s] %s %s",
+				util.LOGGER.Warnf(nil, "watcher[%s] %s %s catch an err: server shutdown",
 					remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
 				return
 			}
@@ -191,19 +196,19 @@ func (wh *WebSocketHandler) HandleWatchWebSocketJob() {
 			resp.Response = nil
 			data, err := json.Marshal(resp)
 			if err != nil {
-				util.LOGGER.Errorf(err, "watch catch a err: marshal output file error, watcher[%s] %s %s",
+				util.LOGGER.Errorf(err, "watcher[%s] %s %s catch an err: marshal output file error",
 					remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
 				message := fmt.Sprintf("marshal output file error, %s", err.Error())
 				err = wh.conn.WriteMessage(websocket.TextMessage, util.StringToBytesWithNoCopy(message))
 				if err != nil {
-					util.LOGGER.Errorf(err, "watch catch a err: write message error, watcher[%s] %s %s",
+					util.LOGGER.Errorf(err, "watcher[%s] %s %s catch an err: write message error",
 						remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
 				}
 				return
 			}
 			err = wh.conn.WriteMessage(websocket.TextMessage, data)
 			if err != nil {
-				util.LOGGER.Errorf(err, "watch catch a err: write message error, watcher[%s] %s %s",
+				util.LOGGER.Errorf(err, "watcher[%s] %s %s catch an err: write message error",
 					remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
 				return
 			}
@@ -219,7 +224,7 @@ func (wh *WebSocketHandler) Close(code int, text string) error {
 	}
 	err := wh.conn.WriteControl(websocket.CloseMessage, message, time.Now().Add(wh.Timeout()))
 	if err != nil {
-		util.LOGGER.Errorf(err, "watch catch a err: write 'Close' message error, watcher[%s] %s %s",
+		util.LOGGER.Errorf(err, "watcher[%s] %s %s catch an err: write 'Close' message error",
 			remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
 		return err
 	}
@@ -233,6 +238,7 @@ func DoWebSocketWatch(ctx context.Context, serviceId string, conn *websocket.Con
 		conn:            conn,
 		watcher:         NewInstanceWatcher(serviceId, apt.GetInstanceRootKey(tenant)+"/"),
 		needPingWatcher: true,
+		closed:          make(chan struct{}),
 	}
 	processHandler(handler)
 }
@@ -244,6 +250,7 @@ func DoWebSocketListAndWatch(ctx context.Context, serviceId string, f func() ([]
 		conn:            conn,
 		watcher:         NewInstanceListWatcher(serviceId, apt.GetInstanceRootKey(tenant)+"/", f),
 		needPingWatcher: true,
+		closed:          make(chan struct{}),
 	}
 	processHandler(handler)
 }
