@@ -99,7 +99,9 @@ func Logger() core.Logger {
 		logger, ok = loggers[logFile]
 		if !ok {
 			cfg := *lager.GetConfig()
-			cfg.LoggerFile = filepath.Join(filepath.Dir(cfg.LoggerFile), logFile+".log")
+			if len(cfg.LoggerFile) != 0 {
+				cfg.LoggerFile = filepath.Join(filepath.Dir(cfg.LoggerFile), logFile+".log")
+			}
 			logger = NewLogger(logFile, &cfg)
 			loggers[logFile] = logger
 		}
@@ -128,7 +130,7 @@ func getCalleeFuncName(stack []byte) string {
 	return funcFullName
 }
 
-func SetCustomLoggerName(pkgOrFunc, fileName string) {
+func CustomLogger(pkgOrFunc, fileName string) {
 	loggerNames[pkgOrFunc] = fileName
 }
 
@@ -139,18 +141,18 @@ func monitorLogFile() {
 			case <-stopCh:
 				return
 			case <-time.After(time.Minute):
-				LOGGER.Debug(fmt.Sprintf("Check log file at %s", time.Now()))
+				Logger().Debug(fmt.Sprintf("Check log file at %s", time.Now()))
 
 				if lager.GetConfig().LoggerFile != "" && !PathExist(lager.GetConfig().LoggerFile) {
 					file, err := os.OpenFile(lager.GetConfig().LoggerFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 					if err != nil {
-						LOGGER.Errorf(err, "Create log file failed.")
+						Logger().Errorf(err, "Create log file failed.")
 						return
 					}
 					// TODO Here will lead to file handle leak
 					sink := core.NewReconfigurableSink(core.NewWriterSink(file, core.DEBUG), reBuildLogLevel)
-					LOGGER.RegisterSink(sink)
-					LOGGER.Errorf(nil, "log file is removed, create again.")
+					Logger().RegisterSink(sink)
+					Logger().Errorf(nil, "log file is removed, create again.")
 				}
 			}
 		}

@@ -142,7 +142,7 @@ func (s *NotifyService) AddJob(job NotifyJob) error {
 	case s.queues[job.Type()] <- job:
 		return nil
 	case <-time.After(s.Config.AddTimeout):
-		util.LOGGER.Errorf(nil, "Add job failed.%s")
+		util.Logger().Errorf(nil, "Add job failed.%s")
 		return errors.New("add notify job timeout")
 	}
 }
@@ -150,7 +150,7 @@ func (s *NotifyService) AddJob(job NotifyJob) error {
 func (s *NotifyService) publish2Subscriber(t NotifyType) {
 	defer s.waits.Done()
 	for job := range s.queues[t] {
-		util.LOGGER.Infof("notification service got a job %s: %s to notify subscriber %s",
+		util.Logger().Infof("notification service got a job %s: %s to notify subscriber %s",
 			job.Type(), job.Subject(), job.SubscriberId())
 
 		s.mutexes[t].Lock()
@@ -210,7 +210,7 @@ func (s *NotifyService) init() {
 
 func (s *NotifyService) Start() {
 	if !s.Closed() {
-		util.LOGGER.Warnf(nil, "notify service is already running with config %v", s.Config)
+		util.Logger().Warnf(nil, "notify service is already running with config %v", s.Config)
 		return
 	}
 	s.closeMux.Lock()
@@ -221,7 +221,7 @@ func (s *NotifyService) Start() {
 	// 错误subscriber清理
 	s.AddSubscriber(NewNotifyServiceHealthChecker())
 
-	util.LOGGER.Infof("notify service is started with config %v", s.Config)
+	util.Logger().Infof("notify service is started with config %v", s.Config)
 
 	for i := NotifyType(0); i != typeEnd; i++ {
 		go s.publish2Subscriber(i)
@@ -252,7 +252,7 @@ func (s *NotifyService) Stop() {
 
 	close(s.err)
 
-	util.LOGGER.Info("notify service stopped.")
+	util.Logger().Info("notify service stopped.")
 }
 
 func GetNotifyService() *NotifyService {

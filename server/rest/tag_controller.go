@@ -40,14 +40,14 @@ func (this *TagService) URLPatterns() []rest.Route {
 func (this *TagService) AddTags(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		util.LOGGER.Error("body err", err)
+		util.Logger().Error("body err", err)
 		WriteText(http.StatusInternalServerError, fmt.Sprintf("body error %s", err.Error()), w)
 		return
 	}
 	var tags map[string]map[string]string
 	err = json.Unmarshal(message, &tags)
 	if err != nil {
-		util.LOGGER.Error("Unmarshal error", err)
+		util.Logger().Error("Unmarshal error", err)
 		WriteText(http.StatusBadRequest, "Unmarshal error", w)
 		return
 	}

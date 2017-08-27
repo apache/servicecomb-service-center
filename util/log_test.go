@@ -19,13 +19,13 @@ import (
 )
 
 func TestLogger(t *testing.T) {
-	SetCustomLoggerName("Not Exist", "testDefaultLOGGER")
+	CustomLogger("Not Exist", "testDefaultLOGGER")
 	l := Logger()
 	if l != LOGGER {
 		fmt.Println("should equal to LOGGER")
 		t.FailNow()
 	}
-	SetCustomLoggerName("TestLogger", "testFuncName")
+	CustomLogger("TestLogger", "testFuncName")
 	l = Logger()
 	if l == LOGGER || l == nil {
 		fmt.Println("should create a new instance for 'TestLogger'")
@@ -36,7 +36,7 @@ func TestLogger(t *testing.T) {
 		fmt.Println("should be the same logger")
 		t.FailNow()
 	}
-	SetCustomLoggerName("github.com/ServiceComb/service-center/util", "testPkgPath")
+	CustomLogger("github.com/ServiceComb/service-center/util", "testPkgPath")
 	l = Logger()
 	if l == LOGGER || l == nil {
 		fmt.Println("should create a new instance for 'util'")

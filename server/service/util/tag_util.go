@@ -26,7 +26,7 @@ func AddTagIntoETCD(ctx context.Context, tenant string, serviceId string, dataTa
 	key := apt.GenerateServiceTagKey(tenant, serviceId)
 	data, err := json.Marshal(dataTags)
 	if err != nil {
-		util.LOGGER.Errorf(err, "add tag into etcd,serviceId %s:json marshal tag data failed.", serviceId)
+		util.Logger().Errorf(err, "add tag into etcd,serviceId %s:json marshal tag data failed.", serviceId)
 		return err
 	}
 
@@ -36,7 +36,7 @@ func AddTagIntoETCD(ctx context.Context, tenant string, serviceId string, dataTa
 		Value:  data,
 	})
 	if err != nil {
-		util.LOGGER.Errorf(err, "add tag into etcd,serviceId %s: commit tag data into etcd failed.", serviceId)
+		util.Logger().Errorf(err, "add tag into etcd,serviceId %s: commit tag data into etcd failed.", serviceId)
 		return err
 	}
 	return nil
@@ -54,7 +54,7 @@ func SearchTags(ctx context.Context, tenant, serviceId string, mode registry.Cac
 		Mode:   mode,
 	})
 	if err != nil {
-		util.LOGGER.Errorf(err, "get service %s tags file failed", key)
+		util.Logger().Errorf(err, "get service %s tags file failed", key)
 		return tags, err
 	}
 
@@ -63,7 +63,7 @@ func SearchTags(ctx context.Context, tenant, serviceId string, mode registry.Cac
 		tags = make(map[string]string, l)
 		err = json.Unmarshal(resp.Kvs[0].Value, &tags)
 		if err != nil {
-			util.LOGGER.Errorf(err, "unmarshal service %s tags file failed", key)
+			util.Logger().Errorf(err, "unmarshal service %s tags file failed", key)
 			return nil, err
 		}
 	}

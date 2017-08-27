@@ -34,17 +34,17 @@ func HandleWatchJob(watcher *ListWatcher, stream pb.ServiceInstanceCtrl_WatchSer
 		case job := <-watcher.Job:
 			if job == nil {
 				err = errors.New("channel is closed")
-				util.LOGGER.Errorf(err, "watcher %s %s caught an exception",
+				util.Logger().Errorf(err, "watcher %s %s caught an exception",
 					watcher.Subject(), watcher.Id())
 				return
 			}
 			resp := job.(*WatchJob).Response
-			util.LOGGER.Infof("event is coming in, watcher %s %s",
+			util.Logger().Infof("event is coming in, watcher %s %s",
 				watcher.Subject(), watcher.Id())
 
 			err = stream.Send(resp)
 			if err != nil {
-				util.LOGGER.Errorf(err, "send message error, watcher %s %s",
+				util.Logger().Errorf(err, "send message error, watcher %s %s",
 					watcher.Subject(), watcher.Id())
 				watcher.SetError(err)
 				return
@@ -66,15 +66,15 @@ func (wh *WebSocketHandler) Init() error {
 	if err := GetNotifyService().AddSubscriber(wh.watcher); err != nil {
 		err = fmt.Errorf("establish[%s] websocket watch failed: notify service error, %s.",
 			remoteAddr, err.Error())
-		util.LOGGER.Errorf(nil, err.Error())
+		util.Logger().Errorf(nil, err.Error())
 
 		err = wh.conn.WriteMessage(websocket.TextMessage, util.StringToBytesWithNoCopy(err.Error()))
 		if err != nil {
-			util.LOGGER.Errorf(err, "establish[%s] websocket watch failed: write message failed.", remoteAddr)
+			util.Logger().Errorf(err, "establish[%s] websocket watch failed: write message failed.", remoteAddr)
 		}
 		return err
 	}
-	util.LOGGER.Debugf("start watching instance status, watcher[%s] %s %s",
+	util.Logger().Debugf("start watching instance status, watcher[%s] %s %s",
 		remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
 	return nil
 }
@@ -90,7 +90,7 @@ func (wh *WebSocketHandler) websocketHeartbeat(messageType int) error {
 		if messageType == websocket.PongMessage {
 			messageTypeName = "Pong"
 		}
-		util.LOGGER.Errorf(err, "fail to send '%s' to watcher[%s] %s %s", messageTypeName,
+		util.Logger().Errorf(err, "fail to send '%s' to watcher[%s] %s %s", messageTypeName,
 			wh.conn.RemoteAddr(), wh.watcher.Subject(), wh.watcher.Id())
 		//wh.watcher.SetError(err)
 		return err
@@ -105,7 +105,7 @@ func (wh *WebSocketHandler) HandleWatchWebSocketControlMessage() {
 	// PING
 	wh.conn.SetPingHandler(func(message string) error {
 		if wh.needPingWatcher {
-			util.LOGGER.Infof("received 'Ping' message '%s' from watcher[%s] %s %s, no longer send 'Ping' to it",
+			util.Logger().Infof("received 'Ping' message '%s' from watcher[%s] %s %s, no longer send 'Ping' to it",
 				message, remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
 		}
 		wh.needPingWatcher = false
@@ -113,13 +113,13 @@ func (wh *WebSocketHandler) HandleWatchWebSocketControlMessage() {
 	})
 	// PONG
 	wh.conn.SetPongHandler(func(message string) error {
-		util.LOGGER.Debugf("received 'Pong' message %s from watcher[%s] %s %s",
+		util.Logger().Debugf("received 'Pong' message %s from watcher[%s] %s %s",
 			message, remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
 		return nil
 	})
 	// CLOSE
 	wh.conn.SetCloseHandler(func(code int, text string) error {
-		util.LOGGER.Warnf(nil, "watcher[%s] %s %s active closed", remoteAddr,
+		util.Logger().Warnf(nil, "watcher[%s] %s %s active closed", remoteAddr,
 			wh.watcher.Subject(), wh.watcher.Id())
 		return wh.Close(code, text)
 	})
@@ -141,7 +141,7 @@ func (wh *WebSocketHandler) HandleWatchWebSocketJob() {
 		case <-wh.closed:
 			return
 		case <-wh.ctx.Done():
-			util.LOGGER.Warnf(nil, "handle timed out, watcher[%s] %s %s", remoteAddr,
+			util.Logger().Warnf(nil, "handle timed out, watcher[%s] %s %s", remoteAddr,
 				wh.watcher.Subject(), wh.watcher.Id())
 			return
 		case <-time.After(wh.Timeout()):
@@ -152,10 +152,10 @@ func (wh *WebSocketHandler) HandleWatchWebSocketJob() {
 			tenant := util.ParseTenantProject(wh.ctx)
 			if !ms.ServiceExist(context.Background(), tenant, wh.watcher.Id()) {
 				err := fmt.Errorf("Service does not exit.")
-				util.LOGGER.Warnf(err, "watcher[%s] %s %s exit", remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
+				util.Logger().Warnf(err, "watcher[%s] %s %s exit", remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
 				err = wh.conn.WriteMessage(websocket.TextMessage, util.StringToBytesWithNoCopy(err.Error()))
 				if err != nil {
-					util.LOGGER.Errorf(err, "watcher[%s] %s %s catch an err: write message error",
+					util.Logger().Errorf(err, "watcher[%s] %s %s catch an err: write message error",
 						remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
 				}
 				return
@@ -165,7 +165,7 @@ func (wh *WebSocketHandler) HandleWatchWebSocketJob() {
 				continue
 			}
 
-			util.LOGGER.Debugf("send 'Ping' message to watcher[%s] %s %s", remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
+			util.Logger().Debugf("send 'Ping' message to watcher[%s] %s %s", remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
 			err := wh.websocketHeartbeat(websocket.PingMessage)
 			if err != nil {
 				return
@@ -179,36 +179,36 @@ func (wh *WebSocketHandler) HandleWatchWebSocketJob() {
 				err := wh.conn.WriteMessage(websocket.TextMessage,
 					util.StringToBytesWithNoCopy("watcher catch an err: server shutdown"))
 				if err != nil {
-					util.LOGGER.Errorf(err, "watcher[%s] %s %s catch an err: write message error",
+					util.Logger().Errorf(err, "watcher[%s] %s %s catch an err: write message error",
 						remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
 					return
 				}
-				util.LOGGER.Warnf(nil, "watcher[%s] %s %s catch an err: server shutdown",
+				util.Logger().Warnf(nil, "watcher[%s] %s %s catch an err: server shutdown",
 					remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
 				return
 			}
 
 			resp := job.(*WatchJob).Response
 
-			util.LOGGER.Warnf(nil, "event[%s] is coming in, watcher[%s] %s %s, providers' info %s %s",
+			util.Logger().Warnf(nil, "event[%s] is coming in, watcher[%s] %s %s, providers' info %s %s",
 				resp.Action, remoteAddr, wh.watcher.Subject(), wh.watcher.Id(), resp.Instance.ServiceId, resp.Instance.InstanceId)
 
 			resp.Response = nil
 			data, err := json.Marshal(resp)
 			if err != nil {
-				util.LOGGER.Errorf(err, "watcher[%s] %s %s catch an err: marshal output file error",
+				util.Logger().Errorf(err, "watcher[%s] %s %s catch an err: marshal output file error",
 					remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
 				message := fmt.Sprintf("marshal output file error, %s", err.Error())
 				err = wh.conn.WriteMessage(websocket.TextMessage, util.StringToBytesWithNoCopy(message))
 				if err != nil {
-					util.LOGGER.Errorf(err, "watcher[%s] %s %s catch an err: write message error",
+					util.Logger().Errorf(err, "watcher[%s] %s %s catch an err: write message error",
 						remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
 				}
 				return
 			}
 			err = wh.conn.WriteMessage(websocket.TextMessage, data)
 			if err != nil {
-				util.LOGGER.Errorf(err, "watcher[%s] %s %s catch an err: write message error",
+				util.Logger().Errorf(err, "watcher[%s] %s %s catch an err: write message error",
 					remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
 				return
 			}
@@ -224,7 +224,7 @@ func (wh *WebSocketHandler) Close(code int, text string) error {
 	}
 	err := wh.conn.WriteControl(websocket.CloseMessage, message, time.Now().Add(wh.Timeout()))
 	if err != nil {
-		util.LOGGER.Errorf(err, "watcher[%s] %s %s catch an err: write 'Close' message error",
+		util.Logger().Errorf(err, "watcher[%s] %s %s catch an err: write 'Close' message error",
 			remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
 		return err
 	}
@@ -265,9 +265,9 @@ func processHandler(handler *WebSocketHandler) {
 
 func EstablishWebSocketError(conn *websocket.Conn, err error) {
 	remoteAddr := conn.RemoteAddr().String()
-	util.LOGGER.Errorf(err, "establish[%s] websocket watch failed.", remoteAddr)
+	util.Logger().Errorf(err, "establish[%s] websocket watch failed.", remoteAddr)
 	if err := conn.WriteMessage(websocket.TextMessage, util.StringToBytesWithNoCopy(err.Error())); err != nil {
-		util.LOGGER.Errorf(err, "establish[%s] websocket watch failed: write message failed.", remoteAddr)
+		util.Logger().Errorf(err, "establish[%s] websocket watch failed: write message failed.", remoteAddr)
 	}
 }
 
@@ -280,7 +280,7 @@ func PublishInstanceEvent(tenant string, action pb.EventType, serviceKey *pb.Mic
 	}
 	for _, consumerId := range subscribers {
 		job := NewWatchJob(INSTANCE, consumerId, apt.GetInstanceRootKey(tenant)+"/", rev, response)
-		util.LOGGER.Debugf("publish event to notify service, %v", job)
+		util.Logger().Debugf("publish event to notify service, %v", job)
 
 		// TODO add超时怎么处理？
 		GetNotifyService().AddJob(job)

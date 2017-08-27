@@ -98,7 +98,7 @@ func GetRulesUtil(ctx context.Context, tenant string, serviceId string) ([]*pb.S
 
 	rules := []*pb.ServiceRule{}
 	for _, kvs := range resp.Kvs {
-		util.LOGGER.Debugf("start unmarshal service rule file: %s", util.BytesToStringWithNoCopy(kvs.Key))
+		util.Logger().Debugf("start unmarshal service rule file: %s", util.BytesToStringWithNoCopy(kvs.Key))
 		rule := &pb.ServiceRule{}
 		err := json.Unmarshal(kvs.Value, rule)
 		if err != nil {
@@ -129,7 +129,7 @@ func GetServiceRuleType(ctx context.Context, tenant string, serviceId string) (s
 		WithPrefix: true,
 	})
 	if err != nil {
-		util.LOGGER.Errorf(err, "Get rule failed.%s", err.Error())
+		util.Logger().Errorf(err, "Get rule failed.%s", err.Error())
 		return "", 0, err
 	}
 	if len(resp.Kvs) == 0 {
@@ -138,7 +138,7 @@ func GetServiceRuleType(ctx context.Context, tenant string, serviceId string) (s
 	rule := &pb.ServiceRule{}
 	err = json.Unmarshal(resp.Kvs[0].Value, rule)
 	if err != nil {
-		util.LOGGER.Errorf(err, "Unmarshal rule data failed.%s", err.Error())
+		util.Logger().Errorf(err, "Unmarshal rule data failed.%s", err.Error())
 	}
 	return rule.RuleType, len(resp.Kvs), nil
 }
@@ -150,17 +150,17 @@ func GetOneRule(ctx context.Context, tenant, serviceId, ruleId string) (*pb.Serv
 	}
 	resp, err := store.Store().Rule().Search(ctx, opt)
 	if err != nil {
-		util.LOGGER.Errorf(nil, "Get rule for service failed for %s.", err.Error())
+		util.Logger().Errorf(nil, "Get rule for service failed for %s.", err.Error())
 		return nil, err
 	}
 	rule := &pb.ServiceRule{}
 	if len(resp.Kvs) == 0 {
-		util.LOGGER.Errorf(nil, "Get rule failed, ruleId is %s.", ruleId)
+		util.Logger().Errorf(nil, "Get rule failed, ruleId is %s.", ruleId)
 		return nil, nil
 	}
 	err = json.Unmarshal(resp.Kvs[0].Value, rule)
 	if err != nil {
-		util.LOGGER.Errorf(nil, "unmarshal resp failed for %s.", err.Error())
+		util.Logger().Errorf(nil, "unmarshal resp failed for %s.", err.Error())
 		return nil, err
 	}
 	return rule, nil
@@ -189,7 +189,7 @@ func MatchRules(rules []*pb.ServiceRule, service *pb.MicroService, serviceTags m
 			key := tagRegEx.FindStringSubmatch(rule.Attribute)[1]
 			value = serviceTags[key]
 			if len(value) == 0 {
-				util.LOGGER.Infof("can not find service %s tag '%s'", service.ServiceId, key)
+				util.Logger().Infof("can not find service %s tag '%s'", service.ServiceId, key)
 				continue
 			}
 		} else {
@@ -205,14 +205,14 @@ func MatchRules(rules []*pb.ServiceRule, service *pb.MicroService, serviceTags m
 			hasWhite = true
 			match, _ := regexp.MatchString(rule.Pattern, value)
 			if match {
-				util.LOGGER.Infof("service %s match white list, rule.Pattern is %s, value is %s",
+				util.Logger().Infof("service %s match white list, rule.Pattern is %s, value is %s",
 					service.ServiceId, rule.Pattern, value)
 				return nil
 			}
 		case "BLACK":
 			match, _ := regexp.MatchString(rule.Pattern, value)
 			if match {
-				util.LOGGER.Infof("service %s match black list, rule.Pattern is %s, value is %s",
+				util.Logger().Infof("service %s match black list, rule.Pattern is %s, value is %s",
 					service.ServiceId, rule.Pattern, value)
 				return MatchBlackListError("Found in black list")
 			}
@@ -220,7 +220,7 @@ func MatchRules(rules []*pb.ServiceRule, service *pb.MicroService, serviceTags m
 
 	}
 	if hasWhite {
-		util.LOGGER.Infof("service %s do not match white list", service.ServiceId)
+		util.Logger().Infof("service %s do not match white list", service.ServiceId)
 		return NotMatchWhiteListError("Not found in white list")
 	}
 	return nil
@@ -310,7 +310,7 @@ func GetProviderIdsByConsumerId(ctx context.Context, tenant, consumerId string) 
 		KeyOnly:    true,
 	})
 	if err != nil {
-		util.LOGGER.Errorf(err, "query service providers failed, consumer id %s", consumerId)
+		util.Logger().Errorf(err, "query service providers failed, consumer id %s", consumerId)
 		return nil, nil, err
 	}
 	l := len(resp.Kvs)

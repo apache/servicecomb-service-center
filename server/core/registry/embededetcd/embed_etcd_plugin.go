@@ -38,7 +38,7 @@ const START_MANAGER_SERVER_TIMEOUT = 60
 const REGISTRY_PLUGIN_EMBEDED_ETCD = "embeded_etcd"
 
 func init() {
-	util.LOGGER.Infof("embed etcd plugin init.")
+	util.Logger().Infof("embed etcd plugin init.")
 	registry.RegistryPlugins[REGISTRY_PLUGIN_EMBEDED_ETCD] = getEmbedInstance
 }
 
@@ -60,7 +60,7 @@ func (s *EtcdEmbed) Close() {
 	if s.Server != nil {
 		s.Server.Close()
 	}
-	util.LOGGER.Debugf("embedded etcd client stopped.")
+	util.Logger().Debugf("embedded etcd client stopped.")
 }
 
 func (s *EtcdEmbed) getPrefixEndKey(prefix []byte) []byte {
@@ -225,14 +225,14 @@ func (s *EtcdEmbed) Compact(ctx context.Context, revision int64) error {
 	otCtx, cancel := registry.WithTimeout(ctx)
 	defer cancel()
 	revToCompact := max(0, revision-beego.AppConfig.DefaultInt64("compact_index_delta", 100))
-	util.LOGGER.Debug(fmt.Sprintf("Compacting %d", revToCompact))
+	util.Logger().Debug(fmt.Sprintf("Compacting %d", revToCompact))
 	resp, err := s.Server.Server.Compact(otCtx, &etcdserverpb.CompactionRequest{
 		Revision: revToCompact,
 	})
 	if err != nil {
 		return err
 	}
-	util.LOGGER.Info(fmt.Sprintf("Compacted %v", resp))
+	util.Logger().Info(fmt.Sprintf("Compacted %v", resp))
 	return nil
 }
 
@@ -245,7 +245,7 @@ func (s *EtcdEmbed) PutNoOverride(ctx context.Context, op *registry.PluginOp) (b
 			Value:  0,
 		},
 	}, nil)
-	util.LOGGER.Debugf("response %s %v %v", op.Key, resp.Succeeded, resp.Revision)
+	util.Logger().Debugf("response %s %v %v", op.Key, resp.Succeeded, resp.Revision)
 	if err != nil {
 		return false, err
 	}
@@ -383,7 +383,7 @@ func (s *EtcdEmbed) Watch(ctx context.Context, op *registry.PluginOp, send func(
 		}
 		watchID := ws.Watch(op.Key, keyBytes, op.WithRev)
 		// defer ws.Cancel(watchID)
-		util.LOGGER.Infof("start to watch key %s, id is %d", key, watchID)
+		util.Logger().Infof("start to watch key %s, id is %d", key, watchID)
 
 		responses := ws.Chan()
 		for {
@@ -439,7 +439,7 @@ func (s *EtcdEmbed) Watch(ctx context.Context, op *registry.PluginOp, send func(
 }
 
 func getEmbedInstance(cfg *registry.Config) registry.Registry {
-	util.LOGGER.Warnf(nil, "starting service center in embed mode")
+	util.Logger().Warnf(nil, "starting service center in embed mode")
 
 	hostName := beego.AppConfig.DefaultString("manager_name", util.GetLocalHostname())
 	addrs := beego.AppConfig.String("manager_addr")
@@ -453,7 +453,7 @@ func getEmbedInstance(cfg *registry.Config) registry.Registry {
 		var err error
 		embedTLSConfig, err = rest.GetServerTLSConfig(common.GetServerSSLConfig().VerifyClient)
 		if err != nil {
-			util.LOGGER.Error("get service center tls config failed", err)
+			util.Logger().Error("get service center tls config failed", err)
 			inst.err <- err
 			return inst
 		}
@@ -471,13 +471,13 @@ func getEmbedInstance(cfg *registry.Config) registry.Registry {
 	// 管理端口
 	urls, err := parseURL(addrs)
 	if err != nil {
-		util.LOGGER.Error(`"manager_addr" field configure error`, err)
+		util.Logger().Error(`"manager_addr" field configure error`, err)
 		inst.err <- err
 		return inst
 	}
 	serverCfg.LPUrls = urls
 	serverCfg.APUrls = urls
-	util.LOGGER.Debugf("--initial-cluster %s --initial-advertise-peer-urls %s --listen-peer-urls %s",
+	util.Logger().Debugf("--initial-cluster %s --initial-advertise-peer-urls %s --listen-peer-urls %s",
 		serverCfg.InitialCluster, addrs, addrs)
 
 	// 业务端口，关闭默认2379端口
@@ -490,7 +490,7 @@ func getEmbedInstance(cfg *registry.Config) registry.Registry {
 
 	etcd, err := embed.StartEtcd(serverCfg)
 	if err != nil {
-		util.LOGGER.Error("error to start etcd server", err)
+		util.Logger().Error("error to start etcd server", err)
 		inst.err <- err
 		return inst
 	}
@@ -507,7 +507,7 @@ func getEmbedInstance(cfg *registry.Config) registry.Registry {
 		}()
 	case <-time.After(START_MANAGER_SERVER_TIMEOUT * time.Second):
 		message := "etcd server took too long to start"
-		util.LOGGER.Error(message, nil)
+		util.Logger().Error(message, nil)
 
 		etcd.Server.Stop()
 
@@ -522,7 +522,7 @@ func parseURL(addrs string) ([]url.URL, error) {
 	for _, ip := range ips {
 		addr, err := url.Parse(ip)
 		if err != nil {
-			util.LOGGER.Error("Error to parse ip address string", err)
+			util.Logger().Error("Error to parse ip address string", err)
 			return nil, err
 		}
 		urls = append(urls, *addr)

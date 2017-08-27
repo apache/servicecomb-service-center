@@ -102,9 +102,9 @@ func (m *LockerFactory) Lock() (l *Locker, err error) {
 		}
 
 		if try <= defaultTry {
-			util.LOGGER.Warnf(err, "Try to lock key %s again, id=%s", m.key, l.id)
+			util.Logger().Warnf(err, "Try to lock key %s again, id=%s", m.key, l.id)
 		} else {
-			util.LOGGER.Errorf(err, "Lock key %s failed, id=%s", m.key, l.id)
+			util.Logger().Errorf(err, "Lock key %s failed, id=%s", m.key, l.id)
 		}
 	}
 	if !IsDebug {
@@ -124,7 +124,7 @@ func (m *Locker) Lock() error {
 		Value:  util.StringToBytesWithNoCopy(m.id),
 	}
 	for {
-		util.LOGGER.Infof("Trying to create a lock: key=%s, id=%s", m.builder.key, m.id)
+		util.Logger().Infof("Trying to create a lock: key=%s, id=%s", m.builder.key, m.id)
 		if m.builder.ttl > 0 {
 			leaseID, err := registry.GetRegisterCenter().LeaseGrant(m.builder.ctx, m.builder.ttl)
 			if err != nil {
@@ -134,10 +134,10 @@ func (m *Locker) Lock() error {
 		}
 		success, err := registry.GetRegisterCenter().PutNoOverride(m.builder.ctx, ops)
 		if err == nil && success {
-			util.LOGGER.Infof("Create Lock OK, key=%s, id=%s", m.builder.key, m.id)
+			util.Logger().Infof("Create Lock OK, key=%s, id=%s", m.builder.key, m.id)
 			return nil
 		}
-		util.LOGGER.Warnf(err, "Key %s is locked, waiting for other node releases it, id=%s", m.builder.key, m.id)
+		util.Logger().Warnf(err, "Key %s is locked, waiting for other node releases it, id=%s", m.builder.key, m.id)
 
 		ctx, cancel := context.WithTimeout(m.builder.ctx, defaultTTL*time.Second)
 		go func() {
@@ -154,7 +154,7 @@ func (m *Locker) Lock() error {
 				return nil //fmt.Errorf("Lock released accidentally(%v), id=%s", evt.Type, m.id)
 			})
 			if err != nil {
-				util.LOGGER.Errorf(nil, "%s, key=%s, id=%s", err.Error(), m.builder.key, m.id)
+				util.Logger().Errorf(nil, "%s, key=%s, id=%s", err.Error(), m.builder.key, m.id)
 			}
 			cancel()
 		}()
@@ -185,10 +185,10 @@ func (m *Locker) Unlock() (err error) {
 			if !IsDebug {
 				m.builder.mutex.Unlock()
 			}
-			util.LOGGER.Infof("Delete lock OK, key=%s, id=%s", m.builder.key, m.id)
+			util.Logger().Infof("Delete lock OK, key=%s, id=%s", m.builder.key, m.id)
 			return nil
 		}
-		util.LOGGER.Errorf(err, "Delete lock falied, key=%s, id=%s", m.builder.key, m.id)
+		util.Logger().Errorf(err, "Delete lock falied, key=%s, id=%s", m.builder.key, m.id)
 		e, ok := err.(client.Error)
 		if ok && e.Code == client.ErrorCodeKeyNotFound {
 			if !IsDebug {

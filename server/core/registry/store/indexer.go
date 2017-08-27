@@ -59,7 +59,7 @@ func (i *Indexer) Search(ctx context.Context, op *registry.PluginOp) (*registry.
 	key := util.BytesToStringWithNoCopy(op.Key)
 
 	if op.Mode == registry.MODE_NO_CACHE || op.WithRev > 0 {
-		util.LOGGER.Debugf("search %s match WitchNoCache or WitchRev, request etcd server, key: %s",
+		util.Logger().Debugf("search %s match WitchNoCache or WitchRev, request etcd server, key: %s",
 			i.cacheType, key)
 		return registry.GetRegisterCenter().Do(ctx, op)
 	}
@@ -84,7 +84,7 @@ func (i *Indexer) Search(ctx context.Context, op *registry.PluginOp) (*registry.
 			return resp, nil
 		}
 
-		util.LOGGER.Debugf("%s cache does not store this key, request etcd server, key: %s", i.cacheType, key)
+		util.Logger().Debugf("%s cache does not store this key, request etcd server, key: %s", i.cacheType, key)
 		return registry.GetRegisterCenter().Do(ctx, op)
 	}
 
@@ -94,7 +94,7 @@ func (i *Indexer) Search(ctx context.Context, op *registry.PluginOp) (*registry.
 			return resp, nil
 		}
 
-		util.LOGGER.Debugf("do not match any key in %s cache store, request etcd server, key: %s",
+		util.Logger().Debugf("do not match any key in %s cache store, request etcd server, key: %s",
 			i.cacheType, key)
 		return registry.GetRegisterCenter().Do(ctx, op)
 	}
@@ -127,7 +127,7 @@ func (i *Indexer) searchPrefixKeyFromCacheOrRemote(ctx context.Context, op *regi
 			return resp, nil
 		}
 
-		util.LOGGER.Debugf("can not find any key from %s cache with prefix, request etcd server, key: %s",
+		util.Logger().Debugf("can not find any key from %s cache with prefix, request etcd server, key: %s",
 			i.cacheType, prefix)
 		return registry.GetRegisterCenter().Do(ctx, op)
 	}
@@ -148,14 +148,14 @@ func (i *Indexer) searchPrefixKeyFromCacheOrRemote(ctx context.Context, op *regi
 		c := i.Cache().Data(key) // TODO too slow when big data is requested
 		if c == nil {
 			// it means resp.Count is not equal to len(keys)
-			util.LOGGER.Debugf("unexpected nil cache, maybe it is removed, key is %s", key)
+			util.Logger().Debugf("unexpected nil cache, maybe it is removed, key is %s", key)
 			continue
 		}
 		kvs[idx] = c.(*mvccpb.KeyValue)
 		idx++
 	}
 	if time.Now().Sub(t) > time.Second {
-		util.LOGGER.Warnf(nil, "too long(%s vs 1s) to copy data from cache", time.Now().Sub(t))
+		util.Logger().Warnf(nil, "too long(%s vs 1s) to copy data from cache", time.Now().Sub(t))
 	}
 	resp.Kvs = kvs[:idx]
 	return resp, nil
@@ -175,7 +175,7 @@ func (i *Indexer) OnCacheEvent(evt *KvEvent) {
 	select {
 	case <-ctx.Done():
 		key := util.BytesToStringWithNoCopy(evt.KV.Key)
-		util.LOGGER.Warnf(nil, "add event to build index queue timed out(%s), key is %s [%s] event",
+		util.Logger().Warnf(nil, "add event to build index queue timed out(%s), key is %s [%s] event",
 			i.BuildTimeout, key, evt.Action)
 	case i.prefixBuildQueue <- evt:
 	}
@@ -206,7 +206,7 @@ func (i *Indexer) buildIndex() {
 
 			}
 		}
-		util.LOGGER.Debugf("build %s index goroutine is stopped", i.cacheType)
+		util.Logger().Debugf("build %s index goroutine is stopped", i.cacheType)
 	})
 }
 
@@ -302,7 +302,7 @@ func (i *Indexer) Stop() {
 
 	util.SafeCloseChan(i.ready)
 
-	util.LOGGER.Debugf("%s indexer is stopped", i.cacheType)
+	util.Logger().Debugf("%s indexer is stopped", i.cacheType)
 }
 
 func (i *Indexer) Ready() <-chan struct{} {

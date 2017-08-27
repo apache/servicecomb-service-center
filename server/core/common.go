@@ -165,12 +165,12 @@ func init() {
 
 func Validate(v interface{}) error {
 	if v == nil {
-		util.LOGGER.Errorf(nil, "Data is nil!")
+		util.Logger().Errorf(nil, "Data is nil!")
 		return errors.New("Data is nil!")
 	}
 	sv := reflect.ValueOf(v)
 	if sv.Kind() == reflect.Ptr && sv.IsNil() {
-		util.LOGGER.Errorf(nil, "Pointer is nil!")
+		util.Logger().Errorf(nil, "Pointer is nil!")
 		return errors.New("Pointer is nil!")
 	}
 	switch t := v.(type) {
@@ -195,7 +195,7 @@ func Validate(v interface{}) error {
 	case *pb.GetOneInstanceRequest, *pb.GetInstancesRequest:
 		return GetInstanceValidator.Validate(v)
 	default:
-		util.LOGGER.Errorf(nil, "No validator for %T.", t)
+		util.Logger().Errorf(nil, "No validator for %T.", t)
 		return nil
 	}
 }

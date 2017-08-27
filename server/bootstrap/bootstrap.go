@@ -31,7 +31,7 @@ import (
 )
 
 func init() {
-	util.LOGGER.Info("BootStrap Huawei Enterprise Edition")
+	util.Logger().Info("BootStrap Huawei Enterprise Edition")
 
 	interceptor.InterceptFunc(interceptor.ACCESS_PHASE, ratelimiter.Intercept)
 	interceptor.InterceptFunc(interceptor.ACCESS_PHASE, access.Intercept)

@@ -38,37 +38,37 @@ func RegisterServent(servant interface{}) {
 	typ := ind.Type()
 	name := typ.PkgPath() + "." + typ.Name()
 	if val.Kind() != reflect.Ptr {
-		util.LOGGER.Errorf(nil, "<rest.RegisterServent> cannot use non-ptr servant struct `%s`", name)
+		util.Logger().Errorf(nil, "<rest.RegisterServent> cannot use non-ptr servant struct `%s`", name)
 		return
 	}
 
 	urlPatternFunc := val.MethodByName("URLPatterns")
 	if !urlPatternFunc.IsValid() {
-		util.LOGGER.Errorf(nil, "<rest.RegisterServent> no 'URLPatterns' function in servant struct `%s`", name)
+		util.Logger().Errorf(nil, "<rest.RegisterServent> no 'URLPatterns' function in servant struct `%s`", name)
 		return
 	}
 
 	vals := urlPatternFunc.Call([]reflect.Value{})
 	if len(vals) <= 0 {
-		util.LOGGER.Errorf(nil, "<rest.RegisterServent> call 'URLPatterns' function failed in servant struct `%s`", name)
+		util.Logger().Errorf(nil, "<rest.RegisterServent> call 'URLPatterns' function failed in servant struct `%s`", name)
 		return
 	}
 
 	val0 := vals[0]
 	if !val.CanInterface() {
-		util.LOGGER.Errorf(nil, "<rest.RegisterServent> result of 'URLPatterns' function not interface type in servant struct `%s`", name)
+		util.Logger().Errorf(nil, "<rest.RegisterServent> result of 'URLPatterns' function not interface type in servant struct `%s`", name)
 		return
 	}
 
 	if routes, ok := val0.Interface().([]Route); ok {
-		util.LOGGER.Infof("register servant %s", name)
+		util.Logger().Infof("register servant %s", name)
 		for _, route := range routes {
 			err := serverHandler.addRoute(&route)
 			if err != nil {
-				util.LOGGER.Errorf(err, "register route failed.")
+				util.Logger().Errorf(err, "register route failed.")
 			}
 		}
 	} else {
-		util.LOGGER.Errorf(nil, "<rest.RegisterServent> result of 'URLPatterns' function not []*Route type in servant struct `%s`", name)
+		util.Logger().Errorf(nil, "<rest.RegisterServent> result of 'URLPatterns' function not []*Route type in servant struct `%s`", name)
 	}
 }

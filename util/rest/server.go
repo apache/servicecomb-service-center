@@ -55,7 +55,7 @@ func ListenAndServeTLS(addr string, handler http.Handler) error {
 		MaxHeaderBytes:    svrCfg.MaxHeaderBytes,
 	}
 
-	util.LOGGER.Warnf(nil, "listen on server %s.", addr)
+	util.Logger().Warnf(nil, "listen on server %s.", addr)
 	// 证书已经在config里加载，这里不需要再重新加载
 	return defaultRESTfulServer.ListenAndServeTLS("", "")
 }
@@ -70,7 +70,7 @@ func ListenAndServe(addr string, handler http.Handler) error {
 		MaxHeaderBytes:    svrCfg.MaxHeaderBytes,
 	}
 
-	util.LOGGER.Warnf(nil, "listen on server %s.", addr)
+	util.Logger().Warnf(nil, "listen on server %s.", addr)
 	return defaultRESTfulServer.ListenAndServe()
 }
 
@@ -78,7 +78,7 @@ func CloseServer() {
 	if defaultRESTfulServer != nil {
 		err := defaultRESTfulServer.Close()
 		if err != nil {
-			util.LOGGER.Errorf(err, "close RESTful server failed.")
+			util.Logger().Errorf(err, "close RESTful server failed.")
 		}
 	}
 }

@@ -43,7 +43,7 @@ func upgrade(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error) {
 	}
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		util.LOGGER.Error("upgrade failed.", err)
+		util.Logger().Error("upgrade failed.", err)
 		WriteText(http.StatusInternalServerError, "Upgrade error", w)
 	}
 	return conn, err

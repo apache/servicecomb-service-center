@@ -135,7 +135,7 @@ func GetServiceId(ctx context.Context, key *pb.MicroServiceKey) (serviceId strin
 	}
 	if len(serviceId) == 0 {
 		// 别名查询
-		util.LOGGER.Debugf("could not search microservice %s/%s/%s id by field 'serviceName', now try field 'alias'.",
+		util.Logger().Debugf("could not search microservice %s/%s/%s id by field 'serviceName', now try field 'alias'.",
 			key.AppId, key.ServiceName, key.Version)
 		return SearchServiceIdFromAlias(ctx, key, registry.MODE_BOTH)
 	}

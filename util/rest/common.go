@@ -53,7 +53,7 @@ func getX509CACertPool() (caCertPool *x509.CertPool, err error) {
 	caCertFile := common.GetServerSSLConfig().CACertFile
 	caCert, err := ioutil.ReadFile(caCertFile)
 	if err != nil {
-		util.LOGGER.Errorf(err, "read ca cert file %s failed.", caCertFile)
+		util.Logger().Errorf(err, "read ca cert file %s failed.", caCertFile)
 		return nil, err
 	}
 
@@ -66,25 +66,25 @@ func loadTLSCertificate() (tlsCert []tls.Certificate, err error) {
 	passphase := common.GetServerSSLConfig().KeyPassphase
 	plainPassphase, err := security.CipherPlugins[beego.AppConfig.DefaultString("cipher_plugin", "default")]().Decrypt(passphase)
 	if err != nil {
-		util.LOGGER.Errorf(err, "decrypt ssl passphase(%d) failed.", len(passphase))
+		util.Logger().Errorf(err, "decrypt ssl passphase(%d) failed.", len(passphase))
 		plainPassphase = ""
 	}
 
 	certContent, err := ioutil.ReadFile(certFile)
 	if err != nil {
-		util.LOGGER.Errorf(err, "read cert file %s failed.", certFile)
+		util.Logger().Errorf(err, "read cert file %s failed.", certFile)
 		return nil, err
 	}
 
 	keyContent, err := ioutil.ReadFile(keyFile)
 	if err != nil {
-		util.LOGGER.Errorf(err, "read key file %s failed.", keyFile)
+		util.Logger().Errorf(err, "read key file %s failed.", keyFile)
 		return nil, err
 	}
 
 	keyBlock, _ := pem.Decode(keyContent)
 	if keyBlock == nil {
-		util.LOGGER.Errorf(err, "decode key file %s failed.", keyFile)
+		util.Logger().Errorf(err, "decode key file %s failed.", keyFile)
 		return nil, err
 	}
 
@@ -94,7 +94,7 @@ func loadTLSCertificate() (tlsCert []tls.Certificate, err error) {
 		util.ClearStringMemory(&plainPassphase)
 		util.ClearByteMemory(plainPassphaseBytes)
 		if err != nil {
-			util.LOGGER.Errorf(err, "decrypt key file %s failed.", keyFile)
+			util.Logger().Errorf(err, "decrypt key file %s failed.", keyFile)
 			return nil, err
 		}
 
@@ -109,7 +109,7 @@ func loadTLSCertificate() (tlsCert []tls.Certificate, err error) {
 
 	cert, err := tls.X509KeyPair(certContent, keyContent)
 	if err != nil {
-		util.LOGGER.Errorf(err, "load X509 key pair from cert file %s with key file %s failed.", certFile, keyFile)
+		util.Logger().Errorf(err, "load X509 key pair from cert file %s with key file %s failed.", certFile, keyFile)
 		return nil, err
 	}
 
@@ -192,14 +192,14 @@ func GetClient(communiType string) (*HttpClient, error) {
 	if communiType == "https" {
 		client, err = GetAnnoHttpsClient(verifyClient)
 		if err != nil {
-			util.LOGGER.Error("Create https rest.client failed.", err)
+			util.Logger().Error("Create https rest.client failed.", err)
 			return nil, err
 		}
 		return client, nil
 	}
 	client, err = GetHttpClient(true)
 	if err != nil {
-		util.LOGGER.Error("Create http rest.client failed.", err)
+		util.Logger().Error("Create http rest.client failed.", err)
 		return nil, err
 	}
 	return client, nil

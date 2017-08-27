@@ -218,7 +218,7 @@ func GetRegisterCenter() Registry {
 		if registryInstance == nil {
 			inst, err := RegisterCenterClient()
 			if err != nil {
-				util.LOGGER.Errorf(err, "get register center client failed")
+				util.Logger().Errorf(err, "get register center client failed")
 			}
 			registryInstance = inst
 		}

@@ -32,12 +32,12 @@ import (
 func Accessible(ctx context.Context, tenant string, consumerId string, providerId string) error {
 	consumerService, err := ms.GetService(ctx, tenant, consumerId)
 	if err != nil {
-		util.LOGGER.Errorf(err,
+		util.Logger().Errorf(err,
 			"consumer %s can't access provider %s for internal error", consumerId, providerId)
 		return errorsEx.InternalError(err.Error())
 	}
 	if consumerService == nil {
-		util.LOGGER.Warnf(nil,
+		util.Logger().Warnf(nil,
 			"consumer %s can't access provider %s for invalid consumer", consumerId, providerId)
 		return fmt.Errorf("consumer invalid")
 	}
@@ -47,12 +47,12 @@ func Accessible(ctx context.Context, tenant string, consumerId string, providerI
 	// 跨应用权限
 	providerService, err := ms.GetService(ctx, tenant, providerId)
 	if err != nil {
-		util.LOGGER.Errorf(err, "consumer %s can't access provider %s for internal error",
+		util.Logger().Errorf(err, "consumer %s can't access provider %s for internal error",
 			consumerFlag, providerId)
 		return errorsEx.InternalError(err.Error())
 	}
 	if providerService == nil {
-		util.LOGGER.Warnf(nil, "consumer %s can't access provider %s for invalid provider",
+		util.Logger().Warnf(nil, "consumer %s can't access provider %s for invalid provider",
 			consumerFlag, providerId)
 		return fmt.Errorf("provider invalid")
 	}
@@ -61,7 +61,7 @@ func Accessible(ctx context.Context, tenant string, consumerId string, providerI
 
 	err = serviceUtil.AllowAcrossApp(providerService, consumerService)
 	if err != nil {
-		util.LOGGER.Warnf(nil,
+		util.Logger().Warnf(nil,
 			"consumer %s can't access provider %s which property 'allowCrossApp' is not true or does not exist",
 			consumerFlag, providerFlag)
 		return err
@@ -70,7 +70,7 @@ func Accessible(ctx context.Context, tenant string, consumerId string, providerI
 	// 黑白名单
 	rules, err := serviceUtil.GetRulesUtil(ctx, tenant, providerId)
 	if err != nil {
-		util.LOGGER.Errorf(err, "consumer %s can't access provider %s for internal error",
+		util.Logger().Errorf(err, "consumer %s can't access provider %s for internal error",
 			consumerFlag, providerFlag)
 		return errorsEx.InternalError(err.Error())
 	}
@@ -81,7 +81,7 @@ func Accessible(ctx context.Context, tenant string, consumerId string, providerI
 
 	validateTags, err := serviceUtil.GetTagsUtils(ctx, tenant, consumerService.ServiceId)
 	if err != nil {
-		util.LOGGER.Errorf(err, "consumer %s can't access provider %s for internal error",
+		util.Logger().Errorf(err, "consumer %s can't access provider %s for internal error",
 			consumerFlag, providerFlag)
 		return errorsEx.InternalError(err.Error())
 	}
@@ -90,10 +90,10 @@ func Accessible(ctx context.Context, tenant string, consumerId string, providerI
 	if err != nil {
 		switch err.(type) {
 		case errorsEx.InternalError:
-			util.LOGGER.Errorf(err, "consumer %s can't access provider %s for internal error",
+			util.Logger().Errorf(err, "consumer %s can't access provider %s for internal error",
 				consumerFlag, providerFlag)
 		default:
-			util.LOGGER.Warnf(err, "consumer %s can't access provider %s", consumerFlag, providerFlag)
+			util.Logger().Warnf(err, "consumer %s can't access provider %s", consumerFlag, providerFlag)
 		}
 		return err
 	}
@@ -103,7 +103,7 @@ func Accessible(ctx context.Context, tenant string, consumerId string, providerI
 
 func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesRequest) (*pb.AddServiceRulesResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 || len(in.GetRules()) == 0 {
-		util.LOGGER.Errorf(nil, "add rule failed: invalid parameters.")
+		util.Logger().Errorf(nil, "add rule failed: invalid parameters.")
 		return &pb.AddServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
 		}, nil
@@ -113,7 +113,7 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 
 	// service id存在性校验
 	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
-		util.LOGGER.Errorf(nil, "add rule failed, serviceId is %s: service not exist.", in.ServiceId)
+		util.Logger().Errorf(nil, "add rule failed, serviceId is %s: service not exist.", in.ServiceId)
 		return &pb.AddServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
 		}, nil
@@ -121,7 +121,7 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 
 	opts := []*registry.PluginOp{}
 	ruleType, _, err := serviceUtil.GetServiceRuleType(ctx, tenant, in.ServiceId)
-	util.LOGGER.Debugf("ruleType is %s", ruleType)
+	util.Logger().Debugf("ruleType is %s", ruleType)
 	if err != nil {
 		return &pb.AddServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
@@ -131,7 +131,7 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 	for _, rule := range in.Rules {
 		err := apt.Validate(rule)
 		if err != nil {
-			util.LOGGER.Errorf(err, "add rule failed, serviceId is %s: invalid rule.", in.ServiceId)
+			util.Logger().Errorf(err, "add rule failed, serviceId is %s: invalid rule.", in.ServiceId)
 			return &pb.AddServiceRulesResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 			}, nil
@@ -141,7 +141,7 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 			ruleType = rule.RuleType
 		} else {
 			if ruleType != rule.RuleType {
-				util.LOGGER.Errorf(nil, "add rule failed, serviceId is %s:can only exist one type, BLACK or WHITE.", in.ServiceId)
+				util.Logger().Errorf(nil, "add rule failed, serviceId is %s:can only exist one type, BLACK or WHITE.", in.ServiceId)
 				return &pb.AddServiceRulesResponse{
 					Response: pb.CreateResponse(pb.Response_FAIL, "Service can only contain one rule type, BLACK or WHITE."),
 				}, nil
@@ -150,7 +150,7 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 
 		//同一服务，attribute和pattern确定一个rule
 		if serviceUtil.RuleExist(ctx, tenant, in.ServiceId, rule.Attribute, rule.Pattern) {
-			util.LOGGER.Infof("This rule more exists, %s ", in.ServiceId)
+			util.Logger().Infof("This rule more exists, %s ", in.ServiceId)
 			continue
 		}
 
@@ -169,11 +169,11 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 		indexKey := apt.GenerateRuleIndexKey(tenant, in.ServiceId, ruleAdd.Attribute, ruleAdd.Pattern)
 		ruleIds = append(ruleIds, ruleAdd.RuleId)
 
-		util.LOGGER.Debugf("indexKey is : %s", indexKey)
-		util.LOGGER.Debugf("start add service rule file: %s", key)
+		util.Logger().Debugf("indexKey is : %s", indexKey)
+		util.Logger().Debugf("start add service rule file: %s", key)
 		data, err := json.Marshal(ruleAdd)
 		if err != nil {
-			util.LOGGER.Errorf(err, "add rule failed, serviceId is %s: marshal rule failed.", in.ServiceId)
+			util.Logger().Errorf(err, "add rule failed, serviceId is %s: marshal rule failed.", in.ServiceId)
 			return &pb.AddServiceRulesResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "Service rule file marshal error."),
 			}, err
@@ -191,20 +191,20 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 		})
 	}
 	if len(opts) <= 0 {
-		util.LOGGER.Infof("add rule successful, serviceId is %s: rule more exists,no rules to add.", in.ServiceId)
+		util.Logger().Infof("add rule successful, serviceId is %s: rule more exists,no rules to add.", in.ServiceId)
 		return &pb.AddServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_SUCCESS, "Service rules has been added."),
 		}, nil
 	}
 	_, err = registry.GetRegisterCenter().Txn(ctx, opts)
 	if err != nil {
-		util.LOGGER.Errorf(err, "add rule failed, serviceId is %s:commit date into etcd failed.", in.ServiceId)
+		util.Logger().Errorf(err, "add rule failed, serviceId is %s:commit date into etcd failed.", in.ServiceId)
 		return &pb.AddServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Commit operations failed."),
 		}, err
 	}
 
-	util.LOGGER.Infof("add rule successful, serviceId  %s.", in.ServiceId)
+	util.Logger().Infof("add rule successful, serviceId  %s.", in.ServiceId)
 	return &pb.AddServiceRulesResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Add service rules successfully."),
 		RuleIds:  ruleIds,
@@ -213,7 +213,7 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 
 func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateServiceRuleRequest) (*pb.UpdateServiceRuleResponse, error) {
 	if in == nil || in.GetRule() == nil || len(in.ServiceId) == 0 || len(in.RuleId) == 0 {
-		util.LOGGER.Errorf(nil, "update rule failed: invalid parameters.")
+		util.Logger().Errorf(nil, "update rule failed: invalid parameters.")
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
 		}, nil
@@ -223,14 +223,14 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 
 	// service id存在性校验
 	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
-		util.LOGGER.Errorf(nil, "update rule failed, serviceId is %s, ruleId is %s: service not exist.", in.ServiceId, in.RuleId)
+		util.Logger().Errorf(nil, "update rule failed, serviceId is %s, ruleId is %s: service not exist.", in.ServiceId, in.RuleId)
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
 		}, nil
 	}
 	err := apt.Validate(in.Rule)
 	if err != nil {
-		util.LOGGER.Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: invalid service rule.", in.ServiceId, in.RuleId)
+		util.Logger().Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: invalid service rule.", in.ServiceId, in.RuleId)
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
@@ -239,13 +239,13 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 	//是否能改变ruleType
 	ruleType, ruleNum, err := serviceUtil.GetServiceRuleType(ctx, tenant, in.ServiceId)
 	if err != nil {
-		util.LOGGER.Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: get rule type failed.", in.ServiceId, in.RuleId)
+		util.Logger().Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: get rule type failed.", in.ServiceId, in.RuleId)
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, err
 	}
 	if ruleNum >= 1 && ruleType != in.Rule.RuleType {
-		util.LOGGER.Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: rule type can exist one type, BLACK or WHITE.rule type is %s", in.ServiceId, in.RuleId, in.Rule.RuleType)
+		util.Logger().Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: rule type can exist one type, BLACK or WHITE.rule type is %s", in.ServiceId, in.RuleId, in.Rule.RuleType)
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Exist multiple rules,can not change rule type. Rule type is "+ruleType),
 		}, nil
@@ -253,13 +253,13 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 
 	rule, err := serviceUtil.GetOneRule(ctx, tenant, in.ServiceId, in.RuleId)
 	if err != nil {
-		util.LOGGER.Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: query service rule failed.", in.ServiceId, in.RuleId)
+		util.Logger().Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: query service rule failed.", in.ServiceId, in.RuleId)
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Get service rule file failed."),
 		}, err
 	}
 	if rule == nil {
-		util.LOGGER.Errorf(err, "update rule failed, serviceId is %s, ruleId is %s:this rule does not exist,can't update.", in.ServiceId, in.RuleId)
+		util.Logger().Errorf(err, "update rule failed, serviceId is %s, ruleId is %s:this rule does not exist,can't update.", in.ServiceId, in.RuleId)
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "This rule does not exist."),
 		}, nil
@@ -281,10 +281,10 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 	rule.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
 
 	key := apt.GenerateServiceRuleKey(tenant, in.ServiceId, in.RuleId)
-	util.LOGGER.Debugf("start update service rule file: %s", key)
+	util.Logger().Debugf("start update service rule file: %s", key)
 	data, err := json.Marshal(rule)
 	if err != nil {
-		util.LOGGER.Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: marshal service rule failed.", in.ServiceId, in.RuleId)
+		util.Logger().Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: marshal service rule failed.", in.ServiceId, in.RuleId)
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service rule file marshal error."),
 		}, err
@@ -317,13 +317,13 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 	opts = append(opts, opt)
 	_, err = registry.GetRegisterCenter().Txn(ctx, opts)
 	if err != nil {
-		util.LOGGER.Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: commit date into etcd failed.", in.ServiceId, in.RuleId)
+		util.Logger().Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: commit date into etcd failed.", in.ServiceId, in.RuleId)
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Commit operations failed."),
 		}, err
 	}
 
-	util.LOGGER.Infof("update rule successful: servieId is %s, ruleId is %s.", in.ServiceId, in.RuleId)
+	util.Logger().Infof("update rule successful: servieId is %s, ruleId is %s.", in.ServiceId, in.RuleId)
 	return &pb.UpdateServiceRuleResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Get service rules successfully."),
 	}, nil
@@ -331,7 +331,7 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 
 func (s *ServiceController) GetRule(ctx context.Context, in *pb.GetServiceRulesRequest) (*pb.GetServiceRulesResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 {
-		util.LOGGER.Errorf(nil, "get service rule failed, serviceId is %s: invalid params.", in.ServiceId)
+		util.Logger().Errorf(nil, "get service rule failed, serviceId is %s: invalid params.", in.ServiceId)
 		return &pb.GetServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
 		}, nil
@@ -340,7 +340,7 @@ func (s *ServiceController) GetRule(ctx context.Context, in *pb.GetServiceRulesR
 	tenant := util.ParseTenantProject(ctx)
 	// service id存在性校验
 	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
-		util.LOGGER.Errorf(nil, "get service rule failed, serviceId is %s: service not exist.", in.ServiceId)
+		util.Logger().Errorf(nil, "get service rule failed, serviceId is %s: service not exist.", in.ServiceId)
 		return &pb.GetServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
 		}, nil
@@ -348,7 +348,7 @@ func (s *ServiceController) GetRule(ctx context.Context, in *pb.GetServiceRulesR
 
 	rules, err := serviceUtil.GetRulesUtil(ctx, tenant, in.ServiceId)
 	if err != nil {
-		util.LOGGER.Errorf(nil, "get service rule failed, serviceId is %s: get rule failed.", in.ServiceId)
+		util.Logger().Errorf(nil, "get service rule failed, serviceId is %s: get rule failed.", in.ServiceId)
 		return &pb.GetServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Get service rules failed."),
 		}, nil
@@ -362,7 +362,7 @@ func (s *ServiceController) GetRule(ctx context.Context, in *pb.GetServiceRulesR
 
 func (s *ServiceController) DeleteRule(ctx context.Context, in *pb.DeleteServiceRulesRequest) (*pb.DeleteServiceRulesResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 {
-		util.LOGGER.Errorf(nil, "delete service rule failed: invalid parameters.")
+		util.Logger().Errorf(nil, "delete service rule failed: invalid parameters.")
 		return &pb.DeleteServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
 		}, nil
@@ -371,7 +371,7 @@ func (s *ServiceController) DeleteRule(ctx context.Context, in *pb.DeleteService
 	tenant := util.ParseTenantProject(ctx)
 	// service id存在性校验
 	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
-		util.LOGGER.Errorf(nil, "delete service rule failed, serviceId is %s, rule is %v: service not exist.", in.ServiceId, in.RuleIds)
+		util.Logger().Errorf(nil, "delete service rule failed, serviceId is %s, rule is %v: service not exist.", in.ServiceId, in.RuleIds)
 		return &pb.DeleteServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
 		}, nil
@@ -382,16 +382,16 @@ func (s *ServiceController) DeleteRule(ctx context.Context, in *pb.DeleteService
 	indexKey := ""
 	for _, ruleId := range in.RuleIds {
 		key = apt.GenerateServiceRuleKey(tenant, in.ServiceId, ruleId)
-		util.LOGGER.Debugf("start delete service rule file: %s", key)
+		util.Logger().Debugf("start delete service rule file: %s", key)
 		data, err := serviceUtil.GetOneRule(ctx, tenant, in.ServiceId, ruleId)
 		if err != nil {
-			util.LOGGER.Errorf(err, "delete service rule failed, serviceId is %s, rule is %v: get rule of ruleId %s failed.", in.ServiceId, in.RuleIds, ruleId)
+			util.Logger().Errorf(err, "delete service rule failed, serviceId is %s, rule is %v: get rule of ruleId %s failed.", in.ServiceId, in.RuleIds, ruleId)
 			return &pb.DeleteServiceRulesResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 			}, err
 		}
 		if data == nil {
-			util.LOGGER.Errorf(nil, "delete service rule failed, serviceId is %s, rule is %v: ruleId %s not exist.", in.ServiceId, in.RuleIds, ruleId)
+			util.Logger().Errorf(nil, "delete service rule failed, serviceId is %s, rule is %v: ruleId %s not exist.", in.ServiceId, in.RuleIds, ruleId)
 			return &pb.DeleteServiceRulesResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "This rule does not exist."),
 			}, nil
@@ -407,20 +407,20 @@ func (s *ServiceController) DeleteRule(ctx context.Context, in *pb.DeleteService
 		})
 	}
 	if len(opts) <= 0 {
-		util.LOGGER.Errorf(nil, "delete service rule failed, serviceId is %s, rule is %v: rule has been deleted.", in.ServiceId, in.RuleIds)
+		util.Logger().Errorf(nil, "delete service rule failed, serviceId is %s, rule is %v: rule has been deleted.", in.ServiceId, in.RuleIds)
 		return &pb.DeleteServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "No service rule has been deleted."),
 		}, nil
 	}
 	_, err := registry.GetRegisterCenter().Txn(ctx, opts)
 	if err != nil {
-		util.LOGGER.Errorf(err, "delete service rule failed, serviceId is %s, rule is %v: commit data into etcd failed.", in.ServiceId, in.RuleIds)
+		util.Logger().Errorf(err, "delete service rule failed, serviceId is %s, rule is %v: commit data into etcd failed.", in.ServiceId, in.RuleIds)
 		return &pb.DeleteServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Commit operations failed."),
 		}, err
 	}
 
-	util.LOGGER.Infof("delete rule successful: serviceId %s, ruleIds %v", in.ServiceId, in.RuleIds)
+	util.Logger().Infof("delete rule successful: serviceId %s, ruleIds %v", in.ServiceId, in.RuleIds)
 	return &pb.DeleteServiceRulesResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Delete service rules successfully."),
 	}, nil

@@ -36,31 +36,31 @@ func (h *InstanceEventHandler) OnEvent(evt *store.KvEvent) {
 	action := evt.Action
 	providerId, providerInstanceId, tenantProject, data := pb.GetInfoFromInstKV(kv)
 	if data == nil {
-		util.LOGGER.Errorf(nil,
+		util.Logger().Errorf(nil,
 			"unmarshal provider service instance file failed, instance %s/%s [%s] event, data is nil",
 			providerId, providerInstanceId, action)
 		return
 	}
 
 	if nf.GetNotifyService().Closed() {
-		util.LOGGER.Warnf(nil, "caught instance %s/%s [%s] event, but notify service is closed",
+		util.Logger().Warnf(nil, "caught instance %s/%s [%s] event, but notify service is closed",
 			providerId, providerInstanceId, action)
 		return
 	}
-	util.LOGGER.Infof("caught instance %s/%s [%s] event",
+	util.Logger().Infof("caught instance %s/%s [%s] event",
 		providerId, providerInstanceId, action)
 
 	var instance pb.MicroServiceInstance
 	err := json.Unmarshal(data, &instance)
 	if err != nil {
-		util.LOGGER.Errorf(err, "unmarshal provider service instance %s/%s file failed",
+		util.Logger().Errorf(err, "unmarshal provider service instance %s/%s file failed",
 			providerId, providerInstanceId)
 		return
 	}
 	// 查询服务版本信息
 	ms, err := microservice.GetServiceInCache(context.Background(), tenantProject, providerId)
 	if ms == nil {
-		util.LOGGER.Errorf(err, "get provider service %s/%s id in cache failed",
+		util.Logger().Errorf(err, "get provider service %s/%s id in cache failed",
 			providerId, providerInstanceId)
 		return
 	}
@@ -68,7 +68,7 @@ func (h *InstanceEventHandler) OnEvent(evt *store.KvEvent) {
 	// 查询所有consumer
 	consumerIds, _, err := serviceUtil.GetConsumerIds(context.Background(), tenantProject, ms)
 	if err != nil {
-		util.LOGGER.Errorf(err, "query service %s consumers failed", providerId)
+		util.Logger().Errorf(err, "query service %s consumers failed", providerId)
 		return
 	}
 

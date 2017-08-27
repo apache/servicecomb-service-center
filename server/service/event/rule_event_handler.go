@@ -50,13 +50,13 @@ func (apt *RulesChangedAsyncTask) Err() error {
 func publish(ctx context.Context, tenant, providerId string, rev int64) error {
 	provider, err := ms.GetService(ctx, tenant, providerId)
 	if provider == nil {
-		util.LOGGER.Errorf(err, "get service %s file failed", providerId)
+		util.Logger().Errorf(err, "get service %s file failed", providerId)
 		return err
 	}
 
 	allow, deny, err := serviceUtil.GetConsumerIds(ctx, tenant, provider)
 	if err != nil {
-		util.LOGGER.Errorf(err, "get consumer services by provider %s failed", providerId)
+		util.Logger().Errorf(err, "get consumer services by provider %s failed", providerId)
 		return err
 	}
 
@@ -68,7 +68,7 @@ func publish(ctx context.Context, tenant, providerId string, rev int64) error {
 
 	instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, tenant, providerId, "")
 	if err != nil || len(instances) == 0 {
-		util.LOGGER.Errorf(err, "get provider service %s instance failed", providerId)
+		util.Logger().Errorf(err, "get provider service %s instance failed", providerId)
 		return err
 	}
 
@@ -91,23 +91,23 @@ func (h *RuleEventHandler) OnEvent(evt *store.KvEvent) {
 	action := evt.Action
 	providerId, ruleId, tenant, data := pb.GetInfoFromRuleKV(kv)
 	if data == nil {
-		util.LOGGER.Errorf(nil,
+		util.Logger().Errorf(nil,
 			"unmarshal service rule file failed, service %s rule %s [%s] event, data is nil",
 			providerId, ruleId, action)
 		return
 	}
 
 	if nf.GetNotifyService().Closed() {
-		util.LOGGER.Warnf(nil, "caught service %s rule %s [%s] event, but notify service is closed",
+		util.Logger().Warnf(nil, "caught service %s rule %s [%s] event, but notify service is closed",
 			providerId, ruleId, action)
 		return
 	}
-	util.LOGGER.Infof("caught service %s rule %s [%s] event", providerId, ruleId, action)
+	util.Logger().Infof("caught service %s rule %s [%s] event", providerId, ruleId, action)
 
 	var rule pb.ServiceRule
 	err := json.Unmarshal(data, &rule)
 	if err != nil {
-		util.LOGGER.Errorf(err, "unmarshal service %s rule %s file failed",
+		util.Logger().Errorf(err, "unmarshal service %s rule %s file failed",
 			providerId, ruleId)
 		return
 	}

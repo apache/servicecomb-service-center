@@ -38,7 +38,7 @@ const (
 var clientTLSConfig *tls.Config
 
 func init() {
-	util.LOGGER.Infof("etcd plugin init.")
+	util.Logger().Infof("etcd plugin init.")
 	registry.RegistryPlugins[REGISTRY_PLUGIN_ETCD] = NewRegistry
 }
 
@@ -60,7 +60,7 @@ func (s *EtcdClient) Close() {
 	if s.Client != nil {
 		s.Client.Close()
 	}
-	util.LOGGER.Debugf("etcd client stopped.")
+	util.Logger().Debugf("etcd client stopped.")
 }
 
 func (c *EtcdClient) CompactCluster(ctx context.Context) {
@@ -70,11 +70,11 @@ func (c *EtcdClient) CompactCluster(ctx context.Context) {
 		mapi := clientv3.NewMaintenance(c.Client)
 		resp, err := mapi.Status(otCtx, ep)
 		if err != nil {
-			util.LOGGER.Error(fmt.Sprintf("Compact error ,can not get status from %s", ep), err)
+			util.Logger().Error(fmt.Sprintf("Compact error ,can not get status from %s", ep), err)
 			continue
 		}
 		curRev := resp.Header.Revision
-		util.LOGGER.Debug(fmt.Sprintf("Compacting.... endpoint: %s / IsLeader: %v\n / revision is %d", ep, resp.Header.MemberId == resp.Leader, curRev))
+		util.Logger().Debug(fmt.Sprintf("Compacting.... endpoint: %s / IsLeader: %v\n / revision is %d", ep, resp.Header.MemberId == resp.Leader, curRev))
 		c.Compact(ctx, curRev)
 	}
 
@@ -85,15 +85,15 @@ func (c *EtcdClient) Compact(ctx context.Context, revision int64) error {
 	defer cancel()
 	revToCompact := max(0, revision-beego.AppConfig.DefaultInt64("compact_index_delta", 100))
 	if revToCompact <= 0 {
-		util.LOGGER.Warnf(nil, "revToCompact is %d, <=0, no nead to compact.", revToCompact)
+		util.Logger().Warnf(nil, "revToCompact is %d, <=0, no nead to compact.", revToCompact)
 		return nil
 	}
-	util.LOGGER.Debug(fmt.Sprintf("Compacting %d", revToCompact))
+	util.Logger().Debug(fmt.Sprintf("Compacting %d", revToCompact))
 	resp, err := c.Client.KV.Compact(otCtx, revToCompact)
 	if err != nil {
 		return err
 	}
-	util.LOGGER.Debugf(fmt.Sprintf("Compacted %v", resp))
+	util.Logger().Debugf(fmt.Sprintf("Compacted %v", resp))
 	return nil
 }
 
@@ -217,10 +217,10 @@ func (c *EtcdClient) PutNoOverride(ctx context.Context, op *registry.PluginOp) (
 		},
 	}, nil)
 	if err != nil {
-		util.LOGGER.Errorf(err, "PutNoOverride %s failed", op.Key)
+		util.Logger().Errorf(err, "PutNoOverride %s failed", op.Key)
 		return false, err
 	}
-	util.LOGGER.Infof("response %s %v %v", op.Key, resp.Succeeded, resp.Revision)
+	util.Logger().Infof("response %s %v %v", op.Key, resp.Succeeded, resp.Revision)
 	return resp.Succeeded, nil
 }
 
@@ -240,7 +240,7 @@ func (c *EtcdClient) paging(ctx context.Context, op *registry.PluginOp, countPer
 		return nil, nil // no paging
 	}
 
-	util.LOGGER.Debugf("get too many KeyValues from etcdserver, now paging.(%d vs %d)",
+	util.Logger().Debugf("get too many KeyValues from etcdserver, now paging.(%d vs %d)",
 		recordCount, countPerPage)
 
 	tempOp.KeyOnly = false
@@ -289,7 +289,7 @@ func (c *EtcdClient) paging(ctx context.Context, op *registry.PluginOp, countPer
 			}
 			etcdResp.Kvs[i], etcdResp.Kvs[last] = etcdResp.Kvs[last], etcdResp.Kvs[i]
 		}
-		util.LOGGER.Debugf("sorted %d KeyValues spend %s", recordCount, time.Now().Sub(t))
+		util.Logger().Debugf("sorted %d KeyValues spend %s", recordCount, time.Now().Sub(t))
 	}
 	return etcdResp, nil
 }
@@ -427,7 +427,7 @@ func (c *EtcdClient) Watch(ctx context.Context, op *registry.PluginOp, send func
 		// 必须创建新的client连接
 		/*client, err := newClient(c.Client.Endpoints())
 		  if err != nil {
-		          util.LOGGER.Error("get manager client failed", err)
+		          util.Logger().Error("get manager client failed", err)
 		          return err
 		  }
 		  defer client.Close()*/
@@ -439,7 +439,7 @@ func (c *EtcdClient) Watch(ctx context.Context, op *registry.PluginOp, send func
 		if op.WithPrefix && key[len(key)-1] != '/' {
 			key += "/"
 		}
-		util.LOGGER.Debugf("start to watch key %s", key)
+		util.Logger().Debugf("start to watch key %s", key)
 
 		// 不能设置超时context，内部判断了连接超时和watch超时
 		ws := client.Watch(context.Background(), key, c.toGetRequest(op)...)
@@ -502,7 +502,7 @@ func (c *EtcdClient) Watch(ctx context.Context, op *registry.PluginOp, send func
 }
 
 func NewRegistry(cfg *registry.Config) registry.Registry {
-	util.LOGGER.Warnf(nil, "starting service center in proxy mode")
+	util.Logger().Warnf(nil, "starting service center in proxy mode")
 
 	inst := &EtcdClient{
 		err:   make(chan error, 1),
@@ -515,7 +515,7 @@ func NewRegistry(cfg *registry.Config) registry.Registry {
 		// go client tls限制，提供身份证书、不认证服务端、不校验CN
 		clientTLSConfig, err = rest.GetClientTLSConfig(common.GetClientSSLConfig().VerifyClient, true, false)
 		if err != nil {
-			util.LOGGER.Error("get etcd client tls config failed", err)
+			util.Logger().Error("get etcd client tls config failed", err)
 			inst.err <- err
 			return inst
 		}
@@ -532,15 +532,15 @@ func NewRegistry(cfg *registry.Config) registry.Registry {
 
 	}
 	refreshManagerClusterInterval := cfg.AutoSyncInterval
-	util.LOGGER.Debugf("refreshManagerClusterInterval is %d", refreshManagerClusterInterval)
+	util.Logger().Debugf("refreshManagerClusterInterval is %d", refreshManagerClusterInterval)
 	client, err := newClient(endpoints, refreshManagerClusterInterval)
 	if err != nil {
-		util.LOGGER.Errorf(err, "get etcd client %+v failed.", endpoints)
+		util.Logger().Errorf(err, "get etcd client %+v failed.", endpoints)
 		inst.err <- err
 		return inst
 	}
 
-	util.LOGGER.Warnf(nil, "get etcd client %+v completed.", endpoints)
+	util.Logger().Warnf(nil, "get etcd client %+v completed.", endpoints)
 	inst.Client = client
 	close(inst.ready)
 	return inst

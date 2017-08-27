@@ -83,7 +83,7 @@ func GetHttpClient(gzip bool) (client *HttpClient, err error) {
 func getHttpsClient(gzip, verifyPeer, supplyCert, verifyCN bool) (client *HttpClient, err error) {
 	transport, err := getTLSTransport(verifyPeer, supplyCert, verifyCN)
 	if err != nil {
-		util.LOGGER.Errorf(err, "get tls transport failed.")
+		util.Logger().Errorf(err, "get tls transport failed.")
 	}
 
 	client = &HttpClient{
@@ -147,14 +147,14 @@ func gzipCompress(src []byte) (dst []byte) {
 func readAndGunzip(reader io.Reader) (dst []byte, err error) {
 	gzipReader, err := gzip.NewReader(reader)
 	if err != nil {
-		util.LOGGER.Errorf(err, "duplicate gzip reader failed.")
+		util.Logger().Errorf(err, "duplicate gzip reader failed.")
 		return nil, err
 	}
 
 	defer gzipReader.Close()
 	dst, err = ioutil.ReadAll(gzipReader)
 	if err != nil {
-		util.LOGGER.Errorf(err, "read from gzip reader failed.")
+		util.Logger().Errorf(err, "read from gzip reader failed.")
 		return nil, err
 	}
 
@@ -172,7 +172,7 @@ func (client *HttpClient) httpDo(method string, url string, headers map[string]s
 			// 如果请求头未传入Conent-Type，则按照json格式进行编码（如果是非json类型，需要自行在headers里指定类型）
 			bodyBytes, err = json.Marshal(body)
 			if err != nil {
-				util.LOGGER.Errorf(err, "mashal object failed.")
+				util.Logger().Errorf(err, "mashal object failed.")
 				return status, result
 			}
 		} else {
@@ -180,7 +180,7 @@ func (client *HttpClient) httpDo(method string, url string, headers map[string]s
 			var ok bool = false
 			bodyBytes, ok = body.([]byte)
 			if !ok {
-				util.LOGGER.Errorf(nil, "invalid body type '%s'(%s), body must type of byte array if Content-Type specified.", reflect.TypeOf(body), headers["Content-Type"])
+				util.Logger().Errorf(nil, "invalid body type '%s'(%s), body must type of byte array if Content-Type specified.", reflect.TypeOf(body), headers["Content-Type"])
 				return status, result
 			}
 		}
@@ -195,7 +195,7 @@ func (client *HttpClient) httpDo(method string, url string, headers map[string]s
 
 	req, err := http.NewRequest(method, url, bodyReader)
 	if err != nil {
-		util.LOGGER.Errorf(err, "create request failed.")
+		util.Logger().Errorf(err, "create request failed.")
 		return status, result
 	}
 
@@ -206,7 +206,7 @@ func (client *HttpClient) httpDo(method string, url string, headers map[string]s
 
 	resp, err := client.client.Do(req)
 	if err != nil {
-		util.LOGGER.Errorf(err, "invoke request failed.")
+		util.Logger().Errorf(err, "invoke request failed.")
 		return status, result
 	}
 
@@ -233,7 +233,7 @@ func (client *HttpClient) HttpDo(method string, url string, headers map[string]s
 			// 如果请求头未传入Conent-Type，则按照json格式进行编码（如果是非json类型，需要自行在headers里指定类型）
 			bodyBytes, err = json.Marshal(body)
 			if err != nil {
-				util.LOGGER.Errorf(err, "mashal object failed.")
+				util.Logger().Errorf(err, "mashal object failed.")
 				return nil, err
 			}
 		} else {
@@ -243,7 +243,7 @@ func (client *HttpClient) HttpDo(method string, url string, headers map[string]s
 			if !ok {
 				err := fmt.Errorf("invalid body type '%s'(%s), body must type of byte array if Content-Type specified.",
 					reflect.TypeOf(body), headers["Content-Type"])
-				util.LOGGER.Errorf(err, "")
+				util.Logger().Errorf(err, "")
 				return nil, err
 			}
 		}
@@ -258,7 +258,7 @@ func (client *HttpClient) HttpDo(method string, url string, headers map[string]s
 
 	req, err := http.NewRequest(method, url, bodyReader)
 	if err != nil {
-		util.LOGGER.Errorf(err, "create request failed.")
+		util.Logger().Errorf(err, "create request failed.")
 		return nil, err
 	}
 
@@ -269,11 +269,11 @@ func (client *HttpClient) HttpDo(method string, url string, headers map[string]s
 
 	resp, err := client.client.Do(req)
 	if err != nil {
-		util.LOGGER.Errorf(err, "Request -----> %s failed.", url)
+		util.Logger().Errorf(err, "Request -----> %s failed.", url)
 		return resp, err
 	}
 	if resp.StatusCode != 200 && resp.StatusCode != 201 {
-		util.LOGGER.Errorf(nil, "Request -----> %s not ok, status is %s", url, resp.Status)
+		util.Logger().Errorf(nil, "Request -----> %s not ok, status is %s", url, resp.Status)
 		return resp, fmt.Errorf("Request failed, status is %s", resp.Status)
 	}
 	return resp, err
