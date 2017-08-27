@@ -240,7 +240,7 @@ func (c *EtcdClient) paging(ctx context.Context, op *registry.PluginOp, countPer
 		return nil, nil // no paging
 	}
 
-	util.LOGGER.Infof("get too many KeyValues from etcdserver, now paging.(%d vs %d)",
+	util.LOGGER.Debugf("get too many KeyValues from etcdserver, now paging.(%d vs %d)",
 		recordCount, countPerPage)
 
 	tempOp.KeyOnly = false
@@ -334,7 +334,6 @@ func (c *EtcdClient) Do(ctx context.Context, op *registry.PluginOp) (*registry.P
 			break
 		}
 		resp = &registry.PluginResponse{
-			PrevKv:   etcdResp.PrevKv,
 			Revision: etcdResp.Header.Revision,
 		}
 	case registry.DELETE:
@@ -456,23 +455,41 @@ func (c *EtcdClient) Watch(ctx context.Context, op *registry.PluginOp, send func
 					err := errors.New("channel is closed")
 					return err
 				}
+				// cause a rpc ResourceExhausted error if watch response body larger then 4MB
 				if err = resp.Err(); err != nil {
 					return err
 				}
+				l := len(resp.Events)
+				pIdx, dIdx := 0, l
+				pResp := &registry.PluginResponse{Action: registry.PUT, Succeeded: true}
+				dResp := &registry.PluginResponse{Action: registry.DELETE, Succeeded: true}
+				kvs := make([]*mvccpb.KeyValue, l)
 				for _, evt := range resp.Events {
-					pbEvent := &registry.PluginResponse{
-						Action:    registry.PUT,
-						Kvs:       []*mvccpb.KeyValue{evt.Kv},
-						PrevKv:    evt.PrevKv,
-						Count:     1,
-						Revision:  evt.Kv.ModRevision,
-						Succeeded: true,
+					pResp.Revision = evt.Kv.ModRevision
+					switch evt.Type {
+					case mvccpb.DELETE:
+						dIdx--
+						kvs[dIdx] = evt.Kv
+					default:
+						kvs[pIdx] = evt.Kv
+						pIdx++
 					}
-					if evt.Type == mvccpb.DELETE {
-						pbEvent.Action = registry.DELETE
-					}
+				}
+				pResp.Count = int64(pIdx)
+				pResp.Kvs = kvs[:pIdx]
 
-					err = send("key information changed", pbEvent)
+				dResp.Revision = pResp.Revision
+				dResp.Count = int64(l) - pResp.Count
+				dResp.Kvs = kvs[dIdx:]
+
+				if pResp.Count > 0 {
+					err = send("key information changed", pResp)
+					if err != nil {
+						return
+					}
+				}
+				if dResp.Count > 0 {
+					err = send("key information changed", dResp)
 					if err != nil {
 						return
 					}

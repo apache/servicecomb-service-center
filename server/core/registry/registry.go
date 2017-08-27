@@ -15,6 +15,7 @@ package registry
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/ServiceComb/service-center/util"
 	"github.com/astaxie/beego"
 	"github.com/coreos/etcd/mvcc/mvccpb"
@@ -172,10 +173,14 @@ func (op *PluginOp) String() string {
 type PluginResponse struct {
 	Action    ActionType
 	Kvs       []*mvccpb.KeyValue
-	PrevKv    *mvccpb.KeyValue // TODO do not support now
 	Count     int64
 	Revision  int64
 	Succeeded bool
+}
+
+func (pr *PluginResponse) String() string {
+	return fmt.Sprintf("{action: %s, count: %d, rev: %d, succeed: %v}",
+		pr.Action, pr.Count, pr.Revision, pr.Succeeded)
 }
 
 type CompareOp struct {

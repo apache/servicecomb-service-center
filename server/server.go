@@ -127,7 +127,7 @@ func (s *ServiceCenterServer) waitForQuit() {
 	case <-s.exit:
 	}
 	if err != nil {
-		util.LOGGER.Errorf(err, "service center catch errors, %s", err.Error())
+		util.LOGGER.Errorf(err, "service center catch errors")
 	}
 	select {
 	case <-s.exit:

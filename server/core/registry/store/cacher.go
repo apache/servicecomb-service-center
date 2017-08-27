@@ -27,6 +27,7 @@ import (
 const (
 	DEFAULT_MAX_NO_EVENT_INTERVAL = 1 // TODO it should be set to 1 for prevent etcd data is lost accidentally.
 	DEFAULT_LISTWATCH_TIMEOUT     = 30 * time.Second
+	DEFAULT_COMPACT_TIMES         = 3
 	DEFAULT_COMPACT_TIMEOUT       = 5 * time.Minute
 	event_block_size              = 1000
 )
@@ -124,11 +125,17 @@ func (c *KvCache) Unlock() {
 	if l > c.lastMaxSize {
 		c.lastMaxSize = l
 	}
-	if l == 0 && c.lastMaxSize > c.size && time.Now().Sub(c.lastRefresh) >= DEFAULT_COMPACT_TIMEOUT {
+	if c.size >= l &&
+		c.lastMaxSize > c.size*DEFAULT_COMPACT_TIMES &&
+		time.Now().Sub(c.lastRefresh) >= DEFAULT_COMPACT_TIMEOUT {
 		util.LOGGER.Infof("cache is empty and not in use over %s, compact capacity to size %d->%d",
 			DEFAULT_COMPACT_TIMEOUT, c.lastMaxSize, c.size)
 		// gc
-		c.store = make(map[string]*mvccpb.KeyValue, c.size)
+		newCache := make(map[string]*mvccpb.KeyValue, c.size)
+		for k, v := range c.store {
+			newCache[k] = v
+		}
+		c.store = newCache
 		c.lastMaxSize = c.size
 		c.lastRefresh = time.Now()
 	}
@@ -233,12 +240,12 @@ func (c *KvCacher) ListAndWatch(ctx context.Context) error {
 
 func (c *KvCacher) handleWatcher(watcher *Watcher) error {
 	defer watcher.Stop()
-	for evt := range watcher.EventBus() {
-		if evt.Type == proto.EVT_ERROR {
-			err := evt.Object.(error)
+	for evts := range watcher.EventBus() {
+		if evts[0].Type == proto.EVT_ERROR {
+			err := evts[0].Object.(error)
 			return err
 		}
-		c.sync([]*Event{evt})
+		c.sync(evts)
 	}
 	return nil
 }

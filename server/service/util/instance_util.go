@@ -211,7 +211,8 @@ func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (resul
 	for _, providerId := range providerIds {
 		service, err := ms.GetServiceWithRev(ctx, tenant, providerId, rev)
 		if err != nil {
-			util.LOGGER.Errorf(err, "get service %s provider service %s file failed.", selfServiceId, providerId)
+			util.LOGGER.Errorf(err, "get service %s provider service %s file with revision %d failed.",
+				selfServiceId, providerId, rev)
 			return
 		}
 		if service == nil {
@@ -221,7 +222,8 @@ func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (resul
 
 		kvs, err := queryServiceInstancesKvs(ctx, providerId, rev)
 		if err != nil {
-			util.LOGGER.Errorf(err, "get service %s provider %s instances failed.", selfServiceId, providerId)
+			util.LOGGER.Errorf(err, "get service %s provider %s instances with revision %d failed.",
+				selfServiceId, providerId, rev)
 			return
 		}
 

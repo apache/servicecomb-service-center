@@ -15,7 +15,6 @@ package microservice
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/ServiceComb/service-center/pkg/common/cache"
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
@@ -49,17 +48,14 @@ func GetServiceWithRev(ctx context.Context, domain string, id string, rev int64)
 		WithRev: rev,
 	})
 	if err != nil {
-		util.LOGGER.Errorf(err, "query service %s file with revision %d failed", id, rev)
 		return nil, err
 	}
 	if len(serviceResp.Kvs) == 0 {
-		util.LOGGER.Errorf(nil, "service %s with revision %d does not exist.", id, rev)
 		return nil, nil
 	}
 	service := &pb.MicroService{}
 	err = json.Unmarshal(serviceResp.Kvs[0].Value, &service)
 	if err != nil {
-		util.LOGGER.Errorf(err, "unmarshal provider service %s file with revision %d failed", id, rev)
 		return nil, err
 	}
 	return service, nil
@@ -92,17 +88,14 @@ func SearchService(ctx context.Context, tenant, serviceId string, mode registry.
 		Mode:   mode,
 	})
 	if err != nil {
-		util.LOGGER.Errorf(err, "query service %s file failed", serviceId)
 		return nil, err
 	}
 	if len(serviceResp.Kvs) == 0 {
-		util.LOGGER.Errorf(nil, "service %s does not exist.", serviceId)
 		return nil, nil
 	}
 	service := &pb.MicroService{}
 	err = json.Unmarshal(serviceResp.Kvs[0].Value, &service)
 	if err != nil {
-		util.LOGGER.Errorf(err, "unmarshal provider service %s file failed", serviceId)
 		return nil, err
 	}
 	return service, nil
@@ -128,7 +121,6 @@ func GetServicesByTenant(ctx context.Context, tenant string) ([]*pb.MicroService
 		service := &pb.MicroService{}
 		err := json.Unmarshal(kvs.Value, service)
 		if err != nil {
-			util.LOGGER.Error(fmt.Sprintf("Can not unmarshal %s", err), err)
 			return nil, err
 		}
 		services = append(services, service)

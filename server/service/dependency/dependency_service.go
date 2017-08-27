@@ -240,6 +240,9 @@ func UpdateAsProviderDependency(ctx context.Context, providerServiseId string, p
 		opts = append(opts, optsTmp...)
 	}
 	if len(opts) != 0 {
+		serviceFlag := util.StringJoin([]string{provider.AppId, provider.ServiceName, provider.Version}, "/")
+		util.LOGGER.Infof("create microservice: add dependency for %s(%s)",
+			providerServiseId, serviceFlag)
 		err = registry.BatchCommit(ctx, opts)
 		if err != nil {
 			util.LOGGER.Errorf(err, "Add provider dependency rule failed: provider %v", provider)

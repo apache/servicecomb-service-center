@@ -276,7 +276,6 @@ func (s *EtcdEmbed) Do(ctx context.Context, op *registry.PluginOp) (*registry.Pl
 			break
 		}
 		resp = &registry.PluginResponse{
-			PrevKv:   etcdResp.PrevKv,
 			Revision: etcdResp.Header.Revision,
 		}
 	case registry.DELETE:
@@ -396,19 +395,38 @@ func (s *EtcdEmbed) Watch(ctx context.Context, op *registry.PluginOp, send func(
 					err = errors.New("channel is closed")
 					return
 				}
+
+				l := len(resp.Events)
+				pIdx, dIdx := 0, l
+				pResp := &registry.PluginResponse{Action: registry.PUT, Succeeded: true}
+				dResp := &registry.PluginResponse{Action: registry.DELETE, Succeeded: true}
+				kvs := make([]*mvccpb.KeyValue, l)
 				for _, evt := range resp.Events {
-					pbEvent := &registry.PluginResponse{
-						Action:    registry.PUT,
-						Kvs:       []*mvccpb.KeyValue{evt.Kv},
-						PrevKv:    evt.PrevKv,
-						Count:     1,
-						Revision:  evt.Kv.ModRevision,
-						Succeeded: true,
+					pResp.Revision = evt.Kv.ModRevision
+					switch evt.Type {
+					case mvccpb.DELETE:
+						dIdx--
+						kvs[dIdx] = evt.Kv
+					default:
+						kvs[pIdx] = evt.Kv
+						pIdx++
 					}
-					if evt.Type == mvccpb.DELETE {
-						pbEvent.Action = registry.DELETE
+				}
+				pResp.Count = int64(pIdx)
+				pResp.Kvs = kvs[:pIdx]
+
+				dResp.Revision = pResp.Revision
+				dResp.Count = int64(l) - pResp.Count
+				dResp.Kvs = kvs[dIdx:]
+
+				if pResp.Count > 0 {
+					err = send("key information changed", pResp)
+					if err != nil {
+						return
 					}
-					err = send("key information changed", pbEvent)
+				}
+				if dResp.Count > 0 {
+					err = send("key information changed", dResp)
 					if err != nil {
 						return
 					}

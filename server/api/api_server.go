@@ -139,9 +139,9 @@ func (s *APIService) registryService() error {
 	if respE.Response.Code == pb.Response_SUCCESS {
 		util.LOGGER.Warnf(nil, "service center service already registered, service id %s", respE.ServiceId)
 		respG, err := rs.ServiceAPI.GetOne(ctx, core.GetServiceRequest(respE.ServiceId))
-		if respE.Response.Code != pb.Response_SUCCESS {
-			return fmt.Errorf("query service center service info failed, service id %s(%s)",
-				respE.ServiceId, err)
+		if respG.Response.Code != pb.Response_SUCCESS {
+			util.LOGGER.Errorf(err, "query service center service info failed, service id %s", respE.ServiceId)
+			return fmt.Errorf("service center service file lost.")
 		}
 		core.Service = respG.Service
 		return nil
