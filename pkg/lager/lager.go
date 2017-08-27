@@ -88,10 +88,10 @@ func Init(c Config) {
 }
 
 func NewLogger(component string) core.Logger {
-	return NewLoggerExt(component, component)
+	return NewLoggerExt(component, component, config)
 }
 
-func NewLoggerExt(component string, app_guid string) core.Logger {
+func NewLoggerExt(component string, app_guid string, config *Config) core.Logger {
 	var lagerLogLevel core.LogLevel
 	switch strings.ToUpper(config.LoggerLevel) {
 	case DEBUG:
@@ -113,6 +113,7 @@ func NewLoggerExt(component string, app_guid string) core.Logger {
 		sink := core.NewReconfigurableSink(core.NewWriterSink(os.Stdout, core.DEBUG), lagerLogLevel)
 		logger.RegisterSink(sink)
 	}
+
 	if config.LoggerFile != "" {
 		file, err := os.OpenFile(config.LoggerFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 		if err != nil {

@@ -17,17 +17,31 @@ import (
 	"fmt"
 	"os"
 
+	"bufio"
+	"bytes"
 	"github.com/ServiceComb/service-center/pkg/lager"
 	"github.com/ServiceComb/service-center/pkg/lager/core"
+	"path/filepath"
+	"runtime/debug"
 	"strings"
+	"sync"
 	"time"
 )
 
 //log var
 var (
-	LOGGER        core.Logger
-	lagerLogLevel core.LogLevel
+	LOGGER          core.Logger
+	reBuildLogLevel core.LogLevel
+
+	loggers     map[string]core.Logger
+	loggerNames map[string]string
+	loggersMux  sync.RWMutex
 )
+
+func init() {
+	loggers = make(map[string]core.Logger, 10)
+	loggerNames = make(map[string]string, 10)
+}
 
 func InitLogger(loggerName string, cfg *lager.Config) {
 	lager.Init(*cfg)
@@ -36,20 +50,86 @@ func InitLogger(loggerName string, cfg *lager.Config) {
 
 	switch strings.ToUpper(lager.GetConfig().LoggerLevel) {
 	case "DEBUG":
-		lagerLogLevel = core.DEBUG
+		reBuildLogLevel = core.DEBUG
 	case "INFO":
-		lagerLogLevel = core.INFO
+		reBuildLogLevel = core.INFO
 	case "WARN":
-		lagerLogLevel = core.WARN
+		reBuildLogLevel = core.WARN
 	case "ERROR":
-		lagerLogLevel = core.ERROR
+		reBuildLogLevel = core.ERROR
 	case "FATAL":
-		lagerLogLevel = core.FATAL
+		reBuildLogLevel = core.FATAL
 	default:
 		panic(fmt.Errorf("unknown logger level: %s", lager.GetConfig().LoggerLevel))
 	}
 
 	monitorLogFile()
+}
+
+func NewLogger(loggerName string, cfg *lager.Config) core.Logger {
+	return lager.NewLoggerExt(loggerName, loggerName, cfg)
+}
+
+func Logger() core.Logger {
+	if len(loggerNames) == 0 {
+		return LOGGER
+	}
+	funcFullName := getCalleeFuncName(debug.Stack())
+
+	for prefix, logFile := range loggerNames {
+		if strings.Index(prefix, "/") < 0 {
+			// function name
+			if prefix != funcFullName[strings.LastIndex(funcFullName, ".")+1:] {
+				continue
+			}
+		} else {
+			// package name
+			if strings.Index(funcFullName, prefix) < 0 {
+				continue
+			}
+		}
+		loggersMux.RLock()
+		logger, ok := loggers[logFile]
+		loggersMux.RUnlock()
+		if ok {
+			return logger
+		}
+
+		loggersMux.Lock()
+		logger, ok = loggers[logFile]
+		if !ok {
+			cfg := *lager.GetConfig()
+			cfg.LoggerFile = filepath.Join(filepath.Dir(cfg.LoggerFile), logFile+".log")
+			logger = NewLogger(logFile, &cfg)
+			loggers[logFile] = logger
+		}
+		loggersMux.Unlock()
+		return logger
+	}
+
+	return LOGGER
+}
+
+func getCalleeFuncName(stack []byte) string {
+	reader := bufio.NewReader(bytes.NewReader(stack))
+	/*
+		goroutine 1 [running]:
+		runtime/debug.Stack(0x0, 0x0, 0x0)
+			runtime/debug/stack.go:24 +0xbe
+		github.com/ServiceComb/service-center/util.Logger(0x0, 0x0)
+			github.com/ServiceComb/service-center/util/log.go:67 +0xf2
+	*/
+	for i := 0; i < 1+2*2; i++ {
+		reader.ReadLine()
+	}
+	line, _, _ := reader.ReadLine()
+	funcFullName := BytesToStringWithNoCopy(line)
+	funcFullName = funcFullName[:strings.LastIndex(funcFullName, "(")]
+	return funcFullName
+}
+
+func SetCustomLoggerName(pkgOrFunc, fileName string) {
+	loggerNames[pkgOrFunc] = fileName
 }
 
 func monitorLogFile() {
@@ -67,8 +147,8 @@ func monitorLogFile() {
 						LOGGER.Errorf(err, "Create log file failed.")
 						return
 					}
-
-					sink := core.NewReconfigurableSink(core.NewWriterSink(file, core.DEBUG), lagerLogLevel)
+					// TODO Here will lead to file handle leak
+					sink := core.NewReconfigurableSink(core.NewWriterSink(file, core.DEBUG), reBuildLogLevel)
 					LOGGER.RegisterSink(sink)
 					LOGGER.Errorf(nil, "log file is removed, create again.")
 				}
