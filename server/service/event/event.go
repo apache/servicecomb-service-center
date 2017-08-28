@@ -20,4 +20,5 @@ import (
 func init() {
 	store.AddEventHandler(NewInstanceEventHandler())
 	store.AddEventHandler(NewRuleEventHandler())
+	store.AddEventHandler(NewTagEventHandler())
 }

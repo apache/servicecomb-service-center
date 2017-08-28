@@ -190,8 +190,12 @@ func (wh *WebSocketHandler) HandleWatchWebSocketJob() {
 
 			resp := job.(*WatchJob).Response
 
-			util.Logger().Warnf(nil, "event[%s] is coming in, watcher[%s] %s %s, providers' info %s %s",
-				resp.Action, remoteAddr, wh.watcher.Subject(), wh.watcher.Id(), resp.Instance.ServiceId, resp.Instance.InstanceId)
+			providerFlag := fmt.Sprintf("%s/%s/%s", resp.Key.AppId, resp.Key.ServiceName, resp.Key.Version)
+			if resp.Action != string(pb.EVT_EXPIRE) {
+				providerFlag = fmt.Sprintf("%s/%s(%s)", resp.Instance.ServiceId, resp.Instance.InstanceId, providerFlag)
+			}
+			util.Logger().Warnf(nil, "event[%s] is coming in, watcher[%s] %s %s, providers' info %s",
+				resp.Action, remoteAddr, wh.watcher.Subject(), wh.watcher.Id(), providerFlag)
 
 			resp.Response = nil
 			data, err := json.Marshal(resp)

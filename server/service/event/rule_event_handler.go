@@ -17,11 +17,12 @@ import (
 	"encoding/json"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
+	"github.com/ServiceComb/service-center/server/service/dependency"
 	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	nf "github.com/ServiceComb/service-center/server/service/notification"
-	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
+	"strings"
 )
 
 type RulesChangedAsyncTask struct {
@@ -39,7 +40,7 @@ func (apt *RulesChangedAsyncTask) Key() string {
 
 func (apt *RulesChangedAsyncTask) Do(ctx context.Context) error {
 	defer store.Store().AsyncTasker().DeferRemoveTask(apt.Key())
-	apt.err = publish(ctx, apt.Tenant, apt.ProviderId, apt.Rev)
+	apt.err = apt.publish(ctx, apt.Tenant, apt.ProviderId, apt.Rev)
 	return apt.err
 }
 
@@ -47,14 +48,14 @@ func (apt *RulesChangedAsyncTask) Err() error {
 	return apt.err
 }
 
-func publish(ctx context.Context, tenant, providerId string, rev int64) error {
+func (apt *RulesChangedAsyncTask) publish(ctx context.Context, tenant, providerId string, rev int64) error {
 	provider, err := ms.GetService(ctx, tenant, providerId)
 	if provider == nil {
 		util.Logger().Errorf(err, "get service %s file failed", providerId)
 		return err
 	}
 
-	allow, deny, err := serviceUtil.GetConsumerIds(ctx, tenant, provider)
+	kvs, err := dependency.GetConsumersInCache(ctx, tenant, providerId)
 	if err != nil {
 		util.Logger().Errorf(err, "get consumer services by provider %s failed", providerId)
 		return err
@@ -66,16 +67,14 @@ func publish(ctx context.Context, tenant, providerId string, rev int64) error {
 		Version:     provider.Version,
 	}
 
-	instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, tenant, providerId, "")
-	if err != nil || len(instances) == 0 {
-		util.Logger().Errorf(err, "get provider service %s instance failed", providerId)
-		return err
+	l := len(kvs)
+	consumerIds := make([]string, l)
+	for i, kv := range kvs {
+		consumerId := util.BytesToStringWithNoCopy(kv.Key)
+		consumerId = consumerId[strings.LastIndex(consumerId, "/")+1:]
+		consumerIds[i] = consumerId
 	}
-
-	for _, instance := range instances {
-		nf.PublishInstanceEvent(tenant, pb.EVT_UPDATE, providerKey, instance, rev, allow)
-		nf.PublishInstanceEvent(tenant, pb.EVT_DELETE, providerKey, instance, rev, deny)
-	}
+	nf.PublishInstanceEvent(tenant, pb.EVT_EXPIRE, providerKey, nil, rev, consumerIds)
 	return nil
 }
 

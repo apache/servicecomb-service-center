@@ -24,7 +24,6 @@ import (
 	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	"github.com/ServiceComb/service-center/util"
 	errorsEx "github.com/ServiceComb/service-center/util/errors"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"reflect"
 	"regexp"
@@ -232,21 +231,24 @@ func getConsumerIdsWithFilter(ctx context.Context, tenant, providerId string,
 	if err != nil {
 		return nil, nil, err
 	}
-	return filterConsumerIds(ctx, kvs, filter)
+	consumerIds := make([]string, len(kvs))
+	for i, kv := range kvs {
+		consumerId := util.BytesToStringWithNoCopy(kv.Key)
+		consumerId = consumerId[strings.LastIndex(consumerId, "/")+1:]
+		consumerIds[i] = consumerId
+	}
+	return filterConsumerIds(ctx, consumerIds, filter)
 }
 
-func filterConsumerIds(ctx context.Context, kvs []*mvccpb.KeyValue,
+func filterConsumerIds(ctx context.Context, consumerIds []string,
 	filter func(ctx context.Context, consumerId string) (bool, error)) (allow []string, deny []string, err error) {
-	l := len(kvs)
+	l := len(consumerIds)
 	if l == 0 {
 		return nil, nil, nil
 	}
 	allowIdx, denyIdx := 0, l
 	consumers := make([]string, l)
-	for _, kv := range kvs {
-		consumerId := util.BytesToStringWithNoCopy(kv.Key)
-		consumerId = consumerId[strings.LastIndex(consumerId, "/")+1:]
-
+	for _, consumerId := range consumerIds {
 		ok, err := filter(ctx, consumerId)
 		if err != nil {
 			return nil, nil, err
@@ -300,8 +302,7 @@ func GetConsumerIds(ctx context.Context, tenant string, provider *pb.MicroServic
 	return allow, deny, nil
 }
 
-func GetProviderIdsByConsumerId(ctx context.Context, tenant, consumerId string) (allow []string, deny []string, _ error) {
-	// 查询所有consumer
+func GetProvidersInCache(ctx context.Context, tenant, consumerId string) ([]string, error) {
 	key := apt.GenerateProviderDependencyKey(tenant, consumerId, "")
 	resp, err := store.Store().Dependency().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
@@ -311,22 +312,33 @@ func GetProviderIdsByConsumerId(ctx context.Context, tenant, consumerId string) 
 	})
 	if err != nil {
 		util.Logger().Errorf(err, "query service providers failed, consumer id %s", consumerId)
-		return nil, nil, err
+		return nil, err
 	}
 	l := len(resp.Kvs)
 	if l == 0 {
-		return nil, nil, nil
+		return nil, nil
 	}
+	providerIds := make([]string, l)
+	for i, kv := range resp.Kvs {
+		providerId := util.BytesToStringWithNoCopy(kv.Key)
+		providerId = providerId[strings.LastIndex(providerId, "/")+1:]
+		providerIds[i] = providerId
+	}
+	return providerIds, nil
+}
 
+func GetProviderIdsByConsumerId(ctx context.Context, tenant, consumerId string) (allow []string, deny []string, _ error) {
+	providerIdsInCache, err := GetProvidersInCache(ctx, tenant, consumerId)
+	if err != nil {
+		return nil, nil, err
+	}
+	l := len(providerIdsInCache)
 	rf := RuleFilter{
 		Tenant: tenant,
 	}
 	allowIdx, denyIdx := 0, l
 	providerIds := make([]string, l)
-	for _, kv := range resp.Kvs {
-		providerId := util.BytesToStringWithNoCopy(kv.Key)
-		providerId = providerId[strings.LastIndex(providerId, "/")+1:]
-
+	for _, providerId := range providerIdsInCache {
 		provider, err := ms.GetService(ctx, tenant, providerId)
 		if provider == nil {
 			continue
