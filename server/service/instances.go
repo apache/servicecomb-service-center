@@ -115,6 +115,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 	}
 
 	instance.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
+	instance.ModTimestamp = instance.Timestamp
 	util.Logger().Debug(fmt.Sprintf("instance ID [%s]", instanceId))
 
 	// 这里应该根据租约计时
@@ -302,13 +303,14 @@ func (s *InstanceController) Heartbeat(ctx context.Context, in *pb.HeartbeatRequ
 			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
 		}, nil
 	}
-
+	remoteIP := util.GetIPFromContext(ctx)
 	tenant := util.ParseTenantProject(ctx)
 	instanceFlag := util.StringJoin([]string{in.ServiceId, in.InstanceId}, "/")
 
 	_, ttl, err, isInnerErr := serviceUtil.HeartbeatUtil(ctx, tenant, in.ServiceId, in.InstanceId)
 	if err != nil {
-		util.Logger().Errorf(err, "heartbeat failed, instance %s, internal error '%v'.", instanceFlag, isInnerErr)
+		util.Logger().Errorf(err, "heartbeat failed, instance %s, internal error '%v'. operator: %s",
+			instanceFlag, isInnerErr, remoteIP)
 		if isInnerErr {
 			return &pb.HeartbeatResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "Service instance does not exist."),
@@ -318,7 +320,7 @@ func (s *InstanceController) Heartbeat(ctx context.Context, in *pb.HeartbeatRequ
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service instance does not exist."),
 		}, nil
 	}
-	util.Logger().Debugf("heartbeat successful: %s renew ttl to %d", instanceFlag, ttl)
+	util.Logger().Infof("heartbeat successful: %s renew ttl to %d. operator: %s", instanceFlag, ttl, remoteIP)
 	return &pb.HeartbeatResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Update service instance heartbeat successfully."),
 	}, nil
@@ -335,7 +337,7 @@ func grantOrRenewLease(ctx context.Context, tenant string, serviceId string, ins
 
 	leaseID, oldTTL, err, inner = serviceUtil.HeartbeatUtil(ctx, tenant, serviceId, instanceId)
 	if inner {
-		util.Logger().Errorf(err, "grant or renew lease failed, service %s, instanceId %s, operator %s",
+		util.Logger().Errorf(err, "grant or renew lease failed, service %s, instanceId %s, operator: %s",
 			instanceFlag, instanceId, remoteIP)
 		return
 	}
@@ -343,11 +345,11 @@ func grantOrRenewLease(ctx context.Context, tenant string, serviceId string, ins
 	if leaseID < 0 || (oldTTL > 0 && oldTTL != ttl) {
 		leaseID, err = registry.GetRegisterCenter().LeaseGrant(ctx, ttl)
 		if err != nil {
-			util.Logger().Errorf(err, "grant or renew lease failed, service %s, instanceId %s, operator %s: lease grant failed.",
+			util.Logger().Errorf(err, "grant or renew lease failed, service %s, instanceId %s, operator: %s: lease grant failed.",
 				instanceFlag, instanceId, remoteIP)
 			return
 		}
-		util.Logger().Infof("lease grant %d->%d successfully, service %s, instanceId %s, operator %s.",
+		util.Logger().Infof("lease grant %d->%d successfully, service %s, instanceId %s, operator: %s.",
 			oldTTL, ttl, instanceFlag, instanceId, remoteIP)
 		return
 	}
@@ -439,6 +441,7 @@ func (s *InstanceController) GetOneInstance(ctx context.Context, in *pb.GetOneIn
 	serviceId := in.ProviderServiceId
 	instanceId := in.ProviderInstanceId
 	instance, err := serviceUtil.GetInstance(ctx, tenant, serviceId, instanceId)
+	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 	if err != nil {
 		util.Logger().Errorf(err, "get instance failed, %s(consumer/provider): get instance failed.", conPro)
 		return &pb.GetOneInstanceResponse{
@@ -468,8 +471,9 @@ func (s *InstanceController) GetOneInstance(ctx context.Context, in *pb.GetOneIn
 	}
 
 	return &pb.GetOneInstanceResponse{
-		Response: pb.CreateResponse(pb.Response_SUCCESS, "Get instance successfully."),
-		Instance: instance,
+		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Get instance successfully."),
+		Instance:  instance,
+		Timestamp: timestamp,
 	}, nil
 }
 
@@ -547,6 +551,7 @@ func (s *InstanceController) GetInstances(ctx context.Context, in *pb.GetInstanc
 
 	instances := []*pb.MicroServiceInstance{}
 	instances, err = serviceUtil.GetAllInstancesOfOneService(ctx, tenant, in.ProviderServiceId, in.Stage)
+	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 	if err != nil {
 		util.Logger().Errorf(err, "get instances failed, %s(consumer/provider): get instances from etcd failed.", conPro)
 		return &pb.GetInstancesResponse{
@@ -556,6 +561,7 @@ func (s *InstanceController) GetInstances(ctx context.Context, in *pb.GetInstanc
 	return &pb.GetInstancesResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Query service instances successfully."),
 		Instances: instances,
+		Timestamp: timestamp,
 	}, nil
 }
 
@@ -658,6 +664,7 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 			instances = append(instances, resp.GetInstances()...)
 		}
 	}
+	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 	consumer := pb.ToMicroServiceKey(tenant, service)
 	//维护version的规则
 	providerService, _ := ms.GetService(ctx, tenant, ids[0])
@@ -693,6 +700,7 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 	return &pb.FindInstancesResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Query service instances successfully."),
 		Instances: instances,
+		Timestamp: timestamp,
 	}, nil
 }
 
@@ -830,6 +838,7 @@ func updateInstance(ctx context.Context, tenant string, instance *pb.MicroServic
 		return errors.New("Instance's leaseId not exist."), false
 	}
 
+	instance.ModTimestamp = strconv.FormatInt(time.Now().Unix(), 10)
 	data, err := json.Marshal(instance)
 	if err != nil {
 		return err, true

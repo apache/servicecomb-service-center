@@ -15,8 +15,19 @@ package util
 
 import (
 	"fmt"
+	"github.com/ServiceComb/service-center/pkg/lager"
 	"testing"
 )
+
+func init() {
+	InitLogger("log_test", &lager.Config{
+		LoggerLevel:   "DEBUG",
+		LoggerFile:    "",
+		EnableRsyslog: false,
+		LogFormatText: true,
+		EnableStdOut:  false,
+	})
+}
 
 func TestLogger(t *testing.T) {
 	CustomLogger("Not Exist", "testDefaultLOGGER")
@@ -43,4 +54,25 @@ func TestLogger(t *testing.T) {
 		t.FailNow()
 	}
 	// l.Infof("OK")
+}
+
+func BenchmarkLogger(b *testing.B) {
+	l := Logger()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			l.Infof("test")
+		}
+	})
+	b.ReportAllocs()
+}
+
+func BenchmarkLoggerCustom(b *testing.B) {
+	CustomLogger("BenchmarkLoggerCustom", "bmLogger")
+	l := Logger()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			l.Infof("test")
+		}
+	})
+	b.ReportAllocs()
 }
