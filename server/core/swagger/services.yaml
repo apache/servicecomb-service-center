@@ -1229,6 +1229,17 @@ definitions:
     properties:
       service:
         $ref: '#/definitions/MicroService'
+      rules:
+        type: array
+        items:
+           $ref: "#/definitions/Rule"
+      instances:
+        type: array
+        items:
+           $ref: '#/definitions/RegistMicroserviceInstance'
+      tags:
+           $ref: '#/definitions/Tags'
+
   GetMicroServicesResponse:
     type: object
     properties:

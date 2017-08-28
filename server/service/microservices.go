@@ -23,6 +23,7 @@ import (
 	"github.com/ServiceComb/service-center/server/core/registry/store"
 	"github.com/ServiceComb/service-center/server/infra/quota"
 	"github.com/ServiceComb/service-center/server/plugins/dynamic"
+	rs "github.com/ServiceComb/service-center/server/rest"
 	"github.com/ServiceComb/service-center/server/service/dependency"
 	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
@@ -38,6 +39,29 @@ type ServiceController struct {
 }
 
 func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequest) (*pb.CreateServiceResponse, error) {
+	if in == nil || in.Service == nil {
+		util.LOGGER.Errorf(nil, "create microservice failed : param empty.")
+		return &pb.CreateServiceResponse{
+			Response: pb.CreateResponse(pb.Response_FAIL, "request format invalid"),
+		}, nil
+	}
+
+	//create service
+	rsp, err := s.CreateServicePri(ctx, in)
+	if err != nil || rsp.GetResponse().Code != pb.Response_SUCCESS {
+		return rsp, err
+	}
+
+	if s.isCreateServiceEx(in) == false {
+		return rsp, err
+	}
+
+	//create tag,rule,instances
+	rsp, err = s.CreateServiceEx(ctx, in, rsp.ServiceId)
+	return rsp, err
+}
+
+func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateServiceRequest) (*pb.CreateServiceResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	if in == nil || in.Service == nil {
 		util.LOGGER.Errorf(nil, "create microservice failed: param empty. operator: %s", remoteIP)
@@ -146,8 +170,20 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 		}, err
 	}
 	if !resp.Succeeded {
+		if s.isCreateServiceEx(in) == true {
+			serviceIdInner, _ := ms.GetServiceId(ctx, consumer)
+			util.LOGGER.Warnf(nil, "create microservice failed, serviceid = %s , flag = %s: service already exists. operator: %s",
+				serviceIdInner, serviceFlag, remoteIP)
+
+			return &pb.CreateServiceResponse{
+				Response:  pb.CreateResponse(pb.Response_SUCCESS, "register service successfully"),
+				ServiceId: serviceIdInner,
+			}, nil
+		}
+
 		util.LOGGER.Warnf(nil, "create microservice failed, %s: service already exists. operator: %s",
 			serviceFlag, remoteIP)
+
 		return &pb.CreateServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service already exists."),
 		}, nil
@@ -1037,6 +1073,117 @@ func containsValueInSlice(in []string, value string) bool {
 		if i == value {
 			return true
 		}
+	}
+	return false
+}
+
+func (s *ServiceController) CreateServiceEx(ctx context.Context, in *pb.CreateServiceRequest, serviceId string) (*pb.CreateServiceResponse, error) {
+	result := &pb.CreateServiceResponse{
+		ServiceId: serviceId,
+		Response:  &pb.Response{},
+	}
+	var chanLen int = 0
+	createRespChan := make(chan *pb.Response, 10)
+	//create rules
+	if in.Rules != nil && len(in.Rules) != 0 {
+		chanLen++
+		go func() {
+			req := &pb.AddServiceRulesRequest{
+				ServiceId: serviceId,
+				Rules:     in.Rules,
+			}
+			chanRsp := &pb.Response{}
+			rsp, err := s.AddRule(ctx, req)
+			if err != nil {
+				chanRsp.Message = err.Error()
+			}
+
+			if rsp.Response.Code != pb.Response_SUCCESS {
+				chanRsp.Message = rsp.Response.Message
+			}
+			createRespChan <- chanRsp
+		}()
+	}
+	//create tags
+	if in.Tags != nil && len(in.Tags) != 0 {
+		chanLen++
+		go func() {
+			req := &pb.AddServiceTagsRequest{
+				ServiceId: serviceId,
+				Tags:      in.Tags,
+			}
+			chanRsp := &pb.Response{}
+			rsp, err := s.AddTags(ctx, req)
+			if err != nil {
+				chanRsp.Message = err.Error()
+			}
+
+			if rsp.Response.Code != pb.Response_SUCCESS {
+				chanRsp.Message = rsp.Response.Message
+			}
+			createRespChan <- chanRsp
+		}()
+	}
+	// create instance
+	if in.Instances != nil && len(in.Instances) != 0 {
+		chanLen++
+		go func() {
+			chanRsp := &pb.Response{}
+			for _, ins := range in.Instances {
+				req := &pb.RegisterInstanceRequest{
+					Instance: ins,
+				}
+				req.Instance.ServiceId = serviceId
+				rsp, err := rs.InstanceAPI.Register(ctx, req)
+				if err != nil {
+					chanRsp.Message += fmt.Sprintf("{instance:%v,result:%s}", ins.Endpoints, err.Error())
+				}
+				if rsp.Response.Code != pb.Response_SUCCESS {
+					chanRsp.Message += fmt.Sprintf("{instance:%v,result:%s}", ins.Endpoints, rsp.Response.Message)
+				}
+				createRespChan <- chanRsp
+			}
+		}()
+	}
+	if chanLen == 0 {
+		close(createRespChan)
+		return result, nil
+	}
+
+	// handle result
+	var errMessages []string
+	var count int = 0
+	for createResp := range createRespChan {
+		count++
+		if len(createResp.Message) != 0 {
+			errMessages = append(errMessages, createResp.Message)
+		}
+
+		if count == chanLen {
+			close(createRespChan)
+		}
+	}
+
+	if len(errMessages) != 0 {
+		result.Response.Code = pb.Response_FAIL
+		errMessage, err := json.Marshal(errMessages)
+		if err != nil {
+			result.Response.Message = "marshal errMessages error"
+			util.LOGGER.Error("marshal errMessages error", err)
+			return result, nil
+		}
+		result.Response.Message = fmt.Sprintf("ErrMessage : %s", errMessage)
+	} else {
+		result.Response.Code = pb.Response_SUCCESS
+	}
+
+	util.LOGGER.Infof("CreateServiceEx, serviceid = %s, result = %s ", result.ServiceId, result.Response.Message)
+	return result, nil
+}
+
+func (s *ServiceController) isCreateServiceEx(in *pb.CreateServiceRequest) bool {
+	if (in.Rules != nil && len(in.Rules) != 0) || (in.Tags != nil && len(in.Tags) != 0) || (in.Instances != nil && len(in.Instances) != 0) {
+		return true
 	}
 	return false
 }
