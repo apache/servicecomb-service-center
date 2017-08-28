@@ -66,7 +66,7 @@ func (q *BuildInQuota) Apply4Quotas(ctx context.Context, quotaType int, quotaSiz
 		return false, err
 	}
 	num := resp.Count
-	util.LOGGER.Debugf("resource num is %d", num)
+	util.Logger().Debugf("resource num is %d", num)
 	if num >= max {
 		return false, nil
 	}

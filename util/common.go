@@ -241,6 +241,6 @@ func StringJoin(args []string, sep string) string {
 
 func RecoverAndReport() {
 	if r := recover(); r != nil {
-		LOGGER.Errorf(nil, "recover! %v", r)
+		Logger().Errorf(nil, "recover! %v", r)
 	}
 }

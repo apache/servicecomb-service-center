@@ -26,27 +26,6 @@ import (
 
 const EVENT_BUS_MAX_SIZE = 1000
 
-var globalRevision int64 = 0
-var revisionMux sync.RWMutex
-
-func SetRevision(rev int64) {
-	if globalRevision >= rev {
-		return
-	}
-	revisionMux.Lock()
-	if globalRevision < rev {
-		globalRevision = rev
-	}
-	revisionMux.Unlock()
-}
-
-func Revision() (rev int64) {
-	revisionMux.RLock()
-	rev = globalRevision
-	revisionMux.RUnlock()
-	return
-}
-
 type Event struct {
 	Revision int64
 	Type     proto.EventType
@@ -67,11 +46,7 @@ type ListWatcher struct {
 	Client registry.Registry
 	Key    string
 
-	modRev int64
-}
-
-func (lw *ListWatcher) ModRevision() int64 {
-	return lw.modRev
+	rev int64
 }
 
 func (lw *ListWatcher) List(op *ListOptions) ([]*mvccpb.KeyValue, error) {
@@ -80,54 +55,56 @@ func (lw *ListWatcher) List(op *ListOptions) ([]*mvccpb.KeyValue, error) {
 	if err != nil {
 		return nil, err
 	}
-	lw.setModRevision(resp.Revision)
+	lw.setRevision(resp.Revision)
 	if len(resp.Kvs) == 0 {
 		return nil, nil
 	}
 	return resp.Kvs, nil
 }
 
+func (lw *ListWatcher) Revision() int64 {
+	return lw.rev
+}
+
+func (lw *ListWatcher) setRevision(rev int64) {
+	lw.rev = rev
+}
+
 func (lw *ListWatcher) Watch(op *ListOptions) *Watcher {
 	return newWatcher(lw, op)
 }
 
-func (lw *ListWatcher) setModRevision(rev int64) {
-	lw.modRev = rev
-	SetRevision(rev)
-}
-
-func (lw *ListWatcher) doWatch(ctx context.Context, f func(evt *Event)) error {
+func (lw *ListWatcher) doWatch(ctx context.Context, f func(evt []*Event)) error {
 	ops := registry.WithWatchPrefix(lw.Key)
-	ops.WithRev = lw.ModRevision() + 1
+	ops.WithRev = lw.Revision() + 1
 	err := lw.Client.Watch(ctx, ops, func(message string, evt *registry.PluginResponse) error {
-		if lw.ModRevision() < evt.Revision {
-			lw.setModRevision(evt.Revision)
+		if evt == nil || len(evt.Kvs) == 0 {
+			return fmt.Errorf("unknown event %s", evt)
 		}
 
-		sendEvt := errEvent(lw.Key, fmt.Errorf("unknown event %+v", evt))
-		sendEvt.Revision = evt.Revision
+		lw.setRevision(evt.Revision)
 
-		if evt != nil && len(evt.Kvs) > 0 {
+		evts := make([]*Event, len(evt.Kvs))
+		for i, kv := range evt.Kvs {
+			sendEvt := &Event{Key: lw.Key, Revision: kv.ModRevision}
 			switch {
-			case evt.Action == registry.PUT && evt.Kvs[0].Version == 1:
-				sendEvt.Type, sendEvt.Object = proto.EVT_CREATE, evt.Kvs[0]
+			case evt.Action == registry.PUT && kv.Version == 1:
+				sendEvt.Type, sendEvt.Object = proto.EVT_CREATE, kv
 			case evt.Action == registry.PUT:
-				sendEvt.Type, sendEvt.Object = proto.EVT_UPDATE, evt.Kvs[0]
+				sendEvt.Type, sendEvt.Object = proto.EVT_UPDATE, kv
 			case evt.Action == registry.DELETE:
-				kv := evt.PrevKv
-				if kv == nil {
-					// TODO 内嵌无法获取
-					kv = evt.Kvs[0]
-				}
 				sendEvt.Type, sendEvt.Object = proto.EVT_DELETE, kv
+			default:
+				return fmt.Errorf("unknown KeyValue %v", kv)
 			}
+			evts[i] = sendEvt
 		}
-		f(sendEvt)
+		f(evts)
 		return nil
 	})
 	if err != nil { // compact可能会导致watch失败
-		lw.setModRevision(0)
-		f(errEvent(lw.Key, err))
+		lw.setRevision(0)
+		f([]*Event{errEvent(lw.Key, err)})
 	}
 	return err
 }
@@ -135,13 +112,13 @@ func (lw *ListWatcher) doWatch(ctx context.Context, f func(evt *Event)) error {
 type Watcher struct {
 	ListOps *ListOptions
 	lw      *ListWatcher
-	bus     chan *Event
+	bus     chan []*Event
 	stopCh  chan struct{}
 	stop    bool
 	mux     sync.Mutex
 }
 
-func (w *Watcher) EventBus() <-chan *Event {
+func (w *Watcher) EventBus() <-chan []*Event {
 	return w.bus
 }
 
@@ -162,7 +139,7 @@ func (w *Watcher) process() {
 	}
 }
 
-func (w *Watcher) sendEvent(evt *Event) {
+func (w *Watcher) sendEvent(evt []*Event) {
 	defer util.RecoverAndReport()
 	w.bus <- evt
 }
@@ -191,7 +168,7 @@ func newWatcher(lw *ListWatcher, listOps *ListOptions) *Watcher {
 	w := &Watcher{
 		ListOps: listOps,
 		lw:      lw,
-		bus:     make(chan *Event, EVENT_BUS_MAX_SIZE),
+		bus:     make(chan []*Event, EVENT_BUS_MAX_SIZE),
 		stopCh:  make(chan struct{}),
 	}
 	go w.process()

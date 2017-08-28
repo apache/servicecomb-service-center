@@ -39,14 +39,14 @@ func (this *RuleService) URLPatterns() []rest.Route {
 func (this *RuleService) AddRule(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		util.LOGGER.Error("bory err", err)
+		util.Logger().Error("bory err", err)
 		WriteText(http.StatusInternalServerError, fmt.Sprintf("body error %s", err.Error()), w)
 		return
 	}
 	rule := map[string][]*pb.AddOrUpdateServiceRule{}
 	err = json.Unmarshal(message, &rule)
 	if err != nil {
-		util.LOGGER.Error("Unmarshal error", err)
+		util.Logger().Error("Unmarshal error", err)
 		WriteText(http.StatusBadRequest, "Unmarshal error", w)
 		return
 	}
@@ -74,7 +74,7 @@ func (this *RuleService) DeleteRule(w http.ResponseWriter, r *http.Request) {
 func (this *RuleService) UpdateRule(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		util.LOGGER.Error("body err", err)
+		util.Logger().Error("body err", err)
 		WriteText(http.StatusBadRequest, "body error", w)
 		return
 	}
@@ -82,7 +82,7 @@ func (this *RuleService) UpdateRule(w http.ResponseWriter, r *http.Request) {
 	rule := pb.AddOrUpdateServiceRule{}
 	err = json.Unmarshal(message, &rule)
 	if err != nil {
-		util.LOGGER.Error("Unmarshal error", err)
+		util.Logger().Error("Unmarshal error", err)
 		WriteText(http.StatusBadRequest, "Unmarshal error", w)
 		return
 	}

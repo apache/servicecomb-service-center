@@ -83,7 +83,7 @@ func (governService *GovernService) GetGraph(w http.ResponseWriter, r *http.Requ
 		}
 		proResp, err := ServiceAPI.GetConsumerDependencies(ctx, proRequest)
 		if err != nil {
-			util.LOGGER.Error("get Dependency failed.", err)
+			util.Logger().Error("get Dependency failed.", err)
 			WriteText(http.StatusInternalServerError, "get Dependency failed", w)
 			return
 		}

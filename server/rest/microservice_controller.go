@@ -63,7 +63,7 @@ func (this *MicroServiceService) GetSchemas(w http.ResponseWriter, r *http.Reque
 func (this *MicroServiceService) ModifySchemas(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		util.LOGGER.Error("body err", err)
+		util.Logger().Error("body err", err)
 		WriteText(http.StatusBadRequest, err.Error(), w)
 		return
 	}
@@ -73,7 +73,7 @@ func (this *MicroServiceService) ModifySchemas(w http.ResponseWriter, r *http.Re
 	}
 	err = json.Unmarshal(message, request)
 	if err != nil {
-		util.LOGGER.Error("Unmarshal error", err)
+		util.Logger().Error("Unmarshal error", err)
 		WriteText(http.StatusBadRequest, err.Error(), w)
 		return
 	}
@@ -93,14 +93,14 @@ func (this *MicroServiceService) DeleteSchemas(w http.ResponseWriter, r *http.Re
 func (this *MicroServiceService) Register(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		util.LOGGER.Error("body err", err)
+		util.Logger().Error("body err", err)
 		WriteText(http.StatusBadRequest, err.Error(), w)
 		return
 	}
 	var request pb.CreateServiceRequest
 	err = json.Unmarshal(message, &request)
 	if err != nil {
-		util.LOGGER.Error("Unmarshal error", err)
+		util.Logger().Error("Unmarshal error", err)
 		WriteText(http.StatusBadRequest, err.Error(), w)
 		return
 	}
@@ -120,7 +120,7 @@ func (this *MicroServiceService) Register(w http.ResponseWriter, r *http.Request
 func (this *MicroServiceService) Update(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		util.LOGGER.Error("body err", err)
+		util.Logger().Error("body err", err)
 		WriteText(http.StatusBadRequest, err.Error(), w)
 		return
 	}
@@ -129,7 +129,7 @@ func (this *MicroServiceService) Update(w http.ResponseWriter, r *http.Request) 
 	}
 	err = json.Unmarshal(message, request)
 	if err != nil {
-		util.LOGGER.Error("Unmarshal error", err)
+		util.Logger().Error("Unmarshal error", err)
 		WriteText(http.StatusBadRequest, err.Error(), w)
 		return
 	}
@@ -140,7 +140,7 @@ func (this *MicroServiceService) Update(w http.ResponseWriter, r *http.Request) 
 func (this *MicroServiceService) Unregister(w http.ResponseWriter, r *http.Request) {
 	force := r.URL.Query().Get("force")
 	serviceId := r.URL.Query().Get(":serviceId")
-	util.LOGGER.Warnf(nil, "Service %s unregists, force is %s.", serviceId, force)
+	util.Logger().Warnf(nil, "Service %s unregists, force is %s.", serviceId, force)
 	if force != "0" && force != "1" && strings.TrimSpace(force) != "" {
 		WriteText(http.StatusBadRequest, "parameter force must be 1 or 0", w)
 		return
@@ -155,7 +155,7 @@ func (this *MicroServiceService) Unregister(w http.ResponseWriter, r *http.Reque
 
 func (this *MicroServiceService) GetServices(w http.ResponseWriter, r *http.Request) {
 	request := &pb.GetServicesRequest{}
-	util.LOGGER.Debugf("tenant is %s", util.ParseTenant(r.Context()))
+	util.Logger().Debugf("tenant is %s", util.ParseTenant(r.Context()))
 	resp, err := ServiceAPI.GetServices(r.Context(), request)
 	if err != nil {
 		WriteText(http.StatusInternalServerError, err.Error(), w)
@@ -211,14 +211,14 @@ func (this *MicroServiceService) GetServiceOne(w http.ResponseWriter, r *http.Re
 func (this *MicroServiceService) CreateDependenciesForMicroServices(w http.ResponseWriter, r *http.Request) {
 	requestBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		util.LOGGER.Error("body err", err)
+		util.Logger().Error("body err", err)
 		WriteText(http.StatusBadRequest, err.Error(), w)
 		return
 	}
 	request := &pb.CreateDependenciesRequest{}
 	err = json.Unmarshal(requestBody, request)
 	if err != nil {
-		util.LOGGER.Error("Invalid json", err)
+		util.Logger().Error("Invalid json", err)
 		WriteText(http.StatusInternalServerError, "Unmarshal error", w)
 		return
 	}
@@ -227,13 +227,13 @@ func (this *MicroServiceService) CreateDependenciesForMicroServices(w http.Respo
 	//fmt.Println("rsp is ", rsp)
 	//请求错误
 	if err != nil {
-		util.LOGGER.Errorf(err, "create dependency failed for service internal reason.")
+		util.Logger().Errorf(err, "create dependency failed for service internal reason.")
 		WriteText(http.StatusInternalServerError, err.Error(), w)
 		return
 	}
 	//服务内部错误
 	if rsp.Response.Code == pb.Response_FAIL {
-		util.LOGGER.Errorf(nil, "create dependency failed for request invalid. %s", rsp.Response.Message)
+		util.Logger().Errorf(nil, "create dependency failed for request invalid. %s", rsp.Response.Message)
 		WriteText(http.StatusBadRequest, rsp.Response.Message, w)
 		return
 	}
@@ -246,13 +246,13 @@ func (this *MicroServiceService) GetConProDependencies(w http.ResponseWriter, r 
 	}
 	resp, err := ServiceAPI.GetConsumerDependencies(r.Context(), request)
 	if err != nil {
-		util.LOGGER.Error("get Dependency failed.", err)
+		util.Logger().Error("get Dependency failed.", err)
 		WriteText(http.StatusInternalServerError, "get Dependency failed", w)
 		return
 	}
 	//服务请求错误
 	if resp.Response.Code == pb.Response_FAIL {
-		util.LOGGER.Errorf(nil, resp.Response.Message)
+		util.Logger().Errorf(nil, resp.Response.Message)
 		WriteText(http.StatusBadRequest, resp.Response.Message, w)
 		return
 	}
@@ -266,13 +266,13 @@ func (this *MicroServiceService) GetProConDependencies(w http.ResponseWriter, r 
 	}
 	resp, err := ServiceAPI.GetProviderDependencies(r.Context(), request)
 	if err != nil {
-		util.LOGGER.Error("get Dependency failed.", err)
+		util.Logger().Error("get Dependency failed.", err)
 		WriteText(http.StatusInternalServerError, "get Dependency failed", w)
 		return
 	}
 	//服务请求错误
 	if resp.Response.Code == pb.Response_FAIL {
-		util.LOGGER.Errorf(nil, resp.Response.Message)
+		util.Logger().Errorf(nil, resp.Response.Message)
 		WriteText(http.StatusBadRequest, resp.Response.Message, w)
 		return
 	}
@@ -283,7 +283,7 @@ func (this *MicroServiceService) GetProConDependencies(w http.ResponseWriter, r 
 func (this *MicroServiceService) UnregisterServices(w http.ResponseWriter, r *http.Request) {
 	request_body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		util.LOGGER.Error("body ,err", err)
+		util.Logger().Error("body ,err", err)
 		WriteText(http.StatusBadRequest, err.Error(), w)
 		return
 	}
@@ -292,7 +292,7 @@ func (this *MicroServiceService) UnregisterServices(w http.ResponseWriter, r *ht
 
 	err = json.Unmarshal(request_body, request)
 	if err != nil {
-		util.LOGGER.Error("unmarshal ,err ", err)
+		util.Logger().Error("unmarshal ,err ", err)
 		WriteText(http.StatusBadRequest, err.Error(), w)
 		return
 	}

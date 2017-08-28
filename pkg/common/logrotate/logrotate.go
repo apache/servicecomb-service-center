@@ -65,7 +65,7 @@ func removeExceededFiles(path string, baseFileName string,
 	}
 	fileList, err := FilterFileList(path, pat)
 	if err != nil {
-		util.LOGGER.Error("filepath.Walk() "+EscapPath(path)+" failed", err)
+		util.Logger().Error("filepath.Walk() "+EscapPath(path)+" failed", err)
 		return
 	}
 	sort.Strings(fileList)
@@ -75,10 +75,10 @@ func removeExceededFiles(path string, baseFileName string,
 	//remove exceeded files, keep file count below maxBackupCount
 	for len(fileList) > maxKeptCount {
 		filePath := fileList[0]
-		util.LOGGER.Warn("remove "+EscapPath(filePath), nil)
+		util.Logger().Warn("remove "+EscapPath(filePath), nil)
 		err := removeFile(filePath)
 		if err != nil {
-			util.LOGGER.Error("remove "+EscapPath(filePath)+" failed", err)
+			util.Logger().Error("remove "+EscapPath(filePath)+" failed", err)
 			break
 		}
 		//remove the first element of a list
@@ -133,7 +133,7 @@ func shouldRollover(fPath string, MaxFileSize int) bool {
 
 	fileInfo, err := os.Stat(fPath)
 	if err != nil {
-		util.LOGGER.Error("state "+EscapPath(fPath)+" failed", err)
+		util.Logger().Error("state "+EscapPath(fPath)+" failed", err)
 		return false
 	}
 
@@ -153,13 +153,13 @@ func doRollover(fPath string, MaxFileSize int, MaxBackupCount int) {
 	rotateFile := fPath + "." + timeStamp
 	err := CopyFile(fPath, rotateFile)
 	if err != nil {
-		util.LOGGER.Error("copy "+EscapPath(fPath)+" failed", err)
+		util.Logger().Error("copy "+EscapPath(fPath)+" failed", err)
 	}
 
 	//truncate the file
 	f, err := os.OpenFile(fPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
 	if err != nil {
-		util.LOGGER.Error("truncate "+EscapPath(fPath)+" failed", err)
+		util.Logger().Error("truncate "+EscapPath(fPath)+" failed", err)
 		return
 	}
 	f.Close()
@@ -175,7 +175,7 @@ func doBackup(fPath string, MaxBackupCount int) {
 	pat := fmt.Sprintf(`%s\.[0-9]{1,17}$`, filepath.Base(fPath))
 	rotateFileList, err := FilterFileList(filepath.Dir(fPath), pat)
 	if err != nil {
-		util.LOGGER.Error("walk"+EscapPath(fPath)+" failed", err)
+		util.Logger().Error("walk"+EscapPath(fPath)+" failed", err)
 		return
 	}
 
@@ -190,12 +190,12 @@ func doBackup(fPath string, MaxBackupCount int) {
 			err = compressFile(file, filepath.Base(fPath), true)
 		}
 		if err != nil {
-			util.LOGGER.Error("compress"+EscapPath(file)+" failed", err)
+			util.Logger().Error("compress"+EscapPath(file)+" failed", err)
 			continue
 		}
 		err = removeFile(file)
 		if err != nil {
-			util.LOGGER.Error("remove"+EscapPath(file)+" failed", err)
+			util.Logger().Error("remove"+EscapPath(file)+" failed", err)
 		}
 	}
 
@@ -206,7 +206,7 @@ func doBackup(fPath string, MaxBackupCount int) {
 func logRotateFile(file string, MaxFileSize int, MaxBackupCount int) {
 	defer func() {
 		if e := recover(); e != nil {
-			util.LOGGER.Errorf(nil, "LogRotate file %s catch an exception, err: %v.", EscapPath(file), e)
+			util.Logger().Errorf(nil, "LogRotate file %s catch an exception, err: %v.", EscapPath(file), e)
 		}
 	}()
 
@@ -221,14 +221,14 @@ func LogRotate(path string, MaxFileSize int, MaxBackupCount int) {
 	//filter .log .trace files
 	defer func() {
 		if e := recover(); e != nil {
-			util.LOGGER.Errorf(nil, "LogRotate catch an exception, err: %v.", e)
+			util.Logger().Errorf(nil, "LogRotate catch an exception, err: %v.", e)
 		}
 	}()
 
 	pat := `.(\.log|\.trace|\.out)$`
 	fileList, err := FilterFileList(path, pat)
 	if err != nil {
-		util.LOGGER.Error("filepath.Walk() "+EscapPath(path)+" failed", err)
+		util.Logger().Error("filepath.Walk() "+EscapPath(path)+" failed", err)
 		return
 	}
 

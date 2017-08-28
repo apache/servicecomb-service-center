@@ -45,7 +45,7 @@ type InstanceController struct {
 
 func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstanceRequest) (*pb.RegisterInstanceResponse, error) {
 	if in == nil || in.Instance == nil {
-		util.LOGGER.Errorf(nil, "register instance failed: invalid params.")
+		util.Logger().Errorf(nil, "register instance failed: invalid params.")
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
 		}, nil
@@ -55,7 +55,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 	instanceFlag := util.StringJoin([]string{instance.ServiceId, instance.HostName}, "/")
 	err := apt.Validate(instance)
 	if err != nil {
-		util.LOGGER.Errorf(err, "register instance failed, service %s, operator %s: invalid instance parameters.", instanceFlag, remoteIP)
+		util.Logger().Errorf(err, "register instance failed, service %s, operator %s: invalid instance parameters.", instanceFlag, remoteIP)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
@@ -65,7 +65,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 
 	// service id存在性校验
 	if !ms.ServiceExist(ctx, tenant, instance.ServiceId) {
-		util.LOGGER.Errorf(nil, "register instance failed, service %s, operator %s: service not exist.", instanceFlag, remoteIP)
+		util.Logger().Errorf(nil, "register instance failed, service %s, operator %s: service not exist.", instanceFlag, remoteIP)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
 		}, nil
@@ -77,11 +77,11 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 	oldInstanceId := ""
 
 	if instanceId == "" {
-		util.LOGGER.Infof("start register a new instance: service %s", instanceFlag)
+		util.Logger().Infof("start register a new instance: service %s", instanceFlag)
 		if len(instance.Endpoints) != 0 {
 			oldInstanceId, err = serviceUtil.CheckEndPoints(ctx, in)
 			if err != nil {
-				util.LOGGER.Errorf(err, "register instance failed, service %s, operator %s: check endpoints failed.", instanceFlag, remoteIP)
+				util.Logger().Errorf(err, "register instance failed, service %s, operator %s: check endpoints failed.", instanceFlag, remoteIP)
 				return &pb.RegisterInstanceResponse{
 					Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 				}, nil
@@ -96,13 +96,13 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 	if len(oldInstanceId) == 0 {
 		ok, err := quota.QuotaPlugins[beego.AppConfig.DefaultString("quota_plugin", "buildin")]().Apply4Quotas(ctx, quota.MicroServiceInstanceQuotaType, 0)
 		if err != nil {
-			util.LOGGER.Errorf(err, "register instance failed, service %s, operator %s: check apply quota failed.", instanceFlag, remoteIP)
+			util.Logger().Errorf(err, "register instance failed, service %s, operator %s: check apply quota failed.", instanceFlag, remoteIP)
 			return &pb.RegisterInstanceResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 			}, err
 		}
 		if !ok {
-			util.LOGGER.Errorf(nil, "register instance failed, service %s, operator %s: no quota apply.", instanceFlag, remoteIP)
+			util.Logger().Errorf(nil, "register instance failed, service %s, operator %s: no quota apply.", instanceFlag, remoteIP)
 			return &pb.RegisterInstanceResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "No quota to create instance."),
 			}, nil
@@ -115,7 +115,8 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 	}
 
 	instance.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
-	util.LOGGER.Debug(fmt.Sprintf("instance ID [%s]", instanceId))
+	instance.ModTimestamp = instance.Timestamp
+	util.Logger().Debug(fmt.Sprintf("instance ID [%s]", instanceId))
 
 	// 这里应该根据租约计时
 	renewalInterval := apt.REGISTRY_DEFAULT_LEASE_RENEWALINTERVAL
@@ -133,7 +134,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 			if instance.HealthCheck.Interval <= 0 || instance.HealthCheck.Interval >= math.MaxInt32 ||
 				instance.HealthCheck.Times <= 0 || instance.HealthCheck.Times >= math.MaxInt32 ||
 				instance.HealthCheck.Interval*(instance.HealthCheck.Times+1) >= math.MaxInt32 {
-				util.LOGGER.Errorf(err, "register instance %s(%s) failed for invalid health check settings.", instance.ServiceId, instance.HostName)
+				util.Logger().Errorf(err, "register instance %s(%s) failed for invalid health check settings.", instance.ServiceId, instance.HostName)
 				return &pb.RegisterInstanceResponse{
 					Response: pb.CreateResponse(pb.Response_FAIL, "Invalid health check settings."),
 				}, nil
@@ -148,7 +149,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 
 	data, err := json.Marshal(instance)
 	if err != nil {
-		util.LOGGER.Errorf(err, "register instance failed, service %s, instanceId %s, operator %s: json marshal data failed.",
+		util.Logger().Errorf(err, "register instance failed, service %s, instanceId %s, operator %s: json marshal data failed.",
 			instanceFlag, instanceId, remoteIP)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Instance file marshal error."),
@@ -166,7 +167,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 	key := apt.GenerateInstanceKey(tenant, instance.ServiceId, instanceId)
 	hbKey := apt.GenerateInstanceLeaseKey(tenant, instance.ServiceId, instanceId)
 
-	util.LOGGER.Debugf("start register service instance: %s %v, lease: %s %ds", key, instance, hbKey, ttl)
+	util.Logger().Debugf("start register service instance: %s %v, lease: %s %ds", key, instance, hbKey, ttl)
 
 	opts := []*registry.PluginOp{
 		{
@@ -197,7 +198,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 	// Set key file
 	_, err = registry.GetRegisterCenter().Txn(ctx, opts)
 	if err != nil {
-		util.LOGGER.Errorf(err, "register instance failed, service %s, instanceId %s, operator %s: commit data into etcd failed.",
+		util.Logger().Errorf(err, "register instance failed, service %s, instanceId %s, operator %s: commit data into etcd failed.",
 			instanceFlag, instanceId, remoteIP)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Commit operations failed."),
@@ -208,7 +209,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 	newDomain := util.ParseTenant(ctx)
 	ok, err := domain.DomainExist(ctx, newDomain)
 	if err != nil {
-		util.LOGGER.Errorf(err, "register instance failed, service %s, instanceId %s, operator %s: find domain failed.",
+		util.Logger().Errorf(err, "register instance failed, service %s, instanceId %s, operator %s: find domain failed.",
 			instanceFlag, instanceId, remoteIP)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Find domain failed."),
@@ -218,7 +219,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 	if !ok {
 		err = domain.NewDomain(ctx, util.ParseTenant(ctx))
 		if err != nil {
-			util.LOGGER.Errorf(err, "register instance failed, service %s, instanceId %s, operator %s: new tenant failed.",
+			util.Logger().Errorf(err, "register instance failed, service %s, instanceId %s, operator %s: new tenant failed.",
 				instanceFlag, instanceId, remoteIP)
 			return &pb.RegisterInstanceResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "Commit operations failed."),
@@ -226,7 +227,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 		}
 	}
 
-	util.LOGGER.Infof("register instance successful service %s, instanceId %s, operator %s.", instanceFlag, instanceId, remoteIP)
+	util.Logger().Infof("register instance successful service %s, instanceId %s, operator %s.", instanceFlag, instanceId, remoteIP)
 	return &pb.RegisterInstanceResponse{
 		Response:   pb.CreateResponse(pb.Response_SUCCESS, "Register service instance successfully."),
 		InstanceId: instanceId,
@@ -235,7 +236,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 
 func (s *InstanceController) Unregister(ctx context.Context, in *pb.UnregisterInstanceRequest) (*pb.UnregisterInstanceResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 || len(in.InstanceId) == 0 {
-		util.LOGGER.Errorf(nil, "unregister instance failed: invalid params.")
+		util.Logger().Errorf(nil, "unregister instance failed: invalid params.")
 		return &pb.UnregisterInstanceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
 		}, nil
@@ -249,13 +250,13 @@ func (s *InstanceController) Unregister(ctx context.Context, in *pb.UnregisterIn
 	remoteIP := util.GetIPFromContext(ctx)
 	isExist, err := serviceUtil.InstanceExist(ctx, tenant, serviceId, instanceId)
 	if err != nil {
-		util.LOGGER.Errorf(err, "unregister instance failed, instance %s, operator %s: query instance failed.", instanceFlag, remoteIP)
+		util.Logger().Errorf(err, "unregister instance failed, instance %s, operator %s: query instance failed.", instanceFlag, remoteIP)
 		return &pb.UnregisterInstanceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Query service instance failed."),
 		}, err
 	}
 	if !isExist {
-		util.LOGGER.Errorf(nil, "unregister instance failed, instance %s, operator %s: instance not exist.", instanceFlag, remoteIP)
+		util.Logger().Errorf(nil, "unregister instance failed, instance %s, operator %s: instance not exist.", instanceFlag, remoteIP)
 		return &pb.UnregisterInstanceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service instance does not exist."),
 		}, nil
@@ -263,7 +264,7 @@ func (s *InstanceController) Unregister(ctx context.Context, in *pb.UnregisterIn
 
 	err, isInnerErr := revokeInstance(ctx, tenant, serviceId, instanceId)
 	if err != nil {
-		util.LOGGER.Errorf(nil, "unregister instance failed, instance %s, operator %s: revoke instance failed.", instanceFlag, remoteIP)
+		util.Logger().Errorf(nil, "unregister instance failed, instance %s, operator %s: revoke instance failed.", instanceFlag, remoteIP)
 		if isInnerErr {
 			return &pb.UnregisterInstanceResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "Revoke instance failed."),
@@ -274,7 +275,7 @@ func (s *InstanceController) Unregister(ctx context.Context, in *pb.UnregisterIn
 		}, nil
 	}
 
-	util.LOGGER.Infof("unregister instance successful isntance %s, operator %s.", instanceFlag, remoteIP)
+	util.Logger().Infof("unregister instance successful isntance %s, operator %s.", instanceFlag, remoteIP)
 	return &pb.UnregisterInstanceResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Unregister service instance successfully."),
 	}, nil
@@ -302,13 +303,14 @@ func (s *InstanceController) Heartbeat(ctx context.Context, in *pb.HeartbeatRequ
 			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
 		}, nil
 	}
-
+	remoteIP := util.GetIPFromContext(ctx)
 	tenant := util.ParseTenantProject(ctx)
 	instanceFlag := util.StringJoin([]string{in.ServiceId, in.InstanceId}, "/")
 
 	_, ttl, err, isInnerErr := serviceUtil.HeartbeatUtil(ctx, tenant, in.ServiceId, in.InstanceId)
 	if err != nil {
-		util.LOGGER.Errorf(err, "heartbeat failed, instance %s, internal error '%v'.", instanceFlag, isInnerErr)
+		util.Logger().Errorf(err, "heartbeat failed, instance %s, internal error '%v'. operator: %s",
+			instanceFlag, isInnerErr, remoteIP)
 		if isInnerErr {
 			return &pb.HeartbeatResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "Service instance does not exist."),
@@ -318,7 +320,7 @@ func (s *InstanceController) Heartbeat(ctx context.Context, in *pb.HeartbeatRequ
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service instance does not exist."),
 		}, nil
 	}
-	util.LOGGER.Debugf("heartbeat successful: %s renew ttl to %d", instanceFlag, ttl)
+	util.Logger().Infof("heartbeat successful: %s renew ttl to %d. operator: %s", instanceFlag, ttl, remoteIP)
 	return &pb.HeartbeatResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Update service instance heartbeat successfully."),
 	}, nil
@@ -335,7 +337,7 @@ func grantOrRenewLease(ctx context.Context, tenant string, serviceId string, ins
 
 	leaseID, oldTTL, err, inner = serviceUtil.HeartbeatUtil(ctx, tenant, serviceId, instanceId)
 	if inner {
-		util.LOGGER.Errorf(err, "grant or renew lease failed, service %s, instanceId %s, operator %s",
+		util.Logger().Errorf(err, "grant or renew lease failed, service %s, instanceId %s, operator: %s",
 			instanceFlag, instanceId, remoteIP)
 		return
 	}
@@ -343,11 +345,11 @@ func grantOrRenewLease(ctx context.Context, tenant string, serviceId string, ins
 	if leaseID < 0 || (oldTTL > 0 && oldTTL != ttl) {
 		leaseID, err = registry.GetRegisterCenter().LeaseGrant(ctx, ttl)
 		if err != nil {
-			util.LOGGER.Errorf(err, "grant or renew lease failed, service %s, instanceId %s, operator %s: lease grant failed.",
+			util.Logger().Errorf(err, "grant or renew lease failed, service %s, instanceId %s, operator: %s: lease grant failed.",
 				instanceFlag, instanceId, remoteIP)
 			return
 		}
-		util.LOGGER.Infof("lease grant %d->%d successfully, service %s, instanceId %s, operator %s.",
+		util.Logger().Infof("lease grant %d->%d successfully, service %s, instanceId %s, operator: %s.",
 			oldTTL, ttl, instanceFlag, instanceId, remoteIP)
 		return
 	}
@@ -356,7 +358,7 @@ func grantOrRenewLease(ctx context.Context, tenant string, serviceId string, ins
 
 func (s *InstanceController) HeartbeatSet(ctx context.Context, in *pb.HeartbeatSetRequest) (*pb.HeartbeatSetResponse, error) {
 	if in == nil || len(in.Instances) == 0 {
-		util.LOGGER.Errorf(nil, "heartbeats failed, invalid request. Body not contain Instances or is empty.")
+		util.Logger().Errorf(nil, "heartbeats failed, invalid request. Body not contain Instances or is empty.")
 		return &pb.HeartbeatSetResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
 		}, nil
@@ -368,7 +370,7 @@ func (s *InstanceController) HeartbeatSet(ctx context.Context, in *pb.HeartbeatS
 	noMultiCounter := 0
 	for _, heartbeatElement := range in.Instances {
 		if _, ok := existFlag[heartbeatElement.ServiceId+heartbeatElement.InstanceId]; ok {
-			util.LOGGER.Warnf(nil, "heartbeatset %s/%s multiple", heartbeatElement.ServiceId, heartbeatElement.InstanceId)
+			util.Logger().Warnf(nil, "heartbeatset %s/%s multiple", heartbeatElement.ServiceId, heartbeatElement.InstanceId)
 			continue
 		} else {
 			existFlag[heartbeatElement.ServiceId+heartbeatElement.InstanceId] = true
@@ -383,7 +385,7 @@ func (s *InstanceController) HeartbeatSet(ctx context.Context, in *pb.HeartbeatS
 			_, _, err, _ := serviceUtil.HeartbeatUtil(ctx, tenant, element.ServiceId, element.InstanceId)
 			if err != nil {
 				hbRst.ErrMessage = err.Error()
-				util.LOGGER.Errorf(err, "heartbeatset failed, %s/%s", element.ServiceId, element.InstanceId)
+				util.Logger().Errorf(err, "heartbeatset failed, %s/%s", element.ServiceId, element.InstanceId)
 			}
 			instancesHbRst <- hbRst
 		}(heartbeatElement)
@@ -404,13 +406,13 @@ func (s *InstanceController) HeartbeatSet(ctx context.Context, in *pb.HeartbeatS
 		}
 	}
 	if !failFlag && successFlag {
-		util.LOGGER.Infof("heartbeatset success")
+		util.Logger().Infof("heartbeatset success")
 		return &pb.HeartbeatSetResponse{
 			Response:  pb.CreateResponse(pb.Response_SUCCESS, "Heartbeatset successfully."),
 			Instances: instanceHbRstArr,
 		}, nil
 	} else {
-		util.LOGGER.Errorf(nil, "heartbeatset failed, %v", in.Instances)
+		util.Logger().Errorf(nil, "heartbeatset failed, %v", in.Instances)
 		return &pb.HeartbeatSetResponse{
 			Response:  pb.CreateResponse(pb.Response_FAIL, "Heartbeatset failed."),
 			Instances: instanceHbRstArr,
@@ -422,12 +424,12 @@ func (s *InstanceController) GetOneInstance(ctx context.Context, in *pb.GetOneIn
 	err, isInternalErr := s.getInstancePreCheck(ctx, in)
 	if err != nil {
 		if isInternalErr {
-			util.LOGGER.Errorf(err, "get instance failed: pre check failed.")
+			util.Logger().Errorf(err, "get instance failed: pre check failed.")
 			return &pb.GetOneInstanceResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 			}, err
 		}
-		util.LOGGER.Errorf(err, "get instance failed: pre check failed.")
+		util.Logger().Errorf(err, "get instance failed: pre check failed.")
 		return &pb.GetOneInstanceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
@@ -439,21 +441,22 @@ func (s *InstanceController) GetOneInstance(ctx context.Context, in *pb.GetOneIn
 	serviceId := in.ProviderServiceId
 	instanceId := in.ProviderInstanceId
 	instance, err := serviceUtil.GetInstance(ctx, tenant, serviceId, instanceId)
+	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 	if err != nil {
-		util.LOGGER.Errorf(err, "get instance failed, %s(consumer/provider): get instance failed.", conPro)
+		util.Logger().Errorf(err, "get instance failed, %s(consumer/provider): get instance failed.", conPro)
 		return &pb.GetOneInstanceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Update service instance properties failed."),
 		}, err
 	}
 	if instance == nil {
-		util.LOGGER.Errorf(nil, "get instance failed, %s(consumer/provider): instance not exist.", conPro)
+		util.Logger().Errorf(nil, "get instance failed, %s(consumer/provider): instance not exist.", conPro)
 		return &pb.GetOneInstanceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service instance does not exist."),
 		}, nil
 	}
 
 	if len(in.Stage) != 0 && in.Stage != instance.Stage {
-		util.LOGGER.Errorf(nil, "get instance failed, %s(consumer/provider): stage not match, can't access.", conPro)
+		util.Logger().Errorf(nil, "get instance failed, %s(consumer/provider): stage not match, can't access.", conPro)
 		return &pb.GetOneInstanceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Stage mismatch, can't access this instance."),
 		}, nil
@@ -461,15 +464,16 @@ func (s *InstanceController) GetOneInstance(ctx context.Context, in *pb.GetOneIn
 
 	errAddDependence := s.addDependenceForService(ctx, tenant, in.ConsumerServiceId, in.ProviderServiceId)
 	if errAddDependence != nil {
-		util.LOGGER.Errorf(err, "get instance failed, %s(consumer/provider): add dependency failed.", conPro)
+		util.Logger().Errorf(err, "get instance failed, %s(consumer/provider): add dependency failed.", conPro)
 		return &pb.GetOneInstanceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Add dependency failed."),
 		}, err
 	}
 
 	return &pb.GetOneInstanceResponse{
-		Response: pb.CreateResponse(pb.Response_SUCCESS, "Get instance successfully."),
-		Instance: instance,
+		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Get instance successfully."),
+		Instance:  instance,
+		Timestamp: timestamp,
 	}, nil
 }
 
@@ -524,12 +528,12 @@ func (s *InstanceController) GetInstances(ctx context.Context, in *pb.GetInstanc
 	err, isInternalErr := s.getInstancePreCheck(ctx, in)
 	if err != nil {
 		if isInternalErr {
-			util.LOGGER.Errorf(err, "get instances failed: pre check failed.")
+			util.Logger().Errorf(err, "get instances failed: pre check failed.")
 			return &pb.GetInstancesResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 			}, err
 		}
-		util.LOGGER.Errorf(err, "get instances failed: pre check failed.")
+		util.Logger().Errorf(err, "get instances failed: pre check failed.")
 		return &pb.GetInstancesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
@@ -539,7 +543,7 @@ func (s *InstanceController) GetInstances(ctx context.Context, in *pb.GetInstanc
 	tenant := util.ParseTenantProject(ctx)
 	errAddDependence := s.addDependenceForService(ctx, tenant, in.ConsumerServiceId, in.ProviderServiceId)
 	if errAddDependence != nil {
-		util.LOGGER.Errorf(errAddDependence, "get instances failed, %s(consumer/provider): add dependency failed.", conPro)
+		util.Logger().Errorf(errAddDependence, "get instances failed, %s(consumer/provider): add dependency failed.", conPro)
 		return &pb.GetInstancesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, errAddDependence.Error()),
 		}, errAddDependence
@@ -547,8 +551,9 @@ func (s *InstanceController) GetInstances(ctx context.Context, in *pb.GetInstanc
 
 	instances := []*pb.MicroServiceInstance{}
 	instances, err = serviceUtil.GetAllInstancesOfOneService(ctx, tenant, in.ProviderServiceId, in.Stage)
+	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 	if err != nil {
-		util.LOGGER.Errorf(err, "get instances failed, %s(consumer/provider): get instances from etcd failed.", conPro)
+		util.Logger().Errorf(err, "get instances failed, %s(consumer/provider): get instances from etcd failed.", conPro)
 		return &pb.GetInstancesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, err
@@ -556,6 +561,7 @@ func (s *InstanceController) GetInstances(ctx context.Context, in *pb.GetInstanc
 	return &pb.GetInstancesResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Query service instances successfully."),
 		Instances: instances,
+		Timestamp: timestamp,
 	}, nil
 }
 
@@ -565,14 +571,14 @@ func (s *InstanceController) addDependenceForService(ctx context.Context, tenant
 		return err
 	}
 	if exist {
-		util.LOGGER.Infof("consumerServiceId:%s , providerServiceId:%s dependency more exists", consumerServiceId, providerServiceId)
+		util.Logger().Infof("consumerServiceId:%s , providerServiceId:%s dependency more exists", consumerServiceId, providerServiceId)
 		return nil
 	}
 	dependenceConKey := apt.GenerateConsumerDependencyKey(tenant, consumerServiceId, providerServiceId)
 	dependenceProKey := apt.GenerateProviderDependencyKey(tenant, providerServiceId, consumerServiceId)
 	timeStamp := strconv.FormatInt(time.Now().Unix(), 10)
-	util.LOGGER.Debugf("add service dependenceConKey, %s", dependenceConKey)
-	util.LOGGER.Debugf("add service dependenceProKey, %s", dependenceProKey)
+	util.Logger().Debugf("add service dependenceConKey, %s", dependenceConKey)
+	util.Logger().Debugf("add service dependenceProKey, %s", dependenceProKey)
 	optCon := &registry.PluginOp{
 		Action: registry.PUT,
 		Key:    util.StringToBytesWithNoCopy(dependenceConKey),
@@ -590,14 +596,14 @@ func (s *InstanceController) addDependenceForService(ctx context.Context, tenant
 	if err != nil {
 		return err
 	}
-	util.LOGGER.Infof("consumerServiceId:%s , providerServiceId:%s dependency add successful", consumerServiceId, providerServiceId)
+	util.Logger().Infof("consumerServiceId:%s , providerServiceId:%s dependency add successful", consumerServiceId, providerServiceId)
 	return nil
 }
 
 func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesRequest) (*pb.FindInstancesResponse, error) {
 	err := apt.Validate(in)
 	if err != nil {
-		util.LOGGER.Errorf(err, "find instance failed: invalid parameters.")
+		util.Logger().Errorf(err, "find instance failed: invalid parameters.")
 		return &pb.FindInstancesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
@@ -606,15 +612,15 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 	tenant := util.ParseTenantProject(ctx)
 
 	findFlag := util.StringJoin([]string{in.ConsumerServiceId, in.AppId, in.ServiceName, in.VersionRule}, "/")
-	service, err := ms.GetServiceByServiceId(ctx, tenant, in.ConsumerServiceId)
+	service, err := ms.GetService(ctx, tenant, in.ConsumerServiceId)
 	if err != nil {
-		util.LOGGER.Errorf(err, "find instance failed, %s: get consumer failed.", findFlag)
+		util.Logger().Errorf(err, "find instance failed, %s: get consumer failed.", findFlag)
 		return &pb.FindInstancesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
 	}
 	if service == nil {
-		util.LOGGER.Errorf(nil, "find instance failed, %s: consumer not exist.", findFlag)
+		util.Logger().Errorf(nil, "find instance failed, %s: consumer not exist.", findFlag)
 		return &pb.FindInstancesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Consumer does not exist."),
 		}, nil
@@ -628,13 +634,13 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 		Alias:       in.ServiceName,
 	})
 	if err != nil {
-		util.LOGGER.Errorf(err, "find instance failed, %s: get providers failed.", findFlag)
+		util.Logger().Errorf(err, "find instance failed, %s: get providers failed.", findFlag)
 		return &pb.FindInstancesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Get serviceId failed."),
 		}, err
 	}
 	if len(ids) == 0 {
-		util.LOGGER.Errorf(nil, "find instance failed, %s: no provider matched.", findFlag)
+		util.Logger().Errorf(nil, "find instance failed, %s: no provider matched.", findFlag)
 		return &pb.FindInstancesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
 		}, nil
@@ -649,7 +655,7 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 			Stage:             in.Stage,
 		})
 		if err != nil {
-			util.LOGGER.Errorf(err, "find instance failed, %s: get service %s 's instance failed.", findFlag, serviceId)
+			util.Logger().Errorf(err, "find instance failed, %s: get service %s 's instance failed.", findFlag, serviceId)
 			return &pb.FindInstancesResponse{
 				Response: resp.GetResponse(),
 			}, err
@@ -658,11 +664,12 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 			instances = append(instances, resp.GetInstances()...)
 		}
 	}
+	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 	consumer := pb.ToMicroServiceKey(tenant, service)
 	//维护version的规则
-	providerService, _ := ms.GetServiceByServiceId(ctx, tenant, ids[0])
+	providerService, _ := ms.GetService(ctx, tenant, ids[0])
 	if providerService == nil {
-		util.LOGGER.Errorf(nil, "find instance failed, %s: no provider matched.", findFlag)
+		util.Logger().Errorf(nil, "find instance failed, %s: no provider matched.", findFlag)
 		return &pb.FindInstancesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
 		}, nil
@@ -675,7 +682,7 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 	}
 	lock, err := mux.Lock(mux.GLOBAL_LOCK)
 	if err != nil {
-		util.LOGGER.Errorf(err, "find instance failed, %s: create lock failed.", findFlag)
+		util.Logger().Errorf(err, "find instance failed, %s: create lock failed.", findFlag)
 		return &pb.FindInstancesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, err
@@ -683,33 +690,34 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 	err, _ = dependency.AddServiceVersionRule(ctx, provider, tenant, consumer)
 	lock.Unlock()
 	if err != nil {
-		util.LOGGER.Errorf(err, "find instance failed, %s: add service version rule failed.", findFlag)
+		util.Logger().Errorf(err, "find instance failed, %s: add service version rule failed.", findFlag)
 		return &pb.FindInstancesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
 	}
-	util.LOGGER.Infof("find instance: add dependency susscess, %s", findFlag)
+	util.Logger().Infof("find instance: add dependency susscess, %s", findFlag)
 
 	return &pb.FindInstancesResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Query service instances successfully."),
 		Instances: instances,
+		Timestamp: timestamp,
 	}, nil
 }
 
 func (s *InstanceController) existDependence(ctx context.Context, tenant string, consumerServiceId string, providerServiceId string) (bool, error) {
 	dependenceKey := apt.GenerateConsumerDependencyKey(tenant, consumerServiceId, providerServiceId)
-	util.LOGGER.Debugf("add service dependence, %s", dependenceKey)
+	util.Logger().Debugf("add service dependence, %s", dependenceKey)
 	rsp, err := store.Store().Dependency().Search(ctx, &registry.PluginOp{
 		Action:    registry.GET,
 		Key:       util.StringToBytesWithNoCopy(dependenceKey),
 		CountOnly: true,
 	})
 	if err != nil {
-		util.LOGGER.Errorf(nil, "Get %s and %s dependency info failed.", consumerServiceId, providerServiceId)
+		util.Logger().Errorf(nil, "Get %s and %s dependency info failed.", consumerServiceId, providerServiceId)
 		return false, err
 	}
 	if rsp.Count > 0 {
-		util.LOGGER.Debugf("%s and %s dependency more existed.", consumerServiceId, providerServiceId)
+		util.Logger().Debugf("%s and %s dependency more existed.", consumerServiceId, providerServiceId)
 		return true, nil
 	}
 	return false, nil
@@ -717,7 +725,7 @@ func (s *InstanceController) existDependence(ctx context.Context, tenant string,
 
 func (s *InstanceController) UpdateStatus(ctx context.Context, in *pb.UpdateInstanceStatusRequest) (*pb.UpdateInstanceStatusResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 || len(in.InstanceId) == 0 {
-		util.LOGGER.Errorf(nil, "update instance status failed: invalid params.")
+		util.Logger().Errorf(nil, "update instance status failed: invalid params.")
 		return &pb.UpdateInstanceStatusResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
 		}, nil
@@ -725,7 +733,7 @@ func (s *InstanceController) UpdateStatus(ctx context.Context, in *pb.UpdateInst
 	tenant := util.ParseTenantProject(ctx)
 	updateStatusFlag := util.StringJoin([]string{in.ServiceId, in.InstanceId, in.Status}, "/")
 	if err := apt.Validate(in); err != nil {
-		util.LOGGER.Errorf(nil, "update instance status failed, %s.", updateStatusFlag)
+		util.Logger().Errorf(nil, "update instance status failed, %s.", updateStatusFlag)
 		return &pb.UpdateInstanceStatusResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
@@ -736,13 +744,13 @@ func (s *InstanceController) UpdateStatus(ctx context.Context, in *pb.UpdateInst
 	var instance *pb.MicroServiceInstance
 	instance, err = serviceUtil.GetInstance(ctx, tenant, in.ServiceId, in.InstanceId)
 	if err != nil {
-		util.LOGGER.Errorf(err, "update instance status failed, %s: get instance from etcd failed.", updateStatusFlag)
+		util.Logger().Errorf(err, "update instance status failed, %s: get instance from etcd failed.", updateStatusFlag)
 		return &pb.UpdateInstanceStatusResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Update service instance properties failed."),
 		}, err
 	}
 	if instance == nil {
-		util.LOGGER.Errorf(nil, "update instance status failed, %s: instance not exist.", updateStatusFlag)
+		util.Logger().Errorf(nil, "update instance status failed, %s: instance not exist.", updateStatusFlag)
 		return &pb.UpdateInstanceStatusResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service instance does not exist."),
 		}, nil
@@ -752,7 +760,7 @@ func (s *InstanceController) UpdateStatus(ctx context.Context, in *pb.UpdateInst
 
 	err, isInnerErr := updateInstance(ctx, tenant, instance)
 	if err != nil {
-		util.LOGGER.Errorf(err, "update instance status failed, %s: update instance lease failed.", updateStatusFlag)
+		util.Logger().Errorf(err, "update instance status failed, %s: update instance lease failed.", updateStatusFlag)
 		if isInnerErr {
 			return &pb.UpdateInstanceStatusResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "Update instance status failed."),
@@ -763,7 +771,7 @@ func (s *InstanceController) UpdateStatus(ctx context.Context, in *pb.UpdateInst
 		}, nil
 	}
 
-	util.LOGGER.Infof("update instance status successful: %s.", updateStatusFlag)
+	util.Logger().Infof("update instance status successful: %s.", updateStatusFlag)
 	return &pb.UpdateInstanceStatusResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Update service instance information successfully."),
 	}, nil
@@ -771,7 +779,7 @@ func (s *InstanceController) UpdateStatus(ctx context.Context, in *pb.UpdateInst
 
 func (s *InstanceController) UpdateInstanceProperties(ctx context.Context, in *pb.UpdateInstancePropsRequest) (*pb.UpdateInstancePropsResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 || len(in.InstanceId) == 0 || in.Properties == nil {
-		util.LOGGER.Errorf(nil, "update instance properties failed: invalid params.")
+		util.Logger().Errorf(nil, "update instance properties failed: invalid params.")
 		return &pb.UpdateInstancePropsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
 		}, nil
@@ -785,13 +793,13 @@ func (s *InstanceController) UpdateInstanceProperties(ctx context.Context, in *p
 
 	instance, err = serviceUtil.GetInstance(ctx, tenant, in.ServiceId, in.InstanceId)
 	if err != nil {
-		util.LOGGER.Errorf(err, "update instance properties failed, %s: get instance from etcd failed.", instanceFlag)
+		util.Logger().Errorf(err, "update instance properties failed, %s: get instance from etcd failed.", instanceFlag)
 		return &pb.UpdateInstancePropsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Update service instance properties failed."),
 		}, err
 	}
 	if instance == nil {
-		util.LOGGER.Errorf(nil, "update instance properties failed, %s: instance not exist.", instanceFlag)
+		util.Logger().Errorf(nil, "update instance properties failed, %s: instance not exist.", instanceFlag)
 		return &pb.UpdateInstancePropsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service instance does not exist."),
 		}, nil
@@ -804,7 +812,7 @@ func (s *InstanceController) UpdateInstanceProperties(ctx context.Context, in *p
 
 	err, isInnerErr := updateInstance(ctx, tenant, instance)
 	if err != nil {
-		util.LOGGER.Errorf(err, "update instance properties failed, %s: update instance lease failed.", instanceFlag)
+		util.Logger().Errorf(err, "update instance properties failed, %s: update instance lease failed.", instanceFlag)
 		if isInnerErr {
 			return &pb.UpdateInstancePropsResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "Update instance lease failed."),
@@ -815,7 +823,7 @@ func (s *InstanceController) UpdateInstanceProperties(ctx context.Context, in *p
 		}, nil
 	}
 
-	util.LOGGER.Infof("update instance properties successful: %s.", instanceFlag)
+	util.Logger().Infof("update instance properties successful: %s.", instanceFlag)
 	return &pb.UpdateInstancePropsResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Update service instance information successfully."),
 	}, nil
@@ -830,6 +838,7 @@ func updateInstance(ctx context.Context, tenant string, instance *pb.MicroServic
 		return errors.New("Instance's leaseId not exist."), false
 	}
 
+	instance.ModTimestamp = strconv.FormatInt(time.Now().Unix(), 10)
 	data, err := json.Marshal(instance)
 	if err != nil {
 		return err, true
@@ -867,14 +876,14 @@ func (s *InstanceController) WatchPreOpera(ctx context.Context, in *pb.WatchInst
 func (s *InstanceController) Watch(in *pb.WatchInstanceRequest, stream pb.ServiceInstanceCtrl_WatchServer) error {
 	var err error
 	if err = s.WatchPreOpera(stream.Context(), in); err != nil {
-		util.LOGGER.Errorf(err, "establish watch failed: invalid params.")
+		util.Logger().Errorf(err, "establish watch failed: invalid params.")
 		return err
 	}
 	tenant := util.ParseTenantProject(stream.Context())
 	watcher := nf.NewInstanceWatcher(in.SelfServiceId, apt.GetInstanceRootKey(tenant)+"/")
 	err = nf.GetNotifyService().AddSubscriber(watcher)
-	util.LOGGER.Infof("start watch instance status, watcher %s %s", watcher.Subject(), watcher.Id())
-	return nf.WatchJobHandler(watcher, stream, nf.GetNotifyService().Config.NotifyTimeout)
+	util.Logger().Infof("start watch instance status, watcher %s %s", watcher.Subject(), watcher.Id())
+	return nf.HandleWatchJob(watcher, stream, nf.GetNotifyService().Config.NotifyTimeout)
 }
 
 func (s *InstanceController) WebSocketWatch(ctx context.Context, in *pb.WatchInstanceRequest, conn *websocket.Conn) {
@@ -882,9 +891,7 @@ func (s *InstanceController) WebSocketWatch(ctx context.Context, in *pb.WatchIns
 		nf.EstablishWebSocketError(conn, err)
 		return
 	}
-	tenant := util.ParseTenantProject(ctx)
-	watcher := nf.NewInstanceWatcher(in.SelfServiceId, apt.GetInstanceRootKey(tenant)+"/")
-	nf.DoWebSocketWatch(nf.GetNotifyService(), watcher, conn)
+	nf.DoWebSocketWatch(ctx, in.SelfServiceId, conn)
 }
 
 func (s *InstanceController) WebSocketListAndWatch(ctx context.Context, in *pb.WatchInstanceRequest, conn *websocket.Conn) {
@@ -892,12 +899,9 @@ func (s *InstanceController) WebSocketListAndWatch(ctx context.Context, in *pb.W
 		nf.EstablishWebSocketError(conn, err)
 		return
 	}
-	tenant := util.ParseTenantProject(ctx)
-	watcher := nf.NewInstanceListWatcher(in.SelfServiceId, apt.GetInstanceRootKey(tenant)+"/",
-		func() ([]*pb.WatchInstanceResponse, int64) {
-			return nf.QueryAllProvidersIntances(ctx, in.SelfServiceId)
-		})
-	nf.DoWebSocketWatch(nf.GetNotifyService(), watcher, conn)
+	nf.DoWebSocketListAndWatch(ctx, in.SelfServiceId, func() ([]*pb.WatchInstanceResponse, int64) {
+		return serviceUtil.QueryAllProvidersIntances(ctx, in.SelfServiceId)
+	}, conn)
 }
 
 func (s *InstanceController) ClusterHealth(ctx context.Context) (*pb.GetInstancesResponse, error) {
@@ -910,13 +914,13 @@ func (s *InstanceController) ClusterHealth(ctx context.Context) (*pb.GetInstance
 	})
 
 	if err != nil {
-		util.LOGGER.Errorf(err, "health check failed: get service center serviceId failed.")
+		util.Logger().Errorf(err, "health check failed: get service center serviceId failed.")
 		return &pb.GetInstancesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service center serviceId failed."),
 		}, err
 	}
 	if len(serviceId) == 0 {
-		util.LOGGER.Errorf(nil, "health check failed: get service center serviceId not exist.")
+		util.Logger().Errorf(nil, "health check failed: get service center serviceId not exist.")
 		return &pb.GetInstancesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service center serviceId not exist."),
 		}, nil
@@ -924,7 +928,7 @@ func (s *InstanceController) ClusterHealth(ctx context.Context) (*pb.GetInstance
 	instances := []*pb.MicroServiceInstance{}
 	instances, err = serviceUtil.GetAllInstancesOfOneService(ctx, tenant, serviceId, "")
 	if err != nil {
-		util.LOGGER.Errorf(err, "health check failed: get service center instances failed.")
+		util.Logger().Errorf(err, "health check failed: get service center instances failed.")
 		return &pb.GetInstancesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service center instances failed."),
 		}, err

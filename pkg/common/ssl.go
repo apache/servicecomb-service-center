@@ -94,7 +94,7 @@ func parseSSLCipherSuites(ciphers string) []uint16 {
 			cipherSuiteList = append(cipherSuiteList, cipherSuite)
 		} else {
 			// 配置算法不存在
-			util.LOGGER.Warnf(nil, "cipher %s not exist.", cipherSuiteName)
+			util.Logger().Warnf(nil, "cipher %s not exist.", cipherSuiteName)
 		}
 	}
 
@@ -106,14 +106,14 @@ func parseSSLProtocol(sprotocol string) uint16 {
 	if protocol, ok := TLS_VERSION_MAP[sprotocol]; ok {
 		result = protocol
 	} else {
-		util.LOGGER.Warnf(nil, "invalid ssl minimal version invalid(%s), use default.", sprotocol)
+		util.Logger().Warnf(nil, "invalid ssl minimal version invalid(%s), use default.", sprotocol)
 	}
 
 	return result
 }
 
 func loadServerSSLConfig() {
-	util.LOGGER.Debugf("load server ssl configurations.")
+	util.Logger().Debugf("load server ssl configurations.")
 	sslServerConfig.SSLEnabled = beego.AppConfig.DefaultInt("ssl_mode", 1) != 0
 	sslServerConfig.VerifyClient = beego.AppConfig.DefaultInt("ssl_verify_client", 1) != 0
 	sslServerProtocol := beego.AppConfig.DefaultString("ssl_protocols", "TLSv1.2")
@@ -123,12 +123,12 @@ func loadServerSSLConfig() {
 		// 如果配置了SSL模式，SSL参数必须配置
 		keyPassphase, err := ioutil.ReadFile(getSSLPath("cert_pwd"))
 		if err != nil {
-			util.LOGGER.Warn("read file cert_pwd failed.", err)
+			util.Logger().Warn("read file cert_pwd failed.", err)
 		}
 		sslServerConfig.KeyPassphase = util.BytesToStringWithNoCopy(keyPassphase)
 	}
 
-	util.LOGGER.Infof("server ssl configs enabled %t, verifyClient %t, minv %#x, ciphers %d, phase %d.",
+	util.Logger().Infof("server ssl configs enabled %t, verifyClient %t, minv %#x, ciphers %d, phase %d.",
 		sslServerConfig.SSLEnabled,
 		sslServerConfig.VerifyClient,
 		sslServerConfig.MinVersion,
@@ -137,7 +137,7 @@ func loadServerSSLConfig() {
 }
 
 func loadClientSSLConfig() {
-	util.LOGGER.Debugf("load client ssl configurations.")
+	util.Logger().Debugf("load client ssl configurations.")
 	sslClientConfig.SSLEnabled = sslServerConfig.SSLEnabled
 	sslClientConfig.VerifyClient = sslServerConfig.VerifyClient
 	sslClientProtocol := beego.AppConfig.DefaultString("ssl_client_protocols", "")
@@ -158,7 +158,7 @@ func loadClientSSLConfig() {
 
 	sslClientConfig.KeyPassphase = sslServerConfig.KeyPassphase
 
-	util.LOGGER.Infof("client ssl configs enabled %t, verifyclient %t, minv %#x, cipers %d, pphase %d.",
+	util.Logger().Infof("client ssl configs enabled %t, verifyclient %t, minv %#x, cipers %d, pphase %d.",
 		sslClientConfig.SSLEnabled,
 		sslClientConfig.VerifyClient,
 		sslClientConfig.MinVersion,

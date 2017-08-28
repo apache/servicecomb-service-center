@@ -19,18 +19,14 @@ import (
 	"fmt"
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/server/core/registry"
-	"github.com/ServiceComb/service-center/server/core/registry/store"
 	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	"github.com/ServiceComb/service-center/util"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/gorilla/websocket"
 	"golang.org/x/net/context"
-	"strings"
 	"time"
 )
 
-func WatchJobHandler(watcher *ListWatcher, stream pb.ServiceInstanceCtrl_WatchServer, timeout time.Duration) (err error) {
+func HandleWatchJob(watcher *ListWatcher, stream pb.ServiceInstanceCtrl_WatchServer, timeout time.Duration) (err error) {
 	for {
 		select {
 		case <-time.After(timeout):
@@ -38,17 +34,17 @@ func WatchJobHandler(watcher *ListWatcher, stream pb.ServiceInstanceCtrl_WatchSe
 		case job := <-watcher.Job:
 			if job == nil {
 				err = errors.New("channel is closed")
-				util.LOGGER.Errorf(err, "watcher %s %s caught an exception",
+				util.Logger().Errorf(err, "watcher %s %s caught an exception",
 					watcher.Subject(), watcher.Id())
 				return
 			}
 			resp := job.(*WatchJob).Response
-			util.LOGGER.Infof("event is coming in, watcher %s %s",
+			util.Logger().Infof("event is coming in, watcher %s %s",
 				watcher.Subject(), watcher.Id())
 
 			err = stream.Send(resp)
 			if err != nil {
-				util.LOGGER.Errorf(err, "send message error, watcher %s %s",
+				util.Logger().Errorf(err, "send message error, watcher %s %s",
 					watcher.Subject(), watcher.Id())
 				watcher.SetError(err)
 				return
@@ -57,189 +53,229 @@ func WatchJobHandler(watcher *ListWatcher, stream pb.ServiceInstanceCtrl_WatchSe
 	}
 }
 
-func websocketHeartbeat(conn *websocket.Conn, messageType int, watcher *ListWatcher, timeout time.Duration) error {
-	err := conn.WriteControl(messageType, util.StringToBytesWithNoCopy("heartbeat"), time.Now().Add(timeout))
+type WebSocketHandler struct {
+	ctx             context.Context
+	conn            *websocket.Conn
+	watcher         *ListWatcher
+	needPingWatcher bool
+	closed          chan struct{}
+}
+
+func (wh *WebSocketHandler) Init() error {
+	remoteAddr := wh.conn.RemoteAddr().String()
+	if err := GetNotifyService().AddSubscriber(wh.watcher); err != nil {
+		err = fmt.Errorf("establish[%s] websocket watch failed: notify service error, %s.",
+			remoteAddr, err.Error())
+		util.Logger().Errorf(nil, err.Error())
+
+		err = wh.conn.WriteMessage(websocket.TextMessage, util.StringToBytesWithNoCopy(err.Error()))
+		if err != nil {
+			util.Logger().Errorf(err, "establish[%s] websocket watch failed: write message failed.", remoteAddr)
+		}
+		return err
+	}
+	util.Logger().Debugf("start watching instance status, watcher[%s] %s %s",
+		remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
+	return nil
+}
+
+func (wh *WebSocketHandler) Timeout() time.Duration {
+	return GetNotifyService().Config.NotifyTimeout
+}
+
+func (wh *WebSocketHandler) websocketHeartbeat(messageType int) error {
+	err := wh.conn.WriteControl(messageType, []byte{}, time.Now().Add(wh.Timeout()))
 	if err != nil {
 		messageTypeName := "Ping"
 		if messageType == websocket.PongMessage {
 			messageTypeName = "Pong"
 		}
-		util.LOGGER.Errorf(err, "fail to send '%s' to watcher[%s] %s %s",
-			messageTypeName, conn.RemoteAddr(), watcher.Subject(), watcher.Id())
-		watcher.SetError(err)
+		util.Logger().Errorf(err, "fail to send '%s' to watcher[%s] %s %s", messageTypeName,
+			wh.conn.RemoteAddr(), wh.watcher.Subject(), wh.watcher.Id())
+		//wh.watcher.SetError(err)
 		return err
 	}
 	return nil
 }
 
-func WatchWebSocketJobHandler(conn *websocket.Conn, watcher *ListWatcher, timeout time.Duration) {
-	remoteAddr := conn.RemoteAddr().String()
-	conn.SetPongHandler(func(message string) error {
-		util.LOGGER.Debugf("receive heartbeat feedback message %s from watcher[%s] %s %s",
-			message, remoteAddr, watcher.Subject(), watcher.Id())
+func (wh *WebSocketHandler) HandleWatchWebSocketControlMessage() {
+	defer close(wh.closed)
+
+	remoteAddr := wh.conn.RemoteAddr().String()
+	// PING
+	wh.conn.SetPingHandler(func(message string) error {
+		if wh.needPingWatcher {
+			util.Logger().Infof("received 'Ping' message '%s' from watcher[%s] %s %s, no longer send 'Ping' to it",
+				message, remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
+		}
+		wh.needPingWatcher = false
+		return wh.websocketHeartbeat(websocket.PongMessage)
+	})
+	// PONG
+	wh.conn.SetPongHandler(func(message string) error {
+		util.Logger().Debugf("received 'Pong' message %s from watcher[%s] %s %s",
+			message, remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
 		return nil
 	})
-	conn.SetPingHandler(func(message string) error {
-		util.LOGGER.Debugf("receive heartbeat message %s from watcher[%s] %s %s, now give it a reply",
-			message, remoteAddr, watcher.Subject(), watcher.Id())
-		return websocketHeartbeat(conn, websocket.PongMessage, watcher, timeout)
+	// CLOSE
+	wh.conn.SetCloseHandler(func(code int, text string) error {
+		util.Logger().Warnf(nil, "watcher[%s] %s %s active closed", remoteAddr,
+			wh.watcher.Subject(), wh.watcher.Id())
+		return wh.Close(code, text)
 	})
+
+	for {
+		_, _, err := wh.conn.ReadMessage()
+		if err != nil {
+			wh.watcher.SetError(err)
+			return
+		}
+	}
+}
+
+func (wh *WebSocketHandler) HandleWatchWebSocketJob() {
+	remoteAddr := wh.conn.RemoteAddr().String()
+
 	for {
 		select {
-		case <-time.After(timeout):
-			util.LOGGER.Debugf("send heartbeat to watcher[%s] %s %s", remoteAddr, watcher.Subject(), watcher.Id())
-			err := websocketHeartbeat(conn, websocket.PingMessage, watcher, timeout)
+		case <-wh.closed:
+			return
+		case <-wh.ctx.Done():
+			util.Logger().Warnf(nil, "handle timed out, watcher[%s] %s %s", remoteAddr,
+				wh.watcher.Subject(), wh.watcher.Id())
+			return
+		case <-time.After(wh.Timeout()):
+			if wh.watcher.Err() != nil {
+				return
+			}
+
+			tenant := util.ParseTenantProject(wh.ctx)
+			if !ms.ServiceExist(context.Background(), tenant, wh.watcher.Id()) {
+				err := fmt.Errorf("Service does not exit.")
+				util.Logger().Warnf(err, "watcher[%s] %s %s exit", remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
+				err = wh.conn.WriteMessage(websocket.TextMessage, util.StringToBytesWithNoCopy(err.Error()))
+				if err != nil {
+					util.Logger().Errorf(err, "watcher[%s] %s %s catch an err: write message error",
+						remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
+				}
+				return
+			}
+
+			if !wh.needPingWatcher {
+				continue
+			}
+
+			util.Logger().Debugf("send 'Ping' message to watcher[%s] %s %s", remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
+			err := wh.websocketHeartbeat(websocket.PingMessage)
 			if err != nil {
 				return
 			}
-		case job := <-watcher.Job:
-			if job == nil {
-				err := conn.WriteMessage(websocket.TextMessage,
-					util.StringToBytesWithNoCopy("watch catch a err: watcher quit for server shutdown"))
-				if err != nil {
-					util.LOGGER.Errorf(err, "watch catch a err: write message error, watcher[%s] %s %s",
-						remoteAddr, watcher.Subject(), watcher.Id())
-					return
-				}
-				util.LOGGER.Warnf(nil, "watch catch a err: server shutdown, watcher[%s] %s %s",
-					remoteAddr, watcher.Subject(), watcher.Id())
+		case job := <-wh.watcher.Job:
+			if wh.watcher.Err() != nil {
 				return
 			}
+
+			if job == nil {
+				err := wh.conn.WriteMessage(websocket.TextMessage,
+					util.StringToBytesWithNoCopy("watcher catch an err: server shutdown"))
+				if err != nil {
+					util.Logger().Errorf(err, "watcher[%s] %s %s catch an err: write message error",
+						remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
+					return
+				}
+				util.Logger().Warnf(nil, "watcher[%s] %s %s catch an err: server shutdown",
+					remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
+				return
+			}
+
 			resp := job.(*WatchJob).Response
-			util.LOGGER.Warnf(nil, "event[%s] is coming in, watcher[%s] %s %s, providers' info %s %s",
-				resp.Action, remoteAddr, watcher.Subject(), watcher.Id(), resp.Instance.ServiceId, resp.Instance.InstanceId)
+
+			providerFlag := fmt.Sprintf("%s/%s/%s", resp.Key.AppId, resp.Key.ServiceName, resp.Key.Version)
+			if resp.Action != string(pb.EVT_EXPIRE) {
+				providerFlag = fmt.Sprintf("%s/%s(%s)", resp.Instance.ServiceId, resp.Instance.InstanceId, providerFlag)
+			}
+			util.Logger().Warnf(nil, "event[%s] is coming in, watcher[%s] %s %s, providers' info %s",
+				resp.Action, remoteAddr, wh.watcher.Subject(), wh.watcher.Id(), providerFlag)
 
 			resp.Response = nil
 			data, err := json.Marshal(resp)
 			if err != nil {
-				util.LOGGER.Errorf(err, "watch catch a err: marshal output file error, watcher[%s] %s %s",
-					remoteAddr, watcher.Subject(), watcher.Id())
-				watcher.SetError(err)
-
+				util.Logger().Errorf(err, "watcher[%s] %s %s catch an err: marshal output file error",
+					remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
 				message := fmt.Sprintf("marshal output file error, %s", err.Error())
-				err = conn.WriteMessage(websocket.TextMessage, util.StringToBytesWithNoCopy(message))
+				err = wh.conn.WriteMessage(websocket.TextMessage, util.StringToBytesWithNoCopy(message))
 				if err != nil {
-					util.LOGGER.Errorf(err, "watch catch a err: write message error, watcher[%s] %s %s",
-						remoteAddr, watcher.Subject(), watcher.Id())
+					util.Logger().Errorf(err, "watcher[%s] %s %s catch an err: write message error",
+						remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
 				}
 				return
 			}
-			err = conn.WriteMessage(websocket.TextMessage, data)
+			err = wh.conn.WriteMessage(websocket.TextMessage, data)
 			if err != nil {
-				util.LOGGER.Errorf(err, "watch catch a err: write message error, watcher[%s] %s %s",
-					remoteAddr, watcher.Subject(), watcher.Id())
-				watcher.SetError(err)
+				util.Logger().Errorf(err, "watcher[%s] %s %s catch an err: write message error",
+					remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
 				return
 			}
 		}
 	}
 }
 
-func DoWebSocketWatch(service *NotifyService, watcher *ListWatcher, conn *websocket.Conn) {
-	remoteAddr := conn.RemoteAddr().String()
-	if err := service.AddSubscriber(watcher); err != nil {
-		err = fmt.Errorf("establish[%s] websocket watch failed: notify service error, %s.",
-			remoteAddr, err.Error())
-		util.LOGGER.Errorf(nil, err.Error())
+func (wh *WebSocketHandler) Close(code int, text string) error {
+	remoteAddr := wh.conn.RemoteAddr().String()
+	message := []byte{}
+	if code != websocket.CloseNoStatusReceived {
+		message = websocket.FormatCloseMessage(code, text)
+	}
+	err := wh.conn.WriteControl(websocket.CloseMessage, message, time.Now().Add(wh.Timeout()))
+	if err != nil {
+		util.Logger().Errorf(err, "watcher[%s] %s %s catch an err: write 'Close' message error",
+			remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
+		return err
+	}
+	return nil
+}
 
-		err = conn.WriteMessage(websocket.TextMessage, util.StringToBytesWithNoCopy(err.Error()))
-		if err != nil {
-			util.LOGGER.Errorf(err, "establish[%s] websocket watch failed: write message failed.", remoteAddr)
-		}
+func DoWebSocketWatch(ctx context.Context, serviceId string, conn *websocket.Conn) {
+	tenant := util.ParseTenantProject(ctx)
+	handler := &WebSocketHandler{
+		ctx:             ctx,
+		conn:            conn,
+		watcher:         NewInstanceWatcher(serviceId, apt.GetInstanceRootKey(tenant)+"/"),
+		needPingWatcher: true,
+		closed:          make(chan struct{}),
+	}
+	processHandler(handler)
+}
+
+func DoWebSocketListAndWatch(ctx context.Context, serviceId string, f func() ([]*pb.WatchInstanceResponse, int64), conn *websocket.Conn) {
+	tenant := util.ParseTenantProject(ctx)
+	handler := &WebSocketHandler{
+		ctx:             ctx,
+		conn:            conn,
+		watcher:         NewInstanceListWatcher(serviceId, apt.GetInstanceRootKey(tenant)+"/", f),
+		needPingWatcher: true,
+		closed:          make(chan struct{}),
+	}
+	processHandler(handler)
+}
+
+func processHandler(handler *WebSocketHandler) {
+	if err := handler.Init(); err != nil {
 		return
 	}
-	util.LOGGER.Debugf("start watching instance status, watcher[%s] %s %s",
-		remoteAddr, watcher.Subject(), watcher.Id())
-	WatchWebSocketJobHandler(conn, watcher, service.Config.NotifyTimeout)
+	go handler.HandleWatchWebSocketControlMessage()
+	handler.HandleWatchWebSocketJob()
 }
 
 func EstablishWebSocketError(conn *websocket.Conn, err error) {
 	remoteAddr := conn.RemoteAddr().String()
-	util.LOGGER.Errorf(err, "establish[%s] websocket watch failed.", remoteAddr)
+	util.Logger().Errorf(err, "establish[%s] websocket watch failed.", remoteAddr)
 	if err := conn.WriteMessage(websocket.TextMessage, util.StringToBytesWithNoCopy(err.Error())); err != nil {
-		util.LOGGER.Errorf(err, "establish[%s] websocket watch failed: write message failed.", remoteAddr)
+		util.Logger().Errorf(err, "establish[%s] websocket watch failed: write message failed.", remoteAddr)
 	}
 }
 
-func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (results []*pb.WatchInstanceResponse, rev int64) {
-	results = []*pb.WatchInstanceResponse{}
-
-	tenant := util.ParseTenantProject(ctx)
-
-	rev = store.Revision()
-
-	key := apt.GenerateConsumerDependencyKey(tenant, selfServiceId, "")
-	resp, err := store.Store().Dependency().Search(ctx, &registry.PluginOp{
-		Action:     registry.GET,
-		Key:        util.StringToBytesWithNoCopy(key),
-		WithRev:    rev,
-		WithPrefix: true,
-		KeyOnly:    true,
-	})
-	if err != nil {
-		util.LOGGER.Errorf(err, "Get %s providers id set failed.", selfServiceId)
-		return
-	}
-
-	for _, depsKv := range resp.Kvs {
-		providerDepsKey := util.BytesToStringWithNoCopy(depsKv.Key)
-		providerId := providerDepsKey[strings.LastIndex(providerDepsKey, "/")+1:]
-
-		service, err := ms.GetService(ctx, tenant, providerId, rev)
-		if service == nil {
-			return
-		}
-		util.LOGGER.Debugf("query provider service %v with revision %d.", service, rev)
-
-		kvs, err := queryServiceInstancesKvs(ctx, providerId, rev)
-		if err != nil {
-			return
-		}
-
-		util.LOGGER.Debugf("query provider service %s instances[%d] with revision %d.", providerId, len(kvs), rev)
-		for _, kv := range kvs {
-			util.LOGGER.Debugf("start unmarshal service instance file with revision %d: %s",
-				rev, util.BytesToStringWithNoCopy(kv.Key))
-			instance := &pb.MicroServiceInstance{}
-			err := json.Unmarshal(kv.Value, instance)
-			if err != nil {
-				util.LOGGER.Errorf(err, "unmarshal instance of service %s with revision %d failed.",
-					providerId, rev)
-				return
-			}
-			results = append(results, &pb.WatchInstanceResponse{
-				Response: pb.CreateResponse(pb.Response_SUCCESS, "List instance successfully."),
-				Action:   string(pb.EVT_CREATE),
-				Key: &pb.MicroServiceKey{
-					AppId:       service.AppId,
-					ServiceName: service.ServiceName,
-					Version:     service.Version,
-				},
-				Instance: instance,
-			})
-		}
-	}
-	return
-}
-
-func queryServiceInstancesKvs(ctx context.Context, serviceId string, rev int64) ([]*mvccpb.KeyValue, error) {
-	tenant := util.ParseTenantProject(ctx)
-	key := apt.GenerateInstanceKey(tenant, serviceId, "")
-	resp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
-		Action:     registry.GET,
-		Key:        util.StringToBytesWithNoCopy(key),
-		WithPrefix: true,
-		WithRev:    rev,
-	})
-	if err != nil {
-		util.LOGGER.Errorf(err, "query instance of service %s with revision %d from etcd failed.",
-			serviceId, rev)
-		return nil, err
-	}
-	return resp.Kvs, nil
-}
-
-func PublishInstanceEvent(service *NotifyService, tenant string, action pb.EventType, serviceKey *pb.MicroServiceKey, instance *pb.MicroServiceInstance, rev int64, subscribers []string) {
+func PublishInstanceEvent(tenant string, action pb.EventType, serviceKey *pb.MicroServiceKey, instance *pb.MicroServiceInstance, rev int64, subscribers []string) {
 	response := &pb.WatchInstanceResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Watch instance successfully."),
 		Action:   string(action),
@@ -248,10 +284,10 @@ func PublishInstanceEvent(service *NotifyService, tenant string, action pb.Event
 	}
 	for _, consumerId := range subscribers {
 		job := NewWatchJob(INSTANCE, consumerId, apt.GetInstanceRootKey(tenant)+"/", rev, response)
-		util.LOGGER.Debugf("publish event to notify service, %v", job)
+		util.Logger().Debugf("publish event to notify service, %v", job)
 
 		// TODO add超时怎么处理？
-		service.AddJob(job)
+		GetNotifyService().AddJob(job)
 	}
 }
 

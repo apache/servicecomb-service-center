@@ -35,7 +35,7 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 		dep := new(dependency.Dependency)
 		dep.Tenant = tenant
 
-		util.LOGGER.Infof("start create dependency, data info %v", dependencyInfo)
+		util.Logger().Infof("start create dependency, data info %v", dependencyInfo)
 
 		consumerInfo := pb.TransferToMicroServiceKeys([]*pb.DependencyMircroService{dependencyInfo.Consumer}, tenant)[0]
 		providersInfo := pb.TransferToMicroServiceKeys(dependencyInfo.Providers, tenant)
@@ -45,20 +45,20 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 
 		rsp := dependency.ParamsChecker(consumerInfo, providersInfo)
 		if rsp != nil {
-			util.LOGGER.Errorf(nil, "create dependency failed, conusmer %s: invalid params.%s", consumerFlag, rsp.Response.Message)
+			util.Logger().Errorf(nil, "create dependency failed, conusmer %s: invalid params.%s", consumerFlag, rsp.Response.Message)
 			return rsp, nil
 		}
 
 		consumerId, err := ms.GetServiceId(ctx, consumerInfo)
-		util.LOGGER.Debugf("consumerId is %s", consumerId)
+		util.Logger().Debugf("consumerId is %s", consumerId)
 		if err != nil {
-			util.LOGGER.Errorf(err, "create dependency failed, consumer %s: get consumer failed.", consumerFlag)
+			util.Logger().Errorf(err, "create dependency failed, consumer %s: get consumer failed.", consumerFlag)
 			return &pb.CreateDependenciesResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 			}, err
 		}
 		if len(consumerId) == 0 {
-			util.LOGGER.Errorf(nil, "create dependency failed, consumer %s: consumer not exist.", consumerFlag)
+			util.Logger().Errorf(nil, "create dependency failed, consumer %s: consumer not exist.", consumerFlag)
 			return &pb.CreateDependenciesResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "Get consumer's serviceId is empty."),
 			}, nil
@@ -68,7 +68,7 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 		//更新服务的内容，把providers加入
 		err = dependency.UpdateServiceForAddDependency(ctx, consumerId, dependencyInfo.Providers, tenant)
 		if err != nil {
-			util.LOGGER.Errorf(err, "create dependency failed, consumer %s: Update service failed.", consumerFlag)
+			util.Logger().Errorf(err, "create dependency failed, consumer %s: Update service failed.", consumerFlag)
 			return &pb.CreateDependenciesResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 			}, err
@@ -77,7 +77,7 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 		//建立依赖规则，用于维护依赖关系
 		lock, err := mux.Lock(mux.GLOBAL_LOCK)
 		if err != nil {
-			util.LOGGER.Errorf(err, "create dependency failed, consumer %s: create lock failed.", consumerFlag)
+			util.Logger().Errorf(err, "create dependency failed, consumer %s: create lock failed.", consumerFlag)
 			return &pb.CreateDependenciesResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 			}, err
@@ -87,7 +87,7 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 		lock.Unlock()
 
 		if err != nil {
-			util.LOGGER.Errorf(err, "create dependency rule failed: consumer %s", consumerFlag)
+			util.Logger().Errorf(err, "create dependency rule failed: consumer %s", consumerFlag)
 			return &pb.CreateDependenciesResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 			}, err
@@ -95,12 +95,12 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 
 		err = dependency.UpdateDependency(dep)
 		if err != nil {
-			util.LOGGER.Errorf(nil, "Dependency update,as consumer,update it's provider list failed. %s", err.Error())
+			util.Logger().Errorf(nil, "Dependency update,as consumer,update it's provider list failed. %s", err.Error())
 			return &pb.CreateDependenciesResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 			}, err
 		}
-		util.LOGGER.Infof("Create dependency success: consumer %s, %s  from remote %s", consumerFlag, consumerId, util.GetIPFromContext(ctx))
+		util.Logger().Infof("Create dependency success: consumer %s, %s  from remote %s", consumerFlag, consumerId, util.GetIPFromContext(ctx))
 	}
 	return &pb.CreateDependenciesResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Create dependency successfully."),
@@ -110,7 +110,7 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 func (s *ServiceController) GetProviderDependencies(ctx context.Context, in *pb.GetDependenciesRequest) (*pb.GetProDependenciesResponse, error) {
 	err := apt.Validate(in)
 	if err != nil {
-		util.LOGGER.Errorf(err, "GetProviderDependencies failed for validating parameters failed.")
+		util.Logger().Errorf(err, "GetProviderDependencies failed for validating parameters failed.")
 		return &pb.GetProDependenciesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
@@ -118,7 +118,7 @@ func (s *ServiceController) GetProviderDependencies(ctx context.Context, in *pb.
 	providerId := in.ServiceId
 	tenant := util.ParseTenantProject(ctx)
 	if !ms.ServiceExist(ctx, tenant, providerId) {
-		util.LOGGER.Errorf(nil, "GetProviderDependencies failed, providerId is %s: service not exist.",
+		util.Logger().Errorf(nil, "GetProviderDependencies failed, providerId is %s: service not exist.",
 			providerId)
 		return &pb.GetProDependenciesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "This provider does not exist."),
@@ -127,13 +127,13 @@ func (s *ServiceController) GetProviderDependencies(ctx context.Context, in *pb.
 	keyProDependency := apt.GenerateProviderDependencyKey(tenant, providerId, "")
 	services, err := dependency.GetDependencies(ctx, keyProDependency, tenant)
 	if err != nil {
-		util.LOGGER.Errorf(err, "GetProviderDependencies failed, providerId is %s.", providerId)
+		util.Logger().Errorf(err, "GetProviderDependencies failed, providerId is %s.", providerId)
 		return &pb.GetProDependenciesResponse{
 			Response:  pb.CreateResponse(pb.Response_FAIL, err.Error()),
 			Consumers: nil,
 		}, err
 	}
-	util.LOGGER.Infof("GetProviderDependencies successfully, providerId is %s.", providerId)
+	util.Logger().Infof("GetProviderDependencies successfully, providerId is %s.", providerId)
 	return &pb.GetProDependenciesResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Get all consumers successful."),
 		Consumers: services,
@@ -143,7 +143,7 @@ func (s *ServiceController) GetProviderDependencies(ctx context.Context, in *pb.
 func (s *ServiceController) GetConsumerDependencies(ctx context.Context, in *pb.GetDependenciesRequest) (*pb.GetConDependenciesResponse, error) {
 	err := apt.Validate(in)
 	if err != nil {
-		util.LOGGER.Errorf(err, "GetConsumerDependencies failed for validating parameters failed.")
+		util.Logger().Errorf(err, "GetConsumerDependencies failed for validating parameters failed.")
 		return &pb.GetConDependenciesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
@@ -151,7 +151,7 @@ func (s *ServiceController) GetConsumerDependencies(ctx context.Context, in *pb.
 	consumerId := in.ServiceId
 	tenant := util.ParseTenantProject(ctx)
 	if !ms.ServiceExist(ctx, tenant, consumerId) {
-		util.LOGGER.Errorf(nil, "GetConsumerDependencies failed, consumerId is %s: service not exist.",
+		util.Logger().Errorf(nil, "GetConsumerDependencies failed, consumerId is %s: service not exist.",
 			consumerId)
 		return &pb.GetConDependenciesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "This consumer does not exist."),
@@ -160,12 +160,12 @@ func (s *ServiceController) GetConsumerDependencies(ctx context.Context, in *pb.
 	keyConDependency := apt.GenerateConsumerDependencyKey(tenant, consumerId, "")
 	services, err := dependency.GetDependencies(ctx, keyConDependency, tenant)
 	if err != nil {
-		util.LOGGER.Errorf(err, "GetConsumerDependencies failed, consumerId is %s.", consumerId)
+		util.Logger().Errorf(err, "GetConsumerDependencies failed, consumerId is %s.", consumerId)
 		return &pb.GetConDependenciesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, err
 	}
-	util.LOGGER.Infof("GetConsumerDependencies successfully, consumerId is %s.", consumerId)
+	util.Logger().Infof("GetConsumerDependencies successfully, consumerId is %s.", consumerId)
 	return &pb.GetConDependenciesResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Get all providers successfully."),
 		Providers: services,

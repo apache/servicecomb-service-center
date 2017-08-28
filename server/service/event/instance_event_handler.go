@@ -17,16 +17,14 @@ import (
 	"encoding/json"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
-	"github.com/ServiceComb/service-center/server/service/dependency"
 	"github.com/ServiceComb/service-center/server/service/microservice"
 	nf "github.com/ServiceComb/service-center/server/service/notification"
+	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
-	"strings"
 )
 
 type InstanceEventHandler struct {
-	service *nf.NotifyService
 }
 
 func (h *InstanceEventHandler) Type() store.StoreType {
@@ -38,56 +36,49 @@ func (h *InstanceEventHandler) OnEvent(evt *store.KvEvent) {
 	action := evt.Action
 	providerId, providerInstanceId, tenantProject, data := pb.GetInfoFromInstKV(kv)
 	if data == nil {
-		util.LOGGER.Errorf(nil,
+		util.Logger().Errorf(nil,
 			"unmarshal provider service instance file failed, instance %s/%s [%s] event, data is nil",
 			providerId, providerInstanceId, action)
 		return
 	}
 
-	if h.service.Closed() {
-		util.LOGGER.Warnf(nil, "caught instance %s/%s [%s] event, but notify service is closed",
+	if nf.GetNotifyService().Closed() {
+		util.Logger().Warnf(nil, "caught instance %s/%s [%s] event, but notify service is closed",
 			providerId, providerInstanceId, action)
 		return
 	}
-	util.LOGGER.Infof("caught instance %s/%s [%s] event",
+	util.Logger().Infof("caught instance %s/%s [%s] event",
 		providerId, providerInstanceId, action)
 
 	var instance pb.MicroServiceInstance
 	err := json.Unmarshal(data, &instance)
 	if err != nil {
-		util.LOGGER.Errorf(err, "unmarshal provider service instance %s/%s file failed",
+		util.Logger().Errorf(err, "unmarshal provider service instance %s/%s file failed",
 			providerId, providerInstanceId)
 		return
 	}
 	// 查询服务版本信息
 	ms, err := microservice.GetServiceInCache(context.Background(), tenantProject, providerId)
 	if ms == nil {
-		util.LOGGER.Errorf(err, "get provider service %s/%s id in cache failed",
+		util.Logger().Errorf(err, "get provider service %s/%s id in cache failed",
 			providerId, providerInstanceId)
 		return
 	}
 
 	// 查询所有consumer
-	Kvs, err := dependency.GetConsumersInCache(context.Background(), tenantProject, providerId)
+	consumerIds, _, err := serviceUtil.GetConsumerIds(context.Background(), tenantProject, ms)
 	if err != nil {
-		util.LOGGER.Errorf(err, "query service %s consumers failed", providerId)
+		util.Logger().Errorf(err, "query service %s consumers failed", providerId)
 		return
 	}
 
-	for _, dependence := range Kvs {
-		consumerId := util.BytesToStringWithNoCopy(dependence.Key)
-		consumerId = consumerId[strings.LastIndex(consumerId, "/")+1:]
-
-		nf.PublishInstanceEvent(h.service, tenantProject, action, &pb.MicroServiceKey{
-			AppId:       ms.AppId,
-			ServiceName: ms.ServiceName,
-			Version:     ms.Version,
-		}, &instance, evt.Revision, []string{consumerId})
-	}
+	nf.PublishInstanceEvent(tenantProject, action, &pb.MicroServiceKey{
+		AppId:       ms.AppId,
+		ServiceName: ms.ServiceName,
+		Version:     ms.Version,
+	}, &instance, evt.Revision, consumerIds)
 }
 
-func NewInstanceEventHandler(s *nf.NotifyService) *InstanceEventHandler {
-	return &InstanceEventHandler{
-		service: s,
-	}
+func NewInstanceEventHandler() *InstanceEventHandler {
+	return &InstanceEventHandler{}
 }

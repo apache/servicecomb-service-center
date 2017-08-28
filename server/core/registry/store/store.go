@@ -101,7 +101,7 @@ func (lat *LeaseAsyncTask) Key() string {
 func (lat *LeaseAsyncTask) Do(ctx context.Context) error {
 	lat.TTL, lat.err = registry.GetRegisterCenter().LeaseRenew(ctx, lat.LeaseID)
 	if lat.err != nil {
-		util.LOGGER.Errorf(lat.err, "renew lease %d failed, key %s", lat.LeaseID, lat.Key())
+		util.Logger().Errorf(lat.err, "renew lease %d failed, key %s", lat.LeaseID, lat.Key())
 	}
 	return lat.err
 }
@@ -172,7 +172,7 @@ func (s *KvStore) store() {
 	}
 	util.SafeCloseChan(s.ready)
 
-	util.LOGGER.Debugf("all indexers are ready")
+	util.Logger().Debugf("all indexers are ready")
 }
 
 func (s *KvStore) onDomainEvent(evt *KvEvent) {
@@ -181,17 +181,17 @@ func (s *KvStore) onDomainEvent(evt *KvEvent) {
 	tenant, _ := pb.GetInfoFromDomainKV(kv)
 
 	if action != pb.EVT_CREATE {
-		util.LOGGER.Infof("tenant '%s' is %s", tenant, action)
+		util.Logger().Infof("tenant '%s' is %s", tenant, action)
 		return
 	}
 
 	if len(tenant) == 0 {
-		util.LOGGER.Errorf(nil,
+		util.Logger().Errorf(nil,
 			"unmarshal tenant info failed, key %s [%s] event", util.BytesToStringWithNoCopy(kv.Key), action)
 		return
 	}
 
-	util.LOGGER.Infof("new tenant %s is created", tenant)
+	util.Logger().Infof("new tenant %s is created", tenant)
 }
 
 func (s *KvStore) onLeaseEvent(evt *KvEvent) {
@@ -204,7 +204,7 @@ func (s *KvStore) onLeaseEvent(evt *KvEvent) {
 
 	s.removeAsyncTask(key)
 
-	util.LOGGER.Debugf("push task to async remove queue successfully, key %s %s [%s] event",
+	util.Logger().Debugf("push task to async remove queue successfully, key %s %s [%s] event",
 		key, leaseID, evt.Action)
 }
 
@@ -230,7 +230,7 @@ func (s *KvStore) Stop() {
 
 	util.SafeCloseChan(s.ready)
 
-	util.LOGGER.Debugf("store daemon stopped.")
+	util.Logger().Debugf("store daemon stopped.")
 }
 
 func (s *KvStore) Ready() <-chan struct{} {
@@ -293,7 +293,7 @@ func (s *KvStore) Domain() *Indexer {
 func (s *KvStore) KeepAlive(ctx context.Context, op *registry.PluginOp) (int64, error) {
 	t := NewLeaseAsyncTask(op)
 	if op.Mode == registry.MODE_NO_CACHE {
-		util.LOGGER.Debugf("keep alive lease WitchNoCache, request etcd server, op: %s", op)
+		util.Logger().Debugf("keep alive lease WitchNoCache, request etcd server, op: %s", op)
 		err := t.Do(ctx)
 		ttl := t.TTL
 		return ttl, err
@@ -324,4 +324,13 @@ func NewLeaseAsyncTask(op *registry.PluginOp) *LeaseAsyncTask {
 		key:     "LeaseAsyncTask_" + util.BytesToStringWithNoCopy(op.Key),
 		LeaseID: op.Lease,
 	}
+}
+
+func Revision() (rev int64) {
+	for _, i := range Store().indexers {
+		if rev < i.Cache().Version() {
+			rev = i.Cache().Version()
+		}
+	}
+	return
 }

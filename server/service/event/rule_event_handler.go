@@ -17,11 +17,12 @@ import (
 	"encoding/json"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
+	"github.com/ServiceComb/service-center/server/service/dependency"
 	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	nf "github.com/ServiceComb/service-center/server/service/notification"
-	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
+	"strings"
 )
 
 type RulesChangedAsyncTask struct {
@@ -31,7 +32,6 @@ type RulesChangedAsyncTask struct {
 	Tenant     string
 	ProviderId string
 	Rev        int64
-	Service    *nf.NotifyService
 }
 
 func (apt *RulesChangedAsyncTask) Key() string {
@@ -40,7 +40,7 @@ func (apt *RulesChangedAsyncTask) Key() string {
 
 func (apt *RulesChangedAsyncTask) Do(ctx context.Context) error {
 	defer store.Store().AsyncTasker().DeferRemoveTask(apt.Key())
-	apt.err = publish(ctx, apt.Service, apt.Tenant, apt.ProviderId, apt.Rev)
+	apt.err = apt.publish(ctx, apt.Tenant, apt.ProviderId, apt.Rev)
 	return apt.err
 }
 
@@ -48,20 +48,16 @@ func (apt *RulesChangedAsyncTask) Err() error {
 	return apt.err
 }
 
-func publish(ctx context.Context, service *nf.NotifyService, tenant, providerId string, rev int64) error {
-	provider, err := ms.GetServiceByServiceId(ctx, tenant, providerId)
+func (apt *RulesChangedAsyncTask) publish(ctx context.Context, tenant, providerId string, rev int64) error {
+	provider, err := ms.GetService(ctx, tenant, providerId)
 	if provider == nil {
-		util.LOGGER.Errorf(err, "get service %s file failed", providerId)
+		util.Logger().Errorf(err, "get service %s file failed", providerId)
 		return err
 	}
-	providerRules, err := serviceUtil.GetRulesUtil(ctx, tenant, providerId)
-	if err != nil || len(providerRules) == 0 {
-		util.LOGGER.Errorf(err, "get provider service %s rules failed", providerId)
-		return err
-	}
-	instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, tenant, providerId, "")
-	if err != nil || len(instances) == 0 {
-		util.LOGGER.Errorf(err, "get provider service %s instance failed", providerId)
+
+	kvs, err := dependency.GetConsumersInCache(ctx, tenant, providerId)
+	if err != nil {
+		util.Logger().Errorf(err, "get consumer services by provider %s failed", providerId)
 		return err
 	}
 
@@ -70,27 +66,19 @@ func publish(ctx context.Context, service *nf.NotifyService, tenant, providerId 
 		ServiceName: provider.ServiceName,
 		Version:     provider.Version,
 	}
-	rf := serviceUtil.RuleFilter{
-		Tenant:        tenant,
-		Provider:      provider,
-		ProviderRules: providerRules,
-	}
 
-	allow, deny, err := serviceUtil.GetConsumerIdsWithFilter(ctx, tenant, providerId, rf.Filter)
-	if err != nil {
-		util.LOGGER.Errorf(err, "get consumer services by provider %s failed", providerId)
-		return err
+	l := len(kvs)
+	consumerIds := make([]string, l)
+	for i, kv := range kvs {
+		consumerId := util.BytesToStringWithNoCopy(kv.Key)
+		consumerId = consumerId[strings.LastIndex(consumerId, "/")+1:]
+		consumerIds[i] = consumerId
 	}
-
-	for _, instance := range instances {
-		nf.PublishInstanceEvent(service, tenant, pb.EVT_UPDATE, providerKey, instance, rev, allow)
-		nf.PublishInstanceEvent(service, tenant, pb.EVT_DELETE, providerKey, instance, rev, deny)
-	}
+	nf.PublishInstanceEvent(tenant, pb.EVT_EXPIRE, providerKey, nil, rev, consumerIds)
 	return nil
 }
 
 type RuleEventHandler struct {
-	service *nf.NotifyService
 }
 
 func (h *RuleEventHandler) Type() store.StoreType {
@@ -102,44 +90,40 @@ func (h *RuleEventHandler) OnEvent(evt *store.KvEvent) {
 	action := evt.Action
 	providerId, ruleId, tenant, data := pb.GetInfoFromRuleKV(kv)
 	if data == nil {
-		util.LOGGER.Errorf(nil,
+		util.Logger().Errorf(nil,
 			"unmarshal service rule file failed, service %s rule %s [%s] event, data is nil",
 			providerId, ruleId, action)
 		return
 	}
 
-	if h.service.Closed() {
-		util.LOGGER.Warnf(nil, "caught service %s rule %s [%s] event, but notify service is closed",
+	if nf.GetNotifyService().Closed() {
+		util.Logger().Warnf(nil, "caught service %s rule %s [%s] event, but notify service is closed",
 			providerId, ruleId, action)
 		return
 	}
-	util.LOGGER.Infof("caught service %s rule %s [%s] event", providerId, ruleId, action)
+	util.Logger().Infof("caught service %s rule %s [%s] event", providerId, ruleId, action)
 
 	var rule pb.ServiceRule
 	err := json.Unmarshal(data, &rule)
 	if err != nil {
-		util.LOGGER.Errorf(err, "unmarshal service %s rule %s file failed",
+		util.Logger().Errorf(err, "unmarshal service %s rule %s file failed",
 			providerId, ruleId)
 		return
 	}
 
 	store.Store().AsyncTasker().AddTask(context.Background(),
-		NewRulesChangedAsyncTask(h.service, tenant, providerId, evt.Revision))
+		NewRulesChangedAsyncTask(tenant, providerId, evt.Revision))
 }
 
-func NewRuleEventHandler(s *nf.NotifyService) *RuleEventHandler {
-	h := &RuleEventHandler{
-		service: s,
-	}
-	return h
+func NewRuleEventHandler() *RuleEventHandler {
+	return &RuleEventHandler{}
 }
 
-func NewRulesChangedAsyncTask(service *nf.NotifyService, tenant, providerId string, rev int64) *RulesChangedAsyncTask {
+func NewRulesChangedAsyncTask(tenant, providerId string, rev int64) *RulesChangedAsyncTask {
 	return &RulesChangedAsyncTask{
 		key:        "RulesChangedAsyncTask_" + providerId,
 		Tenant:     tenant,
 		ProviderId: providerId,
 		Rev:        rev,
-		Service:    service,
 	}
 }

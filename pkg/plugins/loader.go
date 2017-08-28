@@ -40,7 +40,7 @@ func (pm *PluginManager) Init() {
 	err := pm.ReloadPlugins()
 
 	if len(pm.Plugins) == 0 {
-		util.LOGGER.Warnf(err, "no any plugin has been loaded.")
+		util.Logger().Warnf(err, "no any plugin has been loaded.")
 	}
 }
 
@@ -73,12 +73,12 @@ func (pm *PluginManager) ReloadPlugins() error {
 			// golang 1.8+ feature
 			pluginFileFullPath := filepath.Join(dir, file.Name())
 			p, err := plugin.Open(pluginFileFullPath)
-			util.LOGGER.Debugf("load plugin '%s'. path: %s, result: %s",
+			util.Logger().Debugf("load plugin '%s'. path: %s, result: %s",
 				submatchs[1], pluginFileFullPath, err)
 			if err != nil {
 				return fmt.Errorf("load plugin '%s' error for %s", submatchs[1], err.Error())
 			}
-			util.LOGGER.Infof("load plugin '%s' successfully.", submatchs[1])
+			util.Logger().Infof("load plugin '%s' successfully.", submatchs[1])
 			pm.Plugins[submatchs[1]] = p
 		}
 	}

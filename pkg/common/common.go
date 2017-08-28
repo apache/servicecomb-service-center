@@ -34,6 +34,15 @@ func initLogger() {
 		LogFormatText: logFormatText,
 		EnableStdOut:  enableStdOut,
 	})
+
+	// custom loggers
+	util.CustomLogger("Heartbeat", "heartbeat")
+	util.CustomLogger("HeartbeatSet", "heartbeat")
+
+	util.CustomLogger("github.com/ServiceComb/service-center/server/service/event", "event")
+	util.CustomLogger("github.com/ServiceComb/service-center/server/service/notification", "event")
+
+	util.CustomLogger("github.com/ServiceComb/service-center/server/core/registry", "registry")
 }
 
 func initLogRotate() {

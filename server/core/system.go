@@ -43,7 +43,7 @@ func LoadSystemConfig() error {
 	}
 	err = json.Unmarshal(resp.Kvs[0].Value, systemConfig)
 	if err != nil {
-		util.LOGGER.Errorf(err, "load system config failed, maybe incompatible")
+		util.Logger().Errorf(err, "load system config failed, maybe incompatible")
 		return nil
 	}
 	return nil

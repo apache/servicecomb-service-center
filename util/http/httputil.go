@@ -31,7 +31,7 @@ func createConnection(caKey []byte, crt []byte, key []byte) (httpClient *http.Cl
 
 	clientCrt, err := tls.X509KeyPair(crt, key)
 	if err != nil {
-		LOGGER.Error("X509KeyPair err:", err)
+		Logger().Error("X509KeyPair err:", err)
 		return
 	}
 
