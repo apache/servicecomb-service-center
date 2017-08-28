@@ -160,6 +160,9 @@ message GetExistenceResponse {
 
 message CreateServiceRequest {
     MicroService service = 1;
+    repeated AddOrUpdateServiceRule rules =2;
+    map<string,string> tags = 3;
+    repeated MicroServiceInstance instances = 4;
 }
 
 message CreateServiceResponse {
