@@ -40,7 +40,7 @@ type ServiceController struct {
 
 func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequest) (*pb.CreateServiceResponse, error) {
 	if in == nil || in.Service == nil {
-		util.LOGGER.Errorf(nil, "create microservice failed : param empty.")
+		util.Logger().Errorf(nil, "create microservice failed : param empty.")
 		return &pb.CreateServiceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "request format invalid"),
 		}, nil
@@ -1168,7 +1168,7 @@ func (s *ServiceController) CreateServiceEx(ctx context.Context, in *pb.CreateSe
 		errMessage, err := json.Marshal(errMessages)
 		if err != nil {
 			result.Response.Message = "marshal errMessages error"
-			util.LOGGER.Error("marshal errMessages error", err)
+			util.Logger().Error("marshal errMessages error", err)
 			return result, nil
 		}
 		result.Response.Message = fmt.Sprintf("ErrMessage : %s", errMessage)
@@ -1176,7 +1176,7 @@ func (s *ServiceController) CreateServiceEx(ctx context.Context, in *pb.CreateSe
 		result.Response.Code = pb.Response_SUCCESS
 	}
 
-	util.LOGGER.Infof("CreateServiceEx, serviceid = %s, result = %s ", result.ServiceId, result.Response.Message)
+	util.Logger().Infof("CreateServiceEx, serviceid = %s, result = %s ", result.ServiceId, result.Response.Message)
 	return result, nil
 }
 

@@ -83,10 +83,10 @@ func KvToResponse(kv *mvccpb.KeyValue) (keys []string, data []byte) {
 
 func GetInfoFromSvcKV(kv *mvccpb.KeyValue) (serviceId, tenantProject string, data []byte) {
 	keys, data := KvToResponse(kv)
-	if len(keys) < 4 {
+	l := len(keys)
+	if l < 4 {
 		return
 	}
-	l := len(keys)
 	serviceId = keys[l-1]
 	tenantProject = fmt.Sprintf("%s/%s", keys[l-3], keys[l-2])
 	return
@@ -94,10 +94,10 @@ func GetInfoFromSvcKV(kv *mvccpb.KeyValue) (serviceId, tenantProject string, dat
 
 func GetInfoFromInstKV(kv *mvccpb.KeyValue) (serviceId, instanceId, tenantProject string, data []byte) {
 	keys, data := KvToResponse(kv)
-	if len(keys) < 4 {
+	l := len(keys)
+	if l < 4 {
 		return
 	}
-	l := len(keys)
 	serviceId = keys[l-2]
 	instanceId = keys[l-1]
 	tenantProject = fmt.Sprintf("%s/%s", keys[l-4], keys[l-3])
@@ -115,10 +115,10 @@ func GetInfoFromDomainKV(kv *mvccpb.KeyValue) (tenant string, data []byte) {
 
 func GetInfoFromRuleKV(kv *mvccpb.KeyValue) (serviceId, ruleId, tenantProject string, data []byte) {
 	keys, data := KvToResponse(kv)
-	if len(keys) < 4 {
+	l := len(keys)
+	if l < 4 {
 		return
 	}
-	l := len(keys)
 	serviceId = keys[l-2]
 	ruleId = keys[l-1]
 	tenantProject = fmt.Sprintf("%s/%s", keys[l-4], keys[l-3])
@@ -127,10 +127,10 @@ func GetInfoFromRuleKV(kv *mvccpb.KeyValue) (serviceId, ruleId, tenantProject st
 
 func GetInfoFromTagKV(kv *mvccpb.KeyValue) (serviceId, tenantProject string, data []byte) {
 	keys, data := KvToResponse(kv)
-	if len(keys) < 4 {
+	l := len(keys)
+	if l < 3 {
 		return
 	}
-	l := len(keys)
 	serviceId = keys[l-1]
 	tenantProject = fmt.Sprintf("%s/%s", keys[l-3], keys[l-2])
 	return

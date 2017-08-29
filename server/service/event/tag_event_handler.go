@@ -110,11 +110,11 @@ func NewTagEventHandler() *TagEventHandler {
 	return &TagEventHandler{}
 }
 
-func NewTagsChangedAsyncTask(tenant, providerId string, rev int64) *TagsChangedAsyncTask {
+func NewTagsChangedAsyncTask(tenant, consumerId string, rev int64) *TagsChangedAsyncTask {
 	return &TagsChangedAsyncTask{
-		key:        "TagsChangedAsyncTask_" + providerId,
+		key:        "TagsChangedAsyncTask_" + consumerId,
 		Tenant:     tenant,
-		consumerId: providerId,
+		consumerId: consumerId,
 		Rev:        rev,
 	}
 }
