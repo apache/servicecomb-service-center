@@ -13,6 +13,7 @@
 //limitations under the License.
 package integrationtest_test
 
+/*
 import (
 	"bytes"
 	"encoding/json"
@@ -383,3 +384,4 @@ var _ = Describe("MicroService Api Test", func() {
 		})
 	})
 })
+*/
