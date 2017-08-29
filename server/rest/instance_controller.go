@@ -130,7 +130,7 @@ func (this *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r 
 		AppId:             r.URL.Query().Get("appId"),
 		ServiceName:       r.URL.Query().Get("serviceName"),
 		VersionRule:       r.URL.Query().Get("version"),
-		Stage:             r.URL.Query().Get("stage"),
+		Env:               r.URL.Query().Get("env"),
 		Tags:              ids,
 	}
 	resp, err := InstanceAPI.Find(r.Context(), request)
@@ -152,13 +152,12 @@ func (this *MicroServiceInstanceService) GetOneInstance(w http.ResponseWriter, r
 	if len(keys) > 0 {
 		ids = strings.Split(keys, ",")
 	}
-	stage := r.URL.Query().Get("stage")
 	request := &pb.GetOneInstanceRequest{
 		ConsumerServiceId:  r.Header.Get("X-ConsumerId"),
 		ProviderServiceId:  r.URL.Query().Get(":serviceId"),
 		ProviderInstanceId: r.URL.Query().Get(":instanceId"),
 		Tags:               ids,
-		Stage:              stage,
+		Env:                r.URL.Query().Get("env"),
 	}
 	resp, err := InstanceAPI.GetOneInstance(r.Context(), request)
 	if err != nil {
@@ -179,12 +178,11 @@ func (this *MicroServiceInstanceService) GetInstances(w http.ResponseWriter, r *
 	if len(keys) > 0 {
 		ids = strings.Split(keys, ",")
 	}
-	stage := r.URL.Query().Get("stage")
 	request := &pb.GetInstancesRequest{
 		ConsumerServiceId: r.Header.Get("X-ConsumerId"),
 		ProviderServiceId: r.URL.Query().Get(":serviceId"),
 		Tags:              ids,
-		Stage:             stage,
+		Env:               r.URL.Query().Get("env"),
 	}
 	resp, err := InstanceAPI.GetInstances(r.Context(), request)
 	if err != nil {

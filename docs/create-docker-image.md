@@ -69,6 +69,6 @@ c140cc4bdc44        developement/servicecomb/service-center   "/root/start.sh"  
 < Content-Length: 296
 < 
 * Connection #0 to host 0.0.0.0 left intact
-{"instances":[{"instanceId":"043e7fa678de11e7b7300242ac110002","serviceId":"043dbea978de11e7b7300242ac110002","endpoints":["rest://0.0.0.0:30100"],"hostName":"service_center_172_17_0_2","status":"UP","healthCheck":{"mode":"push","interval":30,"times":3},"timestamp":"1501828060","stage":"prod"}]}
+{"instances":[{"instanceId":"043e7fa678de11e7b7300242ac110002","serviceId":"043dbea978de11e7b7300242ac110002","endpoints":["rest://0.0.0.0:30100"],"hostName":"service_center_172_17_0_2","status":"UP","healthCheck":{"mode":"push","interval":30,"times":3},"timestamp":"1501828060","environment":"production"}]}
 ```
 

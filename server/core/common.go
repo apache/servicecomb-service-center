@@ -18,7 +18,6 @@ import (
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/util"
 	"github.com/ServiceComb/service-center/util/validate"
-	"github.com/astaxie/beego"
 	"math"
 	"reflect"
 	"regexp"
@@ -60,7 +59,7 @@ func init() {
 	statusRegex, _ := regexp.Compile(`^(UP|DOWN)*$`)
 	serviceIdRegex, _ := regexp.Compile(`^.*$`)
 	aliasRegex, _ := regexp.Compile(`^[a-zA-Z0-9_\-.:]*$`)
-	stageRegex, _ := regexp.Compile("^(" + beego.AppConfig.String("stage_rules") + ")*$")
+	stageRegex, _ := regexp.Compile("^(development|testing|acceptance|production)*$")
 	// map/slice元素的validator
 	// 元素的格式和长度由正则控制
 	// map/slice的长度由validator中的min/max/length控制
@@ -137,7 +136,7 @@ func init() {
 	MicroServiceInstanceValidator.AddRule("HostName", &validate.ValidateRule{Length: 64, Regexp: simpleNameRegex})
 	MicroServiceInstanceValidator.AddSub("HealthCheck", &HealthCheckInfoValidator)
 	MicroServiceInstanceValidator.AddRule("Status", InstanceStatusRule)
-	MicroServiceInstanceValidator.AddRule("Stage", &validate.ValidateRule{Min: 1, Regexp: stageRegex})
+	MicroServiceInstanceValidator.AddRule("Environment", &validate.ValidateRule{Min: 1, Regexp: stageRegex})
 	MicroServiceInstanceValidator.AddSub("DataCenterInfo", &DataCenterInfoValidator)
 
 	DataCenterInfoValidator.AddRule("Name", &validate.ValidateRule{Length: 128, Regexp: simpleNameRegex})
@@ -154,13 +153,13 @@ func init() {
 	FindInstanceReqValidator.AddRule("ServiceName", &validate.ValidateRule{Min: 1, Max: 128, Regexp: serviceNameForFindRegex})
 	FindInstanceReqValidator.AddRule("VersionRule", versionFuzzyRule)
 	FindInstanceReqValidator.AddRule("Tags", tagRule)
-	FindInstanceReqValidator.AddRule("Stage", stageRule)
+	FindInstanceReqValidator.AddRule("Env", stageRule)
 
 	GetInstanceValidator.AddRule("ConsumerServiceId", ServiceIdRule)
 	GetInstanceValidator.AddRule("ProviderServiceId", ServiceIdRule)
 	GetInstanceValidator.AddRule("ProviderInstanceId", &validate.ValidateRule{Min: 1, Max: 64, Regexp: simpleNameAllowEmptyRegex})
 	GetInstanceValidator.AddRule("Tags", tagRule)
-	GetInstanceValidator.AddRule("Stage", stageRule)
+	GetInstanceValidator.AddRule("Env", stageRule)
 }
 
 func Validate(v interface{}) error {

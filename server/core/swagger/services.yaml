@@ -842,6 +842,10 @@ paths:
           in: query
           description: Tag标签过滤，多个时逗号分隔。
           type: string
+        - name: env
+          in: query
+          description: 实例的environment。
+          type: string
       tags:
         - instances
       responses:
@@ -920,9 +924,9 @@ paths:
           in: query
           description: Tag标签过滤，多个时逗号分隔。
           type: string
-        - name: stage
+        - name: env
           in: query
-          description: 实例的stage。
+          description: 实例的environment。
           type: string
       tags:
         - instances
@@ -1117,9 +1121,9 @@ paths:
           in: query
           description: Tag标签过滤，多个时逗号分隔。
           type: string
-        - name: stage
+        - name: env
           in: query
-          description: stage。
+          description: 实例的environment。
           type: string
       tags:
         - instances
@@ -1313,9 +1317,6 @@ definitions:
       level:
         type: string
         description: 微服务层级，FRONT/MIDDLE/BACK
-      timestamp:
-        type: string
-        description: post 或者 put 不带该参数，timestamp是内部生成的，只有get 接口才返回该值
       schemas:
         type: array
         description: 微服务访问契约内容的外键ID
@@ -1327,6 +1328,12 @@ definitions:
         enum:
         - UP
         - DOWN
+      timestamp:
+        type: string
+        description: post 或者 put 不带该参数，timestamp是内部生成的，只有get 接口才返回该值
+      modTimestamp:
+        type: string
+        description: 更新时间
       paths:
         type: array
         description: 服务路由
@@ -1364,7 +1371,7 @@ definitions:
     required:
     - status
     - hostName
-    - stage
+    - environment
     properties:
       instanceId:
         description: 实例ID,不填写会自动填充
@@ -1384,9 +1391,9 @@ definitions:
         $ref: '#/definitions/Properties'
       healthCheck:
         $ref: '#/definitions/HealthCheck'
-      stage:
+      environment:
         type: string
-        description: dev|test|acceptance|prod
+        description: development|testing|acceptance|production
       dataCenterInfo:
         $ref: '#/definitions/DataCenterInfo'
   MicroServiceInstance:
@@ -1394,7 +1401,7 @@ definitions:
     required:
     - status
     - hostName
-    - stage
+    - environment
     properties:
       instanceId:
         type: string
@@ -1416,14 +1423,17 @@ definitions:
         $ref: '#/definitions/Properties'
       healthCheck:
         $ref: '#/definitions/HealthCheck'
+      environment:
+        type: string
+        description: development|testing|acceptance|production
+      dataCenterInfo:
+        $ref: '#/definitions/DataCenterInfo'
       timestamp:
         type: string
         description: 实例创建时间戳，自动生成
-      stage:
+      modTimestamp:
         type: string
-        description: dev|test|acceptance|prod
-      dataCenterInfo:
-        $ref: '#/definitions/DataCenterInfo'
+        description: 更新时间
   CreateDependenciesRequest:
     type: object
     properties:
@@ -1512,12 +1522,15 @@ definitions:
       pattern:
         description:  匹配规则，正则表达式，长度1到64
         type: string
-      timestamp:
-        description:  只有获取rule时返回使用，创建rule的时间
-        type: string
       description:
         description:  rule描述
         type: string
+      timestamp:
+        description:  只有获取rule时返回使用，创建rule的时间
+        type: string
+      modTimestamp:
+        type: string
+        description: 更新时间
   AddRules:
     type: object
     properties:

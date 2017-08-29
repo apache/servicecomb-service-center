@@ -15,7 +15,6 @@ package service
 
 import (
 	pb "github.com/ServiceComb/service-center/server/core/proto"
-	_ "github.com/ServiceComb/service-center/server/service/event"
 )
 
 func AssembleResources() (pb.ServiceCtrlServer, pb.SerivceInstanceCtrlServerEx, pb.GovernServiceCtrlServerEx) {

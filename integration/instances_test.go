@@ -83,7 +83,7 @@ var _ = Describe("MicroService Api Test", func() {
 				"endpoints":   endpoints,
 				"hostName":    "cse",
 				"status":      "UP",
-				"stage":       "prod",
+				"environment": "production",
 				"properties":  propertiesInstance,
 				"healthCheck": healthcheck,
 			}
@@ -131,9 +131,9 @@ var _ = Describe("MicroService Api Test", func() {
 		By("Register MicroService Instance API", func() {
 			It("Register MicroService Instance with invalid params", func() {
 				instance := map[string]interface{}{
-					"hostName": "cse",
-					"status":   "UP",
-					"stage":    "prod",
+					"hostName":    "cse",
+					"status":      "UP",
+					"environment": "production",
 				}
 
 				bodyParams := map[string]interface{}{
@@ -167,7 +167,7 @@ var _ = Describe("MicroService Api Test", func() {
 					"endpoints":   endpoints,
 					"hostName":    "cse",
 					"status":      "UP",
-					"stage":       "prod",
+					"environment": "production",
 					"properties":  propertiesInstance,
 					"healthCheck": healthcheck,
 				}
@@ -208,7 +208,7 @@ var _ = Describe("MicroService Api Test", func() {
 					"endpoints":   endpoints,
 					"hostName":    "cse",
 					"status":      "UP",
-					"stage":       "prod",
+					"environment": "production",
 					"properties":  propertiesInstance,
 					"healthCheck": healthcheck,
 				}
@@ -547,7 +547,7 @@ func BenchmarkRegisterMicroServiceInstance(b *testing.B) {
 			"endpoints":   endpoints,
 			"hostName":    "cse",
 			"status":      "UP",
-			"stage":       "prod",
+			"environment": "production",
 			"properties":  propertiesInstance,
 			"healthCheck": healthcheck,
 		}

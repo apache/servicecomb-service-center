@@ -54,9 +54,9 @@ var _ = Describe("InstanceController", func() {
 						Endpoints: []string{
 							"rest:127.0.0.1:8080",
 						},
-						HostName: "UT-HOST",
-						Status:   pb.MSI_UP,
-						Stage:    "prod",
+						HostName:    "UT-HOST",
+						Status:      pb.MSI_UP,
+						Environment: "production",
 					},
 				})
 				resp, err = insResource.Register(getContext(), &pb.RegisterInstanceRequest{
@@ -65,9 +65,9 @@ var _ = Describe("InstanceController", func() {
 						Endpoints: []string{
 							"rest:127.0.0.1:8080",
 						},
-						HostName: "UT-HOST",
-						Status:   pb.MSI_UP,
-						Stage:    "prod",
+						HostName:    "UT-HOST",
+						Status:      pb.MSI_UP,
+						Environment: "production",
 					},
 				})
 				Expect(err).To(BeNil())
@@ -80,10 +80,10 @@ var _ = Describe("InstanceController", func() {
 						Endpoints: []string{
 							"rest:127.0.0.1:8080",
 						},
-						HostName:   "UT-HOST",
-						Status:     pb.MSI_UP,
-						Stage:      "prod",
-						Properties: map[string]string{"nodeIP": "test"},
+						HostName:    "UT-HOST",
+						Status:      pb.MSI_UP,
+						Environment: "production",
+						Properties:  map[string]string{"nodeIP": "test"},
 					},
 				})
 				Expect(err).To(BeNil())
@@ -171,9 +171,9 @@ var _ = Describe("InstanceController", func() {
 						Endpoints: []string{
 							"rest:127.0.0.1:8080",
 						},
-						HostName: "UT-HOST",
-						Status:   pb.MSI_UP,
-						Stage:    "prod",
+						HostName:    "UT-HOST",
+						Status:      pb.MSI_UP,
+						Environment: "production",
 					},
 				})
 				Expect(err).To(BeNil())
@@ -200,9 +200,9 @@ var _ = Describe("InstanceController", func() {
 						Endpoints: []string{
 							"rest:127.0.0.1:8080",
 						},
-						HostName: "UT-HOST",
-						Status:   pb.MSI_UP,
-						Stage:    "prod",
+						HostName:    "UT-HOST",
+						Status:      pb.MSI_UP,
+						Environment: "production",
 					},
 				})
 				Expect(respIns.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
@@ -308,10 +308,10 @@ var _ = Describe("InstanceController", func() {
 
 				resp, err := insResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
-						ServiceId: respCreate.ServiceId,
-						HostName:  "UT-HOST",
-						Status:    pb.MSI_UP,
-						Stage:     "prod",
+						ServiceId:   respCreate.ServiceId,
+						HostName:    "UT-HOST",
+						Status:      pb.MSI_UP,
+						Environment: "production",
 					},
 				})
 				Expect(err).To(BeNil())
@@ -323,9 +323,9 @@ var _ = Describe("InstanceController", func() {
 						Endpoints: []string{
 							"rest:127.0.0.1:8080",
 						},
-						HostName: "UT-HOST",
-						Status:   pb.MSI_UP,
-						Stage:    "prod",
+						HostName:    "UT-HOST",
+						Status:      pb.MSI_UP,
+						Environment: "production",
 					},
 				})
 				Expect(err).To(BeNil())
@@ -338,8 +338,8 @@ var _ = Describe("InstanceController", func() {
 						Endpoints: []string{
 							"rest:127.0.0.1:8080",
 						},
-						Status: pb.MSI_UP,
-						Stage:  "prod",
+						Status:      pb.MSI_UP,
+						Environment: "production",
 					},
 				})
 				Expect(err).To(BeNil())
@@ -352,8 +352,8 @@ var _ = Describe("InstanceController", func() {
 						Endpoints: []string{
 							"rest:127.0.0.1:8080",
 						},
-						HostName: "UT-HOST",
-						Stage:    "prod",
+						HostName:    "UT-HOST",
+						Environment: "production",
 					},
 				})
 				Expect(err).To(BeNil())
@@ -375,8 +375,8 @@ var _ = Describe("InstanceController", func() {
 						Endpoints: []string{
 							"rest:127.0.0.1:8080",
 						},
-						HostName: "UT-HOST",
-						Stage:    "prod",
+						HostName:    "UT-HOST",
+						Environment: "production",
 					},
 				})
 				Expect(err).To(BeNil())
@@ -387,10 +387,10 @@ var _ = Describe("InstanceController", func() {
 				fmt.Println("UT============创建实例，含checkhealth")
 				resp, err := insResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
-						ServiceId: consumerId,
-						HostName:  "UT-HOST",
-						Status:    pb.MSI_UP,
-						Stage:     "prod",
+						ServiceId:   consumerId,
+						HostName:    "UT-HOST",
+						Status:      pb.MSI_UP,
+						Environment: "production",
 						HealthCheck: &pb.HealthCheck{
 							Mode:     "push",
 							Interval: 30,
@@ -404,10 +404,10 @@ var _ = Describe("InstanceController", func() {
 
 				resp, err = insResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
-						ServiceId: consumerId,
-						HostName:  "UT-HOST",
-						Status:    pb.MSI_UP,
-						Stage:     "prod",
+						ServiceId:   consumerId,
+						HostName:    "UT-HOST",
+						Status:      pb.MSI_UP,
+						Environment: "production",
 						HealthCheck: &pb.HealthCheck{
 							Mode:     "pull",
 							Interval: 30,
@@ -422,10 +422,10 @@ var _ = Describe("InstanceController", func() {
 
 				resp, err = insResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
-						ServiceId: consumerId,
-						HostName:  "UT-HOST",
-						Status:    pb.MSI_UP,
-						Stage:     "prod",
+						ServiceId:   consumerId,
+						HostName:    "UT-HOST",
+						Status:      pb.MSI_UP,
+						Environment: "production",
 						HealthCheck: &pb.HealthCheck{
 							Mode:     "push",
 							Interval: 30,
@@ -439,10 +439,10 @@ var _ = Describe("InstanceController", func() {
 
 				resp, err = insResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
-						ServiceId: consumerId,
-						HostName:  "UT-HOST",
-						Status:    pb.MSI_UP,
-						Stage:     "prod",
+						ServiceId:   consumerId,
+						HostName:    "UT-HOST",
+						Status:      pb.MSI_UP,
+						Environment: "production",
 						HealthCheck: &pb.HealthCheck{
 							Mode:     "pull",
 							Interval: 30,
@@ -484,7 +484,7 @@ var _ = Describe("InstanceController", func() {
 					ServiceName:       "service_name_provider",
 					VersionRule:       "1.0.0+",
 					Tags:              []string{},
-					Stage:             "nonestage",
+					Env:               "nonestage",
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + respFind.GetResponse().Message)
@@ -496,7 +496,7 @@ var _ = Describe("InstanceController", func() {
 					ServiceName:       "service_name_provider",
 					VersionRule:       "1.0.0+",
 					Tags:              []string{},
-					Stage:             "dev",
+					Env:               "development",
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + respFind.GetResponse().Message)
@@ -508,7 +508,7 @@ var _ = Describe("InstanceController", func() {
 					ServiceName:       "noneservice",
 					VersionRule:       "latest",
 					Tags:              []string{},
-					Stage:             "dev",
+					Env:               "development",
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + respFind.GetResponse().Message)
@@ -520,7 +520,7 @@ var _ = Describe("InstanceController", func() {
 					ServiceName:       "service_name_provider",
 					VersionRule:       "3.0.0+",
 					Tags:              []string{},
-					Stage:             "dev",
+					Env:               "development",
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + respFind.GetResponse().Message)
@@ -532,7 +532,7 @@ var _ = Describe("InstanceController", func() {
 					ServiceName:       "service_name_provider",
 					VersionRule:       "2.0.0-2.0.1",
 					Tags:              []string{},
-					Stage:             "dev",
+					Env:               "development",
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + respFind.GetResponse().Message)
@@ -544,7 +544,7 @@ var _ = Describe("InstanceController", func() {
 					ServiceName:       "service_name_provider",
 					VersionRule:       "2.0.0",
 					Tags:              []string{},
-					Stage:             "dev",
+					Env:               "development",
 				})
 				Expect(err).To(BeNil())
 
@@ -557,7 +557,7 @@ var _ = Describe("InstanceController", func() {
 					ServiceName:       "service_name_provider",
 					VersionRule:       "2.0.0",
 					Tags:              []string{},
-					Stage:             "dev",
+					Env:               "development",
 				})
 				Expect(err).To(BeNil())
 
@@ -588,7 +588,7 @@ var _ = Describe("InstanceController", func() {
 					ServiceName:       "service_name_provider",
 					VersionRule:       "latest",
 					Tags:              []string{},
-					Stage:             "dev",
+					Env:               "development",
 				})
 				fmt.Println("test resp.GetResponse() ", respFind.GetResponse())
 				Expect(err).To(BeNil())
@@ -601,7 +601,7 @@ var _ = Describe("InstanceController", func() {
 					ServiceName:       "service_name_provider",
 					VersionRule:       "1.0.0+",
 					Tags:              []string{},
-					Stage:             "dev",
+					Env:               "development",
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + respFind.GetResponse().Message)
@@ -613,7 +613,7 @@ var _ = Describe("InstanceController", func() {
 					ServiceName:       "service_name_provider",
 					VersionRule:       "1.0.0-1.0.1",
 					Tags:              []string{},
-					Stage:             "dev",
+					Env:               "development",
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp.GetResponse().Message)
@@ -625,7 +625,7 @@ var _ = Describe("InstanceController", func() {
 					ServiceName:       "service_name_provider",
 					VersionRule:       "1.0.0",
 					Tags:              []string{},
-					Stage:             "dev",
+					Env:               "development",
 				})
 				Expect(err).To(BeNil())
 
@@ -760,7 +760,7 @@ var _ = Describe("InstanceController", func() {
 					ConsumerServiceId:  consumerId,
 					ProviderServiceId:  consumerId,
 					ProviderInstanceId: instanceId,
-					Stage:              "dev",
+					Env:                "development",
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp.GetResponse().Message)
@@ -852,7 +852,7 @@ var _ = Describe("InstanceController", func() {
 					ConsumerServiceId: "noneservice",
 					ProviderServiceId: "noneservice",
 					Tags:              []string{},
-					Stage:             "prod",
+					Env:               "development",
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp.GetResponse().Message)

@@ -13,16 +13,9 @@
 //limitations under the License.
 package server
 
+import _ "github.com/ServiceComb/service-center/server/service/event"
 import (
 	"fmt"
-	"github.com/astaxie/beego"
-	"os"
-	"os/signal"
-	"strings"
-	"syscall"
-	"time"
-)
-import (
 	"github.com/ServiceComb/service-center/pkg/common"
 	"github.com/ServiceComb/service-center/server/api"
 	"github.com/ServiceComb/service-center/server/core"
@@ -35,7 +28,13 @@ import (
 	nf "github.com/ServiceComb/service-center/server/service/notification"
 	"github.com/ServiceComb/service-center/util"
 	"github.com/ServiceComb/service-center/version"
+	"github.com/astaxie/beego"
+	"os"
+	"os/signal"
 	"runtime"
+	"strings"
+	"syscall"
+	"time"
 )
 
 const CLEAN_UP_TIMEOUT = 3

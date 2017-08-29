@@ -63,7 +63,7 @@ func GetInstance(ctx context.Context, tenant string, serviceId string, instanceI
 	return instance, nil
 }
 
-func GetAllInstancesOfOneService(ctx context.Context, tenant string, serviceId string, stage string) ([]*pb.MicroServiceInstance, error) {
+func GetAllInstancesOfOneService(ctx context.Context, tenant string, serviceId string, env string) ([]*pb.MicroServiceInstance, error) {
 	key := apt.GenerateInstanceKey(tenant, serviceId, "")
 	resp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
@@ -84,8 +84,8 @@ func GetAllInstancesOfOneService(ctx context.Context, tenant string, serviceId s
 			util.Logger().Errorf(err, "Unmarshal instance of service %s failed.", serviceId)
 			return nil, err
 		}
-		if len(stage) != 0 {
-			if stage == instance.Stage {
+		if len(env) != 0 {
+			if env == instance.Environment {
 				instances = append(instances, instance)
 			}
 		} else {

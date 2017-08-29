@@ -26,6 +26,6 @@ Postman-Token: f1179ffa-5156-88f2-04c6-bd41b9312928
             "times": 2
         },
         "timestamp": "1500520456",
-        "stage": "prod"
+        "environment":"production"
     }
 }
