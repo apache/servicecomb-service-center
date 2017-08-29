@@ -111,6 +111,7 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 	}
 	service.ServiceId = serviceId
 	service.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
+	service.ModTimestamp = service.Timestamp
 
 	data, err := json.Marshal(service)
 	if err != nil {
@@ -556,6 +557,7 @@ func (s *ServiceController) UpdateProperties(ctx context.Context, in *pb.UpdateS
 	for propertyKey := range in.Properties {
 		service.Properties[propertyKey] = in.Properties[propertyKey]
 	}
+	service.ModTimestamp = strconv.FormatInt(time.Now().Unix(), 10)
 
 	data, err := json.Marshal(service)
 	if err != nil {

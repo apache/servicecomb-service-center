@@ -471,9 +471,9 @@ var _ = Describe("ServiceController", func() {
 						Endpoints: []string{
 							"rest:127.0.0.1:8080",
 						},
-						HostName: "UT-HOST",
-						Status:   pb.MSI_UP,
-						Stage:    "prod",
+						HostName:    "UT-HOST",
+						Status:      pb.MSI_UP,
+						Environment: "production",
 					},
 				})
 				Expect(err).To(BeNil())
@@ -486,7 +486,7 @@ var _ = Describe("ServiceController", func() {
 				resp, err := insResource.GetInstances(getContext(), &pb.GetInstancesRequest{
 					ConsumerServiceId: serviceId3,
 					ProviderServiceId: serviceId,
-					Stage:             "prod",
+					Env:               "production",
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp.GetResponse().Message)
@@ -765,12 +765,12 @@ var _ = Describe("ServiceController", func() {
 						Endpoints: []string{
 							"rest:127.0.0.1:8081",
 						},
-						HostName: "UT-HOST",
-						Status:   pb.MSI_UP,
-						Stage:    "prod",
+						HostName:    "UT-HOST",
+						Status:      pb.MSI_UP,
+						Environment: "production",
 					},
 				})
-				instanceId6  = respReg.InstanceId
+				instanceId6 = respReg.InstanceId
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + respReg.GetResponse().Message)
 				Expect(respReg.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
@@ -778,9 +778,9 @@ var _ = Describe("ServiceController", func() {
 
 			It("批量删除服务3和服务4", func() {
 				resp, err := serviceResource.DeleteServices(getContext(), &pb.DelServicesRequest{
-					ServiceIds: []string{serviceId3,serviceId4},
-					Force: false ,
-					},
+					ServiceIds: []string{serviceId3, serviceId4},
+					Force:      false,
+				},
 				)
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp.GetResponse().Message)
@@ -789,8 +789,8 @@ var _ = Describe("ServiceController", func() {
 
 			It("批量删除服务5和服务6", func() {
 				resp, err := serviceResource.DeleteServices(getContext(), &pb.DelServicesRequest{
-					ServiceIds: []string{serviceId5,serviceId6},
-					Force: false ,
+					ServiceIds: []string{serviceId5, serviceId6},
+					Force:      false,
 				},
 				)
 				Expect(err).To(BeNil())
@@ -802,8 +802,8 @@ var _ = Describe("ServiceController", func() {
 			It("删除服务6的实例，删除服务5和服务6", func() {
 
 				respReg, err := insResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
-						ServiceId: serviceId6,
-					        InstanceId:instanceId6,
+					ServiceId:  serviceId6,
+					InstanceId: instanceId6,
 				})
 
 				Expect(err).To(BeNil())
@@ -811,7 +811,7 @@ var _ = Describe("ServiceController", func() {
 
 				resp, err := serviceResource.DeleteServices(getContext(), &pb.DelServicesRequest{
 					ServiceIds: []string{serviceId6},
-					Force: false ,
+					Force:      false,
 				},
 				)
 				Expect(err).To(BeNil())
@@ -819,8 +819,6 @@ var _ = Describe("ServiceController", func() {
 				fmt.Println("UT============" + resp.GetResponse().Message)
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 			})
-
-
 
 		})
 	})

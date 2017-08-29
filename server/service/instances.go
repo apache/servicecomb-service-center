@@ -441,7 +441,6 @@ func (s *InstanceController) GetOneInstance(ctx context.Context, in *pb.GetOneIn
 	serviceId := in.ProviderServiceId
 	instanceId := in.ProviderInstanceId
 	instance, err := serviceUtil.GetInstance(ctx, tenant, serviceId, instanceId)
-	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 	if err != nil {
 		util.Logger().Errorf(err, "get instance failed, %s(consumer/provider): get instance failed.", conPro)
 		return &pb.GetOneInstanceResponse{
@@ -455,10 +454,10 @@ func (s *InstanceController) GetOneInstance(ctx context.Context, in *pb.GetOneIn
 		}, nil
 	}
 
-	if len(in.Stage) != 0 && in.Stage != instance.Stage {
-		util.Logger().Errorf(nil, "get instance failed, %s(consumer/provider): stage not match, can't access.", conPro)
+	if len(in.Env) != 0 && in.Env != instance.Environment {
+		util.Logger().Errorf(nil, "get instance failed, %s(consumer/provider): environment not match, can't access.", conPro)
 		return &pb.GetOneInstanceResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Stage mismatch, can't access this instance."),
+			Response: pb.CreateResponse(pb.Response_FAIL, "Environment mismatch, can't access this instance."),
 		}, nil
 	}
 
@@ -471,9 +470,8 @@ func (s *InstanceController) GetOneInstance(ctx context.Context, in *pb.GetOneIn
 	}
 
 	return &pb.GetOneInstanceResponse{
-		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Get instance successfully."),
-		Instance:  instance,
-		Timestamp: timestamp,
+		Response: pb.CreateResponse(pb.Response_SUCCESS, "Get instance successfully."),
+		Instance: instance,
 	}, nil
 }
 
@@ -550,8 +548,7 @@ func (s *InstanceController) GetInstances(ctx context.Context, in *pb.GetInstanc
 	}
 
 	instances := []*pb.MicroServiceInstance{}
-	instances, err = serviceUtil.GetAllInstancesOfOneService(ctx, tenant, in.ProviderServiceId, in.Stage)
-	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
+	instances, err = serviceUtil.GetAllInstancesOfOneService(ctx, tenant, in.ProviderServiceId, in.Env)
 	if err != nil {
 		util.Logger().Errorf(err, "get instances failed, %s(consumer/provider): get instances from etcd failed.", conPro)
 		return &pb.GetInstancesResponse{
@@ -561,7 +558,6 @@ func (s *InstanceController) GetInstances(ctx context.Context, in *pb.GetInstanc
 	return &pb.GetInstancesResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Query service instances successfully."),
 		Instances: instances,
-		Timestamp: timestamp,
 	}, nil
 }
 
@@ -652,7 +648,7 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 			ConsumerServiceId: in.ConsumerServiceId,
 			ProviderServiceId: serviceId,
 			Tags:              in.Tags,
-			Stage:             in.Stage,
+			Env:               in.Env,
 		})
 		if err != nil {
 			util.Logger().Errorf(err, "find instance failed, %s: get service %s 's instance failed.", findFlag, serviceId)
@@ -664,7 +660,6 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 			instances = append(instances, resp.GetInstances()...)
 		}
 	}
-	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 	consumer := pb.ToMicroServiceKey(tenant, service)
 	//维护version的规则
 	providerService, _ := ms.GetService(ctx, tenant, ids[0])
@@ -700,7 +695,6 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 	return &pb.FindInstancesResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Query service instances successfully."),
 		Instances: instances,
-		Timestamp: timestamp,
 	}, nil
 }
 

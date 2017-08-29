@@ -94,9 +94,9 @@ var _ = Describe("GovernServiceController", func() {
 						Endpoints: []string{
 							"rest:127.0.0.1:8080",
 						},
-						HostName: "UT-HOST",
-						Status:   pb.MSI_UP,
-						Stage:    "prod",
+						HostName:    "UT-HOST",
+						Status:      pb.MSI_UP,
+						Environment: "production",
 					},
 				})
 				Expect(err).To(BeNil())
