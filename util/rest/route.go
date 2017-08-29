@@ -58,12 +58,12 @@ func (this *ROAServerHandler) addRoute(route *Route) (err error) {
 	method := strings.ToUpper(route.Method)
 	if !isValidMethod(method) || !strings.HasPrefix(route.Path, "/") || route.Func == nil {
 		message := fmt.Sprintf("Invalid route parameters(method: %s, path: %s)", method, route.Path)
-		util.LOGGER.Errorf(nil, message)
+		util.Logger().Errorf(nil, message)
 		return errors.New(message)
 	}
 
 	this.handlers[method] = append(this.handlers[method], &urlPatternHandler{route.Path, http.HandlerFunc(route.Func)})
-	util.LOGGER.Infof("register route %s(%s).", route.Path, method)
+	util.Logger().Infof("register route %s(%s).", route.Path, method)
 
 	return nil
 }

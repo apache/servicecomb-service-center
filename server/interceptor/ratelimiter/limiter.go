@@ -63,7 +63,7 @@ func (this *Limiter) LoadConfig() {
 		"RemoteAddr,X-Forwarded-For,X-Real-IP")
 	this.tbLimiter.IPLookups = strings.Split(iplookups, ",")
 
-	util.LOGGER.Warnf(nil, "Rate-limit Load config, ttl: %s, conns: %d, iplookups: %s", ttl, this.conns, iplookups)
+	util.Logger().Warnf(nil, "Rate-limit Load config, ttl: %s, conns: %d, iplookups: %s", ttl, this.conns, iplookups)
 }
 
 func (this *Limiter) Handle(w http.ResponseWriter, r *http.Request) error {
@@ -77,7 +77,7 @@ func (this *Limiter) Handle(w http.ResponseWriter, r *http.Request) error {
 		w.Header().Add("Content-Type", this.tbLimiter.MessageContentType)
 		w.WriteHeader(httpError.StatusCode)
 		w.Write(util.StringToBytesWithNoCopy(httpError.Message))
-		util.LOGGER.Warn("Reached maximum request limit!", nil)
+		util.Logger().Warn("Reached maximum request limit!", nil)
 		return errors.New(httpError.Message)
 	}
 	return nil

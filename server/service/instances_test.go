@@ -184,7 +184,7 @@ var _ = Describe("InstanceController", func() {
 				//注册sc
 				fmt.Println("UT===========health")
 
-				respCluterhealth, err := insResource.CluterHealth(getContext())
+				respCluterhealth, err := insResource.ClusterHealth(getContext())
 				Expect(err).To(BeNil())
 				Expect(respCluterhealth.GetResponse().Code).To(Equal(pb.Response_FAIL))
 
@@ -207,7 +207,7 @@ var _ = Describe("InstanceController", func() {
 				})
 				Expect(respIns.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
-				respCluterhealth, err = insResource.CluterHealth(getContext())
+				respCluterhealth, err = insResource.ClusterHealth(getContext())
 				Expect(err).To(BeNil())
 				Expect(respCluterhealth.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 			})

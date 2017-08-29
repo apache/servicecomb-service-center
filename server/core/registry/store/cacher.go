@@ -27,6 +27,7 @@ import (
 const (
 	DEFAULT_MAX_NO_EVENT_INTERVAL = 1 // TODO it should be set to 1 for prevent etcd data is lost accidentally.
 	DEFAULT_LISTWATCH_TIMEOUT     = 30 * time.Second
+	DEFAULT_COMPACT_TIMES         = 3
 	DEFAULT_COMPACT_TIMEOUT       = 5 * time.Minute
 	event_block_size              = 1000
 )
@@ -124,11 +125,17 @@ func (c *KvCache) Unlock() {
 	if l > c.lastMaxSize {
 		c.lastMaxSize = l
 	}
-	if l == 0 && c.lastMaxSize > c.size && time.Now().Sub(c.lastRefresh) >= DEFAULT_COMPACT_TIMEOUT {
-		util.LOGGER.Infof("cache is empty and not in use over %s, compact capacity to size %d->%d",
+	if c.size >= l &&
+		c.lastMaxSize > c.size*DEFAULT_COMPACT_TIMES &&
+		time.Now().Sub(c.lastRefresh) >= DEFAULT_COMPACT_TIMEOUT {
+		util.Logger().Infof("cache is empty and not in use over %s, compact capacity to size %d->%d",
 			DEFAULT_COMPACT_TIMEOUT, c.lastMaxSize, c.size)
 		// gc
-		c.store = make(map[string]*mvccpb.KeyValue, c.size)
+		newCache := make(map[string]*mvccpb.KeyValue, c.size)
+		for k, v := range c.store {
+			newCache[k] = v
+		}
+		c.store = newCache
 		c.lastMaxSize = c.size
 		c.lastRefresh = time.Now()
 	}
@@ -167,7 +174,7 @@ func (c *KvCacher) needList() bool {
 		return false
 	}
 
-	util.LOGGER.Debugf("no events come in more then %s, need to list key %s",
+	util.Logger().Debugf("no events come in more then %s, need to list key %s",
 		time.Duration(c.noEventInterval)*c.Cfg.Timeout, c.Cfg.Key)
 	c.noEventInterval = 0
 	return true
@@ -185,12 +192,12 @@ func (c *KvCacher) doList(listOps *ListOptions) error {
 	syncDuration := time.Now().Sub(start)
 
 	if syncDuration > 5*time.Second {
-		util.LOGGER.Warnf(nil, "finish to cache key %s, %d items took %s! list options: %+v, rev: %d",
+		util.Logger().Warnf(nil, "finish to cache key %s, %d items took %s! opts: %s, rev: %d",
 			c.Cfg.Key, len(kvs), syncDuration, listOps, c.lastRev)
 		return nil
 	}
 	if lastRev != c.lastRev {
-		util.LOGGER.Infof("finish to cache key %s, %d items took %s, list options: %+v, rev: %d",
+		util.Logger().Infof("finish to cache key %s, %d items took %s, opts: %s, rev: %d",
 			c.Cfg.Key, len(kvs), syncDuration, listOps, c.lastRev)
 	}
 	return nil
@@ -198,8 +205,7 @@ func (c *KvCacher) doList(listOps *ListOptions) error {
 
 func (c *KvCacher) doWatch(listOps *ListOptions) error {
 	watcher := c.lw.Watch(listOps)
-	util.LOGGER.Debugf("finish to new watcher, key %s, list options: %+v, start rev: %d+1",
-		c.Cfg.Key, listOps, c.lastRev)
+	util.Logger().Debugf("finish to new watcher, key %s, opts: %s, start rev: %d+1", c.Cfg.Key, listOps, c.lastRev)
 	return c.handleWatcher(watcher)
 }
 
@@ -213,7 +219,8 @@ func (c *KvCacher) ListAndWatch(ctx context.Context) error {
 	if c.needList() {
 		err := c.doList(listOps)
 		if err != nil {
-			util.LOGGER.Errorf(err, "list key %s failed, list options: %+v", c.Cfg.Key, listOps)
+			util.Logger().Errorf(err, "list key %s failed, opts: %s, rev: %d",
+				c.Cfg.Key, listOps, c.lastRev)
 			// do not return err, continue to watch
 		}
 		util.SafeCloseChan(c.ready)
@@ -224,7 +231,8 @@ func (c *KvCacher) ListAndWatch(ctx context.Context) error {
 	c.mux.Unlock()
 
 	if err != nil {
-		util.LOGGER.Errorf(err, "handle watcher failed, watch key %s, list options: %+v", c.Cfg.Key, listOps)
+		util.Logger().Errorf(err, "handle watcher failed, watch key %s, opts: %s, start rev: %d+1",
+			c.Cfg.Key, listOps, c.lastRev)
 		return err
 	}
 	return nil
@@ -232,58 +240,68 @@ func (c *KvCacher) ListAndWatch(ctx context.Context) error {
 
 func (c *KvCacher) handleWatcher(watcher *Watcher) error {
 	defer watcher.Stop()
-	for evt := range watcher.EventBus() {
-		if evt.Type == proto.EVT_ERROR {
-			err := evt.Object.(error)
+	for evts := range watcher.EventBus() {
+		if evts[0].Type == proto.EVT_ERROR {
+			err := evts[0].Object.(error)
 			return err
 		}
-		c.sync([]*Event{evt})
+		c.sync(evts)
 	}
 	return nil
 }
 
 func (c *KvCacher) sync(evts []*Event) {
+	if len(evts) == 0 {
+		return
+	}
+
 	cache := c.Cache().(*KvCache)
+	idx := 0
+	kvEvts := make([]*KvEvent, len(evts))
 	store := cache.Lock()
-	defer cache.Unlock()
 	for _, evt := range evts {
 		kv := evt.Object.(*mvccpb.KeyValue)
 		key := util.BytesToStringWithNoCopy(kv.Key)
 		prevKv, ok := store[key]
 		switch evt.Type {
 		case proto.EVT_CREATE, proto.EVT_UPDATE:
-			util.LOGGER.Debugf("sync %s event and notify watcher, cache key %s, %+v", evt.Type, key, kv)
+			util.Logger().Debugf("sync %s event and notify watcher, cache key %s, %+v", evt.Type, key, kv)
 			store[key] = kv
 			t := evt.Type
 			if !ok && evt.Type != proto.EVT_CREATE {
-				util.LOGGER.Warnf(nil, "unexpected %s event! it should be %s key %s",
+				util.Logger().Warnf(nil, "unexpected %s event! it should be %s key %s",
 					evt.Type, proto.EVT_CREATE, key)
 				t = proto.EVT_CREATE
 			}
 			if ok && evt.Type != proto.EVT_UPDATE {
-				util.LOGGER.Warnf(nil, "unexpected %s event! it should be %s key %s",
+				util.Logger().Warnf(nil, "unexpected %s event! it should be %s key %s",
 					evt.Type, proto.EVT_UPDATE, key)
 				t = proto.EVT_UPDATE
 			}
-			c.Cfg.OnEvent(&KvEvent{
+			kvEvts[idx] = &KvEvent{
 				Revision: evt.Revision,
 				Action:   t,
 				KV:       kv,
-			})
+			}
+			idx++
 		case proto.EVT_DELETE:
 			if ok {
-				util.LOGGER.Debugf("sync %s event and notify watcher, remove key %s, %+v", evt.Type, key, kv)
+				util.Logger().Debugf("sync %s event and notify watcher, remove key %s, %+v", evt.Type, key, kv)
 				delete(store, key)
-				c.Cfg.OnEvent(&KvEvent{
+				kvEvts[idx] = &KvEvent{
 					Revision: evt.Revision,
 					Action:   evt.Type,
 					KV:       prevKv,
-				})
+				}
+				idx++
 				continue
 			}
-			util.LOGGER.Warnf(nil, "unexpected %s event! nonexistent key %s", evt.Type, key)
+			util.Logger().Warnf(nil, "unexpected %s event! nonexistent key %s", evt.Type, key)
 		}
 	}
+	cache.Unlock()
+
+	c.onKvEvents(kvEvts[:idx])
 }
 
 func (c *KvCacher) filter(rev int64, items []*mvccpb.KeyValue) []*Event {
@@ -405,9 +423,15 @@ func (c *KvCacher) filterCreateOrUpdate(store map[string]*mvccpb.KeyValue, newSt
 	}
 }
 
+func (c *KvCacher) onKvEvents(evts []*KvEvent) {
+	for _, evt := range evts {
+		c.Cfg.OnEvent(evt)
+	}
+}
+
 func (c *KvCacher) run() {
 	c.goroute.Do(func(stopCh <-chan struct{}) {
-		util.LOGGER.Debugf("start to list and watch %s", c.Cfg)
+		util.Logger().Debugf("start to list and watch %s", c.Cfg)
 		ctx, cancel := context.WithCancel(context.Background())
 		c.goroute.Do(func(stopCh <-chan struct{}) {
 			defer cancel()
@@ -423,7 +447,7 @@ func (c *KvCacher) run() {
 			}
 			select {
 			case <-stopCh:
-				util.LOGGER.Warnf(nil, "stop to list and watch %s", c.Cfg)
+				util.Logger().Warnf(nil, "stop to list and watch %s", c.Cfg)
 				return
 			case <-time.After(nextPeriod):
 			}
@@ -444,7 +468,7 @@ func (c *KvCacher) Stop() {
 
 	util.SafeCloseChan(c.ready)
 
-	util.LOGGER.Debugf("cacher is stopped, %s", c.Cfg)
+	util.Logger().Debugf("cacher is stopped, %s", c.Cfg)
 }
 
 func (c *KvCacher) Ready() <-chan struct{} {

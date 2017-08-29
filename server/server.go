@@ -61,7 +61,7 @@ type ServiceCenterServer struct {
 }
 
 func (s *ServiceCenterServer) Run() {
-	util.LOGGER.Infof("service center have running simultaneously with %d CPU cores", runtime.GOMAXPROCS(0))
+	util.Logger().Infof("service center have running simultaneously with %d CPU cores", runtime.GOMAXPROCS(0))
 
 	go server.handleSignal()
 
@@ -87,7 +87,7 @@ func (s *ServiceCenterServer) checkBackendReady() {
 			i = len(wait) - 1
 		}
 		t := time.Duration(wait[i]) * time.Second
-		util.LOGGER.Errorf(nil, "initialize service center failed, retry after %s", t)
+		util.Logger().Errorf(nil, "initialize service center failed, retry after %s", t)
 		<-time.After(t)
 	}
 }
@@ -98,7 +98,7 @@ func (s *ServiceCenterServer) handleSignal() {
 	signal.Ignore(syscall.SIGQUIT) // when uses jstack to dump stack
 
 	sgn := <-sc
-	util.LOGGER.Warnf(nil, "Caught signal '%v', now service center quit...", sgn)
+	util.Logger().Warnf(nil, "Caught signal '%v', now service center quit...", sgn)
 
 	close(s.exit)
 
@@ -127,23 +127,23 @@ func (s *ServiceCenterServer) waitForQuit() {
 	case <-s.exit:
 	}
 	if err != nil {
-		util.LOGGER.Errorf(err, "service center catch errors, %s", err.Error())
+		util.Logger().Errorf(err, "service center catch errors")
 	}
 	select {
 	case <-s.exit:
-		util.LOGGER.Warnf(nil, "waiting for %ds to clean up resources...", CLEAN_UP_TIMEOUT)
+		util.Logger().Warnf(nil, "waiting for %ds to clean up resources...", CLEAN_UP_TIMEOUT)
 		<-time.After(CLEAN_UP_TIMEOUT * time.Second)
 	default:
 		close(s.exit)
 	}
-	util.LOGGER.Warn("service center quit", nil)
+	util.Logger().Warn("service center quit", nil)
 }
 
 func (s *ServiceCenterServer) needUpgrade() bool {
 	if core.GetSystemConfig() == nil {
 		err := core.LoadSystemConfig()
 		if err != nil {
-			util.LOGGER.Errorf(err, "check version failed, can not load the system config")
+			util.Logger().Errorf(err, "check version failed, can not load the system config")
 			return false
 		}
 	}
@@ -156,7 +156,7 @@ func (s *ServiceCenterServer) waitForReady() {
 
 	lock, err := mux.Lock(mux.GLOBAL_LOCK)
 	if err != nil {
-		util.LOGGER.Errorf(err, "wait for server ready failed")
+		util.Logger().Errorf(err, "wait for server ready failed")
 		os.Exit(1)
 	}
 	if s.needUpgrade() {
@@ -186,7 +186,7 @@ func (s *ServiceCenterServer) startApiServer() {
 	grpcPort := beego.AppConfig.DefaultString("grpcport", "")
 	cmpName := beego.AppConfig.String("ComponentName")
 	hostName := fmt.Sprintf("%s_%s", cmpName, strings.Replace(util.GetLocalIP(), ".", "_", -1))
-	util.LOGGER.Infof("Local listen address: %s:%s, host: %s.", restIp, restPort, hostName)
+	util.Logger().Infof("Local listen address: %s:%s, host: %s.", restIp, restPort, hostName)
 
 	eps := map[api.APIType]string{}
 	if len(restIp) > 0 && len(restPort) > 0 {

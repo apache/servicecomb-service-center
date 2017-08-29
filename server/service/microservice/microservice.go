@@ -15,7 +15,6 @@ package microservice
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/ServiceComb/service-center/pkg/common/cache"
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
@@ -41,7 +40,7 @@ func init() {
 /*
 	get Service by service id
 */
-func GetService(ctx context.Context, domain string, id string, rev int64) (*pb.MicroService, error) {
+func GetServiceWithRev(ctx context.Context, domain string, id string, rev int64) (*pb.MicroService, error) {
 	key := apt.GenerateServiceKey(domain, id)
 	serviceResp, err := store.Store().Service().Search(ctx, &registry.PluginOp{
 		Action:  registry.GET,
@@ -49,17 +48,14 @@ func GetService(ctx context.Context, domain string, id string, rev int64) (*pb.M
 		WithRev: rev,
 	})
 	if err != nil {
-		util.LOGGER.Errorf(err, "query service %s file with revision %d failed", id, rev)
 		return nil, err
 	}
 	if len(serviceResp.Kvs) == 0 {
-		util.LOGGER.Errorf(nil, "service %s with revision %d does not exist.", id, rev)
 		return nil, nil
 	}
 	service := &pb.MicroService{}
 	err = json.Unmarshal(serviceResp.Kvs[0].Value, &service)
 	if err != nil {
-		util.LOGGER.Errorf(err, "unmarshal provider service %s file with revision %d failed", id, rev)
 		return nil, err
 	}
 	return service, nil
@@ -69,7 +65,7 @@ func GetServiceInCache(ctx context.Context, domain string, id string) (*pb.Micro
 	uid := domain + ":::" + id
 	ms, ok := msCache.Get(uid)
 	if !ok {
-		ms, err := GetService(ctx, domain, id, 0)
+		ms, err := SearchService(ctx, domain, id, registry.MODE_BOTH)
 		if ms == nil {
 			return nil, err
 		}
@@ -80,8 +76,29 @@ func GetServiceInCache(ctx context.Context, domain string, id string) (*pb.Micro
 	return ms.(*pb.MicroService), nil
 }
 
-func GetServiceByServiceId(ctx context.Context, tenant string, serviceId string) (*pb.MicroService, error) {
-	return GetService(ctx, tenant, serviceId, 0)
+func GetService(ctx context.Context, tenant string, serviceId string) (*pb.MicroService, error) {
+	return SearchService(ctx, tenant, serviceId, registry.MODE_BOTH)
+}
+
+func SearchService(ctx context.Context, tenant, serviceId string, mode registry.CacheMode) (*pb.MicroService, error) {
+	key := apt.GenerateServiceKey(tenant, serviceId)
+	serviceResp, err := store.Store().Service().Search(ctx, &registry.PluginOp{
+		Action: registry.GET,
+		Key:    util.StringToBytesWithNoCopy(key),
+		Mode:   mode,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(serviceResp.Kvs) == 0 {
+		return nil, nil
+	}
+	service := &pb.MicroService{}
+	err = json.Unmarshal(serviceResp.Kvs[0].Value, &service)
+	if err != nil {
+		return nil, err
+	}
+	return service, nil
 }
 
 func GetServicesRawData(ctx context.Context, tenant string) ([]*mvccpb.KeyValue, error) {
@@ -104,7 +121,6 @@ func GetServicesByTenant(ctx context.Context, tenant string) ([]*pb.MicroService
 		service := &pb.MicroService{}
 		err := json.Unmarshal(kvs.Value, service)
 		if err != nil {
-			util.LOGGER.Error(fmt.Sprintf("Can not unmarshal %s", err), err)
 			return nil, err
 		}
 		services = append(services, service)
@@ -119,7 +135,7 @@ func GetServiceId(ctx context.Context, key *pb.MicroServiceKey) (serviceId strin
 	}
 	if len(serviceId) == 0 {
 		// 别名查询
-		util.LOGGER.Debugf("could not search microservice %s/%s/%s id by field 'serviceName', now try field 'alias'.",
+		util.Logger().Debugf("could not search microservice %s/%s/%s id by field 'serviceName', now try field 'alias'.",
 			key.AppId, key.ServiceName, key.Version)
 		return SearchServiceIdFromAlias(ctx, key, registry.MODE_BOTH)
 	}
@@ -156,6 +172,23 @@ func SearchServiceIdFromAlias(ctx context.Context, key *pb.MicroServiceKey, mode
 	return util.BytesToStringWithNoCopy(resp.Kvs[0].Value), nil
 }
 
+func GetServiceAllVersions(ctx context.Context, key *pb.MicroServiceKey, alias bool) (*registry.PluginResponse, error) {
+	key.Version = ""
+	var prefix string
+	if alias {
+		prefix = apt.GenerateServiceAliasKey(key)
+	} else {
+		prefix = apt.GenerateServiceIndexKey(key)
+	}
+	resp, err := store.Store().ServiceIndex().Search(ctx, &registry.PluginOp{
+		Action:     registry.GET,
+		Key:        util.StringToBytesWithNoCopy(prefix),
+		WithPrefix: true,
+		SortOrder:  registry.SORT_DESCEND,
+	})
+	return resp, err
+}
+
 func FindServiceIds(ctx context.Context, versionRule string, key *pb.MicroServiceKey) ([]string, error) {
 	// 版本规则
 	ids := []string{}
@@ -172,22 +205,11 @@ func FindServiceIds(ctx context.Context, versionRule string, key *pb.MicroServic
 		return ids, nil
 	}
 
+	searchAlias := false
 	alsoFindAlias := len(key.Alias) > 0
-	keyGenerator := func(key *pb.MicroServiceKey) string { return apt.GenerateServiceIndexKey(key) }
-	versionsFunc := func(key *pb.MicroServiceKey) (*registry.PluginResponse, error) {
-		key.Version = ""
-		prefix := keyGenerator(key)
-		resp, err := store.Store().ServiceIndex().Search(ctx, &registry.PluginOp{
-			Action:     registry.GET,
-			Key:        util.StringToBytesWithNoCopy(prefix),
-			WithPrefix: true,
-			SortOrder:  registry.SORT_DESCEND,
-		})
-		return resp, err
-	}
 
 FIND_RULE:
-	resp, err := versionsFunc(key)
+	resp, err := GetServiceAllVersions(ctx, key, searchAlias)
 	if err != nil {
 		return nil, err
 	}
@@ -195,8 +217,8 @@ FIND_RULE:
 		ids = match(resp.Kvs)
 	}
 	if len(ids) == 0 && alsoFindAlias {
+		searchAlias = true
 		alsoFindAlias = false
-		keyGenerator = func(key *pb.MicroServiceKey) string { return apt.GenerateServiceAliasKey(key) }
 		goto FIND_RULE
 	}
 	return ids, nil

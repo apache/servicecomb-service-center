@@ -43,7 +43,7 @@ func (this *MicroServiceInstanceService) URLPatterns() []rest.Route {
 func (this *MicroServiceInstanceService) RegisterInstance(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		util.LOGGER.Error("register instance failed, body err", err)
+		util.Logger().Error("register instance failed, body err", err)
 		WriteText(http.StatusBadRequest, err.Error(), w)
 		return
 	}
@@ -51,7 +51,7 @@ func (this *MicroServiceInstanceService) RegisterInstance(w http.ResponseWriter,
 	request := &pb.RegisterInstanceRequest{}
 	err = json.Unmarshal(message, request)
 	if err != nil {
-		util.LOGGER.Error("register instance failed, Unmarshal error", err)
+		util.Logger().Error("register instance failed, Unmarshal error", err)
 		WriteText(http.StatusInternalServerError, "Unmarshal error", w)
 		return
 	}
@@ -78,7 +78,7 @@ func (this *MicroServiceInstanceService) Heartbeat(w http.ResponseWriter, r *htt
 func (this *MicroServiceInstanceService) HeartbeatSet(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		util.LOGGER.Error("register instance failed, body err", err)
+		util.Logger().Error("register instance failed, body err", err)
 		WriteText(http.StatusBadRequest, err.Error(), w)
 		return
 	}
@@ -86,7 +86,7 @@ func (this *MicroServiceInstanceService) HeartbeatSet(w http.ResponseWriter, r *
 	request := &pb.HeartbeatSetRequest{}
 	err = json.Unmarshal(message, request)
 	if err != nil {
-		util.LOGGER.Error("register instance failed, Unmarshal error", err)
+		util.Logger().Error("register instance failed, Unmarshal error", err)
 		WriteText(http.StatusInternalServerError, "Unmarshal error", w)
 		return
 	}
@@ -213,7 +213,7 @@ func (this *MicroServiceInstanceService) UpdateStatus(w http.ResponseWriter, r *
 func (this *MicroServiceInstanceService) UpdateMetadata(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		util.LOGGER.Error("body err", err)
+		util.Logger().Error("body err", err)
 		WriteText(http.StatusBadRequest, err.Error(), w)
 		return
 	}
@@ -223,7 +223,7 @@ func (this *MicroServiceInstanceService) UpdateMetadata(w http.ResponseWriter, r
 	}
 	err = json.Unmarshal(message, request)
 	if err != nil {
-		util.LOGGER.Error("Unmarshal error", err)
+		util.Logger().Error("Unmarshal error", err)
 		WriteText(http.StatusInternalServerError, "Unmarshal error", w)
 		return
 	}

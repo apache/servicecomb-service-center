@@ -60,7 +60,7 @@ func (cors *CORS) handlePreflightRequest(w http.ResponseWriter, r *http.Request)
 	acrm := r.Header.Get("Access-Control-Request-Method")
 	if acrm == "" {
 		cors.invalid(w, r)
-		util.LOGGER.Warnf(nil, "header 'Access-Control-Request-Method' is empty")
+		util.Logger().Warnf(nil, "header 'Access-Control-Request-Method' is empty")
 		return
 	}
 	methods := strings.Split(strings.TrimSpace(acrm), ",")
@@ -68,7 +68,7 @@ func (cors *CORS) handlePreflightRequest(w http.ResponseWriter, r *http.Request)
 		m = strings.TrimSpace(m)
 		if _, ok := cors.allowMethods[m]; !ok {
 			cors.invalid(w, r)
-			util.LOGGER.Warnf(nil, "only supported methods: %v", util.MapToList(cors.allowMethods))
+			util.Logger().Warnf(nil, "only supported methods: %v", util.MapToList(cors.allowMethods))
 			return
 		}
 	}
@@ -79,7 +79,7 @@ func (cors *CORS) handlePreflightRequest(w http.ResponseWriter, r *http.Request)
 			h = strings.ToLower(strings.TrimSpace(h))
 			if _, ok := cors.allowHeaders[h]; !ok {
 				cors.invalid(w, r)
-				util.LOGGER.Warnf(nil, "only supported headers: %v", util.MapToList(cors.allowHeaders))
+				util.Logger().Warnf(nil, "only supported headers: %v", util.MapToList(cors.allowHeaders))
 				return
 			}
 		}
@@ -134,7 +134,7 @@ func Intercept(w http.ResponseWriter, r *http.Request) (err error) {
 	} else if acrm := r.Header.Get("Access-Control-Request-Method"); acrm == "" {
 		cors.handleActualRequest(w, r)
 	} else {
-		util.LOGGER.Debugf("identify the current request is a CORS")
+		util.Logger().Debugf("identify the current request is a CORS")
 		cors.handlePreflightRequest(w, r)
 		err = errors.New("Handle preflight request")
 	}

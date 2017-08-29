@@ -28,6 +28,7 @@ const (
 	EVT_CREATE EventType = "CREATE"
 	EVT_UPDATE EventType = "UPDATE"
 	EVT_DELETE EventType = "DELETE"
+	EVT_EXPIRE EventType = "EXPIRE"
 	EVT_ERROR  EventType = "ERROR"
 	MS_UP      string    = "UP"
 	MS_DOWN    string    = "DOWN"
@@ -51,7 +52,7 @@ type SerivceInstanceCtrlServerEx interface {
 
 	WebSocketWatch(ctx context.Context, in *WatchInstanceRequest, conn *websocket.Conn)
 	WebSocketListAndWatch(ctx context.Context, in *WatchInstanceRequest, conn *websocket.Conn)
-	CluterHealth(ctx context.Context) (*GetInstancesResponse, error)
+	ClusterHealth(ctx context.Context) (*GetInstancesResponse, error)
 }
 
 type GovernServiceCtrlServerEx interface {
@@ -121,6 +122,17 @@ func GetInfoFromRuleKV(kv *mvccpb.KeyValue) (serviceId, ruleId, tenantProject st
 	serviceId = keys[l-2]
 	ruleId = keys[l-1]
 	tenantProject = fmt.Sprintf("%s/%s", keys[l-4], keys[l-3])
+	return
+}
+
+func GetInfoFromTagKV(kv *mvccpb.KeyValue) (serviceId, tenantProject string, data []byte) {
+	keys, data := KvToResponse(kv)
+	if len(keys) < 4 {
+		return
+	}
+	l := len(keys)
+	serviceId = keys[l-1]
+	tenantProject = fmt.Sprintf("%s/%s", keys[l-3], keys[l-2])
 	return
 }
 

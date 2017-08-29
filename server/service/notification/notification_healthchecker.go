@@ -33,7 +33,7 @@ type NotifyServiceHealthCheckJob struct {
 func (s *NotifyServiceHealthChecker) OnMessage(job NotifyJob) {
 	j := job.(*NotifyServiceHealthCheckJob)
 	err := j.ErrorSubscriber.Err()
-	util.LOGGER.Warnf(err, "notify server remove watcher %s %s",
+	util.Logger().Warnf(err, "notify server remove watcher %s %s",
 		j.ErrorSubscriber.Subject(), j.ErrorSubscriber.Id())
 	s.Service().RemoveSubscriber(j.ErrorSubscriber)
 }

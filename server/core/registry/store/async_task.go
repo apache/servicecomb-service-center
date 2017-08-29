@@ -42,27 +42,39 @@ type AsyncTasker struct {
 	isClose     bool
 }
 
+func (lat *AsyncTasker) getOrNewQueue(key string, task AsyncTask) (*util.UniQueue, bool) {
+	lat.queueLock.RLock()
+	queue, ok := lat.queues[key]
+	_, remove := lat.removeTasks[key]
+	lat.queueLock.RUnlock()
+	if !ok {
+		lat.queueLock.Lock()
+		queue, ok = lat.queues[key]
+		if !ok {
+			queue = util.NewUniQueue()
+			lat.queues[key] = queue
+			lat.latestTasks[key] = task
+		}
+		lat.queueLock.Unlock()
+	}
+	if remove && ok {
+		lat.queueLock.Lock()
+		_, remove = lat.removeTasks[key]
+		if remove {
+			delete(lat.removeTasks, key)
+		}
+		lat.queueLock.Unlock()
+	}
+	return queue, !ok
+}
+
 func (lat *AsyncTasker) AddTask(ctx context.Context, task AsyncTask) error {
 	if task == nil || ctx == nil {
 		return errors.New("invalid parameters")
 	}
-	lat.queueLock.RLock()
-	queue, ok := lat.queues[task.Key()]
-	latestTask := lat.latestTasks[task.Key()]
-	lat.queueLock.RUnlock()
-	if !ok {
-		lat.queueLock.Lock()
-		queue, ok = lat.queues[task.Key()]
-		if !ok {
-			queue = util.NewUniQueue()
-			lat.queues[task.Key()] = queue
-			latestTask = task
-			lat.latestTasks[task.Key()] = latestTask
-		}
-		lat.queueLock.Unlock()
-	}
 
-	if !ok || lat.isClose {
+	queue, isNew := lat.getOrNewQueue(task.Key(), task)
+	if isNew || lat.isClose {
 		// do immediately at first time
 		return task.Do(ctx)
 	}
@@ -71,7 +83,7 @@ func (lat *AsyncTasker) AddTask(ctx context.Context, task AsyncTask) error {
 	if err != nil {
 		return err
 	}
-	util.LOGGER.Debugf("add task done! key is %s", task.Key())
+	util.Logger().Debugf("add task done! key is %s", task.Key())
 
 	handled, err := lat.LatestHandled(task.Key())
 	if err != nil {
@@ -80,11 +92,16 @@ func (lat *AsyncTasker) AddTask(ctx context.Context, task AsyncTask) error {
 	return handled.Err()
 }
 
-func (lat *AsyncTasker) RemoveTask(key string) error {
+func (lat *AsyncTasker) DeferRemoveTask(key string) error {
 	lat.queueLock.Lock()
 	if lat.isClose {
 		lat.queueLock.Unlock()
 		return errors.New("AsyncTasker is stopped")
+	}
+	_, exist := lat.queues[key]
+	if !exist {
+		lat.queueLock.Unlock()
+		return nil
 	}
 	lat.removeTasks[key] = struct{}{}
 	lat.queueLock.Unlock()
@@ -97,7 +114,7 @@ func (lat *AsyncTasker) removeTask(key string) {
 	delete(lat.latestTasks, key)
 	delete(lat.removeTasks, key)
 	lat.queueLock.Unlock()
-	util.LOGGER.Debugf("remove task, key is %s", key)
+	util.Logger().Debugf("remove task, key is %s", key)
 }
 
 func (lat *AsyncTasker) LatestHandled(key string) (AsyncTask, error) {
@@ -115,12 +132,12 @@ func (lat *AsyncTasker) schedule(stopCh <-chan struct{}) {
 	ready := make(chan AsyncTask, DEFAULT_MAX_TASK_COUNT)
 	defer func() {
 		close(ready)
-		util.LOGGER.Debugf("AsyncTasker is ready to stop")
+		util.Logger().Debugf("AsyncTasker is ready to stop")
 	}()
 	for {
 		select {
 		case <-stopCh:
-			util.LOGGER.Debugf("scheduler exited for AsyncTasker is stopped")
+			util.Logger().Debugf("scheduler exited for AsyncTasker is stopped")
 			return
 		default:
 			go lat.collectReadyTasks(ready)
@@ -140,7 +157,7 @@ func (lat *AsyncTasker) daemonRemoveTask(stopCh <-chan struct{}) {
 	for {
 		select {
 		case <-stopCh:
-			util.LOGGER.Debugf("daemon remove task exited for AsyncTasker is stopped")
+			util.Logger().Debugf("daemon remove task exited for AsyncTasker is stopped")
 			return
 		case <-time.After(DEFAULT_REMOVE_TASKS_INTERVAL):
 			if lat.isClose {
@@ -155,7 +172,7 @@ func (lat *AsyncTasker) daemonRemoveTask(stopCh <-chan struct{}) {
 			for _, key := range removes {
 				lat.removeTask(key)
 			}
-			util.LOGGER.Debugf("daemon remove task is running, %d removed", len(removes))
+			util.Logger().Debugf("daemon remove task is running, %d removed", len(removes))
 		}
 	}
 }
@@ -189,7 +206,7 @@ func (lat *AsyncTasker) collectReadyTasks(ready chan<- AsyncTask) {
 	for key, queue := range lat.queues {
 		select {
 		case task, ok := <-queue.Chan():
-			util.LOGGER.Debugf("get task in queue[%v], key is %s", ok, key)
+			util.Logger().Debugf("get task in queue[%v], key is %s", ok, key)
 			if !ok {
 				continue
 			}
@@ -201,7 +218,7 @@ func (lat *AsyncTasker) collectReadyTasks(ready chan<- AsyncTask) {
 }
 
 func (lat *AsyncTasker) scheduleTask(at AsyncTask) {
-	util.LOGGER.Debugf("start to run task, key is %s", at.Key())
+	util.Logger().Debugf("start to run task, key is %s", at.Key())
 	lat.goroutine.Do(func(stopCh <-chan struct{}) {
 		ctx, cancel := context.WithCancel(context.Background())
 		go func() {
@@ -211,7 +228,7 @@ func (lat *AsyncTasker) scheduleTask(at AsyncTask) {
 			_, ok := lat.latestTasks[at.Key()]
 			lat.queueLock.RUnlock()
 			if !ok {
-				util.LOGGER.Debugf("task is removed, key is %s", at.Key())
+				util.Logger().Debugf("task is removed, key is %s", at.Key())
 				return
 			}
 
@@ -221,10 +238,10 @@ func (lat *AsyncTasker) scheduleTask(at AsyncTask) {
 		}()
 		select {
 		case <-ctx.Done():
-			util.LOGGER.Debugf("finish to handle task, key is %s", at.Key())
+			util.Logger().Debugf("finish to handle task, key is %s, result: %s", at.Key(), at.Err())
 		case <-stopCh:
 			cancel()
-			util.LOGGER.Debugf("cancelled task for AsyncTasker is stopped, key is %s", at.Key())
+			util.Logger().Debugf("cancelled task for AsyncTasker is stopped, key is %s", at.Key())
 		}
 	})
 }
@@ -265,7 +282,7 @@ func (lat *AsyncTasker) Stop() {
 
 	util.SafeCloseChan(lat.ready)
 
-	util.LOGGER.Debugf("AsyncTasker is stopped")
+	util.Logger().Debugf("AsyncTasker is stopped")
 }
 
 func (lat *AsyncTasker) Ready() <-chan struct{} {

@@ -32,13 +32,13 @@ import (
 const (
 	REGISTRY_PLUGIN_ETCD           = "etcd"
 	CONNECT_MANAGER_SERVER_TIMEOUT = 10
-	DEFAULT_PAGE_COUNT             = 5000 // grpc does not allow to transport a large body more then 4MB in a request.
+	DEFAULT_PAGE_COUNT             = 4096 // grpc does not allow to transport a large body more then 4MB in a request.
 )
 
 var clientTLSConfig *tls.Config
 
 func init() {
-	util.LOGGER.Infof("etcd plugin init.")
+	util.Logger().Infof("etcd plugin init.")
 	registry.RegistryPlugins[REGISTRY_PLUGIN_ETCD] = NewRegistry
 }
 
@@ -60,7 +60,7 @@ func (s *EtcdClient) Close() {
 	if s.Client != nil {
 		s.Client.Close()
 	}
-	util.LOGGER.Debugf("etcd client stopped.")
+	util.Logger().Debugf("etcd client stopped.")
 }
 
 func (c *EtcdClient) CompactCluster(ctx context.Context) {
@@ -70,11 +70,11 @@ func (c *EtcdClient) CompactCluster(ctx context.Context) {
 		mapi := clientv3.NewMaintenance(c.Client)
 		resp, err := mapi.Status(otCtx, ep)
 		if err != nil {
-			util.LOGGER.Error(fmt.Sprintf("Compact error ,can not get status from %s", ep), err)
+			util.Logger().Error(fmt.Sprintf("Compact error ,can not get status from %s", ep), err)
 			continue
 		}
 		curRev := resp.Header.Revision
-		util.LOGGER.Debug(fmt.Sprintf("Compacting.... endpoint: %s / IsLeader: %v\n / revision is %d", ep, resp.Header.MemberId == resp.Leader, curRev))
+		util.Logger().Debug(fmt.Sprintf("Compacting.... endpoint: %s / IsLeader: %v\n / revision is %d", ep, resp.Header.MemberId == resp.Leader, curRev))
 		c.Compact(ctx, curRev)
 	}
 
@@ -85,15 +85,15 @@ func (c *EtcdClient) Compact(ctx context.Context, revision int64) error {
 	defer cancel()
 	revToCompact := max(0, revision-beego.AppConfig.DefaultInt64("compact_index_delta", 100))
 	if revToCompact <= 0 {
-		util.LOGGER.Warnf(nil, "revToCompact is %d, <=0, no nead to compact.", revToCompact)
+		util.Logger().Warnf(nil, "revToCompact is %d, <=0, no nead to compact.", revToCompact)
 		return nil
 	}
-	util.LOGGER.Debug(fmt.Sprintf("Compacting %d", revToCompact))
+	util.Logger().Debug(fmt.Sprintf("Compacting %d", revToCompact))
 	resp, err := c.Client.KV.Compact(otCtx, revToCompact)
 	if err != nil {
 		return err
 	}
-	util.LOGGER.Debugf(fmt.Sprintf("Compacted %v", resp))
+	util.Logger().Debugf(fmt.Sprintf("Compacted %v", resp))
 	return nil
 }
 
@@ -217,10 +217,10 @@ func (c *EtcdClient) PutNoOverride(ctx context.Context, op *registry.PluginOp) (
 		},
 	}, nil)
 	if err != nil {
-		util.LOGGER.Errorf(err, "PutNoOverride %s failed", op.Key)
+		util.Logger().Errorf(err, "PutNoOverride %s failed", op.Key)
 		return false, err
 	}
-	util.LOGGER.Infof("response %s %v %v", op.Key, resp.Succeeded, resp.Revision)
+	util.Logger().Infof("response %s %v %v", op.Key, resp.Succeeded, resp.Revision)
 	return resp.Succeeded, nil
 }
 
@@ -240,8 +240,8 @@ func (c *EtcdClient) paging(ctx context.Context, op *registry.PluginOp, countPer
 		return nil, nil // no paging
 	}
 
-	util.LOGGER.Debugf("get too many KeyValues from etcdserver, now paging.(%d vs %d)",
-		recordCount, DEFAULT_PAGE_COUNT)
+	util.Logger().Debugf("get too many KeyValues from etcdserver, now paging.(%d vs %d)",
+		recordCount, countPerPage)
 
 	tempOp.KeyOnly = false
 	tempOp.CountOnly = false
@@ -289,7 +289,7 @@ func (c *EtcdClient) paging(ctx context.Context, op *registry.PluginOp, countPer
 			}
 			etcdResp.Kvs[i], etcdResp.Kvs[last] = etcdResp.Kvs[last], etcdResp.Kvs[i]
 		}
-		util.LOGGER.Debugf("sorted %d KeyValues spend %s", recordCount, time.Now().Sub(t))
+		util.Logger().Debugf("sorted %d KeyValues spend %s", recordCount, time.Now().Sub(t))
 	}
 	return etcdResp, nil
 }
@@ -304,7 +304,7 @@ func (c *EtcdClient) Do(ctx context.Context, op *registry.PluginOp) (*registry.P
 		var etcdResp *clientv3.GetResponse
 		key := util.BytesToStringWithNoCopy(op.Key)
 
-		if op.WithPrefix && !op.CountOnly && !op.KeyOnly {
+		if op.WithPrefix && !op.CountOnly {
 			etcdResp, err = c.paging(ctx, op, DEFAULT_PAGE_COUNT)
 			if err != nil {
 				break
@@ -334,7 +334,6 @@ func (c *EtcdClient) Do(ctx context.Context, op *registry.PluginOp) (*registry.P
 			break
 		}
 		resp = &registry.PluginResponse{
-			PrevKv:   etcdResp.PrevKv,
 			Revision: etcdResp.Header.Revision,
 		}
 	case registry.DELETE:
@@ -428,7 +427,7 @@ func (c *EtcdClient) Watch(ctx context.Context, op *registry.PluginOp, send func
 		// 必须创建新的client连接
 		/*client, err := newClient(c.Client.Endpoints())
 		  if err != nil {
-		          util.LOGGER.Error("get manager client failed", err)
+		          util.Logger().Error("get manager client failed", err)
 		          return err
 		  }
 		  defer client.Close()*/
@@ -440,7 +439,7 @@ func (c *EtcdClient) Watch(ctx context.Context, op *registry.PluginOp, send func
 		if op.WithPrefix && key[len(key)-1] != '/' {
 			key += "/"
 		}
-		util.LOGGER.Debugf("start to watch key %s", key)
+		util.Logger().Debugf("start to watch key %s", key)
 
 		// 不能设置超时context，内部判断了连接超时和watch超时
 		ws := client.Watch(context.Background(), key, c.toGetRequest(op)...)
@@ -456,23 +455,41 @@ func (c *EtcdClient) Watch(ctx context.Context, op *registry.PluginOp, send func
 					err := errors.New("channel is closed")
 					return err
 				}
+				// cause a rpc ResourceExhausted error if watch response body larger then 4MB
 				if err = resp.Err(); err != nil {
 					return err
 				}
+				l := len(resp.Events)
+				pIdx, dIdx := 0, l
+				pResp := &registry.PluginResponse{Action: registry.PUT, Succeeded: true}
+				dResp := &registry.PluginResponse{Action: registry.DELETE, Succeeded: true}
+				kvs := make([]*mvccpb.KeyValue, l)
 				for _, evt := range resp.Events {
-					pbEvent := &registry.PluginResponse{
-						Action:    registry.PUT,
-						Kvs:       []*mvccpb.KeyValue{evt.Kv},
-						PrevKv:    evt.PrevKv,
-						Count:     1,
-						Revision:  evt.Kv.ModRevision,
-						Succeeded: true,
+					pResp.Revision = evt.Kv.ModRevision
+					switch evt.Type {
+					case mvccpb.DELETE:
+						dIdx--
+						kvs[dIdx] = evt.Kv
+					default:
+						kvs[pIdx] = evt.Kv
+						pIdx++
 					}
-					if evt.Type == mvccpb.DELETE {
-						pbEvent.Action = registry.DELETE
-					}
+				}
+				pResp.Count = int64(pIdx)
+				pResp.Kvs = kvs[:pIdx]
 
-					err = send("key information changed", pbEvent)
+				dResp.Revision = pResp.Revision
+				dResp.Count = int64(l) - pResp.Count
+				dResp.Kvs = kvs[dIdx:]
+
+				if pResp.Count > 0 {
+					err = send("key information changed", pResp)
+					if err != nil {
+						return
+					}
+				}
+				if dResp.Count > 0 {
+					err = send("key information changed", dResp)
 					if err != nil {
 						return
 					}
@@ -485,7 +502,7 @@ func (c *EtcdClient) Watch(ctx context.Context, op *registry.PluginOp, send func
 }
 
 func NewRegistry(cfg *registry.Config) registry.Registry {
-	util.LOGGER.Warnf(nil, "starting service center in proxy mode")
+	util.Logger().Warnf(nil, "starting service center in proxy mode")
 
 	inst := &EtcdClient{
 		err:   make(chan error, 1),
@@ -498,7 +515,7 @@ func NewRegistry(cfg *registry.Config) registry.Registry {
 		// go client tls限制，提供身份证书、不认证服务端、不校验CN
 		clientTLSConfig, err = rest.GetClientTLSConfig(common.GetClientSSLConfig().VerifyClient, true, false)
 		if err != nil {
-			util.LOGGER.Error("get etcd client tls config failed", err)
+			util.Logger().Error("get etcd client tls config failed", err)
 			inst.err <- err
 			return inst
 		}
@@ -515,15 +532,15 @@ func NewRegistry(cfg *registry.Config) registry.Registry {
 
 	}
 	refreshManagerClusterInterval := cfg.AutoSyncInterval
-	util.LOGGER.Debugf("refreshManagerClusterInterval is %d", refreshManagerClusterInterval)
+	util.Logger().Debugf("refreshManagerClusterInterval is %d", refreshManagerClusterInterval)
 	client, err := newClient(endpoints, refreshManagerClusterInterval)
 	if err != nil {
-		util.LOGGER.Errorf(err, "get etcd client %+v failed.", endpoints)
+		util.Logger().Errorf(err, "get etcd client %+v failed.", endpoints)
 		inst.err <- err
 		return inst
 	}
 
-	util.LOGGER.Warnf(nil, "get etcd client %+v completed.", endpoints)
+	util.Logger().Warnf(nil, "get etcd client %+v completed.", endpoints)
 	inst.Client = client
 	close(inst.ready)
 	return inst

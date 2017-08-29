@@ -49,10 +49,10 @@ func init() {
 func autoSyncConsumers() {
 	//ticker := time.NewTicker(time.Minute * 1)
 	//for t := range ticker.C {
-	//	util.LOGGER.Debug(fmt.Sprintf("sync consumers at %s", t))
-	//	keys := microservice.GetService(context.TODO())
+	//	util.Logger().Debug(fmt.Sprintf("sync consumers at %s", t))
+	//	keys := microservice.GetServiceWithRev(context.TODO())
 	//	for _, v := range keys {
-	//		util.LOGGER.Debug(fmt.Sprintf("sync consumers for %s", v))
+	//		util.Logger().Debug(fmt.Sprintf("sync consumers for %s", v))
 	//		domainAndId := strings.Split(v, ":::")
 	//		// 查询所有consumer
 	//		key := apt.GenerateProviderDependencyKey(domainAndId[0], domainAndId[1], "")
@@ -63,7 +63,7 @@ func autoSyncConsumers() {
 	//			KeyOnly:    true,
 	//		})
 	//		if err != nil {
-	//			util.LOGGER.Errorf(err, "query service consumers failed, provider id %s", domainAndId[1])
+	//			util.Logger().Errorf(err, "query service consumers failed, provider id %s", domainAndId[1])
 	//		}
 	//		if len(resp.Kvs) != 0 {
 	//			consumerCache.Set(v, resp.Kvs, 0)
@@ -80,23 +80,24 @@ func GetConsumersInCache(ctx context.Context, tenant string, providerId string) 
 		Key:        util.StringToBytesWithNoCopy(key),
 		WithPrefix: true,
 		KeyOnly:    true,
+		Mode:       registry.MODE_CACHE,
 	})
 	if err != nil {
-		util.LOGGER.Errorf(err, "query service consumers failed, provider id %s", providerId)
+		util.Logger().Errorf(err, "query service consumers failed, provider id %s", providerId)
 		return nil, err
 	}
 	if len(resp.Kvs) == 0 {
 		// 如果没有，使用最后一次更新的缓存
-		util.LOGGER.Debugf("query service consumers in cache %s", providerId)
+		util.Logger().Debugf("query service consumers in cache %s", providerId)
 		consumerList, found := consumerCache.Get(providerId)
 		if found && len(consumerList.([]*mvccpb.KeyValue)) > 0 {
 			return consumerList.([]*mvccpb.KeyValue), nil
 		}
-		return []*mvccpb.KeyValue{}, nil
+		return nil, nil
 	}
 	consumerCache.Set(providerId, resp.Kvs, 0)
 
-	util.LOGGER.Debugf("query service consumers in center %s", key)
+	util.Logger().Debugf("query service consumers in center %s", key)
 	return resp.Kvs, nil
 }
 
@@ -107,13 +108,14 @@ func RefreshDependencyCache(tenant string, providerId string, provider *pb.Micro
 		Key:        util.StringToBytesWithNoCopy(key),
 		WithPrefix: true,
 		KeyOnly:    true,
+		Mode:       registry.MODE_CACHE,
 	})
 	if err != nil {
-		util.LOGGER.Errorf(err, "refresh dependency cache failed: query service consumers failed, provider id %s", providerId)
+		util.Logger().Errorf(err, "refresh dependency cache failed: query service consumers failed, provider id %s", providerId)
 		return err
 	}
 	if resp == nil || len(resp.Kvs) == 0 {
-		util.LOGGER.Infof("refresh dependency cache: this services %s has no consumer dependency.", providerId)
+		util.Logger().Infof("refresh dependency cache: this services %s has no consumer dependency.", providerId)
 	} else {
 		ms.MsCache().Set(providerId, provider, 5*time.Minute)
 		consumerCache.Set(providerId, resp.Kvs, 5*time.Minute)
@@ -130,7 +132,7 @@ func UpdateDependency(dep *Dependency) error {
 	if err != nil {
 		return err
 	}
-	opts := make([]*registry.PluginOp, 0, 2*(len(addDepencyList) + len(deleteDepencyList)))
+	opts := make([]*registry.PluginOp, 0, 2*(len(addDepencyList)+len(deleteDepencyList)))
 	var isEqual bool
 	sameServiceIdList := make([]string, 0, len(addDepencyList))
 	for _, addDepencyProviderId := range addDepencyList {
@@ -163,7 +165,7 @@ func UpdateDependency(dep *Dependency) error {
 	if len(opts) != 0 {
 		err := registry.BatchCommit(context.TODO(), opts)
 		if err != nil {
-			util.LOGGER.Errorf(err, err.Error())
+			util.Logger().Errorf(err, err.Error())
 			return err
 		}
 	}
@@ -174,7 +176,7 @@ func putServiceDependency(consumerId string, providerId string, tenant string) [
 	conProKey := apt.GenerateConsumerDependencyKey(tenant, consumerId, providerId)
 	proProKey := apt.GenerateProviderDependencyKey(tenant, providerId, consumerId)
 	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
-	util.LOGGER.Debugf("%s %s %s", conProKey, " timeStamp is ", timestamp)
+	util.Logger().Debugf("%s %s %s", conProKey, " timeStamp is ", timestamp)
 	optPro := &registry.PluginOp{
 		Action: registry.PUT,
 		Key:    util.StringToBytesWithNoCopy(conProKey),
@@ -188,7 +190,7 @@ func putServiceDependency(consumerId string, providerId string, tenant string) [
 	optPros := []*registry.PluginOp{}
 	optPros = append(optPros, optPro)
 	optPros = append(optPros, optCon)
-	util.LOGGER.Infof("add dependency rule: consumerId %s, providerId %s", consumerId, providerId)
+	util.Logger().Infof("add dependency rule: consumerId %s, providerId %s", consumerId, providerId)
 	return optPros
 }
 
@@ -197,39 +199,39 @@ func UpdateAsProviderDependency(ctx context.Context, providerServiseId string, p
 	tenant := util.ParseTenantProject(ctx)
 	consumerDependAllList, err := getConsumerOfDependAllServices(tenant, provider)
 	if err != nil {
-		util.LOGGER.Errorf(err, "Get consumer that depend on all services failed, %s", providerServiseId)
+		util.Logger().Errorf(err, "Get consumer that depend on all services failed, %s", providerServiseId)
 		return err
 	}
 
 	consumerDependList, err := getConsumersFromAllVersionRuleOfOne(tenant, providerServiseId, provider)
 	if err != nil {
-		util.LOGGER.Errorf(err, "Get consumer that depend on same serviceName and appid rule failed, %s", providerServiseId)
+		util.Logger().Errorf(err, "Get consumer that depend on same serviceName and appid rule failed, %s", providerServiseId)
 		return err
 	}
 
-	allConsumers := make([]*pb.MicroServiceKey, 0, len(consumerDependAllList) + len(consumerDependList))
+	allConsumers := make([]*pb.MicroServiceKey, 0, len(consumerDependAllList)+len(consumerDependList))
 	allConsumers = append(allConsumers, consumerDependAllList...)
 	allConsumers = append(allConsumers, consumerDependList...)
 
 	if len(allConsumers) == 0 {
-		util.LOGGER.Infof("%s as a provider, no consumer use it.", provider.ServiceName)
+		util.Logger().Infof("%s as a provider, no consumer use it.", provider.ServiceName)
 		return nil
 	}
 	//更新作为provider的依赖关系
-	opts :=  make([]*registry.PluginOp, 0 , 2*len(allConsumers))
-	flag := make(map[string] bool, len(allConsumers))
+	opts := make([]*registry.PluginOp, 0, 2*len(allConsumers))
+	flag := make(map[string]bool, len(allConsumers))
 	for _, consumer := range allConsumers {
 		consumerServiceid, err := ms.GetServiceId(ctx, consumer)
 		if err != nil {
-			util.LOGGER.Errorf(err, "Get consumer's serviceId failed.")
+			util.Logger().Errorf(err, "Get consumer's serviceId failed.")
 			return err
 		}
 		if len(consumerServiceid) == 0 {
-			util.LOGGER.Warnf(nil, "Get consumer's serviceId is empty, skip serviceName: %s, appId: %s, version: %s", consumer.ServiceName, consumer.AppId, consumer.Version)
+			util.Logger().Warnf(nil, "Get consumer's serviceId is empty, skip serviceName: %s, appId: %s, version: %s", consumer.ServiceName, consumer.AppId, consumer.Version)
 			continue
 		}
 		if _, ok := flag[consumerServiceid]; ok {
-			util.LOGGER.Infof("consumerServiceid %s more exists.", consumerServiceid)
+			util.Logger().Infof("consumerServiceid %s more exists.", consumerServiceid)
 			continue
 		} else {
 			flag[consumerServiceid] = true
@@ -238,16 +240,19 @@ func UpdateAsProviderDependency(ctx context.Context, providerServiseId string, p
 		opts = append(opts, optsTmp...)
 	}
 	if len(opts) != 0 {
+		serviceFlag := util.StringJoin([]string{provider.AppId, provider.ServiceName, provider.Version}, "/")
+		util.Logger().Infof("create microservice: add dependency for %s(%s)",
+			providerServiseId, serviceFlag)
 		err = registry.BatchCommit(ctx, opts)
 		if err != nil {
-			util.LOGGER.Errorf(err, "Add provider dependency rule failed: provider %v", provider)
+			util.Logger().Errorf(err, "Add provider dependency rule failed: provider %v", provider)
 			return err
 		}
 	}
 	return nil
 }
 
-func getConsumersFromAllVersionRuleOfOne(tenant string, providerServiceId string, provider *pb.MicroServiceKey) ([]*pb.MicroServiceKey, error){
+func getConsumersFromAllVersionRuleOfOne(tenant string, providerServiceId string, provider *pb.MicroServiceKey) ([]*pb.MicroServiceKey, error) {
 	providerVersion := provider.Version
 	provider.Version = ""
 	proKey := apt.GenerateProviderDependencyRuleKey(tenant, provider)
@@ -259,11 +264,11 @@ func getConsumersFromAllVersionRuleOfOne(tenant string, providerServiceId string
 	}
 	rsp, err := store.Store().DependencyRule().Search(context.TODO(), opt)
 	if err != nil {
-		util.LOGGER.Errorf(err, "get all dependency rule failed: provider rule key %v.", provider)
+		util.Logger().Errorf(err, "get all dependency rule failed: provider rule key %v.", provider)
 		return nil, err
 	}
 	if rsp == nil {
-		util.LOGGER.Warnf(nil, "get same appId and serviceName dependency rule is nul: provider rule key %v.", provider)
+		util.Logger().Warnf(nil, "get same appId and serviceName dependency rule is nul: provider rule key %v.", provider)
 		return nil, nil
 	}
 	allConsumers := make([]*pb.MicroServiceKey, 0)
@@ -280,11 +285,11 @@ func getConsumersFromAllVersionRuleOfOne(tenant string, providerServiceId string
 				ServiceName: provider.ServiceName,
 			})
 			if err != nil {
-				util.LOGGER.Errorf(err, "Get latest service failed.")
+				util.Logger().Errorf(err, "Get latest service failed.")
 				return nil, err
 			}
 			if len(latestServiceId) == 0 {
-				util.LOGGER.Infof("%s 's providerId is empty,no this service.", provider.ServiceName)
+				util.Logger().Infof("%s 's providerId is empty,no this service.", provider.ServiceName)
 				continue
 			}
 			if providerServiceId != latestServiceId[0] {
@@ -309,11 +314,11 @@ func getConsumersFromAllVersionRuleOfOne(tenant string, providerServiceId string
 				for _, consumer := range consumers {
 					consumerId, err := ms.GetServiceId(context.TODO(), consumer)
 					if err != nil {
-						util.LOGGER.Errorf(err, "Delete lastest old version dependency failed: provider %v", provider)
+						util.Logger().Errorf(err, "Delete lastest old version dependency failed: provider %v", provider)
 						return nil, err
 					}
 					if len(consumerId) == 0 {
-						util.LOGGER.Errorf(err, "Delete lastest old version dependency, get consumer is empty: consumer %v", consumer)
+						util.Logger().Errorf(err, "Delete lastest old version dependency, get consumer is empty: consumer %v", consumer)
 						continue
 					}
 					consumerIds = append(consumerIds, consumerId)
@@ -330,7 +335,7 @@ func getConsumersFromAllVersionRuleOfOne(tenant string, providerServiceId string
 				if len(deleteDependencyOptList) != 0 {
 					err = registry.BatchCommit(context.TODO(), deleteDependencyOptList)
 					if err != nil {
-						util.LOGGER.Errorf(err, "Add provider dependency rule failed: provider %v", provider)
+						util.Logger().Errorf(err, "Add provider dependency rule failed: provider %v", provider)
 						return nil, err
 					}
 				}
@@ -341,21 +346,22 @@ func getConsumersFromAllVersionRuleOfOne(tenant string, providerServiceId string
 			}
 		}
 
-		util.LOGGER.Debugf("providerETCD is %s", providerVersionRuleArr)
+		util.Logger().Debugf("providerETCD is %s", providerVersionRuleArr)
 		if len(dependency.Dependency) == 0 {
 			err = json.Unmarshal(kv.Value, dependency)
 			if err != nil {
-				util.LOGGER.Errorf(err, "Unmarshal consumers failed.")
+				util.Logger().Errorf(err, "Unmarshal consumers failed.")
 				return nil, err
 			}
 		}
-		util.LOGGER.Infof("Add dependency as provider, provider: serviecName(%s), version(%s) .consumer is", provider.ServiceName, providerVersionRule, dependency.Dependency)
+		util.Logger().Infof("Add dependency as provider, provider: serviecName(%s), version(%s) .consumer is %v",
+			provider.ServiceName, providerVersionRule, dependency.Dependency)
 		allConsumers = append(allConsumers, dependency.Dependency...)
 	}
 	return allConsumers, nil
 }
 
-func getAllVersionServicesForOne(service *pb.MicroServiceKey) (*registry.PluginResponse, error){
+func getAllVersionServicesForOne(service *pb.MicroServiceKey) (*registry.PluginResponse, error) {
 	key := apt.GenerateServiceIndexKey(service)
 	opt := &registry.PluginOp{
 		Action:     registry.GET,
@@ -366,7 +372,7 @@ func getAllVersionServicesForOne(service *pb.MicroServiceKey) (*registry.PluginR
 	return resp, err
 }
 
-func getAllVersionServiceIdsForOne(service *pb.MicroServiceKey) ([]string, error){
+func getAllVersionServiceIdsForOne(service *pb.MicroServiceKey) ([]string, error) {
 	resp, err := getAllVersionServicesForOne(service)
 	if err != nil {
 		return nil, err
@@ -379,7 +385,7 @@ func getAllVersionServiceIdsForOne(service *pb.MicroServiceKey) ([]string, error
 	return serviceIdList, nil
 }
 
-func getConsumerOfDependAllServices(tenant string, provider *pb.MicroServiceKey) ([]*pb.MicroServiceKey, error){
+func getConsumerOfDependAllServices(tenant string, provider *pb.MicroServiceKey) ([]*pb.MicroServiceKey, error) {
 
 	relyAllKey := apt.GenerateProviderDependencyRuleKey(tenant, &pb.MicroServiceKey{
 		ServiceName: "*",
@@ -390,12 +396,12 @@ func getConsumerOfDependAllServices(tenant string, provider *pb.MicroServiceKey)
 	}
 	rsp, err := store.Store().DependencyRule().Search(context.TODO(), opt)
 	if err != nil {
-		util.LOGGER.Errorf(err, "get consumer that rely all service failed.")
+		util.Logger().Errorf(err, "get consumer that rely all service failed.")
 		return nil, err
 	}
 	if len(rsp.Kvs) != 0 {
 		dependency := &pb.MicroServiceDependency{}
-		util.LOGGER.Infof("consumer that rely all service exist.ServiceName: %s.", provider.ServiceName)
+		util.Logger().Infof("consumer that rely all service exist.ServiceName: %s.", provider.ServiceName)
 		err = json.Unmarshal(rsp.Kvs[0].Value, dependency)
 		if err != nil {
 			return nil, err
@@ -434,7 +440,7 @@ func DeleteDependencyForService(ctx context.Context, consumer *pb.MicroServiceKe
 			Action: registry.DELETE,
 			Key:    util.StringToBytesWithNoCopy(conKey),
 		}
-		util.LOGGER.Debugf("conKey is %s.", conKey)
+		util.Logger().Debugf("conKey is %s.", conKey)
 		opts = append(opts, opt)
 	}
 	//作为provider的依赖规则
@@ -443,7 +449,7 @@ func DeleteDependencyForService(ctx context.Context, consumer *pb.MicroServiceKe
 		Action: registry.DELETE,
 		Key:    util.StringToBytesWithNoCopy(providerKey),
 	}
-	util.LOGGER.Debugf("providerKey is %s", providerKey)
+	util.Logger().Debugf("providerKey is %s", providerKey)
 	opts = append(opts, opt)
 
 	//删除依赖关系
@@ -452,12 +458,12 @@ func DeleteDependencyForService(ctx context.Context, consumer *pb.MicroServiceKe
 		return nil, err
 	}
 	opts = append(opts, optsTmps...)
-	util.LOGGER.Debugf("flag is %s", flag)
+	util.Logger().Debugf("flag is %s", flag)
 	optsTmps, err = deleteDependencyUtil(ctx, "p", tenant, serviceId, flag)
 	if err != nil {
 		return nil, err
 	}
-	util.LOGGER.Debugf("flag is %s", flag)
+	util.Logger().Debugf("flag is %s", flag)
 	opts = append(opts, optsTmps...)
 	return opts, nil
 }
@@ -472,17 +478,17 @@ func transferToMicroServiceDependency(ctx context.Context, key string) (error, *
 	}
 	res, err := store.Store().DependencyRule().Search(ctx, opt)
 	if err != nil {
-		util.LOGGER.Errorf(nil, "Get dependency rule failed.")
+		util.Logger().Errorf(nil, "Get dependency rule failed.")
 		return err, nil
 	}
 	if len(res.Kvs) != 0 {
 		err = json.Unmarshal(res.Kvs[0].Value, microServiceDependency)
 		if err != nil {
-			util.LOGGER.Errorf(nil, "Unmarshal res failed.")
+			util.Logger().Errorf(nil, "Unmarshal res failed.")
 			return err, nil
 		}
 	} else {
-		util.LOGGER.Infof("for key %s, no mircroServiceDependency stored", key)
+		util.Logger().Infof("for key %s, no mircroServiceDependency stored", key)
 	}
 	return nil, microServiceDependency
 }
@@ -491,7 +497,7 @@ func deleteDependencyRuleUtil(ctx context.Context, microServiceDependency *pb.Mi
 	for key, serviceTmp := range microServiceDependency.Dependency {
 		if ok := equalServiceDependency(serviceTmp, service); ok {
 			microServiceDependency.Dependency = append(microServiceDependency.Dependency[:key], microServiceDependency.Dependency[key+1:]...)
-			util.LOGGER.Debugf("delete versionRule from %s", serviceTmp.ServiceName)
+			util.Logger().Debugf("delete versionRule from %s", serviceTmp.ServiceName)
 			break
 		}
 	}
@@ -501,13 +507,13 @@ func deleteDependencyRuleUtil(ctx context.Context, microServiceDependency *pb.Mi
 			Action: registry.DELETE,
 			Key:    util.StringToBytesWithNoCopy(serviceKey),
 		}
-		util.LOGGER.Debugf("serviceKey is .", serviceKey)
-		util.LOGGER.Debugf("After deleting versionRule from %s,provider's consumer is empty.", serviceKey)
+		util.Logger().Debugf("serviceKey is .", serviceKey)
+		util.Logger().Debugf("After deleting versionRule from %s,provider's consumer is empty.", serviceKey)
 
 	} else {
 		data, err := json.Marshal(microServiceDependency)
 		if err != nil {
-			util.LOGGER.Errorf(nil, "Marshal tmpValue failed.")
+			util.Logger().Errorf(nil, "Marshal tmpValue failed.")
 			return err
 		}
 		opt = &registry.PluginOp{
@@ -515,11 +521,11 @@ func deleteDependencyRuleUtil(ctx context.Context, microServiceDependency *pb.Mi
 			Key:    util.StringToBytesWithNoCopy(serviceKey),
 			Value:  data,
 		}
-		util.LOGGER.Debugf("serviceKey is %s.", serviceKey)
+		util.Logger().Debugf("serviceKey is %s.", serviceKey)
 	}
 	_, err := registry.GetRegisterCenter().Do(ctx, opt)
 	if err != nil {
-		util.LOGGER.Errorf(err, "Submit update dependency failed.")
+		util.Logger().Errorf(err, "Submit update dependency failed.")
 		return err
 	}
 	return nil
@@ -571,11 +577,11 @@ func deleteDependencyUtil(ctx context.Context, serviceType string, tenant string
 				deleteKey = util.StringJoin([]string{"p", serviceTmpId, serviceId}, "/")
 			}
 			if _, ok := flag[serviceTmpKey]; ok {
-				util.LOGGER.Debugf("serviceTmpKey is more exist.%s", serviceTmpKey)
+				util.Logger().Debugf("serviceTmpKey is more exist.%s", serviceTmpKey)
 				continue
 			}
 			flag[serviceTmpKey] = true
-			util.LOGGER.Infof("delete dependency %s", deleteKey)
+			util.Logger().Infof("delete dependency %s", deleteKey)
 			opt = &registry.PluginOp{
 				Action: registry.DELETE,
 				Key:    util.StringToBytesWithNoCopy(serviceTmpKey),
@@ -587,7 +593,7 @@ func deleteDependencyUtil(ctx context.Context, serviceType string, tenant string
 			Key:        util.StringToBytesWithNoCopy(serviceKey),
 			WithPrefix: true,
 		}
-		util.LOGGER.Infof("delete dependency serviceKey is %s", serviceType+"/"+serviceId)
+		util.Logger().Infof("delete dependency serviceKey is %s", serviceType+"/"+serviceId)
 		opts = append(opts, opt)
 	}
 	return opts, nil
@@ -601,7 +607,7 @@ func CreateDependencyRule(ctx context.Context, dep *Dependency) error {
 
 	err, oldProviderRules := transferToMicroServiceDependency(ctx, conKey)
 	if err != nil {
-		util.LOGGER.Errorf(err, "maintain dependency rule failed, consumer %s: get consumer depedency rule failed.", consumerFlag)
+		util.Logger().Errorf(err, "maintain dependency rule failed, consumer %s: get consumer depedency rule failed.", consumerFlag)
 		return err
 	}
 
@@ -624,13 +630,13 @@ func CreateDependencyRule(ctx context.Context, dep *Dependency) error {
 	dep.err = make(chan error, 5)
 	dep.chanNum = 0
 	if len(unExistDependencyRuleList) != 0 {
-		util.LOGGER.Infof("Unexist dependency rule remove for consumer %s, %v, ",consumerFlag ,unExistDependencyRuleList)
+		util.Logger().Infof("Unexist dependency rule remove for consumer %s, %v, ", consumerFlag, unExistDependencyRuleList)
 		dep.removedDependencyRuleList = unExistDependencyRuleList
 		dep.RemoveConsumerOfProviderRule()
 	}
 
 	if len(newDependencyRuleList) != 0 {
-		util.LOGGER.Infof("New dependency rule add for consumer %s, %v, ",consumerFlag ,newDependencyRuleList)
+		util.Logger().Infof("New dependency rule add for consumer %s, %v, ", consumerFlag, newDependencyRuleList)
 		dep.NewDependencyRuleList = newDependencyRuleList
 		dep.AddConsumerOfProviderRule()
 	}
@@ -685,7 +691,7 @@ func deleteDependency(tenant string, consumerId string, providerId string) []*re
 }
 
 func GetDependencies(ctx context.Context, dependencyKey string, tenant string) ([]*pb.MicroService, error) {
-	util.LOGGER.Debugf("GetDependencies start.")
+	util.Logger().Debugf("GetDependencies start.")
 	opt := &registry.PluginOp{
 		Action:     registry.GET,
 		Key:        util.StringToBytesWithNoCopy(dependencyKey),
@@ -693,15 +699,15 @@ func GetDependencies(ctx context.Context, dependencyKey string, tenant string) (
 	}
 	data, err := store.Store().Dependency().Search(ctx, opt)
 	if err != nil {
-		util.LOGGER.Errorf(nil, "Get dependency failed,%s", err.Error())
+		util.Logger().Errorf(nil, "Get dependency failed,%s", err.Error())
 		return nil, err
 	}
 	if len(data.Kvs) == 0 {
-		util.LOGGER.Errorf(nil, "data.Kvs len is 0.")
+		util.Logger().Errorf(nil, "data.Kvs len is 0.")
 		return nil, nil
 	}
 
-	util.LOGGER.Debugf("data.Kvs[0].Value is %s.", data.Kvs[0].Value)
+	util.Logger().Debugf("data.Kvs[0].Value is %s.", data.Kvs[0].Value)
 
 	key := ""
 	keySplilt := []string{}
@@ -709,17 +715,17 @@ func GetDependencies(ctx context.Context, dependencyKey string, tenant string) (
 	microServices := []*pb.MicroService{}
 	for _, kv := range data.Kvs {
 		key = util.BytesToStringWithNoCopy(kv.Key)
-		util.LOGGER.Debugf("key is %s", key)
+		util.Logger().Debugf("key is %s", key)
 		keySplilt = strings.Split(key, "/")
 		providerId = keySplilt[len(keySplilt)-1]
 
-		provider, err := ms.GetServiceByServiceId(ctx, tenant, providerId)
+		provider, err := ms.GetService(ctx, tenant, providerId)
 		if err != nil {
-			util.LOGGER.Errorf(nil, "Get service failed, %s", err.Error())
+			util.Logger().Errorf(nil, "Get service failed, %s", err.Error())
 			return nil, err
 		}
 		if provider == nil {
-			util.LOGGER.Errorf(nil, "Get service is empty, serviceId is %s", providerId)
+			util.Logger().Errorf(nil, "Get service is empty, serviceId is %s", providerId)
 			return nil, errors.New("Get service is empty.")
 		}
 		microServices = append(microServices, provider)
@@ -746,7 +752,7 @@ func validateMicroServiceKey(in *pb.MicroServiceKey, fuzzyMatch bool) error {
 }
 
 func BadParamsResponse(detailErr string) *pb.CreateDependenciesResponse {
-	util.LOGGER.Errorf(nil, "Request params is Valid.")
+	util.Logger().Errorf(nil, "Request params is Valid.")
 	if len(detailErr) == 0 {
 		detailErr = "Request params is Valid."
 	}
@@ -766,7 +772,7 @@ func ParamsChecker(consumerInfo *pb.MicroServiceKey, providersInfo []*pb.MicroSe
 	for _, providerInfo := range providersInfo {
 		//存在带*的情况，后面的数据就不校验了
 		if providerInfo.ServiceName == "*" {
-			util.LOGGER.Debugf("%s 's provider contains *.", consumerInfo.ServiceName)
+			util.Logger().Debugf("%s 's provider contains *.", consumerInfo.ServiceName)
 			break
 		}
 		if len(providerInfo.AppId) == 0 {
@@ -812,7 +818,7 @@ func AddServiceVersionRule(ctx context.Context, provider *pb.MicroServiceKey, te
 	consumers.Dependency = append(consumers.Dependency, consumer)
 	data, err := json.Marshal(consumers)
 	if err != nil {
-		util.LOGGER.Errorf(err, "Marshal dependency of find failed.")
+		util.Logger().Errorf(err, "Marshal dependency of find failed.")
 		return err, false
 	}
 	opt := &registry.PluginOp{
@@ -826,20 +832,20 @@ func AddServiceVersionRule(ctx context.Context, provider *pb.MicroServiceKey, te
 
 func UpdateServiceForAddDependency(ctx context.Context, consumerId string, providers []*pb.DependencyMircroService, tenant string) error {
 	conServiceKey := apt.GenerateServiceKey(tenant, consumerId)
-	service, err := ms.GetServiceByServiceId(ctx, tenant, consumerId)
+	service, err := ms.GetService(ctx, tenant, consumerId)
 	if err != nil {
-		util.LOGGER.Errorf(err, "create dependency faild: get service failed. consumerId %s", consumerId)
+		util.Logger().Errorf(err, "create dependency faild: get service failed. consumerId %s", consumerId)
 		return err
 	}
 	if service == nil {
-		util.LOGGER.Errorf(nil, "create dependency faild: service not exist.serviceId %s", consumerId)
+		util.Logger().Errorf(nil, "create dependency faild: service not exist.serviceId %s", consumerId)
 		return errors.New("Get service is empty")
 	}
 
 	service.Providers = providers
 	data, err := json.Marshal(service)
 	if err != nil {
-		util.LOGGER.Errorf(err, "create dependency faild: marshal service failed.")
+		util.Logger().Errorf(err, "create dependency faild: marshal service failed.")
 		return err
 	}
 	opt := &registry.PluginOp{
@@ -849,7 +855,7 @@ func UpdateServiceForAddDependency(ctx context.Context, consumerId string, provi
 	}
 	_, err = registry.GetRegisterCenter().Do(ctx, opt)
 	if err != nil {
-		util.LOGGER.Errorf(err, "create dependency faild: commit service data into etcd failed.")
+		util.Logger().Errorf(err, "create dependency faild: commit service data into etcd failed.")
 		return err
 	}
 	return nil
@@ -876,13 +882,13 @@ func (dep *Dependency) removeConsumerOfProviderRule() {
 	opts := make([]*registry.PluginOp, 0, len(dep.removedDependencyRuleList))
 	for _, providerRule := range dep.removedDependencyRuleList {
 		proProkey := apt.GenerateProviderDependencyRuleKey(dep.Tenant, providerRule)
-		util.LOGGER.Debugf("This proProkey is %s.", proProkey)
+		util.Logger().Debugf("This proProkey is %s.", proProkey)
 		err, consumerValue := transferToMicroServiceDependency(ctx, proProkey)
 		if err != nil {
 			dep.err <- err
 			return
 		}
-		for key, tmp :=  range consumerValue.Dependency {
+		for key, tmp := range consumerValue.Dependency {
 			if ok := equalServiceDependency(tmp, dep.Consumer); ok {
 				consumerValue.Dependency = append(consumerValue.Dependency[:key], consumerValue.Dependency[key+1:]...)
 				break
@@ -899,7 +905,7 @@ func (dep *Dependency) removeConsumerOfProviderRule() {
 		}
 		data, err := json.Marshal(consumerValue)
 		if err != nil {
-			util.LOGGER.Errorf(nil, "Marshal tmpValue failed.")
+			util.Logger().Errorf(nil, "Marshal tmpValue failed.")
 			dep.err <- err
 			return
 		}
@@ -939,14 +945,14 @@ func (dep *Dependency) addConsumerOfProviderRule() {
 
 		data, errMarshal := json.Marshal(tmpValue)
 		if errMarshal != nil {
-			util.LOGGER.Errorf(nil, "Marshal tmpValue failed.")
+			util.Logger().Errorf(nil, "Marshal tmpValue failed.")
 			dep.err <- errors.New("Marshal tmpValue failed.")
 			return
 		}
 		opts = append(opts, &registry.PluginOp{
-		        Action: registry.PUT,
-		        Key:    util.StringToBytesWithNoCopy(proProkey),
-		        Value:  data,
+			Action: registry.PUT,
+			Key:    util.StringToBytesWithNoCopy(proProkey),
+			Value:  data,
 		})
 		if prividerRule.ServiceName == "*" {
 			break
@@ -962,13 +968,13 @@ func (dep *Dependency) addConsumerOfProviderRule() {
 	dep.err <- nil
 }
 
-func (dep *Dependency)updateProvidersRuleOfConsumer(conKey string) error{
+func (dep *Dependency) updateProvidersRuleOfConsumer(conKey string) error {
 	dependency := &pb.MicroServiceDependency{
 		Dependency: dep.ProvidersRule,
 	}
 	data, err := json.Marshal(dependency)
 	if err != nil {
-		util.LOGGER.Errorf(nil, "Marshal tmpValue fialed.")
+		util.Logger().Errorf(nil, "Marshal tmpValue fialed.")
 		return err
 	}
 	opt := &registry.PluginOp{
@@ -978,32 +984,31 @@ func (dep *Dependency)updateProvidersRuleOfConsumer(conKey string) error{
 	}
 	_, err = registry.GetRegisterCenter().Do(context.TODO(), opt)
 	if err != nil {
-		util.LOGGER.Errorf(nil, "Upload dependency rule failed.")
+		util.Logger().Errorf(nil, "Upload dependency rule failed.")
 		return err
 	}
 	return nil
 }
 
-func (dep *Dependency)UpdateProvidersRuleOfConsumer(conKey string) error {
+func (dep *Dependency) UpdateProvidersRuleOfConsumer(conKey string) error {
 	return dep.updateProvidersRuleOfConsumer(conKey)
 }
 
-
-func (dep *Dependency)GetAddDependencyProviderIds() ([]string, error) {
+func (dep *Dependency) GetAddDependencyProviderIds() ([]string, error) {
 	return dep.getDependencyProviderIds(dep.NewDependencyRuleList)
 }
 
-func (dep *Dependency)GetDeleteDependencyProviderIds() ([]string, error) {
+func (dep *Dependency) GetDeleteDependencyProviderIds() ([]string, error) {
 	return dep.getDependencyProviderIds(dep.removedDependencyRuleList)
 }
 
-func (dep *Dependency)getDependencyProviderIds(providerRules []*pb.MicroServiceKey) ([]string, error) {
+func (dep *Dependency) getDependencyProviderIds(providerRules []*pb.MicroServiceKey) ([]string, error) {
 	tenant := dep.Tenant
 	provideServiceIds := make([]string, 0)
 	for _, provider := range providerRules {
 		switch {
 		case provider.ServiceName == "*":
-			util.LOGGER.Infof("Add dependency, *: rely all service, consumerId %s", dep.ConsumerId)
+			util.Logger().Infof("Add dependency, *: rely all service, consumerId %s", dep.ConsumerId)
 			allServiceKey := apt.GenerateServiceKey(tenant, "")
 			resp, err := store.Store().Service().Search(context.TODO(), &registry.PluginOp{
 				Action:     registry.GET,
@@ -1011,7 +1016,7 @@ func (dep *Dependency)getDependencyProviderIds(providerRules []*pb.MicroServiceK
 				WithPrefix: true,
 			})
 			if err != nil {
-				util.LOGGER.Errorf(err, "Add dependency failed, rely all service: get all services failed.")
+				util.Logger().Errorf(err, "Add dependency failed, rely all service: get all services failed.")
 				return provideServiceIds, err
 			}
 			keyArr := []string{}
@@ -1029,12 +1034,12 @@ func (dep *Dependency)getDependencyProviderIds(providerRules []*pb.MicroServiceK
 				ServiceName: provider.ServiceName,
 			})
 			if err != nil {
-				util.LOGGER.Errorf(err, "Get providerIds failed, service: %s/%s/%s",
+				util.Logger().Errorf(err, "Get providerIds failed, service: %s/%s/%s",
 					provider.AppId, provider.ServiceName, provider.Version)
 				return provideServiceIds, err
 			}
 			if len(serviceIds) == 0 {
-				util.LOGGER.Warnf(nil, "Get providerIds is empty, service: %s/%s/%s does not exist",
+				util.Logger().Warnf(nil, "Get providerIds is empty, service: %s/%s/%s does not exist",
 					provider.AppId, provider.ServiceName, provider.Version)
 				continue
 			}

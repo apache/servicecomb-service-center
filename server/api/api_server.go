@@ -16,7 +16,6 @@ package api
 import (
 	"fmt"
 	"github.com/ServiceComb/service-center/server/core"
-	"github.com/ServiceComb/service-center/server/core/mux"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	rs "github.com/ServiceComb/service-center/server/rest"
 	"github.com/ServiceComb/service-center/server/rest/handlers"
@@ -67,7 +66,7 @@ func (s *APIService) startGrpcServer() {
 	if s.Config.SSL {
 		tlsConfig, err := rest.GetServerTLSConfig(s.Config.VerifyClient)
 		if err != nil {
-			util.LOGGER.Error("error to get server tls config", err)
+			util.Logger().Error("error to get server tls config", err)
 			s.err <- err
 			return
 		}
@@ -80,10 +79,10 @@ func (s *APIService) startGrpcServer() {
 	pb.RegisterServiceCtrlServer(s.grpcSvr, rs.ServiceAPI)
 	pb.RegisterServiceInstanceCtrlServer(s.grpcSvr, rs.InstanceAPI)
 
-	util.LOGGER.Infof("listen on server %s", ipAddr)
+	util.Logger().Infof("listen on server %s", ipAddr)
 	ls, err := net.Listen("tcp", ipAddr)
 	if err != nil {
-		util.LOGGER.Error("error to start Grpc API server "+ipAddr, err)
+		util.Logger().Error("error to start Grpc API server "+ipAddr, err)
 		s.err <- err
 		return
 	}
@@ -91,7 +90,7 @@ func (s *APIService) startGrpcServer() {
 	go func() {
 		err := s.grpcSvr.Serve(ls)
 		if !s.isClose {
-			util.LOGGER.Error("error to start Grpc API server "+ipAddr, err)
+			util.Logger().Error("error to start Grpc API server "+ipAddr, err)
 			s.err <- err
 		}
 	}()
@@ -115,7 +114,7 @@ func (s *APIService) startRESTfulServer() {
 		}
 
 		if !s.isClose {
-			util.LOGGER.Error("error to start RESTful API server "+ipAddr, err)
+			util.Logger().Error("error to start RESTful API server "+ipAddr, err)
 			s.err <- err
 		}
 	}()
@@ -131,37 +130,29 @@ func (s *APIService) registerServiceCenter() error {
 }
 
 func (s *APIService) registryService() error {
-	//分布式sc 都会一起抢注，导致注册了多个sc微服务静态信息，需要使用分布式同步锁解决
-	lock, err := mux.Lock(mux.PROCESS_LOCK)
-	if err != nil {
-		util.LOGGER.Errorf(err, "could not create global lock %s", mux.PROCESS_LOCK)
-		return err
-	}
-	defer lock.Unlock()
-
 	ctx := core.AddDefaultContextValue(context.TODO())
 	respE, err := rs.ServiceAPI.Exist(ctx, core.GetExistenceRequest())
 	if err != nil {
-		util.LOGGER.Error("query service center existence failed", err)
+		util.Logger().Error("query service center existence failed", err)
 		return err
 	}
 	if respE.Response.Code == pb.Response_SUCCESS {
-		util.LOGGER.Warnf(nil, "service center service already registered, service id %s", respE.ServiceId)
+		util.Logger().Warnf(nil, "service center service already registered, service id %s", respE.ServiceId)
 		respG, err := rs.ServiceAPI.GetOne(ctx, core.GetServiceRequest(respE.ServiceId))
-		if respE.Response.Code != pb.Response_SUCCESS {
-			return fmt.Errorf("query service center service info failed, service id %s(%s)",
-				respE.ServiceId, err)
+		if respG.Response.Code != pb.Response_SUCCESS {
+			util.Logger().Errorf(err, "query service center service info failed, service id %s", respE.ServiceId)
+			return fmt.Errorf("service center service file lost.")
 		}
 		core.Service = respG.Service
 		return nil
 	}
 	respS, err := rs.ServiceAPI.Create(ctx, core.CreateServiceRequest())
 	if err != nil {
-		util.LOGGER.Error("register service center failed", err)
+		util.Logger().Error("register service center failed", err)
 		return err
 	}
 	core.Service.ServiceId = respS.ServiceId
-	util.LOGGER.Infof("register service center service successfully, service id %s", respE.ServiceId)
+	util.Logger().Infof("register service center service successfully, service id %s", respS.ServiceId)
 	return nil
 }
 
@@ -181,11 +172,11 @@ func (s *APIService) registryInstance() error {
 		core.RegisterInstanceRequest(s.Config.HostName, endpoints))
 	if respI.GetResponse().Code != pb.Response_SUCCESS {
 		err = fmt.Errorf("register service center instance failed, %s", respI.GetResponse().Message)
-		util.LOGGER.Error(err.Error(), nil)
+		util.Logger().Error(err.Error(), nil)
 		return err
 	}
 	core.Instance.InstanceId = respI.InstanceId
-	util.LOGGER.Infof("register service center instance successfully, instance %s/%s, endpoints %s",
+	util.Logger().Infof("register service center instance successfully, instance %s/%s, endpoints %s",
 		core.Service.ServiceId, respI.InstanceId, endpoints)
 	return nil
 }
@@ -198,10 +189,10 @@ func (s *APIService) unregisterInstance() error {
 	respI, err := rs.InstanceAPI.Unregister(ctx, core.UnregisterInstanceRequest())
 	if respI.GetResponse().Code != pb.Response_SUCCESS {
 		err = fmt.Errorf("unregister service center instance failed, %s", respI.GetResponse().Message)
-		util.LOGGER.Error(err.Error(), nil)
+		util.Logger().Error(err.Error(), nil)
 		return err
 	}
-	util.LOGGER.Warnf(nil, "unregister service center instance successfully, %s/%s",
+	util.Logger().Warnf(nil, "unregister service center instance successfully, %s/%s",
 		core.Service.ServiceId, core.Instance.InstanceId)
 	return nil
 }
@@ -213,17 +204,17 @@ func (s *APIService) doAPIServerHeartBeat() {
 	ctx := core.AddDefaultContextValue(context.TODO())
 	respI, err := rs.InstanceAPI.Heartbeat(ctx, core.HeartbeatRequest())
 	if respI.GetResponse().Code == pb.Response_SUCCESS {
-		util.LOGGER.Debugf("update service center %s heartbeat %s successfully",
+		util.Logger().Debugf("update service center %s heartbeat %s successfully",
 			core.Instance.ServiceId, core.Instance.InstanceId)
 		return
 	}
-	util.LOGGER.Errorf(err, "update service center %s instance %s heartbeat failed",
+	util.Logger().Errorf(err, "update service center %s instance %s heartbeat failed",
 		core.Instance.ServiceId, core.Instance.InstanceId)
 
 	//服务不存在，创建服务
 	err = s.registerServiceCenter()
 	if err != nil {
-		util.LOGGER.Errorf(err, "Service %s/%s/%s does not exist, and retry to register it failed.",
+		util.Logger().Errorf(err, "retry to register %s/%s/%s failed.",
 			core.Service.AppId, core.Service.ServiceName, core.Service.Version)
 	}
 }
@@ -247,19 +238,19 @@ func (s *APIService) Start() {
 		return
 	}
 	s.isClose = false
+
+	s.startRESTfulServer()
+
+	s.startGrpcServer()
 	// 自注册
 	err := s.registerServiceCenter()
 	if err != nil {
 		s.err <- err
 	}
-
-	s.startRESTfulServer()
-
-	s.startGrpcServer()
 	// 心跳
 	s.startHeartBeatService()
 
-	util.LOGGER.Info("api server is ready")
+	util.Logger().Info("api server is ready")
 }
 
 func (s *APIService) Stop() {
@@ -279,7 +270,7 @@ func (s *APIService) Stop() {
 
 	close(s.err)
 
-	util.LOGGER.Info("api server stopped.")
+	util.Logger().Info("api server stopped.")
 }
 
 var apiServer *APIService

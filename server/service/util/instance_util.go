@@ -19,7 +19,9 @@ import (
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
+	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	"github.com/ServiceComb/service-center/util"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"strconv"
 	"strings"
@@ -61,6 +63,38 @@ func GetInstance(ctx context.Context, tenant string, serviceId string, instanceI
 	return instance, nil
 }
 
+func GetAllInstancesOfOneService(ctx context.Context, tenant string, serviceId string, stage string) ([]*pb.MicroServiceInstance, error) {
+	key := apt.GenerateInstanceKey(tenant, serviceId, "")
+	resp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
+		Action:     registry.GET,
+		Key:        util.StringToBytesWithNoCopy(key),
+		WithPrefix: true,
+	})
+	if err != nil {
+		util.Logger().Errorf(err, "Get instance of service %s from etcd failed.", serviceId)
+		return nil, err
+	}
+
+	instances := []*pb.MicroServiceInstance{}
+	for _, kvs := range resp.Kvs {
+		util.Logger().Debugf("start unmarshal service instance file: %s", util.BytesToStringWithNoCopy(kvs.Key))
+		instance := &pb.MicroServiceInstance{}
+		err := json.Unmarshal(kvs.Value, instance)
+		if err != nil {
+			util.Logger().Errorf(err, "Unmarshal instance of service %s failed.", serviceId)
+			return nil, err
+		}
+		if len(stage) != 0 {
+			if stage == instance.Stage {
+				instances = append(instances, instance)
+			}
+		} else {
+			instances = append(instances, instance)
+		}
+	}
+	return instances, nil
+}
+
 func InstanceExist(ctx context.Context, tenant string, serviceId string, instanceId string) (bool, error) {
 	resp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
 		Action:    registry.GET,
@@ -85,11 +119,11 @@ func CheckEndPoints(ctx context.Context, in *pb.RegisterInstanceRequest) (string
 		WithPrefix: true,
 	})
 	if err != nil {
-		util.LOGGER.Errorf(nil, "Get all instance info failed.", err.Error())
+		util.Logger().Errorf(nil, "Get all instance info failed.", err.Error())
 		return "", err
 	}
 	if len(rsp.Kvs) == 0 {
-		util.LOGGER.Debugf("There is no instance before this instance regists.")
+		util.Logger().Debugf("There is no instance before this instance regists.")
 		return "", nil
 	}
 	registerInstanceEndpoints := in.Instance.Endpoints
@@ -101,7 +135,7 @@ func CheckEndPoints(ctx context.Context, in *pb.RegisterInstanceRequest) (string
 	for _, kv := range rsp.Kvs {
 		err = json.Unmarshal(kv.Value, instance)
 		if err != nil {
-			util.LOGGER.Errorf(nil, "Unmarshal instance info failed.", err.Error())
+			util.Logger().Errorf(nil, "Unmarshal instance info failed.", err.Error())
 			return "", err
 		}
 		nodeIdFromETCD := ""
@@ -147,11 +181,11 @@ func DeleteServiceAllInstances(ctx context.Context, ServiceId string) error {
 		Mode:       registry.MODE_NO_CACHE,
 	})
 	if err != nil {
-		util.LOGGER.Errorf(err, "delete service all instance failed: get instance lease failed.")
+		util.Logger().Errorf(err, "delete service all instance failed: get instance lease failed.")
 		return err
 	}
 	if resp.Count <= 0 {
-		util.LOGGER.Warnf(nil, "No instances to revoke.")
+		util.Logger().Warnf(nil, "No instances to revoke.")
 		return nil
 	}
 	for _, v := range resp.Kvs {
@@ -159,4 +193,79 @@ func DeleteServiceAllInstances(ctx context.Context, ServiceId string) error {
 		registry.GetRegisterCenter().LeaseRevoke(ctx, leaseID)
 	}
 	return nil
+}
+
+func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (results []*pb.WatchInstanceResponse, rev int64) {
+	results = []*pb.WatchInstanceResponse{}
+
+	tenant := util.ParseTenantProject(ctx)
+
+	providerIds, _, err := GetProviderIdsByConsumerId(ctx, tenant, selfServiceId)
+	if err != nil {
+		util.Logger().Errorf(err, "get service %s providers id set failed.", selfServiceId)
+		return
+	}
+
+	rev = store.Revision()
+
+	for _, providerId := range providerIds {
+		service, err := ms.GetServiceWithRev(ctx, tenant, providerId, rev)
+		if err != nil {
+			util.Logger().Errorf(err, "get service %s provider service %s file with revision %d failed.",
+				selfServiceId, providerId, rev)
+			return
+		}
+		if service == nil {
+			continue
+		}
+		util.Logger().Debugf("query provider service %v with revision %d.", service, rev)
+
+		kvs, err := queryServiceInstancesKvs(ctx, providerId, rev)
+		if err != nil {
+			util.Logger().Errorf(err, "get service %s provider %s instances with revision %d failed.",
+				selfServiceId, providerId, rev)
+			return
+		}
+
+		util.Logger().Debugf("query provider service %s instances[%d] with revision %d.", providerId, len(kvs), rev)
+		for _, kv := range kvs {
+			util.Logger().Debugf("start unmarshal service instance file with revision %d: %s",
+				rev, util.BytesToStringWithNoCopy(kv.Key))
+			instance := &pb.MicroServiceInstance{}
+			err := json.Unmarshal(kv.Value, instance)
+			if err != nil {
+				util.Logger().Errorf(err, "unmarshal instance of service %s with revision %d failed.",
+					providerId, rev)
+				return
+			}
+			results = append(results, &pb.WatchInstanceResponse{
+				Response: pb.CreateResponse(pb.Response_SUCCESS, "List instance successfully."),
+				Action:   string(pb.EVT_CREATE),
+				Key: &pb.MicroServiceKey{
+					AppId:       service.AppId,
+					ServiceName: service.ServiceName,
+					Version:     service.Version,
+				},
+				Instance: instance,
+			})
+		}
+	}
+	return
+}
+
+func queryServiceInstancesKvs(ctx context.Context, serviceId string, rev int64) ([]*mvccpb.KeyValue, error) {
+	tenant := util.ParseTenantProject(ctx)
+	key := apt.GenerateInstanceKey(tenant, serviceId, "")
+	resp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
+		Action:     registry.GET,
+		Key:        util.StringToBytesWithNoCopy(key),
+		WithPrefix: true,
+		WithRev:    rev,
+	})
+	if err != nil {
+		util.Logger().Errorf(err, "query instance of service %s with revision %d from etcd failed.",
+			serviceId, rev)
+		return nil, err
+	}
+	return resp.Kvs, nil
 }

@@ -18,7 +18,7 @@ func findUuidFunc(funcName string) func() string {
 	}
 	f, ok := ff.(func() string)
 	if !ok {
-		util.LOGGER.Warnf(nil, "unexpected function '%s' format found in plugin 'uuid'.", funcName)
+		util.Logger().Warnf(nil, "unexpected function '%s' format found in plugin 'uuid'.", funcName)
 		return buildinUnidFunc
 	}
 	return f

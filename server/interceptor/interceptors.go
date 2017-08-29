@@ -69,7 +69,7 @@ func InterceptFunc(phase Phase, intc InterceptorFunc) {
 
 	interceptors[phase] = iters
 
-	util.LOGGER.Infof("Intercept %s at %s", intc.Name(), phase)
+	util.Logger().Infof("Intercept %s at %s", intc.Name(), phase)
 }
 
 func InvokeInterceptors(phase Phase, w http.ResponseWriter, req *http.Request) error {

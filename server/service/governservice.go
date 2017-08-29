@@ -35,7 +35,7 @@ func (governServiceController *GovernServiceController) GetServicesInfo(ctx cont
 	//获取所有服务
 	services, err := ms.GetAllServiceUtil(ctx)
 	if err != nil {
-		util.LOGGER.Errorf(err, "Get all services for govern service faild.")
+		util.Logger().Errorf(err, "Get all services for govern service faild.")
 		return &pb.GetServicesInfoResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Get all service failed."),
 		}, err
@@ -78,7 +78,7 @@ func (governServiceController *GovernServiceController) GetServiceDetail(ctx con
 		}, nil
 	}
 
-	service, err := ms.GetServiceByServiceId(ctx, tenant, in.ServiceId)
+	service, err := ms.GetService(ctx, tenant, in.ServiceId)
 	if service == nil {
 		return &pb.GetServiceDetailResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
@@ -92,7 +92,7 @@ func (governServiceController *GovernServiceController) GetServiceDetail(ctx con
 
 	versions, err := getServiceAllVersions(ctx, tenant, service.AppId, service.ServiceName)
 	if err != nil {
-		util.LOGGER.Errorf(err, "Get service all version fialed.")
+		util.Logger().Errorf(err, "Get service all version fialed.")
 		return &pb.GetServiceDetailResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Get service detail failed."),
 		}, err
@@ -151,16 +151,16 @@ func getAllInstancesForOneService(ctx context.Context, tenant string, serviceId 
 		WithPrefix: true,
 	})
 	if err != nil {
-		util.LOGGER.Errorf(err, "Get one service's instance failed from data source.")
+		util.Logger().Errorf(err, "Get one service's instance failed from data source.")
 		return nil, err
 	}
 	instances := []*pb.MicroServiceInstance{}
 	for _, kvs := range resp.Kvs {
-		util.LOGGER.Debugf("start unmarshal service instance file: %s", util.BytesToStringWithNoCopy(kvs.Key))
+		util.Logger().Debugf("start unmarshal service instance file: %s", util.BytesToStringWithNoCopy(kvs.Key))
 		instance := &pb.MicroServiceInstance{}
 		err := json.Unmarshal(kvs.Value, instance)
 		if err != nil {
-			util.LOGGER.Errorf(err, "Unmarshal service instance failed.")
+			util.Logger().Errorf(err, "Unmarshal service instance failed.")
 			return nil, err
 		}
 		instances = append(instances, instance)
@@ -177,7 +177,7 @@ func getSchemaInfoUtil(ctx context.Context, tenant string, serviceId string) ([]
 		WithPrefix: true,
 	})
 	if err != nil {
-		util.LOGGER.Errorf(err, "Get schema failded,%s")
+		util.Logger().Errorf(err, "Get schema failded,%s")
 		return schemas, err
 	}
 	schemaId := ""
@@ -199,50 +199,50 @@ func getServiceDetailUtil(ctx context.Context, opts []string, tenant string, ser
 		expr := opt
 		switch expr {
 		case "tags":
-			util.LOGGER.Debugf("is tags")
+			util.Logger().Debugf("is tags")
 			tags, err := serviceUtil.GetTagsUtils(ctx, tenant, serviceId)
 			if err != nil {
-				util.LOGGER.Errorf(err, "Get all tags for govern service faild.")
+				util.Logger().Errorf(err, "Get all tags for govern service faild.")
 				return nil, err
 			}
 			serviceDetail.Tags = tags
 		case "rules":
-			util.LOGGER.Debugf("is rules")
+			util.Logger().Debugf("is rules")
 			rules, err := serviceUtil.GetRulesUtil(ctx, tenant, serviceId)
 			if err != nil {
-				util.LOGGER.Errorf(err, "Get all rules for govern service faild.")
+				util.Logger().Errorf(err, "Get all rules for govern service faild.")
 				return nil, err
 			}
 			serviceDetail.Rules = rules
 		case "instances":
-			util.LOGGER.Debugf("is instances")
+			util.Logger().Debugf("is instances")
 			instances, err := getAllInstancesForOneService(ctx, tenant, serviceId)
 			if err != nil {
-				util.LOGGER.Errorf(err, "Get service's all instances for govern service faild.")
+				util.Logger().Errorf(err, "Get service's all instances for govern service faild.")
 				return nil, err
 			}
 			serviceDetail.Instances = instances
 		case "schemas":
-			util.LOGGER.Debugf("is schemas")
+			util.Logger().Debugf("is schemas")
 			schemas, err := getSchemaInfoUtil(ctx, tenant, serviceId)
 			if err != nil {
-				util.LOGGER.Errorf(err, "Get service's all schemas for govern service faild.")
+				util.Logger().Errorf(err, "Get service's all schemas for govern service faild.")
 				return nil, err
 			}
 			serviceDetail.SchemaInfos = schemas
 		case "dependencies":
-			util.LOGGER.Debugf("is dependencies")
+			util.Logger().Debugf("is dependencies")
 			keyProDependency := apt.GenerateProviderDependencyKey(tenant, serviceId, "")
 			consumers, err := dependency.GetDependencies(ctx, keyProDependency, tenant)
 			if err != nil {
-				util.LOGGER.Errorf(err, "Get service's all consumers for govern service faild.")
+				util.Logger().Errorf(err, "Get service's all consumers for govern service faild.")
 				return nil, err
 			}
 			consumers = deleteSelfDenpendency(consumers, serviceId)
 			keyConDependency := apt.GenerateConsumerDependencyKey(tenant, serviceId, "")
 			providers, err := dependency.GetDependencies(ctx, keyConDependency, tenant)
 			if err != nil {
-				util.LOGGER.Errorf(err, "Get service's all providers for govern service faild.")
+				util.Logger().Errorf(err, "Get service's all providers for govern service faild.")
 				return nil, err
 			}
 			providers = deleteSelfDenpendency(providers, serviceId)
@@ -251,7 +251,7 @@ func getServiceDetailUtil(ctx context.Context, opts []string, tenant string, ser
 		case "":
 			continue
 		default:
-			util.LOGGER.Errorf(nil, "option %s from request is invalid.", opt)
+			util.Logger().Errorf(nil, "option %s from request is invalid.", opt)
 		}
 	}
 	return serviceDetail, nil

@@ -160,6 +160,9 @@ message GetExistenceResponse {
 
 message CreateServiceRequest {
     MicroService service = 1;
+    repeated AddOrUpdateServiceRule rules =2;
+    map<string,string> tags = 3;
+    repeated MicroServiceInstance instances = 4;
 }
 
 message CreateServiceResponse {
@@ -305,6 +308,8 @@ message MicroServiceInstance {
 
     DataCenterInfo dataCenterInfo = 9;
     string stage = 10;
+
+    string modTimestamp = 11;
 }
 
 message DataCenterInfo {
@@ -357,6 +362,7 @@ message FindInstancesRequest {
 message FindInstancesResponse {
     Response response = 1;
     repeated MicroServiceInstance instances = 2;
+    string timestamp = 3;
 }
 
 message GetOneInstanceRequest {
@@ -370,6 +376,7 @@ message GetOneInstanceRequest {
 message GetOneInstanceResponse {
     Response response = 1;
     MicroServiceInstance instance = 2;
+    string timestamp = 3;
 }
 
 message GetInstancesRequest {
@@ -382,6 +389,7 @@ message GetInstancesRequest {
 message GetInstancesResponse {
     Response response = 1;
     repeated MicroServiceInstance instances = 2;
+    string timestamp = 3;
 }
 
 message UpdateInstanceStatusRequest {

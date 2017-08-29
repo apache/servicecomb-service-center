@@ -29,7 +29,7 @@ var GovernServiceAPI pb.GovernServiceCtrlServerEx
 func WriteJsonObject(status int, obj interface{}, w http.ResponseWriter) {
 	serviceJSON, err := json.Marshal(obj)
 	if err != nil {
-		util.LOGGER.Error("marshal response error", err)
+		util.Logger().Error("marshal response error", err)
 		WriteText(http.StatusInternalServerError, fmt.Sprintf("marshal response error, %s", err.Error()), w)
 		return
 	}

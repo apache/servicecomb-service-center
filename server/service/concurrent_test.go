@@ -50,7 +50,7 @@ func TestServiceController_CreateDependenciesForMircServices(t *testing.T) {
 			},
 		})
 		if err != nil {
-			util.LOGGER.Error(err.Error(), err)
+			util.Logger().Error(err.Error(), err)
 			return
 		}
 	}
@@ -77,7 +77,7 @@ func TestServiceController_CreateDependenciesForMircServices(t *testing.T) {
 				},
 			})
 			if err != nil {
-				util.LOGGER.Errorf(err, "CreateDependenciesForMircServices %s failed.", serviceName)
+				util.Logger().Errorf(err, "CreateDependenciesForMircServices %s failed.", serviceName)
 				return
 			}
 		}(i)
@@ -94,17 +94,17 @@ func TestServiceController_CreateDependenciesForMircServices(t *testing.T) {
 			Key:    []byte(key),
 		})
 		if err != nil {
-			util.LOGGER.Errorf(err, "%s failed.", key)
+			util.Logger().Errorf(err, "%s failed.", key)
 			return
 		}
 		if len(resp.Kvs) == 0 {
-			util.LOGGER.Warnf(nil, "%s: 0.", key)
+			util.Logger().Warnf(nil, "%s: 0.", key)
 			continue
 		}
 		d := &pb.MicroServiceDependency{}
 		err = json.Unmarshal(resp.Kvs[0].Value, d)
 		if err != nil {
-			util.LOGGER.Errorf(err, "%s failed.", key)
+			util.Logger().Errorf(err, "%s failed.", key)
 			return
 		}
 		fmt.Println(key, ":", len(d.Dependency))

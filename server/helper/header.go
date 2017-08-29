@@ -37,7 +37,7 @@ func GetTenantProjectFromHeader(r *http.Request) (string, string, error) {
 			if _, ok := NO_CHEACK_URL[r.RequestURI]; ok {
 				return core.REGISTRY_TENANT, core.REGISTRY_PROJECT, nil
 			}
-			util.LOGGER.Errorf(nil, "%s does not contain domain.", r.RequestURI)
+			util.Logger().Errorf(nil, "%s does not contain domain.", r.RequestURI)
 			return "", "", errors.New(fmt.Sprintf("Header does not contain tenant.Invalid Request URI %s", r.RequestURI))
 		}
 	}
