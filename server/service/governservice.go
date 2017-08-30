@@ -213,6 +213,9 @@ func getServiceDetailUtil(ctx context.Context, opts []string, tenant string, ser
 				util.Logger().Errorf(err, "Get all rules for govern service faild.")
 				return nil, err
 			}
+			for _, rule := range rules {
+				rule.Timestamp = rule.ModTimestamp
+			}
 			serviceDetail.Rules = rules
 		case "instances":
 			util.Logger().Debugf("is instances")
