@@ -28,9 +28,9 @@ const (
 	REGISTRY_TENANT  = "default"
 	REGISTRY_PROJECT = "default"
 
-	registry_app_id         = "default"
-	registry_service_name   = "SERVICECENTER"
-	registry_instance_stage = "prod"
+	registry_app_id       = "default"
+	registry_service_name = "SERVICECENTER"
+	registry_instance_env = "production"
 
 	REGISTRY_DEFAULT_LEASE_RENEWALINTERVAL int32 = 30
 	REGISTRY_DEFAULT_LEASE_RETRYTIMES      int32 = 3
@@ -92,9 +92,9 @@ func CreateServiceRequest() *pb.CreateServiceRequest {
 func RegisterInstanceRequest(hostName string, endpoints []string) *pb.RegisterInstanceRequest {
 	Instance.HostName = hostName
 	Instance.Endpoints = endpoints
-	Instance.Stage = os.Getenv("CSE_REGISTRY_STAGE")
-	if len(Instance.Stage) == 0 {
-		Instance.Stage = registry_instance_stage
+	Instance.Environment = os.Getenv("CSE_REGISTRY_STAGE")
+	if len(Instance.Environment) == 0 {
+		Instance.Environment = registry_instance_env
 	}
 	return &pb.RegisterInstanceRequest{
 		Instance: Instance,

@@ -157,12 +157,13 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 		// 产生全局rule id
 		timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 		ruleAdd := &pb.ServiceRule{
-			RuleId:      dynamic.GenerateUuid(),
-			RuleType:    rule.RuleType,
-			Attribute:   rule.Attribute,
-			Pattern:     rule.Pattern,
-			Description: rule.Description,
-			Timestamp:   timestamp,
+			RuleId:       dynamic.GenerateUuid(),
+			RuleType:     rule.RuleType,
+			Attribute:    rule.Attribute,
+			Pattern:      rule.Pattern,
+			Description:  rule.Description,
+			Timestamp:    timestamp,
+			ModTimestamp: timestamp,
 		}
 
 		key := apt.GenerateServiceRuleKey(tenant, in.ServiceId, ruleAdd.RuleId)
@@ -278,7 +279,7 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 	}
 	rule.RuleType = in.GetRule().RuleType
 	rule.Description = in.GetRule().Description
-	rule.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
+	rule.ModTimestamp = strconv.FormatInt(time.Now().Unix(), 10)
 
 	key := apt.GenerateServiceRuleKey(tenant, in.ServiceId, in.RuleId)
 	util.Logger().Debugf("start update service rule file: %s", key)

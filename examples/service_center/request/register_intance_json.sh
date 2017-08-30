@@ -15,7 +15,7 @@ Postman-Token: bf33f47f-acfe-76fe-8c53-d1f79a46b246
 		],
 		"hostName":"ase",
 		"status":"UP",
-		"stage":"prod",
+		"environment":"production",
 		"properties": {
 			"_TAGS": "A, B",
 			"attr1": "a",

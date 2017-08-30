@@ -13,16 +13,9 @@
 //limitations under the License.
 package server
 
+import _ "github.com/ServiceComb/service-center/server/service/event"
 import (
 	"fmt"
-	"github.com/astaxie/beego"
-	"os"
-	"os/signal"
-	"strings"
-	"syscall"
-	"time"
-)
-import (
 	"github.com/ServiceComb/service-center/pkg/common"
 	"github.com/ServiceComb/service-center/server/api"
 	"github.com/ServiceComb/service-center/server/core"
@@ -35,7 +28,13 @@ import (
 	nf "github.com/ServiceComb/service-center/server/service/notification"
 	"github.com/ServiceComb/service-center/util"
 	"github.com/ServiceComb/service-center/version"
+	"github.com/astaxie/beego"
+	"os"
+	"os/signal"
 	"runtime"
+	"strings"
+	"syscall"
+	"time"
 )
 
 const CLEAN_UP_TIMEOUT = 3
@@ -177,6 +176,20 @@ func (s *ServiceCenterServer) startNotifyService() {
 	s.notifyService.Start()
 }
 
+func (s *ServiceCenterServer) addEndpoint(t api.APIType, ip, port string, ssl bool) {
+	if s.apiService.Config.Endpoints == nil {
+		s.apiService.Config.Endpoints = map[api.APIType]string{}
+	}
+	if len(ip) == 0 {
+		return
+	}
+	address := util.StringJoin([]string{ip, port}, ":")
+	if ssl {
+		address += "?sslEnabled=true"
+	}
+	s.apiService.Config.Endpoints[t] = address
+}
+
 func (s *ServiceCenterServer) startApiServer() {
 	sslMode := common.GetServerSSLConfig().SSLEnabled
 	verifyClient := common.GetServerSSLConfig().VerifyClient
@@ -188,19 +201,13 @@ func (s *ServiceCenterServer) startApiServer() {
 	hostName := fmt.Sprintf("%s_%s", cmpName, strings.Replace(util.GetLocalIP(), ".", "_", -1))
 	util.Logger().Infof("Local listen address: %s:%s, host: %s.", restIp, restPort, hostName)
 
-	eps := map[api.APIType]string{}
-	if len(restIp) > 0 && len(restPort) > 0 {
-		eps[api.REST] = util.StringJoin([]string{restIp, restPort}, ":")
-	}
-	if len(grpcIp) > 0 && len(grpcPort) > 0 {
-		eps[api.GRPC] = util.StringJoin([]string{grpcIp, grpcPort}, ":")
-	}
 	s.apiService.Config = api.APIServerConfig{
 		HostName:     hostName,
-		Endpoints:    eps,
 		SSL:          sslMode,
 		VerifyClient: verifyClient,
 	}
+	s.addEndpoint(api.REST, restIp, restPort, sslMode)
+	s.addEndpoint(api.GRPC, grpcIp, grpcPort, sslMode)
 	s.apiService.Start()
 }
 

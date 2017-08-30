@@ -81,7 +81,7 @@ var _ = Describe("MicroService Api Test", func() {
 				"endpoints":   endpoints,
 				"hostName":    "cse",
 				"status":      "UP",
-				"stage":       "prod",
+				"environment": "production",
 				"properties":  propertiesInstance,
 				"healthCheck": healthcheck,
 			}
