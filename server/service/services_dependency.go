@@ -92,14 +92,6 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 			}, err
 		}
-
-		err = dependency.UpdateDependency(dep)
-		if err != nil {
-			util.Logger().Errorf(nil, "Dependency update,as consumer,update it's provider list failed. %s", err.Error())
-			return &pb.CreateDependenciesResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
-			}, err
-		}
 		util.Logger().Infof("Create dependency success: consumer %s, %s  from remote %s", consumerFlag, consumerId, util.GetIPFromContext(ctx))
 	}
 	return &pb.CreateDependenciesResponse{
@@ -115,25 +107,30 @@ func (s *ServiceController) GetProviderDependencies(ctx context.Context, in *pb.
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
 	}
-	providerId := in.ServiceId
 	tenant := util.ParseTenantProject(ctx)
-	if !ms.ServiceExist(ctx, tenant, providerId) {
-		util.Logger().Errorf(nil, "GetProviderDependencies failed, providerId is %s: service not exist.",
-			providerId)
+	providerServiseId := in.ServiceId
+
+	provider, err := ms.GetService(context.TODO(), tenant, providerServiseId)
+	if err != nil {
+		util.Logger().Errorf(err, "GetProviderDependencies failed, %s.", providerServiseId)
+		return nil, err
+	}
+	if provider == nil {
+		util.Logger().Errorf(err, "GetProviderDependencies failed for provider not exist, %s.", providerServiseId)
 		return &pb.GetProDependenciesResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "This provider does not exist."),
+			Response: pb.CreateResponse(pb.Response_FAIL, "Provider not exist"),
 		}, nil
 	}
-	keyProDependency := apt.GenerateProviderDependencyKey(tenant, providerId, "")
-	services, err := dependency.GetDependencies(ctx, keyProDependency, tenant)
+
+	dr := dependency.NewProviderDependencyRelation(tenant,providerServiseId, provider)
+	services, err := dr.GetDependencyConsumers()
 	if err != nil {
-		util.Logger().Errorf(err, "GetProviderDependencies failed, providerId is %s.", providerId)
+		util.Logger().Errorf(err, "GetProviderDependencies failed.")
 		return &pb.GetProDependenciesResponse{
-			Response:  pb.CreateResponse(pb.Response_FAIL, err.Error()),
-			Consumers: nil,
+			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, err
 	}
-	util.Logger().Infof("GetProviderDependencies successfully, providerId is %s.", providerId)
+	util.Logger().Infof("GetProviderDependencies successfully, providerId is %s.", in.ServiceId)
 	return &pb.GetProDependenciesResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Get all consumers successful."),
 		Consumers: services,
@@ -150,21 +147,30 @@ func (s *ServiceController) GetConsumerDependencies(ctx context.Context, in *pb.
 	}
 	consumerId := in.ServiceId
 	tenant := util.ParseTenantProject(ctx)
-	if !ms.ServiceExist(ctx, tenant, consumerId) {
-		util.Logger().Errorf(nil, "GetConsumerDependencies failed, consumerId is %s: service not exist.",
-			consumerId)
-		return &pb.GetConDependenciesResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "This consumer does not exist."),
-		}, nil
-	}
-	keyConDependency := apt.GenerateConsumerDependencyKey(tenant, consumerId, "")
-	services, err := dependency.GetDependencies(ctx, keyConDependency, tenant)
+
+	consumer, err := ms.GetService(ctx, tenant, consumerId)
 	if err != nil {
-		util.Logger().Errorf(err, "GetConsumerDependencies failed, consumerId is %s.", consumerId)
+		util.Logger().Errorf(err, "GetConsumerDependencies failed for get consumer failed.")
 		return &pb.GetConDependenciesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, err
 	}
+	if consumer == nil {
+		util.Logger().Errorf(err, "GetConsumerDependencies failed for consumer not exist, %s.", consumerId)
+		return &pb.GetConDependenciesResponse{
+			Response: pb.CreateResponse(pb.Response_FAIL, "Consumer not exist"),
+		}, nil
+	}
+
+	dr := dependency.NewConsumerDependencyRelation(tenant, consumerId, consumer)
+	services, err := dr.GetDependencyProviders()
+	if err != nil {
+		util.Logger().Errorf(err, "GetConsumerDependencies failed for get providers failed.")
+		return &pb.GetConDependenciesResponse{
+			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
+		}, err
+	}
+
 	util.Logger().Infof("GetConsumerDependencies successfully, consumerId is %s.", consumerId)
 	return &pb.GetConDependenciesResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Get all providers successfully."),

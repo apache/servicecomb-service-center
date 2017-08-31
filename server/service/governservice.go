@@ -52,7 +52,7 @@ func (governServiceController *GovernServiceController) GetServicesInfo(ctx cont
 	serviceId := ""
 	for _, service := range services {
 		serviceId = service.ServiceId
-		serviceDetail, err := getServiceDetailUtil(ctx, opts, tenant, serviceId)
+		serviceDetail, err := getServiceDetailUtil(ctx, opts, tenant, serviceId, service)
 		if err != nil {
 			return &pb.GetServicesInfoResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "Get one service detail failed."),
@@ -98,7 +98,7 @@ func (governServiceController *GovernServiceController) GetServiceDetail(ctx con
 		}, err
 	}
 
-	serviceInfo, err := getServiceDetailUtil(ctx, opts, tenant, in.ServiceId)
+	serviceInfo, err := getServiceDetailUtil(ctx, opts, tenant, in.ServiceId, service)
 	if err != nil {
 		return &pb.GetServiceDetailResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Get service detail failed."),
@@ -193,7 +193,7 @@ func getSchemaInfoUtil(ctx context.Context, tenant string, serviceId string) ([]
 	return schemas, nil
 }
 
-func getServiceDetailUtil(ctx context.Context, opts []string, tenant string, serviceId string) (*pb.ServiceDetail, error) {
+func getServiceDetailUtil(ctx context.Context, opts []string, tenant string, serviceId string, service *pb.MicroService) (*pb.ServiceDetail, error) {
 	serviceDetail := &pb.ServiceDetail{}
 	for _, opt := range opts {
 		expr := opt
@@ -235,15 +235,15 @@ func getServiceDetailUtil(ctx context.Context, opts []string, tenant string, ser
 			serviceDetail.SchemaInfos = schemas
 		case "dependencies":
 			util.Logger().Debugf("is dependencies")
-			keyProDependency := apt.GenerateProviderDependencyKey(tenant, serviceId, "")
-			consumers, err := dependency.GetDependencies(ctx, keyProDependency, tenant)
+			dr := dependency.NewDependencyRelation(tenant, serviceId, service, serviceId, service)
+			consumers, err := dr.GetDependencyConsumers()
 			if err != nil {
 				util.Logger().Errorf(err, "Get service's all consumers for govern service faild.")
 				return nil, err
 			}
 			consumers = deleteSelfDenpendency(consumers, serviceId)
-			keyConDependency := apt.GenerateConsumerDependencyKey(tenant, serviceId, "")
-			providers, err := dependency.GetDependencies(ctx, keyConDependency, tenant)
+
+			providers, err := dr.GetDependencyProviders()
 			if err != nil {
 				util.Logger().Errorf(err, "Get service's all providers for govern service faild.")
 				return nil, err

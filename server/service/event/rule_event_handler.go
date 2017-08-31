@@ -22,7 +22,6 @@ import (
 	nf "github.com/ServiceComb/service-center/server/service/notification"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
-	"strings"
 )
 
 type RulesChangedAsyncTask struct {
@@ -50,30 +49,18 @@ func (apt *RulesChangedAsyncTask) Err() error {
 
 func (apt *RulesChangedAsyncTask) publish(ctx context.Context, tenant, providerId string, rev int64) error {
 	provider, err := ms.GetService(ctx, tenant, providerId)
-	if provider == nil {
+	if err != nil {
 		util.Logger().Errorf(err, "get service %s file failed", providerId)
 		return err
 	}
 
-	kvs, err := dependency.GetConsumersInCache(ctx, tenant, providerId)
+	consumerIds, err := dependency.GetConsumersInCache(tenant, providerId, provider)
 	if err != nil {
 		util.Logger().Errorf(err, "get consumer services by provider %s failed", providerId)
 		return err
 	}
+	providerKey :=  pb.ToMicroServiceKey(tenant, provider)
 
-	providerKey := &pb.MicroServiceKey{
-		AppId:       provider.AppId,
-		ServiceName: provider.ServiceName,
-		Version:     provider.Version,
-	}
-
-	l := len(kvs)
-	consumerIds := make([]string, l)
-	for i, kv := range kvs {
-		consumerId := util.BytesToStringWithNoCopy(kv.Key)
-		consumerId = consumerId[strings.LastIndex(consumerId, "/")+1:]
-		consumerIds[i] = consumerId
-	}
 	nf.PublishInstanceEvent(tenant, pb.EVT_EXPIRE, providerKey, nil, rev, consumerIds)
 	return nil
 }
