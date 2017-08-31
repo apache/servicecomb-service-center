@@ -48,7 +48,12 @@ func (apt *TagsChangedAsyncTask) Err() error {
 }
 
 func (apt *TagsChangedAsyncTask) publish(ctx context.Context, tenant, consumerId string, rev int64) error {
-	providerIds, err := serviceUtil.GetProvidersInCache(ctx, tenant, consumerId)
+	consumer, err := ms.GetService(ctx, tenant, consumerId)
+	if err != nil {
+		util.Logger().Errorf(err, "get comsumer for publish event %s failed", consumerId)
+		return err
+	}
+	providerIds, err := serviceUtil.GetProvidersInCache(tenant, consumerId, consumer)
 	if err != nil {
 		util.Logger().Errorf(err, "get provider services by consumer %s failed", consumerId)
 		return err

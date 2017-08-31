@@ -22,7 +22,6 @@ import (
 	"github.com/ServiceComb/service-center/server/core/mux"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
-	"github.com/ServiceComb/service-center/server/core/registry/store"
 	"github.com/ServiceComb/service-center/server/infra/quota"
 	"github.com/ServiceComb/service-center/server/plugins/dynamic"
 	"github.com/ServiceComb/service-center/server/service/dependency"
@@ -461,14 +460,6 @@ func (s *InstanceController) GetOneInstance(ctx context.Context, in *pb.GetOneIn
 		}, nil
 	}
 
-	errAddDependence := s.addDependenceForService(ctx, tenant, in.ConsumerServiceId, in.ProviderServiceId)
-	if errAddDependence != nil {
-		util.Logger().Errorf(err, "get instance failed, %s(consumer/provider): add dependency failed.", conPro)
-		return &pb.GetOneInstanceResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Add dependency failed."),
-		}, err
-	}
-
 	return &pb.GetOneInstanceResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Get instance successfully."),
 		Instance: instance,
@@ -539,13 +530,6 @@ func (s *InstanceController) GetInstances(ctx context.Context, in *pb.GetInstanc
 	conPro := util.StringJoin([]string{in.ConsumerServiceId, in.ProviderServiceId}, "/")
 
 	tenant := util.ParseTenantProject(ctx)
-	errAddDependence := s.addDependenceForService(ctx, tenant, in.ConsumerServiceId, in.ProviderServiceId)
-	if errAddDependence != nil {
-		util.Logger().Errorf(errAddDependence, "get instances failed, %s(consumer/provider): add dependency failed.", conPro)
-		return &pb.GetInstancesResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, errAddDependence.Error()),
-		}, errAddDependence
-	}
 
 	instances := []*pb.MicroServiceInstance{}
 	instances, err = serviceUtil.GetAllInstancesOfOneService(ctx, tenant, in.ProviderServiceId, in.Env)
@@ -559,41 +543,6 @@ func (s *InstanceController) GetInstances(ctx context.Context, in *pb.GetInstanc
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Query service instances successfully."),
 		Instances: instances,
 	}, nil
-}
-
-func (s *InstanceController) addDependenceForService(ctx context.Context, tenant string, consumerServiceId string, providerServiceId string) error {
-	exist, err := s.existDependence(ctx, tenant, consumerServiceId, providerServiceId)
-	if err != nil {
-		return err
-	}
-	if exist {
-		util.Logger().Infof("consumerServiceId:%s , providerServiceId:%s dependency more exists", consumerServiceId, providerServiceId)
-		return nil
-	}
-	dependenceConKey := apt.GenerateConsumerDependencyKey(tenant, consumerServiceId, providerServiceId)
-	dependenceProKey := apt.GenerateProviderDependencyKey(tenant, providerServiceId, consumerServiceId)
-	timeStamp := strconv.FormatInt(time.Now().Unix(), 10)
-	util.Logger().Debugf("add service dependenceConKey, %s", dependenceConKey)
-	util.Logger().Debugf("add service dependenceProKey, %s", dependenceProKey)
-	optCon := &registry.PluginOp{
-		Action: registry.PUT,
-		Key:    util.StringToBytesWithNoCopy(dependenceConKey),
-		Value:  util.StringToBytesWithNoCopy(timeStamp),
-	}
-	optPro := &registry.PluginOp{
-		Action: registry.PUT,
-		Key:    util.StringToBytesWithNoCopy(dependenceProKey),
-		Value:  util.StringToBytesWithNoCopy(timeStamp),
-	}
-	opts := []*registry.PluginOp{}
-	opts = append(opts, optCon)
-	opts = append(opts, optPro)
-	_, err = registry.GetRegisterCenter().Txn(ctx, opts)
-	if err != nil {
-		return err
-	}
-	util.Logger().Infof("consumerServiceId:%s , providerServiceId:%s dependency add successful", consumerServiceId, providerServiceId)
-	return nil
 }
 
 func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesRequest) (*pb.FindInstancesResponse, error) {
@@ -696,25 +645,6 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Query service instances successfully."),
 		Instances: instances,
 	}, nil
-}
-
-func (s *InstanceController) existDependence(ctx context.Context, tenant string, consumerServiceId string, providerServiceId string) (bool, error) {
-	dependenceKey := apt.GenerateConsumerDependencyKey(tenant, consumerServiceId, providerServiceId)
-	util.Logger().Debugf("add service dependence, %s", dependenceKey)
-	rsp, err := store.Store().Dependency().Search(ctx, &registry.PluginOp{
-		Action:    registry.GET,
-		Key:       util.StringToBytesWithNoCopy(dependenceKey),
-		CountOnly: true,
-	})
-	if err != nil {
-		util.Logger().Errorf(nil, "Get %s and %s dependency info failed.", consumerServiceId, providerServiceId)
-		return false, err
-	}
-	if rsp.Count > 0 {
-		util.Logger().Debugf("%s and %s dependency more existed.", consumerServiceId, providerServiceId)
-		return true, nil
-	}
-	return false, nil
 }
 
 func (s *InstanceController) UpdateStatus(ctx context.Context, in *pb.UpdateInstanceStatusRequest) (*pb.UpdateInstanceStatusResponse, error) {
@@ -881,6 +811,7 @@ func (s *InstanceController) Watch(in *pb.WatchInstanceRequest, stream pb.Servic
 }
 
 func (s *InstanceController) WebSocketWatch(ctx context.Context, in *pb.WatchInstanceRequest, conn *websocket.Conn) {
+	util.Logger().Infof("New a web socket watch with %s", in.SelfServiceId)
 	if err := s.WatchPreOpera(ctx, in); err != nil {
 		nf.EstablishWebSocketError(conn, err)
 		return
@@ -889,6 +820,7 @@ func (s *InstanceController) WebSocketWatch(ctx context.Context, in *pb.WatchIns
 }
 
 func (s *InstanceController) WebSocketListAndWatch(ctx context.Context, in *pb.WatchInstanceRequest, conn *websocket.Conn) {
+	util.Logger().Infof("New a web socket list and watch with %s", in.SelfServiceId)
 	if err := s.WatchPreOpera(ctx, in); err != nil {
 		nf.EstablishWebSocketError(conn, err)
 		return

@@ -225,17 +225,11 @@ func MatchRules(rules []*pb.ServiceRule, service *pb.MicroService, serviceTags m
 	return nil
 }
 
-func getConsumerIdsWithFilter(ctx context.Context, tenant, providerId string,
+func getConsumerIdsWithFilter(ctx context.Context, tenant, providerId string, provider *pb.MicroService,
 	filter func(ctx context.Context, consumerId string) (bool, error)) (allow []string, deny []string, err error) {
-	kvs, err := dependency.GetConsumersInCache(ctx, tenant, providerId)
+	consumerIds, err := dependency.GetConsumersInCache(tenant, providerId, provider)
 	if err != nil {
 		return nil, nil, err
-	}
-	consumerIds := make([]string, len(kvs))
-	for i, kv := range kvs {
-		consumerId := util.BytesToStringWithNoCopy(kv.Key)
-		consumerId = consumerId[strings.LastIndex(consumerId, "/")+1:]
-		consumerIds[i] = consumerId
 	}
 	return filterConsumerIds(ctx, consumerIds, filter)
 }
@@ -268,25 +262,18 @@ func noFilter(_ context.Context, _ string) (bool, error) {
 	return true, nil
 }
 
-func GetConsumerIdsByProviderId(ctx context.Context, tenant, providerId string) (allow []string, deny []string, _ error) {
-	provider, err := ms.GetService(ctx, tenant, providerId)
-	if provider == nil {
-		return nil, nil, err
-	}
-	return GetConsumerIds(ctx, tenant, provider)
-}
-
 func GetConsumerIds(ctx context.Context, tenant string, provider *pb.MicroService) (allow []string, deny []string, _ error) {
 	if provider == nil || len(provider.ServiceId) == 0 {
 		return nil, nil, fmt.Errorf("invalid provider")
 	}
 
+	//todo 删除服务，最后实例推送有误差
 	providerRules, err := GetRulesUtil(ctx, tenant, provider.ServiceId)
 	if err != nil {
 		return nil, nil, err
 	}
 	if len(providerRules) == 0 {
-		return getConsumerIdsWithFilter(ctx, tenant, provider.ServiceId, noFilter)
+		return getConsumerIdsWithFilter(ctx, tenant, provider.ServiceId, provider, noFilter)
 	}
 
 	rf := RuleFilter{
@@ -295,40 +282,19 @@ func GetConsumerIds(ctx context.Context, tenant string, provider *pb.MicroServic
 		ProviderRules: providerRules,
 	}
 
-	allow, deny, err = getConsumerIdsWithFilter(ctx, tenant, provider.ServiceId, rf.Filter)
+	allow, deny, err = getConsumerIdsWithFilter(ctx, tenant, provider.ServiceId, provider, rf.Filter)
 	if err != nil {
 		return nil, nil, err
 	}
 	return allow, deny, nil
 }
 
-func GetProvidersInCache(ctx context.Context, tenant, consumerId string) ([]string, error) {
-	key := apt.GenerateProviderDependencyKey(tenant, consumerId, "")
-	resp, err := store.Store().Dependency().Search(ctx, &registry.PluginOp{
-		Action:     registry.GET,
-		Key:        util.StringToBytesWithNoCopy(key),
-		WithPrefix: true,
-		KeyOnly:    true,
-	})
-	if err != nil {
-		util.Logger().Errorf(err, "query service providers failed, consumer id %s", consumerId)
-		return nil, err
-	}
-	l := len(resp.Kvs)
-	if l == 0 {
-		return nil, nil
-	}
-	providerIds := make([]string, l)
-	for i, kv := range resp.Kvs {
-		providerId := util.BytesToStringWithNoCopy(kv.Key)
-		providerId = providerId[strings.LastIndex(providerId, "/")+1:]
-		providerIds[i] = providerId
-	}
-	return providerIds, nil
+func GetProvidersInCache(tenant string, consumerId string, provider *pb.MicroService) ([]string, error) {
+	return dependency.GetProvidersInCache(tenant, consumerId, provider)
 }
 
-func GetProviderIdsByConsumerId(ctx context.Context, tenant, consumerId string) (allow []string, deny []string, _ error) {
-	providerIdsInCache, err := GetProvidersInCache(ctx, tenant, consumerId)
+func GetProviderIdsByConsumerId(ctx context.Context, tenant, consumerId string, server *pb.MicroService) (allow []string, deny []string, _ error) {
+	providerIdsInCache, err := GetProvidersInCache(tenant, consumerId, server)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -367,9 +333,4 @@ func GetProviderIdsByConsumerId(ctx context.Context, tenant, consumerId string) 
 		}
 	}
 	return providerIds[:allowIdx], providerIds[denyIdx:], nil
-}
-
-func GetProviderIds(ctx context.Context, tenant string, consumer *pb.MicroService) (allow []string, deny []string, _ error) {
-	consumerId := consumer.ServiceId
-	return GetProviderIdsByConsumerId(ctx, tenant, consumerId)
 }
