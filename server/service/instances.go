@@ -337,20 +337,20 @@ func grantOrRenewLease(ctx context.Context, tenant string, serviceId string, ins
 
 	leaseID, oldTTL, err, inner = serviceUtil.HeartbeatUtil(ctx, tenant, serviceId, instanceId)
 	if inner {
-		util.Logger().Errorf(err, "grant or renew lease failed, service %s, instanceId %s, operator: %s",
-			instanceFlag, instanceId, remoteIP)
+		util.Logger().Errorf(err, "grant or renew lease failed, instance %s, operator: %s",
+			instanceFlag, remoteIP)
 		return
 	}
 
 	if leaseID < 0 || (oldTTL > 0 && oldTTL != ttl) {
 		leaseID, err = registry.GetRegisterCenter().LeaseGrant(ctx, ttl)
 		if err != nil {
-			util.Logger().Errorf(err, "grant or renew lease failed, service %s, instanceId %s, operator: %s: lease grant failed.",
-				instanceFlag, instanceId, remoteIP)
+			util.Logger().Errorf(err, "grant or renew lease failed, instance %s, operator: %s: lease grant failed.",
+				instanceFlag, remoteIP)
 			return
 		}
-		util.Logger().Infof("lease grant %d->%d successfully, service %s, instanceId %s, operator: %s.",
-			oldTTL, ttl, instanceFlag, instanceId, remoteIP)
+		util.Logger().Infof("lease grant %d->%d successfully, instance %s, operator: %s.",
+			oldTTL, ttl, instanceFlag, remoteIP)
 		return
 	}
 	return
@@ -849,7 +849,12 @@ func updateInstance(ctx context.Context, tenant string, instance *pb.MicroServic
 		return err, true
 	}
 
-	_, err = registry.GetRegisterCenter().LeaseRenew(ctx, leaseID)
+	_, err = store.Store().KeepAlive(ctx, &registry.PluginOp{
+		Action: registry.PUT,
+		Key: util.StringToBytesWithNoCopy(apt.GenerateInstanceLeaseKey(tenant,
+			instance.ServiceId, instance.InstanceId)),
+		Lease: leaseID,
+	})
 	if err != nil {
 		return err, true
 	}
