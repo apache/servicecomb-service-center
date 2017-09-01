@@ -17,7 +17,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/ServiceComb/service-center/server/core"
 	apt "github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/server/core/mux"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
@@ -51,11 +50,15 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 		}, nil
 	}
 	instance := in.GetInstance()
+	if len(instance.Environment) == 0 {
+		instance.Environment = apt.REGISTRY_DEFAULT_INSTANCE_ENV
+	}
 	remoteIP := util.GetIPFromContext(ctx)
 	instanceFlag := util.StringJoin([]string{instance.ServiceId, instance.HostName}, "/")
 	err := apt.Validate(instance)
 	if err != nil {
-		util.Logger().Errorf(err, "register instance failed, service %s, operator %s: invalid instance parameters.", instanceFlag, remoteIP)
+		util.Logger().Errorf(err, "register instance failed, service %s, operator %s: invalid instance parameters.",
+			instanceFlag, remoteIP)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
@@ -904,11 +907,11 @@ func (s *InstanceController) WebSocketListAndWatch(ctx context.Context, in *pb.W
 }
 
 func (s *InstanceController) ClusterHealth(ctx context.Context) (*pb.GetInstancesResponse, error) {
-	tenant := util.StringJoin([]string{core.REGISTRY_TENANT, core.REGISTRY_PROJECT}, "/")
+	tenant := util.StringJoin([]string{apt.REGISTRY_TENANT, apt.REGISTRY_PROJECT}, "/")
 	serviceId, err := ms.GetServiceId(ctx, &pb.MicroServiceKey{
-		AppId:       core.Service.AppId,
-		ServiceName: core.Service.ServiceName,
-		Version:     core.Service.Version,
+		AppId:       apt.Service.AppId,
+		ServiceName: apt.Service.ServiceName,
+		Version:     apt.Service.Version,
 		Tenant:      tenant,
 	})
 
