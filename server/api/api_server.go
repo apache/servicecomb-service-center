@@ -32,6 +32,17 @@ import (
 
 type APIType int64
 
+func (t APIType) String() string {
+	switch t {
+	case GRPC:
+		return "grpc"
+	case REST:
+		return "rest"
+	default:
+		return fmt.Sprintf("SCHEME%d", t)
+	}
+}
+
 type APIServerConfig struct {
 	SSL          bool
 	VerifyClient bool
@@ -182,12 +193,9 @@ func (s *APIService) registryService() error {
 func (s *APIService) registryInstance() error {
 	core.Instance.ServiceId = core.Service.ServiceId
 
-	endpoints := []string{}
-	if address, ok := s.Config.Endpoints[GRPC]; ok {
-		endpoints = append(endpoints, util.StringJoin([]string{"grpc", address}, "://"))
-	}
-	if address, ok := s.Config.Endpoints[REST]; ok {
-		endpoints = append(endpoints, util.StringJoin([]string{"rest", address}, "://"))
+	endpoints := make([]string, 0, len(s.Config.Endpoints))
+	for _, address := range s.Config.Endpoints {
+		endpoints = append(endpoints, address)
 	}
 
 	ctx := core.AddDefaultContextValue(context.TODO())

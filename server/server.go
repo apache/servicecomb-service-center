@@ -187,7 +187,7 @@ func (s *ServiceCenterServer) addEndpoint(t api.APIType, ip, port string, ssl bo
 	if ssl {
 		address += "?sslEnabled=true"
 	}
-	s.apiService.Config.Endpoints[t] = address
+	s.apiService.Config.Endpoints[t] = fmt.Sprintf("%s://%s", t, address)
 }
 
 func (s *ServiceCenterServer) startApiServer() {
