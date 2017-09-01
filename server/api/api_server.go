@@ -26,6 +26,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"net"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -55,11 +56,28 @@ func (s *APIService) Err() <-chan error {
 	return s.err
 }
 
+func (s *APIService) parseEndpoint(ep string) (string, error) {
+	u, err := url.Parse(ep)
+	if err != nil {
+		return "", err
+	}
+	port := u.Port()
+	if len(port) > 0 {
+		return u.Hostname() + ":" + port, nil
+	}
+	return u.Hostname(), nil
+}
+
 func (s *APIService) startGrpcServer() {
 	var err error
 
-	ipAddr, ok := s.Config.Endpoints[GRPC]
+	ep, ok := s.Config.Endpoints[GRPC]
 	if !ok {
+		return
+	}
+	ipAddr, err := s.parseEndpoint(ep)
+	if err != nil {
+		s.err <- err
 		return
 	}
 
@@ -99,8 +117,13 @@ func (s *APIService) startGrpcServer() {
 func (s *APIService) startRESTfulServer() {
 	var err error
 
-	ipAddr, ok := s.Config.Endpoints[REST]
+	ep, ok := s.Config.Endpoints[REST]
 	if !ok {
+		return
+	}
+	ipAddr, err := s.parseEndpoint(ep)
+	if err != nil {
+		s.err <- err
 		return
 	}
 
