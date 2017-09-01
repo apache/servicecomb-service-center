@@ -859,7 +859,7 @@ func updateInstance(ctx context.Context, tenant string, instance *pb.MicroServic
 		Lease: leaseID,
 	})
 	if err != nil {
-		return err, true
+		return err, false
 	}
 	return nil, false
 }
