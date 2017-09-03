@@ -11,24 +11,32 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package api
+package rest
 
 import (
 	"fmt"
 	"github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
-	rs "github.com/ServiceComb/service-center/server/rest"
-	"github.com/ServiceComb/service-center/server/rest/handlers"
 	"github.com/ServiceComb/service-center/util"
 	"github.com/ServiceComb/service-center/util/rest"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"net"
-	"net/http"
 	"net/url"
+	"os"
+	"syscall"
 	"time"
 )
+
+var apiServer *APIServer
+
+func init() {
+	apiServer = &APIServer{
+		isClose: true,
+		err:     make(chan error, 1),
+	}
+}
 
 type APIType int64
 
@@ -50,12 +58,13 @@ type APIServerConfig struct {
 	Endpoints    map[APIType]string
 }
 
-type APIService struct {
-	Config APIServerConfig
-
-	grpcSvr *grpc.Server
-	isClose bool
-	err     chan error
+type APIServer struct {
+	Config     APIServerConfig
+	restIpPort string
+	grpcIpPort string
+	grpcSvr    *grpc.Server
+	isClose    bool
+	err        chan error
 }
 
 const (
@@ -63,11 +72,11 @@ const (
 	REST APIType = 1
 )
 
-func (s *APIService) Err() <-chan error {
+func (s *APIServer) Err() <-chan error {
 	return s.err
 }
 
-func (s *APIService) parseEndpoint(ep string) (string, error) {
+func (s *APIServer) parseEndpoint(ep string) (string, error) {
 	u, err := url.Parse(ep)
 	if err != nil {
 		return "", err
@@ -79,7 +88,7 @@ func (s *APIService) parseEndpoint(ep string) (string, error) {
 	return u.Hostname(), nil
 }
 
-func (s *APIService) startGrpcServer() {
+func (s *APIServer) startGrpcServer() {
 	var err error
 
 	ep, ok := s.Config.Endpoints[GRPC]
@@ -91,6 +100,8 @@ func (s *APIService) startGrpcServer() {
 		s.err <- err
 		return
 	}
+
+	s.grpcIpPort = ipAddr
 
 	if s.Config.SSL {
 		tlsConfig, err := rest.GetServerTLSConfig(s.Config.VerifyClient)
@@ -105,8 +116,8 @@ func (s *APIService) startGrpcServer() {
 		s.grpcSvr = grpc.NewServer()
 	}
 
-	pb.RegisterServiceCtrlServer(s.grpcSvr, rs.ServiceAPI)
-	pb.RegisterServiceInstanceCtrlServer(s.grpcSvr, rs.InstanceAPI)
+	pb.RegisterServiceCtrlServer(s.grpcSvr, ServiceAPI)
+	pb.RegisterServiceInstanceCtrlServer(s.grpcSvr, InstanceAPI)
 
 	util.Logger().Infof("listen on server %s", ipAddr)
 	ls, err := net.Listen("tcp", ipAddr)
@@ -118,14 +129,20 @@ func (s *APIService) startGrpcServer() {
 
 	go func() {
 		err := s.grpcSvr.Serve(ls)
-		if !s.isClose {
-			util.Logger().Error("error to start Grpc API server "+ipAddr, err)
-			s.err <- err
+		if s.isClose {
+			return
 		}
+
+		if s.isClose {
+			return
+		}
+
+		util.Logger().Errorf(err, "error to start Grpc API server %s", s.grpcIpPort)
+		s.err <- err
 	}()
 }
 
-func (s *APIService) startRESTfulServer() {
+func (s *APIServer) startRESTfulServer() {
 	var err error
 
 	ep, ok := s.Config.Endpoints[REST]
@@ -138,23 +155,64 @@ func (s *APIService) startRESTfulServer() {
 		return
 	}
 
-	http.Handle("/", handlers.DefaultServerHandler())
+	s.restIpPort = ipAddr
 
 	go func() {
-		if s.Config.SSL {
-			err = rest.ListenAndServeTLS(ipAddr, nil)
-		} else {
-			err = rest.ListenAndServe(ipAddr, nil)
+		err := s.InitGraceServer(s.restIpPort)
+
+		if err == nil {
+			if s.Config.SSL {
+				err = rest.ListenAndServeTLS("", nil)
+			} else {
+				err = rest.ListenAndServe("", nil)
+			}
 		}
 
-		if !s.isClose {
-			util.Logger().Error("error to start RESTful API server "+ipAddr, err)
-			s.err <- err
+		if s.isClose {
+			return
 		}
+
+		util.Logger().Errorf(err, "error to start RESTful API server %s", s.restIpPort)
+		s.err <- err
 	}()
 }
 
-func (s *APIService) registerServiceCenter() error {
+func (s *APIServer) InitGraceServer(ipAddr string) (err error) {
+	err = rest.InitServer(ipAddr, nil)
+	if err != nil {
+		return
+	}
+
+	if IsFork() {
+		offset := ExtraFileOrder(ipAddr)
+		if offset >= 0 {
+			f := os.NewFile(uintptr(3+offset), "")
+			fl, err := net.FileListener(f)
+			if err != nil {
+				f.Close()
+				return err
+			}
+			rest.RegisterServerListener(fl)
+		}
+		util.Logger().Warnf(nil, "reload server[%s], file offset is %d", ipAddr, offset)
+
+		process, err := os.FindProcess(os.Getppid())
+		if err != nil {
+			return err
+		}
+		err = process.Kill()
+		if err != nil {
+			return err
+		}
+	}
+	return
+}
+
+func (s *APIServer) registerServerFile() {
+	RegisterFiles(s.restIpPort, rest.ServerFile())
+}
+
+func (s *APIServer) registerServiceCenter() error {
 	err := s.registryService()
 	if err != nil {
 		return err
@@ -163,16 +221,16 @@ func (s *APIService) registerServiceCenter() error {
 	return s.registryInstance()
 }
 
-func (s *APIService) registryService() error {
+func (s *APIServer) registryService() error {
 	ctx := core.AddDefaultContextValue(context.TODO())
-	respE, err := rs.ServiceAPI.Exist(ctx, core.GetExistenceRequest())
+	respE, err := ServiceAPI.Exist(ctx, core.GetExistenceRequest())
 	if err != nil {
 		util.Logger().Error("query service center existence failed", err)
 		return err
 	}
 	if respE.Response.Code == pb.Response_SUCCESS {
 		util.Logger().Warnf(nil, "service center service already registered, service id %s", respE.ServiceId)
-		respG, err := rs.ServiceAPI.GetOne(ctx, core.GetServiceRequest(respE.ServiceId))
+		respG, err := ServiceAPI.GetOne(ctx, core.GetServiceRequest(respE.ServiceId))
 		if respG.Response.Code != pb.Response_SUCCESS {
 			util.Logger().Errorf(err, "query service center service info failed, service id %s", respE.ServiceId)
 			return fmt.Errorf("service center service file lost.")
@@ -180,7 +238,7 @@ func (s *APIService) registryService() error {
 		core.Service = respG.Service
 		return nil
 	}
-	respS, err := rs.ServiceAPI.Create(ctx, core.CreateServiceRequest())
+	respS, err := ServiceAPI.Create(ctx, core.CreateServiceRequest())
 	if err != nil {
 		util.Logger().Error("register service center failed", err)
 		return err
@@ -190,7 +248,7 @@ func (s *APIService) registryService() error {
 	return nil
 }
 
-func (s *APIService) registryInstance() error {
+func (s *APIServer) registryInstance() error {
 	core.Instance.ServiceId = core.Service.ServiceId
 
 	endpoints := make([]string, 0, len(s.Config.Endpoints))
@@ -199,7 +257,7 @@ func (s *APIService) registryInstance() error {
 	}
 
 	ctx := core.AddDefaultContextValue(context.TODO())
-	respI, err := rs.InstanceAPI.Register(ctx,
+	respI, err := InstanceAPI.Register(ctx,
 		core.RegisterInstanceRequest(s.Config.HostName, endpoints))
 	if respI.GetResponse().Code != pb.Response_SUCCESS {
 		err = fmt.Errorf("register service center instance failed, %s", respI.GetResponse().Message)
@@ -212,12 +270,12 @@ func (s *APIService) registryInstance() error {
 	return nil
 }
 
-func (s *APIService) unregisterInstance() error {
+func (s *APIServer) unregisterInstance() error {
 	if len(core.Instance.InstanceId) == 0 {
 		return nil
 	}
 	ctx := core.AddDefaultContextValue(context.TODO())
-	respI, err := rs.InstanceAPI.Unregister(ctx, core.UnregisterInstanceRequest())
+	respI, err := InstanceAPI.Unregister(ctx, core.UnregisterInstanceRequest())
 	if respI.GetResponse().Code != pb.Response_SUCCESS {
 		err = fmt.Errorf("unregister service center instance failed, %s", respI.GetResponse().Message)
 		util.Logger().Error(err.Error(), nil)
@@ -228,12 +286,12 @@ func (s *APIService) unregisterInstance() error {
 	return nil
 }
 
-func (s *APIService) doAPIServerHeartBeat() {
+func (s *APIServer) doAPIServerHeartBeat() {
 	if s.isClose {
 		return
 	}
 	ctx := core.AddDefaultContextValue(context.TODO())
-	respI, err := rs.InstanceAPI.Heartbeat(ctx, core.HeartbeatRequest())
+	respI, err := InstanceAPI.Heartbeat(ctx, core.HeartbeatRequest())
 	if respI.GetResponse().Code == pb.Response_SUCCESS {
 		util.Logger().Debugf("update service center %s heartbeat %s successfully",
 			core.Instance.ServiceId, core.Instance.InstanceId)
@@ -250,7 +308,7 @@ func (s *APIService) doAPIServerHeartBeat() {
 	}
 }
 
-func (s *APIService) startHeartBeatService() {
+func (s *APIServer) startHeartBeatService() {
 	go func() {
 		for {
 			select {
@@ -263,12 +321,23 @@ func (s *APIService) startHeartBeatService() {
 	}()
 }
 
+func (s *APIServer) registerSignalHooks() {
+	RegisterSignalHook(PreSignal, s.registerServerFile, syscall.SIGHUP)
+	RegisterSignalHook(PostSignal, s.Stop, syscall.SIGINT)
+	RegisterSignalHook(PostSignal, s.Stop, syscall.SIGKILL)
+	RegisterSignalHook(PostSignal, s.Stop, syscall.SIGTERM)
+}
+
 // 需保证ETCD启动成功后才执行该方法
-func (s *APIService) Start() {
+func (s *APIServer) Start() {
 	if !s.isClose {
 		return
 	}
 	s.isClose = false
+
+	InitGrace()
+
+	s.registerSignalHooks()
 
 	s.startRESTfulServer()
 
@@ -284,14 +353,13 @@ func (s *APIService) Start() {
 	util.Logger().Info("api server is ready")
 }
 
-func (s *APIService) Stop() {
+func (s *APIServer) Stop() {
 	if s.isClose {
 		return
 	}
+	s.isClose = true
 
 	s.unregisterInstance()
-
-	s.isClose = true
 
 	rest.CloseServer()
 
@@ -304,15 +372,6 @@ func (s *APIService) Stop() {
 	util.Logger().Info("api server stopped.")
 }
 
-var apiServer *APIService
-
-func init() {
-	apiServer = &APIService{
-		isClose: true,
-		err:     make(chan error, 1),
-	}
-}
-
-func GetAPIService() *APIService {
+func GetAPIServer() *APIServer {
 	return apiServer
 }
