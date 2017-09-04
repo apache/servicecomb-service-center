@@ -14,7 +14,6 @@
 package rest
 
 import (
-	"github.com/ServiceComb/service-center/util"
 	"net"
 )
 
@@ -24,8 +23,7 @@ type restConn struct {
 }
 
 func (c restConn) Close() (err error) {
-	util.RecoverAndReport()
 	err = c.Conn.Close()
-	c.server.wg.Done()
+	c.server.CloseOne()
 	return
 }

@@ -58,7 +58,7 @@ func (rl *restListener) Accept() (c net.Conn, err error) {
 		server: rl.server,
 	}
 
-	rl.server.wg.Add(1)
+	rl.server.AcceptOne()
 	return
 }
 

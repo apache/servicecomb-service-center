@@ -36,29 +36,30 @@ var (
 	files          []*os.File
 	filesOffsetMap map[string]int
 
-	SignalHooks map[int]map[os.Signal][]func()
-	graceMux    sync.Mutex
-	forked      bool
+	registerSignals []os.Signal
+	SignalHooks     map[int]map[os.Signal][]func()
+	graceMux        sync.Mutex
+	forked          bool
 )
 
 func init() {
 	flag.BoolVar(&isFork, "fork", false, "listen on open fd (after forking)")
 	flag.StringVar(&filesOrder, "filesorder", "", "previous initialization FDs order")
 
+	registerSignals = []os.Signal{
+		syscall.SIGHUP,
+		syscall.SIGKILL,
+		syscall.SIGINT,
+		syscall.SIGTERM,
+	}
 	filesOffsetMap = make(map[string]int)
 	SignalHooks = map[int]map[os.Signal][]func(){
-		PreSignal: {
-			syscall.SIGHUP:  {},
-			syscall.SIGQUIT: {},
-			syscall.SIGINT:  {},
-			syscall.SIGTERM: {},
-		},
-		PostSignal: {
-			syscall.SIGHUP:  {},
-			syscall.SIGQUIT: {},
-			syscall.SIGINT:  {},
-			syscall.SIGTERM: {},
-		},
+		PreSignal:  {},
+		PostSignal: {},
+	}
+	for _, sig := range registerSignals {
+		SignalHooks[PreSignal][sig] = []func(){}
+		SignalHooks[PostSignal][sig] = []func(){}
 	}
 }
 
@@ -103,7 +104,7 @@ func handleSignals() {
 	var sig os.Signal
 
 	sigCh := make(chan os.Signal)
-	signal.Notify(sigCh, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(sigCh, registerSignals...)
 
 	for {
 		sig = <-sigCh
@@ -154,10 +155,10 @@ func fork() (err error) {
 	cmd.ExtraFiles = files
 	err = cmd.Start()
 	if err != nil {
-		util.Logger().Errorf(err, "fork a process failed, %s %v", path, args)
+		util.Logger().Errorf(err, "fork a process failed, %v", args)
 		return
 	}
-	util.Logger().Warnf(nil, "fork process %s %v", path, args)
+	util.Logger().Warnf(nil, "fork process %v", args)
 	return
 }
 

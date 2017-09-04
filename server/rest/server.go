@@ -326,9 +326,7 @@ func (s *APIServer) startHeartBeatService() {
 func (s *APIServer) registerSignalHooks() {
 	InitGrace()
 	RegisterSignalHook(PreSignal, s.registerServerFile, syscall.SIGHUP)
-	RegisterSignalHook(PostSignal, s.Stop, syscall.SIGINT)
-	RegisterSignalHook(PostSignal, s.Stop, syscall.SIGKILL)
-	RegisterSignalHook(PostSignal, s.Stop, syscall.SIGTERM)
+	RegisterSignalHook(PostSignal, s.Stop, syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM)
 }
 
 // 需保证ETCD启动成功后才执行该方法

@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"os"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -145,18 +146,41 @@ type Server struct {
 	restListener     net.Listener
 	innerListener    *restListener
 
+	conns int64
 	wg    sync.WaitGroup
 	state uint8
 }
 
 func (srv *Server) Serve() (err error) {
+	defer func() {
+		srv.state = serverStateClosed
+	}()
+	defer util.RecoverAndReport()
 	srv.state = serverStateRunning
 	err = srv.Server.Serve(srv.restListener)
-	srv.wg.Wait()
-	srv.state = serverStateClosed
-
 	util.Logger().Debugf("server serve failed(%s)", err)
+	srv.wg.Wait()
 	return
+}
+
+func (srv *Server) AcceptOne() {
+	defer util.RecoverAndReport()
+	srv.wg.Add(1)
+	atomic.AddInt64(&srv.conns, 1)
+}
+
+func (srv *Server) CloseOne() bool {
+	defer util.RecoverAndReport()
+	for {
+		left := atomic.LoadInt64(&srv.conns)
+		if left <= 0 {
+			return false
+		}
+		if atomic.CompareAndSwapInt64(&srv.conns, left, left-1) {
+			srv.wg.Done()
+			return true
+		}
+	}
 }
 
 func (srv *Server) ListenAndServe() (err error) {
@@ -232,18 +256,9 @@ func (srv *Server) Shutdown() {
 	if srv.GraceTimeout >= 0 {
 		srv.gracefulStop(srv.GraceTimeout)
 	}
-
-	err = srv.Server.Close()
-	if err != nil {
-		util.Logger().Warnf(err, "server close failed")
-	}
 }
 
 func (srv *Server) gracefulStop(d time.Duration) {
-	util.RecoverAndReport()
-
-	util.Logger().Debugf("server(%d) close connections", srv.state)
-
 	if srv.state != serverStateTerminating {
 		return
 	}
@@ -255,12 +270,18 @@ func (srv *Server) gracefulStop(d time.Duration) {
 		if srv.state == serverStateClosed {
 			break
 		}
-		srv.wg.Done()
-		n++
+
+		if srv.CloseOne() {
+			n++
+		}
 	}
 
 	if n != 0 {
-		util.Logger().Warnf(nil, "%s timed out, forcefully shutting down %d connection(s)", d, n)
+		util.Logger().Warnf(nil, "%s timed out, force close %d connection(s)", d, n)
+		err := srv.Server.Close()
+		if err != nil {
+			util.Logger().Warnf(err, "server close failed")
+		}
 	}
 }
 
