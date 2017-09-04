@@ -195,13 +195,14 @@ func (s *APIServer) InitGraceServer(ipAddr string) (err error) {
 			}
 			rest.RegisterServerListener(fl)
 		}
-		util.Logger().Warnf(nil, "reload server[%s], file offset is %d", ipAddr, offset)
+		ppid := os.Getppid()
+		util.Logger().Warnf(nil, "reload server[%s], pid is %d, file offset is %d", ipAddr, ppid, offset)
 
-		process, err := os.FindProcess(os.Getppid())
+		process, err := os.FindProcess(ppid)
 		if err != nil {
 			return err
 		}
-		err = process.Kill()
+		err = process.Signal(syscall.SIGTERM)
 		if err != nil {
 			return err
 		}

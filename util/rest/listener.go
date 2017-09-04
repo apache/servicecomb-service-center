@@ -49,8 +49,6 @@ func (rl *restListener) Accept() (c net.Conn, err error) {
 	if rl.server.KeepaliveTimeout > 0 {
 		tc.SetKeepAlive(true)
 		tc.SetKeepAlivePeriod(rl.server.KeepaliveTimeout)
-	} else {
-		tc.SetKeepAlive(false)
 	}
 
 	c = restConn{
