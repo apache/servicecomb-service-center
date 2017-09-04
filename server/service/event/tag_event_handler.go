@@ -22,6 +22,7 @@ import (
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
+	"fmt"
 )
 
 type TagsChangedAsyncTask struct {
@@ -48,7 +49,20 @@ func (apt *TagsChangedAsyncTask) Err() error {
 }
 
 func (apt *TagsChangedAsyncTask) publish(ctx context.Context, tenant, consumerId string, rev int64) error {
-	providerIds, err := serviceUtil.GetProvidersInCache(ctx, tenant, consumerId)
+	consumer, err := ms.GetService(ctx, tenant, consumerId)
+	if err != nil {
+		util.Logger().Errorf(err, "get comsumer for publish event %s failed", consumerId)
+		return err
+	}
+	if consumer == nil {
+		consumerTmp, found := ms.MsCache().Get(consumerId)
+		if !found {
+			util.Logger().Errorf(nil, "service not exist, %s", consumerId)
+			return fmt.Errorf("service not exist, %s", consumerId)
+		}
+		consumer = consumerTmp.(*pb.MicroService)
+	}
+	providerIds, err := serviceUtil.GetProvidersInCache(tenant, consumerId, consumer)
 	if err != nil {
 		util.Logger().Errorf(err, "get provider services by consumer %s failed", consumerId)
 		return err

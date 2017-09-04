@@ -347,7 +347,7 @@ var _ = Describe("ServiceController", func() {
 								},
 								{
 									AppId:       "service_group_consumer",
-									ServiceName: "service_name_consumer",
+									ServiceName: "*",
 									Version:     "2.0.0",
 								},
 							},

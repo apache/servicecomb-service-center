@@ -27,6 +27,7 @@ import (
 	"math/rand"
 	"strconv"
 	"testing"
+	"time"
 )
 
 var _ = Describe("MicroService Api Test", func() {
@@ -342,6 +343,7 @@ var _ = Describe("MicroService Api Test", func() {
 				req.Header.Set("X-tenant-name", "default")
 				resp, err := scclient.Do(req)
 				Expect(err).To(BeNil())
+				time.Sleep(time.Second)
 				defer resp.Body.Close()
 
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
@@ -356,6 +358,7 @@ var _ = Describe("MicroService Api Test", func() {
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 				servicesStruct := map[string][]map[string]interface{}{}
 				json.Unmarshal(respbody, &servicesStruct)
+				time.Sleep(time.Second)
 				for _, services := range servicesStruct["instances"] {
 					if services["instanceId"] == serviceInstanceID {
 						newproperties := services["properties"]
@@ -394,6 +397,7 @@ var _ = Describe("MicroService Api Test", func() {
 				defer resp.Body.Close()
 
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				time.Sleep(time.Second)
 
 				//Verify the Instance Status
 				url = strings.Replace(GETINSTANCE, ":serviceId", serviceId, 1)
@@ -405,6 +409,7 @@ var _ = Describe("MicroService Api Test", func() {
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 				servicesStruct := map[string][]map[string]interface{}{}
 				json.Unmarshal(respbody, &servicesStruct)
+				time.Sleep(time.Second)
 				for _, services := range servicesStruct["instances"] {
 					if services["instanceId"] == serviceInstanceID {
 						newSTATUS := services["status"]

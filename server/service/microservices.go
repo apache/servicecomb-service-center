@@ -190,16 +190,6 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 		}, nil
 	}
 
-	//创建服务间的依赖
-	err = dependency.UpdateAsProviderDependency(ctx, serviceId, consumer)
-	if err != nil {
-		util.Logger().Errorf(err, "create microservice: update dependency as provider %s(%s) failed. operator: %s",
-			serviceId, serviceFlag, remoteIP)
-		return &pb.CreateServiceResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
-		}, err
-	}
-
 	util.Logger().Infof("create microservice successful, %s, serviceId: %s. operator: %s",
 		serviceFlag, service.ServiceId, remoteIP)
 	return &pb.CreateServiceResponse{
@@ -237,13 +227,13 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 
 	// 强制删除，则与该服务相关的信息删除，非强制删除： 如果作为该被依赖（作为provider，提供服务,且不是只存在自依赖）或者存在实例，则不能删除
 	if !force {
-		keyConDependency := apt.GenerateProviderDependencyKey(tenant, ServiceId, "")
-		services, err := dependency.GetDependencies(ctx, keyConDependency, tenant)
+		dr := dependency.NewConsumerDependencyRelation(tenant, ServiceId, service)
+		services, err := dr.GetDependencyProviderIds()
 		if err != nil {
 			util.Logger().Errorf(err, "delete microservice failed, serviceId is %s:(unforce) inner err, get service dependency failed.", ServiceId)
 			return pb.CreateResponse(pb.Response_FAIL, "Get dependency info failed."), err
 		}
-		if len(services) > 1 || (len(services) == 1 && services[0].ServiceId != ServiceId) {
+		if len(services) > 1 || (len(services) == 1 && services[0] != ServiceId) {
 			util.Logger().Errorf(nil, "delete microservice failed, serviceId is %s:(unforce) can't delete, other services rely it.", ServiceId)
 			return pb.CreateResponse(pb.Response_FAIL, "Can not delete this service, other service rely it."), err
 		}

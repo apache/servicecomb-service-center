@@ -62,14 +62,13 @@ func GetServiceWithRev(ctx context.Context, domain string, id string, rev int64)
 }
 
 func GetServiceInCache(ctx context.Context, domain string, id string) (*pb.MicroService, error) {
-	uid := domain + ":::" + id
-	ms, ok := msCache.Get(uid)
+	ms, ok := msCache.Get(id)
 	if !ok {
 		ms, err := SearchService(ctx, domain, id, registry.MODE_BOTH)
 		if ms == nil {
 			return nil, err
 		}
-		msCache.Set(uid, ms, 0)
+		msCache.Set(id, ms, 0)
 		return ms, nil
 	}
 
