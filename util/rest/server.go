@@ -198,7 +198,7 @@ func (srv *Server) ListenAndServeTLS(certFile, keyFile string) (err error) {
 	}
 
 	srv.innerListener = newRestListener(l, srv)
-	srv.restListener = tls.NewListener(srv.restListener, srv.TLSConfig)
+	srv.restListener = tls.NewListener(srv.innerListener, srv.TLSConfig)
 	return srv.Serve()
 }
 
