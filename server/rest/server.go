@@ -64,6 +64,7 @@ type APIServer struct {
 	grpcIpPort string
 	grpcSvr    *grpc.Server
 	isClose    bool
+	forked     bool
 	err        chan error
 }
 
@@ -209,20 +210,21 @@ func (s *APIServer) InitGraceServer(ipAddr string) (err error) {
 }
 
 func (s *APIServer) registerServerFile() {
+	s.forked = true
 	RegisterFiles(s.restIpPort, rest.ServerFile())
 }
 
 func (s *APIServer) registerServiceCenter() error {
-	err := s.registryService()
+	err := s.registryService(context.Background())
 	if err != nil {
 		return err
 	}
 	// 实例信息
-	return s.registryInstance()
+	return s.registryInstance(context.Background())
 }
 
-func (s *APIServer) registryService() error {
-	ctx := core.AddDefaultContextValue(context.TODO())
+func (s *APIServer) registryService(pCtx context.Context) error {
+	ctx := core.AddDefaultContextValue(pCtx)
 	respE, err := ServiceAPI.Exist(ctx, core.GetExistenceRequest())
 	if err != nil {
 		util.Logger().Error("query service center existence failed", err)
@@ -248,7 +250,7 @@ func (s *APIServer) registryService() error {
 	return nil
 }
 
-func (s *APIServer) registryInstance() error {
+func (s *APIServer) registryInstance(pCtx context.Context) error {
 	core.Instance.ServiceId = core.Service.ServiceId
 
 	endpoints := make([]string, 0, len(s.Config.Endpoints))
@@ -256,7 +258,7 @@ func (s *APIServer) registryInstance() error {
 		endpoints = append(endpoints, address)
 	}
 
-	ctx := core.AddDefaultContextValue(context.TODO())
+	ctx := core.AddDefaultContextValue(pCtx)
 	respI, err := InstanceAPI.Register(ctx,
 		core.RegisterInstanceRequest(s.Config.HostName, endpoints))
 	if respI.GetResponse().Code != pb.Response_SUCCESS {
@@ -270,11 +272,11 @@ func (s *APIServer) registryInstance() error {
 	return nil
 }
 
-func (s *APIServer) unregisterInstance() error {
+func (s *APIServer) unregisterInstance(pCtx context.Context) error {
 	if len(core.Instance.InstanceId) == 0 {
 		return nil
 	}
-	ctx := core.AddDefaultContextValue(context.TODO())
+	ctx := core.AddDefaultContextValue(pCtx)
 	respI, err := InstanceAPI.Unregister(ctx, core.UnregisterInstanceRequest())
 	if respI.GetResponse().Code != pb.Response_SUCCESS {
 		err = fmt.Errorf("unregister service center instance failed, %s", respI.GetResponse().Message)
@@ -286,11 +288,11 @@ func (s *APIServer) unregisterInstance() error {
 	return nil
 }
 
-func (s *APIServer) doAPIServerHeartBeat() {
+func (s *APIServer) doAPIServerHeartBeat(pCtx context.Context) {
 	if s.isClose {
 		return
 	}
-	ctx := core.AddDefaultContextValue(context.TODO())
+	ctx := core.AddDefaultContextValue(pCtx)
 	respI, err := InstanceAPI.Heartbeat(ctx, core.HeartbeatRequest())
 	if respI.GetResponse().Code == pb.Response_SUCCESS {
 		util.Logger().Debugf("update service center %s heartbeat %s successfully",
@@ -315,13 +317,14 @@ func (s *APIServer) startHeartBeatService() {
 			case <-s.err:
 				return
 			case <-time.After(time.Duration(core.Instance.HealthCheck.Interval) * time.Second):
-				s.doAPIServerHeartBeat()
+				s.doAPIServerHeartBeat(context.Background())
 			}
 		}
 	}()
 }
 
 func (s *APIServer) registerSignalHooks() {
+	InitGrace()
 	RegisterSignalHook(PreSignal, s.registerServerFile, syscall.SIGHUP)
 	RegisterSignalHook(PostSignal, s.Stop, syscall.SIGINT)
 	RegisterSignalHook(PostSignal, s.Stop, syscall.SIGKILL)
@@ -335,18 +338,20 @@ func (s *APIServer) Start() {
 	}
 	s.isClose = false
 
-	InitGrace()
-
 	s.registerSignalHooks()
 
 	s.startRESTfulServer()
 
 	s.startGrpcServer()
+
 	// 自注册
-	err := s.registerServiceCenter()
-	if err != nil {
-		s.err <- err
+	if !IsFork() {
+		err := s.registerServiceCenter()
+		if err != nil {
+			s.err <- err
+		}
 	}
+
 	// 心跳
 	s.startHeartBeatService()
 
@@ -359,9 +364,12 @@ func (s *APIServer) Stop() {
 	}
 	s.isClose = true
 
-	s.unregisterInstance()
+	if !s.forked {
+		ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
+		s.unregisterInstance(ctx)
+	}
 
-	rest.CloseServer()
+	rest.GracefulStop()
 
 	if s.grpcSvr != nil {
 		s.grpcSvr.GracefulStop()

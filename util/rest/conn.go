@@ -25,6 +25,7 @@ type restConn struct {
 
 func (c restConn) Close() (err error) {
 	util.RecoverAndReport()
+	err = c.Conn.Close()
 	c.server.wg.Done()
-	return c.Conn.Close()
+	return
 }

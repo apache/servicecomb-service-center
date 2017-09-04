@@ -120,14 +120,11 @@ func ListenAndServe(addr string, handler http.Handler) (err error) {
 	return defaultRESTfulServer.ListenAndServe()
 }
 
-func CloseServer() {
+func GracefulStop() {
 	if defaultRESTfulServer == nil {
 		return
 	}
-	err := defaultRESTfulServer.Close()
-	if err != nil {
-		util.Logger().Errorf(err, "close RESTful server failed.")
-	}
+	defaultRESTfulServer.Shutdown()
 }
 
 func ServerFile() *os.File {
@@ -157,6 +154,8 @@ func (srv *Server) Serve() (err error) {
 	err = srv.Server.Serve(srv.restListener)
 	srv.wg.Wait()
 	srv.state = serverStateClosed
+
+	util.Logger().Debugf("server serve failed(%s)", err)
 	return
 }
 
@@ -225,28 +224,43 @@ func (srv *Server) Shutdown() {
 	}
 
 	srv.state = serverStateTerminating
-	if srv.GraceTimeout >= 0 {
-		go srv.graceTimeout(srv.GraceTimeout)
-	}
 	err := srv.restListener.Close()
 	if err != nil {
-		util.Logger().Errorf(err, "server shutdown failed")
+		util.Logger().Errorf(err, "server listener close failed")
+	}
+
+	if srv.GraceTimeout >= 0 {
+		srv.gracefulStop(srv.GraceTimeout)
+	}
+
+	err = srv.Server.Close()
+	if err != nil {
+		util.Logger().Warnf(err, "server close failed")
 	}
 }
 
-func (srv *Server) graceTimeout(d time.Duration) {
+func (srv *Server) gracefulStop(d time.Duration) {
 	util.RecoverAndReport()
+
+	util.Logger().Debugf("server(%d) close connections", srv.state)
 
 	if srv.state != serverStateTerminating {
 		return
 	}
-	time.Sleep(d)
-	util.Logger().Warnf(nil, "%s timed out, forcefully shutting down server", d)
+
+	<-time.After(d)
+
+	n := 0
 	for {
 		if srv.state == serverStateClosed {
 			break
 		}
 		srv.wg.Done()
+		n++
+	}
+
+	if n != 0 {
+		util.Logger().Warnf(nil, "%s timed out, forcefully shutting down %d connection(s)", d, n)
 	}
 }
 

@@ -14,6 +14,7 @@
 package server
 
 import _ "github.com/ServiceComb/service-center/server/service/event"
+import _ "github.com/ServiceComb/service-center/server/rest/handlers"
 import (
 	"fmt"
 	"github.com/ServiceComb/service-center/pkg/common"
