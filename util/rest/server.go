@@ -15,9 +15,9 @@ package rest
 
 import (
 	"crypto/tls"
-	"fmt"
 	"github.com/ServiceComb/service-center/pkg/common"
 	"github.com/ServiceComb/service-center/util"
+	"github.com/ServiceComb/service-center/util/grace"
 	"github.com/astaxie/beego"
 	"net"
 	"net/http"
@@ -84,7 +84,7 @@ func NewServer(addr string, handler http.Handler) (server *Server, err error) {
 	return server, nil
 }
 
-func InitServer(addr string, handler http.Handler) error {
+func initServer(addr string, handler http.Handler) error {
 	if defaultRESTfulServer != nil {
 		return nil
 	}
@@ -98,15 +98,8 @@ func InitServer(addr string, handler http.Handler) error {
 	return nil
 }
 
-func RegisterServerListener(l net.Listener) {
-	if defaultRESTfulServer == nil {
-		return
-	}
-	defaultRESTfulServer.RegisterListener(l)
-}
-
 func ListenAndServeTLS(addr string, handler http.Handler) (err error) {
-	err = InitServer(addr, handler)
+	err = initServer(addr, handler)
 	if err != nil {
 		return err
 	}
@@ -114,7 +107,7 @@ func ListenAndServeTLS(addr string, handler http.Handler) (err error) {
 	return defaultRESTfulServer.ListenAndServeTLS("", "")
 }
 func ListenAndServe(addr string, handler http.Handler) (err error) {
-	err = InitServer(addr, handler)
+	err = initServer(addr, handler)
 	if err != nil {
 		return err
 	}
@@ -128,11 +121,8 @@ func GracefulStop() {
 	defaultRESTfulServer.Shutdown()
 }
 
-func ServerFile() *os.File {
-	if defaultRESTfulServer == nil {
-		return nil
-	}
-	return defaultRESTfulServer.File()
+func DefaultServer() *Server {
+	return defaultRESTfulServer
 }
 
 type Server struct {
@@ -183,7 +173,7 @@ func (srv *Server) CloseOne() bool {
 	}
 }
 
-func (srv *Server) ListenAndServe() (err error) {
+func (srv *Server) Listen() error {
 	addr := srv.Addr
 	if addr == "" {
 		addr = ":http"
@@ -195,15 +185,34 @@ func (srv *Server) ListenAndServe() (err error) {
 	}
 
 	srv.restListener = newRestListener(l, srv)
-	return srv.Serve()
+	return nil
 }
 
-func (srv *Server) ListenAndServeTLS(certFile, keyFile string) (err error) {
+func (srv *Server) ListenTLS() error {
 	addr := srv.Addr
 	if addr == "" {
 		addr = ":https"
 	}
 
+	l, err := srv.getListener(addr)
+	if err != nil {
+		return err
+	}
+
+	srv.innerListener = newRestListener(l, srv)
+	srv.restListener = tls.NewListener(srv.innerListener, srv.TLSConfig)
+	return nil
+}
+
+func (srv *Server) ListenAndServe() (err error) {
+	err = srv.Listen()
+	if err != nil {
+		return
+	}
+	return srv.Serve()
+}
+
+func (srv *Server) ListenAndServeTLS(certFile, keyFile string) (err error) {
 	if srv.TLSConfig == nil {
 		srv.TLSConfig = &tls.Config{}
 		srv.TLSConfig.Certificates = make([]tls.Certificate, 1)
@@ -216,13 +225,10 @@ func (srv *Server) ListenAndServeTLS(certFile, keyFile string) (err error) {
 		srv.TLSConfig.NextProtos = []string{"http/1.1"}
 	}
 
-	l, err := srv.getListener(addr)
+	err = srv.ListenTLS()
 	if err != nil {
-		return err
+		return
 	}
-
-	srv.innerListener = newRestListener(l, srv)
-	srv.restListener = tls.NewListener(srv.innerListener, srv.TLSConfig)
 	return srv.Serve()
 }
 
@@ -232,12 +238,23 @@ func (srv *Server) RegisterListener(l net.Listener) {
 
 func (srv *Server) getListener(addr string) (l net.Listener, err error) {
 	l = srv.registerListener
-	if l == nil {
-		l, err = net.Listen(srv.Network, addr)
-		if err != nil {
-			err = fmt.Errorf("net.Listen error: %v", err)
-			return
-		}
+	if l != nil {
+		return
+	}
+	if !grace.IsFork() {
+		return net.Listen(srv.Network, addr)
+	}
+
+	offset := grace.ExtraFileOrder(addr)
+	if offset < 0 {
+		return net.Listen(srv.Network, addr)
+	}
+
+	f := os.NewFile(uintptr(3+offset), "")
+	l, err = net.FileListener(f)
+	if err != nil {
+		f.Close()
+		return nil, err
 	}
 	return
 }

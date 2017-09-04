@@ -18,14 +18,13 @@ import (
 	"github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/util"
+	"github.com/ServiceComb/service-center/util/grace"
 	"github.com/ServiceComb/service-center/util/rest"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"net"
 	"net/url"
-	"os"
-	"syscall"
 	"time"
 )
 
@@ -62,7 +61,8 @@ type APIServer struct {
 	Config     APIServerConfig
 	restIpPort string
 	grpcIpPort string
-	grpcSvr    *grpc.Server
+	restSrv    *rest.Server
+	grpcSrv    *grpc.Server
 	isClose    bool
 	forked     bool
 	err        chan error
@@ -112,13 +112,13 @@ func (s *APIServer) startGrpcServer() {
 			return
 		}
 		creds := credentials.NewTLS(tlsConfig)
-		s.grpcSvr = grpc.NewServer(grpc.Creds(creds))
+		s.grpcSrv = grpc.NewServer(grpc.Creds(creds))
 	} else {
-		s.grpcSvr = grpc.NewServer()
+		s.grpcSrv = grpc.NewServer()
 	}
 
-	pb.RegisterServiceCtrlServer(s.grpcSvr, ServiceAPI)
-	pb.RegisterServiceInstanceCtrlServer(s.grpcSvr, InstanceAPI)
+	pb.RegisterServiceCtrlServer(s.grpcSrv, ServiceAPI)
+	pb.RegisterServiceInstanceCtrlServer(s.grpcSrv, InstanceAPI)
 
 	util.Logger().Infof("listen on server %s", ipAddr)
 	ls, err := net.Listen("tcp", ipAddr)
@@ -129,7 +129,7 @@ func (s *APIServer) startGrpcServer() {
 	}
 
 	go func() {
-		err := s.grpcSvr.Serve(ls)
+		err := s.grpcSrv.Serve(ls)
 		if s.isClose {
 			return
 		}
@@ -145,6 +145,11 @@ func (s *APIServer) startGrpcServer() {
 
 func (s *APIServer) startRESTfulServer() {
 	var err error
+	defer func() {
+		if err != nil {
+			s.err <- err
+		}
+	}()
 
 	ep, ok := s.Config.Endpoints[REST]
 	if !ok {
@@ -152,67 +157,37 @@ func (s *APIServer) startRESTfulServer() {
 	}
 	ipAddr, err := s.parseEndpoint(ep)
 	if err != nil {
-		s.err <- err
 		return
 	}
 
 	s.restIpPort = ipAddr
-
-	go func() {
-		err := s.InitGraceServer(s.restIpPort)
-
-		if err == nil {
-			if s.Config.SSL {
-				err = rest.ListenAndServeTLS("", nil)
-			} else {
-				err = rest.ListenAndServe("", nil)
-			}
-		}
-
-		if s.isClose {
-			return
-		}
-
-		util.Logger().Errorf(err, "error to start RESTful API server %s", s.restIpPort)
-		s.err <- err
-	}()
-}
-
-func (s *APIServer) InitGraceServer(ipAddr string) (err error) {
-	err = rest.InitServer(ipAddr, nil)
+	s.restSrv, err = rest.NewServer(ipAddr, nil)
 	if err != nil {
 		return
 	}
 
-	if IsFork() {
-		offset := ExtraFileOrder(ipAddr)
-		if offset >= 0 {
-			f := os.NewFile(uintptr(3+offset), "")
-			fl, err := net.FileListener(f)
-			if err != nil {
-				f.Close()
-				return err
-			}
-			rest.RegisterServerListener(fl)
-		}
-		ppid := os.Getppid()
-		util.Logger().Warnf(nil, "reload server[%s], pid is %d, file offset is %d", ipAddr, ppid, offset)
-
-		process, err := os.FindProcess(ppid)
-		if err != nil {
-			return err
-		}
-		err = process.Signal(syscall.SIGTERM)
-		if err != nil {
-			return err
-		}
+	if s.Config.SSL {
+		err = s.restSrv.ListenTLS()
+	} else {
+		err = s.restSrv.Listen()
 	}
-	return
-}
+	if err != nil {
+		return
+	}
 
-func (s *APIServer) registerServerFile() {
-	s.forked = true
-	RegisterFiles(s.restIpPort, rest.ServerFile())
+	err = grace.Done()
+	if err != nil {
+		return
+	}
+
+	go func() {
+		err := s.restSrv.Serve()
+		if s.isClose {
+			return
+		}
+		util.Logger().Errorf(err, "error to start RESTful API server %s", s.restIpPort)
+		s.err <- err
+	}()
 }
 
 func (s *APIServer) registerServiceCenter() error {
@@ -325,9 +300,14 @@ func (s *APIServer) startHeartBeatService() {
 }
 
 func (s *APIServer) registerSignalHooks() {
-	InitGrace()
-	RegisterSignalHook(PreSignal, s.registerServerFile, syscall.SIGHUP)
-	RegisterSignalHook(PostSignal, s.Stop, syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM)
+	grace.InitGrace()
+	grace.Before(s.registerServerFile)
+	grace.After(s.Stop)
+}
+
+func (s *APIServer) registerServerFile() {
+	s.forked = true
+	grace.RegisterFiles(s.restIpPort, s.restSrv.File())
 }
 
 // 需保证ETCD启动成功后才执行该方法
@@ -344,7 +324,7 @@ func (s *APIServer) Start() {
 	s.startGrpcServer()
 
 	// 自注册
-	if !IsFork() {
+	if !grace.IsFork() {
 		err := s.registerServiceCenter()
 		if err != nil {
 			s.err <- err
@@ -368,10 +348,12 @@ func (s *APIServer) Stop() {
 		s.unregisterInstance(ctx)
 	}
 
-	rest.GracefulStop()
+	if s.restSrv != nil {
+		s.restSrv.Shutdown()
+	}
 
-	if s.grpcSvr != nil {
-		s.grpcSvr.GracefulStop()
+	if s.grpcSrv != nil {
+		s.grpcSrv.GracefulStop()
 	}
 
 	close(s.err)

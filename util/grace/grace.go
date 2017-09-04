@@ -11,7 +11,7 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package rest
+package grace
 
 import (
 	"flag"
@@ -48,8 +48,8 @@ func init() {
 
 	registerSignals = []os.Signal{
 		syscall.SIGHUP,
-		syscall.SIGKILL,
 		syscall.SIGINT,
+		syscall.SIGKILL,
 		syscall.SIGTERM,
 	}
 	filesOffsetMap = make(map[string]int)
@@ -69,6 +69,14 @@ func InitGrace() {
 	}
 
 	go handleSignals()
+}
+
+func Before(f func()) {
+	RegisterSignalHook(PreSignal, f, syscall.SIGHUP)
+}
+
+func After(f func()) {
+	RegisterSignalHook(PostSignal, f, registerSignals[1:]...)
 }
 
 func RegisterSignalHook(phase int, f func(), sigs ...os.Signal) {
@@ -177,4 +185,21 @@ func ExtraFileOrder(name string) int {
 		}
 	}
 	return -1
+}
+
+func Done() error {
+	if !IsFork() {
+		return nil
+	}
+
+	ppid := os.Getppid()
+	process, err := os.FindProcess(ppid)
+	if err != nil {
+		return err
+	}
+	err = process.Signal(syscall.SIGTERM)
+	if err != nil {
+		return err
+	}
+	return nil
 }
