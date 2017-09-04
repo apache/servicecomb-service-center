@@ -205,6 +205,10 @@ func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (resul
 		util.Logger().Errorf(err, "get service %s failed", selfServiceId)
 		return
 	}
+	if service == nil {
+		util.Logger().Errorf(nil, "service not exist, %s", selfServiceId)
+		return
+	}
 	providerIds, _, err := GetProviderIdsByConsumerId(ctx, tenant, selfServiceId, service)
 	if err != nil {
 		util.Logger().Errorf(err, "get service %s providers id set failed.", selfServiceId)

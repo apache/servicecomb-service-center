@@ -16,7 +16,6 @@ package dependency
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/ServiceComb/service-center/pkg/common/cache"
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
@@ -75,14 +74,6 @@ func autoSyncConsumers() {
 }
 func GetConsumersInCache(tenant string, providerId string, provider *pb.MicroService) ([]string, error) {
 	// 查询所有consumer
-	if provider == nil {
-		provider, found := ms.MsCache().Get(providerId)
-		if !found {
-			util.Logger().Errorf(nil, "service not exist, %s", providerId)
-			return nil, fmt.Errorf("service not exist, %s", providerId)
-		}
-		provider = provider.(*pb.MicroService)
-	}
 	dr := NewProviderDependencyRelation(tenant, providerId, provider)
 	consumerIds, err := dr.GetDependencyConsumerIds()
 	if err != nil {
@@ -105,14 +96,6 @@ func GetConsumersInCache(tenant string, providerId string, provider *pb.MicroSer
 
 func GetProvidersInCache(tenant string, consumerId string, consumer *pb.MicroService) ([]string, error) {
 	// 查询所有provider
-	if consumer == nil {
-		consumerTmp, found := ms.MsCache().Get(consumerId)
-		if !found {
-			util.Logger().Errorf(nil, "service not exist, %s", consumerId)
-			return nil, fmt.Errorf("service not exist, %s", consumerId)
-		}
-		consumer = consumerTmp.(*pb.MicroService)
-	}
 	dr := NewConsumerDependencyRelation(tenant, consumerId, consumer)
 	providerIds, err := dr.GetDependencyProviderIds()
 	if err != nil {
@@ -841,6 +824,9 @@ func (dr *DependencyRelation) GetDependencyConsumerIds() ([]string, error) {
 }
 
 func (dr *DependencyRelation) getDependencyConsumersOfProvider() ([]*pb.MicroServiceKey, error) {
+	if dr.provider == nil {
+		util.LOGGER.Infof("dr.provider is nil ------->")
+	}
 	providerService := pb.ToMicroServiceKey(dr.tenant, dr.provider)
 	consumerDependAllList, err := dr.getConsumerOfDependAllServices()
 	if err != nil {
@@ -931,7 +917,6 @@ func (dr *DependencyRelation) getConsumerOfSameServiceNameAndAppId(provider *pb.
 }
 
 func (dr *DependencyRelation) getConsumerOfDependAllServices() ([]*pb.MicroServiceKey, error) {
-
 	relyAllKey := apt.GenerateProviderDependencyRuleKey(dr.tenant, &pb.MicroServiceKey{
 		ServiceName: "*",
 	})
@@ -944,8 +929,8 @@ func (dr *DependencyRelation) getConsumerOfDependAllServices() ([]*pb.MicroServi
 		util.Logger().Errorf(err, "get consumer that rely all service failed.")
 		return nil, err
 	}
+	dependency := &pb.MicroServiceDependency{}
 	if len(rsp.Kvs) != 0 {
-		dependency := &pb.MicroServiceDependency{}
 		util.Logger().Infof("consumer that rely all service exist.ServiceName: %s.", dr.provider.ServiceName)
 		err = json.Unmarshal(rsp.Kvs[0].Value, dependency)
 		if err != nil {
@@ -953,5 +938,5 @@ func (dr *DependencyRelation) getConsumerOfDependAllServices() ([]*pb.MicroServi
 		}
 		return dependency.Dependency, nil
 	}
-	return nil, nil
+	return dependency.Dependency, nil
 }

@@ -22,6 +22,7 @@ import (
 	nf "github.com/ServiceComb/service-center/server/service/notification"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
+	"fmt"
 )
 
 type RulesChangedAsyncTask struct {
@@ -52,6 +53,14 @@ func (apt *RulesChangedAsyncTask) publish(ctx context.Context, tenant, providerI
 	if err != nil {
 		util.Logger().Errorf(err, "get service %s file failed", providerId)
 		return err
+	}
+	if provider == nil {
+		tmpProvider, found := ms.MsCache().Get(providerId)
+		if !found {
+			util.Logger().Errorf(nil, "service not exist, %s", providerId)
+			return fmt.Errorf("service not exist, %s", providerId)
+		}
+		provider = tmpProvider.(*pb.MicroService)
 	}
 
 	consumerIds, err := dependency.GetConsumersInCache(tenant, providerId, provider)
