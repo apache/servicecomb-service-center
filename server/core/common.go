@@ -58,8 +58,8 @@ func init() {
 	VersionRegex, _ = regexp.Compile(`^[0-9]+(\.[0-9]+)*$`)
 	// version模糊规则: 1.0, 1.0+, 1.0-2.0, latest
 	versionFuzzyRegex, _ := regexp.Compile(`^[0-9]*$|^[0-9]+(\.[0-9]+)*\+{0,1}$|^[0-9]+(\.[0-9]+)*-[0-9]+(\.[0-9]+)*$|^latest$`)
-	pathRegex, _ := regexp.Compile(`^[A-Za-z0-9\.\,\?\'\\/\+&amp;%\$#\=~_\-@\{}]*$`)
-	descriptionRegex, _ := regexp.Compile(`^[\p{Han}\w\s。.:\*,\-：”“]*$`)
+	pathRegex, _ := regexp.Compile(`^[A-Za-z0-9.,?'\\/+&amp;%$#=~_\-@{}]*$`)
+	descriptionRegex, _ := regexp.Compile(`^[\p{Han}\w\s。.:*,\-：”“]*$`)
 	levelRegex, _ := regexp.Compile(`^(FRONT|MIDDLE|BACK)*$`)
 	statusRegex, _ := regexp.Compile(`^(UP|DOWN)*$`)
 	serviceIdRegex, _ := regexp.Compile(`^.*$`)
@@ -70,7 +70,7 @@ func init() {
 	// map/slice的长度由validator中的min/max/length控制
 	schemaIdRegex, _ := regexp.Compile(`^[a-zA-Z0-9]{1,160}$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]{0,158}[a-zA-Z0-9]$`) //length:{1,160}
 	instStatusRegex, _ := regexp.Compile(`^(UP|DOWN|STARTING|OUTOFSERVICE)$`)
-	tagRegex, _ := regexp.Compile(`^[a-zA-Z][a-zA-Z0-9_\-\.]{0,63}$`)
+	tagRegex, _ := regexp.Compile(`^[a-zA-Z][a-zA-Z0-9_\-.]{0,63}$`)
 	hbModeRegex, _ := regexp.Compile(`^(push|pull)$`)
 	numberAllowEmptyRegex, _ := regexp.Compile(`^[0-9]*$`)
 	numberRegex, _ := regexp.Compile(`^[0-9]+$`)
@@ -79,7 +79,7 @@ func init() {
 	simpleNameRegex, _ := regexp.Compile(`^[A-Za-z0-9_.-]+$`)
 	regionRegex, _ := regexp.Compile(`([A-Za-z0-9]+-)+([A-Za-z0-9]+)$`)
 	ruleRegex, _ := regexp.Compile(`^(WHITE|BLACK)$`)
-	ruleAttrRegex, _ := regexp.Compile(`(^tag_([a-zA-Z][a-zA-Z0-9_\-\.]{0,63})|(^ServiceId$)|(^AppId$)|(^ServiceName$)|(^Version$)|(^Description$)|(^Level$)|(^Status$))`)
+	ruleAttrRegex, _ := regexp.Compile(`((^tag_[a-zA-Z][a-zA-Z0-9_\-.]{0,63}$)|(^ServiceId$)|(^AppId$)|(^ServiceName$)|(^Version$)|(^Description$)|(^Level$)|(^Status$))`)
 
 	ServiceIdRule := &validate.ValidateRule{Min: 1, Length: 64, Regexp: serviceIdRegex}
 	InstanceStatusRule := &validate.ValidateRule{Regexp: instStatusRegex}
