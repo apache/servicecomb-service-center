@@ -15,6 +15,7 @@ package rest
 
 import (
 	"encoding/json"
+	"github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/util"
 	"github.com/ServiceComb/service-center/util/rest"
@@ -59,7 +60,7 @@ func (this *MicroServiceInstanceService) RegisterInstance(w http.ResponseWriter,
 		request.Instance.ServiceId = r.URL.Query().Get(":serviceId")
 	}
 
-	resp, err := InstanceAPI.Register(r.Context(), request)
+	resp, err := core.InstanceAPI.Register(r.Context(), request)
 	respInternal := resp.Response
 	resp.Response = nil
 	WriteJsonResponse(respInternal, resp, err, w)
@@ -71,7 +72,7 @@ func (this *MicroServiceInstanceService) Heartbeat(w http.ResponseWriter, r *htt
 		ServiceId:  r.URL.Query().Get(":serviceId"),
 		InstanceId: r.URL.Query().Get(":instanceId"),
 	}
-	resp, err := InstanceAPI.Heartbeat(r.Context(), request)
+	resp, err := core.InstanceAPI.Heartbeat(r.Context(), request)
 	WriteTextResponse(resp.GetResponse(), err, "", w)
 }
 
@@ -90,7 +91,7 @@ func (this *MicroServiceInstanceService) HeartbeatSet(w http.ResponseWriter, r *
 		WriteText(http.StatusInternalServerError, "Unmarshal error", w)
 		return
 	}
-	resp, _ := InstanceAPI.HeartbeatSet(r.Context(), request)
+	resp, _ := core.InstanceAPI.HeartbeatSet(r.Context(), request)
 
 	if resp.Response.Code == pb.Response_SUCCESS {
 		WriteText(http.StatusOK, "", w)
@@ -115,7 +116,7 @@ func (this *MicroServiceInstanceService) UnregisterInstance(w http.ResponseWrite
 		ServiceId:  r.URL.Query().Get(":serviceId"),
 		InstanceId: r.URL.Query().Get(":instanceId"),
 	}
-	resp, err := InstanceAPI.Unregister(r.Context(), request)
+	resp, err := core.InstanceAPI.Unregister(r.Context(), request)
 	WriteTextResponse(resp.GetResponse(), err, "", w)
 }
 
@@ -133,7 +134,7 @@ func (this *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r 
 		Env:               r.URL.Query().Get("env"),
 		Tags:              ids,
 	}
-	resp, err := InstanceAPI.Find(r.Context(), request)
+	resp, err := core.InstanceAPI.Find(r.Context(), request)
 	if err != nil {
 		WriteText(http.StatusInternalServerError, err.Error(), w)
 		return
@@ -159,7 +160,7 @@ func (this *MicroServiceInstanceService) GetOneInstance(w http.ResponseWriter, r
 		Tags:               ids,
 		Env:                r.URL.Query().Get("env"),
 	}
-	resp, err := InstanceAPI.GetOneInstance(r.Context(), request)
+	resp, err := core.InstanceAPI.GetOneInstance(r.Context(), request)
 	if err != nil {
 		WriteText(http.StatusInternalServerError, err.Error(), w)
 		return
@@ -184,7 +185,7 @@ func (this *MicroServiceInstanceService) GetInstances(w http.ResponseWriter, r *
 		Tags:              ids,
 		Env:               r.URL.Query().Get("env"),
 	}
-	resp, err := InstanceAPI.GetInstances(r.Context(), request)
+	resp, err := core.InstanceAPI.GetInstances(r.Context(), request)
 	if err != nil {
 		WriteText(http.StatusInternalServerError, err.Error(), w)
 		return
@@ -204,7 +205,7 @@ func (this *MicroServiceInstanceService) UpdateStatus(w http.ResponseWriter, r *
 		InstanceId: r.URL.Query().Get(":instanceId"),
 		Status:     status,
 	}
-	resp, err := InstanceAPI.UpdateStatus(r.Context(), request)
+	resp, err := core.InstanceAPI.UpdateStatus(r.Context(), request)
 	WriteTextResponse(resp.GetResponse(), err, "", w)
 }
 
@@ -225,6 +226,6 @@ func (this *MicroServiceInstanceService) UpdateMetadata(w http.ResponseWriter, r
 		WriteText(http.StatusInternalServerError, "Unmarshal error", w)
 		return
 	}
-	resp, err := InstanceAPI.UpdateInstanceProperties(r.Context(), request)
+	resp, err := core.InstanceAPI.UpdateInstanceProperties(r.Context(), request)
 	WriteTextResponse(resp.GetResponse(), err, "", w)
 }

@@ -14,9 +14,9 @@
 package domain
 
 import (
+	"errors"
 	"github.com/ServiceComb/service-center/server/helper"
 	"github.com/ServiceComb/service-center/util"
-	"github.com/ServiceComb/service-center/util/errors"
 	"net/http"
 )
 

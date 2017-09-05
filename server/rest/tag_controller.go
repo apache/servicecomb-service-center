@@ -16,6 +16,7 @@ package rest
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/util"
 	"github.com/ServiceComb/service-center/util/rest"
@@ -52,7 +53,7 @@ func (this *TagService) AddTags(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := ServiceAPI.AddTags(r.Context(), &pb.AddServiceTagsRequest{
+	resp, err := core.ServiceAPI.AddTags(r.Context(), &pb.AddServiceTagsRequest{
 		ServiceId: r.URL.Query().Get(":serviceId"),
 		Tags:      tags["tags"],
 	})
@@ -60,7 +61,7 @@ func (this *TagService) AddTags(w http.ResponseWriter, r *http.Request) {
 }
 
 func (this *TagService) UpdateTag(w http.ResponseWriter, r *http.Request) {
-	resp, err := ServiceAPI.UpdateTag(r.Context(), &pb.UpdateServiceTagRequest{
+	resp, err := core.ServiceAPI.UpdateTag(r.Context(), &pb.UpdateServiceTagRequest{
 		ServiceId: r.URL.Query().Get(":serviceId"),
 		Key:       r.URL.Query().Get(":key"),
 		Value:     r.URL.Query().Get("value"),
@@ -69,7 +70,7 @@ func (this *TagService) UpdateTag(w http.ResponseWriter, r *http.Request) {
 }
 
 func (this *TagService) GetTags(w http.ResponseWriter, r *http.Request) {
-	resp, err := ServiceAPI.GetTags(r.Context(), &pb.GetServiceTagsRequest{
+	resp, err := core.ServiceAPI.GetTags(r.Context(), &pb.GetServiceTagsRequest{
 		ServiceId: r.URL.Query().Get(":serviceId"),
 	})
 	respInternal := resp.Response
@@ -81,7 +82,7 @@ func (this *TagService) DeleteTags(w http.ResponseWriter, r *http.Request) {
 	keys := r.URL.Query().Get(":key")
 	ids := strings.Split(keys, ",")
 
-	resp, err := ServiceAPI.DeleteTags(r.Context(), &pb.DeleteServiceTagsRequest{
+	resp, err := core.ServiceAPI.DeleteTags(r.Context(), &pb.DeleteServiceTagsRequest{
 		ServiceId: r.URL.Query().Get(":serviceId"),
 		Keys:      ids,
 	})
