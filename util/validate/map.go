@@ -11,24 +11,22 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package messaging
+package validate
 
-import (
-	"fmt"
-	"testing"
-)
-
-func TestPSub(t *testing.T) {
-	go pub()
-	psub()
-
-}
-
-func psub() {
-	ch := Subscribe("test.*")
-	for {
-		msg := <-ch
-		fmt.Println(fmt.Sprintf("psub %s", msg))
+func MapChecker(data map[string]string) bool {
+	if data == nil {
+		return false
 	}
-
+	if len(data) == 0 {
+		return false
+	}
+	for key, value := range data {
+		if len(key) == 0 {
+			return false
+		}
+		if len(value) == 0 {
+			return false
+		}
+	}
+	return true
 }

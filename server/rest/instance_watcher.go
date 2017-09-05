@@ -14,6 +14,7 @@
 package rest
 
 import (
+	"github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/util"
 	"github.com/ServiceComb/service-center/util/rest"
@@ -55,7 +56,7 @@ func (this *WatchService) Watch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer conn.Close()
-	InstanceAPI.WebSocketWatch(r.Context(), &pb.WatchInstanceRequest{
+	core.InstanceAPI.WebSocketWatch(r.Context(), &pb.WatchInstanceRequest{
 		SelfServiceId: r.URL.Query().Get(":serviceId"),
 	}, conn)
 }
@@ -66,7 +67,7 @@ func (this *WatchService) ListAndWatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer conn.Close()
-	InstanceAPI.WebSocketListAndWatch(r.Context(), &pb.WatchInstanceRequest{
+	core.InstanceAPI.WebSocketListAndWatch(r.Context(), &pb.WatchInstanceRequest{
 		SelfServiceId: r.URL.Query().Get(":serviceId"),
 	}, conn)
 }

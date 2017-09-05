@@ -22,8 +22,6 @@ import (
 	"github.com/ServiceComb/service-center/server/core/mux"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	st "github.com/ServiceComb/service-center/server/core/registry/store"
-	rs "github.com/ServiceComb/service-center/server/rest"
-	"github.com/ServiceComb/service-center/server/service"
 	"github.com/ServiceComb/service-center/server/service/microservice"
 	nf "github.com/ServiceComb/service-center/server/service/notification"
 	"github.com/ServiceComb/service-center/util"
@@ -40,17 +38,15 @@ var (
 )
 
 func init() {
-	rs.ServiceAPI, rs.InstanceAPI, rs.GovernServiceAPI = service.AssembleResources()
-
 	server = &ServiceCenterServer{
 		store:         st.Store(),
 		notifyService: nf.GetNotifyService(),
-		apiServer:     rs.GetAPIServer(),
+		apiServer:     GetAPIServer(),
 	}
 }
 
 type ServiceCenterServer struct {
-	apiServer     *rs.APIServer
+	apiServer     *APIServer
 	notifyService *nf.NotifyService
 	store         *st.KvStore
 }
@@ -139,38 +135,31 @@ func (s *ServiceCenterServer) startNotifyService() {
 }
 
 func (s *ServiceCenterServer) startApiServer() {
-	sslMode := common.GetServerSSLConfig().SSLEnabled
-	verifyClient := common.GetServerSSLConfig().VerifyClient
 	restIp := beego.AppConfig.String("httpaddr")
 	restPort := beego.AppConfig.String("httpport")
-	grpcIp := beego.AppConfig.DefaultString("grpcaddr", "")
-	grpcPort := beego.AppConfig.DefaultString("grpcport", "")
+	rpcIp := beego.AppConfig.DefaultString("rpcaddr", "")
+	rpcPort := beego.AppConfig.DefaultString("rpcport", "")
 	cmpName := beego.AppConfig.String("ComponentName")
 	hostName := fmt.Sprintf("%s_%s", cmpName, strings.Replace(util.GetLocalIP(), ".", "_", -1))
-	util.Logger().Infof("Local listen address: %s:%s, host: %s.", restIp, restPort, hostName)
 
-	s.apiServer.Config = rs.APIServerConfig{
-		HostName:     hostName,
-		SSL:          sslMode,
-		VerifyClient: verifyClient,
-	}
-	s.addEndpoint(rs.REST, restIp, restPort, sslMode)
-	s.addEndpoint(rs.GRPC, grpcIp, grpcPort, sslMode)
+	s.apiServer.HostName = hostName
+	s.addEndpoint(REST, restIp, restPort)
+	s.addEndpoint(RPC, rpcIp, rpcPort)
 	s.apiServer.Start()
 }
 
-func (s *ServiceCenterServer) addEndpoint(t rs.APIType, ip, port string, ssl bool) {
-	if s.apiServer.Config.Endpoints == nil {
-		s.apiServer.Config.Endpoints = map[rs.APIType]string{}
+func (s *ServiceCenterServer) addEndpoint(t APIType, ip, port string) {
+	if s.apiServer.Endpoints == nil {
+		s.apiServer.Endpoints = map[APIType]string{}
 	}
 	if len(ip) == 0 {
 		return
 	}
 	address := util.StringJoin([]string{ip, port}, ":")
-	if ssl {
+	if common.GetServerSSLConfig().SSLEnabled {
 		address += "?sslEnabled=true"
 	}
-	s.apiServer.Config.Endpoints[t] = fmt.Sprintf("%s://%s", t, address)
+	s.apiServer.Endpoints[t] = fmt.Sprintf("%s://%s", t, address)
 }
 
 func (s *ServiceCenterServer) Stop() {

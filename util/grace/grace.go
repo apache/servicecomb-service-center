@@ -63,7 +63,7 @@ func init() {
 	}
 }
 
-func InitGrace() {
+func Init() {
 	if !flag.Parsed() {
 		flag.Parse()
 	}

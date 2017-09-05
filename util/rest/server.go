@@ -15,10 +15,8 @@ package rest
 
 import (
 	"crypto/tls"
-	"github.com/ServiceComb/service-center/pkg/common"
 	"github.com/ServiceComb/service-center/util"
 	"github.com/ServiceComb/service-center/util/grace"
-	"github.com/astaxie/beego"
 	"net"
 	"net/http"
 	"os"
@@ -34,95 +32,48 @@ const (
 	serverStateClosed
 )
 
-var (
-	defaultRESTfulServer *Server
-)
-
-type httpServerCfg struct {
+type ServerConfig struct {
+	Addr              string
+	Handler           http.Handler
 	ReadTimeout       time.Duration
 	ReadHeaderTimeout time.Duration
 	WriteTimeout      time.Duration
-	KeepaliveTimeout  time.Duration
+	KeepAliveTimeout  time.Duration
 	GraceTimeout      time.Duration
 	MaxHeaderBytes    int
+	TLSConfig         *tls.Config
 }
 
-func loadCfg() *httpServerCfg {
-	readHeaderTimeout, _ := time.ParseDuration(beego.AppConfig.DefaultString("read_header_timeout", "60s"))
-	readTimeout, _ := time.ParseDuration(beego.AppConfig.DefaultString("read_timeout", "60s"))
-	writeTimeout, _ := time.ParseDuration(beego.AppConfig.DefaultString("write_timeout", "60s"))
-	maxHeaderBytes := beego.AppConfig.DefaultInt("max_header_bytes", 16384)
-	return &httpServerCfg{readTimeout, readHeaderTimeout, writeTimeout,
-		3 * time.Minute, 3 * time.Second, maxHeaderBytes}
-}
-
-func NewServer(addr string, handler http.Handler) (server *Server, err error) {
-	var tlsConfig *tls.Config
-	if common.GetServerSSLConfig().SSLEnabled {
-		verifyClient := common.GetServerSSLConfig().VerifyClient
-		tlsConfig, err = GetServerTLSConfig(verifyClient)
-		if err != nil {
-			return nil, err
-		}
+func DefaultServerConfig() *ServerConfig {
+	return &ServerConfig{
+		ReadTimeout:       60 * time.Second,
+		ReadHeaderTimeout: 60 * time.Second,
+		WriteTimeout:      60 * time.Second,
+		KeepAliveTimeout:  3 * time.Minute,
+		GraceTimeout:      3 * time.Second,
+		MaxHeaderBytes:    16384,
 	}
-	srvCfg := loadCfg()
-	server = &Server{
+}
+
+func NewServer(srvCfg *ServerConfig) *Server {
+	if srvCfg == nil {
+		srvCfg = DefaultServerConfig()
+	}
+	return &Server{
 		Server: &http.Server{
-			Addr:              addr,
-			Handler:           handler,
-			TLSConfig:         tlsConfig,
+			Addr:              srvCfg.Addr,
+			Handler:           srvCfg.Handler,
+			TLSConfig:         srvCfg.TLSConfig,
 			ReadTimeout:       srvCfg.ReadTimeout,
 			ReadHeaderTimeout: srvCfg.ReadHeaderTimeout,
 			WriteTimeout:      srvCfg.WriteTimeout,
 			MaxHeaderBytes:    srvCfg.MaxHeaderBytes,
 		},
-		KeepaliveTimeout: srvCfg.KeepaliveTimeout,
+		KeepaliveTimeout: srvCfg.KeepAliveTimeout,
 		GraceTimeout:     srvCfg.GraceTimeout,
 		state:            serverStateInit,
 		Network:          "tcp",
 	}
-	return server, nil
-}
-
-func initServer(addr string, handler http.Handler) error {
-	if defaultRESTfulServer != nil {
-		return nil
-	}
-	var err error
-	defaultRESTfulServer, err = NewServer(addr, handler)
-	if err != nil {
-		return err
-	}
-	util.Logger().Warnf(nil, "listen on server %s.", addr)
-
-	return nil
-}
-
-func ListenAndServeTLS(addr string, handler http.Handler) (err error) {
-	err = initServer(addr, handler)
-	if err != nil {
-		return err
-	}
-	// 证书已经在config里加载，这里不需要再重新加载
-	return defaultRESTfulServer.ListenAndServeTLS("", "")
-}
-func ListenAndServe(addr string, handler http.Handler) (err error) {
-	err = initServer(addr, handler)
-	if err != nil {
-		return err
-	}
-	return defaultRESTfulServer.ListenAndServe()
-}
-
-func GracefulStop() {
-	if defaultRESTfulServer == nil {
-		return
-	}
-	defaultRESTfulServer.Shutdown()
-}
-
-func DefaultServer() *Server {
-	return defaultRESTfulServer
 }
 
 type Server struct {
@@ -185,6 +136,7 @@ func (srv *Server) Listen() error {
 	}
 
 	srv.restListener = newRestListener(l, srv)
+	grace.RegisterFiles(addr, srv.File())
 	return nil
 }
 
@@ -201,6 +153,7 @@ func (srv *Server) ListenTLS() error {
 
 	srv.innerListener = newRestListener(l, srv)
 	srv.restListener = tls.NewListener(srv.innerListener, srv.TLSConfig)
+	grace.RegisterFiles(addr, srv.File())
 	return nil
 }
 

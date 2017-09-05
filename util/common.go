@@ -17,6 +17,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"golang.org/x/net/context"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -137,35 +138,6 @@ func ParseProject(ctx context.Context) string {
 	return v
 }
 
-//format : https://10.21.119.167:30100 or http://10.21.119.167:30100
-func URLChecker(url string) (bool, error) {
-	ipPatten := "((?:(?:25[0-5]|2[0-4]\\d|((1\\d{2})|([1-9]?\\d)))\\.){3}(?:25[0-5]|2[0-4]\\d|((1\\d{2})|([1-9]?\\d))))"
-	patten := "^(https|http):\\/\\/" + ipPatten + ":([0-9]+)$"
-	ok, err := regexp.MatchString(patten, url)
-	if err != nil {
-		return false, err
-	}
-	return ok, nil
-}
-
-func MapChecker(data map[string]string) bool {
-	if data == nil {
-		return false
-	}
-	if len(data) == 0 {
-		return false
-	}
-	for key, value := range data {
-		if len(key) == 0 {
-			return false
-		}
-		if len(value) == 0 {
-			return false
-		}
-	}
-	return true
-}
-
 func GetIPFromContext(ctx context.Context) string {
 	remoteIp := ""
 	remoteIp, _ = ctx.Value("x-remote-ip").(string)
@@ -243,4 +215,16 @@ func RecoverAndReport() {
 	if r := recover(); r != nil {
 		Logger().Errorf(nil, "recover! %v", r)
 	}
+}
+
+func ParseEndpoint(ep string) (string, error) {
+	u, err := url.Parse(ep)
+	if err != nil {
+		return "", err
+	}
+	port := u.Port()
+	if len(port) > 0 {
+		return u.Hostname() + ":" + port, nil
+	}
+	return u.Hostname(), nil
 }
