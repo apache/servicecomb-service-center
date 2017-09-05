@@ -109,11 +109,12 @@ func (lat *AsyncTasker) DeferRemoveTask(key string) error {
 }
 
 func (lat *AsyncTasker) removeTask(key string) {
-	lat.queueLock.Lock()
-	delete(lat.queues, key)
+	if queue, ok := lat.queues[key]; ok {
+		queue.Close()
+		delete(lat.queues, key)
+	}
 	delete(lat.latestTasks, key)
 	delete(lat.removeTasks, key)
-	lat.queueLock.Unlock()
 	util.Logger().Debugf("remove task, key is %s", key)
 }
 
@@ -163,16 +164,15 @@ func (lat *AsyncTasker) daemonRemoveTask(stopCh <-chan struct{}) {
 			if lat.isClose {
 				return
 			}
-			removes := make([]string, 0, len(lat.removeTasks))
-			lat.queueLock.RLock()
+			lat.queueLock.Lock()
+			l := len(lat.removeTasks)
 			for key := range lat.removeTasks {
-				removes = append(removes, key)
-			}
-			lat.queueLock.RUnlock()
-			for _, key := range removes {
 				lat.removeTask(key)
 			}
-			util.Logger().Debugf("daemon remove task is running, %d removed", len(removes))
+			lat.queueLock.Unlock()
+			if l > 0 {
+				util.Logger().Infof("daemon remove task completed, %d removed", l)
+			}
 		}
 	}
 }
@@ -206,8 +206,8 @@ func (lat *AsyncTasker) collectReadyTasks(ready chan<- AsyncTask) {
 	for key, queue := range lat.queues {
 		select {
 		case task, ok := <-queue.Chan():
-			util.Logger().Debugf("get task in queue[%v], key is %s", ok, key)
 			if !ok {
+				util.Logger().Warnf(nil, "get a closed task in queue and discard it, key is %s", key)
 				continue
 			}
 			ready <- task.(AsyncTask) // will block when a lot of tasks coming in.
@@ -228,7 +228,7 @@ func (lat *AsyncTasker) scheduleTask(at AsyncTask) {
 			_, ok := lat.latestTasks[at.Key()]
 			lat.queueLock.RUnlock()
 			if !ok {
-				util.Logger().Debugf("task is removed, key is %s", at.Key())
+				util.Logger().Warnf(nil, "can not schedule a closed task, key is %s", at.Key())
 				return
 			}
 
@@ -269,13 +269,8 @@ func (lat *AsyncTasker) Stop() {
 		return
 	}
 	lat.isClose = true
-	for key, queue := range lat.queues {
-		queue.Close()
-		delete(lat.queues, key)
-		delete(lat.latestTasks, key)
-	}
-	for key := range lat.removeTasks {
-		delete(lat.removeTasks, key)
+	for key := range lat.queues {
+		lat.removeTask(key)
 	}
 	lat.queueLock.Unlock()
 	lat.goroutine.Close(true)

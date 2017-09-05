@@ -17,11 +17,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/ServiceComb/service-center/server/core"
 	apt "github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/server/core/mux"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/server/core/registry/store"
 	"github.com/ServiceComb/service-center/server/infra/quota"
 	"github.com/ServiceComb/service-center/server/plugins/dynamic"
 	"github.com/ServiceComb/service-center/server/service/dependency"
@@ -50,11 +50,15 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 		}, nil
 	}
 	instance := in.GetInstance()
+	if len(instance.Environment) == 0 {
+		instance.Environment = apt.REGISTRY_DEFAULT_INSTANCE_ENV
+	}
 	remoteIP := util.GetIPFromContext(ctx)
 	instanceFlag := util.StringJoin([]string{instance.ServiceId, instance.HostName}, "/")
 	err := apt.Validate(instance)
 	if err != nil {
-		util.Logger().Errorf(err, "register instance failed, service %s, operator %s: invalid instance parameters.", instanceFlag, remoteIP)
+		util.Logger().Errorf(err, "register instance failed, service %s, operator %s: invalid instance parameters.",
+			instanceFlag, remoteIP)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
@@ -336,20 +340,20 @@ func grantOrRenewLease(ctx context.Context, tenant string, serviceId string, ins
 
 	leaseID, oldTTL, err, inner = serviceUtil.HeartbeatUtil(ctx, tenant, serviceId, instanceId)
 	if inner {
-		util.Logger().Errorf(err, "grant or renew lease failed, service %s, instanceId %s, operator: %s",
-			instanceFlag, instanceId, remoteIP)
+		util.Logger().Errorf(err, "grant or renew lease failed, instance %s, operator: %s",
+			instanceFlag, remoteIP)
 		return
 	}
 
 	if leaseID < 0 || (oldTTL > 0 && oldTTL != ttl) {
 		leaseID, err = registry.GetRegisterCenter().LeaseGrant(ctx, ttl)
 		if err != nil {
-			util.Logger().Errorf(err, "grant or renew lease failed, service %s, instanceId %s, operator: %s: lease grant failed.",
-				instanceFlag, instanceId, remoteIP)
+			util.Logger().Errorf(err, "grant or renew lease failed, instance %s, operator: %s: lease grant failed.",
+				instanceFlag, remoteIP)
 			return
 		}
-		util.Logger().Infof("lease grant %d->%d successfully, service %s, instanceId %s, operator: %s.",
-			oldTTL, ttl, instanceFlag, instanceId, remoteIP)
+		util.Logger().Infof("lease grant %d->%d successfully, instance %s, operator: %s.",
+			oldTTL, ttl, instanceFlag, remoteIP)
 		return
 	}
 	return
@@ -779,9 +783,14 @@ func updateInstance(ctx context.Context, tenant string, instance *pb.MicroServic
 		return err, true
 	}
 
-	_, err = registry.GetRegisterCenter().LeaseRenew(ctx, leaseID)
+	_, err = store.Store().KeepAlive(ctx, &registry.PluginOp{
+		Action: registry.PUT,
+		Key: util.StringToBytesWithNoCopy(apt.GenerateInstanceLeaseKey(tenant,
+			instance.ServiceId, instance.InstanceId)),
+		Lease: leaseID,
+	})
 	if err != nil {
-		return err, true
+		return err, false
 	}
 	return nil, false
 }
@@ -831,11 +840,11 @@ func (s *InstanceController) WebSocketListAndWatch(ctx context.Context, in *pb.W
 }
 
 func (s *InstanceController) ClusterHealth(ctx context.Context) (*pb.GetInstancesResponse, error) {
-	tenant := util.StringJoin([]string{core.REGISTRY_TENANT, core.REGISTRY_PROJECT}, "/")
+	tenant := util.StringJoin([]string{apt.REGISTRY_TENANT, apt.REGISTRY_PROJECT}, "/")
 	serviceId, err := ms.GetServiceId(ctx, &pb.MicroServiceKey{
-		AppId:       core.Service.AppId,
-		ServiceName: core.Service.ServiceName,
-		Version:     core.Service.Version,
+		AppId:       apt.Service.AppId,
+		ServiceName: apt.Service.ServiceName,
+		Version:     apt.Service.Version,
 		Tenant:      tenant,
 	})
 

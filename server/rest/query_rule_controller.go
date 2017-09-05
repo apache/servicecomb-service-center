@@ -16,6 +16,7 @@ package rest
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/util"
 	"github.com/ServiceComb/service-center/util/rest"
@@ -51,7 +52,7 @@ func (this *RuleService) AddRule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := ServiceAPI.AddRule(r.Context(), &pb.AddServiceRulesRequest{
+	resp, err := core.ServiceAPI.AddRule(r.Context(), &pb.AddServiceRulesRequest{
 		ServiceId: r.URL.Query().Get(":serviceId"),
 		Rules:     rule["rules"],
 	})
@@ -64,7 +65,7 @@ func (this *RuleService) DeleteRule(w http.ResponseWriter, r *http.Request) {
 	rule_id := r.URL.Query().Get(":rule_id")
 	ids := strings.Split(rule_id, ",")
 
-	resp, err := ServiceAPI.DeleteRule(r.Context(), &pb.DeleteServiceRulesRequest{
+	resp, err := core.ServiceAPI.DeleteRule(r.Context(), &pb.DeleteServiceRulesRequest{
 		ServiceId: r.URL.Query().Get(":serviceId"),
 		RuleIds:   ids,
 	})
@@ -86,7 +87,7 @@ func (this *RuleService) UpdateRule(w http.ResponseWriter, r *http.Request) {
 		WriteText(http.StatusBadRequest, "Unmarshal error", w)
 		return
 	}
-	resp, err := ServiceAPI.UpdateRule(r.Context(), &pb.UpdateServiceRuleRequest{
+	resp, err := core.ServiceAPI.UpdateRule(r.Context(), &pb.UpdateServiceRuleRequest{
 		ServiceId: r.URL.Query().Get(":serviceId"),
 		RuleId:    r.URL.Query().Get(":rule_id"),
 		Rule:      &rule,
@@ -98,7 +99,7 @@ func (this *RuleService) GetRules(w http.ResponseWriter, r *http.Request) {
 	// TODO 根据attribute查询
 	// attribute := r.URL.Query().Get("attribute")
 
-	resp, err := ServiceAPI.GetRule(r.Context(), &pb.GetServiceRulesRequest{
+	resp, err := core.ServiceAPI.GetRule(r.Context(), &pb.GetServiceRulesRequest{
 		ServiceId: r.URL.Query().Get(":serviceId"),
 	})
 	respInternal := resp.Response

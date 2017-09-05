@@ -11,24 +11,22 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package errors
+package validate
 
-type InvalidSSLCert struct {
-	URL    string
-	Reason string
-}
-
-func NewInvalidSSLCert(url, reason string) *InvalidSSLCert {
-	return &InvalidSSLCert{
-		URL:    url,
-		Reason: reason,
+func MapChecker(data map[string]string) bool {
+	if data == nil {
+		return false
 	}
-}
-
-func (err *InvalidSSLCert) Error() string {
-	message := "Received invalid SSL certificate from " + err.URL
-	if err.Reason != "" {
-		message += " - " + err.Reason
+	if len(data) == 0 {
+		return false
 	}
-	return message
+	for key, value := range data {
+		if len(key) == 0 {
+			return false
+		}
+		if len(value) == 0 {
+			return false
+		}
+	}
+	return true
 }

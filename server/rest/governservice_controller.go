@@ -18,6 +18,7 @@ import (
 
 	"github.com/ServiceComb/service-center/util"
 
+	"github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/util/rest"
 	"strings"
@@ -62,7 +63,7 @@ func (governService *GovernService) GetGraph(w http.ResponseWriter, r *http.Requ
 	var graph Graph
 	request := &pb.GetServicesRequest{}
 	ctx := r.Context()
-	resp, err := ServiceAPI.GetServices(ctx, request)
+	resp, err := core.ServiceAPI.GetServices(ctx, request)
 	if err != nil {
 		WriteText(http.StatusInternalServerError, err.Error(), w)
 		return
@@ -81,7 +82,7 @@ func (governService *GovernService) GetGraph(w http.ResponseWriter, r *http.Requ
 		proRequest := &pb.GetDependenciesRequest{
 			ServiceId: service.ServiceId,
 		}
-		proResp, err := ServiceAPI.GetConsumerDependencies(ctx, proRequest)
+		proResp, err := core.ServiceAPI.GetConsumerDependencies(ctx, proRequest)
 		if err != nil {
 			util.Logger().Error("get Dependency failed.", err)
 			WriteText(http.StatusInternalServerError, "get Dependency failed", w)
@@ -133,7 +134,7 @@ func (governService *GovernService) GetServiceDetail(w http.ResponseWriter, r *h
 		ServiceId: serviceID,
 	}
 	ctx := r.Context()
-	resp, err := GovernServiceAPI.GetServiceDetail(ctx, request)
+	resp, err := core.GovernServiceAPI.GetServiceDetail(ctx, request)
 
 	respInternal := resp.Response
 	resp.Response = nil
@@ -145,7 +146,7 @@ func (governService *GovernService) GetAllServicesInfo(w http.ResponseWriter, r 
 	ctx := r.Context()
 	optsStr := r.URL.Query().Get("options")
 	request.Options = strings.Split(optsStr, ",")
-	resp, err := GovernServiceAPI.GetServicesInfo(ctx, request)
+	resp, err := core.GovernServiceAPI.GetServicesInfo(ctx, request)
 
 	respInternal := resp.Response
 	resp.Response = nil
