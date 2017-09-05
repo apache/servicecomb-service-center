@@ -19,24 +19,9 @@ import (
 	"golang.org/x/net/context"
 	"net/url"
 	"os"
-	"path/filepath"
-	"regexp"
 	"time"
 	"unsafe"
 )
-
-const (
-	INIT_FAIL_EXIT = 2
-)
-
-func GetAppPath(path string) string {
-	env := os.Getenv("APP_ROOT")
-	if len(env) == 0 {
-		wd, _ := os.Getwd()
-		return filepath.Join(wd, path)
-	}
-	return os.ExpandEnv(filepath.Join("$APP_ROOT", path))
-}
 
 func PathExist(path string) bool {
 	_, err := os.Stat(path)

@@ -61,6 +61,6 @@ func IsRequestURI(uri string) bool {
 }
 
 //format : https://10.21.119.167:30100 or http://10.21.119.167:30100
-func URLChecker(url string) (bool, error) {
-	return rxURL.MatchString(url), nil
+func URLChecker(url string) bool {
+	return rxURL.MatchString(url)
 }
