@@ -178,9 +178,12 @@ func (s *APIServer) startHeartBeatService() {
 	}()
 }
 
-func (s *APIServer) registerSignalHooks() {
+func (s *APIServer) graceDone() {
 	grace.Before(s.MarkForked)
 	grace.After(s.Stop)
+	if err := grace.Done(); err != nil {
+		util.Logger().Errorf(err, "server reload failed")
+	}
 }
 
 func (s *APIServer) MarkForked() {
@@ -238,8 +241,6 @@ func (s *APIServer) Start() {
 	}
 	s.isClose = false
 
-	s.registerSignalHooks()
-
 	var err error
 	err = s.startRESTServer()
 	if err != nil {
@@ -253,19 +254,13 @@ func (s *APIServer) Start() {
 		return
 	}
 
-	err = grace.Done()
+	s.graceDone()
+
+	// 自注册
+	err = s.registerServiceCenter()
 	if err != nil {
 		s.err <- err
 		return
-	}
-
-	if !grace.IsFork() {
-		// 自注册
-		err = s.registerServiceCenter()
-		if err != nil {
-			s.err <- err
-			return
-		}
 	}
 
 	// 心跳
