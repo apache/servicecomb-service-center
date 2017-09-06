@@ -18,6 +18,8 @@ import (
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"strconv"
+	constKey "github.com/ServiceComb/service-center/server/common"
 )
 
 var serviceId string
@@ -118,6 +120,17 @@ var _ = Describe("ServiceController", func() {
 					Tags: map[string]string{
 						"": "value",
 					},
+				})
+				Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_FAIL))
+
+				size := constKey.TAG_MAX_NUM_FOR_ONESERVICE + 1
+				tags := make(map[string]string, size)
+				for i := 0 ; i < size; i ++ {
+					tags[strconv.Itoa(i)] = strconv.Itoa(i)
+				}
+				respAddTags, _ = serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
+					ServiceId: serviceId,
+					Tags: tags,
 				})
 				Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_FAIL))
 			})

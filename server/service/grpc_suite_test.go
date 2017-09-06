@@ -18,13 +18,14 @@ import (
 	_ "github.com/ServiceComb/service-center/server/core/registry"
 	_ "github.com/ServiceComb/service-center/server/core/registry/etcd"
 	_ "github.com/ServiceComb/service-center/server/plugins/infra/quota/buildin"
-	"github.com/ServiceComb/service-center/server/service"
+	"github.com/ServiceComb/service-center/server"
 	"github.com/ServiceComb/service-center/util"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 	"golang.org/x/net/context"
 	"testing"
+	"github.com/ServiceComb/service-center/server/core"
 )
 
 const (
@@ -44,8 +45,10 @@ var governService pb.GovernServiceCtrlServerEx
 
 var _ = BeforeSuite(func() {
 	//init plugin
-	serviceResource, insResource, governService = service.AssembleResources()
-
+	server.InitAPI()
+	serviceResource = core.ServiceAPI
+	insResource = core.InstanceAPI
+	governService = core.GovernServiceAPI
 })
 
 func getContext() context.Context {

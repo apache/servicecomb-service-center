@@ -57,7 +57,7 @@ func GetAllTenent() ([]string, error) {
 	return insWatherByTenantKeys, err
 }
 
-func DomainExist(ctx context.Context, domain string) (bool, error) {
+func DomainExist(domain string) (bool, error) {
 	opt := &registry.PluginOp{
 		Key:       util.StringToBytesWithNoCopy(apt.GenerateDomainKey(domain)),
 		Action:    registry.GET,

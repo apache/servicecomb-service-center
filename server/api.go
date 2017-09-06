@@ -30,6 +30,10 @@ import (
 var apiServer *APIServer
 
 func init() {
+	InitAPI()
+}
+
+func InitAPI() {
 	core.ServiceAPI, core.InstanceAPI, core.GovernServiceAPI = service.AssembleResources()
 	apiServer = &APIServer{
 		isClose: true,

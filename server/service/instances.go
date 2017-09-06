@@ -31,7 +31,6 @@ import (
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
 	errorsEx "github.com/ServiceComb/service-center/util/errors"
-	"github.com/astaxie/beego"
 	"github.com/gorilla/websocket"
 	"golang.org/x/net/context"
 	"math"
@@ -97,7 +96,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 	}
 
 	if len(oldInstanceId) == 0 {
-		ok, err := quota.QuotaPlugins[beego.AppConfig.DefaultString("quota_plugin", "buildin")]().Apply4Quotas(ctx, quota.MicroServiceInstanceQuotaType, 0)
+		ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(quota.MicroServiceInstanceQuotaType, tenant, "", 1)
 		if err != nil {
 			util.Logger().Errorf(err, "register instance failed, service %s, operator %s: check apply quota failed.", instanceFlag, remoteIP)
 			return &pb.RegisterInstanceResponse{
@@ -210,7 +209,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 
 	//新租户，则进行监听
 	newDomain := util.ParseTenant(ctx)
-	ok, err := domain.DomainExist(ctx, newDomain)
+	ok, err := domain.DomainExist(newDomain)
 	if err != nil {
 		util.Logger().Errorf(err, "register instance failed, service %s, instanceId %s, operator %s: find domain failed.",
 			instanceFlag, instanceId, remoteIP)

@@ -11,27 +11,10 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package unlimit
+package common
 
-import (
-	"github.com/ServiceComb/service-center/server/infra/quota"
-	"golang.org/x/net/context"
+const (
+	RULE_NUM_MAX_FOR_ONESERVICE   = 100
+	SCHEMA_NUM_MAX_FOR_ONESERVICE = 1000
+	TAG_MAX_NUM_FOR_ONESERVICE    = 100
 )
-
-type Unlimit struct {
-}
-
-func New() quota.QuotaManager {
-	return &Unlimit{}
-}
-func init() {
-	quota.QuotaPlugins["unlimit"] = New
-}
-
-func (q *Unlimit) Apply4Quotas(quotaType quota.ResourceType, tenant string, serviceId string, quotaSize int16) (bool, error) {
-	return true, nil
-}
-
-func (q *Unlimit) ReportCurrentQuotasUsage(ctx context.Context, quotaType int, usedQuotaSize int16) bool {
-	return false
-}

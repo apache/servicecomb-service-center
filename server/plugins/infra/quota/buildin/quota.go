@@ -21,6 +21,7 @@ import (
 	"github.com/ServiceComb/service-center/server/infra/quota"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
+	constKey "github.com/ServiceComb/service-center/server/common"
 )
 
 type BuildInQuota struct {
@@ -39,11 +40,10 @@ const (
 )
 
 //申请配额sourceType serviceinstance servicetype
-func (q *BuildInQuota) Apply4Quotas(ctx context.Context, quotaType int, quotaSize int16) (bool, error) {
+func (q *BuildInQuota) Apply4Quotas(quotaType quota.ResourceType, tenant string, serviceId string, quotaSize int16) (bool, error) {
 	var key string = ""
 	var max int64 = 0
 	var indexer *store.Indexer
-	tenant := util.ParseTenant(ctx)
 	switch quotaType {
 	case quota.MicroServiceInstanceQuotaType:
 		key = core.GetInstanceRootKey(tenant) + "/"
@@ -53,10 +53,25 @@ func (q *BuildInQuota) Apply4Quotas(ctx context.Context, quotaType int, quotaSiz
 		key = core.GetServiceRootKey(tenant) + "/"
 		max = SERVICE_MAX_NUMBER
 		indexer = store.Store().Service()
+	case quota.RULEQuotaType:
+		key = core.GenerateServiceRuleKey(tenant, serviceId, "")
+		max = constKey.RULE_NUM_MAX_FOR_ONESERVICE
+		indexer = store.Store().Rule()
+	case quota.SCHEMAQuotaType:
+		key = core.GenerateServiceSchemaKey(tenant, serviceId, "")
+		max = constKey.SCHEMA_NUM_MAX_FOR_ONESERVICE
+		indexer = store.Store().Schema()
+	case quota.TAGQuotaType:
+		num := quotaSize
+		if num > constKey.TAG_MAX_NUM_FOR_ONESERVICE {
+			util.Logger().Errorf(nil, "fail to add tag for one service max tag num is %d, %s", constKey.TAG_MAX_NUM_FOR_ONESERVICE, serviceId)
+			return false, fmt.Errorf("fail to add tag for one service max tag num is %d", constKey.TAG_MAX_NUM_FOR_ONESERVICE)
+		}
+		return true, nil
 	default:
 		return false, fmt.Errorf("Unsurported Type %d", quotaType)
 	}
-	resp, err := indexer.Search(ctx, &registry.PluginOp{
+	resp, err := indexer.Search(context.TODO(), &registry.PluginOp{
 		Action:     registry.GET,
 		Key:        util.StringToBytesWithNoCopy(key),
 		CountOnly:  true,
@@ -65,9 +80,9 @@ func (q *BuildInQuota) Apply4Quotas(ctx context.Context, quotaType int, quotaSiz
 	if err != nil {
 		return false, err
 	}
-	num := resp.Count
+	num := resp.Count + int64(quotaSize)
 	util.Logger().Debugf("resource num is %d", num)
-	if num >= max {
+	if num > max {
 		return false, nil
 	}
 	return true, nil

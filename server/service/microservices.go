@@ -28,7 +28,6 @@ import (
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
 	errorsEx "github.com/ServiceComb/service-center/util/errors"
-	"github.com/astaxie/beego"
 	"golang.org/x/net/context"
 	"strconv"
 	"time"
@@ -56,21 +55,18 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 	}
 
 	//create tag,rule,instances
-	rsp, err = s.CreateServiceEx(ctx, in, rsp.ServiceId)
-	return rsp, err
+	return s.CreateServiceEx(ctx, in, rsp.ServiceId)
 }
 
 func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateServiceRequest) (*pb.CreateServiceResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
-	if in == nil || in.Service == nil {
-		util.Logger().Errorf(nil, "create microservice failed: param empty. operator: %s", remoteIP)
-		return &pb.CreateServiceResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
-		}, nil
-	}
 	service := in.Service
-	err := apt.Validate(service)
 	serviceFlag := util.StringJoin([]string{service.AppId, service.ServiceName, service.Version}, "/")
+
+	if quota.QuataType == "unlimit" {
+		apt.MicroServiceValidator.GetRule("").Length = 0
+	}
+	err := apt.Validate(service)
 	if err != nil {
 		util.Logger().Errorf(err, "create microservice failed, %s: invalid parameters. operator: %s",
 			serviceFlag, remoteIP)
@@ -88,7 +84,7 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 		Version:     service.Version,
 		Tenant:      tenant,
 	}
-	err = checkBeforeCreate(ctx, consumer)
+	err = checkBeforeCreate(tenant)
 	if err != nil {
 		util.Logger().Errorf(err, "create microservice failed, %s: check service failed before create. operator: %s",
 			serviceFlag, remoteIP)
@@ -197,8 +193,8 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 	}, nil
 }
 
-func checkBeforeCreate(ctx context.Context, serviceKey *pb.MicroServiceKey) error {
-	ok, err := quota.QuotaPlugins[beego.AppConfig.DefaultString("quota_plugin", "buildin")]().Apply4Quotas(ctx, quota.MicroServiceQuotaType, 0)
+func checkBeforeCreate(tenant string) error {
+	ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(quota.MicroServiceQuotaType, tenant, "", 1)
 	if err != nil {
 		return errorsEx.InternalError(err.Error())
 	}
@@ -672,401 +668,6 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 	}
 }
 
-func (s *ServiceController) AddTags(ctx context.Context, in *pb.AddServiceTagsRequest) (*pb.AddServiceTagsResponse, error) {
-	if in == nil || len(in.ServiceId) == 0 || len(in.GetTags()) == 0 {
-		util.Logger().Errorf(nil, "add service tags failed: invalid parameters.")
-		return &pb.AddServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
-		}, nil
-	}
-
-	err := apt.Validate(in)
-	if err != nil {
-		util.Logger().Errorf(err, "add service tags failed, serviceId %s, tags %v: invalid parameters.", in.ServiceId, in.Tags)
-		return &pb.AddServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
-		}, nil
-	}
-
-	tenant := util.ParseTenantProject(ctx)
-	// service id存在性校验
-	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
-		util.Logger().Errorf(nil, "add service tags failed, serviceId %s, tags %v: service not exist.", in.ServiceId, in.Tags)
-		return &pb.AddServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
-		}, nil
-	}
-
-	addTags := in.GetTags()
-	dataTags, err := serviceUtil.GetTagsUtils(ctx, tenant, in.ServiceId)
-	if err != nil {
-		util.Logger().Errorf(err, "add service tags failed, serviceId %s, tags %v: get existed tag failed.", in.ServiceId, in.Tags)
-		return &pb.AddServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Get tags failed."),
-		}, err
-	}
-	if len(dataTags) > 0 {
-		for key, value := range addTags {
-			dataTags[key] = value
-		}
-	} else {
-		dataTags = addTags
-	}
-
-	err = serviceUtil.AddTagIntoETCD(ctx, tenant, in.ServiceId, dataTags)
-	if err != nil {
-		util.Logger().Errorf(err, "add service tags failed, serviceId %s, tags %v: commit tag data into etcd failed.", in.ServiceId, in.Tags)
-		return &pb.AddServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Commit operations failed."),
-		}, err
-	}
-
-	util.Logger().Infof("add service tags successful, serviceId %s, tags %v.", in.ServiceId, in.Tags)
-	return &pb.AddServiceTagsResponse{
-		Response: pb.CreateResponse(pb.Response_SUCCESS, "Add service tags successfully."),
-	}, nil
-}
-
-func (s *ServiceController) UpdateTag(ctx context.Context, in *pb.UpdateServiceTagRequest) (*pb.UpdateServiceTagResponse, error) {
-	if in == nil || len(in.ServiceId) == 0 || len(in.Key) == 0 || len(in.Value) == 0 {
-		util.Logger().Errorf(nil, "update service tag failed: invalid parameters.")
-		return &pb.UpdateServiceTagResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
-		}, nil
-	}
-	tagFlag := util.StringJoin([]string{in.Key, in.Value}, "/")
-	err := apt.Validate(in)
-	if err != nil {
-		util.Logger().Errorf(err, "update service tag failed, serviceId %s, tag %s: invalid params.", in.ServiceId, tagFlag)
-		return &pb.UpdateServiceTagResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
-		}, nil
-	}
-
-	tenant := util.ParseTenantProject(ctx)
-
-	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
-		util.Logger().Errorf(err, "update service tag failed, serviceId %s, tag %s: service not exist.", in.ServiceId, tagFlag)
-		return &pb.UpdateServiceTagResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
-		}, nil
-	}
-
-	tags, err := serviceUtil.GetTagsUtils(ctx, tenant, in.ServiceId)
-	if err != nil {
-		util.Logger().Errorf(err, "update service tag failed, serviceId %s, tag %s: get tag failed.", in.ServiceId, tagFlag)
-		return &pb.UpdateServiceTagResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Get tags for service failed."),
-		}, err
-	}
-	//check tag 是否存在
-	if _, ok := tags[in.Key]; !ok {
-		util.Logger().Errorf(nil, "update service tag failed, serviceId %s, tag %s: tag not exist,please add first.", in.ServiceId, tagFlag)
-		return &pb.UpdateServiceTagResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Update tag for service failed for update tags not exist, please add first."),
-		}, err
-	}
-	tags[in.Key] = in.Value
-
-	err = serviceUtil.AddTagIntoETCD(ctx, tenant, in.ServiceId, tags)
-
-	if err != nil {
-		util.Logger().Errorf(err, "update service tag failed, serviceId %s, tag %s: adding service tags failed.", in.ServiceId, tagFlag)
-		return &pb.UpdateServiceTagResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Commit into etcd failed."),
-		}, err
-	}
-
-	util.Logger().Infof("update tag successful, serviceId %s, tag %s.", in.ServiceId, tagFlag)
-	return &pb.UpdateServiceTagResponse{
-		Response: pb.CreateResponse(pb.Response_SUCCESS, "Update service tag success."),
-	}, nil
-}
-
-func (s *ServiceController) DeleteTags(ctx context.Context, in *pb.DeleteServiceTagsRequest) (*pb.DeleteServiceTagsResponse, error) {
-	if in == nil || len(in.ServiceId) == 0 || len(in.Keys) == 0 {
-		util.Logger().Errorf(nil, "delete service tags failed: invalid parameters.")
-		return &pb.DeleteServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
-		}, nil
-	}
-	err := apt.Validate(in)
-	if err != nil {
-		util.Logger().Errorf(err, "delete service tags failed, serviceId %s, tags %v: invalid params.", in.ServiceId, in.Keys)
-		return &pb.DeleteServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
-		}, nil
-	}
-
-	tenant := util.ParseTenantProject(ctx)
-
-	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
-		util.Logger().Errorf(nil, "delete service tags failed, serviceId %s, tags %v: service not exist.", in.ServiceId, in.Keys)
-		return &pb.DeleteServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
-		}, nil
-	}
-
-	tags, err := serviceUtil.GetTagsUtils(ctx, tenant, in.ServiceId)
-	if err != nil {
-		util.Logger().Errorf(err, "delete service tags failed, serviceId %s, tags %v: query service failed.", in.ServiceId, in.Keys)
-		return &pb.DeleteServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Get service tags file failed."),
-		}, err
-	}
-	for _, key := range in.Keys {
-		if _, ok := tags[key]; !ok {
-			util.Logger().Errorf(nil, "delete service tags failed, serviceId %s, tags %v: tag %s not exist.", in.ServiceId, in.Keys, key)
-			return &pb.DeleteServiceTagsResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, "Delete tags failed for this key "+key+" does not exist."),
-			}, nil
-		}
-		delete(tags, key)
-	}
-
-	// tags 可能size == 0
-	data, err := json.Marshal(tags)
-	if err != nil {
-		util.Logger().Errorf(err, "delete service tags failed, serviceId %s, tags %v: marshall service tag failed.", in.ServiceId, in.Keys)
-		return &pb.DeleteServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Marshal service tags file failed."),
-		}, err
-	}
-
-	key := apt.GenerateServiceTagKey(tenant, in.ServiceId)
-
-	util.Logger().Debugf("start delete service tags file: %s %v", key, in.Keys)
-	_, err = registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action: registry.PUT,
-		Key:    util.StringToBytesWithNoCopy(key),
-		Value:  data,
-	})
-	if err != nil {
-		util.Logger().Errorf(err, "delete service tags failed, serviceId %s, tags %v: commit tag data into etcd failed.", in.ServiceId, in.Keys)
-		return &pb.DeleteServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Commit operations failed."),
-		}, err
-	}
-
-	util.Logger().Infof("delete service tags successful: serviceId %s, tag %v.", in.ServiceId, in.Keys)
-	return &pb.DeleteServiceTagsResponse{
-		Response: pb.CreateResponse(pb.Response_SUCCESS, "Delete service tags successfully."),
-	}, nil
-}
-
-func (s *ServiceController) GetTags(ctx context.Context, in *pb.GetServiceTagsRequest) (*pb.GetServiceTagsResponse, error) {
-	if in == nil || len(in.ServiceId) == 0 {
-		util.Logger().Errorf(nil, "get service tags failed: invalid params.")
-		return &pb.GetServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
-		}, nil
-	}
-	err := apt.Validate(in)
-	if err != nil {
-		util.Logger().Errorf(err, "get service tags failed, serviceId %s: invalid parameters.", in.ServiceId)
-		return &pb.GetServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
-		}, nil
-	}
-
-	tenant := util.ParseTenantProject(ctx)
-
-	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
-		util.Logger().Errorf(err, "get service tags failed, serviceId %s: service not exist.", in.ServiceId)
-		return &pb.GetServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
-		}, nil
-	}
-
-	tags, err := serviceUtil.GetTagsUtils(ctx, tenant, in.ServiceId)
-	if err != nil {
-		util.Logger().Errorf(err, "get service tags failed, serviceId %s: get tag failed.", in.ServiceId)
-		return &pb.GetServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Get tags for service failed."),
-		}, err
-	}
-
-	return &pb.GetServiceTagsResponse{
-		Response: pb.CreateResponse(pb.Response_SUCCESS, "Get service tags successfully."),
-		Tags:     tags,
-	}, nil
-}
-
-func (s *ServiceController) GetSchemaInfo(ctx context.Context, request *pb.GetSchemaRequest) (*pb.GetSchemaResponse, error) {
-	if request == nil || len(request.ServiceId) == 0 || len(request.SchemaId) == 0 {
-		util.Logger().Errorf(nil, "get schema failed: invalid params.")
-		return &pb.GetSchemaResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Invalid request path."),
-		}, nil
-	}
-
-	err := apt.Validate(request)
-	if err != nil {
-		util.Logger().Errorf(nil, "get schema failed, serviceId %s, schemaId %s: invalid params.", request.ServiceId, request.SchemaId)
-		return &pb.GetSchemaResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
-		}, nil
-	}
-
-	tenant := util.ParseTenantProject(ctx)
-
-	if !ms.ServiceExist(ctx, tenant, request.ServiceId) {
-		util.Logger().Errorf(nil, "get schema failed, serviceId %s, schemaId %s: service not exist.", request.ServiceId, request.SchemaId)
-		return &pb.GetSchemaResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
-		}, nil
-	}
-
-	key := apt.GenerateServiceSchemaKey(tenant, request.ServiceId, request.SchemaId)
-	resp, errDo := store.Store().Schema().Search(ctx, &registry.PluginOp{
-		Action: registry.GET,
-		Key:    util.StringToBytesWithNoCopy(key),
-	})
-	if errDo != nil {
-		util.Logger().Errorf(errDo, "get schema failed, serviceId %s, schemaId %s: get schema info failed.", request.ServiceId, request.SchemaId)
-		return &pb.GetSchemaResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Get schema info failed."),
-		}, errDo
-	}
-	if resp.Count == 0 {
-		util.Logger().Errorf(errDo, "get schema failed, serviceId %s, schemaId %s: schema not exists.", request.ServiceId, request.SchemaId)
-		return &pb.GetSchemaResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Do not have this schema info."),
-		}, nil
-	}
-	return &pb.GetSchemaResponse{
-		Response: pb.CreateResponse(pb.Response_SUCCESS, "Get schema info successfully."),
-		Schema:   util.BytesToStringWithNoCopy(resp.Kvs[0].Value),
-	}, nil
-}
-
-func (s *ServiceController) DeleteSchema(ctx context.Context, request *pb.DeleteSchemaRequest) (*pb.DeleteSchemaResponse, error) {
-	if request == nil || len(request.ServiceId) == 0 || len(request.SchemaId) == 0 {
-		util.Logger().Errorf(nil, "delete schema failded: invalid params.")
-		return &pb.DeleteSchemaResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Invalid request path."),
-		}, nil
-	}
-	err := apt.Validate(request)
-	if err != nil {
-		util.Logger().Errorf(err, "delete schema failded, serviceId %s, schemaId %s: invalid params.", request.ServiceId, request.SchemaId)
-		return &pb.DeleteSchemaResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
-		}, nil
-	}
-	tenant := util.ParseTenantProject(ctx)
-
-	if !ms.ServiceExist(ctx, tenant, request.ServiceId) {
-		util.Logger().Errorf(nil, "delete schema failded, serviceId %s, schemaId %s: service not exist.", request.ServiceId, request.SchemaId)
-		return &pb.DeleteSchemaResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
-		}, nil
-	}
-
-	key := apt.GenerateServiceSchemaKey(tenant, request.ServiceId, request.SchemaId)
-	err, exist := serviceUtil.CheckSchemaInfoExist(ctx, key)
-	if err != nil {
-		util.Logger().Errorf(err, "delete schema failded, serviceId %s, schemaId %s: get schema failed.", request.ServiceId, request.SchemaId)
-		return &pb.DeleteSchemaResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Schema info does not exist."),
-		}, err
-	}
-	if !exist {
-		util.Logger().Errorf(nil, "delete schema failded, serviceId %s, schemaId %s: schema not exist.", request.ServiceId, request.SchemaId)
-		return &pb.DeleteSchemaResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Schema info does not exist."),
-		}, nil
-	}
-	_, errDo := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action: registry.DELETE,
-		Key:    util.StringToBytesWithNoCopy(key),
-	})
-	if errDo != nil {
-		util.Logger().Errorf(errDo, "delete schema failded, serviceId %s, schemaId %s: delete schema from etcd faild.", request.ServiceId, request.SchemaId)
-		return &pb.DeleteSchemaResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Delete schema info failed."),
-		}, errDo
-	}
-	util.Logger().Infof("delete schema info successfully.%s", request.SchemaId)
-	return &pb.DeleteSchemaResponse{
-		Response: pb.CreateResponse(pb.Response_SUCCESS, "Delete schema info successfully."),
-	}, nil
-}
-
-func (s *ServiceController) ModifySchema(ctx context.Context, request *pb.ModifySchemaRequest) (*pb.ModifySchemaResponse, error) {
-	err, rst := s.canModifySchema(ctx, request)
-	if err != nil {
-		return &pb.ModifySchemaResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Modify schema info failed."),
-		}, err
-	}
-	if !rst {
-		return &pb.ModifySchemaResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Modify schema info failed, service or schemaId not exist."),
-		}, nil
-	}
-
-	tenant := util.ParseTenantProject(ctx)
-	key := apt.GenerateServiceSchemaKey(tenant, request.ServiceId, request.SchemaId)
-	_, errDo := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action: registry.PUT,
-		Key:    util.StringToBytesWithNoCopy(key),
-		Value:  util.StringToBytesWithNoCopy(request.Schema),
-	})
-	if errDo != nil {
-		util.Logger().Errorf(errDo, "update schema failded, serviceId %s, schemaId %s: commit schema into etcd failed.", request.ServiceId, request.SchemaId)
-		return &pb.ModifySchemaResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Modify schema info failed."),
-		}, errDo
-	}
-	util.Logger().Infof("update schema success: serviceId %s, schemaId %s.", request.ServiceId, request.SchemaId)
-	return &pb.ModifySchemaResponse{
-		Response: pb.CreateResponse(pb.Response_SUCCESS, "Modify schema info success."),
-	}, nil
-
-}
-
-func (s *ServiceController) canModifySchema(ctx context.Context, request *pb.ModifySchemaRequest) (error, bool) {
-	if request == nil || len(request.Schema) == 0 || len(request.SchemaId) == 0 || len(request.ServiceId) == 0 {
-		util.Logger().Errorf(nil, "update schema failded: invalid params.")
-		return nil, false
-	}
-	err := apt.Validate(request)
-	if err != nil {
-		util.Logger().Errorf(err, "update schema failded, serviceId %s, schemaId %s: invalid params.", request.ServiceId, request.SchemaId)
-		return err, false
-	}
-	tenant := util.ParseTenantProject(ctx)
-	service, err := ms.GetService(ctx, tenant, request.ServiceId)
-	if err != nil {
-		util.Logger().Errorf(err, "update schema failded, serviceId %s, schemaId %s: get service failed.", request.ServiceId, request.SchemaId)
-		return err, false
-	}
-	if service == nil {
-		util.Logger().Errorf(nil, "update schema failded, serviceId %s, schemaId %s: service not exist,%s", request.ServiceId, request.SchemaId)
-		return nil, false
-	}
-	schemas := service.Schemas
-	if !containsValueInSlice(schemas, request.SchemaId) {
-		message := "Do not contain " + request.SchemaId + "Schema in service file."
-		util.Logger().Errorf(nil, "update schema failded, serviceId %s, schemaId %s:%s", request.ServiceId, request.SchemaId, message)
-		return nil, false
-	}
-	return nil, true
-}
-
-func containsValueInSlice(in []string, value string) bool {
-	if in == nil || len(value) == 0 {
-		return false
-	}
-	for _, i := range in {
-		if i == value {
-			return true
-		}
-	}
-	return false
-}
-
 func (s *ServiceController) CreateServiceEx(ctx context.Context, in *pb.CreateServiceRequest, serviceId string) (*pb.CreateServiceResponse, error) {
 	result := &pb.CreateServiceResponse{
 		ServiceId: serviceId,
@@ -1135,21 +736,16 @@ func (s *ServiceController) CreateServiceEx(ctx context.Context, in *pb.CreateSe
 			}
 		}()
 	}
-	if chanLen == 0 {
-		close(createRespChan)
-		return result, nil
-	}
 
 	// handle result
 	var errMessages []string
-	var count int = 0
 	for createResp := range createRespChan {
-		count++
+		chanLen--
 		if len(createResp.Message) != 0 {
 			errMessages = append(errMessages, createResp.Message)
 		}
 
-		if count == chanLen {
+		if 0 == chanLen {
 			close(createRespChan)
 		}
 	}
@@ -1162,7 +758,7 @@ func (s *ServiceController) CreateServiceEx(ctx context.Context, in *pb.CreateSe
 			util.Logger().Error("marshal errMessages error", err)
 			return result, nil
 		}
-		result.Response.Message = fmt.Sprintf("ErrMessage : %s", errMessage)
+		result.Response.Message = fmt.Sprintf("ErrMessage : %s", string(errMessage))
 	} else {
 		result.Response.Code = pb.Response_SUCCESS
 	}
@@ -1172,8 +768,8 @@ func (s *ServiceController) CreateServiceEx(ctx context.Context, in *pb.CreateSe
 }
 
 func (s *ServiceController) isCreateServiceEx(in *pb.CreateServiceRequest) bool {
-	if (in.Rules != nil && len(in.Rules) != 0) || (in.Tags != nil && len(in.Tags) != 0) || (in.Instances != nil && len(in.Instances) != 0) {
-		return true
+	if (len(in.Rules) == 0 &&  len(in.Tags) == 0 && len(in.Instances) == 0) {
+		return false
 	}
-	return false
+	return true
 }
