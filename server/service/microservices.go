@@ -28,7 +28,6 @@ import (
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
 	errorsEx "github.com/ServiceComb/service-center/util/errors"
-	"github.com/astaxie/beego"
 	"golang.org/x/net/context"
 	"strconv"
 	"time"
@@ -64,6 +63,9 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 	service := in.Service
 	serviceFlag := util.StringJoin([]string{service.AppId, service.ServiceName, service.Version}, "/")
 
+	if quota.QuataType == "unlimit" {
+		apt.MicroServiceValidator.GetRule("").Length = 0
+	}
 	err := apt.Validate(service)
 	if err != nil {
 		util.Logger().Errorf(err, "create microservice failed, %s: invalid parameters. operator: %s",
@@ -82,7 +84,7 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 		Version:     service.Version,
 		Tenant:      tenant,
 	}
-	err = checkBeforeCreate(ctx, consumer)
+	err = checkBeforeCreate(tenant)
 	if err != nil {
 		util.Logger().Errorf(err, "create microservice failed, %s: check service failed before create. operator: %s",
 			serviceFlag, remoteIP)
@@ -191,8 +193,8 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 	}, nil
 }
 
-func checkBeforeCreate(ctx context.Context, serviceKey *pb.MicroServiceKey) error {
-	ok, err := quota.QuotaPlugins[beego.AppConfig.DefaultString("quota_plugin", "buildin")]().Apply4Quotas(ctx, quota.MicroServiceQuotaType, 0)
+func checkBeforeCreate(tenant string) error {
+	ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(quota.MicroServiceQuotaType, tenant, "", 1)
 	if err != nil {
 		return errorsEx.InternalError(err.Error())
 	}

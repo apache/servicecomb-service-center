@@ -18,7 +18,6 @@ import (
 	_ "github.com/ServiceComb/service-center/server/core/registry"
 	_ "github.com/ServiceComb/service-center/server/core/registry/etcd"
 	_ "github.com/ServiceComb/service-center/server/plugins/infra/quota/buildin"
-	_ "github.com/ServiceComb/service-center/server/plugins/infra/resourceslimit/buildin"
 	"github.com/ServiceComb/service-center/server"
 	"github.com/ServiceComb/service-center/util"
 	. "github.com/onsi/ginkgo"

@@ -28,7 +28,7 @@ func init() {
 	quota.QuotaPlugins["unlimit"] = New
 }
 
-func (q *Unlimit) Apply4Quotas(ctx context.Context, quotaType int, quotaSize int16) (bool, error) {
+func (q *Unlimit) Apply4Quotas(quotaType quota.ResourceType, tenant string, serviceId string, quotaSize int16) (bool, error) {
 	return true, nil
 }
 

@@ -14,7 +14,6 @@
 package service
 
 import (
-	"fmt"
 	"encoding/json"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	apt "github.com/ServiceComb/service-center/server/core"
@@ -23,7 +22,7 @@ import (
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
-	constKey "github.com/ServiceComb/service-center/server/common"
+	"github.com/ServiceComb/service-center/server/infra/quota"
 )
 
 func (s *ServiceController) AddTags(ctx context.Context, in *pb.AddServiceTagsRequest) (*pb.AddServiceTagsResponse, error) {
@@ -52,10 +51,17 @@ func (s *ServiceController) AddTags(ctx context.Context, in *pb.AddServiceTagsRe
 	}
 
 	addTags := in.GetTags()
-	if !serviceUtil.CheckTagSize(addTags) {
-		util.Logger().Errorf(err, "add service tags failed, serviceId %s, tags %v: max num of one service is %d.", in.ServiceId, in.Tags, constKey.TAG_MAX_NUM_FOR_ONESERVICE)
+	ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(quota.TAGQuotaType, tenant, in.ServiceId, int16(len(addTags)))
+	if err != nil {
+		util.Logger().Errorf(err, "add tag info failed, check resource num failed, %s", in.ServiceId)
 		return &pb.AddServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, fmt.Sprintf("max num of one service is %d.", constKey.TAG_MAX_NUM_FOR_ONESERVICE)),
+			Response: pb.CreateResponse(pb.Response_FAIL, "Modify schema info failed, check resource num failed."),
+		}, err
+	}
+	if !ok {
+		util.Logger().Errorf(err, "add tag info failed, reach the max size of tag, %s", in.ServiceId)
+		return &pb.AddServiceTagsResponse{
+			Response: pb.CreateResponse(pb.Response_FAIL, "reach the max size of tag."),
 		}, nil
 	}
 

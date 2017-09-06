@@ -15,8 +15,6 @@ package service
 
 import (
 	"github.com/ServiceComb/service-center/server/core/registry"
-	"github.com/astaxie/beego"
-	rl "github.com/ServiceComb/service-center/server/infra/resourceslimit"
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
@@ -24,6 +22,7 @@ import (
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
+	"github.com/ServiceComb/service-center/server/infra/quota"
 )
 
 func (s *ServiceController) GetSchemaInfo(ctx context.Context, request *pb.GetSchemaRequest) (*pb.GetSchemaResponse, error) {
@@ -141,7 +140,7 @@ func (s *ServiceController) ModifySchema(ctx context.Context, request *pb.Modify
 	}
 	tenant := util.ParseTenantProject(ctx)
 
-	ok, err := rl.ResourcesLimitPlugins[beego.AppConfig.DefaultString("resource_apply_plugin", "buildin")]().CanApplyResource(rl.SCHEMA, tenant, request.ServiceId, 1)
+	ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(quota.SCHEMAQuotaType, tenant, request.ServiceId, 1)
 	if err != nil {
 		util.Logger().Errorf(err, "Add schema info failed, check resource num failed, %s, %s", request.ServiceId, request. SchemaId)
 		return &pb.ModifySchemaResponse{

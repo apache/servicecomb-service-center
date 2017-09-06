@@ -27,8 +27,7 @@ import (
 	"golang.org/x/net/context"
 	"strconv"
 	"time"
-	rl "github.com/ServiceComb/service-center/server/infra/resourceslimit"
-	"github.com/astaxie/beego"
+	"github.com/ServiceComb/service-center/server/infra/quota"
 )
 
 func Accessible(ctx context.Context, tenant string, consumerId string, providerId string) error {
@@ -120,7 +119,7 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
 		}, nil
 	}
-	ok, err := rl.ResourcesLimitPlugins[beego.AppConfig.DefaultString("resource_apply_plugin", "buildin")]().CanApplyResource(rl.RULE, tenant, in.ServiceId, 1)
+	ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(quota.RULEQuotaType, tenant, in.ServiceId, 1)
 	if err != nil {
 		util.Logger().Errorf(err, "check can apply resource failed.%s", in.ServiceId)
 		return &pb.AddServiceRulesResponse{
