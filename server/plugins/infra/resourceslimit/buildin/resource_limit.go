@@ -67,8 +67,8 @@ func (buildin *BuildInLimit) CanApplyResource(resourceType rl.ResourceType, tena
 		if err != nil {
 			return false, err
 		}
-		num := resp.Count
-		if num >= constKey.SCHEMA_NUM_MAX_FOR_ONESERVICE {
+		num := resp.Count + int64(applyCount)
+		if num > constKey.SCHEMA_NUM_MAX_FOR_ONESERVICE {
 			util.Logger().Errorf(nil, "fail to add schema for one service max rule num is %d, %s", constKey.SCHEMA_NUM_MAX_FOR_ONESERVICE, serviceId)
 			return false, fmt.Errorf("fail to add schema for one service max rule num is %d", constKey.SCHEMA_NUM_MAX_FOR_ONESERVICE)
 		}
