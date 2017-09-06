@@ -15,6 +15,7 @@ package rest
 
 import (
 	"encoding/json"
+	"github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/util"
 	"github.com/ServiceComb/service-center/util/rest"
@@ -51,7 +52,7 @@ func (this *MicroServiceService) GetSchemas(w http.ResponseWriter, r *http.Reque
 		ServiceId: r.URL.Query().Get(":serviceId"),
 		SchemaId:  r.URL.Query().Get(":schemaId"),
 	}
-	resp, err := ServiceAPI.GetSchemaInfo(r.Context(), request)
+	resp, err := core.ServiceAPI.GetSchemaInfo(r.Context(), request)
 	if len(resp.Schema) != 0 {
 		resp.Response = nil
 		WriteJsonObject(http.StatusOK, resp, w)
@@ -77,7 +78,7 @@ func (this *MicroServiceService) ModifySchemas(w http.ResponseWriter, r *http.Re
 		WriteText(http.StatusBadRequest, err.Error(), w)
 		return
 	}
-	resp, err := ServiceAPI.ModifySchema(r.Context(), request)
+	resp, err := core.ServiceAPI.ModifySchema(r.Context(), request)
 	WriteTextResponse(resp.GetResponse(), err, "", w)
 }
 
@@ -86,7 +87,7 @@ func (this *MicroServiceService) DeleteSchemas(w http.ResponseWriter, r *http.Re
 		ServiceId: r.URL.Query().Get(":serviceId"),
 		SchemaId:  r.URL.Query().Get(":schemaId"),
 	}
-	resp, err := ServiceAPI.DeleteSchema(r.Context(), request)
+	resp, err := core.ServiceAPI.DeleteSchema(r.Context(), request)
 	WriteTextResponse(resp.GetResponse(), err, "", w)
 }
 
@@ -104,7 +105,7 @@ func (this *MicroServiceService) Register(w http.ResponseWriter, r *http.Request
 		WriteText(http.StatusBadRequest, err.Error(), w)
 		return
 	}
-	resp, err := ServiceAPI.Create(r.Context(), &request)
+	resp, err := core.ServiceAPI.Create(r.Context(), &request)
 	if err != nil {
 		WriteText(http.StatusInternalServerError, err.Error(), w)
 		return
@@ -133,7 +134,7 @@ func (this *MicroServiceService) Update(w http.ResponseWriter, r *http.Request) 
 		WriteText(http.StatusBadRequest, err.Error(), w)
 		return
 	}
-	resp, err := ServiceAPI.UpdateProperties(r.Context(), request)
+	resp, err := core.ServiceAPI.UpdateProperties(r.Context(), request)
 	WriteTextResponse(resp.GetResponse(), err, "", w)
 }
 
@@ -149,14 +150,14 @@ func (this *MicroServiceService) Unregister(w http.ResponseWriter, r *http.Reque
 		ServiceId: serviceId,
 		Force:     force == "1",
 	}
-	resp, err := ServiceAPI.Delete(r.Context(), request)
+	resp, err := core.ServiceAPI.Delete(r.Context(), request)
 	WriteTextResponse(resp.GetResponse(), err, "", w)
 }
 
 func (this *MicroServiceService) GetServices(w http.ResponseWriter, r *http.Request) {
 	request := &pb.GetServicesRequest{}
 	util.Logger().Debugf("tenant is %s", util.ParseTenant(r.Context()))
-	resp, err := ServiceAPI.GetServices(r.Context(), request)
+	resp, err := core.ServiceAPI.GetServices(r.Context(), request)
 	if err != nil {
 		WriteText(http.StatusInternalServerError, err.Error(), w)
 		return
@@ -178,7 +179,7 @@ func (this *MicroServiceService) GetExistence(w http.ResponseWriter, r *http.Req
 		ServiceId:   r.URL.Query().Get("serviceId"),
 		SchemaId:    r.URL.Query().Get("schemaId"),
 	}
-	resp, err := ServiceAPI.Exist(r.Context(), request)
+	resp, err := core.ServiceAPI.Exist(r.Context(), request)
 	if err != nil {
 		WriteText(http.StatusInternalServerError, err.Error(), w)
 		return
@@ -195,7 +196,7 @@ func (this *MicroServiceService) GetServiceOne(w http.ResponseWriter, r *http.Re
 	request := &pb.GetServiceRequest{
 		ServiceId: r.URL.Query().Get(":serviceId"),
 	}
-	resp, err := ServiceAPI.GetOne(r.Context(), request)
+	resp, err := core.ServiceAPI.GetOne(r.Context(), request)
 	if err != nil {
 		WriteText(http.StatusInternalServerError, err.Error(), w)
 		return
@@ -223,7 +224,7 @@ func (this *MicroServiceService) CreateDependenciesForMicroServices(w http.Respo
 		return
 	}
 	//fmt.Println("request is ", request)
-	rsp, err := ServiceAPI.CreateDependenciesForMircServices(r.Context(), request)
+	rsp, err := core.ServiceAPI.CreateDependenciesForMircServices(r.Context(), request)
 	//fmt.Println("rsp is ", rsp)
 	//请求错误
 	if err != nil {
@@ -244,7 +245,7 @@ func (this *MicroServiceService) GetConProDependencies(w http.ResponseWriter, r 
 	request := &pb.GetDependenciesRequest{
 		ServiceId: r.URL.Query().Get(":consumerId"),
 	}
-	resp, err := ServiceAPI.GetConsumerDependencies(r.Context(), request)
+	resp, err := core.ServiceAPI.GetConsumerDependencies(r.Context(), request)
 	if err != nil {
 		util.Logger().Error("get Dependency failed.", err)
 		WriteText(http.StatusInternalServerError, "get Dependency failed", w)
@@ -264,7 +265,7 @@ func (this *MicroServiceService) GetProConDependencies(w http.ResponseWriter, r 
 	request := &pb.GetDependenciesRequest{
 		ServiceId: r.URL.Query().Get(":providerId"),
 	}
-	resp, err := ServiceAPI.GetProviderDependencies(r.Context(), request)
+	resp, err := core.ServiceAPI.GetProviderDependencies(r.Context(), request)
 	if err != nil {
 		util.Logger().Error("get Dependency failed.", err)
 		WriteText(http.StatusInternalServerError, "get Dependency failed", w)
@@ -297,7 +298,7 @@ func (this *MicroServiceService) UnregisterServices(w http.ResponseWriter, r *ht
 		return
 	}
 
-	resp, err := ServiceAPI.DeleteServices(r.Context(), request)
+	resp, err := core.ServiceAPI.DeleteServices(r.Context(), request)
 
 	if resp.Response.Code == pb.Response_SUCCESS {
 		WriteText(http.StatusOK, "", w)

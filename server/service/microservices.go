@@ -23,7 +23,6 @@ import (
 	"github.com/ServiceComb/service-center/server/core/registry/store"
 	"github.com/ServiceComb/service-center/server/infra/quota"
 	"github.com/ServiceComb/service-center/server/plugins/dynamic"
-	rs "github.com/ServiceComb/service-center/server/rest"
 	"github.com/ServiceComb/service-center/server/service/dependency"
 	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
@@ -1125,7 +1124,7 @@ func (s *ServiceController) CreateServiceEx(ctx context.Context, in *pb.CreateSe
 					Instance: ins,
 				}
 				req.Instance.ServiceId = serviceId
-				rsp, err := rs.InstanceAPI.Register(ctx, req)
+				rsp, err := apt.InstanceAPI.Register(ctx, req)
 				if err != nil {
 					chanRsp.Message += fmt.Sprintf("{instance:%v,result:%s}", ins.Endpoints, err.Error())
 				}

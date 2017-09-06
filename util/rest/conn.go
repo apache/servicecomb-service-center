@@ -11,24 +11,19 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package messaging
+package rest
 
 import (
-	"fmt"
-	"testing"
+	"net"
 )
 
-func TestPSub(t *testing.T) {
-	go pub()
-	psub()
-
+type restConn struct {
+	net.Conn
+	server *Server
 }
 
-func psub() {
-	ch := Subscribe("test.*")
-	for {
-		msg := <-ch
-		fmt.Println(fmt.Sprintf("psub %s", msg))
-	}
-
+func (c restConn) Close() (err error) {
+	err = c.Conn.Close()
+	c.server.CloseOne()
+	return
 }
