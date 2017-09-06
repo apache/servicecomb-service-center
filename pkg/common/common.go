@@ -1,9 +1,11 @@
 package common
 
 import (
+	"flag"
 	"github.com/ServiceComb/service-center/pkg/common/logrotate"
 	"github.com/ServiceComb/service-center/pkg/lager"
 	"github.com/ServiceComb/service-center/util"
+	"github.com/ServiceComb/service-center/util/grace"
 	"github.com/astaxie/beego"
 	"os"
 	"path/filepath"
@@ -11,10 +13,17 @@ import (
 )
 
 func init() {
+	initCommandLine()
 	initLogger()
 	loadServerSSLConfig()
 	loadClientSSLConfig()
 	initLogRotate()
+	grace.Init()
+}
+
+func initCommandLine() {
+	flag.CommandLine.Init(os.Args[0], flag.ContinueOnError)
+	flag.CommandLine.Parse(os.Args[1:])
 }
 
 func initLogger() {

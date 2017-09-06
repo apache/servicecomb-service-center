@@ -11,7 +11,7 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package urlvalidator
+package validate
 
 import (
 	"net/url"
@@ -20,15 +20,15 @@ import (
 )
 
 const (
-	URL     string = `^(([1-9]\d?|1\d\d|2[01]\d|22[0-3])(\.(1?\d{1,2}|2[0-4]\d|25[0-5])){2}(\.([0-9]\d?|1\d\d|2[0-4]\d|25[0-4])))(:(\d{1,5}))$`
-	PATTERN string = `#%`
+	PATTERN_URI      string = `#%`
+	PATTERN_URL             = "^(https|http):\\/\\/((?:(?:25[0-5]|2[0-4]\\d|((1\\d{2})|([1-9]?\\d)))\\.){3}(?:25[0-5]|2[0-4]\\d|((1\\d{2})|([1-9]?\\d)))):([0-9]+)$"
+	PATTERN_HOSTNAME string = `^(([1-9]\d?|1\d\d|2[01]\d|22[0-3])(\.(1?\d{1,2}|2[0-4]\d|25[0-5])){2}(\.([0-9]\d?|1\d\d|2[0-4]\d|25[0-4])))(:(\d{1,5}))$`
 )
 
 var (
-	rxURL = regexp.MustCompile(URL)
-)
-var (
-	rxURI = regexp.MustCompile(PATTERN)
+	rxURI      = regexp.MustCompile(PATTERN_URI)
+	rxURL      = regexp.MustCompile(PATTERN_URL)
+	rxHostName = regexp.MustCompile(PATTERN_HOSTNAME)
 )
 
 // IsURL check if the string is an URL.
@@ -46,9 +46,10 @@ func IsURL(str string) bool {
 	if u.Host == "" && (u.Path != "" && !strings.Contains(u.Path, ".")) {
 		return false
 	}
-	return rxURL.MatchString(str)
+	return rxHostName.MatchString(str)
 
 }
+
 func IsRequestURI(uri string) bool {
 	if uri == "" || len(uri) >= 2048 || len(uri) <= 3 || strings.HasPrefix(uri, ".") {
 		return false
@@ -57,4 +58,9 @@ func IsRequestURI(uri string) bool {
 		return false
 	}
 	return !rxURI.MatchString(uri)
+}
+
+//format : https://10.21.119.167:30100 or http://10.21.119.167:30100
+func URLChecker(url string) bool {
+	return rxURL.MatchString(url)
 }

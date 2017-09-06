@@ -15,6 +15,7 @@ package rest
 
 import (
 	"encoding/json"
+	"github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/util"
 	"github.com/ServiceComb/service-center/util/rest"
 	"github.com/ServiceComb/service-center/version"
@@ -38,7 +39,7 @@ func (this *MainService) URLPatterns() []rest.Route {
 }
 
 func (this *MainService) ClusterHealth(w http.ResponseWriter, r *http.Request) {
-	resp, err := InstanceAPI.ClusterHealth(r.Context())
+	resp, err := core.InstanceAPI.ClusterHealth(r.Context())
 	if err != nil {
 		util.Logger().Error("health check failed", err)
 		WriteText(http.StatusInternalServerError, "health check failed", w)

@@ -24,6 +24,10 @@ import (
 )
 
 var (
+	ServiceAPI       pb.ServiceCtrlServer
+	InstanceAPI      pb.SerivceInstanceCtrlServerEx
+	GovernServiceAPI pb.GovernServiceCtrlServerEx
+
 	VersionRegex                  *regexp.Regexp
 	MicroServiceValidator         validate.Validator
 	MicroServiceInstanceValidator validate.Validator

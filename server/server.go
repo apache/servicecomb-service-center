@@ -14,55 +14,45 @@
 package server
 
 import _ "github.com/ServiceComb/service-center/server/service/event"
+import _ "github.com/ServiceComb/service-center/server/rest/handlers"
 import (
 	"fmt"
 	"github.com/ServiceComb/service-center/pkg/common"
-	"github.com/ServiceComb/service-center/server/api"
 	"github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/server/core/mux"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	st "github.com/ServiceComb/service-center/server/core/registry/store"
-	rs "github.com/ServiceComb/service-center/server/rest"
-	"github.com/ServiceComb/service-center/server/service"
 	"github.com/ServiceComb/service-center/server/service/microservice"
 	nf "github.com/ServiceComb/service-center/server/service/notification"
 	"github.com/ServiceComb/service-center/util"
 	"github.com/ServiceComb/service-center/version"
 	"github.com/astaxie/beego"
 	"os"
-	"os/signal"
 	"runtime"
 	"strings"
-	"syscall"
 	"time"
 )
 
-const CLEAN_UP_TIMEOUT = 3
-
-var server *ServiceCenterServer
+var (
+	server *ServiceCenterServer
+)
 
 func init() {
-	rs.ServiceAPI, rs.InstanceAPI, rs.GovernServiceAPI = service.AssembleResources()
-
 	server = &ServiceCenterServer{
-		exit:          make(chan struct{}),
 		store:         st.Store(),
 		notifyService: nf.GetNotifyService(),
-		apiService:    api.GetAPIService(),
+		apiServer:     GetAPIServer(),
 	}
 }
 
 type ServiceCenterServer struct {
-	apiService    *api.APIService
+	apiServer     *APIServer
 	notifyService *nf.NotifyService
 	store         *st.KvStore
-	exit          chan struct{}
 }
 
 func (s *ServiceCenterServer) Run() {
 	util.Logger().Infof("service center have running simultaneously with %d CPU cores", runtime.GOMAXPROCS(0))
-
-	go server.handleSignal()
 
 	s.waitForReady()
 
@@ -91,50 +81,18 @@ func (s *ServiceCenterServer) checkBackendReady() {
 	}
 }
 
-func (s *ServiceCenterServer) handleSignal() {
-	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, os.Interrupt)
-	signal.Ignore(syscall.SIGQUIT) // when uses jstack to dump stack
-
-	sgn := <-sc
-	util.Logger().Warnf(nil, "Caught signal '%v', now service center quit...", sgn)
-
-	close(s.exit)
-
-	if s.apiService != nil {
-		s.apiService.Stop()
-	}
-
-	if s.notifyService != nil {
-		s.notifyService.Stop()
-	}
-
-	if s.store != nil {
-		s.store.Stop()
-	}
-
-	util.GoCloseAndWait()
-
-	registry.GetRegisterCenter().Close()
-}
-
 func (s *ServiceCenterServer) waitForQuit() {
 	var err error
 	select {
-	case err = <-s.apiService.Err():
+	case err = <-s.apiServer.Err():
 	case err = <-s.notifyService.Err():
-	case <-s.exit:
 	}
 	if err != nil {
 		util.Logger().Errorf(err, "service center catch errors")
 	}
-	select {
-	case <-s.exit:
-		util.Logger().Warnf(nil, "waiting for %ds to clean up resources...", CLEAN_UP_TIMEOUT)
-		<-time.After(CLEAN_UP_TIMEOUT * time.Second)
-	default:
-		close(s.exit)
-	}
+
+	s.Stop()
+
 	util.Logger().Warn("service center quit", nil)
 }
 
@@ -176,39 +134,50 @@ func (s *ServiceCenterServer) startNotifyService() {
 	s.notifyService.Start()
 }
 
-func (s *ServiceCenterServer) addEndpoint(t api.APIType, ip, port string, ssl bool) {
-	if s.apiService.Config.Endpoints == nil {
-		s.apiService.Config.Endpoints = map[api.APIType]string{}
+func (s *ServiceCenterServer) startApiServer() {
+	restIp := beego.AppConfig.String("httpaddr")
+	restPort := beego.AppConfig.String("httpport")
+	rpcIp := beego.AppConfig.DefaultString("rpcaddr", "")
+	rpcPort := beego.AppConfig.DefaultString("rpcport", "")
+	cmpName := beego.AppConfig.String("ComponentName")
+	hostName := fmt.Sprintf("%s_%s", cmpName, strings.Replace(util.GetLocalIP(), ".", "_", -1))
+
+	s.apiServer.HostName = hostName
+	s.addEndpoint(REST, restIp, restPort)
+	s.addEndpoint(RPC, rpcIp, rpcPort)
+	s.apiServer.Start()
+}
+
+func (s *ServiceCenterServer) addEndpoint(t APIType, ip, port string) {
+	if s.apiServer.Endpoints == nil {
+		s.apiServer.Endpoints = map[APIType]string{}
 	}
 	if len(ip) == 0 {
 		return
 	}
 	address := util.StringJoin([]string{ip, port}, ":")
-	if ssl {
+	if common.GetServerSSLConfig().SSLEnabled {
 		address += "?sslEnabled=true"
 	}
-	s.apiService.Config.Endpoints[t] = address
+	s.apiServer.Endpoints[t] = fmt.Sprintf("%s://%s", t, address)
 }
 
-func (s *ServiceCenterServer) startApiServer() {
-	sslMode := common.GetServerSSLConfig().SSLEnabled
-	verifyClient := common.GetServerSSLConfig().VerifyClient
-	restIp := beego.AppConfig.String("httpaddr")
-	restPort := beego.AppConfig.String("httpport")
-	grpcIp := beego.AppConfig.DefaultString("grpcaddr", "")
-	grpcPort := beego.AppConfig.DefaultString("grpcport", "")
-	cmpName := beego.AppConfig.String("ComponentName")
-	hostName := fmt.Sprintf("%s_%s", cmpName, strings.Replace(util.GetLocalIP(), ".", "_", -1))
-	util.Logger().Infof("Local listen address: %s:%s, host: %s.", restIp, restPort, hostName)
-
-	s.apiService.Config = api.APIServerConfig{
-		HostName:     hostName,
-		SSL:          sslMode,
-		VerifyClient: verifyClient,
+func (s *ServiceCenterServer) Stop() {
+	if s.apiServer != nil {
+		s.apiServer.Stop()
 	}
-	s.addEndpoint(api.REST, restIp, restPort, sslMode)
-	s.addEndpoint(api.GRPC, grpcIp, grpcPort, sslMode)
-	s.apiService.Start()
+
+	if s.notifyService != nil {
+		s.notifyService.Stop()
+	}
+
+	if s.store != nil {
+		s.store.Stop()
+	}
+
+	util.GoCloseAndWait()
+
+	registry.GetRegisterCenter().Close()
 }
 
 func Run() {

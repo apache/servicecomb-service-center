@@ -30,8 +30,8 @@ const (
 
 	registry_app_id       = "default"
 	registry_service_name = "SERVICECENTER"
-	registry_instance_env = "production"
 
+	REGISTRY_DEFAULT_INSTANCE_ENV                = "production"
 	REGISTRY_DEFAULT_LEASE_RENEWALINTERVAL int32 = 30
 	REGISTRY_DEFAULT_LEASE_RETRYTIMES      int32 = 3
 )
@@ -94,7 +94,7 @@ func RegisterInstanceRequest(hostName string, endpoints []string) *pb.RegisterIn
 	Instance.Endpoints = endpoints
 	Instance.Environment = os.Getenv("CSE_REGISTRY_STAGE")
 	if len(Instance.Environment) == 0 {
-		Instance.Environment = registry_instance_env
+		Instance.Environment = REGISTRY_DEFAULT_INSTANCE_ENV
 	}
 	return &pb.RegisterInstanceRequest{
 		Instance: Instance,

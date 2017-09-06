@@ -10,6 +10,8 @@ var router http.Handler
 
 func init() {
 	router = routers.GetRouter()
+
+	http.Handle("/", DefaultServerHandler())
 }
 
 type ServerHandler struct {
