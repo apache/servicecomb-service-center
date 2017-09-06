@@ -133,7 +133,7 @@ func (s *KvStore) newStore(t StoreType, initSize int) {
 			s.indexers[t].OnCacheEvent(evt)
 			select {
 			case <-s.Ready():
-				EventHandler(t).OnEvent(evt)
+				EventProxy(t).OnEvent(evt)
 			default:
 			}
 		}))
