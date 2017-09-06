@@ -20,6 +20,7 @@ import (
 	"github.com/ServiceComb/service-center/server/core/registry/store"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
+	constKey "github.com/ServiceComb/service-center/server/common"
 )
 
 func AddTagIntoETCD(ctx context.Context, tenant string, serviceId string, dataTags map[string]string) error {
@@ -68,4 +69,11 @@ func SearchTags(ctx context.Context, tenant, serviceId string, mode registry.Cac
 		}
 	}
 	return tags, nil
+}
+
+func CheckTagSize(tags map[string]string) bool {
+	if len(tags) > constKey.TAG_MAX_NUM_FOR_ONESERVICE {
+		return false
+	}
+	return  true
 }

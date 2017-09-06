@@ -115,6 +115,23 @@ var _ = Describe("InstanceController", func() {
 				Expect(respUpdateStatus.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 			})
 
+			By("register, param check", func() {
+				It("no Environment", func() {
+					resp, err := insResource.Register(getContext(), &pb.RegisterInstanceRequest{
+						Instance: &pb.MicroServiceInstance{
+							ServiceId: consumerId,
+							Endpoints: []string{
+								"rest:127.0.0.1:8080",
+							},
+							HostName:    "UT-HOST",
+							Status:      pb.MSI_UP,
+						},
+					})
+					Expect(err).To(BeNil())
+					Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				})
+			})
+
 			It("批量心跳接口", func() {
 				fmt.Println("UT===========实例心跳上报批量接口， 参数校验")
 				resp, err := insResource.HeartbeatSet(getContext(), &pb.HeartbeatSetRequest{
@@ -760,6 +777,16 @@ var _ = Describe("InstanceController", func() {
 					ConsumerServiceId:  consumerId,
 					ProviderServiceId:  consumerId,
 					ProviderInstanceId: instanceId,
+					Env:                "development",
+				})
+				Expect(err).To(BeNil())
+				fmt.Println("UT============" + resp.GetResponse().Message)
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+
+				resp, err = insResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
+					ConsumerServiceId:  consumerId,
+					ProviderServiceId:  consumerId,
+					ProviderInstanceId: "not_exist_instanceId",
 					Env:                "development",
 				})
 				Expect(err).To(BeNil())

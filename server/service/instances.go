@@ -210,7 +210,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 
 	//新租户，则进行监听
 	newDomain := util.ParseTenant(ctx)
-	ok, err := domain.DomainExist(ctx, newDomain)
+	ok, err := domain.DomainExist(newDomain)
 	if err != nil {
 		util.Logger().Errorf(err, "register instance failed, service %s, instanceId %s, operator %s: find domain failed.",
 			instanceFlag, instanceId, remoteIP)
