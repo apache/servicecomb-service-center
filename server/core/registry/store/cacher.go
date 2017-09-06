@@ -143,7 +143,7 @@ func (c *KvCache) Unlock() {
 }
 
 type KvCacher struct {
-	Cfg *KvCacherConfig
+	Cfg KvCacherConfig
 
 	lastRev            int64
 	noEventInterval    int
@@ -250,9 +250,21 @@ func (c *KvCacher) handleWatcher(watcher *Watcher) error {
 	return nil
 }
 
+func (c *KvCacher) needDeferSync(evts []*Event) bool {
+	if !c.Cfg.Deferred || c.Cfg.DeferStart == nil || c.Cfg.DeferEnd == nil {
+		return false
+	}
+
+	return c.Cfg.DeferStart(evts)
+}
+
 func (c *KvCacher) sync(evts []*Event) {
 	if len(evts) == 0 {
 		return
+	}
+
+	if c.needDeferSync(evts) {
+		// TODO defer sync goroutine
 	}
 
 	cache := c.Cache().(*KvCache)
@@ -475,12 +487,18 @@ func (c *KvCacher) Ready() <-chan struct{} {
 	return c.ready
 }
 
+type DeferStartFunc func(evt []*Event) bool
+type DeferEndFunc func() <-chan *Event
+
 type KvCacherConfig struct {
-	Key      string
-	InitSize int
-	Timeout  time.Duration
-	Period   time.Duration
-	OnEvent  KvEventFunc
+	Key        string
+	InitSize   int
+	Timeout    time.Duration
+	Period     time.Duration
+	OnEvent    KvEventFunc
+	Deferred   bool
+	DeferStart DeferStartFunc
+	DeferEnd   DeferEndFunc
 }
 
 func (cfg *KvCacherConfig) String() string {
@@ -498,7 +516,7 @@ func NewKvCache(c *KvCacher, size int) *KvCache {
 	}
 }
 
-func NewKvCacher(cfg *KvCacherConfig) Cacher {
+func NewKvCacher(cfg KvCacherConfig) Cacher {
 	cacher := &KvCacher{
 		Cfg:   cfg,
 		ready: make(chan struct{}),
@@ -518,7 +536,7 @@ func NewCacher(initSize int, prefix string, callback KvEventFunc) Cacher {
 }
 
 func NewTimeoutCacher(ot time.Duration, initSize int, prefix string, callback KvEventFunc) Cacher {
-	return NewKvCacher(&KvCacherConfig{
+	return NewKvCacher(KvCacherConfig{
 		Key:      prefix,
 		InitSize: initSize,
 		Timeout:  ot,
