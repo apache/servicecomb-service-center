@@ -122,13 +122,14 @@ var _ = Describe("ServiceController", func() {
 					},
 				})
 				Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_FAIL))
-
-				size := constKey.TAG_MAX_NUM_FOR_ONESERVICE + 1
+			})
+			It("size of tags checker for one service", func() {
+				size := constKey.TAG_MAX_NUM_FOR_ONESERVICE + 2
 				tags := make(map[string]string, size)
 				for i := 0 ; i < size; i ++ {
-					tags[strconv.Itoa(i)] = strconv.Itoa(i)
+					tags["a" + strconv.Itoa(i)] = "a" + strconv.Itoa(i)
 				}
-				respAddTags, _ = serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
+				respAddTags, _ := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
 					ServiceId: serviceId,
 					Tags: tags,
 				})
