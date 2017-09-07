@@ -64,7 +64,7 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 	serviceFlag := util.StringJoin([]string{service.AppId, service.ServiceName, service.Version}, "/")
 
 	if quota.QuataType == "unlimit" {
-		apt.MicroServiceValidator.GetRule("").Length = 0
+		apt.MicroServiceValidator.GetRule("Schemas").Length = 0
 	}
 	err := apt.Validate(service)
 	if err != nil {
