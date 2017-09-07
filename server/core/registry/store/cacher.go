@@ -250,12 +250,46 @@ func (c *KvCacher) handleWatcher(watcher *Watcher) error {
 	return nil
 }
 
-func (c *KvCacher) needDeferSync(evts []*Event) bool {
-	if !c.Cfg.Deferred || c.Cfg.DeferStart == nil || c.Cfg.DeferEnd == nil {
+func (c *KvCacher) needDeferHandle(evts []*Event) bool {
+	if c.Cfg.DeferHander == nil {
 		return false
 	}
 
-	return c.Cfg.DeferStart(evts)
+	return c.Cfg.DeferHander.OnCondition(evts)
+}
+
+func (c *KvCacher) deferHandle(stopCh chan struct{}) {
+	if c.Cfg.DeferHander == nil {
+		return
+	}
+
+	i, evts := 0, make([]*Event, event_block_size)
+	for {
+		select {
+		case <-stopCh:
+			return
+		case evt, ok := <-c.Cfg.DeferHander.HandleChan():
+			if !ok {
+				<-time.After(time.Second)
+				continue
+			}
+
+			if i >= event_block_size {
+				c.onEvents(evts[:i])
+				i = 0
+			}
+
+			evts[i] = evt
+			i++
+		case <-time.After(time.Second):
+			if i == 0 {
+				continue
+			}
+
+			c.onEvents(evts[:i])
+			i = 0
+		}
+	}
 }
 
 func (c *KvCacher) sync(evts []*Event) {
@@ -263,57 +297,11 @@ func (c *KvCacher) sync(evts []*Event) {
 		return
 	}
 
-	if c.needDeferSync(evts) {
-		// TODO defer sync goroutine
+	if c.needDeferHandle(evts) {
+		return
 	}
 
-	cache := c.Cache().(*KvCache)
-	idx := 0
-	kvEvts := make([]*KvEvent, len(evts))
-	store := cache.Lock()
-	for _, evt := range evts {
-		kv := evt.Object.(*mvccpb.KeyValue)
-		key := util.BytesToStringWithNoCopy(kv.Key)
-		prevKv, ok := store[key]
-		switch evt.Type {
-		case proto.EVT_CREATE, proto.EVT_UPDATE:
-			util.Logger().Debugf("sync %s event and notify watcher, cache key %s, %+v", evt.Type, key, kv)
-			store[key] = kv
-			t := evt.Type
-			if !ok && evt.Type != proto.EVT_CREATE {
-				util.Logger().Warnf(nil, "unexpected %s event! it should be %s key %s",
-					evt.Type, proto.EVT_CREATE, key)
-				t = proto.EVT_CREATE
-			}
-			if ok && evt.Type != proto.EVT_UPDATE {
-				util.Logger().Warnf(nil, "unexpected %s event! it should be %s key %s",
-					evt.Type, proto.EVT_UPDATE, key)
-				t = proto.EVT_UPDATE
-			}
-			kvEvts[idx] = &KvEvent{
-				Revision: evt.Revision,
-				Action:   t,
-				KV:       kv,
-			}
-			idx++
-		case proto.EVT_DELETE:
-			if ok {
-				util.Logger().Debugf("sync %s event and notify watcher, remove key %s, %+v", evt.Type, key, kv)
-				delete(store, key)
-				kvEvts[idx] = &KvEvent{
-					Revision: evt.Revision,
-					Action:   evt.Type,
-					KV:       prevKv,
-				}
-				idx++
-				continue
-			}
-			util.Logger().Warnf(nil, "unexpected %s event! nonexistent key %s", evt.Type, key)
-		}
-	}
-	cache.Unlock()
-
-	c.onKvEvents(kvEvts[:idx])
+	c.onEvents(evts)
 }
 
 func (c *KvCacher) filter(rev int64, items []*mvccpb.KeyValue) []*Event {
@@ -435,6 +423,56 @@ func (c *KvCacher) filterCreateOrUpdate(store map[string]*mvccpb.KeyValue, newSt
 	}
 }
 
+func (c *KvCacher) onEvents(evts []*Event) {
+	cache := c.Cache().(*KvCache)
+	idx := 0
+	kvEvts := make([]*KvEvent, len(evts))
+	store := cache.Lock()
+	for _, evt := range evts {
+		kv := evt.Object.(*mvccpb.KeyValue)
+		key := util.BytesToStringWithNoCopy(kv.Key)
+		prevKv, ok := store[key]
+		switch evt.Type {
+		case proto.EVT_CREATE, proto.EVT_UPDATE:
+			util.Logger().Debugf("sync %s event and notify watcher, cache key %s, %+v", evt.Type, key, kv)
+			store[key] = kv
+			t := evt.Type
+			if !ok && evt.Type != proto.EVT_CREATE {
+				util.Logger().Warnf(nil, "unexpected %s event! it should be %s key %s",
+					evt.Type, proto.EVT_CREATE, key)
+				t = proto.EVT_CREATE
+			}
+			if ok && evt.Type != proto.EVT_UPDATE {
+				util.Logger().Warnf(nil, "unexpected %s event! it should be %s key %s",
+					evt.Type, proto.EVT_UPDATE, key)
+				t = proto.EVT_UPDATE
+			}
+			kvEvts[idx] = &KvEvent{
+				Revision: evt.Revision,
+				Action:   t,
+				KV:       kv,
+			}
+			idx++
+		case proto.EVT_DELETE:
+			if ok {
+				util.Logger().Debugf("sync %s event and notify watcher, remove key %s, %+v", evt.Type, key, kv)
+				delete(store, key)
+				kvEvts[idx] = &KvEvent{
+					Revision: evt.Revision,
+					Action:   evt.Type,
+					KV:       prevKv,
+				}
+				idx++
+				continue
+			}
+			util.Logger().Warnf(nil, "unexpected %s event! nonexistent key %s", evt.Type, key)
+		}
+	}
+	cache.Unlock()
+
+	c.onKvEvents(kvEvts[:idx])
+}
+
 func (c *KvCacher) onKvEvents(evts []*KvEvent) {
 	for _, evt := range evts {
 		c.Cfg.OnEvent(evt)
@@ -465,6 +503,8 @@ func (c *KvCacher) run() {
 			}
 		}
 	})
+
+	c.goroute.Do(c.deferHandle)
 }
 
 func (c *KvCacher) Cache() Cache {
@@ -487,18 +527,13 @@ func (c *KvCacher) Ready() <-chan struct{} {
 	return c.ready
 }
 
-type DeferStartFunc func(evt []*Event) bool
-type DeferEndFunc func() <-chan *Event
-
 type KvCacherConfig struct {
-	Key        string
-	InitSize   int
-	Timeout    time.Duration
-	Period     time.Duration
-	OnEvent    KvEventFunc
-	Deferred   bool
-	DeferStart DeferStartFunc
-	DeferEnd   DeferEndFunc
+	Key         string
+	InitSize    int
+	Timeout     time.Duration
+	Period      time.Duration
+	OnEvent     KvEventFunc
+	DeferHander DeferHandler
 }
 
 func (cfg *KvCacherConfig) String() string {
