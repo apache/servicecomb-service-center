@@ -40,7 +40,7 @@ const (
 )
 
 //申请配额sourceType serviceinstance servicetype
-func (q *BuildInQuota) Apply4Quotas(quotaType quota.ResourceType, tenant string, serviceId string, quotaSize int16) (bool, error) {
+func (q *BuildInQuota) Apply4Quotas(ctx context.Context, quotaType quota.ResourceType, tenant string, serviceId string, quotaSize int16) (bool, error) {
 	var key string = ""
 	var max int64 = 0
 	var indexer *store.Indexer
@@ -54,9 +54,9 @@ func (q *BuildInQuota) Apply4Quotas(quotaType quota.ResourceType, tenant string,
 		max = SERVICE_MAX_NUMBER
 		indexer = store.Store().Service()
 	default:
-		return ResourceLimitHandler(quotaType, tenant, serviceId, quotaSize)
+		return ResourceLimitHandler(ctx, quotaType, tenant, serviceId, quotaSize)
 	}
-	resp, err := indexer.Search(context.TODO(), &registry.PluginOp{
+	resp, err := indexer.Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
 		Key:        util.StringToBytesWithNoCopy(key),
 		CountOnly:  true,
@@ -80,7 +80,7 @@ func (q *BuildInQuota) ReportCurrentQuotasUsage(ctx context.Context, quotaType i
 	return false
 }
 
-func ResourceLimitHandler(quotaType quota.ResourceType, tenant string, serviceId string, quotaSize int16) (bool, error) {
+func ResourceLimitHandler(ctx context.Context, quotaType quota.ResourceType, tenant string, serviceId string, quotaSize int16) (bool, error) {
 	var key string
 	var max int64 = 0
 	var indexer *store.Indexer
@@ -103,7 +103,7 @@ func ResourceLimitHandler(quotaType quota.ResourceType, tenant string, serviceId
 	default:
 		return false, fmt.Errorf("Unsurported Type %v", quotaType)
 	}
-	resp, err := indexer.Search(context.TODO(), &registry.PluginOp{
+	resp, err := indexer.Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
 		Key:        util.StringToBytesWithNoCopy(key),
 		CountOnly:  true,

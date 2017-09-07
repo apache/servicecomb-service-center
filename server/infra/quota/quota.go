@@ -19,7 +19,7 @@ import (
 )
 
 type QuotaManager interface {
-	Apply4Quotas(quotaType ResourceType, tenant string, serviceId string, quotaSize int16) (bool, error)
+	Apply4Quotas(ctx context.Context, quotaType ResourceType, tenant string, serviceId string, quotaSize int16) (bool, error)
 	ReportCurrentQuotasUsage(ctx context.Context, quotaType int, usedQuotaSize int16) bool
 }
 

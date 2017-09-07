@@ -63,9 +63,6 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 	service := in.Service
 	serviceFlag := util.StringJoin([]string{service.AppId, service.ServiceName, service.Version}, "/")
 
-	if quota.QuataType == "unlimit" {
-		apt.MicroServiceValidator.GetRule("Schemas").Length = 0
-	}
 	err := apt.Validate(service)
 	if err != nil {
 		util.Logger().Errorf(err, "create microservice failed, %s: invalid parameters. operator: %s",
@@ -84,7 +81,7 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 		Version:     service.Version,
 		Tenant:      tenant,
 	}
-	err = checkBeforeCreate(tenant)
+	err = checkBeforeCreate(ctx, tenant)
 	if err != nil {
 		util.Logger().Errorf(err, "create microservice failed, %s: check service failed before create. operator: %s",
 			serviceFlag, remoteIP)
@@ -193,8 +190,8 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 	}, nil
 }
 
-func checkBeforeCreate(tenant string) error {
-	ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(quota.MicroServiceQuotaType, tenant, "", 1)
+func checkBeforeCreate(ctx context.Context, tenant string) error {
+	ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.MicroServiceQuotaType, tenant, "", 1)
 	if err != nil {
 		return errorsEx.InternalError(err.Error())
 	}

@@ -96,7 +96,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 	}
 
 	if len(oldInstanceId) == 0 {
-		ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(quota.MicroServiceInstanceQuotaType, tenant, in.Instance.ServiceId, 1)
+		ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.MicroServiceInstanceQuotaType, tenant, in.Instance.ServiceId, 1)
 		if err != nil {
 			util.Logger().Errorf(err, "register instance failed, service %s, operator %s: check apply quota failed.", instanceFlag, remoteIP)
 			return &pb.RegisterInstanceResponse{
@@ -209,7 +209,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 
 	//新租户，则进行监听
 	newDomain := util.ParseTenant(ctx)
-	ok, err := domain.DomainExist(newDomain)
+	ok, err := domain.DomainExist(ctx, newDomain)
 	if err != nil {
 		util.Logger().Errorf(err, "register instance failed, service %s, instanceId %s, operator %s: find domain failed.",
 			instanceFlag, instanceId, remoteIP)

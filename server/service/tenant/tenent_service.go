@@ -57,13 +57,13 @@ func GetAllTenent() ([]string, error) {
 	return insWatherByTenantKeys, err
 }
 
-func DomainExist(domain string) (bool, error) {
+func DomainExist(ctx context.Context, domain string) (bool, error) {
 	opt := &registry.PluginOp{
 		Key:       util.StringToBytesWithNoCopy(apt.GenerateDomainKey(domain)),
 		Action:    registry.GET,
 		CountOnly: true,
 	}
-	rsp, err := store.Store().Domain().Search(context.Background(), opt)
+	rsp, err := store.Store().Domain().Search(ctx, opt)
 	if err != nil {
 		return false, err
 	}
