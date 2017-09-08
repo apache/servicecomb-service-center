@@ -63,7 +63,7 @@ func DomainExist(ctx context.Context, domain string) (bool, error) {
 		Action:    registry.GET,
 		CountOnly: true,
 	}
-	rsp, err := store.Store().Domain().Search(context.Background(), opt)
+	rsp, err := store.Store().Domain().Search(ctx, opt)
 	if err != nil {
 		return false, err
 	}

@@ -15,10 +15,12 @@ package service_test
 
 import (
 	"fmt"
+	constKey "github.com/ServiceComb/service-center/server/common"
 	"github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"strconv"
 )
 
 var _ = Describe("ServiceController", func() {
@@ -27,6 +29,84 @@ var _ = Describe("ServiceController", func() {
 	var serviceId3 string
 	Describe("Create", func() {
 		Context("normal", func() {
+			By("param check", func() {
+				It("service is nil", func() {
+					resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+						Service: nil,
+
+					})
+					Expect(err).To(BeNil())
+					Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+
+				})
+			})
+			It("create service rule tag at once", func() {
+				tags := make(map[string]string, 10)
+				tags["test"] = "test"
+				rules := []*pb.AddOrUpdateServiceRule{
+					&pb.AddOrUpdateServiceRule{
+						RuleType:    "BLACK",
+						Attribute:   "ServiceName",
+						Pattern:     "test",
+						Description: "test",
+					},
+				}
+				instances := []*pb.MicroServiceInstance{
+					&pb.MicroServiceInstance{
+						Endpoints: []string{
+							"rest:127.0.0.1:8080",
+						},
+						HostName:    "UT-HOST",
+						Status:      pb.MSI_UP,
+						Environment: "production",
+					},
+				}
+				fmt.Println("start is ------------>")
+				resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceName: "create_serivce_rule_tag",
+						AppId:       "default",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Schemas: []string{
+							"xxxxxxxx",
+						},
+						Status: "UP",
+					},
+					Tags:      tags,
+					Rules:     rules,
+					Instances: instances,
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+				delete(tags, "test")
+				tags["second"] = "second"
+				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceName: "create_serivce_rule_tag",
+						AppId:       "default",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Schemas: []string{
+							"xxxxxxxx",
+						},
+						Status: "UP",
+					},
+					Tags:      tags,
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+				respDelete, err := serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{
+					ServiceId: resp.ServiceId,
+					Force:     true,
+				})
+				Expect(err).To(BeNil())
+				Expect(respDelete.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+			})
+
 			It("创建微服务1", func() {
 				resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
@@ -317,6 +397,25 @@ var _ = Describe("ServiceController", func() {
 				Expect(err).To(BeNil())
 				fmt.Println("UT=========" + resp.ServiceId)
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+			})
+
+			It("create service, schema param check", func() {
+				size := constKey.SCHEMA_NUM_MAX_FOR_ONESERVICE + 1
+				schemas := make([]string, size)
+				for i := 0; i < size; i++ {
+					schemas = append(schemas, strconv.Itoa(i))
+				}
+				respServiceForSchema, _ := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceName: "service_name",
+						AppId:       "service_group",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Schemas:     schemas,
+						Status:      "UP",
+					},
+				})
+				Expect(respServiceForSchema.GetResponse().Code).To(Equal(pb.Response_FAIL))
 			})
 
 			It("创建微服务5,参数校验", func() {

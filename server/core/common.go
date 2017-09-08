@@ -21,6 +21,7 @@ import (
 	"math"
 	"reflect"
 	"regexp"
+	const_key "github.com/ServiceComb/service-center/server/common"
 )
 
 var (
@@ -78,11 +79,11 @@ func init() {
 	simpleNameRegex, _ := regexp.Compile(`^[A-Za-z0-9_.-]+$`)
 	regionRegex, _ := regexp.Compile(`([A-Za-z0-9]+-)+([A-Za-z0-9]+)$`)
 	ruleRegex, _ := regexp.Compile(`^(WHITE|BLACK)$`)
-	ruleAttrRegex, _ := regexp.Compile(`(^tag_(.*)|(^ServiceId$)|(^AppId$)|(^ServiceName$)|(^Version$)|(^Description$)|(^Level$)|(^Status$))`)
+	ruleAttrRegex, _ := regexp.Compile(`(^tag_([a-zA-Z][a-zA-Z0-9_\-\.]{0,63})|(^ServiceId$)|(^AppId$)|(^ServiceName$)|(^Version$)|(^Description$)|(^Level$)|(^Status$))`)
 
 	ServiceIdRule := &validate.ValidateRule{Min: 1, Length: 64, Regexp: serviceIdRegex}
 	InstanceStatusRule := &validate.ValidateRule{Regexp: instStatusRegex}
-	SchemaIdRule := &validate.ValidateRule{Regexp: schemaIdRegex}
+	SchemaIdRule := &validate.ValidateRule{Length: const_key.SCHEMA_NUM_MAX_FOR_ONESERVICE, Regexp: schemaIdRegex}
 	stageRule := &validate.ValidateRule{Regexp: stageRegex}
 	nameRule := &validate.ValidateRule{Min: 1, Max: 128, Regexp: nameRegex}
 	versionFuzzyRule := &validate.ValidateRule{Min: 1, Max: 128, Regexp: versionFuzzyRegex}

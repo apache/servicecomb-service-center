@@ -18,6 +18,8 @@ import (
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"strconv"
+	constKey "github.com/ServiceComb/service-center/server/common"
 )
 
 var _ = Describe("ServiceController", func() {
@@ -32,7 +34,21 @@ var _ = Describe("ServiceController", func() {
 							RuleType:    "BLACK",
 							Attribute:   "",
 							Pattern:     "Test*",
-							Description: "test white",
+							Description: "test BLACK",
+						},
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(respAddRule.GetResponse().Code).To(Equal(pb.Response_FAIL))
+
+				respAddRule, err = serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
+					ServiceId: serviceId,
+					Rules: []*pb.AddOrUpdateServiceRule{
+						{
+							RuleType:    "BLACK",
+							Attribute:   "tag_@34",
+							Pattern:     "Test*",
+							Description: "test BLACK",
 						},
 					},
 				})
@@ -114,6 +130,41 @@ var _ = Describe("ServiceController", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respAddRule.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			})
+			It("create rule, size check", func() {
+				rspServiceForRule, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceName: "service_name_rule_size_check",
+						AppId:       "service_group_rule_size_check",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Schemas: []string{
+							"xxxxxxxx",
+						},
+						Status: "UP",
+					},
+				})
+				Expect(err).To(BeNil())
+				serviceIdForRule := rspServiceForRule.ServiceId
+				size := constKey.RULE_NUM_MAX_FOR_ONESERVICE + 1
+				for i := 0; i < size; i ++ {
+					resp, _ := serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
+						ServiceId: serviceIdForRule,
+						Rules: []*pb.AddOrUpdateServiceRule{
+							{
+								RuleType:    "BLACK",
+								Attribute:   "ServiceName",
+								Pattern:     strconv.Itoa(i),
+								Description: "test white",
+							},
+						},
+					})
+					if i == size - 1 {
+						Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+						return
+					}
+					Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				}
 			})
 			It("获取rule，参数校验", func() {
 				fmt.Println("UT===========获取rule")

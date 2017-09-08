@@ -13,17 +13,41 @@
 //limitations under the License.
 package quota
 
-import "golang.org/x/net/context"
+import (
+	"github.com/astaxie/beego"
+	"golang.org/x/net/context"
+)
 
 type QuotaManager interface {
-	Apply4Quotas(ctx context.Context, quotaType int, quotaSize int16) (bool, error)
+	Apply4Quotas(ctx context.Context, quotaType ResourceType, tenant string, serviceId string, quotaSize int16) (bool, error)
 	ReportCurrentQuotasUsage(ctx context.Context, quotaType int, usedQuotaSize int16) bool
+}
+
+var QuataType string
+
+func init() {
+	QuataType = beego.AppConfig.DefaultString("quota_plugin", "buildin")
+	switch QuataType {
+	case "buildin":
+	case "fusionstage":
+	case "unlimit":
+	default:
+		QuataType = "buildin"
+	}
 }
 
 var QuotaPlugins map[string]func() QuotaManager
 
-const MicroServiceQuotaType = 1
-const MicroServiceInstanceQuotaType = 2
+const (
+	RULEQuotaType ResourceType = iota
+	SCHEMAQuotaType
+	TAGQuotaType
+	MicroServiceQuotaType
+	MicroServiceInstanceQuotaType
+	endType
+)
+
+type ResourceType int
 
 func init() {
 	QuotaPlugins = make(map[string]func() QuotaManager)

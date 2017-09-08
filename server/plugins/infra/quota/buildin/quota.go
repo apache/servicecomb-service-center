@@ -21,6 +21,7 @@ import (
 	"github.com/ServiceComb/service-center/server/infra/quota"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
+	constKey "github.com/ServiceComb/service-center/server/common"
 )
 
 type BuildInQuota struct {
@@ -39,11 +40,10 @@ const (
 )
 
 //申请配额sourceType serviceinstance servicetype
-func (q *BuildInQuota) Apply4Quotas(ctx context.Context, quotaType int, quotaSize int16) (bool, error) {
+func (q *BuildInQuota) Apply4Quotas(ctx context.Context, quotaType quota.ResourceType, tenant string, serviceId string, quotaSize int16) (bool, error) {
 	var key string = ""
 	var max int64 = 0
 	var indexer *store.Indexer
-	tenant := util.ParseTenant(ctx)
 	switch quotaType {
 	case quota.MicroServiceInstanceQuotaType:
 		key = core.GetInstanceRootKey(tenant) + "/"
@@ -54,7 +54,7 @@ func (q *BuildInQuota) Apply4Quotas(ctx context.Context, quotaType int, quotaSiz
 		max = SERVICE_MAX_NUMBER
 		indexer = store.Store().Service()
 	default:
-		return false, fmt.Errorf("Unsurported Type %d", quotaType)
+		return ResourceLimitHandler(ctx, quotaType, tenant, serviceId, quotaSize)
 	}
 	resp, err := indexer.Search(ctx, &registry.PluginOp{
 		Action:     registry.GET,
@@ -65,9 +65,10 @@ func (q *BuildInQuota) Apply4Quotas(ctx context.Context, quotaType int, quotaSiz
 	if err != nil {
 		return false, err
 	}
-	num := resp.Count
+	num := resp.Count + int64(quotaSize)
 	util.Logger().Debugf("resource num is %d", num)
-	if num >= max {
+	if num > max {
+		util.Logger().Errorf(nil, "no quota to apply this source, %s", serviceId)
 		return false, nil
 	}
 	return true, nil
@@ -77,4 +78,45 @@ func (q *BuildInQuota) Apply4Quotas(ctx context.Context, quotaType int, quotaSiz
 func (q *BuildInQuota) ReportCurrentQuotasUsage(ctx context.Context, quotaType int, usedQuotaSize int16) bool {
 
 	return false
+}
+
+func ResourceLimitHandler(ctx context.Context, quotaType quota.ResourceType, tenant string, serviceId string, quotaSize int16) (bool, error) {
+	var key string
+	var max int64 = 0
+	var indexer *store.Indexer
+	switch quotaType {
+	case quota.RULEQuotaType:
+		key = core.GenerateServiceRuleKey(tenant, serviceId, "")
+		max = constKey.RULE_NUM_MAX_FOR_ONESERVICE
+		indexer = store.Store().Rule()
+	case quota.SCHEMAQuotaType:
+		key = core.GenerateServiceSchemaKey(tenant, serviceId, "")
+		max = constKey.SCHEMA_NUM_MAX_FOR_ONESERVICE
+		indexer = store.Store().Schema()
+	case quota.TAGQuotaType:
+		num := quotaSize
+		if num > constKey.TAG_MAX_NUM_FOR_ONESERVICE {
+			util.Logger().Errorf(nil, "fail to add tag for one service max tag num is %d, %s", constKey.TAG_MAX_NUM_FOR_ONESERVICE, serviceId)
+			return false, nil
+		}
+		return true, nil
+	default:
+		return false, fmt.Errorf("Unsurported Type %v", quotaType)
+	}
+	resp, err := indexer.Search(ctx, &registry.PluginOp{
+		Action:     registry.GET,
+		Key:        util.StringToBytesWithNoCopy(key),
+		CountOnly:  true,
+		WithPrefix: true,
+	})
+	if err != nil {
+		return false, err
+	}
+	num := resp.Count + int64(quotaSize)
+	util.Logger().Debugf("resource num is %d", num)
+	if num > max {
+		util.Logger().Errorf(nil, "no quota to apply this source, %s", serviceId)
+		return false, nil
+	}
+	return true, nil
 }
