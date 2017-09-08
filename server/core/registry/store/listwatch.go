@@ -77,27 +77,27 @@ func (lw *ListWatcher) Watch(op *ListOptions) *Watcher {
 func (lw *ListWatcher) doWatch(ctx context.Context, f func(evt []*Event)) error {
 	ops := registry.WithWatchPrefix(lw.Key)
 	ops.WithRev = lw.Revision() + 1
-	err := lw.Client.Watch(ctx, ops, func(message string, evt *registry.PluginResponse) error {
-		if evt == nil || len(evt.Kvs) == 0 {
-			return fmt.Errorf("unknown event %s", evt)
+	err := lw.Client.Watch(ctx, ops, func(message string, resp *registry.PluginResponse) error {
+		if resp == nil || len(resp.Kvs) == 0 {
+			return fmt.Errorf("unknown event %s", resp)
 		}
 
-		lw.setRevision(evt.Revision)
+		lw.setRevision(resp.Revision)
 
-		evts := make([]*Event, len(evt.Kvs))
-		for i, kv := range evt.Kvs {
-			sendEvt := &Event{Key: lw.Key, Revision: kv.ModRevision}
+		evts := make([]*Event, len(resp.Kvs))
+		for i, kv := range resp.Kvs {
+			evt := &Event{Key: lw.Key, Revision: kv.ModRevision}
 			switch {
-			case evt.Action == registry.PUT && kv.Version == 1:
-				sendEvt.Type, sendEvt.Object = proto.EVT_CREATE, kv
-			case evt.Action == registry.PUT:
-				sendEvt.Type, sendEvt.Object = proto.EVT_UPDATE, kv
-			case evt.Action == registry.DELETE:
-				sendEvt.Type, sendEvt.Object = proto.EVT_DELETE, kv
+			case resp.Action == registry.PUT && kv.Version == 1:
+				evt.Type, evt.Object = proto.EVT_CREATE, kv
+			case resp.Action == registry.PUT:
+				evt.Type, evt.Object = proto.EVT_UPDATE, kv
+			case resp.Action == registry.DELETE:
+				evt.Type, evt.Object = proto.EVT_DELETE, kv
 			default:
 				return fmt.Errorf("unknown KeyValue %v", kv)
 			}
-			evts[i] = sendEvt
+			evts[i] = evt
 		}
 		f(evts)
 		return nil

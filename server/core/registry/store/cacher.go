@@ -142,6 +142,13 @@ func (c *KvCache) Unlock() {
 	c.rwMux.Unlock()
 }
 
+func (c *KvCache) Size() (len int) {
+	c.rwMux.RLock()
+	len = len(c.store)
+	c.rwMux.RUnlock()
+	return
+}
+
 type KvCacher struct {
 	Cfg KvCacherConfig
 
@@ -432,21 +439,30 @@ func (c *KvCacher) onEvents(evts []*Event) {
 		kv := evt.Object.(*mvccpb.KeyValue)
 		key := util.BytesToStringWithNoCopy(kv.Key)
 		prevKv, ok := store[key]
+		if ok && prevKv.ModRevision >= evt.Revision {
+			util.Logger().Warnf(nil, "expired %s event! key %s(%d >= %d)",
+				evt.Type, key, prevKv.ModRevision, evt.Revision)
+			continue
+		}
+
 		switch evt.Type {
 		case proto.EVT_CREATE, proto.EVT_UPDATE:
 			util.Logger().Debugf("sync %s event and notify watcher, cache key %s, %+v", evt.Type, key, kv)
-			store[key] = kv
+
 			t := evt.Type
 			if !ok && evt.Type != proto.EVT_CREATE {
 				util.Logger().Warnf(nil, "unexpected %s event! it should be %s key %s",
 					evt.Type, proto.EVT_CREATE, key)
 				t = proto.EVT_CREATE
 			}
+
 			if ok && evt.Type != proto.EVT_UPDATE {
 				util.Logger().Warnf(nil, "unexpected %s event! it should be %s key %s",
 					evt.Type, proto.EVT_UPDATE, key)
 				t = proto.EVT_UPDATE
 			}
+
+			store[key] = kv
 			kvEvts[idx] = &KvEvent{
 				Revision: evt.Revision,
 				Action:   t,
@@ -454,18 +470,19 @@ func (c *KvCacher) onEvents(evts []*Event) {
 			}
 			idx++
 		case proto.EVT_DELETE:
-			if ok {
-				util.Logger().Debugf("sync %s event and notify watcher, remove key %s, %+v", evt.Type, key, kv)
-				delete(store, key)
-				kvEvts[idx] = &KvEvent{
-					Revision: evt.Revision,
-					Action:   evt.Type,
-					KV:       prevKv,
-				}
-				idx++
+			if !ok {
+				util.Logger().Warnf(nil, "unexpected %s event! nonexistent key %s", evt.Type, key)
 				continue
 			}
-			util.Logger().Warnf(nil, "unexpected %s event! nonexistent key %s", evt.Type, key)
+
+			util.Logger().Debugf("sync %s event and notify watcher, remove key %s, %+v", evt.Type, key, kv)
+			delete(store, key)
+			kvEvts[idx] = &KvEvent{
+				Revision: evt.Revision,
+				Action:   evt.Type,
+				KV:       prevKv,
+			}
+			idx++
 		}
 	}
 	cache.Unlock()
