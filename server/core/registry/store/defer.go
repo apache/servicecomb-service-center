@@ -13,7 +13,40 @@
 //limitations under the License.
 package store
 
+import "github.com/ServiceComb/service-center/util"
+
 type DeferHandler interface {
-	OnCondition([]*Event) bool
+	OnCondition(Cache, []*Event) bool
 	HandleChan() <-chan *Event
+}
+
+type InstanceEventDeferHandler struct {
+	events  []*Event
+	deferCh chan *Event
+}
+
+func (iedh *InstanceEventDeferHandler) OnCondition(cache Cache, evts []*Event) bool {
+	kvCache, ok := cache.(*KvCache)
+	if !ok {
+		return false
+	}
+	isDefer := len(evts)/kvCache.Size() >= 0
+	if !isDefer {
+		return false
+	}
+	if iedh.deferCh == nil {
+		iedh.events = make([]*Event, len(evts))
+		for i, evt := range evts {
+			iedh.events[i] = evt
+		}
+		iedh.deferCh = make(chan *Event, event_block_size)
+		util.Go(func(stopCh <-chan struct{}) {
+
+		})
+	}
+	return true
+}
+
+func (iedh *InstanceEventDeferHandler) HandleChan() <-chan *Event {
+	return iedh.deferCh
 }
