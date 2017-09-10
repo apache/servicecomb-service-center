@@ -142,9 +142,9 @@ func (c *KvCache) Unlock() {
 	c.rwMux.Unlock()
 }
 
-func (c *KvCache) Size() (len int) {
+func (c *KvCache) Size() (l int) {
 	c.rwMux.RLock()
-	len = len(c.store)
+	l = len(c.store)
 	c.rwMux.RUnlock()
 	return
 }
@@ -262,10 +262,10 @@ func (c *KvCacher) needDeferHandle(evts []*Event) bool {
 		return false
 	}
 
-	return c.Cfg.DeferHander.OnCondition(evts)
+	return c.Cfg.DeferHander.OnCondition(c.Cache(), evts)
 }
 
-func (c *KvCacher) deferHandle(stopCh chan struct{}) {
+func (c *KvCacher) deferHandle(stopCh <-chan struct{}) {
 	if c.Cfg.DeferHander == nil {
 		return
 	}
@@ -439,11 +439,6 @@ func (c *KvCacher) onEvents(evts []*Event) {
 		kv := evt.Object.(*mvccpb.KeyValue)
 		key := util.BytesToStringWithNoCopy(kv.Key)
 		prevKv, ok := store[key]
-		if ok && prevKv.ModRevision >= evt.Revision {
-			util.Logger().Warnf(nil, "expired %s event! key %s(%d >= %d)",
-				evt.Type, key, prevKv.ModRevision, evt.Revision)
-			continue
-		}
 
 		switch evt.Type {
 		case proto.EVT_CREATE, proto.EVT_UPDATE:
