@@ -75,7 +75,7 @@ func (iedh *InstanceEventDeferHandler) init() {
 func (iedh *InstanceEventDeferHandler) OnCondition(cache Cache, evts []*Event) bool {
 	iedh.mux.Lock()
 	if !iedh.enabled && iedh.needDefer(cache, evts) {
-		util.Logger().Warnf(nil, "self preservation is enabled, caught %d(>=%f) DELETE events",
+		util.Logger().Warnf(nil, "self preservation is enabled, caught %d(>=%.0f%%) DELETE events",
 			len(evts), iedh.Percent*100)
 		iedh.enabled = true
 	}
