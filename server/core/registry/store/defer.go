@@ -75,7 +75,8 @@ func (iedh *InstanceEventDeferHandler) init() {
 func (iedh *InstanceEventDeferHandler) OnCondition(cache Cache, evts []*Event) bool {
 	iedh.mux.Lock()
 	if !iedh.enabled && iedh.needDefer(cache, evts) {
-		util.Logger().Warnf(nil, "self preservation is enabled, caught %d DELETE events", len(evts))
+		util.Logger().Warnf(nil, "self preservation is enabled, caught %d(>=%f) DELETE events",
+			len(evts), iedh.Percent*100)
 		iedh.enabled = true
 	}
 
@@ -97,9 +98,9 @@ func (iedh *InstanceEventDeferHandler) OnCondition(cache Cache, evts []*Event) b
 			delete(iedh.events, key)
 			delete(iedh.ttls, key)
 
-			iedh.deferCh <- evt
+			util.Logger().Infof("recovered key %s events", key)
 
-			util.Logger().Debugf("recover key %s events", key)
+			iedh.deferCh <- evt
 		case pb.EVT_DELETE:
 			var instance pb.MicroServiceInstance
 			err := json.Unmarshal(kv.Value, &instance)
@@ -135,9 +136,9 @@ func (iedh *InstanceEventDeferHandler) check(stopCh <-chan struct{}) {
 				delete(iedh.events, key)
 				delete(iedh.ttls, key)
 
-				iedh.deferCh <- evt
+				util.Logger().Warnf(nil, "defer handle timed out, removed key is %s", key)
 
-				util.Logger().Debugf("defer handle timed out, key is %s", key)
+				iedh.deferCh <- evt
 			}
 			if start > 0 && len(iedh.ttls) == 0 {
 				iedh.enabled = false
