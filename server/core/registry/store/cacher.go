@@ -14,7 +14,6 @@
 package store
 
 import (
-	"fmt"
 	"github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/util"
@@ -25,11 +24,9 @@ import (
 )
 
 const (
-	DEFAULT_MAX_NO_EVENT_INTERVAL = 1 // TODO it should be set to 1 for prevent etcd data is lost accidentally.
-	DEFAULT_LISTWATCH_TIMEOUT     = 30 * time.Second
-	DEFAULT_COMPACT_TIMES         = 3
-	DEFAULT_COMPACT_TIMEOUT       = 5 * time.Minute
-	event_block_size              = 1000
+	DEFAULT_COMPACT_TIMES   = 3
+	DEFAULT_COMPACT_TIMEOUT = 5 * time.Minute
+	event_block_size        = 1000
 )
 
 var (
@@ -150,11 +147,10 @@ func (c *KvCache) Size() (l int) {
 }
 
 type KvCacher struct {
-	Cfg KvCacherConfig
+	Cfg KvCacherCfg
 
-	lastRev            int64
-	noEventInterval    int
-	noEventMaxInterval int
+	lastRev         int64
+	noEventInterval int
 
 	ready   chan struct{}
 	lw      ListWatcher
@@ -177,7 +173,7 @@ func (c *KvCacher) needList() bool {
 		return false
 	}
 	c.noEventInterval++
-	if c.noEventInterval < c.noEventMaxInterval {
+	if c.noEventInterval < c.Cfg.NoEventMaxInterval {
 		return false
 	}
 
@@ -486,6 +482,9 @@ func (c *KvCacher) onEvents(evts []*Event) {
 }
 
 func (c *KvCacher) onKvEvents(evts []*KvEvent) {
+	if c.Cfg.OnEvent == nil {
+		return
+	}
 	for _, evt := range evts {
 		c.Cfg.OnEvent(evt)
 	}
@@ -539,20 +538,6 @@ func (c *KvCacher) Ready() <-chan struct{} {
 	return c.ready
 }
 
-type KvCacherConfig struct {
-	Key         string
-	InitSize    int
-	Timeout     time.Duration
-	Period      time.Duration
-	OnEvent     KvEventFunc
-	DeferHander DeferHandler
-}
-
-func (cfg *KvCacherConfig) String() string {
-	return fmt.Sprintf("{key: %s, timeout: %s, period: %s}",
-		cfg.Key, cfg.Timeout, cfg.Period)
-}
-
 func NewKvCache(c *KvCacher, size int) *KvCache {
 	return &KvCache{
 		owner:       c,
@@ -563,7 +548,12 @@ func NewKvCache(c *KvCacher, size int) *KvCache {
 	}
 }
 
-func NewKvCacher(cfg KvCacherConfig) Cacher {
+func NewKvCacher(opts ...KvCacherCfgOption) Cacher {
+	cfg := DefaultKvCacherConfig()
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+
 	cacher := &KvCacher{
 		Cfg:   cfg,
 		ready: make(chan struct{}),
@@ -571,23 +561,8 @@ func NewKvCacher(cfg KvCacherConfig) Cacher {
 			Client: registry.GetRegisterCenter(),
 			Key:    cfg.Key,
 		},
-		goroute:            util.NewGo(make(chan struct{})),
-		noEventMaxInterval: DEFAULT_MAX_NO_EVENT_INTERVAL,
+		goroute: util.NewGo(make(chan struct{})),
 	}
 	cacher.cache = NewKvCache(cacher, cfg.InitSize)
 	return cacher
-}
-
-func NewCacher(initSize int, prefix string, callback KvEventFunc) Cacher {
-	return NewTimeoutCacher(DEFAULT_LISTWATCH_TIMEOUT, initSize, prefix, callback)
-}
-
-func NewTimeoutCacher(ot time.Duration, initSize int, prefix string, callback KvEventFunc) Cacher {
-	return NewKvCacher(KvCacherConfig{
-		Key:      prefix,
-		InitSize: initSize,
-		Timeout:  ot,
-		Period:   time.Second,
-		OnEvent:  callback,
-	})
 }

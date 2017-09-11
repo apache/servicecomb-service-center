@@ -28,6 +28,7 @@ type DeferHandler interface {
 }
 
 type InstanceEventDeferHandler struct {
+	Percent float64
 	enabled bool
 	events  map[string]*Event
 	ttls    map[string]int64
@@ -35,12 +36,19 @@ type InstanceEventDeferHandler struct {
 	deferCh chan *Event
 }
 
+func (iedh *InstanceEventDeferHandler) deferMode(total int, del int) bool {
+	return iedh.Percent > 0 && total > 0 &&
+		del > 1 &&
+		float64(del/total) >= iedh.Percent
+}
+
 func (iedh *InstanceEventDeferHandler) needDefer(cache Cache, evts []*Event) bool {
 	kvCache, ok := cache.(*KvCache)
 	if !ok {
 		return false
 	}
-	if len(evts)/kvCache.Size() < 0 {
+
+	if !iedh.deferMode(kvCache.Size(), len(evts)) {
 		return false
 	}
 
@@ -79,27 +87,28 @@ func (iedh *InstanceEventDeferHandler) OnCondition(cache Cache, evts []*Event) b
 	iedh.init()
 
 	for _, evt := range evts {
+		kv, ok := evt.Object.(*mvccpb.KeyValue)
+		if !ok {
+			continue
+		}
+		key := util.BytesToStringWithNoCopy(kv.Key)
 		switch evt.Type {
 		case pb.EVT_CREATE, pb.EVT_UPDATE:
-			delete(iedh.events, evt.Key)
-			delete(iedh.ttls, evt.Key)
+			delete(iedh.events, key)
+			delete(iedh.ttls, key)
 
 			iedh.deferCh <- evt
 
-			util.Logger().Debugf("recover key %s events", evt.Key)
+			util.Logger().Debugf("recover key %s events", key)
 		case pb.EVT_DELETE:
-			kv, ok := evt.Object.(*mvccpb.KeyValue)
-			if !ok {
-				continue
-			}
 			var instance pb.MicroServiceInstance
 			err := json.Unmarshal(kv.Value, &instance)
 			if err != nil {
-				util.Logger().Errorf(err, "unmarshal instance file failed, key is %s", evt.Key)
+				util.Logger().Errorf(err, "unmarshal instance file failed, key is %s", key)
 				continue
 			}
-			iedh.events[evt.Key] = evt
-			iedh.ttls[evt.Key] = int64(instance.HealthCheck.Interval)
+			iedh.events[key] = evt
+			iedh.ttls[key] = int64(instance.HealthCheck.Interval)
 		}
 	}
 	iedh.mux.Unlock()
@@ -114,14 +123,7 @@ func (iedh *InstanceEventDeferHandler) check(stopCh <-chan struct{}) {
 			return
 		case <-time.After(time.Second):
 			iedh.mux.Lock()
-			if len(iedh.ttls) == 0 {
-				iedh.enabled = false
-				iedh.mux.Unlock()
-
-				util.Logger().Warnf(nil, "self preservation is stopped")
-				continue
-			}
-
+			start := len(iedh.ttls)
 			for key, ttl := range iedh.ttls {
 				ttl--
 				if ttl > 0 {
@@ -135,7 +137,11 @@ func (iedh *InstanceEventDeferHandler) check(stopCh <-chan struct{}) {
 
 				iedh.deferCh <- evt
 
-				util.Logger().Debugf("defer handle timed out, key is %s", evt.Key)
+				util.Logger().Debugf("defer handle timed out, key is %s", key)
+			}
+			if start > 0 && len(iedh.ttls) == 0 {
+				iedh.enabled = false
+				util.Logger().Warnf(nil, "self preservation is stopped")
 			}
 			iedh.mux.Unlock()
 		}
