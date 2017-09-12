@@ -122,11 +122,9 @@ func getServiceAllVersions(ctx context.Context, tenant string, appId string, ser
 		Version:     "",
 	})
 
-	resp, err := store.Store().ServiceIndex().Search(ctx, &registry.PluginOp{
-		Action:     registry.GET,
-		Key:        util.StringToBytesWithNoCopy(key),
-		WithPrefix: true,
-	})
+	resp, err := store.Store().ServiceIndex().Search(ctx,
+		registry.WithStrKey(key),
+		registry.WithPrefix())
 	if err != nil {
 		return nil, err
 	}
@@ -145,11 +143,9 @@ func getServiceAllVersions(ctx context.Context, tenant string, appId string, ser
 func getAllInstancesForOneService(ctx context.Context, tenant string, serviceId string) ([]*pb.MicroServiceInstance, error) {
 	key := apt.GenerateInstanceKey(tenant, serviceId, "")
 
-	resp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
-		Action:     registry.GET,
-		Key:        util.StringToBytesWithNoCopy(key),
-		WithPrefix: true,
-	})
+	resp, err := store.Store().Instance().Search(ctx,
+		registry.WithStrKey(key),
+		registry.WithPrefix())
 	if err != nil {
 		util.Logger().Errorf(err, "Get one service's instance failed from data source.")
 		return nil, err
@@ -171,11 +167,9 @@ func getAllInstancesForOneService(ctx context.Context, tenant string, serviceId 
 func getSchemaInfoUtil(ctx context.Context, tenant string, serviceId string) ([]*pb.SchemaInfos, error) {
 	key := apt.GenerateServiceSchemaKey(tenant, serviceId, "")
 	schemas := []*pb.SchemaInfos{}
-	resp, err := store.Store().Schema().Search(ctx, &registry.PluginOp{
-		Action:     registry.GET,
-		Key:        util.StringToBytesWithNoCopy(key),
-		WithPrefix: true,
-	})
+	resp, err := store.Store().Schema().Search(ctx,
+		registry.WithStrKey(key),
+		registry.WithPrefix())
 	if err != nil {
 		util.Logger().Errorf(err, "Get schema failded,%s")
 		return schemas, err

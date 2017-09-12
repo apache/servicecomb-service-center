@@ -86,11 +86,9 @@ func GetRulesUtil(ctx context.Context, tenant string, serviceId string) ([]*pb.S
 		"",
 	}, "/")
 
-	resp, err := store.Store().Rule().Search(ctx, &registry.PluginOp{
-		Action:     registry.GET,
-		Key:        util.StringToBytesWithNoCopy(key),
-		WithPrefix: true,
-	})
+	resp, err := store.Store().Rule().Search(ctx,
+		registry.WithStrKey(key),
+		registry.WithPrefix())
 	if err != nil {
 		return nil, err
 	}
@@ -109,11 +107,9 @@ func GetRulesUtil(ctx context.Context, tenant string, serviceId string) ([]*pb.S
 }
 
 func RuleExist(ctx context.Context, tenant string, serviceId string, attr string, pattern string) bool {
-	resp, err := store.Store().RuleIndex().Search(ctx, &registry.PluginOp{
-		Action:    registry.GET,
-		Key:       util.StringToBytesWithNoCopy(apt.GenerateRuleIndexKey(tenant, serviceId, attr, pattern)),
-		CountOnly: true,
-	})
+	resp, err := store.Store().RuleIndex().Search(ctx,
+		registry.WithStrKey(apt.GenerateRuleIndexKey(tenant, serviceId, attr, pattern)),
+		registry.WithCountOnly())
 	if err != nil || resp.Count == 0 {
 		return false
 	}
@@ -122,11 +118,9 @@ func RuleExist(ctx context.Context, tenant string, serviceId string, attr string
 
 func GetServiceRuleType(ctx context.Context, tenant string, serviceId string) (string, int, error) {
 	key := apt.GenerateServiceRuleKey(tenant, serviceId, "")
-	resp, err := store.Store().Rule().Search(ctx, &registry.PluginOp{
-		Action:     registry.GET,
-		Key:        util.StringToBytesWithNoCopy(key),
-		WithPrefix: true,
-	})
+	resp, err := store.Store().Rule().Search(ctx,
+		registry.WithStrKey(key),
+		registry.WithPrefix())
 	if err != nil {
 		util.Logger().Errorf(err, "Get rule failed.%s", err.Error())
 		return "", 0, err
@@ -143,11 +137,8 @@ func GetServiceRuleType(ctx context.Context, tenant string, serviceId string) (s
 }
 
 func GetOneRule(ctx context.Context, tenant, serviceId, ruleId string) (*pb.ServiceRule, error) {
-	opt := &registry.PluginOp{
-		Action: registry.GET,
-		Key:    util.StringToBytesWithNoCopy(apt.GenerateServiceRuleKey(tenant, serviceId, ruleId)),
-	}
-	resp, err := store.Store().Rule().Search(ctx, opt)
+	resp, err := store.Store().Rule().Search(ctx,
+		registry.WithStrKey(apt.GenerateServiceRuleKey(tenant, serviceId, ruleId)))
 	if err != nil {
 		util.Logger().Errorf(nil, "Get rule for service failed for %s.", err.Error())
 		return nil, err

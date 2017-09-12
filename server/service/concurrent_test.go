@@ -89,10 +89,8 @@ func TestServiceController_CreateDependenciesForMircServices(t *testing.T) {
 			ServiceName: "service0",
 			Version:     "1.0.0",
 		})
-		resp, err := registry.GetRegisterCenter().Do(getContext(), &registry.PluginOp{
-			Action: registry.GET,
-			Key:    []byte(key),
-		})
+		resp, err := registry.GetRegisterCenter().Do(getContext(),
+			registry.GET, registry.WithStrKey(key))
 		if err != nil {
 			util.Logger().Errorf(err, "%s failed.", key)
 			return

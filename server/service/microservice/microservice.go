@@ -42,11 +42,9 @@ func init() {
 */
 func GetServiceWithRev(ctx context.Context, domain string, id string, rev int64) (*pb.MicroService, error) {
 	key := apt.GenerateServiceKey(domain, id)
-	serviceResp, err := store.Store().Service().Search(ctx, &registry.PluginOp{
-		Action:  registry.GET,
-		Key:     util.StringToBytesWithNoCopy(key),
-		WithRev: rev,
-	})
+	serviceResp, err := store.Store().Service().Search(ctx,
+		registry.WithStrKey(key),
+		registry.WithRev(rev))
 	if err != nil {
 		return nil, err
 	}
@@ -81,11 +79,9 @@ func GetService(ctx context.Context, tenant string, serviceId string) (*pb.Micro
 
 func SearchService(ctx context.Context, tenant, serviceId string, mode registry.CacheMode) (*pb.MicroService, error) {
 	key := apt.GenerateServiceKey(tenant, serviceId)
-	serviceResp, err := store.Store().Service().Search(ctx, &registry.PluginOp{
-		Action: registry.GET,
-		Key:    util.StringToBytesWithNoCopy(key),
-		Mode:   mode,
-	})
+	serviceResp, err := store.Store().Service().Search(ctx,
+		registry.WithStrKey(key),
+		registry.WithMode(mode))
 	if err != nil {
 		return nil, err
 	}
@@ -102,11 +98,9 @@ func SearchService(ctx context.Context, tenant, serviceId string, mode registry.
 
 func GetServicesRawData(ctx context.Context, tenant string) ([]*mvccpb.KeyValue, error) {
 	key := apt.GenerateServiceKey(tenant, "")
-	resp, err := store.Store().Service().Search(ctx, &registry.PluginOp{
-		Action:     registry.GET,
-		Key:        util.StringToBytesWithNoCopy(key),
-		WithPrefix: true,
-	})
+	resp, err := store.Store().Service().Search(ctx,
+		registry.WithStrKey(key),
+		registry.WithPrefix())
 	return resp.Kvs, err
 }
 
@@ -142,11 +136,9 @@ func GetServiceId(ctx context.Context, key *pb.MicroServiceKey) (serviceId strin
 }
 
 func SearchServiceId(ctx context.Context, key *pb.MicroServiceKey, mode registry.CacheMode) (string, error) {
-	resp, err := store.Store().ServiceIndex().Search(ctx, &registry.PluginOp{
-		Action: registry.GET,
-		Key:    util.StringToBytesWithNoCopy(apt.GenerateServiceIndexKey(key)),
-		Mode:   mode,
-	})
+	resp, err := store.Store().ServiceIndex().Search(ctx,
+		registry.WithStrKey(apt.GenerateServiceIndexKey(key)),
+		registry.WithMode(mode))
 	if err != nil {
 		return "", err
 	}
@@ -157,11 +149,9 @@ func SearchServiceId(ctx context.Context, key *pb.MicroServiceKey, mode registry
 }
 
 func SearchServiceIdFromAlias(ctx context.Context, key *pb.MicroServiceKey, mode registry.CacheMode) (string, error) {
-	resp, err := store.Store().ServiceAlias().Search(ctx, &registry.PluginOp{
-		Action: registry.GET,
-		Key:    util.StringToBytesWithNoCopy(apt.GenerateServiceAliasKey(key)),
-		Mode:   mode,
-	})
+	resp, err := store.Store().ServiceAlias().Search(ctx,
+		registry.WithStrKey(apt.GenerateServiceAliasKey(key)),
+		registry.WithMode(mode))
 	if err != nil {
 		return "", err
 	}
@@ -179,12 +169,10 @@ func GetServiceAllVersions(ctx context.Context, key *pb.MicroServiceKey, alias b
 	} else {
 		prefix = apt.GenerateServiceIndexKey(key)
 	}
-	resp, err := store.Store().ServiceIndex().Search(ctx, &registry.PluginOp{
-		Action:     registry.GET,
-		Key:        util.StringToBytesWithNoCopy(prefix),
-		WithPrefix: true,
-		SortOrder:  registry.SORT_DESCEND,
-	})
+	resp, err := store.Store().ServiceIndex().Search(ctx,
+		registry.WithStrKey(prefix),
+		registry.WithPrefix(),
+		registry.WithDescendOrder())
 	return resp, err
 }
 
@@ -224,11 +212,9 @@ FIND_RULE:
 }
 
 func ServiceExist(ctx context.Context, tenant string, serviceId string) bool {
-	resp, err := store.Store().Service().Search(ctx, &registry.PluginOp{
-		Action:    registry.GET,
-		Key:       util.StringToBytesWithNoCopy(apt.GenerateServiceKey(tenant, serviceId)),
-		CountOnly: true,
-	})
+	resp, err := store.Store().Service().Search(ctx,
+		registry.WithStrKey(apt.GenerateServiceKey(tenant, serviceId)),
+		registry.WithCountOnly())
 	if err != nil || resp.Count == 0 {
 		return false
 	}

@@ -14,7 +14,6 @@
 package store
 
 import (
-	"errors"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/util"
@@ -51,21 +50,30 @@ type Indexer struct {
 	isClose          bool
 }
 
-func (i *Indexer) Search(ctx context.Context, op *registry.PluginOp) (*registry.PluginResponse, error) {
-	if op.Action != registry.GET {
-		return nil, errors.New("unexpected action")
-	}
+func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (*registry.PluginResponse, error) {
+	op := registry.OpGet(opts...)
 
 	key := util.BytesToStringWithNoCopy(op.Key)
 
-	if op.Mode == registry.MODE_NO_CACHE || op.WithRev > 0 {
+	if op.Mode == registry.MODE_NO_CACHE || op.Revision > 0 {
 		util.Logger().Debugf("search %s match WitchNoCache or WitchRev, request etcd server, key: %s",
 			i.cacheType, key)
-		return registry.GetRegisterCenter().Do(ctx, op)
+		return registry.GetRegisterCenter().Do(ctx, opts...)
 	}
 
-	if op.WithPrefix {
-		return i.searchPrefixKeyFromCacheOrRemote(ctx, op)
+	if op.Prefix {
+		resp, err := i.searchPrefixKeyWithCache(ctx, &op)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(resp.Kvs) > 0 || op.Mode == registry.MODE_CACHE {
+			return resp, nil
+		}
+
+		util.Logger().Debugf("can not find any key from %s cache with prefix, request etcd server, key: %s",
+			i.cacheType, key)
+		return registry.GetRegisterCenter().Do(ctx, opts...)
 	}
 
 	resp := &registry.PluginResponse{
@@ -85,7 +93,7 @@ func (i *Indexer) Search(ctx context.Context, op *registry.PluginOp) (*registry.
 		}
 
 		util.Logger().Debugf("%s cache does not store this key, request etcd server, key: %s", i.cacheType, key)
-		return registry.GetRegisterCenter().Do(ctx, op)
+		return registry.GetRegisterCenter().Do(ctx, opts...)
 	}
 
 	cacheData := i.Cache().Data(key)
@@ -96,7 +104,7 @@ func (i *Indexer) Search(ctx context.Context, op *registry.PluginOp) (*registry.
 
 		util.Logger().Debugf("do not match any key in %s cache store, request etcd server, key: %s",
 			i.cacheType, key)
-		return registry.GetRegisterCenter().Do(ctx, op)
+		return registry.GetRegisterCenter().Do(ctx, opts...)
 	}
 
 	resp.Count = 1
@@ -108,7 +116,7 @@ func (i *Indexer) Cache() Cache {
 	return i.cacher.Cache()
 }
 
-func (i *Indexer) searchPrefixKeyFromCacheOrRemote(ctx context.Context, op *registry.PluginOp) (*registry.PluginResponse, error) {
+func (i *Indexer) searchPrefixKeyWithCache(ctx context.Context, op *registry.PluginOp) (*registry.PluginResponse, error) {
 	resp := &registry.PluginResponse{
 		Action:    op.Action,
 		Kvs:       []*mvccpb.KeyValue{},
@@ -121,18 +129,7 @@ func (i *Indexer) searchPrefixKeyFromCacheOrRemote(ctx context.Context, op *regi
 
 	i.prefixLock.RLock()
 	resp.Count = int64(i.getPrefixKey(nil, prefix))
-	if resp.Count == 0 {
-		i.prefixLock.RUnlock()
-		if op.Mode == registry.MODE_CACHE {
-			return resp, nil
-		}
-
-		util.Logger().Debugf("can not find any key from %s cache with prefix, request etcd server, key: %s",
-			i.cacheType, prefix)
-		return registry.GetRegisterCenter().Do(ctx, op)
-	}
-
-	if op.CountOnly {
+	if resp.Count == 0 || op.CountOnly {
 		i.prefixLock.RUnlock()
 		return resp, nil
 	}

@@ -14,15 +14,15 @@
 package service
 
 import (
-	"github.com/ServiceComb/service-center/server/core/registry"
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
+	"github.com/ServiceComb/service-center/server/infra/quota"
 	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
-	"github.com/ServiceComb/service-center/server/infra/quota"
 )
 
 func (s *ServiceController) GetSchemaInfo(ctx context.Context, request *pb.GetSchemaRequest) (*pb.GetSchemaResponse, error) {
@@ -51,10 +51,7 @@ func (s *ServiceController) GetSchemaInfo(ctx context.Context, request *pb.GetSc
 	}
 
 	key := apt.GenerateServiceSchemaKey(tenant, request.ServiceId, request.SchemaId)
-	resp, errDo := store.Store().Schema().Search(ctx, &registry.PluginOp{
-		Action: registry.GET,
-		Key:    util.StringToBytesWithNoCopy(key),
-	})
+	resp, errDo := store.Store().Schema().Search(ctx, registry.WithStrKey(key))
 	if errDo != nil {
 		util.Logger().Errorf(errDo, "get schema failed, serviceId %s, schemaId %s: get schema info failed.", request.ServiceId, request.SchemaId)
 		return &pb.GetSchemaResponse{
@@ -110,10 +107,7 @@ func (s *ServiceController) DeleteSchema(ctx context.Context, request *pb.Delete
 			Response: pb.CreateResponse(pb.Response_FAIL, "Schema info does not exist."),
 		}, nil
 	}
-	_, errDo := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action: registry.DELETE,
-		Key:    util.StringToBytesWithNoCopy(key),
-	})
+	_, errDo := registry.GetRegisterCenter().Do(ctx, registry.DEL, registry.WithStrKey(key))
 	if errDo != nil {
 		util.Logger().Errorf(errDo, "delete schema failded, serviceId %s, schemaId %s: delete schema from etcd faild.", request.ServiceId, request.SchemaId)
 		return &pb.DeleteSchemaResponse{
@@ -142,24 +136,23 @@ func (s *ServiceController) ModifySchema(ctx context.Context, request *pb.Modify
 
 	ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.SCHEMAQuotaType, tenant, request.ServiceId, 1)
 	if err != nil {
-		util.Logger().Errorf(err, "Add schema info failed, check resource num failed, %s, %s", request.ServiceId, request. SchemaId)
+		util.Logger().Errorf(err, "Add schema info failed, check resource num failed, %s, %s", request.ServiceId, request.SchemaId)
 		return &pb.ModifySchemaResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Modify schema info failed, check resource num failed."),
 		}, err
 	}
 	if !ok {
-		util.Logger().Errorf(err, "Add schema info failed, reach the max size of shema, %s, %s", request.ServiceId, request. SchemaId)
+		util.Logger().Errorf(err, "Add schema info failed, reach the max size of shema, %s, %s", request.ServiceId, request.SchemaId)
 		return &pb.ModifySchemaResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "reach the max size of shema."),
 		}, nil
 	}
 
 	key := apt.GenerateServiceSchemaKey(tenant, request.ServiceId, request.SchemaId)
-	_, errDo := registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action: registry.PUT,
-		Key:    util.StringToBytesWithNoCopy(key),
-		Value:  util.StringToBytesWithNoCopy(request.Schema),
-	})
+	_, errDo := registry.GetRegisterCenter().Do(ctx,
+		registry.PUT,
+		registry.WithStrKey(key),
+		registry.WithStrValue(request.Schema))
 	if errDo != nil {
 		util.Logger().Errorf(errDo, "update schema failded, serviceId %s, schemaId %s: commit schema into etcd failed.", request.ServiceId, request.SchemaId)
 		return &pb.ModifySchemaResponse{

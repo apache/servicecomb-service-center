@@ -118,21 +118,22 @@ func (m *Locker) ID() string {
 }
 
 func (m *Locker) Lock() error {
-	ops := &registry.PluginOp{
-		Action: registry.PUT,
-		Key:    util.StringToBytesWithNoCopy(m.builder.key),
-		Value:  util.StringToBytesWithNoCopy(m.id),
-	}
+	opts := []registry.PluginOpOption{
+		registry.WithStrKey(m.builder.key),
+		registry.WithStrValue(m.id)}
+
 	for {
 		util.Logger().Infof("Trying to create a lock: key=%s, id=%s", m.builder.key, m.id)
+
+		putOpts := opts
 		if m.builder.ttl > 0 {
 			leaseID, err := registry.GetRegisterCenter().LeaseGrant(m.builder.ctx, m.builder.ttl)
 			if err != nil {
 				return err
 			}
-			ops.Lease = leaseID
+			putOpts = append(opts, registry.WithLease(leaseID))
 		}
-		success, err := registry.GetRegisterCenter().PutNoOverride(m.builder.ctx, ops)
+		success, err := registry.GetRegisterCenter().PutNoOverride(m.builder.ctx, putOpts...)
 		if err == nil && success {
 			util.Logger().Infof("Create Lock OK, key=%s, id=%s", m.builder.key, m.id)
 			return nil
@@ -141,18 +142,17 @@ func (m *Locker) Lock() error {
 
 		ctx, cancel := context.WithTimeout(m.builder.ctx, defaultTTL*time.Second)
 		go func() {
-			err := registry.GetRegisterCenter().Watch(ctx, &registry.PluginOp{
-				Action:     registry.GET,
-				Key:        util.StringToBytesWithNoCopy(m.builder.key),
-				WithPrefix: false,
-				WithPrevKV: false,
-			}, func(message string, evt *registry.PluginResponse) error {
-				if evt != nil && evt.Action == registry.DELETE {
-					// break this for-loop, and try to create the node again.
-					return fmt.Errorf("Lock released, id=%s", m.id)
-				}
-				return nil //fmt.Errorf("Lock released accidentally(%v), id=%s", evt.Type, m.id)
-			})
+			err := registry.GetRegisterCenter().Watch(ctx,
+				registry.GET,
+				registry.WithStrKey(m.builder.key),
+				registry.WithWatchCallback(
+					func(message string, evt *registry.PluginResponse) error {
+						if evt != nil && evt.Action == registry.Delete {
+							// break this for-loop, and try to create the node again.
+							return fmt.Errorf("Lock released, id=%s", m.id)
+						}
+						return nil
+					}))
 			if err != nil {
 				util.Logger().Errorf(nil, "%s, key=%s, id=%s", err.Error(), m.builder.key, m.id)
 			}
@@ -175,12 +175,12 @@ func (m *Locker) Lock() error {
 // It is allowed for one goroutine to lock a Mutex and then
 // arrange for another goroutine to unlock it.
 func (m *Locker) Unlock() (err error) {
-	ops := &registry.PluginOp{
-		Action: registry.DELETE,
-		Key:    util.StringToBytesWithNoCopy(m.builder.key),
-	}
+	opts := []registry.PluginOpOption{
+		registry.DEL,
+		registry.WithStrKey(m.builder.key)}
+
 	for i := 1; i <= defaultTry; i++ {
-		_, err = registry.GetRegisterCenter().Do(m.builder.ctx, ops)
+		_, err = registry.GetRegisterCenter().Do(m.builder.ctx, opts...)
 		if err == nil {
 			if !IsDebug {
 				m.builder.mutex.Unlock()

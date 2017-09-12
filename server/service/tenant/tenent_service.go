@@ -24,12 +24,9 @@ import (
 )
 
 func GetAllTenantRawData() ([]*mvccpb.KeyValue, error) {
-	opt := &registry.PluginOp{
-		Key:        util.StringToBytesWithNoCopy(apt.GenerateDomainKey("")),
-		Action:     registry.GET,
-		WithPrefix: true,
-	}
-	rsp, err := store.Store().Domain().Search(context.Background(), opt)
+	rsp, err := store.Store().Domain().Search(context.Background(),
+		registry.WithStrKey(apt.GenerateDomainKey("")),
+		registry.WithPrefix())
 	if err != nil {
 		return nil, err
 	}
@@ -58,12 +55,9 @@ func GetAllTenent() ([]string, error) {
 }
 
 func DomainExist(ctx context.Context, domain string) (bool, error) {
-	opt := &registry.PluginOp{
-		Key:       util.StringToBytesWithNoCopy(apt.GenerateDomainKey(domain)),
-		Action:    registry.GET,
-		CountOnly: true,
-	}
-	rsp, err := store.Store().Domain().Search(ctx, opt)
+	rsp, err := store.Store().Domain().Search(ctx,
+		registry.WithStrKey(apt.GenerateDomainKey(domain)),
+		registry.WithCountOnly())
 	if err != nil {
 		return false, err
 	}
@@ -71,11 +65,9 @@ func DomainExist(ctx context.Context, domain string) (bool, error) {
 }
 
 func NewDomain(ctx context.Context, tenant string) error {
-	opt := &registry.PluginOp{
-		Action: registry.PUT,
-		Key:    util.StringToBytesWithNoCopy(apt.GenerateDomainKey(tenant)),
-	}
-	_, err := registry.GetRegisterCenter().Do(ctx, opt)
+	_, err := registry.GetRegisterCenter().Do(ctx,
+		registry.PUT,
+		registry.WithStrKey(apt.GenerateDomainKey(tenant)))
 	if err != nil {
 		return err
 	}
