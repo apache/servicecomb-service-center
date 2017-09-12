@@ -14,7 +14,6 @@
 package store
 
 import (
-	"fmt"
 	"github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/util"
@@ -25,11 +24,9 @@ import (
 )
 
 const (
-	DEFAULT_MAX_NO_EVENT_INTERVAL = 1 // TODO it should be set to 1 for prevent etcd data is lost accidentally.
-	DEFAULT_LISTWATCH_TIMEOUT     = 30 * time.Second
-	DEFAULT_COMPACT_TIMES         = 3
-	DEFAULT_COMPACT_TIMEOUT       = 5 * time.Minute
-	event_block_size              = 1000
+	DEFAULT_COMPACT_TIMES   = 3
+	DEFAULT_COMPACT_TIMEOUT = 5 * time.Minute
+	event_block_size        = 1000
 )
 
 var (
@@ -142,12 +139,18 @@ func (c *KvCache) Unlock() {
 	c.rwMux.Unlock()
 }
 
-type KvCacher struct {
-	Cfg *KvCacherConfig
+func (c *KvCache) Size() (l int) {
+	c.rwMux.RLock()
+	l = len(c.store)
+	c.rwMux.RUnlock()
+	return
+}
 
-	lastRev            int64
-	noEventInterval    int
-	noEventMaxInterval int
+type KvCacher struct {
+	Cfg *KvCacherCfg
+
+	lastRev         int64
+	noEventInterval int
 
 	ready   chan struct{}
 	lw      ListWatcher
@@ -170,7 +173,7 @@ func (c *KvCacher) needList() bool {
 		return false
 	}
 	c.noEventInterval++
-	if c.noEventInterval < c.noEventMaxInterval {
+	if c.noEventInterval < c.Cfg.NoEventMaxInterval {
 		return false
 	}
 
@@ -250,58 +253,58 @@ func (c *KvCacher) handleWatcher(watcher *Watcher) error {
 	return nil
 }
 
+func (c *KvCacher) needDeferHandle(evts []*Event) bool {
+	if c.Cfg.DeferHander == nil {
+		return false
+	}
+
+	return c.Cfg.DeferHander.OnCondition(c.Cache(), evts)
+}
+
+func (c *KvCacher) deferHandle(stopCh <-chan struct{}) {
+	if c.Cfg.DeferHander == nil {
+		return
+	}
+
+	i, evts := 0, make([]*Event, event_block_size)
+	for {
+		select {
+		case <-stopCh:
+			return
+		case evt, ok := <-c.Cfg.DeferHander.HandleChan():
+			if !ok {
+				<-time.After(time.Second)
+				continue
+			}
+
+			if i >= event_block_size {
+				c.onEvents(evts[:i])
+				i = 0
+			}
+
+			evts[i] = evt
+			i++
+		case <-time.After(time.Second):
+			if i == 0 {
+				continue
+			}
+
+			c.onEvents(evts[:i])
+			i = 0
+		}
+	}
+}
+
 func (c *KvCacher) sync(evts []*Event) {
 	if len(evts) == 0 {
 		return
 	}
 
-	cache := c.Cache().(*KvCache)
-	idx := 0
-	kvEvts := make([]*KvEvent, len(evts))
-	store := cache.Lock()
-	for _, evt := range evts {
-		kv := evt.Object.(*mvccpb.KeyValue)
-		key := util.BytesToStringWithNoCopy(kv.Key)
-		prevKv, ok := store[key]
-		switch evt.Type {
-		case proto.EVT_CREATE, proto.EVT_UPDATE:
-			util.Logger().Debugf("sync %s event and notify watcher, cache key %s, %+v", evt.Type, key, kv)
-			store[key] = kv
-			t := evt.Type
-			if !ok && evt.Type != proto.EVT_CREATE {
-				util.Logger().Warnf(nil, "unexpected %s event! it should be %s key %s",
-					evt.Type, proto.EVT_CREATE, key)
-				t = proto.EVT_CREATE
-			}
-			if ok && evt.Type != proto.EVT_UPDATE {
-				util.Logger().Warnf(nil, "unexpected %s event! it should be %s key %s",
-					evt.Type, proto.EVT_UPDATE, key)
-				t = proto.EVT_UPDATE
-			}
-			kvEvts[idx] = &KvEvent{
-				Revision: evt.Revision,
-				Action:   t,
-				KV:       kv,
-			}
-			idx++
-		case proto.EVT_DELETE:
-			if ok {
-				util.Logger().Debugf("sync %s event and notify watcher, remove key %s, %+v", evt.Type, key, kv)
-				delete(store, key)
-				kvEvts[idx] = &KvEvent{
-					Revision: evt.Revision,
-					Action:   evt.Type,
-					KV:       prevKv,
-				}
-				idx++
-				continue
-			}
-			util.Logger().Warnf(nil, "unexpected %s event! nonexistent key %s", evt.Type, key)
-		}
+	if c.needDeferHandle(evts) {
+		return
 	}
-	cache.Unlock()
 
-	c.onKvEvents(kvEvts[:idx])
+	c.onEvents(evts)
 }
 
 func (c *KvCacher) filter(rev int64, items []*mvccpb.KeyValue) []*Event {
@@ -423,7 +426,65 @@ func (c *KvCacher) filterCreateOrUpdate(store map[string]*mvccpb.KeyValue, newSt
 	}
 }
 
+func (c *KvCacher) onEvents(evts []*Event) {
+	cache := c.Cache().(*KvCache)
+	idx := 0
+	kvEvts := make([]*KvEvent, len(evts))
+	store := cache.Lock()
+	for _, evt := range evts {
+		kv := evt.Object.(*mvccpb.KeyValue)
+		key := util.BytesToStringWithNoCopy(kv.Key)
+		prevKv, ok := store[key]
+
+		switch evt.Type {
+		case proto.EVT_CREATE, proto.EVT_UPDATE:
+			util.Logger().Debugf("sync %s event and notify watcher, cache key %s, %+v", evt.Type, key, kv)
+
+			t := evt.Type
+			if !ok && evt.Type != proto.EVT_CREATE {
+				util.Logger().Warnf(nil, "unexpected %s event! it should be %s key %s",
+					evt.Type, proto.EVT_CREATE, key)
+				t = proto.EVT_CREATE
+			}
+
+			if ok && evt.Type != proto.EVT_UPDATE {
+				util.Logger().Warnf(nil, "unexpected %s event! it should be %s key %s",
+					evt.Type, proto.EVT_UPDATE, key)
+				t = proto.EVT_UPDATE
+			}
+
+			store[key] = kv
+			kvEvts[idx] = &KvEvent{
+				Revision: evt.Revision,
+				Action:   t,
+				KV:       kv,
+			}
+			idx++
+		case proto.EVT_DELETE:
+			if !ok {
+				util.Logger().Warnf(nil, "unexpected %s event! nonexistent key %s", evt.Type, key)
+				continue
+			}
+
+			util.Logger().Debugf("sync %s event and notify watcher, remove key %s, %+v", evt.Type, key, kv)
+			delete(store, key)
+			kvEvts[idx] = &KvEvent{
+				Revision: evt.Revision,
+				Action:   evt.Type,
+				KV:       prevKv,
+			}
+			idx++
+		}
+	}
+	cache.Unlock()
+
+	c.onKvEvents(kvEvts[:idx])
+}
+
 func (c *KvCacher) onKvEvents(evts []*KvEvent) {
+	if c.Cfg.OnEvent == nil {
+		return
+	}
 	for _, evt := range evts {
 		c.Cfg.OnEvent(evt)
 	}
@@ -453,6 +514,8 @@ func (c *KvCacher) run() {
 			}
 		}
 	})
+
+	c.goroute.Do(c.deferHandle)
 }
 
 func (c *KvCacher) Cache() Cache {
@@ -475,19 +538,6 @@ func (c *KvCacher) Ready() <-chan struct{} {
 	return c.ready
 }
 
-type KvCacherConfig struct {
-	Key      string
-	InitSize int
-	Timeout  time.Duration
-	Period   time.Duration
-	OnEvent  KvEventFunc
-}
-
-func (cfg *KvCacherConfig) String() string {
-	return fmt.Sprintf("{key: %s, timeout: %s, period: %s}",
-		cfg.Key, cfg.Timeout, cfg.Period)
-}
-
 func NewKvCache(c *KvCacher, size int) *KvCache {
 	return &KvCache{
 		owner:       c,
@@ -498,31 +548,21 @@ func NewKvCache(c *KvCacher, size int) *KvCache {
 	}
 }
 
-func NewKvCacher(cfg *KvCacherConfig) Cacher {
+func NewKvCacher(opts ...KvCacherCfgOption) Cacher {
+	cfg := DefaultKvCacherConfig()
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+
 	cacher := &KvCacher{
-		Cfg:   cfg,
+		Cfg:   &cfg,
 		ready: make(chan struct{}),
 		lw: ListWatcher{
 			Client: registry.GetRegisterCenter(),
 			Key:    cfg.Key,
 		},
-		goroute:            util.NewGo(make(chan struct{})),
-		noEventMaxInterval: DEFAULT_MAX_NO_EVENT_INTERVAL,
+		goroute: util.NewGo(make(chan struct{})),
 	}
 	cacher.cache = NewKvCache(cacher, cfg.InitSize)
 	return cacher
-}
-
-func NewCacher(initSize int, prefix string, callback KvEventFunc) Cacher {
-	return NewTimeoutCacher(DEFAULT_LISTWATCH_TIMEOUT, initSize, prefix, callback)
-}
-
-func NewTimeoutCacher(ot time.Duration, initSize int, prefix string, callback KvEventFunc) Cacher {
-	return NewKvCacher(&KvCacherConfig{
-		Key:      prefix,
-		InitSize: initSize,
-		Timeout:  ot,
-		Period:   time.Second,
-		OnEvent:  callback,
-	})
 }

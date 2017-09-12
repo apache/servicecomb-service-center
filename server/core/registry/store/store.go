@@ -36,7 +36,6 @@ const (
 	RULE_INDEX
 	DEPENDENCY
 	DEPENDENCY_RULE
-	ENDPOINTS_INDEX
 	typeEnd
 )
 
@@ -53,7 +52,6 @@ var TypeNames = []string{
 	RULE_INDEX:      "RULE_INDEX",
 	DEPENDENCY:      "DEPENDENCY",
 	DEPENDENCY_RULE: "DEPENDENCY_RULE",
-	ENDPOINTS_INDEX: "ENDPOINTS_INDEX",
 }
 
 var TypeRoots = map[StoreType]string{
@@ -69,7 +67,6 @@ var TypeRoots = map[StoreType]string{
 	RULE_INDEX:      apt.GetServiceRuleIndexRootKey(""),
 	DEPENDENCY:      apt.GetServiceDependencyRootKey(""),
 	DEPENDENCY_RULE: apt.GetServiceDependencyRuleRootKey(""),
-	ENDPOINTS_INDEX: apt.GetInstancesEndpointsIndexRootKey(""),
 }
 
 var store *KvStore
@@ -127,16 +124,22 @@ type KvStore struct {
 	isClose     bool
 }
 
-func (s *KvStore) newStore(t StoreType, initSize int) {
-	s.newCacherStore(t, NewCacher(initSize, TypeRoots[t],
-		func(evt *KvEvent) {
-			s.indexers[t].OnCacheEvent(evt)
-			select {
-			case <-s.Ready():
-				EventHandler(t).OnEvent(evt)
-			default:
-			}
-		}))
+func (s *KvStore) dispatchEvent(t StoreType, evt *KvEvent) {
+	s.indexers[t].OnCacheEvent(evt)
+	select {
+	case <-s.Ready():
+		EventProxy(t).OnEvent(evt)
+	default:
+	}
+}
+
+func (s *KvStore) newStore(t StoreType, opts ...KvCacherCfgOption) {
+	opts = append(opts,
+		WithKey(TypeRoots[t]),
+		WithInitSize(s.StoreSize(t)),
+		WithEventFunc(func(evt *KvEvent) { s.dispatchEvent(t, evt) }),
+	)
+	s.newCacherStore(t, NewKvCacher(opts...))
 }
 
 func (s *KvStore) newNullStore(t StoreType) {
@@ -154,19 +157,33 @@ func (s *KvStore) Run() {
 	s.asyncTasker.Run()
 }
 
+func (s *KvStore) StoreSize(t StoreType) int {
+	switch t {
+	case DOMAIN:
+		return 10
+	case INSTANCE, LEASE:
+		return 1000
+	default:
+		return 100
+	}
+}
+
+func (s *KvStore) SelfPreservationHandler() DeferHandler {
+	return &InstanceEventDeferHandler{Percent: DEFAULT_SELF_PRESERVATION_PERCENT}
+}
+
 func (s *KvStore) store() {
-	s.newStore(DOMAIN, 10)
-	s.newStore(SERVICE, 100)
-	s.newStore(INSTANCE, 1000)
-	s.newStore(LEASE, 1000)
-	s.newStore(SERVICE_INDEX, 100)
-	s.newStore(SERVICE_ALIAS, 100)
-	s.newStore(ENDPOINTS_INDEX, 1000)
-	s.newStore(DEPENDENCY, 100)
-	s.newStore(DEPENDENCY_RULE, 100)
-	s.newStore(SERVICE_TAG, 100)
-	s.newStore(RULE, 100)
-	s.newStore(RULE_INDEX, 100)
+	s.newStore(DOMAIN)
+	s.newStore(SERVICE)
+	s.newStore(INSTANCE, WithDeferHandler(s.SelfPreservationHandler()))
+	s.newStore(LEASE)
+	s.newStore(SERVICE_INDEX)
+	s.newStore(SERVICE_ALIAS)
+	s.newStore(DEPENDENCY)
+	s.newStore(DEPENDENCY_RULE)
+	s.newStore(SERVICE_TAG)
+	s.newStore(RULE)
+	s.newStore(RULE_INDEX)
 	for _, i := range s.indexers {
 		<-i.Ready()
 	}
@@ -280,10 +297,6 @@ func (s *KvStore) Dependency() *Indexer {
 
 func (s *KvStore) DependencyRule() *Indexer {
 	return s.indexers[DEPENDENCY_RULE]
-}
-
-func (s *KvStore) EndpointsIndex() *Indexer {
-	return s.indexers[ENDPOINTS_INDEX]
 }
 
 func (s *KvStore) Domain() *Indexer {

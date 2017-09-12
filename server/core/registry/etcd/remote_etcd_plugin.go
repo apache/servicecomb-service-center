@@ -469,7 +469,11 @@ func (c *EtcdClient) Watch(ctx context.Context, op *registry.PluginOp, send func
 					switch evt.Type {
 					case mvccpb.DELETE:
 						dIdx--
-						kvs[dIdx] = evt.Kv
+						kv := evt.PrevKv
+						if kv == nil {
+							kv = evt.Kv
+						}
+						kvs[dIdx] = kv
 					default:
 						kvs[pIdx] = evt.Kv
 						pIdx++

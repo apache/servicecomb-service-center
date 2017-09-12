@@ -63,24 +63,6 @@ func (s *ServiceCenterServer) Run() {
 	s.waitForQuit()
 }
 
-func (s *ServiceCenterServer) checkBackendReady() {
-	var client registry.Registry
-	wait := []int{1, 1, 1, 5, 10, 20, 30, 60}
-	for i := 0; client == nil; i++ {
-		client = registry.GetRegisterCenter()
-		if client != nil {
-			return
-		}
-
-		if i >= len(wait) {
-			i = len(wait) - 1
-		}
-		t := time.Duration(wait[i]) * time.Second
-		util.Logger().Errorf(nil, "initialize service center failed, retry after %s", t)
-		<-time.After(t)
-	}
-}
-
 func (s *ServiceCenterServer) waitForQuit() {
 	var err error
 	select {
@@ -109,8 +91,6 @@ func (s *ServiceCenterServer) needUpgrade() bool {
 }
 
 func (s *ServiceCenterServer) waitForReady() {
-	s.checkBackendReady()
-
 	lock, err := mux.Lock(mux.GLOBAL_LOCK)
 	if err != nil {
 		util.Logger().Errorf(err, "wait for server ready failed")

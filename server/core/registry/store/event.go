@@ -20,13 +20,13 @@ import (
 )
 
 var (
-	evtHandlers map[StoreType]*KvEventHandler
+	evtProxies map[StoreType]*KvEventProxy
 )
 
 func init() {
-	evtHandlers = make(map[StoreType]*KvEventHandler)
+	evtProxies = make(map[StoreType]*KvEventProxy)
 	for i := StoreType(0); i != typeEnd; i++ {
-		evtHandlers[i] = &KvEventHandler{
+		evtProxies[i] = &KvEventProxy{
 			evtHandleFuncs: make([]KvEventFunc, 0, 5),
 		}
 	}
@@ -40,18 +40,23 @@ type KvEvent struct {
 	KV       *mvccpb.KeyValue
 }
 
-type KvEventHandler struct {
+type KvEventHandler interface {
+	Type() StoreType
+	OnEvent(evt *KvEvent)
+}
+
+type KvEventProxy struct {
 	evtHandleFuncs []KvEventFunc
 	lock           sync.RWMutex
 }
 
-func (h *KvEventHandler) AddHandleFunc(f KvEventFunc) {
+func (h *KvEventProxy) AddHandleFunc(f KvEventFunc) {
 	h.lock.Lock()
 	h.evtHandleFuncs = append(h.evtHandleFuncs, f)
 	h.lock.Unlock()
 }
 
-func (h *KvEventHandler) OnEvent(evt *KvEvent) {
+func (h *KvEventProxy) OnEvent(evt *KvEvent) {
 	h.lock.RLock()
 	for _, f := range h.evtHandleFuncs {
 		f(evt)
@@ -59,19 +64,14 @@ func (h *KvEventHandler) OnEvent(evt *KvEvent) {
 	h.lock.RUnlock()
 }
 
-func EventHandler(t StoreType) *KvEventHandler {
-	return evtHandlers[t]
+func EventProxy(t StoreType) *KvEventProxy {
+	return evtProxies[t]
 }
 
 func AddEventHandleFunc(t StoreType, f KvEventFunc) {
-	EventHandler(t).AddHandleFunc(f)
+	EventProxy(t).AddHandleFunc(f)
 }
 
-type StoreEventHandler interface {
-	Type() StoreType
-	OnEvent(evt *KvEvent)
-}
-
-func AddEventHandler(h StoreEventHandler) {
+func AddEventHandler(h KvEventHandler) {
 	AddEventHandleFunc(h.Type(), h.OnEvent)
 }

@@ -83,13 +83,12 @@ func GetConsumersInCache(tenant string, providerId string, provider *pb.MicroSer
 
 	if len(consumerIds) == 0 {
 		util.Logger().Warnf(nil, "Get consumer for publish from database is empty.%s , get from cache", providerId)
-		consumerList, found := consumerCache.Get(providerId)
-		if found && len(consumerList.([]string)) > 0 {
-			return consumerList.([]string), nil
+		consumerIds, found := consumerCache.Get(providerId)
+		if found && len(consumerIds.([]string)) > 0 {
+			return consumerIds.([]string), nil
 		}
 		return nil, nil
 	}
-	consumerCache.Set(providerId, consumerIds, 0)
 
 	return consumerIds, nil
 }
@@ -111,7 +110,6 @@ func GetProvidersInCache(tenant string, consumerId string, consumer *pb.MicroSer
 		}
 		return nil, nil
 	}
-	consumerCache.Set(consumerId, providerIds, 0)
 
 	return providerIds, nil
 }
@@ -665,7 +663,6 @@ func (dep *Dependency) UpdateProvidersRuleOfConsumer(conKey string) error {
 	return dep.updateProvidersRuleOfConsumer(conKey)
 }
 
-
 type DependencyRelation struct {
 	tenant     string
 	consumerId string
@@ -674,29 +671,29 @@ type DependencyRelation struct {
 	provider   *pb.MicroService
 }
 
-func NewProviderDependencyRelation(tenant string, providerId string, provider *pb.MicroService) *DependencyRelation{
+func NewProviderDependencyRelation(tenant string, providerId string, provider *pb.MicroService) *DependencyRelation {
 	return &DependencyRelation{
-		tenant: tenant,
+		tenant:     tenant,
 		providerId: providerId,
-		provider: provider,
+		provider:   provider,
 	}
 }
 
-func NewConsumerDependencyRelation(tenant string, consumerId string, consumer *pb.MicroService) *DependencyRelation{
+func NewConsumerDependencyRelation(tenant string, consumerId string, consumer *pb.MicroService) *DependencyRelation {
 	return &DependencyRelation{
-		tenant: tenant,
+		tenant:     tenant,
 		consumerId: consumerId,
-		consumer: consumer,
+		consumer:   consumer,
 	}
 }
 
-func NewDependencyRelation(tenant string, consumerId string, consumer *pb.MicroService, providerId string, provider *pb.MicroService) *DependencyRelation{
+func NewDependencyRelation(tenant string, consumerId string, consumer *pb.MicroService, providerId string, provider *pb.MicroService) *DependencyRelation {
 	return &DependencyRelation{
-		tenant: tenant,
+		tenant:     tenant,
 		consumerId: consumerId,
-		consumer: consumer,
+		consumer:   consumer,
 		providerId: providerId,
-		provider: provider,
+		provider:   provider,
 	}
 }
 

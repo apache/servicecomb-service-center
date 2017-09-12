@@ -29,6 +29,7 @@ var (
 	RegistryPlugins  map[string]func(cfg *Config) Registry
 	registryInstance Registry
 	singletonLock    sync.Mutex
+	wait_delay       = []int{1, 1, 5, 10, 20, 30, 60}
 )
 
 type ActionType int
@@ -215,12 +216,24 @@ func RegisterCenterClient() (Registry, error) {
 func GetRegisterCenter() Registry {
 	if registryInstance == nil {
 		singletonLock.Lock()
-		if registryInstance == nil {
+		for i := 0; registryInstance == nil; i++ {
 			inst, err := RegisterCenterClient()
 			if err != nil {
 				util.Logger().Errorf(err, "get register center client failed")
 			}
 			registryInstance = inst
+
+			if registryInstance != nil {
+				singletonLock.Unlock()
+				return registryInstance
+			}
+
+			if i >= len(wait_delay) {
+				i = len(wait_delay) - 1
+			}
+			t := time.Duration(wait_delay[i]) * time.Second
+			util.Logger().Errorf(nil, "initialize service center failed, retry after %s", t)
+			<-time.After(t)
 		}
 		singletonLock.Unlock()
 	}

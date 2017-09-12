@@ -20,22 +20,21 @@ import (
 )
 
 const (
-	REGISTRY_ROOT_KEY        = "cse-sr"
-	REGISTRY_SYS_KEY         = "sys"
-	REGISTRY_SERVICE_KEY     = "ms"
-	REGISTRY_INSTANCE_KEY    = "inst"
-	REGISTRY_FILE            = "files"
-	REGISTRY_INDEX           = "indexes"
-	REGISTRY_RULE_KEY        = "rules"
-	REGISTRY_RULE_INDEX_KEY  = "rule-indexes"
-	REGISTRY_TENANT_KEY      = "tenant"
-	REGISTRY_ALIAS_KEY       = "alias"
-	REGISTRY_TAG_KEY         = "tags"
-	REGISTRY_SCHEMA_KEY      = "schemas"
-	REGISTRY_LEASE_KEY       = "leases"
-	REGISTRY_DEPENDENCY_KEY  = "deps"
-	REGISTRY_DEPS_RULE_KEY   = "dep-rules"
-	REGISTRY_ENDPOINTS_INDEX = "epsindex"
+	REGISTRY_ROOT_KEY       = "cse-sr"
+	REGISTRY_SYS_KEY        = "sys"
+	REGISTRY_SERVICE_KEY    = "ms"
+	REGISTRY_INSTANCE_KEY   = "inst"
+	REGISTRY_FILE           = "files"
+	REGISTRY_INDEX          = "indexes"
+	REGISTRY_RULE_KEY       = "rules"
+	REGISTRY_RULE_INDEX_KEY = "rule-indexes"
+	REGISTRY_TENANT_KEY     = "tenant"
+	REGISTRY_ALIAS_KEY      = "alias"
+	REGISTRY_TAG_KEY        = "tags"
+	REGISTRY_SCHEMA_KEY     = "schemas"
+	REGISTRY_LEASE_KEY      = "leases"
+	REGISTRY_DEPENDENCY_KEY = "deps"
+	REGISTRY_DEPS_RULE_KEY  = "dep-rules"
 )
 
 func GetRootKey() string {
@@ -137,14 +136,6 @@ func GetInstanceLeaseRootKey(tenant string) string {
 		GetRootKey(),
 		REGISTRY_INSTANCE_KEY,
 		REGISTRY_LEASE_KEY,
-		tenant,
-	}, "/")
-}
-
-func GetInstancesEndpointsIndexRootKey(tenant string) string {
-	return util.StringJoin([]string{
-		GetRootKey(),
-		REGISTRY_ENDPOINTS_INDEX,
 		tenant,
 	}, "/")
 }
@@ -327,14 +318,6 @@ func GenerateDomainKey(tenant string) string {
 	return util.StringJoin([]string{
 		GetDomainRootKey(),
 		tenant,
-	}, "/")
-}
-
-func GenerateInsEpsIndex(tenant string, serviceId string, inEpsIndex string) string {
-	return util.StringJoin([]string{
-		GetInstancesEndpointsIndexRootKey(tenant),
-		serviceId,
-		inEpsIndex,
 	}, "/")
 }
 
