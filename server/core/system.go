@@ -25,10 +25,8 @@ import (
 var systemConfig *pb.SystemConfig
 
 func LoadSystemConfig() error {
-	resp, err := registry.GetRegisterCenter().Do(context.Background(), &registry.PluginOp{
-		Action: registry.GET,
-		Key:    util.StringToBytesWithNoCopy(GetSystemKey()),
-	})
+	resp, err := registry.GetRegisterCenter().Do(context.Background(),
+		registry.GET, registry.WithStrKey(GetSystemKey()))
 	if err != nil {
 		return err
 	}
@@ -56,11 +54,8 @@ func UpgradeSystemConfig() error {
 	if err != nil {
 		return err
 	}
-	_, err = registry.GetRegisterCenter().Do(context.Background(), &registry.PluginOp{
-		Action: registry.PUT,
-		Key:    util.StringToBytesWithNoCopy(GetSystemKey()),
-		Value:  bytes,
-	})
+	_, err = registry.GetRegisterCenter().Do(context.Background(),
+		registry.PUT, registry.WithStrKey(GetSystemKey()), registry.WithValue(bytes))
 	if err != nil {
 		return err
 	}

@@ -15,13 +15,13 @@ package buildin
 
 import (
 	"fmt"
+	constKey "github.com/ServiceComb/service-center/server/common"
 	"github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
 	"github.com/ServiceComb/service-center/server/infra/quota"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
-	constKey "github.com/ServiceComb/service-center/server/common"
 )
 
 type BuildInQuota struct {
@@ -56,12 +56,10 @@ func (q *BuildInQuota) Apply4Quotas(ctx context.Context, quotaType quota.Resourc
 	default:
 		return ResourceLimitHandler(ctx, quotaType, tenant, serviceId, quotaSize)
 	}
-	resp, err := indexer.Search(ctx, &registry.PluginOp{
-		Action:     registry.GET,
-		Key:        util.StringToBytesWithNoCopy(key),
-		CountOnly:  true,
-		WithPrefix: true,
-	})
+	resp, err := indexer.Search(ctx,
+		registry.WithStrKey(key),
+		registry.WithPrefix(),
+		registry.WithCountOnly())
 	if err != nil {
 		return false, err
 	}
@@ -103,12 +101,10 @@ func ResourceLimitHandler(ctx context.Context, quotaType quota.ResourceType, ten
 	default:
 		return false, fmt.Errorf("Unsurported Type %v", quotaType)
 	}
-	resp, err := indexer.Search(ctx, &registry.PluginOp{
-		Action:     registry.GET,
-		Key:        util.StringToBytesWithNoCopy(key),
-		CountOnly:  true,
-		WithPrefix: true,
-	})
+	resp, err := indexer.Search(ctx,
+		registry.WithStrKey(key),
+		registry.WithPrefix(),
+		registry.WithCountOnly())
 	if err != nil {
 		return false, err
 	}

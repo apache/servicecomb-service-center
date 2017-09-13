@@ -18,7 +18,6 @@ import (
 	apt "github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
-	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
 )
 
@@ -30,11 +29,9 @@ func HeartbeatUtil(ctx context.Context, tenant string, serviceId string, instanc
 	if leaseID == -1 {
 		return leaseID, ttl, errors.New("leaseId not exist, instance not exist."), false
 	}
-	ttl, err = store.Store().KeepAlive(ctx, &registry.PluginOp{
-		Action: registry.PUT,
-		Key:    util.StringToBytesWithNoCopy(apt.GenerateInstanceLeaseKey(tenant, serviceId, instanceId)),
-		Lease:  leaseID,
-	})
+	ttl, err = store.Store().KeepAlive(ctx,
+		registry.WithStrKey(apt.GenerateInstanceLeaseKey(tenant, serviceId, instanceId)),
+		registry.WithLease(leaseID))
 	if err != nil {
 		return leaseID, ttl, err, false
 	}

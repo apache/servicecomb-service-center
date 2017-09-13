@@ -303,7 +303,9 @@ func (s *KvStore) Domain() *Indexer {
 	return s.indexers[DOMAIN]
 }
 
-func (s *KvStore) KeepAlive(ctx context.Context, op *registry.PluginOp) (int64, error) {
+func (s *KvStore) KeepAlive(ctx context.Context, opts ...registry.PluginOpOption) (int64, error) {
+	op := registry.OpPut(opts...)
+
 	t := NewLeaseAsyncTask(op)
 	if op.Mode == registry.MODE_NO_CACHE {
 		util.Logger().Debugf("keep alive lease WitchNoCache, request etcd server, op: %s", op)
@@ -332,7 +334,7 @@ func Store() *KvStore {
 	return store
 }
 
-func NewLeaseAsyncTask(op *registry.PluginOp) *LeaseAsyncTask {
+func NewLeaseAsyncTask(op registry.PluginOp) *LeaseAsyncTask {
 	return &LeaseAsyncTask{
 		key:     "LeaseAsyncTask_" + util.BytesToStringWithNoCopy(op.Key),
 		LeaseID: op.Lease,

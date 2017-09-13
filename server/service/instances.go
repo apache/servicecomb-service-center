@@ -171,30 +171,16 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 
 	util.Logger().Debugf("start register service instance: %s %v, lease: %s %ds", key, instance, hbKey, ttl)
 
-	opts := []*registry.PluginOp{
-		{
-			Action:          registry.PUT,
-			Key:             util.StringToBytesWithNoCopy(key),
-			Value:           data,
-			Lease:           leaseID,
-			WithIgnoreLease: true,
-		},
-		{
-			Action:          registry.PUT,
-			Key:             util.StringToBytesWithNoCopy(index),
-			Value:           util.StringToBytesWithNoCopy(instance.ServiceId),
-			Lease:           leaseID,
-			WithIgnoreLease: true,
-		},
+	opts := []registry.PluginOp{
+		registry.OpPut(registry.WithStrKey(key), registry.WithValue(data),
+			registry.WithLease(leaseID), registry.WithIgnoreLease()),
+		registry.OpPut(registry.WithStrKey(index), registry.WithStrValue(instance.ServiceId),
+			registry.WithLease(leaseID), registry.WithIgnoreLease()),
 	}
 	if leaseID != 0 {
-		opts = append(opts, &registry.PluginOp{
-			Action:          registry.PUT,
-			Key:             util.StringToBytesWithNoCopy(hbKey),
-			Value:           util.StringToBytesWithNoCopy(fmt.Sprintf("%d", leaseID)),
-			Lease:           leaseID,
-			WithIgnoreLease: true,
-		})
+		opts = append(opts,
+			registry.OpPut(registry.WithStrKey(hbKey), registry.WithStrValue(fmt.Sprintf("%d", leaseID)),
+				registry.WithLease(leaseID), registry.WithIgnoreLease()))
 	}
 
 	// Set key file
@@ -772,22 +758,18 @@ func updateInstance(ctx context.Context, tenant string, instance *pb.MicroServic
 	}
 
 	key := apt.GenerateInstanceKey(tenant, instance.ServiceId, instance.InstanceId)
-	_, err = registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action: registry.PUT,
-		Key:    util.StringToBytesWithNoCopy(key),
-		Value:  data,
-		Lease:  leaseID,
-	})
+	_, err = registry.GetRegisterCenter().Do(ctx,
+		registry.PUT,
+		registry.WithStrKey(key),
+		registry.WithValue(data),
+		registry.WithLease(leaseID))
 	if err != nil {
 		return err, true
 	}
 
-	_, err = store.Store().KeepAlive(ctx, &registry.PluginOp{
-		Action: registry.PUT,
-		Key: util.StringToBytesWithNoCopy(apt.GenerateInstanceLeaseKey(tenant,
-			instance.ServiceId, instance.InstanceId)),
-		Lease: leaseID,
-	})
+	_, err = store.Store().KeepAlive(ctx,
+		registry.WithStrKey(apt.GenerateInstanceLeaseKey(tenant, instance.ServiceId, instance.InstanceId)),
+		registry.WithLease(leaseID))
 	if err != nil {
 		return err, false
 	}

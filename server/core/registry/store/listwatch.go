@@ -51,7 +51,7 @@ type ListWatcher struct {
 
 func (lw *ListWatcher) List(op *ListOptions) ([]*mvccpb.KeyValue, error) {
 	otCtx, _ := context.WithTimeout(op.Context, op.Timeout)
-	resp, err := lw.Client.Do(otCtx, registry.WithWatchPrefix(lw.Key))
+	resp, err := lw.Client.Do(otCtx, registry.WithWatchPrefix(lw.Key)...)
 	if err != nil {
 		return nil, err
 	}
@@ -75,33 +75,37 @@ func (lw *ListWatcher) Watch(op *ListOptions) *Watcher {
 }
 
 func (lw *ListWatcher) doWatch(ctx context.Context, f func(evt []*Event)) error {
-	ops := registry.WithWatchPrefix(lw.Key)
-	ops.WithRev = lw.Revision() + 1
-	err := lw.Client.Watch(ctx, ops, func(message string, resp *registry.PluginResponse) error {
-		if resp == nil || len(resp.Kvs) == 0 {
-			return fmt.Errorf("unknown event %s", resp)
-		}
+	opts := append(
+		registry.WithWatchPrefix(lw.Key),
+		registry.WithRev(lw.Revision()+1),
+		registry.WithWatchCallback(
+			func(message string, resp *registry.PluginResponse) error {
+				if resp == nil || len(resp.Kvs) == 0 {
+					return fmt.Errorf("unknown event %s", resp)
+				}
 
-		lw.setRevision(resp.Revision)
+				lw.setRevision(resp.Revision)
 
-		evts := make([]*Event, len(resp.Kvs))
-		for i, kv := range resp.Kvs {
-			evt := &Event{Key: lw.Key, Revision: kv.ModRevision}
-			switch {
-			case resp.Action == registry.PUT && kv.Version == 1:
-				evt.Type, evt.Object = proto.EVT_CREATE, kv
-			case resp.Action == registry.PUT:
-				evt.Type, evt.Object = proto.EVT_UPDATE, kv
-			case resp.Action == registry.DELETE:
-				evt.Type, evt.Object = proto.EVT_DELETE, kv
-			default:
-				return fmt.Errorf("unknown KeyValue %v", kv)
-			}
-			evts[i] = evt
-		}
-		f(evts)
-		return nil
-	})
+				evts := make([]*Event, len(resp.Kvs))
+				for i, kv := range resp.Kvs {
+					evt := &Event{Key: lw.Key, Revision: kv.ModRevision}
+					switch {
+					case resp.Action == registry.Put && kv.Version == 1:
+						evt.Type, evt.Object = proto.EVT_CREATE, kv
+					case resp.Action == registry.Put:
+						evt.Type, evt.Object = proto.EVT_UPDATE, kv
+					case resp.Action == registry.Delete:
+						evt.Type, evt.Object = proto.EVT_DELETE, kv
+					default:
+						return fmt.Errorf("unknown KeyValue %v", kv)
+					}
+					evts[i] = evt
+				}
+				f(evts)
+				return nil
+			}))
+
+	err := lw.Client.Watch(ctx, opts...)
 	if err != nil { // compact可能会导致watch失败
 		lw.setRevision(0)
 		f([]*Event{errEvent(lw.Key, err)})

@@ -30,11 +30,10 @@ func AddTagIntoETCD(ctx context.Context, tenant string, serviceId string, dataTa
 		return err
 	}
 
-	_, err = registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action: registry.PUT,
-		Key:    util.StringToBytesWithNoCopy(key),
-		Value:  data,
-	})
+	_, err = registry.GetRegisterCenter().Do(ctx,
+		registry.PUT,
+		registry.WithStrKey(key),
+		registry.WithValue(data))
 	if err != nil {
 		util.Logger().Errorf(err, "add tag into etcd,serviceId %s: commit tag data into etcd failed.", serviceId)
 		return err
@@ -48,11 +47,9 @@ func GetTagsUtils(ctx context.Context, tenant, serviceId string) (map[string]str
 
 func SearchTags(ctx context.Context, tenant, serviceId string, mode registry.CacheMode) (tags map[string]string, _ error) {
 	key := apt.GenerateServiceTagKey(tenant, serviceId)
-	resp, err := store.Store().ServiceTag().Search(ctx, &registry.PluginOp{
-		Action: registry.GET,
-		Key:    util.StringToBytesWithNoCopy(key),
-		Mode:   mode,
-	})
+	resp, err := store.Store().ServiceTag().Search(ctx,
+		registry.WithStrKey(key),
+		registry.WithMode(mode))
 	if err != nil {
 		util.Logger().Errorf(err, "get service %s tags file failed", key)
 		return tags, err

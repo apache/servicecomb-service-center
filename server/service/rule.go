@@ -19,6 +19,7 @@ import (
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/server/infra/quota"
 	"github.com/ServiceComb/service-center/server/plugins/dynamic"
 	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
@@ -27,7 +28,6 @@ import (
 	"golang.org/x/net/context"
 	"strconv"
 	"time"
-	"github.com/ServiceComb/service-center/server/infra/quota"
 )
 
 func Accessible(ctx context.Context, tenant string, consumerId string, providerId string) error {
@@ -133,7 +133,7 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 		}, nil
 	}
 
-	opts := []*registry.PluginOp{}
+	opts := []registry.PluginOp{}
 	ruleType, _, err := serviceUtil.GetServiceRuleType(ctx, tenant, in.ServiceId)
 	util.Logger().Debugf("ruleType is %s", ruleType)
 	if err != nil {
@@ -194,16 +194,8 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 			}, err
 		}
 
-		opts = append(opts, &registry.PluginOp{
-			Action: registry.PUT,
-			Key:    util.StringToBytesWithNoCopy(key),
-			Value:  data,
-		})
-		opts = append(opts, &registry.PluginOp{
-			Action: registry.PUT,
-			Key:    util.StringToBytesWithNoCopy(indexKey),
-			Value:  util.StringToBytesWithNoCopy(ruleAdd.RuleId),
-		})
+		opts = append(opts, registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)))
+		opts = append(opts, registry.OpPut(registry.WithStrKey(indexKey), registry.WithStrValue(ruleAdd.RuleId)))
 	}
 	if len(opts) <= 0 {
 		util.Logger().Infof("add rule successful, serviceId is %s: rule more exists,no rules to add.", in.ServiceId)
@@ -304,32 +296,17 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service rule file marshal error."),
 		}, err
 	}
-	opts := []*registry.PluginOp{}
+	opts := []registry.PluginOp{}
 	if isChangeIndex {
 		//加入新的rule index
 		indexKey := apt.GenerateRuleIndexKey(tenant, in.ServiceId, rule.Attribute, rule.Pattern)
-		opt := &registry.PluginOp{
-			Action: registry.PUT,
-			Key:    util.StringToBytesWithNoCopy(indexKey),
-			Value:  util.StringToBytesWithNoCopy(rule.RuleId),
-		}
-		opts = append(opts, opt)
+		opts = append(opts, registry.OpPut(registry.WithStrKey(indexKey), registry.WithStrValue(rule.RuleId)))
 
 		//删除旧的rule index
 		oldIndexKey := apt.GenerateRuleIndexKey(tenant, in.ServiceId, oldRuleAttr, oldRulePatten)
-		opt = &registry.PluginOp{
-			Action: registry.DELETE,
-			Key:    util.StringToBytesWithNoCopy(oldIndexKey),
-		}
-
-		opts = append(opts, opt)
+		opts = append(opts, registry.OpDel(registry.WithStrKey(oldIndexKey)))
 	}
-	opt := &registry.PluginOp{
-		Action: registry.PUT,
-		Key:    util.StringToBytesWithNoCopy(key),
-		Value:  data,
-	}
-	opts = append(opts, opt)
+	opts = append(opts, registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)))
 	_, err = registry.GetRegisterCenter().Txn(ctx, opts)
 	if err != nil {
 		util.Logger().Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: commit date into etcd failed.", in.ServiceId, in.RuleId)
@@ -392,7 +369,7 @@ func (s *ServiceController) DeleteRule(ctx context.Context, in *pb.DeleteService
 		}, nil
 	}
 
-	opts := []*registry.PluginOp{}
+	opts := []registry.PluginOp{}
 	key := ""
 	indexKey := ""
 	for _, ruleId := range in.RuleIds {
@@ -412,14 +389,9 @@ func (s *ServiceController) DeleteRule(ctx context.Context, in *pb.DeleteService
 			}, nil
 		}
 		indexKey = apt.GenerateRuleIndexKey(tenant, in.ServiceId, data.Attribute, data.Pattern)
-		opts = append(opts, &registry.PluginOp{
-			Action: registry.DELETE,
-			Key:    util.StringToBytesWithNoCopy(key),
-		})
-		opts = append(opts, &registry.PluginOp{
-			Action: registry.DELETE,
-			Key:    util.StringToBytesWithNoCopy(indexKey),
-		})
+		opts = append(opts,
+			registry.OpDel(registry.WithStrKey(key)),
+			registry.OpDel(registry.WithStrKey(indexKey)))
 	}
 	if len(opts) <= 0 {
 		util.Logger().Errorf(nil, "delete service rule failed, serviceId is %s, rule is %v: rule has been deleted.", in.ServiceId, in.RuleIds)

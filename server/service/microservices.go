@@ -119,39 +119,18 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 	aliasBytes := util.StringToBytesWithNoCopy(apt.GenerateServiceAliasKey(consumer))
 	util.Logger().Debugf("start register service: %s %v", key, service)
 	util.Logger().Debugf("start register service index: %s %v", index, serviceId)
-	opts := []*registry.PluginOp{
-		{
-			Action: registry.PUT,
-			Key:    util.StringToBytesWithNoCopy(key),
-			Value:  data,
-		},
-		{
-			Action: registry.PUT,
-			Key:    indexBytes,
-			Value:  util.StringToBytesWithNoCopy(serviceId),
-		},
+	opts := []registry.PluginOp{
+		registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)),
+		registry.OpPut(registry.WithKey(indexBytes), registry.WithStrValue(serviceId)),
 	}
-	uniqueCmpOpts := []*registry.CompareOp{
-		{
-			Key:    indexBytes,
-			Type:   registry.CMP_VERSION,
-			Result: registry.CMP_EQUAL,
-			Value:  0,
-		},
+	uniqueCmpOpts := []registry.CompareOp{
+		registry.OpCmp(registry.CmpVer(indexBytes), registry.CMP_EQUAL, 0),
 	}
 
 	if len(consumer.Alias) > 0 {
-		opts = append(opts, &registry.PluginOp{
-			Action: registry.PUT,
-			Key:    aliasBytes,
-			Value:  util.StringToBytesWithNoCopy(serviceId),
-		})
-		uniqueCmpOpts = append(uniqueCmpOpts, &registry.CompareOp{
-			Key:    aliasBytes,
-			Type:   registry.CMP_VERSION,
-			Result: registry.CMP_EQUAL,
-			Value:  0,
-		})
+		opts = append(opts, registry.OpPut(registry.WithKey(aliasBytes), registry.WithStrValue(serviceId)))
+		uniqueCmpOpts = append(uniqueCmpOpts,
+			registry.OpCmp(registry.CmpVer(aliasBytes), registry.CMP_EQUAL, 0))
 	}
 
 	resp, err := registry.GetRegisterCenter().TxnWithCmp(ctx, opts, uniqueCmpOpts, nil)
@@ -231,12 +210,10 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 		}
 
 		instancesKey := apt.GenerateInstanceKey(tenant, ServiceId, "")
-		rsp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
-			Action:     registry.GET,
-			Key:        util.StringToBytesWithNoCopy(instancesKey),
-			WithPrefix: true,
-			CountOnly:  true,
-		})
+		rsp, err := store.Store().Instance().Search(ctx,
+			registry.WithStrKey(instancesKey),
+			registry.WithPrefix(),
+			registry.WithCountOnly())
 		if err != nil {
 			util.Logger().Errorf(err, "delete microservice failed, serviceId is %s:(unforce) inner err,get instances failed.", ServiceId)
 			return pb.CreateResponse(pb.Response_FAIL, "Get instance failed."), err
@@ -263,27 +240,12 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 		return pb.CreateResponse(pb.Response_FAIL, "Refresh dependency cache failed."), err
 	}
 
-	opts := []*registry.PluginOp{
-		{
-			Action: registry.DELETE,
-			Key:    util.StringToBytesWithNoCopy(apt.GenerateServiceIndexKey(consumer)),
-		},
-		{
-			Action: registry.DELETE,
-			Key:    util.StringToBytesWithNoCopy(apt.GenerateServiceAliasKey(consumer)),
-		},
-		{
-			Action: registry.DELETE,
-			Key:    util.StringToBytesWithNoCopy(apt.GenerateServiceKey(tenant, ServiceId)),
-		},
-		{
-			Action: registry.DELETE,
-			Key: util.StringToBytesWithNoCopy(util.StringJoin([]string{
-				apt.GetServiceRuleRootKey(tenant),
-				ServiceId,
-				"",
-			}, "/")),
-		},
+	opts := []registry.PluginOp{
+		registry.OpDel(registry.WithStrKey(apt.GenerateServiceIndexKey(consumer))),
+		registry.OpDel(registry.WithStrKey(apt.GenerateServiceAliasKey(consumer))),
+		registry.OpDel(registry.WithStrKey(apt.GenerateServiceKey(tenant, ServiceId))),
+		registry.OpDel(registry.WithStrKey(
+			util.StringJoin([]string{apt.GetServiceRuleRootKey(tenant), ServiceId, ""}, "/"))),
 	}
 
 	//删除依赖规则
@@ -301,36 +263,20 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 	opts = append(opts, optsTmp...)
 
 	//删除黑白名单
-	rulekey := apt.GenerateServiceRuleKey(tenant, ServiceId, "")
-	opt := &registry.PluginOp{
-		Action:     registry.DELETE,
-		Key:        util.StringToBytesWithNoCopy(rulekey),
-		WithPrefix: true,
-	}
-	opts = append(opts, opt)
-	indexKey := apt.GenerateRuleIndexKey(tenant, ServiceId, "", "")
-	opts = append(opts, &registry.PluginOp{
-		Action: registry.DELETE,
-		Key:    util.StringToBytesWithNoCopy(indexKey),
-	})
-	opts = append(opts, opt)
+	opts = append(opts, registry.OpDel(
+		registry.WithStrKey(apt.GenerateServiceRuleKey(tenant, ServiceId, "")),
+		registry.WithPrefix()))
+	opts = append(opts, registry.OpDel(
+		registry.WithStrKey(apt.GenerateRuleIndexKey(tenant, ServiceId, "", ""))))
 
 	//删除shemas
-	schemaKey := apt.GenerateServiceSchemaKey(tenant, ServiceId, "")
-	opt = &registry.PluginOp{
-		Action:     registry.DELETE,
-		Key:        util.StringToBytesWithNoCopy(schemaKey),
-		WithPrefix: true,
-	}
-	opts = append(opts, opt)
+	opts = append(opts, registry.OpDel(
+		registry.WithStrKey(apt.GenerateServiceSchemaKey(tenant, ServiceId, "")),
+		registry.WithPrefix()))
 
 	//删除tags
-	tagsKey := apt.GenerateServiceTagKey(tenant, ServiceId)
-	opt = &registry.PluginOp{
-		Action: registry.DELETE,
-		Key:    util.StringToBytesWithNoCopy(tagsKey),
-	}
-	opts = append(opts, opt)
+	opts = append(opts, registry.OpDel(
+		registry.WithStrKey(apt.GenerateServiceTagKey(tenant, ServiceId))))
 
 	//删除实例
 	err = serviceUtil.DeleteServiceAllInstances(ctx, ServiceId)
@@ -550,11 +496,10 @@ func (s *ServiceController) UpdateProperties(ctx context.Context, in *pb.UpdateS
 	}
 
 	// Set key file
-	_, err = registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action: registry.PUT,
-		Key:    util.StringToBytesWithNoCopy(key),
-		Value:  data,
-	})
+	_, err = registry.GetRegisterCenter().Do(ctx,
+		registry.PUT,
+		registry.WithStrKey(key),
+		registry.WithValue(data))
 	if err != nil {
 		util.Logger().Errorf(err, "update service properties failed, serviceId is %s: commit data into etcd failed.", in.ServiceId)
 		return &pb.UpdateServicePropsResponse{
@@ -765,7 +710,7 @@ func (s *ServiceController) CreateServiceEx(ctx context.Context, in *pb.CreateSe
 }
 
 func (s *ServiceController) isCreateServiceEx(in *pb.CreateServiceRequest) bool {
-	if (len(in.Rules) == 0 &&  len(in.Tags) == 0 && len(in.Instances) == 0) {
+	if len(in.Rules) == 0 && len(in.Tags) == 0 && len(in.Instances) == 0 {
 		return false
 	}
 	return true

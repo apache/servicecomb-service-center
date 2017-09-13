@@ -15,14 +15,14 @@ package service
 
 import (
 	"encoding/json"
-	"github.com/ServiceComb/service-center/server/core/registry"
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/server/infra/quota"
 	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
-	"github.com/ServiceComb/service-center/server/infra/quota"
 )
 
 func (s *ServiceController) AddTags(ctx context.Context, in *pb.AddServiceTagsRequest) (*pb.AddServiceTagsResponse, error) {
@@ -203,11 +203,10 @@ func (s *ServiceController) DeleteTags(ctx context.Context, in *pb.DeleteService
 	key := apt.GenerateServiceTagKey(tenant, in.ServiceId)
 
 	util.Logger().Debugf("start delete service tags file: %s %v", key, in.Keys)
-	_, err = registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action: registry.PUT,
-		Key:    util.StringToBytesWithNoCopy(key),
-		Value:  data,
-	})
+	_, err = registry.GetRegisterCenter().Do(ctx,
+		registry.PUT,
+		registry.WithStrKey(key),
+		registry.WithValue(data))
 	if err != nil {
 		util.Logger().Errorf(err, "delete service tags failed, serviceId %s, tags %v: commit tag data into etcd failed.", in.ServiceId, in.Keys)
 		return &pb.DeleteServiceTagsResponse{
