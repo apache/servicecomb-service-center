@@ -236,14 +236,16 @@ func (s *ServiceController) GetTags(ctx context.Context, in *pb.GetServiceTagsRe
 
 	tenant := util.ParseTenantProject(ctx)
 
-	if !serviceUtil.ServiceExist(ctx, tenant, in.ServiceId) {
+	opts := serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))
+
+	if !serviceUtil.ServiceExist(ctx, tenant, in.ServiceId, opts...) {
 		util.Logger().Errorf(err, "get service tags failed, serviceId %s: service not exist.", in.ServiceId)
 		return &pb.GetServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
 		}, nil
 	}
 
-	tags, err := serviceUtil.GetTagsUtils(ctx, tenant, in.ServiceId)
+	tags, err := serviceUtil.GetTagsUtils(ctx, tenant, in.ServiceId, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "get service tags failed, serviceId %s: get tag failed.", in.ServiceId)
 		return &pb.GetServiceTagsResponse{

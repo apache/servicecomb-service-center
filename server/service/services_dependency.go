@@ -109,7 +109,7 @@ func (s *ServiceController) GetProviderDependencies(ctx context.Context, in *pb.
 	tenant := util.ParseTenantProject(ctx)
 	providerServiseId := in.ServiceId
 
-	provider, err := serviceUtil.GetService(context.TODO(), tenant, providerServiseId)
+	provider, err := serviceUtil.GetService(ctx, tenant, providerServiseId)
 	if err != nil {
 		util.Logger().Errorf(err, "GetProviderDependencies failed, %s.", providerServiseId)
 		return nil, err
@@ -121,7 +121,8 @@ func (s *ServiceController) GetProviderDependencies(ctx context.Context, in *pb.
 		}, nil
 	}
 
-	dr := serviceUtil.NewProviderDependencyRelation(tenant, providerServiseId, provider)
+	dr := serviceUtil.NewProviderDependencyRelation(ctx, tenant, providerServiseId, provider,
+		serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))...)
 	services, err := dr.GetDependencyConsumers()
 	if err != nil {
 		util.Logger().Errorf(err, "GetProviderDependencies failed.")
@@ -161,7 +162,8 @@ func (s *ServiceController) GetConsumerDependencies(ctx context.Context, in *pb.
 		}, nil
 	}
 
-	dr := serviceUtil.NewConsumerDependencyRelation(tenant, consumerId, consumer)
+	dr := serviceUtil.NewConsumerDependencyRelation(ctx, tenant, consumerId, consumer,
+		serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))...)
 	services, err := dr.GetDependencyProviders()
 	if err != nil {
 		util.Logger().Errorf(err, "GetConsumerDependencies failed for get providers failed.")

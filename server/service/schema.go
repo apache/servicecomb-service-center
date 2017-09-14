@@ -24,17 +24,17 @@ import (
 	"golang.org/x/net/context"
 )
 
-func (s *ServiceController) GetSchemaInfo(ctx context.Context, request *pb.GetSchemaRequest) (*pb.GetSchemaResponse, error) {
-	if request == nil || len(request.ServiceId) == 0 || len(request.SchemaId) == 0 {
+func (s *ServiceController) GetSchemaInfo(ctx context.Context, in *pb.GetSchemaRequest) (*pb.GetSchemaResponse, error) {
+	if in == nil || len(in.ServiceId) == 0 || len(in.SchemaId) == 0 {
 		util.Logger().Errorf(nil, "get schema failed: invalid params.")
 		return &pb.GetSchemaResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Invalid request path."),
 		}, nil
 	}
 
-	err := apt.Validate(request)
+	err := apt.Validate(in)
 	if err != nil {
-		util.Logger().Errorf(nil, "get schema failed, serviceId %s, schemaId %s: invalid params.", request.ServiceId, request.SchemaId)
+		util.Logger().Errorf(nil, "get schema failed, serviceId %s, schemaId %s: invalid params.", in.ServiceId, in.SchemaId)
 		return &pb.GetSchemaResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
@@ -42,23 +42,26 @@ func (s *ServiceController) GetSchemaInfo(ctx context.Context, request *pb.GetSc
 
 	tenant := util.ParseTenantProject(ctx)
 
-	if !serviceUtil.ServiceExist(ctx, tenant, request.ServiceId) {
-		util.Logger().Errorf(nil, "get schema failed, serviceId %s, schemaId %s: service not exist.", request.ServiceId, request.SchemaId)
+	opts := serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))
+
+	if !serviceUtil.ServiceExist(ctx, tenant, in.ServiceId, opts...) {
+		util.Logger().Errorf(nil, "get schema failed, serviceId %s, schemaId %s: service not exist.", in.ServiceId, in.SchemaId)
 		return &pb.GetSchemaResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
 		}, nil
 	}
 
-	key := apt.GenerateServiceSchemaKey(tenant, request.ServiceId, request.SchemaId)
-	resp, errDo := store.Store().Schema().Search(ctx, registry.WithStrKey(key))
+	key := apt.GenerateServiceSchemaKey(tenant, in.ServiceId, in.SchemaId)
+	opts = append(opts, registry.WithStrKey(key))
+	resp, errDo := store.Store().Schema().Search(ctx, opts...)
 	if errDo != nil {
-		util.Logger().Errorf(errDo, "get schema failed, serviceId %s, schemaId %s: get schema info failed.", request.ServiceId, request.SchemaId)
+		util.Logger().Errorf(errDo, "get schema failed, serviceId %s, schemaId %s: get schema info failed.", in.ServiceId, in.SchemaId)
 		return &pb.GetSchemaResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Get schema info failed."),
 		}, errDo
 	}
 	if resp.Count == 0 {
-		util.Logger().Errorf(errDo, "get schema failed, serviceId %s, schemaId %s: schema not exists.", request.ServiceId, request.SchemaId)
+		util.Logger().Errorf(errDo, "get schema failed, serviceId %s, schemaId %s: schema not exists.", in.ServiceId, in.SchemaId)
 		return &pb.GetSchemaResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Do not have this schema info."),
 		}, nil

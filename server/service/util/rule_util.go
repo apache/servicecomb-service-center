@@ -215,7 +215,7 @@ func MatchRules(rules []*pb.ServiceRule, service *pb.MicroService, serviceTags m
 
 func getConsumerIdsWithFilter(ctx context.Context, tenant, providerId string, provider *pb.MicroService,
 	filter func(ctx context.Context, consumerId string) (bool, error)) (allow []string, deny []string, err error) {
-	consumerIds, err := GetConsumersInCache(tenant, providerId, provider)
+	consumerIds, err := GetConsumersInCache(ctx, tenant, providerId, provider)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -278,7 +278,7 @@ func GetConsumerIds(ctx context.Context, tenant string, provider *pb.MicroServic
 }
 
 func GetProviderIdsByConsumerId(ctx context.Context, tenant, consumerId string, server *pb.MicroService) (allow []string, deny []string, _ error) {
-	providerIdsInCache, err := GetProvidersInCache(tenant, consumerId, server)
+	providerIdsInCache, err := GetProvidersInCache(ctx, tenant, consumerId, server)
 	if err != nil {
 		return nil, nil, err
 	}

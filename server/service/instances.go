@@ -460,6 +460,7 @@ func (s *InstanceController) getInstancePreCheck(ctx context.Context, in interfa
 	}
 	var providerServiceId, consumerServiceId string
 	var tags []string
+	var opts []registry.PluginOpOption
 	tenant := util.ParseTenantProject(ctx)
 
 	switch in.(type) {
@@ -467,19 +468,21 @@ func (s *InstanceController) getInstancePreCheck(ctx context.Context, in interfa
 		providerServiceId = in.(*pb.GetOneInstanceRequest).ProviderServiceId
 		consumerServiceId = in.(*pb.GetOneInstanceRequest).ConsumerServiceId
 		tags = in.(*pb.GetOneInstanceRequest).Tags
+		opts = serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.(*pb.GetOneInstanceRequest).NoCache))
 	case *pb.GetInstancesRequest:
 		providerServiceId = in.(*pb.GetInstancesRequest).ProviderServiceId
 		consumerServiceId = in.(*pb.GetInstancesRequest).ConsumerServiceId
 		tags = in.(*pb.GetInstancesRequest).Tags
+		opts = serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.(*pb.GetInstancesRequest).NoCache))
 	}
 
-	if !serviceUtil.ServiceExist(ctx, tenant, providerServiceId) {
+	if !serviceUtil.ServiceExist(ctx, tenant, providerServiceId, opts...) {
 		return fmt.Errorf("Service does not exist. Service id is %s", providerServiceId), false
 	}
 
 	// Tag过滤
 	if len(tags) > 0 {
-		tagsFromETCD, err := serviceUtil.GetTagsUtils(ctx, tenant, providerServiceId, registry.WithCacheOnly())
+		tagsFromETCD, err := serviceUtil.GetTagsUtils(ctx, tenant, providerServiceId, opts...)
 		if err != nil {
 			return err, true
 		}
@@ -491,7 +494,7 @@ func (s *InstanceController) getInstancePreCheck(ctx context.Context, in interfa
 	}
 	// 黑白名单
 	// 跨应用调用
-	err = Accessible(ctx, tenant, consumerServiceId, providerServiceId)
+	err = Accessible(ctx, tenant, consumerServiceId, providerServiceId, opts...)
 	switch err.(type) {
 	case errorsEx.InternalError:
 		return err, true
@@ -544,8 +547,10 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 
 	tenant := util.ParseTenantProject(ctx)
 
+	opts := serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))
+
 	findFlag := util.StringJoin([]string{in.ConsumerServiceId, in.AppId, in.ServiceName, in.VersionRule}, "/")
-	service, err := serviceUtil.GetService(ctx, tenant, in.ConsumerServiceId)
+	service, err := serviceUtil.GetService(ctx, tenant, in.ConsumerServiceId, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "find instance failed, %s: get consumer failed.", findFlag)
 		return &pb.FindInstancesResponse{
@@ -565,7 +570,7 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 		AppId:       in.AppId,
 		ServiceName: in.ServiceName,
 		Alias:       in.ServiceName,
-	})
+	}, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "find instance failed, %s: get providers failed.", findFlag)
 		return &pb.FindInstancesResponse{
@@ -600,7 +605,7 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 	}
 	consumer := pb.ToMicroServiceKey(tenant, service)
 	//维护version的规则
-	providerService, _ := serviceUtil.GetService(ctx, tenant, ids[0])
+	providerService, _ := serviceUtil.GetService(ctx, tenant, ids[0], opts...)
 	if providerService == nil {
 		util.Logger().Errorf(nil, "find instance failed, %s: no provider matched.", findFlag)
 		return &pb.FindInstancesResponse{
@@ -614,7 +619,7 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 		Version:     in.VersionRule,
 	}
 
-	exist, err := serviceUtil.ServiceDependencyRuleExist(ctx, tenant, provider, consumer)
+	exist, err := serviceUtil.ServiceDependencyRuleExist(ctx, tenant, provider, consumer, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "find instance failed, %s: find service dependency rule failed.", findFlag)
 		return &pb.FindInstancesResponse{

@@ -29,8 +29,8 @@ import (
 	"time"
 )
 
-func Accessible(ctx context.Context, tenant string, consumerId string, providerId string) error {
-	consumerService, err := serviceUtil.GetService(ctx, tenant, consumerId)
+func Accessible(ctx context.Context, tenant string, consumerId string, providerId string, opts ...registry.PluginOpOption) error {
+	consumerService, err := serviceUtil.GetService(ctx, tenant, consumerId, opts...)
 	if err != nil {
 		util.Logger().Errorf(err,
 			"consumer %s can't access provider %s for internal error", consumerId, providerId)
@@ -45,7 +45,7 @@ func Accessible(ctx context.Context, tenant string, consumerId string, providerI
 	consumerFlag := fmt.Sprintf("%s/%s/%s", consumerService.AppId, consumerService.ServiceName, consumerService.Version)
 
 	// 跨应用权限
-	providerService, err := serviceUtil.GetService(ctx, tenant, providerId)
+	providerService, err := serviceUtil.GetService(ctx, tenant, providerId, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "consumer %s can't access provider %s for internal error",
 			consumerFlag, providerId)
@@ -67,8 +67,10 @@ func Accessible(ctx context.Context, tenant string, consumerId string, providerI
 		return err
 	}
 
+	opts = append([]registry.PluginOpOption{registry.WithCacheOnly()}, opts...)
+
 	// 黑白名单
-	rules, err := serviceUtil.GetRulesUtil(ctx, tenant, providerId, registry.WithCacheOnly())
+	rules, err := serviceUtil.GetRulesUtil(ctx, tenant, providerId, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "consumer %s can't access provider %s for internal error",
 			consumerFlag, providerFlag)
@@ -79,7 +81,7 @@ func Accessible(ctx context.Context, tenant string, consumerId string, providerI
 		return nil
 	}
 
-	validateTags, err := serviceUtil.GetTagsUtils(ctx, tenant, consumerService.ServiceId, registry.WithCacheOnly())
+	validateTags, err := serviceUtil.GetTagsUtils(ctx, tenant, consumerService.ServiceId, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "consumer %s can't access provider %s for internal error",
 			consumerFlag, providerFlag)
@@ -329,15 +331,18 @@ func (s *ServiceController) GetRule(ctx context.Context, in *pb.GetServiceRulesR
 	}
 
 	tenant := util.ParseTenantProject(ctx)
+
+	opts := serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))
+
 	// service id存在性校验
-	if !serviceUtil.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !serviceUtil.ServiceExist(ctx, tenant, in.ServiceId, opts...) {
 		util.Logger().Errorf(nil, "get service rule failed, serviceId is %s: service not exist.", in.ServiceId)
 		return &pb.GetServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
 		}, nil
 	}
 
-	rules, err := serviceUtil.GetRulesUtil(ctx, tenant, in.ServiceId)
+	rules, err := serviceUtil.GetRulesUtil(ctx, tenant, in.ServiceId, opts...)
 	if err != nil {
 		util.Logger().Errorf(nil, "get service rule failed, serviceId is %s: get rule failed.", in.ServiceId)
 		return &pb.GetServiceRulesResponse{

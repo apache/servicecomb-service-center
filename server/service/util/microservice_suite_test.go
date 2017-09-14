@@ -15,7 +15,7 @@ package util_test
 
 import (
 	"fmt"
-	ms "github.com/ServiceComb/service-center/server/service/microservice"
+	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
@@ -46,7 +46,7 @@ func BenchmarkVersionRule_Latest_GetServicesIds(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ms.VersionRule(ms.Latest).Match(kvs)
+		serviceUtil.VersionRule(serviceUtil.Latest).Match(kvs)
 	}
 	// 5000	  13191856 ns/op
 }
@@ -61,7 +61,7 @@ func BenchmarkVersionRule_Range_GetServicesIds(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ms.VersionRule(ms.Range).Match(kvs, fmt.Sprintf("1.%d", i), fmt.Sprintf("1.%d", i+b.N/10))
+		serviceUtil.VersionRule(serviceUtil.Range).Match(kvs, fmt.Sprintf("1.%d", i), fmt.Sprintf("1.%d", i+b.N/10))
 	}
 	// 5000	  19754095 ns/op
 }
@@ -76,7 +76,7 @@ func BenchmarkVersionRule_AtLess_GetServicesIds(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ms.VersionRule(ms.AtLess).Match(kvs, fmt.Sprintf("1.%d", i))
+		serviceUtil.VersionRule(serviceUtil.AtLess).Match(kvs, fmt.Sprintf("1.%d", i))
 	}
 	// 5000	  18701493 ns/op
 }

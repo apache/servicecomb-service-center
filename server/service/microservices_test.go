@@ -33,7 +33,6 @@ var _ = Describe("ServiceController", func() {
 				It("service is nil", func() {
 					resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 						Service: nil,
-
 					})
 					Expect(err).To(BeNil())
 					Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
@@ -93,7 +92,7 @@ var _ = Describe("ServiceController", func() {
 						},
 						Status: "UP",
 					},
-					Tags:      tags,
+					Tags: tags,
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
@@ -612,6 +611,7 @@ var _ = Describe("ServiceController", func() {
 				resp2, err := insResource.GetInstances(getContext(), &pb.GetInstancesRequest{
 					ConsumerServiceId: serviceId3,
 					ProviderServiceId: serviceId,
+					NoCache:           true,
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp2.GetResponse().Message)
@@ -661,6 +661,7 @@ var _ = Describe("ServiceController", func() {
 					ConsumerServiceId: serviceId,
 					ProviderServiceId: serviceId3,
 					Tags:              []string{"a"},
+					NoCache:           true,
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp2.GetResponse().Message)
@@ -689,6 +690,7 @@ var _ = Describe("ServiceController", func() {
 				resp2, err := insResource.GetInstances(getContext(), &pb.GetInstancesRequest{
 					ConsumerServiceId: serviceId2,
 					ProviderServiceId: serviceId3,
+					NoCache:           true,
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp2.GetResponse().Message)

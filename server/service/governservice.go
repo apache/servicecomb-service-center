@@ -227,7 +227,7 @@ func getServiceDetailUtil(ctx context.Context, opts []string, tenant string, ser
 			serviceDetail.SchemaInfos = schemas
 		case "dependencies":
 			util.Logger().Debugf("is dependencies")
-			dr := serviceUtil.NewDependencyRelation(tenant, serviceId, service, serviceId, service)
+			dr := serviceUtil.NewDependencyRelation(ctx, tenant, serviceId, service, serviceId, service)
 			consumers, err := dr.GetDependencyConsumers()
 			if err != nil {
 				util.Logger().Errorf(err, "Get service's all consumers for govern service faild.")

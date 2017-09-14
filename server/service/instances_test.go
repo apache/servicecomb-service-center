@@ -123,8 +123,8 @@ var _ = Describe("InstanceController", func() {
 							Endpoints: []string{
 								"rest:127.0.0.1:8080",
 							},
-							HostName:    "UT-HOST",
-							Status:      pb.MSI_UP,
+							HostName: "UT-HOST",
+							Status:   pb.MSI_UP,
 						},
 					})
 					Expect(err).To(BeNil())
@@ -858,6 +858,7 @@ var _ = Describe("InstanceController", func() {
 					ProviderServiceId:  consumerId,
 					ProviderInstanceId: instanceId,
 					Tags:               []string{"test"},
+					NoCache:            true,
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp.GetResponse().Message)

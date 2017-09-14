@@ -18,10 +18,10 @@ import "github.com/ServiceComb/service-center/server/core/registry"
 type QueryOp func() []registry.PluginOpOption
 
 func WithNoCache(no bool) QueryOp {
+	if !no {
+		return func() []registry.PluginOpOption { return nil }
+	}
 	return func() []registry.PluginOpOption {
-		if !no {
-			return nil
-		}
 		return []registry.PluginOpOption{registry.WithNoCache()}
 	}
 }

@@ -196,7 +196,7 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 
 	// 强制删除，则与该服务相关的信息删除，非强制删除： 如果作为该被依赖（作为provider，提供服务,且不是只存在自依赖）或者存在实例，则不能删除
 	if !force {
-		dr := serviceUtil.NewConsumerDependencyRelation(tenant, ServiceId, service)
+		dr := serviceUtil.NewConsumerDependencyRelation(ctx, tenant, ServiceId, service)
 		services, err := dr.GetDependencyProviderIds()
 		if err != nil {
 			util.Logger().Errorf(err, "delete microservice failed, serviceId is %s:(unforce) inner err, get service dependency failed.", ServiceId)
@@ -232,7 +232,7 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 	}
 
 	//refresh msCache consumerCache, ensure that watch can notify consumers when no cache.
-	err = serviceUtil.RefreshDependencyCache(tenant, ServiceId, service)
+	err = serviceUtil.RefreshDependencyCache(ctx, tenant, ServiceId, service)
 	if err != nil {
 		util.Logger().Errorf(err, "delete microservice failed, serviceId is %s: inner err, refresh service dependency cache failed.", ServiceId)
 		return pb.CreateResponse(pb.Response_FAIL, "Refresh dependency cache failed."), err
@@ -545,7 +545,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 			Alias:       in.ServiceName,
 			Version:     in.Version,
 			Tenant:      tenant,
-		})
+		}, serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))...)
 		if err != nil {
 			util.Logger().Errorf(err, "microservice exist failed, service %s: find serviceIds failed.", serviceFlag)
 			return &pb.GetExistenceResponse{
@@ -577,7 +577,10 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 			}, nil
 		}
-		if !serviceUtil.ServiceExist(ctx, tenant, in.ServiceId) {
+
+		opts := serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))
+
+		if !serviceUtil.ServiceExist(ctx, tenant, in.ServiceId, opts...) {
 			util.Logger().Warnf(nil, "schema exist failed, serviceId %s, schemaId %s: service not exist.", in.ServiceId, in.SchemaId)
 			return &pb.GetExistenceResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
@@ -585,7 +588,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 		}
 
 		key := apt.GenerateServiceSchemaKey(tenant, in.ServiceId, in.SchemaId)
-		err, exist := serviceUtil.CheckSchemaInfoExist(ctx, key)
+		err, exist := serviceUtil.CheckSchemaInfoExist(ctx, key, opts...)
 		if err != nil {
 			util.Logger().Errorf(err, "schema exist failed, serviceId %s, schemaId %s: get schema failed.", in.ServiceId, in.SchemaId)
 			return &pb.GetExistenceResponse{

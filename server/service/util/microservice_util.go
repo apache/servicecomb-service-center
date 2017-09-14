@@ -91,16 +91,17 @@ func GetService(ctx context.Context, tenant string, serviceId string, opts ...re
 	return service, nil
 }
 
-func GetServicesRawData(ctx context.Context, tenant string) ([]*mvccpb.KeyValue, error) {
+func GetServicesRawData(ctx context.Context, tenant string, opts ...registry.PluginOpOption) ([]*mvccpb.KeyValue, error) {
 	key := apt.GenerateServiceKey(tenant, "")
-	resp, err := store.Store().Service().Search(ctx,
+	opts = append(opts,
 		registry.WithStrKey(key),
 		registry.WithPrefix())
+	resp, err := store.Store().Service().Search(ctx, opts...)
 	return resp.Kvs, err
 }
 
-func GetServicesByTenant(ctx context.Context, tenant string) ([]*pb.MicroService, error) {
-	kvs, err := GetServicesRawData(ctx, tenant)
+func GetServicesByTenant(ctx context.Context, tenant string, opts ...registry.PluginOpOption) ([]*pb.MicroService, error) {
+	kvs, err := GetServicesRawData(ctx, tenant, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -169,13 +170,13 @@ func GetServiceAllVersions(ctx context.Context, key *pb.MicroServiceKey, alias b
 	return resp, err
 }
 
-func FindServiceIds(ctx context.Context, versionRule string, key *pb.MicroServiceKey) ([]string, error) {
+func FindServiceIds(ctx context.Context, versionRule string, key *pb.MicroServiceKey, opts ...registry.PluginOpOption) ([]string, error) {
 	// 版本规则
 	ids := []string{}
 	match := ParseVersionRule(versionRule)
 	if match == nil {
 		key.Version = versionRule
-		serviceId, err := GetServiceId(ctx, key)
+		serviceId, err := GetServiceId(ctx, key, opts...)
 		if err != nil {
 			return nil, err
 		}
@@ -204,10 +205,11 @@ FIND_RULE:
 	return ids, nil
 }
 
-func ServiceExist(ctx context.Context, tenant string, serviceId string) bool {
-	resp, err := store.Store().Service().Search(ctx,
+func ServiceExist(ctx context.Context, tenant string, serviceId string, opts ...registry.PluginOpOption) bool {
+	opts = append(opts,
 		registry.WithStrKey(apt.GenerateServiceKey(tenant, serviceId)),
 		registry.WithCountOnly())
+	resp, err := store.Store().Service().Search(ctx, opts...)
 	if err != nil || resp.Count == 0 {
 		return false
 	}
@@ -216,7 +218,7 @@ func ServiceExist(ctx context.Context, tenant string, serviceId string) bool {
 
 func GetAllServiceUtil(ctx context.Context, opts ...registry.PluginOpOption) ([]*pb.MicroService, error) {
 	tenant := util.ParseTenantProject(ctx)
-	services, err := GetServicesByTenant(ctx, tenant)
+	services, err := GetServicesByTenant(ctx, tenant, opts...)
 	if err != nil {
 		return nil, err
 	}

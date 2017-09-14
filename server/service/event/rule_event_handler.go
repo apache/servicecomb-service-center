@@ -62,7 +62,7 @@ func (apt *RulesChangedAsyncTask) publish(ctx context.Context, tenant, providerI
 		provider = tmpProvider.(*pb.MicroService)
 	}
 
-	consumerIds, err := serviceUtil.GetConsumersInCache(tenant, providerId, provider)
+	consumerIds, err := serviceUtil.GetConsumersInCache(ctx, tenant, providerId, provider)
 	if err != nil {
 		util.Logger().Errorf(err, "get consumer services by provider %s failed", providerId)
 		return err
