@@ -19,7 +19,6 @@ import (
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
-	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	"github.com/ServiceComb/service-center/util"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
@@ -40,10 +39,11 @@ func GetLeaseId(ctx context.Context, tenant string, serviceId string, instanceId
 	return leaseID, nil
 }
 
-func GetInstance(ctx context.Context, tenant string, serviceId string, instanceId string) (*pb.MicroServiceInstance, error) {
+func GetInstance(ctx context.Context, tenant string, serviceId string, instanceId string, opts ...registry.PluginOpOption) (*pb.MicroServiceInstance, error) {
 	key := apt.GenerateInstanceKey(tenant, serviceId, instanceId)
-	resp, err := store.Store().Instance().Search(ctx,
-		registry.WithStrKey(key))
+	opts = append(opts, registry.WithStrKey(key))
+
+	resp, err := store.Store().Instance().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -59,11 +59,10 @@ func GetInstance(ctx context.Context, tenant string, serviceId string, instanceI
 	return instance, nil
 }
 
-func GetAllInstancesOfOneService(ctx context.Context, tenant string, serviceId string, env string) ([]*pb.MicroServiceInstance, error) {
+func GetAllInstancesOfOneService(ctx context.Context, tenant string, serviceId string, env string, opts ...registry.PluginOpOption) ([]*pb.MicroServiceInstance, error) {
 	key := apt.GenerateInstanceKey(tenant, serviceId, "")
-	resp, err := store.Store().Instance().Search(ctx,
-		registry.WithStrKey(key),
-		registry.WithPrefix())
+	opts = append(opts, registry.WithStrKey(key), registry.WithPrefix())
+	resp, err := store.Store().Instance().Search(ctx, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "Get instance of service %s from etcd failed.", serviceId)
 		return nil, err
@@ -167,7 +166,7 @@ func DeleteServiceAllInstances(ctx context.Context, ServiceId string) error {
 	resp, err := store.Store().Lease().Search(ctx,
 		registry.WithStrKey(instanceLeaseKey),
 		registry.WithPrefix(),
-		registry.WithMode(registry.MODE_NO_CACHE))
+		registry.WithNoCache())
 	if err != nil {
 		util.Logger().Errorf(err, "delete service all instance failed: get instance lease failed.")
 		return err
@@ -188,7 +187,7 @@ func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (resul
 
 	tenant := util.ParseTenantProject(ctx)
 
-	service, err := ms.GetService(ctx, tenant, selfServiceId)
+	service, err := GetService(ctx, tenant, selfServiceId)
 	if err != nil {
 		util.Logger().Errorf(err, "get service %s failed", selfServiceId)
 		return
@@ -206,7 +205,7 @@ func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (resul
 	rev = store.Revision()
 
 	for _, providerId := range providerIds {
-		service, err := ms.GetServiceWithRev(ctx, tenant, providerId, rev)
+		service, err := GetServiceWithRev(ctx, tenant, providerId, rev)
 		if err != nil {
 			util.Logger().Errorf(err, "get service %s provider service %s file with revision %d failed.",
 				selfServiceId, providerId, rev)

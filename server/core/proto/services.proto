@@ -73,8 +73,9 @@ message InstanceHbRst {
     string errMessage = 3;
 }
 
-message GetServicesInfoRequest{
+message GetServicesInfoRequest {
     repeated string options = 1;
+    bool noCache = 2;
 }
 
 message GetServicesInfoResponse {
@@ -152,6 +153,7 @@ message GetExistenceRequest {
     string version = 4;
     string serviceId = 5;
     string schemaId = 6;
+    bool noCache = 7;
 }
 
 message GetExistenceResponse {
@@ -162,8 +164,8 @@ message GetExistenceResponse {
 
 message CreateServiceRequest {
     MicroService service = 1;
-    repeated AddOrUpdateServiceRule rules =2;
-    map<string,string> tags = 3;
+    repeated AddOrUpdateServiceRule rules = 2;
+    map<string, string> tags = 3;
     repeated MicroServiceInstance instances = 4;
 }
 
@@ -183,6 +185,7 @@ message DeleteServiceResponse {
 
 message GetServiceRequest {
     string serviceId = 1;
+    bool noCache = 2;
 }
 
 message GetServiceResponse {
@@ -191,6 +194,7 @@ message GetServiceResponse {
 }
 
 message GetServicesRequest {
+    bool noCache = 1;
 }
 
 message GetServicesResponse {
@@ -209,6 +213,7 @@ message UpdateServicePropsResponse {
 
 message GetServiceRulesRequest {
     string serviceId = 1;
+    bool noCache = 2;
 }
 
 message GetServiceRulesResponse {
@@ -247,6 +252,7 @@ message DeleteServiceRulesResponse {
 
 message GetServiceTagsRequest {
     string serviceId = 1;
+    bool noCache = 2;
 }
 
 message GetServiceTagsResponse {
@@ -316,7 +322,7 @@ message MicroServiceInstance {
 
 message DataCenterInfo {
     string name = 1;
-    string region =2;
+    string region = 2;
     string availableZone = 3;
 }
 
@@ -359,6 +365,7 @@ message FindInstancesRequest {
     string versionRule = 4; // version rule
     repeated string tags = 5;
     string env = 6;
+    bool noCache = 7;
 }
 
 message FindInstancesResponse {
@@ -372,6 +379,7 @@ message GetOneInstanceRequest {
     string providerInstanceId = 3;
     repeated string tags = 4;
     string env = 5;
+    bool noCache = 6;
 }
 
 message GetOneInstanceResponse {
@@ -384,6 +392,7 @@ message GetInstancesRequest {
     string providerServiceId = 2;
     repeated string tags = 3;
     string env = 4;
+    bool noCache = 5;
 }
 
 message GetInstancesResponse {
@@ -425,6 +434,7 @@ message WatchInstanceResponse {
 message GetSchemaRequest {
     string serviceId = 1;
     string schemaId = 2;
+    bool noCache = 3;
 }
 
 message GetSchemaResponse {
@@ -473,6 +483,7 @@ message CreateDependenciesResponse {
 
 message GetDependenciesRequest {
     string serviceId = 1;
+    bool noCache = 2;
 }
 
 message GetConDependenciesResponse {
@@ -515,22 +526,20 @@ message GetServiceDetailResponse {
     ServiceDetail service = 2;
 }
 
-
-
 //删除服务请求
 message DelServicesRequest {
     repeated string serviceIds = 1;
-    bool  force = 2;
+    bool force = 2;
 }
 //删除服务响应内容
 message DelServicesRspInfo {
-    string  errMessage = 1;
-    string  serviceId = 2;
+    string errMessage = 1;
+    string serviceId = 2;
 }
 
 //删除服务响应
 message DelServicesResponse {
     Response response = 1;
-    repeated DelServicesRspInfo  services = 2;
+    repeated DelServicesRspInfo services = 2;
 }
 

@@ -192,16 +192,18 @@ func WithAscendOrder() PluginOpOption        { return func(op *PluginOp) { op.So
 func WithDescendOrder() PluginOpOption       { return func(op *PluginOp) { op.SortOrder = SORT_DESCEND } }
 func WithRev(revision int64) PluginOpOption  { return func(op *PluginOp) { op.Revision = revision } }
 func WithIgnoreLease() PluginOpOption        { return func(op *PluginOp) { op.IgnoreLease = true } }
-func WithMode(cm CacheMode) PluginOpOption   { return func(op *PluginOp) { op.Mode = cm } }
+func WithCacheOnly() PluginOpOption          { return func(op *PluginOp) { op.Mode = MODE_CACHE } }
+func WithNoCache() PluginOpOption            { return func(op *PluginOp) { op.Mode = MODE_NO_CACHE } }
 func WithWatchCallback(f WatchCallback) PluginOpOption {
 	return func(op *PluginOp) { op.WatchCallback = f }
-}
-func WithWatchPrefix(key string) []PluginOpOption {
-	return []PluginOpOption{GET, WithStrKey(key), WithPrefix(), WithPrevKv()}
 }
 func WithStrKey(key string) PluginOpOption     { return WithKey(util.StringToBytesWithNoCopy(key)) }
 func WithStrEndKey(key string) PluginOpOption  { return WithEndKey(util.StringToBytesWithNoCopy(key)) }
 func WithStrValue(value string) PluginOpOption { return WithValue(util.StringToBytesWithNoCopy(value)) }
+
+func WatchPrefixOpOptions(key string) []PluginOpOption {
+	return []PluginOpOption{GET, WithStrKey(key), WithPrefix(), WithPrevKv()}
+}
 
 func OpGet(opts ...PluginOpOption) (op PluginOp) {
 	op = OptionsToOp(opts...)
@@ -234,8 +236,8 @@ type PluginResponse struct {
 }
 
 func (pr *PluginResponse) String() string {
-	return fmt.Sprintf("{action: %s, count: %d, rev: %d, succeed: %v}",
-		pr.Action, pr.Count, pr.Revision, pr.Succeeded)
+	return fmt.Sprintf("{action: %s, count: %d/%d, rev: %d, succeed: %v}",
+		pr.Action, len(pr.Kvs), pr.Count, pr.Revision, pr.Succeeded)
 }
 
 type CompareOp struct {

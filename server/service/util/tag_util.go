@@ -41,15 +41,10 @@ func AddTagIntoETCD(ctx context.Context, tenant string, serviceId string, dataTa
 	return nil
 }
 
-func GetTagsUtils(ctx context.Context, tenant, serviceId string) (map[string]string, error) {
-	return SearchTags(ctx, tenant, serviceId, registry.MODE_BOTH)
-}
-
-func SearchTags(ctx context.Context, tenant, serviceId string, mode registry.CacheMode) (tags map[string]string, _ error) {
+func GetTagsUtils(ctx context.Context, tenant, serviceId string, opts ...registry.PluginOpOption) (tags map[string]string, err error) {
 	key := apt.GenerateServiceTagKey(tenant, serviceId)
-	resp, err := store.Store().ServiceTag().Search(ctx,
-		registry.WithStrKey(key),
-		registry.WithMode(mode))
+	opts = append(opts, registry.WithStrKey(key))
+	resp, err := store.Store().ServiceTag().Search(ctx, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "get service %s tags file failed", key)
 		return tags, err

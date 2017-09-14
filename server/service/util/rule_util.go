@@ -20,8 +20,6 @@ import (
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
-	"github.com/ServiceComb/service-center/server/service/dependency"
-	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	"github.com/ServiceComb/service-center/util"
 	errorsEx "github.com/ServiceComb/service-center/util/errors"
 	"golang.org/x/net/context"
@@ -61,12 +59,12 @@ type RuleFilter struct {
 }
 
 func (rf *RuleFilter) Filter(ctx context.Context, consumerId string) (bool, error) {
-	consumer, err := ms.SearchService(ctx, rf.Tenant, consumerId, registry.MODE_CACHE)
+	consumer, err := GetService(ctx, rf.Tenant, consumerId, registry.WithCacheOnly())
 	if consumer == nil {
 		return false, err
 	}
 
-	tags, err := SearchTags(context.Background(), rf.Tenant, consumerId, registry.MODE_CACHE)
+	tags, err := GetTagsUtils(context.Background(), rf.Tenant, consumerId, registry.WithCacheOnly())
 	if err != nil {
 		return false, err
 	}
@@ -79,16 +77,15 @@ func (rf *RuleFilter) Filter(ctx context.Context, consumerId string) (bool, erro
 	return true, nil
 }
 
-func GetRulesUtil(ctx context.Context, tenant string, serviceId string) ([]*pb.ServiceRule, error) {
+func GetRulesUtil(ctx context.Context, tenant string, serviceId string, opts ...registry.PluginOpOption) ([]*pb.ServiceRule, error) {
 	key := util.StringJoin([]string{
 		apt.GetServiceRuleRootKey(tenant),
 		serviceId,
 		"",
 	}, "/")
 
-	resp, err := store.Store().Rule().Search(ctx,
-		registry.WithStrKey(key),
-		registry.WithPrefix())
+	opts = append(opts, registry.WithStrKey(key), registry.WithPrefix())
+	resp, err := store.Store().Rule().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +215,7 @@ func MatchRules(rules []*pb.ServiceRule, service *pb.MicroService, serviceTags m
 
 func getConsumerIdsWithFilter(ctx context.Context, tenant, providerId string, provider *pb.MicroService,
 	filter func(ctx context.Context, consumerId string) (bool, error)) (allow []string, deny []string, err error) {
-	consumerIds, err := dependency.GetConsumersInCache(tenant, providerId, provider)
+	consumerIds, err := GetConsumersInCache(tenant, providerId, provider)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -259,7 +256,7 @@ func GetConsumerIds(ctx context.Context, tenant string, provider *pb.MicroServic
 	}
 
 	//todo 删除服务，最后实例推送有误差
-	providerRules, err := GetRulesUtil(ctx, tenant, provider.ServiceId)
+	providerRules, err := GetRulesUtil(ctx, tenant, provider.ServiceId, registry.WithCacheOnly())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -280,10 +277,6 @@ func GetConsumerIds(ctx context.Context, tenant string, provider *pb.MicroServic
 	return allow, deny, nil
 }
 
-func GetProvidersInCache(tenant string, consumerId string, provider *pb.MicroService) ([]string, error) {
-	return dependency.GetProvidersInCache(tenant, consumerId, provider)
-}
-
 func GetProviderIdsByConsumerId(ctx context.Context, tenant, consumerId string, server *pb.MicroService) (allow []string, deny []string, _ error) {
 	providerIdsInCache, err := GetProvidersInCache(tenant, consumerId, server)
 	if err != nil {
@@ -296,11 +289,11 @@ func GetProviderIdsByConsumerId(ctx context.Context, tenant, consumerId string, 
 	allowIdx, denyIdx := 0, l
 	providerIds := make([]string, l)
 	for _, providerId := range providerIdsInCache {
-		provider, err := ms.GetService(ctx, tenant, providerId)
+		provider, err := GetService(ctx, tenant, providerId)
 		if provider == nil {
 			continue
 		}
-		providerRules, err := GetRulesUtil(ctx, tenant, provider.ServiceId)
+		providerRules, err := GetRulesUtil(ctx, tenant, provider.ServiceId, registry.WithCacheOnly())
 		if err != nil {
 			return nil, nil, err
 		}

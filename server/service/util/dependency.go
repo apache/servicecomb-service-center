@@ -11,7 +11,7 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package dependency
+package util
 
 import (
 	"encoding/json"
@@ -21,7 +21,6 @@ import (
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
-	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
 	"strings"
@@ -126,7 +125,7 @@ func RefreshDependencyCache(tenant string, providerId string, provider *pb.Micro
 		util.Logger().Errorf(err, "%s,refresh dependency cache failed, get providerIds failed.", providerId)
 		return err
 	}
-	ms.MsCache().Set(providerId, provider, 5*time.Minute)
+	MsCache().Set(providerId, provider, 5*time.Minute)
 	if len(consumerIds) == 0 {
 		util.Logger().Infof("refresh dependency cache: this services %s has no consumer dependency.", providerId)
 	} else {
@@ -316,14 +315,14 @@ func CreateDependencyRule(ctx context.Context, dep *Dependency) error {
 	newDependencyRuleList := make([]*pb.MicroServiceKey, 0, len(dep.ProvidersRule))
 	existDependencyRuleList := make([]*pb.MicroServiceKey, 0, len(oldProviderRules.Dependency))
 	for _, oldProviderRule := range oldProviderRules.Dependency {
-		if ok, _ := containerServiceDependency(dep.ProvidersRule, oldProviderRule); !ok {
+		if ok, _ := containServiceDependency(dep.ProvidersRule, oldProviderRule); !ok {
 			unExistDependencyRuleList = append(unExistDependencyRuleList, oldProviderRule)
 		} else {
 			existDependencyRuleList = append(existDependencyRuleList, oldProviderRule)
 		}
 	}
 	for _, tmpProviderRule := range dep.ProvidersRule {
-		if ok, _ := containerServiceDependency(existDependencyRuleList, tmpProviderRule); !ok {
+		if ok, _ := containServiceDependency(existDependencyRuleList, tmpProviderRule); !ok {
 			newDependencyRuleList = append(newDependencyRuleList, tmpProviderRule)
 		}
 	}
@@ -361,7 +360,7 @@ func CreateDependencyRule(ctx context.Context, dep *Dependency) error {
 	return nil
 }
 
-func containerServiceDependency(services []*pb.MicroServiceKey, service *pb.MicroServiceKey) (bool, error) {
+func containServiceDependency(services []*pb.MicroServiceKey, service *pb.MicroServiceKey) (bool, error) {
 	if services == nil || service == nil {
 		return false, errors.New("Invalid params input.")
 	}
@@ -435,43 +434,55 @@ func ParamsChecker(consumerInfo *pb.MicroServiceKey, providersInfo []*pb.MicroSe
 	return nil
 }
 
-func AddServiceVersionRule(ctx context.Context, provider *pb.MicroServiceKey, tenant string, consumer *pb.MicroServiceKey) (error, bool) {
+func ServiceDependencyRuleExist(ctx context.Context, tenant string, provider *pb.MicroServiceKey, consumer *pb.MicroServiceKey) (bool, error) {
+	providerKey := apt.GenerateProviderDependencyRuleKey(tenant, provider)
+	err, consumers := TransferToMicroServiceDependency(ctx, providerKey)
+	if err != nil {
+		return false, err
+	}
+	if len(consumers.Dependency) != 0 {
+		isEqual, err := containServiceDependency(consumers.Dependency, consumer)
+		if err != nil {
+			return false, err
+		}
+		if isEqual {
+			//删除之前的依赖
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func AddServiceVersionRule(ctx context.Context, tenant string, provider *pb.MicroServiceKey, consumer *pb.MicroServiceKey) error {
 	if apt.VersionRegex.Match(util.StringToBytesWithNoCopy(provider.Version)) {
-		return nil, false
+		return nil
+	}
+
+	exist, err := ServiceDependencyRuleExist(ctx, tenant, provider, consumer)
+	if exist || err != nil {
+		return err
 	}
 
 	providerKey := apt.GenerateProviderDependencyRuleKey(tenant, provider)
 	err, consumers := TransferToMicroServiceDependency(ctx, providerKey)
-	if err != nil {
-		return err, false
-	}
-	if len(consumers.Dependency) != 0 {
-		isEqual, err := containerServiceDependency(consumers.Dependency, consumer)
-		if err != nil {
-			return err, false
-		}
-		if isEqual {
-			//删除之前的依赖
-			return nil, true
-		}
-	}
+
 	//添加依赖
 	consumers.Dependency = append(consumers.Dependency, consumer)
 	data, err := json.Marshal(consumers)
 	if err != nil {
 		util.Logger().Errorf(err, "Marshal dependency of find failed.")
-		return err, false
+		return err
 	}
 	_, err = registry.GetRegisterCenter().Do(ctx,
 		registry.PUT,
 		registry.WithStrKey(providerKey),
 		registry.WithValue(data))
-	return err, false
+	return err
 }
 
 func UpdateServiceForAddDependency(ctx context.Context, consumerId string, providers []*pb.DependencyMircroService, tenant string) error {
 	conServiceKey := apt.GenerateServiceKey(tenant, consumerId)
-	service, err := ms.GetService(ctx, tenant, consumerId)
+	service, err := GetService(ctx, tenant, consumerId)
 	if err != nil {
 		util.Logger().Errorf(err, "create dependency faild: get service failed. consumerId %s", consumerId)
 		return err
@@ -661,7 +672,7 @@ func (dr *DependencyRelation) GetDependencyProviders() ([]*pb.MicroService, erro
 	}
 	services := make([]*pb.MicroService, 0)
 	for _, providerId := range providerIds {
-		provider, err := ms.GetService(context.TODO(), dr.tenant, providerId)
+		provider, err := GetService(context.TODO(), dr.tenant, providerId)
 		if err != nil {
 			return nil, err
 		}
@@ -709,7 +720,7 @@ func (dr *DependencyRelation) getDependencyProviderIds(providerRules []*pb.Micro
 			}
 			return provideServiceIds, nil
 		default:
-			serviceIds, err := ms.FindServiceIds(context.TODO(), provider.Version, &pb.MicroServiceKey{
+			serviceIds, err := FindServiceIds(context.TODO(), provider.Version, &pb.MicroServiceKey{
 				Tenant:      tenant,
 				AppId:       provider.AppId,
 				ServiceName: provider.ServiceName,
@@ -760,7 +771,7 @@ func (dr *DependencyRelation) GetDependencyConsumerIds() ([]string, error) {
 	}
 	consumerIds := make([]string, 0)
 	for _, consumer := range consumerDependAllList {
-		consumerId, err := ms.GetServiceId(context.TODO(), consumer)
+		consumerId, err := GetServiceId(context.TODO(), consumer)
 		if err != nil {
 			util.Logger().Errorf(err, "Get consumer failed, %v", consumer)
 			return nil, err
@@ -796,7 +807,7 @@ func (dr *DependencyRelation) getDependencyConsumersOfProvider() ([]*pb.MicroSer
 }
 
 func getServiceByMicroServiceKey(tenant string, service *pb.MicroServiceKey) (*pb.MicroService, error) {
-	serviceId, err := ms.GetServiceId(context.TODO(), service)
+	serviceId, err := GetServiceId(context.TODO(), service)
 	if err != nil {
 		return nil, err
 	}
@@ -804,7 +815,7 @@ func getServiceByMicroServiceKey(tenant string, service *pb.MicroServiceKey) (*p
 		util.Logger().Warnf(nil, "Service not exist,%v", service)
 		return nil, nil
 	}
-	return ms.GetService(context.TODO(), tenant, serviceId)
+	return GetService(context.TODO(), tenant, serviceId)
 }
 
 func (dr *DependencyRelation) getConsumerOfSameServiceNameAndAppId(provider *pb.MicroServiceKey) ([]*pb.MicroServiceKey, error) {
@@ -832,7 +843,7 @@ func (dr *DependencyRelation) getConsumerOfSameServiceNameAndAppId(provider *pb.
 		providerVersionRuleArr := strings.Split(util.BytesToStringWithNoCopy(kv.Key), "/")
 		providerVersionRule := providerVersionRuleArr[len(providerVersionRuleArr)-1]
 		if providerVersionRule == "latest" {
-			latestServiceId, err := ms.FindServiceIds(context.TODO(), providerVersionRule, &pb.MicroServiceKey{
+			latestServiceId, err := FindServiceIds(context.TODO(), providerVersionRule, &pb.MicroServiceKey{
 				Tenant:      dr.tenant,
 				AppId:       provider.AppId,
 				ServiceName: provider.ServiceName,
@@ -850,7 +861,7 @@ func (dr *DependencyRelation) getConsumerOfSameServiceNameAndAppId(provider *pb.
 			}
 
 		} else {
-			if !ms.VersionMatchRule(providerVersion, providerVersionRule) {
+			if !VersionMatchRule(providerVersion, providerVersionRule) {
 				continue
 			}
 		}

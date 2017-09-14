@@ -19,7 +19,6 @@ import (
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/infra/quota"
-	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
@@ -43,7 +42,7 @@ func (s *ServiceController) AddTags(ctx context.Context, in *pb.AddServiceTagsRe
 
 	tenant := util.ParseTenantProject(ctx)
 	// service id存在性校验
-	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !serviceUtil.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.Logger().Errorf(nil, "add service tags failed, serviceId %s, tags %v: service not exist.", in.ServiceId, in.Tags)
 		return &pb.AddServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
@@ -112,7 +111,7 @@ func (s *ServiceController) UpdateTag(ctx context.Context, in *pb.UpdateServiceT
 
 	tenant := util.ParseTenantProject(ctx)
 
-	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !serviceUtil.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.Logger().Errorf(err, "update service tag failed, serviceId %s, tag %s: service not exist.", in.ServiceId, tagFlag)
 		return &pb.UpdateServiceTagResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
@@ -167,7 +166,7 @@ func (s *ServiceController) DeleteTags(ctx context.Context, in *pb.DeleteService
 
 	tenant := util.ParseTenantProject(ctx)
 
-	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !serviceUtil.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.Logger().Errorf(nil, "delete service tags failed, serviceId %s, tags %v: service not exist.", in.ServiceId, in.Keys)
 		return &pb.DeleteServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
@@ -237,7 +236,7 @@ func (s *ServiceController) GetTags(ctx context.Context, in *pb.GetServiceTagsRe
 
 	tenant := util.ParseTenantProject(ctx)
 
-	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !serviceUtil.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.Logger().Errorf(err, "get service tags failed, serviceId %s: service not exist.", in.ServiceId)
 		return &pb.GetServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),

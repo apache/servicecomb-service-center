@@ -17,7 +17,6 @@ import (
 	"encoding/json"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
-	"github.com/ServiceComb/service-center/server/service/microservice"
 	nf "github.com/ServiceComb/service-center/server/service/notification"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
@@ -47,8 +46,7 @@ func (h *InstanceEventHandler) OnEvent(evt *store.KvEvent) {
 			providerId, providerInstanceId, action)
 		return
 	}
-	util.Logger().Infof("caught instance %s/%s [%s] event",
-		providerId, providerInstanceId, action)
+	util.Logger().Infof("caught instance %s/%s [%s] event", providerId, providerInstanceId, action)
 
 	var instance pb.MicroServiceInstance
 	err := json.Unmarshal(data, &instance)
@@ -58,7 +56,7 @@ func (h *InstanceEventHandler) OnEvent(evt *store.KvEvent) {
 		return
 	}
 	// 查询服务版本信息
-	ms, err := microservice.GetServiceInCache(context.Background(), tenantProject, providerId)
+	ms, err := serviceUtil.GetServiceInCache(context.Background(), tenantProject, providerId)
 	if ms == nil {
 		util.Logger().Errorf(err, "get provider service %s/%s id in cache failed",
 			providerId, providerInstanceId)

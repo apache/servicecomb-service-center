@@ -19,7 +19,6 @@ import (
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
 	"github.com/ServiceComb/service-center/server/infra/quota"
-	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
@@ -43,7 +42,7 @@ func (s *ServiceController) GetSchemaInfo(ctx context.Context, request *pb.GetSc
 
 	tenant := util.ParseTenantProject(ctx)
 
-	if !ms.ServiceExist(ctx, tenant, request.ServiceId) {
+	if !serviceUtil.ServiceExist(ctx, tenant, request.ServiceId) {
 		util.Logger().Errorf(nil, "get schema failed, serviceId %s, schemaId %s: service not exist.", request.ServiceId, request.SchemaId)
 		return &pb.GetSchemaResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
@@ -86,7 +85,7 @@ func (s *ServiceController) DeleteSchema(ctx context.Context, request *pb.Delete
 	}
 	tenant := util.ParseTenantProject(ctx)
 
-	if !ms.ServiceExist(ctx, tenant, request.ServiceId) {
+	if !serviceUtil.ServiceExist(ctx, tenant, request.ServiceId) {
 		util.Logger().Errorf(nil, "delete schema failded, serviceId %s, schemaId %s: service not exist.", request.ServiceId, request.SchemaId)
 		return &pb.DeleteSchemaResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
@@ -177,7 +176,7 @@ func (s *ServiceController) canModifySchema(ctx context.Context, request *pb.Mod
 		return err, false
 	}
 	tenant := util.ParseTenantProject(ctx)
-	service, err := ms.GetService(ctx, tenant, request.ServiceId)
+	service, err := serviceUtil.GetService(ctx, tenant, request.ServiceId)
 	if err != nil {
 		util.Logger().Errorf(err, "update schema failded, serviceId %s, schemaId %s: get service failed.", request.ServiceId, request.SchemaId)
 		return err, false

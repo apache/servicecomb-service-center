@@ -15,14 +15,13 @@ package event
 
 import (
 	"encoding/json"
+	"fmt"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
-	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	nf "github.com/ServiceComb/service-center/server/service/notification"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
-	"fmt"
 )
 
 type TagsChangedAsyncTask struct {
@@ -49,13 +48,13 @@ func (apt *TagsChangedAsyncTask) Err() error {
 }
 
 func (apt *TagsChangedAsyncTask) publish(ctx context.Context, tenant, consumerId string, rev int64) error {
-	consumer, err := ms.GetService(ctx, tenant, consumerId)
+	consumer, err := serviceUtil.GetService(ctx, tenant, consumerId)
 	if err != nil {
 		util.Logger().Errorf(err, "get comsumer for publish event %s failed", consumerId)
 		return err
 	}
 	if consumer == nil {
-		consumerTmp, found := ms.MsCache().Get(consumerId)
+		consumerTmp, found := serviceUtil.MsCache().Get(consumerId)
 		if !found {
 			util.Logger().Errorf(nil, "service not exist, %s", consumerId)
 			return fmt.Errorf("service not exist, %s", consumerId)
@@ -69,7 +68,7 @@ func (apt *TagsChangedAsyncTask) publish(ctx context.Context, tenant, consumerId
 	}
 
 	for _, providerId := range providerIds {
-		provider, err := ms.GetService(ctx, tenant, providerId)
+		provider, err := serviceUtil.GetService(ctx, tenant, providerId)
 		if provider == nil {
 			util.Logger().Warnf(err, "get service %s file failed", providerId)
 			continue

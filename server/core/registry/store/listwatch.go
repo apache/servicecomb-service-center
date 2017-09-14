@@ -51,7 +51,7 @@ type ListWatcher struct {
 
 func (lw *ListWatcher) List(op *ListOptions) ([]*mvccpb.KeyValue, error) {
 	otCtx, _ := context.WithTimeout(op.Context, op.Timeout)
-	resp, err := lw.Client.Do(otCtx, registry.WithWatchPrefix(lw.Key)...)
+	resp, err := lw.Client.Do(otCtx, registry.WatchPrefixOpOptions(lw.Key)...)
 	if err != nil {
 		return nil, err
 	}
@@ -76,13 +76,15 @@ func (lw *ListWatcher) Watch(op *ListOptions) *Watcher {
 
 func (lw *ListWatcher) doWatch(ctx context.Context, f func(evt []*Event)) error {
 	opts := append(
-		registry.WithWatchPrefix(lw.Key),
+		registry.WatchPrefixOpOptions(lw.Key),
 		registry.WithRev(lw.Revision()+1),
 		registry.WithWatchCallback(
 			func(message string, resp *registry.PluginResponse) error {
 				if resp == nil || len(resp.Kvs) == 0 {
 					return fmt.Errorf("unknown event %s", resp)
 				}
+
+				util.Logger().Infof("key %s: got a watch response %s from etcd server", lw.Key, resp)
 
 				lw.setRevision(resp.Revision)
 

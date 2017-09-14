@@ -21,7 +21,6 @@ import (
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/infra/quota"
 	"github.com/ServiceComb/service-center/server/plugins/dynamic"
-	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
 	errorsEx "github.com/ServiceComb/service-center/util/errors"
@@ -31,7 +30,7 @@ import (
 )
 
 func Accessible(ctx context.Context, tenant string, consumerId string, providerId string) error {
-	consumerService, err := ms.GetService(ctx, tenant, consumerId)
+	consumerService, err := serviceUtil.GetService(ctx, tenant, consumerId)
 	if err != nil {
 		util.Logger().Errorf(err,
 			"consumer %s can't access provider %s for internal error", consumerId, providerId)
@@ -46,7 +45,7 @@ func Accessible(ctx context.Context, tenant string, consumerId string, providerI
 	consumerFlag := fmt.Sprintf("%s/%s/%s", consumerService.AppId, consumerService.ServiceName, consumerService.Version)
 
 	// 跨应用权限
-	providerService, err := ms.GetService(ctx, tenant, providerId)
+	providerService, err := serviceUtil.GetService(ctx, tenant, providerId)
 	if err != nil {
 		util.Logger().Errorf(err, "consumer %s can't access provider %s for internal error",
 			consumerFlag, providerId)
@@ -69,7 +68,7 @@ func Accessible(ctx context.Context, tenant string, consumerId string, providerI
 	}
 
 	// 黑白名单
-	rules, err := serviceUtil.GetRulesUtil(ctx, tenant, providerId)
+	rules, err := serviceUtil.GetRulesUtil(ctx, tenant, providerId, registry.WithCacheOnly())
 	if err != nil {
 		util.Logger().Errorf(err, "consumer %s can't access provider %s for internal error",
 			consumerFlag, providerFlag)
@@ -80,7 +79,7 @@ func Accessible(ctx context.Context, tenant string, consumerId string, providerI
 		return nil
 	}
 
-	validateTags, err := serviceUtil.GetTagsUtils(ctx, tenant, consumerService.ServiceId)
+	validateTags, err := serviceUtil.GetTagsUtils(ctx, tenant, consumerService.ServiceId, registry.WithCacheOnly())
 	if err != nil {
 		util.Logger().Errorf(err, "consumer %s can't access provider %s for internal error",
 			consumerFlag, providerFlag)
@@ -113,7 +112,7 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 	tenant := util.ParseTenantProject(ctx)
 
 	// service id存在性校验
-	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !serviceUtil.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.Logger().Errorf(nil, "add rule failed, serviceId is %s: service not exist.", in.ServiceId)
 		return &pb.AddServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
@@ -229,7 +228,7 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 	tenant := util.ParseTenantProject(ctx)
 
 	// service id存在性校验
-	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !serviceUtil.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.Logger().Errorf(nil, "update rule failed, serviceId is %s, ruleId is %s: service not exist.", in.ServiceId, in.RuleId)
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
@@ -331,7 +330,7 @@ func (s *ServiceController) GetRule(ctx context.Context, in *pb.GetServiceRulesR
 
 	tenant := util.ParseTenantProject(ctx)
 	// service id存在性校验
-	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !serviceUtil.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.Logger().Errorf(nil, "get service rule failed, serviceId is %s: service not exist.", in.ServiceId)
 		return &pb.GetServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
@@ -362,7 +361,7 @@ func (s *ServiceController) DeleteRule(ctx context.Context, in *pb.DeleteService
 
 	tenant := util.ParseTenantProject(ctx)
 	// service id存在性校验
-	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !serviceUtil.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.Logger().Errorf(nil, "delete service rule failed, serviceId is %s, rule is %v: service not exist.", in.ServiceId, in.RuleIds)
 		return &pb.DeleteServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),

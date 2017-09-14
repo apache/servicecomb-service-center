@@ -11,7 +11,7 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package microservice
+package util
 
 import (
 	"encoding/json"
@@ -62,7 +62,7 @@ func GetServiceWithRev(ctx context.Context, domain string, id string, rev int64)
 func GetServiceInCache(ctx context.Context, domain string, id string) (*pb.MicroService, error) {
 	ms, ok := msCache.Get(id)
 	if !ok {
-		ms, err := SearchService(ctx, domain, id, registry.MODE_BOTH)
+		ms, err := GetService(ctx, domain, id)
 		if ms == nil {
 			return nil, err
 		}
@@ -73,15 +73,10 @@ func GetServiceInCache(ctx context.Context, domain string, id string) (*pb.Micro
 	return ms.(*pb.MicroService), nil
 }
 
-func GetService(ctx context.Context, tenant string, serviceId string) (*pb.MicroService, error) {
-	return SearchService(ctx, tenant, serviceId, registry.MODE_BOTH)
-}
-
-func SearchService(ctx context.Context, tenant, serviceId string, mode registry.CacheMode) (*pb.MicroService, error) {
+func GetService(ctx context.Context, tenant string, serviceId string, opts ...registry.PluginOpOption) (*pb.MicroService, error) {
 	key := apt.GenerateServiceKey(tenant, serviceId)
-	serviceResp, err := store.Store().Service().Search(ctx,
-		registry.WithStrKey(key),
-		registry.WithMode(mode))
+	opts = append(opts, registry.WithStrKey(key))
+	serviceResp, err := store.Store().Service().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -121,8 +116,8 @@ func GetServicesByTenant(ctx context.Context, tenant string) ([]*pb.MicroService
 	return services, nil
 }
 
-func GetServiceId(ctx context.Context, key *pb.MicroServiceKey) (serviceId string, err error) {
-	serviceId, err = SearchServiceId(ctx, key, registry.MODE_BOTH)
+func GetServiceId(ctx context.Context, key *pb.MicroServiceKey, opts ...registry.PluginOpOption) (serviceId string, err error) {
+	serviceId, err = searchServiceId(ctx, key, opts...)
 	if err != nil {
 		return
 	}
@@ -130,15 +125,14 @@ func GetServiceId(ctx context.Context, key *pb.MicroServiceKey) (serviceId strin
 		// 别名查询
 		util.Logger().Debugf("could not search microservice %s/%s/%s id by field 'serviceName', now try field 'alias'.",
 			key.AppId, key.ServiceName, key.Version)
-		return SearchServiceIdFromAlias(ctx, key, registry.MODE_BOTH)
+		return searchServiceIdFromAlias(ctx, key, opts...)
 	}
 	return
 }
 
-func SearchServiceId(ctx context.Context, key *pb.MicroServiceKey, mode registry.CacheMode) (string, error) {
-	resp, err := store.Store().ServiceIndex().Search(ctx,
-		registry.WithStrKey(apt.GenerateServiceIndexKey(key)),
-		registry.WithMode(mode))
+func searchServiceId(ctx context.Context, key *pb.MicroServiceKey, opts ...registry.PluginOpOption) (string, error) {
+	opts = append(opts, registry.WithStrKey(apt.GenerateServiceIndexKey(key)))
+	resp, err := store.Store().ServiceIndex().Search(ctx, opts...)
 	if err != nil {
 		return "", err
 	}
@@ -148,10 +142,9 @@ func SearchServiceId(ctx context.Context, key *pb.MicroServiceKey, mode registry
 	return util.BytesToStringWithNoCopy(resp.Kvs[0].Value), nil
 }
 
-func SearchServiceIdFromAlias(ctx context.Context, key *pb.MicroServiceKey, mode registry.CacheMode) (string, error) {
-	resp, err := store.Store().ServiceAlias().Search(ctx,
-		registry.WithStrKey(apt.GenerateServiceAliasKey(key)),
-		registry.WithMode(mode))
+func searchServiceIdFromAlias(ctx context.Context, key *pb.MicroServiceKey, opts ...registry.PluginOpOption) (string, error) {
+	opts = append(opts, registry.WithStrKey(apt.GenerateServiceAliasKey(key)))
+	resp, err := store.Store().ServiceAlias().Search(ctx, opts...)
 	if err != nil {
 		return "", err
 	}
@@ -221,7 +214,7 @@ func ServiceExist(ctx context.Context, tenant string, serviceId string) bool {
 	return true
 }
 
-func GetAllServiceUtil(ctx context.Context) ([]*pb.MicroService, error) {
+func GetAllServiceUtil(ctx context.Context, opts ...registry.PluginOpOption) ([]*pb.MicroService, error) {
 	tenant := util.ParseTenantProject(ctx)
 	services, err := GetServicesByTenant(ctx, tenant)
 	if err != nil {

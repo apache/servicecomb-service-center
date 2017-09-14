@@ -22,8 +22,8 @@ import (
 	"github.com/ServiceComb/service-center/server/core/mux"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	st "github.com/ServiceComb/service-center/server/core/registry/store"
-	"github.com/ServiceComb/service-center/server/service/microservice"
 	nf "github.com/ServiceComb/service-center/server/service/notification"
+	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
 	"github.com/ServiceComb/service-center/version"
 	"github.com/astaxie/beego"
@@ -86,7 +86,7 @@ func (s *ServiceCenterServer) needUpgrade() bool {
 			return false
 		}
 	}
-	return !microservice.VersionMatchRule(core.GetSystemConfig().Version,
+	return !serviceUtil.VersionMatchRule(core.GetSystemConfig().Version,
 		fmt.Sprintf("%s+", version.Ver().Version))
 }
 

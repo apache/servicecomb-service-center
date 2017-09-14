@@ -15,14 +15,13 @@ package event
 
 import (
 	"encoding/json"
+	"fmt"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
-	"github.com/ServiceComb/service-center/server/service/dependency"
-	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	nf "github.com/ServiceComb/service-center/server/service/notification"
+	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
-	"fmt"
 )
 
 type RulesChangedAsyncTask struct {
@@ -49,13 +48,13 @@ func (apt *RulesChangedAsyncTask) Err() error {
 }
 
 func (apt *RulesChangedAsyncTask) publish(ctx context.Context, tenant, providerId string, rev int64) error {
-	provider, err := ms.GetService(ctx, tenant, providerId)
+	provider, err := serviceUtil.GetService(ctx, tenant, providerId)
 	if err != nil {
 		util.Logger().Errorf(err, "get service %s file failed", providerId)
 		return err
 	}
 	if provider == nil {
-		tmpProvider, found := ms.MsCache().Get(providerId)
+		tmpProvider, found := serviceUtil.MsCache().Get(providerId)
 		if !found {
 			util.Logger().Errorf(nil, "service not exist, %s", providerId)
 			return fmt.Errorf("service not exist, %s", providerId)
@@ -63,12 +62,12 @@ func (apt *RulesChangedAsyncTask) publish(ctx context.Context, tenant, providerI
 		provider = tmpProvider.(*pb.MicroService)
 	}
 
-	consumerIds, err := dependency.GetConsumersInCache(tenant, providerId, provider)
+	consumerIds, err := serviceUtil.GetConsumersInCache(tenant, providerId, provider)
 	if err != nil {
 		util.Logger().Errorf(err, "get consumer services by provider %s failed", providerId)
 		return err
 	}
-	providerKey :=  pb.ToMicroServiceKey(tenant, provider)
+	providerKey := pb.ToMicroServiceKey(tenant, provider)
 
 	nf.PublishInstanceEvent(tenant, pb.EVT_EXPIRE, providerKey, nil, rev, consumerIds)
 	return nil

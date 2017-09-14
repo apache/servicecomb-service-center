@@ -17,8 +17,7 @@ import (
 	apt "github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/server/core/mux"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/server/service/dependency"
-	ms "github.com/ServiceComb/service-center/server/service/microservice"
+	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
 )
@@ -26,13 +25,13 @@ import (
 func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Context, in *pb.CreateDependenciesRequest) (*pb.CreateDependenciesResponse, error) {
 	dependencyInfos := in.Dependencies
 	if dependencyInfos == nil {
-		return dependency.BadParamsResponse("Invalid request body."), nil
+		return serviceUtil.BadParamsResponse("Invalid request body."), nil
 	}
 	tenant := util.ParseTenantProject(ctx)
 	for _, dependencyInfo := range dependencyInfos {
 		consumerFlag := util.StringJoin([]string{dependencyInfo.Consumer.AppId, dependencyInfo.Consumer.ServiceName, dependencyInfo.Consumer.Version}, "/")
 
-		dep := new(dependency.Dependency)
+		dep := new(serviceUtil.Dependency)
 		dep.Tenant = tenant
 
 		util.Logger().Infof("start create dependency, data info %v", dependencyInfo)
@@ -43,13 +42,13 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 		dep.Consumer = consumerInfo
 		dep.ProvidersRule = providersInfo
 
-		rsp := dependency.ParamsChecker(consumerInfo, providersInfo)
+		rsp := serviceUtil.ParamsChecker(consumerInfo, providersInfo)
 		if rsp != nil {
 			util.Logger().Errorf(nil, "create dependency failed, conusmer %s: invalid params.%s", consumerFlag, rsp.Response.Message)
 			return rsp, nil
 		}
 
-		consumerId, err := ms.GetServiceId(ctx, consumerInfo)
+		consumerId, err := serviceUtil.GetServiceId(ctx, consumerInfo)
 		util.Logger().Debugf("consumerId is %s", consumerId)
 		if err != nil {
 			util.Logger().Errorf(err, "create dependency failed, consumer %s: get consumer failed.", consumerFlag)
@@ -66,7 +65,7 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 
 		dep.ConsumerId = consumerId
 		//更新服务的内容，把providers加入
-		err = dependency.UpdateServiceForAddDependency(ctx, consumerId, dependencyInfo.Providers, tenant)
+		err = serviceUtil.UpdateServiceForAddDependency(ctx, consumerId, dependencyInfo.Providers, tenant)
 		if err != nil {
 			util.Logger().Errorf(err, "create dependency failed, consumer %s: Update service failed.", consumerFlag)
 			return &pb.CreateDependenciesResponse{
@@ -83,7 +82,7 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 			}, err
 		}
 
-		err = dependency.CreateDependencyRule(ctx, dep)
+		err = serviceUtil.CreateDependencyRule(ctx, dep)
 		lock.Unlock()
 
 		if err != nil {
@@ -110,7 +109,7 @@ func (s *ServiceController) GetProviderDependencies(ctx context.Context, in *pb.
 	tenant := util.ParseTenantProject(ctx)
 	providerServiseId := in.ServiceId
 
-	provider, err := ms.GetService(context.TODO(), tenant, providerServiseId)
+	provider, err := serviceUtil.GetService(context.TODO(), tenant, providerServiseId)
 	if err != nil {
 		util.Logger().Errorf(err, "GetProviderDependencies failed, %s.", providerServiseId)
 		return nil, err
@@ -122,7 +121,7 @@ func (s *ServiceController) GetProviderDependencies(ctx context.Context, in *pb.
 		}, nil
 	}
 
-	dr := dependency.NewProviderDependencyRelation(tenant,providerServiseId, provider)
+	dr := serviceUtil.NewProviderDependencyRelation(tenant, providerServiseId, provider)
 	services, err := dr.GetDependencyConsumers()
 	if err != nil {
 		util.Logger().Errorf(err, "GetProviderDependencies failed.")
@@ -148,7 +147,7 @@ func (s *ServiceController) GetConsumerDependencies(ctx context.Context, in *pb.
 	consumerId := in.ServiceId
 	tenant := util.ParseTenantProject(ctx)
 
-	consumer, err := ms.GetService(ctx, tenant, consumerId)
+	consumer, err := serviceUtil.GetService(ctx, tenant, consumerId)
 	if err != nil {
 		util.Logger().Errorf(err, "GetConsumerDependencies failed for get consumer failed.")
 		return &pb.GetConDependenciesResponse{
@@ -162,7 +161,7 @@ func (s *ServiceController) GetConsumerDependencies(ctx context.Context, in *pb.
 		}, nil
 	}
 
-	dr := dependency.NewConsumerDependencyRelation(tenant, consumerId, consumer)
+	dr := serviceUtil.NewConsumerDependencyRelation(tenant, consumerId, consumer)
 	services, err := dr.GetDependencyProviders()
 	if err != nil {
 		util.Logger().Errorf(err, "GetConsumerDependencies failed for get providers failed.")

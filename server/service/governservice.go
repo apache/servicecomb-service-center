@@ -19,8 +19,6 @@ import (
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
-	"github.com/ServiceComb/service-center/server/service/dependency"
-	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
@@ -33,7 +31,7 @@ type GovernServiceController struct {
 func (governServiceController *GovernServiceController) GetServicesInfo(ctx context.Context, in *pb.GetServicesInfoRequest) (*pb.GetServicesInfoResponse, error) {
 	opts := in.Options
 	//获取所有服务
-	services, err := ms.GetAllServiceUtil(ctx)
+	services, err := serviceUtil.GetAllServiceUtil(ctx)
 	if err != nil {
 		util.Logger().Errorf(err, "Get all services for govern service faild.")
 		return &pb.GetServicesInfoResponse{
@@ -78,7 +76,7 @@ func (governServiceController *GovernServiceController) GetServiceDetail(ctx con
 		}, nil
 	}
 
-	service, err := ms.GetService(ctx, tenant, in.ServiceId)
+	service, err := serviceUtil.GetService(ctx, tenant, in.ServiceId)
 	if service == nil {
 		return &pb.GetServiceDetailResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
@@ -229,7 +227,7 @@ func getServiceDetailUtil(ctx context.Context, opts []string, tenant string, ser
 			serviceDetail.SchemaInfos = schemas
 		case "dependencies":
 			util.Logger().Debugf("is dependencies")
-			dr := dependency.NewDependencyRelation(tenant, serviceId, service, serviceId, service)
+			dr := serviceUtil.NewDependencyRelation(tenant, serviceId, service, serviceId, service)
 			consumers, err := dr.GetDependencyConsumers()
 			if err != nil {
 				util.Logger().Errorf(err, "Get service's all consumers for govern service faild.")

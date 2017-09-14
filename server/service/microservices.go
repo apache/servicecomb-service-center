@@ -23,8 +23,6 @@ import (
 	"github.com/ServiceComb/service-center/server/core/registry/store"
 	"github.com/ServiceComb/service-center/server/infra/quota"
 	"github.com/ServiceComb/service-center/server/plugins/dynamic"
-	"github.com/ServiceComb/service-center/server/service/dependency"
-	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
 	errorsEx "github.com/ServiceComb/service-center/util/errors"
@@ -143,7 +141,7 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 	}
 	if !resp.Succeeded {
 		if s.isCreateServiceEx(in) == true {
-			serviceIdInner, _ := ms.GetServiceId(ctx, consumer)
+			serviceIdInner, _ := serviceUtil.GetServiceId(ctx, consumer)
 			util.Logger().Warnf(nil, "create microservice failed, serviceid = %s , flag = %s: service already exists. operator: %s",
 				serviceIdInner, serviceFlag, remoteIP)
 
@@ -183,7 +181,7 @@ func checkBeforeCreate(ctx context.Context, tenant string) error {
 func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId string, force bool) (*pb.Response, error) {
 	tenant := util.ParseTenantProject(ctx)
 
-	service, err := ms.GetService(ctx, tenant, ServiceId)
+	service, err := serviceUtil.GetService(ctx, tenant, ServiceId)
 	if err != nil {
 		util.Logger().Errorf(err, "delete microservice failed, serviceId is %s: get service failed.", ServiceId)
 		return pb.CreateResponse(pb.Response_FAIL, err.Error()), err
@@ -198,7 +196,7 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 
 	// 强制删除，则与该服务相关的信息删除，非强制删除： 如果作为该被依赖（作为provider，提供服务,且不是只存在自依赖）或者存在实例，则不能删除
 	if !force {
-		dr := dependency.NewConsumerDependencyRelation(tenant, ServiceId, service)
+		dr := serviceUtil.NewConsumerDependencyRelation(tenant, ServiceId, service)
 		services, err := dr.GetDependencyProviderIds()
 		if err != nil {
 			util.Logger().Errorf(err, "delete microservice failed, serviceId is %s:(unforce) inner err, get service dependency failed.", ServiceId)
@@ -234,7 +232,7 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 	}
 
 	//refresh msCache consumerCache, ensure that watch can notify consumers when no cache.
-	err = dependency.RefreshDependencyCache(tenant, ServiceId, service)
+	err = serviceUtil.RefreshDependencyCache(tenant, ServiceId, service)
 	if err != nil {
 		util.Logger().Errorf(err, "delete microservice failed, serviceId is %s: inner err, refresh service dependency cache failed.", ServiceId)
 		return pb.CreateResponse(pb.Response_FAIL, "Refresh dependency cache failed."), err
@@ -254,7 +252,7 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 		util.Logger().Errorf(err, "delete microservice failed, serviceId is %s: inner err, create lock failed.", ServiceId)
 		return pb.CreateResponse(pb.Response_FAIL, err.Error()), err
 	}
-	optsTmp, err := dependency.DeleteDependencyForService(ctx, consumer, ServiceId)
+	optsTmp, err := serviceUtil.DeleteDependencyForService(ctx, consumer, ServiceId)
 	lock.Unlock()
 	if err != nil {
 		util.Logger().Errorf(err, "delete microservice failed, serviceId is %s: inner err, delete dependency failed.", ServiceId)
@@ -409,7 +407,8 @@ func (s *ServiceController) GetOne(ctx context.Context, in *pb.GetServiceRequest
 		}, nil
 	}
 	tenant := util.ParseTenantProject(ctx)
-	service, err := ms.GetService(ctx, tenant, in.ServiceId)
+	service, err := serviceUtil.GetService(ctx, tenant, in.ServiceId,
+		serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))...)
 
 	if err != nil {
 		util.Logger().Errorf(err, "get microservice failed, serviceId is %s: inner err,get service failed.", in.ServiceId)
@@ -436,7 +435,8 @@ func (s *ServiceController) GetServices(ctx context.Context, in *pb.GetServicesR
 			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
 		}, nil
 	}
-	services, err := ms.GetAllServiceUtil(ctx)
+	services, err := serviceUtil.GetAllServiceUtil(ctx,
+		serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))...)
 	if err != nil {
 		util.Logger().Errorf(err, "get services failed: inner err.")
 		return &pb.GetServicesResponse{
@@ -468,7 +468,7 @@ func (s *ServiceController) UpdateProperties(ctx context.Context, in *pb.UpdateS
 	tenant := util.ParseTenantProject(ctx)
 
 	key := apt.GenerateServiceKey(tenant, in.ServiceId)
-	service, err := ms.GetService(ctx, tenant, in.ServiceId)
+	service, err := serviceUtil.GetService(ctx, tenant, in.ServiceId)
 	if err != nil {
 		util.Logger().Errorf(err, "update service properties failed, serviceId is %s: query service failed.", in.ServiceId)
 		return &pb.UpdateServicePropsResponse{
@@ -539,7 +539,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 			}, nil
 		}
 
-		ids, err := ms.FindServiceIds(ctx, in.Version, &pb.MicroServiceKey{
+		ids, err := serviceUtil.FindServiceIds(ctx, in.Version, &pb.MicroServiceKey{
 			AppId:       in.AppId,
 			ServiceName: in.ServiceName,
 			Alias:       in.ServiceName,
@@ -577,7 +577,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 			}, nil
 		}
-		if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
+		if !serviceUtil.ServiceExist(ctx, tenant, in.ServiceId) {
 			util.Logger().Warnf(nil, "schema exist failed, serviceId %s, schemaId %s: service not exist.", in.ServiceId, in.SchemaId)
 			return &pb.GetExistenceResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
