@@ -41,6 +41,7 @@ var (
 func init() {
 	loggers = make(map[string]core.Logger, 10)
 	loggerNames = make(map[string]string, 10)
+	LOGGER = lager.NewLogger("default")
 }
 
 func InitLogger(loggerName string, cfg *lager.Config) {

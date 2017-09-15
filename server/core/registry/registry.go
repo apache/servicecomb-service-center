@@ -265,8 +265,69 @@ func init() {
 	RegistryPlugins = make(map[string]func(cfg *Config) Registry)
 }
 
+var noClientPluginErr = fmt.Errorf("register center client plugin does not exist")
+
+type ErrorRegisterCenterClient struct {
+	ready chan int
+}
+
+func (ec *ErrorRegisterCenterClient) safeClose(chan int) {
+	defer util.RecoverAndReport()
+	close(ec.ready)
+}
+func (ec *ErrorRegisterCenterClient) Err() (err <-chan error) {
+	return
+}
+func (ec *ErrorRegisterCenterClient) Ready() <-chan int {
+	ec.safeClose(ec.ready)
+	return ec.ready
+}
+func (ec *ErrorRegisterCenterClient) PutNoOverride(ctx context.Context, opts ...PluginOpOption) (bool, error) {
+	return false, noClientPluginErr
+}
+func (ec *ErrorRegisterCenterClient) Do(ctx context.Context, opts ...PluginOpOption) (*PluginResponse, error) {
+	return nil, noClientPluginErr
+}
+func (ec *ErrorRegisterCenterClient) Txn(ctx context.Context, ops []PluginOp) (*PluginResponse, error) {
+	return nil, noClientPluginErr
+}
+func (ec *ErrorRegisterCenterClient) TxnWithCmp(ctx context.Context, success []PluginOp, cmp []CompareOp, fail []PluginOp) (*PluginResponse, error) {
+	return nil, noClientPluginErr
+}
+func (ec *ErrorRegisterCenterClient) LeaseGrant(ctx context.Context, TTL int64) (leaseID int64, err error) {
+	return 0, noClientPluginErr
+}
+func (ec *ErrorRegisterCenterClient) LeaseRenew(ctx context.Context, leaseID int64) (TTL int64, err error) {
+	return 0, noClientPluginErr
+}
+func (ec *ErrorRegisterCenterClient) LeaseRevoke(ctx context.Context, leaseID int64) error {
+	return noClientPluginErr
+}
+func (ec *ErrorRegisterCenterClient) Watch(ctx context.Context, opts ...PluginOpOption) error {
+	return noClientPluginErr
+}
+func (ec *ErrorRegisterCenterClient) Close() {
+	ec.safeClose(ec.ready)
+}
+func (ec *ErrorRegisterCenterClient) CompactCluster(ctx context.Context) {}
+func (ec *ErrorRegisterCenterClient) Compact(ctx context.Context, revision int64) error {
+	return noClientPluginErr
+}
+
+func RegisterCenterClientPlugin() func(cfg *Config) Registry {
+	registryFunc, ok := RegistryPlugins[beego.AppConfig.String("registry_plugin")]
+	if !ok {
+		return func(*Config) Registry {
+			return &ErrorRegisterCenterClient{
+				ready: make(chan int),
+			}
+		}
+	}
+	return registryFunc
+}
+
 func RegisterCenterClient() (Registry, error) {
-	registryFunc := RegistryPlugins[beego.AppConfig.String("registry_plugin")]
+	registryFunc := RegisterCenterClientPlugin()
 	autoSyncInterval, _ := beego.AppConfig.Int64("auto_sync_interval")
 	if autoSyncInterval <= 0 {
 		autoSyncInterval = REFRESH_MANAGER_CLUSTER_INTERVAL

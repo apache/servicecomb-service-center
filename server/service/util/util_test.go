@@ -11,28 +11,41 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package util
+package util_test
 
-import "github.com/ServiceComb/service-center/server/core/registry"
+import (
+	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
+	"testing"
+)
 
-type QueryOp func() []registry.PluginOpOption
-
-func WithNoCache(no bool) QueryOp {
-	if !no {
-		return func() []registry.PluginOpOption { return nil }
+func TestWithNoCache(t *testing.T) {
+	op := serviceUtil.WithNoCache(false)
+	if op == nil {
+		t.FailNow()
 	}
-	return func() []registry.PluginOpOption {
-		return []registry.PluginOpOption{registry.WithNoCache()}
+	r := op()
+	if r != nil {
+		t.FailNow()
+	}
+
+	op = serviceUtil.WithNoCache(true)
+	if op == nil {
+		t.FailNow()
+	}
+	r = op()
+	if r == nil {
+		t.FailNow()
 	}
 }
 
-func QueryOptions(qopts ...QueryOp) (opts []registry.PluginOpOption) {
-	if len(qopts) == 0 {
-		return
+func TestQueryOptions(t *testing.T) {
+	opts := serviceUtil.QueryOptions()
+	if opts != nil {
+		t.FailNow()
 	}
-	opts = []registry.PluginOpOption{}
-	for _, qopt := range qopts {
-		opts = append(opts, qopt()...)
+
+	opts = serviceUtil.QueryOptions(serviceUtil.WithNoCache(true))
+	if len(opts) != 1 {
+		t.FailNow()
 	}
-	return
 }

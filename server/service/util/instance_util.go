@@ -26,9 +26,10 @@ import (
 	"strings"
 )
 
-func GetLeaseId(ctx context.Context, tenant string, serviceId string, instanceId string) (int64, error) {
-	resp, err := store.Store().Lease().Search(ctx,
+func GetLeaseId(ctx context.Context, tenant string, serviceId string, instanceId string, opts ...registry.PluginOpOption) (int64, error) {
+	opts = append(opts,
 		registry.WithStrKey(apt.GenerateInstanceLeaseKey(tenant, serviceId, instanceId)))
+	resp, err := store.Store().Lease().Search(ctx, opts...)
 	if err != nil {
 		return -1, err
 	}
@@ -88,10 +89,11 @@ func GetAllInstancesOfOneService(ctx context.Context, tenant string, serviceId s
 	return instances, nil
 }
 
-func InstanceExist(ctx context.Context, tenant string, serviceId string, instanceId string) (bool, error) {
-	resp, err := store.Store().Instance().Search(ctx,
+func InstanceExist(ctx context.Context, tenant string, serviceId string, instanceId string, opts ...registry.PluginOpOption) (bool, error) {
+	opts = append(opts,
 		registry.WithStrKey(apt.GenerateInstanceKey(tenant, serviceId, instanceId)),
 		registry.WithCountOnly())
+	resp, err := store.Store().Instance().Search(ctx, opts...)
 	if err != nil {
 		return false, err
 	}

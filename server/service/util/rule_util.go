@@ -103,21 +103,23 @@ func GetRulesUtil(ctx context.Context, tenant string, serviceId string, opts ...
 	return rules, nil
 }
 
-func RuleExist(ctx context.Context, tenant string, serviceId string, attr string, pattern string) bool {
-	resp, err := store.Store().RuleIndex().Search(ctx,
+func RuleExist(ctx context.Context, tenant string, serviceId string, attr string, pattern string, opts ...registry.PluginOpOption) bool {
+	opts = append(opts,
 		registry.WithStrKey(apt.GenerateRuleIndexKey(tenant, serviceId, attr, pattern)),
 		registry.WithCountOnly())
+	resp, err := store.Store().RuleIndex().Search(ctx, opts...)
 	if err != nil || resp.Count == 0 {
 		return false
 	}
 	return true
 }
 
-func GetServiceRuleType(ctx context.Context, tenant string, serviceId string) (string, int, error) {
+func GetServiceRuleType(ctx context.Context, tenant string, serviceId string, opts ...registry.PluginOpOption) (string, int, error) {
 	key := apt.GenerateServiceRuleKey(tenant, serviceId, "")
-	resp, err := store.Store().Rule().Search(ctx,
+	opts = append(opts,
 		registry.WithStrKey(key),
 		registry.WithPrefix())
+	resp, err := store.Store().Rule().Search(ctx, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "Get rule failed.%s", err.Error())
 		return "", 0, err
@@ -133,9 +135,10 @@ func GetServiceRuleType(ctx context.Context, tenant string, serviceId string) (s
 	return rule.RuleType, len(resp.Kvs), nil
 }
 
-func GetOneRule(ctx context.Context, tenant, serviceId, ruleId string) (*pb.ServiceRule, error) {
-	resp, err := store.Store().Rule().Search(ctx,
+func GetOneRule(ctx context.Context, tenant, serviceId, ruleId string, opts ...registry.PluginOpOption) (*pb.ServiceRule, error) {
+	opts = append(opts,
 		registry.WithStrKey(apt.GenerateServiceRuleKey(tenant, serviceId, ruleId)))
+	resp, err := store.Store().Rule().Search(ctx, opts...)
 	if err != nil {
 		util.Logger().Errorf(nil, "Get rule for service failed for %s.", err.Error())
 		return nil, err
@@ -167,6 +170,10 @@ func AllowAcrossApp(providerService *pb.MicroService, consumerService *pb.MicroS
 }
 
 func MatchRules(rules []*pb.ServiceRule, service *pb.MicroService, serviceTags map[string]string) error {
+	if service == nil {
+		return nil
+	}
+
 	v := reflect.Indirect(reflect.ValueOf(service))
 
 	hasWhite := false
@@ -211,110 +218,4 @@ func MatchRules(rules []*pb.ServiceRule, service *pb.MicroService, serviceTags m
 		return NotMatchWhiteListError("Not found in white list")
 	}
 	return nil
-}
-
-func getConsumerIdsWithFilter(ctx context.Context, tenant, providerId string, provider *pb.MicroService,
-	filter func(ctx context.Context, consumerId string) (bool, error)) (allow []string, deny []string, err error) {
-	consumerIds, err := GetConsumersInCache(ctx, tenant, providerId, provider)
-	if err != nil {
-		return nil, nil, err
-	}
-	return filterConsumerIds(ctx, consumerIds, filter)
-}
-
-func filterConsumerIds(ctx context.Context, consumerIds []string,
-	filter func(ctx context.Context, consumerId string) (bool, error)) (allow []string, deny []string, err error) {
-	l := len(consumerIds)
-	if l == 0 {
-		return nil, nil, nil
-	}
-	allowIdx, denyIdx := 0, l
-	consumers := make([]string, l)
-	for _, consumerId := range consumerIds {
-		ok, err := filter(ctx, consumerId)
-		if err != nil {
-			return nil, nil, err
-		}
-		if ok {
-			consumers[allowIdx] = consumerId
-			allowIdx++
-		} else {
-			denyIdx--
-			consumers[denyIdx] = consumerId
-		}
-	}
-	return consumers[:allowIdx], consumers[denyIdx:], nil
-}
-
-func noFilter(_ context.Context, _ string) (bool, error) {
-	return true, nil
-}
-
-func GetConsumerIds(ctx context.Context, tenant string, provider *pb.MicroService) (allow []string, deny []string, _ error) {
-	if provider == nil || len(provider.ServiceId) == 0 {
-		return nil, nil, fmt.Errorf("invalid provider")
-	}
-
-	//todo 删除服务，最后实例推送有误差
-	providerRules, err := GetRulesUtil(ctx, tenant, provider.ServiceId, registry.WithCacheOnly())
-	if err != nil {
-		return nil, nil, err
-	}
-	if len(providerRules) == 0 {
-		return getConsumerIdsWithFilter(ctx, tenant, provider.ServiceId, provider, noFilter)
-	}
-
-	rf := RuleFilter{
-		Tenant:        tenant,
-		Provider:      provider,
-		ProviderRules: providerRules,
-	}
-
-	allow, deny, err = getConsumerIdsWithFilter(ctx, tenant, provider.ServiceId, provider, rf.Filter)
-	if err != nil {
-		return nil, nil, err
-	}
-	return allow, deny, nil
-}
-
-func GetProviderIdsByConsumerId(ctx context.Context, tenant, consumerId string, server *pb.MicroService) (allow []string, deny []string, _ error) {
-	providerIdsInCache, err := GetProvidersInCache(ctx, tenant, consumerId, server)
-	if err != nil {
-		return nil, nil, err
-	}
-	l := len(providerIdsInCache)
-	rf := RuleFilter{
-		Tenant: tenant,
-	}
-	allowIdx, denyIdx := 0, l
-	providerIds := make([]string, l)
-	for _, providerId := range providerIdsInCache {
-		provider, err := GetService(ctx, tenant, providerId)
-		if provider == nil {
-			continue
-		}
-		providerRules, err := GetRulesUtil(ctx, tenant, provider.ServiceId, registry.WithCacheOnly())
-		if err != nil {
-			return nil, nil, err
-		}
-		if len(providerRules) == 0 {
-			providerIds[allowIdx] = providerId
-			allowIdx++
-			continue
-		}
-		rf.Provider = provider
-		rf.ProviderRules = providerRules
-		ok, err := rf.Filter(ctx, consumerId)
-		if err != nil {
-			return nil, nil, err
-		}
-		if ok {
-			providerIds[allowIdx] = providerId
-			allowIdx++
-		} else {
-			denyIdx--
-			providerIds[denyIdx] = providerId
-		}
-	}
-	return providerIds[:allowIdx], providerIds[denyIdx:], nil
 }

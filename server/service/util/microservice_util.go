@@ -97,6 +97,9 @@ func GetServicesRawData(ctx context.Context, tenant string, opts ...registry.Plu
 		registry.WithStrKey(key),
 		registry.WithPrefix())
 	resp, err := store.Store().Service().Search(ctx, opts...)
+	if err != nil {
+		return nil, err
+	}
 	return resp.Kvs, err
 }
 
@@ -155,7 +158,7 @@ func searchServiceIdFromAlias(ctx context.Context, key *pb.MicroServiceKey, opts
 	return util.BytesToStringWithNoCopy(resp.Kvs[0].Value), nil
 }
 
-func GetServiceAllVersions(ctx context.Context, key *pb.MicroServiceKey, alias bool) (*registry.PluginResponse, error) {
+func GetServiceAllVersions(ctx context.Context, key *pb.MicroServiceKey, alias bool, opts ...registry.PluginOpOption) (*registry.PluginResponse, error) {
 	key.Version = ""
 	var prefix string
 	if alias {
@@ -163,10 +166,11 @@ func GetServiceAllVersions(ctx context.Context, key *pb.MicroServiceKey, alias b
 	} else {
 		prefix = apt.GenerateServiceIndexKey(key)
 	}
-	resp, err := store.Store().ServiceIndex().Search(ctx,
+	opts = append(opts,
 		registry.WithStrKey(prefix),
 		registry.WithPrefix(),
 		registry.WithDescendOrder())
+	resp, err := store.Store().ServiceIndex().Search(ctx, opts...)
 	return resp, err
 }
 
@@ -190,7 +194,7 @@ func FindServiceIds(ctx context.Context, versionRule string, key *pb.MicroServic
 	alsoFindAlias := len(key.Alias) > 0
 
 FIND_RULE:
-	resp, err := GetServiceAllVersions(ctx, key, searchAlias)
+	resp, err := GetServiceAllVersions(ctx, key, searchAlias, opts...)
 	if err != nil {
 		return nil, err
 	}

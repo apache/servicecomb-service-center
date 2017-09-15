@@ -588,7 +588,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 		}
 
 		key := apt.GenerateServiceSchemaKey(tenant, in.ServiceId, in.SchemaId)
-		err, exist := serviceUtil.CheckSchemaInfoExist(ctx, key, opts...)
+		exist, err := serviceUtil.CheckSchemaInfoExist(ctx, key, opts...)
 		if err != nil {
 			util.Logger().Errorf(err, "schema exist failed, serviceId %s, schemaId %s: get schema failed.", in.ServiceId, in.SchemaId)
 			return &pb.GetExistenceResponse{

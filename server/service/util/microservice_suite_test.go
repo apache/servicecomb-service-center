@@ -15,11 +15,14 @@ package util_test
 
 import (
 	"fmt"
+	"github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/ServiceComb/service-center/server/core/registry"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
+	"golang.org/x/net/context"
 	"testing"
 )
 
@@ -33,7 +36,105 @@ func TestMicroservice(t *testing.T) {
 }
 
 func TestFindServiceIds(t *testing.T) {
+	_, err := serviceUtil.FindServiceIds(context.Background(), "latest", &proto.MicroServiceKey{},
+		registry.WithCacheOnly())
+	if err != nil {
+		t.FailNow()
+	}
 
+	_, err = serviceUtil.FindServiceIds(context.Background(), "1.0.0", &proto.MicroServiceKey{},
+		registry.WithCacheOnly())
+	if err != nil {
+		t.FailNow()
+	}
+
+	_, err = serviceUtil.FindServiceIds(context.Background(), "1.0+", &proto.MicroServiceKey{Alias: "test"},
+		registry.WithCacheOnly())
+	if err != nil {
+		t.FailNow()
+	}
+}
+
+func TestGetService(t *testing.T) {
+	_, err := serviceUtil.GetService(context.Background(), "", "", registry.WithCacheOnly())
+	if err != nil {
+		t.FailNow()
+	}
+
+	_, err = serviceUtil.GetService(context.Background(), "", "")
+	if err == nil {
+		t.FailNow()
+	}
+
+	_, err = serviceUtil.GetServicesRawData(context.Background(), "", registry.WithCacheOnly())
+	if err != nil {
+		t.FailNow()
+	}
+
+	_, err = serviceUtil.GetServicesRawData(context.Background(), "")
+	if err == nil {
+		t.FailNow()
+	}
+
+	_, err = serviceUtil.GetServicesByTenant(context.Background(), "", registry.WithCacheOnly())
+	if err != nil {
+		t.FailNow()
+	}
+
+	_, err = serviceUtil.GetServicesByTenant(context.Background(), "")
+	if err == nil {
+		t.FailNow()
+	}
+
+	_, err = serviceUtil.GetAllServiceUtil(context.Background(), registry.WithCacheOnly())
+	if err != nil {
+		t.FailNow()
+	}
+
+	_, err = serviceUtil.GetAllServiceUtil(context.Background())
+	if err == nil {
+		t.FailNow()
+	}
+
+	_, err = serviceUtil.GetServiceWithRev(context.Background(), "", "", 0)
+	if err == nil {
+		t.FailNow()
+	}
+
+	_, err = serviceUtil.GetServiceWithRev(context.Background(), "", "", 1)
+	if err == nil {
+		t.FailNow()
+	}
+}
+
+func TestMsCache(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.FailNow()
+		}
+	}()
+	_, err := serviceUtil.GetServiceInCache(context.Background(), "", "")
+	if err == nil {
+		t.FailNow()
+	}
+	ms := serviceUtil.MsCache()
+	if ms == nil {
+		t.FailNow()
+	}
+	ms.Set("", &proto.MicroService{}, 0)
+	_, err = serviceUtil.GetServiceInCache(context.Background(), "", "")
+	if err != nil {
+		t.FailNow()
+	}
+}
+
+func TestServiceExist(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.FailNow()
+		}
+	}()
+	serviceUtil.ServiceExist(context.Background(), "", "", registry.WithCacheOnly())
 }
 
 func BenchmarkVersionRule_Latest_GetServicesIds(b *testing.B) {

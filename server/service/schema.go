@@ -96,7 +96,7 @@ func (s *ServiceController) DeleteSchema(ctx context.Context, request *pb.Delete
 	}
 
 	key := apt.GenerateServiceSchemaKey(tenant, request.ServiceId, request.SchemaId)
-	err, exist := serviceUtil.CheckSchemaInfoExist(ctx, key)
+	exist, err := serviceUtil.CheckSchemaInfoExist(ctx, key)
 	if err != nil {
 		util.Logger().Errorf(err, "delete schema failded, serviceId %s, schemaId %s: get schema failed.", request.ServiceId, request.SchemaId)
 		return &pb.DeleteSchemaResponse{

@@ -23,10 +23,11 @@ import (
 	"strings"
 )
 
-func GetAllTenantRawData() ([]*mvccpb.KeyValue, error) {
-	rsp, err := store.Store().Domain().Search(context.Background(),
+func GetAllTenantRawData(ctx context.Context, opts ...registry.PluginOpOption) ([]*mvccpb.KeyValue, error) {
+	opts = append(opts,
 		registry.WithStrKey(apt.GenerateDomainKey("")),
 		registry.WithPrefix())
+	rsp, err := store.Store().Domain().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -34,30 +35,34 @@ func GetAllTenantRawData() ([]*mvccpb.KeyValue, error) {
 
 }
 
-func GetAllTenent() ([]string, error) {
+func GetAllTenant(ctx context.Context, opts ...registry.PluginOpOption) ([]string, error) {
 	insWatherByTenantKeys := []string{}
-	kvs, err := GetAllTenantRawData()
+	kvs, err := GetAllTenantRawData(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
-	if len(kvs) != 0 {
-		tenant := ""
-		instByTenant := ""
-		arrTmp := []string{}
-		for _, kv := range kvs {
-			arrTmp = strings.Split(util.BytesToStringWithNoCopy(kv.Key), "/")
-			tenant = arrTmp[len(arrTmp)-1]
-			instByTenant = apt.GetInstanceRootKey(tenant)
-			insWatherByTenantKeys = append(insWatherByTenantKeys, instByTenant)
-		}
+
+	if len(kvs) == 0 {
+		return insWatherByTenantKeys, err
+	}
+
+	tenant := ""
+	instByTenant := ""
+	arrTmp := []string{}
+	for _, kv := range kvs {
+		arrTmp = strings.Split(util.BytesToStringWithNoCopy(kv.Key), "/")
+		tenant = arrTmp[len(arrTmp)-1]
+		instByTenant = apt.GetInstanceRootKey(tenant)
+		insWatherByTenantKeys = append(insWatherByTenantKeys, instByTenant)
 	}
 	return insWatherByTenantKeys, err
 }
 
-func DomainExist(ctx context.Context, domain string) (bool, error) {
-	rsp, err := store.Store().Domain().Search(ctx,
+func DomainExist(ctx context.Context, domain string, opts ...registry.PluginOpOption) (bool, error) {
+	opts = append(opts,
 		registry.WithStrKey(apt.GenerateDomainKey(domain)),
 		registry.WithCountOnly())
+	rsp, err := store.Store().Domain().Search(ctx, opts...)
 	if err != nil {
 		return false, err
 	}

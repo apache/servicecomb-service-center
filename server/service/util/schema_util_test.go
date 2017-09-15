@@ -11,28 +11,23 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package util
+package util_test
 
-import "github.com/ServiceComb/service-center/server/core/registry"
+import (
+	"github.com/ServiceComb/service-center/server/core/registry"
+	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
+	"golang.org/x/net/context"
+	"testing"
+)
 
-type QueryOp func() []registry.PluginOpOption
+func TestCheckSchemaInfoExist(t *testing.T) {
+	_, err := serviceUtil.CheckSchemaInfoExist(context.Background(), "", registry.WithCacheOnly())
+	if err != nil {
+		t.FailNow()
+	}
 
-func WithNoCache(no bool) QueryOp {
-	if !no {
-		return func() []registry.PluginOpOption { return nil }
+	_, err = serviceUtil.CheckSchemaInfoExist(context.Background(), "")
+	if err == nil {
+		t.FailNow()
 	}
-	return func() []registry.PluginOpOption {
-		return []registry.PluginOpOption{registry.WithNoCache()}
-	}
-}
-
-func QueryOptions(qopts ...QueryOp) (opts []registry.PluginOpOption) {
-	if len(qopts) == 0 {
-		return
-	}
-	opts = []registry.PluginOpOption{}
-	for _, qopt := range qopts {
-		opts = append(opts, qopt()...)
-	}
-	return
 }

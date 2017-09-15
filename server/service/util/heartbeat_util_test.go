@@ -11,28 +11,19 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package util
+package util_test
 
-import "github.com/ServiceComb/service-center/server/core/registry"
+import (
+	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
+	"golang.org/x/net/context"
+	"testing"
+)
 
-type QueryOp func() []registry.PluginOpOption
-
-func WithNoCache(no bool) QueryOp {
-	if !no {
-		return func() []registry.PluginOpOption { return nil }
-	}
-	return func() []registry.PluginOpOption {
-		return []registry.PluginOpOption{registry.WithNoCache()}
-	}
-}
-
-func QueryOptions(qopts ...QueryOp) (opts []registry.PluginOpOption) {
-	if len(qopts) == 0 {
-		return
-	}
-	opts = []registry.PluginOpOption{}
-	for _, qopt := range qopts {
-		opts = append(opts, qopt()...)
-	}
-	return
+func TestHeartbeatUtil(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.FailNow()
+		}
+	}()
+	serviceUtil.HeartbeatUtil(context.Background(), "", "", "")
 }
