@@ -46,7 +46,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 	}
 	instance := in.GetInstance()
 	if len(instance.Environment) == 0 {
-		instance.Environment = apt.REGISTRY_DEFAULT_INSTANCE_ENV
+		instance.Environment = apt.Instance.Environment
 	}
 	remoteIP := util.GetIPFromContext(ctx)
 	instanceFlag := util.StringJoin([]string{instance.ServiceId, instance.HostName}, "/")
