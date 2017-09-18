@@ -13,20 +13,26 @@
 //limitations under the License.
 package util
 
-import (
-	"github.com/ServiceComb/service-center/server/core/registry"
-	"github.com/ServiceComb/service-center/server/core/registry/store"
-	"golang.org/x/net/context"
-)
+import "github.com/ServiceComb/service-center/server/core/registry"
 
-func CheckSchemaInfoExist(ctx context.Context, key string, opts ...registry.PluginOpOption) (bool, error) {
-	opts = append(opts, registry.WithStrKey(key), registry.WithCountOnly())
-	resp, errDo := store.Store().Schema().Search(ctx, opts...)
-	if errDo != nil {
-		return false, errDo
+type QueryOp func() []registry.PluginOpOption
+
+func WithNoCache(no bool) QueryOp {
+	if !no {
+		return func() []registry.PluginOpOption { return nil }
 	}
-	if resp.Count == 0 {
-		return false, nil
+	return func() []registry.PluginOpOption {
+		return []registry.PluginOpOption{registry.WithNoCache()}
 	}
-	return true, nil
+}
+
+func QueryOptions(qopts ...QueryOp) (opts []registry.PluginOpOption) {
+	if len(qopts) == 0 {
+		return
+	}
+	opts = []registry.PluginOpOption{}
+	for _, qopt := range qopts {
+		opts = append(opts, qopt()...)
+	}
+	return
 }

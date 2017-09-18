@@ -11,22 +11,19 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package util
+package util_test
 
 import (
-	"github.com/ServiceComb/service-center/server/core/registry"
-	"github.com/ServiceComb/service-center/server/core/registry/store"
+	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"golang.org/x/net/context"
+	"testing"
 )
 
-func CheckSchemaInfoExist(ctx context.Context, key string, opts ...registry.PluginOpOption) (bool, error) {
-	opts = append(opts, registry.WithStrKey(key), registry.WithCountOnly())
-	resp, errDo := store.Store().Schema().Search(ctx, opts...)
-	if errDo != nil {
-		return false, errDo
-	}
-	if resp.Count == 0 {
-		return false, nil
-	}
-	return true, nil
+func TestHeartbeatUtil(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.FailNow()
+		}
+	}()
+	serviceUtil.HeartbeatUtil(context.Background(), "", "", "")
 }

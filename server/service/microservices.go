@@ -23,8 +23,6 @@ import (
 	"github.com/ServiceComb/service-center/server/core/registry/store"
 	"github.com/ServiceComb/service-center/server/infra/quota"
 	"github.com/ServiceComb/service-center/server/plugins/dynamic"
-	"github.com/ServiceComb/service-center/server/service/dependency"
-	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
 	errorsEx "github.com/ServiceComb/service-center/util/errors"
@@ -119,39 +117,18 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 	aliasBytes := util.StringToBytesWithNoCopy(apt.GenerateServiceAliasKey(consumer))
 	util.Logger().Debugf("start register service: %s %v", key, service)
 	util.Logger().Debugf("start register service index: %s %v", index, serviceId)
-	opts := []*registry.PluginOp{
-		{
-			Action: registry.PUT,
-			Key:    util.StringToBytesWithNoCopy(key),
-			Value:  data,
-		},
-		{
-			Action: registry.PUT,
-			Key:    indexBytes,
-			Value:  util.StringToBytesWithNoCopy(serviceId),
-		},
+	opts := []registry.PluginOp{
+		registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)),
+		registry.OpPut(registry.WithKey(indexBytes), registry.WithStrValue(serviceId)),
 	}
-	uniqueCmpOpts := []*registry.CompareOp{
-		{
-			Key:    indexBytes,
-			Type:   registry.CMP_VERSION,
-			Result: registry.CMP_EQUAL,
-			Value:  0,
-		},
+	uniqueCmpOpts := []registry.CompareOp{
+		registry.OpCmp(registry.CmpVer(indexBytes), registry.CMP_EQUAL, 0),
 	}
 
 	if len(consumer.Alias) > 0 {
-		opts = append(opts, &registry.PluginOp{
-			Action: registry.PUT,
-			Key:    aliasBytes,
-			Value:  util.StringToBytesWithNoCopy(serviceId),
-		})
-		uniqueCmpOpts = append(uniqueCmpOpts, &registry.CompareOp{
-			Key:    aliasBytes,
-			Type:   registry.CMP_VERSION,
-			Result: registry.CMP_EQUAL,
-			Value:  0,
-		})
+		opts = append(opts, registry.OpPut(registry.WithKey(aliasBytes), registry.WithStrValue(serviceId)))
+		uniqueCmpOpts = append(uniqueCmpOpts,
+			registry.OpCmp(registry.CmpVer(aliasBytes), registry.CMP_EQUAL, 0))
 	}
 
 	resp, err := registry.GetRegisterCenter().TxnWithCmp(ctx, opts, uniqueCmpOpts, nil)
@@ -164,7 +141,7 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 	}
 	if !resp.Succeeded {
 		if s.isCreateServiceEx(in) == true {
-			serviceIdInner, _ := ms.GetServiceId(ctx, consumer)
+			serviceIdInner, _ := serviceUtil.GetServiceId(ctx, consumer)
 			util.Logger().Warnf(nil, "create microservice failed, serviceid = %s , flag = %s: service already exists. operator: %s",
 				serviceIdInner, serviceFlag, remoteIP)
 
@@ -204,7 +181,7 @@ func checkBeforeCreate(ctx context.Context, tenant string) error {
 func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId string, force bool) (*pb.Response, error) {
 	tenant := util.ParseTenantProject(ctx)
 
-	service, err := ms.GetService(ctx, tenant, ServiceId)
+	service, err := serviceUtil.GetService(ctx, tenant, ServiceId)
 	if err != nil {
 		util.Logger().Errorf(err, "delete microservice failed, serviceId is %s: get service failed.", ServiceId)
 		return pb.CreateResponse(pb.Response_FAIL, err.Error()), err
@@ -219,7 +196,7 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 
 	// 强制删除，则与该服务相关的信息删除，非强制删除： 如果作为该被依赖（作为provider，提供服务,且不是只存在自依赖）或者存在实例，则不能删除
 	if !force {
-		dr := dependency.NewConsumerDependencyRelation(tenant, ServiceId, service)
+		dr := serviceUtil.NewConsumerDependencyRelation(ctx, tenant, ServiceId, service)
 		services, err := dr.GetDependencyProviderIds()
 		if err != nil {
 			util.Logger().Errorf(err, "delete microservice failed, serviceId is %s:(unforce) inner err, get service dependency failed.", ServiceId)
@@ -231,12 +208,10 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 		}
 
 		instancesKey := apt.GenerateInstanceKey(tenant, ServiceId, "")
-		rsp, err := store.Store().Instance().Search(ctx, &registry.PluginOp{
-			Action:     registry.GET,
-			Key:        util.StringToBytesWithNoCopy(instancesKey),
-			WithPrefix: true,
-			CountOnly:  true,
-		})
+		rsp, err := store.Store().Instance().Search(ctx,
+			registry.WithStrKey(instancesKey),
+			registry.WithPrefix(),
+			registry.WithCountOnly())
 		if err != nil {
 			util.Logger().Errorf(err, "delete microservice failed, serviceId is %s:(unforce) inner err,get instances failed.", ServiceId)
 			return pb.CreateResponse(pb.Response_FAIL, "Get instance failed."), err
@@ -257,33 +232,18 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 	}
 
 	//refresh msCache consumerCache, ensure that watch can notify consumers when no cache.
-	err = dependency.RefreshDependencyCache(tenant, ServiceId, service)
+	err = serviceUtil.RefreshDependencyCache(ctx, tenant, ServiceId, service)
 	if err != nil {
 		util.Logger().Errorf(err, "delete microservice failed, serviceId is %s: inner err, refresh service dependency cache failed.", ServiceId)
 		return pb.CreateResponse(pb.Response_FAIL, "Refresh dependency cache failed."), err
 	}
 
-	opts := []*registry.PluginOp{
-		{
-			Action: registry.DELETE,
-			Key:    util.StringToBytesWithNoCopy(apt.GenerateServiceIndexKey(consumer)),
-		},
-		{
-			Action: registry.DELETE,
-			Key:    util.StringToBytesWithNoCopy(apt.GenerateServiceAliasKey(consumer)),
-		},
-		{
-			Action: registry.DELETE,
-			Key:    util.StringToBytesWithNoCopy(apt.GenerateServiceKey(tenant, ServiceId)),
-		},
-		{
-			Action: registry.DELETE,
-			Key: util.StringToBytesWithNoCopy(util.StringJoin([]string{
-				apt.GetServiceRuleRootKey(tenant),
-				ServiceId,
-				"",
-			}, "/")),
-		},
+	opts := []registry.PluginOp{
+		registry.OpDel(registry.WithStrKey(apt.GenerateServiceIndexKey(consumer))),
+		registry.OpDel(registry.WithStrKey(apt.GenerateServiceAliasKey(consumer))),
+		registry.OpDel(registry.WithStrKey(apt.GenerateServiceKey(tenant, ServiceId))),
+		registry.OpDel(registry.WithStrKey(
+			util.StringJoin([]string{apt.GetServiceRuleRootKey(tenant), ServiceId, ""}, "/"))),
 	}
 
 	//删除依赖规则
@@ -292,7 +252,7 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 		util.Logger().Errorf(err, "delete microservice failed, serviceId is %s: inner err, create lock failed.", ServiceId)
 		return pb.CreateResponse(pb.Response_FAIL, err.Error()), err
 	}
-	optsTmp, err := dependency.DeleteDependencyForService(ctx, consumer, ServiceId)
+	optsTmp, err := serviceUtil.DeleteDependencyForService(ctx, consumer, ServiceId)
 	lock.Unlock()
 	if err != nil {
 		util.Logger().Errorf(err, "delete microservice failed, serviceId is %s: inner err, delete dependency failed.", ServiceId)
@@ -301,36 +261,20 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 	opts = append(opts, optsTmp...)
 
 	//删除黑白名单
-	rulekey := apt.GenerateServiceRuleKey(tenant, ServiceId, "")
-	opt := &registry.PluginOp{
-		Action:     registry.DELETE,
-		Key:        util.StringToBytesWithNoCopy(rulekey),
-		WithPrefix: true,
-	}
-	opts = append(opts, opt)
-	indexKey := apt.GenerateRuleIndexKey(tenant, ServiceId, "", "")
-	opts = append(opts, &registry.PluginOp{
-		Action: registry.DELETE,
-		Key:    util.StringToBytesWithNoCopy(indexKey),
-	})
-	opts = append(opts, opt)
+	opts = append(opts, registry.OpDel(
+		registry.WithStrKey(apt.GenerateServiceRuleKey(tenant, ServiceId, "")),
+		registry.WithPrefix()))
+	opts = append(opts, registry.OpDel(
+		registry.WithStrKey(apt.GenerateRuleIndexKey(tenant, ServiceId, "", ""))))
 
 	//删除shemas
-	schemaKey := apt.GenerateServiceSchemaKey(tenant, ServiceId, "")
-	opt = &registry.PluginOp{
-		Action:     registry.DELETE,
-		Key:        util.StringToBytesWithNoCopy(schemaKey),
-		WithPrefix: true,
-	}
-	opts = append(opts, opt)
+	opts = append(opts, registry.OpDel(
+		registry.WithStrKey(apt.GenerateServiceSchemaKey(tenant, ServiceId, "")),
+		registry.WithPrefix()))
 
 	//删除tags
-	tagsKey := apt.GenerateServiceTagKey(tenant, ServiceId)
-	opt = &registry.PluginOp{
-		Action: registry.DELETE,
-		Key:    util.StringToBytesWithNoCopy(tagsKey),
-	}
-	opts = append(opts, opt)
+	opts = append(opts, registry.OpDel(
+		registry.WithStrKey(apt.GenerateServiceTagKey(tenant, ServiceId))))
 
 	//删除实例
 	err = serviceUtil.DeleteServiceAllInstances(ctx, ServiceId)
@@ -463,7 +407,8 @@ func (s *ServiceController) GetOne(ctx context.Context, in *pb.GetServiceRequest
 		}, nil
 	}
 	tenant := util.ParseTenantProject(ctx)
-	service, err := ms.GetService(ctx, tenant, in.ServiceId)
+	service, err := serviceUtil.GetService(ctx, tenant, in.ServiceId,
+		serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))...)
 
 	if err != nil {
 		util.Logger().Errorf(err, "get microservice failed, serviceId is %s: inner err,get service failed.", in.ServiceId)
@@ -490,7 +435,8 @@ func (s *ServiceController) GetServices(ctx context.Context, in *pb.GetServicesR
 			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
 		}, nil
 	}
-	services, err := ms.GetAllServiceUtil(ctx)
+	services, err := serviceUtil.GetAllServiceUtil(ctx,
+		serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))...)
 	if err != nil {
 		util.Logger().Errorf(err, "get services failed: inner err.")
 		return &pb.GetServicesResponse{
@@ -522,7 +468,7 @@ func (s *ServiceController) UpdateProperties(ctx context.Context, in *pb.UpdateS
 	tenant := util.ParseTenantProject(ctx)
 
 	key := apt.GenerateServiceKey(tenant, in.ServiceId)
-	service, err := ms.GetService(ctx, tenant, in.ServiceId)
+	service, err := serviceUtil.GetService(ctx, tenant, in.ServiceId)
 	if err != nil {
 		util.Logger().Errorf(err, "update service properties failed, serviceId is %s: query service failed.", in.ServiceId)
 		return &pb.UpdateServicePropsResponse{
@@ -550,11 +496,10 @@ func (s *ServiceController) UpdateProperties(ctx context.Context, in *pb.UpdateS
 	}
 
 	// Set key file
-	_, err = registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action: registry.PUT,
-		Key:    util.StringToBytesWithNoCopy(key),
-		Value:  data,
-	})
+	_, err = registry.GetRegisterCenter().Do(ctx,
+		registry.PUT,
+		registry.WithStrKey(key),
+		registry.WithValue(data))
 	if err != nil {
 		util.Logger().Errorf(err, "update service properties failed, serviceId is %s: commit data into etcd failed.", in.ServiceId)
 		return &pb.UpdateServicePropsResponse{
@@ -594,13 +539,13 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 			}, nil
 		}
 
-		ids, err := ms.FindServiceIds(ctx, in.Version, &pb.MicroServiceKey{
+		ids, err := serviceUtil.FindServiceIds(ctx, in.Version, &pb.MicroServiceKey{
 			AppId:       in.AppId,
 			ServiceName: in.ServiceName,
 			Alias:       in.ServiceName,
 			Version:     in.Version,
 			Tenant:      tenant,
-		})
+		}, serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))...)
 		if err != nil {
 			util.Logger().Errorf(err, "microservice exist failed, service %s: find serviceIds failed.", serviceFlag)
 			return &pb.GetExistenceResponse{
@@ -632,7 +577,10 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 			}, nil
 		}
-		if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
+
+		opts := serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))
+
+		if !serviceUtil.ServiceExist(ctx, tenant, in.ServiceId, opts...) {
 			util.Logger().Warnf(nil, "schema exist failed, serviceId %s, schemaId %s: service not exist.", in.ServiceId, in.SchemaId)
 			return &pb.GetExistenceResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
@@ -640,7 +588,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 		}
 
 		key := apt.GenerateServiceSchemaKey(tenant, in.ServiceId, in.SchemaId)
-		err, exist := serviceUtil.CheckSchemaInfoExist(ctx, key)
+		exist, err := serviceUtil.CheckSchemaInfoExist(ctx, key, opts...)
 		if err != nil {
 			util.Logger().Errorf(err, "schema exist failed, serviceId %s, schemaId %s: get schema failed.", in.ServiceId, in.SchemaId)
 			return &pb.GetExistenceResponse{
@@ -765,7 +713,7 @@ func (s *ServiceController) CreateServiceEx(ctx context.Context, in *pb.CreateSe
 }
 
 func (s *ServiceController) isCreateServiceEx(in *pb.CreateServiceRequest) bool {
-	if (len(in.Rules) == 0 &&  len(in.Tags) == 0 && len(in.Instances) == 0) {
+	if len(in.Rules) == 0 && len(in.Tags) == 0 && len(in.Instances) == 0 {
 		return false
 	}
 	return true

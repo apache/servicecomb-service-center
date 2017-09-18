@@ -19,7 +19,7 @@ import (
 	"fmt"
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
-	ms "github.com/ServiceComb/service-center/server/service/microservice"
+	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
 	"github.com/gorilla/websocket"
 	"golang.org/x/net/context"
@@ -150,7 +150,7 @@ func (wh *WebSocketHandler) HandleWatchWebSocketJob() {
 			}
 
 			tenant := util.ParseTenantProject(wh.ctx)
-			if !ms.ServiceExist(context.Background(), tenant, wh.watcher.Id()) {
+			if !serviceUtil.ServiceExist(context.Background(), tenant, wh.watcher.Id()) {
 				err := fmt.Errorf("Service does not exit.")
 				util.Logger().Warnf(err, "watcher[%s] %s %s exit", remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
 				err = wh.conn.WriteMessage(websocket.TextMessage, util.StringToBytesWithNoCopy(err.Error()))
@@ -194,7 +194,7 @@ func (wh *WebSocketHandler) HandleWatchWebSocketJob() {
 			if resp.Action != string(pb.EVT_EXPIRE) {
 				providerFlag = fmt.Sprintf("%s/%s(%s)", resp.Instance.ServiceId, resp.Instance.InstanceId, providerFlag)
 			}
-			util.Logger().Warnf(nil, "event[%s] is coming in, watcher[%s] %s %s, providers' info %s",
+			util.Logger().Infof("event[%s] is coming in, watcher[%s] %s %s, providers' info %s",
 				resp.Action, remoteAddr, wh.watcher.Subject(), wh.watcher.Id(), providerFlag)
 
 			resp.Response = nil

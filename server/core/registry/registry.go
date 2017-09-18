@@ -36,11 +36,11 @@ type ActionType int
 
 func (at ActionType) String() string {
 	switch at {
-	case GET:
+	case Get:
 		return "GET"
-	case PUT:
+	case Put:
 		return "PUT"
-	case DELETE:
+	case Delete:
 		return "DELETE"
 	default:
 		return "ACTION" + strconv.Itoa(int(at))
@@ -81,9 +81,9 @@ type CompareType int
 type CompareResult int
 
 const (
-	GET ActionType = iota
-	PUT
-	DELETE
+	Get ActionType = iota
+	Put
+	Delete
 )
 
 const (
@@ -123,10 +123,10 @@ const (
 type Registry interface {
 	Err() <-chan error
 	Ready() <-chan int
-	PutNoOverride(ctx context.Context, op *PluginOp) (bool, error)
-	Do(ctx context.Context, op *PluginOp) (*PluginResponse, error)
-	Txn(ctx context.Context, ops []*PluginOp) (*PluginResponse, error)
-	TxnWithCmp(ctx context.Context, success []*PluginOp, cmp []*CompareOp, fail []*PluginOp) (*PluginResponse, error)
+	PutNoOverride(ctx context.Context, opts ...PluginOpOption) (bool, error)
+	Do(ctx context.Context, opts ...PluginOpOption) (*PluginResponse, error)
+	Txn(ctx context.Context, ops []PluginOp) (*PluginResponse, error)
+	TxnWithCmp(ctx context.Context, success []PluginOp, cmp []CompareOp, fail []PluginOp) (*PluginResponse, error)
 	LeaseGrant(ctx context.Context, TTL int64) (leaseID int64, err error)
 	LeaseRenew(ctx context.Context, leaseID int64) (TTL int64, err error)
 	LeaseRevoke(ctx context.Context, leaseID int64) error
@@ -135,7 +135,7 @@ type Registry interface {
 	// 2. call send function failed
 	// 3. response.Err()
 	// 4. time out to watch, but return nil
-	Watch(ctx context.Context, op *PluginOp, send func(message string, evt *PluginResponse) error) error
+	Watch(ctx context.Context, opts ...PluginOpOption) error
 	Close()
 	CompactCluster(ctx context.Context)
 	Compact(ctx context.Context, revision int64) error
@@ -151,24 +151,80 @@ type Config struct {
 }
 
 type PluginOp struct {
-	Action          ActionType `json:"action"`
-	Key             []byte     `json:"key,omitempty"`
-	EndKey          []byte     `json:"endKey,omitempty"`
-	Value           []byte     `json:"value,omitempty"`
-	WithPrefix      bool       `json:"prefix,omitempty"`
-	WithPrevKV      bool       `json:"prevKV,omitempty"`
-	Lease           int64      `json:"leaseId,omitempty"`
-	KeyOnly         bool       `json:"keyOnly,omitempty"`
-	CountOnly       bool       `json:"countOnly,omitempty"`
-	SortOrder       SortOrder  `json:"sort,omitempty"`
-	WithRev         int64      `json:"rev,omitempty"`
-	WithIgnoreLease bool       `json:"ignoreLease,omitempty"`
-	Mode            CacheMode  `json:"mode,omitempty"`
+	Action        ActionType    `json:"action"`
+	Key           []byte        `json:"key,omitempty"`
+	EndKey        []byte        `json:"endKey,omitempty"`
+	Value         []byte        `json:"value,omitempty"`
+	Prefix        bool          `json:"prefix,omitempty"`
+	PrevKV        bool          `json:"prevKV,omitempty"`
+	Lease         int64         `json:"leaseId,omitempty"`
+	KeyOnly       bool          `json:"keyOnly,omitempty"`
+	CountOnly     bool          `json:"countOnly,omitempty"`
+	SortOrder     SortOrder     `json:"sort,omitempty"`
+	Revision      int64         `json:"rev,omitempty"`
+	IgnoreLease   bool          `json:"ignoreLease,omitempty"`
+	Mode          CacheMode     `json:"mode,omitempty"`
+	WatchCallback WatchCallback `json:"watchCallback,omitempty"`
 }
 
 func (op *PluginOp) String() string {
 	b, _ := json.Marshal(op)
 	return util.BytesToStringWithNoCopy(b)
+}
+
+type PluginOpOption func(*PluginOp)
+type WatchCallback func(message string, evt *PluginResponse) error
+
+var GET PluginOpOption = func(op *PluginOp) { op.Action = Get }
+var PUT PluginOpOption = func(op *PluginOp) { op.Action = Put }
+var DEL PluginOpOption = func(op *PluginOp) { op.Action = Delete }
+
+func WithKey(key []byte) PluginOpOption      { return func(op *PluginOp) { op.Key = key } }
+func WithEndKey(key []byte) PluginOpOption   { return func(op *PluginOp) { op.EndKey = key } }
+func WithValue(value []byte) PluginOpOption  { return func(op *PluginOp) { op.Value = value } }
+func WithPrefix() PluginOpOption             { return func(op *PluginOp) { op.Prefix = true } }
+func WithPrevKv() PluginOpOption             { return func(op *PluginOp) { op.PrevKV = true } }
+func WithLease(leaseID int64) PluginOpOption { return func(op *PluginOp) { op.Lease = leaseID } }
+func WithKeyOnly() PluginOpOption            { return func(op *PluginOp) { op.KeyOnly = true } }
+func WithCountOnly() PluginOpOption          { return func(op *PluginOp) { op.CountOnly = true } }
+func WithNoneOrder() PluginOpOption          { return func(op *PluginOp) { op.SortOrder = SORT_NONE } }
+func WithAscendOrder() PluginOpOption        { return func(op *PluginOp) { op.SortOrder = SORT_ASCEND } }
+func WithDescendOrder() PluginOpOption       { return func(op *PluginOp) { op.SortOrder = SORT_DESCEND } }
+func WithRev(revision int64) PluginOpOption  { return func(op *PluginOp) { op.Revision = revision } }
+func WithIgnoreLease() PluginOpOption        { return func(op *PluginOp) { op.IgnoreLease = true } }
+func WithCacheOnly() PluginOpOption          { return func(op *PluginOp) { op.Mode = MODE_CACHE } }
+func WithNoCache() PluginOpOption            { return func(op *PluginOp) { op.Mode = MODE_NO_CACHE } }
+func WithWatchCallback(f WatchCallback) PluginOpOption {
+	return func(op *PluginOp) { op.WatchCallback = f }
+}
+func WithStrKey(key string) PluginOpOption     { return WithKey(util.StringToBytesWithNoCopy(key)) }
+func WithStrEndKey(key string) PluginOpOption  { return WithEndKey(util.StringToBytesWithNoCopy(key)) }
+func WithStrValue(value string) PluginOpOption { return WithValue(util.StringToBytesWithNoCopy(value)) }
+
+func WatchPrefixOpOptions(key string) []PluginOpOption {
+	return []PluginOpOption{GET, WithStrKey(key), WithPrefix(), WithPrevKv()}
+}
+
+func OpGet(opts ...PluginOpOption) (op PluginOp) {
+	op = OptionsToOp(opts...)
+	op.Action = Get
+	return
+}
+func OpPut(opts ...PluginOpOption) (op PluginOp) {
+	op = OptionsToOp(opts...)
+	op.Action = Put
+	return
+}
+func OpDel(opts ...PluginOpOption) (op PluginOp) {
+	op = OptionsToOp(opts...)
+	op.Action = Delete
+	return
+}
+func OptionsToOp(opts ...PluginOpOption) (op PluginOp) {
+	for _, opt := range opts {
+		opt(&op)
+	}
+	return
 }
 
 type PluginResponse struct {
@@ -180,8 +236,8 @@ type PluginResponse struct {
 }
 
 func (pr *PluginResponse) String() string {
-	return fmt.Sprintf("{action: %s, count: %d, rev: %d, succeed: %v}",
-		pr.Action, pr.Count, pr.Revision, pr.Succeeded)
+	return fmt.Sprintf("{action: %s, count: %d/%d, rev: %d, succeed: %v}",
+		pr.Action, len(pr.Kvs), pr.Count, pr.Revision, pr.Succeeded)
 }
 
 type CompareOp struct {
@@ -191,12 +247,87 @@ type CompareOp struct {
 	Value  interface{}
 }
 
+func CmpVer(key []byte) CompareOp          { return CompareOp{Key: key, Type: CMP_VERSION} }
+func CmpCreateRev(key []byte) CompareOp    { return CompareOp{Key: key, Type: CMP_CREATE} }
+func CmpModRev(key []byte) CompareOp       { return CompareOp{Key: key, Type: CMP_MOD} }
+func CmpVal(key []byte) CompareOp          { return CompareOp{Key: key, Type: CMP_VALUE} }
+func CmpStrVer(key string) CompareOp       { return CmpVer(util.StringToBytesWithNoCopy(key)) }
+func CmpStrCreateRev(key string) CompareOp { return CmpCreateRev(util.StringToBytesWithNoCopy(key)) }
+func CmpStrModRev(key string) CompareOp    { return CmpModRev(util.StringToBytesWithNoCopy(key)) }
+func CmpStrVal(key string) CompareOp       { return CmpVal(util.StringToBytesWithNoCopy(key)) }
+func OpCmp(cmp CompareOp, result CompareResult, v interface{}) CompareOp {
+	cmp.Result = result
+	cmp.Value = v
+	return cmp
+}
+
 func init() {
 	RegistryPlugins = make(map[string]func(cfg *Config) Registry)
 }
 
+var noClientPluginErr = fmt.Errorf("register center client plugin does not exist")
+
+type ErrorRegisterCenterClient struct {
+	ready chan int
+}
+
+func (ec *ErrorRegisterCenterClient) safeClose(chan int) {
+	defer util.RecoverAndReport()
+	close(ec.ready)
+}
+func (ec *ErrorRegisterCenterClient) Err() (err <-chan error) {
+	return
+}
+func (ec *ErrorRegisterCenterClient) Ready() <-chan int {
+	ec.safeClose(ec.ready)
+	return ec.ready
+}
+func (ec *ErrorRegisterCenterClient) PutNoOverride(ctx context.Context, opts ...PluginOpOption) (bool, error) {
+	return false, noClientPluginErr
+}
+func (ec *ErrorRegisterCenterClient) Do(ctx context.Context, opts ...PluginOpOption) (*PluginResponse, error) {
+	return nil, noClientPluginErr
+}
+func (ec *ErrorRegisterCenterClient) Txn(ctx context.Context, ops []PluginOp) (*PluginResponse, error) {
+	return nil, noClientPluginErr
+}
+func (ec *ErrorRegisterCenterClient) TxnWithCmp(ctx context.Context, success []PluginOp, cmp []CompareOp, fail []PluginOp) (*PluginResponse, error) {
+	return nil, noClientPluginErr
+}
+func (ec *ErrorRegisterCenterClient) LeaseGrant(ctx context.Context, TTL int64) (leaseID int64, err error) {
+	return 0, noClientPluginErr
+}
+func (ec *ErrorRegisterCenterClient) LeaseRenew(ctx context.Context, leaseID int64) (TTL int64, err error) {
+	return 0, noClientPluginErr
+}
+func (ec *ErrorRegisterCenterClient) LeaseRevoke(ctx context.Context, leaseID int64) error {
+	return noClientPluginErr
+}
+func (ec *ErrorRegisterCenterClient) Watch(ctx context.Context, opts ...PluginOpOption) error {
+	return noClientPluginErr
+}
+func (ec *ErrorRegisterCenterClient) Close() {
+	ec.safeClose(ec.ready)
+}
+func (ec *ErrorRegisterCenterClient) CompactCluster(ctx context.Context) {}
+func (ec *ErrorRegisterCenterClient) Compact(ctx context.Context, revision int64) error {
+	return noClientPluginErr
+}
+
+func RegisterCenterClientPlugin() func(cfg *Config) Registry {
+	registryFunc, ok := RegistryPlugins[beego.AppConfig.String("registry_plugin")]
+	if !ok {
+		return func(*Config) Registry {
+			return &ErrorRegisterCenterClient{
+				ready: make(chan int),
+			}
+		}
+	}
+	return registryFunc
+}
+
 func RegisterCenterClient() (Registry, error) {
-	registryFunc := RegistryPlugins[beego.AppConfig.String("registry_plugin")]
+	registryFunc := RegisterCenterClientPlugin()
 	autoSyncInterval, _ := beego.AppConfig.Int64("auto_sync_interval")
 	if autoSyncInterval <= 0 {
 		autoSyncInterval = REFRESH_MANAGER_CLUSTER_INTERVAL
@@ -244,19 +375,10 @@ func WithTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
 	return context.WithTimeout(ctx, REQUEST_TIMEOUT*time.Second)
 }
 
-func WithWatchPrefix(key string) *PluginOp {
-	return &PluginOp{
-		Action:     GET,
-		Key:        util.StringToBytesWithNoCopy(key),
-		WithPrefix: true,
-		WithPrevKV: true,
-	}
-}
-
-func BatchCommit(ctx context.Context, opts []*PluginOp) error {
+func BatchCommit(ctx context.Context, opts []PluginOp) error {
 	lenOpts := len(opts)
 	tmpLen := lenOpts
-	tmpOpts := []*PluginOp{}
+	tmpOpts := []PluginOp{}
 	var err error
 	for i := 0; tmpLen > 0; i++ {
 		tmpLen = lenOpts - (i+1)*MAX_TXN_NUMBER_ONE_TIME

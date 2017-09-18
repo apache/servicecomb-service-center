@@ -24,10 +24,7 @@ import (
 	"github.com/ServiceComb/service-center/server/core/registry/store"
 	"github.com/ServiceComb/service-center/server/infra/quota"
 	"github.com/ServiceComb/service-center/server/plugins/dynamic"
-	"github.com/ServiceComb/service-center/server/service/dependency"
-	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	nf "github.com/ServiceComb/service-center/server/service/notification"
-	domain "github.com/ServiceComb/service-center/server/service/tenant"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
 	errorsEx "github.com/ServiceComb/service-center/util/errors"
@@ -66,7 +63,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 	tenant := util.ParseTenantProject(ctx)
 
 	// service id存在性校验
-	if !ms.ServiceExist(ctx, tenant, instance.ServiceId) {
+	if !serviceUtil.ServiceExist(ctx, tenant, instance.ServiceId) {
 		util.Logger().Errorf(nil, "register instance failed, service %s, operator %s: service not exist.", instanceFlag, remoteIP)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
@@ -171,30 +168,16 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 
 	util.Logger().Debugf("start register service instance: %s %v, lease: %s %ds", key, instance, hbKey, ttl)
 
-	opts := []*registry.PluginOp{
-		{
-			Action:          registry.PUT,
-			Key:             util.StringToBytesWithNoCopy(key),
-			Value:           data,
-			Lease:           leaseID,
-			WithIgnoreLease: true,
-		},
-		{
-			Action:          registry.PUT,
-			Key:             util.StringToBytesWithNoCopy(index),
-			Value:           util.StringToBytesWithNoCopy(instance.ServiceId),
-			Lease:           leaseID,
-			WithIgnoreLease: true,
-		},
+	opts := []registry.PluginOp{
+		registry.OpPut(registry.WithStrKey(key), registry.WithValue(data),
+			registry.WithLease(leaseID), registry.WithIgnoreLease()),
+		registry.OpPut(registry.WithStrKey(index), registry.WithStrValue(instance.ServiceId),
+			registry.WithLease(leaseID), registry.WithIgnoreLease()),
 	}
 	if leaseID != 0 {
-		opts = append(opts, &registry.PluginOp{
-			Action:          registry.PUT,
-			Key:             util.StringToBytesWithNoCopy(hbKey),
-			Value:           util.StringToBytesWithNoCopy(fmt.Sprintf("%d", leaseID)),
-			Lease:           leaseID,
-			WithIgnoreLease: true,
-		})
+		opts = append(opts,
+			registry.OpPut(registry.WithStrKey(hbKey), registry.WithStrValue(fmt.Sprintf("%d", leaseID)),
+				registry.WithLease(leaseID), registry.WithIgnoreLease()))
 	}
 
 	// Set key file
@@ -209,7 +192,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 
 	//新租户，则进行监听
 	newDomain := util.ParseTenant(ctx)
-	ok, err := domain.DomainExist(ctx, newDomain)
+	ok, err := serviceUtil.DomainExist(ctx, newDomain)
 	if err != nil {
 		util.Logger().Errorf(err, "register instance failed, service %s, instanceId %s, operator %s: find domain failed.",
 			instanceFlag, instanceId, remoteIP)
@@ -219,7 +202,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 	}
 
 	if !ok {
-		err = domain.NewDomain(ctx, util.ParseTenant(ctx))
+		err = serviceUtil.NewDomain(ctx, util.ParseTenant(ctx))
 		if err != nil {
 			util.Logger().Errorf(err, "register instance failed, service %s, instanceId %s, operator %s: new tenant failed.",
 				instanceFlag, instanceId, remoteIP)
@@ -442,7 +425,8 @@ func (s *InstanceController) GetOneInstance(ctx context.Context, in *pb.GetOneIn
 
 	serviceId := in.ProviderServiceId
 	instanceId := in.ProviderInstanceId
-	instance, err := serviceUtil.GetInstance(ctx, tenant, serviceId, instanceId)
+	instance, err := serviceUtil.GetInstance(ctx, tenant, serviceId, instanceId,
+		serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))...)
 	if err != nil {
 		util.Logger().Errorf(err, "get instance failed, %s(consumer/provider): get instance failed.", conPro)
 		return &pb.GetOneInstanceResponse{
@@ -476,6 +460,7 @@ func (s *InstanceController) getInstancePreCheck(ctx context.Context, in interfa
 	}
 	var providerServiceId, consumerServiceId string
 	var tags []string
+	var opts []registry.PluginOpOption
 	tenant := util.ParseTenantProject(ctx)
 
 	switch in.(type) {
@@ -483,19 +468,21 @@ func (s *InstanceController) getInstancePreCheck(ctx context.Context, in interfa
 		providerServiceId = in.(*pb.GetOneInstanceRequest).ProviderServiceId
 		consumerServiceId = in.(*pb.GetOneInstanceRequest).ConsumerServiceId
 		tags = in.(*pb.GetOneInstanceRequest).Tags
+		opts = serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.(*pb.GetOneInstanceRequest).NoCache))
 	case *pb.GetInstancesRequest:
 		providerServiceId = in.(*pb.GetInstancesRequest).ProviderServiceId
 		consumerServiceId = in.(*pb.GetInstancesRequest).ConsumerServiceId
 		tags = in.(*pb.GetInstancesRequest).Tags
+		opts = serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.(*pb.GetInstancesRequest).NoCache))
 	}
 
-	if !ms.ServiceExist(ctx, tenant, providerServiceId) {
+	if !serviceUtil.ServiceExist(ctx, tenant, providerServiceId, opts...) {
 		return fmt.Errorf("Service does not exist. Service id is %s", providerServiceId), false
 	}
 
 	// Tag过滤
 	if len(tags) > 0 {
-		tagsFromETCD, err := serviceUtil.GetTagsUtils(ctx, tenant, providerServiceId)
+		tagsFromETCD, err := serviceUtil.GetTagsUtils(ctx, tenant, providerServiceId, opts...)
 		if err != nil {
 			return err, true
 		}
@@ -507,7 +494,7 @@ func (s *InstanceController) getInstancePreCheck(ctx context.Context, in interfa
 	}
 	// 黑白名单
 	// 跨应用调用
-	err = Accessible(ctx, tenant, consumerServiceId, providerServiceId)
+	err = Accessible(ctx, tenant, consumerServiceId, providerServiceId, opts...)
 	switch err.(type) {
 	case errorsEx.InternalError:
 		return err, true
@@ -535,7 +522,8 @@ func (s *InstanceController) GetInstances(ctx context.Context, in *pb.GetInstanc
 	tenant := util.ParseTenantProject(ctx)
 
 	instances := []*pb.MicroServiceInstance{}
-	instances, err = serviceUtil.GetAllInstancesOfOneService(ctx, tenant, in.ProviderServiceId, in.Env)
+	instances, err = serviceUtil.GetAllInstancesOfOneService(ctx, tenant, in.ProviderServiceId, in.Env,
+		serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))...)
 	if err != nil {
 		util.Logger().Errorf(err, "get instances failed, %s(consumer/provider): get instances from etcd failed.", conPro)
 		return &pb.GetInstancesResponse{
@@ -559,8 +547,10 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 
 	tenant := util.ParseTenantProject(ctx)
 
+	opts := serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))
+
 	findFlag := util.StringJoin([]string{in.ConsumerServiceId, in.AppId, in.ServiceName, in.VersionRule}, "/")
-	service, err := ms.GetService(ctx, tenant, in.ConsumerServiceId)
+	service, err := serviceUtil.GetService(ctx, tenant, in.ConsumerServiceId, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "find instance failed, %s: get consumer failed.", findFlag)
 		return &pb.FindInstancesResponse{
@@ -575,12 +565,12 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 	}
 
 	// 版本规则
-	ids, err := ms.FindServiceIds(ctx, in.VersionRule, &pb.MicroServiceKey{
+	ids, err := serviceUtil.FindServiceIds(ctx, in.VersionRule, &pb.MicroServiceKey{
 		Tenant:      tenant,
 		AppId:       in.AppId,
 		ServiceName: in.ServiceName,
 		Alias:       in.ServiceName,
-	})
+	}, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "find instance failed, %s: get providers failed.", findFlag)
 		return &pb.FindInstancesResponse{
@@ -601,6 +591,7 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 			ProviderServiceId: serviceId,
 			Tags:              in.Tags,
 			Env:               in.Env,
+			NoCache:           in.NoCache,
 		})
 		if err != nil {
 			util.Logger().Errorf(err, "find instance failed, %s: get service %s 's instance failed.", findFlag, serviceId)
@@ -614,7 +605,7 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 	}
 	consumer := pb.ToMicroServiceKey(tenant, service)
 	//维护version的规则
-	providerService, _ := ms.GetService(ctx, tenant, ids[0])
+	providerService, _ := serviceUtil.GetService(ctx, tenant, ids[0], opts...)
 	if providerService == nil {
 		util.Logger().Errorf(nil, "find instance failed, %s: no provider matched.", findFlag)
 		return &pb.FindInstancesResponse{
@@ -627,22 +618,35 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 		ServiceName: providerService.ServiceName,
 		Version:     in.VersionRule,
 	}
-	lock, err := mux.Lock(mux.GLOBAL_LOCK)
+
+	exist, err := serviceUtil.ServiceDependencyRuleExist(ctx, tenant, provider, consumer, opts...)
 	if err != nil {
-		util.Logger().Errorf(err, "find instance failed, %s: create lock failed.", findFlag)
+		util.Logger().Errorf(err, "find instance failed, %s: find service dependency rule failed.", findFlag)
 		return &pb.FindInstancesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, err
 	}
-	err, _ = dependency.AddServiceVersionRule(ctx, provider, tenant, consumer)
-	lock.Unlock()
-	if err != nil {
-		util.Logger().Errorf(err, "find instance failed, %s: add service version rule failed.", findFlag)
-		return &pb.FindInstancesResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
-		}, nil
+
+	if !exist {
+		lock, err := mux.Lock(mux.GLOBAL_LOCK)
+		if err != nil {
+			util.Logger().Errorf(err, "find instance failed, %s: create lock failed.", findFlag)
+			return &pb.FindInstancesResponse{
+				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
+			}, err
+		}
+
+		err = serviceUtil.AddServiceVersionRule(ctx, tenant, provider, consumer)
+		lock.Unlock()
+
+		if err != nil {
+			util.Logger().Errorf(err, "find instance failed, %s: add service version rule failed.", findFlag)
+			return &pb.FindInstancesResponse{
+				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
+			}, nil
+		}
+		util.Logger().Infof("find instance: add dependency susscess, %s", findFlag)
 	}
-	util.Logger().Infof("find instance: add dependency susscess, %s", findFlag)
 
 	return &pb.FindInstancesResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Query service instances successfully."),
@@ -772,22 +776,18 @@ func updateInstance(ctx context.Context, tenant string, instance *pb.MicroServic
 	}
 
 	key := apt.GenerateInstanceKey(tenant, instance.ServiceId, instance.InstanceId)
-	_, err = registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action: registry.PUT,
-		Key:    util.StringToBytesWithNoCopy(key),
-		Value:  data,
-		Lease:  leaseID,
-	})
+	_, err = registry.GetRegisterCenter().Do(ctx,
+		registry.PUT,
+		registry.WithStrKey(key),
+		registry.WithValue(data),
+		registry.WithLease(leaseID))
 	if err != nil {
 		return err, true
 	}
 
-	_, err = store.Store().KeepAlive(ctx, &registry.PluginOp{
-		Action: registry.PUT,
-		Key: util.StringToBytesWithNoCopy(apt.GenerateInstanceLeaseKey(tenant,
-			instance.ServiceId, instance.InstanceId)),
-		Lease: leaseID,
-	})
+	_, err = store.Store().KeepAlive(ctx,
+		registry.WithStrKey(apt.GenerateInstanceLeaseKey(tenant, instance.ServiceId, instance.InstanceId)),
+		registry.WithLease(leaseID))
 	if err != nil {
 		return err, false
 	}
@@ -799,7 +799,7 @@ func (s *InstanceController) WatchPreOpera(ctx context.Context, in *pb.WatchInst
 		return errors.New("Request format invalid.")
 	}
 	tenant := util.ParseTenantProject(ctx)
-	if !ms.ServiceExist(ctx, tenant, in.SelfServiceId) {
+	if !serviceUtil.ServiceExist(ctx, tenant, in.SelfServiceId) {
 		return errors.New("Service does not exist.")
 	}
 	return nil
@@ -840,7 +840,7 @@ func (s *InstanceController) WebSocketListAndWatch(ctx context.Context, in *pb.W
 
 func (s *InstanceController) ClusterHealth(ctx context.Context) (*pb.GetInstancesResponse, error) {
 	tenant := util.StringJoin([]string{apt.REGISTRY_TENANT, apt.REGISTRY_PROJECT}, "/")
-	serviceId, err := ms.GetServiceId(ctx, &pb.MicroServiceKey{
+	serviceId, err := serviceUtil.GetServiceId(ctx, &pb.MicroServiceKey{
 		AppId:       apt.Service.AppId,
 		ServiceName: apt.Service.ServiceName,
 		Version:     apt.Service.Version,

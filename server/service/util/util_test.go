@@ -11,22 +11,41 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package util
+package util_test
 
 import (
-	"github.com/ServiceComb/service-center/server/core/registry"
-	"github.com/ServiceComb/service-center/server/core/registry/store"
-	"golang.org/x/net/context"
+	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
+	"testing"
 )
 
-func CheckSchemaInfoExist(ctx context.Context, key string, opts ...registry.PluginOpOption) (bool, error) {
-	opts = append(opts, registry.WithStrKey(key), registry.WithCountOnly())
-	resp, errDo := store.Store().Schema().Search(ctx, opts...)
-	if errDo != nil {
-		return false, errDo
+func TestWithNoCache(t *testing.T) {
+	op := serviceUtil.WithNoCache(false)
+	if op == nil {
+		t.FailNow()
 	}
-	if resp.Count == 0 {
-		return false, nil
+	r := op()
+	if r != nil {
+		t.FailNow()
 	}
-	return true, nil
+
+	op = serviceUtil.WithNoCache(true)
+	if op == nil {
+		t.FailNow()
+	}
+	r = op()
+	if r == nil {
+		t.FailNow()
+	}
+}
+
+func TestQueryOptions(t *testing.T) {
+	opts := serviceUtil.QueryOptions()
+	if opts != nil {
+		t.FailNow()
+	}
+
+	opts = serviceUtil.QueryOptions(serviceUtil.WithNoCache(true))
+	if len(opts) != 1 {
+		t.FailNow()
+	}
 }

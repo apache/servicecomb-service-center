@@ -15,14 +15,13 @@ package service
 
 import (
 	"encoding/json"
-	"github.com/ServiceComb/service-center/server/core/registry"
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
-	ms "github.com/ServiceComb/service-center/server/service/microservice"
+	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/server/infra/quota"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
-	"github.com/ServiceComb/service-center/server/infra/quota"
 )
 
 func (s *ServiceController) AddTags(ctx context.Context, in *pb.AddServiceTagsRequest) (*pb.AddServiceTagsResponse, error) {
@@ -43,7 +42,7 @@ func (s *ServiceController) AddTags(ctx context.Context, in *pb.AddServiceTagsRe
 
 	tenant := util.ParseTenantProject(ctx)
 	// service id存在性校验
-	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !serviceUtil.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.Logger().Errorf(nil, "add service tags failed, serviceId %s, tags %v: service not exist.", in.ServiceId, in.Tags)
 		return &pb.AddServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
@@ -112,7 +111,7 @@ func (s *ServiceController) UpdateTag(ctx context.Context, in *pb.UpdateServiceT
 
 	tenant := util.ParseTenantProject(ctx)
 
-	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !serviceUtil.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.Logger().Errorf(err, "update service tag failed, serviceId %s, tag %s: service not exist.", in.ServiceId, tagFlag)
 		return &pb.UpdateServiceTagResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
@@ -167,7 +166,7 @@ func (s *ServiceController) DeleteTags(ctx context.Context, in *pb.DeleteService
 
 	tenant := util.ParseTenantProject(ctx)
 
-	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !serviceUtil.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.Logger().Errorf(nil, "delete service tags failed, serviceId %s, tags %v: service not exist.", in.ServiceId, in.Keys)
 		return &pb.DeleteServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
@@ -203,11 +202,10 @@ func (s *ServiceController) DeleteTags(ctx context.Context, in *pb.DeleteService
 	key := apt.GenerateServiceTagKey(tenant, in.ServiceId)
 
 	util.Logger().Debugf("start delete service tags file: %s %v", key, in.Keys)
-	_, err = registry.GetRegisterCenter().Do(ctx, &registry.PluginOp{
-		Action: registry.PUT,
-		Key:    util.StringToBytesWithNoCopy(key),
-		Value:  data,
-	})
+	_, err = registry.GetRegisterCenter().Do(ctx,
+		registry.PUT,
+		registry.WithStrKey(key),
+		registry.WithValue(data))
 	if err != nil {
 		util.Logger().Errorf(err, "delete service tags failed, serviceId %s, tags %v: commit tag data into etcd failed.", in.ServiceId, in.Keys)
 		return &pb.DeleteServiceTagsResponse{
@@ -238,14 +236,16 @@ func (s *ServiceController) GetTags(ctx context.Context, in *pb.GetServiceTagsRe
 
 	tenant := util.ParseTenantProject(ctx)
 
-	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
+	opts := serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))
+
+	if !serviceUtil.ServiceExist(ctx, tenant, in.ServiceId, opts...) {
 		util.Logger().Errorf(err, "get service tags failed, serviceId %s: service not exist.", in.ServiceId)
 		return &pb.GetServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
 		}, nil
 	}
 
-	tags, err := serviceUtil.GetTagsUtils(ctx, tenant, in.ServiceId)
+	tags, err := serviceUtil.GetTagsUtils(ctx, tenant, in.ServiceId, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "get service tags failed, serviceId %s: get tag failed.", in.ServiceId)
 		return &pb.GetServiceTagsResponse{

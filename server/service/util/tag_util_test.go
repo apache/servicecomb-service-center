@@ -11,22 +11,34 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package util
+package util_test
 
 import (
+	"fmt"
 	"github.com/ServiceComb/service-center/server/core/registry"
-	"github.com/ServiceComb/service-center/server/core/registry/store"
+	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"golang.org/x/net/context"
+	"testing"
 )
 
-func CheckSchemaInfoExist(ctx context.Context, key string, opts ...registry.PluginOpOption) (bool, error) {
-	opts = append(opts, registry.WithStrKey(key), registry.WithCountOnly())
-	resp, errDo := store.Store().Schema().Search(ctx, opts...)
-	if errDo != nil {
-		return false, errDo
+func TestAddTagIntoETCD(t *testing.T) {
+	err := serviceUtil.AddTagIntoETCD(context.Background(), "", "", map[string]string{"a": "1"})
+	if err == nil {
+		fmt.Printf(`AddTagIntoETCD with {"a": "1"} tags failed`)
+		t.FailNow()
 	}
-	if resp.Count == 0 {
-		return false, nil
+}
+
+func TestGetTagsUtils(t *testing.T) {
+	_, err := serviceUtil.GetTagsUtils(context.Background(), "", "", registry.WithCacheOnly())
+	if err != nil {
+		fmt.Printf(`GetTagsUtils WithCacheOnly failed`)
+		t.FailNow()
 	}
-	return true, nil
+
+	_, err = serviceUtil.GetTagsUtils(context.Background(), "", "")
+	if err == nil {
+		fmt.Printf(`GetTagsUtils failed`)
+		t.FailNow()
+	}
 }

@@ -48,9 +48,15 @@ func (this *MicroServiceService) URLPatterns() []rest.Route {
 }
 
 func (this *MicroServiceService) GetSchemas(w http.ResponseWriter, r *http.Request) {
+	noCache := r.URL.Query().Get("noCache")
+	if noCache != "0" && noCache != "1" && strings.TrimSpace(noCache) != "" {
+		WriteText(http.StatusBadRequest, "parameter noCache must be 1 or 0", w)
+		return
+	}
 	request := &pb.GetSchemaRequest{
 		ServiceId: r.URL.Query().Get(":serviceId"),
 		SchemaId:  r.URL.Query().Get(":schemaId"),
+		NoCache:   noCache == "1",
 	}
 	resp, err := core.ServiceAPI.GetSchemaInfo(r.Context(), request)
 	if len(resp.Schema) != 0 {
@@ -155,7 +161,14 @@ func (this *MicroServiceService) Unregister(w http.ResponseWriter, r *http.Reque
 }
 
 func (this *MicroServiceService) GetServices(w http.ResponseWriter, r *http.Request) {
-	request := &pb.GetServicesRequest{}
+	noCache := r.URL.Query().Get("noCache")
+	if noCache != "0" && noCache != "1" && strings.TrimSpace(noCache) != "" {
+		WriteText(http.StatusBadRequest, "parameter noCache must be 1 or 0", w)
+		return
+	}
+	request := &pb.GetServicesRequest{
+		NoCache: noCache == "1",
+	}
 	util.Logger().Debugf("tenant is %s", util.ParseTenant(r.Context()))
 	resp, err := core.ServiceAPI.GetServices(r.Context(), request)
 	if err != nil {
@@ -171,6 +184,11 @@ func (this *MicroServiceService) GetServices(w http.ResponseWriter, r *http.Requ
 }
 
 func (this *MicroServiceService) GetExistence(w http.ResponseWriter, r *http.Request) {
+	noCache := r.URL.Query().Get("noCache")
+	if noCache != "0" && noCache != "1" && strings.TrimSpace(noCache) != "" {
+		WriteText(http.StatusBadRequest, "parameter noCache must be 1 or 0", w)
+		return
+	}
 	request := &pb.GetExistenceRequest{
 		Type:        r.URL.Query().Get("type"),
 		AppId:       r.URL.Query().Get("appId"),
@@ -178,6 +196,7 @@ func (this *MicroServiceService) GetExistence(w http.ResponseWriter, r *http.Req
 		Version:     r.URL.Query().Get("version"),
 		ServiceId:   r.URL.Query().Get("serviceId"),
 		SchemaId:    r.URL.Query().Get("schemaId"),
+		NoCache:     noCache == "1",
 	}
 	resp, err := core.ServiceAPI.Exist(r.Context(), request)
 	if err != nil {
@@ -193,8 +212,14 @@ func (this *MicroServiceService) GetExistence(w http.ResponseWriter, r *http.Req
 }
 
 func (this *MicroServiceService) GetServiceOne(w http.ResponseWriter, r *http.Request) {
+	noCache := r.URL.Query().Get("noCache")
+	if noCache != "0" && noCache != "1" && strings.TrimSpace(noCache) != "" {
+		WriteText(http.StatusBadRequest, "parameter noCache must be 1 or 0", w)
+		return
+	}
 	request := &pb.GetServiceRequest{
 		ServiceId: r.URL.Query().Get(":serviceId"),
+		NoCache:   noCache == "1",
 	}
 	resp, err := core.ServiceAPI.GetOne(r.Context(), request)
 	if err != nil {
@@ -242,8 +267,14 @@ func (this *MicroServiceService) CreateDependenciesForMicroServices(w http.Respo
 }
 
 func (this *MicroServiceService) GetConProDependencies(w http.ResponseWriter, r *http.Request) {
+	noCache := r.URL.Query().Get("noCache")
+	if noCache != "0" && noCache != "1" && strings.TrimSpace(noCache) != "" {
+		WriteText(http.StatusBadRequest, "parameter noCache must be 1 or 0", w)
+		return
+	}
 	request := &pb.GetDependenciesRequest{
 		ServiceId: r.URL.Query().Get(":consumerId"),
+		NoCache:   noCache == "1",
 	}
 	resp, err := core.ServiceAPI.GetConsumerDependencies(r.Context(), request)
 	if err != nil {
@@ -262,8 +293,14 @@ func (this *MicroServiceService) GetConProDependencies(w http.ResponseWriter, r 
 }
 
 func (this *MicroServiceService) GetProConDependencies(w http.ResponseWriter, r *http.Request) {
+	noCache := r.URL.Query().Get("noCache")
+	if noCache != "0" && noCache != "1" && strings.TrimSpace(noCache) != "" {
+		WriteText(http.StatusBadRequest, "parameter noCache must be 1 or 0", w)
+		return
+	}
 	request := &pb.GetDependenciesRequest{
 		ServiceId: r.URL.Query().Get(":providerId"),
+		NoCache:   noCache == "1",
 	}
 	resp, err := core.ServiceAPI.GetProviderDependencies(r.Context(), request)
 	if err != nil {

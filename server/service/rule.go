@@ -19,19 +19,18 @@ import (
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/server/infra/quota"
 	"github.com/ServiceComb/service-center/server/plugins/dynamic"
-	ms "github.com/ServiceComb/service-center/server/service/microservice"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/util"
 	errorsEx "github.com/ServiceComb/service-center/util/errors"
 	"golang.org/x/net/context"
 	"strconv"
 	"time"
-	"github.com/ServiceComb/service-center/server/infra/quota"
 )
 
-func Accessible(ctx context.Context, tenant string, consumerId string, providerId string) error {
-	consumerService, err := ms.GetService(ctx, tenant, consumerId)
+func Accessible(ctx context.Context, tenant string, consumerId string, providerId string, opts ...registry.PluginOpOption) error {
+	consumerService, err := serviceUtil.GetService(ctx, tenant, consumerId, opts...)
 	if err != nil {
 		util.Logger().Errorf(err,
 			"consumer %s can't access provider %s for internal error", consumerId, providerId)
@@ -46,7 +45,7 @@ func Accessible(ctx context.Context, tenant string, consumerId string, providerI
 	consumerFlag := fmt.Sprintf("%s/%s/%s", consumerService.AppId, consumerService.ServiceName, consumerService.Version)
 
 	// 跨应用权限
-	providerService, err := ms.GetService(ctx, tenant, providerId)
+	providerService, err := serviceUtil.GetService(ctx, tenant, providerId, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "consumer %s can't access provider %s for internal error",
 			consumerFlag, providerId)
@@ -68,8 +67,10 @@ func Accessible(ctx context.Context, tenant string, consumerId string, providerI
 		return err
 	}
 
+	opts = append([]registry.PluginOpOption{registry.WithCacheOnly()}, opts...)
+
 	// 黑白名单
-	rules, err := serviceUtil.GetRulesUtil(ctx, tenant, providerId)
+	rules, err := serviceUtil.GetRulesUtil(ctx, tenant, providerId, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "consumer %s can't access provider %s for internal error",
 			consumerFlag, providerFlag)
@@ -80,7 +81,7 @@ func Accessible(ctx context.Context, tenant string, consumerId string, providerI
 		return nil
 	}
 
-	validateTags, err := serviceUtil.GetTagsUtils(ctx, tenant, consumerService.ServiceId)
+	validateTags, err := serviceUtil.GetTagsUtils(ctx, tenant, consumerService.ServiceId, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "consumer %s can't access provider %s for internal error",
 			consumerFlag, providerFlag)
@@ -113,7 +114,7 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 	tenant := util.ParseTenantProject(ctx)
 
 	// service id存在性校验
-	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !serviceUtil.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.Logger().Errorf(nil, "add rule failed, serviceId is %s: service not exist.", in.ServiceId)
 		return &pb.AddServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
@@ -133,7 +134,7 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 		}, nil
 	}
 
-	opts := []*registry.PluginOp{}
+	opts := []registry.PluginOp{}
 	ruleType, _, err := serviceUtil.GetServiceRuleType(ctx, tenant, in.ServiceId)
 	util.Logger().Debugf("ruleType is %s", ruleType)
 	if err != nil {
@@ -194,16 +195,8 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 			}, err
 		}
 
-		opts = append(opts, &registry.PluginOp{
-			Action: registry.PUT,
-			Key:    util.StringToBytesWithNoCopy(key),
-			Value:  data,
-		})
-		opts = append(opts, &registry.PluginOp{
-			Action: registry.PUT,
-			Key:    util.StringToBytesWithNoCopy(indexKey),
-			Value:  util.StringToBytesWithNoCopy(ruleAdd.RuleId),
-		})
+		opts = append(opts, registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)))
+		opts = append(opts, registry.OpPut(registry.WithStrKey(indexKey), registry.WithStrValue(ruleAdd.RuleId)))
 	}
 	if len(opts) <= 0 {
 		util.Logger().Infof("add rule successful, serviceId is %s: rule more exists,no rules to add.", in.ServiceId)
@@ -237,7 +230,7 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 	tenant := util.ParseTenantProject(ctx)
 
 	// service id存在性校验
-	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !serviceUtil.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.Logger().Errorf(nil, "update rule failed, serviceId is %s, ruleId is %s: service not exist.", in.ServiceId, in.RuleId)
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
@@ -304,32 +297,17 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service rule file marshal error."),
 		}, err
 	}
-	opts := []*registry.PluginOp{}
+	opts := []registry.PluginOp{}
 	if isChangeIndex {
 		//加入新的rule index
 		indexKey := apt.GenerateRuleIndexKey(tenant, in.ServiceId, rule.Attribute, rule.Pattern)
-		opt := &registry.PluginOp{
-			Action: registry.PUT,
-			Key:    util.StringToBytesWithNoCopy(indexKey),
-			Value:  util.StringToBytesWithNoCopy(rule.RuleId),
-		}
-		opts = append(opts, opt)
+		opts = append(opts, registry.OpPut(registry.WithStrKey(indexKey), registry.WithStrValue(rule.RuleId)))
 
 		//删除旧的rule index
 		oldIndexKey := apt.GenerateRuleIndexKey(tenant, in.ServiceId, oldRuleAttr, oldRulePatten)
-		opt = &registry.PluginOp{
-			Action: registry.DELETE,
-			Key:    util.StringToBytesWithNoCopy(oldIndexKey),
-		}
-
-		opts = append(opts, opt)
+		opts = append(opts, registry.OpDel(registry.WithStrKey(oldIndexKey)))
 	}
-	opt := &registry.PluginOp{
-		Action: registry.PUT,
-		Key:    util.StringToBytesWithNoCopy(key),
-		Value:  data,
-	}
-	opts = append(opts, opt)
+	opts = append(opts, registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)))
 	_, err = registry.GetRegisterCenter().Txn(ctx, opts)
 	if err != nil {
 		util.Logger().Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: commit date into etcd failed.", in.ServiceId, in.RuleId)
@@ -353,15 +331,18 @@ func (s *ServiceController) GetRule(ctx context.Context, in *pb.GetServiceRulesR
 	}
 
 	tenant := util.ParseTenantProject(ctx)
+
+	opts := serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))
+
 	// service id存在性校验
-	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !serviceUtil.ServiceExist(ctx, tenant, in.ServiceId, opts...) {
 		util.Logger().Errorf(nil, "get service rule failed, serviceId is %s: service not exist.", in.ServiceId)
 		return &pb.GetServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
 		}, nil
 	}
 
-	rules, err := serviceUtil.GetRulesUtil(ctx, tenant, in.ServiceId)
+	rules, err := serviceUtil.GetRulesUtil(ctx, tenant, in.ServiceId, opts...)
 	if err != nil {
 		util.Logger().Errorf(nil, "get service rule failed, serviceId is %s: get rule failed.", in.ServiceId)
 		return &pb.GetServiceRulesResponse{
@@ -385,14 +366,14 @@ func (s *ServiceController) DeleteRule(ctx context.Context, in *pb.DeleteService
 
 	tenant := util.ParseTenantProject(ctx)
 	// service id存在性校验
-	if !ms.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !serviceUtil.ServiceExist(ctx, tenant, in.ServiceId) {
 		util.Logger().Errorf(nil, "delete service rule failed, serviceId is %s, rule is %v: service not exist.", in.ServiceId, in.RuleIds)
 		return &pb.DeleteServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
 		}, nil
 	}
 
-	opts := []*registry.PluginOp{}
+	opts := []registry.PluginOp{}
 	key := ""
 	indexKey := ""
 	for _, ruleId := range in.RuleIds {
@@ -412,14 +393,9 @@ func (s *ServiceController) DeleteRule(ctx context.Context, in *pb.DeleteService
 			}, nil
 		}
 		indexKey = apt.GenerateRuleIndexKey(tenant, in.ServiceId, data.Attribute, data.Pattern)
-		opts = append(opts, &registry.PluginOp{
-			Action: registry.DELETE,
-			Key:    util.StringToBytesWithNoCopy(key),
-		})
-		opts = append(opts, &registry.PluginOp{
-			Action: registry.DELETE,
-			Key:    util.StringToBytesWithNoCopy(indexKey),
-		})
+		opts = append(opts,
+			registry.OpDel(registry.WithStrKey(key)),
+			registry.OpDel(registry.WithStrKey(indexKey)))
 	}
 	if len(opts) <= 0 {
 		util.Logger().Errorf(nil, "delete service rule failed, serviceId is %s, rule is %v: rule has been deleted.", in.ServiceId, in.RuleIds)

@@ -15,13 +15,13 @@ package core
 
 import (
 	"errors"
+	const_key "github.com/ServiceComb/service-center/server/common"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/util"
 	"github.com/ServiceComb/service-center/util/validate"
 	"math"
 	"reflect"
 	"regexp"
-	const_key "github.com/ServiceComb/service-center/server/common"
 )
 
 var (
@@ -77,7 +77,7 @@ func init() {
 	epRegex, _ := regexp.Compile(`^[A-Za-z0-9:/?=&%_.-]+$`)
 	simpleNameAllowEmptyRegex, _ := regexp.Compile(`^[A-Za-z0-9_.-]*$`)
 	simpleNameRegex, _ := regexp.Compile(`^[A-Za-z0-9_.-]+$`)
-	regionRegex, _ := regexp.Compile(`([A-Za-z0-9]+-)+([A-Za-z0-9]+)$`)
+	regionRegex, _ := regexp.Compile(`^[A-Za-z0-9_.-]+$`)
 	ruleRegex, _ := regexp.Compile(`^(WHITE|BLACK)$`)
 	ruleAttrRegex, _ := regexp.Compile(`((^tag_[a-zA-Z][a-zA-Z0-9_\-.]{0,63}$)|(^ServiceId$)|(^AppId$)|(^ServiceName$)|(^Version$)|(^Description$)|(^Level$)|(^Status$))`)
 
