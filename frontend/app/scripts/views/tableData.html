@@ -1,0 +1,75 @@
+<!--
+Copyright 2017 Huawei Technologies Co., Ltd
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<md-content>
+	<md-card>
+        <md-toolbar class="table-header">
+            <div class="md-toolbar-tools">
+                {{heading}}
+                <span flex></span>
+                <md-button ng-if="dialogClose" class="md-icon-button" ng-click="close()">
+                    <ng-md-icon icon="close" aria-label="Close">
+                        <i class="fa fa-close fa-lg"></i>
+                        </md-icon>
+                </md-button>
+                <md-button ng-if="(enableSearch && data &&(data.length != 0))" class="md-icon-button" ng-click="searchOpen()" ng-hide="showSearch" aria-label="SearchAppList" title="SearchAppList">
+                    <i class="fa fa-search fa-lg"></i>
+                </md-button>
+                <md-button ng-if="(data) || (button.dispalyOnFailure && appList == 'failed')" ng-repeat="button in buttons" class="md-raised" ng-class="button.class" ng-click="button.method()" aria-label="{{button.title}}" title="{{button.title}}">
+                    <i ng-if="button.icon" class="{{button.icon}}"></i> {{button.title}}
+                </md-button>
+                <md-button ng-if="refresh" class="md-icon-button" ng-click="reload()" aria-label="RefershAppList" title="RefreshAppList">
+                    <i class="fa fa-refresh fa-lg"></i>
+                </md-button>
+            </div>
+        </md-toolbar>
+        <md-toolbar class="md-table-toolbar md-raised md-default" ng-if="showSearch">
+          <div class="md-toolbar-tools">
+            <form flex name="filter.form" class="no-padding" >
+              <input id="search" class="form-control" style="width:350px" type="search" ng-model="filter.search" autofocus placeholder="Search">
+            </form>
+            <md-button class="md-icon-button"  aria-label="Close">
+              <md-icon><i class="fa fa-close fa-lg" ng-click="searchClose()" ></i></md-icon>
+            </md-button>
+          </div>
+        </md-toolbar>
+        <fetching-no-data data="appList" info="apiInfo"></fetching-no-data>
+        <md-table-container  ng-if="appList == ''" >
+            <table data-md-table>
+                <thead md-head>
+                    <tr md-row>
+                        <th md-column ng-repeat="header in headers">
+                            {{header.key}}
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr md-row md-select="appData" id="target" data-ng-repeat="appData in data | filter: filter.search | orderBy: paginationQuery.order | limitTo: paginationQuery.limit : (paginationQuery.page - 1) * paginationQuery.limit">
+                        <td md-cell ng-repeat="(key, value) in appData">
+
+                            <span ng-if="key == 'serviceName'">
+                                <a ui-sref="sc.info.instance({serviceId:'{{appData.serviceId}}'})">{{appData.serviceName}}</a>
+                            </span>
+
+                            <span ng-if="key != 'serviceId' && key != 'serviceName'">
+                        		{{value}}
+                        	</span>
+
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </md-table-container>
+
+	</md-card>
+</md-content>

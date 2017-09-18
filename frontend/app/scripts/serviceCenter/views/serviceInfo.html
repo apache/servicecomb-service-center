@@ -1,0 +1,48 @@
+<!--
+Copyright 2017 Huawei Technologies Co., Ltd
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<div class="row serviceInfo">
+  <div class="col-md-1 details">
+    <h1>{{currentServiceDetail.serviceName | limitTo : 1 : 0}}</h1>
+  </div>
+  <div class="col-md-10">
+  	<ul>
+  		<li><strong>{{currentServiceDetail.serviceName | uppercase}}</strong></li>
+  		<li>Application: {{currentServiceDetail.appId}}</li>
+  		<li>version: {{currentServiceDetail.version}}</li>
+  		<li>Created: {{currentServiceDetail.createdAt}}</li>
+  	</ul>
+  </div>
+</div>
+
+<div class="serviceInfoTab" ng-cloak>
+  <md-content>
+    <md-tabs md-dynamic-height md-border-bottom>
+      <md-tab label="SERVICE INSTANCES({{instances.length}})" ng-click="showInstance()">
+        <md-content>
+         <div ui-view="instance"></div>
+        </md-content>
+      </md-tab>
+      <md-tab label="SERVICE PROVIDERS({{providers.length}})" ng-click="showProvider()">
+        <md-content>
+          <div ui-view="provider"></div>
+        </md-content>
+      </md-tab>
+      <md-tab label="SERVICE CONSUMERS({{consumers.length}})" ng-click="showConsumer()">
+        <md-content>
+          <div ui-view="consumer"></div>
+        </md-content>
+      </md-tab>
+    </md-tabs>
+  </md-content>
+</div>
