@@ -1,0 +1,130 @@
+$icon-font-path: "../../bower_components/bootstrap-sass-official/assets/fonts/bootstrap/";
+$fa-font-path: "../../bower_components/components-font-awesome/fonts/";
+
+@import "../../bower_components/bootstrap-sass-official/assets/stylesheets/_bootstrap.scss";
+
+body {
+  height: 100%;
+  margin: 0; 
+  padding: 0;
+  font-family: 'Helvetica','Myriad','Arial';
+
+.logo {
+  margin: 10px 0px;  
+}
+
+.navbar {
+  border-radius: unset !important;
+}
+.navbar-brand {
+  color: #fff;
+}
+  
+#sidebar-wrapper {
+   height: 100%;
+   width: 230px;
+   position: fixed;
+   background: #f5f5f0;
+   margin-top: -20px;
+}
+.sidebar-nav {
+  position: absolute;
+  top: 0;
+  width: 230px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+ }
+ .sidebar-nav li {
+  text-indent: 20px;
+  line-height: 50px;
+}
+.sidebar-nav li a {
+  display: block;
+  text-decoration: none;
+  color: #666666;
+  font-size: 14px;
+}
+.sidebar-nav li a:hover {
+  text-decoration: none;
+  color: black;
+  background: #f5f5f0; 
+}
+.active, .activeProvider, .activeConsumer {
+  text-decoration: none;
+  background:  #fff;
+  color: #009ee0 !important;
+  border-left: 3px solid #009ee0;
+}
+.content {
+  margin-left: 250px;
+}
+
+.label {
+  color: white;
+  font-size: 16px;
+}
+.tenant {
+  height: 27px;
+  margin-top: -2px;
+}
+.table-header {
+  height: 50px;
+  min-height: 50px;
+}
+.initialCaps {
+    text-transform: capitalize;
+}
+.no-padding {
+  padding: 0;
+}
+table.md-table {
+  td.md-cell {
+    height: 48px;
+  }
+  .md-head {
+    tr{
+     th {
+      font-size: 14px;
+      color: #000;
+     }
+    }
+  }
+}
+
+.serviceInfo {
+  margin-left: 0px;
+  .details {
+    height:100px;
+    width:100px;
+    background-color:#efefef;
+    border-radius:50%;
+    text-align:center;
+    padding:10px;
+  }
+  ul {
+    list-style-type: none;
+    li:first-child {
+      line-height: 30px;
+    }
+  }
+}
+.serviceInfoTab {
+    margin-left: 8px;
+    margin-top: 50px;
+}
+
+.margin20 {
+  margin-top: 20px;
+}
+.infoTableHead {
+  background-color: #efefef;
+}
+md-toolbar.md-default-theme:not(.md-menu-toolbar), md-toolbar:not(.md-menu-toolbar)  {
+  background-color : #0288D1 !important;
+}
+
+
+}
+
+

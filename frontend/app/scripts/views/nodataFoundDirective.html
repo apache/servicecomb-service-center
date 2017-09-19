@@ -1,0 +1,72 @@
+<!--
+Copyright 2017 Huawei Technologies Co., Ltd
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<div ng-if="contentStatus === 'fetching'" flex class="cluster-info" layout="row" layout-sm="column">
+    <div flex layout="row">
+        <div flex="25" class="server-data-fetch" layout="column">
+        </div>
+        <div class="server-data-fetch" flex="50" layout="column" layout-align="end center">
+            <md-progress-linear md-mode="indeterminate"></md-progress-linear>
+            <div class="server-data-fetch-text" >Fetching data from the server...</div>
+        </div>
+        <div flex="25" class="server-data-fetch" layout="column">
+        </div>
+    </div>
+</div>
+
+<div ng-if="contentStatus === 'verifying'" flex class="cluster-info" layout="row" layout-sm="column">
+    <div flex layout="row">
+        <md-progress-linear md-mode="indeterminate"></md-progress-linear>
+    </div>
+</div>
+
+<div ng-if="contentStatus === 'requesting'" flex class="cluster-info" layout="row" layout-sm="column">
+    <div flex layout="row">
+        <div flex="5" class="server-data-fetch" layout="column">
+        </div>
+        <div class="server-data-fetch" flex="90" layout="column" layout-align="end center">
+            <md-progress-linear md-mode="indeterminate"></md-progress-linear>
+            <div class="server-data-fetch-text" >Requesting server, please wait..</div>
+        </div>
+        <div flex="5" class="server-data-fetch" layout="column">
+        </div>
+    </div>
+</div>
+
+<div ng-if="contentStatus === 'failed'" flex class="cluster-info" layout="row" layout-sm="column">
+    <div flex layout="row">
+        <div flex="5" class="server-data-fetch" layout="column">
+        </div>
+        <div class="server-data-fetch" flex="90" layout="column" layout-align="end center">
+            <div class="server-data-fetch-text" >Failed to get the resource from the server! Please try again</div>
+        </div>
+        <div flex="5" class="server-data-fetch" layout="column">
+        </div>
+    </div>
+</div>
+
+<div ng-if="contentStatus === 'empty'" flex class="cluster-info" layout="row" layout-sm="column">
+	<div flex layout="row">
+		<div flex="25" class="server-data-fetch" layout="column">
+		</div>
+		<div class="server-data-fetch" flex="50" layout="column" layout-align="end center">
+			<div ng-if="apiInfo && apiInfo != ''" class="server-data-fetch-text">
+				{{apiInfo}}
+				<div ng-bind="'common.emptyData' | translate"></div>
+			</div>
+		 	<div ng-if="!apiInfo || apiInfo == ''" class="server-data-fetch-text" >Response for this request is empty!</div>
+		</div>
+		<div flex="25" class="server-data-fetch" layout="column">
+		 </div>
+	</div>
+</div>
