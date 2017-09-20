@@ -61,6 +61,10 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 	service := in.Service
 	serviceFlag := util.StringJoin([]string{service.AppId, service.ServiceName, service.Version}, "/")
 
+	if len(service.Level) == 0 {
+		service.Level = "BACK"
+	}
+
 	err := apt.Validate(service)
 	if err != nil {
 		util.Logger().Errorf(err, "create microservice failed, %s: invalid parameters. operator: %s",
