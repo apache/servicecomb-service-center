@@ -13,11 +13,11 @@
 //limitations under the License.
 'use strict';
 angular.module('serviceCenter')
-	.controller('serviceInfoController', ['$scope', 'httpService', 'commonService', '$q', 'apiConstant', '$state', '$stateParams','currentService',
-		function($scope, httpService, commonService, $q, apiConstant, $state, $stateParams, currentService){
+	.controller('serviceInfoController', ['$scope', 'httpService', 'commonService', '$q', 'apiConstant', '$state',
+	 '$stateParams','serviceInfo' ,function($scope, httpService, commonService, $q, apiConstant, $state, $stateParams, serviceInfo){
 
 			var serviceId = $stateParams.serviceId;
-			$scope.currentServiceDetail = currentService;
+			$scope.serviceDetail = serviceInfo;
 
 			var apis = [];
 			var instanceUrl = apiConstant.api.instances.url;
@@ -35,7 +35,7 @@ angular.module('serviceCenter')
 				var url = apis[i];
 				var method = "GET";
 				var headers = {"X-ConsumerId": serviceId};
-				promises.push(httpService.apiRequest(url,method,null,headers));
+				promises.push(httpService.apiRequest(url,method,null,headers,"nopopup"));
 			}
 
 			$q.all(promises).then(function(response){
@@ -48,16 +48,20 @@ angular.module('serviceCenter')
 				$scope.consumers = [];
 			});
 
-			$scope.showInstance = function(){
+			$scope.getInstance = function(){
 				$state.go('sc.info.instance')
 			};
 
-			$scope.showProvider = function(){
+			$scope.getProvider = function(){
 				$state.go('sc.info.provider')
 			};
 
-			$scope.showConsumer = function(){
+			$scope.getConsumer = function(){
 				$state.go('sc.info.consumer')
+			};
+
+			$scope.getSchema = function() {
+				$state.go('sc.info.schema');
 			};
 
 			$scope.convertTime = function(timestamp){

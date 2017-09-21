@@ -14,16 +14,24 @@
 'use strict';
 
 angular.module('serviceCenter', ['ngAnimate', 'ngMaterial', 'ngAria', 'ngMessages', 'ngResource', 'ngRoute', 'ngSanitize', 'ui.router',
-    'ngMdIcons', 'pascalprecht.translate', 'serviceCenter.router','md.data.table', 'angular-json-tree'])
-  .config(['$translateProvider', function($translateProvider) {
+    'ngMdIcons', 'pascalprecht.translate', 'serviceCenter.router','md.data.table', 'jsonFormatter'])
+  .config(['$translateProvider', 'english', 'chinese', function($translateProvider, english, chinese) {
         $translateProvider.useSanitizeValueStrategy(null);
-        $translateProvider.useStaticFilesLoader({
-            files: [{
-                prefix: 'scripts/languages/locale-',
-                suffix: '.json'
-            }]
-        });
-        $translateProvider.preferredLanguage('en');
+        
+        $translateProvider.translations('en', english);
+        $translateProvider.translations('cz', chinese);
+  
+        var lang = "";
+        if(localStorage.getItem("lang") && localStorage.getItem("lang")!= ''){
+            lang= localStorage.getItem("lang");
+        }
+        else if (navigator.language) {
+            lang = navigator.language.indexOf("zh") > -1 ? "cz" : "en";
+        } else {
+            lang = navigator.userLanguage.indexOf("zh") > -1 ? "cz" : "en";
+        }
+
+        $translateProvider.preferredLanguage(lang);
     }])
   .config(['$httpProvider','$injector', function($httpProvider,$injector) {
         $httpProvider.defaults.useXDomain = true;
@@ -32,5 +40,8 @@ angular.module('serviceCenter', ['ngAnimate', 'ngMaterial', 'ngAria', 'ngMessage
         $injector.invoke(['$qProvider', function($qProvider) {
             $qProvider.errorOnUnhandledRejections(false);
         }]);
-    }]);
+    }])
+  .config(function (JSONFormatterConfigProvider) {
+        JSONFormatterConfigProvider.hoverPreviewEnabled = true;
+    });
 

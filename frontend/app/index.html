@@ -1,4 +1,4 @@
-<--!
+<!--
 Copyright 2017 Huawei Technologies Co., Ltd
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ limitations under the License.
     <link rel="stylesheet" href="bower_components/angular-material/angular-material.css" />
     <link rel="stylesheet" href="bower_components/angular-material-data-table/dist/md-data-table.css" />
     <link rel="stylesheet" href="bower_components/components-font-awesome/css/font-awesome.css" />
-    <link rel="stylesheet" href="bower_components/angular-json-tree/dist/angular-json-tree.css" />
+    <link rel="stylesheet" href="bower_components/json-formatter/dist/json-formatter.css" />
     <!-- endbower -->
     <!-- endbuild -->
     <!-- build:css(.tmp) styles/main.css -->
@@ -41,6 +41,7 @@ limitations under the License.
 
     <div class="body-content">
       <div ui-view=""></div>
+      <div class="loader"></div>
     </div>
 
     <!-- Google Analytics: change UA-XXXXX-X to be your site's ID -->
@@ -70,7 +71,7 @@ limitations under the License.
     <script src="bower_components/angular-translate-loader-static-files/angular-translate-loader-static-files.js"></script>
     <script src="bower_components/angular-material/angular-material.js"></script>
     <script src="bower_components/angular-material-data-table/dist/md-data-table.js"></script>
-    <script src="bower_components/angular-json-tree/dist/angular-json-tree.js"></script>
+    <script src="bower_components/json-formatter/dist/json-formatter.js"></script>
     <!-- endbower -->
     <!-- endbuild -->
 
@@ -86,12 +87,16 @@ limitations under the License.
     <!-- Load all the directive files here -->
     <script src="scripts/directives/nodataFoundDirective.js"></script>
     <script src="scripts/directives/tableDirective.js"></script>
-    <!-- Load all the modules controller files here -->
+    <!-- Load all the serviceCenter modules controller files here -->
     <script src="scripts/serviceCenter/controllers/servicesListCtrl.js"></script>
     <script src="scripts/serviceCenter/controllers/serviceInfoCtrl.js"></script>
+    <!-- Load all the instances modules controller files here -->
     <script src="scripts/instances/controllers/instancesListCtrl.js"></script>
     <script src="scripts/scRouterConfig.js"></script>
-    <script src="views/baseController.js"></script>
+    <script src="scripts/controllers/serviceCenterCtrl.js"></script>
+    <!-- Load languages files here -->
+    <script src="scripts/languages/locale-en.js"></script>
+    <script src="scripts/languages/locale-cz.js"></script>
     <!-- endbuild -->
 </body>
 </html>

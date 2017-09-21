@@ -13,10 +13,16 @@
 //limitations under the License.
 'use strict';
 angular.module('serviceCenter')
-	.service('httpService', ['$http', '$q', '$mdDialog','apiConstant',function($http, $q, $mdDialog,apiConstant){
+	.service('httpService', ['$http', '$q', '$mdDialog', 'apiConstant', function($http, $q, $mdDialog, apiConstant){
 
-		function apiRequest(requrl, method, payload, headers){
-			 var defer = $q.defer();
+		function apiRequest(requrl, method, payload, headers, nopopup){
+            var tenant = localStorage.getItem('tenant');
+            if(!tenant || tenant == undefined || tenant == null){
+                tenant = 'default';
+                localStorage.setItem('tenant', 'default');
+            }
+
+			var defer = $q.defer();
             if(undefined === requrl || null === requrl || undefined === method || null === method){
                 defer.reject("invalid params");
                 return defer.promise;
@@ -24,10 +30,10 @@ angular.module('serviceCenter')
             var baseUrl = apiConstant.endPoint.url + ':' + apiConstant.endPoint.port;
             if(undefined === headers || null === headers){
                 headers = {
-                    'x-domain-name' : 'default'
+                    'x-domain-name' : tenant
                 };
             }else{
-                headers['x-domain-name'] = 'default';
+                headers['x-domain-name'] = tenant;
             }
 
             var url = baseUrl + '/'+ requrl;
@@ -39,10 +45,14 @@ angular.module('serviceCenter')
             }).then(function(response) {
                 defer.resolve(response);
             }, function(error) {
+                if(nopopup){
+                   defer.reject(error);
+                   return;
+                }
                 var parentEl = angular.element(document.body);
                 $mdDialog.show({
                     parent: parentEl,
-                    templateUrl: 'scripts/views/serverError.html',
+                    templateUrl: 'views/serverError.html',
                     locals: {
                         error: error
                     },

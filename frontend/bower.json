@@ -11,12 +11,12 @@
     "angular-route": "^1.4.0",
     "angular-sanitize": "^1.4.0",
     "angular-ui-router": "^0.2.18",
-    "angular-translate": "^2.11.0",
     "angular-translate-loader-static-files": "^2.11.0",
     "angular-material": "^1.0.8",
     "angular-material-data-table": "^0.10.10",
     "components-font-awesome": "^4.7.0",
-    "angular-json-tree": "^1.0.1"
+    "json-formatter": "^0.6.0",
+    "angular-translate": "^2.15.2"
   },
   "devDependencies": {
     "angular-mocks": "^1.4.0",

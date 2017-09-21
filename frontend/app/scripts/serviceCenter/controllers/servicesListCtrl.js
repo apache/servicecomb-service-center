@@ -13,26 +13,26 @@
 //limitations under the License.
 'use strict';
 angular.module('serviceCenter')
-	.controller('servicesListController', ['$scope', 'httpService','apiConstant','commonService',
-		function($scope, httpService, apiConstant,commonService){
+	.controller('servicesListController', ['$scope', 'httpService', 'apiConstant', 'commonService',
+		function($scope, httpService, apiConstant, commonService){
 
 			$scope.appList = 'fetching';
-			$scope.serviceList = 'Service List';
+			$scope.serviceList = 'serviceList';
 			$scope.tableHeaders = [
 				{
-					'key': 'Name'
+					'key': 'name'
 				},
 				{
-					'key': 'Status'
+					'key': 'status'
 				},
 				{
-					'key': 'AppId'
+					'key': 'appId'
 				},
 				{
-					'key': 'Version'
+					'key': 'version'
 				},
 				{
-					'key': 'CreatedAt'
+					'key': 'createdAt'
 				}
 			];
 

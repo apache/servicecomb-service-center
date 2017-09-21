@@ -11,15 +11,33 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-{
-	"default" : {
-		"ok" : "Ok",
-		"close" : "Close",
-		"cancel" : "Cancel",
-		"go" : "Go",
-		"details" : "Details",
-		"stop": "Stop",
-		"start" : "Start"
-	},
+'use strict';
+angular.module('serviceCenter')
+	.constant('english', {
+
+	"serviceList": "Service List",
+	"instanceList": "Instance List",
+	"serviceCenter": "Service Center",
+	"tenant": "Tenant",
+	"english": "English",
+	"chinese": "Chinese",
+	"services": "Services",
+	"instances": "Instances",
+	"search": "Search",
+	"name": "Name",
+	"status": "Status",
+	"appId": "AppId",
+	"version": "Version",
+	"createdAt": "CreatedAt",
+	"address": "Address",
+	"refresh": "Refresh",
+	"close": "Close",
+	"description": "Description",
+	"application": "Application",
+	"serviceInstances": "SERVICE INSTANCES",
+	"serviceProviders": "SERVICE PROVIDERS",
+	"serviceConsumers": "SERVICE CONSUMERS",
+	"schema": "SCHEMA",
 	"copyRight" : "Developed by Huawei Technologies India Pvt. Ltd (Get confirmation and change accordigly!)"
-}
+
+});

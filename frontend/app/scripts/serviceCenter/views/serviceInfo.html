@@ -12,15 +12,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <div class="row serviceInfo">
-  <div class="col-md-1 details">
-    <h1>{{currentServiceDetail.serviceName | limitTo : 1 : 0}}</h1>
+  <div class="col-md-2 details">
+    <h1>{{serviceDetail.serviceName || "S" | limitTo : 1 : 0 }}</h1>
   </div>
   <div class="col-md-10">
   	<ul>
-  		<li><strong>{{currentServiceDetail.serviceName | uppercase}}</strong></li>
-  		<li>Application: {{currentServiceDetail.appId}}</li>
-  		<li>version: {{currentServiceDetail.version}}</li>
-  		<li>Created: {{currentServiceDetail.createdAt}}</li>
+  		<li><strong>{{serviceDetail.serviceName || "No Service"}}</strong></li>
+  		<li>{{ 'application' | translate }}: {{serviceDetail.appId || "No data"}}</li>
+  		<li>{{ 'version' | translate }}: {{serviceDetail.version || "No data"}}</li>
+  		<li>{{ 'createdAt' | translate }}: {{serviceDetail.createdAt || "No data"}}</li>
   	</ul>
   </div>
 </div>
@@ -28,21 +28,20 @@ limitations under the License.
 <div class="serviceInfoTab" ng-cloak>
   <md-content>
     <md-tabs md-dynamic-height md-border-bottom>
-      <md-tab label="SERVICE INSTANCES({{instances.length}})" ng-click="showInstance()">
-        <md-content>
-         <div ui-view="instance"></div>
-        </md-content>
+      <md-tab label="{{ 'serviceInstances' | translate }}({{instances.length}})" ng-click="getInstance()">
       </md-tab>
-      <md-tab label="SERVICE PROVIDERS({{providers.length}})" ng-click="showProvider()">
-        <md-content>
-          <div ui-view="provider"></div>
-        </md-content>
+
+      <md-tab label="{{ 'serviceProviders' | translate }}({{providers.length}})" ng-click="getProvider()">
       </md-tab>
-      <md-tab label="SERVICE CONSUMERS({{consumers.length}})" ng-click="showConsumer()">
-        <md-content>
-          <div ui-view="consumer"></div>
-        </md-content>
+
+      <md-tab label="{{ 'serviceConsumers' | translate }}({{consumers.length}})" ng-click="getConsumer()">
+      </md-tab>
+
+      <md-tab label="{{ 'schema' | translate }}" ng-click="getSchema()">
       </md-tab>
     </md-tabs>
+
+      <div ui-view="info"></div>
+
   </md-content>
 </div>
