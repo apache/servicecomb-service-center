@@ -57,3 +57,10 @@ func getContext() context.Context {
 	ctx = util.NewContext(ctx, "project", "default")
 	return ctx
 }
+
+func getCunstomContext(tenant string, projetct string) context.Context {
+	ctx := context.TODO()
+	ctx = util.NewContext(ctx, "tenant", tenant)
+	ctx = util.NewContext(ctx, "project", projetct)
+	return ctx
+}
