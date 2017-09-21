@@ -1,4 +1,4 @@
-<--!
+<!--
 Copyright 2017 Huawei Technologies Co., Ltd
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,36 +20,40 @@ limitations under the License.
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="#">Service Center</a>
+      <a class="navbar-brand" href="#">{{ "serviceCenter" | translate }}</a>
     </div>
 
-    <!-- Collect the nav links, forms, and other content for toggling -->
     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
       <ul class="nav navbar-nav navbar-right">
         <li>
-        <form class="navbar-form navbar-left">
+        <form class="navbar-form navbar-left" autocomplete="off">
           <div class="form-group">
-            <label class="label">Tenant</label>
-            <input type="text" class="form-control tenant">
-            <button>&gt;</button>
+            <label class="label">{{ "tenant" | translate }}</label>
+            <input type="text" id="tenant" class="form-control tenant" ng-model="tenant">
           </div>
         </form>
         </li>
+        <li>
+          <select class="form-control" id="language" ng-change="selectLang(language)" ng-model="language">
+            <option value="en">{{ "english" | translate }}</option>
+            <option value="cz">{{ "chinese" | translate }}</option>
+          </select>
+        </li>
       </ul>
-    </div><!-- /.navbar-collapse -->
+    </div>
 </nav>
- <!-- Sidebar -->
 <div id="sidebar-wrapper">
     <ul class="sidebar-nav">
         <li>
-            <img class="logo" src="images/sc.png" height="80px" width="200px">
+            <img class="logo" src="images/sc.png" alt="loading..">
         </li>
         <li>
             <a ui-sref="sc.allServices"  ui-sref-active="active" ng-class="[{active: $state.current.name === 'sc.info.instance'},
-            {activeProvider: $state.current.name === 'sc.info.provider'}, {activeConsumer: $state.current.name === 'sc.info.consumer'}]">Services</a>
+            {activeProvider: $state.current.name === 'sc.info.provider'}, {activeConsumer: $state.current.name === 'sc.info.consumer'},
+            {schema: $state.current.name === 'sc.info.schema'}]">{{ "services" | translate }}</a>
         </li>
         <li>
-            <a ui-sref="sc.allInstances" ui-sref-active="active">Instances</a>
+            <a ui-sref="sc.allInstances" ui-sref-active="active">{{ "instances" | translate }}</a>
         </li>
     </ul>
 </div>

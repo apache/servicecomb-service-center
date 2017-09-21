@@ -1,3 +1,15 @@
+/*
+Copyright 2017 Huawei Technologies Co., Ltd
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+   http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 $icon-font-path: "../../bower_components/bootstrap-sass-official/assets/fonts/bootstrap/";
 $fa-font-path: "../../bower_components/components-font-awesome/fonts/";
 
@@ -8,18 +20,25 @@ body {
   margin: 0; 
   padding: 0;
   font-family: 'Helvetica','Myriad','Arial';
-
-.logo {
-  margin: 10px 0px;  
+.loader {
+  background: rgba(0,0,0,.2) url('../images/loader.gif') no-repeat 50% center;
+  width:100%;
+  height:100%;
+  position:fixed;
+  top:0;
+  left:0;
+  z-index:999;
+  display:none;
 }
-
+.logo {
+  margin: 35px 0px 35px -5px;  
+}
 .navbar {
   border-radius: unset !important;
 }
 .navbar-brand {
   color: #fff;
 }
-  
 #sidebar-wrapper {
    height: 100%;
    width: 230px;
@@ -50,7 +69,7 @@ body {
   color: black;
   background: #f5f5f0; 
 }
-.active, .activeProvider, .activeConsumer {
+.active, .activeProvider, .activeConsumer, .schema {
   text-decoration: none;
   background:  #fff;
   color: #009ee0 !important;
@@ -59,25 +78,32 @@ body {
 .content {
   margin-left: 250px;
 }
-
+.fa-close {
+  color: white;
+}
 .label {
   color: white;
   font-size: 16px;
 }
 .tenant {
-  height: 27px;
-  margin-top: -2px;
+  height: 30px;
 }
+
 .table-header {
   height: 50px;
   min-height: 50px;
 }
-.initialCaps {
-    text-transform: capitalize;
+#language {
+  height: 31px;
+  margin-top: 7px;
 }
 .no-padding {
   padding: 0;
 }
+#search {
+  max-width: 300px;
+}
+
 table.md-table {
   td.md-cell {
     height: 48px;
@@ -93,14 +119,13 @@ table.md-table {
 }
 
 .serviceInfo {
-  margin-left: 0px;
+  margin: 0px;
   .details {
-    height:100px;
-    width:100px;
+    height:80px;
+    width:80px;
     background-color:#efefef;
     border-radius:50%;
     text-align:center;
-    padding:10px;
   }
   ul {
     list-style-type: none;
@@ -123,7 +148,9 @@ table.md-table {
 md-toolbar.md-default-theme:not(.md-menu-toolbar), md-toolbar:not(.md-menu-toolbar)  {
   background-color : #0288D1 !important;
 }
-
+md-toolbar.md-default-theme:not(.md-menu-toolbar).md-warn, md-toolbar:not(.md-menu-toolbar).md-warn {
+    background-color : rgb(255,87,34) !important;
+}
 
 }
 

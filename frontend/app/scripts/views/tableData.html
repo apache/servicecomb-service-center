@@ -15,20 +15,12 @@ limitations under the License.
 	<md-card>
         <md-toolbar class="table-header">
             <div class="md-toolbar-tools">
-                {{heading}}
+                {{heading | translate}}
                 <span flex></span>
-                <md-button ng-if="dialogClose" class="md-icon-button" ng-click="close()">
-                    <ng-md-icon icon="close" aria-label="Close">
-                        <i class="fa fa-close fa-lg"></i>
-                        </md-icon>
-                </md-button>
-                <md-button ng-if="(enableSearch && data &&(data.length != 0))" class="md-icon-button" ng-click="searchOpen()" ng-hide="showSearch" aria-label="SearchAppList" title="SearchAppList">
+                <md-button ng-if="(enableSearch && data && (data.length > 0))" class="md-icon-button" ng-click="searchOpen()" ng-hide="showSearch" aria-label="{{ 'search' | translate }}" title="{{ 'search' | translate }}">
                     <i class="fa fa-search fa-lg"></i>
                 </md-button>
-                <md-button ng-if="(data) || (button.dispalyOnFailure && appList == 'failed')" ng-repeat="button in buttons" class="md-raised" ng-class="button.class" ng-click="button.method()" aria-label="{{button.title}}" title="{{button.title}}">
-                    <i ng-if="button.icon" class="{{button.icon}}"></i> {{button.title}}
-                </md-button>
-                <md-button ng-if="refresh" class="md-icon-button" ng-click="reload()" aria-label="RefershAppList" title="RefreshAppList">
+                <md-button ng-if="refresh" class="md-icon-button" ng-click="reload()" aria-label="{{ 'refresh' | translate }}" title="{{ 'refresh' | translate }}">
                     <i class="fa fa-refresh fa-lg"></i>
                 </md-button>
             </div>
@@ -36,9 +28,10 @@ limitations under the License.
         <md-toolbar class="md-table-toolbar md-raised md-default" ng-if="showSearch">
           <div class="md-toolbar-tools">
             <form flex name="filter.form" class="no-padding" >
-              <input id="search" class="form-control" style="width:350px" type="search" ng-model="filter.search" autofocus placeholder="Search">
+              <input id="search" class="form-control" type="search" ng-model="filter.search" autofocus 
+              placeholder="{{ 'search' | translate }}" autocomplete="off">
             </form>
-            <md-button class="md-icon-button"  aria-label="Close">
+            <md-button class="md-icon-button"  aria-label="{{ 'close' | translate }}" title="{{ 'close' | translate }}">
               <md-icon><i class="fa fa-close fa-lg" ng-click="searchClose()" ></i></md-icon>
             </md-button>
           </div>
@@ -49,7 +42,7 @@ limitations under the License.
                 <thead md-head>
                     <tr md-row>
                         <th md-column ng-repeat="header in headers">
-                            {{header.key}}
+                            {{ header.key | translate }}
                         </th>
                     </tr>
                 </thead>

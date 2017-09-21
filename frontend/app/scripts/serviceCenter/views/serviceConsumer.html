@@ -13,11 +13,11 @@ limitations under the License.
 -->
 <table class="table table-bordered table-responsive margin20" >
 	<thead class="infoTableHead">
-		<th>Service Name</th>
-		<th>Application</th>
-		<th>Version</th>
-		<th>Created</th>
-		<th>Description</th>
+		<th>{{ 'name' | translate }}</th>
+		<th>{{ 'application' | translate }}</th>
+		<th>{{ 'version' | translate }}</th>
+		<th>{{ 'createdAt' | translate }}</th>
+		<th>{{ 'description' | translate }}</th>
 	</thead>
 	<tbody>
 		<tr ng-repeat="consumer in consumers">
@@ -26,6 +26,9 @@ limitations under the License.
 			<td>{{consumer.version}}</td>
 			<td>{{convertTime(consumer.timestamp)}}</td>
 			<td>{{consumer.description || '-' }}</td>
+		</tr>
+		<tr ng-if="consumers.length == 0" class="text-center">
+			<td colspan="5">No Data Found</td>
 		</tr>
 	</tbody>
 </table>

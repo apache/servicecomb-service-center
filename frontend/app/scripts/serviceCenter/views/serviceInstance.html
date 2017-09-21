@@ -13,10 +13,10 @@ limitations under the License.
 -->
 <table class="table table-bordered table-responsive margin20" >
 	<thead class="infoTableHead">
-		<th>Name</th>
-		<th>Status</th>
-		<th>Created</th>
-		<th>Address</th>
+		<th>{{ 'name' | translate }}</th>
+		<th>{{ 'status' | translate }}</th>
+		<th>{{ 'createdAt' | translate }}</th>
+		<th>{{ 'address' | translate }}</th>
 	</thead>
 	<tbody>
 		<tr ng-repeat="instance in instances">
@@ -24,6 +24,9 @@ limitations under the License.
 			<td>{{instance.status | lowercase}}</td>
 			<td>{{convertTime(instance.timestamp)}}</td>
 			<td>{{instance.endpoints[0]}}</td>
+		</tr>
+		<tr ng-if="instances.length == 0" class="text-center">
+			<td colspan="4">No Data Found</td>
 		</tr>
 	</tbody>
 </table>

@@ -19,8 +19,8 @@ angular.module('serviceCenter.router', [])
         .state('sc', {
             url: '/sc',
             abstract: true,
-            templateUrl: 'views/base.html',
-            controller: 'baseController as baseCtrl'
+            templateUrl: 'scripts/views/index.html',
+            controller: 'serviceCenterController as scCtrl'
         })
         .state('sc.allServices', {
             url: '/services',
@@ -49,7 +49,7 @@ angular.module('serviceCenter.router', [])
                             deferred.resolve(response.data.services);
                         }
                         else {
-                            deferred.resolve([]);
+                            deferred.resolve(response);
                         }
                     },function(error){
                         deferred.reject(error);
@@ -60,6 +60,7 @@ angular.module('serviceCenter.router', [])
         })
         .state('sc.info',{
             url: '/:serviceId',
+            abstract: true,
             views: {
                 'base': {
                     templateUrl: 'scripts/serviceCenter/views/serviceInfo.html',
@@ -67,17 +68,19 @@ angular.module('serviceCenter.router', [])
                 }
             },
             resolve: {
-                currentService: ['$q', 'httpService', 'commonService', 'apiConstant', '$stateParams', function($q, httpService, commonService, apiConstant, $stateParams){
+                serviceInfo: ['$q', 'httpService', 'commonService', 'apiConstant', '$stateParams', function($q, httpService, commonService, apiConstant, $stateParams){
+                    $(".loader").show();
                     var serviceId = $stateParams.serviceId;
                     var deferred = $q.defer();
                     var url = apiConstant.api.microservice.url;
                     var method = apiConstant.api.microservice.method;
                     httpService.apiRequest(url,method).then(function(response){
+                        $(".loader").hide();
                         if(response && response.data && response.data.services){
                             response.data.services.forEach(function(services){
                                 if(services.serviceId == serviceId){
                                     var selectedService = {
-                                        serviceName: services.serviceName.charAt(0).toUpperCase()+services.serviceName.slice(1).toLowerCase(),
+                                        serviceName: services.serviceName.toUpperCase(),
                                         status: services.status.toLowerCase(),
                                         appId: services.appId.toLowerCase(),
                                         version: services.version,
@@ -86,14 +89,15 @@ angular.module('serviceCenter.router', [])
                                     };
                                     deferred.resolve(selectedService);
                                 }else {
-                                    deferred.resolve({});
+                                    deferred.resolve(response);
                                 }
                             });
                         }
                         else {
-                            deferred.reject({});
+                            deferred.resolve(response);
                         }
                     },function(error){
+                        $(".loader").hide();
                         deferred.reject(error);
                     });
                     return deferred.promise;
@@ -103,27 +107,32 @@ angular.module('serviceCenter.router', [])
         .state('sc.info.instance', {
             url: '/instance',
             views: {
-                "instance" : {
-                    templateUrl: 'scripts/serviceCenter/views/serviceInstance.html',
-                    controller: 'serviceInfoController as serviceInfo'
+                "info" : {
+                    templateUrl: 'scripts/serviceCenter/views/serviceInstance.html'
                 }
             }
         })
         .state('sc.info.provider', {
             url: '/provider',
             views: {
-                "provider" : {
-                    templateUrl: 'scripts/serviceCenter/views/serviceProvider.html',
-                    controller: 'serviceInfoController as serviceInfo'
+                "info" : {
+                    templateUrl: 'scripts/serviceCenter/views/serviceProvider.html'
                 }
             }
         })
         .state('sc.info.consumer', {
             url: '/consumer',
             views: {
-                "consumer" : {
-                    templateUrl: 'scripts/serviceCenter/views/serviceConsumer.html',
-                    controller: 'serviceInfoController as serviceInfo'
+                "info" : {
+                    templateUrl: 'scripts/serviceCenter/views/serviceConsumer.html'
+                }
+            }
+        })
+        .state('sc.info.schema', {
+            url: '/schema',
+            views: {
+                "info" : {
+                    templateUrl: 'scripts/serviceCenter/views/schema.html'
                 }
             }
         })

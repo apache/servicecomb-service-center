@@ -11,5 +11,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-<table-data headers='tableHeaders' heading="serviceList" data='services' search='true' refresh='refreshAppList' app-list='appList'></table-data>
+<div class="margin20">
+	<div ng-if="instances.length > 0">
+		<json-formatter json="instances" open="10"></json-formatter>
+	</div>
+	<div ng-if="instances.length == 0">
+		<div class="text-center">No Schema Found</div>
+	</div>
+</div>
