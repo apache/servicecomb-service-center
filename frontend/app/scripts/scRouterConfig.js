@@ -14,7 +14,7 @@
 'use strict';
 angular.module('serviceCenter.router', [])
 	.config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $urlRouterProvider) {
-    $urlRouterProvider.otherwise('/sc/services');
+    $urlRouterProvider.otherwise('/sc/dashboard');
     $stateProvider
         .state('sc', {
             url: '/sc',
@@ -22,11 +22,71 @@ angular.module('serviceCenter.router', [])
             templateUrl: 'scripts/views/index.html',
             controller: 'serviceCenterController as scCtrl'
         })
+        .state('sc.dashboard', {
+            url: '/dashboard',
+            views:{
+                'base' :{
+                    templateUrl: 'scripts/modules/dashboard/views/dashboard.html',
+                    controller: 'dashboardController as dashboardCtrl'
+                }
+            },
+            resolve: {
+                servicesList: ['$q', 'httpService', 'apiConstant',function($q, httpService, apiConstant){
+                    var deferred = $q.defer();
+                    var url = apiConstant.api.microservice.url;
+                    var method = apiConstant.api.microservice.method;
+                    httpService.apiRequest(url,method).then(function(response){
+                        if(response && response.data && response.data.services){
+                            deferred.resolve(response.data.services);
+                        }
+                        else {
+                            deferred.resolve(response);
+                        }
+                    },function(error){
+                        deferred.reject(error);
+                    });
+                    return deferred.promise;
+                }],
+                instancesList: ['$q', 'httpService', 'apiConstant',function($q, httpService, apiConstant){
+                    var deferred = $q.defer();
+                    var url = apiConstant.api.microservice.url;
+                    var method = apiConstant.api.microservice.method;
+                    httpService.apiRequest(url,method).then(function(response){
+                        if(response && response.data && response.data.services){
+                            var promises = [];
+                            for (var i = 0; i < response.data.services.length; i++) {
+                                var api = apiConstant.api.instances.url;
+                                var url = api.replace("{{serviceId}}", response.data.services[i].serviceId);
+                                var method = apiConstant.api.instances.method;
+                                var headers = {"X-ConsumerId": response.data.services[i].serviceId};
+
+                                promises.push(httpService.apiRequest(url,method,null,headers));
+                             }
+
+                            $q.all(promises).then(function(response){
+                                if(response && response[0].data && response[0].data.instances){
+                                    deferred.resolve(response[0].data.instances);
+                                }
+                            },function(error){
+                                deferred.reject(error);
+                            });
+
+                        }
+                        else {
+                            deferred.resolve(response);
+                        }
+                    },function(error){
+                        deferred.reject(error);
+                    });
+                    return deferred.promise;
+                }]
+            }
+        })
         .state('sc.allServices', {
             url: '/services',
             views:{
                 'base' :{
-                    templateUrl: 'scripts/serviceCenter/views/servicesList.html',
+                    templateUrl: 'scripts/modules/serviceCenter/views/servicesList.html',
                     controller: 'servicesListController as services'
                 }
             }
@@ -35,7 +95,7 @@ angular.module('serviceCenter.router', [])
             url: '/instances',
             views:{
                 'base' :{
-                    templateUrl: 'scripts/instances/views/instanceList.html',
+                    templateUrl: 'scripts/modules/instances/views/instanceList.html',
                     controller: 'instancesListController as instances',
                 }
             },
@@ -63,7 +123,7 @@ angular.module('serviceCenter.router', [])
             abstract: true,
             views: {
                 'base': {
-                    templateUrl: 'scripts/serviceCenter/views/serviceInfo.html',
+                    templateUrl: 'scripts/modules/serviceCenter/views/serviceInfo.html',
                     controller: 'serviceInfoController as serviceInfo'
                 }
             },
@@ -108,7 +168,7 @@ angular.module('serviceCenter.router', [])
             url: '/instance',
             views: {
                 "info" : {
-                    templateUrl: 'scripts/serviceCenter/views/serviceInstance.html'
+                    templateUrl: 'scripts/modules/serviceCenter/views/serviceInstance.html'
                 }
             }
         })
@@ -116,7 +176,7 @@ angular.module('serviceCenter.router', [])
             url: '/provider',
             views: {
                 "info" : {
-                    templateUrl: 'scripts/serviceCenter/views/serviceProvider.html'
+                    templateUrl: 'scripts/modules/serviceCenter/views/serviceProvider.html'
                 }
             }
         })
@@ -124,7 +184,7 @@ angular.module('serviceCenter.router', [])
             url: '/consumer',
             views: {
                 "info" : {
-                    templateUrl: 'scripts/serviceCenter/views/serviceConsumer.html'
+                    templateUrl: 'scripts/modules/serviceCenter/views/serviceConsumer.html'
                 }
             }
         })
@@ -132,7 +192,8 @@ angular.module('serviceCenter.router', [])
             url: '/schema',
             views: {
                 "info" : {
-                    templateUrl: 'scripts/serviceCenter/views/schema.html'
+                    templateUrl: 'scripts/modules/serviceCenter/views/schema.html',
+                    controller: 'schemaController as schemaCtrl'
                 }
             }
         })

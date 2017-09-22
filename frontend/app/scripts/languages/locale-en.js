@@ -38,6 +38,10 @@ angular.module('serviceCenter')
 	"serviceProviders": "SERVICE PROVIDERS",
 	"serviceConsumers": "SERVICE CONSUMERS",
 	"schema": "SCHEMA",
+	"dashboard": "Dashboard",
+	"up": "UP",
+	"down": "DOWN",
+	"dashboard": "Dashboard",
 	"copyRight" : "Developed by Huawei Technologies India Pvt. Ltd (Get confirmation and change accordigly!)"
 
 });

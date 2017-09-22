@@ -5215,7 +5215,7 @@ button.close {
   .tooltip.bottom {
     margin-top: 3px;
     padding: 5px 0; }
-  .tooltip.left {
+  .tooltip.left, body .dashboardBody .dashboardTitle .tooltip.right, body .dashboardBody .dashboardStatus .tooltip.right, body .dashboardBody .dashboardUpDown .tooltip.right {
     margin-left: -3px;
     padding: 0 5px; }
 
@@ -5258,7 +5258,7 @@ button.close {
   margin-top: -5px;
   border-width: 5px 5px 5px 0;
   border-right-color: #000; }
-.tooltip.left .tooltip-arrow {
+.tooltip.left .tooltip-arrow, body .dashboardBody .dashboardTitle .tooltip.right .tooltip-arrow, body .dashboardBody .dashboardStatus .tooltip.right .tooltip-arrow, body .dashboardBody .dashboardUpDown .tooltip.right .tooltip-arrow {
   top: 50%;
   right: 0;
   margin-top: -5px;
@@ -5320,7 +5320,7 @@ button.close {
     margin-left: 10px; }
   .popover.bottom {
     margin-top: 10px; }
-  .popover.left {
+  .popover.left, body .dashboardBody .dashboardTitle .popover.right, body .dashboardBody .dashboardStatus .popover.right, body .dashboardBody .dashboardUpDown .popover.right {
     margin-left: -10px; }
 
 .popover-title {
@@ -5388,14 +5388,14 @@ button.close {
     margin-left: -10px;
     border-top-width: 0;
     border-bottom-color: #fff; }
-.popover.left > .arrow {
+.popover.left > .arrow, body .dashboardBody .dashboardTitle .popover.right > .arrow, body .dashboardBody .dashboardStatus .popover.right > .arrow, body .dashboardBody .dashboardUpDown .popover.right > .arrow {
   top: 50%;
   right: -11px;
   margin-top: -11px;
   border-right-width: 0;
   border-left-color: #999999;
   border-left-color: rgba(0, 0, 0, 0.25); }
-  .popover.left > .arrow:after {
+  .popover.left > .arrow:after, body .dashboardBody .dashboardTitle .popover.right > .arrow:after, body .dashboardBody .dashboardStatus .popover.right > .arrow:after, body .dashboardBody .dashboardUpDown .popover.right > .arrow:after {
     content: " ";
     right: 1px;
     border-right-width: 0;
@@ -5437,11 +5437,11 @@ button.close {
           -webkit-transform: translate3d(100%, 0, 0);
           transform: translate3d(100%, 0, 0);
           left: 0; }
-        .carousel-inner > .item.prev, .carousel-inner > .item.active.left {
+        .carousel-inner > .item.prev, .carousel-inner > .item.active.left, body .dashboardBody .dashboardTitle .carousel-inner > .item.active.right, body .dashboardBody .dashboardStatus .carousel-inner > .item.active.right, body .dashboardBody .dashboardUpDown .carousel-inner > .item.active.right {
           -webkit-transform: translate3d(-100%, 0, 0);
           transform: translate3d(-100%, 0, 0);
           left: 0; }
-        .carousel-inner > .item.next.left, .carousel-inner > .item.prev.right, .carousel-inner > .item.active {
+        .carousel-inner > .item.next.left, body .dashboardBody .dashboardTitle .carousel-inner > .item.next.right, body .dashboardBody .dashboardStatus .carousel-inner > .item.next.right, body .dashboardBody .dashboardUpDown .carousel-inner > .item.next.right, .carousel-inner > .item.prev.right, .carousel-inner > .item.active {
           -webkit-transform: translate3d(0, 0, 0);
           transform: translate3d(0, 0, 0);
           left: 0; } }
@@ -5460,10 +5460,10 @@ button.close {
     left: 100%; }
   .carousel-inner > .prev {
     left: -100%; }
-  .carousel-inner > .next.left,
+  .carousel-inner > .next.left, body .dashboardBody .dashboardTitle .carousel-inner > .next.right, body .dashboardBody .dashboardStatus .carousel-inner > .next.right, body .dashboardBody .dashboardUpDown .carousel-inner > .next.right,
   .carousel-inner > .prev.right {
     left: 0; }
-  .carousel-inner > .active.left {
+  .carousel-inner > .active.left, body .dashboardBody .dashboardTitle .carousel-inner > .active.right, body .dashboardBody .dashboardStatus .carousel-inner > .active.right, body .dashboardBody .dashboardUpDown .carousel-inner > .active.right {
     left: -100%; }
   .carousel-inner > .active.right {
     left: 100%; }
@@ -5481,7 +5481,7 @@ button.close {
   text-align: center;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
   background-color: rgba(0, 0, 0, 0); }
-  .carousel-control.left {
+  .carousel-control.left, body .dashboardBody .dashboardTitle .carousel-control.right, body .dashboardBody .dashboardStatus .carousel-control.right, body .dashboardBody .dashboardUpDown .carousel-control.right {
     background-image: -webkit-linear-gradient(left, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.0001) 100%);
     background-image: -o-linear-gradient(left, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.0001) 100%);
     background-image: linear-gradient(to right, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.0001) 100%);
@@ -5823,37 +5823,49 @@ body {
     left: 0;
     z-index: 999;
     display: none; }
-  body .logo {
-    margin: 35px 0px 35px -5px; }
+  body .no-margin {
+    margin: 0px !important; }
   body .navbar {
     border-radius: unset !important; }
-  body .navbar-brand {
-    color: #fff; }
-  body #sidebar-wrapper {
+    body .navbar .navbar-brand {
+      color: #fff !important; }
+    body .navbar .label {
+      color: white;
+      font-size: 16px; }
+    body .navbar .tenant {
+      height: 30px; }
+    body .navbar .language {
+      height: 31px;
+      margin-top: 7px; }
+    body .navbar ul li:last-child {
+      margin-right: 10px; }
+  body .sidebar-wrapper {
     height: 100%;
     width: 230px;
     position: fixed;
     background: #f5f5f0;
     margin-top: -20px; }
-  body .sidebar-nav {
-    position: absolute;
-    top: 0;
-    width: 230px;
-    margin: 0;
-    padding: 0;
-    list-style: none; }
-  body .sidebar-nav li {
-    text-indent: 20px;
-    line-height: 50px; }
-  body .sidebar-nav li a {
-    display: block;
-    text-decoration: none;
-    color: #666666;
-    font-size: 14px; }
-  body .sidebar-nav li a:hover {
-    text-decoration: none;
-    color: black;
-    background: #f5f5f0; }
+    body .sidebar-wrapper .sidebar-nav {
+      position: absolute;
+      top: 0;
+      width: 230px;
+      margin: 0;
+      padding: 0;
+      list-style: none; }
+      body .sidebar-wrapper .sidebar-nav li {
+        text-indent: 20px;
+        line-height: 50px; }
+        body .sidebar-wrapper .sidebar-nav li a {
+          display: block;
+          text-decoration: none;
+          color: #666666;
+          font-size: 14px; }
+          body .sidebar-wrapper .sidebar-nav li a:hover {
+            text-decoration: none;
+            color: black;
+            background: #f5f5f0; }
+      body .sidebar-wrapper .sidebar-nav .logo {
+        margin: 35px 0px 35px -5px; }
   body .active, body .activeProvider, body .activeConsumer, body .schema {
     text-decoration: none;
     background: #fff;
@@ -5863,17 +5875,9 @@ body {
     margin-left: 250px; }
   body .fa-close {
     color: white; }
-  body .label {
-    color: white;
-    font-size: 16px; }
-  body .tenant {
-    height: 30px; }
   body .table-header {
     height: 50px;
     min-height: 50px; }
-  body #language {
-    height: 31px;
-    margin-top: 7px; }
   body .no-padding {
     padding: 0; }
   body #search {
@@ -5898,10 +5902,107 @@ body {
   body .serviceInfoTab {
     margin-left: 8px;
     margin-top: 50px; }
+  body canvas {
+    max-width: 65% !important;
+    margin: 0px auto;
+    padding: 15px; }
+    body canvas:hover {
+      cursor: pointer; }
   body .margin20 {
     margin-top: 20px; }
   body .infoTableHead {
     background-color: #efefef; }
+  body .dashboardHeader {
+    height: 100px; }
+    body .dashboardHeader .dashboard {
+      font-size: 30px;
+      color: brown; }
+    body .dashboardHeader .dashboardInfo {
+      height: 80px;
+      width: 200px;
+      border: 1px solid grey;
+      float: right;
+      margin-right: 20px; }
+      body .dashboardHeader .dashboardInfo ul li {
+        padding: 10px 0px;
+        list-style-type: none; }
+        body .dashboardHeader .dashboardInfo ul li:first-child span {
+          color: #97bbcd;
+          padding-right: 10px; }
+        body .dashboardHeader .dashboardInfo ul li:last-child span {
+          color: #dcdcdc;
+          padding-right: 10px; }
+  body .dashboardBody .dashboardTitle {
+    height: 100px; }
+    body .dashboardBody .dashboardTitle .left, body .dashboardBody .dashboardTitle .right {
+      height: inherit;
+      background-color: #F0F2F5;
+      margin-right: 10px;
+      width: 49% !important;
+      padding-top: 30px; }
+      body .dashboardBody .dashboardTitle .left .dashboardName, body .dashboardBody .dashboardTitle .right .dashboardName {
+        font-size: 25px;
+        text-align: center;
+        padding: 5px; }
+      body .dashboardBody .dashboardTitle .left .dashboardCount, body .dashboardBody .dashboardTitle .right .dashboardCount {
+        width: 65%;
+        text-align: end;
+        font-size: 25px; }
+    body .dashboardBody .dashboardTitle .right {
+      margin-right: 0px !important; }
+  body .dashboardBody .dashboardChart .dashboardChartLeft, body .dashboardBody .dashboardChart .dashboardChartRight {
+    width: 49% !important;
+    background-color: #F0F2F5;
+    margin-top: 20px;
+    margin-right: 10px; }
+  body .dashboardBody .dashboardChart .dashboardChartRight {
+    margin-right: 0px !important; }
+  body .dashboardBody .dashboardStatus {
+    height: 100px;
+    margin-top: 20px !important; }
+    body .dashboardBody .dashboardStatus .left, body .dashboardBody .dashboardStatus .right {
+      height: inherit;
+      background-color: #F0F2F5;
+      margin-right: 10px;
+      width: 49% !important; }
+      body .dashboardBody .dashboardStatus .left .dashboardName, body .dashboardBody .dashboardStatus .right .dashboardName {
+        font-size: 25px;
+        text-align: center;
+        padding: 5px;
+        margin-top: 25px; }
+      body .dashboardBody .dashboardStatus .left .dashboardCount, body .dashboardBody .dashboardStatus .right .dashboardCount {
+        width: 65%;
+        text-align: end;
+        font-size: 25px;
+        margin-top: 25px; }
+    body .dashboardBody .dashboardStatus .right {
+      margin-right: 0px !important; }
+  body .dashboardBody .dashboardUpDown {
+    margin-top: 20px !important; }
+    body .dashboardBody .dashboardUpDown .left, body .dashboardBody .dashboardUpDown .right {
+      height: inherit;
+      background-color: white;
+      margin-right: 10px;
+      width: 49% !important;
+      padding: 0px !important; }
+      body .dashboardBody .dashboardUpDown .left .up, body .dashboardBody .dashboardUpDown .right .up {
+        background-color: #F0F2F5;
+        width: 49% !important;
+        margin-right: 5px;
+        height: 100px;
+        font-size: 22px;
+        text-align: left;
+        padding: 35px; }
+      body .dashboardBody .dashboardUpDown .left .down, body .dashboardBody .dashboardUpDown .right .down {
+        background-color: #F0F2F5;
+        width: 50% !important;
+        margin-right: 0px;
+        height: 100px;
+        font-size: 22px;
+        text-align: left;
+        padding: 35px; }
+    body .dashboardBody .dashboardUpDown .right {
+      margin-right: 0px !important; }
   body md-toolbar.md-default-theme:not(.md-menu-toolbar), body md-toolbar:not(.md-menu-toolbar) {
     background-color: #0288D1 !important; }
   body md-toolbar.md-default-theme:not(.md-menu-toolbar).md-warn, body md-toolbar:not(.md-menu-toolbar).md-warn {

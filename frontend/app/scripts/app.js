@@ -14,7 +14,7 @@
 'use strict';
 
 angular.module('serviceCenter', ['ngAnimate', 'ngMaterial', 'ngAria', 'ngMessages', 'ngResource', 'ngRoute', 'ngSanitize', 'ui.router',
-    'ngMdIcons', 'pascalprecht.translate', 'serviceCenter.router','md.data.table', 'jsonFormatter'])
+    'ngMdIcons', 'pascalprecht.translate', 'serviceCenter.router','md.data.table', 'jsonFormatter', 'chart.js'])
   .config(['$translateProvider', 'english', 'chinese', function($translateProvider, english, chinese) {
         $translateProvider.useSanitizeValueStrategy(null);
         

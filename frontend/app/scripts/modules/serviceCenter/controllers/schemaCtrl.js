@@ -13,31 +13,19 @@
 //limitations under the License.
 'use strict';
 angular.module('serviceCenter')
-	.constant('apiConstant', {
-		endPoint :{
-			url : 'http://127.0.0.1',
-			port: '30100'
-		},
-		api : {
-			microservice: {
-				url: 'registry/v3/microservices',
-				method: 'GET'
-			},
-			instances: {
-				url: 'registry/v3/microservices/{{serviceId}}/instances?tags=',
-				method: 'GET'
-			},
-			consumer: {
-				url: 'registry/v3/microservices/{{consumerId}}/providers',
-				method: 'GET'
-			},
-			provider: {
-				url: 'registry/v3/microservices/{{proviserId}}/consumers',
-				method: 'GET'
-			},
-			schema: {
-				url: 'registry/v3/microservices/{{serviceId}}/schemas/{{schemaId}}',
-				method: 'GET'
-			}
-		}
-	});
+	.controller('schemaController',['$scope', 'apiConstant', 'httpService', '$stateParams', function($scope, apiConstant, httpService, $stateParams) {
+		
+		var serviceId = $stateParams.serviceId;
+		var schemaApi = apiConstant.api.schema.url;
+		var api = schemaApi.replace("{{serviceId}}", serviceId);
+		var url = api.replace("{{schemaId}}", serviceId);
+		var method = apiConstant.api.schema.method;
+
+		$scope.schema = [];
+		// httpService.apiRequest(url, method).then(function(response){
+		// 	console.log("got response "+ response);
+		// },function(error){
+		// 	console.log("error"+ JSON.stringify(error));
+		// });
+
+}]);

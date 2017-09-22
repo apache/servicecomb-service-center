@@ -1,0 +1,68 @@
+<!--
+Copyright 2017 Huawei Technologies Co., Ltd
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<div class="dashboardHeader">
+<span class="dashboard">{{ "dashboard" | translate }}</span>
+	<div class="dashboardInfo">
+		<ul>
+			<li><span class="glyphicon glyphicon-stop"></span>{{ "up" | translate }}</li>
+			<li><span class="glyphicon glyphicon-stop"></span>{{ "down" | translate }}</li>
+		</ul>
+	</div>
+</div>
+
+<div class="dashboardBody">
+	<div class="row dashboardTitle no-margin">
+	 <div class="col-md-5 col-sm-5 left">
+	 	<span class="dashboardName"> {{ "services" | translate }} </span>
+	 	<span class="dashboardName pull-right">{{ totalServices }}</span>
+	 </div>
+	 <div class="col-md-5 col-sm-5 right">
+	 	<span class="dashboardName"> {{ "instances" | translate }} </span>
+	 	<span class="dashboardName pull-right">{{ totalInstances }}</span>
+	 </div>
+	</div>
+
+	<div class="row no-margin dashboardChart">
+		<div class="col-md-6 col-sm-6 dashboardChartLeft">
+			<canvas class="chart chart-doughnut" chart-data="servicesData" chart-click="getServices" chart-labels="labels"></canvas> 
+		</div>
+		<div class="col-md-6 col-sm-6 dashboardChartRight">
+			<canvas class="chart chart-doughnut" chart-data="instancesData" chart-click="getInstances" chart-labels="labels"></canvas>
+		</div>
+	</div>
+
+	<div class="row dashboardUpDown no-margin">
+	 <div class="col-md-5 col-sm-5 left">
+	 	<div class="col-md-2 col-sm-2 up">
+	 		<span>{{ "up" | translate }} </span>
+	 		<span class="pull-right">{{ runningServices.length }}</span>
+	 	</div>
+	 	<div class="col-md-2 col-sm-2 down">
+	 		<span>{{ "down" | translate }}</span>
+	 		<span class="pull-right">{{ stoppedServices.length }}</span>
+	 	</div>
+	 </div>
+	 <div class="col-md-5 col-sm-5 right">
+	 	<div class="col-md-2 col-sm-2 up">
+	 		<span>{{ "up" | translate }} </span>
+	 		<span class="pull-right">{{ runningInstances.length }}</span>
+	 	</div>
+	 	<div class="col-md-2 col-sm-2 down">
+	 		<span>{{ "down" | translate }}</span>
+	 		<span class="pull-right"">{{ stoppedInstances.length }}</span>
+	 	</div>
+	 </div>
+	</div>
+	
+</div>
