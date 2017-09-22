@@ -38,6 +38,10 @@ angular.module('serviceCenter')
 	"serviceProviders": "服务供应商",
 	"serviceConsumers": "服务消费者",
 	"schema": "模式",
+	"dashboard": "仪表板",
+	"up": "向上",
+	"down": "下",
+	"dashboard": "仪表板",
 	"copyRight" : "由华为技术股份有限公司有限公司（获得确认和变更）！"
 
 });

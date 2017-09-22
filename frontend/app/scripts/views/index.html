@@ -12,7 +12,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <nav class="navbar navbar-inverse">
-    <!-- Brand and toggle get grouped for better mobile display -->
     <div class="navbar-header">
       <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
         <span class="sr-only">Toggle navigation</span>
@@ -34,7 +33,7 @@ limitations under the License.
         </form>
         </li>
         <li>
-          <select class="form-control" id="language" ng-change="selectLang(language)" ng-model="language">
+          <select class="form-control language" ng-change="selectLang(language)" ng-model="language">
             <option value="en">{{ "english" | translate }}</option>
             <option value="cz">{{ "chinese" | translate }}</option>
           </select>
@@ -42,10 +41,13 @@ limitations under the License.
       </ul>
     </div>
 </nav>
-<div id="sidebar-wrapper">
+<div class="sidebar-wrapper">
     <ul class="sidebar-nav">
         <li>
             <img class="logo" src="images/sc.png" alt="loading..">
+        </li>
+        <li>
+            <a ui-sref="sc.dashboard" ui-sref-active="active">{{ "dashboard" | translate }}</a>
         </li>
         <li>
             <a ui-sref="sc.allServices"  ui-sref-active="active" ng-class="[{active: $state.current.name === 'sc.info.instance'},
