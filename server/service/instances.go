@@ -18,7 +18,6 @@ import (
 	"errors"
 	"fmt"
 	apt "github.com/ServiceComb/service-center/server/core"
-	"github.com/ServiceComb/service-center/server/core/mux"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
@@ -619,34 +618,15 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 		Version:     in.VersionRule,
 	}
 
-	exist, err := serviceUtil.ServiceDependencyRuleExist(ctx, tenant, provider, consumer, opts...)
+	err = serviceUtil.AddServiceVersionRule(ctx, tenant, provider, consumer)
+
 	if err != nil {
-		util.Logger().Errorf(err, "find instance failed, %s: find service dependency rule failed.", findFlag)
+		util.Logger().Errorf(err, "find instance failed, %s: add service version rule failed.", findFlag)
 		return &pb.FindInstancesResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
-		}, err
+		}, nil
 	}
-
-	if !exist {
-		lock, err := mux.Lock(mux.GLOBAL_LOCK)
-		if err != nil {
-			util.Logger().Errorf(err, "find instance failed, %s: create lock failed.", findFlag)
-			return &pb.FindInstancesResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
-			}, err
-		}
-
-		err = serviceUtil.AddServiceVersionRule(ctx, tenant, provider, consumer)
-		lock.Unlock()
-
-		if err != nil {
-			util.Logger().Errorf(err, "find instance failed, %s: add service version rule failed.", findFlag)
-			return &pb.FindInstancesResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
-			}, nil
-		}
-		util.Logger().Infof("find instance: add dependency susscess, %s", findFlag)
-	}
+	util.Logger().Infof("find instance: add dependency susscess, %s", findFlag)
 
 	return &pb.FindInstancesResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Query service instances successfully."),

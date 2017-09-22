@@ -235,13 +235,13 @@ func TestParamsChecker(t *testing.T) {
 }
 
 func TestServiceDependencyRuleExist(t *testing.T) {
-	_, err := ServiceDependencyRuleExist(context.Background(), "", &proto.MicroServiceKey{}, &proto.MicroServiceKey{}, registry.WithCacheOnly())
+	_, err := ProviderDependencyRuleExist(context.Background(), "", &proto.MicroServiceKey{}, &proto.MicroServiceKey{}, registry.WithCacheOnly())
 	if err != nil {
 		fmt.Printf(`ServiceDependencyRuleExist WithCacheOnly failed`)
 		t.FailNow()
 	}
 
-	_, err = ServiceDependencyRuleExist(context.Background(), "", &proto.MicroServiceKey{}, &proto.MicroServiceKey{})
+	_, err = ProviderDependencyRuleExist(context.Background(), "", &proto.MicroServiceKey{}, &proto.MicroServiceKey{})
 	if err == nil {
 		fmt.Printf(`ServiceDependencyRuleExist failed`)
 		t.FailNow()
@@ -249,13 +249,13 @@ func TestServiceDependencyRuleExist(t *testing.T) {
 }
 
 func TestAddServiceVersionRule(t *testing.T) {
-	err := AddServiceVersionRule(context.Background(), "", &proto.MicroServiceKey{Version: "1.0.0"}, &proto.MicroServiceKey{})
+	err := AddProviderVersionRule(context.Background(), "", &proto.MicroServiceKey{Version: "1.0.0"}, &proto.MicroServiceKey{})
 	if err != nil {
 		fmt.Printf(`AddServiceVersionRule invalid failed`)
 		t.FailNow()
 	}
 
-	err = AddServiceVersionRule(context.Background(), "", &proto.MicroServiceKey{}, &proto.MicroServiceKey{})
+	err = AddProviderVersionRule(context.Background(), "", &proto.MicroServiceKey{}, &proto.MicroServiceKey{})
 	if err == nil {
 		fmt.Printf(`AddServiceVersionRule failed`)
 		t.FailNow()

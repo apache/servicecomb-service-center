@@ -582,6 +582,79 @@ var _ = Describe("InstanceController", func() {
 				Expect(respFind.GetResponse().Code).To(Equal(pb.Response_FAIL))
 			})
 
+			It("find instance, create dependency", func() {
+				ctx := getCunstomContext("find_dep", "find_dep")
+				resp, err := serviceResource.Create(ctx, &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceName: "find_create_dep_consumer",
+						AppId:       "default",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Schemas: []string{
+							"xxxxxxxx",
+						},
+						Status: "UP",
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				consumerId := resp.ServiceId
+
+				resp, err = serviceResource.Create(ctx, &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceName: "find_create_dep_provider",
+						AppId:       "default",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Schemas: []string{
+							"xxxxxxxx",
+						},
+						Status: "UP",
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				providerId := resp.ServiceId
+
+				respFind, err := insResource.Find(ctx, &pb.FindInstancesRequest{
+					ConsumerServiceId: consumerId,
+					AppId:             "default",
+					ServiceName:       "find_create_dep_provider",
+					VersionRule:       "latest",
+					Tags:              []string{},
+					Env:               "development",
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+				respPro, err := serviceResource.GetConsumerDependencies(ctx, &pb.GetDependenciesRequest{
+					ServiceId: consumerId,
+				})
+				Expect(err).To(BeNil())
+				Expect(providerId).To(Equal(respPro.Providers[0].ServiceId))
+
+				respCon, err := serviceResource.GetProviderDependencies(ctx, &pb.GetDependenciesRequest{
+					ServiceId: providerId,
+				})
+				Expect(err).To(BeNil())
+				Expect(consumerId).To(Equal(respCon.Consumers[0].ServiceId))
+
+				resDel, err := serviceResource.Delete(ctx, &pb.DeleteServiceRequest{
+					ServiceId: consumerId,
+					Force: true,
+				})
+				Expect(err).To(BeNil())
+				Expect(resDel.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+				resDel, err = serviceResource.Delete(ctx, &pb.DeleteServiceRequest{
+					ServiceId: providerId,
+					Force: true,
+				})
+				Expect(err).To(BeNil())
+				Expect(resDel.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+			})
+
 			It("发现实例", func() {
 				fmt.Println("UT===========发现实例")
 				resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
