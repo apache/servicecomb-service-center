@@ -32,10 +32,12 @@ angular.module('serviceCenter.router', [])
             },
             resolve: {
                 servicesList: ['$q', 'httpService', 'apiConstant',function($q, httpService, apiConstant){
+                    $(".loader").show();
                     var deferred = $q.defer();
                     var url = apiConstant.api.microservice.url;
                     var method = apiConstant.api.microservice.method;
                     httpService.apiRequest(url,method).then(function(response){
+                        $(".loader").hide();
                         if(response && response.data && response.data.services){
                             deferred.resolve(response.data.services);
                         }
@@ -43,15 +45,18 @@ angular.module('serviceCenter.router', [])
                             deferred.resolve(response);
                         }
                     },function(error){
+                        $(".loader").hide();
                         deferred.reject(error);
                     });
                     return deferred.promise;
                 }],
                 instancesList: ['$q', 'httpService', 'apiConstant',function($q, httpService, apiConstant){
+                    $(".loader").show();
                     var deferred = $q.defer();
                     var url = apiConstant.api.microservice.url;
                     var method = apiConstant.api.microservice.method;
                     httpService.apiRequest(url,method).then(function(response){
+                        $(".loader").hide();
                         if(response && response.data && response.data.services){
                             var promises = [];
                             for (var i = 0; i < response.data.services.length; i++) {
@@ -76,6 +81,7 @@ angular.module('serviceCenter.router', [])
                             deferred.resolve(response);
                         }
                     },function(error){
+                        $(".loader").hide();
                         deferred.reject(error);
                     });
                     return deferred.promise;
@@ -101,17 +107,20 @@ angular.module('serviceCenter.router', [])
             },
             resolve: {
                 servicesList: ['$q', 'httpService', 'apiConstant',function($q, httpService, apiConstant){
+                    $(".loader").show();
                     var deferred = $q.defer();
                     var url = apiConstant.api.microservice.url;
                     var method = apiConstant.api.microservice.method;
                     httpService.apiRequest(url,method).then(function(response){
+                        $(".loader").hide();
                         if(response && response.data && response.data.services){
                             deferred.resolve(response.data.services);
                         }
                         else {
-                            deferred.resolve(response);
+                            deferred.reject("no services");
                         }
                     },function(error){
+                        $(".loader").hide();
                         deferred.reject(error);
                     });
                     return deferred.promise;
@@ -137,21 +146,7 @@ angular.module('serviceCenter.router', [])
                     httpService.apiRequest(url,method).then(function(response){
                         $(".loader").hide();
                         if(response && response.data && response.data.services){
-                            response.data.services.forEach(function(services){
-                                if(services.serviceId == serviceId){
-                                    var selectedService = {
-                                        serviceName: services.serviceName.toUpperCase(),
-                                        status: services.status.toLowerCase(),
-                                        appId: services.appId.toLowerCase(),
-                                        version: services.version,
-                                        createdAt: commonService.timeFormat(services.timestamp),
-                                        serviceId: services.serviceId
-                                    };
-                                    deferred.resolve(selectedService);
-                                }else {
-                                    deferred.resolve(response);
-                                }
-                            });
+                            deferred.resolve(response);
                         }
                         else {
                             deferred.resolve(response);
@@ -195,6 +190,27 @@ angular.module('serviceCenter.router', [])
                     templateUrl: 'scripts/modules/serviceCenter/views/schema.html',
                     controller: 'schemaController as schemaCtrl'
                 }
+            },
+            resolve: {
+                servicesList: ['$q', 'httpService', 'apiConstant',function($q, httpService, apiConstant){
+                    $(".loader").show();
+                    var deferred = $q.defer();
+                    var url = apiConstant.api.microservice.url;
+                    var method = apiConstant.api.microservice.method;
+                    httpService.apiRequest(url,method).then(function(response){
+                        $(".loader").hide();
+                        if(response && response.data && response.data.services){
+                            deferred.resolve(response);
+                        }
+                        else {
+                            deferred.resolve(response);
+                        }
+                    },function(error){
+                        $(".loader").hide();
+                        deferred.reject(error);
+                    });
+                    return deferred.promise;
+                }]
             }
         })
         .state('error', {

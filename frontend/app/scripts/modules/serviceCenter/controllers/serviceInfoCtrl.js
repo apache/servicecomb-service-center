@@ -17,7 +17,21 @@ angular.module('serviceCenter')
 	 '$stateParams','serviceInfo' ,function($scope, httpService, commonService, $q, apiConstant, $state, $stateParams, serviceInfo){
 
 			var serviceId = $stateParams.serviceId;
-			$scope.serviceDetail = serviceInfo;
+			if(serviceInfo && serviceInfo.data && serviceInfo.data.services){
+				serviceInfo.data.services.forEach(function(services){
+	                if(services.serviceId == serviceId){
+	                    $scope.serviceDetail = {
+	                        serviceName: services.serviceName.toUpperCase(),
+	                        status: services.status.toLowerCase(),
+	                        appId: services.appId.toLowerCase(),
+	                        version: services.version,
+	                        createdAt: commonService.timeFormat(services.timestamp),
+	                        serviceId: services.serviceId
+	                    };
+	                }
+            	});
+			}
+			
 
 			var apis = [];
 			var instanceUrl = apiConstant.api.instances.url;
