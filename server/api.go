@@ -99,6 +99,7 @@ func (s *APIServer) registryService(pCtx context.Context) error {
 		core.Service = respG.Service
 		return nil
 	}
+	service.ISSCService = true
 	respS, err := core.ServiceAPI.Create(ctx, core.CreateServiceRequest())
 	if err != nil {
 		util.Logger().Error("register service center failed", err)
@@ -118,6 +119,7 @@ func (s *APIServer) registryInstance(pCtx context.Context) error {
 	}
 
 	ctx := core.AddDefaultContextValue(pCtx)
+	service.ISSCInstance = true
 	respI, err := core.InstanceAPI.Register(ctx,
 		core.RegisterInstanceRequest(s.HostName, endpoints))
 	if respI.GetResponse().Code != pb.Response_SUCCESS {

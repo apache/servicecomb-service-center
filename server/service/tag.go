@@ -50,7 +50,7 @@ func (s *ServiceController) AddTags(ctx context.Context, in *pb.AddServiceTagsRe
 	}
 
 	addTags := in.GetTags()
-	ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.TAGQuotaType, tenant, in.ServiceId, int16(len(addTags)))
+	_, ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.TAGQuotaType, tenant, in.ServiceId, int16(len(addTags)))
 	if err != nil {
 		util.Logger().Errorf(err, "add tag info failed, check resource num failed, %s", in.ServiceId)
 		return &pb.AddServiceTagsResponse{

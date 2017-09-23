@@ -24,6 +24,7 @@ import (
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"time"
+	"github.com/ServiceComb/service-center/server/infra/quota"
 )
 
 var msCache *cache.Cache
@@ -227,4 +228,13 @@ func GetAllServiceUtil(ctx context.Context, opts ...registry.PluginOpOption) ([]
 		return nil, err
 	}
 	return services, nil
+}
+
+func RemandServiceQuota(ctx context.Context) {
+	quota.QuotaPlugins[quota.QuataType]().RemandQuotas(ctx, quota.MicroServiceQuotaType)
+	RemandInstanceQuota(ctx)
+}
+
+func RemandInstanceQuota(ctx context.Context) {
+	quota.QuotaPlugins[quota.QuataType]().RemandQuotas(ctx, quota.MicroServiceQuotaType)
 }
