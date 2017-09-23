@@ -50,14 +50,19 @@ limitations under the License.
                     <tr md-row md-select="appData" id="target" data-ng-repeat="appData in data | filter: filter.search | orderBy: paginationQuery.order | limitTo: paginationQuery.limit : (paginationQuery.page - 1) * paginationQuery.limit">
                         <td md-cell ng-repeat="(key, value) in appData">
 
-                            <span ng-if="key == 'serviceName'">
+                            <span ng-if="key == 'serviceName' && key != 'address'">
                                 <a ui-sref="sc.info.instance({serviceId:'{{appData.serviceId}}'})">{{appData.serviceName}}</a>
                             </span>
 
-                            <span ng-if="key != 'serviceId' && key != 'serviceName'">
+                            <span ng-if="key != 'serviceId' && key != 'serviceName' && key != 'address'">
                         		{{value}}
                         	</span>
 
+                            <span ng-if="key == 'address'">
+                                <span ng-repeat="endpoints in value track by $index">
+                                    <li>{{endpoints}}</li>
+                                </span>
+                            </span>
                         </td>
                     </tr>
                 </tbody>

@@ -5827,8 +5827,9 @@ body {
     margin: 0px !important; }
   body .navbar {
     border-radius: unset !important; }
-    body .navbar .navbar-brand {
-      color: #fff !important; }
+    body .navbar .logo {
+      margin-top: 6px;
+      margin-left: 25px; }
     body .navbar .label {
       color: white;
       font-size: 16px; }
@@ -5864,8 +5865,9 @@ body {
             text-decoration: none;
             color: black;
             background: #f5f5f0; }
-      body .sidebar-wrapper .sidebar-nav .logo {
-        margin: 35px 0px 35px -5px; }
+    body .sidebar-wrapper .brand {
+      font-size: 18px;
+      margin: 10px; }
   body .active, body .activeProvider, body .activeConsumer, body .schema {
     text-decoration: none;
     background: #fff;
@@ -6007,5 +6009,7 @@ body {
     background-color: #0288D1 !important; }
   body md-toolbar.md-default-theme:not(.md-menu-toolbar).md-warn, body md-toolbar:not(.md-menu-toolbar).md-warn {
     background-color: #ff5722 !important; }
+  body md-dialog {
+    min-width: 400px; }
 
 /*# sourceMappingURL=main.css.map */

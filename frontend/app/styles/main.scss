@@ -36,8 +36,9 @@ body {
 
   .navbar {
     border-radius: unset !important;
-    .navbar-brand {
-      color: #fff !important;
+    .logo {
+      margin-top: 6px;  
+      margin-left: 25px;
     }
     .label {
       color: white;
@@ -85,9 +86,10 @@ body {
         }
       }
     }
-    .logo {
-      margin: 35px 0px 35px -5px;  
-    }
+   }
+   .brand {
+    font-size: 18px;
+    margin: 10px;
    }
   }
 
@@ -304,6 +306,9 @@ md-toolbar.md-default-theme:not(.md-menu-toolbar), md-toolbar:not(.md-menu-toolb
 }
 md-toolbar.md-default-theme:not(.md-menu-toolbar).md-warn, md-toolbar:not(.md-menu-toolbar).md-warn {
     background-color : rgb(255,87,34) !important;
+}
+md-dialog {
+  min-width: 400px;
 }
 
 }

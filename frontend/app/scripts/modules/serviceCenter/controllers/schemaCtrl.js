@@ -13,19 +13,64 @@
 //limitations under the License.
 'use strict';
 angular.module('serviceCenter')
-	.controller('schemaController',['$scope', 'apiConstant', 'httpService', '$stateParams', function($scope, apiConstant, httpService, $stateParams) {
+	.controller('schemaController',['$scope', 'apiConstant', 'httpService', '$stateParams', 'servicesList', '$q', '$mdDialog',
+		function($scope, apiConstant, httpService, $stateParams, servicesList, $q, $mdDialog) {
 		
 		var serviceId = $stateParams.serviceId;
+		$scope.schemaName = [];
+		if(servicesList && servicesList.data && servicesList.data.services){
+			servicesList.data.services.forEach(function(services){
+	            if(services.serviceId == serviceId){
+	                $scope.schemaName = services.schemas;
+	            }
+        	});
+		}
+		
 		var schemaApi = apiConstant.api.schema.url;
 		var api = schemaApi.replace("{{serviceId}}", serviceId);
 		var url = api.replace("{{schemaId}}", serviceId);
 		var method = apiConstant.api.schema.method;
 
 		$scope.schema = [];
-		// httpService.apiRequest(url, method).then(function(response){
-		// 	console.log("got response "+ response);
-		// },function(error){
-		// 	console.log("error"+ JSON.stringify(error));
-		// });
+
+		$scope.showSchema = function(selectedSchema) {
+			$(".loader").show();
+			$mdDialog.show({
+		      controller: function ($scope, $mdDialog, apiConstant, httpService) {
+				    $scope.hide = function() {
+				      $mdDialog.hide();
+				    };
+
+				    $scope.cancel = function() {
+				      $mdDialog.cancel();
+				    };
+
+				    var schemaApi = apiConstant.api.schema.url;
+					var api = schemaApi.replace("{{serviceId}}", serviceId);
+					var url = api.replace("{{schemaId}}", selectedSchema);
+					var method = apiConstant.api.schema.method;
+					var headers = {"X-ConsumerId": serviceId};
+					httpService.apiRequest(url, method, null, headers, "nopopup").then(function(response){
+						$(".loader").hide();
+						if(response && response.data){
+							$scope.schema = response;
+							$scope.data = true;
+						}else {
+							$scope.data = false;
+						}
+					},function(error) {
+						 	$(".loader").hide();
+							$scope.data = false;
+					});
+			  },
+		      templateUrl: 'scripts/modules/serviceCenter/views/schemaStructure.html',
+		      parent: angular.element(document.body),
+		      clickOutsideToClose:true,
+		      fullscreen: false
+		    });
+		};
+
+		
+
 
 }]);

@@ -11,11 +11,18 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<div class="margin20">
-	<div ng-if="schema.length > 0">
-		<json-formatter json="schema" open="10"></json-formatter>
-	</div>
-	<div ng-if="schema.length == 0">
-		<div class="text-center">No Schema Found</div>
-	</div>
-</div>
+<table class="table table-bordered table-responsive margin20" >
+	<thead class="infoTableHead">
+		<th>Name</th>
+		<th>Get Schema</th>
+	</thead>
+	<tbody>
+		<tr ng-repeat="schema in schemaName">
+			<td>{{ schema }}</td>
+			<td><md-button class="md-primary" ng-click="showSchema(schema)">Show Schema</md-button></td>
+		</tr>
+		<tr ng-if="schemaName.length == 0" class="text-center">
+			<td colspan="2">No Schema Found</td>
+		</tr>
+	</tbody>
+</table>

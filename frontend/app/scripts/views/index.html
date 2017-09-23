@@ -19,7 +19,7 @@ limitations under the License.
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="#">{{ "serviceCenter" | translate }}</a>
+      <img class="logo" src="images/sc.png" alt="loading..">
     </div>
 
     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
@@ -43,8 +43,8 @@ limitations under the License.
 </nav>
 <div class="sidebar-wrapper">
     <ul class="sidebar-nav">
-        <li>
-            <img class="logo" src="images/sc.png" alt="loading..">
+        <li class="brand">
+            {{ "serviceCenter" | translate }}
         </li>
         <li>
             <a ui-sref="sc.dashboard" ui-sref-active="active">{{ "dashboard" | translate }}</a>
