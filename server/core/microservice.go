@@ -18,7 +18,6 @@ import (
 	"github.com/ServiceComb/service-center/util"
 	"github.com/ServiceComb/service-center/version"
 	"golang.org/x/net/context"
-	"os"
 )
 
 var Service *pb.MicroService
@@ -28,10 +27,10 @@ const (
 	REGISTRY_TENANT  = "default"
 	REGISTRY_PROJECT = "default"
 
-	registry_app_id       = "default"
-	registry_service_name = "SERVICECENTER"
+	registry_app_id               = "default"
+	registry_service_name         = "SERVICECENTER"
+	registry_default_instance_env = "production"
 
-	REGISTRY_DEFAULT_INSTANCE_ENV                = "production"
 	REGISTRY_DEFAULT_LEASE_RENEWALINTERVAL int32 = 30
 	REGISTRY_DEFAULT_LEASE_RETRYTIMES      int32 = 3
 )
@@ -53,7 +52,8 @@ func init() {
 	}
 
 	Instance = &pb.MicroServiceInstance{
-		Status: pb.MSI_UP,
+		Environment: registry_default_instance_env,
+		Status:      pb.MSI_UP,
 		HealthCheck: &pb.HealthCheck{
 			Mode:     pb.CHECK_BY_HEARTBEAT,
 			Interval: REGISTRY_DEFAULT_LEASE_RENEWALINTERVAL,
@@ -92,10 +92,6 @@ func CreateServiceRequest() *pb.CreateServiceRequest {
 func RegisterInstanceRequest(hostName string, endpoints []string) *pb.RegisterInstanceRequest {
 	Instance.HostName = hostName
 	Instance.Endpoints = endpoints
-	Instance.Environment = os.Getenv("CSE_REGISTRY_STAGE")
-	if len(Instance.Environment) == 0 {
-		Instance.Environment = REGISTRY_DEFAULT_INSTANCE_ENV
-	}
 	return &pb.RegisterInstanceRequest{
 		Instance: Instance,
 	}

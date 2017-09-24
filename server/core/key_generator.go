@@ -107,9 +107,10 @@ func GetServiceTagRootKey(tenant string) string {
 
 func GetServiceSchemaRootKey(tenant string) string {
 	return util.StringJoin([]string{
-		GetDomainProjectRootKey(tenant),
+		GetRootKey(),
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_SCHEMA_KEY,
+		tenant,
 	}, "/")
 }
 

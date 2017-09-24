@@ -147,7 +147,7 @@ func (c *KvCache) Size() (l int) {
 }
 
 type KvCacher struct {
-	Cfg *KvCacherCfg
+	Cfg KvCacherCfg
 
 	lastRev         int64
 	noEventInterval int
@@ -555,7 +555,7 @@ func NewKvCacher(opts ...KvCacherCfgOption) Cacher {
 	}
 
 	cacher := &KvCacher{
-		Cfg:   &cfg,
+		Cfg:   cfg,
 		ready: make(chan struct{}),
 		lw: ListWatcher{
 			Client: registry.GetRegisterCenter(),

@@ -66,6 +66,11 @@ paths:
           description: 微服务唯一标识。
           required: true
           type: string
+        - name: noCache
+          in: query
+          description: 是否强一致性，1 是、0 否。
+          type: string
+          default: 0
       tags:
         - microservices
       responses:
@@ -126,6 +131,11 @@ paths:
           required: true
           type: string
           default: default
+        - name: noCache
+          in: query
+          description: 是否强一致性，1 是、0 否。
+          type: string
+          default: 0
       responses:
         200:
           description: 查询成功
@@ -280,6 +290,11 @@ paths:
           description: 微服务唯一标识。
           required: true
           type: string
+        - name: noCache
+          in: query
+          description: 是否强一致性，1 是、0 否。
+          type: string
+          default: 0
       tags:
         - microservices
         - tag
@@ -423,6 +438,11 @@ paths:
           description: 微服务唯一标识。
           required: true
           type: string
+        - name: noCache
+          in: query
+          description: 是否强一致性，1 是、0 否。
+          type: string
+          default: 0
       tags:
         - microservices
         - rule
@@ -539,6 +559,11 @@ paths:
           description: 微服务契约唯一标识。
           required: true
           type: string
+        - name: noCache
+          in: query
+          description: 是否强一致性，1 是、0 否。
+          type: string
+          default: 0
       tags:
         - microservices
         - schema
@@ -677,6 +702,11 @@ paths:
           description: 消费者的服务id。
           required: true
           type: string
+        - name: noCache
+          in: query
+          description: 是否强一致性，1 是、0 否。
+          type: string
+          default: 0
       tags:
         - dependency
       responses:
@@ -708,6 +738,11 @@ paths:
           description: 提供者的服务id。
           required: true
           type: string
+        - name: noCache
+          in: query
+          description: 是否强一致性，1 是、0 否。
+          type: string
+          default: 0
       tags:
         - dependency
       responses:
@@ -764,6 +799,11 @@ paths:
           description: 资源类型为 schema时 需传入schema唯一标识。
           type: string
           required: true
+        - name: noCache
+          in: query
+          description: 是否强一致性，1 是、0 否。
+          type: string
+          default: 0
       tags:
         - schemas
         - microservices
@@ -846,6 +886,11 @@ paths:
           in: query
           description: 实例的environment。
           type: string
+        - name: noCache
+          in: query
+          description: 是否强一致性，1 是、0 否。
+          type: string
+          default: 0
       tags:
         - instances
       responses:
@@ -928,6 +973,11 @@ paths:
           in: query
           description: 实例的environment。
           type: string
+        - name: noCache
+          in: query
+          description: 是否强一致性，1 是、0 否。
+          type: string
+          default: 0
       tags:
         - instances
       responses:
@@ -1125,6 +1175,11 @@ paths:
           in: query
           description: 实例的environment。
           type: string
+        - name: noCache
+          in: query
+          description: 是否强一致性，1 是、0 否。
+          type: string
+          default: 0
       tags:
         - instances
       responses:

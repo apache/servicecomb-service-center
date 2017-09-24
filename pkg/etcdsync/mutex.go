@@ -143,7 +143,6 @@ func (m *Locker) Lock() error {
 		ctx, cancel := context.WithTimeout(m.builder.ctx, defaultTTL*time.Second)
 		go func() {
 			err := registry.GetRegisterCenter().Watch(ctx,
-				registry.GET,
 				registry.WithStrKey(m.builder.key),
 				registry.WithWatchCallback(
 					func(message string, evt *registry.PluginResponse) error {

@@ -15,7 +15,7 @@ package version
 
 import "github.com/astaxie/beego"
 
-const VERSION = "0.1.1"
+const VERSION = "0.2.0"
 const API_VERSION = "3.0.0"
 
 type VersionSet struct {
