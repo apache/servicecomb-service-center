@@ -52,7 +52,8 @@ func init() {
 	}
 
 	Instance = &pb.MicroServiceInstance{
-		Status: pb.MSI_UP,
+		Environment: registry_default_instance_env,
+		Status:      pb.MSI_UP,
 		HealthCheck: &pb.HealthCheck{
 			Mode:     pb.CHECK_BY_HEARTBEAT,
 			Interval: REGISTRY_DEFAULT_LEASE_RENEWALINTERVAL,
@@ -91,7 +92,6 @@ func CreateServiceRequest() *pb.CreateServiceRequest {
 func RegisterInstanceRequest(hostName string, endpoints []string) *pb.RegisterInstanceRequest {
 	Instance.HostName = hostName
 	Instance.Endpoints = endpoints
-	Instance.Environment = registry_default_instance_env
 	return &pb.RegisterInstanceRequest{
 		Instance: Instance,
 	}

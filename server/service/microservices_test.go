@@ -376,6 +376,7 @@ var _ = Describe("ServiceController", func() {
 						AppId:       "default",
 						ServiceName: "service-validate",
 						Version:     "1.0.0",
+						Level:       "INVALID",
 						Status:      "UP",
 					},
 				}
