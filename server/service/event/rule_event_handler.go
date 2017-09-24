@@ -16,11 +16,11 @@ package event
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/ServiceComb/service-center/pkg/util"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
 	nf "github.com/ServiceComb/service-center/server/service/notification"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
-	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
 )
 

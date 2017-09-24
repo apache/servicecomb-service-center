@@ -16,7 +16,7 @@ package registry
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/ServiceComb/service-center/util"
+	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/astaxie/beego"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"

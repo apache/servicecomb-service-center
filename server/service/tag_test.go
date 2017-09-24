@@ -16,10 +16,10 @@ package service_test
 import (
 	"fmt"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/ServiceComb/service-center/server/plugin/infra/quota/buildin"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"strconv"
-	constKey "github.com/ServiceComb/service-center/server/common"
 )
 
 var serviceId string
@@ -124,14 +124,14 @@ var _ = Describe("ServiceController", func() {
 				Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_FAIL))
 			})
 			It("size of tags checker for one service", func() {
-				size := constKey.TAG_MAX_NUM_FOR_ONESERVICE + 2
+				size := buildin.TAG_MAX_NUM_FOR_ONESERVICE + 2
 				tags := make(map[string]string, size)
-				for i := 0 ; i < size; i ++ {
-					tags["a" + strconv.Itoa(i)] = "a" + strconv.Itoa(i)
+				for i := 0; i < size; i++ {
+					tags["a"+strconv.Itoa(i)] = "a" + strconv.Itoa(i)
 				}
 				respAddTags, _ := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
 					ServiceId: serviceId,
-					Tags: tags,
+					Tags:      tags,
 				})
 				Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_FAIL))
 			})

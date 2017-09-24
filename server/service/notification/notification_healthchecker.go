@@ -13,7 +13,7 @@
 //limitations under the License.
 package notification
 
-import "github.com/ServiceComb/service-center/util"
+import "github.com/ServiceComb/service-center/pkg/util"
 
 const (
 	NOTIFY_SERVER_CHECKER_NAME  = "__HealthChecker__"

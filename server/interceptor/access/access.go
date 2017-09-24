@@ -15,10 +15,10 @@ package access
 
 import (
 	"fmt"
+	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/ServiceComb/service-center/pkg/validate"
+	"github.com/ServiceComb/service-center/server/common"
 	"github.com/ServiceComb/service-center/server/core"
-	"github.com/ServiceComb/service-center/server/helper"
-	"github.com/ServiceComb/service-center/util"
-	"github.com/ServiceComb/service-center/util/validate"
 	"net/http"
 )
 
@@ -32,7 +32,7 @@ func addCommonResponseHeaders(w http.ResponseWriter) {
 }
 
 func Intercept(w http.ResponseWriter, r *http.Request) error {
-	helper.InitContext(r)
+	common.InitContext(r)
 
 	addCommonResponseHeaders(w)
 

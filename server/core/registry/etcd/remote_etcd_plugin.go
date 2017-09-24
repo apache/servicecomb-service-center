@@ -17,10 +17,10 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/ServiceComb/service-center/pkg/common"
+	"github.com/ServiceComb/service-center/pkg/rest"
+	"github.com/ServiceComb/service-center/pkg/tlsutil"
+	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/core/registry"
-	"github.com/ServiceComb/service-center/util"
-	"github.com/ServiceComb/service-center/util/rest"
 	"github.com/astaxie/beego"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/mvcc/mvccpb"
@@ -514,10 +514,10 @@ func NewRegistry(cfg *registry.Config) registry.Registry {
 	}
 	addrs := strings.Split(cfg.ClusterAddresses, ",")
 
-	if common.GetClientSSLConfig().SSLEnabled && strings.Index(cfg.ClusterAddresses, "https://") >= 0 {
+	if tlsutil.GetClientSSLConfig().SSLEnabled && strings.Index(cfg.ClusterAddresses, "https://") >= 0 {
 		var err error
 		// go client tls限制，提供身份证书、不认证服务端、不校验CN
-		clientTLSConfig, err = rest.GetClientTLSConfig(common.GetClientSSLConfig().VerifyClient, true, false)
+		clientTLSConfig, err = rest.GetClientTLSConfig(tlsutil.GetClientSSLConfig().VerifyClient, true, false)
 		if err != nil {
 			util.Logger().Error("get etcd client tls config failed", err)
 			inst.err <- err

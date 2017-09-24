@@ -15,8 +15,8 @@ package store
 
 import (
 	"encoding/json"
+	"github.com/ServiceComb/service-center/pkg/util"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/util"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"sync"
 	"time"

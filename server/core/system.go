@@ -15,9 +15,9 @@ package core
 
 import (
 	"encoding/json"
+	"github.com/ServiceComb/service-center/pkg/util"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
-	"github.com/ServiceComb/service-center/util"
 	"github.com/ServiceComb/service-center/version"
 	"golang.org/x/net/context"
 )

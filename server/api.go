@@ -15,14 +15,14 @@ package server
 
 import (
 	"fmt"
+	"github.com/ServiceComb/service-center/pkg/grace"
+	"github.com/ServiceComb/service-center/pkg/rest"
+	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	rs "github.com/ServiceComb/service-center/server/rest"
 	"github.com/ServiceComb/service-center/server/rpc"
 	"github.com/ServiceComb/service-center/server/service"
-	"github.com/ServiceComb/service-center/util"
-	"github.com/ServiceComb/service-center/util/grace"
-	"github.com/ServiceComb/service-center/util/rest"
 	"golang.org/x/net/context"
 	"time"
 )
