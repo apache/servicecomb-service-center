@@ -32,8 +32,9 @@ import (
 	"math"
 	"strconv"
 	"time"
+	"github.com/ServiceComb/service-center/server/core"
 )
-var ISSCInstance bool
+
 type InstanceController struct {
 }
 
@@ -93,8 +94,8 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 
 	var reporter quota.QuotaReporter
 	if len(oldInstanceId) == 0 {
-		if ISSCInstance {
-			ISSCInstance = false
+		if core.ISSCSelf(ctx) {
+			util.Logger().Infof("it is service center instance register.")
 		} else {
 			var err error
 			var ok bool

@@ -29,8 +29,9 @@ import (
 	"golang.org/x/net/context"
 	"strconv"
 	"time"
+	"github.com/ServiceComb/service-center/server/core"
 )
-var ISSCService bool
+
 type ServiceController struct {
 }
 
@@ -176,8 +177,7 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 }
 
 func checkBeforeCreate(ctx context.Context, tenant string)  (quota.QuotaReporter, error) {
-	if ISSCService {
-		ISSCService = false
+	if core.ISSCSelf(ctx) {
 		util.Logger().Infof("it is service-center")
 		return nil, nil
 	}
