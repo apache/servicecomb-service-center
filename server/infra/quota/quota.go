@@ -32,13 +32,6 @@ var QuataType string
 
 func init() {
 	QuataType = beego.AppConfig.DefaultString("quota_plugin", "buildin")
-	switch QuataType {
-	case "buildin":
-	case "servicestage":
-	case "unlimit":
-	default:
-		QuataType = "buildin"
-	}
 }
 
 var QuotaPlugins map[string]func() QuotaManager
