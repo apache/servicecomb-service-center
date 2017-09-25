@@ -42,6 +42,12 @@ angular.module('serviceCenter')
 	"up": "UP",
 	"down": "DOWN",
 	"dashboard": "Dashboard",
+	"getSchema": "Get Schema",
+	"error": "Error",
+	"errorCode": "ErrorCode",
+	"errorText": "ErrorText",
+	"errorStatus": "ErrorStatus",
+	"noSchemaFilesExists": "No Schema Files Exists",
 	"copyRight" : "Developed by Huawei Technologies India Pvt. Ltd (Get confirmation and change accordigly!)"
 
 });
