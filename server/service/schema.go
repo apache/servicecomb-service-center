@@ -136,7 +136,7 @@ func (s *ServiceController) ModifySchema(ctx context.Context, request *pb.Modify
 	}
 	tenant := util.ParseTenantProject(ctx)
 
-	ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.SCHEMAQuotaType, tenant, request.ServiceId, 1)
+	_, ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.SCHEMAQuotaType, tenant, request.ServiceId, 1)
 	if err != nil {
 		util.Logger().Errorf(err, "Add schema info failed, check resource num failed, %s, %s", request.ServiceId, request.SchemaId)
 		return &pb.ModifySchemaResponse{

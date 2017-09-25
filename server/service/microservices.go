@@ -29,6 +29,7 @@ import (
 	"golang.org/x/net/context"
 	"strconv"
 	"time"
+	"github.com/ServiceComb/service-center/server/core"
 )
 
 type ServiceController struct {
@@ -83,7 +84,10 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 		Version:     service.Version,
 		Tenant:      tenant,
 	}
-	err = checkBeforeCreate(ctx, tenant)
+	reporter, err := checkBeforeCreate(ctx, tenant)
+	if reporter != nil {
+		defer reporter.Close()
+	}
 	if err != nil {
 		util.Logger().Errorf(err, "create microservice failed, %s: check service failed before create. operator: %s",
 			serviceFlag, remoteIP)
@@ -163,6 +167,11 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 		}, nil
 	}
 
+	if reporter != nil {
+		if err := reporter.ReportUsedQuota(ctx); err != nil {
+			util.Logger().Errorf(err, "report used quota failed.")
+		}
+	}
 	util.Logger().Infof("create microservice successful, %s, serviceId: %s. operator: %s",
 		serviceFlag, service.ServiceId, remoteIP)
 	return &pb.CreateServiceResponse{
@@ -171,15 +180,19 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 	}, nil
 }
 
-func checkBeforeCreate(ctx context.Context, tenant string) error {
-	ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.MicroServiceQuotaType, tenant, "", 1)
+func checkBeforeCreate(ctx context.Context, tenant string)  (quota.QuotaReporter, error) {
+	if core.ISSCSelf(ctx) {
+		util.Logger().Infof("it is service-center")
+		return nil, nil
+	}
+	reporter, ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.MicroServiceQuotaType, tenant, "", 1)
 	if err != nil {
-		return errorsEx.InternalError(err.Error())
+		return reporter, errorsEx.InternalError(err.Error())
 	}
 	if !ok {
-		return fmt.Errorf("No quota to create service.")
+		return reporter, fmt.Errorf("No quota to create service.")
 	}
-	return nil
+	return reporter, nil
 }
 
 func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId string, force bool) (*pb.Response, error) {
@@ -292,6 +305,8 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 		util.Logger().Errorf(err, "delete microservice failed, serviceId is %s: commit data into etcd failed.", ServiceId)
 		return pb.CreateResponse(pb.Response_FAIL, "Commit operations failed."), nil
 	}
+
+	serviceUtil.RemandServiceQuota(ctx)
 
 	util.Logger().Infof("delete microservice successful: serviceid is %s,operator is %s.", ServiceId, util.GetIPFromContext(ctx))
 	return pb.CreateResponse(pb.Response_SUCCESS, "Unregister service successfully."), nil

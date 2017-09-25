@@ -19,21 +19,19 @@ import (
 )
 
 type QuotaManager interface {
-	Apply4Quotas(ctx context.Context, quotaType ResourceType, tenant string, serviceId string, quotaSize int16) (bool, error)
-	ReportCurrentQuotasUsage(ctx context.Context, quotaType int, usedQuotaSize int16) bool
+	Apply4Quotas(ctx context.Context, quotaType ResourceType, tenant string, serviceId string, quotaSize int16) (QuotaReporter, bool , error)
+	RemandQuotas(ctx context.Context, quotaType ResourceType)
+}
+
+type QuotaReporter interface {
+	ReportUsedQuota(ctx context.Context) error
+	Close()
 }
 
 var QuataType string
 
 func init() {
 	QuataType = beego.AppConfig.DefaultString("quota_plugin", "buildin")
-	switch QuataType {
-	case "buildin":
-	case "fusionstage":
-	case "unlimit":
-	default:
-		QuataType = "buildin"
-	}
 }
 
 var QuotaPlugins map[string]func() QuotaManager

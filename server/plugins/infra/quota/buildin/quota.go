@@ -40,7 +40,7 @@ const (
 )
 
 //申请配额sourceType serviceinstance servicetype
-func (q *BuildInQuota) Apply4Quotas(ctx context.Context, quotaType quota.ResourceType, tenant string, serviceId string, quotaSize int16) (bool, error) {
+func (q *BuildInQuota) Apply4Quotas(ctx context.Context, quotaType quota.ResourceType, tenant string, serviceId string, quotaSize int16) (quota.QuotaReporter, bool, error) {
 	var key string = ""
 	var max int64 = 0
 	var indexer *store.Indexer
@@ -61,24 +61,22 @@ func (q *BuildInQuota) Apply4Quotas(ctx context.Context, quotaType quota.Resourc
 		registry.WithPrefix(),
 		registry.WithCountOnly())
 	if err != nil {
-		return false, err
+		return nil, false, err
 	}
 	num := resp.Count + int64(quotaSize)
 	util.Logger().Debugf("resource num is %d", num)
 	if num > max {
 		util.Logger().Errorf(nil, "no quota to apply this source, %s", serviceId)
-		return false, nil
+		return nil, false, nil
 	}
-	return true, nil
+	return nil, true, nil
 }
 
 //向配额中心上报配额使用量
-func (q *BuildInQuota) ReportCurrentQuotasUsage(ctx context.Context, quotaType int, usedQuotaSize int16) bool {
-
-	return false
+func (q *BuildInQuota) RemandQuotas(ctx context.Context, quotaType quota.ResourceType) {
 }
 
-func ResourceLimitHandler(ctx context.Context, quotaType quota.ResourceType, tenant string, serviceId string, quotaSize int16) (bool, error) {
+func ResourceLimitHandler(ctx context.Context, quotaType quota.ResourceType, tenant string, serviceId string, quotaSize int16) (quota.QuotaReporter, bool, error) {
 	var key string
 	var max int64 = 0
 	var indexer *store.Indexer
@@ -95,24 +93,24 @@ func ResourceLimitHandler(ctx context.Context, quotaType quota.ResourceType, ten
 		num := quotaSize
 		if num > constKey.TAG_MAX_NUM_FOR_ONESERVICE {
 			util.Logger().Errorf(nil, "fail to add tag for one service max tag num is %d, %s", constKey.TAG_MAX_NUM_FOR_ONESERVICE, serviceId)
-			return false, nil
+			return nil, false, nil
 		}
-		return true, nil
+		return nil, true, nil
 	default:
-		return false, fmt.Errorf("Unsurported Type %v", quotaType)
+		return nil, false, fmt.Errorf("Unsurported Type %v", quotaType)
 	}
 	resp, err := indexer.Search(ctx,
 		registry.WithStrKey(key),
 		registry.WithPrefix(),
 		registry.WithCountOnly())
 	if err != nil {
-		return false, err
+		return nil, false, err
 	}
 	num := resp.Count + int64(quotaSize)
 	util.Logger().Debugf("resource num is %d", num)
 	if num > max {
 		util.Logger().Errorf(nil, "no quota to apply this source, %s", serviceId)
-		return false, nil
+		return nil, false, nil
 	}
-	return true, nil
+	return nil, true, nil
 }

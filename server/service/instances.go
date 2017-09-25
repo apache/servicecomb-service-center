@@ -32,6 +32,7 @@ import (
 	"math"
 	"strconv"
 	"time"
+	"github.com/ServiceComb/service-center/server/core"
 )
 
 type InstanceController struct {
@@ -91,19 +92,29 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 		}
 	}
 
+	var reporter quota.QuotaReporter
 	if len(oldInstanceId) == 0 {
-		ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.MicroServiceInstanceQuotaType, tenant, in.Instance.ServiceId, 1)
-		if err != nil {
-			util.Logger().Errorf(err, "register instance failed, service %s, operator %s: check apply quota failed.", instanceFlag, remoteIP)
-			return &pb.RegisterInstanceResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
-			}, err
-		}
-		if !ok {
-			util.Logger().Errorf(nil, "register instance failed, service %s, operator %s: no quota apply.", instanceFlag, remoteIP)
-			return &pb.RegisterInstanceResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, "No quota to create instance."),
-			}, nil
+		if core.ISSCSelf(ctx) {
+			util.Logger().Infof("it is service center instance register.")
+		} else {
+			var err error
+			var ok bool
+			reporter, ok, err = quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.MicroServiceInstanceQuotaType, tenant, in.Instance.ServiceId, 1)
+			if reporter != nil {
+				defer reporter.Close()
+			}
+			if err != nil {
+				util.Logger().Errorf(err, "register instance failed, service %s, operator %s: check apply quota failed.", instanceFlag, remoteIP)
+				return &pb.RegisterInstanceResponse{
+					Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
+				}, err
+			}
+			if !ok {
+				util.Logger().Errorf(nil, "register instance failed, service %s, operator %s: no quota apply.", instanceFlag, remoteIP)
+				return &pb.RegisterInstanceResponse{
+					Response: pb.CreateResponse(pb.Response_FAIL, "No quota to create instance."),
+				}, nil
+			}
 		}
 	}
 
@@ -189,6 +200,13 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 		}, err
 	}
 
+	if reporter != nil {
+		if err := reporter.ReportUsedQuota(ctx); err != nil {
+			util.Logger().Errorf(err, "register instance failed, service %s, instanceId %s, operator %s: report used quota failed.",
+				instanceFlag, instanceId, remoteIP)
+		}
+	}
+
 	//新租户，则进行监听
 	newDomain := util.ParseTenant(ctx)
 	ok, err := serviceUtil.DomainExist(ctx, newDomain)
@@ -258,6 +276,8 @@ func (s *InstanceController) Unregister(ctx context.Context, in *pb.UnregisterIn
 			Response: pb.CreateResponse(pb.Response_FAIL, "Revoke instance failed."),
 		}, nil
 	}
+
+	serviceUtil.RemandInstanceQuota(ctx)
 
 	util.Logger().Infof("unregister instance successful isntance %s, operator %s.", instanceFlag, remoteIP)
 	return &pb.UnregisterInstanceResponse{

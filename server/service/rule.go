@@ -120,7 +120,7 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
 		}, nil
 	}
-	ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.RULEQuotaType, tenant, in.ServiceId, 1)
+	_, ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.RULEQuotaType, tenant, in.ServiceId, 1)
 	if err != nil {
 		util.Logger().Errorf(err, "check can apply resource failed.%s", in.ServiceId)
 		return &pb.AddServiceRulesResponse{

@@ -33,6 +33,8 @@ const (
 
 	REGISTRY_DEFAULT_LEASE_RENEWALINTERVAL int32 = 30
 	REGISTRY_DEFAULT_LEASE_RETRYTIMES      int32 = 3
+
+	IS_SC_SELF      = "sc_self"
 )
 
 func init() {
@@ -65,9 +67,16 @@ func init() {
 func AddDefaultContextValue(ctx context.Context) context.Context {
 	ctx = util.NewContext(ctx, "tenant", REGISTRY_TENANT)
 	ctx = util.NewContext(ctx, "project", REGISTRY_PROJECT)
+	ctx = util.NewContext(ctx, IS_SC_SELF, true)
 	return ctx
 }
 
+func ISSCSelf(ctx context.Context) bool{
+	if ctx.Value(IS_SC_SELF) != nil && ctx.Value(IS_SC_SELF).(bool) {
+		return true
+	}
+	return false
+}
 func GetExistenceRequest() *pb.GetExistenceRequest {
 	return &pb.GetExistenceRequest{
 		Type:        pb.EXISTENCE_MS,
