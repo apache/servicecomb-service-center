@@ -16,7 +16,7 @@ limitations under the License.
   <form ng-cloak>
     <md-toolbar>
       <div class="md-toolbar-tools">
-        <h2>Schema</h2>
+        <h2>{{ "schema" | translate }}</h2>
         <span flex></span>
         <md-button class="md-icon-button" ng-click="cancel()">
           <md-icon class="glyphicon glyphicon-remove" aria-label="Close dialog"></md-icon>
@@ -30,7 +30,7 @@ limitations under the License.
        <json-formatter json="schema" open="10"></json-formatter>
       </div>
       <div ng-if="!data">
-      	<h4>No Schema Files Exists</h4>
+      	<h4>{{ "noSchemaFilesExists" | translate}}</h4>
       </div>
       </div>
     </md-dialog-content>
@@ -38,7 +38,7 @@ limitations under the License.
     <md-dialog-actions layout="row">
       <span flex></span>
       <md-button ng-click="cancel()">
-      	close
+      	{{ "close" | translate}}
       </md-button>
       
     </md-dialog-actions>

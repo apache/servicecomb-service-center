@@ -16,7 +16,6 @@ angular.module('serviceCenter')
 	.controller('instancesListController',['$q', '$scope', 'httpService', 'apiConstant', 'servicesList', 'commonService',
 			 function($q, $scope, httpService, apiConstant, servicesList, commonService){
 
-		$scope.servicesList = servicesList;
 		$scope.appList = 'fetching';
 		$scope.instanceList = "instanceList";
 		$scope.tableHeaders = [
@@ -36,14 +35,16 @@ angular.module('serviceCenter')
 		var promises;
 		$scope.getAllInstances = function(){
 			promises = [];
-			for (var i = 0; i < $scope.servicesList.length; i++) {
-				var api = apiConstant.api.instances.url;
-				var url = api.replace("{{serviceId}}", $scope.servicesList[i].serviceId);
-				var method = apiConstant.api.instances.method;
-				var headers = {"X-ConsumerId": $scope.servicesList[i].serviceId};
+			if(servicesList && servicesList.data && servicesList.data.services){
+				for (var i = 0; i < servicesList.data.services.length; i++) {
+					var api = apiConstant.api.instances.url;
+					var url = api.replace("{{serviceId}}", servicesList.data.services[i].serviceId);
+					var method = apiConstant.api.instances.method;
+					var headers = {"X-ConsumerId": servicesList.data.services[i].serviceId};
 
-				promises.push(httpService.apiRequest(url,method,null,headers));
-				angular.element(document.querySelector('.fa-refresh')).removeClass('fa-spin');
+					promises.push(httpService.apiRequest(url,method,null,headers));
+					angular.element(document.querySelector('.fa-refresh')).removeClass('fa-spin');
+				}
 			}
 		};
 		$scope.getAllInstances();
@@ -63,7 +64,7 @@ angular.module('serviceCenter')
 								instanceName : instances.hostName.charAt(0).toUpperCase()+instances.hostName.slice(1),
 								status: instances.status.toLowerCase(),
 								createdAt: commonService.timeFormat(instances.timestamp),
-								address: instances.endpoints[0]
+								address: instances.endpoints
 							};
 							$scope.instancesList.push(instance);
 						})

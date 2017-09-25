@@ -42,6 +42,12 @@ angular.module('serviceCenter')
 	"up": "向上",
 	"down": "下",
 	"dashboard": "仪表板",
+	"getSchema": "得到架构",
+	"error": "错误",
+	"errorCode": "错误代码",
+	"errorText": "错误文字",
+	"errorStatus": "错误状态",
+	"noSchemaFilesExists": "没有模式文件存在",
 	"copyRight" : "由华为技术股份有限公司有限公司（获得确认和变更）！"
 
 });
