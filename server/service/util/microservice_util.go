@@ -236,5 +236,5 @@ func RemandServiceQuota(ctx context.Context) {
 }
 
 func RemandInstanceQuota(ctx context.Context) {
-	quota.QuotaPlugins[quota.QuataType]().RemandQuotas(ctx, quota.MicroServiceQuotaType)
+	quota.QuotaPlugins[quota.QuataType]().RemandQuotas(ctx, quota.MicroServiceInstanceQuotaType)
 }

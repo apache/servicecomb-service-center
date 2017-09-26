@@ -27,7 +27,6 @@ import (
 	"strings"
 	"time"
 	"github.com/ServiceComb/service-center/server/core/mux"
-	"github.com/ServiceComb/service-center/pkg/etcdsync"
 )
 
 var consumerCache *cache.Cache
@@ -457,116 +456,30 @@ func ProviderDependencyRuleExist(ctx context.Context, tenant string, provider *p
 	return false, nil
 }
 
-func AddServiceVersionRule(ctx context.Context, tenant string, provider *pb.MicroServiceKey, consumer *pb.MicroServiceKey) error {
-	if apt.VersionRegex.Match(util.StringToBytesWithNoCopy(provider.Version)) {
-		return nil
+func AddServiceVersionRule(ctx context.Context, tenant string, provider *pb.MicroServiceKey, consumer *pb.MicroServiceKey, consumerId string) error {
+	exist, err := ProviderDependencyRuleExist(ctx, tenant, provider, consumer)
+	if exist || err != nil {
+		return err
 	}
 
-	exist, err := ProviderDependencyRuleExist(ctx, tenant, provider, consumer)
+	dep := new(Dependency)
+	dep.Tenant = tenant
+	dep.Consumer = consumer
+	dep.ProvidersRule = []*pb.MicroServiceKey{provider}
+	dep.ConsumerId = consumerId
+
+	//创建依赖一致
+	if len(dep.Consumer.Stage) == 0 {
+		dep.Consumer.Stage = "dev"
+	}
+	lock, err := mux.Lock(mux.GLOBAL_LOCK)
 	if err != nil {
 		return err
 	}
-	var lock *etcdsync.Locker
-	if !exist  {
-		lock, err = mux.Lock(mux.GLOBAL_LOCK)
-		if err != nil {
-			util.Logger().Errorf(err, "create lock failed for add service version rule")
-			return err
-		}
-		err = AddProviderVersionRule(ctx, tenant, provider, consumer)
-		if err != nil {
-			lock.Unlock()
-			return err
-		}
-	}
 
-	exist, err = ConsumerDependencyRuleExist(ctx, tenant, provider, consumer)
-	if exist || err != nil {
-		if lock != nil {
-			lock.Unlock()
-		}
-		return err
-	}
-
-	if lock == nil {
-		lock, err = mux.Lock(mux.GLOBAL_LOCK)
-		if err != nil {
-			util.Logger().Errorf(err, "create lock failed for add service version rule")
-			return err
-		}
-	}
-	err =  AddConsumerVersionRule(ctx, tenant, provider, consumer)
+	err = CreateDependencyRule(ctx, dep)
 	lock.Unlock()
 	return err
-}
-
-func AddProviderVersionRule(ctx context.Context, tenant string, provider *pb.MicroServiceKey, consumer *pb.MicroServiceKey) error {
-	if apt.VersionRegex.Match(util.StringToBytesWithNoCopy(provider.Version)) {
-		return nil
-	}
-
-	exist, err := ProviderDependencyRuleExist(ctx, tenant, provider, consumer)
-	if exist || err != nil {
-		return err
-	}
-
-	providerKey := apt.GenerateProviderDependencyRuleKey(tenant, provider)
-	consumers, err := TransferToMicroServiceDependency(ctx, providerKey)
-
-	//添加依赖
-	consumers.Dependency = append(consumers.Dependency, consumer)
-	data, err := json.Marshal(consumers)
-	if err != nil {
-		util.Logger().Errorf(err, "Marshal dependency of find failed.")
-		return err
-	}
-	_, err = registry.GetRegisterCenter().Do(ctx,
-		registry.PUT,
-		registry.WithStrKey(providerKey),
-		registry.WithValue(data))
-	return err
-}
-
-func AddConsumerVersionRule(ctx context.Context, tenant string, provider *pb.MicroServiceKey, consumer *pb.MicroServiceKey) error {
-	exist, err := ConsumerDependencyRuleExist(ctx, tenant, provider, consumer)
-	if exist || err != nil {
-		return err
-	}
-
-	consumerKey := apt.GenerateConsumerDependencyRuleKey(tenant, consumer)
-	providers, err := TransferToMicroServiceDependency(ctx, consumerKey)
-
-	//添加依赖
-	providers.Dependency = append(providers.Dependency, provider)
-	data, err := json.Marshal(providers)
-	if err != nil {
-		util.Logger().Errorf(err, "Marshal dependency of find failed.")
-		return err
-	}
-	_, err = registry.GetRegisterCenter().Do(ctx,
-		registry.PUT,
-		registry.WithStrKey(consumerKey),
-		registry.WithValue(data))
-	return err
-}
-
-func ConsumerDependencyRuleExist(ctx context.Context, tenant string, provider *pb.MicroServiceKey, consumer *pb.MicroServiceKey, opts ...registry.PluginOpOption) (bool, error) {
-	consumerKey := apt.GenerateConsumerDependencyRuleKey(tenant, consumer)
-	providers, err := TransferToMicroServiceDependency(ctx, consumerKey, opts...)
-	if err != nil {
-		return false, err
-	}
-	if len(providers.Dependency) != 0 {
-		isEqual, err := containServiceDependency(providers.Dependency, provider)
-		if err != nil {
-			return false, err
-		}
-		if isEqual {
-			//删除之前的依赖
-			return true, nil
-		}
-	}
-	return false, nil
 }
 
 func UpdateServiceForAddDependency(ctx context.Context, consumerId string, providers []*pb.DependencyMircroService, tenant string) error {
@@ -737,6 +650,7 @@ func (dep *Dependency) removeConsumerOfProviderRule() {
 				consumerValue.Dependency = append(consumerValue.Dependency[:key], consumerValue.Dependency[key+1:]...)
 				break
 			}
+			util.Logger().Debugf("tmp and dep.Consumer not equal, tmp %v, consumer %v", tmp, dep.Consumer)
 		}
 		//删除后，如果不存在依赖规则了，就删除该provider的依赖规则，如果有，则更新该依赖规则
 		if len(consumerValue.Dependency) == 0 {
