@@ -5813,7 +5813,7 @@ body {
   height: 100%;
   margin: 0;
   padding: 0;
-  font-family: 'Helvetica','Myriad','Arial'; }
+  font-family: Roboto !important; }
   body .loader {
     background: rgba(0, 0, 0, 0.2) url("../images/loader.gif") no-repeat 50% center;
     width: 100%;
@@ -5838,8 +5838,8 @@ body {
     body .navbar .language {
       height: 31px;
       margin-top: 7px; }
-    body .navbar ul li:last-child {
-      margin-right: 10px; }
+    body .navbar .navbar-right {
+      margin-right: 15px !important; }
   body .sidebar-wrapper {
     height: 100%;
     width: 230px;
@@ -5847,8 +5847,8 @@ body {
     background: #f5f5f0;
     margin-top: -20px; }
     body .sidebar-wrapper .sidebar-nav {
-      position: absolute;
-      top: 0;
+      position: fixed;
+      top: 50px;
       width: 230px;
       margin: 0;
       padding: 0;
@@ -5867,14 +5867,15 @@ body {
             background: #f5f5f0; }
     body .sidebar-wrapper .brand {
       font-size: 18px;
-      margin: 10px; }
+      margin: 10px 0px 10px 0px; }
   body .active, body .activeProvider, body .activeConsumer, body .schema {
     text-decoration: none;
     background: #fff;
     color: #009ee0 !important;
     border-left: 3px solid #009ee0; }
   body .content {
-    margin-left: 250px; }
+    margin-left: 250px;
+    padding-top: 70px; }
   body .fa-close {
     color: white; }
   body .table-header {
@@ -5919,21 +5920,6 @@ body {
     body .dashboardHeader .dashboard {
       font-size: 30px;
       color: brown; }
-    body .dashboardHeader .dashboardInfo {
-      height: 80px;
-      width: 200px;
-      border: 1px solid grey;
-      float: right;
-      margin-right: 20px; }
-      body .dashboardHeader .dashboardInfo ul li {
-        padding: 10px 0px;
-        list-style-type: none; }
-        body .dashboardHeader .dashboardInfo ul li:first-child span {
-          color: #97bbcd;
-          padding-right: 10px; }
-        body .dashboardHeader .dashboardInfo ul li:last-child span {
-          color: #dcdcdc;
-          padding-right: 10px; }
   body .dashboardBody .dashboardTitle {
     height: 100px; }
     body .dashboardBody .dashboardTitle .left, body .dashboardBody .dashboardTitle .right {
@@ -5957,6 +5943,26 @@ body {
     background-color: #F0F2F5;
     margin-top: 20px;
     margin-right: 10px; }
+    body .dashboardBody .dashboardChart .dashboardChartLeft .dashboardInfo, body .dashboardBody .dashboardChart .dashboardChartRight .dashboardInfo {
+      height: 80px;
+      width: 150px;
+      border: 1px solid grey;
+      float: right;
+      margin-top: inherit; }
+      body .dashboardBody .dashboardChart .dashboardChartLeft .dashboardInfo ul, body .dashboardBody .dashboardChart .dashboardChartRight .dashboardInfo ul {
+        padding-left: 20px; }
+        body .dashboardBody .dashboardChart .dashboardChartLeft .dashboardInfo ul li, body .dashboardBody .dashboardChart .dashboardChartRight .dashboardInfo ul li {
+          list-style-type: none; }
+          body .dashboardBody .dashboardChart .dashboardChartLeft .dashboardInfo ul li span, body .dashboardBody .dashboardChart .dashboardChartRight .dashboardInfo ul li span {
+            padding-right: 10px; }
+          body .dashboardBody .dashboardChart .dashboardChartLeft .dashboardInfo ul li .starting, body .dashboardBody .dashboardChart .dashboardChartRight .dashboardInfo ul li .starting {
+            color: #e6e600; }
+          body .dashboardBody .dashboardChart .dashboardChartLeft .dashboardInfo ul li .up, body .dashboardBody .dashboardChart .dashboardChartRight .dashboardInfo ul li .up {
+            color: #64dd17; }
+          body .dashboardBody .dashboardChart .dashboardChartLeft .dashboardInfo ul li .down, body .dashboardBody .dashboardChart .dashboardChartRight .dashboardInfo ul li .down {
+            color: #d50000; }
+          body .dashboardBody .dashboardChart .dashboardChartLeft .dashboardInfo ul li .unavailable, body .dashboardBody .dashboardChart .dashboardChartRight .dashboardInfo ul li .unavailable {
+            color: #A9A9A9; }
   body .dashboardBody .dashboardChart .dashboardChartRight {
     margin-right: 0px !important; }
   body .dashboardBody .dashboardStatus {
@@ -6005,11 +6011,103 @@ body {
         padding: 35px; }
     body .dashboardBody .dashboardUpDown .right {
       margin-right: 0px !important; }
+  body .schemaTable th {
+    width: 50%; }
   body md-toolbar.md-default-theme:not(.md-menu-toolbar), body md-toolbar:not(.md-menu-toolbar) {
     background-color: #0288D1 !important; }
   body md-toolbar.md-default-theme:not(.md-menu-toolbar).md-warn, body md-toolbar:not(.md-menu-toolbar).md-warn {
     background-color: #ff5722 !important; }
   body md-dialog {
     min-width: 400px; }
+  body #schemes {
+    width: 8%;
+    border: 2px solid #006666; }
+  body .testSchema .dropdown select {
+    border: 0px;
+    outline: 0px;
+    font-size: 18px;
+    padding-left: 10px; }
+  body .testSchema .tab {
+    position: relative;
+    margin-bottom: 10px;
+    width: 100%;
+    color: black;
+    overflow: hidden;
+    border: 1px solid darkgrey; }
+    body .testSchema .tab .input {
+      position: absolute;
+      opacity: 0;
+      z-index: -1; }
+      body .testSchema .tab .input:checked ~ .tab-content {
+        max-height: 10em;
+        min-height: 600px; }
+    body .testSchema .tab label {
+      position: relative;
+      display: block;
+      padding: 0 0 0 5px;
+      font-weight: bold;
+      line-height: 3;
+      cursor: pointer;
+      margin: 0px;
+      border-bottom: 1px solid darkgrey;
+      background-color: #efefef; }
+      body .testSchema .tab label .post, body .testSchema .tab label .get, body .testSchema .tab label .put, body .testSchema .tab label .delete {
+        background-color: darkseagreen;
+        padding: 9px 25px;
+        border-radius: 3px;
+        color: white; }
+      body .testSchema .tab label .get, body .testSchema .tab label .put {
+        background-color: deepskyblue;
+        padding: 9px 30px; }
+      body .testSchema .tab label .put {
+        background-color: orange; }
+      body .testSchema .tab label .delete {
+        background-color: indianred;
+        padding: 9px 17px; }
+      body .testSchema .tab label .path {
+        padding-left: 10px;
+        font-weight: normal; }
+    body .testSchema .tab .tab-content {
+      max-height: 0;
+      overflow: hidden;
+      background: white;
+      -webkit-transition: max-height .35s;
+      -o-transition: max-height .35s;
+      transition: max-height .35s; }
+      body .testSchema .tab .tab-content .row {
+        margin: 0px; }
+        body .testSchema .tab .tab-content .row .params {
+          padding: 10px;
+          font-weight: bold; }
+        body .testSchema .tab .tab-content .row .cancelBtn {
+          padding: 5px;
+          padding-right: 15px; }
+        body .testSchema .tab .tab-content .row .btn-default {
+          float: right; }
+      body .testSchema .tab .tab-content .schemaBody {
+        background-color: #efefef;
+        height: 290px; }
+        body .testSchema .tab .tab-content .schemaBody .paramsBody, body .testSchema .tab .tab-content .schemaBody .responseBody {
+          border-top: 1px solid darkgrey;
+          padding-top: 25px; }
+          body .testSchema .tab .tab-content .schemaBody .paramsBody span, body .testSchema .tab .tab-content .schemaBody .responseBody span {
+            font-size: 18px; }
+          body .testSchema .tab .tab-content .schemaBody .paramsBody hr, body .testSchema .tab .tab-content .schemaBody .responseBody hr {
+            margin-top: 30px;
+            margin-bottom: 20px;
+            border-top: 1px solid darkgrey;
+            width: 98%; }
+        body .testSchema .tab .tab-content .schemaBody .field {
+          font-size: 18px; }
+      body .testSchema .tab .tab-content .responseHead select {
+        width: 25%;
+        float: right;
+        margin-top: 3px;
+        border: 2px solid #006666; }
+      body .testSchema .tab .tab-content .well {
+        background-color: #006666 !important;
+        color: white; }
+      body .testSchema .tab .tab-content .executeBtn {
+        margin: 0px 15px; }
 
 /*# sourceMappingURL=main.css.map */

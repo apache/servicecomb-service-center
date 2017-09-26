@@ -12,7 +12,7 @@
 //See the License for the specific language governing permissions and
 //limitations under the License.
 'use strict';
-angular.module('serviceCenter')
+angular.module('serviceCenter.sc', [])
 	.controller('servicesListController', ['$scope', 'httpService', 'apiConstant', 'commonService',
 		function($scope, httpService, apiConstant, commonService){
 
@@ -33,6 +33,9 @@ angular.module('serviceCenter')
 				},
 				{
 					'key': 'createdAt'
+				},
+				{
+					'key': 'instances'
 				}
 			];
 
@@ -49,14 +52,25 @@ angular.module('serviceCenter')
 					if(response && response.data && response.data.services){
 						$scope.services = [];
 						response.data.services.forEach(function(service){
+							var instanceApi = apiConstant.api.instances.url;
+							var instanceUrl = instanceApi.replace("{{serviceId}}", service.serviceId);
+							var instanceMethod = apiConstant.api.instances.method;
+							var headers = {"X-ConsumerId": service.serviceId};
 							var servicesList = {
 								serviceName: service.serviceName.charAt(0).toUpperCase()+service.serviceName.slice(1).toLowerCase(),
 								status: service.status.toLowerCase(),
 								appId: service.appId.toLowerCase(),
 								version: service.version,
 								createdAt: commonService.timeFormat(service.timestamp),
+								instances: 0,
 								serviceId: service.serviceId
 							};
+							httpService.apiRequest(instanceUrl, instanceMethod, null, headers, "nopopup").then(function(resp){
+								if(resp && resp.data && resp.data.instances){
+								   servicesList.instances = resp.data.instances.length;
+								}
+							});
+							
 							$scope.services.push(servicesList);
 						});
 

@@ -12,21 +12,26 @@
 //See the License for the specific language governing permissions and
 //limitations under the License.
 'use strict';
-angular.module('serviceCenter')
+angular.module('serviceCenter.dashboard', [])
 	.controller('dashboardController', ['$scope', '$state','apiConstant', 'httpService','$q', function($scope, $state, apiConstant, httpService,$q){
 
 		$scope.servicesData = [];
 		$scope.runningServices = [];
 		$scope.stoppedServices = [];
+		$scope.startingServices = [];
+		$scope.outofserviceServices =[];
 
 		$scope.instancesData = [];
 		$scope.runningInstances = [];
 		$scope.stoppedInstances = [];	
+		$scope.startingInstances = [];
+		$scope.outofserviceInstances =[];
 
 		$scope.totalServices = 0;
 		$scope.totalInstances = 0;	
 
-		$scope.labels = ["UP", "DOWN"];
+		$scope.labels = ["UP", "DOWN", "STRATING", "OUT OF SERVICE"];
+		$scope.colors = ["#64dd17","#d50000", "#e6e600", "#A9A9A9"];
 		var promises = [];
 		
 		$scope.getServices = function(){
@@ -44,9 +49,17 @@ angular.module('serviceCenter')
 						if(service.status.toLowerCase() === "down"){
 							$scope.stoppedServices.push(service);
 						}
+						if(service.status.toLowerCase() === "starting"){
+							$scope.startingServices.push(service);
+						}
+						if(service.status.toLowerCase() === "outofservice"){
+							$scope.outofserviceServices.push(service);
+						}
 		   			});
 					$scope.servicesData[0] = $scope.runningServices.length;
 					$scope.servicesData[1] = $scope.stoppedServices.length;
+					$scope.servicesData[2] = $scope.startingServices.length;
+					$scope.servicesData[3] = $scope.outofserviceServices.length;
 	            }
 	        },function(error){
 	            $(".loader").hide();
@@ -81,9 +94,17 @@ angular.module('serviceCenter')
 								if(instance.status.toLowerCase() === "down"){
 									$scope.stoppedInstances.push(instance);
 								}
+								if(instance.status.toLowerCase() === "starting"){
+									$scope.startingInstances.push(instance);
+								}
+								if(instance.status.toLowerCase() === "outofservice"){
+									$scope.outofserviceInstances.push(instance);
+								}
 							});
 							$scope.instancesData[0] = $scope.runningInstances.length;
 							$scope.instancesData[1] = $scope.stoppedInstances.length;
+							$scope.instancesData[2] = $scope.startingInstances.length;
+							$scope.instancesData[3] = $scope.outofserviceInstances.length;
 			            }
 			        },function(error){
 			        	$(".loader").hide();
@@ -98,12 +119,4 @@ angular.module('serviceCenter')
 		
 		$scope.getInstances();
 		
-		$scope.getServices = function(){
-			$state.go('sc.allServices');
-		};
-
-		$scope.getInstances = function(){
-			$state.go('sc.allInstances');
-		};
-
 }]);

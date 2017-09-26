@@ -19,7 +19,7 @@ body {
   height: 100%;
   margin: 0; 
   padding: 0;
-  font-family: 'Helvetica','Myriad','Arial';
+  font-family: Roboto !important;
   .loader {
     background: rgba(0,0,0,.2) url('../images/loader.gif') no-repeat 50% center;
     width:100%;
@@ -51,10 +51,8 @@ body {
       height: 31px;
       margin-top: 7px;
     }
-    ul {
-      li:last-child {
-        margin-right: 10px;
-      }
+    .navbar-right{
+     margin-right:15px !important;
     }
   }
 
@@ -65,8 +63,8 @@ body {
    background: #f5f5f0;
    margin-top: -20px;
    .sidebar-nav {
-    position: absolute;
-    top: 0;
+    position: fixed;
+    top: 50px;
     width: 230px;
     margin: 0;
     padding: 0;
@@ -89,7 +87,7 @@ body {
    }
    .brand {
     font-size: 18px;
-    margin: 10px;
+    margin: 10px 0px 10px 0px;
    }
   }
 
@@ -101,6 +99,7 @@ body {
 }
 .content {
     margin-left: 250px;
+    padding-top: 70px;
 }
 .fa-close {
   color: white;
@@ -173,32 +172,6 @@ canvas {
     color: brown;
   }
   height:100px;
-  .dashboardInfo {
-    height: 80px;
-    width: 200px;
-    border: 1px solid grey;
-    float: right;
-    margin-right: 20px;
-    ul {
-      li{
-        padding: 10px 0px;
-        list-style-type: none;
-        &:first-child{
-        span{
-         color: #97bbcd;
-          padding-right:10px;
-        }      
-       }
-       &:last-child{
-            span{
-              color: #dcdcdc;
-              padding-right:10px;
-            }
-        }
-
-      }
-    }
-  }
 }
 
 .dashboardBody{
@@ -232,7 +205,35 @@ canvas {
       background-color:#F0F2F5;
       margin-top: 20px;
       margin-right: 10px;
-   }
+       .dashboardInfo {
+          height: 80px;
+          width: 150px;
+          border: 1px solid grey;
+          float: right;
+          margin-top: inherit;
+          ul {
+            padding-left: 20px;
+            li{
+              list-style-type: none;
+             span {
+              padding-right: 10px;
+             }
+             .starting {
+                color: #e6e600;
+              }
+              .up {
+                color: #64dd17;
+              }
+              .down {
+                color: #d50000;
+              }
+              .unavailable {
+                color: #A9A9A9;
+              }
+            }
+          }
+        }
+     }
    .dashboardChartRight{
        @extend .dashboardChartLeft;
        margin-right:0px !important;
@@ -296,11 +297,13 @@ canvas {
      @extend .left;
      margin-right:0px !important;
     } 
-
   }
 }
-
-
+.schemaTable {
+  th {
+    width: 50%;
+  }
+}
 md-toolbar.md-default-theme:not(.md-menu-toolbar), md-toolbar:not(.md-menu-toolbar)  {
   background-color : #0288D1 !important;
 }
@@ -310,5 +313,134 @@ md-toolbar.md-default-theme:not(.md-menu-toolbar).md-warn, md-toolbar:not(.md-me
 md-dialog {
   min-width: 400px;
 }
+#schemes {
+  width: 8%;
+  border: 2px solid #006666;
+}
+.testSchema {
+  .dropdown{
+   select {
+    border: 0px;
+    outline: 0px;
+    font-size: 18px;
+    padding-left: 10px;
+   }
+  }
+  .tab {
+    position: relative;
+    margin-bottom: 10px;
+    width: 100%;
+    color: black;
+    overflow: hidden;
+    border: 1px solid darkgrey;
+    .input {
+      position: absolute;
+      opacity: 0;
+      z-index: -1;
+      &:checked ~ .tab-content {
+        max-height: 10em;
+        min-height: 600px;
+      } 
+    }
 
+  label {
+    position: relative;
+    display: block;
+    padding: 0 0 0 5px;
+    font-weight: bold;
+    line-height: 3;
+    cursor: pointer;
+    margin: 0px;
+    border-bottom: 1px solid darkgrey;
+    background-color: #efefef;
+    .post {
+      background-color: darkseagreen;
+      padding: 9px 25px;
+      border-radius: 3px;
+      color: white;
+    }
+    .get{
+      @extend .post;
+      background-color: deepskyblue;
+      padding: 9px 30px;
+    }
+    .put{
+      @extend .get;
+      background-color: orange;
+    }
+    .delete{
+      @extend .post;
+      background-color: indianred;
+      padding:9px 17px;
+    }
+    .path {
+      padding-left: 10px;
+      font-weight: normal;
+    }
+  }
+  .tab-content {
+    max-height: 0;
+    overflow: hidden;
+    background: white;
+    -webkit-transition: max-height .35s;
+    -o-transition: max-height .35s;
+    transition: max-height .35s;
+    .row {
+      margin: 0px;
+      .params {
+        padding: 10px;
+        font-weight: bold;
+      }
+      .cancelBtn{
+        padding: 5px;
+        padding-right: 15px;
+      }
+      .btn-default {
+        float: right;
+      }
+    }
+    .schemaBody {
+      background-color: #efefef;
+      height: 290px;
+      .paramsBody {
+        border-top: 1px solid darkgrey;
+        padding-top: 25px;
+        span {
+          font-size: 18px;
+        }
+        hr {
+          margin-top: 30px;
+          margin-bottom: 20px;
+          border-top: 1px solid darkgrey;
+          width: 98%;
+        }
+      }
+      .field {
+          font-size: 18px;
+      }
+    }
+    .responseHead {
+      select {
+        width: 25%;
+        float: right;
+        margin-top: 3px;
+        border: 2px solid #006666;
+      }
+    }
+    .responseBody{
+      @extend .paramsBody;
+    }
+    .well {
+        background-color: #006666 !important;
+        color: white;
+    }
+
+    .executeBtn {
+      margin: 0px 15px;
+    }
+  }
+
+ }
+}
+              
 }

@@ -40,36 +40,6 @@ angular.module('serviceCenter.router', [])
                 }
             }
         })
-        .state('sc.allInstances', {
-            url: '/instances',
-            views:{
-                'base' :{
-                    templateUrl: 'scripts/modules/instances/views/instanceList.html',
-                    controller: 'instancesListController',
-                }
-            },
-            resolve: {
-                servicesList: ['$q', 'httpService', 'apiConstant',function($q, httpService, apiConstant){
-                    $(".loader").show();
-                    var deferred = $q.defer();
-                    var url = apiConstant.api.microservice.url;
-                    var method = apiConstant.api.microservice.method;
-                    httpService.apiRequest(url,method).then(function(response){
-                        $(".loader").hide();
-                        if(response && response.data && response.data.services){
-                            deferred.resolve(response);
-                        }
-                        else {
-                            deferred.reject(response);
-                        }
-                    },function(error){
-                        $(".loader").hide();
-                        deferred.reject(error);
-                    });
-                    return deferred.promise;
-                }]
-            }
-        })
         .state('sc.info',{
             url: '/:serviceId',
             abstract: true,

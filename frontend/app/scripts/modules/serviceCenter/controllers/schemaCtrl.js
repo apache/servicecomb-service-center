@@ -12,7 +12,7 @@
 //See the License for the specific language governing permissions and
 //limitations under the License.
 'use strict';
-angular.module('serviceCenter')
+angular.module('serviceCenter.sc')
 	.controller('schemaController',['$scope', 'apiConstant', 'httpService', '$stateParams', 'servicesList', '$q', '$mdDialog',
 		function($scope, apiConstant, httpService, $stateParams, servicesList, $q, $mdDialog) {
 		
@@ -53,7 +53,7 @@ angular.module('serviceCenter')
 					httpService.apiRequest(url, method, null, headers, "nopopup").then(function(response){
 						$(".loader").hide();
 						if(response && response.data){
-							$scope.schema = response;
+							$scope.schema = response.data;
 							$scope.data = true;
 						}else {
 							$scope.data = false;
@@ -70,7 +70,40 @@ angular.module('serviceCenter')
 		    });
 		};
 
-		
+		$scope.testSchema = function(selectedSchema) {
+			$mdDialog.show({
+		      controller: function ($scope, $mdDialog, apiConstant, httpService) {
+				    $scope.hide = function() {
+				      $mdDialog.hide();
+				    };
+
+				    $scope.cancel = function() {
+				      $mdDialog.cancel();
+				    };
+
+				    var schemaApi = apiConstant.api.schema.url;
+					var api = schemaApi.replace("{{serviceId}}", serviceId);
+					var url = api.replace("{{schemaId}}", selectedSchema);
+					var method = apiConstant.api.schema.method;
+					var headers = {"X-ConsumerId": serviceId};
+					httpService.apiRequest(url, method, null, headers, "nopopup").then(function(response){
+						$(".loader").hide();
+						if(response && response.data){
+							$scope.testSchema = response.data;
+						}else {
+							$scope.data = false;
+						}
+					},function(error) {
+						 	$(".loader").hide();
+							$scope.data = false;
+					});
+			  },
+		      templateUrl: 'scripts/modules/serviceCenter/views/testSchema.html',
+		      parent: angular.element(document.body),
+		      clickOutsideToClose:true,
+		      fullscreen: false
+		    });
+		}
 
 
 }]);

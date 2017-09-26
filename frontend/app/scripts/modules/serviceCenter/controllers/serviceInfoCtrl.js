@@ -12,7 +12,7 @@
 //See the License for the specific language governing permissions and
 //limitations under the License.
 'use strict';
-angular.module('serviceCenter')
+angular.module('serviceCenter.sc')
 	.controller('serviceInfoController', ['$scope', 'httpService', 'commonService', '$q', 'apiConstant', '$state',
 	 '$stateParams','serviceInfo' ,function($scope, httpService, commonService, $q, apiConstant, $state, $stateParams, serviceInfo){
 
