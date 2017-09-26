@@ -11,7 +11,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<nav class="navbar navbar-inverse">
+<nav class="navbar navbar-inverse navbar-fixed-top">
     <div class="navbar-header">
       <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
         <span class="sr-only">Toggle navigation</span>
@@ -53,9 +53,6 @@ limitations under the License.
             <a ui-sref="sc.allServices"  ui-sref-active="active" ng-class="[{active: $state.current.name === 'sc.info.instance'},
             {activeProvider: $state.current.name === 'sc.info.provider'}, {activeConsumer: $state.current.name === 'sc.info.consumer'},
             {schema: $state.current.name === 'sc.info.schema'}]">{{ "services" | translate }}</a>
-        </li>
-        <li>
-            <a ui-sref="sc.allInstances" ui-sref-active="active">{{ "instances" | translate }}</a>
         </li>
     </ul>
 </div>

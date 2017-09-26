@@ -20,72 +20,15 @@ angular.module('serviceCenter.router', [])
             url: '/sc',
             abstract: true,
             templateUrl: 'scripts/views/index.html',
-            controller: 'serviceCenterController as scCtrl'
+            controller: 'serviceCenterController'
         })
         .state('sc.dashboard', {
             url: '/dashboard',
             views:{
                 'base' :{
                     templateUrl: 'scripts/modules/dashboard/views/dashboard.html',
-                    controller: 'dashboardController as dashboardCtrl'
+                    controller: 'dashboardController'
                 }
-            },
-            resolve: {
-                servicesList: ['$q', 'httpService', 'apiConstant',function($q, httpService, apiConstant){
-                    $(".loader").show();
-                    var deferred = $q.defer();
-                    var url = apiConstant.api.microservice.url;
-                    var method = apiConstant.api.microservice.method;
-                    httpService.apiRequest(url,method).then(function(response){
-                        $(".loader").hide();
-                        if(response && response.data && response.data.services){
-                            deferred.resolve(response.data.services);
-                        }
-                        else {
-                            deferred.resolve(response);
-                        }
-                    },function(error){
-                        $(".loader").hide();
-                        deferred.reject(error);
-                    });
-                    return deferred.promise;
-                }],
-                instancesList: ['$q', 'httpService', 'apiConstant',function($q, httpService, apiConstant){
-                    $(".loader").show();
-                    var deferred = $q.defer();
-                    var url = apiConstant.api.microservice.url;
-                    var method = apiConstant.api.microservice.method;
-                    httpService.apiRequest(url,method).then(function(response){
-                        $(".loader").hide();
-                        if(response && response.data && response.data.services){
-                            var promises = [];
-                            for (var i = 0; i < response.data.services.length; i++) {
-                                var api = apiConstant.api.instances.url;
-                                var url = api.replace("{{serviceId}}", response.data.services[i].serviceId);
-                                var method = apiConstant.api.instances.method;
-                                var headers = {"X-ConsumerId": response.data.services[i].serviceId};
-
-                                promises.push(httpService.apiRequest(url,method,null,headers));
-                             }
-
-                            $q.all(promises).then(function(response){
-                                if(response && response[0].data && response[0].data.instances){
-                                    deferred.resolve(response[0].data.instances);
-                                }
-                            },function(error){
-                                deferred.reject(error);
-                            });
-
-                        }
-                        else {
-                            deferred.resolve(response);
-                        }
-                    },function(error){
-                        $(".loader").hide();
-                        deferred.reject(error);
-                    });
-                    return deferred.promise;
-                }]
             }
         })
         .state('sc.allServices', {
@@ -93,38 +36,8 @@ angular.module('serviceCenter.router', [])
             views:{
                 'base' :{
                     templateUrl: 'scripts/modules/serviceCenter/views/servicesList.html',
-                    controller: 'servicesListController as services'
+                    controller: 'servicesListController'
                 }
-            }
-        })
-        .state('sc.allInstances', {
-            url: '/instances',
-            views:{
-                'base' :{
-                    templateUrl: 'scripts/modules/instances/views/instanceList.html',
-                    controller: 'instancesListController as instances',
-                }
-            },
-            resolve: {
-                servicesList: ['$q', 'httpService', 'apiConstant',function($q, httpService, apiConstant){
-                    $(".loader").show();
-                    var deferred = $q.defer();
-                    var url = apiConstant.api.microservice.url;
-                    var method = apiConstant.api.microservice.method;
-                    httpService.apiRequest(url,method).then(function(response){
-                        $(".loader").hide();
-                        if(response && response.data && response.data.services){
-                            deferred.resolve(response.data.services);
-                        }
-                        else {
-                            deferred.reject("no services");
-                        }
-                    },function(error){
-                        $(".loader").hide();
-                        deferred.reject(error);
-                    });
-                    return deferred.promise;
-                }]
             }
         })
         .state('sc.info',{
@@ -133,7 +46,7 @@ angular.module('serviceCenter.router', [])
             views: {
                 'base': {
                     templateUrl: 'scripts/modules/serviceCenter/views/serviceInfo.html',
-                    controller: 'serviceInfoController as serviceInfo'
+                    controller: 'serviceInfoController'
                 }
             },
             resolve: {
@@ -188,7 +101,7 @@ angular.module('serviceCenter.router', [])
             views: {
                 "info" : {
                     templateUrl: 'scripts/modules/serviceCenter/views/schema.html',
-                    controller: 'schemaController as schemaCtrl'
+                    controller: 'schemaController'
                 }
             },
             resolve: {

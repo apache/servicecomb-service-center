@@ -12,17 +12,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <table class="table table-bordered table-responsive margin20" >
-	<thead class="infoTableHead">
-		<th>Name</th>
-		<th>Get Schema</th>
+	<thead class="infoTableHead schemaTable">
+		<th>{{ "name" | translate }}</th>
+		<th>{{ "operations" | translate }}</th>
 	</thead>
 	<tbody>
 		<tr ng-repeat="schema in schemaName">
 			<td>{{ schema }}</td>
-			<td><md-button class="md-primary" ng-click="showSchema(schema)">Show Schema</md-button></td>
+			<td><md-button class="md-raised md-primary" ng-click="showSchema(schema)">Show Schema</md-button>
+			<md-button class="md-raised md-accent" ng-click="testSchema(schema)">Test Schema</md-button></td>
 		</tr>
 		<tr ng-if="schemaName.length == 0" class="text-center">
-			<td colspan="2">No Schema Found</td>
+			<td colspan="2">{{ "noSchemaFound" | translate }}</td>
 		</tr>
 	</tbody>
 </table>

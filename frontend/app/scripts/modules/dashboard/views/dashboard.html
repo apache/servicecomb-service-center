@@ -11,15 +11,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<div class="dashboardHeader">
-<span class="dashboard">{{ "dashboard" | translate }}</span>
-	<div class="dashboardInfo">
-		<ul>
-			<li><span class="glyphicon glyphicon-stop"></span>{{ "up" | translate }}</li>
-			<li><span class="glyphicon glyphicon-stop"></span>{{ "down" | translate }}</li>
-		</ul>
-	</div>
-</div>
 
 <div class="dashboardBody">
 	<div class="row dashboardTitle no-margin">
@@ -35,10 +26,26 @@ limitations under the License.
 
 	<div class="row no-margin dashboardChart">
 		<div class="col-md-6 col-sm-6 dashboardChartLeft">
-			<canvas class="chart chart-doughnut" chart-data="servicesData" chart-click="getServices" chart-labels="labels"></canvas> 
+			<div class="dashboardInfo">
+				<ul>
+					<li><span class="glyphicon glyphicon-stop starting"></span>{{ "starting" | translate }}</li>
+					<li><span class="glyphicon glyphicon-stop up"></span>{{ "up" | translate }}</li>
+					<li><span class="glyphicon glyphicon-stop down"></span>{{ "down" | translate }}</li>
+					<li><span class="glyphicon glyphicon-stop unavailable"></span>{{ "outofservice" | translate }}</li>
+				</ul>
+			</div>
+			<canvas class="chart chart-doughnut" chart-data="servicesData" chart-colors="colors" chart-labels="labels"></canvas> 
 		</div>
 		<div class="col-md-6 col-sm-6 dashboardChartRight">
-			<canvas class="chart chart-doughnut" chart-data="instancesData" chart-click="getInstances" chart-labels="labels"></canvas>
+			<div class="dashboardInfo">
+				<ul>
+					<li><span class="glyphicon glyphicon-stop starting"></span>{{ "starting" | translate }}</li>
+					<li><span class="glyphicon glyphicon-stop up"></span>{{ "up" | translate }}</li>
+					<li><span class="glyphicon glyphicon-stop down"></span>{{ "down" | translate }}</li>
+					<li><span class="glyphicon glyphicon-stop unavailable"></span>{{ "outofservice" | translate }}</li>
+				</ul>
+			</div>
+			<canvas class="chart chart-doughnut" chart-data="instancesData" chart-colors="colors" chart-labels="labels"></canvas>
 		</div>
 	</div>
 

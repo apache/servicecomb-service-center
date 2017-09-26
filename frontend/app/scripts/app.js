@@ -14,7 +14,7 @@
 'use strict';
 
 angular.module('serviceCenter', ['ngAnimate', 'ngMaterial', 'ngAria', 'ngMessages', 'ngResource', 'ngRoute', 'ngSanitize', 'ui.router',
-    'ngMdIcons', 'pascalprecht.translate', 'serviceCenter.router','md.data.table', 'jsonFormatter', 'chart.js'])
+    'ngMdIcons', 'pascalprecht.translate', 'serviceCenter.router', 'serviceCenter.dashboard', 'serviceCenter.sc', 'md.data.table', 'jsonFormatter', 'chart.js'])
   .config(['$translateProvider', 'english', 'chinese', function($translateProvider, english, chinese) {
         $translateProvider.useSanitizeValueStrategy(null);
         
@@ -43,5 +43,19 @@ angular.module('serviceCenter', ['ngAnimate', 'ngMaterial', 'ngAria', 'ngMessage
     }])
   .config(function (JSONFormatterConfigProvider) {
         JSONFormatterConfigProvider.hoverPreviewEnabled = true;
+    })
+  .config(function($mdThemingProvider) {
+        
+  $mdThemingProvider.theme('default')
+    .primaryPalette('indigo', {
+      'default': '400',
+      'hue-1': '100',
+      'hue-2': '600', 
+      'hue-3': 'A100' 
+    })
+    
+    .accentPalette('purple', {
+      'default': '200'
     });
+  });
 
