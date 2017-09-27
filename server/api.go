@@ -11,6 +11,7 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
+//Test Bot functionality
 package server
 
 import (
@@ -90,6 +91,11 @@ func (s *APIServer) registryService(pCtx context.Context) error {
 		return err
 	}
 	if respE.Response.Code == pb.Response_SUCCESS {
+		util.Logger().Warnf(nil, "service center service already registered, service id %s", respE.ServiceId)
+		util.Logger().Warnf(nil, "service center service already registered, service id %s", respE.ServiceId)
+		util.Logger().Warnf(nil, "service center service already registered, service id %s", respE.ServiceId)
+		util.Logger().Warnf(nil, "service center service already registered, service id %s", respE.ServiceId)
+		util.Logger().Warnf(nil, "service center service already registered, service id %s", respE.ServiceId)
 		util.Logger().Warnf(nil, "service center service already registered, service id %s", respE.ServiceId)
 		respG, err := core.ServiceAPI.GetOne(ctx, core.GetServiceRequest(respE.ServiceId))
 		if respG.Response.Code != pb.Response_SUCCESS {
