@@ -19,8 +19,7 @@ limitations under the License.
 	<tbody>
 		<tr ng-repeat="schema in schemaName">
 			<td>{{ schema }}</td>
-			<td><md-button class="md-raised md-primary" ng-click="showSchema(schema)">Show Schema</md-button>
-			<md-button class="md-raised md-accent" ng-click="testSchema(schema)">Test Schema</md-button></td>
+			<td><button class="btn btn-default" ng-click="testSchema(schema)">Test Schema</button></td>
 		</tr>
 		<tr ng-if="schemaName.length == 0" class="text-center">
 			<td colspan="2">{{ "noSchemaFound" | translate }}</td>

@@ -5215,7 +5215,7 @@ button.close {
   .tooltip.bottom {
     margin-top: 3px;
     padding: 5px 0; }
-  .tooltip.left, body .dashboardBody .dashboardTitle .tooltip.right, body .dashboardBody .dashboardStatus .tooltip.right, body .dashboardBody .dashboardUpDown .tooltip.right {
+  .tooltip.left, body .dashboardBody .dashboardTitle .tooltip.right, body .dashboardBody .dashboardPC .tooltip.right, body .dashboardBody .dashboardStatus .tooltip.right, body .dashboardBody .dashboardUpDown .tooltip.right {
     margin-left: -3px;
     padding: 0 5px; }
 
@@ -5258,7 +5258,7 @@ button.close {
   margin-top: -5px;
   border-width: 5px 5px 5px 0;
   border-right-color: #000; }
-.tooltip.left .tooltip-arrow, body .dashboardBody .dashboardTitle .tooltip.right .tooltip-arrow, body .dashboardBody .dashboardStatus .tooltip.right .tooltip-arrow, body .dashboardBody .dashboardUpDown .tooltip.right .tooltip-arrow {
+.tooltip.left .tooltip-arrow, body .dashboardBody .dashboardTitle .tooltip.right .tooltip-arrow, body .dashboardBody .dashboardPC .tooltip.right .tooltip-arrow, body .dashboardBody .dashboardStatus .tooltip.right .tooltip-arrow, body .dashboardBody .dashboardUpDown .tooltip.right .tooltip-arrow {
   top: 50%;
   right: 0;
   margin-top: -5px;
@@ -5320,7 +5320,7 @@ button.close {
     margin-left: 10px; }
   .popover.bottom {
     margin-top: 10px; }
-  .popover.left, body .dashboardBody .dashboardTitle .popover.right, body .dashboardBody .dashboardStatus .popover.right, body .dashboardBody .dashboardUpDown .popover.right {
+  .popover.left, body .dashboardBody .dashboardTitle .popover.right, body .dashboardBody .dashboardPC .popover.right, body .dashboardBody .dashboardStatus .popover.right, body .dashboardBody .dashboardUpDown .popover.right {
     margin-left: -10px; }
 
 .popover-title {
@@ -5388,14 +5388,14 @@ button.close {
     margin-left: -10px;
     border-top-width: 0;
     border-bottom-color: #fff; }
-.popover.left > .arrow, body .dashboardBody .dashboardTitle .popover.right > .arrow, body .dashboardBody .dashboardStatus .popover.right > .arrow, body .dashboardBody .dashboardUpDown .popover.right > .arrow {
+.popover.left > .arrow, body .dashboardBody .dashboardTitle .popover.right > .arrow, body .dashboardBody .dashboardPC .popover.right > .arrow, body .dashboardBody .dashboardStatus .popover.right > .arrow, body .dashboardBody .dashboardUpDown .popover.right > .arrow {
   top: 50%;
   right: -11px;
   margin-top: -11px;
   border-right-width: 0;
   border-left-color: #999999;
   border-left-color: rgba(0, 0, 0, 0.25); }
-  .popover.left > .arrow:after, body .dashboardBody .dashboardTitle .popover.right > .arrow:after, body .dashboardBody .dashboardStatus .popover.right > .arrow:after, body .dashboardBody .dashboardUpDown .popover.right > .arrow:after {
+  .popover.left > .arrow:after, body .dashboardBody .dashboardTitle .popover.right > .arrow:after, body .dashboardBody .dashboardPC .popover.right > .arrow:after, body .dashboardBody .dashboardStatus .popover.right > .arrow:after, body .dashboardBody .dashboardUpDown .popover.right > .arrow:after {
     content: " ";
     right: 1px;
     border-right-width: 0;
@@ -5437,11 +5437,11 @@ button.close {
           -webkit-transform: translate3d(100%, 0, 0);
           transform: translate3d(100%, 0, 0);
           left: 0; }
-        .carousel-inner > .item.prev, .carousel-inner > .item.active.left, body .dashboardBody .dashboardTitle .carousel-inner > .item.active.right, body .dashboardBody .dashboardStatus .carousel-inner > .item.active.right, body .dashboardBody .dashboardUpDown .carousel-inner > .item.active.right {
+        .carousel-inner > .item.prev, .carousel-inner > .item.active.left, body .dashboardBody .dashboardTitle .carousel-inner > .item.active.right, body .dashboardBody .dashboardPC .carousel-inner > .item.active.right, body .dashboardBody .dashboardStatus .carousel-inner > .item.active.right, body .dashboardBody .dashboardUpDown .carousel-inner > .item.active.right {
           -webkit-transform: translate3d(-100%, 0, 0);
           transform: translate3d(-100%, 0, 0);
           left: 0; }
-        .carousel-inner > .item.next.left, body .dashboardBody .dashboardTitle .carousel-inner > .item.next.right, body .dashboardBody .dashboardStatus .carousel-inner > .item.next.right, body .dashboardBody .dashboardUpDown .carousel-inner > .item.next.right, .carousel-inner > .item.prev.right, .carousel-inner > .item.active {
+        .carousel-inner > .item.next.left, body .dashboardBody .dashboardTitle .carousel-inner > .item.next.right, body .dashboardBody .dashboardPC .carousel-inner > .item.next.right, body .dashboardBody .dashboardStatus .carousel-inner > .item.next.right, body .dashboardBody .dashboardUpDown .carousel-inner > .item.next.right, .carousel-inner > .item.prev.right, .carousel-inner > .item.active {
           -webkit-transform: translate3d(0, 0, 0);
           transform: translate3d(0, 0, 0);
           left: 0; } }
@@ -5460,10 +5460,10 @@ button.close {
     left: 100%; }
   .carousel-inner > .prev {
     left: -100%; }
-  .carousel-inner > .next.left, body .dashboardBody .dashboardTitle .carousel-inner > .next.right, body .dashboardBody .dashboardStatus .carousel-inner > .next.right, body .dashboardBody .dashboardUpDown .carousel-inner > .next.right,
+  .carousel-inner > .next.left, body .dashboardBody .dashboardTitle .carousel-inner > .next.right, body .dashboardBody .dashboardPC .carousel-inner > .next.right, body .dashboardBody .dashboardStatus .carousel-inner > .next.right, body .dashboardBody .dashboardUpDown .carousel-inner > .next.right,
   .carousel-inner > .prev.right {
     left: 0; }
-  .carousel-inner > .active.left, body .dashboardBody .dashboardTitle .carousel-inner > .active.right, body .dashboardBody .dashboardStatus .carousel-inner > .active.right, body .dashboardBody .dashboardUpDown .carousel-inner > .active.right {
+  .carousel-inner > .active.left, body .dashboardBody .dashboardTitle .carousel-inner > .active.right, body .dashboardBody .dashboardPC .carousel-inner > .active.right, body .dashboardBody .dashboardStatus .carousel-inner > .active.right, body .dashboardBody .dashboardUpDown .carousel-inner > .active.right {
     left: -100%; }
   .carousel-inner > .active.right {
     left: 100%; }
@@ -5481,7 +5481,7 @@ button.close {
   text-align: center;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
   background-color: rgba(0, 0, 0, 0); }
-  .carousel-control.left, body .dashboardBody .dashboardTitle .carousel-control.right, body .dashboardBody .dashboardStatus .carousel-control.right, body .dashboardBody .dashboardUpDown .carousel-control.right {
+  .carousel-control.left, body .dashboardBody .dashboardTitle .carousel-control.right, body .dashboardBody .dashboardPC .carousel-control.right, body .dashboardBody .dashboardStatus .carousel-control.right, body .dashboardBody .dashboardUpDown .carousel-control.right {
     background-image: -webkit-linear-gradient(left, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.0001) 100%);
     background-image: -o-linear-gradient(left, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.0001) 100%);
     background-image: linear-gradient(to right, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.0001) 100%);
@@ -5825,6 +5825,25 @@ body {
     display: none; }
   body .no-margin {
     margin: 0px !important; }
+  body .glyphicon-trash:hover {
+    cursor: pointer; }
+  body .pagination-class .label {
+    color: rgba(0, 0, 0, 0.54);
+    font-size: 12px;
+    font-weight: normal; }
+  body .serviceStatus {
+    height: 20px;
+    width: 40px;
+    color: white;
+    text-align: center; }
+    body .serviceStatus.up {
+      background-color: #5ecc49; }
+    body .serviceStatus.starting {
+      background-color: #e6e600; }
+    body .serviceStatus.down {
+      background-color: #d50000; }
+    body .serviceStatus.outofservice {
+      background-color: #bcc2c9; }
   body .navbar {
     border-radius: unset !important; }
     body .navbar .logo {
@@ -5865,15 +5884,15 @@ body {
             text-decoration: none;
             color: black;
             background: #f5f5f0; }
+      body .sidebar-wrapper .sidebar-nav .active, body .sidebar-wrapper .sidebar-nav .activeProvider, body .sidebar-wrapper .sidebar-nav .activeConsumer, body .sidebar-wrapper .sidebar-nav .schemaTab {
+        text-decoration: none;
+        background: #fff;
+        color: #009ee0 !important;
+        border-left: 3px solid #009ee0; }
     body .sidebar-wrapper .brand {
       font-size: 18px;
       margin: 10px 0px 10px 0px; }
-  body .active, body .activeProvider, body .activeConsumer, body .schema {
-    text-decoration: none;
-    background: #fff;
-    color: #009ee0 !important;
-    border-left: 3px solid #009ee0; }
-  body .content {
+  body .bodyContent {
     margin-left: 250px;
     padding-top: 70px; }
   body .fa-close {
@@ -5920,37 +5939,41 @@ body {
     body .dashboardHeader .dashboard {
       font-size: 30px;
       color: brown; }
-  body .dashboardBody .dashboardTitle {
+  body .dashboardBody .dashboardTitle, body .dashboardBody .dashboardPC {
     height: 100px; }
-    body .dashboardBody .dashboardTitle .left, body .dashboardBody .dashboardTitle .right {
+    body .dashboardBody .dashboardTitle .left, body .dashboardBody .dashboardPC .left, body .dashboardBody .dashboardTitle .right, body .dashboardBody .dashboardPC .right {
       height: inherit;
       background-color: #F0F2F5;
       margin-right: 10px;
       width: 49% !important;
       padding-top: 30px; }
-      body .dashboardBody .dashboardTitle .left .dashboardName, body .dashboardBody .dashboardTitle .right .dashboardName {
+      body .dashboardBody .dashboardTitle .left .dashboardName, body .dashboardBody .dashboardPC .left .dashboardName, body .dashboardBody .dashboardTitle .right .dashboardName, body .dashboardBody .dashboardPC .right .dashboardName {
         font-size: 25px;
         text-align: center;
         padding: 5px; }
-      body .dashboardBody .dashboardTitle .left .dashboardCount, body .dashboardBody .dashboardTitle .right .dashboardCount {
+      body .dashboardBody .dashboardTitle .left .dashboardCount, body .dashboardBody .dashboardPC .left .dashboardCount, body .dashboardBody .dashboardTitle .right .dashboardCount, body .dashboardBody .dashboardPC .right .dashboardCount {
         width: 65%;
         text-align: end;
         font-size: 25px; }
-    body .dashboardBody .dashboardTitle .right {
+    body .dashboardBody .dashboardTitle .right, body .dashboardBody .dashboardPC .right {
       margin-right: 0px !important; }
+  body .dashboardBody .dashboardPC {
+    margin-top: 20px !important; }
   body .dashboardBody .dashboardChart .dashboardChartLeft, body .dashboardBody .dashboardChart .dashboardChartRight {
     width: 49% !important;
     background-color: #F0F2F5;
     margin-top: 20px;
     margin-right: 10px; }
     body .dashboardBody .dashboardChart .dashboardChartLeft .dashboardInfo, body .dashboardBody .dashboardChart .dashboardChartRight .dashboardInfo {
-      height: 80px;
-      width: 150px;
-      border: 1px solid grey;
+      height: 90px;
+      width: 100%;
       float: right;
-      margin-top: inherit; }
+      margin-right: -8px;
+      padding: 5px 0px; }
       body .dashboardBody .dashboardChart .dashboardChartLeft .dashboardInfo ul, body .dashboardBody .dashboardChart .dashboardChartRight .dashboardInfo ul {
-        padding-left: 20px; }
+        padding: 5px 15px;
+        border: 1px solid darkgrey;
+        float: right; }
         body .dashboardBody .dashboardChart .dashboardChartLeft .dashboardInfo ul li, body .dashboardBody .dashboardChart .dashboardChartRight .dashboardInfo ul li {
           list-style-type: none; }
           body .dashboardBody .dashboardChart .dashboardChartLeft .dashboardInfo ul li span, body .dashboardBody .dashboardChart .dashboardChartRight .dashboardInfo ul li span {
@@ -5958,11 +5981,11 @@ body {
           body .dashboardBody .dashboardChart .dashboardChartLeft .dashboardInfo ul li .starting, body .dashboardBody .dashboardChart .dashboardChartRight .dashboardInfo ul li .starting {
             color: #e6e600; }
           body .dashboardBody .dashboardChart .dashboardChartLeft .dashboardInfo ul li .up, body .dashboardBody .dashboardChart .dashboardChartRight .dashboardInfo ul li .up {
-            color: #64dd17; }
+            color: #5ecc49; }
           body .dashboardBody .dashboardChart .dashboardChartLeft .dashboardInfo ul li .down, body .dashboardBody .dashboardChart .dashboardChartRight .dashboardInfo ul li .down {
             color: #d50000; }
           body .dashboardBody .dashboardChart .dashboardChartLeft .dashboardInfo ul li .unavailable, body .dashboardBody .dashboardChart .dashboardChartRight .dashboardInfo ul li .unavailable {
-            color: #A9A9A9; }
+            color: #bcc2c9; }
   body .dashboardBody .dashboardChart .dashboardChartRight {
     margin-right: 0px !important; }
   body .dashboardBody .dashboardStatus {
@@ -6018,96 +6041,11 @@ body {
   body md-toolbar.md-default-theme:not(.md-menu-toolbar).md-warn, body md-toolbar:not(.md-menu-toolbar).md-warn {
     background-color: #ff5722 !important; }
   body md-dialog {
-    min-width: 400px; }
+    min-width: 75%; }
   body #schemes {
     width: 8%;
     border: 2px solid #006666; }
-  body .testSchema .dropdown select {
-    border: 0px;
-    outline: 0px;
-    font-size: 18px;
-    padding-left: 10px; }
-  body .testSchema .tab {
-    position: relative;
-    margin-bottom: 10px;
-    width: 100%;
-    color: black;
-    overflow: hidden;
-    border: 1px solid darkgrey; }
-    body .testSchema .tab .input {
-      position: absolute;
-      opacity: 0;
-      z-index: -1; }
-      body .testSchema .tab .input:checked ~ .tab-content {
-        max-height: 10em;
-        min-height: 600px; }
-    body .testSchema .tab label {
-      position: relative;
-      display: block;
-      padding: 0 0 0 5px;
-      font-weight: bold;
-      line-height: 3;
-      cursor: pointer;
-      margin: 0px;
-      border-bottom: 1px solid darkgrey;
-      background-color: #efefef; }
-      body .testSchema .tab label .post, body .testSchema .tab label .get, body .testSchema .tab label .put, body .testSchema .tab label .delete {
-        background-color: darkseagreen;
-        padding: 9px 25px;
-        border-radius: 3px;
-        color: white; }
-      body .testSchema .tab label .get, body .testSchema .tab label .put {
-        background-color: deepskyblue;
-        padding: 9px 30px; }
-      body .testSchema .tab label .put {
-        background-color: orange; }
-      body .testSchema .tab label .delete {
-        background-color: indianred;
-        padding: 9px 17px; }
-      body .testSchema .tab label .path {
-        padding-left: 10px;
-        font-weight: normal; }
-    body .testSchema .tab .tab-content {
-      max-height: 0;
-      overflow: hidden;
-      background: white;
-      -webkit-transition: max-height .35s;
-      -o-transition: max-height .35s;
-      transition: max-height .35s; }
-      body .testSchema .tab .tab-content .row {
-        margin: 0px; }
-        body .testSchema .tab .tab-content .row .params {
-          padding: 10px;
-          font-weight: bold; }
-        body .testSchema .tab .tab-content .row .cancelBtn {
-          padding: 5px;
-          padding-right: 15px; }
-        body .testSchema .tab .tab-content .row .btn-default {
-          float: right; }
-      body .testSchema .tab .tab-content .schemaBody {
-        background-color: #efefef;
-        height: 290px; }
-        body .testSchema .tab .tab-content .schemaBody .paramsBody, body .testSchema .tab .tab-content .schemaBody .responseBody {
-          border-top: 1px solid darkgrey;
-          padding-top: 25px; }
-          body .testSchema .tab .tab-content .schemaBody .paramsBody span, body .testSchema .tab .tab-content .schemaBody .responseBody span {
-            font-size: 18px; }
-          body .testSchema .tab .tab-content .schemaBody .paramsBody hr, body .testSchema .tab .tab-content .schemaBody .responseBody hr {
-            margin-top: 30px;
-            margin-bottom: 20px;
-            border-top: 1px solid darkgrey;
-            width: 98%; }
-        body .testSchema .tab .tab-content .schemaBody .field {
-          font-size: 18px; }
-      body .testSchema .tab .tab-content .responseHead select {
-        width: 25%;
-        float: right;
-        margin-top: 3px;
-        border: 2px solid #006666; }
-      body .testSchema .tab .tab-content .well {
-        background-color: #006666 !important;
-        color: white; }
-      body .testSchema .tab .tab-content .executeBtn {
-        margin: 0px 15px; }
+  body .swaggerDiv {
+    margin: 0px 20px; }
 
 /*# sourceMappingURL=main.css.map */

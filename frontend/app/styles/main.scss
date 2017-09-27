@@ -33,7 +33,34 @@ body {
   .no-margin{
     margin:0px !important;
   }
-
+  .glyphicon-trash:hover{
+    cursor: pointer;
+  }
+  .pagination-class {
+    .label {
+      color: rgba(0, 0, 0, .54);
+      font-size: 12px;
+      font-weight: normal;
+    }
+  }
+  .serviceStatus {
+    height: 20px;
+    width: 40px;
+    color: white;
+    text-align: center;
+    &.up {
+      background-color: #5ecc49;
+    }
+    &.starting {
+      background-color: #e6e600;
+    }
+    &.down {
+       background-color: #d50000;
+    }
+    &.outofservice {
+       background-color: #bcc2c9;
+     }
+  }
   .navbar {
     border-radius: unset !important;
     .logo {
@@ -84,6 +111,12 @@ body {
         }
       }
     }
+  .active, .activeProvider, .activeConsumer, .schemaTab {
+    text-decoration: none;
+    background:  #fff;
+    color: #009ee0 !important;
+    border-left: 3px solid #009ee0;
+}
    }
    .brand {
     font-size: 18px;
@@ -91,13 +124,7 @@ body {
    }
   }
 
-.active, .activeProvider, .activeConsumer, .schema {
-  text-decoration: none;
-  background:  #fff;
-  color: #009ee0 !important;
-  border-left: 3px solid #009ee0;
-}
-.content {
+.bodyContent {
     margin-left: 250px;
     padding-top: 70px;
 }
@@ -199,6 +226,10 @@ canvas {
      margin-right:0px !important;
     } 
   }
+  .dashboardPC {
+    @extend .dashboardTitle;
+    margin-top: 20px !important;
+  }
   .dashboardChart{
     .dashboardChartLeft{
       width: 49% !important;
@@ -206,13 +237,15 @@ canvas {
       margin-top: 20px;
       margin-right: 10px;
        .dashboardInfo {
-          height: 80px;
-          width: 150px;
-          border: 1px solid grey;
+          height: 90px;
+          width: 100%;
           float: right;
-          margin-top: inherit;
+          margin-right: -8px;
+          padding: 5px 0px;
           ul {
-            padding-left: 20px;
+            padding: 5px 15px;
+            border: 1px solid darkgrey;
+            float: right;
             li{
               list-style-type: none;
              span {
@@ -222,13 +255,13 @@ canvas {
                 color: #e6e600;
               }
               .up {
-                color: #64dd17;
+                color: #5ecc49;
               }
               .down {
                 color: #d50000;
               }
               .unavailable {
-                color: #A9A9A9;
+                color: #bcc2c9;
               }
             }
           }
@@ -311,136 +344,14 @@ md-toolbar.md-default-theme:not(.md-menu-toolbar).md-warn, md-toolbar:not(.md-me
     background-color : rgb(255,87,34) !important;
 }
 md-dialog {
-  min-width: 400px;
+  min-width: 75%;
 }
 #schemes {
   width: 8%;
   border: 2px solid #006666;
 }
-.testSchema {
-  .dropdown{
-   select {
-    border: 0px;
-    outline: 0px;
-    font-size: 18px;
-    padding-left: 10px;
-   }
-  }
-  .tab {
-    position: relative;
-    margin-bottom: 10px;
-    width: 100%;
-    color: black;
-    overflow: hidden;
-    border: 1px solid darkgrey;
-    .input {
-      position: absolute;
-      opacity: 0;
-      z-index: -1;
-      &:checked ~ .tab-content {
-        max-height: 10em;
-        min-height: 600px;
-      } 
-    }
-
-  label {
-    position: relative;
-    display: block;
-    padding: 0 0 0 5px;
-    font-weight: bold;
-    line-height: 3;
-    cursor: pointer;
-    margin: 0px;
-    border-bottom: 1px solid darkgrey;
-    background-color: #efefef;
-    .post {
-      background-color: darkseagreen;
-      padding: 9px 25px;
-      border-radius: 3px;
-      color: white;
-    }
-    .get{
-      @extend .post;
-      background-color: deepskyblue;
-      padding: 9px 30px;
-    }
-    .put{
-      @extend .get;
-      background-color: orange;
-    }
-    .delete{
-      @extend .post;
-      background-color: indianred;
-      padding:9px 17px;
-    }
-    .path {
-      padding-left: 10px;
-      font-weight: normal;
-    }
-  }
-  .tab-content {
-    max-height: 0;
-    overflow: hidden;
-    background: white;
-    -webkit-transition: max-height .35s;
-    -o-transition: max-height .35s;
-    transition: max-height .35s;
-    .row {
-      margin: 0px;
-      .params {
-        padding: 10px;
-        font-weight: bold;
-      }
-      .cancelBtn{
-        padding: 5px;
-        padding-right: 15px;
-      }
-      .btn-default {
-        float: right;
-      }
-    }
-    .schemaBody {
-      background-color: #efefef;
-      height: 290px;
-      .paramsBody {
-        border-top: 1px solid darkgrey;
-        padding-top: 25px;
-        span {
-          font-size: 18px;
-        }
-        hr {
-          margin-top: 30px;
-          margin-bottom: 20px;
-          border-top: 1px solid darkgrey;
-          width: 98%;
-        }
-      }
-      .field {
-          font-size: 18px;
-      }
-    }
-    .responseHead {
-      select {
-        width: 25%;
-        float: right;
-        margin-top: 3px;
-        border: 2px solid #006666;
-      }
-    }
-    .responseBody{
-      @extend .paramsBody;
-    }
-    .well {
-        background-color: #006666 !important;
-        color: white;
-    }
-
-    .executeBtn {
-      margin: 0px 15px;
-    }
-  }
-
- }
+.swaggerDiv {
+  margin: 0px 20px;
 }
               
 }

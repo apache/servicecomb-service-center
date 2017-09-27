@@ -32,7 +32,7 @@ angular.module('serviceCenter')
 				method: 'GET'
 			},
 			provider: {
-				url: 'registry/v3/microservices/{{proviserId}}/consumers',
+				url: 'registry/v3/microservices/{{providerId}}/consumers',
 				method: 'GET'
 			},
 			schema: {

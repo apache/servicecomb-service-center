@@ -26,49 +26,7 @@ angular.module('serviceCenter.sc')
         	});
 		}
 		
-		var schemaApi = apiConstant.api.schema.url;
-		var api = schemaApi.replace("{{serviceId}}", serviceId);
-		var url = api.replace("{{schemaId}}", serviceId);
-		var method = apiConstant.api.schema.method;
-
 		$scope.schema = [];
-
-		$scope.showSchema = function(selectedSchema) {
-			$(".loader").show();
-			$mdDialog.show({
-		      controller: function ($scope, $mdDialog, apiConstant, httpService) {
-				    $scope.hide = function() {
-				      $mdDialog.hide();
-				    };
-
-				    $scope.cancel = function() {
-				      $mdDialog.cancel();
-				    };
-
-				    var schemaApi = apiConstant.api.schema.url;
-					var api = schemaApi.replace("{{serviceId}}", serviceId);
-					var url = api.replace("{{schemaId}}", selectedSchema);
-					var method = apiConstant.api.schema.method;
-					var headers = {"X-ConsumerId": serviceId};
-					httpService.apiRequest(url, method, null, headers, "nopopup").then(function(response){
-						$(".loader").hide();
-						if(response && response.data){
-							$scope.schema = response.data;
-							$scope.data = true;
-						}else {
-							$scope.data = false;
-						}
-					},function(error) {
-						 	$(".loader").hide();
-							$scope.data = false;
-					});
-			  },
-		      templateUrl: 'scripts/modules/serviceCenter/views/schemaStructure.html',
-		      parent: angular.element(document.body),
-		      clickOutsideToClose:true,
-		      fullscreen: false
-		    });
-		};
 
 		$scope.testSchema = function(selectedSchema) {
 			$mdDialog.show({
@@ -89,13 +47,11 @@ angular.module('serviceCenter.sc')
 					httpService.apiRequest(url, method, null, headers, "nopopup").then(function(response){
 						$(".loader").hide();
 						if(response && response.data){
-							$scope.testSchema = response.data;
+							$scope.testSchema = response.data.schema;
 						}else {
-							$scope.data = false;
 						}
 					},function(error) {
 						 	$(".loader").hide();
-							$scope.data = false;
 					});
 			  },
 		      templateUrl: 'scripts/modules/serviceCenter/views/testSchema.html',
@@ -104,6 +60,5 @@ angular.module('serviceCenter.sc')
 		      fullscreen: false
 		    });
 		}
-
 
 }]);
