@@ -248,20 +248,6 @@ func TestServiceDependencyRuleExist(t *testing.T) {
 	}
 }
 
-func TestAddServiceVersionRule(t *testing.T) {
-	err := AddProviderVersionRule(context.Background(), "", &proto.MicroServiceKey{Version: "1.0.0"}, &proto.MicroServiceKey{})
-	if err != nil {
-		fmt.Printf(`AddServiceVersionRule invalid failed`)
-		t.FailNow()
-	}
-
-	err = AddProviderVersionRule(context.Background(), "", &proto.MicroServiceKey{}, &proto.MicroServiceKey{})
-	if err == nil {
-		fmt.Printf(`AddServiceVersionRule failed`)
-		t.FailNow()
-	}
-}
-
 func TestUpdateServiceForAddDependency(t *testing.T) {
 	err := UpdateServiceForAddDependency(context.Background(), "", []*proto.DependencyMircroService{}, "")
 	if err == nil {

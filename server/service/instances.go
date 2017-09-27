@@ -623,7 +623,7 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 		}
 	}
 	consumer := pb.ToMicroServiceKey(tenant, service)
-	//维护version的规则
+	//维护version的规则,servicename 可能是别名，所以重新获取
 	providerService, _ := serviceUtil.GetService(ctx, tenant, ids[0], opts...)
 	if providerService == nil {
 		util.Logger().Errorf(nil, "find instance failed, %s: no provider matched.", findFlag)
@@ -638,7 +638,7 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 		Version:     in.VersionRule,
 	}
 
-	err = serviceUtil.AddServiceVersionRule(ctx, tenant, provider, consumer)
+	err = serviceUtil.AddServiceVersionRule(ctx, tenant, provider, consumer, in.ConsumerServiceId)
 
 	if err != nil {
 		util.Logger().Errorf(err, "find instance failed, %s: add service version rule failed.", findFlag)
@@ -646,7 +646,6 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
 	}
-	util.Logger().Infof("find instance: add dependency susscess, %s", findFlag)
 
 	return &pb.FindInstancesResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Query service instances successfully."),
