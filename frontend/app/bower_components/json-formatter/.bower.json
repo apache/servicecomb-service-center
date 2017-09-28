@@ -1,0 +1,45 @@
+{
+  "name": "json-formatter",
+  "version": "0.6.0",
+  "authors": "Mohsen Azimi <msn.azi@gmail.com>",
+  "description": "JSON Formatter is an AngularJS directive for rendering JSON objects in HTML with a **collapsible** navigation.",
+  "main": [
+    "dist/json-formatter.js",
+    "dist/json-formatter.css"
+  ],
+  "license": "Apache 2.0",
+  "keywords": [
+    "json",
+    "formatter",
+    "collapsible",
+    "json to HTML",
+    "JSON"
+  ],
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angular": "^1.4.4"
+  },
+  "devDependencies": {
+    "angular": "^1.4.4",
+    "angular-mocks": "^1.4.4",
+    "angular-sanitize": "^1.4.4",
+    "bootstrap": "~3.3.5",
+    "jquery": "~2.1.1"
+  },
+  "homepage": "https://github.com/mohsen1/json-formatter",
+  "_release": "0.6.0",
+  "_resolution": {
+    "type": "version",
+    "tag": "v0.6.0",
+    "commit": "70da0b6f2f268dc4e97d59629f1951e70ce5c0a7"
+  },
+  "_source": "https://github.com/mohsen1/json-formatter.git",
+  "_target": "^0.6.0",
+  "_originalSource": "json-formatter"
+}

@@ -338,10 +338,10 @@ canvas {
   }
 }
 md-toolbar.md-default-theme:not(.md-menu-toolbar), md-toolbar:not(.md-menu-toolbar)  {
-  background-color : #0288D1 !important;
+  background-color : rgb(59,120,231) !important;
 }
 md-toolbar.md-default-theme:not(.md-menu-toolbar).md-warn, md-toolbar:not(.md-menu-toolbar).md-warn {
-    background-color : rgb(255,87,34) !important;
+    background-color : rgb(59,120,231) !important;
 }
 md-dialog {
   min-width: 75%;
