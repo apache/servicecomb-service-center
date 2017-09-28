@@ -56,6 +56,12 @@ angular.module('serviceCenter')
 	"noSchemaFound": "找不到模式",
 	"schemaTest": "模式测试",
 	"schemes": "方案",
+	"providers": "供应商",
+	"consumers": "消费者",
+	"operation": "手术",
+	"page": "页",
+	"rowsPerPage": "每页行数",
+	"of": "的",
 	"copyRight" : "由华为技术股份有限公司有限公司（获得确认和变更）！"
 
 });

@@ -13,7 +13,6 @@ limitations under the License.
 -->
 
 <md-dialog>
-  <form ng-cloak>
     <md-toolbar>
       <div class="md-toolbar-tools">
         <h2>{{ "schemaTest" | translate }}</h2>
@@ -23,134 +22,13 @@ limitations under the License.
         </md-button>
       </div>
     </md-toolbar>
-
-    <md-dialog-content>
-      <div class="md-dialog-content">
-        <div class="form-group">
-          <label for="schemes">{{ "schemes" | translate }}</label>
-          <select class="form-control" id="schemes">
-            <option>HTTP</option>
-            <option>HTTPS</option>
-          </select>
-        </div>
-      <hr>
-      <div class="testSchema">
-        <div class="form-group dropdown">
-            <select>
-              <option>default</option>
-              <option>tenant</option>
-            </select>
-        </div>
-        <hr>
-        <div class="tab">
-          <input class="input" id="tab-one" type="checkbox" name="tabs">
-          <label for="tab-one"><span class="post">POST</span><span class="path">/add</span></label>
-          <div class="tab-content">
-            <div class="row paramsHead">
-              <div class="col-md-4 col-sm-4 params">
-                Parameters
-              </div>
-              <div class="col-md-8 col-sm-8 cancelBtn">
-                <button class="btn btn-default">Cancel</button>
-              </div>
-            </div>
-            <div class="schemaBody">
-              <div class="row paramsBody">
-                <div class="col-md-4 col-sm-4 ">
-                  <span>Name</span>
-                </div>
-                <div class="col-md-8 col-sm-8">
-                  <span>Description</span>
-                </div>
-                <hr>
-              </div>
-              <div class="row">
-                <div class="col-md-4 col-sm-4 ">
-                  <span class="field">date</span> <br> string <br> (formData)
-                </div>
-                <div class="col-md-8 col-sm-8">
-                  <input type="text" name="data" placeholder="date">
-                </div>
-              </div>
-              <br>
-              <div class="row">
-                <div class="col-md-4 col-sm-4 ">
-                  <span class="field">seconds</span> <br> integer <br> (query)
-                </div>
-                <div class="col-md-8 col-sm-8">
-                  <input type="text" name="seconds" placeholder="seconds">
-                </div>
-              </div>
-              <br>
-              <div class="row executeBtn">
-                <button class="btn btn-primary btn-block">Execute</button>
-              </div>
-            </div>
-            <div class="row responseHead">
-              <div class="col-md-4 col-sm-4 params">
-                Responses
-              </div>
-              <div class="col-md-8 col-sm-8">
-                  <select class="form-control">
-                    <option>application/json</option>
-                    <option>text</option>
-                  </select>
-              </div>
-            </div>
-            <div class="schemaBody">
-              <div class="row responseBody">
-                <div class="col-md-4 col-sm-4 ">
-                  <span>Code</span>
-                </div>
-                <div class="col-md-8 col-sm-8">
-                  <span>Description</span>
-                </div>
-                <hr>
-              </div>
-              <div class="row">
-                <div class="col-md-4 col-sm-4 ">
-                  200
-                </div>
-                <div class="col-md-8 col-sm-8">
-                  <div class="well well-sm">response of 200</div>
-                  <span>Example value | Model</span>
-                  <div class="well well-sm">"2017-09-25T12:11:08.107z"</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="tab">
-          <input class="input" id="tab-two" type="checkbox" name="tabs">
-          <label for="tab-two"><span class="get">GET</span><span class="path">/reduce</span></label>
-          <div class="tab-content">
-            <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Tenetur, architecto, explicabo perferendis nostrum, maxime impedit atque odit sunt pariatur illo obcaecati soluta molestias iure facere dolorum adipisci eum? Saepe, itaque.</p>
-          </div>
-        </div>
-        <div class="tab">
-          <input class="input" id="tab-three" type="checkbox" name="tabs">
-          <label for="tab-three"><span class="post">POST</span><span class="path">/testrawjson</span></label>
-          <div class="tab-content">
-            <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Tenetur, architecto, explicabo perferendis nostrum, maxime impedit atque odit sunt pariatur illo obcaecati soluta molestias iure facere dolorum adipisci eum? Saepe, itaque.</p>
-          </div>
-        </div>
-         <div class="tab">
-          <input class="input" id="tab-four" type="checkbox" name="tabs">
-          <label for="tab-four"><span class="put">PUT</span><span class="path">/sayhi/{name}/v2</span></label>
-          <div class="tab-content">
-            <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Tenetur, architecto, explicabo perferendis nostrum, maxime impedit atque odit sunt pariatur illo obcaecati soluta molestias iure facere dolorum adipisci eum? Saepe, itaque.</p>
-          </div>
-        </div>
-        <div class="tab">
-          <input class="input" id="tab-five" type="checkbox" name="tabs">
-          <label for="tab-five"><span class="delete">DELETE</span><span class="path">/delete/{name}</span></label>
-          <div class="tab-content">
-            <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Tenetur, architecto, explicabo perferendis nostrum, maxime impedit atque odit sunt pariatur illo obcaecati soluta molestias iure facere dolorum adipisci eum? Saepe, itaque.</p>
-          </div>
-        </div>
+    <md-content>
+      <div ng-if="testSchema" class="swaggerDiv" swagger-ui input-type="yaml" input="testSchema" 
+      api-explorer="true" try-it="true"></div>
+      <div ng-if="!testSchema">
+        <h2 class="text-center">No Schema Exists</h2>
       </div>
-    </md-dialog-content>
-
+    </md-content>
     <md-dialog-actions layout="row">
       <span flex></span>
       <md-button ng-click="cancel()">

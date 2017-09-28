@@ -18,6 +18,8 @@ angular.module('serviceCenter.sc', [])
 
 			$scope.appList = 'fetching';
 			$scope.serviceList = 'serviceList';
+			$scope.rowsPerPage = [5, 10, 15];
+			
 			$scope.tableHeaders = [
 				{
 					'key': 'name'
@@ -36,9 +38,12 @@ angular.module('serviceCenter.sc', [])
 				},
 				{
 					'key': 'instances'
+				},
+				{
+					'key': 'operation'
 				}
 			];
-
+			
 			$scope.refreshAppList = function() {
 				angular.element(document.querySelector('.fa-refresh')).addClass('fa-spin');
 				$scope.getAllServices();
@@ -63,6 +68,7 @@ angular.module('serviceCenter.sc', [])
 								version: service.version,
 								createdAt: commonService.timeFormat(service.timestamp),
 								instances: 0,
+								operation: '',
 								serviceId: service.serviceId
 							};
 							httpService.apiRequest(instanceUrl, instanceMethod, null, headers, "nopopup").then(function(resp){

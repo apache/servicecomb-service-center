@@ -25,7 +25,6 @@ angular.module('serviceCenter')
                 dialogClose: '=dialogClose',
                 buttons: '=buttons',
                 enableSearch: '=search',
-                enablePagination: '=hasPagination',
                 appList:'=appList',
                 apiInfo:'=apiInfo'
             },
@@ -57,7 +56,6 @@ angular.module('serviceCenter')
                         debounce: 500
                     },
                 };
-
                 scope.showSearch = false;
                 scope.searchClose = function() {
                     scope.showSearch = false;
