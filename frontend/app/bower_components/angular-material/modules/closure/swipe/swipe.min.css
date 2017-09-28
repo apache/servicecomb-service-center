@@ -1,0 +1,6 @@
+/*!
+ * AngularJS Material Design
+ * https://github.com/angular/material
+ * @license MIT
+ * v1.1.4-master-87d1cb1
+ */[md-swipe-left],[md-swipe-right]{touch-action:pan-y}[md-swipe-down],[md-swipe-up]{touch-action:pan-x}

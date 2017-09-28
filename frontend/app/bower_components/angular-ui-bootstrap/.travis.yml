@@ -1,0 +1,19 @@
+language: node_js
+node_js:
+  - "5.9"
+env:
+  - CXX=g++-4.8
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-4.8
+
+before_install:
+  - export DISPLAY=:99.0
+  - sh -e /etc/init.d/xvfb start
+  - npm install --quiet -g karma
+
+script: grunt
+sudo: false
