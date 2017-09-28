@@ -24,8 +24,19 @@ limitations under the License.
 	 </div>
 	</div>
 
+	<div class="row dashboardTitle no-margin" id="pc">
+	 <div class="col-md-5 col-sm-5 left">
+	 	<span class="dashboardName"> {{ "providers" | translate }} </span>
+	 	<span class="dashboardName pull-right">{{ totalProviders }}</span>
+	 </div>
+	 <div class="col-md-5 col-sm-5 right">
+	 	<span class="dashboardName"> {{ "consumers" | translate }} </span>
+	 	<span class="dashboardName pull-right">{{ totalConsumers }}</span>
+	 </div>
+	</div>
+
 	<div class="row no-margin dashboardChart">
-		<div class="col-md-6 col-sm-6 dashboardChartLeft">
+		<div class="col-md-12 col-sm-12 dashboardChartLeft">
 			<div class="dashboardInfo">
 				<ul>
 					<li><span class="glyphicon glyphicon-stop starting"></span>{{ "starting" | translate }}</li>
@@ -36,40 +47,6 @@ limitations under the License.
 			</div>
 			<canvas class="chart chart-doughnut" chart-data="servicesData" chart-colors="colors" chart-labels="labels"></canvas> 
 		</div>
-		<div class="col-md-6 col-sm-6 dashboardChartRight">
-			<div class="dashboardInfo">
-				<ul>
-					<li><span class="glyphicon glyphicon-stop starting"></span>{{ "starting" | translate }}</li>
-					<li><span class="glyphicon glyphicon-stop up"></span>{{ "up" | translate }}</li>
-					<li><span class="glyphicon glyphicon-stop down"></span>{{ "down" | translate }}</li>
-					<li><span class="glyphicon glyphicon-stop unavailable"></span>{{ "outofservice" | translate }}</li>
-				</ul>
-			</div>
-			<canvas class="chart chart-doughnut" chart-data="instancesData" chart-colors="colors" chart-labels="labels"></canvas>
-		</div>
 	</div>
 
-	<div class="row dashboardUpDown no-margin">
-	 <div class="col-md-5 col-sm-5 left">
-	 	<div class="col-md-2 col-sm-2 up">
-	 		<span>{{ "up" | translate }} </span>
-	 		<span class="pull-right">{{ runningServices.length }}</span>
-	 	</div>
-	 	<div class="col-md-2 col-sm-2 down">
-	 		<span>{{ "down" | translate }}</span>
-	 		<span class="pull-right">{{ stoppedServices.length }}</span>
-	 	</div>
-	 </div>
-	 <div class="col-md-5 col-sm-5 right">
-	 	<div class="col-md-2 col-sm-2 up">
-	 		<span>{{ "up" | translate }} </span>
-	 		<span class="pull-right">{{ runningInstances.length }}</span>
-	 	</div>
-	 	<div class="col-md-2 col-sm-2 down">
-	 		<span>{{ "down" | translate }}</span>
-	 		<span class="pull-right"">{{ stoppedInstances.length }}</span>
-	 	</div>
-	 </div>
-	</div>
-	
 </div>
