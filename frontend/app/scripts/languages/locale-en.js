@@ -56,6 +56,12 @@ angular.module('serviceCenter')
 	"noSchemaFound": "No Schema Found",
 	"schemaTest": "Schema Test",
 	"schemes": "Schemes",
+	"providers": "Providers",
+	"consumers": "Consumers",
+	"operation": "Operation",
+	"page": "Page",
+	"rowsPerPage": "Rows Per Page",
+	"of": "Of",
 	"copyRight" : "Developed by Huawei Technologies India Pvt. Ltd (Get confirmation and change accordigly!)"
 
 });

@@ -44,18 +44,18 @@ limitations under the License.
 <div class="sidebar-wrapper">
     <ul class="sidebar-nav">
         <li class="brand">
-            {{ "serviceCenter" | translate }}
+            <i class="fa fa-snowflake-o" aria-hidden="true"></i> {{ "serviceCenter" | translate }}
         </li>
         <li>
-            <a ui-sref="sc.dashboard" ui-sref-active="active">{{ "dashboard" | translate }}</a>
+            <a ui-sref="sc.dashboard" ui-sref-active="active"><i class="fa fa-desktop" aria-hidden="true"></i>    {{ "dashboard" | translate }}</a>
         </li>
         <li>
             <a ui-sref="sc.allServices"  ui-sref-active="active" ng-class="[{active: $state.current.name === 'sc.info.instance'},
             {activeProvider: $state.current.name === 'sc.info.provider'}, {activeConsumer: $state.current.name === 'sc.info.consumer'},
-            {schema: $state.current.name === 'sc.info.schema'}]">{{ "services" | translate }}</a>
+            {schemaTab: $state.current.name === 'sc.info.schema'}]"><i class="fa fa-bars" aria-hidden="true"></i>    {{ "services" | translate }}</a>
         </li>
     </ul>
 </div>
-<div class="content">
+<div class="bodyContent">
   <div ui-view="base"></div>
 </div>
