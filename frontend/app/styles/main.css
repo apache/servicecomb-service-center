@@ -3774,7 +3774,7 @@ tbody.collapse.in {
 
 .navbar-fixed-top {
   top: 0;
-  border-width: 0 0 1px; }
+  border-width: 0 0 0px !important; }
 
 .navbar-fixed-bottom {
   bottom: 0;
@@ -4012,7 +4012,7 @@ tbody.collapse.in {
       color: #ccc; }
 
 .navbar-inverse {
-  background-color: #222;
+  background-color: rgb(59,120,231) !important;
   border-color: #090909; }
   .navbar-inverse .navbar-brand {
     color: #9d9d9d; }
@@ -4022,12 +4022,12 @@ tbody.collapse.in {
   .navbar-inverse .navbar-text {
     color: #9d9d9d; }
   .navbar-inverse .navbar-nav > li > a {
-    color: #9d9d9d; }
-    .navbar-inverse .navbar-nav > li > a:hover, .navbar-inverse .navbar-nav > li > a:focus {
-      color: #fff;
       background-color: transparent; }
   .navbar-inverse .navbar-nav > .active > a, .navbar-inverse .navbar-nav > .active > a:hover, .navbar-inverse .navbar-nav > .active > a:focus {
     color: #fff;
+    color: #9d9d9d; }
+    .navbar-inverse .navbar-nav > li > a:hover, .navbar-inverse .navbar-nav > li > a:focus {
+      color: #fff;
     background-color: #090909; }
   .navbar-inverse .navbar-nav > .disabled > a, .navbar-inverse .navbar-nav > .disabled > a:hover, .navbar-inverse .navbar-nav > .disabled > a:focus {
     color: #444;
@@ -5864,7 +5864,8 @@ body {
     width: 230px;
     position: fixed;
     background: #f5f5f0;
-    margin-top: -20px; }
+    margin-top: -20px;
+    border-right: 1px solid grey;}
     body .sidebar-wrapper .sidebar-nav {
       position: fixed;
       top: 50px;
@@ -5882,19 +5883,21 @@ body {
           font-size: 14px; }
           body .sidebar-wrapper .sidebar-nav li a:hover {
             text-decoration: none;
-            color: black;
-            background: #f5f5f0; }
+            color: #009ee0 !important;
+            background: #f5f5f0;
+            width:229px;}
       body .sidebar-wrapper .sidebar-nav .active, body .sidebar-wrapper .sidebar-nav .activeProvider, body .sidebar-wrapper .sidebar-nav .activeConsumer, body .sidebar-wrapper .sidebar-nav .schemaTab {
         text-decoration: none;
-        background: #fff;
         color: #009ee0 !important;
-        border-left: 3px solid #009ee0; }
+        border-left: 3px solid #009ee0;
+        width:229px;}
     body .sidebar-wrapper .brand {
-      font-size: 18px;
-      margin: 10px 0px 10px 0px; }
+      font-size: 22px;
+      margin: 10px 0px 30px 0px;
+      border-bottom: 1px solid grey;}
   body .bodyContent {
     margin-left: 250px;
-    padding-top: 70px; }
+    padding-top: 70px;}
   body .fa-close {
     color: white; }
   body .table-header {
