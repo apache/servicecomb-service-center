@@ -21,97 +21,59 @@ angular.module('serviceCenter.dashboard', [])
 		$scope.startingServices = [];
 		$scope.outofserviceServices =[];
 
-		$scope.instancesData = [];
-		$scope.runningInstances = [];
-		$scope.stoppedInstances = [];	
-		$scope.startingInstances = [];
-		$scope.outofserviceInstances =[];
-
 		$scope.totalServices = 0;
 		$scope.totalInstances = 0;	
+		$scope.totalProviders = 0;
+		$scope.totalConsumers = 0;
 
 		$scope.labels = ["UP", "DOWN", "STRATING", "OUT OF SERVICE"];
 		$scope.colors = ["#5ecc49","#d50000", "#e6e600", "#bcc2c9"];
 
-		var instancePromises = [];
-
-
-		$scope.getServices = function(){
+		$scope.getAllServices = function(){
 			$(".loader").show();
-	        var url = apiConstant.api.microservice.url;
-	        var method = apiConstant.api.microservice.method;
+	        var url = apiConstant.api.allServices.url;
+	        var method = apiConstant.api.allServices.method;
 	        httpService.apiRequest(url, method, null, null).then(function(response){
 	            $(".loader").hide();
-	            if(response && response.data && response.data.services){
-					$scope.totalServices = response.data.services.length;
-	            	$scope.getInstances(response.data.services);
-	            	response.data.services.forEach(function(service){
-						if(service.status.toLowerCase() === "up"){
-							$scope.runningServices.push(service);
+				if(response && response.data && response.data.allServicesDetail) {
+					$scope.totalServices = response.data.allServicesDetail.length;
+					response.data.allServicesDetail.forEach(function(services){
+						if(services.microSerivce.status.toLowerCase() == "starting") {
+							$scope.startingServices.push(services);
 						}
-						if(service.status.toLowerCase() === "down"){
-							$scope.stoppedServices.push(service);
+						if(services.microSerivce.status.toLowerCase() == "up"){		
+							console.log("hi")
+							$scope.runningServices.push(services);
 						}
-						if(service.status.toLowerCase() === "starting"){
-							$scope.startingServices.push(service);
+						if(services.microSerivce.status.toLowerCase() == "down"){
+							$scope.stoppedServices.push(services);
 						}
-						if(service.status.toLowerCase() === "outofservice"){
-							$scope.outofserviceServices.push(service);
+						if(services.microSerivce.status.toLowerCase() == "outofservice"){
+							$scope.outofserviceServices.push(services);
 						}
-		   			});
 
+						if(services.instances){
+							$scope.totalInstances = $scope.totalInstances + services.instances.length;
+						}
+
+						if(services.providers){
+							$scope.totalProviders = $scope.totalInstances + services.providers.length;
+						}
+
+						if(services.consumers){
+							$scope.totalConsumers = $scope.totalInstances + services.consumers.length;
+						}
+					});
 					$scope.servicesData[0] = $scope.runningServices.length;
 					$scope.servicesData[1] = $scope.stoppedServices.length;
 					$scope.servicesData[2] = $scope.startingServices.length;
 					$scope.servicesData[3] = $scope.outofserviceServices.length;
-	            }
+				}
 	        },function(error){
 	            $(".loader").hide();
 	        });
 		};
-
-		$scope.getServices();
-
-		$scope.getInstances = function(servicesList){
-            for (var i = 0; i < servicesList.length; i++) {
-                var api = apiConstant.api.instances.url;
-                var url = api.replace("{{serviceId}}", servicesList[i].serviceId);
-                var method = apiConstant.api.instances.method;
-                var headers = {"X-ConsumerId": servicesList[i].serviceId};
-
-                instancePromises.push(httpService.apiRequest(url, method, null, headers, "nopopup"));
-            }
-
-            $q.all(instancePromises).then(function(response){
-	            if(response && response[0].data && response[0].data.instances){
-					$scope.totalInstances = response[0].data.instances.length;
-					response[0].data.instances.forEach(function(instance){
-						if(instance.status.toLowerCase() === "up"){
-							$scope.runningInstances.push(instance);
-						}
-						if(instance.status.toLowerCase() === "down"){
-							$scope.stoppedInstances.push(instance);
-						}
-						if(instance.status.toLowerCase() === "starting"){
-							$scope.startingInstances.push(instance);
-						}
-						if(instance.status.toLowerCase() === "outofservice"){
-							$scope.outofserviceInstances.push(instance);
-						}
-					});
-					$scope.instancesData[0] = $scope.runningInstances.length;
-					$scope.instancesData[1] = $scope.stoppedInstances.length;
-					$scope.instancesData[2] = $scope.startingInstances.length;
-					$scope.instancesData[3] = $scope.outofserviceInstances.length;
-	            }
-	        },function(error){
-	        	$(".loader").hide();
-	        });
-
-		};
-
 	
-
-	  
+		$scope.getAllServices();  
 				
 }]);

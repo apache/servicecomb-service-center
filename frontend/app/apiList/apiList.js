@@ -38,6 +38,10 @@ angular.module('serviceCenter')
 			schema: {
 				url: 'registry/v3/microservices/{{serviceId}}/schemas/{{schemaId}}',
 				method: 'GET'
+			},
+			allServices: {
+				url: 'registry/v3/govern/services?options=all',
+				method: 'GET'
 			}
 		}
 	});

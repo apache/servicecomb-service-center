@@ -53,9 +53,9 @@ angular.module('serviceCenter.sc')
 			}
 
 			$q.all(promises).then(function(response){
-				$scope.instances = response[0].data.instances;
-				$scope.providers = response[1].data.providers;
-				$scope.consumers = response[2].data.consumers;
+				$scope.instances = response[0].data.instances || [];
+				$scope.providers = response[1].data.providers || [];
+				$scope.consumers = response[2].data.consumers || [];
 			},function(error){
 				$scope.instances = [];
 				$scope.providers = [];
