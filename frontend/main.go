@@ -22,7 +22,7 @@ import (
 
 func main() {
 	// command line flags
-	port := flag.Int("port", 80, "port to serve on")
+	port := flag.Int("port", 30101, "port to serve on")
 	dir := flag.String("directory", "app/", "directory of web files")
 	flag.Parse()
 
