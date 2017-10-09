@@ -179,14 +179,6 @@
 			"notests": true
 		},
 		{
-			"importpath": "github.com/go-sql-driver/mysql",
-			"repository": "https://github.com/go-sql-driver/mysql",
-			"vcs": "git",
-			"revision": "8fefef06da7707b5a3cda42195a6b409c9c9ab5c",
-			"branch": "HEAD",
-			"notests": true
-		},
-		{
 			"importpath": "github.com/gogo/protobuf",
 			"repository": "https://github.com/gogo/protobuf",
 			"vcs": "git",
