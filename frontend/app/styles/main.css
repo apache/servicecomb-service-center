@@ -5958,13 +5958,11 @@ body {
 .dashboardRefresh:hover {
   cursor: pointer;
 }
-.servicesChart {
-  margin-top: 5%;
-}
+
 .dashboardCount {
     width: 245px !important;
     height: 65px;
-    margin: 0 0 3% 8%;
+    margin: 3% 2% 2% 0%;
     border-radius: 6px;
     background-color: whitesmoke;
     text-align: center;
