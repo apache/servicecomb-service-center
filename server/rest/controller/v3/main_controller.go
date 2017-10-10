@@ -20,12 +20,13 @@ import (
 	"github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/server/rest/controller"
 	"github.com/ServiceComb/service-center/version"
+	"github.com/astaxie/beego"
 	"net/http"
 )
 
 type Result struct {
-	Info   string `json:"info" description:"return info"`
-	Status int    `json:"status" description:"http return code"`
+	version.VersionSet
+	RunMode string `json:"runMode"`
 }
 
 type MainService struct {
@@ -53,7 +54,11 @@ func (this *MainService) ClusterHealth(w http.ResponseWriter, r *http.Request) {
 }
 
 func (this *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
-	versionJSON, _ := json.Marshal(version.Ver())
+	result := Result{
+		version.Ver(),
+		beego.AppConfig.String("runmode"),
+	}
+	resultJSON, _ := json.Marshal(result)
 	w.Header().Set("Content-Type", "application/json;charset=utf-8")
-	w.Write(versionJSON)
+	w.Write(resultJSON)
 }
