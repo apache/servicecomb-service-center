@@ -11,7 +11,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<nav class="navbar navbar-inverse navbar-fixed-top">
+<nav class="navbar navbar-fixed-top">
     <div class="navbar-header">
       <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
         <span class="sr-only">Toggle navigation</span>
@@ -24,19 +24,20 @@ limitations under the License.
 
     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
       <ul class="nav navbar-nav navbar-right">
+        <li><span class="tenant">{{ "tenant" | translate }}</span></li>
         <li>
-        <form class="navbar-form navbar-left" autocomplete="off">
-          <div class="form-group">
-            <label class="label">{{ "tenant" | translate }}</label>
-            <input type="text" id="tenant" class="form-control tenant" ng-model="tenant">
-          </div>
-        </form>
-        </li>
-        <li>
-          <select class="form-control language" ng-change="selectLang(language)" ng-model="language">
-            <option value="en">{{ "english" | translate }}</option>
-            <option value="cz">{{ "chinese" | translate }}</option>
-          </select>
+        <div layout-gt-sm="row" class="navbar-right-header">
+          <md-input-container class="md-block" flex-gt-sm>
+            <input  id="tenant"  ng-model="tenant" aria-label="tenant" autocomplete="off">
+          </md-input-container>
+
+          <md-input-container class="md-block" flex-gt-sm>
+            <md-select ng-model="language" aria-label="language" ng-change="selectLang(language)">
+              <md-option id="lang-option" value="en">{{ "english" | translate }}</md-option>
+              <md-option value="cz">{{ "chinese" | translate }}</md-option>
+            </md-select>
+          </md-input-container>
+        </div>
         </li>
       </ul>
     </div>
@@ -44,7 +45,8 @@ limitations under the License.
 <div class="sidebar-wrapper">
     <ul class="sidebar-nav">
         <li class="brand">
-            <i class="fa fa-snowflake-o" aria-hidden="true"></i> {{ "serviceCenter" | translate }}
+            <i class="fa fa-snowflake-o" aria-hidden="true"></i>
+            <span class="brand"> {{ "serviceCenter" | translate }}</span>
         </li>
         <li>
             <a ui-sref="sc.dashboard" ui-sref-active="active"><i class="fa fa-desktop" aria-hidden="true"></i>    {{ "dashboard" | translate }}</a>
@@ -58,6 +60,9 @@ limitations under the License.
 </div>
 <div class="bodyContent">
   <div ui-view="base">
-
   </div>
+  <footer class="mainFooter">
+    <h5 class="text-center">&copy; 2017 {{ "htipl" | translate }}</h5>
+  </footer>
 </div>
+

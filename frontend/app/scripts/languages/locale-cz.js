@@ -62,6 +62,11 @@ angular.module('serviceCenter')
 	"page": "页",
 	"rowsPerPage": "每页行数",
 	"of": "的",
+	"serviceStatistics": "服务统计",
+	"updated": "更新",
+	"htipl": "华为 技术 私人的 有限",
+	"language": "语言",
+	"testSchema": "测试模式",
 	"copyRight" : "由华为技术股份有限公司有限公司（获得确认和变更）！"
 
 });
