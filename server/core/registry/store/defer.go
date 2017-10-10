@@ -124,7 +124,6 @@ func (iedh *InstanceEventDeferHandler) check(stopCh <-chan struct{}) {
 			return
 		case <-time.After(time.Second):
 			iedh.mux.Lock()
-			start := len(iedh.ttls)
 			for key, ttl := range iedh.ttls {
 				ttl--
 				if ttl > 0 {
@@ -140,7 +139,7 @@ func (iedh *InstanceEventDeferHandler) check(stopCh <-chan struct{}) {
 
 				iedh.deferCh <- evt
 			}
-			if start > 0 && len(iedh.ttls) == 0 {
+			if iedh.enabled && len(iedh.ttls) == 0 {
 				iedh.enabled = false
 				util.Logger().Warnf(nil, "self preservation is stopped")
 			}
