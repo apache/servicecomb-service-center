@@ -49,7 +49,11 @@ angular.module('serviceCenter.sc', [])
 				$scope.getAllServices();
 			};
 
-			$scope.getAllServices = function(filter) {
+			$scope.getAllServices = function() {
+				var filter = '';
+				if($stateParams.status) {
+					filter = $stateParams.status;
+				}
 				var url = apiConstant.api.microservice.url;
 				var method = apiConstant.api.microservice.method;
 
@@ -119,13 +123,7 @@ angular.module('serviceCenter.sc', [])
 					$scope.appList = 'failed';
 				})
 			};
-			
-			if($stateParams.status) {
-				$scope.getAllServices($stateParams.status);
-			}
-			else {
-				$scope.getAllServices();
-			}
-			
-
+		
+			$scope.getAllServices();
+		
 	}]);

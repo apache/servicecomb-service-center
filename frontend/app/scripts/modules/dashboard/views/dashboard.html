@@ -21,7 +21,7 @@ limitations under the License.
     <div class="col-sm-12 col-md-12 col-lg-3" ng-repeat="info in dashboardInfo">
         <div class="mainCard">
             <div class="col-sm-3 col-md-3 col-lg-3 mainCardIcon {{ info.title }}">
-                <i class="fa {{ info.iconName }} icon-big"></i>
+                <i class="fa {{ info.iconName }} fa-3x icon-color"></i>
             </div>
             <div class="col-sm-9 col-md-9">
                 <div class="row">
@@ -52,17 +52,17 @@ limitations under the License.
                         <i class="fa fa-circle legendUnavailable"></i> {{ "outofservice" | translate }}
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-sm-6 col-md-6">
                     <div class="row">
-                        <div class="col-md-12 dashboardCount" ng-repeat="service in servicesStatusData">
+                        <div class="col-sm-12 col-md-12 dashboardCount" ng-repeat="service in servicesStatusData">
                             <div class="row" ng-click="goToServices(service.title)">
-                                <div class="col-xs-4 col-md-3 statusIcon {{ service.title }}">
-                                    <i class="fa {{ service.iconName }} icon-big"></i>
+                                <div class="col-xs-4 col-sm-6 col-md-3 statusIcon {{ service.title }}">
+                                    <i class="fa {{ service.iconName }} fa-3x icon-color"></i>
                                 </div>
-                                <div class="col-xs-4 col-md-5 statusTitle">
+                                <div class="col-xs-4 col-sm-4 col-md-5 statusTitle">
                                     <span>{{ service.title | translate }}</span>
                                 </div>
-                                <div class="col-xs-4 col-md-4 statusCount">
+                                <div class="col-xs-4 col-sm-2 col-md-4 statusCount">
                                     <span class="pull-right">{{ service.count }}</span>
                                 </div>
                             </div>

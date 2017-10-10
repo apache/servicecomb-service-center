@@ -5772,6 +5772,7 @@ body {
     width: 230px;
     position: fixed;
     background-color: #19A093;
+    font-family: sans-serif;
     }
     body .sidebar-wrapper .sidebar-nav {
       position: fixed;
@@ -5825,7 +5826,8 @@ body {
     font-size: 14px;
     color: #000; }
   body .serviceInfo {
-    margin: 0px; }
+    margin: 0px; 
+    font-family: sans-serif;}
     body .serviceInfo .details {
       height: 80px;
       width: 80px;
@@ -5897,9 +5899,7 @@ body {
 .card .content {
     padding: 15px 15px 10px 15px;
  }
-.icon-big {
-    font-size: 2.6em;
-    min-height: 24px; 
+.icon-color {    
     color: white;
 }
 .card .icon-small {
@@ -5932,14 +5932,16 @@ body {
  }
 .card .header {
   padding: 20px 20px 0;
+  font-family: sans-serif;
  }
 .card .title {
   margin: 0;
-  color: #252422;
-  font-weight: 300;
+  color: grey;
+  font-weight: 600;
  }
 .chart-legend {
   text-align: center;
+  font-family: sans-serif;
 }
 .chartAlign {
   padding: 0px 15px;
@@ -5960,25 +5962,25 @@ body {
   margin-top: 5%;
 }
 .dashboardCount {
-    width: 50% !important;
+    width: 245px !important;
     height: 65px;
-    margin: 0 0 3% 20%;
+    margin: 0 0 3% 8%;
     border-radius: 6px;
-    border: 1px solid darkgrey;
     background-color: whitesmoke;
     text-align: center;
     font-weight: bold;
 }
 .dashboardCount .statusIcon {
   height: 65px;
-}
-.dashboardCount .statusIcon, .statusTitle, .statusCount {
-    padding: 15px;
+  padding: 12px;
 }
 .statusTitle, .statusCount {
   background-color: #fff;
   height: 63px;
   border-radius: 0px 5px 5px 0px;
+  font-family: sans-serif;
+  padding: 20px;
+  font-weight: normal;
 }
 .mainFooter {
     position: fixed;
@@ -6011,6 +6013,12 @@ md-card {
     color: white !important;
     border-color: whitesmoke !important;
 }
+body .pagination-class .label {
+  margin-right: -35px;
+}
+md-content {
+  font-family: sans-serif;
+}
 md-select-menu md-content {
    position: relative;
    z-index: 1;
@@ -6040,7 +6048,7 @@ md-table-pagination .md-select-icon {
 .mainCard .mainCardIcon {
   background-color: #3c8dbc;
   height: 100%;
-  padding: 15px;
+  padding: 12px 0px 12px 10px;
 }
 .mainCardTitle {
   font-size: 20px;
@@ -6088,5 +6096,8 @@ md-table-pagination .md-select-icon {
 }
 .updatedTime {
   padding-right: 10px;
+}
+table {
+  font-family: sans-serif;
 }
 /*# sourceMappingURL=main.css.map */
