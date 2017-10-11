@@ -13,8 +13,8 @@
 //limitations under the License.
 'use strict';
 angular.module('serviceCenter.sc', [])
-	.controller('servicesListController', ['$scope', 'httpService', 'apiConstant', 'commonService',
-		function($scope, httpService, apiConstant, commonService){
+	.controller('servicesListController', ['$scope', 'httpService', 'apiConstant', 'commonService', '$stateParams',
+		function($scope, httpService, apiConstant, commonService, $stateParams){
 
 			$scope.appList = 'fetching';
 			$scope.serviceList = 'serviceList';
@@ -50,6 +50,10 @@ angular.module('serviceCenter.sc', [])
 			};
 
 			$scope.getAllServices = function() {
+				var filter = '';
+				if($stateParams.status) {
+					filter = $stateParams.status;
+				}
 				var url = apiConstant.api.microservice.url;
 				var method = apiConstant.api.microservice.method;
 
@@ -61,23 +65,46 @@ angular.module('serviceCenter.sc', [])
 							var instanceUrl = instanceApi.replace("{{serviceId}}", service.serviceId);
 							var instanceMethod = apiConstant.api.instances.method;
 							var headers = {"X-ConsumerId": service.serviceId};
-							var servicesList = {
-								serviceName: service.serviceName.charAt(0).toUpperCase()+service.serviceName.slice(1).toLowerCase(),
-								status: service.status.toLowerCase(),
-								appId: service.appId.toLowerCase(),
-								version: service.version,
-								createdAt: commonService.timeFormat(service.timestamp),
-								instances: 0,
-								operation: '',
-								serviceId: service.serviceId
-							};
-							httpService.apiRequest(instanceUrl, instanceMethod, null, headers, "nopopup").then(function(resp){
-								if(resp && resp.data && resp.data.instances){
-								   servicesList.instances = resp.data.instances.length;
-								}
-							});
+							if(filter && service.status.toLowerCase() === filter) {
+								var servicesList = {
+									serviceName: service.serviceName.charAt(0).toUpperCase()+service.serviceName.slice(1).toLowerCase(),
+									status: service.status.toLowerCase(),
+									appId: service.appId.toLowerCase(),
+									version: service.version,
+									createdAt: commonService.timeFormat(service.timestamp),
+									instances: 0,
+									operation: '',
+									serviceId: service.serviceId
+								};
+								httpService.apiRequest(instanceUrl, instanceMethod, null, headers, "nopopup").then(function(resp){
+									if(resp && resp.data && resp.data.instances){
+									   servicesList.instances = resp.data.instances.length;
+									}
+								});
 							
-							$scope.services.push(servicesList);
+								$scope.services.push(servicesList);
+							}
+							if(!filter){
+								var servicesList = {
+									serviceName: service.serviceName.charAt(0).toUpperCase()+service.serviceName.slice(1).toLowerCase(),
+									status: service.status.toLowerCase(),
+									appId: service.appId.toLowerCase(),
+									version: service.version,
+									createdAt: commonService.timeFormat(service.timestamp),
+									instances: 0,
+									operation: '',
+									serviceId: service.serviceId
+								};
+								httpService.apiRequest(instanceUrl, instanceMethod, null, headers, "nopopup").then(function(resp){
+									if(resp && resp.data && resp.data.instances){
+									   servicesList.instances = resp.data.instances.length;
+									}
+								});
+							
+								$scope.services.push(servicesList);
+							}
+							
+							
 						});
 
 						if($scope.services.length <= 0){
@@ -96,7 +123,7 @@ angular.module('serviceCenter.sc', [])
 					$scope.appList = 'failed';
 				})
 			};
-
+		
 			$scope.getAllServices();
-
+		
 	}]);

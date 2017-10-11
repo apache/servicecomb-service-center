@@ -62,6 +62,11 @@ angular.module('serviceCenter')
 	"page": "Page",
 	"rowsPerPage": "Rows Per Page",
 	"of": "Of",
+	"serviceStatistics": "Service Statistics",
+	"updated": "Updated",
+	"htipl": "Huawei Technologies Pvt Ltd",
+	"language": "Language",
+	"testSchema": "Test Schema",
 	"copyRight" : "Developed by Huawei Technologies India Pvt. Ltd (Get confirmation and change accordigly!)"
 
 });

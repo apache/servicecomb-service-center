@@ -32,7 +32,7 @@ angular.module('serviceCenter.router', [])
             }
         })
         .state('sc.allServices', {
-            url: '/services',
+            url: '/services/:status',
             views:{
                 'base' :{
                     templateUrl: 'scripts/modules/serviceCenter/views/servicesList.html',
