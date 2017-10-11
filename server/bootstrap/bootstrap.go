@@ -13,22 +13,21 @@
 //limitations under the License.
 package bootstrap
 
-import _ "github.com/ServiceComb/service-center/pkg/security"
-import _ "github.com/ServiceComb/service-center/pkg/common/logrotate"
-import _ "github.com/ServiceComb/service-center/pkg/security/plugins/plain"
-import _ "github.com/ServiceComb/service-center/server/core/registry/embededetcd"
+import _ "github.com/ServiceComb/service-center/server/core" // initialize
 import _ "github.com/ServiceComb/service-center/server/core/registry/etcd"
-import _ "github.com/ServiceComb/service-center/server/plugins/infra/quota/buildin"
-import _ "github.com/ServiceComb/service-center/server/plugins/infra/quota/unlimit"
+import _ "github.com/ServiceComb/service-center/server/core/registry/embededetcd"
+import _ "github.com/ServiceComb/service-center/server/plugin/infra/quota/buildin"
+import _ "github.com/ServiceComb/service-center/server/plugin/infra/quota/unlimit"
+import _ "github.com/ServiceComb/service-center/server/plugin/infra/security/plain"
 
 import (
+	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/interceptor"
 	"github.com/ServiceComb/service-center/server/interceptor/access"
 	"github.com/ServiceComb/service-center/server/interceptor/cors"
 	"github.com/ServiceComb/service-center/server/interceptor/domain"
 	"github.com/ServiceComb/service-center/server/interceptor/maxbody"
 	"github.com/ServiceComb/service-center/server/interceptor/ratelimiter"
-	"github.com/ServiceComb/service-center/util"
 )
 
 func init() {

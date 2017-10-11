@@ -15,12 +15,12 @@ package util
 
 import (
 	"encoding/json"
-	"github.com/ServiceComb/service-center/pkg/common/cache"
+	"github.com/ServiceComb/service-center/pkg/cache"
+	"github.com/ServiceComb/service-center/pkg/util"
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
-	"github.com/ServiceComb/service-center/util"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"time"

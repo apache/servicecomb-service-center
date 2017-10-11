@@ -15,7 +15,7 @@ package ratelimiter
 
 import (
 	"errors"
-	"github.com/ServiceComb/service-center/util"
+	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/astaxie/beego"
 	"github.com/didip/tollbooth"
 	"github.com/didip/tollbooth/config"

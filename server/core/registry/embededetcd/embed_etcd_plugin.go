@@ -17,10 +17,10 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/ServiceComb/service-center/pkg/common"
+	"github.com/ServiceComb/service-center/pkg/rest"
+	"github.com/ServiceComb/service-center/pkg/tlsutil"
+	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/core/registry"
-	"github.com/ServiceComb/service-center/util"
-	"github.com/ServiceComb/service-center/util/rest"
 	"github.com/astaxie/beego"
 	"github.com/coreos/etcd/embed"
 	"github.com/coreos/etcd/etcdserver/etcdserverpb"
@@ -453,9 +453,9 @@ func getEmbedInstance(cfg *registry.Config) registry.Registry {
 		ready: make(chan int),
 	}
 
-	if common.GetServerSSLConfig().SSLEnabled {
+	if tlsutil.GetServerSSLConfig().SSLEnabled {
 		var err error
-		embedTLSConfig, err = rest.GetServerTLSConfig(common.GetServerSSLConfig().VerifyClient)
+		embedTLSConfig, err = rest.GetServerTLSConfig(tlsutil.GetServerSSLConfig().VerifyClient)
 		if err != nil {
 			util.Logger().Error("get service center tls config failed", err)
 			inst.err <- err

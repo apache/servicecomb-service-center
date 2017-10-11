@@ -16,10 +16,10 @@ package service_test
 import (
 	"fmt"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/ServiceComb/service-center/server/plugin/infra/quota/buildin"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"strconv"
-	constKey "github.com/ServiceComb/service-center/server/common"
 )
 
 var _ = Describe("ServiceController", func() {
@@ -146,8 +146,8 @@ var _ = Describe("ServiceController", func() {
 				})
 				Expect(err).To(BeNil())
 				serviceIdForRule := rspServiceForRule.ServiceId
-				size := constKey.RULE_NUM_MAX_FOR_ONESERVICE + 1
-				for i := 0; i < size; i ++ {
+				size := buildin.RULE_NUM_MAX_FOR_ONESERVICE + 1
+				for i := 0; i < size; i++ {
 					resp, _ := serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
 						ServiceId: serviceIdForRule,
 						Rules: []*pb.AddOrUpdateServiceRule{
@@ -159,7 +159,7 @@ var _ = Describe("ServiceController", func() {
 							},
 						},
 					})
-					if i == size - 1 {
+					if i == size-1 {
 						Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
 						return
 					}

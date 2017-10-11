@@ -15,10 +15,9 @@ package core
 
 import (
 	"errors"
-	const_key "github.com/ServiceComb/service-center/server/common"
+	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/ServiceComb/service-center/pkg/validate"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/util"
-	"github.com/ServiceComb/service-center/util/validate"
 	"math"
 	"reflect"
 	"regexp"
@@ -47,6 +46,9 @@ var (
 	TagReqValidator               validate.Validator
 	FindInstanceReqValidator      validate.Validator
 	GetInstanceValidator          validate.Validator
+
+	SchemaIdRule *validate.ValidateRule
+	TagRule      *validate.ValidateRule
 )
 
 func init() {
@@ -83,11 +85,11 @@ func init() {
 
 	ServiceIdRule := &validate.ValidateRule{Min: 1, Length: 64, Regexp: serviceIdRegex}
 	InstanceStatusRule := &validate.ValidateRule{Regexp: instStatusRegex}
-	SchemaIdRule := &validate.ValidateRule{Length: const_key.SCHEMA_NUM_MAX_FOR_ONESERVICE, Regexp: schemaIdRegex}
+	SchemaIdRule = &validate.ValidateRule{Regexp: schemaIdRegex}
 	stageRule := &validate.ValidateRule{Regexp: stageRegex}
 	nameRule := &validate.ValidateRule{Min: 1, Max: 128, Regexp: nameRegex}
 	versionFuzzyRule := &validate.ValidateRule{Min: 1, Max: 128, Regexp: versionFuzzyRegex}
-	tagRule := &validate.ValidateRule{Regexp: tagRegex}
+	TagRule = &validate.ValidateRule{Regexp: tagRegex}
 
 	MicroServiceKeyValidator.AddRule("AppId", &validate.ValidateRule{Min: 1, Max: 160, Regexp: nameRegex})
 	MicroServiceKeyValidator.AddRule("ServiceName", nameRule)
@@ -127,7 +129,7 @@ func init() {
 	MSDependencyValidator.AddSub("Providers", &ProviderMsValidator)
 
 	TagReqValidator.AddRule("ServiceId", ServiceIdRule)
-	TagReqValidator.AddRule("Tags", tagRule)
+	TagReqValidator.AddRule("Tags", TagRule)
 
 	HealthCheckInfoValidator.AddRule("Mode", &validate.ValidateRule{Regexp: hbModeRegex})
 	HealthCheckInfoValidator.AddRule("Port", &validate.ValidateRule{Max: math.MaxInt16, Regexp: numberAllowEmptyRegex})
@@ -157,13 +159,13 @@ func init() {
 	FindInstanceReqValidator.AddRule("AppId", MicroServiceKeyValidator.GetRule("AppId"))
 	FindInstanceReqValidator.AddRule("ServiceName", &validate.ValidateRule{Min: 1, Max: 128, Regexp: serviceNameForFindRegex})
 	FindInstanceReqValidator.AddRule("VersionRule", versionFuzzyRule)
-	FindInstanceReqValidator.AddRule("Tags", tagRule)
+	FindInstanceReqValidator.AddRule("Tags", TagRule)
 	FindInstanceReqValidator.AddRule("Env", stageRule)
 
 	GetInstanceValidator.AddRule("ConsumerServiceId", ServiceIdRule)
 	GetInstanceValidator.AddRule("ProviderServiceId", ServiceIdRule)
 	GetInstanceValidator.AddRule("ProviderInstanceId", &validate.ValidateRule{Min: 1, Max: 64, Regexp: simpleNameAllowEmptyRegex})
-	GetInstanceValidator.AddRule("Tags", tagRule)
+	GetInstanceValidator.AddRule("Tags", TagRule)
 	GetInstanceValidator.AddRule("Env", stageRule)
 }
 

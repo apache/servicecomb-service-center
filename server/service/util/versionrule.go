@@ -15,7 +15,7 @@ package util
 
 import (
 	"bytes"
-	"github.com/ServiceComb/service-center/util"
+	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"sort"
 	"strconv"

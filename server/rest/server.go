@@ -15,9 +15,9 @@ package rest
 
 import (
 	"crypto/tls"
-	"github.com/ServiceComb/service-center/pkg/common"
-	"github.com/ServiceComb/service-center/util"
-	"github.com/ServiceComb/service-center/util/rest"
+	"github.com/ServiceComb/service-center/pkg/rest"
+	ssl "github.com/ServiceComb/service-center/pkg/tlsutil"
+	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/astaxie/beego"
 	"net/http"
 	"time"
@@ -34,8 +34,8 @@ func LoadConfig() (srvCfg *rest.ServerConfig, err error) {
 	writeTimeout, _ := time.ParseDuration(beego.AppConfig.DefaultString("write_timeout", "60s"))
 	maxHeaderBytes := beego.AppConfig.DefaultInt("max_header_bytes", 16384)
 	var tlsConfig *tls.Config
-	if common.GetServerSSLConfig().SSLEnabled {
-		verifyClient := common.GetServerSSLConfig().VerifyClient
+	if ssl.GetServerSSLConfig().SSLEnabled {
+		verifyClient := ssl.GetServerSSLConfig().VerifyClient
 		tlsConfig, err = rest.GetServerTLSConfig(verifyClient)
 		if err != nil {
 			return

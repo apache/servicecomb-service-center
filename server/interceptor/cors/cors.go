@@ -15,7 +15,7 @@ package cors
 
 import (
 	"errors"
-	"github.com/ServiceComb/service-center/util"
+	"github.com/ServiceComb/service-center/pkg/util"
 	"io"
 	"net/http"
 	"strconv"
