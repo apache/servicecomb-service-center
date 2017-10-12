@@ -15,14 +15,11 @@ package util
 
 import (
 	"fmt"
-	"os"
-
-	"bufio"
-	"bytes"
 	"github.com/ServiceComb/service-center/pkg/lager"
 	"github.com/ServiceComb/service-center/pkg/lager/core"
+	"os"
 	"path/filepath"
-	"runtime/debug"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -75,12 +72,12 @@ func Logger() core.Logger {
 	if len(loggerNames) == 0 {
 		return LOGGER
 	}
-	funcFullName := getCalleeFuncName(debug.Stack())
+	funcFullName := getCalleeFuncName()
 
 	for prefix, logFile := range loggerNames {
 		if strings.Index(prefix, "/") < 0 {
 			// function name
-			if prefix != funcFullName[strings.LastIndex(funcFullName, ".")+1:] {
+			if prefix != funcFullName[strings.LastIndex(funcFullName, " ")+1:] {
 				continue
 			}
 		} else {
@@ -113,22 +110,42 @@ func Logger() core.Logger {
 	return LOGGER
 }
 
-func getCalleeFuncName(stack []byte) string {
-	reader := bufio.NewReader(bytes.NewReader(stack))
-	/*
-		goroutine 1 [running]:
-		runtime/debug.Stack(0x0, 0x0, 0x0)
-			runtime/debug/stack.go:24 +0xbe
-		github.com/ServiceComb/service-center/util.Logger(0x0, 0x0)
-			github.com/ServiceComb/service-center/util/log.go:67 +0xf2
-	*/
-	for i := 0; i < 1+2*2; i++ {
-		reader.ReadLine()
+func getCalleeFuncName() string {
+	fullName := ""
+	for i := 2; i <= 4; i++ {
+		pc, file, _, ok := runtime.Caller(i)
+
+		if strings.Index(file, "log.go") > 0 {
+			continue
+		}
+
+		if ok {
+			idx := strings.LastIndex(file, "src")
+			switch {
+			case idx >= 0:
+				fullName = file[idx+4:]
+			default:
+				fullName = file
+			}
+
+			if f := runtime.FuncForPC(pc); f != nil {
+				fullName += " " + formatFuncName(f.Name())
+			}
+		}
+		break
 	}
-	line, _, _ := reader.ReadLine()
-	funcFullName := BytesToStringWithNoCopy(line)
-	funcFullName = funcFullName[:strings.LastIndex(funcFullName, "(")]
-	return funcFullName
+	return fullName
+}
+
+func formatFuncName(f string) string {
+	i := strings.LastIndex(f, "/")
+	j := strings.Index(f[i+1:], ".")
+	if j < 1 {
+		return "???"
+	}
+	_, fun := f[:i+j+1], f[i+j+2:]
+	i = strings.LastIndex(fun, ".")
+	return fun[i+1:]
 }
 
 func CustomLogger(pkgOrFunc, fileName string) {
