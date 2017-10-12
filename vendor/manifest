@@ -19,14 +19,6 @@
 			"notests": true
 		},
 		{
-			"importpath": "github.com/beego/goyaml2",
-			"repository": "https://github.com/beego/goyaml2",
-			"vcs": "git",
-			"revision": "5545475820ddd4db3f90a4900d44b65d077d702d",
-			"branch": "HEAD",
-			"notests": true
-		},
-		{
 			"importpath": "github.com/beego/x2j",
 			"repository": "https://github.com/beego/x2j",
 			"vcs": "git",
@@ -147,14 +139,6 @@
 			"notests": true
 		},
 		{
-			"importpath": "github.com/couchbase/goutils",
-			"repository": "https://github.com/couchbase/goutils",
-			"vcs": "git",
-			"revision": "82b8055850965344f7d89d8a0abe364ac09dfa5e",
-			"branch": "HEAD",
-			"notests": true
-		},
-		{
 			"importpath": "github.com/cupcake/rdb",
 			"repository": "https://github.com/cupcake/rdb",
 			"vcs": "git",
@@ -192,14 +176,6 @@
 			"vcs": "git",
 			"revision": "0ca9ea5df5451ffdf184b4428c902747c2c11cd7",
 			"branch": "master",
-			"notests": true
-		},
-		{
-			"importpath": "github.com/go-sql-driver/mysql",
-			"repository": "https://github.com/go-sql-driver/mysql",
-			"vcs": "git",
-			"revision": "8fefef06da7707b5a3cda42195a6b409c9c9ab5c",
-			"branch": "HEAD",
 			"notests": true
 		},
 		{
@@ -451,14 +427,6 @@
 			"notests": true
 		},
 		{
-			"importpath": "github.com/ssdb/gossdb",
-			"repository": "https://github.com/ssdb/gossdb",
-			"vcs": "git",
-			"revision": "96753833c5cc3ea638335ecf9b1cf1b5f8901ca3",
-			"branch": "HEAD",
-			"notests": true
-		},
-		{
 			"importpath": "github.com/syndtr/goleveldb",
 			"repository": "https://github.com/syndtr/goleveldb",
 			"vcs": "git",
@@ -479,14 +447,6 @@
 			"repository": "https://github.com/urfave/cli",
 			"vcs": "git",
 			"revision": "b892ba3809cd07fcf2b064e166b0c2e16e0147bd",
-			"branch": "HEAD",
-			"notests": true
-		},
-		{
-			"importpath": "github.com/wendal/errors",
-			"repository": "https://github.com/wendal/errors",
-			"vcs": "git",
-			"revision": "f66c77a7882b399795a8987ebf87ef64a427417e",
 			"branch": "HEAD",
 			"notests": true
 		},

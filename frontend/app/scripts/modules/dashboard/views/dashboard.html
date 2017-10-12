@@ -11,65 +11,67 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-<div class="dashboardBody">
-	<div class="row dashboardTitle no-margin">
-	 <div class="col-md-5 col-sm-5 left">
-	 	<span class="dashboardName"> {{ "services" | translate }} </span>
-	 	<span class="dashboardName pull-right">{{ totalServices }}</span>
-	 </div>
-	 <div class="col-md-5 col-sm-5 right">
-	 	<span class="dashboardName"> {{ "instances" | translate }} </span>
-	 	<span class="dashboardName pull-right">{{ totalInstances }}</span>
-	 </div>
-	</div>
-
-	<div class="row no-margin dashboardChart">
-		<div class="col-md-6 col-sm-6 dashboardChartLeft">
-			<div class="dashboardInfo">
-				<ul>
-					<li><span class="glyphicon glyphicon-stop starting"></span>{{ "starting" | translate }}</li>
-					<li><span class="glyphicon glyphicon-stop up"></span>{{ "up" | translate }}</li>
-					<li><span class="glyphicon glyphicon-stop down"></span>{{ "down" | translate }}</li>
-					<li><span class="glyphicon glyphicon-stop unavailable"></span>{{ "outofservice" | translate }}</li>
-				</ul>
-			</div>
-			<canvas class="chart chart-doughnut" chart-data="servicesData" chart-colors="colors" chart-labels="labels"></canvas> 
-		</div>
-		<div class="col-md-6 col-sm-6 dashboardChartRight">
-			<div class="dashboardInfo">
-				<ul>
-					<li><span class="glyphicon glyphicon-stop starting"></span>{{ "starting" | translate }}</li>
-					<li><span class="glyphicon glyphicon-stop up"></span>{{ "up" | translate }}</li>
-					<li><span class="glyphicon glyphicon-stop down"></span>{{ "down" | translate }}</li>
-					<li><span class="glyphicon glyphicon-stop unavailable"></span>{{ "outofservice" | translate }}</li>
-				</ul>
-			</div>
-			<canvas class="chart chart-doughnut" chart-data="instancesData" chart-colors="colors" chart-labels="labels"></canvas>
-		</div>
-	</div>
-
-	<div class="row dashboardUpDown no-margin">
-	 <div class="col-md-5 col-sm-5 left">
-	 	<div class="col-md-2 col-sm-2 up">
-	 		<span>{{ "up" | translate }} </span>
-	 		<span class="pull-right">{{ runningServices.length }}</span>
-	 	</div>
-	 	<div class="col-md-2 col-sm-2 down">
-	 		<span>{{ "down" | translate }}</span>
-	 		<span class="pull-right">{{ stoppedServices.length }}</span>
-	 	</div>
-	 </div>
-	 <div class="col-md-5 col-sm-5 right">
-	 	<div class="col-md-2 col-sm-2 up">
-	 		<span>{{ "up" | translate }} </span>
-	 		<span class="pull-right">{{ runningInstances.length }}</span>
-	 	</div>
-	 	<div class="col-md-2 col-sm-2 down">
-	 		<span>{{ "down" | translate }}</span>
-	 		<span class="pull-right"">{{ stoppedInstances.length }}</span>
-	 	</div>
-	 </div>
-	</div>
-	
-</div>
+<div class="row dashboard">
+    <div class="col-sm-12 col-md-12 pb10">
+      <div class="pull-right">
+        <i class="fa fa-clock-o"></i> <span class="updatedTime">{{ "updated" | translate }} {{ updatedTime }} </span>
+        <span ng-click="getAllServices()"><i class="fa fa-refresh dashboardRefresh"></i></span>
+      </div>
+    </div>
+    <div class="col-sm-12 col-md-12 col-lg-3" ng-repeat="info in dashboardInfo">
+        <div class="mainCard">
+            <div class="col-sm-3 col-md-3 col-lg-3 mainCardIcon {{ info.title }}">
+                <i class="fa {{ info.iconName }} fa-3x icon-color"></i>
+            </div>
+            <div class="col-sm-9 col-md-9">
+                <div class="row">
+                    <div class="col-sm-8 col-md-8 no-padding mainCardTitleStyle">
+                        <span class="mainCardTitle">{{ info.title | translate }}</span>
+                    </div>
+                    <div class="col-sm-4 col-md-4 m5">
+                        <span class="mainCardCount">{{ info.count }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row chartAlign">
+	 <div class="col-sm-12 col-md-12">
+        <div class="card">
+            <div class="header">
+                <h3 class="title">{{ "serviceStatistics" | translate }}</h3>       
+            </div>
+            <div class="content">
+            <div class="row">
+                <div class="col-md-6 servicesChart">
+                    <canvas class="chart chart-doughnut" chart-data="servicesChartData" chart-colors="colors" chart-labels="labels"></canvas> 
+                    <div class="chart-legend">
+                        <i class="fa fa-circle legendStarting"></i>{{ "starting" | translate }}
+                        <i class="fa fa-circle legendUp"></i> {{ "up" | translate }}
+                        <i class="fa fa-circle legendDown"></i> {{ "down" | translate }}
+                        <i class="fa fa-circle legendUnavailable"></i> {{ "outofservice" | translate }}
+                    </div>
+                </div>
+                <div class="col-sm-6 col-md-6">
+                    <div class="row">
+                        <div class="col-sm-12 col-md-12 dashboardCount" ng-repeat="service in servicesStatusData">
+                            <div class="row" ng-click="goToServices(service.title)">
+                                <div class="col-xs-4 col-sm-6 col-md-3 statusIcon {{ service.title }}">
+                                    <i class="fa {{ service.iconName }} fa-3x icon-color"></i>
+                                </div>
+                                <div class="col-xs-4 col-sm-4 col-md-5 statusTitle">
+                                    <span>{{ service.title | translate }}</span>
+                                </div>
+                                <div class="col-xs-4 col-sm-2 col-md-4 statusCount">
+                                    <span class="pull-right">{{ service.count }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </div>
+     </div>
+    </div>
+ </div>

@@ -1,3 +1,4 @@
+
 @charset "UTF-8";
 /*
 Copyright 2017 Huawei Technologies Co., Ltd
@@ -23,7 +24,9 @@ html {
   -webkit-text-size-adjust: 100%; }
 
 body {
-  margin: 0; }
+  margin: 0;
+  font-family: sans-serif;
+ }
 
 article,
 aside,
@@ -3731,7 +3734,9 @@ tbody.collapse.in {
       .navbar-fixed-top .navbar-collapse, .navbar-static-top .navbar-collapse, .navbar-fixed-bottom .navbar-collapse {
         padding-left: 0;
         padding-right: 0; } }
-
+.navbar-fixed-top {
+  z-index: 1 !important;
+}
 .navbar-fixed-top .navbar-collapse,
 .navbar-fixed-bottom .navbar-collapse {
   max-height: 340px; }
@@ -3952,7 +3957,8 @@ tbody.collapse.in {
 
   .navbar-right {
     float: right !important;
-    margin-right: -15px; }
+    margin-right: -15px;
+    height: inherit !important; }
     .navbar-right ~ .navbar-right {
       margin-right: 0; } }
 .navbar-default {
@@ -4011,66 +4017,6 @@ tbody.collapse.in {
     .navbar-default .btn-link[disabled]:hover, .navbar-default .btn-link[disabled]:focus, fieldset[disabled] .navbar-default .btn-link:hover, fieldset[disabled] .navbar-default .btn-link:focus {
       color: #ccc; }
 
-.navbar-inverse {
-  background-color: rgb(59,120,231) !important;
-  border-color: #090909; }
-  .navbar-inverse .navbar-brand {
-    color: #9d9d9d; }
-    .navbar-inverse .navbar-brand:hover, .navbar-inverse .navbar-brand:focus {
-      color: #fff;
-      background-color: transparent; }
-  .navbar-inverse .navbar-text {
-    color: #9d9d9d; }
-  .navbar-inverse .navbar-nav > li > a {
-      background-color: transparent; }
-  .navbar-inverse .navbar-nav > .active > a, .navbar-inverse .navbar-nav > .active > a:hover, .navbar-inverse .navbar-nav > .active > a:focus {
-    color: #fff;
-    color: #9d9d9d; }
-    .navbar-inverse .navbar-nav > li > a:hover, .navbar-inverse .navbar-nav > li > a:focus {
-      color: #fff;
-    background-color: #090909; }
-  .navbar-inverse .navbar-nav > .disabled > a, .navbar-inverse .navbar-nav > .disabled > a:hover, .navbar-inverse .navbar-nav > .disabled > a:focus {
-    color: #444;
-    background-color: transparent; }
-  .navbar-inverse .navbar-toggle {
-    border-color: #333; }
-    .navbar-inverse .navbar-toggle:hover, .navbar-inverse .navbar-toggle:focus {
-      background-color: #333; }
-    .navbar-inverse .navbar-toggle .icon-bar {
-      background-color: #fff; }
-  .navbar-inverse .navbar-collapse,
-  .navbar-inverse .navbar-form {
-    border-color: #101010; }
-  .navbar-inverse .navbar-nav > .open > a, .navbar-inverse .navbar-nav > .open > a:hover, .navbar-inverse .navbar-nav > .open > a:focus {
-    background-color: #090909;
-    color: #fff; }
-  @media (max-width: 767px) {
-    .navbar-inverse .navbar-nav .open .dropdown-menu > .dropdown-header {
-      border-color: #090909; }
-    .navbar-inverse .navbar-nav .open .dropdown-menu .divider {
-      background-color: #090909; }
-    .navbar-inverse .navbar-nav .open .dropdown-menu > li > a {
-      color: #9d9d9d; }
-      .navbar-inverse .navbar-nav .open .dropdown-menu > li > a:hover, .navbar-inverse .navbar-nav .open .dropdown-menu > li > a:focus {
-        color: #fff;
-        background-color: transparent; }
-    .navbar-inverse .navbar-nav .open .dropdown-menu > .active > a, .navbar-inverse .navbar-nav .open .dropdown-menu > .active > a:hover, .navbar-inverse .navbar-nav .open .dropdown-menu > .active > a:focus {
-      color: #fff;
-      background-color: #090909; }
-    .navbar-inverse .navbar-nav .open .dropdown-menu > .disabled > a, .navbar-inverse .navbar-nav .open .dropdown-menu > .disabled > a:hover, .navbar-inverse .navbar-nav .open .dropdown-menu > .disabled > a:focus {
-      color: #444;
-      background-color: transparent; } }
-  .navbar-inverse .navbar-link {
-    color: #9d9d9d; }
-    .navbar-inverse .navbar-link:hover {
-      color: #fff; }
-  .navbar-inverse .btn-link {
-    color: #9d9d9d; }
-    .navbar-inverse .btn-link:hover, .navbar-inverse .btn-link:focus {
-      color: #fff; }
-    .navbar-inverse .btn-link[disabled]:hover, .navbar-inverse .btn-link[disabled]:focus, fieldset[disabled] .navbar-inverse .btn-link:hover, fieldset[disabled] .navbar-inverse .btn-link:focus {
-      color: #444; }
-
 .breadcrumb {
   padding: 8px 15px;
   margin-bottom: 20px;
@@ -4080,7 +4026,7 @@ tbody.collapse.in {
   .breadcrumb > li {
     display: inline-block; }
     .breadcrumb > li + li:before {
-      content: "/ ";
+      content: "/ ";
       padding: 0 5px;
       color: #ccc; }
   .breadcrumb > .active {
@@ -5215,9 +5161,6 @@ button.close {
   .tooltip.bottom {
     margin-top: 3px;
     padding: 5px 0; }
-  .tooltip.left, body .dashboardBody .dashboardTitle .tooltip.right, body .dashboardBody .dashboardPC .tooltip.right, body .dashboardBody .dashboardStatus .tooltip.right, body .dashboardBody .dashboardUpDown .tooltip.right {
-    margin-left: -3px;
-    padding: 0 5px; }
 
 .tooltip-inner {
   max-width: 200px;
@@ -5258,12 +5201,6 @@ button.close {
   margin-top: -5px;
   border-width: 5px 5px 5px 0;
   border-right-color: #000; }
-.tooltip.left .tooltip-arrow, body .dashboardBody .dashboardTitle .tooltip.right .tooltip-arrow, body .dashboardBody .dashboardPC .tooltip.right .tooltip-arrow, body .dashboardBody .dashboardStatus .tooltip.right .tooltip-arrow, body .dashboardBody .dashboardUpDown .tooltip.right .tooltip-arrow {
-  top: 50%;
-  right: 0;
-  margin-top: -5px;
-  border-width: 5px 0 5px 5px;
-  border-left-color: #000; }
 .tooltip.bottom .tooltip-arrow {
   top: 0;
   left: 50%;
@@ -5320,9 +5257,6 @@ button.close {
     margin-left: 10px; }
   .popover.bottom {
     margin-top: 10px; }
-  .popover.left, body .dashboardBody .dashboardTitle .popover.right, body .dashboardBody .dashboardPC .popover.right, body .dashboardBody .dashboardStatus .popover.right, body .dashboardBody .dashboardUpDown .popover.right {
-    margin-left: -10px; }
-
 .popover-title {
   margin: 0;
   padding: 8px 14px;
@@ -5388,19 +5322,6 @@ button.close {
     margin-left: -10px;
     border-top-width: 0;
     border-bottom-color: #fff; }
-.popover.left > .arrow, body .dashboardBody .dashboardTitle .popover.right > .arrow, body .dashboardBody .dashboardPC .popover.right > .arrow, body .dashboardBody .dashboardStatus .popover.right > .arrow, body .dashboardBody .dashboardUpDown .popover.right > .arrow {
-  top: 50%;
-  right: -11px;
-  margin-top: -11px;
-  border-right-width: 0;
-  border-left-color: #999999;
-  border-left-color: rgba(0, 0, 0, 0.25); }
-  .popover.left > .arrow:after, body .dashboardBody .dashboardTitle .popover.right > .arrow:after, body .dashboardBody .dashboardPC .popover.right > .arrow:after, body .dashboardBody .dashboardStatus .popover.right > .arrow:after, body .dashboardBody .dashboardUpDown .popover.right > .arrow:after {
-    content: " ";
-    right: 1px;
-    border-right-width: 0;
-    border-left-color: #fff;
-    bottom: -10px; }
 
 .carousel {
   position: relative; }
@@ -5436,14 +5357,6 @@ button.close {
         .carousel-inner > .item.next, .carousel-inner > .item.active.right {
           -webkit-transform: translate3d(100%, 0, 0);
           transform: translate3d(100%, 0, 0);
-          left: 0; }
-        .carousel-inner > .item.prev, .carousel-inner > .item.active.left, body .dashboardBody .dashboardTitle .carousel-inner > .item.active.right, body .dashboardBody .dashboardPC .carousel-inner > .item.active.right, body .dashboardBody .dashboardStatus .carousel-inner > .item.active.right, body .dashboardBody .dashboardUpDown .carousel-inner > .item.active.right {
-          -webkit-transform: translate3d(-100%, 0, 0);
-          transform: translate3d(-100%, 0, 0);
-          left: 0; }
-        .carousel-inner > .item.next.left, body .dashboardBody .dashboardTitle .carousel-inner > .item.next.right, body .dashboardBody .dashboardPC .carousel-inner > .item.next.right, body .dashboardBody .dashboardStatus .carousel-inner > .item.next.right, body .dashboardBody .dashboardUpDown .carousel-inner > .item.next.right, .carousel-inner > .item.prev.right, .carousel-inner > .item.active {
-          -webkit-transform: translate3d(0, 0, 0);
-          transform: translate3d(0, 0, 0);
           left: 0; } }
   .carousel-inner > .active,
   .carousel-inner > .next,
@@ -5460,14 +5373,7 @@ button.close {
     left: 100%; }
   .carousel-inner > .prev {
     left: -100%; }
-  .carousel-inner > .next.left, body .dashboardBody .dashboardTitle .carousel-inner > .next.right, body .dashboardBody .dashboardPC .carousel-inner > .next.right, body .dashboardBody .dashboardStatus .carousel-inner > .next.right, body .dashboardBody .dashboardUpDown .carousel-inner > .next.right,
-  .carousel-inner > .prev.right {
-    left: 0; }
-  .carousel-inner > .active.left, body .dashboardBody .dashboardTitle .carousel-inner > .active.right, body .dashboardBody .dashboardPC .carousel-inner > .active.right, body .dashboardBody .dashboardStatus .carousel-inner > .active.right, body .dashboardBody .dashboardUpDown .carousel-inner > .active.right {
-    left: -100%; }
-  .carousel-inner > .active.right {
-    left: 100%; }
-
+  
 .carousel-control {
   position: absolute;
   top: 0;
@@ -5481,12 +5387,7 @@ button.close {
   text-align: center;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
   background-color: rgba(0, 0, 0, 0); }
-  .carousel-control.left, body .dashboardBody .dashboardTitle .carousel-control.right, body .dashboardBody .dashboardPC .carousel-control.right, body .dashboardBody .dashboardStatus .carousel-control.right, body .dashboardBody .dashboardUpDown .carousel-control.right {
-    background-image: -webkit-linear-gradient(left, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.0001) 100%);
-    background-image: -o-linear-gradient(left, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.0001) 100%);
-    background-image: linear-gradient(to right, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.0001) 100%);
-    background-repeat: repeat-x;
-    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#80000000', endColorstr='#00000000', GradientType=1); }
+  
   .carousel-control.right {
     left: auto;
     right: 0;
@@ -5844,60 +5745,72 @@ body {
       background-color: #d50000; }
     body .serviceStatus.outofservice {
       background-color: #bcc2c9; }
+  nav {
+    background-color: #3c8dbc !important;
+    height: 50px;
+    position: relative;
+    z-index: 1;
+  }
   body .navbar {
     border-radius: unset !important; }
     body .navbar .logo {
-      margin-top: 6px;
+      margin-top: 7px;
       margin-left: 25px; }
     body .navbar .label {
       color: white;
       font-size: 16px; }
-    body .navbar .tenant {
-      height: 30px; }
-    body .navbar .language {
-      height: 31px;
-      margin-top: 7px; }
     body .navbar .navbar-right {
-      margin-right: 15px !important; }
+      margin-right: 15px !important;
+      height: 50px !important;
+       }
+      body .navbar .navbar-right .navbar-right-header label{
+       color : #fff !important;
+      }
+      
   body .sidebar-wrapper {
     height: 100%;
     width: 230px;
     position: fixed;
-    background: #f5f5f0;
-    margin-top: -20px;
-    border-right: 1px solid grey;}
+    background-color: #19A093;
+    font-family: sans-serif;
+    }
     body .sidebar-wrapper .sidebar-nav {
       position: fixed;
-      top: 50px;
+      top: 75px;
       width: 230px;
       margin: 0;
       padding: 0;
       list-style: none; }
       body .sidebar-wrapper .sidebar-nav li {
+        color: #fff;
         text-indent: 20px;
         line-height: 50px; }
         body .sidebar-wrapper .sidebar-nav li a {
           display: block;
           text-decoration: none;
-          color: #666666;
+          color: #fff;
           font-size: 14px; }
           body .sidebar-wrapper .sidebar-nav li a:hover {
             text-decoration: none;
-            color: #009ee0 !important;
-            background: #f5f5f0;
-            width:229px;}
+            color: black !important;
+            background: #fff;
+            width:230px;}
       body .sidebar-wrapper .sidebar-nav .active, body .sidebar-wrapper .sidebar-nav .activeProvider, body .sidebar-wrapper .sidebar-nav .activeConsumer, body .sidebar-wrapper .sidebar-nav .schemaTab {
         text-decoration: none;
-        color: #009ee0 !important;
-        border-left: 3px solid #009ee0;
-        width:229px;}
+        color: brown !important;
+        border-left: 3px solid #3c8dbc;
+        background-color: #fff;
+        width:230px;}
     body .sidebar-wrapper .brand {
       font-size: 22px;
-      margin: 10px 0px 30px 0px;
-      border-bottom: 1px solid grey;}
+      padding-left: 20px;
+      }
+      body .sidebar-wrapper ul li:first-child {
+        border-bottom: 1px solid #fff;
+      }
   body .bodyContent {
     margin-left: 250px;
-    padding-top: 70px;}
+    padding-top: 60px;}
   body .fa-close {
     color: white; }
   body .table-header {
@@ -5913,7 +5826,8 @@ body {
     font-size: 14px;
     color: #000; }
   body .serviceInfo {
-    margin: 0px; }
+    margin: 0px; 
+    font-family: sans-serif;}
     body .serviceInfo .details {
       height: 80px;
       width: 80px;
@@ -5928,119 +5842,25 @@ body {
     margin-left: 8px;
     margin-top: 50px; }
   body canvas {
-    max-width: 65% !important;
+    max-width: 70% !important;
     margin: 0px auto;
     padding: 15px; }
     body canvas:hover {
       cursor: pointer; }
   body .margin20 {
     margin-top: 20px; }
+ body .pb10 {
+    padding-bottom: 10px; }
+  body .m5 {
+    margin: 5px 0px;
+  }
   body .infoTableHead {
     background-color: #efefef; }
-  body .dashboardHeader {
-    height: 100px; }
-    body .dashboardHeader .dashboard {
-      font-size: 30px;
-      color: brown; }
-  body .dashboardBody .dashboardTitle, body .dashboardBody .dashboardPC {
-    height: 100px; }
-    body .dashboardBody .dashboardTitle .left, body .dashboardBody .dashboardPC .left, body .dashboardBody .dashboardTitle .right, body .dashboardBody .dashboardPC .right {
-      height: inherit;
-      background-color: #F0F2F5;
-      margin-right: 10px;
-      width: 49% !important;
-      padding-top: 30px; }
-      body .dashboardBody .dashboardTitle .left .dashboardName, body .dashboardBody .dashboardPC .left .dashboardName, body .dashboardBody .dashboardTitle .right .dashboardName, body .dashboardBody .dashboardPC .right .dashboardName {
-        font-size: 25px;
-        text-align: center;
-        padding: 5px; }
-      body .dashboardBody .dashboardTitle .left .dashboardCount, body .dashboardBody .dashboardPC .left .dashboardCount, body .dashboardBody .dashboardTitle .right .dashboardCount, body .dashboardBody .dashboardPC .right .dashboardCount {
-        width: 65%;
-        text-align: end;
-        font-size: 25px; }
-    body .dashboardBody .dashboardTitle .right, body .dashboardBody .dashboardPC .right {
-      margin-right: 0px !important; }
-  body .dashboardBody .dashboardPC {
-    margin-top: 20px !important; }
-  body .dashboardBody .dashboardChart .dashboardChartLeft, body .dashboardBody .dashboardChart .dashboardChartRight {
-    width: 49% !important;
-    background-color: #F0F2F5;
-    margin-top: 20px;
-    margin-right: 10px; }
-    body .dashboardBody .dashboardChart .dashboardChartLeft .dashboardInfo, body .dashboardBody .dashboardChart .dashboardChartRight .dashboardInfo {
-      height: 90px;
-      width: 100%;
-      float: right;
-      margin-right: -8px;
-      padding: 5px 0px; }
-      body .dashboardBody .dashboardChart .dashboardChartLeft .dashboardInfo ul, body .dashboardBody .dashboardChart .dashboardChartRight .dashboardInfo ul {
-        padding: 5px 15px;
-        border: 1px solid darkgrey;
-        float: right; }
-        body .dashboardBody .dashboardChart .dashboardChartLeft .dashboardInfo ul li, body .dashboardBody .dashboardChart .dashboardChartRight .dashboardInfo ul li {
-          list-style-type: none; }
-          body .dashboardBody .dashboardChart .dashboardChartLeft .dashboardInfo ul li span, body .dashboardBody .dashboardChart .dashboardChartRight .dashboardInfo ul li span {
-            padding-right: 10px; }
-          body .dashboardBody .dashboardChart .dashboardChartLeft .dashboardInfo ul li .starting, body .dashboardBody .dashboardChart .dashboardChartRight .dashboardInfo ul li .starting {
-            color: #e6e600; }
-          body .dashboardBody .dashboardChart .dashboardChartLeft .dashboardInfo ul li .up, body .dashboardBody .dashboardChart .dashboardChartRight .dashboardInfo ul li .up {
-            color: #5ecc49; }
-          body .dashboardBody .dashboardChart .dashboardChartLeft .dashboardInfo ul li .down, body .dashboardBody .dashboardChart .dashboardChartRight .dashboardInfo ul li .down {
-            color: #d50000; }
-          body .dashboardBody .dashboardChart .dashboardChartLeft .dashboardInfo ul li .unavailable, body .dashboardBody .dashboardChart .dashboardChartRight .dashboardInfo ul li .unavailable {
-            color: #bcc2c9; }
-  body .dashboardBody .dashboardChart .dashboardChartRight {
-    margin-right: 0px !important; }
-  body .dashboardBody .dashboardStatus {
-    height: 100px;
-    margin-top: 20px !important; }
-    body .dashboardBody .dashboardStatus .left, body .dashboardBody .dashboardStatus .right {
-      height: inherit;
-      background-color: #F0F2F5;
-      margin-right: 10px;
-      width: 49% !important; }
-      body .dashboardBody .dashboardStatus .left .dashboardName, body .dashboardBody .dashboardStatus .right .dashboardName {
-        font-size: 25px;
-        text-align: center;
-        padding: 5px;
-        margin-top: 25px; }
-      body .dashboardBody .dashboardStatus .left .dashboardCount, body .dashboardBody .dashboardStatus .right .dashboardCount {
-        width: 65%;
-        text-align: end;
-        font-size: 25px;
-        margin-top: 25px; }
-    body .dashboardBody .dashboardStatus .right {
-      margin-right: 0px !important; }
-  body .dashboardBody .dashboardUpDown {
-    margin-top: 20px !important; }
-    body .dashboardBody .dashboardUpDown .left, body .dashboardBody .dashboardUpDown .right {
-      height: inherit;
-      background-color: white;
-      margin-right: 10px;
-      width: 49% !important;
-      padding: 0px !important; }
-      body .dashboardBody .dashboardUpDown .left .up, body .dashboardBody .dashboardUpDown .right .up {
-        background-color: #F0F2F5;
-        width: 49% !important;
-        margin-right: 5px;
-        height: 100px;
-        font-size: 22px;
-        text-align: left;
-        padding: 35px; }
-      body .dashboardBody .dashboardUpDown .left .down, body .dashboardBody .dashboardUpDown .right .down {
-        background-color: #F0F2F5;
-        width: 50% !important;
-        margin-right: 0px;
-        height: 100px;
-        font-size: 22px;
-        text-align: left;
-        padding: 35px; }
-    body .dashboardBody .dashboardUpDown .right {
-      margin-right: 0px !important; }
+  
   body .schemaTable th {
     width: 50%; }
   body md-toolbar.md-default-theme:not(.md-menu-toolbar), body md-toolbar:not(.md-menu-toolbar) {
-    background-color: #0288D1 !important; }
+    background-color: #3c8dbc !important; }
   body md-toolbar.md-default-theme:not(.md-menu-toolbar).md-warn, body md-toolbar:not(.md-menu-toolbar).md-warn {
     background-color: #ff5722 !important; }
   body md-dialog {
@@ -6050,5 +5870,232 @@ body {
     border: 2px solid #006666; }
   body .swaggerDiv {
     margin: 0px 20px; }
+  .fa-snowflake-o {
+    display: block;
+    padding-left: 50px;
+    font-size: 40px;
+  }
+.dashboard {
+  width: 80%;
+}
+.legendStarting {
+  color: #00c0ef;
+}
+.legendUp {
+  color: #00a65a; 
+}
+.legendDown {
+  color: #dd4b39; 
+}
+.legendUnavailable {
+  color: #A9A9A9; 
+}
+.card {
+  border-radius: 6px;
+  box-shadow: 0 2px 2px rgba(204, 197, 185, 0.5);
+  background-color: whitesmoke;
+  margin-bottom: 20px; 
+}
+.card .content {
+    padding: 15px 15px 10px 15px;
+ }
+.icon-color {    
+    color: white;
+}
+.card .icon-small {
+    font-size: 2em;
+    min-height: 32px;
+ }
+.icon-warning {
+  color: #F3BB45;
+ }
 
+.card .footer {
+    padding: 0;
+    line-height: 30px;
+ }
+.card .footer .legend {
+    padding: 5px 0;
+ }
+.card .footer hr {
+    margin-top: 5px;
+    margin-bottom: 5px;
+ }
+.card .stats {
+  color: #a9a9a9;
+  font-weight: 300;
+ }
+.card .stats i {
+  margin-right: 2px;
+  min-width: 15px;
+  display: inline-block;
+ }
+.card .header {
+  padding: 20px 20px 0;
+  font-family: sans-serif;
+ }
+.card .title {
+  margin: 0;
+  color: grey;
+  font-weight: 600;
+ }
+.chart-legend {
+  text-align: center;
+  font-family: sans-serif;
+}
+.chartAlign {
+  padding: 0px 15px;
+}
+.dashboardRefresh {
+    width: 30px;
+    height: 30px;
+    background: whitesmoke;
+    padding: 6px 7px;
+    border-radius: 5px;
+    font-size: 20px;
+    box-shadow: 0 2px 2px rgba(204, 197, 185, 0.5);
+}
+.dashboardRefresh:hover {
+  cursor: pointer;
+}
+
+.dashboardCount {
+    width: 245px !important;
+    height: 65px;
+    margin: 3% 2% 2% 0%;
+    border-radius: 6px;
+    background-color: whitesmoke;
+    text-align: center;
+    font-weight: bold;
+}
+.dashboardCount .statusIcon {
+  height: 65px;
+  padding: 12px;
+}
+.statusTitle, .statusCount {
+  background-color: #fff;
+  height: 63px;
+  border-radius: 0px 5px 5px 0px;
+  font-family: sans-serif;
+  padding: 20px;
+  font-weight: normal;
+}
+.mainFooter {
+    position: fixed;
+    height: 40px;
+    left: 0px;
+    bottom: 0px;
+    width: 100%;
+    background-color: #3c8dbc !important;
+    color: #fff;
+    padding-top: 5px;
+    z-index: 9999;
+}
+md-card {
+    margin-left: 0px;
+}
+#tenant, md-select-value {
+    margin-top: -10px !important;
+}
+#schemaBtn {
+    background-color: rgb(59,120,231);
+}
+.tenant {
+    color: white;
+    position: relative;
+    top: 12px;
+    margin-right: 10px;
+    font-size: 18px
+}
+ md-select-value,.md-select-icon, #tenant {
+    color: white !important;
+    border-color: whitesmoke !important;
+}
+body .pagination-class .label {
+  margin-right: -35px;
+}
+md-content {
+  font-family: sans-serif;
+}
+md-select-menu md-content {
+   position: relative;
+   z-index: 1;
+}
+md-table-pagination .md-text {
+   color: grey;
+   margin-top: 8px;
+}
+md-table-pagination .md-select-icon {
+  color: grey !important;
+  padding-top: 10px;
+}
+.serviceStatusCount {
+   font-size: 18px;
+   padding-top: 10px
+}
+.dashboardCount :hover {
+  cursor: pointer;
+}
+.mainCard {
+  height: 65px;
+  border-radius: 5px;
+  box-shadow: 0 2px 2px rgba(204, 197, 185, 0.5);
+  background-color: whitesmoke;
+  margin-bottom: 20px;
+}
+.mainCard .mainCardIcon {
+  background-color: #3c8dbc;
+  height: 100%;
+  padding: 12px 0px 12px 10px;
+}
+.mainCardTitle {
+  font-size: 20px;
+  font-family: sans-serif;
+  font-weight: 700;
+  color: grey;
+  padding-left: 5px !important;
+}
+.mainCardTitleStyle {
+  margin-top: 15px;
+  text-align: center;
+}
+.mainCardCount {
+  font-size: 35px;
+  padding-left: 8px;
+  font-family: sans-serif;
+}
+.mainCard .services {
+  background-color: #00c0ef;
+}
+.mainCard .instances {
+  background-color: #00a65a;
+}
+.mainCard .providers {
+  background-color: #dd4b39;
+}
+.mainCard .consumers {
+  background-color: #A9A9A9;
+}
+.card .starting {
+  background-color: #00c0ef;
+  border-radius: 6px 0px 0px 6px;
+}
+.card .up {
+  background-color: #00a65a;
+  border-radius: 6px 0px 0px 6px;
+}
+.card .down {
+  background-color: #dd4b39;
+  border-radius: 6px 0px 0px 6px;
+}
+.card .outofservice {
+  background-color: #A9A9A9;
+  border-radius: 6px 0px 0px 6px;
+}
+.updatedTime {
+  padding-right: 10px;
+}
+table {
+  font-family: sans-serif;
+}
 /*# sourceMappingURL=main.css.map */

@@ -14,17 +14,16 @@
 package server
 
 import _ "github.com/ServiceComb/service-center/server/service/event"
-import _ "github.com/ServiceComb/service-center/server/rest/handlers"
 import (
 	"fmt"
-	"github.com/ServiceComb/service-center/pkg/common"
+	ssl "github.com/ServiceComb/service-center/pkg/tlsutil"
+	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/core"
-	"github.com/ServiceComb/service-center/server/core/mux"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	st "github.com/ServiceComb/service-center/server/core/registry/store"
+	"github.com/ServiceComb/service-center/server/mux"
 	nf "github.com/ServiceComb/service-center/server/service/notification"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
-	"github.com/ServiceComb/service-center/util"
 	"github.com/ServiceComb/service-center/version"
 	"github.com/astaxie/beego"
 	"os"
@@ -136,7 +135,7 @@ func (s *ServiceCenterServer) addEndpoint(t APIType, ip, port string) {
 		return
 	}
 	address := util.StringJoin([]string{ip, port}, ":")
-	if common.GetServerSSLConfig().SSLEnabled {
+	if ssl.GetServerSSLConfig().SSLEnabled {
 		address += "?sslEnabled=true"
 	}
 	s.apiServer.Endpoints[t] = fmt.Sprintf("%s://%s", t, address)

@@ -22,11 +22,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/ServiceComb/service-center/pkg/etcdsync"
+	"github.com/ServiceComb/service-center/pkg/util"
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/service"
-	"github.com/ServiceComb/service-center/util"
 	"testing"
 	"time"
 )

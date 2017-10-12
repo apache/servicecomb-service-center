@@ -15,7 +15,7 @@ package store
 
 import (
 	"errors"
-	"github.com/ServiceComb/service-center/util"
+	"github.com/ServiceComb/service-center/pkg/util"
 	"golang.org/x/net/context"
 	"sync"
 	"time"

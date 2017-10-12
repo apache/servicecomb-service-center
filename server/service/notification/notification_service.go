@@ -16,7 +16,7 @@ package notification
 import (
 	"container/list"
 	"errors"
-	"github.com/ServiceComb/service-center/util"
+	"github.com/ServiceComb/service-center/pkg/util"
 	"sync"
 	"time"
 )

@@ -15,8 +15,8 @@ package domain
 
 import (
 	"errors"
-	"github.com/ServiceComb/service-center/server/helper"
-	"github.com/ServiceComb/service-center/util"
+	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/ServiceComb/service-center/server/common"
 	"net/http"
 )
 
@@ -32,7 +32,7 @@ func Intercept(w http.ResponseWriter, r *http.Request) error {
 	project := ""
 	var err error
 	ctx := r.Context()
-	tenant, project, err = helper.GetTenantProjectFromHeader(r)
+	tenant, project, err = common.GetTenantProjectFromHeader(r)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write(util.StringToBytesWithNoCopy(err.Error()))

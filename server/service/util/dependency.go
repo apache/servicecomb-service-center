@@ -17,16 +17,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/ServiceComb/service-center/pkg/common/cache"
+	"github.com/ServiceComb/service-center/pkg/cache"
+	"github.com/ServiceComb/service-center/pkg/util"
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
-	"github.com/ServiceComb/service-center/util"
+	"github.com/ServiceComb/service-center/server/mux"
 	"golang.org/x/net/context"
 	"strings"
 	"time"
-	"github.com/ServiceComb/service-center/server/core/mux"
 )
 
 var consumerCache *cache.Cache

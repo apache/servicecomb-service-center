@@ -59,6 +59,6 @@ angular.module('serviceCenter.sc')
 		      clickOutsideToClose:true,
 		      fullscreen: false
 		    });
-		}
-
+		};
+		
 }]);

@@ -15,10 +15,10 @@ package util
 
 import (
 	"encoding/json"
+	"github.com/ServiceComb/service-center/pkg/util"
 	apt "github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
-	"github.com/ServiceComb/service-center/util"
 	"golang.org/x/net/context"
 )
 

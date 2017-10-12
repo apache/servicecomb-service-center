@@ -19,7 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/ServiceComb/service-center/pkg/lager"
-	"github.com/ServiceComb/service-center/util"
+	"github.com/ServiceComb/service-center/pkg/util"
 	"golang.org/x/net/context"
 	"time"
 )

@@ -14,13 +14,13 @@
 package service_test
 
 import (
+	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server"
 	"github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	_ "github.com/ServiceComb/service-center/server/core/registry"
 	_ "github.com/ServiceComb/service-center/server/core/registry/etcd"
-	_ "github.com/ServiceComb/service-center/server/plugins/infra/quota/buildin"
-	"github.com/ServiceComb/service-center/util"
+	_ "github.com/ServiceComb/service-center/server/plugin/infra/quota/buildin"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"

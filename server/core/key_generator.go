@@ -14,8 +14,8 @@
 package core
 
 import (
+	"github.com/ServiceComb/service-center/pkg/util"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/util"
 	"strings"
 )
 

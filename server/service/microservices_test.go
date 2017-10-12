@@ -15,9 +15,9 @@ package service_test
 
 import (
 	"fmt"
-	constKey "github.com/ServiceComb/service-center/server/common"
 	"github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/ServiceComb/service-center/server/plugin/infra/quota/buildin"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"strconv"
@@ -400,7 +400,7 @@ var _ = Describe("ServiceController", func() {
 			})
 
 			It("create service, schema param check", func() {
-				size := constKey.SCHEMA_NUM_MAX_FOR_ONESERVICE + 1
+				size := buildin.SCHEMA_NUM_MAX_FOR_ONESERVICE + 1
 				schemas := make([]string, size)
 				for i := 0; i < size; i++ {
 					schemas = append(schemas, strconv.Itoa(i))
