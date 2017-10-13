@@ -22,18 +22,37 @@ limitations under the License.
         </md-button>
       </div>
     </md-toolbar>
+
     <md-content>
-      <div ng-if="testSchema" class="swaggerDiv" swagger-ui input-type="yaml" input="testSchema" 
-      api-explorer="true" try-it="true"></div>
-      <div ng-if="!testSchema">
+      <div ng-show="showSchema">
+        <div ng-if="testSchema" class="swaggerDiv" swagger-ui input-type="yaml" input="testSchema" api-explorer="true" 
+          try-it="true"></div>
+       <div ng-if="!testSchema">
         <h2 class="text-center">No Schema Exists</h2>
+       </div>
+      </div>
+      
+      <div ng-show="!showSchema">
+        <div ng-if="(addresses.length > 0)" class="row" style="margin:0px auto;width:70%;">
+          <div class="form-group col-md-offset-3 col-md-4">
+            <label for="sel2">Address :</label>
+            <select class="form-control" ng-model="selectedAddress" ng-change="setAddress(selectedAddress)">
+              <option ng-repeat="address in addresses" value="{{address}}"> {{ address }} </option>
+            </select>
+            <button class="btn btn-primary btn-block" style="margin-top:10px;" ng-click="getSchema()">Next</button>
+        </div>     
+       </div>
+       <div ng-if="(addresses.length == 0)">
+          <h3 class="text-center">No instances available to test the schema</h3>
+       </div>
       </div>
     </md-content>
+
     <md-dialog-actions layout="row">
       <span flex></span>
       <md-button ng-click="cancel()">
       	{{ "close" | translate}}
       </md-button>
     </md-dialog-actions>
-</md-dialog>
 
+</md-dialog>

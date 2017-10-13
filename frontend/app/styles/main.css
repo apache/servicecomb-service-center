@@ -5746,7 +5746,7 @@ body {
     body .serviceStatus.outofservice {
       background-color: #bcc2c9; }
   nav {
-    background-color: #3c8dbc !important;
+    background-color: #0091EA !important;
     height: 50px;
     position: relative;
     z-index: 1;
@@ -5771,7 +5771,6 @@ body {
     height: 100%;
     width: 230px;
     position: fixed;
-    background-color: #19A093;
     font-family: sans-serif;
     }
     body .sidebar-wrapper .sidebar-nav {
@@ -5782,31 +5781,31 @@ body {
       padding: 0;
       list-style: none; }
       body .sidebar-wrapper .sidebar-nav li {
-        color: #fff;
+        color: #000;
         text-indent: 20px;
         line-height: 50px; }
         body .sidebar-wrapper .sidebar-nav li a {
           display: block;
           text-decoration: none;
-          color: #fff;
+          color: #000;
           font-size: 14px; }
           body .sidebar-wrapper .sidebar-nav li a:hover {
             text-decoration: none;
             color: black !important;
-            background: #fff;
+            background: #efefef;
             width:230px;}
       body .sidebar-wrapper .sidebar-nav .active, body .sidebar-wrapper .sidebar-nav .activeProvider, body .sidebar-wrapper .sidebar-nav .activeConsumer, body .sidebar-wrapper .sidebar-nav .schemaTab {
         text-decoration: none;
-        color: brown !important;
+        color: #000 !important;
         border-left: 3px solid #3c8dbc;
-        background-color: #fff;
+        background-color: #efefef;
         width:230px;}
     body .sidebar-wrapper .brand {
       font-size: 22px;
       padding-left: 20px;
       }
       body .sidebar-wrapper ul li:first-child {
-        border-bottom: 1px solid #fff;
+        border-bottom: 1px solid #d3d3d3;
       }
   body .bodyContent {
     margin-left: 250px;
@@ -5860,7 +5859,7 @@ body {
   body .schemaTable th {
     width: 50%; }
   body md-toolbar.md-default-theme:not(.md-menu-toolbar), body md-toolbar:not(.md-menu-toolbar) {
-    background-color: #3c8dbc !important; }
+    background-color: #0091EA !important; }
   body md-toolbar.md-default-theme:not(.md-menu-toolbar).md-warn, body md-toolbar:not(.md-menu-toolbar).md-warn {
     background-color: #ff5722 !important; }
   body md-dialog {
@@ -5986,7 +5985,7 @@ body {
     left: 0px;
     bottom: 0px;
     width: 100%;
-    background-color: #3c8dbc !important;
+    background-color: #0091EA !important;
     color: #fff;
     padding-top: 5px;
     z-index: 9999;

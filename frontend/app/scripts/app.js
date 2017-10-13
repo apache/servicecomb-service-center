@@ -13,8 +13,8 @@
 //limitations under the License.
 'use strict';
 
-angular.module('serviceCenter', ['ngAnimate', 'ngMaterial', 'ngAria', 'ngMessages', 'ngResource', 'ngRoute', 'ngSanitize', 'ui.router',
-    'ngMdIcons', 'pascalprecht.translate', 'serviceCenter.router', 'serviceCenter.dashboard', 'serviceCenter.sc', 'md.data.table', 'jsonFormatter', 'chart.js', 'swaggerUi'])
+angular.module('serviceCenter', ['ngAnimate', 'ngMaterial', 'ngAria', 'ngMessages', 'ngResource', 'ngRoute', 'ngSanitize', 'ui.router', 'ngMdIcons', 'pascalprecht.translate', 'serviceCenter.router', 
+  'serviceCenter.dashboard', 'serviceCenter.sc', 'md.data.table', 'chart.js', 'swaggerUi', 'mmumshad.yamljs'])
   .config(['$translateProvider', 'english', 'chinese', function($translateProvider, english, chinese) {
         $translateProvider.useSanitizeValueStrategy(null);
         
@@ -40,10 +40,8 @@ angular.module('serviceCenter', ['ngAnimate', 'ngMaterial', 'ngAria', 'ngMessage
         $injector.invoke(['$qProvider', function($qProvider) {
             $qProvider.errorOnUnhandledRejections(false);
         }]);
+
     }])
-  .config(function (JSONFormatterConfigProvider) {
-        JSONFormatterConfigProvider.hoverPreviewEnabled = true;
-    })
   .config(function($mdThemingProvider) { 
     $mdThemingProvider.theme('default')
       .primaryPalette('indigo', {
@@ -52,7 +50,6 @@ angular.module('serviceCenter', ['ngAnimate', 'ngMaterial', 'ngAria', 'ngMessage
         'hue-2': '600', 
         'hue-3': 'A100' 
       })
-      
       .accentPalette('purple', {
         'default': '200'
       });
