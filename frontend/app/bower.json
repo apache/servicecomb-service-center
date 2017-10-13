@@ -1,5 +1,5 @@
 {
-  "name": "Huawei Cloud Fedration",
+  "name": "Huawei MicroServices",
   "version": "0.0.0",
   "dependencies": {
     "angular": "^1.4.0",
@@ -27,7 +27,7 @@
     "angular-translate": "^2.11.0"
   },
   "appPath": "app",
-  "moduleName": "cloudFedrationApp",
+  "moduleName": "Huawei Microservices",
   "overrides": {
     "bootstrap": {
       "main": [

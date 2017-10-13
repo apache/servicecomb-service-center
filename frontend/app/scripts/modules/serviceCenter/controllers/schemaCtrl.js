@@ -43,10 +43,10 @@ angular.module('serviceCenter.sc')
 					}
 			  }
 			  else {
-			  	addresses = [];
+			  	addresses = [[]];
 			  }
 			},function(error){
-				addresses = [];
+				addresses = [[]];
 			});
 		}
 		$scope.instanceDetails();
