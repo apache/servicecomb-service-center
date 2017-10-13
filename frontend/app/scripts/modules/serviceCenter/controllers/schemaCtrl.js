@@ -35,9 +35,9 @@ angular.module('serviceCenter.sc')
 			httpService.apiRequest(instanceApi, instanceMethod, null, instanceHeaders, "nopopup").then(function(response){
 			  if(response && response.data && response.data.instances) {
 					for(var i = 0; i < response.data.instances.length; i++){
-						instances.push(response.data.instances[i].hostName);
+						addresses[i] = [];
+						instances.push(response.data.instances[i].hostName + '-' +response.data.instances[i].instanceId);
 						for(var j = 0; j< response.data.instances[i].endpoints.length; j++){
-							addresses[i] = [];
 							addresses[i].push(response.data.instances[i].endpoints[j])
 						}
 					}
