@@ -5994,8 +5994,9 @@ md-card {
 #tenant, md-select-value {
     margin-top: -10px !important;
 }
-#schemaBtn {
-    background-color: rgb(59,120,231);
+.schemaBtn {
+    background-color: #0091EA !important;
+    color: #fff !important;
 }
 .tenant {
     color: white;
@@ -6092,7 +6093,7 @@ md-table-pagination .md-select-icon {
 .updatedTime {
   padding-right: 10px;
 }
-table {
+table, md-toolbar {
   font-family: sans-serif;
 }
 /*# sourceMappingURL=main.css.map */

@@ -88,10 +88,12 @@ angular.module('serviceCenter.sc')
 							$(".loader").hide();
 							if(response && response.data && response.data.schema){
 								if($scope.selectedAddress.indexOf("rest") != -1){
-				    				var ip = $scope.selectedAddress.substring(7, $scope.selectedAddress.length);
+				    				var rest = $scope.selectedAddress.split(':');
+				    				var ip = rest[1].substring(2,rest[1].length)+":"+rest[2].substring(0,4);
 				    			}
 				    			if($scope.selectedAddress.indexOf("highway") != -1){
-				    				var ip = $scope.selectedAddress.substring(10, $scope.selectedAddress.length);
+				    				var highway = $scope.selectedAddress.split(':');
+				    				var ip = highway[1].substring(2,highway[1].length)+":"+highway[2].substring(0,4);
 				    			}
 								var schema = response.data.schema;
 								var json = YAML.parse(schema);
