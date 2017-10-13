@@ -28,22 +28,26 @@ limitations under the License.
         <div ng-if="testSchema" class="swaggerDiv" swagger-ui input-type="yaml" input="testSchema" api-explorer="true" 
           try-it="true"></div>
        <div ng-if="!testSchema">
-        <h2 class="text-center">No Schema Exists</h2>
+        <h2 class="text-center">{{ "noSchemaExists" | translate }}</h2>
        </div>
       </div>
       
       <div ng-show="!showSchema">
-        <div ng-if="(addresses.length > 0)" class="row" style="margin:0px auto;width:70%;">
-          <div class="form-group col-md-offset-3 col-md-4">
-            <label for="sel2">Address :</label>
+        <div ng-if="(instances.length > 0)" class="row" style="margin:0px auto;width:70%;">
+          <div class="form-group col-md-offset-3 col-md-4" style="margin-top: 20px;">
+            <label>{{ "instancename" | translate }}:</label>
+            <select class="form-control" ng-model="selectedInstance" ng-change="setInstance(selectedInstance)">
+              <option ng-repeat="instance in instances" value="{{instance}}"> {{ instance }} </option>
+            </select>
+            <label>{{ "address" | translate }}:</label>
             <select class="form-control" ng-model="selectedAddress" ng-change="setAddress(selectedAddress)">
               <option ng-repeat="address in addresses" value="{{address}}"> {{ address }} </option>
             </select>
-            <button class="btn btn-primary btn-block" style="margin-top:10px;" ng-click="getSchema()">Next</button>
+            <button class="btn btn-primary btn-block" style="margin-top:10px;" ng-click="getSchema()">{{ "next" | translate }}</button>
         </div>     
        </div>
-       <div ng-if="(addresses.length == 0)">
-          <h3 class="text-center">No instances available to test the schema</h3>
+       <div ng-if="(instances.length == 0)">
+          <h3 class="text-center">{{ "noInstance" | translate }}</h3>
        </div>
       </div>
     </md-content>

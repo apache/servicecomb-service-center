@@ -67,6 +67,11 @@ angular.module('serviceCenter')
 	"htipl": "华为 技术 私人的 有限",
 	"language": "语言",
 	"testSchema": "测试模式",
+	"noschemaExists": "不存在模式",
+	"noInstance": "没有可用的测试模式的实例",
+	"instancename":"实例名称",
+	"address": "地址",
+	"next":"下一个",
 	"copyRight" : "由华为技术股份有限公司有限公司（获得确认和变更）！"
 
 });

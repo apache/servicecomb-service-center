@@ -424,8 +424,8 @@ angular
 			// add headers
 			headers.Accept = values.responseType;
 			headers['Content-Type'] = body ? values.contentType : 'text/plain';
-			headers['instanceIP'] = swagger.instanceIP || '';
-			headers['schema'] = swagger.schemaName || '';
+			headers['X-InstanceIP'] = swagger.instanceIP || '';
+			headers['X-SchemaName'] = swagger.schemaName || '';
 		    // build request
 			var basePath = swagger.basePath || '',
 				baseUrl = [

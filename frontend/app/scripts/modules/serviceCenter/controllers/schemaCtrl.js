@@ -26,6 +26,7 @@ angular.module('serviceCenter.sc')
         	});
 		}
 		var addresses = [];
+		var instances = [];
 		$scope.instanceDetails = function(){
 			var instanceUrl = apiConstant.api.instances.url;
 			var instanceApi = instanceUrl.replace('{{serviceId}}', serviceId);
@@ -34,8 +35,10 @@ angular.module('serviceCenter.sc')
 			httpService.apiRequest(instanceApi, instanceMethod, null, instanceHeaders, "nopopup").then(function(response){
 			  if(response && response.data && response.data.instances) {
 					for(var i = 0; i < response.data.instances.length; i++){
+						instances.push(response.data.instances[i].hostName);
 						for(var j = 0; j< response.data.instances[i].endpoints.length; j++){
-							addresses.push(response.data.instances[i].endpoints[j])
+							addresses[i] = [];
+							addresses[i].push(response.data.instances[i].endpoints[j])
 						}
 					}
 			  }
@@ -49,14 +52,27 @@ angular.module('serviceCenter.sc')
 		$scope.instanceDetails();
 
 		$scope.schema = [];
-
 		$scope.testSchema = function(selectedSchema) {
 			$mdDialog.show({
 		      controller: function ($scope, $mdDialog, apiConstant, httpService) {
 				    $scope.showSchema = false;
 
-				    $scope.addresses = addresses;
-				    $scope.selectedAddress = addresses[0] || '';
+				    $scope.instances = instances;
+				    $scope.selectedInstance =  instances[0] || '';
+
+				    $scope.addresses = addresses[0];
+				    $scope.selectedAddress = addresses[0][0] || '';
+
+				    $scope.setInstance = function(instance) {
+				    	for(var i = 0; i < $scope.instances.length; i++){
+				    		if(instance == $scope.instances[i]){
+				    			$scope.selectedInstance = instance[i];
+				    			$scope.addresses = addresses[i];
+				    			$scope.selectedAddress = addresses[i][0];
+				    		}
+				    	}
+
+				    };
 
 				    $scope.setAddress = function(address) {
 				    	$scope.selectedAddress = address;
