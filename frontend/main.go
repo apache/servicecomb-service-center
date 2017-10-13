@@ -16,6 +16,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/ServiceComb/service-center/frontend/schema"
 	"log"
 	"net/http"
 )
@@ -30,6 +31,9 @@ func main() {
 	fs := http.Dir(*dir)
 	fileHandler := http.FileServer(fs)
 	http.Handle("/", fileHandler)
+
+	schemaHandler := schema.TestSchema()
+	http.Handle("/testSchema/", schemaHandler)
 
 	log.Printf("Running on port %d\n", *port)
 
