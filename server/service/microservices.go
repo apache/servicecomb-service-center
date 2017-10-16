@@ -300,7 +300,7 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 		return pb.CreateResponse(pb.Response_FAIL, "Delete all instances failed for service."), err
 	}
 
-	_, err = registry.GetRegisterCenter().Txn(ctx, opts)
+	err = registry.BatchCommit(ctx, opts)
 	if err != nil {
 		util.Logger().Errorf(err, "delete microservice failed, serviceId is %s: commit data into etcd failed.", ServiceId)
 		return pb.CreateResponse(pb.Response_FAIL, "Commit operations failed."), nil

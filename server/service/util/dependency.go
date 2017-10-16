@@ -457,6 +457,10 @@ func ProviderDependencyRuleExist(ctx context.Context, tenant string, provider *p
 }
 
 func AddServiceVersionRule(ctx context.Context, tenant string, provider *pb.MicroServiceKey, consumer *pb.MicroServiceKey, consumerId string) error {
+	//创建依赖一致
+	if len(consumer.Stage) == 0 {
+		consumer.Stage = "dev"
+	}
 	exist, err := ProviderDependencyRuleExist(ctx, tenant, provider, consumer)
 	if exist || err != nil {
 		return err
@@ -468,10 +472,6 @@ func AddServiceVersionRule(ctx context.Context, tenant string, provider *pb.Micr
 	dep.ProvidersRule = []*pb.MicroServiceKey{provider}
 	dep.ConsumerId = consumerId
 
-	//创建依赖一致
-	if len(dep.Consumer.Stage) == 0 {
-		dep.Consumer.Stage = "dev"
-	}
 	lock, err := mux.Lock(mux.GLOBAL_LOCK)
 	if err != nil {
 		return err
