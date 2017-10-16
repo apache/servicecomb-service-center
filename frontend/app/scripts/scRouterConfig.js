@@ -105,7 +105,7 @@ angular.module('serviceCenter.router', [])
                 }
             },
             resolve: {
-                servicesList: ['$q', 'httpService', 'apiConstant',function($q, httpService, apiConstant){
+                servicesList: ['$q', 'httpService', 'apiConstant', function($q, httpService, apiConstant){
                     $(".loader").show();
                     var deferred = $q.defer();
                     var url = apiConstant.api.microservice.url;

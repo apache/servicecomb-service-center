@@ -11,9 +11,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
-<md-dialog>
-    <md-toolbar>
+<md-dialog flex="70">
+  <md-toolbar>
       <div class="md-toolbar-tools">
         <h2>{{ "schemaTest" | translate }}</h2>
         <span flex></span>
@@ -21,19 +20,44 @@ limitations under the License.
           <md-icon class="glyphicon glyphicon-remove" aria-label="Close dialog"></md-icon>
         </md-button>
       </div>
-    </md-toolbar>
-    <md-content>
-      <div ng-if="testSchema" class="swaggerDiv" swagger-ui input-type="yaml" input="testSchema" 
-      api-explorer="true" try-it="true"></div>
-      <div ng-if="!testSchema">
-        <h2 class="text-center">No Schema Exists</h2>
+  </md-toolbar>
+  <md-dialog-content>
+     <div ng-show="showSchema">
+        <div ng-if="testSchema" class="swaggerDiv" swagger-ui input-type="yaml" input="testSchema" api-explorer="true" 
+          try-it="true"></div>
+       <div ng-if="!testSchema">
+        <h2 class="text-center">{{ "noSchemaExists" | translate }}</h2>
+       </div>
       </div>
-    </md-content>
-    <md-dialog-actions layout="row">
-      <span flex></span>
-      <md-button ng-click="cancel()">
-      	{{ "close" | translate}}
-      </md-button>
-    </md-dialog-actions>
-</md-dialog>
+      
+      <div ng-show="!showSchema">
+        <div ng-if="(instances.length > 0)" layout="row" style="margin-top:15px;">
+          <div flex="25"></div>
+          <div flex="50">
+            <label>{{ "instancename" | translate }}:</label>
+            <select class="form-control" ng-model="selectedInstance" ng-change="setInstance(selectedInstance)">
+              <option ng-repeat="instance in instances" value="{{instance}}"> {{ instance }} </option>
+            </select>
+            <label>{{ "address" | translate }}:</label>
+            <select class="form-control" ng-model="selectedAddress" ng-change="setAddress(selectedAddress)">
+              <option ng-repeat="address in addresses" value="{{address}}"> {{ address }} </option>
+            </select>
+          </div>
+          <div flex="25"></div>    
+       </div>
+       <div ng-if="(instances.length == 0)">
+          <h3 class="text-center">{{ "noInstance" | translate }}</h3>
+       </div>
+      </div>
 
+  </md-dialog-content>
+  <md-dialog-actions layout="row">
+    <span flex></span>
+    <md-button class="md-primary md-raised" ng-show="(!showSchema) && (instances.length != 0) " ng-click="getSchema()">
+      {{ "next" | translate}}
+    </md-button>
+    <md-button ng-click="cancel()">
+      {{ "close" | translate}}
+    </md-button>
+  </md-dialog-actions>
+</md-dialog>

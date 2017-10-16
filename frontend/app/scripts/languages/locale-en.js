@@ -67,6 +67,11 @@ angular.module('serviceCenter')
 	"htipl": "Huawei Technologies Pvt Ltd",
 	"language": "Language",
 	"testSchema": "Test Schema",
+	"noSchemaExists": "No Schema Exists",
+	"noInstance": "No instances available to test the schema",
+	"instancename":"Instance Name",
+	"address": "Address",
+	"next":"Next",
 	"copyRight" : "Developed by Huawei Technologies India Pvt. Ltd (Get confirmation and change accordigly!)"
 
 });
