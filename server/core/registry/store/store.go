@@ -91,6 +91,7 @@ type LeaseAsyncTask struct {
 	TTL        int64
 	CreateTime time.Time
 	StartTime  time.Time
+	EndTime    time.Time
 	err        error
 }
 
@@ -101,6 +102,7 @@ func (lat *LeaseAsyncTask) Key() string {
 func (lat *LeaseAsyncTask) Do(ctx context.Context) error {
 	lat.StartTime = time.Now()
 	lat.TTL, lat.err = registry.GetRegisterCenter().LeaseRenew(ctx, lat.LeaseID)
+	lat.EndTime = time.Now()
 	if lat.err != nil {
 		util.Logger().Errorf(lat.err, "renew lease %d failed(rev: %s, start: %s(cost %s)), key %s",
 			lat.LeaseID,
@@ -108,15 +110,18 @@ func (lat *LeaseAsyncTask) Do(ctx context.Context) error {
 			lat.StartTime.Format("15:04:05.000"),
 			time.Now().Sub(lat.StartTime),
 			lat.Key())
-	} else {
-		util.Logger().Debugf("renew lease %d(rev: %s, start: %s(cost %s)), key %s",
+		return lat.err
+	}
+
+	if lat.EndTime.Sub(lat.StartTime) > time.Second {
+		util.Logger().Warnf(nil, "renew lease %d(rev: %s, start: %s(cost %s)), key %s",
 			lat.LeaseID,
 			lat.CreateTime.Format("15:04:05.000"),
 			lat.StartTime.Format("15:04:05.000"),
 			time.Now().Sub(lat.StartTime),
 			lat.Key())
 	}
-	return lat.err
+	return nil
 }
 
 func (lat *LeaseAsyncTask) Err() error {
