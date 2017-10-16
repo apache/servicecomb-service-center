@@ -150,7 +150,7 @@ func (l *logger) logs(ss []Sink, loglevel LogLevel, action string, err error, da
 	log := LogFormat{
 		Timestamp: currentTimestamp(),
 		Source:    l.component,
-		Message:   l.task + "." + strconv.QuoteToGraphic(action),
+		Message:   strconv.QuoteToGraphic(action),
 		LogLevel:  loglevel,
 		Data:      logData,
 	}
@@ -160,6 +160,7 @@ func (l *logger) logs(ss []Sink, loglevel LogLevel, action string, err error, da
 
 	for _, sink := range ss {
 		if !(l.logFormatText) {
+			log.Message = l.task + "." + log.Message
 			jsondata, jserr := log.ToJSON()
 			if jserr != nil {
 				fmt.Printf("[lager] ToJSON() ERROR! action: %s, jserr: %s, log: %s\n", action, jserr, log)
@@ -175,7 +176,7 @@ func (l *logger) logs(ss []Sink, loglevel LogLevel, action string, err error, da
 		} else {
 			levelstr := strings.ToUpper(FormatLogLevel(log.LogLevel))
 			buf := bytes.Buffer{}
-			buf.WriteString(fmt.Sprintf("%s %s %s %d %s %s():%d - %s",
+			buf.WriteString(fmt.Sprintf("%s %s %s %d %s %s():%d %s",
 				log.Timestamp, levelstr, log.Source, log.ProcessID, log.File, log.Method, log.LineNo, log.Message))
 			if err != nil {
 				buf.WriteString(fmt.Sprintf("(error: %s)", logData["error"]))
@@ -264,7 +265,7 @@ func (l *logger) baseData(givenData ...Data) Data {
 }
 
 func currentTimestamp() string {
-	return time.Now().Format(time.RFC3339Nano)
+	return time.Now().Format("2006-01-02T15:04:05.000Z07:00")
 }
 
 func addExtLogInfo(logf *LogFormat) {
@@ -284,6 +285,15 @@ func addExtLogInfo(logf *LogFormat) {
 				logf.File = file[idx+4:]
 			default:
 				logf.File = file
+			}
+			packages := strings.Split(logf.File, "/")
+			if len(packages) > 0 {
+				short := ""
+				for _, p := range packages {
+					short += p[0:1] + "/"
+				}
+				short += packages[len(packages)-1]
+				logf.File = short
 			}
 
 			logf.LineNo = line

@@ -21,6 +21,7 @@ import (
 	"golang.org/x/net/context"
 	"strconv"
 	"sync"
+	"time"
 )
 
 const (
@@ -85,10 +86,12 @@ func init() {
 }
 
 type LeaseAsyncTask struct {
-	key     string
-	LeaseID int64
-	TTL     int64
-	err     error
+	key        string
+	LeaseID    int64
+	TTL        int64
+	CreateTime time.Time
+	StartTime  time.Time
+	err        error
 }
 
 func (lat *LeaseAsyncTask) Key() string {
@@ -96,9 +99,22 @@ func (lat *LeaseAsyncTask) Key() string {
 }
 
 func (lat *LeaseAsyncTask) Do(ctx context.Context) error {
+	lat.StartTime = time.Now()
 	lat.TTL, lat.err = registry.GetRegisterCenter().LeaseRenew(ctx, lat.LeaseID)
 	if lat.err != nil {
-		util.Logger().Errorf(lat.err, "renew lease %d failed, key %s", lat.LeaseID, lat.Key())
+		util.Logger().Errorf(lat.err, "renew lease %d failed(rev: %s, start: %s(cost %s)), key %s",
+			lat.LeaseID,
+			lat.CreateTime.Format("15:04:05.000"),
+			lat.StartTime.Format("15:04:05.000"),
+			time.Now().Sub(lat.StartTime),
+			lat.Key())
+	} else {
+		util.Logger().Debugf("renew lease %d(rev: %s, start: %s(cost %s)), key %s",
+			lat.LeaseID,
+			lat.CreateTime.Format("15:04:05.000"),
+			lat.StartTime.Format("15:04:05.000"),
+			time.Now().Sub(lat.StartTime),
+			lat.Key())
 	}
 	return lat.err
 }
@@ -336,8 +352,9 @@ func Store() *KvStore {
 
 func NewLeaseAsyncTask(op registry.PluginOp) *LeaseAsyncTask {
 	return &LeaseAsyncTask{
-		key:     "LeaseAsyncTask_" + util.BytesToStringWithNoCopy(op.Key),
-		LeaseID: op.Lease,
+		key:        "LeaseAsyncTask_" + util.BytesToStringWithNoCopy(op.Key),
+		LeaseID:    op.Lease,
+		CreateTime: time.Now(),
 	}
 }
 
