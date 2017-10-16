@@ -176,3 +176,29 @@ func monitorLogFile() {
 		}
 	})
 }
+
+func LogNilOrWarnf(start time.Time, format string, args ...interface{}) {
+	cost := time.Now().Sub(start)
+	if cost < time.Second {
+		return
+	}
+	Logger().Warnf(nil, "[%s]%s", cost, fmt.Sprintf(format, args...))
+}
+
+func LogDebugOrWarnf(start time.Time, format string, args ...interface{}) {
+	cost := time.Now().Sub(start)
+	if cost < time.Second {
+		Logger().Debugf("[%s]%s", cost, fmt.Sprintf(format, args...))
+		return
+	}
+	Logger().Warnf(nil, "[%s]%s", cost, fmt.Sprintf(format, args...))
+}
+
+func LogInfoOrWarnf(start time.Time, format string, args ...interface{}) {
+	cost := time.Now().Sub(start)
+	if cost < time.Second {
+		Logger().Infof("[%s]%s", cost, fmt.Sprintf(format, args...))
+		return
+	}
+	Logger().Warnf(nil, "[%s]%s", cost, fmt.Sprintf(format, args...))
+}

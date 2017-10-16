@@ -14,7 +14,6 @@
 package registry
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/astaxie/beego"
@@ -78,7 +77,38 @@ func (so SortOrder) String() string {
 }
 
 type CompareType int
+
+func (ct CompareType) String() string {
+	switch ct {
+	case CMP_VERSION:
+		return "CMP_VERSION"
+	case CMP_CREATE:
+		return "CMP_CREATE"
+	case CMP_MOD:
+		return "CMP_MOD"
+	case CMP_VALUE:
+		return "CMP_VALUE"
+	default:
+		return "CMP_TYPE" + strconv.Itoa(int(ct))
+	}
+}
+
 type CompareResult int
+
+func (cr CompareResult) String() string {
+	switch cr {
+	case CMP_EQUAL:
+		return "CMP_EQUAL"
+	case CMP_GREATER:
+		return "CMP_GREATER"
+	case CMP_LESS:
+		return "CMP_LESS"
+	case CMP_NOT_EQUAL:
+		return "CMP_NOT_EQUAL"
+	default:
+		return "CMP_RESULT" + strconv.Itoa(int(cr))
+	}
+}
 
 const (
 	Get ActionType = iota
@@ -151,25 +181,28 @@ type Config struct {
 }
 
 type PluginOp struct {
-	Action        ActionType    `json:"action"`
-	Key           []byte        `json:"key,omitempty"`
-	EndKey        []byte        `json:"endKey,omitempty"`
-	Value         []byte        `json:"value,omitempty"`
-	Prefix        bool          `json:"prefix,omitempty"`
-	PrevKV        bool          `json:"prevKV,omitempty"`
-	Lease         int64         `json:"leaseId,omitempty"`
-	KeyOnly       bool          `json:"keyOnly,omitempty"`
-	CountOnly     bool          `json:"countOnly,omitempty"`
-	SortOrder     SortOrder     `json:"sort,omitempty"`
-	Revision      int64         `json:"rev,omitempty"`
-	IgnoreLease   bool          `json:"ignoreLease,omitempty"`
-	Mode          CacheMode     `json:"mode,omitempty"`
-	WatchCallback WatchCallback `json:"watchCallback,omitempty"`
+	Action        ActionType
+	Key           []byte
+	EndKey        []byte
+	Value         []byte
+	Prefix        bool
+	PrevKV        bool
+	Lease         int64
+	KeyOnly       bool
+	CountOnly     bool
+	SortOrder     SortOrder
+	Revision      int64
+	IgnoreLease   bool
+	Mode          CacheMode
+	WatchCallback WatchCallback
 }
 
-func (op *PluginOp) String() string {
-	b, _ := json.Marshal(op)
-	return util.BytesToStringWithNoCopy(b)
+func (op PluginOp) String() string {
+	return fmt.Sprintf(
+		"{action: %s, key: %s, end: %s, val: %s, prefix: %t, prev: %t, lease: %d, keyOnly: %t, countOnly: %t, sort: %s, rev: %d, ignoreLease: %t, mode: %s}",
+		op.Action, op.Key, op.EndKey, op.Value, op.Prefix, op.PrevKV, op.Lease, op.KeyOnly, op.CountOnly,
+		op.SortOrder, op.Revision, op.IgnoreLease, op.Mode,
+	)
 }
 
 type PluginOpOption func(*PluginOp)
@@ -245,6 +278,13 @@ type CompareOp struct {
 	Type   CompareType
 	Result CompareResult
 	Value  interface{}
+}
+
+func (op CompareOp) String() string {
+	return fmt.Sprintf(
+		"{key: %s, type: %s, result: %s, val: %s}",
+		op.Key, op.Type, op.Result, op.Value,
+	)
 }
 
 func CmpVer(key []byte) CompareOp          { return CompareOp{Key: key, Type: CMP_VERSION} }

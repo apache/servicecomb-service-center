@@ -34,7 +34,7 @@ type KvCacherCfg struct {
 	DeferHander        DeferHandler
 }
 
-func (cfg *KvCacherCfg) String() string {
+func (cfg KvCacherCfg) String() string {
 	return fmt.Sprintf("{key: %s, timeout: %s, period: %s}",
 		cfg.Key, cfg.Timeout, cfg.Period)
 }
