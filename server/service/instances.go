@@ -307,6 +307,7 @@ func (s *InstanceController) Heartbeat(ctx context.Context, in *pb.HeartbeatRequ
 			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
 		}, nil
 	}
+	startTime := time.Now()
 	remoteIP := util.GetIPFromContext(ctx)
 	tenant := util.ParseTenantProject(ctx)
 	instanceFlag := util.StringJoin([]string{in.ServiceId, in.InstanceId}, "/")
@@ -324,7 +325,8 @@ func (s *InstanceController) Heartbeat(ctx context.Context, in *pb.HeartbeatRequ
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service instance does not exist."),
 		}, nil
 	}
-	util.Logger().Infof("heartbeat successful: %s renew ttl to %d. operator: %s", instanceFlag, ttl, remoteIP)
+	util.Logger().Infof("heartbeat(cost %s) successful: %s renew ttl to %d. operator: %s",
+		time.Since(startTime), instanceFlag, ttl, remoteIP)
 	return &pb.HeartbeatResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Update service instance heartbeat successfully."),
 	}, nil
