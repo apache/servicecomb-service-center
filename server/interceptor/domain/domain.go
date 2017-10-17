@@ -16,32 +16,30 @@ package domain
 import (
 	"errors"
 	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/server/common"
+	"github.com/ServiceComb/service-center/server/core"
 	"net/http"
 )
 
 const (
-	TIME_FORMAT = "2006-01-02T15:04:05Z07:00"
+	DEFAULT_PROJECT = "default"
 )
 
-func Intercept(w http.ResponseWriter, r *http.Request) error {
-	util.Logger().Debugf("Intercept Domain")
+var NO_CHECK_URL = map[string]bool{"/version": true, "/health": true}
 
+func Intercept(w http.ResponseWriter, r *http.Request) error {
 	request := r
 	tenant := ""
 	project := ""
-	var err error
 	ctx := r.Context()
-	tenant, project, err = common.GetTenantProjectFromHeader(r)
-	if err != nil {
+	tenant, project = GetTenantProjectFromHeader(r)
+	if len(tenant) == 0 || len(project) == 0 {
+		err := errors.New("Header does not contain domain.")
+
+		util.Logger().Errorf(err, "Invalid Request URI %s", r.RequestURI)
+
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write(util.StringToBytesWithNoCopy(err.Error()))
 		return err
-	}
-	if len(tenant) == 0 || len(project) == 0 {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write(util.StringToBytesWithNoCopy("Domain or project from token is empty."))
-		return errors.New("Domain or project from token is empty.")
 	}
 
 	ctx = util.NewContext(ctx, "tenant", tenant)
@@ -49,4 +47,30 @@ func Intercept(w http.ResponseWriter, r *http.Request) error {
 	request = r.WithContext(ctx)
 	*r = *request
 	return nil
+}
+
+func IsSkip(uri string) bool {
+	if b, ok := NO_CHECK_URL[uri]; ok {
+		return b
+	}
+	return false
+}
+
+func GetTenantProjectFromHeader(r *http.Request) (string, string) {
+	var domain, project string
+	domain = r.Header.Get("X-Tenant-Name")
+	if len(domain) == 0 {
+		domain = r.Header.Get("x-domain-name")
+		if len(domain) == 0 {
+			if IsSkip(r.RequestURI) {
+				return core.REGISTRY_TENANT, core.REGISTRY_PROJECT
+			}
+			return "", ""
+		}
+	}
+	project = r.Header.Get("X-Project-Name")
+	if len(project) == 0 {
+		project = DEFAULT_PROJECT
+	}
+	return domain, project
 }
