@@ -126,9 +126,11 @@ func ParseProject(ctx context.Context) string {
 }
 
 func GetIPFromContext(ctx context.Context) string {
-	remoteIp := ""
-	remoteIp, _ = ctx.Value("x-remote-ip").(string)
-	return remoteIp
+	v, ok := FromContext(ctx, "x-remote-ip").(string)
+	if !ok {
+		return ""
+	}
+	return v
 }
 
 func DeepCopy(dst, src interface{}) error {
@@ -232,6 +234,22 @@ func addIPToContext(r *http.Request) {
 	*r = *request
 }
 
+func addStartTimestamp(r *http.Request) {
+	ctx := r.Context()
+	ctx = NewContext(ctx, "x-start-timestamp", time.Now())
+	request := r.WithContext(ctx)
+	*r = *request
+}
+
 func InitContext(r *http.Request) {
 	addIPToContext(r)
+	addStartTimestamp(r)
+}
+
+func GetStartTimeFromContext(ctx context.Context) time.Time {
+	v, ok := FromContext(ctx, "x-start-timestamp").(time.Time)
+	if !ok {
+		return time.Now()
+	}
+	return v
 }
