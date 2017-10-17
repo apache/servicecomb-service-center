@@ -51,7 +51,7 @@ type ServiceCenterServer struct {
 }
 
 func (s *ServiceCenterServer) Run() {
-	util.Logger().Infof("service center have running simultaneously with %d CPU cores", runtime.GOMAXPROCS(0))
+	s.initialize()
 
 	s.waitForReady()
 
@@ -60,6 +60,12 @@ func (s *ServiceCenterServer) Run() {
 	s.startApiServer()
 
 	s.waitForQuit()
+}
+
+func (s *ServiceCenterServer) initialize() {
+	cores := runtime.NumCPU()
+	runtime.GOMAXPROCS(cores)
+	util.Logger().Infof("service center have running simultaneously with %d CPU cores", cores)
 }
 
 func (s *ServiceCenterServer) waitForQuit() {

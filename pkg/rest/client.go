@@ -272,10 +272,6 @@ func (client *HttpClient) HttpDo(method string, url string, headers map[string]s
 		util.Logger().Errorf(err, "Request -----> %s failed.", url)
 		return resp, err
 	}
-	if resp.StatusCode != 200 && resp.StatusCode != 201 {
-		util.Logger().Errorf(nil, "Request -----> %s not ok, status is %s", url, resp.Status)
-		return resp, fmt.Errorf("Request failed, status is %s", resp.Status)
-	}
 	return resp, err
 }
 
