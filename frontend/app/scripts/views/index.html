@@ -33,7 +33,7 @@ limitations under the License.
 
           <md-input-container class="md-block" flex-gt-sm>
             <md-select ng-model="language" aria-label="language" ng-change="selectLang(language)">
-              <md-option id="lang-option" value="en">{{ "english" | translate }}</md-option>
+              <md-option id="lang-option" value="en">English</md-option>
               <md-option value="cz">{{ "chinese" | translate }}</md-option>
             </md-select>
           </md-input-container>
@@ -62,7 +62,7 @@ limitations under the License.
   <div ui-view="base">
   </div>
   <footer class="mainFooter">
-    <h5 class="text-center">&copy; 2017 {{ "htipl" | translate }}</h5>
+    <h5 class="text-center">&copy; {{ "footerValue" | translate }}</h5>
   </footer>
 </div>
 

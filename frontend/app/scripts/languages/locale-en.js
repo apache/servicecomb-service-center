@@ -64,7 +64,7 @@ angular.module('serviceCenter')
 	"of": "Of",
 	"serviceStatistics": "Service Statistics",
 	"updated": "Updated",
-	"htipl": "Huawei Technologies Pvt Ltd",
+	"footerValue": "Service Comb",
 	"language": "Language",
 	"testSchema": "Test Schema",
 	"noSchemaExists": "No Schema Exists",
@@ -72,6 +72,8 @@ angular.module('serviceCenter')
 	"instancename":"Instance Name",
 	"address": "Address",
 	"next":"Next",
-	"copyRight" : "Developed by Huawei Technologies India Pvt. Ltd (Get confirmation and change accordigly!)"
+	"noSchemaToDownload":"No schema found to download",
+	"download": "Download",
+	"viewDownload": "View & Download"
 
 });

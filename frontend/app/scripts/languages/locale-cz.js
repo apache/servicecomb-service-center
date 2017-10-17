@@ -64,7 +64,7 @@ angular.module('serviceCenter')
 	"of": "的",
 	"serviceStatistics": "服务统计",
 	"updated": "更新",
-	"htipl": "华为 技术 私人的 有限",
+	"footerValue": "服务梳",
 	"language": "语言",
 	"testSchema": "测试模式",
 	"noschemaExists": "不存在模式",
@@ -72,6 +72,8 @@ angular.module('serviceCenter')
 	"instancename":"实例名称",
 	"address": "地址",
 	"next":"下一个",
-	"copyRight" : "由华为技术股份有限公司有限公司（获得确认和变更）！"
+	"noSchemaToDownload": "找不到下载的模式",
+	"download": "下载",
+	"viewDownload": "查看和下载"
 
 });
