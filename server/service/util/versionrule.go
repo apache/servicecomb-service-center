@@ -14,7 +14,6 @@
 package util
 
 import (
-	"bytes"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"sort"
@@ -27,13 +26,14 @@ type VersionRule func(sorted []string, kvs map[string]string, start, end string)
 func (vr VersionRule) Match(kvs []*mvccpb.KeyValue, ops ...string) []string {
 	sorter := &serviceKeySorter{
 		sortArr: make([]string, len(kvs)),
-		kvs:     make(map[string]string),
+		kvs:     make(map[string]string, len(kvs)),
 		cmp:     Larger,
 	}
 	for i, kv := range kvs {
 		key := util.BytesToStringWithNoCopy(kv.Key)
-		sorter.sortArr[i] = key[strings.LastIndex(key, "/")+1:]
-		sorter.kvs[sorter.sortArr[i]] = util.BytesToStringWithNoCopy(kv.Value)
+		ver := key[strings.LastIndex(key, "/")+1:]
+		sorter.sortArr[i] = ver
+		sorter.kvs[ver] = util.BytesToStringWithNoCopy(kv.Value)
 	}
 	sort.Sort(sorter)
 
@@ -66,23 +66,27 @@ func (sks *serviceKeySorter) Less(i, j int) bool {
 	return sks.cmp(sks.sortArr[i], sks.sortArr[j])
 }
 
-func stringToBytesVersion(versionStr string) []byte {
-	verSet := strings.Split(versionStr, ".")
-	verBytes := make([]byte, len(verSet))
-	for i, v := range verSet {
-		integer, err := strconv.ParseInt(v, 10, 8)
-		if err != nil {
-			return []byte{}
+func versionToInt(versionStr string) (ret int32) {
+	verBytes := [4]byte{}
+	idx := 0
+	for i := 0; i < 4 && idx < len(versionStr); i++ {
+		f := strings.IndexRune(versionStr[idx:], '.')
+		if f < 0 {
+			f = len(versionStr) - idx
+		}
+		integer, err := strconv.ParseInt(versionStr[idx:idx+f], 10, 8)
+		if err != nil || integer < 0 {
+			return 0
 		}
 		verBytes[i] = byte(integer)
+		idx += f + 1
 	}
-	return verBytes[:]
+	ret = util.BytesToInt32(verBytes[:])
+	return
 }
 
 func Larger(start, end string) bool {
-	startVerBytes := stringToBytesVersion(start)
-	endVerBytes := stringToBytesVersion(end)
-	return bytes.Compare(startVerBytes, endVerBytes) > 0
+	return versionToInt(start) > versionToInt(end)
 }
 
 func Latest(sorted []string, kvs map[string]string, start, end string) []string {

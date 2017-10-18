@@ -18,7 +18,10 @@ import (
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"math"
+	"math/rand"
 	"sort"
+	"testing"
 )
 
 var _ = Describe("Version Rule sorter", func() {
@@ -220,3 +223,22 @@ var _ = Describe("Version Rule sorter", func() {
 		})
 	})
 })
+
+func BenchmarkVersionRule_Match(b *testing.B) {
+	var kvs = []*mvccpb.KeyValue{}
+	for i := 1; i <= b.N; i++ {
+		x := rand.Intn(math.MaxInt8)
+		y := rand.Intn(math.MaxInt8)
+		z := rand.Intn(math.MaxInt8)
+		kvs = append(kvs, &mvccpb.KeyValue{
+			Key:   []byte(fmt.Sprintf("/service/ver/%d.%d.%d", x, y, z)),
+			Value: []byte(fmt.Sprintf("%d.%d.%d", x, y, z)),
+		})
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		VersionRule(Latest).Match(kvs)
+	}
+	b.ReportAllocs()
+}
