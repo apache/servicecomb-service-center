@@ -47,7 +47,7 @@ func TestLogger(t *testing.T) {
 		fmt.Println("should be the same logger")
 		t.FailNow()
 	}
-	CustomLogger("github.com/ServiceComb/service-center/util", "testPkgPath")
+	CustomLogger("github.com/ServiceComb/service-center/pkg/util", "testPkgPath")
 	l = Logger()
 	if l == LOGGER || l == nil {
 		fmt.Println("should create a new instance for 'util'")

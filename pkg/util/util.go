@@ -17,8 +17,10 @@ import (
 	"bytes"
 	"encoding/gob"
 	"golang.org/x/net/context"
+	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 	"unsafe"
 )
@@ -124,9 +126,11 @@ func ParseProject(ctx context.Context) string {
 }
 
 func GetIPFromContext(ctx context.Context) string {
-	remoteIp := ""
-	remoteIp, _ = ctx.Value("x-remote-ip").(string)
-	return remoteIp
+	v, ok := FromContext(ctx, "x-remote-ip").(string)
+	if !ok {
+		return ""
+	}
+	return v
 }
 
 func DeepCopy(dst, src interface{}) error {
@@ -212,4 +216,40 @@ func ParseEndpoint(ep string) (string, error) {
 		return u.Hostname() + ":" + port, nil
 	}
 	return u.Hostname(), nil
+}
+
+func GetRealIP(r *http.Request) string {
+	addrs := strings.Split(r.RemoteAddr, ":")
+	if len(addrs) > 0 {
+		return addrs[0]
+	}
+	return ""
+}
+
+func addIPToContext(r *http.Request) {
+	terminalIP := GetRealIP(r)
+	ctx := r.Context()
+	ctx = NewContext(ctx, "x-remote-ip", terminalIP)
+	request := r.WithContext(ctx)
+	*r = *request
+}
+
+func addStartTimestamp(r *http.Request) {
+	ctx := r.Context()
+	ctx = NewContext(ctx, "x-start-timestamp", time.Now())
+	request := r.WithContext(ctx)
+	*r = *request
+}
+
+func InitContext(r *http.Request) {
+	addIPToContext(r)
+	addStartTimestamp(r)
+}
+
+func GetStartTimeFromContext(ctx context.Context) time.Time {
+	v, ok := FromContext(ctx, "x-start-timestamp").(time.Time)
+	if !ok {
+		return time.Now()
+	}
+	return v
 }

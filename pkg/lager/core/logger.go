@@ -279,23 +279,13 @@ func addExtLogInfo(logf *LogFormat) {
 		}
 
 		if ok {
-			idx := strings.LastIndex(file, "src")
+			idx := strings.LastIndex(file, "/")
 			switch {
 			case idx >= 0:
-				logf.File = file[idx+4:]
+				logf.File = file[idx+1:]
 			default:
 				logf.File = file
 			}
-			packages := strings.Split(logf.File, "/")
-			if len(packages) > 0 {
-				short := ""
-				for _, p := range packages {
-					short += p[0:1] + "/"
-				}
-				short += packages[len(packages)-1]
-				logf.File = short
-			}
-
 			logf.LineNo = line
 			if f := runtime.FuncForPC(pc); f != nil {
 				logf.Method = formatFuncName(f.Name())
