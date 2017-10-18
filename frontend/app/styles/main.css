@@ -5794,7 +5794,7 @@ body {
             color: black !important;
             background: #efefef;
             width:230px;}
-      body .sidebar-wrapper .sidebar-nav .active, body .sidebar-wrapper .sidebar-nav .activeProvider, body .sidebar-wrapper .sidebar-nav .activeConsumer, body .sidebar-wrapper .sidebar-nav .schemaTab {
+      body .sidebar-wrapper .sidebar-nav .active, body .sidebar-wrapper .sidebar-nav .activeProvider, body .sidebar-wrapper .sidebar-nav .activeConsumer, body .sidebar-wrapper .sidebar-nav .schemaTab{
         text-decoration: none;
         color: #000 !important;
         border-left: 3px solid #3c8dbc;

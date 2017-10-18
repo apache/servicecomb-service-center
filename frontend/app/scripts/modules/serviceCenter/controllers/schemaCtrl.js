@@ -13,8 +13,8 @@
 //limitations under the License.
 'use strict';
 angular.module('serviceCenter.sc')
-	.controller('schemaController',['$scope', 'apiConstant', 'httpService', '$stateParams', 'servicesList', '$q', '$mdDialog', 'YAML',
-		function($scope, apiConstant, httpService, $stateParams, servicesList, $q, $mdDialog, YAML) {
+	.controller('schemaController',['$scope', 'apiConstant', 'httpService', '$stateParams', 'servicesList', '$q', '$mdDialog', 'YAML', '$http', '$state', '$document', '$timeout',
+		function($scope, apiConstant, httpService, $stateParams, servicesList, $q, $mdDialog, YAML, $http, $state, $document, $timeout) {
 		
 		var serviceId = $stateParams.serviceId;
 		$scope.schemaName = [];
@@ -50,12 +50,78 @@ angular.module('serviceCenter.sc')
 			});
 		}
 		$scope.instanceDetails();
+		$scope.show = false;
+		$scope.downloadSchema = function(selectedSchema){
+	    	var schemaApi = apiConstant.api.schema.url;
+			var api = schemaApi.replace("{{serviceId}}", serviceId);
+			var url = api.replace("{{schemaId}}", selectedSchema);
+			var method = apiConstant.api.schema.method;
+			var headers = {"X-ConsumerId": serviceId};
+			httpService.apiRequest(url, method, null, headers, "nopopup").then(function(response){
+				if(response && response.data && response.data.schema){
+					$scope.template = response.data.schema;
+					$scope.json = YAML.parse($scope.template);
+					const ui = SwaggerUIBundle({
+						  spec: $scope.json,
+					      dom_id: '#swagger-template',
+					      presets: [
+					        SwaggerUIBundle.presets.apis,
+					        SwaggerUIStandalonePreset
+					      ],
+					      plugins: [
+					        SwaggerUIBundle.plugins.DownloadUrl
+					      ],
+					      layout: "StandaloneLayout",
+					      docExpansion: 'full'
+					});
+
+					$timeout(function(){
+						var content = $document[0].getElementById('mytemplate').innerHTML;
+						var blob = new Blob([ content ], { type : "text/html;charset=utf-8" });
+						$scope.url = (window.URL || window.webkitURL).createObjectURL( blob );
+					},2000)
+					
+				}
+			},function(error) {
+				$mdDialog.show({
+						template: `<md-dialog flex="30">
+									 <md-toolbar>
+									 	 <div class="md-toolbar-tools">
+									        <h2>Alert</h2>
+									        <span flex></span>
+									        <md-button class="md-icon-button" ng-click="cancel()">
+									          <md-icon class="glyphicon glyphicon-remove" aria-label="Close dialog"></md-icon>
+									        </md-button>
+									      </div>
+									 </md-toolbar>
+									 <md-dialog-content>
+									 	<h3 class="text-center" style="margin-top:15px;">No schema available to download</h3>
+									 </md-dialog-content>
+									 <md-dialog-actions layout="row">
+									    <span flex></span>
+									    <md-button ng-click="cancel()">
+									     Close
+									    </md-button>
+									  </md-dialog-actions>
+									</md-dialog>`,
+						parent: angular.element(document.body),
+						clickOutsideToClose: true,
+						controller: function($scope, $mdDialog) {
+							$scope.cancel = function(){
+								$mdDialog.hide();
+							}
+						}
+					})
+			});
+		};
+
 
 		$scope.schema = [];
+		
 		$scope.testSchema = function(selectedSchema) {
 			$mdDialog.show({
 		      controller: function ($scope, $mdDialog, apiConstant, httpService) {
-				    $scope.showSchema = false;
+		      		$scope.showSchema = false;
 
 				    $scope.instances = instances;
 				    $scope.selectedInstance =  instances[0] || '';
@@ -124,4 +190,6 @@ angular.module('serviceCenter.sc')
 		      fullscreen: false
 		    });
 		};
+
+		
 }]);
