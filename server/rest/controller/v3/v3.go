@@ -19,6 +19,14 @@ import (
 	"net/http"
 )
 
+var router http.Handler
+
+func init() {
+	util.Logger().Debugf("init router")
+	router = roa.InitROAServerHandler()
+	initRouter()
+}
+
 func initRouter() {
 	roa.RegisterServent(&MainService{})
 	roa.RegisterServent(&MicroServiceService{})
@@ -30,10 +38,6 @@ func initRouter() {
 }
 
 //GetRouter return the router fo REST service
-func GetRouter() (router http.Handler) {
-	util.Logger().Debugf("init router")
-	router = roa.InitROAServerHandler()
-	initRouter()
-
-	return
+func GetRouter() http.Handler {
+	return router
 }

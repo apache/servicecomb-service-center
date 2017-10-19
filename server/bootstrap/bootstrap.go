@@ -39,4 +39,6 @@ func init() {
 	interceptor.InterceptFunc(interceptor.ACCESS_PHASE, domain.Intercept)
 
 	interceptor.InterceptFunc(interceptor.CONTENT_PHASE, maxbody.Intercept)
+
+	interceptor.InterceptFunc(interceptor.LOG_PHASE, access.Log)
 }

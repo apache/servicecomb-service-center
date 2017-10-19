@@ -17,7 +17,6 @@ import (
 	"fmt"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/pkg/validate"
-	"github.com/ServiceComb/service-center/server/common"
 	"github.com/ServiceComb/service-center/server/core"
 	"net/http"
 )
@@ -32,7 +31,7 @@ func addCommonResponseHeaders(w http.ResponseWriter) {
 }
 
 func Intercept(w http.ResponseWriter, r *http.Request) error {
-	common.InitContext(r)
+	util.InitContext(r)
 
 	addCommonResponseHeaders(w)
 
@@ -42,5 +41,10 @@ func Intercept(w http.ResponseWriter, r *http.Request) error {
 		w.Write(util.StringToBytesWithNoCopy(err.Error()))
 		return err
 	}
+	return nil
+}
+
+func Log(w http.ResponseWriter, r *http.Request) error {
+	util.LogNilOrWarnf(util.GetStartTimeFromContext(r.Context()), "%s %s", r.Method, r.RequestURI)
 	return nil
 }

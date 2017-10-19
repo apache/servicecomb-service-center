@@ -224,6 +224,7 @@ func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp, countPerP
 	var etcdResp *clientv3.GetResponse
 	key := util.BytesToStringWithNoCopy(op.Key)
 
+	start := time.Now()
 	tempOp := op
 	tempOp.CountOnly = true
 	coutResp, err := c.Client.Get(ctx, key, c.toGetRequest(tempOp)...)
@@ -235,9 +236,6 @@ func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp, countPerP
 	if recordCount < countPerPage {
 		return nil, nil // no paging
 	}
-
-	util.Logger().Debugf("get too many KeyValues from etcdserver, now paging.(%d vs %d)",
-		recordCount, countPerPage)
 
 	tempOp.KeyOnly = false
 	tempOp.CountOnly = false
@@ -274,6 +272,9 @@ func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp, countPerP
 		etcdResp.Kvs = append(etcdResp.Kvs, recordResp.Kvs...)
 	}
 
+	util.LogInfoOrWarnf(start, "get too many KeyValues from etcdserver, now paging.(%d vs %d)",
+		recordCount, countPerPage)
+
 	// too slow
 	if op.SortOrder == registry.SORT_DESCEND {
 		t := time.Now()
@@ -285,12 +286,13 @@ func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp, countPerP
 			}
 			etcdResp.Kvs[i], etcdResp.Kvs[last] = etcdResp.Kvs[last], etcdResp.Kvs[i]
 		}
-		util.Logger().Debugf("sorted %d KeyValues spend %s", recordCount, time.Now().Sub(t))
+		util.LogNilOrWarnf(t, "sorted %d KeyValues", recordCount)
 	}
 	return etcdResp, nil
 }
 
 func (c *EtcdClient) Do(ctx context.Context, opts ...registry.PluginOpOption) (*registry.PluginResponse, error) {
+	start := time.Now()
 	op := registry.OptionsToOp(opts...)
 
 	otCtx, cancel := registry.WithTimeout(ctx)
@@ -348,6 +350,8 @@ func (c *EtcdClient) Do(ctx context.Context, opts ...registry.PluginOpOption) (*
 		return nil, err
 	}
 	resp.Succeeded = true
+
+	util.LogNilOrWarnf(start, "registry client do %s", op)
 	return resp, nil
 }
 
@@ -366,6 +370,7 @@ func (c *EtcdClient) TxnWithCmp(ctx context.Context, success []registry.PluginOp
 	otCtx, cancel := registry.WithTimeout(ctx)
 	defer cancel()
 
+	start := time.Now()
 	etcdCmps := c.toCompares(cmps)
 	etcdSuccessOps := c.toTxnRequest(success)
 	etcdFailOps := c.toTxnRequest(fail)
@@ -383,6 +388,7 @@ func (c *EtcdClient) TxnWithCmp(ctx context.Context, success []registry.PluginOp
 	if err != nil {
 		return nil, err
 	}
+	util.LogNilOrWarnf(start, "registry client txn {cmp: %s, success: %s, fail: %s}", cmps, success, fail)
 	return &registry.PluginResponse{
 		Succeeded: resp.Succeeded,
 		Revision:  resp.Header.Revision,
@@ -392,30 +398,36 @@ func (c *EtcdClient) TxnWithCmp(ctx context.Context, success []registry.PluginOp
 func (c *EtcdClient) LeaseGrant(ctx context.Context, TTL int64) (int64, error) {
 	otCtx, cancel := registry.WithTimeout(ctx)
 	defer cancel()
+	start := time.Now()
 	etcdResp, err := c.Client.Grant(otCtx, TTL)
 	if err != nil {
 		return 0, err
 	}
+	util.LogNilOrWarnf(start, "registry client grant lease %ds", TTL)
 	return int64(etcdResp.ID), nil
 }
 
 func (c *EtcdClient) LeaseRenew(ctx context.Context, leaseID int64) (int64, error) {
 	otCtx, cancel := registry.WithTimeout(ctx)
 	defer cancel()
+	start := time.Now()
 	etcdResp, err := c.Client.KeepAliveOnce(otCtx, clientv3.LeaseID(leaseID))
 	if err != nil {
 		return 0, err
 	}
+	util.LogNilOrWarnf(start, "registry client renew lease %d", leaseID)
 	return etcdResp.TTL, nil
 }
 
 func (c *EtcdClient) LeaseRevoke(ctx context.Context, leaseID int64) error {
 	otCtx, cancel := registry.WithTimeout(ctx)
 	defer cancel()
+	start := time.Now()
 	_, err := c.Client.Revoke(otCtx, clientv3.LeaseID(leaseID))
 	if err != nil {
 		return err
 	}
+	util.LogNilOrWarnf(start, "registry client revoke lease %d", leaseID)
 	return nil
 }
 

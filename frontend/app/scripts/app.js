@@ -33,13 +33,15 @@ angular.module('serviceCenter', ['ngAnimate', 'ngMaterial', 'ngAria', 'ngMessage
 
         $translateProvider.preferredLanguage(lang);
     }])
-  .config(['$httpProvider','$injector', function($httpProvider,$injector) {
+  .config(['$httpProvider','$injector', '$compileProvider', function($httpProvider,$injector, $compileProvider) {
         $httpProvider.defaults.useXDomain = true;
         delete $httpProvider.defaults.headers.common['X-Requested-With'];
 
         $injector.invoke(['$qProvider', function($qProvider) {
             $qProvider.errorOnUnhandledRejections(false);
         }]);
+
+        $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|tel|file|blob):/)
 
     }])
   .config(function($mdThemingProvider) { 
