@@ -395,9 +395,9 @@ func validateMicroServiceKey(in *pb.MicroServiceKey, fuzzyMatch bool) error {
 }
 
 func BadParamsResponse(detailErr string) *pb.CreateDependenciesResponse {
-	util.Logger().Errorf(nil, "Request params is Valid.")
+	util.Logger().Errorf(nil, "Request params is invalid.")
 	if len(detailErr) == 0 {
-		detailErr = "Request params is Valid."
+		detailErr = "Request params is invalid."
 	}
 	return &pb.CreateDependenciesResponse{
 		Response: pb.CreateResponse(pb.Response_FAIL, detailErr),
