@@ -43,6 +43,18 @@ angular.module('serviceCenter.sc', [])
 					'key': 'operation'
 				}
 			];
+
+			function predicateBy(prop){
+				return function(a,b){
+					if(a[prop] >b[prop]){
+						return 1;
+					}
+					else if(a[prop] < b[prop]){
+						return -1;
+					}
+					return 0;
+				}
+			}
 			
 			$scope.refreshAppList = function() {
 				angular.element(document.querySelector('.fa-refresh')).addClass('fa-spin');
@@ -103,9 +115,11 @@ angular.module('serviceCenter.sc', [])
 							
 								$scope.services.push(servicesList);
 							}
-							
-							
 						});
+
+						if($scope.services.length >0){
+							$scope.services.sort(predicateBy("serviceName"));
+						}
 
 						if($scope.services.length <= 0){
 							$scope.appList = 'empty';

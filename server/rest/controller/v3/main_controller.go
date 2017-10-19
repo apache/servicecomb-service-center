@@ -24,6 +24,8 @@ import (
 	"net/http"
 )
 
+var RunMode string
+
 type Result struct {
 	version.VersionSet
 	RunMode string `json:"runMode"`
@@ -31,6 +33,10 @@ type Result struct {
 
 type MainService struct {
 	//
+}
+
+func init() {
+	RunMode = beego.AppConfig.DefaultString("runmode", "prod")
 }
 
 func (this *MainService) URLPatterns() []rest.Route {
@@ -56,7 +62,7 @@ func (this *MainService) ClusterHealth(w http.ResponseWriter, r *http.Request) {
 func (this *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
 	result := Result{
 		version.Ver(),
-		beego.AppConfig.String("runmode"),
+		RunMode,
 	}
 	resultJSON, _ := json.Marshal(result)
 	w.Header().Set("Content-Type", "application/json;charset=utf-8")

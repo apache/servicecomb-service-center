@@ -205,6 +205,8 @@ func (op PluginOp) String() string {
 	)
 }
 
+type Operation func(...PluginOpOption) (op PluginOp)
+
 type PluginOpOption func(*PluginOp)
 type WatchCallback func(message string, evt *PluginResponse) error
 

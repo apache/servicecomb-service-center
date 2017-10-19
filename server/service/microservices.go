@@ -620,9 +620,17 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 				Response: pb.CreateResponse(pb.Response_FAIL, "Schema does not exist."),
 			}, nil
 		}
+		schemaSummary, err := getSchemaSummary(ctx, tenant, in.ServiceId, in.SchemaId)
+		if err != nil {
+			util.Logger().Errorf(err, "schema exist failed, serviceId %s, schemaId %s: get schema summary failed.", in.ServiceId, in.SchemaId)
+			return &pb.GetExistenceResponse{
+				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
+			}, err
+		}
 		return &pb.GetExistenceResponse{
 			Response: pb.CreateResponse(pb.Response_SUCCESS, "Schema exist."),
 			SchemaId: in.SchemaId,
+			Summary: schemaSummary,
 		}, nil
 	default:
 		util.Logger().Warnf(nil, "unexpected type '%s' for query.", in.Type)
