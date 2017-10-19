@@ -36,18 +36,21 @@ var (
 	HealthCheckInfoValidator      validate.Validator
 	MicroServiceKeyValidator      validate.Validator
 	DataCenterInfoValidator       validate.Validator
-	GetMSExistsReqValidator       validate.Validator
-	GetSchemaExistsReqValidator   validate.Validator
-	GetServiceReqValidator        validate.Validator
-	GetSchemaReqValidator         validate.Validator
-	DependencyMSValidator         validate.Validator
-	ProviderMsValidator           validate.Validator
-	MSDependencyValidator         validate.Validator
-	TagReqValidator               validate.Validator
-	FindInstanceReqValidator      validate.Validator
-	GetInstanceValidator          validate.Validator
+	GetMSExistsReqValidator     validate.Validator
+	GetSchemaExistsReqValidator validate.Validator
+	GetServiceReqValidator      validate.Validator
+	GetSchemaReqValidator       validate.Validator
+	DependencyMSValidator       validate.Validator
+	ProviderMsValidator         validate.Validator
+	MSDependencyValidator       validate.Validator
+	TagReqValidator             validate.Validator
+	FindInstanceReqValidator    validate.Validator
+	GetInstanceValidator        validate.Validator
+	SchemasValidor              validate.Validator
+	SchemaValidor               validate.Validator
 
 	SchemaIdRule *validate.ValidateRule
+	SchemasRule  *validate.ValidateRule
 	TagRule      *validate.ValidateRule
 )
 
@@ -62,7 +65,7 @@ func init() {
 	versionFuzzyRegex, _ := regexp.Compile(`^[0-9]*$|^[0-9]+(\.[0-9]+)*\+{0,1}$|^[0-9]+(\.[0-9]+)*-[0-9]+(\.[0-9]+)*$|^latest$`)
 	pathRegex, _ := regexp.Compile(`^[A-Za-z0-9.,?'\\/+&amp;%$#=~_\-@{}]*$`)
 	descriptionRegex, _ := regexp.Compile(`^[\p{Han}\w\s。.:*,\-：”“]*$`)
-	levelRegex, _ := regexp.Compile(`^(FRONT|MIDDLE|BACK)*$`)
+	levelRegex, _ := regexp.Compile(`^(FRONT|MIDDLE|BACK)$`)
 	statusRegex, _ := regexp.Compile(`^(UP|DOWN)*$`)
 	serviceIdRegex, _ := regexp.Compile(`^.*$`)
 	aliasRegex, _ := regexp.Compile(`^[a-zA-Z0-9_\-.:]*$`)
@@ -111,6 +114,12 @@ func init() {
 
 	GetSchemaExistsReqValidator.AddRule("ServiceId", ServiceIdRule)
 	GetSchemaExistsReqValidator.AddRule("SchemaId", SchemaIdRule)
+	SchemasValidor.AddRule("ServiceId", ServiceIdRule)
+	SchemasValidor.AddSub("Schemas", &SchemaValidor)
+	SchemaValidor.AddRule("SchemaId", SchemaIdRule)
+	SchemaSummaryRegex , _ := regexp.Compile(`(a-zA-Z0-9)*`)
+	SchemaValidor.AddRule("Summary", &validate.ValidateRule{Min: 1, Max: 512, Regexp: SchemaSummaryRegex})
+	SchemaValidor.AddRule("Schema", &validate.ValidateRule{Min: 1})
 
 	GetServiceReqValidator.AddRule("ServiceId", ServiceIdRule)
 
@@ -194,6 +203,8 @@ func Validate(v interface{}) error {
 		return TagReqValidator.Validate(v)
 	case *pb.GetSchemaRequest, *pb.ModifySchemaRequest, *pb.DeleteSchemaRequest:
 		return GetSchemaReqValidator.Validate(v)
+	case *pb.ModifySchemasRequest:
+		return SchemasValidor.Validate(v)
 	case *pb.MicroServiceDependency:
 		return DependencyMSValidator.Validate(v)
 	case *pb.FindInstancesRequest:

@@ -38,8 +38,9 @@ func (this *MicroServiceService) URLPatterns() []rest.Route {
 		{rest.HTTP_METHOD_PUT, "/registry/v3/microservices/:serviceId/properties", this.Update},
 		{rest.HTTP_METHOD_DELETE, "/registry/v3/microservices/:serviceId", this.Unregister},
 		{rest.HTTP_METHOD_GET, "/registry/v3/microservices/:serviceId/schemas/:schemaId", this.GetSchemas},
-		{rest.HTTP_METHOD_PUT, "/registry/v3/microservices/:serviceId/schemas/:schemaId", this.ModifySchemas},
+		{rest.HTTP_METHOD_PUT, "/registry/v3/microservices/:serviceId/schemas/:schemaId", this.ModifySchema},
 		{rest.HTTP_METHOD_DELETE, "/registry/v3/microservices/:serviceId/schemas/:schemaId", this.DeleteSchemas},
+		{rest.HTTP_METHOD_POST, "/registry/v3/microservices/:serviceId/schemas", this.ModifySchemas},
 
 		{rest.HTTP_METHOD_PUT, "/registry/v3/dependencies", this.CreateDependenciesForMicroServices},
 		{rest.HTTP_METHOD_GET, "/registry/v3/microservices/:consumerId/providers", this.GetConProDependencies},
@@ -68,13 +69,14 @@ func (this *MicroServiceService) GetSchemas(w http.ResponseWriter, r *http.Reque
 	controller.WriteTextResponse(resp.GetResponse(), err, "", w)
 }
 
-func (this *MicroServiceService) ModifySchemas(w http.ResponseWriter, r *http.Request) {
+func (this *MicroServiceService) ModifySchema(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		util.Logger().Error("body err", err)
 		controller.WriteText(http.StatusBadRequest, err.Error(), w)
 		return
 	}
+
 	request := &pb.ModifySchemaRequest{
 		ServiceId: r.URL.Query().Get(":serviceId"),
 		SchemaId:  r.URL.Query().Get(":schemaId"),
@@ -86,6 +88,27 @@ func (this *MicroServiceService) ModifySchemas(w http.ResponseWriter, r *http.Re
 		return
 	}
 	resp, err := core.ServiceAPI.ModifySchema(r.Context(), request)
+	controller.WriteTextResponse(resp.GetResponse(), err, "", w)
+}
+
+func (this *MicroServiceService) ModifySchemas(w http.ResponseWriter, r *http.Request) {
+	message, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		util.Logger().Error("body err", err)
+		controller.WriteText(http.StatusBadRequest, err.Error(), w)
+		return
+	}
+	serviceId := r.URL.Query().Get(":serviceId")
+	request := &pb.ModifySchemasRequest{
+	}
+	err = json.Unmarshal(message, request)
+	if err != nil {
+		util.Logger().Error("Unmarshal error", err)
+		controller.WriteText(http.StatusBadRequest, err.Error(), w)
+		return
+	}
+	request.ServiceId = serviceId
+	resp, err := core.ServiceAPI.ModifySchemas(r.Context(), request)
 	controller.WriteTextResponse(resp.GetResponse(), err, "", w)
 }
 
@@ -209,6 +232,8 @@ func (this *MicroServiceService) GetExistence(w http.ResponseWriter, r *http.Req
 		return
 	}
 	resp.Response = nil
+	w.Header().Add("x-schema-summary", resp.Summary)
+	resp.Summary = ""
 	controller.WriteJsonObject(http.StatusOK, resp, w)
 }
 

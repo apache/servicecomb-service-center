@@ -227,6 +227,71 @@ var _ = Describe("ServiceController", func() {
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
 			})
 
+			It("exist schema", func() {
+				respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceName: "exist_schema_service_name",
+						AppId:       "exist_schema_appId",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Schemas: []string{
+							"first_schemaId",
+						},
+						Status: "UP",
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				serviceId := respCreateService.ServiceId
+
+				respCreateSchema, err := serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
+					ServiceId: serviceId,
+					SchemaId: "first_schemaId",
+					Schema: "first_schema",
+				})
+				Expect(err).To(BeNil())
+				Expect(respCreateSchema.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+				respSchemaExist, err := serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
+					Type: "schema",
+					ServiceId: serviceId,
+					SchemaId: "first_schemaId",
+				})
+				Expect(err).To(BeNil())
+				Expect(respSchemaExist.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respSchemaExist.Summary).To(Equal(""))
+
+				respCreateSchemas, err := serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+					ServiceId: serviceId,
+					Schemas: []*pb.Schema{
+						&pb.Schema{
+							SchemaId: "first_schemaId",
+							Schema: "first_schema",
+							Summary: "first_summary",
+						},
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(respCreateSchemas.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+				respSchemaExist, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
+					Type: "schema",
+					ServiceId: serviceId,
+					SchemaId: "first_schemaId",
+				})
+				Expect(err).To(BeNil())
+				Expect(respSchemaExist.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respSchemaExist.Summary).To(Equal("first_summary"))
+
+
+				respDeleteService, err := serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{
+					ServiceId: serviceId,
+					Force: true,
+				})
+				Expect(err).To(BeNil())
+				Expect(respDeleteService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			})
+
 			It("微服务是否存在", func() {
 				resp, err := serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
 					Type:        "microservice",
@@ -774,6 +839,24 @@ var _ = Describe("ServiceController", func() {
 	})
 
 	Describe("DeleteServices", func() {
+		Context("param check", func() {
+			It("param check", func() {
+				resp, err := serviceResource.DeleteServices(getContext(), &pb.DelServicesRequest{
+					ServiceIds: []string{},
+					Force:      false,
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+
+				resp, err = serviceResource.DeleteServices(getContext(), &pb.DelServicesRequest{
+					ServiceIds: []string{"@#$44332_non-invalid_serviceId"},
+					Force:      false,
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+			})
+
+		})
 		Context("normal", func() {
 			var serviceId3 string
 			var serviceId4 string

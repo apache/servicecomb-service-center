@@ -29,6 +29,7 @@ const (
 	INSTANCE
 	DOMAIN
 	SCHEMA // big data should not be stored in memory.
+	SCHEMA_SUMMARY
 	RULE
 	LEASE
 	SERVICE_INDEX
@@ -45,6 +46,7 @@ var TypeNames = []string{
 	INSTANCE:        "INSTANCE",
 	DOMAIN:          "DOMAIN",
 	SCHEMA:          "SCHEMA",
+	SCHEMA_SUMMARY:   "SCHEMA_SUMMARY",
 	RULE:            "RULE",
 	LEASE:           "LEASE",
 	SERVICE_INDEX:   "SERVICE_INDEX",
@@ -60,6 +62,7 @@ var TypeRoots = map[StoreType]string{
 	INSTANCE: apt.GetInstanceRootKey(""),
 	DOMAIN:   apt.GetDomainRootKey() + "/",
 	// SCHEMA:
+	SCHEMA_SUMMARY:  apt.GetServiceSchemaSummaryRootKey(""),
 	RULE:            apt.GetServiceRuleRootKey(""),
 	LEASE:           apt.GetInstanceLeaseRootKey(""),
 	SERVICE_INDEX:   apt.GetServiceIndexRootKey(""),
@@ -205,6 +208,7 @@ func (s *KvStore) store() {
 	s.newStore(SERVICE_TAG)
 	s.newStore(RULE)
 	s.newStore(RULE_INDEX)
+	s.newStore(SCHEMA_SUMMARY)
 	for _, i := range s.indexers {
 		<-i.Ready()
 	}
@@ -278,6 +282,10 @@ func (s *KvStore) Ready() <-chan struct{} {
 
 func (s *KvStore) Service() *Indexer {
 	return s.indexers[SERVICE]
+}
+
+func (s *KvStore) SchemaSummary() *Indexer {
+	return s.indexers[SCHEMA_SUMMARY]
 }
 
 func (s *KvStore) Instance() *Indexer {
