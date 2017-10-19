@@ -15,6 +15,7 @@ package notification
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"time"
 )
@@ -41,6 +42,11 @@ type NotifyServiceConfig struct {
 	AddTimeout    time.Duration
 	NotifyTimeout time.Duration
 	MaxQueue      int64
+}
+
+func (nsc NotifyServiceConfig) String() string {
+	return fmt.Sprintf("{acceptQueue: %d, accept: %s, notify: %s}",
+		nsc.MaxQueue, nsc.AddTimeout, nsc.NotifyTimeout)
 }
 
 type Subscriber interface {

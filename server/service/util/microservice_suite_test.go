@@ -137,47 +137,55 @@ func TestServiceExist(t *testing.T) {
 	serviceUtil.ServiceExist(context.Background(), "", "", registry.WithCacheOnly())
 }
 
+const VERSIONRULE_BASE = 5000
+
 func BenchmarkVersionRule_Latest_GetServicesIds(b *testing.B) {
-	var kvs = make([]*mvccpb.KeyValue, b.N)
-	for i := 1; i <= b.N; i++ {
+	var kvs = make([]*mvccpb.KeyValue, VERSIONRULE_BASE)
+	for i := 1; i <= VERSIONRULE_BASE; i++ {
 		kvs[i-1] = &mvccpb.KeyValue{
 			Key:   []byte(fmt.Sprintf("/service/ver/1.%d", i)),
 			Value: []byte(fmt.Sprintf("%d", i)),
 		}
 	}
+	b.N = VERSIONRULE_BASE
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		serviceUtil.VersionRule(serviceUtil.Latest).Match(kvs)
 	}
-	// 5000	  13191856 ns/op
+	b.ReportAllocs()
+	// 5000	   7105020 ns/op	 2180198 B/op	   39068 allocs/op
 }
 
 func BenchmarkVersionRule_Range_GetServicesIds(b *testing.B) {
-	var kvs = make([]*mvccpb.KeyValue, b.N)
-	for i := 1; i <= b.N; i++ {
+	var kvs = make([]*mvccpb.KeyValue, VERSIONRULE_BASE)
+	for i := 1; i <= VERSIONRULE_BASE; i++ {
 		kvs[i-1] = &mvccpb.KeyValue{
 			Key:   []byte(fmt.Sprintf("/service/ver/1.%d", i)),
 			Value: []byte(fmt.Sprintf("%d", i)),
 		}
 	}
+	b.N = VERSIONRULE_BASE
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		serviceUtil.VersionRule(serviceUtil.Range).Match(kvs, fmt.Sprintf("1.%d", i), fmt.Sprintf("1.%d", i+b.N/10))
+		serviceUtil.VersionRule(serviceUtil.Range).Match(kvs, fmt.Sprintf("1.%d", i), fmt.Sprintf("1.%d", i+VERSIONRULE_BASE/10))
 	}
-	// 5000	  19754095 ns/op
+	b.ReportAllocs()
+	// 5000	   7244029 ns/op	 2287389 B/op	   39584 allocs/op
 }
 
 func BenchmarkVersionRule_AtLess_GetServicesIds(b *testing.B) {
-	var kvs = make([]*mvccpb.KeyValue, b.N)
-	for i := 1; i <= b.N; i++ {
+	var kvs = make([]*mvccpb.KeyValue, VERSIONRULE_BASE)
+	for i := 1; i <= VERSIONRULE_BASE; i++ {
 		kvs[i-1] = &mvccpb.KeyValue{
 			Key:   []byte(fmt.Sprintf("/service/ver/1.%d", i)),
 			Value: []byte(fmt.Sprintf("%d", i)),
 		}
 	}
+	b.N = VERSIONRULE_BASE
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		serviceUtil.VersionRule(serviceUtil.AtLess).Match(kvs, fmt.Sprintf("1.%d", i))
 	}
-	// 5000	  18701493 ns/op
+	b.ReportAllocs()
+	// 5000	  11221098 ns/op	 3174720 B/op	   58064 allocs/op
 }

@@ -21,19 +21,19 @@ import (
 	"strings"
 )
 
-type VersionRule func(sorted []string, kvs map[string]string, start, end string) []string
+type VersionRule func(sorted []string, kvs map[string]*mvccpb.KeyValue, start, end string) []string
 
 func (vr VersionRule) Match(kvs []*mvccpb.KeyValue, ops ...string) []string {
 	sorter := &serviceKeySorter{
 		sortArr: make([]string, len(kvs)),
-		kvs:     make(map[string]string, len(kvs)),
+		kvs:     make(map[string]*mvccpb.KeyValue, len(kvs)),
 		cmp:     Larger,
 	}
 	for i, kv := range kvs {
 		key := util.BytesToStringWithNoCopy(kv.Key)
 		ver := key[strings.LastIndex(key, "/")+1:]
 		sorter.sortArr[i] = ver
-		sorter.kvs[ver] = util.BytesToStringWithNoCopy(kv.Value)
+		sorter.kvs[ver] = kv
 	}
 	sort.Sort(sorter)
 
@@ -50,7 +50,7 @@ func (vr VersionRule) Match(kvs []*mvccpb.KeyValue, ops ...string) []string {
 
 type serviceKeySorter struct {
 	sortArr []string
-	kvs     map[string]string
+	kvs     map[string]*mvccpb.KeyValue
 	cmp     func(i, j string) bool
 }
 
@@ -89,14 +89,18 @@ func Larger(start, end string) bool {
 	return versionToInt(start) > versionToInt(end)
 }
 
-func Latest(sorted []string, kvs map[string]string, start, end string) []string {
+func LessEqual(start, end string) bool {
+	return !Larger(start, end)
+}
+
+func Latest(sorted []string, kvs map[string]*mvccpb.KeyValue, start, end string) []string {
 	if len(sorted) == 0 {
 		return []string{}
 	}
-	return []string{kvs[sorted[0]]}
+	return []string{util.BytesToStringWithNoCopy(kvs[sorted[0]].Value)}
 }
 
-func Range(sorted []string, kvs map[string]string, start, end string) []string {
+func Range(sorted []string, kvs map[string]*mvccpb.KeyValue, start, end string) []string {
 	result := make([]string, len(sorted))
 	i, flag := 0, 0
 
@@ -104,7 +108,8 @@ func Range(sorted []string, kvs map[string]string, start, end string) []string {
 		start, end = end, start
 	}
 
-	if len(sorted) == 0 || Larger(start, sorted[0]) || Larger(sorted[len(sorted)-1], end) {
+	l := len(sorted)
+	if l == 0 || Larger(start, sorted[0]) || LessEqual(end, sorted[l-1]) {
 		return []string{}
 	}
 
@@ -112,7 +117,7 @@ func Range(sorted []string, kvs map[string]string, start, end string) []string {
 		// end >= k >= start
 		switch flag {
 		case 0:
-			if Larger(k, end) {
+			if LessEqual(end, k) {
 				continue
 			}
 			flag = 1
@@ -122,13 +127,13 @@ func Range(sorted []string, kvs map[string]string, start, end string) []string {
 			}
 		}
 
-		result[i] = kvs[k]
+		result[i] = util.BytesToStringWithNoCopy(kvs[k].Value)
 		i++
 	}
 	return result[:i]
 }
 
-func AtLess(sorted []string, kvs map[string]string, start, end string) []string {
+func AtLess(sorted []string, kvs map[string]*mvccpb.KeyValue, start, end string) []string {
 	result := make([]string, len(sorted))
 
 	if len(sorted) == 0 || Larger(start, sorted[0]) {
@@ -139,7 +144,7 @@ func AtLess(sorted []string, kvs map[string]string, start, end string) []string 
 		if Larger(start, k) {
 			return result[:i]
 		}
-		result[i] = kvs[k]
+		result[i] = util.BytesToStringWithNoCopy(kvs[k].Value)
 	}
 	return result[:]
 }
