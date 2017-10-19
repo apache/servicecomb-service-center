@@ -20,21 +20,22 @@ import (
 )
 
 const (
-	REGISTRY_ROOT_KEY       = "cse-sr"
-	REGISTRY_SYS_KEY        = "sys"
-	REGISTRY_SERVICE_KEY    = "ms"
-	REGISTRY_INSTANCE_KEY   = "inst"
-	REGISTRY_FILE           = "files"
-	REGISTRY_INDEX          = "indexes"
-	REGISTRY_RULE_KEY       = "rules"
-	REGISTRY_RULE_INDEX_KEY = "rule-indexes"
-	REGISTRY_TENANT_KEY     = "tenant"
-	REGISTRY_ALIAS_KEY      = "alias"
-	REGISTRY_TAG_KEY        = "tags"
-	REGISTRY_SCHEMA_KEY     = "schemas"
-	REGISTRY_LEASE_KEY      = "leases"
-	REGISTRY_DEPENDENCY_KEY = "deps"
-	REGISTRY_DEPS_RULE_KEY  = "dep-rules"
+	REGISTRY_ROOT_KEY           = "cse-sr"
+	REGISTRY_SYS_KEY            = "sys"
+	REGISTRY_SERVICE_KEY        = "ms"
+	REGISTRY_INSTANCE_KEY       = "inst"
+	REGISTRY_FILE               = "files"
+	REGISTRY_INDEX              = "indexes"
+	REGISTRY_RULE_KEY           = "rules"
+	REGISTRY_RULE_INDEX_KEY     = "rule-indexes"
+	REGISTRY_TENANT_KEY         = "tenant"
+	REGISTRY_ALIAS_KEY          = "alias"
+	REGISTRY_TAG_KEY            = "tags"
+	REGISTRY_SCHEMA_KEY         = "schemas"
+	REGISTRY_SCHEMA_SUMMARY_KEY = "schema-sum"
+	REGISTRY_LEASE_KEY          = "leases"
+	REGISTRY_DEPENDENCY_KEY     = "deps"
+	REGISTRY_DEPS_RULE_KEY      = "dep-rules"
 )
 
 func GetRootKey() string {
@@ -213,6 +214,23 @@ func GenerateServiceSchemaKey(tenant string, serviceId string, schemaId string) 
 		GetServiceSchemaRootKey(tenant),
 		serviceId,
 		schemaId,
+	}, "/")
+}
+
+func GenerateServiceSchemaSummaryKey(tenant string, serviceId string, schemaId string) string {
+	return util.StringJoin([]string{
+		GetServiceSchemaSummaryRootKey(tenant),
+		serviceId,
+		schemaId,
+	}, "/")
+}
+
+func GetServiceSchemaSummaryRootKey(tenant string) string {
+	return util.StringJoin([]string{
+		GetRootKey(),
+		REGISTRY_SERVICE_KEY,
+		REGISTRY_SCHEMA_SUMMARY_KEY,
+		tenant,
 	}, "/")
 }
 

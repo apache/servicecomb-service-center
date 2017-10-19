@@ -18,6 +18,7 @@ import (
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/ServiceComb/service-center/server/rest/controller/v3"
 )
 
 const (
@@ -276,6 +277,195 @@ var _ = Describe("ServiceController", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
 			})
+		})
+	})
+	Describe("schemas",func() {
+		var serviceId string
+		It("create service", func() {
+			respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					ServiceName: "service_name_schemas",
+					AppId:       "service_group_schemas",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Schemas: []string{
+						"first_schemaId",
+						"second_schemaId",
+					},
+					Status: "UP",
+				},
+			})
+			Expect(err).To(BeNil())
+			serviceId = respCreateService.ServiceId
+			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+		})
+
+		It("param check", func() {
+			respCreateService, err := serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				ServiceId: "not_exist_serviceId",
+				Schemas: nil,
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_FAIL))
+
+			respCreateService, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				ServiceId: "not_exist_serviceId",
+				Schemas: []*pb.Schema{},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_FAIL))
+
+			respCreateService, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				ServiceId: "not_exist_serviceId",
+				Schemas: []*pb.Schema{
+					&pb.Schema{
+						SchemaId: "@",
+					},
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_FAIL))
+
+			respCreateService, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				ServiceId: "",
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_FAIL))
+
+			respCreateService, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				ServiceId: "not_exist_serviceId",
+				Schemas: []*pb.Schema{},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_FAIL))
+
+			respCreateService, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				ServiceId: serviceId,
+				Schemas: []*pb.Schema{
+					&pb.Schema{
+						SchemaId: "not_exist_schemaId",
+						Summary: "not_exist_summary",
+						Schema:  "not_exist_schema",
+					},
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_FAIL))
+		})
+		It("create schemas, dev mode", func() {
+			schemas := []*pb.Schema{
+				&pb.Schema{
+					SchemaId: "first_schemaId",
+					Schema: "first_schema",
+					Summary: "fist_summary",
+				},
+			}
+			respCreateService, err := serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				ServiceId: serviceId,
+				Schemas:   schemas,
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+			schemas = []*pb.Schema{
+				&pb.Schema{
+					SchemaId: "second_schemaId",
+					Schema: "second_schema",
+					Summary: "second_summary",
+				},
+			}
+			respCreateService, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				ServiceId: serviceId,
+				Schemas:   schemas,
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+			schemas = []*pb.Schema{
+				&pb.Schema{
+					SchemaId: "second_schemaId",
+					Schema: "second_schema",
+					Summary: "second_summary",
+				},
+			}
+			respCreateService, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				ServiceId: serviceId,
+				Schemas:   schemas,
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+			schemas = []*pb.Schema{
+			}
+			respCreateService, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				ServiceId: serviceId,
+				Schemas:   schemas,
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+		})
+		It("create schemas, prod mode", func() {
+			v3.RunMode = "prod"
+			respModifySchema, err := serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
+				ServiceId: serviceId,
+				SchemaId: "first_schemaId",
+				Schema: "first_schema",
+			})
+			Expect(err).To(BeNil())
+			Expect(respModifySchema.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+			schemas := []*pb.Schema{
+				&pb.Schema{
+					SchemaId: "first_schemaId",
+					Schema: "first_schema",
+					Summary: "first_summary",
+				},
+			}
+			respModifySchemas, err := serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				ServiceId: serviceId,
+				Schemas: schemas,
+			})
+			Expect(err).To(BeNil())
+			Expect(respModifySchemas.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+			schemas = []*pb.Schema{
+				&pb.Schema{
+					SchemaId: "first_schemaId",
+					Schema: "first_schema_change",
+					Summary: "first_summary_change",
+				},
+			}
+			respModifySchemas, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				ServiceId: serviceId,
+				Schemas: schemas,
+			})
+			Expect(err).To(BeNil())
+			Expect(respModifySchemas.GetResponse().Code).To(Equal(pb.Response_FAIL))
+
+
+			schemas = []*pb.Schema{
+				&pb.Schema{
+					SchemaId: "second_schemaId",
+					Schema: "second_schema_change",
+					Summary: "second_summary_change",
+				},
+			}
+			respModifySchemas, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				ServiceId: serviceId,
+				Schemas: schemas,
+			})
+			Expect(err).To(BeNil())
+			Expect(respModifySchemas.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			v3.RunMode = "dev"
+		})
+		It("clean", func() {
+			respDeleteService, err := serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{
+				ServiceId: serviceId,
+				Force: true,
+			})
+			Expect(err).To(BeNil())
+			Expect(respDeleteService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 		})
 	})
 })
