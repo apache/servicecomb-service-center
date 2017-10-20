@@ -213,8 +213,8 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 
 	// 强制删除，则与该服务相关的信息删除，非强制删除： 如果作为该被依赖（作为provider，提供服务,且不是只存在自依赖）或者存在实例，则不能删除
 	if !force {
-		dr := serviceUtil.NewConsumerDependencyRelation(ctx, tenant, ServiceId, service)
-		services, err := dr.GetDependencyProviderIds()
+		dr := serviceUtil.NewProviderDependencyRelation(ctx, tenant, ServiceId, service)
+		services, err := dr.GetDependencyConsumerIds()
 		if err != nil {
 			util.Logger().Errorf(err, "delete microservice failed, serviceId is %s:(unforce) inner err, get service dependency failed.", ServiceId)
 			return pb.CreateResponse(pb.Response_FAIL, "Get dependency info failed."), err
