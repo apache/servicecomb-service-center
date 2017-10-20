@@ -107,23 +107,20 @@ func (lat *LeaseAsyncTask) Do(ctx context.Context) error {
 	lat.TTL, lat.err = registry.GetRegisterCenter().LeaseRenew(ctx, lat.LeaseID)
 	lat.EndTime = time.Now()
 	if lat.err != nil {
-		util.Logger().Errorf(lat.err, "renew lease %d failed(rev: %s, start: %s(cost %s)), key %s",
+		util.Logger().Errorf(lat.err, "[%s]renew lease %d failed(rev: %s, run: %s), key %s",
+			time.Now().Sub(lat.CreateTime),
 			lat.LeaseID,
 			lat.CreateTime.Format("15:04:05.000"),
 			lat.StartTime.Format("15:04:05.000"),
-			time.Now().Sub(lat.StartTime),
 			lat.Key())
 		return lat.err
 	}
 
-	if lat.EndTime.Sub(lat.StartTime) > time.Second {
-		util.Logger().Warnf(nil, "renew lease %d(rev: %s, start: %s(cost %s)), key %s",
-			lat.LeaseID,
-			lat.CreateTime.Format("15:04:05.000"),
-			lat.StartTime.Format("15:04:05.000"),
-			time.Now().Sub(lat.StartTime),
-			lat.Key())
-	}
+	util.LogNilOrWarnf(lat.CreateTime, "renew lease %d(rev: %s, run: %s), key %s",
+		lat.LeaseID,
+		lat.CreateTime.Format("15:04:05.000"),
+		lat.StartTime.Format("15:04:05.000"),
+		lat.Key())
 	return nil
 }
 

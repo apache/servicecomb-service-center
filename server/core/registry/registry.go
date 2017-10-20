@@ -199,8 +199,9 @@ type PluginOp struct {
 
 func (op PluginOp) String() string {
 	return fmt.Sprintf(
-		"{action: %s, key: %s, end: %s, val: %s, prefix: %t, prev: %t, lease: %d, keyOnly: %t, countOnly: %t, sort: %s, rev: %d, ignoreLease: %t, mode: %s}",
-		op.Action, op.Key, op.EndKey, op.Value, op.Prefix, op.PrevKV, op.Lease, op.KeyOnly, op.CountOnly,
+		"{action: %s, key: %s, end: %s, val: %d, prefix: %t, prev: %t, lease: %d, keyOnly: %t, countOnly: %t, sort: %s, rev: %d, ignoreLease: %t, mode: %s}",
+		op.Action, op.Key, op.EndKey, len(util.BytesToStringWithNoCopy(op.Value)),
+		op.Prefix, op.PrevKV, op.Lease, op.KeyOnly, op.CountOnly,
 		op.SortOrder, op.Revision, op.IgnoreLease, op.Mode,
 	)
 }

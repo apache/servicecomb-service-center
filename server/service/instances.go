@@ -94,9 +94,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 
 	var reporter quota.QuotaReporter
 	if len(oldInstanceId) == 0 {
-		if core.ISSCSelf(ctx) {
-			util.Logger().Infof("it is service center instance register.")
-		} else {
+		if !core.ISSCSelf(ctx) {
 			var err error
 			var ok bool
 			reporter, ok, err = quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.MicroServiceInstanceQuotaType, tenant, in.Instance.ServiceId, 1)

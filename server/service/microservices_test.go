@@ -246,16 +246,16 @@ var _ = Describe("ServiceController", func() {
 
 				respCreateSchema, err := serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
 					ServiceId: serviceId,
-					SchemaId: "first_schemaId",
-					Schema: "first_schema",
+					SchemaId:  "first_schemaId",
+					Schema:    "first_schema",
 				})
 				Expect(err).To(BeNil())
 				Expect(respCreateSchema.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
 				respSchemaExist, err := serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
-					Type: "schema",
+					Type:      "schema",
 					ServiceId: serviceId,
-					SchemaId: "first_schemaId",
+					SchemaId:  "first_schemaId",
 				})
 				Expect(err).To(BeNil())
 				Expect(respSchemaExist.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
@@ -266,8 +266,8 @@ var _ = Describe("ServiceController", func() {
 					Schemas: []*pb.Schema{
 						&pb.Schema{
 							SchemaId: "first_schemaId",
-							Schema: "first_schema",
-							Summary: "first_summary",
+							Schema:   "first_schema",
+							Summary:  "first_summary",
 						},
 					},
 				})
@@ -275,18 +275,17 @@ var _ = Describe("ServiceController", func() {
 				Expect(respCreateSchemas.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
 				respSchemaExist, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
-					Type: "schema",
+					Type:      "schema",
 					ServiceId: serviceId,
-					SchemaId: "first_schemaId",
+					SchemaId:  "first_schemaId",
 				})
 				Expect(err).To(BeNil())
 				Expect(respSchemaExist.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 				Expect(respSchemaExist.Summary).To(Equal("first_summary"))
 
-
 				respDeleteService, err := serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{
 					ServiceId: serviceId,
-					Force: true,
+					Force:     true,
 				})
 				Expect(err).To(BeNil())
 				Expect(respDeleteService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
@@ -337,7 +336,7 @@ var _ = Describe("ServiceController", func() {
 					Type:        "microservice",
 					AppId:       "default",
 					ServiceName: "some-relay",
-					Version:     "0.9.1-1.0.0",
+					Version:     "0.9.1-1.0.1",
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT=============" + resp.String())
