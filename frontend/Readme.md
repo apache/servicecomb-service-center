@@ -21,7 +21,7 @@ go run main.go
 This will bring up the Service-Center UI on [http://127.0.0.1:30101](http://127.0.0.1:30101).
 
 ### Preview of Service-Center UI
-
+![Service-Center Preview](/docs/Service-Center-UI-Preview.gif)
 
 ### Feature List and RoadMap of Service-Center UI
 Below is the comprehensive list of features which Service-Center UI offers, we are working constantly to improve the user experience and offer more useful features to leverage the features offered by Service-Center.
