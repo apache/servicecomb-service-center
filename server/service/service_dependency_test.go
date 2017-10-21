@@ -657,6 +657,165 @@ var _ = Describe("ServiceController", func() {
 			})
 		})
 
+		Context("dep find", func() {
+			var providerIdDep1, providerIdDep2, providerIdDep3, consumerIdDep string
+			It("find接口， 建立依赖关系", func() {
+				resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceName: "serviceName_consumer1",
+						AppId:       "appId_consumer1",
+						Version:     "2.0.0",
+						Level:       "FRONT",
+						Schemas: []string{
+							"com.huawei.test",
+						},
+						Status: "UP",
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				consumerIdDep = resp.ServiceId
+
+				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceName: "serviceName_provider1",
+						AppId:       "appId_provider1",
+						Version:     "2.0.0",
+						Level:       "FRONT",
+						Schemas: []string{
+							"com.huawei.test",
+						},
+						Status: "UP",
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				providerIdDep1 = resp.ServiceId
+
+				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceName: "serviceName_provider2",
+						AppId:       "appId_provider2",
+						Version:     "2.0.0",
+						Level:       "FRONT",
+						Schemas: []string{
+							"com.huawei.test",
+						},
+						Status: "UP",
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				providerIdDep2 = resp.ServiceId
+
+				respFind, err := insResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: consumerIdDep,
+					AppId:             "appId_provider1",
+					ServiceName:       "serviceName_provider1",
+					VersionRule:       "latest",
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+				respFind, err = insResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: consumerIdDep,
+					AppId:             "appId_provider2",
+					ServiceName:       "serviceName_provider2",
+					VersionRule:       "latest",
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+				respPro, err := serviceResource.GetConsumerDependencies(getContext(), &pb.GetDependenciesRequest{
+					ServiceId: consumerIdDep,
+				})
+				Expect(err).To(BeNil())
+				Expect(respPro.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+				var flag bool
+				if len(respPro.Providers) == 2 {
+					if (respPro.Providers[0].ServiceId == providerIdDep1 || respPro.Providers[0].ServiceId == providerIdDep2) &&
+						(respPro.Providers[1].ServiceId == providerIdDep1 || respPro.Providers[1].ServiceId == providerIdDep2) {
+						flag = true
+					}
+				}
+				Expect(flag).To(Equal(true))
+
+			})
+			It("find ,find 不同version，相同servicename和appId", func() {
+				respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceName: "serviceName_provider2",
+						AppId:       "appId_provider2",
+						Version:     "1.0",
+						Level:       "FRONT",
+						Schemas: []string{
+							"com.huawei.test",
+						},
+						Status: "UP",
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				providerIdDep3 = respCreate.ServiceId
+
+				respFind, err := insResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: consumerIdDep,
+					AppId:             "appId_provider2",
+					ServiceName:       "serviceName_provider2",
+					VersionRule:       "1.0",
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+				respPro, err := serviceResource.GetConsumerDependencies(getContext(), &pb.GetDependenciesRequest{
+					ServiceId: consumerIdDep,
+				})
+				Expect(err).To(BeNil())
+				Expect(respPro.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+				var flag bool
+				if len(respPro.Providers) == 2 {
+					if (respPro.Providers[0].ServiceId == providerIdDep1 || respPro.Providers[0].ServiceId == providerIdDep3) &&
+						(respPro.Providers[1].ServiceId == providerIdDep1 || respPro.Providers[1].ServiceId == providerIdDep3) {
+						flag = true
+					}
+				}
+				Expect(flag).To(Equal(true))
+			} )
+
+			It("clean", func() {
+				respDelete, err := serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{
+					ServiceId: consumerIdDep,
+					Force:     true,
+				})
+				Expect(err).To(BeNil())
+				Expect(respDelete.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+				respDelete, err = serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{
+					ServiceId: providerIdDep1,
+					Force:     true,
+				})
+				Expect(err).To(BeNil())
+				Expect(respDelete.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+				respDelete, err = serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{
+					ServiceId: providerIdDep2,
+					Force:     true,
+				})
+				Expect(err).To(BeNil())
+				Expect(respDelete.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+				respDelete, err = serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{
+					ServiceId: providerIdDep3,
+					Force:     true,
+				})
+				Expect(err).To(BeNil())
+				Expect(respDelete.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			})
+		})
+
+
 		It("删除微服务,作为provider，有consumer", func() {
 			var consumerId, providerId string
 			resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
