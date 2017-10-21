@@ -23,7 +23,7 @@ import (
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"golang.org/x/net/context"
 	"errors"
-	"github.com/ServiceComb/service-center/server/rest/controller/v3"
+	"github.com/ServiceComb/service-center/server/rest/controller/v4"
 	"strings"
 )
 

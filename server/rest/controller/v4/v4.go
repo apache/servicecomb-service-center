@@ -17,6 +17,9 @@ import (
 	roa "github.com/ServiceComb/service-center/pkg/rest"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"net/http"
+	"strings"
+	"errors"
+	"github.com/ServiceComb/service-center/server/core"
 )
 
 var router http.Handler
@@ -28,6 +31,7 @@ func init() {
 }
 
 func initRouter() {
+	roa.RegisterFilter(&v4Context{})
 	roa.RegisterServent(&MainService{})
 	roa.RegisterServent(&MicroServiceService{})
 	roa.RegisterServent(&TagService{})
@@ -42,6 +46,37 @@ func GetRouter() http.Handler {
 	return router
 }
 
-type V4Selector struct {
+type v4Context struct {
 
+}
+
+func (v *v4Context) IsMatch(r *http.Request) bool {
+	return strings.Index(r.RequestURI, "/v4/") == 0
+}
+
+func (v *v4Context) Do(r *http.Request) error {
+	start := len("/v4/")
+	end := start + strings.Index(r.RequestURI[start:], "/")
+
+	tenant := r.RequestURI[start:end]
+	if len(tenant) == 0 {
+		err := errors.New("Header does not contain domain.")
+		util.Logger().Errorf(err, "Invalid Request URI %s", r.RequestURI)
+		return err
+	}
+
+	project := r.Header.Get("X-Domain-Name")
+	if len(project) == 0 {
+		project = r.Header.Get("X-Tenant-Name")
+		if len(project) == 0 {
+			project = core.REGISTRY_PROJECT
+		}
+	}
+
+	ctx := r.Context()
+	ctx = util.NewContext(ctx, "tenant", tenant)
+	ctx = util.NewContext(ctx, "project", project)
+	request := r.WithContext(ctx)
+	*r = *request
+	return nil
 }

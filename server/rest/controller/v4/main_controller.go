@@ -24,7 +24,7 @@ import (
 	"net/http"
 )
 
-const API_VERSION = "3.0.0"
+const API_VERSION = "4.0.0"
 
 var RunMode string
 
@@ -44,8 +44,8 @@ func init() {
 
 func (this *MainService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTP_METHOD_GET, "/version", this.GetVersion},
-		{rest.HTTP_METHOD_GET, "/health", this.ClusterHealth},
+		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/version", this.GetVersion},
+		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/health", this.ClusterHealth},
 	}
 }
 

@@ -47,11 +47,14 @@ type Route struct {
 //   2. redirect not supported
 type ROAServerHandler struct {
 	handlers map[string][]*urlPatternHandler
+	filters []Filter
 }
 
 func NewROAServerHander() *ROAServerHandler {
 	return &ROAServerHandler{
-		handlers: make(map[string][]*urlPatternHandler)}
+		handlers: make(map[string][]*urlPatternHandler),
+		filters: make([]Filter, 0, 5),
+	}
 }
 
 func (this *ROAServerHandler) addRoute(route *Route) (err error) {
@@ -69,10 +72,15 @@ func (this *ROAServerHandler) addRoute(route *Route) (err error) {
 }
 
 func (this *ROAServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	var err error
 	for _, ph := range this.handlers[r.Method] {
 		if params, ok := ph.try(r.URL.Path); ok {
 			if len(params) > 0 {
 				r.URL.RawQuery = url.Values(params).Encode() + "&" + r.URL.RawQuery
+			}
+
+			if err = this.doFilter(r); err != nil {
+				break
 			}
 
 			ph.ServeHTTP(w, r)
@@ -80,15 +88,20 @@ func (this *ROAServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	allowed := make([]string, 0, len(this.handlers))
-	for meth, handlers := range this.handlers {
-		if meth == r.Method {
+	for method, handlers := range this.handlers {
+		if method == r.Method {
 			continue
 		}
 
 		for _, ph := range handlers {
 			if _, ok := ph.try(r.URL.Path); ok {
-				allowed = append(allowed, meth)
+				allowed = append(allowed, method)
 			}
 		}
 	}
@@ -100,6 +113,15 @@ func (this *ROAServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 
 	w.Header().Add("Allow", util.StringJoin(allowed, ", "))
 	http.Error(w, "Method Not Allowed", 405)
+}
+
+func (this *ROAServerHandler) doFilter(r *http.Request) error {
+	for _, f := range this.filters {
+		if f.IsMatch(r) {
+			return f.Do(r)
+		}
+	}
+	return nil
 }
 
 func (this *urlPatternHandler) try(path string) (p map[string][]string, _ bool) {
@@ -163,17 +185,7 @@ func isAlnum(ch byte) bool {
 	return isAlpha(ch) || isDigit(ch)
 }
 
-var routeSelectors []RouteSelector
-
-type RouteSelector interface {
+type Filter interface {
 	IsMatch(r *http.Request) bool
 	Do(r *http.Request) error
-}
-
-func RegisterRouteSelector(r RouteSelector) {
-
-}
-
-func Selector(r *http.Request) RouteSelector {
-	return nil
 }

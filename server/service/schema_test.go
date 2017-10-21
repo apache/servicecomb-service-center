@@ -18,7 +18,7 @@ import (
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/ServiceComb/service-center/server/rest/controller/v3"
+	"github.com/ServiceComb/service-center/server/rest/controller/v4"
 )
 
 const (

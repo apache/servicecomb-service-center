@@ -14,8 +14,8 @@
 package integrationtest
 
 // Basic API
-var HEALTH = "/health"
-var VERSION = "/version"
+var HEALTH = "/v4/default/registry/health"
+var VERSION = "/v4/default/registry/version"
 
 // Micro-Service API's
 var CHECKEXISTENCE = "/v4/default/registry/existence"
@@ -45,9 +45,9 @@ var INSTANCEWATCHER = "/v4/default/registry/microservices/:serviceId/watcher"
 var INSTANCELISTWATCHER = "/v4/default/registry/microservices/:serviceId/listwatcher"
 
 //Governance API's
-var GETGOVERNANCESERVICEDETAILS = "/v4/default/registry/govern/service/:serviceId"
-var GETRELATIONGRAPH = "/v4/default/registry/govern/relation"
-var GETALLSERVICEGOVERNANCEINFO = "/v4/default/registry/govern/services"
+var GETGOVERNANCESERVICEDETAILS = "/v4/default/govern/microservices/:serviceId"
+var GETRELATIONGRAPH = "/v4/default/govern/relations"
+var GETALLSERVICEGOVERNANCEINFO = "/v4/default/govern/microservices"
 
 //Rules API's
 var ADDRULE = "/v4/default/registry/microservices/:serviceId/rules"

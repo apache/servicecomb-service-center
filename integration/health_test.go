@@ -47,7 +47,7 @@ var _ = Describe("Basic Api Test", func() {
 				defer resp.Body.Close()
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 				respbody, _ := ioutil.ReadAll(resp.Body)
-				Expect(gojson.Json(string(respbody)).Get("apiVersion").Tostring()).To(Equal("3.0.0"))
+				Expect(gojson.Json(string(respbody)).Get("apiVersion").Tostring()).To(Equal("4.0.0"))
 			})
 		})
 	})

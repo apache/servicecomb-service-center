@@ -25,7 +25,6 @@ import (
 	"github.com/ServiceComb/service-center/server/interceptor"
 	"github.com/ServiceComb/service-center/server/interceptor/access"
 	"github.com/ServiceComb/service-center/server/interceptor/cors"
-	"github.com/ServiceComb/service-center/server/interceptor/domain"
 	"github.com/ServiceComb/service-center/server/interceptor/maxbody"
 	"github.com/ServiceComb/service-center/server/interceptor/ratelimiter"
 )
@@ -36,7 +35,6 @@ func init() {
 	interceptor.InterceptFunc(interceptor.ACCESS_PHASE, ratelimiter.Intercept)
 	interceptor.InterceptFunc(interceptor.ACCESS_PHASE, access.Intercept)
 	interceptor.InterceptFunc(interceptor.ACCESS_PHASE, cors.Intercept)
-	interceptor.InterceptFunc(interceptor.ACCESS_PHASE, domain.Intercept)
 
 	interceptor.InterceptFunc(interceptor.CONTENT_PHASE, maxbody.Intercept)
 
