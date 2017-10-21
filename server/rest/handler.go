@@ -5,12 +5,13 @@ import (
 	"github.com/ServiceComb/service-center/server/rest/controller/v3"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
+	"github.com/ServiceComb/service-center/server/rest/controller/v4"
 )
 
 var router http.Handler
 
 func init() {
-	router = v3.GetRouter()
+	router = v4.GetRouter()
 
 	// api
 	http.Handle("/", DefaultServerHandler())

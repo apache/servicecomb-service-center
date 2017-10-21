@@ -11,7 +11,7 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package v3
+package v4
 
 import (
 	"encoding/json"
@@ -32,10 +32,10 @@ type TagService struct {
 
 func (this *TagService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTP_METHOD_POST, "/registry/v3/microservices/:serviceId/tags", this.AddTags},
-		{rest.HTTP_METHOD_PUT, "/registry/v3/microservices/:serviceId/tags/:key", this.UpdateTag},
-		{rest.HTTP_METHOD_GET, "/registry/v3/microservices/:serviceId/tags", this.GetTags},
-		{rest.HTTP_METHOD_DELETE, "/registry/v3/microservices/:serviceId/tags/:key", this.DeleteTags},
+		{rest.HTTP_METHOD_POST, "/v4/:domain/registry/microservices/:serviceId/tags", this.AddTags},
+		{rest.HTTP_METHOD_PUT, "/v4/:domain/registry/microservices/:serviceId/tags/:key", this.UpdateTag},
+		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/microservices/:serviceId/tags", this.GetTags},
+		{rest.HTTP_METHOD_DELETE, "/v4/:domain/registry/microservices/:serviceId/tags/:key", this.DeleteTags},
 	}
 }
 

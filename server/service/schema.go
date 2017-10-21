@@ -202,7 +202,7 @@ func modifySchemas(ctx context.Context, tenant string, service *pb.MicroService,
 	}
 
 	pluginOps := []registry.PluginOp{}
-	switch v3.RunMode {
+	switch v4.RunMode {
 	case "dev":
 		needDeleteSchemaList := make([]*pb.Schema, 0, len(schemasInDataBase))
 		for _, schemasInner := range schemasInDataBase {

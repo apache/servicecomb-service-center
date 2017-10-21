@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-POST /registry/v3/microservices HTTP/1.1
+POST /v4/default/registry/microservices HTTP/1.1
 Host: localhost:30100
 Content-Type: application/json
 x-domain-name: default

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-DELETE /registry/v3/microservices/serviceID/instances/instanceID HTTP/1.1
+DELETE /v4/default/registry/microservices/serviceID/instances/instanceID HTTP/1.1
 Host: localhost:30100
 x-domain-name: default
 Cache-Control: no-cache

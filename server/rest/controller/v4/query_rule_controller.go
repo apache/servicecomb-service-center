@@ -11,7 +11,7 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package v3
+package v4
 
 import (
 	"encoding/json"
@@ -32,10 +32,10 @@ type RuleService struct {
 
 func (this *RuleService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTP_METHOD_POST, "/registry/v3/microservices/:serviceId/rules", this.AddRule},
-		{rest.HTTP_METHOD_GET, "/registry/v3/microservices/:serviceId/rules", this.GetRules},
-		{rest.HTTP_METHOD_PUT, "/registry/v3/microservices/:serviceId/rules/:rule_id", this.UpdateRule},
-		{rest.HTTP_METHOD_DELETE, "/registry/v3/microservices/:serviceId/rules/:rule_id", this.DeleteRule},
+		{rest.HTTP_METHOD_POST, "/v4/:domain/registry/microservices/:serviceId/rules", this.AddRule},
+		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/microservices/:serviceId/rules", this.GetRules},
+		{rest.HTTP_METHOD_PUT, "/v4/:domain/registry/microservices/:serviceId/rules/:rule_id", this.UpdateRule},
+		{rest.HTTP_METHOD_DELETE, "/v4/:domain/registry/microservices/:serviceId/rules/:rule_id", this.DeleteRule},
 	}
 }
 func (this *RuleService) AddRule(w http.ResponseWriter, r *http.Request) {

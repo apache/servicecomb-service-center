@@ -162,3 +162,18 @@ func isDigit(ch byte) bool {
 func isAlnum(ch byte) bool {
 	return isAlpha(ch) || isDigit(ch)
 }
+
+var routeSelectors []RouteSelector
+
+type RouteSelector interface {
+	IsMatch(r *http.Request) bool
+	Do(r *http.Request) error
+}
+
+func RegisterRouteSelector(r RouteSelector) {
+
+}
+
+func Selector(r *http.Request) RouteSelector {
+	return nil
+}

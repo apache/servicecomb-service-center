@@ -406,7 +406,7 @@ var _ = Describe("ServiceController", func() {
 
 		})
 		It("create schemas, prod mode", func() {
-			v3.RunMode = "prod"
+			v4.RunMode = "prod"
 			respModifySchema, err := serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
 				ServiceId: serviceId,
 				SchemaId: "first_schemaId",
@@ -457,7 +457,7 @@ var _ = Describe("ServiceController", func() {
 			})
 			Expect(err).To(BeNil())
 			Expect(respModifySchemas.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-			v3.RunMode = "dev"
+			v4.RunMode = "dev"
 		})
 		It("clean", func() {
 			respDeleteService, err := serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{

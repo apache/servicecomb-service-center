@@ -11,7 +11,7 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package v3
+package v4
 
 import (
 	roa "github.com/ServiceComb/service-center/pkg/rest"
@@ -40,4 +40,8 @@ func initRouter() {
 //GetRouter return the router fo REST service
 func GetRouter() http.Handler {
 	return router
+}
+
+type V4Selector struct {
+
 }
