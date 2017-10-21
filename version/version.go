@@ -13,23 +13,25 @@
 //limitations under the License.
 package version
 
-import "github.com/astaxie/beego"
-
-const VERSION = "0.2.0"
-const API_VERSION = "3.0.0"
+var (
+	// no need to modify
+	// please use:
+	// 	go build -ldflags "-X github.com/ServiceComb/service-center/version.VERSION=x.x.x"
+	// to set these values.
+	VERSION   = "0.0.1"
+	BUILD_TAG = "Not provided"
+)
 
 type VersionSet struct {
-	Version    string `json:"version"`
-	ApiVersion string `json:"apiVersion"`
-	BuildTag   string `json:"buildTag"`
+	Version  string `json:"version"`
+	BuildTag string `json:"buildTag"`
 }
 
 var version VersionSet
 
 func init() {
 	version.Version = VERSION
-	version.ApiVersion = API_VERSION
-	version.BuildTag = beego.AppConfig.String("build_tag")
+	version.BuildTag = BUILD_TAG
 }
 
 func Ver() VersionSet {
