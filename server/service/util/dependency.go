@@ -363,6 +363,134 @@ func CreateDependencyRule(ctx context.Context, dep *Dependency) error {
 	return nil
 }
 
+func CreateDependencyRuleForFind(ctx context.Context, tenant string, provider *pb.MicroServiceKey, consumer *pb.MicroServiceKey) error {
+	//更新consumer的providers的值,consumer的版本是确定的
+	consumerFlag := strings.Join([]string{consumer.AppId, consumer.ServiceName, consumer.Version}, "/")
+	conKey := apt.GenerateConsumerDependencyRuleKey(tenant, consumer)
+
+	oldProviderRules, err := TransferToMicroServiceDependency(ctx, conKey)
+	if err != nil {
+		util.Logger().Errorf(err, "get dependency rule failed, consumer %s: get consumer depedency rule failed.", consumerFlag)
+		return err
+	}
+	opts := []registry.PluginOp{}
+	if oldProviderRule := isNeedUpdate(oldProviderRules.Dependency, provider); oldProviderRule != nil {
+		opt, err := deleteConsumerDepOfProviderRule(ctx, tenant, oldProviderRule, consumer)
+		if err != nil {
+			util.Logger().Errorf(err, "marshal consumerDepRules failed for delete consumer rule from provider rule's dep.%s", consumerFlag)
+			return err
+		}
+		util.Logger().Infof("delete provider dep, %v, delete consumer %v", oldProviderRule, consumer)
+		opts = append(opts, opt)
+
+		opt, err = updateDepRuleUtil(conKey, oldProviderRules, provider)
+		if err != nil {
+			util.Logger().Errorf(err, "update provider rule into consumer's dep rule failed, %s", consumerFlag)
+			return err
+		}
+		util.Logger().Infof("update consumer dep %s, %v --> %v",consumerFlag, oldProviderRule, provider)
+		opts = append(opts, opt)
+	} else {
+		if !isExist(oldProviderRules.Dependency, provider) {
+			opt, err := addDepRuleUtil(conKey, oldProviderRules, provider)
+			if err != nil {
+				util.Logger().Errorf(err, "add provider rule into consumer's dep rule failed, %s", consumerFlag)
+				return err
+			}
+			util.Logger().Infof("add consumer dep, %s, add %v", consumerFlag, provider)
+			opts = append(opts, opt)
+		}
+
+		proKey := apt.GenerateProviderDependencyRuleKey(tenant, provider)
+		consumerDepRules, err := TransferToMicroServiceDependency(ctx, proKey)
+		if err != nil {
+			util.Logger().Errorf(err, "get consumer rule of provider failed,%v", provider)
+			return err
+		}
+		if !isExist(consumerDepRules.Dependency, consumer) {
+			opt, err := addDepRuleUtil(proKey, consumerDepRules, consumer)
+			if err != nil {
+				util.Logger().Errorf(err, "add consumer rule into provider's dep rule failed,%s",consumerFlag)
+				return err
+			}
+			util.Logger().Infof("add provider dep, %s, add %v", consumerFlag, provider)
+			opts = append(opts, opt)
+		}
+	}
+
+	if len(opts) != 0 {
+		_, err = registry.GetRegisterCenter().Txn(ctx, opts)
+		if err != nil {
+			util.Logger().Errorf(err, "update dep rule for consumer failed, %s", consumerFlag)
+			return err
+		}
+	}
+	return nil
+}
+
+func isExist(services []*pb.MicroServiceKey, service *pb.MicroServiceKey) bool{
+	for _, tmp := range services {
+		if equalServiceDependency(tmp, service) {
+			return true
+		}
+	}
+	return false
+}
+
+func deleteConsumerDepOfProviderRule(ctx context.Context, tenant string, providerRule *pb.MicroServiceKey, deleteConsumer *pb.MicroServiceKey) (registry.PluginOp, error){
+	proKey := apt.GenerateProviderDependencyRuleKey(tenant, providerRule)
+	consumerDepRules, err := TransferToMicroServiceDependency(ctx, proKey)
+	if err != nil {
+		return registry.PluginOp{}, err
+	}
+	return deleteDepRuleUtil(proKey, consumerDepRules, deleteConsumer)
+}
+
+func deleteDepRuleUtil(key string, deps *pb.MicroServiceDependency, deleteDepRule *pb.MicroServiceKey)(registry.PluginOp, error){
+	for key, consumerDepRule := range deps.Dependency {
+		if equalServiceDependency(consumerDepRule, deleteDepRule) {
+			deps.Dependency = append(deps.Dependency[:key], deps.Dependency[key+1:]...)
+		}
+	}
+	data, err := json.Marshal(deps)
+	if err != nil {
+		return registry.PluginOp{}, err
+	}
+	return registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)), nil
+}
+
+func addDepRuleUtil(key string, deps *pb.MicroServiceDependency, updateDepRule *pb.MicroServiceKey) (registry.PluginOp, error){
+	deps.Dependency = append(deps.Dependency, updateDepRule)
+	data, err := json.Marshal(deps)
+	if err != nil {
+		util.Logger().Errorf(err, "marshal consumerDepRules failed for delete consumer rule from provider rule's dep.")
+		return registry.PluginOp{}, err
+	}
+	return registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)), nil
+}
+
+func updateDepRuleUtil(key string, deps *pb.MicroServiceDependency, updateDepRule *pb.MicroServiceKey) (registry.PluginOp, error){
+	for _, serviceRule := range deps.Dependency {
+		if serviceRule.ServiceName == updateDepRule.ServiceName && updateDepRule.AppId ==  serviceRule.AppId &&  updateDepRule.Version != serviceRule.Version{
+			serviceRule.Version = updateDepRule.Version
+		}
+	}
+	data, err := json.Marshal(deps)
+	if err != nil {
+		return registry.PluginOp{}, err
+	}
+	return registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)), nil
+}
+
+func isNeedUpdate(services []*pb.MicroServiceKey, service *pb.MicroServiceKey) *pb.MicroServiceKey{
+	for _, tmp := range services {
+		if tmp.ServiceName == service.ServiceName && tmp.AppId == service.AppId && tmp.Version != service.Version {
+			return tmp
+		}
+	}
+	return nil
+}
+
 func containServiceDependency(services []*pb.MicroServiceKey, service *pb.MicroServiceKey) (bool, error) {
 	if services == nil || service == nil {
 		return false, errors.New("Invalid params input.")
@@ -466,18 +594,11 @@ func AddServiceVersionRule(ctx context.Context, tenant string, provider *pb.Micr
 		return err
 	}
 
-	dep := new(Dependency)
-	dep.Tenant = tenant
-	dep.Consumer = consumer
-	dep.ProvidersRule = []*pb.MicroServiceKey{provider}
-	dep.ConsumerId = consumerId
-
 	lock, err := mux.Lock(mux.GLOBAL_LOCK)
 	if err != nil {
 		return err
 	}
-
-	err = CreateDependencyRule(ctx, dep)
+	err = CreateDependencyRuleForFind(ctx, tenant, provider, consumer)
 	lock.Unlock()
 	return err
 }
