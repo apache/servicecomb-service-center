@@ -656,5 +656,83 @@ var _ = Describe("ServiceController", func() {
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 			})
 		})
+
+		It("删除微服务,作为provider，有consumer", func() {
+			var consumerId, providerId string
+			resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					ServiceName: "serviceName_consumer",
+					AppId:       "appId_consumer",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Schemas: []string{
+						"com.huawei.test",
+					},
+					Status: "UP",
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			consumerId = resp.ServiceId
+
+			resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					ServiceName: "serviceName_provider",
+					AppId:       "appId_provider",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Schemas: []string{
+						"com.huawei.test",
+					},
+					Status: "UP",
+				},
+			})
+			Expect(err).To(BeNil())
+			providerId = resp.ServiceId
+			Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+			respCreateDependency, err := serviceResource.CreateDependenciesForMircServices(getContext(), &pb.CreateDependenciesRequest{
+				Dependencies: []*pb.MircroServiceDependency{
+					{
+						Consumer: &pb.DependencyMircroService{
+							AppId:       "appId_consumer",
+							ServiceName: "serviceName_consumer",
+							Version:     "1.0.0",
+						},
+						Providers: []*pb.DependencyMircroService{
+							{
+								AppId:       "",
+								ServiceName: "*",
+								Version:     "",
+							},
+						},
+					},
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateDependency.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+			respDelete, err := serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{
+				ServiceId: providerId,
+				Force:     false,
+			})
+			Expect(err).To(BeNil())
+			Expect(respDelete.GetResponse().Code).To(Equal(pb.Response_FAIL))
+
+
+			respDelete, err = serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{
+				ServiceId: consumerId,
+				Force:     true,
+			})
+			Expect(err).To(BeNil())
+			Expect(respDelete.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+			respDelete, err = serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{
+				ServiceId: providerId,
+				Force:     true,
+			})
+			Expect(err).To(BeNil())
+			Expect(respDelete.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+		})
 	})
 })

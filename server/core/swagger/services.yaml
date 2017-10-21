@@ -654,6 +654,42 @@ paths:
           description: 内部错误
           schema:
             type: string
+  /registry/v3/microservices/{serviceId}/schemas:
+    post:
+      description: |
+        批量上传schemas。
+      operationId: ModifySchemas
+      parameters:
+        - name: x-domain-name
+          in: header
+          required: true
+          type: string
+          default: default
+        - name: serviceId
+          in: path
+          description: 唯一标识。
+          required: true
+          type: string
+        - name: type
+          in: body
+          required: true
+          description: 批量上传schemas信息。
+          schema:
+            $ref: '#/definitions/ModifySchemasRequest'
+      tags:
+        - microservices
+        - schema
+      responses:
+        200:
+          description: 創建成功
+        400:
+          description: 错误的请求
+          schema:
+            type: string
+        500:
+          description: 内部错误
+          schema:
+            type: string
   /registry/v3/dependencies:
     put:
       description: |
@@ -1704,3 +1740,19 @@ definitions:
       errMessage:
         description: 错误信息，成功为空，不成功，则为错误，在部分成功的场景使用
         type: string
+  ModifySchemasRequest:
+     type: object
+     properties:
+       schemas:
+         type: array
+         items:
+           $ref: "#/definitions/Schema"
+  Schema:
+     type: object
+     properties:
+       schemaId:
+         type: string
+       schema:
+         type: string
+       summary:
+         type: string
