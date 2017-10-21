@@ -20,6 +20,7 @@ import (
 	"strings"
 	"errors"
 	"github.com/ServiceComb/service-center/server/core"
+	"net/url"
 )
 
 var router http.Handler
@@ -55,10 +56,16 @@ func (v *v4Context) IsMatch(r *http.Request) bool {
 }
 
 func (v *v4Context) Do(r *http.Request) error {
-	start := len("/v4/")
-	end := start + strings.Index(r.RequestURI[start:], "/")
+	path, err := url.PathUnescape(r.RequestURI)
+	if err != nil {
+		util.Logger().Errorf(err, "Invalid Request URI %s", r.RequestURI)
+		return err
+	}
 
-	tenant := r.RequestURI[start:end]
+	start := len("/v4/")
+	end := start + strings.Index(path[start:], "/")
+
+	tenant := strings.TrimSpace(path[start:end])
 	if len(tenant) == 0 {
 		err := errors.New("Header does not contain domain.")
 		util.Logger().Errorf(err, "Invalid Request URI %s", r.RequestURI)
