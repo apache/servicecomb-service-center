@@ -28,7 +28,7 @@ var _ = Describe("Version Rule sorter", func() {
 				kvs := []string{"1.0.0", "1.0.1"}
 				sort.Sort(&serviceKeySorter{
 					sortArr: kvs,
-					kvs:     make(map[string]string),
+					kvs:     make(map[string]*mvccpb.KeyValue),
 					cmp:     Larger,
 				})
 				Expect(kvs[0]).To(Equal("1.0.1"))
@@ -38,7 +38,7 @@ var _ = Describe("Version Rule sorter", func() {
 				kvs := []string{"1.0.1", "1.0.0"}
 				sort.Sort(&serviceKeySorter{
 					sortArr: kvs,
-					kvs:     make(map[string]string),
+					kvs:     make(map[string]*mvccpb.KeyValue),
 					cmp:     Larger,
 				})
 				Expect(kvs[0]).To(Equal("1.0.1"))
@@ -48,7 +48,7 @@ var _ = Describe("Version Rule sorter", func() {
 				kvs := []string{"1.0.0.0", "1.0.1"}
 				sort.Sort(&serviceKeySorter{
 					sortArr: kvs,
-					kvs:     make(map[string]string),
+					kvs:     make(map[string]*mvccpb.KeyValue),
 					cmp:     Larger,
 				})
 				Expect(kvs[0]).To(Equal("1.0.1"))
@@ -58,7 +58,7 @@ var _ = Describe("Version Rule sorter", func() {
 				kvs := []string{"1.0.9", "1.0.10"}
 				sort.Sort(&serviceKeySorter{
 					sortArr: kvs,
-					kvs:     make(map[string]string),
+					kvs:     make(map[string]*mvccpb.KeyValue),
 					cmp:     Larger,
 				})
 				Expect(kvs[0]).To(Equal("1.0.10"))
@@ -68,7 +68,7 @@ var _ = Describe("Version Rule sorter", func() {
 				kvs := []string{"1.10", "4"}
 				sort.Sort(&serviceKeySorter{
 					sortArr: kvs,
-					kvs:     make(map[string]string),
+					kvs:     make(map[string]*mvccpb.KeyValue),
 					cmp:     Larger,
 				})
 				Expect(kvs[0]).To(Equal("4"))
@@ -80,7 +80,7 @@ var _ = Describe("Version Rule sorter", func() {
 				kvs := []string{"1.a", "1.0.1.a"}
 				sort.Sort(&serviceKeySorter{
 					sortArr: kvs,
-					kvs:     make(map[string]string),
+					kvs:     make(map[string]*mvccpb.KeyValue),
 					cmp:     Larger,
 				})
 				Expect(kvs[0]).To(Equal("1.a"))
@@ -90,7 +90,7 @@ var _ = Describe("Version Rule sorter", func() {
 				kvs := []string{"1.0", "1.0.1.128"}
 				sort.Sort(&serviceKeySorter{
 					sortArr: kvs,
-					kvs:     make(map[string]string),
+					kvs:     make(map[string]*mvccpb.KeyValue),
 					cmp:     Larger,
 				})
 				Expect(kvs[0]).To(Equal("1.0"))
@@ -115,17 +115,17 @@ var _ = Describe("Version Rule sorter", func() {
 				Expect(len(results)).To(Equal(1))
 				Expect(results[0]).To(Equal(fmt.Sprintf("%d", count)))
 			})
-			It("Range1.1 ver in [1.4, 1.8]", func() {
+			It("Range1.1 ver in [1.4, 1.8)", func() {
 				results := VersionRule(Range).Match(kvs[:], "1.4", "1.8")
-				Expect(len(results)).To(Equal(5))
-				Expect(results[0]).To(Equal("8"))
-				Expect(results[4]).To(Equal("4"))
+				Expect(len(results)).To(Equal(4))
+				Expect(results[0]).To(Equal("7"))
+				Expect(results[3]).To(Equal("4"))
 			})
-			It("Range1.2 ver in [1.8, 1.4]", func() {
+			It("Range1.2 ver in (1.8, 1.4]", func() {
 				results := VersionRule(Range).Match(kvs[:], "1.8", "1.4")
-				Expect(len(results)).To(Equal(5))
-				Expect(results[0]).To(Equal("8"))
-				Expect(results[4]).To(Equal("4"))
+				Expect(len(results)).To(Equal(4))
+				Expect(results[0]).To(Equal("7"))
+				Expect(results[3]).To(Equal("4"))
 			})
 			It("Range2 ver in [1, 2]", func() {
 				results := VersionRule(Range).Match(kvs[:], "1", "2")
@@ -186,12 +186,12 @@ var _ = Describe("Version Rule sorter", func() {
 				Expect(len(results)).To(Equal(1))
 				Expect(results[0]).To(Equal(fmt.Sprintf("%d", count)))
 			})
-			It("Range ver in [1.4, 1.8]", func() {
+			It("Range ver in [1.4, 1.8)", func() {
 				match := ParseVersionRule("1.4-1.8")
 				results := match(kvs[:])
-				Expect(len(results)).To(Equal(5))
-				Expect(results[0]).To(Equal("8"))
-				Expect(results[4]).To(Equal("4"))
+				Expect(len(results)).To(Equal(4))
+				Expect(results[0]).To(Equal("7"))
+				Expect(results[3]).To(Equal("4"))
 			})
 			It("AtLess ver >= 1.6", func() {
 				match := ParseVersionRule("1.6+")
@@ -208,7 +208,7 @@ var _ = Describe("Version Rule sorter", func() {
 			It("Range ver in [1.4, 1.8]", func() {
 				Expect(VersionMatchRule("1.4", "1.4-1.8")).To(BeTrue())
 				Expect(VersionMatchRule("1.6", "1.4-1.8")).To(BeTrue())
-				Expect(VersionMatchRule("1.8", "1.4-1.8")).To(BeTrue())
+				Expect(VersionMatchRule("1.8", "1.4-1.8")).To(BeFalse())
 				Expect(VersionMatchRule("1.0", "1.4-1.8")).To(BeFalse())
 				Expect(VersionMatchRule("1.9", "1.4-1.8")).To(BeFalse())
 			})

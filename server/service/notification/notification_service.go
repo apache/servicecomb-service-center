@@ -210,7 +210,7 @@ func (s *NotifyService) init() {
 
 func (s *NotifyService) Start() {
 	if !s.Closed() {
-		util.Logger().Warnf(nil, "notify service is already running with config %v", s.Config)
+		util.Logger().Warnf(nil, "notify service is already running with config %s", s.Config)
 		return
 	}
 	s.closeMux.Lock()
@@ -221,7 +221,7 @@ func (s *NotifyService) Start() {
 	// 错误subscriber清理
 	s.AddSubscriber(NewNotifyServiceHealthChecker())
 
-	util.Logger().Infof("notify service is started with config %v", s.Config)
+	util.Logger().Infof("notify service is started with config %s", s.Config)
 
 	for i := NotifyType(0); i != typeEnd; i++ {
 		go s.publish2Subscriber(i)

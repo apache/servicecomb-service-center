@@ -16,7 +16,10 @@ package util
 import (
 	"net"
 	"os"
+	"unsafe"
 )
+
+const INT_SIZE int = int(unsafe.Sizeof(0))
 
 func GetLocalHostname() string {
 	hostName, _ := os.Hostname()
@@ -37,4 +40,14 @@ func GetLocalIP() string {
 		}
 	}
 	return ""
+}
+
+func IsBigEndian() bool {
+	return !IsLittleEndian()
+}
+
+func IsLittleEndian() bool {
+	i := 0x1
+	bs := (*[INT_SIZE]byte)(unsafe.Pointer(&i))
+	return bs[0] == 0
 }
