@@ -24,11 +24,14 @@ import (
 	"net/http"
 )
 
+const API_VERSION = "3.0.0"
+
 var RunMode string
 
 type Result struct {
 	version.VersionSet
-	RunMode string `json:"runMode"`
+	ApiVersion string `json:"apiVersion"`
+	RunMode    string `json:"runMode"`
 }
 
 type MainService struct {
@@ -62,6 +65,7 @@ func (this *MainService) ClusterHealth(w http.ResponseWriter, r *http.Request) {
 func (this *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
 	result := Result{
 		version.Ver(),
+		API_VERSION,
 		RunMode,
 	}
 	resultJSON, _ := json.Marshal(result)

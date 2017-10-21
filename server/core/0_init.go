@@ -2,16 +2,21 @@ package core
 
 import (
 	"flag"
+	"fmt"
 	"github.com/ServiceComb/service-center/pkg/grace"
 	"github.com/ServiceComb/service-center/pkg/lager"
 	"github.com/ServiceComb/service-center/pkg/logrotate"
 	"github.com/ServiceComb/service-center/pkg/tlsutil"
 	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/ServiceComb/service-center/version"
 	"github.com/astaxie/beego"
 	"os"
 	"path/filepath"
+	"runtime"
 	"time"
 )
+
+var printVersion bool
 
 func init() {
 	Initialize()
@@ -27,8 +32,17 @@ func Initialize() {
 }
 
 func initCommandLine() {
+	flag.BoolVar(&printVersion, "v", false, "Print the version and exit.")
 	flag.CommandLine.Init(os.Args[0], flag.ContinueOnError)
 	flag.CommandLine.Parse(os.Args[1:])
+
+	if printVersion {
+		fmt.Printf("ServiceCenter version: %s\n", version.Ver().Version)
+		fmt.Printf("Build tag: %s\n", version.Ver().BuildTag)
+		fmt.Printf("Go version: %s\n", runtime.Version())
+		fmt.Printf("Go OS/Arch: %s/%s\n", runtime.GOOS, runtime.GOARCH)
+		os.Exit(0)
+	}
 }
 
 func initLogger() {
