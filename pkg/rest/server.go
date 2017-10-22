@@ -246,7 +246,9 @@ func (srv *Server) gracefulStop(d time.Duration) {
 
 		if srv.CloseOne() {
 			n++
+			continue
 		}
+		break
 	}
 
 	if n != 0 {
