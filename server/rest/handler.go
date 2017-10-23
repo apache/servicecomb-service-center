@@ -2,21 +2,21 @@ package rest
 
 import (
 	"github.com/ServiceComb/service-center/server/interceptor"
-	"github.com/ServiceComb/service-center/server/rest/controller/v3"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
+	"github.com/ServiceComb/service-center/server/rest/controller/v4"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 var router http.Handler
 
 func init() {
-	router = v3.GetRouter()
+	router = v4.GetRouter()
 
 	// api
 	http.Handle("/", DefaultServerHandler())
 
 	// prometheus metrics
-	http.Handle("/metrics", promhttp.Handler())
+	http.Handle("/metrics", prometheus.Handler())
 }
 
 type ServerHandler struct {

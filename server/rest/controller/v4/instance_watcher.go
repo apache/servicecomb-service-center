@@ -11,7 +11,7 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package v3
+package v4
 
 import (
 	"github.com/ServiceComb/service-center/pkg/rest"
@@ -29,8 +29,8 @@ type WatchService struct {
 
 func (this *WatchService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTP_METHOD_GET, "/registry/v3/microservices/:serviceId/watcher", this.Watch},
-		{rest.HTTP_METHOD_GET, "/registry/v3/microservices/:serviceId/listwatcher", this.ListAndWatch},
+		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/microservices/:serviceId/watcher", this.Watch},
+		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/microservices/:serviceId/listwatcher", this.ListAndWatch},
 	}
 }
 

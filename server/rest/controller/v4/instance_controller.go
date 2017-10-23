@@ -11,7 +11,7 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package v3
+package v4
 
 import (
 	"encoding/json"
@@ -31,15 +31,15 @@ type MicroServiceInstanceService struct {
 
 func (this *MicroServiceInstanceService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTP_METHOD_GET, "/registry/v3/instances", this.FindInstances},
-		{rest.HTTP_METHOD_GET, "/registry/v3/microservices/:serviceId/instances", this.GetInstances},
-		{rest.HTTP_METHOD_GET, "/registry/v3/microservices/:serviceId/instances/:instanceId", this.GetOneInstance},
-		{rest.HTTP_METHOD_POST, "/registry/v3/microservices/:serviceId/instances", this.RegisterInstance},
-		{rest.HTTP_METHOD_DELETE, "/registry/v3/microservices/:serviceId/instances/:instanceId", this.UnregisterInstance},
-		{rest.HTTP_METHOD_PUT, "/registry/v3/microservices/:serviceId/instances/:instanceId/properties", this.UpdateMetadata},
-		{rest.HTTP_METHOD_PUT, "/registry/v3/microservices/:serviceId/instances/:instanceId/status", this.UpdateStatus},
-		{rest.HTTP_METHOD_PUT, "/registry/v3/microservices/:serviceId/instances/:instanceId/heartbeat", this.Heartbeat},
-		{rest.HTTP_METHOD_PUT, "/registry/v3/heartbeats", this.HeartbeatSet},
+		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/instances", this.FindInstances},
+		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/microservices/:serviceId/instances", this.GetInstances},
+		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/microservices/:serviceId/instances/:instanceId", this.GetOneInstance},
+		{rest.HTTP_METHOD_POST, "/v4/:domain/registry/microservices/:serviceId/instances", this.RegisterInstance},
+		{rest.HTTP_METHOD_DELETE, "/v4/:domain/registry/microservices/:serviceId/instances/:instanceId", this.UnregisterInstance},
+		{rest.HTTP_METHOD_PUT, "/v4/:domain/registry/microservices/:serviceId/instances/:instanceId/properties", this.UpdateMetadata},
+		{rest.HTTP_METHOD_PUT, "/v4/:domain/registry/microservices/:serviceId/instances/:instanceId/status", this.UpdateStatus},
+		{rest.HTTP_METHOD_PUT, "/v4/:domain/registry/microservices/:serviceId/instances/:instanceId/heartbeat", this.Heartbeat},
+		{rest.HTTP_METHOD_PUT, "/v4/:domain/registry/heartbeats", this.HeartbeatSet},
 	}
 }
 func (this *MicroServiceInstanceService) RegisterInstance(w http.ResponseWriter, r *http.Request) {

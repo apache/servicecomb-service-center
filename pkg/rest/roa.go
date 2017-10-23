@@ -72,3 +72,7 @@ func RegisterServent(servant interface{}) {
 		util.Logger().Errorf(nil, "<rest.RegisterServent> result of 'URLPatterns' function not []*Route type in servant struct `%s`", name)
 	}
 }
+
+func RegisterFilter(f Filter) {
+	serverHandler.filters = append(serverHandler.filters, f)
+}

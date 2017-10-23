@@ -11,7 +11,7 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package v3
+package v4
 
 import (
 	"net/http"
@@ -25,9 +25,23 @@ import (
 	"strings"
 )
 
+// GovernService 治理相关接口服务
+type GovernService struct {
+	//
+}
+
+// URLPatterns 路由
+func (governService *GovernService) URLPatterns() []rest.Route {
+	return []rest.Route{
+		{rest.HTTP_METHOD_GET, "/v4/:domain/govern/microservices/:serviceId", governService.GetServiceDetail},
+		{rest.HTTP_METHOD_GET, "/v4/:domain/govern/relations", governService.GetGraph},
+		{rest.HTTP_METHOD_GET, "/v4/:domain/govern/microservices", governService.GetAllServicesInfo},
+	}
+}
+
 //Node 节点信息
 type Node struct {
-	Id       string   `json:"id";`
+	Id       string   `json:"id"`
 	Name     string   `json:"name"`
 	AppID    string   `json:"appId"`
 	Version  string   `json:"version"`
@@ -112,20 +126,6 @@ func (governService *GovernService) GetGraph(w http.ResponseWriter, r *http.Requ
 	}
 	graph.Nodes = nodes
 	controller.WriteJsonObject(http.StatusOK, graph, w)
-}
-
-// GovernService 治理相关接口服务
-type GovernService struct {
-	//
-}
-
-// URLPatterns 路由
-func (governService *GovernService) URLPatterns() []rest.Route {
-	return []rest.Route{
-		{rest.HTTP_METHOD_GET, "/registry/v3/govern/service/:serviceId", governService.GetServiceDetail},
-		{rest.HTTP_METHOD_GET, "/registry/v3/govern/relation", governService.GetGraph},
-		{rest.HTTP_METHOD_GET, "/registry/v3/govern/services", governService.GetAllServicesInfo},
-	}
 }
 
 // GetServiceDetail 查询服务详细信息

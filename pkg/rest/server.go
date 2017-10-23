@@ -37,6 +37,7 @@ type ServerConfig struct {
 	Handler           http.Handler
 	ReadTimeout       time.Duration
 	ReadHeaderTimeout time.Duration
+	IdleTimeout       time.Duration
 	WriteTimeout      time.Duration
 	KeepAliveTimeout  time.Duration
 	GraceTimeout      time.Duration
@@ -48,8 +49,9 @@ func DefaultServerConfig() *ServerConfig {
 	return &ServerConfig{
 		ReadTimeout:       60 * time.Second,
 		ReadHeaderTimeout: 60 * time.Second,
+		IdleTimeout:       60 * time.Second,
 		WriteTimeout:      60 * time.Second,
-		KeepAliveTimeout:  3 * time.Minute,
+		KeepAliveTimeout:  1 * time.Minute,
 		GraceTimeout:      3 * time.Second,
 		MaxHeaderBytes:    16384,
 	}
@@ -66,6 +68,7 @@ func NewServer(srvCfg *ServerConfig) *Server {
 			TLSConfig:         srvCfg.TLSConfig,
 			ReadTimeout:       srvCfg.ReadTimeout,
 			ReadHeaderTimeout: srvCfg.ReadHeaderTimeout,
+			IdleTimeout:       srvCfg.IdleTimeout,
 			WriteTimeout:      srvCfg.WriteTimeout,
 			MaxHeaderBytes:    srvCfg.MaxHeaderBytes,
 		},
@@ -243,7 +246,9 @@ func (srv *Server) gracefulStop(d time.Duration) {
 
 		if srv.CloseOne() {
 			n++
+			continue
 		}
+		break
 	}
 
 	if n != 0 {

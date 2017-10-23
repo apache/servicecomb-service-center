@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-DELETE /registry/v3/microservices/63cc69716a8f11e79855286ed488ca3e?force=1 HTTP/1.1
+DELETE /v4/default/registry/microservices/63cc69716a8f11e79855286ed488ca3e?force=1 HTTP/1.1
 Host: localhost:30100
 Content-Type: application/json
 x-domain-name: default

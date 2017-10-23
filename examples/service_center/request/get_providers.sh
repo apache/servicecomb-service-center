@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-GET /registry/v3/microservices/2/providers HTTP/1.1
+GET /v4/default/registry/microservices/2/providers HTTP/1.1
 Host: localhost:30100
 X-Tenant-Name: default
 X-Project-Name: default

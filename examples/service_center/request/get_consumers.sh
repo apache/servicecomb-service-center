@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-GET /registry/v3/microservices/3/consumers HTTP/1.1
+GET /v4/default/registry/microservices/3/consumers HTTP/1.1
 Host: localhost:30100
 x-domain-name: default
 Cache-Control: no-cache

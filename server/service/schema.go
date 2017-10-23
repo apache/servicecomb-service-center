@@ -23,7 +23,7 @@ import (
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"golang.org/x/net/context"
 	"errors"
-	"github.com/ServiceComb/service-center/server/rest/controller/v3"
+	"github.com/ServiceComb/service-center/server/rest/controller/v4"
 	"strings"
 )
 
@@ -202,7 +202,7 @@ func modifySchemas(ctx context.Context, tenant string, service *pb.MicroService,
 	}
 
 	pluginOps := []registry.PluginOp{}
-	switch v3.RunMode {
+	switch v4.RunMode {
 	case "dev":
 		needDeleteSchemaList := make([]*pb.Schema, 0, len(schemasInDataBase))
 		for _, schemasInner := range schemasInDataBase {
