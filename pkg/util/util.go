@@ -105,7 +105,7 @@ func FromContext(ctx context.Context, key string) interface{} {
 	return ctx.Value(key)
 }
 
-func WithContext(r *http.Request, key string, val interface{}) {
+func SetReqCtx(r *http.Request, key string, val interface{}) {
 	ctx := r.Context()
 	ctx = NewContext(ctx, key, val)
 	if ctx != r.Context() {
@@ -236,10 +236,10 @@ func GetRealIP(r *http.Request) string {
 }
 
 func InitContext(r *http.Request) {
-	WithContext(r, "x-start-timestamp", time.Now())
+	SetReqCtx(r, "x-start-timestamp", time.Now())
 
 	terminalIP := GetRealIP(r)
-	WithContext(r, "x-remote-ip", terminalIP)
+	SetReqCtx(r, "x-remote-ip", terminalIP)
 }
 
 func GetStartTimeFromContext(ctx context.Context) time.Time {

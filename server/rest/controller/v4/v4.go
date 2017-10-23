@@ -14,13 +14,13 @@
 package v4
 
 import (
+	"errors"
 	roa "github.com/ServiceComb/service-center/pkg/rest"
 	"github.com/ServiceComb/service-center/pkg/util"
-	"net/http"
-	"strings"
-	"errors"
 	"github.com/ServiceComb/service-center/server/core"
+	"net/http"
 	"net/url"
+	"strings"
 )
 
 var router http.Handler
@@ -48,7 +48,6 @@ func GetRouter() http.Handler {
 }
 
 type v4Context struct {
-
 }
 
 func (v *v4Context) IsMatch(r *http.Request) bool {
@@ -73,7 +72,7 @@ func (v *v4Context) Do(r *http.Request) error {
 			util.Logger().Errorf(err, "Invalid Request URI %s", r.RequestURI)
 			return err
 		}
-		util.WithContext(r, "tenant", tenant)
+		util.SetReqCtx(r, "tenant", tenant)
 	}
 
 	if ctx.Value("project") == nil {
@@ -81,7 +80,7 @@ func (v *v4Context) Do(r *http.Request) error {
 		if len(project) == 0 {
 			project = core.REGISTRY_PROJECT
 		}
-		util.WithContext(r, "project", project)
+		util.SetReqCtx(r, "project", project)
 	}
 	return nil
 }
