@@ -6,7 +6,7 @@ Service-Center UI also offers a unique feature of testing the Schemas of their M
 ### QuickStart Guide
 
 Easiest way to get started with Service-Center UI is to download the release from [here](https://github.com/ServiceComb/service-center/releases) and then untar/unzip it based on your OS and run start.sh/start.bat.
-This will bring up the Service-Center UI on [http://127.0.0.1:30101](http://127.0.0.1:30101).
+This will bring up the Service-Center UI on [http://127.0.0.1:30103](http://127.0.0.1:30103).
 
 ##### Running UI from source code
 However if you want to try our latest code then you can follow the below steps
@@ -18,7 +18,7 @@ cd $GOPATH/src/github.com/ServiceComb/service-center
 cd frontend
 go run main.go
 ```
-This will bring up the Service-Center UI on [http://127.0.0.1:30101](http://127.0.0.1:30101).
+This will bring up the Service-Center UI on [http://127.0.0.1:30103](http://127.0.0.1:30103).
 
 ### Preview of Service-Center UI
 ![Service-Center Preview](/docs/Service-Center-UI-Preview.gif)
