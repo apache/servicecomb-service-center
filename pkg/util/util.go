@@ -105,6 +105,15 @@ func FromContext(ctx context.Context, key string) interface{} {
 	return ctx.Value(key)
 }
 
+func WithContext(r *http.Request, key string, val interface{}) {
+	ctx := r.Context()
+	ctx = NewContext(ctx, key, val)
+	if ctx != r.Context() {
+		nr := r.WithContext(ctx)
+		*r = *nr
+	}
+}
+
 func ParseTenantProject(ctx context.Context) string {
 	return StringJoin([]string{ParseTenant(ctx), ParseProject(ctx)}, "/")
 }
@@ -226,24 +235,11 @@ func GetRealIP(r *http.Request) string {
 	return ""
 }
 
-func addIPToContext(r *http.Request) {
-	terminalIP := GetRealIP(r)
-	ctx := r.Context()
-	ctx = NewContext(ctx, "x-remote-ip", terminalIP)
-	request := r.WithContext(ctx)
-	*r = *request
-}
-
-func addStartTimestamp(r *http.Request) {
-	ctx := r.Context()
-	ctx = NewContext(ctx, "x-start-timestamp", time.Now())
-	request := r.WithContext(ctx)
-	*r = *request
-}
-
 func InitContext(r *http.Request) {
-	addIPToContext(r)
-	addStartTimestamp(r)
+	WithContext(r, "x-start-timestamp", time.Now())
+
+	terminalIP := GetRealIP(r)
+	WithContext(r, "x-remote-ip", terminalIP)
 }
 
 func GetStartTimeFromContext(ctx context.Context) time.Time {
