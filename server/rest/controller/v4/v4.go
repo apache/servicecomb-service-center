@@ -14,13 +14,13 @@
 package v4
 
 import (
+	"errors"
 	roa "github.com/ServiceComb/service-center/pkg/rest"
 	"github.com/ServiceComb/service-center/pkg/util"
-	"net/http"
-	"strings"
-	"errors"
 	"github.com/ServiceComb/service-center/server/core"
+	"net/http"
 	"net/url"
+	"strings"
 )
 
 var router http.Handler
@@ -48,7 +48,6 @@ func GetRouter() http.Handler {
 }
 
 type v4Context struct {
-
 }
 
 func (v *v4Context) IsMatch(r *http.Request) bool {
@@ -56,34 +55,32 @@ func (v *v4Context) IsMatch(r *http.Request) bool {
 }
 
 func (v *v4Context) Do(r *http.Request) error {
-	path, err := url.PathUnescape(r.RequestURI)
-	if err != nil {
-		util.Logger().Errorf(err, "Invalid Request URI %s", r.RequestURI)
-		return err
+	ctx := r.Context()
+	if ctx.Value("tenant") == nil {
+		path, err := url.PathUnescape(r.RequestURI)
+		if err != nil {
+			util.Logger().Errorf(err, "Invalid Request URI %s", r.RequestURI)
+			return err
+		}
+
+		start := len("/v4/")
+		end := start + strings.Index(path[start:], "/")
+
+		tenant := strings.TrimSpace(path[start:end])
+		if len(tenant) == 0 {
+			err := errors.New("Header does not contain domain.")
+			util.Logger().Errorf(err, "Invalid Request URI %s", r.RequestURI)
+			return err
+		}
+		util.SetReqCtx(r, "tenant", tenant)
 	}
 
-	start := len("/v4/")
-	end := start + strings.Index(path[start:], "/")
-
-	tenant := strings.TrimSpace(path[start:end])
-	if len(tenant) == 0 {
-		err := errors.New("Header does not contain domain.")
-		util.Logger().Errorf(err, "Invalid Request URI %s", r.RequestURI)
-		return err
-	}
-
-	project := r.Header.Get("X-Domain-Name")
-	if len(project) == 0 {
-		project = r.Header.Get("X-Tenant-Name")
+	if ctx.Value("project") == nil {
+		project := r.Header.Get("X-Domain-Name")
 		if len(project) == 0 {
 			project = core.REGISTRY_PROJECT
 		}
+		util.SetReqCtx(r, "project", project)
 	}
-
-	ctx := r.Context()
-	ctx = util.NewContext(ctx, "tenant", tenant)
-	ctx = util.NewContext(ctx, "project", project)
-	request := r.WithContext(ctx)
-	*r = *request
 	return nil
 }
