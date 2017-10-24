@@ -109,7 +109,7 @@ func (iedh *InstanceEventDeferHandler) OnCondition(cache Cache, evts []*Event) b
 				continue
 			}
 			iedh.events[key] = evt
-			iedh.ttls[key] = int64(instance.HealthCheck.Interval)
+			iedh.ttls[key] = int64(instance.HealthCheck.Interval * (instance.HealthCheck.Times + 1))
 		}
 	}
 	iedh.mux.Unlock()
