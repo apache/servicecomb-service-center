@@ -28,9 +28,41 @@ type GovernServiceController struct {
 }
 
 func (governServiceController *GovernServiceController) GetServicesInfo(ctx context.Context, in *pb.GetServicesInfoRequest) (*pb.GetServicesInfoResponse, error) {
-	options := in.Options
-	//获取所有服务
 	opts := serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))
+
+	optionMap := make(map[string]struct{}, len(in.Options))
+	for _, opt := range in.Options {
+		optionMap[opt] = struct{}{}
+	}
+
+	options := make([]string, 0, len(optionMap))
+	if _, ok := optionMap["all"]; ok {
+		optionMap["statistics"] = struct{}{}
+		options = []string{"tags", "rules", "instances", "schemas", "dependencies"}
+	} else {
+		for opt := range optionMap {
+			options = append(options, opt)
+		}
+	}
+
+	var st *pb.Statistics
+	if _, ok := optionMap["statistics"]; ok {
+		var err error
+		st, err = statistics(ctx, opts...)
+		if err != nil {
+			return &pb.GetServicesInfoResponse{
+				Response: pb.CreateResponse(pb.Response_FAIL, "Statistics failed."),
+			}, err
+		}
+		if len(optionMap) == 1 {
+			return &pb.GetServicesInfoResponse{
+				Response:   pb.CreateResponse(pb.Response_SUCCESS, "Statistics successfully."),
+				Statistics: st,
+			}, nil
+		}
+	}
+
+	//获取所有服务
 	services, err := serviceUtil.GetAllServiceUtil(ctx, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "Get all services for govern service faild.")
@@ -39,30 +71,13 @@ func (governServiceController *GovernServiceController) GetServicesInfo(ctx cont
 		}, err
 	}
 
-	for _, opt := range options {
-		if opt == "all" {
-			options = []string{"tags", "rules", "instances", "schemas", "dependencies"}
-			break
-		}
-		if opt == "statistics" {
-			s, err := statistics(ctx, opts...)
-			if err != nil {
-				return &pb.GetServicesInfoResponse{
-					Response: pb.CreateResponse(pb.Response_FAIL, "Statistics failed."),
-				}, err
-			}
-			return &pb.GetServicesInfoResponse{
-				Response:   pb.CreateResponse(pb.Response_SUCCESS, "Statistics successfully."),
-				Statistics: s,
-			}, nil
-		}
-	}
 	allServiceDetails := []*pb.ServiceDetail{}
 	tenant := util.ParseTenantProject(ctx)
-	serviceId := ""
 	for _, service := range services {
-		serviceId = service.ServiceId
-		serviceDetail, err := getServiceDetailUtil(ctx, options, tenant, serviceId, service, opts...)
+		if apt.Service.ServiceId == service.ServiceId {
+			continue
+		}
+		serviceDetail, err := getServiceDetailUtil(ctx, options, tenant, service.ServiceId, service, opts...)
 		if err != nil {
 			return &pb.GetServicesInfoResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "Get one service detail failed."),
@@ -75,6 +90,7 @@ func (governServiceController *GovernServiceController) GetServicesInfo(ctx cont
 	return &pb.GetServicesInfoResponse{
 		Response:          pb.CreateResponse(pb.Response_SUCCESS, "Get services info successfully."),
 		AllServicesDetail: allServiceDetails,
+		Statistics:        st,
 	}, nil
 }
 
