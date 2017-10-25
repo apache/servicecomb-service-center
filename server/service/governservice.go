@@ -96,7 +96,7 @@ func (governServiceController *GovernServiceController) GetServicesInfo(ctx cont
 
 func (governServiceController *GovernServiceController) GetServiceDetail(ctx context.Context, in *pb.GetServiceRequest) (*pb.GetServiceDetailResponse, error) {
 	tenant := util.ParseTenantProject(ctx)
-	opts := []string{"tags", "rules", "instances", "schemas", "dependencies"}
+	options := []string{"tags", "rules", "instances", "schemas", "dependencies"}
 
 	if len(in.ServiceId) == 0 {
 		return &pb.GetServiceDetailResponse{
@@ -104,7 +104,9 @@ func (governServiceController *GovernServiceController) GetServiceDetail(ctx con
 		}, nil
 	}
 
-	service, err := serviceUtil.GetService(ctx, tenant, in.ServiceId)
+	opts := serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))
+
+	service, err := serviceUtil.GetService(ctx, tenant, in.ServiceId, opts...)
 	if service == nil {
 		return &pb.GetServiceDetailResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
@@ -116,7 +118,7 @@ func (governServiceController *GovernServiceController) GetServiceDetail(ctx con
 		}, err
 	}
 
-	versions, err := getServiceAllVersions(ctx, tenant, service.AppId, service.ServiceName)
+	versions, err := getServiceAllVersions(ctx, tenant, service.AppId, service.ServiceName, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "Get service all version fialed.")
 		return &pb.GetServiceDetailResponse{
@@ -124,7 +126,7 @@ func (governServiceController *GovernServiceController) GetServiceDetail(ctx con
 		}, err
 	}
 
-	serviceInfo, err := getServiceDetailUtil(ctx, opts, tenant, in.ServiceId, service)
+	serviceInfo, err := getServiceDetailUtil(ctx, options, tenant, in.ServiceId, service, opts...)
 	if err != nil {
 		return &pb.GetServiceDetailResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Get service detail failed."),
@@ -139,7 +141,7 @@ func (governServiceController *GovernServiceController) GetServiceDetail(ctx con
 	}, nil
 }
 
-func getServiceAllVersions(ctx context.Context, tenant string, appId string, serviceName string) ([]string, error) {
+func getServiceAllVersions(ctx context.Context, tenant string, appId string, serviceName string, opts ...registry.PluginOpOption) ([]string, error) {
 	versions := []string{}
 	key := apt.GenerateServiceIndexKey(&pb.MicroServiceKey{
 		Tenant:      tenant,
@@ -148,9 +150,11 @@ func getServiceAllVersions(ctx context.Context, tenant string, appId string, ser
 		Version:     "",
 	})
 
-	resp, err := store.Store().ServiceIndex().Search(ctx,
+	opts = append(opts,
 		registry.WithStrKey(key),
 		registry.WithPrefix())
+
+	resp, err := store.Store().ServiceIndex().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -166,9 +170,9 @@ func getServiceAllVersions(ctx context.Context, tenant string, appId string, ser
 	return versions, nil
 }
 
-func getSchemaInfoUtil(ctx context.Context, tenant string, serviceId string) ([]*pb.SchemaInfos, error) {
+func getSchemaInfoUtil(ctx context.Context, tenant string, serviceId string) ([]*pb.Schema, error) {
 	key := apt.GenerateServiceSchemaKey(tenant, serviceId, "")
-	schemas := []*pb.SchemaInfos{}
+	schemas := []*pb.Schema{}
 	resp, err := store.Store().Schema().Search(ctx,
 		registry.WithStrKey(key),
 		registry.WithPrefix())
@@ -176,14 +180,10 @@ func getSchemaInfoUtil(ctx context.Context, tenant string, serviceId string) ([]
 		util.Logger().Errorf(err, "Get schema failded,%s")
 		return schemas, err
 	}
-	schemaId := ""
-	schema := ""
 	for _, kv := range resp.Kvs {
-		schemaInfo := &pb.SchemaInfos{}
-		schemaId = util.BytesToStringWithNoCopy(kv.Key[len(key):])
-		schema = util.BytesToStringWithNoCopy(kv.Value)
-		schemaInfo.Schema = schema
-		schemaInfo.SchemaId = schemaId
+		schemaInfo := &pb.Schema{}
+		schemaInfo.Schema = util.BytesToStringWithNoCopy(kv.Value)
+		schemaInfo.SchemaId = util.BytesToStringWithNoCopy(kv.Key[len(key):])
 		schemas = append(schemas, schemaInfo)
 	}
 	return schemas, nil
