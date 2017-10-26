@@ -277,7 +277,8 @@ func statistics(ctx context.Context, opts ...registry.PluginOpOption) (*pb.Stati
 	key := apt.GetServiceIndexRootKey(tenantProject)
 	svcOpts := append(opts,
 		registry.WithStrKey(key),
-		registry.WithPrefix())
+		registry.WithPrefix(),
+		registry.WithKeyOnly())
 	resp, err := store.Store().Service().Search(ctx, svcOpts...)
 	if err != nil {
 		return nil, err
@@ -304,7 +305,8 @@ func statistics(ctx context.Context, opts ...registry.PluginOpOption) (*pb.Stati
 	key = apt.GetInstanceRootKey(tenantProject)
 	instOpts := append(opts,
 		registry.WithStrKey(key),
-		registry.WithPrefix())
+		registry.WithPrefix(),
+	    registry.WithKeyOnly())
 	respIns, err := store.Store().Instance().Search(ctx, instOpts...)
 	if err != nil {
 		return nil, err
