@@ -11,12 +11,14 @@ import (
 	"github.com/ServiceComb/service-center/version"
 	"github.com/astaxie/beego"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"runtime"
+	"syscall"
 	"time"
 )
 
-var printVersion bool
+var printVer bool
 
 func init() {
 	Initialize()
@@ -24,25 +26,44 @@ func init() {
 
 func Initialize() {
 	initCommandLine()
+
 	initLogger()
+
+	printVersion()
+
+	go handleSignals()
+
 	tlsutil.LoadServerSSLConfig()
 	tlsutil.LoadClientSSLConfig()
+
 	initLogRotate()
+
 	grace.Init()
 }
 
 func initCommandLine() {
-	flag.BoolVar(&printVersion, "v", false, "Print the version and exit.")
+	flag.BoolVar(&printVer, "v", false, "Print the version and exit.")
 	flag.CommandLine.Init(os.Args[0], flag.ContinueOnError)
 	flag.CommandLine.Parse(os.Args[1:])
 
-	if printVersion {
+	if printVer {
 		fmt.Printf("ServiceCenter version: %s\n", version.Ver().Version)
 		fmt.Printf("Build tag: %s\n", version.Ver().BuildTag)
 		fmt.Printf("Go version: %s\n", runtime.Version())
 		fmt.Printf("Go OS/Arch: %s/%s\n", runtime.GOOS, runtime.GOARCH)
 		os.Exit(0)
 	}
+}
+
+func printVersion() {
+	util.Logger().Infof("service center version: %s", version.Ver().Version)
+	util.Logger().Infof("Build tag: %s", version.Ver().BuildTag)
+	util.Logger().Infof("Go version: %s", runtime.Version())
+	util.Logger().Infof("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH)
+
+	cores := runtime.NumCPU()
+	runtime.GOMAXPROCS(cores)
+	util.Logger().Infof("service center is running simultaneously with %d CPU cores", cores)
 }
 
 func initLogger() {
@@ -90,4 +111,24 @@ func initLogRotate() {
 		BackupCount: maxBackupCount,
 		Period:      rotatePeriod,
 	})
+}
+
+func handleSignals() {
+	var sig os.Signal
+	sigCh := make(chan os.Signal)
+	signal.Notify(sigCh,
+		syscall.SIGINT,
+		syscall.SIGKILL,
+		syscall.SIGTERM,
+	)
+	wait := 5 * time.Second
+	for {
+		sig = <-sigCh
+		switch sig {
+		case syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM:
+			<-time.After(wait)
+			util.Logger().Warnf(nil, "Clean up resources timed out(%s), force shutdown.", wait)
+			os.Exit(1)
+		}
+	}
 }
