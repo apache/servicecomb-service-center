@@ -18,30 +18,58 @@ angular.module('serviceCenter')
 			url : 'http://127.0.0.1',
 			port: '30100'
 		},
+//		 v4 api's
 		api : {
-			microservice: {
-				url: 'registry/v3/microservices',
-				method: 'GET'
-			},
-			instances: {
-				url: 'registry/v3/microservices/{{serviceId}}/instances?tags=',
-				method: 'GET'
-			},
-			consumer: {
-				url: 'registry/v3/microservices/{{consumerId}}/providers',
-				method: 'GET'
-			},
-			provider: {
-				url: 'registry/v3/microservices/{{providerId}}/consumers',
-				method: 'GET'
-			},
-			schema: {
-				url: 'registry/v3/microservices/{{serviceId}}/schemas/{{schemaId}}',
-				method: 'GET'
-			},
-			allServices: {
-				url: 'registry/v3/govern/services?options=all',
-				method: 'GET'
-			}
-		}
+            microservice: {
+                url: 'v4/default/registry/microservices',
+                method: 'GET'
+            },
+            instances: {
+                url: 'v4/default/registry/microservices/{{serviceId}}/instances',
+                method: 'GET'
+            },
+            consumer: {
+                url: 'v4/default/registry/microservices/{{consumerId}}/providers',
+                method: 'GET'
+            },
+            provider: {
+                url: 'v4/default/registry/microservices/{{providerId}}/consumers',
+                method: 'GET'
+            },
+            schema: {
+                url: 'v4/default/registry/microservices/{{serviceId}}/schemas/{{schemaId}}',
+                method: 'GET'
+            },
+            allServices: {
+                url: 'v4/default/govern/microservices',
+                method: 'GET'
+            }
+        }
+//       v3 api's
+//		api : {
+//			microservice: {
+//				url: 'registry/v3/microservices',
+//				method: 'GET'
+//			},
+//			instances: {
+//				url: 'registry/v3/microservices/{{serviceId}}/instances?tags=',
+//				method: 'GET'
+//			},
+//			consumer: {
+//				url: 'registry/v3/microservices/{{consumerId}}/providers',
+//				method: 'GET'
+//			},
+//			provider: {
+//				url: 'registry/v3/microservices/{{providerId}}/consumers',
+//				method: 'GET'
+//			},
+//			schema: {
+//				url: 'registry/v3/microservices/{{serviceId}}/schemas/{{schemaId}}',
+//				method: 'GET'
+//			},
+//			allServices: {
+//				url: 'registry/v3/govern/services?options=all',
+//				method: 'GET'
+//			}
+//		}
 	});

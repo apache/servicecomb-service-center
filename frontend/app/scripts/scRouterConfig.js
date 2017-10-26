@@ -50,13 +50,13 @@ angular.module('serviceCenter.router', [])
                 }
             },
             resolve: {
-                serviceInfo: ['$q', 'httpService', 'commonService', 'apiConstant', '$stateParams', function($q, httpService, commonService, apiConstant, $stateParams){
+                serviceInfo: ['$q', 'httpService', 'commonService', 'apiConstant', '$stateParams', '$state', function($q, httpService, commonService, apiConstant, $stateParams, $state){
                     $(".loader").show();
                     var serviceId = $stateParams.serviceId;
                     var deferred = $q.defer();
                     var url = apiConstant.api.microservice.url;
                     var method = apiConstant.api.microservice.method;
-                    httpService.apiRequest(url,method).then(function(response){
+                    httpService.apiRequest(url, method, null, null, "nopopup").then(function(response){
                         $(".loader").hide();
                         if(response && response.data && response.data.services){
                             deferred.resolve(response);
@@ -67,6 +67,7 @@ angular.module('serviceCenter.router', [])
                     },function(error){
                         $(".loader").hide();
                         deferred.reject(error);
+                        $state.go("sc.dashboard");
                     });
                     return deferred.promise;
                 }]
@@ -110,7 +111,7 @@ angular.module('serviceCenter.router', [])
                     var deferred = $q.defer();
                     var url = apiConstant.api.microservice.url;
                     var method = apiConstant.api.microservice.method;
-                    httpService.apiRequest(url,method).then(function(response){
+                    httpService.apiRequest(url, method, null, null, "nopopup").then(function(response){
                         $(".loader").hide();
                         if(response && response.data && response.data.services){
                             deferred.resolve(response);

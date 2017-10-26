@@ -19,12 +19,22 @@ import (
 	"github.com/ServiceComb/service-center/frontend/schema"
 	"log"
 	"net/http"
+	"github.com/astaxie/beego"
+	//"strconv"
 )
 
 func main() {
+
+	frontendIp := beego.AppConfig.String("FRONTEND_HOST_IP")
+	frontendPort, err := beego.AppConfig.Int("FRONTEND_HOST_PORT")
+	if err != nil {
+		fmt.Println("error while reading port config value", err)
+	}
+
 	// command line flags
-	port := flag.Int("port", 30101, "port to serve on")
+	port := flag.Int("port", frontendPort, "port to serve on")
 	dir := flag.String("directory", "app/", "directory of web files")
+
 	flag.Parse()
 
 	// handle all requests by serving a file of the same name
@@ -37,8 +47,9 @@ func main() {
 
 	log.Printf("Running on port %d\n", *port)
 
-	addr := fmt.Sprintf("127.0.0.1:%d", *port)
+
+	addr := fmt.Sprintf("%s:%d", frontendIp, *port)
 	// this call blocks -- the progam runs here forever
-	err := http.ListenAndServe(addr, nil)
+	err = http.ListenAndServe(addr, nil)
 	fmt.Println(err.Error())
 }

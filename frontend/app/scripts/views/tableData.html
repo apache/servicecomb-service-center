@@ -47,7 +47,7 @@ limitations under the License.
                     </tr>
                 </thead>
                 <tbody>
-                    <tr md-row md-select="appData" id="target" data-ng-repeat="appData in data | filter: filter.search | orderBy: paginationQuery.order | limitTo: paginationQuery.limit : (paginationQuery.page - 1) * paginationQuery.limit">
+                    <tr md-row md-select="appData" id="target" data-ng-repeat="appData in data | filter: filter.search | orderBy: 'serviceName' | limitTo: paginationQuery.limit : (paginationQuery.page - 1) * paginationQuery.limit">
                         <td md-cell ng-repeat="(key, value) in appData">
                             <span ng-if="key == 'serviceName'">
                                 <a ui-sref="sc.info.instance({serviceId:'{{appData.serviceId}}'})">{{appData.serviceName}}</a>

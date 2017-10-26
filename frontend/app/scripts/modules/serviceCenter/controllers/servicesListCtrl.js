@@ -18,7 +18,7 @@ angular.module('serviceCenter.sc', [])
 
 			$scope.appList = 'fetching';
 			$scope.serviceList = 'serviceList';
-			$scope.rowsPerPage = [5, 10, 15];
+			$scope.rowsPerPage = [5, 10];
 			
 			$scope.tableHeaders = [
 				{
@@ -44,18 +44,6 @@ angular.module('serviceCenter.sc', [])
 				}
 			];
 
-			function predicateBy(prop){
-				return function(a,b){
-					if(a[prop] >b[prop]){
-						return 1;
-					}
-					else if(a[prop] < b[prop]){
-						return -1;
-					}
-					return 0;
-				}
-			}
-			
 			$scope.refreshAppList = function() {
 				angular.element(document.querySelector('.fa-refresh')).addClass('fa-spin');
 				$scope.getAllServices();
@@ -116,10 +104,6 @@ angular.module('serviceCenter.sc', [])
 								$scope.services.push(servicesList);
 							}
 						});
-
-						if($scope.services.length >0){
-							$scope.services.sort(predicateBy("serviceName"));
-						}
 
 						if($scope.services.length <= 0){
 							$scope.appList = 'empty';

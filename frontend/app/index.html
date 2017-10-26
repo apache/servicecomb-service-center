@@ -77,13 +77,15 @@ limitations under the License.
     <script src="bower_components/angular-swagger-ui/dist/scripts/swagger-ui.js"></script>
     <script src="bower_components/angular-yamljs/dist/angular-yamljs.js"></script>
     <script src="bower_components/yaml.js/dist/yaml.js"></script>
+    <script src="bower_components/angular-swagger-ui/dist/scripts/modules/swagger-yaml-parser.min.js"></script>
     <!-- endbower -->
     <!-- endbuild -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.3.2/swagger-ui-bundle.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.3.2/swagger-ui-standalone-preset.js"></script>
-    <script src="bower_components/angular-swagger-ui/dist/scripts/modules/swagger-yaml-parser.min.js"></script>
     <script src="http://cdnjs.cloudflare.com/ajax/libs/angular-material-icons/0.7.0/angular-material-icons.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/3.10.0/js-yaml.min.js"></script>
+    <script src="https://cdn.rawgit.com/Stuk/jszip/edc3323d/vendor/FileSaver.js"></script>
+    <script src="https://cdn.rawgit.com/Stuk/jszip/edc3323d/dist/jszip.min.js"></script>
     <!-- build:js({.tmp,app}) scripts/scripts.js -->
     <script src="scripts/app.js"></script>
     <!-- Load common services -->
@@ -99,6 +101,8 @@ limitations under the License.
     <script src="scripts/modules/serviceCenter/controllers/servicesListCtrl.js"></script>
     <script src="scripts/modules/serviceCenter/controllers/serviceInfoCtrl.js"></script>
     <script src="scripts/modules/serviceCenter/controllers/schemaCtrl.js"></script>
+    <!-- Load all the serviceCenter modules filter files here -->
+    <script src="scripts/modules/serviceCenter/filters/formatSchema.js"></script>
     <!-- Load the serviceCenter router modules files here -->
     <script src="scripts/scRouterConfig.js"></script>
     <script src="scripts/controllers/serviceCenterCtrl.js"></script>
