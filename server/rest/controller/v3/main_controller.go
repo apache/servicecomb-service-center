@@ -11,54 +11,31 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package v4
+package v3
 
 import (
 	"encoding/json"
 	"github.com/ServiceComb/service-center/pkg/rest"
-	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/server/core"
-	"github.com/ServiceComb/service-center/server/rest/controller"
+	"github.com/ServiceComb/service-center/server/rest/controller/v4"
 	"github.com/ServiceComb/service-center/version"
 	"net/http"
 )
 
-const API_VERSION = "4.0.0"
-
-type Result struct {
-	version.VersionSet
-	ApiVersion string `json:"apiVersion"`
-}
+const API_VERSION = "3.0.0"
 
 type MainService struct {
-	//
-}
-
-func init() {
+	v4.MainService
 }
 
 func (this *MainService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/version", this.GetVersion},
-		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/health", this.ClusterHealth},
+		{rest.HTTP_METHOD_GET, "/version", this.GetVersion},
+		{rest.HTTP_METHOD_GET, "/health", this.ClusterHealth},
 	}
-}
-
-func (this *MainService) ClusterHealth(w http.ResponseWriter, r *http.Request) {
-	resp, err := core.InstanceAPI.ClusterHealth(r.Context())
-	if err != nil {
-		util.Logger().Error("health check failed", err)
-		controller.WriteText(http.StatusInternalServerError, "health check failed", w)
-		return
-	}
-
-	respInternal := resp.Response
-	resp.Response = nil
-	controller.WriteJsonResponse(respInternal, resp, err, w)
 }
 
 func (this *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
-	result := Result{
+	result := v4.Result{
 		version.Ver(),
 		API_VERSION,
 	}

@@ -11,33 +11,8 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package version
+package chain
 
-import "github.com/astaxie/beego"
-
-var (
-	// no need to modify
-	// please use:
-	// 	go build -ldflags "-X github.com/ServiceComb/service-center/version.VERSION=x.x.x"
-	// to set these values.
-	VERSION   = "0.0.1"
-	BUILD_TAG = "Not provided"
-)
-
-type VersionSet struct {
-	Version  string `json:"version"`
-	BuildTag string `json:"buildTag"`
-	RunMode  string `json:"runMode"`
-}
-
-var version VersionSet
-
-func init() {
-	version.Version = VERSION
-	version.BuildTag = BUILD_TAG
-	version.RunMode = beego.AppConfig.DefaultString("runmode", "prod")
-}
-
-func Ver() VersionSet {
-	return version
+type Handler interface {
+	Handle(i *Invocation)
 }
