@@ -14,6 +14,7 @@
 package service
 
 import (
+	"errors"
 	"github.com/ServiceComb/service-center/pkg/util"
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
@@ -21,9 +22,8 @@ import (
 	"github.com/ServiceComb/service-center/server/core/registry/store"
 	"github.com/ServiceComb/service-center/server/infra/quota"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
+	"github.com/ServiceComb/service-center/version"
 	"golang.org/x/net/context"
-	"errors"
-	"github.com/ServiceComb/service-center/server/rest/controller/v4"
 	"strings"
 )
 
@@ -177,7 +177,7 @@ func modifySchemas(ctx context.Context, tenant string, service *pb.MicroService,
 	schemasInDataBase, err := GetSchemasFromDataBase(ctx, tenant, serviceId)
 	if err != nil {
 		util.Logger().Errorf(nil, "modify schema failed: get schema from database failed, %s", serviceId)
-		return errors.New("exist not exist schemaId"),  true
+		return errors.New("exist not exist schemaId"), true
 	}
 
 	needUpdateSchemaList := make([]*pb.Schema, 0, len(schemas))
@@ -202,7 +202,7 @@ func modifySchemas(ctx context.Context, tenant string, service *pb.MicroService,
 	}
 
 	pluginOps := []registry.PluginOp{}
-	switch v4.RunMode {
+	switch version.Ver().RunMode {
 	case "dev":
 		needDeleteSchemaList := make([]*pb.Schema, 0, len(schemasInDataBase))
 		for _, schemasInner := range schemasInDataBase {
@@ -233,12 +233,12 @@ func modifySchemas(ctx context.Context, tenant string, service *pb.MicroService,
 
 		for _, schema := range needUpdateSchemaList {
 			util.Logger().Infof("update schema %v", schema)
-			opts:= schemaWithDatabaseOpera(registry.OpPut, tenant, serviceId, schema)
+			opts := schemaWithDatabaseOpera(registry.OpPut, tenant, serviceId, schema)
 			pluginOps = append(pluginOps, opts...)
 		}
 		for _, schema := range needDeleteSchemaList {
 			util.Logger().Infof("delete not exist schema %v", schema)
-			opts:= schemaWithDatabaseOpera(registry.OpDel, tenant, serviceId, schema)
+			opts := schemaWithDatabaseOpera(registry.OpDel, tenant, serviceId, schema)
 			pluginOps = append(pluginOps, opts...)
 		}
 	case "prod":
@@ -281,7 +281,7 @@ func modifySchemas(ctx context.Context, tenant string, service *pb.MicroService,
 
 	for _, schema := range needAddSchemaList {
 		util.Logger().Infof("add new schema %v", schema)
-		opts:= schemaWithDatabaseOpera(registry.OpPut, tenant, service.ServiceId, schema)
+		opts := schemaWithDatabaseOpera(registry.OpPut, tenant, service.ServiceId, schema)
 		pluginOps = append(pluginOps, opts...)
 	}
 
@@ -291,7 +291,7 @@ func modifySchemas(ctx context.Context, tenant string, service *pb.MicroService,
 	return nil, false
 }
 
-func isExistSchemaId(service *pb.MicroService, schemas []*pb.Schema) bool{
+func isExistSchemaId(service *pb.MicroService, schemas []*pb.Schema) bool {
 	seriviceSchemaIds := service.Schemas
 	for _, schema := range schemas {
 		if !containsValueInSlice(seriviceSchemaIds, schema.SchemaId) {
@@ -302,7 +302,7 @@ func isExistSchemaId(service *pb.MicroService, schemas []*pb.Schema) bool{
 	return true
 }
 
-func schemaWithDatabaseOpera(invoke registry.Operation, tenant string, serviceId string, schema *pb.Schema) []registry.PluginOp{
+func schemaWithDatabaseOpera(invoke registry.Operation, tenant string, serviceId string, schema *pb.Schema) []registry.PluginOp {
 	pluginOps := []registry.PluginOp{}
 	key := apt.GenerateServiceSchemaKey(tenant, serviceId, schema.SchemaId)
 	opt := invoke(registry.WithStrKey(key), registry.WithStrValue(schema.Schema))
@@ -328,11 +328,11 @@ func GetSchemasFromDataBase(ctx context.Context, tenant string, serviceId string
 	for _, kv := range resp.Kvs {
 		key := util.BytesToStringWithNoCopy(kv.Key)
 		tmp := strings.Split(key, "/")
-		schemaId := tmp[len(tmp) - 1]
+		schemaId := tmp[len(tmp)-1]
 		schema := util.BytesToStringWithNoCopy(kv.Value)
 		schemaStruct := &pb.Schema{
 			SchemaId: schemaId,
-			Schema: schema,
+			Schema:   schema,
 		}
 		schemas = append(schemas, schemaStruct)
 	}
@@ -353,11 +353,11 @@ func GetSchemasSummaryFromDataBase(ctx context.Context, tenant string, serviceId
 	for _, kv := range resp.Kvs {
 		key := util.BytesToStringWithNoCopy(kv.Key)
 		tmp := strings.Split(key, "/")
-		schemaId := tmp[len(tmp) - 1]
+		schemaId := tmp[len(tmp)-1]
 		summary := util.BytesToStringWithNoCopy(kv.Value)
 		schemaStruct := &pb.Schema{
 			SchemaId: schemaId,
-			Summary: summary,
+			Summary:  summary,
 		}
 		schemas = append(schemas, schemaStruct)
 	}
@@ -435,7 +435,7 @@ func (s *ServiceController) canModifySchema(ctx context.Context, request *pb.Mod
 		return errors.New("service non-exist"), false
 	}
 	schema := &pb.Schema{
-		Schema: request.Schema,
+		Schema:   request.Schema,
 		SchemaId: schemaId,
 	}
 	if !isExistSchemaId(service, []*pb.Schema{schema}) {
@@ -462,7 +462,7 @@ func getSchemaSummary(ctx context.Context, tenant string, serviceId string, sche
 		registry.WithStrKey(key),
 	)
 	if err != nil {
-		util.Logger().Errorf(err,"get %s schema %s summary failed", serviceId, schemaId)
+		util.Logger().Errorf(err, "get %s schema %s summary failed", serviceId, schemaId)
 		return "", err
 	}
 	if len(resp.Kvs) == 0 {
