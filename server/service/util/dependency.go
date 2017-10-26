@@ -373,6 +373,10 @@ func CreateDependencyRuleForFind(ctx context.Context, tenant string, provider *p
 		util.Logger().Errorf(err, "get dependency rule failed, consumer %s: get consumer depedency rule failed.", consumerFlag)
 		return err
 	}
+	if isDependencyAll(oldProviderRules) {
+		util.Logger().Infof("find update dep rule, exist * for %v", consumer)
+		return nil
+	}
 	opts := []registry.PluginOp{}
 	if oldProviderRule := isNeedUpdate(oldProviderRules.Dependency, provider); oldProviderRule != nil {
 		opt, err := deleteConsumerDepOfProviderRule(ctx, tenant, oldProviderRule, consumer)
@@ -428,6 +432,15 @@ func CreateDependencyRuleForFind(ctx context.Context, tenant string, provider *p
 	return nil
 }
 
+func isDependencyAll(dep *pb.MicroServiceDependency) bool{
+	for _, servicedep := range dep.Dependency {
+		if servicedep.ServiceName == "*" {
+			return true
+		}
+	}
+	return false
+}
+
 func isExist(services []*pb.MicroServiceKey, service *pb.MicroServiceKey) bool{
 	for _, tmp := range services {
 		if equalServiceDependency(tmp, service) {
@@ -450,6 +463,7 @@ func deleteDepRuleUtil(key string, deps *pb.MicroServiceDependency, deleteDepRul
 	for key, consumerDepRule := range deps.Dependency {
 		if equalServiceDependency(consumerDepRule, deleteDepRule) {
 			deps.Dependency = append(deps.Dependency[:key], deps.Dependency[key+1:]...)
+			break
 		}
 	}
 	data, err := json.Marshal(deps)
@@ -473,6 +487,7 @@ func updateDepRuleUtil(key string, deps *pb.MicroServiceDependency, updateDepRul
 	for _, serviceRule := range deps.Dependency {
 		if serviceRule.ServiceName == updateDepRule.ServiceName && updateDepRule.AppId ==  serviceRule.AppId &&  updateDepRule.Version != serviceRule.Version{
 			serviceRule.Version = updateDepRule.Version
+			break
 		}
 	}
 	data, err := json.Marshal(deps)

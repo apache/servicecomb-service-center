@@ -71,6 +71,10 @@ func AddDefaultContextValue(ctx context.Context) context.Context {
 	return ctx
 }
 
+func IsDefaultDomain(tenantProject string) bool{
+	return tenantProject == util.StringJoin([]string{REGISTRY_TENANT, REGISTRY_PROJECT}, "/")
+}
+
 func ISSCSelf(ctx context.Context) bool {
 	if ctx.Value(IS_SC_SELF) != nil && ctx.Value(IS_SC_SELF).(bool) {
 		return true

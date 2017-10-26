@@ -269,34 +269,47 @@ func statistics(ctx context.Context, opts ...registry.PluginOpOption) (*pb.Stati
 	result := &pb.Statistics{
 		Services:  &pb.StService{},
 		Instances: &pb.StInstance{},
+		Apps:      &pb.StApp{},
 	}
 	tenantProject := util.ParseTenantProject(ctx)
 
 	// services
-	key := apt.GenerateServiceKey(tenantProject, "")
+	key := apt.GetServiceIndexRootKey(tenantProject)
 	svcOpts := append(opts,
 		registry.WithStrKey(key),
-		registry.WithPrefix(),
-		registry.WithCountOnly())
+		registry.WithPrefix())
 	resp, err := store.Store().Service().Search(ctx, svcOpts...)
 	if err != nil {
 		return nil, err
 	}
 	if resp.Count > 0 {
-		result.Services.Count = resp.Count - 1
+		result.Services.Count = resp.Count
+		if apt.IsDefaultDomain(tenantProject) {
+			result.Services.Count = result.Services.Count - 1
+		}
 	}
+
+	app := map[string]interface{}{}
+	for _, kv := range resp.Kvs {
+		key := util.BytesToStringWithNoCopy(kv.Key)
+		keySpilted := strings.Split(key, "/")
+		if len(keySpilted) > 6 {
+			appId := keySpilted[6]
+			app[appId] = nil
+		}
+	}
+	result.Apps.Count = int32(len(app))
 
 	// instance
 	key = apt.GetInstanceRootKey(tenantProject)
 	instOpts := append(opts,
 		registry.WithStrKey(key),
-		registry.WithPrefix(),
-		registry.WithCountOnly())
-	resp, err = store.Store().Instance().Search(ctx, instOpts...)
+		registry.WithPrefix())
+	respIns, err := store.Store().Instance().Search(ctx, instOpts...)
 	if err != nil {
 		return nil, err
 	}
-	result.Instances.Count = resp.Count
+	result.Instances.Count = respIns.Count
 	key = apt.GenerateInstanceKey(tenantProject, apt.Service.ServiceId, "")
 	scOpts := append(opts,
 		registry.WithStrKey(key),
@@ -307,5 +320,16 @@ func statistics(ctx context.Context, opts ...registry.PluginOpOption) (*pb.Stati
 		return nil, err
 	}
 	result.Instances.Count = result.Instances.Count - resp.Count
+
+	onlineServices := map[string] interface{}{}
+	for _, kv := range respIns.Kvs {
+		key := util.BytesToStringWithNoCopy(kv.Key)
+		keySpilted := strings.Split(key, "/")
+		if len(keySpilted) > 6 {
+			servieId := keySpilted[6]
+			onlineServices[servieId] = nil
+		}
+	}
+	result.Services.OnlineCount = int32(len(onlineServices))
 	return result, err
 }

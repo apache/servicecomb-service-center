@@ -41,7 +41,14 @@ var _ = Describe("GovernServiceController", func() {
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
 				resp, err = governService.GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
-					Options: []string{"tags", "rules", "instances", "schemas"},
+					Options: []string{"tags", "rules", "instances", "schemas", "statistics"},
+				})
+
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+				resp, err = governService.GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
+					Options: []string{"statistics"},
 				})
 
 				Expect(err).To(BeNil())
