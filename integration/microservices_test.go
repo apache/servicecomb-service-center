@@ -57,7 +57,7 @@ var _ = Describe("MicroService Api Test", func() {
 				body, _ := json.Marshal(bodyParams)
 				bodyBuf := bytes.NewReader(body)
 				req, _ := http.NewRequest(POST, SCURL+REGISTERMICROSERVICE, bodyBuf)
-				req.Header.Set("X-tenant-name", "default")
+				req.Header.Set("X-Domain-Name", "default")
 				resp, err := scclient.Do(req)
 				Expect(err).To(BeNil())
 				defer resp.Body.Close()
@@ -71,7 +71,7 @@ var _ = Describe("MicroService Api Test", func() {
 				// UNRegister Service
 				url := strings.Replace(UNREGISTERMICROSERVICE, ":serviceId", serviceId, 1)
 				req, _ = http.NewRequest(DELETE, SCURL+url, nil)
-				req.Header.Set("X-tenant-name", "default")
+				req.Header.Set("X-Domain-Name", "default")
 				resp, _ = scclient.Do(req)
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 
@@ -99,7 +99,7 @@ var _ = Describe("MicroService Api Test", func() {
 				body, _ := json.Marshal(bodyParams)
 				bodyBuf := bytes.NewReader(body)
 				req, _ := http.NewRequest(POST, SCURL+REGISTERMICROSERVICE, bodyBuf)
-				req.Header.Set("X-tenant-name", "default")
+				req.Header.Set("X-Domain-Name", "default")
 				resp, err := scclient.Do(req)
 				Expect(err).To(BeNil())
 				defer resp.Body.Close()
@@ -115,7 +115,7 @@ var _ = Describe("MicroService Api Test", func() {
 				if serviceId != "" {
 					url := strings.Replace(UNREGISTERMICROSERVICE, ":serviceId", serviceId, 1)
 					req, _ := http.NewRequest(DELETE, SCURL+url, nil)
-					req.Header.Set("X-tenant-name", "default")
+					req.Header.Set("X-Domain-Name", "default")
 					resp, _ := scclient.Do(req)
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
 				}
@@ -125,7 +125,7 @@ var _ = Describe("MicroService Api Test", func() {
 				It("test valid scenario", func() {
 					url := strings.Replace(UNREGISTERMICROSERVICE, ":serviceId", serviceId, 1)
 					req, _ := http.NewRequest(DELETE, SCURL+url, nil)
-					req.Header.Set("X-tenant-name", "default")
+					req.Header.Set("X-Domain-Name", "default")
 					resp, _ := scclient.Do(req)
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
 					serviceId = ""
@@ -134,7 +134,7 @@ var _ = Describe("MicroService Api Test", func() {
 				It("test invalid id", func() {
 					url := strings.Replace(UNREGISTERMICROSERVICE, ":serviceId", "56565", 1)
 					req, _ := http.NewRequest(DELETE, SCURL+url, nil)
-					req.Header.Set("X-tenant-name", "default")
+					req.Header.Set("X-Domain-Name", "default")
 					resp, _ := scclient.Do(req)
 					Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
 				})
@@ -144,7 +144,7 @@ var _ = Describe("MicroService Api Test", func() {
 				It("test valid scenario", func() {
 					getServiceName(serviceId)
 					req, _ := http.NewRequest(GET, SCURL+CHECKEXISTENCE+"?type=microservice&appId="+serviceAppId+"&serviceName="+serviceName+"&version="+serviceVersion, nil)
-					req.Header.Set("X-tenant-name", "default")
+					req.Header.Set("X-Domain-Name", "default")
 					resp, _ := scclient.Do(req)
 					respbody, _ := ioutil.ReadAll(resp.Body)
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
@@ -153,7 +153,7 @@ var _ = Describe("MicroService Api Test", func() {
 
 				It("test invalid api params", func() {
 					req, _ := http.NewRequest(GET, SCURL+CHECKEXISTENCE+"?type=microservice&appId=&serviceName="+serviceName+"&version="+serviceVersion, nil)
-					req.Header.Set("X-tenant-name", "default")
+					req.Header.Set("X-Domain-Name", "default")
 					resp, _ := scclient.Do(req)
 					Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
 				})
@@ -164,7 +164,7 @@ var _ = Describe("MicroService Api Test", func() {
 					getServiceName(serviceId)
 					url := strings.Replace(GETSERVICEBYID, ":serviceId", serviceId, 1)
 					req, _ := http.NewRequest(GET, SCURL+url, nil)
-					req.Header.Set("X-tenant-name", "default")
+					req.Header.Set("X-Domain-Name", "default")
 					resp, _ := scclient.Do(req)
 					respbody, _ := ioutil.ReadAll(resp.Body)
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
@@ -175,7 +175,7 @@ var _ = Describe("MicroService Api Test", func() {
 				It("test invalid api params", func() {
 					url := strings.Replace(GETSERVICEBYID, ":serviceId", "abcd", 1)
 					req, _ := http.NewRequest(GET, SCURL+url, nil)
-					req.Header.Set("X-tenant-name", "default")
+					req.Header.Set("X-Domain-Name", "default")
 					resp, _ := scclient.Do(req)
 					Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
 				})
@@ -185,7 +185,7 @@ var _ = Describe("MicroService Api Test", func() {
 				It("test valid scenario", func() {
 					getServiceName(serviceId)
 					req, _ := http.NewRequest(GET, SCURL+GETALLSERVICE, nil)
-					req.Header.Set("X-tenant-name", "default")
+					req.Header.Set("X-Domain-Name", "default")
 					resp, _ := scclient.Do(req)
 					respbody, _ := ioutil.ReadAll(resp.Body)
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
@@ -203,7 +203,7 @@ var _ = Describe("MicroService Api Test", func() {
 
 				It("test get all service with wrong tenant name", func() {
 					req, _ := http.NewRequest(GET, SCURL+GETALLSERVICE, nil)
-					req.Header.Set("X-tenant-name", "default1")
+					req.Header.Set("X-Domain-Name", "default1")
 					resp, _ := scclient.Do(req)
 					respbody, _ := ioutil.ReadAll(resp.Body)
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
@@ -221,7 +221,7 @@ var _ = Describe("MicroService Api Test", func() {
 					body, _ := json.Marshal(bodyParams)
 					bodyBuf := bytes.NewReader(body)
 					req, _ := http.NewRequest(UPDATE, SCURL+url, bodyBuf)
-					req.Header.Set("X-tenant-name", "default")
+					req.Header.Set("X-Domain-Name", "default")
 					resp, _ := scclient.Do(req)
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
 				})
@@ -235,7 +235,7 @@ var _ = Describe("MicroService Api Test", func() {
 					body, _ := json.Marshal(bodyParams)
 					bodyBuf := bytes.NewReader(body)
 					req, _ := http.NewRequest(UPDATE, SCURL+url, bodyBuf)
-					req.Header.Set("X-tenant-name", "default")
+					req.Header.Set("X-Domain-Name", "default")
 					resp, _ := scclient.Do(req)
 					Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
 				})
@@ -249,7 +249,7 @@ var _ = Describe("MicroService Api Test", func() {
 					body, _ := json.Marshal(bodyParams)
 					bodyBuf := bytes.NewReader(body)
 					req, _ := http.NewRequest(UPDATE, SCURL+url, bodyBuf)
-					req.Header.Set("X-tenant-name", "default")
+					req.Header.Set("X-Domain-Name", "default")
 					resp, _ := scclient.Do(req)
 					Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
 				})
@@ -278,7 +278,7 @@ var _ = Describe("MicroService Api Test", func() {
 					body, _ := json.Marshal(bodyParams)
 					bodyBuf := bytes.NewReader(body)
 					req, _ := http.NewRequest(POST, SCURL+REGISTERMICROSERVICE, bodyBuf)
-					req.Header.Set("X-tenant-name", "default")
+					req.Header.Set("X-Domain-Name", "default")
 					resp, err := scclient.Do(req)
 					Expect(err).To(BeNil())
 					defer resp.Body.Close()
@@ -311,7 +311,7 @@ var _ = Describe("MicroService Api Test", func() {
 					body, _ = json.Marshal(bodyParams)
 					bodyBuf = bytes.NewReader(body)
 					req, _ = http.NewRequest(UPDATE, SCURL+CREATEDEPENDENCIES, bodyBuf)
-					req.Header.Set("X-tenant-name", "default")
+					req.Header.Set("X-Domain-Name", "default")
 					resp, err = scclient.Do(req)
 					Expect(err).To(BeNil())
 					defer resp.Body.Close()
@@ -320,24 +320,24 @@ var _ = Describe("MicroService Api Test", func() {
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
 
 					/*
-					//Now try to delete the provider //this will fail as consumer needs to be deleted first
-					url := strings.Replace(UNREGISTERMICROSERVICE, ":serviceId", serviceId, 1)
-					req, _ = http.NewRequest(DELETE, SCURL+url, nil)
-					req.Header.Set("X-tenant-name", "default")
-					resp, _ = scclient.Do(req)
-					Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))*/
+						//Now try to delete the provider //this will fail as consumer needs to be deleted first
+						url := strings.Replace(UNREGISTERMICROSERVICE, ":serviceId", serviceId, 1)
+						req, _ = http.NewRequest(DELETE, SCURL+url, nil)
+						req.Header.Set("X-Domain-Name", "default")
+						resp, _ = scclient.Do(req)
+						Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))*/
 
 					//Now delete consumer and then provider
 
 					url := strings.Replace(UNREGISTERMICROSERVICE, ":serviceId", consumerServiceID, 1)
 					req, _ = http.NewRequest(DELETE, SCURL+url, nil)
-					req.Header.Set("X-tenant-name", "default")
+					req.Header.Set("X-Domain-Name", "default")
 					resp, _ = scclient.Do(req)
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
 
 					url = strings.Replace(UNREGISTERMICROSERVICE, ":serviceId", serviceId, 1)
 					req, _ = http.NewRequest(DELETE, SCURL+url, nil)
-					req.Header.Set("X-tenant-name", "default")
+					req.Header.Set("X-Domain-Name", "default")
 					resp, _ = scclient.Do(req)
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
 					serviceId = ""
@@ -365,7 +365,7 @@ var _ = Describe("MicroService Api Test", func() {
 					body, _ := json.Marshal(bodyParams)
 					bodyBuf := bytes.NewReader(body)
 					req, _ := http.NewRequest(POST, SCURL+REGISTERMICROSERVICE, bodyBuf)
-					req.Header.Set("X-tenant-name", "default")
+					req.Header.Set("X-Domain-Name", "default")
 					resp, err := scclient.Do(req)
 					Expect(err).To(BeNil())
 					defer resp.Body.Close()
@@ -398,7 +398,7 @@ var _ = Describe("MicroService Api Test", func() {
 					body, _ = json.Marshal(bodyParams)
 					bodyBuf = bytes.NewReader(body)
 					req, _ = http.NewRequest(UPDATE, SCURL+CREATEDEPENDENCIES, bodyBuf)
-					req.Header.Set("X-tenant-name", "default")
+					req.Header.Set("X-Domain-Name", "default")
 					resp, err = scclient.Do(req)
 					Expect(err).To(BeNil())
 					defer resp.Body.Close()
@@ -409,7 +409,7 @@ var _ = Describe("MicroService Api Test", func() {
 					//Get Provider by ConsumerID
 					url := strings.Replace(GETCONPRODEPENDENCY, ":consumerId", consumerServiceID, 1)
 					req, _ = http.NewRequest(GET, SCURL+url, nil)
-					req.Header.Set("X-tenant-name", "default")
+					req.Header.Set("X-Domain-Name", "default")
 					resp, _ = scclient.Do(req)
 					respbody, _ = ioutil.ReadAll(resp.Body)
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
@@ -429,7 +429,7 @@ var _ = Describe("MicroService Api Test", func() {
 
 					url = strings.Replace(GETPROCONDEPENDENCY, ":providerId", serviceId, 1)
 					req, _ = http.NewRequest(GET, SCURL+url, nil)
-					req.Header.Set("X-tenant-name", "default")
+					req.Header.Set("X-Domain-Name", "default")
 					resp, _ = scclient.Do(req)
 					respbody, _ = ioutil.ReadAll(resp.Body)
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
@@ -448,13 +448,13 @@ var _ = Describe("MicroService Api Test", func() {
 					//Delete Consumer and Provider
 					url = strings.Replace(UNREGISTERMICROSERVICE, ":serviceId", consumerServiceID, 1)
 					req, _ = http.NewRequest(DELETE, SCURL+url, nil)
-					req.Header.Set("X-tenant-name", "default")
+					req.Header.Set("X-Domain-Name", "default")
 					resp, _ = scclient.Do(req)
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
 
 					url = strings.Replace(UNREGISTERMICROSERVICE, ":serviceId", serviceId, 1)
 					req, _ = http.NewRequest(DELETE, SCURL+url, nil)
-					req.Header.Set("X-tenant-name", "default")
+					req.Header.Set("X-Domain-Name", "default")
 					resp, _ = scclient.Do(req)
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
 					serviceId = ""
@@ -465,14 +465,14 @@ var _ = Describe("MicroService Api Test", func() {
 					//Get Provider by ConsumerID
 					url := strings.Replace(GETCONPRODEPENDENCY, ":consumerId", "wrongID", 1)
 					req, _ := http.NewRequest(GET, SCURL+url, nil)
-					req.Header.Set("X-tenant-name", "default")
+					req.Header.Set("X-Domain-Name", "default")
 					resp, _ := scclient.Do(req)
 					Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
 
 					//Get Consumer by ProviderID
 					url = strings.Replace(GETPROCONDEPENDENCY, ":providerId", "wrongID", 1)
 					req, _ = http.NewRequest(GET, SCURL+url, nil)
-					req.Header.Set("X-tenant-name", "default")
+					req.Header.Set("X-Domain-Name", "default")
 					resp, _ = scclient.Do(req)
 					Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
 
@@ -504,7 +504,7 @@ func BenchmarkRegisterMicroServiceAndDelete(b *testing.B) {
 		body, _ := json.Marshal(bodyParams)
 		bodyBuf := bytes.NewReader(body)
 		req, _ := http.NewRequest(POST, SCURL+REGISTERMICROSERVICE, bodyBuf)
-		req.Header.Set("X-tenant-name", "default")
+		req.Header.Set("X-Domain-Name", "default")
 		resp, err := scclient.Do(req)
 		Expect(err).To(BeNil())
 		defer resp.Body.Close()
@@ -517,7 +517,7 @@ func BenchmarkRegisterMicroServiceAndDelete(b *testing.B) {
 		if serviceId != "" {
 			url := strings.Replace(UNREGISTERMICROSERVICE, ":serviceId", serviceId, 1)
 			req, _ := http.NewRequest(DELETE, SCURL+url, nil)
-			req.Header.Set("X-tenant-name", "default")
+			req.Header.Set("X-Domain-Name", "default")
 			resp, _ := scclient.Do(req)
 			Expect(resp.StatusCode).To(Equal(http.StatusOK))
 		}
@@ -544,7 +544,7 @@ func BenchmarkRegisterMicroService(b *testing.B) {
 		body, _ := json.Marshal(bodyParams)
 		bodyBuf := bytes.NewReader(body)
 		req, _ := http.NewRequest(POST, SCURL+REGISTERMICROSERVICE, bodyBuf)
-		req.Header.Set("X-tenant-name", "default")
+		req.Header.Set("X-Domain-Name", "default")
 		_, err := scclient.Do(req)
 		Expect(err).To(BeNil())
 	}
@@ -553,7 +553,7 @@ func BenchmarkRegisterMicroService(b *testing.B) {
 func getServiceName(serviceId string) {
 	url := strings.Replace(GETSERVICEBYID, ":serviceId", serviceId, 1)
 	req, _ := http.NewRequest(GET, SCURL+url, nil)
-	req.Header.Set("X-tenant-name", "default")
+	req.Header.Set("X-Domain-Name", "default")
 	resp, _ := scclient.Do(req)
 	respbody, _ := ioutil.ReadAll(resp.Body)
 	Expect(resp.StatusCode).To(Equal(http.StatusOK))

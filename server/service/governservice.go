@@ -14,7 +14,6 @@
 package service
 
 import (
-	"encoding/json"
 	"github.com/ServiceComb/service-center/pkg/util"
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
@@ -29,9 +28,42 @@ type GovernServiceController struct {
 }
 
 func (governServiceController *GovernServiceController) GetServicesInfo(ctx context.Context, in *pb.GetServicesInfoRequest) (*pb.GetServicesInfoResponse, error) {
-	opts := in.Options
+	opts := serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))
+
+	optionMap := make(map[string]struct{}, len(in.Options))
+	for _, opt := range in.Options {
+		optionMap[opt] = struct{}{}
+	}
+
+	options := make([]string, 0, len(optionMap))
+	if _, ok := optionMap["all"]; ok {
+		optionMap["statistics"] = struct{}{}
+		options = []string{"tags", "rules", "instances", "schemas", "dependencies"}
+	} else {
+		for opt := range optionMap {
+			options = append(options, opt)
+		}
+	}
+
+	var st *pb.Statistics
+	if _, ok := optionMap["statistics"]; ok {
+		var err error
+		st, err = statistics(ctx, opts...)
+		if err != nil {
+			return &pb.GetServicesInfoResponse{
+				Response: pb.CreateResponse(pb.Response_FAIL, "Statistics failed."),
+			}, err
+		}
+		if len(optionMap) == 1 {
+			return &pb.GetServicesInfoResponse{
+				Response:   pb.CreateResponse(pb.Response_SUCCESS, "Statistics successfully."),
+				Statistics: st,
+			}, nil
+		}
+	}
+
 	//获取所有服务
-	services, err := serviceUtil.GetAllServiceUtil(ctx)
+	services, err := serviceUtil.GetAllServiceUtil(ctx, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "Get all services for govern service faild.")
 		return &pb.GetServicesInfoResponse{
@@ -39,18 +71,13 @@ func (governServiceController *GovernServiceController) GetServicesInfo(ctx cont
 		}, err
 	}
 
-	for _, opt := range opts {
-		if opt == "all" {
-			opts = []string{"tags", "rules", "instances", "schemas", "dependencies"}
-			break
-		}
-	}
 	allServiceDetails := []*pb.ServiceDetail{}
 	tenant := util.ParseTenantProject(ctx)
-	serviceId := ""
 	for _, service := range services {
-		serviceId = service.ServiceId
-		serviceDetail, err := getServiceDetailUtil(ctx, opts, tenant, serviceId, service)
+		if apt.Service.ServiceId == service.ServiceId {
+			continue
+		}
+		serviceDetail, err := getServiceDetailUtil(ctx, options, tenant, service.ServiceId, service, opts...)
 		if err != nil {
 			return &pb.GetServicesInfoResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "Get one service detail failed."),
@@ -61,14 +88,15 @@ func (governServiceController *GovernServiceController) GetServicesInfo(ctx cont
 	}
 
 	return &pb.GetServicesInfoResponse{
-		Response:          pb.CreateResponse(pb.Response_SUCCESS, "Register service instance successfully."),
+		Response:          pb.CreateResponse(pb.Response_SUCCESS, "Get services info successfully."),
 		AllServicesDetail: allServiceDetails,
+		Statistics:        st,
 	}, nil
 }
 
 func (governServiceController *GovernServiceController) GetServiceDetail(ctx context.Context, in *pb.GetServiceRequest) (*pb.GetServiceDetailResponse, error) {
 	tenant := util.ParseTenantProject(ctx)
-	opts := []string{"tags", "rules", "instances", "schemas", "dependencies"}
+	options := []string{"tags", "rules", "instances", "schemas", "dependencies"}
 
 	if len(in.ServiceId) == 0 {
 		return &pb.GetServiceDetailResponse{
@@ -76,7 +104,9 @@ func (governServiceController *GovernServiceController) GetServiceDetail(ctx con
 		}, nil
 	}
 
-	service, err := serviceUtil.GetService(ctx, tenant, in.ServiceId)
+	opts := serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))
+
+	service, err := serviceUtil.GetService(ctx, tenant, in.ServiceId, opts...)
 	if service == nil {
 		return &pb.GetServiceDetailResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
@@ -88,7 +118,7 @@ func (governServiceController *GovernServiceController) GetServiceDetail(ctx con
 		}, err
 	}
 
-	versions, err := getServiceAllVersions(ctx, tenant, service.AppId, service.ServiceName)
+	versions, err := getServiceAllVersions(ctx, tenant, service.AppId, service.ServiceName, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "Get service all version fialed.")
 		return &pb.GetServiceDetailResponse{
@@ -96,7 +126,7 @@ func (governServiceController *GovernServiceController) GetServiceDetail(ctx con
 		}, err
 	}
 
-	serviceInfo, err := getServiceDetailUtil(ctx, opts, tenant, in.ServiceId, service)
+	serviceInfo, err := getServiceDetailUtil(ctx, options, tenant, in.ServiceId, service, opts...)
 	if err != nil {
 		return &pb.GetServiceDetailResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Get service detail failed."),
@@ -111,7 +141,7 @@ func (governServiceController *GovernServiceController) GetServiceDetail(ctx con
 	}, nil
 }
 
-func getServiceAllVersions(ctx context.Context, tenant string, appId string, serviceName string) ([]string, error) {
+func getServiceAllVersions(ctx context.Context, tenant string, appId string, serviceName string, opts ...registry.PluginOpOption) ([]string, error) {
 	versions := []string{}
 	key := apt.GenerateServiceIndexKey(&pb.MicroServiceKey{
 		Tenant:      tenant,
@@ -120,9 +150,11 @@ func getServiceAllVersions(ctx context.Context, tenant string, appId string, ser
 		Version:     "",
 	})
 
-	resp, err := store.Store().ServiceIndex().Search(ctx,
+	opts = append(opts,
 		registry.WithStrKey(key),
 		registry.WithPrefix())
+
+	resp, err := store.Store().ServiceIndex().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -138,33 +170,9 @@ func getServiceAllVersions(ctx context.Context, tenant string, appId string, ser
 	return versions, nil
 }
 
-func getAllInstancesForOneService(ctx context.Context, tenant string, serviceId string) ([]*pb.MicroServiceInstance, error) {
-	key := apt.GenerateInstanceKey(tenant, serviceId, "")
-
-	resp, err := store.Store().Instance().Search(ctx,
-		registry.WithStrKey(key),
-		registry.WithPrefix())
-	if err != nil {
-		util.Logger().Errorf(err, "Get one service's instance failed from data source.")
-		return nil, err
-	}
-	instances := []*pb.MicroServiceInstance{}
-	for _, kvs := range resp.Kvs {
-		util.Logger().Debugf("start unmarshal service instance file: %s", util.BytesToStringWithNoCopy(kvs.Key))
-		instance := &pb.MicroServiceInstance{}
-		err := json.Unmarshal(kvs.Value, instance)
-		if err != nil {
-			util.Logger().Errorf(err, "Unmarshal service instance failed.")
-			return nil, err
-		}
-		instances = append(instances, instance)
-	}
-	return instances, nil
-}
-
-func getSchemaInfoUtil(ctx context.Context, tenant string, serviceId string) ([]*pb.SchemaInfos, error) {
+func getSchemaInfoUtil(ctx context.Context, tenant string, serviceId string) ([]*pb.Schema, error) {
 	key := apt.GenerateServiceSchemaKey(tenant, serviceId, "")
-	schemas := []*pb.SchemaInfos{}
+	schemas := []*pb.Schema{}
 	resp, err := store.Store().Schema().Search(ctx,
 		registry.WithStrKey(key),
 		registry.WithPrefix())
@@ -172,27 +180,23 @@ func getSchemaInfoUtil(ctx context.Context, tenant string, serviceId string) ([]
 		util.Logger().Errorf(err, "Get schema failded,%s")
 		return schemas, err
 	}
-	schemaId := ""
-	schema := ""
 	for _, kv := range resp.Kvs {
-		schemaInfo := &pb.SchemaInfos{}
-		schemaId = util.BytesToStringWithNoCopy(kv.Key[len(key):])
-		schema = util.BytesToStringWithNoCopy(kv.Value)
-		schemaInfo.Schema = schema
-		schemaInfo.SchemaId = schemaId
+		schemaInfo := &pb.Schema{}
+		schemaInfo.Schema = util.BytesToStringWithNoCopy(kv.Value)
+		schemaInfo.SchemaId = util.BytesToStringWithNoCopy(kv.Key[len(key):])
 		schemas = append(schemas, schemaInfo)
 	}
 	return schemas, nil
 }
 
-func getServiceDetailUtil(ctx context.Context, opts []string, tenant string, serviceId string, service *pb.MicroService) (*pb.ServiceDetail, error) {
+func getServiceDetailUtil(ctx context.Context, options []string, tenant string, serviceId string, service *pb.MicroService, opts ...registry.PluginOpOption) (*pb.ServiceDetail, error) {
 	serviceDetail := &pb.ServiceDetail{}
-	for _, opt := range opts {
+	for _, opt := range options {
 		expr := opt
 		switch expr {
 		case "tags":
 			util.Logger().Debugf("is tags")
-			tags, err := serviceUtil.GetTagsUtils(ctx, tenant, serviceId)
+			tags, err := serviceUtil.GetTagsUtils(ctx, tenant, serviceId, opts...)
 			if err != nil {
 				util.Logger().Errorf(err, "Get all tags for govern service faild.")
 				return nil, err
@@ -200,7 +204,7 @@ func getServiceDetailUtil(ctx context.Context, opts []string, tenant string, ser
 			serviceDetail.Tags = tags
 		case "rules":
 			util.Logger().Debugf("is rules")
-			rules, err := serviceUtil.GetRulesUtil(ctx, tenant, serviceId)
+			rules, err := serviceUtil.GetRulesUtil(ctx, tenant, serviceId, opts...)
 			if err != nil {
 				util.Logger().Errorf(err, "Get all rules for govern service faild.")
 				return nil, err
@@ -211,7 +215,7 @@ func getServiceDetailUtil(ctx context.Context, opts []string, tenant string, ser
 			serviceDetail.Rules = rules
 		case "instances":
 			util.Logger().Debugf("is instances")
-			instances, err := getAllInstancesForOneService(ctx, tenant, serviceId)
+			instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, tenant, serviceId, "", opts...)
 			if err != nil {
 				util.Logger().Errorf(err, "Get service's all instances for govern service faild.")
 				return nil, err
@@ -227,20 +231,20 @@ func getServiceDetailUtil(ctx context.Context, opts []string, tenant string, ser
 			serviceDetail.SchemaInfos = schemas
 		case "dependencies":
 			util.Logger().Debugf("is dependencies")
-			dr := serviceUtil.NewDependencyRelation(ctx, tenant, serviceId, service, serviceId, service)
+			dr := serviceUtil.NewDependencyRelation(ctx, tenant, serviceId, service, serviceId, service, opts...)
 			consumers, err := dr.GetDependencyConsumers()
 			if err != nil {
 				util.Logger().Errorf(err, "Get service's all consumers for govern service faild.")
 				return nil, err
 			}
-			consumers = deleteSelfDenpendency(consumers, serviceId)
+			consumers = skipSelfDependency(consumers, serviceId)
 
 			providers, err := dr.GetDependencyProviders()
 			if err != nil {
 				util.Logger().Errorf(err, "Get service's all providers for govern service faild.")
 				return nil, err
 			}
-			providers = deleteSelfDenpendency(providers, serviceId)
+			providers = skipSelfDependency(providers, serviceId)
 			serviceDetail.Consumers = consumers
 			serviceDetail.Providers = providers
 		case "":
@@ -252,11 +256,56 @@ func getServiceDetailUtil(ctx context.Context, opts []string, tenant string, ser
 	return serviceDetail, nil
 }
 
-func deleteSelfDenpendency(services []*pb.MicroService, serviceId string) []*pb.MicroService {
+func skipSelfDependency(services []*pb.MicroService, serviceId string) []*pb.MicroService {
 	for key, service := range services {
 		if service.ServiceId == serviceId {
 			services = append(services[:key], services[key+1:]...)
 		}
 	}
 	return services
+}
+
+func statistics(ctx context.Context, opts ...registry.PluginOpOption) (*pb.Statistics, error) {
+	result := &pb.Statistics{
+		Services:  &pb.StService{},
+		Instances: &pb.StInstance{},
+	}
+	tenantProject := util.ParseTenantProject(ctx)
+
+	// services
+	key := apt.GenerateServiceKey(tenantProject, "")
+	svcOpts := append(opts,
+		registry.WithStrKey(key),
+		registry.WithPrefix(),
+		registry.WithCountOnly())
+	resp, err := store.Store().Service().Search(ctx, svcOpts...)
+	if err != nil {
+		return nil, err
+	}
+	if resp.Count > 0 {
+		result.Services.Count = resp.Count - 1
+	}
+
+	// instance
+	key = apt.GetInstanceRootKey(tenantProject)
+	instOpts := append(opts,
+		registry.WithStrKey(key),
+		registry.WithPrefix(),
+		registry.WithCountOnly())
+	resp, err = store.Store().Instance().Search(ctx, instOpts...)
+	if err != nil {
+		return nil, err
+	}
+	result.Instances.Count = resp.Count
+	key = apt.GenerateInstanceKey(tenantProject, apt.Service.ServiceId, "")
+	scOpts := append(opts,
+		registry.WithStrKey(key),
+		registry.WithPrefix(),
+		registry.WithCountOnly())
+	resp, err = store.Store().Instance().Search(ctx, scOpts...)
+	if err != nil {
+		return nil, err
+	}
+	result.Instances.Count = result.Instances.Count - resp.Count
+	return result, err
 }

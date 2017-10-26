@@ -31,6 +31,7 @@ func LoadConfig() (srvCfg *rest.ServerConfig, err error) {
 	srvCfg = rest.DefaultServerConfig()
 	readHeaderTimeout, _ := time.ParseDuration(beego.AppConfig.DefaultString("read_header_timeout", "60s"))
 	readTimeout, _ := time.ParseDuration(beego.AppConfig.DefaultString("read_timeout", "60s"))
+	idleTimeout, _ := time.ParseDuration(beego.AppConfig.DefaultString("idle_timeout", "60s"))
 	writeTimeout, _ := time.ParseDuration(beego.AppConfig.DefaultString("write_timeout", "60s"))
 	maxHeaderBytes := beego.AppConfig.DefaultInt("max_header_bytes", 16384)
 	var tlsConfig *tls.Config
@@ -43,6 +44,7 @@ func LoadConfig() (srvCfg *rest.ServerConfig, err error) {
 	}
 	srvCfg.ReadHeaderTimeout = readHeaderTimeout
 	srvCfg.ReadTimeout = readTimeout
+	srvCfg.IdleTimeout = idleTimeout
 	srvCfg.WriteTimeout = writeTimeout
 	srvCfg.MaxHeaderBytes = maxHeaderBytes
 	srvCfg.TLSConfig = tlsConfig

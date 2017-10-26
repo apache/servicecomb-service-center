@@ -11,7 +11,7 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package v3
+package v4
 
 import (
 	"encoding/json"
@@ -24,11 +24,14 @@ import (
 	"net/http"
 )
 
+const API_VERSION = "4.0.0"
+
 var RunMode string
 
 type Result struct {
 	version.VersionSet
-	RunMode string `json:"runMode"`
+	ApiVersion string `json:"apiVersion"`
+	RunMode    string `json:"runMode"`
 }
 
 type MainService struct {
@@ -41,8 +44,8 @@ func init() {
 
 func (this *MainService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTP_METHOD_GET, "/version", this.GetVersion},
-		{rest.HTTP_METHOD_GET, "/health", this.ClusterHealth},
+		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/version", this.GetVersion},
+		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/health", this.ClusterHealth},
 	}
 }
 
@@ -62,6 +65,7 @@ func (this *MainService) ClusterHealth(w http.ResponseWriter, r *http.Request) {
 func (this *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
 	result := Result{
 		version.Ver(),
+		API_VERSION,
 		RunMode,
 	}
 	resultJSON, _ := json.Marshal(result)

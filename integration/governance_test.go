@@ -54,7 +54,7 @@ var _ = Describe("MicroService Api Test", func() {
 			body, _ := json.Marshal(bodyParams)
 			bodyBuf := bytes.NewReader(body)
 			req, _ := http.NewRequest(POST, SCURL+REGISTERMICROSERVICE, bodyBuf)
-			req.Header.Set("X-tenant-name", "default")
+			req.Header.Set("X-Domain-Name", "default")
 			resp, err := scclient.Do(req)
 			Expect(err).To(BeNil())
 			defer resp.Body.Close()
@@ -93,7 +93,7 @@ var _ = Describe("MicroService Api Test", func() {
 			body, _ = json.Marshal(bodyParams)
 			bodyBuf = bytes.NewReader(body)
 			req, _ = http.NewRequest(POST, SCURL+url, bodyBuf)
-			req.Header.Set("X-tenant-name", "default")
+			req.Header.Set("X-Domain-Name", "default")
 			resp, err = scclient.Do(req)
 			Expect(err).To(BeNil())
 			defer resp.Body.Close()
@@ -111,7 +111,7 @@ var _ = Describe("MicroService Api Test", func() {
 				url := strings.Replace(UNREGISTERINSTANCE, ":serviceId", serviceId, 1)
 				url = strings.Replace(url, ":instanceId", serviceInstanceID, 1)
 				req, _ := http.NewRequest(DELETE, SCURL+url, nil)
-				req.Header.Set("X-tenant-name", "default")
+				req.Header.Set("X-Domain-Name", "default")
 				resp, _ := scclient.Do(req)
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 			}
@@ -119,7 +119,7 @@ var _ = Describe("MicroService Api Test", func() {
 			if serviceId != "" {
 				url := strings.Replace(UNREGISTERMICROSERVICE, ":serviceId", serviceId, 1)
 				req, _ := http.NewRequest(DELETE, SCURL+url, nil)
-				req.Header.Set("X-tenant-name", "default")
+				req.Header.Set("X-Domain-Name", "default")
 				resp, _ := scclient.Do(req)
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 			}
@@ -130,7 +130,7 @@ var _ = Describe("MicroService Api Test", func() {
 			It("Get ServiceInfo by Governance API", func() {
 				url := strings.Replace(GETGOVERNANCESERVICEDETAILS, ":serviceId", serviceId, 1)
 				req, _ := http.NewRequest(GET, SCURL+url, nil)
-				req.Header.Set("X-tenant-name", "default")
+				req.Header.Set("X-Domain-Name", "default")
 				resp, err := scclient.Do(req)
 				Expect(err).To(BeNil())
 				defer resp.Body.Close()
@@ -146,7 +146,7 @@ var _ = Describe("MicroService Api Test", func() {
 			It("Get ServiceInfo by Governance API with non-exsistence serviceID", func() {
 				url := strings.Replace(GETGOVERNANCESERVICEDETAILS, ":serviceId", "XXXXX", 1)
 				req, _ := http.NewRequest(GET, SCURL+url, nil)
-				req.Header.Set("X-tenant-name", "default")
+				req.Header.Set("X-Domain-Name", "default")
 				resp, err := scclient.Do(req)
 				Expect(err).To(BeNil())
 				defer resp.Body.Close()
@@ -157,7 +157,7 @@ var _ = Describe("MicroService Api Test", func() {
 		By("GET Relation Graph for all microservice", func() {
 			It("Get Relation Graph for all ", func() {
 				req, _ := http.NewRequest(GET, SCURL+GETRELATIONGRAPH, nil)
-				req.Header.Set("X-tenant-name", "default")
+				req.Header.Set("X-Domain-Name", "default")
 				resp, err := scclient.Do(req)
 				Expect(err).To(BeNil())
 				defer resp.Body.Close()
@@ -179,7 +179,7 @@ var _ = Describe("MicroService Api Test", func() {
 		By("Get All Services information by Governance API", func() {
 			It("Get All Service Metadata", func() {
 				req, _ := http.NewRequest(GET, SCURL+GETALLSERVICEGOVERNANCEINFO, nil)
-				req.Header.Set("X-tenant-name", "default")
+				req.Header.Set("X-Domain-Name", "default")
 				resp, err := scclient.Do(req)
 				Expect(err).To(BeNil())
 				defer resp.Body.Close()
@@ -223,7 +223,7 @@ func BenchmarkGovernance(b *testing.B) {
 	body, _ := json.Marshal(bodyParams)
 	bodyBuf := bytes.NewReader(body)
 	req, _ := http.NewRequest(POST, SCURL+REGISTERMICROSERVICE, bodyBuf)
-	req.Header.Set("X-tenant-name", "default")
+	req.Header.Set("X-Domain-Name", "default")
 	resp, err := scclient.Do(req)
 	Expect(err).To(BeNil())
 	defer resp.Body.Close()
@@ -237,7 +237,7 @@ func BenchmarkGovernance(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		url := strings.Replace(GETGOVERNANCESERVICEDETAILS, ":serviceId", serviceId, 1)
 		req, _ := http.NewRequest(GET, SCURL+url, nil)
-		req.Header.Set("X-tenant-name", "default")
+		req.Header.Set("X-Domain-Name", "default")
 		resp, err := scclient.Do(req)
 		Expect(err).To(BeNil())
 		defer resp.Body.Close()
@@ -246,7 +246,7 @@ func BenchmarkGovernance(b *testing.B) {
 	if serviceId != "" {
 		url := strings.Replace(UNREGISTERMICROSERVICE, ":serviceId", serviceId, 1)
 		req, _ := http.NewRequest(DELETE, SCURL+url, nil)
-		req.Header.Set("X-tenant-name", "default")
+		req.Header.Set("X-Domain-Name", "default")
 		resp, _ := scclient.Do(req)
 		Expect(resp.StatusCode).To(Equal(http.StatusOK))
 	}

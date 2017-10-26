@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-PUT /registry/v3/microservices/serviceID/instances/instanceID/status?value=UP HTTP/1.1
+PUT /v4/default/registry/microservices/serviceID/instances/instanceID/status?value=UP HTTP/1.1
 Host: localhost:30100
 Content-Type: application/json
 x-domain-name: default

@@ -11,7 +11,7 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package v3
+package v4
 
 import (
 	"net/http"
@@ -25,9 +25,23 @@ import (
 	"strings"
 )
 
+// GovernService 治理相关接口服务
+type GovernService struct {
+	//
+}
+
+// URLPatterns 路由
+func (governService *GovernService) URLPatterns() []rest.Route {
+	return []rest.Route{
+		{rest.HTTP_METHOD_GET, "/v4/:domain/govern/microservices/:serviceId", governService.GetServiceDetail},
+		{rest.HTTP_METHOD_GET, "/v4/:domain/govern/relations", governService.GetGraph},
+		{rest.HTTP_METHOD_GET, "/v4/:domain/govern/microservices", governService.GetAllServicesInfo},
+	}
+}
+
 //Node 节点信息
 type Node struct {
-	Id       string   `json:"id";`
+	Id       string   `json:"id"`
 	Name     string   `json:"name"`
 	AppID    string   `json:"appId"`
 	Version  string   `json:"version"`
@@ -62,7 +76,14 @@ type Graph struct {
 // GetGraph 获取依赖连接图详细依赖关系
 func (governService *GovernService) GetGraph(w http.ResponseWriter, r *http.Request) {
 	var graph Graph
-	request := &pb.GetServicesRequest{}
+	noCache := r.URL.Query().Get("noCache")
+	if noCache != "0" && noCache != "1" && strings.TrimSpace(noCache) != "" {
+		controller.WriteText(http.StatusBadRequest, "parameter noCache must be 1 or 0", w)
+		return
+	}
+	request := &pb.GetServicesRequest{
+		NoCache: noCache == "1",
+	}
 	ctx := r.Context()
 	resp, err := core.ServiceAPI.GetServices(ctx, request)
 	if err != nil {
@@ -114,25 +135,17 @@ func (governService *GovernService) GetGraph(w http.ResponseWriter, r *http.Requ
 	controller.WriteJsonObject(http.StatusOK, graph, w)
 }
 
-// GovernService 治理相关接口服务
-type GovernService struct {
-	//
-}
-
-// URLPatterns 路由
-func (governService *GovernService) URLPatterns() []rest.Route {
-	return []rest.Route{
-		{rest.HTTP_METHOD_GET, "/registry/v3/govern/service/:serviceId", governService.GetServiceDetail},
-		{rest.HTTP_METHOD_GET, "/registry/v3/govern/relation", governService.GetGraph},
-		{rest.HTTP_METHOD_GET, "/registry/v3/govern/services", governService.GetAllServicesInfo},
-	}
-}
-
 // GetServiceDetail 查询服务详细信息
 func (governService *GovernService) GetServiceDetail(w http.ResponseWriter, r *http.Request) {
 	serviceID := r.URL.Query().Get(":serviceId")
+	noCache := r.URL.Query().Get("noCache")
+	if noCache != "0" && noCache != "1" && strings.TrimSpace(noCache) != "" {
+		controller.WriteText(http.StatusBadRequest, "parameter noCache must be 1 or 0", w)
+		return
+	}
 	request := &pb.GetServiceRequest{
 		ServiceId: serviceID,
+		NoCache:   noCache == "1",
 	}
 	ctx := r.Context()
 	resp, err := core.GovernServiceAPI.GetServiceDetail(ctx, request)
@@ -143,7 +156,14 @@ func (governService *GovernService) GetServiceDetail(w http.ResponseWriter, r *h
 }
 
 func (governService *GovernService) GetAllServicesInfo(w http.ResponseWriter, r *http.Request) {
-	request := &pb.GetServicesInfoRequest{}
+	noCache := r.URL.Query().Get("noCache")
+	if noCache != "0" && noCache != "1" && strings.TrimSpace(noCache) != "" {
+		controller.WriteText(http.StatusBadRequest, "parameter noCache must be 1 or 0", w)
+		return
+	}
+	request := &pb.GetServicesInfoRequest{
+		NoCache: noCache == "1",
+	}
 	ctx := r.Context()
 	optsStr := r.URL.Query().Get("options")
 	request.Options = strings.Split(optsStr, ",")

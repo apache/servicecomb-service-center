@@ -29,7 +29,7 @@ var _ = Describe("Basic Api Test", func() {
 		By("Call Health API", func() {
 			It("health test", func() {
 				req, _ := http.NewRequest(GET, SCURL+HEALTH, nil)
-				req.Header.Set("X-tenant-name", "default")
+				req.Header.Set("X-Domain-Name", "default")
 				resp, err := scclient.Do(req)
 				Expect(err).To(BeNil())
 				defer resp.Body.Close()
@@ -41,13 +41,13 @@ var _ = Describe("Basic Api Test", func() {
 		By("Call Version API", func() {
 			It("version test", func() {
 				req, _ := http.NewRequest(GET, SCURL+VERSION, nil)
-				req.Header.Set("X-tenant-name", "default")
+				req.Header.Set("X-Domain-Name", "default")
 				resp, err := scclient.Do(req)
 				Expect(err).To(BeNil())
 				defer resp.Body.Close()
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 				respbody, _ := ioutil.ReadAll(resp.Body)
-				Expect(gojson.Json(string(respbody)).Get("apiVersion").Tostring()).To(Equal("3.0.0"))
+				Expect(gojson.Json(string(respbody)).Get("apiVersion").Tostring()).To(Equal("4.0.0"))
 			})
 		})
 	})
@@ -57,7 +57,7 @@ var _ = Describe("Basic Api Test", func() {
 func BenchmarkHealthTest(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		req, _ := http.NewRequest(GET, SCURL+HEALTH, nil)
-		req.Header.Set("X-tenant-name", "default")
+		req.Header.Set("X-Domain-Name", "default")
 		resp, err := scclient.Do(req)
 		Expect(err).To(BeNil())
 		defer resp.Body.Close()
@@ -68,7 +68,7 @@ func BenchmarkHealthTest(b *testing.B) {
 func BenchmarkVersionTest(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		req, _ := http.NewRequest(GET, SCURL+VERSION, nil)
-		req.Header.Set("X-tenant-name", "default")
+		req.Header.Set("X-Domain-Name", "default")
 		resp, err := scclient.Do(req)
 		Expect(err).To(BeNil())
 		defer resp.Body.Close()

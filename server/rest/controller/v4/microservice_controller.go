@@ -11,7 +11,7 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package v3
+package v4
 
 import (
 	"encoding/json"
@@ -31,21 +31,21 @@ type MicroServiceService struct {
 
 func (this *MicroServiceService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTP_METHOD_GET, "/registry/v3/existence", this.GetExistence},
-		{rest.HTTP_METHOD_GET, "/registry/v3/microservices", this.GetServices},
-		{rest.HTTP_METHOD_GET, "/registry/v3/microservices/:serviceId", this.GetServiceOne},
-		{rest.HTTP_METHOD_POST, "/registry/v3/microservices", this.Register},
-		{rest.HTTP_METHOD_PUT, "/registry/v3/microservices/:serviceId/properties", this.Update},
-		{rest.HTTP_METHOD_DELETE, "/registry/v3/microservices/:serviceId", this.Unregister},
-		{rest.HTTP_METHOD_GET, "/registry/v3/microservices/:serviceId/schemas/:schemaId", this.GetSchemas},
-		{rest.HTTP_METHOD_PUT, "/registry/v3/microservices/:serviceId/schemas/:schemaId", this.ModifySchema},
-		{rest.HTTP_METHOD_DELETE, "/registry/v3/microservices/:serviceId/schemas/:schemaId", this.DeleteSchemas},
-		{rest.HTTP_METHOD_POST, "/registry/v3/microservices/:serviceId/schemas", this.ModifySchemas},
+		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/existence", this.GetExistence},
+		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/microservices", this.GetServices},
+		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/microservices/:serviceId", this.GetServiceOne},
+		{rest.HTTP_METHOD_POST, "/v4/:domain/registry/microservices", this.Register},
+		{rest.HTTP_METHOD_PUT, "/v4/:domain/registry/microservices/:serviceId/properties", this.Update},
+		{rest.HTTP_METHOD_DELETE, "/v4/:domain/registry/microservices/:serviceId", this.Unregister},
+		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/microservices/:serviceId/schemas/:schemaId", this.GetSchemas},
+		{rest.HTTP_METHOD_PUT, "/v4/:domain/registry/microservices/:serviceId/schemas/:schemaId", this.ModifySchema},
+		{rest.HTTP_METHOD_DELETE, "/v4/:domain/registry/microservices/:serviceId/schemas/:schemaId", this.DeleteSchemas},
+		{rest.HTTP_METHOD_POST, "/v4/:domain/registry/microservices/:serviceId/schemas", this.ModifySchemas},
 
-		{rest.HTTP_METHOD_PUT, "/registry/v3/dependencies", this.CreateDependenciesForMicroServices},
-		{rest.HTTP_METHOD_GET, "/registry/v3/microservices/:consumerId/providers", this.GetConProDependencies},
-		{rest.HTTP_METHOD_GET, "/registry/v3/microservices/:providerId/consumers", this.GetProConDependencies},
-		{rest.HTTP_METHOD_DELETE, "/registry/v3/microservices", this.UnregisterServices},
+		{rest.HTTP_METHOD_PUT, "/v4/:domain/registry/dependencies", this.CreateDependenciesForMicroServices},
+		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/microservices/:consumerId/providers", this.GetConProDependencies},
+		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/microservices/:providerId/consumers", this.GetProConDependencies},
+		{rest.HTTP_METHOD_DELETE, "/v4/:domain/registry/microservices", this.UnregisterServices},
 	}
 }
 

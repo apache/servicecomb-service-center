@@ -89,6 +89,19 @@ message InstanceHbRst {
     string errMessage = 3;
 }
 
+message StService {
+    int64 count = 1;
+}
+
+message StInstance {
+    int64 count = 1;
+}
+
+message Statistics {
+    StService services = 1;
+    StInstance instances = 2;
+}
+
 message GetServicesInfoRequest {
     repeated string options = 1;
     bool noCache = 2;
@@ -97,6 +110,8 @@ message GetServicesInfoRequest {
 message GetServicesInfoResponse {
     Response response = 1;
     repeated ServiceDetail allServicesDetail = 2;
+    Statistics statistics = 3;
+
 }
 
 message MicroServiceKey {
@@ -520,16 +535,11 @@ message ServiceOverview {
     map<string, string> tags = 3;
 }
 
-message SchemaInfos {
-    string schemaId = 1;
-    string schema = 2;
-}
-
 //服务详情
 message ServiceDetail {
     MicroService microSerivce = 1;
     repeated MicroServiceInstance instances = 2;
-    repeated SchemaInfos schemaInfos = 3;
+    repeated Schema schemaInfos = 3;
     repeated ServiceRule rules = 4;
     repeated MicroService providers = 5;
     repeated MicroService consumers = 6;

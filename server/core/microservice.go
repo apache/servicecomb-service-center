@@ -34,14 +34,14 @@ const (
 	REGISTRY_DEFAULT_LEASE_RENEWALINTERVAL int32 = 30
 	REGISTRY_DEFAULT_LEASE_RETRYTIMES      int32 = 3
 
-	IS_SC_SELF      = "sc_self"
+	IS_SC_SELF = "sc_self"
 )
 
 func init() {
 	Service = &pb.MicroService{
 		AppId:       registry_app_id,
 		ServiceName: registry_service_name,
-		Version:     version.Ver().ApiVersion,
+		Version:     version.Ver().Version,
 		Status:      pb.MS_UP,
 		Level:       "BACK",
 		Schemas: []string{
@@ -71,7 +71,7 @@ func AddDefaultContextValue(ctx context.Context) context.Context {
 	return ctx
 }
 
-func ISSCSelf(ctx context.Context) bool{
+func ISSCSelf(ctx context.Context) bool {
 	if ctx.Value(IS_SC_SELF) != nil && ctx.Value(IS_SC_SELF).(bool) {
 		return true
 	}
@@ -82,7 +82,7 @@ func GetExistenceRequest() *pb.GetExistenceRequest {
 		Type:        pb.EXISTENCE_MS,
 		AppId:       registry_app_id,
 		ServiceName: registry_service_name,
-		Version:     version.Ver().ApiVersion,
+		Version:     version.Ver().Version,
 	}
 }
 

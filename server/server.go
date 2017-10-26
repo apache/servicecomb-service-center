@@ -27,8 +27,10 @@ import (
 	"github.com/ServiceComb/service-center/version"
 	"github.com/astaxie/beego"
 	"os"
+	"os/signal"
 	"runtime"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -66,6 +68,28 @@ func (s *ServiceCenterServer) initialize() {
 	cores := runtime.NumCPU()
 	runtime.GOMAXPROCS(cores)
 	util.Logger().Infof("service center have running simultaneously with %d CPU cores", cores)
+
+	go handleSignals()
+}
+
+func handleSignals() {
+	var sig os.Signal
+	sigCh := make(chan os.Signal)
+	signal.Notify(sigCh,
+		syscall.SIGINT,
+		syscall.SIGKILL,
+		syscall.SIGTERM,
+	)
+	wait := 5 * time.Second
+	for {
+		sig = <-sigCh
+		switch sig {
+		case syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM:
+			<-time.After(wait)
+			util.Logger().Warnf(nil, "Clean up resources timed out(%s), force shutdown.", wait)
+			os.Exit(1)
+		}
+	}
 }
 
 func (s *ServiceCenterServer) waitForQuit() {
