@@ -38,6 +38,6 @@ func init() {
 	version.RunMode = beego.AppConfig.DefaultString("runmode", "prod")
 }
 
-func Ver() VersionSet {
-	return version
+func Ver() *VersionSet {
+	return &version
 }

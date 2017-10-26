@@ -26,7 +26,7 @@ import (
 const API_VERSION = "4.0.0"
 
 type Result struct {
-	version.VersionSet
+	*version.VersionSet
 	ApiVersion string `json:"apiVersion"`
 }
 

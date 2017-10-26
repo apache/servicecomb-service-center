@@ -16,9 +16,9 @@ package service_test
 import (
 	"fmt"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/ServiceComb/service-center/version"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/ServiceComb/service-center/server/rest/controller/v4"
 )
 
 const (
@@ -279,7 +279,7 @@ var _ = Describe("ServiceController", func() {
 			})
 		})
 	})
-	Describe("schemas",func() {
+	Describe("schemas", func() {
 		var serviceId string
 		It("create service", func() {
 			respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
@@ -303,14 +303,14 @@ var _ = Describe("ServiceController", func() {
 		It("param check", func() {
 			respCreateService, err := serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
 				ServiceId: "not_exist_serviceId",
-				Schemas: nil,
+				Schemas:   nil,
 			})
 			Expect(err).To(BeNil())
 			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_FAIL))
 
 			respCreateService, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
 				ServiceId: "not_exist_serviceId",
-				Schemas: []*pb.Schema{},
+				Schemas:   []*pb.Schema{},
 			})
 			Expect(err).To(BeNil())
 			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_FAIL))
@@ -334,7 +334,7 @@ var _ = Describe("ServiceController", func() {
 
 			respCreateService, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
 				ServiceId: "not_exist_serviceId",
-				Schemas: []*pb.Schema{},
+				Schemas:   []*pb.Schema{},
 			})
 			Expect(err).To(BeNil())
 			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_FAIL))
@@ -344,8 +344,8 @@ var _ = Describe("ServiceController", func() {
 				Schemas: []*pb.Schema{
 					&pb.Schema{
 						SchemaId: "not_exist_schemaId",
-						Summary: "not_exist_summary",
-						Schema:  "not_exist_schema",
+						Summary:  "not_exist_summary",
+						Schema:   "not_exist_schema",
 					},
 				},
 			})
@@ -356,8 +356,8 @@ var _ = Describe("ServiceController", func() {
 			schemas := []*pb.Schema{
 				&pb.Schema{
 					SchemaId: "first_schemaId",
-					Schema: "first_schema",
-					Summary: "fist_summary",
+					Schema:   "first_schema",
+					Summary:  "fist_summary",
 				},
 			}
 			respCreateService, err := serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
@@ -370,8 +370,8 @@ var _ = Describe("ServiceController", func() {
 			schemas = []*pb.Schema{
 				&pb.Schema{
 					SchemaId: "second_schemaId",
-					Schema: "second_schema",
-					Summary: "second_summary",
+					Schema:   "second_schema",
+					Summary:  "second_summary",
 				},
 			}
 			respCreateService, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
@@ -384,8 +384,8 @@ var _ = Describe("ServiceController", func() {
 			schemas = []*pb.Schema{
 				&pb.Schema{
 					SchemaId: "second_schemaId",
-					Schema: "second_schema",
-					Summary: "second_summary",
+					Schema:   "second_schema",
+					Summary:  "second_summary",
 				},
 			}
 			respCreateService, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
@@ -395,8 +395,7 @@ var _ = Describe("ServiceController", func() {
 			Expect(err).To(BeNil())
 			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
-			schemas = []*pb.Schema{
-			}
+			schemas = []*pb.Schema{}
 			respCreateService, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
 				ServiceId: serviceId,
 				Schemas:   schemas,
@@ -406,11 +405,11 @@ var _ = Describe("ServiceController", func() {
 
 		})
 		It("create schemas, prod mode", func() {
-			v4.RunMode = "prod"
+			version.Ver().RunMode = "prod"
 			respModifySchema, err := serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
 				ServiceId: serviceId,
-				SchemaId: "first_schemaId",
-				Schema: "first_schema",
+				SchemaId:  "first_schemaId",
+				Schema:    "first_schema",
 			})
 			Expect(err).To(BeNil())
 			Expect(respModifySchema.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
@@ -418,13 +417,13 @@ var _ = Describe("ServiceController", func() {
 			schemas := []*pb.Schema{
 				&pb.Schema{
 					SchemaId: "first_schemaId",
-					Schema: "first_schema",
-					Summary: "first_summary",
+					Schema:   "first_schema",
+					Summary:  "first_summary",
 				},
 			}
 			respModifySchemas, err := serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
 				ServiceId: serviceId,
-				Schemas: schemas,
+				Schemas:   schemas,
 			})
 			Expect(err).To(BeNil())
 			Expect(respModifySchemas.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
@@ -432,37 +431,36 @@ var _ = Describe("ServiceController", func() {
 			schemas = []*pb.Schema{
 				&pb.Schema{
 					SchemaId: "first_schemaId",
-					Schema: "first_schema_change",
-					Summary: "first_summary_change",
+					Schema:   "first_schema_change",
+					Summary:  "first_summary_change",
 				},
 			}
 			respModifySchemas, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
 				ServiceId: serviceId,
-				Schemas: schemas,
+				Schemas:   schemas,
 			})
 			Expect(err).To(BeNil())
 			Expect(respModifySchemas.GetResponse().Code).To(Equal(pb.Response_FAIL))
 
-
 			schemas = []*pb.Schema{
 				&pb.Schema{
 					SchemaId: "second_schemaId",
-					Schema: "second_schema_change",
-					Summary: "second_summary_change",
+					Schema:   "second_schema_change",
+					Summary:  "second_summary_change",
 				},
 			}
 			respModifySchemas, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
 				ServiceId: serviceId,
-				Schemas: schemas,
+				Schemas:   schemas,
 			})
 			Expect(err).To(BeNil())
 			Expect(respModifySchemas.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-			v4.RunMode = "dev"
+			version.Ver().RunMode = "dev"
 		})
 		It("clean", func() {
 			respDeleteService, err := serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{
 				ServiceId: serviceId,
-				Force: true,
+				Force:     true,
 			})
 			Expect(err).To(BeNil())
 			Expect(respDeleteService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
