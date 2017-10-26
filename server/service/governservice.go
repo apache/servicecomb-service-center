@@ -283,12 +283,7 @@ func statistics(ctx context.Context, opts ...registry.PluginOpOption) (*pb.Stati
 	if err != nil {
 		return nil, err
 	}
-	if resp.Count > 0 {
-		result.Services.Count = resp.Count
-		if apt.IsDefaultDomain(tenantProject) {
-			result.Services.Count = result.Services.Count - 1
-		}
-	}
+	result.Services.Count = RemoveSCSelf(tenantProject, resp.Count, 1)
 
 	app := map[string]interface{}{}
 	for _, kv := range resp.Kvs {
@@ -299,7 +294,7 @@ func statistics(ctx context.Context, opts ...registry.PluginOpOption) (*pb.Stati
 			app[appId] = nil
 		}
 	}
-	result.Apps.Count = int32(len(app))
+	result.Apps.Count = RemoveSCSelf(tenantProject, int64(len(app)), 1)
 
 	// instance
 	key = apt.GetInstanceRootKey(tenantProject)
@@ -332,6 +327,15 @@ func statistics(ctx context.Context, opts ...registry.PluginOpOption) (*pb.Stati
 			onlineServices[servieId] = nil
 		}
 	}
-	result.Services.OnlineCount = int32(len(onlineServices))
+	result.Services.OnlineCount = RemoveSCSelf(tenantProject, int64(len(onlineServices)), 1)
 	return result, err
+}
+
+func RemoveSCSelf(tenantProject string, count int64, removeNum int64) int64{
+	if count > 0 {
+		if apt.IsDefaultDomain(tenantProject) {
+			count = count - removeNum
+		}
+	}
+	return count
 }
