@@ -91,15 +91,21 @@ message InstanceHbRst {
 
 message StService {
     int64 count = 1;
+    int64 onlineCount = 2;
 }
 
 message StInstance {
     int64 count = 1;
 }
 
+message StApp {
+    int64 count = 1;
+}
+
 message Statistics {
     StService services = 1;
     StInstance instances = 2;
+    StApp     apps = 3;
 }
 
 message GetServicesInfoRequest {

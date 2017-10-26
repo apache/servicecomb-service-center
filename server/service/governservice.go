@@ -269,34 +269,44 @@ func statistics(ctx context.Context, opts ...registry.PluginOpOption) (*pb.Stati
 	result := &pb.Statistics{
 		Services:  &pb.StService{},
 		Instances: &pb.StInstance{},
+		Apps:      &pb.StApp{},
 	}
 	tenantProject := util.ParseTenantProject(ctx)
 
 	// services
-	key := apt.GenerateServiceKey(tenantProject, "")
+	key := apt.GetServiceIndexRootKey(tenantProject)
 	svcOpts := append(opts,
 		registry.WithStrKey(key),
 		registry.WithPrefix(),
-		registry.WithCountOnly())
+		registry.WithKeyOnly())
 	resp, err := store.Store().Service().Search(ctx, svcOpts...)
 	if err != nil {
 		return nil, err
 	}
-	if resp.Count > 0 {
-		result.Services.Count = resp.Count - 1
+	result.Services.Count = RemoveSCSelf(tenantProject, resp.Count, 1)
+
+	app := map[string]interface{}{}
+	for _, kv := range resp.Kvs {
+		key := util.BytesToStringWithNoCopy(kv.Key)
+		keySpilted := strings.Split(key, "/")
+		if len(keySpilted) > 6 {
+			appId := keySpilted[6]
+			app[appId] = nil
+		}
 	}
+	result.Apps.Count = RemoveSCSelf(tenantProject, int64(len(app)), 1)
 
 	// instance
 	key = apt.GetInstanceRootKey(tenantProject)
 	instOpts := append(opts,
 		registry.WithStrKey(key),
 		registry.WithPrefix(),
-		registry.WithCountOnly())
-	resp, err = store.Store().Instance().Search(ctx, instOpts...)
+	    registry.WithKeyOnly())
+	respIns, err := store.Store().Instance().Search(ctx, instOpts...)
 	if err != nil {
 		return nil, err
 	}
-	result.Instances.Count = resp.Count
+	result.Instances.Count = respIns.Count
 	key = apt.GenerateInstanceKey(tenantProject, apt.Service.ServiceId, "")
 	scOpts := append(opts,
 		registry.WithStrKey(key),
@@ -307,5 +317,25 @@ func statistics(ctx context.Context, opts ...registry.PluginOpOption) (*pb.Stati
 		return nil, err
 	}
 	result.Instances.Count = result.Instances.Count - resp.Count
+
+	onlineServices := map[string] interface{}{}
+	for _, kv := range respIns.Kvs {
+		key := util.BytesToStringWithNoCopy(kv.Key)
+		keySpilted := strings.Split(key, "/")
+		if len(keySpilted) > 6 {
+			servieId := keySpilted[6]
+			onlineServices[servieId] = nil
+		}
+	}
+	result.Services.OnlineCount = RemoveSCSelf(tenantProject, int64(len(onlineServices)), 1)
 	return result, err
+}
+
+func RemoveSCSelf(tenantProject string, count int64, removeNum int64) int64{
+	if count > 0 {
+		if apt.IsDefaultDomain(tenantProject) {
+			count = count - removeNum
+		}
+	}
+	return count
 }
