@@ -13,8 +13,22 @@
 //limitations under the License.
 package errors
 
+import (
+	"fmt"
+)
+
 type InternalError string
 
 func (e InternalError) Error() string {
 	return string(e)
+}
+
+func RaiseError(itf interface{}) InternalError {
+	if itf == nil {
+		return InternalError("panic: unknown")
+	}
+	if err, ok := itf.(error); ok {
+		return InternalError(err.Error())
+	}
+	return InternalError(fmt.Sprintf("%v", itf))
 }

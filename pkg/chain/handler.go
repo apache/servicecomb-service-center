@@ -13,6 +13,21 @@
 //limitations under the License.
 package chain
 
+var handlersMap map[string][]Handler = make(map[string][]Handler, CAP_SIZE)
+
 type Handler interface {
 	Handle(i *Invocation)
+}
+
+func RegisterHandler(catalog string, h Handler) {
+	handlers, ok := handlersMap[catalog]
+	if !ok {
+		handlers = make([]Handler, 0, CAP_SIZE)
+	}
+	handlers = append(handlers, h)
+	handlersMap[catalog] = handlers
+}
+
+func Handlers(catalog string) []Handler {
+	return handlersMap[catalog]
 }
