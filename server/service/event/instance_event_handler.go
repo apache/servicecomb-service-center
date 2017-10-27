@@ -21,6 +21,8 @@ import (
 	nf "github.com/ServiceComb/service-center/server/service/notification"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"golang.org/x/net/context"
+	"strings"
+	apt "github.com/ServiceComb/service-center/server/core"
 )
 
 type InstanceEventHandler struct {
@@ -39,6 +41,17 @@ func (h *InstanceEventHandler) OnEvent(evt *store.KvEvent) {
 			"unmarshal provider service instance file failed, instance %s/%s [%s] event, data is nil",
 			providerId, providerInstanceId, action)
 		return
+	}
+	if action == pb.EVT_DELETE {
+		spilted := strings.Split(tenantProject, "/")
+		if len(spilted) == 2 && apt.IsDefaultDomain(tenantProject) {
+			domainName := spilted[0]
+			projectName := spilted[1]
+			ctx := context.TODO()
+			ctx = context.WithValue(ctx, "tenant", domainName)
+			ctx = context.WithValue(ctx, "project", projectName)
+			serviceUtil.RemandInstanceQuota(ctx)
+		}
 	}
 
 	if nf.GetNotifyService().Closed() {

@@ -232,7 +232,6 @@ func GetAllServiceUtil(ctx context.Context, opts ...registry.PluginOpOption) ([]
 
 func RemandServiceQuota(ctx context.Context) {
 	quota.QuotaPlugins[quota.QuataType]().RemandQuotas(ctx, quota.MicroServiceQuotaType)
-	RemandInstanceQuota(ctx)
 }
 
 func RemandInstanceQuota(ctx context.Context) {
