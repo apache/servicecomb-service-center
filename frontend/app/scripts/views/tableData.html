@@ -59,14 +59,16 @@ limitations under the License.
                                 <div ng-if="value == 'outofservice'" class="serviceStatus outofservice">{{value}}</div>
                             </span>
                             <span ng-if="key == 'operation'">
-                                <span class="glyphicon glyphicon-trash"></span>
+                                <md-button class="md-icon-button" ng-disabled="appData.instances != 0" ng-click="remove(appData.serviceId, appData.instances)" aria-label="{{ 'delete' | translate }}" title="{{ 'delete' | translate }}">
+                                    <span class="glyphicon glyphicon-trash"></span>
+                                </md-button>
                             </span>
                             <span ng-if="key == 'address'">
                                 <span ng-repeat="endpoints in value track by $index">
                                     <li>{{endpoints}}</li>
                                 </span>
                             </span>
-                            <span ng-if="key != 'serviceId' && key != 'serviceName' && key != 'address' && key != 'operation' && key !='status'">
+                            <span ng-if="key != 'serviceId' && key != 'serviceName' && key != 'disableBtn' && key != 'address' && key != 'operation' && key !='status'">
                                 {{value}}
                             </span>
                         </td>

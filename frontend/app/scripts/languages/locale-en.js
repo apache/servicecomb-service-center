@@ -75,6 +75,13 @@ angular.module('serviceCenter')
 	"noSchemaAvailableToDownload" :"Schema file is not available in service center",
 	"download": "Download",
     "downloadAll": "Download All",
-    "alert": "Alert"
+    "alert": "Alert",
+	"delete": "Delete",
+	"warning": "Warning",
+	"prompt": "Prompt",
+	"areYouSureToDelete": "Are you sure to delete ?",
+	"cannotDeleteServiceWhenInstanceIsAvailable": "Cannot delete service when instance is available",
+	"serviceDeletedSuccessfully": "Service Deleted Successfully",
+	"unableToDeleteService": "Unable to delete service..Try again"
 
 });

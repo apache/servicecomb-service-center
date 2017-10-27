@@ -43,6 +43,10 @@ angular.module('serviceCenter')
             allServices: {
                 url: 'v4/default/govern/microservices',
                 method: 'GET'
+            },
+            deleteService: {
+                url: 'v4/default/registry/microservices/{{serviceId}}',
+                method: 'DELETE'
             }
         }
 //       v3 api's
@@ -70,6 +74,10 @@ angular.module('serviceCenter')
 //			allServices: {
 //				url: 'registry/v3/govern/services?options=all',
 //				method: 'GET'
-//			}
+//			},
+//          deleteService: {
+//              url: 'registry/v3/microservices/{{serviceId}}',
+//              method: 'DELETE'
+//          }
 //		}
 	});
