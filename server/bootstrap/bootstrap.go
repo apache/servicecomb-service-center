@@ -14,11 +14,19 @@
 package bootstrap
 
 import _ "github.com/ServiceComb/service-center/server/core" // initialize
+// cipher
+import _ "github.com/ServiceComb/service-center/server/plugin/infra/security/plain"
+
+// registry
 import _ "github.com/ServiceComb/service-center/server/core/registry/etcd"
 import _ "github.com/ServiceComb/service-center/server/core/registry/embededetcd"
+
+// v3
+import _ "github.com/ServiceComb/service-center/server/rest/controller/v3"
+
+// quota
 import _ "github.com/ServiceComb/service-center/server/plugin/infra/quota/buildin"
 import _ "github.com/ServiceComb/service-center/server/plugin/infra/quota/unlimit"
-import _ "github.com/ServiceComb/service-center/server/plugin/infra/security/plain"
 
 import (
 	"github.com/ServiceComb/service-center/pkg/util"
