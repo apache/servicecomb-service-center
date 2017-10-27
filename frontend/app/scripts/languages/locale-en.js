@@ -69,11 +69,12 @@ angular.module('serviceCenter')
 	"testSchema": "Test Schema",
 	"noSchemaExists": "No Schema Exists",
 	"noInstance": "No instances available to test the schema",
-	"instancename":"Instance Name",
+	"instanceName":"Instance Name",
 	"address": "Address",
 	"next":"Next",
-	"noSchemaToDownload":"No schema found to download",
+	"noSchemaAvailableToDownload" :"Schema file is not available in service center",
 	"download": "Download",
-	"viewDownload": "View & Download"
+    "downloadAll": "Download All",
+    "alert": "Alert"
 
 });

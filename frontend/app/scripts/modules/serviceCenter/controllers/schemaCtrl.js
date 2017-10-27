@@ -13,20 +13,86 @@
 //limitations under the License.
 'use strict';
 angular.module('serviceCenter.sc')
-	.controller('schemaController',['$scope', 'apiConstant', 'httpService', '$stateParams', 'servicesList', '$q', '$mdDialog', 'YAML', '$http', '$state', '$document', '$timeout',
-		function($scope, apiConstant, httpService, $stateParams, servicesList, $q, $mdDialog, YAML, $http, $state, $document, $timeout) {
+	.controller('schemaController',['$scope', 'apiConstant', 'httpService', '$stateParams', 'servicesList', '$q', '$mdDialog', 'YAML', '$http', '$state', '$document', '$interval',
+		function($scope, apiConstant, httpService, $stateParams, servicesList, $q, $mdDialog, YAML, $http, $state, $document, $interval) {
 		
 		var serviceId = $stateParams.serviceId;
 		$scope.schemaName = [];
+        var addresses = [];
+        var instances = [];
+        var promises = [];
 		if(servicesList && servicesList.data && servicesList.data.services){
 			servicesList.data.services.forEach(function(services){
 	            if(services.serviceId == serviceId){
-	                $scope.schemaName = services.schemas;
+	                $scope.schemaName = services.schemas || [];
 	            }
         	});
 		}
-		var addresses = [];
-		var instances = [];
+
+		$scope.downloadAllSchema = function(){
+		    $(".loader").show();
+			for(var s= 0; s < $scope.schemaName.length; s++){
+				var schemaApi = apiConstant.api.schema.url;
+				var api = schemaApi.replace("{{serviceId}}", serviceId);
+				var url = api.replace("{{schemaId}}", $scope.schemaName[s]);
+				var method = apiConstant.api.schema.method;
+				var headers = {"X-ConsumerId": serviceId};
+				promises.push(httpService.apiRequest(url, method, null, headers, "nopopup"));
+			}
+
+			$q.all(promises).then(function(response){
+				if(response){
+					promises = [];
+					for(var i = 0; i < response.length; i++){
+						$scope.schemaJson = YAML.parse(response[i].data.schema);
+						var schemaName = $scope.schemaName[i].split('.');
+						var id = schemaName[schemaName.length - 1];
+						const ui = SwaggerUIBundle({
+						  spec: $scope.schemaJson,
+					      dom_id: '#'+id,
+					      presets: [
+					        SwaggerUIBundle.presets.apis,
+					        SwaggerUIStandalonePreset
+					      ],
+					      plugins: [
+					        SwaggerUIBundle.plugins.DownloadUrl
+					      ],
+					      layout: "StandaloneLayout",
+					      docExpansion: 'full'
+						});
+
+						if(i == 0){
+							var zip = new JSZip();
+							var folder = zip.folder('schemas');
+						}
+
+						(function(i){
+							var interval = $interval(function(){
+								if(angular.element('.swagger-ui').length){
+   									$interval.cancel(interval);
+									var schemaName = $scope.schemaName[i].split('.');
+									var fileName = schemaName[schemaName.length - 1];
+									var content = $document[0].getElementById('multipleTemplate').innerHTML;
+									zip.file(fileName+".html", content);
+									var clearDom = angular.element(document.querySelector('#'+fileName));
+									clearDom.empty();
+									if(i == response.length - 1){
+									    $(".loader").hide();
+										zip.generateAsync({type: "blob"}).then(function(content) {
+											saveAs(content, "schemas.zip");
+										})
+									}
+								}
+							},500)
+						})(i);
+					}
+				}
+			},function(error){
+			    $(".loader").hide();
+				$scope.noSchemaFound();
+			})
+		}
+
 		$scope.instanceDetails = function(){
 			var instanceUrl = apiConstant.api.instances.url;
 			var instanceApi = instanceUrl.replace('{{serviceId}}', serviceId);
@@ -50,8 +116,9 @@ angular.module('serviceCenter.sc')
 			});
 		}
 		$scope.instanceDetails();
-		$scope.show = false;
+
 		$scope.downloadSchema = function(selectedSchema){
+		    $(".loader").show();
 	    	var schemaApi = apiConstant.api.schema.url;
 			var api = schemaApi.replace("{{serviceId}}", serviceId);
 			var url = api.replace("{{schemaId}}", selectedSchema);
@@ -75,49 +142,59 @@ angular.module('serviceCenter.sc')
 					      docExpansion: 'full'
 					});
 
-					$timeout(function(){
-						var content = $document[0].getElementById('mytemplate').innerHTML;
-						var blob = new Blob([ content ], { type : "text/html;charset=utf-8" });
-						$scope.url = (window.URL || window.webkitURL).createObjectURL( blob );
-					},2000)
-					
+					var interval = $interval(function(){
+                        if(angular.element('.swagger-ui').length){
+                            $(".loader").hide();
+                            var content = $document[0].getElementById('singleTemplate').innerHTML;
+                            var blob = new Blob([ content ], { type : "text/html;charset=utf-8" });
+                            var link = angular.element('<a></a>');
+                            link.attr('href', window.URL.createObjectURL(blob));
+                            link.attr('download', selectedSchema+".html");
+                            link[0].click();
+                            $interval.cancel(interval);
+                            var clearDom = angular.element(document.querySelector('#swagger-template'));
+                            clearDom.empty();
+                        }
+                    },500)
 				}
 			},function(error) {
-				$mdDialog.show({
-						template: `<md-dialog flex="30">
-									 <md-toolbar>
-									 	 <div class="md-toolbar-tools">
-									        <h2>Alert</h2>
-									        <span flex></span>
-									        <md-button class="md-icon-button" ng-click="cancel()">
-									          <md-icon class="glyphicon glyphicon-remove" aria-label="Close dialog"></md-icon>
-									        </md-button>
-									      </div>
-									 </md-toolbar>
-									 <md-dialog-content>
-									 	<h3 class="text-center" style="margin-top:15px;">No schema available to download</h3>
-									 </md-dialog-content>
-									 <md-dialog-actions layout="row">
-									    <span flex></span>
-									    <md-button ng-click="cancel()">
-									     Close
-									    </md-button>
-									  </md-dialog-actions>
-									</md-dialog>`,
-						parent: angular.element(document.body),
-						clickOutsideToClose: true,
-						controller: function($scope, $mdDialog) {
-							$scope.cancel = function(){
-								$mdDialog.hide();
-							}
-						}
-					})
+			    $(".loader").hide();
+                $scope.noSchemaFound()
 			});
 		};
 
+	    $scope.noSchemaFound = function(){
+	        $mdDialog.show({
+                template: `<md-dialog flex="30">
+                             <md-toolbar>
+                                 <div class="md-toolbar-tools">
+                                    <h2>{{ "alert" | translate }}</h2>
+                                    <span flex></span>
+                                    <md-button class="md-icon-button" ng-click="cancel()">
+                                      <md-icon class="glyphicon glyphicon-remove" aria-label="Close dialog"></md-icon>
+                                    </md-button>
+                                  </div>
+                             </md-toolbar>
+                             <md-dialog-content>
+                                <h3 class="text-center" style="margin-top:15px;">{{ "noSchemaAvailableToDownload" | translate }}</h3>
+                             </md-dialog-content>
+                             <md-dialog-actions layout="row">
+                                <span flex></span>
+                                <md-button ng-click="cancel()">
+                                 {{ "close" | translate }}
+                                </md-button>
+                              </md-dialog-actions>
+                            </md-dialog>`,
+                parent: angular.element(document.body),
+                clickOutsideToClose: true,
+                controller: function($scope, $mdDialog) {
+                    $scope.cancel = function(){
+                        $mdDialog.hide();
+                    }
+                }
+            })
+	    };
 
-		$scope.schema = [];
-		
 		$scope.testSchema = function(selectedSchema) {
 			$mdDialog.show({
 		      controller: function ($scope, $mdDialog, apiConstant, httpService) {
