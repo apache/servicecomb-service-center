@@ -56,7 +56,7 @@ func (v *v4Context) IsMatch(r *http.Request) bool {
 
 func (v *v4Context) Do(r *http.Request) error {
 	ctx := r.Context()
-	if ctx.Value("tenant") == nil {
+	if ctx.Value("project") == nil {
 		path, err := url.PathUnescape(r.RequestURI)
 		if err != nil {
 			util.Logger().Errorf(err, "Invalid Request URI %s", r.RequestURI)
@@ -66,21 +66,21 @@ func (v *v4Context) Do(r *http.Request) error {
 		start := len("/v4/")
 		end := start + strings.Index(path[start:], "/")
 
-		tenant := strings.TrimSpace(path[start:end])
+		project := strings.TrimSpace(path[start:end])
+		if len(project) == 0 {
+			project = core.REGISTRY_PROJECT
+		}
+		util.SetReqCtx(r, "project", project)
+	}
+
+	if ctx.Value("tenant") == nil {
+		tenant := r.Header.Get("X-Domain-Name")
 		if len(tenant) == 0 {
 			err := errors.New("Header does not contain domain.")
 			util.Logger().Errorf(err, "Invalid Request URI %s", r.RequestURI)
 			return err
 		}
 		util.SetReqCtx(r, "tenant", tenant)
-	}
-
-	if ctx.Value("project") == nil {
-		project := r.Header.Get("X-Domain-Name")
-		if len(project) == 0 {
-			project = core.REGISTRY_PROJECT
-		}
-		util.SetReqCtx(r, "project", project)
 	}
 	return nil
 }
