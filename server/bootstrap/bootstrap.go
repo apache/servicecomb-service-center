@@ -21,8 +21,9 @@ import _ "github.com/ServiceComb/service-center/server/plugin/infra/security/pla
 import _ "github.com/ServiceComb/service-center/server/core/registry/etcd"
 import _ "github.com/ServiceComb/service-center/server/core/registry/embededetcd"
 
-// v3
+// rest
 import _ "github.com/ServiceComb/service-center/server/rest/controller/v3"
+import _ "github.com/ServiceComb/service-center/server/rest/controller/v4"
 
 // quota
 import _ "github.com/ServiceComb/service-center/server/plugin/infra/quota/buildin"
@@ -30,6 +31,7 @@ import _ "github.com/ServiceComb/service-center/server/plugin/infra/quota/unlimi
 
 import (
 	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/ServiceComb/service-center/server/handler/context"
 	"github.com/ServiceComb/service-center/server/interceptor"
 	"github.com/ServiceComb/service-center/server/interceptor/access"
 	"github.com/ServiceComb/service-center/server/interceptor/cors"
@@ -40,11 +42,13 @@ import (
 func init() {
 	util.Logger().Info("BootStrap Huawei Enterprise Edition")
 
-	interceptor.InterceptFunc(interceptor.ACCESS_PHASE, ratelimiter.Intercept)
-	interceptor.InterceptFunc(interceptor.ACCESS_PHASE, access.Intercept)
-	interceptor.InterceptFunc(interceptor.ACCESS_PHASE, cors.Intercept)
+	interceptor.InterceptFunc(ratelimiter.Intercept)
+	interceptor.InterceptFunc(access.Intercept)
+	interceptor.InterceptFunc(cors.Intercept)
 
-	interceptor.InterceptFunc(interceptor.CONTENT_PHASE, maxbody.Intercept)
+	interceptor.InterceptFunc(maxbody.Intercept)
 
-	interceptor.InterceptFunc(interceptor.LOG_PHASE, access.Log)
+	interceptor.InterceptFunc(access.Log)
+
+	context.RegisterHandlers()
 }

@@ -13,20 +13,16 @@
 //limitations under the License.
 package chain
 
-import (
-	"errors"
-)
-
 const CAP_SIZE = 10
 
 type Invocation struct {
 	Callback
 	handlerContext map[string]interface{}
 	context        map[string]interface{}
-	chain          *Chain
+	chain          Chain
 }
 
-func (i *Invocation) Init(ch *Chain) {
+func (i *Invocation) Init(ch Chain) {
 	i.handlerContext = make(map[string]interface{}, CAP_SIZE)
 	i.context = make(map[string]interface{}, CAP_SIZE)
 	i.chain = ch
@@ -51,10 +47,6 @@ func (i *Invocation) WithContext(key string, val interface{}) *Invocation {
 }
 
 func (i *Invocation) Next() {
-	if i.chain == nil {
-		i.Fail(errors.New("Can not find any chain for this invocation"))
-		return
-	}
 	i.chain.Next(i)
 }
 
@@ -63,8 +55,8 @@ func (i *Invocation) Invoke(f func(r Result)) {
 	i.Next()
 }
 
-func NewInvocation(ch *Chain) *Invocation {
+func NewInvocation(ch Chain) Invocation {
 	var inv Invocation
 	inv.Init(ch)
-	return &inv
+	return inv
 }

@@ -11,22 +11,41 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package v3
+package context
 
 import (
+	"github.com/ServiceComb/service-center/pkg/chain"
 	roa "github.com/ServiceComb/service-center/pkg/rest"
+	"net/http"
 )
 
-func init() {
-	initRouter()
+type ContextHandler struct {
 }
 
-func initRouter() {
-	roa.RegisterServent(&MainService{})
-	roa.RegisterServent(&MicroServiceService{})
-	roa.RegisterServent(&TagService{})
-	roa.RegisterServent(&RuleService{})
-	roa.RegisterServent(&MicroServiceInstanceService{})
-	roa.RegisterServent(&WatchService{})
-	roa.RegisterServent(&GovernService{})
+func (c *ContextHandler) Handle(i *chain.Invocation) {
+	var (
+		err error
+		v3  v3Context
+		v4  v4Context
+	)
+
+	ctx := i.HandlerContext()
+	r := ctx[roa.CTX_REQUEST].(*http.Request)
+
+	switch {
+	case v3.IsMatch(r):
+		err = v3.Do(r)
+	case v4.IsMatch(r):
+		err = v4.Do(r)
+	}
+
+	if err != nil {
+		i.Fail(err)
+		return
+	}
+	i.Next()
+}
+
+func RegisterHandlers() {
+	chain.RegisterHandler(roa.SERVER_CHAIN_NAME, &ContextHandler{})
 }

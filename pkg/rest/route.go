@@ -16,6 +16,8 @@ package rest
 import (
 	"errors"
 	"fmt"
+	"github.com/ServiceComb/service-center/pkg/chain"
+	errorsEx "github.com/ServiceComb/service-center/pkg/errors"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"net/http"
 	"strings"
@@ -46,13 +48,11 @@ type Route struct {
 //   2. redirect not supported
 type ROAServerHandler struct {
 	handlers map[string][]*urlPatternHandler
-	filters  []Filter
 }
 
 func NewROAServerHander() *ROAServerHandler {
 	return &ROAServerHandler{
 		handlers: make(map[string][]*urlPatternHandler),
-		filters:  make([]Filter, 0, 5),
 	}
 }
 
@@ -78,11 +78,7 @@ func (this *ROAServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 				r.URL.RawQuery = util.UrlEncode(params) + "&" + r.URL.RawQuery
 			}
 
-			if err = this.doFilter(r); err != nil {
-				break
-			}
-
-			ph.ServeHTTP(w, r)
+			this.serve(ph, w, r)
 			return
 		}
 	}
@@ -114,13 +110,33 @@ func (this *ROAServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	http.Error(w, "Method Not Allowed", 405)
 }
 
-func (this *ROAServerHandler) doFilter(r *http.Request) error {
-	for _, f := range this.filters {
-		if f.IsMatch(r) {
-			return f.Do(r)
-		}
+func (this *ROAServerHandler) serve(ph http.Handler, w http.ResponseWriter, r *http.Request) {
+	hs := chain.Handlers(SERVER_CHAIN_NAME)
+	if len(hs) == 0 {
+		ph.ServeHTTP(w, r)
+		return
 	}
-	return nil
+	ch := make(chan struct{})
+	inv := chain.NewInvocation(chain.NewChain(SERVER_CHAIN_NAME, hs...))
+	inv.WithHandlerContext(CTX_RESPONSE, w).WithHandlerContext(CTX_REQUEST, r)
+	inv.Invoke(func(ret chain.Result) {
+		defer func() {
+			defer close(ch)
+			err := ret.Err
+			itf := recover()
+			if itf != nil {
+				util.Logger().Errorf(nil, "recover! %v", itf)
+				err = errorsEx.RaiseError(itf)
+			}
+			if _, ok := err.(errorsEx.InternalError); ok {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
+		}()
+		if ret.OK {
+			ph.ServeHTTP(w, r)
+		}
+	})
+	<-ch
 }
 
 func (this *urlPatternHandler) try(path string) (p map[string]string, _ bool) {
