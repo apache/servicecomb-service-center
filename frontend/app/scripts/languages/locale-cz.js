@@ -75,6 +75,13 @@ angular.module('serviceCenter')
 	"noSchemaAvailableToDownload": "服务中心不提供模式文件",
 	"download": "下载",
 	"downloadAll": "全部下载",
-	"alert": "Alert"
+	"alert": "警报",
+	"delete": "删除",
+	"warning": "警告",
+	"prompt": "提示",
+	"areYouSureToDelete": "你确定删除吗？",
+	"cannotDeleteServiceWhenInstanceIsAvailable": "实例可用时无法删除服务",
+	"serviceDeletedSuccessfully": "服务已成功删除",
+	"unableToDeleteService": "无法删除服务 再试一次"
 
 });

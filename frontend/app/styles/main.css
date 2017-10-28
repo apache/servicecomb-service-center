@@ -39,8 +39,6 @@ body {
     display: none; }
   body .no-margin {
     margin: 0px !important; }
-  body .glyphicon-trash:hover {
-    cursor: pointer; }
   body .pagination-class .label {
     color: rgba(0, 0, 0, 0.54);
     font-size: 12px;
