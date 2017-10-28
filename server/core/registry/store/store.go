@@ -46,7 +46,7 @@ var TypeNames = []string{
 	INSTANCE:        "INSTANCE",
 	DOMAIN:          "DOMAIN",
 	SCHEMA:          "SCHEMA",
-	SCHEMA_SUMMARY:   "SCHEMA_SUMMARY",
+	SCHEMA_SUMMARY:  "SCHEMA_SUMMARY",
 	RULE:            "RULE",
 	LEASE:           "LEASE",
 	SERVICE_INDEX:   "SERVICE_INDEX",
@@ -218,19 +218,13 @@ func (s *KvStore) onDomainEvent(evt *KvEvent) {
 	kv := evt.KV
 	action := evt.Action
 	tenant, _ := pb.GetInfoFromDomainKV(kv)
-
-	if action != pb.EVT_CREATE {
-		util.Logger().Infof("tenant '%s' is %s", tenant, action)
-		return
-	}
-
 	if len(tenant) == 0 {
 		util.Logger().Errorf(nil,
-			"unmarshal tenant info failed, key %s [%s] event", util.BytesToStringWithNoCopy(kv.Key), action)
+			"unmarshal domain file failed, key %s [%s] event", util.BytesToStringWithNoCopy(kv.Key), action)
 		return
 	}
 
-	util.Logger().Infof("new tenant %s is created", tenant)
+	util.Logger().Infof("domain '%s' is %s", tenant, action)
 }
 
 func (s *KvStore) onLeaseEvent(evt *KvEvent) {

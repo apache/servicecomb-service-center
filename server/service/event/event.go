@@ -18,6 +18,7 @@ import (
 )
 
 func init() {
+	store.AddEventHandler(NewServiceEventHandler())
 	store.AddEventHandler(NewInstanceEventHandler())
 	store.AddEventHandler(NewRuleEventHandler())
 	store.AddEventHandler(NewTagEventHandler())
