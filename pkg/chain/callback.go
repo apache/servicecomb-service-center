@@ -40,7 +40,12 @@ func (cb *Callback) Invoke(r Result) {
 }
 
 func (cb *Callback) syncInvoke(r Result) {
-	defer util.RecoverAndReport()
+	defer func() {
+		if itf := recover(); itf != nil {
+			name := util.FuncName(cb.Func)
+			util.Logger().Errorf(nil, "recover from '%s()'! %v", name, itf)
+		}
+	}()
 	if cb.Func == nil {
 		util.Logger().Errorf(nil, "Callback function is nil. result: %s,", r)
 		return

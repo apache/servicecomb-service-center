@@ -18,14 +18,12 @@ import (
 	roa "github.com/ServiceComb/service-center/pkg/rest"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"net/http"
-	"reflect"
-	"runtime"
 )
 
 type InterceptorFunc func(http.ResponseWriter, *http.Request) error
 
 func (f InterceptorFunc) Name() string {
-	return runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
+	return util.FuncName(f)
 }
 
 type Interception struct {
@@ -49,7 +47,7 @@ func (i Interception) Handle(inv *chain.Invocation) {
 // This can be applied to any Controller.
 // It must have the signature of:
 //   func example(c *revel.Controller) revel.Result
-func InterceptFunc(intc InterceptorFunc) {
+func RegisterInterceptFunc(intc InterceptorFunc) {
 	chain.RegisterHandler(roa.SERVER_CHAIN_NAME, &Interception{
 		function: intc,
 	})

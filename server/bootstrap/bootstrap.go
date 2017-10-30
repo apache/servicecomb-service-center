@@ -45,10 +45,10 @@ func init() {
 
 	perf.RegisterHandlers()
 
-	interceptor.InterceptFunc(ratelimiter.Intercept)
-	interceptor.InterceptFunc(access.Intercept)
-	interceptor.InterceptFunc(cors.Intercept)
-	interceptor.InterceptFunc(maxbody.Intercept)
+	interceptor.RegisterInterceptFunc(ratelimiter.Intercept)
+	interceptor.RegisterInterceptFunc(access.Intercept)
+	interceptor.RegisterInterceptFunc(cors.Intercept)
+	interceptor.RegisterInterceptFunc(maxbody.Intercept)
 
 	context.RegisterHandlers()
 }

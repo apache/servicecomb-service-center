@@ -20,6 +20,8 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"reflect"
+	"runtime"
 	"strings"
 	"time"
 	"unsafe"
@@ -276,4 +278,8 @@ func UrlEncode(keys map[string]string) string {
 		arr = append(arr, url.QueryEscape(k)+"="+url.QueryEscape(v))
 	}
 	return StringJoin(arr, "&")
+}
+
+func FuncName(f interface{}) string {
+	return runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
 }

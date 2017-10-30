@@ -52,7 +52,13 @@ func (c *ContextHandler) Handle(i *chain.Invocation) {
 
 func IsSkip(url string) bool {
 	l, vl, hl := len(url), len("/version"), len("/health")
-	return url[l-vl:] == "/version" || url[l-hl:] == "/health"
+	if l > vl && url[l-vl:] == "/version" {
+		return true
+	}
+	if l > hl && url[l-hl:] == "/health" {
+		return true
+	}
+	return false
 }
 
 func RegisterHandlers() {
