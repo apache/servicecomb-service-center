@@ -69,11 +69,19 @@ angular.module('serviceCenter')
 	"testSchema": "Test Schema",
 	"noSchemaExists": "No Schema Exists",
 	"noInstance": "No instances available to test the schema",
-	"instancename":"Instance Name",
+	"instanceName":"Instance Name",
 	"address": "Address",
 	"next":"Next",
-	"noSchemaToDownload":"No schema found to download",
+	"noSchemaAvailableToDownload" :"Schema file is not available in service center",
 	"download": "Download",
-	"viewDownload": "View & Download"
+    "downloadAll": "Download All",
+    "alert": "Alert",
+	"delete": "Delete",
+	"warning": "Warning",
+	"prompt": "Prompt",
+	"areYouSureToDelete": "Are you sure to delete ?",
+	"cannotDeleteServiceWhenInstanceIsAvailable": "Cannot delete service when instance is available",
+	"serviceDeletedSuccessfully": "Service Deleted Successfully",
+	"unableToDeleteService": "Unable to delete service..Try again"
 
 });

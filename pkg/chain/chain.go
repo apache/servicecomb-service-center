@@ -14,25 +14,21 @@
 package chain
 
 import (
-	"fmt"
+	errorsEx "github.com/ServiceComb/service-center/pkg/errors"
 	"github.com/ServiceComb/service-center/pkg/util"
-	"sync"
 )
-
-var handlersMap map[string][]Handler
 
 type Chain struct {
 	name         string
 	handlers     []Handler
 	currentIndex int
-	mux          sync.Mutex
 }
 
 func (c *Chain) Init(chainName string, hs []Handler) {
 	c.name = chainName
 	c.currentIndex = -1
 	if len(hs) > 0 {
-		c.handlers = make([]Handler, 0, len(hs))
+		c.handlers = make([]Handler, len(hs))
 		copy(c.handlers, hs)
 	}
 }
@@ -41,17 +37,31 @@ func (c *Chain) Name() string {
 	return c.name
 }
 
-func (c *Chain) doNext(i *Invocation) {
-	defer util.RecoverAndReport()
+func (c *Chain) syncNext(i *Invocation) {
+	defer func() {
+		itf := recover()
+		if itf == nil {
+			return
+		}
+		util.Logger().Errorf(nil, "recover! %v", itf)
 
-	if c.currentIndex >= len(c.handlers) {
-		i.Fail(fmt.Errorf("Over end of chain '%s'", c.name))
+		i.Fail(errorsEx.RaiseError(itf))
+	}()
+
+	if c.currentIndex >= len(c.handlers)-1 {
+		i.Success()
 		return
 	}
 	c.currentIndex += 1
 	c.handlers[c.currentIndex].Handle(i)
 }
 
-func (c *Chain) next(i *Invocation) {
-	go c.doNext(i)
+func (c *Chain) Next(i *Invocation) {
+	go c.syncNext(i)
+}
+
+func NewChain(name string, handlers ...Handler) *Chain {
+	var ch Chain
+	ch.Init(name, handlers)
+	return &ch
 }

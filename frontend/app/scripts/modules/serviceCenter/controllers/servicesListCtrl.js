@@ -13,12 +13,12 @@
 //limitations under the License.
 'use strict';
 angular.module('serviceCenter.sc', [])
-	.controller('servicesListController', ['$scope', 'httpService', 'apiConstant', 'commonService', '$stateParams',
-		function($scope, httpService, apiConstant, commonService, $stateParams){
+	.controller('servicesListController', ['$scope', 'httpService', 'apiConstant', 'commonService', '$stateParams', '$mdDialog',
+		function($scope, httpService, apiConstant, commonService, $stateParams, $mdDialog){
 
 			$scope.appList = 'fetching';
 			$scope.serviceList = 'serviceList';
-			$scope.rowsPerPage = [5, 10, 15];
+			$scope.rowsPerPage = [5, 10];
 			
 			$scope.tableHeaders = [
 				{
@@ -44,22 +44,41 @@ angular.module('serviceCenter.sc', [])
 				}
 			];
 
-			function predicateBy(prop){
-				return function(a,b){
-					if(a[prop] >b[prop]){
-						return 1;
-					}
-					else if(a[prop] < b[prop]){
-						return -1;
-					}
-					return 0;
-				}
-			}
-			
 			$scope.refreshAppList = function() {
 				angular.element(document.querySelector('.fa-refresh')).addClass('fa-spin');
 				$scope.getAllServices();
 			};
+
+            var deleteService = function(response){
+            	if(response == "yes"){
+            		$(".loader").show();
+        			var url = apiConstant.api.deleteService.url;
+        			var api =  url.replace("{{serviceId}}", $scope.deleteServiceId);
+					var method = apiConstant.api.deleteService.method;
+					httpService.apiRequest(api, method, null, null, "nopopup").then(function(response){
+						if(response && response.status == 200){
+							$(".loader").hide();
+							$scope.refreshAppList();
+							commonService.oneBtnMsg("prompt", "serviceDeletedSuccessfully")
+						}else{
+							$(".loader").hide();
+							commonService.oneBtnMsg("error","unableToDeleteService")
+						}
+					},function(error){
+							$(".loader").hide();
+							commonService.oneBtnMsg("error","unableToDeleteService")
+					})
+            	}
+            };
+
+		  	$scope.removeService = function(serviceId, instances) {
+		  		$scope.deleteServiceId = serviceId;
+		  		if(instances == 0){
+		  			commonService.twoBtnMsg("warning", "areYouSureToDelete", deleteService);
+		  		}else {
+		  			commonService.oneBtnMsg("prompt", "cannotDeleteServiceWhenInstanceIsAvailable");
+		  		}
+            };
 
 			$scope.getAllServices = function() {
 				var filter = '';
@@ -86,11 +105,15 @@ angular.module('serviceCenter.sc', [])
 									createdAt: commonService.timeFormat(service.timestamp),
 									instances: 0,
 									operation: '',
-									serviceId: service.serviceId
+									serviceId: service.serviceId,
+									disableBtn: false
 								};
 								httpService.apiRequest(instanceUrl, instanceMethod, null, headers, "nopopup").then(function(resp){
 									if(resp && resp.data && resp.data.instances){
 									   servicesList.instances = resp.data.instances.length;
+									   if(servicesList.instances > 0){
+									   		servicesList.disableBtn = true;
+									   }
 									}
 								});
 							
@@ -105,21 +128,21 @@ angular.module('serviceCenter.sc', [])
 									createdAt: commonService.timeFormat(service.timestamp),
 									instances: 0,
 									operation: '',
-									serviceId: service.serviceId
+									serviceId: service.serviceId,
+									disableBtn: false
 								};
 								httpService.apiRequest(instanceUrl, instanceMethod, null, headers, "nopopup").then(function(resp){
 									if(resp && resp.data && resp.data.instances){
 									   servicesList.instances = resp.data.instances.length;
+									   if(servicesList.instances > 0){
+									   		servicesList.disableBtn = true;
+									   }
 									}
 								});
 							
 								$scope.services.push(servicesList);
 							}
 						});
-
-						if($scope.services.length >0){
-							$scope.services.sort(predicateBy("serviceName"));
-						}
 
 						if($scope.services.length <= 0){
 							$scope.appList = 'empty';

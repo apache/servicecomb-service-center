@@ -22,6 +22,7 @@ angular.module('serviceCenter')
                 data: '=data',
                 pagination: '=pagination',
                 refresh: '=refresh',
+                removes: '=removes',
                 dialogClose: '=dialogClose',
                 buttons: '=buttons',
                 enableSearch: '=search',
@@ -72,6 +73,10 @@ angular.module('serviceCenter')
 
                 scope.close = function() {
                     $mdDialog.cancel();
+                };
+
+                scope.remove = function(serviceId, instances) {
+                    scope.removes(serviceId, instances)
                 };
             }
         };

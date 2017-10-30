@@ -16,7 +16,6 @@ vendor/**
 # for local UT
 server/service/conf/
 etc/data
-conf/
 integration/conf
 frontend/bower_components/
 frontend/node_modules

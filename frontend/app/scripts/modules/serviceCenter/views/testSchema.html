@@ -34,7 +34,7 @@ limitations under the License.
         <div ng-if="(instances.length > 0)" layout="row" style="margin-top:15px;">
           <div flex="25"></div>
           <div flex="50">
-            <label>{{ "instancename" | translate }}:</label>
+            <label>{{ "instanceName" | translate }}:</label>
             <select class="form-control" ng-model="selectedInstance" ng-change="setInstance(selectedInstance)">
               <option ng-repeat="instance in instances" value="{{instance}}"> {{ instance }} </option>
             </select>

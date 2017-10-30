@@ -11,6 +11,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
+
 <table class="table table-bordered table-responsive margin20">
 	<thead class="infoTableHead schemaTable">
 		<th>{{ "name" | translate }}</th>
@@ -20,7 +21,7 @@ limitations under the License.
 		<tr ng-repeat="schema in schemaName">
 			<td>{{ schema }}</td>
 			<td><md-button class="md-raised schemaBtn" ng-click="testSchema(schema)">{{ "testSchema" | translate }}</md-button>
-        	<md-button class="md-raised schemaBtn" download="schema.html" ng-click="downloadSchema(schema)" ng-href="{{ url }}">{{ "download" | translate }} HTML</md-button>
+        	<md-button class="md-raised schemaBtn"  ng-click="downloadSchema(schema)" >{{ "download" | translate }} HTML</md-button>
 			</td>
 		</tr>
 		<tr ng-if="schemaName.length == 0" class="text-center">
@@ -28,9 +29,16 @@ limitations under the License.
 		</tr>
 	</tbody>
 </table>
-
-<div id="mytemplate" ng-hide="true">
+<div ng-if="schemaName.length > 0">
+	<md-button class="md-raised schemaBtn" ng-click="downloadAllSchema()">{{ "downloadAll" | translate }}</md-button>
+</div>
+<div id="singleTemplate" ng-hide="true">
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.3.2/swagger-ui.css">
     <div id="swagger-template"></div>
 </div>
-
+<div id="multipleTemplate" ng-hide="true">
+	<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.3.2/swagger-ui.css">
+	<div ng-repeat="schema in schemaName">
+		<div id="{{schema  | formatSchema}}"></div>
+	</div>
+</div>

@@ -14,6 +14,7 @@
 package chain
 
 import (
+	"fmt"
 	"github.com/ServiceComb/service-center/pkg/util"
 )
 
@@ -23,17 +24,28 @@ type Result struct {
 	Args []interface{}
 }
 
-type CallbackFunc func(r Result)
+func (r Result) String() string {
+	if r.OK {
+		return "OK"
+	}
+	return fmt.Sprintf("FAIL(error: %s)", r.Err)
+}
 
 type Callback struct {
-	Func CallbackFunc
+	Func func(r Result)
 }
 
 func (cb *Callback) Invoke(r Result) {
-	go func() {
-		defer util.RecoverAndReport()
-		cb.Func(r)
-	}()
+	go cb.syncInvoke(r)
+}
+
+func (cb *Callback) syncInvoke(r Result) {
+	defer util.RecoverAndReport()
+	if cb.Func == nil {
+		util.Logger().Errorf(nil, "Callback function is nil. result: %s,", r)
+		return
+	}
+	cb.Func(r)
 }
 
 func (cb *Callback) Fail(err error, args ...interface{}) {
@@ -49,10 +61,4 @@ func (cb *Callback) Success(args ...interface{}) {
 		OK:   true,
 		Args: args,
 	})
-}
-
-func NewCallback(f CallbackFunc) Callback {
-	return Callback{
-		Func: f,
-	}
 }

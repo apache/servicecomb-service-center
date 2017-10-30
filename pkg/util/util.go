@@ -209,10 +209,11 @@ func StringJoin(args []string, sep string) string {
 	}
 }
 
-func RecoverAndReport() {
-	if r := recover(); r != nil {
+func RecoverAndReport() (r interface{}) {
+	if r = recover(); r != nil {
 		Logger().Errorf(nil, "recover! %v", r)
 	}
+	return
 }
 
 func ParseEndpoint(ep string) (string, error) {
@@ -268,4 +269,16 @@ func BytesToInt32(bs []byte) (in int32) {
 		pi[3-i] = bs[l-i-1]
 	}
 	return
+}
+
+func UrlEncode(keys map[string]string) string {
+	l := len(keys)
+	if l == 0 {
+		return ""
+	}
+	arr := make([]string, 0, l)
+	for k, v := range keys {
+		arr = append(arr, url.QueryEscape(k)+"="+url.QueryEscape(v))
+	}
+	return StringJoin(arr, "&")
 }

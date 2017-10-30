@@ -11,15 +11,11 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package event
-
-import (
-	"github.com/ServiceComb/service-center/server/core/registry/store"
-)
-
-func init() {
-	store.AddEventHandler(NewServiceEventHandler())
-	store.AddEventHandler(NewInstanceEventHandler())
-	store.AddEventHandler(NewRuleEventHandler())
-	store.AddEventHandler(NewTagEventHandler())
-}
+'use strict';
+angular.module('serviceCenter.sc')
+	.filter('formatSchema', function(){
+		return function(schemaName){
+			var schema = schemaName.split(".");
+			return schema[schema.length - 1];
+		}
+	});

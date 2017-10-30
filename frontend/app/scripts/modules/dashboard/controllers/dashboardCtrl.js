@@ -141,6 +141,9 @@ angular.module('serviceCenter.dashboard', [])
 					$scope.timeSince(new Date());
 
 				}
+				else {
+				    $scope.timeSince(new Date());
+				}
 	        },function(error){
 	            $(".loader").hide();
 	        });
