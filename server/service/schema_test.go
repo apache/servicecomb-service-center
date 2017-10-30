@@ -192,14 +192,14 @@ var _ = Describe("ServiceController", func() {
 			})
 
 			It("修改schema,参数校验", func() {
-				fmt.Println("UT===========修改schema,参数校验")
+				fmt.Println("UT===========修改schema,参数校验,dev mode can change")
 				resp, err := serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
 					ServiceId: serviceId,
 					SchemaId:  "noneschma",
 					Schema:    "change schema",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
 				resp, err = serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
 					ServiceId: "noneservice",
@@ -350,7 +350,7 @@ var _ = Describe("ServiceController", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_FAIL))
+			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 		})
 		It("create schemas, dev mode", func() {
 			schemas := []*pb.Schema{
