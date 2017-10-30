@@ -89,7 +89,7 @@ func (c *StringContext) SetKV(key string, val interface{}) {
 	c.kv[key] = val
 }
 
-func NewContext(ctx context.Context, key string, val interface{}) context.Context {
+func NewStringContext(ctx context.Context) *StringContext {
 	strCtx, ok := ctx.(*StringContext)
 	if !ok {
 		strCtx = &StringContext{
@@ -97,6 +97,11 @@ func NewContext(ctx context.Context, key string, val interface{}) context.Contex
 			kv:        make(map[string]interface{}, 10),
 		}
 	}
+	return strCtx
+}
+
+func NewContext(ctx context.Context, key string, val interface{}) context.Context {
+	strCtx := NewStringContext(ctx)
 	strCtx.SetKV(key, val)
 	return strCtx
 }
@@ -237,18 +242,8 @@ func GetRealIP(r *http.Request) string {
 }
 
 func InitContext(r *http.Request) {
-	SetReqCtx(r, "x-start-timestamp", time.Now())
-
 	terminalIP := GetRealIP(r)
 	SetReqCtx(r, "x-remote-ip", terminalIP)
-}
-
-func GetStartTimeFromContext(ctx context.Context) time.Time {
-	v, ok := FromContext(ctx, "x-start-timestamp").(time.Time)
-	if !ok {
-		return time.Now()
-	}
-	return v
 }
 
 func BytesToInt32(bs []byte) (in int32) {

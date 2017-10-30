@@ -36,8 +36,3 @@ func Intercept(w http.ResponseWriter, r *http.Request) error {
 	}
 	return nil
 }
-
-func Log(w http.ResponseWriter, r *http.Request) error {
-	util.LogNilOrWarnf(util.GetStartTimeFromContext(r.Context()), "%s %s", r.Method, r.RequestURI)
-	return nil
-}

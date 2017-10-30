@@ -35,11 +35,11 @@ type Interception struct {
 // Invoke performs the given interception.
 // val is a pointer to the App Controller.
 func (i Interception) Handle(inv *chain.Invocation) {
-	ctx := inv.HandlerContext()
-	w, req := ctx[roa.CTX_RESPONSE].(http.ResponseWriter), ctx[roa.CTX_REQUEST].(*http.Request)
+	w, req := inv.Context().Value(roa.CTX_RESPONSE).(http.ResponseWriter),
+		inv.Context().Value(roa.CTX_REQUEST).(*http.Request)
 	err := i.function(w, req)
 	if err != nil {
-		inv.Fail(err)
+		inv.Fail(nil)
 		return
 	}
 	inv.Next()

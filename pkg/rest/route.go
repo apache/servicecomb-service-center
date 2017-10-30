@@ -71,7 +71,6 @@ func (this *ROAServerHandler) addRoute(route *Route) (err error) {
 }
 
 func (this *ROAServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var err error
 	for _, ph := range this.handlers[r.Method] {
 		if params, ok := ph.try(r.URL.Path); ok {
 			if len(params) > 0 {
@@ -81,11 +80,6 @@ func (this *ROAServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 			this.serve(ph, w, r)
 			return
 		}
-	}
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
 	}
 
 	allowed := make([]string, 0, len(this.handlers))
@@ -107,18 +101,27 @@ func (this *ROAServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	}
 
 	w.Header().Add("Allow", util.StringJoin(allowed, ", "))
-	http.Error(w, "Method Not Allowed", 405)
+	http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 }
 
-func (this *ROAServerHandler) serve(ph http.Handler, w http.ResponseWriter, r *http.Request) {
+func (this *ROAServerHandler) serve(ph *urlPatternHandler, w http.ResponseWriter, r *http.Request) {
 	hs := chain.Handlers(SERVER_CHAIN_NAME)
 	if len(hs) == 0 {
 		ph.ServeHTTP(w, r)
 		return
 	}
+
+	ctx := util.NewStringContext(r.Context())
+	if ctx != r.Context() {
+		nr := r.WithContext(ctx)
+		*r = *nr
+	}
+
 	ch := make(chan struct{})
-	inv := chain.NewInvocation(chain.NewChain(SERVER_CHAIN_NAME, hs...))
-	inv.WithHandlerContext(CTX_RESPONSE, w).WithHandlerContext(CTX_REQUEST, r)
+	inv := chain.NewInvocation(ctx, chain.NewChain(SERVER_CHAIN_NAME, hs))
+	inv.WithContext(CTX_RESPONSE, w).
+		WithContext(CTX_REQUEST, r).
+		WithContext(CTX_MATCH_PATTERN, ph.Path)
 	inv.Invoke(func(ret chain.Result) {
 		defer func() {
 			defer close(ch)
@@ -130,6 +133,11 @@ func (this *ROAServerHandler) serve(ph http.Handler, w http.ResponseWriter, r *h
 			}
 			if _, ok := err.(errorsEx.InternalError); ok {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
 			}
 		}()
 		if ret.OK {

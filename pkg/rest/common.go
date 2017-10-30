@@ -38,6 +38,7 @@ const (
 
 	CTX_RESPONSE      = "_server_response"
 	CTX_REQUEST       = "_server_request"
+	CTX_MATCH_PATTERN = "_server_match_pattern"
 	SERVER_CHAIN_NAME = "_server_chain"
 )
 

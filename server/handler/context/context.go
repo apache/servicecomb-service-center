@@ -23,15 +23,19 @@ type ContextHandler struct {
 }
 
 func (c *ContextHandler) Handle(i *chain.Invocation) {
+	pattern := i.Context().Value(roa.CTX_MATCH_PATTERN).(string)
+	if IsSkip(pattern) {
+		i.Next()
+		return
+	}
+
 	var (
 		err error
 		v3  v3Context
 		v4  v4Context
 	)
 
-	ctx := i.HandlerContext()
-	r := ctx[roa.CTX_REQUEST].(*http.Request)
-
+	r := i.Context().Value(roa.CTX_REQUEST).(*http.Request)
 	switch {
 	case v3.IsMatch(r):
 		err = v3.Do(r)
@@ -44,6 +48,11 @@ func (c *ContextHandler) Handle(i *chain.Invocation) {
 		return
 	}
 	i.Next()
+}
+
+func IsSkip(url string) bool {
+	l, vl, hl := len(url), len("/version"), len("/health")
+	return url[l-vl:] == "/version" || url[l-hl:] == "/health"
 }
 
 func RegisterHandlers() {

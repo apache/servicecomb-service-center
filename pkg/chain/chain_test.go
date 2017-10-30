@@ -14,6 +14,7 @@
 package chain_test
 
 import (
+	"context"
 	"github.com/ServiceComb/service-center/pkg/chain"
 	"testing"
 )
@@ -22,7 +23,9 @@ type handler struct {
 }
 
 func (h *handler) Handle(i *chain.Invocation) {
-	syncFunc(i.HandlerContext())
+	counter := i.Context().Value("counter").(int)
+	counter++
+	i.WithContext("counter", counter)
 	i.Next()
 }
 
@@ -43,8 +46,9 @@ func BenchmarkChain(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			ch := make(chan struct{})
-			inv := chain.NewInvocation(chain.NewChain("_bench_chain_", chain.Handlers("_bench_handlers_")...))
-			inv.WithHandlerContext("counter", 0)
+			inv := chain.NewInvocation(context.Background(),
+				chain.NewChain("_bench_chain_", chain.Handlers("_bench_handlers_")))
+			inv.WithContext("counter", 0)
 			inv.Invoke(func(r chain.Result) { close(ch) })
 			<-ch
 		}

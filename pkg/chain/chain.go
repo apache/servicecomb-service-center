@@ -60,7 +60,7 @@ func (c *Chain) Next(i *Invocation) {
 	go c.syncNext(i)
 }
 
-func NewChain(name string, handlers ...Handler) Chain {
+func NewChain(name string, handlers []Handler) Chain {
 	var ch Chain
 	ch.Init(name, handlers)
 	return ch

@@ -17,7 +17,7 @@ import "sync"
 
 type GoRoutine struct {
 	stopCh chan struct{}
-	wg     *sync.WaitGroup
+	wg     sync.WaitGroup
 	mux    sync.RWMutex
 	once   sync.Once
 	closed bool
@@ -25,7 +25,6 @@ type GoRoutine struct {
 
 func (g *GoRoutine) Init(stopCh chan struct{}) {
 	g.once.Do(func() {
-		g.wg = &sync.WaitGroup{}
 		g.stopCh = stopCh
 	})
 }

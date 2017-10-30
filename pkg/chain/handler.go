@@ -13,6 +13,8 @@
 //limitations under the License.
 package chain
 
+const CAP_SIZE = 10
+
 var handlersMap map[string][]Handler = make(map[string][]Handler, CAP_SIZE)
 
 type Handler interface {
