@@ -1,8 +1,0 @@
-2017-10-30T10:40:31.697+08:00 INFO event 6820 notification_service.go Start():224 "notify service is started with config {acceptQueue: 100, accept: 30s, notify: 30s}"
-2017-10-30T10:40:31.708+08:00 INFO event 6820 instance_event_handler.go OnEvent():49 "caught instance 147b5c26bd1a11e7aff9286ed488d07e/b2a5ace8bd1b11e7a212286ed488d07e [CREATE] event"
-2017-10-30T10:43:29.604+08:00 INFO event 6820 instance_event_handler.go OnEvent():49 "caught instance 147b5c26bd1a11e7aff9286ed488d07e/b2a5ace8bd1b11e7a212286ed488d07e [DELETE] event"
-2017-10-30T10:43:32.613+08:00 INFO event 6820 notification_service.go Stop():255 "notify service stopped."
-2017-10-30T10:43:55.292+08:00 INFO event 4212 notification_service.go Start():224 "notify service is started with config {acceptQueue: 100, accept: 30s, notify: 30s}"
-2017-10-30T10:43:55.306+08:00 INFO event 4212 instance_event_handler.go OnEvent():49 "caught instance 147b5c26bd1a11e7aff9286ed488d07e/2c001330bd1c11e7916a286ed488d07e [CREATE] event"
-2017-10-30T10:45:12.359+08:00 INFO event 1444 notification_service.go Start():224 "notify service is started with config {acceptQueue: 100, accept: 30s, notify: 30s}"
-2017-10-30T10:45:12.364+08:00 INFO event 1444 instance_event_handler.go OnEvent():49 "caught instance 147b5c26bd1a11e7aff9286ed488d07e/2c001330bd1c11e7916a286ed488d07e [UPDATE] event"
