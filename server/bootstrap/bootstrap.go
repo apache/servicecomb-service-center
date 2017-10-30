@@ -36,19 +36,16 @@ import (
 	"github.com/ServiceComb/service-center/server/interceptor"
 	"github.com/ServiceComb/service-center/server/interceptor/access"
 	"github.com/ServiceComb/service-center/server/interceptor/cors"
-	"github.com/ServiceComb/service-center/server/interceptor/maxbody"
 	"github.com/ServiceComb/service-center/server/interceptor/ratelimiter"
 )
 
 func init() {
 	util.Logger().Info("BootStrap Huawei Enterprise Edition")
 
-	perf.RegisterHandlers()
-
-	interceptor.RegisterInterceptFunc(ratelimiter.Intercept)
 	interceptor.RegisterInterceptFunc(access.Intercept)
+	interceptor.RegisterInterceptFunc(ratelimiter.Intercept)
 	interceptor.RegisterInterceptFunc(cors.Intercept)
-	interceptor.RegisterInterceptFunc(maxbody.Intercept)
 
+	perf.RegisterHandlers()
 	context.RegisterHandlers()
 }

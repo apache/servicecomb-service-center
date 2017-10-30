@@ -14,11 +14,11 @@
 package interceptor
 
 import (
-	"github.com/ServiceComb/service-center/pkg/chain"
-	roa "github.com/ServiceComb/service-center/pkg/rest"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"net/http"
 )
+
+var interceptors []*Interception
 
 type InterceptorFunc func(http.ResponseWriter, *http.Request) error
 
@@ -32,15 +32,12 @@ type Interception struct {
 
 // Invoke performs the given interception.
 // val is a pointer to the App Controller.
-func (i Interception) Handle(inv *chain.Invocation) {
-	w, req := inv.Context().Value(roa.CTX_RESPONSE).(http.ResponseWriter),
-		inv.Context().Value(roa.CTX_REQUEST).(*http.Request)
-	err := i.function(w, req)
-	if err != nil {
-		inv.Fail(nil)
-		return
-	}
-	inv.Next()
+func (i Interception) Invoke(w http.ResponseWriter, req *http.Request) error {
+	return i.function(w, req)
+}
+
+func init() {
+	interceptors = make([]*Interception, 0, 10)
 }
 
 // InterceptFunc installs a general interceptor.
@@ -48,9 +45,26 @@ func (i Interception) Handle(inv *chain.Invocation) {
 // It must have the signature of:
 //   func example(c *revel.Controller) revel.Result
 func RegisterInterceptFunc(intc InterceptorFunc) {
-	chain.RegisterHandler(roa.SERVER_CHAIN_NAME, &Interception{
+	interceptors = append(interceptors, &Interception{
 		function: intc,
 	})
 
 	util.Logger().Infof("Intercept %s", intc.Name())
+}
+
+func InvokeInterceptors(w http.ResponseWriter, req *http.Request) error {
+	var intc *Interception
+	defer func() {
+		if itf := recover(); itf != nil {
+			name := util.FuncName(intc.function)
+			util.Logger().Errorf(nil, "recover from '%s()'! %v", name, itf)
+		}
+	}()
+	for _, intc = range interceptors {
+		err := intc.Invoke(w, req)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

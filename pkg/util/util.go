@@ -244,8 +244,7 @@ func GetRealIP(r *http.Request) string {
 }
 
 func InitContext(r *http.Request) {
-	terminalIP := GetRealIP(r)
-	SetReqCtx(r, "x-remote-ip", terminalIP)
+	SetReqCtx(r, "x-remote-ip", GetRealIP(r))
 }
 
 func BytesToInt32(bs []byte) (in int32) {

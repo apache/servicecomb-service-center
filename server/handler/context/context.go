@@ -16,6 +16,7 @@ package context
 import (
 	"github.com/ServiceComb/service-center/pkg/chain"
 	roa "github.com/ServiceComb/service-center/pkg/rest"
+	"github.com/ServiceComb/service-center/pkg/util"
 	"net/http"
 )
 
@@ -47,6 +48,9 @@ func (c *ContextHandler) Handle(i *chain.Invocation) {
 		i.Fail(err)
 		return
 	}
+
+	i.WithContext("x-remote-ip", util.GetRealIP(r))
+
 	i.Next()
 }
 
