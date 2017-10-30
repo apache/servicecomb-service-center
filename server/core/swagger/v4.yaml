@@ -1,7 +1,7 @@
 swagger: '2.0'
 info:
   title: Service Center API
-  version: "3.0.0"
+  version: "4.0.0"
 # the domain of the service
 host: 127.0.0.1:30100
 # array of all schemes that your API supports
@@ -1815,7 +1815,7 @@ definitions:
           type: string
       force:
         description: 不传即默认为false。 强制删除，则与该服务相关的信息删除，非强制删除： 如果作为该被依赖（作为provider，提供服务,且不是只存在自依赖）或者存在实例，则不能删除,其它均删除。
-        type: bool
+        type: boolean
         
   DelServicesResponse:
     type: object

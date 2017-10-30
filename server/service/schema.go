@@ -375,7 +375,8 @@ func GetSchemasSummaryFromDataBase(ctx context.Context, tenant string, serviceId
 }
 
 func (s *ServiceController) ModifySchema(ctx context.Context, request *pb.ModifySchemaRequest) (*pb.ModifySchemaResponse, error) {
-	err, rst := s.canModifySchema(ctx, request)
+	tenant := util.ParseTenantProject(ctx)
+	err, rst := s.canModifySchema(ctx, tenant, request)
 	if err != nil {
 		if !rst {
 			return &pb.ModifySchemaResponse{
@@ -386,43 +387,34 @@ func (s *ServiceController) ModifySchema(ctx context.Context, request *pb.Modify
 			Response: pb.CreateResponse(pb.Response_FAIL, "Modify schema info failed."),
 		}, err
 	}
-	tenant := util.ParseTenantProject(ctx)
 	serviceId := request.ServiceId
 	schemaId := request.SchemaId
 
-	_, ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.SCHEMAQuotaType, tenant, serviceId, 1)
-	if err != nil {
-		util.Logger().Errorf(err, "Add schema info failed, check resource num failed, %s, %s", serviceId, schemaId)
-		return &pb.ModifySchemaResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Modify schema info failed, check resource num failed."),
-		}, err
+	schema := pb.Schema{
+		SchemaId: schemaId,
+		Summary:  request.Summary,
+		Schema:   request.Schema,
 	}
-	if !ok {
-		util.Logger().Errorf(err, "Add schema info failed, reach the max size of shema, %s, %s", serviceId, schemaId)
+	err, isInnerErr := s.modifySchema(ctx, serviceId, &schema)
+	if err != nil {
+		util.Logger().Errorf(err, "modify service schema failed")
+		if isInnerErr {
+			return &pb.ModifySchemaResponse{
+				Response: pb.CreateResponse(pb.Response_FAIL, "Modify schema info failed."),
+			}, err
+		}
 		return &pb.ModifySchemaResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "reach the max size of shema."),
+			Response: pb.CreateResponse(pb.Response_FAIL, "Modify schema info failed."),
 		}, nil
 	}
 
-	key := apt.GenerateServiceSchemaKey(tenant, serviceId, schemaId)
-	_, errDo := registry.GetRegisterCenter().Do(ctx,
-		registry.PUT,
-		registry.WithStrKey(key),
-		registry.WithStrValue(request.Schema))
-	if errDo != nil {
-		util.Logger().Errorf(errDo, "update schema failded, serviceId %s, schemaId %s: commit schema into etcd failed.", serviceId, schemaId)
-		return &pb.ModifySchemaResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Modify schema info failed."),
-		}, errDo
-	}
 	util.Logger().Infof("update schema success: serviceId %s, schemaId %s.", serviceId, schemaId)
 	return &pb.ModifySchemaResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Modify schema info success."),
 	}, nil
-
 }
 
-func (s *ServiceController) canModifySchema(ctx context.Context, request *pb.ModifySchemaRequest) (error, bool) {
+func (s *ServiceController) canModifySchema(ctx context.Context, tenant string, request *pb.ModifySchemaRequest) (error, bool) {
 	serviceId := request.ServiceId
 	schemaId := request.SchemaId
 	if len(schemaId) == 0 || len(serviceId) == 0 {
@@ -434,7 +426,25 @@ func (s *ServiceController) canModifySchema(ctx context.Context, request *pb.Mod
 		util.Logger().Errorf(err, "update schema failded, serviceId %s, schemaId %s: invalid params.", serviceId, schemaId)
 		return err, false
 	}
+
+	_, ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.SCHEMAQuotaType, tenant, serviceId, 1)
+	if err != nil {
+		util.Logger().Errorf(err, "Add schema info failed, check resource num failed, %s, %s", serviceId, schemaId)
+		return err, true
+	}
+	if !ok {
+		util.Logger().Errorf(err, "Add schema info failed, reach the max size of schema, %s, %s", serviceId, schemaId)
+		return errors.New("add schema failed, reach max size of schema"), false
+	}
+	if len(request.Summary) == 0 {
+		util.Logger().Infof("%s 's schema %s is empty.", request.ServiceId, schemaId)
+	}
+	return nil, true
+}
+
+func (s *ServiceController) modifySchema(ctx context.Context, serviceId string, schema *pb.Schema) (error, bool) {
 	tenant := util.ParseTenantProject(ctx)
+	schemaId := schema.SchemaId
 	service, err := serviceUtil.GetService(ctx, tenant, serviceId)
 	if err != nil {
 		util.Logger().Errorf(err, "update schema failded, serviceId %s, schemaId %s: get service failed.", serviceId, schemaId)
@@ -444,33 +454,71 @@ func (s *ServiceController) canModifySchema(ctx context.Context, request *pb.Mod
 		util.Logger().Errorf(nil, "update schema failded, serviceId %s, schemaId %s: service not exist,%s", serviceId, schemaId)
 		return errors.New("service non-exist"), false
 	}
-	schema := &pb.Schema{
-		Schema:   request.Schema,
-		SchemaId: schemaId,
-	}
-
-	if !isExistSchemaId(service, []*pb.Schema{schema}) {
-		if version.Ver().RunMode == "prod" {
+	pluginOps := []registry.PluginOp{}
+	isExist := isExistSchemaId(service, []*pb.Schema{schema})
+	if version.Ver().RunMode == "prod" {
+		if !isExist {
 			return errors.New("schemaId non-exist"), false
+		}
+		key := apt.GenerateServiceSchemaKey(tenant, serviceId, schemaId)
+		resp, err := store.Store().Schema().Search(ctx, registry.WithStrKey(key), registry.WithCountOnly())
+		if err != nil {
+			util.Logger().Errorf(err, "get schema summary failed, %s %s", serviceId, schemaId)
+			return err, true
+		}
+
+		if resp.Count == 0 {
+			opts := CommitSchemaInfo(tenant, serviceId, schema)
+			pluginOps = append(pluginOps, opts...)
 		} else {
-			service.Schemas = append(service.Schemas, schemaId)
-			key := apt.GenerateServiceKey(tenant, serviceId)
-			data, err := json.Marshal(service)
+			key = apt.GenerateServiceSchemaSummaryKey(tenant, serviceId, schemaId)
+			resp, err = store.Store().SchemaSummary().Search(ctx, registry.WithStrKey(key), registry.WithCountOnly())
 			if err != nil {
-				util.Logger().Errorf(err, "marshal service failed.")
+				util.Logger().Errorf(err, "get schema summary failed, %s %s", serviceId, schemaId)
 				return err, true
 			}
-			_, errDo := registry.GetRegisterCenter().Do(ctx,
-				registry.PUT,
-				registry.WithStrKey(key),
-				registry.WithValue(data))
-			if errDo != nil {
-				util.Logger().Errorf(errDo, "update schema failded, serviceId %s, schemaId %s: commit schema into etcd failed.", serviceId, schemaId)
-				return errDo, true
+			if resp.Count == 0 {
+				if len(schema.Summary) != 0 {
+					keySummary := apt.GenerateServiceSchemaSummaryKey(tenant, serviceId, schema.SchemaId)
+					opt := registry.OpPut(registry.WithStrKey(keySummary), registry.WithStrValue(schema.Summary))
+					pluginOps = append(pluginOps, opt)
+				}
+			} else {
+				util.Logger().Errorf(err, "prod mode, schema more exist, can not change, %s %s", serviceId, schemaId)
+				return errors.New("prod mode, schema more exist, can not change"), false
 			}
 		}
+	} else {
+		if !isExist {
+			service.Schemas = append(service.Schemas, schemaId)
+			opt, err := serviceUtil.UpdateService(tenant, serviceId, service)
+			if err != nil {
+				util.Logger().Errorf(err, "update service failed , %s", serviceId)
+				return err, true
+			}
+			pluginOps = append(pluginOps, opt)
+		}
+		opts := CommitSchemaInfo(tenant, serviceId, schema)
+		pluginOps = append(pluginOps, opts...)
 	}
-	return nil, true
+	if len(pluginOps) != 0 {
+		_, err = registry.GetRegisterCenter().Txn(ctx, pluginOps)
+		if err != nil {
+			util.Logger().Errorf(err, "commit update schema failed")
+			return err, true
+		}
+	}
+	return nil, false
+}
+
+func CommitSchemaInfo(tenant string, serviceId string, schema *pb.Schema) []registry.PluginOp {
+	if len(schema.Summary) != 0 {
+		return schemaWithDatabaseOpera(registry.OpPut, tenant, serviceId, schema)
+	} else {
+		key := apt.GenerateServiceSchemaKey(tenant, serviceId, schema.SchemaId)
+		opt := registry.OpPut(registry.WithStrKey(key), registry.WithStrValue(schema.Schema))
+		return []registry.PluginOp{opt}
+	}
 }
 
 func containsValueInSlice(in []string, value string) bool {

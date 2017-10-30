@@ -237,3 +237,15 @@ func RemandServiceQuota(ctx context.Context) {
 func RemandInstanceQuota(ctx context.Context) {
 	quota.QuotaPlugins[quota.QuataType]().RemandQuotas(ctx, quota.MicroServiceInstanceQuotaType)
 }
+
+func UpdateService(tenant string, serviceId string, service *pb.MicroService) (opt registry.PluginOp, err error) {
+	opt = registry.PluginOp{}
+	key := apt.GenerateServiceKey(tenant, serviceId)
+	data, err := json.Marshal(service)
+	if err != nil {
+		util.Logger().Errorf(err, "marshal service failed.")
+		return
+	}
+	opt = registry.OpPut(registry.WithStrKey(key), registry.WithValue(data))
+	return
+}

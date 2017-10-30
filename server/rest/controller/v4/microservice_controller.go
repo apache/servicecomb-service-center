@@ -78,8 +78,6 @@ func (this *MicroServiceService) ModifySchema(w http.ResponseWriter, r *http.Req
 	}
 
 	request := &pb.ModifySchemaRequest{
-		ServiceId: r.URL.Query().Get(":serviceId"),
-		SchemaId:  r.URL.Query().Get(":schemaId"),
 	}
 	err = json.Unmarshal(message, request)
 	if err != nil {
@@ -87,6 +85,8 @@ func (this *MicroServiceService) ModifySchema(w http.ResponseWriter, r *http.Req
 		controller.WriteText(http.StatusBadRequest, err.Error(), w)
 		return
 	}
+	request.ServiceId = r.URL.Query().Get(":serviceId")
+	request.SchemaId = r.URL.Query().Get(":schemaId")
 	resp, err := core.ServiceAPI.ModifySchema(r.Context(), request)
 	controller.WriteTextResponse(resp.GetResponse(), err, "", w)
 }

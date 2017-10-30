@@ -280,7 +280,7 @@ var _ = Describe("ServiceController", func() {
 		})
 	})
 	Describe("schemas", func() {
-		var serviceId string
+		var serviceId , serviceId2 string
 		It("create service", func() {
 			respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 				Service: &pb.MicroService{
@@ -291,12 +291,27 @@ var _ = Describe("ServiceController", func() {
 					Schemas: []string{
 						"first_schemaId",
 						"second_schemaId",
+						"third_schemaId",
 					},
 					Status: "UP",
 				},
 			})
 			Expect(err).To(BeNil())
 			serviceId = respCreateService.ServiceId
+			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+
+			respCreateService, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					ServiceName: "service_name_no_schemaId",
+					AppId:       "service_group_no_schema",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status: "UP",
+				},
+			})
+			Expect(err).To(BeNil())
+			serviceId2 = respCreateService.ServiceId
 			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 		})
 
@@ -406,27 +421,51 @@ var _ = Describe("ServiceController", func() {
 		})
 		It("create schemas, prod mode", func() {
 			version.Ver().RunMode = "prod"
+			schemas := []*pb.Schema{
+				&pb.Schema{
+					SchemaId: "new_schemaId",
+					Schema:   "new_schema",
+					Summary:  "new_summary",
+				},
+			}
+			respModifySchemas, err := serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				ServiceId: serviceId2,
+				Schemas:   schemas,
+			})
+			Expect(err).To(BeNil())
+			Expect(respModifySchemas.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
 			respModifySchema, err := serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
 				ServiceId: serviceId,
-				SchemaId:  "first_schemaId",
-				Schema:    "first_schema",
+				SchemaId:  "third_schemaId",
+				Schema:    "third_schema",
 			})
 			Expect(err).To(BeNil())
 			Expect(respModifySchema.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
-			schemas := []*pb.Schema{
+			schemas = []*pb.Schema{
 				&pb.Schema{
-					SchemaId: "first_schemaId",
-					Schema:   "first_schema",
-					Summary:  "first_summary",
+					SchemaId: "third_schemaId",
+					Schema:   "third_schema",
+					Summary:  "third_summary",
 				},
 			}
-			respModifySchemas, err := serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+			respModifySchemas, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
 				ServiceId: serviceId,
 				Schemas:   schemas,
 			})
 			Expect(err).To(BeNil())
 			Expect(respModifySchemas.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+			respSchemaExist, err := serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
+				Type:      "schema",
+				ServiceId: serviceId,
+				SchemaId:  "third_schemaId",
+			})
+			Expect(err).To(BeNil())
+			Expect(respSchemaExist.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			Expect(respSchemaExist.Summary).To(Equal("third_summary"))
+
 
 			schemas = []*pb.Schema{
 				&pb.Schema{
@@ -435,6 +474,13 @@ var _ = Describe("ServiceController", func() {
 					Summary:  "first_summary_change",
 				},
 			}
+			respModifySchemas, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				ServiceId: serviceId,
+				Schemas:   schemas,
+			})
+			Expect(err).To(BeNil())
+			Expect(respModifySchemas.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
 			respModifySchemas, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
 				ServiceId: serviceId,
 				Schemas:   schemas,
