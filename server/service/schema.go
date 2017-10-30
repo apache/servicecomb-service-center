@@ -448,12 +448,28 @@ func (s *ServiceController) canModifySchema(ctx context.Context, request *pb.Mod
 		Schema:   request.Schema,
 		SchemaId: schemaId,
 	}
-	if version.Ver().RunMode == "prod" {
-		if !isExistSchemaId(service, []*pb.Schema{schema}) {
+
+	if !isExistSchemaId(service, []*pb.Schema{schema}) {
+		if version.Ver().RunMode == "prod" {
 			return errors.New("schemaId non-exist"), false
+		} else {
+			service.Schemas = append(service.Schemas, schemaId)
+			key := apt.GenerateServiceKey(tenant, serviceId)
+			data, err := json.Marshal(service)
+			if err != nil {
+				util.Logger().Errorf(err, "marshal service failed.")
+				return err, true
+			}
+			_, errDo := registry.GetRegisterCenter().Do(ctx,
+				registry.PUT,
+				registry.WithStrKey(key),
+				registry.WithValue(data))
+			if errDo != nil {
+				util.Logger().Errorf(errDo, "update schema failded, serviceId %s, schemaId %s: commit schema into etcd failed.", serviceId, schemaId)
+				return errDo, true
+			}
 		}
 	}
-
 	return nil, true
 }
 
