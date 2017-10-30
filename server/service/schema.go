@@ -14,6 +14,7 @@
 package service
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/ServiceComb/service-center/pkg/util"
 	apt "github.com/ServiceComb/service-center/server/core"
@@ -169,9 +170,6 @@ func (s *ServiceController) ModifySchemas(ctx context.Context, request *pb.Modif
 }
 
 func modifySchemas(ctx context.Context, tenant string, service *pb.MicroService, schemas []*pb.Schema) (err error, innerErr bool) {
-	if !isExistSchemaId(service, schemas) {
-		return errors.New("exist non-exist schemaId"), false
-	}
 
 	serviceId := service.ServiceId
 	schemasInDataBase, err := GetSchemasFromDataBase(ctx, tenant, serviceId)
@@ -182,22 +180,20 @@ func modifySchemas(ctx context.Context, tenant string, service *pb.MicroService,
 
 	needUpdateSchemaList := make([]*pb.Schema, 0, len(schemas))
 	needAddSchemaList := make([]*pb.Schema, 0, len(schemas))
+	newSchemaIdList := make([]string, 0, len(schemas))
 
-	if len(schemasInDataBase) == 0 {
-		needAddSchemaList = schemas
-	} else {
-		for _, schema := range schemas {
-			exist := false
-			for _, schemaInner := range schemasInDataBase {
-				if schema.SchemaId == schemaInner.SchemaId {
-					needUpdateSchemaList = append(needUpdateSchemaList, schema)
-					exist = true
-					break
-				}
+	for _, schema := range schemas {
+		exist := false
+		for _, schemaInner := range schemasInDataBase {
+			if schema.SchemaId == schemaInner.SchemaId {
+				needUpdateSchemaList = append(needUpdateSchemaList, schema)
+				exist = true
+				break
 			}
-			if !exist {
-				needAddSchemaList = append(needAddSchemaList, schema)
-			}
+		}
+		if !exist {
+			needAddSchemaList = append(needAddSchemaList, schema)
+			newSchemaIdList = append(newSchemaIdList, schema.SchemaId)
 		}
 	}
 
@@ -242,6 +238,9 @@ func modifySchemas(ctx context.Context, tenant string, service *pb.MicroService,
 			pluginOps = append(pluginOps, opts...)
 		}
 	case "prod":
+		if len(service.Schemas) != 0 && !isExistSchemaId(service, schemas) {
+			return errors.New("exist non-exist schemaId"), false
+		}
 		quotaSize := len(needAddSchemaList)
 		if quotaSize > 0 {
 			_, ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.SCHEMAQuotaType, tenant, serviceId, int16(quotaSize))
@@ -272,6 +271,17 @@ func modifySchemas(ctx context.Context, tenant string, service *pb.MicroService,
 				opt := registry.OpPut(registry.WithStrKey(keySummary), registry.WithStrValue(schema.Summary))
 				pluginOps = append(pluginOps, opt)
 			}
+		}
+		if len(service.Schemas) == 0 {
+			key := apt.GenerateServiceKey(tenant, serviceId)
+			service.Schemas = newSchemaIdList
+			data, err := json.Marshal(service)
+			if err != nil {
+				util.Logger().Errorf(err, "marshal service failed.")
+				return err, true
+			}
+			opt := registry.OpPut(registry.WithStrKey(key), registry.WithValue(data))
+			pluginOps = append(pluginOps, opt)
 		}
 		if len(needUpdateSchemaList) > 0 && len(pluginOps) == 0 {
 			util.Logger().Errorf(nil, "run mode is prod, schema more exist, can't change.%v", needUpdateSchemaList)
@@ -438,9 +448,12 @@ func (s *ServiceController) canModifySchema(ctx context.Context, request *pb.Mod
 		Schema:   request.Schema,
 		SchemaId: schemaId,
 	}
-	if !isExistSchemaId(service, []*pb.Schema{schema}) {
-		return errors.New("schemaId non-exist"), false
+	if version.Ver().RunMode == "prod" {
+		if !isExistSchemaId(service, []*pb.Schema{schema}) {
+			return errors.New("schemaId non-exist"), false
+		}
 	}
+
 	return nil, true
 }
 
