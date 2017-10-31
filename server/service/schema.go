@@ -266,10 +266,10 @@ func modifySchemas(ctx context.Context, tenant string, service *pb.MicroService,
 					break
 				}
 			}
+			//key of summary not exist, exist one chance of changing schema
 			if !exist {
-				keySummary := apt.GenerateServiceSchemaSummaryKey(tenant, serviceId, schema.SchemaId)
-				opt := registry.OpPut(registry.WithStrKey(keySummary), registry.WithStrValue(schema.Summary))
-				pluginOps = append(pluginOps, opt)
+				opts := schemaWithDatabaseOpera(registry.OpPut, tenant, serviceId, schema)
+				pluginOps = append(pluginOps, opts...)
 			}
 		}
 		if len(service.Schemas) == 0 {
@@ -479,9 +479,8 @@ func (s *ServiceController) modifySchema(ctx context.Context, serviceId string, 
 			}
 			if resp.Count == 0 {
 				if len(schema.Summary) != 0 {
-					keySummary := apt.GenerateServiceSchemaSummaryKey(tenant, serviceId, schema.SchemaId)
-					opt := registry.OpPut(registry.WithStrKey(keySummary), registry.WithStrValue(schema.Summary))
-					pluginOps = append(pluginOps, opt)
+					opts := schemaWithDatabaseOpera(registry.OpPut, tenant, serviceId, schema)
+					pluginOps = append(pluginOps, opts...)
 				}
 			} else {
 				util.Logger().Errorf(err, "prod mode, schema more exist, can not change, %s %s", serviceId, schemaId)
