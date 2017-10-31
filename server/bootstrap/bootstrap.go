@@ -31,6 +31,7 @@ import _ "github.com/ServiceComb/service-center/server/plugin/infra/quota/unlimi
 
 import (
 	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/ServiceComb/service-center/server/handler/auth"
 	"github.com/ServiceComb/service-center/server/handler/context"
 	"github.com/ServiceComb/service-center/server/handler/perf"
 	"github.com/ServiceComb/service-center/server/interceptor"
@@ -40,12 +41,13 @@ import (
 )
 
 func init() {
-	util.Logger().Info("BootStrap Huawei Enterprise Edition")
+	util.Logger().Info("BootStrap ServiceComb.io Edition")
 
 	interceptor.RegisterInterceptFunc(access.Intercept)
 	interceptor.RegisterInterceptFunc(ratelimiter.Intercept)
 	interceptor.RegisterInterceptFunc(cors.Intercept)
 
 	perf.RegisterHandlers()
+	auth.RegisterHandlers()
 	context.RegisterHandlers()
 }
