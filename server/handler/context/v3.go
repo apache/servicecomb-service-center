@@ -11,37 +11,43 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package access
+package context
 
 import (
-	"fmt"
+	"errors"
 	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/pkg/validate"
 	"github.com/ServiceComb/service-center/server/core"
-	"github.com/astaxie/beego"
 	"net/http"
+	"strings"
 )
 
-var (
-	serverName string
-	maxBytes   int64
-)
-
-func init() {
-	serverName = core.Service.ServiceName + "/" + core.Service.Version
-	maxBytes = beego.AppConfig.DefaultInt64("max_body_bytes", 2097152)
+type v3Context struct {
 }
 
-func Intercept(w http.ResponseWriter, r *http.Request) error {
-	w.Header().Add("server", serverName)
+func (v *v3Context) IsMatch(r *http.Request) bool {
+	return strings.Index(r.RequestURI, "/registry/v3/") == 0
+}
 
-	r.Body = http.MaxBytesReader(w, r.Body, maxBytes)
+func (v *v3Context) Do(r *http.Request) error {
+	ctx := r.Context()
 
-	if !validate.IsRequestURI(r.RequestURI) {
-		err := fmt.Errorf("Invalid Request URI %s", r.RequestURI)
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write(util.StringToBytesWithNoCopy(err.Error()))
-		return err
+	if ctx.Value("tenant") == nil {
+		tenant := r.Header.Get("X-Tenant-Name")
+		if len(tenant) == 0 {
+			tenant = r.Header.Get("X-Domain-Name")
+		}
+
+		if len(tenant) == 0 {
+			err := errors.New("Header does not contain domain.")
+			util.Logger().Errorf(err, "Invalid Request URI %s", r.RequestURI)
+			return err
+		}
+		util.SetReqCtx(r, "tenant", tenant)
 	}
+
+	if ctx.Value("project") == nil {
+		util.SetReqCtx(r, "project", core.REGISTRY_PROJECT)
+	}
+
 	return nil
 }

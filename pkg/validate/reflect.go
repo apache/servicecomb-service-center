@@ -37,9 +37,9 @@ type Reflector struct {
 	mux   sync.RWMutex
 }
 
-func (r *Reflector) Load(d interface{}) *StructType {
+func (r *Reflector) Load(obj interface{}) *StructType {
 	r.mux.RLock()
-	itab := *(**uintptr)(unsafe.Pointer(&d))
+	itab := *(**uintptr)(unsafe.Pointer(&obj))
 	t, ok := r.types[itab]
 	r.mux.RUnlock()
 	if ok {
@@ -53,18 +53,22 @@ func (r *Reflector) Load(d interface{}) *StructType {
 		return t
 	}
 	t = &StructType{
-		Type: reflect.TypeOf(d),
+		Type: reflect.TypeOf(obj),
 	}
-	t.Fields = make([]*reflect.StructField, t.Type.NumField())
-	for i := 0; i < t.Type.NumField(); i++ {
-		f := t.Type.Field(i)
-		t.Fields[i] = &f
+
+	fl := t.Type.NumField()
+	if fl > 0 {
+		t.Fields = make([]*reflect.StructField, fl)
+		for i := 0; i < fl; i++ {
+			f := t.Type.Field(i)
+			t.Fields[i] = &f
+		}
 	}
 	r.types[itab] = t
 	r.mux.Unlock()
 	return t
 }
 
-func LoadStruct(d interface{}) *StructType {
-	return reflector.Load(d)
+func LoadStruct(obj interface{}) *StructType {
+	return reflector.Load(obj)
 }

@@ -11,44 +11,31 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package chain
+package perf
 
 import (
+	"github.com/ServiceComb/service-center/pkg/chain"
+	"github.com/ServiceComb/service-center/pkg/rest"
 	"github.com/ServiceComb/service-center/pkg/util"
-	"golang.org/x/net/context"
+	"net/http"
+	"time"
 )
 
-type Invocation struct {
-	Callback
-	context *util.StringContext
-	chain   Chain
+type LatencyStat struct {
 }
 
-func (i *Invocation) Init(ctx context.Context, ch Chain) {
-	i.context = util.NewStringContext(ctx)
-	i.chain = ch
+func (l *LatencyStat) Handle(i *chain.Invocation) {
+	i.WithContext("x-start-timestamp", time.Now())
+
+	cb := i.Func
+	i.Invoke(func(ret chain.Result) {
+		cb(ret)
+
+		r := i.Context().Value(rest.CTX_REQUEST).(*http.Request)
+		util.LogNilOrWarnf(i.Context().Value("x-start-timestamp").(time.Time), "%s %s", r.Method, r.RequestURI)
+	})
 }
 
-func (i *Invocation) Context() context.Context {
-	return i.context
-}
-
-func (i *Invocation) WithContext(key string, val interface{}) *Invocation {
-	i.context.SetKV(key, val)
-	return i
-}
-
-func (i *Invocation) Next() {
-	i.chain.Next(i)
-}
-
-func (i *Invocation) Invoke(f func(r Result)) {
-	i.Func = f
-	i.Next()
-}
-
-func NewInvocation(ctx context.Context, ch Chain) Invocation {
-	var inv Invocation
-	inv.Init(ctx, ch)
-	return inv
+func RegisterHandlers() {
+	chain.RegisterHandler(rest.SERVER_CHAIN_NAME, &LatencyStat{})
 }

@@ -28,15 +28,18 @@ import (
 const (
 	DEFAULT_TLS_HANDSHAKE_TIMEOUT = 30 * time.Second
 	DEFAULT_HTTP_RESPONSE_TIMEOUT = 60 * time.Second
-)
 
-const HTTP_ERROR_STATUS_CODE = 600
+	HTTP_ERROR_STATUS_CODE = 600
 
-const (
 	HTTP_METHOD_GET    = "GET"
 	HTTP_METHOD_PUT    = "PUT"
 	HTTP_METHOD_POST   = "POST"
 	HTTP_METHOD_DELETE = "DELETE"
+
+	CTX_RESPONSE      = "_server_response"
+	CTX_REQUEST       = "_server_request"
+	CTX_MATCH_PATTERN = "_server_match_pattern"
+	SERVER_CHAIN_NAME = "_server_chain"
 )
 
 func isValidMethod(method string) bool {

@@ -272,8 +272,8 @@ func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp, countPerP
 		etcdResp.Kvs = append(etcdResp.Kvs, recordResp.Kvs...)
 	}
 
-	util.LogInfoOrWarnf(start, "get too many KeyValues from etcdserver, now paging.(%d vs %d)",
-		recordCount, countPerPage)
+	util.LogInfoOrWarnf(start, "get too many KeyValues(%s) from etcdserver, now paging.(%d vs %d)",
+		key, recordCount, countPerPage)
 
 	// too slow
 	if op.SortOrder == registry.SORT_DESCEND {
@@ -286,7 +286,7 @@ func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp, countPerP
 			}
 			etcdResp.Kvs[i], etcdResp.Kvs[last] = etcdResp.Kvs[last], etcdResp.Kvs[i]
 		}
-		util.LogNilOrWarnf(t, "sorted %d KeyValues", recordCount)
+		util.LogNilOrWarnf(t, "sorted %d KeyValues(%s)", recordCount, key)
 	}
 	return etcdResp, nil
 }

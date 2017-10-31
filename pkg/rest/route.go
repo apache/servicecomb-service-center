@@ -16,6 +16,8 @@ package rest
 import (
 	"errors"
 	"fmt"
+	"github.com/ServiceComb/service-center/pkg/chain"
+	errorsEx "github.com/ServiceComb/service-center/pkg/errors"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"net/http"
 	"strings"
@@ -46,13 +48,11 @@ type Route struct {
 //   2. redirect not supported
 type ROAServerHandler struct {
 	handlers map[string][]*urlPatternHandler
-	filters  []Filter
 }
 
 func NewROAServerHander() *ROAServerHandler {
 	return &ROAServerHandler{
 		handlers: make(map[string][]*urlPatternHandler),
-		filters:  make([]Filter, 0, 5),
 	}
 }
 
@@ -71,25 +71,15 @@ func (this *ROAServerHandler) addRoute(route *Route) (err error) {
 }
 
 func (this *ROAServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var err error
 	for _, ph := range this.handlers[r.Method] {
 		if params, ok := ph.try(r.URL.Path); ok {
 			if len(params) > 0 {
 				r.URL.RawQuery = util.UrlEncode(params) + "&" + r.URL.RawQuery
 			}
 
-			if err = this.doFilter(r); err != nil {
-				break
-			}
-
-			ph.ServeHTTP(w, r)
+			this.serve(ph, w, r)
 			return
 		}
-	}
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
 	}
 
 	allowed := make([]string, 0, len(this.handlers))
@@ -111,16 +101,50 @@ func (this *ROAServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	}
 
 	w.Header().Add("Allow", util.StringJoin(allowed, ", "))
-	http.Error(w, "Method Not Allowed", 405)
+	http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 }
 
-func (this *ROAServerHandler) doFilter(r *http.Request) error {
-	for _, f := range this.filters {
-		if f.IsMatch(r) {
-			return f.Do(r)
-		}
+func (this *ROAServerHandler) serve(ph *urlPatternHandler, w http.ResponseWriter, r *http.Request) {
+	hs := chain.Handlers(SERVER_CHAIN_NAME)
+	if len(hs) == 0 {
+		ph.ServeHTTP(w, r)
+		return
 	}
-	return nil
+
+	ctx := util.NewStringContext(r.Context())
+	if ctx != r.Context() {
+		nr := r.WithContext(ctx)
+		*r = *nr
+	}
+
+	ch := make(chan struct{})
+	inv := chain.NewInvocation(ctx, chain.NewChain(SERVER_CHAIN_NAME, hs))
+	inv.WithContext(CTX_RESPONSE, w).
+		WithContext(CTX_REQUEST, r).
+		WithContext(CTX_MATCH_PATTERN, ph.Path)
+	inv.Invoke(func(ret chain.Result) {
+		defer func() {
+			defer close(ch)
+			err := ret.Err
+			itf := recover()
+			if itf != nil {
+				util.Logger().Errorf(nil, "recover! %v", itf)
+				err = errorsEx.RaiseError(itf)
+			}
+			if _, ok := err.(errorsEx.InternalError); ok {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+		}()
+		if ret.OK {
+			ph.ServeHTTP(w, r)
+		}
+	})
+	<-ch
 }
 
 func (this *urlPatternHandler) try(path string) (p map[string]string, _ bool) {

@@ -16,6 +16,8 @@ package chain
 import (
 	errorsEx "github.com/ServiceComb/service-center/pkg/errors"
 	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/ServiceComb/service-center/pkg/validate"
+	"reflect"
 )
 
 type Chain struct {
@@ -43,7 +45,8 @@ func (c *Chain) syncNext(i *Invocation) {
 		if itf == nil {
 			return
 		}
-		util.Logger().Errorf(nil, "recover! %v", itf)
+		t := validate.LoadStruct(reflect.ValueOf(c.handlers[c.currentIndex]).Elem().Interface())
+		util.Logger().Errorf(nil, "recover from '%s/%s.Handle()'! %v", t.Type.PkgPath(), t.Type.Name(), itf)
 
 		i.Fail(errorsEx.RaiseError(itf))
 	}()
@@ -60,8 +63,8 @@ func (c *Chain) Next(i *Invocation) {
 	go c.syncNext(i)
 }
 
-func NewChain(name string, handlers ...Handler) *Chain {
+func NewChain(name string, handlers []Handler) Chain {
 	var ch Chain
 	ch.Init(name, handlers)
-	return &ch
+	return ch
 }

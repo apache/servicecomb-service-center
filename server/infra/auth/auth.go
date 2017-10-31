@@ -11,20 +11,16 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package maxbody
+package auth
 
-import (
-	"github.com/astaxie/beego"
-	"net/http"
-)
+import "net/http"
 
-var maxBytes int64
-
-func init() {
-	maxBytes = beego.AppConfig.DefaultInt64("max_body_bytes", 2097152)
+type Auth interface {
+	Identify(r *http.Request) error
 }
 
-func Intercept(w http.ResponseWriter, r *http.Request) error {
-	r.Body = http.MaxBytesReader(w, r.Body, maxBytes)
-	return nil
+var AuthPlugins map[string]func() Auth
+
+func init() {
+	AuthPlugins = make(map[string]func() Auth)
 }

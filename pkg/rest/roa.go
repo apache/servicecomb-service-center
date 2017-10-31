@@ -15,6 +15,7 @@ package rest
 
 import (
 	"github.com/ServiceComb/service-center/pkg/util"
+	"net/http"
 	"reflect"
 )
 
@@ -22,11 +23,15 @@ var (
 	serverHandler *ROAServerHandler
 )
 
+func init() {
+	initROAServerHandler()
+}
+
 type ROAServantService interface {
 	URLPatterns() []Route
 }
 
-func InitROAServerHandler() *ROAServerHandler {
+func initROAServerHandler() *ROAServerHandler {
 	serverHandler = NewROAServerHander()
 	return serverHandler
 }
@@ -73,6 +78,7 @@ func RegisterServent(servant interface{}) {
 	}
 }
 
-func RegisterFilter(f Filter) {
-	serverHandler.filters = append(serverHandler.filters, f)
+//GetRouter return the router fo REST service
+func GetRouter() http.Handler {
+	return serverHandler
 }

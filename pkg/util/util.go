@@ -20,6 +20,8 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"reflect"
+	"runtime"
 	"strings"
 	"time"
 	"unsafe"
@@ -89,7 +91,7 @@ func (c *StringContext) SetKV(key string, val interface{}) {
 	c.kv[key] = val
 }
 
-func NewContext(ctx context.Context, key string, val interface{}) context.Context {
+func NewStringContext(ctx context.Context) *StringContext {
 	strCtx, ok := ctx.(*StringContext)
 	if !ok {
 		strCtx = &StringContext{
@@ -97,6 +99,11 @@ func NewContext(ctx context.Context, key string, val interface{}) context.Contex
 			kv:        make(map[string]interface{}, 10),
 		}
 	}
+	return strCtx
+}
+
+func NewContext(ctx context.Context, key string, val interface{}) context.Context {
+	strCtx := NewStringContext(ctx)
 	strCtx.SetKV(key, val)
 	return strCtx
 }
@@ -237,18 +244,7 @@ func GetRealIP(r *http.Request) string {
 }
 
 func InitContext(r *http.Request) {
-	SetReqCtx(r, "x-start-timestamp", time.Now())
-
-	terminalIP := GetRealIP(r)
-	SetReqCtx(r, "x-remote-ip", terminalIP)
-}
-
-func GetStartTimeFromContext(ctx context.Context) time.Time {
-	v, ok := FromContext(ctx, "x-start-timestamp").(time.Time)
-	if !ok {
-		return time.Now()
-	}
-	return v
+	SetReqCtx(r, "x-remote-ip", GetRealIP(r))
 }
 
 func BytesToInt32(bs []byte) (in int32) {
@@ -281,4 +277,8 @@ func UrlEncode(keys map[string]string) string {
 		arr = append(arr, url.QueryEscape(k)+"="+url.QueryEscape(v))
 	}
 	return StringJoin(arr, "&")
+}
+
+func FuncName(f interface{}) string {
+	return runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
 }

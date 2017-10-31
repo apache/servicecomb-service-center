@@ -13,6 +13,14 @@
 //limitations under the License.
 package chain
 
+import (
+	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/ServiceComb/service-center/pkg/validate"
+	"reflect"
+)
+
+const CAP_SIZE = 10
+
 var handlersMap map[string][]Handler = make(map[string][]Handler, CAP_SIZE)
 
 type Handler interface {
@@ -26,6 +34,9 @@ func RegisterHandler(catalog string, h Handler) {
 	}
 	handlers = append(handlers, h)
 	handlersMap[catalog] = handlers
+
+	util.Logger().Infof("register handler[%s] %s", catalog,
+		validate.LoadStruct(reflect.ValueOf(h).Elem().Interface()))
 }
 
 func Handlers(catalog string) []Handler {
