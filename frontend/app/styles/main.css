@@ -115,8 +115,9 @@ body {
         background-color: #efefef;
         width:230px;}
     body .sidebar-wrapper .brand {
-      font-size: 22px;
-      padding-left: 20px;
+          font-size: 22px;
+          text-align: center;
+          text-indent: 0px !important;
       }
       body .sidebar-wrapper ul li:first-child {
         border-bottom: 1px solid #d3d3d3;
@@ -183,7 +184,6 @@ body {
     margin: 0px 20px; }
   .fa-snowflake-o {
     display: block;
-    padding-left: 50px;
     font-size: 40px;
   }
 .dashboard {
@@ -360,9 +360,9 @@ md-table-pagination .md-select-icon {
   margin-bottom: 20px;
 }
 .mainCard .mainCardIcon {
-  background-color: #3c8dbc;
   height: 100%;
-  padding: 12px 0px 12px 10px;
+  padding-top: 10px;
+  text-align: center;
 }
 .mainCardTitle {
   font-size: 20px;
