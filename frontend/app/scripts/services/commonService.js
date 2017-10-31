@@ -64,7 +64,7 @@ angular.module('serviceCenter')
                                  <div class="md-toolbar-tools">
                                     <h2>{{ title | translate }}</h2>
                                     <span flex></span>
-                                    <md-button class="md-icon-button" ng-click="cancel()">
+                                    <md-button class="md-icon-button" ng-click="no()">
                                       <md-icon class="glyphicon glyphicon-remove" aria-label="Close dialog"></md-icon>
                                     </md-button>
                                   </div>
