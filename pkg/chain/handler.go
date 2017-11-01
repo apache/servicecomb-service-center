@@ -35,8 +35,8 @@ func RegisterHandler(catalog string, h Handler) {
 	handlers = append(handlers, h)
 	handlersMap[catalog] = handlers
 
-	util.Logger().Infof("register handler[%s] %s", catalog,
-		validate.LoadStruct(reflect.ValueOf(h).Elem().Interface()))
+	t := validate.LoadStruct(reflect.ValueOf(h).Elem().Interface())
+	util.Logger().Infof("register handler[%s] %s/%s", catalog, t.Type.PkgPath(), t.Type.Name())
 }
 
 func Handlers(catalog string) []Handler {

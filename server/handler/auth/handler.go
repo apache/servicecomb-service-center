@@ -16,6 +16,7 @@ package auth
 import (
 	"github.com/ServiceComb/service-center/pkg/chain"
 	"github.com/ServiceComb/service-center/pkg/rest"
+	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/infra/auth"
 	"github.com/astaxie/beego"
 	"net/http"
@@ -24,9 +25,13 @@ import (
 var plugin auth.Auth
 
 func init() {
-	if pluginBuilder, ok := auth.AuthPlugins[beego.AppConfig.String("auth_plugin")]; ok {
+	name := beego.AppConfig.String("auth_plugin")
+	if pluginBuilder, ok := auth.AuthPlugins[name]; ok {
+		util.Logger().Warnf(nil, "service center is in '%s' mode", name)
 		plugin = pluginBuilder()
+		return
 	}
+	util.Logger().Warnf(nil, "service center is in 'noAuth' mode")
 }
 
 type AuthRequest struct {
