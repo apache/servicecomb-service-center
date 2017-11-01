@@ -261,28 +261,6 @@ var _ = Describe("ServiceController", func() {
 				Expect(respSchemaExist.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 				Expect(respSchemaExist.Summary).To(Equal(""))
 
-				respCreateSchemas, err := serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
-					ServiceId: serviceId,
-					Schemas: []*pb.Schema{
-						&pb.Schema{
-							SchemaId: "first_schemaId",
-							Schema:   "first_schema",
-							Summary:  "first_summary",
-						},
-					},
-				})
-				Expect(err).To(BeNil())
-				Expect(respCreateSchemas.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-
-				respSchemaExist, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
-					Type:      "schema",
-					ServiceId: serviceId,
-					SchemaId:  "first_schemaId",
-				})
-				Expect(err).To(BeNil())
-				Expect(respSchemaExist.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-				Expect(respSchemaExist.Summary).To(Equal("first_summary"))
-
 				respDeleteService, err := serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{
 					ServiceId: serviceId,
 					Force:     true,

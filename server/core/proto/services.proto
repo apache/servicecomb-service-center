@@ -493,6 +493,7 @@ message ModifySchemaRequest {
     string serviceId = 1;
     string schemaId = 2;
     string schema = 3;
+    string summary = 4;
 }
 
 message ModifySchemaResponse {
