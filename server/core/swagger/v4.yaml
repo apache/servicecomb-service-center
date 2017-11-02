@@ -1376,6 +1376,123 @@ paths:
           description: 内部错误
           schema:
             type: string
+  /v4/{project}/govern/microservices/{serviceId}:
+    get:
+      description: |
+        查询单个服务的所有信息。
+      operationId: GetServiceDetail
+      parameters:
+        - name: x-domain-name
+          in: header
+          type: string
+          default: default
+          required: true
+        - name: project
+          in: path
+          required: true
+          type: string
+        - name: serviceId
+          in: path
+          description: 微服务消费者的微服务唯一标识。
+          required: true
+          type: string
+        - name: noCache
+          in: query
+          description: 查询的东西是否用缓存，值为0或者1，0使用缓存，1不使用，默认为使用。
+          required: false
+          type: integer
+      tags:
+        - governance
+      responses:
+        200:
+          description: 单个服务的信息
+          schema:
+            $ref: '#/definitions/GetServiceDetailResponse'
+        400:
+          description: 错误的请求
+          schema:
+            type: string
+        500:
+          description: 内部错误
+          schema:
+            type: string
+  /v4/{project}/govern/microservices:
+    get:
+      description: |
+        查询单个服务的所有信息。
+      operationId: GetServicesInfo
+      parameters:
+        - name: x-domain-name
+          in: header
+          type: string
+          default: default
+          required: true
+        - name: project
+          in: path
+          required: true
+          type: string
+        - name: noCache
+          in: query
+          description: 查询的东西是否用缓存，值为0或者1，0使用缓存，1不使用，默认为使用。
+          required: false
+          type: integer
+        - name: options
+          in: query
+          description: 获取对应options相对应的信息，all,tag,rules,instances,schemas,dependencies,statistics,没有默认返回服务信息
+          required: false
+          type: string
+      tags:
+        - governance
+      responses:
+        200:
+          description: 单个服务的信息
+          schema:
+            $ref: '#/definitions/GetServicesInfoResponse'
+        400:
+          description: 错误的请求
+          schema:
+            type: string
+        500:
+          description: 内部错误
+          schema:
+            type: string
+  /v4/{project}/govern/relations:
+    get:
+      description: |
+        查询服务间的关系。
+      operationId: GetGraph
+      parameters:
+        - name: x-domain-name
+          in: header
+          type: string
+          default: default
+          description: 租户名字
+          required: true
+        - name: project
+          in: path
+          description: 项目名字
+          required: true
+          type: string
+        - name: noCache
+          in: query
+          description: 查询的东西是否用缓存，值为0或者1，0使用缓存，1不使用，默认为使用。
+          required: false
+          type: integer
+      tags:
+        - governance
+      responses:
+        200:
+          description: 单个服务的信息
+          schema:
+            $ref: '#/definitions/Graph'
+        400:
+          description: 错误的请求
+          schema:
+            type: string
+        500:
+          description: 内部错误
+          schema:
+            type: string
 definitions:
   Version:
     type: object
@@ -1398,9 +1515,14 @@ definitions:
         $ref: '#/definitions/Properties'
   CreateSchema:
     type: object
+    required:
+      - schema
     properties:
       schema:
         type: string
+      summary:
+        type: string
+        description: 新加入参数，后面创建schema，请尽量提供，shema的摘要
   GetResourceResponse:
     type: object
     properties:
@@ -1805,7 +1927,7 @@ definitions:
       errMessage:
         description: 错误信息，成功为空，不成功，则为错误，在部分成功的场景使用
         type: string
-        
+
   DelServicesRequest:
     type: object
     properties:
@@ -1816,7 +1938,7 @@ definitions:
       force:
         description: 不传即默认为false。 强制删除，则与该服务相关的信息删除，非强制删除： 如果作为该被依赖（作为provider，提供服务,且不是只存在自依赖）或者存在实例，则不能删除,其它均删除。
         type: boolean
-        
+
   DelServicesResponse:
     type: object
     properties:
@@ -1824,7 +1946,7 @@ definitions:
         type: array
         items:
           $ref: "#/definitions/DelServicesRspInfo"
-        
+
   DelServicesRspInfo:
     type: object
     properties:
@@ -1850,3 +1972,135 @@ definitions:
          type: string
        summary:
          type: string
+  GetServiceDetailResponse:
+     type: object
+     properties:
+        service:
+         description: 单个服务信息
+         $ref: "#/definitions/ServiceDetail"
+  ServiceDetail:
+     type: object
+     properties:
+       microservice:
+         description: 静态服务信息
+         $ref: "#/definitions/MicroService"
+       instances:
+         type: array
+         description: 该服务的所有实例信息
+         items:
+           $ref: "#/definitions/MicroServiceInstance"
+       schemaInfos:
+         description: schema信息
+         type: array
+         items:
+           $ref: "#/definitions/Schema"
+       rules:
+         type: array
+         description: 该服务的所有黑白名单信息
+         items:
+           $ref: "#/definitions/Rule"
+       providers:
+         description: 所有的provider信息
+         type: array
+         items:
+           $ref: "#/definitions/MicroService"
+       consumers:
+         description: 所有的consumer信息
+         type: array
+         items:
+           $ref: "#/definitions/MicroService"
+       tags:
+         description: 所有的标签信息
+         type: array
+         items:
+           $ref: "#/definitions/Tags"
+       microServiceVersions:
+         description: 微服务的所有版本信息，同服务名和应用名的服务的版本信息
+         type: array
+         items:
+           type: string
+  Graph:
+     type: object
+     properties:
+       nodes:
+         description: 图里面的节点信息
+         $ref: "#/definitions/Nodes"
+  Nodes:
+     type: array
+     description: 节点信息
+     items:
+       $ref: "#/definitions/Node"
+  Node:
+     type: object
+     properties:
+       id:
+         description: 微服务服务id
+         type: string
+       name:
+         description: 微服务名字
+         type: string
+       appID:
+         description: 应用id
+         type: string
+       version:
+         description: 微服务版本
+         type: string
+       type:
+         description: 类型
+         type: string
+       color:
+         description: 颜色
+         type: string
+       position:
+         description: 位置
+         type: string
+       visits:
+         description: 能访问到的服务
+         type: array
+         items:
+            type: string
+  GetServicesInfoResponse:
+     type: object
+     properties:
+       AllServicesDetail:
+         description: 所有服务的相关信息
+         type: array
+         items:
+           $ref: "#/definitions/ServiceDetail"
+       statistics:
+         description: 静态信息，包含服务个数，实例个数，有实例的服务个数，应用个数等
+         type: object
+         $ref: "#/definitions/Statistics"
+  Statistics:
+     type: object
+     properties:
+       services:
+         description: 微服务个数
+         $ref: "#/definitions/StService"
+       instances:
+         description: 实例个数
+         $ref: "#/definitions/StInstance"
+       apps:
+         description: 应用个数
+         $ref: "#/definitions/StApp"
+  StService:
+     type: object
+     properties:
+       count:
+         description: 微服务个数
+         type: integer
+       onlineCount:
+         description: 有实例的微服务个数
+         type: integer
+  StInstance:
+     type: object
+     properties:
+       count:
+         description: 实例个数
+         type: integer
+  StApp:
+     type: object
+     properties:
+       count:
+         description: 应用个数
+         type: integer
