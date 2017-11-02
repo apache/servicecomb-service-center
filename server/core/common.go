@@ -15,12 +15,13 @@ package core
 
 import (
 	"errors"
-	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/pkg/validate"
-	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"math"
 	"reflect"
 	"regexp"
+
+	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/ServiceComb/service-center/pkg/validate"
+	pb "github.com/ServiceComb/service-center/server/core/proto"
 )
 
 var (
@@ -36,22 +37,25 @@ var (
 	HealthCheckInfoValidator      validate.Validator
 	MicroServiceKeyValidator      validate.Validator
 	DataCenterInfoValidator       validate.Validator
-	GetMSExistsReqValidator     validate.Validator
-	GetSchemaExistsReqValidator validate.Validator
-	GetServiceReqValidator      validate.Validator
-	GetSchemaReqValidator       validate.Validator
-	DependencyMSValidator       validate.Validator
-	ProviderMsValidator         validate.Validator
-	MSDependencyValidator       validate.Validator
-	TagReqValidator             validate.Validator
-	FindInstanceReqValidator    validate.Validator
-	GetInstanceValidator        validate.Validator
-	SchemasValidor              validate.Validator
-	SchemaValidor               validate.Validator
+	GetMSExistsReqValidator       validate.Validator
+	GetSchemaExistsReqValidator   validate.Validator
+	GetServiceReqValidator        validate.Validator
+	GetSchemaReqValidator         validate.Validator
+	DependencyMSValidator         validate.Validator
+	ProviderMsValidator           validate.Validator
+	MSDependencyValidator         validate.Validator
+	TagReqValidator               validate.Validator
+	FindInstanceReqValidator      validate.Validator
+	GetInstanceValidator          validate.Validator
+	SchemasValidor                validate.Validator
+	SchemaValidor                 validate.Validator
 
 	SchemaIdRule *validate.ValidateRule
 	SchemasRule  *validate.ValidateRule
 	TagRule      *validate.ValidateRule
+
+	//Broker Related types
+	BrokerServiceAPI pb.BrokerServiceCtrlServer
 )
 
 func init() {
@@ -117,7 +121,7 @@ func init() {
 	SchemasValidor.AddRule("ServiceId", ServiceIdRule)
 	SchemasValidor.AddSub("Schemas", &SchemaValidor)
 	SchemaValidor.AddRule("SchemaId", SchemaIdRule)
-	SchemaSummaryRegex , _ := regexp.Compile(`(a-zA-Z0-9)*`)
+	SchemaSummaryRegex, _ := regexp.Compile(`(a-zA-Z0-9)*`)
 	SchemaValidor.AddRule("Summary", &validate.ValidateRule{Min: 1, Max: 512, Regexp: SchemaSummaryRegex})
 	SchemaValidor.AddRule("Schema", &validate.ValidateRule{Min: 1})
 
