@@ -15,7 +15,7 @@
 angular.module('serviceCenter')
 	.constant('apiConstant', {
 		endPoint :{
-			url : 'http://127.0.0.1',
+			ip : 'http://127.0.0.1',
 			port: '30100'
 		},
 //		 v4 api's
@@ -41,7 +41,7 @@ angular.module('serviceCenter')
                 method: 'GET'
             },
             allServices: {
-                url: 'v4/default/govern/microservices',
+                url: 'v4/default/govern/microservices?options=instances,dependencies',
                 method: 'GET'
             },
             deleteService: {

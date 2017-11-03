@@ -13,7 +13,7 @@
 //limitations under the License.
 'use strict';
 
-angular.module('serviceCenter', ['ngAnimate', 'ngMaterial', 'ngAria', 'ngMessages', 'ngResource', 'ngRoute', 'ngSanitize', 'ui.router', 'ngMdIcons', 'pascalprecht.translate', 'serviceCenter.router', 
+angular.module('serviceCenter', ['ngAnimate', 'ngMaterial', 'ngAria', 'ngMessages', 'ngResource', 'ngSanitize', 'ui.router', 'pascalprecht.translate', 'serviceCenter.router', 
   'serviceCenter.dashboard', 'serviceCenter.sc', 'md.data.table', 'chart.js', 'swaggerUi', 'mmumshad.yamljs'])
   .config(['$translateProvider', 'english', 'chinese', function($translateProvider, english, chinese) {
         $translateProvider.useSanitizeValueStrategy(null);

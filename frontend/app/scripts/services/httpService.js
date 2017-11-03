@@ -27,7 +27,7 @@ angular.module('serviceCenter')
                 defer.reject("invalid params");
                 return defer.promise;
             }
-            var baseUrl = apiConstant.endPoint.url + ':' + apiConstant.endPoint.port;
+            var baseUrl = apiConstant.endPoint.ip + ':' + apiConstant.endPoint.port;
             if(undefined === headers || null === headers){
                 headers = {
                     'x-domain-name' : tenant
