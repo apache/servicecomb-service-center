@@ -17,14 +17,17 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	errorsEx "github.com/ServiceComb/service-center/pkg/errors"
 	"github.com/ServiceComb/service-center/pkg/rest"
 	"github.com/ServiceComb/service-center/pkg/tlsutil"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/astaxie/beego"
 	"github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
 	"strings"
 	"time"
 )
@@ -413,7 +416,10 @@ func (c *EtcdClient) LeaseRenew(ctx context.Context, leaseID int64) (int64, erro
 	start := time.Now()
 	etcdResp, err := c.Client.KeepAliveOnce(otCtx, clientv3.LeaseID(leaseID))
 	if err != nil {
-		return 0, err
+		if err.Error() == grpc.ErrorDesc(rpctypes.ErrGRPCLeaseNotFound) {
+			return 0, err
+		}
+		return 0, errorsEx.RaiseError(err)
 	}
 	util.LogNilOrWarnf(start, "registry client renew lease %d", leaseID)
 	return etcdResp.TTL, nil
@@ -425,7 +431,10 @@ func (c *EtcdClient) LeaseRevoke(ctx context.Context, leaseID int64) error {
 	start := time.Now()
 	_, err := c.Client.Revoke(otCtx, clientv3.LeaseID(leaseID))
 	if err != nil {
-		return err
+		if err.Error() == grpc.ErrorDesc(rpctypes.ErrGRPCLeaseNotFound) {
+			return err
+		}
+		return errorsEx.RaiseError(err)
 	}
 	util.LogNilOrWarnf(start, "registry client revoke lease %d", leaseID)
 	return nil
