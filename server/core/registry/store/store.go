@@ -248,7 +248,7 @@ func (s *KvStore) onLeaseEvent(evt *KvEvent) {
 	key := util.BytesToStringWithNoCopy(evt.KV.Key)
 	leaseID := util.BytesToStringWithNoCopy(evt.KV.Value)
 
-	s.removeAsyncTask(key)
+	s.removeAsyncTask(toLeaseAsyncTaskKey(key))
 
 	util.Logger().Debugf("push task to async remove queue successfully, key %s %s [%s] event",
 		key, leaseID, evt.Action)
@@ -369,10 +369,14 @@ func Store() *KvStore {
 
 func NewLeaseAsyncTask(op registry.PluginOp) *LeaseAsyncTask {
 	return &LeaseAsyncTask{
-		key:        "LeaseAsyncTask_" + util.BytesToStringWithNoCopy(op.Key),
+		key:        toLeaseAsyncTaskKey(util.BytesToStringWithNoCopy(op.Key)),
 		LeaseID:    op.Lease,
 		CreateTime: time.Now(),
 	}
+}
+
+func toLeaseAsyncTaskKey(key string) string {
+	return "LeaseAsyncTask_" + key
 }
 
 func Revision() (rev int64) {
