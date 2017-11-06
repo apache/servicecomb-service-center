@@ -17,6 +17,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"golang.org/x/net/context"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -236,6 +237,17 @@ func ParseEndpoint(ep string) (string, error) {
 }
 
 func GetRealIP(r *http.Request) string {
+	for _, h := range [2]string{"X-Forwarded-For", "X-Real-Ip"} {
+		addresses := strings.Split(r.Header.Get(h), ",")
+		for _, ip := range addresses {
+			ip = strings.TrimSpace(ip)
+			realIP := net.ParseIP(ip)
+			if !realIP.IsGlobalUnicast() {
+				continue
+			}
+			return ip
+		}
+	}
 	addrs := strings.Split(r.RemoteAddr, ":")
 	if len(addrs) > 0 {
 		return addrs[0]
