@@ -14,6 +14,7 @@
 package store
 
 import (
+	errorsEx "github.com/ServiceComb/service-center/pkg/errors"
 	"github.com/ServiceComb/service-center/pkg/util"
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
@@ -40,6 +41,8 @@ const (
 	DEPENDENCY_RULE
 	typeEnd
 )
+
+const TIME_FORMAT = "15:04:05.000"
 
 var TypeNames = []string{
 	SERVICE:         "SERVICE",
@@ -106,21 +109,24 @@ func (lat *LeaseAsyncTask) Do(ctx context.Context) error {
 	lat.StartTime = time.Now()
 	lat.TTL, lat.err = registry.GetRegisterCenter().LeaseRenew(ctx, lat.LeaseID)
 	lat.EndTime = time.Now()
-	if lat.err != nil {
-		util.Logger().Errorf(lat.err, "[%s]renew lease %d failed(rev: %s, run: %s), key %s",
-			time.Now().Sub(lat.CreateTime),
+	if lat.err == nil {
+		util.LogNilOrWarnf(lat.CreateTime, "renew lease %d(rev: %s, run: %s), key %s",
 			lat.LeaseID,
-			lat.CreateTime.Format("15:04:05.000"),
-			lat.StartTime.Format("15:04:05.000"),
+			lat.CreateTime.Format(TIME_FORMAT),
+			lat.StartTime.Format(TIME_FORMAT),
 			lat.Key())
-		return lat.err
+		return nil
 	}
 
-	util.LogNilOrWarnf(lat.CreateTime, "renew lease %d(rev: %s, run: %s), key %s",
+	util.Logger().Errorf(lat.err, "[%s]renew lease %d failed(rev: %s, run: %s), key %s",
+		time.Now().Sub(lat.CreateTime),
 		lat.LeaseID,
-		lat.CreateTime.Format("15:04:05.000"),
-		lat.StartTime.Format("15:04:05.000"),
+		lat.CreateTime.Format(TIME_FORMAT),
+		lat.StartTime.Format(TIME_FORMAT),
 		lat.Key())
+	if _, ok := lat.err.(errorsEx.InternalError); !ok {
+		return lat.err
+	}
 	return nil
 }
 
@@ -235,7 +241,7 @@ func (s *KvStore) onLeaseEvent(evt *KvEvent) {
 	key := util.BytesToStringWithNoCopy(evt.KV.Key)
 	leaseID := util.BytesToStringWithNoCopy(evt.KV.Value)
 
-	s.removeAsyncTask(key)
+	s.removeAsyncTask(toLeaseAsyncTaskKey(key))
 
 	util.Logger().Debugf("push task to async remove queue successfully, key %s %s [%s] event",
 		key, leaseID, evt.Action)
@@ -356,10 +362,14 @@ func Store() *KvStore {
 
 func NewLeaseAsyncTask(op registry.PluginOp) *LeaseAsyncTask {
 	return &LeaseAsyncTask{
-		key:        "LeaseAsyncTask_" + util.BytesToStringWithNoCopy(op.Key),
+		key:        toLeaseAsyncTaskKey(util.BytesToStringWithNoCopy(op.Key)),
 		LeaseID:    op.Lease,
 		CreateTime: time.Now(),
 	}
+}
+
+func toLeaseAsyncTaskKey(key string) string {
+	return "LeaseAsyncTask_" + key
 }
 
 func Revision() (rev int64) {
