@@ -118,22 +118,15 @@ func (lat *LeaseAsyncTask) Do(ctx context.Context) error {
 		return nil
 	}
 
-	if _, ok := lat.err.(errorsEx.InternalError); !ok {
-		util.Logger().Errorf(lat.err, "[%s]renew lease %d failed(rev: %s, run: %s), key %s",
-			time.Now().Sub(lat.CreateTime),
-			lat.LeaseID,
-			lat.CreateTime.Format(TIME_FORMAT),
-			lat.StartTime.Format(TIME_FORMAT),
-			lat.Key())
-		return lat.err
-	}
-
 	util.Logger().Errorf(lat.err, "[%s]renew lease %d failed(rev: %s, run: %s), key %s",
 		time.Now().Sub(lat.CreateTime),
 		lat.LeaseID,
 		lat.CreateTime.Format(TIME_FORMAT),
 		lat.StartTime.Format(TIME_FORMAT),
 		lat.Key())
+	if _, ok := lat.err.(errorsEx.InternalError); !ok {
+		return lat.err
+	}
 	return nil
 }
 
