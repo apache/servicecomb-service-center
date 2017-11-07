@@ -261,19 +261,19 @@ func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp) (*clientv
 	baseOps := []clientv3.OpOption{}
 	baseOps = append(baseOps, c.toGetRequest(tempOp)...)
 
+	nextKey := key
 	for i := int64(0); i < pageCount; i++ {
 		limit := op.Limit
 		if remainCount > 0 && i == pageCount-1 {
 			limit = remainCount
 		}
 		ops := append(baseOps, clientv3.WithLimit(int64(limit)))
-		recordResp, err := c.Client.Get(ctx, key, ops...)
+		recordResp, err := c.Client.Get(ctx, nextKey, ops...)
 		if err != nil {
 			return nil, err
 		}
 		l := int64(len(recordResp.Kvs))
-		nextKey := recordResp.Kvs[l-1].Key
-		key = clientv3.GetPrefixRangeEnd(util.BytesToStringWithNoCopy(nextKey))
+		nextKey = clientv3.GetPrefixRangeEnd(util.BytesToStringWithNoCopy(recordResp.Kvs[l-1].Key))
 
 		if op.Offset >= 0 && (op.Offset < i*op.Limit || op.Offset >= (i+1)*op.Limit) {
 			continue
