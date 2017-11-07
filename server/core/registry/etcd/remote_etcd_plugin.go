@@ -244,6 +244,9 @@ func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp) (*clientv
 	tempOp.Prefix = false
 	tempOp.SortOrder = registry.SORT_ASCEND
 	tempOp.EndKey = op.Key
+	if len(op.EndKey) > 0 {
+		tempOp.EndKey = op.EndKey
+	}
 	tempOp.Revision = coutResp.Header.Revision
 
 	etcdResp = coutResp
@@ -260,7 +263,7 @@ func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp) (*clientv
 
 	for i := int64(0); i < pageCount; i++ {
 		limit := op.Limit
-		if i == pageCount-1 {
+		if remainCount > 0 && i == pageCount-1 {
 			limit = remainCount
 		}
 		ops := append(baseOps, clientv3.WithLimit(int64(limit)))
@@ -311,7 +314,7 @@ func (c *EtcdClient) Do(ctx context.Context, opts ...registry.PluginOpOption) (*
 		var etcdResp *clientv3.GetResponse
 		key := util.BytesToStringWithNoCopy(op.Key)
 
-		if op.Prefix && !op.CountOnly {
+		if (op.Prefix || len(op.EndKey) > 0) && !op.CountOnly {
 			etcdResp, err = c.paging(ctx, op)
 			if err != nil {
 				break
