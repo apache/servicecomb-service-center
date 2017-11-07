@@ -36,6 +36,7 @@ const (
 	REGISTRY_LEASE_KEY          = "leases"
 	REGISTRY_DEPENDENCY_KEY     = "deps"
 	REGISTRY_DEPS_RULE_KEY      = "dep-rules"
+	REGISTRY_METRICS_KEY        = "metrics"
 )
 
 func GetRootKey() string {
@@ -344,5 +345,21 @@ func GetSystemKey() string {
 	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_SYS_KEY,
+	}, "/")
+}
+
+func GetMetricsRootKey(tenant string) string {
+	return util.StringJoin([]string{
+		GetRootKey(),
+		REGISTRY_METRICS_KEY,
+		tenant,
+	}, "/")
+}
+
+func GenerateMetricsKey(tenant, name, utc string) string {
+	return util.StringJoin([]string{
+		GetMetricsRootKey(tenant),
+		name,
+		utc,
 	}, "/")
 }

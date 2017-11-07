@@ -55,14 +55,16 @@ func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (
 
 	key := util.BytesToStringWithNoCopy(op.Key)
 
-	if op.Mode == registry.MODE_NO_CACHE || op.Revision > 0 {
-		util.Logger().Debugf("search %s match WitchNoCache or WitchRev, request etcd server, key: %s",
-			i.cacheType, key)
+	if op.Mode == registry.MODE_NO_CACHE ||
+		op.Revision > 0 ||
+		(op.Offset >= 0 && op.Limit > 0) {
+		util.Logger().Debugf("search %s match special options, request etcd server, opts: %s",
+			i.cacheType, op)
 		return registry.GetRegisterCenter().Do(ctx, opts...)
 	}
 
 	if op.Prefix {
-		resp, err := i.searchPrefixKeyWithCache(ctx, &op)
+		resp, err := i.searchPrefixKeyWithCache(ctx, op)
 		if err != nil {
 			return nil, err
 		}
@@ -116,7 +118,7 @@ func (i *Indexer) Cache() Cache {
 	return i.cacher.Cache()
 }
 
-func (i *Indexer) searchPrefixKeyWithCache(ctx context.Context, op *registry.PluginOp) (*registry.PluginResponse, error) {
+func (i *Indexer) searchPrefixKeyWithCache(ctx context.Context, op registry.PluginOp) (*registry.PluginResponse, error) {
 	resp := &registry.PluginResponse{
 		Action:    op.Action,
 		Kvs:       []*mvccpb.KeyValue{},
