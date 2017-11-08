@@ -17,16 +17,19 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	errorsEx "github.com/ServiceComb/service-center/pkg/errors"
 	"github.com/ServiceComb/service-center/pkg/rest"
 	"github.com/ServiceComb/service-center/pkg/tlsutil"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/astaxie/beego"
 	"github.com/coreos/etcd/embed"
+	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
 	"github.com/coreos/etcd/etcdserver/etcdserverpb"
 	"github.com/coreos/etcd/lease"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
 	"net/url"
 	"strings"
 	"time"
@@ -348,7 +351,10 @@ func (s *EtcdEmbed) LeaseRenew(ctx context.Context, leaseID int64) (int64, error
 	defer cancel()
 	ttl, err := s.Server.Server.LeaseRenew(otCtx, lease.LeaseID(leaseID))
 	if err != nil {
-		return 0, err
+		if err.Error() == grpc.ErrorDesc(rpctypes.ErrGRPCLeaseNotFound) {
+			return 0, err
+		}
+		return 0, errorsEx.RaiseError(err)
 	}
 	return ttl, nil
 }
@@ -360,7 +366,10 @@ func (s *EtcdEmbed) LeaseRevoke(ctx context.Context, leaseID int64) error {
 		ID: leaseID,
 	})
 	if err != nil {
-		return err
+		if err.Error() == grpc.ErrorDesc(rpctypes.ErrGRPCLeaseNotFound) {
+			return err
+		}
+		return errorsEx.RaiseError(err)
 	}
 	return nil
 }

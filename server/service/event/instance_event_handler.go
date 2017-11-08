@@ -44,7 +44,7 @@ func (h *InstanceEventHandler) OnEvent(evt *store.KvEvent) {
 	}
 	if action == pb.EVT_DELETE {
 		spilted := strings.Split(tenantProject, "/")
-		if len(spilted) == 2 && apt.IsDefaultDomain(tenantProject) {
+		if len(spilted) == 2 && !apt.IsDefaultDomain(tenantProject) {
 			domainName := spilted[0]
 			projectName := spilted[1]
 			ctx := context.TODO()
