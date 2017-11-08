@@ -105,7 +105,7 @@ func (s *BrokerController) RetrieveProviderPacts(ctx context.Context,
 			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
 		}, nil
 	}
-	tenant := util.ParseTenantProject(ctx)
+	tenant := serviceUtil.GetDefaultTenantProject()
 
 	provider, err := serviceUtil.GetService(ctx, tenant, in.ProviderId)
 	if err != nil {
@@ -258,7 +258,7 @@ func (s *BrokerController) GetAllProviderPacts(ctx context.Context,
 			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
 		}, nil
 	}
-	tenant := util.ParseTenantProject(ctx)
+	tenant := serviceUtil.GetDefaultTenantProject()
 
 	provider, err := serviceUtil.GetService(ctx, tenant, in.ProviderId)
 	if err != nil {
@@ -409,7 +409,7 @@ func (s *BrokerController) RetrieveVerificationResults(ctx context.Context, in *
 			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
 		}, nil
 	}
-	tenant := util.ParseTenantProject(ctx)
+	tenant := serviceUtil.GetDefaultTenantProject()
 	consumer, err := serviceUtil.GetService(ctx, tenant, in.ConsumerId)
 	if err != nil {
 		serviceUtil.PactLogger.Errorf(err, "verification result retrieve request failed, consumerId is %s: query consumer failed.", in.ConsumerId)
@@ -584,7 +584,7 @@ func (s *BrokerController) PublishVerificationResults(ctx context.Context, in *p
 			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
 		}, nil
 	}
-	tenant := util.ParseTenantProject(ctx)
+	tenant := serviceUtil.GetDefaultTenantProject()
 	consumer, err := serviceUtil.GetService(ctx, tenant, in.ConsumerId)
 	if err != nil {
 		serviceUtil.PactLogger.Errorf(err, "verification result publish request failed, consumerId is %s: query consumer failed.", in.ConsumerId)
@@ -727,7 +727,7 @@ func (s *BrokerController) PublishPact(ctx context.Context, in *pb.PublishPactRe
 			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
 		}, nil
 	}
-	tenant := util.ParseTenantProject(ctx)
+	tenant := serviceUtil.GetDefaultTenantProject()
 
 	provider, err := serviceUtil.GetService(ctx, tenant, in.ProviderId)
 	if err != nil {

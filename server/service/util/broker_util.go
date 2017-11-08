@@ -98,6 +98,10 @@ func init() {
 	PactLogger = lager.NewLogger("broker_srvc")
 }
 
+func GetDefaultTenantProject() string {
+	return util.StringJoin([]string{"default", "default"}, "/")
+}
+
 //GenerateBrokerAPIPath creates the API link from the constant template
 func GenerateBrokerAPIPath(scheme string, host string, apiPath string,
 	replacer *strings.Replacer) string {
@@ -196,7 +200,7 @@ func GetBrokerParticipantUtils(ctx context.Context, tenant string, appId string,
 func GetBrokerParticipantFromServiceId(ctx context.Context, serviceId string) (*pb.Participant,
 	*pb.MicroService, error, error) {
 
-	tenant := util.ParseTenantProject(ctx)
+	tenant := GetDefaultTenantProject()
 	serviceParticipant, err := GetService(ctx, tenant, serviceId)
 	if err != nil {
 		PactLogger.Errorf(err,
@@ -231,7 +235,7 @@ func GetBrokerParticipantFromService(ctx context.Context,
 	if microservice == nil {
 		return nil, nil
 	}
-	tenant := util.ParseTenantProject(ctx)
+	tenant := GetDefaultTenantProject()
 	participant, errBroker := GetBrokerParticipantUtils(ctx, tenant, microservice.AppId,
 		microservice.ServiceName)
 	if errBroker != nil {
@@ -543,7 +547,7 @@ func RetrieveProviderConsumerPact(ctx context.Context,
 			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
 		}, -1, nil
 	}
-	tenant := util.ParseTenantProject(ctx)
+	tenant := GetDefaultTenantProject()
 	// Get provider microservice
 	provider, err := GetService(ctx, tenant, in.ProviderId)
 	if err != nil {
@@ -673,7 +677,7 @@ func RetrieveProviderConsumerPact(ctx context.Context,
 func DeletePactData(ctx context.Context,
 	in *pb.BaseBrokerRequest) (*pb.Response, error) {
 	//tenant := util.ParseTenantProject(ctx)
-	allPactKey := apt.GetBrokerVerificationKey("default") //util.StringJoin([]string{ apt.GetRootKey(), apt.REGISTRY_PACT_ROOT_KEY }, "/")
+	allPactKey := apt.GetBrokerRootKey()//GetBrokerVerificationKey("default") //util.StringJoin([]string{ apt.GetRootKey(), apt.REGISTRY_PACT_ROOT_KEY }, "/")
 
 	_, err := registry.GetRegisterCenter().Do(ctx,
 		registry.DEL, registry.WithStrKey(allPactKey), registry.WithPrefix())
