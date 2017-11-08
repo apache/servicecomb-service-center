@@ -348,18 +348,18 @@ func GetSystemKey() string {
 	}, "/")
 }
 
-func GetMetricsRootKey(tenant string) string {
+func GetMetricsRootKey() string {
 	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_METRICS_KEY,
-		tenant,
 	}, "/")
 }
 
-func GenerateMetricsKey(tenant, name, utc string) string {
+func GenerateMetricsKey(name, utc, tenant string) string {
 	return util.StringJoin([]string{
-		GetMetricsRootKey(tenant),
+		GetMetricsRootKey(),
 		name,
 		utc,
+		tenant,
 	}, "/")
 }

@@ -218,7 +218,7 @@ func (c *EtcdClient) PutNoOverride(ctx context.Context, opts ...registry.PluginO
 		util.Logger().Errorf(err, "PutNoOverride %s failed", op.Key)
 		return false, err
 	}
-	util.Logger().Infof("response %s %v %v", op.Key, resp.Succeeded, resp.Revision)
+	util.Logger().Debugf("response %s %v %v", op.Key, resp.Succeeded, resp.Revision)
 	return resp.Succeeded, nil
 }
 
@@ -235,7 +235,7 @@ func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp) (*clientv
 	}
 
 	recordCount := coutResp.Count
-	if recordCount < op.Limit {
+	if op.Offset == -1 && recordCount < op.Limit {
 		return nil, nil // no paging
 	}
 
