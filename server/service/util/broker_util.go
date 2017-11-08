@@ -173,12 +173,12 @@ func GetBrokerParticipantUtils(ctx context.Context, tenant string, appId string,
 	participants, err := store.Store().Participant().Search(ctx, opts...)
 
 	if err != nil {
-		pactLogger.Errorf(nil, "pact publish failed, participant with, could not be searched.")
+		PactLogger.Errorf(nil, "pact publish failed, participant with, could not be searched.")
 		return nil, err
 	}
 
 	if len(participants.Kvs) == 0 {
-		pactLogger.Info("GetParticipant found no participant")
+		PactLogger.Info("GetParticipant found no participant")
 		return nil, nil
 	}
 
@@ -187,7 +187,7 @@ func GetBrokerParticipantUtils(ctx context.Context, tenant string, appId string,
 	if err != nil {
 		return nil, err
 	}
-	pactLogger.Infof("GetParticipant: (%d, %s, %s)", participant.Id, participant.AppId,
+	PactLogger.Infof("GetParticipant: (%d, %s, %s)", participant.Id, participant.AppId,
 		participant.ServiceName)
 	return participant, nil
 }
@@ -199,12 +199,12 @@ func GetBrokerParticipantFromServiceId(ctx context.Context, serviceId string) (*
 	tenant := util.ParseTenantProject(ctx)
 	serviceParticipant, err := GetService(ctx, tenant, serviceId)
 	if err != nil {
-		pactLogger.Errorf(err,
+		PactLogger.Errorf(err,
 			"get participant failed, serviceId is %s: query provider failed.", serviceId)
 		return nil, nil, nil, err
 	}
 	if serviceParticipant == nil {
-		pactLogger.Errorf(nil,
+		PactLogger.Errorf(nil,
 			"get participant failed, serviceId is %s: service not exist.", serviceId)
 		return nil, nil, nil, errors.New("get participant, serviceId not exist.")
 	}
@@ -212,12 +212,12 @@ func GetBrokerParticipantFromServiceId(ctx context.Context, serviceId string) (*
 	participant, errBroker := GetBrokerParticipantUtils(ctx, tenant, serviceParticipant.AppId,
 		serviceParticipant.ServiceName)
 	if errBroker != nil {
-		pactLogger.Errorf(errBroker,
+		PactLogger.Errorf(errBroker,
 			"get participant failed, serviceId %s: query participant failed.", serviceId)
 		return nil, serviceParticipant, errBroker, err
 	}
 	if participant == nil {
-		pactLogger.Errorf(nil,
+		PactLogger.Errorf(nil,
 			"get participant failed, particpant does not exist for serviceId %s", serviceId)
 		return nil, serviceParticipant, errors.New("particpant does not exist for serviceId."), err
 	}
@@ -235,7 +235,7 @@ func GetBrokerParticipantFromService(ctx context.Context,
 	participant, errBroker := GetBrokerParticipantUtils(ctx, tenant, microservice.AppId,
 		microservice.ServiceName)
 	if errBroker != nil {
-		pactLogger.Errorf(errBroker,
+		PactLogger.Errorf(errBroker,
 			"get participant failed, serviceId %s: query participant failed.",
 			microservice.ServiceId)
 		return nil, errBroker
@@ -251,7 +251,7 @@ func GetParticipant(ctx context.Context, domain string, appId string,
 		return nil, err
 	}
 	if len(participants.Kvs) == 0 {
-		pactLogger.Info("GetParticipant found no participant")
+		PactLogger.Info("GetParticipant found no participant")
 		return nil, nil
 	}
 	participant := &pb.Participant{}
@@ -259,7 +259,7 @@ func GetParticipant(ctx context.Context, domain string, appId string,
 	if err != nil {
 		return nil, err
 	}
-	pactLogger.Infof("GetParticipant: (%d, %s, %s)", participant.Id, participant.AppId, participant.ServiceName)
+	PactLogger.Infof("GetParticipant: (%d, %s, %s)", participant.Id, participant.AppId, participant.ServiceName)
 	return participant, nil
 }
 
@@ -278,7 +278,7 @@ func GetVersion(ctx context.Context, domain string, number string,
 	if err != nil {
 		return nil, err
 	}
-	pactLogger.Infof("GetVersion: (%d, %s, %d, %d)", version.Id, version.Number, version.ParticipantId, version.Order)
+	PactLogger.Infof("GetVersion: (%d, %s, %d, %d)", version.Id, version.Number, version.ParticipantId, version.Order)
 	return version, nil
 }
 
@@ -296,7 +296,7 @@ func GetPact(ctx context.Context, domain string, consumerParticipantId int32, pr
 	if err != nil {
 		return nil, err
 	}
-	pactLogger.Infof("GetPact: (%d, %d, %d, %s, %s)", pact.Id, pact.ConsumerParticipantId, pact.ProviderParticipantId, string(pact.Sha), string(pact.Content))
+	PactLogger.Infof("GetPact: (%d, %d, %d, %s, %s)", pact.Id, pact.ConsumerParticipantId, pact.ProviderParticipantId, string(pact.Sha), string(pact.Content))
 	return pact, nil
 }
 
@@ -315,7 +315,7 @@ func GetPactVersion(ctx context.Context, domain string, versionId int32,
 	if err != nil {
 		return nil, err
 	}
-	pactLogger.Infof("GetPactVersion: (%d, %d, %d, %d)", pactVersion.Id, pactVersion.VersionId, pactVersion.PactId, pactVersion.ProviderParticipantId)
+	PactLogger.Infof("GetPactVersion: (%d, %d, %d, %d)", pactVersion.Id, pactVersion.VersionId, pactVersion.PactId, pactVersion.ProviderParticipantId)
 	return pactVersion, nil
 }
 
@@ -344,7 +344,7 @@ func StoreData(ctx context.Context, key string, value string) error {
 func CreateParticipant(pactLogger core.Logger, ctx context.Context, participantKey string, participant pb.Participant) (*pb.PublishPactResponse, error) {
 	data, err := json.Marshal(participant)
 	if err != nil {
-		pactLogger.Errorf(nil, "pact publish failed, participant cannot be created.")
+		PactLogger.Errorf(nil, "pact publish failed, participant cannot be created.")
 		return &pb.PublishPactResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "participant cannot be created."),
 		}, err
@@ -355,7 +355,7 @@ func CreateParticipant(pactLogger core.Logger, ctx context.Context, participantK
 		registry.WithValue(data))
 
 	if err != nil {
-		pactLogger.Errorf(nil, "pact publish failed, participant cannot be created.")
+		PactLogger.Errorf(nil, "pact publish failed, participant cannot be created.")
 		return &pb.PublishPactResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "participant cannot be created."),
 		}, err
@@ -363,15 +363,15 @@ func CreateParticipant(pactLogger core.Logger, ctx context.Context, participantK
 
 	k := apt.GetBrokerLatestParticipantIDKey()
 	v := strconv.Itoa(int(participant.Id))
-	pactLogger.Infof("Inserting (%s, %s)", k, v)
+	PactLogger.Infof("Inserting (%s, %s)", k, v)
 	err = StoreData(ctx, k, v)
 	if err != nil {
-		pactLogger.Errorf(nil, "pact publish failed, participant cannot be created.")
+		PactLogger.Errorf(nil, "pact publish failed, participant cannot be created.")
 		return &pb.PublishPactResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "participant cannot be created."),
 		}, err
 	}
-	pactLogger.Infof("Participant created for key: %s", participantKey)
+	PactLogger.Infof("Participant created for key: %s", participantKey)
 	return nil, nil
 }
 
@@ -379,7 +379,7 @@ func CreateVersion(pactLogger core.Logger, ctx context.Context, versionKey strin
 	version pb.Version) (*pb.PublishPactResponse, error) {
 	data, err := json.Marshal(version)
 	if err != nil {
-		pactLogger.Errorf(nil, "pact publish failed, version cannot be created.")
+		PactLogger.Errorf(nil, "pact publish failed, version cannot be created.")
 		return &pb.PublishPactResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "version cannot be created."),
 		}, err
@@ -389,22 +389,22 @@ func CreateVersion(pactLogger core.Logger, ctx context.Context, versionKey strin
 		registry.WithStrKey(versionKey),
 		registry.WithValue(data))
 	if err != nil {
-		pactLogger.Errorf(nil, "pact publish failed, version cannot be created.")
+		PactLogger.Errorf(nil, "pact publish failed, version cannot be created.")
 		return &pb.PublishPactResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "version cannot be created."),
 		}, err
 	}
 	k := apt.GetBrokerLatestVersionIDKey()
 	v := strconv.Itoa(int(version.Id))
-	pactLogger.Infof("Inserting (%s, %s)", k, v)
+	PactLogger.Infof("Inserting (%s, %s)", k, v)
 	err = StoreData(ctx, k, v)
 	if err != nil {
-		pactLogger.Errorf(nil, "pact publish failed, version cannot be created.")
+		PactLogger.Errorf(nil, "pact publish failed, version cannot be created.")
 		return &pb.PublishPactResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "version cannot be created."),
 		}, err
 	}
-	pactLogger.Infof("Version created for key: %s", versionKey)
+	PactLogger.Infof("Version created for key: %s", versionKey)
 	return nil, nil
 }
 
@@ -412,7 +412,7 @@ func CreatePact(pactLogger core.Logger, ctx context.Context,
 	pactKey string, pact pb.Pact) (*pb.PublishPactResponse, error) {
 	data, err := json.Marshal(pact)
 	if err != nil {
-		pactLogger.Errorf(nil, "pact publish failed, pact cannot be created.")
+		PactLogger.Errorf(nil, "pact publish failed, pact cannot be created.")
 		return &pb.PublishPactResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "pact cannot be created."),
 		}, err
@@ -424,29 +424,29 @@ func CreatePact(pactLogger core.Logger, ctx context.Context,
 		registry.WithValue(data))
 
 	if err != nil {
-		pactLogger.Errorf(nil, "pact publish failed, pact cannot be created.")
+		PactLogger.Errorf(nil, "pact publish failed, pact cannot be created.")
 		return &pb.PublishPactResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "pact cannot be created."),
 		}, err
 	}
 	k := apt.GetBrokerLatestPactIDKey()
 	v := strconv.Itoa(int(pact.Id))
-	pactLogger.Infof("Inserting (%s, %s)", k, v)
+	PactLogger.Infof("Inserting (%s, %s)", k, v)
 	err = StoreData(ctx, k, v)
 	if err != nil {
-		pactLogger.Errorf(nil, "pact publish failed, pact cannot be created.")
+		PactLogger.Errorf(nil, "pact publish failed, pact cannot be created.")
 		return &pb.PublishPactResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "pact cannot be created."),
 		}, err
 	}
-	pactLogger.Infof("Pact created for key: %s", pactKey)
+	PactLogger.Infof("Pact created for key: %s", pactKey)
 	return nil, nil
 }
 
 func CreatePactVersion(pactLogger core.Logger, ctx context.Context, pactVersionKey string, pactVersion pb.PactVersion) (*pb.PublishPactResponse, error) {
 	data, err := json.Marshal(pactVersion)
 	if err != nil {
-		pactLogger.Errorf(nil, "pact publish failed, pact version cannot be created.")
+		PactLogger.Errorf(nil, "pact publish failed, pact version cannot be created.")
 		return &pb.PublishPactResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "pact version cannot be created."),
 		}, err
@@ -455,22 +455,22 @@ func CreatePactVersion(pactLogger core.Logger, ctx context.Context, pactVersionK
 	_, err = registry.GetRegisterCenter().Do(ctx,
 		registry.PUT, registry.WithValue(data), registry.WithStrKey(pactVersionKey))
 	if err != nil {
-		pactLogger.Errorf(nil, "pact publish failed, pact version cannot be created.")
+		PactLogger.Errorf(nil, "pact publish failed, pact version cannot be created.")
 		return &pb.PublishPactResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "pact version cannot be created."),
 		}, err
 	}
 	k := apt.GetBrokerLatestPactVersionIDKey()
 	v := strconv.Itoa(int(pactVersion.Id))
-	pactLogger.Infof("Inserting (%s, %s)", k, v)
+	PactLogger.Infof("Inserting (%s, %s)", k, v)
 	err = StoreData(ctx, k, v)
 	if err != nil {
-		pactLogger.Errorf(nil, "pact publish failed, pact version cannot be created.")
+		PactLogger.Errorf(nil, "pact publish failed, pact version cannot be created.")
 		return &pb.PublishPactResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "pact version cannot be created."),
 		}, err
 	}
-	pactLogger.Infof("Pact version created for key: %s", pactVersionKey)
+	PactLogger.Infof("Pact version created for key: %s", pactVersionKey)
 	return nil, nil
 }
 
@@ -478,7 +478,7 @@ func CreateVerification(pactLogger core.Logger, ctx context.Context,
 	verificationKey string, verification pb.Verification) (*pb.PublishVerificationResponse, error) {
 	data, err := json.Marshal(verification)
 	if err != nil {
-		pactLogger.Errorf(nil, "verification result publish failed, verification result marshal error.")
+		PactLogger.Errorf(nil, "verification result publish failed, verification result marshal error.")
 		return &pb.PublishVerificationResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "verification result marshal error."),
 		}, err
@@ -488,22 +488,22 @@ func CreateVerification(pactLogger core.Logger, ctx context.Context,
 		registry.WithStrKey(verificationKey),
 		registry.WithValue(data))
 	if err != nil {
-		pactLogger.Errorf(nil, "verification result publish failed, verification result cannot be created.")
+		PactLogger.Errorf(nil, "verification result publish failed, verification result cannot be created.")
 		return &pb.PublishVerificationResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "verification result cannot be created."),
 		}, err
 	}
 	k := apt.GetBrokerLatestVerificationIDKey()
 	v := strconv.Itoa(int(verification.Id))
-	pactLogger.Infof("Inserting (%s, %s)", k, v)
+	PactLogger.Infof("Inserting (%s, %s)", k, v)
 	err = StoreData(ctx, k, v)
 	if err != nil {
-		pactLogger.Errorf(nil, "verification result publish failed, verification result cannot be created.")
+		PactLogger.Errorf(nil, "verification result publish failed, verification result cannot be created.")
 		return &pb.PublishVerificationResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "verification result cannot be created."),
 		}, err
 	}
-	pactLogger.Infof("Verification result created for key: %s", verificationKey)
+	PactLogger.Infof("Verification result created for key: %s", verificationKey)
 	return nil, nil
 }
 
@@ -538,7 +538,7 @@ func GetLastestVersionNumberForParticipant(ctx context.Context,
 func RetrieveProviderConsumerPact(ctx context.Context,
 	in *pb.GetProviderConsumerVersionPactRequest) (*pb.GetProviderConsumerVersionPactResponse, int32, error) {
 	if in == nil || len(in.ProviderId) == 0 || len(in.ConsumerId) == 0 || len(in.Version) == 0 {
-		pactLogger.Errorf(nil, "pact retrieve request failed: invalid params.")
+		PactLogger.Errorf(nil, "pact retrieve request failed: invalid params.")
 		return &pb.GetProviderConsumerVersionPactResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
 		}, -1, nil
@@ -547,13 +547,13 @@ func RetrieveProviderConsumerPact(ctx context.Context,
 	// Get provider microservice
 	provider, err := GetService(ctx, tenant, in.ProviderId)
 	if err != nil {
-		pactLogger.Errorf(err, "pact retrieve failed, providerId is %s: query provider failed.", in.ProviderId)
+		PactLogger.Errorf(err, "pact retrieve failed, providerId is %s: query provider failed.", in.ProviderId)
 		return &pb.GetProviderConsumerVersionPactResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Query provider failed."),
 		}, -1, err
 	}
 	if provider == nil {
-		pactLogger.Errorf(nil, "pact retrieve failed, providerId is %s: provider not exist.", in.ProviderId)
+		PactLogger.Errorf(nil, "pact retrieve failed, providerId is %s: provider not exist.", in.ProviderId)
 		return &pb.GetProviderConsumerVersionPactResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Provider does not exist."),
 		}, -1, nil
@@ -561,13 +561,13 @@ func RetrieveProviderConsumerPact(ctx context.Context,
 	// Get consumer microservice
 	consumer, err := GetService(ctx, tenant, in.ConsumerId)
 	if err != nil {
-		pactLogger.Errorf(err, "pact retrieve failed, consumerId is %s: query consumer failed.", in.ConsumerId)
+		PactLogger.Errorf(err, "pact retrieve failed, consumerId is %s: query consumer failed.", in.ConsumerId)
 		return &pb.GetProviderConsumerVersionPactResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Query consumer failed."),
 		}, -1, err
 	}
 	if consumer == nil {
-		pactLogger.Errorf(nil, "pact retrieve failed, consumerId is %s: consumer not exist.", in.ConsumerId)
+		PactLogger.Errorf(nil, "pact retrieve failed, consumerId is %s: consumer not exist.", in.ConsumerId)
 		return &pb.GetProviderConsumerVersionPactResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Consumer does not exist."),
 		}, -1, nil
@@ -576,7 +576,7 @@ func RetrieveProviderConsumerPact(ctx context.Context,
 	//providerParticipantKey := apt.GenerateBrokerParticipantKey(tenant, provider.AppId, provider.ServiceName)
 	providerParticipant, err := GetParticipant(ctx, tenant, provider.AppId, provider.ServiceName)
 	if err != nil || providerParticipant == nil {
-		pactLogger.Errorf(nil, "pact retrieve failed, provider participant %s cannot be searched.", in.ProviderId)
+		PactLogger.Errorf(nil, "pact retrieve failed, provider participant %s cannot be searched.", in.ProviderId)
 		return &pb.GetProviderConsumerVersionPactResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Provider participant cannot be searched."),
 		}, -1, err
@@ -585,7 +585,7 @@ func RetrieveProviderConsumerPact(ctx context.Context,
 	//consumerParticipantKey := apt.GenerateBrokerParticipantKey(tenant, consumer.AppId, consumer.ServiceName)
 	consumerParticipant, err := GetParticipant(ctx, tenant, consumer.AppId, consumer.ServiceName)
 	if err != nil || consumerParticipant == nil {
-		pactLogger.Errorf(nil, "pact retrieve failed, consumer participant %s cannot be searched.", in.ConsumerId)
+		PactLogger.Errorf(nil, "pact retrieve failed, consumer participant %s cannot be searched.", in.ConsumerId)
 		return &pb.GetProviderConsumerVersionPactResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "consumer participant cannot be searched."),
 		}, -1, err
@@ -594,7 +594,7 @@ func RetrieveProviderConsumerPact(ctx context.Context,
 	//versionKey := apt.GenerateBrokerVersionKey(tenant, in.Version, consumerParticipant.Id)
 	version, err := GetVersion(ctx, tenant, in.Version, consumerParticipant.Id)
 	if err != nil || version == nil {
-		pactLogger.Errorf(nil, "pact retrieve failed, version cannot be searched.")
+		PactLogger.Errorf(nil, "pact retrieve failed, version cannot be searched.")
 		return &pb.GetProviderConsumerVersionPactResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "version cannot be searched."),
 		}, -1, err
@@ -612,7 +612,7 @@ func RetrieveProviderConsumerPact(ctx context.Context,
 		return nil, -1, err
 	}
 	if len(pactVersions.Kvs) == 0 {
-		pactLogger.Info("[RetrieveProviderPact] No pact version found, sorry")
+		PactLogger.Info("[RetrieveProviderPact] No pact version found, sorry")
 		return nil, -1, nil
 	}
 	pactIds := make(map[int32]int32)
@@ -629,7 +629,7 @@ func RetrieveProviderConsumerPact(ctx context.Context,
 		}
 	}
 	if len(pactIds) == 0 {
-		pactLogger.Errorf(nil, "pact retrieve failed, pact cannot be found.")
+		PactLogger.Errorf(nil, "pact retrieve failed, pact cannot be found.")
 		return &pb.GetProviderConsumerVersionPactResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "pact cannot be found."),
 		}, -1, err
@@ -647,7 +647,7 @@ func RetrieveProviderConsumerPact(ctx context.Context,
 		return nil, -1, err
 	}
 	if len(pacts.Kvs) == 0 {
-		pactLogger.Info("[RetrieveProviderPact] No pact version found, sorry")
+		PactLogger.Info("[RetrieveProviderPact] No pact version found, sorry")
 		return nil, -1, nil
 	}
 	for i := 0; i < len(pacts.Kvs); i++ {
@@ -657,14 +657,14 @@ func RetrieveProviderConsumerPact(ctx context.Context,
 			return nil, -1, err
 		}
 		if _, ok := pactIds[pactObj.Id]; ok {
-			//pactLogger.Infof("pact retrieve succeeded, found pact: %s", string(pactObj.Content))
+			//PactLogger.Infof("pact retrieve succeeded, found pact: %s", string(pactObj.Content))
 			return &pb.GetProviderConsumerVersionPactResponse{
 				Response: pb.CreateResponse(pb.Response_SUCCESS, "pact found."),
 				Pact:     pactObj.Content,
 			}, pactObj.Id, nil
 		}
 	}
-	pactLogger.Errorf(nil, "pact retrieve failed, pact cannot be found.")
+	PactLogger.Errorf(nil, "pact retrieve failed, pact cannot be found.")
 	return &pb.GetProviderConsumerVersionPactResponse{
 		Response: pb.CreateResponse(pb.Response_FAIL, "pact cannot be found."),
 	}, -1, nil
