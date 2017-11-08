@@ -14,14 +14,15 @@
 package store
 
 import (
+	"strconv"
+	"sync"
+	"time"
+
 	"github.com/ServiceComb/service-center/pkg/util"
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"golang.org/x/net/context"
-	"strconv"
-	"sync"
-	"time"
 )
 
 const (
@@ -38,6 +39,13 @@ const (
 	RULE_INDEX
 	DEPENDENCY
 	DEPENDENCY_RULE
+	PARTICIPANT
+	VERSION
+	PACT
+	PACT_VERSION
+	PACT_TAG
+	VERIFICATION
+	PACT_LATEST
 	typeEnd
 )
 
@@ -55,6 +63,13 @@ var TypeNames = []string{
 	RULE_INDEX:      "RULE_INDEX",
 	DEPENDENCY:      "DEPENDENCY",
 	DEPENDENCY_RULE: "DEPENDENCY_RULE",
+	PARTICIPANT:     "PARTICIPANT",
+	VERSION:         "VERSION",
+	PACT:            "PACT",
+	PACT_VERSION:    "PACT_VERSION",
+	PACT_TAG:        "PACT_TAG",
+	VERIFICATION:    "VERIFICATION",
+	PACT_LATEST:     "PACT_LATEST",
 }
 
 var TypeRoots = map[StoreType]string{
@@ -71,6 +86,14 @@ var TypeRoots = map[StoreType]string{
 	RULE_INDEX:      apt.GetServiceRuleIndexRootKey(""),
 	DEPENDENCY:      apt.GetServiceDependencyRootKey(""),
 	DEPENDENCY_RULE: apt.GetServiceDependencyRuleRootKey(""),
+	// broker related:
+	PARTICIPANT:  apt.GetBrokerParticipantKey(""),
+	VERSION:      apt.GetBrokerVersionKey(""),
+	PACT:         apt.GetBrokerPactKey(""),
+	PACT_VERSION: apt.GetBrokerPactVersionKey(""),
+	PACT_TAG:     apt.GetBrokerTagKey(""),
+	VERIFICATION: apt.GetBrokerVerificationKey(""),
+	PACT_LATEST:  apt.GetBrokerLatestKey(""),
 }
 
 var store *KvStore
@@ -206,6 +229,14 @@ func (s *KvStore) store() {
 	s.newStore(RULE)
 	s.newStore(RULE_INDEX)
 	s.newStore(SCHEMA_SUMMARY)
+	//Broker related
+	s.newStore(PARTICIPANT)
+	s.newStore(VERSION)
+	s.newStore(PACT)
+	s.newStore(PACT_VERSION)
+	s.newStore(PACT_TAG)
+	s.newStore(VERIFICATION)
+	s.newStore(PACT_LATEST)
 	for _, i := range s.indexers {
 		<-i.Ready()
 	}
@@ -321,6 +352,35 @@ func (s *KvStore) DependencyRule() *Indexer {
 
 func (s *KvStore) Domain() *Indexer {
 	return s.indexers[DOMAIN]
+}
+
+//Broker related
+func (s *KvStore) Participant() *Indexer {
+	return s.indexers[PARTICIPANT]
+}
+
+func (s *KvStore) Version() *Indexer {
+	return s.indexers[VERSION]
+}
+
+func (s *KvStore) Pact() *Indexer {
+	return s.indexers[PACT]
+}
+
+func (s *KvStore) PactVersion() *Indexer {
+	return s.indexers[PACT_VERSION]
+}
+
+func (s *KvStore) PactTag() *Indexer {
+	return s.indexers[PACT_TAG]
+}
+
+func (s *KvStore) Verification() *Indexer {
+	return s.indexers[VERIFICATION]
+}
+
+func (s *KvStore) PactLatest() *Indexer {
+	return s.indexers[PACT_LATEST]
 }
 
 func (s *KvStore) KeepAlive(ctx context.Context, opts ...registry.PluginOpOption) (int64, error) {

@@ -15,6 +15,8 @@ package server
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/ServiceComb/service-center/pkg/grace"
 	"github.com/ServiceComb/service-center/pkg/rest"
 	"github.com/ServiceComb/service-center/pkg/util"
@@ -24,7 +26,6 @@ import (
 	"github.com/ServiceComb/service-center/server/rpc"
 	"github.com/ServiceComb/service-center/server/service"
 	"golang.org/x/net/context"
-	"time"
 )
 
 var apiServer *APIServer
@@ -34,7 +35,8 @@ func init() {
 }
 
 func InitAPI() {
-	core.ServiceAPI, core.InstanceAPI, core.GovernServiceAPI = service.AssembleResources()
+	core.ServiceAPI, core.InstanceAPI, core.GovernServiceAPI,
+		core.BrokerServiceAPI = service.AssembleResources()
 	apiServer = &APIServer{
 		isClose: true,
 		err:     make(chan error, 1),

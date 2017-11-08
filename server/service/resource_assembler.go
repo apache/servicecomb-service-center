@@ -17,9 +17,11 @@ import (
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 )
 
-func AssembleResources() (pb.ServiceCtrlServer, pb.SerivceInstanceCtrlServerEx, pb.GovernServiceCtrlServerEx) {
+func AssembleResources() (pb.ServiceCtrlServer, pb.SerivceInstanceCtrlServerEx,
+	pb.GovernServiceCtrlServerEx, pb.BrokerServiceCtrlServer) {
 	var serviceController ServiceController
 	var instanceController InstanceController
 	var governServiceAPI GovernServiceController
-	return &serviceController, &instanceController, &governServiceAPI
+	var brokerController BrokerController
+	return &serviceController, &instanceController, &governServiceAPI, &brokerController
 }
