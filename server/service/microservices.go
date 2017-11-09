@@ -18,6 +18,7 @@ import (
 	"fmt"
 	errorsEx "github.com/ServiceComb/service-center/pkg/errors"
 	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/ServiceComb/service-center/server/core"
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
@@ -29,7 +30,6 @@ import (
 	"golang.org/x/net/context"
 	"strconv"
 	"time"
-	"github.com/ServiceComb/service-center/server/core"
 )
 
 type ServiceController struct {
@@ -75,16 +75,16 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 		}, nil
 	}
 
-	tenant := util.ParseTenantProject(ctx)
+	domainProject := util.ParseDomainProject(ctx)
 
 	consumer := &pb.MicroServiceKey{
 		AppId:       service.AppId,
 		ServiceName: service.ServiceName,
 		Alias:       service.Alias,
 		Version:     service.Version,
-		Tenant:      tenant,
+		Tenant:      domainProject,
 	}
-	reporter, err := checkBeforeCreate(ctx, tenant)
+	reporter, err := checkBeforeCreate(ctx, domainProject)
 	if reporter != nil {
 		defer reporter.Close()
 	}
@@ -119,12 +119,10 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 			Response: pb.CreateResponse(pb.Response_FAIL, "Body error "+err.Error()),
 		}, nil
 	}
-	key := apt.GenerateServiceKey(tenant, serviceId)
+	key := apt.GenerateServiceKey(domainProject, serviceId)
 	index := apt.GenerateServiceIndexKey(consumer)
 	indexBytes := util.StringToBytesWithNoCopy(index)
 	aliasBytes := util.StringToBytesWithNoCopy(apt.GenerateServiceAliasKey(consumer))
-	util.Logger().Debugf("start register service: %s %v", key, service)
-	util.Logger().Debugf("start register service index: %s %v", index, serviceId)
 	opts := []registry.PluginOp{
 		registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)),
 		registry.OpPut(registry.WithKey(indexBytes), registry.WithStrValue(serviceId)),
@@ -180,12 +178,12 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 	}, nil
 }
 
-func checkBeforeCreate(ctx context.Context, tenant string)  (quota.QuotaReporter, error) {
+func checkBeforeCreate(ctx context.Context, domainProject string) (quota.QuotaReporter, error) {
 	if core.ISSCSelf(ctx) {
 		util.Logger().Infof("it is service-center")
 		return nil, nil
 	}
-	reporter, ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.MicroServiceQuotaType, tenant, "", 1)
+	reporter, ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.MicroServiceQuotaType, domainProject, "", 1)
 	if err != nil {
 		return reporter, errorsEx.InternalError(err.Error())
 	}
@@ -196,9 +194,9 @@ func checkBeforeCreate(ctx context.Context, tenant string)  (quota.QuotaReporter
 }
 
 func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId string, force bool) (*pb.Response, error) {
-	tenant := util.ParseTenantProject(ctx)
+	domainProject := util.ParseDomainProject(ctx)
 
-	service, err := serviceUtil.GetService(ctx, tenant, ServiceId)
+	service, err := serviceUtil.GetService(ctx, domainProject, ServiceId)
 	if err != nil {
 		util.Logger().Errorf(err, "delete microservice failed, serviceId is %s: get service failed.", ServiceId)
 		return pb.CreateResponse(pb.Response_FAIL, err.Error()), err
@@ -213,7 +211,7 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 
 	// 强制删除，则与该服务相关的信息删除，非强制删除： 如果作为该被依赖（作为provider，提供服务,且不是只存在自依赖）或者存在实例，则不能删除
 	if !force {
-		dr := serviceUtil.NewProviderDependencyRelation(ctx, tenant, ServiceId, service)
+		dr := serviceUtil.NewProviderDependencyRelation(ctx, domainProject, ServiceId, service)
 		services, err := dr.GetDependencyConsumerIds()
 		if err != nil {
 			util.Logger().Errorf(err, "delete microservice failed, serviceId is %s:(unforce) inner err, get service dependency failed.", ServiceId)
@@ -224,7 +222,7 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 			return pb.CreateResponse(pb.Response_FAIL, "Can not delete this service, other service rely it."), err
 		}
 
-		instancesKey := apt.GenerateInstanceKey(tenant, ServiceId, "")
+		instancesKey := apt.GenerateInstanceKey(domainProject, ServiceId, "")
 		rsp, err := store.Store().Instance().Search(ctx,
 			registry.WithStrKey(instancesKey),
 			registry.WithPrefix(),
@@ -245,11 +243,11 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 		ServiceName: service.ServiceName,
 		Version:     service.Version,
 		Alias:       service.Alias,
-		Tenant:      tenant,
+		Tenant:      domainProject,
 	}
 
 	//refresh msCache consumerCache, ensure that watch can notify consumers when no cache.
-	err = serviceUtil.RefreshDependencyCache(ctx, tenant, ServiceId, service)
+	err = serviceUtil.RefreshDependencyCache(ctx, domainProject, ServiceId, service)
 	if err != nil {
 		util.Logger().Errorf(err, "delete microservice failed, serviceId is %s: inner err, refresh service dependency cache failed.", ServiceId)
 		return pb.CreateResponse(pb.Response_FAIL, "Refresh dependency cache failed."), err
@@ -258,9 +256,9 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 	opts := []registry.PluginOp{
 		registry.OpDel(registry.WithStrKey(apt.GenerateServiceIndexKey(consumer))),
 		registry.OpDel(registry.WithStrKey(apt.GenerateServiceAliasKey(consumer))),
-		registry.OpDel(registry.WithStrKey(apt.GenerateServiceKey(tenant, ServiceId))),
+		registry.OpDel(registry.WithStrKey(apt.GenerateServiceKey(domainProject, ServiceId))),
 		registry.OpDel(registry.WithStrKey(
-			util.StringJoin([]string{apt.GetServiceRuleRootKey(tenant), ServiceId, ""}, "/"))),
+			util.StringJoin([]string{apt.GetServiceRuleRootKey(domainProject), ServiceId, ""}, "/"))),
 	}
 
 	//删除依赖规则
@@ -279,19 +277,19 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 
 	//删除黑白名单
 	opts = append(opts, registry.OpDel(
-		registry.WithStrKey(apt.GenerateServiceRuleKey(tenant, ServiceId, "")),
+		registry.WithStrKey(apt.GenerateServiceRuleKey(domainProject, ServiceId, "")),
 		registry.WithPrefix()))
 	opts = append(opts, registry.OpDel(
-		registry.WithStrKey(apt.GenerateRuleIndexKey(tenant, ServiceId, "", ""))))
+		registry.WithStrKey(apt.GenerateRuleIndexKey(domainProject, ServiceId, "", ""))))
 
 	//删除shemas
 	opts = append(opts, registry.OpDel(
-		registry.WithStrKey(apt.GenerateServiceSchemaKey(tenant, ServiceId, "")),
+		registry.WithStrKey(apt.GenerateServiceSchemaKey(domainProject, ServiceId, "")),
 		registry.WithPrefix()))
 
 	//删除tags
 	opts = append(opts, registry.OpDel(
-		registry.WithStrKey(apt.GenerateServiceTagKey(tenant, ServiceId))))
+		registry.WithStrKey(apt.GenerateServiceTagKey(domainProject, ServiceId))))
 
 	//删除实例
 	err = serviceUtil.DeleteServiceAllInstances(ctx, ServiceId)
@@ -425,8 +423,8 @@ func (s *ServiceController) GetOne(ctx context.Context, in *pb.GetServiceRequest
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
 	}
-	tenant := util.ParseTenantProject(ctx)
-	service, err := serviceUtil.GetService(ctx, tenant, in.ServiceId,
+	domainProject := util.ParseDomainProject(ctx)
+	service, err := serviceUtil.GetService(ctx, domainProject, in.ServiceId,
 		serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))...)
 
 	if err != nil {
@@ -484,10 +482,10 @@ func (s *ServiceController) UpdateProperties(ctx context.Context, in *pb.UpdateS
 		}, nil
 	}
 
-	tenant := util.ParseTenantProject(ctx)
+	domainProject := util.ParseDomainProject(ctx)
 
-	key := apt.GenerateServiceKey(tenant, in.ServiceId)
-	service, err := serviceUtil.GetService(ctx, tenant, in.ServiceId)
+	key := apt.GenerateServiceKey(domainProject, in.ServiceId)
+	service, err := serviceUtil.GetService(ctx, domainProject, in.ServiceId)
 	if err != nil {
 		util.Logger().Errorf(err, "update service properties failed, serviceId is %s: query service failed.", in.ServiceId)
 		return &pb.UpdateServicePropsResponse{
@@ -540,7 +538,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 		}, nil
 	}
 
-	tenant := util.ParseTenantProject(ctx)
+	domainProject := util.ParseDomainProject(ctx)
 	switch in.Type {
 	case "microservice":
 		if len(in.AppId) == 0 || len(in.ServiceName) == 0 || len(in.Version) == 0 {
@@ -563,7 +561,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 			ServiceName: in.ServiceName,
 			Alias:       in.ServiceName,
 			Version:     in.Version,
-			Tenant:      tenant,
+			Tenant:      domainProject,
 		}, serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))...)
 		if err != nil {
 			util.Logger().Errorf(err, "microservice exist failed, service %s: find serviceIds failed.", serviceFlag)
@@ -599,14 +597,14 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 
 		opts := serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))
 
-		if !serviceUtil.ServiceExist(ctx, tenant, in.ServiceId, opts...) {
+		if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId, opts...) {
 			util.Logger().Warnf(nil, "schema exist failed, serviceId %s, schemaId %s: service not exist.", in.ServiceId, in.SchemaId)
 			return &pb.GetExistenceResponse{
 				Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
 			}, nil
 		}
 
-		key := apt.GenerateServiceSchemaKey(tenant, in.ServiceId, in.SchemaId)
+		key := apt.GenerateServiceSchemaKey(domainProject, in.ServiceId, in.SchemaId)
 		exist, err := serviceUtil.CheckSchemaInfoExist(ctx, key, opts...)
 		if err != nil {
 			util.Logger().Errorf(err, "schema exist failed, serviceId %s, schemaId %s: get schema failed.", in.ServiceId, in.SchemaId)
@@ -620,7 +618,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 				Response: pb.CreateResponse(pb.Response_FAIL, "Schema does not exist."),
 			}, nil
 		}
-		schemaSummary, err := getSchemaSummary(ctx, tenant, in.ServiceId, in.SchemaId)
+		schemaSummary, err := getSchemaSummary(ctx, domainProject, in.ServiceId, in.SchemaId)
 		if err != nil {
 			util.Logger().Errorf(err, "schema exist failed, serviceId %s, schemaId %s: get schema summary failed.", in.ServiceId, in.SchemaId)
 			return &pb.GetExistenceResponse{
@@ -630,7 +628,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 		return &pb.GetExistenceResponse{
 			Response: pb.CreateResponse(pb.Response_SUCCESS, "Schema exist."),
 			SchemaId: in.SchemaId,
-			Summary: schemaSummary,
+			Summary:  schemaSummary,
 		}, nil
 	default:
 		util.Logger().Warnf(nil, "unexpected type '%s' for query.", in.Type)

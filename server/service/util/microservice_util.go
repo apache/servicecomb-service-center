@@ -21,10 +21,10 @@ import (
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
+	"github.com/ServiceComb/service-center/server/infra/quota"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"time"
-	"github.com/ServiceComb/service-center/server/infra/quota"
 )
 
 var msCache *cache.Cache
@@ -74,8 +74,8 @@ func GetServiceInCache(ctx context.Context, domain string, id string) (*pb.Micro
 	return ms.(*pb.MicroService), nil
 }
 
-func GetService(ctx context.Context, tenant string, serviceId string, opts ...registry.PluginOpOption) (*pb.MicroService, error) {
-	key := apt.GenerateServiceKey(tenant, serviceId)
+func GetService(ctx context.Context, domainProject string, serviceId string, opts ...registry.PluginOpOption) (*pb.MicroService, error) {
+	key := apt.GenerateServiceKey(domainProject, serviceId)
 	opts = append(opts, registry.WithStrKey(key))
 	serviceResp, err := store.Store().Service().Search(ctx, opts...)
 	if err != nil {
@@ -92,8 +92,8 @@ func GetService(ctx context.Context, tenant string, serviceId string, opts ...re
 	return service, nil
 }
 
-func GetServicesRawData(ctx context.Context, tenant string, opts ...registry.PluginOpOption) ([]*mvccpb.KeyValue, error) {
-	key := apt.GenerateServiceKey(tenant, "")
+func GetServicesRawData(ctx context.Context, domainProject string, opts ...registry.PluginOpOption) ([]*mvccpb.KeyValue, error) {
+	key := apt.GenerateServiceKey(domainProject, "")
 	opts = append(opts,
 		registry.WithStrKey(key),
 		registry.WithPrefix())
@@ -104,8 +104,8 @@ func GetServicesRawData(ctx context.Context, tenant string, opts ...registry.Plu
 	return resp.Kvs, err
 }
 
-func GetServicesByTenant(ctx context.Context, tenant string, opts ...registry.PluginOpOption) ([]*pb.MicroService, error) {
-	kvs, err := GetServicesRawData(ctx, tenant, opts...)
+func GetServicesByDomain(ctx context.Context, domainProject string, opts ...registry.PluginOpOption) ([]*pb.MicroService, error) {
+	kvs, err := GetServicesRawData(ctx, domainProject, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -210,9 +210,9 @@ FIND_RULE:
 	return ids, nil
 }
 
-func ServiceExist(ctx context.Context, tenant string, serviceId string, opts ...registry.PluginOpOption) bool {
+func ServiceExist(ctx context.Context, domainProject string, serviceId string, opts ...registry.PluginOpOption) bool {
 	opts = append(opts,
-		registry.WithStrKey(apt.GenerateServiceKey(tenant, serviceId)),
+		registry.WithStrKey(apt.GenerateServiceKey(domainProject, serviceId)),
 		registry.WithCountOnly())
 	resp, err := store.Store().Service().Search(ctx, opts...)
 	if err != nil || resp.Count == 0 {
@@ -222,8 +222,8 @@ func ServiceExist(ctx context.Context, tenant string, serviceId string, opts ...
 }
 
 func GetAllServiceUtil(ctx context.Context, opts ...registry.PluginOpOption) ([]*pb.MicroService, error) {
-	tenant := util.ParseTenantProject(ctx)
-	services, err := GetServicesByTenant(ctx, tenant, opts...)
+	domainProject := util.ParseDomainProject(ctx)
+	services, err := GetServicesByDomain(ctx, domainProject, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -238,9 +238,9 @@ func RemandInstanceQuota(ctx context.Context) {
 	quota.QuotaPlugins[quota.QuataType]().RemandQuotas(ctx, quota.MicroServiceInstanceQuotaType)
 }
 
-func UpdateService(tenant string, serviceId string, service *pb.MicroService) (opt registry.PluginOp, err error) {
+func UpdateService(domainProject string, serviceId string, service *pb.MicroService) (opt registry.PluginOp, err error) {
 	opt = registry.PluginOp{}
-	key := apt.GenerateServiceKey(tenant, serviceId)
+	key := apt.GenerateServiceKey(domainProject, serviceId)
 	data, err := json.Marshal(service)
 	if err != nil {
 		util.Logger().Errorf(err, "marshal service failed.")

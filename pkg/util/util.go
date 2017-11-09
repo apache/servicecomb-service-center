@@ -122,12 +122,12 @@ func SetReqCtx(r *http.Request, key string, val interface{}) {
 	}
 }
 
-func ParseTenantProject(ctx context.Context) string {
-	return StringJoin([]string{ParseTenant(ctx), ParseProject(ctx)}, "/")
+func ParseDomainProject(ctx context.Context) string {
+	return ParseDomain(ctx) + "/" + ParseProject(ctx)
 }
 
-func ParseTenant(ctx context.Context) string {
-	v, ok := FromContext(ctx, "tenant").(string)
+func ParseDomain(ctx context.Context) string {
+	v, ok := FromContext(ctx, "domain").(string)
 	if !ok {
 		return ""
 	}

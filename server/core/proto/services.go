@@ -25,6 +25,7 @@ import (
 type EventType string
 
 const (
+	EVT_INIT   EventType = "INIT"
 	EVT_CREATE EventType = "CREATE"
 	EVT_UPDATE EventType = "UPDATE"
 	EVT_DELETE EventType = "DELETE"
@@ -81,18 +82,18 @@ func KvToResponse(kv *mvccpb.KeyValue) (keys []string, data []byte) {
 	return
 }
 
-func GetInfoFromSvcKV(kv *mvccpb.KeyValue) (serviceId, tenantProject string, data []byte) {
+func GetInfoFromSvcKV(kv *mvccpb.KeyValue) (serviceId, domainProject string, data []byte) {
 	keys, data := KvToResponse(kv)
 	l := len(keys)
 	if l < 4 {
 		return
 	}
 	serviceId = keys[l-1]
-	tenantProject = fmt.Sprintf("%s/%s", keys[l-3], keys[l-2])
+	domainProject = fmt.Sprintf("%s/%s", keys[l-3], keys[l-2])
 	return
 }
 
-func GetInfoFromInstKV(kv *mvccpb.KeyValue) (serviceId, instanceId, tenantProject string, data []byte) {
+func GetInfoFromInstKV(kv *mvccpb.KeyValue) (serviceId, instanceId, domainProject string, data []byte) {
 	keys, data := KvToResponse(kv)
 	l := len(keys)
 	if l < 4 {
@@ -100,20 +101,31 @@ func GetInfoFromInstKV(kv *mvccpb.KeyValue) (serviceId, instanceId, tenantProjec
 	}
 	serviceId = keys[l-2]
 	instanceId = keys[l-1]
-	tenantProject = fmt.Sprintf("%s/%s", keys[l-4], keys[l-3])
+	domainProject = fmt.Sprintf("%s/%s", keys[l-4], keys[l-3])
 	return
 }
 
-func GetInfoFromDomainKV(kv *mvccpb.KeyValue) (tenant string, data []byte) {
+func GetInfoFromDomainKV(kv *mvccpb.KeyValue) (domain string, data []byte) {
 	keys, data := KvToResponse(kv)
-	if len(keys) < 1 {
+	l := len(keys)
+	if l < 1 {
 		return
 	}
-	tenant = keys[len(keys)-1]
+	domain = keys[l-1]
 	return
 }
 
-func GetInfoFromRuleKV(kv *mvccpb.KeyValue) (serviceId, ruleId, tenantProject string, data []byte) {
+func GetInfoFromProjectKV(kv *mvccpb.KeyValue) (domainProject string, data []byte) {
+	keys, data := KvToResponse(kv)
+	l := len(keys)
+	if l < 2 {
+		return
+	}
+	domainProject = fmt.Sprintf("%s/%s", keys[l-2], keys[l-1])
+	return
+}
+
+func GetInfoFromRuleKV(kv *mvccpb.KeyValue) (serviceId, ruleId, domainProject string, data []byte) {
 	keys, data := KvToResponse(kv)
 	l := len(keys)
 	if l < 4 {
@@ -121,26 +133,26 @@ func GetInfoFromRuleKV(kv *mvccpb.KeyValue) (serviceId, ruleId, tenantProject st
 	}
 	serviceId = keys[l-2]
 	ruleId = keys[l-1]
-	tenantProject = fmt.Sprintf("%s/%s", keys[l-4], keys[l-3])
+	domainProject = fmt.Sprintf("%s/%s", keys[l-4], keys[l-3])
 	return
 }
 
-func GetInfoFromTagKV(kv *mvccpb.KeyValue) (serviceId, tenantProject string, data []byte) {
+func GetInfoFromTagKV(kv *mvccpb.KeyValue) (serviceId, domainProject string, data []byte) {
 	keys, data := KvToResponse(kv)
 	l := len(keys)
 	if l < 3 {
 		return
 	}
 	serviceId = keys[l-1]
-	tenantProject = fmt.Sprintf("%s/%s", keys[l-3], keys[l-2])
+	domainProject = fmt.Sprintf("%s/%s", keys[l-3], keys[l-2])
 	return
 }
 
-func TransferToMicroServiceKeys(in []*DependencyMircroService, tenant string) []*MicroServiceKey {
+func TransferToMicroServiceKeys(in []*DependencyMircroService, domainProject string) []*MicroServiceKey {
 	rst := []*MicroServiceKey{}
 	for _, value := range in {
 		rst = append(rst, &MicroServiceKey{
-			Tenant:      tenant,
+			Tenant:      domainProject,
 			AppId:       value.AppId,
 			ServiceName: value.ServiceName,
 			Version:     value.Version,
@@ -149,9 +161,9 @@ func TransferToMicroServiceKeys(in []*DependencyMircroService, tenant string) []
 	return rst
 }
 
-func ToMicroServiceKey(tenant string, in *MicroService) *MicroServiceKey {
+func ToMicroServiceKey(domainProject string, in *MicroService) *MicroServiceKey {
 	return &MicroServiceKey{
-		Tenant:      tenant,
+		Tenant:      domainProject,
 		AppId:       in.AppId,
 		ServiceName: in.ServiceName,
 		Version:     in.Version,

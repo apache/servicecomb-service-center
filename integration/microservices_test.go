@@ -201,7 +201,7 @@ var _ = Describe("MicroService Api Test", func() {
 					Expect(foundMicroService).To(Equal(true))
 				})
 
-				It("test get all service with wrong tenant name", func() {
+				It("test get all service with wrong domain name", func() {
 					req, _ := http.NewRequest(GET, SCURL+GETALLSERVICE, nil)
 					req.Header.Set("X-Domain-Name", "default1")
 					resp, _ := scclient.Do(req)

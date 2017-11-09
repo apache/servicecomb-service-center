@@ -28,9 +28,9 @@ type TagsChangedAsyncTask struct {
 	key string
 	err error
 
-	Tenant     string
-	consumerId string
-	Rev        int64
+	DomainProject string
+	consumerId    string
+	Rev           int64
 }
 
 func (apt *TagsChangedAsyncTask) Key() string {
@@ -38,8 +38,8 @@ func (apt *TagsChangedAsyncTask) Key() string {
 }
 
 func (apt *TagsChangedAsyncTask) Do(ctx context.Context) error {
-	defer store.Store().AsyncTasker().DeferRemoveTask(apt.Key())
-	apt.err = apt.publish(ctx, apt.Tenant, apt.consumerId, apt.Rev)
+	defer store.AsyncTaskService().DeferRemove(apt.Key())
+	apt.err = apt.publish(ctx, apt.DomainProject, apt.consumerId, apt.Rev)
 	return apt.err
 }
 
@@ -47,8 +47,8 @@ func (apt *TagsChangedAsyncTask) Err() error {
 	return apt.err
 }
 
-func (apt *TagsChangedAsyncTask) publish(ctx context.Context, tenant, consumerId string, rev int64) error {
-	consumer, err := serviceUtil.GetService(ctx, tenant, consumerId)
+func (apt *TagsChangedAsyncTask) publish(ctx context.Context, domainProject, consumerId string, rev int64) error {
+	consumer, err := serviceUtil.GetService(ctx, domainProject, consumerId)
 	if err != nil {
 		util.Logger().Errorf(err, "get comsumer for publish event %s failed", consumerId)
 		return err
@@ -61,19 +61,19 @@ func (apt *TagsChangedAsyncTask) publish(ctx context.Context, tenant, consumerId
 		}
 		consumer = consumerTmp.(*pb.MicroService)
 	}
-	providerIds, err := serviceUtil.GetProvidersInCache(ctx, tenant, consumerId, consumer)
+	providerIds, err := serviceUtil.GetProvidersInCache(ctx, domainProject, consumerId, consumer)
 	if err != nil {
 		util.Logger().Errorf(err, "get provider services by consumer %s failed", consumerId)
 		return err
 	}
 
 	for _, providerId := range providerIds {
-		provider, err := serviceUtil.GetService(ctx, tenant, providerId)
+		provider, err := serviceUtil.GetService(ctx, domainProject, providerId)
 		if provider == nil {
 			util.Logger().Warnf(err, "get service %s file failed", providerId)
 			continue
 		}
-		nf.PublishInstanceEvent(tenant, pb.EVT_EXPIRE,
+		nf.PublishInstanceEvent(domainProject, pb.EVT_EXPIRE,
 			&pb.MicroServiceKey{
 				AppId:       provider.AppId,
 				ServiceName: provider.ServiceName,
@@ -91,9 +91,13 @@ func (h *TagEventHandler) Type() store.StoreType {
 }
 
 func (h *TagEventHandler) OnEvent(evt *store.KvEvent) {
-	kv := evt.KV
 	action := evt.Action
-	consumerId, tenant, data := pb.GetInfoFromTagKV(kv)
+	if action == pb.EVT_INIT {
+		return
+	}
+
+	kv := evt.KV
+	consumerId, domainProject, data := pb.GetInfoFromTagKV(kv)
 	if data == nil {
 		util.Logger().Errorf(nil,
 			"unmarshal service rule file failed, service %s tags [%s] event, data is nil",
@@ -115,19 +119,19 @@ func (h *TagEventHandler) OnEvent(evt *store.KvEvent) {
 		return
 	}
 
-	store.Store().AsyncTasker().AddTask(context.Background(),
-		NewTagsChangedAsyncTask(tenant, consumerId, evt.Revision))
+	store.AsyncTaskService().Add(context.Background(),
+		NewTagsChangedAsyncTask(domainProject, consumerId, evt.Revision))
 }
 
 func NewTagEventHandler() *TagEventHandler {
 	return &TagEventHandler{}
 }
 
-func NewTagsChangedAsyncTask(tenant, consumerId string, rev int64) *TagsChangedAsyncTask {
+func NewTagsChangedAsyncTask(domainProject, consumerId string, rev int64) *TagsChangedAsyncTask {
 	return &TagsChangedAsyncTask{
-		key:        "TagsChangedAsyncTask_" + consumerId,
-		Tenant:     tenant,
-		consumerId: consumerId,
-		Rev:        rev,
+		key:           "TagsChangedAsyncTask_" + consumerId,
+		DomainProject: domainProject,
+		consumerId:    consumerId,
+		Rev:           rev,
 	}
 }

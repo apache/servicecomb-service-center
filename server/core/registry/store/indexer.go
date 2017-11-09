@@ -161,7 +161,9 @@ func (i *Indexer) searchPrefixKeyWithCache(ctx context.Context, op registry.Plug
 }
 
 func (i *Indexer) OnCacheEvent(evt *KvEvent) {
-	if evt.Action != pb.EVT_DELETE && evt.Action != pb.EVT_CREATE {
+	switch evt.Action {
+	case pb.EVT_INIT, pb.EVT_CREATE, pb.EVT_DELETE:
+	default:
 		return
 	}
 
@@ -196,10 +198,10 @@ func (i *Indexer) buildIndex() {
 
 				i.prefixLock.Lock()
 				switch evt.Action {
-				case pb.EVT_CREATE:
-					i.addPrefixKey(prefix, key)
 				case pb.EVT_DELETE:
 					i.deletePrefixKey(prefix, key)
+				default:
+					i.addPrefixKey(prefix, key)
 				}
 				i.prefixLock.Unlock()
 

@@ -14,85 +14,40 @@
 package event
 
 import (
-	"fmt"
 	"github.com/ServiceComb/service-center/pkg/util"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
-	nf "github.com/ServiceComb/service-center/server/service/notification"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"golang.org/x/net/context"
 	"strings"
 )
 
-type DomainAsyncTask struct {
+type DomainProjectAsyncTask struct {
 	key string
 	err error
 
-	Domain string
+	Domain  string
+	Project string
 }
 
-func (apt *DomainAsyncTask) Key() string {
+func (apt *DomainProjectAsyncTask) Key() string {
 	return apt.key
 }
 
-func (apt *DomainAsyncTask) Do(ctx context.Context) error {
-	defer store.Store().AsyncTasker().DeferRemoveTask(apt.Key())
-
-	ok, err := serviceUtil.DomainExist(ctx, apt.Domain)
-	if err != nil {
-		util.Logger().Errorf(err, "find domain %s file failed", apt.Domain)
-		return err
-	}
-	if ok {
-		return nil
-	}
-
-	err = serviceUtil.NewDomain(ctx, apt.Domain)
-	if err != nil {
-		util.Logger().Errorf(err, "new domain %s file failed", apt.Domain)
-		return err
-	}
-	return nil
-}
-
-func (apt *DomainAsyncTask) Err() error {
+func (apt *DomainProjectAsyncTask) Err() error {
 	return apt.err
 }
 
-func (apt *DomainAsyncTask) publish(ctx context.Context, tenant, consumerId string, rev int64) error {
-	consumer, err := serviceUtil.GetService(ctx, tenant, consumerId)
-	if err != nil {
-		util.Logger().Errorf(err, "get comsumer for publish event %s failed", consumerId)
-		return err
-	}
-	if consumer == nil {
-		consumerTmp, found := serviceUtil.MsCache().Get(consumerId)
-		if !found {
-			util.Logger().Errorf(nil, "service not exist, %s", consumerId)
-			return fmt.Errorf("service not exist, %s", consumerId)
-		}
-		consumer = consumerTmp.(*pb.MicroService)
-	}
-	providerIds, err := serviceUtil.GetProvidersInCache(ctx, tenant, consumerId, consumer)
-	if err != nil {
-		util.Logger().Errorf(err, "get provider services by consumer %s failed", consumerId)
-		return err
-	}
+func (apt *DomainProjectAsyncTask) Do(ctx context.Context) error {
+	defer store.AsyncTaskService().DeferRemove(apt.Key())
 
-	for _, providerId := range providerIds {
-		provider, err := serviceUtil.GetService(ctx, tenant, providerId)
-		if provider == nil {
-			util.Logger().Warnf(err, "get service %s file failed", providerId)
-			continue
-		}
-		nf.PublishInstanceEvent(tenant, pb.EVT_EXPIRE,
-			&pb.MicroServiceKey{
-				AppId:       provider.AppId,
-				ServiceName: provider.ServiceName,
-				Version:     provider.Version,
-			}, nil, rev, []string{consumerId})
+	err := serviceUtil.NewDomainProject(ctx, apt.Domain, apt.Project)
+	if err != nil {
+		util.Logger().Errorf(err, "new domain(%s) or project(%s) failed", apt.Domain, apt.Project)
+		return err
 	}
+	util.Logger().Infof("new domain(%s) and project(%s)", apt.Domain, apt.Project)
 	return nil
 }
 
@@ -104,9 +59,13 @@ func (h *ServiceEventHandler) Type() store.StoreType {
 }
 
 func (h *ServiceEventHandler) OnEvent(evt *store.KvEvent) {
-	kv := evt.KV
 	action := evt.Action
-	serviceId, tenantProject, data := pb.GetInfoFromSvcKV(kv)
+	if action == pb.EVT_DELETE || action == pb.EVT_UPDATE {
+		return
+	}
+
+	kv := evt.KV
+	serviceId, domainProject, data := pb.GetInfoFromSvcKV(kv)
 	if data == nil {
 		util.Logger().Errorf(nil,
 			"unmarshal service file failed, service %s [%s] event, data is nil",
@@ -114,24 +73,19 @@ func (h *ServiceEventHandler) OnEvent(evt *store.KvEvent) {
 		return
 	}
 
-	if nf.GetNotifyService().Closed() {
-		util.Logger().Warnf(nil, "caught service %s [%s] event, but notify service is closed",
-			serviceId, action)
-		return
-	}
-
 	switch action {
-	case pb.EVT_CREATE:
-		newDomain := tenantProject[:strings.Index(tenantProject, "/")]
-		ok, err := serviceUtil.DomainExist(context.Background(), newDomain, registry.WithCacheOnly())
+	case pb.EVT_CREATE, pb.EVT_INIT:
+		newDomain := domainProject[:strings.Index(domainProject, "/")]
+		newProject := domainProject[strings.Index(domainProject, "/")+1:]
+		ok, err := serviceUtil.ProjectExist(context.Background(), newDomain, newProject, registry.WithCacheOnly())
 		if err != nil {
-			util.Logger().Errorf(err, "find domain %s file failed", newDomain)
+			util.Logger().Errorf(err, "find project %s/%s file failed", newDomain, newProject)
 			return
 		}
 		if ok {
 			return
 		}
-		store.Store().AsyncTasker().AddTask(context.Background(), NewDomainAsyncTask(newDomain))
+		store.AsyncTaskService().Add(context.Background(), NewDomainProjectAsyncTask(newDomain, newProject))
 	}
 }
 
@@ -139,9 +93,10 @@ func NewServiceEventHandler() *ServiceEventHandler {
 	return &ServiceEventHandler{}
 }
 
-func NewDomainAsyncTask(domain string) *DomainAsyncTask {
-	return &DomainAsyncTask{
-		key:    "DomainAsyncTask_" + domain,
-		Domain: domain,
+func NewDomainProjectAsyncTask(domain, project string) *DomainProjectAsyncTask {
+	return &DomainProjectAsyncTask{
+		key:     "DomainProjectAsyncTask_" + domain + "/" + project,
+		Domain:  domain,
+		Project: project,
 	}
 }

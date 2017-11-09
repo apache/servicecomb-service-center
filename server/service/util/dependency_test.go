@@ -276,7 +276,7 @@ func TestFilter(t *testing.T) {
 	}
 
 	rf := RuleFilter{
-		Tenant:        "",
+		DomainProject: "",
 		Provider:      &proto.MicroService{},
 		ProviderRules: []*proto.ServiceRule{},
 	}

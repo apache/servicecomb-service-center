@@ -53,14 +53,14 @@ var _ = BeforeSuite(func() {
 
 func getContext() context.Context {
 	ctx := context.TODO()
-	ctx = util.NewContext(ctx, "tenant", "default")
+	ctx = util.NewContext(ctx, "domain", "default")
 	ctx = util.NewContext(ctx, "project", "default")
 	return ctx
 }
 
-func getCunstomContext(tenant string, projetct string) context.Context {
+func getCunstomContext(domain string, project string) context.Context {
 	ctx := context.TODO()
-	ctx = util.NewContext(ctx, "tenant", tenant)
-	ctx = util.NewContext(ctx, "project", projetct)
+	ctx = util.NewContext(ctx, "domain", domain)
+	ctx = util.NewContext(ctx, "project", project)
 	return ctx
 }

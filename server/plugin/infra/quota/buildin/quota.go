@@ -44,21 +44,21 @@ const (
 )
 
 //申请配额sourceType serviceinstance servicetype
-func (q *BuildInQuota) Apply4Quotas(ctx context.Context, quotaType quota.ResourceType, tenant string, serviceId string, quotaSize int16) (quota.QuotaReporter, bool, error) {
+func (q *BuildInQuota) Apply4Quotas(ctx context.Context, quotaType quota.ResourceType, domainProject string, serviceId string, quotaSize int16) (quota.QuotaReporter, bool, error) {
 	var key string = ""
 	var max int64 = 0
 	var indexer *store.Indexer
 	switch quotaType {
 	case quota.MicroServiceInstanceQuotaType:
-		key = core.GetInstanceRootKey(tenant) + "/"
+		key = core.GetInstanceRootKey(domainProject) + "/"
 		max = INSTANCE_MAX_NUMBER
 		indexer = store.Store().Instance()
 	case quota.MicroServiceQuotaType:
-		key = core.GetServiceRootKey(tenant) + "/"
+		key = core.GetServiceRootKey(domainProject) + "/"
 		max = SERVICE_MAX_NUMBER
 		indexer = store.Store().Service()
 	default:
-		return ResourceLimitHandler(ctx, quotaType, tenant, serviceId, quotaSize)
+		return ResourceLimitHandler(ctx, quotaType, domainProject, serviceId, quotaSize)
 	}
 	resp, err := indexer.Search(ctx,
 		registry.WithStrKey(key),
@@ -80,17 +80,17 @@ func (q *BuildInQuota) Apply4Quotas(ctx context.Context, quotaType quota.Resourc
 func (q *BuildInQuota) RemandQuotas(ctx context.Context, quotaType quota.ResourceType) {
 }
 
-func ResourceLimitHandler(ctx context.Context, quotaType quota.ResourceType, tenant string, serviceId string, quotaSize int16) (quota.QuotaReporter, bool, error) {
+func ResourceLimitHandler(ctx context.Context, quotaType quota.ResourceType, domainProject string, serviceId string, quotaSize int16) (quota.QuotaReporter, bool, error) {
 	var key string
 	var max int64 = 0
 	var indexer *store.Indexer
 	switch quotaType {
 	case quota.RULEQuotaType:
-		key = core.GenerateServiceRuleKey(tenant, serviceId, "")
+		key = core.GenerateServiceRuleKey(domainProject, serviceId, "")
 		max = RULE_NUM_MAX_FOR_ONESERVICE
 		indexer = store.Store().Rule()
 	case quota.SCHEMAQuotaType:
-		key = core.GenerateServiceSchemaKey(tenant, serviceId, "")
+		key = core.GenerateServiceSchemaKey(domainProject, serviceId, "")
 		max = SCHEMA_NUM_MAX_FOR_ONESERVICE
 		indexer = store.Store().Schema()
 	case quota.TAGQuotaType:

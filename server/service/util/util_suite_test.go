@@ -76,12 +76,12 @@ func TestGetService(t *testing.T) {
 		t.FailNow()
 	}
 
-	_, err = serviceUtil.GetServicesByTenant(context.Background(), "", registry.WithCacheOnly())
+	_, err = serviceUtil.GetServicesByDomain(context.Background(), "", registry.WithCacheOnly())
 	if err != nil {
 		t.FailNow()
 	}
 
-	_, err = serviceUtil.GetServicesByTenant(context.Background(), "")
+	_, err = serviceUtil.GetServicesByDomain(context.Background(), "")
 	if err == nil {
 		t.FailNow()
 	}

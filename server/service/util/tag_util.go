@@ -22,8 +22,8 @@ import (
 	"golang.org/x/net/context"
 )
 
-func AddTagIntoETCD(ctx context.Context, tenant string, serviceId string, dataTags map[string]string) error {
-	key := apt.GenerateServiceTagKey(tenant, serviceId)
+func AddTagIntoETCD(ctx context.Context, domainProject string, serviceId string, dataTags map[string]string) error {
+	key := apt.GenerateServiceTagKey(domainProject, serviceId)
 	data, err := json.Marshal(dataTags)
 	if err != nil {
 		util.Logger().Errorf(err, "add tag into etcd,serviceId %s:json marshal tag data failed.", serviceId)
@@ -41,8 +41,8 @@ func AddTagIntoETCD(ctx context.Context, tenant string, serviceId string, dataTa
 	return nil
 }
 
-func GetTagsUtils(ctx context.Context, tenant, serviceId string, opts ...registry.PluginOpOption) (tags map[string]string, err error) {
-	key := apt.GenerateServiceTagKey(tenant, serviceId)
+func GetTagsUtils(ctx context.Context, domainProject, serviceId string, opts ...registry.PluginOpOption) (tags map[string]string, err error) {
+	key := apt.GenerateServiceTagKey(domainProject, serviceId)
 	opts = append(opts, registry.WithStrKey(key))
 	resp, err := store.Store().ServiceTag().Search(ctx, opts...)
 	if err != nil {

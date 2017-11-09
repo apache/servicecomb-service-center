@@ -23,7 +23,7 @@ import (
 	"strings"
 )
 
-func GetAllTenantRawData(ctx context.Context, opts ...registry.PluginOpOption) ([]*mvccpb.KeyValue, error) {
+func GetAllDomainRawData(ctx context.Context, opts ...registry.PluginOpOption) ([]*mvccpb.KeyValue, error) {
 	opts = append(opts,
 		registry.WithStrKey(apt.GenerateDomainKey("")),
 		registry.WithPrefix())
@@ -35,27 +35,27 @@ func GetAllTenantRawData(ctx context.Context, opts ...registry.PluginOpOption) (
 
 }
 
-func GetAllTenant(ctx context.Context, opts ...registry.PluginOpOption) ([]string, error) {
-	insWatherByTenantKeys := []string{}
-	kvs, err := GetAllTenantRawData(ctx, opts...)
+func GetAllDomain(ctx context.Context, opts ...registry.PluginOpOption) ([]string, error) {
+	insWatherByDomainKeys := []string{}
+	kvs, err := GetAllDomainRawData(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(kvs) == 0 {
-		return insWatherByTenantKeys, err
+		return insWatherByDomainKeys, err
 	}
 
-	tenant := ""
-	instByTenant := ""
+	domain := ""
+	instByDomain := ""
 	arrTmp := []string{}
 	for _, kv := range kvs {
 		arrTmp = strings.Split(util.BytesToStringWithNoCopy(kv.Key), "/")
-		tenant = arrTmp[len(arrTmp)-1]
-		instByTenant = apt.GetInstanceRootKey(tenant)
-		insWatherByTenantKeys = append(insWatherByTenantKeys, instByTenant)
+		domain = arrTmp[len(arrTmp)-1]
+		instByDomain = apt.GetInstanceRootKey(domain)
+		insWatherByDomainKeys = append(insWatherByDomainKeys, instByDomain)
 	}
-	return insWatherByTenantKeys, err
+	return insWatherByDomainKeys, err
 }
 
 func DomainExist(ctx context.Context, domain string, opts ...registry.PluginOpOption) (bool, error) {
@@ -69,12 +69,46 @@ func DomainExist(ctx context.Context, domain string, opts ...registry.PluginOpOp
 	return rsp.Count > 0, nil
 }
 
-func NewDomain(ctx context.Context, tenant string) error {
-	_, err := registry.GetRegisterCenter().Do(ctx,
-		registry.PUT,
-		registry.WithStrKey(apt.GenerateDomainKey(tenant)))
+func ProjectExist(ctx context.Context, domain, project string, opts ...registry.PluginOpOption) (bool, error) {
+	opts = append(opts,
+		registry.WithStrKey(apt.GenerateProjectKey(domain, project)),
+		registry.WithCountOnly())
+	rsp, err := store.Store().Project().Search(ctx, opts...)
+	if err != nil {
+		return false, err
+	}
+	return rsp.Count > 0, nil
+}
+
+func NewDomain(ctx context.Context, domain string) error {
+	_, err := registry.GetRegisterCenter().PutNoOverride(ctx,
+		registry.WithStrKey(apt.GenerateDomainKey(domain)))
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func NewProject(ctx context.Context, domain, project string) error {
+	_, err := registry.GetRegisterCenter().PutNoOverride(ctx,
+		registry.WithStrKey(apt.GenerateProjectKey(domain, project)))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func NewDomainProject(ctx context.Context, domain, project string) error {
+	ok, err := DomainExist(ctx, domain, registry.WithCacheOnly())
+	if !ok && err == nil {
+		err = NewDomain(ctx, domain)
+	}
+	if err != nil {
+		return err
+	}
+	ok, err = ProjectExist(ctx, domain, project, registry.WithCacheOnly())
+	if !ok && err == nil {
+		err = NewProject(ctx, domain, project)
+	}
+	return err
 }

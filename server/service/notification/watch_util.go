@@ -149,8 +149,8 @@ func (wh *WebSocketHandler) HandleWatchWebSocketJob() {
 				return
 			}
 
-			tenant := util.ParseTenantProject(wh.ctx)
-			if !serviceUtil.ServiceExist(context.Background(), tenant, wh.watcher.Id()) {
+			domainProject := util.ParseDomainProject(wh.ctx)
+			if !serviceUtil.ServiceExist(context.Background(), domainProject, wh.watcher.Id()) {
 				err := fmt.Errorf("Service does not exit.")
 				util.Logger().Warnf(err, "watcher[%s] %s %s exit", remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
 				err = wh.conn.WriteMessage(websocket.TextMessage, util.StringToBytesWithNoCopy(err.Error()))
@@ -236,11 +236,11 @@ func (wh *WebSocketHandler) Close(code int, text string) error {
 }
 
 func DoWebSocketWatch(ctx context.Context, serviceId string, conn *websocket.Conn) {
-	tenant := util.ParseTenantProject(ctx)
+	domainProject := util.ParseDomainProject(ctx)
 	handler := &WebSocketHandler{
 		ctx:             ctx,
 		conn:            conn,
-		watcher:         NewInstanceWatcher(serviceId, apt.GetInstanceRootKey(tenant)+"/"),
+		watcher:         NewInstanceWatcher(serviceId, apt.GetInstanceRootKey(domainProject)+"/"),
 		needPingWatcher: true,
 		closed:          make(chan struct{}),
 	}
@@ -248,11 +248,11 @@ func DoWebSocketWatch(ctx context.Context, serviceId string, conn *websocket.Con
 }
 
 func DoWebSocketListAndWatch(ctx context.Context, serviceId string, f func() ([]*pb.WatchInstanceResponse, int64), conn *websocket.Conn) {
-	tenant := util.ParseTenantProject(ctx)
+	domainProject := util.ParseDomainProject(ctx)
 	handler := &WebSocketHandler{
 		ctx:             ctx,
 		conn:            conn,
-		watcher:         NewInstanceListWatcher(serviceId, apt.GetInstanceRootKey(tenant)+"/", f),
+		watcher:         NewInstanceListWatcher(serviceId, apt.GetInstanceRootKey(domainProject)+"/", f),
 		needPingWatcher: true,
 		closed:          make(chan struct{}),
 	}
@@ -275,7 +275,7 @@ func EstablishWebSocketError(conn *websocket.Conn, err error) {
 	}
 }
 
-func PublishInstanceEvent(tenant string, action pb.EventType, serviceKey *pb.MicroServiceKey, instance *pb.MicroServiceInstance, rev int64, subscribers []string) {
+func PublishInstanceEvent(domainProject string, action pb.EventType, serviceKey *pb.MicroServiceKey, instance *pb.MicroServiceInstance, rev int64, subscribers []string) {
 	response := &pb.WatchInstanceResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Watch instance successfully."),
 		Action:   string(action),
@@ -283,7 +283,7 @@ func PublishInstanceEvent(tenant string, action pb.EventType, serviceKey *pb.Mic
 		Instance: instance,
 	}
 	for _, consumerId := range subscribers {
-		job := NewWatchJob(INSTANCE, consumerId, apt.GetInstanceRootKey(tenant)+"/", rev, response)
+		job := NewWatchJob(INSTANCE, consumerId, apt.GetInstanceRootKey(domainProject)+"/", rev, response)
 		util.Logger().Debugf("publish event to notify service, %v", job)
 
 		// TODO add超时怎么处理？

@@ -21,8 +21,8 @@ import (
 	"golang.org/x/net/context"
 )
 
-func HeartbeatUtil(ctx context.Context, tenant string, serviceId string, instanceId string) (leaseID int64, ttl int64, err error, isInnerErr bool) {
-	leaseID, err = GetLeaseId(ctx, tenant, serviceId, instanceId)
+func HeartbeatUtil(ctx context.Context, domainProject string, serviceId string, instanceId string) (leaseID int64, ttl int64, err error, isInnerErr bool) {
+	leaseID, err = GetLeaseId(ctx, domainProject, serviceId, instanceId)
 	if err != nil {
 		return leaseID, ttl, err, true
 	}
@@ -30,7 +30,7 @@ func HeartbeatUtil(ctx context.Context, tenant string, serviceId string, instanc
 		return leaseID, ttl, errors.New("leaseId not exist, instance not exist."), false
 	}
 	ttl, err = store.Store().KeepAlive(ctx,
-		registry.WithStrKey(apt.GenerateInstanceLeaseKey(tenant, serviceId, instanceId)),
+		registry.WithStrKey(apt.GenerateInstanceLeaseKey(domainProject, serviceId, instanceId)),
 		registry.WithLease(leaseID))
 	if err != nil {
 		return leaseID, ttl, err, false

@@ -24,7 +24,7 @@ var Service *pb.MicroService
 var Instance *pb.MicroServiceInstance
 
 const (
-	REGISTRY_TENANT  = "default"
+	REGISTRY_DOMAIN  = "default"
 	REGISTRY_PROJECT = "default"
 
 	registry_app_id               = "default"
@@ -65,14 +65,14 @@ func init() {
 }
 
 func AddDefaultContextValue(ctx context.Context) context.Context {
-	ctx = util.NewContext(ctx, "tenant", REGISTRY_TENANT)
+	ctx = util.NewContext(ctx, "domain", REGISTRY_DOMAIN)
 	ctx = util.NewContext(ctx, "project", REGISTRY_PROJECT)
 	ctx = util.NewContext(ctx, IS_SC_SELF, true)
 	return ctx
 }
 
-func IsDefaultDomain(tenantProject string) bool{
-	return tenantProject == util.StringJoin([]string{REGISTRY_TENANT, REGISTRY_PROJECT}, "/")
+func IsDefaultDomainProject(domainProject string) bool {
+	return domainProject == util.StringJoin([]string{REGISTRY_DOMAIN, REGISTRY_PROJECT}, "/")
 }
 
 func ISSCSelf(ctx context.Context) bool {
