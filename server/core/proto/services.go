@@ -25,6 +25,7 @@ import (
 type EventType string
 
 const (
+	EVT_INIT   EventType = "INIT"
 	EVT_CREATE EventType = "CREATE"
 	EVT_UPDATE EventType = "UPDATE"
 	EVT_DELETE EventType = "DELETE"

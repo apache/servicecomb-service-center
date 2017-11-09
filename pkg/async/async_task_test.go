@@ -11,7 +11,7 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package store
+package async
 
 import (
 	"testing"
@@ -72,19 +72,19 @@ func (tt *testTask) Do(ctx context.Context) error {
 }
 
 func TestBaseAsyncTasker_AddTask(t *testing.T) {
-	at := NewAsyncTasker()
+	at := NewAsyncTaskService()
 	at.Run()
 	defer at.Stop()
 
 	ctx, cancel := context.WithCancel(context.Background())
-	err := at.AddTask(ctx, nil)
+	err := at.Add(ctx, nil)
 	if err == nil {
 		fail(t, "add nil task should be error")
 	}
 	cancel()
 
 	testCtx1, testC1 := context.WithCancel(context.Background())
-	err = at.AddTask(testCtx1, &testTask{
+	err = at.Add(testCtx1, &testTask{
 		done: testC1,
 		test: "test1",
 	})
@@ -97,7 +97,7 @@ func TestBaseAsyncTasker_AddTask(t *testing.T) {
 	}
 
 	testCtx2, testC2 := context.WithTimeout(context.Background(), 3*time.Second)
-	err = at.AddTask(testCtx2, &testTask{
+	err = at.Add(testCtx2, &testTask{
 		done: testC2,
 		test: "test2",
 	})
@@ -112,12 +112,12 @@ func TestBaseAsyncTasker_AddTask(t *testing.T) {
 }
 
 func TestBaseAsyncTasker_Stop(t *testing.T) {
-	at := NewAsyncTasker()
+	at := NewAsyncTaskService()
 	at.Stop()
 	at.Run()
 
 	_, cancel := context.WithCancel(context.Background())
-	err := at.AddTask(context.Background(), &testTask{
+	err := at.Add(context.Background(), &testTask{
 		done:   cancel,
 		test:   "test stop",
 		result: true,
@@ -126,7 +126,7 @@ func TestBaseAsyncTasker_Stop(t *testing.T) {
 		fail(t, "add task should be ok")
 	}
 	_, cancel = context.WithCancel(context.Background())
-	err = at.AddTask(context.Background(), &testTask{
+	err = at.Add(context.Background(), &testTask{
 		done:   cancel,
 		test:   "test stop",
 		wait:   3 * time.Second,
@@ -138,7 +138,7 @@ func TestBaseAsyncTasker_Stop(t *testing.T) {
 	<-time.After(time.Second)
 	at.Stop()
 
-	err = at.AddTask(context.Background(), &testTask{result: true})
+	err = at.Add(context.Background(), &testTask{result: true})
 	if err != nil {
 		fail(t, "add task should be ok when Tasker is stopped")
 	}
@@ -147,15 +147,15 @@ func TestBaseAsyncTasker_Stop(t *testing.T) {
 }
 
 func TestBaseAsyncTasker_RemoveTask(t *testing.T) {
-	at := NewAsyncTasker()
+	at := NewAsyncTaskService()
 	at.Run()
 
-	err := at.DeferRemoveTask("test")
+	err := at.DeferRemove("test")
 	if err != nil {
 		fail(t, "remove task should be ok")
 	}
 	_, cancel := context.WithCancel(context.Background())
-	err = at.AddTask(context.Background(), &testTask{
+	err = at.Add(context.Background(), &testTask{
 		done:   cancel,
 		test:   "test remove task",
 		result: true,
@@ -166,13 +166,13 @@ func TestBaseAsyncTasker_RemoveTask(t *testing.T) {
 	}
 	fmt.Println("OK")
 
-	err = at.DeferRemoveTask("test")
+	err = at.DeferRemove("test")
 	if err != nil {
 		fail(t, "remove task should be ok")
 	}
 	at.Stop()
 
-	err = at.DeferRemoveTask("test")
+	err = at.DeferRemove("test")
 	if err == nil {
 		fail(t, "remove task should be error when Tasker is stopped")
 	}

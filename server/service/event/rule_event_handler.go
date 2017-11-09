@@ -38,7 +38,7 @@ func (apt *RulesChangedAsyncTask) Key() string {
 }
 
 func (apt *RulesChangedAsyncTask) Do(ctx context.Context) error {
-	defer store.Store().AsyncTasker().DeferRemoveTask(apt.Key())
+	defer store.AsyncTaskService().DeferRemove(apt.Key())
 	apt.err = apt.publish(ctx, apt.DomainProject, apt.ProviderId, apt.Rev)
 	return apt.err
 }
@@ -81,8 +81,12 @@ func (h *RuleEventHandler) Type() store.StoreType {
 }
 
 func (h *RuleEventHandler) OnEvent(evt *store.KvEvent) {
-	kv := evt.KV
 	action := evt.Action
+	if action == pb.EVT_INIT {
+		return
+	}
+
+	kv := evt.KV
 	providerId, ruleId, domainProject, data := pb.GetInfoFromRuleKV(kv)
 	if data == nil {
 		util.Logger().Errorf(nil,
@@ -106,7 +110,7 @@ func (h *RuleEventHandler) OnEvent(evt *store.KvEvent) {
 		return
 	}
 
-	store.Store().AsyncTasker().AddTask(context.Background(),
+	store.AsyncTaskService().Add(context.Background(),
 		NewRulesChangedAsyncTask(domainProject, providerId, evt.Revision))
 }
 

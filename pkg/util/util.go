@@ -123,7 +123,7 @@ func SetReqCtx(r *http.Request, key string, val interface{}) {
 }
 
 func ParseDomainProject(ctx context.Context) string {
-	return StringJoin([]string{ParseDomain(ctx), ParseProject(ctx)}, "/")
+	return ParseDomain(ctx) + "/" + ParseProject(ctx)
 }
 
 func ParseDomain(ctx context.Context) string {

@@ -33,8 +33,12 @@ func (h *InstanceEventHandler) Type() store.StoreType {
 }
 
 func (h *InstanceEventHandler) OnEvent(evt *store.KvEvent) {
-	kv := evt.KV
 	action := evt.Action
+	if action == pb.EVT_INIT {
+		return
+	}
+
+	kv := evt.KV
 	providerId, providerInstanceId, domainProject, data := pb.GetInfoFromInstKV(kv)
 	if data == nil {
 		util.Logger().Errorf(nil,

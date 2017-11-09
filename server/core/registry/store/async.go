@@ -11,15 +11,17 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package event
+package store
 
-import (
-	"github.com/ServiceComb/service-center/server/core/registry/store"
-)
+import "github.com/ServiceComb/service-center/pkg/async"
+
+var service *async.AsyncTaskService
 
 func init() {
-	store.AddEventHandler(NewServiceEventHandler())
-	store.AddEventHandler(NewInstanceEventHandler())
-	store.AddEventHandler(NewRuleEventHandler())
-	store.AddEventHandler(NewTagEventHandler())
+	service = async.NewAsyncTaskService()
+	service.Run()
+}
+
+func AsyncTaskService() *async.AsyncTaskService {
+	return service
 }

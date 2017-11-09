@@ -38,7 +38,7 @@ func (apt *TagsChangedAsyncTask) Key() string {
 }
 
 func (apt *TagsChangedAsyncTask) Do(ctx context.Context) error {
-	defer store.Store().AsyncTasker().DeferRemoveTask(apt.Key())
+	defer store.AsyncTaskService().DeferRemove(apt.Key())
 	apt.err = apt.publish(ctx, apt.DomainProject, apt.consumerId, apt.Rev)
 	return apt.err
 }
@@ -91,8 +91,12 @@ func (h *TagEventHandler) Type() store.StoreType {
 }
 
 func (h *TagEventHandler) OnEvent(evt *store.KvEvent) {
-	kv := evt.KV
 	action := evt.Action
+	if action == pb.EVT_INIT {
+		return
+	}
+
+	kv := evt.KV
 	consumerId, domainProject, data := pb.GetInfoFromTagKV(kv)
 	if data == nil {
 		util.Logger().Errorf(nil,
@@ -115,7 +119,7 @@ func (h *TagEventHandler) OnEvent(evt *store.KvEvent) {
 		return
 	}
 
-	store.Store().AsyncTasker().AddTask(context.Background(),
+	store.AsyncTaskService().Add(context.Background(),
 		NewTagsChangedAsyncTask(domainProject, consumerId, evt.Revision))
 }
 

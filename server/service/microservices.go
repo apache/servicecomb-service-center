@@ -137,17 +137,6 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 			registry.OpCmp(registry.CmpVer(aliasBytes), registry.CMP_EQUAL, 0))
 	}
 
-	domain := util.ParseDomain(ctx)
-	project := util.ParseProject(ctx)
-	err = serviceUtil.NewDomainProject(ctx, domain, project)
-	if err != nil {
-		util.Logger().Errorf(err, "create microservice failed, %s: new domain(%s) or project(%s) failed. operator: %s",
-			serviceFlag, domain, project, remoteIP)
-		return &pb.CreateServiceResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "New domain or project failed"),
-		}, err
-	}
-
 	resp, err := registry.GetRegisterCenter().TxnWithCmp(ctx, opts, uniqueCmpOpts, nil)
 	if err != nil {
 		util.Logger().Errorf(err, "create microservice failed, %s: commit data into etcd failed. operator: %s",
