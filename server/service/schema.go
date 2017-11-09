@@ -44,18 +44,18 @@ func (s *ServiceController) GetSchemaInfo(ctx context.Context, in *pb.GetSchemaR
 		}, nil
 	}
 
-	tenant := util.ParseTenantProject(ctx)
+	domainProject := util.ParseDomainProject(ctx)
 
 	opts := serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))
 
-	if !serviceUtil.ServiceExist(ctx, tenant, in.ServiceId, opts...) {
+	if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId, opts...) {
 		util.Logger().Errorf(nil, "get schema failed, serviceId %s, schemaId %s: service not exist.", in.ServiceId, in.SchemaId)
 		return &pb.GetSchemaResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
 		}, nil
 	}
 
-	key := apt.GenerateServiceSchemaKey(tenant, in.ServiceId, in.SchemaId)
+	key := apt.GenerateServiceSchemaKey(domainProject, in.ServiceId, in.SchemaId)
 	opts = append(opts, registry.WithStrKey(key))
 	resp, errDo := store.Store().Schema().Search(ctx, opts...)
 	if errDo != nil {
@@ -90,16 +90,16 @@ func (s *ServiceController) DeleteSchema(ctx context.Context, request *pb.Delete
 			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
 		}, nil
 	}
-	tenant := util.ParseTenantProject(ctx)
+	domainProject := util.ParseDomainProject(ctx)
 
-	if !serviceUtil.ServiceExist(ctx, tenant, request.ServiceId) {
+	if !serviceUtil.ServiceExist(ctx, domainProject, request.ServiceId) {
 		util.Logger().Errorf(nil, "delete schema failded, serviceId %s, schemaId %s: service not exist.", request.ServiceId, request.SchemaId)
 		return &pb.DeleteSchemaResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
 		}, nil
 	}
 
-	key := apt.GenerateServiceSchemaKey(tenant, request.ServiceId, request.SchemaId)
+	key := apt.GenerateServiceSchemaKey(domainProject, request.ServiceId, request.SchemaId)
 	exist, err := serviceUtil.CheckSchemaInfoExist(ctx, key)
 	if err != nil {
 		util.Logger().Errorf(err, "delete schema failded, serviceId %s, schemaId %s: get schema failed.", request.ServiceId, request.SchemaId)
@@ -136,9 +136,9 @@ func (s *ServiceController) ModifySchemas(ctx context.Context, request *pb.Modif
 	}
 	serviceId := request.ServiceId
 
-	tenant := util.ParseTenantProject(ctx)
+	domainProject := util.ParseDomainProject(ctx)
 
-	service, err := serviceUtil.GetService(ctx, tenant, serviceId)
+	service, err := serviceUtil.GetService(ctx, domainProject, serviceId)
 	if err != nil {
 		util.Logger().Errorf(err, "modify schemas failded: get service failed. %s", serviceId)
 		return &pb.ModifySchemasResponse{
@@ -152,7 +152,7 @@ func (s *ServiceController) ModifySchemas(ctx context.Context, request *pb.Modif
 		}, nil
 	}
 
-	err, isInnErr := modifySchemas(ctx, tenant, service, request.Schemas)
+	err, isInnErr := modifySchemas(ctx, domainProject, service, request.Schemas)
 	if err != nil {
 		if isInnErr {
 			return &pb.ModifySchemasResponse{
@@ -169,10 +169,10 @@ func (s *ServiceController) ModifySchemas(ctx context.Context, request *pb.Modif
 	}, nil
 }
 
-func modifySchemas(ctx context.Context, tenant string, service *pb.MicroService, schemas []*pb.Schema) (err error, innerErr bool) {
+func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroService, schemas []*pb.Schema) (err error, innerErr bool) {
 
 	serviceId := service.ServiceId
-	schemasInDataBase, err := GetSchemasFromDataBase(ctx, tenant, serviceId)
+	schemasInDataBase, err := GetSchemasFromDataBase(ctx, domainProject, serviceId)
 	if err != nil {
 		util.Logger().Errorf(nil, "modify schema failed: get schema from database failed, %s", serviceId)
 		return errors.New("exist not exist schemaId"), true
@@ -216,7 +216,7 @@ func modifySchemas(ctx context.Context, tenant string, service *pb.MicroService,
 
 		quotaSize := len(needAddSchemaList) - len(needDeleteSchemaList)
 		if quotaSize > 0 {
-			_, ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.SCHEMAQuotaType, tenant, serviceId, int16(quotaSize))
+			_, ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.SCHEMAQuotaType, domainProject, serviceId, int16(quotaSize))
 			if err != nil {
 				util.Logger().Errorf(err, "Add schema info failed, check resource num failed, %s", serviceId)
 				return err, true
@@ -229,12 +229,12 @@ func modifySchemas(ctx context.Context, tenant string, service *pb.MicroService,
 
 		for _, schema := range needUpdateSchemaList {
 			util.Logger().Infof("update schema %v", schema)
-			opts := schemaWithDatabaseOpera(registry.OpPut, tenant, serviceId, schema)
+			opts := schemaWithDatabaseOpera(registry.OpPut, domainProject, serviceId, schema)
 			pluginOps = append(pluginOps, opts...)
 		}
 		for _, schema := range needDeleteSchemaList {
 			util.Logger().Infof("delete not exist schema %v", schema)
-			opts := schemaWithDatabaseOpera(registry.OpDel, tenant, serviceId, schema)
+			opts := schemaWithDatabaseOpera(registry.OpDel, domainProject, serviceId, schema)
 			pluginOps = append(pluginOps, opts...)
 		}
 	case "prod":
@@ -243,7 +243,7 @@ func modifySchemas(ctx context.Context, tenant string, service *pb.MicroService,
 		}
 		quotaSize := len(needAddSchemaList)
 		if quotaSize > 0 {
-			_, ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.SCHEMAQuotaType, tenant, serviceId, int16(quotaSize))
+			_, ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.SCHEMAQuotaType, domainProject, serviceId, int16(quotaSize))
 			if err != nil {
 				util.Logger().Errorf(err, "Add schema info failed, check resource num failed, %s", serviceId)
 				return err, true
@@ -253,7 +253,7 @@ func modifySchemas(ctx context.Context, tenant string, service *pb.MicroService,
 				return errors.New("reach the max size of schema"), false
 			}
 		}
-		schemasFromDatabase, err := GetSchemasSummaryFromDataBase(ctx, tenant, serviceId)
+		schemasFromDatabase, err := GetSchemasSummaryFromDataBase(ctx, domainProject, serviceId)
 		if err != nil {
 			util.Logger().Errorf(err, "get schema summary failed")
 			return errors.New("run mode is prod, schema more exist, can't change"), false
@@ -268,12 +268,12 @@ func modifySchemas(ctx context.Context, tenant string, service *pb.MicroService,
 			}
 			//key of summary not exist, exist one chance of changing schema
 			if !exist {
-				opts := schemaWithDatabaseOpera(registry.OpPut, tenant, serviceId, schema)
+				opts := schemaWithDatabaseOpera(registry.OpPut, domainProject, serviceId, schema)
 				pluginOps = append(pluginOps, opts...)
 			}
 		}
 		if len(service.Schemas) == 0 {
-			key := apt.GenerateServiceKey(tenant, serviceId)
+			key := apt.GenerateServiceKey(domainProject, serviceId)
 			service.Schemas = newSchemaIdList
 			data, err := json.Marshal(service)
 			if err != nil {
@@ -291,7 +291,7 @@ func modifySchemas(ctx context.Context, tenant string, service *pb.MicroService,
 
 	for _, schema := range needAddSchemaList {
 		util.Logger().Infof("add new schema %v", schema)
-		opts := schemaWithDatabaseOpera(registry.OpPut, tenant, service.ServiceId, schema)
+		opts := schemaWithDatabaseOpera(registry.OpPut, domainProject, service.ServiceId, schema)
 		pluginOps = append(pluginOps, opts...)
 	}
 
@@ -312,20 +312,20 @@ func isExistSchemaId(service *pb.MicroService, schemas []*pb.Schema) bool {
 	return true
 }
 
-func schemaWithDatabaseOpera(invoke registry.Operation, tenant string, serviceId string, schema *pb.Schema) []registry.PluginOp {
+func schemaWithDatabaseOpera(invoke registry.Operation, domainProject string, serviceId string, schema *pb.Schema) []registry.PluginOp {
 	pluginOps := []registry.PluginOp{}
-	key := apt.GenerateServiceSchemaKey(tenant, serviceId, schema.SchemaId)
+	key := apt.GenerateServiceSchemaKey(domainProject, serviceId, schema.SchemaId)
 	opt := invoke(registry.WithStrKey(key), registry.WithStrValue(schema.Schema))
 	pluginOps = append(pluginOps, opt)
-	keySummary := apt.GenerateServiceSchemaSummaryKey(tenant, serviceId, schema.SchemaId)
+	keySummary := apt.GenerateServiceSchemaSummaryKey(domainProject, serviceId, schema.SchemaId)
 	opt = invoke(registry.WithStrKey(keySummary), registry.WithStrValue(schema.Summary))
 	pluginOps = append(pluginOps, opt)
 	return pluginOps
 }
 
-func GetSchemasFromDataBase(ctx context.Context, tenant string, serviceId string) ([]*pb.Schema, error) {
+func GetSchemasFromDataBase(ctx context.Context, domainProject string, serviceId string) ([]*pb.Schema, error) {
 	schemas := []*pb.Schema{}
-	key := apt.GenerateServiceSchemaKey(tenant, serviceId, "")
+	key := apt.GenerateServiceSchemaKey(domainProject, serviceId, "")
 	util.Logger().Debugf("key is %s", key)
 	resp, err := registry.GetRegisterCenter().Do(ctx,
 		registry.GET,
@@ -349,9 +349,9 @@ func GetSchemasFromDataBase(ctx context.Context, tenant string, serviceId string
 	return schemas, nil
 }
 
-func GetSchemasSummaryFromDataBase(ctx context.Context, tenant string, serviceId string) ([]*pb.Schema, error) {
+func GetSchemasSummaryFromDataBase(ctx context.Context, domainProject string, serviceId string) ([]*pb.Schema, error) {
 	schemas := []*pb.Schema{}
-	key := apt.GenerateServiceSchemaSummaryKey(tenant, serviceId, "")
+	key := apt.GenerateServiceSchemaSummaryKey(domainProject, serviceId, "")
 	util.Logger().Debugf("key is %s", key)
 	resp, err := store.Store().SchemaSummary().Search(ctx,
 		registry.WithPrefix(),
@@ -375,8 +375,8 @@ func GetSchemasSummaryFromDataBase(ctx context.Context, tenant string, serviceId
 }
 
 func (s *ServiceController) ModifySchema(ctx context.Context, request *pb.ModifySchemaRequest) (*pb.ModifySchemaResponse, error) {
-	tenant := util.ParseTenantProject(ctx)
-	err, rst := s.canModifySchema(ctx, tenant, request)
+	domainProject := util.ParseDomainProject(ctx)
+	err, rst := s.canModifySchema(ctx, domainProject, request)
 	if err != nil {
 		if !rst {
 			return &pb.ModifySchemaResponse{
@@ -414,7 +414,7 @@ func (s *ServiceController) ModifySchema(ctx context.Context, request *pb.Modify
 	}, nil
 }
 
-func (s *ServiceController) canModifySchema(ctx context.Context, tenant string, request *pb.ModifySchemaRequest) (error, bool) {
+func (s *ServiceController) canModifySchema(ctx context.Context, domainProject string, request *pb.ModifySchemaRequest) (error, bool) {
 	serviceId := request.ServiceId
 	schemaId := request.SchemaId
 	if len(schemaId) == 0 || len(serviceId) == 0 {
@@ -427,7 +427,7 @@ func (s *ServiceController) canModifySchema(ctx context.Context, tenant string, 
 		return err, false
 	}
 
-	_, ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.SCHEMAQuotaType, tenant, serviceId, 1)
+	_, ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.SCHEMAQuotaType, domainProject, serviceId, 1)
 	if err != nil {
 		util.Logger().Errorf(err, "Add schema info failed, check resource num failed, %s, %s", serviceId, schemaId)
 		return err, true
@@ -443,9 +443,9 @@ func (s *ServiceController) canModifySchema(ctx context.Context, tenant string, 
 }
 
 func (s *ServiceController) modifySchema(ctx context.Context, serviceId string, schema *pb.Schema) (error, bool) {
-	tenant := util.ParseTenantProject(ctx)
+	domainProject := util.ParseDomainProject(ctx)
 	schemaId := schema.SchemaId
-	service, err := serviceUtil.GetService(ctx, tenant, serviceId)
+	service, err := serviceUtil.GetService(ctx, domainProject, serviceId)
 	if err != nil {
 		util.Logger().Errorf(err, "update schema failded, serviceId %s, schemaId %s: get service failed.", serviceId, schemaId)
 		return err, true
@@ -460,7 +460,7 @@ func (s *ServiceController) modifySchema(ctx context.Context, serviceId string, 
 		if !isExist {
 			return errors.New("schemaId non-exist"), false
 		}
-		key := apt.GenerateServiceSchemaKey(tenant, serviceId, schemaId)
+		key := apt.GenerateServiceSchemaKey(domainProject, serviceId, schemaId)
 		resp, err := store.Store().Schema().Search(ctx, registry.WithStrKey(key), registry.WithCountOnly())
 		if err != nil {
 			util.Logger().Errorf(err, "get schema summary failed, %s %s", serviceId, schemaId)
@@ -468,10 +468,10 @@ func (s *ServiceController) modifySchema(ctx context.Context, serviceId string, 
 		}
 
 		if resp.Count == 0 {
-			opts := CommitSchemaInfo(tenant, serviceId, schema)
+			opts := CommitSchemaInfo(domainProject, serviceId, schema)
 			pluginOps = append(pluginOps, opts...)
 		} else {
-			key = apt.GenerateServiceSchemaSummaryKey(tenant, serviceId, schemaId)
+			key = apt.GenerateServiceSchemaSummaryKey(domainProject, serviceId, schemaId)
 			resp, err = store.Store().SchemaSummary().Search(ctx, registry.WithStrKey(key), registry.WithCountOnly())
 			if err != nil {
 				util.Logger().Errorf(err, "get schema summary failed, %s %s", serviceId, schemaId)
@@ -479,7 +479,7 @@ func (s *ServiceController) modifySchema(ctx context.Context, serviceId string, 
 			}
 			if resp.Count == 0 {
 				if len(schema.Summary) != 0 {
-					opts := schemaWithDatabaseOpera(registry.OpPut, tenant, serviceId, schema)
+					opts := schemaWithDatabaseOpera(registry.OpPut, domainProject, serviceId, schema)
 					pluginOps = append(pluginOps, opts...)
 				}
 			} else {
@@ -490,14 +490,14 @@ func (s *ServiceController) modifySchema(ctx context.Context, serviceId string, 
 	} else {
 		if !isExist {
 			service.Schemas = append(service.Schemas, schemaId)
-			opt, err := serviceUtil.UpdateService(tenant, serviceId, service)
+			opt, err := serviceUtil.UpdateService(domainProject, serviceId, service)
 			if err != nil {
 				util.Logger().Errorf(err, "update service failed , %s", serviceId)
 				return err, true
 			}
 			pluginOps = append(pluginOps, opt)
 		}
-		opts := CommitSchemaInfo(tenant, serviceId, schema)
+		opts := CommitSchemaInfo(domainProject, serviceId, schema)
 		pluginOps = append(pluginOps, opts...)
 	}
 	if len(pluginOps) != 0 {
@@ -510,11 +510,11 @@ func (s *ServiceController) modifySchema(ctx context.Context, serviceId string, 
 	return nil, false
 }
 
-func CommitSchemaInfo(tenant string, serviceId string, schema *pb.Schema) []registry.PluginOp {
+func CommitSchemaInfo(domainProject string, serviceId string, schema *pb.Schema) []registry.PluginOp {
 	if len(schema.Summary) != 0 {
-		return schemaWithDatabaseOpera(registry.OpPut, tenant, serviceId, schema)
+		return schemaWithDatabaseOpera(registry.OpPut, domainProject, serviceId, schema)
 	} else {
-		key := apt.GenerateServiceSchemaKey(tenant, serviceId, schema.SchemaId)
+		key := apt.GenerateServiceSchemaKey(domainProject, serviceId, schema.SchemaId)
 		opt := registry.OpPut(registry.WithStrKey(key), registry.WithStrValue(schema.Schema))
 		return []registry.PluginOp{opt}
 	}
@@ -532,8 +532,8 @@ func containsValueInSlice(in []string, value string) bool {
 	return false
 }
 
-func getSchemaSummary(ctx context.Context, tenant string, serviceId string, schemaId string) (string, error) {
-	key := apt.GenerateServiceSchemaSummaryKey(tenant, serviceId, schemaId)
+func getSchemaSummary(ctx context.Context, domainProject string, serviceId string, schemaId string) (string, error) {
+	key := apt.GenerateServiceSchemaSummaryKey(domainProject, serviceId, schemaId)
 	resp, err := store.Store().SchemaSummary().Search(ctx,
 		registry.WithStrKey(key),
 	)

@@ -19,7 +19,7 @@ import (
 )
 
 type QuotaManager interface {
-	Apply4Quotas(ctx context.Context, quotaType ResourceType, tenant string, serviceId string, quotaSize int16) (QuotaReporter, bool , error)
+	Apply4Quotas(ctx context.Context, quotaType ResourceType, domainProject string, serviceId string, quotaSize int16) (QuotaReporter, bool, error)
 	RemandQuotas(ctx context.Context, quotaType ResourceType)
 }
 

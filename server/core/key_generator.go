@@ -28,7 +28,8 @@ const (
 	REGISTRY_INDEX              = "indexes"
 	REGISTRY_RULE_KEY           = "rules"
 	REGISTRY_RULE_INDEX_KEY     = "rule-indexes"
-	REGISTRY_TENANT_KEY         = "tenant"
+	REGISTRY_DOMAIN_KEY         = "domains"
+	REGISTRY_PROJECT_KEY        = "projects"
 	REGISTRY_ALIAS_KEY          = "alias"
 	REGISTRY_TAG_KEY            = "tags"
 	REGISTRY_SCHEMA_KEY         = "schemas"
@@ -46,113 +47,106 @@ func GetRootKey() string {
 	}, "/")
 }
 
-func GetDomainProjectRootKey(tenant string) string {
-	return util.StringJoin([]string{
-		GetRootKey(),
-		tenant,
-	}, "/")
-}
-
-func GetServiceRootKey(tenant string) string {
+func GetServiceRootKey(domainProject string) string {
 	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_FILE,
-		tenant,
+		domainProject,
 	}, "/")
 }
 
-func GetServiceIndexRootKey(tenant string) string {
+func GetServiceIndexRootKey(domainProject string) string {
 	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_INDEX,
-		tenant,
+		domainProject,
 	}, "/")
 }
 
-func GetServiceAliasRootKey(tenant string) string {
+func GetServiceAliasRootKey(domainProject string) string {
 	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_ALIAS_KEY,
-		tenant,
+		domainProject,
 	}, "/")
 }
 
-func GetServiceRuleRootKey(tenant string) string {
+func GetServiceRuleRootKey(domainProject string) string {
 	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_RULE_KEY,
-		tenant,
+		domainProject,
 	}, "/")
 }
 
-func GetServiceRuleIndexRootKey(tenant string) string {
+func GetServiceRuleIndexRootKey(domainProject string) string {
 	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_RULE_INDEX_KEY,
-		tenant,
+		domainProject,
 	}, "/")
 }
 
-func GetServiceTagRootKey(tenant string) string {
+func GetServiceTagRootKey(domainProject string) string {
 	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_TAG_KEY,
-		tenant,
+		domainProject,
 	}, "/")
 }
 
-func GetServiceSchemaRootKey(tenant string) string {
+func GetServiceSchemaRootKey(domainProject string) string {
 	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_SCHEMA_KEY,
-		tenant,
+		domainProject,
 	}, "/")
 }
 
-func GetInstanceIndexRootKey(tenant string) string {
+func GetInstanceIndexRootKey(domainProject string) string {
 	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_INSTANCE_KEY,
 		REGISTRY_INDEX,
-		tenant,
+		domainProject,
 	}, "/")
 }
 
-func GetInstanceRootKey(tenant string) string {
+func GetInstanceRootKey(domainProject string) string {
 	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_INSTANCE_KEY,
 		REGISTRY_FILE,
-		tenant,
+		domainProject,
 	}, "/")
 }
 
-func GetInstanceLeaseRootKey(tenant string) string {
+func GetInstanceLeaseRootKey(domainProject string) string {
 	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_INSTANCE_KEY,
 		REGISTRY_LEASE_KEY,
-		tenant,
+		domainProject,
 	}, "/")
 }
 
-func GenerateServiceKey(tenant string, serviceId string) string {
+func GenerateServiceKey(domainProject string, serviceId string) string {
 	return util.StringJoin([]string{
-		GetServiceRootKey(tenant),
+		GetServiceRootKey(domainProject),
 		serviceId,
 	}, "/")
 }
 
-func GenerateRuleIndexKey(tenant string, serviceId string, attr string, pattern string) string {
+func GenerateRuleIndexKey(domainProject string, serviceId string, attr string, pattern string) string {
 	return util.StringJoin([]string{
-		GetServiceRuleIndexRootKey(tenant),
+		GetServiceRuleIndexRootKey(domainProject),
 		serviceId,
 		attr,
 		pattern,
@@ -195,73 +189,73 @@ func GenerateServiceAliasKey(key *pb.MicroServiceKey) string {
 	}, "/")
 }
 
-func GenerateServiceRuleKey(tenant string, serviceId string, ruleId string) string {
+func GenerateServiceRuleKey(domainProject string, serviceId string, ruleId string) string {
 	return util.StringJoin([]string{
-		GetServiceRuleRootKey(tenant),
+		GetServiceRuleRootKey(domainProject),
 		serviceId,
 		ruleId,
 	}, "/")
 }
 
-func GenerateServiceTagKey(tenant string, serviceId string) string {
+func GenerateServiceTagKey(domainProject string, serviceId string) string {
 	return util.StringJoin([]string{
-		GetServiceTagRootKey(tenant),
+		GetServiceTagRootKey(domainProject),
 		serviceId,
 	}, "/")
 }
 
-func GenerateServiceSchemaKey(tenant string, serviceId string, schemaId string) string {
+func GenerateServiceSchemaKey(domainProject string, serviceId string, schemaId string) string {
 	return util.StringJoin([]string{
-		GetServiceSchemaRootKey(tenant),
-		serviceId,
-		schemaId,
-	}, "/")
-}
-
-func GenerateServiceSchemaSummaryKey(tenant string, serviceId string, schemaId string) string {
-	return util.StringJoin([]string{
-		GetServiceSchemaSummaryRootKey(tenant),
+		GetServiceSchemaRootKey(domainProject),
 		serviceId,
 		schemaId,
 	}, "/")
 }
 
-func GetServiceSchemaSummaryRootKey(tenant string) string {
+func GenerateServiceSchemaSummaryKey(domainProject string, serviceId string, schemaId string) string {
+	return util.StringJoin([]string{
+		GetServiceSchemaSummaryRootKey(domainProject),
+		serviceId,
+		schemaId,
+	}, "/")
+}
+
+func GetServiceSchemaSummaryRootKey(domainProject string) string {
 	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_SCHEMA_SUMMARY_KEY,
-		tenant,
+		domainProject,
 	}, "/")
 }
 
-func GenerateInstanceIndexKey(tenant string, instanceId string) string {
+func GenerateInstanceIndexKey(domainProject string, instanceId string) string {
 	return util.StringJoin([]string{
-		GetInstanceIndexRootKey(tenant),
+		GetInstanceIndexRootKey(domainProject),
 		instanceId,
 	}, "/")
 }
 
-func GenerateInstanceKey(tenant string, serviceId string, instanceId string) string {
+func GenerateInstanceKey(domainProject string, serviceId string, instanceId string) string {
 	return util.StringJoin([]string{
-		GetInstanceRootKey(tenant),
+		GetInstanceRootKey(domainProject),
 		serviceId,
 		instanceId,
 	}, "/")
 }
 
-func GenerateInstanceLeaseKey(tenant string, serviceId string, instanceId string) string {
+func GenerateInstanceLeaseKey(domainProject string, serviceId string, instanceId string) string {
 	return util.StringJoin([]string{
-		GetInstanceLeaseRootKey(tenant),
+		GetInstanceLeaseRootKey(domainProject),
 		serviceId,
 		instanceId,
 	}, "/")
 }
 
-func GenerateServiceDependencyRuleKey(serviceType string, tenant string, in *pb.MicroServiceKey) string {
+func GenerateServiceDependencyRuleKey(serviceType string, domainProject string, in *pb.MicroServiceKey) string {
 	if in.ServiceName == "*" {
 		return util.StringJoin([]string{
-			GetServiceDependencyRuleRootKey(tenant),
+			GetServiceDependencyRuleRootKey(domainProject),
 			serviceType,
 			in.ServiceName,
 		}, "/")
@@ -275,7 +269,7 @@ func GenerateServiceDependencyRuleKey(serviceType string, tenant string, in *pb.
 		stage = "dev"
 	}
 	return util.StringJoin([]string{
-		GetServiceDependencyRuleRootKey(tenant),
+		GetServiceDependencyRuleRootKey(domainProject),
 		serviceType,
 		appId,
 		stage,
@@ -284,60 +278,60 @@ func GenerateServiceDependencyRuleKey(serviceType string, tenant string, in *pb.
 	}, "/")
 }
 
-func GenerateConsumerDependencyRuleKey(tenant string, in *pb.MicroServiceKey) string {
-	return GenerateServiceDependencyRuleKey("c", tenant, in)
+func GenerateConsumerDependencyRuleKey(domainProject string, in *pb.MicroServiceKey) string {
+	return GenerateServiceDependencyRuleKey("c", domainProject, in)
 }
 
-func GenerateProviderDependencyRuleKey(tenant string, in *pb.MicroServiceKey) string {
-	return GenerateServiceDependencyRuleKey("p", tenant, in)
+func GenerateProviderDependencyRuleKey(domainProject string, in *pb.MicroServiceKey) string {
+	return GenerateServiceDependencyRuleKey("p", domainProject, in)
 }
 
-func GetServiceDependencyRuleRootKey(tenant string) string {
+func GetServiceDependencyRuleRootKey(domainProject string) string {
 	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_DEPS_RULE_KEY,
-		tenant,
+		domainProject,
 	}, "/")
 }
 
-func GenerateConsumerDependencyKey(tenant string, consumerId string, providerId string) string {
-	return GenerateServiceDependencyKey("c", tenant, consumerId, providerId)
+func GenerateConsumerDependencyKey(domainProject string, consumerId string, providerId string) string {
+	return GenerateServiceDependencyKey("c", domainProject, consumerId, providerId)
 }
 
-func GenerateServiceDependencyKey(serviceType string, tenant string, serviceId1 string, serviceId2 string) string {
+func GenerateServiceDependencyKey(serviceType string, domainProject string, serviceId1 string, serviceId2 string) string {
 	return util.StringJoin([]string{
-		GetServiceDependencyRootKey(tenant),
+		GetServiceDependencyRootKey(domainProject),
 		serviceType,
 		serviceId1,
 		serviceId2,
 	}, "/")
 }
 
-func GenerateProviderDependencyKey(tenant string, providerId string, consumerId string) string {
-	return GenerateServiceDependencyKey("p", tenant, providerId, consumerId)
+func GenerateProviderDependencyKey(domainProject string, providerId string, consumerId string) string {
+	return GenerateServiceDependencyKey("p", domainProject, providerId, consumerId)
 }
 
-func GetServiceDependencyRootKey(tenant string) string {
+func GetServiceDependencyRootKey(domainProject string) string {
 	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_DEPENDENCY_KEY,
-		tenant,
+		domainProject,
 	}, "/")
 }
 
 func GetDomainRootKey() string {
 	return util.StringJoin([]string{
 		GetRootKey(),
-		REGISTRY_TENANT_KEY,
+		REGISTRY_DOMAIN_KEY,
 	}, "/")
 }
 
-func GenerateDomainKey(tenant string) string {
+func GenerateDomainKey(domain string) string {
 	return util.StringJoin([]string{
 		GetDomainRootKey(),
-		tenant,
+		domain,
 	}, "/")
 }
 
@@ -355,11 +349,26 @@ func GetMetricsRootKey() string {
 	}, "/")
 }
 
-func GenerateMetricsKey(name, utc, tenant string) string {
+func GenerateMetricsKey(name, utc, domain string) string {
 	return util.StringJoin([]string{
 		GetMetricsRootKey(),
 		name,
 		utc,
-		tenant,
+		domain,
+	}, "/")
+}
+
+func GetProjectRootKey(domain string) string {
+	return util.StringJoin([]string{
+		GetRootKey(),
+		REGISTRY_PROJECT_KEY,
+		domain,
+	}, "/")
+}
+
+func GenerateProjectKey(domain, project string) string {
+	return util.StringJoin([]string{
+		GetProjectRootKey(domain),
+		project,
 	}, "/")
 }

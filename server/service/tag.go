@@ -40,9 +40,9 @@ func (s *ServiceController) AddTags(ctx context.Context, in *pb.AddServiceTagsRe
 		}, nil
 	}
 
-	tenant := util.ParseTenantProject(ctx)
+	domainProject := util.ParseDomainProject(ctx)
 	// service id存在性校验
-	if !serviceUtil.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId) {
 		util.Logger().Errorf(nil, "add service tags failed, serviceId %s, tags %v: service not exist.", in.ServiceId, in.Tags)
 		return &pb.AddServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
@@ -50,7 +50,7 @@ func (s *ServiceController) AddTags(ctx context.Context, in *pb.AddServiceTagsRe
 	}
 
 	addTags := in.GetTags()
-	_, ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.TAGQuotaType, tenant, in.ServiceId, int16(len(addTags)))
+	_, ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.TAGQuotaType, domainProject, in.ServiceId, int16(len(addTags)))
 	if err != nil {
 		util.Logger().Errorf(err, "add tag info failed, check resource num failed, %s", in.ServiceId)
 		return &pb.AddServiceTagsResponse{
@@ -64,7 +64,7 @@ func (s *ServiceController) AddTags(ctx context.Context, in *pb.AddServiceTagsRe
 		}, nil
 	}
 
-	dataTags, err := serviceUtil.GetTagsUtils(ctx, tenant, in.ServiceId)
+	dataTags, err := serviceUtil.GetTagsUtils(ctx, domainProject, in.ServiceId)
 	if err != nil {
 		util.Logger().Errorf(err, "add service tags failed, serviceId %s, tags %v: get existed tag failed.", in.ServiceId, in.Tags)
 		return &pb.AddServiceTagsResponse{
@@ -79,7 +79,7 @@ func (s *ServiceController) AddTags(ctx context.Context, in *pb.AddServiceTagsRe
 		dataTags = addTags
 	}
 
-	err = serviceUtil.AddTagIntoETCD(ctx, tenant, in.ServiceId, dataTags)
+	err = serviceUtil.AddTagIntoETCD(ctx, domainProject, in.ServiceId, dataTags)
 	if err != nil {
 		util.Logger().Errorf(err, "add service tags failed, serviceId %s, tags %v: commit tag data into etcd failed.", in.ServiceId, in.Tags)
 		return &pb.AddServiceTagsResponse{
@@ -109,16 +109,16 @@ func (s *ServiceController) UpdateTag(ctx context.Context, in *pb.UpdateServiceT
 		}, nil
 	}
 
-	tenant := util.ParseTenantProject(ctx)
+	domainProject := util.ParseDomainProject(ctx)
 
-	if !serviceUtil.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId) {
 		util.Logger().Errorf(err, "update service tag failed, serviceId %s, tag %s: service not exist.", in.ServiceId, tagFlag)
 		return &pb.UpdateServiceTagResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
 		}, nil
 	}
 
-	tags, err := serviceUtil.GetTagsUtils(ctx, tenant, in.ServiceId)
+	tags, err := serviceUtil.GetTagsUtils(ctx, domainProject, in.ServiceId)
 	if err != nil {
 		util.Logger().Errorf(err, "update service tag failed, serviceId %s, tag %s: get tag failed.", in.ServiceId, tagFlag)
 		return &pb.UpdateServiceTagResponse{
@@ -134,7 +134,7 @@ func (s *ServiceController) UpdateTag(ctx context.Context, in *pb.UpdateServiceT
 	}
 	tags[in.Key] = in.Value
 
-	err = serviceUtil.AddTagIntoETCD(ctx, tenant, in.ServiceId, tags)
+	err = serviceUtil.AddTagIntoETCD(ctx, domainProject, in.ServiceId, tags)
 
 	if err != nil {
 		util.Logger().Errorf(err, "update service tag failed, serviceId %s, tag %s: adding service tags failed.", in.ServiceId, tagFlag)
@@ -164,16 +164,16 @@ func (s *ServiceController) DeleteTags(ctx context.Context, in *pb.DeleteService
 		}, nil
 	}
 
-	tenant := util.ParseTenantProject(ctx)
+	domainProject := util.ParseDomainProject(ctx)
 
-	if !serviceUtil.ServiceExist(ctx, tenant, in.ServiceId) {
+	if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId) {
 		util.Logger().Errorf(nil, "delete service tags failed, serviceId %s, tags %v: service not exist.", in.ServiceId, in.Keys)
 		return &pb.DeleteServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
 		}, nil
 	}
 
-	tags, err := serviceUtil.GetTagsUtils(ctx, tenant, in.ServiceId)
+	tags, err := serviceUtil.GetTagsUtils(ctx, domainProject, in.ServiceId)
 	if err != nil {
 		util.Logger().Errorf(err, "delete service tags failed, serviceId %s, tags %v: query service failed.", in.ServiceId, in.Keys)
 		return &pb.DeleteServiceTagsResponse{
@@ -199,7 +199,7 @@ func (s *ServiceController) DeleteTags(ctx context.Context, in *pb.DeleteService
 		}, err
 	}
 
-	key := apt.GenerateServiceTagKey(tenant, in.ServiceId)
+	key := apt.GenerateServiceTagKey(domainProject, in.ServiceId)
 
 	util.Logger().Debugf("start delete service tags file: %s %v", key, in.Keys)
 	_, err = registry.GetRegisterCenter().Do(ctx,
@@ -234,18 +234,18 @@ func (s *ServiceController) GetTags(ctx context.Context, in *pb.GetServiceTagsRe
 		}, nil
 	}
 
-	tenant := util.ParseTenantProject(ctx)
+	domainProject := util.ParseDomainProject(ctx)
 
 	opts := serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))
 
-	if !serviceUtil.ServiceExist(ctx, tenant, in.ServiceId, opts...) {
+	if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId, opts...) {
 		util.Logger().Errorf(err, "get service tags failed, serviceId %s: service not exist.", in.ServiceId)
 		return &pb.GetServiceTagsResponse{
 			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
 		}, nil
 	}
 
-	tags, err := serviceUtil.GetTagsUtils(ctx, tenant, in.ServiceId, opts...)
+	tags, err := serviceUtil.GetTagsUtils(ctx, domainProject, in.ServiceId, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "get service tags failed, serviceId %s: get tag failed.", in.ServiceId)
 		return &pb.GetServiceTagsResponse{

@@ -77,8 +77,7 @@ func (this *MicroServiceService) ModifySchema(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	request := &pb.ModifySchemaRequest{
-	}
+	request := &pb.ModifySchemaRequest{}
 	err = json.Unmarshal(message, request)
 	if err != nil {
 		util.Logger().Error("Unmarshal error", err)
@@ -99,8 +98,7 @@ func (this *MicroServiceService) ModifySchemas(w http.ResponseWriter, r *http.Re
 		return
 	}
 	serviceId := r.URL.Query().Get(":serviceId")
-	request := &pb.ModifySchemasRequest{
-	}
+	request := &pb.ModifySchemasRequest{}
 	err = json.Unmarshal(message, request)
 	if err != nil {
 		util.Logger().Error("Unmarshal error", err)
@@ -193,7 +191,7 @@ func (this *MicroServiceService) GetServices(w http.ResponseWriter, r *http.Requ
 	request := &pb.GetServicesRequest{
 		NoCache: noCache == "1",
 	}
-	util.Logger().Debugf("tenant is %s", util.ParseTenant(r.Context()))
+	util.Logger().Debugf("domain is %s", util.ParseDomain(r.Context()))
 	resp, err := core.ServiceAPI.GetServices(r.Context(), request)
 	if err != nil {
 		controller.WriteText(http.StatusInternalServerError, err.Error(), w)

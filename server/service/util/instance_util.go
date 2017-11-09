@@ -26,9 +26,9 @@ import (
 	"strings"
 )
 
-func GetLeaseId(ctx context.Context, tenant string, serviceId string, instanceId string, opts ...registry.PluginOpOption) (int64, error) {
+func GetLeaseId(ctx context.Context, domainProject string, serviceId string, instanceId string, opts ...registry.PluginOpOption) (int64, error) {
 	opts = append(opts,
-		registry.WithStrKey(apt.GenerateInstanceLeaseKey(tenant, serviceId, instanceId)))
+		registry.WithStrKey(apt.GenerateInstanceLeaseKey(domainProject, serviceId, instanceId)))
 	resp, err := store.Store().Lease().Search(ctx, opts...)
 	if err != nil {
 		return -1, err
@@ -40,8 +40,8 @@ func GetLeaseId(ctx context.Context, tenant string, serviceId string, instanceId
 	return leaseID, nil
 }
 
-func GetInstance(ctx context.Context, tenant string, serviceId string, instanceId string, opts ...registry.PluginOpOption) (*pb.MicroServiceInstance, error) {
-	key := apt.GenerateInstanceKey(tenant, serviceId, instanceId)
+func GetInstance(ctx context.Context, domainProject string, serviceId string, instanceId string, opts ...registry.PluginOpOption) (*pb.MicroServiceInstance, error) {
+	key := apt.GenerateInstanceKey(domainProject, serviceId, instanceId)
 	opts = append(opts, registry.WithStrKey(key))
 
 	resp, err := store.Store().Instance().Search(ctx, opts...)
@@ -60,8 +60,8 @@ func GetInstance(ctx context.Context, tenant string, serviceId string, instanceI
 	return instance, nil
 }
 
-func GetAllInstancesOfOneService(ctx context.Context, tenant string, serviceId string, env string, opts ...registry.PluginOpOption) ([]*pb.MicroServiceInstance, error) {
-	key := apt.GenerateInstanceKey(tenant, serviceId, "")
+func GetAllInstancesOfOneService(ctx context.Context, domainProject string, serviceId string, env string, opts ...registry.PluginOpOption) ([]*pb.MicroServiceInstance, error) {
+	key := apt.GenerateInstanceKey(domainProject, serviceId, "")
 	opts = append(opts, registry.WithStrKey(key), registry.WithPrefix())
 	resp, err := store.Store().Instance().Search(ctx, opts...)
 	if err != nil {
@@ -89,9 +89,9 @@ func GetAllInstancesOfOneService(ctx context.Context, tenant string, serviceId s
 	return instances, nil
 }
 
-func InstanceExist(ctx context.Context, tenant string, serviceId string, instanceId string, opts ...registry.PluginOpOption) (bool, error) {
+func InstanceExist(ctx context.Context, domainProject string, serviceId string, instanceId string, opts ...registry.PluginOpOption) (bool, error) {
 	opts = append(opts,
-		registry.WithStrKey(apt.GenerateInstanceKey(tenant, serviceId, instanceId)),
+		registry.WithStrKey(apt.GenerateInstanceKey(domainProject, serviceId, instanceId)),
 		registry.WithCountOnly())
 	resp, err := store.Store().Instance().Search(ctx, opts...)
 	if err != nil {
@@ -104,8 +104,8 @@ func InstanceExist(ctx context.Context, tenant string, serviceId string, instanc
 }
 
 func CheckEndPoints(ctx context.Context, in *pb.RegisterInstanceRequest) (string, error) {
-	tenant := util.ParseTenantProject(ctx)
-	allInstancesKey := apt.GenerateInstanceKey(tenant, in.Instance.ServiceId, "")
+	domainProject := util.ParseDomainProject(ctx)
+	allInstancesKey := apt.GenerateInstanceKey(domainProject, in.Instance.ServiceId, "")
 	rsp, err := store.Store().Instance().Search(ctx,
 		registry.WithStrKey(allInstancesKey),
 		registry.WithPrefix())
@@ -162,9 +162,9 @@ func isContain(endpoints []string, endpoint string) bool {
 }
 
 func DeleteServiceAllInstances(ctx context.Context, ServiceId string) error {
-	tenant := util.ParseTenantProject(ctx)
+	domainProject := util.ParseDomainProject(ctx)
 
-	instanceLeaseKey := apt.GenerateInstanceLeaseKey(tenant, ServiceId, "")
+	instanceLeaseKey := apt.GenerateInstanceLeaseKey(domainProject, ServiceId, "")
 	resp, err := store.Store().Lease().Search(ctx,
 		registry.WithStrKey(instanceLeaseKey),
 		registry.WithPrefix(),
@@ -187,9 +187,9 @@ func DeleteServiceAllInstances(ctx context.Context, ServiceId string) error {
 func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (results []*pb.WatchInstanceResponse, rev int64) {
 	results = []*pb.WatchInstanceResponse{}
 
-	tenant := util.ParseTenantProject(ctx)
+	domainProject := util.ParseDomainProject(ctx)
 
-	service, err := GetService(ctx, tenant, selfServiceId)
+	service, err := GetService(ctx, domainProject, selfServiceId)
 	if err != nil {
 		util.Logger().Errorf(err, "get service %s failed", selfServiceId)
 		return
@@ -198,7 +198,7 @@ func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (resul
 		util.Logger().Errorf(nil, "service not exist, %s", selfServiceId)
 		return
 	}
-	providerIds, _, err := GetProviderIdsByConsumerId(ctx, tenant, selfServiceId, service)
+	providerIds, _, err := GetProviderIdsByConsumerId(ctx, domainProject, selfServiceId, service)
 	if err != nil {
 		util.Logger().Errorf(err, "get service %s providers id set failed.", selfServiceId)
 		return
@@ -207,7 +207,7 @@ func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (resul
 	rev = store.Revision()
 
 	for _, providerId := range providerIds {
-		service, err := GetServiceWithRev(ctx, tenant, providerId, rev)
+		service, err := GetServiceWithRev(ctx, domainProject, providerId, rev)
 		if err != nil {
 			util.Logger().Errorf(err, "get service %s provider service %s file with revision %d failed.",
 				selfServiceId, providerId, rev)
@@ -252,8 +252,8 @@ func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (resul
 }
 
 func queryServiceInstancesKvs(ctx context.Context, serviceId string, rev int64) ([]*mvccpb.KeyValue, error) {
-	tenant := util.ParseTenantProject(ctx)
-	key := apt.GenerateInstanceKey(tenant, serviceId, "")
+	domainProject := util.ParseDomainProject(ctx)
+	key := apt.GenerateInstanceKey(domainProject, serviceId, "")
 	resp, err := store.Store().Instance().Search(ctx,
 		registry.WithStrKey(key),
 		registry.WithPrefix(),

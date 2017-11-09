@@ -21,28 +21,28 @@ import (
 	"testing"
 )
 
-func TestGetTenant(t *testing.T) {
-	_, err := serviceUtil.GetAllTenantRawData(context.Background(), registry.WithCacheOnly())
+func TestGetDomain(t *testing.T) {
+	_, err := serviceUtil.GetAllDomainRawData(context.Background(), registry.WithCacheOnly())
 	if err != nil {
-		fmt.Printf("GetAllTenantRawData WithCacheOnly failed")
+		fmt.Printf("GetAllDomainRawData WithCacheOnly failed")
 		t.FailNow()
 	}
 
-	_, err = serviceUtil.GetAllTenantRawData(context.Background())
+	_, err = serviceUtil.GetAllDomainRawData(context.Background())
 	if err == nil {
-		fmt.Printf("GetAllTenantRawData failed")
+		fmt.Printf("GetAllDomainRawData failed")
 		t.FailNow()
 	}
 
-	_, err = serviceUtil.GetAllTenant(context.Background(), registry.WithCacheOnly())
+	_, err = serviceUtil.GetAllDomain(context.Background(), registry.WithCacheOnly())
 	if err != nil {
-		fmt.Printf("GetAllTenant WithCacheOnly failed")
+		fmt.Printf("GetAllDomain WithCacheOnly failed")
 		t.FailNow()
 	}
 
-	_, err = serviceUtil.GetAllTenant(context.Background())
+	_, err = serviceUtil.GetAllDomain(context.Background())
 	if err == nil {
-		fmt.Printf("GetAllTenant failed")
+		fmt.Printf("GetAllDomain failed")
 		t.FailNow()
 	}
 }
@@ -65,6 +65,36 @@ func TestNewDomain(t *testing.T) {
 	err := serviceUtil.NewDomain(context.Background(), "")
 	if err == nil {
 		fmt.Printf("NewDomain failed")
+		t.FailNow()
+	}
+}
+
+func TestProjectExist(t *testing.T) {
+	_, err := serviceUtil.ProjectExist(context.Background(), "", "", registry.WithCacheOnly())
+	if err != nil {
+		fmt.Printf("DomainExist WithCacheOnly failed")
+		t.FailNow()
+	}
+
+	_, err = serviceUtil.ProjectExist(context.Background(), "", "")
+	if err == nil {
+		fmt.Printf("DomainExist failed")
+		t.FailNow()
+	}
+}
+
+func TestNewProject(t *testing.T) {
+	err := serviceUtil.NewProject(context.Background(), "", "")
+	if err == nil {
+		fmt.Printf("NewProject failed")
+		t.FailNow()
+	}
+}
+
+func TestNewDomainProject(t *testing.T) {
+	err := serviceUtil.NewDomainProject(context.Background(), "", "")
+	if err == nil {
+		fmt.Printf("NewDomainProject failed")
 		t.FailNow()
 	}
 }

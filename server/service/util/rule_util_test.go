@@ -42,7 +42,7 @@ func TestRuleErr(t *testing.T) {
 
 func TestRuleFilter_Filter(t *testing.T) {
 	rf := serviceUtil.RuleFilter{
-		Tenant:        "",
+		DomainProject: "",
 		Provider:      &proto.MicroService{},
 		ProviderRules: []*proto.ServiceRule{},
 	}

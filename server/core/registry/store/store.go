@@ -39,6 +39,7 @@ const (
 	RULE_INDEX
 	DEPENDENCY
 	DEPENDENCY_RULE
+	PROJECT
 	typeEnd
 )
 
@@ -58,13 +59,14 @@ var TypeNames = []string{
 	RULE_INDEX:      "RULE_INDEX",
 	DEPENDENCY:      "DEPENDENCY",
 	DEPENDENCY_RULE: "DEPENDENCY_RULE",
+	PROJECT:         "PROJECT",
 }
 
 var TypeRoots = map[StoreType]string{
-	SERVICE:  apt.GetServiceRootKey(""),
-	INSTANCE: apt.GetInstanceRootKey(""),
-	DOMAIN:   apt.GetDomainRootKey() + "/",
-	// SCHEMA:
+	SERVICE:         apt.GetServiceRootKey(""),
+	INSTANCE:        apt.GetInstanceRootKey(""),
+	DOMAIN:          apt.GetDomainRootKey() + "/",
+	SCHEMA:          apt.GetServiceSchemaRootKey(""),
 	SCHEMA_SUMMARY:  apt.GetServiceSchemaSummaryRootKey(""),
 	RULE:            apt.GetServiceRuleRootKey(""),
 	LEASE:           apt.GetInstanceLeaseRootKey(""),
@@ -74,6 +76,7 @@ var TypeRoots = map[StoreType]string{
 	RULE_INDEX:      apt.GetServiceRuleIndexRootKey(""),
 	DEPENDENCY:      apt.GetServiceDependencyRootKey(""),
 	DEPENDENCY_RULE: apt.GetServiceDependencyRuleRootKey(""),
+	PROJECT:         apt.GetProjectRootKey(""),
 }
 
 var store *KvStore
@@ -88,6 +91,7 @@ func init() {
 		store.newNullStore(i)
 	}
 	AddEventHandleFunc(DOMAIN, store.onDomainEvent)
+	AddEventHandleFunc(PROJECT, store.onProjectEvent)
 	AddEventHandleFunc(LEASE, store.onLeaseEvent)
 }
 
@@ -166,14 +170,14 @@ func (s *KvStore) newStore(t StoreType, opts ...KvCacherCfgOption) {
 		WithInitSize(s.StoreSize(t)),
 		WithEventFunc(func(evt *KvEvent) { s.dispatchEvent(t, evt) }),
 	)
-	s.newCacherStore(t, NewKvCacher(opts...))
+	s.newIndexer(t, NewKvCacher(opts...))
 }
 
 func (s *KvStore) newNullStore(t StoreType) {
-	s.newCacherStore(t, NullCacher)
+	s.newIndexer(t, NullCacher)
 }
 
-func (s *KvStore) newCacherStore(t StoreType, cacher Cacher) {
+func (s *KvStore) newIndexer(t StoreType, cacher Cacher) {
 	indexer := NewCacheIndexer(t, cacher)
 	s.indexers[t] = indexer
 	indexer.Run()
@@ -200,18 +204,16 @@ func (s *KvStore) SelfPreservationHandler() DeferHandler {
 }
 
 func (s *KvStore) store() {
-	s.newStore(DOMAIN)
-	s.newStore(SERVICE)
-	s.newStore(INSTANCE, WithDeferHandler(s.SelfPreservationHandler()))
-	s.newStore(LEASE)
-	s.newStore(SERVICE_INDEX)
-	s.newStore(SERVICE_ALIAS)
-	s.newStore(DEPENDENCY)
-	s.newStore(DEPENDENCY_RULE)
-	s.newStore(SERVICE_TAG)
-	s.newStore(RULE)
-	s.newStore(RULE_INDEX)
-	s.newStore(SCHEMA_SUMMARY)
+	for t := StoreType(0); t != typeEnd; t++ {
+		switch t {
+		case INSTANCE:
+			s.newStore(t, WithDeferHandler(s.SelfPreservationHandler()))
+		case SCHEMA:
+			continue
+		default:
+			s.newStore(t)
+		}
+	}
 	for _, i := range s.indexers {
 		<-i.Ready()
 	}
@@ -223,14 +225,27 @@ func (s *KvStore) store() {
 func (s *KvStore) onDomainEvent(evt *KvEvent) {
 	kv := evt.KV
 	action := evt.Action
-	tenant, _ := pb.GetInfoFromDomainKV(kv)
-	if len(tenant) == 0 {
+	domain, _ := pb.GetInfoFromDomainKV(kv)
+	if len(domain) == 0 {
 		util.Logger().Errorf(nil,
 			"unmarshal domain file failed, key %s [%s] event", util.BytesToStringWithNoCopy(kv.Key), action)
 		return
 	}
 
-	util.Logger().Infof("domain '%s' is %s", tenant, action)
+	util.Logger().Infof("domain '%s' is %s", domain, action)
+}
+
+func (s *KvStore) onProjectEvent(evt *KvEvent) {
+	kv := evt.KV
+	action := evt.Action
+	domainProject, _ := pb.GetInfoFromProjectKV(kv)
+	if len(domainProject) == 0 {
+		util.Logger().Errorf(nil,
+			"unmarshal project file failed, key %s [%s] event", util.BytesToStringWithNoCopy(kv.Key), action)
+		return
+	}
+
+	util.Logger().Infof("project '%s' is %s", domainProject, action)
 }
 
 func (s *KvStore) onLeaseEvent(evt *KvEvent) {
@@ -327,6 +342,10 @@ func (s *KvStore) DependencyRule() *Indexer {
 
 func (s *KvStore) Domain() *Indexer {
 	return s.indexers[DOMAIN]
+}
+
+func (s *KvStore) Project() *Indexer {
+	return s.indexers[PROJECT]
 }
 
 func (s *KvStore) KeepAlive(ctx context.Context, opts ...registry.PluginOpOption) (int64, error) {

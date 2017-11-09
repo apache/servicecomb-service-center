@@ -35,7 +35,7 @@ func init() {
 	quota.QuotaPlugins["unlimit"] = New
 }
 
-func (q *Unlimit) Apply4Quotas(ctx context.Context, quotaType quota.ResourceType, tenant string, serviceId string, quotaSize int16) (quota.QuotaReporter, bool, error) {
+func (q *Unlimit) Apply4Quotas(ctx context.Context, quotaType quota.ResourceType, domainProject string, serviceId string, quotaSize int16) (quota.QuotaReporter, bool, error) {
 	return nil, true, nil
 }
 

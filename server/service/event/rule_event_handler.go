@@ -28,9 +28,9 @@ type RulesChangedAsyncTask struct {
 	key string
 	err error
 
-	Tenant     string
-	ProviderId string
-	Rev        int64
+	DomainProject string
+	ProviderId    string
+	Rev           int64
 }
 
 func (apt *RulesChangedAsyncTask) Key() string {
@@ -39,7 +39,7 @@ func (apt *RulesChangedAsyncTask) Key() string {
 
 func (apt *RulesChangedAsyncTask) Do(ctx context.Context) error {
 	defer store.Store().AsyncTasker().DeferRemoveTask(apt.Key())
-	apt.err = apt.publish(ctx, apt.Tenant, apt.ProviderId, apt.Rev)
+	apt.err = apt.publish(ctx, apt.DomainProject, apt.ProviderId, apt.Rev)
 	return apt.err
 }
 
@@ -47,8 +47,8 @@ func (apt *RulesChangedAsyncTask) Err() error {
 	return apt.err
 }
 
-func (apt *RulesChangedAsyncTask) publish(ctx context.Context, tenant, providerId string, rev int64) error {
-	provider, err := serviceUtil.GetService(ctx, tenant, providerId)
+func (apt *RulesChangedAsyncTask) publish(ctx context.Context, domainProject, providerId string, rev int64) error {
+	provider, err := serviceUtil.GetService(ctx, domainProject, providerId)
 	if err != nil {
 		util.Logger().Errorf(err, "get service %s file failed", providerId)
 		return err
@@ -62,14 +62,14 @@ func (apt *RulesChangedAsyncTask) publish(ctx context.Context, tenant, providerI
 		provider = tmpProvider.(*pb.MicroService)
 	}
 
-	consumerIds, err := serviceUtil.GetConsumersInCache(ctx, tenant, providerId, provider)
+	consumerIds, err := serviceUtil.GetConsumersInCache(ctx, domainProject, providerId, provider)
 	if err != nil {
 		util.Logger().Errorf(err, "get consumer services by provider %s failed", providerId)
 		return err
 	}
-	providerKey := pb.ToMicroServiceKey(tenant, provider)
+	providerKey := pb.ToMicroServiceKey(domainProject, provider)
 
-	nf.PublishInstanceEvent(tenant, pb.EVT_EXPIRE, providerKey, nil, rev, consumerIds)
+	nf.PublishInstanceEvent(domainProject, pb.EVT_EXPIRE, providerKey, nil, rev, consumerIds)
 	return nil
 }
 
@@ -83,7 +83,7 @@ func (h *RuleEventHandler) Type() store.StoreType {
 func (h *RuleEventHandler) OnEvent(evt *store.KvEvent) {
 	kv := evt.KV
 	action := evt.Action
-	providerId, ruleId, tenant, data := pb.GetInfoFromRuleKV(kv)
+	providerId, ruleId, domainProject, data := pb.GetInfoFromRuleKV(kv)
 	if data == nil {
 		util.Logger().Errorf(nil,
 			"unmarshal service rule file failed, service %s rule %s [%s] event, data is nil",
@@ -107,18 +107,18 @@ func (h *RuleEventHandler) OnEvent(evt *store.KvEvent) {
 	}
 
 	store.Store().AsyncTasker().AddTask(context.Background(),
-		NewRulesChangedAsyncTask(tenant, providerId, evt.Revision))
+		NewRulesChangedAsyncTask(domainProject, providerId, evt.Revision))
 }
 
 func NewRuleEventHandler() *RuleEventHandler {
 	return &RuleEventHandler{}
 }
 
-func NewRulesChangedAsyncTask(tenant, providerId string, rev int64) *RulesChangedAsyncTask {
+func NewRulesChangedAsyncTask(domainProject, providerId string, rev int64) *RulesChangedAsyncTask {
 	return &RulesChangedAsyncTask{
-		key:        "RulesChangedAsyncTask_" + providerId,
-		Tenant:     tenant,
-		ProviderId: providerId,
-		Rev:        rev,
+		key:           "RulesChangedAsyncTask_" + providerId,
+		DomainProject: domainProject,
+		ProviderId:    providerId,
+		Rev:           rev,
 	}
 }

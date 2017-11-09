@@ -53,18 +53,18 @@ func (e MatchBlackListError) Error() string {
 }
 
 type RuleFilter struct {
-	Tenant        string
+	DomainProject string
 	Provider      *pb.MicroService
 	ProviderRules []*pb.ServiceRule
 }
 
 func (rf *RuleFilter) Filter(ctx context.Context, consumerId string) (bool, error) {
-	consumer, err := GetService(ctx, rf.Tenant, consumerId, registry.WithCacheOnly())
+	consumer, err := GetService(ctx, rf.DomainProject, consumerId, registry.WithCacheOnly())
 	if consumer == nil {
 		return false, err
 	}
 
-	tags, err := GetTagsUtils(context.Background(), rf.Tenant, consumerId, registry.WithCacheOnly())
+	tags, err := GetTagsUtils(context.Background(), rf.DomainProject, consumerId, registry.WithCacheOnly())
 	if err != nil {
 		return false, err
 	}
@@ -77,9 +77,9 @@ func (rf *RuleFilter) Filter(ctx context.Context, consumerId string) (bool, erro
 	return true, nil
 }
 
-func GetRulesUtil(ctx context.Context, tenant string, serviceId string, opts ...registry.PluginOpOption) ([]*pb.ServiceRule, error) {
+func GetRulesUtil(ctx context.Context, domainProject string, serviceId string, opts ...registry.PluginOpOption) ([]*pb.ServiceRule, error) {
 	key := util.StringJoin([]string{
-		apt.GetServiceRuleRootKey(tenant),
+		apt.GetServiceRuleRootKey(domainProject),
 		serviceId,
 		"",
 	}, "/")
@@ -103,9 +103,9 @@ func GetRulesUtil(ctx context.Context, tenant string, serviceId string, opts ...
 	return rules, nil
 }
 
-func RuleExist(ctx context.Context, tenant string, serviceId string, attr string, pattern string, opts ...registry.PluginOpOption) bool {
+func RuleExist(ctx context.Context, domainProject string, serviceId string, attr string, pattern string, opts ...registry.PluginOpOption) bool {
 	opts = append(opts,
-		registry.WithStrKey(apt.GenerateRuleIndexKey(tenant, serviceId, attr, pattern)),
+		registry.WithStrKey(apt.GenerateRuleIndexKey(domainProject, serviceId, attr, pattern)),
 		registry.WithCountOnly())
 	resp, err := store.Store().RuleIndex().Search(ctx, opts...)
 	if err != nil || resp.Count == 0 {
@@ -114,8 +114,8 @@ func RuleExist(ctx context.Context, tenant string, serviceId string, attr string
 	return true
 }
 
-func GetServiceRuleType(ctx context.Context, tenant string, serviceId string, opts ...registry.PluginOpOption) (string, int, error) {
-	key := apt.GenerateServiceRuleKey(tenant, serviceId, "")
+func GetServiceRuleType(ctx context.Context, domainProject string, serviceId string, opts ...registry.PluginOpOption) (string, int, error) {
+	key := apt.GenerateServiceRuleKey(domainProject, serviceId, "")
 	opts = append(opts,
 		registry.WithStrKey(key),
 		registry.WithPrefix())
@@ -135,9 +135,9 @@ func GetServiceRuleType(ctx context.Context, tenant string, serviceId string, op
 	return rule.RuleType, len(resp.Kvs), nil
 }
 
-func GetOneRule(ctx context.Context, tenant, serviceId, ruleId string, opts ...registry.PluginOpOption) (*pb.ServiceRule, error) {
+func GetOneRule(ctx context.Context, domainProject, serviceId, ruleId string, opts ...registry.PluginOpOption) (*pb.ServiceRule, error) {
 	opts = append(opts,
-		registry.WithStrKey(apt.GenerateServiceRuleKey(tenant, serviceId, ruleId)))
+		registry.WithStrKey(apt.GenerateServiceRuleKey(domainProject, serviceId, ruleId)))
 	resp, err := store.Store().Rule().Search(ctx, opts...)
 	if err != nil {
 		util.Logger().Errorf(nil, "Get rule for service failed for %s.", err.Error())
