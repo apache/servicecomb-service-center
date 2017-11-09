@@ -148,6 +148,8 @@ const (
 	REQUEST_TIMEOUT = 300
 
 	MAX_TXN_NUMBER_ONE_TIME = 128
+
+	DEFAULT_PAGE_COUNT = 4096 // grpc does not allow to transport a large body more then 4MB in a request.
 )
 
 type Registry interface {
@@ -195,14 +197,16 @@ type PluginOp struct {
 	IgnoreLease   bool
 	Mode          CacheMode
 	WatchCallback WatchCallback
+	Offset        int64
+	Limit         int64
 }
 
 func (op PluginOp) String() string {
 	return fmt.Sprintf(
-		"{action: %s, key: %s, end: %s, val: %d, prefix: %t, prev: %t, lease: %d, keyOnly: %t, countOnly: %t, sort: %s, rev: %d, ignoreLease: %t, mode: %s}",
-		op.Action, op.Key, op.EndKey, len(util.BytesToStringWithNoCopy(op.Value)),
+		"{mode: %s, action: %s, key: %s, end: %s, val: %d, prefix: %t, prev: %t, lease: %d, keyOnly: %t, countOnly: %t, sort: %s, rev: %d, ignoreLease: %t, offset: %d, limit: %d}",
+		op.Mode, op.Action, op.Key, op.EndKey, len(util.BytesToStringWithNoCopy(op.Value)),
 		op.Prefix, op.PrevKV, op.Lease, op.KeyOnly, op.CountOnly,
-		op.SortOrder, op.Revision, op.IgnoreLease, op.Mode,
+		op.SortOrder, op.Revision, op.IgnoreLease, op.Offset, op.Limit,
 	)
 }
 
@@ -236,7 +240,8 @@ func WithWatchCallback(f WatchCallback) PluginOpOption {
 func WithStrKey(key string) PluginOpOption     { return WithKey(util.StringToBytesWithNoCopy(key)) }
 func WithStrEndKey(key string) PluginOpOption  { return WithEndKey(util.StringToBytesWithNoCopy(key)) }
 func WithStrValue(value string) PluginOpOption { return WithValue(util.StringToBytesWithNoCopy(value)) }
-
+func WithOffset(i int64) PluginOpOption        { return func(op *PluginOp) { op.Offset = i } }
+func WithLimit(i int64) PluginOpOption         { return func(op *PluginOp) { op.Limit = i } }
 func WatchPrefixOpOptions(key string) []PluginOpOption {
 	return []PluginOpOption{GET, WithStrKey(key), WithPrefix(), WithPrevKv()}
 }
@@ -259,6 +264,10 @@ func OpDel(opts ...PluginOpOption) (op PluginOp) {
 func OptionsToOp(opts ...PluginOpOption) (op PluginOp) {
 	for _, opt := range opts {
 		opt(&op)
+	}
+	if op.Limit == 0 {
+		op.Offset = -1
+		op.Limit = DEFAULT_PAGE_COUNT
 	}
 	return
 }
