@@ -21,14 +21,15 @@ import (
 import (
 	"encoding/json"
 	"fmt"
+	"testing"
+	"time"
+
 	"github.com/ServiceComb/service-center/pkg/etcdsync"
 	"github.com/ServiceComb/service-center/pkg/util"
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/service"
-	"testing"
-	"time"
 )
 
 func init() {
@@ -38,7 +39,7 @@ func init() {
 func TestServiceController_CreateDependenciesForMircServices(t *testing.T) {
 	tryTimes := 3
 	testCount := 10
-	serviceResource, _, _ := service.AssembleResources()
+	serviceResource, _, _, _ := service.AssembleResources()
 	for i := 0; i < testCount; i++ {
 		_, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 			Service: &pb.MicroService{

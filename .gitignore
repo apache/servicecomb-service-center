@@ -19,3 +19,6 @@ etc/data
 integration/conf
 frontend/bower_components/
 frontend/node_modules
+
+# for local logging
+**/*.log

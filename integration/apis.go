@@ -66,3 +66,9 @@ var GET = "GET"
 var POST = "POST"
 var UPDATE = "PUT"
 var DELETE = "DELETE"
+
+//Broker API's
+var BROKER_PUBLISH = "/broker/pacts/provider/:providerId/consumer/:consumerId/version/:number"
+var BROKER_HOME = "/broker"
+var BROKER_RETRIEVE_VERIFICATION = "/broker/verification-results/consumer/:consumerId/version/:consumerVersion/latest"
+var BROKER_PUBLISH_VERIFICATION = "/broker/pacts/provider/:providerId/consumer/:consumerId/pact-version/:sha/verification-results"
