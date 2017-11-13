@@ -24,20 +24,16 @@ type ContextHandler struct {
 }
 
 func (c *ContextHandler) Handle(i *chain.Invocation) {
-	pattern := i.Context().Value(roa.CTX_MATCH_PATTERN).(string)
-	if IsSkip(pattern) {
-		i.Next()
-		return
-	}
-
 	var (
-		err error
-		v3  v3Context
-		v4  v4Context
+		err     error
+		v3      v3Context
+		v4      v4Context
+		r       = i.Context().Value(roa.CTX_REQUEST).(*http.Request)
+		pattern = i.Context().Value(roa.CTX_MATCH_PATTERN).(string)
 	)
 
-	r := i.Context().Value(roa.CTX_REQUEST).(*http.Request)
 	switch {
+	case IsSkip(pattern):
 	case v3.IsMatch(r):
 		err = v3.Do(r)
 	case v4.IsMatch(r):

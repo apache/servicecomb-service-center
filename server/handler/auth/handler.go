@@ -42,11 +42,15 @@ func (h *AuthRequest) Handle(i *chain.Invocation) {
 		i.Next()
 		return
 	}
-	err := plugin.Identify(i.Context().Value(rest.CTX_REQUEST).(*http.Request))
+
+	r := i.Context().Value(rest.CTX_REQUEST).(*http.Request)
+	err := plugin.Identify(r)
 	if err == nil {
 		i.Next()
 		return
 	}
+
+	util.Logger().Errorf(err, "authenticate request failed, %s %s", r.Method, r.RequestURI)
 
 	w := i.Context().Value(rest.CTX_RESPONSE).(http.ResponseWriter)
 	http.Error(w, "Request Unauthorized", http.StatusUnauthorized)
