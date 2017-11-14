@@ -38,6 +38,7 @@ const (
 	REGISTRY_DEPENDENCY_KEY     = "deps"
 	REGISTRY_DEPS_RULE_KEY      = "dep-rules"
 	REGISTRY_METRICS_KEY        = "metrics"
+	ENDPOINTS_ROOT_KEY          = "endpoints"
 )
 
 func GetRootKey() string {
@@ -370,5 +371,31 @@ func GenerateProjectKey(domain, project string) string {
 	return util.StringJoin([]string{
 		GetProjectRootKey(domain),
 		project,
+	}, "/")
+}
+
+func GenerateEndpointsRootKey(domainProject string) string {
+	return util.StringJoin([]string{
+		GetRootKey(),
+		REGISTRY_INSTANCE_KEY,
+		ENDPOINTS_ROOT_KEY,
+		domainProject,
+	}, "/")
+}
+
+func GetEndpointsIndexKey(domainProject string, region string, availableZone string, endpoints string) string {
+	return util.StringJoin([]string{
+		GenerateEndpointsRootKey(domainProject),
+		region,
+		availableZone,
+		endpoints,
+	}, "/")
+}
+
+func GetEndPointsKey(domainProject string, endpoints string, region string, availableZone string, serviceId string, instanceId string) string{
+	return util.StringJoin([]string{
+		GetEndpointsIndexKey(domainProject, region, availableZone, endpoints),
+		serviceId,
+		instanceId,
 	}, "/")
 }

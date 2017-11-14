@@ -19,7 +19,6 @@ import (
 	"fmt"
 	errorsEx "github.com/ServiceComb/service-center/pkg/errors"
 	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/server/core"
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
@@ -75,10 +74,11 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 	//如果没填写 并且endpoints沒重復，則产生新的全局instance id
 	oldInstanceId := ""
 
+	var endpointsIndexKey string
 	if instanceId == "" {
 		util.Logger().Infof("start register a new instance: service %s", instanceFlag)
 		if len(instance.Endpoints) != 0 {
-			oldInstanceId, err = serviceUtil.CheckEndPoints(ctx, in)
+			oldInstanceId, endpointsIndexKey,  err = serviceUtil.CheckEndPoints(ctx, in)
 			if err != nil {
 				util.Logger().Errorf(err, "register instance failed, service %s, operator %s: check endpoints failed.", instanceFlag, remoteIP)
 				return &pb.RegisterInstanceResponse{
@@ -86,15 +86,18 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 				}, nil
 			}
 			if oldInstanceId != "" {
-				instanceId = oldInstanceId
-				instance.InstanceId = instanceId
+				util.Logger().Infof("instance more exist.")
+				return &pb.RegisterInstanceResponse{
+					Response:   pb.CreateResponse(pb.Response_SUCCESS, "instance more exist."),
+					InstanceId: oldInstanceId,
+				}, nil
 			}
 		}
 	}
 
 	var reporter quota.QuotaReporter
 	if len(oldInstanceId) == 0 {
-		if !core.ISSCSelf(ctx) {
+		if !apt.ISSCSelf(ctx) {
 			var err error
 			var ok bool
 			reporter, ok, err = quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.MicroServiceInstanceQuotaType, domainProject, in.Instance.ServiceId, 1)
@@ -186,6 +189,16 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 		opts = append(opts,
 			registry.OpPut(registry.WithStrKey(hbKey), registry.WithStrValue(fmt.Sprintf("%d", leaseID)),
 				registry.WithLease(leaseID), registry.WithIgnoreLease()))
+	}
+
+	if endpointsIndexKey != "" {
+		endpointsKey := util.StringJoin([]string{
+			endpointsIndexKey,
+			instance.ServiceId,
+			instanceId,
+		}, "/")
+		opts = append(opts, registry.OpPut(registry.WithStrKey(endpointsKey),
+			registry.WithLease(leaseID), registry.WithIgnoreLease()))
 	}
 
 	// Set key file
