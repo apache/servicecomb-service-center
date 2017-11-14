@@ -16,40 +16,11 @@ package event
 import (
 	"github.com/ServiceComb/service-center/pkg/util"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"golang.org/x/net/context"
 	"strings"
 )
-
-type DomainProjectAsyncTask struct {
-	key string
-	err error
-
-	Domain  string
-	Project string
-}
-
-func (apt *DomainProjectAsyncTask) Key() string {
-	return apt.key
-}
-
-func (apt *DomainProjectAsyncTask) Err() error {
-	return apt.err
-}
-
-func (apt *DomainProjectAsyncTask) Do(ctx context.Context) error {
-	defer store.AsyncTaskService().DeferRemove(apt.Key())
-
-	err := serviceUtil.NewDomainProject(ctx, apt.Domain, apt.Project)
-	if err != nil {
-		util.Logger().Errorf(err, "new domain(%s) or project(%s) failed", apt.Domain, apt.Project)
-		return err
-	}
-	util.Logger().Infof("new domain(%s) and project(%s)", apt.Domain, apt.Project)
-	return nil
-}
 
 type ServiceEventHandler struct {
 }
@@ -77,26 +48,17 @@ func (h *ServiceEventHandler) OnEvent(evt *store.KvEvent) {
 	case pb.EVT_CREATE, pb.EVT_INIT:
 		newDomain := domainProject[:strings.Index(domainProject, "/")]
 		newProject := domainProject[strings.Index(domainProject, "/")+1:]
-		ok, err := serviceUtil.ProjectExist(context.Background(), newDomain, newProject, registry.WithCacheOnly())
+		err := serviceUtil.NewDomainProject(context.Background(), newDomain, newProject)
 		if err != nil {
-			util.Logger().Errorf(err, "find project %s/%s file failed", newDomain, newProject)
+			util.Logger().Errorf(err, "new domain(%s) or project(%s) failed", newDomain, newProject)
 			return
 		}
-		if ok {
-			return
+		if action == pb.EVT_CREATE {
+			util.Logger().Infof("new domain(%s) and project(%s)", newDomain, newProject)
 		}
-		store.AsyncTaskService().Add(context.Background(), NewDomainProjectAsyncTask(newDomain, newProject))
 	}
 }
 
 func NewServiceEventHandler() *ServiceEventHandler {
 	return &ServiceEventHandler{}
-}
-
-func NewDomainProjectAsyncTask(domain, project string) *DomainProjectAsyncTask {
-	return &DomainProjectAsyncTask{
-		key:     "DomainProjectAsyncTask_" + domain + "/" + project,
-		Domain:  domain,
-		Project: project,
-	}
 }

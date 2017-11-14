@@ -84,7 +84,7 @@ func GetConsumersInCache(ctx context.Context, domainProject string, providerId s
 	}
 
 	if len(consumerIds) == 0 {
-		util.Logger().Warnf(nil, "Get consumer for publish from database is empty.%s , get from cache", providerId)
+		util.Logger().Warnf(nil, "Get consumer for publish from database is empty. %s, get from cache", providerId)
 		consumerIds, found := consumerCache.Get(providerId)
 		if found && len(consumerIds.([]string)) > 0 {
 			return consumerIds.([]string), nil

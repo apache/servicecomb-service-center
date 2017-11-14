@@ -138,7 +138,6 @@ func (lat *AsyncTaskService) DeferRemove(key string) error {
 	_, exist := lat.schedules[key]
 	if !exist {
 		lat.lock.Unlock()
-		util.Logger().Warnf(nil, "an unused scheduler will be removed, key is %s", key)
 		return nil
 	}
 	lat.removeTasks[key] = struct{}{}
