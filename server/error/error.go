@@ -11,20 +11,29 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package errors
+package error
 
-var errors = map[int]string{
+import (
+	"encoding/json"
+	"fmt"
+	"github.com/ServiceComb/service-center/pkg/util"
+	"net/http"
+)
+
+var errors = map[int32]string{
 	ErrInvalidParams: "Invalid parameter(s)",
 
 	ErrServiceAlreadyExists: "Micro-service already exists",
 	ErrServiceNotExists:     "Micro-service does not exist",
 	ErrDeployedInstance:     "Micro-service has deployed instance(s)",
+	ErrDependedOnConsumer:   "Consumer(s) depends on this micro-service",
 
 	ErrUndefinedSchemaId:    "Undefined schema id",
 	ErrModifySchemaNotAllow: "Not allowed to modify schema",
 	ErrSchemaNotExists:      "Schema does not exist",
 
 	ErrInstanceNotExists: "Instance does not exist",
+	ErrPermissionDeny:    "Access micro-service refused",
 
 	ErrTagNotExists: "Tag does not exist",
 
@@ -37,43 +46,47 @@ var errors = map[int]string{
 
 	ErrUnauthorized: "Request unauthorized",
 
-	ErrInternalException:  "Internal server error",
+	ErrInternal:           "Internal server error",
 	ErrUnavailableBackend: "Registry service is unavailable",
 	ErrUnavailableQuota:   "Quota service is unavailable",
 }
 
 const (
-	ErrInvalidParams     = 400001
-	ErrUnauthorized      = 401002
-	ErrInternalException = 500003
+	ErrInvalidParams int32 = 400001
+	ErrUnauthorized  int32 = 401002
+	ErrInternal      int32 = 500003
 
-	ErrServiceAlreadyExists = 400010
-	ErrUnavailableBackend   = 500011
+	ErrServiceAlreadyExists int32 = 400010
+	ErrUnavailableBackend   int32 = 500011
 
-	ErrServiceNotExists = 400012
+	ErrServiceNotExists int32 = 400012
 
-	ErrDeployedInstance = 400013
+	ErrDeployedInstance int32 = 400013
 
-	ErrUndefinedSchemaId    = 400014
-	ErrModifySchemaNotAllow = 400015
-	ErrSchemaNotExists      = 400016
+	ErrUndefinedSchemaId    int32 = 400014
+	ErrModifySchemaNotAllow int32 = 400015
+	ErrSchemaNotExists      int32 = 400016
 
-	ErrInstanceNotExists = 400017
+	ErrInstanceNotExists int32 = 400017
 
-	ErrTagNotExists = 400018
+	ErrTagNotExists int32 = 400018
 
-	ErrRuleAlreadyExists  = 400019
-	ErrBlackAndWhiteRule  = 400020
-	ErrModifyRuleNotAllow = 400021
-	ErrRuleNotExists      = 400022
+	ErrRuleAlreadyExists  int32 = 400019
+	ErrBlackAndWhiteRule  int32 = 400020
+	ErrModifyRuleNotAllow int32 = 400021
+	ErrRuleNotExists      int32 = 400022
 
-	ErrNotEnoughQuota   = 400100
-	ErrUnavailableQuota = 500101
+	ErrDependedOnConsumer int32 = 400023
+
+	ErrPermissionDeny int32 = 400024
+
+	ErrNotEnoughQuota   int32 = 400100
+	ErrUnavailableQuota int32 = 500101
 )
 
 type Error struct {
-	Code    int    `json:"errCode,string"`
-	Message string `json:"errMsg"`
+	Code    int32  `json:"errorCode,string"`
+	Message string `json:"errorMessage"`
 	Detail  string `json:"detail,omitempty"`
 }
 
@@ -84,7 +97,27 @@ func (e Error) Error() string {
 	return e.Message + "(" + e.Detail + ")"
 }
 
-func NewError(code int, detail string) *Error {
+func (e Error) toJson() string {
+	bs, _ := json.Marshal(e)
+	return util.BytesToStringWithNoCopy(bs)
+}
+
+func (e Error) StatusCode() int {
+	if e.Code >= 500000 {
+		return http.StatusInternalServerError
+	}
+	return http.StatusBadRequest
+}
+
+func (e Error) HttpWrite(w http.ResponseWriter) {
+	status := e.StatusCode()
+	w.Header().Add("X-Response-Status", fmt.Sprint(status))
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(status)
+	fmt.Fprintln(w, e.toJson())
+}
+
+func NewError(code int32, detail string) *Error {
 	return &Error{
 		Code:    code,
 		Message: errors[code],

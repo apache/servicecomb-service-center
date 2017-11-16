@@ -48,7 +48,7 @@ var _ = Describe("ServiceController", func() {
 					Dependencies: nil,
 				})
 				Expect(err).To(BeNil())
-				Expect(respCreateDependency.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respCreateDependency.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respCreateDependency, err = serviceResource.CreateDependenciesForMircServices(getContext(), &pb.CreateDependenciesRequest{
 					Dependencies: []*pb.MircroServiceDependency{
@@ -62,7 +62,7 @@ var _ = Describe("ServiceController", func() {
 						},
 					},
 				})
-				Expect(respCreateDependency.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respCreateDependency.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respCreateDependency, err = serviceResource.CreateDependenciesForMircServices(getContext(), &pb.CreateDependenciesRequest{
 					Dependencies: []*pb.MircroServiceDependency{
@@ -88,7 +88,7 @@ var _ = Describe("ServiceController", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respCreateDependency.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respCreateDependency.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respCreateDependency, err = serviceResource.CreateDependenciesForMircServices(getContext(), &pb.CreateDependenciesRequest{
 					Dependencies: []*pb.MircroServiceDependency{
@@ -130,7 +130,7 @@ var _ = Describe("ServiceController", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respCreateDependency.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respCreateDependency.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respCreateDependency, err = serviceResource.CreateDependenciesForMircServices(getContext(), &pb.CreateDependenciesRequest{
 					Dependencies: []*pb.MircroServiceDependency{
@@ -151,7 +151,7 @@ var _ = Describe("ServiceController", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respCreateDependency.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respCreateDependency.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respCreateDependency, err = serviceResource.CreateDependenciesForMircServices(getContext(), &pb.CreateDependenciesRequest{
 					Dependencies: []*pb.MircroServiceDependency{
@@ -172,7 +172,7 @@ var _ = Describe("ServiceController", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respCreateDependency.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respCreateDependency.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respCreateDependency, err = serviceResource.CreateDependenciesForMircServices(getContext(), &pb.CreateDependenciesRequest{
 					Dependencies: []*pb.MircroServiceDependency{
@@ -193,7 +193,7 @@ var _ = Describe("ServiceController", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respCreateDependency.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respCreateDependency.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respCreateDependency, err = serviceResource.CreateDependenciesForMircServices(getContext(), &pb.CreateDependenciesRequest{
 					Dependencies: []*pb.MircroServiceDependency{
@@ -214,7 +214,7 @@ var _ = Describe("ServiceController", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respCreateDependency.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respCreateDependency.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 			It("创建Dependency", func() {
 				fmt.Println("UT===========创建Dependency")
@@ -390,7 +390,7 @@ var _ = Describe("ServiceController", func() {
 					Force:     false,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("查询provider对应的所有consumer,参数校验", func() {
@@ -399,13 +399,13 @@ var _ = Describe("ServiceController", func() {
 					ServiceId: "",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = serviceResource.GetProviderDependencies(getContext(), &pb.GetDependenciesRequest{
 					ServiceId: "noneservice",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("查询provider对应的所有consumer", func() {
@@ -423,13 +423,13 @@ var _ = Describe("ServiceController", func() {
 					ServiceId: "",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = serviceResource.GetConsumerDependencies(getContext(), &pb.GetDependenciesRequest{
 					ServiceId: "noneservice",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("查询consumer对应的所有provider", func() {
@@ -782,7 +782,7 @@ var _ = Describe("ServiceController", func() {
 					}
 				}
 				Expect(flag).To(Equal(true))
-			} )
+			})
 
 			It("clean", func() {
 				respDelete, err := serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{
@@ -814,7 +814,6 @@ var _ = Describe("ServiceController", func() {
 				Expect(respDelete.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 			})
 		})
-
 
 		It("删除微服务,作为provider，有consumer", func() {
 			var consumerId, providerId string
@@ -876,8 +875,7 @@ var _ = Describe("ServiceController", func() {
 				Force:     false,
 			})
 			Expect(err).To(BeNil())
-			Expect(respDelete.GetResponse().Code).To(Equal(pb.Response_FAIL))
-
+			Expect(respDelete.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 			respDelete, err = serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{
 				ServiceId: consumerId,

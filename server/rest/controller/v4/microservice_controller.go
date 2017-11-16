@@ -19,6 +19,7 @@ import (
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
+	scerr "github.com/ServiceComb/service-center/server/error"
 	"github.com/ServiceComb/service-center/server/rest/controller"
 	"io/ioutil"
 	"net/http"
@@ -52,7 +53,7 @@ func (this *MicroServiceService) URLPatterns() []rest.Route {
 func (this *MicroServiceService) GetSchemas(w http.ResponseWriter, r *http.Request) {
 	noCache := r.URL.Query().Get("noCache")
 	if noCache != "0" && noCache != "1" && strings.TrimSpace(noCache) != "" {
-		controller.WriteText(http.StatusBadRequest, "parameter noCache must be 1 or 0", w)
+		controller.WriteError(w, scerr.ErrInvalidParams, "parameter noCache must be 1 or 0")
 		return
 	}
 	request := &pb.GetSchemaRequest{
@@ -60,20 +61,17 @@ func (this *MicroServiceService) GetSchemas(w http.ResponseWriter, r *http.Reque
 		SchemaId:  r.URL.Query().Get(":schemaId"),
 		NoCache:   noCache == "1",
 	}
-	resp, err := core.ServiceAPI.GetSchemaInfo(r.Context(), request)
-	if len(resp.Schema) != 0 {
-		resp.Response = nil
-		controller.WriteJsonObject(http.StatusOK, resp, w)
-		return
-	}
-	controller.WriteTextResponse(resp.GetResponse(), err, "", w)
+	resp, _ := core.ServiceAPI.GetSchemaInfo(r.Context(), request)
+	respInternal := resp.Response
+	resp.Response = nil
+	controller.WriteResponse(w, respInternal, resp)
 }
 
 func (this *MicroServiceService) ModifySchema(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		util.Logger().Error("body err", err)
-		controller.WriteText(http.StatusBadRequest, err.Error(), w)
+		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
 
@@ -81,20 +79,20 @@ func (this *MicroServiceService) ModifySchema(w http.ResponseWriter, r *http.Req
 	err = json.Unmarshal(message, request)
 	if err != nil {
 		util.Logger().Error("Unmarshal error", err)
-		controller.WriteText(http.StatusBadRequest, err.Error(), w)
+		controller.WriteError(w, scerr.ErrInternal, err.Error())
 		return
 	}
 	request.ServiceId = r.URL.Query().Get(":serviceId")
 	request.SchemaId = r.URL.Query().Get(":schemaId")
 	resp, err := core.ServiceAPI.ModifySchema(r.Context(), request)
-	controller.WriteTextResponse(resp.GetResponse(), err, "", w)
+	controller.WriteResponse(w, resp.GetResponse(), nil)
 }
 
 func (this *MicroServiceService) ModifySchemas(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		util.Logger().Error("body err", err)
-		controller.WriteText(http.StatusBadRequest, err.Error(), w)
+		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
 	serviceId := r.URL.Query().Get(":serviceId")
@@ -102,12 +100,12 @@ func (this *MicroServiceService) ModifySchemas(w http.ResponseWriter, r *http.Re
 	err = json.Unmarshal(message, request)
 	if err != nil {
 		util.Logger().Error("Unmarshal error", err)
-		controller.WriteText(http.StatusBadRequest, err.Error(), w)
+		controller.WriteError(w, scerr.ErrInternal, err.Error())
 		return
 	}
 	request.ServiceId = serviceId
 	resp, err := core.ServiceAPI.ModifySchemas(r.Context(), request)
-	controller.WriteTextResponse(resp.GetResponse(), err, "", w)
+	controller.WriteResponse(w, resp.GetResponse(), nil)
 }
 
 func (this *MicroServiceService) DeleteSchemas(w http.ResponseWriter, r *http.Request) {
@@ -115,42 +113,35 @@ func (this *MicroServiceService) DeleteSchemas(w http.ResponseWriter, r *http.Re
 		ServiceId: r.URL.Query().Get(":serviceId"),
 		SchemaId:  r.URL.Query().Get(":schemaId"),
 	}
-	resp, err := core.ServiceAPI.DeleteSchema(r.Context(), request)
-	controller.WriteTextResponse(resp.GetResponse(), err, "", w)
+	resp, _ := core.ServiceAPI.DeleteSchema(r.Context(), request)
+	controller.WriteResponse(w, resp.GetResponse(), nil)
 }
 
 func (this *MicroServiceService) Register(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		util.Logger().Error("body err", err)
-		controller.WriteText(http.StatusBadRequest, err.Error(), w)
+		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
 	var request pb.CreateServiceRequest
 	err = json.Unmarshal(message, &request)
 	if err != nil {
 		util.Logger().Error("Unmarshal error", err)
-		controller.WriteText(http.StatusBadRequest, err.Error(), w)
+		controller.WriteError(w, scerr.ErrInternal, err.Error())
 		return
 	}
 	resp, err := core.ServiceAPI.Create(r.Context(), &request)
-	if err != nil {
-		controller.WriteText(http.StatusInternalServerError, err.Error(), w)
-		return
-	}
-	if resp.GetResponse().Code != pb.Response_SUCCESS {
-		controller.WriteText(http.StatusBadRequest, resp.GetResponse().Message, w)
-		return
-	}
+	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteJsonObject(http.StatusOK, resp, w)
+	controller.WriteResponse(w, respInternal, resp)
 }
 
 func (this *MicroServiceService) Update(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		util.Logger().Error("body err", err)
-		controller.WriteText(http.StatusBadRequest, err.Error(), w)
+		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
 	request := &pb.UpdateServicePropsRequest{
@@ -159,11 +150,11 @@ func (this *MicroServiceService) Update(w http.ResponseWriter, r *http.Request) 
 	err = json.Unmarshal(message, request)
 	if err != nil {
 		util.Logger().Error("Unmarshal error", err)
-		controller.WriteText(http.StatusBadRequest, err.Error(), w)
+		controller.WriteError(w, scerr.ErrInternal, err.Error())
 		return
 	}
 	resp, err := core.ServiceAPI.UpdateProperties(r.Context(), request)
-	controller.WriteTextResponse(resp.GetResponse(), err, "", w)
+	controller.WriteResponse(w, resp.GetResponse(), nil)
 }
 
 func (this *MicroServiceService) Unregister(w http.ResponseWriter, r *http.Request) {
@@ -171,44 +162,37 @@ func (this *MicroServiceService) Unregister(w http.ResponseWriter, r *http.Reque
 	serviceId := r.URL.Query().Get(":serviceId")
 	util.Logger().Warnf(nil, "Service %s unregists, force is %s.", serviceId, force)
 	if force != "0" && force != "1" && strings.TrimSpace(force) != "" {
-		controller.WriteText(http.StatusBadRequest, "parameter force must be 1 or 0", w)
+		controller.WriteError(w, scerr.ErrInvalidParams, "parameter force must be 1 or 0")
 		return
 	}
 	request := &pb.DeleteServiceRequest{
 		ServiceId: serviceId,
 		Force:     force == "1",
 	}
-	resp, err := core.ServiceAPI.Delete(r.Context(), request)
-	controller.WriteTextResponse(resp.GetResponse(), err, "", w)
+	resp, _ := core.ServiceAPI.Delete(r.Context(), request)
+	controller.WriteResponse(w, resp.GetResponse(), nil)
 }
 
 func (this *MicroServiceService) GetServices(w http.ResponseWriter, r *http.Request) {
 	noCache := r.URL.Query().Get("noCache")
 	if noCache != "0" && noCache != "1" && strings.TrimSpace(noCache) != "" {
-		controller.WriteText(http.StatusBadRequest, "parameter noCache must be 1 or 0", w)
+		controller.WriteError(w, scerr.ErrInvalidParams, "parameter force must be 1 or 0")
 		return
 	}
 	request := &pb.GetServicesRequest{
 		NoCache: noCache == "1",
 	}
 	util.Logger().Debugf("domain is %s", util.ParseDomain(r.Context()))
-	resp, err := core.ServiceAPI.GetServices(r.Context(), request)
-	if err != nil {
-		controller.WriteText(http.StatusInternalServerError, err.Error(), w)
-		return
-	}
-	if resp.GetResponse().Code != pb.Response_SUCCESS {
-		controller.WriteText(http.StatusBadRequest, resp.GetResponse().Message, w)
-		return
-	}
+	resp, _ := core.ServiceAPI.GetServices(r.Context(), request)
+	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteJsonObject(http.StatusOK, resp, w)
+	controller.WriteResponse(w, respInternal, resp)
 }
 
 func (this *MicroServiceService) GetExistence(w http.ResponseWriter, r *http.Request) {
 	noCache := r.URL.Query().Get("noCache")
 	if noCache != "0" && noCache != "1" && strings.TrimSpace(noCache) != "" {
-		controller.WriteText(http.StatusBadRequest, "parameter noCache must be 1 or 0", w)
+		controller.WriteError(w, scerr.ErrInvalidParams, "parameter force must be 1 or 0")
 		return
 	}
 	request := &pb.GetExistenceRequest{
@@ -220,133 +204,86 @@ func (this *MicroServiceService) GetExistence(w http.ResponseWriter, r *http.Req
 		SchemaId:    r.URL.Query().Get("schemaId"),
 		NoCache:     noCache == "1",
 	}
-	resp, err := core.ServiceAPI.Exist(r.Context(), request)
-	if err != nil {
-		controller.WriteText(http.StatusInternalServerError, err.Error(), w)
-		return
-	}
-	if resp.GetResponse().Code != pb.Response_SUCCESS {
-		controller.WriteText(http.StatusBadRequest, resp.GetResponse().Message, w)
-		return
-	}
+	resp, _ := core.ServiceAPI.Exist(r.Context(), request)
+	w.Header().Add("X-Schema-Summary", resp.Summary)
+	respInternal := resp.Response
 	resp.Response = nil
-	w.Header().Add("x-schema-summary", resp.Summary)
 	resp.Summary = ""
-	controller.WriteJsonObject(http.StatusOK, resp, w)
+	controller.WriteResponse(w, respInternal, resp)
 }
 
 func (this *MicroServiceService) GetServiceOne(w http.ResponseWriter, r *http.Request) {
 	noCache := r.URL.Query().Get("noCache")
 	if noCache != "0" && noCache != "1" && strings.TrimSpace(noCache) != "" {
-		controller.WriteText(http.StatusBadRequest, "parameter noCache must be 1 or 0", w)
+		controller.WriteError(w, scerr.ErrInvalidParams, "parameter force must be 1 or 0")
 		return
 	}
 	request := &pb.GetServiceRequest{
 		ServiceId: r.URL.Query().Get(":serviceId"),
 		NoCache:   noCache == "1",
 	}
-	resp, err := core.ServiceAPI.GetOne(r.Context(), request)
-	if err != nil {
-		controller.WriteText(http.StatusInternalServerError, err.Error(), w)
-		return
-	}
-	if resp.GetResponse().Code != pb.Response_SUCCESS {
-		controller.WriteText(http.StatusBadRequest, resp.GetResponse().Message, w)
-		return
-	}
+	resp, _ := core.ServiceAPI.GetOne(r.Context(), request)
+	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteJsonObject(http.StatusOK, resp, w)
+	controller.WriteResponse(w, respInternal, resp)
 }
 
 func (this *MicroServiceService) CreateDependenciesForMicroServices(w http.ResponseWriter, r *http.Request) {
 	requestBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		util.Logger().Error("body err", err)
-		controller.WriteText(http.StatusBadRequest, err.Error(), w)
+		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
 	request := &pb.CreateDependenciesRequest{}
 	err = json.Unmarshal(requestBody, request)
 	if err != nil {
 		util.Logger().Error("Invalid json", err)
-		controller.WriteText(http.StatusInternalServerError, "Unmarshal error", w)
+		controller.WriteError(w, scerr.ErrInternal, err.Error())
 		return
 	}
-	//fmt.Println("request is ", request)
-	rsp, err := core.ServiceAPI.CreateDependenciesForMircServices(r.Context(), request)
-	//fmt.Println("rsp is ", rsp)
-	//请求错误
-	if err != nil {
-		util.Logger().Errorf(err, "create dependency failed for service internal reason.")
-		controller.WriteText(http.StatusInternalServerError, err.Error(), w)
-		return
-	}
-	//服务内部错误
-	if rsp.Response.Code == pb.Response_FAIL {
-		util.Logger().Errorf(nil, "create dependency failed for request invalid. %s", rsp.Response.Message)
-		controller.WriteText(http.StatusBadRequest, rsp.Response.Message, w)
-		return
-	}
-	controller.WriteText(http.StatusOK, "add dependency success.", w)
+
+	resp, err := core.ServiceAPI.CreateDependenciesForMircServices(r.Context(), request)
+	controller.WriteResponse(w, resp.GetResponse(), nil)
 }
 
 func (this *MicroServiceService) GetConProDependencies(w http.ResponseWriter, r *http.Request) {
 	noCache := r.URL.Query().Get("noCache")
 	if noCache != "0" && noCache != "1" && strings.TrimSpace(noCache) != "" {
-		controller.WriteText(http.StatusBadRequest, "parameter noCache must be 1 or 0", w)
+		controller.WriteError(w, scerr.ErrInvalidParams, "parameter force must be 1 or 0")
 		return
 	}
 	request := &pb.GetDependenciesRequest{
 		ServiceId: r.URL.Query().Get(":consumerId"),
 		NoCache:   noCache == "1",
 	}
-	resp, err := core.ServiceAPI.GetConsumerDependencies(r.Context(), request)
-	if err != nil {
-		util.Logger().Error("get Dependency failed.", err)
-		controller.WriteText(http.StatusInternalServerError, "get Dependency failed", w)
-		return
-	}
-	//服务请求错误
-	if resp.Response.Code == pb.Response_FAIL {
-		util.Logger().Errorf(nil, resp.Response.Message)
-		controller.WriteText(http.StatusBadRequest, resp.Response.Message, w)
-		return
-	}
+	resp, _ := core.ServiceAPI.GetConsumerDependencies(r.Context(), request)
+	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteJsonObject(http.StatusOK, resp, w)
+	controller.WriteResponse(w, respInternal, resp)
 }
 
 func (this *MicroServiceService) GetProConDependencies(w http.ResponseWriter, r *http.Request) {
 	noCache := r.URL.Query().Get("noCache")
 	if noCache != "0" && noCache != "1" && strings.TrimSpace(noCache) != "" {
-		controller.WriteText(http.StatusBadRequest, "parameter noCache must be 1 or 0", w)
+		controller.WriteError(w, scerr.ErrInvalidParams, "parameter force must be 1 or 0")
 		return
 	}
 	request := &pb.GetDependenciesRequest{
 		ServiceId: r.URL.Query().Get(":providerId"),
 		NoCache:   noCache == "1",
 	}
-	resp, err := core.ServiceAPI.GetProviderDependencies(r.Context(), request)
-	if err != nil {
-		util.Logger().Error("get Dependency failed.", err)
-		controller.WriteText(http.StatusInternalServerError, "get Dependency failed", w)
-		return
-	}
-	//服务请求错误
-	if resp.Response.Code == pb.Response_FAIL {
-		util.Logger().Errorf(nil, resp.Response.Message)
-		controller.WriteText(http.StatusBadRequest, resp.Response.Message, w)
-		return
-	}
+	resp, _ := core.ServiceAPI.GetProviderDependencies(r.Context(), request)
+	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteJsonObject(http.StatusOK, resp, w)
+	controller.WriteResponse(w, respInternal, resp)
 }
 
 func (this *MicroServiceService) UnregisterServices(w http.ResponseWriter, r *http.Request) {
 	request_body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		util.Logger().Error("body ,err", err)
-		controller.WriteText(http.StatusBadRequest, err.Error(), w)
+		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
 
@@ -355,26 +292,12 @@ func (this *MicroServiceService) UnregisterServices(w http.ResponseWriter, r *ht
 	err = json.Unmarshal(request_body, request)
 	if err != nil {
 		util.Logger().Error("unmarshal ,err ", err)
-		controller.WriteText(http.StatusBadRequest, err.Error(), w)
+		controller.WriteError(w, scerr.ErrInternal, err.Error())
 		return
 	}
 
 	resp, err := core.ServiceAPI.DeleteServices(r.Context(), request)
-
-	if resp.Response.Code == pb.Response_SUCCESS {
-		controller.WriteText(http.StatusOK, "", w)
-		return
-	}
-	if resp.Services == nil || len(resp.Services) == 0 {
-		controller.WriteText(http.StatusBadRequest, resp.Response.Message, w)
-		return
-	}
+	respInternal := resp.Response
 	resp.Response = nil
-	objJson, err := json.Marshal(resp)
-	if err != nil {
-		controller.WriteText(http.StatusInternalServerError, err.Error(), w)
-		return
-	}
-	controller.WriteJson(http.StatusBadRequest, objJson, w)
-	return
+	controller.WriteResponse(w, respInternal, resp)
 }

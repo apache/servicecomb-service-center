@@ -17,6 +17,7 @@ import (
 	"github.com/ServiceComb/service-center/pkg/util"
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
+	scerr "github.com/ServiceComb/service-center/server/error"
 	"github.com/ServiceComb/service-center/server/mux"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"golang.org/x/net/context"
@@ -53,13 +54,13 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 		if err != nil {
 			util.Logger().Errorf(err, "create dependency failed, consumer %s: get consumer failed.", consumerFlag)
 			return &pb.CreateDependenciesResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
+				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 			}, err
 		}
 		if len(consumerId) == 0 {
 			util.Logger().Errorf(nil, "create dependency failed, consumer %s: consumer not exist.", consumerFlag)
 			return &pb.CreateDependenciesResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, "Get consumer's serviceId is empty."),
+				Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Get consumer's serviceId is empty."),
 			}, nil
 		}
 
@@ -69,7 +70,7 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 		if err != nil {
 			util.Logger().Errorf(err, "create dependency failed, consumer %s: Update service failed.", consumerFlag)
 			return &pb.CreateDependenciesResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
+				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 			}, err
 		}
 
@@ -78,7 +79,7 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 		if err != nil {
 			util.Logger().Errorf(err, "create dependency failed, consumer %s: create lock failed.", consumerFlag)
 			return &pb.CreateDependenciesResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
+				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 			}, err
 		}
 
@@ -88,7 +89,7 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 		if err != nil {
 			util.Logger().Errorf(err, "create dependency rule failed: consumer %s", consumerFlag)
 			return &pb.CreateDependenciesResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
+				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 			}, err
 		}
 		util.Logger().Infof("Create dependency success: consumer %s, %s  from remote %s", consumerFlag, consumerId, util.GetIPFromContext(ctx))
@@ -103,7 +104,7 @@ func (s *ServiceController) GetProviderDependencies(ctx context.Context, in *pb.
 	if err != nil {
 		util.Logger().Errorf(err, "GetProviderDependencies failed for validating parameters failed.")
 		return &pb.GetProDependenciesResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 	domainProject := util.ParseDomainProject(ctx)
@@ -115,9 +116,9 @@ func (s *ServiceController) GetProviderDependencies(ctx context.Context, in *pb.
 		return nil, err
 	}
 	if provider == nil {
-		util.Logger().Errorf(err, "GetProviderDependencies failed for provider not exist, %s.", providerServiceId)
+		util.Logger().Errorf(err, "GetProviderDependencies failed for provider does not exist, %s.", providerServiceId)
 		return &pb.GetProDependenciesResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Provider not exist"),
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Provider does not exist"),
 		}, nil
 	}
 
@@ -127,7 +128,7 @@ func (s *ServiceController) GetProviderDependencies(ctx context.Context, in *pb.
 	if err != nil {
 		util.Logger().Errorf(err, "GetProviderDependencies failed.")
 		return &pb.GetProDependenciesResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 	util.Logger().Infof("GetProviderDependencies successfully, providerId is %s.", in.ServiceId)
@@ -142,7 +143,7 @@ func (s *ServiceController) GetConsumerDependencies(ctx context.Context, in *pb.
 	if err != nil {
 		util.Logger().Errorf(err, "GetConsumerDependencies failed for validating parameters failed.")
 		return &pb.GetConDependenciesResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 	consumerId := in.ServiceId
@@ -152,13 +153,13 @@ func (s *ServiceController) GetConsumerDependencies(ctx context.Context, in *pb.
 	if err != nil {
 		util.Logger().Errorf(err, "GetConsumerDependencies failed for get consumer failed.")
 		return &pb.GetConDependenciesResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 	if consumer == nil {
-		util.Logger().Errorf(err, "GetConsumerDependencies failed for consumer not exist, %s.", consumerId)
+		util.Logger().Errorf(err, "GetConsumerDependencies failed for consumer does not exist, %s.", consumerId)
 		return &pb.GetConDependenciesResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Consumer not exist"),
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Consumer does not exist"),
 		}, nil
 	}
 
@@ -168,7 +169,7 @@ func (s *ServiceController) GetConsumerDependencies(ctx context.Context, in *pb.
 	if err != nil {
 		util.Logger().Errorf(err, "GetConsumerDependencies failed for get providers failed.")
 		return &pb.GetConDependenciesResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 

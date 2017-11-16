@@ -15,11 +15,11 @@ package v4
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/ServiceComb/service-center/pkg/rest"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
+	scerr "github.com/ServiceComb/service-center/server/error"
 	"github.com/ServiceComb/service-center/server/rest/controller"
 	"io/ioutil"
 	"net/http"
@@ -42,14 +42,14 @@ func (this *RuleService) AddRule(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		util.Logger().Error("bory err", err)
-		controller.WriteText(http.StatusInternalServerError, fmt.Sprintf("body error %s", err.Error()), w)
+		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
 	rule := map[string][]*pb.AddOrUpdateServiceRule{}
 	err = json.Unmarshal(message, &rule)
 	if err != nil {
-		util.Logger().Error("Unmarshal error", err)
-		controller.WriteText(http.StatusBadRequest, "Unmarshal error", w)
+		util.Logger().Errorf(err, "Unmarshal error")
+		controller.WriteError(w, scerr.ErrInternal, err.Error())
 		return
 	}
 
@@ -57,27 +57,27 @@ func (this *RuleService) AddRule(w http.ResponseWriter, r *http.Request) {
 		ServiceId: r.URL.Query().Get(":serviceId"),
 		Rules:     rule["rules"],
 	})
-	respInter := resp.Response
+	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteJsonResponse(respInter, resp, err, w)
+	controller.WriteResponse(w, respInternal, resp)
 }
 
 func (this *RuleService) DeleteRule(w http.ResponseWriter, r *http.Request) {
 	rule_id := r.URL.Query().Get(":rule_id")
 	ids := strings.Split(rule_id, ",")
 
-	resp, err := core.ServiceAPI.DeleteRule(r.Context(), &pb.DeleteServiceRulesRequest{
+	resp, _ := core.ServiceAPI.DeleteRule(r.Context(), &pb.DeleteServiceRulesRequest{
 		ServiceId: r.URL.Query().Get(":serviceId"),
 		RuleIds:   ids,
 	})
-	controller.WriteTextResponse(resp.GetResponse(), err, "", w)
+	controller.WriteResponse(w, resp.GetResponse(), nil)
 }
 
 func (this *RuleService) UpdateRule(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		util.Logger().Error("body err", err)
-		controller.WriteText(http.StatusBadRequest, "body error", w)
+		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
 
@@ -85,7 +85,7 @@ func (this *RuleService) UpdateRule(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(message, &rule)
 	if err != nil {
 		util.Logger().Error("Unmarshal error", err)
-		controller.WriteText(http.StatusBadRequest, "Unmarshal error", w)
+		controller.WriteError(w, scerr.ErrInternal, err.Error())
 		return
 	}
 	resp, err := core.ServiceAPI.UpdateRule(r.Context(), &pb.UpdateServiceRuleRequest{
@@ -93,23 +93,21 @@ func (this *RuleService) UpdateRule(w http.ResponseWriter, r *http.Request) {
 		RuleId:    r.URL.Query().Get(":rule_id"),
 		Rule:      &rule,
 	})
-	controller.WriteTextResponse(resp.GetResponse(), err, "", w)
+	controller.WriteResponse(w, resp.GetResponse(), nil)
 }
 
 func (this *RuleService) GetRules(w http.ResponseWriter, r *http.Request) {
 	noCache := r.URL.Query().Get("noCache")
 	if noCache != "0" && noCache != "1" && strings.TrimSpace(noCache) != "" {
-		controller.WriteText(http.StatusBadRequest, "parameter noCache must be 1 or 0", w)
+		controller.WriteError(w, scerr.ErrInvalidParams, "parameter noCache must be 1 or 0")
 		return
 	}
-	// TODO 根据attribute查询
-	// attribute := r.URL.Query().Get("attribute")
 
-	resp, err := core.ServiceAPI.GetRule(r.Context(), &pb.GetServiceRulesRequest{
+	resp, _ := core.ServiceAPI.GetRule(r.Context(), &pb.GetServiceRulesRequest{
 		ServiceId: r.URL.Query().Get(":serviceId"),
 		NoCache:   noCache == "1",
 	})
 	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteJsonResponse(respInternal, resp, err, w)
+	controller.WriteResponse(w, respInternal, resp)
 }

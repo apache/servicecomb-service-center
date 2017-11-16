@@ -18,6 +18,7 @@ import (
 	"github.com/ServiceComb/service-center/pkg/rest"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/core"
+	scerr "github.com/ServiceComb/service-center/server/error"
 	"github.com/ServiceComb/service-center/server/rest/controller"
 	"github.com/ServiceComb/service-center/version"
 	"net/http"
@@ -48,13 +49,13 @@ func (this *MainService) ClusterHealth(w http.ResponseWriter, r *http.Request) {
 	resp, err := core.InstanceAPI.ClusterHealth(r.Context())
 	if err != nil {
 		util.Logger().Error("health check failed", err)
-		controller.WriteText(http.StatusInternalServerError, "health check failed", w)
+		controller.WriteError(w, scerr.ErrInternal, "health check failed")
 		return
 	}
 
 	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteJsonResponse(respInternal, resp, err, w)
+	controller.WriteResponse(w, respInternal, resp)
 }
 
 func (this *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {

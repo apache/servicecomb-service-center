@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
+	scerr "github.com/ServiceComb/service-center/server/error"
 	"github.com/ServiceComb/service-center/server/service"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -138,7 +139,7 @@ var _ = Describe("InstanceController", func() {
 					Instances: []*pb.HeartbeatSetElement{},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				fmt.Println("UT===========实例心跳上报批量接口")
 				resp, err = insResource.HeartbeatSet(getContext(), &pb.HeartbeatSetRequest{
@@ -177,7 +178,7 @@ var _ = Describe("InstanceController", func() {
 						},
 					},
 				})
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("创建实例,参数校验", func() {
@@ -194,7 +195,7 @@ var _ = Describe("InstanceController", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("health", func() {
@@ -203,7 +204,7 @@ var _ = Describe("InstanceController", func() {
 
 				respCluterhealth, err := insResource.ClusterHealth(getContext())
 				Expect(err).To(BeNil())
-				Expect(respCluterhealth.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respCluterhealth.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err := serviceResource.Create(getContext(), core.CreateServiceRequest())
 				Expect(err).To(BeNil())
@@ -238,7 +239,7 @@ var _ = Describe("InstanceController", func() {
 
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + respUpdateStatus.GetResponse().Message)
-				Expect(respUpdateStatus.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respUpdateStatus.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respUpdateStatus, err = insResource.UpdateStatus(getContext(), &pb.UpdateInstanceStatusRequest{
 					ServiceId:  "notexistservice",
@@ -248,7 +249,7 @@ var _ = Describe("InstanceController", func() {
 
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + respUpdateStatus.GetResponse().Message)
-				Expect(respUpdateStatus.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respUpdateStatus.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respUpdateStatus, err = insResource.UpdateStatus(getContext(), &pb.UpdateInstanceStatusRequest{
 					ServiceId:  consumerId,
@@ -258,7 +259,7 @@ var _ = Describe("InstanceController", func() {
 
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + respUpdateStatus.GetResponse().Message)
-				Expect(respUpdateStatus.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respUpdateStatus.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respUpdateStatus, err = insResource.UpdateStatus(getContext(), &pb.UpdateInstanceStatusRequest{
 					ServiceId:  consumerId,
@@ -268,7 +269,7 @@ var _ = Describe("InstanceController", func() {
 
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + respUpdateStatus.GetResponse().Message)
-				Expect(respUpdateStatus.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respUpdateStatus.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("修改实例的properties", func() {
@@ -282,7 +283,7 @@ var _ = Describe("InstanceController", func() {
 
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + respUpdateProperties.GetResponse().Message)
-				Expect(respUpdateProperties.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respUpdateProperties.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respUpdateProperties, err = insResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
 					ServiceId:  "",
@@ -294,7 +295,7 @@ var _ = Describe("InstanceController", func() {
 
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + respUpdateProperties.GetResponse().Message)
-				Expect(respUpdateProperties.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respUpdateProperties.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respUpdateProperties, err = insResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
 					ServiceId:  "notexistservice",
@@ -306,7 +307,7 @@ var _ = Describe("InstanceController", func() {
 
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + respUpdateProperties.GetResponse().Message)
-				Expect(respUpdateProperties.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respUpdateProperties.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("创建实例，字段校验", func() {
@@ -347,7 +348,7 @@ var _ = Describe("InstanceController", func() {
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp.GetResponse().Message)
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = insResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
@@ -361,7 +362,7 @@ var _ = Describe("InstanceController", func() {
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp.GetResponse().Message)
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = insResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
@@ -375,14 +376,14 @@ var _ = Describe("InstanceController", func() {
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp.GetResponse().Message)
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = insResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: nil,
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp.GetResponse().Message)
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("创建实例，字段校验,服务不存在", func() {
@@ -398,7 +399,7 @@ var _ = Describe("InstanceController", func() {
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp.GetResponse().Message)
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 			It("创建实例,含healthcheck", func() {
 				fmt.Println("UT============创建实例，含checkhealth")
@@ -452,7 +453,7 @@ var _ = Describe("InstanceController", func() {
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp.GetResponse().Message)
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = insResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
@@ -470,7 +471,7 @@ var _ = Describe("InstanceController", func() {
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp.GetResponse().Message)
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 	})
@@ -505,7 +506,7 @@ var _ = Describe("InstanceController", func() {
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + respFind.GetResponse().Message)
-				Expect(respFind.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respFind, err = insResource.Find(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: "",
@@ -517,7 +518,7 @@ var _ = Describe("InstanceController", func() {
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + respFind.GetResponse().Message)
-				Expect(respFind.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respFind, err = insResource.Find(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: consumerIdFind,
@@ -529,7 +530,7 @@ var _ = Describe("InstanceController", func() {
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + respFind.GetResponse().Message)
-				Expect(respFind.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respFind, err = insResource.Find(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: consumerIdFind,
@@ -541,7 +542,7 @@ var _ = Describe("InstanceController", func() {
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + respFind.GetResponse().Message)
-				Expect(respFind.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respFind, err = insResource.Find(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: consumerIdFind,
@@ -553,7 +554,7 @@ var _ = Describe("InstanceController", func() {
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + respFind.GetResponse().Message)
-				Expect(respFind.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respFind, err = insResource.Find(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: consumerIdFind,
@@ -566,7 +567,7 @@ var _ = Describe("InstanceController", func() {
 				Expect(err).To(BeNil())
 
 				fmt.Println("UT============" + respFind.GetResponse().Message)
-				Expect(respFind.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respFind, err = insResource.Find(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: "notExistServiceId",
@@ -579,7 +580,7 @@ var _ = Describe("InstanceController", func() {
 				Expect(err).To(BeNil())
 
 				fmt.Println("UT============" + respFind.GetResponse().Message)
-				Expect(respFind.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("find instance, create dependency", func() {
@@ -641,14 +642,14 @@ var _ = Describe("InstanceController", func() {
 
 				resDel, err := serviceResource.Delete(ctx, &pb.DeleteServiceRequest{
 					ServiceId: consumerId,
-					Force: true,
+					Force:     true,
 				})
 				Expect(err).To(BeNil())
 				Expect(resDel.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
 				resDel, err = serviceResource.Delete(ctx, &pb.DeleteServiceRequest{
 					ServiceId: providerId,
-					Force: true,
+					Force:     true,
 				})
 				Expect(err).To(BeNil())
 				Expect(resDel.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
@@ -773,7 +774,7 @@ var _ = Describe("InstanceController", func() {
 				Expect(err).To(BeNil())
 				providerOkId := resp.ServiceId
 
-				UTFunc := func(providerId string, code pb.Response_Code) {
+				UTFunc := func(providerId string, code int32) {
 					respFind, err := insResource.GetInstances(getContext(), &pb.GetInstancesRequest{
 						ConsumerServiceId: consumerId,
 						ProviderServiceId: providerId,
@@ -784,7 +785,7 @@ var _ = Describe("InstanceController", func() {
 					Expect(respFind.GetResponse().Code).To(Equal(code))
 				}
 
-				UTFunc(providerFailId, pb.Response_FAIL)
+				UTFunc(providerFailId, scerr.ErrPermissionDeny)
 
 				UTFunc(providerOkId, pb.Response_SUCCESS)
 			})
@@ -806,19 +807,19 @@ var _ = Describe("InstanceController", func() {
 					InstanceId: instanceId,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = insResource.Heartbeat(getContext(), &pb.HeartbeatRequest{
 					ServiceId:  consumerId,
 					InstanceId: "100000000000",
 				})
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = insResource.Heartbeat(getContext(), &pb.HeartbeatRequest{
 					ServiceId:  consumerId,
 					InstanceId: "not-exist-ins",
 				})
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("删除微服务,实例存在，不能删除", func() {
@@ -827,7 +828,7 @@ var _ = Describe("InstanceController", func() {
 					Force:     false,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 	})
@@ -843,7 +844,7 @@ var _ = Describe("InstanceController", func() {
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp.GetResponse().Message)
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				fmt.Println("UT===========查找实例，参数校验,")
 				resp, err = insResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
@@ -854,7 +855,7 @@ var _ = Describe("InstanceController", func() {
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp.GetResponse().Message)
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = insResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
 					ConsumerServiceId:  consumerId,
@@ -864,7 +865,7 @@ var _ = Describe("InstanceController", func() {
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp.GetResponse().Message)
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("查找单个实例,夸app调用", func() {
@@ -891,7 +892,7 @@ var _ = Describe("InstanceController", func() {
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp.GetResponse().Message)
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("查找单个实例", func() {
@@ -914,7 +915,7 @@ var _ = Describe("InstanceController", func() {
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp.GetResponse().Message)
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				fmt.Println("UT===========查找实例，含有存在的tag")
 				respAddTags, err := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
@@ -947,7 +948,7 @@ var _ = Describe("InstanceController", func() {
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp.GetResponse().Message)
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = insResource.GetInstances(getContext(), &pb.GetInstancesRequest{
 					ConsumerServiceId: "noneservice",
@@ -957,7 +958,7 @@ var _ = Describe("InstanceController", func() {
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp.GetResponse().Message)
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = insResource.GetInstances(getContext(), &pb.GetInstancesRequest{
 					ConsumerServiceId: consumerId,
@@ -1000,7 +1001,7 @@ var _ = Describe("InstanceController", func() {
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp.GetResponse().Message)
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = insResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
 					ServiceId:  consumerId,
@@ -1008,7 +1009,7 @@ var _ = Describe("InstanceController", func() {
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp.GetResponse().Message)
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = insResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
 					ServiceId:  consumerId,
@@ -1016,7 +1017,7 @@ var _ = Describe("InstanceController", func() {
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp.GetResponse().Message)
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 	})

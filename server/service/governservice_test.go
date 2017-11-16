@@ -65,7 +65,7 @@ var _ = Describe("GovernServiceController", func() {
 				})
 
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("服务治理获取单个服务信息", func() {
@@ -128,7 +128,7 @@ var _ = Describe("GovernServiceController", func() {
 					ServiceId: serviceId,
 				})
 
-				Expect(respGetServiceDetail.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respGetServiceDetail.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 	})

@@ -35,7 +35,7 @@ var _ = Describe("ServiceController", func() {
 						Service: nil,
 					})
 					Expect(err).To(BeNil())
-					Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+					Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				})
 			})
@@ -140,7 +140,7 @@ var _ = Describe("ServiceController", func() {
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT=============" + resp.String())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
@@ -157,7 +157,7 @@ var _ = Describe("ServiceController", func() {
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT=============" + resp.String())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
@@ -175,7 +175,7 @@ var _ = Describe("ServiceController", func() {
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT=============" + resp.String())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("微服务是否存在,参数校验", func() {
@@ -186,7 +186,7 @@ var _ = Describe("ServiceController", func() {
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT=============" + resp.String())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
 					Type:      "schema",
@@ -195,7 +195,7 @@ var _ = Describe("ServiceController", func() {
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT=============" + resp.String())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
 					Type:      "nonetype",
@@ -204,7 +204,7 @@ var _ = Describe("ServiceController", func() {
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT=============" + resp.String())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
 					Type:      "schema",
@@ -213,7 +213,7 @@ var _ = Describe("ServiceController", func() {
 				})
 				//Expect(err).To(BeNil())
 				fmt.Println("UT=============" + resp.String())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
 					Type:        "microservice",
@@ -224,7 +224,7 @@ var _ = Describe("ServiceController", func() {
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT=============" + resp.String())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("exist schema", func() {
@@ -328,7 +328,7 @@ var _ = Describe("ServiceController", func() {
 				})
 				Expect(err).To(BeNil())
 				fmt.Println("UT=============" + resp.String())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("创建微服务2", func() {
@@ -385,7 +385,7 @@ var _ = Describe("ServiceController", func() {
 				resp, err := serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
 				fmt.Println("UT=========" + resp.ServiceId)
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				r = &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
@@ -398,7 +398,7 @@ var _ = Describe("ServiceController", func() {
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
 				fmt.Println("UT=========" + resp.ServiceId)
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				r = &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
@@ -411,7 +411,7 @@ var _ = Describe("ServiceController", func() {
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
 				fmt.Println("UT=========" + resp.ServiceId)
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				r = &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
@@ -425,7 +425,7 @@ var _ = Describe("ServiceController", func() {
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
 				fmt.Println("UT=========" + resp.ServiceId)
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				r = &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
@@ -438,7 +438,7 @@ var _ = Describe("ServiceController", func() {
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
 				fmt.Println("UT=========" + resp.ServiceId)
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("create service, schema param check", func() {
@@ -457,7 +457,7 @@ var _ = Describe("ServiceController", func() {
 						Status:      "UP",
 					},
 				})
-				Expect(respServiceForSchema.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respServiceForSchema.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("创建微服务5,参数校验", func() {
@@ -467,7 +467,7 @@ var _ = Describe("ServiceController", func() {
 				}
 				resp, err := serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				fmt.Println("UT=========" + "Alias 非法")
 				r = &pb.CreateServiceRequest{
@@ -482,7 +482,7 @@ var _ = Describe("ServiceController", func() {
 				}
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				fmt.Println("UT=========" + "Alias 合法")
 				r = &pb.CreateServiceRequest{
@@ -504,7 +504,7 @@ var _ = Describe("ServiceController", func() {
 				resp, err := serviceResource.GetServices(getContext(), nil)
 				Expect(err).To(BeNil())
 				fmt.Println(fmt.Sprintf("UT=============%s", resp.Services))
-				Expect(resp.Response.Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("查询所有服务", func() {
@@ -519,19 +519,19 @@ var _ = Describe("ServiceController", func() {
 					ServiceId: "",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = serviceResource.GetOne(getContext(), &pb.GetServiceRequest{
 					ServiceId: "notexistservice",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = serviceResource.GetOne(getContext(), &pb.GetServiceRequest{
 					ServiceId: TOO_LONG_SERVICEID,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 			It("更新微服务1props", func() {
 				r := &pb.UpdateServicePropsRequest{
@@ -571,7 +571,7 @@ var _ = Describe("ServiceController", func() {
 				}
 				Expect(err).To(BeNil())
 				fmt.Println(fmt.Sprintf("UT=============%s", resp.Response.Code))
-				Expect(resp.Response.Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 			It("更新微服务3props，空结构更新", func() {
 				r := &pb.UpdateServicePropsRequest{
@@ -584,7 +584,7 @@ var _ = Describe("ServiceController", func() {
 				}
 				Expect(err).To(BeNil())
 				fmt.Println(fmt.Sprintf("UT=============%s", resp.Response.Code))
-				Expect(resp.Response.Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				r = &pb.UpdateServicePropsRequest{
 					ServiceId:  "",
@@ -593,7 +593,7 @@ var _ = Describe("ServiceController", func() {
 				resp, err = serviceResource.UpdateProperties(getContext(), r)
 				Expect(err).To(BeNil())
 				fmt.Println(fmt.Sprintf("UT=============%s", resp.Response.Code))
-				Expect(resp.Response.Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("更新微服务3props, 参数校验", func() {
@@ -602,7 +602,7 @@ var _ = Describe("ServiceController", func() {
 					Properties: map[string]string{},
 				}
 				resp, _ := serviceResource.UpdateProperties(getContext(), r)
-				Expect(resp.Response.Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("创建微服务1实例", func() {
@@ -659,7 +659,7 @@ var _ = Describe("ServiceController", func() {
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp2.GetResponse().Message)
 				fmt.Println(fmt.Sprintf("UT============%s"), resp2.Instances)
-				Expect(resp2.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp2.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 				Expect(len(resp2.Instances)).To((Equal(0)))
 			})
 			It("添加白名单 尝试访问", func() {
@@ -738,7 +738,7 @@ var _ = Describe("ServiceController", func() {
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp2.GetResponse().Message)
 				fmt.Println(fmt.Sprintf("UT============%s"), resp2.Instances)
-				Expect(resp2.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp2.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 				Expect(len(resp2.Instances)).To((Equal(0)))
 			})
 		})
@@ -752,21 +752,21 @@ var _ = Describe("ServiceController", func() {
 					Force:     true,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{
 					ServiceId: TOO_LONG_SERVICEID,
 					Force:     true,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{
 					ServiceId: "notexistservice",
 					Force:     true,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("删除微服务1", func() {
@@ -810,7 +810,7 @@ var _ = Describe("ServiceController", func() {
 				})
 				fmt.Println("UT============" + resp.GetResponse().Message)
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 	})
@@ -823,14 +823,14 @@ var _ = Describe("ServiceController", func() {
 					Force:      false,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = serviceResource.DeleteServices(getContext(), &pb.DelServicesRequest{
 					ServiceIds: []string{"@#$44332_non-invalid_serviceId"},
 					Force:      false,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 		})
@@ -958,7 +958,7 @@ var _ = Describe("ServiceController", func() {
 				Expect(err).To(BeNil())
 				//期待结果失败
 				fmt.Println("UT============" + resp.GetResponse().Message)
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("删除服务6的实例，删除服务5和服务6", func() {

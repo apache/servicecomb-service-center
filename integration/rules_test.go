@@ -183,13 +183,17 @@ var _ = Describe("MicroService Api Test", func() {
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 
 				//Duplicate Request
+				bodyBuf = bytes.NewReader(body)
 				req, _ = http.NewRequest(POST, SCURL+url, bodyBuf)
 				req.Header.Set("X-Domain-Name", "default")
 				resp, err = scclient.Do(req)
 				Expect(err).To(BeNil())
 				defer resp.Body.Close()
 
-				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+
+				respbody, _ := ioutil.ReadAll(resp.Body)
+				Expect(strings.TrimSpace(string(respbody))).To(Equal("{}"))
 			})
 		})
 
@@ -243,7 +247,7 @@ var _ = Describe("MicroService Api Test", func() {
 				resp, _ := scclient.Do(req)
 				respbody, _ := ioutil.ReadAll(resp.Body)
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
-				Expect(string(respbody)).To(Equal("{}"))
+				Expect(strings.TrimSpace(string(respbody))).To(Equal("{}"))
 			})
 
 			It("Get Rules for Invalid MicroService", func() {
@@ -482,7 +486,7 @@ var _ = Describe("MicroService Api Test", func() {
 				resp, _ = scclient.Do(req)
 				respbody, _ = ioutil.ReadAll(resp.Body)
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
-				Expect(string(respbody)).To(Equal("{}"))
+				Expect(strings.TrimSpace(string(respbody))).To(Equal("{}"))
 			})
 
 			It("Delete MicroService rules with non-exsisting ruleID", func() {

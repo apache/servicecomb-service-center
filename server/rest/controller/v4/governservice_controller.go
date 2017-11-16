@@ -16,11 +16,11 @@ package v4
 import (
 	"net/http"
 
-	"github.com/ServiceComb/service-center/pkg/util"
-
 	"github.com/ServiceComb/service-center/pkg/rest"
+	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
+	scerr "github.com/ServiceComb/service-center/server/error"
 	"github.com/ServiceComb/service-center/server/rest/controller"
 	"strings"
 )
@@ -78,7 +78,7 @@ func (governService *GovernService) GetGraph(w http.ResponseWriter, r *http.Requ
 	var graph Graph
 	noCache := r.URL.Query().Get("noCache")
 	if noCache != "0" && noCache != "1" && strings.TrimSpace(noCache) != "" {
-		controller.WriteText(http.StatusBadRequest, "parameter noCache must be 1 or 0", w)
+		controller.WriteError(w, scerr.ErrInvalidParams, "parameter noCache must be 1 or 0")
 		return
 	}
 	request := &pb.GetServicesRequest{
@@ -87,7 +87,7 @@ func (governService *GovernService) GetGraph(w http.ResponseWriter, r *http.Requ
 	ctx := r.Context()
 	resp, err := core.ServiceAPI.GetServices(ctx, request)
 	if err != nil {
-		controller.WriteText(http.StatusInternalServerError, err.Error(), w)
+		controller.WriteError(w, scerr.ErrInternal, err.Error())
 		return
 	}
 	services := resp.GetServices()
@@ -107,7 +107,7 @@ func (governService *GovernService) GetGraph(w http.ResponseWriter, r *http.Requ
 		proResp, err := core.ServiceAPI.GetConsumerDependencies(ctx, proRequest)
 		if err != nil {
 			util.Logger().Error("get Dependency failed.", err)
-			controller.WriteText(http.StatusInternalServerError, "get Dependency failed", w)
+			controller.WriteError(w, scerr.ErrInternal, "get Dependency failed")
 			return
 		}
 
@@ -132,7 +132,7 @@ func (governService *GovernService) GetGraph(w http.ResponseWriter, r *http.Requ
 		}
 	}
 	graph.Nodes = nodes
-	controller.WriteJsonObject(http.StatusOK, graph, w)
+	controller.WriteJsonObject(w, graph)
 }
 
 // GetServiceDetail 查询服务详细信息
@@ -140,7 +140,7 @@ func (governService *GovernService) GetServiceDetail(w http.ResponseWriter, r *h
 	serviceID := r.URL.Query().Get(":serviceId")
 	noCache := r.URL.Query().Get("noCache")
 	if noCache != "0" && noCache != "1" && strings.TrimSpace(noCache) != "" {
-		controller.WriteText(http.StatusBadRequest, "parameter noCache must be 1 or 0", w)
+		controller.WriteError(w, scerr.ErrInvalidParams, "parameter noCache must be 1 or 0")
 		return
 	}
 	request := &pb.GetServiceRequest{
@@ -148,17 +148,17 @@ func (governService *GovernService) GetServiceDetail(w http.ResponseWriter, r *h
 		NoCache:   noCache == "1",
 	}
 	ctx := r.Context()
-	resp, err := core.GovernServiceAPI.GetServiceDetail(ctx, request)
+	resp, _ := core.GovernServiceAPI.GetServiceDetail(ctx, request)
 
 	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteJsonResponse(respInternal, resp, err, w)
+	controller.WriteResponse(w, respInternal, resp)
 }
 
 func (governService *GovernService) GetAllServicesInfo(w http.ResponseWriter, r *http.Request) {
 	noCache := r.URL.Query().Get("noCache")
 	if noCache != "0" && noCache != "1" && strings.TrimSpace(noCache) != "" {
-		controller.WriteText(http.StatusBadRequest, "parameter noCache must be 1 or 0", w)
+		controller.WriteError(w, scerr.ErrInvalidParams, "parameter noCache must be 1 or 0")
 		return
 	}
 	request := &pb.GetServicesInfoRequest{
@@ -167,9 +167,9 @@ func (governService *GovernService) GetAllServicesInfo(w http.ResponseWriter, r 
 	ctx := r.Context()
 	optsStr := r.URL.Query().Get("options")
 	request.Options = strings.Split(optsStr, ",")
-	resp, err := core.GovernServiceAPI.GetServicesInfo(ctx, request)
+	resp, _ := core.GovernServiceAPI.GetServicesInfo(ctx, request)
 
 	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteJsonResponse(respInternal, resp, err, w)
+	controller.WriteResponse(w, respInternal, resp)
 }

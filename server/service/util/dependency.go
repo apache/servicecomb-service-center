@@ -23,6 +23,7 @@ import (
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
+	scerr "github.com/ServiceComb/service-center/server/error"
 	"github.com/ServiceComb/service-center/server/mux"
 	"golang.org/x/net/context"
 	"strings"
@@ -543,7 +544,7 @@ func BadParamsResponse(detailErr string) *pb.CreateDependenciesResponse {
 		detailErr = "Request params is invalid."
 	}
 	return &pb.CreateDependenciesResponse{
-		Response: pb.CreateResponse(pb.Response_FAIL, detailErr),
+		Response: pb.CreateResponse(scerr.ErrInvalidParams, detailErr),
 	}
 }
 
