@@ -17,34 +17,16 @@ import (
 	"github.com/ServiceComb/service-center/pkg/chain"
 	"github.com/ServiceComb/service-center/pkg/rest"
 	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/server/infra/auth"
-	"github.com/astaxie/beego"
+	"github.com/ServiceComb/service-center/server/plugin/dynamic"
 	"net/http"
 )
-
-var plugin auth.Auth
-
-func init() {
-	name := beego.AppConfig.String("auth_plugin")
-	if pluginBuilder, ok := auth.AuthPlugins[name]; ok {
-		util.Logger().Warnf(nil, "service center is in '%s' mode", name)
-		plugin = pluginBuilder()
-		return
-	}
-	util.Logger().Warnf(nil, "service center is in 'noAuth' mode")
-}
 
 type AuthRequest struct {
 }
 
 func (h *AuthRequest) Handle(i *chain.Invocation) {
-	if plugin == nil {
-		i.Next()
-		return
-	}
-
 	r := i.Context().Value(rest.CTX_REQUEST).(*http.Request)
-	err := plugin.Identify(r)
+	err := dynamic.Identify(r)
 	if err == nil {
 		i.Next()
 		return
