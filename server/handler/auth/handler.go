@@ -17,7 +17,9 @@ import (
 	"github.com/ServiceComb/service-center/pkg/chain"
 	"github.com/ServiceComb/service-center/pkg/rest"
 	"github.com/ServiceComb/service-center/pkg/util"
+	scerr "github.com/ServiceComb/service-center/server/error"
 	"github.com/ServiceComb/service-center/server/plugin/dynamic"
+	"github.com/ServiceComb/service-center/server/rest/controller"
 	"net/http"
 )
 
@@ -35,7 +37,8 @@ func (h *AuthRequest) Handle(i *chain.Invocation) {
 	util.Logger().Errorf(err, "authenticate request failed, %s %s", r.Method, r.RequestURI)
 
 	w := i.Context().Value(rest.CTX_RESPONSE).(http.ResponseWriter)
-	http.Error(w, "Request Unauthorized", http.StatusUnauthorized)
+	controller.WriteError(w, scerr.ErrUnauthorized, err.Error())
+
 	i.Fail(nil)
 }
 
