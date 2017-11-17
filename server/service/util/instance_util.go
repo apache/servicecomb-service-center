@@ -121,13 +121,13 @@ func CheckEndPoints(ctx context.Context, in *pb.RegisterInstanceRequest) (string
 	if resp.Count == 0 {
 		return "", instanceEndpointsIndexKey, nil
 	}
-	key := util.BytesToStringWithNoCopy(resp.Kvs[0].Key)
-	splitedKey := strings.Split(key, "/")
-	serviceIdInner := splitedKey[len(splitedKey) - 2]
+	value := util.BytesToStringWithNoCopy(resp.Kvs[0].Value)
+	splitedValue := strings.Split(value, "/")
+	serviceIdInner := splitedValue[0]
 	if in.Instance.ServiceId != serviceIdInner {
 		return "", "", fmt.Errorf("endpoints more exist for service %s", serviceIdInner)
 	}
-	return splitedKey[len(splitedKey) - 1], "", nil
+	return splitedValue[1], "", nil
 }
 
 

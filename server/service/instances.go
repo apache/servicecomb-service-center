@@ -192,12 +192,12 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 	}
 
 	if endpointsIndexKey != "" {
-		endpointsKey := util.StringJoin([]string{
-			endpointsIndexKey,
+		value := util.StringJoin([]string{
 			instance.ServiceId,
 			instanceId,
 		}, "/")
-		opts = append(opts, registry.OpPut(registry.WithStrKey(endpointsKey),
+		opts = append(opts, registry.OpPut(registry.WithStrKey(endpointsIndexKey),
+			registry.WithStrValue(value),
 			registry.WithLease(leaseID), registry.WithIgnoreLease()))
 	}
 
@@ -217,7 +217,6 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 				instanceFlag, instanceId, remoteIP)
 		}
 	}
-
 	util.Logger().Infof("register instance successful service %s, instanceId %s, operator %s.", instanceFlag, instanceId, remoteIP)
 	return &pb.RegisterInstanceResponse{
 		Response:   pb.CreateResponse(pb.Response_SUCCESS, "Register service instance successfully."),

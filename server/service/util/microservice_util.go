@@ -249,3 +249,31 @@ func UpdateService(domainProject string, serviceId string, service *pb.MicroServ
 	opt = registry.OpPut(registry.WithStrKey(key), registry.WithValue(data))
 	return
 }
+
+func GetOneDomainProjectServiceCount(ctx context.Context, domainProject string) (int64, error) {
+	opts := []registry.PluginOpOption{}
+	key := apt.GenerateServiceKey(domainProject, "")
+	opts = append(opts,
+		registry.WithStrKey(key),
+		registry.WithCountOnly(),
+		registry.WithPrefix())
+	resp, err := store.Store().Service().Search(ctx, opts...)
+	if err != nil {
+		return 0, err
+	}
+	return resp.Count, nil
+}
+
+func GetOneDomainProjectInstanceCount(ctx context.Context, domainProject string) (int64, error) {
+	opts := []registry.PluginOpOption{}
+	key := apt.GenerateInstanceIndexKey(domainProject, "")
+	opts = append(opts,
+		registry.WithStrKey(key),
+		registry.WithCountOnly(),
+		registry.WithPrefix())
+	resp, err := store.Store().Instance().Search(ctx, opts...)
+	if err != nil {
+		return 0, err
+	}
+	return resp.Count, nil
+}
