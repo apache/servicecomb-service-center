@@ -391,11 +391,3 @@ func GetEndpointsIndexKey(domainProject string, region string, availableZone str
 		endpoints,
 	}, "/")
 }
-
-func GetEndPointsKey(domainProject string, endpoints string, region string, availableZone string, serviceId string, instanceId string) string{
-	return util.StringJoin([]string{
-		GetEndpointsIndexKey(domainProject, region, availableZone, endpoints),
-		serviceId,
-		instanceId,
-	}, "/")
-}
