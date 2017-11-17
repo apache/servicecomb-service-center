@@ -21,6 +21,7 @@ import (
 	"github.com/ServiceComb/service-center/server/core/registry"
 	scerr "github.com/ServiceComb/service-center/server/error"
 	"github.com/ServiceComb/service-center/server/infra/quota"
+	"github.com/ServiceComb/service-center/server/plugin"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"golang.org/x/net/context"
 )
@@ -51,7 +52,7 @@ func (s *ServiceController) AddTags(ctx context.Context, in *pb.AddServiceTagsRe
 	}
 
 	addTags := in.GetTags()
-	_, ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.TAGQuotaType, domainProject, in.ServiceId, int16(len(addTags)))
+	_, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.TAGQuotaType, domainProject, in.ServiceId, int16(len(addTags)))
 	if err != nil {
 		util.Logger().Errorf(err, "add tag info failed, check resource num failed, %s", in.ServiceId)
 		return &pb.AddServiceTagsResponse{

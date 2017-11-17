@@ -16,43 +16,42 @@ package dynamic
 import (
 	"github.com/ServiceComb/service-center/pkg/plugin"
 	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/server/infra/auth"
-	"github.com/astaxie/beego"
+	mgr "github.com/ServiceComb/service-center/server/plugin"
 	"net/http"
 )
 
-var authLib auth.Auth
+var authFunc func(r *http.Request) error
 
 func init() {
-	name := beego.AppConfig.String("auth_plugin")
-	if pluginBuilder, ok := auth.AuthPlugins[name]; ok {
-		util.Logger().Warnf(nil, "static load plugin '%s' successfully.", name)
-		authLib = pluginBuilder()
+	f := findAuthFunc("Identify")
+	if f == nil {
 		return
 	}
+
+	authFunc = f
+	mgr.RegisterPlugin(mgr.Plugin{mgr.DYNAMIC, mgr.AUTH, "dynamic", New})
 }
 
-func buildinAuthFunc(r *http.Request) error {
-	if authLib == nil {
-		return nil
-	}
-	return authLib.Identify(r)
-}
-
-func findAuthFunc(funcName string) func(*http.Request) error {
+func findAuthFunc(funcName string) func(r *http.Request) error {
 	ff, err := plugin.FindFunc("auth", funcName)
 	if err != nil {
-		return buildinAuthFunc
+		return nil
 	}
 	f, ok := ff.(func(*http.Request) error)
 	if !ok {
 		util.Logger().Warnf(nil, "unexpected function '%s' format found in plugin 'auth'.", funcName)
-		return buildinAuthFunc
+		return nil
 	}
 	return f
 }
 
-func Identify(r *http.Request) error {
-	f := findAuthFunc("Identify")
-	return f(r)
+func New() mgr.PluginInstance {
+	return &DynamicAuth{}
+}
+
+type DynamicAuth struct {
+}
+
+func (da *DynamicAuth) Identify(r *http.Request) error {
+	return authFunc(r)
 }

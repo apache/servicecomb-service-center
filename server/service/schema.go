@@ -23,6 +23,7 @@ import (
 	"github.com/ServiceComb/service-center/server/core/registry/store"
 	scerr "github.com/ServiceComb/service-center/server/error"
 	"github.com/ServiceComb/service-center/server/infra/quota"
+	"github.com/ServiceComb/service-center/server/plugin"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/version"
 	"golang.org/x/net/context"
@@ -217,7 +218,7 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 
 		quotaSize := len(needAddSchemaList) - len(needDeleteSchemaList)
 		if quotaSize > 0 {
-			_, ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.SCHEMAQuotaType, domainProject, serviceId, int16(quotaSize))
+			_, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.SCHEMAQuotaType, domainProject, serviceId, int16(quotaSize))
 			if err != nil {
 				util.Logger().Errorf(err, "Add schema info failed, check resource num failed, %s", serviceId)
 				return err, true
@@ -244,7 +245,7 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 		}
 		quotaSize := len(needAddSchemaList)
 		if quotaSize > 0 {
-			_, ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.SCHEMAQuotaType, domainProject, serviceId, int16(quotaSize))
+			_, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.SCHEMAQuotaType, domainProject, serviceId, int16(quotaSize))
 			if err != nil {
 				util.Logger().Errorf(err, "Add schema info failed, check resource num failed, %s", serviceId)
 				return err, true
@@ -428,7 +429,7 @@ func (s *ServiceController) canModifySchema(ctx context.Context, domainProject s
 		return err, false
 	}
 
-	_, ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.SCHEMAQuotaType, domainProject, serviceId, 1)
+	_, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.SCHEMAQuotaType, domainProject, serviceId, 1)
 	if err != nil {
 		util.Logger().Errorf(err, "Add schema info failed, check resource num failed, %s, %s", serviceId, schemaId)
 		return err, true

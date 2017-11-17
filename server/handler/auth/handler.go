@@ -18,7 +18,7 @@ import (
 	"github.com/ServiceComb/service-center/pkg/rest"
 	"github.com/ServiceComb/service-center/pkg/util"
 	scerr "github.com/ServiceComb/service-center/server/error"
-	"github.com/ServiceComb/service-center/server/plugin/dynamic"
+	"github.com/ServiceComb/service-center/server/plugin"
 	"github.com/ServiceComb/service-center/server/rest/controller"
 	"net/http"
 )
@@ -28,7 +28,7 @@ type AuthRequest struct {
 
 func (h *AuthRequest) Handle(i *chain.Invocation) {
 	r := i.Context().Value(rest.CTX_REQUEST).(*http.Request)
-	err := dynamic.Identify(r)
+	err := plugin.Plugins().Auth().Identify(r)
 	if err == nil {
 		i.Next()
 		return

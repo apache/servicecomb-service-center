@@ -18,12 +18,13 @@ import (
 	"fmt"
 	errorsEx "github.com/ServiceComb/service-center/pkg/errors"
 	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/ServiceComb/service-center/pkg/uuid"
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	scerr "github.com/ServiceComb/service-center/server/error"
 	"github.com/ServiceComb/service-center/server/infra/quota"
-	"github.com/ServiceComb/service-center/server/plugin/dynamic"
+	"github.com/ServiceComb/service-center/server/plugin"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"golang.org/x/net/context"
 	"strconv"
@@ -121,7 +122,7 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Service does not exist."),
 		}, nil
 	}
-	_, ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.RULEQuotaType, domainProject, in.ServiceId, int16(len(in.Rules)))
+	_, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.RULEQuotaType, domainProject, in.ServiceId, int16(len(in.Rules)))
 	if err != nil {
 		util.Logger().Errorf(err, "check can apply resource failed.%s", in.ServiceId)
 		return &pb.AddServiceRulesResponse{
@@ -173,7 +174,7 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 		// 产生全局rule id
 		timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 		ruleAdd := &pb.ServiceRule{
-			RuleId:       dynamic.GenerateUuid(),
+			RuleId:       uuid.GenerateUuid(),
 			RuleType:     rule.RuleType,
 			Attribute:    rule.Attribute,
 			Pattern:      rule.Pattern,

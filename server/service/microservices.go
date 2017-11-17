@@ -26,7 +26,7 @@ import (
 	scerr "github.com/ServiceComb/service-center/server/error"
 	"github.com/ServiceComb/service-center/server/infra/quota"
 	"github.com/ServiceComb/service-center/server/mux"
-	"github.com/ServiceComb/service-center/server/plugin/dynamic"
+	"github.com/ServiceComb/service-center/server/plugin"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"golang.org/x/net/context"
 	"strconv"
@@ -106,7 +106,7 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 	// 产生全局service id
 	serviceId := in.Service.ServiceId
 	if len(serviceId) == 0 {
-		serviceId = dynamic.GetServiceId()
+		serviceId = plugin.Plugins().UUID().GetServiceId()
 	}
 	service.ServiceId = serviceId
 	service.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
@@ -184,7 +184,7 @@ func checkQuota(ctx context.Context, domainProject string) (quota.QuotaReporter,
 		util.Logger().Infof("it is service-center")
 		return nil, nil
 	}
-	reporter, ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.MicroServiceQuotaType, domainProject, "", 1)
+	reporter, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.MicroServiceQuotaType, domainProject, "", 1)
 	if err != nil {
 		return reporter, errorsEx.InternalError(err.Error())
 	}

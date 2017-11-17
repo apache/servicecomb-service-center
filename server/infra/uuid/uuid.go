@@ -11,16 +11,9 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package auditlog
+package uuid
 
-import "net/http"
-
-type AuditLogger interface {
-	Record(r *http.Request, responseHeaders http.Header)
-}
-
-var AuditLogPlugins map[string]func() AuditLogger
-
-func init() {
-	AuditLogPlugins = make(map[string]func() AuditLogger)
+type UUID interface {
+	GetServiceId() string
+	GetInstanceId() string
 }

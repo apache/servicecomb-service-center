@@ -25,7 +25,7 @@ import (
 	"github.com/ServiceComb/service-center/server/core/registry"
 	scerr "github.com/ServiceComb/service-center/server/error"
 	"github.com/ServiceComb/service-center/server/infra/quota"
-	"github.com/ServiceComb/service-center/server/plugin/dynamic"
+	"github.com/ServiceComb/service-center/server/plugin"
 	nf "github.com/ServiceComb/service-center/server/service/notification"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/gorilla/websocket"
@@ -97,7 +97,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 		if !core.ISSCSelf(ctx) {
 			var err error
 			var ok bool
-			reporter, ok, err = quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.MicroServiceInstanceQuotaType, domainProject, in.Instance.ServiceId, 1)
+			reporter, ok, err = plugin.Plugins().Quota().Apply4Quotas(ctx, quota.MicroServiceInstanceQuotaType, domainProject, in.Instance.ServiceId, 1)
 			if reporter != nil {
 				defer reporter.Close()
 			}
@@ -117,7 +117,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 	}
 
 	if len(instanceId) == 0 {
-		instanceId = dynamic.GetInstanceId()
+		instanceId = plugin.Plugins().UUID().GetInstanceId()
 		instance.InstanceId = instanceId
 	}
 

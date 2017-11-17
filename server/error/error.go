@@ -124,3 +124,13 @@ func NewError(code int32, detail string) *Error {
 		Detail:  detail,
 	}
 }
+
+func RegisterErrors(errs map[int32]string) {
+	for err, msg := range errs {
+		if err < 400000 || err >= 600000 {
+			// should be between 4xx and 5xx
+			continue
+		}
+		errors[err] = msg
+	}
+}

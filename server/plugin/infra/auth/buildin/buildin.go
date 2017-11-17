@@ -11,10 +11,24 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package security
+package dynamic
 
-type Cipher interface {
-	Encrypt(src string) (string, error)
+import (
+	mgr "github.com/ServiceComb/service-center/server/plugin"
+	"net/http"
+)
 
-	Decrypt(src string) (string, error)
+func init() {
+	mgr.RegisterPlugin(mgr.Plugin{mgr.STATIC, mgr.AUTH, "buildin", New})
+}
+
+func New() mgr.PluginInstance {
+	return &BuildInAuth{}
+}
+
+type BuildInAuth struct {
+}
+
+func (ba *BuildInAuth) Identify(r *http.Request) error {
+	return nil
 }

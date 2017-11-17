@@ -19,8 +19,7 @@ import (
 	"encoding/pem"
 	"github.com/ServiceComb/service-center/pkg/tlsutil"
 	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/server/infra/security"
-	"github.com/astaxie/beego"
+	"github.com/ServiceComb/service-center/server/plugin"
 	"io/ioutil"
 	"time"
 )
@@ -67,7 +66,7 @@ func getX509CACertPool() (caCertPool *x509.CertPool, err error) {
 func loadTLSCertificate() (tlsCert []tls.Certificate, err error) {
 	certFile, keyFile := tlsutil.GetServerSSLConfig().CertFile, tlsutil.GetServerSSLConfig().KeyFile
 	passphase := tlsutil.GetServerSSLConfig().KeyPassphase
-	plainPassphase, err := security.CipherPlugins[beego.AppConfig.DefaultString("cipher_plugin", "default")]().Decrypt(passphase)
+	plainPassphase, err := plugin.Plugins().Cipher().Decrypt(passphase)
 	if err != nil {
 		util.Logger().Errorf(err, "decrypt ssl passphase(%d) failed.", len(passphase))
 		plainPassphase = ""
