@@ -467,7 +467,6 @@ func (c *EtcdClient) Watch(ctx context.Context, opts ...registry.PluginOpOption)
 		if op.Prefix && key[len(key)-1] != '/' {
 			key += "/"
 		}
-		util.Logger().Debugf("start to watch key %s", key)
 
 		// 不能设置超时context，内部判断了连接超时和watch超时
 		ws := client.Watch(context.Background(), key, c.toGetRequest(op)...)

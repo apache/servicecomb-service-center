@@ -200,7 +200,6 @@ func (c *KvCacher) doList(listOps *ListOptions) error {
 
 func (c *KvCacher) doWatch(listOps *ListOptions) error {
 	watcher := c.lw.Watch(listOps)
-	util.Logger().Debugf("finish to new watcher, key %s, start rev: %d+1", c.Cfg.Key, c.lastRev)
 	return c.handleWatcher(watcher)
 }
 

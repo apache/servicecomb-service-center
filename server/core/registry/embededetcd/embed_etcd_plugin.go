@@ -391,8 +391,7 @@ func (s *EtcdEmbed) Watch(ctx context.Context, opts ...registry.PluginOpOption) 
 			keyBytes = s.getPrefixEndKey(util.StringToBytesWithNoCopy(key))
 		}
 		watchID := ws.Watch(op.Key, keyBytes, op.Revision)
-		// defer ws.Cancel(watchID)
-		util.Logger().Infof("start to watch key %s, id is %d", key, watchID)
+		defer ws.Cancel(watchID)
 
 		responses := ws.Chan()
 		for {
