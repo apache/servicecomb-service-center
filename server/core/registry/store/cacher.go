@@ -519,8 +519,6 @@ func (c *KvCacher) Stop() {
 	c.goroute.Close(true)
 
 	util.SafeCloseChan(c.ready)
-
-	util.Logger().Debugf("cacher is stopped, %s", c.Cfg)
 }
 
 func (c *KvCacher) Ready() <-chan struct{} {

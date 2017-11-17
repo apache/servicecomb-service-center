@@ -302,8 +302,6 @@ func (i *Indexer) Stop() {
 	close(i.prefixBuildQueue)
 
 	util.SafeCloseChan(i.ready)
-
-	util.Logger().Debugf("%s indexer is stopped", i.cacheType)
 }
 
 func (i *Indexer) Ready() <-chan struct{} {
