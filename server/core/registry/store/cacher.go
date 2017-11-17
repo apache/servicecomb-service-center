@@ -193,7 +193,7 @@ func (c *KvCacher) doList(listOps *ListOptions) error {
 	c.lastRev = c.lw.Revision()
 	c.sync(c.filter(c.lastRev, kvs))
 
-	util.LogNilOrWarnf(start, "finish to cache key %s, %d items, rev: %d", c.Cfg.Key, len(kvs), c.lastRev)
+	util.LogDebugOrWarnf(start, "finish to cache key %s, %d items, rev: %d", c.Cfg.Key, len(kvs), c.lastRev)
 
 	return nil
 }
@@ -482,7 +482,7 @@ func (c *KvCacher) onKvEvents(evts []*KvEvent) {
 
 func (c *KvCacher) run() {
 	c.goroute.Do(func(stopCh <-chan struct{}) {
-		util.Logger().Infof("start to list and watch %s", c.Cfg)
+		util.Logger().Debugf("start to list and watch %s", c.Cfg)
 		ctx, cancel := context.WithCancel(context.Background())
 		c.goroute.Do(func(stopCh <-chan struct{}) {
 			defer cancel()

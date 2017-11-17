@@ -406,40 +406,31 @@ func (s *EtcdEmbed) Watch(ctx context.Context, opts ...registry.PluginOpOption) 
 				}
 
 				l := len(resp.Events)
-				pIdx, dIdx := 0, l
-				pResp := &registry.PluginResponse{Action: registry.Put, Succeeded: true}
-				dResp := &registry.PluginResponse{Action: registry.Delete, Succeeded: true}
 				kvs := make([]*mvccpb.KeyValue, l)
+				pIdx, prevAction := 0, mvccpb.PUT
+				pResp := &registry.PluginResponse{Action: registry.Put, Succeeded: true}
+
 				for _, evt := range resp.Events {
-					pResp.Revision = evt.Kv.ModRevision
-					switch evt.Type {
-					case mvccpb.DELETE:
-						dIdx--
-						kv := evt.PrevKv
-						if kv == nil {
-							kv = evt.Kv
+					if prevAction != evt.Type {
+						prevAction = evt.Type
+
+						if pIdx > 0 {
+							err = setResponseAndCallback(pResp, kvs[:pIdx], op.WatchCallback)
+							if err != nil {
+								return
+							}
+							pIdx = 0
 						}
-						kvs[dIdx] = kv
-					default:
-						kvs[pIdx] = evt.Kv
-						pIdx++
 					}
-				}
-				pResp.Count = int64(pIdx)
-				pResp.Kvs = kvs[:pIdx]
 
-				dResp.Revision = pResp.Revision
-				dResp.Count = int64(l) - pResp.Count
-				dResp.Kvs = kvs[dIdx:]
+					pResp.Revision = evt.Kv.ModRevision
+					pResp.Action = setKvsAndConvertAction(kvs, pIdx, &evt)
 
-				if pResp.Count > 0 {
-					err = op.WatchCallback("key information changed", pResp)
-					if err != nil {
-						return
-					}
+					pIdx++
 				}
-				if dResp.Count > 0 {
-					err = op.WatchCallback("key information changed", dResp)
+
+				if pIdx > 0 {
+					err = setResponseAndCallback(pResp, kvs[:pIdx], op.WatchCallback)
 					if err != nil {
 						return
 					}
@@ -449,6 +440,32 @@ func (s *EtcdEmbed) Watch(ctx context.Context, opts ...registry.PluginOpOption) 
 	}
 	err = fmt.Errorf("no key has been watched")
 	return
+}
+
+func setKvsAndConvertAction(kvs []*mvccpb.KeyValue, pIdx int, evt *mvccpb.Event) registry.ActionType {
+	switch evt.Type {
+	case mvccpb.DELETE:
+		kv := evt.PrevKv
+		if kv == nil {
+			kv = evt.Kv
+		}
+		kvs[pIdx] = kv
+		return registry.Delete
+	default:
+		kvs[pIdx] = evt.Kv
+		return registry.Put
+	}
+}
+
+func setResponseAndCallback(pResp *registry.PluginResponse, kvs []*mvccpb.KeyValue, cb registry.WatchCallback) error {
+	pResp.Count = int64(len(kvs))
+	pResp.Kvs = kvs
+
+	err := cb("key information changed", pResp)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func getEmbedInstance(cfg *registry.Config) registry.Registry {
