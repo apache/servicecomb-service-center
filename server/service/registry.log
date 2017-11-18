@@ -1,0 +1,8 @@
+2017-11-18T09:45:53.916+08:00 INFO registry 5660 embed_etcd_plugin.go 0():44 "embed etcd plugin init."
+2017-11-18T09:45:53.917+08:00 INFO registry 5660 remote_etcd_plugin.go 0():43 "etcd plugin init."
+2017-11-18T09:45:53.937+08:00 WARN registry 5660 remote_etcd_plugin.go NewRegistry():537 "starting service center in proxy mode"
+2017-11-18T09:45:53.938+08:00 WARN registry 5660 remote_etcd_plugin.go NewRegistry():575 "get etcd client [127.0.0.1:2379] completed."
+2017-11-18T09:49:51.130+08:00 INFO registry 7340 embed_etcd_plugin.go 0():44 "embed etcd plugin init."
+2017-11-18T09:49:51.131+08:00 INFO registry 7340 remote_etcd_plugin.go 0():43 "etcd plugin init."
+2017-11-18T09:49:51.149+08:00 WARN registry 7340 remote_etcd_plugin.go NewRegistry():537 "starting service center in proxy mode"
+2017-11-18T09:49:51.151+08:00 WARN registry 7340 remote_etcd_plugin.go NewRegistry():575 "get etcd client [127.0.0.1:2379] completed."
