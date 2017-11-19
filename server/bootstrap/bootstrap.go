@@ -20,8 +20,8 @@ import _ "github.com/ServiceComb/service-center/server/rest/controller/v3"
 import _ "github.com/ServiceComb/service-center/server/rest/controller/v4"
 
 // registry
-import _ "github.com/ServiceComb/service-center/server/core/registry/etcd"
-import _ "github.com/ServiceComb/service-center/server/core/registry/embededetcd"
+import _ "github.com/ServiceComb/service-center/server/plugin/infra/registry/etcd"
+import _ "github.com/ServiceComb/service-center/server/plugin/infra/registry/embededetcd"
 
 // cipher
 import _ "github.com/ServiceComb/service-center/server/plugin/infra/security/buildin"

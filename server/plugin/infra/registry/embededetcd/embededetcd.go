@@ -21,7 +21,8 @@ import (
 	"github.com/ServiceComb/service-center/pkg/rest"
 	"github.com/ServiceComb/service-center/pkg/tlsutil"
 	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/server/infra/registry"
+	mgr "github.com/ServiceComb/service-center/server/plugin"
 	"github.com/astaxie/beego"
 	"github.com/coreos/etcd/embed"
 	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
@@ -38,11 +39,10 @@ import (
 var embedTLSConfig *tls.Config
 
 const START_MANAGER_SERVER_TIMEOUT = 60
-const REGISTRY_PLUGIN_EMBEDED_ETCD = "embeded_etcd"
 
 func init() {
 	util.Logger().Infof("embed etcd plugin init.")
-	registry.RegistryPlugins[REGISTRY_PLUGIN_EMBEDED_ETCD] = getEmbedInstance
+	mgr.RegisterPlugin(mgr.Plugin{mgr.STATIC, mgr.REGISTRY, "embeded_etcd", getEmbedInstance})
 }
 
 type EtcdEmbed struct {
@@ -467,7 +467,7 @@ func setResponseAndCallback(pResp *registry.PluginResponse, kvs []*mvccpb.KeyVal
 	return nil
 }
 
-func getEmbedInstance(cfg *registry.Config) registry.Registry {
+func getEmbedInstance() mgr.PluginInstance {
 	util.Logger().Warnf(nil, "starting service center in embed mode")
 
 	hostName := beego.AppConfig.DefaultString("manager_name", util.GetLocalHostname())
@@ -495,7 +495,7 @@ func getEmbedInstance(cfg *registry.Config) registry.Registry {
 
 	// 集群支持
 	serverCfg.Name = hostName
-	serverCfg.InitialCluster = cfg.ClusterAddresses
+	serverCfg.InitialCluster = registry.RegistryConfig().ClusterAddresses
 
 	// 管理端口
 	urls, err := parseURL(addrs)

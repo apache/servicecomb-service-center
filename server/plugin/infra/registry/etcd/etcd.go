@@ -21,7 +21,8 @@ import (
 	"github.com/ServiceComb/service-center/pkg/rest"
 	"github.com/ServiceComb/service-center/pkg/tlsutil"
 	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/server/infra/registry"
+	mgr "github.com/ServiceComb/service-center/server/plugin"
 	"github.com/astaxie/beego"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
@@ -33,15 +34,13 @@ import (
 )
 
 const (
-	REGISTRY_PLUGIN_ETCD           = "etcd"
 	CONNECT_MANAGER_SERVER_TIMEOUT = 10
 )
 
 var clientTLSConfig *tls.Config
 
 func init() {
-	util.Logger().Infof("etcd plugin init.")
-	registry.RegistryPlugins[REGISTRY_PLUGIN_ETCD] = NewRegistry
+	mgr.RegisterPlugin(mgr.Plugin{mgr.STATIC, mgr.REGISTRY, "etcd", NewRegistry})
 }
 
 type EtcdClient struct {
@@ -550,16 +549,16 @@ func setResponseAndCallback(pResp *registry.PluginResponse, kvs []*mvccpb.KeyVal
 	return nil
 }
 
-func NewRegistry(cfg *registry.Config) registry.Registry {
+func NewRegistry() mgr.PluginInstance {
 	util.Logger().Warnf(nil, "starting service center in proxy mode")
 
 	inst := &EtcdClient{
 		err:   make(chan error, 1),
 		ready: make(chan int),
 	}
-	addrs := strings.Split(cfg.ClusterAddresses, ",")
+	addrs := strings.Split(registry.RegistryConfig().ClusterAddresses, ",")
 
-	if tlsutil.GetClientSSLConfig().SSLEnabled && strings.Index(cfg.ClusterAddresses, "https://") >= 0 {
+	if tlsutil.GetClientSSLConfig().SSLEnabled && strings.Index(registry.RegistryConfig().ClusterAddresses, "https://") >= 0 {
 		var err error
 		// go client tls限制，提供身份证书、不认证服务端、不校验CN
 		clientTLSConfig, err = rest.GetClientTLSConfig(tlsutil.GetClientSSLConfig().VerifyClient, true, false)
@@ -580,7 +579,7 @@ func NewRegistry(cfg *registry.Config) registry.Registry {
 		}
 
 	}
-	refreshManagerClusterInterval := cfg.AutoSyncInterval
+	refreshManagerClusterInterval := registry.RegistryConfig().AutoSyncInterval
 	util.Logger().Debugf("refreshManagerClusterInterval is %d", refreshManagerClusterInterval)
 	client, err := newClient(endpoints, refreshManagerClusterInterval)
 	if err != nil {

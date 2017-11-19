@@ -19,6 +19,7 @@ import (
 	"github.com/ServiceComb/service-center/server/infra/auditlog"
 	"github.com/ServiceComb/service-center/server/infra/auth"
 	"github.com/ServiceComb/service-center/server/infra/quota"
+	"github.com/ServiceComb/service-center/server/infra/registry"
 	"github.com/ServiceComb/service-center/server/infra/security"
 	"github.com/ServiceComb/service-center/server/infra/uuid"
 	"github.com/astaxie/beego"
@@ -36,6 +37,7 @@ const (
 	AUTH
 	CIPHER
 	QUOTA
+	REGISTRY
 	typeEnd
 )
 
@@ -45,6 +47,7 @@ var pluginNames = map[PluginName]string{
 	AUTH:      "auth",
 	CIPHER:    "cipher",
 	QUOTA:     "quota",
+	REGISTRY:  "registry",
 }
 
 var pluginMgr = &PluginManager{
@@ -85,8 +88,12 @@ type PluginManager struct {
 	lock      sync.RWMutex
 }
 
-func (pm *PluginManager) Load() error {
-	return nil
+func (pm *PluginManager) ReloadAll() {
+	pm.lock.Lock()
+	for k := range pm.instances {
+		delete(pm.instances, k)
+	}
+	pm.lock.Unlock()
 }
 
 // unsafe
@@ -117,6 +124,22 @@ func (pm *PluginManager) Instance(pn PluginName) PluginInstance {
 	}
 	pm.lock.RUnlock()
 
+	pm.lock.Lock()
+	inst, ok = pm.instances[pn]
+	if ok {
+		pm.lock.Unlock()
+		return inst
+	}
+	inst = pm.New(pn)
+	if inst != nil {
+		pm.instances[pn] = inst
+	}
+	pm.lock.Unlock()
+
+	return inst
+}
+
+func (pm *PluginManager) New(pn PluginName) PluginInstance {
 	var f func() PluginInstance
 	p := pm.existDynamicPlugin(pn)
 	if p != nil {
@@ -135,19 +158,14 @@ func (pm *PluginManager) Instance(pn PluginName) PluginInstance {
 
 		f = p.New
 	}
-
-	pm.lock.Lock()
-	inst, ok = pm.instances[pn]
-	if ok {
-		pm.lock.Unlock()
-		return inst
-	}
-	inst = f()
-	pm.instances[pn] = inst
-	pm.lock.Unlock()
-
 	util.Logger().Infof("new '%s' plugin '%s' instance", p.PName, p.Name)
-	return inst
+	return f()
+}
+
+func (pm *PluginManager) Reload(pn PluginName) {
+	pm.lock.Lock()
+	delete(pm.instances, pn)
+	pm.lock.Unlock()
 }
 
 func (pm *PluginManager) existDynamicPlugin(pn PluginName) *Plugin {
@@ -161,6 +179,10 @@ func (pm *PluginManager) existDynamicPlugin(pn PluginName) *Plugin {
 		}
 	}
 	return nil
+}
+
+func (pm *PluginManager) Registry() registry.Registry {
+	return pm.Instance(REGISTRY).(registry.Registry)
 }
 
 func (pm *PluginManager) UUID() uuid.UUID {
