@@ -85,7 +85,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 				if oldInstanceId != "" {
 					return &pb.RegisterInstanceResponse{
 						Response: pb.CreateResponse(scerr.ErrEndpointAlreadyExists, err.Error()),
-					}, err
+					}, nil
 				}
 				return &pb.RegisterInstanceResponse{
 					Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
