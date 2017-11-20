@@ -78,7 +78,7 @@ var TypeRoots = map[StoreType]string{
 	DEPENDENCY:      apt.GetServiceDependencyRootKey(""),
 	DEPENDENCY_RULE: apt.GetServiceDependencyRuleRootKey(""),
 	PROJECT:         apt.GetProjectRootKey(""),
-	ENDPOINTS:       apt.GenerateEndpointsRootKey(""),
+	ENDPOINTS:       apt.GetEndpointsRootKey(""),
 }
 
 var store *KvStore
