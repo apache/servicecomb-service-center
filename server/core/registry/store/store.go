@@ -39,6 +39,7 @@ const (
 	DEPENDENCY
 	DEPENDENCY_RULE
 	PROJECT
+	ENDPOINTS
 	typeEnd
 )
 
@@ -59,6 +60,7 @@ var TypeNames = []string{
 	DEPENDENCY:      "DEPENDENCY",
 	DEPENDENCY_RULE: "DEPENDENCY_RULE",
 	PROJECT:         "PROJECT",
+	ENDPOINTS:       "ENDPOINTS",
 }
 
 var TypeRoots = map[StoreType]string{
@@ -76,6 +78,7 @@ var TypeRoots = map[StoreType]string{
 	DEPENDENCY:      apt.GetServiceDependencyRootKey(""),
 	DEPENDENCY_RULE: apt.GetServiceDependencyRuleRootKey(""),
 	PROJECT:         apt.GetProjectRootKey(""),
+	ENDPOINTS:       apt.GenerateEndpointsRootKey(""),
 }
 
 var store *KvStore
@@ -272,6 +275,10 @@ func (s *KvStore) Domain() *Indexer {
 
 func (s *KvStore) Project() *Indexer {
 	return s.indexers[PROJECT]
+}
+
+func (s *KvStore) Endpoints() *Indexer {
+	return s.indexers[ENDPOINTS]
 }
 
 func (s *KvStore) KeepAlive(ctx context.Context, opts ...registry.PluginOpOption) (int64, error) {
