@@ -925,7 +925,7 @@ var _ = Describe("ServiceController", func() {
 					Instance: &pb.MicroServiceInstance{
 						ServiceId: serviceId6,
 						Endpoints: []string{
-							"rest:127.0.0.1:8081",
+							"rest:127.0.0.2:8081",
 						},
 						HostName:    "UT-HOST",
 						Status:      pb.MSI_UP,
