@@ -25,6 +25,8 @@ import (
 	"golang.org/x/net/context"
 	"strconv"
 	"strings"
+	"sort"
+	"fmt"
 )
 
 func GetLeaseId(ctx context.Context, domainProject string, serviceId string, instanceId string, opts ...registry.PluginOpOption) (int64, error) {
@@ -104,54 +106,32 @@ func InstanceExist(ctx context.Context, domainProject string, serviceId string, 
 	return true, nil
 }
 
-func CheckEndPoints(ctx context.Context, in *pb.RegisterInstanceRequest) (string, error) {
+func CheckEndPoints(ctx context.Context, in *pb.RegisterInstanceRequest) (string, string, error) {
 	domainProject := util.ParseDomainProject(ctx)
-	allInstancesKey := apt.GenerateInstanceKey(domainProject, in.Instance.ServiceId, "")
-	rsp, err := store.Store().Instance().Search(ctx,
-		registry.WithStrKey(allInstancesKey),
+	endpoints := in.Instance.Endpoints
+	sort.Strings(endpoints)
+	endpointsJoin := util.StringJoin(endpoints, "/")
+	region, availableZone := apt.GetRegionAndAvailableZone(in.Instance.DataCenterInfo)
+	instanceEndpointsIndexKey := apt.GetEndpointsIndexKey(domainProject, region, availableZone, endpointsJoin)
+	resp, err := store.Store().Endpoints().Search(ctx,
+		registry.WithStrKey(instanceEndpointsIndexKey),
 		registry.WithPrefix())
 	if err != nil {
-		util.Logger().Errorf(nil, "Get all instance info failed.", err.Error())
-		return "", err
+		return "", "", err
 	}
-	if len(rsp.Kvs) == 0 {
-		util.Logger().Debugf("There is no instance before this instance regists.")
-		return "", nil
+	if resp.Count == 0 {
+		return "", instanceEndpointsIndexKey, nil
 	}
-	registerInstanceEndpoints := in.Instance.Endpoints
-	nodeIpOfIn := ""
-	if value, ok := in.GetInstance().Properties["nodeIP"]; ok {
-		nodeIpOfIn = value
+	value := util.BytesToStringWithNoCopy(resp.Kvs[0].Value)
+	splitedValue := strings.Split(value, "/")
+	serviceIdInner := splitedValue[0]
+	if in.Instance.ServiceId != serviceIdInner {
+		return "", "", fmt.Errorf("endpoints more exist for service %s", serviceIdInner)
 	}
-	instance := &pb.MicroServiceInstance{}
-	for _, kv := range rsp.Kvs {
-		err = json.Unmarshal(kv.Value, instance)
-		if err != nil {
-			util.Logger().Errorf(nil, "Unmarshal instance info failed.", err.Error())
-			return "", err
-		}
-		nodeIdFromETCD := ""
-		if value, ok := instance.Properties["nodeIP"]; ok {
-			nodeIdFromETCD = value
-		}
-		if nodeIdFromETCD != nodeIpOfIn {
-			continue
-		}
-		tmpInstanceEndpoints := instance.Endpoints
-		isEqual := true
-		for _, endpoint := range registerInstanceEndpoints {
-			if !isContain(tmpInstanceEndpoints, endpoint) {
-				isEqual = false
-				break
-			}
-		}
-		if isEqual {
-			arr := strings.Split(util.BytesToStringWithNoCopy(kv.Key), "/")
-			return arr[len(arr)-1], nil
-		}
-	}
-	return "", nil
+	return splitedValue[1], "", nil
 }
+
+
 
 func isContain(endpoints []string, endpoint string) bool {
 	for _, tmpEndpoint := range endpoints {
