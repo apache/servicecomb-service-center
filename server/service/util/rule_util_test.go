@@ -16,7 +16,7 @@ package util_test
 import (
 	"fmt"
 	"github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/server/infra/registry"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"golang.org/x/net/context"
 	"testing"

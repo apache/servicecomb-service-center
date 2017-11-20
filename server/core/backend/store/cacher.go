@@ -15,8 +15,8 @@ package store
 
 import (
 	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/ServiceComb/service-center/server/core/backend"
 	"github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"sync"
@@ -545,7 +545,7 @@ func NewKvCacher(opts ...KvCacherCfgOption) Cacher {
 		Cfg:   cfg,
 		ready: make(chan struct{}),
 		lw: ListWatcher{
-			Client: registry.GetRegisterCenter(),
+			Client: backend.Registry(),
 			Key:    cfg.Key,
 		},
 		goroute: util.NewGo(make(chan struct{})),

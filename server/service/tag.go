@@ -17,10 +17,11 @@ import (
 	"encoding/json"
 	"github.com/ServiceComb/service-center/pkg/util"
 	apt "github.com/ServiceComb/service-center/server/core"
+	"github.com/ServiceComb/service-center/server/core/backend"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/server/core/registry"
 	scerr "github.com/ServiceComb/service-center/server/error"
 	"github.com/ServiceComb/service-center/server/infra/quota"
+	"github.com/ServiceComb/service-center/server/infra/registry"
 	"github.com/ServiceComb/service-center/server/plugin"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"golang.org/x/net/context"
@@ -204,7 +205,7 @@ func (s *ServiceController) DeleteTags(ctx context.Context, in *pb.DeleteService
 	key := apt.GenerateServiceTagKey(domainProject, in.ServiceId)
 
 	util.Logger().Debugf("start delete service tags file: %s %v", key, in.Keys)
-	_, err = registry.GetRegisterCenter().Do(ctx,
+	_, err = backend.Registry().Do(ctx,
 		registry.PUT,
 		registry.WithStrKey(key),
 		registry.WithValue(data))

@@ -16,8 +16,9 @@ package util
 import (
 	"github.com/ServiceComb/service-center/pkg/util"
 	apt "github.com/ServiceComb/service-center/server/core"
-	"github.com/ServiceComb/service-center/server/core/registry"
-	"github.com/ServiceComb/service-center/server/core/registry/store"
+	"github.com/ServiceComb/service-center/server/core/backend"
+	"github.com/ServiceComb/service-center/server/core/backend/store"
+	"github.com/ServiceComb/service-center/server/infra/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"strings"
@@ -81,7 +82,7 @@ func ProjectExist(ctx context.Context, domain, project string, opts ...registry.
 }
 
 func NewDomain(ctx context.Context, domain string) error {
-	_, err := registry.GetRegisterCenter().PutNoOverride(ctx,
+	_, err := backend.Registry().PutNoOverride(ctx,
 		registry.WithStrKey(apt.GenerateDomainKey(domain)))
 	if err != nil {
 		return err
@@ -90,7 +91,7 @@ func NewDomain(ctx context.Context, domain string) error {
 }
 
 func NewProject(ctx context.Context, domain, project string) error {
-	_, err := registry.GetRegisterCenter().PutNoOverride(ctx,
+	_, err := backend.Registry().PutNoOverride(ctx,
 		registry.WithStrKey(apt.GenerateProjectKey(domain, project)))
 	if err != nil {
 		return err

@@ -16,6 +16,7 @@ package store
 import (
 	errorsEx "github.com/ServiceComb/service-center/pkg/errors"
 	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/ServiceComb/service-center/server/core/backend"
 	"github.com/ServiceComb/service-center/server/infra/registry"
 	"golang.org/x/net/context"
 	"time"
@@ -37,7 +38,7 @@ func (lat *LeaseAsyncTask) Key() string {
 
 func (lat *LeaseAsyncTask) Do(ctx context.Context) error {
 	lat.StartTime = time.Now()
-	lat.TTL, lat.err = backend.GetRegisterCenter().LeaseRenew(ctx, lat.LeaseID)
+	lat.TTL, lat.err = backend.Registry().LeaseRenew(ctx, lat.LeaseID)
 	lat.EndTime = time.Now()
 	if lat.err == nil {
 		util.LogNilOrWarnf(lat.CreateTime, "renew lease %d(rev: %s, run: %s), key %s",

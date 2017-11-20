@@ -20,10 +20,11 @@ import (
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/pkg/uuid"
 	apt "github.com/ServiceComb/service-center/server/core"
+	"github.com/ServiceComb/service-center/server/core/backend"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/server/core/registry"
 	scerr "github.com/ServiceComb/service-center/server/error"
 	"github.com/ServiceComb/service-center/server/infra/quota"
+	"github.com/ServiceComb/service-center/server/infra/registry"
 	"github.com/ServiceComb/service-center/server/plugin"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"golang.org/x/net/context"
@@ -206,7 +207,7 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 			Response: pb.CreateResponse(pb.Response_SUCCESS, "Service rules has been added."),
 		}, nil
 	}
-	_, err = registry.GetRegisterCenter().Txn(ctx, opts)
+	_, err = backend.Registry().Txn(ctx, opts)
 	if err != nil {
 		util.Logger().Errorf(err, "add rule failed, serviceId is %s:commit date into etcd failed.", in.ServiceId)
 		return &pb.AddServiceRulesResponse{
@@ -310,7 +311,7 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 		opts = append(opts, registry.OpDel(registry.WithStrKey(oldIndexKey)))
 	}
 	opts = append(opts, registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)))
-	_, err = registry.GetRegisterCenter().Txn(ctx, opts)
+	_, err = backend.Registry().Txn(ctx, opts)
 	if err != nil {
 		util.Logger().Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: commit date into etcd failed.", in.ServiceId, in.RuleId)
 		return &pb.UpdateServiceRuleResponse{
@@ -405,7 +406,7 @@ func (s *ServiceController) DeleteRule(ctx context.Context, in *pb.DeleteService
 			Response: pb.CreateResponse(scerr.ErrRuleNotExists, "No service rule has been deleted."),
 		}, nil
 	}
-	_, err := registry.GetRegisterCenter().Txn(ctx, opts)
+	_, err := backend.Registry().Txn(ctx, opts)
 	if err != nil {
 		util.Logger().Errorf(err, "delete service rule failed, serviceId is %s, rule is %v: commit data into etcd failed.", in.ServiceId, in.RuleIds)
 		return &pb.DeleteServiceRulesResponse{

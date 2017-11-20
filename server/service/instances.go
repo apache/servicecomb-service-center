@@ -21,10 +21,11 @@ import (
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/core"
 	apt "github.com/ServiceComb/service-center/server/core"
+	"github.com/ServiceComb/service-center/server/core/backend"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/server/core/registry"
 	scerr "github.com/ServiceComb/service-center/server/error"
 	"github.com/ServiceComb/service-center/server/infra/quota"
+	"github.com/ServiceComb/service-center/server/infra/registry"
 	"github.com/ServiceComb/service-center/server/plugin"
 	nf "github.com/ServiceComb/service-center/server/service/notification"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
@@ -189,7 +190,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 	}
 
 	// Set key file
-	_, err = registry.GetRegisterCenter().Txn(ctx, opts)
+	_, err = backend.Registry().Txn(ctx, opts)
 	if err != nil {
 		util.Logger().Errorf(err, "register instance failed, service %s, instanceId %s, operator %s: commit data into etcd failed.",
 			instanceFlag, instanceId, remoteIP)
@@ -268,7 +269,7 @@ func revokeInstance(ctx context.Context, domainProject string, serviceId string,
 		return errors.New("instance's leaseId not exist."), false
 	}
 
-	err = registry.GetRegisterCenter().LeaseRevoke(ctx, leaseID)
+	err = backend.Registry().LeaseRevoke(ctx, leaseID)
 	if err != nil {
 		return err, true
 	}
@@ -321,7 +322,7 @@ func grantOrRenewLease(ctx context.Context, domainProject string, serviceId stri
 	}
 
 	if leaseID < 0 || (oldTTL > 0 && oldTTL != ttl) {
-		leaseID, err = registry.GetRegisterCenter().LeaseGrant(ctx, ttl)
+		leaseID, err = backend.Registry().LeaseGrant(ctx, ttl)
 		if err != nil {
 			util.Logger().Errorf(err, "grant or renew lease failed, instance %s, operator: %s: lease grant failed.",
 				instanceFlag, remoteIP)
@@ -739,7 +740,7 @@ func updateInstance(ctx context.Context, domainProject string, instance *pb.Micr
 	}
 
 	key := apt.GenerateInstanceKey(domainProject, instance.ServiceId, instance.InstanceId)
-	_, err = registry.GetRegisterCenter().Do(ctx,
+	_, err = backend.Registry().Do(ctx,
 		registry.PUT,
 		registry.WithStrKey(key),
 		registry.WithValue(data),

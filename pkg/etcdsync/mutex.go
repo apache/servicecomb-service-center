@@ -16,6 +16,7 @@ package etcdsync
 import (
 	"fmt"
 	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/ServiceComb/service-center/server/core/backend"
 	"github.com/ServiceComb/service-center/server/infra/registry"
 	"github.com/coreos/etcd/client"
 	"golang.org/x/net/context"
@@ -127,13 +128,13 @@ func (m *Locker) Lock() error {
 
 		putOpts := opts
 		if m.builder.ttl > 0 {
-			leaseID, err := backend.GetRegisterCenter().LeaseGrant(m.builder.ctx, m.builder.ttl)
+			leaseID, err := backend.Registry().LeaseGrant(m.builder.ctx, m.builder.ttl)
 			if err != nil {
 				return err
 			}
 			putOpts = append(opts, registry.WithLease(leaseID))
 		}
-		success, err := backend.GetRegisterCenter().PutNoOverride(m.builder.ctx, putOpts...)
+		success, err := backend.Registry().PutNoOverride(m.builder.ctx, putOpts...)
 		if err == nil && success {
 			util.Logger().Infof("Create Lock OK, key=%s, id=%s", m.builder.key, m.id)
 			return nil
@@ -142,7 +143,7 @@ func (m *Locker) Lock() error {
 
 		ctx, cancel := context.WithTimeout(m.builder.ctx, defaultTTL*time.Second)
 		go func() {
-			err := backend.GetRegisterCenter().Watch(ctx,
+			err := backend.Registry().Watch(ctx,
 				registry.WithStrKey(m.builder.key),
 				registry.WithWatchCallback(
 					func(message string, evt *registry.PluginResponse) error {
@@ -179,7 +180,7 @@ func (m *Locker) Unlock() (err error) {
 		registry.WithStrKey(m.builder.key)}
 
 	for i := 1; i <= defaultTry; i++ {
-		_, err = backend.GetRegisterCenter().Do(m.builder.ctx, opts...)
+		_, err = backend.Registry().Do(m.builder.ctx, opts...)
 		if err == nil {
 			if !IsDebug {
 				m.builder.mutex.Unlock()

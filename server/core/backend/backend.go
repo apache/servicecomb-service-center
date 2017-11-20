@@ -11,7 +11,7 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package registry
+package backend
 
 import (
 	"errors"
@@ -33,7 +33,7 @@ const (
 	MAX_TXN_NUMBER_ONE_TIME = 128
 )
 
-func RegisterCenterClient() (registry.Registry, error) {
+func New() (registry.Registry, error) {
 	instance := plugin.Plugins().Registry()
 	if instance == nil {
 		return nil, errors.New("register center client plugin does not exist")
@@ -47,11 +47,11 @@ func RegisterCenterClient() (registry.Registry, error) {
 	return instance, nil
 }
 
-func GetRegisterCenter() registry.Registry {
+func Registry() registry.Registry {
 	if registryInstance == nil {
 		singletonLock.Lock()
 		for i := 0; registryInstance == nil; i++ {
-			inst, err := RegisterCenterClient()
+			inst, err := New()
 			if err != nil {
 				util.Logger().Errorf(err, "get register center client failed")
 			}
@@ -86,7 +86,7 @@ func BatchCommit(ctx context.Context, opts []registry.PluginOp) error {
 		} else {
 			tmpOpts = opts[i*MAX_TXN_NUMBER_ONE_TIME : lenOpts]
 		}
-		_, err = GetRegisterCenter().Txn(ctx, tmpOpts)
+		_, err = Registry().Txn(ctx, tmpOpts)
 		if err != nil {
 			return err
 		}

@@ -16,8 +16,8 @@ package util
 import (
 	"errors"
 	apt "github.com/ServiceComb/service-center/server/core"
-	"github.com/ServiceComb/service-center/server/core/registry"
-	"github.com/ServiceComb/service-center/server/core/registry/store"
+	"github.com/ServiceComb/service-center/server/core/backend/store"
+	"github.com/ServiceComb/service-center/server/infra/registry"
 	"golang.org/x/net/context"
 )
 

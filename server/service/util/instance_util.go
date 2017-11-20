@@ -17,9 +17,10 @@ import (
 	"encoding/json"
 	"github.com/ServiceComb/service-center/pkg/util"
 	apt "github.com/ServiceComb/service-center/server/core"
+	"github.com/ServiceComb/service-center/server/core/backend"
+	"github.com/ServiceComb/service-center/server/core/backend/store"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/server/core/registry"
-	"github.com/ServiceComb/service-center/server/core/registry/store"
+	"github.com/ServiceComb/service-center/server/infra/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"strconv"
@@ -179,7 +180,7 @@ func DeleteServiceAllInstances(ctx context.Context, ServiceId string) error {
 	}
 	for _, v := range resp.Kvs {
 		leaseID, _ := strconv.ParseInt(util.BytesToStringWithNoCopy(v.Value), 10, 64)
-		registry.GetRegisterCenter().LeaseRevoke(ctx, leaseID)
+		backend.Registry().LeaseRevoke(ctx, leaseID)
 	}
 	return nil
 }

@@ -14,8 +14,8 @@
 package service_test
 
 import (
-	_ "github.com/ServiceComb/service-center/server/core/registry/embededetcd"
-	_ "github.com/ServiceComb/service-center/server/core/registry/etcd"
+	_ "github.com/ServiceComb/service-center/server/plugin/infra/registry/embededetcd"
+	_ "github.com/ServiceComb/service-center/server/plugin/infra/registry/etcd"
 )
 
 import (
@@ -24,8 +24,9 @@ import (
 	"github.com/ServiceComb/service-center/pkg/etcdsync"
 	"github.com/ServiceComb/service-center/pkg/util"
 	apt "github.com/ServiceComb/service-center/server/core"
+	"github.com/ServiceComb/service-center/server/core/backend"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/server/infra/registry"
 	"github.com/ServiceComb/service-center/server/service"
 	"testing"
 	"time"
@@ -89,7 +90,7 @@ func TestServiceController_CreateDependenciesForMircServices(t *testing.T) {
 			ServiceName: "service0",
 			Version:     "1.0.0",
 		})
-		resp, err := registry.GetRegisterCenter().Do(getContext(),
+		resp, err := backend.Registry().Do(getContext(),
 			registry.GET, registry.WithStrKey(key))
 		if err != nil {
 			util.Logger().Errorf(err, "%s failed.", key)

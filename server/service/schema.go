@@ -18,11 +18,12 @@ import (
 	"errors"
 	"github.com/ServiceComb/service-center/pkg/util"
 	apt "github.com/ServiceComb/service-center/server/core"
+	"github.com/ServiceComb/service-center/server/core/backend"
+	"github.com/ServiceComb/service-center/server/core/backend/store"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/server/core/registry"
-	"github.com/ServiceComb/service-center/server/core/registry/store"
 	scerr "github.com/ServiceComb/service-center/server/error"
 	"github.com/ServiceComb/service-center/server/infra/quota"
+	"github.com/ServiceComb/service-center/server/infra/registry"
 	"github.com/ServiceComb/service-center/server/plugin"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/version"
@@ -115,7 +116,7 @@ func (s *ServiceController) DeleteSchema(ctx context.Context, request *pb.Delete
 			Response: pb.CreateResponse(scerr.ErrSchemaNotExists, "Schema info does not exist."),
 		}, nil
 	}
-	_, errDo := registry.GetRegisterCenter().Do(ctx, registry.DEL, registry.WithStrKey(key))
+	_, errDo := backend.Registry().Do(ctx, registry.DEL, registry.WithStrKey(key))
 	if errDo != nil {
 		util.Logger().Errorf(errDo, "delete schema failded, serviceId %s, schemaId %s: delete schema from etcd faild.", request.ServiceId, request.SchemaId)
 		return &pb.DeleteSchemaResponse{
@@ -298,7 +299,7 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 	}
 
 	if len(pluginOps) != 0 {
-		return registry.BatchCommit(ctx, pluginOps), true
+		return backend.BatchCommit(ctx, pluginOps), true
 	}
 	return nil, false
 }
@@ -329,7 +330,7 @@ func GetSchemasFromDataBase(ctx context.Context, domainProject string, serviceId
 	schemas := []*pb.Schema{}
 	key := apt.GenerateServiceSchemaKey(domainProject, serviceId, "")
 	util.Logger().Debugf("key is %s", key)
-	resp, err := registry.GetRegisterCenter().Do(ctx,
+	resp, err := backend.Registry().Do(ctx,
 		registry.GET,
 		registry.WithPrefix(),
 		registry.WithStrKey(key))
@@ -503,7 +504,7 @@ func (s *ServiceController) modifySchema(ctx context.Context, serviceId string, 
 		pluginOps = append(pluginOps, opts...)
 	}
 	if len(pluginOps) != 0 {
-		_, err = registry.GetRegisterCenter().Txn(ctx, pluginOps)
+		_, err = backend.Registry().Txn(ctx, pluginOps)
 		if err != nil {
 			util.Logger().Errorf(err, "commit update schema failed")
 			return err, true

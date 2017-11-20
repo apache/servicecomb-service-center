@@ -20,11 +20,12 @@ import (
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/core"
 	apt "github.com/ServiceComb/service-center/server/core"
+	"github.com/ServiceComb/service-center/server/core/backend"
+	"github.com/ServiceComb/service-center/server/core/backend/store"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/server/core/registry"
-	"github.com/ServiceComb/service-center/server/core/registry/store"
 	scerr "github.com/ServiceComb/service-center/server/error"
 	"github.com/ServiceComb/service-center/server/infra/quota"
+	"github.com/ServiceComb/service-center/server/infra/registry"
 	"github.com/ServiceComb/service-center/server/mux"
 	"github.com/ServiceComb/service-center/server/plugin"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
@@ -138,7 +139,7 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 			registry.OpCmp(registry.CmpVer(aliasBytes), registry.CMP_EQUAL, 0))
 	}
 
-	resp, err := registry.GetRegisterCenter().TxnWithCmp(ctx, opts, uniqueCmpOpts, nil)
+	resp, err := backend.Registry().TxnWithCmp(ctx, opts, uniqueCmpOpts, nil)
 	if err != nil {
 		util.Logger().Errorf(err, "create microservice failed, %s: commit data into etcd failed. operator: %s",
 			serviceFlag, remoteIP)
@@ -299,7 +300,7 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 		return pb.CreateResponse(scerr.ErrInternal, "Delete all instances failed for service."), err
 	}
 
-	err = registry.BatchCommit(ctx, opts)
+	err = backend.BatchCommit(ctx, opts)
 	if err != nil {
 		util.Logger().Errorf(err, "delete microservice failed, serviceId is %s: commit data into etcd failed.", ServiceId)
 		return pb.CreateResponse(scerr.ErrUnavailableBackend, "Commit operations failed."), nil
@@ -514,7 +515,7 @@ func (s *ServiceController) UpdateProperties(ctx context.Context, in *pb.UpdateS
 	}
 
 	// Set key file
-	_, err = registry.GetRegisterCenter().Do(ctx,
+	_, err = backend.Registry().Do(ctx,
 		registry.PUT,
 		registry.WithStrKey(key),
 		registry.WithValue(data))

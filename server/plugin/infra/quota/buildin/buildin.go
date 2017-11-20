@@ -17,7 +17,7 @@ import (
 	"fmt"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/core"
-	"github.com/ServiceComb/service-center/server/core/registry/store"
+	"github.com/ServiceComb/service-center/server/core/backend/store"
 	"github.com/ServiceComb/service-center/server/infra/quota"
 	"github.com/ServiceComb/service-center/server/infra/registry"
 	mgr "github.com/ServiceComb/service-center/server/plugin"

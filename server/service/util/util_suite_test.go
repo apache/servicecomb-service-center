@@ -13,10 +13,12 @@
 //limitations under the License.
 package util_test
 
+import _ "github.com/ServiceComb/service-center/server/plugin/infra/registry/buildin"
+
 import (
 	"fmt"
 	"github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/server/infra/registry"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	. "github.com/onsi/ginkgo"
