@@ -167,6 +167,8 @@ func (governService *GovernService) GetAllServicesInfo(w http.ResponseWriter, r 
 	ctx := r.Context()
 	optsStr := r.URL.Query().Get("options")
 	request.Options = strings.Split(optsStr, ",")
+	request.AppId = r.URL.Query().Get("appId")
+	request.ServiceName = r.URL.Query().Get("serviceName")
 	resp, _ := core.GovernServiceAPI.GetServicesInfo(ctx, request)
 
 	respInternal := resp.Response
