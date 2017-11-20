@@ -383,7 +383,7 @@ func GetEndpointsRootKey(domainProject string) string {
 	}, "/")
 }
 
-func GenerateEndpointsIndexKey(domainProject string, region string, availableZone string, nodeIP string, endpoints string) string {
+func GenerateEndpointsIndexKey(domainProject, region, availableZone, nodeIP, endpoints string) string {
 	return util.StringJoin([]string{
 		GetEndpointsRootKey(domainProject),
 		region,
