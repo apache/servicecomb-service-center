@@ -50,7 +50,7 @@ var errors = map[int32]string{
 	ErrUnavailableBackend: "Registry service is unavailable",
 	ErrUnavailableQuota:   "Quota service is unavailable",
 
-	ErrEnpointsMoreBelongToOtherService: "endpoint more belong to other service",
+	ErrEndpointAlreadyExists: "endpoint more belong to other service",
 }
 
 const (
@@ -82,7 +82,7 @@ const (
 
 	ErrPermissionDeny int32 = 400024
 
-	ErrEnpointsMoreBelongToOtherService int32 = 400025
+	ErrEndpointAlreadyExists int32 = 400025
 
 	ErrNotEnoughQuota   int32 = 400100
 	ErrUnavailableQuota int32 = 500101

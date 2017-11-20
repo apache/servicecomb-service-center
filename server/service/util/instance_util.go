@@ -126,13 +126,25 @@ func CheckEndPoints(ctx context.Context, in *pb.RegisterInstanceRequest) (string
 	if resp.Count == 0 {
 		return "", instanceEndpointsIndexKey, nil
 	}
-	value := util.BytesToStringWithNoCopy(resp.Kvs[0].Value)
-	splitedValue := strings.Split(value, "/")
-	serviceIdInner := splitedValue[0]
-	if in.Instance.ServiceId != serviceIdInner {
-		return splitedValue[1], "", fmt.Errorf("endpoints more belong to service %s", serviceIdInner)
+	endpointValue := ParseEndpointValue(resp.Kvs[0].Value)
+	if in.Instance.ServiceId != endpointValue.serviceId {
+		return endpointValue.instanceId, "", fmt.Errorf("endpoints more belong to service %s", endpointValue.serviceId)
 	}
-	return splitedValue[1], "", nil
+	return endpointValue.instanceId, "", nil
+}
+
+type EndpointValue struct {
+	serviceId string
+	instanceId string
+}
+
+func ParseEndpointValue(value []byte) EndpointValue {
+	endpointValue := EndpointValue{}
+	tmp := util.BytesToStringWithNoCopy(value)
+	splitedTmp := strings.Split(tmp, "/")
+	endpointValue.serviceId = splitedTmp[0]
+	endpointValue.instanceId = splitedTmp[1]
+	return endpointValue
 }
 
 func isContain(endpoints []string, endpoint string) bool {
