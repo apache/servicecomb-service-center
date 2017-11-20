@@ -16,23 +16,26 @@ package unlimit
 import (
 	apt "github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/server/infra/quota"
+	mgr "github.com/ServiceComb/service-center/server/plugin"
 	"github.com/astaxie/beego"
 	"golang.org/x/net/context"
 )
 
-type Unlimit struct {
-}
-
-func New() quota.QuotaManager {
-	return &Unlimit{}
-}
 func init() {
+	mgr.RegisterPlugin(mgr.Plugin{mgr.STATIC, mgr.QUOTA, "unlimit", New})
+
 	quataType := beego.AppConfig.DefaultString("quota_plugin", "")
 	if quataType != "unlimit" {
 		return
 	}
 	apt.MicroServiceValidator.GetRule("Schemas").Length = 0
-	quota.QuotaPlugins["unlimit"] = New
+}
+
+type Unlimit struct {
+}
+
+func New() mgr.PluginInstance {
+	return &Unlimit{}
 }
 
 func (q *Unlimit) Apply4Quotas(ctx context.Context, quotaType quota.ResourceType, domainProject string, serviceId string, quotaSize int16) (quota.QuotaReporter, bool, error) {

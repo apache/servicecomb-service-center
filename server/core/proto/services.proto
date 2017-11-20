@@ -174,12 +174,7 @@ message ServicePath {
 }
 
 message Response {
-    enum Code {
-        UNKNOWN = 0;
-        SUCCESS = 1;
-        FAIL = 2;
-    }
-    Code code = 1;
+    int32 code = 1;
     string message = 2;
 }
 

@@ -14,7 +14,6 @@
 package quota
 
 import (
-	"github.com/astaxie/beego"
 	"golang.org/x/net/context"
 )
 
@@ -28,25 +27,13 @@ type QuotaReporter interface {
 	Close()
 }
 
-var QuataType string
-
-func init() {
-	QuataType = beego.AppConfig.DefaultString("quota_plugin", "buildin")
-}
-
-var QuotaPlugins map[string]func() QuotaManager
-
 const (
 	RULEQuotaType ResourceType = iota
 	SCHEMAQuotaType
 	TAGQuotaType
 	MicroServiceQuotaType
 	MicroServiceInstanceQuotaType
-	endType
+	typeEnd
 )
 
 type ResourceType int
-
-func init() {
-	QuotaPlugins = make(map[string]func() QuotaManager)
-}

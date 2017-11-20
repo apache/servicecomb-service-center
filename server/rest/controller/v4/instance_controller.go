@@ -19,6 +19,7 @@ import (
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
+	scerr "github.com/ServiceComb/service-center/server/error"
 	"github.com/ServiceComb/service-center/server/rest/controller"
 	"io/ioutil"
 	"net/http"
@@ -46,7 +47,7 @@ func (this *MicroServiceInstanceService) RegisterInstance(w http.ResponseWriter,
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		util.Logger().Error("register instance failed, body err", err)
-		controller.WriteText(http.StatusBadRequest, err.Error(), w)
+		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
 
@@ -54,7 +55,7 @@ func (this *MicroServiceInstanceService) RegisterInstance(w http.ResponseWriter,
 	err = json.Unmarshal(message, request)
 	if err != nil {
 		util.Logger().Error("register instance failed, Unmarshal error", err)
-		controller.WriteText(http.StatusInternalServerError, "Unmarshal error", w)
+		controller.WriteError(w, scerr.ErrInternal, "Unmarshal error")
 		return
 	}
 	if request.GetInstance() != nil {
@@ -64,7 +65,7 @@ func (this *MicroServiceInstanceService) RegisterInstance(w http.ResponseWriter,
 	resp, err := core.InstanceAPI.Register(r.Context(), request)
 	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteJsonResponse(respInternal, resp, err, w)
+	controller.WriteResponse(w, respInternal, resp)
 }
 
 //TODO 什么样的服务允许更新服务心跳，只能是本服务才可以更新自己，如何屏蔽其他服务伪造的心跳更新？
@@ -73,15 +74,15 @@ func (this *MicroServiceInstanceService) Heartbeat(w http.ResponseWriter, r *htt
 		ServiceId:  r.URL.Query().Get(":serviceId"),
 		InstanceId: r.URL.Query().Get(":instanceId"),
 	}
-	resp, err := core.InstanceAPI.Heartbeat(r.Context(), request)
-	controller.WriteTextResponse(resp.GetResponse(), err, "", w)
+	resp, _ := core.InstanceAPI.Heartbeat(r.Context(), request)
+	controller.WriteResponse(w, resp.GetResponse(), nil)
 }
 
 func (this *MicroServiceInstanceService) HeartbeatSet(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		util.Logger().Error("register instance failed, body err", err)
-		controller.WriteText(http.StatusBadRequest, err.Error(), w)
+		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
 
@@ -89,26 +90,18 @@ func (this *MicroServiceInstanceService) HeartbeatSet(w http.ResponseWriter, r *
 	err = json.Unmarshal(message, request)
 	if err != nil {
 		util.Logger().Error("register instance failed, Unmarshal error", err)
-		controller.WriteText(http.StatusInternalServerError, "Unmarshal error", w)
+		controller.WriteError(w, scerr.ErrInternal, "Unmarshal error")
 		return
 	}
 	resp, _ := core.InstanceAPI.HeartbeatSet(r.Context(), request)
 
 	if resp.Response.Code == pb.Response_SUCCESS {
-		controller.WriteText(http.StatusOK, "", w)
+		controller.WriteJsonObject(w, nil)
 		return
 	}
-	if resp.Instances == nil || len(resp.Instances) == 0 {
-		controller.WriteText(http.StatusBadRequest, resp.Response.Message, w)
-		return
-	}
+	respInternal := resp.Response
 	resp.Response = nil
-	objJson, err := json.Marshal(resp)
-	if err != nil {
-		controller.WriteText(http.StatusInternalServerError, err.Error(), w)
-		return
-	}
-	controller.WriteJson(http.StatusBadRequest, objJson, w)
+	controller.WriteResponse(w, respInternal, resp)
 	return
 }
 
@@ -117,8 +110,8 @@ func (this *MicroServiceInstanceService) UnregisterInstance(w http.ResponseWrite
 		ServiceId:  r.URL.Query().Get(":serviceId"),
 		InstanceId: r.URL.Query().Get(":instanceId"),
 	}
-	resp, err := core.InstanceAPI.Unregister(r.Context(), request)
-	controller.WriteTextResponse(resp.GetResponse(), err, "", w)
+	resp, _ := core.InstanceAPI.Unregister(r.Context(), request)
+	controller.WriteResponse(w, resp.GetResponse(), nil)
 }
 
 func (this *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r *http.Request) {
@@ -129,7 +122,7 @@ func (this *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r 
 	}
 	noCache := r.URL.Query().Get("noCache")
 	if noCache != "0" && noCache != "1" && strings.TrimSpace(noCache) != "" {
-		controller.WriteText(http.StatusBadRequest, "parameter noCache must be 1 or 0", w)
+		controller.WriteError(w, scerr.ErrInvalidParams, "parameter noCache must be 1 or 0")
 		return
 	}
 	request := &pb.FindInstancesRequest{
@@ -141,17 +134,10 @@ func (this *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r 
 		Tags:              ids,
 		NoCache:           noCache == "1",
 	}
-	resp, err := core.InstanceAPI.Find(r.Context(), request)
-	if err != nil {
-		controller.WriteText(http.StatusInternalServerError, err.Error(), w)
-		return
-	}
-	if resp.GetResponse().Code != pb.Response_SUCCESS {
-		controller.WriteText(http.StatusBadRequest, resp.GetResponse().Message, w)
-		return
-	}
+	resp, _ := core.InstanceAPI.Find(r.Context(), request)
+	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteJsonObject(http.StatusOK, resp, w)
+	controller.WriteResponse(w, respInternal, resp)
 }
 
 func (this *MicroServiceInstanceService) GetOneInstance(w http.ResponseWriter, r *http.Request) {
@@ -162,7 +148,7 @@ func (this *MicroServiceInstanceService) GetOneInstance(w http.ResponseWriter, r
 	}
 	noCache := r.URL.Query().Get("noCache")
 	if noCache != "0" && noCache != "1" && strings.TrimSpace(noCache) != "" {
-		controller.WriteText(http.StatusBadRequest, "parameter noCache must be 1 or 0", w)
+		controller.WriteError(w, scerr.ErrInvalidParams, "parameter noCache must be 1 or 0")
 		return
 	}
 	request := &pb.GetOneInstanceRequest{
@@ -173,17 +159,10 @@ func (this *MicroServiceInstanceService) GetOneInstance(w http.ResponseWriter, r
 		Env:                r.URL.Query().Get("env"),
 		NoCache:            noCache == "1",
 	}
-	resp, err := core.InstanceAPI.GetOneInstance(r.Context(), request)
-	if err != nil {
-		controller.WriteText(http.StatusInternalServerError, err.Error(), w)
-		return
-	}
-	if resp.GetResponse().Code != pb.Response_SUCCESS {
-		controller.WriteText(http.StatusBadRequest, resp.GetResponse().Message, w)
-		return
-	}
+	resp, _ := core.InstanceAPI.GetOneInstance(r.Context(), request)
+	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteJsonObject(http.StatusOK, resp, w)
+	controller.WriteResponse(w, respInternal, resp)
 }
 
 func (this *MicroServiceInstanceService) GetInstances(w http.ResponseWriter, r *http.Request) {
@@ -194,7 +173,7 @@ func (this *MicroServiceInstanceService) GetInstances(w http.ResponseWriter, r *
 	}
 	noCache := r.URL.Query().Get("noCache")
 	if noCache != "0" && noCache != "1" && strings.TrimSpace(noCache) != "" {
-		controller.WriteText(http.StatusBadRequest, "parameter noCache must be 1 or 0", w)
+		controller.WriteError(w, scerr.ErrInvalidParams, "parameter noCache must be 1 or 0")
 		return
 	}
 	request := &pb.GetInstancesRequest{
@@ -204,17 +183,10 @@ func (this *MicroServiceInstanceService) GetInstances(w http.ResponseWriter, r *
 		Env:               r.URL.Query().Get("env"),
 		NoCache:           noCache == "1",
 	}
-	resp, err := core.InstanceAPI.GetInstances(r.Context(), request)
-	if err != nil {
-		controller.WriteText(http.StatusInternalServerError, err.Error(), w)
-		return
-	}
-	if resp.GetResponse().Code != pb.Response_SUCCESS {
-		controller.WriteText(http.StatusBadRequest, resp.GetResponse().Message, w)
-		return
-	}
+	resp, _ := core.InstanceAPI.GetInstances(r.Context(), request)
+	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteJsonObject(http.StatusOK, resp, w)
+	controller.WriteResponse(w, respInternal, resp)
 }
 
 func (this *MicroServiceInstanceService) UpdateStatus(w http.ResponseWriter, r *http.Request) {
@@ -224,15 +196,15 @@ func (this *MicroServiceInstanceService) UpdateStatus(w http.ResponseWriter, r *
 		InstanceId: r.URL.Query().Get(":instanceId"),
 		Status:     status,
 	}
-	resp, err := core.InstanceAPI.UpdateStatus(r.Context(), request)
-	controller.WriteTextResponse(resp.GetResponse(), err, "", w)
+	resp, _ := core.InstanceAPI.UpdateStatus(r.Context(), request)
+	controller.WriteResponse(w, resp.GetResponse(), nil)
 }
 
 func (this *MicroServiceInstanceService) UpdateMetadata(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		util.Logger().Error("body err", err)
-		controller.WriteText(http.StatusBadRequest, err.Error(), w)
+		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
 	request := &pb.UpdateInstancePropsRequest{
@@ -242,9 +214,9 @@ func (this *MicroServiceInstanceService) UpdateMetadata(w http.ResponseWriter, r
 	err = json.Unmarshal(message, request)
 	if err != nil {
 		util.Logger().Error("Unmarshal error", err)
-		controller.WriteText(http.StatusInternalServerError, "Unmarshal error", w)
+		controller.WriteError(w, scerr.ErrInternal, "Unmarshal error")
 		return
 	}
 	resp, err := core.InstanceAPI.UpdateInstanceProperties(r.Context(), request)
-	controller.WriteTextResponse(resp.GetResponse(), err, "", w)
+	controller.WriteResponse(w, resp.GetResponse(), nil)
 }

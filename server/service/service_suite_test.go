@@ -21,6 +21,7 @@ import (
 	_ "github.com/ServiceComb/service-center/server/core/registry"
 	_ "github.com/ServiceComb/service-center/server/core/registry/etcd"
 	_ "github.com/ServiceComb/service-center/server/plugin/infra/quota/buildin"
+	_ "github.com/ServiceComb/service-center/server/plugin/infra/uuid/dynamic"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"

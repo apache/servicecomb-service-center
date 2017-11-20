@@ -39,7 +39,7 @@ var _ = Describe("ServiceController", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respAddRule.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respAddRule, err = serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
 					ServiceId: serviceId,
@@ -53,7 +53,7 @@ var _ = Describe("ServiceController", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respAddRule.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respAddRule, err = serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
 					ServiceId: "notexistservice",
@@ -67,7 +67,7 @@ var _ = Describe("ServiceController", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respAddRule.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respAddRule, err = serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
 					ServiceId: "",
@@ -81,7 +81,7 @@ var _ = Describe("ServiceController", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respAddRule.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 			ruleId := ""
 			It("创建rule", func() {
@@ -160,7 +160,7 @@ var _ = Describe("ServiceController", func() {
 						},
 					})
 					if i == size-1 {
-						Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+						Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 						return
 					}
 					Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
@@ -172,13 +172,13 @@ var _ = Describe("ServiceController", func() {
 					ServiceId: "",
 				})
 				Expect(err).To(BeNil())
-				Expect(respGetRule.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respGetRule.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respGetRule, err = serviceResource.GetRule(getContext(), &pb.GetServiceRulesRequest{
 					ServiceId: "notexist",
 				})
 				Expect(err).To(BeNil())
-				Expect(respGetRule.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respGetRule.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 			It("获取rule", func() {
 				respAddRule, err := serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
@@ -193,7 +193,7 @@ var _ = Describe("ServiceController", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respAddRule.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				//只能有一种ruleType
 				respAddRule, err = serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
@@ -208,7 +208,7 @@ var _ = Describe("ServiceController", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respAddRule.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				fmt.Println("UT===========获取rule")
 				respGetRule, err := serviceResource.GetRule(getContext(), &pb.GetServiceRulesRequest{
@@ -230,7 +230,7 @@ var _ = Describe("ServiceController", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respAddRule.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respAddRule, err = serviceResource.UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
 					ServiceId: "notexistservice",
@@ -243,7 +243,7 @@ var _ = Describe("ServiceController", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respAddRule.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respAddRule, err = serviceResource.UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
 					ServiceId: serviceId,
@@ -256,7 +256,7 @@ var _ = Describe("ServiceController", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respAddRule.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respAddRule, err = serviceResource.UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
 					ServiceId: serviceId,
@@ -269,7 +269,7 @@ var _ = Describe("ServiceController", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respAddRule.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 			It("修改rule", func() {
 				fmt.Println("UT===========修改rule")
@@ -309,7 +309,7 @@ var _ = Describe("ServiceController", func() {
 						Description: "test white update",
 					},
 				})
-				Expect(respAddRule.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respAddRule.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respAddRule, err = serviceResource.UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
 					ServiceId: serviceId,
@@ -321,7 +321,7 @@ var _ = Describe("ServiceController", func() {
 						Description: "test white update",
 					},
 				})
-				Expect(respAddRule.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respAddRule.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("删除rule,参数校验", func() {
@@ -331,14 +331,14 @@ var _ = Describe("ServiceController", func() {
 					RuleIds:   []string{"1000000"},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respAddRule.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respAddRule, err = serviceResource.DeleteRule(getContext(), &pb.DeleteServiceRulesRequest{
 					ServiceId: serviceId,
 					RuleIds:   []string{},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respAddRule.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 			})
 
@@ -365,7 +365,7 @@ var _ = Describe("ServiceController", func() {
 					RuleIds:   []string{ruleId},
 				})
 				//Expect(err).To(BeNil())
-				Expect(respAddRule.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respAddRule.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				fmt.Println("UT===========删除serviceId不存在rule")
 				respAddRule, _ = serviceResource.DeleteRule(getContext(), &pb.DeleteServiceRulesRequest{
@@ -373,7 +373,7 @@ var _ = Describe("ServiceController", func() {
 					RuleIds:   []string{ruleId},
 				})
 				//Expect(err).To(BeNil())
-				Expect(respAddRule.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respAddRule.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 	})

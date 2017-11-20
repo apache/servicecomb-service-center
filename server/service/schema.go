@@ -21,7 +21,9 @@ import (
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
+	scerr "github.com/ServiceComb/service-center/server/error"
 	"github.com/ServiceComb/service-center/server/infra/quota"
+	"github.com/ServiceComb/service-center/server/plugin"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/ServiceComb/service-center/version"
 	"golang.org/x/net/context"
@@ -32,7 +34,7 @@ func (s *ServiceController) GetSchemaInfo(ctx context.Context, in *pb.GetSchemaR
 	if in == nil || len(in.ServiceId) == 0 || len(in.SchemaId) == 0 {
 		util.Logger().Errorf(nil, "get schema failed: invalid params.")
 		return &pb.GetSchemaResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Invalid request path."),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Invalid request path."),
 		}, nil
 	}
 
@@ -40,7 +42,7 @@ func (s *ServiceController) GetSchemaInfo(ctx context.Context, in *pb.GetSchemaR
 	if err != nil {
 		util.Logger().Errorf(nil, "get schema failed, serviceId %s, schemaId %s: invalid params.", in.ServiceId, in.SchemaId)
 		return &pb.GetSchemaResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -51,7 +53,7 @@ func (s *ServiceController) GetSchemaInfo(ctx context.Context, in *pb.GetSchemaR
 	if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId, opts...) {
 		util.Logger().Errorf(nil, "get schema failed, serviceId %s, schemaId %s: service not exist.", in.ServiceId, in.SchemaId)
 		return &pb.GetSchemaResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
@@ -61,13 +63,13 @@ func (s *ServiceController) GetSchemaInfo(ctx context.Context, in *pb.GetSchemaR
 	if errDo != nil {
 		util.Logger().Errorf(errDo, "get schema failed, serviceId %s, schemaId %s: get schema info failed.", in.ServiceId, in.SchemaId)
 		return &pb.GetSchemaResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Get schema info failed."),
+			Response: pb.CreateResponse(scerr.ErrInternal, "Get schema info failed."),
 		}, errDo
 	}
 	if resp.Count == 0 {
 		util.Logger().Errorf(errDo, "get schema failed, serviceId %s, schemaId %s: schema not exists.", in.ServiceId, in.SchemaId)
 		return &pb.GetSchemaResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Do not have this schema info."),
+			Response: pb.CreateResponse(scerr.ErrSchemaNotExists, "Do not have this schema info."),
 		}, nil
 	}
 	return &pb.GetSchemaResponse{
@@ -80,14 +82,14 @@ func (s *ServiceController) DeleteSchema(ctx context.Context, request *pb.Delete
 	if request == nil || len(request.ServiceId) == 0 || len(request.SchemaId) == 0 {
 		util.Logger().Errorf(nil, "delete schema failded: invalid params.")
 		return &pb.DeleteSchemaResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Invalid request path."),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Invalid request path."),
 		}, nil
 	}
 	err := apt.Validate(request)
 	if err != nil {
 		util.Logger().Errorf(err, "delete schema failded, serviceId %s, schemaId %s: invalid params.", request.ServiceId, request.SchemaId)
 		return &pb.DeleteSchemaResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 	domainProject := util.ParseDomainProject(ctx)
@@ -95,7 +97,7 @@ func (s *ServiceController) DeleteSchema(ctx context.Context, request *pb.Delete
 	if !serviceUtil.ServiceExist(ctx, domainProject, request.ServiceId) {
 		util.Logger().Errorf(nil, "delete schema failded, serviceId %s, schemaId %s: service not exist.", request.ServiceId, request.SchemaId)
 		return &pb.DeleteSchemaResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
@@ -104,20 +106,20 @@ func (s *ServiceController) DeleteSchema(ctx context.Context, request *pb.Delete
 	if err != nil {
 		util.Logger().Errorf(err, "delete schema failded, serviceId %s, schemaId %s: get schema failed.", request.ServiceId, request.SchemaId)
 		return &pb.DeleteSchemaResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Schema info does not exist."),
+			Response: pb.CreateResponse(scerr.ErrInternal, "Schema info does not exist."),
 		}, err
 	}
 	if !exist {
 		util.Logger().Errorf(nil, "delete schema failded, serviceId %s, schemaId %s: schema not exist.", request.ServiceId, request.SchemaId)
 		return &pb.DeleteSchemaResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Schema info does not exist."),
+			Response: pb.CreateResponse(scerr.ErrSchemaNotExists, "Schema info does not exist."),
 		}, nil
 	}
 	_, errDo := registry.GetRegisterCenter().Do(ctx, registry.DEL, registry.WithStrKey(key))
 	if errDo != nil {
 		util.Logger().Errorf(errDo, "delete schema failded, serviceId %s, schemaId %s: delete schema from etcd faild.", request.ServiceId, request.SchemaId)
 		return &pb.DeleteSchemaResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Delete schema info failed."),
+			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, "Delete schema info failed."),
 		}, errDo
 	}
 	util.Logger().Infof("delete schema info successfully.%s", request.SchemaId)
@@ -131,7 +133,7 @@ func (s *ServiceController) ModifySchemas(ctx context.Context, request *pb.Modif
 	if err != nil {
 		util.Logger().Errorf(err, "modify schemas failded: invalid params.")
 		return &pb.ModifySchemasResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Invalid request."),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Invalid request."),
 		}, nil
 	}
 	serviceId := request.ServiceId
@@ -142,13 +144,13 @@ func (s *ServiceController) ModifySchemas(ctx context.Context, request *pb.Modif
 	if err != nil {
 		util.Logger().Errorf(err, "modify schemas failded: get service failed. %s", serviceId)
 		return &pb.ModifySchemasResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Invalid request."),
+			Response: pb.CreateResponse(scerr.ErrInternal, "Invalid request."),
 		}, err
 	}
 	if service == nil {
-		util.Logger().Errorf(nil, "modify schemas failded: service not exist. %s", serviceId)
+		util.Logger().Errorf(nil, "modify schemas failded: service does not exist. %s", serviceId)
 		return &pb.ModifySchemasResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Service not exist."),
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
@@ -156,11 +158,11 @@ func (s *ServiceController) ModifySchemas(ctx context.Context, request *pb.Modif
 	if err != nil {
 		if isInnErr {
 			return &pb.ModifySchemasResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
+				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 			}, err
 		}
 		return &pb.ModifySchemasResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrModifySchemaNotAllow, err.Error()),
 		}, nil
 	}
 
@@ -216,7 +218,7 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 
 		quotaSize := len(needAddSchemaList) - len(needDeleteSchemaList)
 		if quotaSize > 0 {
-			_, ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.SCHEMAQuotaType, domainProject, serviceId, int16(quotaSize))
+			_, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.SCHEMAQuotaType, domainProject, serviceId, int16(quotaSize))
 			if err != nil {
 				util.Logger().Errorf(err, "Add schema info failed, check resource num failed, %s", serviceId)
 				return err, true
@@ -243,7 +245,7 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 		}
 		quotaSize := len(needAddSchemaList)
 		if quotaSize > 0 {
-			_, ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.SCHEMAQuotaType, domainProject, serviceId, int16(quotaSize))
+			_, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.SCHEMAQuotaType, domainProject, serviceId, int16(quotaSize))
 			if err != nil {
 				util.Logger().Errorf(err, "Add schema info failed, check resource num failed, %s", serviceId)
 				return err, true
@@ -380,11 +382,11 @@ func (s *ServiceController) ModifySchema(ctx context.Context, request *pb.Modify
 	if err != nil {
 		if !rst {
 			return &pb.ModifySchemaResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
+				Response: pb.CreateResponse(scerr.ErrModifySchemaNotAllow, err.Error()),
 			}, nil
 		}
 		return &pb.ModifySchemaResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Modify schema info failed."),
+			Response: pb.CreateResponse(scerr.ErrInternal, "Modify schema info failed."),
 		}, err
 	}
 	serviceId := request.ServiceId
@@ -400,11 +402,11 @@ func (s *ServiceController) ModifySchema(ctx context.Context, request *pb.Modify
 		util.Logger().Errorf(err, "modify service schema failed")
 		if isInnerErr {
 			return &pb.ModifySchemaResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, "Modify schema info failed."),
+				Response: pb.CreateResponse(scerr.ErrInternal, "Modify schema info failed."),
 			}, err
 		}
 		return &pb.ModifySchemaResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Modify schema info failed."),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Modify schema info failed."),
 		}, nil
 	}
 
@@ -427,7 +429,7 @@ func (s *ServiceController) canModifySchema(ctx context.Context, domainProject s
 		return err, false
 	}
 
-	_, ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.SCHEMAQuotaType, domainProject, serviceId, 1)
+	_, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.SCHEMAQuotaType, domainProject, serviceId, 1)
 	if err != nil {
 		util.Logger().Errorf(err, "Add schema info failed, check resource num failed, %s, %s", serviceId, schemaId)
 		return err, true

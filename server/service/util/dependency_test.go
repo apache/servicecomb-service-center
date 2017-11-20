@@ -181,7 +181,7 @@ func TestBadParamsResponse(t *testing.T) {
 
 func TestParamsChecker(t *testing.T) {
 	p := ParamsChecker(nil, nil)
-	if p == nil || p.Response.Code != proto.Response_FAIL {
+	if p == nil || p.Response.Code == proto.Response_SUCCESS {
 		fmt.Printf(`ParamsChecker invalid failed`)
 		t.FailNow()
 	}
@@ -191,7 +191,7 @@ func TestParamsChecker(t *testing.T) {
 		ServiceName: "b",
 		Version:     "1.0.0",
 	}, nil)
-	if p == nil || p.Response.Code != proto.Response_FAIL {
+	if p == nil || p.Response.Code == proto.Response_SUCCESS {
 		fmt.Printf(`ParamsChecker invalid failed`)
 		t.FailNow()
 	}

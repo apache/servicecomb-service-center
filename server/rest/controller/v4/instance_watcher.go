@@ -18,6 +18,7 @@ import (
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
+	scerr "github.com/ServiceComb/service-center/server/error"
 	"github.com/ServiceComb/service-center/server/rest/controller"
 	"github.com/gorilla/websocket"
 	"net/http"
@@ -46,7 +47,7 @@ func upgrade(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		util.Logger().Error("upgrade failed.", err)
-		controller.WriteText(http.StatusInternalServerError, "Upgrade error", w)
+		controller.WriteError(w, scerr.ErrInternal, "Upgrade error")
 	}
 	return conn, err
 }

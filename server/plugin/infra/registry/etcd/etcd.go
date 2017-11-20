@@ -21,7 +21,8 @@ import (
 	"github.com/ServiceComb/service-center/pkg/rest"
 	"github.com/ServiceComb/service-center/pkg/tlsutil"
 	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/server/infra/registry"
+	mgr "github.com/ServiceComb/service-center/server/plugin"
 	"github.com/astaxie/beego"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
@@ -33,15 +34,13 @@ import (
 )
 
 const (
-	REGISTRY_PLUGIN_ETCD           = "etcd"
 	CONNECT_MANAGER_SERVER_TIMEOUT = 10
 )
 
 var clientTLSConfig *tls.Config
 
 func init() {
-	util.Logger().Infof("etcd plugin init.")
-	registry.RegistryPlugins[REGISTRY_PLUGIN_ETCD] = NewRegistry
+	mgr.RegisterPlugin(mgr.Plugin{mgr.STATIC, mgr.REGISTRY, "etcd", NewRegistry})
 }
 
 type EtcdClient struct {
@@ -467,7 +466,6 @@ func (c *EtcdClient) Watch(ctx context.Context, opts ...registry.PluginOpOption)
 		if op.Prefix && key[len(key)-1] != '/' {
 			key += "/"
 		}
-		util.Logger().Debugf("start to watch key %s", key)
 
 		// 不能设置超时context，内部判断了连接超时和watch超时
 		ws := client.Watch(context.Background(), key, c.toGetRequest(op)...)
@@ -487,41 +485,33 @@ func (c *EtcdClient) Watch(ctx context.Context, opts ...registry.PluginOpOption)
 				if err = resp.Err(); err != nil {
 					return err
 				}
+
 				l := len(resp.Events)
-				pIdx, dIdx := 0, l
-				pResp := &registry.PluginResponse{Action: registry.Put, Succeeded: true}
-				dResp := &registry.PluginResponse{Action: registry.Delete, Succeeded: true}
 				kvs := make([]*mvccpb.KeyValue, l)
+				pIdx, prevAction := 0, mvccpb.PUT
+				pResp := &registry.PluginResponse{Action: registry.Put, Succeeded: true}
+
 				for _, evt := range resp.Events {
-					pResp.Revision = evt.Kv.ModRevision
-					switch evt.Type {
-					case mvccpb.DELETE:
-						dIdx--
-						kv := evt.PrevKv
-						if kv == nil {
-							kv = evt.Kv
+					if prevAction != evt.Type {
+						prevAction = evt.Type
+
+						if pIdx > 0 {
+							err = setResponseAndCallback(pResp, kvs[:pIdx], op.WatchCallback)
+							if err != nil {
+								return
+							}
+							pIdx = 0
 						}
-						kvs[dIdx] = kv
-					default:
-						kvs[pIdx] = evt.Kv
-						pIdx++
 					}
-				}
-				pResp.Count = int64(pIdx)
-				pResp.Kvs = kvs[:pIdx]
 
-				dResp.Revision = pResp.Revision
-				dResp.Count = int64(l) - pResp.Count
-				dResp.Kvs = kvs[dIdx:]
+					pResp.Revision = evt.Kv.ModRevision
+					pResp.Action = setKvsAndConvertAction(kvs, pIdx, evt)
 
-				if pResp.Count > 0 {
-					err = op.WatchCallback("key information changed", pResp)
-					if err != nil {
-						return
-					}
+					pIdx++
 				}
-				if dResp.Count > 0 {
-					err = op.WatchCallback("key information changed", dResp)
+
+				if pIdx > 0 {
+					err = setResponseAndCallback(pResp, kvs[:pIdx], op.WatchCallback)
 					if err != nil {
 						return
 					}
@@ -533,16 +523,42 @@ func (c *EtcdClient) Watch(ctx context.Context, opts ...registry.PluginOpOption)
 	return
 }
 
-func NewRegistry(cfg *registry.Config) registry.Registry {
+func setKvsAndConvertAction(kvs []*mvccpb.KeyValue, pIdx int, evt *clientv3.Event) registry.ActionType {
+	switch evt.Type {
+	case mvccpb.DELETE:
+		kv := evt.PrevKv
+		if kv == nil {
+			kv = evt.Kv
+		}
+		kvs[pIdx] = kv
+		return registry.Delete
+	default:
+		kvs[pIdx] = evt.Kv
+		return registry.Put
+	}
+}
+
+func setResponseAndCallback(pResp *registry.PluginResponse, kvs []*mvccpb.KeyValue, cb registry.WatchCallback) error {
+	pResp.Count = int64(len(kvs))
+	pResp.Kvs = kvs
+
+	err := cb("key information changed", pResp)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func NewRegistry() mgr.PluginInstance {
 	util.Logger().Warnf(nil, "starting service center in proxy mode")
 
 	inst := &EtcdClient{
 		err:   make(chan error, 1),
 		ready: make(chan int),
 	}
-	addrs := strings.Split(cfg.ClusterAddresses, ",")
+	addrs := strings.Split(registry.RegistryConfig().ClusterAddresses, ",")
 
-	if tlsutil.GetClientSSLConfig().SSLEnabled && strings.Index(cfg.ClusterAddresses, "https://") >= 0 {
+	if tlsutil.GetClientSSLConfig().SSLEnabled && strings.Index(registry.RegistryConfig().ClusterAddresses, "https://") >= 0 {
 		var err error
 		// go client tls限制，提供身份证书、不认证服务端、不校验CN
 		clientTLSConfig, err = rest.GetClientTLSConfig(tlsutil.GetClientSSLConfig().VerifyClient, true, false)
@@ -563,7 +579,7 @@ func NewRegistry(cfg *registry.Config) registry.Registry {
 		}
 
 	}
-	refreshManagerClusterInterval := cfg.AutoSyncInterval
+	refreshManagerClusterInterval := registry.RegistryConfig().AutoSyncInterval
 	util.Logger().Debugf("refreshManagerClusterInterval is %d", refreshManagerClusterInterval)
 	client, err := newClient(endpoints, refreshManagerClusterInterval)
 	if err != nil {

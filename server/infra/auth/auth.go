@@ -18,9 +18,3 @@ import "net/http"
 type Auth interface {
 	Identify(r *http.Request) error
 }
-
-var AuthPlugins map[string]func() Auth
-
-func init() {
-	AuthPlugins = make(map[string]func() Auth)
-}

@@ -21,7 +21,8 @@ import (
 	"github.com/ServiceComb/service-center/pkg/rest"
 	"github.com/ServiceComb/service-center/pkg/tlsutil"
 	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/server/infra/registry"
+	mgr "github.com/ServiceComb/service-center/server/plugin"
 	"github.com/astaxie/beego"
 	"github.com/coreos/etcd/embed"
 	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
@@ -38,11 +39,10 @@ import (
 var embedTLSConfig *tls.Config
 
 const START_MANAGER_SERVER_TIMEOUT = 60
-const REGISTRY_PLUGIN_EMBEDED_ETCD = "embeded_etcd"
 
 func init() {
 	util.Logger().Infof("embed etcd plugin init.")
-	registry.RegistryPlugins[REGISTRY_PLUGIN_EMBEDED_ETCD] = getEmbedInstance
+	mgr.RegisterPlugin(mgr.Plugin{mgr.STATIC, mgr.REGISTRY, "embeded_etcd", getEmbedInstance})
 }
 
 type EtcdEmbed struct {
@@ -391,8 +391,7 @@ func (s *EtcdEmbed) Watch(ctx context.Context, opts ...registry.PluginOpOption) 
 			keyBytes = s.getPrefixEndKey(util.StringToBytesWithNoCopy(key))
 		}
 		watchID := ws.Watch(op.Key, keyBytes, op.Revision)
-		// defer ws.Cancel(watchID)
-		util.Logger().Infof("start to watch key %s, id is %d", key, watchID)
+		defer ws.Cancel(watchID)
 
 		responses := ws.Chan()
 		for {
@@ -406,40 +405,31 @@ func (s *EtcdEmbed) Watch(ctx context.Context, opts ...registry.PluginOpOption) 
 				}
 
 				l := len(resp.Events)
-				pIdx, dIdx := 0, l
-				pResp := &registry.PluginResponse{Action: registry.Put, Succeeded: true}
-				dResp := &registry.PluginResponse{Action: registry.Delete, Succeeded: true}
 				kvs := make([]*mvccpb.KeyValue, l)
+				pIdx, prevAction := 0, mvccpb.PUT
+				pResp := &registry.PluginResponse{Action: registry.Put, Succeeded: true}
+
 				for _, evt := range resp.Events {
-					pResp.Revision = evt.Kv.ModRevision
-					switch evt.Type {
-					case mvccpb.DELETE:
-						dIdx--
-						kv := evt.PrevKv
-						if kv == nil {
-							kv = evt.Kv
+					if prevAction != evt.Type {
+						prevAction = evt.Type
+
+						if pIdx > 0 {
+							err = setResponseAndCallback(pResp, kvs[:pIdx], op.WatchCallback)
+							if err != nil {
+								return
+							}
+							pIdx = 0
 						}
-						kvs[dIdx] = kv
-					default:
-						kvs[pIdx] = evt.Kv
-						pIdx++
 					}
-				}
-				pResp.Count = int64(pIdx)
-				pResp.Kvs = kvs[:pIdx]
 
-				dResp.Revision = pResp.Revision
-				dResp.Count = int64(l) - pResp.Count
-				dResp.Kvs = kvs[dIdx:]
+					pResp.Revision = evt.Kv.ModRevision
+					pResp.Action = setKvsAndConvertAction(kvs, pIdx, &evt)
 
-				if pResp.Count > 0 {
-					err = op.WatchCallback("key information changed", pResp)
-					if err != nil {
-						return
-					}
+					pIdx++
 				}
-				if dResp.Count > 0 {
-					err = op.WatchCallback("key information changed", dResp)
+
+				if pIdx > 0 {
+					err = setResponseAndCallback(pResp, kvs[:pIdx], op.WatchCallback)
 					if err != nil {
 						return
 					}
@@ -451,7 +441,33 @@ func (s *EtcdEmbed) Watch(ctx context.Context, opts ...registry.PluginOpOption) 
 	return
 }
 
-func getEmbedInstance(cfg *registry.Config) registry.Registry {
+func setKvsAndConvertAction(kvs []*mvccpb.KeyValue, pIdx int, evt *mvccpb.Event) registry.ActionType {
+	switch evt.Type {
+	case mvccpb.DELETE:
+		kv := evt.PrevKv
+		if kv == nil {
+			kv = evt.Kv
+		}
+		kvs[pIdx] = kv
+		return registry.Delete
+	default:
+		kvs[pIdx] = evt.Kv
+		return registry.Put
+	}
+}
+
+func setResponseAndCallback(pResp *registry.PluginResponse, kvs []*mvccpb.KeyValue, cb registry.WatchCallback) error {
+	pResp.Count = int64(len(kvs))
+	pResp.Kvs = kvs
+
+	err := cb("key information changed", pResp)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func getEmbedInstance() mgr.PluginInstance {
 	util.Logger().Warnf(nil, "starting service center in embed mode")
 
 	hostName := beego.AppConfig.DefaultString("manager_name", util.GetLocalHostname())
@@ -479,7 +495,7 @@ func getEmbedInstance(cfg *registry.Config) registry.Registry {
 
 	// 集群支持
 	serverCfg.Name = hostName
-	serverCfg.InitialCluster = cfg.ClusterAddresses
+	serverCfg.InitialCluster = registry.RegistryConfig().ClusterAddresses
 
 	// 管理端口
 	urls, err := parseURL(addrs)

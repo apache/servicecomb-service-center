@@ -11,10 +11,27 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package security
+package plain
 
-type Cipher interface {
-	Encrypt(src string) (string, error)
+import (
+	mgr "github.com/ServiceComb/service-center/server/plugin"
+)
 
-	Decrypt(src string) (string, error)
+func init() {
+	mgr.RegisterPlugin(mgr.Plugin{mgr.STATIC, mgr.CIPHER, "buildin", New})
+}
+
+func New() mgr.PluginInstance {
+	return &DefaultCipher{}
+}
+
+type DefaultCipher struct {
+}
+
+func (c *DefaultCipher) Encrypt(src string) (string, error) {
+	return src, nil
+}
+
+func (c *DefaultCipher) Decrypt(src string) (string, error) {
+	return src, nil
 }

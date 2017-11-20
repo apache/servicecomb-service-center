@@ -207,7 +207,7 @@ var _ = Describe("MicroService Api Test", func() {
 					resp, _ := scclient.Do(req)
 					respbody, _ := ioutil.ReadAll(resp.Body)
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
-					Expect(string(respbody)).To(Equal("{}"))
+					Expect(strings.TrimSpace(string(respbody))).To(Equal("{}"))
 				})
 			})
 

@@ -14,20 +14,28 @@
 package bootstrap
 
 import _ "github.com/ServiceComb/service-center/server/core" // initialize
-// cipher
-import _ "github.com/ServiceComb/service-center/server/plugin/infra/security/plain"
-
-// registry
-import _ "github.com/ServiceComb/service-center/server/core/registry/etcd"
-import _ "github.com/ServiceComb/service-center/server/core/registry/embededetcd"
 
 // rest
 import _ "github.com/ServiceComb/service-center/server/rest/controller/v3"
 import _ "github.com/ServiceComb/service-center/server/rest/controller/v4"
 
+// registry
+import _ "github.com/ServiceComb/service-center/server/plugin/infra/registry/etcd"
+import _ "github.com/ServiceComb/service-center/server/plugin/infra/registry/embededetcd"
+
+// cipher
+import _ "github.com/ServiceComb/service-center/server/plugin/infra/security/buildin"
+
 // quota
 import _ "github.com/ServiceComb/service-center/server/plugin/infra/quota/buildin"
 import _ "github.com/ServiceComb/service-center/server/plugin/infra/quota/unlimit"
+
+// auth
+import _ "github.com/ServiceComb/service-center/server/plugin/infra/auth/buildin"
+import _ "github.com/ServiceComb/service-center/server/plugin/infra/auth/dynamic"
+
+// uuid
+import _ "github.com/ServiceComb/service-center/server/plugin/infra/uuid/dynamic"
 
 import (
 	"github.com/ServiceComb/service-center/pkg/util"

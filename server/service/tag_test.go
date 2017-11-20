@@ -91,7 +91,7 @@ var _ = Describe("ServiceController", func() {
 						"a": "test",
 					},
 				})
-				Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respAddTags.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respAddTags, _ = serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
 					ServiceId: "noServiceTest",
@@ -99,13 +99,13 @@ var _ = Describe("ServiceController", func() {
 						"a": "test",
 					},
 				})
-				Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respAddTags.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respAddTags, _ = serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
 					ServiceId: serviceId,
 					Tags:      map[string]string{},
 				})
-				Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respAddTags.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respAddTags, _ = serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
 					ServiceId: TOO_LONG_SERVICEID,
@@ -113,7 +113,7 @@ var _ = Describe("ServiceController", func() {
 						"a": "b",
 					},
 				})
-				Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respAddTags.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respAddTags, _ = serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
 					ServiceId: serviceId,
@@ -121,7 +121,7 @@ var _ = Describe("ServiceController", func() {
 						"": "value",
 					},
 				})
-				Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respAddTags.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 			It("size of tags checker for one service", func() {
 				size := buildin.TAG_MAX_NUM_FOR_ONESERVICE + 2
@@ -133,23 +133,23 @@ var _ = Describe("ServiceController", func() {
 					ServiceId: serviceId,
 					Tags:      tags,
 				})
-				Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respAddTags.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 			It("获取tag，参数校验", func() {
 				resp, _ := serviceResource.GetTags(getContext(), &pb.GetServiceTagsRequest{
 					ServiceId: "noThisService",
 				})
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, _ = serviceResource.GetTags(getContext(), &pb.GetServiceTagsRequest{
 					ServiceId: "",
 				})
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, _ = serviceResource.GetTags(getContext(), &pb.GetServiceTagsRequest{
 					ServiceId: TOO_LONG_SERVICEID,
 				})
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("获取tag", func() {
@@ -168,7 +168,7 @@ var _ = Describe("ServiceController", func() {
 					Value:     "update",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = serviceResource.UpdateTag(getContext(), &pb.UpdateServiceTagRequest{
 					ServiceId: "noneservice",
@@ -176,7 +176,7 @@ var _ = Describe("ServiceController", func() {
 					Value:     "update",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = serviceResource.UpdateTag(getContext(), &pb.UpdateServiceTagRequest{
 					ServiceId: TOO_LONG_SERVICEID,
@@ -184,7 +184,7 @@ var _ = Describe("ServiceController", func() {
 					Value:     "update",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("修改tag", func() {
@@ -203,7 +203,7 @@ var _ = Describe("ServiceController", func() {
 					Value:     "update",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = serviceResource.UpdateTag(getContext(), &pb.UpdateServiceTagRequest{
 					ServiceId: TOO_LONG_SERVICEID,
@@ -211,7 +211,7 @@ var _ = Describe("ServiceController", func() {
 					Value:     "update",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("删除tag,参数校验", func() {
@@ -221,7 +221,7 @@ var _ = Describe("ServiceController", func() {
 					Keys:      []string{"a", "b"},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respAddTags.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				fmt.Println("UT===========删除tag,参数校验，serviceId为空")
 				respAddTags, err = serviceResource.DeleteTags(getContext(), &pb.DeleteServiceTagsRequest{
@@ -229,28 +229,28 @@ var _ = Describe("ServiceController", func() {
 					Keys:      []string{"a", "b"},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respAddTags.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respAddTags, err = serviceResource.DeleteTags(getContext(), &pb.DeleteServiceTagsRequest{
 					ServiceId: serviceId2,
 					Keys:      []string{"a", "b"},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respAddTags.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respAddTags, err = serviceResource.DeleteTags(getContext(), &pb.DeleteServiceTagsRequest{
 					ServiceId: serviceId,
 					Keys:      []string{"c"},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respAddTags.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respAddTags, err = serviceResource.DeleteTags(getContext(), &pb.DeleteServiceTagsRequest{
 					ServiceId: TOO_LONG_SERVICEID,
 					Keys:      []string{""},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respAddTags.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("删除tag", func() {

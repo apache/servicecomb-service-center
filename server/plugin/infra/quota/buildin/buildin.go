@@ -17,23 +17,12 @@ import (
 	"fmt"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/core"
-	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
 	"github.com/ServiceComb/service-center/server/infra/quota"
+	"github.com/ServiceComb/service-center/server/infra/registry"
+	mgr "github.com/ServiceComb/service-center/server/plugin"
 	"golang.org/x/net/context"
 )
-
-type BuildInQuota struct {
-}
-
-func New() quota.QuotaManager {
-	return &BuildInQuota{}
-}
-func init() {
-	core.SchemaIdRule.Length = SCHEMA_NUM_MAX_FOR_ONESERVICE
-	core.TagRule.Length = TAG_MAX_NUM_FOR_ONESERVICE
-	quota.QuotaPlugins["buildin"] = New
-}
 
 const (
 	SERVICE_MAX_NUMBER            = 12000
@@ -42,6 +31,20 @@ const (
 	SCHEMA_NUM_MAX_FOR_ONESERVICE = 1000
 	TAG_MAX_NUM_FOR_ONESERVICE    = 100
 )
+
+func init() {
+	core.SchemaIdRule.Length = SCHEMA_NUM_MAX_FOR_ONESERVICE
+	core.TagRule.Length = TAG_MAX_NUM_FOR_ONESERVICE
+
+	mgr.RegisterPlugin(mgr.Plugin{mgr.STATIC, mgr.QUOTA, "buildin", New})
+}
+
+func New() mgr.PluginInstance {
+	return &BuildInQuota{}
+}
+
+type BuildInQuota struct {
+}
 
 //申请配额sourceType serviceinstance servicetype
 func (q *BuildInQuota) Apply4Quotas(ctx context.Context, quotaType quota.ResourceType, domainProject string, serviceId string, quotaSize int16) (quota.QuotaReporter, bool, error) {

@@ -221,7 +221,7 @@ func (s *NotifyService) Start() {
 	// 错误subscriber清理
 	s.AddSubscriber(NewNotifyServiceHealthChecker())
 
-	util.Logger().Infof("notify service is started with config %s", s.Config)
+	util.Logger().Debugf("notify service is started with config %s", s.Config)
 
 	for i := NotifyType(0); i != typeEnd; i++ {
 		go s.publish2Subscriber(i)
@@ -252,7 +252,7 @@ func (s *NotifyService) Stop() {
 
 	close(s.err)
 
-	util.Logger().Info("notify service stopped.")
+	util.Logger().Debug("notify service stopped.")
 }
 
 func GetNotifyService() *NotifyService {

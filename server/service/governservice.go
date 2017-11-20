@@ -19,6 +19,7 @@ import (
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/ServiceComb/service-center/server/core/registry/store"
+	scerr "github.com/ServiceComb/service-center/server/error"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"golang.org/x/net/context"
 	"strings"
@@ -51,7 +52,7 @@ func (governServiceController *GovernServiceController) GetServicesInfo(ctx cont
 		st, err = statistics(ctx, opts...)
 		if err != nil {
 			return &pb.GetServicesInfoResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, "Statistics failed."),
+				Response: pb.CreateResponse(scerr.ErrInternal, "Statistics failed."),
 			}, err
 		}
 		if len(optionMap) == 1 {
@@ -67,7 +68,7 @@ func (governServiceController *GovernServiceController) GetServicesInfo(ctx cont
 	if err != nil {
 		util.Logger().Errorf(err, "Get all services for govern service faild.")
 		return &pb.GetServicesInfoResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Get all service failed."),
+			Response: pb.CreateResponse(scerr.ErrInternal, "Get all service failed."),
 		}, err
 	}
 
@@ -80,7 +81,7 @@ func (governServiceController *GovernServiceController) GetServicesInfo(ctx cont
 		serviceDetail, err := getServiceDetailUtil(ctx, options, domainProject, service.ServiceId, service, opts...)
 		if err != nil {
 			return &pb.GetServicesInfoResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, "Get one service detail failed."),
+				Response: pb.CreateResponse(scerr.ErrInternal, "Get one service detail failed."),
 			}, err
 		}
 		serviceDetail.MicroSerivce = service
@@ -100,7 +101,7 @@ func (governServiceController *GovernServiceController) GetServiceDetail(ctx con
 
 	if len(in.ServiceId) == 0 {
 		return &pb.GetServiceDetailResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Invalid requtest for getting service detail."),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Invalid requtest for getting service detail."),
 		}, nil
 	}
 
@@ -109,12 +110,12 @@ func (governServiceController *GovernServiceController) GetServiceDetail(ctx con
 	service, err := serviceUtil.GetService(ctx, domainProject, in.ServiceId, opts...)
 	if service == nil {
 		return &pb.GetServiceDetailResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 	if err != nil {
 		return &pb.GetServiceDetailResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Get service failed."),
+			Response: pb.CreateResponse(scerr.ErrInternal, "Get service failed."),
 		}, err
 	}
 
@@ -122,14 +123,14 @@ func (governServiceController *GovernServiceController) GetServiceDetail(ctx con
 	if err != nil {
 		util.Logger().Errorf(err, "Get service all version fialed.")
 		return &pb.GetServiceDetailResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Get service detail failed."),
+			Response: pb.CreateResponse(scerr.ErrInternal, "Get all versions of the service failed."),
 		}, err
 	}
 
 	serviceInfo, err := getServiceDetailUtil(ctx, options, domainProject, in.ServiceId, service, opts...)
 	if err != nil {
 		return &pb.GetServiceDetailResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Get service detail failed."),
+			Response: pb.CreateResponse(scerr.ErrInternal, "Get service detail failed."),
 		}, err
 	}
 

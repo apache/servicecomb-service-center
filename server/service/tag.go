@@ -19,7 +19,9 @@ import (
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
+	scerr "github.com/ServiceComb/service-center/server/error"
 	"github.com/ServiceComb/service-center/server/infra/quota"
+	"github.com/ServiceComb/service-center/server/plugin"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"golang.org/x/net/context"
 )
@@ -28,7 +30,7 @@ func (s *ServiceController) AddTags(ctx context.Context, in *pb.AddServiceTagsRe
 	if in == nil || len(in.ServiceId) == 0 || len(in.GetTags()) == 0 {
 		util.Logger().Errorf(nil, "add service tags failed: invalid parameters.")
 		return &pb.AddServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
 		}, nil
 	}
 
@@ -36,7 +38,7 @@ func (s *ServiceController) AddTags(ctx context.Context, in *pb.AddServiceTagsRe
 	if err != nil {
 		util.Logger().Errorf(err, "add service tags failed, serviceId %s, tags %v: invalid parameters.", in.ServiceId, in.Tags)
 		return &pb.AddServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -45,22 +47,22 @@ func (s *ServiceController) AddTags(ctx context.Context, in *pb.AddServiceTagsRe
 	if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId) {
 		util.Logger().Errorf(nil, "add service tags failed, serviceId %s, tags %v: service not exist.", in.ServiceId, in.Tags)
 		return &pb.AddServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
 	addTags := in.GetTags()
-	_, ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.TAGQuotaType, domainProject, in.ServiceId, int16(len(addTags)))
+	_, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.TAGQuotaType, domainProject, in.ServiceId, int16(len(addTags)))
 	if err != nil {
 		util.Logger().Errorf(err, "add tag info failed, check resource num failed, %s", in.ServiceId)
 		return &pb.AddServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Modify schema info failed, check resource num failed."),
+			Response: pb.CreateResponse(scerr.ErrUnavailableQuota, "Modify schema info failed, check resource num failed."),
 		}, err
 	}
 	if !ok {
 		util.Logger().Errorf(err, "add tag info failed, reach the max size of tag, %s", in.ServiceId)
 		return &pb.AddServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "reach the max size of tag."),
+			Response: pb.CreateResponse(scerr.ErrNotEnoughQuota, "reach the max size of tag."),
 		}, nil
 	}
 
@@ -68,7 +70,7 @@ func (s *ServiceController) AddTags(ctx context.Context, in *pb.AddServiceTagsRe
 	if err != nil {
 		util.Logger().Errorf(err, "add service tags failed, serviceId %s, tags %v: get existed tag failed.", in.ServiceId, in.Tags)
 		return &pb.AddServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Get tags failed."),
+			Response: pb.CreateResponse(scerr.ErrInternal, "Get tags failed."),
 		}, err
 	}
 	if len(dataTags) > 0 {
@@ -83,7 +85,7 @@ func (s *ServiceController) AddTags(ctx context.Context, in *pb.AddServiceTagsRe
 	if err != nil {
 		util.Logger().Errorf(err, "add service tags failed, serviceId %s, tags %v: commit tag data into etcd failed.", in.ServiceId, in.Tags)
 		return &pb.AddServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Commit operations failed."),
+			Response: pb.CreateResponse(scerr.ErrInternal, "Commit operations failed."),
 		}, err
 	}
 
@@ -97,7 +99,7 @@ func (s *ServiceController) UpdateTag(ctx context.Context, in *pb.UpdateServiceT
 	if in == nil || len(in.ServiceId) == 0 || len(in.Key) == 0 || len(in.Value) == 0 {
 		util.Logger().Errorf(nil, "update service tag failed: invalid parameters.")
 		return &pb.UpdateServiceTagResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
 		}, nil
 	}
 	tagFlag := util.StringJoin([]string{in.Key, in.Value}, "/")
@@ -105,7 +107,7 @@ func (s *ServiceController) UpdateTag(ctx context.Context, in *pb.UpdateServiceT
 	if err != nil {
 		util.Logger().Errorf(err, "update service tag failed, serviceId %s, tag %s: invalid params.", in.ServiceId, tagFlag)
 		return &pb.UpdateServiceTagResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -114,7 +116,7 @@ func (s *ServiceController) UpdateTag(ctx context.Context, in *pb.UpdateServiceT
 	if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId) {
 		util.Logger().Errorf(err, "update service tag failed, serviceId %s, tag %s: service not exist.", in.ServiceId, tagFlag)
 		return &pb.UpdateServiceTagResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
@@ -122,15 +124,15 @@ func (s *ServiceController) UpdateTag(ctx context.Context, in *pb.UpdateServiceT
 	if err != nil {
 		util.Logger().Errorf(err, "update service tag failed, serviceId %s, tag %s: get tag failed.", in.ServiceId, tagFlag)
 		return &pb.UpdateServiceTagResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Get tags for service failed."),
+			Response: pb.CreateResponse(scerr.ErrInternal, "Get tags for service failed."),
 		}, err
 	}
 	//check tag 是否存在
 	if _, ok := tags[in.Key]; !ok {
 		util.Logger().Errorf(nil, "update service tag failed, serviceId %s, tag %s: tag not exist,please add first.", in.ServiceId, tagFlag)
 		return &pb.UpdateServiceTagResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Update tag for service failed for update tags not exist, please add first."),
-		}, err
+			Response: pb.CreateResponse(scerr.ErrTagNotExists, "Update tag for service failed for update tags not exist, please add first."),
+		}, nil
 	}
 	tags[in.Key] = in.Value
 
@@ -139,7 +141,7 @@ func (s *ServiceController) UpdateTag(ctx context.Context, in *pb.UpdateServiceT
 	if err != nil {
 		util.Logger().Errorf(err, "update service tag failed, serviceId %s, tag %s: adding service tags failed.", in.ServiceId, tagFlag)
 		return &pb.UpdateServiceTagResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Commit into etcd failed."),
+			Response: pb.CreateResponse(scerr.ErrInternal, "Commit into etcd failed."),
 		}, err
 	}
 
@@ -153,14 +155,14 @@ func (s *ServiceController) DeleteTags(ctx context.Context, in *pb.DeleteService
 	if in == nil || len(in.ServiceId) == 0 || len(in.Keys) == 0 {
 		util.Logger().Errorf(nil, "delete service tags failed: invalid parameters.")
 		return &pb.DeleteServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
 		}, nil
 	}
 	err := apt.Validate(in)
 	if err != nil {
 		util.Logger().Errorf(err, "delete service tags failed, serviceId %s, tags %v: invalid params.", in.ServiceId, in.Keys)
 		return &pb.DeleteServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -169,7 +171,7 @@ func (s *ServiceController) DeleteTags(ctx context.Context, in *pb.DeleteService
 	if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId) {
 		util.Logger().Errorf(nil, "delete service tags failed, serviceId %s, tags %v: service not exist.", in.ServiceId, in.Keys)
 		return &pb.DeleteServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
@@ -177,14 +179,14 @@ func (s *ServiceController) DeleteTags(ctx context.Context, in *pb.DeleteService
 	if err != nil {
 		util.Logger().Errorf(err, "delete service tags failed, serviceId %s, tags %v: query service failed.", in.ServiceId, in.Keys)
 		return &pb.DeleteServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Get service tags file failed."),
+			Response: pb.CreateResponse(scerr.ErrInternal, "Get service tags file failed."),
 		}, err
 	}
 	for _, key := range in.Keys {
 		if _, ok := tags[key]; !ok {
 			util.Logger().Errorf(nil, "delete service tags failed, serviceId %s, tags %v: tag %s not exist.", in.ServiceId, in.Keys, key)
 			return &pb.DeleteServiceTagsResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, "Delete tags failed for this key "+key+" does not exist."),
+				Response: pb.CreateResponse(scerr.ErrTagNotExists, "Delete tags failed for this key "+key+" does not exist."),
 			}, nil
 		}
 		delete(tags, key)
@@ -195,7 +197,7 @@ func (s *ServiceController) DeleteTags(ctx context.Context, in *pb.DeleteService
 	if err != nil {
 		util.Logger().Errorf(err, "delete service tags failed, serviceId %s, tags %v: marshall service tag failed.", in.ServiceId, in.Keys)
 		return &pb.DeleteServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Marshal service tags file failed."),
+			Response: pb.CreateResponse(scerr.ErrInternal, "Marshal service tags file failed."),
 		}, err
 	}
 
@@ -209,7 +211,7 @@ func (s *ServiceController) DeleteTags(ctx context.Context, in *pb.DeleteService
 	if err != nil {
 		util.Logger().Errorf(err, "delete service tags failed, serviceId %s, tags %v: commit tag data into etcd failed.", in.ServiceId, in.Keys)
 		return &pb.DeleteServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Commit operations failed."),
+			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, "Commit operations failed."),
 		}, err
 	}
 
@@ -223,14 +225,14 @@ func (s *ServiceController) GetTags(ctx context.Context, in *pb.GetServiceTagsRe
 	if in == nil || len(in.ServiceId) == 0 {
 		util.Logger().Errorf(nil, "get service tags failed: invalid params.")
 		return &pb.GetServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
 		}, nil
 	}
 	err := apt.Validate(in)
 	if err != nil {
 		util.Logger().Errorf(err, "get service tags failed, serviceId %s: invalid parameters.", in.ServiceId)
 		return &pb.GetServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -241,7 +243,7 @@ func (s *ServiceController) GetTags(ctx context.Context, in *pb.GetServiceTagsRe
 	if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId, opts...) {
 		util.Logger().Errorf(err, "get service tags failed, serviceId %s: service not exist.", in.ServiceId)
 		return &pb.GetServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
@@ -249,7 +251,7 @@ func (s *ServiceController) GetTags(ctx context.Context, in *pb.GetServiceTagsRe
 	if err != nil {
 		util.Logger().Errorf(err, "get service tags failed, serviceId %s: get tag failed.", in.ServiceId)
 		return &pb.GetServiceTagsResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Get tags for service failed."),
+			Response: pb.CreateResponse(scerr.ErrInternal, "Get tags for service failed."),
 		}, err
 	}
 

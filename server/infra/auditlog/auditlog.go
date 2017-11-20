@@ -11,28 +11,10 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package plain
+package auditlog
 
-import (
-	"github.com/ServiceComb/service-center/server/infra/security"
-)
+import "net/http"
 
-type DefaultCipher struct {
-}
-
-func init() {
-	security.CipherPlugins["default"] = New
-
-}
-func New() security.Cipher {
-
-	return &DefaultCipher{}
-}
-
-func (c *DefaultCipher) Encrypt(src string) (string, error) {
-	return src, nil
-}
-
-func (c *DefaultCipher) Decrypt(src string) (string, error) {
-	return src, nil
+type AuditLogger interface {
+	Record(r *http.Request, responseHeaders http.Header)
 }

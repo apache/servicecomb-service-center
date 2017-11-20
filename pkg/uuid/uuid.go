@@ -18,6 +18,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"net"
+	"strings"
 	"sync"
 	"time"
 	"unsafe"
@@ -164,4 +165,8 @@ func NewV1() UUID {
 	u.SetLayout()
 
 	return u
+}
+
+func GenerateUuid() string {
+	return strings.Replace(NewV1().String(), string(DASH), "", -1)
 }

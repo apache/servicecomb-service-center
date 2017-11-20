@@ -18,11 +18,13 @@ import (
 	"fmt"
 	errorsEx "github.com/ServiceComb/service-center/pkg/errors"
 	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/ServiceComb/service-center/pkg/uuid"
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/core/registry"
+	scerr "github.com/ServiceComb/service-center/server/error"
 	"github.com/ServiceComb/service-center/server/infra/quota"
-	"github.com/ServiceComb/service-center/server/plugin/dynamic"
+	"github.com/ServiceComb/service-center/server/plugin"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"golang.org/x/net/context"
 	"strconv"
@@ -107,7 +109,7 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 	if in == nil || len(in.ServiceId) == 0 || len(in.GetRules()) == 0 {
 		util.Logger().Errorf(nil, "add rule failed: invalid parameters.")
 		return &pb.AddServiceRulesResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
 		}, nil
 	}
 
@@ -117,20 +119,20 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 	if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId) {
 		util.Logger().Errorf(nil, "add rule failed, serviceId is %s: service not exist.", in.ServiceId)
 		return &pb.AddServiceRulesResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Service does not exist."),
 		}, nil
 	}
-	_, ok, err := quota.QuotaPlugins[quota.QuataType]().Apply4Quotas(ctx, quota.RULEQuotaType, domainProject, in.ServiceId, int16(len(in.Rules)))
+	_, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.RULEQuotaType, domainProject, in.ServiceId, int16(len(in.Rules)))
 	if err != nil {
 		util.Logger().Errorf(err, "check can apply resource failed.%s", in.ServiceId)
 		return &pb.AddServiceRulesResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrUnavailableQuota, err.Error()),
 		}, err
 	}
 	if !ok {
 		util.Logger().Errorf(err, "no size to add tag, max size is 100 for one servivce.%s", in.ServiceId)
 		return &pb.AddServiceRulesResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "no size to add tag, max size is 100 for one servivce"),
+			Response: pb.CreateResponse(scerr.ErrNotEnoughQuota, "no size to add tag, max size is 100 for one servivce"),
 		}, nil
 	}
 
@@ -139,8 +141,8 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 	util.Logger().Debugf("ruleType is %s", ruleType)
 	if err != nil {
 		return &pb.AddServiceRulesResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
-		}, nil
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
 	}
 	ruleIds := []string{}
 	for _, rule := range in.Rules {
@@ -148,7 +150,7 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 		if err != nil {
 			util.Logger().Errorf(err, "add rule failed, serviceId is %s: invalid rule.", in.ServiceId)
 			return &pb.AddServiceRulesResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
+				Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 			}, nil
 		}
 		//黑白名单只能存在一种，黑名单 or 白名单
@@ -158,7 +160,7 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 			if ruleType != rule.RuleType {
 				util.Logger().Errorf(nil, "add rule failed, serviceId is %s:can only exist one type, BLACK or WHITE.", in.ServiceId)
 				return &pb.AddServiceRulesResponse{
-					Response: pb.CreateResponse(pb.Response_FAIL, "Service can only contain one rule type, BLACK or WHITE."),
+					Response: pb.CreateResponse(scerr.ErrBlackAndWhiteRule, "Service can only contain one rule type, BLACK or WHITE."),
 				}, nil
 			}
 		}
@@ -172,7 +174,7 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 		// 产生全局rule id
 		timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 		ruleAdd := &pb.ServiceRule{
-			RuleId:       dynamic.GenerateUuid(),
+			RuleId:       uuid.GenerateUuid(),
 			RuleType:     rule.RuleType,
 			Attribute:    rule.Attribute,
 			Pattern:      rule.Pattern,
@@ -191,7 +193,7 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 		if err != nil {
 			util.Logger().Errorf(err, "add rule failed, serviceId is %s: marshal rule failed.", in.ServiceId)
 			return &pb.AddServiceRulesResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, "Service rule file marshal error."),
+				Response: pb.CreateResponse(scerr.ErrInternal, "Service rule file marshal error."),
 			}, err
 		}
 
@@ -208,7 +210,7 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 	if err != nil {
 		util.Logger().Errorf(err, "add rule failed, serviceId is %s:commit date into etcd failed.", in.ServiceId)
 		return &pb.AddServiceRulesResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Commit operations failed."),
+			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, "Commit operations failed."),
 		}, err
 	}
 
@@ -223,7 +225,7 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 	if in == nil || in.GetRule() == nil || len(in.ServiceId) == 0 || len(in.RuleId) == 0 {
 		util.Logger().Errorf(nil, "update rule failed: invalid parameters.")
 		return &pb.UpdateServiceRuleResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
 		}, nil
 	}
 
@@ -233,14 +235,14 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 	if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId) {
 		util.Logger().Errorf(nil, "update rule failed, serviceId is %s, ruleId is %s: service not exist.", in.ServiceId, in.RuleId)
 		return &pb.UpdateServiceRuleResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 	err := apt.Validate(in.Rule)
 	if err != nil {
 		util.Logger().Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: invalid service rule.", in.ServiceId, in.RuleId)
 		return &pb.UpdateServiceRuleResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -249,13 +251,13 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 	if err != nil {
 		util.Logger().Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: get rule type failed.", in.ServiceId, in.RuleId)
 		return &pb.UpdateServiceRuleResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 	if ruleNum >= 1 && ruleType != in.Rule.RuleType {
 		util.Logger().Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: rule type can exist one type, BLACK or WHITE.rule type is %s", in.ServiceId, in.RuleId, in.Rule.RuleType)
 		return &pb.UpdateServiceRuleResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Exist multiple rules,can not change rule type. Rule type is "+ruleType),
+			Response: pb.CreateResponse(scerr.ErrModifyRuleNotAllow, "Exist multiple rules,can not change rule type. Rule type is "+ruleType),
 		}, nil
 	}
 
@@ -263,13 +265,13 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 	if err != nil {
 		util.Logger().Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: query service rule failed.", in.ServiceId, in.RuleId)
 		return &pb.UpdateServiceRuleResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Get service rule file failed."),
+			Response: pb.CreateResponse(scerr.ErrInternal, "Get service rule file failed."),
 		}, err
 	}
 	if rule == nil {
 		util.Logger().Errorf(err, "update rule failed, serviceId is %s, ruleId is %s:this rule does not exist,can't update.", in.ServiceId, in.RuleId)
 		return &pb.UpdateServiceRuleResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "This rule does not exist."),
+			Response: pb.CreateResponse(scerr.ErrRuleNotExists, "This rule does not exist."),
 		}, nil
 	}
 
@@ -294,7 +296,7 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 	if err != nil {
 		util.Logger().Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: marshal service rule failed.", in.ServiceId, in.RuleId)
 		return &pb.UpdateServiceRuleResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Service rule file marshal error."),
+			Response: pb.CreateResponse(scerr.ErrInternal, "Service rule file marshal error."),
 		}, err
 	}
 	opts := []registry.PluginOp{}
@@ -312,7 +314,7 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 	if err != nil {
 		util.Logger().Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: commit date into etcd failed.", in.ServiceId, in.RuleId)
 		return &pb.UpdateServiceRuleResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Commit operations failed."),
+			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, "Commit operations failed."),
 		}, err
 	}
 
@@ -326,7 +328,7 @@ func (s *ServiceController) GetRule(ctx context.Context, in *pb.GetServiceRulesR
 	if in == nil || len(in.ServiceId) == 0 {
 		util.Logger().Errorf(nil, "get service rule failed, serviceId is %s: invalid params.", in.ServiceId)
 		return &pb.GetServiceRulesResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
 		}, nil
 	}
 
@@ -338,16 +340,16 @@ func (s *ServiceController) GetRule(ctx context.Context, in *pb.GetServiceRulesR
 	if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId, opts...) {
 		util.Logger().Errorf(nil, "get service rule failed, serviceId is %s: service not exist.", in.ServiceId)
 		return &pb.GetServiceRulesResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
 	rules, err := serviceUtil.GetRulesUtil(ctx, domainProject, in.ServiceId, opts...)
 	if err != nil {
-		util.Logger().Errorf(nil, "get service rule failed, serviceId is %s: get rule failed.", in.ServiceId)
+		util.Logger().Errorf(err, "get service rule failed, serviceId is %s: get rule failed.", in.ServiceId)
 		return &pb.GetServiceRulesResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Get service rules failed."),
-		}, nil
+			Response: pb.CreateResponse(scerr.ErrInternal, "Get service rules failed."),
+		}, err
 	}
 
 	return &pb.GetServiceRulesResponse{
@@ -360,7 +362,7 @@ func (s *ServiceController) DeleteRule(ctx context.Context, in *pb.DeleteService
 	if in == nil || len(in.ServiceId) == 0 {
 		util.Logger().Errorf(nil, "delete service rule failed: invalid parameters.")
 		return &pb.DeleteServiceRulesResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Request format invalid."),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
 		}, nil
 	}
 
@@ -369,7 +371,7 @@ func (s *ServiceController) DeleteRule(ctx context.Context, in *pb.DeleteService
 	if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId) {
 		util.Logger().Errorf(nil, "delete service rule failed, serviceId is %s, rule is %v: service not exist.", in.ServiceId, in.RuleIds)
 		return &pb.DeleteServiceRulesResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Service does not exist."),
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
@@ -383,13 +385,13 @@ func (s *ServiceController) DeleteRule(ctx context.Context, in *pb.DeleteService
 		if err != nil {
 			util.Logger().Errorf(err, "delete service rule failed, serviceId is %s, rule is %v: get rule of ruleId %s failed.", in.ServiceId, in.RuleIds, ruleId)
 			return &pb.DeleteServiceRulesResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, err.Error()),
+				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 			}, err
 		}
 		if data == nil {
 			util.Logger().Errorf(nil, "delete service rule failed, serviceId is %s, rule is %v: ruleId %s not exist.", in.ServiceId, in.RuleIds, ruleId)
 			return &pb.DeleteServiceRulesResponse{
-				Response: pb.CreateResponse(pb.Response_FAIL, "This rule does not exist."),
+				Response: pb.CreateResponse(scerr.ErrRuleNotExists, "This rule does not exist."),
 			}, nil
 		}
 		indexKey = apt.GenerateRuleIndexKey(domainProject, in.ServiceId, data.Attribute, data.Pattern)
@@ -400,14 +402,14 @@ func (s *ServiceController) DeleteRule(ctx context.Context, in *pb.DeleteService
 	if len(opts) <= 0 {
 		util.Logger().Errorf(nil, "delete service rule failed, serviceId is %s, rule is %v: rule has been deleted.", in.ServiceId, in.RuleIds)
 		return &pb.DeleteServiceRulesResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "No service rule has been deleted."),
+			Response: pb.CreateResponse(scerr.ErrRuleNotExists, "No service rule has been deleted."),
 		}, nil
 	}
 	_, err := registry.GetRegisterCenter().Txn(ctx, opts)
 	if err != nil {
 		util.Logger().Errorf(err, "delete service rule failed, serviceId is %s, rule is %v: commit data into etcd failed.", in.ServiceId, in.RuleIds)
 		return &pb.DeleteServiceRulesResponse{
-			Response: pb.CreateResponse(pb.Response_FAIL, "Commit operations failed."),
+			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, "Commit operations failed."),
 		}, err
 	}
 
