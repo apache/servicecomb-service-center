@@ -35,8 +35,6 @@ const (
 	REGISTRY_DEFAULT_LEASE_RETRYTIMES      int32 = 3
 
 	IS_SC_SELF            = "sc_self"
-	DEFAULT_REGION        = "default"
-	DEFAULT_AVAILABLEZONE = "default"
 )
 
 func init() {
