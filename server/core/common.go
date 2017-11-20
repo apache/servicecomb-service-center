@@ -36,18 +36,18 @@ var (
 	HealthCheckInfoValidator      validate.Validator
 	MicroServiceKeyValidator      validate.Validator
 	DataCenterInfoValidator       validate.Validator
-	GetMSExistsReqValidator     validate.Validator
-	GetSchemaExistsReqValidator validate.Validator
-	GetServiceReqValidator      validate.Validator
-	GetSchemaReqValidator       validate.Validator
-	DependencyMSValidator       validate.Validator
-	ProviderMsValidator         validate.Validator
-	MSDependencyValidator       validate.Validator
-	TagReqValidator             validate.Validator
-	FindInstanceReqValidator    validate.Validator
-	GetInstanceValidator        validate.Validator
-	SchemasValidor              validate.Validator
-	SchemaValidor               validate.Validator
+	GetMSExistsReqValidator       validate.Validator
+	GetSchemaExistsReqValidator   validate.Validator
+	GetServiceReqValidator        validate.Validator
+	GetSchemaReqValidator         validate.Validator
+	DependencyMSValidator         validate.Validator
+	ProviderMsValidator           validate.Validator
+	MSDependencyValidator         validate.Validator
+	TagReqValidator               validate.Validator
+	FindInstanceReqValidator      validate.Validator
+	GetInstanceValidator          validate.Validator
+	SchemasValidor                validate.Validator
+	SchemaValidor                 validate.Validator
 
 	SchemaIdRule *validate.ValidateRule
 	SchemasRule  *validate.ValidateRule
@@ -60,7 +60,7 @@ func init() {
 	serviceNameForFindRegex, _ := regexp.Compile(`^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.:]*[a-zA-Z0-9]$`)
 	//name模糊规则: name, *
 	nameFuzzyRegex, _ := regexp.Compile(`^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]*[a-zA-Z0-9]$|^\*$`)
-	VersionRegex, _ = regexp.Compile(`^[0-9]+(\.[0-9]+)*$`)
+	VersionRegex, _ = regexp.Compile(`^[0-9]+(\.[0-9]+){0,2}$`)
 	// version模糊规则: 1.0, 1.0+, 1.0-2.0, latest
 	versionFuzzyRegex, _ := regexp.Compile(`^[0-9]*$|^[0-9]+(\.[0-9]+)*\+{0,1}$|^[0-9]+(\.[0-9]+)*-[0-9]+(\.[0-9]+)*$|^latest$`)
 	pathRegex, _ := regexp.Compile(`^[A-Za-z0-9.,?'\\/+&amp;%$#=~_\-@{}]*$`)
@@ -117,7 +117,7 @@ func init() {
 	SchemasValidor.AddRule("ServiceId", ServiceIdRule)
 	SchemasValidor.AddSub("Schemas", &SchemaValidor)
 	SchemaValidor.AddRule("SchemaId", SchemaIdRule)
-	SchemaSummaryRegex , _ := regexp.Compile(`(a-zA-Z0-9)*`)
+	SchemaSummaryRegex, _ := regexp.Compile(`(a-zA-Z0-9)*`)
 	SchemaValidor.AddRule("Summary", &validate.ValidateRule{Min: 1, Max: 512, Regexp: SchemaSummaryRegex})
 	SchemaValidor.AddRule("Schema", &validate.ValidateRule{Min: 1})
 

@@ -84,7 +84,7 @@ func TestInstanceExist(t *testing.T) {
 }
 
 func TestCheckEndPoints(t *testing.T) {
-	_, err := CheckEndPoints(context.Background(), &proto.RegisterInstanceRequest{
+	_, _, err := CheckEndPoints(context.Background(), &proto.RegisterInstanceRequest{
 		Instance: &proto.MicroServiceInstance{
 			ServiceId: "a",
 		},
