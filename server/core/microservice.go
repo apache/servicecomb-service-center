@@ -128,15 +128,9 @@ func HeartbeatRequest() *pb.HeartbeatRequest {
 
 func GetRegionAndAvailableZone(in *pb.DataCenterInfo) (region string, availableZone string) {
 	if in == nil {
-		return DEFAULT_REGION, DEFAULT_AVAILABLEZONE
+		return "", ""
 	}
 	region = in.Region
-	if region == "" {
-		region = DEFAULT_REGION
-	}
 	availableZone = in.AvailableZone
-	if availableZone == "" {
-		availableZone = DEFAULT_AVAILABLEZONE
-	}
 	return
 }

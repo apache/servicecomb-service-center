@@ -82,6 +82,11 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 			oldInstanceId, endpointsIndexKey,  err = serviceUtil.CheckEndPoints(ctx, in)
 			if err != nil {
 				util.Logger().Errorf(err, "register instance failed, service %s, operator %s: check endpoints failed.", instanceFlag, remoteIP)
+				if oldInstanceId != "" {
+					return &pb.RegisterInstanceResponse{
+						Response: pb.CreateResponse(scerr.ErrEnpointsMoreBelongToOtherService, err.Error()),
+					}, err
+				}
 				return &pb.RegisterInstanceResponse{
 					Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 				}, err

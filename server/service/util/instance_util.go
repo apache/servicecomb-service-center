@@ -29,6 +29,7 @@ import (
 	"strings"
 )
 
+const NODEIP  = "nodeIP"
 func GetLeaseId(ctx context.Context, domainProject string, serviceId string, instanceId string, opts ...registry.PluginOpOption) (int64, error) {
 	opts = append(opts,
 		registry.WithStrKey(apt.GenerateInstanceLeaseKey(domainProject, serviceId, instanceId)))
@@ -112,10 +113,13 @@ func CheckEndPoints(ctx context.Context, in *pb.RegisterInstanceRequest) (string
 	sort.Strings(endpoints)
 	endpointsJoin := util.StringJoin(endpoints, "/")
 	region, availableZone := apt.GetRegionAndAvailableZone(in.Instance.DataCenterInfo)
-	instanceEndpointsIndexKey := apt.GenerateEndpointsIndexKey(domainProject, region, availableZone, endpointsJoin)
+	nodeIP := ""
+	if value, ok := in.Instance.Properties[NODEIP]; ok {
+		nodeIP = value
+	}
+	instanceEndpointsIndexKey := apt.GenerateEndpointsIndexKey(domainProject, region, availableZone, nodeIP, endpointsJoin)
 	resp, err := store.Store().Endpoints().Search(ctx,
-		registry.WithStrKey(instanceEndpointsIndexKey),
-		registry.WithPrefix())
+		registry.WithStrKey(instanceEndpointsIndexKey))
 	if err != nil {
 		return "", "", err
 	}
@@ -126,7 +130,7 @@ func CheckEndPoints(ctx context.Context, in *pb.RegisterInstanceRequest) (string
 	splitedValue := strings.Split(value, "/")
 	serviceIdInner := splitedValue[0]
 	if in.Instance.ServiceId != serviceIdInner {
-		return "", "", fmt.Errorf("endpoints more exist for service %s", serviceIdInner)
+		return splitedValue[1], "", fmt.Errorf("endpoints more belong to service %s", serviceIdInner)
 	}
 	return splitedValue[1], "", nil
 }
