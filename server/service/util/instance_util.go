@@ -112,7 +112,7 @@ func CheckEndPoints(ctx context.Context, in *pb.RegisterInstanceRequest) (string
 	sort.Strings(endpoints)
 	endpointsJoin := util.StringJoin(endpoints, "/")
 	region, availableZone := apt.GetRegionAndAvailableZone(in.Instance.DataCenterInfo)
-	instanceEndpointsIndexKey := apt.GetEndpointsIndexKey(domainProject, region, availableZone, endpointsJoin)
+	instanceEndpointsIndexKey := apt.GenerateEndpointsIndexKey(domainProject, region, availableZone, endpointsJoin)
 	resp, err := store.Store().Endpoints().Search(ctx,
 		registry.WithStrKey(instanceEndpointsIndexKey),
 		registry.WithPrefix())

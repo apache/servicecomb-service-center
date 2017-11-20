@@ -374,7 +374,7 @@ func GenerateProjectKey(domain, project string) string {
 	}, "/")
 }
 
-func GenerateEndpointsRootKey(domainProject string) string {
+func GetEndpointsRootKey(domainProject string) string {
 	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_INSTANCE_KEY,
@@ -383,9 +383,9 @@ func GenerateEndpointsRootKey(domainProject string) string {
 	}, "/")
 }
 
-func GetEndpointsIndexKey(domainProject string, region string, availableZone string, endpoints string) string {
+func GenerateEndpointsIndexKey(domainProject string, region string, availableZone string, endpoints string) string {
 	return util.StringJoin([]string{
-		GenerateEndpointsRootKey(domainProject),
+		GetEndpointsRootKey(domainProject),
 		region,
 		availableZone,
 		endpoints,
