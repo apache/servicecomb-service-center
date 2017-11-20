@@ -111,6 +111,8 @@ message Statistics {
 message GetServicesInfoRequest {
     repeated string options = 1;
     bool noCache = 2;
+    string appId = 3;
+    string serviceName = 4;
 }
 
 message GetServicesInfoResponse {

@@ -78,6 +78,15 @@ func (governServiceController *GovernServiceController) GetServicesInfo(ctx cont
 		if apt.Service.ServiceId == service.ServiceId {
 			continue
 		}
+		if len(in.AppId) > 0 {
+			if in.AppId != service.AppId {
+				continue
+			}
+			if len(in.ServiceName) > 0 && in.ServiceName != service.ServiceName {
+				continue
+			}
+		}
+
 		serviceDetail, err := getServiceDetailUtil(ctx, options, domainProject, service.ServiceId, service, opts...)
 		if err != nil {
 			return &pb.GetServicesInfoResponse{
