@@ -18,9 +18,3 @@ type Cipher interface {
 
 	Decrypt(src string) (string, error)
 }
-
-var CipherPlugins map[string]func() Cipher
-
-func init() {
-	CipherPlugins = make(map[string]func() Cipher)
-}

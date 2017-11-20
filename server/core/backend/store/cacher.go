@@ -15,8 +15,8 @@ package store
 
 import (
 	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/ServiceComb/service-center/server/core/backend"
 	"github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/server/core/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"sync"
@@ -193,14 +193,13 @@ func (c *KvCacher) doList(listOps *ListOptions) error {
 	c.lastRev = c.lw.Revision()
 	c.sync(c.filter(c.lastRev, kvs))
 
-	util.LogNilOrWarnf(start, "finish to cache key %s, %d items, rev: %d", c.Cfg.Key, len(kvs), c.lastRev)
+	util.LogDebugOrWarnf(start, "finish to cache key %s, %d items, rev: %d", c.Cfg.Key, len(kvs), c.lastRev)
 
 	return nil
 }
 
 func (c *KvCacher) doWatch(listOps *ListOptions) error {
 	watcher := c.lw.Watch(listOps)
-	util.Logger().Debugf("finish to new watcher, key %s, start rev: %d+1", c.Cfg.Key, c.lastRev)
 	return c.handleWatcher(watcher)
 }
 
@@ -482,7 +481,7 @@ func (c *KvCacher) onKvEvents(evts []*KvEvent) {
 
 func (c *KvCacher) run() {
 	c.goroute.Do(func(stopCh <-chan struct{}) {
-		util.Logger().Infof("start to list and watch %s", c.Cfg)
+		util.Logger().Debugf("start to list and watch %s", c.Cfg)
 		ctx, cancel := context.WithCancel(context.Background())
 		c.goroute.Do(func(stopCh <-chan struct{}) {
 			defer cancel()
@@ -520,8 +519,6 @@ func (c *KvCacher) Stop() {
 	c.goroute.Close(true)
 
 	util.SafeCloseChan(c.ready)
-
-	util.Logger().Debugf("cacher is stopped, %s", c.Cfg)
 }
 
 func (c *KvCacher) Ready() <-chan struct{} {
@@ -548,7 +545,7 @@ func NewKvCacher(opts ...KvCacherCfgOption) Cacher {
 		Cfg:   cfg,
 		ready: make(chan struct{}),
 		lw: ListWatcher{
-			Client: registry.GetRegisterCenter(),
+			Client: backend.Registry(),
 			Key:    cfg.Key,
 		},
 		goroute: util.NewGo(make(chan struct{})),

@@ -34,8 +34,8 @@ const (
 	REGISTRY_DEFAULT_LEASE_RENEWALINTERVAL int32 = 30
 	REGISTRY_DEFAULT_LEASE_RETRYTIMES      int32 = 3
 
-	IS_SC_SELF = "sc_self"
-	DEFAULT_REGION = "default"
+	IS_SC_SELF            = "sc_self"
+	DEFAULT_REGION        = "default"
 	DEFAULT_AVAILABLEZONE = "default"
 )
 
@@ -126,7 +126,7 @@ func HeartbeatRequest() *pb.HeartbeatRequest {
 	}
 }
 
-func GetRegionAndAvailableZone(in *pb.DataCenterInfo) (region string, availableZone string){
+func GetRegionAndAvailableZone(in *pb.DataCenterInfo) (region string, availableZone string) {
 	if in == nil {
 		return DEFAULT_REGION, DEFAULT_AVAILABLEZONE
 	}

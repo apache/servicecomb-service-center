@@ -17,8 +17,9 @@ import (
 	"encoding/json"
 	"github.com/ServiceComb/service-center/pkg/util"
 	apt "github.com/ServiceComb/service-center/server/core"
-	"github.com/ServiceComb/service-center/server/core/registry"
-	"github.com/ServiceComb/service-center/server/core/registry/store"
+	"github.com/ServiceComb/service-center/server/core/backend"
+	"github.com/ServiceComb/service-center/server/core/backend/store"
+	"github.com/ServiceComb/service-center/server/infra/registry"
 	"golang.org/x/net/context"
 )
 
@@ -30,7 +31,7 @@ func AddTagIntoETCD(ctx context.Context, domainProject string, serviceId string,
 		return err
 	}
 
-	_, err = registry.GetRegisterCenter().Do(ctx,
+	_, err = backend.Registry().Do(ctx,
 		registry.PUT,
 		registry.WithStrKey(key),
 		registry.WithValue(data))

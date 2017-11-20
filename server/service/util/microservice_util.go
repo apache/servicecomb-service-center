@@ -18,10 +18,11 @@ import (
 	"github.com/ServiceComb/service-center/pkg/cache"
 	"github.com/ServiceComb/service-center/pkg/util"
 	apt "github.com/ServiceComb/service-center/server/core"
+	"github.com/ServiceComb/service-center/server/core/backend/store"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/server/core/registry"
-	"github.com/ServiceComb/service-center/server/core/registry/store"
 	"github.com/ServiceComb/service-center/server/infra/quota"
+	"github.com/ServiceComb/service-center/server/infra/registry"
+	"github.com/ServiceComb/service-center/server/plugin"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"time"
@@ -231,11 +232,11 @@ func GetAllServiceUtil(ctx context.Context, opts ...registry.PluginOpOption) ([]
 }
 
 func RemandServiceQuota(ctx context.Context) {
-	quota.QuotaPlugins[quota.QuataType]().RemandQuotas(ctx, quota.MicroServiceQuotaType)
+	plugin.Plugins().Quota().RemandQuotas(ctx, quota.MicroServiceQuotaType)
 }
 
 func RemandInstanceQuota(ctx context.Context) {
-	quota.QuotaPlugins[quota.QuataType]().RemandQuotas(ctx, quota.MicroServiceInstanceQuotaType)
+	plugin.Plugins().Quota().RemandQuotas(ctx, quota.MicroServiceInstanceQuotaType)
 }
 
 func UpdateService(domainProject string, serviceId string, service *pb.MicroService) (opt registry.PluginOp, err error) {

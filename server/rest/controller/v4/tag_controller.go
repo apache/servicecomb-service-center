@@ -15,11 +15,11 @@ package v4
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/ServiceComb/service-center/pkg/rest"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
+	scerr "github.com/ServiceComb/service-center/server/error"
 	"github.com/ServiceComb/service-center/server/rest/controller"
 	"io/ioutil"
 	"net/http"
@@ -43,14 +43,14 @@ func (this *TagService) AddTags(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		util.Logger().Error("body err", err)
-		controller.WriteText(http.StatusInternalServerError, fmt.Sprintf("body error %s", err.Error()), w)
+		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
 	var tags map[string]map[string]string
 	err = json.Unmarshal(message, &tags)
 	if err != nil {
 		util.Logger().Error("Unmarshal error", err)
-		controller.WriteText(http.StatusBadRequest, "Unmarshal error", w)
+		controller.WriteError(w, scerr.ErrInternal, err.Error())
 		return
 	}
 
@@ -58,40 +58,40 @@ func (this *TagService) AddTags(w http.ResponseWriter, r *http.Request) {
 		ServiceId: r.URL.Query().Get(":serviceId"),
 		Tags:      tags["tags"],
 	})
-	controller.WriteTextResponse(resp.GetResponse(), err, "", w)
+	controller.WriteResponse(w, resp.GetResponse(), nil)
 }
 
 func (this *TagService) UpdateTag(w http.ResponseWriter, r *http.Request) {
-	resp, err := core.ServiceAPI.UpdateTag(r.Context(), &pb.UpdateServiceTagRequest{
+	resp, _ := core.ServiceAPI.UpdateTag(r.Context(), &pb.UpdateServiceTagRequest{
 		ServiceId: r.URL.Query().Get(":serviceId"),
 		Key:       r.URL.Query().Get(":key"),
 		Value:     r.URL.Query().Get("value"),
 	})
-	controller.WriteTextResponse(resp.GetResponse(), err, "", w)
+	controller.WriteResponse(w, resp.GetResponse(), nil)
 }
 
 func (this *TagService) GetTags(w http.ResponseWriter, r *http.Request) {
 	noCache := r.URL.Query().Get("noCache")
 	if noCache != "0" && noCache != "1" && strings.TrimSpace(noCache) != "" {
-		controller.WriteText(http.StatusBadRequest, "parameter noCache must be 1 or 0", w)
+		controller.WriteError(w, scerr.ErrInvalidParams, "parameter noCache must be 1 or 0")
 		return
 	}
-	resp, err := core.ServiceAPI.GetTags(r.Context(), &pb.GetServiceTagsRequest{
+	resp, _ := core.ServiceAPI.GetTags(r.Context(), &pb.GetServiceTagsRequest{
 		ServiceId: r.URL.Query().Get(":serviceId"),
 		NoCache:   noCache == "1",
 	})
 	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteJsonResponse(respInternal, resp, err, w)
+	controller.WriteResponse(w, respInternal, resp)
 }
 
 func (this *TagService) DeleteTags(w http.ResponseWriter, r *http.Request) {
 	keys := r.URL.Query().Get(":key")
 	ids := strings.Split(keys, ",")
 
-	resp, err := core.ServiceAPI.DeleteTags(r.Context(), &pb.DeleteServiceTagsRequest{
+	resp, _ := core.ServiceAPI.DeleteTags(r.Context(), &pb.DeleteServiceTagsRequest{
 		ServiceId: r.URL.Query().Get(":serviceId"),
 		Keys:      ids,
 	})
-	controller.WriteTextResponse(resp.GetResponse(), err, "", w)
+	controller.WriteResponse(w, resp.GetResponse(), nil)
 }

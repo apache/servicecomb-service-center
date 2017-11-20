@@ -20,9 +20,11 @@ import (
 	"github.com/ServiceComb/service-center/pkg/cache"
 	"github.com/ServiceComb/service-center/pkg/util"
 	apt "github.com/ServiceComb/service-center/server/core"
+	"github.com/ServiceComb/service-center/server/core/backend"
+	"github.com/ServiceComb/service-center/server/core/backend/store"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/server/core/registry"
-	"github.com/ServiceComb/service-center/server/core/registry/store"
+	scerr "github.com/ServiceComb/service-center/server/error"
+	"github.com/ServiceComb/service-center/server/infra/registry"
 	"github.com/ServiceComb/service-center/server/mux"
 	"golang.org/x/net/context"
 	"strings"
@@ -238,7 +240,7 @@ func deleteDependencyRuleUtil(ctx context.Context, microServiceDependency *pb.Mi
 		opts = append(opts, registry.PUT, registry.WithStrKey(serviceKey), registry.WithValue(data))
 		util.Logger().Debugf("serviceKey is %s.", serviceKey)
 	}
-	_, err := registry.GetRegisterCenter().Do(ctx, opts...)
+	_, err := backend.Registry().Do(ctx, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "Submit update dependency failed.")
 		return err
@@ -423,7 +425,7 @@ func CreateDependencyRuleForFind(ctx context.Context, domainProject string, prov
 	}
 
 	if len(opts) != 0 {
-		_, err = registry.GetRegisterCenter().Txn(ctx, opts)
+		_, err = backend.Registry().Txn(ctx, opts)
 		if err != nil {
 			util.Logger().Errorf(err, "update dep rule for consumer failed, %s", consumerFlag)
 			return err
@@ -543,7 +545,7 @@ func BadParamsResponse(detailErr string) *pb.CreateDependenciesResponse {
 		detailErr = "Request params is invalid."
 	}
 	return &pb.CreateDependenciesResponse{
-		Response: pb.CreateResponse(pb.Response_FAIL, detailErr),
+		Response: pb.CreateResponse(scerr.ErrInvalidParams, detailErr),
 	}
 }
 
@@ -636,7 +638,7 @@ func UpdateServiceForAddDependency(ctx context.Context, consumerId string, provi
 		util.Logger().Errorf(err, "create dependency faild: marshal service failed.")
 		return err
 	}
-	_, err = registry.GetRegisterCenter().Do(ctx,
+	_, err = backend.Registry().Do(ctx,
 		registry.PUT,
 		registry.WithStrKey(conServiceKey),
 		registry.WithValue(data))
@@ -804,7 +806,7 @@ func (dep *Dependency) removeConsumerOfProviderRule() {
 			registry.WithValue(data)))
 	}
 	if len(opts) != 0 {
-		_, err := registry.GetRegisterCenter().Txn(ctx, opts)
+		_, err := backend.Registry().Txn(ctx, opts)
 		if err != nil {
 			dep.err <- err
 			return
@@ -844,7 +846,7 @@ func (dep *Dependency) addConsumerOfProviderRule() {
 		}
 	}
 	if len(opts) != 0 {
-		_, err := registry.GetRegisterCenter().Txn(ctx, opts)
+		_, err := backend.Registry().Txn(ctx, opts)
 		if err != nil {
 			dep.err <- err
 			return
@@ -862,7 +864,7 @@ func (dep *Dependency) updateProvidersRuleOfConsumer(conKey string) error {
 		util.Logger().Errorf(nil, "Marshal tmpValue fialed.")
 		return err
 	}
-	_, err = registry.GetRegisterCenter().Do(context.TODO(),
+	_, err = backend.Registry().Do(context.TODO(),
 		registry.PUT,
 		registry.WithStrKey(conKey),
 		registry.WithValue(data))

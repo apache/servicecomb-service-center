@@ -17,34 +17,18 @@ import (
 	"github.com/ServiceComb/service-center/pkg/chain"
 	"github.com/ServiceComb/service-center/pkg/rest"
 	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/server/infra/auth"
-	"github.com/astaxie/beego"
+	scerr "github.com/ServiceComb/service-center/server/error"
+	"github.com/ServiceComb/service-center/server/plugin"
+	"github.com/ServiceComb/service-center/server/rest/controller"
 	"net/http"
 )
-
-var plugin auth.Auth
-
-func init() {
-	name := beego.AppConfig.String("auth_plugin")
-	if pluginBuilder, ok := auth.AuthPlugins[name]; ok {
-		util.Logger().Warnf(nil, "service center is in '%s' mode", name)
-		plugin = pluginBuilder()
-		return
-	}
-	util.Logger().Warnf(nil, "service center is in 'noAuth' mode")
-}
 
 type AuthRequest struct {
 }
 
 func (h *AuthRequest) Handle(i *chain.Invocation) {
-	if plugin == nil {
-		i.Next()
-		return
-	}
-
 	r := i.Context().Value(rest.CTX_REQUEST).(*http.Request)
-	err := plugin.Identify(r)
+	err := plugin.Plugins().Auth().Identify(r)
 	if err == nil {
 		i.Next()
 		return
@@ -53,7 +37,8 @@ func (h *AuthRequest) Handle(i *chain.Invocation) {
 	util.Logger().Errorf(err, "authenticate request failed, %s %s", r.Method, r.RequestURI)
 
 	w := i.Context().Value(rest.CTX_RESPONSE).(http.ResponseWriter)
-	http.Error(w, "Request Unauthorized", http.StatusUnauthorized)
+	controller.WriteError(w, scerr.ErrUnauthorized, err.Error())
+
 	i.Fail(nil)
 }
 

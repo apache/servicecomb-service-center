@@ -15,8 +15,9 @@ package store
 
 import (
 	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/ServiceComb/service-center/server/core/backend"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/server/infra/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"strings"
@@ -60,7 +61,7 @@ func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (
 		(op.Offset >= 0 && op.Limit > 0) {
 		util.Logger().Debugf("search %s match special options, request etcd server, opts: %s",
 			i.cacheType, op)
-		return registry.GetRegisterCenter().Do(ctx, opts...)
+		return backend.Registry().Do(ctx, opts...)
 	}
 
 	if op.Prefix {
@@ -75,7 +76,7 @@ func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (
 
 		util.Logger().Debugf("can not find any key from %s cache with prefix, request etcd server, key: %s",
 			i.cacheType, key)
-		return registry.GetRegisterCenter().Do(ctx, opts...)
+		return backend.Registry().Do(ctx, opts...)
 	}
 
 	resp := &registry.PluginResponse{
@@ -95,7 +96,7 @@ func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (
 		}
 
 		util.Logger().Debugf("%s cache does not store this key, request etcd server, key: %s", i.cacheType, key)
-		return registry.GetRegisterCenter().Do(ctx, opts...)
+		return backend.Registry().Do(ctx, opts...)
 	}
 
 	cacheData := i.Cache().Data(key)
@@ -106,7 +107,7 @@ func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (
 
 		util.Logger().Debugf("do not match any key in %s cache store, request etcd server, key: %s",
 			i.cacheType, key)
-		return registry.GetRegisterCenter().Do(ctx, opts...)
+		return backend.Registry().Do(ctx, opts...)
 	}
 
 	resp.Count = 1
@@ -302,8 +303,6 @@ func (i *Indexer) Stop() {
 	close(i.prefixBuildQueue)
 
 	util.SafeCloseChan(i.ready)
-
-	util.Logger().Debugf("%s indexer is stopped", i.cacheType)
 }
 
 func (i *Indexer) Ready() <-chan struct{} {

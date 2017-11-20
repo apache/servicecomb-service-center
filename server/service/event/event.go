@@ -14,7 +14,7 @@
 package event
 
 import (
-	"github.com/ServiceComb/service-center/server/core/registry/store"
+	"github.com/ServiceComb/service-center/server/core/backend/store"
 )
 
 func init() {

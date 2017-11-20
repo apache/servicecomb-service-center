@@ -18,58 +18,39 @@ import (
 	"fmt"
 	"github.com/ServiceComb/service-center/pkg/util"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/ServiceComb/service-center/server/error"
 	"net/http"
-	"strconv"
 )
 
-func WriteJsonObject(status int, obj interface{}, w http.ResponseWriter) {
-	serviceJSON, err := json.Marshal(obj)
-	if err != nil {
-		util.Logger().Error("marshal response error", err)
-		WriteText(http.StatusInternalServerError, fmt.Sprintf("marshal response error, %s", err.Error()), w)
-		return
-	}
-	WriteJson(status, serviceJSON, w)
+func WriteError(w http.ResponseWriter, code int32, detail string) {
+	err := error.NewError(code, detail)
+	err.HttpWrite(w)
 }
 
-func WriteJson(status int, json []byte, w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "application/json;charset=utf-8")
-	w.Header().Add("x-response-status", strconv.Itoa(status))
-	w.WriteHeader(status)
-	w.Write(json)
-}
+func WriteJsonObject(w http.ResponseWriter, obj interface{}) {
+	if obj == nil {
+		w.Header().Add("X-Response-Status", fmt.Sprint(http.StatusOK))
+		w.Header().Set("Content-Type", "text/plain; charset=UTF-8")
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 
-func WriteText(status int, text string, w http.ResponseWriter) {
-	w.Header().Add("x-response-status", strconv.Itoa(status))
-	w.WriteHeader(status)
-	w.Write(util.StringToBytesWithNoCopy(text))
-}
-
-func WriteTextResponse(resp *pb.Response, err error, textIfSuccess string, w http.ResponseWriter) {
-	if err != nil {
-		WriteText(http.StatusInternalServerError, err.Error(), w)
-		return
-	}
-	if resp.Code != pb.Response_SUCCESS {
-		WriteText(http.StatusBadRequest, resp.Message, w)
-		return
-	}
-	WriteText(http.StatusOK, textIfSuccess, w)
-}
-
-func WriteJsonResponse(resp *pb.Response, obj interface{}, err error, w http.ResponseWriter) {
-	if err != nil {
-		WriteText(http.StatusInternalServerError, err.Error(), w)
-		return
-	}
-	if resp.Code != pb.Response_SUCCESS {
-		WriteText(http.StatusBadRequest, resp.Message, w)
-		return
-	}
 	objJson, err := json.Marshal(obj)
 	if err != nil {
-		WriteText(http.StatusInternalServerError, err.Error(), w)
+		WriteError(w, error.ErrInternal, err.Error())
 		return
 	}
-	WriteJson(http.StatusOK, objJson, w)
+	w.Header().Add("X-Response-Status", fmt.Sprint(http.StatusOK))
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintln(w, util.BytesToStringWithNoCopy(objJson))
+}
+
+func WriteResponse(w http.ResponseWriter, resp *pb.Response, obj interface{}) {
+	if resp.GetCode() == pb.Response_SUCCESS {
+		WriteJsonObject(w, obj)
+		return
+	}
+
+	WriteError(w, resp.GetCode(), resp.GetMessage())
 }

@@ -18,7 +18,7 @@ import (
 	"github.com/ServiceComb/service-center/pkg/util"
 	apt "github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/server/infra/registry"
 	"golang.org/x/net/context"
 	"strconv"
 	"sync"
@@ -78,7 +78,7 @@ var TypeRoots = map[StoreType]string{
 	DEPENDENCY:      apt.GetServiceDependencyRootKey(""),
 	DEPENDENCY_RULE: apt.GetServiceDependencyRuleRootKey(""),
 	PROJECT:         apt.GetProjectRootKey(""),
-	ENDPOINTS:       apt.GenerateEndpointsRootKey(""),
+	ENDPOINTS:       apt.GetEndpointsRootKey(""),
 }
 
 var store *KvStore

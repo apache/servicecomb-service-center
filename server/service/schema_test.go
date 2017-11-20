@@ -63,7 +63,7 @@ var _ = Describe("ServiceController", func() {
 					Schema:    "create schema",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
 					ServiceId: serviceId,
@@ -71,7 +71,7 @@ var _ = Describe("ServiceController", func() {
 					Schema:    "create schema",
 				})
 				//Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
 					ServiceId: "notExistService",
@@ -79,7 +79,7 @@ var _ = Describe("ServiceController", func() {
 					Schema:    "create schema",
 				})
 				//Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("schema是否存在,参数校验", func() {
@@ -89,7 +89,7 @@ var _ = Describe("ServiceController", func() {
 					SchemaId:  "com.huawei.test",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
 					Type:      "schema",
@@ -97,11 +97,11 @@ var _ = Describe("ServiceController", func() {
 					SchemaId:  "noneschema",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = serviceResource.Exist(getContext(), nil)
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respExist, err := serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
 					Type:        "microservice",
@@ -110,7 +110,7 @@ var _ = Describe("ServiceController", func() {
 					Version:     "3.0.0",
 				})
 				Expect(err).To(BeNil())
-				Expect(respExist.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(respExist.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("schema是否存在", func() {
@@ -143,7 +143,7 @@ var _ = Describe("ServiceController", func() {
 					SchemaId:  "com.huawei.test",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("查询schema", func() {
@@ -164,7 +164,7 @@ var _ = Describe("ServiceController", func() {
 					SchemaId:  "com.huawei.test",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				fmt.Println("UT===========查询schema")
 				resp, err = serviceResource.GetSchemaInfo(getContext(), &pb.GetSchemaRequest{
@@ -172,7 +172,7 @@ var _ = Describe("ServiceController", func() {
 					SchemaId:  "com.huawei.test",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				fmt.Println("UT===========查询schema")
 				resp, err = serviceResource.GetSchemaInfo(getContext(), &pb.GetSchemaRequest{
@@ -180,7 +180,7 @@ var _ = Describe("ServiceController", func() {
 					SchemaId:  "nonexistschema",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				fmt.Println("UT===========查询schema")
 				resp, err = serviceResource.GetSchemaInfo(getContext(), &pb.GetSchemaRequest{
@@ -188,7 +188,7 @@ var _ = Describe("ServiceController", func() {
 					SchemaId:  invalidSchemaId,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("修改schema,参数校验", func() {
@@ -207,7 +207,7 @@ var _ = Describe("ServiceController", func() {
 					Schema:    "change schema",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("修改schema", func() {
@@ -227,7 +227,7 @@ var _ = Describe("ServiceController", func() {
 					SchemaId:  "noneschema",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				fmt.Println("UT===========删除schema")
 				resp, err = serviceResource.DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
@@ -252,7 +252,7 @@ var _ = Describe("ServiceController", func() {
 					SchemaId:  "com.huawei.test",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				fmt.Println("UT===========删除schema，")
 				resp, err = serviceResource.DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
@@ -260,7 +260,7 @@ var _ = Describe("ServiceController", func() {
 					SchemaId:  "com.huawei.test",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				fmt.Println("UT===========删除schema，")
 				resp, err = serviceResource.DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
@@ -268,19 +268,19 @@ var _ = Describe("ServiceController", func() {
 					SchemaId:  "com.huawei.test",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = serviceResource.DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
 					ServiceId: serviceId,
 					SchemaId:  invalidSchemaId,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_FAIL))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 	})
 	Describe("schemas", func() {
-		var serviceId , serviceId2 string
+		var serviceId, serviceId2 string
 		It("create service", func() {
 			respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 				Service: &pb.MicroService{
@@ -300,14 +300,13 @@ var _ = Describe("ServiceController", func() {
 			serviceId = respCreateService.ServiceId
 			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
-
 			respCreateService, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 				Service: &pb.MicroService{
 					ServiceName: "service_name_no_schemaId",
 					AppId:       "service_group_no_schema",
 					Version:     "1.0.0",
 					Level:       "FRONT",
-					Status: "UP",
+					Status:      "UP",
 				},
 			})
 			Expect(err).To(BeNil())
@@ -321,14 +320,14 @@ var _ = Describe("ServiceController", func() {
 				Schemas:   nil,
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_FAIL))
+			Expect(respCreateService.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 			respCreateService, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
 				ServiceId: "not_exist_serviceId",
 				Schemas:   []*pb.Schema{},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_FAIL))
+			Expect(respCreateService.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 			respCreateService, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
 				ServiceId: "not_exist_serviceId",
@@ -339,20 +338,20 @@ var _ = Describe("ServiceController", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_FAIL))
+			Expect(respCreateService.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 			respCreateService, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
 				ServiceId: "",
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_FAIL))
+			Expect(respCreateService.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 			respCreateService, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
 				ServiceId: "not_exist_serviceId",
 				Schemas:   []*pb.Schema{},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_FAIL))
+			Expect(respCreateService.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 			respCreateService, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
 				ServiceId: serviceId,
@@ -466,7 +465,6 @@ var _ = Describe("ServiceController", func() {
 			Expect(respSchemaExist.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 			Expect(respSchemaExist.Summary).To(Equal("third_summary"))
 
-
 			schemas = []*pb.Schema{
 				&pb.Schema{
 					SchemaId: "first_schemaId",
@@ -486,7 +484,7 @@ var _ = Describe("ServiceController", func() {
 				Schemas:   schemas,
 			})
 			Expect(err).To(BeNil())
-			Expect(respModifySchemas.GetResponse().Code).To(Equal(pb.Response_FAIL))
+			Expect(respModifySchemas.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 			schemas = []*pb.Schema{
 				&pb.Schema{

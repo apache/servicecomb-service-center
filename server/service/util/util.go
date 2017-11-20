@@ -13,7 +13,7 @@
 //limitations under the License.
 package util
 
-import "github.com/ServiceComb/service-center/server/core/registry"
+import "github.com/ServiceComb/service-center/server/infra/registry"
 
 type QueryOp func() []registry.PluginOpOption
 

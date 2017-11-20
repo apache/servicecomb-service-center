@@ -46,6 +46,8 @@ const (
 	EXISTENCE_SCHEMA string = "schema"
 
 	PROP_ALLOW_CROSS_APP = "allowCrossApp"
+
+	Response_SUCCESS int32 = 0
 )
 
 type SerivceInstanceCtrlServerEx interface {
@@ -68,7 +70,7 @@ type SystemConfig struct {
 	Version string `json:"version"`
 }
 
-func CreateResponse(code Response_Code, message string) *Response {
+func CreateResponse(code int32, message string) *Response {
 	resp := &Response{
 		Code:    code,
 		Message: message,

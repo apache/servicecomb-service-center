@@ -16,7 +16,7 @@ package util
 import (
 	"fmt"
 	"github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/server/infra/registry"
 	"golang.org/x/net/context"
 	"testing"
 )

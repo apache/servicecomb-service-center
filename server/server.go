@@ -19,8 +19,8 @@ import (
 	ssl "github.com/ServiceComb/service-center/pkg/tlsutil"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/core"
-	"github.com/ServiceComb/service-center/server/core/registry"
-	st "github.com/ServiceComb/service-center/server/core/registry/store"
+	"github.com/ServiceComb/service-center/server/core/backend"
+	st "github.com/ServiceComb/service-center/server/core/backend/store"
 	"github.com/ServiceComb/service-center/server/mux"
 	nf "github.com/ServiceComb/service-center/server/service/notification"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
@@ -158,7 +158,7 @@ func (s *ServiceCenterServer) Stop() {
 
 	util.GoCloseAndWait()
 
-	registry.GetRegisterCenter().Close()
+	backend.Registry().Close()
 }
 
 func Run() {

@@ -16,8 +16,9 @@ package core
 import (
 	"encoding/json"
 	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/ServiceComb/service-center/server/core/backend"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/server/core/registry"
+	"github.com/ServiceComb/service-center/server/infra/registry"
 	"github.com/ServiceComb/service-center/version"
 	"golang.org/x/net/context"
 )
@@ -25,7 +26,7 @@ import (
 var systemConfig *pb.SystemConfig
 
 func LoadSystemConfig() error {
-	resp, err := registry.GetRegisterCenter().Do(context.Background(),
+	resp, err := backend.Registry().Do(context.Background(),
 		registry.GET, registry.WithStrKey(GetSystemKey()))
 	if err != nil {
 		return err
@@ -54,7 +55,7 @@ func UpgradeSystemConfig() error {
 	if err != nil {
 		return err
 	}
-	_, err = registry.GetRegisterCenter().Do(context.Background(),
+	_, err = backend.Registry().Do(context.Background(),
 		registry.PUT, registry.WithStrKey(GetSystemKey()), registry.WithValue(bytes))
 	if err != nil {
 		return err

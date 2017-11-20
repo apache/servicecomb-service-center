@@ -15,17 +15,18 @@ package util
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/ServiceComb/service-center/pkg/util"
 	apt "github.com/ServiceComb/service-center/server/core"
+	"github.com/ServiceComb/service-center/server/core/backend"
+	"github.com/ServiceComb/service-center/server/core/backend/store"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/server/core/registry"
-	"github.com/ServiceComb/service-center/server/core/registry/store"
+	"github.com/ServiceComb/service-center/server/infra/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
+	"sort"
 	"strconv"
 	"strings"
-	"sort"
-	"fmt"
 )
 
 func GetLeaseId(ctx context.Context, domainProject string, serviceId string, instanceId string, opts ...registry.PluginOpOption) (int64, error) {
@@ -111,7 +112,7 @@ func CheckEndPoints(ctx context.Context, in *pb.RegisterInstanceRequest) (string
 	sort.Strings(endpoints)
 	endpointsJoin := util.StringJoin(endpoints, "/")
 	region, availableZone := apt.GetRegionAndAvailableZone(in.Instance.DataCenterInfo)
-	instanceEndpointsIndexKey := apt.GetEndpointsIndexKey(domainProject, region, availableZone, endpointsJoin)
+	instanceEndpointsIndexKey := apt.GenerateEndpointsIndexKey(domainProject, region, availableZone, endpointsJoin)
 	resp, err := store.Store().Endpoints().Search(ctx,
 		registry.WithStrKey(instanceEndpointsIndexKey),
 		registry.WithPrefix())
@@ -129,8 +130,6 @@ func CheckEndPoints(ctx context.Context, in *pb.RegisterInstanceRequest) (string
 	}
 	return splitedValue[1], "", nil
 }
-
-
 
 func isContain(endpoints []string, endpoint string) bool {
 	for _, tmpEndpoint := range endpoints {
@@ -159,7 +158,7 @@ func DeleteServiceAllInstances(ctx context.Context, ServiceId string) error {
 	}
 	for _, v := range resp.Kvs {
 		leaseID, _ := strconv.ParseInt(util.BytesToStringWithNoCopy(v.Value), 10, 64)
-		registry.GetRegisterCenter().LeaseRevoke(ctx, leaseID)
+		backend.Registry().LeaseRevoke(ctx, leaseID)
 	}
 	return nil
 }
