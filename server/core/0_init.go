@@ -90,7 +90,7 @@ func initLogger() {
 	util.CustomLogger("github.com/ServiceComb/service-center/server/service/event", "event")
 	util.CustomLogger("github.com/ServiceComb/service-center/server/service/notification", "event")
 
-	util.CustomLogger("github.com/ServiceComb/service-center/server/core/registry", "registry")
+	util.CustomLogger("github.com/ServiceComb/service-center/server/core/backend", "registry")
 }
 
 func initLogRotate() {
