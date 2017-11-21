@@ -13,26 +13,18 @@
 //limitations under the License.
 package util
 
-import "github.com/ServiceComb/service-center/server/infra/registry"
+import (
+	"github.com/ServiceComb/service-center/server/infra/registry"
+	"golang.org/x/net/context"
+)
 
-type QueryOp func() []registry.PluginOpOption
-
-func WithNoCache(no bool) QueryOp {
-	if !no {
-		return func() []registry.PluginOpOption { return nil }
+func FromContext(ctx context.Context) []registry.PluginOpOption {
+	opts := make([]registry.PluginOpOption, 0, 5)
+	switch {
+	case ctx.Value("noCache") == "1":
+		opts = append(opts, registry.WithNoCache())
+	case ctx.Value("cacheOnly") == "1":
+		opts = append(opts, registry.WithCacheOnly())
 	}
-	return func() []registry.PluginOpOption {
-		return []registry.PluginOpOption{registry.WithNoCache()}
-	}
-}
-
-func QueryOptions(qopts ...QueryOp) (opts []registry.PluginOpOption) {
-	if len(qopts) == 0 {
-		return
-	}
-	opts = []registry.PluginOpOption{}
-	for _, qopt := range qopts {
-		opts = append(opts, qopt()...)
-	}
-	return
+	return opts
 }
