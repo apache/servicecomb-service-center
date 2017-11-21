@@ -52,8 +52,8 @@ func (h *InstanceEventHandler) OnEvent(evt *store.KvEvent) {
 			domainName := spilted[0]
 			projectName := spilted[1]
 			ctx := context.TODO()
-			ctx = util.NewContext(ctx, "domain", domainName)
-			ctx = util.NewContext(ctx, "project", projectName)
+			ctx = util.SetContext(ctx, "domain", domainName)
+			ctx = util.SetContext(ctx, "project", projectName)
 			serviceUtil.RemandInstanceQuota(ctx)
 		}
 	}

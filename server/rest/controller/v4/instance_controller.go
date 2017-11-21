@@ -120,11 +120,6 @@ func (this *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r 
 	if len(keys) > 0 {
 		ids = strings.Split(keys, ",")
 	}
-	noCache := r.URL.Query().Get("noCache")
-	if noCache != "0" && noCache != "1" && strings.TrimSpace(noCache) != "" {
-		controller.WriteError(w, scerr.ErrInvalidParams, "parameter noCache must be 1 or 0")
-		return
-	}
 	request := &pb.FindInstancesRequest{
 		ConsumerServiceId: r.Header.Get("X-ConsumerId"),
 		AppId:             r.URL.Query().Get("appId"),
@@ -132,7 +127,6 @@ func (this *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r 
 		VersionRule:       r.URL.Query().Get("version"),
 		Env:               r.URL.Query().Get("env"),
 		Tags:              ids,
-		NoCache:           noCache == "1",
 	}
 	resp, _ := core.InstanceAPI.Find(r.Context(), request)
 	respInternal := resp.Response
@@ -146,18 +140,12 @@ func (this *MicroServiceInstanceService) GetOneInstance(w http.ResponseWriter, r
 	if len(keys) > 0 {
 		ids = strings.Split(keys, ",")
 	}
-	noCache := r.URL.Query().Get("noCache")
-	if noCache != "0" && noCache != "1" && strings.TrimSpace(noCache) != "" {
-		controller.WriteError(w, scerr.ErrInvalidParams, "parameter noCache must be 1 or 0")
-		return
-	}
 	request := &pb.GetOneInstanceRequest{
 		ConsumerServiceId:  r.Header.Get("X-ConsumerId"),
 		ProviderServiceId:  r.URL.Query().Get(":serviceId"),
 		ProviderInstanceId: r.URL.Query().Get(":instanceId"),
 		Tags:               ids,
 		Env:                r.URL.Query().Get("env"),
-		NoCache:            noCache == "1",
 	}
 	resp, _ := core.InstanceAPI.GetOneInstance(r.Context(), request)
 	respInternal := resp.Response
@@ -171,17 +159,11 @@ func (this *MicroServiceInstanceService) GetInstances(w http.ResponseWriter, r *
 	if len(keys) > 0 {
 		ids = strings.Split(keys, ",")
 	}
-	noCache := r.URL.Query().Get("noCache")
-	if noCache != "0" && noCache != "1" && strings.TrimSpace(noCache) != "" {
-		controller.WriteError(w, scerr.ErrInvalidParams, "parameter noCache must be 1 or 0")
-		return
-	}
 	request := &pb.GetInstancesRequest{
 		ConsumerServiceId: r.Header.Get("X-ConsumerId"),
 		ProviderServiceId: r.URL.Query().Get(":serviceId"),
 		Tags:              ids,
 		Env:               r.URL.Query().Get("env"),
-		NoCache:           noCache == "1",
 	}
 	resp, _ := core.InstanceAPI.GetInstances(r.Context(), request)
 	respInternal := resp.Response

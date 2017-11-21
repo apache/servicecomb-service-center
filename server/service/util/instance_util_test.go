@@ -15,14 +15,15 @@ package util
 
 import (
 	"fmt"
+	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/server/infra/registry"
 	"golang.org/x/net/context"
 	"testing"
 )
 
 func TestGetLeaseId(t *testing.T) {
-	_, err := GetLeaseId(context.Background(), "", "", "", registry.WithCacheOnly())
+
+	_, err := GetLeaseId(util.SetContext(context.Background(), "cacheOnly", "1"), "", "", "")
 	if err != nil {
 		fmt.Printf(`GetLeaseId WithCacheOnly failed`)
 		t.FailNow()
@@ -36,7 +37,7 @@ func TestGetLeaseId(t *testing.T) {
 }
 
 func TestGetInstance(t *testing.T) {
-	_, err := GetInstance(context.Background(), "", "", "", registry.WithCacheOnly())
+	_, err := GetInstance(util.SetContext(context.Background(), "cacheOnly", "1"), "", "", "")
 	if err != nil {
 		fmt.Printf(`GetInstance WithCacheOnly failed`)
 		t.FailNow()
@@ -48,7 +49,7 @@ func TestGetInstance(t *testing.T) {
 		t.FailNow()
 	}
 
-	_, err = GetAllInstancesOfOneService(context.Background(), "", "", "", registry.WithCacheOnly())
+	_, err = GetAllInstancesOfOneService(util.SetContext(context.Background(), "cacheOnly", "1"), "", "", "")
 	if err != nil {
 		fmt.Printf(`GetAllInstancesOfOneService WithCacheOnly failed`)
 		t.FailNow()
@@ -70,7 +71,7 @@ func TestGetInstance(t *testing.T) {
 }
 
 func TestInstanceExist(t *testing.T) {
-	_, err := InstanceExist(context.Background(), "", "", "", registry.WithCacheOnly())
+	_, err := InstanceExist(util.SetContext(context.Background(), "cacheOnly", "1"), "", "", "")
 	if err != nil {
 		fmt.Printf(`InstanceExist WithCacheOnly failed`)
 		t.FailNow()

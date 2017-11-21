@@ -15,8 +15,8 @@ package util
 
 import (
 	"fmt"
+	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/server/infra/registry"
 	"golang.org/x/net/context"
 	"testing"
 )
@@ -72,7 +72,7 @@ func TestDeleteDependencyForService(t *testing.T) {
 }
 
 func TestTransferToMicroServiceDependency(t *testing.T) {
-	_, err := TransferToMicroServiceDependency(context.Background(), "", registry.WithCacheOnly())
+	_, err := TransferToMicroServiceDependency(util.SetContext(context.Background(), "cacheOnly", "1"), "")
 	if err != nil {
 		fmt.Printf(`TransferToMicroServiceDependency WithCacheOnly failed`)
 		t.FailNow()
@@ -235,7 +235,7 @@ func TestParamsChecker(t *testing.T) {
 }
 
 func TestServiceDependencyRuleExist(t *testing.T) {
-	_, err := ProviderDependencyRuleExist(context.Background(), "", &proto.MicroServiceKey{}, &proto.MicroServiceKey{}, registry.WithCacheOnly())
+	_, err := ProviderDependencyRuleExist(util.SetContext(context.Background(), "cacheOnly", "1"), "", &proto.MicroServiceKey{}, &proto.MicroServiceKey{})
 	if err != nil {
 		fmt.Printf(`ServiceDependencyRuleExist WithCacheOnly failed`)
 		t.FailNow()
@@ -307,7 +307,7 @@ func TestDependency(t *testing.T) {
 	dr := &DependencyRelation{
 		provider: &proto.MicroService{},
 		consumer: &proto.MicroService{},
-		opts:     []registry.PluginOpOption{registry.WithCacheOnly()},
+		ctx:      util.SetContext(context.Background(), "cacheOnly", "1"),
 	}
 	_, err = dr.GetDependencyProviders()
 	if err != nil {
@@ -354,7 +354,7 @@ func TestDependency(t *testing.T) {
 	dr = &DependencyRelation{
 		provider: &proto.MicroService{},
 		consumer: &proto.MicroService{},
-		opts:     []registry.PluginOpOption{},
+		ctx:      context.Background(),
 	}
 	_, err = dr.getDependencyProviderIds([]*proto.MicroServiceKey{
 		{ServiceName: "*"},
@@ -392,7 +392,7 @@ func TestDependency(t *testing.T) {
 
 	dr = &DependencyRelation{
 		consumer: &proto.MicroService{},
-		opts:     []registry.PluginOpOption{},
+		ctx:      context.Background(),
 	}
 	_, err = dr.getDependencyConsumersOfProvider()
 	if err == nil {

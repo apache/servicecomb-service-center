@@ -15,6 +15,7 @@ package service_test
 
 import (
 	"fmt"
+	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/plugin/infra/quota/buildin"
@@ -651,11 +652,12 @@ var _ = Describe("ServiceController", func() {
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp.GetResponse().Message)
 				fmt.Println(fmt.Sprintf("UT============%s"), resp.String())
-				resp2, err := insResource.GetInstances(getContext(), &pb.GetInstancesRequest{
-					ConsumerServiceId: serviceId3,
-					ProviderServiceId: serviceId,
-					NoCache:           true,
-				})
+				resp2, err := insResource.GetInstances(
+					util.SetContext(util.CloneContext(getContext()), "noCache", "1"),
+					&pb.GetInstancesRequest{
+						ConsumerServiceId: serviceId3,
+						ProviderServiceId: serviceId,
+					})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp2.GetResponse().Message)
 				fmt.Println(fmt.Sprintf("UT============%s"), resp2.Instances)
@@ -700,12 +702,13 @@ var _ = Describe("ServiceController", func() {
 				fmt.Println(fmt.Sprintf("UT============%s"), resp1.Response)
 				Expect(resp1.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
-				resp2, err := insResource.GetInstances(getContext(), &pb.GetInstancesRequest{
-					ConsumerServiceId: serviceId,
-					ProviderServiceId: serviceId3,
-					Tags:              []string{"a"},
-					NoCache:           true,
-				})
+				resp2, err := insResource.GetInstances(
+					util.SetContext(util.CloneContext(getContext()), "noCache", "1"),
+					&pb.GetInstancesRequest{
+						ConsumerServiceId: serviceId,
+						ProviderServiceId: serviceId3,
+						Tags:              []string{"a"},
+					})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp2.GetResponse().Message)
 				fmt.Println(fmt.Sprintf("UT============%s"), resp2.Instances)
@@ -730,11 +733,12 @@ var _ = Describe("ServiceController", func() {
 				fmt.Println("UT============" + resp.GetResponse().Message)
 				fmt.Println(fmt.Sprintf("UT============%s"), resp.String())
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-				resp2, err := insResource.GetInstances(getContext(), &pb.GetInstancesRequest{
-					ConsumerServiceId: serviceId2,
-					ProviderServiceId: serviceId3,
-					NoCache:           true,
-				})
+				resp2, err := insResource.GetInstances(
+					util.SetContext(util.CloneContext(getContext()), "noCache", "1"),
+					&pb.GetInstancesRequest{
+						ConsumerServiceId: serviceId2,
+						ProviderServiceId: serviceId3,
+					})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp2.GetResponse().Message)
 				fmt.Println(fmt.Sprintf("UT============%s"), resp2.Instances)

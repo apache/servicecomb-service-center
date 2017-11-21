@@ -110,9 +110,8 @@ message Statistics {
 
 message GetServicesInfoRequest {
     repeated string options = 1;
-    bool noCache = 2;
-    string appId = 3;
-    string serviceName = 4;
+    string appId = 2;
+    string serviceName = 3;
 }
 
 message GetServicesInfoResponse {
@@ -187,7 +186,6 @@ message GetExistenceRequest {
     string version = 4;
     string serviceId = 5;
     string schemaId = 6;
-    bool noCache = 7;
 }
 
 message GetExistenceResponse {
@@ -220,7 +218,6 @@ message DeleteServiceResponse {
 
 message GetServiceRequest {
     string serviceId = 1;
-    bool noCache = 2;
 }
 
 message GetServiceResponse {
@@ -229,7 +226,6 @@ message GetServiceResponse {
 }
 
 message GetServicesRequest {
-    bool noCache = 1;
 }
 
 message GetServicesResponse {
@@ -248,7 +244,6 @@ message UpdateServicePropsResponse {
 
 message GetServiceRulesRequest {
     string serviceId = 1;
-    bool noCache = 2;
 }
 
 message GetServiceRulesResponse {
@@ -287,7 +282,6 @@ message DeleteServiceRulesResponse {
 
 message GetServiceTagsRequest {
     string serviceId = 1;
-    bool noCache = 2;
 }
 
 message GetServiceTagsResponse {
@@ -400,7 +394,6 @@ message FindInstancesRequest {
     string versionRule = 4; // version rule
     repeated string tags = 5;
     string env = 6;
-    bool noCache = 7;
 }
 
 message FindInstancesResponse {
@@ -414,7 +407,6 @@ message GetOneInstanceRequest {
     string providerInstanceId = 3;
     repeated string tags = 4;
     string env = 5;
-    bool noCache = 6;
 }
 
 message GetOneInstanceResponse {
@@ -427,7 +419,6 @@ message GetInstancesRequest {
     string providerServiceId = 2;
     repeated string tags = 3;
     string env = 4;
-    bool noCache = 5;
 }
 
 message GetInstancesResponse {
@@ -469,7 +460,6 @@ message WatchInstanceResponse {
 message GetSchemaRequest {
     string serviceId = 1;
     string schemaId = 2;
-    bool noCache = 3;
 }
 
 message GetSchemaResponse {
@@ -519,7 +509,6 @@ message CreateDependenciesResponse {
 
 message GetDependenciesRequest {
     string serviceId = 1;
-    bool noCache = 2;
 }
 
 message GetConDependenciesResponse {

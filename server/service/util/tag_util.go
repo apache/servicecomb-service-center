@@ -42,9 +42,9 @@ func AddTagIntoETCD(ctx context.Context, domainProject string, serviceId string,
 	return nil
 }
 
-func GetTagsUtils(ctx context.Context, domainProject, serviceId string, opts ...registry.PluginOpOption) (tags map[string]string, err error) {
+func GetTagsUtils(ctx context.Context, domainProject, serviceId string) (tags map[string]string, err error) {
 	key := apt.GenerateServiceTagKey(domainProject, serviceId)
-	opts = append(opts, registry.WithStrKey(key))
+	opts := append(FromContext(ctx), registry.WithStrKey(key))
 	resp, err := store.Store().ServiceTag().Search(ctx, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "get service %s tags file failed", key)

@@ -15,7 +15,7 @@ package util_test
 
 import (
 	"fmt"
-	"github.com/ServiceComb/service-center/server/infra/registry"
+	"github.com/ServiceComb/service-center/pkg/util"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"golang.org/x/net/context"
 	"testing"
@@ -30,7 +30,7 @@ func TestAddTagIntoETCD(t *testing.T) {
 }
 
 func TestGetTagsUtils(t *testing.T) {
-	_, err := serviceUtil.GetTagsUtils(context.Background(), "", "", registry.WithCacheOnly())
+	_, err := serviceUtil.GetTagsUtils(util.SetContext(context.Background(), "cacheOnly", "1"), "", "")
 	if err != nil {
 		fmt.Printf(`GetTagsUtils WithCacheOnly failed`)
 		t.FailNow()

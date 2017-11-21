@@ -14,14 +14,14 @@
 package util_test
 
 import (
-	"github.com/ServiceComb/service-center/server/infra/registry"
+	"github.com/ServiceComb/service-center/pkg/util"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"golang.org/x/net/context"
 	"testing"
 )
 
 func TestCheckSchemaInfoExist(t *testing.T) {
-	_, err := serviceUtil.CheckSchemaInfoExist(context.Background(), "", registry.WithCacheOnly())
+	_, err := serviceUtil.CheckSchemaInfoExist(util.SetContext(context.Background(), "cacheOnly", "1"), "")
 	if err != nil {
 		t.FailNow()
 	}

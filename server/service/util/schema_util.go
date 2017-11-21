@@ -19,8 +19,8 @@ import (
 	"golang.org/x/net/context"
 )
 
-func CheckSchemaInfoExist(ctx context.Context, key string, opts ...registry.PluginOpOption) (bool, error) {
-	opts = append(opts, registry.WithStrKey(key), registry.WithCountOnly())
+func CheckSchemaInfoExist(ctx context.Context, key string) (bool, error) {
+	opts := append(FromContext(ctx), registry.WithStrKey(key), registry.WithCountOnly())
 	resp, errDo := store.Store().Schema().Search(ctx, opts...)
 	if errDo != nil {
 		return false, errDo

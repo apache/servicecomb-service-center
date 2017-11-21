@@ -15,8 +15,8 @@ package util_test
 
 import (
 	"fmt"
+	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/server/infra/registry"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"golang.org/x/net/context"
 	"testing"
@@ -54,7 +54,7 @@ func TestRuleFilter_Filter(t *testing.T) {
 }
 
 func TestGetRulesUtil(t *testing.T) {
-	_, err := serviceUtil.GetRulesUtil(context.Background(), "", "", registry.WithCacheOnly())
+	_, err := serviceUtil.GetRulesUtil(util.SetContext(context.Background(), "cacheOnly", "1"), "", "")
 	if err != nil {
 		fmt.Printf("GetRulesUtil WithCacheOnly failed")
 		t.FailNow()
@@ -66,7 +66,7 @@ func TestGetRulesUtil(t *testing.T) {
 		t.FailNow()
 	}
 
-	_, err = serviceUtil.GetOneRule(context.Background(), "", "", "", registry.WithCacheOnly())
+	_, err = serviceUtil.GetOneRule(util.SetContext(context.Background(), "cacheOnly", "1"), "", "", "")
 	if err != nil {
 		fmt.Printf("GetOneRule WithCacheOnly failed")
 		t.FailNow()
@@ -86,12 +86,12 @@ func TestRuleExist(t *testing.T) {
 			t.FailNow()
 		}
 	}()
-	serviceUtil.RuleExist(context.Background(), "", "", "", "", registry.WithCacheOnly())
+	serviceUtil.RuleExist(util.SetContext(context.Background(), "cacheOnly", "1"), "", "", "", "")
 	serviceUtil.RuleExist(context.Background(), "", "", "", "")
 }
 
 func TestGetServiceRuleType(t *testing.T) {
-	_, _, err := serviceUtil.GetServiceRuleType(context.Background(), "", "", registry.WithCacheOnly())
+	_, _, err := serviceUtil.GetServiceRuleType(util.SetContext(context.Background(), "cacheOnly", "1"), "", "")
 	if err != nil {
 		fmt.Printf("GetServiceRuleType WithCacheOnly failed")
 		t.FailNow()
@@ -317,10 +317,10 @@ func TestGetConsumer(t *testing.T) {
 		t.FailNow()
 	}
 
-	_, err = serviceUtil.GetConsumersInCache(context.Background(), "", "",
+	_, err = serviceUtil.GetConsumersInCache(util.SetContext(context.Background(), "cacheOnly", "1"), "", "",
 		&proto.MicroService{
 			ServiceId: "a",
-		}, registry.WithCacheOnly())
+		})
 	if err != nil {
 		fmt.Printf("GetConsumersInCache WithCacheOnly failed")
 		t.FailNow()
@@ -328,9 +328,10 @@ func TestGetConsumer(t *testing.T) {
 }
 
 func TestGetProvider(t *testing.T) {
-	_, err := serviceUtil.GetProvidersInCache(context.Background(), "", "", &proto.MicroService{
-		ServiceId: "a",
-	}, registry.WithCacheOnly())
+	_, err := serviceUtil.GetProvidersInCache(util.SetContext(context.Background(), "cacheOnly", "1"), "", "",
+		&proto.MicroService{
+			ServiceId: "a",
+		})
 	if err != nil {
 		fmt.Printf("GetProvidersInCache WithCacheOnly failed")
 		t.FailNow()
@@ -342,7 +343,8 @@ func TestGetProvider(t *testing.T) {
 		t.FailNow()
 	}
 
-	_, _, err = serviceUtil.GetProviderIdsByConsumerId(context.Background(), "", "", &proto.MicroService{}, registry.WithCacheOnly())
+	_, _, err = serviceUtil.GetProviderIdsByConsumerId(util.SetContext(context.Background(), "cacheOnly", "1"),
+		"", "", &proto.MicroService{})
 	if err != nil {
 		fmt.Printf("GetProviderIdsByConsumerId WithCacheOnly failed")
 		t.FailNow()

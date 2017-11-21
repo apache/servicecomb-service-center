@@ -24,8 +24,8 @@ import (
 	"strings"
 )
 
-func GetAllDomainRawData(ctx context.Context, opts ...registry.PluginOpOption) ([]*mvccpb.KeyValue, error) {
-	opts = append(opts,
+func GetAllDomainRawData(ctx context.Context) ([]*mvccpb.KeyValue, error) {
+	opts := append(FromContext(ctx),
 		registry.WithStrKey(apt.GenerateDomainKey("")),
 		registry.WithPrefix())
 	rsp, err := store.Store().Domain().Search(ctx, opts...)
@@ -36,9 +36,9 @@ func GetAllDomainRawData(ctx context.Context, opts ...registry.PluginOpOption) (
 
 }
 
-func GetAllDomain(ctx context.Context, opts ...registry.PluginOpOption) ([]string, error) {
+func GetAllDomain(ctx context.Context) ([]string, error) {
 	insWatherByDomainKeys := []string{}
-	kvs, err := GetAllDomainRawData(ctx, opts...)
+	kvs, err := GetAllDomainRawData(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -59,8 +59,8 @@ func GetAllDomain(ctx context.Context, opts ...registry.PluginOpOption) ([]strin
 	return insWatherByDomainKeys, err
 }
 
-func DomainExist(ctx context.Context, domain string, opts ...registry.PluginOpOption) (bool, error) {
-	opts = append(opts,
+func DomainExist(ctx context.Context, domain string) (bool, error) {
+	opts := append(FromContext(ctx),
 		registry.WithStrKey(apt.GenerateDomainKey(domain)),
 		registry.WithCountOnly())
 	rsp, err := store.Store().Domain().Search(ctx, opts...)
@@ -70,8 +70,8 @@ func DomainExist(ctx context.Context, domain string, opts ...registry.PluginOpOp
 	return rsp.Count > 0, nil
 }
 
-func ProjectExist(ctx context.Context, domain, project string, opts ...registry.PluginOpOption) (bool, error) {
-	opts = append(opts,
+func ProjectExist(ctx context.Context, domain, project string) (bool, error) {
+	opts := append(FromContext(ctx),
 		registry.WithStrKey(apt.GenerateProjectKey(domain, project)),
 		registry.WithCountOnly())
 	rsp, err := store.Store().Project().Search(ctx, opts...)
@@ -100,14 +100,15 @@ func NewProject(ctx context.Context, domain, project string) error {
 }
 
 func NewDomainProject(ctx context.Context, domain, project string) error {
-	ok, err := DomainExist(ctx, domain, registry.WithCacheOnly())
+	copyCtx := util.SetContext(util.CloneContext(ctx), "cacheOnly", "1")
+	ok, err := DomainExist(copyCtx, domain)
 	if !ok && err == nil {
 		err = NewDomain(ctx, domain)
 	}
 	if err != nil {
 		return err
 	}
-	ok, err = ProjectExist(ctx, domain, project, registry.WithCacheOnly())
+	ok, err = ProjectExist(copyCtx, domain, project)
 	if !ok && err == nil {
 		err = NewProject(ctx, domain, project)
 	}

@@ -76,14 +76,7 @@ type Graph struct {
 // GetGraph 获取依赖连接图详细依赖关系
 func (governService *GovernService) GetGraph(w http.ResponseWriter, r *http.Request) {
 	var graph Graph
-	noCache := r.URL.Query().Get("noCache")
-	if noCache != "0" && noCache != "1" && strings.TrimSpace(noCache) != "" {
-		controller.WriteError(w, scerr.ErrInvalidParams, "parameter noCache must be 1 or 0")
-		return
-	}
-	request := &pb.GetServicesRequest{
-		NoCache: noCache == "1",
-	}
+	request := &pb.GetServicesRequest{}
 	ctx := r.Context()
 	resp, err := core.ServiceAPI.GetServices(ctx, request)
 	if err != nil {
@@ -138,14 +131,8 @@ func (governService *GovernService) GetGraph(w http.ResponseWriter, r *http.Requ
 // GetServiceDetail 查询服务详细信息
 func (governService *GovernService) GetServiceDetail(w http.ResponseWriter, r *http.Request) {
 	serviceID := r.URL.Query().Get(":serviceId")
-	noCache := r.URL.Query().Get("noCache")
-	if noCache != "0" && noCache != "1" && strings.TrimSpace(noCache) != "" {
-		controller.WriteError(w, scerr.ErrInvalidParams, "parameter noCache must be 1 or 0")
-		return
-	}
 	request := &pb.GetServiceRequest{
 		ServiceId: serviceID,
-		NoCache:   noCache == "1",
 	}
 	ctx := r.Context()
 	resp, _ := core.GovernServiceAPI.GetServiceDetail(ctx, request)
@@ -156,14 +143,7 @@ func (governService *GovernService) GetServiceDetail(w http.ResponseWriter, r *h
 }
 
 func (governService *GovernService) GetAllServicesInfo(w http.ResponseWriter, r *http.Request) {
-	noCache := r.URL.Query().Get("noCache")
-	if noCache != "0" && noCache != "1" && strings.TrimSpace(noCache) != "" {
-		controller.WriteError(w, scerr.ErrInvalidParams, "parameter noCache must be 1 or 0")
-		return
-	}
-	request := &pb.GetServicesInfoRequest{
-		NoCache: noCache == "1",
-	}
+	request := &pb.GetServicesInfoRequest{}
 	ctx := r.Context()
 	optsStr := r.URL.Query().Get("options")
 	request.Options = strings.Split(optsStr, ",")

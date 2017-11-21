@@ -122,8 +122,7 @@ func (s *ServiceController) GetProviderDependencies(ctx context.Context, in *pb.
 		}, nil
 	}
 
-	dr := serviceUtil.NewProviderDependencyRelation(ctx, domainProject, providerServiceId, provider,
-		serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))...)
+	dr := serviceUtil.NewProviderDependencyRelation(ctx, domainProject, providerServiceId, provider)
 	services, err := dr.GetDependencyConsumers()
 	if err != nil {
 		util.Logger().Errorf(err, "GetProviderDependencies failed.")
@@ -163,8 +162,7 @@ func (s *ServiceController) GetConsumerDependencies(ctx context.Context, in *pb.
 		}, nil
 	}
 
-	dr := serviceUtil.NewConsumerDependencyRelation(ctx, domainProject, consumerId, consumer,
-		serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))...)
+	dr := serviceUtil.NewConsumerDependencyRelation(ctx, domainProject, consumerId, consumer)
 	services, err := dr.GetDependencyProviders()
 	if err != nil {
 		util.Logger().Errorf(err, "GetConsumerDependencies failed for get providers failed.")

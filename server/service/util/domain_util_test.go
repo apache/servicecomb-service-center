@@ -15,14 +15,14 @@ package util_test
 
 import (
 	"fmt"
-	"github.com/ServiceComb/service-center/server/infra/registry"
+	"github.com/ServiceComb/service-center/pkg/util"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"golang.org/x/net/context"
 	"testing"
 )
 
 func TestGetDomain(t *testing.T) {
-	_, err := serviceUtil.GetAllDomainRawData(context.Background(), registry.WithCacheOnly())
+	_, err := serviceUtil.GetAllDomainRawData(util.SetContext(context.Background(), "cacheOnly", "1"))
 	if err != nil {
 		fmt.Printf("GetAllDomainRawData WithCacheOnly failed")
 		t.FailNow()
@@ -34,7 +34,7 @@ func TestGetDomain(t *testing.T) {
 		t.FailNow()
 	}
 
-	_, err = serviceUtil.GetAllDomain(context.Background(), registry.WithCacheOnly())
+	_, err = serviceUtil.GetAllDomain(util.SetContext(context.Background(), "cacheOnly", "1"))
 	if err != nil {
 		fmt.Printf("GetAllDomain WithCacheOnly failed")
 		t.FailNow()
@@ -48,7 +48,7 @@ func TestGetDomain(t *testing.T) {
 }
 
 func TestDomainExist(t *testing.T) {
-	_, err := serviceUtil.DomainExist(context.Background(), "", registry.WithCacheOnly())
+	_, err := serviceUtil.DomainExist(util.SetContext(context.Background(), "cacheOnly", "1"), "")
 	if err != nil {
 		fmt.Printf("DomainExist WithCacheOnly failed")
 		t.FailNow()
@@ -70,7 +70,7 @@ func TestNewDomain(t *testing.T) {
 }
 
 func TestProjectExist(t *testing.T) {
-	_, err := serviceUtil.ProjectExist(context.Background(), "", "", registry.WithCacheOnly())
+	_, err := serviceUtil.ProjectExist(util.SetContext(context.Background(), "cacheOnly", "1"), "", "")
 	if err != nil {
 		fmt.Printf("DomainExist WithCacheOnly failed")
 		t.FailNow()

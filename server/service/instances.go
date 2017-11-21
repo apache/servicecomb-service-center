@@ -79,7 +79,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 	if instanceId == "" {
 		util.Logger().Infof("start register a new instance: service %s", instanceFlag)
 		if len(instance.Endpoints) != 0 {
-			oldInstanceId, endpointsIndexKey,  err = serviceUtil.CheckEndPoints(ctx, in)
+			oldInstanceId, endpointsIndexKey, err = serviceUtil.CheckEndPoints(ctx, in)
 			if err != nil {
 				util.Logger().Errorf(err, "register instance failed, service %s, operator %s: check endpoints failed.", instanceFlag, remoteIP)
 				if oldInstanceId != "" {
@@ -430,8 +430,7 @@ func (s *InstanceController) GetOneInstance(ctx context.Context, in *pb.GetOneIn
 
 	serviceId := in.ProviderServiceId
 	instanceId := in.ProviderInstanceId
-	instance, err := serviceUtil.GetInstance(ctx, domainProject, serviceId, instanceId,
-		serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))...)
+	instance, err := serviceUtil.GetInstance(ctx, domainProject, serviceId, instanceId)
 	if err != nil {
 		util.Logger().Errorf(err, "get instance failed, %s(consumer/provider): get instance failed.", conPro)
 		return &pb.GetOneInstanceResponse{
@@ -465,7 +464,6 @@ func (s *InstanceController) getInstancePreCheck(ctx context.Context, in interfa
 	}
 	var providerServiceId, consumerServiceId string
 	var tags []string
-	var opts []registry.PluginOpOption
 	domainProject := util.ParseDomainProject(ctx)
 
 	switch in.(type) {
@@ -473,21 +471,19 @@ func (s *InstanceController) getInstancePreCheck(ctx context.Context, in interfa
 		providerServiceId = in.(*pb.GetOneInstanceRequest).ProviderServiceId
 		consumerServiceId = in.(*pb.GetOneInstanceRequest).ConsumerServiceId
 		tags = in.(*pb.GetOneInstanceRequest).Tags
-		opts = serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.(*pb.GetOneInstanceRequest).NoCache))
 	case *pb.GetInstancesRequest:
 		providerServiceId = in.(*pb.GetInstancesRequest).ProviderServiceId
 		consumerServiceId = in.(*pb.GetInstancesRequest).ConsumerServiceId
 		tags = in.(*pb.GetInstancesRequest).Tags
-		opts = serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.(*pb.GetInstancesRequest).NoCache))
 	}
 
-	if !serviceUtil.ServiceExist(ctx, domainProject, providerServiceId, opts...) {
+	if !serviceUtil.ServiceExist(ctx, domainProject, providerServiceId) {
 		return scerr.NewError(scerr.ErrInvalidParams, fmt.Sprintf("Service does not exist. Service id is %s", providerServiceId))
 	}
 
 	// Tag过滤
 	if len(tags) > 0 {
-		tagsFromETCD, err := serviceUtil.GetTagsUtils(ctx, domainProject, providerServiceId, opts...)
+		tagsFromETCD, err := serviceUtil.GetTagsUtils(ctx, domainProject, providerServiceId)
 		if err != nil {
 			return scerr.NewError(scerr.ErrInternal, err.Error())
 		}
@@ -499,7 +495,7 @@ func (s *InstanceController) getInstancePreCheck(ctx context.Context, in interfa
 	}
 	// 黑白名单
 	// 跨应用调用
-	err = Accessible(ctx, domainProject, consumerServiceId, providerServiceId, opts...)
+	err = Accessible(ctx, domainProject, consumerServiceId, providerServiceId)
 	switch err.(type) {
 	case errorsEx.InternalError:
 		return scerr.NewError(scerr.ErrInternal, err.Error())
@@ -523,8 +519,7 @@ func (s *InstanceController) GetInstances(ctx context.Context, in *pb.GetInstanc
 
 	domainProject := util.ParseDomainProject(ctx)
 
-	instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, domainProject, in.ProviderServiceId, in.Env,
-		serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))...)
+	instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, domainProject, in.ProviderServiceId, in.Env)
 	if err != nil {
 		util.Logger().Errorf(err, "get instances failed, %s(consumer/provider): get instances from etcd failed.", conPro)
 		return &pb.GetInstancesResponse{
@@ -548,10 +543,8 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 
 	domainProject := util.ParseDomainProject(ctx)
 
-	opts := serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))
-
 	findFlag := util.StringJoin([]string{in.ConsumerServiceId, in.AppId, in.ServiceName, in.VersionRule}, "/")
-	service, err := serviceUtil.GetService(ctx, domainProject, in.ConsumerServiceId, opts...)
+	service, err := serviceUtil.GetService(ctx, domainProject, in.ConsumerServiceId)
 	if err != nil {
 		util.Logger().Errorf(err, "find instance failed, %s: get consumer failed.", findFlag)
 		return &pb.FindInstancesResponse{
@@ -571,7 +564,7 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 		AppId:       in.AppId,
 		ServiceName: in.ServiceName,
 		Alias:       in.ServiceName,
-	}, opts...)
+	})
 	if err != nil {
 		util.Logger().Errorf(err, "find instance failed, %s: get providers failed.", findFlag)
 		return &pb.FindInstancesResponse{
@@ -592,7 +585,6 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 			ProviderServiceId: serviceId,
 			Tags:              in.Tags,
 			Env:               in.Env,
-			NoCache:           in.NoCache,
 		})
 		if err != nil {
 			util.Logger().Errorf(err, "find instance failed, %s: get service %s 's instance failed.", findFlag, serviceId)
@@ -606,7 +598,7 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 	}
 	consumer := pb.ToMicroServiceKey(domainProject, service)
 	//维护version的规则,servicename 可能是别名，所以重新获取
-	providerService, _ := serviceUtil.GetService(ctx, domainProject, ids[0], opts...)
+	providerService, _ := serviceUtil.GetService(ctx, domainProject, ids[0])
 	if providerService == nil {
 		util.Logger().Errorf(nil, "find instance failed, %s: no provider matched.", findFlag)
 		return &pb.FindInstancesResponse{
