@@ -49,9 +49,7 @@ func (s *ServiceController) GetSchemaInfo(ctx context.Context, in *pb.GetSchemaR
 
 	domainProject := util.ParseDomainProject(ctx)
 
-	opts := serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))
-
-	if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId, opts...) {
+	if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId) {
 		util.Logger().Errorf(nil, "get schema failed, serviceId %s, schemaId %s: service not exist.", in.ServiceId, in.SchemaId)
 		return &pb.GetSchemaResponse{
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
@@ -59,7 +57,7 @@ func (s *ServiceController) GetSchemaInfo(ctx context.Context, in *pb.GetSchemaR
 	}
 
 	key := apt.GenerateServiceSchemaKey(domainProject, in.ServiceId, in.SchemaId)
-	opts = append(opts, registry.WithStrKey(key))
+	opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(key))
 	resp, errDo := store.Store().Schema().Search(ctx, opts...)
 	if errDo != nil {
 		util.Logger().Errorf(errDo, "get schema failed, serviceId %s, schemaId %s: get schema info failed.", in.ServiceId, in.SchemaId)

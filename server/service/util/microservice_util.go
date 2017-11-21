@@ -75,9 +75,9 @@ func GetServiceInCache(ctx context.Context, domain string, id string) (*pb.Micro
 	return ms.(*pb.MicroService), nil
 }
 
-func GetService(ctx context.Context, domainProject string, serviceId string, opts ...registry.PluginOpOption) (*pb.MicroService, error) {
+func GetService(ctx context.Context, domainProject string, serviceId string) (*pb.MicroService, error) {
 	key := apt.GenerateServiceKey(domainProject, serviceId)
-	opts = append(opts, registry.WithStrKey(key))
+	opts := append(FromContext(ctx), registry.WithStrKey(key))
 	serviceResp, err := store.Store().Service().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
@@ -93,9 +93,9 @@ func GetService(ctx context.Context, domainProject string, serviceId string, opt
 	return service, nil
 }
 
-func GetServicesRawData(ctx context.Context, domainProject string, opts ...registry.PluginOpOption) ([]*mvccpb.KeyValue, error) {
+func GetServicesRawData(ctx context.Context, domainProject string) ([]*mvccpb.KeyValue, error) {
 	key := apt.GenerateServiceKey(domainProject, "")
-	opts = append(opts,
+	opts := append(FromContext(ctx),
 		registry.WithStrKey(key),
 		registry.WithPrefix())
 	resp, err := store.Store().Service().Search(ctx, opts...)
@@ -105,8 +105,8 @@ func GetServicesRawData(ctx context.Context, domainProject string, opts ...regis
 	return resp.Kvs, err
 }
 
-func GetServicesByDomain(ctx context.Context, domainProject string, opts ...registry.PluginOpOption) ([]*pb.MicroService, error) {
-	kvs, err := GetServicesRawData(ctx, domainProject, opts...)
+func GetServicesByDomain(ctx context.Context, domainProject string) ([]*pb.MicroService, error) {
+	kvs, err := GetServicesRawData(ctx, domainProject)
 	if err != nil {
 		return nil, err
 	}
@@ -122,8 +122,8 @@ func GetServicesByDomain(ctx context.Context, domainProject string, opts ...regi
 	return services, nil
 }
 
-func GetServiceId(ctx context.Context, key *pb.MicroServiceKey, opts ...registry.PluginOpOption) (serviceId string, err error) {
-	serviceId, err = searchServiceId(ctx, key, opts...)
+func GetServiceId(ctx context.Context, key *pb.MicroServiceKey) (serviceId string, err error) {
+	serviceId, err = searchServiceId(ctx, key)
 	if err != nil {
 		return
 	}
@@ -131,13 +131,13 @@ func GetServiceId(ctx context.Context, key *pb.MicroServiceKey, opts ...registry
 		// 别名查询
 		util.Logger().Debugf("could not search microservice %s/%s/%s id by field 'serviceName', now try field 'alias'.",
 			key.AppId, key.ServiceName, key.Version)
-		return searchServiceIdFromAlias(ctx, key, opts...)
+		return searchServiceIdFromAlias(ctx, key)
 	}
 	return
 }
 
-func searchServiceId(ctx context.Context, key *pb.MicroServiceKey, opts ...registry.PluginOpOption) (string, error) {
-	opts = append(opts, registry.WithStrKey(apt.GenerateServiceIndexKey(key)))
+func searchServiceId(ctx context.Context, key *pb.MicroServiceKey) (string, error) {
+	opts := append(FromContext(ctx), registry.WithStrKey(apt.GenerateServiceIndexKey(key)))
 	resp, err := store.Store().ServiceIndex().Search(ctx, opts...)
 	if err != nil {
 		return "", err
@@ -148,8 +148,8 @@ func searchServiceId(ctx context.Context, key *pb.MicroServiceKey, opts ...regis
 	return util.BytesToStringWithNoCopy(resp.Kvs[0].Value), nil
 }
 
-func searchServiceIdFromAlias(ctx context.Context, key *pb.MicroServiceKey, opts ...registry.PluginOpOption) (string, error) {
-	opts = append(opts, registry.WithStrKey(apt.GenerateServiceAliasKey(key)))
+func searchServiceIdFromAlias(ctx context.Context, key *pb.MicroServiceKey) (string, error) {
+	opts := append(FromContext(ctx), registry.WithStrKey(apt.GenerateServiceAliasKey(key)))
 	resp, err := store.Store().ServiceAlias().Search(ctx, opts...)
 	if err != nil {
 		return "", err
@@ -160,7 +160,7 @@ func searchServiceIdFromAlias(ctx context.Context, key *pb.MicroServiceKey, opts
 	return util.BytesToStringWithNoCopy(resp.Kvs[0].Value), nil
 }
 
-func GetServiceAllVersions(ctx context.Context, key *pb.MicroServiceKey, alias bool, opts ...registry.PluginOpOption) (*registry.PluginResponse, error) {
+func GetServiceAllVersions(ctx context.Context, key *pb.MicroServiceKey, alias bool) (*registry.PluginResponse, error) {
 	key.Version = ""
 	var prefix string
 	if alias {
@@ -168,7 +168,7 @@ func GetServiceAllVersions(ctx context.Context, key *pb.MicroServiceKey, alias b
 	} else {
 		prefix = apt.GenerateServiceIndexKey(key)
 	}
-	opts = append(opts,
+	opts := append(FromContext(ctx),
 		registry.WithStrKey(prefix),
 		registry.WithPrefix(),
 		registry.WithDescendOrder())
@@ -176,13 +176,13 @@ func GetServiceAllVersions(ctx context.Context, key *pb.MicroServiceKey, alias b
 	return resp, err
 }
 
-func FindServiceIds(ctx context.Context, versionRule string, key *pb.MicroServiceKey, opts ...registry.PluginOpOption) ([]string, error) {
+func FindServiceIds(ctx context.Context, versionRule string, key *pb.MicroServiceKey) ([]string, error) {
 	// 版本规则
 	ids := []string{}
 	match := ParseVersionRule(versionRule)
 	if match == nil {
 		key.Version = versionRule
-		serviceId, err := GetServiceId(ctx, key, opts...)
+		serviceId, err := GetServiceId(ctx, key)
 		if err != nil {
 			return nil, err
 		}
@@ -196,7 +196,7 @@ func FindServiceIds(ctx context.Context, versionRule string, key *pb.MicroServic
 	alsoFindAlias := len(key.Alias) > 0
 
 FIND_RULE:
-	resp, err := GetServiceAllVersions(ctx, key, searchAlias, opts...)
+	resp, err := GetServiceAllVersions(ctx, key, searchAlias)
 	if err != nil {
 		return nil, err
 	}
@@ -211,8 +211,8 @@ FIND_RULE:
 	return ids, nil
 }
 
-func ServiceExist(ctx context.Context, domainProject string, serviceId string, opts ...registry.PluginOpOption) bool {
-	opts = append(opts,
+func ServiceExist(ctx context.Context, domainProject string, serviceId string) bool {
+	opts := append(FromContext(ctx),
 		registry.WithStrKey(apt.GenerateServiceKey(domainProject, serviceId)),
 		registry.WithCountOnly())
 	resp, err := store.Store().Service().Search(ctx, opts...)
@@ -222,9 +222,9 @@ func ServiceExist(ctx context.Context, domainProject string, serviceId string, o
 	return true
 }
 
-func GetAllServiceUtil(ctx context.Context, opts ...registry.PluginOpOption) ([]*pb.MicroService, error) {
+func GetAllServiceUtil(ctx context.Context) ([]*pb.MicroService, error) {
 	domainProject := util.ParseDomainProject(ctx)
-	services, err := GetServicesByDomain(ctx, domainProject, opts...)
+	services, err := GetServicesByDomain(ctx, domainProject)
 	if err != nil {
 		return nil, err
 	}

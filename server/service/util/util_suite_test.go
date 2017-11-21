@@ -17,8 +17,8 @@ import _ "github.com/ServiceComb/service-center/server/plugin/infra/registry/bui
 
 import (
 	"fmt"
+	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/server/infra/registry"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	. "github.com/onsi/ginkgo"
@@ -38,27 +38,27 @@ func TestMicroservice(t *testing.T) {
 }
 
 func TestFindServiceIds(t *testing.T) {
-	_, err := serviceUtil.FindServiceIds(context.Background(), "latest", &proto.MicroServiceKey{},
-		registry.WithCacheOnly())
+	_, err := serviceUtil.FindServiceIds(util.SetContext(context.Background(), "cacheOnly", "1"),
+		"latest", &proto.MicroServiceKey{})
 	if err != nil {
 		t.FailNow()
 	}
 
-	_, err = serviceUtil.FindServiceIds(context.Background(), "1.0.0", &proto.MicroServiceKey{},
-		registry.WithCacheOnly())
+	_, err = serviceUtil.FindServiceIds(util.SetContext(context.Background(), "cacheOnly", "1"),
+		"1.0.0", &proto.MicroServiceKey{})
 	if err != nil {
 		t.FailNow()
 	}
 
-	_, err = serviceUtil.FindServiceIds(context.Background(), "1.0+", &proto.MicroServiceKey{Alias: "test"},
-		registry.WithCacheOnly())
+	_, err = serviceUtil.FindServiceIds(util.SetContext(context.Background(), "cacheOnly", "1"),
+		"1.0+", &proto.MicroServiceKey{Alias: "test"})
 	if err != nil {
 		t.FailNow()
 	}
 }
 
 func TestGetService(t *testing.T) {
-	_, err := serviceUtil.GetService(context.Background(), "", "", registry.WithCacheOnly())
+	_, err := serviceUtil.GetService(util.SetContext(context.Background(), "cacheOnly", "1"), "", "")
 	if err != nil {
 		t.FailNow()
 	}
@@ -68,7 +68,7 @@ func TestGetService(t *testing.T) {
 		t.FailNow()
 	}
 
-	_, err = serviceUtil.GetServicesRawData(context.Background(), "", registry.WithCacheOnly())
+	_, err = serviceUtil.GetServicesRawData(util.SetContext(context.Background(), "cacheOnly", "1"), "")
 	if err != nil {
 		t.FailNow()
 	}
@@ -78,7 +78,7 @@ func TestGetService(t *testing.T) {
 		t.FailNow()
 	}
 
-	_, err = serviceUtil.GetServicesByDomain(context.Background(), "", registry.WithCacheOnly())
+	_, err = serviceUtil.GetServicesByDomain(util.SetContext(context.Background(), "cacheOnly", "1"), "")
 	if err != nil {
 		t.FailNow()
 	}
@@ -88,7 +88,7 @@ func TestGetService(t *testing.T) {
 		t.FailNow()
 	}
 
-	_, err = serviceUtil.GetAllServiceUtil(context.Background(), registry.WithCacheOnly())
+	_, err = serviceUtil.GetAllServiceUtil(util.SetContext(context.Background(), "cacheOnly", "1"))
 	if err != nil {
 		t.FailNow()
 	}
@@ -136,7 +136,7 @@ func TestServiceExist(t *testing.T) {
 			t.FailNow()
 		}
 	}()
-	serviceUtil.ServiceExist(context.Background(), "", "", registry.WithCacheOnly())
+	serviceUtil.ServiceExist(util.SetContext(context.Background(), "cacheOnly", "1"), "", "")
 }
 
 const VERSIONRULE_BASE = 5000

@@ -15,6 +15,7 @@ package service_test
 
 import (
 	"fmt"
+	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	scerr "github.com/ServiceComb/service-center/server/error"
@@ -927,13 +928,14 @@ var _ = Describe("InstanceController", func() {
 				Expect(err).To(BeNil())
 				Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
-				resp, err = insResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
-					ConsumerServiceId:  consumerId,
-					ProviderServiceId:  consumerId,
-					ProviderInstanceId: instanceId,
-					Tags:               []string{"test"},
-					NoCache:            true,
-				})
+				resp, err = insResource.GetOneInstance(
+					util.SetContext(util.CloneContext(getContext()), "noCache", "1"),
+					&pb.GetOneInstanceRequest{
+						ConsumerServiceId:  consumerId,
+						ProviderServiceId:  consumerId,
+						ProviderInstanceId: instanceId,
+						Tags:               []string{"test"},
+					})
 				Expect(err).To(BeNil())
 				fmt.Println("UT============" + resp.GetResponse().Message)
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))

@@ -59,12 +59,13 @@ type RuleFilter struct {
 }
 
 func (rf *RuleFilter) Filter(ctx context.Context, consumerId string) (bool, error) {
-	consumer, err := GetService(ctx, rf.DomainProject, consumerId, registry.WithCacheOnly())
+	copyCtx := util.SetContext(util.CloneContext(ctx), "cacheOnly", "1")
+	consumer, err := GetService(copyCtx, rf.DomainProject, consumerId)
 	if consumer == nil {
 		return false, err
 	}
 
-	tags, err := GetTagsUtils(context.Background(), rf.DomainProject, consumerId, registry.WithCacheOnly())
+	tags, err := GetTagsUtils(copyCtx, rf.DomainProject, consumerId)
 	if err != nil {
 		return false, err
 	}
@@ -77,14 +78,14 @@ func (rf *RuleFilter) Filter(ctx context.Context, consumerId string) (bool, erro
 	return true, nil
 }
 
-func GetRulesUtil(ctx context.Context, domainProject string, serviceId string, opts ...registry.PluginOpOption) ([]*pb.ServiceRule, error) {
+func GetRulesUtil(ctx context.Context, domainProject string, serviceId string) ([]*pb.ServiceRule, error) {
 	key := util.StringJoin([]string{
 		apt.GetServiceRuleRootKey(domainProject),
 		serviceId,
 		"",
 	}, "/")
 
-	opts = append(opts, registry.WithStrKey(key), registry.WithPrefix())
+	opts := append(FromContext(ctx), registry.WithStrKey(key), registry.WithPrefix())
 	resp, err := store.Store().Rule().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
@@ -103,8 +104,8 @@ func GetRulesUtil(ctx context.Context, domainProject string, serviceId string, o
 	return rules, nil
 }
 
-func RuleExist(ctx context.Context, domainProject string, serviceId string, attr string, pattern string, opts ...registry.PluginOpOption) bool {
-	opts = append(opts,
+func RuleExist(ctx context.Context, domainProject string, serviceId string, attr string, pattern string) bool {
+	opts := append(FromContext(ctx),
 		registry.WithStrKey(apt.GenerateRuleIndexKey(domainProject, serviceId, attr, pattern)),
 		registry.WithCountOnly())
 	resp, err := store.Store().RuleIndex().Search(ctx, opts...)
@@ -114,9 +115,9 @@ func RuleExist(ctx context.Context, domainProject string, serviceId string, attr
 	return true
 }
 
-func GetServiceRuleType(ctx context.Context, domainProject string, serviceId string, opts ...registry.PluginOpOption) (string, int, error) {
+func GetServiceRuleType(ctx context.Context, domainProject string, serviceId string) (string, int, error) {
 	key := apt.GenerateServiceRuleKey(domainProject, serviceId, "")
-	opts = append(opts,
+	opts := append(FromContext(ctx),
 		registry.WithStrKey(key),
 		registry.WithPrefix())
 	resp, err := store.Store().Rule().Search(ctx, opts...)
@@ -135,8 +136,8 @@ func GetServiceRuleType(ctx context.Context, domainProject string, serviceId str
 	return rule.RuleType, len(resp.Kvs), nil
 }
 
-func GetOneRule(ctx context.Context, domainProject, serviceId, ruleId string, opts ...registry.PluginOpOption) (*pb.ServiceRule, error) {
-	opts = append(opts,
+func GetOneRule(ctx context.Context, domainProject, serviceId, ruleId string) (*pb.ServiceRule, error) {
+	opts := append(FromContext(ctx),
 		registry.WithStrKey(apt.GenerateServiceRuleKey(domainProject, serviceId, ruleId)))
 	resp, err := store.Store().Rule().Search(ctx, opts...)
 	if err != nil {

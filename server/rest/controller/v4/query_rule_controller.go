@@ -97,15 +97,8 @@ func (this *RuleService) UpdateRule(w http.ResponseWriter, r *http.Request) {
 }
 
 func (this *RuleService) GetRules(w http.ResponseWriter, r *http.Request) {
-	noCache := r.URL.Query().Get("noCache")
-	if noCache != "0" && noCache != "1" && strings.TrimSpace(noCache) != "" {
-		controller.WriteError(w, scerr.ErrInvalidParams, "parameter noCache must be 1 or 0")
-		return
-	}
-
 	resp, _ := core.ServiceAPI.GetRule(r.Context(), &pb.GetServiceRulesRequest{
 		ServiceId: r.URL.Query().Get(":serviceId"),
-		NoCache:   noCache == "1",
 	})
 	respInternal := resp.Response
 	resp.Response = nil

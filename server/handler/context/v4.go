@@ -45,7 +45,7 @@ func (v *v4Context) Do(r *http.Request) error {
 		if len(project) == 0 {
 			project = core.REGISTRY_PROJECT
 		}
-		util.SetReqCtx(r, "project", project)
+		util.SetRequestContext(r, "project", project)
 	}
 
 	if len(util.ParseDomain(ctx)) == 0 {
@@ -55,7 +55,7 @@ func (v *v4Context) Do(r *http.Request) error {
 			util.Logger().Errorf(err, "Invalid Request URI %s", r.RequestURI)
 			return err
 		}
-		util.SetReqCtx(r, "domain", domain)
+		util.SetRequestContext(r, "domain", domain)
 	}
 	return nil
 }

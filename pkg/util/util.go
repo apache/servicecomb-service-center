@@ -103,9 +103,26 @@ func NewStringContext(ctx context.Context) *StringContext {
 	return strCtx
 }
 
-func NewContext(ctx context.Context, key string, val interface{}) context.Context {
+func SetContext(ctx context.Context, key string, val interface{}) context.Context {
 	strCtx := NewStringContext(ctx)
 	strCtx.SetKV(key, val)
+	return strCtx
+}
+
+func CloneContext(ctx context.Context) context.Context {
+	strCtx := &StringContext{
+		parentCtx: ctx,
+		kv:        make(map[string]interface{}, 10),
+	}
+
+	old, ok := ctx.(*StringContext)
+	if !ok {
+		return strCtx
+	}
+
+	for k, v := range old.kv {
+		strCtx.kv[k] = v
+	}
 	return strCtx
 }
 
@@ -113,13 +130,14 @@ func FromContext(ctx context.Context, key string) interface{} {
 	return ctx.Value(key)
 }
 
-func SetReqCtx(r *http.Request, key string, val interface{}) {
+func SetRequestContext(r *http.Request, key string, val interface{}) *http.Request {
 	ctx := r.Context()
-	ctx = NewContext(ctx, key, val)
+	ctx = SetContext(ctx, key, val)
 	if ctx != r.Context() {
 		nr := r.WithContext(ctx)
 		*r = *nr
 	}
+	return r
 }
 
 func ParseDomainProject(ctx context.Context) string {
@@ -253,10 +271,6 @@ func GetRealIP(r *http.Request) string {
 		return addrs[0]
 	}
 	return ""
-}
-
-func InitContext(r *http.Request) {
-	SetReqCtx(r, "x-remote-ip", GetRealIP(r))
 }
 
 func BytesToInt32(bs []byte) (in int32) {

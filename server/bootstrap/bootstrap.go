@@ -40,6 +40,7 @@ import _ "github.com/ServiceComb/service-center/server/plugin/infra/uuid/dynamic
 import (
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/handler/auth"
+	"github.com/ServiceComb/service-center/server/handler/cache"
 	"github.com/ServiceComb/service-center/server/handler/context"
 	"github.com/ServiceComb/service-center/server/handler/perf"
 	"github.com/ServiceComb/service-center/server/interceptor"
@@ -58,4 +59,5 @@ func init() {
 	perf.RegisterHandlers()
 	auth.RegisterHandlers()
 	context.RegisterHandlers()
+	cache.RegisterHandlers()
 }

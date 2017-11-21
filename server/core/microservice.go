@@ -27,14 +27,13 @@ const (
 	REGISTRY_DOMAIN  = "default"
 	REGISTRY_PROJECT = "default"
 
-	registry_app_id               = "default"
-	registry_service_name         = "SERVICECENTER"
-	registry_default_instance_env = "production"
+	registry_app_id       = "default"
+	registry_service_name = "SERVICECENTER"
 
 	REGISTRY_DEFAULT_LEASE_RENEWALINTERVAL int32 = 30
 	REGISTRY_DEFAULT_LEASE_RETRYTIMES      int32 = 3
 
-	IS_SC_SELF            = "sc_self"
+	IS_SC_SELF = "sc_self"
 )
 
 func init() {
@@ -54,7 +53,7 @@ func init() {
 	}
 
 	Instance = &pb.MicroServiceInstance{
-		Environment: registry_default_instance_env,
+		Environment: "production",
 		Status:      pb.MSI_UP,
 		HealthCheck: &pb.HealthCheck{
 			Mode:     pb.CHECK_BY_HEARTBEAT,
@@ -62,12 +61,15 @@ func init() {
 			Times:    REGISTRY_DEFAULT_LEASE_RETRYTIMES,
 		},
 	}
+	if version.Ver().RunMode == "dev" {
+		Instance.Environment = "development"
+	}
 }
 
 func AddDefaultContextValue(ctx context.Context) context.Context {
-	ctx = util.NewContext(ctx, "domain", REGISTRY_DOMAIN)
-	ctx = util.NewContext(ctx, "project", REGISTRY_PROJECT)
-	ctx = util.NewContext(ctx, IS_SC_SELF, true)
+	ctx = util.SetContext(ctx, "domain", REGISTRY_DOMAIN)
+	ctx = util.SetContext(ctx, "project", REGISTRY_PROJECT)
+	ctx = util.SetContext(ctx, IS_SC_SELF, true)
 	return ctx
 }
 

@@ -29,9 +29,10 @@ import (
 	"strings"
 )
 
-const NODEIP  = "nodeIP"
-func GetLeaseId(ctx context.Context, domainProject string, serviceId string, instanceId string, opts ...registry.PluginOpOption) (int64, error) {
-	opts = append(opts,
+const NODEIP = "nodeIP"
+
+func GetLeaseId(ctx context.Context, domainProject string, serviceId string, instanceId string) (int64, error) {
+	opts := append(FromContext(ctx),
 		registry.WithStrKey(apt.GenerateInstanceLeaseKey(domainProject, serviceId, instanceId)))
 	resp, err := store.Store().Lease().Search(ctx, opts...)
 	if err != nil {
@@ -44,9 +45,9 @@ func GetLeaseId(ctx context.Context, domainProject string, serviceId string, ins
 	return leaseID, nil
 }
 
-func GetInstance(ctx context.Context, domainProject string, serviceId string, instanceId string, opts ...registry.PluginOpOption) (*pb.MicroServiceInstance, error) {
+func GetInstance(ctx context.Context, domainProject string, serviceId string, instanceId string) (*pb.MicroServiceInstance, error) {
 	key := apt.GenerateInstanceKey(domainProject, serviceId, instanceId)
-	opts = append(opts, registry.WithStrKey(key))
+	opts := append(FromContext(ctx), registry.WithStrKey(key))
 
 	resp, err := store.Store().Instance().Search(ctx, opts...)
 	if err != nil {
@@ -64,9 +65,9 @@ func GetInstance(ctx context.Context, domainProject string, serviceId string, in
 	return instance, nil
 }
 
-func GetAllInstancesOfOneService(ctx context.Context, domainProject string, serviceId string, env string, opts ...registry.PluginOpOption) ([]*pb.MicroServiceInstance, error) {
+func GetAllInstancesOfOneService(ctx context.Context, domainProject string, serviceId string, env string) ([]*pb.MicroServiceInstance, error) {
 	key := apt.GenerateInstanceKey(domainProject, serviceId, "")
-	opts = append(opts, registry.WithStrKey(key), registry.WithPrefix())
+	opts := append(FromContext(ctx), registry.WithStrKey(key), registry.WithPrefix())
 	resp, err := store.Store().Instance().Search(ctx, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "Get instance of service %s from etcd failed.", serviceId)
@@ -93,8 +94,8 @@ func GetAllInstancesOfOneService(ctx context.Context, domainProject string, serv
 	return instances, nil
 }
 
-func InstanceExist(ctx context.Context, domainProject string, serviceId string, instanceId string, opts ...registry.PluginOpOption) (bool, error) {
-	opts = append(opts,
+func InstanceExist(ctx context.Context, domainProject string, serviceId string, instanceId string) (bool, error) {
+	opts := append(FromContext(ctx),
 		registry.WithStrKey(apt.GenerateInstanceKey(domainProject, serviceId, instanceId)),
 		registry.WithCountOnly())
 	resp, err := store.Store().Instance().Search(ctx, opts...)
@@ -134,7 +135,7 @@ func CheckEndPoints(ctx context.Context, in *pb.RegisterInstanceRequest) (string
 }
 
 type EndpointValue struct {
-	serviceId string
+	serviceId  string
 	instanceId string
 }
 

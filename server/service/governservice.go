@@ -29,8 +29,6 @@ type GovernServiceController struct {
 }
 
 func (governServiceController *GovernServiceController) GetServicesInfo(ctx context.Context, in *pb.GetServicesInfoRequest) (*pb.GetServicesInfoResponse, error) {
-	opts := serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))
-
 	optionMap := make(map[string]struct{}, len(in.Options))
 	for _, opt := range in.Options {
 		optionMap[opt] = struct{}{}
@@ -49,7 +47,7 @@ func (governServiceController *GovernServiceController) GetServicesInfo(ctx cont
 	var st *pb.Statistics
 	if _, ok := optionMap["statistics"]; ok {
 		var err error
-		st, err = statistics(ctx, opts...)
+		st, err = statistics(ctx)
 		if err != nil {
 			return &pb.GetServicesInfoResponse{
 				Response: pb.CreateResponse(scerr.ErrInternal, "Statistics failed."),
@@ -64,7 +62,7 @@ func (governServiceController *GovernServiceController) GetServicesInfo(ctx cont
 	}
 
 	//获取所有服务
-	services, err := serviceUtil.GetAllServiceUtil(ctx, opts...)
+	services, err := serviceUtil.GetAllServiceUtil(ctx)
 	if err != nil {
 		util.Logger().Errorf(err, "Get all services for govern service faild.")
 		return &pb.GetServicesInfoResponse{
@@ -87,7 +85,7 @@ func (governServiceController *GovernServiceController) GetServicesInfo(ctx cont
 			}
 		}
 
-		serviceDetail, err := getServiceDetailUtil(ctx, options, domainProject, service.ServiceId, service, opts...)
+		serviceDetail, err := getServiceDetailUtil(ctx, options, domainProject, service.ServiceId, service)
 		if err != nil {
 			return &pb.GetServicesInfoResponse{
 				Response: pb.CreateResponse(scerr.ErrInternal, "Get one service detail failed."),
@@ -114,9 +112,7 @@ func (governServiceController *GovernServiceController) GetServiceDetail(ctx con
 		}, nil
 	}
 
-	opts := serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))
-
-	service, err := serviceUtil.GetService(ctx, domainProject, in.ServiceId, opts...)
+	service, err := serviceUtil.GetService(ctx, domainProject, in.ServiceId)
 	if service == nil {
 		return &pb.GetServiceDetailResponse{
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
@@ -128,7 +124,7 @@ func (governServiceController *GovernServiceController) GetServiceDetail(ctx con
 		}, err
 	}
 
-	versions, err := getServiceAllVersions(ctx, domainProject, service.AppId, service.ServiceName, opts...)
+	versions, err := getServiceAllVersions(ctx, domainProject, service.AppId, service.ServiceName)
 	if err != nil {
 		util.Logger().Errorf(err, "Get service all version fialed.")
 		return &pb.GetServiceDetailResponse{
@@ -136,7 +132,7 @@ func (governServiceController *GovernServiceController) GetServiceDetail(ctx con
 		}, err
 	}
 
-	serviceInfo, err := getServiceDetailUtil(ctx, options, domainProject, in.ServiceId, service, opts...)
+	serviceInfo, err := getServiceDetailUtil(ctx, options, domainProject, in.ServiceId, service)
 	if err != nil {
 		return &pb.GetServiceDetailResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, "Get service detail failed."),
@@ -151,7 +147,7 @@ func (governServiceController *GovernServiceController) GetServiceDetail(ctx con
 	}, nil
 }
 
-func getServiceAllVersions(ctx context.Context, domainProject string, appId string, serviceName string, opts ...registry.PluginOpOption) ([]string, error) {
+func getServiceAllVersions(ctx context.Context, domainProject string, appId string, serviceName string) ([]string, error) {
 	versions := []string{}
 	key := apt.GenerateServiceIndexKey(&pb.MicroServiceKey{
 		Tenant:      domainProject,
@@ -160,7 +156,7 @@ func getServiceAllVersions(ctx context.Context, domainProject string, appId stri
 		Version:     "",
 	})
 
-	opts = append(opts,
+	opts := append(serviceUtil.FromContext(ctx),
 		registry.WithStrKey(key),
 		registry.WithPrefix())
 
@@ -199,22 +195,20 @@ func getSchemaInfoUtil(ctx context.Context, domainProject string, serviceId stri
 	return schemas, nil
 }
 
-func getServiceDetailUtil(ctx context.Context, options []string, domainProject string, serviceId string, service *pb.MicroService, opts ...registry.PluginOpOption) (*pb.ServiceDetail, error) {
+func getServiceDetailUtil(ctx context.Context, options []string, domainProject string, serviceId string, service *pb.MicroService) (*pb.ServiceDetail, error) {
 	serviceDetail := &pb.ServiceDetail{}
 	for _, opt := range options {
 		expr := opt
 		switch expr {
 		case "tags":
-			util.Logger().Debugf("is tags")
-			tags, err := serviceUtil.GetTagsUtils(ctx, domainProject, serviceId, opts...)
+			tags, err := serviceUtil.GetTagsUtils(ctx, domainProject, serviceId)
 			if err != nil {
 				util.Logger().Errorf(err, "Get all tags for govern service faild.")
 				return nil, err
 			}
 			serviceDetail.Tags = tags
 		case "rules":
-			util.Logger().Debugf("is rules")
-			rules, err := serviceUtil.GetRulesUtil(ctx, domainProject, serviceId, opts...)
+			rules, err := serviceUtil.GetRulesUtil(ctx, domainProject, serviceId)
 			if err != nil {
 				util.Logger().Errorf(err, "Get all rules for govern service faild.")
 				return nil, err
@@ -224,15 +218,13 @@ func getServiceDetailUtil(ctx context.Context, options []string, domainProject s
 			}
 			serviceDetail.Rules = rules
 		case "instances":
-			util.Logger().Debugf("is instances")
-			instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, domainProject, serviceId, "", opts...)
+			instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, domainProject, serviceId, "")
 			if err != nil {
 				util.Logger().Errorf(err, "Get service's all instances for govern service faild.")
 				return nil, err
 			}
 			serviceDetail.Instances = instances
 		case "schemas":
-			util.Logger().Debugf("is schemas")
 			schemas, err := getSchemaInfoUtil(ctx, domainProject, serviceId)
 			if err != nil {
 				util.Logger().Errorf(err, "Get service's all schemas for govern service faild.")
@@ -240,8 +232,7 @@ func getServiceDetailUtil(ctx context.Context, options []string, domainProject s
 			}
 			serviceDetail.SchemaInfos = schemas
 		case "dependencies":
-			util.Logger().Debugf("is dependencies")
-			dr := serviceUtil.NewDependencyRelation(ctx, domainProject, serviceId, service, serviceId, service, opts...)
+			dr := serviceUtil.NewDependencyRelation(ctx, domainProject, serviceId, service, serviceId, service)
 			consumers, err := dr.GetDependencyConsumers()
 			if err != nil {
 				util.Logger().Errorf(err, "Get service's all consumers for govern service faild.")
@@ -275,13 +266,14 @@ func skipSelfDependency(services []*pb.MicroService, serviceId string) []*pb.Mic
 	return services
 }
 
-func statistics(ctx context.Context, opts ...registry.PluginOpOption) (*pb.Statistics, error) {
+func statistics(ctx context.Context) (*pb.Statistics, error) {
 	result := &pb.Statistics{
 		Services:  &pb.StService{},
 		Instances: &pb.StInstance{},
 		Apps:      &pb.StApp{},
 	}
 	domainProject := util.ParseDomainProject(ctx)
+	opts := serviceUtil.FromContext(ctx)
 
 	// services
 	key := apt.GetServiceIndexRootKey(domainProject)

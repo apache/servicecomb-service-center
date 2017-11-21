@@ -426,8 +426,7 @@ func (s *ServiceController) GetOne(ctx context.Context, in *pb.GetServiceRequest
 		}, nil
 	}
 	domainProject := util.ParseDomainProject(ctx)
-	service, err := serviceUtil.GetService(ctx, domainProject, in.ServiceId,
-		serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))...)
+	service, err := serviceUtil.GetService(ctx, domainProject, in.ServiceId)
 
 	if err != nil {
 		util.Logger().Errorf(err, "get microservice failed, serviceId is %s: inner err,get service failed.", in.ServiceId)
@@ -454,8 +453,7 @@ func (s *ServiceController) GetServices(ctx context.Context, in *pb.GetServicesR
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
 		}, nil
 	}
-	services, err := serviceUtil.GetAllServiceUtil(ctx,
-		serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))...)
+	services, err := serviceUtil.GetAllServiceUtil(ctx)
 	if err != nil {
 		util.Logger().Errorf(err, "get services failed: inner err.")
 		return &pb.GetServicesResponse{
@@ -564,7 +562,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 			Alias:       in.ServiceName,
 			Version:     in.Version,
 			Tenant:      domainProject,
-		}, serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))...)
+		})
 		if err != nil {
 			util.Logger().Errorf(err, "microservice exist failed, service %s: find serviceIds failed.", serviceFlag)
 			return &pb.GetExistenceResponse{
@@ -597,9 +595,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 			}, nil
 		}
 
-		opts := serviceUtil.QueryOptions(serviceUtil.WithNoCache(in.NoCache))
-
-		if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId, opts...) {
+		if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId) {
 			util.Logger().Warnf(nil, "schema exist failed, serviceId %s, schemaId %s: service not exist.", in.ServiceId, in.SchemaId)
 			return &pb.GetExistenceResponse{
 				Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
@@ -607,7 +603,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 		}
 
 		key := apt.GenerateServiceSchemaKey(domainProject, in.ServiceId, in.SchemaId)
-		exist, err := serviceUtil.CheckSchemaInfoExist(ctx, key, opts...)
+		exist, err := serviceUtil.CheckSchemaInfoExist(ctx, key)
 		if err != nil {
 			util.Logger().Errorf(err, "schema exist failed, serviceId %s, schemaId %s: get schema failed.", in.ServiceId, in.SchemaId)
 			return &pb.GetExistenceResponse{
