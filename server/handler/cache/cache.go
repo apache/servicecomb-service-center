@@ -35,7 +35,7 @@ func (l *CacheResponse) Handle(i *chain.Invocation) {
 	noCache := r.URL.Query().Get("noCache") == "1"
 	rev, _ := strconv.ParseInt(r.URL.Query().Get("rev"), 10, 64)
 
-	if rev == scRev {
+	if rev == scRev && r.Method == http.MethodGet {
 		w.WriteHeader(http.StatusNotModified)
 		i.Fail(nil)
 		return
