@@ -35,8 +35,6 @@ const (
 	REGISTRY_DEFAULT_LEASE_RETRYTIMES      int32 = 3
 
 	IS_SC_SELF            = "sc_self"
-	DEFAULT_REGION        = "default"
-	DEFAULT_AVAILABLEZONE = "default"
 )
 
 func init() {
@@ -128,15 +126,9 @@ func HeartbeatRequest() *pb.HeartbeatRequest {
 
 func GetRegionAndAvailableZone(in *pb.DataCenterInfo) (region string, availableZone string) {
 	if in == nil {
-		return DEFAULT_REGION, DEFAULT_AVAILABLEZONE
+		return "", ""
 	}
 	region = in.Region
-	if region == "" {
-		region = DEFAULT_REGION
-	}
 	availableZone = in.AvailableZone
-	if availableZone == "" {
-		availableZone = DEFAULT_AVAILABLEZONE
-	}
 	return
 }

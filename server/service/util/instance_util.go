@@ -29,6 +29,7 @@ import (
 	"strings"
 )
 
+const NODEIP  = "nodeIP"
 func GetLeaseId(ctx context.Context, domainProject string, serviceId string, instanceId string, opts ...registry.PluginOpOption) (int64, error) {
 	opts = append(opts,
 		registry.WithStrKey(apt.GenerateInstanceLeaseKey(domainProject, serviceId, instanceId)))
@@ -112,23 +113,38 @@ func CheckEndPoints(ctx context.Context, in *pb.RegisterInstanceRequest) (string
 	sort.Strings(endpoints)
 	endpointsJoin := util.StringJoin(endpoints, "/")
 	region, availableZone := apt.GetRegionAndAvailableZone(in.Instance.DataCenterInfo)
-	instanceEndpointsIndexKey := apt.GenerateEndpointsIndexKey(domainProject, region, availableZone, endpointsJoin)
+	nodeIP := ""
+	if value, ok := in.Instance.Properties[NODEIP]; ok {
+		nodeIP = value
+	}
+	instanceEndpointsIndexKey := apt.GenerateEndpointsIndexKey(domainProject, region, availableZone, nodeIP, endpointsJoin)
 	resp, err := store.Store().Endpoints().Search(ctx,
-		registry.WithStrKey(instanceEndpointsIndexKey),
-		registry.WithPrefix())
+		registry.WithStrKey(instanceEndpointsIndexKey))
 	if err != nil {
 		return "", "", err
 	}
 	if resp.Count == 0 {
 		return "", instanceEndpointsIndexKey, nil
 	}
-	value := util.BytesToStringWithNoCopy(resp.Kvs[0].Value)
-	splitedValue := strings.Split(value, "/")
-	serviceIdInner := splitedValue[0]
-	if in.Instance.ServiceId != serviceIdInner {
-		return "", "", fmt.Errorf("endpoints more exist for service %s", serviceIdInner)
+	endpointValue := ParseEndpointValue(resp.Kvs[0].Value)
+	if in.Instance.ServiceId != endpointValue.serviceId {
+		return endpointValue.instanceId, "", fmt.Errorf("endpoints more belong to service %s", endpointValue.serviceId)
 	}
-	return splitedValue[1], "", nil
+	return endpointValue.instanceId, "", nil
+}
+
+type EndpointValue struct {
+	serviceId string
+	instanceId string
+}
+
+func ParseEndpointValue(value []byte) EndpointValue {
+	endpointValue := EndpointValue{}
+	tmp := util.BytesToStringWithNoCopy(value)
+	splitedTmp := strings.Split(tmp, "/")
+	endpointValue.serviceId = splitedTmp[0]
+	endpointValue.instanceId = splitedTmp[1]
+	return endpointValue
 }
 
 func isContain(endpoints []string, endpoint string) bool {
