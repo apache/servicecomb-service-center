@@ -48,6 +48,11 @@ const (
 	PROP_ALLOW_CROSS_APP = "allowCrossApp"
 
 	Response_SUCCESS int32 = 0
+
+	ENV_DEV    string = "development"
+	ENV_TEST   string = "testing"
+	ENV_ACCEPT string = "acceptance"
+	ENV_PROD   string = "production"
 )
 
 type SerivceInstanceCtrlServerEx interface {

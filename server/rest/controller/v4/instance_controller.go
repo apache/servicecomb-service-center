@@ -125,7 +125,7 @@ func (this *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r 
 		AppId:             r.URL.Query().Get("appId"),
 		ServiceName:       r.URL.Query().Get("serviceName"),
 		VersionRule:       r.URL.Query().Get("version"),
-		Env:               r.URL.Query().Get("env"),
+		Environment:       r.URL.Query().Get("env"),
 		Tags:              ids,
 	}
 	resp, _ := core.InstanceAPI.Find(r.Context(), request)
@@ -145,7 +145,6 @@ func (this *MicroServiceInstanceService) GetOneInstance(w http.ResponseWriter, r
 		ProviderServiceId:  r.URL.Query().Get(":serviceId"),
 		ProviderInstanceId: r.URL.Query().Get(":instanceId"),
 		Tags:               ids,
-		Env:                r.URL.Query().Get("env"),
 	}
 	resp, _ := core.InstanceAPI.GetOneInstance(r.Context(), request)
 	respInternal := resp.Response
@@ -163,7 +162,6 @@ func (this *MicroServiceInstanceService) GetInstances(w http.ResponseWriter, r *
 		ConsumerServiceId: r.Header.Get("X-ConsumerId"),
 		ProviderServiceId: r.URL.Query().Get(":serviceId"),
 		Tags:              ids,
-		Env:               r.URL.Query().Get("env"),
 	}
 	resp, _ := core.InstanceAPI.GetInstances(r.Context(), request)
 	respInternal := resp.Response

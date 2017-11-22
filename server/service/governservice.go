@@ -218,7 +218,7 @@ func getServiceDetailUtil(ctx context.Context, options []string, domainProject s
 			}
 			serviceDetail.Rules = rules
 		case "instances":
-			instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, domainProject, serviceId, "")
+			instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, domainProject, serviceId)
 			if err != nil {
 				util.Logger().Errorf(err, "Get service's all instances for govern service faild.")
 				return nil, err

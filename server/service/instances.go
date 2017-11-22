@@ -46,9 +46,6 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 		}, nil
 	}
 	instance := in.GetInstance()
-	if len(instance.Environment) == 0 {
-		instance.Environment = apt.Instance.Environment
-	}
 	remoteIP := util.GetIPFromContext(ctx)
 	instanceFlag := util.StringJoin([]string{instance.ServiceId, instance.HostName}, "/")
 	err := apt.Validate(instance)
@@ -444,13 +441,6 @@ func (s *InstanceController) GetOneInstance(ctx context.Context, in *pb.GetOneIn
 		}, nil
 	}
 
-	if len(in.Env) != 0 && in.Env != instance.Environment {
-		util.Logger().Errorf(nil, "get instance failed, %s(consumer/provider): environment not match, can't access.", conPro)
-		return &pb.GetOneInstanceResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Environment mismatch, can't access this instance."),
-		}, nil
-	}
-
 	return &pb.GetOneInstanceResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Get instance successfully."),
 		Instance: instance,
@@ -519,7 +509,7 @@ func (s *InstanceController) GetInstances(ctx context.Context, in *pb.GetInstanc
 
 	domainProject := util.ParseDomainProject(ctx)
 
-	instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, domainProject, in.ProviderServiceId, in.Env)
+	instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, domainProject, in.ProviderServiceId)
 	if err != nil {
 		util.Logger().Errorf(err, "get instances failed, %s(consumer/provider): get instances from etcd failed.", conPro)
 		return &pb.GetInstancesResponse{
@@ -561,6 +551,7 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 	// 版本规则
 	ids, err := serviceUtil.FindServiceIds(ctx, in.VersionRule, &pb.MicroServiceKey{
 		Tenant:      domainProject,
+		Environment: in.Environment,
 		AppId:       in.AppId,
 		ServiceName: in.ServiceName,
 		Alias:       in.ServiceName,
@@ -584,7 +575,6 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 			ConsumerServiceId: in.ConsumerServiceId,
 			ProviderServiceId: serviceId,
 			Tags:              in.Tags,
-			Env:               in.Env,
 		})
 		if err != nil {
 			util.Logger().Errorf(err, "find instance failed, %s: get service %s 's instance failed.", findFlag, serviceId)
@@ -826,7 +816,7 @@ func (s *InstanceController) ClusterHealth(ctx context.Context) (*pb.GetInstance
 		}, nil
 	}
 	instances := []*pb.MicroServiceInstance{}
-	instances, err = serviceUtil.GetAllInstancesOfOneService(ctx, domainProject, serviceId, "")
+	instances, err = serviceUtil.GetAllInstancesOfOneService(ctx, domainProject, serviceId)
 	if err != nil {
 		util.Logger().Errorf(err, "health check failed: get service center instances failed.")
 		return &pb.GetInstancesResponse{

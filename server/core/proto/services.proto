@@ -127,7 +127,7 @@ message MicroServiceKey {
     string appId = 3;
     string serviceName = 4;
     string version = 5;
-    string stage = 6;
+    string environment = 6;
     string alias = 7;
 }
 
@@ -138,7 +138,6 @@ message MicroService {
     string appId = 2;
     string serviceName = 3;
     string version = 4;
-
     string description = 5;
     string level = 6; // custom
     repeated string schemas = 7;
@@ -150,6 +149,7 @@ message MicroService {
     string alias = 13;
     map<string, string> LBStrategy = 14;
     string modTimestamp = 15;
+    string environment = 16;
 }
 
 message ServiceRule {
@@ -186,6 +186,7 @@ message GetExistenceRequest {
     string version = 4;
     string serviceId = 5;
     string schemaId = 6;
+    string environment = 7;
 }
 
 message GetExistenceResponse {
@@ -344,9 +345,8 @@ message MicroServiceInstance {
     string timestamp = 8;
 
     DataCenterInfo dataCenterInfo = 9;
-    string environment = 10;
 
-    string modTimestamp = 11;
+    string modTimestamp = 10;
 }
 
 message DataCenterInfo {
@@ -393,7 +393,7 @@ message FindInstancesRequest {
     string serviceName = 3;
     string versionRule = 4; // version rule
     repeated string tags = 5;
-    string env = 6;
+    string environment = 6;
 }
 
 message FindInstancesResponse {
@@ -406,7 +406,6 @@ message GetOneInstanceRequest {
     string providerServiceId = 2;
     string providerInstanceId = 3;
     repeated string tags = 4;
-    string env = 5;
 }
 
 message GetOneInstanceResponse {
@@ -418,7 +417,6 @@ message GetInstancesRequest {
     string consumerServiceId = 1;
     string providerServiceId = 2;
     repeated string tags = 3;
-    string env = 4;
 }
 
 message GetInstancesResponse {
@@ -495,7 +493,7 @@ message DependencyMircroService {
     string appId = 1;
     string serviceName = 2;
     string version = 3;
-    string stage = 4;
+    string environment = 4;
 }
 
 message MircroServiceDependency {

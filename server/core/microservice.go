@@ -27,8 +27,8 @@ const (
 	REGISTRY_DOMAIN  = "default"
 	REGISTRY_PROJECT = "default"
 
-	registry_app_id       = "default"
-	registry_service_name = "SERVICECENTER"
+	REGISTRY_APP_ID       = "default"
+	REGISTRY_SERVICE_NAME = "SERVICECENTER"
 
 	REGISTRY_DEFAULT_LEASE_RENEWALINTERVAL int32 = 30
 	REGISTRY_DEFAULT_LEASE_RETRYTIMES      int32 = 3
@@ -38,8 +38,9 @@ const (
 
 func init() {
 	Service = &pb.MicroService{
-		AppId:       registry_app_id,
-		ServiceName: registry_service_name,
+		Environment: pb.ENV_PROD,
+		AppId:       REGISTRY_APP_ID,
+		ServiceName: REGISTRY_SERVICE_NAME,
 		Version:     version.Ver().Version,
 		Status:      pb.MS_UP,
 		Level:       "BACK",
@@ -51,18 +52,17 @@ func init() {
 			pb.PROP_ALLOW_CROSS_APP: "true",
 		},
 	}
+	if version.Ver().RunMode == "dev" {
+		Service.Environment = pb.ENV_DEV
+	}
 
 	Instance = &pb.MicroServiceInstance{
-		Environment: "production",
-		Status:      pb.MSI_UP,
+		Status: pb.MSI_UP,
 		HealthCheck: &pb.HealthCheck{
 			Mode:     pb.CHECK_BY_HEARTBEAT,
 			Interval: REGISTRY_DEFAULT_LEASE_RENEWALINTERVAL,
 			Times:    REGISTRY_DEFAULT_LEASE_RETRYTIMES,
 		},
-	}
-	if version.Ver().RunMode == "dev" {
-		Instance.Environment = "development"
 	}
 }
 
@@ -86,8 +86,8 @@ func ISSCSelf(ctx context.Context) bool {
 func GetExistenceRequest() *pb.GetExistenceRequest {
 	return &pb.GetExistenceRequest{
 		Type:        pb.EXISTENCE_MS,
-		AppId:       registry_app_id,
-		ServiceName: registry_service_name,
+		AppId:       REGISTRY_APP_ID,
+		ServiceName: REGISTRY_SERVICE_NAME,
 		Version:     version.Ver().Version,
 	}
 }

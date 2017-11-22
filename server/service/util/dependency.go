@@ -260,8 +260,8 @@ func equalServiceDependency(serviceA *pb.MicroServiceKey, serviceB *pb.MicroServ
 func toString(in *pb.MicroServiceKey) string {
 	return util.StringJoin([]string{
 		in.Tenant,
+		in.Environment,
 		in.AppId,
-		in.Stage,
 		in.ServiceName,
 		in.Version,
 	}, "")
@@ -533,8 +533,8 @@ func validateMicroServiceKey(in *pb.MicroServiceKey, fuzzyMatch bool) error {
 	if err != nil {
 		return err
 	}
-	if len(in.Stage) == 0 {
-		in.Stage = "dev"
+	if len(in.Environment) == 0 {
+		in.Environment = pb.ENV_DEV
 	}
 	return nil
 }
@@ -603,8 +603,8 @@ func ProviderDependencyRuleExist(ctx context.Context, domainProject string, prov
 
 func AddServiceVersionRule(ctx context.Context, domainProject string, provider *pb.MicroServiceKey, consumer *pb.MicroServiceKey, consumerId string) error {
 	//创建依赖一致
-	if len(consumer.Stage) == 0 {
-		consumer.Stage = "dev"
+	if len(consumer.Environment) == 0 {
+		consumer.Environment = pb.ENV_DEV
 	}
 	exist, err := ProviderDependencyRuleExist(ctx, domainProject, provider, consumer)
 	if exist || err != nil {
