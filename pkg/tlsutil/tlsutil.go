@@ -15,7 +15,10 @@ package tlsutil
 
 import (
 	"crypto/tls"
+	"crypto/x509"
+	"encoding/pem"
 	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/ServiceComb/service-center/server/plugin"
 	"github.com/astaxie/beego"
 	"io/ioutil"
 	"os"
@@ -172,4 +175,140 @@ func GetServerSSLConfig() *SSLConfig {
 
 func GetClientSSLConfig() *SSLConfig {
 	return sslClientConfig
+}
+
+func GetX509CACertPool() (caCertPool *x509.CertPool, err error) {
+	pool := x509.NewCertPool()
+	caCertFile := GetServerSSLConfig().CACertFile
+	caCert, err := ioutil.ReadFile(caCertFile)
+	if err != nil {
+		util.Logger().Errorf(err, "read ca cert file %s failed.", caCertFile)
+		return nil, err
+	}
+
+	pool.AppendCertsFromPEM(caCert)
+	return pool, nil
+}
+
+func LoadTLSCertificate() (tlsCert []tls.Certificate, err error) {
+	certFile, keyFile := GetServerSSLConfig().CertFile, GetServerSSLConfig().KeyFile
+	passphase := GetServerSSLConfig().KeyPassphase
+	plainPassphase, err := plugin.Plugins().Cipher().Decrypt(passphase)
+	if err != nil {
+		util.Logger().Errorf(err, "decrypt ssl passphase(%d) failed.", len(passphase))
+		plainPassphase = ""
+	}
+
+	certContent, err := ioutil.ReadFile(certFile)
+	if err != nil {
+		util.Logger().Errorf(err, "read cert file %s failed.", certFile)
+		return nil, err
+	}
+
+	keyContent, err := ioutil.ReadFile(keyFile)
+	if err != nil {
+		util.Logger().Errorf(err, "read key file %s failed.", keyFile)
+		return nil, err
+	}
+
+	keyBlock, _ := pem.Decode(keyContent)
+	if keyBlock == nil {
+		util.Logger().Errorf(err, "decode key file %s failed.", keyFile)
+		return nil, err
+	}
+
+	if x509.IsEncryptedPEMBlock(keyBlock) {
+		plainPassphaseBytes := util.StringToBytesWithNoCopy(plainPassphase)
+		keyData, err := x509.DecryptPEMBlock(keyBlock, plainPassphaseBytes)
+		util.ClearStringMemory(&plainPassphase)
+		util.ClearByteMemory(plainPassphaseBytes)
+		if err != nil {
+			util.Logger().Errorf(err, "decrypt key file %s failed.", keyFile)
+			return nil, err
+		}
+
+		// 解密成功，重新编码为PEM格式的文件
+		plainKeyBlock := &pem.Block{
+			Type:  "RSA PRIVATE KEY",
+			Bytes: keyData,
+		}
+
+		keyContent = pem.EncodeToMemory(plainKeyBlock)
+	}
+
+	cert, err := tls.X509KeyPair(certContent, keyContent)
+	if err != nil {
+		util.Logger().Errorf(err, "load X509 key pair from cert file %s with key file %s failed.", certFile, keyFile)
+		return nil, err
+	}
+
+	var certs []tls.Certificate
+	certs = append(certs, cert)
+
+	return certs, nil
+}
+
+/**
+  verifyPeer    Whether verify client
+  supplyCert    Whether send certificate
+  verifyCN      Whether verify CommonName
+*/
+func GetClientTLSConfig(verifyPeer bool, supplyCert bool, verifyCN bool) (tlsConfig *tls.Config, err error) {
+	var pool *x509.CertPool = nil
+	var certs []tls.Certificate
+	if verifyPeer {
+		pool, err = GetX509CACertPool()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if supplyCert {
+		certs, err = LoadTLSCertificate()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	tlsConfig = &tls.Config{
+		RootCAs:            pool,
+		Certificates:       certs,
+		CipherSuites:       GetClientSSLConfig().CipherSuites,
+		InsecureSkipVerify: !verifyCN,
+		MinVersion:         GetClientSSLConfig().MinVersion,
+		MaxVersion:         GetClientSSLConfig().MaxVersion,
+	}
+
+	return tlsConfig, nil
+}
+
+func GetServerTLSConfig(verifyPeer bool) (tlsConfig *tls.Config, err error) {
+	clientAuthMode := tls.NoClientCert
+	var pool *x509.CertPool = nil
+	if verifyPeer {
+		pool, err = GetX509CACertPool()
+		if err != nil {
+			return nil, err
+		}
+
+		clientAuthMode = tls.RequireAndVerifyClientCert
+	}
+
+	var certs []tls.Certificate
+	certs, err = LoadTLSCertificate()
+	if err != nil {
+		return nil, err
+	}
+
+	tlsConfig = &tls.Config{
+		ClientCAs:                pool,
+		Certificates:             certs,
+		CipherSuites:             GetServerSSLConfig().CipherSuites,
+		PreferServerCipherSuites: true,
+		ClientAuth:               clientAuthMode,
+		MinVersion:               GetServerSSLConfig().MinVersion,
+		MaxVersion:               GetServerSSLConfig().MaxVersion,
+	}
+
+	return tlsConfig, nil
 }

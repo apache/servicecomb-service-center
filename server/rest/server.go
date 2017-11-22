@@ -37,7 +37,7 @@ func LoadConfig() (srvCfg *rest.ServerConfig, err error) {
 	var tlsConfig *tls.Config
 	if ssl.GetServerSSLConfig().SSLEnabled {
 		verifyClient := ssl.GetServerSSLConfig().VerifyClient
-		tlsConfig, err = rest.GetServerTLSConfig(verifyClient)
+		tlsConfig, err = ssl.GetServerTLSConfig(verifyClient)
 		if err != nil {
 			return
 		}

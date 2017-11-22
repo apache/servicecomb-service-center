@@ -18,7 +18,6 @@ import (
 	"errors"
 	"fmt"
 	errorsEx "github.com/ServiceComb/service-center/pkg/errors"
-	"github.com/ServiceComb/service-center/pkg/rest"
 	"github.com/ServiceComb/service-center/pkg/tlsutil"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/infra/registry"
@@ -480,7 +479,7 @@ func getEmbedInstance() mgr.PluginInstance {
 
 	if tlsutil.GetServerSSLConfig().SSLEnabled {
 		var err error
-		embedTLSConfig, err = rest.GetServerTLSConfig(tlsutil.GetServerSSLConfig().VerifyClient)
+		embedTLSConfig, err = tlsutil.GetServerTLSConfig(tlsutil.GetServerSSLConfig().VerifyClient)
 		if err != nil {
 			util.Logger().Error("get service center tls config failed", err)
 			inst.err <- err

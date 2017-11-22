@@ -18,7 +18,6 @@ import (
 	"errors"
 	"fmt"
 	errorsEx "github.com/ServiceComb/service-center/pkg/errors"
-	"github.com/ServiceComb/service-center/pkg/rest"
 	"github.com/ServiceComb/service-center/pkg/tlsutil"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/infra/registry"
@@ -561,7 +560,7 @@ func NewRegistry() mgr.PluginInstance {
 	if tlsutil.GetClientSSLConfig().SSLEnabled && strings.Index(registry.RegistryConfig().ClusterAddresses, "https://") >= 0 {
 		var err error
 		// go client tls限制，提供身份证书、不认证服务端、不校验CN
-		clientTLSConfig, err = rest.GetClientTLSConfig(tlsutil.GetClientSSLConfig().VerifyClient, true, false)
+		clientTLSConfig, err = tlsutil.GetClientTLSConfig(tlsutil.GetClientSSLConfig().VerifyClient, true, false)
 		if err != nil {
 			util.Logger().Error("get etcd client tls config failed", err)
 			inst.err <- err
