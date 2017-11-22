@@ -50,9 +50,10 @@ var pluginNames = map[PluginName]string{
 	REGISTRY:  "registry",
 }
 
-var pluginMgr = &PluginManager{
-	plugins:   make(map[PluginName]map[string]*Plugin, int(typeEnd)),
-	instances: make(map[PluginName]PluginInstance, int(typeEnd)),
+var pluginMgr = &PluginManager{}
+
+func init() {
+	pluginMgr.Initialize()
 }
 
 type PluginType int
@@ -82,18 +83,31 @@ type Plugin struct {
 
 type PluginInstance interface{}
 
+type wrapInstance struct {
+	instance PluginInstance
+	lock     sync.RWMutex
+}
+
 type PluginManager struct {
 	plugins   map[PluginName]map[string]*Plugin
-	instances map[PluginName]PluginInstance
-	lock      sync.RWMutex
+	instances map[PluginName]*wrapInstance
+}
+
+func (pm *PluginManager) Initialize() {
+	pm.plugins = make(map[PluginName]map[string]*Plugin, int(typeEnd))
+	pm.instances = make(map[PluginName]*wrapInstance, int(typeEnd))
+
+	for t := PluginName(0); t != typeEnd; t++ {
+		pluginMgr.instances[t] = &wrapInstance{}
+	}
 }
 
 func (pm *PluginManager) ReloadAll() {
-	pm.lock.Lock()
-	for k := range pm.instances {
-		delete(pm.instances, k)
+	for _, i := range pm.instances {
+		i.lock.Lock()
+		i.instance = nil
+		i.lock.Unlock()
 	}
-	pm.lock.Unlock()
 }
 
 // unsafe
@@ -116,27 +130,23 @@ func (pm *PluginManager) Get(pn PluginName, name string) *Plugin {
 }
 
 func (pm *PluginManager) Instance(pn PluginName) PluginInstance {
-	pm.lock.RLock()
-	inst, ok := pm.instances[pn]
-	if ok {
-		pm.lock.RUnlock()
-		return inst
+	wi := pm.instances[pn]
+	wi.lock.RLock()
+	if wi.instance != nil {
+		wi.lock.RUnlock()
+		return wi.instance
 	}
-	pm.lock.RUnlock()
+	wi.lock.RUnlock()
 
-	pm.lock.Lock()
-	inst, ok = pm.instances[pn]
-	if ok {
-		pm.lock.Unlock()
-		return inst
+	wi.lock.Lock()
+	if wi.instance != nil {
+		wi.lock.Unlock()
+		return wi.instance
 	}
-	inst = pm.New(pn)
-	if inst != nil {
-		pm.instances[pn] = inst
-	}
-	pm.lock.Unlock()
+	wi.instance = pm.New(pn)
+	wi.lock.Unlock()
 
-	return inst
+	return wi.instance
 }
 
 func (pm *PluginManager) New(pn PluginName) PluginInstance {
@@ -163,9 +173,10 @@ func (pm *PluginManager) New(pn PluginName) PluginInstance {
 }
 
 func (pm *PluginManager) Reload(pn PluginName) {
-	pm.lock.Lock()
-	delete(pm.instances, pn)
-	pm.lock.Unlock()
+	wi := pm.instances[pn]
+	wi.lock.Lock()
+	wi.instance = nil
+	wi.lock.Unlock()
 }
 
 func (pm *PluginManager) existDynamicPlugin(pn PluginName) *Plugin {

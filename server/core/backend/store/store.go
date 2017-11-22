@@ -81,17 +81,11 @@ var TypeRoots = map[StoreType]string{
 	ENDPOINTS:       apt.GetEndpointsRootKey(""),
 }
 
-var store *KvStore
+var store = &KvStore{}
 
 func init() {
-	store = &KvStore{
-		indexers:     make(map[StoreType]*Indexer),
-		asyncTaskSvc: async.NewAsyncTaskService(),
-		ready:        make(chan struct{}),
-	}
-	for i := StoreType(0); i != typeEnd; i++ {
-		store.newNullStore(i)
-	}
+	store.Initialize()
+
 	AddEventHandleFunc(LEASE, store.onLeaseEvent)
 }
 
@@ -110,6 +104,16 @@ type KvStore struct {
 	lock         sync.RWMutex
 	ready        chan struct{}
 	isClose      bool
+}
+
+func (s *KvStore) Initialize() {
+	s.indexers = make(map[StoreType]*Indexer)
+	s.asyncTaskSvc = async.NewAsyncTaskService()
+	s.ready = make(chan struct{})
+
+	for i := StoreType(0); i != typeEnd; i++ {
+		store.newNullStore(i)
+	}
 }
 
 func (s *KvStore) dispatchEvent(t StoreType, evt *KvEvent) {

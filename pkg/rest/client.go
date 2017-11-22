@@ -18,6 +18,7 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
+	"github.com/ServiceComb/service-center/pkg/tlsutil"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/astaxie/beego"
 	"io"
@@ -34,7 +35,7 @@ type HttpClient struct {
 }
 
 func getTLSTransport(verifyPeer bool, supplyCert bool, verifyCN bool) (transport *http.Transport, err error) {
-	tlsConfig, err := GetClientTLSConfig(verifyPeer, supplyCert, verifyCN)
+	tlsConfig, err := tlsutil.GetClientTLSConfig(verifyPeer, supplyCert, verifyCN)
 	if err != nil {
 		return nil, err
 	}
@@ -293,4 +294,25 @@ func (client *HttpClient) Delete(url string, headers map[string]string) (int, st
 
 func (client *HttpClient) Do(req *http.Request) (*http.Response, error) {
 	return client.client.Do(req)
+}
+
+func GetClient(communiType string) (*HttpClient, error) {
+	verifyClient := false
+	var err error
+	var client *HttpClient
+	//client, err = rest.GetHttpsClient(verifyClient)
+	if communiType == "https" {
+		client, err = GetAnnoHttpsClient(verifyClient)
+		if err != nil {
+			util.Logger().Error("Create https rest.client failed.", err)
+			return nil, err
+		}
+		return client, nil
+	}
+	client, err = GetHttpClient(true)
+	if err != nil {
+		util.Logger().Error("Create http rest.client failed.", err)
+		return nil, err
+	}
+	return client, nil
 }

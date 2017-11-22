@@ -14,7 +14,6 @@
 package rpc
 
 import (
-	"github.com/ServiceComb/service-center/pkg/rest"
 	"github.com/ServiceComb/service-center/pkg/tlsutil"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/core"
@@ -41,7 +40,7 @@ func NewServer(ep string) (_ *Server, err error) {
 
 	var grpcSrv *grpc.Server
 	if tlsutil.GetServerSSLConfig().SSLEnabled {
-		tlsConfig, err := rest.GetServerTLSConfig(tlsutil.GetServerSSLConfig().VerifyClient)
+		tlsConfig, err := tlsutil.GetServerTLSConfig(tlsutil.GetServerSSLConfig().VerifyClient)
 		if err != nil {
 			util.Logger().Error("error to get server tls config", err)
 			return nil, err
