@@ -14,8 +14,6 @@
 package service_test
 
 import (
-	"fmt"
-	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/core"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	scerr "github.com/ServiceComb/service-center/server/error"
@@ -26,390 +24,140 @@ import (
 	"google.golang.org/grpc"
 )
 
-var instanceId string
-var _ = Describe("InstanceController", func() {
-	var consumerId string
-	var providerId string
-	Describe("Register", func() {
-		Context("normal", func() {
-			It("创建实例", func() {
-				fmt.Println("UT===========创建实例")
-				respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-					Service: &pb.MicroService{
-						ServiceName: "service_name_consumer_register",
-						AppId:       "default",
-						Version:     "1.0.0",
-						Level:       "FRONT",
-						Schemas: []string{
-							"xxxxxxxx",
-						},
-						Status: "UP",
-					},
-				})
-				Expect(err).To(BeNil())
-				consumerId = respCreate.ServiceId
-				Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+var _ = Describe("'Instance' service", func() {
+	Describe("execute 'register' operartion", func() {
+		respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				ServiceName: "create_instance_service",
+				AppId:       "create_instance",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		Expect(err).To(BeNil())
+		Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+		serviceId := respCreate.ServiceId
 
-				resp, err := insResource.Register(getContext(), &pb.RegisterInstanceRequest{
+		Context("when register a instance", func() {
+			It("should be passed", func() {
+				resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
-						ServiceId: consumerId,
+						ServiceId: serviceId,
 						Endpoints: []string{
-							"rest:127.0.0.1:8080",
+							"createInstance:127.0.0.1:8080",
 						},
-						HostName:    "UT-HOST",
-						Status:      pb.MSI_UP,
-						Environment: "production",
-					},
-				})
-				resp, err = insResource.Register(getContext(), &pb.RegisterInstanceRequest{
-					Instance: &pb.MicroServiceInstance{
-						ServiceId: consumerId,
-						Endpoints: []string{
-							"rest:127.0.0.1:8080",
-						},
-						HostName:    "UT-HOST",
-						Status:      pb.MSI_UP,
-						Environment: "production",
+						HostName: "UT-HOST",
+						Status:   pb.MSI_UP,
 					},
 				})
 				Expect(err).To(BeNil())
-				fmt.Println("UT============" + resp.GetResponse().Message)
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.InstanceId).To(Not(Equal("")))
+			})
+		})
+
+		Context("when update the same instance", func() {
+			It("should be passed", func() {
+				instance := &pb.MicroServiceInstance{
+					ServiceId: serviceId,
+					Endpoints: []string{
+						"sameInstance:127.0.0.1:8080",
+					},
+					HostName: "UT-HOST",
+					Status:   pb.MSI_UP,
+				}
+				resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+					Instance: instance,
+				})
+				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+					Instance: instance,
+				})
+				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
-				resp, err = insResource.Register(getContext(), &pb.RegisterInstanceRequest{
+			})
+		})
+
+		Context("when register invalid instance", func() {
+			It("should be failed", func() {
+				By("endpoints are empty")
+				resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
-						ServiceId: consumerId,
-						Endpoints: []string{
-							"rest:127.0.0.1:8080",
-						},
-						HostName:    "UT-HOST",
-						Status:      pb.MSI_UP,
-						Environment: "production",
-						Properties:  map[string]string{"nodeIP": "test"},
+						ServiceId: serviceId,
+						HostName:  "UT-HOST",
+						Status:    pb.MSI_UP,
 					},
 				})
 				Expect(err).To(BeNil())
-				fmt.Println("UT============" + resp.GetResponse().Message)
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
-				instanceId = resp.InstanceId
-
-				respUpdateProperties, err := insResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
-					ServiceId:  consumerId,
-					InstanceId: instanceId,
-					Properties: map[string]string{
-						"test": "test",
-					},
-				})
-
-				Expect(err).To(BeNil())
-				fmt.Println("UT============" + respUpdateProperties.GetResponse().Message)
-				Expect(respUpdateProperties.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-
-				respUpdateStatus, err := insResource.UpdateStatus(getContext(), &pb.UpdateInstanceStatusRequest{
-					ServiceId:  consumerId,
-					InstanceId: instanceId,
-					Status:     pb.MSI_STARTING,
-				})
-
-				Expect(err).To(BeNil())
-				fmt.Println("UT============" + respUpdateStatus.GetResponse().Message)
-				Expect(respUpdateStatus.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-			})
-
-			By("register, param check", func() {
-				It("no Environment", func() {
-					resp, err := insResource.Register(getContext(), &pb.RegisterInstanceRequest{
-						Instance: &pb.MicroServiceInstance{
-							ServiceId: consumerId,
-							Endpoints: []string{
-								"rest:127.0.0.1:8080",
-							},
-							HostName: "UT-HOST",
-							Status:   pb.MSI_UP,
+				By("serviceId is empty")
+				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+					Instance: &pb.MicroServiceInstance{
+						HostName: "UT-HOST",
+						Endpoints: []string{
+							"check:127.0.0.1:8080",
 						},
-					})
-					Expect(err).To(BeNil())
-					Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-				})
-			})
-
-			It("批量心跳接口", func() {
-				fmt.Println("UT===========实例心跳上报批量接口， 参数校验")
-				resp, err := insResource.HeartbeatSet(getContext(), &pb.HeartbeatSetRequest{
-					Instances: []*pb.HeartbeatSetElement{},
+						Status: pb.MSI_UP,
+					},
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
-				fmt.Println("UT===========实例心跳上报批量接口")
-				resp, err = insResource.HeartbeatSet(getContext(), &pb.HeartbeatSetRequest{
-					Instances: []*pb.HeartbeatSetElement{
-						&pb.HeartbeatSetElement{
-							ServiceId:  consumerId,
-							InstanceId: instanceId,
-						},
-					},
-				})
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-
-				resp, err = insResource.HeartbeatSet(getContext(), &pb.HeartbeatSetRequest{
-					Instances: []*pb.HeartbeatSetElement{
-						&pb.HeartbeatSetElement{
-							ServiceId:  consumerId,
-							InstanceId: instanceId,
-						},
-						&pb.HeartbeatSetElement{
-							ServiceId:  consumerId,
-							InstanceId: instanceId,
-						},
-					},
-				})
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-
-				resp, err = insResource.HeartbeatSet(getContext(), &pb.HeartbeatSetRequest{
-					Instances: []*pb.HeartbeatSetElement{
-						&pb.HeartbeatSetElement{
-							ServiceId:  consumerId,
-							InstanceId: "not-exist-instanceId",
-						},
-						&pb.HeartbeatSetElement{
-							ServiceId:  consumerId,
-							InstanceId: instanceId,
-						},
-					},
-				})
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
-			})
-
-			It("创建实例,参数校验", func() {
-				fmt.Println("UT===========创建实例， 参数校验")
-				resp, err := insResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				By("service does not exist")
+				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						ServiceId: "1000000000000000",
 						Endpoints: []string{
-							"rest:127.0.0.1:8080",
+							"check:127.0.0.1:8080",
 						},
-						HostName:    "UT-HOST",
-						Status:      pb.MSI_UP,
-						Environment: "production",
+						HostName: "UT-HOST",
+						Status:   pb.MSI_UP,
 					},
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
-			})
 
-			It("health", func() {
-				//注册sc
-				fmt.Println("UT===========health")
-
-				respCluterhealth, err := insResource.ClusterHealth(getContext())
-				Expect(err).To(BeNil())
-				Expect(respCluterhealth.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
-
-				resp, err := serviceResource.Create(getContext(), core.CreateServiceRequest())
-				Expect(err).To(BeNil())
-				scServiceId := resp.ServiceId
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-
-				//注册实例
-				respIns, err := insResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				By("status is empty")
+				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
-						ServiceId: scServiceId,
+						ServiceId: serviceId,
+						HostName:  "UT-HOST",
 						Endpoints: []string{
-							"rest:127.0.0.1:8081",
+							"check:127.0.0.1:8080",
 						},
-						HostName:    "UT-HOST",
-						Status:      pb.MSI_UP,
-						Environment: "production",
-					},
-				})
-				Expect(respIns.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-
-				respCluterhealth, err = insResource.ClusterHealth(getContext())
-				Expect(err).To(BeNil())
-				Expect(respCluterhealth.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-			})
-
-			It("修改实例的status，参数校验", func() {
-				respUpdateStatus, err := insResource.UpdateStatus(getContext(), &pb.UpdateInstanceStatusRequest{
-					ServiceId:  "",
-					InstanceId: instanceId,
-					Status:     pb.MSI_STARTING,
-				})
-
-				Expect(err).To(BeNil())
-				fmt.Println("UT============" + respUpdateStatus.GetResponse().Message)
-				Expect(respUpdateStatus.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
-
-				respUpdateStatus, err = insResource.UpdateStatus(getContext(), &pb.UpdateInstanceStatusRequest{
-					ServiceId:  "notexistservice",
-					InstanceId: instanceId,
-					Status:     pb.MSI_STARTING,
-				})
-
-				Expect(err).To(BeNil())
-				fmt.Println("UT============" + respUpdateStatus.GetResponse().Message)
-				Expect(respUpdateStatus.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
-
-				respUpdateStatus, err = insResource.UpdateStatus(getContext(), &pb.UpdateInstanceStatusRequest{
-					ServiceId:  consumerId,
-					InstanceId: "notexistins",
-					Status:     pb.MSI_STARTING,
-				})
-
-				Expect(err).To(BeNil())
-				fmt.Println("UT============" + respUpdateStatus.GetResponse().Message)
-				Expect(respUpdateStatus.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
-
-				respUpdateStatus, err = insResource.UpdateStatus(getContext(), &pb.UpdateInstanceStatusRequest{
-					ServiceId:  consumerId,
-					InstanceId: instanceId,
-					Status:     "nonestatus",
-				})
-
-				Expect(err).To(BeNil())
-				fmt.Println("UT============" + respUpdateStatus.GetResponse().Message)
-				Expect(respUpdateStatus.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
-			})
-
-			It("修改实例的properties", func() {
-				respUpdateProperties, err := insResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
-					ServiceId:  consumerId,
-					InstanceId: "notexistins",
-					Properties: map[string]string{
-						"test": "test",
-					},
-				})
-
-				Expect(err).To(BeNil())
-				fmt.Println("UT============" + respUpdateProperties.GetResponse().Message)
-				Expect(respUpdateProperties.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
-
-				respUpdateProperties, err = insResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
-					ServiceId:  "",
-					InstanceId: instanceId,
-					Properties: map[string]string{
-						"test": "test",
-					},
-				})
-
-				Expect(err).To(BeNil())
-				fmt.Println("UT============" + respUpdateProperties.GetResponse().Message)
-				Expect(respUpdateProperties.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
-
-				respUpdateProperties, err = insResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
-					ServiceId:  "notexistservice",
-					InstanceId: instanceId,
-					Properties: map[string]string{
-						"test": "test",
-					},
-				})
-
-				Expect(err).To(BeNil())
-				fmt.Println("UT============" + respUpdateProperties.GetResponse().Message)
-				Expect(respUpdateProperties.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
-			})
-
-			It("创建实例，字段校验", func() {
-				fmt.Println("UT===========创建实例")
-				respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-					Service: &pb.MicroService{
-						ServiceName: "instance_validate",
-						AppId:       "instance_validate",
-						Version:     "1.0.0",
-						Level:       "FRONT",
-						Status:      "UP",
 					},
 				})
 				Expect(err).To(BeNil())
-				// Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-
-				resp, err := insResource.Register(getContext(), &pb.RegisterInstanceRequest{
-					Instance: &pb.MicroServiceInstance{
-						ServiceId:   respCreate.ServiceId,
-						HostName:    "UT-HOST",
-						Status:      pb.MSI_UP,
-						Environment: "production",
-					},
-				})
-				Expect(err).To(BeNil())
-				fmt.Println("UT============" + resp.GetResponse().Message)
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-
-				resp, err = insResource.Register(getContext(), &pb.RegisterInstanceRequest{
-					Instance: &pb.MicroServiceInstance{
-						Endpoints: []string{
-							"rest:127.0.0.1:8080",
-						},
-						HostName:    "UT-HOST",
-						Status:      pb.MSI_UP,
-						Environment: "production",
-					},
-				})
-				Expect(err).To(BeNil())
-				fmt.Println("UT============" + resp.GetResponse().Message)
 				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
-				resp, err = insResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				By("hostName is empty")
+				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
-						ServiceId: consumerId,
+						ServiceId: serviceId,
 						Endpoints: []string{
-							"rest:127.0.0.1:8080",
+							"check:127.0.0.1:8080",
 						},
-						Status:      pb.MSI_UP,
-						Environment: "production",
+						Status: pb.MSI_UP,
 					},
 				})
 				Expect(err).To(BeNil())
-				fmt.Println("UT============" + resp.GetResponse().Message)
 				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
-				resp, err = insResource.Register(getContext(), &pb.RegisterInstanceRequest{
-					Instance: &pb.MicroServiceInstance{
-						ServiceId: consumerId,
-						Endpoints: []string{
-							"rest:127.0.0.1:8080",
-						},
-						HostName:    "UT-HOST",
-						Environment: "production",
-					},
-				})
-				Expect(err).To(BeNil())
-				fmt.Println("UT============" + resp.GetResponse().Message)
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
-
-				resp, err = insResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				By("instance is nil")
+				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: nil,
 				})
 				Expect(err).To(BeNil())
-				fmt.Println("UT============" + resp.GetResponse().Message)
 				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
-			})
 
-			It("创建实例，字段校验,服务不存在", func() {
-				resp, err := insResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				By("check normal push healthChceck")
+				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
-						ServiceId: consumerId,
-						Endpoints: []string{
-							"rest:127.0.0.1:8080",
-						},
-						HostName:    "UT-HOST",
-						Environment: "production",
-					},
-				})
-				Expect(err).To(BeNil())
-				fmt.Println("UT============" + resp.GetResponse().Message)
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
-			})
-			It("创建实例,含healthcheck", func() {
-				fmt.Println("UT============创建实例，含checkhealth")
-				resp, err := insResource.Register(getContext(), &pb.RegisterInstanceRequest{
-					Instance: &pb.MicroServiceInstance{
-						ServiceId:   consumerId,
-						HostName:    "UT-HOST",
-						Status:      pb.MSI_UP,
-						Environment: "production",
+						ServiceId: serviceId,
+						HostName:  "UT-HOST",
+						Status:    pb.MSI_UP,
 						HealthCheck: &pb.HealthCheck{
 							Mode:     "push",
 							Interval: 30,
@@ -418,15 +166,14 @@ var _ = Describe("InstanceController", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				fmt.Println("UT============" + resp.GetResponse().Message)
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
-				resp, err = insResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				By("check normal pull healthChceck")
+				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
-						ServiceId:   consumerId,
-						HostName:    "UT-HOST",
-						Status:      pb.MSI_UP,
-						Environment: "production",
+						ServiceId: serviceId,
+						HostName:  "UT-HOST",
+						Status:    pb.MSI_UP,
 						HealthCheck: &pb.HealthCheck{
 							Mode:     "pull",
 							Interval: 30,
@@ -436,15 +183,14 @@ var _ = Describe("InstanceController", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				fmt.Println("UT============" + resp.GetResponse().Message)
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
-				resp, err = insResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				By("check invalid push healthChceck")
+				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
-						ServiceId:   consumerId,
-						HostName:    "UT-HOST",
-						Status:      pb.MSI_UP,
-						Environment: "production",
+						ServiceId: serviceId,
+						HostName:  "UT-HOST",
+						Status:    pb.MSI_UP,
 						HealthCheck: &pb.HealthCheck{
 							Mode:     "push",
 							Interval: 30,
@@ -453,15 +199,14 @@ var _ = Describe("InstanceController", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				fmt.Println("UT============" + resp.GetResponse().Message)
 				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
-				resp, err = insResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				By("check invalid pull healthChceck")
+				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
-						ServiceId:   consumerId,
-						HostName:    "UT-HOST",
-						Status:      pb.MSI_UP,
-						Environment: "production",
+						ServiceId: serviceId,
+						HostName:  "UT-HOST",
+						Status:    pb.MSI_UP,
 						HealthCheck: &pb.HealthCheck{
 							Mode:     "pull",
 							Interval: 30,
@@ -471,600 +216,807 @@ var _ = Describe("InstanceController", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				fmt.Println("UT============" + resp.GetResponse().Message)
 				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 	})
-	Describe("findInstance", func() {
-		Context("normal", func() {
-			var consumerIdFind string
-			It("发现实例,参数校验", func() {
-				fmt.Println("UT===========发现实例")
-				respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-					Service: &pb.MicroService{
-						ServiceName: "service_name_consumer_find",
-						AppId:       "default",
-						Version:     "1.0.0",
-						Level:       "FRONT",
-						Schemas: []string{
-							"xxxxxxxx",
-						},
-						Status: "UP",
-					},
-				})
-				Expect(err).To(BeNil())
-				consumerIdFind = respCreate.ServiceId
-				Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
-				respFind, err := insResource.Find(getContext(), &pb.FindInstancesRequest{
-					ConsumerServiceId: consumerIdFind,
-					AppId:             "service_group_provider",
-					ServiceName:       "service_name_provider",
-					VersionRule:       "1.0.0+",
-					Tags:              []string{},
-					Env:               "nonestage",
-				})
-				Expect(err).To(BeNil())
-				fmt.Println("UT============" + respFind.GetResponse().Message)
-				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+	Describe("execute 'heartbeat' operartion", func() {
+		respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				ServiceName: "heartbeat_service",
+				AppId:       "heartbeat_service",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		Expect(err).To(BeNil())
+		Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+		serviceId := respCreate.ServiceId
 
-				respFind, err = insResource.Find(getContext(), &pb.FindInstancesRequest{
-					ConsumerServiceId: "",
-					AppId:             "service_group_provider",
-					ServiceName:       "service_name_provider",
-					VersionRule:       "1.0.0+",
-					Tags:              []string{},
-					Env:               "development",
-				})
-				Expect(err).To(BeNil())
-				fmt.Println("UT============" + respFind.GetResponse().Message)
-				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+		resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+			Instance: &pb.MicroServiceInstance{
+				ServiceId: serviceId,
+				HostName:  "UT-HOST",
+				Endpoints: []string{
+					"heartbeat:127.0.0.1:8080",
+				},
+			},
+		})
+		Expect(err).To(BeNil())
+		Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+		instanceId1 := resp.InstanceId
 
-				respFind, err = insResource.Find(getContext(), &pb.FindInstancesRequest{
-					ConsumerServiceId: consumerIdFind,
-					AppId:             "service_group_provider",
-					ServiceName:       "noneservice",
-					VersionRule:       "latest",
-					Tags:              []string{},
-					Env:               "development",
-				})
-				Expect(err).To(BeNil())
-				fmt.Println("UT============" + respFind.GetResponse().Message)
-				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+		resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+			Instance: &pb.MicroServiceInstance{
+				ServiceId: serviceId,
+				HostName:  "UT-HOST",
+				Endpoints: []string{
+					"heartbeat:127.0.0.2:8080",
+				},
+			},
+		})
+		Expect(err).To(BeNil())
+		Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+		instanceId2 := resp.InstanceId
 
-				respFind, err = insResource.Find(getContext(), &pb.FindInstancesRequest{
-					ConsumerServiceId: consumerIdFind,
-					AppId:             "service_group_provider",
-					ServiceName:       "service_name_provider",
-					VersionRule:       "3.0.0+",
-					Tags:              []string{},
-					Env:               "development",
-				})
-				Expect(err).To(BeNil())
-				fmt.Println("UT============" + respFind.GetResponse().Message)
-				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
-
-				respFind, err = insResource.Find(getContext(), &pb.FindInstancesRequest{
-					ConsumerServiceId: consumerIdFind,
-					AppId:             "service_group_provider",
-					ServiceName:       "service_name_provider",
-					VersionRule:       "2.0.0-2.0.1",
-					Tags:              []string{},
-					Env:               "development",
-				})
-				Expect(err).To(BeNil())
-				fmt.Println("UT============" + respFind.GetResponse().Message)
-				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
-
-				respFind, err = insResource.Find(getContext(), &pb.FindInstancesRequest{
-					ConsumerServiceId: consumerIdFind,
-					AppId:             "service_group_provider",
-					ServiceName:       "service_name_provider",
-					VersionRule:       "2.0.0",
-					Tags:              []string{},
-					Env:               "development",
-				})
-				Expect(err).To(BeNil())
-
-				fmt.Println("UT============" + respFind.GetResponse().Message)
-				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
-
-				respFind, err = insResource.Find(getContext(), &pb.FindInstancesRequest{
-					ConsumerServiceId: "notExistServiceId",
-					AppId:             "service_group_provider",
-					ServiceName:       "service_name_provider",
-					VersionRule:       "2.0.0",
-					Tags:              []string{},
-					Env:               "development",
-				})
-				Expect(err).To(BeNil())
-
-				fmt.Println("UT============" + respFind.GetResponse().Message)
-				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
-			})
-
-			It("find instance, create dependency", func() {
-				ctx := getCunstomContext("find_dep", "find_dep")
-				resp, err := serviceResource.Create(ctx, &pb.CreateServiceRequest{
-					Service: &pb.MicroService{
-						ServiceName: "find_create_dep_consumer",
-						AppId:       "default",
-						Version:     "1.0.0",
-						Level:       "FRONT",
-						Schemas: []string{
-							"xxxxxxxx",
-						},
-						Status: "UP",
-					},
+		Context("when update a lease", func() {
+			It("should be passed", func() {
+				By("valid instance")
+				resp, err := instanceResource.Heartbeat(getContext(), &pb.HeartbeatRequest{
+					ServiceId:  serviceId,
+					InstanceId: instanceId1,
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-				consumerId := resp.ServiceId
 
-				resp, err = serviceResource.Create(ctx, &pb.CreateServiceRequest{
-					Service: &pb.MicroService{
-						ServiceName: "find_create_dep_provider",
-						AppId:       "default",
-						Version:     "1.0.0",
-						Level:       "FRONT",
-						Schemas: []string{
-							"xxxxxxxx",
-						},
-						Status: "UP",
-					},
-				})
-				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-				providerId := resp.ServiceId
-
-				respFind, err := insResource.Find(ctx, &pb.FindInstancesRequest{
-					ConsumerServiceId: consumerId,
-					AppId:             "default",
-					ServiceName:       "find_create_dep_provider",
-					VersionRule:       "latest",
-					Tags:              []string{},
-					Env:               "development",
-				})
-				Expect(err).To(BeNil())
-				Expect(respFind.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-
-				respPro, err := serviceResource.GetConsumerDependencies(ctx, &pb.GetDependenciesRequest{
-					ServiceId: consumerId,
-				})
-				Expect(err).To(BeNil())
-				Expect(providerId).To(Equal(respPro.Providers[0].ServiceId))
-
-				respCon, err := serviceResource.GetProviderDependencies(ctx, &pb.GetDependenciesRequest{
-					ServiceId: providerId,
-				})
-				Expect(err).To(BeNil())
-				Expect(consumerId).To(Equal(respCon.Consumers[0].ServiceId))
-
-				resDel, err := serviceResource.Delete(ctx, &pb.DeleteServiceRequest{
-					ServiceId: consumerId,
-					Force:     true,
-				})
-				Expect(err).To(BeNil())
-				Expect(resDel.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-
-				resDel, err = serviceResource.Delete(ctx, &pb.DeleteServiceRequest{
-					ServiceId: providerId,
-					Force:     true,
-				})
-				Expect(err).To(BeNil())
-				Expect(resDel.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-
-			})
-
-			It("发现实例", func() {
-				fmt.Println("UT===========发现实例")
-				resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-					Service: &pb.MicroService{
-						ServiceName: "service_name_provider",
-						AppId:       "default",
-						Version:     "1.0.0",
-						Level:       "FRONT",
-						Schemas: []string{
-							"xxxxxxxx",
-						},
-						Status: "UP",
-					},
-				})
-				Expect(err).To(BeNil())
-				providerId = resp.ServiceId
-
-				respFind, err := insResource.Find(getContext(), &pb.FindInstancesRequest{
-					ConsumerServiceId: consumerId,
-					AppId:             "default",
-					ServiceName:       "service_name_provider",
-					VersionRule:       "latest",
-					Tags:              []string{},
-					Env:               "development",
-				})
-				fmt.Println("test resp.GetResponse() ", respFind.GetResponse())
-				Expect(err).To(BeNil())
-				fmt.Println("UT============" + respFind.GetResponse().Message)
-				Expect(respFind.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-
-				respFind, err = insResource.Find(getContext(), &pb.FindInstancesRequest{
-					ConsumerServiceId: consumerId,
-					AppId:             "default",
-					ServiceName:       "service_name_provider",
-					VersionRule:       "1.0.0+",
-					Tags:              []string{},
-					Env:               "development",
-				})
-				Expect(err).To(BeNil())
-				fmt.Println("UT============" + respFind.GetResponse().Message)
-				Expect(respFind.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-
-				respFind, err = insResource.Find(getContext(), &pb.FindInstancesRequest{
-					ConsumerServiceId: consumerId,
-					AppId:             "default",
-					ServiceName:       "service_name_provider",
-					VersionRule:       "1.0.0-1.0.1",
-					Tags:              []string{},
-					Env:               "development",
-				})
-				Expect(err).To(BeNil())
-				fmt.Println("UT============" + resp.GetResponse().Message)
-				Expect(respFind.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-
-				respFind, err = insResource.Find(getContext(), &pb.FindInstancesRequest{
-					ConsumerServiceId: consumerId,
-					AppId:             "default",
-					ServiceName:       "service_name_provider",
-					VersionRule:       "1.0.0",
-					Tags:              []string{},
-					Env:               "development",
-				})
-				Expect(err).To(BeNil())
-
-				fmt.Println("UT============" + resp.GetResponse().Message)
-				Expect(respFind.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-			})
-
-			It("跨App发现实例", func() {
-				fmt.Println("UT===========跨App发现实例")
-				resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-					Service: &pb.MicroService{
-						ServiceName: "service_name_app_consumer",
-						AppId:       "service_group_app_consumer",
-						Version:     "1.0.0",
-						Level:       "FRONT",
-						Schemas: []string{
-							"xxxxxxxx",
-						},
-						Status: "UP",
-					},
-				})
-				Expect(err).To(BeNil())
-				consumerId := resp.ServiceId
-
-				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-					Service: &pb.MicroService{
-						ServiceName: "service_name_app_provider_fail",
-						AppId:       "service_group_app_provider",
-						Version:     "1.0.0",
-						Level:       "FRONT",
-						Schemas: []string{
-							"xxxxxxxx",
-						},
-						Status: "UP",
-					},
-				})
-				Expect(err).To(BeNil())
-				providerFailId := resp.ServiceId
-
-				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-					Service: &pb.MicroService{
-						ServiceName: "service_name_app_provider_ok",
-						AppId:       "service_group_app_provider",
-						Version:     "1.0.0",
-						Level:       "FRONT",
-						Schemas: []string{
-							"xxxxxxxx",
-						},
-						Status: "UP",
-						Properties: map[string]string{
-							pb.PROP_ALLOW_CROSS_APP: "true",
-						},
-					},
-				})
-				Expect(err).To(BeNil())
-				providerOkId := resp.ServiceId
-
-				UTFunc := func(providerId string, code int32) {
-					respFind, err := insResource.GetInstances(getContext(), &pb.GetInstancesRequest{
-						ConsumerServiceId: consumerId,
-						ProviderServiceId: providerId,
-					})
-					fmt.Println("test resp.GetResponse() ", respFind.GetResponse())
-					Expect(err).To(BeNil())
-					fmt.Println("UT============" + respFind.GetResponse().Message)
-					Expect(respFind.GetResponse().Code).To(Equal(code))
-				}
-
-				UTFunc(providerFailId, scerr.ErrPermissionDeny)
-
-				UTFunc(providerOkId, pb.Response_SUCCESS)
-			})
-
-			It("实例心跳", func() {
-				fmt.Println("UT===========实例心跳")
-				resp, err := insResource.Heartbeat(getContext(), &pb.HeartbeatRequest{
-					ServiceId:  consumerId,
-					InstanceId: instanceId,
-				})
-				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-			})
-
-			It("实例心跳,参数校验", func() {
-				fmt.Println("UT===========实例心跳")
-				resp, err := insResource.Heartbeat(getContext(), &pb.HeartbeatRequest{
+				By("serviceId is empty")
+				resp, err = instanceResource.Heartbeat(getContext(), &pb.HeartbeatRequest{
 					ServiceId:  "",
-					InstanceId: instanceId,
+					InstanceId: instanceId1,
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
-				resp, err = insResource.Heartbeat(getContext(), &pb.HeartbeatRequest{
-					ServiceId:  consumerId,
-					InstanceId: "100000000000",
+				By("serviceId does not exist")
+				resp, err = instanceResource.Heartbeat(getContext(), &pb.HeartbeatRequest{
+					ServiceId:  "100000000000",
+					InstanceId: instanceId1,
 				})
 				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
-				resp, err = insResource.Heartbeat(getContext(), &pb.HeartbeatRequest{
-					ServiceId:  consumerId,
+				By("instance does not exist")
+				resp, err = instanceResource.Heartbeat(getContext(), &pb.HeartbeatRequest{
+					ServiceId:  serviceId,
 					InstanceId: "not-exist-ins",
 				})
 				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
+		})
 
-			It("删除微服务,实例存在，不能删除", func() {
-				resp, err := serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{
-					ServiceId: consumerId,
-					Force:     false,
+		Context("when batch update lease", func() {
+			It("should be passed", func() {
+				By("instances are empty")
+				resp, err := instanceResource.HeartbeatSet(getContext(), &pb.HeartbeatSetRequest{
+					Instances: []*pb.HeartbeatSetElement{},
 				})
 				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+
+				By("instances are nil")
+				resp, err = instanceResource.HeartbeatSet(getContext(), &pb.HeartbeatSetRequest{})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+
+				By("request contains > 1 instances")
+				resp, err = instanceResource.HeartbeatSet(getContext(), &pb.HeartbeatSetRequest{
+					Instances: []*pb.HeartbeatSetElement{
+						{
+							ServiceId:  serviceId,
+							InstanceId: instanceId1,
+						},
+						{
+							ServiceId:  serviceId,
+							InstanceId: instanceId2,
+						},
+					},
+				})
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+				By("request contains invalid instance")
+				resp, err = instanceResource.HeartbeatSet(getContext(), &pb.HeartbeatSetRequest{
+					Instances: []*pb.HeartbeatSetElement{
+						{
+							ServiceId:  serviceId,
+							InstanceId: instanceId1,
+						},
+						{
+							ServiceId:  serviceId,
+							InstanceId: "not-exist-instanceId",
+						},
+					},
+				})
 				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 	})
 
-	Describe("getInstances", func() {
-		Context("normal", func() {
-			It("查找单个实例,参数校验", func() {
-				fmt.Println("UT===========查找实例，参数校验")
-				resp, err := insResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
-					ConsumerServiceId:  consumerId,
-					ProviderServiceId:  "",
-					ProviderInstanceId: instanceId,
-				})
-				Expect(err).To(BeNil())
-				fmt.Println("UT============" + resp.GetResponse().Message)
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+	Describe("execute 'clusterHealth' operartion", func() {
+		resp, err := serviceResource.Create(getContext(), core.CreateServiceRequest())
+		Expect(err).To(BeNil())
+		scServiceId := resp.ServiceId
+		Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
-				fmt.Println("UT===========查找实例，参数校验,")
-				resp, err = insResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
-					ConsumerServiceId:  consumerId,
-					ProviderServiceId:  consumerId,
-					ProviderInstanceId: instanceId,
-					Env:                "development",
-				})
+		Context("when request is valid", func() {
+			It("should be passed", func() {
+				//注册sc
+				By("SC cluster is empty")
+				respCluterhealth, err := instanceResource.ClusterHealth(getContext())
 				Expect(err).To(BeNil())
-				fmt.Println("UT============" + resp.GetResponse().Message)
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respCluterhealth.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
-				resp, err = insResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
-					ConsumerServiceId:  consumerId,
-					ProviderServiceId:  consumerId,
-					ProviderInstanceId: "not_exist_instanceId",
-					Env:                "development",
-				})
-				Expect(err).To(BeNil())
-				fmt.Println("UT============" + resp.GetResponse().Message)
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
-			})
-
-			It("查找单个实例,夸app调用", func() {
-				respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-					Service: &pb.MicroService{
-						ServiceName: "service_name_cross_app",
-						AppId:       "crossApp",
-						Version:     "1.0.0",
-						Level:       "FRONT",
-						Schemas: []string{
-							"xxxxxxxx",
+				By("SC cluster is not empty")
+				respIns, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+					Instance: &pb.MicroServiceInstance{
+						ServiceId: scServiceId,
+						Endpoints: []string{
+							"cluster:127.0.0.1:8081",
 						},
-						Status: "UP",
+						HostName: "UT-HOST",
+						Status:   pb.MSI_UP,
 					},
 				})
-				Expect(err).To(BeNil())
-				crossAppId := respCreate.ServiceId
+				Expect(respIns.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
-				fmt.Println("UT===========查找实例，参数校验")
-				resp, err := insResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
-					ConsumerServiceId:  crossAppId,
-					ProviderServiceId:  consumerId,
-					ProviderInstanceId: instanceId,
-				})
+				respCluterhealth, err = instanceResource.ClusterHealth(getContext())
 				Expect(err).To(BeNil())
-				fmt.Println("UT============" + resp.GetResponse().Message)
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respCluterhealth.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 			})
 
-			It("查找单个实例", func() {
-				fmt.Println("UT===========查找实例，参数校验")
-				resp, err := insResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
-					ConsumerServiceId:  consumerId,
-					ProviderServiceId:  consumerId,
-					ProviderInstanceId: instanceId,
-				})
-				Expect(err).To(BeNil())
-				fmt.Println("UT============" + resp.GetResponse().Message)
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+		})
+	})
 
-				fmt.Println("UT===========查找实例，含有不存在的tag")
-				resp, err = insResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
-					ConsumerServiceId:  consumerId,
-					ProviderServiceId:  consumerId,
-					ProviderInstanceId: instanceId,
-					Tags:               []string{"not-exist-tag"},
-				})
-				Expect(err).To(BeNil())
-				fmt.Println("UT============" + resp.GetResponse().Message)
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+	Describe("execute 'udpate' operartion", func() {
+		respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				ServiceName: "update_instance_service",
+				AppId:       "update_instance_service",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		Expect(err).To(BeNil())
+		Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+		serviceId := respCreate.ServiceId
 
-				fmt.Println("UT===========查找实例，含有存在的tag")
-				respAddTags, err := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
-					ServiceId: consumerId,
-					Tags: map[string]string{
+		resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+			Instance: &pb.MicroServiceInstance{
+				ServiceId: serviceId,
+				Endpoints: []string{
+					"updateInstance:127.0.0.1:8080",
+				},
+				HostName:   "UT-HOST",
+				Status:     pb.MSI_UP,
+				Properties: map[string]string{"nodeIP": "test"},
+			},
+		})
+		Expect(err).To(BeNil())
+		Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+		instanceId := resp.InstanceId
+
+		Context("when update instance status", func() {
+			It("should be passed", func() {
+				By("update instance status")
+				respUpdateStatus, err := instanceResource.UpdateStatus(getContext(), &pb.UpdateInstanceStatusRequest{
+					ServiceId:  serviceId,
+					InstanceId: instanceId,
+					Status:     pb.MSI_STARTING,
+				})
+
+				Expect(err).To(BeNil())
+				Expect(respUpdateStatus.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+				By("update status with a empty serviceId")
+				respUpdateStatus, err = instanceResource.UpdateStatus(getContext(), &pb.UpdateInstanceStatusRequest{
+					ServiceId:  "",
+					InstanceId: instanceId,
+					Status:     pb.MSI_STARTING,
+				})
+
+				Expect(err).To(BeNil())
+				Expect(respUpdateStatus.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+
+				By("update status with a not exist service")
+				respUpdateStatus, err = instanceResource.UpdateStatus(getContext(), &pb.UpdateInstanceStatusRequest{
+					ServiceId:  "notexistservice",
+					InstanceId: instanceId,
+					Status:     pb.MSI_STARTING,
+				})
+
+				Expect(err).To(BeNil())
+				Expect(respUpdateStatus.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+
+				By("update status with a not exist instance")
+				respUpdateStatus, err = instanceResource.UpdateStatus(getContext(), &pb.UpdateInstanceStatusRequest{
+					ServiceId:  serviceId,
+					InstanceId: "notexistins",
+					Status:     pb.MSI_STARTING,
+				})
+
+				Expect(err).To(BeNil())
+				Expect(respUpdateStatus.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+
+				By("update invalid status")
+				respUpdateStatus, err = instanceResource.UpdateStatus(getContext(), &pb.UpdateInstanceStatusRequest{
+					ServiceId:  serviceId,
+					InstanceId: instanceId,
+					Status:     "nonestatus",
+				})
+
+				Expect(err).To(BeNil())
+				Expect(respUpdateStatus.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+			})
+		})
+
+		Context("when update instance properties", func() {
+			It("should be passed", func() {
+				By("update instance properties")
+				respUpdateProperties, err := instanceResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
+					ServiceId:  serviceId,
+					InstanceId: instanceId,
+					Properties: map[string]string{
 						"test": "test",
 					},
 				})
-				Expect(err).To(BeNil())
-				Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
-				resp, err = insResource.GetOneInstance(
-					util.SetContext(util.CloneContext(getContext()), "noCache", "1"),
+				Expect(err).To(BeNil())
+				Expect(respUpdateProperties.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+				By("instance does not exist")
+				respUpdateProperties, err = instanceResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
+					ServiceId:  serviceId,
+					InstanceId: "notexistins",
+					Properties: map[string]string{
+						"test": "test",
+					},
+				})
+
+				Expect(err).To(BeNil())
+				Expect(respUpdateProperties.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+
+				By("serviceId is empty")
+				respUpdateProperties, err = instanceResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
+					ServiceId:  "",
+					InstanceId: instanceId,
+					Properties: map[string]string{
+						"test": "test",
+					},
+				})
+
+				Expect(err).To(BeNil())
+				Expect(respUpdateProperties.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+
+				By("service does not exist")
+				respUpdateProperties, err = instanceResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
+					ServiceId:  "notexistservice",
+					InstanceId: instanceId,
+					Properties: map[string]string{
+						"test": "test",
+					},
+				})
+
+				Expect(err).To(BeNil())
+				Expect(respUpdateProperties.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+			})
+		})
+	})
+
+	Describe("execute 'query' operartion", func() {
+		respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "query_instance",
+				ServiceName: "query_instance_service",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		Expect(err).To(BeNil())
+		Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+		serviceId1 := respCreate.ServiceId
+
+		respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "query_instance",
+				ServiceName: "query_instance_service",
+				Version:     "1.0.5",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		Expect(err).To(BeNil())
+		Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+		serviceId2 := respCreate.ServiceId
+
+		resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+			Instance: &pb.MicroServiceInstance{
+				ServiceId: serviceId1,
+				HostName:  "UT-HOST",
+				Endpoints: []string{
+					"find:127.0.0.1:8080",
+				},
+				Status: pb.MSI_UP,
+			},
+		})
+		Expect(err).To(BeNil())
+		Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+		instanceId1 := resp.InstanceId
+
+		resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+			Instance: &pb.MicroServiceInstance{
+				ServiceId: serviceId2,
+				HostName:  "UT-HOST",
+				Endpoints: []string{
+					"find:127.0.0.2:8080",
+				},
+				Status: pb.MSI_UP,
+			},
+		})
+		Expect(err).To(BeNil())
+		Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+		instanceId2 := resp.InstanceId
+
+		respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "query_instance_cross",
+				ServiceName: "query_instance_service",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		Expect(err).To(BeNil())
+		Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+		serviceId3 := respCreate.ServiceId
+
+		Context("when query invalid parameters", func() {
+			It("should be failed", func() {
+				By("invalid env")
+				respFind, err := instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: serviceId1,
+					AppId:             "query_instance",
+					ServiceName:       "query_instance_service",
+					VersionRule:       "1.0.0+",
+					Environment:       "nonestage",
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+
+				By("consumerId is empty")
+				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: "",
+					AppId:             "query_instance",
+					ServiceName:       "query_instance_service",
+					VersionRule:       "1.0.0+",
+					Environment:       pb.ENV_DEV,
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+
+				By("provider does not exist")
+				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: serviceId1,
+					AppId:             "query_instance",
+					ServiceName:       "noneservice",
+					VersionRule:       "latest",
+					Environment:       pb.ENV_DEV,
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+
+				By("provider does not contain 3.0.0+ versions")
+				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: serviceId1,
+					AppId:             "query_instance",
+					ServiceName:       "query_instance_service",
+					VersionRule:       "3.0.0+",
+					Environment:       pb.ENV_DEV,
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+
+				By("provider does not contain 2.0.0-2.0.1 versions")
+				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: serviceId1,
+					AppId:             "query_instance",
+					ServiceName:       "query_instance_service",
+					VersionRule:       "2.0.0-2.0.1",
+					Environment:       pb.ENV_DEV,
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+
+				By("provider does not contain 2.0.0 version")
+				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: serviceId1,
+					AppId:             "query_instance",
+					ServiceName:       "query_instance_service",
+					VersionRule:       "2.0.0",
+					Environment:       pb.ENV_DEV,
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+
+				By("consumer does not exist")
+				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: "notExistServiceId",
+					AppId:             "query_instance",
+					ServiceName:       "query_instance_service",
+					VersionRule:       "2.0.0",
+					Environment:       pb.ENV_DEV,
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+			})
+		})
+
+		Context("when query instances", func() {
+			It("should be passed", func() {
+				respFind, err := instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: serviceId1,
+					AppId:             "query_instance",
+					ServiceName:       "query_instance_service",
+					VersionRule:       "latest",
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId2))
+
+				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: serviceId1,
+					AppId:             "query_instance",
+					ServiceName:       "query_instance_service",
+					VersionRule:       "1.0.0+",
+					Tags:              []string{},
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId2))
+
+				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: serviceId1,
+					AppId:             "query_instance",
+					ServiceName:       "query_instance_service",
+					VersionRule:       "1.0.0-1.0.1",
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId1))
+
+				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: serviceId1,
+					AppId:             "query_instance",
+					ServiceName:       "query_instance_service",
+					VersionRule:       "1.0.0",
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId1))
+			})
+
+		})
+
+		Context("when query instances between diff apps", func() {
+			It("should be passed", func() {
+				UTFunc := func(consumerId string, code int32) {
+					respFind, err := instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
+						ConsumerServiceId: consumerId,
+						ProviderServiceId: serviceId2,
+					})
+					Expect(err).To(BeNil())
+					Expect(respFind.GetResponse().Code).To(Equal(code))
+				}
+
+				UTFunc(serviceId3, scerr.ErrPermissionDeny)
+
+				UTFunc(serviceId1, pb.Response_SUCCESS)
+			})
+		})
+	})
+
+	Describe("execute 'get' operartion", func() {
+		respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "get_instance",
+				ServiceName: "get_instance_service",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		Expect(err).To(BeNil())
+		Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+		serviceId1 := respCreate.ServiceId
+
+		respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "get_instance",
+				ServiceName: "get_instance_service",
+				Version:     "1.0.5",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+			Tags: map[string]string{
+				"test": "test",
+			},
+		})
+		Expect(err).To(BeNil())
+		Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+		serviceId2 := respCreate.ServiceId
+
+		resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+			Instance: &pb.MicroServiceInstance{
+				ServiceId: serviceId2,
+				HostName:  "UT-HOST",
+				Endpoints: []string{
+					"get:127.0.0.2:8080",
+				},
+				Status: pb.MSI_UP,
+			},
+		})
+		Expect(err).To(BeNil())
+		Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+		instanceId2 := resp.InstanceId
+
+		respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "get_instance_cross",
+				ServiceName: "get_instance_service",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		Expect(err).To(BeNil())
+		serviceId3 := respCreate.ServiceId
+
+		Context("when get one instance request is invalid", func() {
+			It("should be failed", func() {
+				By("find service itself")
+				resp, err := instanceResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
+					ConsumerServiceId:  serviceId2,
+					ProviderServiceId:  serviceId2,
+					ProviderInstanceId: instanceId2,
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+				By("provider id is empty")
+				resp, err = instanceResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
+					ConsumerServiceId:  serviceId1,
+					ProviderServiceId:  "",
+					ProviderInstanceId: instanceId2,
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+
+				By("provider instance id is empty")
+				resp, err = instanceResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
+					ConsumerServiceId:  serviceId1,
+					ProviderServiceId:  serviceId2,
+					ProviderInstanceId: "",
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+
+				By("consumer id is empty")
+				resp, err = instanceResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
+					ConsumerServiceId:  "",
+					ProviderServiceId:  serviceId2,
+					ProviderInstanceId: instanceId2,
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+
+				By("consumer does not exist")
+				resp, err = instanceResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
+					ConsumerServiceId:  "not-exist-id",
+					ProviderServiceId:  serviceId2,
+					ProviderInstanceId: instanceId2,
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+
+				By("provider tag does not exist")
+				resp, err = instanceResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
+					ConsumerServiceId:  serviceId1,
+					ProviderServiceId:  serviceId2,
+					ProviderInstanceId: instanceId2,
+					Tags:               []string{"not-exist-tag"},
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+
+				By("provider tag exist")
+				resp, err = instanceResource.GetOneInstance(getContext(),
 					&pb.GetOneInstanceRequest{
-						ConsumerServiceId:  consumerId,
-						ProviderServiceId:  consumerId,
-						ProviderInstanceId: instanceId,
+						ConsumerServiceId:  serviceId1,
+						ProviderServiceId:  serviceId2,
+						ProviderInstanceId: instanceId2,
 						Tags:               []string{"test"},
 					})
 				Expect(err).To(BeNil())
-				fmt.Println("UT============" + resp.GetResponse().Message)
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-
 			})
+		})
 
-			It("查找实例，参数校验", func() {
-				fmt.Println("UT===========查找实例，参数校验")
-				resp, err := insResource.GetInstances(getContext(), &pb.GetInstancesRequest{
+		Context("when get between diff apps", func() {
+			It("should be failed", func() {
+				resp, err := instanceResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
+					ConsumerServiceId:  serviceId3,
+					ProviderServiceId:  serviceId2,
+					ProviderInstanceId: instanceId2,
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+
+				resp, err = instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
+					ConsumerServiceId: serviceId3,
+					ProviderServiceId: serviceId2,
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+			})
+		})
+
+		Context("when get instances request is invalid", func() {
+			It("should be failed", func() {
+				By("consumer id is empty")
+				resp, err := instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
 					ConsumerServiceId: "",
-					ProviderServiceId: instanceId,
+					ProviderServiceId: serviceId2,
 				})
 				Expect(err).To(BeNil())
-				fmt.Println("UT============" + resp.GetResponse().Message)
 				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
-				resp, err = insResource.GetInstances(getContext(), &pb.GetInstancesRequest{
+				By("consumer does not exist")
+				resp, err = instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
 					ConsumerServiceId: "noneservice",
-					ProviderServiceId: "noneservice",
-					Tags:              []string{},
-					Env:               "development",
+					ProviderServiceId: serviceId2,
 				})
 				Expect(err).To(BeNil())
-				fmt.Println("UT============" + resp.GetResponse().Message)
 				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
-				resp, err = insResource.GetInstances(getContext(), &pb.GetInstancesRequest{
-					ConsumerServiceId: consumerId,
-					ProviderServiceId: providerId,
-					Tags:              []string{},
+				By("valid request")
+				resp, err = instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
+					ConsumerServiceId: serviceId1,
+					ProviderServiceId: serviceId2,
 				})
 				Expect(err).To(BeNil())
-				fmt.Println("UT============" + resp.GetResponse().Message)
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 			})
 		})
 	})
 
-	Describe("Unregister", func() {
-		Context("normal", func() {
-			It("去注册实例", func() {
-				fmt.Println("UT===========去注册实例")
-				resp, err := insResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
-					ServiceId:  consumerId,
+	Describe("execute 'unregister' operartion", func() {
+		respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "unregister_instance",
+				ServiceName: "unregister_instance_service",
+				Version:     "1.0.5",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+			Tags: map[string]string{
+				"test": "test",
+			},
+		})
+		Expect(err).To(BeNil())
+		Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+		serviceId := respCreate.ServiceId
+
+		resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+			Instance: &pb.MicroServiceInstance{
+				ServiceId: serviceId,
+				HostName:  "UT-HOST",
+				Endpoints: []string{
+					"unregister:127.0.0.2:8080",
+				},
+				Status: pb.MSI_UP,
+			},
+		})
+		Expect(err).To(BeNil())
+		Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+		instanceId := resp.InstanceId
+
+		Context("when request is valid", func() {
+			It("should be passed", func() {
+				resp, err := instanceResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
+					ServiceId:  serviceId,
 					InstanceId: instanceId,
 				})
 				Expect(err).To(BeNil())
-				fmt.Println("UT============" + resp.GetResponse().Message)
-				//Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-
-				respDeleteService, err := serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{
-					ServiceId: consumerId,
-					Force:     true,
-				})
-				Expect(err).To(BeNil())
-				fmt.Println("UT============" + resp.GetResponse().Message)
-				Expect(respDeleteService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 			})
+		})
 
-			It("去注册实例, 参数校验", func() {
-				fmt.Println("UT===========去注册实例")
-				resp, err := insResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
+		Context("when request is invalid", func() {
+			It("should be failed", func() {
+				By("service id is empty")
+				resp, err := instanceResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
 					ServiceId:  "",
 					InstanceId: instanceId,
 				})
 				Expect(err).To(BeNil())
-				fmt.Println("UT============" + resp.GetResponse().Message)
 				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
-				resp, err = insResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
-					ServiceId:  consumerId,
+				By("service does not exist")
+				resp, err = instanceResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
+					ServiceId:  "not-exist-id",
 					InstanceId: instanceId,
 				})
 				Expect(err).To(BeNil())
-				fmt.Println("UT============" + resp.GetResponse().Message)
 				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
-				resp, err = insResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
-					ServiceId:  consumerId,
-					InstanceId: "100000000000",
+				By("instance is empty")
+				resp, err = instanceResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
+					ServiceId:  serviceId,
+					InstanceId: "",
 				})
 				Expect(err).To(BeNil())
-				fmt.Println("UT============" + resp.GetResponse().Message)
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+
+				By("instance does not exist")
+				resp, err = instanceResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
+					ServiceId:  serviceId,
+					InstanceId: "not-exist-id",
+				})
+				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 	})
 
-	Describe("Watcher", func() {
-		Context("normal", func() {
-			It("参数校验，不存在", func() {
-				fmt.Println("UT===========参数校验，不存在")
-				IC := insResource.(*service.InstanceController)
+	Describe("execute 'watch' operartion", func() {
+		respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				ServiceName: "service_name_watch",
+				AppId:       "service_name_watch",
+				Version:     "1.0.0",
+				Level:       "BACK",
+				Status:      pb.MS_UP,
+			},
+		})
+		Expect(err).To(BeNil())
+		Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+		serviceId := respCreate.ServiceId
+
+		Context("when request is invalid", func() {
+			It("should be failed", func() {
+				By("service does not exist")
+				IC := instanceResource.(*service.InstanceController)
 				err := IC.WatchPreOpera(getContext(), &pb.WatchInstanceRequest{
 					SelfServiceId: "-1",
 				})
-				fmt.Println("UT============" + err.Error())
 				Expect(err).NotTo(BeNil())
 
 				err = IC.Watch(&pb.WatchInstanceRequest{
 					SelfServiceId: "-1",
 				}, &grpcWatchServer{})
-				fmt.Println("UT============" + err.Error())
 				Expect(err).NotTo(BeNil())
-			})
-			It("参数校验，非法", func() {
-				fmt.Println("UT===========参数校验，非法")
-				err := insResource.(*service.InstanceController).WatchPreOpera(getContext(), &pb.WatchInstanceRequest{
+
+				By("service id is empty")
+				err = instanceResource.(*service.InstanceController).WatchPreOpera(getContext(), &pb.WatchInstanceRequest{
 					SelfServiceId: "",
 				})
-				fmt.Println("UT============" + err.Error())
 				Expect(err).NotTo(BeNil())
-			})
-			It("参数校验，OK", func() {
-				fmt.Println("UT===========参数校验，OK")
-				respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-					Service: &pb.MicroService{
-						ServiceName: "service_name_watch",
-						AppId:       "watch",
-						Version:     "1.0.0",
-						Level:       "BACK",
-						Status:      "UP",
-					},
-				})
-				Expect(err).To(BeNil())
 
-				err = insResource.(*service.InstanceController).WatchPreOpera(getContext(),
+				By("request is valid")
+				err = instanceResource.(*service.InstanceController).WatchPreOpera(getContext(),
 					&pb.WatchInstanceRequest{
-						SelfServiceId: respCreate.ServiceId,
+						SelfServiceId: serviceId,
 					})
 				Expect(err).To(BeNil())
 			})

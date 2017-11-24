@@ -20,9 +20,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var consumerId string
-var providerId string
-var consumerId2 string
 var _ = Describe("ServiceController", func() {
 	Describe("serviceDependency", func() {
 		Context("normal", func() {
@@ -612,7 +609,7 @@ var _ = Describe("ServiceController", func() {
 			})
 			It("Find 添加依赖", func() {
 				fmt.Println("UT===========find 添加依赖")
-				resp, err := insResource.Find(getContext(), &pb.FindInstancesRequest{
+				resp, err := instanceResource.Find(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: consumerId,
 					AppId:             "service_group_provider",
 					ServiceName:       "service_name_provider",
@@ -622,7 +619,7 @@ var _ = Describe("ServiceController", func() {
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
 				//重复find
-				resp, err = insResource.Find(getContext(), &pb.FindInstancesRequest{
+				resp, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: consumerId,
 					AppId:             "service_group_provider",
 					ServiceName:       "service_name_provider",
@@ -708,7 +705,7 @@ var _ = Describe("ServiceController", func() {
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 				providerIdDep2 = resp.ServiceId
 
-				respFind, err := insResource.Find(getContext(), &pb.FindInstancesRequest{
+				respFind, err := instanceResource.Find(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: consumerIdDep,
 					AppId:             "appId_provider1",
 					ServiceName:       "serviceName_provider1",
@@ -717,7 +714,7 @@ var _ = Describe("ServiceController", func() {
 				Expect(err).To(BeNil())
 				Expect(respFind.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
-				respFind, err = insResource.Find(getContext(), &pb.FindInstancesRequest{
+				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: consumerIdDep,
 					AppId:             "appId_provider2",
 					ServiceName:       "serviceName_provider2",
@@ -759,7 +756,7 @@ var _ = Describe("ServiceController", func() {
 				Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 				providerIdDep3 = respCreate.ServiceId
 
-				respFind, err := insResource.Find(getContext(), &pb.FindInstancesRequest{
+				respFind, err := instanceResource.Find(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: consumerIdDep,
 					AppId:             "appId_provider2",
 					ServiceName:       "serviceName_provider2",
@@ -812,6 +809,79 @@ var _ = Describe("ServiceController", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respDelete.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			})
+
+			It("find instance, create dependency", func() {
+				ctx := getCunstomContext("find_dep", "find_dep")
+				resp, err := serviceResource.Create(ctx, &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceName: "find_create_dep_consumer",
+						AppId:       "default",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Schemas: []string{
+							"xxxxxxxx",
+						},
+						Status: "UP",
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				consumerId := resp.ServiceId
+
+				resp, err = serviceResource.Create(ctx, &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceName: "find_create_dep_provider",
+						AppId:       "default",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Schemas: []string{
+							"xxxxxxxx",
+						},
+						Status: "UP",
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				providerId := resp.ServiceId
+
+				respFind, err := instanceResource.Find(ctx, &pb.FindInstancesRequest{
+					ConsumerServiceId: consumerId,
+					AppId:             "default",
+					ServiceName:       "find_create_dep_provider",
+					VersionRule:       "latest",
+					Tags:              []string{},
+					Env:               "development",
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+				respPro, err := serviceResource.GetConsumerDependencies(ctx, &pb.GetDependenciesRequest{
+					ServiceId: consumerId,
+				})
+				Expect(err).To(BeNil())
+				Expect(providerId).To(Equal(respPro.Providers[0].ServiceId))
+
+				respCon, err := serviceResource.GetProviderDependencies(ctx, &pb.GetDependenciesRequest{
+					ServiceId: providerId,
+				})
+				Expect(err).To(BeNil())
+				Expect(consumerId).To(Equal(respCon.Consumers[0].ServiceId))
+
+				resDel, err := serviceResource.Delete(ctx, &pb.DeleteServiceRequest{
+					ServiceId: consumerId,
+					Force:     true,
+				})
+				Expect(err).To(BeNil())
+				Expect(resDel.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+				resDel, err = serviceResource.Delete(ctx, &pb.DeleteServiceRequest{
+					ServiceId: providerId,
+					Force:     true,
+				})
+				Expect(err).To(BeNil())
+				Expect(resDel.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
 			})
 		})
 

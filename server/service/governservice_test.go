@@ -14,105 +14,96 @@
 package service_test
 
 import (
-	"fmt"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("GovernServiceController", func() {
-	Describe("GetServicesInfo", func() {
-		Context("normal", func() {
-			It("服务治理获取所有服务信息", func() {
-				fmt.Println("UT===========服务治理获取所有服务信息")
-
+var _ = Describe("'Govern' service", func() {
+	Describe("execute 'get all' operartion", func() {
+		Context("when get all services", func() {
+			It("should be passed", func() {
+				By("all optionis")
 				resp, err := governService.GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
 					Options: []string{"all"},
 				})
-
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
+				By("only service metadata")
 				resp, err = governService.GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
 					Options: []string{""},
 				})
-
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
+				By("custom options")
 				resp, err = governService.GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
 					Options: []string{"tags", "rules", "instances", "schemas", "statistics"},
 				})
-
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
+				By("'statistics' option")
 				resp, err = governService.GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
 					Options: []string{"statistics"},
 				})
-
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 			})
 		})
 	})
-	Describe("GetServiceDetail", func() {
-		Context("normal", func() {
-			It("服务治理获取单个服务信息,参数校验", func() {
-				fmt.Println("UT===========服务治理获取单个服务信息,参数校验")
+
+	Describe("execute 'get detail' operartion", func() {
+		resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "govern_service_group",
+				ServiceName: "govern_service_name",
+				Version:     "3.0.0",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		Expect(err).To(BeNil())
+		Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+		serviceId := resp.ServiceId
+
+		serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
+			ServiceId: serviceId,
+			SchemaId:  "schemaId",
+			Schema:    "detail",
+		})
+		Expect(err).To(BeNil())
+		Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+		instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+			Instance: &pb.MicroServiceInstance{
+				ServiceId: serviceId,
+				Endpoints: []string{
+					"govern:127.0.0.1:8080",
+				},
+				HostName: "UT-HOST",
+				Status:   pb.MSI_UP,
+			},
+		})
+		Expect(err).To(BeNil())
+		Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+		Context("when get invalid service detail", func() {
+			It("should be failed", func() {
 				resp, err := governService.GetServiceDetail(getContext(), &pb.GetServiceRequest{
 					ServiceId: "",
 				})
-
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
+		})
 
-			It("服务治理获取单个服务信息", func() {
-				resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-					Service: &pb.MicroService{
-						ServiceName: "service_name_govern",
-						AppId:       "service_group_govern",
-						Version:     "3.0.0",
-						Level:       "FRONT",
-						Schemas: []string{
-							"schemaId",
-						},
-						Status: "UP",
-					},
-				})
-
-				Expect(err).To(BeNil())
-				serviceId := resp.ServiceId
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-				fmt.Println("UT===========服务治理获取单个服务信息")
-
-				serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
-					ServiceId: serviceId,
-					SchemaId:  "schemaId",
-					Schema:    "detail",
-				})
-				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-
-				insResource.Register(getContext(), &pb.RegisterInstanceRequest{
-					Instance: &pb.MicroServiceInstance{
-						ServiceId: serviceId,
-						Endpoints: []string{
-							"rest:127.0.0.1:8080",
-						},
-						HostName:    "UT-HOST",
-						Status:      pb.MSI_UP,
-						Environment: "production",
-					},
-				})
-				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-
+		Context("when get a service detail", func() {
+			It("should be passed", func() {
 				respGetServiceDetail, err := governService.GetServiceDetail(getContext(), &pb.GetServiceRequest{
 					ServiceId: serviceId,
 				})
-
 				Expect(err).To(BeNil())
 				Expect(respGetServiceDetail.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
@@ -120,14 +111,13 @@ var _ = Describe("GovernServiceController", func() {
 					ServiceId: serviceId,
 					Force:     true,
 				})
-
 				Expect(err).To(BeNil())
 				Expect(respDelete.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
 				respGetServiceDetail, err = governService.GetServiceDetail(getContext(), &pb.GetServiceRequest{
 					ServiceId: serviceId,
 				})
-
+				Expect(err).To(BeNil())
 				Expect(respGetServiceDetail.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
