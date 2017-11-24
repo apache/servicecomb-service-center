@@ -20,38 +20,47 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("ServiceController", func() {
-	Describe("serviceDependency", func() {
-		Context("normal", func() {
-			It("创建Dependency,参数校验", func() {
-				fmt.Println("UT===========创建Dependency，参数校验")
-				resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-					Service: &pb.MicroService{
-						ServiceName: "service_name_consumer",
-						AppId:       "service_group_consumer",
-						Version:     "6.0.0",
-						Level:       "FRONT",
-						Schemas: []string{
-							"com.huawei.test",
-						},
-						Status: "UP",
-					},
-				})
-				Expect(err).To(BeNil())
-				consumerId = resp.ServiceId
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+var _ = Describe("'Dependency' service", func() {
+	Describe("execute 'create' operartion", func() {
+		respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "create_dep_group",
+				ServiceName: "create_dep_consumer",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		Expect(err).To(BeNil())
+		Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+		consumerId := respCreateService.ServiceId
 
-				respCreateDependency, err := serviceResource.CreateDependenciesForMircServices(getContext(), &pb.CreateDependenciesRequest{
-					Dependencies: nil,
-				})
+		respCreateService, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "create_dep_group",
+				ServiceName: "create_dep_provider",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		Expect(err).To(BeNil())
+		Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+		providerId := respCreateService.ServiceId
+
+		Context("when request is invalid", func() {
+			It("should be failed", func() {
+				By("dependency is nil")
+				respCreateDependency, err := serviceResource.CreateDependenciesForMircServices(getContext(), &pb.CreateDependenciesRequest{})
 				Expect(err).To(BeNil())
 				Expect(respCreateDependency.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
+				By("consumer appId is empty")
 				respCreateDependency, err = serviceResource.CreateDependenciesForMircServices(getContext(), &pb.CreateDependenciesRequest{
 					Dependencies: []*pb.MircroServiceDependency{
 						{
 							Consumer: &pb.DependencyMircroService{
-								ServiceName: "service_name_consumer2",
+								ServiceName: "create_dep_consumer",
 								AppId:       "",
 								Version:     "3.0.0",
 							},

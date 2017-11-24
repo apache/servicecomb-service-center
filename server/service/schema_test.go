@@ -26,8 +26,9 @@ import (
 
 const (
 	invalidSchemaId = "@"
-	tooLongSummary  = strings.Repeat("x", 513)
 )
+
+var tooLongSummary = strings.Repeat("x", 513)
 
 var _ = Describe("'Schema' service", func() {
 	Describe("execute 'create' operartion", func() {
@@ -202,7 +203,7 @@ var _ = Describe("'Schema' service", func() {
 				Expect(respServiceForSchema.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("batch modify schemas")
-				respCreateService, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				respCreateService, err := serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
 					ServiceId: serviceId,
 					Schemas:   schemas,
 				})
@@ -215,9 +216,9 @@ var _ = Describe("'Schema' service", func() {
 
 				By("modify one schema")
 				for _, schema := range schemas {
-					respCreateService, err = serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
+					respCreateService, err := serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
 						ServiceId: serviceId,
-						Schema:    schema,
+						Schema:    schema.Schema,
 					})
 					Expect(err).To(BeNil())
 					if respCreateService.GetResponse().Code != pb.Response_SUCCESS {
@@ -273,7 +274,7 @@ var _ = Describe("'Schema' service", func() {
 						Summary:  "first_summary",
 					},
 				}
-				respCreateService, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				respCreateService, err := serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
 					ServiceId: serviceId1,
 					Schemas:   schemas,
 				})
@@ -692,7 +693,7 @@ var _ = Describe("'Schema' service", func() {
 		Context("when request is invalid", func() {
 			It("should be failed", func() {
 				By("service does not exist")
-				resp, err = serviceResource.GetSchemaInfo(getContext(), &pb.GetSchemaRequest{
+				resp, err := serviceResource.GetSchemaInfo(getContext(), &pb.GetSchemaRequest{
 					ServiceId: "noneexistservice",
 					SchemaId:  "com.huawei.test",
 				})
@@ -807,27 +808,27 @@ var _ = Describe("'Schema' service", func() {
 
 		Context("when request is valid", func() {
 			It("should be passed", func() {
-				resp, err = serviceResource.DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
+				resp, err := serviceResource.DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
 					ServiceId: serviceId,
 					SchemaId:  "com.huawei.test",
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
-				resp, err := serviceResource.GetSchemaInfo(getContext(), &pb.GetSchemaRequest{
+				respGet, err := serviceResource.GetSchemaInfo(getContext(), &pb.GetSchemaRequest{
 					ServiceId: serviceId,
 					SchemaId:  "com.huawei.test",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(scerr.ErrSchemaNotExists))
+				Expect(respGet.GetResponse().Code).To(Equal(scerr.ErrSchemaNotExists))
 
-				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
+				respExist, err := serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
 					Type:      "schema",
 					ServiceId: serviceId,
 					SchemaId:  "com.huawei.test",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(scerr.ErrSchemaNotExists))
+				Expect(respExist.GetResponse().Code).To(Equal(scerr.ErrSchemaNotExists))
 			})
 		})
 	})
