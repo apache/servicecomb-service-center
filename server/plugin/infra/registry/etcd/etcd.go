@@ -109,7 +109,7 @@ func (s *EtcdClient) toGetRequest(op registry.PluginOp) []clientv3.OpOption {
 	if op.Prefix {
 		opts = append(opts, clientv3.WithPrefix())
 	} else if len(op.EndKey) > 0 {
-		opts = append(opts, clientv3.WithRange(clientv3.GetPrefixRangeEnd(util.BytesToStringWithNoCopy(op.EndKey))))
+		opts = append(opts, clientv3.WithRange(util.BytesToStringWithNoCopy(op.EndKey)))
 	}
 	if op.PrevKV {
 		opts = append(opts, clientv3.WithPrevKV())
@@ -241,7 +241,7 @@ func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp) (*clientv
 	tempOp.CountOnly = false
 	tempOp.Prefix = false
 	tempOp.SortOrder = registry.SORT_ASCEND
-	tempOp.EndKey = op.Key
+	tempOp.EndKey = util.StringToBytesWithNoCopy(clientv3.GetPrefixRangeEnd(key))
 	if len(op.EndKey) > 0 {
 		tempOp.EndKey = op.EndKey
 	}
