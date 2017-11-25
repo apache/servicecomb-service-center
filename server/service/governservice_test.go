@@ -55,39 +55,45 @@ var _ = Describe("'Govern' service", func() {
 	})
 
 	Describe("execute 'get detail' operartion", func() {
-		resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				AppId:       "govern_service_group",
-				ServiceName: "govern_service_name",
-				Version:     "3.0.0",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
-		})
-		Expect(err).To(BeNil())
-		Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		serviceId := resp.ServiceId
+		var (
+			serviceId string
+		)
 
-		serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
-			ServiceId: serviceId,
-			SchemaId:  "schemaId",
-			Schema:    "detail",
-		})
-		Expect(err).To(BeNil())
-		Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-
-		instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
-			Instance: &pb.MicroServiceInstance{
-				ServiceId: serviceId,
-				Endpoints: []string{
-					"govern:127.0.0.1:8080",
+		It("should be passed", func() {
+			resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "govern_service_group",
+					ServiceName: "govern_service_name",
+					Version:     "3.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
 				},
-				HostName: "UT-HOST",
-				Status:   pb.MSI_UP,
-			},
+			})
+			Expect(err).To(BeNil())
+			Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			serviceId = resp.ServiceId
+
+			serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
+				ServiceId: serviceId,
+				SchemaId:  "schemaId",
+				Schema:    "detail",
+			})
+			Expect(err).To(BeNil())
+			Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+			instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				Instance: &pb.MicroServiceInstance{
+					ServiceId: serviceId,
+					Endpoints: []string{
+						"govern:127.0.0.1:8080",
+					},
+					HostName: "UT-HOST",
+					Status:   pb.MSI_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 		})
-		Expect(err).To(BeNil())
-		Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
 		Context("when get invalid service detail", func() {
 			It("should be failed", func() {

@@ -21,29 +21,31 @@ import (
 
 var _ = Describe("'Dependency' service", func() {
 	Describe("execute 'create' operartion", func() {
-		respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				AppId:       "create_dep_group",
-				ServiceName: "create_dep_consumer",
-				Version:     "1.0.0",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
-		})
-		Expect(err).To(BeNil())
-		Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+		It("should be passed", func() {
+			respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "create_dep_group",
+					ServiceName: "create_dep_consumer",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
-		respCreateService, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				AppId:       "create_dep_group",
-				ServiceName: "create_dep_provider",
-				Version:     "1.0.0",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
+			respCreateService, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "create_dep_group",
+					ServiceName: "create_dep_provider",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 		})
-		Expect(err).To(BeNil())
-		Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
 		Context("when request is invalid", func() {
 			It("should be failed", func() {
@@ -265,31 +267,38 @@ var _ = Describe("'Dependency' service", func() {
 	})
 
 	Describe("execute 'get' operartion", func() {
-		respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				AppId:       "get_dep_group",
-				ServiceName: "get_dep_consumer",
-				Version:     "1.0.0",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
-		})
-		Expect(err).To(BeNil())
-		Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		consumerId := respCreateService.ServiceId
+		var (
+			consumerId string
+			providerId string
+		)
 
-		respCreateService, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				AppId:       "get_dep_group",
-				ServiceName: "get_dep_provider",
-				Version:     "1.0.0",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
+		It("should be passed", func() {
+			respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "get_dep_group",
+					ServiceName: "get_dep_consumer",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			consumerId = respCreateService.ServiceId
+
+			respCreateService, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "get_dep_group",
+					ServiceName: "get_dep_provider",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			providerId = respCreateService.ServiceId
 		})
-		Expect(err).To(BeNil())
-		Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		providerId := respCreateService.ServiceId
 
 		Context("when request is invalid", func() {
 			It("should be failed", func() {
@@ -323,11 +332,11 @@ var _ = Describe("'Dependency' service", func() {
 			})
 		})
 
-		Context("when request is invalid", func() {
-			It("should be failed", func() {
+		Context("when request is valid", func() {
+			It("should be passed", func() {
 				By("get provider")
 				respPro, err := serviceResource.GetProviderDependencies(getContext(), &pb.GetDependenciesRequest{
-					ServiceId: consumerId,
+					ServiceId: providerId,
 				})
 				Expect(err).To(BeNil())
 				Expect(respPro.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
@@ -353,21 +362,21 @@ var _ = Describe("'Dependency' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
-				By("get provider")
+				By("get provider's deps")
 				respGetP, err := serviceResource.GetProviderDependencies(getContext(), &pb.GetDependenciesRequest{
-					ServiceId: consumerId,
-				})
-				Expect(err).To(BeNil())
-				Expect(respGetP.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-				Expect(respGetP.Consumers[0].ServiceId).To(Equal(providerId))
-
-				By("get consumer")
-				respGetC, err := serviceResource.GetConsumerDependencies(getContext(), &pb.GetDependenciesRequest{
 					ServiceId: providerId,
 				})
 				Expect(err).To(BeNil())
-				Expect(respGetC.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respGetP.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 				Expect(respGetP.Consumers[0].ServiceId).To(Equal(consumerId))
+
+				By("get consumer's deps")
+				respGetC, err := serviceResource.GetConsumerDependencies(getContext(), &pb.GetDependenciesRequest{
+					ServiceId: consumerId,
+				})
+				Expect(err).To(BeNil())
+				Expect(respGetC.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respGetC.Providers[0].ServiceId).To(Equal(providerId))
 
 				//重复find
 				resp, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
@@ -381,7 +390,7 @@ var _ = Describe("'Dependency' service", func() {
 
 				By("get provider again")
 				respGetP, err = serviceResource.GetProviderDependencies(getContext(), &pb.GetDependenciesRequest{
-					ServiceId: consumerId,
+					ServiceId: providerId,
 				})
 				Expect(err).To(BeNil())
 				Expect(respGetP.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
@@ -389,11 +398,11 @@ var _ = Describe("'Dependency' service", func() {
 
 				By("get consumer again")
 				respGetC, err = serviceResource.GetConsumerDependencies(getContext(), &pb.GetDependenciesRequest{
-					ServiceId: providerId,
+					ServiceId: consumerId,
 				})
 				Expect(err).To(BeNil())
 				Expect(respGetC.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-				Expect(len(respGetP.Consumers)).To(Equal(0))
+				Expect(len(respGetC.Providers)).To(Equal(0))
 			})
 		})
 	})

@@ -25,7 +25,7 @@ import (
 
 func (s *ServiceController) CreateDependenciesForMicroServices(ctx context.Context, in *pb.CreateDependenciesRequest) (*pb.CreateDependenciesResponse, error) {
 	dependencyInfos := in.Dependencies
-	if dependencyInfos == nil {
+	if len(dependencyInfos) == 0 {
 		return serviceUtil.BadParamsResponse("Invalid request body."), nil
 	}
 	domainProject := util.ParseDomainProject(ctx)
@@ -62,6 +62,10 @@ func (s *ServiceController) CreateDependenciesForMicroServices(ctx context.Conte
 			return &pb.CreateDependenciesResponse{
 				Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Get consumer's serviceId is empty."),
 			}, nil
+		}
+
+		if len(dependencyInfo.Providers) == 0 {
+			return serviceUtil.BadParamsResponse("Provider is invalid"), nil
 		}
 
 		dep.ConsumerId = consumerId

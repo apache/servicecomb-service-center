@@ -24,18 +24,24 @@ import (
 
 var _ = Describe("'Rule' service", func() {
 	Describe("execute 'create' operartion", func() {
-		respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				AppId:       "create_rule_group",
-				ServiceName: "create_rule_service",
-				Version:     "1.0.0",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
+		var (
+			serviceId string
+		)
+
+		It("should be passed", func() {
+			respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "create_rule_group",
+					ServiceName: "create_rule_service",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			serviceId = respCreateService.ServiceId
 		})
-		Expect(err).To(BeNil())
-		Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		serviceId := respCreateService.ServiceId
 
 		Context("when request is invalid", func() {
 			It("should be failed", func() {
@@ -198,34 +204,41 @@ var _ = Describe("'Rule' service", func() {
 	})
 
 	Describe("execute 'get' operartion", func() {
-		respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				AppId:       "get_rule_group",
-				ServiceName: "get_rule_service",
-				Version:     "1.0.0",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
-		})
-		Expect(err).To(BeNil())
-		Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		serviceId := respCreateService.ServiceId
+		var (
+			serviceId string
+			ruleId    string
+		)
 
-		respAddRule, err := serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
-			ServiceId: serviceId,
-			Rules: []*pb.AddOrUpdateServiceRule{
-				{
-					RuleType:    "BLACK",
-					Attribute:   "ServiceName",
-					Pattern:     "Test*",
-					Description: "test BLACK",
+		It("should be passed", func() {
+			respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "get_rule_group",
+					ServiceName: "get_rule_service",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
 				},
-			},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			serviceId = respCreateService.ServiceId
+
+			respAddRule, err := serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
+				ServiceId: serviceId,
+				Rules: []*pb.AddOrUpdateServiceRule{
+					{
+						RuleType:    "BLACK",
+						Attribute:   "ServiceName",
+						Pattern:     "Test*",
+						Description: "test BLACK",
+					},
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respAddRule.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			ruleId = respAddRule.RuleIds[0]
+			Expect(ruleId).ToNot(Equal(""))
 		})
-		Expect(err).To(BeNil())
-		Expect(respAddRule.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		ruleId := respAddRule.RuleIds[0]
-		Expect(ruleId).ToNot(Equal(""))
 
 		Context("when request is invalid", func() {
 			It("should be failed", func() {
@@ -258,34 +271,41 @@ var _ = Describe("'Rule' service", func() {
 	})
 
 	Describe("execute 'update' operartion", func() {
-		respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				AppId:       "update_rule_group",
-				ServiceName: "update_rule_service",
-				Version:     "1.0.0",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
-		})
-		Expect(err).To(BeNil())
-		Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		serviceId := respCreateService.ServiceId
+		var (
+			serviceId string
+			ruleId    string
+		)
 
-		respAddRule, err := serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
-			ServiceId: serviceId,
-			Rules: []*pb.AddOrUpdateServiceRule{
-				{
-					RuleType:    "BLACK",
-					Attribute:   "ServiceName",
-					Pattern:     "Test*",
-					Description: "test BLACK",
+		It("should be passed", func() {
+			respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "update_rule_group",
+					ServiceName: "update_rule_service",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
 				},
-			},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			serviceId = respCreateService.ServiceId
+
+			respAddRule, err := serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
+				ServiceId: serviceId,
+				Rules: []*pb.AddOrUpdateServiceRule{
+					{
+						RuleType:    "BLACK",
+						Attribute:   "ServiceName",
+						Pattern:     "Test*",
+						Description: "test BLACK",
+					},
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respAddRule.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			ruleId = respAddRule.RuleIds[0]
+			Expect(ruleId).ToNot(Equal(""))
 		})
-		Expect(err).To(BeNil())
-		Expect(respAddRule.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		ruleId := respAddRule.RuleIds[0]
-		Expect(ruleId).ToNot(Equal(""))
 
 		Context("when request is invalid", func() {
 			It("should be failed", func() {
@@ -408,34 +428,41 @@ var _ = Describe("'Rule' service", func() {
 	})
 
 	Describe("execute 'delete' operartion", func() {
-		respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				AppId:       "delete_rule_group",
-				ServiceName: "delete_rule_service",
-				Version:     "1.0.0",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
-		})
-		Expect(err).To(BeNil())
-		Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		serviceId := respCreateService.ServiceId
+		var (
+			serviceId string
+			ruleId    string
+		)
 
-		respAddRule, err := serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
-			ServiceId: serviceId,
-			Rules: []*pb.AddOrUpdateServiceRule{
-				{
-					RuleType:    "BLACK",
-					Attribute:   "ServiceName",
-					Pattern:     "Test*",
-					Description: "test BLACK",
+		It("should be passed", func() {
+			respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "delete_rule_group",
+					ServiceName: "delete_rule_service",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
 				},
-			},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			serviceId = respCreateService.ServiceId
+
+			respAddRule, err := serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
+				ServiceId: serviceId,
+				Rules: []*pb.AddOrUpdateServiceRule{
+					{
+						RuleType:    "BLACK",
+						Attribute:   "ServiceName",
+						Pattern:     "Test*",
+						Description: "test BLACK",
+					},
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respAddRule.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			ruleId = respAddRule.RuleIds[0]
+			Expect(ruleId).ToNot(Equal(""))
 		})
-		Expect(err).To(BeNil())
-		Expect(respAddRule.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		ruleId := respAddRule.RuleIds[0]
-		Expect(ruleId).ToNot(Equal(""))
 
 		Context("when request is invalid", func() {
 			It("should be failed", func() {
@@ -493,100 +520,109 @@ var _ = Describe("'Rule' service", func() {
 	})
 
 	Describe("execute 'permission' operartion", func() {
-		respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				AppId:       "query_instance_tag",
-				ServiceName: "query_instance_tag_service",
-				Version:     "1.0.0",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
-		})
-		Expect(err).To(BeNil())
-		Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		consumerVersion := respCreate.ServiceId
+		var (
+			consumerVersion string
+			consumerTag     string
+			providerBlack   string
+			providerWhite   string
+		)
 
-		respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				AppId:       "query_instance_tag",
-				ServiceName: "query_instance_tag_service",
-				Version:     "1.0.2",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
-		})
-		Expect(err).To(BeNil())
-		Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		providerBlack := respCreate.ServiceId
-
-		resp, err := serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
-			ServiceId: providerBlack,
-			Rules: []*pb.AddOrUpdateServiceRule{
-				{
-					RuleType:  "BLACK",
-					Attribute: "Version",
-					Pattern:   "1.0.0",
+		It("should be passed", func() {
+			respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "query_instance_tag",
+					ServiceName: "query_instance_tag_service",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
 				},
-				{
-					RuleType:  "BLACK",
-					Attribute: "tag_a",
-					Pattern:   "b",
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			consumerVersion = respCreate.ServiceId
+
+			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "query_instance_tag",
+					ServiceName: "query_instance_tag_service",
+					Version:     "1.0.2",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
 				},
-			},
-		})
-		Expect(err).To(BeNil())
-		Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			providerBlack = respCreate.ServiceId
 
-		respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				AppId:       "query_instance_tag",
-				ServiceName: "query_instance_tag_service",
-				Version:     "1.0.3",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
-		})
-		Expect(err).To(BeNil())
-		Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		providerWhite := respCreate.ServiceId
-
-		resp, err = serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
-			ServiceId: providerWhite,
-			Rules: []*pb.AddOrUpdateServiceRule{
-				{
-					RuleType:  "WHITE",
-					Attribute: "Version",
-					Pattern:   "1.0.0",
+			resp, err := serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
+				ServiceId: providerBlack,
+				Rules: []*pb.AddOrUpdateServiceRule{
+					{
+						RuleType:  "BLACK",
+						Attribute: "Version",
+						Pattern:   "1.0.0",
+					},
+					{
+						RuleType:  "BLACK",
+						Attribute: "tag_a",
+						Pattern:   "b",
+					},
 				},
-				{
-					RuleType:  "WHITE",
-					Attribute: "tag_a",
-					Pattern:   "b",
+			})
+			Expect(err).To(BeNil())
+			Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "query_instance_tag",
+					ServiceName: "query_instance_tag_service",
+					Version:     "1.0.3",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
 				},
-			},
-		})
-		Expect(err).To(BeNil())
-		Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			providerWhite = respCreate.ServiceId
 
-		respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				AppId:       "query_instance_tag",
-				ServiceName: "query_instance_tag_service",
-				Version:     "1.0.4",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
-		})
-		Expect(err).To(BeNil())
-		Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		consuemrTag := respCreate.ServiceId
+			resp, err = serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
+				ServiceId: providerWhite,
+				Rules: []*pb.AddOrUpdateServiceRule{
+					{
+						RuleType:  "WHITE",
+						Attribute: "Version",
+						Pattern:   "1.0.0",
+					},
+					{
+						RuleType:  "WHITE",
+						Attribute: "tag_a",
+						Pattern:   "b",
+					},
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
-		resp1, err := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
-			ServiceId: consuemrTag,
-			Tags:      map[string]string{"a": "b"},
+			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "query_instance_tag",
+					ServiceName: "query_instance_tag_service",
+					Version:     "1.0.4",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			consumerTag = respCreate.ServiceId
+
+			resp1, err := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
+				ServiceId: consumerTag,
+				Tags:      map[string]string{"a": "b"},
+			})
+			Expect(err).To(BeNil())
+			Expect(resp1.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 		})
-		Expect(err).To(BeNil())
-		Expect(resp1.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
 		Context("when query instances", func() {
 			It("should be failed", func() {
@@ -600,7 +636,7 @@ var _ = Describe("'Rule' service", func() {
 
 				By("consumer tag in black list")
 				resp, err = instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
-					ConsumerServiceId: consuemrTag,
+					ConsumerServiceId: consumerTag,
 					ProviderServiceId: providerBlack,
 				})
 				Expect(err).To(BeNil())
@@ -632,7 +668,7 @@ var _ = Describe("'Rule' service", func() {
 
 				By("consumer tag in white list")
 				resp, err = instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
-					ConsumerServiceId: consuemrTag,
+					ConsumerServiceId: consumerTag,
 					ProviderServiceId: providerWhite,
 				})
 				Expect(err).To(BeNil())

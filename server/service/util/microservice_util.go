@@ -278,3 +278,12 @@ func GetOneDomainProjectInstanceCount(ctx context.Context, domainProject string)
 	}
 	return resp.Count, nil
 }
+
+func SetDefault(service *pb.MicroService) {
+	if len(service.Level) == 0 {
+		service.Level = "BACK"
+	}
+	if len(service.Environment) == 0 {
+		service.Environment = pb.ENV_DEV
+	}
+}

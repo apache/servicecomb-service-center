@@ -18,6 +18,12 @@ import (
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"strings"
+)
+
+var (
+	TOO_LONG_SERVICEID   = strings.Repeat("x", 65)
+	TOO_LONG_SERVICENAME = strings.Repeat("x", 129)
 )
 
 var _ = Describe("'Micro-service' service", func() {
@@ -112,7 +118,7 @@ var _ = Describe("'Micro-service' service", func() {
 					ConsumerServiceId: resp.ServiceId,
 					ProviderServiceId: resp.ServiceId,
 				})
-				Expect(respGetInsts).To(BeNil())
+				Expect(err).To(BeNil())
 				Expect(respGetInsts.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 				Expect(respGetInsts.Instances[0].HostName).To(Equal("UT-HOST"))
 
@@ -342,22 +348,25 @@ var _ = Describe("'Micro-service' service", func() {
 		var (
 			serviceId string
 		)
-		respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				Alias:       "es",
-				ServiceName: "exist_service",
-				AppId:       "exist_appId",
-				Version:     "1.0.0",
-				Level:       "FRONT",
-				Schemas: []string{
-					"first_schemaId",
+
+		It("should be passed", func() {
+			respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					Alias:       "es",
+					ServiceName: "exist_service",
+					AppId:       "exist_appId",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Schemas: []string{
+						"first_schemaId",
+					},
+					Status: "UP",
 				},
-				Status: "UP",
-			},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.ServiceId).ToNot(Equal(""))
+			serviceId = respCreateService.ServiceId
 		})
-		Expect(err).To(BeNil())
-		Expect(respCreateService.ServiceId).ToNot(Equal(""))
-		serviceId = respCreateService.ServiceId
 
 		Context("when type is invalid", func() {
 			It("should be failed", func() {
@@ -506,19 +515,22 @@ var _ = Describe("'Micro-service' service", func() {
 		var (
 			serviceId string
 		)
-		respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				Alias:       "es",
-				ServiceName: "update_prop_service",
-				AppId:       "update_prop_appId",
-				Version:     "1.0.0",
-				Level:       "FRONT",
-				Status:      "UP",
-			},
+
+		It("should be passed", func() {
+			respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					Alias:       "es",
+					ServiceName: "update_prop_service",
+					AppId:       "update_prop_appId",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      "UP",
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.ServiceId).ToNot(Equal(""))
+			serviceId = respCreateService.ServiceId
 		})
-		Expect(err).To(BeNil())
-		Expect(respCreateService.ServiceId).ToNot(Equal(""))
-		serviceId = respCreateService.ServiceId
 
 		Context("when property is not nil", func() {
 			It("should be passed", func() {
@@ -543,7 +555,7 @@ var _ = Describe("'Micro-service' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(resp2.Service.ServiceId).To(Equal(serviceId))
-				Expect(resp2.Service.Properties["test"]).To(Equal("1"))
+				Expect(resp2.Service.Properties["test"]).To(Equal(""))
 				Expect(resp2.Service.Properties["k"]).To(Equal("v"))
 			})
 		})
@@ -600,65 +612,68 @@ var _ = Describe("'Micro-service' service", func() {
 			serviceNoInstId      string
 			serviceConsumerId    string
 		)
-		instances := []*pb.MicroServiceInstance{
-			{
-				Endpoints: []string{
-					"deleteService:127.0.0.1:8080",
+
+		It("should be passed", func() {
+			instances := []*pb.MicroServiceInstance{
+				{
+					Endpoints: []string{
+						"deleteService:127.0.0.1:8080",
+					},
+					HostName: "delete-host",
+					Status:   pb.MSI_UP,
 				},
-				HostName: "delete-host",
-				Status:   pb.MSI_UP,
-			},
-		}
+			}
 
-		respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				ServiceName: "delete_service_with_inst",
+			respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					ServiceName: "delete_service_with_inst",
+					AppId:       "delete_service",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      "UP",
+				},
+				Instances: instances,
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			serviceContainInstId = respCreate.ServiceId
+
+			provider := &pb.MicroService{
+				ServiceName: "delete_serivce_no_inst",
 				AppId:       "delete_service",
 				Version:     "1.0.0",
 				Level:       "FRONT",
 				Status:      "UP",
-			},
-			Instances: instances,
-		})
-		Expect(err).To(BeNil())
-		Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		serviceContainInstId = respCreate.ServiceId
+			}
+			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: provider,
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			serviceNoInstId = respCreate.ServiceId
 
-		provider := &pb.MicroService{
-			ServiceName: "delete_serivce_no_inst",
-			AppId:       "delete_service",
-			Version:     "1.0.0",
-			Level:       "FRONT",
-			Status:      "UP",
-		}
-		respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: provider,
-		})
-		Expect(err).To(BeNil())
-		Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		serviceNoInstId = respCreate.ServiceId
+			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					ServiceName: "delete_serivce_consuemr",
+					AppId:       "delete_service",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      "UP",
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			serviceConsumerId = respCreate.ServiceId
 
-		respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				ServiceName: "delete_serivce_consuemr",
-				AppId:       "delete_service",
-				Version:     "1.0.0",
-				Level:       "FRONT",
-				Status:      "UP",
-			},
+			respFind, err := instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				ConsumerServiceId: serviceConsumerId,
+				AppId:             provider.AppId,
+				ServiceName:       provider.ServiceName,
+				VersionRule:       provider.Version,
+			})
+			Expect(err).To(BeNil())
+			Expect(respFind.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 		})
-		Expect(err).To(BeNil())
-		Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		serviceConsumerId = respCreate.ServiceId
-
-		respFind, err := instanceResource.Find(getContext(), &pb.FindInstancesRequest{
-			ConsumerServiceId: serviceConsumerId,
-			AppId:             provider.AppId,
-			ServiceName:       provider.ServiceName,
-			VersionRule:       provider.Version,
-		})
-		Expect(err).To(BeNil())
-		Expect(respFind.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
 		Context("when request is invalid", func() {
 			It("should be failed", func() {
@@ -782,31 +797,38 @@ var _ = Describe("'Micro-service' service", func() {
 		})
 
 		Context("batch delete services", func() {
-			resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-				Service: &pb.MicroService{
-					ServiceName: "batch_delete_services_1",
-					AppId:       "batch_delete",
-					Version:     "1.0.0",
-					Level:       "FRONT",
-					Status:      "UP",
-				},
-			})
-			Expect(err).To(BeNil())
-			serviceId1 := resp.ServiceId
-			Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			var (
+				serviceId1 string
+				serviceId2 string
+			)
 
-			resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-				Service: &pb.MicroService{
-					ServiceName: "batch_delete_services_2",
-					AppId:       "batch_delete",
-					Version:     "1.0.0",
-					Level:       "FRONT",
-					Status:      "UP",
-				},
+			It("should be passed", func() {
+				resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceName: "batch_delete_services_1",
+						AppId:       "batch_delete",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Status:      "UP",
+					},
+				})
+				Expect(err).To(BeNil())
+				serviceId1 = resp.ServiceId
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceName: "batch_delete_services_2",
+						AppId:       "batch_delete",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Status:      "UP",
+					},
+				})
+				Expect(err).To(BeNil())
+				serviceId2 = resp.ServiceId
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 			})
-			Expect(err).To(BeNil())
-			serviceId2 := resp.ServiceId
-			Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
 			It("should be passed", func() {
 				resp, err := serviceResource.DeleteServices(getContext(), &pb.DelServicesRequest{
@@ -821,42 +843,49 @@ var _ = Describe("'Micro-service' service", func() {
 		})
 
 		Context("batch delete services contain instances", func() {
-			resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-				Service: &pb.MicroService{
-					ServiceName: "batch_delete_services_failed_1",
-					AppId:       "batch_delete",
-					Version:     "1.0.0",
-					Level:       "FRONT",
-					Status:      "UP",
-				},
-			})
-			Expect(err).To(BeNil())
-			serviceIdFailed1 := resp.ServiceId
-			Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			var (
+				serviceIdFailed1 string
+				serviceIdFailed2 string
+			)
 
-			instances := []*pb.MicroServiceInstance{
-				{
-					Endpoints: []string{
-						"batchDeleteServices:127.0.0.2:8081",
+			It("should be passed", func() {
+				resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceName: "batch_delete_services_failed_1",
+						AppId:       "batch_delete",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Status:      "UP",
 					},
-					HostName: "batch-delete-host",
-					Status:   pb.MSI_UP,
-				},
-			}
+				})
+				Expect(err).To(BeNil())
+				serviceIdFailed1 = resp.ServiceId
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
-			resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-				Service: &pb.MicroService{
-					ServiceName: "batch_delete_services_failed_2",
-					AppId:       "batch_delete",
-					Version:     "1.0.0",
-					Level:       "FRONT",
-					Status:      "UP",
-				},
-				Instances: instances,
+				instances := []*pb.MicroServiceInstance{
+					{
+						Endpoints: []string{
+							"batchDeleteServices:127.0.0.2:8081",
+						},
+						HostName: "batch-delete-host",
+						Status:   pb.MSI_UP,
+					},
+				}
+
+				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceName: "batch_delete_services_failed_2",
+						AppId:       "batch_delete",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Status:      "UP",
+					},
+					Instances: instances,
+				})
+				Expect(err).To(BeNil())
+				serviceIdFailed2 = resp.ServiceId
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 			})
-			Expect(err).To(BeNil())
-			serviceIdFailed2 := resp.ServiceId
-			Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
 			It("should be failed", func() {
 				resp, err := serviceResource.DeleteServices(getContext(), &pb.DelServicesRequest{

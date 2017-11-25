@@ -23,18 +23,24 @@ import (
 
 var _ = Describe("'Tag' service", func() {
 	Describe("execute 'create' operartion", func() {
-		respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				AppId:       "create_tag_group",
-				ServiceName: "create_tag_service",
-				Version:     "1.0.0",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
+		var (
+			serviceId string
+		)
+
+		It("should be passed", func() {
+			respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "create_tag_group",
+					ServiceName: "create_tag_service",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			serviceId = respCreateService.ServiceId
 		})
-		Expect(err).To(BeNil())
-		Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		serviceId := respCreateService.ServiceId
 
 		Context("when request is invalid", func() {
 			It("should be failed", func() {
@@ -106,28 +112,34 @@ var _ = Describe("'Tag' service", func() {
 	})
 
 	Describe("execute 'get' operartion", func() {
-		respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				AppId:       "get_tag_group",
-				ServiceName: "get_tag_service",
-				Version:     "1.0.0",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
-		})
-		Expect(err).To(BeNil())
-		Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		serviceId := respCreateService.ServiceId
+		var (
+			serviceId string
+		)
 
-		respAddTags, err := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
-			ServiceId: serviceId,
-			Tags: map[string]string{
-				"a": "test",
-				"b": "b",
-			},
+		It("should be passed", func() {
+			respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "get_tag_group",
+					ServiceName: "get_tag_service",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			serviceId = respCreateService.ServiceId
+
+			respAddTags, err := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
+				ServiceId: serviceId,
+				Tags: map[string]string{
+					"a": "test",
+					"b": "b",
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 		})
-		Expect(err).To(BeNil())
-		Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
 		Context("when request is invalid", func() {
 			It("should be failed", func() {
@@ -159,28 +171,34 @@ var _ = Describe("'Tag' service", func() {
 	})
 
 	Describe("execute 'update' operartion", func() {
-		respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				AppId:       "update_tag_group",
-				ServiceName: "update_tag_service",
-				Version:     "1.0.0",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
-		})
-		Expect(err).To(BeNil())
-		Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		serviceId := respCreateService.ServiceId
+		var (
+			serviceId string
+		)
 
-		respAddTags, err := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
-			ServiceId: serviceId,
-			Tags: map[string]string{
-				"a": "test",
-				"b": "b",
-			},
+		It("should be passed", func() {
+			respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "update_tag_group",
+					ServiceName: "update_tag_service",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			serviceId = respCreateService.ServiceId
+
+			respAddTags, err := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
+				ServiceId: serviceId,
+				Tags: map[string]string{
+					"a": "test",
+					"b": "b",
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 		})
-		Expect(err).To(BeNil())
-		Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
 		Context("when request is invalid", func() {
 			It("should be failed", func() {
@@ -229,28 +247,34 @@ var _ = Describe("'Tag' service", func() {
 	})
 
 	Describe("execute 'delete' operartion", func() {
-		respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				AppId:       "delete_tag_group",
-				ServiceName: "delete_tag_service",
-				Version:     "1.0.0",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
-		})
-		Expect(err).To(BeNil())
-		Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		serviceId := respCreateService.ServiceId
+		var (
+			serviceId string
+		)
 
-		respAddTags, err := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
-			ServiceId: serviceId,
-			Tags: map[string]string{
-				"a": "test",
-				"b": "b",
-			},
+		It("should be passed", func() {
+			respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "delete_tag_group",
+					ServiceName: "delete_tag_service",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			serviceId = respCreateService.ServiceId
+
+			respAddTags, err := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
+				ServiceId: serviceId,
+				Tags: map[string]string{
+					"a": "test",
+					"b": "b",
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 		})
-		Expect(err).To(BeNil())
-		Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
 		Context("when request is invalid", func() {
 			It("should be failed", func() {
@@ -302,7 +326,7 @@ var _ = Describe("'Tag' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-				Expect(resp.Tags["a"]).To(BeNil())
+				Expect(resp.Tags["a"]).To(Equal(""))
 			})
 		})
 	})

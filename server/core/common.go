@@ -117,11 +117,18 @@ func init() {
 
 	GetSchemaExistsReqValidator.AddRule("ServiceId", ServiceIdRule)
 	GetSchemaExistsReqValidator.AddRule("SchemaId", SchemaIdRule)
+
+	var subSchemaValidor validate.Validator
+	subSchemaValidor.AddRule("SchemaId", SchemaIdRule)
+	subSchemaValidor.AddRule("Summary", &validate.ValidateRule{Min: 1, Max: 512, Regexp: SchemaSummaryRegex})
+	subSchemaValidor.AddRule("Schema", &validate.ValidateRule{Min: 1})
+
 	SchemasValidor.AddRule("ServiceId", ServiceIdRule)
-	SchemasValidor.AddSub("Schemas", &SchemaValidor)
-	SchemaValidor.AddRule("SchemaId", SchemaIdRule)
-	SchemaValidor.AddRule("Summary", &validate.ValidateRule{Min: 1, Max: 512, Regexp: SchemaSummaryRegex})
-	SchemaValidor.AddRule("Schema", &validate.ValidateRule{Min: 1})
+	SchemasValidor.AddSub("Schemas", &subSchemaValidor)
+
+	SchemaValidor.AddRules(subSchemaValidor.GetRules())
+	SchemaValidor.AddRule("ServiceId", ServiceIdRule)
+	SchemaValidor.AddRule("Summary", &validate.ValidateRule{Max: 512, Regexp: SchemaSummaryRegex})
 
 	GetServiceReqValidator.AddRule("ServiceId", ServiceIdRule)
 
@@ -201,8 +208,10 @@ func Validate(v interface{}) error {
 	case *pb.AddServiceTagsRequest, *pb.DeleteServiceTagsRequest,
 		*pb.UpdateServiceTagRequest, *pb.GetServiceTagsRequest:
 		return TagReqValidator.Validate(v)
-	case *pb.GetSchemaRequest, *pb.ModifySchemaRequest, *pb.DeleteSchemaRequest:
+	case *pb.GetSchemaRequest, *pb.DeleteSchemaRequest:
 		return GetSchemaReqValidator.Validate(v)
+	case *pb.ModifySchemaRequest:
+		return SchemaValidor.Validate(v)
 	case *pb.ModifySchemasRequest:
 		return SchemasValidor.Validate(v)
 	case *pb.MicroServiceDependency:

@@ -26,18 +26,24 @@ import (
 
 var _ = Describe("'Instance' service", func() {
 	Describe("execute 'register' operartion", func() {
-		respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				ServiceName: "create_instance_service",
-				AppId:       "create_instance",
-				Version:     "1.0.0",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
+		var (
+			serviceId string
+		)
+
+		It("should be passed", func() {
+			respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					ServiceName: "create_instance_service",
+					AppId:       "create_instance",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			serviceId = respCreate.ServiceId
 		})
-		Expect(err).To(BeNil())
-		Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		serviceId := respCreate.ServiceId
 
 		Context("when register a instance", func() {
 			It("should be passed", func() {
@@ -222,44 +228,54 @@ var _ = Describe("'Instance' service", func() {
 	})
 
 	Describe("execute 'heartbeat' operartion", func() {
-		respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				ServiceName: "heartbeat_service",
-				AppId:       "heartbeat_service",
-				Version:     "1.0.0",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
-		})
-		Expect(err).To(BeNil())
-		Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		serviceId := respCreate.ServiceId
+		var (
+			serviceId   string
+			instanceId1 string
+			instanceId2 string
+		)
 
-		resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
-			Instance: &pb.MicroServiceInstance{
-				ServiceId: serviceId,
-				HostName:  "UT-HOST",
-				Endpoints: []string{
-					"heartbeat:127.0.0.1:8080",
+		It("should be passed", func() {
+			respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					ServiceName: "heartbeat_service",
+					AppId:       "heartbeat_service",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
 				},
-			},
-		})
-		Expect(err).To(BeNil())
-		Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		instanceId1 := resp.InstanceId
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			serviceId = respCreate.ServiceId
 
-		resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
-			Instance: &pb.MicroServiceInstance{
-				ServiceId: serviceId,
-				HostName:  "UT-HOST",
-				Endpoints: []string{
-					"heartbeat:127.0.0.2:8080",
+			resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				Instance: &pb.MicroServiceInstance{
+					ServiceId: serviceId,
+					HostName:  "UT-HOST",
+					Endpoints: []string{
+						"heartbeat:127.0.0.1:8080",
+					},
+					Status: pb.MSI_UP,
 				},
-			},
+			})
+			Expect(err).To(BeNil())
+			Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			instanceId1 = resp.InstanceId
+
+			resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				Instance: &pb.MicroServiceInstance{
+					ServiceId: serviceId,
+					HostName:  "UT-HOST",
+					Endpoints: []string{
+						"heartbeat:127.0.0.2:8080",
+					},
+					Status: pb.MSI_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			instanceId2 = resp.InstanceId
 		})
-		Expect(err).To(BeNil())
-		Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		instanceId2 := resp.InstanceId
 
 		Context("when update a lease", func() {
 			It("should be passed", func() {
@@ -343,68 +359,72 @@ var _ = Describe("'Instance' service", func() {
 	})
 
 	Describe("execute 'clusterHealth' operartion", func() {
-		resp, err := serviceResource.Create(getContext(), core.CreateServiceRequest())
-		Expect(err).To(BeNil())
-		scServiceId := resp.ServiceId
-		Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+		var (
+			scServiceId string
+		)
 
-		Context("when request is valid", func() {
-			It("should be passed", func() {
-				//注册sc
-				By("SC cluster is empty")
+		It("should be passed", func() {
+			resp, err := serviceResource.Create(getContext(), core.CreateServiceRequest())
+			Expect(err).To(BeNil())
+			scServiceId = resp.ServiceId
+			Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+		})
+
+		Context("when SC does not exist", func() {
+			It("should be failed", func() {
+				old := core.Service.ServiceName
+				core.Service.ServiceName = "x"
 				respCluterhealth, err := instanceResource.ClusterHealth(getContext())
 				Expect(err).To(BeNil())
 				Expect(respCluterhealth.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				core.Service.ServiceName = old
+			})
+		})
 
-				By("SC cluster is not empty")
-				respIns, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
-					Instance: &pb.MicroServiceInstance{
-						ServiceId: scServiceId,
-						Endpoints: []string{
-							"cluster:127.0.0.1:8081",
-						},
-						HostName: "UT-HOST",
-						Status:   pb.MSI_UP,
-					},
-				})
-				Expect(respIns.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-
-				respCluterhealth, err = instanceResource.ClusterHealth(getContext())
+		Context("when SC registered", func() {
+			It("should be passed", func() {
+				respCluterhealth, err := instanceResource.ClusterHealth(getContext())
 				Expect(err).To(BeNil())
 				Expect(respCluterhealth.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 			})
-
 		})
 	})
 
 	Describe("execute 'udpate' operartion", func() {
-		respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				ServiceName: "update_instance_service",
-				AppId:       "update_instance_service",
-				Version:     "1.0.0",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
-		})
-		Expect(err).To(BeNil())
-		Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		serviceId := respCreate.ServiceId
+		var (
+			serviceId  string
+			instanceId string
+		)
 
-		resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
-			Instance: &pb.MicroServiceInstance{
-				ServiceId: serviceId,
-				Endpoints: []string{
-					"updateInstance:127.0.0.1:8080",
+		It("should be passed", func() {
+			respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					ServiceName: "update_instance_service",
+					AppId:       "update_instance_service",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
 				},
-				HostName:   "UT-HOST",
-				Status:     pb.MSI_UP,
-				Properties: map[string]string{"nodeIP": "test"},
-			},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			serviceId = respCreate.ServiceId
+
+			resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				Instance: &pb.MicroServiceInstance{
+					ServiceId: serviceId,
+					Endpoints: []string{
+						"updateInstance:127.0.0.1:8080",
+					},
+					HostName:   "UT-HOST",
+					Status:     pb.MSI_UP,
+					Properties: map[string]string{"nodeIP": "test"},
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			instanceId = resp.InstanceId
 		})
-		Expect(err).To(BeNil())
-		Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		instanceId := resp.InstanceId
 
 		Context("when update instance status", func() {
 			It("should be passed", func() {
@@ -514,72 +534,82 @@ var _ = Describe("'Instance' service", func() {
 	})
 
 	Describe("execute 'query' operartion", func() {
-		respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				AppId:       "query_instance",
-				ServiceName: "query_instance_service",
-				Version:     "1.0.0",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
-		})
-		Expect(err).To(BeNil())
-		Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		serviceId1 := respCreate.ServiceId
+		var (
+			serviceId1  string
+			serviceId2  string
+			serviceId3  string
+			instanceId1 string
+			instanceId2 string
+		)
 
-		respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				AppId:       "query_instance",
-				ServiceName: "query_instance_service",
-				Version:     "1.0.5",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
-		})
-		Expect(err).To(BeNil())
-		Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		serviceId2 := respCreate.ServiceId
-
-		resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
-			Instance: &pb.MicroServiceInstance{
-				ServiceId: serviceId1,
-				HostName:  "UT-HOST",
-				Endpoints: []string{
-					"find:127.0.0.1:8080",
+		It("should be passed", func() {
+			respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "query_instance",
+					ServiceName: "query_instance_service",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
 				},
-				Status: pb.MSI_UP,
-			},
-		})
-		Expect(err).To(BeNil())
-		Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		instanceId1 := resp.InstanceId
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			serviceId1 = respCreate.ServiceId
 
-		resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
-			Instance: &pb.MicroServiceInstance{
-				ServiceId: serviceId2,
-				HostName:  "UT-HOST",
-				Endpoints: []string{
-					"find:127.0.0.2:8080",
+			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "query_instance",
+					ServiceName: "query_instance_service",
+					Version:     "1.0.5",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
 				},
-				Status: pb.MSI_UP,
-			},
-		})
-		Expect(err).To(BeNil())
-		Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		instanceId2 := resp.InstanceId
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			serviceId2 = respCreate.ServiceId
 
-		respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				AppId:       "query_instance_cross",
-				ServiceName: "query_instance_service",
-				Version:     "1.0.0",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
+			resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				Instance: &pb.MicroServiceInstance{
+					ServiceId: serviceId1,
+					HostName:  "UT-HOST",
+					Endpoints: []string{
+						"find:127.0.0.1:8080",
+					},
+					Status: pb.MSI_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			instanceId1 = resp.InstanceId
+
+			resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				Instance: &pb.MicroServiceInstance{
+					ServiceId: serviceId2,
+					HostName:  "UT-HOST",
+					Endpoints: []string{
+						"find:127.0.0.2:8080",
+					},
+					Status: pb.MSI_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			instanceId2 = resp.InstanceId
+
+			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "query_instance_cross",
+					ServiceName: "query_instance_service",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			serviceId3 = respCreate.ServiceId
 		})
-		Expect(err).To(BeNil())
-		Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		serviceId3 := respCreate.ServiceId
 
 		Context("when query invalid parameters", func() {
 			It("should be failed", func() {
@@ -727,60 +757,69 @@ var _ = Describe("'Instance' service", func() {
 	})
 
 	Describe("execute 'get' operartion", func() {
-		respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				AppId:       "get_instance",
-				ServiceName: "get_instance_service",
-				Version:     "1.0.0",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
-		})
-		Expect(err).To(BeNil())
-		Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		serviceId1 := respCreate.ServiceId
+		var (
+			serviceId1  string
+			serviceId2  string
+			serviceId3  string
+			instanceId2 string
+		)
 
-		respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				AppId:       "get_instance",
-				ServiceName: "get_instance_service",
-				Version:     "1.0.5",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
-			Tags: map[string]string{
-				"test": "test",
-			},
-		})
-		Expect(err).To(BeNil())
-		Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		serviceId2 := respCreate.ServiceId
-
-		resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
-			Instance: &pb.MicroServiceInstance{
-				ServiceId: serviceId2,
-				HostName:  "UT-HOST",
-				Endpoints: []string{
-					"get:127.0.0.2:8080",
+		It("should be passed", func() {
+			respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "get_instance",
+					ServiceName: "get_instance_service",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
 				},
-				Status: pb.MSI_UP,
-			},
-		})
-		Expect(err).To(BeNil())
-		Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		instanceId2 := resp.InstanceId
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			serviceId1 = respCreate.ServiceId
 
-		respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				AppId:       "get_instance_cross",
-				ServiceName: "get_instance_service",
-				Version:     "1.0.0",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
+			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "get_instance",
+					ServiceName: "get_instance_service",
+					Version:     "1.0.5",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+				Tags: map[string]string{
+					"test": "test",
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			serviceId2 = respCreate.ServiceId
+
+			resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				Instance: &pb.MicroServiceInstance{
+					ServiceId: serviceId2,
+					HostName:  "UT-HOST",
+					Endpoints: []string{
+						"get:127.0.0.2:8080",
+					},
+					Status: pb.MSI_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			instanceId2 = resp.InstanceId
+
+			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "get_instance_cross",
+					ServiceName: "get_instance_service",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			serviceId3 = respCreate.ServiceId
 		})
-		Expect(err).To(BeNil())
-		serviceId3 := respCreate.ServiceId
 
 		Context("when get one instance request is invalid", func() {
 			It("should be failed", func() {
@@ -901,35 +940,42 @@ var _ = Describe("'Instance' service", func() {
 	})
 
 	Describe("execute 'unregister' operartion", func() {
-		respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				AppId:       "unregister_instance",
-				ServiceName: "unregister_instance_service",
-				Version:     "1.0.5",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
-			Tags: map[string]string{
-				"test": "test",
-			},
-		})
-		Expect(err).To(BeNil())
-		Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		serviceId := respCreate.ServiceId
+		var (
+			serviceId  string
+			instanceId string
+		)
 
-		resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
-			Instance: &pb.MicroServiceInstance{
-				ServiceId: serviceId,
-				HostName:  "UT-HOST",
-				Endpoints: []string{
-					"unregister:127.0.0.2:8080",
+		It("should be passed", func() {
+			respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "unregister_instance",
+					ServiceName: "unregister_instance_service",
+					Version:     "1.0.5",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
 				},
-				Status: pb.MSI_UP,
-			},
+				Tags: map[string]string{
+					"test": "test",
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			serviceId = respCreate.ServiceId
+
+			resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				Instance: &pb.MicroServiceInstance{
+					ServiceId: serviceId,
+					HostName:  "UT-HOST",
+					Endpoints: []string{
+						"unregister:127.0.0.2:8080",
+					},
+					Status: pb.MSI_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			instanceId = resp.InstanceId
 		})
-		Expect(err).To(BeNil())
-		Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		instanceId := resp.InstanceId
 
 		Context("when request is valid", func() {
 			It("should be passed", func() {
@@ -980,18 +1026,24 @@ var _ = Describe("'Instance' service", func() {
 	})
 
 	Describe("execute 'watch' operartion", func() {
-		respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				ServiceName: "service_name_watch",
-				AppId:       "service_name_watch",
-				Version:     "1.0.0",
-				Level:       "BACK",
-				Status:      pb.MS_UP,
-			},
+		var (
+			serviceId string
+		)
+
+		It("should be passed", func() {
+			respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					ServiceName: "service_name_watch",
+					AppId:       "service_name_watch",
+					Version:     "1.0.0",
+					Level:       "BACK",
+					Status:      pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			serviceId = respCreate.ServiceId
 		})
-		Expect(err).To(BeNil())
-		Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		serviceId := respCreate.ServiceId
 
 		Context("when request is invalid", func() {
 			It("should be failed", func() {

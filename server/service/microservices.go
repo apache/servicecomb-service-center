@@ -64,9 +64,7 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 	service := in.Service
 	serviceFlag := util.StringJoin([]string{service.AppId, service.ServiceName, service.Version}, "/")
 
-	if len(service.Level) == 0 {
-		service.Level = "BACK"
-	}
+	serviceUtil.SetDefault(service)
 
 	err := apt.Validate(service)
 	if err != nil {
@@ -541,6 +539,9 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 	domainProject := util.ParseDomainProject(ctx)
 	switch in.Type {
 	case "microservice":
+		if len(in.Environment) == 0 {
+			in.Environment = pb.ENV_DEV
+		}
 		if len(in.AppId) == 0 || len(in.ServiceName) == 0 || len(in.Version) == 0 {
 			util.Logger().Errorf(nil, "microservice exist failed: invalid params.")
 			return &pb.GetExistenceResponse{

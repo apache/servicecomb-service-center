@@ -32,18 +32,24 @@ var tooLongSummary = strings.Repeat("x", 513)
 
 var _ = Describe("'Schema' service", func() {
 	Describe("execute 'create' operartion", func() {
-		respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				AppId:       "create_schema_group",
-				ServiceName: "create_schema_service",
-				Version:     "1.0.0",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
+		var (
+			serviceId string
+		)
+
+		It("should be passed", func() {
+			respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "create_schema_group",
+					ServiceName: "create_schema_service",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			serviceId = respCreateService.ServiceId
 		})
-		Expect(err).To(BeNil())
-		Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		serviceId := respCreateService.ServiceId
 
 		Context("when create an invalid schema", func() {
 			f := func() {
@@ -74,6 +80,7 @@ var _ = Describe("'Schema' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
+				By("summary is invalid")
 				resp, err = serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
 					ServiceId: serviceId,
 					SchemaId:  "com.huawei.test",
@@ -189,7 +196,7 @@ var _ = Describe("'Schema' service", func() {
 				for i := 0; i < size; i++ {
 					schemaIds = append(schemaIds, strconv.Itoa(i))
 				}
-				respServiceForSchema, _ := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				respServiceForSchema, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
 						AppId:       "check_schema_group",
 						ServiceName: "check_schema_service",
@@ -215,8 +222,10 @@ var _ = Describe("'Schema' service", func() {
 				f()
 
 				By("modify one schema")
+				var err error
+				respCreateService := &pb.ModifySchemaResponse{}
 				for _, schema := range schemas {
-					respCreateService, err := serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
+					respCreateService, err = serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
 						ServiceId: serviceId,
 						Schema:    schema.Schema,
 					})
@@ -236,34 +245,41 @@ var _ = Describe("'Schema' service", func() {
 		})
 
 		Context("when batch create schemas in dev env", func() {
-			respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-				Service: &pb.MicroService{
-					AppId:       "create_schemas_dev",
-					ServiceName: "create_schemas_service",
-					Version:     "1.0.0",
-					Level:       "FRONT",
-					Status:      pb.MS_UP,
-				},
-			})
-			Expect(err).To(BeNil())
-			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-			serviceId1 := respCreateService.ServiceId
+			var (
+				serviceId1 string
+				serviceId2 string
+			)
 
-			respCreateService, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-				Service: &pb.MicroService{
-					AppId:       "create_schemas_dev",
-					ServiceName: "create_schemas_service",
-					Version:     "1.0.1",
-					Level:       "FRONT",
-					Schemas: []string{
-						"first_schemaId",
+			It("should be passed", func() {
+				respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						AppId:       "create_schemas_dev",
+						ServiceName: "create_schemas_service",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Status:      pb.MS_UP,
 					},
-					Status: pb.MS_UP,
-				},
+				})
+				Expect(err).To(BeNil())
+				Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				serviceId1 = respCreateService.ServiceId
+
+				respCreateService, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						AppId:       "create_schemas_dev",
+						ServiceName: "create_schemas_service",
+						Version:     "1.0.1",
+						Level:       "FRONT",
+						Schemas: []string{
+							"first_schemaId",
+						},
+						Status: pb.MS_UP,
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				serviceId2 = respCreateService.ServiceId
 			})
-			Expect(err).To(BeNil())
-			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-			serviceId2 := respCreateService.ServiceId
 
 			It("should be passed", func() {
 				By("create schemas when service schema id set is empty")
@@ -333,34 +349,41 @@ var _ = Describe("'Schema' service", func() {
 		})
 
 		Context("when batch create schemas in prod env", func() {
-			respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-				Service: &pb.MicroService{
-					AppId:       "create_schemas_prod",
-					ServiceName: "create_schemas_service",
-					Version:     "1.0.0",
-					Level:       "FRONT",
-					Status:      pb.MS_UP,
-				},
-			})
-			Expect(err).To(BeNil())
-			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-			serviceId1 := respCreateService.ServiceId
+			var (
+				serviceId1 string
+				serviceId2 string
+			)
 
-			respCreateService, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-				Service: &pb.MicroService{
-					AppId:       "create_schemas_prod",
-					ServiceName: "create_schemas_service",
-					Version:     "1.0.1",
-					Level:       "FRONT",
-					Schemas: []string{
-						"first_schemaId",
+			It("should be passed", func() {
+				respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						AppId:       "create_schemas_prod",
+						ServiceName: "create_schemas_service",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Status:      pb.MS_UP,
 					},
-					Status: pb.MS_UP,
-				},
+				})
+				Expect(err).To(BeNil())
+				Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				serviceId1 = respCreateService.ServiceId
+
+				respCreateService, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						AppId:       "create_schemas_prod",
+						ServiceName: "create_schemas_service",
+						Version:     "1.0.1",
+						Level:       "FRONT",
+						Schemas: []string{
+							"first_schemaId",
+						},
+						Status: pb.MS_UP,
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				serviceId2 = respCreateService.ServiceId
 			})
-			Expect(err).To(BeNil())
-			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-			serviceId2 := respCreateService.ServiceId
 
 			It("should be passed", func() {
 				version.Ver().RunMode = "prod"
@@ -394,7 +417,7 @@ var _ = Describe("'Schema' service", func() {
 					Schemas:   schemas,
 				})
 				Expect(err).To(BeNil())
-				Expect(respModifySchemas.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respModifySchemas.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
 				By("add schemas")
 				schemas = []*pb.Schema{
@@ -423,34 +446,41 @@ var _ = Describe("'Schema' service", func() {
 		})
 
 		Context("when create a schema in dev env", func() {
-			respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-				Service: &pb.MicroService{
-					AppId:       "create_schema_dev",
-					ServiceName: "create_schema_service",
-					Version:     "1.0.0",
-					Level:       "FRONT",
-					Status:      pb.MS_UP,
-				},
-			})
-			Expect(err).To(BeNil())
-			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-			serviceId1 := respCreateService.ServiceId
+			var (
+				serviceId1 string
+				serviceId2 string
+			)
 
-			respCreateService, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-				Service: &pb.MicroService{
-					AppId:       "create_schema_dev",
-					ServiceName: "create_schema_service",
-					Version:     "1.0.1",
-					Level:       "FRONT",
-					Schemas: []string{
-						"first_schemaId",
+			It("should be passed", func() {
+				respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						AppId:       "create_schema_dev",
+						ServiceName: "create_schema_service",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Status:      pb.MS_UP,
 					},
-					Status: pb.MS_UP,
-				},
+				})
+				Expect(err).To(BeNil())
+				Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				serviceId1 = respCreateService.ServiceId
+
+				respCreateService, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						AppId:       "create_schema_dev",
+						ServiceName: "create_schema_service",
+						Version:     "1.0.1",
+						Level:       "FRONT",
+						Schemas: []string{
+							"first_schemaId",
+						},
+						Status: pb.MS_UP,
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				serviceId2 = respCreateService.ServiceId
 			})
-			Expect(err).To(BeNil())
-			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-			serviceId2 := respCreateService.ServiceId
 
 			It("should be passed", func() {
 				By("create schema when service schema id set is empty")
@@ -503,43 +533,50 @@ var _ = Describe("'Schema' service", func() {
 		})
 
 		Context("when create a schemas in prod env", func() {
-			respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-				Service: &pb.MicroService{
-					AppId:       "create_schema_prod",
-					ServiceName: "create_schema_service",
-					Version:     "1.0.0",
-					Level:       "FRONT",
-					Status:      pb.MS_UP,
-				},
-			})
-			Expect(err).To(BeNil())
-			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-			serviceId1 := respCreateService.ServiceId
+			var (
+				serviceId1 string
+				serviceId2 string
+			)
 
-			respCreateService, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-				Service: &pb.MicroService{
-					AppId:       "create_schema_prod",
-					ServiceName: "create_schema_service",
-					Version:     "1.0.1",
-					Level:       "FRONT",
-					Schemas: []string{
-						"first_schemaId",
-						"second_schemaId",
+			It("should be passed", func() {
+				respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						AppId:       "create_schema_prod",
+						ServiceName: "create_schema_service",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Status:      pb.MS_UP,
 					},
-					Status: pb.MS_UP,
-				},
-			})
-			Expect(err).To(BeNil())
-			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-			serviceId2 := respCreateService.ServiceId
+				})
+				Expect(err).To(BeNil())
+				Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				serviceId1 = respCreateService.ServiceId
 
-			respModifySchema, err := serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
-				ServiceId: serviceId2,
-				SchemaId:  "second_schemaId",
-				Schema:    "second_schema",
+				respCreateService, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						AppId:       "create_schema_prod",
+						ServiceName: "create_schema_service",
+						Version:     "1.0.1",
+						Level:       "FRONT",
+						Schemas: []string{
+							"first_schemaId",
+							"second_schemaId",
+						},
+						Status: pb.MS_UP,
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				serviceId2 = respCreateService.ServiceId
+
+				respModifySchema, err := serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
+					ServiceId: serviceId2,
+					SchemaId:  "second_schemaId",
+					Schema:    "second_schema",
+				})
+				Expect(err).To(BeNil())
+				Expect(respModifySchema.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 			})
-			Expect(err).To(BeNil())
-			Expect(respModifySchema.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
 			It("should be passed", func() {
 				By("create schema when service schema id set is empty")
@@ -593,27 +630,33 @@ var _ = Describe("'Schema' service", func() {
 	})
 
 	Describe("execute 'exist' operartion", func() {
-		respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				AppId:       "query_schema_group",
-				ServiceName: "query_schema_service",
-				Version:     "1.0.0",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
-		})
-		Expect(err).To(BeNil())
-		Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		serviceId := respCreateService.ServiceId
+		var (
+			serviceId string
+		)
 
-		resp, err := serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
-			ServiceId: serviceId,
-			SchemaId:  "com.huawei.test",
-			Schema:    "query schema",
-			Summary:   "xxx",
+		It("should be passed", func() {
+			respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "query_schema_group",
+					ServiceName: "query_schema_service",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			serviceId = respCreateService.ServiceId
+
+			resp, err := serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
+				ServiceId: serviceId,
+				SchemaId:  "com.huawei.test",
+				Schema:    "query schema",
+				Summary:   "xxx",
+			})
+			Expect(err).To(BeNil())
+			Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 		})
-		Expect(err).To(BeNil())
-		Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
 		Context("when request is invalid", func() {
 			It("should be failed", func() {
@@ -668,27 +711,33 @@ var _ = Describe("'Schema' service", func() {
 	})
 
 	Describe("execute 'get' operartion", func() {
-		respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				AppId:       "get_schema_group",
-				ServiceName: "get_schema_service",
-				Version:     "1.0.0",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
-		})
-		Expect(err).To(BeNil())
-		Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		serviceId := respCreateService.ServiceId
+		var (
+			serviceId string
+		)
 
-		resp, err := serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
-			ServiceId: serviceId,
-			SchemaId:  "com.huawei.test",
-			Schema:    "get schema",
-			Summary:   "xxx",
+		It("should be passed", func() {
+			respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "get_schema_group",
+					ServiceName: "get_schema_service",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			serviceId = respCreateService.ServiceId
+
+			resp, err := serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
+				ServiceId: serviceId,
+				SchemaId:  "com.huawei.test",
+				Schema:    "get schema",
+				Summary:   "xxx",
+			})
+			Expect(err).To(BeNil())
+			Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 		})
-		Expect(err).To(BeNil())
-		Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
 		Context("when request is invalid", func() {
 			It("should be failed", func() {
@@ -748,27 +797,33 @@ var _ = Describe("'Schema' service", func() {
 	})
 
 	Describe("execute 'delete' operartion", func() {
-		respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				AppId:       "delete_schema_group",
-				ServiceName: "delete_schema_service",
-				Version:     "1.0.0",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
-		})
-		Expect(err).To(BeNil())
-		Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-		serviceId := respCreateService.ServiceId
+		var (
+			serviceId string
+		)
 
-		resp, err := serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
-			ServiceId: serviceId,
-			SchemaId:  "com.huawei.test",
-			Schema:    "delete schema",
-			Summary:   "xxx",
+		It("should be passed", func() {
+			respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "delete_schema_group",
+					ServiceName: "delete_schema_service",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			serviceId = respCreateService.ServiceId
+
+			resp, err := serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
+				ServiceId: serviceId,
+				SchemaId:  "com.huawei.test",
+				Schema:    "delete schema",
+				Summary:   "xxx",
+			})
+			Expect(err).To(BeNil())
+			Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 		})
-		Expect(err).To(BeNil())
-		Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
 		Context("when request is invalid", func() {
 			It("should be failed", func() {
