@@ -92,22 +92,16 @@ func getSSLPath(path string) string {
 	return os.ExpandEnv(filepath.Join("$SSL_ROOT", path))
 }
 
-func parseSSLCipherSuites(ciphers string, isServer bool) []uint16 {
+func parseSSLCipherSuites(ciphers string, permitTlsCipherSuiteMap map[string]uint16) []uint16 {
 	cipherSuiteList := make([]uint16, 0)
 	cipherSuiteNameList := strings.Split(ciphers, ",")
-	var tlsCipherSuiteMap map[string]uint16
-	if isServer {
-		tlsCipherSuiteMap = SERVER_TLS_CIPHER_SUITE_MAP
-	} else {
-		tlsCipherSuiteMap = CLIENT_TLS_CIPHER_SUITE_MAP
-	}
 	for _, cipherSuiteName := range cipherSuiteNameList {
 		cipherSuiteName = strings.TrimSpace(cipherSuiteName)
 		if len(cipherSuiteName) == 0 {
 			continue
 		}
 
-		if cipherSuite, ok := tlsCipherSuiteMap[cipherSuiteName]; ok {
+		if cipherSuite, ok := permitTlsCipherSuiteMap[cipherSuiteName]; ok {
 			cipherSuiteList = append(cipherSuiteList, cipherSuite)
 		} else {
 			// 配置算法不存在
@@ -119,11 +113,11 @@ func parseSSLCipherSuites(ciphers string, isServer bool) []uint16 {
 }
 
 func parseServerSSLCipherSuites(ciphers string) []uint16 {
-	return parseSSLCipherSuites(ciphers, true)
+	return parseSSLCipherSuites(ciphers, SERVER_TLS_CIPHER_SUITE_MAP)
 }
 
 func parseClientSSLCipherSuites(ciphers string) []uint16 {
-	return parseSSLCipherSuites(ciphers, false)
+	return parseSSLCipherSuites(ciphers, CLIENT_TLS_CIPHER_SUITE_MAP)
 }
 
 func parseSSLProtocol(sprotocol string) uint16 {
