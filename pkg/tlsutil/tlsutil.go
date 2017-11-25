@@ -26,11 +26,19 @@ import (
 	"strings"
 )
 
-var TLS_CIPHER_SUITE_MAP = map[string]uint16{
+var SERVER_TLS_CIPHER_SUITE_MAP = map[string]uint16{
 	"TLS_RSA_WITH_AES_128_GCM_SHA256":       tls.TLS_RSA_WITH_AES_128_GCM_SHA256,
 	"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256": tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
 	"TLS_RSA_WITH_AES_256_GCM_SHA384":       tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
 	"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384": tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+}
+
+var CLIENT_TLS_CIPHER_SUITE_MAP = map[string]uint16{
+	"TLS_RSA_WITH_AES_128_GCM_SHA256":       tls.TLS_RSA_WITH_AES_128_GCM_SHA256,
+	"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256": tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+	"TLS_RSA_WITH_AES_256_GCM_SHA384":       tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
+	"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384": tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+	"TLS_RSA_WITH_AES_128_CBC_SHA256":       tls.TLS_RSA_WITH_AES_128_CBC_SHA256,
 }
 
 var TLS_VERSION_MAP = map[string]uint16{
@@ -84,16 +92,22 @@ func getSSLPath(path string) string {
 	return os.ExpandEnv(filepath.Join("$SSL_ROOT", path))
 }
 
-func parseSSLCipherSuites(ciphers string) []uint16 {
+func parseSSLCipherSuites(ciphers string, isServer bool) []uint16 {
 	cipherSuiteList := make([]uint16, 0)
 	cipherSuiteNameList := strings.Split(ciphers, ",")
+	var tlsCipherSuiteMap map[string]uint16
+	if isServer {
+		tlsCipherSuiteMap = SERVER_TLS_CIPHER_SUITE_MAP
+	} else {
+		tlsCipherSuiteMap = CLIENT_TLS_CIPHER_SUITE_MAP
+	}
 	for _, cipherSuiteName := range cipherSuiteNameList {
 		cipherSuiteName = strings.TrimSpace(cipherSuiteName)
 		if len(cipherSuiteName) == 0 {
 			continue
 		}
 
-		if cipherSuite, ok := TLS_CIPHER_SUITE_MAP[cipherSuiteName]; ok {
+		if cipherSuite, ok := tlsCipherSuiteMap[cipherSuiteName]; ok {
 			cipherSuiteList = append(cipherSuiteList, cipherSuite)
 		} else {
 			// 配置算法不存在
@@ -102,6 +116,14 @@ func parseSSLCipherSuites(ciphers string) []uint16 {
 	}
 
 	return cipherSuiteList
+}
+
+func parseServerSSLCipherSuites(ciphers string) []uint16 {
+	return parseSSLCipherSuites(ciphers, true)
+}
+
+func parseClientSSLCipherSuites(ciphers string) []uint16 {
+	return parseSSLCipherSuites(ciphers, false)
 }
 
 func parseSSLProtocol(sprotocol string) uint16 {
@@ -121,7 +143,7 @@ func LoadServerSSLConfig() {
 	sslServerConfig.VerifyClient = beego.AppConfig.DefaultInt("ssl_verify_client", 1) != 0
 	sslServerProtocol := beego.AppConfig.DefaultString("ssl_protocols", "TLSv1.2")
 	sslServerConfig.MinVersion = parseSSLProtocol(sslServerProtocol)
-	sslServerConfig.CipherSuites = parseSSLCipherSuites(beego.AppConfig.DefaultString("ssl_ciphers", ""))
+	sslServerConfig.CipherSuites = parseServerSSLCipherSuites(beego.AppConfig.DefaultString("ssl_ciphers", ""))
 	if sslServerConfig.SSLEnabled {
 		// 如果配置了SSL模式，SSL参数必须配置
 		keyPassphase, err := ioutil.ReadFile(getSSLPath("cert_pwd"))
@@ -156,7 +178,7 @@ func LoadClientSSLConfig() {
 		// 如果未配置，则复用服务端配置
 		sslClientConfig.CipherSuites = sslServerConfig.CipherSuites[:]
 	} else {
-		sslClientConfig.CipherSuites = parseSSLCipherSuites(sslClientCiphers)
+		sslClientConfig.CipherSuites = parseClientSSLCipherSuites(sslClientCiphers)
 	}
 
 	sslClientConfig.KeyPassphase = sslServerConfig.KeyPassphase

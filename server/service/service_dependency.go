@@ -130,7 +130,7 @@ func (s *ServiceController) GetProviderDependencies(ctx context.Context, in *pb.
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
-	util.Logger().Infof("GetProviderDependencies successfully, providerId is %s.", in.ServiceId)
+	util.Logger().Debugf("GetProviderDependencies successfully, providerId is %s.", in.ServiceId)
 	return &pb.GetProDependenciesResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Get all consumers successful."),
 		Consumers: services,
@@ -171,7 +171,7 @@ func (s *ServiceController) GetConsumerDependencies(ctx context.Context, in *pb.
 		}, err
 	}
 
-	util.Logger().Infof("GetConsumerDependencies successfully, consumerId is %s.", consumerId)
+	util.Logger().Debugf("GetConsumerDependencies successfully, consumerId is %s.", consumerId)
 	return &pb.GetConDependenciesResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Get all providers successfully."),
 		Providers: services,
