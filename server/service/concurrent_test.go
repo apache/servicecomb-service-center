@@ -36,7 +36,7 @@ func init() {
 	etcdsync.IsDebug = true
 }
 
-func TestServiceController_CreateDependenciesForMircServices(t *testing.T) {
+func TestServiceController_CreateDependenciesForMicroServices(t *testing.T) {
 	tryTimes := 3
 	testCount := 10
 	serviceResource, _, _ := service.AssembleResources()
@@ -59,16 +59,16 @@ func TestServiceController_CreateDependenciesForMircServices(t *testing.T) {
 	for i := 0; i < testCount; i++ {
 		go func(i int) {
 			serviceName := fmt.Sprintf("service%d", i)
-			_, err := serviceResource.CreateDependenciesForMircServices(getContext(), &pb.CreateDependenciesRequest{
+			_, err := serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
 				Dependencies: []*pb.MircroServiceDependency{
 					{
-						Consumer: &pb.DependencyMircroService{
+						Consumer: &pb.DependencyKey{
 							AppId:       "test_deps",
 							ServiceName: serviceName,
 							Version:     "1.0.0",
 						},
-						Providers: []*pb.DependencyMircroService{
-							&pb.DependencyMircroService{
+						Providers: []*pb.DependencyKey{
+							{
 								AppId:       "test_deps",
 								ServiceName: "service0",
 								Version:     "1.0.0",
@@ -78,7 +78,7 @@ func TestServiceController_CreateDependenciesForMircServices(t *testing.T) {
 				},
 			})
 			if err != nil {
-				util.Logger().Errorf(err, "CreateDependenciesForMircServices %s failed.", serviceName)
+				util.Logger().Errorf(err, "CreateDependenciesForMicroServices %s failed.", serviceName)
 				return
 			}
 		}(i)

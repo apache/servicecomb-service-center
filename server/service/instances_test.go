@@ -862,12 +862,12 @@ var _ = Describe("'Instance' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
-				resp, err = instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
+				respAll, err := instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
 					ConsumerServiceId: serviceId3,
 					ProviderServiceId: serviceId2,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respAll.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 

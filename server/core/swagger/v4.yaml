@@ -1649,7 +1649,7 @@ definitions:
       providers:
         type: array
         items:
-          $ref: '#/definitions/DependencyMicroService'
+          $ref: '#/definitions/DependencyKey'
       properties:
         $ref: '#/definitions/Properties'
       LBStrategy:
@@ -1752,12 +1752,12 @@ definitions:
     type: object
     properties:
       consumer:
-        $ref: '#/definitions/DependencyMicroService'
+        $ref: '#/definitions/DependencyKey'
       providers:
         type: array
         items:
-          $ref: '#/definitions/DependencyMicroService'
-  DependencyMicroService:
+          $ref: '#/definitions/DependencyKey'
+  DependencyKey:
     type: object
     required:
         - appId

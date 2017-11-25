@@ -28,9 +28,10 @@ service ServiceCtrl {
     rpc modifySchema (ModifySchemaRequest) returns (ModifySchemaResponse);
     rpc modifySchemas (ModifySchemasRequest) returns (ModifySchemasResponse);
 
-    rpc createDependenciesForMircServices (CreateDependenciesRequest) returns (CreateDependenciesResponse);
+    rpc createDependenciesForMicroServices (CreateDependenciesRequest) returns (CreateDependenciesResponse);
     rpc getProviderDependencies (GetDependenciesRequest) returns (GetProDependenciesResponse);
     rpc getConsumerDependencies (GetDependenciesRequest) returns (GetConDependenciesResponse);
+
     rpc deleteServices (DelServicesRequest) returns (DelServicesResponse);
 }
 
@@ -145,7 +146,7 @@ message MicroService {
     string status = 8; // UP|DOWN
     map<string, string> properties = 9;
     string timestamp = 11;
-    repeated DependencyMircroService providers = 12;
+    repeated DependencyKey providers = 12;
     string alias = 13;
     map<string, string> LBStrategy = 14;
     string modTimestamp = 15;
@@ -489,7 +490,7 @@ message CreateDependenciesRequest {
     repeated MircroServiceDependency dependencies = 1;
 }
 
-message DependencyMircroService {
+message DependencyKey {
     string appId = 1;
     string serviceName = 2;
     string version = 3;
@@ -497,8 +498,8 @@ message DependencyMircroService {
 }
 
 message MircroServiceDependency {
-    DependencyMircroService consumer = 1;
-    repeated DependencyMircroService providers = 2;
+    DependencyKey consumer = 1;
+    repeated DependencyKey providers = 2;
 }
 
 message CreateDependenciesResponse {
@@ -517,13 +518,6 @@ message GetConDependenciesResponse {
 message GetProDependenciesResponse {
     Response response = 1;
     repeated MicroService consumers = 2;
-}
-
-//服务概览
-message ServiceOverview {
-    MicroService microSerivce = 1;
-    repeated MicroServiceInstance instances = 2;
-    map<string, string> tags = 3;
 }
 
 //服务详情

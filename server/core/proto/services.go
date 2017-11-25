@@ -155,7 +155,7 @@ func GetInfoFromTagKV(kv *mvccpb.KeyValue) (serviceId, domainProject string, dat
 	return
 }
 
-func TransferToMicroServiceKeys(in []*DependencyMircroService, domainProject string) []*MicroServiceKey {
+func TransferToMicroServiceKeys(in []*DependencyKey, domainProject string) []*MicroServiceKey {
 	rst := []*MicroServiceKey{}
 	for _, value := range in {
 		rst = append(rst, &MicroServiceKey{

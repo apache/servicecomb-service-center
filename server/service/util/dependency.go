@@ -620,7 +620,7 @@ func AddServiceVersionRule(ctx context.Context, domainProject string, provider *
 	return err
 }
 
-func UpdateServiceForAddDependency(ctx context.Context, consumerId string, providers []*pb.DependencyMircroService, domainProject string) error {
+func UpdateServiceForAddDependency(ctx context.Context, consumerId string, providers []*pb.DependencyKey, domainProject string) error {
 	conServiceKey := apt.GenerateServiceKey(domainProject, consumerId)
 	service, err := GetService(ctx, domainProject, consumerId)
 	if err != nil {

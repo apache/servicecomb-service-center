@@ -23,7 +23,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Context, in *pb.CreateDependenciesRequest) (*pb.CreateDependenciesResponse, error) {
+func (s *ServiceController) CreateDependenciesForMicroServices(ctx context.Context, in *pb.CreateDependenciesRequest) (*pb.CreateDependenciesResponse, error) {
 	dependencyInfos := in.Dependencies
 	if dependencyInfos == nil {
 		return serviceUtil.BadParamsResponse("Invalid request body."), nil
@@ -37,7 +37,7 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 
 		util.Logger().Infof("start create dependency, data info %v", dependencyInfo)
 
-		consumerInfo := pb.TransferToMicroServiceKeys([]*pb.DependencyMircroService{dependencyInfo.Consumer}, domainProject)[0]
+		consumerInfo := pb.TransferToMicroServiceKeys([]*pb.DependencyKey{dependencyInfo.Consumer}, domainProject)[0]
 		providersInfo := pb.TransferToMicroServiceKeys(dependencyInfo.Providers, domainProject)
 
 		dep.Consumer = consumerInfo

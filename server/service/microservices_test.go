@@ -23,13 +23,12 @@ import (
 var _ = Describe("'Micro-service' service", func() {
 	Describe("execute 'create' operartion", func() {
 		Context("when service is nil", func() {
-			It("should not be ok", func() {
+			It("should not be passed", func() {
 				resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 					Service: nil,
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
-
 			})
 		})
 
@@ -345,7 +344,7 @@ var _ = Describe("'Micro-service' service", func() {
 		)
 		respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
-				ServiceName: "es",
+				Alias:       "es",
 				ServiceName: "exist_service",
 				AppId:       "exist_appId",
 				Version:     "1.0.0",
@@ -509,7 +508,7 @@ var _ = Describe("'Micro-service' service", func() {
 		)
 		respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
-				ServiceName: "es",
+				Alias:       "es",
 				ServiceName: "update_prop_service",
 				AppId:       "update_prop_appId",
 				Version:     "1.0.0",
@@ -595,7 +594,7 @@ var _ = Describe("'Micro-service' service", func() {
 		})
 	})
 
-	Describe("Delete operation", func() {
+	Describe("execute 'delete' operartion", func() {
 		var (
 			serviceContainInstId string
 			serviceNoInstId      string
