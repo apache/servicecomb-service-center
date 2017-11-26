@@ -27,7 +27,8 @@ import (
 var _ = Describe("'Instance' service", func() {
 	Describe("execute 'register' operartion", func() {
 		var (
-			serviceId string
+			serviceId1 string
+			serviceId2 string
 		)
 
 		It("should be passed", func() {
@@ -42,14 +43,27 @@ var _ = Describe("'Instance' service", func() {
 			})
 			Expect(err).To(BeNil())
 			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-			serviceId = respCreate.ServiceId
+			serviceId1 = respCreate.ServiceId
+
+			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					ServiceName: "create_instance_service",
+					AppId:       "create_instance",
+					Version:     "1.0.1",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			serviceId2 = respCreate.ServiceId
 		})
 
 		Context("when register a instance", func() {
 			It("should be passed", func() {
 				resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
-						ServiceId: serviceId,
+						ServiceId: serviceId1,
 						Endpoints: []string{
 							"createInstance:127.0.0.1:8080",
 						},
@@ -66,7 +80,7 @@ var _ = Describe("'Instance' service", func() {
 		Context("when update the same instance", func() {
 			It("should be passed", func() {
 				instance := &pb.MicroServiceInstance{
-					ServiceId: serviceId,
+					ServiceId: serviceId1,
 					Endpoints: []string{
 						"sameInstance:127.0.0.1:8080",
 					},
@@ -76,11 +90,23 @@ var _ = Describe("'Instance' service", func() {
 				resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: instance,
 				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+				instance.InstanceId = ""
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: instance,
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+				instance.InstanceId = ""
+				instance.ServiceId = serviceId2
+				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+					Instance: instance,
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).To(Equal(scerr.ErrEndpointAlreadyExists))
 
 			})
 		})
@@ -90,7 +116,7 @@ var _ = Describe("'Instance' service", func() {
 				By("endpoints are empty")
 				resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
-						ServiceId: serviceId,
+						ServiceId: serviceId1,
 						HostName:  "UT-HOST",
 						Status:    pb.MSI_UP,
 					},
@@ -128,7 +154,7 @@ var _ = Describe("'Instance' service", func() {
 				By("status is empty")
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
-						ServiceId: serviceId,
+						ServiceId: serviceId1,
 						HostName:  "UT-HOST",
 						Endpoints: []string{
 							"check:127.0.0.1:8080",
@@ -141,7 +167,7 @@ var _ = Describe("'Instance' service", func() {
 				By("hostName is empty")
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
-						ServiceId: serviceId,
+						ServiceId: serviceId1,
 						Endpoints: []string{
 							"check:127.0.0.1:8080",
 						},
@@ -161,7 +187,7 @@ var _ = Describe("'Instance' service", func() {
 				By("check normal push healthChceck")
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
-						ServiceId: serviceId,
+						ServiceId: serviceId1,
 						HostName:  "UT-HOST",
 						Status:    pb.MSI_UP,
 						HealthCheck: &pb.HealthCheck{
@@ -177,7 +203,7 @@ var _ = Describe("'Instance' service", func() {
 				By("check normal pull healthChceck")
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
-						ServiceId: serviceId,
+						ServiceId: serviceId1,
 						HostName:  "UT-HOST",
 						Status:    pb.MSI_UP,
 						HealthCheck: &pb.HealthCheck{
@@ -194,7 +220,7 @@ var _ = Describe("'Instance' service", func() {
 				By("check invalid push healthChceck")
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
-						ServiceId: serviceId,
+						ServiceId: serviceId1,
 						HostName:  "UT-HOST",
 						Status:    pb.MSI_UP,
 						HealthCheck: &pb.HealthCheck{
@@ -210,7 +236,7 @@ var _ = Describe("'Instance' service", func() {
 				By("check invalid pull healthChceck")
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
-						ServiceId: serviceId,
+						ServiceId: serviceId1,
 						HostName:  "UT-HOST",
 						Status:    pb.MSI_UP,
 						HealthCheck: &pb.HealthCheck{

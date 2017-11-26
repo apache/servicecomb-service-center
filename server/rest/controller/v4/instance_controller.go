@@ -55,7 +55,7 @@ func (this *MicroServiceInstanceService) RegisterInstance(w http.ResponseWriter,
 	err = json.Unmarshal(message, request)
 	if err != nil {
 		util.Logger().Error("register instance failed, Unmarshal error", err)
-		controller.WriteError(w, scerr.ErrInternal, "Unmarshal error")
+		controller.WriteError(w, scerr.ErrInvalidParams, "Unmarshal error")
 		return
 	}
 	if request.GetInstance() != nil {
@@ -90,7 +90,7 @@ func (this *MicroServiceInstanceService) HeartbeatSet(w http.ResponseWriter, r *
 	err = json.Unmarshal(message, request)
 	if err != nil {
 		util.Logger().Error("register instance failed, Unmarshal error", err)
-		controller.WriteError(w, scerr.ErrInternal, "Unmarshal error")
+		controller.WriteError(w, scerr.ErrInvalidParams, "Unmarshal error")
 		return
 	}
 	resp, _ := core.InstanceAPI.HeartbeatSet(r.Context(), request)
@@ -194,7 +194,7 @@ func (this *MicroServiceInstanceService) UpdateMetadata(w http.ResponseWriter, r
 	err = json.Unmarshal(message, request)
 	if err != nil {
 		util.Logger().Error("Unmarshal error", err)
-		controller.WriteError(w, scerr.ErrInternal, "Unmarshal error")
+		controller.WriteError(w, scerr.ErrInvalidParams, "Unmarshal error")
 		return
 	}
 	resp, err := core.InstanceAPI.UpdateInstanceProperties(r.Context(), request)

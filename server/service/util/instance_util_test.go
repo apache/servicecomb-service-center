@@ -49,13 +49,13 @@ func TestGetInstance(t *testing.T) {
 		t.FailNow()
 	}
 
-	_, err = GetAllInstancesOfOneService(util.SetContext(context.Background(), "cacheOnly", "1"), "", "", "")
+	_, err = GetAllInstancesOfOneService(util.SetContext(context.Background(), "cacheOnly", "1"), "", "")
 	if err != nil {
 		fmt.Printf(`GetAllInstancesOfOneService WithCacheOnly failed`)
 		t.FailNow()
 	}
 
-	_, err = GetAllInstancesOfOneService(context.Background(), "", "", "")
+	_, err = GetAllInstancesOfOneService(context.Background(), "", "")
 	if err == nil {
 		fmt.Printf(`GetAllInstancesOfOneService failed`)
 		t.FailNow()

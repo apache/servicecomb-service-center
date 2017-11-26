@@ -38,77 +38,8 @@ func (this *MicroServiceService) URLPatterns() []rest.Route {
 		{rest.HTTP_METHOD_POST, "/v4/:domain/registry/microservices", this.Register},
 		{rest.HTTP_METHOD_PUT, "/v4/:domain/registry/microservices/:serviceId/properties", this.Update},
 		{rest.HTTP_METHOD_DELETE, "/v4/:domain/registry/microservices/:serviceId", this.Unregister},
-		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/microservices/:serviceId/schemas/:schemaId", this.GetSchemas},
-		{rest.HTTP_METHOD_PUT, "/v4/:domain/registry/microservices/:serviceId/schemas/:schemaId", this.ModifySchema},
-		{rest.HTTP_METHOD_DELETE, "/v4/:domain/registry/microservices/:serviceId/schemas/:schemaId", this.DeleteSchemas},
-		{rest.HTTP_METHOD_POST, "/v4/:domain/registry/microservices/:serviceId/schemas", this.ModifySchemas},
-
-		{rest.HTTP_METHOD_PUT, "/v4/:domain/registry/dependencies", this.CreateDependenciesForMicroServices},
-		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/microservices/:consumerId/providers", this.GetConProDependencies},
-		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/microservices/:providerId/consumers", this.GetProConDependencies},
 		{rest.HTTP_METHOD_DELETE, "/v4/:domain/registry/microservices", this.UnregisterServices},
 	}
-}
-
-func (this *MicroServiceService) GetSchemas(w http.ResponseWriter, r *http.Request) {
-	request := &pb.GetSchemaRequest{
-		ServiceId: r.URL.Query().Get(":serviceId"),
-		SchemaId:  r.URL.Query().Get(":schemaId"),
-	}
-	resp, _ := core.ServiceAPI.GetSchemaInfo(r.Context(), request)
-	respInternal := resp.Response
-	resp.Response = nil
-	controller.WriteResponse(w, respInternal, resp)
-}
-
-func (this *MicroServiceService) ModifySchema(w http.ResponseWriter, r *http.Request) {
-	message, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		util.Logger().Error("body err", err)
-		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
-		return
-	}
-
-	request := &pb.ModifySchemaRequest{}
-	err = json.Unmarshal(message, request)
-	if err != nil {
-		util.Logger().Error("Unmarshal error", err)
-		controller.WriteError(w, scerr.ErrInternal, err.Error())
-		return
-	}
-	request.ServiceId = r.URL.Query().Get(":serviceId")
-	request.SchemaId = r.URL.Query().Get(":schemaId")
-	resp, err := core.ServiceAPI.ModifySchema(r.Context(), request)
-	controller.WriteResponse(w, resp.GetResponse(), nil)
-}
-
-func (this *MicroServiceService) ModifySchemas(w http.ResponseWriter, r *http.Request) {
-	message, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		util.Logger().Error("body err", err)
-		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
-		return
-	}
-	serviceId := r.URL.Query().Get(":serviceId")
-	request := &pb.ModifySchemasRequest{}
-	err = json.Unmarshal(message, request)
-	if err != nil {
-		util.Logger().Error("Unmarshal error", err)
-		controller.WriteError(w, scerr.ErrInternal, err.Error())
-		return
-	}
-	request.ServiceId = serviceId
-	resp, err := core.ServiceAPI.ModifySchemas(r.Context(), request)
-	controller.WriteResponse(w, resp.GetResponse(), nil)
-}
-
-func (this *MicroServiceService) DeleteSchemas(w http.ResponseWriter, r *http.Request) {
-	request := &pb.DeleteSchemaRequest{
-		ServiceId: r.URL.Query().Get(":serviceId"),
-		SchemaId:  r.URL.Query().Get(":schemaId"),
-	}
-	resp, _ := core.ServiceAPI.DeleteSchema(r.Context(), request)
-	controller.WriteResponse(w, resp.GetResponse(), nil)
 }
 
 func (this *MicroServiceService) Register(w http.ResponseWriter, r *http.Request) {
@@ -122,7 +53,7 @@ func (this *MicroServiceService) Register(w http.ResponseWriter, r *http.Request
 	err = json.Unmarshal(message, &request)
 	if err != nil {
 		util.Logger().Error("Unmarshal error", err)
-		controller.WriteError(w, scerr.ErrInternal, err.Error())
+		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
 	resp, err := core.ServiceAPI.Create(r.Context(), &request)
@@ -144,7 +75,7 @@ func (this *MicroServiceService) Update(w http.ResponseWriter, r *http.Request) 
 	err = json.Unmarshal(message, request)
 	if err != nil {
 		util.Logger().Error("Unmarshal error", err)
-		controller.WriteError(w, scerr.ErrInternal, err.Error())
+		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
 	resp, err := core.ServiceAPI.UpdateProperties(r.Context(), request)
@@ -203,45 +134,6 @@ func (this *MicroServiceService) GetServiceOne(w http.ResponseWriter, r *http.Re
 	controller.WriteResponse(w, respInternal, resp)
 }
 
-func (this *MicroServiceService) CreateDependenciesForMicroServices(w http.ResponseWriter, r *http.Request) {
-	requestBody, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		util.Logger().Error("body err", err)
-		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
-		return
-	}
-	request := &pb.CreateDependenciesRequest{}
-	err = json.Unmarshal(requestBody, request)
-	if err != nil {
-		util.Logger().Error("Invalid json", err)
-		controller.WriteError(w, scerr.ErrInternal, err.Error())
-		return
-	}
-
-	resp, err := core.ServiceAPI.CreateDependenciesForMircServices(r.Context(), request)
-	controller.WriteResponse(w, resp.GetResponse(), nil)
-}
-
-func (this *MicroServiceService) GetConProDependencies(w http.ResponseWriter, r *http.Request) {
-	request := &pb.GetDependenciesRequest{
-		ServiceId: r.URL.Query().Get(":consumerId"),
-	}
-	resp, _ := core.ServiceAPI.GetConsumerDependencies(r.Context(), request)
-	respInternal := resp.Response
-	resp.Response = nil
-	controller.WriteResponse(w, respInternal, resp)
-}
-
-func (this *MicroServiceService) GetProConDependencies(w http.ResponseWriter, r *http.Request) {
-	request := &pb.GetDependenciesRequest{
-		ServiceId: r.URL.Query().Get(":providerId"),
-	}
-	resp, _ := core.ServiceAPI.GetProviderDependencies(r.Context(), request)
-	respInternal := resp.Response
-	resp.Response = nil
-	controller.WriteResponse(w, respInternal, resp)
-}
-
 func (this *MicroServiceService) UnregisterServices(w http.ResponseWriter, r *http.Request) {
 	request_body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -255,7 +147,7 @@ func (this *MicroServiceService) UnregisterServices(w http.ResponseWriter, r *ht
 	err = json.Unmarshal(request_body, request)
 	if err != nil {
 		util.Logger().Error("unmarshal ,err ", err)
-		controller.WriteError(w, scerr.ErrInternal, err.Error())
+		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
 

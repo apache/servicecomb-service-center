@@ -24,6 +24,8 @@ func init() {
 func initRouter() {
 	roa.RegisterServent(&MainService{})
 	roa.RegisterServent(&MicroServiceService{})
+	roa.RegisterServent(&SchemaService{})
+	roa.RegisterServent(&DependencyService{})
 	roa.RegisterServent(&TagService{})
 	roa.RegisterServent(&RuleService{})
 	roa.RegisterServent(&MicroServiceInstanceService{})

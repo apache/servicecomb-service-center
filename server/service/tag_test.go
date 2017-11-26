@@ -15,11 +15,15 @@ package service_test
 
 import (
 	pb "github.com/ServiceComb/service-center/server/core/proto"
+	scerr "github.com/ServiceComb/service-center/server/error"
 	"github.com/ServiceComb/service-center/server/plugin/infra/quota/buildin"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"strconv"
+	"strings"
 )
+
+var tooLongTag = strings.Repeat("x", 65)
 
 var _ = Describe("'Tag' service", func() {
 	Describe("execute 'create' operartion", func() {
@@ -96,17 +100,25 @@ var _ = Describe("'Tag' service", func() {
 
 		Context("when create tag out of gauge", func() {
 			It("should be failed", func() {
-				size := buildin.TAG_MAX_NUM_FOR_ONESERVICE + 1
+				size := buildin.TAG_MAX_NUM_FOR_ONESERVICE / 2
 				tags := make(map[string]string, size)
 				for i := 0; i < size; i++ {
-					s := strconv.Itoa(i)
+					s := "tag" + strconv.Itoa(i)
 					tags[s] = s
 				}
-				respAddTags, _ := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
+				respAddTags, err := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
 					ServiceId: serviceId,
 					Tags:      tags,
 				})
-				Expect(respAddTags.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(err).To(BeNil())
+				Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+				respAddTags, _ = serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
+					ServiceId: serviceId,
+					Tags:      tags,
+				})
+				Expect(err).To(BeNil())
+				Expect(respAddTags.GetResponse().Code).To(Equal(scerr.ErrNotEnoughQuota))
 			})
 		})
 	})
@@ -152,6 +164,12 @@ var _ = Describe("'Tag' service", func() {
 				By("service id is empty")
 				resp, _ = serviceResource.GetTags(getContext(), &pb.GetServiceTagsRequest{
 					ServiceId: "",
+				})
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+
+				By("service id is invalid")
+				resp, _ = serviceResource.GetTags(getContext(), &pb.GetServiceTagsRequest{
+					ServiceId: TOO_LONG_SERVICEID,
 				})
 				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
@@ -225,6 +243,24 @@ var _ = Describe("'Tag' service", func() {
 					ServiceId: serviceId,
 					Key:       "",
 					Value:     "update",
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+
+				By("tag key does not exist")
+				resp, err = serviceResource.UpdateTag(getContext(), &pb.UpdateServiceTagRequest{
+					ServiceId: serviceId,
+					Key:       "notexisttag",
+					Value:     "update",
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+
+				By("tag key is invalid")
+				resp, err = serviceResource.UpdateTag(getContext(), &pb.UpdateServiceTagRequest{
+					ServiceId: serviceId,
+					Key:       tooLongTag,
+					Value:     "v",
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
@@ -306,6 +342,14 @@ var _ = Describe("'Tag' service", func() {
 				respAddTags, err = serviceResource.DeleteTags(getContext(), &pb.DeleteServiceTagsRequest{
 					ServiceId: serviceId,
 					Keys:      []string{""},
+				})
+				Expect(err).To(BeNil())
+				Expect(respAddTags.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+
+				By("tag key is invalid")
+				respAddTags, err = serviceResource.DeleteTags(getContext(), &pb.DeleteServiceTagsRequest{
+					ServiceId: serviceId,
+					Keys:      []string{tooLongTag},
 				})
 				Expect(err).To(BeNil())
 				Expect(respAddTags.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))

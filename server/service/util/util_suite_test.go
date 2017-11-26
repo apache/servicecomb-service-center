@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/ServiceComb/service-center/server/infra/registry"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	. "github.com/onsi/ginkgo"
@@ -126,6 +127,30 @@ func TestMsCache(t *testing.T) {
 	ms.Set("", &proto.MicroService{}, 0)
 	_, err = serviceUtil.GetServiceInCache(context.Background(), "", "")
 	if err != nil {
+		t.FailNow()
+	}
+}
+
+func TestFromContext(t *testing.T) {
+	ctx := context.WithValue(context.Background(), "noCache", "1")
+	opts := serviceUtil.FromContext(ctx)
+	if len(opts) == 0 {
+		t.FailNow()
+	}
+
+	op := registry.OptionsToOp(opts...)
+	if op.Mode != registry.MODE_NO_CACHE {
+		t.FailNow()
+	}
+
+	ctx = context.WithValue(context.Background(), "cacheOnly", "1")
+	opts = serviceUtil.FromContext(ctx)
+	if len(opts) == 0 {
+		t.FailNow()
+	}
+
+	op = registry.OptionsToOp(opts...)
+	if op.Mode != registry.MODE_CACHE {
 		t.FailNow()
 	}
 }

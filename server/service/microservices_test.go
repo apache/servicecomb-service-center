@@ -769,11 +769,11 @@ var _ = Describe("'Micro-service' service", func() {
 		Context("when delete a service with not force flag", func() {
 			It("should be not allowed", func() {
 				resp, err := serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{
-					ServiceId: serviceConsumerId,
+					ServiceId: serviceNoInstId,
 					Force:     false,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 
@@ -813,8 +813,8 @@ var _ = Describe("'Micro-service' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				serviceId1 = resp.ServiceId
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				serviceId1 = resp.ServiceId
 
 				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
@@ -826,8 +826,8 @@ var _ = Describe("'Micro-service' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				serviceId2 = resp.ServiceId
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				serviceId2 = resp.ServiceId
 			})
 
 			It("should be passed", func() {

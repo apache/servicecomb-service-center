@@ -16,6 +16,7 @@ package validate
 import (
 	"errors"
 	"fmt"
+	"github.com/ServiceComb/service-center/pkg/util"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -30,20 +31,24 @@ type ValidateRule struct {
 }
 
 func (v *ValidateRule) String() string {
-	toString := "rule: {"
+	idx, arr := 0, [4]string{}
 	if v.Min != 0 {
-		toString = fmt.Sprintf("%s Min: %d,", toString, v.Min)
+		arr[idx] = fmt.Sprintf("Min: %d", v.Min)
+		idx++
 	}
 	if v.Max != 0 {
-		toString = fmt.Sprintf("%s Max: %d,", toString, v.Max)
+		arr[idx] = fmt.Sprintf("Max: %d", v.Max)
+		idx++
 	}
 	if v.Length != 0 {
-		toString = fmt.Sprintf("%s Length: %d,", toString, v.Length)
+		arr[idx] = fmt.Sprintf("Length: %d", v.Length)
+		idx++
 	}
 	if v.Regexp != nil {
-		toString = fmt.Sprintf("%s RegEx: %s }", toString, v.Regexp)
+		arr[idx] = fmt.Sprintf("Length: %s", v.Regexp)
+		idx++
 	}
-	return toString
+	return "rule: {" + util.StringJoin(arr[:idx], ",") + "}"
 }
 
 func (v *ValidateRule) Match(s interface{}) bool {

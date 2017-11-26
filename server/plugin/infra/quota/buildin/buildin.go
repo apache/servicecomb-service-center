@@ -21,6 +21,7 @@ import (
 	"github.com/ServiceComb/service-center/server/infra/quota"
 	"github.com/ServiceComb/service-center/server/infra/registry"
 	mgr "github.com/ServiceComb/service-center/server/plugin"
+	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"golang.org/x/net/context"
 )
 
@@ -87,6 +88,7 @@ func ResourceLimitHandler(ctx context.Context, quotaType quota.ResourceType, dom
 	var key string
 	var max int64 = 0
 	var indexer *store.Indexer
+
 	switch quotaType {
 	case quota.RULEQuotaType:
 		key = core.GenerateServiceRuleKey(domainProject, serviceId, "")
@@ -98,16 +100,20 @@ func ResourceLimitHandler(ctx context.Context, quotaType quota.ResourceType, dom
 		indexer = store.Store().Schema()
 	case quota.TAGQuotaType:
 		num := quotaSize
-		if num > TAG_MAX_NUM_FOR_ONESERVICE {
-			util.Logger().Errorf(nil,
-				"fail to add tag for one service max tag num is %d, %s",
-				TAG_MAX_NUM_FOR_ONESERVICE, serviceId)
+		max = TAG_MAX_NUM_FOR_ONESERVICE
+		tags, err := serviceUtil.GetTagsUtils(ctx, domainProject, serviceId)
+		if err != nil {
+			return nil, false, err
+		}
+		if int64(len(tags))+int64(num) > max {
+			util.Logger().Errorf(nil, "no quota(%d) to apply resource '%s', %s", max, quotaType, serviceId)
 			return nil, false, nil
 		}
 		return nil, true, nil
 	default:
-		return nil, false, fmt.Errorf("Unsurported Type %v", quotaType)
+		return nil, false, fmt.Errorf("Unsurported resource '%s'", quotaType)
 	}
+
 	resp, err := indexer.Search(ctx,
 		registry.WithStrKey(key),
 		registry.WithPrefix(),
@@ -118,7 +124,7 @@ func ResourceLimitHandler(ctx context.Context, quotaType quota.ResourceType, dom
 	num := resp.Count + int64(quotaSize)
 	util.Logger().Debugf("resource num is %d", num)
 	if num > max {
-		util.Logger().Errorf(nil, "no quota to apply this source, %s", serviceId)
+		util.Logger().Errorf(nil, "no quota(%d) to apply resource '%s', %s", max, quotaType, serviceId)
 		return nil, false, nil
 	}
 	return nil, true, nil

@@ -46,11 +46,10 @@ var (
 	TagReqValidator               validate.Validator
 	FindInstanceReqValidator      validate.Validator
 	GetInstanceValidator          validate.Validator
-	SchemasValidor                validate.Validator
-	SchemaValidor                 validate.Validator
+	SchemasValidator              validate.Validator
+	SchemaValidator               validate.Validator
 
 	SchemaIdRule *validate.ValidateRule
-	SchemasRule  *validate.ValidateRule
 	TagRule      *validate.ValidateRule
 )
 
@@ -123,12 +122,12 @@ func init() {
 	subSchemaValidor.AddRule("Summary", &validate.ValidateRule{Min: 1, Max: 512, Regexp: SchemaSummaryRegex})
 	subSchemaValidor.AddRule("Schema", &validate.ValidateRule{Min: 1})
 
-	SchemasValidor.AddRule("ServiceId", ServiceIdRule)
-	SchemasValidor.AddSub("Schemas", &subSchemaValidor)
+	SchemasValidator.AddRule("ServiceId", ServiceIdRule)
+	SchemasValidator.AddSub("Schemas", &subSchemaValidor)
 
-	SchemaValidor.AddRules(subSchemaValidor.GetRules())
-	SchemaValidor.AddRule("ServiceId", ServiceIdRule)
-	SchemaValidor.AddRule("Summary", &validate.ValidateRule{Max: 512, Regexp: SchemaSummaryRegex})
+	SchemaValidator.AddRules(subSchemaValidor.GetRules())
+	SchemaValidator.AddRule("ServiceId", ServiceIdRule)
+	SchemaValidator.AddRule("Summary", &validate.ValidateRule{Max: 512, Regexp: SchemaSummaryRegex})
 
 	GetServiceReqValidator.AddRule("ServiceId", ServiceIdRule)
 
@@ -148,6 +147,9 @@ func init() {
 
 	TagReqValidator.AddRule("ServiceId", ServiceIdRule)
 	TagReqValidator.AddRule("Tags", TagRule)
+	TagReqValidator.AddRule("Keys", &validate.ValidateRule{Regexp: tagRegex})
+	TagReqValidator.AddRule("Key", &validate.ValidateRule{Regexp: tagRegex})
+	TagReqValidator.AddRule("Value", &validate.ValidateRule{Regexp: tagRegex})
 
 	HealthCheckInfoValidator.AddRule("Mode", &validate.ValidateRule{Regexp: hbModeRegex})
 	HealthCheckInfoValidator.AddRule("Port", &validate.ValidateRule{Max: math.MaxInt16, Regexp: numberAllowEmptyRegex})
@@ -211,9 +213,9 @@ func Validate(v interface{}) error {
 	case *pb.GetSchemaRequest, *pb.DeleteSchemaRequest:
 		return GetSchemaReqValidator.Validate(v)
 	case *pb.ModifySchemaRequest:
-		return SchemaValidor.Validate(v)
+		return SchemaValidator.Validate(v)
 	case *pb.ModifySchemasRequest:
-		return SchemasValidor.Validate(v)
+		return SchemasValidator.Validate(v)
 	case *pb.MicroServiceDependency:
 		return DependencyMSValidator.Validate(v)
 	case *pb.FindInstancesRequest:
