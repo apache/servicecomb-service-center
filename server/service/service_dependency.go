@@ -37,8 +37,8 @@ func (s *ServiceController) CreateDependenciesForMicroServices(ctx context.Conte
 
 		util.Logger().Infof("start create dependency, data info %v", dependencyInfo)
 
-		consumerInfo := pb.TransferToMicroServiceKeys([]*pb.DependencyKey{dependencyInfo.Consumer}, domainProject)[0]
-		providersInfo := pb.TransferToMicroServiceKeys(dependencyInfo.Providers, domainProject)
+		consumerInfo := pb.DependenciesToKeys([]*pb.DependencyKey{dependencyInfo.Consumer}, domainProject)[0]
+		providersInfo := pb.DependenciesToKeys(dependencyInfo.Providers, domainProject)
 
 		dep.Consumer = consumerInfo
 		dep.ProvidersRule = providersInfo

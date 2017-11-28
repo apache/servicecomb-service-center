@@ -51,8 +51,8 @@ service ServiceInstanceCtrl {
 //治理相关的接口和数据结构
 service GovernServiceCtrl {
     rpc getServiceDetail (GetServiceRequest) returns (GetServiceDetailResponse);
-
     rpc getServicesInfo (GetServicesInfoRequest) returns (GetServicesInfoResponse);
+    rpc getApplications (GetAppsRequest) returns (GetAppsResponse);
 }
 
 message ModifySchemasRequest {
@@ -554,3 +554,11 @@ message DelServicesResponse {
     repeated DelServicesRspInfo services = 2;
 }
 
+message GetAppsRequest {
+    string environment = 1;
+}
+
+message GetAppsResponse {
+    Response response = 1;
+    repeated string appIds = 2;
+}

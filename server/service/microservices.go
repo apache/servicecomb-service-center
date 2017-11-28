@@ -180,7 +180,7 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 }
 
 func checkQuota(ctx context.Context, domainProject string) (quota.QuotaReporter, error) {
-	if core.ISSCSelf(ctx) {
+	if core.IsSCInstance(ctx) {
 		util.Logger().Infof("it is service-center")
 		return nil, nil
 	}

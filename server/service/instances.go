@@ -100,7 +100,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 
 	var reporter quota.QuotaReporter
 	if len(oldInstanceId) == 0 {
-		if !apt.ISSCSelf(ctx) {
+		if !apt.IsSCInstance(ctx) {
 			var err error
 			var ok bool
 			reporter, ok, err = plugin.Plugins().Quota().Apply4Quotas(ctx, quota.MicroServiceInstanceQuotaType, domainProject, in.Instance.ServiceId, 1)
@@ -586,7 +586,7 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 			instances = append(instances, resp.GetInstances()...)
 		}
 	}
-	consumer := pb.ToMicroServiceKey(domainProject, service)
+	consumer := pb.MicroServiceToKey(domainProject, service)
 	//维护version的规则,servicename 可能是别名，所以重新获取
 	providerService, _ := serviceUtil.GetService(ctx, domainProject, ids[0])
 	if providerService == nil {

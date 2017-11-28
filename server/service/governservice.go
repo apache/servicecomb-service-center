@@ -22,7 +22,6 @@ import (
 	"github.com/ServiceComb/service-center/server/infra/registry"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"golang.org/x/net/context"
-	"strings"
 )
 
 type GovernServiceController struct {
@@ -149,8 +148,61 @@ func (governServiceController *GovernServiceController) GetServiceDetail(ctx con
 	serviceInfo.MicroService = service
 	serviceInfo.MicroServiceVersions = versions
 	return &pb.GetServiceDetailResponse{
-		Response: pb.CreateResponse(pb.Response_SUCCESS, "Get service successful."),
+		Response: pb.CreateResponse(pb.Response_SUCCESS, "Get service successfully."),
 		Service:  serviceInfo,
+	}, nil
+}
+
+func (governServiceController *GovernServiceController) GetApplications(ctx context.Context, in *pb.GetAppsRequest) (*pb.GetAppsResponse, error) {
+	err := apt.Validate(in)
+	if err != nil {
+		return &pb.GetAppsResponse{
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+		}, nil
+	}
+
+	domainProject := util.ParseDomainProject(ctx)
+	key := util.StringJoin([]string{
+		apt.GetServiceIndexRootKey(domainProject),
+		in.Environment,
+	}, "/")
+	if key[len(key)-1:] != "/" {
+		key += "/"
+	}
+
+	opts := append(serviceUtil.FromContext(ctx),
+		registry.WithStrKey(key),
+		registry.WithPrefix(),
+		registry.WithKeyOnly())
+
+	resp, err := store.Store().ServiceIndex().Search(ctx, opts...)
+	if err != nil {
+		return nil, err
+	}
+	l := len(resp.Kvs)
+	if l == 0 {
+		return &pb.GetAppsResponse{
+			Response: pb.CreateResponse(pb.Response_SUCCESS, "Get all applications successfully."),
+		}, nil
+	}
+
+	apps := make([]string, 0, l)
+	appMap := make(map[string]struct{}, l)
+	for _, kv := range resp.Kvs {
+		key, _ := pb.GetInfoFromSvcIndexKV(kv)
+		if _, ok := appMap[key.AppId]; ok {
+			continue
+		}
+		if apt.IsSCKey(key) {
+			continue
+		}
+		appMap[key.AppId] = struct{}{}
+		apps = append(apps, key.AppId)
+	}
+
+	return &pb.GetAppsResponse{
+		Response: pb.CreateResponse(pb.Response_SUCCESS, "Get all applications successfully."),
+		AppIds:   apps,
 	}, nil
 }
 
@@ -169,11 +221,9 @@ func getServiceAllVersions(ctx context.Context, serviceKey *pb.MicroServiceKey) 
 	if resp == nil || len(resp.Kvs) == 0 {
 		return versions, nil
 	}
-	version := ""
-	for _, kvs := range resp.Kvs {
-		tmpArr := strings.Split(util.BytesToStringWithNoCopy(kvs.Key), "/")
-		version = tmpArr[len(tmpArr)-1]
-		versions = append(versions, version)
+	for _, kv := range resp.Kvs {
+		key, _ := pb.GetInfoFromSvcIndexKV(kv)
+		versions = append(versions, key.Version)
 	}
 	return versions, nil
 }
@@ -283,22 +333,30 @@ func statistics(ctx context.Context) (*pb.Statistics, error) {
 		registry.WithStrKey(key),
 		registry.WithPrefix(),
 		registry.WithKeyOnly())
-	resp, err := store.Store().Service().Search(ctx, svcOpts...)
+	respSvc, err := store.Store().ServiceIndex().Search(ctx, svcOpts...)
 	if err != nil {
 		return nil, err
 	}
-	result.Services.Count = RemoveSCSelf(domainProject, resp.Count, 1)
 
-	app := map[string]interface{}{}
-	for _, kv := range resp.Kvs {
-		key := util.BytesToStringWithNoCopy(kv.Key)
-		keySpilted := strings.Split(key, "/")
-		if len(keySpilted) > 6 {
-			appId := keySpilted[6]
-			app[appId] = nil
+	app := make(map[string]interface{}, respSvc.Count)
+	scSvc := make(map[string]interface{}, respSvc.Count)
+	for _, kv := range respSvc.Kvs {
+		key, _ := pb.GetInfoFromSvcIndexKV(kv)
+		if _, ok := app[key.AppId]; !ok {
+			if !apt.IsSCKey(key) {
+				app[key.AppId] = nil
+			}
+		}
+
+		if apt.IsSCKey(key) {
+			k := util.BytesToStringWithNoCopy(kv.Key)
+			if _, ok := scSvc[k]; !ok {
+				scSvc[k] = nil
+			}
 		}
 	}
-	result.Apps.Count = RemoveSCSelf(domainProject, int64(len(app)), 1)
+	result.Services.Count = respSvc.Count - int64(len(scSvc))
+	result.Apps.Count = int64(len(app))
 
 	// instance
 	key = apt.GetInstanceRootKey(domainProject)
@@ -310,32 +368,31 @@ func statistics(ctx context.Context) (*pb.Statistics, error) {
 	if err != nil {
 		return nil, err
 	}
-	result.Instances.Count = respIns.Count
+
+	onlineServices := make(map[string]interface{}, respSvc.Count)
+	for _, kv := range respIns.Kvs {
+		serviceId, _, _, _ := pb.GetInfoFromInstKV(kv)
+		if _, ok := onlineServices[serviceId]; !ok {
+			onlineServices[serviceId] = nil
+		}
+	}
+
 	key = apt.GenerateInstanceKey(domainProject, apt.Service.ServiceId, "")
 	scOpts := append(opts,
 		registry.WithStrKey(key),
 		registry.WithPrefix(),
 		registry.WithCountOnly())
-	resp, err = store.Store().Instance().Search(ctx, scOpts...)
+	respScIns, err := store.Store().Instance().Search(ctx, scOpts...)
 	if err != nil {
 		return nil, err
 	}
-	result.Instances.Count = result.Instances.Count - resp.Count
 
-	onlineServices := map[string]interface{}{}
-	for _, kv := range respIns.Kvs {
-		key := util.BytesToStringWithNoCopy(kv.Key)
-		keySpilted := strings.Split(key, "/")
-		if len(keySpilted) > 6 {
-			servieId := keySpilted[6]
-			onlineServices[servieId] = nil
-		}
-	}
-	result.Services.OnlineCount = RemoveSCSelf(domainProject, int64(len(onlineServices)), 1)
+	result.Instances.Count = respIns.Count - respScIns.Count
+	result.Services.OnlineCount = removeSCSelf(domainProject, int64(len(onlineServices)), 1)
 	return result, err
 }
 
-func RemoveSCSelf(domainProject string, count int64, removeNum int64) int64 {
+func removeSCSelf(domainProject string, count int64, removeNum int64) int64 {
 	if count > 0 {
 		if apt.IsDefaultDomainProject(domainProject) {
 			count = count - removeNum

@@ -1498,6 +1498,47 @@ paths:
           description: 内部错误
           schema:
             type: string
+  /v4/{project}/govern/apps:
+    get:
+      description: |
+        查询所有appId。
+      operationId: GetApplications
+      parameters:
+        - name: x-domain-name
+          in: header
+          type: string
+          default: default
+          description: 租户名字
+          required: true
+        - name: project
+          in: path
+          description: 项目名字
+          required: true
+          type: string
+        - name: env
+          in: query
+          description: development|testing|acceptance|production
+          type: string
+        - name: noCache
+          in: query
+          description: 查询的东西是否用缓存，值为0或者1，0使用缓存，1不使用，默认为使用。
+          required: false
+          type: integer
+      tags:
+        - governance
+      responses:
+        200:
+          description: appId集合
+          schema:
+            $ref: '#/definitions/GetAppsResponse'
+        400:
+          description: 错误的请求
+          schema:
+            type: string
+        500:
+          description: 内部错误
+          schema:
+            type: string
 definitions:
   Version:
     type: object
@@ -1716,7 +1757,6 @@ definitions:
     required:
     - status
     - hostName
-    - environment
     properties:
       instanceId:
         type: string
@@ -2109,3 +2149,11 @@ definitions:
        count:
          description: 应用个数
          type: integer
+  GetAppsResponse:
+     type: object
+     properties:
+       appIds:
+         description: 所有应用ID
+         type: array
+         items:
+           type: string

@@ -218,6 +218,8 @@ func Validate(v interface{}) error {
 		return FindInstanceReqValidator.Validate(v)
 	case *pb.GetOneInstanceRequest, *pb.GetInstancesRequest:
 		return GetInstanceValidator.Validate(v)
+	case *pb.GetAppsRequest:
+		return MicroServiceKeyValidator.Validate(v)
 	default:
 		util.Logger().Errorf(nil, "No validator for %T.", t)
 		return nil

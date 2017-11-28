@@ -45,35 +45,6 @@ func init() {
 	d, _ := time.ParseDuration("2m")
 	consumerCache = cache.New(d, d)
 	providerCache = cache.New(d, d)
-	go autoSyncConsumers()
-}
-
-//TODO
-func autoSyncConsumers() {
-	//ticker := time.NewTicker(time.Minute * 1)
-	//for t := range ticker.C {
-	//	util.Logger().Debug(fmt.Sprintf("sync consumers at %s", t))
-	//	keys := microservice.GetServiceWithRev(context.TODO())
-	//	for _, v := range keys {
-	//		util.Logger().Debug(fmt.Sprintf("sync consumers for %s", v))
-	//		domainAndId := strings.Split(v, ":::")
-	//		// 查询所有consumer
-	//		key := apt.GenerateProviderDependencyKey(domainAndId[0], domainAndId[1], "")
-	//		resp, err := registry.GetRegisterCenter().Do(context.TODO(), &registry.PluginOp{
-	//			Action:     registry.GET,
-	//			Key:        util.StringToBytesWithNoCopy(key),
-	//			WithPrefix: true,
-	//			KeyOnly:    true,
-	//		})
-	//		if err != nil {
-	//			util.Logger().Errorf(err, "query service consumers failed, provider id %s", domainAndId[1])
-	//		}
-	//		if len(resp.Kvs) != 0 {
-	//			consumerCache.Set(v, resp.Kvs, 0)
-	//		}
-	//
-	//	}
-	//}
 }
 
 func GetConsumersInCache(ctx context.Context, domainProject string, providerId string, provider *pb.MicroService) ([]string, error) {
@@ -914,7 +885,7 @@ func (dr *DependencyRelation) GetDependencyProviders() ([]*pb.MicroService, erro
 }
 
 func (dr *DependencyRelation) GetDependencyProviderIds() ([]string, error) {
-	consumerMicroServiceKey := pb.ToMicroServiceKey(dr.domainProject, dr.consumer)
+	consumerMicroServiceKey := pb.MicroServiceToKey(dr.domainProject, dr.consumer)
 
 	conKey := apt.GenerateConsumerDependencyRuleKey(dr.domainProject, consumerMicroServiceKey)
 	consumerDependency, err := TransferToMicroServiceDependency(dr.ctx, conKey)
@@ -1021,7 +992,7 @@ func (dr *DependencyRelation) getDependencyConsumersOfProvider() ([]*pb.MicroSer
 		util.LOGGER.Infof("dr.provider is nil ------->")
 		return nil, fmt.Errorf("Invalid provider")
 	}
-	providerService := pb.ToMicroServiceKey(dr.domainProject, dr.provider)
+	providerService := pb.MicroServiceToKey(dr.domainProject, dr.provider)
 	consumerDependAllList, err := dr.getConsumerOfDependAllServices()
 	if err != nil {
 		util.Logger().Errorf(err, "Get consumer that depend on all services failed, %s", dr.providerId)

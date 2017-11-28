@@ -77,7 +77,14 @@ func IsDefaultDomainProject(domainProject string) bool {
 	return domainProject == util.StringJoin([]string{REGISTRY_DOMAIN, REGISTRY_PROJECT}, "/")
 }
 
-func ISSCSelf(ctx context.Context) bool {
+func IsSCKey(key *pb.MicroServiceKey) bool {
+	if !IsDefaultDomainProject(key.Tenant) {
+		return false
+	}
+	return key.AppId == Service.AppId && key.ServiceName == Service.ServiceName
+}
+
+func IsSCInstance(ctx context.Context) bool {
 	if ctx.Value(IS_SC_SELF) != nil && ctx.Value(IS_SC_SELF).(bool) {
 		return true
 	}

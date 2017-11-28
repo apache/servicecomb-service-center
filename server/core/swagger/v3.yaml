@@ -1500,7 +1500,6 @@ definitions:
     required:
     - status
     - hostName
-    - environment
     properties:
       instanceId:
         type: string
