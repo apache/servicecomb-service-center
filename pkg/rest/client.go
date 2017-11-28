@@ -106,9 +106,9 @@ func GetHttpsClient(verifyPeer bool) (client *HttpClient, err error) {
 }
 
 /**
-  获取匿名认证HTTP客户端（支持压缩，不提供证书，也不认证对端）
+  获取匿名认证HTTP客户端（支持压缩, 不校验对端, 不提供证书, 不校验CN）
 */
-func GetAnnoHttpsClient(gzip bool) (client *HttpClient, err error) {
+func GetAnonymousHttpsClient(gzip bool) (client *HttpClient, err error) {
 	return getHttpsClient(gzip, false, false, false)
 }
 
@@ -297,12 +297,11 @@ func (client *HttpClient) Do(req *http.Request) (*http.Response, error) {
 }
 
 func GetClient(communiType string) (*HttpClient, error) {
-	verifyClient := false
 	var err error
 	var client *HttpClient
 	//client, err = rest.GetHttpsClient(verifyClient)
 	if communiType == "https" {
-		client, err = GetAnnoHttpsClient(verifyClient)
+		client, err = getHttpsClient(false, false,  true, false)
 		if err != nil {
 			util.Logger().Error("Create https rest.client failed.", err)
 			return nil, err
