@@ -23,9 +23,9 @@ import (
 	"golang.org/x/net/context"
 )
 
-func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Context, in *pb.CreateDependenciesRequest) (*pb.CreateDependenciesResponse, error) {
+func (s *ServiceController) CreateDependenciesForMicroServices(ctx context.Context, in *pb.CreateDependenciesRequest) (*pb.CreateDependenciesResponse, error) {
 	dependencyInfos := in.Dependencies
-	if dependencyInfos == nil {
+	if len(dependencyInfos) == 0 {
 		return serviceUtil.BadParamsResponse("Invalid request body."), nil
 	}
 	domainProject := util.ParseDomainProject(ctx)
@@ -37,8 +37,8 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 
 		util.Logger().Infof("start create dependency, data info %v", dependencyInfo)
 
-		consumerInfo := pb.TransferToMicroServiceKeys([]*pb.DependencyMircroService{dependencyInfo.Consumer}, domainProject)[0]
-		providersInfo := pb.TransferToMicroServiceKeys(dependencyInfo.Providers, domainProject)
+		consumerInfo := pb.DependenciesToKeys([]*pb.DependencyKey{dependencyInfo.Consumer}, domainProject)[0]
+		providersInfo := pb.DependenciesToKeys(dependencyInfo.Providers, domainProject)
 
 		dep.Consumer = consumerInfo
 		dep.ProvidersRule = providersInfo
@@ -62,6 +62,10 @@ func (s *ServiceController) CreateDependenciesForMircServices(ctx context.Contex
 			return &pb.CreateDependenciesResponse{
 				Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Get consumer's serviceId is empty."),
 			}, nil
+		}
+
+		if len(dependencyInfo.Providers) == 0 {
+			return serviceUtil.BadParamsResponse("Provider is invalid"), nil
 		}
 
 		dep.ConsumerId = consumerId

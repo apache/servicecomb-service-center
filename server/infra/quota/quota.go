@@ -14,6 +14,7 @@
 package quota
 
 import (
+	"fmt"
 	"golang.org/x/net/context"
 )
 
@@ -37,3 +38,20 @@ const (
 )
 
 type ResourceType int
+
+func (r ResourceType) String() string {
+	switch r {
+	case RULEQuotaType:
+		return "RULE"
+	case SCHEMAQuotaType:
+		return "SCHEMA"
+	case TAGQuotaType:
+		return "TAG"
+	case MicroServiceQuotaType:
+		return "SERVICE"
+	case MicroServiceInstanceQuotaType:
+		return "INSTANCE"
+	default:
+		return "RESOURCE" + fmt.Sprint(r)
+	}
+}

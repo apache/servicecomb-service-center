@@ -47,10 +47,10 @@ func (h *InstanceEventHandler) OnEvent(evt *store.KvEvent) {
 		return
 	}
 	if action == pb.EVT_DELETE {
-		spilted := strings.Split(domainProject, "/")
-		if len(spilted) == 2 && !apt.IsDefaultDomainProject(domainProject) {
-			domainName := spilted[0]
-			projectName := spilted[1]
+		splited := strings.Split(domainProject, "/")
+		if len(splited) == 2 && !apt.IsDefaultDomainProject(domainProject) {
+			domainName := splited[0]
+			projectName := splited[1]
 			ctx := context.TODO()
 			ctx = util.SetContext(ctx, "domain", domainName)
 			ctx = util.SetContext(ctx, "project", projectName)
@@ -88,6 +88,7 @@ func (h *InstanceEventHandler) OnEvent(evt *store.KvEvent) {
 	}
 
 	nf.PublishInstanceEvent(domainProject, action, &pb.MicroServiceKey{
+		Environment: ms.Environment,
 		AppId:       ms.AppId,
 		ServiceName: ms.ServiceName,
 		Version:     ms.Version,

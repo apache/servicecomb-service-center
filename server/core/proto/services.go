@@ -48,6 +48,11 @@ const (
 	PROP_ALLOW_CROSS_APP = "allowCrossApp"
 
 	Response_SUCCESS int32 = 0
+
+	ENV_DEV    string = "development"
+	ENV_TEST   string = "testing"
+	ENV_ACCEPT string = "acceptance"
+	ENV_PROD   string = "production"
 )
 
 type SerivceInstanceCtrlServerEx interface {
@@ -150,11 +155,28 @@ func GetInfoFromTagKV(kv *mvccpb.KeyValue) (serviceId, domainProject string, dat
 	return
 }
 
-func TransferToMicroServiceKeys(in []*DependencyMircroService, domainProject string) []*MicroServiceKey {
+func GetInfoFromSvcIndexKV(kv *mvccpb.KeyValue) (key *MicroServiceKey, data []byte) {
+	keys, data := KvToResponse(kv)
+	l := len(keys)
+	if l < 6 {
+		return
+	}
+	domainProject := fmt.Sprintf("%s/%s", keys[l-6], keys[l-5])
+	return &MicroServiceKey{
+		Tenant:      domainProject,
+		Environment: keys[l-4],
+		AppId:       keys[l-3],
+		ServiceName: keys[l-2],
+		Version:     keys[l-1],
+	}, data
+}
+
+func DependenciesToKeys(in []*DependencyKey, domainProject string) []*MicroServiceKey {
 	rst := []*MicroServiceKey{}
 	for _, value := range in {
 		rst = append(rst, &MicroServiceKey{
 			Tenant:      domainProject,
+			Environment: value.Environment,
 			AppId:       value.AppId,
 			ServiceName: value.ServiceName,
 			Version:     value.Version,
@@ -163,9 +185,10 @@ func TransferToMicroServiceKeys(in []*DependencyMircroService, domainProject str
 	return rst
 }
 
-func ToMicroServiceKey(domainProject string, in *MicroService) *MicroServiceKey {
+func MicroServiceToKey(domainProject string, in *MicroService) *MicroServiceKey {
 	return &MicroServiceKey{
 		Tenant:      domainProject,
+		Environment: in.Environment,
 		AppId:       in.AppId,
 		ServiceName: in.ServiceName,
 		Version:     in.Version,

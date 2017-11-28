@@ -46,9 +46,6 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 		}, nil
 	}
 	instance := in.GetInstance()
-	if len(instance.Environment) == 0 {
-		instance.Environment = apt.Instance.Environment
-	}
 	remoteIP := util.GetIPFromContext(ctx)
 	instanceFlag := util.StringJoin([]string{instance.ServiceId, instance.HostName}, "/")
 	err := apt.Validate(instance)
@@ -103,7 +100,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 
 	var reporter quota.QuotaReporter
 	if len(oldInstanceId) == 0 {
-		if !apt.ISSCSelf(ctx) {
+		if !apt.IsSCInstance(ctx) {
 			var err error
 			var ok bool
 			reporter, ok, err = plugin.Plugins().Quota().Apply4Quotas(ctx, quota.MicroServiceInstanceQuotaType, domainProject, in.Instance.ServiceId, 1)
@@ -444,13 +441,6 @@ func (s *InstanceController) GetOneInstance(ctx context.Context, in *pb.GetOneIn
 		}, nil
 	}
 
-	if len(in.Env) != 0 && in.Env != instance.Environment {
-		util.Logger().Errorf(nil, "get instance failed, %s(consumer/provider): environment not match, can't access.", conPro)
-		return &pb.GetOneInstanceResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Environment mismatch, can't access this instance."),
-		}, nil
-	}
-
 	return &pb.GetOneInstanceResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Get instance successfully."),
 		Instance: instance,
@@ -519,7 +509,7 @@ func (s *InstanceController) GetInstances(ctx context.Context, in *pb.GetInstanc
 
 	domainProject := util.ParseDomainProject(ctx)
 
-	instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, domainProject, in.ProviderServiceId, in.Env)
+	instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, domainProject, in.ProviderServiceId)
 	if err != nil {
 		util.Logger().Errorf(err, "get instances failed, %s(consumer/provider): get instances from etcd failed.", conPro)
 		return &pb.GetInstancesResponse{
@@ -561,6 +551,7 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 	// 版本规则
 	ids, err := serviceUtil.FindServiceIds(ctx, in.VersionRule, &pb.MicroServiceKey{
 		Tenant:      domainProject,
+		Environment: service.Environment,
 		AppId:       in.AppId,
 		ServiceName: in.ServiceName,
 		Alias:       in.ServiceName,
@@ -584,7 +575,6 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 			ConsumerServiceId: in.ConsumerServiceId,
 			ProviderServiceId: serviceId,
 			Tags:              in.Tags,
-			Env:               in.Env,
 		})
 		if err != nil {
 			util.Logger().Errorf(err, "find instance failed, %s: get service %s 's instance failed.", findFlag, serviceId)
@@ -596,7 +586,7 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 			instances = append(instances, resp.GetInstances()...)
 		}
 	}
-	consumer := pb.ToMicroServiceKey(domainProject, service)
+	consumer := pb.MicroServiceToKey(domainProject, service)
 	//维护version的规则,servicename 可能是别名，所以重新获取
 	providerService, _ := serviceUtil.GetService(ctx, domainProject, ids[0])
 	if providerService == nil {
@@ -607,6 +597,7 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 	}
 	provider := &pb.MicroServiceKey{
 		Tenant:      domainProject,
+		Environment: consumer.Environment,
 		AppId:       in.AppId,
 		ServiceName: providerService.ServiceName,
 		Version:     in.VersionRule,
@@ -808,6 +799,7 @@ func (s *InstanceController) ClusterHealth(ctx context.Context) (*pb.GetInstance
 	domainProject := util.StringJoin([]string{apt.REGISTRY_DOMAIN, apt.REGISTRY_PROJECT}, "/")
 	serviceId, err := serviceUtil.GetServiceId(ctx, &pb.MicroServiceKey{
 		AppId:       apt.Service.AppId,
+		Environment: apt.Service.Environment,
 		ServiceName: apt.Service.ServiceName,
 		Version:     apt.Service.Version,
 		Tenant:      domainProject,
@@ -826,7 +818,7 @@ func (s *InstanceController) ClusterHealth(ctx context.Context) (*pb.GetInstance
 		}, nil
 	}
 	instances := []*pb.MicroServiceInstance{}
-	instances, err = serviceUtil.GetAllInstancesOfOneService(ctx, domainProject, serviceId, "")
+	instances, err = serviceUtil.GetAllInstancesOfOneService(ctx, domainProject, serviceId)
 	if err != nil {
 		util.Logger().Errorf(err, "health check failed: get service center instances failed.")
 		return &pb.GetInstancesResponse{

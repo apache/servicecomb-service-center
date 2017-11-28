@@ -157,16 +157,16 @@ func GenerateRuleIndexKey(domainProject string, serviceId string, attr string, p
 func GenerateServiceIndexKey(key *pb.MicroServiceKey) string {
 	appId := key.AppId
 	if len(strings.TrimSpace(appId)) == 0 {
-		key.AppId = "default"
+		key.AppId = REGISTRY_APP_ID
 	}
-	stage := key.Stage
+	stage := key.Environment
 	if len(strings.TrimSpace(stage)) == 0 {
-		key.Stage = "dev"
+		key.Environment = pb.ENV_DEV
 	}
 	return util.StringJoin([]string{
 		GetServiceIndexRootKey(key.Tenant),
+		key.Environment,
 		key.AppId,
-		key.Stage,
 		key.ServiceName,
 		key.Version,
 	}, "/")
@@ -175,16 +175,16 @@ func GenerateServiceIndexKey(key *pb.MicroServiceKey) string {
 func GenerateServiceAliasKey(key *pb.MicroServiceKey) string {
 	appId := key.AppId
 	if len(strings.TrimSpace(appId)) == 0 {
-		key.AppId = "default"
+		key.AppId = REGISTRY_APP_ID
 	}
-	stage := key.Stage
+	stage := key.Environment
 	if len(strings.TrimSpace(stage)) == 0 {
-		key.Stage = "dev"
+		key.Environment = pb.ENV_DEV
 	}
 	return util.StringJoin([]string{
 		GetServiceAliasRootKey(key.Tenant),
+		key.Environment,
 		key.AppId,
-		key.Stage,
 		key.Alias,
 		key.Version,
 	}, "/")
@@ -258,22 +258,23 @@ func GenerateServiceDependencyRuleKey(serviceType string, domainProject string, 
 		return util.StringJoin([]string{
 			GetServiceDependencyRuleRootKey(domainProject),
 			serviceType,
+			in.Environment,
 			in.ServiceName,
 		}, "/")
 	}
 	appId := in.AppId
 	if len(strings.TrimSpace(appId)) == 0 {
-		appId = "default"
+		appId = REGISTRY_APP_ID
 	}
-	stage := in.Stage
-	if len(strings.TrimSpace(stage)) == 0 {
-		stage = "dev"
+	env := in.Environment
+	if len(strings.TrimSpace(env)) == 0 {
+		env = pb.ENV_DEV
 	}
 	return util.StringJoin([]string{
 		GetServiceDependencyRuleRootKey(domainProject),
 		serviceType,
+		env,
 		appId,
-		stage,
 		in.ServiceName,
 		in.Version,
 	}, "/")

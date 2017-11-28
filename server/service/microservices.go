@@ -64,9 +64,7 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 	service := in.Service
 	serviceFlag := util.StringJoin([]string{service.AppId, service.ServiceName, service.Version}, "/")
 
-	if len(service.Level) == 0 {
-		service.Level = "BACK"
-	}
+	serviceUtil.SetDefault(service)
 
 	err := apt.Validate(service)
 	if err != nil {
@@ -79,12 +77,13 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 
 	domainProject := util.ParseDomainProject(ctx)
 
-	consumer := &pb.MicroServiceKey{
+	serviceKey := &pb.MicroServiceKey{
+		Tenant:      domainProject,
+		Environment: service.Environment,
 		AppId:       service.AppId,
 		ServiceName: service.ServiceName,
 		Alias:       service.Alias,
 		Version:     service.Version,
-		Tenant:      domainProject,
 	}
 	reporter, err := checkQuota(ctx, domainProject)
 	if reporter != nil {
@@ -122,9 +121,9 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 		}, err
 	}
 	key := apt.GenerateServiceKey(domainProject, serviceId)
-	index := apt.GenerateServiceIndexKey(consumer)
+	index := apt.GenerateServiceIndexKey(serviceKey)
 	indexBytes := util.StringToBytesWithNoCopy(index)
-	aliasBytes := util.StringToBytesWithNoCopy(apt.GenerateServiceAliasKey(consumer))
+	aliasBytes := util.StringToBytesWithNoCopy(apt.GenerateServiceAliasKey(serviceKey))
 	opts := []registry.PluginOp{
 		registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)),
 		registry.OpPut(registry.WithKey(indexBytes), registry.WithStrValue(serviceId)),
@@ -133,7 +132,7 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 		registry.OpCmp(registry.CmpVer(indexBytes), registry.CMP_EQUAL, 0),
 	}
 
-	if len(consumer.Alias) > 0 {
+	if len(serviceKey.Alias) > 0 {
 		opts = append(opts, registry.OpPut(registry.WithKey(aliasBytes), registry.WithStrValue(serviceId)))
 		uniqueCmpOpts = append(uniqueCmpOpts,
 			registry.OpCmp(registry.CmpVer(aliasBytes), registry.CMP_EQUAL, 0))
@@ -149,7 +148,7 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 	}
 	if !resp.Succeeded {
 		if s.isCreateServiceEx(in) == true {
-			serviceIdInner, _ := serviceUtil.GetServiceId(ctx, consumer)
+			serviceIdInner, _ := serviceUtil.GetServiceId(ctx, serviceKey)
 			util.Logger().Warnf(nil, "create microservice failed, serviceid = %s , flag = %s: service already exists. operator: %s",
 				serviceIdInner, serviceFlag, remoteIP)
 
@@ -181,7 +180,7 @@ func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateS
 }
 
 func checkQuota(ctx context.Context, domainProject string) (quota.QuotaReporter, error) {
-	if core.ISSCSelf(ctx) {
+	if core.IsSCInstance(ctx) {
 		util.Logger().Infof("it is service-center")
 		return nil, nil
 	}
@@ -241,11 +240,12 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 	}
 
 	consumer := &pb.MicroServiceKey{
+		Tenant:      domainProject,
+		Environment: service.Environment,
 		AppId:       service.AppId,
 		ServiceName: service.ServiceName,
 		Version:     service.Version,
 		Alias:       service.Alias,
-		Tenant:      domainProject,
 	}
 
 	//refresh msCache consumerCache, ensure that watch can notify consumers when no cache.
@@ -557,6 +557,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 		}
 
 		ids, err := serviceUtil.FindServiceIds(ctx, in.Version, &pb.MicroServiceKey{
+			Environment: in.Environment,
 			AppId:       in.AppId,
 			ServiceName: in.ServiceName,
 			Alias:       in.ServiceName,

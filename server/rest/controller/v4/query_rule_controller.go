@@ -49,7 +49,7 @@ func (this *RuleService) AddRule(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(message, &rule)
 	if err != nil {
 		util.Logger().Errorf(err, "Unmarshal error")
-		controller.WriteError(w, scerr.ErrInternal, err.Error())
+		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
 
@@ -85,7 +85,7 @@ func (this *RuleService) UpdateRule(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(message, &rule)
 	if err != nil {
 		util.Logger().Error("Unmarshal error", err)
-		controller.WriteError(w, scerr.ErrInternal, err.Error())
+		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
 	resp, err := core.ServiceAPI.UpdateRule(r.Context(), &pb.UpdateServiceRuleRequest{

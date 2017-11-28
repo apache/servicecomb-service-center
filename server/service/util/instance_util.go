@@ -65,7 +65,7 @@ func GetInstance(ctx context.Context, domainProject string, serviceId string, in
 	return instance, nil
 }
 
-func GetAllInstancesOfOneService(ctx context.Context, domainProject string, serviceId string, env string) ([]*pb.MicroServiceInstance, error) {
+func GetAllInstancesOfOneService(ctx context.Context, domainProject string, serviceId string) ([]*pb.MicroServiceInstance, error) {
 	key := apt.GenerateInstanceKey(domainProject, serviceId, "")
 	opts := append(FromContext(ctx), registry.WithStrKey(key), registry.WithPrefix())
 	resp, err := store.Store().Instance().Search(ctx, opts...)
@@ -83,13 +83,7 @@ func GetAllInstancesOfOneService(ctx context.Context, domainProject string, serv
 			util.Logger().Errorf(err, "Unmarshal instance of service %s failed.", serviceId)
 			return nil, err
 		}
-		if len(env) != 0 {
-			if env == instance.Environment {
-				instances = append(instances, instance)
-			}
-		} else {
-			instances = append(instances, instance)
-		}
+		instances = append(instances, instance)
 	}
 	return instances, nil
 }
@@ -236,6 +230,7 @@ func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (resul
 				Response: pb.CreateResponse(pb.Response_SUCCESS, "List instance successfully."),
 				Action:   string(pb.EVT_CREATE),
 				Key: &pb.MicroServiceKey{
+					Environment: service.Environment,
 					AppId:       service.AppId,
 					ServiceName: service.ServiceName,
 					Version:     service.Version,

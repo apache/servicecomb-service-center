@@ -67,7 +67,7 @@ func (apt *RulesChangedAsyncTask) publish(ctx context.Context, domainProject, pr
 		util.Logger().Errorf(err, "get consumer services by provider %s failed", providerId)
 		return err
 	}
-	providerKey := pb.ToMicroServiceKey(domainProject, provider)
+	providerKey := pb.MicroServiceToKey(domainProject, provider)
 
 	nf.PublishInstanceEvent(domainProject, pb.EVT_EXPIRE, providerKey, nil, rev, consumerIds)
 	return nil

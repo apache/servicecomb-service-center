@@ -36,6 +36,7 @@ func (governService *GovernService) URLPatterns() []rest.Route {
 		{rest.HTTP_METHOD_GET, "/v4/:domain/govern/microservices/:serviceId", governService.GetServiceDetail},
 		{rest.HTTP_METHOD_GET, "/v4/:domain/govern/relations", governService.GetGraph},
 		{rest.HTTP_METHOD_GET, "/v4/:domain/govern/microservices", governService.GetAllServicesInfo},
+		{rest.HTTP_METHOD_GET, "/v4/:domain/govern/apps", governService.GetAllApplications},
 	}
 }
 
@@ -150,6 +151,17 @@ func (governService *GovernService) GetAllServicesInfo(w http.ResponseWriter, r 
 	request.AppId = r.URL.Query().Get("appId")
 	request.ServiceName = r.URL.Query().Get("serviceName")
 	resp, _ := core.GovernServiceAPI.GetServicesInfo(ctx, request)
+
+	respInternal := resp.Response
+	resp.Response = nil
+	controller.WriteResponse(w, respInternal, resp)
+}
+
+func (governService *GovernService) GetAllApplications(w http.ResponseWriter, r *http.Request) {
+	request := &pb.GetAppsRequest{}
+	ctx := r.Context()
+	request.Environment = r.URL.Query().Get("env")
+	resp, _ := core.GovernServiceAPI.GetApplications(ctx, request)
 
 	respInternal := resp.Response
 	resp.Response = nil

@@ -249,7 +249,7 @@ func TestServiceDependencyRuleExist(t *testing.T) {
 }
 
 func TestUpdateServiceForAddDependency(t *testing.T) {
-	err := UpdateServiceForAddDependency(context.Background(), "", []*proto.DependencyMircroService{}, "")
+	err := UpdateServiceForAddDependency(context.Background(), "", []*proto.DependencyKey{}, "")
 	if err == nil {
 		fmt.Printf(`UpdateServiceForAddDependency failed`)
 		t.FailNow()

@@ -50,7 +50,7 @@ func (this *TagService) AddTags(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(message, &tags)
 	if err != nil {
 		util.Logger().Error("Unmarshal error", err)
-		controller.WriteError(w, scerr.ErrInternal, err.Error())
+		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
 

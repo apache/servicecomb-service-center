@@ -14,65 +14,79 @@
 package service_test
 
 import (
-	"fmt"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
+	scerr "github.com/ServiceComb/service-center/server/error"
 	"github.com/ServiceComb/service-center/server/plugin/infra/quota/buildin"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"strconv"
+	"strings"
 )
 
-var serviceId string
-var serviceId2 string
-var _ = Describe("ServiceController", func() {
-	Describe("tag", func() {
-		Context("normal", func() {
-			It("创建tag", func() {
-				fmt.Println("UT===========创建tag")
-				resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-					Service: &pb.MicroService{
-						ServiceName: "service_name_consumer",
-						AppId:       "service_group_consumer",
-						Version:     "4.0.0",
-						Level:       "FRONT",
-						Schemas: []string{
-							"xxxxxxxx",
-						},
-						Status: "UP",
-					},
-				})
+var tooLongTag = strings.Repeat("x", 65)
 
-				Expect(err).To(BeNil())
-				serviceId = resp.ServiceId
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+var _ = Describe("'Tag' service", func() {
+	Describe("execute 'create' operartion", func() {
+		var (
+			serviceId string
+		)
 
-				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-					Service: &pb.MicroService{
-						ServiceName: "service_name_consumer1",
-						AppId:       "service_group_consumer2",
-						Version:     "4.0.0",
-						Level:       "FRONT",
-						Schemas: []string{
-							"xxxxxxxx",
-						},
-						Status: "UP",
-					},
-				})
+		It("should be passed", func() {
+			respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "create_tag_group",
+					ServiceName: "create_tag_service",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			serviceId = respCreateService.ServiceId
+		})
 
-				Expect(err).To(BeNil())
-				serviceId2 = resp.ServiceId
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-
-				respAddTags, err := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
-					ServiceId: serviceId,
+		Context("when request is invalid", func() {
+			It("should be failed", func() {
+				By("service id is empty")
+				respAddTags, _ := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
+					ServiceId: "",
 					Tags: map[string]string{
 						"a": "test",
 					},
 				})
-				Expect(err).To(BeNil())
-				Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respAddTags.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
-				respAddTags, err = serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
+				By("service does not exist")
+				respAddTags, _ = serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
+					ServiceId: "noServiceTest",
+					Tags: map[string]string{
+						"a": "test",
+					},
+				})
+				Expect(respAddTags.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+
+				By("tag is empty")
+				respAddTags, _ = serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
+					ServiceId: serviceId,
+					Tags:      map[string]string{},
+				})
+				Expect(respAddTags.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+
+				By("tag key is empty")
+				respAddTags, _ = serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
+					ServiceId: serviceId,
+					Tags: map[string]string{
+						"": "value",
+					},
+				})
+				Expect(respAddTags.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+			})
+		})
+
+		Context("when request is valid", func() {
+			It("should be passed", func() {
+				respAddTags, err := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
 					ServiceId: serviceId,
 					Tags: map[string]string{
 						"a": "test",
@@ -82,86 +96,131 @@ var _ = Describe("ServiceController", func() {
 				Expect(err).To(BeNil())
 				Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 			})
+		})
 
-			It("创建tag，参数校验", func() {
-				fmt.Println("UT===========创建tag，参数校验")
-				respAddTags, _ := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
-					ServiceId: "",
-					Tags: map[string]string{
-						"a": "test",
-					},
-				})
-				Expect(respAddTags.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
-
-				respAddTags, _ = serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
-					ServiceId: "noServiceTest",
-					Tags: map[string]string{
-						"a": "test",
-					},
-				})
-				Expect(respAddTags.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
-
-				respAddTags, _ = serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
-					ServiceId: serviceId,
-					Tags:      map[string]string{},
-				})
-				Expect(respAddTags.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
-
-				respAddTags, _ = serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
-					ServiceId: TOO_LONG_SERVICEID,
-					Tags: map[string]string{
-						"a": "b",
-					},
-				})
-				Expect(respAddTags.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
-
-				respAddTags, _ = serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
-					ServiceId: serviceId,
-					Tags: map[string]string{
-						"": "value",
-					},
-				})
-				Expect(respAddTags.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
-			})
-			It("size of tags checker for one service", func() {
-				size := buildin.TAG_MAX_NUM_FOR_ONESERVICE + 2
+		Context("when create tag out of gauge", func() {
+			It("should be failed", func() {
+				size := buildin.TAG_MAX_NUM_FOR_ONESERVICE / 2
 				tags := make(map[string]string, size)
 				for i := 0; i < size; i++ {
-					tags["a"+strconv.Itoa(i)] = "a" + strconv.Itoa(i)
+					s := "tag" + strconv.Itoa(i)
+					tags[s] = s
 				}
-				respAddTags, _ := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
+				respAddTags, err := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
 					ServiceId: serviceId,
 					Tags:      tags,
 				})
-				Expect(respAddTags.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(err).To(BeNil())
+				Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+				respAddTags, _ = serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
+					ServiceId: serviceId,
+					Tags:      tags,
+				})
+				Expect(err).To(BeNil())
+				Expect(respAddTags.GetResponse().Code).To(Equal(scerr.ErrNotEnoughQuota))
 			})
-			It("获取tag，参数校验", func() {
+		})
+	})
+
+	Describe("execute 'get' operartion", func() {
+		var (
+			serviceId string
+		)
+
+		It("should be passed", func() {
+			respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "get_tag_group",
+					ServiceName: "get_tag_service",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			serviceId = respCreateService.ServiceId
+
+			respAddTags, err := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
+				ServiceId: serviceId,
+				Tags: map[string]string{
+					"a": "test",
+					"b": "b",
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+		})
+
+		Context("when request is invalid", func() {
+			It("should be failed", func() {
+				By("service does not exits")
 				resp, _ := serviceResource.GetTags(getContext(), &pb.GetServiceTagsRequest{
 					ServiceId: "noThisService",
 				})
 				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
+				By("service id is empty")
 				resp, _ = serviceResource.GetTags(getContext(), &pb.GetServiceTagsRequest{
 					ServiceId: "",
 				})
 				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
+				By("service id is invalid")
 				resp, _ = serviceResource.GetTags(getContext(), &pb.GetServiceTagsRequest{
 					ServiceId: TOO_LONG_SERVICEID,
 				})
 				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
+		})
 
-			It("获取tag", func() {
+		Context("when request is valid", func() {
+			It("should be passed", func() {
 				resp, err := serviceResource.GetTags(getContext(), &pb.GetServiceTagsRequest{
 					ServiceId: serviceId,
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Tags["a"]).To(Equal("test"))
 			})
+		})
 
-			It("修改tag,参数校验", func() {
-				fmt.Println("UT===========修改tag，参数校验")
+	})
+
+	Describe("execute 'update' operartion", func() {
+		var (
+			serviceId string
+		)
+
+		It("should be passed", func() {
+			respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "update_tag_group",
+					ServiceName: "update_tag_service",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			serviceId = respCreateService.ServiceId
+
+			respAddTags, err := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
+				ServiceId: serviceId,
+				Tags: map[string]string{
+					"a": "test",
+					"b": "b",
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+		})
+
+		Context("when request is invalid", func() {
+			It("should be failed", func() {
+				By("service id is empty")
 				resp, err := serviceResource.UpdateTag(getContext(), &pb.UpdateServiceTagRequest{
 					ServiceId: "",
 					Key:       "a",
@@ -170,6 +229,7 @@ var _ = Describe("ServiceController", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
+				By("service does not exits")
 				resp, err = serviceResource.UpdateTag(getContext(), &pb.UpdateServiceTagRequest{
 					ServiceId: "noneservice",
 					Key:       "a",
@@ -178,17 +238,37 @@ var _ = Describe("ServiceController", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
+				By("tag key is empty")
 				resp, err = serviceResource.UpdateTag(getContext(), &pb.UpdateServiceTagRequest{
-					ServiceId: TOO_LONG_SERVICEID,
-					Key:       "a",
+					ServiceId: serviceId,
+					Key:       "",
 					Value:     "update",
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
-			})
 
-			It("修改tag", func() {
-				fmt.Println("UT===========修改tag")
+				By("tag key does not exist")
+				resp, err = serviceResource.UpdateTag(getContext(), &pb.UpdateServiceTagRequest{
+					ServiceId: serviceId,
+					Key:       "notexisttag",
+					Value:     "update",
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+
+				By("tag key is invalid")
+				resp, err = serviceResource.UpdateTag(getContext(), &pb.UpdateServiceTagRequest{
+					ServiceId: serviceId,
+					Key:       tooLongTag,
+					Value:     "v",
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+			})
+		})
+
+		Context("when request is valid", func() {
+			It("should be passed", func() {
 				resp, err := serviceResource.UpdateTag(getContext(), &pb.UpdateServiceTagRequest{
 					ServiceId: serviceId,
 					Key:       "a",
@@ -196,26 +276,45 @@ var _ = Describe("ServiceController", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-
-				resp, err = serviceResource.UpdateTag(getContext(), &pb.UpdateServiceTagRequest{
-					ServiceId: serviceId,
-					Key:       "notExistKey",
-					Value:     "update",
-				})
-				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
-
-				resp, err = serviceResource.UpdateTag(getContext(), &pb.UpdateServiceTagRequest{
-					ServiceId: TOO_LONG_SERVICEID,
-					Key:       "",
-					Value:     "update",
-				})
-				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
-			It("删除tag,参数校验", func() {
-				fmt.Println("UT===========删除tag,参数校验，serviceId为空")
+		})
+
+	})
+
+	Describe("execute 'delete' operartion", func() {
+		var (
+			serviceId string
+		)
+
+		It("should be passed", func() {
+			respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "delete_tag_group",
+					ServiceName: "delete_tag_service",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			serviceId = respCreateService.ServiceId
+
+			respAddTags, err := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
+				ServiceId: serviceId,
+				Tags: map[string]string{
+					"a": "test",
+					"b": "b",
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+		})
+
+		Context("when request is invalid", func() {
+			It("should be failed", func() {
+				By("service id is empty")
 				respAddTags, err := serviceResource.DeleteTags(getContext(), &pb.DeleteServiceTagsRequest{
 					ServiceId: "",
 					Keys:      []string{"a", "b"},
@@ -223,7 +322,7 @@ var _ = Describe("ServiceController", func() {
 				Expect(err).To(BeNil())
 				Expect(respAddTags.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
-				fmt.Println("UT===========删除tag,参数校验，serviceId为空")
+				By("service does not exits")
 				respAddTags, err = serviceResource.DeleteTags(getContext(), &pb.DeleteServiceTagsRequest{
 					ServiceId: "noneservice",
 					Keys:      []string{"a", "b"},
@@ -231,13 +330,7 @@ var _ = Describe("ServiceController", func() {
 				Expect(err).To(BeNil())
 				Expect(respAddTags.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
-				respAddTags, err = serviceResource.DeleteTags(getContext(), &pb.DeleteServiceTagsRequest{
-					ServiceId: serviceId2,
-					Keys:      []string{"a", "b"},
-				})
-				Expect(err).To(BeNil())
-				Expect(respAddTags.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
-
+				By("tag key does not exits")
 				respAddTags, err = serviceResource.DeleteTags(getContext(), &pb.DeleteServiceTagsRequest{
 					ServiceId: serviceId,
 					Keys:      []string{"c"},
@@ -245,16 +338,26 @@ var _ = Describe("ServiceController", func() {
 				Expect(err).To(BeNil())
 				Expect(respAddTags.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
+				By("tag key is empty")
 				respAddTags, err = serviceResource.DeleteTags(getContext(), &pb.DeleteServiceTagsRequest{
-					ServiceId: TOO_LONG_SERVICEID,
+					ServiceId: serviceId,
 					Keys:      []string{""},
 				})
 				Expect(err).To(BeNil())
 				Expect(respAddTags.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
-			})
 
-			It("删除tag", func() {
-				fmt.Println("UT===========删除tag")
+				By("tag key is invalid")
+				respAddTags, err = serviceResource.DeleteTags(getContext(), &pb.DeleteServiceTagsRequest{
+					ServiceId: serviceId,
+					Keys:      []string{tooLongTag},
+				})
+				Expect(err).To(BeNil())
+				Expect(respAddTags.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+			})
+		})
+
+		Context("when request is valid", func() {
+			It("should be passed", func() {
 				respAddTags, err := serviceResource.DeleteTags(getContext(), &pb.DeleteServiceTagsRequest{
 					ServiceId: serviceId,
 					Keys:      []string{"a", "b"},
@@ -262,19 +365,12 @@ var _ = Describe("ServiceController", func() {
 				Expect(err).To(BeNil())
 				Expect(respAddTags.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
-				respDel, err := serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{
+				resp, err := serviceResource.GetTags(getContext(), &pb.GetServiceTagsRequest{
 					ServiceId: serviceId,
-					Force:     true,
 				})
 				Expect(err).To(BeNil())
-				Expect(respDel.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-
-				respDel, err = serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{
-					ServiceId: serviceId2,
-					Force:     true,
-				})
-				Expect(err).To(BeNil())
-				Expect(respDel.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Tags["a"]).To(Equal(""))
 			})
 		})
 	})

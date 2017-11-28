@@ -28,9 +28,10 @@ service ServiceCtrl {
     rpc modifySchema (ModifySchemaRequest) returns (ModifySchemaResponse);
     rpc modifySchemas (ModifySchemasRequest) returns (ModifySchemasResponse);
 
-    rpc createDependenciesForMircServices (CreateDependenciesRequest) returns (CreateDependenciesResponse);
+    rpc createDependenciesForMicroServices (CreateDependenciesRequest) returns (CreateDependenciesResponse);
     rpc getProviderDependencies (GetDependenciesRequest) returns (GetProDependenciesResponse);
     rpc getConsumerDependencies (GetDependenciesRequest) returns (GetConDependenciesResponse);
+
     rpc deleteServices (DelServicesRequest) returns (DelServicesResponse);
 }
 
@@ -50,8 +51,8 @@ service ServiceInstanceCtrl {
 //治理相关的接口和数据结构
 service GovernServiceCtrl {
     rpc getServiceDetail (GetServiceRequest) returns (GetServiceDetailResponse);
-
     rpc getServicesInfo (GetServicesInfoRequest) returns (GetServicesInfoResponse);
+    rpc getApplications (GetAppsRequest) returns (GetAppsResponse);
 }
 
 message ModifySchemasRequest {
@@ -127,7 +128,7 @@ message MicroServiceKey {
     string appId = 3;
     string serviceName = 4;
     string version = 5;
-    string stage = 6;
+    string environment = 6;
     string alias = 7;
 }
 
@@ -138,7 +139,6 @@ message MicroService {
     string appId = 2;
     string serviceName = 3;
     string version = 4;
-
     string description = 5;
     string level = 6; // custom
     repeated string schemas = 7;
@@ -146,10 +146,11 @@ message MicroService {
     string status = 8; // UP|DOWN
     map<string, string> properties = 9;
     string timestamp = 11;
-    repeated DependencyMircroService providers = 12;
+    repeated DependencyKey providers = 12;
     string alias = 13;
     map<string, string> LBStrategy = 14;
     string modTimestamp = 15;
+    string environment = 16;
 }
 
 message ServiceRule {
@@ -186,6 +187,7 @@ message GetExistenceRequest {
     string version = 4;
     string serviceId = 5;
     string schemaId = 6;
+    string environment = 7;
 }
 
 message GetExistenceResponse {
@@ -344,9 +346,8 @@ message MicroServiceInstance {
     string timestamp = 8;
 
     DataCenterInfo dataCenterInfo = 9;
-    string environment = 10;
 
-    string modTimestamp = 11;
+    string modTimestamp = 10;
 }
 
 message DataCenterInfo {
@@ -393,7 +394,6 @@ message FindInstancesRequest {
     string serviceName = 3;
     string versionRule = 4; // version rule
     repeated string tags = 5;
-    string env = 6;
 }
 
 message FindInstancesResponse {
@@ -406,7 +406,6 @@ message GetOneInstanceRequest {
     string providerServiceId = 2;
     string providerInstanceId = 3;
     repeated string tags = 4;
-    string env = 5;
 }
 
 message GetOneInstanceResponse {
@@ -418,7 +417,6 @@ message GetInstancesRequest {
     string consumerServiceId = 1;
     string providerServiceId = 2;
     repeated string tags = 3;
-    string env = 4;
 }
 
 message GetInstancesResponse {
@@ -491,16 +489,16 @@ message CreateDependenciesRequest {
     repeated MircroServiceDependency dependencies = 1;
 }
 
-message DependencyMircroService {
+message DependencyKey {
     string appId = 1;
     string serviceName = 2;
     string version = 3;
-    string stage = 4;
+    string environment = 4;
 }
 
 message MircroServiceDependency {
-    DependencyMircroService consumer = 1;
-    repeated DependencyMircroService providers = 2;
+    DependencyKey consumer = 1;
+    repeated DependencyKey providers = 2;
 }
 
 message CreateDependenciesResponse {
@@ -521,16 +519,9 @@ message GetProDependenciesResponse {
     repeated MicroService consumers = 2;
 }
 
-//服务概览
-message ServiceOverview {
-    MicroService microSerivce = 1;
-    repeated MicroServiceInstance instances = 2;
-    map<string, string> tags = 3;
-}
-
 //服务详情
 message ServiceDetail {
-    MicroService microSerivce = 1;
+    MicroService microService = 1;
     repeated MicroServiceInstance instances = 2;
     repeated Schema schemaInfos = 3;
     repeated ServiceRule rules = 4;
@@ -563,3 +554,11 @@ message DelServicesResponse {
     repeated DelServicesRspInfo services = 2;
 }
 
+message GetAppsRequest {
+    string environment = 1;
+}
+
+message GetAppsResponse {
+    Response response = 1;
+    repeated string appIds = 2;
+}

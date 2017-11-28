@@ -36,21 +36,20 @@ var (
 	HealthCheckInfoValidator      validate.Validator
 	MicroServiceKeyValidator      validate.Validator
 	DataCenterInfoValidator       validate.Validator
-	GetMSExistsReqValidator     validate.Validator
-	GetSchemaExistsReqValidator validate.Validator
-	GetServiceReqValidator      validate.Validator
-	GetSchemaReqValidator       validate.Validator
-	DependencyMSValidator       validate.Validator
-	ProviderMsValidator         validate.Validator
-	MSDependencyValidator       validate.Validator
-	TagReqValidator             validate.Validator
-	FindInstanceReqValidator    validate.Validator
-	GetInstanceValidator        validate.Validator
-	SchemasValidor              validate.Validator
-	SchemaValidor               validate.Validator
+	GetMSExistsReqValidator       validate.Validator
+	GetSchemaExistsReqValidator   validate.Validator
+	GetServiceReqValidator        validate.Validator
+	GetSchemaReqValidator         validate.Validator
+	DependencyMSValidator         validate.Validator
+	ProviderMsValidator           validate.Validator
+	MSDependencyValidator         validate.Validator
+	TagReqValidator               validate.Validator
+	FindInstanceReqValidator      validate.Validator
+	GetInstanceValidator          validate.Validator
+	SchemasValidator              validate.Validator
+	SchemaValidator               validate.Validator
 
 	SchemaIdRule *validate.ValidateRule
-	SchemasRule  *validate.ValidateRule
 	TagRule      *validate.ValidateRule
 )
 
@@ -66,15 +65,17 @@ func init() {
 	pathRegex, _ := regexp.Compile(`^[A-Za-z0-9.,?'\\/+&amp;%$#=~_\-@{}]*$`)
 	descriptionRegex, _ := regexp.Compile(`^[\p{Han}\w\s。.:*,\-：”“]*$`)
 	levelRegex, _ := regexp.Compile(`^(FRONT|MIDDLE|BACK)$`)
-	statusRegex, _ := regexp.Compile(`^(UP|DOWN)*$`)
+	statusRegex, _ := regexp.Compile("^(" + pb.MS_UP + "|" + pb.MS_DOWN + ")*$")
 	serviceIdRegex, _ := regexp.Compile(`^.*$`)
 	aliasRegex, _ := regexp.Compile(`^[a-zA-Z0-9_\-.:]*$`)
-	stageRegex, _ := regexp.Compile("^(development|testing|acceptance|production)*$")
+	envRegex, _ := regexp.Compile("^(" + util.StringJoin([]string{
+		pb.ENV_DEV, pb.ENV_TEST, pb.ENV_ACCEPT, pb.ENV_PROD}, "|") + ")*$")
 	// map/slice元素的validator
 	// 元素的格式和长度由正则控制
 	// map/slice的长度由validator中的min/max/length控制
 	schemaIdRegex, _ := regexp.Compile(`^[a-zA-Z0-9]{1,160}$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]{0,158}[a-zA-Z0-9]$`) //length:{1,160}
-	instStatusRegex, _ := regexp.Compile(`^(UP|DOWN|STARTING|OUTOFSERVICE)$`)
+	instStatusRegex, _ := regexp.Compile("^(" + util.StringJoin([]string{
+		pb.MSI_UP, pb.MSI_DOWN, pb.MSI_STARTING, pb.MSI_OUTOFSERVICE}, "|") + ")$")
 	tagRegex, _ := regexp.Compile(`^[a-zA-Z][a-zA-Z0-9_\-.]{0,63}$`)
 	hbModeRegex, _ := regexp.Compile(`^(push|pull)$`)
 	numberAllowEmptyRegex, _ := regexp.Compile(`^[0-9]*$`)
@@ -85,15 +86,16 @@ func init() {
 	regionRegex, _ := regexp.Compile(`^[A-Za-z0-9_.-]+$`)
 	ruleRegex, _ := regexp.Compile(`^(WHITE|BLACK)$`)
 	ruleAttrRegex, _ := regexp.Compile(`((^tag_[a-zA-Z][a-zA-Z0-9_\-.]{0,63}$)|(^ServiceId$)|(^AppId$)|(^ServiceName$)|(^Version$)|(^Description$)|(^Level$)|(^Status$))`)
+	SchemaSummaryRegex, _ := regexp.Compile(`(a-zA-Z0-9)*`)
 
 	ServiceIdRule := &validate.ValidateRule{Min: 1, Length: 64, Regexp: serviceIdRegex}
 	InstanceStatusRule := &validate.ValidateRule{Regexp: instStatusRegex}
 	SchemaIdRule = &validate.ValidateRule{Regexp: schemaIdRegex}
-	stageRule := &validate.ValidateRule{Regexp: stageRegex}
 	nameRule := &validate.ValidateRule{Min: 1, Max: 128, Regexp: nameRegex}
 	versionFuzzyRule := &validate.ValidateRule{Min: 1, Max: 128, Regexp: versionFuzzyRegex}
 	TagRule = &validate.ValidateRule{Regexp: tagRegex}
 
+	MicroServiceKeyValidator.AddRule("Environment", &validate.ValidateRule{Regexp: envRegex})
 	MicroServiceKeyValidator.AddRule("AppId", &validate.ValidateRule{Min: 1, Max: 160, Regexp: nameRegex})
 	MicroServiceKeyValidator.AddRule("ServiceName", nameRule)
 	MicroServiceKeyValidator.AddRule("Version", &validate.ValidateRule{Min: 1, Max: 64, Regexp: VersionRegex})
@@ -108,18 +110,23 @@ func init() {
 	MicroServiceValidator.AddSub("Paths", &ServicePathValidator)
 	MicroServiceValidator.AddRule("Alias", &validate.ValidateRule{Length: 128, Regexp: aliasRegex})
 
-	GetMSExistsReqValidator.AddRule("AppId", MicroServiceKeyValidator.GetRule("AppId"))
-	GetMSExistsReqValidator.AddRule("ServiceName", nameRule)
+	GetMSExistsReqValidator.AddRules(MicroServiceKeyValidator.GetRules())
 	GetMSExistsReqValidator.AddRule("Version", versionFuzzyRule)
 
 	GetSchemaExistsReqValidator.AddRule("ServiceId", ServiceIdRule)
 	GetSchemaExistsReqValidator.AddRule("SchemaId", SchemaIdRule)
-	SchemasValidor.AddRule("ServiceId", ServiceIdRule)
-	SchemasValidor.AddSub("Schemas", &SchemaValidor)
-	SchemaValidor.AddRule("SchemaId", SchemaIdRule)
-	SchemaSummaryRegex , _ := regexp.Compile(`(a-zA-Z0-9)*`)
-	SchemaValidor.AddRule("Summary", &validate.ValidateRule{Min: 1, Max: 512, Regexp: SchemaSummaryRegex})
-	SchemaValidor.AddRule("Schema", &validate.ValidateRule{Min: 1})
+
+	var subSchemaValidor validate.Validator
+	subSchemaValidor.AddRule("SchemaId", SchemaIdRule)
+	subSchemaValidor.AddRule("Summary", &validate.ValidateRule{Min: 1, Max: 512, Regexp: SchemaSummaryRegex})
+	subSchemaValidor.AddRule("Schema", &validate.ValidateRule{Min: 1})
+
+	SchemasValidator.AddRule("ServiceId", ServiceIdRule)
+	SchemasValidator.AddSub("Schemas", &subSchemaValidor)
+
+	SchemaValidator.AddRules(subSchemaValidor.GetRules())
+	SchemaValidator.AddRule("ServiceId", ServiceIdRule)
+	SchemaValidator.AddRule("Summary", &validate.ValidateRule{Max: 512, Regexp: SchemaSummaryRegex})
 
 	GetServiceReqValidator.AddRule("ServiceId", ServiceIdRule)
 
@@ -127,18 +134,19 @@ func init() {
 	GetSchemaReqValidator.AddRule("SchemaId", SchemaIdRule)
 
 	DependencyMSValidator.AddRules(MicroServiceKeyValidator.GetRules())
-	DependencyMSValidator.AddRule("Stage", stageRule)
 
-	ProviderMsValidator.AddRule("AppId", MicroServiceKeyValidator.GetRule("AppId"))
+	ProviderMsValidator.AddRules(MicroServiceKeyValidator.GetRules())
 	ProviderMsValidator.AddRule("ServiceName", &validate.ValidateRule{Min: 1, Max: 128, Regexp: nameFuzzyRegex})
 	ProviderMsValidator.AddRule("Version", versionFuzzyRule)
-	ProviderMsValidator.AddRule("Stage", stageRule)
 
 	MSDependencyValidator.AddSub("Consumer", &DependencyMSValidator)
 	MSDependencyValidator.AddSub("Providers", &ProviderMsValidator)
 
 	TagReqValidator.AddRule("ServiceId", ServiceIdRule)
 	TagReqValidator.AddRule("Tags", TagRule)
+	TagReqValidator.AddRule("Keys", &validate.ValidateRule{Regexp: tagRegex})
+	TagReqValidator.AddRule("Key", &validate.ValidateRule{Regexp: tagRegex})
+	TagReqValidator.AddRule("Value", &validate.ValidateRule{Regexp: tagRegex})
 
 	HealthCheckInfoValidator.AddRule("Mode", &validate.ValidateRule{Regexp: hbModeRegex})
 	HealthCheckInfoValidator.AddRule("Port", &validate.ValidateRule{Max: math.MaxInt16, Regexp: numberAllowEmptyRegex})
@@ -152,7 +160,6 @@ func init() {
 	MicroServiceInstanceValidator.AddRule("HostName", &validate.ValidateRule{Length: 64, Regexp: simpleNameRegex})
 	MicroServiceInstanceValidator.AddSub("HealthCheck", &HealthCheckInfoValidator)
 	MicroServiceInstanceValidator.AddRule("Status", InstanceStatusRule)
-	MicroServiceInstanceValidator.AddRule("Environment", &validate.ValidateRule{Min: 1, Regexp: stageRegex})
 	MicroServiceInstanceValidator.AddSub("DataCenterInfo", &DataCenterInfoValidator)
 
 	DataCenterInfoValidator.AddRule("Name", &validate.ValidateRule{Length: 128, Regexp: simpleNameRegex})
@@ -169,13 +176,11 @@ func init() {
 	FindInstanceReqValidator.AddRule("ServiceName", &validate.ValidateRule{Min: 1, Max: 128, Regexp: serviceNameForFindRegex})
 	FindInstanceReqValidator.AddRule("VersionRule", versionFuzzyRule)
 	FindInstanceReqValidator.AddRule("Tags", TagRule)
-	FindInstanceReqValidator.AddRule("Env", stageRule)
 
 	GetInstanceValidator.AddRule("ConsumerServiceId", ServiceIdRule)
 	GetInstanceValidator.AddRule("ProviderServiceId", ServiceIdRule)
 	GetInstanceValidator.AddRule("ProviderInstanceId", &validate.ValidateRule{Min: 1, Max: 64, Regexp: simpleNameAllowEmptyRegex})
 	GetInstanceValidator.AddRule("Tags", TagRule)
-	GetInstanceValidator.AddRule("Env", stageRule)
 }
 
 func Validate(v interface{}) error {
@@ -201,16 +206,20 @@ func Validate(v interface{}) error {
 	case *pb.AddServiceTagsRequest, *pb.DeleteServiceTagsRequest,
 		*pb.UpdateServiceTagRequest, *pb.GetServiceTagsRequest:
 		return TagReqValidator.Validate(v)
-	case *pb.GetSchemaRequest, *pb.ModifySchemaRequest, *pb.DeleteSchemaRequest:
+	case *pb.GetSchemaRequest, *pb.DeleteSchemaRequest:
 		return GetSchemaReqValidator.Validate(v)
+	case *pb.ModifySchemaRequest:
+		return SchemaValidator.Validate(v)
 	case *pb.ModifySchemasRequest:
-		return SchemasValidor.Validate(v)
+		return SchemasValidator.Validate(v)
 	case *pb.MicroServiceDependency:
 		return DependencyMSValidator.Validate(v)
 	case *pb.FindInstancesRequest:
 		return FindInstanceReqValidator.Validate(v)
 	case *pb.GetOneInstanceRequest, *pb.GetInstancesRequest:
 		return GetInstanceValidator.Validate(v)
+	case *pb.GetAppsRequest:
+		return MicroServiceKeyValidator.Validate(v)
 	default:
 		util.Logger().Errorf(nil, "No validator for %T.", t)
 		return nil

@@ -23,7 +23,7 @@ import (
 )
 
 func TestRuleErr(t *testing.T) {
-	e1 := serviceUtil.NotAllowAcrossAppError("a")
+	e1 := serviceUtil.NotAllowAcrossDimensionError("a")
 	if e1.Error() != "a" {
 		fmt.Printf("NotAllowAcrossAppError failed")
 		t.FailNow()
@@ -105,7 +105,7 @@ func TestGetServiceRuleType(t *testing.T) {
 }
 
 func TestAllowAcrossApp(t *testing.T) {
-	err := serviceUtil.AllowAcrossApp(&proto.MicroService{
+	err := serviceUtil.AllowAcrossDimension(&proto.MicroService{
 		AppId: "a",
 	}, &proto.MicroService{
 		AppId: "a",
@@ -115,7 +115,7 @@ func TestAllowAcrossApp(t *testing.T) {
 		t.FailNow()
 	}
 
-	err = serviceUtil.AllowAcrossApp(&proto.MicroService{
+	err = serviceUtil.AllowAcrossDimension(&proto.MicroService{
 		AppId: "a",
 	}, &proto.MicroService{
 		AppId: "c",
@@ -125,7 +125,7 @@ func TestAllowAcrossApp(t *testing.T) {
 		t.FailNow()
 	}
 
-	err = serviceUtil.AllowAcrossApp(&proto.MicroService{
+	err = serviceUtil.AllowAcrossDimension(&proto.MicroService{
 		AppId: "a",
 		Properties: map[string]string{
 			proto.PROP_ALLOW_CROSS_APP: "true",
@@ -138,7 +138,7 @@ func TestAllowAcrossApp(t *testing.T) {
 		t.FailNow()
 	}
 
-	err = serviceUtil.AllowAcrossApp(&proto.MicroService{
+	err = serviceUtil.AllowAcrossDimension(&proto.MicroService{
 		AppId: "a",
 		Properties: map[string]string{
 			proto.PROP_ALLOW_CROSS_APP: "true",
@@ -151,7 +151,7 @@ func TestAllowAcrossApp(t *testing.T) {
 		t.FailNow()
 	}
 
-	err = serviceUtil.AllowAcrossApp(&proto.MicroService{
+	err = serviceUtil.AllowAcrossDimension(&proto.MicroService{
 		AppId: "a",
 		Properties: map[string]string{
 			proto.PROP_ALLOW_CROSS_APP: "false",
@@ -164,7 +164,7 @@ func TestAllowAcrossApp(t *testing.T) {
 		t.FailNow()
 	}
 
-	err = serviceUtil.AllowAcrossApp(&proto.MicroService{
+	err = serviceUtil.AllowAcrossDimension(&proto.MicroService{
 		AppId: "a",
 		Properties: map[string]string{
 			proto.PROP_ALLOW_CROSS_APP: "",

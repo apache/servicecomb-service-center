@@ -18,18 +18,15 @@ import (
 	"github.com/ServiceComb/service-center/server/rest/controller/v4"
 )
 
-type MicroServiceService struct {
-	v4.MicroServiceService
+type SchemaService struct {
+	v4.SchemaService
 }
 
-func (this *MicroServiceService) URLPatterns() []rest.Route {
+func (this *SchemaService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTP_METHOD_GET, "/registry/v3/existence", this.GetExistence},
-		{rest.HTTP_METHOD_GET, "/registry/v3/microservices", this.GetServices},
-		{rest.HTTP_METHOD_GET, "/registry/v3/microservices/:serviceId", this.GetServiceOne},
-		{rest.HTTP_METHOD_POST, "/registry/v3/microservices", this.Register},
-		{rest.HTTP_METHOD_PUT, "/registry/v3/microservices/:serviceId/properties", this.Update},
-		{rest.HTTP_METHOD_DELETE, "/registry/v3/microservices/:serviceId", this.Unregister},
-		{rest.HTTP_METHOD_DELETE, "/registry/v3/microservices", this.UnregisterServices},
+		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/microservices/:serviceId/schemas/:schemaId", this.GetSchemas},
+		{rest.HTTP_METHOD_PUT, "/v4/:domain/registry/microservices/:serviceId/schemas/:schemaId", this.ModifySchema},
+		{rest.HTTP_METHOD_DELETE, "/v4/:domain/registry/microservices/:serviceId/schemas/:schemaId", this.DeleteSchemas},
+		{rest.HTTP_METHOD_POST, "/v4/:domain/registry/microservices/:serviceId/schemas", this.ModifySchemas},
 	}
 }

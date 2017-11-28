@@ -28,11 +28,6 @@ import (
 	"testing"
 )
 
-const (
-	TOO_LONG_SERVICEID   = "addasdfasaddasdfasaddasdfasaddasdfasaddasdfasaddasdfasaddasdfasadafd"
-	TOO_LONG_SERVICENAME = "addasdfasaddasdfasaddasdfasaddasdfasaddasdfasaddasdfasaddasdfasadafd"
-)
-
 func TestGrpc(t *testing.T) {
 	RegisterFailHandler(Fail)
 	junitReporter := reporters.NewJUnitReporter("model.junit.xml")
@@ -40,14 +35,14 @@ func TestGrpc(t *testing.T) {
 }
 
 var serviceResource pb.ServiceCtrlServer
-var insResource pb.SerivceInstanceCtrlServerEx
+var instanceResource pb.SerivceInstanceCtrlServerEx
 var governService pb.GovernServiceCtrlServerEx
 
 var _ = BeforeSuite(func() {
 	//init plugin
 	server.InitAPI()
 	serviceResource = core.ServiceAPI
-	insResource = core.InstanceAPI
+	instanceResource = core.InstanceAPI
 	governService = core.GovernServiceAPI
 })
 
@@ -55,12 +50,6 @@ func getContext() context.Context {
 	ctx := context.TODO()
 	ctx = util.SetContext(ctx, "domain", "default")
 	ctx = util.SetContext(ctx, "project", "default")
-	return ctx
-}
-
-func getCunstomContext(domain string, project string) context.Context {
-	ctx := context.TODO()
-	ctx = util.SetContext(ctx, "domain", domain)
-	ctx = util.SetContext(ctx, "project", project)
+	ctx = util.SetContext(ctx, "noCache", "1")
 	return ctx
 }
