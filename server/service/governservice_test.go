@@ -128,4 +128,30 @@ var _ = Describe("'Govern' service", func() {
 			})
 		})
 	})
+
+	Describe("execute 'get apps' operartion", func() {
+		Context("when request is invalid", func() {
+			It("should be failed", func() {
+				resp, err := governService.GetApplications(getContext(), &pb.GetAppsRequest{
+					Environment: "notexistenv",
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+			})
+		})
+
+		Context("when request is valid", func() {
+			It("should be passed", func() {
+				resp, err := governService.GetApplications(getContext(), &pb.GetAppsRequest{})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+				resp, err = governService.GetApplications(getContext(), &pb.GetAppsRequest{
+					Environment: pb.ENV_ACCEPT,
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			})
+		})
+	})
 })
