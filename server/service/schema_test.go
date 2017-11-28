@@ -194,6 +194,7 @@ var _ = Describe("'Schema' service", func() {
 			}
 
 			It("should be failed in dev env", func() {
+				By("batch modify schemas")
 				respCreateSchemas, err := serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
 					ServiceId: serviceId,
 					Schemas:   schemas,
@@ -201,7 +202,7 @@ var _ = Describe("'Schema' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respCreateSchemas.GetResponse().Code).To(Equal(scerr.ErrNotEnoughQuota))
 
-				By("modify one schema")
+				/*By("modify one schema")
 				respCreateService := &pb.ModifySchemaResponse{}
 				for _, schema := range schemas {
 					respCreateService, err = serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
@@ -214,7 +215,7 @@ var _ = Describe("'Schema' service", func() {
 						Expect(respCreateService.GetResponse().Code).To(Equal(scerr.ErrNotEnoughQuota))
 						break
 					}
-				}
+				}*/
 			})
 
 			It("should be failed in prod env", func() {
