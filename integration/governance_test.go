@@ -139,7 +139,7 @@ var _ = Describe("MicroService Api Test", func() {
 				servicesStruct := map[string]map[string]map[string]interface{}{}
 				json.Unmarshal(respbody, &servicesStruct)
 				microservice := servicesStruct["service"]
-				microserviceID := microservice["microSerivce"]
+				microserviceID := microservice["microService"]
 				Expect(microserviceID["serviceId"]).To(Equal(serviceId))
 			})
 
@@ -190,7 +190,7 @@ var _ = Describe("MicroService Api Test", func() {
 				json.Unmarshal(respbody, &relationStruct)
 				foundMicroService := false
 				for _, microservices := range relationStruct["allServicesDetail"] {
-					service := microservices["microSerivce"]
+					service := microservices["microService"]
 					if service["serviceId"] == serviceId {
 						foundMicroService = true
 						break

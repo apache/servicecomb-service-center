@@ -135,6 +135,7 @@ var _ = Describe("'Micro-service' service", func() {
 
 		Context("when creating the same service", func() {
 			It("should be failed", func() {
+				By("the same serviceName")
 				resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
 						ServiceName: "some-relay",
@@ -167,6 +168,7 @@ var _ = Describe("'Micro-service' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
+				By("the same alias")
 				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
 						ServiceName: "some-relay1",
@@ -199,6 +201,34 @@ var _ = Describe("'Micro-service' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+			})
+		})
+
+		Context("when creating a diff env service", func() {
+			It("should be passed", func() {
+				service := &pb.MicroService{
+					ServiceName: "diff_env_service",
+					AppId:       "default",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Schemas: []string{
+						"xxxxxxxx",
+					},
+					Status: "UP",
+				}
+				resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: service,
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+				service.ServiceId = ""
+				service.Environment = pb.ENV_PROD
+				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: service,
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 			})
 		})
 
@@ -311,6 +341,21 @@ var _ = Describe("'Micro-service' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
+				By("invalid env")
+				r = &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						Environment: "notexistenv",
+						AppId:       "default",
+						ServiceName: "service-invalidate-env",
+						Version:     "1.0.0",
+						Level:       "BACK",
+						Status:      "UP",
+					},
+				}
+				resp, err = serviceResource.Create(getContext(), r)
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+
 				By("alias contains illegal char")
 				r = &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
@@ -346,26 +391,37 @@ var _ = Describe("'Micro-service' service", func() {
 
 	Describe("execute 'exists' operartion", func() {
 		var (
-			serviceId string
+			serviceId1 string
+			serviceId2 string
 		)
 
 		It("should be passed", func() {
-			respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-				Service: &pb.MicroService{
-					Alias:       "es",
-					ServiceName: "exist_service",
-					AppId:       "exist_appId",
-					Version:     "1.0.0",
-					Level:       "FRONT",
-					Schemas: []string{
-						"first_schemaId",
-					},
-					Status: "UP",
+			service := &pb.MicroService{
+				Alias:       "es",
+				ServiceName: "exist_service",
+				AppId:       "exist_appId",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Schemas: []string{
+					"first_schemaId",
 				},
+				Status: "UP",
+			}
+			respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: service,
 			})
 			Expect(err).To(BeNil())
 			Expect(respCreateService.ServiceId).ToNot(Equal(""))
-			serviceId = respCreateService.ServiceId
+			serviceId1 = respCreateService.ServiceId
+
+			service.ServiceId = ""
+			service.Environment = pb.ENV_PROD
+			respCreateService, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: service,
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.ServiceId).ToNot(Equal(""))
+			serviceId2 = respCreateService.ServiceId
 		})
 
 		Context("when type is invalid", func() {
@@ -404,10 +460,33 @@ var _ = Describe("'Micro-service' service", func() {
 
 		Context("when service does not exist", func() {
 			It("should be failed", func() {
+				By("query a not exist serviceName")
 				resp, err := serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
 					Type:        "microservice",
 					AppId:       "exist_appId",
 					ServiceName: "notExistService",
+					Version:     "1.0.0",
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+
+				By("query a not exist env")
+				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
+					Type:        "microservice",
+					Environment: pb.ENV_TEST,
+					AppId:       "exist_appId",
+					ServiceName: "exist_service",
+					Version:     "1.0.0",
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+
+				By("query a not exist env with alias")
+				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
+					Type:        "microservice",
+					Environment: pb.ENV_TEST,
+					AppId:       "exist_appId",
+					ServiceName: "es",
 					Version:     "1.0.0",
 				})
 				Expect(err).To(BeNil())
@@ -425,7 +504,18 @@ var _ = Describe("'Micro-service' service", func() {
 					Version:     "1.0.0",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.ServiceId).To(Equal(serviceId))
+				Expect(resp.ServiceId).To(Equal(serviceId1))
+
+				By("search with serviceName and env")
+				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
+					Type:        "microservice",
+					Environment: pb.ENV_PROD,
+					AppId:       "exist_appId",
+					ServiceName: "exist_service",
+					Version:     "1.0.0",
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.ServiceId).To(Equal(serviceId2))
 
 				By("search with alias")
 				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
@@ -435,7 +525,18 @@ var _ = Describe("'Micro-service' service", func() {
 					Version:     "1.0.0",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.ServiceId).To(Equal(serviceId))
+				Expect(resp.ServiceId).To(Equal(serviceId1))
+
+				By("search with alias and env")
+				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
+					Type:        "microservice",
+					Environment: pb.ENV_PROD,
+					AppId:       "exist_appId",
+					ServiceName: "es",
+					Version:     "1.0.0",
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.ServiceId).To(Equal(serviceId2))
 
 				By("search with latest versionRule")
 				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
@@ -445,7 +546,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Version:     "latest",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.ServiceId).To(Equal(serviceId))
+				Expect(resp.ServiceId).To(Equal(serviceId1))
 
 				By("search with 1.0.0+ versionRule")
 				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
@@ -455,7 +556,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Version:     "1.0.0+",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.ServiceId).To(Equal(serviceId))
+				Expect(resp.ServiceId).To(Equal(serviceId1))
 
 				By("search with range versionRule")
 				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
@@ -465,7 +566,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Version:     "0.9.1-1.0.1",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.ServiceId).To(Equal(serviceId))
+				Expect(resp.ServiceId).To(Equal(serviceId1))
 			})
 		})
 	})
@@ -481,14 +582,13 @@ var _ = Describe("'Micro-service' service", func() {
 
 		Context("when query all services", func() {
 			It("should be larger than 0", func() {
-
 				resp, err := serviceResource.GetServices(getContext(), &pb.GetServicesRequest{})
 				Expect(err).To(BeNil())
 				Expect(len(resp.Services)).To(Not(Equal(0)))
 			})
 		})
 
-		Context("when query a not exist service", func() {
+		Context("when query a not exist service by serviceId", func() {
 			It("should be failed", func() {
 				resp, err := serviceResource.GetOne(getContext(), &pb.GetServiceRequest{
 					ServiceId: "",

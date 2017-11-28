@@ -125,7 +125,6 @@ func (this *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r 
 		AppId:             r.URL.Query().Get("appId"),
 		ServiceName:       r.URL.Query().Get("serviceName"),
 		VersionRule:       r.URL.Query().Get("version"),
-		Environment:       r.URL.Query().Get("env"),
 		Tags:              ids,
 	}
 	resp, _ := core.InstanceAPI.Find(r.Context(), request)

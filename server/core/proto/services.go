@@ -160,6 +160,7 @@ func TransferToMicroServiceKeys(in []*DependencyKey, domainProject string) []*Mi
 	for _, value := range in {
 		rst = append(rst, &MicroServiceKey{
 			Tenant:      domainProject,
+			Environment: value.Environment,
 			AppId:       value.AppId,
 			ServiceName: value.ServiceName,
 			Version:     value.Version,
@@ -171,6 +172,7 @@ func TransferToMicroServiceKeys(in []*DependencyKey, domainProject string) []*Mi
 func ToMicroServiceKey(domainProject string, in *MicroService) *MicroServiceKey {
 	return &MicroServiceKey{
 		Tenant:      domainProject,
+		Environment: in.Environment,
 		AppId:       in.AppId,
 		ServiceName: in.ServiceName,
 		Version:     in.Version,

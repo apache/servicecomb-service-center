@@ -34,9 +34,9 @@ func init() {
 	tagRegEx, _ = regexp.Compile("tag_(.*)")
 }
 
-type NotAllowAcrossAppError string
+type NotAllowAcrossDimensionError string
 
-func (e NotAllowAcrossAppError) Error() string {
+func (e NotAllowAcrossDimensionError) Error() string {
 	return string(e)
 }
 
@@ -157,16 +157,21 @@ func GetOneRule(ctx context.Context, domainProject, serviceId, ruleId string) (*
 	return rule, nil
 }
 
-func AllowAcrossApp(providerService *pb.MicroService, consumerService *pb.MicroService) error {
+func AllowAcrossDimension(providerService *pb.MicroService, consumerService *pb.MicroService) error {
 	if providerService.AppId != consumerService.AppId {
 		if len(providerService.Properties) == 0 {
-			return NotAllowAcrossAppError("not allow across app access")
+			return NotAllowAcrossDimensionError("not allow across app access")
 		}
 
 		if allowCrossApp, ok := providerService.Properties[pb.PROP_ALLOW_CROSS_APP]; !ok || strings.ToLower(allowCrossApp) != "true" {
-			return NotAllowAcrossAppError("not allow across app access")
+			return NotAllowAcrossDimensionError("not allow across app access")
 		}
 	}
+
+	if providerService.Environment != consumerService.Environment {
+		return NotAllowAcrossDimensionError("not allow across environment access")
+	}
+
 	return nil
 }
 

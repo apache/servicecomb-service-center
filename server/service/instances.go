@@ -551,7 +551,7 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 	// 版本规则
 	ids, err := serviceUtil.FindServiceIds(ctx, in.VersionRule, &pb.MicroServiceKey{
 		Tenant:      domainProject,
-		Environment: in.Environment,
+		Environment: service.Environment,
 		AppId:       in.AppId,
 		ServiceName: in.ServiceName,
 		Alias:       in.ServiceName,
@@ -597,6 +597,7 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 	}
 	provider := &pb.MicroServiceKey{
 		Tenant:      domainProject,
+		Environment: consumer.Environment,
 		AppId:       in.AppId,
 		ServiceName: providerService.ServiceName,
 		Version:     in.VersionRule,
@@ -798,6 +799,7 @@ func (s *InstanceController) ClusterHealth(ctx context.Context) (*pb.GetInstance
 	domainProject := util.StringJoin([]string{apt.REGISTRY_DOMAIN, apt.REGISTRY_PROJECT}, "/")
 	serviceId, err := serviceUtil.GetServiceId(ctx, &pb.MicroServiceKey{
 		AppId:       apt.Service.AppId,
+		Environment: apt.Service.Environment,
 		ServiceName: apt.Service.ServiceName,
 		Version:     apt.Service.Version,
 		Tenant:      domainProject,

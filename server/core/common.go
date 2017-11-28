@@ -91,12 +91,11 @@ func init() {
 	ServiceIdRule := &validate.ValidateRule{Min: 1, Length: 64, Regexp: serviceIdRegex}
 	InstanceStatusRule := &validate.ValidateRule{Regexp: instStatusRegex}
 	SchemaIdRule = &validate.ValidateRule{Regexp: schemaIdRegex}
-	envRule := &validate.ValidateRule{Regexp: envRegex}
 	nameRule := &validate.ValidateRule{Min: 1, Max: 128, Regexp: nameRegex}
 	versionFuzzyRule := &validate.ValidateRule{Min: 1, Max: 128, Regexp: versionFuzzyRegex}
 	TagRule = &validate.ValidateRule{Regexp: tagRegex}
 
-	MicroServiceKeyValidator.AddRule("Environment", &validate.ValidateRule{Min: 1, Regexp: envRegex})
+	MicroServiceKeyValidator.AddRule("Environment", &validate.ValidateRule{Regexp: envRegex})
 	MicroServiceKeyValidator.AddRule("AppId", &validate.ValidateRule{Min: 1, Max: 160, Regexp: nameRegex})
 	MicroServiceKeyValidator.AddRule("ServiceName", nameRule)
 	MicroServiceKeyValidator.AddRule("Version", &validate.ValidateRule{Min: 1, Max: 64, Regexp: VersionRegex})
@@ -135,12 +134,10 @@ func init() {
 	GetSchemaReqValidator.AddRule("SchemaId", SchemaIdRule)
 
 	DependencyMSValidator.AddRules(MicroServiceKeyValidator.GetRules())
-	DependencyMSValidator.AddRule("Environment", envRule)
 
-	ProviderMsValidator.AddRule("AppId", MicroServiceKeyValidator.GetRule("AppId"))
+	ProviderMsValidator.AddRules(MicroServiceKeyValidator.GetRules())
 	ProviderMsValidator.AddRule("ServiceName", &validate.ValidateRule{Min: 1, Max: 128, Regexp: nameFuzzyRegex})
 	ProviderMsValidator.AddRule("Version", versionFuzzyRule)
-	ProviderMsValidator.AddRule("Environment", envRule)
 
 	MSDependencyValidator.AddSub("Consumer", &DependencyMSValidator)
 	MSDependencyValidator.AddSub("Providers", &ProviderMsValidator)
@@ -179,7 +176,6 @@ func init() {
 	FindInstanceReqValidator.AddRule("ServiceName", &validate.ValidateRule{Min: 1, Max: 128, Regexp: serviceNameForFindRegex})
 	FindInstanceReqValidator.AddRule("VersionRule", versionFuzzyRule)
 	FindInstanceReqValidator.AddRule("Tags", TagRule)
-	FindInstanceReqValidator.AddRule("Env", envRule)
 
 	GetInstanceValidator.AddRule("ConsumerServiceId", ServiceIdRule)
 	GetInstanceValidator.AddRule("ProviderServiceId", ServiceIdRule)

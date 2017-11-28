@@ -91,7 +91,7 @@ func (governServiceController *GovernServiceController) GetServicesInfo(ctx cont
 				Response: pb.CreateResponse(scerr.ErrInternal, "Get one service detail failed."),
 			}, err
 		}
-		serviceDetail.MicroSerivce = service
+		serviceDetail.MicroService = service
 		allServiceDetails = append(allServiceDetails, serviceDetail)
 	}
 
@@ -124,7 +124,14 @@ func (governServiceController *GovernServiceController) GetServiceDetail(ctx con
 		}, err
 	}
 
-	versions, err := getServiceAllVersions(ctx, domainProject, service.AppId, service.ServiceName)
+	key := &pb.MicroServiceKey{
+		Tenant:      domainProject,
+		Environment: service.Environment,
+		AppId:       service.AppId,
+		ServiceName: service.ServiceName,
+		Version:     "",
+	}
+	versions, err := getServiceAllVersions(ctx, key)
 	if err != nil {
 		util.Logger().Errorf(err, "Get service all version fialed.")
 		return &pb.GetServiceDetailResponse{
@@ -139,7 +146,7 @@ func (governServiceController *GovernServiceController) GetServiceDetail(ctx con
 		}, err
 	}
 
-	serviceInfo.MicroSerivce = service
+	serviceInfo.MicroService = service
 	serviceInfo.MicroServiceVersions = versions
 	return &pb.GetServiceDetailResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Get service successful."),
@@ -147,14 +154,9 @@ func (governServiceController *GovernServiceController) GetServiceDetail(ctx con
 	}, nil
 }
 
-func getServiceAllVersions(ctx context.Context, domainProject string, appId string, serviceName string) ([]string, error) {
+func getServiceAllVersions(ctx context.Context, serviceKey *pb.MicroServiceKey) ([]string, error) {
 	versions := []string{}
-	key := apt.GenerateServiceIndexKey(&pb.MicroServiceKey{
-		Tenant:      domainProject,
-		AppId:       appId,
-		ServiceName: serviceName,
-		Version:     "",
-	})
+	key := apt.GenerateServiceIndexKey(serviceKey)
 
 	opts := append(serviceUtil.FromContext(ctx),
 		registry.WithStrKey(key),

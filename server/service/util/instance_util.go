@@ -230,6 +230,7 @@ func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (resul
 				Response: pb.CreateResponse(pb.Response_SUCCESS, "List instance successfully."),
 				Action:   string(pb.EVT_CREATE),
 				Key: &pb.MicroServiceKey{
+					Environment: service.Environment,
 					AppId:       service.AppId,
 					ServiceName: service.ServiceName,
 					Version:     service.Version,

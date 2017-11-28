@@ -564,8 +564,10 @@ var _ = Describe("'Instance' service", func() {
 			serviceId1  string
 			serviceId2  string
 			serviceId3  string
+			serviceId4  string
 			instanceId1 string
 			instanceId2 string
+			instanceId4 string
 		)
 
 		It("should be passed", func() {
@@ -595,6 +597,33 @@ var _ = Describe("'Instance' service", func() {
 			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 			serviceId2 = respCreate.ServiceId
 
+			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "query_instance_diff_app",
+					ServiceName: "query_instance_service",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			serviceId3 = respCreate.ServiceId
+
+			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					Environment: pb.ENV_PROD,
+					AppId:       "query_instance",
+					ServiceName: "query_instance_diff_env_service",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			serviceId4 = respCreate.ServiceId
+
 			resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 				Instance: &pb.MicroServiceInstance{
 					ServiceId: serviceId1,
@@ -623,40 +652,29 @@ var _ = Describe("'Instance' service", func() {
 			Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 			instanceId2 = resp.InstanceId
 
-			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-				Service: &pb.MicroService{
-					AppId:       "query_instance_cross",
-					ServiceName: "query_instance_service",
-					Version:     "1.0.0",
-					Level:       "FRONT",
-					Status:      pb.MS_UP,
+			resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				Instance: &pb.MicroServiceInstance{
+					ServiceId: serviceId4,
+					HostName:  "UT-HOST",
+					Endpoints: []string{
+						"find:127.0.0.4:8080",
+					},
+					Status: pb.MSI_UP,
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
-			serviceId3 = respCreate.ServiceId
+			Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			instanceId4 = resp.InstanceId
 		})
 
 		Context("when query invalid parameters", func() {
 			It("should be failed", func() {
-				By("invalid env")
-				respFind, err := instanceResource.Find(getContext(), &pb.FindInstancesRequest{
-					ConsumerServiceId: serviceId1,
-					AppId:             "query_instance",
-					ServiceName:       "query_instance_service",
-					VersionRule:       "1.0.0+",
-					Environment:       "nonestage",
-				})
-				Expect(err).To(BeNil())
-				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
-
 				By("consumerId is empty")
-				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				respFind, err := instanceResource.Find(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: "",
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_service",
 					VersionRule:       "1.0.0+",
-					Environment:       pb.ENV_DEV,
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
@@ -667,7 +685,6 @@ var _ = Describe("'Instance' service", func() {
 					AppId:             "query_instance",
 					ServiceName:       "noneservice",
 					VersionRule:       "latest",
-					Environment:       pb.ENV_DEV,
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
@@ -678,7 +695,6 @@ var _ = Describe("'Instance' service", func() {
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_service",
 					VersionRule:       "3.0.0+",
-					Environment:       pb.ENV_DEV,
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
@@ -689,7 +705,6 @@ var _ = Describe("'Instance' service", func() {
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_service",
 					VersionRule:       "2.0.0-2.0.1",
-					Environment:       pb.ENV_DEV,
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
@@ -700,7 +715,6 @@ var _ = Describe("'Instance' service", func() {
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_service",
 					VersionRule:       "2.0.0",
-					Environment:       pb.ENV_DEV,
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
@@ -711,7 +725,6 @@ var _ = Describe("'Instance' service", func() {
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_service",
 					VersionRule:       "2.0.0",
-					Environment:       pb.ENV_DEV,
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
@@ -760,12 +773,24 @@ var _ = Describe("'Instance' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respFind.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId1))
+
+				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: serviceId4,
+					AppId:             "query_instance",
+					ServiceName:       "query_instance_diff_env_service",
+					VersionRule:       "1.0.0",
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(len(respFind.Instances)).To(Equal(1))
+				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId4))
 			})
 
 		})
 
-		Context("when query instances between diff apps", func() {
-			It("should be passed", func() {
+		Context("when query instances between diff dimensions", func() {
+			It("should be failed", func() {
+				By("diff appId")
 				UTFunc := func(consumerId string, code int32) {
 					respFind, err := instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
 						ConsumerServiceId: consumerId,
@@ -778,6 +803,14 @@ var _ = Describe("'Instance' service", func() {
 				UTFunc(serviceId3, scerr.ErrPermissionDeny)
 
 				UTFunc(serviceId1, pb.Response_SUCCESS)
+
+				By("diff env")
+				respFind, err := instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
+					ConsumerServiceId: serviceId4,
+					ProviderServiceId: serviceId2,
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 	})

@@ -258,13 +258,7 @@ func equalServiceDependency(serviceA *pb.MicroServiceKey, serviceB *pb.MicroServ
 }
 
 func toString(in *pb.MicroServiceKey) string {
-	return util.StringJoin([]string{
-		in.Tenant,
-		in.Environment,
-		in.AppId,
-		in.ServiceName,
-		in.Version,
-	}, "")
+	return apt.GenerateProviderDependencyRuleKey(in.Tenant, in)
 }
 
 func deleteDependencyUtil(ctx context.Context, serviceType string, domainProject string, serviceId string, flag map[string]bool) ([]registry.PluginOp, error) {
@@ -487,7 +481,10 @@ func addDepRuleUtil(key string, deps *pb.MicroServiceDependency, updateDepRule *
 
 func updateDepRuleUtil(key string, deps *pb.MicroServiceDependency, updateDepRule *pb.MicroServiceKey) (registry.PluginOp, error) {
 	for _, serviceRule := range deps.Dependency {
-		if serviceRule.ServiceName == updateDepRule.ServiceName && updateDepRule.AppId == serviceRule.AppId && updateDepRule.Version != serviceRule.Version {
+		if serviceRule.Environment == updateDepRule.Environment &&
+			updateDepRule.AppId == serviceRule.AppId &&
+			serviceRule.ServiceName == updateDepRule.ServiceName &&
+			updateDepRule.Version != serviceRule.Version {
 			serviceRule.Version = updateDepRule.Version
 			break
 		}
@@ -501,7 +498,10 @@ func updateDepRuleUtil(key string, deps *pb.MicroServiceDependency, updateDepRul
 
 func isNeedUpdate(services []*pb.MicroServiceKey, service *pb.MicroServiceKey) *pb.MicroServiceKey {
 	for _, tmp := range services {
-		if tmp.ServiceName == service.ServiceName && tmp.AppId == service.AppId && tmp.Version != service.Version {
+		if tmp.Environment == service.Environment &&
+			tmp.AppId == service.AppId &&
+			tmp.ServiceName == service.ServiceName &&
+			tmp.Version != service.Version {
 			return tmp
 		}
 	}
@@ -523,20 +523,12 @@ func containServiceDependency(services []*pb.MicroServiceKey, service *pb.MicroS
 
 // fuzzyMatch: 是否使用模糊规则
 func validateMicroServiceKey(in *pb.MicroServiceKey, fuzzyMatch bool) error {
-	var err error
 	if fuzzyMatch {
 		// provider的ServiceName, Version支持模糊规则
-		err = apt.ProviderMsValidator.Validate(in)
+		return apt.ProviderMsValidator.Validate(in)
 	} else {
-		err = apt.DependencyMSValidator.Validate(in)
+		return apt.DependencyMSValidator.Validate(in)
 	}
-	if err != nil {
-		return err
-	}
-	if len(in.Environment) == 0 {
-		in.Environment = pb.ENV_DEV
-	}
-	return nil
 }
 
 func BadParamsResponse(detailErr string) *pb.CreateDependenciesResponse {
@@ -603,9 +595,6 @@ func ProviderDependencyRuleExist(ctx context.Context, domainProject string, prov
 
 func AddServiceVersionRule(ctx context.Context, domainProject string, provider *pb.MicroServiceKey, consumer *pb.MicroServiceKey, consumerId string) error {
 	//创建依赖一致
-	if len(consumer.Environment) == 0 {
-		consumer.Environment = pb.ENV_DEV
-	}
 	exist, err := ProviderDependencyRuleExist(ctx, domainProject, provider, consumer)
 	if exist || err != nil {
 		return err
@@ -856,7 +845,7 @@ func (dep *Dependency) addConsumerOfProviderRule() {
 	dep.err <- nil
 }
 
-func (dep *Dependency) updateProvidersRuleOfConsumer(conKey string) error {
+func (dep *Dependency) UpdateProvidersRuleOfConsumer(conKey string) error {
 	dependency := &pb.MicroServiceDependency{
 		Dependency: dep.ProvidersRule,
 	}
@@ -874,10 +863,6 @@ func (dep *Dependency) updateProvidersRuleOfConsumer(conKey string) error {
 		return err
 	}
 	return nil
-}
-
-func (dep *Dependency) UpdateProvidersRuleOfConsumer(conKey string) error {
-	return dep.updateProvidersRuleOfConsumer(conKey)
 }
 
 type DependencyRelation struct {
@@ -967,6 +952,7 @@ func (dr *DependencyRelation) getDependencyProviderIds(providerRules []*pb.Micro
 		default:
 			serviceIds, err := FindServiceIds(dr.ctx, provider.Version, &pb.MicroServiceKey{
 				Tenant:      domainProject,
+				Environment: provider.Environment,
 				AppId:       provider.AppId,
 				ServiceName: provider.ServiceName,
 			})
@@ -1077,7 +1063,7 @@ func (dr *DependencyRelation) getConsumerOfSameServiceNameAndAppId(provider *pb.
 		util.Logger().Errorf(err, "get all dependency rule failed: provider rule key %v.", provider)
 		return nil, err
 	}
-	allConsumers := make([]*pb.MicroServiceKey, 0)
+	allConsumers := make([]*pb.MicroServiceKey, 0, len(rsp.Kvs))
 	for _, kv := range rsp.Kvs {
 		dependency := &pb.MicroServiceDependency{
 			Dependency: []*pb.MicroServiceKey{},
@@ -1087,6 +1073,7 @@ func (dr *DependencyRelation) getConsumerOfSameServiceNameAndAppId(provider *pb.
 		if providerVersionRule == "latest" {
 			latestServiceId, err := FindServiceIds(dr.ctx, providerVersionRule, &pb.MicroServiceKey{
 				Tenant:      dr.domainProject,
+				Environment: provider.Environment,
 				AppId:       provider.AppId,
 				ServiceName: provider.ServiceName,
 			})

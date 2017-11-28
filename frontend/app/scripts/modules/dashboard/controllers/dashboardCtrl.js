@@ -81,16 +81,16 @@ angular.module('serviceCenter.dashboard', [])
 				if(response && response.data && response.data.allServicesDetail) {
 					$scope.dashboardInfo[0].count = response.data.allServicesDetail.length;
 					response.data.allServicesDetail.forEach(function(services){
-						if(services.microSerivce.status.toLowerCase() == "starting") {
+						if(services.microService.status.toLowerCase() == "starting") {
 							$scope.startingServices.push(services);
 						}
-						if(services.microSerivce.status.toLowerCase() == "up"){		
+						if(services.microService.status.toLowerCase() == "up"){		
 							$scope.runningServices.push(services);
 						}
-						if(services.microSerivce.status.toLowerCase() == "down"){
+						if(services.microService.status.toLowerCase() == "down"){
 							$scope.stoppedServices.push(services);
 						}
-						if(services.microSerivce.status.toLowerCase() == "outofservice"){
+						if(services.microService.status.toLowerCase() == "outofservice"){
 							$scope.outofserviceServices.push(services);
 						}
 

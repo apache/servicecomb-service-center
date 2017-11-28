@@ -88,6 +88,7 @@ func (h *InstanceEventHandler) OnEvent(evt *store.KvEvent) {
 	}
 
 	nf.PublishInstanceEvent(domainProject, action, &pb.MicroServiceKey{
+		Environment: ms.Environment,
 		AppId:       ms.AppId,
 		ServiceName: ms.ServiceName,
 		Version:     ms.Version,

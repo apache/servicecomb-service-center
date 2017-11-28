@@ -258,6 +258,7 @@ func GenerateServiceDependencyRuleKey(serviceType string, domainProject string, 
 		return util.StringJoin([]string{
 			GetServiceDependencyRuleRootKey(domainProject),
 			serviceType,
+			in.Environment,
 			in.ServiceName,
 		}, "/")
 	}

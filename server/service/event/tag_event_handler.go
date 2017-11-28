@@ -75,6 +75,7 @@ func (apt *TagsChangedAsyncTask) publish(ctx context.Context, domainProject, con
 		}
 		nf.PublishInstanceEvent(domainProject, pb.EVT_EXPIRE,
 			&pb.MicroServiceKey{
+				Environment: provider.Environment,
 				AppId:       provider.AppId,
 				ServiceName: provider.ServiceName,
 				Version:     provider.Version,

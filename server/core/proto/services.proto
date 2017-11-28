@@ -394,7 +394,6 @@ message FindInstancesRequest {
     string serviceName = 3;
     string versionRule = 4; // version rule
     repeated string tags = 5;
-    string environment = 6;
 }
 
 message FindInstancesResponse {
@@ -522,7 +521,7 @@ message GetProDependenciesResponse {
 
 //服务详情
 message ServiceDetail {
-    MicroService microSerivce = 1;
+    MicroService microService = 1;
     repeated MicroServiceInstance instances = 2;
     repeated Schema schemaInfos = 3;
     repeated ServiceRule rules = 4;

@@ -62,7 +62,7 @@ func Accessible(ctx context.Context, domainProject string, consumerId string, pr
 
 	providerFlag := fmt.Sprintf("%s/%s/%s", providerService.AppId, providerService.ServiceName, providerService.Version)
 
-	err = serviceUtil.AllowAcrossApp(providerService, consumerService)
+	err = serviceUtil.AllowAcrossDimension(providerService, consumerService)
 	if err != nil {
 		util.Logger().Warnf(nil,
 			"consumer %s can't access provider %s which property 'allowCrossApp' is not true or does not exist",
