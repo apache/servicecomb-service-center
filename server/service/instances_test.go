@@ -74,6 +74,20 @@ var _ = Describe("'Instance' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 				Expect(resp.InstanceId).To(Not(Equal("")))
+
+				By("status is nil")
+				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+					Instance: &pb.MicroServiceInstance{
+						ServiceId: serviceId1,
+						Endpoints: []string{
+							"createInstance:127.0.0.1:8081",
+						},
+						HostName: "UT-HOST",
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.InstanceId).To(Not(Equal("")))
 			})
 		})
 
@@ -146,19 +160,6 @@ var _ = Describe("'Instance' service", func() {
 						},
 						HostName: "UT-HOST",
 						Status:   pb.MSI_UP,
-					},
-				})
-				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
-
-				By("status is empty")
-				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
-					Instance: &pb.MicroServiceInstance{
-						ServiceId: serviceId1,
-						HostName:  "UT-HOST",
-						Endpoints: []string{
-							"check:127.0.0.1:8080",
-						},
 					},
 				})
 				Expect(err).To(BeNil())
@@ -245,6 +246,20 @@ var _ = Describe("'Instance' service", func() {
 							Times:    1,
 							Url:      "*",
 						},
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+
+				By("invalid status")
+				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+					Instance: &pb.MicroServiceInstance{
+						ServiceId: serviceId1,
+						Endpoints: []string{
+							"createInstance:127.0.0.1:8083",
+						},
+						HostName: "UT-HOST",
+						Status:   "Invalid",
 					},
 				})
 				Expect(err).To(BeNil())

@@ -301,19 +301,6 @@ var _ = Describe("'Micro-service' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
 
-				By("invalid status")
-				r = &pb.CreateServiceRequest{
-					Service: &pb.MicroService{
-						AppId:       "default",
-						ServiceName: "service-validate",
-						Version:     "1.0.0",
-						Level:       "BACK",
-					},
-				}
-				resp, err = serviceResource.Create(getContext(), r)
-				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
-
 				By("invalid version")
 				r = &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
@@ -386,6 +373,112 @@ var _ = Describe("'Micro-service' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 			})
+		})
+
+		Context("when service with framework/registerBy/status", func() {
+			It("should be passed", func() {
+				By("framework name is nil")
+				r := &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceName: "framework-test",
+						AppId:       "default",
+						Version:     "1.0.1",
+						Level:       "BACK",
+						FrameWork: &pb.FrameWorkProperty{
+							Version: "1.0.0",
+						},
+						Properties: make(map[string]string),
+						Status:     "UP",
+					},
+				}
+				resp, err := serviceResource.Create(getContext(), r)
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+				By("registerBy is nil")
+				r = &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceName: "framework-test",
+						AppId:       "default",
+						Version:     "1.0.2",
+						Level:       "BACK",
+						Properties:  make(map[string]string),
+						Status:      "UP",
+					},
+				}
+				resp, err = serviceResource.Create(getContext(), r)
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+
+				By("status is nil")
+				r = &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceName: "framework-test",
+						AppId:       "default",
+						Version:     "1.0.3",
+						Level:       "BACK",
+						Properties:  make(map[string]string),
+					},
+				}
+				resp, err = serviceResource.Create(getContext(), r)
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			})
+			It("should be failed", func() {
+				By("invalid framework version")
+				r := &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceName: "framework-test",
+						AppId:       "default",
+						Version:     "1.0.4",
+						Level:       "BACK",
+						FrameWork: &pb.FrameWorkProperty{
+							Name:    "",
+							Version: "1.0.0-:",
+						},
+						Properties: make(map[string]string),
+						Status:     "UP",
+					},
+				}
+				resp, err := serviceResource.Create(getContext(), r)
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+
+				By("invalid framework name")
+				r = &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceName: "framework-test",
+						AppId:       "default",
+						Version:     "1.0.5",
+						Level:       "BACK",
+						FrameWork: &pb.FrameWorkProperty{
+							Name:    "test@$",
+							Version: "1.0.0-",
+						},
+						Properties: make(map[string]string),
+						Status:     "UP",
+					},
+				}
+				resp, err = serviceResource.Create(getContext(), r)
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+
+				By("invalid registerBy")
+				r = &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						AppId:       "default",
+						ServiceName: "framework-test",
+						Version:     "1.0.6",
+						Level:       "BACK",
+						Status:      "UP",
+						RegisterBy:  "InValid",
+					},
+				}
+				resp, err = serviceResource.Create(getContext(), r)
+				Expect(err).To(BeNil())
+				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+			})
+
 		})
 	})
 

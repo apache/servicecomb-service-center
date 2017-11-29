@@ -48,6 +48,7 @@ var (
 	GetInstanceValidator          validate.Validator
 	SchemasValidator              validate.Validator
 	SchemaValidator               validate.Validator
+	FrameWKValidator              validate.Validator
 
 	SchemaIdRule *validate.ValidateRule
 	TagRule      *validate.ValidateRule
@@ -68,6 +69,9 @@ func init() {
 	statusRegex, _ := regexp.Compile("^(" + pb.MS_UP + "|" + pb.MS_DOWN + ")*$")
 	serviceIdRegex, _ := regexp.Compile(`^.*$`)
 	aliasRegex, _ := regexp.Compile(`^[a-zA-Z0-9_\-.:]*$`)
+	frameversionRegex, _ := regexp.Compile(`^[a-zA-Z0-9_\-.]*$`)
+	registerByRegex, _ := regexp.Compile("^(" + util.StringJoin([]string{
+		pb.REGISTERBY_SDK, pb.REGISTERBY_PLATFORM, pb.REGISTERBY_SIDECAR, pb.REGISTERBY_UNKNOWM}, "|") + ")*$")
 	envRegex, _ := regexp.Compile("^(" + util.StringJoin([]string{
 		pb.ENV_DEV, pb.ENV_TEST, pb.ENV_ACCEPT, pb.ENV_PROD}, "|") + ")*$")
 	// map/slice元素的validator
@@ -102,6 +106,9 @@ func init() {
 
 	ServicePathValidator.AddRule("Path", &validate.ValidateRule{Regexp: pathRegex})
 
+	FrameWKValidator.AddRule("Name", &validate.ValidateRule{Min: 1, Max: 64, Regexp: nameRegex})
+	FrameWKValidator.AddRule("Version", &validate.ValidateRule{Length: 64, Regexp: frameversionRegex})
+
 	MicroServiceValidator.AddRules(MicroServiceKeyValidator.GetRules())
 	MicroServiceValidator.AddRule("Description", &validate.ValidateRule{Length: 256, Regexp: descriptionRegex})
 	MicroServiceValidator.AddRule("Level", &validate.ValidateRule{Min: 1, Regexp: levelRegex})
@@ -109,6 +116,8 @@ func init() {
 	MicroServiceValidator.AddRule("Schemas", SchemaIdRule)
 	MicroServiceValidator.AddSub("Paths", &ServicePathValidator)
 	MicroServiceValidator.AddRule("Alias", &validate.ValidateRule{Length: 128, Regexp: aliasRegex})
+	MicroServiceValidator.AddRule("RegisterBy", &validate.ValidateRule{Min: 1, Length: 64, Regexp: registerByRegex})
+	MicroServiceValidator.AddSub("FrameWork", &FrameWKValidator)
 
 	GetMSExistsReqValidator.AddRules(MicroServiceKeyValidator.GetRules())
 	GetMSExistsReqValidator.AddRule("Version", versionFuzzyRule)
