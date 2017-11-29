@@ -293,7 +293,7 @@ func SetDefault(service *pb.MicroService) {
 		service.FrameWork = &pb.FrameWorkProperty{}
 	}
 	if len(service.FrameWork.Name) == 0 {
-		service.FrameWork.Name = pb.FRAMEWORK_NAME
+		service.FrameWork.Name = pb.FRAMEWORK_UNKNOWN
 	}
 	if len(service.Status) == 0 {
 		service.Status = pb.MS_UP

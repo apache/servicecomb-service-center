@@ -59,7 +59,7 @@ const (
 	REGISTERBY_SIDECAR  string = "SIDECAR"
 	REGISTERBY_UNKNOWM  string = "UNKNOWN"
 
-	FRAMEWORK_NAME string = "UNKNOWN"
+	FRAMEWORK_UNKNOWN string = "UNKNOWN"
 )
 
 type SerivceInstanceCtrlServerEx interface {
@@ -195,6 +195,7 @@ func DependenciesToKeys(in []*DependencyKey, domainProject string) []*MicroServi
 func MicroServiceToKey(domainProject string, in *MicroService) *MicroServiceKey {
 	return &MicroServiceKey{
 		Tenant:      domainProject,
+		Environment: in.Environment,
 		AppId:       in.AppId,
 		ServiceName: in.ServiceName,
 		Version:     in.Version,
