@@ -151,6 +151,13 @@ message MicroService {
     map<string, string> LBStrategy = 14;
     string modTimestamp = 15;
     string environment = 16;
+    string registerBy = 17;
+    FrameWorkProperty FrameWork = 18;
+}
+
+message FrameWorkProperty {
+    string name = 1;
+    string version = 2;
 }
 
 message ServiceRule {

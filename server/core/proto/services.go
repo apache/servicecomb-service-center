@@ -53,6 +53,13 @@ const (
 	ENV_TEST   string = "testing"
 	ENV_ACCEPT string = "acceptance"
 	ENV_PROD   string = "production"
+
+	REGISTERBY_SDK      string = "SDK"
+	REGISTERBY_PLATFORM string = "PLATFORM"
+	REGISTERBY_SIDECAR  string = "SIDECAR"
+	REGISTERBY_UNKNOWM  string = "UNKNOWN"
+
+	FRAMEWORK_UNKNOWN string = "UNKNOWN"
 )
 
 type SerivceInstanceCtrlServerEx interface {

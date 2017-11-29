@@ -286,4 +286,16 @@ func SetDefault(service *pb.MicroService) {
 	if len(service.Environment) == 0 {
 		service.Environment = pb.ENV_DEV
 	}
+	if len(service.RegisterBy) == 0 {
+		service.RegisterBy = pb.REGISTERBY_UNKNOWM
+	}
+	if service.FrameWork == nil {
+		service.FrameWork = &pb.FrameWorkProperty{}
+	}
+	if len(service.FrameWork.Name) == 0 {
+		service.FrameWork.Name = pb.FRAMEWORK_UNKNOWN
+	}
+	if len(service.Status) == 0 {
+		service.Status = pb.MS_UP
+	}
 }

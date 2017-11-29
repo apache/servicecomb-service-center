@@ -46,6 +46,10 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 		}, nil
 	}
 	instance := in.GetInstance()
+	if len(instance.Status) == 0 {
+		instance.Status = pb.MSI_UP
+	}
+
 	remoteIP := util.GetIPFromContext(ctx)
 	instanceFlag := util.StringJoin([]string{instance.ServiceId, instance.HostName}, "/")
 	err := apt.Validate(instance)
