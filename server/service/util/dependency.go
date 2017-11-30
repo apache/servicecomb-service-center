@@ -1078,9 +1078,9 @@ func (dr *DependencyRelation) getConsumerOfSameServiceNameAndAppId(provider *pb.
 }
 
 func (dr *DependencyRelation) getConsumerOfDependAllServices() ([]*pb.MicroServiceKey, error) {
-	relyAllKey := apt.GenerateProviderDependencyRuleKey(dr.domainProject, &pb.MicroServiceKey{
-		ServiceName: "*",
-	})
+	providerService := pb.MicroServiceToKey(dr.domainProject, dr.provider)
+	providerService.ServiceName = "*"
+	relyAllKey := apt.GenerateProviderDependencyRuleKey(dr.domainProject, providerService)
 	opts := append(FromContext(dr.ctx), registry.WithStrKey(relyAllKey))
 	rsp, err := store.Store().DependencyRule().Search(dr.ctx, opts...)
 	if err != nil {
