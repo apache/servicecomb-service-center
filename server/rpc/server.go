@@ -53,6 +53,7 @@ func NewServer(ep string) (_ *Server, err error) {
 
 	pb.RegisterServiceCtrlServer(grpcSrv, core.ServiceAPI)
 	pb.RegisterServiceInstanceCtrlServer(grpcSrv, core.InstanceAPI)
+	pb.RegisterGovernServiceCtrlServer(grpcSrv, core.GovernServiceAPI)
 
 	ls, err := net.Listen("tcp", ipAddr)
 	if err != nil {

@@ -253,7 +253,7 @@ func LogPanic(args ...interface{}) {
 			break
 		}
 
-		if strings.Index(file, "service-center") > 0 {
+		if strings.Index(file, "service-center") > 0 || strings.Index(file, "servicecenter") > 0 {
 			idx := strings.LastIndex(file, "/")
 			if idx >= 0 {
 				file = file[idx+1:]
