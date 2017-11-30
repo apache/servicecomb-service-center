@@ -288,6 +288,9 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 	opts = append(opts, registry.OpDel(
 		registry.WithStrKey(apt.GenerateServiceSchemaKey(domainProject, ServiceId, "")),
 		registry.WithPrefix()))
+	opts = append(opts, registry.OpDel(
+		registry.WithStrKey(apt.GenerateServiceSchemaSummaryKey(domainProject, ServiceId, "")),
+		registry.WithPrefix()))
 
 	//删除tags
 	opts = append(opts, registry.OpDel(

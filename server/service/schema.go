@@ -115,7 +115,12 @@ func (s *ServiceController) DeleteSchema(ctx context.Context, request *pb.Delete
 			Response: pb.CreateResponse(scerr.ErrSchemaNotExists, "Schema info does not exist."),
 		}, nil
 	}
-	_, errDo := backend.Registry().Do(ctx, registry.DEL, registry.WithStrKey(key))
+	epSummaryKey := apt.GenerateServiceSchemaSummaryKey(domainProject, request.ServiceId, request.SchemaId)
+	opts := []registry.PluginOp{
+		registry.OpDel(registry.WithStrKey(epSummaryKey)),
+		registry.OpDel(registry.WithStrKey(key)),
+	}
+	_, errDo := backend.Registry().Txn(ctx, opts)
 	if errDo != nil {
 		util.Logger().Errorf(errDo, "delete schema failded, serviceId %s, schemaId %s: delete schema from etcd faild.", request.ServiceId, request.SchemaId)
 		return &pb.DeleteSchemaResponse{

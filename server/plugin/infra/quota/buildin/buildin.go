@@ -54,11 +54,11 @@ func (q *BuildInQuota) Apply4Quotas(ctx context.Context, quotaType quota.Resourc
 	var indexer *store.Indexer
 	switch quotaType {
 	case quota.MicroServiceInstanceQuotaType:
-		key = core.GetInstanceRootKey(domainProject) + "/"
+		key = core.GetInstanceRootKey("")
 		max = INSTANCE_MAX_NUMBER
 		indexer = store.Store().Instance()
 	case quota.MicroServiceQuotaType:
-		key = core.GetServiceRootKey(domainProject) + "/"
+		key = core.GetServiceRootKey("")
 		max = SERVICE_MAX_NUMBER
 		indexer = store.Store().Service()
 	default:
