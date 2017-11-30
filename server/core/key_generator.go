@@ -38,7 +38,7 @@ const (
 	REGISTRY_DEPENDENCY_KEY     = "deps"
 	REGISTRY_DEPS_RULE_KEY      = "dep-rules"
 	REGISTRY_METRICS_KEY        = "metrics"
-	ENDPOINTS_ROOT_KEY          = "endpoints"
+	ENDPOINTS_ROOT_KEY          = "eps"
 )
 
 func GetRootKey() string {
