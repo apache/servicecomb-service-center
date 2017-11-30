@@ -94,9 +94,9 @@ func GetExistenceRequest() *pb.GetExistenceRequest {
 	return &pb.GetExistenceRequest{
 		Type:        pb.EXISTENCE_MS,
 		Environment: Service.Environment,
-		AppId:       REGISTRY_APP_ID,
-		ServiceName: REGISTRY_SERVICE_NAME,
-		Version:     version.Ver().Version,
+		AppId:       Service.AppId,
+		ServiceName: Service.ServiceName,
+		Version:     Service.Version,
 	}
 }
 
