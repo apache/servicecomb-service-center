@@ -289,11 +289,11 @@ func SetDefault(service *pb.MicroService) {
 	if len(service.RegisterBy) == 0 {
 		service.RegisterBy = pb.REGISTERBY_UNKNOWM
 	}
-	if service.FrameWork == nil {
-		service.FrameWork = &pb.FrameWorkProperty{}
+	if service.Framework == nil {
+		service.Framework = &pb.FrameWorkProperty{}
 	}
-	if len(service.FrameWork.Name) == 0 {
-		service.FrameWork.Name = pb.FRAMEWORK_UNKNOWN
+	if len(service.Framework.Name) == 0 {
+		service.Framework.Name = pb.FRAMEWORK_UNKNOWN
 	}
 	if len(service.Status) == 0 {
 		service.Status = pb.MS_UP
