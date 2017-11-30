@@ -867,7 +867,7 @@ paths:
           description: 资源类型 microservice微服务 schema微服务访问契约。
           required: true
           type: string
-        - name: environment
+        - name: env
           in: query
           description: development|testing|acceptance|production
           type: string
