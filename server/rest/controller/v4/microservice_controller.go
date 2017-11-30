@@ -110,6 +110,7 @@ func (this *MicroServiceService) GetServices(w http.ResponseWriter, r *http.Requ
 func (this *MicroServiceService) GetExistence(w http.ResponseWriter, r *http.Request) {
 	request := &pb.GetExistenceRequest{
 		Type:        r.URL.Query().Get("type"),
+		Environment: r.URL.Query().Get("env"),
 		AppId:       r.URL.Query().Get("appId"),
 		ServiceName: r.URL.Query().Get("serviceName"),
 		Version:     r.URL.Query().Get("version"),
