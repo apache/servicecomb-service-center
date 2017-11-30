@@ -3,7 +3,7 @@
 
 A standalone service center allows services to register their instance information and to discover providers of a given service. 
 ## Features
- - Seperated microservice and microservice instance entity management
+ -  Seperated microservice and microservice instance entity management
  -  White and back list configuration for service discovery
  -  Use web socket to notify client about instance change events
  -  Support query instance by criteria
@@ -11,6 +11,9 @@ A standalone service center allows services to register their instance informati
  -  API doc(Open API format) management for microservice
  -  Microservice dependency management
  -  Awesome  [web portal](/frontend)
+ -	 Multiple fault tolerance mechanism and design in the architecture
+ -	 Performance/Caching design 
+
 ## Quick Start
 
 ### Getting Service Center
