@@ -380,8 +380,8 @@ var _ = Describe("'Micro-service' service", func() {
 						AppId:       "default",
 						Version:     "1.0.4",
 						Level:       "BACK",
-						FrameWork: &pb.FrameWorkProperty{
-							Name:    "",
+						Framework: &pb.FrameWorkProperty{
+							Name:    "framework",
 							Version: "1.0.0-:",
 						},
 						Properties: make(map[string]string),
@@ -399,7 +399,7 @@ var _ = Describe("'Micro-service' service", func() {
 						AppId:       "default",
 						Version:     "1.0.5",
 						Level:       "BACK",
-						FrameWork: &pb.FrameWorkProperty{
+						Framework: &pb.FrameWorkProperty{
 							Name:    "test@$",
 							Version: "1.0.0-",
 						},
@@ -437,7 +437,7 @@ var _ = Describe("'Micro-service' service", func() {
 						AppId:       "default",
 						Version:     "1.0.1",
 						Level:       "BACK",
-						FrameWork: &pb.FrameWorkProperty{
+						Framework: &pb.FrameWorkProperty{
 							Version: "1.0.0",
 						},
 						Properties: make(map[string]string),
