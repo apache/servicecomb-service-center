@@ -16,6 +16,8 @@ package util
 import (
 	"bytes"
 	"encoding/gob"
+	"fmt"
+	"github.com/astaxie/beego"
 	"golang.org/x/net/context"
 	"net"
 	"net/http"
@@ -23,6 +25,7 @@ import (
 	"os"
 	"reflect"
 	"runtime"
+	"runtime/debug"
 	"strings"
 	"time"
 	"unsafe"
@@ -237,9 +240,44 @@ func StringJoin(args []string, sep string) string {
 
 func RecoverAndReport() (r interface{}) {
 	if r = recover(); r != nil {
-		Logger().Errorf(nil, "recover! %v", r)
+		LogPanic(r)
 	}
 	return
+}
+
+// this function can only be called in recover().
+func LogPanic(args ...interface{}) {
+	for i := 2; i < 10; i++ {
+		file, method, line, ok := GetCaller(i)
+		if !ok {
+			break
+		}
+
+		if strings.Index(file, "service-center") > 0 || strings.Index(file, "servicecenter") > 0 {
+			idx := strings.LastIndex(file, "/")
+			if idx >= 0 {
+				file = file[idx+1:]
+			}
+			Logger().Errorf(nil, "recover from %s %s():%d! %s", file, method, line, fmt.Sprint(args...))
+			return
+		}
+	}
+
+	file, method, line, _ := GetCaller(0)
+	idx := strings.LastIndex(file, "/")
+	if idx >= 0 {
+		file = file[idx+1:]
+	}
+	fmt.Fprintln(os.Stderr, time.Now().Format("2006-01-02T15:04:05.000Z07:00"), "FATAL",
+		beego.AppConfig.String("ComponentName"), os.Getpid(),
+		fmt.Sprintf("%s %s():%d", file, method, line), fmt.Sprint(args...))
+	fmt.Fprintln(os.Stderr, BytesToStringWithNoCopy(debug.Stack()))
+}
+
+func GetCaller(skip int) (string, string, int, bool) {
+	pc, file, line, ok := runtime.Caller(skip + 1)
+	method := FormatFuncName(runtime.FuncForPC(pc).Name())
+	return file, method, line, ok
 }
 
 func ParseEndpoint(ep string) (string, error) {
@@ -303,6 +341,17 @@ func UrlEncode(keys map[string]string) string {
 		arr = append(arr, url.QueryEscape(k)+"="+url.QueryEscape(v))
 	}
 	return StringJoin(arr, "&")
+}
+
+func FormatFuncName(f string) string {
+	i := strings.LastIndex(f, "/")
+	j := strings.Index(f[i+1:], ".")
+	if j < 1 {
+		return "???"
+	}
+	_, fun := f[:i+j+1], f[i+j+2:]
+	i = strings.LastIndex(fun, ".")
+	return fun[i+1:]
 }
 
 func FuncName(f interface{}) string {

@@ -129,23 +129,12 @@ func getCalleeFuncName() string {
 			}
 
 			if f := runtime.FuncForPC(pc); f != nil {
-				fullName += " " + formatFuncName(f.Name())
+				fullName += " " + FormatFuncName(f.Name())
 			}
 		}
 		break
 	}
 	return fullName
-}
-
-func formatFuncName(f string) string {
-	i := strings.LastIndex(f, "/")
-	j := strings.Index(f[i+1:], ".")
-	if j < 1 {
-		return "???"
-	}
-	_, fun := f[:i+j+1], f[i+j+2:]
-	i = strings.LastIndex(fun, ".")
-	return fun[i+1:]
 }
 
 func CustomLogger(pkgOrFunc, fileName string) {

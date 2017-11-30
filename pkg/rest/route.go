@@ -128,7 +128,8 @@ func (this *ROAServerHandler) serve(ph *urlPatternHandler, w http.ResponseWriter
 			err := ret.Err
 			itf := recover()
 			if itf != nil {
-				util.Logger().Errorf(nil, "recover! %v", itf)
+				util.LogPanic(itf)
+
 				err = errorsEx.RaiseError(itf)
 			}
 			if _, ok := err.(errorsEx.InternalError); ok {

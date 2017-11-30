@@ -14,6 +14,7 @@
 package interceptor
 
 import (
+	errorsEx "github.com/ServiceComb/service-center/pkg/errors"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"net/http"
 )
@@ -52,19 +53,22 @@ func RegisterInterceptFunc(intc InterceptorFunc) {
 	util.Logger().Infof("Intercept %s", intc.Name())
 }
 
-func InvokeInterceptors(w http.ResponseWriter, req *http.Request) error {
+func InvokeInterceptors(w http.ResponseWriter, req *http.Request) (err error) {
 	var intc *Interception
 	defer func() {
 		if itf := recover(); itf != nil {
-			name := util.FuncName(intc.function)
-			util.Logger().Errorf(nil, "recover from '%s()'! %v", name, itf)
+			util.LogPanic(itf)
+
+			err = errorsEx.RaiseError(itf)
+
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}()
 	for _, intc = range interceptors {
-		err := intc.Invoke(w, req)
+		err = intc.Invoke(w, req)
 		if err != nil {
-			return err
+			return
 		}
 	}
-	return nil
+	return
 }
