@@ -15,8 +15,6 @@ package service
 
 import (
 	"encoding/json"
-	"fmt"
-	errorsEx "github.com/ServiceComb/service-center/pkg/errors"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/pkg/uuid"
 	apt "github.com/ServiceComb/service-center/server/core"
