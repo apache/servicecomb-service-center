@@ -30,7 +30,7 @@ import (
 	"time"
 )
 
-func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesRequest) (*pb.AddServiceRulesResponse, error) {
+func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRulesRequest) (*pb.AddServiceRulesResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 || len(in.GetRules()) == 0 {
 		util.Logger().Errorf(nil, "add rule failed: invalid parameters.")
 		return &pb.AddServiceRulesResponse{
@@ -146,7 +146,7 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 	}, nil
 }
 
-func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateServiceRuleRequest) (*pb.UpdateServiceRuleResponse, error) {
+func (s *MicroServiceService) UpdateRule(ctx context.Context, in *pb.UpdateServiceRuleRequest) (*pb.UpdateServiceRuleResponse, error) {
 	if in == nil || in.GetRule() == nil || len(in.ServiceId) == 0 || len(in.RuleId) == 0 {
 		util.Logger().Errorf(nil, "update rule failed: invalid parameters.")
 		return &pb.UpdateServiceRuleResponse{
@@ -249,7 +249,7 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 	}, nil
 }
 
-func (s *ServiceController) GetRule(ctx context.Context, in *pb.GetServiceRulesRequest) (*pb.GetServiceRulesResponse, error) {
+func (s *MicroServiceService) GetRule(ctx context.Context, in *pb.GetServiceRulesRequest) (*pb.GetServiceRulesResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 {
 		util.Logger().Errorf(nil, "get service rule failed, serviceId is %s: invalid params.", in.ServiceId)
 		return &pb.GetServiceRulesResponse{
@@ -281,7 +281,7 @@ func (s *ServiceController) GetRule(ctx context.Context, in *pb.GetServiceRulesR
 	}, nil
 }
 
-func (s *ServiceController) DeleteRule(ctx context.Context, in *pb.DeleteServiceRulesRequest) (*pb.DeleteServiceRulesResponse, error) {
+func (s *MicroServiceService) DeleteRule(ctx context.Context, in *pb.DeleteServiceRulesRequest) (*pb.DeleteServiceRulesResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 {
 		util.Logger().Errorf(nil, "delete service rule failed: invalid parameters.")
 		return &pb.DeleteServiceRulesResponse{

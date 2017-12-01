@@ -14,6 +14,7 @@
 package util_test
 
 import (
+	"fmt"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"golang.org/x/net/context"
 	"testing"
@@ -26,4 +27,18 @@ func TestHeartbeatUtil(t *testing.T) {
 		}
 	}()
 	serviceUtil.HeartbeatUtil(context.Background(), "", "", "")
+}
+
+func TestKeepAliveLease(t *testing.T) {
+	_, err := serviceUtil.KeepAliveLease(context.Background(), "", "", "", -1)
+	if err == nil {
+		fmt.Printf("KeepAliveLease -1 failed")
+		t.FailNow()
+	}
+
+	_, err = serviceUtil.KeepAliveLease(context.Background(), "", "", "", 0)
+	if err == nil {
+		fmt.Printf("KeepAliveLease failed")
+		t.FailNow()
+	}
 }

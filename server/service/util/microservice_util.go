@@ -252,9 +252,8 @@ func UpdateService(domainProject string, serviceId string, service *pb.MicroServ
 }
 
 func GetOneDomainProjectServiceCount(ctx context.Context, domainProject string) (int64, error) {
-	opts := []registry.PluginOpOption{}
 	key := apt.GenerateServiceKey(domainProject, "")
-	opts = append(opts,
+	opts := append(FromContext(ctx),
 		registry.WithStrKey(key),
 		registry.WithCountOnly(),
 		registry.WithPrefix())
@@ -266,9 +265,8 @@ func GetOneDomainProjectServiceCount(ctx context.Context, domainProject string) 
 }
 
 func GetOneDomainProjectInstanceCount(ctx context.Context, domainProject string) (int64, error) {
-	opts := []registry.PluginOpOption{}
 	key := apt.GenerateInstanceIndexKey(domainProject, "")
-	opts = append(opts,
+	opts := append(FromContext(ctx),
 		registry.WithStrKey(key),
 		registry.WithCountOnly(),
 		registry.WithPrefix())

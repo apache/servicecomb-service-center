@@ -19,13 +19,24 @@ import (
 	"google.golang.org/grpc"
 )
 
-func AssembleResources() (pb.ServiceCtrlServer, pb.SerivceInstanceCtrlServerEx) {
-	var serviceController ServiceController
-	var instanceController InstanceController
+var (
+	serviceService  pb.ServiceCtrlServer
+	instanceService pb.SerivceInstanceCtrlServerEx
+)
 
-	rpc.RegisterService(func(s *grpc.Server) {
-		pb.RegisterServiceCtrlServer(s, &serviceController)
-		pb.RegisterServiceInstanceCtrlServer(s, &instanceController)
-	})
-	return &serviceController, &instanceController
+func init() {
+	instanceService = &InstanceService{}
+	serviceService = &MicroServiceService{
+		instanceService: instanceService,
+	}
+	rpc.RegisterService(RegisterGrpcServices)
+}
+
+func RegisterGrpcServices(s *grpc.Server) {
+	pb.RegisterServiceCtrlServer(s, serviceService)
+	pb.RegisterServiceInstanceCtrlServer(s, instanceService)
+}
+
+func AssembleResources() (pb.ServiceCtrlServer, pb.SerivceInstanceCtrlServerEx) {
+	return serviceService, instanceService
 }

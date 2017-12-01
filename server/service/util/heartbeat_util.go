@@ -26,14 +26,19 @@ func HeartbeatUtil(ctx context.Context, domainProject string, serviceId string, 
 	if err != nil {
 		return leaseID, ttl, err, true
 	}
+	ttl, err = KeepAliveLease(ctx, domainProject, serviceId, instanceId, leaseID)
+	return leaseID, ttl, nil, false
+}
+
+func KeepAliveLease(ctx context.Context, domainProject, serviceId, instanceId string, leaseID int64) (ttl int64, err error) {
 	if leaseID == -1 {
-		return leaseID, ttl, errors.New("leaseId not exist, instance not exist."), false
+		return ttl, errors.New("leaseId not exist, instance not exist.")
 	}
 	ttl, err = store.Store().KeepAlive(ctx,
 		registry.WithStrKey(apt.GenerateInstanceLeaseKey(domainProject, serviceId, instanceId)),
 		registry.WithLease(leaseID))
 	if err != nil {
-		return leaseID, ttl, err, false
+		return ttl, err
 	}
-	return leaseID, ttl, nil, false
+	return ttl, nil
 }

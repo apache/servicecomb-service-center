@@ -27,12 +27,6 @@ import (
 	"testing"
 )
 
-func TestGrpc(t *testing.T) {
-	RegisterFailHandler(Fail)
-	junitReporter := reporters.NewJUnitReporter("model.junit.xml")
-	RunSpecsWithDefaultAndCustomReporters(t, "model Suite", []Reporter{junitReporter})
-}
-
 var serviceResource pb.ServiceCtrlServer
 var instanceResource pb.SerivceInstanceCtrlServerEx
 
@@ -47,4 +41,31 @@ func getContext() context.Context {
 	ctx = util.SetContext(ctx, "project", "default")
 	ctx = util.SetContext(ctx, "noCache", "1")
 	return ctx
+}
+
+func TestGrpc(t *testing.T) {
+	RegisterFailHandler(Fail)
+	junitReporter := reporters.NewJUnitReporter("model.junit.xml")
+	RunSpecsWithDefaultAndCustomReporters(t, "model Suite", []Reporter{junitReporter})
+}
+
+func TestRegisterGrpcServices(t *testing.T) {
+	defer func() {
+		recover()
+	}()
+	service.RegisterGrpcServices(nil)
+}
+
+func TestInstanceService_WebSocketWatch(t *testing.T) {
+	defer func() {
+		recover()
+	}()
+	instanceResource.WebSocketWatch(context.Background(), &pb.WatchInstanceRequest{}, nil)
+}
+
+func TestInstanceService_WebSocketListAndWatch(t *testing.T) {
+	defer func() {
+		recover()
+	}()
+	instanceResource.WebSocketListAndWatch(context.Background(), &pb.WatchInstanceRequest{}, nil)
 }

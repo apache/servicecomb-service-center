@@ -31,14 +31,15 @@ var apiServer *APIServer
 
 func init() {
 	InitAPI()
-}
 
-func InitAPI() {
-	core.ServiceAPI, core.InstanceAPI = service.AssembleResources()
 	apiServer = &APIServer{
 		isClose: true,
 		err:     make(chan error, 1),
 	}
+}
+
+func InitAPI() {
+	core.ServiceAPI, core.InstanceAPI = service.AssembleResources()
 }
 
 type APIType int64
@@ -223,6 +224,7 @@ func (s *APIServer) startRPCServer() (err error) {
 	if !ok {
 		return
 	}
+
 	s.rpcSrv, err = rpc.NewServer(ep)
 	if err != nil {
 		return

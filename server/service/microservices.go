@@ -34,10 +34,11 @@ import (
 	"time"
 )
 
-type ServiceController struct {
+type MicroServiceService struct {
+	instanceService pb.SerivceInstanceCtrlServerEx
 }
 
-func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequest) (*pb.CreateServiceResponse, error) {
+func (s *MicroServiceService) Create(ctx context.Context, in *pb.CreateServiceRequest) (*pb.CreateServiceResponse, error) {
 	if in == nil || in.Service == nil {
 		util.Logger().Errorf(nil, "create microservice failed : param empty.")
 		return &pb.CreateServiceResponse{
@@ -59,7 +60,7 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 	return s.CreateServiceEx(ctx, in, rsp.ServiceId)
 }
 
-func (s *ServiceController) CreateServicePri(ctx context.Context, in *pb.CreateServiceRequest) (*pb.CreateServiceResponse, error) {
+func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.CreateServiceRequest) (*pb.CreateServiceResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	service := in.Service
 	serviceFlag := util.StringJoin([]string{service.AppId, service.ServiceName, service.Version}, "/")
@@ -194,7 +195,7 @@ func checkQuota(ctx context.Context, domainProject string) (quota.QuotaReporter,
 	return reporter, nil
 }
 
-func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId string, force bool) (*pb.Response, error) {
+func (s *MicroServiceService) DeleteServicePri(ctx context.Context, ServiceId string, force bool) (*pb.Response, error) {
 	domainProject := util.ParseDomainProject(ctx)
 
 	service, err := serviceUtil.GetService(ctx, domainProject, ServiceId)
@@ -315,7 +316,7 @@ func (s *ServiceController) DeleteServicePri(ctx context.Context, ServiceId stri
 	return pb.CreateResponse(pb.Response_SUCCESS, "Unregister service successfully."), nil
 }
 
-func (s *ServiceController) Delete(ctx context.Context, in *pb.DeleteServiceRequest) (*pb.DeleteServiceResponse, error) {
+func (s *MicroServiceService) Delete(ctx context.Context, in *pb.DeleteServiceRequest) (*pb.DeleteServiceResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 || in.ServiceId == apt.Service.ServiceId {
 		util.Logger().Errorf(nil, "delete microservice failed: service empty.")
 		return &pb.DeleteServiceResponse{
@@ -337,7 +338,7 @@ func (s *ServiceController) Delete(ctx context.Context, in *pb.DeleteServiceRequ
 	}, err
 }
 
-func (s *ServiceController) DeleteServices(ctx context.Context, request *pb.DelServicesRequest) (*pb.DelServicesResponse, error) {
+func (s *MicroServiceService) DeleteServices(ctx context.Context, request *pb.DelServicesRequest) (*pb.DelServicesResponse, error) {
 	// 合法性检查
 	if request == nil || request.ServiceIds == nil || len(request.ServiceIds) == 0 {
 		return &pb.DelServicesResponse{
@@ -414,7 +415,7 @@ func (s *ServiceController) DeleteServices(ctx context.Context, request *pb.DelS
 	}, nil
 }
 
-func (s *ServiceController) GetOne(ctx context.Context, in *pb.GetServiceRequest) (*pb.GetServiceResponse, error) {
+func (s *MicroServiceService) GetOne(ctx context.Context, in *pb.GetServiceRequest) (*pb.GetServiceResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 {
 		return &pb.GetServiceResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
@@ -449,7 +450,7 @@ func (s *ServiceController) GetOne(ctx context.Context, in *pb.GetServiceRequest
 	}, nil
 }
 
-func (s *ServiceController) GetServices(ctx context.Context, in *pb.GetServicesRequest) (*pb.GetServicesResponse, error) {
+func (s *MicroServiceService) GetServices(ctx context.Context, in *pb.GetServicesRequest) (*pb.GetServicesResponse, error) {
 	if in == nil {
 		util.Logger().Errorf(nil, "get services failed: invalid params.")
 		return &pb.GetServicesResponse{
@@ -470,7 +471,7 @@ func (s *ServiceController) GetServices(ctx context.Context, in *pb.GetServicesR
 	}, nil
 }
 
-func (s *ServiceController) UpdateProperties(ctx context.Context, in *pb.UpdateServicePropsRequest) (*pb.UpdateServicePropsResponse, error) {
+func (s *MicroServiceService) UpdateProperties(ctx context.Context, in *pb.UpdateServicePropsRequest) (*pb.UpdateServicePropsResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 || in.Properties == nil {
 		util.Logger().Errorf(nil, "update service properties failed: invalid params.")
 		return &pb.UpdateServicePropsResponse{
@@ -533,7 +534,7 @@ func (s *ServiceController) UpdateProperties(ctx context.Context, in *pb.UpdateS
 	}, nil
 }
 
-func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceRequest) (*pb.GetExistenceResponse, error) {
+func (s *MicroServiceService) Exist(ctx context.Context, in *pb.GetExistenceRequest) (*pb.GetExistenceResponse, error) {
 	if in == nil {
 		util.Logger().Errorf(nil, "exist failed: invalid params.")
 		return &pb.GetExistenceResponse{
@@ -640,7 +641,7 @@ func (s *ServiceController) Exist(ctx context.Context, in *pb.GetExistenceReques
 	}
 }
 
-func (s *ServiceController) CreateServiceEx(ctx context.Context, in *pb.CreateServiceRequest, serviceId string) (*pb.CreateServiceResponse, error) {
+func (s *MicroServiceService) CreateServiceEx(ctx context.Context, in *pb.CreateServiceRequest, serviceId string) (*pb.CreateServiceResponse, error) {
 	result := &pb.CreateServiceResponse{
 		ServiceId: serviceId,
 		Response:  &pb.Response{},
@@ -697,7 +698,7 @@ func (s *ServiceController) CreateServiceEx(ctx context.Context, in *pb.CreateSe
 					Instance: ins,
 				}
 				req.Instance.ServiceId = serviceId
-				rsp, err := apt.InstanceAPI.Register(ctx, req)
+				rsp, err := s.instanceService.Register(ctx, req)
 				if err != nil {
 					chanRsp.Message += fmt.Sprintf("{instance:%v,result:%s}", ins.Endpoints, err.Error())
 				}
@@ -739,7 +740,7 @@ func (s *ServiceController) CreateServiceEx(ctx context.Context, in *pb.CreateSe
 	return result, nil
 }
 
-func (s *ServiceController) isCreateServiceEx(in *pb.CreateServiceRequest) bool {
+func (s *MicroServiceService) isCreateServiceEx(in *pb.CreateServiceRequest) bool {
 	if len(in.Rules) == 0 && len(in.Tags) == 0 && len(in.Instances) == 0 {
 		return false
 	}
