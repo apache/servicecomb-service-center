@@ -27,7 +27,7 @@ func HeartbeatUtil(ctx context.Context, domainProject string, serviceId string, 
 		return leaseID, ttl, err, true
 	}
 	ttl, err = KeepAliveLease(ctx, domainProject, serviceId, instanceId, leaseID)
-	return leaseID, ttl, nil, false
+	return leaseID, ttl, err, false
 }
 
 func KeepAliveLease(ctx context.Context, domainProject, serviceId, instanceId string, leaseID int64) (ttl int64, err error) {
