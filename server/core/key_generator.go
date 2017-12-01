@@ -254,14 +254,6 @@ func GenerateInstanceLeaseKey(domainProject string, serviceId string, instanceId
 }
 
 func GenerateServiceDependencyRuleKey(serviceType string, domainProject string, in *pb.MicroServiceKey) string {
-	if in.ServiceName == "*" {
-		return util.StringJoin([]string{
-			GetServiceDependencyRuleRootKey(domainProject),
-			serviceType,
-			in.Environment,
-			in.ServiceName,
-		}, "/")
-	}
 	appId := in.AppId
 	if len(strings.TrimSpace(appId)) == 0 {
 		appId = REGISTRY_APP_ID
@@ -269,6 +261,14 @@ func GenerateServiceDependencyRuleKey(serviceType string, domainProject string, 
 	env := in.Environment
 	if len(strings.TrimSpace(env)) == 0 {
 		env = pb.ENV_DEV
+	}
+	if in.ServiceName == "*" {
+		return util.StringJoin([]string{
+			GetServiceDependencyRuleRootKey(domainProject),
+			serviceType,
+			env,
+			in.ServiceName,
+		}, "/")
 	}
 	return util.StringJoin([]string{
 		GetServiceDependencyRuleRootKey(domainProject),
