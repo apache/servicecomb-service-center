@@ -11,11 +11,12 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package service_test
+package govern_test
 
 import (
 	"github.com/ServiceComb/service-center/pkg/util"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/ServiceComb/service-center/server/govern"
 	_ "github.com/ServiceComb/service-center/server/plugin/infra/quota/buildin"
 	_ "github.com/ServiceComb/service-center/server/plugin/infra/registry/etcd"
 	_ "github.com/ServiceComb/service-center/server/plugin/infra/uuid/dynamic"
@@ -27,7 +28,7 @@ import (
 	"testing"
 )
 
-func TestGrpc(t *testing.T) {
+func TestGovern(t *testing.T) {
 	RegisterFailHandler(Fail)
 	junitReporter := reporters.NewJUnitReporter("model.junit.xml")
 	RunSpecsWithDefaultAndCustomReporters(t, "model Suite", []Reporter{junitReporter})
@@ -35,10 +36,12 @@ func TestGrpc(t *testing.T) {
 
 var serviceResource pb.ServiceCtrlServer
 var instanceResource pb.SerivceInstanceCtrlServerEx
+var governService pb.GovernServiceCtrlServerEx
 
 var _ = BeforeSuite(func() {
 	//init plugin
 	serviceResource, instanceResource = service.AssembleResources()
+	governService = govern.GovernServiceAPI
 })
 
 func getContext() context.Context {

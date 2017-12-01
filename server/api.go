@@ -34,7 +34,7 @@ func init() {
 }
 
 func InitAPI() {
-	core.ServiceAPI, core.InstanceAPI, core.GovernServiceAPI = service.AssembleResources()
+	core.ServiceAPI, core.InstanceAPI = service.AssembleResources()
 	apiServer = &APIServer{
 		isClose: true,
 		err:     make(chan error, 1),

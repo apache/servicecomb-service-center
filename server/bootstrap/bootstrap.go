@@ -37,6 +37,9 @@ import _ "github.com/ServiceComb/service-center/server/plugin/infra/auth/dynamic
 // uuid
 import _ "github.com/ServiceComb/service-center/server/plugin/infra/uuid/dynamic"
 
+// module
+import _ "github.com/ServiceComb/service-center/server/govern"
+
 import (
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/handler/auth"

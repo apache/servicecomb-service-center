@@ -11,21 +11,24 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package service
+package rpc
 
-import (
-	"github.com/ServiceComb/service-center/pkg/rpc"
-	pb "github.com/ServiceComb/service-center/server/core/proto"
-	"google.golang.org/grpc"
-)
+import "google.golang.org/grpc"
 
-func AssembleResources() (pb.ServiceCtrlServer, pb.SerivceInstanceCtrlServerEx) {
-	var serviceController ServiceController
-	var instanceController InstanceController
+type RegisterServiceFunc func(s *grpc.Server)
 
-	rpc.RegisterService(func(s *grpc.Server) {
-		pb.RegisterServiceCtrlServer(s, &serviceController)
-		pb.RegisterServiceInstanceCtrlServer(s, &instanceController)
-	})
-	return &serviceController, &instanceController
+var registerFuncs []RegisterServiceFunc
+
+func init() {
+	registerFuncs = make([]RegisterServiceFunc, 0, 5)
+}
+
+func RegisterService(f RegisterServiceFunc) {
+	registerFuncs = append(registerFuncs, f)
+}
+
+func RegisterServer(s *grpc.Server) {
+	for _, f := range registerFuncs {
+		f(s)
+	}
 }

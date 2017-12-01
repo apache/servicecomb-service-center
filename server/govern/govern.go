@@ -11,21 +11,28 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package service
+package govern
 
 import (
+	roa "github.com/ServiceComb/service-center/pkg/rest"
 	"github.com/ServiceComb/service-center/pkg/rpc"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"google.golang.org/grpc"
 )
 
-func AssembleResources() (pb.ServiceCtrlServer, pb.SerivceInstanceCtrlServerEx) {
-	var serviceController ServiceController
-	var instanceController InstanceController
+func init() {
+	registerGRPC()
 
+	registerREST()
+}
+
+func registerGRPC() {
 	rpc.RegisterService(func(s *grpc.Server) {
-		pb.RegisterServiceCtrlServer(s, &serviceController)
-		pb.RegisterServiceInstanceCtrlServer(s, &instanceController)
+		pb.RegisterGovernServiceCtrlServer(s, GovernServiceAPI)
 	})
-	return &serviceController, &instanceController
+}
+
+func registerREST() {
+	roa.RegisterServent(&GovernServiceControllerV3{})
+	roa.RegisterServent(&GovernServiceControllerV4{})
 }
