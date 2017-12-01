@@ -489,7 +489,7 @@ func (s *InstanceController) getInstancePreCheck(ctx context.Context, in interfa
 	}
 	// 黑白名单
 	// 跨应用调用
-	err = Accessible(ctx, domainProject, consumerServiceId, providerServiceId)
+	err = serviceUtil.Accessible(ctx, domainProject, consumerServiceId, providerServiceId)
 	switch err.(type) {
 	case errorsEx.InternalError:
 		return scerr.NewError(scerr.ErrInternal, err.Error())

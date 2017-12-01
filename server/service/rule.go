@@ -15,8 +15,6 @@ package service
 
 import (
 	"encoding/json"
-	"fmt"
-	errorsEx "github.com/ServiceComb/service-center/pkg/errors"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/pkg/uuid"
 	apt "github.com/ServiceComb/service-center/server/core"
@@ -31,80 +29,6 @@ import (
 	"strconv"
 	"time"
 )
-
-func Accessible(ctx context.Context, domainProject string, consumerId string, providerId string) error {
-	consumerService, err := serviceUtil.GetService(ctx, domainProject, consumerId)
-	if err != nil {
-		util.Logger().Errorf(err,
-			"consumer %s can't access provider %s for internal error", consumerId, providerId)
-		return errorsEx.InternalError(err.Error())
-	}
-	if consumerService == nil {
-		util.Logger().Warnf(nil,
-			"consumer %s can't access provider %s for invalid consumer", consumerId, providerId)
-		return fmt.Errorf("consumer invalid")
-	}
-
-	consumerFlag := fmt.Sprintf("%s/%s/%s", consumerService.AppId, consumerService.ServiceName, consumerService.Version)
-
-	// 跨应用权限
-	providerService, err := serviceUtil.GetService(ctx, domainProject, providerId)
-	if err != nil {
-		util.Logger().Errorf(err, "consumer %s can't access provider %s for internal error",
-			consumerFlag, providerId)
-		return errorsEx.InternalError(err.Error())
-	}
-	if providerService == nil {
-		util.Logger().Warnf(nil, "consumer %s can't access provider %s for invalid provider",
-			consumerFlag, providerId)
-		return fmt.Errorf("provider invalid")
-	}
-
-	providerFlag := fmt.Sprintf("%s/%s/%s", providerService.AppId, providerService.ServiceName, providerService.Version)
-
-	err = serviceUtil.AllowAcrossDimension(providerService, consumerService)
-	if err != nil {
-		util.Logger().Warnf(nil,
-			"consumer %s can't access provider %s which property 'allowCrossApp' is not true or does not exist",
-			consumerFlag, providerFlag)
-		return err
-	}
-
-	ctx = util.SetContext(util.CloneContext(ctx), "cacheOnly", "1")
-
-	// 黑白名单
-	rules, err := serviceUtil.GetRulesUtil(ctx, domainProject, providerId)
-	if err != nil {
-		util.Logger().Errorf(err, "consumer %s can't access provider %s for internal error",
-			consumerFlag, providerFlag)
-		return errorsEx.InternalError(err.Error())
-	}
-
-	if len(rules) == 0 {
-		return nil
-	}
-
-	validateTags, err := serviceUtil.GetTagsUtils(ctx, domainProject, consumerService.ServiceId)
-	if err != nil {
-		util.Logger().Errorf(err, "consumer %s can't access provider %s for internal error",
-			consumerFlag, providerFlag)
-		return errorsEx.InternalError(err.Error())
-	}
-
-	err = serviceUtil.MatchRules(rules, consumerService, validateTags)
-	if err != nil {
-		switch err.(type) {
-		case errorsEx.InternalError:
-			util.Logger().Errorf(err, "consumer %s can't access provider %s for internal error",
-				consumerFlag, providerFlag)
-		default:
-			util.Logger().Warnf(err, "consumer %s can't access provider %s", consumerFlag, providerFlag)
-		}
-		return err
-	}
-
-	return nil
-}
 
 func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesRequest) (*pb.AddServiceRulesResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 || len(in.GetRules()) == 0 {
