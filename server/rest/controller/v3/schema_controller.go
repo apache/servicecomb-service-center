@@ -24,9 +24,9 @@ type SchemaService struct {
 
 func (this *SchemaService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/microservices/:serviceId/schemas/:schemaId", this.GetSchemas},
-		{rest.HTTP_METHOD_PUT, "/v4/:domain/registry/microservices/:serviceId/schemas/:schemaId", this.ModifySchema},
-		{rest.HTTP_METHOD_DELETE, "/v4/:domain/registry/microservices/:serviceId/schemas/:schemaId", this.DeleteSchemas},
-		{rest.HTTP_METHOD_POST, "/v4/:domain/registry/microservices/:serviceId/schemas", this.ModifySchemas},
+		{rest.HTTP_METHOD_GET, "/registry/v3/microservices/:serviceId/schemas/:schemaId", this.GetSchemas},
+		{rest.HTTP_METHOD_PUT, "/registry/v3/microservices/:serviceId/schemas/:schemaId", this.ModifySchema},
+		{rest.HTTP_METHOD_DELETE, "/registry/v3/microservices/:serviceId/schemas/:schemaId", this.DeleteSchemas},
+		{rest.HTTP_METHOD_POST, "/registry/v3/microservices/:serviceId/schemas", this.ModifySchemas},
 	}
 }

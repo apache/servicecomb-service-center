@@ -32,9 +32,9 @@ type DependencyService struct {
 
 func (this *DependencyService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTP_METHOD_PUT, "/v4/:domain/registry/dependencies", this.CreateDependenciesForMicroServices},
-		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/microservices/:consumerId/providers", this.GetConProDependencies},
-		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/microservices/:providerId/consumers", this.GetProConDependencies},
+		{rest.HTTP_METHOD_PUT, "/registry/v3/dependencies", this.CreateDependenciesForMicroServices},
+		{rest.HTTP_METHOD_GET, "/registry/v3/microservices/:consumerId/providers", this.GetConProDependencies},
+		{rest.HTTP_METHOD_GET, "/registry/v3/microservices/:providerId/consumers", this.GetProConDependencies},
 	}
 }
 
