@@ -122,8 +122,8 @@ func (s *APIServer) registryInstance(pCtx context.Context) error {
 
 	respI, err := core.InstanceAPI.Register(ctx,
 		core.RegisterInstanceRequest(s.HostName, endpoints))
-	if respI.GetResponse().Code != pb.Response_SUCCESS {
-		err = fmt.Errorf("register service center instance failed, %s", respI.GetResponse().Message)
+	if respI.Response.Code != pb.Response_SUCCESS {
+		err = fmt.Errorf("register service center instance failed, %s", respI.Response.Message)
 		util.Logger().Error(err.Error(), nil)
 		return err
 	}
@@ -139,8 +139,8 @@ func (s *APIServer) unregisterInstance(pCtx context.Context) error {
 	}
 	ctx := core.AddDefaultContextValue(pCtx)
 	respI, err := core.InstanceAPI.Unregister(ctx, core.UnregisterInstanceRequest())
-	if respI.GetResponse().Code != pb.Response_SUCCESS {
-		err = fmt.Errorf("unregister service center instance failed, %s", respI.GetResponse().Message)
+	if respI.Response.Code != pb.Response_SUCCESS {
+		err = fmt.Errorf("unregister service center instance failed, %s", respI.Response.Message)
 		util.Logger().Error(err.Error(), nil)
 		return err
 	}
@@ -155,7 +155,7 @@ func (s *APIServer) doAPIServerHeartBeat(pCtx context.Context) {
 	}
 	ctx := core.AddDefaultContextValue(pCtx)
 	respI, err := core.InstanceAPI.Heartbeat(ctx, core.HeartbeatRequest())
-	if respI.GetResponse().Code == pb.Response_SUCCESS {
+	if respI.Response.Code == pb.Response_SUCCESS {
 		util.Logger().Debugf("update service center %s heartbeat %s successfully",
 			core.Instance.ServiceId, core.Instance.InstanceId)
 		return

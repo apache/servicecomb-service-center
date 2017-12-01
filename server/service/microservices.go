@@ -47,7 +47,7 @@ func (s *ServiceController) Create(ctx context.Context, in *pb.CreateServiceRequ
 
 	//create service
 	rsp, err := s.CreateServicePri(ctx, in)
-	if err != nil || rsp.GetResponse().Code != pb.Response_SUCCESS {
+	if err != nil || rsp.Response.Code != pb.Response_SUCCESS {
 		return rsp, err
 	}
 

@@ -34,7 +34,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Service: nil,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 
@@ -78,7 +78,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Instances: instances,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 
 				By("second: create")
 				delete(tags, "test")
@@ -97,21 +97,21 @@ var _ = Describe("'Micro-service' service", func() {
 					Tags: tags,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 
 				By("check the tags/rules/instances")
 				respGetTags, err := serviceResource.GetTags(getContext(), &pb.GetServiceTagsRequest{
 					ServiceId: resp.ServiceId,
 				})
 				Expect(err).To(BeNil())
-				Expect(respGetTags.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respGetTags.Response.Code).To(Equal(pb.Response_SUCCESS))
 				Expect(respGetTags.Tags["second"]).To(Equal("second"))
 
 				respGetRules, err := serviceResource.GetRule(getContext(), &pb.GetServiceRulesRequest{
 					ServiceId: resp.ServiceId,
 				})
 				Expect(err).To(BeNil())
-				Expect(respGetRules.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respGetRules.Response.Code).To(Equal(pb.Response_SUCCESS))
 				Expect(respGetRules.Rules[0].Attribute).To(Equal("ServiceName"))
 
 				respGetInsts, err := instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
@@ -119,7 +119,7 @@ var _ = Describe("'Micro-service' service", func() {
 					ProviderServiceId: resp.ServiceId,
 				})
 				Expect(err).To(BeNil())
-				Expect(respGetInsts.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respGetInsts.Response.Code).To(Equal(pb.Response_SUCCESS))
 				Expect(respGetInsts.Instances[0].HostName).To(Equal("UT-HOST"))
 
 				By("delete service")
@@ -128,7 +128,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Force:     true,
 				})
 				Expect(err).To(BeNil())
-				Expect(respDelete.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respDelete.Response.Code).To(Equal(pb.Response_SUCCESS))
 
 			})
 		})
@@ -150,7 +150,7 @@ var _ = Describe("'Micro-service' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 
 				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
@@ -166,7 +166,7 @@ var _ = Describe("'Micro-service' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("the same alias")
 				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
@@ -183,7 +183,7 @@ var _ = Describe("'Micro-service' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
@@ -200,7 +200,7 @@ var _ = Describe("'Micro-service' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 
@@ -220,7 +220,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Service: service,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 
 				service.ServiceId = ""
 				service.Environment = pb.ENV_PROD
@@ -228,7 +228,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Service: service,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 			})
 		})
 
@@ -250,7 +250,7 @@ var _ = Describe("'Micro-service' service", func() {
 				r.Service.Properties["project"] = "x"
 				resp, err := serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 			})
 			It("创建微服务3", func() {
 				r := &pb.CreateServiceRequest{
@@ -269,7 +269,7 @@ var _ = Describe("'Micro-service' service", func() {
 				r.Service.Properties["project"] = "x"
 				resp, err := serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 			})
 		})
 
@@ -286,7 +286,7 @@ var _ = Describe("'Micro-service' service", func() {
 				}
 				resp, err := serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("serviceName is nil")
 				r = &pb.CreateServiceRequest{
@@ -299,7 +299,7 @@ var _ = Describe("'Micro-service' service", func() {
 				}
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("invalid version")
 				r = &pb.CreateServiceRequest{
@@ -312,7 +312,7 @@ var _ = Describe("'Micro-service' service", func() {
 				}
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("invalid level")
 				r = &pb.CreateServiceRequest{
@@ -326,7 +326,7 @@ var _ = Describe("'Micro-service' service", func() {
 				}
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("invalid env")
 				r = &pb.CreateServiceRequest{
@@ -341,7 +341,7 @@ var _ = Describe("'Micro-service' service", func() {
 				}
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("alias contains illegal char")
 				r = &pb.CreateServiceRequest{
@@ -356,7 +356,7 @@ var _ = Describe("'Micro-service' service", func() {
 				}
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("valid alias")
 				r = &pb.CreateServiceRequest{
@@ -371,7 +371,7 @@ var _ = Describe("'Micro-service' service", func() {
 				}
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 
 				By("invalid framework version")
 				r = &pb.CreateServiceRequest{
@@ -390,7 +390,7 @@ var _ = Describe("'Micro-service' service", func() {
 				}
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("invalid framework name")
 				r = &pb.CreateServiceRequest{
@@ -409,7 +409,7 @@ var _ = Describe("'Micro-service' service", func() {
 				}
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("invalid registerBy")
 				r = &pb.CreateServiceRequest{
@@ -424,7 +424,7 @@ var _ = Describe("'Micro-service' service", func() {
 				}
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 
@@ -446,7 +446,7 @@ var _ = Describe("'Micro-service' service", func() {
 				}
 				resp, err := serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 
 				By("registerBy is nil")
 				r = &pb.CreateServiceRequest{
@@ -461,7 +461,7 @@ var _ = Describe("'Micro-service' service", func() {
 				}
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 
 				By("status is nil")
 				r = &pb.CreateServiceRequest{
@@ -475,7 +475,7 @@ var _ = Describe("'Micro-service' service", func() {
 				}
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 			})
 		})
 	})
@@ -521,7 +521,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Type: "nonetype",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 
@@ -535,7 +535,7 @@ var _ = Describe("'Micro-service' service", func() {
 					AppId:       "exist_appId",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("serviceName is empty")
 				respExist, err := serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
@@ -545,7 +545,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Version:     "3.0.0",
 				})
 				Expect(err).To(BeNil())
-				Expect(respExist.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respExist.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 
@@ -559,7 +559,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Version:     "1.0.0",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("query a not exist env")
 				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
@@ -570,7 +570,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Version:     "1.0.0",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("query a not exist env with alias")
 				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
@@ -581,7 +581,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Version:     "1.0.0",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 
@@ -826,7 +826,7 @@ var _ = Describe("'Micro-service' service", func() {
 				Instances: instances,
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
 			serviceContainInstId = respCreate.ServiceId
 
 			provider := &pb.MicroService{
@@ -840,7 +840,7 @@ var _ = Describe("'Micro-service' service", func() {
 				Service: provider,
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
 			serviceNoInstId = respCreate.ServiceId
 
 			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
@@ -853,7 +853,7 @@ var _ = Describe("'Micro-service' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
 			serviceConsumerId = respCreate.ServiceId
 
 			respFind, err := instanceResource.Find(getContext(), &pb.FindInstancesRequest{
@@ -863,7 +863,7 @@ var _ = Describe("'Micro-service' service", func() {
 				VersionRule:       provider.Version,
 			})
 			Expect(err).To(BeNil())
-			Expect(respFind.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
 		})
 
 		Context("when request is invalid", func() {
@@ -874,7 +874,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Force:     true,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("serviceId is invalid")
 				resp, err = serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{
@@ -882,7 +882,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Force:     true,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("serviceId does not exist")
 				resp, err = serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{
@@ -890,7 +890,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Force:     true,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 
@@ -909,7 +909,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Force:     true,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 
@@ -920,7 +920,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Force:     false,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 
@@ -931,7 +931,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Force:     true,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 			})
 		})
 
@@ -942,7 +942,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Force:     false,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 
@@ -953,7 +953,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Force:     true,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 			})
 		})
 
@@ -964,7 +964,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Force:     false,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 
@@ -975,14 +975,14 @@ var _ = Describe("'Micro-service' service", func() {
 					Force:      false,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				resp, err = serviceResource.DeleteServices(getContext(), &pb.DelServicesRequest{
 					ServiceIds: []string{"@#$44332_non-invalid_serviceId"},
 					Force:      false,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 		})
@@ -1004,7 +1004,7 @@ var _ = Describe("'Micro-service' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 				serviceId1 = resp.ServiceId
 
 				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
@@ -1017,7 +1017,7 @@ var _ = Describe("'Micro-service' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 				serviceId2 = resp.ServiceId
 			})
 
@@ -1028,7 +1028,7 @@ var _ = Describe("'Micro-service' service", func() {
 				},
 				)
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 			})
 
 		})
@@ -1051,7 +1051,7 @@ var _ = Describe("'Micro-service' service", func() {
 				})
 				Expect(err).To(BeNil())
 				serviceIdFailed1 = resp.ServiceId
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 
 				instances := []*pb.MicroServiceInstance{
 					{
@@ -1075,7 +1075,7 @@ var _ = Describe("'Micro-service' service", func() {
 				})
 				Expect(err).To(BeNil())
 				serviceIdFailed2 = resp.ServiceId
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 			})
 
 			It("should be failed", func() {
@@ -1086,7 +1086,7 @@ var _ = Describe("'Micro-service' service", func() {
 				)
 				Expect(err).To(BeNil())
 				//期待结果失败
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 	})

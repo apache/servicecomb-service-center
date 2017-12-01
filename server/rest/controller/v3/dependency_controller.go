@@ -54,7 +54,7 @@ func (this *DependencyService) CreateDependenciesForMicroServices(w http.Respons
 	}
 
 	resp, err := core.ServiceAPI.CreateDependenciesForMicroServices(r.Context(), request)
-	controller.WriteResponse(w, resp.GetResponse(), nil)
+	controller.WriteResponse(w, resp.Response, nil)
 }
 
 func (this *DependencyService) GetConProDependencies(w http.ResponseWriter, r *http.Request) {

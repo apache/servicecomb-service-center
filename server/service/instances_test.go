@@ -42,7 +42,7 @@ var _ = Describe("'Instance' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
 			serviceId1 = respCreate.ServiceId
 
 			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
@@ -55,7 +55,7 @@ var _ = Describe("'Instance' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
 			serviceId2 = respCreate.ServiceId
 		})
 
@@ -72,7 +72,7 @@ var _ = Describe("'Instance' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 				Expect(resp.InstanceId).To(Not(Equal("")))
 
 				By("status is nil")
@@ -86,7 +86,7 @@ var _ = Describe("'Instance' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 				Expect(resp.InstanceId).To(Not(Equal("")))
 			})
 		})
@@ -105,14 +105,14 @@ var _ = Describe("'Instance' service", func() {
 					Instance: instance,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 
 				instance.InstanceId = ""
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: instance,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 
 				instance.InstanceId = ""
 				instance.ServiceId = serviceId2
@@ -120,7 +120,7 @@ var _ = Describe("'Instance' service", func() {
 					Instance: instance,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(scerr.ErrEndpointAlreadyExists))
+				Expect(resp.Response.Code).To(Equal(scerr.ErrEndpointAlreadyExists))
 
 			})
 		})
@@ -136,7 +136,7 @@ var _ = Describe("'Instance' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 
 				By("serviceId is empty")
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
@@ -149,7 +149,7 @@ var _ = Describe("'Instance' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("service does not exist")
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
@@ -163,7 +163,7 @@ var _ = Describe("'Instance' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("hostName is empty")
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
@@ -176,14 +176,14 @@ var _ = Describe("'Instance' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("instance is nil")
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: nil,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("check normal push healthChceck")
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
@@ -199,7 +199,7 @@ var _ = Describe("'Instance' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 
 				By("check normal pull healthChceck")
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
@@ -216,7 +216,7 @@ var _ = Describe("'Instance' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 
 				By("check invalid push healthChceck")
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
@@ -232,7 +232,7 @@ var _ = Describe("'Instance' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("check invalid pull healthChceck")
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
@@ -249,7 +249,7 @@ var _ = Describe("'Instance' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("invalid status")
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
@@ -263,7 +263,7 @@ var _ = Describe("'Instance' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 	})
@@ -286,7 +286,7 @@ var _ = Describe("'Instance' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
 			serviceId = respCreate.ServiceId
 
 			resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
@@ -300,7 +300,7 @@ var _ = Describe("'Instance' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 			instanceId1 = resp.InstanceId
 
 			resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
@@ -314,7 +314,7 @@ var _ = Describe("'Instance' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 			instanceId2 = resp.InstanceId
 		})
 
@@ -326,7 +326,7 @@ var _ = Describe("'Instance' service", func() {
 					InstanceId: instanceId1,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 
 				By("serviceId is empty")
 				resp, err = instanceResource.Heartbeat(getContext(), &pb.HeartbeatRequest{
@@ -334,21 +334,21 @@ var _ = Describe("'Instance' service", func() {
 					InstanceId: instanceId1,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("serviceId does not exist")
 				resp, err = instanceResource.Heartbeat(getContext(), &pb.HeartbeatRequest{
 					ServiceId:  "100000000000",
 					InstanceId: instanceId1,
 				})
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("instance does not exist")
 				resp, err = instanceResource.Heartbeat(getContext(), &pb.HeartbeatRequest{
 					ServiceId:  serviceId,
 					InstanceId: "not-exist-ins",
 				})
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 
@@ -359,12 +359,12 @@ var _ = Describe("'Instance' service", func() {
 					Instances: []*pb.HeartbeatSetElement{},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("instances are nil")
 				resp, err = instanceResource.HeartbeatSet(getContext(), &pb.HeartbeatSetRequest{})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("request contains > 1 instances")
 				resp, err = instanceResource.HeartbeatSet(getContext(), &pb.HeartbeatSetRequest{
@@ -379,7 +379,7 @@ var _ = Describe("'Instance' service", func() {
 						},
 					},
 				})
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 
 				By("request contains invalid instance")
 				resp, err = instanceResource.HeartbeatSet(getContext(), &pb.HeartbeatSetRequest{
@@ -394,7 +394,7 @@ var _ = Describe("'Instance' service", func() {
 						},
 					},
 				})
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 	})
@@ -408,7 +408,7 @@ var _ = Describe("'Instance' service", func() {
 			resp, err := serviceResource.Create(getContext(), core.CreateServiceRequest())
 			Expect(err).To(BeNil())
 			scServiceId = resp.ServiceId
-			Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 		})
 
 		Context("when SC does not exist", func() {
@@ -417,7 +417,7 @@ var _ = Describe("'Instance' service", func() {
 				core.Service.ServiceName = "x"
 				respCluterhealth, err := instanceResource.ClusterHealth(getContext())
 				Expect(err).To(BeNil())
-				Expect(respCluterhealth.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respCluterhealth.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 				core.Service.ServiceName = old
 			})
 		})
@@ -426,7 +426,7 @@ var _ = Describe("'Instance' service", func() {
 			It("should be passed", func() {
 				respCluterhealth, err := instanceResource.ClusterHealth(getContext())
 				Expect(err).To(BeNil())
-				Expect(respCluterhealth.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respCluterhealth.Response.Code).To(Equal(pb.Response_SUCCESS))
 			})
 		})
 	})
@@ -448,7 +448,7 @@ var _ = Describe("'Instance' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
 			serviceId = respCreate.ServiceId
 
 			resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
@@ -463,7 +463,7 @@ var _ = Describe("'Instance' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 			instanceId = resp.InstanceId
 		})
 
@@ -477,7 +477,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 
 				Expect(err).To(BeNil())
-				Expect(respUpdateStatus.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respUpdateStatus.Response.Code).To(Equal(pb.Response_SUCCESS))
 
 				By("update status with a empty serviceId")
 				respUpdateStatus, err = instanceResource.UpdateStatus(getContext(), &pb.UpdateInstanceStatusRequest{
@@ -487,7 +487,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 
 				Expect(err).To(BeNil())
-				Expect(respUpdateStatus.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respUpdateStatus.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("update status with a not exist service")
 				respUpdateStatus, err = instanceResource.UpdateStatus(getContext(), &pb.UpdateInstanceStatusRequest{
@@ -497,7 +497,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 
 				Expect(err).To(BeNil())
-				Expect(respUpdateStatus.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respUpdateStatus.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("update status with a not exist instance")
 				respUpdateStatus, err = instanceResource.UpdateStatus(getContext(), &pb.UpdateInstanceStatusRequest{
@@ -507,7 +507,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 
 				Expect(err).To(BeNil())
-				Expect(respUpdateStatus.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respUpdateStatus.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("update invalid status")
 				respUpdateStatus, err = instanceResource.UpdateStatus(getContext(), &pb.UpdateInstanceStatusRequest{
@@ -517,7 +517,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 
 				Expect(err).To(BeNil())
-				Expect(respUpdateStatus.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respUpdateStatus.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 
@@ -533,7 +533,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 
 				Expect(err).To(BeNil())
-				Expect(respUpdateProperties.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respUpdateProperties.Response.Code).To(Equal(pb.Response_SUCCESS))
 
 				By("instance does not exist")
 				respUpdateProperties, err = instanceResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
@@ -545,7 +545,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 
 				Expect(err).To(BeNil())
-				Expect(respUpdateProperties.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respUpdateProperties.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("serviceId is empty")
 				respUpdateProperties, err = instanceResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
@@ -557,7 +557,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 
 				Expect(err).To(BeNil())
-				Expect(respUpdateProperties.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respUpdateProperties.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("service does not exist")
 				respUpdateProperties, err = instanceResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
@@ -569,7 +569,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 
 				Expect(err).To(BeNil())
-				Expect(respUpdateProperties.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respUpdateProperties.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 	})
@@ -596,7 +596,7 @@ var _ = Describe("'Instance' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
 			serviceId1 = respCreate.ServiceId
 
 			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
@@ -609,7 +609,7 @@ var _ = Describe("'Instance' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
 			serviceId2 = respCreate.ServiceId
 
 			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
@@ -622,7 +622,7 @@ var _ = Describe("'Instance' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
 			serviceId3 = respCreate.ServiceId
 
 			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
@@ -636,7 +636,7 @@ var _ = Describe("'Instance' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
 			serviceId4 = respCreate.ServiceId
 
 			resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
@@ -650,7 +650,7 @@ var _ = Describe("'Instance' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 			instanceId1 = resp.InstanceId
 
 			resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
@@ -664,7 +664,7 @@ var _ = Describe("'Instance' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 			instanceId2 = resp.InstanceId
 
 			resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
@@ -678,7 +678,7 @@ var _ = Describe("'Instance' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 			instanceId4 = resp.InstanceId
 		})
 
@@ -692,7 +692,7 @@ var _ = Describe("'Instance' service", func() {
 					VersionRule:       "1.0.0+",
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respFind.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("provider does not exist")
 				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
@@ -702,7 +702,7 @@ var _ = Describe("'Instance' service", func() {
 					VersionRule:       "latest",
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respFind.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("provider does not contain 3.0.0+ versions")
 				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
@@ -712,7 +712,7 @@ var _ = Describe("'Instance' service", func() {
 					VersionRule:       "3.0.0+",
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respFind.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("provider does not contain 2.0.0-2.0.1 versions")
 				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
@@ -722,7 +722,7 @@ var _ = Describe("'Instance' service", func() {
 					VersionRule:       "2.0.0-2.0.1",
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respFind.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("provider does not contain 2.0.0 version")
 				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
@@ -732,7 +732,7 @@ var _ = Describe("'Instance' service", func() {
 					VersionRule:       "2.0.0",
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respFind.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("consumer does not exist")
 				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
@@ -742,7 +742,7 @@ var _ = Describe("'Instance' service", func() {
 					VersionRule:       "2.0.0",
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respFind.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 
@@ -755,7 +755,7 @@ var _ = Describe("'Instance' service", func() {
 					VersionRule:       "latest",
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId2))
 
 				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
@@ -766,7 +766,7 @@ var _ = Describe("'Instance' service", func() {
 					Tags:              []string{},
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId2))
 
 				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
@@ -776,7 +776,7 @@ var _ = Describe("'Instance' service", func() {
 					VersionRule:       "1.0.0-1.0.1",
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId1))
 
 				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
@@ -786,7 +786,7 @@ var _ = Describe("'Instance' service", func() {
 					VersionRule:       "1.0.0",
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId1))
 
 				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
@@ -796,7 +796,7 @@ var _ = Describe("'Instance' service", func() {
 					VersionRule:       "1.0.0",
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
 				Expect(len(respFind.Instances)).To(Equal(1))
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId4))
 			})
@@ -812,7 +812,7 @@ var _ = Describe("'Instance' service", func() {
 						ProviderServiceId: serviceId2,
 					})
 					Expect(err).To(BeNil())
-					Expect(respFind.GetResponse().Code).To(Equal(code))
+					Expect(respFind.Response.Code).To(Equal(code))
 				}
 
 				UTFunc(serviceId3, scerr.ErrPermissionDeny)
@@ -825,7 +825,7 @@ var _ = Describe("'Instance' service", func() {
 					ProviderServiceId: serviceId2,
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respFind.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 	})
@@ -849,7 +849,7 @@ var _ = Describe("'Instance' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
 			serviceId1 = respCreate.ServiceId
 
 			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
@@ -865,7 +865,7 @@ var _ = Describe("'Instance' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
 			serviceId2 = respCreate.ServiceId
 
 			resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
@@ -879,7 +879,7 @@ var _ = Describe("'Instance' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 			instanceId2 = resp.InstanceId
 
 			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
@@ -904,7 +904,7 @@ var _ = Describe("'Instance' service", func() {
 					ProviderInstanceId: instanceId2,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 
 				By("provider id is empty")
 				resp, err = instanceResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
@@ -913,7 +913,7 @@ var _ = Describe("'Instance' service", func() {
 					ProviderInstanceId: instanceId2,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("provider instance id is empty")
 				resp, err = instanceResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
@@ -922,7 +922,7 @@ var _ = Describe("'Instance' service", func() {
 					ProviderInstanceId: "",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("consumer id is empty")
 				resp, err = instanceResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
@@ -931,7 +931,7 @@ var _ = Describe("'Instance' service", func() {
 					ProviderInstanceId: instanceId2,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("consumer does not exist")
 				resp, err = instanceResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
@@ -940,7 +940,7 @@ var _ = Describe("'Instance' service", func() {
 					ProviderInstanceId: instanceId2,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("provider tag does not exist")
 				resp, err = instanceResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
@@ -950,7 +950,7 @@ var _ = Describe("'Instance' service", func() {
 					Tags:               []string{"not-exist-tag"},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("provider tag exist")
 				resp, err = instanceResource.GetOneInstance(getContext(),
@@ -961,7 +961,7 @@ var _ = Describe("'Instance' service", func() {
 						Tags:               []string{"test"},
 					})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 			})
 		})
 
@@ -973,14 +973,14 @@ var _ = Describe("'Instance' service", func() {
 					ProviderInstanceId: instanceId2,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				respAll, err := instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
 					ConsumerServiceId: serviceId3,
 					ProviderServiceId: serviceId2,
 				})
 				Expect(err).To(BeNil())
-				Expect(respAll.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respAll.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 
@@ -992,7 +992,7 @@ var _ = Describe("'Instance' service", func() {
 					ProviderServiceId: serviceId2,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("consumer does not exist")
 				resp, err = instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
@@ -1000,7 +1000,7 @@ var _ = Describe("'Instance' service", func() {
 					ProviderServiceId: serviceId2,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("valid request")
 				resp, err = instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
@@ -1008,7 +1008,7 @@ var _ = Describe("'Instance' service", func() {
 					ProviderServiceId: serviceId2,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 			})
 		})
 	})
@@ -1033,7 +1033,7 @@ var _ = Describe("'Instance' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
 			serviceId = respCreate.ServiceId
 
 			resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
@@ -1047,7 +1047,7 @@ var _ = Describe("'Instance' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 			instanceId = resp.InstanceId
 		})
 
@@ -1058,7 +1058,7 @@ var _ = Describe("'Instance' service", func() {
 					InstanceId: instanceId,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 			})
 		})
 
@@ -1070,7 +1070,7 @@ var _ = Describe("'Instance' service", func() {
 					InstanceId: instanceId,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("service does not exist")
 				resp, err = instanceResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
@@ -1078,7 +1078,7 @@ var _ = Describe("'Instance' service", func() {
 					InstanceId: instanceId,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("instance is empty")
 				resp, err = instanceResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
@@ -1086,7 +1086,7 @@ var _ = Describe("'Instance' service", func() {
 					InstanceId: "",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("instance does not exist")
 				resp, err = instanceResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
@@ -1094,7 +1094,7 @@ var _ = Describe("'Instance' service", func() {
 					InstanceId: "not-exist-id",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 	})
@@ -1115,7 +1115,7 @@ var _ = Describe("'Instance' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreate.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
 			serviceId = respCreate.ServiceId
 		})
 
