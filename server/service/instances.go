@@ -580,10 +580,10 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 			ProviderServiceId: serviceId,
 			Tags:              in.Tags,
 		})
-		if err != nil {
+		if resp.Response.Code != pb.Response_SUCCESS {
 			util.Logger().Errorf(err, "find instance failed, %s: get service %s 's instance failed.", findFlag, serviceId)
 			return &pb.FindInstancesResponse{
-				Response: resp.GetResponse(),
+				Response: resp.Response,
 			}, err
 		}
 		if len(resp.GetInstances()) > 0 {

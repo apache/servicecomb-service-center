@@ -67,7 +67,7 @@ func (this *SchemaService) ModifySchema(w http.ResponseWriter, r *http.Request) 
 	request.ServiceId = r.URL.Query().Get(":serviceId")
 	request.SchemaId = r.URL.Query().Get(":schemaId")
 	resp, err := core.ServiceAPI.ModifySchema(r.Context(), request)
-	controller.WriteResponse(w, resp.GetResponse(), nil)
+	controller.WriteResponse(w, resp.Response, nil)
 }
 
 func (this *SchemaService) ModifySchemas(w http.ResponseWriter, r *http.Request) {
@@ -87,7 +87,7 @@ func (this *SchemaService) ModifySchemas(w http.ResponseWriter, r *http.Request)
 	}
 	request.ServiceId = serviceId
 	resp, err := core.ServiceAPI.ModifySchemas(r.Context(), request)
-	controller.WriteResponse(w, resp.GetResponse(), nil)
+	controller.WriteResponse(w, resp.Response, nil)
 }
 
 func (this *SchemaService) DeleteSchemas(w http.ResponseWriter, r *http.Request) {
@@ -96,5 +96,5 @@ func (this *SchemaService) DeleteSchemas(w http.ResponseWriter, r *http.Request)
 		SchemaId:  r.URL.Query().Get(":schemaId"),
 	}
 	resp, _ := core.ServiceAPI.DeleteSchema(r.Context(), request)
-	controller.WriteResponse(w, resp.GetResponse(), nil)
+	controller.WriteResponse(w, resp.Response, nil)
 }

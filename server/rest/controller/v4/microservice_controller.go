@@ -79,7 +79,7 @@ func (this *MicroServiceService) Update(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	resp, err := core.ServiceAPI.UpdateProperties(r.Context(), request)
-	controller.WriteResponse(w, resp.GetResponse(), nil)
+	controller.WriteResponse(w, resp.Response, nil)
 }
 
 func (this *MicroServiceService) Unregister(w http.ResponseWriter, r *http.Request) {
@@ -95,7 +95,7 @@ func (this *MicroServiceService) Unregister(w http.ResponseWriter, r *http.Reque
 		Force:     force == "1",
 	}
 	resp, _ := core.ServiceAPI.Delete(r.Context(), request)
-	controller.WriteResponse(w, resp.GetResponse(), nil)
+	controller.WriteResponse(w, resp.Response, nil)
 }
 
 func (this *MicroServiceService) GetServices(w http.ResponseWriter, r *http.Request) {
