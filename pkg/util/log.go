@@ -102,6 +102,7 @@ func Logger() core.Logger {
 			}
 			logger = NewLogger(logFile, &cfg)
 			loggers[logFile] = logger
+			LOGGER.Warnf(nil, "match %s, new logger %s for %s", prefix, logFile, funcFullName)
 		}
 		loggersMux.Unlock()
 		return logger
