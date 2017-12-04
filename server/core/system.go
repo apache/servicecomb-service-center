@@ -20,27 +20,50 @@ import (
 	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"github.com/ServiceComb/service-center/server/infra/registry"
 	"github.com/ServiceComb/service-center/version"
+	"github.com/astaxie/beego"
 	"golang.org/x/net/context"
 )
 
-var systemConfig *pb.SystemConfig
+var serverInfo *pb.ServerInformation
 
-func LoadSystemConfig() error {
+func newInfo() *pb.ServerInformation {
+	return &pb.ServerInformation{
+		Version: "0",
+		Config: &pb.ServerConfig{
+			MaxHeaderBytes: int64(beego.AppConfig.DefaultInt("max_header_bytes", 16384)),
+			MaxBodyBytes:   beego.AppConfig.DefaultInt64("max_body_bytes", 2097152),
+
+			ReadHeaderTimeout: beego.AppConfig.DefaultString("read_header_timeout", "60s"),
+			ReadTimeout:       beego.AppConfig.DefaultString("read_timeout", "60s"),
+			IdleTimeout:       beego.AppConfig.DefaultString("idle_timeout", "60s"),
+			WriteTimeout:      beego.AppConfig.DefaultString("write_timeout", "60s"),
+
+			LimitTTLUnit:     beego.AppConfig.DefaultString("limit_ttl", "s"),
+			LimitConnections: int64(beego.AppConfig.DefaultInt("limit_conns", 0)),
+			LimitIPLookup: beego.AppConfig.DefaultString("limit_iplookups",
+				"RemoteAddr,X-Forwarded-For,X-Real-IP"),
+
+			SslEnabled:      beego.AppConfig.DefaultInt("ssl_mode", 1) != 0,
+			SslVerifyClient: beego.AppConfig.DefaultInt("ssl_verify_client", 1) != 0,
+			SslCiphers:      beego.AppConfig.String("ssl_ciphers"),
+		},
+	}
+}
+
+func LoadServerInformation() error {
 	resp, err := backend.Registry().Do(context.Background(),
 		registry.GET, registry.WithStrKey(GetSystemKey()))
 	if err != nil {
 		return err
 	}
+
+	serverInfo = newInfo()
+
 	if len(resp.Kvs) == 0 {
-		systemConfig = &pb.SystemConfig{
-			Version: "0",
-		}
 		return nil
 	}
-	systemConfig = &pb.SystemConfig{
-		Version: "0",
-	}
-	err = json.Unmarshal(resp.Kvs[0].Value, systemConfig)
+
+	err = json.Unmarshal(resp.Kvs[0].Value, serverInfo)
 	if err != nil {
 		util.Logger().Errorf(err, "load system config failed, maybe incompatible")
 		return nil
@@ -48,10 +71,10 @@ func LoadSystemConfig() error {
 	return nil
 }
 
-func UpgradeSystemConfig() error {
-	GetSystemConfig().Version = version.Ver().Version
+func UpgradeServerVersion() error {
+	GetServerInformation().Version = version.Ver().Version
 
-	bytes, err := json.Marshal(GetSystemConfig())
+	bytes, err := json.Marshal(GetServerInformation())
 	if err != nil {
 		return err
 	}
@@ -63,6 +86,6 @@ func UpgradeSystemConfig() error {
 	return nil
 }
 
-func GetSystemConfig() *pb.SystemConfig {
-	return systemConfig
+func GetServerInformation() *pb.ServerInformation {
+	return serverInfo
 }

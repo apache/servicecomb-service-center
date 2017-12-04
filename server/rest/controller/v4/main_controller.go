@@ -18,6 +18,7 @@ import (
 	"github.com/ServiceComb/service-center/pkg/rest"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/core"
+	pb "github.com/ServiceComb/service-center/server/core/proto"
 	scerr "github.com/ServiceComb/service-center/server/error"
 	"github.com/ServiceComb/service-center/server/rest/controller"
 	"github.com/ServiceComb/service-center/version"
@@ -28,7 +29,8 @@ const API_VERSION = "4.0.0"
 
 type Result struct {
 	*version.VersionSet
-	ApiVersion string `json:"apiVersion"`
+	ApiVersion string           `json:"apiVersion"`
+	Config     *pb.ServerConfig `json:"config,omitempty"`
 }
 
 type MainService struct {
@@ -62,6 +64,7 @@ func (this *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
 	result := Result{
 		version.Ver(),
 		API_VERSION,
+		core.GetServerInformation().Config,
 	}
 	resultJSON, _ := json.Marshal(result)
 	w.Header().Set("Content-Type", "application/json;charset=utf-8")

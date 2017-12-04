@@ -80,14 +80,14 @@ func (s *ServiceCenterServer) waitForQuit() {
 }
 
 func (s *ServiceCenterServer) needUpgrade() bool {
-	if core.GetSystemConfig() == nil {
-		err := core.LoadSystemConfig()
+	if core.GetServerInformation() == nil {
+		err := core.LoadServerInformation()
 		if err != nil {
 			util.Logger().Errorf(err, "check version failed, can not load the system config")
 			return false
 		}
 	}
-	return !serviceUtil.VersionMatchRule(core.GetSystemConfig().Version,
+	return !serviceUtil.VersionMatchRule(core.GetServerInformation().Version,
 		fmt.Sprintf("%s+", version.Ver().Version))
 }
 
@@ -98,7 +98,7 @@ func (s *ServiceCenterServer) waitForReady() {
 		os.Exit(1)
 	}
 	if s.needUpgrade() {
-		core.UpgradeSystemConfig()
+		core.UpgradeServerVersion()
 	}
 	lock.Unlock()
 
