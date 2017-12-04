@@ -93,9 +93,10 @@ func IsSCInstance(ctx context.Context) bool {
 func GetExistenceRequest() *pb.GetExistenceRequest {
 	return &pb.GetExistenceRequest{
 		Type:        pb.EXISTENCE_MS,
-		AppId:       REGISTRY_APP_ID,
-		ServiceName: REGISTRY_SERVICE_NAME,
-		Version:     version.Ver().Version,
+		Environment: Service.Environment,
+		AppId:       Service.AppId,
+		ServiceName: Service.ServiceName,
+		Version:     Service.Version,
 	}
 }
 

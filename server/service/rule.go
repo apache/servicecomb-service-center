@@ -15,8 +15,6 @@ package service
 
 import (
 	"encoding/json"
-	"fmt"
-	errorsEx "github.com/ServiceComb/service-center/pkg/errors"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/pkg/uuid"
 	apt "github.com/ServiceComb/service-center/server/core"
@@ -32,81 +30,7 @@ import (
 	"time"
 )
 
-func Accessible(ctx context.Context, domainProject string, consumerId string, providerId string) error {
-	consumerService, err := serviceUtil.GetService(ctx, domainProject, consumerId)
-	if err != nil {
-		util.Logger().Errorf(err,
-			"consumer %s can't access provider %s for internal error", consumerId, providerId)
-		return errorsEx.InternalError(err.Error())
-	}
-	if consumerService == nil {
-		util.Logger().Warnf(nil,
-			"consumer %s can't access provider %s for invalid consumer", consumerId, providerId)
-		return fmt.Errorf("consumer invalid")
-	}
-
-	consumerFlag := fmt.Sprintf("%s/%s/%s", consumerService.AppId, consumerService.ServiceName, consumerService.Version)
-
-	// 跨应用权限
-	providerService, err := serviceUtil.GetService(ctx, domainProject, providerId)
-	if err != nil {
-		util.Logger().Errorf(err, "consumer %s can't access provider %s for internal error",
-			consumerFlag, providerId)
-		return errorsEx.InternalError(err.Error())
-	}
-	if providerService == nil {
-		util.Logger().Warnf(nil, "consumer %s can't access provider %s for invalid provider",
-			consumerFlag, providerId)
-		return fmt.Errorf("provider invalid")
-	}
-
-	providerFlag := fmt.Sprintf("%s/%s/%s", providerService.AppId, providerService.ServiceName, providerService.Version)
-
-	err = serviceUtil.AllowAcrossDimension(providerService, consumerService)
-	if err != nil {
-		util.Logger().Warnf(nil,
-			"consumer %s can't access provider %s which property 'allowCrossApp' is not true or does not exist",
-			consumerFlag, providerFlag)
-		return err
-	}
-
-	ctx = util.SetContext(util.CloneContext(ctx), "cacheOnly", "1")
-
-	// 黑白名单
-	rules, err := serviceUtil.GetRulesUtil(ctx, domainProject, providerId)
-	if err != nil {
-		util.Logger().Errorf(err, "consumer %s can't access provider %s for internal error",
-			consumerFlag, providerFlag)
-		return errorsEx.InternalError(err.Error())
-	}
-
-	if len(rules) == 0 {
-		return nil
-	}
-
-	validateTags, err := serviceUtil.GetTagsUtils(ctx, domainProject, consumerService.ServiceId)
-	if err != nil {
-		util.Logger().Errorf(err, "consumer %s can't access provider %s for internal error",
-			consumerFlag, providerFlag)
-		return errorsEx.InternalError(err.Error())
-	}
-
-	err = serviceUtil.MatchRules(rules, consumerService, validateTags)
-	if err != nil {
-		switch err.(type) {
-		case errorsEx.InternalError:
-			util.Logger().Errorf(err, "consumer %s can't access provider %s for internal error",
-				consumerFlag, providerFlag)
-		default:
-			util.Logger().Warnf(err, "consumer %s can't access provider %s", consumerFlag, providerFlag)
-		}
-		return err
-	}
-
-	return nil
-}
-
-func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesRequest) (*pb.AddServiceRulesResponse, error) {
+func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRulesRequest) (*pb.AddServiceRulesResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 || len(in.GetRules()) == 0 {
 		util.Logger().Errorf(nil, "add rule failed: invalid parameters.")
 		return &pb.AddServiceRulesResponse{
@@ -222,7 +146,7 @@ func (s *ServiceController) AddRule(ctx context.Context, in *pb.AddServiceRulesR
 	}, nil
 }
 
-func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateServiceRuleRequest) (*pb.UpdateServiceRuleResponse, error) {
+func (s *MicroServiceService) UpdateRule(ctx context.Context, in *pb.UpdateServiceRuleRequest) (*pb.UpdateServiceRuleResponse, error) {
 	if in == nil || in.GetRule() == nil || len(in.ServiceId) == 0 || len(in.RuleId) == 0 {
 		util.Logger().Errorf(nil, "update rule failed: invalid parameters.")
 		return &pb.UpdateServiceRuleResponse{
@@ -325,7 +249,7 @@ func (s *ServiceController) UpdateRule(ctx context.Context, in *pb.UpdateService
 	}, nil
 }
 
-func (s *ServiceController) GetRule(ctx context.Context, in *pb.GetServiceRulesRequest) (*pb.GetServiceRulesResponse, error) {
+func (s *MicroServiceService) GetRule(ctx context.Context, in *pb.GetServiceRulesRequest) (*pb.GetServiceRulesResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 {
 		util.Logger().Errorf(nil, "get service rule failed, serviceId is %s: invalid params.", in.ServiceId)
 		return &pb.GetServiceRulesResponse{
@@ -357,7 +281,7 @@ func (s *ServiceController) GetRule(ctx context.Context, in *pb.GetServiceRulesR
 	}, nil
 }
 
-func (s *ServiceController) DeleteRule(ctx context.Context, in *pb.DeleteServiceRulesRequest) (*pb.DeleteServiceRulesResponse, error) {
+func (s *MicroServiceService) DeleteRule(ctx context.Context, in *pb.DeleteServiceRulesRequest) (*pb.DeleteServiceRulesResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 {
 		util.Logger().Errorf(nil, "delete service rule failed: invalid parameters.")
 		return &pb.DeleteServiceRulesResponse{

@@ -27,7 +27,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-func (s *ServiceController) AddTags(ctx context.Context, in *pb.AddServiceTagsRequest) (*pb.AddServiceTagsResponse, error) {
+func (s *MicroServiceService) AddTags(ctx context.Context, in *pb.AddServiceTagsRequest) (*pb.AddServiceTagsResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 || len(in.GetTags()) == 0 {
 		util.Logger().Errorf(nil, "add service tags failed: invalid parameters.")
 		return &pb.AddServiceTagsResponse{
@@ -96,7 +96,7 @@ func (s *ServiceController) AddTags(ctx context.Context, in *pb.AddServiceTagsRe
 	}, nil
 }
 
-func (s *ServiceController) UpdateTag(ctx context.Context, in *pb.UpdateServiceTagRequest) (*pb.UpdateServiceTagResponse, error) {
+func (s *MicroServiceService) UpdateTag(ctx context.Context, in *pb.UpdateServiceTagRequest) (*pb.UpdateServiceTagResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 || len(in.Key) == 0 || len(in.Value) == 0 {
 		util.Logger().Errorf(nil, "update service tag failed: invalid parameters.")
 		return &pb.UpdateServiceTagResponse{
@@ -152,7 +152,7 @@ func (s *ServiceController) UpdateTag(ctx context.Context, in *pb.UpdateServiceT
 	}, nil
 }
 
-func (s *ServiceController) DeleteTags(ctx context.Context, in *pb.DeleteServiceTagsRequest) (*pb.DeleteServiceTagsResponse, error) {
+func (s *MicroServiceService) DeleteTags(ctx context.Context, in *pb.DeleteServiceTagsRequest) (*pb.DeleteServiceTagsResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 || len(in.Keys) == 0 {
 		util.Logger().Errorf(nil, "delete service tags failed: invalid parameters.")
 		return &pb.DeleteServiceTagsResponse{
@@ -222,7 +222,7 @@ func (s *ServiceController) DeleteTags(ctx context.Context, in *pb.DeleteService
 	}, nil
 }
 
-func (s *ServiceController) GetTags(ctx context.Context, in *pb.GetServiceTagsRequest) (*pb.GetServiceTagsResponse, error) {
+func (s *MicroServiceService) GetTags(ctx context.Context, in *pb.GetServiceTagsRequest) (*pb.GetServiceTagsResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 {
 		util.Logger().Errorf(nil, "get service tags failed: invalid params.")
 		return &pb.GetServiceTagsResponse{

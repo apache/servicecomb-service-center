@@ -14,12 +14,29 @@
 package service
 
 import (
+	"github.com/ServiceComb/service-center/pkg/rpc"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
+	"google.golang.org/grpc"
 )
 
-func AssembleResources() (pb.ServiceCtrlServer, pb.SerivceInstanceCtrlServerEx, pb.GovernServiceCtrlServerEx) {
-	var serviceController ServiceController
-	var instanceController InstanceController
-	var governServiceAPI GovernServiceController
-	return &serviceController, &instanceController, &governServiceAPI
+var (
+	serviceService  pb.ServiceCtrlServer
+	instanceService pb.SerivceInstanceCtrlServerEx
+)
+
+func init() {
+	instanceService = &InstanceService{}
+	serviceService = &MicroServiceService{
+		instanceService: instanceService,
+	}
+	rpc.RegisterService(RegisterGrpcServices)
+}
+
+func RegisterGrpcServices(s *grpc.Server) {
+	pb.RegisterServiceCtrlServer(s, serviceService)
+	pb.RegisterServiceInstanceCtrlServer(s, instanceService)
+}
+
+func AssembleResources() (pb.ServiceCtrlServer, pb.SerivceInstanceCtrlServerEx) {
+	return serviceService, instanceService
 }

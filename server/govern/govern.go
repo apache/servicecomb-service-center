@@ -11,23 +11,28 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package v3
+package govern
 
 import (
 	roa "github.com/ServiceComb/service-center/pkg/rest"
+	"github.com/ServiceComb/service-center/pkg/rpc"
+	pb "github.com/ServiceComb/service-center/server/core/proto"
+	"google.golang.org/grpc"
 )
 
 func init() {
-	initRouter()
+	registerGRPC()
+
+	registerREST()
 }
 
-func initRouter() {
-	roa.RegisterServent(&MainService{})
-	roa.RegisterServent(&MicroServiceService{})
-	roa.RegisterServent(&SchemaService{})
-	roa.RegisterServent(&DependencyService{})
-	roa.RegisterServent(&TagService{})
-	roa.RegisterServent(&RuleService{})
-	roa.RegisterServent(&MicroServiceInstanceService{})
-	roa.RegisterServent(&WatchService{})
+func registerGRPC() {
+	rpc.RegisterService(func(s *grpc.Server) {
+		pb.RegisterGovernServiceCtrlServer(s, GovernServiceAPI)
+	})
+}
+
+func registerREST() {
+	roa.RegisterServent(&GovernServiceControllerV3{})
+	roa.RegisterServent(&GovernServiceControllerV4{})
 }

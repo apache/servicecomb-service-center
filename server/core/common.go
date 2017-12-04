@@ -24,9 +24,8 @@ import (
 )
 
 var (
-	ServiceAPI       pb.ServiceCtrlServer
-	InstanceAPI      pb.SerivceInstanceCtrlServerEx
-	GovernServiceAPI pb.GovernServiceCtrlServerEx
+	ServiceAPI  pb.ServiceCtrlServer
+	InstanceAPI pb.SerivceInstanceCtrlServerEx
 
 	VersionRegex                  *regexp.Regexp
 	MicroServiceValidator         validate.Validator
@@ -117,7 +116,7 @@ func init() {
 	MicroServiceValidator.AddSub("Paths", &ServicePathValidator)
 	MicroServiceValidator.AddRule("Alias", &validate.ValidateRule{Length: 128, Regexp: aliasRegex})
 	MicroServiceValidator.AddRule("RegisterBy", &validate.ValidateRule{Min: 1, Length: 64, Regexp: registerByRegex})
-	MicroServiceValidator.AddSub("FrameWork", &FrameWKValidator)
+	MicroServiceValidator.AddSub("Framework", &FrameWKValidator)
 
 	GetMSExistsReqValidator.AddRules(MicroServiceKeyValidator.GetRules())
 	GetMSExistsReqValidator.AddRule("Version", versionFuzzyRule)

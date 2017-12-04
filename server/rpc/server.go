@@ -14,10 +14,9 @@
 package rpc
 
 import (
+	"github.com/ServiceComb/service-center/pkg/rpc"
 	"github.com/ServiceComb/service-center/pkg/tlsutil"
 	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/server/core"
-	pb "github.com/ServiceComb/service-center/server/core/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"net"
@@ -51,9 +50,7 @@ func NewServer(ep string) (_ *Server, err error) {
 		grpcSrv = grpc.NewServer()
 	}
 
-	pb.RegisterServiceCtrlServer(grpcSrv, core.ServiceAPI)
-	pb.RegisterServiceInstanceCtrlServer(grpcSrv, core.InstanceAPI)
-	pb.RegisterGovernServiceCtrlServer(grpcSrv, core.GovernServiceAPI)
+	rpc.RegisterServer(grpcSrv)
 
 	ls, err := net.Listen("tcp", ipAddr)
 	if err != nil {

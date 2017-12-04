@@ -867,7 +867,7 @@ paths:
           description: 资源类型 microservice微服务 schema微服务访问契约。
           required: true
           type: string
-        - name: environment
+        - name: env
           in: query
           description: development|testing|acceptance|production
           type: string
@@ -1554,6 +1554,15 @@ definitions:
     description: 扩展属性
     additionalProperties:
       type: string
+  Framework:
+    type: object
+    properties:
+      name:
+        type: string
+        description: 微服务开发框架，默认值为UNKNOWN
+      version:
+        type: string
+        description: 微服务开发框架版本号
   UpdateProperties:
     type: object
     properties:
@@ -1673,6 +1682,9 @@ definitions:
       level:
         type: string
         description: 微服务层级，FRONT/MIDDLE/BACK
+      registerBy:
+        type: string
+        description: 微服务注册方式，SDK/PLATFORM/SIDECAR/UNKNOWN
       schemas:
         type: array
         description: 微服务访问契约内容的外键ID
@@ -1690,6 +1702,8 @@ definitions:
       modTimestamp:
         type: string
         description: 更新时间
+      framework:
+        $ref: '#/definitions/Framework'
       paths:
         type: array
         description: 服务路由

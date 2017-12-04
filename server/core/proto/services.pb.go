@@ -523,7 +523,7 @@ type MicroService struct {
 	ModTimestamp string             `protobuf:"bytes,15,opt,name=modTimestamp" json:"modTimestamp,omitempty"`
 	Environment  string             `protobuf:"bytes,16,opt,name=environment" json:"environment,omitempty"`
 	RegisterBy   string             `protobuf:"bytes,17,opt,name=registerBy" json:"registerBy,omitempty"`
-	FrameWork    *FrameWorkProperty `protobuf:"bytes,18,opt,name=FrameWork" json:"FrameWork,omitempty"`
+	Framework    *FrameWorkProperty `protobuf:"bytes,18,opt,name=framework" json:"framework,omitempty"`
 }
 
 func (m *MicroService) Reset()                    { *m = MicroService{} }
@@ -650,9 +650,9 @@ func (m *MicroService) GetRegisterBy() string {
 	return ""
 }
 
-func (m *MicroService) GetFrameWork() *FrameWorkProperty {
+func (m *MicroService) GetFramework() *FrameWorkProperty {
 	if m != nil {
-		return m.FrameWork
+		return m.Framework
 	}
 	return nil
 }

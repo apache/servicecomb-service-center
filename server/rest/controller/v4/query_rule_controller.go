@@ -70,7 +70,7 @@ func (this *RuleService) DeleteRule(w http.ResponseWriter, r *http.Request) {
 		ServiceId: r.URL.Query().Get(":serviceId"),
 		RuleIds:   ids,
 	})
-	controller.WriteResponse(w, resp.GetResponse(), nil)
+	controller.WriteResponse(w, resp.Response, nil)
 }
 
 func (this *RuleService) UpdateRule(w http.ResponseWriter, r *http.Request) {
@@ -93,7 +93,7 @@ func (this *RuleService) UpdateRule(w http.ResponseWriter, r *http.Request) {
 		RuleId:    r.URL.Query().Get(":rule_id"),
 		Rule:      &rule,
 	})
-	controller.WriteResponse(w, resp.GetResponse(), nil)
+	controller.WriteResponse(w, resp.Response, nil)
 }
 
 func (this *RuleService) GetRules(w http.ResponseWriter, r *http.Request) {

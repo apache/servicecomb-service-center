@@ -35,10 +35,10 @@ import (
 	"time"
 )
 
-type InstanceController struct {
+type InstanceService struct {
 }
 
-func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstanceRequest) (*pb.RegisterInstanceResponse, error) {
+func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceRequest) (*pb.RegisterInstanceResponse, error) {
 	if in == nil || in.Instance == nil {
 		util.Logger().Errorf(nil, "register instance failed: invalid params.")
 		return &pb.RegisterInstanceResponse{
@@ -231,7 +231,7 @@ func (s *InstanceController) Register(ctx context.Context, in *pb.RegisterInstan
 	}, nil
 }
 
-func (s *InstanceController) Unregister(ctx context.Context, in *pb.UnregisterInstanceRequest) (*pb.UnregisterInstanceResponse, error) {
+func (s *InstanceService) Unregister(ctx context.Context, in *pb.UnregisterInstanceRequest) (*pb.UnregisterInstanceResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 || len(in.InstanceId) == 0 {
 		util.Logger().Errorf(nil, "unregister instance failed: invalid params.")
 		return &pb.UnregisterInstanceResponse{
@@ -294,7 +294,7 @@ func revokeInstance(ctx context.Context, domainProject string, serviceId string,
 	return nil, false
 }
 
-func (s *InstanceController) Heartbeat(ctx context.Context, in *pb.HeartbeatRequest) (*pb.HeartbeatResponse, error) {
+func (s *InstanceService) Heartbeat(ctx context.Context, in *pb.HeartbeatRequest) (*pb.HeartbeatResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 || len(in.InstanceId) == 0 {
 		return &pb.HeartbeatResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
@@ -353,7 +353,7 @@ func grantOrRenewLease(ctx context.Context, domainProject string, serviceId stri
 	return
 }
 
-func (s *InstanceController) HeartbeatSet(ctx context.Context, in *pb.HeartbeatSetRequest) (*pb.HeartbeatSetResponse, error) {
+func (s *InstanceService) HeartbeatSet(ctx context.Context, in *pb.HeartbeatSetRequest) (*pb.HeartbeatSetResponse, error) {
 	if in == nil || len(in.Instances) == 0 {
 		util.Logger().Errorf(nil, "heartbeats failed, invalid request. Body not contain Instances or is empty.")
 		return &pb.HeartbeatSetResponse{
@@ -417,7 +417,7 @@ func (s *InstanceController) HeartbeatSet(ctx context.Context, in *pb.HeartbeatS
 	}
 }
 
-func (s *InstanceController) GetOneInstance(ctx context.Context, in *pb.GetOneInstanceRequest) (*pb.GetOneInstanceResponse, error) {
+func (s *InstanceService) GetOneInstance(ctx context.Context, in *pb.GetOneInstanceRequest) (*pb.GetOneInstanceResponse, error) {
 	checkErr := s.getInstancePreCheck(ctx, in)
 	if checkErr != nil {
 		util.Logger().Errorf(checkErr, "get instance failed: pre check failed.")
@@ -451,7 +451,7 @@ func (s *InstanceController) GetOneInstance(ctx context.Context, in *pb.GetOneIn
 	}, nil
 }
 
-func (s *InstanceController) getInstancePreCheck(ctx context.Context, in interface{}) *scerr.Error {
+func (s *InstanceService) getInstancePreCheck(ctx context.Context, in interface{}) *scerr.Error {
 	err := apt.Validate(in)
 	if err != nil {
 		return scerr.NewError(scerr.ErrInvalidParams, err.Error())
@@ -489,7 +489,7 @@ func (s *InstanceController) getInstancePreCheck(ctx context.Context, in interfa
 	}
 	// 黑白名单
 	// 跨应用调用
-	err = Accessible(ctx, domainProject, consumerServiceId, providerServiceId)
+	err = serviceUtil.Accessible(ctx, domainProject, consumerServiceId, providerServiceId)
 	switch err.(type) {
 	case errorsEx.InternalError:
 		return scerr.NewError(scerr.ErrInternal, err.Error())
@@ -501,7 +501,7 @@ func (s *InstanceController) getInstancePreCheck(ctx context.Context, in interfa
 	}
 }
 
-func (s *InstanceController) GetInstances(ctx context.Context, in *pb.GetInstancesRequest) (*pb.GetInstancesResponse, error) {
+func (s *InstanceService) GetInstances(ctx context.Context, in *pb.GetInstancesRequest) (*pb.GetInstancesResponse, error) {
 	checkErr := s.getInstancePreCheck(ctx, in)
 	if checkErr != nil {
 		util.Logger().Errorf(checkErr, "get instances failed: pre check failed.")
@@ -526,7 +526,7 @@ func (s *InstanceController) GetInstances(ctx context.Context, in *pb.GetInstanc
 	}, nil
 }
 
-func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesRequest) (*pb.FindInstancesResponse, error) {
+func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest) (*pb.FindInstancesResponse, error) {
 	err := apt.Validate(in)
 	if err != nil {
 		util.Logger().Errorf(err, "find instance failed: invalid parameters.")
@@ -580,10 +580,10 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 			ProviderServiceId: serviceId,
 			Tags:              in.Tags,
 		})
-		if err != nil {
+		if resp.Response.Code != pb.Response_SUCCESS {
 			util.Logger().Errorf(err, "find instance failed, %s: get service %s 's instance failed.", findFlag, serviceId)
 			return &pb.FindInstancesResponse{
-				Response: resp.GetResponse(),
+				Response: resp.Response,
 			}, err
 		}
 		if len(resp.GetInstances()) > 0 {
@@ -622,7 +622,7 @@ func (s *InstanceController) Find(ctx context.Context, in *pb.FindInstancesReque
 	}, nil
 }
 
-func (s *InstanceController) UpdateStatus(ctx context.Context, in *pb.UpdateInstanceStatusRequest) (*pb.UpdateInstanceStatusResponse, error) {
+func (s *InstanceService) UpdateStatus(ctx context.Context, in *pb.UpdateInstanceStatusRequest) (*pb.UpdateInstanceStatusResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 || len(in.InstanceId) == 0 {
 		util.Logger().Errorf(nil, "update instance status failed: invalid params.")
 		return &pb.UpdateInstanceStatusResponse{
@@ -676,7 +676,7 @@ func (s *InstanceController) UpdateStatus(ctx context.Context, in *pb.UpdateInst
 	}, nil
 }
 
-func (s *InstanceController) UpdateInstanceProperties(ctx context.Context, in *pb.UpdateInstancePropsRequest) (*pb.UpdateInstancePropsResponse, error) {
+func (s *InstanceService) UpdateInstanceProperties(ctx context.Context, in *pb.UpdateInstancePropsRequest) (*pb.UpdateInstancePropsResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 || len(in.InstanceId) == 0 || in.Properties == nil {
 		util.Logger().Errorf(nil, "update instance properties failed: invalid params.")
 		return &pb.UpdateInstancePropsResponse{
@@ -755,7 +755,7 @@ func updateInstance(ctx context.Context, domainProject string, instance *pb.Micr
 	return nil, false
 }
 
-func (s *InstanceController) WatchPreOpera(ctx context.Context, in *pb.WatchInstanceRequest) error {
+func (s *InstanceService) WatchPreOpera(ctx context.Context, in *pb.WatchInstanceRequest) error {
 	if in == nil || len(in.SelfServiceId) == 0 {
 		return errors.New("Request format invalid.")
 	}
@@ -766,7 +766,7 @@ func (s *InstanceController) WatchPreOpera(ctx context.Context, in *pb.WatchInst
 	return nil
 }
 
-func (s *InstanceController) Watch(in *pb.WatchInstanceRequest, stream pb.ServiceInstanceCtrl_WatchServer) error {
+func (s *InstanceService) Watch(in *pb.WatchInstanceRequest, stream pb.ServiceInstanceCtrl_WatchServer) error {
 	var err error
 	if err = s.WatchPreOpera(stream.Context(), in); err != nil {
 		util.Logger().Errorf(err, "establish watch failed: invalid params.")
@@ -779,7 +779,7 @@ func (s *InstanceController) Watch(in *pb.WatchInstanceRequest, stream pb.Servic
 	return nf.HandleWatchJob(watcher, stream, nf.GetNotifyService().Config.NotifyTimeout)
 }
 
-func (s *InstanceController) WebSocketWatch(ctx context.Context, in *pb.WatchInstanceRequest, conn *websocket.Conn) {
+func (s *InstanceService) WebSocketWatch(ctx context.Context, in *pb.WatchInstanceRequest, conn *websocket.Conn) {
 	util.Logger().Infof("New a web socket watch with %s", in.SelfServiceId)
 	if err := s.WatchPreOpera(ctx, in); err != nil {
 		nf.EstablishWebSocketError(conn, err)
@@ -788,7 +788,7 @@ func (s *InstanceController) WebSocketWatch(ctx context.Context, in *pb.WatchIns
 	nf.DoWebSocketWatch(ctx, in.SelfServiceId, conn)
 }
 
-func (s *InstanceController) WebSocketListAndWatch(ctx context.Context, in *pb.WatchInstanceRequest, conn *websocket.Conn) {
+func (s *InstanceService) WebSocketListAndWatch(ctx context.Context, in *pb.WatchInstanceRequest, conn *websocket.Conn) {
 	util.Logger().Infof("New a web socket list and watch with %s", in.SelfServiceId)
 	if err := s.WatchPreOpera(ctx, in); err != nil {
 		nf.EstablishWebSocketError(conn, err)
@@ -799,7 +799,7 @@ func (s *InstanceController) WebSocketListAndWatch(ctx context.Context, in *pb.W
 	}, conn)
 }
 
-func (s *InstanceController) ClusterHealth(ctx context.Context) (*pb.GetInstancesResponse, error) {
+func (s *InstanceService) ClusterHealth(ctx context.Context) (*pb.GetInstancesResponse, error) {
 	domainProject := util.StringJoin([]string{apt.REGISTRY_DOMAIN, apt.REGISTRY_PROJECT}, "/")
 	serviceId, err := serviceUtil.GetServiceId(ctx, &pb.MicroServiceKey{
 		AppId:       apt.Service.AppId,

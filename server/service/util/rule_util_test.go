@@ -15,6 +15,7 @@ package util_test
 
 import (
 	"fmt"
+	errorsEx "github.com/ServiceComb/service-center/pkg/errors"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/core/proto"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
@@ -347,6 +348,20 @@ func TestGetProvider(t *testing.T) {
 		"", "", &proto.MicroService{})
 	if err != nil {
 		fmt.Printf("GetProviderIdsByConsumerId WithCacheOnly failed")
+		t.FailNow()
+	}
+}
+
+func TestAccessible(t *testing.T) {
+	err := serviceUtil.Accessible(context.Background(), "", "", "")
+	if _, ok := err.(errorsEx.InternalError); !ok {
+		fmt.Printf("Accessible invalid failed")
+		t.FailNow()
+	}
+
+	err = serviceUtil.Accessible(util.SetContext(context.Background(), "cacheOnly", "1"), "", "", "")
+	if _, ok := err.(errorsEx.InternalError); ok {
+		fmt.Printf("Accessible WithCacheOnly failed")
 		t.FailNow()
 	}
 }

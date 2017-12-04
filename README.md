@@ -1,7 +1,18 @@
 # service-center 
 [![Build Status](https://travis-ci.org/ServiceComb/service-center.svg?branch=master)](https://travis-ci.org/ServiceComb/service-center)   [![Coverage Status](https://coveralls.io/repos/github/ServiceComb/service-center/badge.svg?branch=master)](https://coveralls.io/github/ServiceComb/service-center?branch=master)  [![Go Report Card](https://goreportcard.com/badge/github.com/ServiceComb/service-center)](https://goreportcard.com/report/github.com/ServiceComb/service-center)  [![GoDoc](https://godoc.org/github.com/ServiceComb/service-center?status.svg)](https://godoc.org/github.com/ServiceComb/service-center)
 
-A standalone service center allows services to register their instance information and to discover providers of a given service. It also offers an awesome [web portal](/frontend) to manage the micro-services.
+A standalone service center allows services to register their instance information and to discover providers of a given service. 
+## Features
+ -  Seperated microservice and microservice instance entity management
+ -  White and back list configuration for service discovery
+ -  Use web socket to notify client about instance change events
+ -  Support query instance by criteria
+ -  Metadata management for both microservice and microservice instance 
+ -  API doc(Open API format) management for microservice
+ -  Microservice dependency management
+ -  Awesome  [web portal](/frontend)
+ -	 Multiple fault tolerance mechanism and design in the architecture
+ -	 Performance/Caching design 
 
 ## Quick Start
 

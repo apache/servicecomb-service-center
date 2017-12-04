@@ -152,7 +152,7 @@ message MicroService {
     string modTimestamp = 15;
     string environment = 16;
     string registerBy = 17;
-    FrameWorkProperty FrameWork = 18;
+    FrameWorkProperty framework = 18;
 }
 
 message FrameWorkProperty {

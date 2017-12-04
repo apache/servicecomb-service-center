@@ -20,3 +20,4 @@ etc/ssl/
 integration/conf/
 frontend/bower_components/
 frontend/node_modules/
+server/govern/conf/

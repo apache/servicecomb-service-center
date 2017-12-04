@@ -13,7 +13,10 @@
 //limitations under the License.
 package util_test
 
-import _ "github.com/ServiceComb/service-center/server/plugin/infra/registry/buildin"
+import (
+	_ "github.com/ServiceComb/service-center/server/plugin/infra/quota/buildin"
+	_ "github.com/ServiceComb/service-center/server/plugin/infra/registry/buildin"
+)
 
 import (
 	"fmt"
@@ -162,6 +165,53 @@ func TestServiceExist(t *testing.T) {
 		}
 	}()
 	serviceUtil.ServiceExist(util.SetContext(context.Background(), "cacheOnly", "1"), "", "")
+}
+
+func TestRemandQuota(t *testing.T) {
+	serviceUtil.RemandServiceQuota(context.Background())
+	serviceUtil.RemandInstanceQuota(context.Background())
+}
+
+func TestSetDefault(t *testing.T) {
+	service := &proto.MicroService{}
+	serviceUtil.SetDefault(service)
+	if len(service.Level) == 0 ||
+		len(service.Environment) == 0 ||
+		len(service.RegisterBy) == 0 ||
+		service.Framework == nil ||
+		len(service.Framework.Name) == 0 ||
+		len(service.Status) == 0 {
+		fmt.Printf(`TestSetDefault failed`)
+		t.FailNow()
+	}
+}
+
+func TestGetOneDomainProjectServiceCount(t *testing.T) {
+	_, err := serviceUtil.GetOneDomainProjectServiceCount(util.SetContext(context.Background(), "cacheOnly", "1"), "")
+	if err != nil {
+		fmt.Printf("GetOneDomainProjectServiceCount WithCacheOnly failed")
+		t.FailNow()
+	}
+
+	_, err = serviceUtil.GetOneDomainProjectServiceCount(context.Background(), "")
+	if err == nil {
+		fmt.Printf("GetOneDomainProjectServiceCount failed")
+		t.FailNow()
+	}
+}
+
+func TestGetOneDomainProjectInstanceCount(t *testing.T) {
+	_, err := serviceUtil.GetOneDomainProjectInstanceCount(util.SetContext(context.Background(), "cacheOnly", "1"), "")
+	if err != nil {
+		fmt.Printf("GetOneDomainProjectInstanceCount WithCacheOnly failed")
+		t.FailNow()
+	}
+
+	_, err = serviceUtil.GetOneDomainProjectInstanceCount(context.Background(), "")
+	if err == nil {
+		fmt.Printf("GetOneDomainProjectInstanceCount failed")
+		t.FailNow()
+	}
 }
 
 const VERSIONRULE_BASE = 5000

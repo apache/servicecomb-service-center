@@ -11,23 +11,24 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package v3
+package rpc
 
-import (
-	roa "github.com/ServiceComb/service-center/pkg/rest"
-)
+import "google.golang.org/grpc"
+
+type RegisterServiceFunc func(s *grpc.Server)
+
+var registerFuncs []RegisterServiceFunc
 
 func init() {
-	initRouter()
+	registerFuncs = make([]RegisterServiceFunc, 0, 5)
 }
 
-func initRouter() {
-	roa.RegisterServent(&MainService{})
-	roa.RegisterServent(&MicroServiceService{})
-	roa.RegisterServent(&SchemaService{})
-	roa.RegisterServent(&DependencyService{})
-	roa.RegisterServent(&TagService{})
-	roa.RegisterServent(&RuleService{})
-	roa.RegisterServent(&MicroServiceInstanceService{})
-	roa.RegisterServent(&WatchService{})
+func RegisterService(f RegisterServiceFunc) {
+	registerFuncs = append(registerFuncs, f)
+}
+
+func RegisterServer(s *grpc.Server) {
+	for _, f := range registerFuncs {
+		f(s)
+	}
 }

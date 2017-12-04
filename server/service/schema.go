@@ -32,7 +32,7 @@ import (
 	"strings"
 )
 
-func (s *ServiceController) GetSchemaInfo(ctx context.Context, in *pb.GetSchemaRequest) (*pb.GetSchemaResponse, error) {
+func (s *MicroServiceService) GetSchemaInfo(ctx context.Context, in *pb.GetSchemaRequest) (*pb.GetSchemaResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 || len(in.SchemaId) == 0 {
 		util.Logger().Errorf(nil, "get schema failed: invalid params.")
 		return &pb.GetSchemaResponse{
@@ -78,7 +78,7 @@ func (s *ServiceController) GetSchemaInfo(ctx context.Context, in *pb.GetSchemaR
 	}, nil
 }
 
-func (s *ServiceController) DeleteSchema(ctx context.Context, request *pb.DeleteSchemaRequest) (*pb.DeleteSchemaResponse, error) {
+func (s *MicroServiceService) DeleteSchema(ctx context.Context, request *pb.DeleteSchemaRequest) (*pb.DeleteSchemaResponse, error) {
 	if request == nil || len(request.ServiceId) == 0 || len(request.SchemaId) == 0 {
 		util.Logger().Errorf(nil, "delete schema failded: invalid params.")
 		return &pb.DeleteSchemaResponse{
@@ -133,7 +133,7 @@ func (s *ServiceController) DeleteSchema(ctx context.Context, request *pb.Delete
 	}, nil
 }
 
-func (s *ServiceController) ModifySchemas(ctx context.Context, request *pb.ModifySchemasRequest) (*pb.ModifySchemasResponse, error) {
+func (s *MicroServiceService) ModifySchemas(ctx context.Context, request *pb.ModifySchemasRequest) (*pb.ModifySchemasResponse, error) {
 	err := apt.Validate(request)
 	if err != nil {
 		util.Logger().Errorf(err, "modify schemas failded: invalid params.")
@@ -383,7 +383,7 @@ func GetSchemasSummaryFromDataBase(ctx context.Context, domainProject string, se
 	return schemas, nil
 }
 
-func (s *ServiceController) ModifySchema(ctx context.Context, request *pb.ModifySchemaRequest) (*pb.ModifySchemaResponse, error) {
+func (s *MicroServiceService) ModifySchema(ctx context.Context, request *pb.ModifySchemaRequest) (*pb.ModifySchemaResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	respErr := s.canModifySchema(ctx, domainProject, request)
 	if respErr != nil {
@@ -423,7 +423,7 @@ func (s *ServiceController) ModifySchema(ctx context.Context, request *pb.Modify
 	}, nil
 }
 
-func (s *ServiceController) canModifySchema(ctx context.Context, domainProject string, request *pb.ModifySchemaRequest) *scerr.Error {
+func (s *MicroServiceService) canModifySchema(ctx context.Context, domainProject string, request *pb.ModifySchemaRequest) *scerr.Error {
 	serviceId := request.ServiceId
 	schemaId := request.SchemaId
 	if len(schemaId) == 0 || len(serviceId) == 0 {
@@ -451,7 +451,7 @@ func (s *ServiceController) canModifySchema(ctx context.Context, domainProject s
 	return nil
 }
 
-func (s *ServiceController) modifySchema(ctx context.Context, serviceId string, schema *pb.Schema) (error, bool) {
+func (s *MicroServiceService) modifySchema(ctx context.Context, serviceId string, schema *pb.Schema) (error, bool) {
 	domainProject := util.ParseDomainProject(ctx)
 	schemaId := schema.SchemaId
 

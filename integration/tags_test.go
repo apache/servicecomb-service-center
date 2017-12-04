@@ -13,7 +13,6 @@
 //limitations under the License.
 package integrationtest_test
 
-/*
 import (
 	"bytes"
 	"encoding/json"
@@ -158,7 +157,7 @@ var _ = Describe("MicroService Api Test", func() {
 
 				//Get Tags
 				url = strings.Replace(GETTAGS, ":serviceId", serviceId, 1)
-				req, _ = http.NewRequest(GET, SCURL+url, nil)
+				req, _ = http.NewRequest(GET, SCURL+url+"?noCache=1", nil)
 				req.Header.Set("X-Domain-Name", "default")
 				req.Header.Set("X-ConsumerId", serviceId)
 				resp, _ = scclient.Do(req)
@@ -178,7 +177,7 @@ var _ = Describe("MicroService Api Test", func() {
 				resp, _ := scclient.Do(req)
 				respbody, _ := ioutil.ReadAll(resp.Body)
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
-				Expect(string(respbody)).To(Equal("{}"))
+				Expect(string(bytes.TrimSpace(respbody))).To(Equal("{}"))
 			})
 
 			It("Get Tags for Invalid MicroService", func() {
@@ -215,7 +214,7 @@ var _ = Describe("MicroService Api Test", func() {
 				//Update Tags
 				url = strings.Replace(UPDATETAG, ":serviceId", serviceId, 1)
 				url = strings.Replace(url, ":key", "testkey", 1)
-				req, _ = http.NewRequest(UPDATE, SCURL+url+"?value=newValue", nil)
+				req, _ = http.NewRequest(UPDATE, SCURL+url+"?value=newValue&noCache=1", nil)
 				req.Header.Set("X-Domain-Name", "default")
 				resp, err = scclient.Do(req)
 				Expect(err).To(BeNil())
@@ -225,7 +224,7 @@ var _ = Describe("MicroService Api Test", func() {
 				//Verify the Tags
 				<-time.After(time.Second)
 				url = strings.Replace(GETTAGS, ":serviceId", serviceId, 1)
-				req, _ = http.NewRequest(GET, SCURL+url, nil)
+				req, _ = http.NewRequest(GET, SCURL+url+"?noCache=1", nil)
 				req.Header.Set("X-Domain-Name", "default")
 				req.Header.Set("X-ConsumerId", serviceId)
 				resp, _ = scclient.Do(req)
@@ -266,7 +265,7 @@ var _ = Describe("MicroService Api Test", func() {
 				//Update Tags
 				url = strings.Replace(UPDATETAG, ":serviceId", serviceId, 1)
 				url = strings.Replace(url, ":key", "unknownkey", 1)
-				req, _ = http.NewRequest(UPDATE, SCURL+url+"?value=newValue", nil)
+				req, _ = http.NewRequest(UPDATE, SCURL+url+"?value=newValue&noCache=1", nil)
 				req.Header.Set("X-Domain-Name", "default")
 				resp, err = scclient.Do(req)
 				Expect(err).To(BeNil())
@@ -311,7 +310,7 @@ var _ = Describe("MicroService Api Test", func() {
 				//Delete the tag
 				url = strings.Replace(DELETETAG, ":serviceId", serviceId, 1)
 				url = strings.Replace(url, ":key", "testkey", 1)
-				req, _ = http.NewRequest(DELETE, SCURL+url, nil)
+				req, _ = http.NewRequest(DELETE, SCURL+url+"?noCache=1", nil)
 				req.Header.Set("X-Domain-Name", "default")
 				resp, err = scclient.Do(req)
 				Expect(err).To(BeNil())
@@ -321,13 +320,13 @@ var _ = Describe("MicroService Api Test", func() {
 				//verify Delete
 				<-time.After(time.Second)
 				url = strings.Replace(GETTAGS, ":serviceId", serviceId, 1)
-				req, _ = http.NewRequest(GET, SCURL+url, nil)
+				req, _ = http.NewRequest(GET, SCURL+url+"?noCache=1", nil)
 				req.Header.Set("X-Domain-Name", "default")
 				req.Header.Set("X-ConsumerId", serviceId)
 				resp, _ = scclient.Do(req)
 				respbody, _ := ioutil.ReadAll(resp.Body)
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
-				Expect(string(respbody)).To(Equal("{}"))
+				Expect(string(bytes.TrimSpace(respbody))).To(Equal("{}"))
 			})
 
 			It("Delete MicroService tag with non-exsisting tags", func() {
@@ -353,7 +352,7 @@ var _ = Describe("MicroService Api Test", func() {
 				//Delete the tag
 				url = strings.Replace(DELETETAG, ":serviceId", serviceId, 1)
 				url = strings.Replace(url, ":key", "unknowTag", 1)
-				req, _ = http.NewRequest(DELETE, SCURL+url, nil)
+				req, _ = http.NewRequest(DELETE, SCURL+url+"?noCache=1", nil)
 				req.Header.Set("X-Domain-Name", "default")
 				resp, err = scclient.Do(req)
 				Expect(err).To(BeNil())
@@ -362,7 +361,7 @@ var _ = Describe("MicroService Api Test", func() {
 
 				//verify Non-deleted of exsiting tag
 				url = strings.Replace(GETTAGS, ":serviceId", serviceId, 1)
-				req, _ = http.NewRequest(GET, SCURL+url, nil)
+				req, _ = http.NewRequest(GET, SCURL+url+"?noCache=1", nil)
 				req.Header.Set("X-Domain-Name", "default")
 				req.Header.Set("X-ConsumerId", serviceId)
 				resp, _ = scclient.Do(req)
@@ -387,4 +386,3 @@ var _ = Describe("MicroService Api Test", func() {
 		})
 	})
 })
-*/

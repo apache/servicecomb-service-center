@@ -75,7 +75,7 @@ func (this *MicroServiceInstanceService) Heartbeat(w http.ResponseWriter, r *htt
 		InstanceId: r.URL.Query().Get(":instanceId"),
 	}
 	resp, _ := core.InstanceAPI.Heartbeat(r.Context(), request)
-	controller.WriteResponse(w, resp.GetResponse(), nil)
+	controller.WriteResponse(w, resp.Response, nil)
 }
 
 func (this *MicroServiceInstanceService) HeartbeatSet(w http.ResponseWriter, r *http.Request) {
@@ -111,7 +111,7 @@ func (this *MicroServiceInstanceService) UnregisterInstance(w http.ResponseWrite
 		InstanceId: r.URL.Query().Get(":instanceId"),
 	}
 	resp, _ := core.InstanceAPI.Unregister(r.Context(), request)
-	controller.WriteResponse(w, resp.GetResponse(), nil)
+	controller.WriteResponse(w, resp.Response, nil)
 }
 
 func (this *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r *http.Request) {
@@ -176,7 +176,7 @@ func (this *MicroServiceInstanceService) UpdateStatus(w http.ResponseWriter, r *
 		Status:     status,
 	}
 	resp, _ := core.InstanceAPI.UpdateStatus(r.Context(), request)
-	controller.WriteResponse(w, resp.GetResponse(), nil)
+	controller.WriteResponse(w, resp.Response, nil)
 }
 
 func (this *MicroServiceInstanceService) UpdateMetadata(w http.ResponseWriter, r *http.Request) {
@@ -197,5 +197,5 @@ func (this *MicroServiceInstanceService) UpdateMetadata(w http.ResponseWriter, r
 		return
 	}
 	resp, err := core.InstanceAPI.UpdateInstanceProperties(r.Context(), request)
-	controller.WriteResponse(w, resp.GetResponse(), nil)
+	controller.WriteResponse(w, resp.Response, nil)
 }
