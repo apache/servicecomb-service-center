@@ -11,7 +11,7 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package v4
+package govern
 
 import (
 	"net/http"
@@ -26,12 +26,12 @@ import (
 )
 
 // GovernService 治理相关接口服务
-type GovernService struct {
+type GovernServiceControllerV4 struct {
 	//
 }
 
 // URLPatterns 路由
-func (governService *GovernService) URLPatterns() []rest.Route {
+func (governService *GovernServiceControllerV4) URLPatterns() []rest.Route {
 	return []rest.Route{
 		{rest.HTTP_METHOD_GET, "/v4/:domain/govern/microservices/:serviceId", governService.GetServiceDetail},
 		{rest.HTTP_METHOD_GET, "/v4/:domain/govern/relations", governService.GetGraph},
@@ -75,7 +75,7 @@ type Graph struct {
 }
 
 // GetGraph 获取依赖连接图详细依赖关系
-func (governService *GovernService) GetGraph(w http.ResponseWriter, r *http.Request) {
+func (governService *GovernServiceControllerV4) GetGraph(w http.ResponseWriter, r *http.Request) {
 	var graph Graph
 	request := &pb.GetServicesRequest{}
 	ctx := r.Context()
@@ -130,38 +130,38 @@ func (governService *GovernService) GetGraph(w http.ResponseWriter, r *http.Requ
 }
 
 // GetServiceDetail 查询服务详细信息
-func (governService *GovernService) GetServiceDetail(w http.ResponseWriter, r *http.Request) {
+func (governService *GovernServiceControllerV4) GetServiceDetail(w http.ResponseWriter, r *http.Request) {
 	serviceID := r.URL.Query().Get(":serviceId")
 	request := &pb.GetServiceRequest{
 		ServiceId: serviceID,
 	}
 	ctx := r.Context()
-	resp, _ := core.GovernServiceAPI.GetServiceDetail(ctx, request)
+	resp, _ := GovernServiceAPI.GetServiceDetail(ctx, request)
 
 	respInternal := resp.Response
 	resp.Response = nil
 	controller.WriteResponse(w, respInternal, resp)
 }
 
-func (governService *GovernService) GetAllServicesInfo(w http.ResponseWriter, r *http.Request) {
+func (governService *GovernServiceControllerV4) GetAllServicesInfo(w http.ResponseWriter, r *http.Request) {
 	request := &pb.GetServicesInfoRequest{}
 	ctx := r.Context()
 	optsStr := r.URL.Query().Get("options")
 	request.Options = strings.Split(optsStr, ",")
 	request.AppId = r.URL.Query().Get("appId")
 	request.ServiceName = r.URL.Query().Get("serviceName")
-	resp, _ := core.GovernServiceAPI.GetServicesInfo(ctx, request)
+	resp, _ := GovernServiceAPI.GetServicesInfo(ctx, request)
 
 	respInternal := resp.Response
 	resp.Response = nil
 	controller.WriteResponse(w, respInternal, resp)
 }
 
-func (governService *GovernService) GetAllApplications(w http.ResponseWriter, r *http.Request) {
+func (governService *GovernServiceControllerV4) GetAllApplications(w http.ResponseWriter, r *http.Request) {
 	request := &pb.GetAppsRequest{}
 	ctx := r.Context()
 	request.Environment = r.URL.Query().Get("env")
-	resp, _ := core.GovernServiceAPI.GetApplications(ctx, request)
+	resp, _ := GovernServiceAPI.GetApplications(ctx, request)
 
 	respInternal := resp.Response
 	resp.Response = nil

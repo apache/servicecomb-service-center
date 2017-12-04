@@ -11,7 +11,7 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package service
+package govern
 
 import (
 	"github.com/ServiceComb/service-center/pkg/util"
@@ -24,10 +24,12 @@ import (
 	"golang.org/x/net/context"
 )
 
-type GovernServiceController struct {
+var GovernServiceAPI pb.GovernServiceCtrlServerEx = &GovernService{}
+
+type GovernService struct {
 }
 
-func (governServiceController *GovernServiceController) GetServicesInfo(ctx context.Context, in *pb.GetServicesInfoRequest) (*pb.GetServicesInfoResponse, error) {
+func (governService *GovernService) GetServicesInfo(ctx context.Context, in *pb.GetServicesInfoRequest) (*pb.GetServicesInfoResponse, error) {
 	optionMap := make(map[string]struct{}, len(in.Options))
 	for _, opt := range in.Options {
 		optionMap[opt] = struct{}{}
@@ -101,7 +103,7 @@ func (governServiceController *GovernServiceController) GetServicesInfo(ctx cont
 	}, nil
 }
 
-func (governServiceController *GovernServiceController) GetServiceDetail(ctx context.Context, in *pb.GetServiceRequest) (*pb.GetServiceDetailResponse, error) {
+func (governService *GovernService) GetServiceDetail(ctx context.Context, in *pb.GetServiceRequest) (*pb.GetServiceDetailResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	options := []string{"tags", "rules", "instances", "schemas", "dependencies"}
 
@@ -153,7 +155,7 @@ func (governServiceController *GovernServiceController) GetServiceDetail(ctx con
 	}, nil
 }
 
-func (governServiceController *GovernServiceController) GetApplications(ctx context.Context, in *pb.GetAppsRequest) (*pb.GetAppsResponse, error) {
+func (governService *GovernService) GetApplications(ctx context.Context, in *pb.GetAppsRequest) (*pb.GetAppsResponse, error) {
 	err := apt.Validate(in)
 	if err != nil {
 		return &pb.GetAppsResponse{

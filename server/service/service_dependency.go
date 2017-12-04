@@ -23,7 +23,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-func (s *ServiceController) CreateDependenciesForMicroServices(ctx context.Context, in *pb.CreateDependenciesRequest) (*pb.CreateDependenciesResponse, error) {
+func (s *MicroServiceService) CreateDependenciesForMicroServices(ctx context.Context, in *pb.CreateDependenciesRequest) (*pb.CreateDependenciesResponse, error) {
 	dependencyInfos := in.Dependencies
 	if len(dependencyInfos) == 0 {
 		return serviceUtil.BadParamsResponse("Invalid request body."), nil
@@ -103,7 +103,7 @@ func (s *ServiceController) CreateDependenciesForMicroServices(ctx context.Conte
 	}, nil
 }
 
-func (s *ServiceController) GetProviderDependencies(ctx context.Context, in *pb.GetDependenciesRequest) (*pb.GetProDependenciesResponse, error) {
+func (s *MicroServiceService) GetProviderDependencies(ctx context.Context, in *pb.GetDependenciesRequest) (*pb.GetProDependenciesResponse, error) {
 	err := apt.Validate(in)
 	if err != nil {
 		util.Logger().Errorf(err, "GetProviderDependencies failed for validating parameters failed.")
@@ -141,7 +141,7 @@ func (s *ServiceController) GetProviderDependencies(ctx context.Context, in *pb.
 	}, nil
 }
 
-func (s *ServiceController) GetConsumerDependencies(ctx context.Context, in *pb.GetDependenciesRequest) (*pb.GetConDependenciesResponse, error) {
+func (s *MicroServiceService) GetConsumerDependencies(ctx context.Context, in *pb.GetDependenciesRequest) (*pb.GetConDependenciesResponse, error) {
 	err := apt.Validate(in)
 	if err != nil {
 		util.Logger().Errorf(err, "GetConsumerDependencies failed for validating parameters failed.")

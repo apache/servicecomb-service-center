@@ -11,20 +11,19 @@
 //WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //See the License for the specific language governing permissions and
 //limitations under the License.
-package v3
+package govern
 
 import (
 	"github.com/ServiceComb/service-center/pkg/rest"
-	"github.com/ServiceComb/service-center/server/rest/controller/v4"
 )
 
 // GovernService 治理相关接口服务
-type GovernService struct {
-	v4.GovernService
+type GovernServiceControllerV3 struct {
+	GovernServiceControllerV4
 }
 
 // URLPatterns 路由
-func (governService *GovernService) URLPatterns() []rest.Route {
+func (governService *GovernServiceControllerV3) URLPatterns() []rest.Route {
 	return []rest.Route{
 		{rest.HTTP_METHOD_GET, "/registry/v3/govern/service/:serviceId", governService.GetServiceDetail},
 		{rest.HTTP_METHOD_GET, "/registry/v3/govern/relation", governService.GetGraph},

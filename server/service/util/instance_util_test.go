@@ -115,3 +115,11 @@ func TestDeleteServiceAllInstances(t *testing.T) {
 		t.FailNow()
 	}
 }
+
+func TestParseEndpointValue(t *testing.T) {
+	epv := ParseEndpointValue([]byte("x/y"))
+	if epv.serviceId != "x" || epv.instanceId != "y" {
+		fmt.Printf(`ParseEndpointValue failed`)
+		t.FailNow()
+	}
+}

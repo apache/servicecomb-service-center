@@ -24,6 +24,18 @@ import (
 	"google.golang.org/grpc"
 )
 
+type grpcWatchServer struct {
+	grpc.ServerStream
+}
+
+func (x *grpcWatchServer) Send(m *pb.WatchInstanceResponse) error {
+	return nil
+}
+
+func (x *grpcWatchServer) Context() context.Context {
+	return getContext()
+}
+
 var _ = Describe("'Instance' service", func() {
 	Describe("execute 'register' operartion", func() {
 		var (
@@ -1122,7 +1134,7 @@ var _ = Describe("'Instance' service", func() {
 		Context("when request is invalid", func() {
 			It("should be failed", func() {
 				By("service does not exist")
-				IC := instanceResource.(*service.InstanceController)
+				IC := instanceResource.(*service.InstanceService)
 				err := IC.WatchPreOpera(getContext(), &pb.WatchInstanceRequest{
 					SelfServiceId: "-1",
 				})
@@ -1134,13 +1146,13 @@ var _ = Describe("'Instance' service", func() {
 				Expect(err).NotTo(BeNil())
 
 				By("service id is empty")
-				err = instanceResource.(*service.InstanceController).WatchPreOpera(getContext(), &pb.WatchInstanceRequest{
+				err = instanceResource.(*service.InstanceService).WatchPreOpera(getContext(), &pb.WatchInstanceRequest{
 					SelfServiceId: "",
 				})
 				Expect(err).NotTo(BeNil())
 
 				By("request is valid")
-				err = instanceResource.(*service.InstanceController).WatchPreOpera(getContext(),
+				err = instanceResource.(*service.InstanceService).WatchPreOpera(getContext(),
 					&pb.WatchInstanceRequest{
 						SelfServiceId: serviceId,
 					})
@@ -1149,15 +1161,3 @@ var _ = Describe("'Instance' service", func() {
 		})
 	})
 })
-
-type grpcWatchServer struct {
-	grpc.ServerStream
-}
-
-func (x *grpcWatchServer) Send(m *pb.WatchInstanceResponse) error {
-	return nil
-}
-
-func (x *grpcWatchServer) Context() context.Context {
-	return getContext()
-}

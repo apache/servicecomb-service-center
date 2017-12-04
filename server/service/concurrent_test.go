@@ -39,7 +39,7 @@ func init() {
 func TestServiceController_CreateDependenciesForMicroServices(t *testing.T) {
 	tryTimes := 3
 	testCount := 10
-	serviceResource, _, _ := service.AssembleResources()
+	serviceResource, _ := service.AssembleResources()
 	for i := 0; i < testCount; i++ {
 		_, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
