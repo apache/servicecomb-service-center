@@ -172,7 +172,6 @@ func DeleteServiceAllInstances(ctx context.Context, serviceId string) error {
 		err = backend.Registry().LeaseRevoke(ctx, leaseID)
 		if err != nil {
 			util.Logger().Errorf(err, "revoke instance failed.serviceId %s", serviceId)
-			return err
 		}
 	}
 	return nil
