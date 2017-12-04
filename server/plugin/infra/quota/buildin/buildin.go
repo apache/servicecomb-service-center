@@ -23,14 +23,17 @@ import (
 	mgr "github.com/ServiceComb/service-center/server/plugin"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"golang.org/x/net/context"
+	"strings"
 )
 
 const (
-	SERVICE_MAX_NUMBER            = 12000
-	INSTANCE_MAX_NUMBER           = 150000
-	RULE_NUM_MAX_FOR_ONESERVICE   = 100
-	SCHEMA_NUM_MAX_FOR_ONESERVICE = 1000
-	TAG_MAX_NUM_FOR_ONESERVICE    = 100
+	SERVICE_MAX_NUMBER                      = 12000
+	SERVICE_NUM_MAX_LIMIT_UNDER_ONE_TENANT  = 100
+	INSTANCE_MAX_NUMBER                     = 150000
+	INSTANCE_NUM_MAX_LIMIT_UNDER_ONE_TENANT = 100
+	RULE_NUM_MAX_FOR_ONESERVICE             = 100
+	SCHEMA_NUM_MAX_FOR_ONESERVICE           = 1000
+	TAG_MAX_NUM_FOR_ONESERVICE              = 100
 )
 
 func init() {
@@ -49,35 +52,20 @@ type BuildInQuota struct {
 
 //申请配额sourceType serviceinstance servicetype
 func (q *BuildInQuota) Apply4Quotas(ctx context.Context, quotaType quota.ResourceType, domainProject string, serviceId string, quotaSize int16) (quota.QuotaReporter, bool, error) {
-	var key string = ""
-	var max int64 = 0
-	var indexer *store.Indexer
+	data := &QuotaApplyData {
+		domain: strings.Split(domainProject, "/")[0],
+		quotaSize: int64(quotaSize),
+	}
 	switch quotaType {
 	case quota.MicroServiceInstanceQuotaType:
-		key = core.GetInstanceRootKey("")
-		max = INSTANCE_MAX_NUMBER
-		indexer = store.Store().Instance()
+		isOk, err := instanceQuotaCheck(ctx, data)
+		return nil, isOk, err
 	case quota.MicroServiceQuotaType:
-		key = core.GetServiceRootKey("")
-		max = SERVICE_MAX_NUMBER
-		indexer = store.Store().Service()
+		isOk, err := serviceQuotaCheck(ctx, data)
+		return nil, isOk, err
 	default:
 		return ResourceLimitHandler(ctx, quotaType, domainProject, serviceId, quotaSize)
 	}
-	resp, err := indexer.Search(ctx,
-		registry.WithStrKey(key),
-		registry.WithPrefix(),
-		registry.WithCountOnly())
-	if err != nil {
-		return nil, false, err
-	}
-	num := resp.Count + int64(quotaSize)
-	util.Logger().Debugf("resource num is %d", num)
-	if num > max {
-		util.Logger().Errorf(nil, "no quota to apply this source, %s", serviceId)
-		return nil, false, nil
-	}
-	return nil, true, nil
 }
 
 //向配额中心上报配额使用量
@@ -128,4 +116,130 @@ func ResourceLimitHandler(ctx context.Context, quotaType quota.ResourceType, dom
 		return nil, false, nil
 	}
 	return nil, true, nil
+}
+
+type QuotaApplyData struct {
+	domain        string
+	project       string
+	domainProject string
+	quotaSize     int64
+}
+
+type GetCurUsedNum func(context.Context, *QuotaApplyData) (int64, error)
+type GetLimitQuota func() int64
+
+func quotaCheck(ctx context.Context, data *QuotaApplyData, getLimitQuota GetLimitQuota, getCurUsedNum GetCurUsedNum) (bool, error) {
+	limitQuota := getLimitQuota()
+	curNum, err := getCurUsedNum(ctx, data)
+	if err != nil {
+		return false, err
+	}
+	if curNum+data.quotaSize > limitQuota {
+		return false, nil
+	}
+	return true, nil
+}
+
+func instanceQuotaCheck(ctx context.Context, data *QuotaApplyData) (isOk bool, err error) {
+	isOk, err = quotaCheck(ctx, data, getInstanceMaxLimitUnderOneTenant, getAllInstancesNumUnderOneTenant)
+	if err != nil {
+		util.Logger().Errorf(err, "instance quota check failed under one tenant")
+		return
+	}
+	if !isOk {
+		util.Logger().Errorf(err, "no quota to create instance under one tenant")
+		return
+	}
+
+	isOk, err = quotaCheck(ctx, data, getInstanceMaxLimit, getAllInstancesNum)
+	if err != nil {
+		util.Logger().Errorf(err, "instance quota check failed")
+		return
+	}
+	if !isOk {
+		util.Logger().Errorf(err, "no quota to create instance")
+		return
+	}
+	return
+}
+
+func getInstanceMaxLimitUnderOneTenant() int64 {
+	return INSTANCE_NUM_MAX_LIMIT_UNDER_ONE_TENANT
+}
+
+func getInstanceMaxLimit() int64 {
+	return INSTANCE_MAX_NUMBER
+}
+
+func getInstancesNum(ctx context.Context, key string) (int64, error) {
+	resp, err := store.Store().Instance().Search(ctx,
+		registry.WithStrKey(key),
+		registry.WithPrefix(),
+		registry.WithCountOnly())
+	if err != nil {
+		return 0, err
+	}
+	return resp.Count, nil
+}
+
+func getAllInstancesNum(ctx context.Context, data *QuotaApplyData) (int64, error) {
+	key := core.GetInstanceRootKey("")
+	return getInstancesNum(ctx, key)
+}
+
+func getAllInstancesNumUnderOneTenant(ctx context.Context, data *QuotaApplyData) (int64, error) {
+	key := core.GetInstanceRootKey(data.domain)
+	return getInstancesNum(ctx, key)
+}
+
+func serviceQuotaCheck(ctx context.Context, data *QuotaApplyData) (isOk bool, err error) {
+	isOk, err = quotaCheck(ctx, data, getServiceMaxLimitUnderOneTenant, getAllServicesNumUnderOneTenant)
+	if err != nil {
+		util.Logger().Errorf(err, "service quota check failed under one tenant ")
+		return
+	}
+	if !isOk {
+		util.Logger().Errorf(err, "no quota to create service under one tenant")
+		return
+	}
+
+	isOk, err = quotaCheck(ctx, data, getServiceMaxLimit, getAllServicesNum)
+	if err != nil {
+		util.Logger().Errorf(err, "service quota check failed")
+		return
+	}
+	if !isOk {
+		util.Logger().Errorf(err, "no quota to create service")
+		return
+	}
+	return
+}
+
+func getServiceMaxLimitUnderOneTenant() int64 {
+	return SERVICE_NUM_MAX_LIMIT_UNDER_ONE_TENANT
+}
+
+func getServiceMaxLimit() int64 {
+	return SERVICE_MAX_NUMBER
+}
+
+func getServicesNum(ctx context.Context, key string) (int64, error) {
+	resp, err := store.Store().Service().Search(ctx,
+		registry.WithStrKey(key),
+		registry.WithPrefix(),
+		registry.WithCountOnly())
+	if err != nil {
+		return 0, err
+	}
+	return resp.Count, nil
+}
+
+func getAllServicesNum(ctx context.Context, data *QuotaApplyData) (int64, error) {
+	key := core.GetServiceRootKey("")
+	return getServicesNum(ctx, key)
+}
+
+func getAllServicesNumUnderOneTenant(ctx context.Context, data *QuotaApplyData) (int64, error) {
+	key := core.GetServiceRootKey(data.domain)
+	return getServicesNum(ctx, key)
 }

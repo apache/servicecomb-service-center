@@ -151,10 +151,10 @@ func isContain(endpoints []string, endpoint string) bool {
 	return false
 }
 
-func DeleteServiceAllInstances(ctx context.Context, ServiceId string) error {
+func DeleteServiceAllInstances(ctx context.Context, serviceId string) error {
 	domainProject := util.ParseDomainProject(ctx)
 
-	instanceLeaseKey := apt.GenerateInstanceLeaseKey(domainProject, ServiceId, "")
+	instanceLeaseKey := apt.GenerateInstanceLeaseKey(domainProject, serviceId, "")
 	resp, err := store.Store().Lease().Search(ctx,
 		registry.WithStrKey(instanceLeaseKey),
 		registry.WithPrefix(),
@@ -169,7 +169,11 @@ func DeleteServiceAllInstances(ctx context.Context, ServiceId string) error {
 	}
 	for _, v := range resp.Kvs {
 		leaseID, _ := strconv.ParseInt(util.BytesToStringWithNoCopy(v.Value), 10, 64)
-		backend.Registry().LeaseRevoke(ctx, leaseID)
+		err = backend.Registry().LeaseRevoke(ctx, leaseID)
+		if err != nil {
+			util.Logger().Errorf(err, "revoke instance failed.serviceId %s", serviceId)
+			return err
+		}
 	}
 	return nil
 }
