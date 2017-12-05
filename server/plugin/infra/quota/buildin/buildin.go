@@ -78,15 +78,15 @@ func ResourceLimitHandler(ctx context.Context, quotaType quota.ResourceType, dom
 	var indexer *store.Indexer
 
 	switch quotaType {
-	case quota.RULEQuotaType:
+	case quota.RuleQuotaType:
 		key = core.GenerateServiceRuleKey(domainProject, serviceId, "")
 		max = RULE_NUM_MAX_LIMIT_PER_SERVICE
 		indexer = store.Store().Rule()
-	case quota.SCHEMAQuotaType:
+	case quota.SchemaQuotaType:
 		key = core.GenerateServiceSchemaKey(domainProject, serviceId, "")
 		max = SCHEMA_NUM_MAX_LIMIT_PER_SERVICE
 		indexer = store.Store().Schema()
-	case quota.TAGQuotaType:
+	case quota.TagQuotaType:
 		num := quotaSize
 		max = TAG_NUM_MAX_LIMIT_PER_SERVICE
 		tags, err := serviceUtil.GetTagsUtils(ctx, domainProject, serviceId)

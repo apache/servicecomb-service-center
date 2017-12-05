@@ -219,7 +219,7 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 	pluginOps := make([]registry.PluginOp, 0)
 	if service.Environment == pb.ENV_PROD {
 		if len(service.Schemas) == 0 {
-			_, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.SCHEMAQuotaType, domainProject, serviceId, int16(len(schemas)))
+			_, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.SchemaQuotaType, domainProject, serviceId, int16(len(schemas)))
 			if err != nil {
 				util.Logger().Errorf(err, "Add schema info failed, check resource num failed, %s", serviceId)
 				return scerr.NewError(scerr.ErrUnavailableQuota, err.Error())
@@ -271,7 +271,7 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 
 		quotaSize := len(needAddSchemas) - len(needDeleteSchemas)
 		if quotaSize > 0 {
-			_, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.SCHEMAQuotaType, domainProject, serviceId, int16(quotaSize))
+			_, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.SchemaQuotaType, domainProject, serviceId, int16(quotaSize))
 			if err != nil {
 				util.Logger().Errorf(err, "Add schema info failed, check resource num failed, %s", serviceId)
 				return scerr.NewError(scerr.ErrUnavailableQuota, err.Error())
@@ -421,7 +421,7 @@ func (s *MicroServiceService) canModifySchema(ctx context.Context, domainProject
 		return scerr.NewError(scerr.ErrInvalidParams, err.Error())
 	}
 
-	_, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.SCHEMAQuotaType, domainProject, serviceId, 1)
+	_, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.SchemaQuotaType, domainProject, serviceId, 1)
 	if err != nil {
 		util.Logger().Errorf(err, "Add schema info failed, check resource num failed, %s, %s", serviceId, schemaId)
 		return scerr.NewError(scerr.ErrUnavailableQuota, err.Error())
