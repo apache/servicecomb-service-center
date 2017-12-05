@@ -74,7 +74,7 @@ func GetAllInstancesOfOneService(ctx context.Context, domainProject string, serv
 		return nil, err
 	}
 
-	instances := []*pb.MicroServiceInstance{}
+	instances := make([]*pb.MicroServiceInstance, 0, len(resp.Kvs))
 	for _, kvs := range resp.Kvs {
 		util.Logger().Debugf("start unmarshal service instance file: %s", util.BytesToStringWithNoCopy(kvs.Key))
 		instance := &pb.MicroServiceInstance{}
@@ -151,10 +151,10 @@ func isContain(endpoints []string, endpoint string) bool {
 	return false
 }
 
-func DeleteServiceAllInstances(ctx context.Context, ServiceId string) error {
+func DeleteServiceAllInstances(ctx context.Context, serviceId string) error {
 	domainProject := util.ParseDomainProject(ctx)
 
-	instanceLeaseKey := apt.GenerateInstanceLeaseKey(domainProject, ServiceId, "")
+	instanceLeaseKey := apt.GenerateInstanceLeaseKey(domainProject, serviceId, "")
 	resp, err := store.Store().Lease().Search(ctx,
 		registry.WithStrKey(instanceLeaseKey),
 		registry.WithPrefix(),

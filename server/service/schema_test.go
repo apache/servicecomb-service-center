@@ -179,7 +179,7 @@ var _ = Describe("'Schema' service", func() {
 		})
 
 		Context("when create schemas out of gauge", func() {
-			size := buildin.SCHEMA_NUM_MAX_FOR_ONESERVICE + 1
+			size := buildin.SCHEMA_NUM_MAX_LIMIT_PER_SERVICE + 1
 			schemaIds := make([]string, 0, size)
 			schemas := make([]*pb.Schema, 0, size)
 			for i := 0; i < size; i++ {

@@ -89,28 +89,28 @@ func GetProvidersInCache(ctx context.Context, domainProject string, consumerId s
 	return providerIds, nil
 }
 
-func RefreshDependencyCache(ctx context.Context, domainProject string, providerId string, provider *pb.MicroService) error {
-	dr := NewDependencyRelation(ctx, domainProject, providerId, provider, providerId, provider)
+func RefreshDependencyCache(ctx context.Context, domainProject string, serviceId string, service *pb.MicroService) error {
+	dr := NewDependencyRelation(ctx, domainProject, serviceId, service, serviceId, service)
 	consumerIds, err := dr.GetDependencyConsumerIds()
 	if err != nil {
-		util.Logger().Errorf(err, "%s,refresh dependency cache failed, get consumerIds failed.", providerId)
+		util.Logger().Errorf(err, "%s,refresh dependency cache failed, get consumerIds failed.", serviceId)
 		return err
 	}
 	providerIds, err := dr.GetDependencyProviderIds()
 	if err != nil {
-		util.Logger().Errorf(err, "%s,refresh dependency cache failed, get providerIds failed.", providerId)
+		util.Logger().Errorf(err, "%s,refresh dependency cache failed, get providerIds failed.", serviceId)
 		return err
 	}
-	MsCache().Set(providerId, provider, 5*time.Minute)
+	MsCache().Set(serviceId, service, 5*time.Minute)
 	if len(consumerIds) == 0 {
-		util.Logger().Infof("refresh dependency cache: this services %s has no consumer dependency.", providerId)
+		util.Logger().Infof("refresh dependency cache: this services %s has no consumer dependency.", serviceId)
 	} else {
-		consumerCache.Set(providerId, consumerIds, 5*time.Minute)
+		consumerCache.Set(serviceId, consumerIds, 5*time.Minute)
 	}
 	if len(providerIds) == 0 {
-		util.Logger().Infof("refresh dependency cache: this services %s has no consumer dependency.", providerId)
+		util.Logger().Infof("refresh dependency cache: this services %s has no consumer dependency.", serviceId)
 	} else {
-		providerCache.Set(providerId, providerIds, 5*time.Minute)
+		providerCache.Set(serviceId, providerIds, 5*time.Minute)
 	}
 	return nil
 }
