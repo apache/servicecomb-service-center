@@ -91,14 +91,15 @@ type ServerConfig struct {
 	LimitConnections int64  `json:"limitConnections"`
 	LimitIPLookup    string `json:"limitIPLookup"`
 
-	SslEnabled      bool   `json:"sslEnabled,string"`
-	SslVerifyClient bool   `json:"sslVerifyClient,string"`
-	SslCiphers      string `json:"sslCiphers"`
+	SslEnabled    bool   `json:"sslEnabled,string"`
+	SslMinVersion string `json:"sslMinVersion"`
+	SslVerifyPeer bool   `json:"sslVerifyPeer,string"`
+	SslCiphers    string `json:"sslCiphers"`
 }
 
 type ServerInformation struct {
 	Version string        `json:"version"`
-	Config  *ServerConfig `json:"config,omitempty"`
+	Config  *ServerConfig `json:"-"`
 }
 
 func CreateResponse(code int32, message string) *Response {

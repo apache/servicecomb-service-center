@@ -64,7 +64,7 @@ func (this *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
 	result := Result{
 		version.Ver(),
 		API_VERSION,
-		core.GetServerInformation().Config,
+		core.ServerInfo.Config,
 	}
 	resultJSON, _ := json.Marshal(result)
 	w.Header().Set("Content-Type", "application/json;charset=utf-8")

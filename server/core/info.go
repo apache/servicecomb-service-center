@@ -24,7 +24,11 @@ import (
 	"golang.org/x/net/context"
 )
 
-var serverInfo *pb.ServerInformation
+var ServerInfo *pb.ServerInformation
+
+func init() {
+	ServerInfo = newInfo()
+}
 
 func newInfo() *pb.ServerInformation {
 	return &pb.ServerInformation{
@@ -43,9 +47,10 @@ func newInfo() *pb.ServerInformation {
 			LimitIPLookup: beego.AppConfig.DefaultString("limit_iplookups",
 				"RemoteAddr,X-Forwarded-For,X-Real-IP"),
 
-			SslEnabled:      beego.AppConfig.DefaultInt("ssl_mode", 1) != 0,
-			SslVerifyClient: beego.AppConfig.DefaultInt("ssl_verify_client", 1) != 0,
-			SslCiphers:      beego.AppConfig.String("ssl_ciphers"),
+			SslEnabled:    beego.AppConfig.DefaultInt("ssl_mode", 1) != 0,
+			SslMinVersion: beego.AppConfig.DefaultString("ssl_min_version", "TLSv1.2"),
+			SslVerifyPeer: beego.AppConfig.DefaultInt("ssl_verify_client", 1) != 0,
+			SslCiphers:    beego.AppConfig.String("ssl_ciphers"),
 		},
 	}
 }
@@ -56,14 +61,11 @@ func LoadServerInformation() error {
 	if err != nil {
 		return err
 	}
-
-	serverInfo = newInfo()
-
 	if len(resp.Kvs) == 0 {
 		return nil
 	}
 
-	err = json.Unmarshal(resp.Kvs[0].Value, serverInfo)
+	err = json.Unmarshal(resp.Kvs[0].Value, ServerInfo)
 	if err != nil {
 		util.Logger().Errorf(err, "load system config failed, maybe incompatible")
 		return nil
@@ -72,9 +74,9 @@ func LoadServerInformation() error {
 }
 
 func UpgradeServerVersion() error {
-	GetServerInformation().Version = version.Ver().Version
+	ServerInfo.Version = version.Ver().Version
 
-	bytes, err := json.Marshal(GetServerInformation())
+	bytes, err := json.Marshal(ServerInfo)
 	if err != nil {
 		return err
 	}
@@ -84,8 +86,4 @@ func UpgradeServerVersion() error {
 		return err
 	}
 	return nil
-}
-
-func GetServerInformation() *pb.ServerInformation {
-	return serverInfo
 }

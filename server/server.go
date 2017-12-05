@@ -16,7 +16,6 @@ package server
 import _ "github.com/ServiceComb/service-center/server/service/event"
 import (
 	"fmt"
-	ssl "github.com/ServiceComb/service-center/pkg/tlsutil"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/server/core/backend"
@@ -80,14 +79,14 @@ func (s *ServiceCenterServer) waitForQuit() {
 }
 
 func (s *ServiceCenterServer) needUpgrade() bool {
-	if core.GetServerInformation() == nil {
+	if core.ServerInfo.Version == "0" {
 		err := core.LoadServerInformation()
 		if err != nil {
 			util.Logger().Errorf(err, "check version failed, can not load the system config")
 			return false
 		}
 	}
-	return !serviceUtil.VersionMatchRule(core.GetServerInformation().Version,
+	return !serviceUtil.VersionMatchRule(core.ServerInfo.Version,
 		fmt.Sprintf("%s+", version.Ver().Version))
 }
 
@@ -137,7 +136,7 @@ func (s *ServiceCenterServer) addEndpoint(t APIType, ip, port string) {
 		return
 	}
 	address := util.StringJoin([]string{ip, port}, ":")
-	if ssl.GetServerSSLConfig().SSLEnabled {
+	if core.ServerInfo.Config.SslEnabled {
 		address += "?sslEnabled=true"
 	}
 	s.apiServer.Endpoints[t] = fmt.Sprintf("%s://%s", t, address)
