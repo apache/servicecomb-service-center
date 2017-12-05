@@ -203,7 +203,7 @@ func doBackup(fPath string, MaxBackupCount int) {
 	removeExceededFiles(filepath.Dir(fPath), filepath.Base(fPath), MaxBackupCount, "backup")
 }
 
-func logRotateFile(file string, MaxFileSize int, MaxBackupCount int) {
+func LogRotateFile(file string, MaxFileSize int, MaxBackupCount int) {
 	defer func() {
 		if e := recover(); e != nil {
 			util.Logger().Errorf(nil, "LogRotate file %s catch an exception, err: %v.", EscapPath(file), e)
@@ -233,7 +233,7 @@ func LogRotate(path string, MaxFileSize int, MaxBackupCount int) {
 	}
 
 	for _, file := range fileList {
-		logRotateFile(file, MaxFileSize, MaxBackupCount)
+		LogRotateFile(file, MaxFileSize, MaxBackupCount)
 	}
 }
 

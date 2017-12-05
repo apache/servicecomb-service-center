@@ -18,11 +18,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/server/plugin"
-	"github.com/astaxie/beego"
 	"io/ioutil"
-	"os"
-	"path/filepath"
 	"strings"
 )
 
@@ -48,51 +44,38 @@ var TLS_VERSION_MAP = map[string]uint16{
 }
 
 type SSLConfig struct {
-	SSLEnabled   bool
-	VerifyClient bool
-	CipherSuites []uint16
-	MinVersion   uint16
-	MaxVersion   uint16
-	CACertFile   string
-	CertFile     string
-	KeyFile      string
-	KeyPassphase string
+	VerifyPeer     bool
+	VerifyHostName bool
+	CipherSuites   []uint16
+	MinVersion     uint16
+	MaxVersion     uint16
+	CACertFile     string
+	CertFile       string
+	KeyFile        string
+	KeyPassphase   string
 }
 
-var sslServerConfig *SSLConfig = &SSLConfig{
-	SSLEnabled:   true,
-	VerifyClient: true,
-	MinVersion:   tls.VersionTLS12,
-	MaxVersion:   tls.VersionTLS12,
-	CipherSuites: nil,
-	CACertFile:   getSSLPath("trust.cer"),
-	CertFile:     getSSLPath("server.cer"),
-	KeyFile:      getSSLPath("server_key.pem"),
-	KeyPassphase: "",
-}
+type SSLConfigOption func(*SSLConfig)
 
-var sslClientConfig *SSLConfig = &SSLConfig{
-	SSLEnabled:   true,
-	VerifyClient: true,
-	CipherSuites: nil,
-	MinVersion:   tls.VersionTLS12,
-	MaxVersion:   tls.VersionTLS12,
-	CACertFile:   getSSLPath("trust.cer"),
-	CertFile:     getSSLPath("server.cer"),
-	KeyFile:      getSSLPath("server_key.pem"),
-	KeyPassphase: "",
+func WithVerifyPeer(b bool) SSLConfigOption      { return func(c *SSLConfig) { c.VerifyPeer = b } }
+func WithVerifyHostName(b bool) SSLConfigOption  { return func(c *SSLConfig) { c.VerifyHostName = b } }
+func WithCipherSuits(s []uint16) SSLConfigOption { return func(c *SSLConfig) { c.CipherSuites = s } }
+func WithVersion(min, max uint16) SSLConfigOption {
+	return func(c *SSLConfig) { c.MinVersion, c.MaxVersion = min, max }
 }
+func WithCert(f string) SSLConfigOption    { return func(c *SSLConfig) { c.CertFile = f } }
+func WithKey(k string) SSLConfigOption     { return func(c *SSLConfig) { c.KeyFile = k } }
+func WithKeyPass(p string) SSLConfigOption { return func(c *SSLConfig) { c.KeyPassphase = p } }
+func WithCA(f string) SSLConfigOption      { return func(c *SSLConfig) { c.CACertFile = f } }
 
-func getSSLPath(path string) string {
-	env := os.Getenv("SSL_ROOT")
-	if len(env) == 0 {
-		wd, _ := os.Getwd()
-		return filepath.Join(wd, "etc", "ssl", path)
+func toSSLConfig(opts ...SSLConfigOption) (op SSLConfig) {
+	for _, opt := range opts {
+		opt(&op)
 	}
-	return os.ExpandEnv(filepath.Join("$SSL_ROOT", path))
+	return
 }
 
-func parseSSLCipherSuites(ciphers string, permitTlsCipherSuiteMap map[string]uint16) []uint16 {
+func ParseSSLCipherSuites(ciphers string, permitTlsCipherSuiteMap map[string]uint16) []uint16 {
 	cipherSuiteList := make([]uint16, 0)
 	cipherSuiteNameList := strings.Split(ciphers, ",")
 	for _, cipherSuiteName := range cipherSuiteNameList {
@@ -112,15 +95,15 @@ func parseSSLCipherSuites(ciphers string, permitTlsCipherSuiteMap map[string]uin
 	return cipherSuiteList
 }
 
-func parseServerSSLCipherSuites(ciphers string) []uint16 {
-	return parseSSLCipherSuites(ciphers, SERVER_TLS_CIPHER_SUITE_MAP)
+func ParseServerSSLCipherSuites(ciphers string) []uint16 {
+	return ParseSSLCipherSuites(ciphers, SERVER_TLS_CIPHER_SUITE_MAP)
 }
 
-func parseClientSSLCipherSuites(ciphers string) []uint16 {
-	return parseSSLCipherSuites(ciphers, CLIENT_TLS_CIPHER_SUITE_MAP)
+func ParseClientSSLCipherSuites(ciphers string) []uint16 {
+	return ParseSSLCipherSuites(ciphers, CLIENT_TLS_CIPHER_SUITE_MAP)
 }
 
-func parseSSLProtocol(sprotocol string) uint16 {
+func ParseSSLProtocol(sprotocol string) uint16 {
 	var result uint16 = tls.VersionTLS12
 	if protocol, ok := TLS_VERSION_MAP[sprotocol]; ok {
 		result = protocol
@@ -131,71 +114,8 @@ func parseSSLProtocol(sprotocol string) uint16 {
 	return result
 }
 
-func LoadServerSSLConfig() {
-	util.Logger().Debugf("load server ssl configurations.")
-	sslServerConfig.SSLEnabled = beego.AppConfig.DefaultInt("ssl_mode", 1) != 0
-	sslServerConfig.VerifyClient = beego.AppConfig.DefaultInt("ssl_verify_client", 1) != 0
-	sslServerProtocol := beego.AppConfig.DefaultString("ssl_protocols", "TLSv1.2")
-	sslServerConfig.MinVersion = parseSSLProtocol(sslServerProtocol)
-	sslServerConfig.CipherSuites = parseServerSSLCipherSuites(beego.AppConfig.DefaultString("ssl_ciphers", ""))
-	if sslServerConfig.SSLEnabled {
-		// 如果配置了SSL模式，SSL参数必须配置
-		keyPassphase, err := ioutil.ReadFile(getSSLPath("cert_pwd"))
-		if err != nil {
-			util.Logger().Warn("read file cert_pwd failed.", err)
-		}
-		sslServerConfig.KeyPassphase = util.BytesToStringWithNoCopy(keyPassphase)
-	}
-
-	util.Logger().Infof("server ssl configs enabled %t, verifyClient %t, minv %#x, ciphers %d, phase %d.",
-		sslServerConfig.SSLEnabled,
-		sslServerConfig.VerifyClient,
-		sslServerConfig.MinVersion,
-		len(sslServerConfig.CipherSuites),
-		len(sslServerConfig.KeyPassphase))
-}
-
-func LoadClientSSLConfig() {
-	util.Logger().Debugf("load client ssl configurations.")
-	sslClientConfig.SSLEnabled = sslServerConfig.SSLEnabled
-	sslClientConfig.VerifyClient = sslServerConfig.VerifyClient
-	sslClientProtocol := beego.AppConfig.DefaultString("ssl_client_protocols", "")
-	if len(sslClientProtocol) == 0 {
-		// 如果未配置，则复用服务端配置
-		sslClientConfig.MinVersion = sslServerConfig.MinVersion
-	} else {
-		sslClientConfig.MinVersion = parseSSLProtocol(sslClientProtocol)
-	}
-
-	sslClientCiphers := beego.AppConfig.DefaultString("ssl_client_ciphers", "")
-	if len(sslClientCiphers) == 0 {
-		// 如果未配置，则复用服务端配置
-		sslClientConfig.CipherSuites = sslServerConfig.CipherSuites[:]
-	} else {
-		sslClientConfig.CipherSuites = parseClientSSLCipherSuites(sslClientCiphers)
-	}
-
-	sslClientConfig.KeyPassphase = sslServerConfig.KeyPassphase
-
-	util.Logger().Infof("client ssl configs enabled %t, verifyclient %t, minv %#x, cipers %d, pphase %d.",
-		sslClientConfig.SSLEnabled,
-		sslClientConfig.VerifyClient,
-		sslClientConfig.MinVersion,
-		len(sslClientConfig.CipherSuites),
-		len(sslClientConfig.KeyPassphase))
-}
-
-func GetServerSSLConfig() *SSLConfig {
-	return sslServerConfig
-}
-
-func GetClientSSLConfig() *SSLConfig {
-	return sslClientConfig
-}
-
-func GetX509CACertPool() (caCertPool *x509.CertPool, err error) {
+func GetX509CACertPool(caCertFile string) (caCertPool *x509.CertPool, err error) {
 	pool := x509.NewCertPool()
-	caCertFile := GetServerSSLConfig().CACertFile
 	caCert, err := ioutil.ReadFile(caCertFile)
 	if err != nil {
 		util.Logger().Errorf(err, "read ca cert file %s failed.", caCertFile)
@@ -206,15 +126,7 @@ func GetX509CACertPool() (caCertPool *x509.CertPool, err error) {
 	return pool, nil
 }
 
-func LoadTLSCertificate() (tlsCert []tls.Certificate, err error) {
-	certFile, keyFile := GetServerSSLConfig().CertFile, GetServerSSLConfig().KeyFile
-	passphase := GetServerSSLConfig().KeyPassphase
-	plainPassphase, err := plugin.Plugins().Cipher().Decrypt(passphase)
-	if err != nil {
-		util.Logger().Errorf(err, "decrypt ssl passphase(%d) failed.", len(passphase))
-		plainPassphase = ""
-	}
-
+func LoadTLSCertificate(certFile, keyFile, plainPassphase string) (tlsCert []tls.Certificate, err error) {
 	certContent, err := ioutil.ReadFile(certFile)
 	if err != nil {
 		util.Logger().Errorf(err, "read cert file %s failed.", certFile)
@@ -269,18 +181,19 @@ func LoadTLSCertificate() (tlsCert []tls.Certificate, err error) {
   supplyCert    Whether send certificate
   verifyCN      Whether verify CommonName
 */
-func GetClientTLSConfig(verifyPeer bool, supplyCert bool, verifyCN bool) (tlsConfig *tls.Config, err error) {
+func GetClientTLSConfig(opts ...SSLConfigOption) (tlsConfig *tls.Config, err error) {
+	cfg := toSSLConfig(opts...)
 	var pool *x509.CertPool = nil
 	var certs []tls.Certificate
-	if verifyPeer {
-		pool, err = GetX509CACertPool()
+	if cfg.VerifyPeer {
+		pool, err = GetX509CACertPool(cfg.CACertFile)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	if supplyCert {
-		certs, err = LoadTLSCertificate()
+	if len(cfg.CertFile) > 0 {
+		certs, err = LoadTLSCertificate(cfg.CertFile, cfg.KeyFile, cfg.KeyPassphase)
 		if err != nil {
 			return nil, err
 		}
@@ -289,20 +202,21 @@ func GetClientTLSConfig(verifyPeer bool, supplyCert bool, verifyCN bool) (tlsCon
 	tlsConfig = &tls.Config{
 		RootCAs:            pool,
 		Certificates:       certs,
-		CipherSuites:       GetClientSSLConfig().CipherSuites,
-		InsecureSkipVerify: !verifyCN,
-		MinVersion:         GetClientSSLConfig().MinVersion,
-		MaxVersion:         GetClientSSLConfig().MaxVersion,
+		CipherSuites:       cfg.CipherSuites,
+		InsecureSkipVerify: !cfg.VerifyHostName,
+		MinVersion:         cfg.MinVersion,
+		MaxVersion:         cfg.MaxVersion,
 	}
 
 	return tlsConfig, nil
 }
 
-func GetServerTLSConfig(verifyPeer bool) (tlsConfig *tls.Config, err error) {
+func GetServerTLSConfig(opts ...SSLConfigOption) (tlsConfig *tls.Config, err error) {
+	cfg := toSSLConfig(opts...)
 	clientAuthMode := tls.NoClientCert
 	var pool *x509.CertPool = nil
-	if verifyPeer {
-		pool, err = GetX509CACertPool()
+	if cfg.VerifyPeer {
+		pool, err = GetX509CACertPool(cfg.CACertFile)
 		if err != nil {
 			return nil, err
 		}
@@ -311,7 +225,7 @@ func GetServerTLSConfig(verifyPeer bool) (tlsConfig *tls.Config, err error) {
 	}
 
 	var certs []tls.Certificate
-	certs, err = LoadTLSCertificate()
+	certs, err = LoadTLSCertificate(cfg.CertFile, cfg.KeyFile, cfg.KeyPassphase)
 	if err != nil {
 		return nil, err
 	}
@@ -319,11 +233,11 @@ func GetServerTLSConfig(verifyPeer bool) (tlsConfig *tls.Config, err error) {
 	tlsConfig = &tls.Config{
 		ClientCAs:                pool,
 		Certificates:             certs,
-		CipherSuites:             GetServerSSLConfig().CipherSuites,
+		CipherSuites:             cfg.CipherSuites,
 		PreferServerCipherSuites: true,
 		ClientAuth:               clientAuthMode,
-		MinVersion:               GetServerSSLConfig().MinVersion,
-		MaxVersion:               GetServerSSLConfig().MaxVersion,
+		MinVersion:               cfg.MinVersion,
+		MaxVersion:               cfg.MaxVersion,
 	}
 
 	return tlsConfig, nil

@@ -16,7 +16,7 @@ package ratelimiter
 import (
 	"errors"
 	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/astaxie/beego"
+	"github.com/ServiceComb/service-center/server/core"
 	"github.com/didip/tollbooth"
 	"github.com/didip/tollbooth/config"
 	"net/http"
@@ -49,7 +49,7 @@ func GetLimiter() *Limiter {
 
 func (this *Limiter) LoadConfig() {
 	ttl := time.Second
-	switch beego.AppConfig.DefaultString("limit_ttl", "s") {
+	switch core.ServerInfo.Config.LimitTTLUnit {
 	case "ms":
 		ttl = time.Millisecond
 	case "m":
@@ -57,10 +57,9 @@ func (this *Limiter) LoadConfig() {
 	case "h":
 		ttl = time.Hour
 	}
-	this.conns = int64(beego.AppConfig.DefaultInt("limit_conns", 0))
+	this.conns = core.ServerInfo.Config.LimitConnections
 	this.tbLimiter = tollbooth.NewLimiter(this.conns, ttl)
-	iplookups := beego.AppConfig.DefaultString("limit_iplookups",
-		"RemoteAddr,X-Forwarded-For,X-Real-IP")
+	iplookups := core.ServerInfo.Config.LimitIPLookup
 	this.tbLimiter.IPLookups = strings.Split(iplookups, ",")
 
 	util.Logger().Warnf(nil, "Rate-limit Load config, ttl: %s, conns: %d, iplookups: %s", ttl, this.conns, iplookups)

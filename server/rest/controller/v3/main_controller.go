@@ -36,8 +36,8 @@ func (this *MainService) URLPatterns() []rest.Route {
 
 func (this *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
 	result := v4.Result{
-		version.Ver(),
-		API_VERSION,
+		VersionSet: version.Ver(),
+		ApiVersion: API_VERSION,
 	}
 	resultJSON, _ := json.Marshal(result)
 	w.Header().Set("Content-Type", "application/json;charset=utf-8")

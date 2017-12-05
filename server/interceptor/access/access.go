@@ -18,24 +18,21 @@ import (
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/pkg/validate"
 	"github.com/ServiceComb/service-center/server/core"
-	"github.com/astaxie/beego"
 	"net/http"
 )
 
 var (
 	serverName string
-	maxBytes   int64
 )
 
 func init() {
 	serverName = core.Service.ServiceName + "/" + core.Service.Version
-	maxBytes = beego.AppConfig.DefaultInt64("max_body_bytes", 2097152)
 }
 
 func Intercept(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Add("server", serverName)
 
-	r.Body = http.MaxBytesReader(w, r.Body, maxBytes)
+	r.Body = http.MaxBytesReader(w, r.Body, core.ServerInfo.Config.MaxBodyBytes)
 
 	if !validate.IsRequestURI(r.RequestURI) {
 		err := fmt.Errorf("Invalid Request URI %s", r.RequestURI)

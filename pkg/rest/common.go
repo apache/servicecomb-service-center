@@ -14,19 +14,14 @@
 package rest
 
 import (
-	"time"
+	"net/http"
 )
 
 const (
-	DEFAULT_TLS_HANDSHAKE_TIMEOUT = 30 * time.Second
-	DEFAULT_HTTP_RESPONSE_TIMEOUT = 60 * time.Second
-
-	HTTP_ERROR_STATUS_CODE = 600
-
-	HTTP_METHOD_GET    = "GET"
-	HTTP_METHOD_PUT    = "PUT"
-	HTTP_METHOD_POST   = "POST"
-	HTTP_METHOD_DELETE = "DELETE"
+	HTTP_METHOD_GET    = http.MethodGet
+	HTTP_METHOD_PUT    = http.MethodPut
+	HTTP_METHOD_POST   = http.MethodPost
+	HTTP_METHOD_DELETE = http.MethodDelete
 
 	CTX_RESPONSE      = "_server_response"
 	CTX_REQUEST       = "_server_request"
@@ -36,7 +31,7 @@ const (
 
 func isValidMethod(method string) bool {
 	switch method {
-	case HTTP_METHOD_GET, HTTP_METHOD_PUT, HTTP_METHOD_POST, HTTP_METHOD_DELETE:
+	case http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete:
 		return true
 	default:
 		return false

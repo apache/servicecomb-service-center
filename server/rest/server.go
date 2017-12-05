@@ -16,9 +16,9 @@ package rest
 import (
 	"crypto/tls"
 	"github.com/ServiceComb/service-center/pkg/rest"
-	ssl "github.com/ServiceComb/service-center/pkg/tlsutil"
 	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/astaxie/beego"
+	"github.com/ServiceComb/service-center/server/core"
+	sctls "github.com/ServiceComb/service-center/server/tls"
 	"net/http"
 	"time"
 )
@@ -29,15 +29,14 @@ var (
 
 func LoadConfig() (srvCfg *rest.ServerConfig, err error) {
 	srvCfg = rest.DefaultServerConfig()
-	readHeaderTimeout, _ := time.ParseDuration(beego.AppConfig.DefaultString("read_header_timeout", "60s"))
-	readTimeout, _ := time.ParseDuration(beego.AppConfig.DefaultString("read_timeout", "60s"))
-	idleTimeout, _ := time.ParseDuration(beego.AppConfig.DefaultString("idle_timeout", "60s"))
-	writeTimeout, _ := time.ParseDuration(beego.AppConfig.DefaultString("write_timeout", "60s"))
-	maxHeaderBytes := beego.AppConfig.DefaultInt("max_header_bytes", 16384)
+	readHeaderTimeout, _ := time.ParseDuration(core.ServerInfo.Config.ReadHeaderTimeout)
+	readTimeout, _ := time.ParseDuration(core.ServerInfo.Config.ReadTimeout)
+	idleTimeout, _ := time.ParseDuration(core.ServerInfo.Config.IdleTimeout)
+	writeTimeout, _ := time.ParseDuration(core.ServerInfo.Config.WriteTimeout)
+	maxHeaderBytes := int(core.ServerInfo.Config.MaxHeaderBytes)
 	var tlsConfig *tls.Config
-	if ssl.GetServerSSLConfig().SSLEnabled {
-		verifyClient := ssl.GetServerSSLConfig().VerifyClient
-		tlsConfig, err = ssl.GetServerTLSConfig(verifyClient)
+	if core.ServerInfo.Config.SslEnabled {
+		tlsConfig, err = sctls.GetServerTLSConfig()
 		if err != nil {
 			return
 		}

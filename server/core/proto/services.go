@@ -78,8 +78,31 @@ type MicroServiceDependency struct {
 	Dependency []*MicroServiceKey
 }
 
-type SystemConfig struct {
-	Version string `json:"version"`
+type ServerConfig struct {
+	MaxHeaderBytes int64 `json:"maxHeaderBytes"`
+	MaxBodyBytes   int64 `json:"maxBodyBytes"`
+
+	ReadHeaderTimeout string `json:"readHeaderTimeout"`
+	ReadTimeout       string `json:"readTimeout"`
+	IdleTimeout       string `json:"idleTimeout"`
+	WriteTimeout      string `json:"writeTimeout"`
+
+	LimitTTLUnit     string `json:"limitTTLUnit"`
+	LimitConnections int64  `json:"limitConnections"`
+	LimitIPLookup    string `json:"limitIPLookup"`
+
+	SslEnabled    bool   `json:"sslEnabled,string"`
+	SslMinVersion string `json:"sslMinVersion"`
+	SslVerifyPeer bool   `json:"sslVerifyPeer,string"`
+	SslCiphers    string `json:"sslCiphers"`
+
+	AutoSyncInterval  string `json:"autoSyncInterval"`
+	CompactIndexDelta int64  `json:"compactIndexDelta"`
+}
+
+type ServerInformation struct {
+	Version string        `json:"version"`
+	Config  *ServerConfig `json:"-"`
 }
 
 func CreateResponse(code int32, message string) *Response {

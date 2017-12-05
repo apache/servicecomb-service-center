@@ -6,7 +6,6 @@ import (
 	"github.com/ServiceComb/service-center/pkg/grace"
 	"github.com/ServiceComb/service-center/pkg/lager"
 	"github.com/ServiceComb/service-center/pkg/logrotate"
-	"github.com/ServiceComb/service-center/pkg/tlsutil"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/version"
 	"github.com/astaxie/beego"
@@ -32,9 +31,6 @@ func Initialize() {
 	printVersion()
 
 	go handleSignals()
-
-	tlsutil.LoadServerSSLConfig()
-	tlsutil.LoadClientSSLConfig()
 
 	initLogRotate()
 

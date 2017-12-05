@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"github.com/ServiceComb/service-center/pkg/tlsutil"
 	"github.com/ServiceComb/service-center/pkg/util"
+	sctls "github.com/ServiceComb/service-center/server/tls"
 	"github.com/astaxie/beego"
 	"io"
 	"io/ioutil"
@@ -29,49 +30,108 @@ import (
 	"time"
 )
 
+const (
+	DEFAULT_TLS_HANDSHAKE_TIMEOUT = 30 * time.Second
+	DEFAULT_HTTP_RESPONSE_TIMEOUT = 10 * time.Second
+	DEFAULT_REQUEST_TIMEOUT       = 300 * time.Second
+
+	HTTP_ERROR_STATUS_CODE = 600
+)
+
 type HttpClient struct {
 	gzip   bool
 	client *http.Client
 }
 
+func NewDialer() *net.Dialer {
+	return &net.Dialer{
+		Timeout:   5 * time.Second,
+		KeepAlive: 30 * time.Second,
+	}
+}
+
+func NewTransport() *http.Transport {
+	return &http.Transport{
+		Dial:                  NewDialer().Dial,
+		MaxIdleConnsPerHost:   beego.AppConfig.DefaultInt("max_idle_conns_per_host", 5),
+		ResponseHeaderTimeout: DEFAULT_HTTP_RESPONSE_TIMEOUT,
+	}
+}
+
 func getTLSTransport(verifyPeer bool, supplyCert bool, verifyCN bool) (transport *http.Transport, err error) {
-	tlsConfig, err := tlsutil.GetClientTLSConfig(verifyPeer, supplyCert, verifyCN)
+	opts := append(sctls.DefaultClientTLSOptions(),
+		tlsutil.WithVerifyPeer(verifyPeer),
+		tlsutil.WithVerifyHostName(verifyCN),
+	)
+
+	if supplyCert {
+		_, decrypt := sctls.GetPassphase()
+		opts = append(opts,
+			tlsutil.WithKeyPass(decrypt),
+		)
+	} else {
+		opts = append(opts,
+			tlsutil.WithCert(""),
+			tlsutil.WithKey(""),
+		)
+	}
+
+	tlsConfig, err := tlsutil.GetClientTLSConfig(opts...)
 	if err != nil {
 		return nil, err
 	}
 
-	transport = &http.Transport{
-		TLSClientConfig:       tlsConfig,
-		TLSHandshakeTimeout:   DEFAULT_TLS_HANDSHAKE_TIMEOUT,
-		ResponseHeaderTimeout: DEFAULT_HTTP_RESPONSE_TIMEOUT,
-	}
-
+	transport = NewTransport()
+	transport.TLSClientConfig = tlsConfig
+	transport.TLSHandshakeTimeout = DEFAULT_TLS_HANDSHAKE_TIMEOUT
 	return transport, nil
 }
 
 /**
   获取普通HTTP客户端
 */
-var httpClient = &http.Client{
-	Transport: transport,
-	Timeout:   300 * time.Second,
-}
-
-var maxIdleConnsPerHost = beego.AppConfig.DefaultInt("max_idle_conns_per_host", 200)
-var transport = &http.Transport{
-	Dial: (&net.Dialer{
-		Timeout:   5 * time.Second,
-		KeepAlive: 30 * time.Second,
-	}).Dial,
-	MaxIdleConnsPerHost:   maxIdleConnsPerHost,
-	ResponseHeaderTimeout: 10 * time.Second,
-}
 
 func GetHttpClient(gzip bool) (client *HttpClient, err error) {
 	return &HttpClient{
-		gzip:   gzip,
-		client: httpClient,
+		gzip: gzip,
+		client: &http.Client{
+			Transport: NewTransport(),
+			Timeout:   DEFAULT_REQUEST_TIMEOUT,
+		},
 	}, nil
+}
+
+/**
+  获取匿名认证HTTP客户端（支持压缩, 不校验对端, 不提供证书, 不校验CN）
+*/
+func GetAnonymousHttpsClient(gzip bool) (client *HttpClient, err error) {
+	return getHttpsClient(gzip, false, false, false)
+}
+
+/**
+  获取TLS认证HTTP客户端（支持压缩，提供证书，是否认证对端通过参数控制）
+*/
+func GetHttpsClient(gzip, verifyPeer bool) (client *HttpClient, err error) {
+	return getHttpsClient(gzip, verifyPeer, true, false)
+}
+
+func GetClient(scheme string) (*HttpClient, error) {
+	var err error
+	var client *HttpClient
+	if scheme == "https" {
+		client, err = getHttpsClient(false, false, true, false)
+		if err != nil {
+			util.Logger().Error("Create https rest.client failed.", err)
+			return nil, err
+		}
+		return client, nil
+	}
+	client, err = GetHttpClient(false)
+	if err != nil {
+		util.Logger().Error("Create http rest.client failed.", err)
+		return nil, err
+	}
+	return client, nil
 }
 
 /**
@@ -91,25 +151,11 @@ func getHttpsClient(gzip, verifyPeer, supplyCert, verifyCN bool) (client *HttpCl
 		gzip: gzip,
 		client: &http.Client{
 			Transport: transport,
-			Timeout:   300 * time.Second,
+			Timeout:   DEFAULT_REQUEST_TIMEOUT,
 		},
 	}
 
 	return client, nil
-}
-
-/**
-  获取TLS认证HTTP客户端（支持压缩，提供证书，是否认证对端通过参数控制）
-*/
-func GetHttpsClient(verifyPeer bool) (client *HttpClient, err error) {
-	return getHttpsClient(true, verifyPeer, true, false)
-}
-
-/**
-  获取匿名认证HTTP客户端（支持压缩, 不校验对端, 不提供证书, 不校验CN）
-*/
-func GetAnonymousHttpsClient(gzip bool) (client *HttpClient, err error) {
-	return getHttpsClient(gzip, false, false, false)
 }
 
 func (client *HttpClient) getHeaders(method string, headers map[string]string, body interface{}) map[string]string {
@@ -277,41 +323,21 @@ func (client *HttpClient) HttpDo(method string, url string, headers map[string]s
 }
 
 func (client *HttpClient) Get(url string, headers map[string]string) (int, string) {
-	return client.httpDo(HTTP_METHOD_GET, url, headers, nil)
+	return client.httpDo(http.MethodGet, url, headers, nil)
 }
 
 func (client *HttpClient) Put(url string, headers map[string]string, body interface{}) (int, string) {
-	return client.httpDo(HTTP_METHOD_PUT, url, headers, body)
+	return client.httpDo(http.MethodPut, url, headers, body)
 }
 
 func (client *HttpClient) Post(url string, headers map[string]string, body interface{}) (int, string) {
-	return client.httpDo(HTTP_METHOD_POST, url, headers, body)
+	return client.httpDo(http.MethodPost, url, headers, body)
 }
 
 func (client *HttpClient) Delete(url string, headers map[string]string) (int, string) {
-	return client.httpDo(HTTP_METHOD_DELETE, url, headers, nil)
+	return client.httpDo(http.MethodDelete, url, headers, nil)
 }
 
 func (client *HttpClient) Do(req *http.Request) (*http.Response, error) {
 	return client.client.Do(req)
-}
-
-func GetClient(communiType string) (*HttpClient, error) {
-	var err error
-	var client *HttpClient
-	//client, err = rest.GetHttpsClient(verifyClient)
-	if communiType == "https" {
-		client, err = getHttpsClient(false, false,  true, false)
-		if err != nil {
-			util.Logger().Error("Create https rest.client failed.", err)
-			return nil, err
-		}
-		return client, nil
-	}
-	client, err = GetHttpClient(true)
-	if err != nil {
-		util.Logger().Error("Create http rest.client failed.", err)
-		return nil, err
-	}
-	return client, nil
 }

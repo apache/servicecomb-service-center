@@ -15,8 +15,9 @@ package rpc
 
 import (
 	"github.com/ServiceComb/service-center/pkg/rpc"
-	"github.com/ServiceComb/service-center/pkg/tlsutil"
 	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/ServiceComb/service-center/server/core"
+	sctls "github.com/ServiceComb/service-center/server/tls"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"net"
@@ -38,8 +39,8 @@ func NewServer(ep string) (_ *Server, err error) {
 	}
 
 	var grpcSrv *grpc.Server
-	if tlsutil.GetServerSSLConfig().SSLEnabled {
-		tlsConfig, err := tlsutil.GetServerTLSConfig(tlsutil.GetServerSSLConfig().VerifyClient)
+	if core.ServerInfo.Config.SslEnabled {
+		tlsConfig, err := sctls.GetServerTLSConfig()
 		if err != nil {
 			util.Logger().Error("error to get server tls config", err)
 			return nil, err
