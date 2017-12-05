@@ -169,10 +169,7 @@ func DeleteServiceAllInstances(ctx context.Context, serviceId string) error {
 	}
 	for _, v := range resp.Kvs {
 		leaseID, _ := strconv.ParseInt(util.BytesToStringWithNoCopy(v.Value), 10, 64)
-		err = backend.Registry().LeaseRevoke(ctx, leaseID)
-		if err != nil {
-			util.Logger().Errorf(err, "revoke instance failed.serviceId %s, %s", serviceId, leaseID)
-		}
+		backend.Registry().LeaseRevoke(ctx, leaseID)
 	}
 	return nil
 }
