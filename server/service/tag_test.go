@@ -100,7 +100,7 @@ var _ = Describe("'Tag' service", func() {
 
 		Context("when create tag out of gauge", func() {
 			It("should be failed", func() {
-				size := buildin.TAG_MAX_NUM_FOR_ONESERVICE / 2
+				size := buildin.TAG_NUM_MAX_LIMIT_PER_SERVICE / 2
 				tags := make(map[string]string, size)
 				for i := 0; i < size; i++ {
 					s := "tag" + strconv.Itoa(i)

@@ -183,7 +183,7 @@ var _ = Describe("'Rule' service", func() {
 
 		Context("when create rule out of gauge", func() {
 			It("should be failed", func() {
-				size := buildin.RULE_NUM_MAX_FOR_ONESERVICE + 1
+				size := buildin.RULE_NUM_MAX_LIMIT_PER_SERVICE + 1
 				rules := make([]*pb.AddOrUpdateServiceRule, 0, size)
 				for i := 0; i < size; i++ {
 					rules = append(rules, &pb.AddOrUpdateServiceRule{

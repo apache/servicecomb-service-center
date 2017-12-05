@@ -27,18 +27,18 @@ import (
 )
 
 const (
-	SERVICE_MAX_NUMBER                      = 12000
-	SERVICE_NUM_MAX_LIMIT_UNDER_ONE_TENANT  = 100
-	INSTANCE_MAX_NUMBER                     = 150000
-	INSTANCE_NUM_MAX_LIMIT_UNDER_ONE_TENANT = 100
-	RULE_NUM_MAX_FOR_ONESERVICE             = 100
-	SCHEMA_NUM_MAX_FOR_ONESERVICE           = 1000
-	TAG_MAX_NUM_FOR_ONESERVICE              = 100
+	SERVICE_NUM_MAX_LIMIT             = 12000
+	SERVICE_NUM_MAX_LIMIT_PER_TENANT  = 100
+	INSTANCE_NUM_MAX_LIMIT            = 150000
+	INSTANCE_NUM_MAX_LIMIT_PER_TENANT = 100
+	RULE_NUM_MAX_LIMIT_PER_SERVICE    = 100
+	SCHEMA_NUM_MAX_LIMIT_PER_SERVICE  = 1000
+	TAG_NUM_MAX_LIMIT_PER_SERVICE     = 100
 )
 
 func init() {
-	core.SchemaIdRule.Length = SCHEMA_NUM_MAX_FOR_ONESERVICE
-	core.TagRule.Length = TAG_MAX_NUM_FOR_ONESERVICE
+	core.SchemaIdRule.Length = SCHEMA_NUM_MAX_LIMIT_PER_SERVICE
+	core.TagRule.Length = TAG_NUM_MAX_LIMIT_PER_SERVICE
 
 	mgr.RegisterPlugin(mgr.Plugin{mgr.STATIC, mgr.QUOTA, "buildin", New})
 }
@@ -80,15 +80,15 @@ func ResourceLimitHandler(ctx context.Context, quotaType quota.ResourceType, dom
 	switch quotaType {
 	case quota.RULEQuotaType:
 		key = core.GenerateServiceRuleKey(domainProject, serviceId, "")
-		max = RULE_NUM_MAX_FOR_ONESERVICE
+		max = RULE_NUM_MAX_LIMIT_PER_SERVICE
 		indexer = store.Store().Rule()
 	case quota.SCHEMAQuotaType:
 		key = core.GenerateServiceSchemaKey(domainProject, serviceId, "")
-		max = SCHEMA_NUM_MAX_FOR_ONESERVICE
+		max = SCHEMA_NUM_MAX_LIMIT_PER_SERVICE
 		indexer = store.Store().Schema()
 	case quota.TAGQuotaType:
 		num := quotaSize
-		max = TAG_MAX_NUM_FOR_ONESERVICE
+		max = TAG_NUM_MAX_LIMIT_PER_SERVICE
 		tags, err := serviceUtil.GetTagsUtils(ctx, domainProject, serviceId)
 		if err != nil {
 			return nil, false, err
@@ -164,11 +164,11 @@ func instanceQuotaCheck(ctx context.Context, data *QuotaApplyData) (isOk bool, e
 }
 
 func getInstanceMaxLimitUnderOneTenant() int64 {
-	return INSTANCE_NUM_MAX_LIMIT_UNDER_ONE_TENANT
+	return INSTANCE_NUM_MAX_LIMIT_PER_TENANT
 }
 
 func getInstanceMaxLimit() int64 {
-	return INSTANCE_MAX_NUMBER
+	return INSTANCE_NUM_MAX_LIMIT
 }
 
 func getInstancesNum(ctx context.Context, key string) (int64, error) {
@@ -216,11 +216,11 @@ func serviceQuotaCheck(ctx context.Context, data *QuotaApplyData) (isOk bool, er
 }
 
 func getServiceMaxLimitUnderOneTenant() int64 {
-	return SERVICE_NUM_MAX_LIMIT_UNDER_ONE_TENANT
+	return SERVICE_NUM_MAX_LIMIT_PER_TENANT
 }
 
 func getServiceMaxLimit() int64 {
-	return SERVICE_MAX_NUMBER
+	return SERVICE_NUM_MAX_LIMIT
 }
 
 func getServicesNum(ctx context.Context, key string) (int64, error) {

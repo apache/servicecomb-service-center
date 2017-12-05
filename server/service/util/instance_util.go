@@ -74,7 +74,7 @@ func GetAllInstancesOfOneService(ctx context.Context, domainProject string, serv
 		return nil, err
 	}
 
-	instances := []*pb.MicroServiceInstance{}
+	instances := make([]*pb.MicroServiceInstance, 0, len(resp.Kvs))
 	for _, kvs := range resp.Kvs {
 		util.Logger().Debugf("start unmarshal service instance file: %s", util.BytesToStringWithNoCopy(kvs.Key))
 		instance := &pb.MicroServiceInstance{}
@@ -171,7 +171,7 @@ func DeleteServiceAllInstances(ctx context.Context, serviceId string) error {
 		leaseID, _ := strconv.ParseInt(util.BytesToStringWithNoCopy(v.Value), 10, 64)
 		err = backend.Registry().LeaseRevoke(ctx, leaseID)
 		if err != nil {
-			util.Logger().Errorf(err, "revoke instance failed.serviceId %s", serviceId)
+			util.Logger().Errorf(err, "revoke instance failed.serviceId %s, %s", serviceId, leaseID)
 		}
 	}
 	return nil
