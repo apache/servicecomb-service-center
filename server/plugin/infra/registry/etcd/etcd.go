@@ -579,27 +579,28 @@ func NewRegistry() mgr.PluginInstance {
 		}
 
 	}
-	refreshManagerClusterInterval := registry.RegistryConfig().AutoSyncInterval
-	util.Logger().Debugf("refreshManagerClusterInterval is %d", refreshManagerClusterInterval)
-	client, err := newClient(endpoints, refreshManagerClusterInterval)
+
+	inv, _ := time.ParseDuration(core.ServerInfo.Config.AutoSyncInterval)
+	client, err := newClient(endpoints, inv)
 	if err != nil {
 		util.Logger().Errorf(err, "get etcd client %+v failed.", endpoints)
 		inst.err <- err
 		return inst
 	}
 
-	util.Logger().Warnf(nil, "get etcd client %+v completed.", endpoints)
+	util.Logger().Warnf(nil, "get etcd client %+v completed, auto sync endpoints interval is %s.",
+		endpoints, core.ServerInfo.Config.AutoSyncInterval)
 	inst.Client = client
 	close(inst.ready)
 	return inst
 }
 
-func newClient(endpoints []string, autoSyncInterval int64) (*clientv3.Client, error) {
+func newClient(endpoints []string, autoSyncInterval time.Duration) (*clientv3.Client, error) {
 	client, err := clientv3.New(clientv3.Config{
 		Endpoints:        endpoints,
 		DialTimeout:      CONNECT_MANAGER_SERVER_TIMEOUT * time.Second,
 		TLS:              clientTLSConfig, // 暂时与API Server共用一套证书
-		AutoSyncInterval: time.Duration(autoSyncInterval) * time.Second,
+		AutoSyncInterval: autoSyncInterval,
 	})
 	if err != nil {
 		return nil, err

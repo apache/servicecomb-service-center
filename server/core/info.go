@@ -51,6 +51,9 @@ func newInfo() *pb.ServerInformation {
 			SslMinVersion: beego.AppConfig.DefaultString("ssl_min_version", "TLSv1.2"),
 			SslVerifyPeer: beego.AppConfig.DefaultInt("ssl_verify_client", 1) != 0,
 			SslCiphers:    beego.AppConfig.String("ssl_ciphers"),
+
+			AutoSyncInterval:  beego.AppConfig.DefaultString("auto_sync_interval", "30s"),
+			CompactIndexDelta: beego.AppConfig.DefaultInt64("compact_index_delta", 100),
 		},
 	}
 }

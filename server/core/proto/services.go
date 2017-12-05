@@ -95,6 +95,9 @@ type ServerConfig struct {
 	SslMinVersion string `json:"sslMinVersion"`
 	SslVerifyPeer bool   `json:"sslVerifyPeer,string"`
 	SslCiphers    string `json:"sslCiphers"`
+
+	AutoSyncInterval  string `json:"autoSyncInterval"`
+	CompactIndexDelta int64  `json:"compactIndexDelta"`
 }
 
 type ServerInformation struct {

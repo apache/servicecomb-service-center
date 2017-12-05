@@ -26,11 +26,6 @@ import (
 var defaultRegistryConfig Config
 
 func init() {
-	autoSyncInterval, _ := beego.AppConfig.Int64("auto_sync_interval")
-	if autoSyncInterval <= 0 {
-		autoSyncInterval = REFRESH_MANAGER_CLUSTER_INTERVAL
-	}
-	defaultRegistryConfig.AutoSyncInterval = autoSyncInterval
 	defaultRegistryConfig.ClusterAddresses = beego.AppConfig.String("manager_cluster")
 }
 
@@ -146,8 +141,6 @@ const (
 )
 
 const (
-	REFRESH_MANAGER_CLUSTER_INTERVAL = 30
-
 	REQUEST_TIMEOUT = 300
 
 	DEFAULT_PAGE_COUNT = 4096 // grpc does not allow to transport a large body more then 4MB in a request.
@@ -175,7 +168,6 @@ type Registry interface {
 type Config struct {
 	EmbedMode        string
 	ClusterAddresses string
-	AutoSyncInterval int64
 }
 
 type PluginOp struct {
