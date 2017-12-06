@@ -516,7 +516,7 @@ func CreateDependencyRuleForFind(ctx context.Context, domainProject string, prov
 		util.Logger().Infof("find update dep rule, exist * for %v", consumer)
 		return nil
 	}
-	opts := []registry.PluginOp{}
+	opts := make([]registry.PluginOp, 0)
 	if oldProviderRule := isNeedUpdate(oldProviderRules.Dependency, provider); oldProviderRule != nil {
 		opt, err := deleteConsumerDepOfProviderRule(ctx, domainProject, oldProviderRule, consumer)
 		if err != nil {
@@ -534,7 +534,11 @@ func CreateDependencyRuleForFind(ctx context.Context, domainProject string, prov
 		util.Logger().Infof("update provider %v(from version '%s') into consumer dep %s", provider, oldRule, consumerFlag)
 		opts = append(opts, opt)
 
-		// TODO Bug: forget to maintain the ProviderDependencyRuleKey of provider rule which is removed
+		opt, err = updateProviderRuleDep(ctx, domainProject, provider, consumer)
+		if err != nil {
+			return err
+		}
+		opts = append(opts, opt)
 	} else {
 		if !isExist(oldProviderRules.Dependency, provider) {
 			opt, err := addDepRuleUtil(conKey, oldProviderRules, provider)
@@ -571,6 +575,22 @@ func CreateDependencyRuleForFind(ctx context.Context, domainProject string, prov
 		}
 	}
 	return nil
+}
+
+func updateProviderRuleDep(ctx context.Context, domainProject string, providerRule , consumer *pb.MicroServiceKey) (registry.PluginOp, error) {
+	proKey := apt.GenerateProviderDependencyRuleKey(domainProject, providerRule)
+	consumerDepRules, err := TransferToMicroServiceDependency(ctx, proKey)
+	opt := registry.PluginOp{}
+	if err != nil {
+		util.Logger().Errorf(err, "get provider rule's dep failed, providerRule %v, consumer %v", providerRule, consumer)
+		return opt, err
+	}
+	opt, err = addDepRuleUtil(proKey, consumerDepRules, consumer)
+	if err != nil {
+		util.Logger().Errorf(err, "add consumer into provider's dep rule failed, providerRule %v, consumer %v", providerRule, consumer)
+		return opt, err
+	}
+	return opt, nil
 }
 
 func isDependencyAll(dep *pb.MicroServiceDependency) bool {
