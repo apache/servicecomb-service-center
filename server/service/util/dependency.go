@@ -258,41 +258,6 @@ func AddServiceVersionRule(ctx context.Context, domainProject string, provider *
 	return err
 }
 
-func UpdateServiceDependencyById(ctx context.Context, consumerId string, providers []*pb.DependencyKey, domainProject string) error {
-	service, err := GetService(ctx, domainProject, consumerId)
-	if err != nil {
-		util.Logger().Errorf(err, "update service dependency failed: get service failed. consumerId %s", consumerId)
-		return err
-	}
-
-	return UpdateServiceDependency(ctx, service, providers, domainProject)
-}
-
-func UpdateServiceDependency(ctx context.Context, service *pb.MicroService, providers []*pb.DependencyKey, domainProject string) error {
-	if service == nil {
-		util.Logger().Errorf(nil, "update service dependency failed: service is nil")
-		return errors.New("Get service is empty")
-	}
-
-	conServiceKey := apt.GenerateServiceKey(domainProject, service.ServiceId)
-
-	service.Providers = providers
-	data, err := json.Marshal(service)
-	if err != nil {
-		util.Logger().Errorf(err, "update service dependency failed: marshal service failed.")
-		return err
-	}
-	_, err = backend.Registry().Do(ctx,
-		registry.PUT,
-		registry.WithStrKey(conServiceKey),
-		registry.WithValue(data))
-	if err != nil {
-		util.Logger().Errorf(err, "update service dependency failed: commit service data into etcd failed.")
-		return err
-	}
-	return nil
-}
-
 func DeleteDependencyForService(ctx context.Context, consumer *pb.MicroServiceKey, serviceId string) ([]registry.PluginOp, error) {
 	ops := []registry.PluginOp{}
 	opsTmps := []registry.PluginOp{}
@@ -767,7 +732,7 @@ func validateMicroServiceKey(in *pb.MicroServiceKey, fuzzyMatch bool) error {
 		// provider的ServiceName, Version支持模糊规则
 		return apt.ProviderMsValidator.Validate(in)
 	} else {
-		return apt.DependencyMSValidator.Validate(in)
+		return apt.ConsumerMsValidator.Validate(in)
 	}
 }
 
@@ -1190,4 +1155,15 @@ func (dr *DependencyRelation) getConsumerOfSameServiceNameAndAppId(provider *pb.
 		allConsumers = append(allConsumers, dependency.Dependency...)
 	}
 	return allConsumers, nil
+}
+
+func SetDependencyDefaultValue(dep *pb.ConsumerDependency) {
+	if len(dep.Consumer.Environment) == 0 {
+		dep.Consumer.Environment = pb.ENV_DEV
+	}
+	for _, p := range dep.Providers {
+		if len(p.Environment) == 0 {
+			p.Environment = pb.ENV_DEV
+		}
+	}
 }

@@ -60,7 +60,7 @@ func TestServiceController_CreateDependenciesForMicroServices(t *testing.T) {
 		go func(i int) {
 			serviceName := fmt.Sprintf("service%d", i)
 			_, err := serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
-				Dependencies: []*pb.MircroServiceDependency{
+				Dependencies: []*pb.ConsumerDependency{
 					{
 						Consumer: &pb.DependencyKey{
 							AppId:       "test_deps",

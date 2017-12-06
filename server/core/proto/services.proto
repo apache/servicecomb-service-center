@@ -494,7 +494,7 @@ message ModifySchemaResponse {
 }
 
 message AddDependenciesRequest {
-    repeated MircroServiceDependency dependencies = 1;
+    repeated ConsumerDependency dependencies = 1;
 }
 
 message AddDependenciesResponse {
@@ -502,7 +502,7 @@ message AddDependenciesResponse {
 }
 
 message CreateDependenciesRequest {
-    repeated MircroServiceDependency dependencies = 1;
+    repeated ConsumerDependency dependencies = 1;
 }
 
 message DependencyKey {
@@ -512,7 +512,7 @@ message DependencyKey {
     string environment = 4;
 }
 
-message MircroServiceDependency {
+message ConsumerDependency {
     DependencyKey consumer = 1;
     repeated DependencyKey providers = 2;
 }

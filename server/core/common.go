@@ -39,9 +39,8 @@ var (
 	GetSchemaExistsReqValidator   validate.Validator
 	GetServiceReqValidator        validate.Validator
 	GetSchemaReqValidator         validate.Validator
-	DependencyMSValidator         validate.Validator
+	ConsumerMsValidator           validate.Validator
 	ProviderMsValidator           validate.Validator
-	MSDependencyValidator         validate.Validator
 	TagReqValidator               validate.Validator
 	FindInstanceReqValidator      validate.Validator
 	GetInstanceValidator          validate.Validator
@@ -141,14 +140,11 @@ func init() {
 	GetSchemaReqValidator.AddRule("ServiceId", ServiceIdRule)
 	GetSchemaReqValidator.AddRule("SchemaId", SchemaIdRule)
 
-	DependencyMSValidator.AddRules(MicroServiceKeyValidator.GetRules())
+	ConsumerMsValidator.AddRules(MicroServiceKeyValidator.GetRules())
 
 	ProviderMsValidator.AddRules(MicroServiceKeyValidator.GetRules())
 	ProviderMsValidator.AddRule("ServiceName", &validate.ValidateRule{Min: 1, Max: 128, Regexp: nameFuzzyRegex})
 	ProviderMsValidator.AddRule("Version", versionFuzzyRule)
-
-	MSDependencyValidator.AddSub("Consumer", &DependencyMSValidator)
-	MSDependencyValidator.AddSub("Providers", &ProviderMsValidator)
 
 	TagReqValidator.AddRule("ServiceId", ServiceIdRule)
 	TagReqValidator.AddRule("Tags", TagRule)
@@ -220,8 +216,6 @@ func Validate(v interface{}) error {
 		return SchemaValidator.Validate(v)
 	case *pb.ModifySchemasRequest:
 		return SchemasValidator.Validate(v)
-	case *pb.MicroServiceDependency:
-		return DependencyMSValidator.Validate(v)
 	case *pb.FindInstancesRequest:
 		return FindInstanceReqValidator.Validate(v)
 	case *pb.GetOneInstanceRequest, *pb.GetInstancesRequest:

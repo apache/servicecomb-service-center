@@ -70,7 +70,7 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 	service := in.Service
 	serviceFlag := util.StringJoin([]string{service.AppId, service.ServiceName, service.Version}, "/")
 
-	serviceUtil.SetDefault(service)
+	serviceUtil.SetServiceDefaultValue(service)
 
 	err := apt.Validate(service)
 	if err != nil {

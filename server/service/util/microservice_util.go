@@ -277,7 +277,7 @@ func GetOneDomainProjectInstanceCount(ctx context.Context, domainProject string)
 	return resp.Count, nil
 }
 
-func SetDefault(service *pb.MicroService) {
+func SetServiceDefaultValue(service *pb.MicroService) {
 	if len(service.Level) == 0 {
 		service.Level = "BACK"
 	}

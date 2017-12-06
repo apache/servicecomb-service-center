@@ -69,6 +69,18 @@ func TestDeleteDependencyForService(t *testing.T) {
 		fmt.Printf(`deleteDependencyUtil failed`)
 		t.FailNow()
 	}
+
+	_, err = deleteConsumerDepOfProviderRule(context.Background(), "", &proto.MicroServiceKey{}, &proto.MicroServiceKey{})
+	if err == nil {
+		fmt.Printf(`deleteConsumerDepOfProviderRule failed`)
+		t.FailNow()
+	}
+
+	_, err = deleteDepRuleUtil("", &proto.MicroServiceDependency{}, &proto.MicroServiceKey{})
+	if err != nil {
+		fmt.Printf(`deleteDepRuleUtil failed`)
+		t.FailNow()
+	}
 }
 
 func TestTransferToMicroServiceDependency(t *testing.T) {
@@ -107,8 +119,34 @@ func TestCreateDependencyRule(t *testing.T) {
 	err := CreateDependencyRule(context.Background(), &Dependency{
 		Consumer: &proto.MicroServiceKey{},
 	})
-	if err == nil {
+	if err != nil {
 		fmt.Printf(`CreateDependencyRule failed`)
+		t.FailNow()
+	}
+
+	err = AddDependencyRule(context.Background(), &Dependency{
+		Consumer: &proto.MicroServiceKey{},
+	})
+	if err != nil {
+		fmt.Printf(`AddDependencyRule failed`)
+		t.FailNow()
+	}
+
+	err = AddServiceVersionRule(context.Background(), "", &proto.MicroServiceKey{}, &proto.MicroServiceKey{}, "")
+	if err == nil {
+		fmt.Printf(`AddServiceVersionRule failed`)
+		t.FailNow()
+	}
+
+	err = CreateDependencyRuleForFind(context.Background(), "", &proto.MicroServiceKey{}, &proto.MicroServiceKey{})
+	if err == nil {
+		fmt.Printf(`CreateDependencyRuleForFind failed`)
+		t.FailNow()
+	}
+
+	_, err = addDepRuleUtil("", &proto.MicroServiceDependency{}, &proto.MicroServiceKey{})
+	if err != nil {
+		fmt.Printf(`addDepRuleUtil failed`)
 		t.FailNow()
 	}
 
@@ -135,6 +173,20 @@ func TestCreateDependencyRule(t *testing.T) {
 	_, err = containServiceDependency(nil, nil)
 	if err == nil {
 		fmt.Printf(`containServiceDependency invalid failed`)
+		t.FailNow()
+	}
+
+	ok := diffServiceVersion(&proto.MicroServiceKey{
+		AppId:       "a",
+		ServiceName: "a",
+		Version:     "1",
+	}, &proto.MicroServiceKey{
+		AppId:       "a",
+		ServiceName: "a",
+		Version:     "2",
+	})
+	if !ok {
+		fmt.Printf(`diffServiceVersion failed`)
 		t.FailNow()
 	}
 
@@ -167,6 +219,36 @@ func TestCreateDependencyRule(t *testing.T) {
 	}, false)
 	if err != nil {
 		fmt.Printf(`validateMicroServiceKey false failed`)
+		t.FailNow()
+	}
+
+	ok = isDependencyAll(&proto.MicroServiceDependency{})
+	if ok {
+		fmt.Printf(`isDependencyAll not * failed`)
+		t.FailNow()
+	}
+
+	ok = isDependencyAll(&proto.MicroServiceDependency{
+		Dependency: []*proto.MicroServiceKey{
+			{
+				ServiceName: "*",
+			},
+		},
+	})
+	if !ok {
+		fmt.Printf(`isDependencyAll * failed`)
+		t.FailNow()
+	}
+
+	ok = isExist([]*proto.MicroServiceKey{
+		{
+			ServiceName: "*",
+		},
+	}, &proto.MicroServiceKey{
+		ServiceName: "*",
+	})
+	if !ok {
+		fmt.Printf(`isExist failed`)
 		t.FailNow()
 	}
 }
@@ -249,9 +331,25 @@ func TestServiceDependencyRuleExist(t *testing.T) {
 }
 
 func TestUpdateServiceForAddDependency(t *testing.T) {
-	err := UpdateServiceDependencyById(context.Background(), "", []*proto.DependencyKey{}, "")
-	if err == nil {
-		fmt.Printf(`UpdateServiceForAddDependency failed`)
+	_, _, err := updateDepRuleUtil("", &proto.MicroServiceDependency{}, &proto.MicroServiceKey{})
+	if err != nil {
+		fmt.Printf(`updateDepRuleUtil failed`)
+		t.FailNow()
+	}
+
+	old := isNeedUpdate([]*proto.MicroServiceKey{
+		{
+			AppId:       "a",
+			ServiceName: "a",
+			Version:     "1",
+		},
+	}, &proto.MicroServiceKey{
+		AppId:       "a",
+		ServiceName: "a",
+		Version:     "2",
+	})
+	if old == nil {
+		fmt.Printf(`isNeedUpdate failed`)
 		t.FailNow()
 	}
 }

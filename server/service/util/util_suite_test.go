@@ -174,7 +174,7 @@ func TestRemandQuota(t *testing.T) {
 
 func TestSetDefault(t *testing.T) {
 	service := &proto.MicroService{}
-	serviceUtil.SetDefault(service)
+	serviceUtil.SetServiceDefaultValue(service)
 	if len(service.Level) == 0 ||
 		len(service.Environment) == 0 ||
 		len(service.RegisterBy) == 0 ||

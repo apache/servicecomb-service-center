@@ -24,161 +24,80 @@ import (
 )
 
 func (s *MicroServiceService) AddDependenciesForMicroServices(ctx context.Context, in *pb.AddDependenciesRequest) (*pb.AddDependenciesResponse, error) {
-	dependencyInfos := in.Dependencies
-	if len(dependencyInfos) == 0 {
-		return &pb.AddDependenciesResponse{
-			Response: serviceUtil.BadParamsResponse("Invalid request body.").Response,
-		}, nil
-	}
-	domainProject := util.ParseDomainProject(ctx)
-	for _, dependencyInfo := range dependencyInfos {
-		if len(dependencyInfo.Providers) == 0 {
-			return &pb.AddDependenciesResponse{
-				Response: serviceUtil.BadParamsResponse("Provider is invalid").Response,
-			}, nil
-		}
-
-		consumerFlag := util.StringJoin([]string{dependencyInfo.Consumer.AppId, dependencyInfo.Consumer.ServiceName, dependencyInfo.Consumer.Version}, "/")
-
-		dep := new(serviceUtil.Dependency)
-		dep.DomainProject = domainProject
-
-		util.Logger().Infof("start add dependency, data info %v", dependencyInfo)
-
-		consumerInfo := pb.DependenciesToKeys([]*pb.DependencyKey{dependencyInfo.Consumer}, domainProject)[0]
-		providersInfo := pb.DependenciesToKeys(dependencyInfo.Providers, domainProject)
-
-		dep.Consumer = consumerInfo
-		dep.ProvidersRule = providersInfo
-
-		rsp := serviceUtil.ParamsChecker(consumerInfo, providersInfo)
-		if rsp != nil {
-			util.Logger().Errorf(nil, "Add dependency failed, conusmer %s: invalid params.%s", consumerFlag, rsp.Response.Message)
-			return &pb.AddDependenciesResponse{
-				Response: rsp.Response,
-			}, nil
-		}
-
-		consumerId, err := serviceUtil.GetServiceId(ctx, consumerInfo)
-		util.Logger().Debugf("consumerId is %s", consumerId)
-		if err != nil {
-			util.Logger().Errorf(err, "Add dependency failed, consumer %s: get consumer id failed.", consumerFlag)
-			return &pb.AddDependenciesResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
-			}, err
-		}
-		if len(consumerId) == 0 {
-			util.Logger().Errorf(nil, "Add dependency failed, consumer %s: consumer not exist.", consumerFlag)
-			return &pb.AddDependenciesResponse{
-				Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Get consumer's serviceId is empty."),
-			}, nil
-		}
-
-		dep.ConsumerId = consumerId
-
-		//建立依赖规则，用于维护依赖关系
-		lock, err := mux.Lock(mux.GLOBAL_LOCK)
-		if err != nil {
-			util.Logger().Errorf(err, "Add dependency failed, consumer %s: create lock failed.", consumerFlag)
-			return &pb.AddDependenciesResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
-			}, err
-		}
-
-		err = serviceUtil.AddDependencyRule(ctx, dep)
-		if err != nil {
-			util.Logger().Errorf(err, "Add dependency rule failed: consumer %s", consumerFlag)
-			lock.Unlock()
-			return &pb.AddDependenciesResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
-			}, err
-		}
-		util.Logger().Infof("Add dependency success: consumer %s, %s  from remote %s", consumerFlag, consumerId, util.GetIPFromContext(ctx))
-		lock.Unlock()
-	}
+	resp, err := s.AddOrUpdateDependencies(ctx, in.Dependencies, false)
 	return &pb.AddDependenciesResponse{
-		Response: pb.CreateResponse(pb.Response_SUCCESS, "Add dependency successfully."),
-	}, nil
+		Response: resp,
+	}, err
 }
 
 func (s *MicroServiceService) CreateDependenciesForMicroServices(ctx context.Context, in *pb.CreateDependenciesRequest) (*pb.CreateDependenciesResponse, error) {
-	dependencyInfos := in.Dependencies
+	resp, err := s.AddOrUpdateDependencies(ctx, in.Dependencies, true)
+	return &pb.CreateDependenciesResponse{
+		Response: resp,
+	}, err
+}
+
+func (s *MicroServiceService) AddOrUpdateDependencies(ctx context.Context, dependencyInfos []*pb.ConsumerDependency, override bool) (*pb.Response, error) {
 	if len(dependencyInfos) == 0 {
-		return serviceUtil.BadParamsResponse("Invalid request body."), nil
+		return serviceUtil.BadParamsResponse("Invalid request body.").Response, nil
 	}
 	domainProject := util.ParseDomainProject(ctx)
 	for _, dependencyInfo := range dependencyInfos {
-		if len(dependencyInfo.Providers) == 0 {
-			return serviceUtil.BadParamsResponse("Provider is invalid"), nil
+		if len(dependencyInfo.Providers) == 0 || dependencyInfo.Consumer == nil {
+			return serviceUtil.BadParamsResponse("Provider is invalid").Response, nil
 		}
-
-		consumerFlag := util.StringJoin([]string{dependencyInfo.Consumer.AppId, dependencyInfo.Consumer.ServiceName, dependencyInfo.Consumer.Version}, "/")
-
-		dep := new(serviceUtil.Dependency)
-		dep.DomainProject = domainProject
 
 		util.Logger().Infof("start create dependency, data info %v", dependencyInfo)
 
+		serviceUtil.SetDependencyDefaultValue(dependencyInfo)
+
+		consumerFlag := util.StringJoin([]string{dependencyInfo.Consumer.AppId, dependencyInfo.Consumer.ServiceName, dependencyInfo.Consumer.Version}, "/")
 		consumerInfo := pb.DependenciesToKeys([]*pb.DependencyKey{dependencyInfo.Consumer}, domainProject)[0]
 		providersInfo := pb.DependenciesToKeys(dependencyInfo.Providers, domainProject)
-
-		dep.Consumer = consumerInfo
-		dep.ProvidersRule = providersInfo
 
 		rsp := serviceUtil.ParamsChecker(consumerInfo, providersInfo)
 		if rsp != nil {
 			util.Logger().Errorf(nil, "create dependency failed, conusmer %s: invalid params.%s", consumerFlag, rsp.Response.Message)
-			return rsp, nil
+			return rsp.Response, nil
 		}
 
 		consumerId, err := serviceUtil.GetServiceId(ctx, consumerInfo)
 		util.Logger().Debugf("consumerId is %s", consumerId)
 		if err != nil {
 			util.Logger().Errorf(err, "create dependency failed, consumer %s: get consumer failed.", consumerFlag)
-			return &pb.CreateDependenciesResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
-			}, err
+			return pb.CreateResponse(scerr.ErrInternal, err.Error()), err
 		}
 		if len(consumerId) == 0 {
 			util.Logger().Errorf(nil, "create dependency failed, consumer %s: consumer not exist.", consumerFlag)
-			return &pb.CreateDependenciesResponse{
-				Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Get consumer's serviceId is empty."),
-			}, nil
-		}
-
-		dep.ConsumerId = consumerId
-		//更新服务的内容，把providers加入
-		err = serviceUtil.UpdateServiceDependencyById(ctx, consumerId, dependencyInfo.Providers, domainProject)
-		if err != nil {
-			util.Logger().Errorf(err, "create dependency failed, consumer %s: Update service failed.", consumerFlag)
-			return &pb.CreateDependenciesResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
-			}, err
+			return pb.CreateResponse(scerr.ErrServiceNotExists, "Get consumer's serviceId is empty."), nil
 		}
 
 		//建立依赖规则，用于维护依赖关系
 		lock, err := mux.Lock(mux.GLOBAL_LOCK)
 		if err != nil {
 			util.Logger().Errorf(err, "create dependency failed, consumer %s: create lock failed.", consumerFlag)
-			return &pb.CreateDependenciesResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
-			}, err
+			return pb.CreateResponse(scerr.ErrInternal, err.Error()), err
 		}
 
-		err = serviceUtil.CreateDependencyRule(ctx, dep)
+		var dep serviceUtil.Dependency
+		dep.DomainProject = domainProject
+		dep.Consumer = consumerInfo
+		dep.ProvidersRule = providersInfo
+		dep.ConsumerId = consumerId
+		if override {
+			err = serviceUtil.CreateDependencyRule(ctx, &dep)
+		} else {
+			err = serviceUtil.AddDependencyRule(ctx, &dep)
+		}
 		lock.Unlock()
 
 		if err != nil {
 			util.Logger().Errorf(err, "create dependency rule failed: consumer %s", consumerFlag)
-			return &pb.CreateDependenciesResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
-			}, err
+			return pb.CreateResponse(scerr.ErrInternal, err.Error()), err
 		}
 		util.Logger().Infof("Create dependency success: consumer %s, %s  from remote %s", consumerFlag, consumerId, util.GetIPFromContext(ctx))
 	}
-	return &pb.CreateDependenciesResponse{
-		Response: pb.CreateResponse(pb.Response_SUCCESS, "Create dependency successfully."),
-	}, nil
+	return pb.CreateResponse(pb.Response_SUCCESS, "Create dependency successfully."), nil
 }
 
 func (s *MicroServiceService) GetProviderDependencies(ctx context.Context, in *pb.GetDependenciesRequest) (*pb.GetProDependenciesResponse, error) {
