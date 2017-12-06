@@ -47,7 +47,7 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Service does not exist."),
 		}, nil
 	}
-	_, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.RULEQuotaType, domainProject, in.ServiceId, int16(len(in.Rules)))
+	_, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.RuleQuotaType, domainProject, in.ServiceId, int16(len(in.Rules)))
 	if err != nil {
 		util.Logger().Errorf(err, "check can apply resource failed.%s", in.ServiceId)
 		return &pb.AddServiceRulesResponse{

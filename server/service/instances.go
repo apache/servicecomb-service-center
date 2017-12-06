@@ -573,7 +573,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		}, nil
 	}
 
-	instances := []*pb.MicroServiceInstance{}
+	instances := make([]*pb.MicroServiceInstance, 0)
 	for _, serviceId := range ids {
 		resp, err := s.GetInstances(ctx, &pb.GetInstancesRequest{
 			ConsumerServiceId: in.ConsumerServiceId,

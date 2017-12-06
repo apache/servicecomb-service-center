@@ -38,6 +38,11 @@ type MicroServiceService struct {
 	instanceService pb.SerivceInstanceCtrlServerEx
 }
 
+const (
+	EXIST_TYPE_MICROSERVICE = "microservice"
+	EXIST_TYPE_SCHEMA       = "schema"
+)
+
 func (s *MicroServiceService) Create(ctx context.Context, in *pb.CreateServiceRequest) (*pb.CreateServiceResponse, error) {
 	if in == nil || in.Service == nil {
 		util.Logger().Errorf(nil, "create microservice failed : param empty.")
@@ -544,7 +549,7 @@ func (s *MicroServiceService) Exist(ctx context.Context, in *pb.GetExistenceRequ
 
 	domainProject := util.ParseDomainProject(ctx)
 	switch in.Type {
-	case "microservice":
+	case EXIST_TYPE_MICROSERVICE:
 		if len(in.AppId) == 0 || len(in.ServiceName) == 0 || len(in.Version) == 0 {
 			util.Logger().Errorf(nil, "microservice exist failed: invalid params.")
 			return &pb.GetExistenceResponse{
@@ -584,7 +589,7 @@ func (s *MicroServiceService) Exist(ctx context.Context, in *pb.GetExistenceRequ
 			Response:  pb.CreateResponse(pb.Response_SUCCESS, "Get service id successfully."),
 			ServiceId: ids[0], // 约定多个时，取较新版本
 		}, nil
-	case "schema":
+	case EXIST_TYPE_SCHEMA:
 		if len(in.SchemaId) == 0 || len(in.ServiceId) == 0 {
 			util.Logger().Errorf(nil, "schema exist failed, serviceId %s, schemaId %s: invalid params.", in.ServiceId, in.SchemaId)
 			return &pb.GetExistenceResponse{

@@ -29,9 +29,9 @@ type QuotaReporter interface {
 }
 
 const (
-	RULEQuotaType ResourceType = iota
-	SCHEMAQuotaType
-	TAGQuotaType
+	RuleQuotaType                 ResourceType = iota
+	SchemaQuotaType
+	TagQuotaType
 	MicroServiceQuotaType
 	MicroServiceInstanceQuotaType
 	typeEnd
@@ -41,11 +41,11 @@ type ResourceType int
 
 func (r ResourceType) String() string {
 	switch r {
-	case RULEQuotaType:
+	case RuleQuotaType:
 		return "RULE"
-	case SCHEMAQuotaType:
+	case SchemaQuotaType:
 		return "SCHEMA"
-	case TAGQuotaType:
+	case TagQuotaType:
 		return "TAG"
 	case MicroServiceQuotaType:
 		return "SERVICE"

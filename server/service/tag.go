@@ -53,7 +53,7 @@ func (s *MicroServiceService) AddTags(ctx context.Context, in *pb.AddServiceTags
 	}
 
 	addTags := in.GetTags()
-	_, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.TAGQuotaType, domainProject, in.ServiceId, int16(len(addTags)))
+	_, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.TagQuotaType, domainProject, in.ServiceId, int16(len(addTags)))
 	if err != nil {
 		util.Logger().Errorf(err, "add tag info failed, check resource num failed, %s", in.ServiceId)
 		return &pb.AddServiceTagsResponse{
