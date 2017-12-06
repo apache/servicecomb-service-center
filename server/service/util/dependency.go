@@ -406,6 +406,16 @@ func equalServiceDependency(serviceA *pb.MicroServiceKey, serviceB *pb.MicroServ
 	return false
 }
 
+func diffServiceVersion(serviceA *pb.MicroServiceKey, serviceB *pb.MicroServiceKey) bool {
+	stringA := toString(serviceA)
+	stringB := toString(serviceB)
+	if stringA != stringB &&
+		stringA[:strings.LastIndex(stringA, "/")+1] == stringB[:strings.LastIndex(stringB, "/")+1] {
+		return true
+	}
+	return false
+}
+
 func toString(in *pb.MicroServiceKey) string {
 	return apt.GenerateProviderDependencyRuleKey(in.Tenant, in)
 }
@@ -646,7 +656,7 @@ func CreateDependencyRuleForFind(ctx context.Context, domainProject string, prov
 	return nil
 }
 
-func updateProviderRuleDep(ctx context.Context, domainProject string, providerRule , consumer *pb.MicroServiceKey) (registry.PluginOp, error) {
+func updateProviderRuleDep(ctx context.Context, domainProject string, providerRule, consumer *pb.MicroServiceKey) (registry.PluginOp, error) {
 	proKey := apt.GenerateProviderDependencyRuleKey(domainProject, providerRule)
 	consumerDepRules, err := TransferToMicroServiceDependency(ctx, proKey)
 	opt := registry.PluginOp{}
@@ -716,10 +726,7 @@ func addDepRuleUtil(key string, deps *pb.MicroServiceDependency, updateDepRule *
 func updateDepRuleUtil(key string, deps *pb.MicroServiceDependency, updateDepRule *pb.MicroServiceKey) (string, registry.PluginOp, error) {
 	oldRule := ""
 	for _, serviceRule := range deps.Dependency {
-		if serviceRule.Environment == updateDepRule.Environment &&
-			serviceRule.AppId == updateDepRule.AppId &&
-			serviceRule.ServiceName == updateDepRule.ServiceName &&
-			serviceRule.Version != updateDepRule.Version {
+		if diffServiceVersion(serviceRule, updateDepRule) {
 			oldRule = serviceRule.Version
 			serviceRule.Version = updateDepRule.Version
 			break
@@ -734,10 +741,7 @@ func updateDepRuleUtil(key string, deps *pb.MicroServiceDependency, updateDepRul
 
 func isNeedUpdate(services []*pb.MicroServiceKey, service *pb.MicroServiceKey) *pb.MicroServiceKey {
 	for _, tmp := range services {
-		if tmp.Environment == service.Environment &&
-			tmp.AppId == service.AppId &&
-			tmp.ServiceName == service.ServiceName &&
-			tmp.Version != service.Version {
+		if diffServiceVersion(tmp, service) {
 			return tmp
 		}
 	}

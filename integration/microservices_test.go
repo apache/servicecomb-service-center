@@ -445,6 +445,37 @@ var _ = Describe("MicroService Api Test", func() {
 					}
 					Expect(foundMicroService).To(Equal(true))
 
+					providersArray = []interface{}{consumer}
+					body, _ = json.Marshal(bodyParams)
+					bodyBuf = bytes.NewReader(body)
+					req, _ = http.NewRequest(POST, SCURL+CREATEDEPENDENCIES, bodyBuf)
+					req.Header.Set("X-Domain-Name", "default")
+					resp, err = scclient.Do(req)
+					Expect(err).To(BeNil())
+					defer resp.Body.Close()
+
+					// Validate the dependency creation
+					Expect(resp.StatusCode).To(Equal(http.StatusOK))
+
+					//Get Provider by ConsumerID
+					url = strings.Replace(GETCONPRODEPENDENCY, ":consumerId", consumerServiceID, 1)
+					req, _ = http.NewRequest(GET, SCURL+url, nil)
+					req.Header.Set("X-Domain-Name", "default")
+					resp, _ = scclient.Do(req)
+					respbody, _ = ioutil.ReadAll(resp.Body)
+					Expect(resp.StatusCode).To(Equal(http.StatusOK))
+					servicesStruct = map[string][]map[string]interface{}{}
+
+					json.Unmarshal(respbody, &servicesStruct)
+					foundMicroService = false
+					for _, services := range servicesStruct["providers"] {
+						if services["serviceName"] == serviceName {
+							foundMicroService = true
+							break
+						}
+					}
+					Expect(foundMicroService).To(Equal(true))
+
 					//Delete Consumer and Provider
 					url = strings.Replace(UNREGISTERMICROSERVICE, ":serviceId", consumerServiceID, 1)
 					req, _ = http.NewRequest(DELETE, SCURL+url, nil)
