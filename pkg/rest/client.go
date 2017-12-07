@@ -21,7 +21,6 @@ import (
 	"github.com/ServiceComb/service-center/pkg/tlsutil"
 	"github.com/ServiceComb/service-center/pkg/util"
 	sctls "github.com/ServiceComb/service-center/server/tls"
-	"github.com/astaxie/beego"
 	"io"
 	"io/ioutil"
 	"net"
@@ -53,7 +52,7 @@ func NewDialer() *net.Dialer {
 func NewTransport() *http.Transport {
 	return &http.Transport{
 		Dial:                  NewDialer().Dial,
-		MaxIdleConnsPerHost:   beego.AppConfig.DefaultInt("max_idle_conns_per_host", 5),
+		MaxIdleConnsPerHost:   5,
 		ResponseHeaderTimeout: DEFAULT_HTTP_RESPONSE_TIMEOUT,
 	}
 }

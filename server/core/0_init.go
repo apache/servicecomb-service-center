@@ -8,7 +8,6 @@ import (
 	"github.com/ServiceComb/service-center/pkg/logrotate"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/version"
-	"github.com/astaxie/beego"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -16,8 +15,6 @@ import (
 	"syscall"
 	"time"
 )
-
-var printVer bool
 
 func init() {
 	Initialize()
@@ -38,6 +35,7 @@ func Initialize() {
 }
 
 func initCommandLine() {
+	var printVer bool
 	flag.BoolVar(&printVer, "v", false, "Print the version and exit.")
 	flag.CommandLine.Init(os.Args[0], flag.ContinueOnError)
 	flag.CommandLine.Parse(os.Args[1:])
@@ -63,21 +61,14 @@ func printVersion() {
 }
 
 func initLogger() {
-	logFormatText, err := beego.AppConfig.Bool("LogFormatText")
-	loggerFile := os.ExpandEnv(beego.AppConfig.String("logfile"))
-	loggerName := beego.AppConfig.String("ComponentName")
-	enableRsyslog, err := beego.AppConfig.Bool("EnableRsyslog")
-	if err != nil {
-		enableRsyslog = false
-	}
-
-	util.InitLogger(loggerName, &lager.Config{
-		LoggerLevel:   beego.AppConfig.String("loglevel"),
-		LoggerFile:    loggerFile,
-		EnableRsyslog: enableRsyslog,
-		LogFormatText: logFormatText,
-		EnableStdOut:  version.Ver().RunMode == "dev",
-	})
+	util.InitLogger(ServerInfo.Config.LoggerName,
+		&lager.Config{
+			LoggerLevel:   ServerInfo.Config.LogLevel,
+			LoggerFile:    os.ExpandEnv(ServerInfo.Config.LogFilePath),
+			EnableRsyslog: ServerInfo.Config.LogSys,
+			LogFormatText: ServerInfo.Config.LogFormat == "text",
+			EnableStdOut:  version.Ver().RunMode == "dev",
+		})
 
 	// custom loggers
 	util.CustomLogger("Heartbeat", "heartbeat")
@@ -90,20 +81,11 @@ func initLogger() {
 }
 
 func initLogRotate() {
-	logDir := os.ExpandEnv(beego.AppConfig.String("logfile"))
 	rotatePeriod := 30 * time.Second
-	maxFileSize := beego.AppConfig.DefaultInt("log_rotate_size", 20)
-	if maxFileSize <= 0 || maxFileSize > 50 {
-		maxFileSize = 20
-	}
-	maxBackupCount := beego.AppConfig.DefaultInt("log_backup_count", 5)
-	if maxBackupCount < 0 || maxBackupCount > 100 {
-		maxBackupCount = 5
-	}
 	traceutils.RunLogRotate(&traceutils.LogRotateConfig{
-		Dir:         filepath.Dir(logDir),
-		MaxFileSize: maxFileSize,
-		BackupCount: maxBackupCount,
+		Dir:         filepath.Dir(os.ExpandEnv(ServerInfo.Config.LogFilePath)),
+		MaxFileSize: int(ServerInfo.Config.LogRotateSize),
+		BackupCount: int(ServerInfo.Config.LogBackupCount),
 		Period:      rotatePeriod,
 	})
 }
@@ -122,7 +104,7 @@ func handleSignals() {
 		switch sig {
 		case syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM:
 			<-time.After(wait)
-			util.Logger().Warnf(nil, "Clean up resources timed out(%s), force shutdown.", wait)
+			util.Logger().Warnf(nil, "Waiting for server response timed out(%s), force shutdown.", wait)
 			os.Exit(1)
 		}
 	}

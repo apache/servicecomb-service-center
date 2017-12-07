@@ -160,11 +160,11 @@ func DeleteServiceAllInstances(ctx context.Context, serviceId string) error {
 		registry.WithPrefix(),
 		registry.WithNoCache())
 	if err != nil {
-		util.Logger().Errorf(err, "delete service all instance failed: get instance lease failed.")
+		util.Logger().Errorf(err, "delete service %s all instance failed: get instance lease failed.", serviceId)
 		return err
 	}
 	if resp.Count <= 0 {
-		util.Logger().Warnf(nil, "No instances to revoke.")
+		util.Logger().Warnf(nil, "service %s has NO instance to revoke.", serviceId)
 		return nil
 	}
 	for _, v := range resp.Kvs {

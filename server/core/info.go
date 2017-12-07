@@ -24,13 +24,17 @@ import (
 	"golang.org/x/net/context"
 )
 
-var ServerInfo *pb.ServerInformation
-
-func init() {
-	ServerInfo = newInfo()
-}
+var ServerInfo *pb.ServerInformation = newInfo()
 
 func newInfo() *pb.ServerInformation {
+	maxLogFileSize := beego.AppConfig.DefaultInt64("log_rotate_size", 20)
+	if maxLogFileSize <= 0 || maxLogFileSize > 50 {
+		maxLogFileSize = 20
+	}
+	maxLogBackupCount := beego.AppConfig.DefaultInt64("log_backup_count", 50)
+	if maxLogBackupCount < 0 || maxLogBackupCount > 100 {
+		maxLogBackupCount = 50
+	}
 	return &pb.ServerInformation{
 		Version: "0",
 		Config: &pb.ServerConfig{
@@ -54,6 +58,16 @@ func newInfo() *pb.ServerInformation {
 
 			AutoSyncInterval:  beego.AppConfig.DefaultString("auto_sync_interval", "30s"),
 			CompactIndexDelta: beego.AppConfig.DefaultInt64("compact_index_delta", 100),
+
+			LoggerName:     beego.AppConfig.String("component_name"),
+			LogRotateSize:  maxLogFileSize,
+			LogBackupCount: maxLogBackupCount,
+			LogFilePath:    beego.AppConfig.String("logfile"),
+			LogLevel:       beego.AppConfig.String("loglevel"),
+			LogFormat:      beego.AppConfig.DefaultString("log_format", "text"),
+			LogSys:         beego.AppConfig.DefaultBool("log_sys", false),
+
+			PluginsDir: beego.AppConfig.DefaultString("plugins_dir", "./plugins"),
 		},
 	}
 }

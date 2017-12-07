@@ -31,7 +31,7 @@ func (h *ServiceEventHandler) Type() store.StoreType {
 
 func (h *ServiceEventHandler) OnEvent(evt *store.KvEvent) {
 	action := evt.Action
-	if action == pb.EVT_DELETE || action == pb.EVT_UPDATE {
+	if action != pb.EVT_CREATE && action != pb.EVT_INIT {
 		return
 	}
 
@@ -52,9 +52,6 @@ func (h *ServiceEventHandler) OnEvent(evt *store.KvEvent) {
 		if err != nil {
 			util.Logger().Errorf(err, "new domain(%s) or project(%s) failed", newDomain, newProject)
 			return
-		}
-		if action == pb.EVT_CREATE {
-			util.Logger().Infof("new domain(%s) and project(%s)", newDomain, newProject)
 		}
 	}
 }

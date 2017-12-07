@@ -227,7 +227,7 @@ func (s *EtcdEmbed) CompactCluster(ctx context.Context) {
 func (s *EtcdEmbed) Compact(ctx context.Context, revision int64) error {
 	otCtx, cancel := registry.WithTimeout(ctx)
 	defer cancel()
-	revToCompact := max(0, revision-beego.AppConfig.DefaultInt64("compact_index_delta", 100))
+	revToCompact := max(0, revision-core.ServerInfo.Config.CompactIndexDelta)
 	util.Logger().Debug(fmt.Sprintf("Compacting %d", revToCompact))
 	resp, err := s.Server.Server.Compact(otCtx, &etcdserverpb.CompactionRequest{
 		Revision: revToCompact,

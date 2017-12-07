@@ -25,20 +25,20 @@ import (
 )
 
 const (
-	SERVICE StoreType = iota
-	INSTANCE
-	DOMAIN
-	SCHEMA // big data should not be stored in memory.
-	SCHEMA_SUMMARY
-	RULE
-	LEASE
+	DOMAIN StoreType = iota
+	PROJECT
+	SERVICE
 	SERVICE_INDEX
 	SERVICE_ALIAS
 	SERVICE_TAG
+	RULE
 	RULE_INDEX
 	DEPENDENCY
 	DEPENDENCY_RULE
-	PROJECT
+	SCHEMA // big data should not be stored in memory.
+	SCHEMA_SUMMARY
+	INSTANCE
+	LEASE
 	ENDPOINTS
 	typeEnd
 )

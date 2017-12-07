@@ -98,6 +98,20 @@ type ServerConfig struct {
 
 	AutoSyncInterval  string `json:"autoSyncInterval"`
 	CompactIndexDelta int64  `json:"compactIndexDelta"`
+
+	LoggerName     string `json:"-"`
+	LogRotateSize  int64  `json:"logRotateSize"`
+	LogBackupCount int64  `json:"logBackupCount"`
+	LogFilePath    string `json:"-"`
+	LogLevel       string `json:"-"`
+	LogFormat      string `json:"-"`
+	LogSys         bool   `json:"-"`
+
+	PluginsDir string `json:"-"`
+}
+
+func (c *ServerConfig) LogPrint() {
+
 }
 
 type ServerInformation struct {
