@@ -148,15 +148,14 @@ func (i *Indexer) searchPrefixKeyWithCache(ctx context.Context, op registry.Plug
 		c := i.Cache().Data(key) // TODO too slow when big data is requested
 		if c == nil {
 			// it means resp.Count is not equal to len(keys)
-			util.Logger().Debugf("unexpected nil cache, maybe it is removed, key is %s", key)
+			util.Logger().Warnf(nil, "unexpected nil cache, maybe it is removed, key is %s", key)
 			continue
 		}
 		kvs[idx] = c.(*mvccpb.KeyValue)
 		idx++
 	}
-	if time.Now().Sub(t) > time.Second {
-		util.Logger().Warnf(nil, "too long(%s vs 1s) to copy data from cache", time.Now().Sub(t))
-	}
+	util.LogNilOrWarnf(t, "too long to copy data from cache with prefix %s", prefix)
+
 	resp.Kvs = kvs[:idx]
 	return resp, nil
 }
