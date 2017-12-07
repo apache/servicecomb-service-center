@@ -204,7 +204,7 @@ func GetInfoFromSvcIndexKV(kv *mvccpb.KeyValue) (key *MicroServiceKey, data []by
 func GetInfoFromSchemaSummaryKV(kv *mvccpb.KeyValue) (schemaId string, data []byte) {
 	keys, data := KvToResponse(kv)
 	l := len(keys)
-	if l < 7 {
+	if l < 2 {
 		return
 	}
 
@@ -214,7 +214,7 @@ func GetInfoFromSchemaSummaryKV(kv *mvccpb.KeyValue) (schemaId string, data []by
 func GetInfoFromSchemaKV(kv *mvccpb.KeyValue) (schemaId string, data []byte) {
 	keys, data := KvToResponse(kv)
 	l := len(keys)
-	if l < 7 {
+	if l < 2 {
 		return
 	}
 

@@ -108,15 +108,16 @@ func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAl
 		}, nil
 	}
 
+	schemas := []*pb.Schema{}
 	schemasList := service.Schemas
 	if schemasList == nil || len(schemasList) == 0 {
-		util.Logger().Errorf(nil, "get all schemas failed, Service %s: schemas does not exist.", in.ServiceId)
+		util.Logger().Errorf(nil, "get all schemas empty, Service %s: schemas does not exist.", in.ServiceId)
 		return &pb.GetAllSchemaResponse{
-			Response: pb.CreateResponse(scerr.ErrSchemaNotExists, "Do not have this schema info."),
+			Response: pb.CreateResponse(pb.Response_SUCCESS, "Do not have this schema info."),
+			Schema:   schemas,
 		}, nil
 	}
 
-	schemas := []*pb.Schema{}
 	// if 'withschmas' is false, not to search schemas content
 	key := apt.GenerateServiceSchemaSummaryKey(domainProject, in.ServiceId, "")
 	opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(key), registry.WithPrefix())
