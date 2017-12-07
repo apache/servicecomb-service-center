@@ -205,7 +205,8 @@ func Validate(v interface{}) error {
 	case (*pb.AddOrUpdateServiceRule):
 		return ServiceRuleValidator.Validate(v)
 	case *pb.GetServiceRequest, *pb.UpdateServicePropsRequest,
-		*pb.DeleteServiceRequest, *pb.GetDependenciesRequest:
+		*pb.DeleteServiceRequest, *pb.GetDependenciesRequest,
+		*pb.GetAllSchemaRequest:
 		return GetServiceReqValidator.Validate(v)
 	case *pb.AddServiceTagsRequest, *pb.DeleteServiceTagsRequest,
 		*pb.UpdateServiceTagRequest, *pb.GetServiceTagsRequest:

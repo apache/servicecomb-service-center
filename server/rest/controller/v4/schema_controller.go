@@ -23,6 +23,7 @@ import (
 	"github.com/ServiceComb/service-center/server/rest/controller"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 type SchemaService struct {
@@ -35,6 +36,7 @@ func (this *SchemaService) URLPatterns() []rest.Route {
 		{rest.HTTP_METHOD_PUT, "/v4/:domain/registry/microservices/:serviceId/schemas/:schemaId", this.ModifySchema},
 		{rest.HTTP_METHOD_DELETE, "/v4/:domain/registry/microservices/:serviceId/schemas/:schemaId", this.DeleteSchemas},
 		{rest.HTTP_METHOD_POST, "/v4/:domain/registry/microservices/:serviceId/schemas", this.ModifySchemas},
+		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/microservices/:serviceId/schemas", this.GetAllSchemas},
 	}
 }
 
@@ -97,4 +99,22 @@ func (this *SchemaService) DeleteSchemas(w http.ResponseWriter, r *http.Request)
 	}
 	resp, _ := core.ServiceAPI.DeleteSchema(r.Context(), request)
 	controller.WriteResponse(w, resp.Response, nil)
+}
+
+func (this *SchemaService) GetAllSchemas(w http.ResponseWriter, r *http.Request) {
+	withSchema := r.URL.Query().Get("withSchema")
+	serviceId := r.URL.Query().Get(":serviceId")
+	util.Logger().Warnf(nil, "Query Service %s schema, withSchema is %s.", serviceId, withSchema)
+	if withSchema != "0" && withSchema != "1" && strings.TrimSpace(withSchema) != "" {
+		controller.WriteError(w, scerr.ErrInvalidParams, "parameter withSchema must be 1 or 0")
+		return
+	}
+	request := &pb.GetAllSchemaRequest{
+		ServiceId:  serviceId,
+		WithSchema: withSchema == "1",
+	}
+	resp, _ := core.ServiceAPI.GetAllSchemaInfo(r.Context(), request)
+	respInternal := resp.Response
+	resp.Response = nil
+	controller.WriteResponse(w, respInternal, resp)
 }
