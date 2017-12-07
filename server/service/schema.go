@@ -76,6 +76,98 @@ func (s *MicroServiceService) GetSchemaInfo(ctx context.Context, in *pb.GetSchem
 	}, nil
 }
 
+func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAllSchemaRequest) (*pb.GetAllSchemaResponse, error) {
+	if in == nil || len(in.ServiceId) == 0 {
+		util.Logger().Errorf(nil, "get all schema failed: invalid params.")
+		return &pb.GetAllSchemaResponse{
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Invalid request path."),
+		}, nil
+	}
+
+	err := apt.Validate(in)
+	if err != nil {
+		util.Logger().Errorf(nil, "get schema failed, serviceId %s: invalid params.", in.ServiceId)
+		return &pb.GetAllSchemaResponse{
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+		}, nil
+	}
+
+	domainProject := util.ParseDomainProject(ctx)
+
+	service, err := serviceUtil.GetService(ctx, domainProject, in.ServiceId)
+	if err != nil {
+		util.Logger().Errorf(err, "get all schemas failded: get service failed. %s", in.ServiceId)
+		return &pb.GetAllSchemaResponse{
+			Response: pb.CreateResponse(scerr.ErrInternal, "Invalid request."),
+		}, err
+	}
+	if service == nil {
+		util.Logger().Errorf(nil, "get all schemas failded: service does not exist. %s", in.ServiceId)
+		return &pb.GetAllSchemaResponse{
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+		}, nil
+	}
+
+	schemas := []*pb.Schema{}
+	schemasList := service.Schemas
+	if schemasList == nil || len(schemasList) == 0 {
+		util.Logger().Infof("service %s schemaId set is empty.", in.ServiceId)
+		return &pb.GetAllSchemaResponse{
+			Response: pb.CreateResponse(pb.Response_SUCCESS, "Do not have this schema info."),
+			Schema:   schemas,
+		}, nil
+	}
+
+	// if 'withschmas' is false, not to search schemas content
+	key := apt.GenerateServiceSchemaSummaryKey(domainProject, in.ServiceId, "")
+	opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(key), registry.WithPrefix())
+	resp, errDo := store.Store().SchemaSummary().Search(ctx, opts...)
+	if errDo != nil {
+		util.Logger().Errorf(errDo, "get schema failed, serviceId %s: get schema info failed.", in.ServiceId)
+		return &pb.GetAllSchemaResponse{
+			Response: pb.CreateResponse(scerr.ErrInternal, "Get schema info failed."),
+		}, errDo
+	}
+
+	respWithSchema := &registry.PluginResponse{}
+	if in.WithSchema {
+		key := apt.GenerateServiceSchemaKey(domainProject, in.ServiceId, "")
+		opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(key), registry.WithPrefix())
+		respWithSchema, errDo = store.Store().Schema().Search(ctx, opts...)
+		if errDo != nil {
+			util.Logger().Errorf(errDo, "get schema failed, serviceId %s: get schema info failed.", in.ServiceId)
+			return &pb.GetAllSchemaResponse{
+				Response: pb.CreateResponse(scerr.ErrInternal, "Get schema info failed."),
+			}, errDo
+		}
+	}
+
+	for _, schema_id := range schemasList {
+		tempSchema := &pb.Schema{}
+		tempSchema.SchemaId = schema_id
+		for _, summarySchema := range resp.Kvs {
+			summaryId, summaryData := pb.GetInfoFromSchemaSummaryKV(summarySchema)
+			if schema_id == summaryId {
+				tempSchema.Summary = util.BytesToStringWithNoCopy(summaryData)
+			}
+		}
+
+		for _, contentSchema := range respWithSchema.Kvs {
+			schemaId, schemaData := pb.GetInfoFromSchemaKV(contentSchema)
+			if schema_id == schemaId {
+				tempSchema.Schema = util.BytesToStringWithNoCopy(schemaData)
+			}
+		}
+		schemas = append(schemas, tempSchema)
+	}
+
+	return &pb.GetAllSchemaResponse{
+		Response: pb.CreateResponse(pb.Response_SUCCESS, "Get all schema info successfully."),
+		Schema:   schemas,
+	}, nil
+
+}
+
 func (s *MicroServiceService) DeleteSchema(ctx context.Context, request *pb.DeleteSchemaRequest) (*pb.DeleteSchemaResponse, error) {
 	if request == nil || len(request.ServiceId) == 0 || len(request.SchemaId) == 0 {
 		util.Logger().Errorf(nil, "delete schema failed: invalid params.")

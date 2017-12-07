@@ -24,6 +24,7 @@ service ServiceCtrl {
     rpc deleteTags (DeleteServiceTagsRequest) returns (DeleteServiceTagsResponse);
 
     rpc getSchemaInfo (GetSchemaRequest) returns (GetSchemaResponse);
+    rpc getAllSchemaInfo (GetAllSchemaRequest) returns (GetAllSchemaResponse);
     rpc deleteSchema (DeleteSchemaRequest) returns (DeleteSchemaResponse);
     rpc modifySchema (ModifySchemaRequest) returns (ModifySchemaResponse);
     rpc modifySchemas (ModifySchemasRequest) returns (ModifySchemasResponse);
@@ -468,9 +469,19 @@ message GetSchemaRequest {
     string schemaId = 2;
 }
 
+message GetAllSchemaRequest {
+    string serviceId = 1;
+    bool withSchema = 2;
+}
+
 message GetSchemaResponse {
     Response response = 1;
     string schema = 2;
+}
+
+message GetAllSchemaResponse {
+    Response response = 1;
+    repeated Schema schema = 2;
 }
 
 message DeleteSchemaRequest {

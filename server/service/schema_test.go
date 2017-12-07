@@ -821,7 +821,16 @@ var _ = Describe("'Schema' service", func() {
 
 	Describe("execute 'get' operation", func() {
 		var (
-			serviceId string
+			serviceId  string
+			serviceId1 string
+		)
+
+		var (
+			schemaId1     string = "all_schema1"
+			schemaId2     string = "all_schema2"
+			schemaId3     string = "all_schema3"
+			summary       string = "this is a test"
+			schemaContent string = "the content is vary large"
 		)
 
 		It("should be passed", func() {
@@ -849,6 +858,86 @@ var _ = Describe("'Schema' service", func() {
 			})
 			Expect(err).To(BeNil())
 			Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+
+			respCreateService, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "get_all_schema",
+					ServiceName: "get_all_schema",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Schemas: []string{
+						schemaId1,
+						schemaId2,
+						schemaId3,
+					},
+					Status: pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.Response.Code).To(Equal(pb.Response_SUCCESS))
+			serviceId1 = respCreateService.ServiceId
+
+			respPutData, err := serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
+				ServiceId: serviceId1,
+				SchemaId:  schemaId2,
+				Schema:    schemaContent,
+			})
+			Expect(err).To(BeNil())
+			Expect(respPutData.Response.Code).To(Equal(pb.Response_SUCCESS))
+
+			respPutData, err = serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
+				ServiceId: serviceId1,
+				SchemaId:  schemaId3,
+				Schema:    schemaContent,
+				Summary:   summary,
+			})
+			Expect(err).To(BeNil())
+			Expect(respPutData.Response.Code).To(Equal(pb.Response_SUCCESS))
+
+			respGetAllSchema, err := serviceResource.GetAllSchemaInfo(getContext(), &pb.GetAllSchemaRequest{
+				ServiceId:  serviceId1,
+				WithSchema: false,
+			})
+			Expect(err).To(BeNil())
+			Expect(respGetAllSchema.Response.Code).To(Equal(pb.Response_SUCCESS))
+			schemas := respGetAllSchema.Schema
+			for _, schema := range schemas {
+				if schema.SchemaId == schemaId1 {
+					Expect(schema.Summary).To(BeEmpty())
+					Expect(schema.Schema).To(BeEmpty())
+				}
+				if schema.SchemaId == schemaId2 {
+					Expect(schema.Summary).To(BeEmpty())
+					Expect(schema.Schema).To(BeEmpty())
+				}
+				if schema.SchemaId == schemaId3 {
+					Expect(schema.Summary).To(Equal(summary))
+					Expect(schema.Schema).To(BeEmpty())
+				}
+			}
+
+			respGetAllSchema, err = serviceResource.GetAllSchemaInfo(getContext(), &pb.GetAllSchemaRequest{
+				ServiceId:  serviceId1,
+				WithSchema: true,
+			})
+			Expect(err).To(BeNil())
+			Expect(respGetAllSchema.Response.Code).To(Equal(pb.Response_SUCCESS))
+			schemas = respGetAllSchema.Schema
+			for _, schema := range schemas {
+				if schema.SchemaId == schemaId1 {
+					Expect(schema.Schema).To(BeEmpty())
+					Expect(schema.Schema).To(BeEmpty())
+				}
+				if schema.SchemaId == schemaId2 {
+					Expect(schema.Summary).To(BeEmpty())
+					Expect(schema.Schema).To(Equal(schemaContent))
+				}
+				if schema.SchemaId == schemaId3 {
+					Expect(schema.Summary).To(Equal(summary))
+					Expect(schema.Schema).To(Equal(schemaContent))
+				}
+			}
+
 		})
 
 		Context("when request is invalid", func() {

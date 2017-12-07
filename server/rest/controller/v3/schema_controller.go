@@ -28,5 +28,6 @@ func (this *SchemaService) URLPatterns() []rest.Route {
 		{rest.HTTP_METHOD_PUT, "/registry/v3/microservices/:serviceId/schemas/:schemaId", this.ModifySchema},
 		{rest.HTTP_METHOD_DELETE, "/registry/v3/microservices/:serviceId/schemas/:schemaId", this.DeleteSchemas},
 		{rest.HTTP_METHOD_POST, "/registry/v3/microservices/:serviceId/schemas", this.ModifySchemas},
+		{rest.HTTP_METHOD_GET, "/registry/v3/microservices/:serviceId/schemas", this.GetAllSchemas},
 	}
 }
