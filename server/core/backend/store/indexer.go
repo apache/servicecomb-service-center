@@ -314,7 +314,7 @@ func NewCacheIndexer(t StoreType, cr Cacher) *Indexer {
 		BuildTimeout:     DEFAULT_ADD_QUEUE_TIMEOUT,
 		cacher:           cr,
 		cacheType:        t,
-		prefixIndex:      make(map[string]map[string]struct{}),
+		prefixIndex:      make(map[string]map[string]struct{}, DEFAULT_MAX_EVENT_COUNT),
 		prefixBuildQueue: make(chan *KvEvent, DEFAULT_MAX_EVENT_COUNT),
 		goroutine:        util.NewGo(make(chan struct{})),
 		ready:            make(chan struct{}),

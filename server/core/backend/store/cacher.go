@@ -535,7 +535,7 @@ func NewKvCache(c *KvCacher, size int) *KvCache {
 	}
 }
 
-func NewKvCacher(opts ...KvCacherCfgOption) Cacher {
+func NewKvCacher(opts ...KvCacherCfgOption) *KvCacher {
 	cfg := DefaultKvCacherConfig()
 	for _, opt := range opts {
 		opt(&cfg)
