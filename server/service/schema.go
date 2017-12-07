@@ -111,7 +111,7 @@ func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAl
 	schemas := []*pb.Schema{}
 	schemasList := service.Schemas
 	if schemasList == nil || len(schemasList) == 0 {
-		util.Logger().Errorf(nil, "get all schemas empty, Service %s: schemas does not exist.", in.ServiceId)
+		util.Logger().Infof("service %s schemaId set is empty.", in.ServiceId)
 		return &pb.GetAllSchemaResponse{
 			Response: pb.CreateResponse(pb.Response_SUCCESS, "Do not have this schema info."),
 			Schema:   schemas,
