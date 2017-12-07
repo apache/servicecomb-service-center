@@ -159,13 +159,13 @@ func GenerateServiceIndexKey(key *pb.MicroServiceKey) string {
 	if len(strings.TrimSpace(appId)) == 0 {
 		key.AppId = REGISTRY_APP_ID
 	}
-	stage := key.Environment
-	if len(strings.TrimSpace(stage)) == 0 {
-		key.Environment = pb.ENV_DEV
+	env := key.Environment
+	if len(strings.TrimSpace(env)) == 0 {
+		env = pb.ENV_DEV
 	}
 	return util.StringJoin([]string{
 		GetServiceIndexRootKey(key.Tenant),
-		key.Environment,
+		env,
 		key.AppId,
 		key.ServiceName,
 		key.Version,
@@ -177,13 +177,13 @@ func GenerateServiceAliasKey(key *pb.MicroServiceKey) string {
 	if len(strings.TrimSpace(appId)) == 0 {
 		key.AppId = REGISTRY_APP_ID
 	}
-	stage := key.Environment
-	if len(strings.TrimSpace(stage)) == 0 {
-		key.Environment = pb.ENV_DEV
+	env := key.Environment
+	if len(strings.TrimSpace(env)) == 0 {
+		env = pb.ENV_DEV
 	}
 	return util.StringJoin([]string{
 		GetServiceAliasRootKey(key.Tenant),
-		key.Environment,
+		env,
 		key.AppId,
 		key.Alias,
 		key.Version,

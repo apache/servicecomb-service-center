@@ -108,7 +108,7 @@ func ParseSSLProtocol(sprotocol string) uint16 {
 	if protocol, ok := TLS_VERSION_MAP[sprotocol]; ok {
 		result = protocol
 	} else {
-		util.Logger().Warnf(nil, "invalid ssl minimal version invalid(%s), use default.", sprotocol)
+		util.Logger().Warnf(nil, "invalid ssl minimal version(%s), use default.", sprotocol)
 	}
 
 	return result

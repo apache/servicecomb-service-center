@@ -28,6 +28,7 @@ service ServiceCtrl {
     rpc modifySchema (ModifySchemaRequest) returns (ModifySchemaResponse);
     rpc modifySchemas (ModifySchemasRequest) returns (ModifySchemasResponse);
 
+    rpc addDependenciesForMicroServices (AddDependenciesRequest) returns (AddDependenciesResponse);
     rpc createDependenciesForMicroServices (CreateDependenciesRequest) returns (CreateDependenciesResponse);
     rpc getProviderDependencies (GetDependenciesRequest) returns (GetProDependenciesResponse);
     rpc getConsumerDependencies (GetDependenciesRequest) returns (GetConDependenciesResponse);
@@ -492,8 +493,16 @@ message ModifySchemaResponse {
     Response response = 1;
 }
 
+message AddDependenciesRequest {
+    repeated ConsumerDependency dependencies = 1;
+}
+
+message AddDependenciesResponse {
+    Response response = 1;
+}
+
 message CreateDependenciesRequest {
-    repeated MircroServiceDependency dependencies = 1;
+    repeated ConsumerDependency dependencies = 1;
 }
 
 message DependencyKey {
@@ -503,7 +512,7 @@ message DependencyKey {
     string environment = 4;
 }
 
-message MircroServiceDependency {
+message ConsumerDependency {
     DependencyKey consumer = 1;
     repeated DependencyKey providers = 2;
 }

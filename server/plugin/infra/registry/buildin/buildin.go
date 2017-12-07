@@ -25,53 +25,53 @@ func init() {
 	mgr.RegisterPlugin(mgr.Plugin{mgr.STATIC, mgr.REGISTRY, "buildin", NewRegistry})
 }
 
-var noClientPluginErr = fmt.Errorf("register center client plugin does not exist")
+var noPluginErr = fmt.Errorf("register center plugin does not exist")
 
-type ErrorRegisterCenterClient struct {
+type BuildinRegistry struct {
 	ready chan int
 }
 
-func (ec *ErrorRegisterCenterClient) safeClose(chan int) {
+func (ec *BuildinRegistry) safeClose(chan int) {
 	defer util.RecoverAndReport()
 	close(ec.ready)
 }
-func (ec *ErrorRegisterCenterClient) Err() (err <-chan error) {
+func (ec *BuildinRegistry) Err() (err <-chan error) {
 	return
 }
-func (ec *ErrorRegisterCenterClient) Ready() <-chan int {
+func (ec *BuildinRegistry) Ready() <-chan int {
 	ec.safeClose(ec.ready)
 	return ec.ready
 }
-func (ec *ErrorRegisterCenterClient) PutNoOverride(ctx context.Context, opts ...registry.PluginOpOption) (bool, error) {
-	return false, noClientPluginErr
+func (ec *BuildinRegistry) PutNoOverride(ctx context.Context, opts ...registry.PluginOpOption) (bool, error) {
+	return false, noPluginErr
 }
-func (ec *ErrorRegisterCenterClient) Do(ctx context.Context, opts ...registry.PluginOpOption) (*registry.PluginResponse, error) {
-	return nil, noClientPluginErr
+func (ec *BuildinRegistry) Do(ctx context.Context, opts ...registry.PluginOpOption) (*registry.PluginResponse, error) {
+	return nil, noPluginErr
 }
-func (ec *ErrorRegisterCenterClient) Txn(ctx context.Context, ops []registry.PluginOp) (*registry.PluginResponse, error) {
-	return nil, noClientPluginErr
+func (ec *BuildinRegistry) Txn(ctx context.Context, ops []registry.PluginOp) (*registry.PluginResponse, error) {
+	return nil, noPluginErr
 }
-func (ec *ErrorRegisterCenterClient) TxnWithCmp(ctx context.Context, success []registry.PluginOp, cmp []registry.CompareOp, fail []registry.PluginOp) (*registry.PluginResponse, error) {
-	return nil, noClientPluginErr
+func (ec *BuildinRegistry) TxnWithCmp(ctx context.Context, success []registry.PluginOp, cmp []registry.CompareOp, fail []registry.PluginOp) (*registry.PluginResponse, error) {
+	return nil, noPluginErr
 }
-func (ec *ErrorRegisterCenterClient) LeaseGrant(ctx context.Context, TTL int64) (leaseID int64, err error) {
-	return 0, noClientPluginErr
+func (ec *BuildinRegistry) LeaseGrant(ctx context.Context, TTL int64) (leaseID int64, err error) {
+	return 0, noPluginErr
 }
-func (ec *ErrorRegisterCenterClient) LeaseRenew(ctx context.Context, leaseID int64) (TTL int64, err error) {
-	return 0, noClientPluginErr
+func (ec *BuildinRegistry) LeaseRenew(ctx context.Context, leaseID int64) (TTL int64, err error) {
+	return 0, noPluginErr
 }
-func (ec *ErrorRegisterCenterClient) LeaseRevoke(ctx context.Context, leaseID int64) error {
-	return noClientPluginErr
+func (ec *BuildinRegistry) LeaseRevoke(ctx context.Context, leaseID int64) error {
+	return noPluginErr
 }
-func (ec *ErrorRegisterCenterClient) Watch(ctx context.Context, opts ...registry.PluginOpOption) error {
-	return noClientPluginErr
+func (ec *BuildinRegistry) Watch(ctx context.Context, opts ...registry.PluginOpOption) error {
+	return noPluginErr
 }
-func (ec *ErrorRegisterCenterClient) Close() {
+func (ec *BuildinRegistry) Close() {
 	ec.safeClose(ec.ready)
 }
 
 func NewRegistry() mgr.PluginInstance {
-	return &ErrorRegisterCenterClient{
+	return &BuildinRegistry{
 		ready: make(chan int),
 	}
 }

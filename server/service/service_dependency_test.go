@@ -102,7 +102,7 @@ var _ = Describe("'Dependency' service", func() {
 
 				By("consumer does not exist")
 				respCreateDependency, err = serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
-					Dependencies: []*pb.MircroServiceDependency{
+					Dependencies: []*pb.ConsumerDependency{
 						{
 							Consumer: &pb.DependencyKey{
 								AppId:       "noexistapp",
@@ -118,7 +118,7 @@ var _ = Describe("'Dependency' service", func() {
 
 				By("consumer version is invalid")
 				respCreateDependency, err = serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
-					Dependencies: []*pb.MircroServiceDependency{
+					Dependencies: []*pb.ConsumerDependency{
 						{
 							Consumer: &pb.DependencyKey{
 								AppId:       "create_dep_group",
@@ -134,7 +134,7 @@ var _ = Describe("'Dependency' service", func() {
 
 				By("consumer serviceName is invalid")
 				respCreateDependency, err = serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
-					Dependencies: []*pb.MircroServiceDependency{
+					Dependencies: []*pb.ConsumerDependency{
 						{
 							Consumer: &pb.DependencyKey{
 								AppId:       "create_dep_group",
@@ -150,7 +150,7 @@ var _ = Describe("'Dependency' service", func() {
 
 				By("provider is nil")
 				respCreateDependency, err = serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
-					Dependencies: []*pb.MircroServiceDependency{
+					Dependencies: []*pb.ConsumerDependency{
 						{
 							Consumer: consumer,
 						},
@@ -161,7 +161,7 @@ var _ = Describe("'Dependency' service", func() {
 
 				By("provider app is invalid")
 				respCreateDependency, err = serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
-					Dependencies: []*pb.MircroServiceDependency{
+					Dependencies: []*pb.ConsumerDependency{
 						{
 							Consumer: consumer,
 							Providers: []*pb.DependencyKey{
@@ -179,7 +179,7 @@ var _ = Describe("'Dependency' service", func() {
 
 				By("provider serviceName is invalid")
 				respCreateDependency, err = serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
-					Dependencies: []*pb.MircroServiceDependency{
+					Dependencies: []*pb.ConsumerDependency{
 						{
 							Consumer: consumer,
 							Providers: []*pb.DependencyKey{
@@ -197,7 +197,7 @@ var _ = Describe("'Dependency' service", func() {
 
 				By("provider version is invalid")
 				respCreateDependency, err = serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
-					Dependencies: []*pb.MircroServiceDependency{
+					Dependencies: []*pb.ConsumerDependency{
 						{
 							Consumer: consumer,
 							Providers: []*pb.DependencyKey{
@@ -215,7 +215,7 @@ var _ = Describe("'Dependency' service", func() {
 
 				By("provider in diff env")
 				respCreateDependency, err = serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
-					Dependencies: []*pb.MircroServiceDependency{
+					Dependencies: []*pb.ConsumerDependency{
 						{
 							Consumer: consumer,
 							Providers: []*pb.DependencyKey{
@@ -242,7 +242,7 @@ var _ = Describe("'Dependency' service", func() {
 				By("consumer in diff env")
 				consumer.Environment = pb.ENV_PROD
 				respCreateDependency, err = serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
-					Dependencies: []*pb.MircroServiceDependency{
+					Dependencies: []*pb.ConsumerDependency{
 						{
 							Consumer: consumer,
 							Providers: []*pb.DependencyKey{
@@ -277,7 +277,7 @@ var _ = Describe("'Dependency' service", func() {
 
 				By("add latest")
 				respCreateDependency, err := serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
-					Dependencies: []*pb.MircroServiceDependency{
+					Dependencies: []*pb.ConsumerDependency{
 						{
 							Consumer: consumer,
 							Providers: []*pb.DependencyKey{
@@ -295,7 +295,7 @@ var _ = Describe("'Dependency' service", func() {
 
 				By("add 1.0.0+")
 				respCreateDependency, err = serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
-					Dependencies: []*pb.MircroServiceDependency{
+					Dependencies: []*pb.ConsumerDependency{
 						{
 							Consumer: consumer,
 							Providers: []*pb.DependencyKey{
@@ -313,7 +313,7 @@ var _ = Describe("'Dependency' service", func() {
 
 				By("add *")
 				respCreateDependency, err = serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
-					Dependencies: []*pb.MircroServiceDependency{
+					Dependencies: []*pb.ConsumerDependency{
 						{
 							Consumer: consumer,
 							Providers: []*pb.DependencyKey{
@@ -329,7 +329,7 @@ var _ = Describe("'Dependency' service", func() {
 
 				By("add multiple providers")
 				respCreateDependency, err = serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
-					Dependencies: []*pb.MircroServiceDependency{
+					Dependencies: []*pb.ConsumerDependency{
 						{
 							Consumer: consumer,
 							Providers: []*pb.DependencyKey{
@@ -350,7 +350,7 @@ var _ = Describe("'Dependency' service", func() {
 
 				By("add 1.0.0-2.0.0")
 				respCreateDependency, err = serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
-					Dependencies: []*pb.MircroServiceDependency{
+					Dependencies: []*pb.ConsumerDependency{
 						{
 							Consumer: consumer,
 							Providers: []*pb.DependencyKey{
@@ -365,6 +365,24 @@ var _ = Describe("'Dependency' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respCreateDependency.Response.Code).To(Equal(pb.Response_SUCCESS))
+
+				By("add not override")
+				respAddDependency, err := serviceResource.AddDependenciesForMicroServices(getContext(), &pb.AddDependenciesRequest{
+					Dependencies: []*pb.ConsumerDependency{
+						{
+							Consumer: consumer,
+							Providers: []*pb.DependencyKey{
+								{
+									AppId:       "create_dep_group",
+									ServiceName: "create_dep_provider",
+									Version:     "1.0.0-2.0.0",
+								},
+							},
+						},
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(respAddDependency.Response.Code).To(Equal(pb.Response_SUCCESS))
 			})
 		})
 	})

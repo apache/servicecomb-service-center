@@ -31,10 +31,30 @@ type DependencyService struct {
 
 func (this *DependencyService) URLPatterns() []rest.Route {
 	return []rest.Route{
+		{rest.HTTP_METHOD_POST, "/v4/:domain/registry/dependencies", this.AddDependenciesForMicroServices},
 		{rest.HTTP_METHOD_PUT, "/v4/:domain/registry/dependencies", this.CreateDependenciesForMicroServices},
 		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/microservices/:consumerId/providers", this.GetConProDependencies},
 		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/microservices/:providerId/consumers", this.GetProConDependencies},
 	}
+}
+
+func (this *DependencyService) AddDependenciesForMicroServices(w http.ResponseWriter, r *http.Request) {
+	requestBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		util.Logger().Error("body err", err)
+		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
+		return
+	}
+	request := &pb.AddDependenciesRequest{}
+	err = json.Unmarshal(requestBody, request)
+	if err != nil {
+		util.Logger().Error("Invalid json", err)
+		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
+		return
+	}
+
+	resp, err := core.ServiceAPI.AddDependenciesForMicroServices(r.Context(), request)
+	controller.WriteResponse(w, resp.Response, nil)
 }
 
 func (this *DependencyService) CreateDependenciesForMicroServices(w http.ResponseWriter, r *http.Request) {
