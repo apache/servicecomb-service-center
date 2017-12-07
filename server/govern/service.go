@@ -71,7 +71,7 @@ func (governService *GovernService) GetServicesInfo(ctx context.Context, in *pb.
 		}, err
 	}
 
-	allServiceDetails := make([]*pb.ServiceDetail, 0)
+	allServiceDetails := make([]*pb.ServiceDetail, 0, len(services))
 	domainProject := util.ParseDomainProject(ctx)
 	for _, service := range services {
 		if apt.Service.ServiceId == service.ServiceId {
@@ -232,14 +232,15 @@ func getServiceAllVersions(ctx context.Context, serviceKey *pb.MicroServiceKey) 
 
 func getSchemaInfoUtil(ctx context.Context, domainProject string, serviceId string) ([]*pb.Schema, error) {
 	key := apt.GenerateServiceSchemaKey(domainProject, serviceId, "")
-	schemas := []*pb.Schema{}
+
 	resp, err := store.Store().Schema().Search(ctx,
 		registry.WithStrKey(key),
 		registry.WithPrefix())
 	if err != nil {
-		util.Logger().Errorf(err, "Get schema failded,%s")
-		return schemas, err
+		util.Logger().Errorf(err, "Get schema failed,%s")
+		return make([]*pb.Schema, 0), err
 	}
+	schemas := make([]*pb.Schema, 0, len(resp.Kvs))
 	for _, kv := range resp.Kvs {
 		schemaInfo := &pb.Schema{}
 		schemaInfo.Schema = util.BytesToStringWithNoCopy(kv.Value)
@@ -358,12 +359,8 @@ func statistics(ctx context.Context) (*pb.Statistics, error) {
 			}
 		}
 
-		svcWithNonVersionKey := util.StringJoin([]string{
-			key.Tenant,
-			key.Environment,
-			key.AppId,
-			key.ServiceName,
-		}, "/")
+		key.Version = ""
+		svcWithNonVersionKey := apt.GenerateServiceIndexKey(key)
 		svcWithNonVersion[svcWithNonVersionKey] = nil
 	}
 	scSvcCount := 0
