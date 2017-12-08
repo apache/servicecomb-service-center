@@ -15,31 +15,13 @@ package util_test
 
 import (
 	"fmt"
-	errorsEx "github.com/ServiceComb/service-center/pkg/errors"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/core/proto"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"golang.org/x/net/context"
+	"net/http"
 	"testing"
 )
-
-func TestRuleErr(t *testing.T) {
-	e1 := serviceUtil.NotAllowAcrossDimensionError("a")
-	if e1.Error() != "a" {
-		fmt.Printf("NotAllowAcrossAppError failed")
-		t.FailNow()
-	}
-	e2 := serviceUtil.NotMatchWhiteListError("a")
-	if e2.Error() != "a" {
-		fmt.Printf("NotAllowAcrossAppError failed")
-		t.FailNow()
-	}
-	e3 := serviceUtil.MatchBlackListError("a")
-	if e3.Error() != "a" {
-		fmt.Printf("NotAllowAcrossAppError failed")
-		t.FailNow()
-	}
-}
 
 func TestRuleFilter_Filter(t *testing.T) {
 	rf := serviceUtil.RuleFilter{
@@ -187,7 +169,7 @@ func TestMatchRules(t *testing.T) {
 			Pattern:   "",
 		},
 	}, nil, nil)
-	if err != nil {
+	if err == nil {
 		fmt.Printf("MatchRules nil failed")
 		t.FailNow()
 	}
@@ -354,13 +336,13 @@ func TestGetProvider(t *testing.T) {
 
 func TestAccessible(t *testing.T) {
 	err := serviceUtil.Accessible(context.Background(), "", "", "")
-	if _, ok := err.(errorsEx.InternalError); !ok {
+	if err.StatusCode() != http.StatusInternalServerError {
 		fmt.Printf("Accessible invalid failed")
 		t.FailNow()
 	}
 
 	err = serviceUtil.Accessible(util.SetContext(context.Background(), "cacheOnly", "1"), "", "", "")
-	if _, ok := err.(errorsEx.InternalError); ok {
+	if err.StatusCode() == http.StatusInternalServerError {
 		fmt.Printf("Accessible WithCacheOnly failed")
 		t.FailNow()
 	}
