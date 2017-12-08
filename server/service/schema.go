@@ -15,6 +15,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"github.com/ServiceComb/service-center/pkg/util"
 	apt "github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/server/core/backend"
@@ -313,25 +314,26 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 		if len(service.Schemas) == 0 {
 			_, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.SchemaQuotaType, domainProject, serviceId, int16(len(schemas)))
 			if err != nil {
-				util.Logger().Errorf(err, "Add schema info failed, check resource num failed, %s", serviceId)
+				util.Logger().Errorf(err, "modify schemas info failed, check resource num failed, %s", serviceId)
 				return scerr.NewError(scerr.ErrUnavailableQuota, err.Error())
 			}
 			if !ok {
-				util.Logger().Errorf(err, "Add schema info failed, reach the max size of schema, %s", serviceId)
+				util.Logger().Errorf(err, "modify schemas info failed, reach the max size of schema, %s", serviceId)
 				return scerr.NewError(scerr.ErrNotEnoughQuota, "reach the max size of schema")
 			}
 
 			service.Schemas = nonExistSchemaIds
 			opt, err := serviceUtil.UpdateService(domainProject, serviceId, service)
 			if err != nil {
-				util.Logger().Errorf(err, "update service failed , %s", serviceId)
+				util.Logger().Errorf(err, "modify schemas info failed, update service failed , %s", serviceId)
 				return scerr.NewError(scerr.ErrInternal, err.Error())
 			}
 			pluginOps = append(pluginOps, opt)
 		} else {
 			if len(nonExistSchemaIds) != 0 {
-				util.Logger().Errorf(nil, "non-exist schemaId %#v", nonExistSchemaIds)
-				return scerr.NewError(scerr.ErrInvalidParams, "non-exist schemaId")
+				errInfo := fmt.Sprintf("non-exist schemaId %s", util.StringJoin(nonExistSchemaIds, " ,"))
+				util.Logger().Errorf(nil, "modify schemas failed, serviceId %s, %s", serviceId, errInfo)
+				return scerr.NewError(scerr.ErrInvalidParams, errInfo)
 			}
 			for _, needUpdateSchema := range needUpdateSchemas {
 				exist, err := isExistSchemaSummary(ctx, domainProject, serviceId, needUpdateSchema.SchemaId)
@@ -342,7 +344,7 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 					opts := schemaWithDatabaseOpera(registry.OpPut, domainProject, serviceId, needUpdateSchema)
 					pluginOps = append(pluginOps, opts...)
 				} else {
-					util.Logger().Warnf(nil, "schema and summary more existed, skip,service %s, schemaId %s", service.ServiceId, needUpdateSchema.SchemaId)
+					util.Logger().Warnf(nil, "schema and summary more existed, skip,serviceId %s, schemaId %s", serviceId, needUpdateSchema.SchemaId)
 				}
 			}
 		}
@@ -365,22 +367,22 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 		if quotaSize > 0 {
 			_, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.SchemaQuotaType, domainProject, serviceId, int16(quotaSize))
 			if err != nil {
-				util.Logger().Errorf(err, "Add schema info failed, check resource num failed, %s", serviceId)
+				util.Logger().Errorf(err, "modify schemas info failed, check resource num failed, %s", serviceId)
 				return scerr.NewError(scerr.ErrUnavailableQuota, err.Error())
 			}
 			if !ok {
-				util.Logger().Errorf(err, "Add schema info failed, reach the max size of schema, %s", serviceId)
+				util.Logger().Errorf(err, "modify schemas info failed, reach the max size of schema, %s", serviceId)
 				return scerr.NewError(scerr.ErrNotEnoughQuota, "reach the max size of schema")
 			}
 		}
 
 		for _, schema := range needUpdateSchemas {
-			util.Logger().Infof("update schema %v", schema)
+			util.Logger().Infof("update schema: serviceId %s, schemaId %s", serviceId, schema.SchemaId)
 			opts := schemaWithDatabaseOpera(registry.OpPut, domainProject, serviceId, schema)
 			pluginOps = append(pluginOps, opts...)
 		}
 		for _, schema := range needDeleteSchemas {
-			util.Logger().Infof("delete not exist schema %v", schema)
+			util.Logger().Infof("delete non-exist schema: serviceId %s, schemaId %s", serviceId, schema.SchemaId)
 			opts := schemaWithDatabaseOpera(registry.OpDel, domainProject, serviceId, schema)
 			pluginOps = append(pluginOps, opts...)
 		}
@@ -389,7 +391,7 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 			service.Schemas = append(service.Schemas, nonExistSchemaIds...)
 			opt, err := serviceUtil.UpdateService(domainProject, serviceId, service)
 			if err != nil {
-				util.Logger().Errorf(err, "update service failed , %s", serviceId)
+				util.Logger().Errorf(err, "modify schema info failed, update service failed , %s", serviceId)
 				return scerr.NewError(scerr.ErrInternal, err.Error())
 			}
 			pluginOps = append(pluginOps, opt)
@@ -397,7 +399,7 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 	}
 
 	for _, schema := range needAddSchemas {
-		util.Logger().Infof("add new schema %v", schema)
+		util.Logger().Infof("add new schema: serviceId %s, schemaId %s", serviceId, schema.SchemaId)
 		opts := schemaWithDatabaseOpera(registry.OpPut, domainProject, service.ServiceId, schema)
 		pluginOps = append(pluginOps, opts...)
 	}
@@ -408,8 +410,17 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 			return scerr.NewError(scerr.ErrInternal, err.Error())
 		}
 	}
+	util.Logger().Infof("modify schemas info successfully, serviceId %s, schemaIds %s", serviceId, parseSchemaIds(schemas))
 
 	return nil
+}
+
+func parseSchemaIds(schemas []*pb.Schema) string {
+	schemaIdsArr := make([]string, 0, len(schemas))
+	for _, schema := range schemas {
+		schemaIdsArr = append(schemaIdsArr, schema.SchemaId)
+	}
+	return util.StringJoin(schemaIdsArr, " , ")
 }
 
 func isExistSchemaId(service *pb.MicroService, schemas []*pb.Schema) bool {
@@ -483,10 +494,10 @@ func (s *MicroServiceService) ModifySchema(ctx context.Context, request *pb.Modi
 	}
 	err, isInnerErr := s.modifySchema(ctx, serviceId, &schema)
 	if err != nil {
-		util.Logger().Errorf(err, "modify service schema failed")
+		util.Logger().Errorf(err, "modify schema failed, serviceId %s, schemaId %s", serviceId, schemaId)
 		if isInnerErr {
 			return &pb.ModifySchemaResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, "Modify schema info failed."),
+				Response: pb.CreateResponse(scerr.ErrInternal, "Modify schema info failed, sc internal err"),
 			}, err
 		}
 		return &pb.ModifySchemaResponse{
@@ -494,9 +505,9 @@ func (s *MicroServiceService) ModifySchema(ctx context.Context, request *pb.Modi
 		}, nil
 	}
 
-	util.Logger().Infof("update schema success: serviceId %s, schemaId %s.", serviceId, schemaId)
+	util.Logger().Infof("modify schema successfully: serviceId %s, schemaId %s.", serviceId, schemaId)
 	return &pb.ModifySchemaResponse{
-		Response: pb.CreateResponse(pb.Response_SUCCESS, "Modify schema info success."),
+		Response: pb.CreateResponse(pb.Response_SUCCESS, "modify schema info success"),
 	}, nil
 }
 
@@ -515,15 +526,15 @@ func (s *MicroServiceService) canModifySchema(ctx context.Context, domainProject
 
 	_, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.SchemaQuotaType, domainProject, serviceId, 1)
 	if err != nil {
-		util.Logger().Errorf(err, "Add schema info failed, check resource num failed, %s, %s", serviceId, schemaId)
+		util.Logger().Errorf(err, "modify schema info failed, check resource num failed, %s, %s", serviceId, schemaId)
 		return scerr.NewError(scerr.ErrUnavailableQuota, err.Error())
 	}
 	if !ok {
-		util.Logger().Errorf(err, "Add schema info failed, reach the max size of schema, %s, %s", serviceId, schemaId)
+		util.Logger().Errorf(err, "modify schema info failed, reach the max size of schema, %s, %s", serviceId, schemaId)
 		return scerr.NewError(scerr.ErrNotEnoughQuota, "add schema failed, reach max size of schema")
 	}
 	if len(request.Summary) == 0 {
-		util.Logger().Warnf(nil, "service %s schema %s is empty.", request.ServiceId, schemaId)
+		util.Logger().Warnf(nil, "service %s schema %s summary is empty.", request.ServiceId, schemaId)
 	}
 	return nil
 }
@@ -534,44 +545,44 @@ func (s *MicroServiceService) modifySchema(ctx context.Context, serviceId string
 
 	service, err := serviceUtil.GetService(ctx, domainProject, serviceId)
 	if err != nil {
-		util.Logger().Errorf(err, "update schema failed, serviceId %s, schemaId %s: get service failed.", serviceId, schemaId)
+		util.Logger().Errorf(err, "modify schema failed, serviceId %s, schemaId %s: get service failed.", serviceId, schemaId)
 		return err, true
 	}
 	if service == nil {
-		util.Logger().Errorf(nil, "update schema failed, serviceId %s, schemaId %s: service not exist,%s", serviceId, schemaId)
-		return errors.New("service non-exist"), false
+		util.Logger().Errorf(nil, "modify schema failed, serviceId %s, schemaId %s: service not exist", serviceId, schemaId)
+		return errors.New("service non-exist, can't modify schema"), false
 	}
 
-	util.Logger().Infof("modify schema, serviceId  %s", service.ServiceId)
-	pluginOps := make([]registry.PluginOp, 0)
+	util.Logger().Infof("start to modify schema, serviceId  %s, schemaId %s", service.ServiceId, schemaId)
+	pluginOps := make([]registry.PluginOp, 0, 10)
 	isExist := isExistSchemaId(service, []*pb.Schema{schema})
 
 	if service.Environment == pb.ENV_PROD {
 		if len(service.Schemas) != 0 && !isExist {
-			return errors.New("non-exist schemaId, prod mode"), false
+			return errors.New(fmt.Sprintf("schemaId non-exist %s, can't be added, environment is production", schemaId)), false
 		}
 
 		key := apt.GenerateServiceSchemaKey(domainProject, serviceId, schemaId)
 		respSchema, err := store.Store().Schema().Search(ctx, registry.WithStrKey(key), registry.WithCountOnly())
 		if err != nil {
-			util.Logger().Errorf(err, "get schema summary failed, %s %s", serviceId, schemaId)
+			util.Logger().Errorf(err, "modify schema failed, get schema summary failed, %s %s", serviceId, schemaId)
 			return err, true
 		}
 
 		if respSchema.Count != 0 {
 			if len(schema.Summary) == 0 {
 				util.Logger().Errorf(err, "prod mode, schema more exist, can not change, %s %s", serviceId, schemaId)
-				return errors.New("schema more exist, can not change, prod mode"), false
+				return errors.New("schema more exist, can not change, environment is production"), false
 			}
 
 			exist, err := isExistSchemaSummary(ctx, domainProject, serviceId, schemaId)
 			if err != nil {
-				util.Logger().Errorf(err, "check schema summary is exist failed")
+				util.Logger().Errorf(err, "check schema summary is exist failed, serviceId %s, schemaId %s", serviceId, schemaId)
 				return err, false
 			}
 			if exist {
 				util.Logger().Errorf(err, "prod mode, schema more exist, can not change, %s %s", serviceId, schemaId)
-				return errors.New("schema more exist, can not change, prod mode"), false
+				return errors.New("schema more exist, can not change, environment is production"), false
 			}
 		}
 
@@ -579,7 +590,7 @@ func (s *MicroServiceService) modifySchema(ctx context.Context, serviceId string
 			service.Schemas = append(service.Schemas, schemaId)
 			opt, err := serviceUtil.UpdateService(domainProject, serviceId, service)
 			if err != nil {
-				util.Logger().Errorf(err, "update service failed , %s", serviceId)
+				util.Logger().Errorf(err, "modify schema failed, update service failed , serviceId %s, schemaId %s", serviceId, schemaId)
 				return err, true
 			}
 			pluginOps = append(pluginOps, opt)
@@ -589,7 +600,7 @@ func (s *MicroServiceService) modifySchema(ctx context.Context, serviceId string
 			service.Schemas = append(service.Schemas, schemaId)
 			opt, err := serviceUtil.UpdateService(domainProject, serviceId, service)
 			if err != nil {
-				util.Logger().Errorf(err, "update service failed , %s", serviceId)
+				util.Logger().Errorf(err, "modify schema failed, update service failed , serviceId %s, schemaId %s", serviceId, schemaId)
 				return err, true
 			}
 			pluginOps = append(pluginOps, opt)
@@ -601,7 +612,7 @@ func (s *MicroServiceService) modifySchema(ctx context.Context, serviceId string
 
 	_, err = backend.Registry().Txn(ctx, pluginOps)
 	if err != nil {
-		util.Logger().Errorf(err, "commit update schema failed")
+		util.Logger().Errorf(err, "commit update schema failed, serviceId %s, schemaId %s", serviceId, schemaId)
 		return err, true
 	}
 	return nil, false
