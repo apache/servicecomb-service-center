@@ -16,11 +16,11 @@ package util
 import (
 	"encoding/json"
 	"fmt"
-	errorsEx "github.com/ServiceComb/service-center/pkg/errors"
 	"github.com/ServiceComb/service-center/pkg/util"
 	apt "github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/server/core/backend/store"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
+	scerr "github.com/ServiceComb/service-center/server/error"
 	"github.com/ServiceComb/service-center/server/infra/registry"
 	"golang.org/x/net/context"
 	"reflect"
@@ -32,24 +32,6 @@ var tagRegEx *regexp.Regexp
 
 func init() {
 	tagRegEx, _ = regexp.Compile("tag_(.*)")
-}
-
-type NotAllowAcrossDimensionError string
-
-func (e NotAllowAcrossDimensionError) Error() string {
-	return string(e)
-}
-
-type NotMatchWhiteListError string
-
-func (e NotMatchWhiteListError) Error() string {
-	return string(e)
-}
-
-type MatchBlackListError string
-
-func (e MatchBlackListError) Error() string {
-	return string(e)
 }
 
 type RuleFilter struct {
@@ -70,10 +52,11 @@ func (rf *RuleFilter) Filter(ctx context.Context, consumerId string) (bool, erro
 		return false, err
 	}
 	matchErr := MatchRules(rf.ProviderRules, consumer, tags)
-	switch matchErr.(type) {
-	case NotMatchWhiteListError, MatchBlackListError:
-		return false, nil
-	default:
+	if matchErr != nil {
+		if matchErr.Code == scerr.ErrPermissionDeny {
+			return false, nil
+		}
+		return false, matchErr
 	}
 	return true, nil
 }
@@ -160,24 +143,24 @@ func GetOneRule(ctx context.Context, domainProject, serviceId, ruleId string) (*
 func AllowAcrossDimension(providerService *pb.MicroService, consumerService *pb.MicroService) error {
 	if providerService.AppId != consumerService.AppId {
 		if len(providerService.Properties) == 0 {
-			return NotAllowAcrossDimensionError("not allow across app access")
+			return fmt.Errorf("not allow across app access")
 		}
 
 		if allowCrossApp, ok := providerService.Properties[pb.PROP_ALLOW_CROSS_APP]; !ok || strings.ToLower(allowCrossApp) != "true" {
-			return NotAllowAcrossDimensionError("not allow across app access")
+			return fmt.Errorf("not allow across app access")
 		}
 	}
 
 	if providerService.Environment != consumerService.Environment {
-		return NotAllowAcrossDimensionError("not allow across environment access")
+		return fmt.Errorf("not allow across environment access")
 	}
 
 	return nil
 }
 
-func MatchRules(rules []*pb.ServiceRule, service *pb.MicroService, serviceTags map[string]string) error {
+func MatchRules(rules []*pb.ServiceRule, service *pb.MicroService, serviceTags map[string]string) *scerr.Error {
 	if service == nil {
-		return nil
+		return scerr.NewError(scerr.ErrInvalidParams, "service is nil")
 	}
 
 	v := reflect.Indirect(reflect.ValueOf(service))
@@ -195,7 +178,9 @@ func MatchRules(rules []*pb.ServiceRule, service *pb.MicroService, serviceTags m
 		} else {
 			key := v.FieldByName(rule.Attribute)
 			if !key.IsValid() {
-				return errorsEx.InternalError(fmt.Sprintf("can not find field '%s'", rule.Attribute))
+				util.Logger().Errorf(nil, "can not find service %s field '%s', rule %s",
+					service.ServiceId, rule.Attribute, rule.RuleId)
+				return scerr.NewError(scerr.ErrInternal, fmt.Sprintf("Can not find field '%s'", rule.Attribute))
 			}
 			value = key.String()
 		}
@@ -214,54 +199,38 @@ func MatchRules(rules []*pb.ServiceRule, service *pb.MicroService, serviceTags m
 			if match {
 				util.Logger().Infof("service %s match black list, rule.Pattern is %s, value is %s",
 					service.ServiceId, rule.Pattern, value)
-				return MatchBlackListError("Found in black list")
+				return scerr.NewError(scerr.ErrPermissionDeny, "Found in black list")
 			}
 		}
-
 	}
 	if hasWhite {
 		util.Logger().Infof("service %s do not match white list", service.ServiceId)
-		return NotMatchWhiteListError("Not found in white list")
+		return scerr.NewError(scerr.ErrPermissionDeny, "Not found in white list")
 	}
 	return nil
 }
 
-func Accessible(ctx context.Context, domainProject string, consumerId string, providerId string) error {
+func Accessible(ctx context.Context, domainProject string, consumerId string, providerId string) *scerr.Error {
 	consumerService, err := GetService(ctx, domainProject, consumerId)
 	if err != nil {
-		util.Logger().Errorf(err,
-			"consumer %s can't access provider %s for internal error", consumerId, providerId)
-		return errorsEx.InternalError(err.Error())
+		return scerr.NewError(scerr.ErrInternal, fmt.Sprintf("An error occurred in query consumer(%s)", err.Error()))
 	}
 	if consumerService == nil {
-		util.Logger().Warnf(nil,
-			"consumer %s can't access provider %s for invalid consumer", consumerId, providerId)
-		return fmt.Errorf("consumer invalid")
+		return scerr.NewError(scerr.ErrServiceNotExists, "consumer serviceId is invalid")
 	}
-
-	consumerFlag := fmt.Sprintf("%s/%s/%s", consumerService.AppId, consumerService.ServiceName, consumerService.Version)
 
 	// 跨应用权限
 	providerService, err := GetService(ctx, domainProject, providerId)
 	if err != nil {
-		util.Logger().Errorf(err, "consumer %s can't access provider %s for internal error",
-			consumerFlag, providerId)
-		return errorsEx.InternalError(err.Error())
+		return scerr.NewError(scerr.ErrInternal, fmt.Sprintf("An error occurred in query provider(%s)", err.Error()))
 	}
 	if providerService == nil {
-		util.Logger().Warnf(nil, "consumer %s can't access provider %s for invalid provider",
-			consumerFlag, providerId)
-		return fmt.Errorf("provider invalid")
+		return scerr.NewError(scerr.ErrServiceNotExists, "provider serviceId is invalid")
 	}
-
-	providerFlag := fmt.Sprintf("%s/%s/%s", providerService.AppId, providerService.ServiceName, providerService.Version)
 
 	err = AllowAcrossDimension(providerService, consumerService)
 	if err != nil {
-		util.Logger().Warnf(nil,
-			"consumer %s can't access provider %s which property 'allowCrossApp' is not true or does not exist",
-			consumerFlag, providerFlag)
-		return err
+		return scerr.NewError(scerr.ErrPermissionDeny, err.Error())
 	}
 
 	ctx = util.SetContext(util.CloneContext(ctx), "cacheOnly", "1")
@@ -269,9 +238,7 @@ func Accessible(ctx context.Context, domainProject string, consumerId string, pr
 	// 黑白名单
 	rules, err := GetRulesUtil(ctx, domainProject, providerId)
 	if err != nil {
-		util.Logger().Errorf(err, "consumer %s can't access provider %s for internal error",
-			consumerFlag, providerFlag)
-		return errorsEx.InternalError(err.Error())
+		return scerr.NewError(scerr.ErrInternal, fmt.Sprintf("An error occurred in query provider rules(%s)", err.Error()))
 	}
 
 	if len(rules) == 0 {
@@ -280,22 +247,8 @@ func Accessible(ctx context.Context, domainProject string, consumerId string, pr
 
 	validateTags, err := GetTagsUtils(ctx, domainProject, consumerService.ServiceId)
 	if err != nil {
-		util.Logger().Errorf(err, "consumer %s can't access provider %s for internal error",
-			consumerFlag, providerFlag)
-		return errorsEx.InternalError(err.Error())
+		return scerr.NewError(scerr.ErrInternal, fmt.Sprintf("An error occurred in query consumer tags(%s)", err.Error()))
 	}
 
-	err = MatchRules(rules, consumerService, validateTags)
-	if err != nil {
-		switch err.(type) {
-		case errorsEx.InternalError:
-			util.Logger().Errorf(err, "consumer %s can't access provider %s for internal error",
-				consumerFlag, providerFlag)
-		default:
-			util.Logger().Warnf(err, "consumer %s can't access provider %s", consumerFlag, providerFlag)
-		}
-		return err
-	}
-
-	return nil
+	return MatchRules(rules, consumerService, validateTags)
 }

@@ -16,7 +16,6 @@ package service
 import (
 	"encoding/json"
 	"fmt"
-	errorsEx "github.com/ServiceComb/service-center/pkg/errors"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/core"
 	apt "github.com/ServiceComb/service-center/server/core"
@@ -30,6 +29,7 @@ import (
 	"github.com/ServiceComb/service-center/server/plugin"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"golang.org/x/net/context"
+	"net/http"
 	"strconv"
 	"time"
 )
@@ -91,22 +91,20 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 		Alias:       service.Alias,
 		Version:     service.Version,
 	}
-	reporter, err := checkQuota(ctx, domainProject)
+	reporter, quotaErr := checkQuota(ctx, domainProject)
 	if reporter != nil {
 		defer reporter.Close()
 	}
-	if err != nil {
+	if quotaErr != nil {
 		util.Logger().Errorf(err, "create microservice failed, %s: check service failed before create. operator: %s",
 			serviceFlag, remoteIP)
-		resp := &pb.CreateServiceResponse{}
-		switch err.(type) {
-		case errorsEx.InternalError:
-			resp.Response = pb.CreateResponse(scerr.ErrUnavailableQuota, err.Error())
-			return resp, err
-		default:
-			resp.Response = pb.CreateResponse(scerr.ErrNotEnoughQuota, err.Error())
-			return resp, nil
+		resp := &pb.CreateServiceResponse{
+			Response: pb.CreateResponse(quotaErr.Code, quotaErr.Detail),
 		}
+		if quotaErr.StatusCode() == http.StatusInternalServerError {
+			return resp, quotaErr
+		}
+		return resp, nil
 	}
 
 	// 产生全局service id
@@ -185,17 +183,18 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 	}, nil
 }
 
-func checkQuota(ctx context.Context, domainProject string) (quota.QuotaReporter, error) {
+func checkQuota(ctx context.Context, domainProject string) (quota.QuotaReporter, *scerr.Error) {
 	if core.IsSCInstance(ctx) {
 		util.Logger().Infof("it is service-center")
 		return nil, nil
 	}
 	reporter, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.MicroServiceQuotaType, domainProject, "", 1)
 	if err != nil {
-		return reporter, errorsEx.InternalError(err.Error())
+		return reporter, scerr.NewError(scerr.ErrUnavailableQuota,
+			fmt.Sprintf("An error occurred in apply for quotas(%s)", err.Error()))
 	}
 	if !ok {
-		return reporter, fmt.Errorf("No quota to create service.")
+		return reporter, scerr.NewError(scerr.ErrNotEnoughQuota, "No quota to create service")
 	}
 	return reporter, nil
 }

@@ -17,7 +17,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	errorsEx "github.com/ServiceComb/service-center/pkg/errors"
 	"github.com/ServiceComb/service-center/pkg/util"
 	apt "github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/server/core/backend"
@@ -31,6 +30,7 @@ import (
 	"github.com/gorilla/websocket"
 	"golang.org/x/net/context"
 	"math"
+	"net/http"
 	"strconv"
 	"time"
 )
@@ -421,9 +421,13 @@ func (s *InstanceService) GetOneInstance(ctx context.Context, in *pb.GetOneInsta
 	checkErr := s.getInstancePreCheck(ctx, in)
 	if checkErr != nil {
 		util.Logger().Errorf(checkErr, "get instance failed: pre check failed.")
-		return &pb.GetOneInstanceResponse{
+		resp := &pb.GetOneInstanceResponse{
 			Response: pb.CreateResponse(checkErr.Code, checkErr.Detail),
-		}, nil
+		}
+		if checkErr.StatusCode() == http.StatusInternalServerError {
+			return resp, checkErr
+		}
+		return resp, nil
 	}
 	conPro := util.StringJoin([]string{in.ConsumerServiceId, in.ProviderServiceId, in.ProviderInstanceId}, "/")
 
@@ -472,42 +476,46 @@ func (s *InstanceService) getInstancePreCheck(ctx context.Context, in interface{
 	}
 
 	if !serviceUtil.ServiceExist(ctx, domainProject, providerServiceId) {
-		return scerr.NewError(scerr.ErrInvalidParams, fmt.Sprintf("Service does not exist. Service id is %s", providerServiceId))
+		return scerr.NewError(scerr.ErrServiceNotExists, "Provider serviceId is invalid")
 	}
 
 	// Tag过滤
 	if len(tags) > 0 {
 		tagsFromETCD, err := serviceUtil.GetTagsUtils(ctx, domainProject, providerServiceId)
 		if err != nil {
-			return scerr.NewError(scerr.ErrInternal, err.Error())
+			return scerr.NewError(scerr.ErrInternal, fmt.Sprintf("An error occurred in query provider tags(%s)", err.Error()))
+		}
+		if len(tagsFromETCD) == 0 {
+			return scerr.NewError(scerr.ErrTagNotExists, "Provider has no tag")
 		}
 		for _, tag := range tags {
 			if _, ok := tagsFromETCD[tag]; !ok {
-				return scerr.NewError(scerr.ErrTagNotExists, fmt.Sprintf("Provider's tag not contain %s", tag))
+				return scerr.NewError(scerr.ErrTagNotExists, fmt.Sprintf("Provider tags do not contain '%s'", tag))
 			}
 		}
 	}
 	// 黑白名单
 	// 跨应用调用
-	err = serviceUtil.Accessible(ctx, domainProject, consumerServiceId, providerServiceId)
-	switch err.(type) {
-	case errorsEx.InternalError:
-		return scerr.NewError(scerr.ErrInternal, err.Error())
-	default:
-		if err != nil {
-			return scerr.NewError(scerr.ErrPermissionDeny, err.Error())
-		}
-		return nil
+	forbid := serviceUtil.Accessible(ctx, domainProject, consumerServiceId, providerServiceId)
+	if forbid != nil {
+		util.Logger().Errorf(forbid,
+			"consumer %s can't access provider %s", consumerServiceId, providerServiceId)
+		return forbid
 	}
+	return nil
 }
 
 func (s *InstanceService) GetInstances(ctx context.Context, in *pb.GetInstancesRequest) (*pb.GetInstancesResponse, error) {
 	checkErr := s.getInstancePreCheck(ctx, in)
 	if checkErr != nil {
 		util.Logger().Errorf(checkErr, "get instances failed: pre check failed.")
-		return &pb.GetInstancesResponse{
+		resp := &pb.GetInstancesResponse{
 			Response: pb.CreateResponse(checkErr.Code, checkErr.Detail),
-		}, nil
+		}
+		if checkErr.StatusCode() == http.StatusInternalServerError {
+			return resp, checkErr
+		}
+		return resp, nil
 	}
 	conPro := util.StringJoin([]string{in.ConsumerServiceId, in.ProviderServiceId}, "/")
 
@@ -580,7 +588,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 			ProviderServiceId: serviceId,
 			Tags:              in.Tags,
 		})
-		if resp.Response.Code != pb.Response_SUCCESS {
+		if err != nil {
 			util.Logger().Errorf(err, "find instance failed, %s: get service %s 's instance failed.", findFlag, serviceId)
 			return &pb.FindInstancesResponse{
 				Response: resp.Response,
