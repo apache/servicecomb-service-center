@@ -811,6 +811,29 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
 				Expect(len(respFind.Instances)).To(Equal(1))
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId4))
+
+				By("find should return 200 even if consumer permission deny")
+				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: serviceId3,
+					AppId:             "query_instance",
+					ServiceName:       "query_instance_service",
+					VersionRule:       "1.0.5",
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(len(respFind.Instances)).To(Equal(0))
+
+				By("provider tag does not exist")
+				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: serviceId1,
+					AppId:             "query_instance",
+					ServiceName:       "query_instance_service",
+					VersionRule:       "latest",
+					Tags:              []string{"notexisttag"},
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(len(respFind.Instances)).To(Equal(0))
 			})
 
 		})
@@ -842,7 +865,7 @@ var _ = Describe("'Instance' service", func() {
 		})
 	})
 
-	Describe("execute 'get' operartion", func() {
+	Describe("execute 'get one' operartion", func() {
 		var (
 			serviceId1  string
 			serviceId2  string
