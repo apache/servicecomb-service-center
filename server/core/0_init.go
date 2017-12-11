@@ -6,6 +6,7 @@ import (
 	"github.com/ServiceComb/service-center/pkg/grace"
 	"github.com/ServiceComb/service-center/pkg/lager"
 	"github.com/ServiceComb/service-center/pkg/logrotate"
+	"github.com/ServiceComb/service-center/pkg/plugin"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/version"
 	"os"
@@ -23,13 +24,13 @@ func init() {
 func Initialize() {
 	initCommandLine()
 
+	plugin.SetPluginDir(ServerInfo.Config.PluginsDir)
+
 	initLogger()
 
 	printVersion()
 
 	go handleSignals()
-
-	initLogRotate()
 
 	grace.Init()
 }
@@ -78,6 +79,8 @@ func initLogger() {
 	util.CustomLogger("github.com/ServiceComb/service-center/server/service/notification", "event")
 
 	util.CustomLogger("github.com/ServiceComb/service-center/server/core/backend", "registry")
+
+	initLogRotate()
 }
 
 func initLogRotate() {
