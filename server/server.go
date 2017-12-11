@@ -119,7 +119,7 @@ func (s *ServiceCenterServer) startApiServer() {
 	restPort := beego.AppConfig.String("httpport")
 	rpcIp := beego.AppConfig.DefaultString("rpcaddr", "")
 	rpcPort := beego.AppConfig.DefaultString("rpcport", "")
-	cmpName := beego.AppConfig.String("ComponentName")
+	cmpName := core.ServerInfo.Config.LoggerName
 	hostName := fmt.Sprintf("%s_%s", cmpName, strings.Replace(util.GetLocalIP(), ".", "_", -1))
 
 	s.apiServer.HostName = hostName

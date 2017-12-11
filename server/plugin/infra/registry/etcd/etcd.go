@@ -23,7 +23,6 @@ import (
 	"github.com/ServiceComb/service-center/server/infra/registry"
 	mgr "github.com/ServiceComb/service-center/server/plugin"
 	sctls "github.com/ServiceComb/service-center/server/tls"
-	"github.com/astaxie/beego"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
 	"github.com/coreos/etcd/mvcc/mvccpb"
@@ -84,7 +83,7 @@ func (c *EtcdClient) CompactCluster(ctx context.Context) {
 func (c *EtcdClient) Compact(ctx context.Context, revision int64) error {
 	otCtx, cancel := registry.WithTimeout(ctx)
 	defer cancel()
-	revToCompact := max(0, revision-beego.AppConfig.DefaultInt64("compact_index_delta", 100))
+	revToCompact := max(0, revision-core.ServerInfo.Config.CompactIndexDelta)
 	if revToCompact <= 0 {
 		util.Logger().Warnf(nil, "revToCompact is %d, <=0, no nead to compact.", revToCompact)
 		return nil

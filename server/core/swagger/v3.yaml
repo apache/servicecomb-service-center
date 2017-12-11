@@ -691,9 +691,40 @@ paths:
           schema:
             type: string
   /registry/v3/dependencies:
+    post:
+      description: |
+        增量式添加服务间的依赖关系，consumer的version必须是确定的版本，serviceName不能为*，consumer必须是已存在的服务，provider可以是还未创建的。
+      operationId: createDependenciesForMircServices
+      parameters:
+        - name: x-domain-name
+          in: header
+          required: true
+          type: string
+          default: default
+        - name: type
+          in: body
+          description: 创建服务间的依赖关系的请求体。
+          required: true
+          schema:
+            $ref: '#/definitions/CreateDependenciesRequest'
+      tags:
+        - dependency
+      responses:
+        200:
+          description: 创建成功
+          schema:
+            type: string
+        400:
+          description: 错误的请求
+          schema:
+            type: string
+        500:
+          description: 内部错误
+          schema:
+            type: string
     put:
       description: |
-        创建服务间的依赖关系，consumer的version必须是确定的版本，serviceName不能为*，consumer必须是已存在的服务，provider可以是还未创建的。
+        覆盖式修改服务间的依赖关系，consumer的version必须是确定的版本，serviceName不能为*，consumer必须是已存在的服务，provider可以是还未创建的。
       operationId: createDependenciesForMircServices
       parameters:
         - name: x-domain-name

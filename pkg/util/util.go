@@ -17,7 +17,6 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
-	"github.com/astaxie/beego"
 	"golang.org/x/net/context"
 	"net"
 	"net/http"
@@ -268,8 +267,7 @@ func LogPanic(args ...interface{}) {
 	if idx >= 0 {
 		file = file[idx+1:]
 	}
-	fmt.Fprintln(os.Stderr, time.Now().Format("2006-01-02T15:04:05.000Z07:00"), "FATAL",
-		beego.AppConfig.String("ComponentName"), os.Getpid(),
+	fmt.Fprintln(os.Stderr, time.Now().Format("2006-01-02T15:04:05.000Z07:00"), "FATAL", "system", os.Getpid(),
 		fmt.Sprintf("%s %s():%d", file, method, line), fmt.Sprint(args...))
 	fmt.Fprintln(os.Stderr, BytesToStringWithNoCopy(debug.Stack()))
 }

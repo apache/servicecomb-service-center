@@ -16,7 +16,6 @@ package plugin
 import (
 	"fmt"
 	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/astaxie/beego"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -31,6 +30,7 @@ var (
 )
 
 type PluginManager struct {
+	Dir     string
 	Plugins map[string]*plugin.Plugin
 }
 
@@ -45,7 +45,7 @@ func (pm *PluginManager) Init() {
 }
 
 func (pm *PluginManager) ReloadPlugins() error {
-	dir := beego.AppConfig.DefaultString("plugins_dir", "")
+	dir := os.ExpandEnv(pm.Dir)
 	if len(dir) == 0 {
 		dir, _ = os.Getwd()
 	}
@@ -95,6 +95,10 @@ func (pm *PluginManager) Find(pluginName, funcName string) (plugin.Symbol, error
 		return nil, err
 	}
 	return f, nil
+}
+
+func SetPluginDir(dir string) {
+	pluginManager.Dir = dir
 }
 
 func GetPluginManager() *PluginManager {

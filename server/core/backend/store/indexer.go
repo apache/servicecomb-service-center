@@ -148,15 +148,14 @@ func (i *Indexer) searchPrefixKeyWithCache(ctx context.Context, op registry.Plug
 		c := i.Cache().Data(key) // TODO too slow when big data is requested
 		if c == nil {
 			// it means resp.Count is not equal to len(keys)
-			util.Logger().Debugf("unexpected nil cache, maybe it is removed, key is %s", key)
+			util.Logger().Warnf(nil, "unexpected nil cache, maybe it is removed, key is %s", key)
 			continue
 		}
 		kvs[idx] = c.(*mvccpb.KeyValue)
 		idx++
 	}
-	if time.Now().Sub(t) > time.Second {
-		util.Logger().Warnf(nil, "too long(%s vs 1s) to copy data from cache", time.Now().Sub(t))
-	}
+	util.LogNilOrWarnf(t, "too long to copy data from cache with prefix %s", prefix)
+
 	resp.Kvs = kvs[:idx]
 	return resp, nil
 }
@@ -315,7 +314,7 @@ func NewCacheIndexer(t StoreType, cr Cacher) *Indexer {
 		BuildTimeout:     DEFAULT_ADD_QUEUE_TIMEOUT,
 		cacher:           cr,
 		cacheType:        t,
-		prefixIndex:      make(map[string]map[string]struct{}),
+		prefixIndex:      make(map[string]map[string]struct{}, DEFAULT_MAX_EVENT_COUNT),
 		prefixBuildQueue: make(chan *KvEvent, DEFAULT_MAX_EVENT_COUNT),
 		goroutine:        util.NewGo(make(chan struct{})),
 		ready:            make(chan struct{}),

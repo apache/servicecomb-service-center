@@ -104,6 +104,9 @@ func NewDomainProject(ctx context.Context, domain, project string) error {
 	ok, err := DomainExist(copyCtx, domain)
 	if !ok && err == nil {
 		err = NewDomain(ctx, domain)
+		if err == nil {
+			util.Logger().Infof("new domain(%s)", domain)
+		}
 	}
 	if err != nil {
 		return err
@@ -111,6 +114,9 @@ func NewDomainProject(ctx context.Context, domain, project string) error {
 	ok, err = ProjectExist(copyCtx, domain, project)
 	if !ok && err == nil {
 		err = NewProject(ctx, domain, project)
+		if err == nil {
+			util.Logger().Infof("new project(%s/%s)", domain, project)
+		}
 	}
 	return err
 }
