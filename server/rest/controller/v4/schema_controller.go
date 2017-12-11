@@ -104,7 +104,6 @@ func (this *SchemaService) DeleteSchemas(w http.ResponseWriter, r *http.Request)
 func (this *SchemaService) GetAllSchemas(w http.ResponseWriter, r *http.Request) {
 	withSchema := r.URL.Query().Get("withSchema")
 	serviceId := r.URL.Query().Get(":serviceId")
-	util.Logger().Warnf(nil, "Query Service %s schema, withSchema is %s.", serviceId, withSchema)
 	if withSchema != "0" && withSchema != "1" && strings.TrimSpace(withSchema) != "" {
 		controller.WriteError(w, scerr.ErrInvalidParams, "parameter withSchema must be 1 or 0")
 		return

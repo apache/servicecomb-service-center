@@ -97,13 +97,13 @@ func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAl
 
 	service, err := serviceUtil.GetService(ctx, domainProject, in.ServiceId)
 	if err != nil {
-		util.Logger().Errorf(err, "get all schemas failded: get service failed. %s", in.ServiceId)
+		util.Logger().Errorf(err, "get all schemas failed: get service failed. %s", in.ServiceId)
 		return &pb.GetAllSchemaResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, "Invalid request."),
 		}, err
 	}
 	if service == nil {
-		util.Logger().Errorf(nil, "get all schemas failded: service does not exist. %s", in.ServiceId)
+		util.Logger().Errorf(nil, "get all schemas failed: service does not exist. %s", in.ServiceId)
 		return &pb.GetAllSchemaResponse{
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
@@ -119,7 +119,6 @@ func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAl
 		}, nil
 	}
 
-	// if 'withschmas' is false, not to search schemas content
 	key := apt.GenerateServiceSchemaSummaryKey(domainProject, in.ServiceId, "")
 	opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(key), registry.WithPrefix())
 	resp, errDo := store.Store().SchemaSummary().Search(ctx, opts...)
@@ -143,19 +142,19 @@ func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAl
 		}
 	}
 
-	for _, schema_id := range schemasList {
+	for _, schemaId := range schemasList {
 		tempSchema := &pb.Schema{}
-		tempSchema.SchemaId = schema_id
+		tempSchema.SchemaId = schemaId
 		for _, summarySchema := range resp.Kvs {
-			summaryId, summaryData := pb.GetInfoFromSchemaSummaryKV(summarySchema)
-			if schema_id == summaryId {
+			schemaIdOfSummary, summaryData := pb.GetInfoFromSchemaSummaryKV(summarySchema)
+			if schemaId == schemaIdOfSummary {
 				tempSchema.Summary = util.BytesToStringWithNoCopy(summaryData)
 			}
 		}
 
 		for _, contentSchema := range respWithSchema.Kvs {
-			schemaId, schemaData := pb.GetInfoFromSchemaKV(contentSchema)
-			if schema_id == schemaId {
+			schemaIdOfSchema, schemaData := pb.GetInfoFromSchemaKV(contentSchema)
+			if schemaId == schemaIdOfSchema {
 				tempSchema.Schema = util.BytesToStringWithNoCopy(schemaData)
 			}
 		}
