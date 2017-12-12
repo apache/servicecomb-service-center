@@ -41,7 +41,6 @@ var embedTLSConfig *tls.Config
 const START_MANAGER_SERVER_TIMEOUT = 60
 
 func init() {
-	util.Logger().Infof("embed etcd plugin init.")
 	mgr.RegisterPlugin(mgr.Plugin{mgr.STATIC, mgr.REGISTRY, "embeded_etcd", getEmbedInstance})
 }
 
