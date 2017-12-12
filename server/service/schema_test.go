@@ -734,7 +734,7 @@ var _ = Describe("'Schema' service", func() {
 				ServiceId: serviceId,
 				SchemaId:  "com.huawei.test",
 				Schema:    "query schema",
-				Summary:   "xxx",
+				Summary:   "summary",
 			})
 			Expect(err).To(BeNil())
 			Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
@@ -793,7 +793,7 @@ var _ = Describe("'Schema' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
-				Expect(resp.Summary).To(Equal("xxx"))
+				Expect(resp.Summary).To(Equal("summary"))
 
 				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
 					Type:        "schema",
@@ -854,7 +854,7 @@ var _ = Describe("'Schema' service", func() {
 				ServiceId: serviceId,
 				SchemaId:  "com.huawei.test",
 				Schema:    "get schema",
-				Summary:   "xxx",
+				Summary:   "schema-summary",
 			})
 			Expect(err).To(BeNil())
 			Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
@@ -993,6 +993,7 @@ var _ = Describe("'Schema' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 				Expect(resp.Schema).To(Equal("get schema"))
+				Expect(resp.SchemaSummary).To(Equal("schema-summary"))
 			})
 		})
 	})
@@ -1020,7 +1021,7 @@ var _ = Describe("'Schema' service", func() {
 				ServiceId: serviceId,
 				SchemaId:  "com.huawei.test",
 				Schema:    "delete schema",
-				Summary:   "xxx",
+				Summary:   "summary",
 			})
 			Expect(err).To(BeNil())
 			Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))

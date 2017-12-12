@@ -611,9 +611,9 @@ paths:
         - schema
       responses:
         200:
-          description: 查询成功
+          description: 查询成功,如果summary存在，则header里面的X-Schema-Summary的value为该schema对应的摘要
           schema:
-            $ref: '#/definitions/CreateSchema'
+            $ref: '#/definitions/getSchemaInfoResponse'
         400:
           description: 错误的请求
           schema:
@@ -2251,3 +2251,9 @@ definitions:
          type: array
          items:
            type: string
+  getSchemaInfoResponse:
+     type: object
+     properties:
+       schema:
+         description: shema
+         type: string

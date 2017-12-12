@@ -46,6 +46,8 @@ func (this *SchemaService) GetSchemas(w http.ResponseWriter, r *http.Request) {
 		SchemaId:  r.URL.Query().Get(":schemaId"),
 	}
 	resp, _ := core.ServiceAPI.GetSchemaInfo(r.Context(), request)
+	w.Header().Add("X-Schema-Summary", resp.SchemaSummary)
+	resp.SchemaSummary = ""
 	respInternal := resp.Response
 	resp.Response = nil
 	controller.WriteResponse(w, respInternal, resp)
