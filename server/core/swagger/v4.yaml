@@ -735,11 +735,10 @@ paths:
           description: 内部错误
           schema:
             type: string
-  /v4/{project}/registry/dependencies:
-    post:
+    get:
       description: |
-        增量式添加服务间的依赖关系，consumer的version必须是确定的版本，serviceName不能为*，consumer必须是已存在的服务，provider可以是还未创建的。
-      operationId: createDependenciesForMircServices
+        批量查询所有schemas和summary。
+      operationId: GetAllSchemas
       parameters:
         - name: x-domain-name
           in: header
@@ -749,19 +748,24 @@ paths:
           in: path
           required: true
           type: string
-        - name: type
-          in: body
-          description: 创建服务间的依赖关系的请求体。
+        - name: serviceId
+          in: path
+          description: 唯一标识。
           required: true
-          schema:
-            $ref: '#/definitions/CreateDependenciesRequest'
+          type: string
+        - name: withSchema
+          in: query
+          description: 是否查询schema，0只显示summary，1同时显示schema。
+          type: string
+          default: 0
       tags:
-        - dependency
+        - microservices
+        - schema
       responses:
         200:
-          description: 创建成功
+          description: 查询成功
           schema:
-            type: string
+            $ref: '#/definitions/AllSchemasRequest'
         400:
           description: 错误的请求
           schema:
@@ -770,9 +774,10 @@ paths:
           description: 内部错误
           schema:
             type: string
+  /v4/{project}/registry/dependencies:
     put:
       description: |
-        覆盖式修改服务间的依赖关系，consumer的version必须是确定的版本，serviceName不能为*，consumer必须是已存在的服务，provider可以是还未创建的。
+        创建服务间的依赖关系，consumer的version必须是确定的版本，serviceName不能为*，consumer必须是已存在的服务，provider可以是还未创建的。
       operationId: createDependenciesForMircServices
       parameters:
         - name: x-domain-name
@@ -2050,6 +2055,13 @@ definitions:
         description: 错误信息，成功为空，不成功，则为错误，在部分成功的场景使用
         type: string
   ModifySchemasRequest:
+     type: object
+     properties:
+       schemas:
+         type: array
+         items:
+           $ref: "#/definitions/Schema"
+  AllSchemasRequest:
      type: object
      properties:
        schemas:

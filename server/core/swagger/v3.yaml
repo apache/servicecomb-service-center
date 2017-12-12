@@ -690,30 +690,33 @@ paths:
           description: 内部错误
           schema:
             type: string
-  /registry/v3/dependencies:
-    post:
+    get:
       description: |
-        增量式添加服务间的依赖关系，consumer的version必须是确定的版本，serviceName不能为*，consumer必须是已存在的服务，provider可以是还未创建的。
-      operationId: createDependenciesForMircServices
+        批量查询所有schemas和summary。
+      operationId: GetAllSchemas
       parameters:
         - name: x-domain-name
           in: header
-          required: true
           type: string
           default: default
-        - name: type
-          in: body
-          description: 创建服务间的依赖关系的请求体。
+        - name: serviceId
+          in: path
+          description: 唯一标识。
           required: true
-          schema:
-            $ref: '#/definitions/CreateDependenciesRequest'
+          type: string
+        - name: withSchema
+          in: query
+          description: 是否查询schema，0只显示summary，1同时显示schema。
+          type: string
+          default: 0
       tags:
-        - dependency
+        - microservices
+        - schema
       responses:
         200:
-          description: 创建成功
+          description: 查询成功
           schema:
-            type: string
+            $ref: '#/definitions/AllSchemasRequest'
         400:
           description: 错误的请求
           schema:
@@ -722,9 +725,10 @@ paths:
           description: 内部错误
           schema:
             type: string
+  /registry/v3/dependencies:
     put:
       description: |
-        覆盖式修改服务间的依赖关系，consumer的version必须是确定的版本，serviceName不能为*，consumer必须是已存在的服务，provider可以是还未创建的。
+        创建服务间的依赖关系，consumer的version必须是确定的版本，serviceName不能为*，consumer必须是已存在的服务，provider可以是还未创建的。
       operationId: createDependenciesForMircServices
       parameters:
         - name: x-domain-name
@@ -1771,7 +1775,7 @@ definitions:
       force:
         description: 不传即默认为false。 强制删除，则与该服务相关的信息删除，非强制删除： 如果作为该被依赖（作为provider，提供服务,且不是只存在自依赖）或者存在实例，则不能删除,其它均删除。
         type: string
-        
+
   DelServicesResponse:
     type: object
     properties:
@@ -1779,7 +1783,7 @@ definitions:
         type: array
         items:
           $ref: "#/definitions/DelServicesRspInfo"
-        
+
   DelServicesRspInfo:
     type: object
     properties:
@@ -1805,3 +1809,10 @@ definitions:
          type: string
        summary:
          type: string
+  AllSchemasRequest:
+     type: object
+     properties:
+       schemas:
+         type: array
+         items:
+           $ref: "#/definitions/Schema"
