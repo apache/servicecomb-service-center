@@ -1,1807 +1,1849 @@
-swagger: '2.0'
-info:
-  title: Service Center API
-  version: "3.0.0"
-# the domain of the service
-host: 127.0.0.1:30100
-# array of all schemes that your API supports
-schemes:
-  - http
-  - https
-# will be prefixed to all paths
-produces:
-  - application/json
-paths:
-  /version:
-    get:
-      description: |
-        查询服务中心版本信息。
-      tags:
-        - base
-      responses:
-        200:
-          description: 版本信息结构体
-          schema:
-            $ref: '#/definitions/Version'
-        400:
-          description: 错误的请求
-          schema:
+  swagger: '2.0'
+  info:
+    title: Service Center API
+    version: "3.0.0"
+  # the domain of the service
+  host: 127.0.0.1:30100
+  # array of all schemes that your API supports
+  schemes:
+    - http
+    - https
+  # will be prefixed to all paths
+  produces:
+    - application/json
+  paths:
+    /version:
+      get:
+        description: |
+          查询服务中心版本信息。
+        tags:
+          - base
+        responses:
+          200:
+            description: 版本信息结构体
+            schema:
+              $ref: '#/definitions/Version'
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+    /health:
+      get:
+        description: |
+          查询服务中心集群信息。
+        tags:
+          - base
+        responses:
+          200:
+            description: 服务中心实例集群信息列表
+            schema:
+              $ref: '#/definitions/GetInstancesResponse'
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+    /registry/v3/microservices/{serviceId}:
+      get:
+        description: |
+          根据serviceId查询微服务定义信息。
+        operationId: getOne
+        parameters:
+          - name: x-domain-name
+            in: header
+            required: true
             type: string
-        500:
-          description: 内部错误
-          schema:
+            default: default
+          - name: serviceId
+            in: path
+            description: 微服务唯一标识。
+            required: true
             type: string
-  /health:
-    get:
-      description: |
-        查询服务中心集群信息。
-      tags:
-        - base
-      responses:
-        200:
-          description: 服务中心实例集群信息列表
-          schema:
-            $ref: '#/definitions/GetInstancesResponse'
-        400:
-          description: 错误的请求
-          schema:
+          - name: noCache
+            in: query
+            description: 是否强一致性，1 是、0 否。
             type: string
-        500:
-          description: 内部错误
-          schema:
+            default: 0
+        tags:
+          - microservices
+        responses:
+          200:
+            description: 微服务结构体
+            schema:
+              $ref: '#/definitions/CreateMicroService'
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+      delete:
+        description: |
+          删除一个微服务定义及其相关信息，同时注销其所有实例信息。
+        operationId: delete
+        parameters:
+          - name: x-domain-name
+            in: header
+            required: true
             type: string
-  /registry/v3/microservices/{serviceId}:
-    get:
-      description: |
-        根据serviceId查询微服务定义信息。
-      operationId: getOne
-      parameters:
-        - name: x-domain-name
-          in: header
-          required: true
+            default: default
+          - name: serviceId
+            in: path
+            description: 微服务唯一标识。
+            required: true
+            type: string
+          - name: force
+            in: query
+            description: 不传即默认为false。 强制删除，则与该服务相关的信息删除，非强制删除： 如果作为该被依赖（作为provider，提供服务,且不是只存在自依赖）或者存在实例，则不能删除,其它均删除。
+            type: string
+        tags:
+          - microservices
+        responses:
+          200:
+            description: 修改成功
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+    /registry/v3/microservices:
+      get:
+        description: |
+          根据条件组合，查询满足所有条件的微服务定义信息。
+        operationId: getServices
+        tags:
+          - microservices
+        parameters:
+          - name: x-domain-name
+            in: header
+            required: true
+            type: string
+            default: default
+          - name: noCache
+            in: query
+            description: 是否强一致性，1 是、0 否。
+            type: string
+            default: 0
+        responses:
+          200:
+            description: 查询成功
+            schema:
+              $ref: '#/definitions/GetMicroServicesResponse'
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+      post:
+        description: |
+          在注册微服务实例前需要创建服务静态信息，之后注册的微服务实例根据service id这个字段与静态信息关联，一个服务对应对多个实例。
+        operationId: create
+        parameters:
+          - name: x-domain-name
+            in: header
+            required: true
+            type: string
+            default: default
+          - name: service
+            in: body
+            description: 创建微服务请求结构体。
+            required: true
+            schema:
+              $ref: '#/definitions/CreateMicroService'
+        tags:
+          - microservices
+        responses:
+          200:
+            description: 创建成功
+            schema:
+              $ref: '#/definitions/CreateMicroServiceResponse'
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+      delete:
+        description: |
+          批量删除指定的微服务定义及其相关信息，同时注销其所有实例信息。
+        operationId: deleteServices
+        parameters:
+          - name: serviceIds
+            in: body
+            description: 批量删除服务的服务ID列表
+            required: true
+            schema:
+              $ref: '#/definitions/DelServicesRequest'
+        tags:
+          - microservices
+        responses:
+          200:
+            description: 更新成功
+          400:
+            description: 错误的请求
+            schema:
+              $ref: '#/definitions/DelServicesResponse'
+          500:
+            description: 内部错误
+            schema:
+              type: string
+    /registry/v3/microservices/{serviceId}/properties:
+      put:
+        description: |
+          创建微服务静态信息后可对服务部分字段进行更新，每次更新都需要传入完整的服务静态信息json，也就是说，即便不更新部分的字段也要作为json的属性传过去。
+        operationId: updateProperties
+        parameters:
+          - name: x-domain-name
+            in: header
+            required: true
+            type: string
+            default: default
+          - name: serviceId
+            in: path
+            description: 微服务唯一标识。
+            required: true
+            type: string
+          - name: properties
+            in: body
+            description: 微服务扩展属性请求结构体。
+            required: true
+            schema:
+              $ref: '#/definitions/UpdateProperties'
+        tags:
+          - microservices
+        responses:
+          200:
+            description: 修改成功
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+    /registry/v3/microservices/{serviceId}/tags:
+      post:
+        description: |
+          为serviceId的微服务创建tag。
+        operationId: addTags
+        parameters:
+          - name: x-domain-name
+            in: header
+            required: true
+            type: string
+            default: default
+          - name: serviceId
+            in: path
+            description: 微服务唯一标识。
+            required: true
+            type: string
+          - name: tags
+            in: body
+            description: 要创建的tags。
+            required: true
+            schema:
+              $ref: '#/definitions/Tags'
+        tags:
+          - microservices
+          - tag
+        responses:
+          200:
+            description: 创建成功
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+      get:
+        description: |
+          获取serviceId的微服务的tag
+        operationId: getTags
+        parameters:
+          - name: x-domain-name
+            in: header
+            required: true
+            type: string
+            default: default
+          - name: serviceId
+            in: path
+            description: 微服务唯一标识。
+            required: true
+            type: string
+          - name: noCache
+            in: query
+            description: 是否强一致性，1 是、0 否。
+            type: string
+            default: 0
+        tags:
+          - microservices
+          - tag
+        responses:
+          200:
+            description: 查询成功
+            schema:
+              $ref: '#/definitions/Tags'
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+                  type: string
+    /registry/v3/microservices/{serviceId}/tags/{key}:
+      put:
+        description: |
+          为serviceId的微服务更新key对应的value值
+        operationId: updateTag
+        parameters:
+          - name: x-domain-name
+            in: header
+            required: true
+            type: string
+            default: default
+          - name: serviceId
+            in: path
+            description: 微服务唯一标识。
+            required: true
+            type: string
+          - name: key
+            in: path
+            description: 要更新的tag的key值。
+            required: true
+            type: string
+          - name: value
+            in: query
+            description: 要更新的tag的value值。
+            required: true
+            type: string
+        tags:
+          - microservices
+          - tag
+        responses:
+          200:
+            description: 更新成功
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+      delete:
+        description: |
+          为serviceId的微服务删除tags
+        operationId: deleteTags
+        parameters:
+          - name: x-domain-name
+            in: header
+            required: true
+            type: string
+            default: default
+          - name: serviceId
+            in: path
+            description: 微服务唯一标识。
+            required: true
+            type: string
+          - name: key
+            in: path
+            description: 要删除的tag的key值，多个key的话，以，隔开。
+            required: true
+            type: string
+        tags:
+          - microservices
+          - tag
+        responses:
+          200:
+            description: 删除成功
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+    /registry/v3/microservices/{serviceId}/rules:
+      post:
+        description: |
+          为serviceId的服务新增黑白名单，同一服务，attribute和pattern唯一标识一份黑白名单。
+        operationId: addRule
+        parameters:
+          - name: x-domain-name
+            in: header
+            required: true
+            type: string
+            default: default
+          - name: serviceId
+            in: path
+            description: 微服务唯一标识。
+            required: true
+            type: string
+          - name: rules
+            in: body
+            description: 新增黑白名单。
+            required: true
+            schema:
+              $ref: '#/definitions/AddRules'
+        tags:
+          - microservices
+          - rule
+        responses:
+          200:
+            description: 创建成功
+            schema:
+              $ref: '#/definitions/AddRuleResponse'
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+      get:
+        description: |
+          获取serviceId的服务的黑白名单信息。
+        operationId: getRule
+        parameters:
+          - name: x-domain-name
+            in: header
+            required: true
+            type: string
+            default: default
+          - name: serviceId
+            in: path
+            description: 微服务唯一标识。
+            required: true
+            type: string
+          - name: noCache
+            in: query
+            description: 是否强一致性，1 是、0 否。
+            type: string
+            default: 0
+        tags:
+          - microservices
+          - rule
+        responses:
+          200:
+            description: 查询成功
+            schema:
+              $ref: '#/definitions/Rules'
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+    /registry/v3/microservices/{serviceId}/rules/{rule_id}:
+      put:
+        description: |
+          为serviceId的服务更新黑白名单。
+        operationId: updateRule
+        parameters:
+          - name: x-domain-name
+            in: header
+            required: true
+            type: string
+            default: default
+          - name: serviceId
+            in: path
+            description: 微服务唯一标识。
+            required: true
+            type: string
+          - name: rule_id
+            in: path
+            description: ruleId。
+            required: true
+            type: string
+          - name: rule
+            in: body
+            description: 要更新的rule
+            required: true
+            schema:
+              $ref: "#/definitions/AddOrUpdateRule"
+        tags:
+          - microservices
+          - rule
+        responses:
+          200:
+            description: 修改成功
+            schema:
+              type: string
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+      delete:
+        description: |
+          为serviceId的服务删除黑白名单。
+        operationId: deleteRule
+        parameters:
+          - name: x-domain-name
+            in: header
+            required: true
+            type: string
+            default: default
+          - name: serviceId
+            in: path
+            description: 微服务唯一标识。
+            required: true
+            type: string
+          - name: rule_id
+            in: path
+            description: ruleId。
+            required: true
+            type: string
+        tags:
+          - microservices
+          - rule
+        responses:
+          200:
+            description: 删除成功
+            schema:
+              type: string
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+    /registry/v3/microservices/{serviceId}/schemas/{schemaId}:
+      get:
+        description: |
+          根据serviceId和schemaId查询微服务的schema信息。
+        operationId: getSchemaInfo
+        parameters:
+          - name: x-domain-name
+            in: header
+            required: true
+            type: string
+            default: default
+          - name: serviceId
+            in: path
+            description: 微服务唯一标识。
+            required: true
+            type: string
+          - name: schemaId
+            in: path
+            description: 微服务契约唯一标识。
+            required: true
+            type: string
+          - name: noCache
+            in: query
+            description: 是否强一致性，1 是、0 否。
+            type: string
+            default: 0
+        tags:
+          - microservices
+          - schema
+        responses:
+          200:
+            description: 查询成功
+            schema:
+              $ref: '#/definitions/CreateSchema'
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+      put:
+        description: |
+          根据schemaId更新微服务的访问契约内容。
+        operationId: modifySchema
+        parameters:
+          - name: x-domain-name
+            in: header
+            required: true
+            type: string
+            default: default
+          - name: serviceId
+            in: path
+            description: 微服务唯一标识。
+            required: true
+            type: string
+          - name: schemaId
+            in: path
+            description: 微服务契约唯一标识。
+            required: true
+            type: string
+          - name: schema
+            in: body
+            description: 微服务契约内容。
+            required: true
+            schema:
+              $ref: '#/definitions/CreateSchema'
+        tags:
+          - microservices
+          - schema
+        responses:
+          200:
+            description: 修改成功
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+      delete:
+        description: |
+          删除微服务的一个schema信息。
+        operationId: deleteSchema
+        parameters:
+          - name: x-domain-name
+            in: header
+            required: true
+            type: string
+            default: default
+          - name: serviceId
+            in: path
+            description: 微服务唯一标识。
+            required: true
+            type: string
+          - name: schemaId
+            in: path
+            description: 微服务契约唯一标识。
+            required: true
+            type: string
+        tags:
+          - microservices
+          - schema
+        responses:
+          200:
+            description: 删除成功
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+    /registry/v3/microservices/{serviceId}/schemas:
+      post:
+        description: |
+          批量上传schemas。
+        operationId: ModifySchemas
+        parameters:
+          - name: x-domain-name
+            in: header
+            required: true
+            type: string
+            default: default
+          - name: serviceId
+            in: path
+            description: 唯一标识。
+            required: true
+            type: string
+          - name: type
+            in: body
+            required: true
+            description: 批量上传schemas信息。
+            schema:
+              $ref: '#/definitions/ModifySchemasRequest'
+        tags:
+          - microservices
+          - schema
+        responses:
+          200:
+            description: 創建成功
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+      get:
+        description: |
+          批量查询所有schemas和summary。
+        operationId: GetAllSchemas
+        parameters:
+          - name: x-domain-name
+            in: header
+            type: string
+            default: default
+          - name: serviceId
+            in: path
+            description: 唯一标识。
+            required: true
+            type: string
+          - name: withSchema
+            in: query
+            description: 是否查询schema，0只显示summary，1同时显示schema。
+            type: string
+            default: 0
+        tags:
+          - microservices
+          - schema
+        responses:
+          200:
+            description: 查询成功
+            schema:
+              $ref: '#/definitions/AllSchemasRequest'
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+    /registry/v3/dependencies:
+      post:
+        description: |
+          增量式添加服务间的依赖关系，consumer的version必须是确定的版本，serviceName不能为*，consumer必须是已存在的服务，provider可以是还未创建的。
+        operationId: AddDependenciesForMicroServices
+        parameters:
+          - name: x-domain-name
+            in: header
+            required: true
+            type: string
+            default: default
+          - name: type
+            in: body
+            description: 创建服务间的依赖关系的请求体。
+            required: true
+            schema:
+              $ref: '#/definitions/CreateDependenciesRequest'
+        tags:
+          - dependency
+        responses:
+          200:
+            description: 创建成功
+            schema:
+              type: string
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+      put:
+        description: |
+          覆盖式修改服务间的依赖关系，consumer的version必须是确定的版本，serviceName不能为*，consumer必须是已存在的服务，provider可以是还未创建的。
+        operationId: createDependenciesForMircServices
+        parameters:
+          - name: x-domain-name
+            in: header
+            required: true
+            type: string
+            default: default
+          - name: type
+            in: body
+            description: 创建服务间的依赖关系的请求体。
+            required: true
+            schema:
+              $ref: '#/definitions/CreateDependenciesRequest'
+        tags:
+          - dependency
+        responses:
+          200:
+            description: 创建成功
+            schema:
+              type: string
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+    /registry/v3/microservices/{consumerId}/providers:
+      get:
+        description: |
+          根据consumerId获取该服务的所有providers
+        operationId: getConsumerDependencies
+        parameters:
+          - name: x-domain-name
+            in: header
+            required: true
+            type: string
+            default: default
+          - name: consumerId
+            in: path
+            description: 消费者的服务id。
+            required: true
+            type: string
+          - name: noCache
+            in: query
+            description: 是否强一致性，1 是、0 否。
+            type: string
+            default: 0
+        tags:
+          - dependency
+        responses:
+          200:
+            description: 查询成功
+            schema:
+              $ref: '#/definitions/GetConDependenciesResponse'
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+    /registry/v3/microservices/{providerId}/consumers:
+      get:
+        description: |
+          根据providerId获取该服务的所有consumers
+        operationId: getProviderDependencies
+        parameters:
+          - name: x-domain-name
+            in: header
+            required: true
+            type: string
+            default: default
+          - name: providerId
+            in: path
+            description: 提供者的服务id。
+            required: true
+            type: string
+          - name: noCache
+            in: query
+            description: 是否强一致性，1 是、0 否。
+            type: string
+            default: 0
+        tags:
+          - dependency
+        responses:
+          200:
+            description: 查询成功
+            schema:
+              $ref: '#/definitions/GetProDependenciesResponse'
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+    /registry/v3/existence:
+      get:
+        description: |
+          可通过指定条件，查询微服务serviceId或schema的唯一标识信息。
+        operationId: exist
+        parameters:
+          - name: x-domain-name
+            in: header
+            required: true
+            type: string
+            default: default
+          - name: type
+            in: query
+            description: 资源类型 microservice微服务 schema微服务访问契约。
+            required: true
+            type: string
+          - name: env
+            in: query
+            description: development|testing|acceptance|production
+            type: string
+            default: development
+          - name: appId
+            in: query
+            description: 资源类型为 microservice时 需传入应用app唯一标识。
+            type: string
+            required: true
+          - name: serviceName
+            in: query
+            description: 资源类型为 microservice时 需传入微服务名称。
+            type: string
+            required: true
+          - name: version
+            in: query
+            description: 资源类型为 microservice时 需传入微服务版本。
+            type: string
+            required: true
+          - name: serviceId
+            in: query
+            description: 资源类型为 schema时 需传入微服务唯一标识。
+            type: string
+            required: true
+          - name: schemaId
+            in: query
+            description: 资源类型为 schema时 需传入schema唯一标识。
+            type: string
+            required: true
+          - name: noCache
+            in: query
+            description: 是否强一致性，1 是、0 否。
+            type: string
+            default: 0
+        tags:
+          - schemas
+          - microservices
+        responses:
+          200:
+            description: 查询成功
+            schema:
+              $ref: '#/definitions/GetResourceResponse'
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+    /registry/v3/microservices/{serviceId}/instances:
+      post:
+        description: |
+          创建微服务后就可以注册该微服务的实例了。 注册微服务实例时，需提供该微服务实例相关的信息。
+          instanceID可定制,如果定制了，再次注册就直接全内容覆盖。如果没定制，逻辑如下：系统自动生成id，如果endpoints内容重复，则使用原来的id
+        operationId: register
+        parameters:
+          - name: x-domain-name
+            in: header
+            required: true
+            type: string
+            default: default
+          - name: serviceId
+            in: path
+            description: 微服务唯一标识。
+            required: true
+            type: string
+          - name: instance
+            in: body
+            description: 微服务实例请求结构体。
+            required: true
+            schema:
+              $ref: '#/definitions/CreateInstance'
+        tags:
+          - instances
+        responses:
+          200:
+            description: 注册成功
+            schema:
+              $ref: '#/definitions/CreateInstanceResponse'
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+      get:
+        description: |
+          实例注册后可以根据 service_id 发现该微服务的所有实例。
+        operationId: getInstances
+        parameters:
+          - name: x-domain-name
+            in: header
+            required: true
+            type: string
+            default: default
+          - name: X-ConsumerId
+            in: header
+            description: 微服务消费者的微服务唯一标识。
+            required: true
+            type: string
+          - name: serviceId
+            in: path
+            description: 微服务唯一标识。
+            required: true
+            type: string
+          - name: tags
+            in: query
+            description: Tag标签过滤，多个时逗号分隔。
+            type: string
+          - name: env
+            in: query
+            description: 实例的environment。
+            type: string
+          - name: noCache
+            in: query
+            description: 是否强一致性，1 是、0 否。
+            type: string
+            default: 0
+        tags:
+          - instances
+        responses:
+          200:
+            description: 查询成功
+            schema:
+              $ref: '#/definitions/GetInstancesResponse'
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+    /registry/v3/microservices/{serviceId}/instances/{instanceId}:
+      delete:
+        description: |
+          实例注册后可以根据 instance_id 进行实例注销。
+        operationId: unregister
+        parameters:
+          - name: x-domain-name
+            in: header
+            required: true
+            type: string
+            default: default
+          - name: serviceId
+            in: path
+            description: 微服务唯一标识。
+            required: true
+            type: string
+          - name: instanceId
+            in: path
+            description: 微服务实例唯一标识。
+            required: true
+            type: string
+        tags:
+          - instances
+        responses:
+          200:
+            description: 注销成功
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+      get:
+        description: |
+          实例注册后可以根据 service_id和serviceId获取该实例的详细信息。
+        operationId: GetOneInstance
+        parameters:
+          - name: x-domain-name
+            in: header
+            required: true
+            type: string
+            default: default
+          - name: X-ConsumerId
+            in: header
+            description: 微服务消费者的微服务唯一标识。
+            required: true
+            type: string
+          - name: serviceId
+            in: path
+            description: 微服务唯一标识。
+            required: true
+            type: string
+          - name: instanceId
+            in: path
+            description: 实例唯一标识。
+            required: true
+            type: string
+          - name: tags
+            in: query
+            description: Tag标签过滤，多个时逗号分隔。
+            type: string
+          - name: env
+            in: query
+            description: 实例的environment。
+            type: string
+          - name: noCache
+            in: query
+            description: 是否强一致性，1 是、0 否。
+            type: string
+            default: 0
+        tags:
+          - instances
+        responses:
+          200:
+            description: 查询成功
+            schema:
+              $ref: '#/definitions/GetOneInstanceResponse'
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+    /registry/v3/microservices/{serviceId}/instances/{instanceId}/properties:
+      put:
+        description: |
+          实例注册后可以根据 instance_id 进行添加/更新一个微服务实例扩展信息。
+        operationId: updateInstanceProperties
+        parameters:
+          - name: x-domain-name
+            in: header
+            required: true
+            type: string
+            default: default
+          - name: serviceId
+            in: path
+            description: 微服务唯一标识。
+            required: true
+            type: string
+          - name: instanceId
+            in: path
+            description: 微服务实例唯一标识。
+            required: true
+            type: string
+          - name: properties
+            in: body
+            description: 微服务实例扩展属性请求结构体。
+            required: true
+            schema:
+              $ref: '#/definitions/UpdateProperties'
+        tags:
+          - instances
+        responses:
+          200:
+            description: 修改成功
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+    /registry/v3/microservices/{serviceId}/instances/{instanceId}/status:
+      put:
+        description: |
+          实例注册后可以根据 instance_id 进行更新一个微服务实例状态。
+        operationId: updateStatus
+        parameters:
+          - name: x-domain-name
+            in: header
+            required: true
+            type: string
+            default: default
+          - name: serviceId
+            in: path
+            description: 微服务唯一标识。
+            required: true
+            type: string
+          - name: instanceId
+            in: path
+            description: 微服务实例唯一标识。
+            required: true
+            type: string
+          - name: value
+            in: query
+            description: 实例状态 UP在线OUTOFSERVICE摘机STARTING正在启动DOWN下线。
+            required: true
+            type: string
+        tags:
+          - instances
+        responses:
+          200:
+            description: 修改成功
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+    /registry/v3/microservices/{serviceId}/instances/{instanceId}/heartbeat:
+      put:
+        description: |
+          服务提供端需要向服务中心发送心跳信息，以保证服务中心知道服务实例是否健康。
+        operationId: heartbeat
+        parameters:
+          - name: x-domain-name
+            in: header
+            required: true
+            type: string
+            default: default
+          - name: serviceId
+            in: path
+            description: 微服务唯一标识。
+            required: true
+            type: string
+          - name: instanceId
+            in: path
+            description: 微服务实例唯一标识。
+            required: true
+            type: string
+        tags:
+          - instances
+        responses:
+          200:
+            description: 更新成功
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+    /registry/v3/heartbeats:
+      put:
+        description: |
+          服务提供端需要向服务中心发送心跳信息，以保证服务中心知道服务实例是否健康。该接口为批量接口
+        operationId: HeartbeatSet
+        parameters:
+          - name: x-domain-name
+            in: header
+            required: true
+            type: string
+            default: default
+          - name: Instances
+            in: body
+            description: 批量上报心跳的实例的标识。
+            required: true
+            schema:
+              $ref: '#/definitions/HeartbeatSetRequest'
+        tags:
+          - instances
+        responses:
+          200:
+            description: 更新成功
+          400:
+            description: 错误的请求
+            schema:
+              $ref: '#/definitions/InstancesHbRst'
+          500:
+            description: 内部错误
+            schema:
+              type: string
+    /registry/v3/instances:
+      get:
+        description: |
+          实例注册后可以根据微服务版本规则或字段条件 发现该微服务的实例。
+        operationId: find
+        parameters:
+          - name: x-domain-name
+            in: header
+            required: true
+            type: string
+            default: default
+          - name: X-ConsumerId
+            in: header
+            description: 微服务消费者的微服务唯一标识。
+            required: true
+            type: string
+          - name: appId
+            in: query
+            description: 应用app唯一标识。
+            required: true
+            type: string
+          - name: serviceName
+            in: query
+            description: 微服务名称。
+            required: true
+            type: string
+          - name: version
+            in: query
+            description: 版本规则：1.精确版本匹配 2.后续版本匹配 3.最新版本 4.版本范围
+            type: string
+            required: true
+          - name: tags
+            in: query
+            description: Tag标签过滤，多个时逗号分隔。
+            type: string
+          - name: env
+            in: query
+            description: 实例的environment。
+            type: string
+          - name: noCache
+            in: query
+            description: 是否强一致性，1 是、0 否。
+            type: string
+            default: 0
+        tags:
+          - instances
+        responses:
+          200:
+            description: 查询成功
+            schema:
+              $ref: '#/definitions/GetInstancesResponse'
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+    /registry/v3/microservices/{serviceId}/watcher:
+      get:
+        description: |
+          当服务在心跳消失，注册，注销，状态更新时， 将这些变化主动推送到客户端。
+        operationId: watch
+        parameters:
+          - name: serviceId
+            in: path
+            description: 微服务消费者的微服务唯一标识。
+            required: true
+            type: string
+        tags:
+          - microservices
+        responses:
+          200:
+            description: 实例变化时，成功推送给watcher的信息
+            schema:
+              $ref: '#/definitions/WatchInstanceResponse'
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+    /registry/v3/microservices/{serviceId}/listwatcher:
+      get:
+        description: |
+          watch成功后返回完整的微服务提供者的实例信息，且服务在心跳消失，注册，注销，状态更新时，将这些变化主动推送到客户端。
+        parameters:
+          - name: serviceId
+            in: path
+            description: 微服务消费者的微服务唯一标识。
+            required: true
+            type: string
+        tags:
+          - microservices
+        responses:
+          200:
+            description: 推送给watcher实例变化信息
+            schema:
+              $ref: '#/definitions/WatchInstanceResponse'
+          400:
+            description: 错误的请求
+            schema:
+              type: string
+          500:
+            description: 内部错误
+            schema:
+              type: string
+  definitions:
+    Version:
+      type: object
+      properties:
+        version:
           type: string
-          default: default
-        - name: serviceId
-          in: path
-          description: 微服务唯一标识。
-          required: true
+        apiVersion:
           type: string
-        - name: noCache
-          in: query
-          description: 是否强一致性，1 是、0 否。
+        buildTag:
           type: string
-          default: 0
-      tags:
-        - microservices
-      responses:
-        200:
-          description: 微服务结构体
-          schema:
-            $ref: '#/definitions/CreateMicroService'
-        400:
-          description: 错误的请求
-          schema:
+    Properties:
+      type: object
+      description: 扩展属性
+      additionalProperties:
+        type: string
+    Framework:
+      type: object
+      properties:
+        name:
+          type: string
+          description: 微服务开发框架，默认值为UNKNOWN
+        version:
+          type: string
+          description: 微服务开发框架版本号
+    UpdateProperties:
+      type: object
+      properties:
+        properties:
+          $ref: '#/definitions/Properties'
+    CreateSchema:
+      type: object
+      properties:
+        schema:
+          type: string
+    GetResourceResponse:
+      type: object
+      properties:
+        serviceId:
+          type: string
+        schemaId:
+          type: string
+    CreateMicroServiceResponse:
+      type: object
+      properties:
+        serviceId:
+          type: string
+    CreateMicroService:
+      type: object
+      properties:
+        service:
+          $ref: '#/definitions/MicroService'
+        rules:
+          type: array
+          items:
+             $ref: "#/definitions/Rule"
+        instances:
+          type: array
+          items:
+             $ref: '#/definitions/RegistMicroserviceInstance'
+        tags:
+             $ref: '#/definitions/Tags'
+
+    GetMicroServicesResponse:
+      type: object
+      properties:
+        services:
+          type: array
+          items:
+            $ref: '#/definitions/MicroService'
+    CreateInstance:
+      type: object
+      properties:
+        instance:
+          $ref: '#/definitions/RegistMicroserviceInstance'
+    CreateInstanceResponse:
+      type: object
+      properties:
+        instanceId:
+          type: string
+    GetInstancesResponse:
+      type: object
+      properties:
+        instances:
+          type: array
+          items:
+            $ref: '#/definitions/MicroServiceInstance'
+    GetOneInstanceResponse:
+      type: object
+      properties:
+        instance:
+          $ref: '#/definitions/MicroServiceInstance'
+    WatchMicroServiceKey:
+      type: object
+      properties:
+        appId:
+          type: string
+        serviceName:
+          type: string
+        version:
+          type: string
+    WatchInstanceResponse:
+      type: object
+      properties:
+        action:
+          type: string
+          description: 分别有CREATE UPDATE DELETE三种事件
+        key:
+          $ref: '#/definitions/WatchMicroServiceKey'
+        instance:
+          $ref: '#/definitions/MicroServiceInstance'
+    MicroService:
+      type: object
+      required:
+      - appId
+      - serviceName
+      - version
+      - status
+      properties:
+        serviceId:
+          type: string
+        environment:
+          type: string
+          description: development|testing|acceptance|production
+        appId:
+          type: string
+          description: 应用App唯一标识
+        serviceName:
+          type: string
+          description: 微服务名称，同一个App要保证唯一
+        version:
+          type: string
+          description: 微服务版本号
+        description:
+          type: string
+          description: 微服务描述信息
+        level:
+          type: string
+          description: 微服务层级，FRONT/MIDDLE/BACK
+        registerBy:
+          type: string
+          description: 微服务注册方式，SDK/PLATFORM/SIDECAR/UNKNOWN
+        schemas:
+          type: array
+          description: 微服务访问契约内容的外键ID
+          items:
             type: string
-        500:
-          description: 内部错误
-          schema:
+        status:
+          type: string
+          description: 微服务状态，UP表示上线 DOWN表示下线
+          enum:
+          - UP
+          - DOWN
+        timestamp:
+          type: string
+          description: post 或者 put 不带该参数，timestamp是内部生成的，只有get 接口才返回该值
+        modTimestamp:
+          type: string
+          description: 更新时间
+        framework:
+          $ref: '#/definitions/Framework'
+        paths:
+          type: array
+          description: 服务路由
+          items:
+            $ref: '#/definitions/ServicePath'
+        providers:
+          type: array
+          items:
+            $ref: '#/definitions/DependencyKey'
+        properties:
+          $ref: '#/definitions/Properties'
+        LBStrategy:
+          $ref: '#/definitions/Properties'
+    HealthCheck:
+      type: object
+      required:
+      - mode
+      - interval
+      - times
+      properties:
+        mode:
+          type: string
+          description: check模式 push/pull
+        port:
+          type: integer
+          description: 端口
+        interval:
+          type: integer
+          description: check interval (second)
+        times:
+          type: integer
+          description: retry times
+    RegistMicroserviceInstance:
+      type: object
+      required:
+      - status
+      - hostName
+      - environment
+      properties:
+        instanceId:
+          description: 实例ID,不填写会自动填充
+          type: string
+        hostName:
+          description: 机器的hostname
+          type: string
+        endpoints:
+          type: array
+          items:
             type: string
-    delete:
-      description: |
-        删除一个微服务定义及其相关信息，同时注销其所有实例信息。
-      operationId: delete
-      parameters:
-        - name: x-domain-name
-          in: header
-          required: true
+            description: 例:rest:127.0.0.1:8080
+        status:
           type: string
-          default: default
-        - name: serviceId
-          in: path
-          description: 微服务唯一标识。
-          required: true
+          description: 实例状态，UP|DOWN|STARTING|OUTOFSERVICE
+        properties:
+          $ref: '#/definitions/Properties'
+        healthCheck:
+          $ref: '#/definitions/HealthCheck'
+        environment:
           type: string
-        - name: force
-          in: query
+          description: development|testing|acceptance|production
+        dataCenterInfo:
+          $ref: '#/definitions/DataCenterInfo'
+    MicroServiceInstance:
+      type: object
+      required:
+      - status
+      - hostName
+      properties:
+        instanceId:
+          type: string
+          description: 实例id,唯一标识。创建实例，instanceId由service-center产生
+        serviceId:
+          type: string
+          description: 微服务唯一标识，创建实例时，以url里面的为准，不用这里的serviceId。
+        hostName:
+          type: string
+        endpoints:
+          type: array
+          items:
+            type: string
+            description: 例:rest:127.0.0.1:8080
+        status:
+          type: string
+          description: 实例状态，UP|DOWN|STARTING|OUTOFSERVICE
+        properties:
+          $ref: '#/definitions/Properties'
+        healthCheck:
+          $ref: '#/definitions/HealthCheck'
+        dataCenterInfo:
+          $ref: '#/definitions/DataCenterInfo'
+        timestamp:
+          type: string
+          description: 实例创建时间戳，自动生成
+        modTimestamp:
+          type: string
+          description: 更新时间
+    CreateDependenciesRequest:
+      type: object
+      properties:
+        dependencies:
+          type: array
+          items:
+            $ref: '#/definitions/MicroServiceDependency'
+    MicroServiceDependency:
+      type: object
+      properties:
+        consumer:
+          $ref: '#/definitions/DependencyKey'
+        providers:
+          type: array
+          items:
+            $ref: '#/definitions/DependencyKey'
+    DependencyKey:
+      type: object
+      required:
+          - appId
+          - serviceName
+          - version
+      properties:
+        environment:
+          type: string
+          description: development|testing|acceptance|production
+        appId:
+          type: string
+          description: 应用app唯一标识。
+        serviceName:
+          type: string
+          description: 微服务名称，作为provider支持为*，表示依赖同一租户下的所有服务,当服务名称为*的时候，appId和version可以省略，consumer不支持*。
+        version:
+          type: string
+          description: 微服务版本，作为provider支持+，如1.0.1+[表示1.0.1以上的版本(包括1.0.1)]、固定版本和latest(当前最新版本)，作为consumer只能为固定版本。
+
+    GetProDependenciesResponse:
+      type: object
+      properties:
+        dependency:
+          type: array
+          items:
+            $ref: "#/definitions/ProDependency"
+    ProDependency:
+      type: object
+      properties:
+        Consumers:
+            $ref: "#/definitions/MicroService"
+    GetConDependenciesResponse:
+      type: object
+      properties:
+        dependency:
+          type: array
+          items:
+            $ref: "#/definitions/ConDependency"
+    ConDependency:
+      type: object
+      properties:
+        Providers:
+          $ref: "#/definitions/MicroService"
+    Tags:
+      type: object
+      properties:
+        tags:
+          $ref: "#/definitions/Properties"
+
+    Rules:
+      type: object
+      properties:
+        rules:
+          type: array
+          items:
+            $ref: "#/definitions/Rule"
+    Rule:
+      type: object
+      properties:
+        ruleId:
+          description:  自定义ruleId
+          type: string
+        ruleType:
+          description:  rule类型，WHITE或者BLACK
+          type: string
+        attribute:
+          description:  如果是tag_xxx开头，则按Tag过滤attribute属性，否则，则按"ServiceId", "AppId", "ServiceName", "Version", "Description", "Level", "Status"过滤
+          type: string
+        pattern:
+          description:  匹配规则，正则表达式，长度1到64
+          type: string
+        description:
+          description:  rule描述
+          type: string
+        timestamp:
+          description:  只有获取rule时返回使用，创建rule的时间
+          type: string
+        modTimestamp:
+          type: string
+          description: 更新时间
+    AddRules:
+      type: object
+      properties:
+        rules:
+          type: array
+          items:
+            $ref: "#/definitions/AddOrUpdateRule"
+    AddOrUpdateRule:
+      type: object
+      properties:
+        ruleType:
+          description:  rule类型，WHITE或者BLACK
+          type: string
+        attribute:
+          description:  如果是tag_xxx开头，则按Tag过滤attribute属性，否则，则按"ServiceId", "AppId", "ServiceName", "Version", "Description", "Level", "Status"过滤
+          type: string
+        pattern:
+          description:  匹配规则，正则表达式，长度1到64
+          type: string
+        description:
+          description:  rule描述
+          type: string
+    DataCenterInfo:
+      type: object
+      required:
+      - name
+      - region
+      - availableZone
+      properties:
+        name:
+          type: string
+          description: 区域名字
+        region:
+          type: string
+          description: 区域
+        availableZone:
+          type: string
+          description: 可获取区
+    ServicePath:
+      type: object
+      properties:
+        Path:
+          type: string
+          description: 路由地址
+        Property:
+            $ref: '#/definitions/Properties'
+    AddRuleResponse:
+      type: object
+      properties:
+        RuleIds:
+          description: 生成的ruleId集合
+          type: array
+          items:
+            type: string
+    HeartbeatSetRequest:
+      type: object
+      properties:
+        Instances:
+          type: array
+          items:
+            $ref: "#/definitions/HeartbeatSetElement"
+    HeartbeatSetElement:
+      type: object
+      properties:
+        serviceId:
+          description: 微服务id
+          type: string
+        instanceId:
+          description: 微服务实例id
+          type: string
+    InstancesHbRst:
+      type: object
+      properties:
+        instances:
+          type: array
+          items:
+            $ref: "#/definitions/InstanceHbRst"
+    InstanceHbRst:
+      type: object
+      properties:
+        serviceId:
+          description: 微服务id
+          type: string
+        instanceId:
+          description: 微服务实例id
+          type: string
+        errMessage:
+          description: 错误信息，成功为空，不成功，则为错误，在部分成功的场景使用
+          type: string
+
+    DelServicesRequest:
+      type: object
+      properties:
+        serviceIds:
+          type: array
+          items:
+            type: string
+        force:
           description: 不传即默认为false。 强制删除，则与该服务相关的信息删除，非强制删除： 如果作为该被依赖（作为provider，提供服务,且不是只存在自依赖）或者存在实例，则不能删除,其它均删除。
           type: string
-      tags:
-        - microservices
-      responses:
-        200:
-          description: 修改成功
-        400:
-          description: 错误的请求
-          schema:
-            type: string
-        500:
-          description: 内部错误
-          schema:
-            type: string
-  /registry/v3/microservices:
-    get:
-      description: |
-        根据条件组合，查询满足所有条件的微服务定义信息。
-      operationId: getServices
-      tags:
-        - microservices
-      parameters:
-        - name: x-domain-name
-          in: header
-          required: true
-          type: string
-          default: default
-        - name: noCache
-          in: query
-          description: 是否强一致性，1 是、0 否。
-          type: string
-          default: 0
-      responses:
-        200:
-          description: 查询成功
-          schema:
-            $ref: '#/definitions/GetMicroServicesResponse'
-        400:
-          description: 错误的请求
-          schema:
-            type: string
-        500:
-          description: 内部错误
-          schema:
-            type: string
-    post:
-      description: |
-        在注册微服务实例前需要创建服务静态信息，之后注册的微服务实例根据service id这个字段与静态信息关联，一个服务对应对多个实例。
-      operationId: create
-      parameters:
-        - name: x-domain-name
-          in: header
-          required: true
-          type: string
-          default: default
-        - name: service
-          in: body
-          description: 创建微服务请求结构体。
-          required: true
-          schema:
-            $ref: '#/definitions/CreateMicroService'
-      tags:
-        - microservices
-      responses:
-        200:
-          description: 创建成功
-          schema:
-            $ref: '#/definitions/CreateMicroServiceResponse'
-        400:
-          description: 错误的请求
-          schema:
-            type: string
-        500:
-          description: 内部错误
-          schema:
-            type: string
-    delete:
-      description: |
-        批量删除指定的微服务定义及其相关信息，同时注销其所有实例信息。
-      operationId: deleteServices
-      parameters:
-        - name: serviceIds
-          in: body
-          description: 批量删除服务的服务ID列表
-          required: true
-          schema:
-            $ref: '#/definitions/DelServicesRequest'
-      tags:
-        - microservices
-      responses:
-        200:
-          description: 更新成功
-        400:
-          description: 错误的请求
-          schema:
-            $ref: '#/definitions/DelServicesResponse'
-        500:
-          description: 内部错误
-          schema:
-            type: string
-  /registry/v3/microservices/{serviceId}/properties:
-    put:
-      description: |
-        创建微服务静态信息后可对服务部分字段进行更新，每次更新都需要传入完整的服务静态信息json，也就是说，即便不更新部分的字段也要作为json的属性传过去。
-      operationId: updateProperties
-      parameters:
-        - name: x-domain-name
-          in: header
-          required: true
-          type: string
-          default: default
-        - name: serviceId
-          in: path
-          description: 微服务唯一标识。
-          required: true
-          type: string
-        - name: properties
-          in: body
-          description: 微服务扩展属性请求结构体。
-          required: true
-          schema:
-            $ref: '#/definitions/UpdateProperties'
-      tags:
-        - microservices
-      responses:
-        200:
-          description: 修改成功
-        400:
-          description: 错误的请求
-          schema:
-            type: string
-        500:
-          description: 内部错误
-          schema:
-            type: string
-  /registry/v3/microservices/{serviceId}/tags:
-    post:
-      description: |
-        为serviceId的微服务创建tag。
-      operationId: addTags
-      parameters:
-        - name: x-domain-name
-          in: header
-          required: true
-          type: string
-          default: default
-        - name: serviceId
-          in: path
-          description: 微服务唯一标识。
-          required: true
-          type: string
-        - name: tags
-          in: body
-          description: 要创建的tags。
-          required: true
-          schema:
-            $ref: '#/definitions/Tags'
-      tags:
-        - microservices
-        - tag
-      responses:
-        200:
-          description: 创建成功
-        400:
-          description: 错误的请求
-          schema:
-            type: string
-        500:
-          description: 内部错误
-          schema:
-            type: string
-    get:
-      description: |
-        获取serviceId的微服务的tag
-      operationId: getTags
-      parameters:
-        - name: x-domain-name
-          in: header
-          required: true
-          type: string
-          default: default
-        - name: serviceId
-          in: path
-          description: 微服务唯一标识。
-          required: true
-          type: string
-        - name: noCache
-          in: query
-          description: 是否强一致性，1 是、0 否。
-          type: string
-          default: 0
-      tags:
-        - microservices
-        - tag
-      responses:
-        200:
-          description: 查询成功
-          schema:
-            $ref: '#/definitions/Tags'
-        400:
-          description: 错误的请求
-          schema:
-            type: string
-        500:
-          description: 内部错误
-          schema:
-                type: string
-  /registry/v3/microservices/{serviceId}/tags/{key}:
-    put:
-      description: |
-        为serviceId的微服务更新key对应的value值
-      operationId: updateTag
-      parameters:
-        - name: x-domain-name
-          in: header
-          required: true
-          type: string
-          default: default
-        - name: serviceId
-          in: path
-          description: 微服务唯一标识。
-          required: true
-          type: string
-        - name: key
-          in: path
-          description: 要更新的tag的key值。
-          required: true
-          type: string
-        - name: value
-          in: query
-          description: 要更新的tag的value值。
-          required: true
-          type: string
-      tags:
-        - microservices
-        - tag
-      responses:
-        200:
-          description: 更新成功
-        400:
-          description: 错误的请求
-          schema:
-            type: string
-        500:
-          description: 内部错误
-          schema:
-            type: string
-    delete:
-      description: |
-        为serviceId的微服务删除tags
-      operationId: deleteTags
-      parameters:
-        - name: x-domain-name
-          in: header
-          required: true
-          type: string
-          default: default
-        - name: serviceId
-          in: path
-          description: 微服务唯一标识。
-          required: true
-          type: string
-        - name: key
-          in: path
-          description: 要删除的tag的key值，多个key的话，以，隔开。
-          required: true
-          type: string
-      tags:
-        - microservices
-        - tag
-      responses:
-        200:
-          description: 删除成功
-        400:
-          description: 错误的请求
-          schema:
-            type: string
-        500:
-          description: 内部错误
-          schema:
-            type: string
-  /registry/v3/microservices/{serviceId}/rules:
-    post:
-      description: |
-        为serviceId的服务新增黑白名单，同一服务，attribute和pattern唯一标识一份黑白名单。
-      operationId: addRule
-      parameters:
-        - name: x-domain-name
-          in: header
-          required: true
-          type: string
-          default: default
-        - name: serviceId
-          in: path
-          description: 微服务唯一标识。
-          required: true
-          type: string
-        - name: rules
-          in: body
-          description: 新增黑白名单。
-          required: true
-          schema:
-            $ref: '#/definitions/AddRules'
-      tags:
-        - microservices
-        - rule
-      responses:
-        200:
-          description: 创建成功
-          schema:
-            $ref: '#/definitions/AddRuleResponse'
-        400:
-          description: 错误的请求
-          schema:
-            type: string
-        500:
-          description: 内部错误
-          schema:
-            type: string
-    get:
-      description: |
-        获取serviceId的服务的黑白名单信息。
-      operationId: getRule
-      parameters:
-        - name: x-domain-name
-          in: header
-          required: true
-          type: string
-          default: default
-        - name: serviceId
-          in: path
-          description: 微服务唯一标识。
-          required: true
-          type: string
-        - name: noCache
-          in: query
-          description: 是否强一致性，1 是、0 否。
-          type: string
-          default: 0
-      tags:
-        - microservices
-        - rule
-      responses:
-        200:
-          description: 查询成功
-          schema:
-            $ref: '#/definitions/Rules'
-        400:
-          description: 错误的请求
-          schema:
-            type: string
-        500:
-          description: 内部错误
-          schema:
-            type: string
-  /registry/v3/microservices/{serviceId}/rules/{rule_id}:
-    put:
-      description: |
-        为serviceId的服务更新黑白名单。
-      operationId: updateRule
-      parameters:
-        - name: x-domain-name
-          in: header
-          required: true
-          type: string
-          default: default
-        - name: serviceId
-          in: path
-          description: 微服务唯一标识。
-          required: true
-          type: string
-        - name: rule_id
-          in: path
-          description: ruleId。
-          required: true
-          type: string
-        - name: rule
-          in: body
-          description: 要更新的rule
-          required: true
-          schema:
-            $ref: "#/definitions/AddOrUpdateRule"
-      tags:
-        - microservices
-        - rule
-      responses:
-        200:
-          description: 修改成功
-          schema:
-            type: string
-        400:
-          description: 错误的请求
-          schema:
-            type: string
-        500:
-          description: 内部错误
-          schema:
-            type: string
-    delete:
-      description: |
-        为serviceId的服务删除黑白名单。
-      operationId: deleteRule
-      parameters:
-        - name: x-domain-name
-          in: header
-          required: true
-          type: string
-          default: default
-        - name: serviceId
-          in: path
-          description: 微服务唯一标识。
-          required: true
-          type: string
-        - name: rule_id
-          in: path
-          description: ruleId。
-          required: true
-          type: string
-      tags:
-        - microservices
-        - rule
-      responses:
-        200:
-          description: 删除成功
-          schema:
-            type: string
-        400:
-          description: 错误的请求
-          schema:
-            type: string
-        500:
-          description: 内部错误
-          schema:
-            type: string
-  /registry/v3/microservices/{serviceId}/schemas/{schemaId}:
-    get:
-      description: |
-        根据serviceId和schemaId查询微服务的schema信息。
-      operationId: getSchemaInfo
-      parameters:
-        - name: x-domain-name
-          in: header
-          required: true
-          type: string
-          default: default
-        - name: serviceId
-          in: path
-          description: 微服务唯一标识。
-          required: true
-          type: string
-        - name: schemaId
-          in: path
-          description: 微服务契约唯一标识。
-          required: true
-          type: string
-        - name: noCache
-          in: query
-          description: 是否强一致性，1 是、0 否。
-          type: string
-          default: 0
-      tags:
-        - microservices
-        - schema
-      responses:
-        200:
-          description: 查询成功
-          schema:
-            $ref: '#/definitions/CreateSchema'
-        400:
-          description: 错误的请求
-          schema:
-            type: string
-        500:
-          description: 内部错误
-          schema:
-            type: string
-    put:
-      description: |
-        根据schemaId更新微服务的访问契约内容。
-      operationId: modifySchema
-      parameters:
-        - name: x-domain-name
-          in: header
-          required: true
-          type: string
-          default: default
-        - name: serviceId
-          in: path
-          description: 微服务唯一标识。
-          required: true
-          type: string
-        - name: schemaId
-          in: path
-          description: 微服务契约唯一标识。
-          required: true
-          type: string
-        - name: schema
-          in: body
-          description: 微服务契约内容。
-          required: true
-          schema:
-            $ref: '#/definitions/CreateSchema'
-      tags:
-        - microservices
-        - schema
-      responses:
-        200:
-          description: 修改成功
-        400:
-          description: 错误的请求
-          schema:
-            type: string
-        500:
-          description: 内部错误
-          schema:
-            type: string
-    delete:
-      description: |
-        删除微服务的一个schema信息。
-      operationId: deleteSchema
-      parameters:
-        - name: x-domain-name
-          in: header
-          required: true
-          type: string
-          default: default
-        - name: serviceId
-          in: path
-          description: 微服务唯一标识。
-          required: true
-          type: string
-        - name: schemaId
-          in: path
-          description: 微服务契约唯一标识。
-          required: true
-          type: string
-      tags:
-        - microservices
-        - schema
-      responses:
-        200:
-          description: 删除成功
-        400:
-          description: 错误的请求
-          schema:
-            type: string
-        500:
-          description: 内部错误
-          schema:
-            type: string
-  /registry/v3/microservices/{serviceId}/schemas:
-    post:
-      description: |
-        批量上传schemas。
-      operationId: ModifySchemas
-      parameters:
-        - name: x-domain-name
-          in: header
-          required: true
-          type: string
-          default: default
-        - name: serviceId
-          in: path
-          description: 唯一标识。
-          required: true
-          type: string
-        - name: type
-          in: body
-          required: true
-          description: 批量上传schemas信息。
-          schema:
-            $ref: '#/definitions/ModifySchemasRequest'
-      tags:
-        - microservices
-        - schema
-      responses:
-        200:
-          description: 創建成功
-        400:
-          description: 错误的请求
-          schema:
-            type: string
-        500:
-          description: 内部错误
-          schema:
-            type: string
-  /registry/v3/dependencies:
-    post:
-      description: |
-        增量式添加服务间的依赖关系，consumer的version必须是确定的版本，serviceName不能为*，consumer必须是已存在的服务，provider可以是还未创建的。
-      operationId: createDependenciesForMircServices
-      parameters:
-        - name: x-domain-name
-          in: header
-          required: true
-          type: string
-          default: default
-        - name: type
-          in: body
-          description: 创建服务间的依赖关系的请求体。
-          required: true
-          schema:
-            $ref: '#/definitions/CreateDependenciesRequest'
-      tags:
-        - dependency
-      responses:
-        200:
-          description: 创建成功
-          schema:
-            type: string
-        400:
-          description: 错误的请求
-          schema:
-            type: string
-        500:
-          description: 内部错误
-          schema:
-            type: string
-    put:
-      description: |
-        覆盖式修改服务间的依赖关系，consumer的version必须是确定的版本，serviceName不能为*，consumer必须是已存在的服务，provider可以是还未创建的。
-      operationId: createDependenciesForMircServices
-      parameters:
-        - name: x-domain-name
-          in: header
-          required: true
-          type: string
-          default: default
-        - name: type
-          in: body
-          description: 创建服务间的依赖关系的请求体。
-          required: true
-          schema:
-            $ref: '#/definitions/CreateDependenciesRequest'
-      tags:
-        - dependency
-      responses:
-        200:
-          description: 创建成功
-          schema:
-            type: string
-        400:
-          description: 错误的请求
-          schema:
-            type: string
-        500:
-          description: 内部错误
-          schema:
-            type: string
-  /registry/v3/microservices/{consumerId}/providers:
-    get:
-      description: |
-        根据consumerId获取该服务的所有providers
-      operationId: getConsumerDependencies
-      parameters:
-        - name: x-domain-name
-          in: header
-          required: true
-          type: string
-          default: default
-        - name: consumerId
-          in: path
-          description: 消费者的服务id。
-          required: true
-          type: string
-        - name: noCache
-          in: query
-          description: 是否强一致性，1 是、0 否。
-          type: string
-          default: 0
-      tags:
-        - dependency
-      responses:
-        200:
-          description: 查询成功
-          schema:
-            $ref: '#/definitions/GetConDependenciesResponse'
-        400:
-          description: 错误的请求
-          schema:
-            type: string
-        500:
-          description: 内部错误
-          schema:
-            type: string
-  /registry/v3/microservices/{providerId}/consumers:
-    get:
-      description: |
-        根据providerId获取该服务的所有consumers
-      operationId: getProviderDependencies
-      parameters:
-        - name: x-domain-name
-          in: header
-          required: true
-          type: string
-          default: default
-        - name: providerId
-          in: path
-          description: 提供者的服务id。
-          required: true
-          type: string
-        - name: noCache
-          in: query
-          description: 是否强一致性，1 是、0 否。
-          type: string
-          default: 0
-      tags:
-        - dependency
-      responses:
-        200:
-          description: 查询成功
-          schema:
-            $ref: '#/definitions/GetProDependenciesResponse'
-        400:
-          description: 错误的请求
-          schema:
-            type: string
-        500:
-          description: 内部错误
-          schema:
-            type: string
-  /registry/v3/existence:
-    get:
-      description: |
-        可通过指定条件，查询微服务serviceId或schema的唯一标识信息。
-      operationId: exist
-      parameters:
-        - name: x-domain-name
-          in: header
-          required: true
-          type: string
-          default: default
-        - name: type
-          in: query
-          description: 资源类型 microservice微服务 schema微服务访问契约。
-          required: true
-          type: string
-        - name: env
-          in: query
-          description: development|testing|acceptance|production
-          type: string
-          default: development
-        - name: appId
-          in: query
-          description: 资源类型为 microservice时 需传入应用app唯一标识。
-          type: string
-          required: true
-        - name: serviceName
-          in: query
-          description: 资源类型为 microservice时 需传入微服务名称。
-          type: string
-          required: true
-        - name: version
-          in: query
-          description: 资源类型为 microservice时 需传入微服务版本。
-          type: string
-          required: true
-        - name: serviceId
-          in: query
-          description: 资源类型为 schema时 需传入微服务唯一标识。
-          type: string
-          required: true
-        - name: schemaId
-          in: query
-          description: 资源类型为 schema时 需传入schema唯一标识。
-          type: string
-          required: true
-        - name: noCache
-          in: query
-          description: 是否强一致性，1 是、0 否。
-          type: string
-          default: 0
-      tags:
-        - schemas
-        - microservices
-      responses:
-        200:
-          description: 查询成功
-          schema:
-            $ref: '#/definitions/GetResourceResponse'
-        400:
-          description: 错误的请求
-          schema:
-            type: string
-        500:
-          description: 内部错误
-          schema:
-            type: string
-  /registry/v3/microservices/{serviceId}/instances:
-    post:
-      description: |
-        创建微服务后就可以注册该微服务的实例了。 注册微服务实例时，需提供该微服务实例相关的信息。
-        instanceID可定制,如果定制了，再次注册就直接全内容覆盖。如果没定制，逻辑如下：系统自动生成id，如果endpoints内容重复，则使用原来的id
-      operationId: register
-      parameters:
-        - name: x-domain-name
-          in: header
-          required: true
-          type: string
-          default: default
-        - name: serviceId
-          in: path
-          description: 微服务唯一标识。
-          required: true
-          type: string
-        - name: instance
-          in: body
-          description: 微服务实例请求结构体。
-          required: true
-          schema:
-            $ref: '#/definitions/CreateInstance'
-      tags:
-        - instances
-      responses:
-        200:
-          description: 注册成功
-          schema:
-            $ref: '#/definitions/CreateInstanceResponse'
-        400:
-          description: 错误的请求
-          schema:
-            type: string
-        500:
-          description: 内部错误
-          schema:
-            type: string
-    get:
-      description: |
-        实例注册后可以根据 service_id 发现该微服务的所有实例。
-      operationId: getInstances
-      parameters:
-        - name: x-domain-name
-          in: header
-          required: true
-          type: string
-          default: default
-        - name: X-ConsumerId
-          in: header
-          description: 微服务消费者的微服务唯一标识。
-          required: true
-          type: string
-        - name: serviceId
-          in: path
-          description: 微服务唯一标识。
-          required: true
-          type: string
-        - name: tags
-          in: query
-          description: Tag标签过滤，多个时逗号分隔。
-          type: string
-        - name: env
-          in: query
-          description: 实例的environment。
-          type: string
-        - name: noCache
-          in: query
-          description: 是否强一致性，1 是、0 否。
-          type: string
-          default: 0
-      tags:
-        - instances
-      responses:
-        200:
-          description: 查询成功
-          schema:
-            $ref: '#/definitions/GetInstancesResponse'
-        400:
-          description: 错误的请求
-          schema:
-            type: string
-        500:
-          description: 内部错误
-          schema:
-            type: string
-  /registry/v3/microservices/{serviceId}/instances/{instanceId}:
-    delete:
-      description: |
-        实例注册后可以根据 instance_id 进行实例注销。
-      operationId: unregister
-      parameters:
-        - name: x-domain-name
-          in: header
-          required: true
-          type: string
-          default: default
-        - name: serviceId
-          in: path
-          description: 微服务唯一标识。
-          required: true
-          type: string
-        - name: instanceId
-          in: path
-          description: 微服务实例唯一标识。
-          required: true
-          type: string
-      tags:
-        - instances
-      responses:
-        200:
-          description: 注销成功
-        400:
-          description: 错误的请求
-          schema:
-            type: string
-        500:
-          description: 内部错误
-          schema:
-            type: string
-    get:
-      description: |
-        实例注册后可以根据 service_id和serviceId获取该实例的详细信息。
-      operationId: GetOneInstance
-      parameters:
-        - name: x-domain-name
-          in: header
-          required: true
-          type: string
-          default: default
-        - name: X-ConsumerId
-          in: header
-          description: 微服务消费者的微服务唯一标识。
-          required: true
-          type: string
-        - name: serviceId
-          in: path
-          description: 微服务唯一标识。
-          required: true
-          type: string
-        - name: instanceId
-          in: path
-          description: 实例唯一标识。
-          required: true
-          type: string
-        - name: tags
-          in: query
-          description: Tag标签过滤，多个时逗号分隔。
-          type: string
-        - name: env
-          in: query
-          description: 实例的environment。
-          type: string
-        - name: noCache
-          in: query
-          description: 是否强一致性，1 是、0 否。
-          type: string
-          default: 0
-      tags:
-        - instances
-      responses:
-        200:
-          description: 查询成功
-          schema:
-            $ref: '#/definitions/GetOneInstanceResponse'
-        400:
-          description: 错误的请求
-          schema:
-            type: string
-        500:
-          description: 内部错误
-          schema:
-            type: string
-  /registry/v3/microservices/{serviceId}/instances/{instanceId}/properties:
-    put:
-      description: |
-        实例注册后可以根据 instance_id 进行添加/更新一个微服务实例扩展信息。
-      operationId: updateInstanceProperties
-      parameters:
-        - name: x-domain-name
-          in: header
-          required: true
-          type: string
-          default: default
-        - name: serviceId
-          in: path
-          description: 微服务唯一标识。
-          required: true
-          type: string
-        - name: instanceId
-          in: path
-          description: 微服务实例唯一标识。
-          required: true
-          type: string
-        - name: properties
-          in: body
-          description: 微服务实例扩展属性请求结构体。
-          required: true
-          schema:
-            $ref: '#/definitions/UpdateProperties'
-      tags:
-        - instances
-      responses:
-        200:
-          description: 修改成功
-        400:
-          description: 错误的请求
-          schema:
-            type: string
-        500:
-          description: 内部错误
-          schema:
-            type: string
-  /registry/v3/microservices/{serviceId}/instances/{instanceId}/status:
-    put:
-      description: |
-        实例注册后可以根据 instance_id 进行更新一个微服务实例状态。
-      operationId: updateStatus
-      parameters:
-        - name: x-domain-name
-          in: header
-          required: true
-          type: string
-          default: default
-        - name: serviceId
-          in: path
-          description: 微服务唯一标识。
-          required: true
-          type: string
-        - name: instanceId
-          in: path
-          description: 微服务实例唯一标识。
-          required: true
-          type: string
-        - name: value
-          in: query
-          description: 实例状态 UP在线OUTOFSERVICE摘机STARTING正在启动DOWN下线。
-          required: true
-          type: string
-      tags:
-        - instances
-      responses:
-        200:
-          description: 修改成功
-        400:
-          description: 错误的请求
-          schema:
-            type: string
-        500:
-          description: 内部错误
-          schema:
-            type: string
-  /registry/v3/microservices/{serviceId}/instances/{instanceId}/heartbeat:
-    put:
-      description: |
-        服务提供端需要向服务中心发送心跳信息，以保证服务中心知道服务实例是否健康。
-      operationId: heartbeat
-      parameters:
-        - name: x-domain-name
-          in: header
-          required: true
-          type: string
-          default: default
-        - name: serviceId
-          in: path
-          description: 微服务唯一标识。
-          required: true
-          type: string
-        - name: instanceId
-          in: path
-          description: 微服务实例唯一标识。
-          required: true
-          type: string
-      tags:
-        - instances
-      responses:
-        200:
-          description: 更新成功
-        400:
-          description: 错误的请求
-          schema:
-            type: string
-        500:
-          description: 内部错误
-          schema:
-            type: string
-  /registry/v3/heartbeats:
-    put:
-      description: |
-        服务提供端需要向服务中心发送心跳信息，以保证服务中心知道服务实例是否健康。该接口为批量接口
-      operationId: HeartbeatSet
-      parameters:
-        - name: x-domain-name
-          in: header
-          required: true
-          type: string
-          default: default
-        - name: Instances
-          in: body
-          description: 批量上报心跳的实例的标识。
-          required: true
-          schema:
-            $ref: '#/definitions/HeartbeatSetRequest'
-      tags:
-        - instances
-      responses:
-        200:
-          description: 更新成功
-        400:
-          description: 错误的请求
-          schema:
-            $ref: '#/definitions/InstancesHbRst'
-        500:
-          description: 内部错误
-          schema:
-            type: string
-  /registry/v3/instances:
-    get:
-      description: |
-        实例注册后可以根据微服务版本规则或字段条件 发现该微服务的实例。
-      operationId: find
-      parameters:
-        - name: x-domain-name
-          in: header
-          required: true
-          type: string
-          default: default
-        - name: X-ConsumerId
-          in: header
-          description: 微服务消费者的微服务唯一标识。
-          required: true
-          type: string
-        - name: appId
-          in: query
-          description: 应用app唯一标识。
-          required: true
-          type: string
-        - name: serviceName
-          in: query
-          description: 微服务名称。
-          required: true
-          type: string
-        - name: version
-          in: query
-          description: 版本规则：1.精确版本匹配 2.后续版本匹配 3.最新版本 4.版本范围
-          type: string
-          required: true
-        - name: tags
-          in: query
-          description: Tag标签过滤，多个时逗号分隔。
-          type: string
-        - name: env
-          in: query
-          description: 实例的environment。
-          type: string
-        - name: noCache
-          in: query
-          description: 是否强一致性，1 是、0 否。
-          type: string
-          default: 0
-      tags:
-        - instances
-      responses:
-        200:
-          description: 查询成功
-          schema:
-            $ref: '#/definitions/GetInstancesResponse'
-        400:
-          description: 错误的请求
-          schema:
-            type: string
-        500:
-          description: 内部错误
-          schema:
-            type: string
-  /registry/v3/microservices/{serviceId}/watcher:
-    get:
-      description: |
-        当服务在心跳消失，注册，注销，状态更新时， 将这些变化主动推送到客户端。
-      operationId: watch
-      parameters:
-        - name: serviceId
-          in: path
-          description: 微服务消费者的微服务唯一标识。
-          required: true
-          type: string
-      tags:
-        - microservices
-      responses:
-        200:
-          description: 实例变化时，成功推送给watcher的信息
-          schema:
-            $ref: '#/definitions/WatchInstanceResponse'
-        400:
-          description: 错误的请求
-          schema:
-            type: string
-        500:
-          description: 内部错误
-          schema:
-            type: string
-  /registry/v3/microservices/{serviceId}/listwatcher:
-    get:
-      description: |
-        watch成功后返回完整的微服务提供者的实例信息，且服务在心跳消失，注册，注销，状态更新时，将这些变化主动推送到客户端。
-      parameters:
-        - name: serviceId
-          in: path
-          description: 微服务消费者的微服务唯一标识。
-          required: true
-          type: string
-      tags:
-        - microservices
-      responses:
-        200:
-          description: 推送给watcher实例变化信息
-          schema:
-            $ref: '#/definitions/WatchInstanceResponse'
-        400:
-          description: 错误的请求
-          schema:
-            type: string
-        500:
-          description: 内部错误
-          schema:
-            type: string
-definitions:
-  Version:
-    type: object
-    properties:
-      version:
-        type: string
-      apiVersion:
-        type: string
-      buildTag:
-        type: string
-  Properties:
-    type: object
-    description: 扩展属性
-    additionalProperties:
-      type: string
-  Framework:
-    type: object
-    properties:
-      name:
-        type: string
-        description: 微服务开发框架，默认值为UNKNOWN
-      version:
-        type: string
-        description: 微服务开发框架版本号
-  UpdateProperties:
-    type: object
-    properties:
-      properties:
-        $ref: '#/definitions/Properties'
-  CreateSchema:
-    type: object
-    properties:
-      schema:
-        type: string
-  GetResourceResponse:
-    type: object
-    properties:
-      serviceId:
-        type: string
-      schemaId:
-        type: string
-  CreateMicroServiceResponse:
-    type: object
-    properties:
-      serviceId:
-        type: string
-  CreateMicroService:
-    type: object
-    properties:
-      service:
-        $ref: '#/definitions/MicroService'
-      rules:
-        type: array
-        items:
-           $ref: "#/definitions/Rule"
-      instances:
-        type: array
-        items:
-           $ref: '#/definitions/RegistMicroserviceInstance'
-      tags:
-           $ref: '#/definitions/Tags'
 
-  GetMicroServicesResponse:
-    type: object
-    properties:
-      services:
-        type: array
-        items:
-          $ref: '#/definitions/MicroService'
-  CreateInstance:
-    type: object
-    properties:
-      instance:
-        $ref: '#/definitions/RegistMicroserviceInstance'
-  CreateInstanceResponse:
-    type: object
-    properties:
-      instanceId:
-        type: string
-  GetInstancesResponse:
-    type: object
-    properties:
-      instances:
-        type: array
-        items:
-          $ref: '#/definitions/MicroServiceInstance'
-  GetOneInstanceResponse:
-    type: object
-    properties:
-      instance:
-        $ref: '#/definitions/MicroServiceInstance'
-  WatchMicroServiceKey:
-    type: object
-    properties:
-      appId:
-        type: string
-      serviceName:
-        type: string
-      version:
-        type: string
-  WatchInstanceResponse:
-    type: object
-    properties:
-      action:
-        type: string
-        description: 分别有CREATE UPDATE DELETE三种事件
-      key:
-        $ref: '#/definitions/WatchMicroServiceKey'
-      instance:
-        $ref: '#/definitions/MicroServiceInstance'
-  MicroService:
-    type: object
-    required:
-    - appId
-    - serviceName
-    - version
-    - status
-    properties:
-      serviceId:
-        type: string
-      environment:
-        type: string
-        description: development|testing|acceptance|production
-      appId:
-        type: string
-        description: 应用App唯一标识
-      serviceName:
-        type: string
-        description: 微服务名称，同一个App要保证唯一
-      version:
-        type: string
-        description: 微服务版本号
-      description:
-        type: string
-        description: 微服务描述信息
-      level:
-        type: string
-        description: 微服务层级，FRONT/MIDDLE/BACK
-      registerBy:
-        type: string
-        description: 微服务注册方式，SDK/PLATFORM/SIDECAR/UNKNOWN
-      schemas:
-        type: array
-        description: 微服务访问契约内容的外键ID
-        items:
-          type: string
-      status:
-        type: string
-        description: 微服务状态，UP表示上线 DOWN表示下线
-        enum:
-        - UP
-        - DOWN
-      timestamp:
-        type: string
-        description: post 或者 put 不带该参数，timestamp是内部生成的，只有get 接口才返回该值
-      modTimestamp:
-        type: string
-        description: 更新时间
-      framework:
-        $ref: '#/definitions/Framework'
-      paths:
-        type: array
-        description: 服务路由
-        items:
-          $ref: '#/definitions/ServicePath'
-      providers:
-        type: array
-        items:
-          $ref: '#/definitions/DependencyKey'
+    DelServicesResponse:
+      type: object
       properties:
-        $ref: '#/definitions/Properties'
-      LBStrategy:
-        $ref: '#/definitions/Properties'
-  HealthCheck:
-    type: object
-    required:
-    - mode
-    - interval
-    - times
-    properties:
-      mode:
-        type: string
-        description: check模式 push/pull
-      port:
-        type: integer
-        description: 端口
-      interval:
-        type: integer
-        description: check interval (second)
-      times:
-        type: integer
-        description: retry times
-  RegistMicroserviceInstance:
-    type: object
-    required:
-    - status
-    - hostName
-    - environment
-    properties:
-      instanceId:
-        description: 实例ID,不填写会自动填充
-        type: string
-      hostName:
-        description: 机器的hostname
-        type: string
-      endpoints:
-        type: array
-        items:
-          type: string
-          description: 例:rest:127.0.0.1:8080
-      status:
-        type: string
-        description: 实例状态，UP|DOWN|STARTING|OUTOFSERVICE
+        services:
+          type: array
+          items:
+            $ref: "#/definitions/DelServicesRspInfo"
+
+    DelServicesRspInfo:
+      type: object
       properties:
-        $ref: '#/definitions/Properties'
-      healthCheck:
-        $ref: '#/definitions/HealthCheck'
-      environment:
-        type: string
-        description: development|testing|acceptance|production
-      dataCenterInfo:
-        $ref: '#/definitions/DataCenterInfo'
-  MicroServiceInstance:
-    type: object
-    required:
-    - status
-    - hostName
-    properties:
-      instanceId:
-        type: string
-        description: 实例id,唯一标识。创建实例，instanceId由service-center产生
-      serviceId:
-        type: string
-        description: 微服务唯一标识，创建实例时，以url里面的为准，不用这里的serviceId。
-      hostName:
-        type: string
-      endpoints:
-        type: array
-        items:
+        serviceId:
+          description: 微服务id
           type: string
-          description: 例:rest:127.0.0.1:8080
-      status:
-        type: string
-        description: 实例状态，UP|DOWN|STARTING|OUTOFSERVICE
-      properties:
-        $ref: '#/definitions/Properties'
-      healthCheck:
-        $ref: '#/definitions/HealthCheck'
-      dataCenterInfo:
-        $ref: '#/definitions/DataCenterInfo'
-      timestamp:
-        type: string
-        description: 实例创建时间戳，自动生成
-      modTimestamp:
-        type: string
-        description: 更新时间
-  CreateDependenciesRequest:
-    type: object
-    properties:
-      dependencies:
-        type: array
-        items:
-          $ref: '#/definitions/MicroServiceDependency'
-  MicroServiceDependency:
-    type: object
-    properties:
-      consumer:
-        $ref: '#/definitions/DependencyKey'
-      providers:
-        type: array
-        items:
-          $ref: '#/definitions/DependencyKey'
-  DependencyKey:
-    type: object
-    required:
-        - appId
-        - serviceName
-        - version
-    properties:
-      environment:
-        type: string
-        description: development|testing|acceptance|production
-      appId:
-        type: string
-        description: 应用app唯一标识。
-      serviceName:
-        type: string
-        description: 微服务名称，作为provider支持为*，表示依赖同一租户下的所有服务,当服务名称为*的时候，appId和version可以省略，consumer不支持*。
-      version:
-        type: string
-        description: 微服务版本，作为provider支持+，如1.0.1+[表示1.0.1以上的版本(包括1.0.1)]、固定版本和latest(当前最新版本)，作为consumer只能为固定版本。
-
-  GetProDependenciesResponse:
-    type: object
-    properties:
-      dependency:
-        type: array
-        items:
-          $ref: "#/definitions/ProDependency"
-  ProDependency:
-    type: object
-    properties:
-      Consumers:
-          $ref: "#/definitions/MicroService"
-  GetConDependenciesResponse:
-    type: object
-    properties:
-      dependency:
-        type: array
-        items:
-          $ref: "#/definitions/ConDependency"
-  ConDependency:
-    type: object
-    properties:
-      Providers:
-        $ref: "#/definitions/MicroService"
-  Tags:
-    type: object
-    properties:
-      tags:
-        $ref: "#/definitions/Properties"
-
-  Rules:
-    type: object
-    properties:
-      rules:
-        type: array
-        items:
-          $ref: "#/definitions/Rule"
-  Rule:
-    type: object
-    properties:
-      ruleId:
-        description:  自定义ruleId
-        type: string
-      ruleType:
-        description:  rule类型，WHITE或者BLACK
-        type: string
-      attribute:
-        description:  如果是tag_xxx开头，则按Tag过滤attribute属性，否则，则按"ServiceId", "AppId", "ServiceName", "Version", "Description", "Level", "Status"过滤
-        type: string
-      pattern:
-        description:  匹配规则，正则表达式，长度1到64
-        type: string
-      description:
-        description:  rule描述
-        type: string
-      timestamp:
-        description:  只有获取rule时返回使用，创建rule的时间
-        type: string
-      modTimestamp:
-        type: string
-        description: 更新时间
-  AddRules:
-    type: object
-    properties:
-      rules:
-        type: array
-        items:
-          $ref: "#/definitions/AddOrUpdateRule"
-  AddOrUpdateRule:
-    type: object
-    properties:
-      ruleType:
-        description:  rule类型，WHITE或者BLACK
-        type: string
-      attribute:
-        description:  如果是tag_xxx开头，则按Tag过滤attribute属性，否则，则按"ServiceId", "AppId", "ServiceName", "Version", "Description", "Level", "Status"过滤
-        type: string
-      pattern:
-        description:  匹配规则，正则表达式，长度1到64
-        type: string
-      description:
-        description:  rule描述
-        type: string
-  DataCenterInfo:
-    type: object
-    required:
-    - name
-    - region
-    - availableZone
-    properties:
-      name:
-        type: string
-        description: 区域名字
-      region:
-        type: string
-        description: 区域
-      availableZone:
-        type: string
-        description: 可获取区
-  ServicePath:
-    type: object
-    properties:
-      Path:
-        type: string
-        description: 路由地址
-      Property:
-          $ref: '#/definitions/Properties'
-  AddRuleResponse:
-    type: object
-    properties:
-      RuleIds:
-        description: 生成的ruleId集合
-        type: array
-        items:
+        errMessage:
+          description: 错误信息，成功为空，不成功，则为错误，在部分成功的场景使用
           type: string
-  HeartbeatSetRequest:
-    type: object
-    properties:
-      Instances:
-        type: array
-        items:
-          $ref: "#/definitions/HeartbeatSetElement"
-  HeartbeatSetElement:
-    type: object
-    properties:
-      serviceId:
-        description: 微服务id
-        type: string
-      instanceId:
-        description: 微服务实例id
-        type: string
-  InstancesHbRst:
-    type: object
-    properties:
-      instances:
-        type: array
-        items:
-          $ref: "#/definitions/InstanceHbRst"
-  InstanceHbRst:
-    type: object
-    properties:
-      serviceId:
-        description: 微服务id
-        type: string
-      instanceId:
-        description: 微服务实例id
-        type: string
-      errMessage:
-        description: 错误信息，成功为空，不成功，则为错误，在部分成功的场景使用
-        type: string
-
-  DelServicesRequest:
-    type: object
-    properties:
-      serviceIds:
-        type: array
-        items:
-          type: string
-      force:
-        description: 不传即默认为false。 强制删除，则与该服务相关的信息删除，非强制删除： 如果作为该被依赖（作为provider，提供服务,且不是只存在自依赖）或者存在实例，则不能删除,其它均删除。
-        type: string
-        
-  DelServicesResponse:
-    type: object
-    properties:
-      services:
-        type: array
-        items:
-          $ref: "#/definitions/DelServicesRspInfo"
-        
-  DelServicesRspInfo:
-    type: object
-    properties:
-      serviceId:
-        description: 微服务id
-        type: string
-      errMessage:
-        description: 错误信息，成功为空，不成功，则为错误，在部分成功的场景使用
-        type: string
-  ModifySchemasRequest:
-     type: object
-     properties:
-       schemas:
-         type: array
-         items:
-           $ref: "#/definitions/Schema"
-  Schema:
-     type: object
-     properties:
-       schemaId:
-         type: string
-       schema:
-         type: string
-       summary:
-         type: string
+    ModifySchemasRequest:
+       type: object
+       properties:
+         schemas:
+           type: array
+           items:
+             $ref: "#/definitions/Schema"
+    Schema:
+       type: object
+       properties:
+         schemaId:
+           type: string
+         schema:
+           type: string
+         summary:
+           type: string
+    AllSchemasRequest:
+       type: object
+       properties:
+         schemas:
+           type: array
+           items:
+             $ref: "#/definitions/Schema"
