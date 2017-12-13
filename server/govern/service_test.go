@@ -20,10 +20,10 @@ import (
 )
 
 var _ = Describe("'Govern' service", func() {
-	Describe("execute 'get all' operartion", func() {
+	Describe("execute 'get all' operation", func() {
 		Context("when get all services", func() {
 			It("should be passed", func() {
-				By("all optionis")
+				By("all options")
 				resp, err := governService.GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
 					Options: []string{"all"},
 				})
@@ -50,11 +50,19 @@ var _ = Describe("'Govern' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+
+				By("get instance count")
+				resp, err = governService.GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
+					Options: []string{"instances"},
+					CountOnly: true,
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 			})
 		})
 	})
 
-	Describe("execute 'get detail' operartion", func() {
+	Describe("execute 'get detail' operation", func() {
 		var (
 			serviceId string
 		)
@@ -129,11 +137,11 @@ var _ = Describe("'Govern' service", func() {
 		})
 	})
 
-	Describe("execute 'get apps' operartion", func() {
+	Describe("execute 'get apps' operation", func() {
 		Context("when request is invalid", func() {
 			It("should be failed", func() {
 				resp, err := governService.GetApplications(getContext(), &pb.GetAppsRequest{
-					Environment: "notexistenv",
+					Environment: "non-exist-env",
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))

@@ -150,6 +150,14 @@ func (governService *GovernServiceControllerV4) GetAllServicesInfo(w http.Respon
 	request.Options = strings.Split(optsStr, ",")
 	request.AppId = r.URL.Query().Get("appId")
 	request.ServiceName = r.URL.Query().Get("serviceName")
+	countOnly := r.URL.Query().Get("countOnly")
+	if countOnly != "0" && countOnly != "1" && strings.TrimSpace(countOnly) != "" {
+		controller.WriteError(w, scerr.ErrInvalidParams, "parameter countOnly must be 1 or 0")
+		return
+	}
+	if countOnly == "1" {
+		request.CountOnly = true
+	}
 	resp, _ := GovernServiceAPI.GetServicesInfo(ctx, request)
 
 	respInternal := resp.Response

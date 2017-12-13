@@ -71,9 +71,19 @@ func (s *MicroServiceService) GetSchemaInfo(ctx context.Context, in *pb.GetSchem
 			Response: pb.CreateResponse(scerr.ErrSchemaNotExists, "Do not have this schema info."),
 		}, nil
 	}
+
+	schemaSummary, err := getSchemaSummary(ctx, domainProject, in.ServiceId, in.SchemaId)
+	if err != nil {
+		util.Logger().Errorf(err, "get schema failed, serviceId %s, schemaId %s: get schema summary failed.", in.ServiceId, in.SchemaId)
+		return &pb.GetSchemaResponse{
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+
 	return &pb.GetSchemaResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Get schema info successfully."),
 		Schema:   util.BytesToStringWithNoCopy(resp.Kvs[0].Value),
+		SchemaSummary: schemaSummary,
 	}, nil
 }
 
@@ -109,13 +119,13 @@ func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAl
 		}, nil
 	}
 
-	schemas := []*pb.Schema{}
+
 	schemasList := service.Schemas
 	if schemasList == nil || len(schemasList) == 0 {
 		util.Logger().Infof("service %s schemaId set is empty.", in.ServiceId)
 		return &pb.GetAllSchemaResponse{
 			Response: pb.CreateResponse(pb.Response_SUCCESS, "Do not have this schema info."),
-			Schema:   schemas,
+			Schema:   []*pb.Schema{},
 		}, nil
 	}
 
@@ -142,6 +152,7 @@ func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAl
 		}
 	}
 
+	schemas := make([]*pb.Schema, 0, len(schemasList))
 	for _, schemaId := range schemasList {
 		tempSchema := &pb.Schema{}
 		tempSchema.SchemaId = schemaId

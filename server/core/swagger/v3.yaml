@@ -569,7 +569,10 @@
           - schema
         responses:
           200:
-            description: 查询成功
+            description: 查询成功，如果summary存在，则header里面的X-Schema-Summary的value为该schema对应的摘要
+            headers:
+              X-Schema-Summary:
+                type: string
             schema:
               $ref: '#/definitions/CreateSchema'
           400:
@@ -916,7 +919,10 @@
           - microservices
         responses:
           200:
-            description: 查询成功
+            description: 查询成功，查询shema存不存时，如果summary存在，则在header里面返回，key为X-Schema-Summary
+            headers:
+              X-Schema-Summary:
+                type: string
             schema:
               $ref: '#/definitions/GetResourceResponse'
           400:

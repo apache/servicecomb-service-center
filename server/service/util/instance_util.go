@@ -88,6 +88,20 @@ func GetAllInstancesOfOneService(ctx context.Context, domainProject string, serv
 	return instances, nil
 }
 
+func GetInstanceCountOfOneService(ctx context.Context, domainProject string, serviceId string) (int64, error){
+	key := apt.GenerateInstanceKey(domainProject, serviceId, "")
+	opts := append(FromContext(ctx),
+		    registry.WithStrKey(key),
+			registry.WithPrefix(),
+			registry.WithCountOnly())
+	resp, err := store.Store().Instance().Search(ctx, opts...)
+	if err != nil {
+		util.Logger().Errorf(err, "Get instance count of service %s from etcd failed.", serviceId)
+		return 0, err
+	}
+	return resp.Count, nil
+}
+
 func InstanceExist(ctx context.Context, domainProject string, serviceId string, instanceId string) (bool, error) {
 	opts := append(FromContext(ctx),
 		registry.WithStrKey(apt.GenerateInstanceKey(domainProject, serviceId, instanceId)),
