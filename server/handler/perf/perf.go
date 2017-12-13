@@ -17,6 +17,7 @@ import (
 	"github.com/ServiceComb/service-center/pkg/chain"
 	"github.com/ServiceComb/service-center/pkg/rest"
 	"github.com/ServiceComb/service-center/pkg/util"
+	mr "github.com/ServiceComb/service-center/server/rest"
 	"net/http"
 	"time"
 )
@@ -32,7 +33,11 @@ func (l *LatencyStat) Handle(i *chain.Invocation) {
 		cb(ret)
 
 		r := i.Context().Value(rest.CTX_REQUEST).(*http.Request)
-		util.LogNilOrWarnf(i.Context().Value("x-start-timestamp").(time.Time), "%s %s", r.Method, r.RequestURI)
+		start := i.Context().Value("x-start-timestamp").(time.Time)
+
+		util.LogNilOrWarnf(start, "%s %s", r.Method, r.RequestURI)
+
+		mr.ReportRequestCompleted(i, start)
 	})
 }
 

@@ -3,16 +3,12 @@ package rest
 import (
 	roa "github.com/ServiceComb/service-center/pkg/rest"
 	"github.com/ServiceComb/service-center/server/interceptor"
-	"github.com/prometheus/client_golang/prometheus"
 	"net/http"
 )
 
 func init() {
 	// api
 	http.Handle("/", &ServerHandler{})
-
-	// prometheus metrics
-	http.Handle("/metrics", prometheus.Handler())
 }
 
 type ServerHandler struct {

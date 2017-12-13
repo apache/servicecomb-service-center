@@ -14,6 +14,8 @@
 package rest
 
 import (
+	"github.com/ServiceComb/service-center/pkg/chain"
+	"github.com/ServiceComb/service-center/pkg/rest"
 	"github.com/ServiceComb/service-center/server/core"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
@@ -43,24 +45,29 @@ var (
 		prometheus.SummaryOpts{
 			Namespace: "service_center",
 			Subsystem: "http",
-			Name:      "request_durations_seconds",
+			Name:      "request_durations_microseconds",
 			Help:      "HTTP request latency summary of ROA handler",
 		}, []string{"method", "instance", "api"})
 )
 
 func init() {
 	prometheus.MustRegister(incomingRequests, successfulRequests, reqDurations)
+
+	http.Handle("/metrics", prometheus.Handler())
 }
 
-func ReportRequestCompleted(m string, h http.Header, start time.Time) {
+func ReportRequestCompleted(i *chain.Invocation, start time.Time) {
 	id := core.Instance.InstanceId
-	elapsed := time.Since(start).Seconds()
-	reqDurations.WithLabelValues(m, id).Observe(elapsed)
+	elapsed := float64(time.Since(start).Nanoseconds()) / 1000
+	r := i.Context().Value(rest.CTX_REQUEST).(*http.Request)
+	route := i.Context().Value(rest.CTX_MATCH_PATTERN).(string)
 
-	incomingRequests.WithLabelValues(m, id).Inc()
+	reqDurations.WithLabelValues(r.Method, id, route).Observe(elapsed)
 
-	if success, code := codeOf(h); success {
-		successfulRequests.WithLabelValues(m, code, id).Inc()
+	incomingRequests.WithLabelValues(r.Method, id, route).Inc()
+
+	if success, code := codeOf(r.Header); success {
+		successfulRequests.WithLabelValues(r.Method, code, id, route).Inc()
 	}
 }
 

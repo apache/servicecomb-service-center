@@ -33,10 +33,10 @@ type GovernServiceControllerV4 struct {
 // URLPatterns 路由
 func (governService *GovernServiceControllerV4) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTP_METHOD_GET, "/v4/:domain/govern/microservices/:serviceId", governService.GetServiceDetail},
-		{rest.HTTP_METHOD_GET, "/v4/:domain/govern/relations", governService.GetGraph},
-		{rest.HTTP_METHOD_GET, "/v4/:domain/govern/microservices", governService.GetAllServicesInfo},
-		{rest.HTTP_METHOD_GET, "/v4/:domain/govern/apps", governService.GetAllApplications},
+		{rest.HTTP_METHOD_GET, "/v4/:project/govern/microservices/:serviceId", governService.GetServiceDetail},
+		{rest.HTTP_METHOD_GET, "/v4/:project/govern/relations", governService.GetGraph},
+		{rest.HTTP_METHOD_GET, "/v4/:project/govern/microservices", governService.GetAllServicesInfo},
+		{rest.HTTP_METHOD_GET, "/v4/:project/govern/apps", governService.GetAllApplications},
 	}
 }
 
