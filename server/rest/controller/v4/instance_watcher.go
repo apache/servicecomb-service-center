@@ -28,8 +28,8 @@ type WatchService struct {
 
 func (this *WatchService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/microservices/:serviceId/watcher", this.Watch},
-		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/microservices/:serviceId/listwatcher", this.ListAndWatch},
+		{rest.HTTP_METHOD_GET, "/v4/:project/registry/microservices/:serviceId/watcher", this.Watch},
+		{rest.HTTP_METHOD_GET, "/v4/:project/registry/microservices/:serviceId/listwatcher", this.ListAndWatch},
 	}
 }
 
