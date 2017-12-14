@@ -37,7 +37,9 @@ func (l *LatencyStat) Handle(i *chain.Invocation) {
 
 		util.LogNilOrWarnf(start, "%s %s", r.Method, r.RequestURI)
 
-		mr.ReportRequestCompleted(i, start)
+		if r.Method != "WEBSOCKET" {
+			mr.ReportRequestCompleted(i, start)
+		}
 	})
 }
 
