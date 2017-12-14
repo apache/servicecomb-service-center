@@ -194,7 +194,7 @@ func (i *Indexer) buildIndex() {
 					return
 				}
 				key := util.BytesToStringWithNoCopy(evt.KV.Key)
-				prefix := key[:strings.LastIndex(key, "/")+1]
+				prefix := key[:strings.LastIndex(key[:len(key)-1], "/")+1]
 
 				i.prefixLock.Lock()
 				switch evt.Action {
