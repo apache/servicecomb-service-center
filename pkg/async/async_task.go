@@ -59,7 +59,6 @@ func (s *scheduler) do() {
 		select {
 		case task, ok := <-s.queue.Chan():
 			if !ok {
-				util.Logger().Warnf(nil, "scheduler is closed, key is %s", s.latestTask.Key())
 				return
 			}
 			at := task.(AsyncTask)

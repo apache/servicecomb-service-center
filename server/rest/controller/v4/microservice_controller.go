@@ -85,7 +85,6 @@ func (this *MicroServiceService) Update(w http.ResponseWriter, r *http.Request) 
 func (this *MicroServiceService) Unregister(w http.ResponseWriter, r *http.Request) {
 	force := r.URL.Query().Get("force")
 	serviceId := r.URL.Query().Get(":serviceId")
-	util.Logger().Warnf(nil, "Service %s unregists, force is %s.", serviceId, force)
 	if force != "0" && force != "1" && strings.TrimSpace(force) != "" {
 		controller.WriteError(w, scerr.ErrInvalidParams, "parameter force must be 1 or 0")
 		return

@@ -14,6 +14,7 @@
 package rest
 
 import (
+	"fmt"
 	"github.com/ServiceComb/service-center/pkg/chain"
 	"github.com/ServiceComb/service-center/pkg/rest"
 	"github.com/ServiceComb/service-center/server/core"
@@ -57,7 +58,7 @@ func init() {
 }
 
 func ReportRequestCompleted(i *chain.Invocation, start time.Time) {
-	id := core.Instance.InstanceId
+	id := fmt.Sprint(core.Instance.Endpoints)
 	elapsed := float64(time.Since(start).Nanoseconds()) / 1000
 	r := i.Context().Value(rest.CTX_REQUEST).(*http.Request)
 	route := i.Context().Value(rest.CTX_MATCH_PATTERN).(string)

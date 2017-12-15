@@ -88,12 +88,12 @@ func GetAllInstancesOfOneService(ctx context.Context, domainProject string, serv
 	return instances, nil
 }
 
-func GetInstanceCountOfOneService(ctx context.Context, domainProject string, serviceId string) (int64, error){
+func GetInstanceCountOfOneService(ctx context.Context, domainProject string, serviceId string) (int64, error) {
 	key := apt.GenerateInstanceKey(domainProject, serviceId, "")
 	opts := append(FromContext(ctx),
-		    registry.WithStrKey(key),
-			registry.WithPrefix(),
-			registry.WithCountOnly())
+		registry.WithStrKey(key),
+		registry.WithPrefix(),
+		registry.WithCountOnly())
 	resp, err := store.Store().Instance().Search(ctx, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "Get instance count of service %s from etcd failed.", serviceId)
@@ -178,7 +178,7 @@ func DeleteServiceAllInstances(ctx context.Context, serviceId string) error {
 		return err
 	}
 	if resp.Count <= 0 {
-		util.Logger().Warnf(nil, "service %s has NO instance to revoke.", serviceId)
+		util.Logger().Warnf(nil, "service %s has no deployment of instance.", serviceId)
 		return nil
 	}
 	for _, v := range resp.Kvs {
