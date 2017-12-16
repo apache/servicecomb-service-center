@@ -15,13 +15,13 @@ package rest
 
 import (
 	"fmt"
-	"github.com/ServiceComb/service-center/pkg/chain"
 	"github.com/ServiceComb/service-center/pkg/rest"
 	"github.com/ServiceComb/service-center/server/core"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -32,7 +32,7 @@ var (
 			Subsystem: "http",
 			Name:      "request_total",
 			Help:      "Counter of requests received into ROA handler",
-		}, []string{"method", "instance", "api"})
+		}, []string{"method", "code", "instance", "api"})
 
 	successfulRequests = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
@@ -44,10 +44,11 @@ var (
 
 	reqDurations = prometheus.NewSummaryVec(
 		prometheus.SummaryOpts{
-			Namespace: "service_center",
-			Subsystem: "http",
-			Name:      "request_durations_microseconds",
-			Help:      "HTTP request latency summary of ROA handler",
+			Namespace:  "service_center",
+			Subsystem:  "http",
+			Name:       "request_durations_microseconds",
+			Help:       "HTTP request latency summary of ROA handler",
+			Objectives: prometheus.DefObjectives,
 		}, []string{"method", "instance", "api"})
 )
 
@@ -57,18 +58,21 @@ func init() {
 	http.Handle("/metrics", prometheus.Handler())
 }
 
-func ReportRequestCompleted(i *chain.Invocation, start time.Time) {
-	id := fmt.Sprint(core.Instance.Endpoints)
+func ReportRequestCompleted(w http.ResponseWriter, r *http.Request, start time.Time) {
+	instance := fmt.Sprint(core.Instance.Endpoints)
 	elapsed := float64(time.Since(start).Nanoseconds()) / 1000
-	r := i.Context().Value(rest.CTX_REQUEST).(*http.Request)
-	route := i.Context().Value(rest.CTX_MATCH_PATTERN).(string)
+	route := r.Context().Value(rest.CTX_MATCH_PATTERN).(string)
 
-	reqDurations.WithLabelValues(r.Method, id, route).Observe(elapsed)
+	if strings.Index(r.Method, "WATCH") != 0 {
+		reqDurations.WithLabelValues(r.Method, instance, route).Observe(elapsed)
+	}
 
-	incomingRequests.WithLabelValues(r.Method, id, route).Inc()
+	success, code := codeOf(w.Header())
 
-	if success, code := codeOf(r.Header); success {
-		successfulRequests.WithLabelValues(r.Method, code, id, route).Inc()
+	incomingRequests.WithLabelValues(r.Method, code, instance, route).Inc()
+
+	if success {
+		successfulRequests.WithLabelValues(r.Method, code, instance, route).Inc()
 	}
 }
 

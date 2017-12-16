@@ -47,7 +47,6 @@ func upgrade(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error) {
 		util.Logger().Error("upgrade failed.", err)
 		// controller.WriteError(w, scerr.ErrInternal, "Upgrade error")
 	}
-	r.Method = "WEBSOCKET"
 	return conn, err
 }
 
@@ -57,6 +56,8 @@ func (this *WatchService) Watch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer conn.Close()
+
+	r.Method = "WATCH"
 	core.InstanceAPI.WebSocketWatch(r.Context(), &pb.WatchInstanceRequest{
 		SelfServiceId: r.URL.Query().Get(":serviceId"),
 	}, conn)
@@ -68,6 +69,8 @@ func (this *WatchService) ListAndWatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer conn.Close()
+
+	r.Method = "WATCHLIST"
 	core.InstanceAPI.WebSocketListAndWatch(r.Context(), &pb.WatchInstanceRequest{
 		SelfServiceId: r.URL.Query().Get(":serviceId"),
 	}, conn)

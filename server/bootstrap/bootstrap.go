@@ -45,7 +45,6 @@ import (
 	"github.com/ServiceComb/service-center/server/handler/auth"
 	"github.com/ServiceComb/service-center/server/handler/cache"
 	"github.com/ServiceComb/service-center/server/handler/context"
-	"github.com/ServiceComb/service-center/server/handler/perf"
 	"github.com/ServiceComb/service-center/server/interceptor"
 	"github.com/ServiceComb/service-center/server/interceptor/access"
 	"github.com/ServiceComb/service-center/server/interceptor/cors"
@@ -59,7 +58,6 @@ func init() {
 	interceptor.RegisterInterceptFunc(ratelimiter.Intercept)
 	interceptor.RegisterInterceptFunc(cors.Intercept)
 
-	perf.RegisterHandlers()
 	auth.RegisterHandlers()
 	context.RegisterHandlers()
 	cache.RegisterHandlers()
