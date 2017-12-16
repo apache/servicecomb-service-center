@@ -1,6 +1,10 @@
 FROM {{.BASE_IMAGE}}:{{.BASE_IMAGE_VERSION}}
 
-COPY ./service-center ./start.sh /root/
+RUN mkdir -p /etc/service-center
 
-ENTRYPOINT ["/root/start.sh"]
+COPY ./service-center/conf /etc/service-center/conf
+COPY ./service-center/service-center /usr/bin/service-center
 
+WORKDIR /etc/service-center
+
+ENTRYPOINT ["service-center"]

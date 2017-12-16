@@ -469,8 +469,8 @@ func setResponseAndCallback(pResp *registry.PluginResponse, kvs []*mvccpb.KeyVal
 func getEmbedInstance() mgr.PluginInstance {
 	util.Logger().Warnf(nil, "starting service center in embed mode")
 
-	hostName := beego.AppConfig.DefaultString("manager_name", util.GetLocalHostname())
-	addrs := beego.AppConfig.String("manager_addr")
+	hostName := beego.AppConfig.DefaultString("manager_name", "sc-0")
+	addrs := beego.AppConfig.DefaultString("manager_addr", "http://127.0.0.1:2380")
 
 	inst := &EtcdEmbed{
 		err:   make(chan error, 1),

@@ -16,7 +16,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "hideControls": false,
-  "id": 2,
+  "id": 3,
   "links": [
     {
       "icon": "external link",
@@ -471,7 +471,7 @@
           "dashes": false,
           "datasource": null,
           "fill": 1,
-          "height": "250px",
+          "height": "",
           "id": 2,
           "legend": {
             "alignAsTable": true,
@@ -551,7 +551,7 @@
           "dashes": false,
           "datasource": null,
           "fill": 1,
-          "height": "250px",
+          "height": "",
           "id": 9,
           "legend": {
             "alignAsTable": true,
@@ -578,8 +578,9 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "process_cpu_seconds_total{job=\"service-center\"}",
+              "expr": "irate(process_cpu_seconds_total{job=\"service-center\"}[1m])",
               "format": "time_series",
+              "instant": false,
               "intervalFactor": 2,
               "refId": "A"
             }
@@ -627,7 +628,7 @@
           "dashes": false,
           "datasource": null,
           "fill": 1,
-          "height": "250px",
+          "height": "",
           "id": 8,
           "legend": {
             "alignAsTable": true,
@@ -654,9 +655,9 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "avg(max_over_time(go_gc_duration_seconds{job=\"service-center\"}[5m]))",
+              "expr": "max(max_over_time(go_gc_duration_seconds{job=\"service-center\"}[1m]))",
               "format": "time_series",
-              "instant": true,
+              "instant": false,
               "intervalFactor": 2,
               "legendFormat": "gc",
               "refId": "A"
@@ -665,7 +666,7 @@
           "thresholds": [],
           "timeFrom": null,
           "timeShift": null,
-          "title": "GC latency",
+          "title": "GC Latency",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -852,7 +853,7 @@
           "thresholds": [],
           "timeFrom": null,
           "timeShift": null,
-          "title": "File descriptions",
+          "title": "File Descriptions",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -1007,5 +1008,5 @@
   },
   "timezone": "",
   "title": "ServiceCenter",
-  "version": 22
+  "version": 8
 }
