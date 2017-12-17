@@ -18,7 +18,6 @@ package util
 
 import (
 	"net"
-	"os"
 	"unsafe"
 )
 
