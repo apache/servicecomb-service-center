@@ -65,7 +65,7 @@ func init() {
 	// version模糊规则: 1.0, 1.0+, 1.0-2.0, latest
 	versionFuzzyRegex, _ := regexp.Compile(`^[0-9]*$|^[0-9]+(\.[0-9]+)*\+{0,1}$|^[0-9]+(\.[0-9]+)*-[0-9]+(\.[0-9]+)*$|^latest$`)
 	pathRegex, _ := regexp.Compile(`^[A-Za-z0-9.,?'\\/+&amp;%$#=~_\-@{}]*$`)
-	descriptionRegex, _ := regexp.Compile(`^[\p{Han}\w\s。.:*,\-：”“]*$`)
+	descriptionRegex, _ := regexp.Compile(`^[\p{Han}\w\s。.:*,\-：”“"]*$`)
 	levelRegex, _ := regexp.Compile(`^(FRONT|MIDDLE|BACK)$`)
 	statusRegex, _ := regexp.Compile("^(" + pb.MS_UP + "|" + pb.MS_DOWN + ")*$")
 	serviceIdRegex, _ := regexp.Compile(`^.*$`)

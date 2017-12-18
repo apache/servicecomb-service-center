@@ -87,6 +87,8 @@ const (
 
 	ErrEndpointAlreadyExists int32 = 400025
 
+	ErrSchemaIdNotExists    int32 = 400026
+
 	ErrNotEnoughQuota   int32 = 400100
 	ErrUnavailableQuota int32 = 500101
 )

@@ -17,7 +17,6 @@
 package service
 
 import (
-	"errors"
 	"fmt"
 	"github.com/ServiceComb/service-center/pkg/util"
 	apt "github.com/ServiceComb/service-center/server/core"
@@ -504,17 +503,16 @@ func (s *MicroServiceService) ModifySchema(ctx context.Context, request *pb.Modi
 		Summary:  request.Summary,
 		Schema:   request.Schema,
 	}
-	err, isInnerErr := s.modifySchema(ctx, serviceId, &schema)
+	err := s.modifySchema(ctx, serviceId, &schema)
 	if err != nil {
 		util.Logger().Errorf(err, "modify schema failed, serviceId %s, schemaId %s", serviceId, schemaId)
-		if isInnerErr {
-			return &pb.ModifySchemaResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, "Modify schema info failed, sc internal err"),
-			}, err
+		resp := &pb.ModifySchemaResponse{
+			Response: pb.CreateResponse(err.Code, err.Detail),
 		}
-		return &pb.ModifySchemaResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
-		}, nil
+		if err.StatusCode() == http.StatusInternalServerError {
+			return resp, err
+		}
+		return resp, nil
 	}
 
 	util.Logger().Infof("modify schema successfully: serviceId %s, schemaId %s.", serviceId, schemaId)
@@ -551,18 +549,18 @@ func (s *MicroServiceService) canModifySchema(ctx context.Context, domainProject
 	return nil
 }
 
-func (s *MicroServiceService) modifySchema(ctx context.Context, serviceId string, schema *pb.Schema) (error, bool) {
+func (s *MicroServiceService) modifySchema(ctx context.Context, serviceId string, schema *pb.Schema) *scerr.Error {
 	domainProject := util.ParseDomainProject(ctx)
 	schemaId := schema.SchemaId
 
 	service, err := serviceUtil.GetService(ctx, domainProject, serviceId)
 	if err != nil {
 		util.Logger().Errorf(err, "modify schema failed, serviceId %s, schemaId %s: get service failed.", serviceId, schemaId)
-		return err, true
+		return scerr.NewError(scerr.ErrInternal, "get service failed")
 	}
 	if service == nil {
 		util.Logger().Errorf(nil, "modify schema failed, serviceId %s, schemaId %s: service not exist", serviceId, schemaId)
-		return errors.New("service non-exist, can't modify schema"), false
+		return scerr.NewError(scerr.ErrServiceNotExists, "service non-exist")
 	}
 
 	util.Logger().Infof("start to modify schema, serviceId  %s, schemaId %s", service.ServiceId, schemaId)
@@ -571,30 +569,30 @@ func (s *MicroServiceService) modifySchema(ctx context.Context, serviceId string
 
 	if service.Environment == pb.ENV_PROD {
 		if len(service.Schemas) != 0 && !isExist {
-			return errors.New(fmt.Sprintf("schemaId non-exist %s, can't be added, environment is production", schemaId)), false
+			return scerr.NewError(scerr.ErrSchemaIdNotExists, "schemaId non-exist， can't be added, environment is production")
 		}
 
 		key := apt.GenerateServiceSchemaKey(domainProject, serviceId, schemaId)
 		respSchema, err := store.Store().Schema().Search(ctx, registry.WithStrKey(key), registry.WithCountOnly())
 		if err != nil {
 			util.Logger().Errorf(err, "modify schema failed, get schema summary failed, %s %s", serviceId, schemaId)
-			return err, true
+			return scerr.NewError(scerr.ErrInternal, "get schema summary failed")
 		}
 
 		if respSchema.Count != 0 {
 			if len(schema.Summary) == 0 {
 				util.Logger().Errorf(err, "prod mode, schema more exist, can not change, %s %s", serviceId, schemaId)
-				return errors.New("schema more exist, can not change, environment is production"), false
+				return scerr.NewError(scerr.ErrModifySchemaNotAllow, "schema more exist, can not change, environment is production")
 			}
 
 			exist, err := isExistSchemaSummary(ctx, domainProject, serviceId, schemaId)
 			if err != nil {
 				util.Logger().Errorf(err, "check schema summary is exist failed, serviceId %s, schemaId %s", serviceId, schemaId)
-				return err, false
+				return scerr.NewError(scerr.ErrInternal, "check schema summary existence failed")
 			}
 			if exist {
 				util.Logger().Errorf(err, "prod mode, schema more exist, can not change, %s %s", serviceId, schemaId)
-				return errors.New("schema more exist, can not change, environment is production"), false
+				return scerr.NewError(scerr.ErrModifySchemaNotAllow, "schema more exist, can not change, environment is production")
 			}
 		}
 
@@ -603,7 +601,7 @@ func (s *MicroServiceService) modifySchema(ctx context.Context, serviceId string
 			opt, err := serviceUtil.UpdateService(domainProject, serviceId, service)
 			if err != nil {
 				util.Logger().Errorf(err, "modify schema failed, update service failed , serviceId %s, schemaId %s", serviceId, schemaId)
-				return err, true
+				return scerr.NewError(scerr.ErrInternal, "update service failed")
 			}
 			pluginOps = append(pluginOps, opt)
 		}
@@ -613,7 +611,7 @@ func (s *MicroServiceService) modifySchema(ctx context.Context, serviceId string
 			opt, err := serviceUtil.UpdateService(domainProject, serviceId, service)
 			if err != nil {
 				util.Logger().Errorf(err, "modify schema failed, update service failed , serviceId %s, schemaId %s", serviceId, schemaId)
-				return err, true
+				return scerr.NewError(scerr.ErrInternal, "update service failed")
 			}
 			pluginOps = append(pluginOps, opt)
 		}
@@ -625,9 +623,9 @@ func (s *MicroServiceService) modifySchema(ctx context.Context, serviceId string
 	_, err = backend.Registry().Txn(ctx, pluginOps)
 	if err != nil {
 		util.Logger().Errorf(err, "commit update schema failed, serviceId %s, schemaId %s", serviceId, schemaId)
-		return err, true
+		return scerr.NewError(scerr.ErrInternal, "commit update schema failed")
 	}
-	return nil, false
+	return nil
 }
 
 func isExistSchemaSummary(ctx context.Context, domainProject, serviceId, schemaId string) (bool, error) {
