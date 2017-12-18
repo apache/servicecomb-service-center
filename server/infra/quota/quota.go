@@ -32,7 +32,7 @@ type QuotaReporter interface {
 }
 
 const (
-	RuleQuotaType                 ResourceType = iota
+	RuleQuotaType ResourceType = iota
 	SchemaQuotaType
 	TagQuotaType
 	MicroServiceQuotaType

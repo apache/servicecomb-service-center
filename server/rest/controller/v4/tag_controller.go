@@ -35,10 +35,10 @@ type TagService struct {
 
 func (this *TagService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTP_METHOD_POST, "/v4/:domain/registry/microservices/:serviceId/tags", this.AddTags},
-		{rest.HTTP_METHOD_PUT, "/v4/:domain/registry/microservices/:serviceId/tags/:key", this.UpdateTag},
-		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/microservices/:serviceId/tags", this.GetTags},
-		{rest.HTTP_METHOD_DELETE, "/v4/:domain/registry/microservices/:serviceId/tags/:key", this.DeleteTags},
+		{rest.HTTP_METHOD_POST, "/v4/:project/registry/microservices/:serviceId/tags", this.AddTags},
+		{rest.HTTP_METHOD_PUT, "/v4/:project/registry/microservices/:serviceId/tags/:key", this.UpdateTag},
+		{rest.HTTP_METHOD_GET, "/v4/:project/registry/microservices/:serviceId/tags", this.GetTags},
+		{rest.HTTP_METHOD_DELETE, "/v4/:project/registry/microservices/:serviceId/tags/:key", this.DeleteTags},
 	}
 }
 

@@ -84,8 +84,8 @@ func (s *MicroServiceService) GetSchemaInfo(ctx context.Context, in *pb.GetSchem
 	}
 
 	return &pb.GetSchemaResponse{
-		Response: pb.CreateResponse(pb.Response_SUCCESS, "Get schema info successfully."),
-		Schema:   util.BytesToStringWithNoCopy(resp.Kvs[0].Value),
+		Response:      pb.CreateResponse(pb.Response_SUCCESS, "Get schema info successfully."),
+		Schema:        util.BytesToStringWithNoCopy(resp.Kvs[0].Value),
 		SchemaSummary: schemaSummary,
 	}, nil
 }
@@ -121,7 +121,6 @@ func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAl
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
-
 
 	schemasList := service.Schemas
 	if schemasList == nil || len(schemasList) == 0 {

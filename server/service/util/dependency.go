@@ -60,11 +60,11 @@ func GetConsumersInCache(ctx context.Context, domainProject string, providerId s
 	}
 
 	if len(consumerIds) == 0 {
-		util.Logger().Warnf(nil, "Get consumer for publish from database is empty. %s, get from cache", providerId)
 		consumerIds, found := consumerCache.Get(providerId)
 		if found && len(consumerIds.([]string)) > 0 {
 			return consumerIds.([]string), nil
 		}
+		util.Logger().Warnf(nil, "Can not find any consumer from local cache and backend. provider is %s", providerId)
 		return nil, nil
 	}
 
@@ -81,11 +81,11 @@ func GetProvidersInCache(ctx context.Context, domainProject string, consumerId s
 	}
 
 	if len(providerIds) == 0 {
-		util.Logger().Warnf(nil, "Get consumer for publish from database is empty.%s , get from cache", consumerId)
 		providerIds, found := providerCache.Get(consumerId)
 		if found && len(providerIds.([]string)) > 0 {
 			return providerIds.([]string), nil
 		}
+		util.Logger().Warnf(nil, "Can not find any provider from local cache and backend. consumer is %s", consumerId)
 		return nil, nil
 	}
 
@@ -105,14 +105,12 @@ func RefreshDependencyCache(ctx context.Context, domainProject string, serviceId
 		return err
 	}
 	MsCache().Set(serviceId, service, 5*time.Minute)
-	if len(consumerIds) == 0 {
-		util.Logger().Infof("refresh dependency cache: this services %s has no consumer dependency.", serviceId)
-	} else {
+	if len(consumerIds) > 0 {
+		util.Logger().Infof("refresh %s dependency cache: cached %d consumerId(s) for 5min.", serviceId, len(consumerIds))
 		consumerCache.Set(serviceId, consumerIds, 5*time.Minute)
 	}
-	if len(providerIds) == 0 {
-		util.Logger().Infof("refresh dependency cache: this services %s has no consumer dependency.", serviceId)
-	} else {
+	if len(providerIds) > 0 {
+		util.Logger().Infof("refresh %s dependency cache: cached %s providerId(s) for 5min.", serviceId, len(providerIds))
 		providerCache.Set(serviceId, providerIds, 5*time.Minute)
 	}
 	return nil
@@ -245,7 +243,7 @@ func ProviderDependencyRuleExist(ctx context.Context, domainProject string, prov
 	return false, nil
 }
 
-func AddServiceVersionRule(ctx context.Context, domainProject string, provider *pb.MicroServiceKey, consumer *pb.MicroServiceKey, consumerId string) error {
+func AddServiceVersionRule(ctx context.Context, domainProject string, provider *pb.MicroServiceKey, consumer *pb.MicroServiceKey) error {
 	//创建依赖一致
 	exist, err := ProviderDependencyRuleExist(ctx, domainProject, provider, consumer)
 	if exist || err != nil {
@@ -328,8 +326,6 @@ func TransferToMicroServiceDependency(ctx context.Context, key string) (*pb.Micr
 			util.Logger().Errorf(nil, "Unmarshal res failed.")
 			return nil, err
 		}
-	} else {
-		util.Logger().Infof("for key %s, no mircroServiceDependency stored", key)
 	}
 	return microServiceDependency, nil
 }

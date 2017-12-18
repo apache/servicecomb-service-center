@@ -548,7 +548,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 
 	domainProject := util.ParseDomainProject(ctx)
 
-	findFlag := util.StringJoin([]string{in.ConsumerServiceId, in.AppId, in.ServiceName, in.VersionRule}, "/")
+	findFlag := fmt.Sprintf("consumer %s --> provider %s/%s/%s", in.ConsumerServiceId, in.AppId, in.ServiceName, in.VersionRule)
 	service, err := serviceUtil.GetService(ctx, domainProject, in.ConsumerServiceId)
 	if err != nil {
 		util.Logger().Errorf(err, "find instance failed, %s: get consumer failed.", findFlag)
@@ -618,7 +618,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		Version:     in.VersionRule,
 	}
 
-	err = serviceUtil.AddServiceVersionRule(ctx, domainProject, provider, consumer, in.ConsumerServiceId)
+	err = serviceUtil.AddServiceVersionRule(ctx, domainProject, provider, consumer)
 
 	if err != nil {
 		util.Logger().Errorf(err, "find instance failed, %s: add service version rule failed.", findFlag)

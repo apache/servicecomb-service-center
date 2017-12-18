@@ -56,7 +56,7 @@ var _ = Describe("'Govern' service", func() {
 
 				By("get instance count")
 				resp, err = governService.GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
-					Options: []string{"instances"},
+					Options:   []string{"instances"},
 					CountOnly: true,
 				})
 				Expect(err).To(BeNil())

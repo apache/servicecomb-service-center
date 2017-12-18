@@ -18,16 +18,10 @@ package util
 
 import (
 	"net"
-	"os"
 	"unsafe"
 )
 
 const INT_SIZE int = int(unsafe.Sizeof(0))
-
-func GetLocalHostname() string {
-	hostName, _ := os.Hostname()
-	return hostName
-}
 
 func GetLocalIP() string {
 	addrs, err := net.InterfaceAddrs()

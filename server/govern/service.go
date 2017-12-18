@@ -306,7 +306,7 @@ func getServiceDetailUtil(ctx context.Context, serviceDetailOpt ServiceDetailOpt
 					return nil, err
 				}
 				serviceDetail.Statics.Instances = &pb.StInstance{
-						Count: instanceCount}
+					Count: instanceCount}
 				continue
 			}
 			instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, domainProject, serviceId)

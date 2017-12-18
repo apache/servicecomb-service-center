@@ -1,6 +1,5 @@
 FROM {{.BASE_IMAGE}}:{{.BASE_IMAGE_VERSION}}
 
-COPY ./service-center ./start.sh /root/
+ADD ./service-center /opt/service-center
 
-ENTRYPOINT ["/root/start.sh"]
-
+ENTRYPOINT ["/opt/service-center/start.sh"]

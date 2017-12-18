@@ -20,9 +20,9 @@ import (
 	"flag"
 	"fmt"
 	"github.com/ServiceComb/service-center/frontend/schema"
+	"github.com/astaxie/beego"
 	"log"
 	"net/http"
-	"github.com/astaxie/beego"
 	//"strconv"
 )
 
@@ -49,7 +49,6 @@ func main() {
 	http.Handle("/testSchema/", schemaHandler)
 
 	log.Printf("Running on port %d\n", *port)
-
 
 	addr := fmt.Sprintf("%s:%d", frontendIp, *port)
 	// this call blocks -- the progam runs here forever

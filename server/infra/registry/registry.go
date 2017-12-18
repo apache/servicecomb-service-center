@@ -29,7 +29,7 @@ import (
 var defaultRegistryConfig Config
 
 func init() {
-	defaultRegistryConfig.ClusterAddresses = beego.AppConfig.String("manager_cluster")
+	defaultRegistryConfig.ClusterAddresses = beego.AppConfig.DefaultString("manager_cluster", "sc-0=http://127.0.0.1:2380")
 }
 
 type ActionType int

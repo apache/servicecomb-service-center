@@ -45,8 +45,8 @@ func init() {
 
 func (this *MainService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/version", this.GetVersion},
-		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/health", this.ClusterHealth},
+		{rest.HTTP_METHOD_GET, "/v4/:project/registry/version", this.GetVersion},
+		{rest.HTTP_METHOD_GET, "/v4/:project/registry/health", this.ClusterHealth},
 	}
 }
 
