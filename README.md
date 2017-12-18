@@ -12,7 +12,8 @@ A standalone service center allows services to register their instance informati
  -  Microservice dependency management
  -  Awesome  [web portal](/frontend)
  -	 Multiple fault tolerance mechanism and design in the architecture
- -	 Performance/Caching design 
+ -	 Performance/Caching design
+ - **Metrics**: Able to expose Prometheus metric API automatically
 
 ## Quick Start
 
