@@ -569,7 +569,7 @@ func (s *MicroServiceService) modifySchema(ctx context.Context, serviceId string
 
 	if service.Environment == pb.ENV_PROD {
 		if len(service.Schemas) != 0 && !isExist {
-			return scerr.NewError(scerr.ErrSchemaIdNotExists, "schemaId non-exist， can't be added, environment is production")
+			return scerr.NewError(scerr.ErrUndefinedSchemaId, "schemaId non-exist， can't be added, environment is production")
 		}
 
 		key := apt.GenerateServiceSchemaKey(domainProject, serviceId, schemaId)
