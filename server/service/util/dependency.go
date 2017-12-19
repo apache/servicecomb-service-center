@@ -110,7 +110,7 @@ func RefreshDependencyCache(ctx context.Context, domainProject string, serviceId
 		consumerCache.Set(serviceId, consumerIds, 5*time.Minute)
 	}
 	if len(providerIds) > 0 {
-		util.Logger().Infof("refresh %s dependency cache: cached %s providerId(s) for 5min.", serviceId, len(providerIds))
+		util.Logger().Infof("refresh %s dependency cache: cached %d providerId(s) for 5min.", serviceId, len(providerIds))
 		providerCache.Set(serviceId, providerIds, 5*time.Minute)
 	}
 	return nil
