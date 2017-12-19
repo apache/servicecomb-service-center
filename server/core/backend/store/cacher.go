@@ -454,7 +454,7 @@ func (c *KvCacher) onEvents(evts []*Event) {
 			idx++
 		case proto.EVT_DELETE:
 			if !ok {
-				util.Logger().Warnf(nil, "unexpected %s event! nonexistent key %s", evt.Type, key)
+				util.Logger().Warnf(nil, "unexpected %s event! key %s does not exist", evt.Type, key)
 				continue
 			}
 

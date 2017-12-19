@@ -16,7 +16,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "hideControls": false,
-  "id": 3,
+  "id": 4,
   "links": [
     {
       "icon": "external link",
@@ -42,7 +42,7 @@
           "height": "",
           "id": 1,
           "legend": {
-            "alignAsTable": true,
+            "alignAsTable": false,
             "avg": true,
             "current": true,
             "max": false,
@@ -556,7 +556,7 @@
           "legend": {
             "alignAsTable": true,
             "avg": true,
-            "current": true,
+            "current": false,
             "max": true,
             "min": true,
             "show": true,
@@ -582,6 +582,7 @@
               "format": "time_series",
               "instant": false,
               "intervalFactor": 2,
+              "legendFormat": "cpu",
               "refId": "A"
             }
           ],
@@ -633,7 +634,7 @@
           "legend": {
             "alignAsTable": true,
             "avg": true,
-            "current": true,
+            "current": false,
             "max": true,
             "min": true,
             "show": true,
@@ -1008,5 +1009,5 @@
   },
   "timezone": "",
   "title": "ServiceCenter",
-  "version": 8
+  "version": 2
 }

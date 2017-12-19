@@ -157,7 +157,7 @@ func (i *Indexer) searchPrefixKeyWithCache(ctx context.Context, op registry.Plug
 		kvs[idx] = c.(*mvccpb.KeyValue)
 		idx++
 	}
-	util.LogNilOrWarnf(t, "too long to copy data from cache with prefix %s", prefix)
+	util.LogNilOrWarnf(t, "too long to copy data[%d] from cache with prefix %s", idx, prefix)
 
 	resp.Kvs = kvs[:idx]
 	return resp, nil
