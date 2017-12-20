@@ -16,7 +16,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "hideControls": false,
-  "id": 4,
+  "id": 5,
   "links": [
     {
       "icon": "external link",
@@ -44,7 +44,7 @@
           "legend": {
             "alignAsTable": false,
             "avg": true,
-            "current": true,
+            "current": false,
             "max": false,
             "min": false,
             "show": true,
