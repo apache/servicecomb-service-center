@@ -1,16 +1,19 @@
-//Copyright 2017 Huawei Technologies Co., Ltd
-//
-//Licensed under the Apache License, Version 2.0 (the "License");
-//you may not use this file except in compliance with the License.
-//You may obtain a copy of the License at
-//
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-//Unless required by applicable law or agreed to in writing, software
-//distributed under the License is distributed on an "AS IS" BASIS,
-//WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//See the License for the specific language governing permissions and
-//limitations under the License.
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package core
 
 import (
@@ -24,13 +27,17 @@ import (
 	"golang.org/x/net/context"
 )
 
-var ServerInfo *pb.ServerInformation
-
-func init() {
-	ServerInfo = newInfo()
-}
+var ServerInfo *pb.ServerInformation = newInfo()
 
 func newInfo() *pb.ServerInformation {
+	maxLogFileSize := beego.AppConfig.DefaultInt64("log_rotate_size", 20)
+	if maxLogFileSize <= 0 || maxLogFileSize > 50 {
+		maxLogFileSize = 20
+	}
+	maxLogBackupCount := beego.AppConfig.DefaultInt64("log_backup_count", 50)
+	if maxLogBackupCount < 0 || maxLogBackupCount > 100 {
+		maxLogBackupCount = 50
+	}
 	return &pb.ServerInformation{
 		Version: "0",
 		Config: &pb.ServerConfig{
@@ -54,6 +61,16 @@ func newInfo() *pb.ServerInformation {
 
 			AutoSyncInterval:  beego.AppConfig.DefaultString("auto_sync_interval", "30s"),
 			CompactIndexDelta: beego.AppConfig.DefaultInt64("compact_index_delta", 100),
+
+			LoggerName:     beego.AppConfig.String("component_name"),
+			LogRotateSize:  maxLogFileSize,
+			LogBackupCount: maxLogBackupCount,
+			LogFilePath:    beego.AppConfig.String("logfile"),
+			LogLevel:       beego.AppConfig.String("loglevel"),
+			LogFormat:      beego.AppConfig.DefaultString("log_format", "text"),
+			LogSys:         beego.AppConfig.DefaultBool("log_sys", false),
+
+			PluginsDir: beego.AppConfig.DefaultString("plugins_dir", "./plugins"),
 		},
 	}
 }

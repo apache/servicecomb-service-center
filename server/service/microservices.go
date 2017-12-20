@@ -1,16 +1,19 @@
-//Copyright 2017 Huawei Technologies Co., Ltd
-//
-//Licensed under the Apache License, Version 2.0 (the "License");
-//you may not use this file except in compliance with the License.
-//You may obtain a copy of the License at
-//
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-//Unless required by applicable law or agreed to in writing, software
-//distributed under the License is distributed on an "AS IS" BASIS,
-//WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//See the License for the specific language governing permissions and
-//limitations under the License.
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package service
 
 import (
@@ -202,29 +205,32 @@ func checkQuota(ctx context.Context, domainProject string) (quota.QuotaReporter,
 func (s *MicroServiceService) DeleteServicePri(ctx context.Context, ServiceId string, force bool) (*pb.Response, error) {
 	domainProject := util.ParseDomainProject(ctx)
 
+	title := "delete"
+	if force {
+		title = "force delete"
+	}
+
 	service, err := serviceUtil.GetService(ctx, domainProject, ServiceId)
 	if err != nil {
-		util.Logger().Errorf(err, "delete microservice failed, serviceId is %s: get service failed.", ServiceId)
+		util.Logger().Errorf(err, "%s microservice failed, serviceId is %s: get service failed.", title, ServiceId)
 		return pb.CreateResponse(scerr.ErrInternal, err.Error()), err
 	}
 
 	if service == nil {
-		util.Logger().Errorf(err, "delete microservice failed, serviceId is %s: service not exist.", ServiceId)
+		util.Logger().Errorf(err, "%s microservice failed, serviceId is %s: service not exist.", title, ServiceId)
 		return pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."), nil
 	}
-
-	util.Logger().Infof("start delete service %s", ServiceId)
 
 	// 强制删除，则与该服务相关的信息删除，非强制删除： 如果作为该被依赖（作为provider，提供服务,且不是只存在自依赖）或者存在实例，则不能删除
 	if !force {
 		dr := serviceUtil.NewProviderDependencyRelation(ctx, domainProject, ServiceId, service)
 		services, err := dr.GetDependencyConsumerIds()
 		if err != nil {
-			util.Logger().Errorf(err, "delete microservice failed, serviceId is %s:(unforce) inner err, get service dependency failed.", ServiceId)
+			util.Logger().Errorf(err, "delete microservice failed, serviceId is %s: inner err, get service dependency failed.", ServiceId)
 			return pb.CreateResponse(scerr.ErrInternal, "Get dependency info failed."), err
 		}
 		if len(services) > 1 || (len(services) == 1 && services[0] != ServiceId) {
-			util.Logger().Errorf(nil, "delete microservice failed, serviceId is %s:(unforce) can't delete, other services rely it.", ServiceId)
+			util.Logger().Errorf(nil, "delete microservice failed, serviceId is %s: can't delete, other services rely it.", ServiceId)
 			return pb.CreateResponse(scerr.ErrDependedOnConsumer, "Can not delete this service, other service rely it."), err
 		}
 
@@ -234,12 +240,12 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, ServiceId st
 			registry.WithPrefix(),
 			registry.WithCountOnly())
 		if err != nil {
-			util.Logger().Errorf(err, "delete microservice failed, serviceId is %s:(unforce) inner err,get instances failed.", ServiceId)
+			util.Logger().Errorf(err, "delete microservice failed, serviceId is %s: inner err,get instances failed.", ServiceId)
 			return pb.CreateResponse(scerr.ErrInternal, "Get instance failed."), err
 		}
 
 		if rsp.Count > 0 {
-			util.Logger().Errorf(nil, "delete microservice failed, serviceId is %s:(unforce) can't delete, exist instance.", ServiceId)
+			util.Logger().Errorf(nil, "delete microservice failed, serviceId is %s: can't delete, exist instance.", ServiceId)
 			return pb.CreateResponse(scerr.ErrDeployedInstance, "Can not delete this service, exist instance."), err
 		}
 	}
@@ -256,7 +262,7 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, ServiceId st
 	//refresh msCache consumerCache, ensure that watch can notify consumers when no cache.
 	err = serviceUtil.RefreshDependencyCache(ctx, domainProject, ServiceId, service)
 	if err != nil {
-		util.Logger().Errorf(err, "delete microservice failed, serviceId is %s: inner err, refresh service dependency cache failed.", ServiceId)
+		util.Logger().Errorf(err, "%s microservice failed, serviceId is %s: inner err, refresh service dependency cache failed.", title, ServiceId)
 		return pb.CreateResponse(scerr.ErrInternal, "Refresh dependency cache failed."), err
 	}
 
@@ -271,13 +277,13 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, ServiceId st
 	//删除依赖规则
 	lock, err := mux.Lock(mux.GLOBAL_LOCK)
 	if err != nil {
-		util.Logger().Errorf(err, "delete microservice failed, serviceId is %s: inner err, create lock failed.", ServiceId)
+		util.Logger().Errorf(err, "%s microservice failed, serviceId is %s: inner err, create lock failed.", title, ServiceId)
 		return pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()), err
 	}
 	optsTmp, err := serviceUtil.DeleteDependencyForService(ctx, consumer, ServiceId)
 	lock.Unlock()
 	if err != nil {
-		util.Logger().Errorf(err, "delete microservice failed, serviceId is %s: inner err, delete dependency failed.", ServiceId)
+		util.Logger().Errorf(err, "%s microservice failed, serviceId is %s: inner err, delete dependency failed.", title, ServiceId)
 		return pb.CreateResponse(scerr.ErrInternal, err.Error()), err
 	}
 	opts = append(opts, optsTmp...)
@@ -304,19 +310,19 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, ServiceId st
 	//删除实例
 	err = serviceUtil.DeleteServiceAllInstances(ctx, ServiceId)
 	if err != nil {
-		util.Logger().Errorf(err, "delete microservice failed, serviceId is %s: delete all instances failed.", ServiceId)
+		util.Logger().Errorf(err, "%s microservice failed, serviceId is %s: delete all instances failed.", title, ServiceId)
 		return pb.CreateResponse(scerr.ErrInternal, "Delete all instances failed for service."), err
 	}
 
 	err = backend.BatchCommit(ctx, opts)
 	if err != nil {
-		util.Logger().Errorf(err, "delete microservice failed, serviceId is %s: commit data into etcd failed.", ServiceId)
+		util.Logger().Errorf(err, "%s microservice failed, serviceId is %s: commit data into etcd failed.", title, ServiceId)
 		return pb.CreateResponse(scerr.ErrUnavailableBackend, "Commit operations failed."), nil
 	}
 
 	serviceUtil.RemandServiceQuota(ctx)
 
-	util.Logger().Infof("delete microservice successful: serviceid is %s,operator is %s.", ServiceId, util.GetIPFromContext(ctx))
+	util.Logger().Infof("%s microservice successful: serviceid is %s, operator is %s.", title, ServiceId, util.GetIPFromContext(ctx))
 	return pb.CreateResponse(pb.Response_SUCCESS, "Unregister service successfully."), nil
 }
 

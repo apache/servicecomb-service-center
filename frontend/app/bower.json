@@ -1,5 +1,5 @@
 {
-  "name": "Huawei MicroServices",
+  "name": "Service-Center",
   "version": "0.0.0",
   "dependencies": {
     "angular": "^1.4.0",
@@ -26,7 +26,7 @@
     "angular-translate": "^2.11.0"
   },
   "appPath": "app",
-  "moduleName": "Huawei Microservices",
+  "moduleName": "Service-Center",
   "overrides": {
     "bootstrap": {
       "main": [

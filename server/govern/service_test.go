@@ -1,16 +1,19 @@
-//Copyright 2017 Huawei Technologies Co., Ltd
-//
-//Licensed under the Apache License, Version 2.0 (the "License");
-//you may not use this file except in compliance with the License.
-//You may obtain a copy of the License at
-//
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-//Unless required by applicable law or agreed to in writing, software
-//distributed under the License is distributed on an "AS IS" BASIS,
-//WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//See the License for the specific language governing permissions and
-//limitations under the License.
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package govern_test
 
 import (
@@ -20,10 +23,10 @@ import (
 )
 
 var _ = Describe("'Govern' service", func() {
-	Describe("execute 'get all' operartion", func() {
+	Describe("execute 'get all' operation", func() {
 		Context("when get all services", func() {
 			It("should be passed", func() {
-				By("all optionis")
+				By("all options")
 				resp, err := governService.GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
 					Options: []string{"all"},
 				})
@@ -50,11 +53,19 @@ var _ = Describe("'Govern' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+
+				By("get instance count")
+				resp, err = governService.GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
+					Options:   []string{"instances"},
+					CountOnly: true,
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 			})
 		})
 	})
 
-	Describe("execute 'get detail' operartion", func() {
+	Describe("execute 'get detail' operation", func() {
 		var (
 			serviceId string
 		)
@@ -129,11 +140,11 @@ var _ = Describe("'Govern' service", func() {
 		})
 	})
 
-	Describe("execute 'get apps' operartion", func() {
+	Describe("execute 'get apps' operation", func() {
 		Context("when request is invalid", func() {
 			It("should be failed", func() {
 				resp, err := governService.GetApplications(getContext(), &pb.GetAppsRequest{
-					Environment: "notexistenv",
+					Environment: "non-exist-env",
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))

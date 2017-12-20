@@ -1,23 +1,25 @@
-//Copyright 2017 Huawei Technologies Co., Ltd
-//
-//Licensed under the Apache License, Version 2.0 (the "License");
-//you may not use this file except in compliance with the License.
-//You may obtain a copy of the License at
-//
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-//Unless required by applicable law or agreed to in writing, software
-//distributed under the License is distributed on an "AS IS" BASIS,
-//WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//See the License for the specific language governing permissions and
-//limitations under the License.
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package util
 
 import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
-	"github.com/astaxie/beego"
 	"golang.org/x/net/context"
 	"net"
 	"net/http"
@@ -50,9 +52,9 @@ func ClearStringMemory(src *string) {
 		len int
 	})(unsafe.Pointer(src))
 
-	len := MinInt(p.len, 32)
+	l := MinInt(p.len, 32)
 	ptr := p.ptr
-	for idx := 0; idx < len; idx = idx + 1 {
+	for idx := 0; idx < l; idx = idx + 1 {
 		b := (*byte)(unsafe.Pointer(ptr))
 		*b = 0
 		ptr += 1
@@ -60,8 +62,8 @@ func ClearStringMemory(src *string) {
 }
 
 func ClearByteMemory(src []byte) {
-	len := MinInt(len(src), 32)
-	for idx := 0; idx < len; idx = idx + 1 {
+	l := MinInt(len(src), 32)
+	for idx := 0; idx < l; idx = idx + 1 {
 		src[idx] = 0
 	}
 }
@@ -268,8 +270,7 @@ func LogPanic(args ...interface{}) {
 	if idx >= 0 {
 		file = file[idx+1:]
 	}
-	fmt.Fprintln(os.Stderr, time.Now().Format("2006-01-02T15:04:05.000Z07:00"), "FATAL",
-		beego.AppConfig.String("ComponentName"), os.Getpid(),
+	fmt.Fprintln(os.Stderr, time.Now().Format("2006-01-02T15:04:05.000Z07:00"), "FATAL", "system", os.Getpid(),
 		fmt.Sprintf("%s %s():%d", file, method, line), fmt.Sprint(args...))
 	fmt.Fprintln(os.Stderr, BytesToStringWithNoCopy(debug.Stack()))
 }

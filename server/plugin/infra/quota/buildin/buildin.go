@@ -1,16 +1,19 @@
-//Copyright 2017 Huawei Technologies Co., Ltd
-//
-//Licensed under the Apache License, Version 2.0 (the "License");
-//you may not use this file except in compliance with the License.
-//You may obtain a copy of the License at
-//
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-//Unless required by applicable law or agreed to in writing, software
-//distributed under the License is distributed on an "AS IS" BASIS,
-//WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//See the License for the specific language governing permissions and
-//limitations under the License.
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package buildin
 
 import (
@@ -27,13 +30,11 @@ import (
 )
 
 const (
-	SERVICE_NUM_MAX_LIMIT             = 12000
-	SERVICE_NUM_MAX_LIMIT_PER_TENANT  = 100
-	INSTANCE_NUM_MAX_LIMIT            = 150000
-	INSTANCE_NUM_MAX_LIMIT_PER_TENANT = 100
-	RULE_NUM_MAX_LIMIT_PER_SERVICE    = 100
-	SCHEMA_NUM_MAX_LIMIT_PER_SERVICE  = 1000
-	TAG_NUM_MAX_LIMIT_PER_SERVICE     = 100
+	SERVICE_NUM_MAX_LIMIT            = 12000
+	INSTANCE_NUM_MAX_LIMIT           = 150000
+	RULE_NUM_MAX_LIMIT_PER_SERVICE   = 100
+	SCHEMA_NUM_MAX_LIMIT_PER_SERVICE = 1000
+	TAG_NUM_MAX_LIMIT_PER_SERVICE    = 100
 )
 
 func init() {
@@ -52,8 +53,8 @@ type BuildInQuota struct {
 
 //申请配额sourceType serviceinstance servicetype
 func (q *BuildInQuota) Apply4Quotas(ctx context.Context, quotaType quota.ResourceType, domainProject string, serviceId string, quotaSize int16) (quota.QuotaReporter, bool, error) {
-	data := &QuotaApplyData {
-		domain: strings.Split(domainProject, "/")[0],
+	data := &QuotaApplyData{
+		domain:    strings.Split(domainProject, "/")[0],
 		quotaSize: int64(quotaSize),
 	}
 	switch quotaType {
@@ -141,16 +142,6 @@ func quotaCheck(ctx context.Context, data *QuotaApplyData, getLimitQuota GetLimi
 }
 
 func instanceQuotaCheck(ctx context.Context, data *QuotaApplyData) (isOk bool, err error) {
-	isOk, err = quotaCheck(ctx, data, getInstanceMaxLimitUnderOneTenant, getAllInstancesNumUnderOneTenant)
-	if err != nil {
-		util.Logger().Errorf(err, "instance quota check failed under one tenant")
-		return
-	}
-	if !isOk {
-		util.Logger().Errorf(err, "no quota to create instance under one tenant")
-		return
-	}
-
 	isOk, err = quotaCheck(ctx, data, getInstanceMaxLimit, getAllInstancesNum)
 	if err != nil {
 		util.Logger().Errorf(err, "instance quota check failed")
@@ -161,10 +152,6 @@ func instanceQuotaCheck(ctx context.Context, data *QuotaApplyData) (isOk bool, e
 		return
 	}
 	return
-}
-
-func getInstanceMaxLimitUnderOneTenant() int64 {
-	return INSTANCE_NUM_MAX_LIMIT_PER_TENANT
 }
 
 func getInstanceMaxLimit() int64 {
@@ -187,22 +174,7 @@ func getAllInstancesNum(ctx context.Context, data *QuotaApplyData) (int64, error
 	return getInstancesNum(ctx, key)
 }
 
-func getAllInstancesNumUnderOneTenant(ctx context.Context, data *QuotaApplyData) (int64, error) {
-	key := core.GetInstanceRootKey(data.domain)
-	return getInstancesNum(ctx, key)
-}
-
 func serviceQuotaCheck(ctx context.Context, data *QuotaApplyData) (isOk bool, err error) {
-	isOk, err = quotaCheck(ctx, data, getServiceMaxLimitUnderOneTenant, getAllServicesNumUnderOneTenant)
-	if err != nil {
-		util.Logger().Errorf(err, "service quota check failed under one tenant ")
-		return
-	}
-	if !isOk {
-		util.Logger().Errorf(err, "no quota to create service under one tenant")
-		return
-	}
-
 	isOk, err = quotaCheck(ctx, data, getServiceMaxLimit, getAllServicesNum)
 	if err != nil {
 		util.Logger().Errorf(err, "service quota check failed")
@@ -213,10 +185,6 @@ func serviceQuotaCheck(ctx context.Context, data *QuotaApplyData) (isOk bool, er
 		return
 	}
 	return
-}
-
-func getServiceMaxLimitUnderOneTenant() int64 {
-	return SERVICE_NUM_MAX_LIMIT_PER_TENANT
 }
 
 func getServiceMaxLimit() int64 {
@@ -236,10 +204,5 @@ func getServicesNum(ctx context.Context, key string) (int64, error) {
 
 func getAllServicesNum(ctx context.Context, data *QuotaApplyData) (int64, error) {
 	key := core.GetServiceRootKey("")
-	return getServicesNum(ctx, key)
-}
-
-func getAllServicesNumUnderOneTenant(ctx context.Context, data *QuotaApplyData) (int64, error) {
-	key := core.GetServiceRootKey(data.domain)
 	return getServicesNum(ctx, key)
 }

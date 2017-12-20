@@ -1,20 +1,22 @@
-//Copyright 2017 Huawei Technologies Co., Ltd
-//
-//Licensed under the Apache License, Version 2.0 (the "License");
-//you may not use this file except in compliance with the License.
-//You may obtain a copy of the License at
-//
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-//Unless required by applicable law or agreed to in writing, software
-//distributed under the License is distributed on an "AS IS" BASIS,
-//WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//See the License for the specific language governing permissions and
-//limitations under the License.
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package service
 
 import (
-	"errors"
 	"fmt"
 	"github.com/ServiceComb/service-center/pkg/util"
 	apt "github.com/ServiceComb/service-center/server/core"
@@ -71,9 +73,19 @@ func (s *MicroServiceService) GetSchemaInfo(ctx context.Context, in *pb.GetSchem
 			Response: pb.CreateResponse(scerr.ErrSchemaNotExists, "Do not have this schema info."),
 		}, nil
 	}
+
+	schemaSummary, err := getSchemaSummary(ctx, domainProject, in.ServiceId, in.SchemaId)
+	if err != nil {
+		util.Logger().Errorf(err, "get schema failed, serviceId %s, schemaId %s: get schema summary failed.", in.ServiceId, in.SchemaId)
+		return &pb.GetSchemaResponse{
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+
 	return &pb.GetSchemaResponse{
-		Response: pb.CreateResponse(pb.Response_SUCCESS, "Get schema info successfully."),
-		Schema:   util.BytesToStringWithNoCopy(resp.Kvs[0].Value),
+		Response:      pb.CreateResponse(pb.Response_SUCCESS, "Get schema info successfully."),
+		Schema:        util.BytesToStringWithNoCopy(resp.Kvs[0].Value),
+		SchemaSummary: schemaSummary,
 	}, nil
 }
 
@@ -97,29 +109,27 @@ func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAl
 
 	service, err := serviceUtil.GetService(ctx, domainProject, in.ServiceId)
 	if err != nil {
-		util.Logger().Errorf(err, "get all schemas failded: get service failed. %s", in.ServiceId)
+		util.Logger().Errorf(err, "get all schemas failed: get service failed. %s", in.ServiceId)
 		return &pb.GetAllSchemaResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, "Invalid request."),
 		}, err
 	}
 	if service == nil {
-		util.Logger().Errorf(nil, "get all schemas failded: service does not exist. %s", in.ServiceId)
+		util.Logger().Errorf(nil, "get all schemas failed: service does not exist. %s", in.ServiceId)
 		return &pb.GetAllSchemaResponse{
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
-	schemas := []*pb.Schema{}
 	schemasList := service.Schemas
 	if schemasList == nil || len(schemasList) == 0 {
 		util.Logger().Infof("service %s schemaId set is empty.", in.ServiceId)
 		return &pb.GetAllSchemaResponse{
 			Response: pb.CreateResponse(pb.Response_SUCCESS, "Do not have this schema info."),
-			Schema:   schemas,
+			Schema:   []*pb.Schema{},
 		}, nil
 	}
 
-	// if 'withschmas' is false, not to search schemas content
 	key := apt.GenerateServiceSchemaSummaryKey(domainProject, in.ServiceId, "")
 	opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(key), registry.WithPrefix())
 	resp, errDo := store.Store().SchemaSummary().Search(ctx, opts...)
@@ -143,19 +153,20 @@ func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAl
 		}
 	}
 
-	for _, schema_id := range schemasList {
+	schemas := make([]*pb.Schema, 0, len(schemasList))
+	for _, schemaId := range schemasList {
 		tempSchema := &pb.Schema{}
-		tempSchema.SchemaId = schema_id
+		tempSchema.SchemaId = schemaId
 		for _, summarySchema := range resp.Kvs {
-			summaryId, summaryData := pb.GetInfoFromSchemaSummaryKV(summarySchema)
-			if schema_id == summaryId {
+			schemaIdOfSummary, summaryData := pb.GetInfoFromSchemaSummaryKV(summarySchema)
+			if schemaId == schemaIdOfSummary {
 				tempSchema.Summary = util.BytesToStringWithNoCopy(summaryData)
 			}
 		}
 
 		for _, contentSchema := range respWithSchema.Kvs {
-			schemaId, schemaData := pb.GetInfoFromSchemaKV(contentSchema)
-			if schema_id == schemaId {
+			schemaIdOfSchema, schemaData := pb.GetInfoFromSchemaKV(contentSchema)
+			if schemaId == schemaIdOfSchema {
 				tempSchema.Schema = util.BytesToStringWithNoCopy(schemaData)
 			}
 		}
@@ -492,17 +503,16 @@ func (s *MicroServiceService) ModifySchema(ctx context.Context, request *pb.Modi
 		Summary:  request.Summary,
 		Schema:   request.Schema,
 	}
-	err, isInnerErr := s.modifySchema(ctx, serviceId, &schema)
+	err := s.modifySchema(ctx, serviceId, &schema)
 	if err != nil {
 		util.Logger().Errorf(err, "modify schema failed, serviceId %s, schemaId %s", serviceId, schemaId)
-		if isInnerErr {
-			return &pb.ModifySchemaResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, "Modify schema info failed, sc internal err"),
-			}, err
+		resp := &pb.ModifySchemaResponse{
+			Response: pb.CreateResponse(err.Code, err.Detail),
 		}
-		return &pb.ModifySchemaResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
-		}, nil
+		if err.StatusCode() == http.StatusInternalServerError {
+			return resp, err
+		}
+		return resp, nil
 	}
 
 	util.Logger().Infof("modify schema successfully: serviceId %s, schemaId %s.", serviceId, schemaId)
@@ -539,18 +549,18 @@ func (s *MicroServiceService) canModifySchema(ctx context.Context, domainProject
 	return nil
 }
 
-func (s *MicroServiceService) modifySchema(ctx context.Context, serviceId string, schema *pb.Schema) (error, bool) {
+func (s *MicroServiceService) modifySchema(ctx context.Context, serviceId string, schema *pb.Schema) *scerr.Error {
 	domainProject := util.ParseDomainProject(ctx)
 	schemaId := schema.SchemaId
 
 	service, err := serviceUtil.GetService(ctx, domainProject, serviceId)
 	if err != nil {
 		util.Logger().Errorf(err, "modify schema failed, serviceId %s, schemaId %s: get service failed.", serviceId, schemaId)
-		return err, true
+		return scerr.NewError(scerr.ErrInternal, "get service failed")
 	}
 	if service == nil {
 		util.Logger().Errorf(nil, "modify schema failed, serviceId %s, schemaId %s: service not exist", serviceId, schemaId)
-		return errors.New("service non-exist, can't modify schema"), false
+		return scerr.NewError(scerr.ErrServiceNotExists, "service non-exist")
 	}
 
 	util.Logger().Infof("start to modify schema, serviceId  %s, schemaId %s", service.ServiceId, schemaId)
@@ -559,30 +569,30 @@ func (s *MicroServiceService) modifySchema(ctx context.Context, serviceId string
 
 	if service.Environment == pb.ENV_PROD {
 		if len(service.Schemas) != 0 && !isExist {
-			return errors.New(fmt.Sprintf("schemaId non-exist %s, can't be added, environment is production", schemaId)), false
+			return scerr.NewError(scerr.ErrUndefinedSchemaId, "schemaId non-exist， can't be added, environment is production")
 		}
 
 		key := apt.GenerateServiceSchemaKey(domainProject, serviceId, schemaId)
 		respSchema, err := store.Store().Schema().Search(ctx, registry.WithStrKey(key), registry.WithCountOnly())
 		if err != nil {
 			util.Logger().Errorf(err, "modify schema failed, get schema summary failed, %s %s", serviceId, schemaId)
-			return err, true
+			return scerr.NewError(scerr.ErrInternal, "get schema summary failed")
 		}
 
 		if respSchema.Count != 0 {
 			if len(schema.Summary) == 0 {
 				util.Logger().Errorf(err, "prod mode, schema more exist, can not change, %s %s", serviceId, schemaId)
-				return errors.New("schema more exist, can not change, environment is production"), false
+				return scerr.NewError(scerr.ErrModifySchemaNotAllow, "schema more exist, can not change, environment is production")
 			}
 
 			exist, err := isExistSchemaSummary(ctx, domainProject, serviceId, schemaId)
 			if err != nil {
 				util.Logger().Errorf(err, "check schema summary is exist failed, serviceId %s, schemaId %s", serviceId, schemaId)
-				return err, false
+				return scerr.NewError(scerr.ErrInternal, "check schema summary existence failed")
 			}
 			if exist {
 				util.Logger().Errorf(err, "prod mode, schema more exist, can not change, %s %s", serviceId, schemaId)
-				return errors.New("schema more exist, can not change, environment is production"), false
+				return scerr.NewError(scerr.ErrModifySchemaNotAllow, "schema more exist, can not change, environment is production")
 			}
 		}
 
@@ -591,7 +601,7 @@ func (s *MicroServiceService) modifySchema(ctx context.Context, serviceId string
 			opt, err := serviceUtil.UpdateService(domainProject, serviceId, service)
 			if err != nil {
 				util.Logger().Errorf(err, "modify schema failed, update service failed , serviceId %s, schemaId %s", serviceId, schemaId)
-				return err, true
+				return scerr.NewError(scerr.ErrInternal, "update service failed")
 			}
 			pluginOps = append(pluginOps, opt)
 		}
@@ -601,7 +611,7 @@ func (s *MicroServiceService) modifySchema(ctx context.Context, serviceId string
 			opt, err := serviceUtil.UpdateService(domainProject, serviceId, service)
 			if err != nil {
 				util.Logger().Errorf(err, "modify schema failed, update service failed , serviceId %s, schemaId %s", serviceId, schemaId)
-				return err, true
+				return scerr.NewError(scerr.ErrInternal, "update service failed")
 			}
 			pluginOps = append(pluginOps, opt)
 		}
@@ -613,9 +623,9 @@ func (s *MicroServiceService) modifySchema(ctx context.Context, serviceId string
 	_, err = backend.Registry().Txn(ctx, pluginOps)
 	if err != nil {
 		util.Logger().Errorf(err, "commit update schema failed, serviceId %s, schemaId %s", serviceId, schemaId)
-		return err, true
+		return scerr.NewError(scerr.ErrInternal, "commit update schema failed")
 	}
-	return nil, false
+	return nil
 }
 
 func isExistSchemaSummary(ctx context.Context, domainProject, serviceId, schemaId string) (bool, error) {

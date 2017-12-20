@@ -1,16 +1,19 @@
-//Copyright 2017 Huawei Technologies Co., Ltd
-//
-//Licensed under the Apache License, Version 2.0 (the "License");
-//you may not use this file except in compliance with the License.
-//You may obtain a copy of the License at
-//
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-//Unless required by applicable law or agreed to in writing, software
-//distributed under the License is distributed on an "AS IS" BASIS,
-//WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//See the License for the specific language governing permissions and
-//limitations under the License.
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package util
 
 import (
@@ -88,6 +91,20 @@ func GetAllInstancesOfOneService(ctx context.Context, domainProject string, serv
 	return instances, nil
 }
 
+func GetInstanceCountOfOneService(ctx context.Context, domainProject string, serviceId string) (int64, error) {
+	key := apt.GenerateInstanceKey(domainProject, serviceId, "")
+	opts := append(FromContext(ctx),
+		registry.WithStrKey(key),
+		registry.WithPrefix(),
+		registry.WithCountOnly())
+	resp, err := store.Store().Instance().Search(ctx, opts...)
+	if err != nil {
+		util.Logger().Errorf(err, "Get instance count of service %s from etcd failed.", serviceId)
+		return 0, err
+	}
+	return resp.Count, nil
+}
+
 func InstanceExist(ctx context.Context, domainProject string, serviceId string, instanceId string) (bool, error) {
 	opts := append(FromContext(ctx),
 		registry.WithStrKey(apt.GenerateInstanceKey(domainProject, serviceId, instanceId)),
@@ -160,11 +177,11 @@ func DeleteServiceAllInstances(ctx context.Context, serviceId string) error {
 		registry.WithPrefix(),
 		registry.WithNoCache())
 	if err != nil {
-		util.Logger().Errorf(err, "delete service all instance failed: get instance lease failed.")
+		util.Logger().Errorf(err, "delete service %s all instance failed: get instance lease failed.", serviceId)
 		return err
 	}
 	if resp.Count <= 0 {
-		util.Logger().Warnf(nil, "No instances to revoke.")
+		util.Logger().Warnf(nil, "service %s has no deployment of instance.", serviceId)
 		return nil
 	}
 	for _, v := range resp.Kvs {

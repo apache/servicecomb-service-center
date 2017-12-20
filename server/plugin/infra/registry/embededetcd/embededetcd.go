@@ -1,16 +1,19 @@
-//Copyright 2017 Huawei Technologies Co., Ltd
-//
-//Licensed under the Apache License, Version 2.0 (the "License");
-//you may not use this file except in compliance with the License.
-//You may obtain a copy of the License at
-//
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-//Unless required by applicable law or agreed to in writing, software
-//distributed under the License is distributed on an "AS IS" BASIS,
-//WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//See the License for the specific language governing permissions and
-//limitations under the License.
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package embededetcd
 
 import (
@@ -41,7 +44,6 @@ var embedTLSConfig *tls.Config
 const START_MANAGER_SERVER_TIMEOUT = 60
 
 func init() {
-	util.Logger().Infof("embed etcd plugin init.")
 	mgr.RegisterPlugin(mgr.Plugin{mgr.STATIC, mgr.REGISTRY, "embeded_etcd", getEmbedInstance})
 }
 
@@ -227,7 +229,7 @@ func (s *EtcdEmbed) CompactCluster(ctx context.Context) {
 func (s *EtcdEmbed) Compact(ctx context.Context, revision int64) error {
 	otCtx, cancel := registry.WithTimeout(ctx)
 	defer cancel()
-	revToCompact := max(0, revision-beego.AppConfig.DefaultInt64("compact_index_delta", 100))
+	revToCompact := max(0, revision-core.ServerInfo.Config.CompactIndexDelta)
 	util.Logger().Debug(fmt.Sprintf("Compacting %d", revToCompact))
 	resp, err := s.Server.Server.Compact(otCtx, &etcdserverpb.CompactionRequest{
 		Revision: revToCompact,
@@ -470,8 +472,8 @@ func setResponseAndCallback(pResp *registry.PluginResponse, kvs []*mvccpb.KeyVal
 func getEmbedInstance() mgr.PluginInstance {
 	util.Logger().Warnf(nil, "starting service center in embed mode")
 
-	hostName := beego.AppConfig.DefaultString("manager_name", util.GetLocalHostname())
-	addrs := beego.AppConfig.String("manager_addr")
+	hostName := beego.AppConfig.DefaultString("manager_name", "sc-0")
+	addrs := beego.AppConfig.DefaultString("manager_addr", "http://127.0.0.1:2380")
 
 	inst := &EtcdEmbed{
 		err:   make(chan error, 1),

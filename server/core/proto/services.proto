@@ -115,6 +115,7 @@ message GetServicesInfoRequest {
     repeated string options = 1;
     string appId = 2;
     string serviceName = 3;
+    bool   countOnly = 4;
 }
 
 message GetServicesInfoResponse {
@@ -477,6 +478,7 @@ message GetAllSchemaRequest {
 message GetSchemaResponse {
     Response response = 1;
     string schema = 2;
+    string schemaSummary = 3;
 }
 
 message GetAllSchemaResponse {
@@ -556,6 +558,7 @@ message ServiceDetail {
     repeated MicroService consumers = 6;
     map<string, string> tags = 7;
     repeated string microServiceVersions = 8;
+    Statistics statics = 9;
 }
 
 //服务详情返回信息

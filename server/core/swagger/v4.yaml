@@ -611,9 +611,12 @@ paths:
         - schema
       responses:
         200:
-          description: 查询成功
+          description: 查询成功,如果summary存在，则header里面的X-Schema-Summary的value为该schema对应的摘要
+          headers:
+            X-Schema-Summary:
+              type: string
           schema:
-            $ref: '#/definitions/CreateSchema'
+            $ref: '#/definitions/getSchemaInfoResponse'
         400:
           description: 错误的请求
           schema:
@@ -735,10 +738,83 @@ paths:
           description: 内部错误
           schema:
             type: string
+    get:
+      description: |
+        批量查询所有schemas和summary。
+      operationId: GetAllSchemas
+      parameters:
+        - name: x-domain-name
+          in: header
+          type: string
+          default: default
+        - name: project
+          in: path
+          required: true
+          type: string
+        - name: serviceId
+          in: path
+          description: 唯一标识。
+          required: true
+          type: string
+        - name: withSchema
+          in: query
+          description: 是否查询schema，0只显示summary，1同时显示schema。
+          type: string
+          default: 0
+      tags:
+        - microservices
+        - schema
+      responses:
+        200:
+          description: 查询成功
+          schema:
+            $ref: '#/definitions/AllSchemasRequest'
+        400:
+          description: 错误的请求
+          schema:
+            type: string
+        500:
+          description: 内部错误
+          schema:
+            type: string
   /v4/{project}/registry/dependencies:
+    post:
+      description: |
+        增量式添加服务间的依赖关系，consumer的version必须是确定的版本，serviceName不能为*，consumer必须是已存在的服务，provider可以是还未创建的。
+      operationId: AddDependenciesForMicroServices
+      parameters:
+        - name: x-domain-name
+          in: header
+          type: string
+          default: default
+        - name: project
+          in: path
+          required: true
+          type: string
+        - name: type
+          in: body
+          description: 创建服务间的依赖关系的请求体。
+          required: true
+          schema:
+            $ref: '#/definitions/CreateDependenciesRequest'
+      tags:
+        - dependency
+      responses:
+        200:
+          description: 创建成功
+          schema:
+            type: string
+        400:
+          description: 错误的请求
+          schema:
+            type: string
+        500:
+          description: 内部错误
+          schema:
+            type: string
     put:
       description: |
-        创建服务间的依赖关系，consumer的version必须是确定的版本，serviceName不能为*，consumer必须是已存在的服务，provider可以是还未创建的。
+        覆盖式修改服务间的依赖关系，consumer的version必须是确定的版本，serviceName不能为*，consumer必须是已存在的服务，provider可以是还未创建的。
       operationId: createDependenciesForMircServices
       parameters:
         - name: x-domain-name
@@ -907,7 +983,10 @@ paths:
         - microservices
       responses:
         200:
-          description: 查询成功
+          description: 查询成功,查询shema存不存时，如果summary存在，则在header里面返回，key为X-Schema-Summary
+          headers:
+            X-Schema-Summary:
+              type: string
           schema:
             $ref: '#/definitions/GetResourceResponse'
         400:
@@ -2022,6 +2101,13 @@ definitions:
          type: array
          items:
            $ref: "#/definitions/Schema"
+  AllSchemasRequest:
+     type: object
+     properties:
+       schemas:
+         type: array
+         items:
+           $ref: "#/definitions/Schema"
   Schema:
      type: object
      properties:
@@ -2171,3 +2257,9 @@ definitions:
          type: array
          items:
            type: string
+  getSchemaInfoResponse:
+     type: object
+     properties:
+       schema:
+         description: shema
+         type: string

@@ -1,16 +1,19 @@
-//Copyright 2017 Huawei Technologies Co., Ltd
-//
-//Licensed under the Apache License, Version 2.0 (the "License");
-//you may not use this file except in compliance with the License.
-//You may obtain a copy of the License at
-//
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-//Unless required by applicable law or agreed to in writing, software
-//distributed under the License is distributed on an "AS IS" BASIS,
-//WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//See the License for the specific language governing permissions and
-//limitations under the License.
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package govern
 
 import (
@@ -33,10 +36,10 @@ type GovernServiceControllerV4 struct {
 // URLPatterns 路由
 func (governService *GovernServiceControllerV4) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTP_METHOD_GET, "/v4/:domain/govern/microservices/:serviceId", governService.GetServiceDetail},
-		{rest.HTTP_METHOD_GET, "/v4/:domain/govern/relations", governService.GetGraph},
-		{rest.HTTP_METHOD_GET, "/v4/:domain/govern/microservices", governService.GetAllServicesInfo},
-		{rest.HTTP_METHOD_GET, "/v4/:domain/govern/apps", governService.GetAllApplications},
+		{rest.HTTP_METHOD_GET, "/v4/:project/govern/microservices/:serviceId", governService.GetServiceDetail},
+		{rest.HTTP_METHOD_GET, "/v4/:project/govern/relations", governService.GetGraph},
+		{rest.HTTP_METHOD_GET, "/v4/:project/govern/microservices", governService.GetAllServicesInfo},
+		{rest.HTTP_METHOD_GET, "/v4/:project/govern/apps", governService.GetAllApplications},
 	}
 }
 
@@ -150,6 +153,14 @@ func (governService *GovernServiceControllerV4) GetAllServicesInfo(w http.Respon
 	request.Options = strings.Split(optsStr, ",")
 	request.AppId = r.URL.Query().Get("appId")
 	request.ServiceName = r.URL.Query().Get("serviceName")
+	countOnly := r.URL.Query().Get("countOnly")
+	if countOnly != "0" && countOnly != "1" && strings.TrimSpace(countOnly) != "" {
+		controller.WriteError(w, scerr.ErrInvalidParams, "parameter countOnly must be 1 or 0")
+		return
+	}
+	if countOnly == "1" {
+		request.CountOnly = true
+	}
 	resp, _ := GovernServiceAPI.GetServicesInfo(ctx, request)
 
 	respInternal := resp.Response

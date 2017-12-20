@@ -1,16 +1,19 @@
-//Copyright 2017 Huawei Technologies Co., Ltd
-//
-//Licensed under the Apache License, Version 2.0 (the "License");
-//you may not use this file except in compliance with the License.
-//You may obtain a copy of the License at
-//
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-//Unless required by applicable law or agreed to in writing, software
-//distributed under the License is distributed on an "AS IS" BASIS,
-//WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//See the License for the specific language governing permissions and
-//limitations under the License.
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package v4
 
 import (
@@ -32,11 +35,11 @@ type SchemaService struct {
 
 func (this *SchemaService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/microservices/:serviceId/schemas/:schemaId", this.GetSchemas},
-		{rest.HTTP_METHOD_PUT, "/v4/:domain/registry/microservices/:serviceId/schemas/:schemaId", this.ModifySchema},
-		{rest.HTTP_METHOD_DELETE, "/v4/:domain/registry/microservices/:serviceId/schemas/:schemaId", this.DeleteSchemas},
-		{rest.HTTP_METHOD_POST, "/v4/:domain/registry/microservices/:serviceId/schemas", this.ModifySchemas},
-		{rest.HTTP_METHOD_GET, "/v4/:domain/registry/microservices/:serviceId/schemas", this.GetAllSchemas},
+		{rest.HTTP_METHOD_GET, "/v4/:project/registry/microservices/:serviceId/schemas/:schemaId", this.GetSchemas},
+		{rest.HTTP_METHOD_PUT, "/v4/:project/registry/microservices/:serviceId/schemas/:schemaId", this.ModifySchema},
+		{rest.HTTP_METHOD_DELETE, "/v4/:project/registry/microservices/:serviceId/schemas/:schemaId", this.DeleteSchemas},
+		{rest.HTTP_METHOD_POST, "/v4/:project/registry/microservices/:serviceId/schemas", this.ModifySchemas},
+		{rest.HTTP_METHOD_GET, "/v4/:project/registry/microservices/:serviceId/schemas", this.GetAllSchemas},
 	}
 }
 
@@ -46,6 +49,8 @@ func (this *SchemaService) GetSchemas(w http.ResponseWriter, r *http.Request) {
 		SchemaId:  r.URL.Query().Get(":schemaId"),
 	}
 	resp, _ := core.ServiceAPI.GetSchemaInfo(r.Context(), request)
+	w.Header().Add("X-Schema-Summary", resp.SchemaSummary)
+	resp.SchemaSummary = ""
 	respInternal := resp.Response
 	resp.Response = nil
 	controller.WriteResponse(w, respInternal, resp)
@@ -104,7 +109,6 @@ func (this *SchemaService) DeleteSchemas(w http.ResponseWriter, r *http.Request)
 func (this *SchemaService) GetAllSchemas(w http.ResponseWriter, r *http.Request) {
 	withSchema := r.URL.Query().Get("withSchema")
 	serviceId := r.URL.Query().Get(":serviceId")
-	util.Logger().Warnf(nil, "Query Service %s schema, withSchema is %s.", serviceId, withSchema)
 	if withSchema != "0" && withSchema != "1" && strings.TrimSpace(withSchema) != "" {
 		controller.WriteError(w, scerr.ErrInvalidParams, "parameter withSchema must be 1 or 0")
 		return

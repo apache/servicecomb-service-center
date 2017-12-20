@@ -19,7 +19,7 @@ Once the bootup is successful then the consumer can communicate with providers f
 
 ![Commuication](/docs/communication.PNG)
 
-Provider instance regularly sends heartbeat signal every 30 seconds to SC, if SC does not recieve the heartbeat for particular instance then the information in etcd expires and the provider instance information is removed.  
+Provider instance regularly sends heartbeat signal every 30 seconds to SC, if SC does not receive the heartbeat for particular instance then the information in etcd expires and the provider instance information is removed.  
 Consumer watches the information of provider instances from SC and if there is any change then the cache is updated.  
 When Consumer needs to communicate to Provider then consumer reads endpoints of the provider instances from cache and do loadbalancing to communicate to Provider.
 

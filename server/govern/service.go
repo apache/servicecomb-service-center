@@ -1,16 +1,19 @@
-//Copyright 2017 Huawei Technologies Co., Ltd
-//
-//Licensed under the Apache License, Version 2.0 (the "License");
-//you may not use this file except in compliance with the License.
-//You may obtain a copy of the License at
-//
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-//Unless required by applicable law or agreed to in writing, software
-//distributed under the License is distributed on an "AS IS" BASIS,
-//WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//See the License for the specific language governing permissions and
-//limitations under the License.
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package govern
 
 import (
@@ -27,6 +30,13 @@ import (
 var GovernServiceAPI pb.GovernServiceCtrlServerEx = &GovernService{}
 
 type GovernService struct {
+}
+
+type ServiceDetailOpt struct {
+	domainProject string
+	service       *pb.MicroService
+	countOnly     bool
+	options       []string
 }
 
 func (governService *GovernService) GetServicesInfo(ctx context.Context, in *pb.GetServicesInfoRequest) (*pb.GetServicesInfoResponse, error) {
@@ -65,7 +75,7 @@ func (governService *GovernService) GetServicesInfo(ctx context.Context, in *pb.
 	//获取所有服务
 	services, err := serviceUtil.GetAllServiceUtil(ctx)
 	if err != nil {
-		util.Logger().Errorf(err, "Get all services for govern service faild.")
+		util.Logger().Errorf(err, "Get all services for govern service failed.")
 		return &pb.GetServicesInfoResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, "Get all service failed."),
 		}, err
@@ -86,7 +96,12 @@ func (governService *GovernService) GetServicesInfo(ctx context.Context, in *pb.
 			}
 		}
 
-		serviceDetail, err := getServiceDetailUtil(ctx, options, domainProject, service.ServiceId, service)
+		serviceDetail, err := getServiceDetailUtil(ctx, ServiceDetailOpt{
+			domainProject: domainProject,
+			service:       service,
+			countOnly:     in.CountOnly,
+			options:       options,
+		})
 		if err != nil {
 			return &pb.GetServicesInfoResponse{
 				Response: pb.CreateResponse(scerr.ErrInternal, "Get one service detail failed."),
@@ -134,13 +149,17 @@ func (governService *GovernService) GetServiceDetail(ctx context.Context, in *pb
 	}
 	versions, err := getServiceAllVersions(ctx, key)
 	if err != nil {
-		util.Logger().Errorf(err, "Get service all version fialed.")
+		util.Logger().Errorf(err, "Get service all version failed.")
 		return &pb.GetServiceDetailResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, "Get all versions of the service failed."),
 		}, err
 	}
 
-	serviceInfo, err := getServiceDetailUtil(ctx, options, domainProject, in.ServiceId, service)
+	serviceInfo, err := getServiceDetailUtil(ctx, ServiceDetailOpt{
+		domainProject: domainProject,
+		service:       service,
+		options:       options,
+	})
 	if err != nil {
 		return &pb.GetServiceDetailResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, "Get service detail failed."),
@@ -250,22 +269,29 @@ func getSchemaInfoUtil(ctx context.Context, domainProject string, serviceId stri
 	return schemas, nil
 }
 
-func getServiceDetailUtil(ctx context.Context, options []string, domainProject string, serviceId string, service *pb.MicroService) (*pb.ServiceDetail, error) {
-	serviceDetail := &pb.ServiceDetail{}
+func getServiceDetailUtil(ctx context.Context, serviceDetailOpt ServiceDetailOpt) (*pb.ServiceDetail, error) {
+	serviceId := serviceDetailOpt.service.ServiceId
+	options := serviceDetailOpt.options
+	domainProject := serviceDetailOpt.domainProject
+	serviceDetail := new(pb.ServiceDetail)
+	if serviceDetailOpt.countOnly {
+		serviceDetail.Statics = new(pb.Statistics)
+	}
+
 	for _, opt := range options {
 		expr := opt
 		switch expr {
 		case "tags":
 			tags, err := serviceUtil.GetTagsUtils(ctx, domainProject, serviceId)
 			if err != nil {
-				util.Logger().Errorf(err, "Get all tags for govern service faild.")
+				util.Logger().Errorf(err, "Get all tags for govern service failed.")
 				return nil, err
 			}
 			serviceDetail.Tags = tags
 		case "rules":
 			rules, err := serviceUtil.GetRulesUtil(ctx, domainProject, serviceId)
 			if err != nil {
-				util.Logger().Errorf(err, "Get all rules for govern service faild.")
+				util.Logger().Errorf(err, "Get all rules for govern service failed.")
 				return nil, err
 			}
 			for _, rule := range rules {
@@ -273,31 +299,42 @@ func getServiceDetailUtil(ctx context.Context, options []string, domainProject s
 			}
 			serviceDetail.Rules = rules
 		case "instances":
+			if serviceDetailOpt.countOnly {
+				instanceCount, err := serviceUtil.GetInstanceCountOfOneService(ctx, domainProject, serviceId)
+				if err != nil {
+					util.Logger().Errorf(err, "Get service's instances count for govern service failed.")
+					return nil, err
+				}
+				serviceDetail.Statics.Instances = &pb.StInstance{
+					Count: instanceCount}
+				continue
+			}
 			instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, domainProject, serviceId)
 			if err != nil {
-				util.Logger().Errorf(err, "Get service's all instances for govern service faild.")
+				util.Logger().Errorf(err, "Get service's all instances for govern service failed.")
 				return nil, err
 			}
 			serviceDetail.Instances = instances
 		case "schemas":
 			schemas, err := getSchemaInfoUtil(ctx, domainProject, serviceId)
 			if err != nil {
-				util.Logger().Errorf(err, "Get service's all schemas for govern service faild.")
+				util.Logger().Errorf(err, "Get service's all schemas for govern service failed.")
 				return nil, err
 			}
 			serviceDetail.SchemaInfos = schemas
 		case "dependencies":
+			service := serviceDetailOpt.service
 			dr := serviceUtil.NewDependencyRelation(ctx, domainProject, serviceId, service, serviceId, service)
 			consumers, err := dr.GetDependencyConsumers()
 			if err != nil {
-				util.Logger().Errorf(err, "Get service's all consumers for govern service faild.")
+				util.Logger().Errorf(err, "Get service's all consumers for govern service failed.")
 				return nil, err
 			}
 			consumers = skipSelfDependency(consumers, serviceId)
 
 			providers, err := dr.GetDependencyProviders()
 			if err != nil {
-				util.Logger().Errorf(err, "Get service's all providers for govern service faild.")
+				util.Logger().Errorf(err, "Get service's all providers for govern service failed.")
 				return nil, err
 			}
 			providers = skipSelfDependency(providers, serviceId)
