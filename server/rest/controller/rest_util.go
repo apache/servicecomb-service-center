@@ -57,3 +57,15 @@ func WriteResponse(w http.ResponseWriter, resp *pb.Response, obj interface{}) {
 
 	WriteError(w, resp.GetCode(), resp.GetMessage())
 }
+
+func WriteBytes(w http.ResponseWriter, resp *pb.Response, json []byte) {
+	if resp.GetCode() == pb.Response_SUCCESS {
+		w.Header().Add("X-Response-Status", fmt.Sprint(http.StatusOK))
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusOK)
+		w.Write(json)
+		return
+	}
+	WriteError(w, resp.GetCode(), resp.GetMessage())
+}
+
