@@ -17,14 +17,9 @@
 package event
 
 import (
-	"encoding/json"
 	"github.com/ServiceComb/service-center/pkg/util"
 	"github.com/ServiceComb/service-center/server/core/backend/store"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/server/mux"
-	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
-	"golang.org/x/net/context"
-	"net/http"
 )
 
 type DependencyEventHandler struct {
@@ -41,81 +36,14 @@ func (h *DependencyEventHandler) OnEvent(evt *store.KvEvent) {
 	}
 
 	kv := evt.KV
-	method, domainProject, data := pb.GetInfoFromDependencyKV(kv)
+	method, _, data := pb.GetInfoFromDependencyKV(kv)
 	if data == nil {
 		util.Logger().Errorf(nil,
 			"unmarshal dependency file failed, method %s [%s] event, data is nil",
 			method, action)
 		return
 	}
-
-	// maintain dependency rules.
-	var (
-		r   pb.AddDependenciesRequest
-		ctx context.Context = context.Background()
-	)
-
-	err := json.Unmarshal(data, &r.Dependencies)
-	if err != nil {
-		util.Logger().Errorf(err, "unmarshal dependency file failed, method %s [%s] event",
-			method, action)
-		return
-	}
-
-	//建立依赖规则，用于维护依赖关系
-	lock, err := mux.Try(mux.GLOBAL_LOCK)
-	if err != nil {
-		// retry
-		util.Logger().Errorf(err, "%s dependency failed, [%s] event", method, action)
-		return
-	}
-	if lock == nil {
-		return
-	}
-	defer lock.Unlock()
-
-	for _, dependencyInfo := range r.Dependencies {
-		util.Logger().Infof("start %s dependency, [%s] event, data info %v", method, action, dependencyInfo)
-
-		serviceUtil.SetDependencyDefaultValue(dependencyInfo)
-
-		consumerFlag := util.StringJoin([]string{dependencyInfo.Consumer.AppId, dependencyInfo.Consumer.ServiceName, dependencyInfo.Consumer.Version}, "/")
-		consumerInfo := pb.DependenciesToKeys([]*pb.DependencyKey{dependencyInfo.Consumer}, domainProject)[0]
-		providersInfo := pb.DependenciesToKeys(dependencyInfo.Providers, domainProject)
-
-		consumerId, err := serviceUtil.GetServiceId(ctx, consumerInfo)
-		if err != nil {
-			// retry
-			util.Logger().Errorf(err, "%s dependency failed because of getting service %s error, [%s] event",
-				method, consumerFlag, action)
-			return
-		}
-		if len(consumerId) == 0 {
-			util.Logger().Errorf(nil, "%s dependency failed, consumer %s: consumer does not exist, [%s] event",
-				method, consumerFlag, action)
-			return
-		}
-
-		var dep serviceUtil.Dependency
-		dep.DomainProject = domainProject
-		dep.Consumer = consumerInfo
-		dep.ProvidersRule = providersInfo
-		dep.ConsumerId = consumerId
-		switch method {
-		case http.MethodPost:
-			err = serviceUtil.AddDependencyRule(ctx, &dep)
-		default:
-			err = serviceUtil.CreateDependencyRule(ctx, &dep)
-		}
-
-		if err != nil {
-			// retry
-			util.Logger().Errorf(err, "%s dependency failed: consumer %s, [%s] event",
-				method, consumerFlag, action)
-			return
-		}
-	}
-	return
+	// TODO maintain dependency rules.
 }
 
 func NewDependencyEventHandler() *DependencyEventHandler {
