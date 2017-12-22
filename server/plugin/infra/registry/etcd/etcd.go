@@ -276,8 +276,12 @@ func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp) (*clientv
 		l := int64(len(recordResp.Kvs))
 		nextKey = clientv3.GetPrefixRangeEnd(util.BytesToStringWithNoCopy(recordResp.Kvs[l-1].Key))
 
-		if op.Offset >= 0 && (op.Offset < i*op.Limit || op.Offset >= (i+1)*op.Limit) {
-			continue
+		if op.Offset >= 0 {
+			if op.Offset < i*op.Limit {
+				continue
+			} else if op.Offset >= (i+1)*op.Limit {
+				break
+			}
 		}
 		etcdResp.Kvs = append(etcdResp.Kvs, recordResp.Kvs...)
 	}
@@ -290,14 +294,14 @@ func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp) (*clientv
 	// too slow
 	if op.SortOrder == registry.SORT_DESCEND {
 		t := time.Now()
-		for i := int64(0); i < recordCount; i++ {
-			last := recordCount - i - 1
+		for i, l := 0, len(etcdResp.Kvs); i < l; i++ {
+			last := l - i - 1
 			if last <= i {
 				break
 			}
 			etcdResp.Kvs[i], etcdResp.Kvs[last] = etcdResp.Kvs[last], etcdResp.Kvs[i]
 		}
-		util.LogNilOrWarnf(t, "sorted %d KeyValues(%s)", recordCount, key)
+		util.LogNilOrWarnf(t, "sorted descend %d KeyValues(%s)", recordCount, key)
 	}
 	return etcdResp, nil
 }

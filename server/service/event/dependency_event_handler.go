@@ -17,13 +17,35 @@
 package event
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
+	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/ServiceComb/service-center/server/core/backend/store"
+	pb "github.com/ServiceComb/service-center/server/core/proto"
 )
 
-func init() {
-	store.AddEventHandler(NewServiceEventHandler())
-	store.AddEventHandler(NewInstanceEventHandler())
-	store.AddEventHandler(NewRuleEventHandler())
-	store.AddEventHandler(NewTagEventHandler())
-	store.AddEventHandler(NewDependencyEventHandler())
+type DependencyEventHandler struct {
+}
+
+func (h *DependencyEventHandler) Type() store.StoreType {
+	return store.SERVICE
+}
+
+func (h *DependencyEventHandler) OnEvent(evt *store.KvEvent) {
+	action := evt.Action
+	if action != pb.EVT_CREATE && action != pb.EVT_INIT {
+		return
+	}
+
+	kv := evt.KV
+	method, _, data := pb.GetInfoFromDependencyKV(kv)
+	if data == nil {
+		util.Logger().Errorf(nil,
+			"unmarshal dependency file failed, method %s [%s] event, data is nil",
+			method, action)
+		return
+	}
+	// TODO maintain dependency rules.
+}
+
+func NewDependencyEventHandler() *DependencyEventHandler {
+	return &DependencyEventHandler{}
 }

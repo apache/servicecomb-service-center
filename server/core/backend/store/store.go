@@ -38,6 +38,7 @@ const (
 	RULE_INDEX
 	DEPENDENCY
 	DEPENDENCY_RULE
+	DEPENDENCY_QUEUE
 	SCHEMA // big data should not be stored in memory.
 	SCHEMA_SUMMARY
 	INSTANCE
@@ -49,39 +50,41 @@ const (
 const TIME_FORMAT = "15:04:05.000"
 
 var TypeNames = []string{
-	SERVICE:         "SERVICE",
-	INSTANCE:        "INSTANCE",
-	DOMAIN:          "DOMAIN",
-	SCHEMA:          "SCHEMA",
-	SCHEMA_SUMMARY:  "SCHEMA_SUMMARY",
-	RULE:            "RULE",
-	LEASE:           "LEASE",
-	SERVICE_INDEX:   "SERVICE_INDEX",
-	SERVICE_ALIAS:   "SERVICE_ALIAS",
-	SERVICE_TAG:     "SERVICE_TAG",
-	RULE_INDEX:      "RULE_INDEX",
-	DEPENDENCY:      "DEPENDENCY",
-	DEPENDENCY_RULE: "DEPENDENCY_RULE",
-	PROJECT:         "PROJECT",
-	ENDPOINTS:       "ENDPOINTS",
+	SERVICE:          "SERVICE",
+	INSTANCE:         "INSTANCE",
+	DOMAIN:           "DOMAIN",
+	SCHEMA:           "SCHEMA",
+	SCHEMA_SUMMARY:   "SCHEMA_SUMMARY",
+	RULE:             "RULE",
+	LEASE:            "LEASE",
+	SERVICE_INDEX:    "SERVICE_INDEX",
+	SERVICE_ALIAS:    "SERVICE_ALIAS",
+	SERVICE_TAG:      "SERVICE_TAG",
+	RULE_INDEX:       "RULE_INDEX",
+	DEPENDENCY:       "DEPENDENCY",
+	DEPENDENCY_RULE:  "DEPENDENCY_RULE",
+	DEPENDENCY_QUEUE: "DEPENDENCY_QUEUE",
+	PROJECT:          "PROJECT",
+	ENDPOINTS:        "ENDPOINTS",
 }
 
 var TypeRoots = map[StoreType]string{
-	SERVICE:         apt.GetServiceRootKey(""),
-	INSTANCE:        apt.GetInstanceRootKey(""),
-	DOMAIN:          apt.GetDomainRootKey() + "/",
-	SCHEMA:          apt.GetServiceSchemaRootKey(""),
-	SCHEMA_SUMMARY:  apt.GetServiceSchemaSummaryRootKey(""),
-	RULE:            apt.GetServiceRuleRootKey(""),
-	LEASE:           apt.GetInstanceLeaseRootKey(""),
-	SERVICE_INDEX:   apt.GetServiceIndexRootKey(""),
-	SERVICE_ALIAS:   apt.GetServiceAliasRootKey(""),
-	SERVICE_TAG:     apt.GetServiceTagRootKey(""),
-	RULE_INDEX:      apt.GetServiceRuleIndexRootKey(""),
-	DEPENDENCY:      apt.GetServiceDependencyRootKey(""),
-	DEPENDENCY_RULE: apt.GetServiceDependencyRuleRootKey(""),
-	PROJECT:         apt.GetProjectRootKey(""),
-	ENDPOINTS:       apt.GetEndpointsRootKey(""),
+	SERVICE:          apt.GetServiceRootKey(""),
+	INSTANCE:         apt.GetInstanceRootKey(""),
+	DOMAIN:           apt.GetDomainRootKey() + "/",
+	SCHEMA:           apt.GetServiceSchemaRootKey(""),
+	SCHEMA_SUMMARY:   apt.GetServiceSchemaSummaryRootKey(""),
+	RULE:             apt.GetServiceRuleRootKey(""),
+	LEASE:            apt.GetInstanceLeaseRootKey(""),
+	SERVICE_INDEX:    apt.GetServiceIndexRootKey(""),
+	SERVICE_ALIAS:    apt.GetServiceAliasRootKey(""),
+	SERVICE_TAG:      apt.GetServiceTagRootKey(""),
+	RULE_INDEX:       apt.GetServiceRuleIndexRootKey(""),
+	DEPENDENCY:       apt.GetServiceDependencyRootKey(""),
+	DEPENDENCY_RULE:  apt.GetServiceDependencyRuleRootKey(""),
+	DEPENDENCY_QUEUE: apt.GetServiceDependencyQueueRootKey(""),
+	PROJECT:          apt.GetProjectRootKey(""),
+	ENDPOINTS:        apt.GetEndpointsRootKey(""),
 }
 
 var store = &KvStore{}

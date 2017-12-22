@@ -47,15 +47,12 @@ func (h *ServiceEventHandler) OnEvent(evt *store.KvEvent) {
 		return
 	}
 
-	switch action {
-	case pb.EVT_CREATE, pb.EVT_INIT:
-		newDomain := domainProject[:strings.Index(domainProject, "/")]
-		newProject := domainProject[strings.Index(domainProject, "/")+1:]
-		err := serviceUtil.NewDomainProject(context.Background(), newDomain, newProject)
-		if err != nil {
-			util.Logger().Errorf(err, "new domain(%s) or project(%s) failed", newDomain, newProject)
-			return
-		}
+	newDomain := domainProject[:strings.Index(domainProject, "/")]
+	newProject := domainProject[strings.Index(domainProject, "/")+1:]
+	err := serviceUtil.NewDomainProject(context.Background(), newDomain, newProject)
+	if err != nil {
+		util.Logger().Errorf(err, "new domain(%s) or project(%s) failed", newDomain, newProject)
+		return
 	}
 }
 

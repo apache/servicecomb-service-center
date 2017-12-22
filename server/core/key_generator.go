@@ -40,6 +40,7 @@ const (
 	REGISTRY_LEASE_KEY          = "leases"
 	REGISTRY_DEPENDENCY_KEY     = "deps"
 	REGISTRY_DEPS_RULE_KEY      = "dep-rules"
+	REGISTRY_DEPS_QUEUE_KEY     = "dep-queue"
 	REGISTRY_METRICS_KEY        = "metrics"
 	ENDPOINTS_ROOT_KEY          = "eps"
 )
@@ -296,6 +297,15 @@ func GetServiceDependencyRuleRootKey(domainProject string) string {
 		GetRootKey(),
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_DEPS_RULE_KEY,
+		domainProject,
+	}, "/")
+}
+
+func GetServiceDependencyQueueRootKey(domainProject string) string {
+	return util.StringJoin([]string{
+		GetRootKey(),
+		REGISTRY_SERVICE_KEY,
+		REGISTRY_DEPS_QUEUE_KEY,
 		domainProject,
 	}, "/")
 }

@@ -238,6 +238,16 @@ func GetInfoFromSchemaKV(kv *mvccpb.KeyValue) (schemaId string, data []byte) {
 	return keys[l-1], data
 }
 
+func GetInfoFromDependencyKV(kv *mvccpb.KeyValue) (method, domainProject string, data []byte) {
+	keys, data := KvToResponse(kv)
+	l := len(keys)
+	if l < 4 {
+		return
+	}
+
+	return keys[l-1], keys[l-3], data
+}
+
 func DependenciesToKeys(in []*DependencyKey, domainProject string) []*MicroServiceKey {
 	rst := []*MicroServiceKey{}
 	for _, value := range in {
