@@ -18,13 +18,13 @@ package buildin
 
 import (
 	"fmt"
-	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/server/core"
-	"github.com/ServiceComb/service-center/server/core/backend/store"
-	"github.com/ServiceComb/service-center/server/infra/quota"
-	"github.com/ServiceComb/service-center/server/infra/registry"
-	mgr "github.com/ServiceComb/service-center/server/plugin"
-	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
+	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
+	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
 	"strings"
 )

@@ -19,7 +19,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/ServiceComb/service-center/pkg/lager"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/lager"
 )
 
 func main() {

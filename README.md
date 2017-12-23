@@ -47,8 +47,8 @@ docker run -d -p 30100:30100 servicecomb/service-center
 
 Download the Code
 ```sh
-git clone https://github.com/ServiceComb/service-center.git $GOPATH/src/github.com/ServiceComb/service-center
-cd $GOPATH/src/github.com/ServiceComb/service-center
+git clone https://github.com/apache/incubator-servicecomb-service-center.git $GOPATH/src/github.com/apache/incubator-servicecomb-service-center
+cd $GOPATH/src/github.com/apache/incubator-servicecomb-service-center
 ```
 
 Dependencies
@@ -74,7 +74,7 @@ tar -xvf etcd-v3.1.8-linux-amd64.tar.gz
 cd etcd-v3.1.8-linux-amd64
 ./etcd
 
-cd $GOPATH/src/github.com/ServiceComb/service-center
+cd $GOPATH/src/github.com/apache/incubator-servicecomb-service-center
 cp -r ./etc/conf .
 ./service-center
 ```

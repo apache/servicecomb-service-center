@@ -16,42 +16,42 @@
  */
 package bootstrap
 
-import _ "github.com/ServiceComb/service-center/server/core" // initialize
+import _ "github.com/apache/incubator-servicecomb-service-center/server/core" // initialize
 
 // rest
-import _ "github.com/ServiceComb/service-center/server/rest/controller/v3"
-import _ "github.com/ServiceComb/service-center/server/rest/controller/v4"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/rest/controller/v3"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/rest/controller/v4"
 
 // registry
-import _ "github.com/ServiceComb/service-center/server/plugin/infra/registry/etcd"
-import _ "github.com/ServiceComb/service-center/server/plugin/infra/registry/embededetcd"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/registry/etcd"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/registry/embededetcd"
 
 // cipher
-import _ "github.com/ServiceComb/service-center/server/plugin/infra/security/buildin"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/security/buildin"
 
 // quota
-import _ "github.com/ServiceComb/service-center/server/plugin/infra/quota/buildin"
-import _ "github.com/ServiceComb/service-center/server/plugin/infra/quota/unlimit"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/quota/buildin"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/quota/unlimit"
 
 // auth
-import _ "github.com/ServiceComb/service-center/server/plugin/infra/auth/buildin"
-import _ "github.com/ServiceComb/service-center/server/plugin/infra/auth/dynamic"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/auth/buildin"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/auth/dynamic"
 
 // uuid
-import _ "github.com/ServiceComb/service-center/server/plugin/infra/uuid/dynamic"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/uuid/dynamic"
 
 // module
-import _ "github.com/ServiceComb/service-center/server/govern"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/govern"
 
 import (
-	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/server/handler/auth"
-	"github.com/ServiceComb/service-center/server/handler/cache"
-	"github.com/ServiceComb/service-center/server/handler/context"
-	"github.com/ServiceComb/service-center/server/interceptor"
-	"github.com/ServiceComb/service-center/server/interceptor/access"
-	"github.com/ServiceComb/service-center/server/interceptor/cors"
-	"github.com/ServiceComb/service-center/server/interceptor/ratelimiter"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/handler/auth"
+	"github.com/apache/incubator-servicecomb-service-center/server/handler/cache"
+	"github.com/apache/incubator-servicecomb-service-center/server/handler/context"
+	"github.com/apache/incubator-servicecomb-service-center/server/interceptor"
+	"github.com/apache/incubator-servicecomb-service-center/server/interceptor/access"
+	"github.com/apache/incubator-servicecomb-service-center/server/interceptor/cors"
+	"github.com/apache/incubator-servicecomb-service-center/server/interceptor/ratelimiter"
 )
 
 func init() {

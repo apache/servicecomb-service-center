@@ -17,9 +17,9 @@
 package context
 
 import (
-	"github.com/ServiceComb/service-center/pkg/chain"
-	roa "github.com/ServiceComb/service-center/pkg/rest"
-	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/chain"
+	roa "github.com/apache/incubator-servicecomb-service-center/pkg/rest"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"net/http"
 )
 

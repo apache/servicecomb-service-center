@@ -18,9 +18,9 @@ package access
 
 import (
 	"fmt"
-	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/pkg/validate"
-	"github.com/ServiceComb/service-center/server/core"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/validate"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"net/http"
 )
 

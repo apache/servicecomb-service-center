@@ -20,12 +20,12 @@ package core
 import (
 	"flag"
 	"fmt"
-	"github.com/ServiceComb/service-center/pkg/grace"
-	"github.com/ServiceComb/service-center/pkg/lager"
-	"github.com/ServiceComb/service-center/pkg/logrotate"
-	"github.com/ServiceComb/service-center/pkg/plugin"
-	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/version"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/grace"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/lager"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/logrotate"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/plugin"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/version"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -92,10 +92,10 @@ func initLogger() {
 	util.CustomLogger("Heartbeat", "heartbeat")
 	util.CustomLogger("HeartbeatSet", "heartbeat")
 
-	util.CustomLogger("github.com/ServiceComb/service-center/server/service/event", "event")
-	util.CustomLogger("github.com/ServiceComb/service-center/server/service/notification", "event")
+	util.CustomLogger("github.com/apache/incubator-servicecomb-service-center/server/service/event", "event")
+	util.CustomLogger("github.com/apache/incubator-servicecomb-service-center/server/service/notification", "event")
 
-	util.CustomLogger("github.com/ServiceComb/service-center/server/core/backend", "registry")
+	util.CustomLogger("github.com/apache/incubator-servicecomb-service-center/server/core/backend", "registry")
 
 	initLogRotate()
 }

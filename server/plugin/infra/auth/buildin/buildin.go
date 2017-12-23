@@ -17,7 +17,7 @@
 package dynamic
 
 import (
-	mgr "github.com/ServiceComb/service-center/server/plugin"
+	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	"net/http"
 )
 

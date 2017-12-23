@@ -18,9 +18,9 @@ package v3
 
 import (
 	"encoding/json"
-	"github.com/ServiceComb/service-center/pkg/rest"
-	"github.com/ServiceComb/service-center/server/rest/controller/v4"
-	"github.com/ServiceComb/service-center/version"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
+	"github.com/apache/incubator-servicecomb-service-center/server/rest/controller/v4"
+	"github.com/apache/incubator-servicecomb-service-center/version"
 	"net/http"
 )
 

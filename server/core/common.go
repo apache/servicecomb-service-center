@@ -18,9 +18,9 @@ package core
 
 import (
 	"errors"
-	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/pkg/validate"
-	pb "github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/validate"
+	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"math"
 	"reflect"
 	"regexp"

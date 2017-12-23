@@ -17,10 +17,10 @@
 package store
 
 import (
-	errorsEx "github.com/ServiceComb/service-center/pkg/errors"
-	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/server/core/backend"
-	"github.com/ServiceComb/service-center/server/infra/registry"
+	errorsEx "github.com/apache/incubator-servicecomb-service-center/pkg/errors"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"golang.org/x/net/context"
 	"time"
 )

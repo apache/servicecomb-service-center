@@ -21,7 +21,7 @@ import "github.com/astaxie/beego"
 var (
 	// no need to modify
 	// please use:
-	// 	go build -ldflags "-X github.com/ServiceComb/service-center/version.VERSION=x.x.x"
+	// 	go build -ldflags "-X github.com/apache/incubator-servicecomb-service-center/version.VERSION=x.x.x"
 	// to set these values.
 	VERSION   = "0.0.1"
 	BUILD_TAG = "Not provided"

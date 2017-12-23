@@ -17,8 +17,8 @@
 package chain
 
 import (
-	errorsEx "github.com/ServiceComb/service-center/pkg/errors"
-	"github.com/ServiceComb/service-center/pkg/util"
+	errorsEx "github.com/apache/incubator-servicecomb-service-center/pkg/errors"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 )
 
 type Chain struct {

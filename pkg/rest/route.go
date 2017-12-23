@@ -19,9 +19,9 @@ package rest
 import (
 	"errors"
 	"fmt"
-	"github.com/ServiceComb/service-center/pkg/chain"
-	errorsEx "github.com/ServiceComb/service-center/pkg/errors"
-	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/chain"
+	errorsEx "github.com/apache/incubator-servicecomb-service-center/pkg/errors"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"net/http"
 	"strings"
 )

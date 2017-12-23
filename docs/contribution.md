@@ -1,6 +1,6 @@
 ## Contribution guide for Service-Center
 
-Thanks everyone for contributing to [Service-Center](https://github.com/ServiceComb/service-center).
+Thanks everyone for contributing to [Service-Center](https://github.com/apache/incubator-servicecomb-service-center).
 
 This document explains the process and best practices for submitting a Pull Request to the Service-Center project. This document can be treated as a reference for all contributors and be useful to new and infrequent submitters.
 
@@ -9,8 +9,8 @@ This document explains the process and best practices for submitting a Pull Requ
 Clone the repo in a proper GOPATH
 
 ```
-git clone https://github.com/ServiceComb/service-center.git $GOPATH/src/github.com/ServiceComb/service-center
-cd $GOPATH/src/github.com/ServiceComb/service-center
+git clone https://github.com/apache/incubator-servicecomb-service-center.git $GOPATH/src/github.com/apache/incubator-servicecomb-service-center
+cd $GOPATH/src/github.com/apache/incubator-servicecomb-service-center
 ```
 
 #### Download the Dependencies
@@ -24,7 +24,7 @@ gvt restore
 
 #### Make your Changes
 
-If this is a bug or a small fix then you can directly make the changes and ensure all the steps in this documentation and raise a PR, but If it is a feature or a big design or architecture change then we recommend you to raise an issue [here](https://github.com/ServiceComb/service-center/issues) or discuss the same in our [mailing list](https://groups.google.com/forum/#!forum/servicecomb-developers).
+If this is a bug or a small fix then you can directly make the changes and ensure all the steps in this documentation and raise a PR, but If it is a feature or a big design or architecture change then we recommend you to raise an issue [here](https://github.com/apache/incubator-servicecomb-service-center/issues) or discuss the same in our [mailing list](https://groups.google.com/forum/#!forum/servicecomb-developers).
 
 #### Compile and running Test locally.
 

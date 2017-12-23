@@ -24,7 +24,7 @@ import (
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega/gbytes"
 
-	"github.com/ServiceComb/service-center/pkg/lager"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/lager"
 )
 
 type TestLogger struct {

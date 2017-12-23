@@ -17,13 +17,13 @@
 package govern_test
 
 import (
-	"github.com/ServiceComb/service-center/pkg/util"
-	pb "github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/server/govern"
-	_ "github.com/ServiceComb/service-center/server/plugin/infra/quota/buildin"
-	_ "github.com/ServiceComb/service-center/server/plugin/infra/registry/etcd"
-	_ "github.com/ServiceComb/service-center/server/plugin/infra/uuid/dynamic"
-	"github.com/ServiceComb/service-center/server/service"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/server/govern"
+	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/quota/buildin"
+	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/registry/etcd"
+	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/uuid/dynamic"
+	"github.com/apache/incubator-servicecomb-service-center/server/service"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"

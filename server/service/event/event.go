@@ -17,7 +17,7 @@
 package event
 
 import (
-	"github.com/ServiceComb/service-center/server/core/backend/store"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
 )
 
 func init() {

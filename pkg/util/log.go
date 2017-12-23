@@ -18,8 +18,8 @@ package util
 
 import (
 	"fmt"
-	"github.com/ServiceComb/service-center/pkg/lager"
-	"github.com/ServiceComb/service-center/pkg/lager/core"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/lager"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/lager/core"
 	"os"
 	"path/filepath"
 	"runtime"

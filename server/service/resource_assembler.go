@@ -17,8 +17,8 @@
 package service
 
 import (
-	"github.com/ServiceComb/service-center/pkg/rpc"
-	pb "github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/rpc"
+	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"google.golang.org/grpc"
 )
 

@@ -18,10 +18,10 @@ package tls
 
 import (
 	"crypto/tls"
-	"github.com/ServiceComb/service-center/pkg/tlsutil"
-	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/server/core"
-	"github.com/ServiceComb/service-center/server/plugin"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/tlsutil"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	"github.com/astaxie/beego"
 	"io/ioutil"
 	"os"
