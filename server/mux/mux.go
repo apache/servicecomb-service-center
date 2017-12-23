@@ -33,7 +33,7 @@ func (m *MuxType) String() (s string) {
 }
 
 const (
-	GLOBAL_LOCK MuxType = "/global"
+	GLOBAL_LOCK MuxType = "/cse-sr/lock/global"
 )
 
 func Lock(t MuxType) (*etcdsync.DLock, error) {
