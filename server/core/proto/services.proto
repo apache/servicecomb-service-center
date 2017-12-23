@@ -528,6 +528,7 @@ message DependencyKey {
 message ConsumerDependency {
     DependencyKey consumer = 1;
     repeated DependencyKey providers = 2;
+    bool override = 3;
 }
 
 message CreateDependenciesResponse {

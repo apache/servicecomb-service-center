@@ -18,20 +18,24 @@ package event
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/ServiceComb/service-center/server/core"
 	"github.com/ServiceComb/service-center/server/core/backend/store"
 	pb "github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/ServiceComb/service-center/server/infra/registry"
 	"github.com/ServiceComb/service-center/server/mux"
 	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"golang.org/x/net/context"
-	"net/http"
+	"time"
 )
 
 type DependencyEventHandler struct {
+	signals *util.UniQueue
 }
 
 func (h *DependencyEventHandler) Type() store.StoreType {
-	return store.SERVICE
+	return store.DEPENDENCY_QUEUE
 }
 
 func (h *DependencyEventHandler) OnEvent(evt *store.KvEvent) {
@@ -40,60 +44,87 @@ func (h *DependencyEventHandler) OnEvent(evt *store.KvEvent) {
 		return
 	}
 
-	kv := evt.KV
-	method, domainProject, data := pb.GetInfoFromDependencyKV(kv)
-	if data == nil {
-		util.Logger().Errorf(nil,
-			"unmarshal dependency file failed, method %s [%s] event, data is nil",
-			method, action)
-		return
+	h.signals.Put(context.Background(), struct{}{})
+}
+
+func (h *DependencyEventHandler) loop() {
+	util.Go(func(stopCh <-chan struct{}) {
+		waitDelayIndex := 0
+		waitDelay := []int{1, 1, 5, 10, 20, 30, 60}
+		retry := func() {
+			if waitDelayIndex >= len(waitDelay) {
+				waitDelayIndex = 0
+			}
+			<-time.After(time.Duration(waitDelay[waitDelayIndex]) * time.Second)
+			waitDelayIndex++
+
+			h.signals.Put(context.Background(), struct{}{})
+		}
+		for {
+			select {
+			case <-stopCh:
+				return
+			case <-h.signals.Chan():
+				lock, err := mux.Try(mux.DEP_QUEUE_LOCK)
+				if err != nil {
+					util.Logger().Errorf(err, "try to lock %s failed", mux.DEP_QUEUE_LOCK)
+					retry()
+					continue
+				}
+
+				if lock == nil {
+					continue
+				}
+
+				err = h.handle()
+				lock.Unlock()
+				if err != nil {
+					util.Logger().Errorf(err, "handle dependency event failed")
+					retry()
+					continue
+				}
+			}
+		}
+	})
+}
+
+func (h *DependencyEventHandler) handle() error {
+	key := core.GetServiceDependencyQueueRootKey("")
+	resp, err := store.Store().DependencyQueue().Search(context.Background(),
+		registry.WithStrKey(key),
+		registry.WithPrefix())
+	if err != nil {
+		return err
 	}
 
 	// maintain dependency rules.
-	var (
-		r   pb.AddDependenciesRequest
-		ctx context.Context = context.Background()
-	)
+	for _, kv := range resp.Kvs {
+		var (
+			r   *pb.ConsumerDependency
+			ctx context.Context = context.Background()
+		)
 
-	err := json.Unmarshal(data, &r.Dependencies)
-	if err != nil {
-		util.Logger().Errorf(err, "unmarshal dependency file failed, method %s [%s] event",
-			method, action)
-		return
-	}
+		consumerId, domainProject, data := pb.GetInfoFromDependencyQueueKV(kv)
 
-	//建立依赖规则，用于维护依赖关系
-	lock, err := mux.Try(mux.GLOBAL_LOCK)
-	if err != nil {
-		// retry
-		util.Logger().Errorf(err, "%s dependency failed, [%s] event", method, action)
-		return
-	}
-	if lock == nil {
-		return
-	}
-	defer lock.Unlock()
-
-	for _, dependencyInfo := range r.Dependencies {
-		util.Logger().Infof("start %s dependency, [%s] event, data info %v", method, action, dependencyInfo)
-
-		serviceUtil.SetDependencyDefaultValue(dependencyInfo)
-
-		consumerFlag := util.StringJoin([]string{dependencyInfo.Consumer.AppId, dependencyInfo.Consumer.ServiceName, dependencyInfo.Consumer.Version}, "/")
-		consumerInfo := pb.DependenciesToKeys([]*pb.DependencyKey{dependencyInfo.Consumer}, domainProject)[0]
-		providersInfo := pb.DependenciesToKeys(dependencyInfo.Providers, domainProject)
-
-		consumerId, err := serviceUtil.GetServiceId(ctx, consumerInfo)
+		err := json.Unmarshal(data, r)
 		if err != nil {
-			// retry
-			util.Logger().Errorf(err, "%s dependency failed because of getting service %s error, [%s] event",
-				method, consumerFlag, action)
-			return
+			return fmt.Errorf("unmarshal consumer %s dependency failed, %s", consumerId, err.Error())
+		}
+
+		serviceUtil.SetDependencyDefaultValue(r)
+
+		consumerFlag := util.StringJoin([]string{r.Consumer.AppId, r.Consumer.ServiceName, r.Consumer.Version}, "/")
+		consumerInfo := pb.DependenciesToKeys([]*pb.DependencyKey{r.Consumer}, domainProject)[0]
+		providersInfo := pb.DependenciesToKeys(r.Providers, domainProject)
+
+		consumerId, err = serviceUtil.GetServiceId(ctx, consumerInfo)
+		if err != nil {
+			return fmt.Errorf("get consumer %s id failed, override: %t, %s", consumerFlag, r.Override, err.Error())
 		}
 		if len(consumerId) == 0 {
-			util.Logger().Errorf(nil, "%s dependency failed, consumer %s: consumer does not exist, [%s] event",
-				method, consumerFlag, action)
-			return
+			util.Logger().Errorf(nil, "maintain dependency failed, override: %t, consumer %s does not exist",
+				r.Override, consumerFlag)
+			return nil
 		}
 
 		var dep serviceUtil.Dependency
@@ -101,23 +132,26 @@ func (h *DependencyEventHandler) OnEvent(evt *store.KvEvent) {
 		dep.Consumer = consumerInfo
 		dep.ProvidersRule = providersInfo
 		dep.ConsumerId = consumerId
-		switch method {
-		case http.MethodPost:
-			err = serviceUtil.AddDependencyRule(ctx, &dep)
-		default:
+		if r.Override {
 			err = serviceUtil.CreateDependencyRule(ctx, &dep)
+		} else {
+			err = serviceUtil.AddDependencyRule(ctx, &dep)
 		}
 
 		if err != nil {
-			// retry
-			util.Logger().Errorf(err, "%s dependency failed: consumer %s, [%s] event",
-				method, consumerFlag, action)
-			return
+			return fmt.Errorf("override: %t, consumer is %s, %s", r.Override, consumerFlag, err.Error())
 		}
+
+		util.Logger().Infof("maintain dependency %+v successfully", r)
 	}
-	return
+
+	return nil
 }
 
 func NewDependencyEventHandler() *DependencyEventHandler {
-	return &DependencyEventHandler{}
+	h := &DependencyEventHandler{
+		signals: util.NewUniQueue(),
+	}
+	h.loop()
+	return h
 }

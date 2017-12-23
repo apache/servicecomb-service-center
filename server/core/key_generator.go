@@ -327,6 +327,14 @@ func GenerateProviderDependencyKey(domainProject string, providerId string, cons
 	return GenerateServiceDependencyKey("p", domainProject, providerId, consumerId)
 }
 
+func GenerateConsumerDependencyQueueKey(domainProject, consumerId, uuid string) string {
+	return util.StringJoin([]string{
+		GetServiceDependencyQueueRootKey(domainProject),
+		consumerId,
+		uuid,
+	}, "/")
+}
+
 func GetServiceDependencyRootKey(domainProject string) string {
 	return util.StringJoin([]string{
 		GetRootKey(),

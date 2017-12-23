@@ -601,15 +601,17 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 			instances = append(instances, resp.GetInstances()...)
 		}
 	}
-	consumer := pb.MicroServiceToKey(domainProject, service)
+
 	//维护version的规则,servicename 可能是别名，所以重新获取
-	providerService, _ := serviceUtil.GetService(ctx, domainProject, ids[0])
+	providerService, err := serviceUtil.GetService(ctx, domainProject, ids[0])
 	if providerService == nil {
-		util.Logger().Errorf(nil, "find instance failed, %s: no provider matched.", findFlag)
+		util.Logger().Errorf(err, "find instance failed, %s: no provider matched.", findFlag)
 		return &pb.FindInstancesResponse{
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "No provider matched."),
 		}, nil
 	}
+
+	consumer := pb.MicroServiceToKey(domainProject, service)
 	provider := &pb.MicroServiceKey{
 		Tenant:      domainProject,
 		Environment: consumer.Environment,
@@ -618,8 +620,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		Version:     in.VersionRule,
 	}
 
-	err = serviceUtil.AddServiceVersionRule(ctx, domainProject, provider, consumer)
-
+	err = serviceUtil.AddServiceVersionRule(ctx, domainProject, service.ServiceId, consumer, provider)
 	if err != nil {
 		util.Logger().Errorf(err, "find instance failed, %s: add service version rule failed.", findFlag)
 		return &pb.FindInstancesResponse{

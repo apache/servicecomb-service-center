@@ -20,15 +20,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/cache"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
-	"github.com/apache/incubator-servicecomb-service-center/server/mux"
+	"github.com/ServiceComb/service-center/pkg/cache"
+	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/ServiceComb/service-center/pkg/uuid"
+	apt "github.com/ServiceComb/service-center/server/core"
+	"github.com/ServiceComb/service-center/server/core/backend"
+	"github.com/ServiceComb/service-center/server/core/backend/store"
+	pb "github.com/ServiceComb/service-center/server/core/proto"
+	scerr "github.com/ServiceComb/service-center/server/error"
+	"github.com/ServiceComb/service-center/server/infra/registry"
 	"golang.org/x/net/context"
 	"strings"
 	"time"
@@ -243,19 +243,37 @@ func ProviderDependencyRuleExist(ctx context.Context, domainProject string, prov
 	return false, nil
 }
 
-func AddServiceVersionRule(ctx context.Context, domainProject string, provider *pb.MicroServiceKey, consumer *pb.MicroServiceKey) error {
+func AddServiceVersionRule(ctx context.Context, domainProject, consumerId string, consumer *pb.MicroServiceKey, provider *pb.MicroServiceKey) error {
 	//创建依赖一致
 	exist, err := ProviderDependencyRuleExist(ctx, domainProject, provider, consumer)
 	if exist || err != nil {
 		return err
 	}
 
-	lock, err := mux.Lock(mux.GLOBAL_LOCK)
+	data, err := json.Marshal(&pb.ConsumerDependency{
+		Consumer: &pb.DependencyKey{
+			Environment: consumer.Environment,
+			AppId:       consumer.AppId,
+			ServiceName: consumer.ServiceName,
+			Version:     consumer.Version,
+		},
+		Providers: []*pb.DependencyKey{
+			{
+				Environment: consumer.Environment,
+				AppId:       provider.AppId,
+				ServiceName: provider.ServiceName,
+				Version:     provider.Version,
+			},
+		},
+		Override: false,
+	})
 	if err != nil {
 		return err
 	}
-	err = CreateDependencyRuleForFind(ctx, domainProject, provider, consumer)
-	lock.Unlock()
+
+	key := apt.GenerateConsumerDependencyQueueKey(domainProject, consumerId, uuid.GenerateUuid())
+	_, err = backend.Registry().Do(ctx, registry.PUT,
+		registry.WithStrKey(key), registry.WithValue(data))
 	return err
 }
 

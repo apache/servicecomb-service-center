@@ -221,7 +221,7 @@ func GetInfoFromSvcIndexKV(kv *mvccpb.KeyValue) (key *MicroServiceKey, data []by
 func GetInfoFromSchemaSummaryKV(kv *mvccpb.KeyValue) (schemaId string, data []byte) {
 	keys, data := KvToResponse(kv)
 	l := len(keys)
-	if l < 2 {
+	if l < 1 {
 		return
 	}
 
@@ -231,21 +231,21 @@ func GetInfoFromSchemaSummaryKV(kv *mvccpb.KeyValue) (schemaId string, data []by
 func GetInfoFromSchemaKV(kv *mvccpb.KeyValue) (schemaId string, data []byte) {
 	keys, data := KvToResponse(kv)
 	l := len(keys)
-	if l < 2 {
+	if l < 1 {
 		return
 	}
 
 	return keys[l-1], data
 }
 
-func GetInfoFromDependencyKV(kv *mvccpb.KeyValue) (method, domainProject string, data []byte) {
+func GetInfoFromDependencyQueueKV(kv *mvccpb.KeyValue) (consumerId, domainProject string, data []byte) {
 	keys, data := KvToResponse(kv)
 	l := len(keys)
-	if l < 4 {
+	if l < 3 {
 		return
 	}
 
-	return keys[l-1], keys[l-3], data
+	return keys[l-2], keys[l-3], data
 }
 
 func DependenciesToKeys(in []*DependencyKey, domainProject string) []*MicroServiceKey {

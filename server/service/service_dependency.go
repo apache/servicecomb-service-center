@@ -17,12 +17,15 @@
 package service
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
-	"github.com/apache/incubator-servicecomb-service-center/server/mux"
-	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
+	"encoding/json"
+	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/ServiceComb/service-center/pkg/uuid"
+	apt "github.com/ServiceComb/service-center/server/core"
+	"github.com/ServiceComb/service-center/server/core/backend"
+	pb "github.com/ServiceComb/service-center/server/core/proto"
+	scerr "github.com/ServiceComb/service-center/server/error"
+	"github.com/ServiceComb/service-center/server/infra/registry"
+	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
 	"golang.org/x/net/context"
 )
 
@@ -44,13 +47,12 @@ func (s *MicroServiceService) AddOrUpdateDependencies(ctx context.Context, depen
 	if len(dependencyInfos) == 0 {
 		return serviceUtil.BadParamsResponse("Invalid request body.").Response, nil
 	}
+	opts := make([]registry.PluginOp, 0, len(dependencyInfos))
 	domainProject := util.ParseDomainProject(ctx)
 	for _, dependencyInfo := range dependencyInfos {
 		if len(dependencyInfo.Providers) == 0 || dependencyInfo.Consumer == nil {
 			return serviceUtil.BadParamsResponse("Provider is invalid").Response, nil
 		}
-
-		util.Logger().Infof("start create dependency, data info %v", dependencyInfo)
 
 		serviceUtil.SetDependencyDefaultValue(dependencyInfo)
 
@@ -60,46 +62,46 @@ func (s *MicroServiceService) AddOrUpdateDependencies(ctx context.Context, depen
 
 		rsp := serviceUtil.ParamsChecker(consumerInfo, providersInfo)
 		if rsp != nil {
-			util.Logger().Errorf(nil, "create dependency failed, conusmer %s: invalid params.%s", consumerFlag, rsp.Response.Message)
+			util.Logger().Errorf(nil, "put request into dependency queue failed, override: %t, consumer is %s, %s",
+				override, consumerFlag, rsp.Response.Message)
 			return rsp.Response, nil
 		}
 
 		consumerId, err := serviceUtil.GetServiceId(ctx, consumerInfo)
-		util.Logger().Debugf("consumerId is %s", consumerId)
 		if err != nil {
-			util.Logger().Errorf(err, "create dependency failed, consumer %s: get consumer failed.", consumerFlag)
+			util.Logger().Errorf(err, "put request into dependency queue failed, override: %t, get consumer %s id failed",
+				override, consumerFlag)
 			return pb.CreateResponse(scerr.ErrInternal, err.Error()), err
 		}
 		if len(consumerId) == 0 {
-			util.Logger().Errorf(nil, "create dependency failed, consumer %s: consumer not exist.", consumerFlag)
+			util.Logger().Errorf(nil, "put request into dependency queue failed, override: %t, consumer %s does not exist.",
+				override, consumerFlag)
 			return pb.CreateResponse(scerr.ErrServiceNotExists, "Get consumer's serviceId is empty."), nil
 		}
 
-		//建立依赖规则，用于维护依赖关系
-		lock, err := mux.Lock(mux.GLOBAL_LOCK)
+		data, err := json.Marshal(dependencyInfo)
 		if err != nil {
-			util.Logger().Errorf(err, "create dependency failed, consumer %s: create lock failed.", consumerFlag)
+			util.Logger().Errorf(err, "put request into dependency queue failed, override: %t, marshal consumer %s dependency failed",
+				override, consumerFlag)
 			return pb.CreateResponse(scerr.ErrInternal, err.Error()), err
 		}
 
-		var dep serviceUtil.Dependency
-		dep.DomainProject = domainProject
-		dep.Consumer = consumerInfo
-		dep.ProvidersRule = providersInfo
-		dep.ConsumerId = consumerId
-		if override {
-			err = serviceUtil.CreateDependencyRule(ctx, &dep)
-		} else {
-			err = serviceUtil.AddDependencyRule(ctx, &dep)
+		id := "0"
+		if !override {
+			id = uuid.GenerateUuid()
 		}
-		lock.Unlock()
-
-		if err != nil {
-			util.Logger().Errorf(err, "create dependency rule failed: consumer %s", consumerFlag)
-			return pb.CreateResponse(scerr.ErrInternal, err.Error()), err
-		}
-		util.Logger().Infof("Create dependency success: consumer %s, %s  from remote %s", consumerFlag, consumerId, util.GetIPFromContext(ctx))
+		key := apt.GenerateConsumerDependencyQueueKey(domainProject, consumerId, id)
+		opts = append(opts, registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)))
 	}
+
+	_, err := backend.Registry().Txn(ctx, opts)
+	if err != nil {
+		util.Logger().Errorf(err, "put request into dependency queue failed, override: %t, %v", override, dependencyInfos)
+		return pb.CreateResponse(scerr.ErrInternal, err.Error()), err
+	}
+
+	util.Logger().Infof("put request into dependency queue successfully, override: %t, %v, from remote %s",
+		override, dependencyInfos, util.GetIPFromContext(ctx))
 	return pb.CreateResponse(pb.Response_SUCCESS, "Create dependency successfully."), nil
 }
 

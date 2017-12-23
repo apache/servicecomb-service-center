@@ -279,6 +279,10 @@ func (s *KvStore) DependencyRule() *Indexer {
 	return s.indexers[DEPENDENCY_RULE]
 }
 
+func (s *KvStore) DependencyQueue() *Indexer {
+	return s.indexers[DEPENDENCY_QUEUE]
+}
+
 func (s *KvStore) Domain() *Indexer {
 	return s.indexers[DOMAIN]
 }
