@@ -22,10 +22,10 @@ before_install:
   - go get github.com/FiloSottile/gvt
   
 before_script:
-  - mkdir -p $HOME/gopath/src/github.com/ServiceComb/service-center
-  - rsync -az ${TRAVIS_BUILD_DIR}/ $HOME/gopath/src/github.com/ServiceComb/service-center/
-  - export TRAVIS_BUILD_DIR=$HOME/gopath/src/github.com/ServiceComb/service-center
-  - cd $HOME/gopath/src/github.com/ServiceComb/service-center
+  - mkdir -p $HOME/gopath/src/github.com/apache/incubator-servicecomb-service-center
+  - rsync -az ${TRAVIS_BUILD_DIR}/ $HOME/gopath/src/github.com/apache/incubator-servicecomb-service-center/
+  - export TRAVIS_BUILD_DIR=$HOME/gopath/src/github.com/apache/incubator-servicecomb-service-center
+  - cd $HOME/gopath/src/github.com/apache/incubator-servicecomb-service-center
   - gvt restore
   
 install: true
@@ -33,7 +33,7 @@ install: true
 jobs:
   include:
     - stage: Building Service Center
-      script: CGO_ENABLED=0 GO_EXTLINK_ENABLED=0 go build --ldflags '-w -extldflags "-static"' -o servicecenter
+      script: go build -o servicecenter
     - stage: Unit Testing
       script: bash -x scripts/ut_test_in_docker.sh && $HOME/gopath/bin/goveralls -coverprofile=coverage.txt -service=travis-ci
     - stage: Integration Testing
