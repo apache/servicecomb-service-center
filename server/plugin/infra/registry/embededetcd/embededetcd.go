@@ -223,22 +223,37 @@ func (s *EtcdEmbed) toCompares(cmps []registry.CompareOp) []*etcdserverpb.Compar
 	return etcdCmps
 }
 
-func (s *EtcdEmbed) CompactCluster(ctx context.Context) {
-}
-
-func (s *EtcdEmbed) Compact(ctx context.Context, revision int64) error {
+func (s *EtcdEmbed) Compact(ctx context.Context, reserve int64) error {
 	otCtx, cancel := registry.WithTimeout(ctx)
 	defer cancel()
-	revToCompact := max(0, revision-core.ServerInfo.Config.CompactIndexDelta)
-	util.Logger().Debug(fmt.Sprintf("Compacting %d", revToCompact))
-	resp, err := s.Server.Server.Compact(otCtx, &etcdserverpb.CompactionRequest{
+
+	curRev := s.getLeaderCurrentRevision(otCtx)
+	revToCompact := max(0, curRev-reserve)
+	if revToCompact <= 0 {
+		util.Logger().Infof("revision is %d, <=%d, no nead to compact", curRev, reserve)
+		return nil
+	}
+
+	util.Logger().Infof("Compacting... revision is %d(current: %d, reserve %d)", revToCompact, curRev, reserve)
+	_, err := s.Server.Server.Compact(otCtx, &etcdserverpb.CompactionRequest{
 		Revision: revToCompact,
+		Physical: true,
 	})
 	if err != nil {
+		util.Logger().Errorf(err, "Compact locally failed, revision is %d(current: %d, reserve %d)",
+			revToCompact, curRev, reserve)
 		return err
 	}
-	util.Logger().Info(fmt.Sprintf("Compacted %v", resp))
+	util.Logger().Infof("Compacted locally, revision is %d(current: %d, reserve %d)", revToCompact, curRev, reserve)
+
+	// TODO defragment
+	util.Logger().Infof("Defraged locally")
+
 	return nil
+}
+
+func (s *EtcdEmbed) getLeaderCurrentRevision(ctx context.Context) int64 {
+	return s.Server.Server.KV().Rev()
 }
 
 func (s *EtcdEmbed) PutNoOverride(ctx context.Context, opts ...registry.PluginOpOption) (bool, error) {

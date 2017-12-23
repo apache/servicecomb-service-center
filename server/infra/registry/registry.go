@@ -165,6 +165,7 @@ type Registry interface {
 	// 3. response.Err()
 	// 4. time out to watch, but return nil
 	Watch(ctx context.Context, opts ...PluginOpOption) error
+	Compact(ctx context.Context, reserve int64) error
 	Close()
 }
 

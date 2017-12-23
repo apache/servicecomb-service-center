@@ -66,38 +66,60 @@ func (s *EtcdClient) Close() {
 	util.Logger().Debugf("etcd client stopped.")
 }
 
-func (c *EtcdClient) CompactCluster(ctx context.Context) {
-	for _, ep := range c.Client.Endpoints() {
-		otCtx, cancel := registry.WithTimeout(ctx)
-		defer cancel()
-		mapi := clientv3.NewMaintenance(c.Client)
-		resp, err := mapi.Status(otCtx, ep)
-		if err != nil {
-			util.Logger().Error(fmt.Sprintf("Compact error ,can not get status from %s", ep), err)
-			continue
-		}
-		curRev := resp.Header.Revision
-		util.Logger().Debug(fmt.Sprintf("Compacting.... endpoint: %s / IsLeader: %v\n / revision is %d", ep, resp.Header.MemberId == resp.Leader, curRev))
-		c.Compact(ctx, curRev)
-	}
+func (c *EtcdClient) Compact(ctx context.Context, reserve int64) error {
+	eps := c.Client.Endpoints()
+	curRev := c.getLeaderCurrentRevision(ctx)
 
-}
-
-func (c *EtcdClient) Compact(ctx context.Context, revision int64) error {
-	otCtx, cancel := registry.WithTimeout(ctx)
-	defer cancel()
-	revToCompact := max(0, revision-core.ServerInfo.Config.CompactIndexDelta)
+	revToCompact := max(0, curRev-reserve)
 	if revToCompact <= 0 {
-		util.Logger().Warnf(nil, "revToCompact is %d, <=0, no nead to compact.", revToCompact)
+		util.Logger().Infof("revision is %d, <=%d, no nead to compact %s", curRev, reserve, eps)
 		return nil
 	}
-	util.Logger().Debug(fmt.Sprintf("Compacting %d", revToCompact))
-	resp, err := c.Client.KV.Compact(otCtx, revToCompact)
+
+	otCtx, cancel := registry.WithTimeout(ctx)
+	defer cancel()
+
+	_, err := c.Client.Compact(otCtx, revToCompact, clientv3.WithCompactPhysical())
 	if err != nil {
+		util.Logger().Errorf(err, "Compact %s failed, revision is %d(current: %d, reserve %d)",
+			eps, revToCompact, curRev, reserve)
 		return err
 	}
-	util.Logger().Debugf(fmt.Sprintf("Compacted %v", resp))
+	util.Logger().Infof("Compacted %s, revision is %d(current: %d, reserve %d)", eps, revToCompact, curRev, reserve)
+
+	for _, ep := range eps {
+		_, err := c.Client.Defragment(otCtx, ep)
+		if err != nil {
+			util.Logger().Errorf(err, "Defrag %s failed", ep)
+			continue
+		}
+		util.Logger().Infof("Defraged %s", ep)
+	}
+
 	return nil
+}
+
+func (c *EtcdClient) getLeaderCurrentRevision(ctx context.Context) int64 {
+	eps := c.Client.Endpoints()
+	curRev := int64(0)
+	for _, ep := range eps {
+		otCtx, cancel := registry.WithTimeout(ctx)
+
+		resp, err := c.Client.Status(otCtx, ep)
+		if err != nil {
+			util.Logger().Error(fmt.Sprintf("Compact error ,can not get status from %s", ep), err)
+			cancel()
+			continue
+		}
+		curRev = resp.Header.Revision
+		if resp.Leader == resp.Header.MemberId {
+			util.Logger().Infof("Get leader endpoint: %s, revision is %d", ep, curRev)
+			break
+		}
+
+		cancel()
+	}
+	return curRev
 }
 
 func max(n1, n2 int64) int64 {

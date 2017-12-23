@@ -36,6 +36,10 @@ const (
 	GLOBAL_LOCK MuxType = "/global"
 )
 
-func Lock(t MuxType) (*etcdsync.Locker, error) {
-	return etcdsync.Lock(t.String())
+func Lock(t MuxType) (*etcdsync.DLock, error) {
+	return etcdsync.Lock(t.String(), true)
+}
+
+func Try(t MuxType) (*etcdsync.DLock, error) {
+	return etcdsync.Lock(t.String(), false)
 }
