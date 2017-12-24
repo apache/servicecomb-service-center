@@ -119,7 +119,7 @@ func (s *ServiceCenterServer) autoCompactBackend() {
 		for {
 			select {
 			case <-stopCh:
-				break
+				return
 			case <-time.After(12 * time.Hour):
 				lock, err := mux.Try(mux.GLOBAL_LOCK)
 				if lock == nil {
