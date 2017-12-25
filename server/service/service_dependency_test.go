@@ -93,12 +93,12 @@ var _ = Describe("'Dependency' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respCreateDependency.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
-				consumer := &pb.DependencyKey{
+				consumer := &pb.MicroServiceKey{
 					AppId:       "create_dep_group",
 					ServiceName: "create_dep_consumer",
 					Version:     "1.0.0",
 				}
-				providers := []*pb.DependencyKey{
+				providers := []*pb.MicroServiceKey{
 					{
 						AppId:       "create_dep_group",
 						ServiceName: "create_dep_provider",
@@ -110,7 +110,7 @@ var _ = Describe("'Dependency' service", func() {
 				respCreateDependency, err = serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
 					Dependencies: []*pb.ConsumerDependency{
 						{
-							Consumer: &pb.DependencyKey{
+							Consumer: &pb.MicroServiceKey{
 								AppId:       "noexistapp",
 								ServiceName: "noexistservice",
 								Version:     "1.0.0",
@@ -126,7 +126,7 @@ var _ = Describe("'Dependency' service", func() {
 				respCreateDependency, err = serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
 					Dependencies: []*pb.ConsumerDependency{
 						{
-							Consumer: &pb.DependencyKey{
+							Consumer: &pb.MicroServiceKey{
 								AppId:       "create_dep_group",
 								ServiceName: "create_dep_consumer",
 								Version:     "1.0.0+",
@@ -142,7 +142,7 @@ var _ = Describe("'Dependency' service", func() {
 				respCreateDependency, err = serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
 					Dependencies: []*pb.ConsumerDependency{
 						{
-							Consumer: &pb.DependencyKey{
+							Consumer: &pb.MicroServiceKey{
 								AppId:       "create_dep_group",
 								ServiceName: "*",
 								Version:     "1.0.0",
@@ -170,7 +170,7 @@ var _ = Describe("'Dependency' service", func() {
 					Dependencies: []*pb.ConsumerDependency{
 						{
 							Consumer: consumer,
-							Providers: []*pb.DependencyKey{
+							Providers: []*pb.MicroServiceKey{
 								{
 									AppId:       "*",
 									ServiceName: "service_name_provider",
@@ -188,7 +188,7 @@ var _ = Describe("'Dependency' service", func() {
 					Dependencies: []*pb.ConsumerDependency{
 						{
 							Consumer: consumer,
-							Providers: []*pb.DependencyKey{
+							Providers: []*pb.MicroServiceKey{
 								{
 									AppId:       "service_group_provider",
 									ServiceName: "-",
@@ -206,7 +206,7 @@ var _ = Describe("'Dependency' service", func() {
 					Dependencies: []*pb.ConsumerDependency{
 						{
 							Consumer: consumer,
-							Providers: []*pb.DependencyKey{
+							Providers: []*pb.MicroServiceKey{
 								{
 									AppId:       "service_group_provider",
 									ServiceName: "service_name_provider",
@@ -224,7 +224,7 @@ var _ = Describe("'Dependency' service", func() {
 					Dependencies: []*pb.ConsumerDependency{
 						{
 							Consumer: consumer,
-							Providers: []*pb.DependencyKey{
+							Providers: []*pb.MicroServiceKey{
 								{
 									Environment: pb.ENV_PROD,
 									AppId:       "service_group_provider",
@@ -251,7 +251,7 @@ var _ = Describe("'Dependency' service", func() {
 					Dependencies: []*pb.ConsumerDependency{
 						{
 							Consumer: consumer,
-							Providers: []*pb.DependencyKey{
+							Providers: []*pb.MicroServiceKey{
 								{
 									AppId:       "service_group_provider",
 									ServiceName: "service_name_provider",
@@ -275,7 +275,7 @@ var _ = Describe("'Dependency' service", func() {
 
 		Context("when request is valid", func() {
 			It("should be passed", func() {
-				consumer := &pb.DependencyKey{
+				consumer := &pb.MicroServiceKey{
 					ServiceName: "create_dep_consumer",
 					AppId:       "create_dep_group",
 					Version:     "1.0.0",
@@ -286,7 +286,7 @@ var _ = Describe("'Dependency' service", func() {
 					Dependencies: []*pb.ConsumerDependency{
 						{
 							Consumer: consumer,
-							Providers: []*pb.DependencyKey{
+							Providers: []*pb.MicroServiceKey{
 								{
 									AppId:       "create_dep_group",
 									ServiceName: "create_dep_provider",
@@ -304,7 +304,7 @@ var _ = Describe("'Dependency' service", func() {
 					Dependencies: []*pb.ConsumerDependency{
 						{
 							Consumer: consumer,
-							Providers: []*pb.DependencyKey{
+							Providers: []*pb.MicroServiceKey{
 								{
 									AppId:       "create_dep_group",
 									ServiceName: "create_dep_provider",
@@ -322,7 +322,7 @@ var _ = Describe("'Dependency' service", func() {
 					Dependencies: []*pb.ConsumerDependency{
 						{
 							Consumer: consumer,
-							Providers: []*pb.DependencyKey{
+							Providers: []*pb.MicroServiceKey{
 								{
 									ServiceName: "*",
 								},
@@ -338,7 +338,7 @@ var _ = Describe("'Dependency' service", func() {
 					Dependencies: []*pb.ConsumerDependency{
 						{
 							Consumer: consumer,
-							Providers: []*pb.DependencyKey{
+							Providers: []*pb.MicroServiceKey{
 								{
 									AppId:       "create_dep_group",
 									ServiceName: "create_dep_provider",
@@ -359,7 +359,7 @@ var _ = Describe("'Dependency' service", func() {
 					Dependencies: []*pb.ConsumerDependency{
 						{
 							Consumer: consumer,
-							Providers: []*pb.DependencyKey{
+							Providers: []*pb.MicroServiceKey{
 								{
 									AppId:       "create_dep_group",
 									ServiceName: "create_dep_provider",
@@ -377,7 +377,7 @@ var _ = Describe("'Dependency' service", func() {
 					Dependencies: []*pb.ConsumerDependency{
 						{
 							Consumer: consumer,
-							Providers: []*pb.DependencyKey{
+							Providers: []*pb.MicroServiceKey{
 								{
 									AppId:       "create_dep_group",
 									ServiceName: "create_dep_provider",

@@ -275,7 +275,7 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, ServiceId st
 	}
 
 	//删除依赖规则
-	lock, err := mux.Lock(mux.GLOBAL_LOCK)
+	lock, err := mux.Lock(mux.DEP_QUEUE_LOCK)
 	if err != nil {
 		util.Logger().Errorf(err, "%s microservice failed, serviceId is %s: inner err, create lock failed.", title, ServiceId)
 		return pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()), err

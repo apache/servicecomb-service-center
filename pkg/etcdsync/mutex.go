@@ -107,7 +107,8 @@ func (m *DLockFactory) NewDLock(wait bool) (l *DLock, err error) {
 		}
 
 		if !wait {
-			return nil, nil
+			l, err = nil, nil
+			break
 		}
 
 		if try <= defaultTry {
@@ -120,27 +121,6 @@ func (m *DLockFactory) NewDLock(wait bool) (l *DLock, err error) {
 		m.mutex.Unlock()
 	}
 	return l, err
-}
-
-func (m *DLockFactory) Try() (bool, error) {
-	opts := []registry.PluginOpOption{
-		registry.WithStrKey(m.key),
-	}
-	resp, err := backend.Registry().Do(m.ctx, opts...)
-	if err == nil && resp.Count == 0 {
-		util.Logger().Infof("Can create lock, key=%s", m.key)
-		return true, nil
-	}
-
-	if err != nil {
-		util.Logger().Errorf(err, "Try to create a lock failed, key=%s", m.key)
-		return false, err
-	}
-
-	util.Logger().Warnf(nil, "Key %s is locked by id=%s",
-		m.key, util.BytesToStringWithNoCopy(resp.Kvs[0].Value))
-
-	return false, nil
 }
 
 func (m *DLock) ID() string {

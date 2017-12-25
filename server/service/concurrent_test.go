@@ -65,12 +65,12 @@ func testServiceController_CreateDependenciesForMicroServices(t *testing.T) {
 			_, err := serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
 				Dependencies: []*pb.ConsumerDependency{
 					{
-						Consumer: &pb.DependencyKey{
+						Consumer: &pb.MicroServiceKey{
 							AppId:       "test_deps",
 							ServiceName: serviceName,
 							Version:     "1.0.0",
 						},
-						Providers: []*pb.DependencyKey{
+						Providers: []*pb.MicroServiceKey{
 							{
 								AppId:       "test_deps",
 								ServiceName: "service0",

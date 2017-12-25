@@ -42,7 +42,7 @@ func (h *DependencyEventHandler) Type() store.StoreType {
 
 func (h *DependencyEventHandler) OnEvent(evt *store.KvEvent) {
 	action := evt.Action
-	if action != pb.EVT_CREATE && action != pb.EVT_INIT {
+	if action != pb.EVT_CREATE && action != pb.EVT_UPDATE && action != pb.EVT_INIT {
 		return
 	}
 
@@ -85,6 +85,18 @@ func (h *DependencyEventHandler) loop() {
 					retry()
 					continue
 				}
+			case <-time.After(10 * time.Second):
+				key := core.GetServiceDependencyQueueRootKey("")
+				resp, _ := store.Store().DependencyQueue().Search(context.Background(),
+					registry.WithStrKey(key),
+					registry.WithPrefix(),
+					registry.WithCountOnly(),
+					registry.WithCacheOnly())
+				if resp != nil && resp.Count > 0 {
+					util.Logger().Infof("wait for dependency event timed out(10s) and found %d items still in queue",
+						resp.Count)
+					h.signals.Put(context.Background(), struct{}{})
+				}
 			}
 		}
 	})
@@ -100,12 +112,17 @@ func (h *DependencyEventHandler) Handle() error {
 	}
 
 	// maintain dependency rules.
-	for _, kv := range resp.Kvs {
-		var (
-			r                   = &pb.ConsumerDependency{}
-			ctx context.Context = context.Background()
-		)
+	l := len(resp.Kvs)
+	if l == 0 {
+		return nil
+	}
 
+	var (
+		r   *pb.ConsumerDependency = &pb.ConsumerDependency{}
+		ctx context.Context        = context.Background()
+	)
+
+	for _, kv := range resp.Kvs {
 		consumerId, domainProject, data := pb.GetInfoFromDependencyQueueKV(kv)
 
 		err := json.Unmarshal(data, r)
@@ -113,7 +130,7 @@ func (h *DependencyEventHandler) Handle() error {
 			util.Logger().Errorf(err, "maintain dependency failed, unmarshal failed, consumer %s dependency: %s",
 				consumerId, util.BytesToStringWithNoCopy(data))
 
-			if err = h.removeKV(kv); err != nil {
+			if err = h.removeKV(ctx, kv); err != nil {
 				return err
 			}
 			continue
@@ -133,7 +150,7 @@ func (h *DependencyEventHandler) Handle() error {
 			util.Logger().Errorf(nil, "maintain dependency failed, override: %t, consumer %s does not exist",
 				r.Override, consumerFlag)
 
-			if err = h.removeKV(kv); err != nil {
+			if err = h.removeKV(ctx, kv); err != nil {
 				return err
 			}
 			continue
@@ -154,7 +171,7 @@ func (h *DependencyEventHandler) Handle() error {
 			return fmt.Errorf("override: %t, consumer is %s, %s", r.Override, consumerFlag, err.Error())
 		}
 
-		if err = h.removeKV(kv); err != nil {
+		if err = h.removeKV(ctx, kv); err != nil {
 			return err
 		}
 
@@ -163,8 +180,8 @@ func (h *DependencyEventHandler) Handle() error {
 	return nil
 }
 
-func (h *DependencyEventHandler) removeKV(kv *mvccpb.KeyValue) error {
-	dresp, err := backend.Registry().TxnWithCmp(context.Background(), []registry.PluginOp{registry.OpDel(registry.WithKey(kv.Key))},
+func (h *DependencyEventHandler) removeKV(ctx context.Context, kv *mvccpb.KeyValue) error {
+	dresp, err := backend.Registry().TxnWithCmp(ctx, []registry.PluginOp{registry.OpDel(registry.WithKey(kv.Key))},
 		[]registry.CompareOp{registry.OpCmp(registry.CmpVer(kv.Key), registry.CMP_EQUAL, kv.Version)},
 		nil)
 	if err != nil {
