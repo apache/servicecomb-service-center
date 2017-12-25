@@ -191,7 +191,7 @@ func DeleteServiceAllInstances(ctx context.Context, serviceId string) error {
 	return nil
 }
 
-func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (results []*pb.WatchInstanceResponse, rev int64) {
+func QueryAllProvidersInstances(ctx context.Context, selfServiceId string) (results []*pb.WatchInstanceResponse, rev int64) {
 	results = []*pb.WatchInstanceResponse{}
 
 	domainProject := util.ParseDomainProject(ctx)
@@ -205,7 +205,7 @@ func QueryAllProvidersIntances(ctx context.Context, selfServiceId string) (resul
 		util.Logger().Errorf(nil, "service not exist, %s", selfServiceId)
 		return
 	}
-	providerIds, _, err := GetProviderIdsByConsumerId(ctx, domainProject, selfServiceId, service)
+	providerIds, _, err := GetProviderIdsByConsumer(ctx, domainProject, service)
 	if err != nil {
 		util.Logger().Errorf(err, "get service %s providers id set failed.", selfServiceId)
 		return

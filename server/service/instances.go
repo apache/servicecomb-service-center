@@ -809,7 +809,7 @@ func (s *InstanceService) WebSocketListAndWatch(ctx context.Context, in *pb.Watc
 		return
 	}
 	nf.DoWebSocketListAndWatch(ctx, in.SelfServiceId, func() ([]*pb.WatchInstanceResponse, int64) {
-		return serviceUtil.QueryAllProvidersIntances(ctx, in.SelfServiceId)
+		return serviceUtil.QueryAllProvidersInstances(ctx, in.SelfServiceId)
 	}, conn)
 }
 

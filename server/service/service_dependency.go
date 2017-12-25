@@ -129,7 +129,7 @@ func (s *MicroServiceService) GetProviderDependencies(ctx context.Context, in *p
 		}, nil
 	}
 
-	dr := serviceUtil.NewProviderDependencyRelation(ctx, domainProject, providerServiceId, provider)
+	dr := serviceUtil.NewProviderDependencyRelation(ctx, domainProject, provider)
 	services, err := dr.GetDependencyConsumers()
 	if err != nil {
 		util.Logger().Errorf(err, "GetProviderDependencies failed.")
@@ -169,7 +169,7 @@ func (s *MicroServiceService) GetConsumerDependencies(ctx context.Context, in *p
 		}, nil
 	}
 
-	dr := serviceUtil.NewConsumerDependencyRelation(ctx, domainProject, consumerId, consumer)
+	dr := serviceUtil.NewConsumerDependencyRelation(ctx, domainProject, consumer)
 	services, err := dr.GetDependencyProviders()
 	if err != nil {
 		util.Logger().Errorf(err, "GetConsumerDependencies failed for get providers failed.")

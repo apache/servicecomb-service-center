@@ -141,12 +141,6 @@ func TestCreateDependencyRule(t *testing.T) {
 		t.FailNow()
 	}
 
-	err = CreateDependencyRuleForFind(context.Background(), "", &proto.MicroServiceKey{}, &proto.MicroServiceKey{})
-	if err == nil {
-		fmt.Printf(`CreateDependencyRuleForFind failed`)
-		t.FailNow()
-	}
-
 	_, err = addDepRuleUtil("", &proto.MicroServiceDependency{}, &proto.MicroServiceKey{})
 	if err != nil {
 		fmt.Printf(`addDepRuleUtil failed`)
@@ -320,13 +314,13 @@ func TestParamsChecker(t *testing.T) {
 }
 
 func TestServiceDependencyRuleExist(t *testing.T) {
-	_, err := ProviderDependencyRuleExist(util.SetContext(context.Background(), "cacheOnly", "1"), "", &proto.MicroServiceKey{}, &proto.MicroServiceKey{})
+	_, err := ProviderDependencyRuleExist(util.SetContext(context.Background(), "cacheOnly", "1"), &proto.MicroServiceKey{}, &proto.MicroServiceKey{})
 	if err != nil {
 		fmt.Printf(`ServiceDependencyRuleExist WithCacheOnly failed`)
 		t.FailNow()
 	}
 
-	_, err = ProviderDependencyRuleExist(context.Background(), "", &proto.MicroServiceKey{}, &proto.MicroServiceKey{})
+	_, err = ProviderDependencyRuleExist(context.Background(), &proto.MicroServiceKey{}, &proto.MicroServiceKey{})
 	if err == nil {
 		fmt.Printf(`ServiceDependencyRuleExist failed`)
 		t.FailNow()

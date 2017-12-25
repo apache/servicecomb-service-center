@@ -289,17 +289,17 @@ func TestMatchRules(t *testing.T) {
 }
 
 func TestGetConsumer(t *testing.T) {
-	_, _, err := serviceUtil.GetConsumerIds(context.Background(), "", &proto.MicroService{})
+	_, _, err := serviceUtil.GetConsumerIdsByProvider(context.Background(), "", &proto.MicroService{})
 	if err == nil {
-		fmt.Printf("GetConsumerIds invalid failed")
+		fmt.Printf("GetConsumerIdsByProvider invalid failed")
 		t.FailNow()
 	}
 
-	_, _, err = serviceUtil.GetConsumerIds(context.Background(), "", &proto.MicroService{
+	_, _, err = serviceUtil.GetConsumerIdsByProvider(context.Background(), "", &proto.MicroService{
 		ServiceId: "a",
 	})
 	if err == nil {
-		fmt.Printf("GetConsumerIds not exist service failed")
+		fmt.Printf("GetConsumerIdsByProvider not exist service failed")
 		t.FailNow()
 	}
 
@@ -323,16 +323,16 @@ func TestGetProvider(t *testing.T) {
 		t.FailNow()
 	}
 
-	_, _, err = serviceUtil.GetProviderIdsByConsumerId(context.Background(), "", "", &proto.MicroService{})
+	_, _, err = serviceUtil.GetProviderIdsByConsumer(context.Background(), "", "", &proto.MicroService{})
 	if err == nil {
-		fmt.Printf("GetProviderIdsByConsumerId invalid failed")
+		fmt.Printf("GetProviderIdsByConsumer invalid failed")
 		t.FailNow()
 	}
 
-	_, _, err = serviceUtil.GetProviderIdsByConsumerId(util.SetContext(context.Background(), "cacheOnly", "1"),
+	_, _, err = serviceUtil.GetProviderIdsByConsumer(util.SetContext(context.Background(), "cacheOnly", "1"),
 		"", "", &proto.MicroService{})
 	if err != nil {
-		fmt.Printf("GetProviderIdsByConsumerId WithCacheOnly failed")
+		fmt.Printf("GetProviderIdsByConsumer WithCacheOnly failed")
 		t.FailNow()
 	}
 }

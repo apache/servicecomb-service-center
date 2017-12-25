@@ -49,73 +49,75 @@ func init() {
 	providerCache = cache.New(d, d)
 }
 
-func GetConsumersInCache(ctx context.Context, domainProject string, providerId string, provider *pb.MicroService) ([]string, error) {
+func GetConsumersInCache(ctx context.Context, domainProject string, provider *pb.MicroService) ([]string, error) {
 	// 查询所有consumer
-	dr := NewProviderDependencyRelation(ctx, domainProject, providerId, provider)
+	dr := NewProviderDependencyRelation(ctx, domainProject, provider)
 	consumerIds, err := dr.GetDependencyConsumerIds()
 	if err != nil {
-		util.Logger().Errorf(err, "Get dependency consumerIds failed.%s", providerId)
+		util.Logger().Errorf(err, "Get dependency consumerIds failed.%s", provider.ServiceId)
 		return nil, err
 	}
 
 	if len(consumerIds) == 0 {
-		consumerIds, found := consumerCache.Get(providerId)
+		consumerIds, found := consumerCache.Get(provider.ServiceId)
 		if found && len(consumerIds.([]string)) > 0 {
 			return consumerIds.([]string), nil
 		}
-		util.Logger().Warnf(nil, "Can not find any consumer from local cache and backend. provider is %s", providerId)
+		util.Logger().Warnf(nil, "Can not find any consumer from local cache and backend. provider is %s",
+			provider.ServiceId)
 		return nil, nil
 	}
 
 	return consumerIds, nil
 }
 
-func GetProvidersInCache(ctx context.Context, domainProject string, consumerId string, consumer *pb.MicroService) ([]string, error) {
+func GetProvidersInCache(ctx context.Context, domainProject string, consumer *pb.MicroService) ([]string, error) {
 	// 查询所有provider
-	dr := NewConsumerDependencyRelation(ctx, domainProject, consumerId, consumer)
+	dr := NewConsumerDependencyRelation(ctx, domainProject, consumer)
 	providerIds, err := dr.GetDependencyProviderIds()
 	if err != nil {
-		util.Logger().Errorf(err, "Get dependency providerIds failed.%s", consumerId)
+		util.Logger().Errorf(err, "Get dependency providerIds failed.%s", consumer.ServiceId)
 		return nil, err
 	}
 
 	if len(providerIds) == 0 {
-		providerIds, found := providerCache.Get(consumerId)
+		providerIds, found := providerCache.Get(consumer.ServiceId)
 		if found && len(providerIds.([]string)) > 0 {
 			return providerIds.([]string), nil
 		}
-		util.Logger().Warnf(nil, "Can not find any provider from local cache and backend. consumer is %s", consumerId)
+		util.Logger().Warnf(nil, "Can not find any provider from local cache and backend. consumer is %s",
+			consumer.ServiceId)
 		return nil, nil
 	}
 
 	return providerIds, nil
 }
 
-func RefreshDependencyCache(ctx context.Context, domainProject string, serviceId string, service *pb.MicroService) error {
-	dr := NewDependencyRelation(ctx, domainProject, serviceId, service, serviceId, service)
+func RefreshDependencyCache(ctx context.Context, domainProject string, service *pb.MicroService) error {
+	dr := NewDependencyRelation(ctx, domainProject, service, service)
 	consumerIds, err := dr.GetDependencyConsumerIds()
 	if err != nil {
-		util.Logger().Errorf(err, "%s,refresh dependency cache failed, get consumerIds failed.", serviceId)
+		util.Logger().Errorf(err, "%s,refresh dependency cache failed, get consumerIds failed.", service.ServiceId)
 		return err
 	}
 	providerIds, err := dr.GetDependencyProviderIds()
 	if err != nil {
-		util.Logger().Errorf(err, "%s,refresh dependency cache failed, get providerIds failed.", serviceId)
+		util.Logger().Errorf(err, "%s,refresh dependency cache failed, get providerIds failed.", service.ServiceId)
 		return err
 	}
-	MsCache().Set(serviceId, service, 5*time.Minute)
+	MsCache().Set(service.ServiceId, service, 5*time.Minute)
 	if len(consumerIds) > 0 {
-		util.Logger().Infof("refresh %s dependency cache: cached %d consumerId(s) for 5min.", serviceId, len(consumerIds))
-		consumerCache.Set(serviceId, consumerIds, 5*time.Minute)
+		util.Logger().Infof("refresh %s dependency cache: cached %d consumerId(s) for 5min.", service.ServiceId, len(consumerIds))
+		consumerCache.Set(service.ServiceId, consumerIds, 5*time.Minute)
 	}
 	if len(providerIds) > 0 {
-		util.Logger().Infof("refresh %s dependency cache: cached %d providerId(s) for 5min.", serviceId, len(providerIds))
-		providerCache.Set(serviceId, providerIds, 5*time.Minute)
+		util.Logger().Infof("refresh %s dependency cache: cached %d providerId(s) for 5min.", service.ServiceId, len(providerIds))
+		providerCache.Set(service.ServiceId, providerIds, 5*time.Minute)
 	}
 	return nil
 }
 
-func GetConsumerIds(ctx context.Context, domainProject string, provider *pb.MicroService) (allow []string, deny []string, _ error) {
+func GetConsumerIdsByProvider(ctx context.Context, domainProject string, provider *pb.MicroService) (allow []string, deny []string, _ error) {
 	if provider == nil || len(provider.ServiceId) == 0 {
 		return nil, nil, fmt.Errorf("invalid provider")
 	}
@@ -127,7 +129,7 @@ func GetConsumerIds(ctx context.Context, domainProject string, provider *pb.Micr
 		return nil, nil, err
 	}
 	if len(providerRules) == 0 {
-		return getConsumerIdsWithFilter(ctx, domainProject, provider.ServiceId, provider, noFilter)
+		return getConsumerIdsWithFilter(ctx, domainProject, provider, noFilter)
 	}
 
 	rf := RuleFilter{
@@ -136,16 +138,16 @@ func GetConsumerIds(ctx context.Context, domainProject string, provider *pb.Micr
 		ProviderRules: providerRules,
 	}
 
-	allow, deny, err = getConsumerIdsWithFilter(ctx, domainProject, provider.ServiceId, provider, rf.Filter)
+	allow, deny, err = getConsumerIdsWithFilter(ctx, domainProject, provider, rf.Filter)
 	if err != nil {
 		return nil, nil, err
 	}
 	return allow, deny, nil
 }
 
-func getConsumerIdsWithFilter(ctx context.Context, domainProject, providerId string, provider *pb.MicroService,
+func getConsumerIdsWithFilter(ctx context.Context, domainProject string, provider *pb.MicroService,
 	filter func(ctx context.Context, consumerId string) (bool, error)) (allow []string, deny []string, err error) {
-	consumerIds, err := GetConsumersInCache(ctx, domainProject, providerId, provider)
+	consumerIds, err := GetConsumersInCache(ctx, domainProject, provider)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -180,8 +182,8 @@ func noFilter(_ context.Context, _ string) (bool, error) {
 	return true, nil
 }
 
-func GetProviderIdsByConsumerId(ctx context.Context, domainProject, consumerId string, service *pb.MicroService) (allow []string, deny []string, _ error) {
-	providerIdsInCache, err := GetProvidersInCache(ctx, domainProject, consumerId, service)
+func GetProviderIdsByConsumer(ctx context.Context, domainProject string, service *pb.MicroService) (allow []string, deny []string, _ error) {
+	providerIdsInCache, err := GetProvidersInCache(ctx, domainProject, service)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -208,7 +210,7 @@ func GetProviderIdsByConsumerId(ctx context.Context, domainProject, consumerId s
 		}
 		rf.Provider = provider
 		rf.ProviderRules = providerRules
-		ok, err := rf.Filter(ctx, consumerId)
+		ok, err := rf.Filter(ctx, service.ServiceId)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -223,8 +225,12 @@ func GetProviderIdsByConsumerId(ctx context.Context, domainProject, consumerId s
 	return providerIds[:allowIdx], providerIds[denyIdx:], nil
 }
 
-func ProviderDependencyRuleExist(ctx context.Context, domainProject string, provider *pb.MicroServiceKey, consumer *pb.MicroServiceKey) (bool, error) {
-	providerKey := apt.GenerateProviderDependencyRuleKey(domainProject, provider)
+func ProviderDependencyRuleExist(ctx context.Context, provider *pb.MicroServiceKey, consumer *pb.MicroServiceKey) (bool, error) {
+	targetDomainProject := provider.Tenant
+	if len(targetDomainProject) == 0 {
+		targetDomainProject = consumer.Tenant
+	}
+	providerKey := apt.GenerateProviderDependencyRuleKey(targetDomainProject, provider)
 	consumers, err := TransferToMicroServiceDependency(ctx, providerKey)
 	if err != nil {
 		return false, err
@@ -245,7 +251,7 @@ func ProviderDependencyRuleExist(ctx context.Context, domainProject string, prov
 func AddServiceVersionRule(ctx context.Context, domainProject string, consumer *pb.MicroService, provider *pb.MicroServiceKey) error {
 	//创建依赖一致
 	consumerKey := pb.MicroServiceToKey(domainProject, consumer)
-	exist, err := ProviderDependencyRuleExist(ctx, domainProject, provider, consumerKey)
+	exist, err := ProviderDependencyRuleExist(ctx, provider, consumerKey)
 	if exist || err != nil {
 		return err
 	}
@@ -557,97 +563,6 @@ func CreateDependencyRule(ctx context.Context, dep *Dependency) error {
 	return syncDependencyRule(ctx, dep, parseOverrideRules)
 }
 
-func CreateDependencyRuleForFind(ctx context.Context, domainProject string, provider *pb.MicroServiceKey, consumer *pb.MicroServiceKey) error {
-	//更新consumer的providers的值,consumer的版本是确定的
-	consumerFlag := strings.Join([]string{consumer.AppId, consumer.ServiceName, consumer.Version}, "/")
-	conKey := apt.GenerateConsumerDependencyRuleKey(domainProject, consumer)
-
-	oldProviderRules, err := TransferToMicroServiceDependency(ctx, conKey)
-	if err != nil {
-		util.Logger().Errorf(err, "get dependency rule failed, consumer %s: get consumer depedency rule failed.", consumerFlag)
-		return err
-	}
-	if isDependencyAll(oldProviderRules) {
-		util.Logger().Infof("find update dep rule, exist * for %v", consumer)
-		return nil
-	}
-	opts := make([]registry.PluginOp, 0)
-	if oldProviderRule := isNeedUpdate(oldProviderRules.Dependency, provider); oldProviderRule != nil {
-		opt, err := deleteConsumerDepOfProviderRule(ctx, domainProject, oldProviderRule, consumer)
-		if err != nil {
-			util.Logger().Errorf(err, "marshal consumerDepRules failed for delete consumer rule from provider rule's dep.%s", consumerFlag)
-			return err
-		}
-		util.Logger().Infof("delete consumer %v from provider dep %v", consumer, oldProviderRule)
-		opts = append(opts, opt)
-
-		oldRule, opt, err := updateDepRuleUtil(conKey, oldProviderRules, provider)
-		if err != nil {
-			util.Logger().Errorf(err, "update provider rule into consumer's dep rule failed, %s", consumerFlag)
-			return err
-		}
-		util.Logger().Infof("update provider %v(from version '%s') into consumer dep %s", provider, oldRule, consumerFlag)
-		opts = append(opts, opt)
-
-		opt, err = updateProviderRuleDep(ctx, domainProject, provider, consumer)
-		if err != nil {
-			return err
-		}
-		opts = append(opts, opt)
-	} else {
-		if !isExist(oldProviderRules.Dependency, provider) {
-			opt, err := addDepRuleUtil(conKey, oldProviderRules, provider)
-			if err != nil {
-				util.Logger().Errorf(err, "add provider rule into consumer's dep rule failed, %s", consumerFlag)
-				return err
-			}
-			util.Logger().Infof("add consumer dep, %s, add %v", consumerFlag, provider)
-			opts = append(opts, opt)
-		}
-
-		proKey := apt.GenerateProviderDependencyRuleKey(domainProject, provider)
-		consumerDepRules, err := TransferToMicroServiceDependency(ctx, proKey)
-		if err != nil {
-			util.Logger().Errorf(err, "get consumer rule of provider failed,%v", provider)
-			return err
-		}
-		if !isExist(consumerDepRules.Dependency, consumer) {
-			opt, err := addDepRuleUtil(proKey, consumerDepRules, consumer)
-			if err != nil {
-				util.Logger().Errorf(err, "add consumer rule into provider's dep rule failed,%s", consumerFlag)
-				return err
-			}
-			util.Logger().Infof("add provider dep, %s, add %v", consumerFlag, provider)
-			opts = append(opts, opt)
-		}
-	}
-
-	if len(opts) != 0 {
-		_, err = backend.Registry().Txn(ctx, opts)
-		if err != nil {
-			util.Logger().Errorf(err, "update dep rule for consumer failed, %s", consumerFlag)
-			return err
-		}
-	}
-	return nil
-}
-
-func updateProviderRuleDep(ctx context.Context, domainProject string, providerRule, consumer *pb.MicroServiceKey) (registry.PluginOp, error) {
-	proKey := apt.GenerateProviderDependencyRuleKey(domainProject, providerRule)
-	consumerDepRules, err := TransferToMicroServiceDependency(ctx, proKey)
-	opt := registry.PluginOp{}
-	if err != nil {
-		util.Logger().Errorf(err, "get provider rule's dep failed, providerRule %v, consumer %v", providerRule, consumer)
-		return opt, err
-	}
-	opt, err = addDepRuleUtil(proKey, consumerDepRules, consumer)
-	if err != nil {
-		util.Logger().Errorf(err, "add consumer into provider's dep rule failed, providerRule %v, consumer %v", providerRule, consumer)
-		return opt, err
-	}
-	return opt, nil
-}
-
 func isDependencyAll(dep *pb.MicroServiceDependency) bool {
 	for _, servicedep := range dep.Dependency {
 		if servicedep.ServiceName == "*" {
@@ -810,7 +725,7 @@ func (dep *Dependency) removeConsumerOfProviderRule() {
 	ctx := context.TODO()
 	opts := make([]registry.PluginOp, 0, len(dep.removedDependencyRuleList))
 	for _, providerRule := range dep.removedDependencyRuleList {
-		proProkey := apt.GenerateProviderDependencyRuleKey(dep.DomainProject, providerRule)
+		proProkey := apt.GenerateProviderDependencyRuleKey(providerRule.Tenant, providerRule)
 		util.Logger().Debugf("This proProkey is %s.", proProkey)
 		consumerValue, err := TransferToMicroServiceDependency(ctx, proProkey)
 		if err != nil {
@@ -857,8 +772,8 @@ func (dep *Dependency) AddConsumerOfProviderRule() {
 func (dep *Dependency) addConsumerOfProviderRule() {
 	ctx := context.TODO()
 	opts := []registry.PluginOp{}
-	for _, prividerRule := range dep.NewDependencyRuleList {
-		proProkey := apt.GenerateProviderDependencyRuleKey(dep.DomainProject, prividerRule)
+	for _, providerRule := range dep.NewDependencyRuleList {
+		proProkey := apt.GenerateProviderDependencyRuleKey(providerRule.Tenant, providerRule)
 		tmpValue, err := TransferToMicroServiceDependency(ctx, proProkey)
 		if err != nil {
 			dep.err <- err
@@ -875,7 +790,7 @@ func (dep *Dependency) addConsumerOfProviderRule() {
 		opts = append(opts, registry.OpPut(
 			registry.WithStrKey(proProkey),
 			registry.WithValue(data)))
-		if prividerRule.ServiceName == "*" {
+		if providerRule.ServiceName == "*" {
 			break
 		}
 	}
@@ -912,27 +827,23 @@ func (dep *Dependency) UpdateProvidersRuleOfConsumer(conKey string) error {
 type DependencyRelation struct {
 	ctx           context.Context
 	domainProject string
-	consumerId    string
 	consumer      *pb.MicroService
-	providerId    string
 	provider      *pb.MicroService
 }
 
-func NewProviderDependencyRelation(ctx context.Context, domainProject string, providerId string, provider *pb.MicroService) *DependencyRelation {
-	return NewDependencyRelation(ctx, domainProject, "", nil, providerId, provider)
+func NewProviderDependencyRelation(ctx context.Context, domainProject string, provider *pb.MicroService) *DependencyRelation {
+	return NewDependencyRelation(ctx, domainProject, nil, provider)
 }
 
-func NewConsumerDependencyRelation(ctx context.Context, domainProject string, consumerId string, consumer *pb.MicroService) *DependencyRelation {
-	return NewDependencyRelation(ctx, domainProject, consumerId, consumer, "", nil)
+func NewConsumerDependencyRelation(ctx context.Context, domainProject string, consumer *pb.MicroService) *DependencyRelation {
+	return NewDependencyRelation(ctx, domainProject, consumer, nil)
 }
 
-func NewDependencyRelation(ctx context.Context, domainProject string, consumerId string, consumer *pb.MicroService, providerId string, provider *pb.MicroService) *DependencyRelation {
+func NewDependencyRelation(ctx context.Context, domainProject string, consumer *pb.MicroService, provider *pb.MicroService) *DependencyRelation {
 	return &DependencyRelation{
 		ctx:           ctx,
 		domainProject: domainProject,
-		consumerId:    consumerId,
 		consumer:      consumer,
-		providerId:    providerId,
 		provider:      provider,
 	}
 }
@@ -978,7 +889,7 @@ func (dr *DependencyRelation) getDependencyProviderIds(providerRules []*pb.Micro
 	for _, provider := range providerRules {
 		switch {
 		case provider.ServiceName == "*":
-			util.Logger().Infof("Rely all service,* type, consumerId %s", dr.consumerId)
+			util.Logger().Infof("Rely all service,* type, consumerId %s", dr.consumer.ServiceId)
 			splited := strings.Split(apt.GenerateServiceIndexKey(provider), "/")
 			allServiceKey := util.StringJoin(splited[:len(splited)-3], "/") + "/"
 			sopts := append(opts,
@@ -1015,7 +926,7 @@ func (dr *DependencyRelation) getDependencyProviderIds(providerRules []*pb.Micro
 func (dr *DependencyRelation) GetDependencyConsumers() ([]*pb.MicroService, error) {
 	consumerDependAllList, err := dr.getDependencyConsumersOfProvider()
 	if err != nil {
-		util.Logger().Errorf(err, "Get consumers of provider rule failed, %s", dr.providerId)
+		util.Logger().Errorf(err, "Get consumers of provider rule failed, %s", dr.provider.ServiceId)
 		return nil, err
 	}
 	consumers := make([]*pb.MicroService, 0)
@@ -1076,13 +987,14 @@ func (dr *DependencyRelation) getDependencyConsumersOfProvider() ([]*pb.MicroSer
 	providerService := pb.MicroServiceToKey(dr.domainProject, dr.provider)
 	consumerDependAllList, err := dr.getConsumerOfDependAllServices()
 	if err != nil {
-		util.Logger().Errorf(err, "Get consumer that depend on all services failed, %s", dr.providerId)
+		util.Logger().Errorf(err, "Get consumer that depend on all services failed, %s", dr.provider.ServiceId)
 		return nil, err
 	}
 
 	consumerDependList, err := dr.getConsumerOfSameServiceNameAndAppId(providerService)
 	if err != nil {
-		util.Logger().Errorf(err, "Get consumer that depend on same serviceName and appid rule failed, %s", dr.providerId)
+		util.Logger().Errorf(err, "Get consumer that depend on same serviceName and appid rule failed, %s",
+			dr.provider.ServiceId)
 		return nil, err
 	}
 	consumerDependAllList = append(consumerDependAllList, consumerDependList...)
@@ -1147,7 +1059,7 @@ func (dr *DependencyRelation) getConsumerOfSameServiceNameAndAppId(provider *pb.
 				util.Logger().Infof("%s 's providerId is empty,no this service.", provider.ServiceName)
 				continue
 			}
-			if dr.providerId != latestServiceId[0] {
+			if dr.provider.ServiceId != latestServiceId[0] {
 				continue
 			}
 

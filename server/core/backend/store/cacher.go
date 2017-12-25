@@ -458,7 +458,7 @@ func (c *KvCacher) onEvents(evts []*Event) {
 				continue
 			}
 
-			util.Logger().Debugf("sync %s event and notify watcher, remove cache %+v", evt.Type, kv)
+			util.Logger().Debugf("sync %s event and notify watcher, remove cache %v", evt.Type, kv)
 			delete(store, key)
 			kvEvts[idx] = &KvEvent{
 				Revision: evt.Revision,

@@ -40,6 +40,8 @@ func (c *ContextHandler) Handle(i *chain.Invocation) {
 	case v3.IsMatch(r):
 		err = v3.Do(r)
 	case v4.IsMatch(r):
+		util.SetRequestContext(r, "target-domain", "default")
+		util.SetRequestContext(r, "target-project", "default")
 		err = v4.Do(r)
 	}
 
