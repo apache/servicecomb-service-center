@@ -303,7 +303,7 @@ func TestGetConsumer(t *testing.T) {
 		t.FailNow()
 	}
 
-	_, err = serviceUtil.GetConsumersInCache(util.SetContext(context.Background(), "cacheOnly", "1"), "", "",
+	_, err = serviceUtil.GetConsumersInCache(util.SetContext(context.Background(), "cacheOnly", "1"), "",
 		&proto.MicroService{
 			ServiceId: "a",
 		})
@@ -314,7 +314,7 @@ func TestGetConsumer(t *testing.T) {
 }
 
 func TestGetProvider(t *testing.T) {
-	_, err := serviceUtil.GetProvidersInCache(util.SetContext(context.Background(), "cacheOnly", "1"), "", "",
+	_, err := serviceUtil.GetProvidersInCache(util.SetContext(context.Background(), "cacheOnly", "1"), "",
 		&proto.MicroService{
 			ServiceId: "a",
 		})
@@ -323,14 +323,14 @@ func TestGetProvider(t *testing.T) {
 		t.FailNow()
 	}
 
-	_, _, err = serviceUtil.GetProviderIdsByConsumer(context.Background(), "", "", &proto.MicroService{})
+	_, _, err = serviceUtil.GetProviderIdsByConsumer(context.Background(), "", &proto.MicroService{})
 	if err == nil {
 		fmt.Printf("GetProviderIdsByConsumer invalid failed")
 		t.FailNow()
 	}
 
 	_, _, err = serviceUtil.GetProviderIdsByConsumer(util.SetContext(context.Background(), "cacheOnly", "1"),
-		"", "", &proto.MicroService{})
+		"", &proto.MicroService{})
 	if err != nil {
 		fmt.Printf("GetProviderIdsByConsumer WithCacheOnly failed")
 		t.FailNow()
