@@ -17,9 +17,9 @@
 package unlimit
 
 import (
-	apt "github.com/ServiceComb/service-center/server/core"
-	"github.com/ServiceComb/service-center/server/infra/quota"
-	mgr "github.com/ServiceComb/service-center/server/plugin"
+	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
+	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	"github.com/astaxie/beego"
 	"golang.org/x/net/context"
 )

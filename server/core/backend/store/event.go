@@ -17,7 +17,7 @@
 package store
 
 import (
-	"github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"sync"
 )

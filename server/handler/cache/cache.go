@@ -18,9 +18,9 @@ package cache
 
 import (
 	"fmt"
-	"github.com/ServiceComb/service-center/pkg/chain"
-	"github.com/ServiceComb/service-center/pkg/rest"
-	"github.com/ServiceComb/service-center/server/core/backend/store"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/chain"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
 	"net/http"
 	"strconv"
 )

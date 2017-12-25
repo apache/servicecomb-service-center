@@ -18,7 +18,7 @@ package async
 
 import (
 	"errors"
-	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"golang.org/x/net/context"
 	"sync"
 	"time"

@@ -17,10 +17,10 @@
 package service_test
 
 import (
-	"github.com/ServiceComb/service-center/server/core"
-	pb "github.com/ServiceComb/service-center/server/core/proto"
-	scerr "github.com/ServiceComb/service-center/server/error"
-	"github.com/ServiceComb/service-center/server/service"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
+	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
+	"github.com/apache/incubator-servicecomb-service-center/server/service"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"golang.org/x/net/context"

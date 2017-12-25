@@ -16,7 +16,7 @@
  */
 package store
 
-import "github.com/ServiceComb/service-center/pkg/async"
+import "github.com/apache/incubator-servicecomb-service-center/pkg/async"
 
 var service *async.AsyncTaskService
 

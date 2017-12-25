@@ -18,10 +18,10 @@
 package dynamic
 
 import (
-	"github.com/ServiceComb/service-center/pkg/plugin"
-	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/pkg/uuid"
-	mgr "github.com/ServiceComb/service-center/server/plugin"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/plugin"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/uuid"
+	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
 )
 
 var (

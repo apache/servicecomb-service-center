@@ -17,20 +17,20 @@
 package service_test
 
 import (
-	_ "github.com/ServiceComb/service-center/server/plugin/infra/registry/embededetcd"
-	_ "github.com/ServiceComb/service-center/server/plugin/infra/registry/etcd"
+	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/registry/embededetcd"
+	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/registry/etcd"
 )
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/ServiceComb/service-center/pkg/etcdsync"
-	"github.com/ServiceComb/service-center/pkg/util"
-	apt "github.com/ServiceComb/service-center/server/core"
-	"github.com/ServiceComb/service-center/server/core/backend"
-	pb "github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/server/infra/registry"
-	"github.com/ServiceComb/service-center/server/service"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/etcdsync"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
+	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
+	"github.com/apache/incubator-servicecomb-service-center/server/service"
 	"testing"
 	"time"
 )

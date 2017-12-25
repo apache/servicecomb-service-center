@@ -17,7 +17,7 @@
 package plain
 
 import (
-	mgr "github.com/ServiceComb/service-center/server/plugin"
+	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
 )
 
 func init() {

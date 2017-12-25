@@ -18,9 +18,9 @@ package store
 
 import (
 	"fmt"
-	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/server/infra/registry"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"sync"

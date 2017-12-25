@@ -18,8 +18,8 @@ package rest
 
 import (
 	"fmt"
-	"github.com/ServiceComb/service-center/pkg/rest"
-	"github.com/ServiceComb/service-center/server/core"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 	"net/http"

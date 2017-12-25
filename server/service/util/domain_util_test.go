@@ -18,8 +18,8 @@ package util_test
 
 import (
 	"fmt"
-	"github.com/ServiceComb/service-center/pkg/util"
-	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
 	"testing"
 )

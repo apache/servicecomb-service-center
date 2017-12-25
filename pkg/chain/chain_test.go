@@ -18,7 +18,7 @@ package chain_test
 
 import (
 	"context"
-	"github.com/ServiceComb/service-center/pkg/chain"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/chain"
 	"testing"
 )
 

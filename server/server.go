@@ -16,17 +16,17 @@
  */
 package server
 
-import _ "github.com/ServiceComb/service-center/server/service/event"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/service/event"
 import (
 	"fmt"
-	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/server/core"
-	"github.com/ServiceComb/service-center/server/core/backend"
-	st "github.com/ServiceComb/service-center/server/core/backend/store"
-	"github.com/ServiceComb/service-center/server/mux"
-	nf "github.com/ServiceComb/service-center/server/service/notification"
-	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
-	"github.com/ServiceComb/service-center/version"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
+	st "github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
+	"github.com/apache/incubator-servicecomb-service-center/server/mux"
+	nf "github.com/apache/incubator-servicecomb-service-center/server/service/notification"
+	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
+	"github.com/apache/incubator-servicecomb-service-center/version"
 	"github.com/astaxie/beego"
 	"os"
 	"strings"

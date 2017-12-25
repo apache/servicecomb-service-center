@@ -18,10 +18,10 @@ package rest
 
 import (
 	"crypto/tls"
-	"github.com/ServiceComb/service-center/pkg/rest"
-	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/server/core"
-	sctls "github.com/ServiceComb/service-center/server/tls"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
+	sctls "github.com/apache/incubator-servicecomb-service-center/server/tls"
 	"net/http"
 	"time"
 )

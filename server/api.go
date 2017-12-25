@@ -18,14 +18,14 @@ package server
 
 import (
 	"fmt"
-	"github.com/ServiceComb/service-center/pkg/grace"
-	"github.com/ServiceComb/service-center/pkg/rest"
-	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/server/core"
-	pb "github.com/ServiceComb/service-center/server/core/proto"
-	rs "github.com/ServiceComb/service-center/server/rest"
-	"github.com/ServiceComb/service-center/server/rpc"
-	"github.com/ServiceComb/service-center/server/service"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/grace"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
+	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	rs "github.com/apache/incubator-servicecomb-service-center/server/rest"
+	"github.com/apache/incubator-servicecomb-service-center/server/rpc"
+	"github.com/apache/incubator-servicecomb-service-center/server/service"
 	"golang.org/x/net/context"
 	"time"
 )

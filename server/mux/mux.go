@@ -17,7 +17,7 @@
 package mux
 
 import (
-	"github.com/ServiceComb/service-center/pkg/etcdsync"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/etcdsync"
 	"reflect"
 	"unsafe"
 )

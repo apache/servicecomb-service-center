@@ -25,8 +25,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ServiceComb/service-center/pkg/lager"
-	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/lager"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 )
 
 type Entry struct {

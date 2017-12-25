@@ -18,11 +18,11 @@ package util
 
 import (
 	"encoding/json"
-	"github.com/ServiceComb/service-center/pkg/util"
-	apt "github.com/ServiceComb/service-center/server/core"
-	"github.com/ServiceComb/service-center/server/core/backend"
-	"github.com/ServiceComb/service-center/server/core/backend/store"
-	"github.com/ServiceComb/service-center/server/infra/registry"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"golang.org/x/net/context"
 )
 
