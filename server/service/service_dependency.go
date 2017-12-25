@@ -79,6 +79,7 @@ func (s *MicroServiceService) AddOrUpdateDependencies(ctx context.Context, depen
 			return pb.CreateResponse(scerr.ErrServiceNotExists, "Get consumer's serviceId is empty."), nil
 		}
 
+		dependencyInfo.Override = override
 		data, err := json.Marshal(dependencyInfo)
 		if err != nil {
 			util.Logger().Errorf(err, "put request into dependency queue failed, override: %t, marshal consumer %s dependency failed",

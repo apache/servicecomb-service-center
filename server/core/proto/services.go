@@ -241,11 +241,12 @@ func GetInfoFromSchemaKV(kv *mvccpb.KeyValue) (schemaId string, data []byte) {
 func GetInfoFromDependencyQueueKV(kv *mvccpb.KeyValue) (consumerId, domainProject string, data []byte) {
 	keys, data := KvToResponse(kv)
 	l := len(keys)
-	if l < 3 {
+	if l < 4 {
 		return
 	}
-
-	return keys[l-2], keys[l-3], data
+	consumerId = keys[l-2]
+	domainProject = fmt.Sprintf("%s/%s", keys[l-4], keys[l-3])
+	return
 }
 
 func DependenciesToKeys(in []*DependencyKey, domainProject string) []*MicroServiceKey {

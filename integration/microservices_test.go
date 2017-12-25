@@ -30,6 +30,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 var serviceName = ""
@@ -408,6 +409,8 @@ var _ = Describe("MicroService Api Test", func() {
 
 					// Validate the dependency creation
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
+
+					<-time.After(time.Second)
 
 					//Get Provider by ConsumerID
 					url := strings.Replace(GETCONPRODEPENDENCY, ":consumerId", consumerServiceID, 1)

@@ -611,12 +611,12 @@ func NewRegistry() mgr.PluginInstance {
 	inv, _ := time.ParseDuration(core.ServerInfo.Config.AutoSyncInterval)
 	client, err := newClient(endpoints, inv)
 	if err != nil {
-		util.Logger().Errorf(err, "get etcd client %+v failed.", endpoints)
+		util.Logger().Errorf(err, "get etcd client %v failed.", endpoints)
 		inst.err <- err
 		return inst
 	}
 
-	util.Logger().Warnf(nil, "get etcd client %+v completed, auto sync endpoints interval is %s.",
+	util.Logger().Warnf(nil, "get etcd client %v completed, auto sync endpoints interval is %s.",
 		endpoints, core.ServerInfo.Config.AutoSyncInterval)
 	inst.Client = client
 	close(inst.ready)

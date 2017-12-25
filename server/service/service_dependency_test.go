@@ -18,9 +18,12 @@ package service_test
 
 import (
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/server/service/event"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
+
+var deh event.DependencyEventHandler
 
 var _ = Describe("'Dependency' service", func() {
 	Describe("execute 'create' operartion", func() {
@@ -500,6 +503,8 @@ var _ = Describe("'Dependency' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 
+				Expect(deh.Handle()).To(BeNil())
+
 				By("get provider's deps")
 				respGetP, err := serviceResource.GetProviderDependencies(getContext(), &pb.GetDependenciesRequest{
 					ServiceId: providerId1,
@@ -525,6 +530,8 @@ var _ = Describe("'Dependency' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+
+				Expect(deh.Handle()).To(BeNil())
 
 				By("get provider again")
 				respGetP, err = serviceResource.GetProviderDependencies(getContext(), &pb.GetDependenciesRequest{

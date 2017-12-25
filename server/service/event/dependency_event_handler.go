@@ -21,11 +21,13 @@ import (
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/apache/incubator-servicecomb-service-center/server/mux"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"time"
 )
@@ -76,7 +78,7 @@ func (h *DependencyEventHandler) loop() {
 					continue
 				}
 
-				err = h.handle()
+				err = h.Handle()
 				lock.Unlock()
 				if err != nil {
 					util.Logger().Errorf(err, "handle dependency event failed")
@@ -88,7 +90,7 @@ func (h *DependencyEventHandler) loop() {
 	})
 }
 
-func (h *DependencyEventHandler) handle() error {
+func (h *DependencyEventHandler) Handle() error {
 	key := core.GetServiceDependencyQueueRootKey("")
 	resp, err := store.Store().DependencyQueue().Search(context.Background(),
 		registry.WithStrKey(key),
@@ -100,7 +102,7 @@ func (h *DependencyEventHandler) handle() error {
 	// maintain dependency rules.
 	for _, kv := range resp.Kvs {
 		var (
-			r   *pb.ConsumerDependency
+			r                   = &pb.ConsumerDependency{}
 			ctx context.Context = context.Background()
 		)
 
@@ -108,7 +110,13 @@ func (h *DependencyEventHandler) handle() error {
 
 		err := json.Unmarshal(data, r)
 		if err != nil {
-			return fmt.Errorf("unmarshal consumer %s dependency failed, %s", consumerId, err.Error())
+			util.Logger().Errorf(err, "maintain dependency failed, unmarshal failed, consumer %s dependency: %s",
+				consumerId, util.BytesToStringWithNoCopy(data))
+
+			if err = h.removeKV(kv); err != nil {
+				return err
+			}
+			continue
 		}
 
 		serviceUtil.SetDependencyDefaultValue(r)
@@ -124,7 +132,11 @@ func (h *DependencyEventHandler) handle() error {
 		if len(consumerId) == 0 {
 			util.Logger().Errorf(nil, "maintain dependency failed, override: %t, consumer %s does not exist",
 				r.Override, consumerFlag)
-			return nil
+
+			if err = h.removeKV(kv); err != nil {
+				return err
+			}
+			continue
 		}
 
 		var dep serviceUtil.Dependency
@@ -142,9 +154,25 @@ func (h *DependencyEventHandler) handle() error {
 			return fmt.Errorf("override: %t, consumer is %s, %s", r.Override, consumerFlag, err.Error())
 		}
 
-		util.Logger().Infof("maintain dependency %+v successfully", r)
-	}
+		if err = h.removeKV(kv); err != nil {
+			return err
+		}
 
+		util.Logger().Infof("maintain dependency %v successfully, override: %t", r, r.Override)
+	}
+	return nil
+}
+
+func (h *DependencyEventHandler) removeKV(kv *mvccpb.KeyValue) error {
+	dresp, err := backend.Registry().TxnWithCmp(context.Background(), []registry.PluginOp{registry.OpDel(registry.WithKey(kv.Key))},
+		[]registry.CompareOp{registry.OpCmp(registry.CmpVer(kv.Key), registry.CMP_EQUAL, kv.Version)},
+		nil)
+	if err != nil {
+		return fmt.Errorf("can not remove the dependency %s request, %s", util.BytesToStringWithNoCopy(kv.Key), err.Error())
+	}
+	if !dresp.Succeeded {
+		util.Logger().Infof("the dependency %s request is changed", util.BytesToStringWithNoCopy(kv.Key))
+	}
 	return nil
 }
 

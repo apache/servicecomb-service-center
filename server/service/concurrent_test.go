@@ -39,7 +39,7 @@ func init() {
 	etcdsync.IsDebug = true
 }
 
-func TestServiceController_CreateDependenciesForMicroServices(t *testing.T) {
+func testServiceController_CreateDependenciesForMicroServices(t *testing.T) {
 	tryTimes := 3
 	testCount := 10
 	serviceResource, _ := service.AssembleResources()

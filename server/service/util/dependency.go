@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/cache"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/uuid"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
@@ -250,7 +249,7 @@ func AddServiceVersionRule(ctx context.Context, domainProject, consumerId string
 		return err
 	}
 
-	data, err := json.Marshal(&pb.ConsumerDependency{
+	r := &pb.ConsumerDependency{
 		Consumer: &pb.DependencyKey{
 			Environment: consumer.Environment,
 			AppId:       consumer.AppId,
@@ -266,15 +265,21 @@ func AddServiceVersionRule(ctx context.Context, domainProject, consumerId string
 			},
 		},
 		Override: false,
-	})
+	}
+	data, err := json.Marshal(r)
 	if err != nil {
 		return err
 	}
 
-	key := apt.GenerateConsumerDependencyQueueKey(domainProject, consumerId, uuid.GenerateUuid())
-	_, err = backend.Registry().Do(ctx, registry.PUT,
-		registry.WithStrKey(key), registry.WithValue(data))
-	return err
+	id := util.StringJoin([]string{provider.AppId, provider.ServiceName}, "_")
+	key := apt.GenerateConsumerDependencyQueueKey(domainProject, consumerId, id)
+	_, err = backend.Registry().Do(ctx, registry.PUT, registry.WithStrKey(key), registry.WithValue(data))
+	if err != nil {
+		return err
+	}
+
+	util.Logger().Infof("find request into dependency queue successfully, %s: %v", key, r)
+	return nil
 }
 
 func DeleteDependencyForService(ctx context.Context, consumer *pb.MicroServiceKey, serviceId string) ([]registry.PluginOp, error) {
