@@ -619,7 +619,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		}, nil
 	}
 
-	provider.ServiceName = providerService.ServiceName
+	provider = pb.MicroServiceToKey(targetDomainProject, providerService)
 	provider.Version = in.VersionRule
 
 	err = serviceUtil.AddServiceVersionRule(ctx, domainProject, service, provider)

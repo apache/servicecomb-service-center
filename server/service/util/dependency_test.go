@@ -25,7 +25,7 @@ import (
 )
 
 func TestRefreshDependencyCache(t *testing.T) {
-	err := RefreshDependencyCache(context.Background(), "", "", &proto.MicroService{})
+	err := RefreshDependencyCache(context.Background(), "", &proto.MicroService{})
 	if err == nil {
 		fmt.Printf(`RefreshDependencyCache failed`)
 		t.FailNow()
@@ -352,7 +352,7 @@ func TestUpdateServiceForAddDependency(t *testing.T) {
 }
 
 func TestFilter(t *testing.T) {
-	_, _, err := getConsumerIdsWithFilter(context.Background(), "", "", &proto.MicroService{}, noFilter)
+	_, _, err := getConsumerIdsWithFilter(context.Background(), "", &proto.MicroService{}, noFilter)
 	if err == nil {
 		fmt.Printf(`getConsumerIdsWithFilter failed`)
 		t.FailNow()
@@ -434,7 +434,7 @@ func TestDependency(t *testing.T) {
 		t.FailNow()
 	}
 
-	_, err = dr.getServiceByMicroServiceKey("", &proto.MicroServiceKey{})
+	_, err = dr.getServiceByMicroServiceKey(&proto.MicroServiceKey{})
 	if err != nil {
 		fmt.Printf(`DependencyRelation_getServiceByMicroServiceKey WithCacheOnly failed`)
 		t.FailNow()
@@ -473,7 +473,7 @@ func TestDependency(t *testing.T) {
 		t.FailNow()
 	}
 
-	_, err = dr.getServiceByMicroServiceKey("", &proto.MicroServiceKey{})
+	_, err = dr.getServiceByMicroServiceKey(&proto.MicroServiceKey{})
 	if err == nil {
 		fmt.Printf(`DependencyRelation_getServiceByMicroServiceKey failed`)
 		t.FailNow()

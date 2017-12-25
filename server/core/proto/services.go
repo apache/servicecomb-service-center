@@ -264,6 +264,7 @@ func MicroServiceToKey(domainProject string, in *MicroService) *MicroServiceKey 
 		Environment: in.Environment,
 		AppId:       in.AppId,
 		ServiceName: in.ServiceName,
+		Alias:       in.Alias,
 		Version:     in.Version,
 	}
 }
