@@ -434,11 +434,11 @@ func (s *InstanceService) GetOneInstance(ctx context.Context, in *pb.GetOneInsta
 	}
 	conPro := util.StringJoin([]string{in.ConsumerServiceId, in.ProviderServiceId, in.ProviderInstanceId}, "/")
 
-	domainProject := util.ParseDomainProject(ctx)
+	targetDomainProject := util.ParseTargetDomainProject(ctx)
 
 	serviceId := in.ProviderServiceId
 	instanceId := in.ProviderInstanceId
-	instance, err := serviceUtil.GetInstance(ctx, domainProject, serviceId, instanceId)
+	instance, err := serviceUtil.GetInstance(ctx, targetDomainProject, serviceId, instanceId)
 	if err != nil {
 		util.Logger().Errorf(err, "get instance failed, %s(consumer/provider): get instance failed.", conPro)
 		return &pb.GetOneInstanceResponse{
@@ -463,9 +463,9 @@ func (s *InstanceService) getInstancePreCheck(ctx context.Context, in interface{
 	if err != nil {
 		return scerr.NewError(scerr.ErrInvalidParams, err.Error())
 	}
+	var targetDomainProject = util.ParseTargetDomainProject(ctx)
 	var providerServiceId, consumerServiceId string
 	var tags []string
-	domainProject := util.ParseDomainProject(ctx)
 
 	switch in.(type) {
 	case *pb.GetOneInstanceRequest:
@@ -478,13 +478,13 @@ func (s *InstanceService) getInstancePreCheck(ctx context.Context, in interface{
 		tags = in.(*pb.GetInstancesRequest).Tags
 	}
 
-	if !serviceUtil.ServiceExist(ctx, domainProject, providerServiceId) {
+	if !serviceUtil.ServiceExist(ctx, targetDomainProject, providerServiceId) {
 		return scerr.NewError(scerr.ErrServiceNotExists, "Provider serviceId is invalid")
 	}
 
 	// Tag过滤
 	if len(tags) > 0 {
-		tagsFromETCD, err := serviceUtil.GetTagsUtils(ctx, domainProject, providerServiceId)
+		tagsFromETCD, err := serviceUtil.GetTagsUtils(ctx, targetDomainProject, providerServiceId)
 		if err != nil {
 			return scerr.NewError(scerr.ErrInternal, fmt.Sprintf("An error occurred in query provider tags(%s)", err.Error()))
 		}
@@ -499,7 +499,7 @@ func (s *InstanceService) getInstancePreCheck(ctx context.Context, in interface{
 	}
 	// 黑白名单
 	// 跨应用调用
-	forbid := serviceUtil.Accessible(ctx, domainProject, consumerServiceId, providerServiceId)
+	forbid := serviceUtil.Accessible(ctx, consumerServiceId, providerServiceId)
 	if forbid != nil {
 		util.Logger().Errorf(forbid,
 			"consumer %s can't access provider %s", consumerServiceId, providerServiceId)
@@ -522,9 +522,9 @@ func (s *InstanceService) GetInstances(ctx context.Context, in *pb.GetInstancesR
 	}
 	conPro := util.StringJoin([]string{in.ConsumerServiceId, in.ProviderServiceId}, "/")
 
-	domainProject := util.ParseDomainProject(ctx)
+	targetDomainProject := util.ParseTargetDomainProject(ctx)
 
-	instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, domainProject, in.ProviderServiceId)
+	instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, targetDomainProject, in.ProviderServiceId)
 	if err != nil {
 		util.Logger().Errorf(err, "get instances failed, %s(consumer/provider): get instances from etcd failed.", conPro)
 		return &pb.GetInstancesResponse{
@@ -547,6 +547,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 	}
 
 	domainProject := util.ParseDomainProject(ctx)
+	targetDomainProject := util.ParseTargetDomainProject(ctx)
 
 	findFlag := fmt.Sprintf("consumer %s --> provider %s/%s/%s", in.ConsumerServiceId, in.AppId, in.ServiceName, in.VersionRule)
 	service, err := serviceUtil.GetService(ctx, domainProject, in.ConsumerServiceId)
@@ -563,14 +564,21 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		}, nil
 	}
 
-	// 版本规则
-	ids, err := serviceUtil.FindServiceIds(ctx, in.VersionRule, &pb.MicroServiceKey{
-		Tenant:      domainProject,
+	provider := &pb.MicroServiceKey{
+		Tenant:      targetDomainProject,
 		Environment: service.Environment,
 		AppId:       in.AppId,
 		ServiceName: in.ServiceName,
 		Alias:       in.ServiceName,
-	})
+	}
+
+	if apt.IsShared(provider) {
+		// it means the shared micro-services must be the same env with SC.
+		provider.Environment = apt.Service.Environment
+	}
+
+	// 版本规则
+	ids, err := serviceUtil.FindServiceIds(ctx, in.VersionRule, provider)
 	if err != nil {
 		util.Logger().Errorf(err, "find instance failed, %s: get providers failed.", findFlag)
 		return &pb.FindInstancesResponse{
@@ -603,7 +611,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 	}
 
 	//维护version的规则,servicename 可能是别名，所以重新获取
-	providerService, err := serviceUtil.GetService(ctx, domainProject, ids[0])
+	providerService, err := serviceUtil.GetService(ctx, targetDomainProject, ids[0])
 	if providerService == nil {
 		util.Logger().Errorf(err, "find instance failed, %s: no provider matched.", findFlag)
 		return &pb.FindInstancesResponse{
@@ -611,16 +619,10 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		}, nil
 	}
 
-	consumer := pb.MicroServiceToKey(domainProject, service)
-	provider := &pb.MicroServiceKey{
-		Tenant:      domainProject,
-		Environment: consumer.Environment,
-		AppId:       in.AppId,
-		ServiceName: providerService.ServiceName,
-		Version:     in.VersionRule,
-	}
+	provider.ServiceName = providerService.ServiceName
+	provider.Version = in.VersionRule
 
-	err = serviceUtil.AddServiceVersionRule(ctx, domainProject, service.ServiceId, consumer, provider)
+	err = serviceUtil.AddServiceVersionRule(ctx, domainProject, service, provider)
 	if err != nil {
 		util.Logger().Errorf(err, "find instance failed, %s: add service version rule failed.", findFlag)
 		return &pb.FindInstancesResponse{

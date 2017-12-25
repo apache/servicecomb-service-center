@@ -91,7 +91,7 @@ func TestGetServiceRuleType(t *testing.T) {
 }
 
 func TestAllowAcrossApp(t *testing.T) {
-	err := serviceUtil.AllowAcrossDimension(&proto.MicroService{
+	err := serviceUtil.AllowAcrossDimension(context.Background(), &proto.MicroService{
 		AppId: "a",
 	}, &proto.MicroService{
 		AppId: "a",
@@ -101,7 +101,7 @@ func TestAllowAcrossApp(t *testing.T) {
 		t.FailNow()
 	}
 
-	err = serviceUtil.AllowAcrossDimension(&proto.MicroService{
+	err = serviceUtil.AllowAcrossDimension(context.Background(), &proto.MicroService{
 		AppId: "a",
 	}, &proto.MicroService{
 		AppId: "c",
@@ -111,7 +111,7 @@ func TestAllowAcrossApp(t *testing.T) {
 		t.FailNow()
 	}
 
-	err = serviceUtil.AllowAcrossDimension(&proto.MicroService{
+	err = serviceUtil.AllowAcrossDimension(context.Background(), &proto.MicroService{
 		AppId: "a",
 		Properties: map[string]string{
 			proto.PROP_ALLOW_CROSS_APP: "true",
@@ -124,7 +124,7 @@ func TestAllowAcrossApp(t *testing.T) {
 		t.FailNow()
 	}
 
-	err = serviceUtil.AllowAcrossDimension(&proto.MicroService{
+	err = serviceUtil.AllowAcrossDimension(context.Background(), &proto.MicroService{
 		AppId: "a",
 		Properties: map[string]string{
 			proto.PROP_ALLOW_CROSS_APP: "true",
@@ -137,7 +137,7 @@ func TestAllowAcrossApp(t *testing.T) {
 		t.FailNow()
 	}
 
-	err = serviceUtil.AllowAcrossDimension(&proto.MicroService{
+	err = serviceUtil.AllowAcrossDimension(context.Background(), &proto.MicroService{
 		AppId: "a",
 		Properties: map[string]string{
 			proto.PROP_ALLOW_CROSS_APP: "false",
@@ -150,7 +150,7 @@ func TestAllowAcrossApp(t *testing.T) {
 		t.FailNow()
 	}
 
-	err = serviceUtil.AllowAcrossDimension(&proto.MicroService{
+	err = serviceUtil.AllowAcrossDimension(context.Background(), &proto.MicroService{
 		AppId: "a",
 		Properties: map[string]string{
 			proto.PROP_ALLOW_CROSS_APP: "",
@@ -338,13 +338,13 @@ func TestGetProvider(t *testing.T) {
 }
 
 func TestAccessible(t *testing.T) {
-	err := serviceUtil.Accessible(context.Background(), "", "", "")
+	err := serviceUtil.Accessible(context.Background(), "", "")
 	if err.StatusCode() != http.StatusInternalServerError {
 		fmt.Printf("Accessible invalid failed")
 		t.FailNow()
 	}
 
-	err = serviceUtil.Accessible(util.SetContext(context.Background(), "cacheOnly", "1"), "", "", "")
+	err = serviceUtil.Accessible(util.SetContext(context.Background(), "cacheOnly", "1"), "", "")
 	if err.StatusCode() == http.StatusInternalServerError {
 		fmt.Printf("Accessible WithCacheOnly failed")
 		t.FailNow()

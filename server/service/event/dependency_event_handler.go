@@ -122,7 +122,7 @@ func (h *DependencyEventHandler) Handle() error {
 		serviceUtil.SetDependencyDefaultValue(r)
 
 		consumerFlag := util.StringJoin([]string{r.Consumer.AppId, r.Consumer.ServiceName, r.Consumer.Version}, "/")
-		consumerInfo := pb.DependenciesToKeys([]*pb.DependencyKey{r.Consumer}, domainProject)[0]
+		consumerInfo := pb.DependenciesToKeys([]*pb.MicroServiceKey{r.Consumer}, domainProject)[0]
 		providersInfo := pb.DependenciesToKeys(r.Providers, domainProject)
 
 		consumerId, err = serviceUtil.GetServiceId(ctx, consumerInfo)

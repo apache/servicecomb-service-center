@@ -135,7 +135,7 @@ func TestCreateDependencyRule(t *testing.T) {
 		t.FailNow()
 	}
 
-	err = AddServiceVersionRule(context.Background(), "", "", &proto.MicroServiceKey{}, &proto.MicroServiceKey{})
+	err = AddServiceVersionRule(context.Background(), "", &proto.MicroService{}, &proto.MicroServiceKey{})
 	if err == nil {
 		fmt.Printf(`AddServiceVersionRule failed`)
 		t.FailNow()

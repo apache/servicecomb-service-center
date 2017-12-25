@@ -249,18 +249,13 @@ func GetInfoFromDependencyQueueKV(kv *mvccpb.KeyValue) (consumerId, domainProjec
 	return
 }
 
-func DependenciesToKeys(in []*DependencyKey, domainProject string) []*MicroServiceKey {
-	rst := []*MicroServiceKey{}
+func DependenciesToKeys(in []*MicroServiceKey, domainProject string) []*MicroServiceKey {
 	for _, value := range in {
-		rst = append(rst, &MicroServiceKey{
-			Tenant:      domainProject,
-			Environment: value.Environment,
-			AppId:       value.AppId,
-			ServiceName: value.ServiceName,
-			Version:     value.Version,
-		})
+		if len(value.Tenant) == 0 {
+			value.Tenant = domainProject
+		}
 	}
-	return rst
+	return in
 }
 
 func MicroServiceToKey(domainProject string, in *MicroService) *MicroServiceKey {

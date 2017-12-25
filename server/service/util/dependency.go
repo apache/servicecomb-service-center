@@ -242,29 +242,18 @@ func ProviderDependencyRuleExist(ctx context.Context, domainProject string, prov
 	return false, nil
 }
 
-func AddServiceVersionRule(ctx context.Context, domainProject, consumerId string, consumer *pb.MicroServiceKey, provider *pb.MicroServiceKey) error {
+func AddServiceVersionRule(ctx context.Context, domainProject string, consumer *pb.MicroService, provider *pb.MicroServiceKey) error {
 	//创建依赖一致
-	exist, err := ProviderDependencyRuleExist(ctx, domainProject, provider, consumer)
+	consumerKey := pb.MicroServiceToKey(domainProject, consumer)
+	exist, err := ProviderDependencyRuleExist(ctx, domainProject, provider, consumerKey)
 	if exist || err != nil {
 		return err
 	}
 
 	r := &pb.ConsumerDependency{
-		Consumer: &pb.DependencyKey{
-			Environment: consumer.Environment,
-			AppId:       consumer.AppId,
-			ServiceName: consumer.ServiceName,
-			Version:     consumer.Version,
-		},
-		Providers: []*pb.DependencyKey{
-			{
-				Environment: consumer.Environment,
-				AppId:       provider.AppId,
-				ServiceName: provider.ServiceName,
-				Version:     provider.Version,
-			},
-		},
-		Override: false,
+		Consumer:  consumerKey,
+		Providers: []*pb.MicroServiceKey{provider},
+		Override:  false,
 	}
 	data, err := json.Marshal(r)
 	if err != nil {
@@ -272,7 +261,7 @@ func AddServiceVersionRule(ctx context.Context, domainProject, consumerId string
 	}
 
 	id := util.StringJoin([]string{provider.AppId, provider.ServiceName}, "_")
-	key := apt.GenerateConsumerDependencyQueueKey(domainProject, consumerId, id)
+	key := apt.GenerateConsumerDependencyQueueKey(domainProject, consumer.ServiceId, id)
 	_, err = backend.Registry().Do(ctx, registry.PUT, registry.WithStrKey(key), registry.WithValue(data))
 	if err != nil {
 		return err

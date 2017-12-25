@@ -149,7 +149,7 @@ message MicroService {
     string status = 8; // UP|DOWN
     map<string, string> properties = 9;
     string timestamp = 11;
-    repeated DependencyKey providers = 12;
+    repeated MicroServiceKey providers = 12;
     string alias = 13;
     map<string, string> LBStrategy = 14;
     string modTimestamp = 15;
@@ -518,16 +518,9 @@ message CreateDependenciesRequest {
     repeated ConsumerDependency dependencies = 1;
 }
 
-message DependencyKey {
-    string appId = 1;
-    string serviceName = 2;
-    string version = 3;
-    string environment = 4;
-}
-
 message ConsumerDependency {
-    DependencyKey consumer = 1;
-    repeated DependencyKey providers = 2;
+    MicroServiceKey consumer = 1;
+    repeated MicroServiceKey providers = 2;
     bool override = 3;
 }
 
