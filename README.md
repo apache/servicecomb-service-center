@@ -1,7 +1,7 @@
 # service-center 
 [![Build Status](https://www.travis-ci.org/apache/incubator-servicecomb-service-center.svg?branch=master)](https://www.travis-ci.org/apache/incubator-servicecomb-service-center)  [![Coverage Status](https://coveralls.io/repos/github/apache/incubator-servicecomb-service-center/badge.svg?branch=master)](https://coveralls.io/github/apache/incubator-servicecomb-service-center?branch=master)  [![Go Report Card](https://goreportcard.com/badge/github.com/apache/incubator-servicecomb-service-center)](https://goreportcard.com/report/github.com/apache/incubator-servicecomb-service-center) [![GoDoc](https://godoc.org/github.com/apache/incubator-servicecomb-service-center?status.svg)](https://godoc.org/github.com/apache/incubator-servicecomb-service-center)  
 
-A standalone service center allows services to register their instance information and to discover providers of a given service. 
+Apache service-center (incubating) allows services to register their instance information and to discover providers of a given service. 
 ## Features
  -  Seperated microservice and microservice instance entity management
  -  White and back list configuration for service discovery
