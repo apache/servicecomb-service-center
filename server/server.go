@@ -114,13 +114,19 @@ func (s *ServiceCenterServer) autoCompactBackend() {
 	if delta <= 0 {
 		return
 	}
+	interval, err := time.ParseDuration(core.ServerInfo.Config.CompactInterval)
+	if err != nil {
+		util.Logger().Errorf(err, "invalid compact interval %s, reset to default interval 12h", core.ServerInfo.Config.CompactInterval)
+		interval = 12 * time.Hour
+	}
 	util.Go(func(stopCh <-chan struct{}) {
-		util.Logger().Infof("start the automatic compact mechanism, compact once every 12h")
+		util.Logger().Infof("start the automatic compact mechanism, compact once every %s",
+			core.ServerInfo.Config.CompactInterval)
 		for {
 			select {
 			case <-stopCh:
 				return
-			case <-time.After(12 * time.Hour):
+			case <-time.After(interval):
 				lock, err := mux.Try(mux.GLOBAL_LOCK)
 				if lock == nil {
 					util.Logger().Warnf(err, "can not compact backend by this service center instance now")
