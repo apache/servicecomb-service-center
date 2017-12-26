@@ -16,7 +16,7 @@
  */
 package notification
 
-import "github.com/ServiceComb/service-center/pkg/util"
+import "github.com/apache/incubator-servicecomb-service-center/pkg/util"
 
 const (
 	NOTIFY_SERVER_CHECKER_NAME  = "__HealthChecker__"

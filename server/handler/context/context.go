@@ -17,9 +17,9 @@
 package context
 
 import (
-	"github.com/ServiceComb/service-center/pkg/chain"
-	roa "github.com/ServiceComb/service-center/pkg/rest"
-	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/chain"
+	roa "github.com/apache/incubator-servicecomb-service-center/pkg/rest"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"net/http"
 )
 
@@ -40,6 +40,8 @@ func (c *ContextHandler) Handle(i *chain.Invocation) {
 	case v3.IsMatch(r):
 		err = v3.Do(r)
 	case v4.IsMatch(r):
+		util.SetRequestContext(r, "target-domain", "default")
+		util.SetRequestContext(r, "target-project", "default")
 		err = v4.Do(r)
 	}
 

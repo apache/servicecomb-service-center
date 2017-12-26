@@ -18,12 +18,12 @@ package event
 
 import (
 	"encoding/json"
-	"github.com/ServiceComb/service-center/pkg/util"
-	apt "github.com/ServiceComb/service-center/server/core"
-	"github.com/ServiceComb/service-center/server/core/backend/store"
-	pb "github.com/ServiceComb/service-center/server/core/proto"
-	nf "github.com/ServiceComb/service-center/server/service/notification"
-	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
+	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	nf "github.com/apache/incubator-servicecomb-service-center/server/service/notification"
+	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
 	"strings"
 )
@@ -84,7 +84,7 @@ func (h *InstanceEventHandler) OnEvent(evt *store.KvEvent) {
 	}
 
 	// 查询所有consumer
-	consumerIds, _, err := serviceUtil.GetConsumerIds(context.Background(), domainProject, ms)
+	consumerIds, _, err := serviceUtil.GetConsumerIdsByProvider(context.Background(), domainProject, ms)
 	if err != nil {
 		util.Logger().Errorf(err, "query service %s consumers failed", providerId)
 		return

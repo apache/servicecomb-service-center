@@ -18,7 +18,7 @@ package proto
 
 import (
 	"fmt"
-	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/gorilla/websocket"
 	"golang.org/x/net/context"
@@ -101,6 +101,7 @@ type ServerConfig struct {
 
 	AutoSyncInterval  string `json:"autoSyncInterval"`
 	CompactIndexDelta int64  `json:"compactIndexDelta"`
+	CompactInterval   string `json:"compactInterval"`
 
 	LoggerName     string `json:"-"`
 	LogRotateSize  int64  `json:"logRotateSize"`
@@ -221,7 +222,7 @@ func GetInfoFromSvcIndexKV(kv *mvccpb.KeyValue) (key *MicroServiceKey, data []by
 func GetInfoFromSchemaSummaryKV(kv *mvccpb.KeyValue) (schemaId string, data []byte) {
 	keys, data := KvToResponse(kv)
 	l := len(keys)
-	if l < 2 {
+	if l < 1 {
 		return
 	}
 
@@ -231,25 +232,31 @@ func GetInfoFromSchemaSummaryKV(kv *mvccpb.KeyValue) (schemaId string, data []by
 func GetInfoFromSchemaKV(kv *mvccpb.KeyValue) (schemaId string, data []byte) {
 	keys, data := KvToResponse(kv)
 	l := len(keys)
-	if l < 2 {
+	if l < 1 {
 		return
 	}
 
 	return keys[l-1], data
 }
 
-func DependenciesToKeys(in []*DependencyKey, domainProject string) []*MicroServiceKey {
-	rst := []*MicroServiceKey{}
-	for _, value := range in {
-		rst = append(rst, &MicroServiceKey{
-			Tenant:      domainProject,
-			Environment: value.Environment,
-			AppId:       value.AppId,
-			ServiceName: value.ServiceName,
-			Version:     value.Version,
-		})
+func GetInfoFromDependencyQueueKV(kv *mvccpb.KeyValue) (consumerId, domainProject string, data []byte) {
+	keys, data := KvToResponse(kv)
+	l := len(keys)
+	if l < 4 {
+		return
 	}
-	return rst
+	consumerId = keys[l-2]
+	domainProject = fmt.Sprintf("%s/%s", keys[l-4], keys[l-3])
+	return
+}
+
+func DependenciesToKeys(in []*MicroServiceKey, domainProject string) []*MicroServiceKey {
+	for _, value := range in {
+		if len(value.Tenant) == 0 {
+			value.Tenant = domainProject
+		}
+	}
+	return in
 }
 
 func MicroServiceToKey(domainProject string, in *MicroService) *MicroServiceKey {
@@ -258,6 +265,7 @@ func MicroServiceToKey(domainProject string, in *MicroService) *MicroServiceKey 
 		Environment: in.Environment,
 		AppId:       in.AppId,
 		ServiceName: in.ServiceName,
+		Alias:       in.Alias,
 		Version:     in.Version,
 	}
 }

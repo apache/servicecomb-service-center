@@ -17,7 +17,7 @@
 package mux
 
 import (
-	"github.com/ServiceComb/service-center/pkg/etcdsync"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/etcdsync"
 	"reflect"
 	"unsafe"
 )
@@ -33,9 +33,14 @@ func (m *MuxType) String() (s string) {
 }
 
 const (
-	GLOBAL_LOCK MuxType = "/global"
+	GLOBAL_LOCK    MuxType = "/cse-sr/lock/global"
+	DEP_QUEUE_LOCK MuxType = "/cse-sr/lock/dep-queue"
 )
 
-func Lock(t MuxType) (*etcdsync.Locker, error) {
-	return etcdsync.Lock(t.String())
+func Lock(t MuxType) (*etcdsync.DLock, error) {
+	return etcdsync.Lock(t.String(), true)
+}
+
+func Try(t MuxType) (*etcdsync.DLock, error) {
+	return etcdsync.Lock(t.String(), false)
 }

@@ -17,16 +17,16 @@
 package util_test
 
 import (
-	_ "github.com/ServiceComb/service-center/server/plugin/infra/quota/buildin"
-	_ "github.com/ServiceComb/service-center/server/plugin/infra/registry/buildin"
+	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/quota/buildin"
+	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/registry/buildin"
 )
 
 import (
 	"fmt"
-	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/server/infra/registry"
-	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
+	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"

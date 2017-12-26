@@ -17,10 +17,10 @@
 package access
 
 import (
-	//"fmt"
-	//"github.com/ServiceComb/service-center/pkg/util"
-	//"github.com/ServiceComb/service-center/pkg/validate"
-	"github.com/ServiceComb/service-center/server/core"
+	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/validate"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"net/http"
 )
 
@@ -37,11 +37,11 @@ func Intercept(w http.ResponseWriter, r *http.Request) error {
 
 	r.Body = http.MaxBytesReader(w, r.Body, core.ServerInfo.Config.MaxBodyBytes)
 
-	/*if !validate.IsRequestURI(r.RequestURI) {
+	if !validate.IsRequestURI(r.RequestURI) {
 		err := fmt.Errorf("Interceptor: Invalid Request URI %s", r.RequestURI)
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write(util.StringToBytesWithNoCopy(err.Error()))
 		return err
-	}*/
+	}
 	return nil
 }

@@ -17,7 +17,7 @@
 package rest
 
 import (
-	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"net/http"
 	"reflect"
 )

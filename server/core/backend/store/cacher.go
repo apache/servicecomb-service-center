@@ -17,9 +17,9 @@
 package store
 
 import (
-	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/server/core/backend"
-	"github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"sync"
@@ -430,7 +430,7 @@ func (c *KvCacher) onEvents(evts []*Event) {
 
 		switch evt.Type {
 		case proto.EVT_CREATE, proto.EVT_UPDATE:
-			util.Logger().Debugf("sync %s event and notify watcher, cache key %s, %+v", evt.Type, key, kv)
+			util.Logger().Debugf("sync %s event and notify watcher, cache %v", evt.Type, kv)
 
 			t := evt.Type
 			if !ok && evt.Type != proto.EVT_CREATE {
@@ -458,7 +458,7 @@ func (c *KvCacher) onEvents(evts []*Event) {
 				continue
 			}
 
-			util.Logger().Debugf("sync %s event and notify watcher, remove key %s, %+v", evt.Type, key, kv)
+			util.Logger().Debugf("sync %s event and notify watcher, remove cache %v", evt.Type, kv)
 			delete(store, key)
 			kvEvts[idx] = &KvEvent{
 				Revision: evt.Revision,

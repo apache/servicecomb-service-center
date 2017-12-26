@@ -17,8 +17,8 @@
 package service_test
 
 import (
-	"github.com/ServiceComb/service-center/server/core"
-	pb "github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
+	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"strings"
@@ -867,6 +867,8 @@ var _ = Describe("'Micro-service' service", func() {
 			})
 			Expect(err).To(BeNil())
 			Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
+
+			Expect(deh.Handle()).To(BeNil())
 		})
 
 		Context("when request is invalid", func() {

@@ -18,9 +18,9 @@ package buildin
 
 import (
 	"fmt"
-	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/server/infra/registry"
-	mgr "github.com/ServiceComb/service-center/server/plugin"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
+	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	"golang.org/x/net/context"
 )
 
@@ -67,6 +67,9 @@ func (ec *BuildinRegistry) LeaseRevoke(ctx context.Context, leaseID int64) error
 	return noPluginErr
 }
 func (ec *BuildinRegistry) Watch(ctx context.Context, opts ...registry.PluginOpOption) error {
+	return noPluginErr
+}
+func (c *BuildinRegistry) Compact(ctx context.Context, reserve int64) error {
 	return noPluginErr
 }
 func (ec *BuildinRegistry) Close() {

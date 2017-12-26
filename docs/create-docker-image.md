@@ -1,4 +1,4 @@
-### Creating Custom Docker Image for [Service-Center](https://github.com/ServiceComb/service-center)
+### Creating Custom Docker Image for [Service-Center](https://github.com/apache/incubator-servicecomb-service-center)
 
 There is already a docker image in our dockerhub [repo](https://hub.docker.com/r/servicecomb/service-center/), you can use this to run the service-center in docker container.
 ```
@@ -9,8 +9,8 @@ However if you want to customize the service-center and make your own docker ima
 
 ##### 1. Make Sure your service-center is in correct GOPATH and then download all the dependencies
 ```
-git clone https://github.com/ServiceComb/service-center.git $GOPATH/src/github.com/ServiceComb/service-center
-cd $GOPATH/src/github.com/ServiceComb/service-center
+git clone https://github.com/apache/incubator-servicecomb-service-center.git $GOPATH/src/github.com/apache/incubator-servicecomb-service-center
+cd $GOPATH/src/github.com/apache/incubator-servicecomb-service-center
 
 go get github.com/FiloSottile/gvt
 gvt restore

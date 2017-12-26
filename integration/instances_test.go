@@ -25,7 +25,7 @@ import (
 	"strings"
 
 	"bytes"
-	. "github.com/ServiceComb/service-center/integration"
+	. "github.com/apache/incubator-servicecomb-service-center/integration"
 	"io/ioutil"
 	"math/rand"
 	"strconv"

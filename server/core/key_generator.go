@@ -17,8 +17,8 @@
 package core
 
 import (
-	"github.com/ServiceComb/service-center/pkg/util"
-	pb "github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"strings"
 )
 
@@ -40,6 +40,7 @@ const (
 	REGISTRY_LEASE_KEY          = "leases"
 	REGISTRY_DEPENDENCY_KEY     = "deps"
 	REGISTRY_DEPS_RULE_KEY      = "dep-rules"
+	REGISTRY_DEPS_QUEUE_KEY     = "dep-queue"
 	REGISTRY_METRICS_KEY        = "metrics"
 	ENDPOINTS_ROOT_KEY          = "eps"
 )
@@ -300,6 +301,15 @@ func GetServiceDependencyRuleRootKey(domainProject string) string {
 	}, "/")
 }
 
+func GetServiceDependencyQueueRootKey(domainProject string) string {
+	return util.StringJoin([]string{
+		GetRootKey(),
+		REGISTRY_SERVICE_KEY,
+		REGISTRY_DEPS_QUEUE_KEY,
+		domainProject,
+	}, "/")
+}
+
 func GenerateConsumerDependencyKey(domainProject string, consumerId string, providerId string) string {
 	return GenerateServiceDependencyKey("c", domainProject, consumerId, providerId)
 }
@@ -315,6 +325,14 @@ func GenerateServiceDependencyKey(serviceType string, domainProject string, serv
 
 func GenerateProviderDependencyKey(domainProject string, providerId string, consumerId string) string {
 	return GenerateServiceDependencyKey("p", domainProject, providerId, consumerId)
+}
+
+func GenerateConsumerDependencyQueueKey(domainProject, consumerId, uuid string) string {
+	return util.StringJoin([]string{
+		GetServiceDependencyQueueRootKey(domainProject),
+		consumerId,
+		uuid,
+	}, "/")
 }
 
 func GetServiceDependencyRootKey(domainProject string) string {

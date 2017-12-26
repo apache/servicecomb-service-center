@@ -17,10 +17,10 @@
 package store
 
 import (
-	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/server/core/backend"
-	pb "github.com/ServiceComb/service-center/server/core/proto"
-	"github.com/ServiceComb/service-center/server/infra/registry"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
+	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"strings"
@@ -157,7 +157,7 @@ func (i *Indexer) searchPrefixKeyWithCache(ctx context.Context, op registry.Plug
 		kvs[idx] = c.(*mvccpb.KeyValue)
 		idx++
 	}
-	util.LogNilOrWarnf(t, "too long to copy data[%d] from cache with prefix %s", idx, prefix)
+	util.LogNilOrWarnf(t, "too long to copy data[%d] from cache[%d] with prefix %s", idx, len(i.prefixIndex), prefix)
 
 	resp.Kvs = kvs[:idx]
 	return resp, nil
@@ -196,6 +196,7 @@ func (i *Indexer) buildIndex() {
 				if !ok {
 					return
 				}
+				t := time.Now()
 				key := util.BytesToStringWithNoCopy(evt.KV.Key)
 				prefix := key[:strings.LastIndex(key[:len(key)-1], "/")+1]
 
@@ -208,6 +209,8 @@ func (i *Indexer) buildIndex() {
 				}
 				i.prefixLock.Unlock()
 
+				util.LogNilOrWarnf(t, "too long to rebuild(action: %s) index[%d], key is %s",
+					evt.Action, key, len(i.prefixIndex))
 			}
 		}
 		util.Logger().Debugf("build %s index goroutine is stopped", i.cacheType)
@@ -235,10 +238,10 @@ func (i *Indexer) getPrefixKey(arr *[]string, prefix string) (count int) {
 			}
 			break
 		}
-		count += n
+		/*count += n
 		if arr != nil {
 			*arr = append(*arr, *childs...)
-		}
+		}*/
 	}
 	return count
 }
@@ -268,11 +271,18 @@ func (i *Indexer) deletePrefixKey(prefix, key string) {
 	if !ok {
 		return
 	}
-
+	// remove child
 	for k := range i.prefixIndex[key] {
 		i.deletePrefixKey(key, k)
 	}
+
 	delete(m, key)
+
+	// remove parent which has no child
+	if len(m) == 0 {
+		delete(i.prefixIndex, prefix)
+		i.deletePrefixKey(prefix[:strings.LastIndex(prefix[:len(prefix)-1], "/")+1], prefix)
+	}
 }
 
 func (i *Indexer) Run() {

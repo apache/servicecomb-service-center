@@ -16,18 +16,19 @@
  */
 package server
 
-import _ "github.com/ServiceComb/service-center/server/service/event"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/service/event"
 import (
 	"fmt"
-	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/server/core"
-	"github.com/ServiceComb/service-center/server/core/backend"
-	st "github.com/ServiceComb/service-center/server/core/backend/store"
-	"github.com/ServiceComb/service-center/server/mux"
-	nf "github.com/ServiceComb/service-center/server/service/notification"
-	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
-	"github.com/ServiceComb/service-center/version"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
+	st "github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
+	"github.com/apache/incubator-servicecomb-service-center/server/mux"
+	nf "github.com/apache/incubator-servicecomb-service-center/server/service/notification"
+	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
+	"github.com/apache/incubator-servicecomb-service-center/version"
 	"github.com/astaxie/beego"
+	"golang.org/x/net/context"
 	"os"
 	"strings"
 	"time"
@@ -54,16 +55,11 @@ type ServiceCenterServer struct {
 func (s *ServiceCenterServer) Run() {
 	s.initialize()
 
-	s.waitForReady()
-
 	s.startNotifyService()
 
 	s.startApiServer()
 
 	s.waitForQuit()
-}
-
-func (s *ServiceCenterServer) initialize() {
 }
 
 func (s *ServiceCenterServer) waitForQuit() {
@@ -93,8 +89,10 @@ func (s *ServiceCenterServer) needUpgrade() bool {
 		fmt.Sprintf("%s+", version.Ver().Version))
 }
 
-func (s *ServiceCenterServer) waitForReady() {
+func (s *ServiceCenterServer) initialize() {
+	// check version
 	lock, err := mux.Lock(mux.GLOBAL_LOCK)
+	defer lock.Unlock()
 	if err != nil {
 		util.Logger().Errorf(err, "wait for server ready failed")
 		os.Exit(1)
@@ -102,10 +100,45 @@ func (s *ServiceCenterServer) waitForReady() {
 	if s.needUpgrade() {
 		core.UpgradeServerVersion()
 	}
-	lock.Unlock()
 
+	// cache mechanism
 	s.store.Run()
 	<-s.store.Ready()
+
+	// auto compact backend
+	s.autoCompactBackend()
+}
+
+func (s *ServiceCenterServer) autoCompactBackend() {
+	delta := core.ServerInfo.Config.CompactIndexDelta
+	if delta <= 0 {
+		return
+	}
+	interval, err := time.ParseDuration(core.ServerInfo.Config.CompactInterval)
+	if err != nil {
+		util.Logger().Errorf(err, "invalid compact interval %s, reset to default interval 12h", core.ServerInfo.Config.CompactInterval)
+		interval = 12 * time.Hour
+	}
+	util.Go(func(stopCh <-chan struct{}) {
+		util.Logger().Infof("start the automatic compact mechanism, compact once every %s",
+			core.ServerInfo.Config.CompactInterval)
+		for {
+			select {
+			case <-stopCh:
+				return
+			case <-time.After(interval):
+				lock, err := mux.Try(mux.GLOBAL_LOCK)
+				if lock == nil {
+					util.Logger().Warnf(err, "can not compact backend by this service center instance now")
+					continue
+				}
+
+				backend.Registry().Compact(context.Background(), delta)
+
+				lock.Unlock()
+			}
+		}
+	})
 }
 
 func (s *ServiceCenterServer) startNotifyService() {

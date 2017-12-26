@@ -21,8 +21,8 @@ import (
 
 	"errors"
 	"fmt"
-	"github.com/ServiceComb/service-center/pkg/lager"
-	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/lager"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"golang.org/x/net/context"
 	"time"
 )

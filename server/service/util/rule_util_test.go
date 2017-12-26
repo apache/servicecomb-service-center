@@ -18,9 +18,9 @@ package util_test
 
 import (
 	"fmt"
-	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/server/core/proto"
-	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
 	"net/http"
 	"testing"
@@ -91,7 +91,7 @@ func TestGetServiceRuleType(t *testing.T) {
 }
 
 func TestAllowAcrossApp(t *testing.T) {
-	err := serviceUtil.AllowAcrossDimension(&proto.MicroService{
+	err := serviceUtil.AllowAcrossDimension(context.Background(), &proto.MicroService{
 		AppId: "a",
 	}, &proto.MicroService{
 		AppId: "a",
@@ -101,7 +101,7 @@ func TestAllowAcrossApp(t *testing.T) {
 		t.FailNow()
 	}
 
-	err = serviceUtil.AllowAcrossDimension(&proto.MicroService{
+	err = serviceUtil.AllowAcrossDimension(context.Background(), &proto.MicroService{
 		AppId: "a",
 	}, &proto.MicroService{
 		AppId: "c",
@@ -111,7 +111,7 @@ func TestAllowAcrossApp(t *testing.T) {
 		t.FailNow()
 	}
 
-	err = serviceUtil.AllowAcrossDimension(&proto.MicroService{
+	err = serviceUtil.AllowAcrossDimension(context.Background(), &proto.MicroService{
 		AppId: "a",
 		Properties: map[string]string{
 			proto.PROP_ALLOW_CROSS_APP: "true",
@@ -124,7 +124,7 @@ func TestAllowAcrossApp(t *testing.T) {
 		t.FailNow()
 	}
 
-	err = serviceUtil.AllowAcrossDimension(&proto.MicroService{
+	err = serviceUtil.AllowAcrossDimension(context.Background(), &proto.MicroService{
 		AppId: "a",
 		Properties: map[string]string{
 			proto.PROP_ALLOW_CROSS_APP: "true",
@@ -137,7 +137,7 @@ func TestAllowAcrossApp(t *testing.T) {
 		t.FailNow()
 	}
 
-	err = serviceUtil.AllowAcrossDimension(&proto.MicroService{
+	err = serviceUtil.AllowAcrossDimension(context.Background(), &proto.MicroService{
 		AppId: "a",
 		Properties: map[string]string{
 			proto.PROP_ALLOW_CROSS_APP: "false",
@@ -150,7 +150,7 @@ func TestAllowAcrossApp(t *testing.T) {
 		t.FailNow()
 	}
 
-	err = serviceUtil.AllowAcrossDimension(&proto.MicroService{
+	err = serviceUtil.AllowAcrossDimension(context.Background(), &proto.MicroService{
 		AppId: "a",
 		Properties: map[string]string{
 			proto.PROP_ALLOW_CROSS_APP: "",
@@ -289,21 +289,21 @@ func TestMatchRules(t *testing.T) {
 }
 
 func TestGetConsumer(t *testing.T) {
-	_, _, err := serviceUtil.GetConsumerIds(context.Background(), "", &proto.MicroService{})
+	_, _, err := serviceUtil.GetConsumerIdsByProvider(context.Background(), "", &proto.MicroService{})
 	if err == nil {
-		fmt.Printf("GetConsumerIds invalid failed")
+		fmt.Printf("GetConsumerIdsByProvider invalid failed")
 		t.FailNow()
 	}
 
-	_, _, err = serviceUtil.GetConsumerIds(context.Background(), "", &proto.MicroService{
+	_, _, err = serviceUtil.GetConsumerIdsByProvider(context.Background(), "", &proto.MicroService{
 		ServiceId: "a",
 	})
 	if err == nil {
-		fmt.Printf("GetConsumerIds not exist service failed")
+		fmt.Printf("GetConsumerIdsByProvider not exist service failed")
 		t.FailNow()
 	}
 
-	_, err = serviceUtil.GetConsumersInCache(util.SetContext(context.Background(), "cacheOnly", "1"), "", "",
+	_, err = serviceUtil.GetConsumersInCache(util.SetContext(context.Background(), "cacheOnly", "1"), "",
 		&proto.MicroService{
 			ServiceId: "a",
 		})
@@ -314,7 +314,7 @@ func TestGetConsumer(t *testing.T) {
 }
 
 func TestGetProvider(t *testing.T) {
-	_, err := serviceUtil.GetProvidersInCache(util.SetContext(context.Background(), "cacheOnly", "1"), "", "",
+	_, err := serviceUtil.GetProvidersInCache(util.SetContext(context.Background(), "cacheOnly", "1"), "",
 		&proto.MicroService{
 			ServiceId: "a",
 		})
@@ -323,28 +323,28 @@ func TestGetProvider(t *testing.T) {
 		t.FailNow()
 	}
 
-	_, _, err = serviceUtil.GetProviderIdsByConsumerId(context.Background(), "", "", &proto.MicroService{})
+	_, _, err = serviceUtil.GetProviderIdsByConsumer(context.Background(), "", &proto.MicroService{})
 	if err == nil {
-		fmt.Printf("GetProviderIdsByConsumerId invalid failed")
+		fmt.Printf("GetProviderIdsByConsumer invalid failed")
 		t.FailNow()
 	}
 
-	_, _, err = serviceUtil.GetProviderIdsByConsumerId(util.SetContext(context.Background(), "cacheOnly", "1"),
-		"", "", &proto.MicroService{})
+	_, _, err = serviceUtil.GetProviderIdsByConsumer(util.SetContext(context.Background(), "cacheOnly", "1"),
+		"", &proto.MicroService{})
 	if err != nil {
-		fmt.Printf("GetProviderIdsByConsumerId WithCacheOnly failed")
+		fmt.Printf("GetProviderIdsByConsumer WithCacheOnly failed")
 		t.FailNow()
 	}
 }
 
 func TestAccessible(t *testing.T) {
-	err := serviceUtil.Accessible(context.Background(), "", "", "")
+	err := serviceUtil.Accessible(context.Background(), "", "")
 	if err.StatusCode() != http.StatusInternalServerError {
 		fmt.Printf("Accessible invalid failed")
 		t.FailNow()
 	}
 
-	err = serviceUtil.Accessible(util.SetContext(context.Background(), "cacheOnly", "1"), "", "", "")
+	err = serviceUtil.Accessible(util.SetContext(context.Background(), "cacheOnly", "1"), "", "")
 	if err.StatusCode() == http.StatusInternalServerError {
 		fmt.Printf("Accessible WithCacheOnly failed")
 		t.FailNow()

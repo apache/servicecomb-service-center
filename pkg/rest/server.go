@@ -18,8 +18,8 @@ package rest
 
 import (
 	"crypto/tls"
-	"github.com/ServiceComb/service-center/pkg/grace"
-	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/grace"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"net"
 	"net/http"
 	"os"

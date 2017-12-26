@@ -19,12 +19,12 @@ package util
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/ServiceComb/service-center/pkg/util"
-	apt "github.com/ServiceComb/service-center/server/core"
-	"github.com/ServiceComb/service-center/server/core/backend/store"
-	pb "github.com/ServiceComb/service-center/server/core/proto"
-	scerr "github.com/ServiceComb/service-center/server/error"
-	"github.com/ServiceComb/service-center/server/infra/registry"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
+	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"golang.org/x/net/context"
 	"reflect"
 	"regexp"
@@ -143,7 +143,7 @@ func GetOneRule(ctx context.Context, domainProject, serviceId, ruleId string) (*
 	return rule, nil
 }
 
-func AllowAcrossDimension(providerService *pb.MicroService, consumerService *pb.MicroService) error {
+func AllowAcrossDimension(ctx context.Context, providerService *pb.MicroService, consumerService *pb.MicroService) error {
 	if providerService.AppId != consumerService.AppId {
 		if len(providerService.Properties) == 0 {
 			return fmt.Errorf("not allow across app access")
@@ -154,7 +154,9 @@ func AllowAcrossDimension(providerService *pb.MicroService, consumerService *pb.
 		}
 	}
 
-	if providerService.Environment != consumerService.Environment {
+	targetDomainProject := util.ParseTargetDomainProject(ctx)
+	if !apt.IsShared(pb.MicroServiceToKey(targetDomainProject, providerService)) &&
+		providerService.Environment != consumerService.Environment {
 		return fmt.Errorf("not allow across environment access")
 	}
 
@@ -213,7 +215,10 @@ func MatchRules(rules []*pb.ServiceRule, service *pb.MicroService, serviceTags m
 	return nil
 }
 
-func Accessible(ctx context.Context, domainProject string, consumerId string, providerId string) *scerr.Error {
+func Accessible(ctx context.Context, consumerId string, providerId string) *scerr.Error {
+	domainProject := util.ParseDomainProject(ctx)
+	targetDomainProject := util.ParseTargetDomainProject(ctx)
+
 	consumerService, err := GetService(ctx, domainProject, consumerId)
 	if err != nil {
 		return scerr.NewError(scerr.ErrInternal, fmt.Sprintf("An error occurred in query consumer(%s)", err.Error()))
@@ -223,7 +228,7 @@ func Accessible(ctx context.Context, domainProject string, consumerId string, pr
 	}
 
 	// 跨应用权限
-	providerService, err := GetService(ctx, domainProject, providerId)
+	providerService, err := GetService(ctx, targetDomainProject, providerId)
 	if err != nil {
 		return scerr.NewError(scerr.ErrInternal, fmt.Sprintf("An error occurred in query provider(%s)", err.Error()))
 	}
@@ -231,7 +236,7 @@ func Accessible(ctx context.Context, domainProject string, consumerId string, pr
 		return scerr.NewError(scerr.ErrServiceNotExists, "provider serviceId is invalid")
 	}
 
-	err = AllowAcrossDimension(providerService, consumerService)
+	err = AllowAcrossDimension(ctx, providerService, consumerService)
 	if err != nil {
 		return scerr.NewError(scerr.ErrPermissionDeny, err.Error())
 	}
@@ -239,7 +244,7 @@ func Accessible(ctx context.Context, domainProject string, consumerId string, pr
 	ctx = util.SetContext(util.CloneContext(ctx), "cacheOnly", "1")
 
 	// 黑白名单
-	rules, err := GetRulesUtil(ctx, domainProject, providerId)
+	rules, err := GetRulesUtil(ctx, targetDomainProject, providerId)
 	if err != nil {
 		return scerr.NewError(scerr.ErrInternal, fmt.Sprintf("An error occurred in query provider rules(%s)", err.Error()))
 	}

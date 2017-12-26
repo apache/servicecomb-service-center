@@ -17,13 +17,13 @@
 package govern
 
 import (
-	"github.com/ServiceComb/service-center/pkg/util"
-	apt "github.com/ServiceComb/service-center/server/core"
-	"github.com/ServiceComb/service-center/server/core/backend/store"
-	pb "github.com/ServiceComb/service-center/server/core/proto"
-	scerr "github.com/ServiceComb/service-center/server/error"
-	"github.com/ServiceComb/service-center/server/infra/registry"
-	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
+	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
+	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
 )
 
@@ -324,7 +324,7 @@ func getServiceDetailUtil(ctx context.Context, serviceDetailOpt ServiceDetailOpt
 			serviceDetail.SchemaInfos = schemas
 		case "dependencies":
 			service := serviceDetailOpt.service
-			dr := serviceUtil.NewDependencyRelation(ctx, domainProject, serviceId, service, serviceId, service)
+			dr := serviceUtil.NewDependencyRelation(ctx, domainProject, service, service)
 			consumers, err := dr.GetDependencyConsumers()
 			if err != nil {
 				util.Logger().Errorf(err, "Get service's all consumers for govern service failed.")

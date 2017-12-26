@@ -18,7 +18,7 @@ package registry
 
 import (
 	"fmt"
-	"github.com/ServiceComb/service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/astaxie/beego"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
@@ -165,6 +165,7 @@ type Registry interface {
 	// 3. response.Err()
 	// 4. time out to watch, but return nil
 	Watch(ctx context.Context, opts ...PluginOpOption) error
+	Compact(ctx context.Context, reserve int64) error
 	Close()
 }
 
@@ -290,15 +291,28 @@ func (op CompareOp) String() string {
 	)
 }
 
-func CmpVer(key []byte) CompareOp          { return CompareOp{Key: key, Type: CMP_VERSION} }
-func CmpCreateRev(key []byte) CompareOp    { return CompareOp{Key: key, Type: CMP_CREATE} }
-func CmpModRev(key []byte) CompareOp       { return CompareOp{Key: key, Type: CMP_MOD} }
-func CmpVal(key []byte) CompareOp          { return CompareOp{Key: key, Type: CMP_VALUE} }
-func CmpStrVer(key string) CompareOp       { return CmpVer(util.StringToBytesWithNoCopy(key)) }
-func CmpStrCreateRev(key string) CompareOp { return CmpCreateRev(util.StringToBytesWithNoCopy(key)) }
-func CmpStrModRev(key string) CompareOp    { return CmpModRev(util.StringToBytesWithNoCopy(key)) }
-func CmpStrVal(key string) CompareOp       { return CmpVal(util.StringToBytesWithNoCopy(key)) }
-func OpCmp(cmp CompareOp, result CompareResult, v interface{}) CompareOp {
+type CompareOperation func(op *CompareOp)
+
+func CmpVer(key []byte) CompareOperation {
+	return func(op *CompareOp) { op.Key = key; op.Type = CMP_VERSION }
+}
+func CmpCreateRev(key []byte) CompareOperation {
+	return func(op *CompareOp) { op.Key = key; op.Type = CMP_CREATE }
+}
+func CmpModRev(key []byte) CompareOperation {
+	return func(op *CompareOp) { op.Key = key; op.Type = CMP_MOD }
+}
+func CmpVal(key []byte) CompareOperation {
+	return func(op *CompareOp) { op.Key = key; op.Type = CMP_VALUE }
+}
+func CmpStrVer(key string) CompareOperation { return CmpVer(util.StringToBytesWithNoCopy(key)) }
+func CmpStrCreateRev(key string) CompareOperation {
+	return CmpCreateRev(util.StringToBytesWithNoCopy(key))
+}
+func CmpStrModRev(key string) CompareOperation { return CmpModRev(util.StringToBytesWithNoCopy(key)) }
+func CmpStrVal(key string) CompareOperation    { return CmpVal(util.StringToBytesWithNoCopy(key)) }
+func OpCmp(opt CompareOperation, result CompareResult, v interface{}) (cmp CompareOp) {
+	opt(&cmp)
 	cmp.Result = result
 	cmp.Value = v
 	return cmp

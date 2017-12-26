@@ -17,7 +17,7 @@
 package govern
 
 import (
-	"github.com/ServiceComb/service-center/pkg/rest"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
 )
 
 // GovernService 治理相关接口服务

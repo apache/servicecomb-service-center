@@ -19,7 +19,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/ServiceComb/service-center/frontend/schema"
+	"github.com/apache/incubator-servicecomb-service-center/frontend/schema"
 	"github.com/astaxie/beego"
 	"log"
 	"net/http"

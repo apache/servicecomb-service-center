@@ -18,13 +18,13 @@ package plugin
 
 import (
 	"fmt"
-	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/server/infra/auditlog"
-	"github.com/ServiceComb/service-center/server/infra/auth"
-	"github.com/ServiceComb/service-center/server/infra/quota"
-	"github.com/ServiceComb/service-center/server/infra/registry"
-	"github.com/ServiceComb/service-center/server/infra/security"
-	"github.com/ServiceComb/service-center/server/infra/uuid"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/auditlog"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/auth"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/security"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/uuid"
 	"github.com/astaxie/beego"
 	"sync"
 )

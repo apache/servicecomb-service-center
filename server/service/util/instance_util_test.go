@@ -18,8 +18,8 @@ package util
 
 import (
 	"fmt"
-	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"golang.org/x/net/context"
 	"testing"
 )
@@ -64,7 +64,7 @@ func TestGetInstance(t *testing.T) {
 		t.FailNow()
 	}
 
-	QueryAllProvidersIntances(context.Background(), "")
+	QueryAllProvidersInstances(context.Background(), "")
 
 	_, err = queryServiceInstancesKvs(context.Background(), "", 0)
 	if err == nil {

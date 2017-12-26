@@ -18,8 +18,8 @@ package ratelimiter
 
 import (
 	"errors"
-	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/server/core"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/didip/tollbooth"
 	"github.com/didip/tollbooth/config"
 	"net/http"

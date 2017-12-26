@@ -17,7 +17,7 @@
 package store
 
 import (
-	"github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"sync"
 )
@@ -71,6 +71,7 @@ func EventProxy(t StoreType) *KvEventProxy {
 	return evtProxies[t]
 }
 
+// the event handler/func must be good performance, or will block the event bus.
 func AddEventHandleFunc(t StoreType, f KvEventFunc) {
 	EventProxy(t).AddHandleFunc(f)
 }

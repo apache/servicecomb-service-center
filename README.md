@@ -1,7 +1,7 @@
 # service-center 
-[![Build Status](https://www.travis-ci.org/apache/incubator-servicecomb-service-center.svg?branch=master)](https://www.travis-ci.org/apache/incubator-servicecomb-service-center)  [![Coverage Status](https://coveralls.io/repos/github/ServiceComb/service-center/badge.svg?branch=master)](https://coveralls.io/github/ServiceComb/service-center?branch=master)  [![Go Report Card](https://goreportcard.com/badge/github.com/apache/incubator-servicecomb-service-center)](https://goreportcard.com/report/github.com/apache/incubator-servicecomb-service-center) [![GoDoc](https://godoc.org/github.com/ServiceComb/service-center?status.svg)](https://godoc.org/github.com/ServiceComb/service-center)
+[![Build Status](https://www.travis-ci.org/apache/incubator-servicecomb-service-center.svg?branch=master)](https://www.travis-ci.org/apache/incubator-servicecomb-service-center)  [![Coverage Status](https://coveralls.io/repos/github/apache/incubator-servicecomb-service-center/badge.svg?branch=master)](https://coveralls.io/github/apache/incubator-servicecomb-service-center?branch=master)  [![Go Report Card](https://goreportcard.com/badge/github.com/apache/incubator-servicecomb-service-center)](https://goreportcard.com/report/github.com/apache/incubator-servicecomb-service-center) [![GoDoc](https://godoc.org/github.com/apache/incubator-servicecomb-service-center?status.svg)](https://godoc.org/github.com/apache/incubator-servicecomb-service-center)  
 
-A standalone service center allows services to register their instance information and to discover providers of a given service. 
+Apache ServiceComb (incubating) service-center allows services to register their instance information and to discover providers of a given service. 
 ## Features
  -  Seperated microservice and microservice instance entity management
  -  White and back list configuration for service discovery
@@ -47,8 +47,8 @@ docker run -d -p 30100:30100 servicecomb/service-center
 
 Download the Code
 ```sh
-git clone https://github.com/ServiceComb/service-center.git $GOPATH/src/github.com/ServiceComb/service-center
-cd $GOPATH/src/github.com/ServiceComb/service-center
+git clone https://github.com/apache/incubator-servicecomb-service-center.git $GOPATH/src/github.com/apache/incubator-servicecomb-service-center
+cd $GOPATH/src/github.com/apache/incubator-servicecomb-service-center
 ```
 
 Dependencies
@@ -74,7 +74,7 @@ tar -xvf etcd-v3.1.8-linux-amd64.tar.gz
 cd etcd-v3.1.8-linux-amd64
 ./etcd
 
-cd $GOPATH/src/github.com/ServiceComb/service-center
+cd $GOPATH/src/github.com/apache/incubator-servicecomb-service-center
 cp -r ./etc/conf .
 ./service-center
 ```

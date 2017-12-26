@@ -19,18 +19,18 @@ package service
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/ServiceComb/service-center/pkg/util"
-	"github.com/ServiceComb/service-center/server/core"
-	apt "github.com/ServiceComb/service-center/server/core"
-	"github.com/ServiceComb/service-center/server/core/backend"
-	"github.com/ServiceComb/service-center/server/core/backend/store"
-	pb "github.com/ServiceComb/service-center/server/core/proto"
-	scerr "github.com/ServiceComb/service-center/server/error"
-	"github.com/ServiceComb/service-center/server/infra/quota"
-	"github.com/ServiceComb/service-center/server/infra/registry"
-	"github.com/ServiceComb/service-center/server/mux"
-	"github.com/ServiceComb/service-center/server/plugin"
-	serviceUtil "github.com/ServiceComb/service-center/server/service/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
+	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
+	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
+	"github.com/apache/incubator-servicecomb-service-center/server/mux"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
+	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
 	"net/http"
 	"strconv"
@@ -223,7 +223,7 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, ServiceId st
 
 	// 强制删除，则与该服务相关的信息删除，非强制删除： 如果作为该被依赖（作为provider，提供服务,且不是只存在自依赖）或者存在实例，则不能删除
 	if !force {
-		dr := serviceUtil.NewProviderDependencyRelation(ctx, domainProject, ServiceId, service)
+		dr := serviceUtil.NewProviderDependencyRelation(ctx, domainProject, service)
 		services, err := dr.GetDependencyConsumerIds()
 		if err != nil {
 			util.Logger().Errorf(err, "delete microservice failed, serviceId is %s: inner err, get service dependency failed.", ServiceId)
@@ -260,7 +260,7 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, ServiceId st
 	}
 
 	//refresh msCache consumerCache, ensure that watch can notify consumers when no cache.
-	err = serviceUtil.RefreshDependencyCache(ctx, domainProject, ServiceId, service)
+	err = serviceUtil.RefreshDependencyCache(ctx, domainProject, service)
 	if err != nil {
 		util.Logger().Errorf(err, "%s microservice failed, serviceId is %s: inner err, refresh service dependency cache failed.", title, ServiceId)
 		return pb.CreateResponse(scerr.ErrInternal, "Refresh dependency cache failed."), err
@@ -275,7 +275,7 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, ServiceId st
 	}
 
 	//删除依赖规则
-	lock, err := mux.Lock(mux.GLOBAL_LOCK)
+	lock, err := mux.Lock(mux.DEP_QUEUE_LOCK)
 	if err != nil {
 		util.Logger().Errorf(err, "%s microservice failed, serviceId is %s: inner err, create lock failed.", title, ServiceId)
 		return pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()), err

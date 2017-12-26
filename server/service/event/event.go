@@ -17,7 +17,7 @@
 package event
 
 import (
-	"github.com/ServiceComb/service-center/server/core/backend/store"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
 )
 
 func init() {
@@ -25,4 +25,5 @@ func init() {
 	store.AddEventHandler(NewInstanceEventHandler())
 	store.AddEventHandler(NewRuleEventHandler())
 	store.AddEventHandler(NewTagEventHandler())
+	store.AddEventHandler(NewDependencyEventHandler())
 }
