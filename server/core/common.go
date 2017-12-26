@@ -65,7 +65,7 @@ func init() {
 	// version模糊规则: 1.0, 1.0+, 1.0-2.0, latest
 	versionFuzzyRegex, _ := regexp.Compile(`^[0-9]*$|^[0-9]+(\.[0-9]+)*\+{0,1}$|^[0-9]+(\.[0-9]+)*-[0-9]+(\.[0-9]+)*$|^latest$`)
 	pathRegex, _ := regexp.Compile(`^[A-Za-z0-9.,?'\\/+&amp;%$#=~_\-@{}]*$`)
-	descriptionRegex, _ := regexp.Compile(`^[\p{Han}\w\s。.:*,\-：”“"]*$`)
+	// descriptionRegex, _ := regexp.Compile(`^[\p{Han}\w\s。.:*,\-：”“"]*$`)
 	levelRegex, _ := regexp.Compile(`^(FRONT|MIDDLE|BACK)$`)
 	statusRegex, _ := regexp.Compile("^(" + pb.MS_UP + "|" + pb.MS_DOWN + ")*$")
 	serviceIdRegex, _ := regexp.Compile(`^.*$`)
@@ -111,7 +111,7 @@ func init() {
 	FrameWKValidator.AddRule("Version", &validate.ValidateRule{Length: 64, Regexp: frameversionRegex})
 
 	MicroServiceValidator.AddRules(MicroServiceKeyValidator.GetRules())
-	MicroServiceValidator.AddRule("Description", &validate.ValidateRule{Length: 256, Regexp: descriptionRegex})
+	MicroServiceValidator.AddRule("Description", &validate.ValidateRule{Length: 256})
 	MicroServiceValidator.AddRule("Level", &validate.ValidateRule{Min: 1, Regexp: levelRegex})
 	MicroServiceValidator.AddRule("Status", &validate.ValidateRule{Min: 1, Regexp: statusRegex})
 	MicroServiceValidator.AddRule("Schemas", SchemaIdRule)
