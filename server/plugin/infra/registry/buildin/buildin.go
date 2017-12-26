@@ -69,6 +69,9 @@ func (ec *BuildinRegistry) LeaseRevoke(ctx context.Context, leaseID int64) error
 func (ec *BuildinRegistry) Watch(ctx context.Context, opts ...registry.PluginOpOption) error {
 	return noPluginErr
 }
+func (c *BuildinRegistry) Compact(ctx context.Context, reserve int64) error {
+	return noPluginErr
+}
 func (ec *BuildinRegistry) Close() {
 	ec.safeClose(ec.ready)
 }

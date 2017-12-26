@@ -28,6 +28,7 @@ import (
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"github.com/apache/incubator-servicecomb-service-center/version"
 	"github.com/astaxie/beego"
+	"golang.org/x/net/context"
 	"os"
 	"strings"
 	"time"
@@ -54,16 +55,11 @@ type ServiceCenterServer struct {
 func (s *ServiceCenterServer) Run() {
 	s.initialize()
 
-	s.waitForReady()
-
 	s.startNotifyService()
 
 	s.startApiServer()
 
 	s.waitForQuit()
-}
-
-func (s *ServiceCenterServer) initialize() {
 }
 
 func (s *ServiceCenterServer) waitForQuit() {
@@ -93,8 +89,10 @@ func (s *ServiceCenterServer) needUpgrade() bool {
 		fmt.Sprintf("%s+", version.Ver().Version))
 }
 
-func (s *ServiceCenterServer) waitForReady() {
+func (s *ServiceCenterServer) initialize() {
+	// check version
 	lock, err := mux.Lock(mux.GLOBAL_LOCK)
+	defer lock.Unlock()
 	if err != nil {
 		util.Logger().Errorf(err, "wait for server ready failed")
 		os.Exit(1)
@@ -102,10 +100,39 @@ func (s *ServiceCenterServer) waitForReady() {
 	if s.needUpgrade() {
 		core.UpgradeServerVersion()
 	}
-	lock.Unlock()
 
+	// cache mechanism
 	s.store.Run()
 	<-s.store.Ready()
+
+	// auto compact backend
+	s.autoCompactBackend()
+}
+
+func (s *ServiceCenterServer) autoCompactBackend() {
+	delta := core.ServerInfo.Config.CompactIndexDelta
+	if delta <= 0 {
+		return
+	}
+	util.Go(func(stopCh <-chan struct{}) {
+		util.Logger().Infof("start the automatic compact mechanism, compact once every 12h")
+		for {
+			select {
+			case <-stopCh:
+				return
+			case <-time.After(12 * time.Hour):
+				lock, err := mux.Try(mux.GLOBAL_LOCK)
+				if lock == nil {
+					util.Logger().Warnf(err, "can not compact backend by this service center instance now")
+					continue
+				}
+
+				backend.Registry().Compact(context.Background(), delta)
+
+				lock.Unlock()
+			}
+		}
+	})
 }
 
 func (s *ServiceCenterServer) startNotifyService() {

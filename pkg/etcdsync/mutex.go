@@ -36,7 +36,7 @@ const (
 )
 
 // A Mutex is a mutual exclusion lock which is distributed across a cluster.
-type LockerFactory struct {
+type DLockFactory struct {
 	key    string
 	ctx    context.Context
 	ttl    int64
@@ -44,13 +44,13 @@ type LockerFactory struct {
 	logger io.Writer
 }
 
-type Locker struct {
-	builder *LockerFactory
+type DLock struct {
+	builder *DLockFactory
 	id      string
 }
 
 var (
-	globalMap map[string]*LockerFactory
+	globalMap map[string]*DLockFactory
 	globalMux sync.Mutex
 	IsDebug   bool
 	hostname  string
@@ -58,7 +58,7 @@ var (
 )
 
 func init() {
-	globalMap = make(map[string]*LockerFactory)
+	globalMap = make(map[string]*DLockFactory)
 	IsDebug = false
 
 	var err error
@@ -72,7 +72,7 @@ func init() {
 // New creates a Mutex with the given key which must be the same
 // across the cluster nodes.
 // machines are the ectd cluster addresses
-func New(key string, ttl int64) *LockerFactory {
+func NewLockFactory(key string, ttl int64) *DLockFactory {
 	if len(key) == 0 {
 		return nil
 	}
@@ -80,7 +80,7 @@ func New(key string, ttl int64) *LockerFactory {
 		ttl = defaultTTL
 	}
 
-	return &LockerFactory{
+	return &DLockFactory{
 		key:   key,
 		ctx:   context.Background(),
 		ttl:   ttl,
@@ -90,19 +90,25 @@ func New(key string, ttl int64) *LockerFactory {
 
 // Lock locks m.
 // If the lock is already in use, the calling goroutine
-// blocks until the mutex is available.
-func (m *LockerFactory) Lock() (l *Locker, err error) {
+// blocks until the mutex is available. Flag wait is false,
+// this function is non-block when lock exist.
+func (m *DLockFactory) NewDLock(wait bool) (l *DLock, err error) {
 	if !IsDebug {
 		m.mutex.Lock()
 	}
-	l = &Locker{
+	l = &DLock{
 		builder: m,
 		id:      fmt.Sprintf("%v-%v-%v", hostname, pid, time.Now().Format("20060102-15:04:05.999999999")),
 	}
 	for try := 1; try <= defaultTry; try++ {
-		err = l.Lock()
+		err = l.Lock(wait)
 		if err == nil {
 			return l, nil
+		}
+
+		if !wait {
+			l, err = nil, nil
+			break
 		}
 
 		if try <= defaultTry {
@@ -117,11 +123,11 @@ func (m *LockerFactory) Lock() (l *Locker, err error) {
 	return l, err
 }
 
-func (m *Locker) ID() string {
+func (m *DLock) ID() string {
 	return m.id
 }
 
-func (m *Locker) Lock() error {
+func (m *DLock) Lock(wait bool) error {
 	opts := []registry.PluginOpOption{
 		registry.WithStrKey(m.builder.key),
 		registry.WithStrValue(m.id)}
@@ -142,6 +148,11 @@ func (m *Locker) Lock() error {
 			util.Logger().Infof("Create Lock OK, key=%s, id=%s", m.builder.key, m.id)
 			return nil
 		}
+
+		if !wait {
+			return fmt.Errorf("Key %s is locked by id=%s", m.builder.key, m.id)
+		}
+
 		util.Logger().Warnf(err, "Key %s is locked, waiting for other node releases it, id=%s", m.builder.key, m.id)
 
 		ctx, cancel := context.WithTimeout(m.builder.ctx, defaultTTL*time.Second)
@@ -177,7 +188,7 @@ func (m *Locker) Lock() error {
 // A locked Mutex is not associated with a particular goroutine.
 // It is allowed for one goroutine to lock a Mutex and then
 // arrange for another goroutine to unlock it.
-func (m *Locker) Unlock() (err error) {
+func (m *DLock) Unlock() (err error) {
 	opts := []registry.PluginOpOption{
 		registry.DEL,
 		registry.WithStrKey(m.builder.key)}
@@ -206,13 +217,13 @@ func (m *Locker) Unlock() (err error) {
 	return err
 }
 
-func Lock(key string) (*Locker, error) {
+func Lock(key string, wait bool) (*DLock, error) {
 	globalMux.Lock()
 	lc, ok := globalMap[key]
 	if !ok {
-		lc = New(fmt.Sprintf("%s%s", ROOT_PATH, key), -1)
+		lc = NewLockFactory(fmt.Sprintf("%s%s", ROOT_PATH, key), -1)
 		globalMap[key] = lc
 	}
 	globalMux.Unlock()
-	return lc.Lock()
+	return lc.NewDLock(wait)
 }

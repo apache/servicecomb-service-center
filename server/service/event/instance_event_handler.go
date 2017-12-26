@@ -84,7 +84,7 @@ func (h *InstanceEventHandler) OnEvent(evt *store.KvEvent) {
 	}
 
 	// 查询所有consumer
-	consumerIds, _, err := serviceUtil.GetConsumerIds(context.Background(), domainProject, ms)
+	consumerIds, _, err := serviceUtil.GetConsumerIdsByProvider(context.Background(), domainProject, ms)
 	if err != nil {
 		util.Logger().Errorf(err, "query service %s consumers failed", providerId)
 		return

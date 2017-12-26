@@ -26,21 +26,21 @@ import (
 var _ = Describe("Mutex", func() {
 	Context("normal", func() {
 		It("TestLockTimeout", func() {
-			m1 := New("key1", 10)
-			m2 := New("key1", 2)
-			m1.Lock()
+			m1 := NewLockFactory("key1", 10)
+			m2 := NewLockFactory("key1", 2)
+			m1.NewDLock(true)
 			fmt.Println("UT===================m1 locked")
 			ch := make(chan bool)
 			go func() {
-				l, _ := m2.Lock()
+				l, _ := m2.NewDLock(true)
 				fmt.Println("UT===================m2 locked")
 				l.Unlock()
 				ch <- true
 			}()
 			<-ch
 			fmt.Println("lock m1 timeout")
-			m3 := New("key1", 2)
-			l, _ := m3.Lock()
+			m3 := NewLockFactory("key1", 2)
+			l, _ := m3.NewDLock(true)
 			fmt.Println("UT===================m3 locked")
 			l.Unlock()
 

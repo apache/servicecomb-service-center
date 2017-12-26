@@ -80,11 +80,18 @@ func IsDefaultDomainProject(domainProject string) bool {
 	return domainProject == util.StringJoin([]string{REGISTRY_DOMAIN, REGISTRY_PROJECT}, "/")
 }
 
-func IsSCKey(key *pb.MicroServiceKey) bool {
+func IsShared(key *pb.MicroServiceKey) bool {
 	if !IsDefaultDomainProject(key.Tenant) {
 		return false
 	}
-	return key.AppId == Service.AppId && key.ServiceName == Service.ServiceName
+	return key.AppId == Service.AppId
+}
+
+func IsSCKey(key *pb.MicroServiceKey) bool {
+	if !IsShared(key) {
+		return false
+	}
+	return key.ServiceName == Service.ServiceName
 }
 
 func IsSCInstance(ctx context.Context) bool {
@@ -93,6 +100,7 @@ func IsSCInstance(ctx context.Context) bool {
 	}
 	return false
 }
+
 func GetExistenceRequest() *pb.GetExistenceRequest {
 	return &pb.GetExistenceRequest{
 		Type:        pb.EXISTENCE_MS,

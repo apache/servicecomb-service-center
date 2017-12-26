@@ -71,6 +71,7 @@ func EventProxy(t StoreType) *KvEventProxy {
 	return evtProxies[t]
 }
 
+// the event handler/func must be good performance, or will block the event bus.
 func AddEventHandleFunc(t StoreType, f KvEventFunc) {
 	EventProxy(t).AddHandleFunc(f)
 }

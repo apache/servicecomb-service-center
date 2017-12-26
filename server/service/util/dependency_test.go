@@ -25,7 +25,7 @@ import (
 )
 
 func TestRefreshDependencyCache(t *testing.T) {
-	err := RefreshDependencyCache(context.Background(), "", "", &proto.MicroService{})
+	err := RefreshDependencyCache(context.Background(), "", &proto.MicroService{})
 	if err == nil {
 		fmt.Printf(`RefreshDependencyCache failed`)
 		t.FailNow()
@@ -135,15 +135,9 @@ func TestCreateDependencyRule(t *testing.T) {
 		t.FailNow()
 	}
 
-	err = AddServiceVersionRule(context.Background(), "", &proto.MicroServiceKey{}, &proto.MicroServiceKey{})
+	err = AddServiceVersionRule(context.Background(), "", &proto.MicroService{}, &proto.MicroServiceKey{})
 	if err == nil {
 		fmt.Printf(`AddServiceVersionRule failed`)
-		t.FailNow()
-	}
-
-	err = CreateDependencyRuleForFind(context.Background(), "", &proto.MicroServiceKey{}, &proto.MicroServiceKey{})
-	if err == nil {
-		fmt.Printf(`CreateDependencyRuleForFind failed`)
 		t.FailNow()
 	}
 
@@ -320,13 +314,13 @@ func TestParamsChecker(t *testing.T) {
 }
 
 func TestServiceDependencyRuleExist(t *testing.T) {
-	_, err := ProviderDependencyRuleExist(util.SetContext(context.Background(), "cacheOnly", "1"), "", &proto.MicroServiceKey{}, &proto.MicroServiceKey{})
+	_, err := ProviderDependencyRuleExist(util.SetContext(context.Background(), "cacheOnly", "1"), &proto.MicroServiceKey{}, &proto.MicroServiceKey{})
 	if err != nil {
 		fmt.Printf(`ServiceDependencyRuleExist WithCacheOnly failed`)
 		t.FailNow()
 	}
 
-	_, err = ProviderDependencyRuleExist(context.Background(), "", &proto.MicroServiceKey{}, &proto.MicroServiceKey{})
+	_, err = ProviderDependencyRuleExist(context.Background(), &proto.MicroServiceKey{}, &proto.MicroServiceKey{})
 	if err == nil {
 		fmt.Printf(`ServiceDependencyRuleExist failed`)
 		t.FailNow()
@@ -358,7 +352,7 @@ func TestUpdateServiceForAddDependency(t *testing.T) {
 }
 
 func TestFilter(t *testing.T) {
-	_, _, err := getConsumerIdsWithFilter(context.Background(), "", "", &proto.MicroService{}, noFilter)
+	_, _, err := getConsumerIdsWithFilter(context.Background(), "", &proto.MicroService{}, noFilter)
 	if err == nil {
 		fmt.Printf(`getConsumerIdsWithFilter failed`)
 		t.FailNow()
@@ -440,7 +434,7 @@ func TestDependency(t *testing.T) {
 		t.FailNow()
 	}
 
-	_, err = dr.getServiceByMicroServiceKey("", &proto.MicroServiceKey{})
+	_, err = dr.getServiceByMicroServiceKey(&proto.MicroServiceKey{})
 	if err != nil {
 		fmt.Printf(`DependencyRelation_getServiceByMicroServiceKey WithCacheOnly failed`)
 		t.FailNow()
@@ -479,7 +473,7 @@ func TestDependency(t *testing.T) {
 		t.FailNow()
 	}
 
-	_, err = dr.getServiceByMicroServiceKey("", &proto.MicroServiceKey{})
+	_, err = dr.getServiceByMicroServiceKey(&proto.MicroServiceKey{})
 	if err == nil {
 		fmt.Printf(`DependencyRelation_getServiceByMicroServiceKey failed`)
 		t.FailNow()

@@ -64,7 +64,7 @@ func TestGetInstance(t *testing.T) {
 		t.FailNow()
 	}
 
-	QueryAllProvidersIntances(context.Background(), "")
+	QueryAllProvidersInstances(context.Background(), "")
 
 	_, err = queryServiceInstancesKvs(context.Background(), "", 0)
 	if err == nil {
