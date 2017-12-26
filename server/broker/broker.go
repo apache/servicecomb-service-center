@@ -14,7 +14,7 @@
 package broker
 
 import (
-	roa "github.com/ServiceComb/service-center/pkg/rest"
+	roa "github.com/apache/incubator-servicecomb-service-center/pkg/rest"
 )
 
 func init() {

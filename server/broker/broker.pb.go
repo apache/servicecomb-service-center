@@ -39,7 +39,7 @@ package broker
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import services "github.com/ServiceComb/service-center/server/core/proto"
+import services "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal

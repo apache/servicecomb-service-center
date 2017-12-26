@@ -19,9 +19,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/ServiceComb/service-center/pkg/rest"
-	scerr "github.com/ServiceComb/service-center/server/error"
-	"github.com/ServiceComb/service-center/server/rest/controller"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
+	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
+	"github.com/apache/incubator-servicecomb-service-center/server/rest/controller"
 )
 
 const DEFAULT_SCHEME = "http"

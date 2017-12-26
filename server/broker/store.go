@@ -16,10 +16,10 @@ package broker
 import (
 	"sync"
 
-	"github.com/ServiceComb/service-center/pkg/async"
-	"github.com/ServiceComb/service-center/pkg/util"
-	sstore "github.com/ServiceComb/service-center/server/core/backend/store"
-	pb "github.com/ServiceComb/service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/async"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	sstore "github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
+	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 )
 
 const (
@@ -98,8 +98,8 @@ func (s *BKvStore) store() {
 
 func init() {
 	store.Initialize()
-
-	//sstore.AddEventHandleFunc(LEASE, store.onLeaseEvent)
+	store.Run()
+	store.Ready()
 }
 
 type BKvStore struct {
