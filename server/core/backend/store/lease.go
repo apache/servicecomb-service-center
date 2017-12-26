@@ -39,27 +39,29 @@ func (lat *LeaseAsyncTask) Key() string {
 	return lat.key
 }
 
-func (lat *LeaseAsyncTask) Do(ctx context.Context) error {
+func (lat *LeaseAsyncTask) Do(ctx context.Context) (err error) {
 	lat.StartTime = time.Now()
-	lat.TTL, lat.err = backend.Registry().LeaseRenew(ctx, lat.LeaseID)
+	lat.TTL, err = backend.Registry().LeaseRenew(ctx, lat.LeaseID)
 	lat.EndTime = time.Now()
-	if lat.err == nil {
+	if err == nil {
+		lat.err = err
 		util.LogNilOrWarnf(lat.CreateTime, "renew lease %d(rev: %s, run: %s), key %s",
 			lat.LeaseID,
 			lat.CreateTime.Format(TIME_FORMAT),
 			lat.StartTime.Format(TIME_FORMAT),
 			lat.Key())
-		return nil
+		return
 	}
 
-	util.Logger().Errorf(lat.err, "[%s]renew lease %d failed(rev: %s, run: %s), key %s",
+	util.Logger().Errorf(err, "[%s]renew lease %d failed(rev: %s, run: %s), key %s",
 		time.Now().Sub(lat.CreateTime),
 		lat.LeaseID,
 		lat.CreateTime.Format(TIME_FORMAT),
 		lat.StartTime.Format(TIME_FORMAT),
 		lat.Key())
-	if _, ok := lat.err.(errorsEx.InternalError); !ok {
-		return lat.err
+	if _, ok := err.(errorsEx.InternalError); !ok {
+		lat.err = err
+		return
 	}
 	return nil
 }
