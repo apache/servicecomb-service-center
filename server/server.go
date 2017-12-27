@@ -111,7 +111,7 @@ func (s *ServiceCenterServer) initialize() {
 
 func (s *ServiceCenterServer) autoCompactBackend() {
 	delta := core.ServerInfo.Config.CompactIndexDelta
-	if delta <= 0 {
+	if delta <= 0 || len(core.ServerInfo.Config.CompactInterval) == 0 {
 		return
 	}
 	interval, err := time.ParseDuration(core.ServerInfo.Config.CompactInterval)
@@ -120,8 +120,8 @@ func (s *ServiceCenterServer) autoCompactBackend() {
 		interval = 12 * time.Hour
 	}
 	util.Go(func(stopCh <-chan struct{}) {
-		util.Logger().Infof("start the automatic compact mechanism, compact once every %s",
-			core.ServerInfo.Config.CompactInterval)
+		util.Logger().Infof("start the automatic compact mechanism, compact once every %s, reserve %d",
+			core.ServerInfo.Config.CompactInterval, delta)
 		for {
 			select {
 			case <-stopCh:

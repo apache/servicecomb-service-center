@@ -35,31 +35,24 @@ func (v *v4Context) IsMatch(r *http.Request) bool {
 func (v *v4Context) Do(r *http.Request) error {
 	ctx := r.Context()
 
-	domain := r.Header.Get("X-Domain-Name")
-	path, err := url.PathUnescape(r.RequestURI)
-	if err != nil {
-		util.Logger().Errorf(err, "Invalid Request URI %s", r.RequestURI)
-		return err
+	if len(util.ParseProject(ctx)) == 0 {
+		path, err := url.PathUnescape(r.RequestURI)
+		if err != nil {
+			util.Logger().Errorf(err, "Invalid Request URI %s", r.RequestURI)
+			return err
+		}
+
+		util.SetRequestContext(r, "project", v.parseProjectFromPath(path))
 	}
 
-	// self domain
 	if len(util.ParseDomain(ctx)) == 0 {
+		domain := r.Header.Get("X-Domain-Name")
 		if len(domain) == 0 {
 			err := errors.New("Header does not contain domain.")
 			util.Logger().Errorf(err, "Invalid Request URI %s", r.RequestURI)
 			return err
 		}
 		util.SetRequestContext(r, "domain", domain)
-	}
-	if len(util.ParseProject(ctx)) == 0 {
-		util.SetRequestContext(r, "project", v.parseProjectFromPath(path))
-	}
-	// target domain
-	if len(util.ParseTargetDomain(ctx)) == 0 {
-		util.SetRequestContext(r, "target-domain", domain)
-	}
-	if len(util.ParseTargetProject(ctx)) == 0 {
-		util.SetRequestContext(r, "target-project", v.parseProjectFromPath(path))
 	}
 	return nil
 }

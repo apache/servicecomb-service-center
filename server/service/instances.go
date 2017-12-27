@@ -547,9 +547,8 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 	}
 
 	domainProject := util.ParseDomainProject(ctx)
-	targetDomainProject := util.ParseTargetDomainProject(ctx)
-
 	findFlag := fmt.Sprintf("consumer %s --> provider %s/%s/%s", in.ConsumerServiceId, in.AppId, in.ServiceName, in.VersionRule)
+
 	service, err := serviceUtil.GetService(ctx, domainProject, in.ConsumerServiceId)
 	if err != nil {
 		util.Logger().Errorf(err, "find instance failed, %s: get consumer failed.", findFlag)
@@ -564,6 +563,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		}, nil
 	}
 
+	targetDomainProject := util.ParseTargetDomainProject(ctx)
 	provider := &pb.MicroServiceKey{
 		Tenant:      targetDomainProject,
 		Environment: service.Environment,
@@ -571,10 +571,13 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		ServiceName: in.ServiceName,
 		Alias:       in.ServiceName,
 	}
-
 	if apt.IsShared(provider) {
 		// it means the shared micro-services must be the same env with SC.
 		provider.Environment = apt.Service.Environment
+	} else {
+		// only allow shared micro-service instances found in different domains.
+		targetDomainProject = domainProject
+		provider.Tenant = domainProject
 	}
 
 	// 版本规则
