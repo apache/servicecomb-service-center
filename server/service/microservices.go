@@ -210,6 +210,12 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, ServiceId st
 		title = "force delete"
 	}
 
+	if ServiceId == apt.Service.ServiceId {
+		err := fmt.Errorf("Not allow to delete service center")
+		util.Logger().Errorf(err, "%s microservice failed, serviceId is %s", title, ServiceId)
+		return pb.CreateResponse(scerr.ErrInvalidParams, err.Error()), err
+	}
+
 	service, err := serviceUtil.GetService(ctx, domainProject, ServiceId)
 	if err != nil {
 		util.Logger().Errorf(err, "%s microservice failed, serviceId is %s: get service failed.", title, ServiceId)
@@ -327,7 +333,7 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, ServiceId st
 }
 
 func (s *MicroServiceService) Delete(ctx context.Context, in *pb.DeleteServiceRequest) (*pb.DeleteServiceResponse, error) {
-	if in == nil || len(in.ServiceId) == 0 || in.ServiceId == apt.Service.ServiceId {
+	if in == nil || len(in.ServiceId) == 0 {
 		util.Logger().Errorf(nil, "delete microservice failed: service empty.")
 		return &pb.DeleteServiceResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
