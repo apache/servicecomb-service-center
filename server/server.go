@@ -120,8 +120,8 @@ func (s *ServiceCenterServer) autoCompactBackend() {
 		interval = 12 * time.Hour
 	}
 	util.Go(func(stopCh <-chan struct{}) {
-		util.Logger().Infof("start the automatic compact mechanism, compact once every %s",
-			core.ServerInfo.Config.CompactInterval)
+		util.Logger().Infof("start the automatic compact mechanism, compact once every %s, reserve %d",
+			core.ServerInfo.Config.CompactInterval, delta)
 		for {
 			select {
 			case <-stopCh:
