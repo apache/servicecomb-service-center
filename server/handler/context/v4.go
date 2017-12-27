@@ -42,14 +42,7 @@ func (v *v4Context) Do(r *http.Request) error {
 			return err
 		}
 
-		start := len("/v4/")
-		end := start + strings.Index(path[start:], "/")
-
-		project := strings.TrimSpace(path[start:end])
-		if len(project) == 0 {
-			project = core.REGISTRY_PROJECT
-		}
-		util.SetRequestContext(r, "project", project)
+		util.SetRequestContext(r, "project", v.parseProjectFromPath(path))
 	}
 
 	if len(util.ParseDomain(ctx)) == 0 {
