@@ -213,7 +213,7 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, ServiceId st
 	if ServiceId == apt.Service.ServiceId {
 		err := fmt.Errorf("Not allow to delete service center")
 		util.Logger().Errorf(err, "%s microservice failed, serviceId is %s", title, ServiceId)
-		return pb.CreateResponse(scerr.ErrInvalidParams, err.Error()), err
+		return pb.CreateResponse(scerr.ErrInvalidParams, err.Error()), nil
 	}
 
 	service, err := serviceUtil.GetService(ctx, domainProject, ServiceId)
