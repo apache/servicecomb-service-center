@@ -111,7 +111,7 @@ func (s *ServiceCenterServer) initialize() {
 
 func (s *ServiceCenterServer) autoCompactBackend() {
 	delta := core.ServerInfo.Config.CompactIndexDelta
-	if delta <= 0 {
+	if delta <= 0 || len(core.ServerInfo.Config.CompactInterval) == 0 {
 		return
 	}
 	interval, err := time.ParseDuration(core.ServerInfo.Config.CompactInterval)
