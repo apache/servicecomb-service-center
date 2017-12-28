@@ -563,9 +563,8 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		}, nil
 	}
 
-	targetDomainProject := util.ParseTargetDomainProject(ctx)
 	provider := &pb.MicroServiceKey{
-		Tenant:      targetDomainProject,
+		Tenant:      util.ParseTargetDomainProject(ctx),
 		Environment: service.Environment,
 		AppId:       in.AppId,
 		ServiceName: in.ServiceName,
@@ -576,9 +575,11 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		provider.Environment = apt.Service.Environment
 		findFlag += "(shared services in " + provider.Environment + " environment)"
 	} else {
+		// provider is not a shared micro-service,
 		// only allow shared micro-service instances found in different domains.
-		targetDomainProject = domainProject
-		provider.Tenant = domainProject
+		util.SetContext(ctx, "target-domain", util.ParseDomain(ctx))
+		util.SetContext(ctx, "target-project", util.ParseProject(ctx))
+		provider.Tenant = util.ParseTargetDomainProject(ctx)
 		findFlag += "(" + provider.Environment + " services of the same domain)"
 	}
 
@@ -616,7 +617,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 	}
 
 	//维护version的规则,servicename 可能是别名，所以重新获取
-	providerService, err := serviceUtil.GetService(ctx, targetDomainProject, ids[0])
+	providerService, err := serviceUtil.GetService(ctx, provider.Tenant, ids[0])
 	if providerService == nil {
 		util.Logger().Errorf(err, "find instance failed, %s: no provider matched.", findFlag)
 		return &pb.FindInstancesResponse{
@@ -624,7 +625,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		}, nil
 	}
 
-	provider = pb.MicroServiceToKey(targetDomainProject, providerService)
+	provider = pb.MicroServiceToKey(provider.Tenant, providerService)
 	provider.Version = in.VersionRule
 
 	err = serviceUtil.AddServiceVersionRule(ctx, domainProject, service, provider)
