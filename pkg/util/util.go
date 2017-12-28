@@ -150,11 +150,7 @@ func ParseDomainProject(ctx context.Context) string {
 }
 
 func ParseTargetDomainProject(ctx context.Context) string {
-	domain := ParseTargetDomain(ctx)
-	if len(domain) == 0 {
-		return ParseDomainProject(ctx)
-	}
-	return domain + "/" + ParseTargetProject(ctx)
+	return ParseTargetDomain(ctx) + "/" + ParseTargetProject(ctx)
 }
 
 func ParseDomain(ctx context.Context) string {
@@ -166,9 +162,9 @@ func ParseDomain(ctx context.Context) string {
 }
 
 func ParseTargetDomain(ctx context.Context) string {
-	v, ok := FromContext(ctx, "target-domain").(string)
-	if !ok {
-		return ""
+	v, _ := FromContext(ctx, "target-domain").(string)
+	if len(v) == 0 {
+		return ParseDomain(ctx)
 	}
 	return v
 }
@@ -182,9 +178,9 @@ func ParseProject(ctx context.Context) string {
 }
 
 func ParseTargetProject(ctx context.Context) string {
-	v, ok := FromContext(ctx, "target-project").(string)
-	if !ok {
-		return ""
+	v, _ := FromContext(ctx, "target-project").(string)
+	if len(v) == 0 {
+		return ParseProject(ctx)
 	}
 	return v
 }

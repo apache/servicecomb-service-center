@@ -53,14 +53,14 @@ func (apt *RulesChangedAsyncTask) Err() error {
 func (apt *RulesChangedAsyncTask) publish(ctx context.Context, domainProject, providerId string, rev int64) error {
 	provider, err := serviceUtil.GetService(ctx, domainProject, providerId)
 	if err != nil {
-		util.Logger().Errorf(err, "get service %s file failed", providerId)
+		util.Logger().Errorf(err, "get provider %s service file failed", providerId)
 		return err
 	}
 	if provider == nil {
 		tmpProvider, found := serviceUtil.MsCache().Get(providerId)
 		if !found {
-			util.Logger().Errorf(nil, "service not exist, %s", providerId)
-			return fmt.Errorf("service not exist, %s", providerId)
+			util.Logger().Errorf(nil, "provider %s does not exist", providerId)
+			return fmt.Errorf("provider %s does not exist", providerId)
 		}
 		provider = tmpProvider.(*pb.MicroService)
 	}
