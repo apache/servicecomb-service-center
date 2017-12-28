@@ -18,6 +18,7 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/uuid"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
@@ -76,7 +77,7 @@ func (s *MicroServiceService) AddOrUpdateDependencies(ctx context.Context, depen
 		if len(consumerId) == 0 {
 			util.Logger().Errorf(nil, "put request into dependency queue failed, override: %t, consumer %s does not exist.",
 				override, consumerFlag)
-			return pb.CreateResponse(scerr.ErrServiceNotExists, "Get consumer's serviceId is empty."), nil
+			return pb.CreateResponse(scerr.ErrServiceNotExists, fmt.Sprintf("Consumer %s does not exist.", consumerFlag)), nil
 		}
 
 		dependencyInfo.Override = override
