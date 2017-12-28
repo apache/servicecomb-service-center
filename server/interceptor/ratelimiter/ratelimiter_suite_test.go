@@ -25,5 +25,5 @@ import (
 
 func TestNet(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "RateLimiter Suite")
+	RunSpecs(t, "HttpLimiter Suite")
 }
