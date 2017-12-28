@@ -131,13 +131,7 @@ func (this *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r 
 		Tags:              ids,
 	}
 
-	targetDomain := r.Header.Get("X-Domain-Name")
-	targetProject := r.URL.Query().Get(":project")
-	if len(targetProject) == 0 {
-		targetProject = core.REGISTRY_PROJECT
-	}
-	util.SetRequestContext(r, "target-domain", targetDomain)
-	util.SetRequestContext(r, "target-project", targetProject)
+	util.SetTargetDomainProject(r.Context(), r.Header.Get("X-Domain-Name"), r.URL.Query().Get(":project"))
 
 	resp, _ := core.InstanceAPI.Find(r.Context(), request)
 	respInternal := resp.Response

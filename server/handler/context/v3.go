@@ -34,8 +34,10 @@ func (v *v3Context) IsMatch(r *http.Request) bool {
 func (v *v3Context) Do(r *http.Request) error {
 	ctx := r.Context()
 
-	if len(util.ParseDomain(ctx)) == 0 {
-		domain := r.Header.Get("X-Tenant-Name")
+	domain, project := util.ParseDomain(ctx), util.ParseProject(ctx)
+
+	if len(domain) == 0 {
+		domain = r.Header.Get("X-Tenant-Name")
 		if len(domain) == 0 {
 			domain = r.Header.Get("X-Domain-Name")
 		}
@@ -45,11 +47,12 @@ func (v *v3Context) Do(r *http.Request) error {
 			util.Logger().Errorf(err, "Invalid Request URI %s", r.RequestURI)
 			return err
 		}
-		util.SetRequestContext(r, "domain", domain)
+		util.SetDomain(r.Context(), domain)
 	}
 
-	if len(util.ParseProject(ctx)) == 0 {
-		util.SetRequestContext(r, "project", core.REGISTRY_PROJECT)
+	if len(project) == 0 {
+		util.SetProject(r.Context(), core.REGISTRY_PROJECT)
 	}
+
 	return nil
 }

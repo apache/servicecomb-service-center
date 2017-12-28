@@ -434,11 +434,9 @@ func (s *InstanceService) GetOneInstance(ctx context.Context, in *pb.GetOneInsta
 	}
 	conPro := util.StringJoin([]string{in.ConsumerServiceId, in.ProviderServiceId, in.ProviderInstanceId}, "/")
 
-	targetDomainProject := util.ParseTargetDomainProject(ctx)
-
 	serviceId := in.ProviderServiceId
 	instanceId := in.ProviderInstanceId
-	instance, err := serviceUtil.GetInstance(ctx, targetDomainProject, serviceId, instanceId)
+	instance, err := serviceUtil.GetInstance(ctx, util.ParseTargetDomainProject(ctx), serviceId, instanceId)
 	if err != nil {
 		util.Logger().Errorf(err, "get instance failed, %s(consumer/provider): get instance failed.", conPro)
 		return &pb.GetOneInstanceResponse{
@@ -522,9 +520,7 @@ func (s *InstanceService) GetInstances(ctx context.Context, in *pb.GetInstancesR
 	}
 	conPro := util.StringJoin([]string{in.ConsumerServiceId, in.ProviderServiceId}, "/")
 
-	targetDomainProject := util.ParseTargetDomainProject(ctx)
-
-	instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, targetDomainProject, in.ProviderServiceId)
+	instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, util.ParseTargetDomainProject(ctx), in.ProviderServiceId)
 	if err != nil {
 		util.Logger().Errorf(err, "get instances failed, %s(consumer/provider): get instances from etcd failed.", conPro)
 		return &pb.GetInstancesResponse{
@@ -577,8 +573,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 	} else {
 		// provider is not a shared micro-service,
 		// only allow shared micro-service instances found in different domains.
-		util.SetContext(ctx, "target-domain", util.ParseDomain(ctx))
-		util.SetContext(ctx, "target-project", util.ParseProject(ctx))
+		util.SetTargetDomainProject(ctx, util.ParseDomain(ctx), util.ParseProject(ctx))
 		provider.Tenant = util.ParseTargetDomainProject(ctx)
 		findFlag += "(" + provider.Environment + " services of the same domain)"
 	}

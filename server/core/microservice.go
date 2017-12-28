@@ -70,10 +70,9 @@ func init() {
 }
 
 func AddDefaultContextValue(ctx context.Context) context.Context {
-	ctx = util.SetContext(ctx, "domain", REGISTRY_DOMAIN)
-	ctx = util.SetContext(ctx, "project", REGISTRY_PROJECT)
-	ctx = util.SetContext(ctx, IS_SC_SELF, true)
-	return ctx
+	return util.SetContext(
+		util.SetDomainProject(ctx, REGISTRY_DOMAIN, REGISTRY_PROJECT),
+		IS_SC_SELF, true)
 }
 
 func IsDefaultDomainProject(domainProject string) bool {

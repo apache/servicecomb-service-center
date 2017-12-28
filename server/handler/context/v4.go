@@ -21,7 +21,6 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"net/http"
-	"net/url"
 	"strings"
 )
 
@@ -35,35 +34,25 @@ func (v *v4Context) IsMatch(r *http.Request) bool {
 func (v *v4Context) Do(r *http.Request) error {
 	ctx := r.Context()
 
-	if len(util.ParseProject(ctx)) == 0 {
-		path, err := url.PathUnescape(r.RequestURI)
-		if err != nil {
-			util.Logger().Errorf(err, "Invalid Request URI %s", r.RequestURI)
-			return err
-		}
+	domain, project := util.ParseDomain(ctx), util.ParseProject(ctx)
 
-		util.SetRequestContext(r, "project", v.parseProjectFromPath(path))
-	}
-
-	if len(util.ParseDomain(ctx)) == 0 {
-		domain := r.Header.Get("X-Domain-Name")
+	if len(domain) == 0 {
+		domain = r.Header.Get("X-Domain-Name")
 		if len(domain) == 0 {
 			err := errors.New("Header does not contain domain.")
 			util.Logger().Errorf(err, "Invalid Request URI %s", r.RequestURI)
 			return err
 		}
-		util.SetRequestContext(r, "domain", domain)
+		util.SetDomain(r.Context(), domain)
 	}
-	return nil
-}
 
-func (v *v4Context) parseProjectFromPath(path string) string {
-	start := len("/v4/")
-	end := start + strings.Index(path[start:], "/")
-
-	project := strings.TrimSpace(path[start:end])
 	if len(project) == 0 {
-		project = core.REGISTRY_PROJECT
+		project = r.URL.Query().Get(":project")
+		if len(project) == 0 {
+			project = core.REGISTRY_PROJECT
+		}
+		util.SetProject(r.Context(), project)
 	}
-	return project
+
+	return nil
 }
