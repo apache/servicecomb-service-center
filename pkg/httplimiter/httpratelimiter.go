@@ -22,7 +22,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"github.com/ServiceComb/service-center/pkg/ratelimiter"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/ratelimiter"
 	"fmt"
 	"sync"
 )
