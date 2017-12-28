@@ -185,6 +185,30 @@ func ParseTargetProject(ctx context.Context) string {
 	return v
 }
 
+func SetDomain(ctx context.Context, domain string) context.Context {
+	return SetContext(ctx, "domain", domain)
+}
+
+func SetProject(ctx context.Context, project string) context.Context {
+	return SetContext(ctx, "project", project)
+}
+
+func SetTargetDomain(ctx context.Context, domain string) context.Context {
+	return SetContext(ctx, "target-domain", domain)
+}
+
+func SetTargetProject(ctx context.Context, project string) context.Context {
+	return SetContext(ctx, "target-project", project)
+}
+
+func SetDomainProject(ctx context.Context, domain string, project string) context.Context {
+	return SetProject(SetDomain(ctx, domain), project)
+}
+
+func SetTargetDomainProject(ctx context.Context, domain string, project string) context.Context {
+	return SetTargetProject(SetTargetDomain(ctx, domain), project)
+}
+
 func GetIPFromContext(ctx context.Context) string {
 	v, ok := FromContext(ctx, "x-remote-ip").(string)
 	if !ok {
