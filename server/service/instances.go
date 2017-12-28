@@ -574,10 +574,12 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 	if apt.IsShared(provider) {
 		// it means the shared micro-services must be the same env with SC.
 		provider.Environment = apt.Service.Environment
+		findFlag += "(shared services in " + provider.Environment + " environment)"
 	} else {
 		// only allow shared micro-service instances found in different domains.
 		targetDomainProject = domainProject
 		provider.Tenant = domainProject
+		findFlag += "(" + provider.Environment + " services of the same domain)"
 	}
 
 	// 版本规则

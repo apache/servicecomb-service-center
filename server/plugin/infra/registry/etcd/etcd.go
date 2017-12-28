@@ -76,22 +76,25 @@ func (c *EtcdClient) Compact(ctx context.Context, reserve int64) error {
 		return nil
 	}
 
+	t := time.Now()
 	_, err := c.Client.Compact(ctx, revToCompact, clientv3.WithCompactPhysical())
 	if err != nil {
 		util.Logger().Errorf(err, "Compact %s failed, revision is %d(current: %d, reserve %d)",
 			eps, revToCompact, curRev, reserve)
 		return err
 	}
-	util.Logger().Infof("Compacted %s, revision is %d(current: %d, reserve %d)", eps, revToCompact, curRev, reserve)
+	util.LogInfoOrWarnf(t, "Compacted %s, revision is %d(current: %d, reserve %d)", eps, revToCompact, curRev, reserve)
 
-	for _, ep := range eps {
+	// TODO can not defrag! because backend will always be unavailable when space in used is too large.
+	/*for _, ep := range eps {
+		t = time.Now()
 		_, err := c.Client.Defragment(ctx, ep)
 		if err != nil {
 			util.Logger().Errorf(err, "Defrag %s failed", ep)
 			continue
 		}
-		util.Logger().Infof("Defraged %s", ep)
-	}
+		util.LogInfoOrWarnf(t, "Defraged %s", ep)
+	}*/
 
 	return nil
 }
