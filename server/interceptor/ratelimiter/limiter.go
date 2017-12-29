@@ -18,10 +18,9 @@ package ratelimiter
 
 import (
 	"errors"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/httplimiter"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	"github.com/didip/tollbooth"
-	"github.com/didip/tollbooth/config"
 	"net/http"
 	"strings"
 	"sync"
@@ -31,7 +30,7 @@ import (
 type Limiter struct {
 	conns int64
 
-	tbLimiter *config.Limiter
+	httpLimiter *httplimiter.HttpLimiter
 }
 
 var limiter *Limiter
@@ -61,9 +60,9 @@ func (this *Limiter) LoadConfig() {
 		ttl = time.Hour
 	}
 	this.conns = core.ServerInfo.Config.LimitConnections
-	this.tbLimiter = tollbooth.NewLimiter(this.conns, ttl)
+	this.httpLimiter = httplimiter.NewHttpLimiter(this.conns, ttl)
 	iplookups := core.ServerInfo.Config.LimitIPLookup
-	this.tbLimiter.IPLookups = strings.Split(iplookups, ",")
+	this.httpLimiter.IPLookups = strings.Split(iplookups, ",")
 
 	util.Logger().Warnf(nil, "Rate-limit Load config, ttl: %s, conns: %d, iplookups: %s", ttl, this.conns, iplookups)
 }
@@ -73,13 +72,13 @@ func (this *Limiter) Handle(w http.ResponseWriter, r *http.Request) error {
 		return nil
 	}
 
-	tollbooth.SetResponseHeaders(this.tbLimiter, w)
-	httpError := tollbooth.LimitByRequest(this.tbLimiter, r)
+	httplimiter.SetResponseHeaders(this.httpLimiter, w)
+	httpError := httplimiter.LimitByRequest(this.httpLimiter, r)
 	if httpError != nil {
-		w.Header().Add("Content-Type", this.tbLimiter.MessageContentType)
+		w.Header().Add("Content-Type", this.httpLimiter.ContentType)
 		w.WriteHeader(httpError.StatusCode)
 		w.Write(util.StringToBytesWithNoCopy(httpError.Message))
-		util.Logger().Warn("Reached maximum request limit!", nil)
+		util.Logger().Warnf(nil, "Reached maximum request limit for %s host and %s url", r.RemoteAddr, r.RequestURI)
 		return errors.New(httpError.Message)
 	}
 	return nil
