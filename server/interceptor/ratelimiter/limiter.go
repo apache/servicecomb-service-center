@@ -18,9 +18,9 @@ package ratelimiter
 
 import (
 	"errors"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/httplimiter"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/httplimiter"
 	"net/http"
 	"strings"
 	"sync"
@@ -78,7 +78,7 @@ func (this *Limiter) Handle(w http.ResponseWriter, r *http.Request) error {
 		w.Header().Add("Content-Type", this.httpLimiter.ContentType)
 		w.WriteHeader(httpError.StatusCode)
 		w.Write(util.StringToBytesWithNoCopy(httpError.Message))
-		util.Logger().Warn("Reached maximum request limit!", nil)
+		util.Logger().Warnf(nil, "Reached maximum request limit for %s host and %s url", r.RemoteAddr, r.RequestURI)
 		return errors.New(httpError.Message)
 	}
 	return nil

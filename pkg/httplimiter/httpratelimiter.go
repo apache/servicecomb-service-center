@@ -84,18 +84,18 @@ func BuildSegments(httpLimiter *HttpLimiter, r *http.Request) [][]string {
 	}
 
 	if httpLimiter.Methods != nil && httpLimiter.Headers != nil && httpLimiter.BasicAuthUsers != nil {
-		if checkExsistence(httpLimiter.Methods, r.Method) {
+		if checkExistence(httpLimiter.Methods, r.Method) {
 			for headerKey, headerValues := range httpLimiter.Headers {
 				if (headerValues == nil || len(headerValues) <= 0) && r.Header.Get(headerKey) != "" {
 					username, _, ok := r.BasicAuth()
-					if ok && checkExsistence(httpLimiter.BasicAuthUsers, username) {
+					if ok && checkExistence(httpLimiter.BasicAuthUsers, username) {
 						sliceKeys = append(sliceKeys, []string{remoteIP, urlPath, r.Method, headerKey, username})
 					}
 
 				} else if len(headerValues) > 0 && r.Header.Get(headerKey) != "" {
 					for _, headerValue := range headerValues {
 						username, _, ok := r.BasicAuth()
-						if ok && checkExsistence(httpLimiter.BasicAuthUsers, username) {
+						if ok && checkExistence(httpLimiter.BasicAuthUsers, username) {
 							sliceKeys = append(sliceKeys, []string{remoteIP, urlPath, r.Method, headerKey, headerValue, username})
 						}
 					}
@@ -104,7 +104,7 @@ func BuildSegments(httpLimiter *HttpLimiter, r *http.Request) [][]string {
 		}
 
 	} else if httpLimiter.Methods != nil && httpLimiter.Headers != nil {
-		if checkExsistence(httpLimiter.Methods, r.Method) {
+		if checkExistence(httpLimiter.Methods, r.Method) {
 			for headerKey, headerValues := range httpLimiter.Headers {
 				if (headerValues == nil || len(headerValues) <= 0) && r.Header.Get(headerKey) != "" {
 					sliceKeys = append(sliceKeys, []string{remoteIP, urlPath, r.Method, headerKey})
@@ -118,15 +118,15 @@ func BuildSegments(httpLimiter *HttpLimiter, r *http.Request) [][]string {
 		}
 
 	} else if httpLimiter.Methods != nil && httpLimiter.BasicAuthUsers != nil {
-		if checkExsistence(httpLimiter.Methods, r.Method) {
+		if checkExistence(httpLimiter.Methods, r.Method) {
 			username, _, ok := r.BasicAuth()
-			if ok && checkExsistence(httpLimiter.BasicAuthUsers, username) {
+			if ok && checkExistence(httpLimiter.BasicAuthUsers, username) {
 				sliceKeys = append(sliceKeys, []string{remoteIP, urlPath, r.Method, username})
 			}
 		}
 
 	} else if httpLimiter.Methods != nil {
-		if checkExsistence(httpLimiter.Methods, r.Method) {
+		if checkExistence(httpLimiter.Methods, r.Method) {
 			sliceKeys = append(sliceKeys, []string{remoteIP, urlPath, r.Method})
 		}
 
@@ -144,7 +144,7 @@ func BuildSegments(httpLimiter *HttpLimiter, r *http.Request) [][]string {
 
 	} else if httpLimiter.BasicAuthUsers != nil {
 		username, _, ok := r.BasicAuth()
-		if ok && checkExsistence(httpLimiter.BasicAuthUsers, username) {
+		if ok && checkExistence(httpLimiter.BasicAuthUsers, username) {
 			sliceKeys = append(sliceKeys, []string{remoteIP, urlPath, username})
 		}
 	} else {
@@ -159,7 +159,7 @@ func SetResponseHeaders(limiter *HttpLimiter, w http.ResponseWriter) {
 	w.Header().Add("X-Rate-Limit-Duration", limiter.TTL.String())
 }
 
-func checkExsistence(sliceString []string, needle string) bool {
+func checkExistence(sliceString []string, needle string) bool {
 	for _, b := range sliceString {
 		if b == needle {
 			return true
@@ -204,7 +204,7 @@ func NewHttpLimiter(max int64, ttl time.Duration) *HttpLimiter {
 	limiter := &HttpLimiter{RequestLimit: max, TTL: ttl}
 	limiter.ContentType = "text/plain; charset=utf-8"
 	limiter.HttpMessage = "You have reached maximum request limit."
-	limiter.StatusCode = 429
+	limiter.StatusCode = http.StatusTooManyRequests
 	limiter.leakyBuckets = make(map[string]*ratelimiter.LeakyBucket)
 	limiter.IPLookups = []string{"RemoteAddr", "X-Forwarded-For", "X-Real-IP"}
 
