@@ -48,6 +48,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/handler/auth"
 	"github.com/apache/incubator-servicecomb-service-center/server/handler/cache"
 	"github.com/apache/incubator-servicecomb-service-center/server/handler/context"
+	"github.com/apache/incubator-servicecomb-service-center/server/handler/metric"
 	"github.com/apache/incubator-servicecomb-service-center/server/interceptor"
 	"github.com/apache/incubator-servicecomb-service-center/server/interceptor/access"
 	"github.com/apache/incubator-servicecomb-service-center/server/interceptor/cors"
@@ -57,10 +58,13 @@ import (
 func init() {
 	util.Logger().Info("BootStrap ServiceComb.io Edition")
 
+	// intercept requests before routing.
 	interceptor.RegisterInterceptFunc(access.Intercept)
 	interceptor.RegisterInterceptFunc(ratelimiter.Intercept)
 	interceptor.RegisterInterceptFunc(cors.Intercept)
 
+	// handle requests after routing.
+	metric.RegisterHandlers()
 	auth.RegisterHandlers()
 	context.RegisterHandlers()
 	cache.RegisterHandlers()
