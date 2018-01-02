@@ -888,6 +888,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(len(respFind.Instances)).To(Equal(0))
 
 				By("shared service discovery")
+				core.SetSharedMode(true)
 				core.Service.Environment = pb.ENV_PROD
 				respFind, err = instanceResource.Find(
 					util.SetTargetDomainProject(
@@ -915,6 +916,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(len(respFind.Instances)).To(Equal(1))
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId5))
 				core.Service.Environment = pb.ENV_DEV
+				core.SetSharedMode(false)
 			})
 		})
 

@@ -20,11 +20,16 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/version"
+	"github.com/astaxie/beego"
 	"golang.org/x/net/context"
+	"strings"
 )
 
-var Service *pb.MicroService
-var Instance *pb.MicroServiceInstance
+var (
+	Service  *pb.MicroService
+	Instance *pb.MicroServiceInstance
+	isAuth   bool
+)
 
 const (
 	REGISTRY_DOMAIN  = "default"
@@ -40,6 +45,8 @@ const (
 )
 
 func init() {
+	SetSharedMode(len(strings.TrimSpace(beego.AppConfig.String("auth_plugin"))) > 0)
+
 	Service = &pb.MicroService{
 		Environment: pb.ENV_PROD,
 		AppId:       REGISTRY_APP_ID,
@@ -79,7 +86,15 @@ func IsDefaultDomainProject(domainProject string) bool {
 	return domainProject == util.StringJoin([]string{REGISTRY_DOMAIN, REGISTRY_PROJECT}, "/")
 }
 
+func SetSharedMode(b bool) {
+	isAuth = b
+}
+
 func IsShared(key *pb.MicroServiceKey) bool {
+	if !isAuth {
+		// shared micro-service only can be registered in auth mode.
+		return false
+	}
 	if !IsDefaultDomainProject(key.Tenant) {
 		return false
 	}
@@ -87,10 +102,10 @@ func IsShared(key *pb.MicroServiceKey) bool {
 }
 
 func IsSCKey(key *pb.MicroServiceKey) bool {
-	if !IsShared(key) {
+	if !IsDefaultDomainProject(key.Tenant) {
 		return false
 	}
-	return key.ServiceName == Service.ServiceName
+	return key.AppId == Service.AppId && key.ServiceName == Service.ServiceName
 }
 
 func IsSCInstance(ctx context.Context) bool {
