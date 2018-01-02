@@ -25,6 +25,8 @@ import (
 	"time"
 )
 
+const CTX_START_TIMESTAMP = "x-start-timestamp"
+
 func init() {
 	// api
 	http.Handle("/", &ServerHandler{})
@@ -34,7 +36,7 @@ type ServerHandler struct {
 }
 
 func (s *ServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	util.SetRequestContext(r, "x-start-timestamp", time.Now())
+	util.SetRequestContext(r, CTX_START_TIMESTAMP, time.Now())
 
 	err := interceptor.InvokeInterceptors(w, r)
 	if err != nil {

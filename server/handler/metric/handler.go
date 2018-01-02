@@ -20,6 +20,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/chain"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	svr "github.com/apache/incubator-servicecomb-service-center/server/rest"
 	"net/http"
 	"time"
 )
@@ -34,7 +35,7 @@ func (h *MetricsHandler) Handle(i *chain.Invocation) {
 	i.Invoke(func(ret chain.Result) {
 		cb(ret)
 
-		start, ok := i.Context().Value("x-start-timestamp").(time.Time)
+		start, ok := i.Context().Value(svr.CTX_START_TIMESTAMP).(time.Time)
 		if !ok {
 			return
 		}
