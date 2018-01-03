@@ -90,7 +90,7 @@ Project documentation is available on the [ServiceComb website][servicecomb-webs
       
 ## Contact
 
-Bugs: [issues](https://github.com/servicecomb/service-center/issues)
+Bugs: [issues](https://issues.apache.org/jira/browse/SCB)
 
 ## Contributing
 
