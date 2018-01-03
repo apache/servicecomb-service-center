@@ -30,6 +30,7 @@ import (
 	"net/http"
 	"reflect"
 	"time"
+	"net/url"
 )
 
 const (
@@ -117,7 +118,7 @@ func GetHttpsClient(gzip, verifyPeer bool) (client *HttpClient, err error) {
 	return getHttpsClient(gzip, verifyPeer, true, false)
 }
 
-func GetClient(scheme string) (*HttpClient, error) {
+func GetClientByScheme(scheme string) (*HttpClient, error) {
 	var err error
 	var client *HttpClient
 	if scheme == "https" {
@@ -134,6 +135,16 @@ func GetClient(scheme string) (*HttpClient, error) {
 		return nil, err
 	}
 	return client, nil
+}
+
+func GetClient(urlPath string) (*HttpClient, error) {
+	var err error
+	urlParsed, err := url.Parse(urlPath)
+	if err != nil {
+		util.Logger().Errorf(err, "nonstandard url %s", urlPath)
+		return nil, err
+	}
+	return GetClientByScheme(urlParsed.Scheme)
 }
 
 /**
