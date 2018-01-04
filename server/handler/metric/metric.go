@@ -17,120 +17,33 @@
 package metric
 
 import (
-	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/chain"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	"github.com/prometheus/client_golang/prometheus"
-	dto "github.com/prometheus/client_model/go"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	svr "github.com/apache/incubator-servicecomb-service-center/server/rest"
 	"net/http"
-	"strconv"
-	"strings"
 	"time"
 )
 
-var (
-	incomingRequests = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace: "service_center",
-			Subsystem: "http",
-			Name:      "request_total",
-			Help:      "Counter of requests received into ROA handler",
-		}, []string{"method", "code", "instance", "api"})
-
-	successfulRequests = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace: "service_center",
-			Subsystem: "http",
-			Name:      "success_total",
-			Help:      "Counter of successful requests processed by ROA handler",
-		}, []string{"method", "code", "instance", "api"})
-
-	reqDurations = prometheus.NewSummaryVec(
-		prometheus.SummaryOpts{
-			Namespace:  "service_center",
-			Subsystem:  "http",
-			Name:       "request_durations_microseconds",
-			Help:       "HTTP request latency summary of ROA handler",
-			Objectives: prometheus.DefObjectives,
-		}, []string{"method", "instance", "api"})
-)
-
-func init() {
-	prometheus.MustRegister(incomingRequests, successfulRequests, reqDurations)
-
-	http.Handle("/metrics", prometheus.Handler())
+type MetricsHandler struct {
 }
 
-func ReportRequestCompleted(w http.ResponseWriter, r *http.Request, start time.Time) {
-	instance := fmt.Sprint(core.Instance.Endpoints)
-	elapsed := float64(time.Since(start).Nanoseconds()) / 1000
-	route, _ := r.Context().Value(rest.CTX_MATCH_PATTERN).(string)
+func (h *MetricsHandler) Handle(i *chain.Invocation) {
+	w, r := i.Context().Value(rest.CTX_RESPONSE).(http.ResponseWriter),
+		i.Context().Value(rest.CTX_REQUEST).(*http.Request)
+	cb := i.Func
+	i.Invoke(func(ret chain.Result) {
+		cb(ret)
 
-	if strings.Index(r.Method, "WATCH") != 0 {
-		reqDurations.WithLabelValues(r.Method, instance, route).Observe(elapsed)
-	}
-
-	success, code := codeOf(w.Header())
-
-	incomingRequests.WithLabelValues(r.Method, code, instance, route).Inc()
-
-	if success {
-		successfulRequests.WithLabelValues(r.Method, code, instance, route).Inc()
-	}
+		start, ok := i.Context().Value(svr.CTX_START_TIMESTAMP).(time.Time)
+		if !ok {
+			return
+		}
+		svr.ReportRequestCompleted(w, r, start)
+		util.LogNilOrWarnf(start, "%s %s", r.Method, r.RequestURI)
+	})
 }
 
-func codeOf(h http.Header) (bool, string) {
-	statusCode := h.Get("X-Response-Status")
-	if statusCode == "" {
-		return true, "200"
-	}
-
-	if code, _ := strconv.Atoi(statusCode); code >= http.StatusOK && code <= http.StatusAccepted {
-		return true, statusCode
-	}
-
-	return false, statusCode
-}
-
-// Get value of metricFamily
-func MetricValueOf(mf *dto.MetricFamily) float64 {
-	if len(mf.GetMetric()) == 0 {
-		return 0
-	}
-
-	switch mf.GetType() {
-	case dto.MetricType_GAUGE:
-		return mf.GetMetric()[0].GetGauge().GetValue()
-	case dto.MetricType_COUNTER:
-		return metricCounterOf(mf.GetMetric())
-	case dto.MetricType_SUMMARY:
-		return metricSummaryOf(mf.GetMetric())
-	default:
-		return 0
-	}
-}
-
-func metricCounterOf(m []*dto.Metric) float64 {
-	var sum float64 = 0
-	for _, d := range m {
-		sum += d.GetCounter().GetValue()
-	}
-	return sum
-}
-
-func metricSummaryOf(m []*dto.Metric) float64 {
-	var (
-		count uint64  = 0
-		sum   float64 = 0
-	)
-	for _, d := range m {
-		count += d.GetSummary().GetSampleCount()
-		sum += d.GetSummary().GetSampleSum()
-	}
-
-	if count == 0 {
-		return 0
-	}
-
-	return sum / float64(count)
+func RegisterHandlers() {
+	chain.RegisterHandler(rest.SERVER_CHAIN_NAME, &MetricsHandler{})
 }
