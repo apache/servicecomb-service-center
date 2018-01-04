@@ -118,7 +118,7 @@ func GetHttpsClient(gzip, verifyPeer bool) (client *HttpClient, err error) {
 	return getHttpsClient(gzip, verifyPeer, true, false)
 }
 
-func GetClientByScheme(scheme string) (*HttpClient, error) {
+func getClientByScheme(scheme string) (*HttpClient, error) {
 	var err error
 	var client *HttpClient
 	if scheme == "https" {
