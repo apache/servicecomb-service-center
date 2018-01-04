@@ -144,7 +144,7 @@ func GetClient(urlPath string) (*HttpClient, error) {
 		util.Logger().Errorf(err, "nonstandard url %s", urlPath)
 		return nil, err
 	}
-	return GetClientByScheme(urlParsed.Scheme)
+	return getClientByScheme(urlParsed.Scheme)
 }
 
 /**
