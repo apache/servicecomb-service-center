@@ -14,14 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package metric
+package rest
 
 import (
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/prometheus/client_golang/prometheus"
-	dto "github.com/prometheus/client_model/go"
 	"net/http"
 	"strconv"
 	"strings"
@@ -90,47 +89,4 @@ func codeOf(h http.Header) (bool, string) {
 	}
 
 	return false, statusCode
-}
-
-// Get value of metricFamily
-func MetricValueOf(mf *dto.MetricFamily) float64 {
-	if len(mf.GetMetric()) == 0 {
-		return 0
-	}
-
-	switch mf.GetType() {
-	case dto.MetricType_GAUGE:
-		return mf.GetMetric()[0].GetGauge().GetValue()
-	case dto.MetricType_COUNTER:
-		return metricCounterOf(mf.GetMetric())
-	case dto.MetricType_SUMMARY:
-		return metricSummaryOf(mf.GetMetric())
-	default:
-		return 0
-	}
-}
-
-func metricCounterOf(m []*dto.Metric) float64 {
-	var sum float64 = 0
-	for _, d := range m {
-		sum += d.GetCounter().GetValue()
-	}
-	return sum
-}
-
-func metricSummaryOf(m []*dto.Metric) float64 {
-	var (
-		count uint64  = 0
-		sum   float64 = 0
-	)
-	for _, d := range m {
-		count += d.GetSummary().GetSampleCount()
-		sum += d.GetSummary().GetSampleSum()
-	}
-
-	if count == 0 {
-		return 0
-	}
-
-	return sum / float64(count)
 }

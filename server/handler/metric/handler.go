@@ -39,7 +39,7 @@ func (h *MetricsHandler) Handle(i *chain.Invocation) {
 		if !ok {
 			return
 		}
-		ReportRequestCompleted(w, r, start)
+		svr.ReportRequestCompleted(w, r, start)
 		util.LogNilOrWarnf(start, "%s %s", r.Method, r.RequestURI)
 	})
 }
