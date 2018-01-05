@@ -191,8 +191,6 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	opts := []registry.PluginOp{
 		registry.OpPut(registry.WithStrKey(key), registry.WithValue(data),
 			registry.WithLease(leaseID), registry.WithIgnoreLease()),
-		registry.OpPut(registry.WithStrKey(index), registry.WithStrValue(instance.ServiceId),
-			registry.WithLease(leaseID), registry.WithIgnoreLease()),
 	}
 	if leaseID != 0 {
 		opts = append(opts,
