@@ -140,7 +140,7 @@ func CheckEndPoints(ctx context.Context, in *pb.RegisterInstanceRequest) (string
 	}
 	endpointValue := ParseEndpointValue(resp.Kvs[0].Value)
 	if in.Instance.ServiceId != endpointValue.serviceId {
-		return endpointValue.instanceId, "", fmt.Errorf("endpoints more belong to service %s", endpointValue.serviceId)
+		return endpointValue.instanceId, "", fmt.Errorf("Find the same endpoints in service %s", endpointValue.serviceId)
 	}
 	return endpointValue.instanceId, "", nil
 }
