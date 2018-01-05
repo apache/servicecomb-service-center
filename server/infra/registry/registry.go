@@ -229,9 +229,9 @@ func WithNoCache() PluginOpOption            { return func(op *PluginOp) { op.Mo
 func WithWatchCallback(f WatchCallback) PluginOpOption {
 	return func(op *PluginOp) { op.WatchCallback = f }
 }
-func WithStrKey(key string) PluginOpOption     { return WithKey(util.StringToBytesWithNoCopy(key)) }
-func WithStrEndKey(key string) PluginOpOption  { return WithEndKey(util.StringToBytesWithNoCopy(key)) }
-func WithStrValue(value string) PluginOpOption { return WithValue(util.StringToBytesWithNoCopy(value)) }
+func WithStrKey(key string) PluginOpOption     { return WithKey([]byte(key)) }
+func WithStrEndKey(key string) PluginOpOption  { return WithEndKey([]byte(key)) }
+func WithStrValue(value string) PluginOpOption { return WithValue([]byte(value)) }
 func WithOffset(i int64) PluginOpOption        { return func(op *PluginOp) { op.Offset = i } }
 func WithLimit(i int64) PluginOpOption         { return func(op *PluginOp) { op.Limit = i } }
 func WatchPrefixOpOptions(key string) []PluginOpOption {
@@ -305,12 +305,10 @@ func CmpModRev(key []byte) CompareOperation {
 func CmpVal(key []byte) CompareOperation {
 	return func(op *CompareOp) { op.Key = key; op.Type = CMP_VALUE }
 }
-func CmpStrVer(key string) CompareOperation { return CmpVer(util.StringToBytesWithNoCopy(key)) }
-func CmpStrCreateRev(key string) CompareOperation {
-	return CmpCreateRev(util.StringToBytesWithNoCopy(key))
-}
-func CmpStrModRev(key string) CompareOperation { return CmpModRev(util.StringToBytesWithNoCopy(key)) }
-func CmpStrVal(key string) CompareOperation    { return CmpVal(util.StringToBytesWithNoCopy(key)) }
+func CmpStrVer(key string) CompareOperation       { return CmpVer([]byte(key)) }
+func CmpStrCreateRev(key string) CompareOperation { return CmpCreateRev([]byte(key)) }
+func CmpStrModRev(key string) CompareOperation    { return CmpModRev([]byte(key)) }
+func CmpStrVal(key string) CompareOperation       { return CmpVal([]byte(key)) }
 func OpCmp(opt CompareOperation, result CompareResult, v interface{}) (cmp CompareOp) {
 	opt(&cmp)
 	cmp.Result = result
