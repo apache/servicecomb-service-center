@@ -41,6 +41,7 @@ type Cache interface {
 	Version() int64
 	Data(interface{}) interface{}
 	Have(interface{}) bool
+	Size() int
 }
 
 type Cacher interface {
@@ -63,6 +64,10 @@ func (n *nullCache) Data(interface{}) interface{} {
 
 func (n *nullCache) Have(interface{}) bool {
 	return false
+}
+
+func (n *nullCache) Size() int {
+	return 0
 }
 
 type nullCacher struct {
@@ -136,7 +141,7 @@ func (c *KvCache) Unlock() {
 			newCache[k] = v
 		}
 		c.store = newCache
-		c.lastMaxSize = c.size
+		c.lastMaxSize = l
 		c.lastRefresh = time.Now()
 	}
 	c.rwMux.Unlock()
@@ -313,7 +318,7 @@ func (c *KvCacher) filter(rev int64, items []*mvccpb.KeyValue) []*Event {
 		max = nc
 	}
 
-	newStore := make(map[string]*mvccpb.KeyValue)
+	newStore := make(map[string]*mvccpb.KeyValue, nc)
 	for _, kv := range items {
 		newStore[util.BytesToStringWithNoCopy(kv.Key)] = kv
 	}
@@ -532,7 +537,6 @@ func NewKvCache(c *KvCacher, size int) *KvCache {
 	return &KvCache{
 		owner:       c,
 		size:        size,
-		lastMaxSize: size,
 		store:       make(map[string]*mvccpb.KeyValue, size),
 		lastRefresh: time.Now(),
 	}

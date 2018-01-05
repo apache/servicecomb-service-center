@@ -46,12 +46,7 @@ func (iedh *InstanceEventDeferHandler) deferMode(total int, del int) bool {
 }
 
 func (iedh *InstanceEventDeferHandler) needDefer(cache Cache, evts []*Event) bool {
-	kvCache, ok := cache.(*KvCache)
-	if !ok {
-		return false
-	}
-
-	if !iedh.deferMode(kvCache.Size(), len(evts)) {
+	if !iedh.deferMode(cache.Size(), len(evts)) {
 		return false
 	}
 
