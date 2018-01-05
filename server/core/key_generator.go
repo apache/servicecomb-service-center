@@ -115,15 +115,6 @@ func GetServiceSchemaRootKey(domainProject string) string {
 	}, "/")
 }
 
-func GetInstanceIndexRootKey(domainProject string) string {
-	return util.StringJoin([]string{
-		GetRootKey(),
-		REGISTRY_INSTANCE_KEY,
-		REGISTRY_INDEX,
-		domainProject,
-	}, "/")
-}
-
 func GetInstanceRootKey(domainProject string) string {
 	return util.StringJoin([]string{
 		GetRootKey(),
@@ -231,13 +222,6 @@ func GetServiceSchemaSummaryRootKey(domainProject string) string {
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_SCHEMA_SUMMARY_KEY,
 		domainProject,
-	}, "/")
-}
-
-func GenerateInstanceIndexKey(domainProject string, instanceId string) string {
-	return util.StringJoin([]string{
-		GetInstanceIndexRootKey(domainProject),
-		instanceId,
 	}, "/")
 }
 

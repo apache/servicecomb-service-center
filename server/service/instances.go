@@ -183,7 +183,6 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 		}, err
 	}
 
-	index := apt.GenerateInstanceIndexKey(domainProject, instanceId)
 	key := apt.GenerateInstanceKey(domainProject, instance.ServiceId, instanceId)
 	hbKey := apt.GenerateInstanceLeaseKey(domainProject, instance.ServiceId, instanceId)
 

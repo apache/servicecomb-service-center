@@ -268,7 +268,7 @@ func GetOneDomainProjectServiceCount(ctx context.Context, domainProject string) 
 }
 
 func GetOneDomainProjectInstanceCount(ctx context.Context, domainProject string) (int64, error) {
-	key := apt.GenerateInstanceIndexKey(domainProject, "")
+	key := apt.GetInstanceRootKey(domainProject) + "/"
 	opts := append(FromContext(ctx),
 		registry.WithStrKey(key),
 		registry.WithCountOnly(),
