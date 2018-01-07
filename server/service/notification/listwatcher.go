@@ -19,6 +19,7 @@ package notification
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"time"
 )
 
 // 状态变化推送
@@ -64,7 +65,14 @@ func (w *ListWatcher) OnMessage(job NotifyJob) {
 		return
 	}
 
-	<-w.listCh
+	select {
+	case <-w.listCh:
+	case <-time.After(DEFAULT_ON_MESSAGE_TIMEOUT):
+		util.Logger().Errorf(nil,
+			"the %s listwatcher %s %s is not ready[over %s], drop the event %v",
+			w.Type(), w.Id(), w.Subject(), DEFAULT_ON_MESSAGE_TIMEOUT, job)
+		return
+	}
 
 	if job.(*WatchJob).Revision <= w.ListRevision {
 		util.Logger().Warnf(nil,
@@ -76,10 +84,16 @@ func (w *ListWatcher) OnMessage(job NotifyJob) {
 }
 
 func (w *ListWatcher) sendMessage(job NotifyJob) {
-	util.Logger().Debugf("start notify %s watcher %s %s, job is %v, current revision is %v", w.Type(),
+	util.Logger().Debugf("start to notify %s watcher %s %s, job is %v, current revision is %v", w.Type(),
 		w.Id(), w.Subject(), job, w.ListRevision)
 	defer util.RecoverAndReport()
-	w.Job <- job
+	select {
+	case w.Job <- job:
+	case <-time.After(DEFAULT_ON_MESSAGE_TIMEOUT):
+		util.Logger().Errorf(nil,
+			"the %s watcher %s %s event queue is full[over %s], drop the event %v",
+			w.Type(), w.Id(), w.Subject(), DEFAULT_ON_MESSAGE_TIMEOUT, job)
+	}
 }
 
 func (w *ListWatcher) Close() {

@@ -133,8 +133,8 @@ func (c *KvCache) Unlock() {
 	if c.size >= l &&
 		c.lastMaxSize > c.size*DEFAULT_COMPACT_TIMES &&
 		time.Now().Sub(c.lastRefresh) >= DEFAULT_COMPACT_TIMEOUT {
-		util.Logger().Infof("cache is empty and not in use over %s, compact capacity to size %d->%d",
-			DEFAULT_COMPACT_TIMEOUT, c.lastMaxSize, c.size)
+		util.Logger().Infof("cache %s is not in use over %s, compact capacity to size %d->%d",
+			c.owner.Cfg.Key, DEFAULT_COMPACT_TIMEOUT, c.lastMaxSize, c.size)
 		// gc
 		newCache := make(map[string]*mvccpb.KeyValue, c.size)
 		for k, v := range c.store {
