@@ -24,8 +24,10 @@ import (
 )
 
 const (
-	DEFAULT_MAX_QUEUE = 1000
-	DEFAULT_TIMEOUT   = 30 * time.Second
+	DEFAULT_MAX_QUEUE          = 1000
+	DEFAULT_INIT_SUBSCRIBERS   = 1000
+	DEFAULT_ON_MESSAGE_TIMEOUT = 100 * time.Millisecond
+	DEFAULT_TIMEOUT            = 30 * time.Second
 
 	NOTIFTY NotifyType = iota
 	INSTANCE
@@ -61,6 +63,7 @@ type Subscriber interface {
 	Service() *NotifyService
 	SetService(*NotifyService)
 	OnAccept()
+	// The event bus will callback this function, so it must be non-blocked.
 	OnMessage(job NotifyJob)
 	Close()
 }
