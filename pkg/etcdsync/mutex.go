@@ -163,7 +163,7 @@ func (m *DLock) Lock(wait bool) error {
 					func(message string, evt *registry.PluginResponse) error {
 						if evt != nil && evt.Action == registry.Delete {
 							// break this for-loop, and try to create the node again.
-							return fmt.Errorf("Lock released, id=%s", m.id)
+							return fmt.Errorf("Lock released")
 						}
 						return nil
 					}))
