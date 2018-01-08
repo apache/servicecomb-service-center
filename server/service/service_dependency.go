@@ -55,8 +55,6 @@ func (s *MicroServiceService) AddOrUpdateDependencies(ctx context.Context, depen
 			return serviceUtil.BadParamsResponse("Provider is invalid").Response, nil
 		}
 
-		serviceUtil.SetDependencyDefaultValue(dependencyInfo)
-
 		consumerFlag := util.StringJoin([]string{dependencyInfo.Consumer.AppId, dependencyInfo.Consumer.ServiceName, dependencyInfo.Consumer.Version}, "/")
 		consumerInfo := pb.DependenciesToKeys([]*pb.MicroServiceKey{dependencyInfo.Consumer}, domainProject)[0]
 		providersInfo := pb.DependenciesToKeys(dependencyInfo.Providers, domainProject)

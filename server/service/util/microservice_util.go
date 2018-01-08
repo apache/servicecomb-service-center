@@ -284,9 +284,6 @@ func SetServiceDefaultValue(service *pb.MicroService) {
 	if len(service.Level) == 0 {
 		service.Level = "BACK"
 	}
-	if len(service.Environment) == 0 {
-		service.Environment = pb.ENV_DEV
-	}
 	if len(service.RegisterBy) == 0 {
 		service.RegisterBy = pb.REGISTERBY_UNKNOWM
 	}

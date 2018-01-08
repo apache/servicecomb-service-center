@@ -572,7 +572,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		// only allow shared micro-service instances found in different domains.
 		util.SetTargetDomainProject(ctx, util.ParseDomain(ctx), util.ParseProject(ctx))
 		provider.Tenant = util.ParseTargetDomainProject(ctx)
-		findFlag += "(" + provider.Environment + " services of the same domain)"
+		findFlag += "('" + provider.Environment + "' services of the same domain)"
 	}
 
 	// 版本规则
