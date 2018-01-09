@@ -28,7 +28,7 @@ import (
 var (
 	Service  *pb.MicroService
 	Instance *pb.MicroServiceInstance
-	isAuth   bool
+	isShared bool
 )
 
 const (
@@ -87,11 +87,11 @@ func IsDefaultDomainProject(domainProject string) bool {
 }
 
 func SetSharedMode(b bool) {
-	isAuth = b
+	isShared = b
 }
 
 func IsShared(key *pb.MicroServiceKey) bool {
-	if !isAuth {
+	if !isShared {
 		// shared micro-service only can be registered in auth mode.
 		return false
 	}

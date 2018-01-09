@@ -117,12 +117,9 @@ func (h *DependencyEventHandler) Handle() error {
 		return nil
 	}
 
-	var (
-		r   *pb.ConsumerDependency = &pb.ConsumerDependency{}
-		ctx context.Context        = context.Background()
-	)
-
+	ctx := context.Background()
 	for _, kv := range resp.Kvs {
+		r := &pb.ConsumerDependency{}
 		consumerId, domainProject, data := pb.GetInfoFromDependencyQueueKV(kv)
 
 		err := json.Unmarshal(data, r)
