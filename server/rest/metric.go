@@ -62,7 +62,7 @@ func init() {
 
 func ReportRequestCompleted(w http.ResponseWriter, r *http.Request, start time.Time) {
 	instance := fmt.Sprint(core.Instance.Endpoints)
-	elapsed := float64(time.Since(start).Nanoseconds()) / 1000
+	elapsed := float64(time.Since(start).Nanoseconds()) / float64(time.Microsecond)
 	route, _ := r.Context().Value(rest.CTX_MATCH_PATTERN).(string)
 
 	if strings.Index(r.Method, "WATCH") != 0 {
