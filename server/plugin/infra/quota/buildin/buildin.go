@@ -52,20 +52,18 @@ type BuildInQuota struct {
 }
 
 //申请配额sourceType serviceinstance servicetype
-func (q *BuildInQuota) Apply4Quotas(ctx context.Context, quotaType quota.ResourceType, domainProject string, serviceId string, quotaSize int16) (quota.QuotaReporter, bool, error) {
+func (q *BuildInQuota) Apply4Quotas(ctx context.Context, res *quota.ApplyQuotaRes) *quota.ApplyQuotaResult {
 	data := &QuotaApplyData{
-		domain:    strings.Split(domainProject, "/")[0],
-		quotaSize: int64(quotaSize),
+		domain:    strings.Split(res.DomainProject, "/")[0],
+		quotaSize: res.QuotaSize,
 	}
-	switch quotaType {
+	switch res.QuotaType {
 	case quota.MicroServiceInstanceQuotaType:
-		isOk, err := instanceQuotaCheck(ctx, data)
-		return nil, isOk, err
+		return instanceQuotaCheck(ctx, data)
 	case quota.MicroServiceQuotaType:
-		isOk, err := serviceQuotaCheck(ctx, data)
-		return nil, isOk, err
+		return serviceQuotaCheck(ctx, data)
 	default:
-		return ResourceLimitHandler(ctx, quotaType, domainProject, serviceId, quotaSize)
+		return ResourceLimitHandler(ctx, res)
 	}
 }
 
@@ -73,12 +71,14 @@ func (q *BuildInQuota) Apply4Quotas(ctx context.Context, quotaType quota.Resourc
 func (q *BuildInQuota) RemandQuotas(ctx context.Context, quotaType quota.ResourceType) {
 }
 
-func ResourceLimitHandler(ctx context.Context, quotaType quota.ResourceType, domainProject string, serviceId string, quotaSize int16) (quota.QuotaReporter, bool, error) {
+func ResourceLimitHandler(ctx context.Context, res *quota.ApplyQuotaRes) *quota.ApplyQuotaResult {
 	var key string
 	var max int64 = 0
 	var indexer *store.Indexer
 
-	switch quotaType {
+	domainProject := res.DomainProject
+	serviceId := res.ServiceId
+	switch res.QuotaType {
 	case quota.RuleQuotaType:
 		key = core.GenerateServiceRuleKey(domainProject, serviceId, "")
 		max = RULE_NUM_MAX_LIMIT_PER_SERVICE
@@ -88,19 +88,22 @@ func ResourceLimitHandler(ctx context.Context, quotaType quota.ResourceType, dom
 		max = SCHEMA_NUM_MAX_LIMIT_PER_SERVICE
 		indexer = store.Store().Schema()
 	case quota.TagQuotaType:
-		num := quotaSize
+		applyNum := res.QuotaSize
 		max = TAG_NUM_MAX_LIMIT_PER_SERVICE
 		tags, err := serviceUtil.GetTagsUtils(ctx, domainProject, serviceId)
 		if err != nil {
-			return nil, false, err
+			return quota.NewApplyQuotaResult(nil, false, err, "")
 		}
-		if int64(len(tags))+int64(num) > max {
-			util.Logger().Errorf(nil, "no quota(%d) to apply resource '%s', %s", max, quotaType, serviceId)
-			return nil, false, nil
+		curNum := int64(len(tags))
+		if curNum+applyNum > max {
+			mes := fmt.Sprintf("no quota to apply %s , max quota is %d, current used quota is %d, apply quota num is %d",
+				res.QuotaType, max, curNum, applyNum)
+			util.Logger().Errorf(nil, "%s, serviceId is %s", mes, serviceId)
+			return quota.NewApplyQuotaResult(nil, false, nil, mes)
 		}
-		return nil, true, nil
+		return quota.NewApplyQuotaResult(nil, true, nil, "")
 	default:
-		return nil, false, fmt.Errorf("Unsurported resource '%s'", quotaType)
+		return quota.NewApplyQuotaResult(nil, false, fmt.Errorf("Unsupport type %s ", res.QuotaType), "")
 	}
 
 	resp, err := indexer.Search(ctx,
@@ -108,15 +111,17 @@ func ResourceLimitHandler(ctx context.Context, quotaType quota.ResourceType, dom
 		registry.WithPrefix(),
 		registry.WithCountOnly())
 	if err != nil {
-		return nil, false, err
+		return quota.NewApplyQuotaResult(nil, false, err, "")
 	}
-	num := resp.Count + int64(quotaSize)
+	num := resp.Count + int64(res.QuotaSize)
 	util.Logger().Debugf("resource num is %d", num)
 	if num > max {
-		util.Logger().Errorf(nil, "no quota(%d) to apply resource '%s', %s", max, quotaType, serviceId)
-		return nil, false, nil
+		mes := fmt.Sprintf("no quota to apply %s, max quota is %d, current used quota is %d, apply quota num is %d",
+			res.QuotaType, max, resp.Count, res.QuotaSize)
+		util.Logger().Errorf(nil, "%s,  serviceId %s", mes, serviceId)
+		return quota.NewApplyQuotaResult(nil, false, err, mes)
 	}
-	return nil, true, nil
+	return quota.NewApplyQuotaResult(nil, true, nil, "")
 }
 
 type QuotaApplyData struct {
@@ -129,29 +134,45 @@ type QuotaApplyData struct {
 type GetCurUsedNum func(context.Context, *QuotaApplyData) (int64, error)
 type GetLimitQuota func() int64
 
-func quotaCheck(ctx context.Context, data *QuotaApplyData, getLimitQuota GetLimitQuota, getCurUsedNum GetCurUsedNum) (bool, error) {
+type QuotaCheckResult struct {
+	isOk   bool
+	curNum int64
+	err    error
+}
+
+func NewQuotaCheckResult(isOk bool, curNum int64, err error) QuotaCheckResult {
+	return QuotaCheckResult{
+		isOk,
+		curNum,
+		err,
+	}
+}
+
+func quotaCheck(ctx context.Context, data *QuotaApplyData, getLimitQuota GetLimitQuota, getCurUsedNum GetCurUsedNum) QuotaCheckResult {
 	limitQuota := getLimitQuota()
 	curNum, err := getCurUsedNum(ctx, data)
 	if err != nil {
-		return false, err
+		return NewQuotaCheckResult(false, 0, err)
 	}
 	if curNum+data.quotaSize > limitQuota {
-		return false, nil
+		return NewQuotaCheckResult(false, curNum, nil)
 	}
-	return true, nil
+	return NewQuotaCheckResult(true, curNum, nil)
 }
 
-func instanceQuotaCheck(ctx context.Context, data *QuotaApplyData) (isOk bool, err error) {
-	isOk, err = quotaCheck(ctx, data, getInstanceMaxLimit, getAllInstancesNum)
-	if err != nil {
-		util.Logger().Errorf(err, "instance quota check failed")
-		return
+func instanceQuotaCheck(ctx context.Context, data *QuotaApplyData) *quota.ApplyQuotaResult {
+	rst := quotaCheck(ctx, data, getInstanceMaxLimit, getAllInstancesNum)
+	if rst.err != nil {
+		util.Logger().Errorf(rst.err, "instance quota check failed")
+		return quota.NewApplyQuotaResult(nil, false, rst.err, "")
 	}
-	if !isOk {
-		util.Logger().Errorf(err, "no quota to create instance")
-		return
+	if !rst.isOk {
+		mes := fmt.Sprintf("no quota to create instance, max num is %d, curNum is %d, apply num is %d",
+			getInstanceMaxLimit(), rst.curNum, data.quotaSize)
+		util.Logger().Errorf(nil, mes)
+		return quota.NewApplyQuotaResult(nil, false, nil, mes)
 	}
-	return
+	return quota.NewApplyQuotaResult(nil, true, nil, "")
 }
 
 func getInstanceMaxLimit() int64 {
@@ -174,17 +195,20 @@ func getAllInstancesNum(ctx context.Context, data *QuotaApplyData) (int64, error
 	return getInstancesNum(ctx, key)
 }
 
-func serviceQuotaCheck(ctx context.Context, data *QuotaApplyData) (isOk bool, err error) {
-	isOk, err = quotaCheck(ctx, data, getServiceMaxLimit, getAllServicesNum)
+func serviceQuotaCheck(ctx context.Context, data *QuotaApplyData) *quota.ApplyQuotaResult {
+	rst := quotaCheck(ctx, data, getServiceMaxLimit, getAllServicesNum)
+	err := rst.err
 	if err != nil {
 		util.Logger().Errorf(err, "service quota check failed")
-		return
+		return quota.NewApplyQuotaResult(nil, false, err, "")
 	}
-	if !isOk {
-		util.Logger().Errorf(err, "no quota to create service")
-		return
+	if !rst.isOk {
+		mes := fmt.Sprintf("no quota to create service, max quota is %d, current used quota is %d, apply quota num is %d",
+			getServiceMaxLimit(), rst.curNum, data.quotaSize)
+		util.Logger().Errorf(err, mes)
+		return quota.NewApplyQuotaResult(nil, false, nil, mes)
 	}
-	return
+	return quota.NewApplyQuotaResult(nil, true, nil, "")
 }
 
 func getServiceMaxLimit() int64 {

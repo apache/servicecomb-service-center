@@ -323,14 +323,16 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 	pluginOps := make([]registry.PluginOp, 0)
 	if service.Environment == pb.ENV_PROD {
 		if len(service.Schemas) == 0 {
-			_, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.SchemaQuotaType, domainProject, serviceId, int16(len(schemas)))
+			res := quota.NewApplyQuotaRes(quota.SchemaQuotaType, domainProject, serviceId, int64(len(schemas)))
+			rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+			err := rst.Err
 			if err != nil {
 				util.Logger().Errorf(err, "modify schemas info failed, check resource num failed, %s", serviceId)
 				return scerr.NewError(scerr.ErrUnavailableQuota, err.Error())
 			}
-			if !ok {
+			if !rst.IsOk {
 				util.Logger().Errorf(err, "modify schemas info failed, reach the max size of schema, %s", serviceId)
-				return scerr.NewError(scerr.ErrNotEnoughQuota, "reach the max size of schema")
+				return scerr.NewError(scerr.ErrNotEnoughQuota, rst.Message)
 			}
 
 			service.Schemas = nonExistSchemaIds
@@ -376,14 +378,16 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 
 		quotaSize := len(needAddSchemas) - len(needDeleteSchemas)
 		if quotaSize > 0 {
-			_, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.SchemaQuotaType, domainProject, serviceId, int16(quotaSize))
+			res := quota.NewApplyQuotaRes(quota.SchemaQuotaType, domainProject, serviceId, int64(quotaSize))
+			rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+			err := rst.Err
 			if err != nil {
 				util.Logger().Errorf(err, "modify schemas info failed, check resource num failed, %s", serviceId)
 				return scerr.NewError(scerr.ErrUnavailableQuota, err.Error())
 			}
-			if !ok {
+			if !rst.IsOk {
 				util.Logger().Errorf(err, "modify schemas info failed, reach the max size of schema, %s", serviceId)
-				return scerr.NewError(scerr.ErrNotEnoughQuota, "reach the max size of schema")
+				return scerr.NewError(scerr.ErrNotEnoughQuota, rst.Message)
 			}
 		}
 
@@ -534,14 +538,16 @@ func (s *MicroServiceService) canModifySchema(ctx context.Context, domainProject
 		return scerr.NewError(scerr.ErrInvalidParams, err.Error())
 	}
 
-	_, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.SchemaQuotaType, domainProject, serviceId, 1)
+	res := quota.NewApplyQuotaRes(quota.SchemaQuotaType, domainProject, serviceId, 1)
+	rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+	err = rst.Err
 	if err != nil {
 		util.Logger().Errorf(err, "modify schema info failed, check resource num failed, %s, %s", serviceId, schemaId)
 		return scerr.NewError(scerr.ErrUnavailableQuota, err.Error())
 	}
-	if !ok {
+	if !rst.IsOk {
 		util.Logger().Errorf(err, "modify schema info failed, reach the max size of schema, %s, %s", serviceId, schemaId)
-		return scerr.NewError(scerr.ErrNotEnoughQuota, "add schema failed, reach max size of schema")
+		return scerr.NewError(scerr.ErrNotEnoughQuota, rst.Message)
 	}
 	if len(request.Summary) == 0 {
 		util.Logger().Warnf(nil, "service %s schema %s summary is empty.", request.ServiceId, schemaId)

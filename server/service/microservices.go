@@ -191,13 +191,16 @@ func checkQuota(ctx context.Context, domainProject string) (quota.QuotaReporter,
 		util.Logger().Infof("it is service-center")
 		return nil, nil
 	}
-	reporter, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.MicroServiceQuotaType, domainProject, "", 1)
+	res := quota.NewApplyQuotaRes(quota.MicroServiceQuotaType, domainProject, "", 1)
+	rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+	reporter := rst.Reporter
+	err := rst.Err
 	if err != nil {
 		return reporter, scerr.NewError(scerr.ErrUnavailableQuota,
 			fmt.Sprintf("An error occurred in apply for quotas(%s)", err.Error()))
 	}
-	if !ok {
-		return reporter, scerr.NewError(scerr.ErrNotEnoughQuota, "No quota to create service")
+	if !rst.IsOk {
+		return reporter, scerr.NewError(scerr.ErrNotEnoughQuota, rst.Message)
 	}
 	return reporter, nil
 }

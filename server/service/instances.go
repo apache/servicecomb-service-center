@@ -108,9 +108,11 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	var reporter quota.QuotaReporter
 	if len(oldInstanceId) == 0 {
 		if !apt.IsSCInstance(ctx) {
-			var err error
-			var ok bool
-			reporter, ok, err = plugin.Plugins().Quota().Apply4Quotas(ctx, quota.MicroServiceInstanceQuotaType, domainProject, in.Instance.ServiceId, 1)
+			res := quota.NewApplyQuotaRes(quota.MicroServiceInstanceQuotaType, domainProject, in.Instance.ServiceId, 1)
+			rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+			reporter = rst.Reporter
+			err := rst.Err
+			isOk := rst.IsOk
 			if reporter != nil {
 				defer reporter.Close()
 			}
@@ -120,10 +122,10 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 					Response: pb.CreateResponse(scerr.ErrUnavailableQuota, err.Error()),
 				}, err
 			}
-			if !ok {
+			if !isOk {
 				util.Logger().Errorf(nil, "register instance failed, service %s, operator %s: no quota apply.", instanceFlag, remoteIP)
 				return &pb.RegisterInstanceResponse{
-					Response: pb.CreateResponse(scerr.ErrNotEnoughQuota, "No quota to create instance."),
+					Response: pb.CreateResponse(scerr.ErrNotEnoughQuota, rst.Message),
 				}, nil
 			}
 		}

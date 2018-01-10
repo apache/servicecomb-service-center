@@ -21,8 +21,40 @@ import (
 	"golang.org/x/net/context"
 )
 
+type ApplyQuotaResult struct {
+	Reporter QuotaReporter
+	IsOk     bool
+	Err      error
+	Message  string
+}
+
+func NewApplyQuotaResult(reporter QuotaReporter, isOk bool, err error, mes string) *ApplyQuotaResult {
+	return &ApplyQuotaResult{
+		reporter,
+		isOk,
+		err,
+		mes,
+	}
+}
+
+type ApplyQuotaRes struct {
+	QuotaType     ResourceType
+	DomainProject string
+	ServiceId     string
+	QuotaSize     int64
+}
+
+func NewApplyQuotaRes(quotaType ResourceType, domainProject, serviceId string, quotaSize int64) *ApplyQuotaRes {
+	return &ApplyQuotaRes{
+		quotaType,
+		domainProject,
+		serviceId,
+		quotaSize,
+	}
+}
+
 type QuotaManager interface {
-	Apply4Quotas(ctx context.Context, quotaType ResourceType, domainProject string, serviceId string, quotaSize int16) (QuotaReporter, bool, error)
+	Apply4Quotas(ctx context.Context, req *ApplyQuotaRes) *ApplyQuotaResult
 	RemandQuotas(ctx context.Context, quotaType ResourceType)
 }
 
