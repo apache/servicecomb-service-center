@@ -1112,14 +1112,3 @@ func (dr *DependencyRelation) getConsumerOfSameServiceNameAndAppId(provider *pb.
 	}
 	return allConsumers, nil
 }
-
-func SetDependencyDefaultValue(dep *pb.ConsumerDependency) {
-	if len(dep.Consumer.Environment) == 0 {
-		dep.Consumer.Environment = pb.ENV_DEV
-	}
-	for _, p := range dep.Providers {
-		if len(p.Environment) == 0 {
-			p.Environment = pb.ENV_DEV
-		}
-	}
-}

@@ -117,12 +117,9 @@ func (h *DependencyEventHandler) Handle() error {
 		return nil
 	}
 
-	var (
-		r   *pb.ConsumerDependency = &pb.ConsumerDependency{}
-		ctx context.Context        = context.Background()
-	)
-
+	ctx := context.Background()
 	for _, kv := range resp.Kvs {
+		r := &pb.ConsumerDependency{}
 		consumerId, domainProject, data := pb.GetInfoFromDependencyQueueKV(kv)
 
 		err := json.Unmarshal(data, r)
@@ -135,8 +132,6 @@ func (h *DependencyEventHandler) Handle() error {
 			}
 			continue
 		}
-
-		serviceUtil.SetDependencyDefaultValue(r)
 
 		consumerFlag := util.StringJoin([]string{r.Consumer.AppId, r.Consumer.ServiceName, r.Consumer.Version}, "/")
 		consumerInfo := pb.DependenciesToKeys([]*pb.MicroServiceKey{r.Consumer}, domainProject)[0]

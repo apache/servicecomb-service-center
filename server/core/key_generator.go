@@ -19,7 +19,6 @@ package core
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	"strings"
 )
 
 const (
@@ -150,17 +149,9 @@ func GenerateRuleIndexKey(domainProject string, serviceId string, attr string, p
 }
 
 func GenerateServiceIndexKey(key *pb.MicroServiceKey) string {
-	appId := key.AppId
-	if len(strings.TrimSpace(appId)) == 0 {
-		key.AppId = REGISTRY_APP_ID
-	}
-	env := key.Environment
-	if len(strings.TrimSpace(env)) == 0 {
-		env = pb.ENV_DEV
-	}
 	return util.StringJoin([]string{
 		GetServiceIndexRootKey(key.Tenant),
-		env,
+		key.Environment,
 		key.AppId,
 		key.ServiceName,
 		key.Version,
@@ -168,17 +159,9 @@ func GenerateServiceIndexKey(key *pb.MicroServiceKey) string {
 }
 
 func GenerateServiceAliasKey(key *pb.MicroServiceKey) string {
-	appId := key.AppId
-	if len(strings.TrimSpace(appId)) == 0 {
-		key.AppId = REGISTRY_APP_ID
-	}
-	env := key.Environment
-	if len(strings.TrimSpace(env)) == 0 {
-		env = pb.ENV_DEV
-	}
 	return util.StringJoin([]string{
 		GetServiceAliasRootKey(key.Tenant),
-		env,
+		key.Environment,
 		key.AppId,
 		key.Alias,
 		key.Version,
@@ -242,27 +225,19 @@ func GenerateInstanceLeaseKey(domainProject string, serviceId string, instanceId
 }
 
 func GenerateServiceDependencyRuleKey(serviceType string, domainProject string, in *pb.MicroServiceKey) string {
-	appId := in.AppId
-	if len(strings.TrimSpace(appId)) == 0 {
-		appId = REGISTRY_APP_ID
-	}
-	env := in.Environment
-	if len(strings.TrimSpace(env)) == 0 {
-		env = pb.ENV_DEV
-	}
 	if in.ServiceName == "*" {
 		return util.StringJoin([]string{
 			GetServiceDependencyRuleRootKey(domainProject),
 			serviceType,
-			env,
+			in.Environment,
 			in.ServiceName,
 		}, "/")
 	}
 	return util.StringJoin([]string{
 		GetServiceDependencyRuleRootKey(domainProject),
 		serviceType,
-		env,
-		appId,
+		in.Environment,
+		in.AppId,
 		in.ServiceName,
 		in.Version,
 	}, "/")

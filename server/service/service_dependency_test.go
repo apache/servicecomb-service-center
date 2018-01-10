@@ -238,13 +238,6 @@ var _ = Describe("'Dependency' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respCreateDependency.Response.Code).To(Equal(pb.Response_SUCCESS))
 
-				respCon, err := serviceResource.GetConsumerDependencies(getContext(), &pb.GetDependenciesRequest{
-					ServiceId: consumerId1,
-				})
-				Expect(err).To(BeNil())
-				Expect(respCon.Response.Code).To(Equal(pb.Response_SUCCESS))
-				Expect(len(respCon.Providers)).To(Equal(0))
-
 				By("consumer in diff env")
 				consumer.Environment = pb.ENV_PROD
 				respCreateDependency, err = serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
@@ -263,6 +256,15 @@ var _ = Describe("'Dependency' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respCreateDependency.Response.Code).To(Equal(pb.Response_SUCCESS))
+
+				Expect(deh.Handle()).To(BeNil())
+
+				respCon, err := serviceResource.GetConsumerDependencies(getContext(), &pb.GetDependenciesRequest{
+					ServiceId: consumerId1,
+				})
+				Expect(err).To(BeNil())
+				Expect(respCon.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(len(respCon.Providers)).To(Equal(0))
 
 				respCon, err = serviceResource.GetConsumerDependencies(getContext(), &pb.GetDependenciesRequest{
 					ServiceId: consumerId2,
