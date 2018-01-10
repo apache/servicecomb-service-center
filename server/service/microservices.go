@@ -99,7 +99,7 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 		defer reporter.Close()
 	}
 	if quotaErr != nil {
-		util.Logger().Errorf(err, "create microservice failed, %s: check service failed before create. operator: %s",
+		util.Logger().Errorf(quotaErr, "create microservice failed, %s: check service failed before create. operator: %s",
 			serviceFlag, remoteIP)
 		resp := &pb.CreateServiceResponse{
 			Response: pb.CreateResponse(quotaErr.Code, quotaErr.Detail),
@@ -193,16 +193,7 @@ func checkQuota(ctx context.Context, domainProject string) (quota.QuotaReporter,
 	}
 	res := quota.NewApplyQuotaRes(quota.MicroServiceQuotaType, domainProject, "", 1)
 	rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
-	reporter := rst.Reporter
-	err := rst.Err
-	if err != nil {
-		return reporter, scerr.NewError(scerr.ErrUnavailableQuota,
-			fmt.Sprintf("An error occurred in apply for quotas(%s)", err.Error()))
-	}
-	if !rst.IsOk {
-		return reporter, scerr.NewError(scerr.ErrNotEnoughQuota, rst.Message)
-	}
-	return reporter, nil
+	return rst.Reporter, rst.Err
 }
 
 func (s *MicroServiceService) DeleteServicePri(ctx context.Context, ServiceId string, force bool) (*pb.Response, error) {

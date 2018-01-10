@@ -325,14 +325,10 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 		if len(service.Schemas) == 0 {
 			res := quota.NewApplyQuotaRes(quota.SchemaQuotaType, domainProject, serviceId, int64(len(schemas)))
 			rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
-			err := rst.Err
-			if err != nil {
-				util.Logger().Errorf(err, "modify schemas info failed, check resource num failed, %s", serviceId)
-				return scerr.NewError(scerr.ErrUnavailableQuota, err.Error())
-			}
-			if !rst.IsOk {
-				util.Logger().Errorf(err, "modify schemas info failed, reach the max size of schema, %s", serviceId)
-				return scerr.NewError(scerr.ErrNotEnoughQuota, rst.Message)
+			errQuota := rst.Err
+			if errQuota != nil {
+				util.Logger().Errorf(errQuota, "modify schemas info failed, serviceId is %s", serviceId)
+				return errQuota
 			}
 
 			service.Schemas = nonExistSchemaIds
@@ -383,11 +379,7 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 			err := rst.Err
 			if err != nil {
 				util.Logger().Errorf(err, "modify schemas info failed, check resource num failed, %s", serviceId)
-				return scerr.NewError(scerr.ErrUnavailableQuota, err.Error())
-			}
-			if !rst.IsOk {
-				util.Logger().Errorf(err, "modify schemas info failed, reach the max size of schema, %s", serviceId)
-				return scerr.NewError(scerr.ErrNotEnoughQuota, rst.Message)
+				return err
 			}
 		}
 
@@ -540,14 +532,10 @@ func (s *MicroServiceService) canModifySchema(ctx context.Context, domainProject
 
 	res := quota.NewApplyQuotaRes(quota.SchemaQuotaType, domainProject, serviceId, 1)
 	rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
-	err = rst.Err
-	if err != nil {
-		util.Logger().Errorf(err, "modify schema info failed, check resource num failed, %s, %s", serviceId, schemaId)
-		return scerr.NewError(scerr.ErrUnavailableQuota, err.Error())
-	}
-	if !rst.IsOk {
-		util.Logger().Errorf(err, "modify schema info failed, reach the max size of schema, %s, %s", serviceId, schemaId)
-		return scerr.NewError(scerr.ErrNotEnoughQuota, rst.Message)
+	errQuota := rst.Err
+	if errQuota != nil {
+		util.Logger().Errorf(errQuota, "modify schema info failed, check resource num failed, %s, %s", serviceId, schemaId)
+		return errQuota
 	}
 	if len(request.Summary) == 0 {
 		util.Logger().Warnf(nil, "service %s schema %s summary is empty.", request.ServiceId, schemaId)

@@ -47,6 +47,8 @@ var errors = map[int32]string{
 
 	ErrNotEnoughQuota: "Not enough quota",
 
+	ErrNotDefineQuotaType: "Not define quota type",
+
 	ErrUnauthorized: "Request unauthorized",
 
 	ErrInternal:           "Internal server error",
@@ -88,6 +90,7 @@ const (
 	ErrEndpointAlreadyExists int32 = 400025
 
 	ErrNotEnoughQuota   int32 = 400100
+	ErrNotDefineQuotaType int32 = 400101
 	ErrUnavailableQuota int32 = 500101
 )
 
@@ -114,6 +117,13 @@ func (e Error) StatusCode() int {
 		return http.StatusInternalServerError
 	}
 	return http.StatusBadRequest
+}
+
+func (e Error) InternalError() bool {
+	if e.Code >= 500000 {
+		return true
+	}
+	return false
 }
 
 func (e Error) HttpWrite(w http.ResponseWriter) {

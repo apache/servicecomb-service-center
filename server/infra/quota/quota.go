@@ -19,21 +19,18 @@ package quota
 import (
 	"fmt"
 	"golang.org/x/net/context"
+	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 )
 
 type ApplyQuotaResult struct {
 	Reporter QuotaReporter
-	IsOk     bool
-	Err      error
-	Message  string
+	Err      *scerr.Error
 }
 
-func NewApplyQuotaResult(reporter QuotaReporter, isOk bool, err error, mes string) *ApplyQuotaResult {
+func NewApplyQuotaResult(reporter QuotaReporter, err *scerr.Error) *ApplyQuotaResult {
 	return &ApplyQuotaResult{
 		reporter,
-		isOk,
 		err,
-		mes,
 	}
 }
 

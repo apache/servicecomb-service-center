@@ -27,6 +27,7 @@ import (
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
 	"strings"
+	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 )
 
 const (
@@ -92,18 +93,18 @@ func ResourceLimitHandler(ctx context.Context, res *quota.ApplyQuotaRes) *quota.
 		max = TAG_NUM_MAX_LIMIT_PER_SERVICE
 		tags, err := serviceUtil.GetTagsUtils(ctx, domainProject, serviceId)
 		if err != nil {
-			return quota.NewApplyQuotaResult(nil, false, err, "")
+			return quota.NewApplyQuotaResult(nil, scerr.NewError(scerr.ErrInternal, err.Error()))
 		}
 		curNum := int64(len(tags))
 		if curNum+applyNum > max {
 			mes := fmt.Sprintf("no quota to apply %s , max quota is %d, current used quota is %d, apply quota num is %d",
 				res.QuotaType, max, curNum, applyNum)
 			util.Logger().Errorf(nil, "%s, serviceId is %s", mes, serviceId)
-			return quota.NewApplyQuotaResult(nil, false, nil, mes)
+			return quota.NewApplyQuotaResult(nil, scerr.NewError(scerr.ErrNotEnoughQuota, mes))
 		}
-		return quota.NewApplyQuotaResult(nil, true, nil, "")
+		return quota.NewApplyQuotaResult(nil, nil)
 	default:
-		return quota.NewApplyQuotaResult(nil, false, fmt.Errorf("Unsupport type %s ", res.QuotaType), "")
+		return quota.NewApplyQuotaResult(nil, scerr.NewError(scerr.ErrNotDefineQuotaType, ""))
 	}
 
 	resp, err := indexer.Search(ctx,
@@ -111,7 +112,7 @@ func ResourceLimitHandler(ctx context.Context, res *quota.ApplyQuotaRes) *quota.
 		registry.WithPrefix(),
 		registry.WithCountOnly())
 	if err != nil {
-		return quota.NewApplyQuotaResult(nil, false, err, "")
+		return quota.NewApplyQuotaResult(nil, scerr.NewError(scerr.ErrInternal, err.Error()))
 	}
 	num := resp.Count + int64(res.QuotaSize)
 	util.Logger().Debugf("resource num is %d", num)
@@ -119,9 +120,9 @@ func ResourceLimitHandler(ctx context.Context, res *quota.ApplyQuotaRes) *quota.
 		mes := fmt.Sprintf("no quota to apply %s, max quota is %d, current used quota is %d, apply quota num is %d",
 			res.QuotaType, max, resp.Count, res.QuotaSize)
 		util.Logger().Errorf(nil, "%s,  serviceId %s", mes, serviceId)
-		return quota.NewApplyQuotaResult(nil, false, err, mes)
+		return quota.NewApplyQuotaResult(nil, scerr.NewError(scerr.ErrNotEnoughQuota, mes))
 	}
-	return quota.NewApplyQuotaResult(nil, true, nil, "")
+	return quota.NewApplyQuotaResult(nil, nil)
 }
 
 type QuotaApplyData struct {
@@ -162,17 +163,18 @@ func quotaCheck(ctx context.Context, data *QuotaApplyData, getLimitQuota GetLimi
 
 func instanceQuotaCheck(ctx context.Context, data *QuotaApplyData) *quota.ApplyQuotaResult {
 	rst := quotaCheck(ctx, data, getInstanceMaxLimit, getAllInstancesNum)
+	err := rst.err
 	if rst.err != nil {
 		util.Logger().Errorf(rst.err, "instance quota check failed")
-		return quota.NewApplyQuotaResult(nil, false, rst.err, "")
+		return quota.NewApplyQuotaResult(nil, scerr.NewError(scerr.ErrInternal, err.Error()))
 	}
 	if !rst.isOk {
 		mes := fmt.Sprintf("no quota to create instance, max num is %d, curNum is %d, apply num is %d",
 			getInstanceMaxLimit(), rst.curNum, data.quotaSize)
 		util.Logger().Errorf(nil, mes)
-		return quota.NewApplyQuotaResult(nil, false, nil, mes)
+		return quota.NewApplyQuotaResult(nil, scerr.NewError(scerr.ErrNotEnoughQuota, mes))
 	}
-	return quota.NewApplyQuotaResult(nil, true, nil, "")
+	return quota.NewApplyQuotaResult(nil, nil)
 }
 
 func getInstanceMaxLimit() int64 {
@@ -200,15 +202,15 @@ func serviceQuotaCheck(ctx context.Context, data *QuotaApplyData) *quota.ApplyQu
 	err := rst.err
 	if err != nil {
 		util.Logger().Errorf(err, "service quota check failed")
-		return quota.NewApplyQuotaResult(nil, false, err, "")
+		return quota.NewApplyQuotaResult(nil, scerr.NewError(scerr.ErrInternal, err.Error()))
 	}
 	if !rst.isOk {
 		mes := fmt.Sprintf("no quota to create service, max quota is %d, current used quota is %d, apply quota num is %d",
 			getServiceMaxLimit(), rst.curNum, data.quotaSize)
 		util.Logger().Errorf(err, mes)
-		return quota.NewApplyQuotaResult(nil, false, nil, mes)
+		return quota.NewApplyQuotaResult(nil, scerr.NewError(scerr.ErrNotEnoughQuota, mes))
 	}
-	return quota.NewApplyQuotaResult(nil, true, nil, "")
+	return quota.NewApplyQuotaResult(nil,nil)
 }
 
 func getServiceMaxLimit() int64 {

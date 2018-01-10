@@ -112,20 +112,19 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 			rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
 			reporter = rst.Reporter
 			err := rst.Err
-			isOk := rst.IsOk
 			if reporter != nil {
 				defer reporter.Close()
 			}
 			if err != nil {
-				util.Logger().Errorf(err, "register instance failed, service %s, operator %s: check apply quota failed.", instanceFlag, remoteIP)
-				return &pb.RegisterInstanceResponse{
-					Response: pb.CreateResponse(scerr.ErrUnavailableQuota, err.Error()),
-				}, err
-			}
-			if !isOk {
+				if err.InternalError() {
+					util.Logger().Errorf(err, "register instance failed, service %s, operator %s: check apply quota failed.", instanceFlag, remoteIP)
+					return &pb.RegisterInstanceResponse{
+						Response: pb.CreateResponse(scerr.ErrUnavailableQuota, err.Error()),
+					}, err
+				}
 				util.Logger().Errorf(nil, "register instance failed, service %s, operator %s: no quota apply.", instanceFlag, remoteIP)
 				return &pb.RegisterInstanceResponse{
-					Response: pb.CreateResponse(scerr.ErrNotEnoughQuota, rst.Message),
+					Response: pb.CreateResponse(scerr.ErrNotEnoughQuota, err.Detail),
 				}, nil
 			}
 		}

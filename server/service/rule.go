@@ -52,17 +52,17 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 	}
 	res := quota.NewApplyQuotaRes(quota.RuleQuotaType, domainProject, in.ServiceId, int64(len(in.Rules)))
 	rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
-	err := rst.Err
-	if err != nil {
-		util.Logger().Errorf(err, "check can apply resource failed.%s", in.ServiceId)
+	errQuota := rst.Err
+	if errQuota != nil {
+		if errQuota.InternalError() {
+			util.Logger().Errorf(errQuota, "check can apply resource failed.%s", in.ServiceId)
+			return &pb.AddServiceRulesResponse{
+				Response: pb.CreateResponse(errQuota.Code, errQuota.Error()),
+			}, errQuota
+		}
+		util.Logger().Errorf(errQuota, "")
 		return &pb.AddServiceRulesResponse{
-			Response: pb.CreateResponse(scerr.ErrUnavailableQuota, err.Error()),
-		}, err
-	}
-	if !rst.IsOk {
-		util.Logger().Errorf(nil, "no quota to add tag for %s, %s", in.ServiceId, rst.Message)
-		return &pb.AddServiceRulesResponse{
-			Response: pb.CreateResponse(scerr.ErrNotEnoughQuota, rst.Message),
+			Response: pb.CreateResponse(errQuota.Code, errQuota.Detail),
 		}, nil
 	}
 
