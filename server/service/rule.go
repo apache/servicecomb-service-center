@@ -54,16 +54,15 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 	rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
 	errQuota := rst.Err
 	if errQuota != nil {
-		if errQuota.InternalError() {
-			util.Logger().Errorf(errQuota, "check can apply resource failed.%s", in.ServiceId)
-			return &pb.AddServiceRulesResponse{
-				Response: pb.CreateResponse(errQuota.Code, errQuota.Error()),
-			}, errQuota
-		}
 		util.Logger().Errorf(errQuota, "")
-		return &pb.AddServiceRulesResponse{
+		response := &pb.AddServiceRulesResponse{
 			Response: pb.CreateResponse(errQuota.Code, errQuota.Detail),
-		}, nil
+		}
+		if errQuota.InternalError() {
+			response.Response = pb.CreateResponse(errQuota.Code, errQuota.Error())
+			return response, errQuota
+		}
+		return response, nil
 	}
 
 

@@ -266,7 +266,8 @@ func (s *MicroServiceService) ModifySchemas(ctx context.Context, request *pb.Mod
 		resp := &pb.ModifySchemasResponse{
 			Response: pb.CreateResponse(respErr.Code, respErr.Detail),
 		}
-		if respErr.StatusCode() == http.StatusInternalServerError {
+		if respErr.InternalError() {
+			resp.Response = pb.CreateResponse(respErr.Code, respErr.Error())
 			return resp, respErr
 		}
 		return resp, nil
@@ -485,7 +486,7 @@ func (s *MicroServiceService) ModifySchema(ctx context.Context, request *pb.Modi
 		resp := &pb.ModifySchemaResponse{
 			Response: pb.CreateResponse(respErr.Code, respErr.Detail),
 		}
-		if respErr.StatusCode() == http.StatusInternalServerError {
+		if respErr.InternalError() {
 			return resp, respErr
 		}
 		return resp, nil

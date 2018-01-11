@@ -104,7 +104,8 @@ func ResourceLimitHandler(ctx context.Context, res *quota.ApplyQuotaRes) *quota.
 		}
 		return quota.NewApplyQuotaResult(nil, nil)
 	default:
-		return quota.NewApplyQuotaResult(nil, scerr.NewError(scerr.ErrNotDefineQuotaType, ""))
+		mes := fmt.Sprintf("not define quota type %s", res.QuotaType)
+		return quota.NewApplyQuotaResult(nil, scerr.NewError(scerr.ErrInternal, mes))
 	}
 
 	resp, err := indexer.Search(ctx,

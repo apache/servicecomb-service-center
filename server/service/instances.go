@@ -116,16 +116,15 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 				defer reporter.Close()
 			}
 			if err != nil {
-				if err.InternalError() {
-					util.Logger().Errorf(err, "register instance failed, service %s, operator %s: check apply quota failed.", instanceFlag, remoteIP)
-					return &pb.RegisterInstanceResponse{
-						Response: pb.CreateResponse(scerr.ErrUnavailableQuota, err.Error()),
-					}, err
+				util.Logger().Errorf(err, "register instance failed, service %s, operator %s: no quota apply.", instanceFlag, remoteIP)
+				response := &pb.RegisterInstanceResponse{
+					Response: pb.CreateResponse(err.Code, err.Detail),
 				}
-				util.Logger().Errorf(nil, "register instance failed, service %s, operator %s: no quota apply.", instanceFlag, remoteIP)
-				return &pb.RegisterInstanceResponse{
-					Response: pb.CreateResponse(scerr.ErrNotEnoughQuota, err.Detail),
-				}, nil
+				if err.InternalError() {
+					response.Response = pb.CreateResponse(err.Code, err.Error())
+					return response, err
+				}
+				return response, nil
 			}
 		}
 	}
@@ -541,7 +540,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 	}
 
 	domainProject := util.ParseDomainProject(ctx)
-	findFlag := fmt.Sprintf("consumer %s --> provider %s/%s/%s", in.ConsumerServiceId, in.AppId, in.ServiceName, in.VersionRule)
+	findFlag := fmt.Sprintf("consumer %s find provider %s/%s/%s", in.ConsumerServiceId, in.AppId, in.ServiceName, in.VersionRule)
 
 	service, err := serviceUtil.GetService(ctx, domainProject, in.ConsumerServiceId)
 	if err != nil {
@@ -585,9 +584,10 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		}, err
 	}
 	if len(ids) == 0 {
-		util.Logger().Errorf(nil, "find instance failed, %s: no provider matched.", findFlag)
+		mes := fmt.Sprintf("no provider matched, %s", findFlag)
+		util.Logger().Errorf(nil, "find instance failed, %s", mes)
 		return &pb.FindInstancesResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "No provider matched."),
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists, mes),
 		}, nil
 	}
 
@@ -609,7 +609,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		}
 	}
 
-	//维护version的规则,servicename 可能是别名，所以重新获取
+	//维护version的规则,service name 可能是别名，所以重新获取
 	providerService, err := serviceUtil.GetService(ctx, provider.Tenant, ids[0])
 	if providerService == nil {
 		util.Logger().Errorf(err, "find instance failed, %s: no provider matched.", findFlag)
