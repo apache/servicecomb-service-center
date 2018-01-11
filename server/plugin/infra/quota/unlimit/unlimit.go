@@ -42,7 +42,7 @@ func New() mgr.PluginInstance {
 }
 
 func (q *Unlimit) Apply4Quotas(ctx context.Context, res *quota.ApplyQuotaRes) *quota.ApplyQuotaResult {
-	return nil
+	return quota.NewApplyQuotaResult(nil, nil)
 }
 
 func (q *Unlimit) RemandQuotas(ctx context.Context, quotaType quota.ResourceType) {
