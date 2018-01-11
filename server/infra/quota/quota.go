@@ -51,7 +51,7 @@ func NewApplyQuotaRes(quotaType ResourceType, domainProject, serviceId string, q
 }
 
 type QuotaManager interface {
-	Apply4Quotas(ctx context.Context, req *ApplyQuotaRes) *ApplyQuotaResult
+	Apply4Quotas(ctx context.Context, res *ApplyQuotaRes) *ApplyQuotaResult
 	RemandQuotas(ctx context.Context, quotaType ResourceType)
 }
 

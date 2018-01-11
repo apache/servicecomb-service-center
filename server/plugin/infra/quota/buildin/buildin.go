@@ -136,9 +136,9 @@ type GetCurUsedNum func(context.Context, *QuotaApplyData) (int64, error)
 type GetLimitQuota func() int64
 
 type QuotaCheckResult struct {
-	isOk   bool
-	curNum int64
-	err    error
+	IsOk   bool
+	CurNum int64
+	Err    error
 }
 
 func NewQuotaCheckResult(isOk bool, curNum int64, err error) QuotaCheckResult {
@@ -163,14 +163,14 @@ func quotaCheck(ctx context.Context, data *QuotaApplyData, getLimitQuota GetLimi
 
 func instanceQuotaCheck(ctx context.Context, data *QuotaApplyData) *quota.ApplyQuotaResult {
 	rst := quotaCheck(ctx, data, getInstanceMaxLimit, getAllInstancesNum)
-	err := rst.err
-	if rst.err != nil {
-		util.Logger().Errorf(rst.err, "instance quota check failed")
+	err := rst.Err
+	if rst.Err != nil {
+		util.Logger().Errorf(rst.Err, "instance quota check failed")
 		return quota.NewApplyQuotaResult(nil, scerr.NewError(scerr.ErrInternal, err.Error()))
 	}
-	if !rst.isOk {
+	if !rst.IsOk {
 		mes := fmt.Sprintf("no quota to create instance, max num is %d, curNum is %d, apply num is %d",
-			getInstanceMaxLimit(), rst.curNum, data.quotaSize)
+			getInstanceMaxLimit(), rst.CurNum, data.quotaSize)
 		util.Logger().Errorf(nil, mes)
 		return quota.NewApplyQuotaResult(nil, scerr.NewError(scerr.ErrNotEnoughQuota, mes))
 	}
@@ -199,14 +199,14 @@ func getAllInstancesNum(ctx context.Context, data *QuotaApplyData) (int64, error
 
 func serviceQuotaCheck(ctx context.Context, data *QuotaApplyData) *quota.ApplyQuotaResult {
 	rst := quotaCheck(ctx, data, getServiceMaxLimit, getAllServicesNum)
-	err := rst.err
+	err := rst.Err
 	if err != nil {
 		util.Logger().Errorf(err, "service quota check failed")
 		return quota.NewApplyQuotaResult(nil, scerr.NewError(scerr.ErrInternal, err.Error()))
 	}
-	if !rst.isOk {
+	if !rst.IsOk {
 		mes := fmt.Sprintf("no quota to create service, max quota is %d, current used quota is %d, apply quota num is %d",
-			getServiceMaxLimit(), rst.curNum, data.quotaSize)
+			getServiceMaxLimit(), rst.CurNum, data.quotaSize)
 		util.Logger().Errorf(err, mes)
 		return quota.NewApplyQuotaResult(nil, scerr.NewError(scerr.ErrNotEnoughQuota, mes))
 	}
