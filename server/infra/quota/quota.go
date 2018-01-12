@@ -34,15 +34,15 @@ func NewApplyQuotaResult(reporter QuotaReporter, err *scerr.Error) *ApplyQuotaRe
 	}
 }
 
-type ApplyQuotaRes struct {
+type ApplyQuotaResource struct {
 	QuotaType     ResourceType
 	DomainProject string
 	ServiceId     string
 	QuotaSize     int64
 }
 
-func NewApplyQuotaRes(quotaType ResourceType, domainProject, serviceId string, quotaSize int64) *ApplyQuotaRes {
-	return &ApplyQuotaRes{
+func NewApplyQuotaResource(quotaType ResourceType, domainProject, serviceId string, quotaSize int64) *ApplyQuotaResource {
+	return &ApplyQuotaResource{
 		quotaType,
 		domainProject,
 		serviceId,
@@ -51,7 +51,7 @@ func NewApplyQuotaRes(quotaType ResourceType, domainProject, serviceId string, q
 }
 
 type QuotaManager interface {
-	Apply4Quotas(ctx context.Context, res *ApplyQuotaRes) *ApplyQuotaResult
+	Apply4Quotas(ctx context.Context, res *ApplyQuotaResource) *ApplyQuotaResult
 	RemandQuotas(ctx context.Context, quotaType ResourceType)
 }
 

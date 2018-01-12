@@ -192,7 +192,7 @@ func checkQuota(ctx context.Context, domainProject string) (quota.QuotaReporter,
 		util.Logger().Infof("it is service-center")
 		return nil, nil
 	}
-	res := quota.NewApplyQuotaRes(quota.MicroServiceQuotaType, domainProject, "", 1)
+	res := quota.NewApplyQuotaResource(quota.MicroServiceQuotaType, domainProject, "", 1)
 	rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
 	return rst.Reporter, rst.Err
 }

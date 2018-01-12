@@ -108,7 +108,7 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	var reporter quota.QuotaReporter
 	if len(oldInstanceId) == 0 {
 		if !apt.IsSCInstance(ctx) {
-			res := quota.NewApplyQuotaRes(quota.MicroServiceInstanceQuotaType, domainProject, in.Instance.ServiceId, 1)
+			res := quota.NewApplyQuotaResource(quota.MicroServiceInstanceQuotaType, domainProject, in.Instance.ServiceId, 1)
 			rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
 			reporter = rst.Reporter
 			err := rst.Err

@@ -41,7 +41,7 @@ func New() mgr.PluginInstance {
 	return &Unlimit{}
 }
 
-func (q *Unlimit) Apply4Quotas(ctx context.Context, res *quota.ApplyQuotaRes) *quota.ApplyQuotaResult {
+func (q *Unlimit) Apply4Quotas(ctx context.Context, res *quota.ApplyQuotaResource) *quota.ApplyQuotaResult {
 	return quota.NewApplyQuotaResult(nil, nil)
 }
 

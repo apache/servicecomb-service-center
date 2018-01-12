@@ -53,7 +53,7 @@ type BuildInQuota struct {
 }
 
 //申请配额sourceType serviceinstance servicetype
-func (q *BuildInQuota) Apply4Quotas(ctx context.Context, res *quota.ApplyQuotaRes) *quota.ApplyQuotaResult {
+func (q *BuildInQuota) Apply4Quotas(ctx context.Context, res *quota.ApplyQuotaResource) *quota.ApplyQuotaResult {
 	data := &QuotaApplyData{
 		domain:    strings.Split(res.DomainProject, "/")[0],
 		quotaSize: res.QuotaSize,
@@ -72,7 +72,7 @@ func (q *BuildInQuota) Apply4Quotas(ctx context.Context, res *quota.ApplyQuotaRe
 func (q *BuildInQuota) RemandQuotas(ctx context.Context, quotaType quota.ResourceType) {
 }
 
-func ResourceLimitHandler(ctx context.Context, res *quota.ApplyQuotaRes) *quota.ApplyQuotaResult {
+func ResourceLimitHandler(ctx context.Context, res *quota.ApplyQuotaResource) *quota.ApplyQuotaResult {
 	var key string
 	var max int64 = 0
 	var indexer *store.Indexer

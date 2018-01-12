@@ -56,7 +56,7 @@ func (s *MicroServiceService) AddTags(ctx context.Context, in *pb.AddServiceTags
 	}
 
 	addTags := in.GetTags()
-	res := quota.NewApplyQuotaRes(quota.TagQuotaType, domainProject, in.ServiceId, int64(len(addTags)))
+	res := quota.NewApplyQuotaResource(quota.TagQuotaType, domainProject, in.ServiceId, int64(len(addTags)))
 	rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
 	errQuota := rst.Err
 	if errQuota != nil {

@@ -323,7 +323,7 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 	pluginOps := make([]registry.PluginOp, 0)
 	if service.Environment == pb.ENV_PROD {
 		if len(service.Schemas) == 0 {
-			res := quota.NewApplyQuotaRes(quota.SchemaQuotaType, domainProject, serviceId, int64(len(schemas)))
+			res := quota.NewApplyQuotaResource(quota.SchemaQuotaType, domainProject, serviceId, int64(len(schemas)))
 			rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
 			errQuota := rst.Err
 			if errQuota != nil {
@@ -374,7 +374,7 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 
 		quotaSize := len(needAddSchemas) - len(needDeleteSchemas)
 		if quotaSize > 0 {
-			res := quota.NewApplyQuotaRes(quota.SchemaQuotaType, domainProject, serviceId, int64(quotaSize))
+			res := quota.NewApplyQuotaResource(quota.SchemaQuotaType, domainProject, serviceId, int64(quotaSize))
 			rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
 			err := rst.Err
 			if err != nil {
@@ -530,7 +530,7 @@ func (s *MicroServiceService) canModifySchema(ctx context.Context, domainProject
 		return scerr.NewError(scerr.ErrInvalidParams, err.Error())
 	}
 
-	res := quota.NewApplyQuotaRes(quota.SchemaQuotaType, domainProject, serviceId, 1)
+	res := quota.NewApplyQuotaResource(quota.SchemaQuotaType, domainProject, serviceId, 1)
 	rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
 	errQuota := rst.Err
 	if errQuota != nil {

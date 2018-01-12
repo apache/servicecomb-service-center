@@ -50,7 +50,7 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Service does not exist."),
 		}, nil
 	}
-	res := quota.NewApplyQuotaRes(quota.RuleQuotaType, domainProject, in.ServiceId, int64(len(in.Rules)))
+	res := quota.NewApplyQuotaResource(quota.RuleQuotaType, domainProject, in.ServiceId, int64(len(in.Rules)))
 	rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
 	errQuota := rst.Err
 	if errQuota != nil {
