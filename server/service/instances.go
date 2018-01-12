@@ -118,10 +118,9 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 			if err != nil {
 				util.Logger().Errorf(err, "register instance failed, service %s, operator %s: no quota apply.", instanceFlag, remoteIP)
 				response := &pb.RegisterInstanceResponse{
-					Response: pb.CreateResponse(err.Code, err.Detail),
+					Response: pb.CreateResponseWithSCErr(err),
 				}
 				if err.InternalError() {
-					response.Response = pb.CreateResponse(err.Code, err.Error())
 					return response, err
 				}
 				return response, nil
@@ -422,7 +421,7 @@ func (s *InstanceService) GetOneInstance(ctx context.Context, in *pb.GetOneInsta
 	if checkErr != nil {
 		util.Logger().Errorf(checkErr, "get instance failed: pre check failed.")
 		resp := &pb.GetOneInstanceResponse{
-			Response: pb.CreateResponse(checkErr.Code, checkErr.Detail),
+			Response: pb.CreateResponseWithSCErr(checkErr),
 		}
 		if checkErr.StatusCode() == http.StatusInternalServerError {
 			return resp, checkErr
@@ -508,7 +507,7 @@ func (s *InstanceService) GetInstances(ctx context.Context, in *pb.GetInstancesR
 	if checkErr != nil {
 		util.Logger().Errorf(checkErr, "get instances failed: pre check failed.")
 		resp := &pb.GetInstancesResponse{
-			Response: pb.CreateResponse(checkErr.Code, checkErr.Detail),
+			Response: pb.CreateResponseWithSCErr(checkErr),
 		}
 		if checkErr.StatusCode() == http.StatusInternalServerError {
 			return resp, checkErr

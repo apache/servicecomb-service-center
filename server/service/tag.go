@@ -62,10 +62,9 @@ func (s *MicroServiceService) AddTags(ctx context.Context, in *pb.AddServiceTags
 	if errQuota != nil {
 		util.Logger().Errorf(errQuota, "add tag info failed, check resource num failed, %s", in.ServiceId)
 		response := &pb.AddServiceTagsResponse{
-			Response: pb.CreateResponse(errQuota.Code, errQuota.Detail),
+			Response: pb.CreateResponseWithSCErr(errQuota),
 		}
 		if errQuota.InternalError() {
-			response.Response = pb.CreateResponse(errQuota.Code, errQuota.Error())
 			return response, errQuota
 		}
 		return response, nil

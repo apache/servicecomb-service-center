@@ -56,10 +56,9 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 	if errQuota != nil {
 		util.Logger().Errorf(errQuota, "")
 		response := &pb.AddServiceRulesResponse{
-			Response: pb.CreateResponse(errQuota.Code, errQuota.Detail),
+			Response: pb.CreateResponseWithSCErr(errQuota),
 		}
 		if errQuota.InternalError() {
-			response.Response = pb.CreateResponse(errQuota.Code, errQuota.Error())
 			return response, errQuota
 		}
 		return response, nil

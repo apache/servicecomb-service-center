@@ -264,10 +264,9 @@ func (s *MicroServiceService) ModifySchemas(ctx context.Context, request *pb.Mod
 	respErr := modifySchemas(ctx, domainProject, service, request.Schemas)
 	if respErr != nil {
 		resp := &pb.ModifySchemasResponse{
-			Response: pb.CreateResponse(respErr.Code, respErr.Detail),
+			Response: pb.CreateResponseWithSCErr(respErr),
 		}
 		if respErr.InternalError() {
-			resp.Response = pb.CreateResponse(respErr.Code, respErr.Error())
 			return resp, respErr
 		}
 		return resp, nil
@@ -484,7 +483,7 @@ func (s *MicroServiceService) ModifySchema(ctx context.Context, request *pb.Modi
 	respErr := s.canModifySchema(ctx, domainProject, request)
 	if respErr != nil {
 		resp := &pb.ModifySchemaResponse{
-			Response: pb.CreateResponse(respErr.Code, respErr.Detail),
+			Response: pb.CreateResponseWithSCErr(respErr),
 		}
 		if respErr.InternalError() {
 			return resp, respErr
@@ -504,7 +503,7 @@ func (s *MicroServiceService) ModifySchema(ctx context.Context, request *pb.Modi
 	if err != nil {
 		util.Logger().Errorf(err, "modify schema failed, serviceId %s, schemaId %s", serviceId, schemaId)
 		resp := &pb.ModifySchemaResponse{
-			Response: pb.CreateResponse(err.Code, err.Detail),
+			Response: pb.CreateResponseWithSCErr(err),
 		}
 		if err.StatusCode() == http.StatusInternalServerError {
 			return resp, err

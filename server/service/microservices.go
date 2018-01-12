@@ -103,10 +103,9 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 		util.Logger().Errorf(quotaErr, "create micro-service failed, %s: check service failed before create. operator: %s",
 			serviceFlag, remoteIP)
 		resp := &pb.CreateServiceResponse{
-			Response: pb.CreateResponse(quotaErr.Code, quotaErr.Detail),
+			Response: pb.CreateResponseWithSCErr(quotaErr),
 		}
 		if quotaErr.StatusCode() == http.StatusInternalServerError {
-			resp.Response = pb.CreateResponse(quotaErr.Code, quotaErr.Error())
 			return resp, quotaErr
 		}
 		return resp, nil
