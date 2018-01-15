@@ -32,7 +32,6 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
-	"net/http"
 	"strconv"
 	"time"
 	"errors"
@@ -105,7 +104,7 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 		resp := &pb.CreateServiceResponse{
 			Response: pb.CreateResponseWithSCErr(quotaErr),
 		}
-		if quotaErr.StatusCode() == http.StatusInternalServerError {
+		if quotaErr.InternalError() {
 			return resp, quotaErr
 		}
 		return resp, nil

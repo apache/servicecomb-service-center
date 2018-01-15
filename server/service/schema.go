@@ -29,7 +29,6 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
-	"net/http"
 	"strings"
 )
 
@@ -505,7 +504,7 @@ func (s *MicroServiceService) ModifySchema(ctx context.Context, request *pb.Modi
 		resp := &pb.ModifySchemaResponse{
 			Response: pb.CreateResponseWithSCErr(err),
 		}
-		if err.StatusCode() == http.StatusInternalServerError {
+		if err.InternalError() {
 			return resp, err
 		}
 		return resp, nil

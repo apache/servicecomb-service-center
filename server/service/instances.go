@@ -33,7 +33,6 @@ import (
 	"github.com/gorilla/websocket"
 	"golang.org/x/net/context"
 	"math"
-	"net/http"
 	"strconv"
 	"time"
 )
@@ -423,7 +422,7 @@ func (s *InstanceService) GetOneInstance(ctx context.Context, in *pb.GetOneInsta
 		resp := &pb.GetOneInstanceResponse{
 			Response: pb.CreateResponseWithSCErr(checkErr),
 		}
-		if checkErr.StatusCode() == http.StatusInternalServerError {
+		if checkErr.InternalError() {
 			return resp, checkErr
 		}
 		return resp, nil
@@ -509,7 +508,7 @@ func (s *InstanceService) GetInstances(ctx context.Context, in *pb.GetInstancesR
 		resp := &pb.GetInstancesResponse{
 			Response: pb.CreateResponseWithSCErr(checkErr),
 		}
-		if checkErr.StatusCode() == http.StatusInternalServerError {
+		if checkErr.InternalError() {
 			return resp, checkErr
 		}
 		return resp, nil
