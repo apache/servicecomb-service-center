@@ -19,10 +19,39 @@ package quota
 import (
 	"fmt"
 	"golang.org/x/net/context"
+	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 )
 
+type ApplyQuotaResult struct {
+	Reporter QuotaReporter
+	Err      *scerr.Error
+}
+
+func NewApplyQuotaResult(reporter QuotaReporter, err *scerr.Error) *ApplyQuotaResult {
+	return &ApplyQuotaResult{
+		reporter,
+		err,
+	}
+}
+
+type ApplyQuotaResource struct {
+	QuotaType     ResourceType
+	DomainProject string
+	ServiceId     string
+	QuotaSize     int64
+}
+
+func NewApplyQuotaResource(quotaType ResourceType, domainProject, serviceId string, quotaSize int64) *ApplyQuotaResource {
+	return &ApplyQuotaResource{
+		quotaType,
+		domainProject,
+		serviceId,
+		quotaSize,
+	}
+}
+
 type QuotaManager interface {
-	Apply4Quotas(ctx context.Context, quotaType ResourceType, domainProject string, serviceId string, quotaSize int16) (QuotaReporter, bool, error)
+	Apply4Quotas(ctx context.Context, res *ApplyQuotaResource) *ApplyQuotaResult
 	RemandQuotas(ctx context.Context, quotaType ResourceType)
 }
 

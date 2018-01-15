@@ -33,7 +33,6 @@ import (
 	"github.com/gorilla/websocket"
 	"golang.org/x/net/context"
 	"math"
-	"net/http"
 	"strconv"
 	"time"
 )
@@ -108,23 +107,22 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	var reporter quota.QuotaReporter
 	if len(oldInstanceId) == 0 {
 		if !apt.IsSCInstance(ctx) {
-			var err error
-			var ok bool
-			reporter, ok, err = plugin.Plugins().Quota().Apply4Quotas(ctx, quota.MicroServiceInstanceQuotaType, domainProject, in.Instance.ServiceId, 1)
+			res := quota.NewApplyQuotaResource(quota.MicroServiceInstanceQuotaType, domainProject, in.Instance.ServiceId, 1)
+			rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+			reporter = rst.Reporter
+			err := rst.Err
 			if reporter != nil {
 				defer reporter.Close()
 			}
 			if err != nil {
-				util.Logger().Errorf(err, "register instance failed, service %s, operator %s: check apply quota failed.", instanceFlag, remoteIP)
-				return &pb.RegisterInstanceResponse{
-					Response: pb.CreateResponse(scerr.ErrUnavailableQuota, err.Error()),
-				}, err
-			}
-			if !ok {
-				util.Logger().Errorf(nil, "register instance failed, service %s, operator %s: no quota apply.", instanceFlag, remoteIP)
-				return &pb.RegisterInstanceResponse{
-					Response: pb.CreateResponse(scerr.ErrNotEnoughQuota, "No quota to create instance."),
-				}, nil
+				util.Logger().Errorf(err, "register instance failed, service %s, operator %s: no quota apply.", instanceFlag, remoteIP)
+				response := &pb.RegisterInstanceResponse{
+					Response: pb.CreateResponseWithSCErr(err),
+				}
+				if err.InternalError() {
+					return response, err
+				}
+				return response, nil
 			}
 		}
 	}
@@ -422,9 +420,9 @@ func (s *InstanceService) GetOneInstance(ctx context.Context, in *pb.GetOneInsta
 	if checkErr != nil {
 		util.Logger().Errorf(checkErr, "get instance failed: pre check failed.")
 		resp := &pb.GetOneInstanceResponse{
-			Response: pb.CreateResponse(checkErr.Code, checkErr.Detail),
+			Response: pb.CreateResponseWithSCErr(checkErr),
 		}
-		if checkErr.StatusCode() == http.StatusInternalServerError {
+		if checkErr.InternalError() {
 			return resp, checkErr
 		}
 		return resp, nil
@@ -508,9 +506,9 @@ func (s *InstanceService) GetInstances(ctx context.Context, in *pb.GetInstancesR
 	if checkErr != nil {
 		util.Logger().Errorf(checkErr, "get instances failed: pre check failed.")
 		resp := &pb.GetInstancesResponse{
-			Response: pb.CreateResponse(checkErr.Code, checkErr.Detail),
+			Response: pb.CreateResponseWithSCErr(checkErr),
 		}
-		if checkErr.StatusCode() == http.StatusInternalServerError {
+		if checkErr.InternalError() {
 			return resp, checkErr
 		}
 		return resp, nil
@@ -540,7 +538,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 	}
 
 	domainProject := util.ParseDomainProject(ctx)
-	findFlag := fmt.Sprintf("consumer %s --> provider %s/%s/%s", in.ConsumerServiceId, in.AppId, in.ServiceName, in.VersionRule)
+	findFlag := fmt.Sprintf("consumer %s find provider %s/%s/%s", in.ConsumerServiceId, in.AppId, in.ServiceName, in.VersionRule)
 
 	service, err := serviceUtil.GetService(ctx, domainProject, in.ConsumerServiceId)
 	if err != nil {
@@ -584,9 +582,10 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		}, err
 	}
 	if len(ids) == 0 {
-		util.Logger().Errorf(nil, "find instance failed, %s: no provider matched.", findFlag)
+		mes := fmt.Sprintf("no provider matched, %s", findFlag)
+		util.Logger().Errorf(nil, "find instance failed, %s", mes)
 		return &pb.FindInstancesResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "No provider matched."),
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists, mes),
 		}, nil
 	}
 
@@ -608,7 +607,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		}
 	}
 
-	//维护version的规则,servicename 可能是别名，所以重新获取
+	//维护version的规则,service name 可能是别名，所以重新获取
 	providerService, err := serviceUtil.GetService(ctx, provider.Tenant, ids[0])
 	if providerService == nil {
 		util.Logger().Errorf(err, "find instance failed, %s: no provider matched.", findFlag)

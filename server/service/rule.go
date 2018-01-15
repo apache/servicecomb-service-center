@@ -50,21 +50,21 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Service does not exist."),
 		}, nil
 	}
-	_, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.RuleQuotaType, domainProject, in.ServiceId, int16(len(in.Rules)))
-	if err != nil {
-		util.Logger().Errorf(err, "check can apply resource failed.%s", in.ServiceId)
-		return &pb.AddServiceRulesResponse{
-			Response: pb.CreateResponse(scerr.ErrUnavailableQuota, err.Error()),
-		}, err
-	}
-	if !ok {
-		util.Logger().Errorf(err, "no size to add tag, max size is 100 for one servivce.%s", in.ServiceId)
-		return &pb.AddServiceRulesResponse{
-			Response: pb.CreateResponse(scerr.ErrNotEnoughQuota, "no size to add tag, max size is 100 for one servivce"),
-		}, nil
+	res := quota.NewApplyQuotaResource(quota.RuleQuotaType, domainProject, in.ServiceId, int64(len(in.Rules)))
+	rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+	errQuota := rst.Err
+	if errQuota != nil {
+		util.Logger().Errorf(errQuota, "")
+		response := &pb.AddServiceRulesResponse{
+			Response: pb.CreateResponseWithSCErr(errQuota),
+		}
+		if errQuota.InternalError() {
+			return response, errQuota
+		}
+		return response, nil
 	}
 
-	opts := []registry.PluginOp{}
+
 	ruleType, _, err := serviceUtil.GetServiceRuleType(ctx, domainProject, in.ServiceId)
 	util.Logger().Debugf("ruleType is %s", ruleType)
 	if err != nil {
@@ -72,7 +72,8 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
-	ruleIds := []string{}
+	ruleIds := make([]string, 0, len(in.Rules))
+	opts := make([]registry.PluginOp, 0, 2*len(in.Rules))
 	for _, rule := range in.Rules {
 		err := apt.Validate(rule)
 		if err != nil {

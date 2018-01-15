@@ -116,6 +116,13 @@ func (e Error) StatusCode() int {
 	return http.StatusBadRequest
 }
 
+func (e Error) InternalError() bool {
+	if e.Code >= 500000 {
+		return true
+	}
+	return false
+}
+
 func (e Error) HttpWrite(w http.ResponseWriter) {
 	status := e.StatusCode()
 	w.Header().Add("X-Response-Status", fmt.Sprint(status))

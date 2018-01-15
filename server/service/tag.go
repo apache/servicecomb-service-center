@@ -56,18 +56,18 @@ func (s *MicroServiceService) AddTags(ctx context.Context, in *pb.AddServiceTags
 	}
 
 	addTags := in.GetTags()
-	_, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.TagQuotaType, domainProject, in.ServiceId, int16(len(addTags)))
-	if err != nil {
-		util.Logger().Errorf(err, "add tag info failed, check resource num failed, %s", in.ServiceId)
-		return &pb.AddServiceTagsResponse{
-			Response: pb.CreateResponse(scerr.ErrUnavailableQuota, "Modify schema info failed, check resource num failed."),
-		}, err
-	}
-	if !ok {
-		util.Logger().Errorf(err, "add tag info failed, reach the max size of tag, %s", in.ServiceId)
-		return &pb.AddServiceTagsResponse{
-			Response: pb.CreateResponse(scerr.ErrNotEnoughQuota, "reach the max size of tag."),
-		}, nil
+	res := quota.NewApplyQuotaResource(quota.TagQuotaType, domainProject, in.ServiceId, int64(len(addTags)))
+	rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+	errQuota := rst.Err
+	if errQuota != nil {
+		util.Logger().Errorf(errQuota, "add tag info failed, check resource num failed, %s", in.ServiceId)
+		response := &pb.AddServiceTagsResponse{
+			Response: pb.CreateResponseWithSCErr(errQuota),
+		}
+		if errQuota.InternalError() {
+			return response, errQuota
+		}
+		return response, nil
 	}
 
 	dataTags, err := serviceUtil.GetTagsUtils(ctx, domainProject, in.ServiceId)

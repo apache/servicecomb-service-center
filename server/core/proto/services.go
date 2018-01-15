@@ -23,6 +23,7 @@ import (
 	"github.com/gorilla/websocket"
 	"golang.org/x/net/context"
 	"strings"
+	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 )
 
 type EventType string
@@ -129,6 +130,13 @@ func CreateResponse(code int32, message string) *Response {
 		Message: message,
 	}
 	return resp
+}
+
+func CreateResponseWithSCErr(err *scerr.Error) *Response {
+	return &Response{
+		Code:    err.Code,
+		Message: err.Detail,
+	}
 }
 
 func KvToResponse(kv *mvccpb.KeyValue) (keys []string, data []byte) {
