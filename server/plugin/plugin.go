@@ -18,6 +18,7 @@ package plugin
 
 import (
 	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/plugin"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/auditlog"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/auth"
@@ -28,6 +29,8 @@ import (
 	"github.com/astaxie/beego"
 	"sync"
 )
+
+const BUILDIN = "buildin"
 
 const (
 	STATIC PluginType = iota
@@ -122,6 +125,10 @@ func (pm *PluginManager) Register(p Plugin) {
 	m[p.Name] = &p
 	pm.plugins[p.PName] = m
 	util.Logger().Infof("%s load '%s' plugin named '%s'", p.Type, p.PName, p.Name)
+
+	if p.Type == STATIC && p.PName == BUILDIN {
+		pm.Register(Plugin{DYNAMIC, p.PName, DYNAMIC.String(), p.New})
+	}
 }
 
 func (pm *PluginManager) Get(pn PluginName, name string) *Plugin {
@@ -163,7 +170,7 @@ func (pm *PluginManager) New(pn PluginName) PluginInstance {
 			return nil
 		}
 
-		name := beego.AppConfig.DefaultString(pn.String()+"_plugin", "buildin")
+		name := beego.AppConfig.DefaultString(pn.String()+"_plugin", BUILDIN)
 		p, ok = m[name]
 		if !ok {
 			return nil
@@ -188,7 +195,7 @@ func (pm *PluginManager) existDynamicPlugin(pn PluginName) *Plugin {
 		return nil
 	}
 	for _, p := range m {
-		if p.Type == DYNAMIC {
+		if p.Type == DYNAMIC && plugin.PluginLoader().Exist(p.Name) {
 			return p
 		}
 	}
@@ -225,4 +232,8 @@ func Plugins() *PluginManager {
 
 func RegisterPlugin(p Plugin) {
 	Plugins().Register(p)
+}
+
+func RegisterStaticPlugin(pname PluginName, name string, f func() PluginInstance) {
+	Plugins().Register(Plugin{STATIC, pname, name, f})
 }

@@ -28,26 +28,27 @@ import (
 )
 
 var (
-	pluginManager PluginManager
-	once          sync.Once
+	loader   Loader
+	once     sync.Once
+	regex, _ = regexp.Compile(`([A-Za-z0-9_.-]+)_plugin.so$`)
 )
 
-type PluginManager struct {
+type Loader struct {
 	Dir     string
 	Plugins map[string]*plugin.Plugin
+	mux     sync.RWMutex
 }
 
-func (pm *PluginManager) Init() {
+func (pm *Loader) Init() {
 	pm.Plugins = make(map[string]*plugin.Plugin)
 
 	err := pm.ReloadPlugins()
-
 	if len(pm.Plugins) == 0 {
 		util.Logger().Warnf(err, "no any plugin has been loaded.")
 	}
 }
 
-func (pm *PluginManager) ReloadPlugins() error {
+func (pm *Loader) ReloadPlugins() error {
 	dir := os.ExpandEnv(pm.Dir)
 	if len(dir) == 0 {
 		dir, _ = os.Getwd()
@@ -61,35 +62,35 @@ func (pm *PluginManager) ReloadPlugins() error {
 		return err
 	}
 
-	nameRegex := `([A-Za-z0-9_.-]+)_plugin.so$`
-	regex, err := regexp.Compile(nameRegex)
-	if err != nil {
-		return err
-	}
-
 	for _, file := range files {
 		if !file.Mode().IsRegular() {
 			continue
 		}
+
 		submatchs := regex.FindStringSubmatch(file.Name())
-		if len(submatchs) >= 2 {
-			// golang 1.8+ feature
-			pluginFileFullPath := filepath.Join(dir, file.Name())
-			p, err := plugin.Open(pluginFileFullPath)
-			util.Logger().Debugf("load plugin '%s'. path: %s, result: %s",
-				submatchs[1], pluginFileFullPath, err)
-			if err != nil {
-				return fmt.Errorf("load plugin '%s' error for %s", submatchs[1], err.Error())
-			}
-			util.Logger().Infof("load plugin '%s' successfully.", submatchs[1])
-			pm.Plugins[submatchs[1]] = p
+		if len(submatchs) < 2 {
+			continue
 		}
+
+		// golang 1.8+ feature
+		pluginFileFullPath := filepath.Join(dir, file.Name())
+		p, err := plugin.Open(pluginFileFullPath)
+		if err != nil {
+			return fmt.Errorf("load plugin '%s' error for %s", submatchs[1], err.Error())
+		}
+		util.Logger().Infof("load plugin '%s' successfully.", submatchs[1])
+
+		pm.mux.Lock()
+		pm.Plugins[submatchs[1]] = p
+		pm.mux.Unlock()
 	}
 	return nil
 }
 
-func (pm *PluginManager) Find(pluginName, funcName string) (plugin.Symbol, error) {
+func (pm *Loader) Find(pluginName, funcName string) (plugin.Symbol, error) {
+	pm.mux.RLock()
 	p, ok := pm.Plugins[pluginName]
+	pm.mux.RUnlock()
 	if !ok {
 		return nil, fmt.Errorf("can not find plugin '%s'.", pluginName)
 	}
@@ -100,19 +101,26 @@ func (pm *PluginManager) Find(pluginName, funcName string) (plugin.Symbol, error
 	return f, nil
 }
 
-func SetPluginDir(dir string) {
-	pluginManager.Dir = dir
+func (pm *Loader) Exist(pluginName string) bool {
+	pm.mux.RLock()
+	_, ok := pm.Plugins[pluginName]
+	pm.mux.RUnlock()
+	return ok
 }
 
-func GetPluginManager() *PluginManager {
-	once.Do(pluginManager.Init)
-	return &pluginManager
+func SetPluginDir(dir string) {
+	loader.Dir = dir
+}
+
+func PluginLoader() *Loader {
+	once.Do(loader.Init)
+	return &loader
 }
 
 func Reload() error {
-	return GetPluginManager().ReloadPlugins()
+	return PluginLoader().ReloadPlugins()
 }
 
 func FindFunc(pluginName, funcName string) (plugin.Symbol, error) {
-	return GetPluginManager().Find(pluginName, funcName)
+	return PluginLoader().Find(pluginName, funcName)
 }
