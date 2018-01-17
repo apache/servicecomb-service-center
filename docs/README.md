@@ -7,3 +7,5 @@
 #### [Contribution Guide](/docs/contribution.md) 
 
 #### [Docker Image Guide](/docs/create-docker-image.md) 
+
+#### [Deploy Service-Center in Cluster](/docs/sc-cluster.md)
