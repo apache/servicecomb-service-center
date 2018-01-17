@@ -102,6 +102,7 @@ cse:
   service:
     registry:
       address: "http://10.12.0.1:30100, http://10.12.0.2:30100"
+      autodiscovery: true
 ```
 or 
 ```
@@ -109,6 +110,7 @@ cse:
   service:
     registry:
       address: http://10.12.0.1:30100
+      autodiscovery: true
 ```
 In both the cases sdk will be able to discover all the instances of SC in cluster.
 
