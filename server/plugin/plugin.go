@@ -27,15 +27,11 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/security"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/uuid"
 	"github.com/astaxie/beego"
+	pg "plugin"
 	"sync"
 )
 
 const BUILDIN = "buildin"
-
-const (
-	STATIC PluginType = iota
-	DYNAMIC
-)
 
 const (
 	UUID PluginName = iota
@@ -62,15 +58,6 @@ func init() {
 	pluginMgr.Initialize()
 }
 
-type PluginType int
-
-func (pt PluginType) String() string {
-	if pt == DYNAMIC {
-		return "dynamic"
-	}
-	return "static"
-}
-
 type PluginName int
 
 func (pn PluginName) String() string {
@@ -81,7 +68,6 @@ func (pn PluginName) String() string {
 }
 
 type Plugin struct {
-	Type  PluginType
 	PName PluginName
 	Name  string
 	New   func() PluginInstance
@@ -124,11 +110,7 @@ func (pm *PluginManager) Register(p Plugin) {
 	}
 	m[p.Name] = &p
 	pm.plugins[p.PName] = m
-	util.Logger().Infof("%s load '%s' plugin named '%s'", p.Type, p.PName, p.Name)
-
-	if p.Type == STATIC && p.PName == BUILDIN {
-		pm.Register(Plugin{DYNAMIC, p.PName, DYNAMIC.String(), p.New})
-	}
+	util.Logger().Infof("load '%s' plugin named '%s'", p.PName, p.Name)
 }
 
 func (pm *PluginManager) Get(pn PluginName, name string) *Plugin {
@@ -160,9 +142,13 @@ func (pm *PluginManager) Instance(pn PluginName) PluginInstance {
 }
 
 func (pm *PluginManager) New(pn PluginName) PluginInstance {
-	var f func() PluginInstance
+	var (
+		title string = "static"
+		f     func() PluginInstance
+	)
 	p := pm.existDynamicPlugin(pn)
 	if p != nil {
+		title = "dynamic"
 		f = p.New
 	} else {
 		m, ok := pm.plugins[pn]
@@ -178,7 +164,7 @@ func (pm *PluginManager) New(pn PluginName) PluginInstance {
 
 		f = p.New
 	}
-	util.Logger().Infof("new '%s' plugin '%s' instance", p.PName, p.Name)
+	util.Logger().Infof("new '%s' instance from '%s' %s plugin", p.Name, p.PName, title)
 	return f()
 }
 
@@ -195,8 +181,8 @@ func (pm *PluginManager) existDynamicPlugin(pn PluginName) *Plugin {
 		return nil
 	}
 	for _, p := range m {
-		if p.Type == DYNAMIC && plugin.PluginLoader().Exist(p.Name) {
-			return p
+		if plugin.PluginLoader().Exist(p.Name) {
+			return m[BUILDIN]
 		}
 	}
 	return nil
@@ -234,6 +220,14 @@ func RegisterPlugin(p Plugin) {
 	Plugins().Register(p)
 }
 
-func RegisterStaticPlugin(pname PluginName, name string, f func() PluginInstance) {
-	Plugins().Register(Plugin{STATIC, pname, name, f})
+func DynamicPluginFunc(pn PluginName, funcName string) pg.Symbol {
+	if p := Plugins().existDynamicPlugin(pn); p != nil {
+		return nil
+	}
+
+	f, err := plugin.FindFunc(pn.String(), funcName)
+	if err != nil {
+		util.Logger().Errorf(err, "plugin '%s': not implemented function '%s'.", pn, funcName)
+	}
+	return f
 }

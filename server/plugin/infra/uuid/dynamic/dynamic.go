@@ -33,7 +33,7 @@ func init() {
 	serviceIdFunc = findUuidFunc("GetServiceId")
 	instanceIdFunc = findUuidFunc("GetInstanceId")
 
-	mgr.RegisterPlugin(mgr.Plugin{mgr.DYNAMIC, mgr.UUID, "dynamic", New})
+	mgr.RegisterPlugin(mgr.Plugin{mgr.UUID, "dynamic", New})
 }
 
 func buildinUuidFunc() string {

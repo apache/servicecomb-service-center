@@ -85,18 +85,6 @@ func (h *DependencyEventHandler) loop() {
 					retry()
 					continue
 				}
-			case <-time.After(10 * time.Second):
-				key := core.GetServiceDependencyQueueRootKey("")
-				resp, _ := store.Store().DependencyQueue().Search(context.Background(),
-					registry.WithStrKey(key),
-					registry.WithPrefix(),
-					registry.WithCountOnly(),
-					registry.WithCacheOnly())
-				if resp != nil && resp.Count > 0 {
-					util.Logger().Infof("wait for dependency event timed out(10s) and found %d items still in queue",
-						resp.Count)
-					h.signals.Put(context.Background(), struct{}{})
-				}
 			}
 		}
 	})

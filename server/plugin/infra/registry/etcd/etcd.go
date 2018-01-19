@@ -42,7 +42,7 @@ const (
 var clientTLSConfig *tls.Config
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{mgr.STATIC, mgr.REGISTRY, "etcd", NewRegistry})
+	mgr.RegisterPlugin(mgr.Plugin{mgr.REGISTRY, "etcd", NewRegistry})
 }
 
 type EtcdClient struct {

@@ -21,13 +21,13 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
+	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
 	"strings"
-	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 )
 
 const (
@@ -42,7 +42,7 @@ func init() {
 	core.SchemaIdRule.Length = SCHEMA_NUM_MAX_LIMIT_PER_SERVICE
 	core.TagRule.Length = TAG_NUM_MAX_LIMIT_PER_SERVICE
 
-	mgr.RegisterPlugin(mgr.Plugin{mgr.STATIC, mgr.QUOTA, "buildin", New})
+	mgr.RegisterPlugin(mgr.Plugin{mgr.QUOTA, "buildin", New})
 }
 
 func New() mgr.PluginInstance {
@@ -211,7 +211,7 @@ func serviceQuotaCheck(ctx context.Context, data *QuotaApplyData) *quota.ApplyQu
 		util.Logger().Errorf(err, mes)
 		return quota.NewApplyQuotaResult(nil, scerr.NewError(scerr.ErrNotEnoughQuota, mes))
 	}
-	return quota.NewApplyQuotaResult(nil,nil)
+	return quota.NewApplyQuotaResult(nil, nil)
 }
 
 func getServiceMaxLimit() int64 {

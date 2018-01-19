@@ -32,7 +32,7 @@ func init() {
 	}
 
 	authFunc = f
-	mgr.RegisterPlugin(mgr.Plugin{mgr.DYNAMIC, mgr.AUTH, "dynamic", New})
+	mgr.RegisterPlugin(mgr.Plugin{mgr.AUTH, "dynamic", New})
 }
 
 func findAuthFunc(funcName string) func(r *http.Request) error {

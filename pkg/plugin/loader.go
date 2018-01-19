@@ -33,14 +33,19 @@ var (
 	regex, _ = regexp.Compile(`([A-Za-z0-9_.-]+)_plugin.so$`)
 )
 
+type wrapPlugin struct {
+	p     *plugin.Plugin
+	funcs map[string]plugin.Symbol
+}
+
 type Loader struct {
 	Dir     string
-	Plugins map[string]*plugin.Plugin
+	Plugins map[string]*wrapPlugin
 	mux     sync.RWMutex
 }
 
 func (pm *Loader) Init() {
-	pm.Plugins = make(map[string]*plugin.Plugin)
+	pm.Plugins = make(map[string]*wrapPlugin, 10)
 
 	err := pm.ReloadPlugins()
 	if len(pm.Plugins) == 0 {
@@ -81,7 +86,7 @@ func (pm *Loader) ReloadPlugins() error {
 		util.Logger().Infof("load plugin '%s' successfully.", submatchs[1])
 
 		pm.mux.Lock()
-		pm.Plugins[submatchs[1]] = p
+		pm.Plugins[submatchs[1]] = &wrapPlugin{p, make(map[string]plugin.Symbol, 10)}
 		pm.mux.Unlock()
 	}
 	return nil
@@ -89,15 +94,28 @@ func (pm *Loader) ReloadPlugins() error {
 
 func (pm *Loader) Find(pluginName, funcName string) (plugin.Symbol, error) {
 	pm.mux.RLock()
-	p, ok := pm.Plugins[pluginName]
-	pm.mux.RUnlock()
+	w, ok := pm.Plugins[pluginName]
 	if !ok {
+		pm.mux.RUnlock()
 		return nil, fmt.Errorf("can not find plugin '%s'.", pluginName)
 	}
-	f, err := p.Lookup(funcName)
+
+	f, ok := w.funcs[funcName]
+	if ok {
+		pm.mux.RUnlock()
+		return f, nil
+	}
+	pm.mux.RUnlock()
+
+	pm.mux.Lock()
+	var err error
+	f, err = w.p.Lookup(funcName)
 	if err != nil {
+		pm.mux.Unlock()
 		return nil, err
 	}
+	w.funcs[funcName] = f
+	pm.mux.Unlock()
 	return f, nil
 }
 

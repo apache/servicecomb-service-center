@@ -14,11 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package plugin_test
+package plugin
 
 import (
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/plugin"
 	pg "plugin"
 	"testing"
 )
@@ -30,12 +29,12 @@ func TestLoader_Init(t *testing.T) {
 			t.FailNow()
 		}
 	}()
-	loader := plugin.Loader{}
+	loader := Loader{}
 	loader.Init()
 }
 
 func TestLoader_ReloadPlugins(t *testing.T) {
-	loader := plugin.Loader{}
+	loader := Loader{}
 	loader.Init()
 	err := loader.ReloadPlugins()
 	if err != nil {
@@ -52,7 +51,7 @@ func TestLoader_ReloadPlugins(t *testing.T) {
 }
 
 func TestLoader_Exist(t *testing.T) {
-	loader := plugin.Loader{}
+	loader := Loader{}
 	loader.Init()
 	b := loader.Exist("")
 	if b {
@@ -62,7 +61,7 @@ func TestLoader_Exist(t *testing.T) {
 }
 
 func TestLoader_Find(t *testing.T) {
-	loader := plugin.Loader{}
+	loader := Loader{}
 	loader.Init()
 	f, err := loader.Find("", "")
 	if err == nil || f != nil {
@@ -70,7 +69,7 @@ func TestLoader_Find(t *testing.T) {
 		t.FailNow()
 	}
 
-	loader.Plugins["a"] = &pg.Plugin{}
+	loader.Plugins["a"] = &wrapPlugin{&pg.Plugin{}, make(map[string]pg.Symbol)}
 	f, err = loader.Find("a", "")
 	if err == nil || f != nil {
 		fmt.Printf(`TestLoader_Find failed`)
@@ -79,23 +78,23 @@ func TestLoader_Find(t *testing.T) {
 }
 
 func TestSetPluginDir(t *testing.T) {
-	plugin.SetPluginDir("")
+	SetPluginDir("")
 }
 
 func TestPluginLoader(t *testing.T) {
-	loader := plugin.PluginLoader()
+	loader := PluginLoader()
 	if loader == nil {
 		fmt.Printf(`TestPluginLoader failed`)
 		t.FailNow()
 	}
 
-	err := plugin.Reload()
+	err := Reload()
 	if err != nil {
 		fmt.Printf(`TestPluginLoader Reload failed, %s`, err)
 		t.FailNow()
 	}
 
-	f, err := plugin.FindFunc("", "")
+	f, err := FindFunc("", "")
 	if err == nil || f != nil {
 		fmt.Printf(`TestPluginLoader FindFunc failed`)
 		t.FailNow()

@@ -21,7 +21,7 @@ import (
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{mgr.STATIC, mgr.CIPHER, "buildin", New})
+	mgr.RegisterPlugin(mgr.Plugin{mgr.CIPHER, "buildin", New})
 }
 
 func New() mgr.PluginInstance {
