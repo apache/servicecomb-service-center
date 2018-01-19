@@ -450,15 +450,18 @@ var _ = Describe("'Micro-service' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 
-				By("registerBy is nil")
+				By("framework version is nil")
 				r = &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
 						ServiceName: "framework-test",
 						AppId:       "default",
 						Version:     "1.0.2",
 						Level:       "BACK",
-						Properties:  make(map[string]string),
-						Status:      "UP",
+						Framework: &pb.FrameWorkProperty{
+							Name: "framework",
+						},
+						Properties: make(map[string]string),
+						Status:     "UP",
 					},
 				}
 				resp, err = serviceResource.Create(getContext(), r)
@@ -468,7 +471,7 @@ var _ = Describe("'Micro-service' service", func() {
 				By("status is nil")
 				r = &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
-						ServiceName: "framework-test",
+						ServiceName: "status-test",
 						AppId:       "default",
 						Version:     "1.0.3",
 						Level:       "BACK",
