@@ -19,11 +19,11 @@ package proto
 import (
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/gorilla/websocket"
 	"golang.org/x/net/context"
 	"strings"
-	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 )
 
 type EventType string
@@ -58,12 +58,8 @@ const (
 	ENV_ACCEPT string = "acceptance"
 	ENV_PROD   string = "production"
 
-	REGISTERBY_SDK      string = "SDK"
-	REGISTERBY_PLATFORM string = "PLATFORM"
-	REGISTERBY_SIDECAR  string = "SIDECAR"
-	REGISTERBY_UNKNOWM  string = "UNKNOWN"
-
-	FRAMEWORK_UNKNOWN string = "UNKNOWN"
+	REGISTERBY_SDK     string = "SDK"
+	REGISTERBY_SIDECAR string = "SIDECAR"
 )
 
 type SerivceInstanceCtrlServerEx interface {

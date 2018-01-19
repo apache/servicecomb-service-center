@@ -25,8 +25,9 @@ import (
 )
 
 var (
-	TOO_LONG_SERVICEID   = strings.Repeat("x", 65)
-	TOO_LONG_SERVICENAME = strings.Repeat("x", 129)
+	TOO_LONG_SERVICEID     = strings.Repeat("x", 65)
+	TOO_LONG_SERVICENAME   = strings.Repeat("x", 129)
+	TOO_LONG_FRAMEWORK_VER = strings.Repeat("x", 65)
 )
 
 var _ = Describe("'Micro-service' service", func() {
@@ -384,8 +385,7 @@ var _ = Describe("'Micro-service' service", func() {
 						Version:     "1.0.4",
 						Level:       "BACK",
 						Framework: &pb.FrameWorkProperty{
-							Name:    "framework",
-							Version: "1.0.0-:",
+							Version: TOO_LONG_FRAMEWORK_VER,
 						},
 						Properties: make(map[string]string),
 						Status:     "UP",
@@ -403,8 +403,7 @@ var _ = Describe("'Micro-service' service", func() {
 						Version:     "1.0.5",
 						Level:       "BACK",
 						Framework: &pb.FrameWorkProperty{
-							Name:    "test@$",
-							Version: "1.0.0-",
+							Name: "test@$",
 						},
 						Properties: make(map[string]string),
 						Status:     "UP",

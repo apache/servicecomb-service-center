@@ -70,8 +70,7 @@ func init() {
 	statusRegex, _ := regexp.Compile("^(" + pb.MS_UP + "|" + pb.MS_DOWN + ")*$")
 	serviceIdRegex, _ := regexp.Compile(`^.*$`)
 	aliasRegex, _ := regexp.Compile(`^[a-zA-Z0-9_\-.:]*$`)
-	registerByRegex, _ := regexp.Compile("^(" + util.StringJoin([]string{
-		pb.REGISTERBY_SDK, pb.REGISTERBY_PLATFORM, pb.REGISTERBY_SIDECAR, pb.REGISTERBY_UNKNOWM}, "|") + ")*$")
+	registerByRegex, _ := regexp.Compile("^(" + util.StringJoin([]string{pb.REGISTERBY_SDK, pb.REGISTERBY_SIDECAR}, "|") + ")*$")
 	envRegex, _ := regexp.Compile("^(" + util.StringJoin([]string{
 		pb.ENV_DEV, pb.ENV_TEST, pb.ENV_ACCEPT, pb.ENV_PROD}, "|") + ")*$")
 	// map/slice元素的validator
@@ -106,7 +105,7 @@ func init() {
 
 	ServicePathValidator.AddRule("Path", &validate.ValidateRule{Regexp: pathRegex})
 
-	FrameWKValidator.AddRule("Name", &validate.ValidateRule{Min: 1, Max: 64, Regexp: nameRegex})
+	FrameWKValidator.AddRule("Name", &validate.ValidateRule{Max: 64, Regexp: nameRegex})
 	FrameWKValidator.AddRule("Version", &validate.ValidateRule{Length: 64})
 
 	MicroServiceValidator.AddRules(MicroServiceKeyValidator.GetRules())
@@ -116,7 +115,7 @@ func init() {
 	MicroServiceValidator.AddRule("Schemas", SchemaIdRule)
 	MicroServiceValidator.AddSub("Paths", &ServicePathValidator)
 	MicroServiceValidator.AddRule("Alias", &validate.ValidateRule{Length: 128, Regexp: aliasRegex})
-	MicroServiceValidator.AddRule("RegisterBy", &validate.ValidateRule{Min: 1, Length: 64, Regexp: registerByRegex})
+	MicroServiceValidator.AddRule("RegisterBy", &validate.ValidateRule{Length: 64, Regexp: registerByRegex})
 	MicroServiceValidator.AddSub("Framework", &FrameWKValidator)
 
 	GetMSExistsReqValidator.AddRules(MicroServiceKeyValidator.GetRules())
