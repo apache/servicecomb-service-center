@@ -240,16 +240,18 @@ func LogRotate(path string, MaxFileSize int, MaxBackupCount int) {
 	}
 }
 
+func isSkip(f os.FileInfo) bool{
+	//dir or non write permission,skip
+	return f.IsDir() || (f.Mode() & 0200 == 0000)
+}
+
 //path : where the file will be filtered
 //pat  : regexp pattern to filter the matched file
 func FilterFileList(path, pat string) ([]string, error) {
 	capacity := 10
 	//initialize a fileName slice, len=0, cap=10
 	fileList := make([]string, 0, capacity)
-	isSkip := func(f os.FileInfo) bool{
-		//dir or non write permission,skip
-		return f.IsDir() || (f.Mode() & 0200 == 0000)
-	}
+
 	err := filepath.Walk(path,
 		func(pathName string, f os.FileInfo, e error) error {
 			if f == nil {
