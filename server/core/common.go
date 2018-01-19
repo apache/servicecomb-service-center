@@ -108,7 +108,7 @@ func init() {
 	ServicePathValidator.AddRule("Path", &validate.ValidateRule{Regexp: pathRegex})
 
 	FrameWKValidator.AddRule("Name", &validate.ValidateRule{Min: 1, Max: 64, Regexp: nameRegex})
-	FrameWKValidator.AddRule("Version", &validate.ValidateRule{Length: 64, Regexp: frameversionRegex})
+	FrameWKValidator.AddRule("Version", &validate.ValidateRule{Length: 64})
 
 	MicroServiceValidator.AddRules(MicroServiceKeyValidator.GetRules())
 	MicroServiceValidator.AddRule("Description", &validate.ValidateRule{Length: 256})
