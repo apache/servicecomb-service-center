@@ -70,7 +70,6 @@ func init() {
 	statusRegex, _ := regexp.Compile("^(" + pb.MS_UP + "|" + pb.MS_DOWN + ")*$")
 	serviceIdRegex, _ := regexp.Compile(`^.*$`)
 	aliasRegex, _ := regexp.Compile(`^[a-zA-Z0-9_\-.:]*$`)
-	frameversionRegex, _ := regexp.Compile(`^[a-zA-Z0-9_\-.]*$`)
 	registerByRegex, _ := regexp.Compile("^(" + util.StringJoin([]string{
 		pb.REGISTERBY_SDK, pb.REGISTERBY_PLATFORM, pb.REGISTERBY_SIDECAR, pb.REGISTERBY_UNKNOWM}, "|") + ")*$")
 	envRegex, _ := regexp.Compile("^(" + util.StringJoin([]string{
