@@ -33,13 +33,13 @@ func TestRefreshDependencyCache(t *testing.T) {
 }
 
 func TestDeleteDependencyForService(t *testing.T) {
-	_, err := DeleteDependencyForService(context.Background(), &proto.MicroServiceKey{}, "")
+	_, err := DeleteDependencyForService(context.Background(), &proto.MicroServiceKey{})
 	if err == nil {
 		fmt.Printf(`DeleteDependencyForService failed`)
 		t.FailNow()
 	}
 
-	err = deleteDependencyRuleUtil(context.Background(),
+	_, err = updateProviderDependencyRuleUtil(
 		&proto.MicroServiceDependency{
 			Dependency: []*proto.MicroServiceKey{
 				{AppId: "a"},
@@ -53,7 +53,7 @@ func TestDeleteDependencyForService(t *testing.T) {
 		t.FailNow()
 	}
 
-	err = deleteDependencyRuleUtil(context.Background(),
+	_, err = updateProviderDependencyRuleUtil(
 		&proto.MicroServiceDependency{
 			Dependency: []*proto.MicroServiceKey{
 				{AppId: "b"},

@@ -102,6 +102,20 @@ func (h *DependencyEventHandler) loop() {
 	})
 }
 
+type DependencyEventHandlerResource struct {
+	dep    *pb.ConsumerDependency
+	kv     *mvccpb.KeyValue
+	domainProject  string
+}
+
+func NewDependencyEventHandlerResource(dep *pb.ConsumerDependency, kv *mvccpb.KeyValue, domainProject string) *DependencyEventHandlerResource {
+	return &DependencyEventHandlerResource{
+		dep,
+		kv,
+		domainProject,
+	}
+}
+
 func (h *DependencyEventHandler) Handle() error {
 	key := core.GetServiceDependencyQueueRootKey("")
 	resp, err := store.Store().DependencyQueue().Search(context.Background(),
@@ -116,6 +130,9 @@ func (h *DependencyEventHandler) Handle() error {
 	if l == 0 {
 		return nil
 	}
+
+	lenKvs := len(resp.Kvs)
+	resourcesMap := make(map[string]*[]*DependencyEventHandlerResource, lenKvs)
 
 	ctx := context.Background()
 	for _, kv := range resp.Kvs {
@@ -133,19 +150,64 @@ func (h *DependencyEventHandler) Handle() error {
 			continue
 		}
 
+		lockKey := serviceUtil.NewDependencyLockKey(domainProject, r.Consumer.Environment)
+		res := NewDependencyEventHandlerResource(r, kv, domainProject)
+		if resources, ok := resourcesMap[lockKey]; ok {
+			*resources = append(*resources, res)
+		} else {
+			resources := make([]*DependencyEventHandlerResource, 0, lenKvs)
+			resources = append(resources, res)
+			resourcesMap[lockKey] = &resources
+		}
+	}
+
+	dependencyRuleHandleResults := make(chan error, len(resourcesMap))
+	for lockKey, resources := range resourcesMap {
+		go func(lockKey string, resources []*DependencyEventHandlerResource){
+			err := h.dependencyRuleHandle(ctx, lockKey, resources)
+			dependencyRuleHandleResults <- err
+		}(lockKey, *resources)
+	}
+	var lastErr error
+	finishedCount := 0
+	for err := range dependencyRuleHandleResults {
+		finishedCount++
+		if err != nil {
+			lastErr = err
+		}
+		if finishedCount == len(resourcesMap) {
+			close(dependencyRuleHandleResults)
+		}
+	}
+	return lastErr
+}
+
+func (h *DependencyEventHandler)dependencyRuleHandle(ctx context.Context, lockKey string, resources []*DependencyEventHandlerResource) error{
+	lock, err := serviceUtil.DependencyLock(lockKey)
+	if err != nil {
+		util.Logger().Errorf(err, "create dependency rule locker failed")
+		return err
+	}
+	defer lock.Unlock()
+	for _, res := range resources {
+		r := res.dep
 		consumerFlag := util.StringJoin([]string{r.Consumer.AppId, r.Consumer.ServiceName, r.Consumer.Version}, "/")
+
+		domainProject := res.domainProject
 		consumerInfo := pb.DependenciesToKeys([]*pb.MicroServiceKey{r.Consumer}, domainProject)[0]
 		providersInfo := pb.DependenciesToKeys(r.Providers, domainProject)
 
-		consumerId, err = serviceUtil.GetServiceId(ctx, consumerInfo)
+		consumerId, err := serviceUtil.GetServiceId(ctx, consumerInfo)
 		if err != nil {
+			util.Logger().Errorf(err, "modify dependency rule failed, override: %t, consumer %s", r.Override, consumerFlag)
 			return fmt.Errorf("get consumer %s id failed, override: %t, %s", consumerFlag, r.Override, err.Error())
 		}
 		if len(consumerId) == 0 {
 			util.Logger().Errorf(nil, "maintain dependency failed, override: %t, consumer %s does not exist",
 				r.Override, consumerFlag)
 
-			if err = h.removeKV(ctx, kv); err != nil {
+			if err = h.removeKV(ctx, res.kv); err != nil {
+				util.Logger().Errorf(err, "remove dependency rule failed, override: %t, consumer %s", r.Override, consumerFlag)
 				return err
 			}
 			continue
@@ -163,10 +225,12 @@ func (h *DependencyEventHandler) Handle() error {
 		}
 
 		if err != nil {
+			util.Logger().Errorf(err, "modify dependency rule failed, override: %t, consumer %s", r.Override, consumerFlag)
 			return fmt.Errorf("override: %t, consumer is %s, %s", r.Override, consumerFlag, err.Error())
 		}
 
-		if err = h.removeKV(ctx, kv); err != nil {
+		if err = h.removeKV(ctx, res.kv); err != nil {
+			util.Logger().Errorf(err, "remove dependency rule failed, override: %t, consumer %s", r.Override, consumerFlag)
 			return err
 		}
 
