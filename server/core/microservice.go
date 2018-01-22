@@ -92,16 +92,10 @@ func IsDefaultDomainProject(domainProject string) bool {
 
 func SetSharedMode() {
 	sharedServiceNames = util.ListToMap(strings.Split(os.Getenv("CSE_SHARED_SERVICES"), ","))
-	if _, ok := sharedServiceNames[Service.ServiceName]; !ok {
-		sharedServiceNames[Service.ServiceName] = struct{}{}
-	}
+	sharedServiceNames[Service.ServiceName] = struct{}{}
 }
 
 func IsShared(key *pb.MicroServiceKey) bool {
-	if len(sharedServiceNames) == 0 {
-		// shared micro-service only can be registered in auth mode.
-		return false
-	}
 	if !IsDefaultDomainProject(key.Tenant) {
 		return false
 	}
