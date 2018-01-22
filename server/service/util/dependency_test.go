@@ -48,7 +48,7 @@ func TestDeleteDependencyForService(t *testing.T) {
 		&proto.MicroServiceKey{
 			AppId: "a",
 		}, "")
-	if err == nil {
+	if err != nil {
 		fmt.Printf(`deleteDependencyRuleUtil with the same deps failed`)
 		t.FailNow()
 	}
@@ -62,14 +62,8 @@ func TestDeleteDependencyForService(t *testing.T) {
 		&proto.MicroServiceKey{
 			AppId: "a",
 		}, "")
-	if err == nil {
+	if err != nil {
 		fmt.Printf(`deleteDependencyRuleUtil failed`)
-		t.FailNow()
-	}
-
-	_, err = deleteDependencyUtil(context.Background(), "", "", "", map[string]bool{})
-	if err == nil {
-		fmt.Printf(`deleteDependencyUtil failed`)
 		t.FailNow()
 	}
 

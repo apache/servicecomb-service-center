@@ -380,43 +380,6 @@ func toString(in *pb.MicroServiceKey) string {
 	return apt.GenerateProviderDependencyRuleKey(in.Tenant, in)
 }
 
-func deleteDependencyUtil(ctx context.Context, serviceType string, domainProject string, serviceId string, flag map[string]bool) ([]registry.PluginOp, error) {
-	serviceKey := apt.GenerateServiceDependencyKey(serviceType, domainProject, serviceId, "")
-	rsp, err := store.Store().Dependency().Search(ctx,
-		registry.WithStrKey(serviceKey),
-		registry.WithPrefix())
-	if err != nil {
-		return nil, err
-	}
-	ops := []registry.PluginOp{}
-	if rsp != nil {
-		serviceTmpId := ""
-		serviceTmpKey := ""
-		deleteKey := ""
-		for _, kv := range rsp.Kvs {
-			tmpKeyArr := strings.Split(util.BytesToStringWithNoCopy(kv.Key), "/")
-			serviceTmpId = tmpKeyArr[len(tmpKeyArr)-1]
-			if serviceType == "p" {
-				serviceTmpKey = apt.GenerateConsumerDependencyKey(domainProject, serviceTmpId, serviceId)
-				deleteKey = util.StringJoin([]string{"c", serviceTmpId, serviceId}, "/")
-			} else {
-				serviceTmpKey = apt.GenerateProviderDependencyKey(domainProject, serviceTmpId, serviceId)
-				deleteKey = util.StringJoin([]string{"p", serviceTmpId, serviceId}, "/")
-			}
-			if _, ok := flag[serviceTmpKey]; ok {
-				util.Logger().Debugf("serviceTmpKey is more exist.%s", serviceTmpKey)
-				continue
-			}
-			flag[serviceTmpKey] = true
-			util.Logger().Infof("delete dependency %s", deleteKey)
-			ops = append(ops, registry.OpDel(registry.WithStrKey(serviceTmpKey)))
-		}
-		util.Logger().Infof("delete dependency serviceKey is %s", serviceType+"/"+serviceId)
-		ops = append(ops, registry.OpDel(registry.WithStrKey(serviceKey), registry.WithPrefix()))
-	}
-	return ops, nil
-}
-
 func parseAddOrUpdateRules(ctx context.Context, dep *Dependency) (newDependencyRuleList, existDependencyRuleList, deleteDependencyRuleList []*pb.MicroServiceKey) {
 	conKey := apt.GenerateConsumerDependencyRuleKey(dep.DomainProject, dep.Consumer)
 
