@@ -153,7 +153,7 @@ func (h *DependencyEventHandler) Handle() error {
 		lockKey := serviceUtil.NewDependencyLockKey(domainProject, r.Consumer.Environment)
 		res := NewDependencyEventHandlerResource(r, kv, domainProject)
 		resources := resourcesMap[lockKey]
-		if _, ok := resourcesMap[lockKey]; !ok {
+		if resources == nil {
 			resources = make([]*DependencyEventHandlerResource, 0, lenKvs)
 		}
 		resources = append(resources, res)
