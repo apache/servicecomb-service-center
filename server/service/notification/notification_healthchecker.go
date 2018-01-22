@@ -36,8 +36,15 @@ type NotifyServiceHealthCheckJob struct {
 func (s *NotifyServiceHealthChecker) OnMessage(job NotifyJob) {
 	j := job.(*NotifyServiceHealthCheckJob)
 	err := j.ErrorSubscriber.Err()
-	util.Logger().Warnf(err, "notify server remove watcher %s %s",
-		j.ErrorSubscriber.Subject(), j.ErrorSubscriber.Id())
+
+	if j.ErrorSubscriber.Type() == NOTIFTY {
+		util.Logger().Errorf(nil, "remove %s watcher %s %s failed, here cause a dead lock",
+			j.ErrorSubscriber.Type(), j.ErrorSubscriber.Subject(), j.ErrorSubscriber.Id())
+		return
+	}
+
+	util.Logger().Warnf(err, "notification service remove %s watcher %s %s",
+		j.ErrorSubscriber.Type(), j.ErrorSubscriber.Subject(), j.ErrorSubscriber.Id())
 	s.Service().RemoveSubscriber(j.ErrorSubscriber)
 }
 

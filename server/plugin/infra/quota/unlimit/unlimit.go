@@ -41,8 +41,8 @@ func New() mgr.PluginInstance {
 	return &Unlimit{}
 }
 
-func (q *Unlimit) Apply4Quotas(ctx context.Context, quotaType quota.ResourceType, domainProject string, serviceId string, quotaSize int16) (quota.QuotaReporter, bool, error) {
-	return nil, true, nil
+func (q *Unlimit) Apply4Quotas(ctx context.Context, res *quota.ApplyQuotaResource) *quota.ApplyQuotaResult {
+	return quota.NewApplyQuotaResult(nil, nil)
 }
 
 func (q *Unlimit) RemandQuotas(ctx context.Context, quotaType quota.ResourceType) {

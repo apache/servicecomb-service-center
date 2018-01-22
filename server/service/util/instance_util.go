@@ -140,7 +140,7 @@ func CheckEndPoints(ctx context.Context, in *pb.RegisterInstanceRequest) (string
 	}
 	endpointValue := ParseEndpointValue(resp.Kvs[0].Value)
 	if in.Instance.ServiceId != endpointValue.serviceId {
-		return endpointValue.instanceId, "", fmt.Errorf("endpoints more belong to service %s", endpointValue.serviceId)
+		return endpointValue.instanceId, "", fmt.Errorf("Find the same endpoints in service %s", endpointValue.serviceId)
 	}
 	return endpointValue.instanceId, "", nil
 }
@@ -245,7 +245,7 @@ func QueryAllProvidersInstances(ctx context.Context, selfServiceId string) (resu
 			}
 			results = append(results, &pb.WatchInstanceResponse{
 				Response: pb.CreateResponse(pb.Response_SUCCESS, "List instance successfully."),
-				Action:   string(pb.EVT_CREATE),
+				Action:   string(pb.EVT_INIT),
 				Key: &pb.MicroServiceKey{
 					Environment: service.Environment,
 					AppId:       service.AppId,

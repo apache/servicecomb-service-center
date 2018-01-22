@@ -224,10 +224,7 @@ func (s *EtcdEmbed) toCompares(cmps []registry.CompareOp) []*etcdserverpb.Compar
 }
 
 func (s *EtcdEmbed) Compact(ctx context.Context, reserve int64) error {
-	otCtx, cancel := registry.WithTimeout(ctx)
-	defer cancel()
-
-	curRev := s.getLeaderCurrentRevision(otCtx)
+	curRev := s.getLeaderCurrentRevision(ctx)
 	revToCompact := max(0, curRev-reserve)
 	if revToCompact <= 0 {
 		util.Logger().Infof("revision is %d, <=%d, no nead to compact", curRev, reserve)
@@ -235,7 +232,7 @@ func (s *EtcdEmbed) Compact(ctx context.Context, reserve int64) error {
 	}
 
 	util.Logger().Infof("Compacting... revision is %d(current: %d, reserve %d)", revToCompact, curRev, reserve)
-	_, err := s.Server.Server.Compact(otCtx, &etcdserverpb.CompactionRequest{
+	_, err := s.Server.Server.Compact(ctx, &etcdserverpb.CompactionRequest{
 		Revision: revToCompact,
 		Physical: true,
 	})

@@ -119,12 +119,12 @@ func getCalleeFuncName() string {
 	for i := 2; i <= 4; i++ {
 		pc, file, _, ok := runtime.Caller(i)
 
-		if strings.Index(file, "log.go") > 0 {
+		if strings.Index(file, "/log.go") > 0 {
 			continue
 		}
 
 		if ok {
-			idx := strings.LastIndex(file, "src")
+			idx := strings.LastIndex(file, "/src/")
 			switch {
 			case idx >= 0:
 				fullName = file[idx+4:]

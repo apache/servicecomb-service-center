@@ -33,7 +33,6 @@ import (
 	"github.com/gorilla/websocket"
 	"golang.org/x/net/context"
 	"math"
-	"net/http"
 	"strconv"
 	"time"
 )
@@ -108,23 +107,22 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	var reporter quota.QuotaReporter
 	if len(oldInstanceId) == 0 {
 		if !apt.IsSCInstance(ctx) {
-			var err error
-			var ok bool
-			reporter, ok, err = plugin.Plugins().Quota().Apply4Quotas(ctx, quota.MicroServiceInstanceQuotaType, domainProject, in.Instance.ServiceId, 1)
+			res := quota.NewApplyQuotaResource(quota.MicroServiceInstanceQuotaType, domainProject, in.Instance.ServiceId, 1)
+			rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+			reporter = rst.Reporter
+			err := rst.Err
 			if reporter != nil {
 				defer reporter.Close()
 			}
 			if err != nil {
-				util.Logger().Errorf(err, "register instance failed, service %s, operator %s: check apply quota failed.", instanceFlag, remoteIP)
-				return &pb.RegisterInstanceResponse{
-					Response: pb.CreateResponse(scerr.ErrUnavailableQuota, err.Error()),
-				}, err
-			}
-			if !ok {
-				util.Logger().Errorf(nil, "register instance failed, service %s, operator %s: no quota apply.", instanceFlag, remoteIP)
-				return &pb.RegisterInstanceResponse{
-					Response: pb.CreateResponse(scerr.ErrNotEnoughQuota, "No quota to create instance."),
-				}, nil
+				util.Logger().Errorf(err, "register instance failed, service %s, operator %s: no quota apply.", instanceFlag, remoteIP)
+				response := &pb.RegisterInstanceResponse{
+					Response: pb.CreateResponseWithSCErr(err),
+				}
+				if err.InternalError() {
+					return response, err
+				}
+				return response, nil
 			}
 		}
 	}
@@ -183,7 +181,6 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 		}, err
 	}
 
-	index := apt.GenerateInstanceIndexKey(domainProject, instanceId)
 	key := apt.GenerateInstanceKey(domainProject, instance.ServiceId, instanceId)
 	hbKey := apt.GenerateInstanceLeaseKey(domainProject, instance.ServiceId, instanceId)
 
@@ -191,8 +188,6 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 
 	opts := []registry.PluginOp{
 		registry.OpPut(registry.WithStrKey(key), registry.WithValue(data),
-			registry.WithLease(leaseID), registry.WithIgnoreLease()),
-		registry.OpPut(registry.WithStrKey(index), registry.WithStrValue(instance.ServiceId),
 			registry.WithLease(leaseID), registry.WithIgnoreLease()),
 	}
 	if leaseID != 0 {
@@ -425,20 +420,18 @@ func (s *InstanceService) GetOneInstance(ctx context.Context, in *pb.GetOneInsta
 	if checkErr != nil {
 		util.Logger().Errorf(checkErr, "get instance failed: pre check failed.")
 		resp := &pb.GetOneInstanceResponse{
-			Response: pb.CreateResponse(checkErr.Code, checkErr.Detail),
+			Response: pb.CreateResponseWithSCErr(checkErr),
 		}
-		if checkErr.StatusCode() == http.StatusInternalServerError {
+		if checkErr.InternalError() {
 			return resp, checkErr
 		}
 		return resp, nil
 	}
 	conPro := util.StringJoin([]string{in.ConsumerServiceId, in.ProviderServiceId, in.ProviderInstanceId}, "/")
 
-	targetDomainProject := util.ParseTargetDomainProject(ctx)
-
 	serviceId := in.ProviderServiceId
 	instanceId := in.ProviderInstanceId
-	instance, err := serviceUtil.GetInstance(ctx, targetDomainProject, serviceId, instanceId)
+	instance, err := serviceUtil.GetInstance(ctx, util.ParseTargetDomainProject(ctx), serviceId, instanceId)
 	if err != nil {
 		util.Logger().Errorf(err, "get instance failed, %s(consumer/provider): get instance failed.", conPro)
 		return &pb.GetOneInstanceResponse{
@@ -513,18 +506,16 @@ func (s *InstanceService) GetInstances(ctx context.Context, in *pb.GetInstancesR
 	if checkErr != nil {
 		util.Logger().Errorf(checkErr, "get instances failed: pre check failed.")
 		resp := &pb.GetInstancesResponse{
-			Response: pb.CreateResponse(checkErr.Code, checkErr.Detail),
+			Response: pb.CreateResponseWithSCErr(checkErr),
 		}
-		if checkErr.StatusCode() == http.StatusInternalServerError {
+		if checkErr.InternalError() {
 			return resp, checkErr
 		}
 		return resp, nil
 	}
 	conPro := util.StringJoin([]string{in.ConsumerServiceId, in.ProviderServiceId}, "/")
 
-	targetDomainProject := util.ParseTargetDomainProject(ctx)
-
-	instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, targetDomainProject, in.ProviderServiceId)
+	instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, util.ParseTargetDomainProject(ctx), in.ProviderServiceId)
 	if err != nil {
 		util.Logger().Errorf(err, "get instances failed, %s(consumer/provider): get instances from etcd failed.", conPro)
 		return &pb.GetInstancesResponse{
@@ -547,9 +538,8 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 	}
 
 	domainProject := util.ParseDomainProject(ctx)
-	targetDomainProject := util.ParseTargetDomainProject(ctx)
+	findFlag := fmt.Sprintf("consumer %s find provider %s/%s/%s", in.ConsumerServiceId, in.AppId, in.ServiceName, in.VersionRule)
 
-	findFlag := fmt.Sprintf("consumer %s --> provider %s/%s/%s", in.ConsumerServiceId, in.AppId, in.ServiceName, in.VersionRule)
 	service, err := serviceUtil.GetService(ctx, domainProject, in.ConsumerServiceId)
 	if err != nil {
 		util.Logger().Errorf(err, "find instance failed, %s: get consumer failed.", findFlag)
@@ -565,16 +555,22 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 	}
 
 	provider := &pb.MicroServiceKey{
-		Tenant:      targetDomainProject,
+		Tenant:      util.ParseTargetDomainProject(ctx),
 		Environment: service.Environment,
 		AppId:       in.AppId,
 		ServiceName: in.ServiceName,
 		Alias:       in.ServiceName,
 	}
-
 	if apt.IsShared(provider) {
 		// it means the shared micro-services must be the same env with SC.
 		provider.Environment = apt.Service.Environment
+		findFlag += "(shared services in " + provider.Environment + " environment)"
+	} else {
+		// provider is not a shared micro-service,
+		// only allow shared micro-service instances found in different domains.
+		util.SetTargetDomainProject(ctx, util.ParseDomain(ctx), util.ParseProject(ctx))
+		provider.Tenant = util.ParseTargetDomainProject(ctx)
+		findFlag += "('" + provider.Environment + "' services of the same domain)"
 	}
 
 	// 版本规则
@@ -586,9 +582,10 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		}, err
 	}
 	if len(ids) == 0 {
-		util.Logger().Errorf(nil, "find instance failed, %s: no provider matched.", findFlag)
+		mes := fmt.Sprintf("no provider matched, %s", findFlag)
+		util.Logger().Errorf(nil, "find instance failed, %s", mes)
 		return &pb.FindInstancesResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "No provider matched."),
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists, mes),
 		}, nil
 	}
 
@@ -610,8 +607,8 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		}
 	}
 
-	//维护version的规则,servicename 可能是别名，所以重新获取
-	providerService, err := serviceUtil.GetService(ctx, targetDomainProject, ids[0])
+	//维护version的规则,service name 可能是别名，所以重新获取
+	providerService, err := serviceUtil.GetService(ctx, provider.Tenant, ids[0])
 	if providerService == nil {
 		util.Logger().Errorf(err, "find instance failed, %s: no provider matched.", findFlag)
 		return &pb.FindInstancesResponse{
@@ -619,7 +616,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		}, nil
 	}
 
-	provider = pb.MicroServiceToKey(targetDomainProject, providerService)
+	provider = pb.MicroServiceToKey(provider.Tenant, providerService)
 	provider.Version = in.VersionRule
 
 	err = serviceUtil.AddServiceVersionRule(ctx, domainProject, service, provider)

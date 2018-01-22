@@ -268,7 +268,7 @@ func GetOneDomainProjectServiceCount(ctx context.Context, domainProject string) 
 }
 
 func GetOneDomainProjectInstanceCount(ctx context.Context, domainProject string) (int64, error) {
-	key := apt.GenerateInstanceIndexKey(domainProject, "")
+	key := apt.GetInstanceRootKey(domainProject) + "/"
 	opts := append(FromContext(ctx),
 		registry.WithStrKey(key),
 		registry.WithCountOnly(),
@@ -283,18 +283,6 @@ func GetOneDomainProjectInstanceCount(ctx context.Context, domainProject string)
 func SetServiceDefaultValue(service *pb.MicroService) {
 	if len(service.Level) == 0 {
 		service.Level = "BACK"
-	}
-	if len(service.Environment) == 0 {
-		service.Environment = pb.ENV_DEV
-	}
-	if len(service.RegisterBy) == 0 {
-		service.RegisterBy = pb.REGISTERBY_UNKNOWM
-	}
-	if service.Framework == nil {
-		service.Framework = &pb.FrameWorkProperty{}
-	}
-	if len(service.Framework.Name) == 0 {
-		service.Framework.Name = pb.FRAMEWORK_UNKNOWN
 	}
 	if len(service.Status) == 0 {
 		service.Status = pb.MS_UP

@@ -21,7 +21,6 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"net/http"
-	"net/url"
 	"strings"
 )
 
@@ -35,42 +34,25 @@ func (v *v4Context) IsMatch(r *http.Request) bool {
 func (v *v4Context) Do(r *http.Request) error {
 	ctx := r.Context()
 
-	domain := r.Header.Get("X-Domain-Name")
-	path, err := url.PathUnescape(r.RequestURI)
-	if err != nil {
-		util.Logger().Errorf(err, "Invalid Request URI %s", r.RequestURI)
-		return err
-	}
+	domain, project := util.ParseDomain(ctx), util.ParseProject(ctx)
 
-	// self domain
-	if len(util.ParseDomain(ctx)) == 0 {
+	if len(domain) == 0 {
+		domain = r.Header.Get("X-Domain-Name")
 		if len(domain) == 0 {
 			err := errors.New("Header does not contain domain.")
 			util.Logger().Errorf(err, "Invalid Request URI %s", r.RequestURI)
 			return err
 		}
-		util.SetRequestContext(r, "domain", domain)
+		util.SetDomain(r.Context(), domain)
 	}
-	if len(util.ParseProject(ctx)) == 0 {
-		util.SetRequestContext(r, "project", v.parseProjectFromPath(path))
-	}
-	// target domain
-	if len(util.ParseTargetDomain(ctx)) == 0 {
-		util.SetRequestContext(r, "target-domain", domain)
-	}
-	if len(util.ParseTargetProject(ctx)) == 0 {
-		util.SetRequestContext(r, "target-project", v.parseProjectFromPath(path))
-	}
-	return nil
-}
 
-func (v *v4Context) parseProjectFromPath(path string) string {
-	start := len("/v4/")
-	end := start + strings.Index(path[start:], "/")
-
-	project := strings.TrimSpace(path[start:end])
 	if len(project) == 0 {
-		project = core.REGISTRY_PROJECT
+		project = r.URL.Query().Get(":project")
+		if len(project) == 0 {
+			project = core.REGISTRY_PROJECT
+		}
+		util.SetProject(r.Context(), project)
 	}
-	return project
+
+	return nil
 }

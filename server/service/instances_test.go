@@ -17,6 +17,7 @@
 package service_test
 
 import (
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
@@ -25,6 +26,7 @@ import (
 	. "github.com/onsi/gomega"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"os"
 )
 
 type grpcWatchServer struct {
@@ -595,9 +597,13 @@ var _ = Describe("'Instance' service", func() {
 			serviceId2  string
 			serviceId3  string
 			serviceId4  string
+			serviceId5  string
+			serviceId6  string
+			serviceId7  string
 			instanceId1 string
 			instanceId2 string
 			instanceId4 string
+			instanceId5 string
 		)
 
 		It("should be passed", func() {
@@ -654,6 +660,50 @@ var _ = Describe("'Instance' service", func() {
 			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
 			serviceId4 = respCreate.ServiceId
 
+			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					Environment: pb.ENV_PROD,
+					AppId:       "default",
+					ServiceName: "query_instance_shared_provider",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+					Properties: map[string]string{
+						pb.PROP_ALLOW_CROSS_APP: "true",
+					},
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
+			serviceId5 = respCreate.ServiceId
+
+			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "default",
+					ServiceName: "query_instance_shared_consumer",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
+			serviceId7 = respCreate.ServiceId
+
+			respCreate, err = serviceResource.Create(util.SetDomainProject(context.Background(), "user", "user"),
+				&pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						AppId:       "default",
+						ServiceName: "query_instance_diff_domain_consumer",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Status:      pb.MS_UP,
+					},
+				})
+			Expect(err).To(BeNil())
+			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
+			serviceId6 = respCreate.ServiceId
+
 			resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 				Instance: &pb.MicroServiceInstance{
 					ServiceId: serviceId1,
@@ -695,6 +745,20 @@ var _ = Describe("'Instance' service", func() {
 			Expect(err).To(BeNil())
 			Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 			instanceId4 = resp.InstanceId
+
+			resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				Instance: &pb.MicroServiceInstance{
+					ServiceId: serviceId5,
+					HostName:  "UT-HOST",
+					Endpoints: []string{
+						"find:127.0.0.5:8080",
+					},
+					Status: pb.MSI_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+			instanceId5 = resp.InstanceId
 		})
 
 		Context("when query invalid parameters", func() {
@@ -837,8 +901,40 @@ var _ = Describe("'Instance' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
 				Expect(len(respFind.Instances)).To(Equal(0))
-			})
 
+				By("shared service discovery")
+				os.Setenv("CSE_SHARED_SERVICES", "query_instance_shared_provider")
+				core.SetSharedMode()
+				core.Service.Environment = pb.ENV_PROD
+
+				respFind, err = instanceResource.Find(
+					util.SetTargetDomainProject(
+						util.SetDomainProject(context.Background(), "user", "user"),
+						"default", "default"),
+					&pb.FindInstancesRequest{
+						ConsumerServiceId: serviceId6,
+						AppId:             "default",
+						ServiceName:       "query_instance_shared_provider",
+						VersionRule:       "1.0.0",
+					})
+				Expect(err).To(BeNil())
+				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(len(respFind.Instances)).To(Equal(1))
+				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId5))
+
+				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: serviceId7,
+					AppId:             "default",
+					ServiceName:       "query_instance_shared_provider",
+					VersionRule:       "1.0.0",
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(len(respFind.Instances)).To(Equal(1))
+				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId5))
+
+				core.Service.Environment = pb.ENV_DEV
+			})
 		})
 
 		Context("when query instances between diff dimensions", func() {

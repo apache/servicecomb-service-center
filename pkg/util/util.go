@@ -150,11 +150,7 @@ func ParseDomainProject(ctx context.Context) string {
 }
 
 func ParseTargetDomainProject(ctx context.Context) string {
-	domain := ParseTargetDomain(ctx)
-	if len(domain) == 0 {
-		return ParseDomainProject(ctx)
-	}
-	return domain + "/" + ParseTargetProject(ctx)
+	return ParseTargetDomain(ctx) + "/" + ParseTargetProject(ctx)
 }
 
 func ParseDomain(ctx context.Context) string {
@@ -166,9 +162,9 @@ func ParseDomain(ctx context.Context) string {
 }
 
 func ParseTargetDomain(ctx context.Context) string {
-	v, ok := FromContext(ctx, "target-domain").(string)
-	if !ok {
-		return ""
+	v, _ := FromContext(ctx, "target-domain").(string)
+	if len(v) == 0 {
+		return ParseDomain(ctx)
 	}
 	return v
 }
@@ -182,11 +178,35 @@ func ParseProject(ctx context.Context) string {
 }
 
 func ParseTargetProject(ctx context.Context) string {
-	v, ok := FromContext(ctx, "target-project").(string)
-	if !ok {
-		return ""
+	v, _ := FromContext(ctx, "target-project").(string)
+	if len(v) == 0 {
+		return ParseProject(ctx)
 	}
 	return v
+}
+
+func SetDomain(ctx context.Context, domain string) context.Context {
+	return SetContext(ctx, "domain", domain)
+}
+
+func SetProject(ctx context.Context, project string) context.Context {
+	return SetContext(ctx, "project", project)
+}
+
+func SetTargetDomain(ctx context.Context, domain string) context.Context {
+	return SetContext(ctx, "target-domain", domain)
+}
+
+func SetTargetProject(ctx context.Context, project string) context.Context {
+	return SetContext(ctx, "target-project", project)
+}
+
+func SetDomainProject(ctx context.Context, domain string, project string) context.Context {
+	return SetProject(SetDomain(ctx, domain), project)
+}
+
+func SetTargetDomainProject(ctx context.Context, domain string, project string) context.Context {
+	return SetTargetProject(SetTargetDomain(ctx, domain), project)
 }
 
 func GetIPFromContext(ctx context.Context) string {

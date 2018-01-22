@@ -130,6 +130,9 @@ func (this *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r 
 		VersionRule:       r.URL.Query().Get("version"),
 		Tags:              ids,
 	}
+
+	util.SetTargetDomainProject(r.Context(), r.Header.Get("X-Domain-Name"), r.URL.Query().Get(":project"))
+
 	resp, _ := core.InstanceAPI.Find(r.Context(), request)
 	respInternal := resp.Response
 	resp.Response = nil

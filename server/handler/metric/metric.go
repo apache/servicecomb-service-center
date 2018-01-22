@@ -14,37 +14,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package rest
+package metric
 
 import (
-	roa "github.com/apache/incubator-servicecomb-service-center/pkg/rest"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/chain"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/interceptor"
+	svr "github.com/apache/incubator-servicecomb-service-center/server/rest"
 	"net/http"
 	"time"
 )
 
-const CTX_START_TIMESTAMP = "x-start-timestamp"
-
-func init() {
-	// api
-	http.Handle("/", &ServerHandler{})
+type MetricsHandler struct {
 }
 
-type ServerHandler struct {
+func (h *MetricsHandler) Handle(i *chain.Invocation) {
+	w, r := i.Context().Value(rest.CTX_RESPONSE).(http.ResponseWriter),
+		i.Context().Value(rest.CTX_REQUEST).(*http.Request)
+	cb := i.Func
+	i.Invoke(func(ret chain.Result) {
+		cb(ret)
+
+		start, ok := i.Context().Value(svr.CTX_START_TIMESTAMP).(time.Time)
+		if !ok {
+			return
+		}
+		svr.ReportRequestCompleted(w, r, start)
+		util.LogNilOrWarnf(start, "%s %s", r.Method, r.RequestURI)
+	})
 }
 
-func (s *ServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	util.SetRequestContext(r, CTX_START_TIMESTAMP, time.Now())
-
-	err := interceptor.InvokeInterceptors(w, r)
-	if err != nil {
-		return
-	}
-
-	roa.GetRouter().ServeHTTP(w, r)
-
-	// CAUTION: There will be cause a concurrent problem,
-	// if here get/set the HTTP request headers.
+func RegisterHandlers() {
+	chain.RegisterHandler(rest.SERVER_CHAIN_NAME, &MetricsHandler{})
 }

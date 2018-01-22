@@ -29,7 +29,6 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
-	"net/http"
 	"strings"
 )
 
@@ -264,9 +263,9 @@ func (s *MicroServiceService) ModifySchemas(ctx context.Context, request *pb.Mod
 	respErr := modifySchemas(ctx, domainProject, service, request.Schemas)
 	if respErr != nil {
 		resp := &pb.ModifySchemasResponse{
-			Response: pb.CreateResponse(respErr.Code, respErr.Detail),
+			Response: pb.CreateResponseWithSCErr(respErr),
 		}
-		if respErr.StatusCode() == http.StatusInternalServerError {
+		if respErr.InternalError() {
 			return resp, respErr
 		}
 		return resp, nil
@@ -323,14 +322,12 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 	pluginOps := make([]registry.PluginOp, 0)
 	if service.Environment == pb.ENV_PROD {
 		if len(service.Schemas) == 0 {
-			_, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.SchemaQuotaType, domainProject, serviceId, int16(len(schemas)))
-			if err != nil {
-				util.Logger().Errorf(err, "modify schemas info failed, check resource num failed, %s", serviceId)
-				return scerr.NewError(scerr.ErrUnavailableQuota, err.Error())
-			}
-			if !ok {
-				util.Logger().Errorf(err, "modify schemas info failed, reach the max size of schema, %s", serviceId)
-				return scerr.NewError(scerr.ErrNotEnoughQuota, "reach the max size of schema")
+			res := quota.NewApplyQuotaResource(quota.SchemaQuotaType, domainProject, serviceId, int64(len(schemas)))
+			rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+			errQuota := rst.Err
+			if errQuota != nil {
+				util.Logger().Errorf(errQuota, "modify schemas info failed, serviceId is %s", serviceId)
+				return errQuota
 			}
 
 			service.Schemas = nonExistSchemaIds
@@ -376,14 +373,12 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 
 		quotaSize := len(needAddSchemas) - len(needDeleteSchemas)
 		if quotaSize > 0 {
-			_, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.SchemaQuotaType, domainProject, serviceId, int16(quotaSize))
+			res := quota.NewApplyQuotaResource(quota.SchemaQuotaType, domainProject, serviceId, int64(quotaSize))
+			rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+			err := rst.Err
 			if err != nil {
 				util.Logger().Errorf(err, "modify schemas info failed, check resource num failed, %s", serviceId)
-				return scerr.NewError(scerr.ErrUnavailableQuota, err.Error())
-			}
-			if !ok {
-				util.Logger().Errorf(err, "modify schemas info failed, reach the max size of schema, %s", serviceId)
-				return scerr.NewError(scerr.ErrNotEnoughQuota, "reach the max size of schema")
+				return err
 			}
 		}
 
@@ -487,9 +482,9 @@ func (s *MicroServiceService) ModifySchema(ctx context.Context, request *pb.Modi
 	respErr := s.canModifySchema(ctx, domainProject, request)
 	if respErr != nil {
 		resp := &pb.ModifySchemaResponse{
-			Response: pb.CreateResponse(respErr.Code, respErr.Detail),
+			Response: pb.CreateResponseWithSCErr(respErr),
 		}
-		if respErr.StatusCode() == http.StatusInternalServerError {
+		if respErr.InternalError() {
 			return resp, respErr
 		}
 		return resp, nil
@@ -507,9 +502,9 @@ func (s *MicroServiceService) ModifySchema(ctx context.Context, request *pb.Modi
 	if err != nil {
 		util.Logger().Errorf(err, "modify schema failed, serviceId %s, schemaId %s", serviceId, schemaId)
 		resp := &pb.ModifySchemaResponse{
-			Response: pb.CreateResponse(err.Code, err.Detail),
+			Response: pb.CreateResponseWithSCErr(err),
 		}
-		if err.StatusCode() == http.StatusInternalServerError {
+		if err.InternalError() {
 			return resp, err
 		}
 		return resp, nil
@@ -534,14 +529,12 @@ func (s *MicroServiceService) canModifySchema(ctx context.Context, domainProject
 		return scerr.NewError(scerr.ErrInvalidParams, err.Error())
 	}
 
-	_, ok, err := plugin.Plugins().Quota().Apply4Quotas(ctx, quota.SchemaQuotaType, domainProject, serviceId, 1)
-	if err != nil {
-		util.Logger().Errorf(err, "modify schema info failed, check resource num failed, %s, %s", serviceId, schemaId)
-		return scerr.NewError(scerr.ErrUnavailableQuota, err.Error())
-	}
-	if !ok {
-		util.Logger().Errorf(err, "modify schema info failed, reach the max size of schema, %s, %s", serviceId, schemaId)
-		return scerr.NewError(scerr.ErrNotEnoughQuota, "add schema failed, reach max size of schema")
+	res := quota.NewApplyQuotaResource(quota.SchemaQuotaType, domainProject, serviceId, 1)
+	rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+	errQuota := rst.Err
+	if errQuota != nil {
+		util.Logger().Errorf(errQuota, "modify schema info failed, check resource num failed, %s, %s", serviceId, schemaId)
+		return errQuota
 	}
 	if len(request.Summary) == 0 {
 		util.Logger().Warnf(nil, "service %s schema %s summary is empty.", request.ServiceId, schemaId)

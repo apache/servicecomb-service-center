@@ -1,0 +1,7 @@
+FROM ubuntu
+
+ADD frontend.tar.gz /opt
+
+WORKDIR /opt/frontend
+
+ENTRYPOINT ["/opt/frontend/start_linux.sh"]

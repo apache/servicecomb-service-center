@@ -73,15 +73,15 @@ func (s *NotifyService) AddSubscriber(n Subscriber) error {
 
 	sr, ok := ss[n.Subject()]
 	if !ok {
-		sr = make(subscriberIndex)
-		ss[n.Subject()] = sr
+		sr = make(subscriberIndex, DEFAULT_INIT_SUBSCRIBERS)
+		ss[n.Subject()] = sr // add a subscriber
 	}
 
 	ns, ok := sr[n.Id()]
 	if !ok {
 		ns = list.New()
 	}
-	ns.PushBack(n)
+	ns.PushBack(n) // add a connection
 	sr[n.Id()] = ns
 
 	n.SetService(s)
@@ -170,7 +170,7 @@ func (s *NotifyService) publish2Subscriber(t NotifyType) {
 				ns, ok := m[job.SubscriberId()]
 				if ok {
 					for n := ns.Front(); n != nil; n = n.Next() {
-						go n.Value.(Subscriber).OnMessage(job)
+						n.Value.(Subscriber).OnMessage(job)
 					}
 				}
 				s.mutexes[t].Unlock()
@@ -179,7 +179,7 @@ func (s *NotifyService) publish2Subscriber(t NotifyType) {
 			for key := range m {
 				ns := m[key]
 				for n := ns.Front(); n != nil; n = n.Next() {
-					go n.Value.(Subscriber).OnMessage(job)
+					n.Value.(Subscriber).OnMessage(job)
 				}
 			}
 		}
@@ -199,12 +199,12 @@ func (s *NotifyService) init() {
 		s.Config.MaxQueue = DEFAULT_MAX_QUEUE
 	}
 
-	s.services = make(serviceIndex)
+	s.services = make(serviceIndex, typeEnd)
 	s.err = make(chan error, 1)
-	s.queues = make(map[NotifyType]chan NotifyJob)
-	s.mutexes = make(map[NotifyType]*sync.Mutex)
+	s.queues = make(map[NotifyType]chan NotifyJob, typeEnd)
+	s.mutexes = make(map[NotifyType]*sync.Mutex, typeEnd)
 	for i := NotifyType(0); i != typeEnd; i++ {
-		s.services[i] = make(subscriberSubjectIndex)
+		s.services[i] = make(subscriberSubjectIndex, DEFAULT_INIT_SUBSCRIBERS)
 		s.queues[i] = make(chan NotifyJob, s.Config.MaxQueue)
 		s.mutexes[i] = &sync.Mutex{}
 		s.waits.Add(1)

@@ -25,8 +25,9 @@ import (
 )
 
 var (
-	TOO_LONG_SERVICEID   = strings.Repeat("x", 65)
-	TOO_LONG_SERVICENAME = strings.Repeat("x", 129)
+	TOO_LONG_SERVICEID     = strings.Repeat("x", 65)
+	TOO_LONG_SERVICENAME   = strings.Repeat("x", 129)
+	TOO_LONG_FRAMEWORK_VER = strings.Repeat("x", 65)
 )
 
 var _ = Describe("'Micro-service' service", func() {
@@ -384,8 +385,7 @@ var _ = Describe("'Micro-service' service", func() {
 						Version:     "1.0.4",
 						Level:       "BACK",
 						Framework: &pb.FrameWorkProperty{
-							Name:    "framework",
-							Version: "1.0.0-:",
+							Version: TOO_LONG_FRAMEWORK_VER,
 						},
 						Properties: make(map[string]string),
 						Status:     "UP",
@@ -403,8 +403,7 @@ var _ = Describe("'Micro-service' service", func() {
 						Version:     "1.0.5",
 						Level:       "BACK",
 						Framework: &pb.FrameWorkProperty{
-							Name:    "test@$",
-							Version: "1.0.0-",
+							Name: "test@$",
 						},
 						Properties: make(map[string]string),
 						Status:     "UP",
@@ -451,15 +450,18 @@ var _ = Describe("'Micro-service' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 
-				By("registerBy is nil")
+				By("framework version is nil")
 				r = &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
 						ServiceName: "framework-test",
 						AppId:       "default",
 						Version:     "1.0.2",
 						Level:       "BACK",
-						Properties:  make(map[string]string),
-						Status:      "UP",
+						Framework: &pb.FrameWorkProperty{
+							Name: "framework",
+						},
+						Properties: make(map[string]string),
+						Status:     "UP",
 					},
 				}
 				resp, err = serviceResource.Create(getContext(), r)
@@ -469,7 +471,7 @@ var _ = Describe("'Micro-service' service", func() {
 				By("status is nil")
 				r = &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
-						ServiceName: "framework-test",
+						ServiceName: "status-test",
 						AppId:       "default",
 						Version:     "1.0.3",
 						Level:       "BACK",

@@ -21,10 +21,15 @@ import (
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/version"
 	"golang.org/x/net/context"
+	"os"
+	"strings"
 )
 
-var Service *pb.MicroService
-var Instance *pb.MicroServiceInstance
+var (
+	Service            *pb.MicroService
+	Instance           *pb.MicroServiceInstance
+	sharedServiceNames map[string]struct{}
+)
 
 const (
 	REGISTRY_DOMAIN  = "default"
@@ -40,6 +45,12 @@ const (
 )
 
 func init() {
+	prepareSelfRegistration()
+
+	SetSharedMode()
+}
+
+func prepareSelfRegistration() {
 	Service = &pb.MicroService{
 		Environment: pb.ENV_PROD,
 		AppId:       REGISTRY_APP_ID,
@@ -70,28 +81,36 @@ func init() {
 }
 
 func AddDefaultContextValue(ctx context.Context) context.Context {
-	ctx = util.SetContext(ctx, "domain", REGISTRY_DOMAIN)
-	ctx = util.SetContext(ctx, "project", REGISTRY_PROJECT)
-	ctx = util.SetContext(ctx, IS_SC_SELF, true)
-	return ctx
+	return util.SetContext(
+		util.SetDomainProject(ctx, REGISTRY_DOMAIN, REGISTRY_PROJECT),
+		IS_SC_SELF, true)
 }
 
 func IsDefaultDomainProject(domainProject string) bool {
 	return domainProject == util.StringJoin([]string{REGISTRY_DOMAIN, REGISTRY_PROJECT}, "/")
 }
 
+func SetSharedMode() {
+	sharedServiceNames = util.ListToMap(strings.Split(os.Getenv("CSE_SHARED_SERVICES"), ","))
+	sharedServiceNames[Service.ServiceName] = struct{}{}
+}
+
 func IsShared(key *pb.MicroServiceKey) bool {
 	if !IsDefaultDomainProject(key.Tenant) {
 		return false
 	}
-	return key.AppId == Service.AppId
+	if key.AppId != REGISTRY_APP_ID {
+		return false
+	}
+	_, ok := sharedServiceNames[key.ServiceName]
+	return ok
 }
 
 func IsSCKey(key *pb.MicroServiceKey) bool {
-	if !IsShared(key) {
+	if !IsDefaultDomainProject(key.Tenant) {
 		return false
 	}
-	return key.ServiceName == Service.ServiceName
+	return key.AppId == Service.AppId && key.ServiceName == Service.ServiceName
 }
 
 func IsSCInstance(ctx context.Context) bool {

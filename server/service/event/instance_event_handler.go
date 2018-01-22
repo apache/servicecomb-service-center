@@ -54,9 +54,7 @@ func (h *InstanceEventHandler) OnEvent(evt *store.KvEvent) {
 		if len(splited) == 2 && !apt.IsDefaultDomainProject(domainProject) {
 			domainName := splited[0]
 			projectName := splited[1]
-			ctx := context.TODO()
-			ctx = util.SetContext(ctx, "domain", domainName)
-			ctx = util.SetContext(ctx, "project", projectName)
+			ctx := util.SetDomainProject(context.Background(), domainName, projectName)
 			serviceUtil.RemandInstanceQuota(ctx)
 		}
 	}

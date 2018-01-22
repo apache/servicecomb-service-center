@@ -256,7 +256,7 @@ func getSchemaInfoUtil(ctx context.Context, domainProject string, serviceId stri
 		registry.WithStrKey(key),
 		registry.WithPrefix())
 	if err != nil {
-		util.Logger().Errorf(err, "Get schema failed,%s")
+		util.Logger().Errorf(err, "Get schema failed")
 		return make([]*pb.Schema, 0), err
 	}
 	schemas := make([]*pb.Schema, 0, len(resp.Kvs))
@@ -368,7 +368,7 @@ func statistics(ctx context.Context) (*pb.Statistics, error) {
 	opts := serviceUtil.FromContext(ctx)
 
 	// services
-	key := apt.GetServiceIndexRootKey(domainProject)
+	key := apt.GetServiceIndexRootKey(domainProject) + "/"
 	svcOpts := append(opts,
 		registry.WithStrKey(key),
 		registry.WithPrefix(),
@@ -408,7 +408,7 @@ func statistics(ctx context.Context) (*pb.Statistics, error) {
 	result.Apps.Count = int64(len(app))
 
 	// instance
-	key = apt.GetInstanceRootKey(domainProject)
+	key = apt.GetInstanceRootKey(domainProject) + "/"
 	instOpts := append(opts,
 		registry.WithStrKey(key),
 		registry.WithPrefix(),

@@ -25,7 +25,7 @@ import (
 	"time"
 )
 
-var _ = Describe("Limiter", func() {
+var _ = Describe("HttpLimiter", func() {
 	var (
 		limiter *Limiter
 	)
@@ -39,7 +39,7 @@ var _ = Describe("Limiter", func() {
 			It("should be ok", func() {
 				Expect(limiter.conns).To(Equal(int64(0)))
 				res := []string{"RemoteAddr", "X-Forwarded-For", "X-Real-IP"}
-				for i, val := range limiter.tbLimiter.IPLookups {
+				for i, val := range limiter.httpLimiter.IPLookups {
 					Expect(val).To(Equal(res[i]))
 				}
 			})
@@ -57,7 +57,7 @@ var _ = Describe("Limiter", func() {
 		Context("Connections > 0", func() {
 			It("should not be router", func() {
 				limiter.conns = 1
-				limiter.tbLimiter = tollbooth.NewLimiter(1, time.Second)
+				limiter.httpLimiter = tollbooth.NewLimiter(1, time.Second)
 				resp, err := http.Get(ts.URL)
 				Expect(err).To(BeNil())
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
@@ -70,7 +70,7 @@ var _ = Describe("Limiter", func() {
 		Context("Connections <= 0", func() {
 			It("should be router", func() {
 				limiter.conns = 0
-				limiter.tbLimiter = tollbooth.NewLimiter(0, time.Second)
+				limiter.httpLimiter = tollbooth.NewLimiter(0, time.Second)
 				resp, err := http.Get(ts.URL)
 				Expect(err).To(BeNil())
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
