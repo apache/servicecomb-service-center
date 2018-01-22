@@ -186,10 +186,8 @@ func (pm *PluginManager) existDynamicPlugin(pn PluginName) *Plugin {
 	if !ok {
 		return nil
 	}
-	for _, p := range m {
-		if plugin.PluginLoader().Exist(p.Name) {
-			return m[BUILDIN]
-		}
+	if plugin.PluginLoader().Exist(pn.String()) {
+		return m[BUILDIN]
 	}
 	return nil
 }
