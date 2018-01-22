@@ -33,13 +33,13 @@ func TestRefreshDependencyCache(t *testing.T) {
 }
 
 func TestDeleteDependencyForService(t *testing.T) {
-	_, err := DeleteDependencyForService(context.Background(), &proto.MicroServiceKey{}, "")
+	_, err := DeleteDependencyForService(context.Background(), &proto.MicroServiceKey{})
 	if err == nil {
 		fmt.Printf(`DeleteDependencyForService failed`)
 		t.FailNow()
 	}
 
-	err = deleteDependencyRuleUtil(context.Background(),
+	_, err = updateProviderDependencyRuleUtil(
 		&proto.MicroServiceDependency{
 			Dependency: []*proto.MicroServiceKey{
 				{AppId: "a"},
@@ -48,12 +48,12 @@ func TestDeleteDependencyForService(t *testing.T) {
 		&proto.MicroServiceKey{
 			AppId: "a",
 		}, "")
-	if err == nil {
+	if err != nil {
 		fmt.Printf(`deleteDependencyRuleUtil with the same deps failed`)
 		t.FailNow()
 	}
 
-	err = deleteDependencyRuleUtil(context.Background(),
+	_, err = updateProviderDependencyRuleUtil(
 		&proto.MicroServiceDependency{
 			Dependency: []*proto.MicroServiceKey{
 				{AppId: "b"},
@@ -62,14 +62,8 @@ func TestDeleteDependencyForService(t *testing.T) {
 		&proto.MicroServiceKey{
 			AppId: "a",
 		}, "")
-	if err == nil {
+	if err != nil {
 		fmt.Printf(`deleteDependencyRuleUtil failed`)
-		t.FailNow()
-	}
-
-	_, err = deleteDependencyUtil(context.Background(), "", "", "", map[string]bool{})
-	if err == nil {
-		fmt.Printf(`deleteDependencyUtil failed`)
 		t.FailNow()
 	}
 

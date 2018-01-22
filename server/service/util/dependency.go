@@ -31,6 +31,8 @@ import (
 	"golang.org/x/net/context"
 	"strings"
 	"time"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/etcdsync"
+	"github.com/apache/incubator-servicecomb-service-center/server/mux"
 )
 
 var consumerCache *cache.Cache
@@ -277,54 +279,40 @@ func AddServiceVersionRule(ctx context.Context, domainProject string, consumer *
 	return nil
 }
 
-func DeleteDependencyForService(ctx context.Context, consumer *pb.MicroServiceKey, serviceId string) ([]registry.PluginOp, error) {
-	ops := []registry.PluginOp{}
-	opsTmps := []registry.PluginOp{}
-	domainProject := consumer.Tenant
-	flag := map[string]bool{}
+func DeleteDependencyForService(ctx context.Context, service *pb.MicroServiceKey) ([]registry.PluginOp, error) {
+	domainProject := service.Tenant
 	//删除依赖规则
-	conKey := apt.GenerateConsumerDependencyRuleKey(domainProject, consumer)
+	conKey := apt.GenerateConsumerDependencyRuleKey(domainProject, service)
 	providerValue, err := TransferToMicroServiceDependency(ctx, conKey)
 	if err != nil {
 		return nil, err
 	}
+	opts := make([]registry.PluginOp, 0)
 	if providerValue != nil && len(providerValue.Dependency) != 0 {
-		proProkey := ""
+		providerRuleKey := ""
 		for _, providerRule := range providerValue.Dependency {
-			proProkey = apt.GenerateProviderDependencyRuleKey(domainProject, providerRule)
-			consumers, err := TransferToMicroServiceDependency(ctx, proProkey)
+			providerRuleKey = apt.GenerateProviderDependencyRuleKey(domainProject, providerRule)
+			consumers, err := TransferToMicroServiceDependency(ctx, providerRuleKey)
 			if err != nil {
 				return nil, err
 			}
-			err = deleteDependencyRuleUtil(ctx, consumers, consumer, proProkey)
+			opt, err := updateProviderDependencyRuleUtil(consumers, service, providerRuleKey)
 			if err != nil {
 				return nil, err
 			}
+			opts = append(opts, opt)
 		}
-
-		util.Logger().Debugf("conKey is %s.", conKey)
-		ops = append(ops, registry.OpDel(registry.WithStrKey(conKey)))
 	}
+	util.Logger().Infof("delete dependency rule, consumer Key is %s.", conKey)
+	opts = append(opts, registry.OpDel(registry.WithStrKey(conKey)))
+
 	//作为provider的依赖规则
-	providerKey := apt.GenerateProviderDependencyRuleKey(domainProject, consumer)
+	providerKey := apt.GenerateProviderDependencyRuleKey(domainProject, service)
 
-	util.Logger().Debugf("providerKey is %s", providerKey)
-	ops = append(ops, registry.OpDel(registry.WithStrKey(providerKey)))
+	util.Logger().Infof("delete dependency rule, providerKey is %s", providerKey)
+	opts = append(opts, registry.OpDel(registry.WithStrKey(providerKey)))
 
-	//删除依赖关系
-	opsTmps, err = deleteDependencyUtil(ctx, "c", domainProject, serviceId, flag)
-	if err != nil {
-		return nil, err
-	}
-	ops = append(ops, opsTmps...)
-	util.Logger().Debugf("flag is %s", flag)
-	opsTmps, err = deleteDependencyUtil(ctx, "p", domainProject, serviceId, flag)
-	if err != nil {
-		return nil, err
-	}
-	util.Logger().Debugf("flag is %s", flag)
-	ops = append(ops, opsTmps...)
-	return ops, nil
+	return opts, nil
 }
 
 func TransferToMicroServiceDependency(ctx context.Context, key string) (*pb.MicroServiceDependency, error) {
@@ -348,35 +336,25 @@ func TransferToMicroServiceDependency(ctx context.Context, key string) (*pb.Micr
 	return microServiceDependency, nil
 }
 
-func deleteDependencyRuleUtil(ctx context.Context, microServiceDependency *pb.MicroServiceDependency, service *pb.MicroServiceKey, serviceKey string) error {
-	for key, serviceTmp := range microServiceDependency.Dependency {
-		if ok := equalServiceDependency(serviceTmp, service); ok {
-			microServiceDependency.Dependency = append(microServiceDependency.Dependency[:key], microServiceDependency.Dependency[key+1:]...)
-			util.Logger().Debugf("delete versionRule from %s", serviceTmp.ServiceName)
+func updateProviderDependencyRuleUtil(consumersOfProvideRules *pb.MicroServiceDependency, consumer *pb.MicroServiceKey, providerRuleKey string) (registry.PluginOp, error) {
+	for key, consumerInner := range consumersOfProvideRules.Dependency {
+		if ok := equalServiceDependency(consumerInner, consumer); ok {
+			consumersOfProvideRules.Dependency = append(consumersOfProvideRules.Dependency[:key], consumersOfProvideRules.Dependency[key+1:]...)
 			break
 		}
 	}
-	opts := []registry.PluginOpOption{}
-	if len(microServiceDependency.Dependency) == 0 {
-		opts = append(opts, registry.DEL, registry.WithStrKey(serviceKey))
-		util.Logger().Debugf("serviceKey is .", serviceKey)
-		util.Logger().Debugf("After deleting versionRule from %s,provider's consumer is empty.", serviceKey)
-
+	if len(consumersOfProvideRules.Dependency) == 0 {
+		util.Logger().Infof("delete dependency rule key is %s", providerRuleKey)
+		return registry.OpDel(registry.WithStrKey(providerRuleKey)), nil
 	} else {
-		data, err := json.Marshal(microServiceDependency)
+		data, err := json.Marshal(consumersOfProvideRules)
 		if err != nil {
-			util.Logger().Errorf(nil, "Marshal tmpValue failed.")
-			return err
+			util.Logger().Errorf(nil, "update dependency key Marshal tmpValue failed.")
+			return registry.PluginOp{}, err
 		}
-		opts = append(opts, registry.PUT, registry.WithStrKey(serviceKey), registry.WithValue(data))
-		util.Logger().Debugf("serviceKey is %s.", serviceKey)
+		util.Logger().Infof("put provider's dependency rule, key is  %s, value is %v.", providerRuleKey, consumersOfProvideRules)
+		return registry.OpPut(registry.WithStrKey(providerRuleKey), registry.WithValue(data)), nil
 	}
-	_, err := backend.Registry().Do(ctx, opts...)
-	if err != nil {
-		util.Logger().Errorf(err, "Submit update dependency failed.")
-		return err
-	}
-	return nil
 }
 
 func equalServiceDependency(serviceA *pb.MicroServiceKey, serviceB *pb.MicroServiceKey) bool {
@@ -400,43 +378,6 @@ func diffServiceVersion(serviceA *pb.MicroServiceKey, serviceB *pb.MicroServiceK
 
 func toString(in *pb.MicroServiceKey) string {
 	return apt.GenerateProviderDependencyRuleKey(in.Tenant, in)
-}
-
-func deleteDependencyUtil(ctx context.Context, serviceType string, domainProject string, serviceId string, flag map[string]bool) ([]registry.PluginOp, error) {
-	serviceKey := apt.GenerateServiceDependencyKey(serviceType, domainProject, serviceId, "")
-	rsp, err := store.Store().Dependency().Search(ctx,
-		registry.WithStrKey(serviceKey),
-		registry.WithPrefix())
-	if err != nil {
-		return nil, err
-	}
-	ops := []registry.PluginOp{}
-	if rsp != nil {
-		serviceTmpId := ""
-		serviceTmpKey := ""
-		deleteKey := ""
-		for _, kv := range rsp.Kvs {
-			tmpKeyArr := strings.Split(util.BytesToStringWithNoCopy(kv.Key), "/")
-			serviceTmpId = tmpKeyArr[len(tmpKeyArr)-1]
-			if serviceType == "p" {
-				serviceTmpKey = apt.GenerateConsumerDependencyKey(domainProject, serviceTmpId, serviceId)
-				deleteKey = util.StringJoin([]string{"c", serviceTmpId, serviceId}, "/")
-			} else {
-				serviceTmpKey = apt.GenerateProviderDependencyKey(domainProject, serviceTmpId, serviceId)
-				deleteKey = util.StringJoin([]string{"p", serviceTmpId, serviceId}, "/")
-			}
-			if _, ok := flag[serviceTmpKey]; ok {
-				util.Logger().Debugf("serviceTmpKey is more exist.%s", serviceTmpKey)
-				continue
-			}
-			flag[serviceTmpKey] = true
-			util.Logger().Infof("delete dependency %s", deleteKey)
-			ops = append(ops, registry.OpDel(registry.WithStrKey(serviceTmpKey)))
-		}
-		util.Logger().Infof("delete dependency serviceKey is %s", serviceType+"/"+serviceId)
-		ops = append(ops, registry.OpDel(registry.WithStrKey(serviceKey), registry.WithPrefix()))
-	}
-	return ops, nil
 }
 
 func parseAddOrUpdateRules(ctx context.Context, dep *Dependency) (newDependencyRuleList, existDependencyRuleList, deleteDependencyRuleList []*pb.MicroServiceKey) {
@@ -1111,4 +1052,12 @@ func (dr *DependencyRelation) getConsumerOfSameServiceNameAndAppId(provider *pb.
 		allConsumers = append(allConsumers, dependency.Dependency...)
 	}
 	return allConsumers, nil
+}
+
+func DependencyLock(lockKey string) (*etcdsync.DLock, error) {
+	return mux.Lock(mux.MuxType(lockKey))
+}
+
+func NewDependencyLockKey(domainProject, env string) string {
+	return util.StringJoin([]string{"","env-lock", domainProject, env}, "/")
 }

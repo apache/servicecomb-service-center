@@ -28,7 +28,6 @@ import (
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
-	"github.com/apache/incubator-servicecomb-service-center/server/mux"
 	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
@@ -196,7 +195,7 @@ func checkQuota(ctx context.Context, domainProject string) (quota.QuotaReporter,
 	return rst.Reporter, rst.Err
 }
 
-func (s *MicroServiceService) DeleteServicePri(ctx context.Context, ServiceId string, force bool) (*pb.Response, error) {
+func (s *MicroServiceService) DeleteServicePri(ctx context.Context, serviceId string, force bool) (*pb.Response, error) {
 	domainProject := util.ParseDomainProject(ctx)
 
 	title := "delete"
@@ -204,20 +203,24 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, ServiceId st
 		title = "force delete"
 	}
 
-	if ServiceId == apt.Service.ServiceId {
+	isServiceCenter := func(serviceId string) bool {
+		return serviceId == apt.Service.ServiceId
+	}
+
+	if isServiceCenter(serviceId) {
 		err := errors.New("not allow to delete service center")
-		util.Logger().Errorf(err, "%s micro-service failed, serviceId is %s", title, ServiceId)
+		util.Logger().Errorf(err, "%s micro-service failed, serviceId is %s", title, serviceId)
 		return pb.CreateResponse(scerr.ErrInvalidParams, err.Error()), nil
 	}
 
-	service, err := serviceUtil.GetService(ctx, domainProject, ServiceId)
+	service, err := serviceUtil.GetService(ctx, domainProject, serviceId)
 	if err != nil {
-		util.Logger().Errorf(err, "%s micro-service failed, serviceId is %s: get service failed.", title, ServiceId)
+		util.Logger().Errorf(err, "%s micro-service failed, serviceId is %s: get service failed.", title, serviceId)
 		return pb.CreateResponse(scerr.ErrInternal, err.Error()), err
 	}
 
 	if service == nil {
-		util.Logger().Errorf(err, "%s micro-service failed, serviceId is %s: service not exist.", title, ServiceId)
+		util.Logger().Errorf(err, "%s micro-service failed, serviceId is %s: service not exist.", title, serviceId)
 		return pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."), nil
 	}
 
@@ -226,31 +229,38 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, ServiceId st
 		dr := serviceUtil.NewProviderDependencyRelation(ctx, domainProject, service)
 		services, err := dr.GetDependencyConsumerIds()
 		if err != nil {
-			util.Logger().Errorf(err, "delete micro-service failed, serviceId is %s: inner err, get service dependency failed.", ServiceId)
+			util.Logger().Errorf(err, "delete micro-service failed, serviceId is %s: inner err, get service dependency failed.", serviceId)
 			return pb.CreateResponse(scerr.ErrInternal, "Get dependency info failed."), err
 		}
-		if len(services) > 1 || (len(services) == 1 && services[0] != ServiceId) {
-			util.Logger().Errorf(nil, "delete micro-service failed, serviceId is %s: can't delete, other services rely it.", ServiceId)
+		if len(services) > 1 || (len(services) == 1 && services[0] != serviceId) {
+			util.Logger().Errorf(nil, "delete micro-service failed, serviceId is %s: can't delete, other services rely it.", serviceId)
 			return pb.CreateResponse(scerr.ErrDependedOnConsumer, "Can not delete this service, other service rely it."), err
 		}
 
-		instancesKey := apt.GenerateInstanceKey(domainProject, ServiceId, "")
+		instancesKey := apt.GenerateInstanceKey(domainProject, serviceId, "")
 		rsp, err := store.Store().Instance().Search(ctx,
 			registry.WithStrKey(instancesKey),
 			registry.WithPrefix(),
 			registry.WithCountOnly())
 		if err != nil {
-			util.Logger().Errorf(err, "delete micro-service failed, serviceId is %s: inner err,get instances failed.", ServiceId)
+			util.Logger().Errorf(err, "delete micro-service failed, serviceId is %s: inner err,get instances failed.", serviceId)
 			return pb.CreateResponse(scerr.ErrInternal, "Get instance failed."), err
 		}
 
 		if rsp.Count > 0 {
-			util.Logger().Errorf(nil, "delete micro-service failed, serviceId is %s: can't delete, exist instance.", ServiceId)
+			util.Logger().Errorf(nil, "delete micro-service failed, serviceId is %s: can't delete, exist instance.", serviceId)
 			return pb.CreateResponse(scerr.ErrDeployedInstance, "Can not delete this service, exist instance."), err
 		}
 	}
 
-	consumer := &pb.MicroServiceKey{
+	//refresh msCache consumerCache, ensure that watch can notify consumers when no cache.
+	err = serviceUtil.RefreshDependencyCache(ctx, domainProject, service)
+	if err != nil {
+		util.Logger().Errorf(err, "%s micro-service failed, serviceId is %s: inner err, refresh service dependency cache failed.", title, serviceId)
+		return pb.CreateResponse(scerr.ErrInternal, "Refresh dependency cache failed."), err
+	}
+
+	serviceKey := &pb.MicroServiceKey{
 		Tenant:      domainProject,
 		Environment: service.Environment,
 		AppId:       service.AppId,
@@ -258,71 +268,64 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, ServiceId st
 		Version:     service.Version,
 		Alias:       service.Alias,
 	}
-
-	//refresh msCache consumerCache, ensure that watch can notify consumers when no cache.
-	err = serviceUtil.RefreshDependencyCache(ctx, domainProject, service)
-	if err != nil {
-		util.Logger().Errorf(err, "%s micro-service failed, serviceId is %s: inner err, refresh service dependency cache failed.", title, ServiceId)
-		return pb.CreateResponse(scerr.ErrInternal, "Refresh dependency cache failed."), err
-	}
-
 	opts := []registry.PluginOp{
-		registry.OpDel(registry.WithStrKey(apt.GenerateServiceIndexKey(consumer))),
-		registry.OpDel(registry.WithStrKey(apt.GenerateServiceAliasKey(consumer))),
-		registry.OpDel(registry.WithStrKey(apt.GenerateServiceKey(domainProject, ServiceId))),
+		registry.OpDel(registry.WithStrKey(apt.GenerateServiceIndexKey(serviceKey))),
+		registry.OpDel(registry.WithStrKey(apt.GenerateServiceAliasKey(serviceKey))),
+		registry.OpDel(registry.WithStrKey(apt.GenerateServiceKey(domainProject, serviceId))),
 		registry.OpDel(registry.WithStrKey(
-			util.StringJoin([]string{apt.GetServiceRuleRootKey(domainProject), ServiceId, ""}, "/"))),
+			util.StringJoin([]string{apt.GetServiceRuleRootKey(domainProject), serviceId, ""}, "/"))),
 	}
 
 	//删除依赖规则
-	lock, err := mux.Lock(mux.DEP_QUEUE_LOCK)
+	lock, err := serviceUtil.DependencyLock(serviceUtil.NewDependencyLockKey(domainProject, service.Environment))
 	if err != nil {
-		util.Logger().Errorf(err, "%s micro-service failed, serviceId is %s: inner err, create lock failed.", title, ServiceId)
+		util.Logger().Errorf(err, "%s micro-service failed, serviceId is %s: inner err, create lock failed.", title, serviceId)
 		return pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()), err
 	}
-	optsTmp, err := serviceUtil.DeleteDependencyForService(ctx, consumer, ServiceId)
-	lock.Unlock()
+
+	defer lock.Unlock()
+	optsTmp, err := serviceUtil.DeleteDependencyForService(ctx, serviceKey)
 	if err != nil {
-		util.Logger().Errorf(err, "%s micro-service failed, serviceId is %s: inner err, delete dependency failed.", title, ServiceId)
+		util.Logger().Errorf(err, "%s micro-service failed, serviceId is %s: inner err, delete dependency failed.", title, serviceId)
 		return pb.CreateResponse(scerr.ErrInternal, err.Error()), err
 	}
 	opts = append(opts, optsTmp...)
 
 	//删除黑白名单
 	opts = append(opts, registry.OpDel(
-		registry.WithStrKey(apt.GenerateServiceRuleKey(domainProject, ServiceId, "")),
+		registry.WithStrKey(apt.GenerateServiceRuleKey(domainProject, serviceId, "")),
 		registry.WithPrefix()))
 	opts = append(opts, registry.OpDel(
-		registry.WithStrKey(apt.GenerateRuleIndexKey(domainProject, ServiceId, "", ""))))
+		registry.WithStrKey(apt.GenerateRuleIndexKey(domainProject, serviceId, "", ""))))
 
 	//删除schemas
 	opts = append(opts, registry.OpDel(
-		registry.WithStrKey(apt.GenerateServiceSchemaKey(domainProject, ServiceId, "")),
+		registry.WithStrKey(apt.GenerateServiceSchemaKey(domainProject, serviceId, "")),
 		registry.WithPrefix()))
 	opts = append(opts, registry.OpDel(
-		registry.WithStrKey(apt.GenerateServiceSchemaSummaryKey(domainProject, ServiceId, "")),
+		registry.WithStrKey(apt.GenerateServiceSchemaSummaryKey(domainProject, serviceId, "")),
 		registry.WithPrefix()))
 
 	//删除tags
 	opts = append(opts, registry.OpDel(
-		registry.WithStrKey(apt.GenerateServiceTagKey(domainProject, ServiceId))))
+		registry.WithStrKey(apt.GenerateServiceTagKey(domainProject, serviceId))))
 
 	//删除实例
-	err = serviceUtil.DeleteServiceAllInstances(ctx, ServiceId)
+	err = serviceUtil.DeleteServiceAllInstances(ctx, serviceId)
 	if err != nil {
-		util.Logger().Errorf(err, "%s micro-service failed, serviceId is %s: delete all instances failed.", title, ServiceId)
+		util.Logger().Errorf(err, "%s micro-service failed, serviceId is %s: delete all instances failed.", title, serviceId)
 		return pb.CreateResponse(scerr.ErrInternal, "Delete all instances failed for service."), err
 	}
 
 	err = backend.BatchCommit(ctx, opts)
 	if err != nil {
-		util.Logger().Errorf(err, "%s micro-service failed, serviceId is %s: commit data into etcd failed.", title, ServiceId)
+		util.Logger().Errorf(err, "%s micro-service failed, serviceId is %s: commit data into etcd failed.", title, serviceId)
 		return pb.CreateResponse(scerr.ErrUnavailableBackend, "Commit operations failed."), nil
 	}
 
 	serviceUtil.RemandServiceQuota(ctx)
 
-	util.Logger().Infof("%s micro-service successful: serviceId is %s, operator is %s.", title, ServiceId, util.GetIPFromContext(ctx))
+	util.Logger().Infof("%s micro-service successful: serviceId is %s, operator is %s.", title, serviceId, util.GetIPFromContext(ctx))
 	return pb.CreateResponse(pb.Response_SUCCESS, "Unregister service successfully."), nil
 }
 
