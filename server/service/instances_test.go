@@ -26,6 +26,7 @@ import (
 	. "github.com/onsi/gomega"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"os"
 )
 
 type grpcWatchServer struct {
@@ -598,6 +599,7 @@ var _ = Describe("'Instance' service", func() {
 			serviceId4  string
 			serviceId5  string
 			serviceId6  string
+			serviceId7  string
 			instanceId1 string
 			instanceId2 string
 			instanceId4 string
@@ -675,10 +677,23 @@ var _ = Describe("'Instance' service", func() {
 			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
 			serviceId5 = respCreate.ServiceId
 
+			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "default",
+					ServiceName: "query_instance_shared_consumer",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
+			serviceId7 = respCreate.ServiceId
+
 			respCreate, err = serviceResource.Create(util.SetDomainProject(context.Background(), "user", "user"),
 				&pb.CreateServiceRequest{
 					Service: &pb.MicroService{
-						AppId:       "query_instance_diff_domain",
+						AppId:       "default",
 						ServiceName: "query_instance_diff_domain_consumer",
 						Version:     "1.0.0",
 						Level:       "FRONT",
@@ -888,8 +903,10 @@ var _ = Describe("'Instance' service", func() {
 				Expect(len(respFind.Instances)).To(Equal(0))
 
 				By("shared service discovery")
-				core.SetSharedMode(true)
+				os.Setenv("CSE_SHARED_SERVICES", "query_instance_shared_provider")
+				core.SetSharedMode()
 				core.Service.Environment = pb.ENV_PROD
+
 				respFind, err = instanceResource.Find(
 					util.SetTargetDomainProject(
 						util.SetDomainProject(context.Background(), "user", "user"),
@@ -906,7 +923,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId5))
 
 				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
-					ConsumerServiceId: serviceId4,
+					ConsumerServiceId: serviceId7,
 					AppId:             "default",
 					ServiceName:       "query_instance_shared_provider",
 					VersionRule:       "1.0.0",
@@ -915,8 +932,8 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
 				Expect(len(respFind.Instances)).To(Equal(1))
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId5))
+
 				core.Service.Environment = pb.ENV_DEV
-				core.SetSharedMode(false)
 			})
 		})
 
