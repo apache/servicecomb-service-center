@@ -17,13 +17,9 @@
 package buildin
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/plugin"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	"net/http"
 )
-
-var authFunc func(r *http.Request) error
 
 func init() {
 	mgr.RegisterPlugin(mgr.Plugin{mgr.AUTH, "buildin", New})
@@ -37,18 +33,10 @@ type BuildInAuth struct {
 }
 
 func (ba *BuildInAuth) Identify(r *http.Request) error {
-	return nil
-}
+	df, ok := mgr.DynamicPluginFunc(mgr.AUTH, "Identify").(func(r *http.Request) error)
+	if ok {
+		return df(r)
+	}
 
-func findAuthFunc(funcName string) func(r *http.Request) error {
-	ff, err := plugin.FindFunc(mgr.AUTH.String(), funcName)
-	if err != nil {
-		return nil
-	}
-	f, ok := ff.(func(*http.Request) error)
-	if !ok {
-		util.Logger().Warnf(nil, "unexpected function '%s' format found in plugin 'auth'.", funcName)
-		return nil
-	}
-	return f
+	return nil
 }

@@ -54,6 +54,11 @@ type BuildInQuota struct {
 
 //申请配额sourceType serviceinstance servicetype
 func (q *BuildInQuota) Apply4Quotas(ctx context.Context, res *quota.ApplyQuotaResource) *quota.ApplyQuotaResult {
+	df, ok := mgr.DynamicPluginFunc(mgr.QUOTA, "Apply4Quotas").(func(context.Context, *quota.ApplyQuotaResource) *quota.ApplyQuotaResult)
+	if ok {
+		return df(ctx, res)
+	}
+
 	data := &QuotaApplyData{
 		domain:    strings.Split(res.DomainProject, "/")[0],
 		quotaSize: res.QuotaSize,
@@ -70,6 +75,11 @@ func (q *BuildInQuota) Apply4Quotas(ctx context.Context, res *quota.ApplyQuotaRe
 
 //向配额中心上报配额使用量
 func (q *BuildInQuota) RemandQuotas(ctx context.Context, quotaType quota.ResourceType) {
+	df, ok := mgr.DynamicPluginFunc(mgr.QUOTA, "RemandQuotas").(func(context.Context, quota.ResourceType))
+	if ok {
+		df(ctx, quotaType)
+		return
+	}
 }
 
 func ResourceLimitHandler(ctx context.Context, res *quota.ApplyQuotaResource) *quota.ApplyQuotaResult {

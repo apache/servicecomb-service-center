@@ -76,6 +76,7 @@ type Plugin struct {
 type PluginInstance interface{}
 
 type wrapInstance struct {
+	dynamic  bool
 	instance PluginInstance
 	lock     sync.RWMutex
 }
@@ -135,37 +136,42 @@ func (pm *PluginManager) Instance(pn PluginName) PluginInstance {
 		wi.lock.Unlock()
 		return wi.instance
 	}
-	wi.instance = pm.New(pn)
+	pm.New(pn)
 	wi.lock.Unlock()
 
 	return wi.instance
 }
 
-func (pm *PluginManager) New(pn PluginName) PluginInstance {
+func (pm *PluginManager) New(pn PluginName) {
 	var (
-		title string = "static"
+		title = "static"
 		f     func() PluginInstance
 	)
+
+	wi := pm.instances[pn]
 	p := pm.existDynamicPlugin(pn)
 	if p != nil {
+		wi.dynamic = true
 		title = "dynamic"
 		f = p.New
 	} else {
+		wi.dynamic = false
 		m, ok := pm.plugins[pn]
 		if !ok {
-			return nil
+			return
 		}
 
 		name := beego.AppConfig.DefaultString(pn.String()+"_plugin", BUILDIN)
 		p, ok = m[name]
 		if !ok {
-			return nil
+			return
 		}
 
 		f = p.New
 	}
 	util.Logger().Infof("new '%s' instance from '%s' %s plugin", p.Name, p.PName, title)
-	return f()
+
+	wi.instance = f()
 }
 
 func (pm *PluginManager) Reload(pn PluginName) {
@@ -221,7 +227,7 @@ func RegisterPlugin(p Plugin) {
 }
 
 func DynamicPluginFunc(pn PluginName, funcName string) pg.Symbol {
-	if p := Plugins().existDynamicPlugin(pn); p != nil {
+	if wi := Plugins().instances[pn]; !wi.dynamic {
 		return nil
 	}
 

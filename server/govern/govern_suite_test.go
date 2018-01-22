@@ -22,7 +22,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/govern"
 	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/quota/buildin"
 	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/registry/etcd"
-	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/uuid/dynamic"
+	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/uuid/buildin"
 	"github.com/apache/incubator-servicecomb-service-center/server/service"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"

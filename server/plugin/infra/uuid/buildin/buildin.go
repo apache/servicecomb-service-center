@@ -14,47 +14,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dynamic
+
+package buildin
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/plugin"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/uuid"
 	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
-	"net/http"
 )
 
-var authFunc func(r *http.Request) error
-
 func init() {
-	f := findAuthFunc("Identify")
-	if f == nil {
-		return
-	}
-
-	authFunc = f
-	mgr.RegisterPlugin(mgr.Plugin{mgr.AUTH, "dynamic", New})
-}
-
-func findAuthFunc(funcName string) func(r *http.Request) error {
-	ff, err := plugin.FindFunc("auth", funcName)
-	if err != nil {
-		return nil
-	}
-	f, ok := ff.(func(*http.Request) error)
-	if !ok {
-		util.Logger().Warnf(nil, "unexpected function '%s' format found in plugin 'auth'.", funcName)
-		return nil
-	}
-	return f
+	mgr.RegisterPlugin(mgr.Plugin{mgr.UUID, "buildin", New})
 }
 
 func New() mgr.PluginInstance {
-	return &DynamicAuth{}
+	return &BuildinUUID{}
 }
 
-type DynamicAuth struct {
+type BuildinUUID struct {
 }
 
-func (da *DynamicAuth) Identify(r *http.Request) error {
-	return authFunc(r)
+func (du *BuildinUUID) GetServiceId() string {
+	df, ok := mgr.DynamicPluginFunc(mgr.UUID, "GetServiceId").(func() string)
+	if ok {
+		return df()
+	}
+	return uuid.GenerateUuid()
+}
+
+func (du *BuildinUUID) GetInstanceId() string {
+	df, ok := mgr.DynamicPluginFunc(mgr.UUID, "GetInstanceId").(func() string)
+	if ok {
+		return df()
+	}
+	return uuid.GenerateUuid()
 }
