@@ -132,7 +132,7 @@ func (h *DependencyEventHandler) Handle() error {
 	}
 
 	lenKvs := len(resp.Kvs)
-	resourcesMap := make(map[string]*[]*DependencyEventHandlerResource, lenKvs)
+	resourcesMap := make(map[string][]*DependencyEventHandlerResource, lenKvs)
 
 	ctx := context.Background()
 	for _, kv := range resp.Kvs {
@@ -152,13 +152,12 @@ func (h *DependencyEventHandler) Handle() error {
 
 		lockKey := serviceUtil.NewDependencyLockKey(domainProject, r.Consumer.Environment)
 		res := NewDependencyEventHandlerResource(r, kv, domainProject)
-		if resources, ok := resourcesMap[lockKey]; ok {
-			*resources = append(*resources, res)
-		} else {
-			resources := make([]*DependencyEventHandlerResource, 0, lenKvs)
-			resources = append(resources, res)
-			resourcesMap[lockKey] = &resources
+		resources := resourcesMap[lockKey]
+		if _, ok := resourcesMap[lockKey]; !ok {
+			resources = make([]*DependencyEventHandlerResource, 0, lenKvs)
 		}
+		resources = append(resources, res)
+		resourcesMap[lockKey] = resources
 	}
 
 	dependencyRuleHandleResults := make(chan error, len(resourcesMap))
@@ -166,7 +165,7 @@ func (h *DependencyEventHandler) Handle() error {
 		go func(lockKey string, resources []*DependencyEventHandlerResource){
 			err := h.dependencyRuleHandle(ctx, lockKey, resources)
 			dependencyRuleHandleResults <- err
-		}(lockKey, *resources)
+		}(lockKey, resources)
 	}
 	var lastErr error
 	finishedCount := 0
