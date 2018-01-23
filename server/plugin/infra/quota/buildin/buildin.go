@@ -21,13 +21,13 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
+	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
 	"strings"
-	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 )
 
 const (
@@ -42,7 +42,7 @@ func init() {
 	core.SchemaIdRule.Length = SCHEMA_NUM_MAX_LIMIT_PER_SERVICE
 	core.TagRule.Length = TAG_NUM_MAX_LIMIT_PER_SERVICE
 
-	mgr.RegisterPlugin(mgr.Plugin{mgr.STATIC, mgr.QUOTA, "buildin", New})
+	mgr.RegisterPlugin(mgr.Plugin{mgr.QUOTA, "buildin", New})
 }
 
 func New() mgr.PluginInstance {
@@ -54,6 +54,11 @@ type BuildInQuota struct {
 
 //申请配额sourceType serviceinstance servicetype
 func (q *BuildInQuota) Apply4Quotas(ctx context.Context, res *quota.ApplyQuotaResource) *quota.ApplyQuotaResult {
+	df, ok := mgr.DynamicPluginFunc(mgr.QUOTA, "Apply4Quotas").(func(context.Context, *quota.ApplyQuotaResource) *quota.ApplyQuotaResult)
+	if ok {
+		return df(ctx, res)
+	}
+
 	data := &QuotaApplyData{
 		domain:    strings.Split(res.DomainProject, "/")[0],
 		quotaSize: res.QuotaSize,
@@ -70,6 +75,11 @@ func (q *BuildInQuota) Apply4Quotas(ctx context.Context, res *quota.ApplyQuotaRe
 
 //向配额中心上报配额使用量
 func (q *BuildInQuota) RemandQuotas(ctx context.Context, quotaType quota.ResourceType) {
+	df, ok := mgr.DynamicPluginFunc(mgr.QUOTA, "RemandQuotas").(func(context.Context, quota.ResourceType))
+	if ok {
+		df(ctx, quotaType)
+		return
+	}
 }
 
 func ResourceLimitHandler(ctx context.Context, res *quota.ApplyQuotaResource) *quota.ApplyQuotaResult {
@@ -211,7 +221,7 @@ func serviceQuotaCheck(ctx context.Context, data *QuotaApplyData) *quota.ApplyQu
 		util.Logger().Errorf(err, mes)
 		return quota.NewApplyQuotaResult(nil, scerr.NewError(scerr.ErrNotEnoughQuota, mes))
 	}
-	return quota.NewApplyQuotaResult(nil,nil)
+	return quota.NewApplyQuotaResult(nil, nil)
 }
 
 func getServiceMaxLimit() int64 {

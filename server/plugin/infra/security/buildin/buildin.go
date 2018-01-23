@@ -21,7 +21,7 @@ import (
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{mgr.STATIC, mgr.CIPHER, "buildin", New})
+	mgr.RegisterPlugin(mgr.Plugin{mgr.CIPHER, "buildin", New})
 }
 
 func New() mgr.PluginInstance {
@@ -32,9 +32,17 @@ type DefaultCipher struct {
 }
 
 func (c *DefaultCipher) Encrypt(src string) (string, error) {
+	df, ok := mgr.DynamicPluginFunc(mgr.CIPHER, "Encrypt").(func(src string) (string, error))
+	if ok {
+		return df(src)
+	}
 	return src, nil
 }
 
 func (c *DefaultCipher) Decrypt(src string) (string, error) {
+	df, ok := mgr.DynamicPluginFunc(mgr.CIPHER, "Decrypt").(func(src string) (string, error))
+	if ok {
+		return df(src)
+	}
 	return src, nil
 }

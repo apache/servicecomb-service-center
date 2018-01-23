@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dynamic
+package buildin
 
 import (
 	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
@@ -22,7 +22,7 @@ import (
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{mgr.STATIC, mgr.AUTH, "buildin", New})
+	mgr.RegisterPlugin(mgr.Plugin{mgr.AUTH, "buildin", New})
 }
 
 func New() mgr.PluginInstance {
@@ -33,5 +33,10 @@ type BuildInAuth struct {
 }
 
 func (ba *BuildInAuth) Identify(r *http.Request) error {
+	df, ok := mgr.DynamicPluginFunc(mgr.AUTH, "Identify").(func(r *http.Request) error)
+	if ok {
+		return df(r)
+	}
+
 	return nil
 }

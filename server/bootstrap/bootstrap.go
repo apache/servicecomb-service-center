@@ -35,10 +35,9 @@ import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/i
 
 // auth
 import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/auth/buildin"
-import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/auth/dynamic"
 
 // uuid
-import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/uuid/dynamic"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/uuid/buildin"
 
 // module
 import _ "github.com/apache/incubator-servicecomb-service-center/server/govern"

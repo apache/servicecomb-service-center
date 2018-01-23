@@ -25,7 +25,7 @@ import (
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{mgr.STATIC, mgr.QUOTA, "unlimit", New})
+	mgr.RegisterPlugin(mgr.Plugin{mgr.QUOTA, "unlimit", New})
 
 	quataType := beego.AppConfig.DefaultString("quota_plugin", "")
 	if quataType != "unlimit" {

@@ -15,55 +15,36 @@
  * limitations under the License.
  */
 
-package dynamic
+package buildin
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/plugin"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/uuid"
 	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
 )
 
-var (
-	serviceIdFunc  func() string
-	instanceIdFunc func() string
-)
-
 func init() {
-	serviceIdFunc = findUuidFunc("GetServiceId")
-	instanceIdFunc = findUuidFunc("GetInstanceId")
-
-	mgr.RegisterPlugin(mgr.Plugin{mgr.DYNAMIC, mgr.UUID, "dynamic", New})
-}
-
-func buildinUuidFunc() string {
-	return uuid.GenerateUuid()
-}
-
-func findUuidFunc(funcName string) func() string {
-	ff, err := plugin.FindFunc("uuid", funcName)
-	if err != nil {
-		return buildinUuidFunc
-	}
-	f, ok := ff.(func() string)
-	if !ok {
-		util.Logger().Warnf(nil, "unexpected function '%s' format found in plugin 'uuid'.", funcName)
-		return buildinUuidFunc
-	}
-	return f
+	mgr.RegisterPlugin(mgr.Plugin{mgr.UUID, "buildin", New})
 }
 
 func New() mgr.PluginInstance {
-	return &DynamicUUID{}
+	return &BuildinUUID{}
 }
 
-type DynamicUUID struct {
+type BuildinUUID struct {
 }
 
-func (du *DynamicUUID) GetServiceId() string {
-	return serviceIdFunc()
+func (du *BuildinUUID) GetServiceId() string {
+	df, ok := mgr.DynamicPluginFunc(mgr.UUID, "GetServiceId").(func() string)
+	if ok {
+		return df()
+	}
+	return uuid.GenerateUuid()
 }
 
-func (du *DynamicUUID) GetInstanceId() string {
-	return instanceIdFunc()
+func (du *BuildinUUID) GetInstanceId() string {
+	df, ok := mgr.DynamicPluginFunc(mgr.UUID, "GetInstanceId").(func() string)
+	if ok {
+		return df()
+	}
+	return uuid.GenerateUuid()
 }
