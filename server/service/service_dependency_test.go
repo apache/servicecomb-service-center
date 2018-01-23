@@ -26,7 +26,7 @@ import (
 var deh event.DependencyEventHandler
 
 var _ = Describe("'Dependency' service", func() {
-	Describe("execute 'create' operartion", func() {
+	Describe("execute 'create' operation", func() {
 		var (
 			consumerId1 string
 			consumerId2 string

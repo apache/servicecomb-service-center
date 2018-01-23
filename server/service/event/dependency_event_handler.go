@@ -96,6 +96,42 @@ type DependencyEventHandlerResource struct {
 	domainProject string
 }
 
+type treeNode struct {
+	res         *DependencyEventHandlerResource
+	left, right *treeNode
+}
+
+func addTreeNode(tn *treeNode, res *DependencyEventHandlerResource) *treeNode {
+	if tn == nil {
+		tn = new(treeNode)
+		tn.res = res
+		return tn
+	}
+	if tn.res.kv.ModRevision > res.kv.ModRevision {
+		tn.left = addTreeNode(tn.left, res)
+	} else {
+		tn.right = addTreeNode(tn.right, res)
+	}
+	return tn
+}
+
+func midOderTraversal(tn *treeNode, handle func(ctx context.Context, res *DependencyEventHandlerResource) error) error {
+	if tn == nil {
+		return nil
+	}
+
+	var savedErr error
+
+	midOderTraversal(tn.left, handle)
+	err := handle(context.Background(), tn.res)
+	if err != nil {
+		util.Logger().Errorf(err, "handle dependency event failed")
+		savedErr = err
+	}
+	midOderTraversal(tn.right, handle)
+	return savedErr
+}
+
 func NewDependencyEventHandlerResource(dep *pb.ConsumerDependency, kv *mvccpb.KeyValue, domainProject string) *DependencyEventHandlerResource {
 	return &DependencyEventHandlerResource{
 		dep,
@@ -119,10 +155,8 @@ func (h *DependencyEventHandler) Handle() error {
 		return nil
 	}
 
-	lenKvs := len(resp.Kvs)
-	resourcesMap := make(map[string][]*DependencyEventHandlerResource, lenKvs)
-
 	ctx := context.Background()
+	var root *treeNode
 	for _, kv := range resp.Kvs {
 		r := &pb.ConsumerDependency{}
 		consumerId, domainProject, data := pb.GetInfoFromDependencyQueueKV(kv)
@@ -138,102 +172,55 @@ func (h *DependencyEventHandler) Handle() error {
 			continue
 		}
 
-		lockKey := serviceUtil.NewDependencyLockKey(domainProject, r.Consumer.Environment)
 		res := NewDependencyEventHandlerResource(r, kv, domainProject)
-		resources := resourcesMap[lockKey]
-		if resources == nil {
-			resources = make([]*DependencyEventHandlerResource, 0, lenKvs)
-		}
-		resources = append(resources, res)
-		resourcesMap[lockKey] = resources
-	}
 
-	dependencyRuleHandleResults := make(chan error, len(resourcesMap))
-	for lockKey, resources := range resourcesMap {
-		go func(lockKey string, resources []*DependencyEventHandlerResource) {
-			err := h.dependencyRuleHandle(ctx, lockKey, resources)
-			dependencyRuleHandleResults <- err
-		}(lockKey, resources)
+		root = addTreeNode(root, res)
+
 	}
-	var lastErr error
-	finishedCount := 0
-	for err := range dependencyRuleHandleResults {
-		finishedCount++
-		if err != nil {
-			lastErr = err
-		}
-		if finishedCount == len(resourcesMap) {
-			close(dependencyRuleHandleResults)
-		}
-	}
-	return lastErr
+	return midOderTraversal(root, h.dependencyRuleHandle)
 }
 
-func (h *DependencyEventHandler) dependencyRuleHandle(ctx context.Context, lockKey string, resources []*DependencyEventHandlerResource) error {
-	lock, err := serviceUtil.DependencyLock(lockKey)
+func (h *DependencyEventHandler) dependencyRuleHandle(ctx context.Context, res *DependencyEventHandlerResource) error {
+	r := res.dep
+	consumerFlag := util.StringJoin([]string{r.Consumer.AppId, r.Consumer.ServiceName, r.Consumer.Version}, "/")
+
+	domainProject := res.domainProject
+	consumerInfo := pb.DependenciesToKeys([]*pb.MicroServiceKey{r.Consumer}, domainProject)[0]
+	providersInfo := pb.DependenciesToKeys(r.Providers, domainProject)
+
+	var dep serviceUtil.Dependency
+	var err error
+	dep.DomainProject = domainProject
+	dep.Consumer = consumerInfo
+	dep.ProvidersRule = providersInfo
+	if r.Override {
+		err = serviceUtil.CreateDependencyRule(ctx, &dep)
+	} else {
+		err = serviceUtil.AddDependencyRule(ctx, &dep)
+	}
+
 	if err != nil {
-		util.Logger().Errorf(err, "create dependency rule locker failed")
+		util.Logger().Errorf(err, "modify dependency rule failed, override: %t, consumer %s", r.Override, consumerFlag)
+		return fmt.Errorf("override: %t, consumer is %s, %s", r.Override, consumerFlag, err.Error())
+	}
+
+	if err = h.removeKV(ctx, res.kv); err != nil {
+		util.Logger().Errorf(err, "remove dependency rule failed, override: %t, consumer %s", r.Override, consumerFlag)
 		return err
 	}
-	defer lock.Unlock()
-	for _, res := range resources {
-		r := res.dep
-		consumerFlag := util.StringJoin([]string{r.Consumer.AppId, r.Consumer.ServiceName, r.Consumer.Version}, "/")
 
-		domainProject := res.domainProject
-		consumerInfo := pb.DependenciesToKeys([]*pb.MicroServiceKey{r.Consumer}, domainProject)[0]
-		providersInfo := pb.DependenciesToKeys(r.Providers, domainProject)
-
-		consumerId, err := serviceUtil.GetServiceId(ctx, consumerInfo)
-		if err != nil {
-			util.Logger().Errorf(err, "modify dependency rule failed, override: %t, consumer %s", r.Override, consumerFlag)
-			return fmt.Errorf("get consumer %s id failed, override: %t, %s", consumerFlag, r.Override, err.Error())
-		}
-		if len(consumerId) == 0 {
-			util.Logger().Errorf(nil, "maintain dependency failed, override: %t, consumer %s does not exist",
-				r.Override, consumerFlag)
-
-			if err = h.removeKV(ctx, res.kv); err != nil {
-				util.Logger().Errorf(err, "remove dependency rule failed, override: %t, consumer %s", r.Override, consumerFlag)
-				return err
-			}
-			continue
-		}
-
-		var dep serviceUtil.Dependency
-		dep.DomainProject = domainProject
-		dep.Consumer = consumerInfo
-		dep.ProvidersRule = providersInfo
-		dep.ConsumerId = consumerId
-		if r.Override {
-			err = serviceUtil.CreateDependencyRule(ctx, &dep)
-		} else {
-			err = serviceUtil.AddDependencyRule(ctx, &dep)
-		}
-
-		if err != nil {
-			util.Logger().Errorf(err, "modify dependency rule failed, override: %t, consumer %s", r.Override, consumerFlag)
-			return fmt.Errorf("override: %t, consumer is %s, %s", r.Override, consumerFlag, err.Error())
-		}
-
-		if err = h.removeKV(ctx, res.kv); err != nil {
-			util.Logger().Errorf(err, "remove dependency rule failed, override: %t, consumer %s", r.Override, consumerFlag)
-			return err
-		}
-
-		util.Logger().Infof("maintain dependency %v successfully, override: %t", r, r.Override)
-	}
+	util.Logger().Infof("maintain dependency %v successfully, override: %t", r, r.Override)
 	return nil
 }
 
 func (h *DependencyEventHandler) removeKV(ctx context.Context, kv *mvccpb.KeyValue) error {
-	dresp, err := backend.Registry().TxnWithCmp(ctx, []registry.PluginOp{registry.OpDel(registry.WithKey(kv.Key))},
+	dResp, err := backend.Registry().TxnWithCmp(ctx, []registry.PluginOp{registry.OpDel(registry.WithKey(kv.Key))},
 		[]registry.CompareOp{registry.OpCmp(registry.CmpVer(kv.Key), registry.CMP_EQUAL, kv.Version)},
 		nil)
 	if err != nil {
 		return fmt.Errorf("can not remove the dependency %s request, %s", util.BytesToStringWithNoCopy(kv.Key), err.Error())
 	}
-	if !dresp.Succeeded {
+	if !dResp.Succeeded {
 		util.Logger().Infof("the dependency %s request is changed", util.BytesToStringWithNoCopy(kv.Key))
 	}
 	return nil

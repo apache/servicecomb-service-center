@@ -229,9 +229,9 @@ func WithNoCache() PluginOpOption            { return func(op *PluginOp) { op.Mo
 func WithWatchCallback(f WatchCallback) PluginOpOption {
 	return func(op *PluginOp) { op.WatchCallback = f }
 }
-func WithStrKey(key string) PluginOpOption     { return WithKey([]byte(key)) }
-func WithStrEndKey(key string) PluginOpOption  { return WithEndKey([]byte(key)) }
-func WithStrValue(value string) PluginOpOption { return WithValue([]byte(value)) }
+func WithStrKey(key string) PluginOpOption     { return WithKey(util.StringToBytesWithNoCopy(key)) }
+func WithStrEndKey(key string) PluginOpOption  { return WithEndKey(util.StringToBytesWithNoCopy(key)) }
+func WithStrValue(value string) PluginOpOption { return WithValue(util.StringToBytesWithNoCopy(value)) }
 func WithOffset(i int64) PluginOpOption        { return func(op *PluginOp) { op.Offset = i } }
 func WithLimit(i int64) PluginOpOption         { return func(op *PluginOp) { op.Limit = i } }
 func WatchPrefixOpOptions(key string) []PluginOpOption {

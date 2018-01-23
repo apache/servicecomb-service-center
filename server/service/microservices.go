@@ -278,19 +278,12 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, serviceId st
 	}
 
 	//删除依赖规则
-	lock, err := serviceUtil.DependencyLock(serviceUtil.NewDependencyLockKey(domainProject, service.Environment))
-	if err != nil {
-		util.Logger().Errorf(err, "%s micro-service failed, serviceId is %s: inner err, create lock failed.", title, serviceId)
-		return pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()), err
-	}
-
-	defer lock.Unlock()
-	optsTmp, err := serviceUtil.DeleteDependencyForService(ctx, serviceKey)
+	optDeleteDep, err := serviceUtil.DeleteDependencyForDeleteService(domainProject, serviceId, serviceKey)
 	if err != nil {
 		util.Logger().Errorf(err, "%s micro-service failed, serviceId is %s: inner err, delete dependency failed.", title, serviceId)
 		return pb.CreateResponse(scerr.ErrInternal, err.Error()), err
 	}
-	opts = append(opts, optsTmp...)
+	opts = append(opts, optDeleteDep)
 
 	//删除黑白名单
 	opts = append(opts, registry.OpDel(
