@@ -306,8 +306,9 @@ func (c *KvCacher) sync(evts []*Event) {
 
 func (c *KvCacher) filter(rev int64, items []*mvccpb.KeyValue) []*Event {
 	cache := c.Cache().(*KvCache)
-	store := cache.Lock()
-	defer cache.Unlock()
+	// unsafe
+	store := cache.store
+
 	oc, nc := len(store), len(items)
 	tc := oc + nc
 	if tc == 0 {
