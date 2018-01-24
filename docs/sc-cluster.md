@@ -101,8 +101,8 @@ In your microservice.yaml you can provide the SC IP of both the instance or any 
 cse:
   service:
     registry:
+      # simple load balencer
       address: "http://10.12.0.1:30100, http://10.12.0.2:30100"
-      autodiscovery: true
 ```
 or 
 ```
@@ -110,6 +110,7 @@ cse:
   service:
     registry:
       address: http://10.12.0.1:30100
+      # auto discovery service-center endpoints
       autodiscovery: true
 ```
 In both the cases sdk will be able to discover all the instances of SC in cluster.
