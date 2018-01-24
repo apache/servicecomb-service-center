@@ -49,7 +49,7 @@ manager_cluster = "10.12.0.4:2379"
 
 Note: In `manger_cluster` you can put the multiple instances of etcd in the cluster like 
 ```
-manager_cluster= "10.12.0.4:2379, 10.12.0.X:2379, 10.12.0.X:2379"
+manager_cluster= "10.12.0.4:2379,10.12.0.X:2379,10.12.0.X:2379"
 ```
 
 #### Step 4
@@ -101,7 +101,7 @@ In your microservice.yaml you can provide the SC IP of both the instance or any 
 cse:
   service:
     registry:
-      address: "http://10.12.0.1:30100, http://10.12.0.2:30100"
+      address: "http://10.12.0.1:30100,http://10.12.0.2:30100"
       autodiscovery: true
 ```
 In this case sdk will be able to discover all the instances of SC in cluster.
