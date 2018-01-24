@@ -62,7 +62,7 @@ Verify your instances
             "instanceId": "d6e9e976f9df11e7a72b286ed488ff9f",
             "serviceId": "d6e99f4cf9df11e7a72b286ed488ff9f",
             "endpoints": [
-                "rest://10.12.0.1:30101"
+                "rest://10.12.0.1:30100"
             ],
             "hostName": "service_center_10_12_0_1",
             "status": "UP",
