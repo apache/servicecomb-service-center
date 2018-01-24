@@ -589,15 +589,14 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		}, nil
 	}
 
-	instances := make([]*pb.MicroServiceInstance, 0)
+	var instances []*pb.MicroServiceInstance
+	cloneCtx := util.SetContext(util.CloneContext(ctx), "cacheOnly", "1")
 	for _, serviceId := range ids {
-		resp, err := s.GetInstances(
-			util.SetContext(util.CloneContext(ctx), "cacheOnly", "1"),
-			&pb.GetInstancesRequest{
-				ConsumerServiceId: in.ConsumerServiceId,
-				ProviderServiceId: serviceId,
-				Tags:              in.Tags,
-			})
+		resp, err := s.GetInstances(cloneCtx, &pb.GetInstancesRequest{
+			ConsumerServiceId: in.ConsumerServiceId,
+			ProviderServiceId: serviceId,
+			Tags:              in.Tags,
+		})
 		if err != nil {
 			util.Logger().Errorf(err, "find instance failed, %s: get service %s 's instance failed.", findFlag, serviceId)
 			return &pb.FindInstancesResponse{

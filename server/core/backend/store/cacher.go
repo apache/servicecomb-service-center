@@ -255,7 +255,35 @@ func (c *KvCacher) needDeferHandle(evts []*Event) bool {
 		return false
 	}
 
-	return c.Cfg.DeferHander.OnCondition(c.Cache(), evts)
+	if c.Cfg.DeferHander.OnCondition(c.Cache(), evts) {
+		c.Cfg.DeferHander.Defer(evts)
+		return true
+	}
+	return false
+}
+
+func (c *KvCacher) refresh(stopCh <-chan struct{}) {
+	util.Logger().Debugf("start to list and watch %s", c.Cfg)
+	ctx, cancel := context.WithCancel(context.Background())
+	c.goroute.Do(func(stopCh <-chan struct{}) {
+		defer cancel()
+		<-stopCh
+	})
+	for {
+		start := time.Now()
+		c.ListAndWatch(ctx)
+		watchDuration := time.Since(start)
+		nextPeriod := 0 * time.Second
+		if watchDuration > 0 && c.Cfg.Period > watchDuration {
+			nextPeriod = c.Cfg.Period - watchDuration
+		}
+		select {
+		case <-stopCh:
+			util.Logger().Debugf("stop to list and watch %s", c.Cfg)
+			return
+		case <-time.After(nextPeriod):
+		}
+	}
 }
 
 func (c *KvCacher) deferHandle(stopCh <-chan struct{}) {
@@ -489,30 +517,7 @@ func (c *KvCacher) onKvEvents(evts []*KvEvent) {
 }
 
 func (c *KvCacher) run() {
-	c.goroute.Do(func(stopCh <-chan struct{}) {
-		util.Logger().Debugf("start to list and watch %s", c.Cfg)
-		ctx, cancel := context.WithCancel(context.Background())
-		c.goroute.Do(func(stopCh <-chan struct{}) {
-			defer cancel()
-			<-stopCh
-		})
-		for {
-			start := time.Now()
-			c.ListAndWatch(ctx)
-			watchDuration := time.Now().Sub(start)
-			nextPeriod := 0 * time.Second
-			if watchDuration > 0 && c.Cfg.Period > watchDuration {
-				nextPeriod = c.Cfg.Period - watchDuration
-			}
-			select {
-			case <-stopCh:
-				util.Logger().Debugf("stop to list and watch %s", c.Cfg)
-				return
-			case <-time.After(nextPeriod):
-			}
-		}
-	})
-
+	c.goroute.Do(c.refresh)
 	c.goroute.Do(c.deferHandle)
 }
 
