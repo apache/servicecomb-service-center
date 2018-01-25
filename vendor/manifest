@@ -478,7 +478,7 @@
 			"importpath": "gopkg.in/yaml.v2",
 			"repository": "https://gopkg.in/yaml.v2",
 			"vcs": "git",
-			"revision": "cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b",
+			"revision": "d670f9405373e636a5a2765eea47fac0c9bc91a4",
 			"branch": "HEAD",
 			"notests": true
 		}
