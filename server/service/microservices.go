@@ -18,6 +18,7 @@ package service
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
@@ -33,7 +34,6 @@ import (
 	"golang.org/x/net/context"
 	"strconv"
 	"time"
-	"errors"
 )
 
 type MicroServiceService struct {
@@ -130,9 +130,15 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 	index := apt.GenerateServiceIndexKey(serviceKey)
 	indexBytes := util.StringToBytesWithNoCopy(index)
 	aliasBytes := util.StringToBytesWithNoCopy(apt.GenerateServiceAliasKey(serviceKey))
+
+	backend.Registry().Do(ctx, registry.PUT, registry.WithStrKey(index+"1"), registry.WithStrValue(serviceId))
+	backend.Registry().Do(ctx, registry.PUT, registry.WithStrKey(index+"2"), registry.WithStrValue(serviceId))
+
 	opts := []registry.PluginOp{
 		registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)),
 		registry.OpPut(registry.WithKey(indexBytes), registry.WithStrValue(serviceId)),
+		registry.OpDel(registry.WithStrKey(index+"1"), registry.WithStrValue(serviceId)),
+		registry.OpDel(registry.WithStrKey(index+"2"), registry.WithStrValue(serviceId)),
 	}
 	uniqueCmpOpts := []registry.CompareOp{
 		registry.OpCmp(registry.CmpVer(indexBytes), registry.CMP_EQUAL, 0),

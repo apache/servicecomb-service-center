@@ -120,6 +120,15 @@ func (c *KvCache) Have(k interface{}) (ok bool) {
 	return
 }
 
+func (c *KvCache) RLock() map[string]*mvccpb.KeyValue {
+	c.rwMux.RLock()
+	return c.store
+}
+
+func (c *KvCache) RUnlock() {
+	c.rwMux.RUnlock()
+}
+
 func (c *KvCache) Lock() map[string]*mvccpb.KeyValue {
 	c.rwMux.Lock()
 	return c.store
@@ -333,9 +342,8 @@ func (c *KvCacher) sync(evts []*Event) {
 }
 
 func (c *KvCacher) filter(rev int64, items []*mvccpb.KeyValue) []*Event {
-	cache := c.Cache().(*KvCache)
-	// unsafe
-	store := cache.store
+	store := c.cache.RLock()
+	defer c.cache.RUnlock()
 
 	oc, nc := len(store), len(items)
 	tc := oc + nc
@@ -453,17 +461,18 @@ func (c *KvCacher) filterCreateOrUpdate(store map[string]*mvccpb.KeyValue, newSt
 }
 
 func (c *KvCacher) onEvents(evts []*Event) {
-	cache := c.Cache().(*KvCache)
 	idx := 0
 	kvEvts := make([]*KvEvent, len(evts))
-	store := cache.Lock()
+	store := c.cache.Lock()
 	for _, evt := range evts {
 		kv := evt.Object.(*mvccpb.KeyValue)
 		key := util.BytesToStringWithNoCopy(kv.Key)
 		prevKv, ok := store[key]
 
 		switch evt.Type {
-		case proto.EVT_CREATE, proto.EVT_UPDATE:
+		case proto.EVT_CREATE:
+
+		case proto.EVT_UPDATE:
 			util.Logger().Debugf("sync %s event and notify watcher, cache %v", evt.Type, kv)
 
 			t := evt.Type
@@ -502,7 +511,7 @@ func (c *KvCacher) onEvents(evts []*Event) {
 			idx++
 		}
 	}
-	cache.Unlock()
+	c.cache.Unlock()
 
 	c.onKvEvents(kvEvts[:idx])
 }

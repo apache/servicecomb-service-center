@@ -148,9 +148,9 @@ func (w *Watcher) process() {
 	}
 }
 
-func (w *Watcher) sendEvent(evt []*Event) {
+func (w *Watcher) sendEvent(evts []*Event) {
 	defer util.RecoverAndReport()
-	w.bus <- evt
+	w.bus <- evts
 }
 
 func (w *Watcher) Stop() {
