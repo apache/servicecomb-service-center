@@ -1,11 +1,15 @@
 package tree
 
-type Tree struct {
-	Root *Node
+//The tree is binary sort tree
+type tree struct {
+	root *Node
+	isAddToLeft func(node *Node, addRes interface{}) bool
 }
 
-func NewTree() *Tree {
-	return new(Tree)
+func NewTree(isAddToLeft func(node *Node, addRes interface{}) bool) *tree {
+	return &tree{
+		isAddToLeft: isAddToLeft,
+	}
 }
 
 type Node struct {
@@ -13,64 +17,51 @@ type Node struct {
 	left, right *Node
 }
 
-//binary sort tree
-func (t *Tree) AddNode(n *Node, res interface{}, isAddToLeft func(addRes interface{}, node *Node) bool) *Node{
+func (t *tree) GetRoot()*Node {
+	return t.root
+}
+
+//add res into tree
+func (t *tree) AddNode(res interface{}) *Node {
+	return t.addNode(t.root, res)
+}
+
+func (t *tree) addNode(n *Node, res interface{}) *Node{
 	if n == nil {
 		n = new(Node)
 		n.Res = res
+		if t.root == nil {
+			t.root = n
+		}
 		return n
 	}
-	if isAddToLeft(res, n) {
-		n.left = t.AddNode(n.left, res, isAddToLeft)
+	if t.isAddToLeft(n, res) {
+		n.left = t.addNode(n.left, res)
 	} else {
-		n.right = t.AddNode(n.right, res, isAddToLeft)
+		n.right = t.addNode(n.right, res)
 	}
 	return n
 }
 
-//middle oder traversal
-
-func (t *Tree)MidOderTraversal(n *Node, handle func(res interface{}) error) error {
+//middle oder traversal, handle is the func that deals with the res, n is the start node to traversal
+func (t *tree)MidOderTraversal(n *Node, handle func(res interface{}) error) error {
 	if n == nil {
 		return nil
 	}
-
-	var savedErr error
 
 	err := t.MidOderTraversal(n.left, handle)
 	if err != nil {
-		savedErr = err
+		return err
 	}
 	err = handle(n.Res)
 	if err != nil {
-		savedErr = err
+		return err
 	}
 	err = t.MidOderTraversal(n.right, handle)
-	if err != nil {
-		savedErr = err
-	}
-	return savedErr
-}
-
-//todo add asynchronous handle handle func: go handle
-
-//middle oder traversal
-func (t *Tree)MidOderTraversalFailFast(n *Node, handle func(res interface{}) error) error {
-	if n == nil {
-		return nil
-	}
-
-	err := t.MidOderTraversalFailFast(n.left, handle)
-	if err != nil {
-		return err
-	}
-	err = handle(n.Res)
-	if err != nil {
-		return err
-	}
-	err = t.MidOderTraversalFailFast(n.right, handle)
 	if err != nil {
 		return err
 	}
 	return nil
 }
+
+//todo add asynchronous handle handle func: go handle

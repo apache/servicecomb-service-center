@@ -105,6 +105,15 @@ func NewDependencyEventHandlerResource(dep *pb.ConsumerDependency, kv *mvccpb.Ke
 	}
 }
 
+func isAddToLeft(centerNode *tree.Node, addRes interface{}) bool {
+	res := addRes.(*DependencyEventHandlerResource)
+	compareRes := centerNode.Res.(*DependencyEventHandlerResource)
+	if res.kv.ModRevision > compareRes.kv.ModRevision {
+		return false
+	}
+	return true
+}
+
 func (h *DependencyEventHandler) Handle() error {
 	key := core.GetServiceDependencyQueueRootKey("")
 	resp, err := store.Store().DependencyQueue().Search(context.Background(),
@@ -122,8 +131,8 @@ func (h *DependencyEventHandler) Handle() error {
 
 	ctx := context.Background()
 
-	dependencyTree := tree.NewTree()
-	root := dependencyTree.Root
+	dependencyTree := tree.NewTree(isAddToLeft)
+
 	for _, kv := range resp.Kvs {
 		r := &pb.ConsumerDependency{}
 		consumerId, domainProject, data := pb.GetInfoFromDependencyQueueKV(kv)
@@ -141,17 +150,10 @@ func (h *DependencyEventHandler) Handle() error {
 
 		res := NewDependencyEventHandlerResource(r, kv, domainProject)
 
-		root = dependencyTree.AddNode(root, res , func(addRes interface{}, node *tree.Node) bool {
-			res := addRes.(*DependencyEventHandlerResource)
-			compareRes := node.Res.(*DependencyEventHandlerResource)
-			if res.kv.ModRevision > compareRes.kv.ModRevision {
-				return false
-			}
-			return true
-		})
+		dependencyTree.AddNode(res)
 	}
 
-	return dependencyTree.MidOderTraversal(root, h.dependencyRuleHandle)
+	return dependencyTree.MidOderTraversal(dependencyTree.GetRoot(), h.dependencyRuleHandle)
 }
 
 func (h *DependencyEventHandler) dependencyRuleHandle(res interface{}) error {
@@ -159,6 +161,7 @@ func (h *DependencyEventHandler) dependencyRuleHandle(res interface{}) error {
 	dependencyEventHandlerRes := res.(*DependencyEventHandlerResource)
 	r := dependencyEventHandlerRes.dep
 	consumerFlag := util.StringJoin([]string{r.Consumer.AppId, r.Consumer.ServiceName, r.Consumer.Version}, "/")
+
 
 	domainProject := dependencyEventHandlerRes.domainProject
 	consumerInfo := pb.DependenciesToKeys([]*pb.MicroServiceKey{r.Consumer}, domainProject)[0]

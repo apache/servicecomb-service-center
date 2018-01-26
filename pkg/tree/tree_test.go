@@ -4,15 +4,10 @@ import (
 	"fmt"
 	"testing"
 	"reflect"
-	"errors"
 )
 
 func TestTree(t *testing.T) {
-	testTree := new(Tree)
-	root := testTree.Root
-	testSlice := []int{6,3,7,2,4,5}
-	targetSlice := []int{2,3,4,5,6,7}
-	compareFunc := func(addRes interface{}, node *Node) bool {
+	compareFunc := func(node *Node, addRes interface{}) bool {
 		k := addRes.(int)
 		kCompare := node.Res.(int)
 		if k > kCompare {
@@ -20,29 +15,26 @@ func TestTree(t *testing.T) {
 		}
 		return true
 	}
-	for _, v := range testSlice {
-		root = testTree.AddNode(root, v, compareFunc)
-	}
+	testSlice := []int{6,3,7,2,4,5}
+	targetSlice := []int{2,3,4,5,6,7}
 	slice := testSlice[:0]
-
 	handle := func(res interface{}) error {
 		slice = append(slice, res.(int))
 		return nil
 	}
 
-	testTree.MidOderTraversal(root, handle)
-	if !reflect.DeepEqual(slice, targetSlice) {
-		fmt.Printf(`TestTree failed`)
-		t.FailNow()
+
+	testTree := NewTree(compareFunc)
+
+	for _, v := range testSlice {
+		testTree.AddNode(v)
 	}
 
-	handleFailFast := func(res interface{}) error {
-		return errors.New("test fail fast")
-	}
-	slice = testSlice[:0]
-	testTree.MidOderTraversalFailFast(root, handleFailFast)
-	if len(slice) != 0 {
-		fmt.Printf(`MidOderTraversalFailFast fail fast failed`)
+
+	testTree.MidOderTraversal(testTree.GetRoot(), handle)
+	fmt.Println(slice)
+	if !reflect.DeepEqual(slice, targetSlice) {
+		fmt.Printf(`TestTree failed`)
 		t.FailNow()
 	}
 }
