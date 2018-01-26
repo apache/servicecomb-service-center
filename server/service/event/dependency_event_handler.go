@@ -30,6 +30,7 @@ import (
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"time"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/tree"
 )
 
 type DependencyEventHandler struct {
@@ -96,42 +97,6 @@ type DependencyEventHandlerResource struct {
 	domainProject string
 }
 
-type treeNode struct {
-	res         *DependencyEventHandlerResource
-	left, right *treeNode
-}
-
-func addTreeNode(tn *treeNode, res *DependencyEventHandlerResource) *treeNode {
-	if tn == nil {
-		tn = new(treeNode)
-		tn.res = res
-		return tn
-	}
-	if tn.res.kv.ModRevision > res.kv.ModRevision {
-		tn.left = addTreeNode(tn.left, res)
-	} else {
-		tn.right = addTreeNode(tn.right, res)
-	}
-	return tn
-}
-
-func midOderTraversal(tn *treeNode, handle func(ctx context.Context, res *DependencyEventHandlerResource) error) error {
-	if tn == nil {
-		return nil
-	}
-
-	var savedErr error
-
-	midOderTraversal(tn.left, handle)
-	err := handle(context.Background(), tn.res)
-	if err != nil {
-		util.Logger().Errorf(err, "handle dependency event failed")
-		savedErr = err
-	}
-	midOderTraversal(tn.right, handle)
-	return savedErr
-}
-
 func NewDependencyEventHandlerResource(dep *pb.ConsumerDependency, kv *mvccpb.KeyValue, domainProject string) *DependencyEventHandlerResource {
 	return &DependencyEventHandlerResource{
 		dep,
@@ -156,7 +121,9 @@ func (h *DependencyEventHandler) Handle() error {
 	}
 
 	ctx := context.Background()
-	var root *treeNode
+
+	dependencyTree := tree.NewTree()
+	root := dependencyTree.Root
 	for _, kv := range resp.Kvs {
 		r := &pb.ConsumerDependency{}
 		consumerId, domainProject, data := pb.GetInfoFromDependencyQueueKV(kv)
@@ -174,17 +141,26 @@ func (h *DependencyEventHandler) Handle() error {
 
 		res := NewDependencyEventHandlerResource(r, kv, domainProject)
 
-		root = addTreeNode(root, res)
-
+		root = dependencyTree.AddNode(root, res , func(addRes interface{}, node *tree.Node) bool {
+			res := addRes.(*DependencyEventHandlerResource)
+			compareRes := node.Res.(*DependencyEventHandlerResource)
+			if res.kv.ModRevision > compareRes.kv.ModRevision {
+				return false
+			}
+			return true
+		})
 	}
-	return midOderTraversal(root, h.dependencyRuleHandle)
+
+	return dependencyTree.MidOderTraversal(root, h.dependencyRuleHandle)
 }
 
-func (h *DependencyEventHandler) dependencyRuleHandle(ctx context.Context, res *DependencyEventHandlerResource) error {
-	r := res.dep
+func (h *DependencyEventHandler) dependencyRuleHandle(res interface{}) error {
+	ctx := context.Background()
+	dependencyEventHandlerRes := res.(*DependencyEventHandlerResource)
+	r := dependencyEventHandlerRes.dep
 	consumerFlag := util.StringJoin([]string{r.Consumer.AppId, r.Consumer.ServiceName, r.Consumer.Version}, "/")
 
-	domainProject := res.domainProject
+	domainProject := dependencyEventHandlerRes.domainProject
 	consumerInfo := pb.DependenciesToKeys([]*pb.MicroServiceKey{r.Consumer}, domainProject)[0]
 	providersInfo := pb.DependenciesToKeys(r.Providers, domainProject)
 
@@ -204,7 +180,7 @@ func (h *DependencyEventHandler) dependencyRuleHandle(ctx context.Context, res *
 		return fmt.Errorf("override: %t, consumer is %s, %s", r.Override, consumerFlag, err.Error())
 	}
 
-	if err = h.removeKV(ctx, res.kv); err != nil {
+	if err = h.removeKV(ctx, dependencyEventHandlerRes.kv); err != nil {
 		util.Logger().Errorf(err, "remove dependency rule failed, override: %t, consumer %s", r.Override, consumerFlag)
 		return err
 	}
