@@ -1334,7 +1334,7 @@ paths:
   /v4/{project}/registry/instances:
     get:
       description: |
-        实例注册后可以根据微服务版本规则或字段条件 发现该微服务的实例。
+        实例注册后可以根据微服务版本规则或字段条件 发现该微服务的实例。同时会将此微服务版本规则记录到依赖关系中，当发现相同微服务的不同版本规则时，会覆盖已有的依赖关系。
       operationId: find
       parameters:
         - name: x-domain-name
