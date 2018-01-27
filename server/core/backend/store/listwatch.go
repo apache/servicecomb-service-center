@@ -32,7 +32,7 @@ const EVENT_BUS_MAX_SIZE = 1000
 type Event struct {
 	Revision int64
 	Type     proto.EventType
-	Key      string
+	Prefix   string
 	Object   interface{}
 }
 
@@ -93,7 +93,7 @@ func (lw *ListWatcher) doWatch(ctx context.Context, f func(evt []*Event)) error 
 
 				evts := make([]*Event, len(resp.Kvs))
 				for i, kv := range resp.Kvs {
-					evt := &Event{Key: lw.Key, Revision: kv.ModRevision}
+					evt := &Event{Prefix: lw.Key, Revision: kv.ModRevision}
 					switch {
 					case resp.Action == registry.Put && kv.Version == 1:
 						evt.Type, evt.Object = proto.EVT_CREATE, kv
@@ -168,7 +168,7 @@ func (w *Watcher) Stop() {
 func errEvent(key string, err error) *Event {
 	return &Event{
 		Type:   proto.EVT_ERROR,
-		Key:    key,
+		Prefix: key,
 		Object: err,
 	}
 }

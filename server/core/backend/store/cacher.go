@@ -260,15 +260,11 @@ func (c *KvCacher) handleWatcher(watcher *Watcher) error {
 }
 
 func (c *KvCacher) needDeferHandle(evts []*Event) bool {
-	if c.Cfg.DeferHander == nil {
+	if c.Cfg.DeferHandler == nil {
 		return false
 	}
 
-	if c.Cfg.DeferHander.OnCondition(c.Cache(), evts) {
-		c.Cfg.DeferHander.Defer(evts)
-		return true
-	}
-	return false
+	return c.Cfg.DeferHandler.OnCondition(c.Cache(), evts)
 }
 
 func (c *KvCacher) refresh(stopCh <-chan struct{}) {
@@ -296,7 +292,7 @@ func (c *KvCacher) refresh(stopCh <-chan struct{}) {
 }
 
 func (c *KvCacher) deferHandle(stopCh <-chan struct{}) {
-	if c.Cfg.DeferHander == nil {
+	if c.Cfg.DeferHandler == nil {
 		return
 	}
 
@@ -305,7 +301,7 @@ func (c *KvCacher) deferHandle(stopCh <-chan struct{}) {
 		select {
 		case <-stopCh:
 			return
-		case evt, ok := <-c.Cfg.DeferHander.HandleChan():
+		case evt, ok := <-c.Cfg.DeferHandler.HandleChan():
 			if !ok {
 				<-time.After(time.Second)
 				continue
@@ -318,7 +314,7 @@ func (c *KvCacher) deferHandle(stopCh <-chan struct{}) {
 
 			evts[i] = evt
 			i++
-		case <-time.After(time.Second):
+		case <-time.After(300 * time.Millisecond):
 			if i == 0 {
 				continue
 			}
@@ -396,7 +392,7 @@ func (c *KvCacher) filterDelete(store map[string]*mvccpb.KeyValue, newStore map[
 		block[i] = &Event{
 			Revision: rev,
 			Type:     proto.EVT_DELETE,
-			Key:      c.Cfg.Key,
+			Prefix:   c.Cfg.Key,
 			Object:   v,
 		}
 		i++
@@ -424,7 +420,7 @@ func (c *KvCacher) filterCreateOrUpdate(store map[string]*mvccpb.KeyValue, newSt
 			block[i] = &Event{
 				Revision: rev,
 				Type:     proto.EVT_CREATE,
-				Key:      c.Cfg.Key,
+				Prefix:   c.Cfg.Key,
 				Object:   v,
 			}
 			i++
@@ -444,7 +440,7 @@ func (c *KvCacher) filterCreateOrUpdate(store map[string]*mvccpb.KeyValue, newSt
 		block[i] = &Event{
 			Revision: rev,
 			Type:     proto.EVT_UPDATE,
-			Key:      c.Cfg.Key,
+			Prefix:   c.Cfg.Key,
 			Object:   v,
 		}
 		i++
@@ -470,9 +466,7 @@ func (c *KvCacher) onEvents(evts []*Event) {
 		prevKv, ok := store[key]
 
 		switch evt.Type {
-		case proto.EVT_CREATE:
-
-		case proto.EVT_UPDATE:
+		case proto.EVT_CREATE, proto.EVT_UPDATE:
 			util.Logger().Debugf("sync %s event and notify watcher, cache %v", evt.Type, kv)
 
 			t := evt.Type
@@ -494,7 +488,6 @@ func (c *KvCacher) onEvents(evts []*Event) {
 				Action:   t,
 				KV:       kv,
 			}
-			idx++
 		case proto.EVT_DELETE:
 			if !ok {
 				util.Logger().Warnf(nil, "unexpected %s event! key %s does not exist", evt.Type, key)
@@ -508,8 +501,13 @@ func (c *KvCacher) onEvents(evts []*Event) {
 				Action:   evt.Type,
 				KV:       prevKv,
 			}
-			idx++
 		}
+
+		if c.cache.lastMaxSize == 0 && kvEvts[idx].Action == proto.EVT_CREATE {
+			kvEvts[idx].Action = proto.EVT_INIT
+		}
+
+		idx++
 	}
 	c.cache.Unlock()
 
