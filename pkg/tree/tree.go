@@ -44,12 +44,12 @@ func (t *tree) addNode(n *Node, res interface{}) *Node{
 }
 
 //middle oder traversal, handle is the func that deals with the res, n is the start node to traversal
-func (t *tree)MidOderTraversal(n *Node, handle func(res interface{}) error) error {
+func (t *tree) InOrderTraversal(n *Node, handle func(res interface{}) error) error {
 	if n == nil {
 		return nil
 	}
 
-	err := t.MidOderTraversal(n.left, handle)
+	err := t.InOrderTraversal(n.left, handle)
 	if err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func (t *tree)MidOderTraversal(n *Node, handle func(res interface{}) error) erro
 	if err != nil {
 		return err
 	}
-	err = t.MidOderTraversal(n.right, handle)
+	err = t.InOrderTraversal(n.right, handle)
 	if err != nil {
 		return err
 	}

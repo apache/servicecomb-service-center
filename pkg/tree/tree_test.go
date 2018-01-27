@@ -31,8 +31,7 @@ func TestTree(t *testing.T) {
 	}
 
 
-	testTree.MidOderTraversal(testTree.GetRoot(), handle)
-	fmt.Println(slice)
+	testTree.InOrderTraversal(testTree.GetRoot(), handle)
 	if !reflect.DeepEqual(slice, targetSlice) {
 		fmt.Printf(`TestTree failed`)
 		t.FailNow()

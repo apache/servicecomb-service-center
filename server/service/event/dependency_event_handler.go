@@ -153,7 +153,7 @@ func (h *DependencyEventHandler) Handle() error {
 		dependencyTree.AddNode(res)
 	}
 
-	return dependencyTree.MidOderTraversal(dependencyTree.GetRoot(), h.dependencyRuleHandle)
+	return dependencyTree.InOrderTraversal(dependencyTree.GetRoot(), h.dependencyRuleHandle)
 }
 
 func (h *DependencyEventHandler) dependencyRuleHandle(res interface{}) error {
