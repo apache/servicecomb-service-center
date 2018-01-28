@@ -91,9 +91,9 @@ func (h *DependencyEventHandler) loop() {
 }
 
 type DependencyEventHandlerResource struct {
-	dep    *pb.ConsumerDependency
-	kv     *mvccpb.KeyValue
-	domainProject  string
+	dep           *pb.ConsumerDependency
+	kv            *mvccpb.KeyValue
+	domainProject string
 }
 
 func NewDependencyEventHandlerResource(dep *pb.ConsumerDependency, kv *mvccpb.KeyValue, domainProject string) *DependencyEventHandlerResource {
@@ -150,7 +150,7 @@ func (h *DependencyEventHandler) Handle() error {
 
 	dependencyRuleHandleResults := make(chan error, len(resourcesMap))
 	for lockKey, resources := range resourcesMap {
-		go func(lockKey string, resources []*DependencyEventHandlerResource){
+		go func(lockKey string, resources []*DependencyEventHandlerResource) {
 			err := h.dependencyRuleHandle(ctx, lockKey, resources)
 			dependencyRuleHandleResults <- err
 		}(lockKey, resources)
@@ -169,7 +169,7 @@ func (h *DependencyEventHandler) Handle() error {
 	return lastErr
 }
 
-func (h *DependencyEventHandler)dependencyRuleHandle(ctx context.Context, lockKey string, resources []*DependencyEventHandlerResource) error{
+func (h *DependencyEventHandler) dependencyRuleHandle(ctx context.Context, lockKey string, resources []*DependencyEventHandlerResource) error {
 	lock, err := serviceUtil.DependencyLock(lockKey)
 	if err != nil {
 		util.Logger().Errorf(err, "create dependency rule locker failed")

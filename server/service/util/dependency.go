@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/cache"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/etcdsync"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
@@ -28,11 +29,10 @@ import (
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
+	"github.com/apache/incubator-servicecomb-service-center/server/mux"
 	"golang.org/x/net/context"
 	"strings"
 	"time"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/etcdsync"
-	"github.com/apache/incubator-servicecomb-service-center/server/mux"
 )
 
 var consumerCache *cache.Cache
@@ -1059,5 +1059,5 @@ func DependencyLock(lockKey string) (*etcdsync.DLock, error) {
 }
 
 func NewDependencyLockKey(domainProject, env string) string {
-	return util.StringJoin([]string{"","env-lock", domainProject, env}, "/")
+	return util.StringJoin([]string{"", "env-lock", domainProject, env}, "/")
 }

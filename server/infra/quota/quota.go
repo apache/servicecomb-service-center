@@ -18,8 +18,8 @@ package quota
 
 import (
 	"fmt"
-	"golang.org/x/net/context"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
+	"golang.org/x/net/context"
 )
 
 type ApplyQuotaResult struct {

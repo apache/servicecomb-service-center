@@ -64,7 +64,6 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 		return response, nil
 	}
 
-
 	ruleType, _, err := serviceUtil.GetServiceRuleType(ctx, domainProject, in.ServiceId)
 	util.Logger().Debugf("ruleType is %s", ruleType)
 	if err != nil {

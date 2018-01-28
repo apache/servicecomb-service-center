@@ -240,9 +240,9 @@ func LogRotate(path string, MaxFileSize int, MaxBackupCount int) {
 	}
 }
 
-func isSkip(f os.FileInfo) bool{
+func isSkip(f os.FileInfo) bool {
 	//dir or non write permission,skip
-	return f.IsDir() || (f.Mode() & 0200 == 0000)
+	return f.IsDir() || (f.Mode()&0200 == 0000)
 }
 
 //path : where the file will be filtered

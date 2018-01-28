@@ -60,7 +60,7 @@ func (c *Chain) syncNext(i *Invocation) {
 }
 
 func (c *Chain) Next(i *Invocation) {
-	go c.syncNext(i)
+	c.syncNext(i)
 }
 
 func NewChain(name string, handlers []Handler) Chain {

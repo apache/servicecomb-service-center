@@ -64,13 +64,9 @@ func (iedh *InstanceEventDeferHandler) OnCondition(cache Cache, evts []*Event) b
 }
 
 func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt *Event) error {
-	kv, ok := evt.Object.(*mvccpb.KeyValue)
-	if !ok {
-		// error type event
-		return nil
-	}
+	kv := evt.Object.(*mvccpb.KeyValue)
 	key := util.BytesToStringWithNoCopy(kv.Key)
-	_, ok = iedh.items[key]
+	_, ok := iedh.items[key]
 	switch evt.Type {
 	case pb.EVT_CREATE, pb.EVT_UPDATE:
 		if ok {
@@ -129,24 +125,19 @@ func (iedh *InstanceEventDeferHandler) check(stopCh <-chan struct{}) {
 		case <-t.C:
 			t, n = iedh.newTimer(), false
 
-			if !iedh.enabled {
-				for _, item := range iedh.items {
-					iedh.recover(item.event)
-				}
-				continue
-			}
-
 			for key, item := range iedh.items {
-				select {
-				case <-item.ttl.C:
-				default:
-					continue
+				if iedh.enabled {
+					select {
+					case <-item.ttl.C:
+					default:
+						continue
+					}
+					util.Logger().Warnf(nil, "defer handle timed out, removed key is %s", key)
 				}
 				iedh.recover(item.event)
-				util.Logger().Warnf(nil, "defer handle timed out, removed key is %s", key)
 			}
 
-			if len(iedh.items) == 0 {
+			if iedh.enabled && len(iedh.items) == 0 {
 				iedh.enabled = false
 				util.Logger().Warnf(nil, "self preservation is stopped")
 			}
@@ -155,7 +146,7 @@ func (iedh *InstanceEventDeferHandler) check(stopCh <-chan struct{}) {
 }
 
 func (iedh *InstanceEventDeferHandler) newTimer() *time.Timer {
-	return time.NewTimer(time.Second)
+	return time.NewTimer(2 * time.Second) // instance DELETE event will be delay.
 }
 
 func (iedh *InstanceEventDeferHandler) recover(evt *Event) {
