@@ -457,7 +457,7 @@ func (c *KvCacher) filterCreateOrUpdate(store map[string]*mvccpb.KeyValue, newSt
 }
 
 func (c *KvCacher) onEvents(evts []*Event) {
-	idx := 0
+	idx, init := 0, !c.IsReady()
 	kvEvts := make([]*KvEvent, len(evts))
 	store := c.cache.Lock()
 	for _, evt := range evts {
@@ -503,7 +503,7 @@ func (c *KvCacher) onEvents(evts []*Event) {
 			}
 		}
 
-		if c.cache.lastMaxSize == 0 && kvEvts[idx].Action == proto.EVT_CREATE {
+		if init && kvEvts[idx].Action == proto.EVT_CREATE {
 			kvEvts[idx].Action = proto.EVT_INIT
 		}
 
@@ -544,6 +544,15 @@ func (c *KvCacher) Stop() {
 
 func (c *KvCacher) Ready() <-chan struct{} {
 	return c.ready
+}
+
+func (c *KvCacher) IsReady() bool {
+	select {
+	case <-c.ready:
+		return true
+	default:
+		return false
+	}
 }
 
 func NewKvCache(c *KvCacher, size int) *KvCache {

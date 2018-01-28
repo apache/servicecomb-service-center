@@ -23,8 +23,8 @@ import (
 	errorsEx "github.com/apache/incubator-servicecomb-service-center/pkg/errors"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"net/http"
-	"strings"
 	"net/url"
+	"strings"
 )
 
 type URLPattern struct {
@@ -169,7 +169,7 @@ func (this *urlPatternHandler) try(path string) (p string, _ bool) {
 			_, nextc, j = match(this.Path, isAlnum, 0, j+1)
 			val, _, i = match(path, matchParticial, nextc, i)
 
-			p += url.QueryEscape(this.Path[o:j])+"="+url.QueryEscape(val)+"&"
+			p += url.QueryEscape(this.Path[o:j]) + "=" + url.QueryEscape(val) + "&"
 		case path[i] == this.Path[j]:
 			i++
 			j++
