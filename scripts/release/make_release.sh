@@ -72,6 +72,10 @@ build_linux(){
     echo "kill -9 \$(ps aux | grep 'incubator-servicecomb-service-center' | awk '{print \$2}')" >> servicecomb-service-center-$PACKAGE-linux-amd64/stop.sh
     chmod +x servicecomb-service-center-$PACKAGE-linux-amd64/start.sh
     chmod +x servicecomb-service-center-$PACKAGE-linux-amd64/stop.sh
+    cp -r LICENSE servicecomb-service-center-$PACKAGE-linux-amd64/
+    cp -r NOTICE servicecomb-service-center-$PACKAGE-linux-amd64/
+    cp -r DISCLAIMER servicecomb-service-center-$PACKAGE-linux-amd64/
+    cp -r README.md servicecomb-service-center-$PACKAGE-linux-amd64/
     tar -czvf servicecomb-service-center-$PACKAGE-linux-amd64.tar.gz servicecomb-service-center-$PACKAGE-linux-amd64
 
 }
@@ -101,6 +105,10 @@ build_windows(){
     prepare_conf
     cp -r tmp/conf servicecomb-service-center-$PACKAGE-windows-amd64/
     echo "incubator-servicecomb-service-center.exe" >> servicecomb-service-center-$PACKAGE-windows-amd64/start.bat
+    cp -r LICENSE servicecomb-service-center-$PACKAGE-windows-amd64/
+    cp -r NOTICE servicecomb-service-center-$PACKAGE-windows-amd64/
+    cp -r DISCLAIMER servicecomb-service-center-$PACKAGE-windows-amd64/
+    cp -r README.md servicecomb-service-center-$PACKAGE-windows-amd64/
     tar -czvf servicecomb-service-center-$PACKAGE-windows-amd64.tar.gz servicecomb-service-center-$PACKAGE-windows-amd64
 }
 
