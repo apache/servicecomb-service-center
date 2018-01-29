@@ -84,9 +84,6 @@ func (governService *GovernService) GetServicesInfo(ctx context.Context, in *pb.
 	allServiceDetails := make([]*pb.ServiceDetail, 0, len(services))
 	domainProject := util.ParseDomainProject(ctx)
 	for _, service := range services {
-		if apt.Service.ServiceId == service.ServiceId {
-			continue
-		}
 		if len(in.AppId) > 0 {
 			if in.AppId != service.AppId {
 				continue
@@ -212,9 +209,6 @@ func (governService *GovernService) GetApplications(ctx context.Context, in *pb.
 	for _, kv := range resp.Kvs {
 		key, _ := pb.GetInfoFromSvcIndexKV(kv)
 		if _, ok := appMap[key.AppId]; ok {
-			continue
-		}
-		if apt.IsSCKey(key) {
 			continue
 		}
 		appMap[key.AppId] = struct{}{}
@@ -379,32 +373,20 @@ func statistics(ctx context.Context) (*pb.Statistics, error) {
 	}
 
 	app := make(map[string]interface{}, respSvc.Count)
-	scSvc := make(map[string]interface{}, respSvc.Count)
 	svcWithNonVersion := make(map[string]interface{}, respSvc.Count)
 	for _, kv := range respSvc.Kvs {
 		key, _ := pb.GetInfoFromSvcIndexKV(kv)
-		if _, ok := app[key.AppId]; !ok {
-			if !apt.IsSCKey(key) {
-				app[key.AppId] = nil
-			}
-		}
 
-		if apt.IsSCKey(key) {
-			k := util.BytesToStringWithNoCopy(kv.Key)
-			if _, ok := scSvc[k]; !ok {
-				scSvc[k] = nil
-			}
+		if _, ok := app[key.AppId]; !ok {
+			app[key.AppId] = nil
 		}
 
 		key.Version = ""
 		svcWithNonVersionKey := apt.GenerateServiceIndexKey(key)
 		svcWithNonVersion[svcWithNonVersionKey] = nil
 	}
-	scSvcCount := 0
-	if int64(len(scSvc)) > 0 {
-		scSvcCount = 1
-	}
-	result.Services.Count = int64(len(svcWithNonVersion) - scSvcCount)
+
+	result.Services.Count = int64(len(svcWithNonVersion))
 	result.Apps.Count = int64(len(app))
 
 	// instance
@@ -425,27 +407,7 @@ func statistics(ctx context.Context) (*pb.Statistics, error) {
 			onlineServices[serviceId] = nil
 		}
 	}
-
-	key = apt.GenerateInstanceKey(domainProject, apt.Service.ServiceId, "")
-	scOpts := append(opts,
-		registry.WithStrKey(key),
-		registry.WithPrefix(),
-		registry.WithCountOnly())
-	respScIns, err := store.Store().Instance().Search(ctx, scOpts...)
-	if err != nil {
-		return nil, err
-	}
-
-	result.Instances.Count = respIns.Count - respScIns.Count
-	result.Services.OnlineCount = removeSCSelf(domainProject, int64(len(onlineServices)), 1)
+	result.Instances.Count = respIns.Count
+	result.Services.OnlineCount = int64(len(onlineServices))
 	return result, err
-}
-
-func removeSCSelf(domainProject string, count int64, removeNum int64) int64 {
-	if count > 0 {
-		if apt.IsDefaultDomainProject(domainProject) {
-			count = count - removeNum
-		}
-	}
-	return count
 }
