@@ -18,8 +18,8 @@
 package ratelimiter
 
 import (
-	"time"
 	"sync"
+	"time"
 )
 
 type LeakyBucket struct {
@@ -31,7 +31,6 @@ type LeakyBucket struct {
 	available       int64
 	availableTicker int64
 }
-
 
 func NewLeakyBucket(fillInterval time.Duration, capacity, quantum int64) *LeakyBucket {
 	if fillInterval <= 0 {
@@ -77,7 +76,6 @@ func (leakyBucket *LeakyBucket) MaximumTakeDuration(count int64, maxWait time.Du
 	return leakyBucket.take(time.Now(), count, maxWait)
 }
 
-
 func (leakyBucket *LeakyBucket) Rate() float64 {
 	return 1e9 * float64(leakyBucket.quantum) / float64(leakyBucket.interval)
 }
@@ -118,4 +116,3 @@ func (leakyBucket *LeakyBucket) adjust(now time.Time) (currentTick int64) {
 	leakyBucket.availableTicker = currentTick
 	return
 }
-

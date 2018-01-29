@@ -501,49 +501,55 @@ func (c *EtcdClient) Watch(ctx context.Context, opts ...registry.PluginOpOption)
 				return
 			case resp, ok = <-ws:
 				if !ok {
-					err := errors.New("channel is closed")
-					return err
+					err = errors.New("channel is closed")
+					return
 				}
 				// cause a rpc ResourceExhausted error if watch response body larger then 4MB
 				if err = resp.Err(); err != nil {
-					return err
+					return
 				}
 
-				l := len(resp.Events)
-				kvs := make([]*mvccpb.KeyValue, l)
-				pIdx, prevAction := 0, mvccpb.PUT
-				pResp := &registry.PluginResponse{Action: registry.Put, Succeeded: true}
-
-				for _, evt := range resp.Events {
-					if prevAction != evt.Type {
-						prevAction = evt.Type
-
-						if pIdx > 0 {
-							err = setResponseAndCallback(pResp, kvs[:pIdx], op.WatchCallback)
-							if err != nil {
-								return
-							}
-							pIdx = 0
-						}
-					}
-
-					pResp.Revision = evt.Kv.ModRevision
-					pResp.Action = setKvsAndConvertAction(kvs, pIdx, evt)
-
-					pIdx++
-				}
-
-				if pIdx > 0 {
-					err = setResponseAndCallback(pResp, kvs[:pIdx], op.WatchCallback)
-					if err != nil {
-						return
-					}
+				err = dispatch(resp.Events, op.WatchCallback)
+				if err != nil {
+					return
 				}
 			}
 		}
 	}
-	err = fmt.Errorf("no key has been watched")
-	return
+	return fmt.Errorf("no key has been watched")
+}
+
+func dispatch(evts []*clientv3.Event, cb registry.WatchCallback) error {
+	l := len(evts)
+	kvs := make([]*mvccpb.KeyValue, l)
+	sIdx, eIdx, prevAction := 0, 0, mvccpb.PUT
+	pResp := &registry.PluginResponse{Action: registry.Put, Succeeded: true}
+
+	for _, evt := range evts {
+		if prevAction != evt.Type {
+			prevAction = evt.Type
+
+			if eIdx > 0 {
+				err := setResponseAndCallback(pResp, kvs[sIdx:eIdx], cb)
+				if err != nil {
+					return err
+				}
+				sIdx = eIdx
+			}
+		}
+
+		if pResp.Revision < evt.Kv.ModRevision {
+			pResp.Revision = evt.Kv.ModRevision
+		}
+		pResp.Action = setKvsAndConvertAction(kvs, eIdx, evt)
+
+		eIdx++
+	}
+
+	if eIdx > 0 {
+		return setResponseAndCallback(pResp, kvs[sIdx:eIdx], cb)
+	}
+	return nil
 }
 
 func setKvsAndConvertAction(kvs []*mvccpb.KeyValue, pIdx int, evt *clientv3.Event) registry.ActionType {
@@ -564,12 +570,7 @@ func setKvsAndConvertAction(kvs []*mvccpb.KeyValue, pIdx int, evt *clientv3.Even
 func setResponseAndCallback(pResp *registry.PluginResponse, kvs []*mvccpb.KeyValue, cb registry.WatchCallback) error {
 	pResp.Count = int64(len(kvs))
 	pResp.Kvs = kvs
-
-	err := cb("key information changed", pResp)
-	if err != nil {
-		return err
-	}
-	return nil
+	return cb("key information changed", pResp)
 }
 
 func NewRegistry() mgr.PluginInstance {

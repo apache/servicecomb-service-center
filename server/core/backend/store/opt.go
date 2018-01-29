@@ -34,7 +34,7 @@ type KvCacherCfg struct {
 	Timeout            time.Duration
 	Period             time.Duration
 	OnEvent            KvEventFunc
-	DeferHander        DeferHandler
+	DeferHandler       DeferHandler
 }
 
 func (cfg KvCacherCfg) String() string {
@@ -65,7 +65,7 @@ func WithEventFunc(f KvEventFunc) KvCacherCfgOption {
 }
 
 func WithDeferHandler(h DeferHandler) KvCacherCfgOption {
-	return func(cfg *KvCacherCfg) { cfg.DeferHander = h }
+	return func(cfg *KvCacherCfg) { cfg.DeferHandler = h }
 }
 
 func DefaultKvCacherConfig() KvCacherCfg {

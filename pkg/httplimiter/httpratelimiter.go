@@ -18,13 +18,13 @@
 package httplimiter
 
 import (
+	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/ratelimiter"
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/ratelimiter"
-	"fmt"
 	"sync"
+	"time"
 )
 
 type HTTPErrorMessage struct {
@@ -35,7 +35,6 @@ type HTTPErrorMessage struct {
 func (httpErrorMessage *HTTPErrorMessage) Error() string {
 	return fmt.Sprintf("%v: %v", httpErrorMessage.StatusCode, httpErrorMessage.Message)
 }
-
 
 type HttpLimiter struct {
 	HttpMessage    string
@@ -50,8 +49,6 @@ type HttpLimiter struct {
 	leakyBuckets   map[string]*ratelimiter.LeakyBucket
 	sync.RWMutex
 }
-
-
 
 func LimitBySegments(limiter *HttpLimiter, keys []string) *HTTPErrorMessage {
 	if limiter.LimitExceeded(strings.Join(keys, "|")) {
@@ -199,7 +196,6 @@ func getRemoteIP(ipLookups []string, r *http.Request) string {
 	return ""
 }
 
-
 func NewHttpLimiter(max int64, ttl time.Duration) *HttpLimiter {
 	limiter := &HttpLimiter{RequestLimit: max, TTL: ttl}
 	limiter.ContentType = "text/plain; charset=utf-8"
@@ -210,7 +206,6 @@ func NewHttpLimiter(max int64, ttl time.Duration) *HttpLimiter {
 
 	return limiter
 }
-
 
 func (rateLimiter *HttpLimiter) LimitExceeded(key string) bool {
 	rateLimiter.Lock()
@@ -224,5 +219,3 @@ func (rateLimiter *HttpLimiter) LimitExceeded(key string) bool {
 	}
 	return true
 }
-
-

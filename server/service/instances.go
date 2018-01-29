@@ -589,9 +589,13 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		}, nil
 	}
 
-	instances := make([]*pb.MicroServiceInstance, 0)
+	var instances []*pb.MicroServiceInstance
+	cloneCtx := ctx
+	if s, ok := ctx.Value("noCache").(string); !ok || s != "1" {
+		cloneCtx = util.SetContext(util.CloneContext(ctx), "cacheOnly", "1")
+	}
 	for _, serviceId := range ids {
-		resp, err := s.GetInstances(ctx, &pb.GetInstancesRequest{
+		resp, err := s.GetInstances(cloneCtx, &pb.GetInstancesRequest{
 			ConsumerServiceId: in.ConsumerServiceId,
 			ProviderServiceId: serviceId,
 			Tags:              in.Tags,
