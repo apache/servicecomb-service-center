@@ -21,7 +21,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/cache"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/etcdsync"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
@@ -29,7 +28,6 @@ import (
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
-	"github.com/apache/incubator-servicecomb-service-center/server/mux"
 	"golang.org/x/net/context"
 	"strings"
 	"time"
@@ -279,42 +277,6 @@ func AddServiceVersionRule(ctx context.Context, domainProject string, consumer *
 	return nil
 }
 
-func DeleteDependencyForService(ctx context.Context, service *pb.MicroServiceKey) ([]registry.PluginOp, error) {
-	domainProject := service.Tenant
-	//删除依赖规则
-	conKey := apt.GenerateConsumerDependencyRuleKey(domainProject, service)
-	providerValue, err := TransferToMicroServiceDependency(ctx, conKey)
-	if err != nil {
-		return nil, err
-	}
-	opts := make([]registry.PluginOp, 0)
-	if providerValue != nil && len(providerValue.Dependency) != 0 {
-		providerRuleKey := ""
-		for _, providerRule := range providerValue.Dependency {
-			providerRuleKey = apt.GenerateProviderDependencyRuleKey(domainProject, providerRule)
-			consumers, err := TransferToMicroServiceDependency(ctx, providerRuleKey)
-			if err != nil {
-				return nil, err
-			}
-			opt, err := updateProviderDependencyRuleUtil(consumers, service, providerRuleKey)
-			if err != nil {
-				return nil, err
-			}
-			opts = append(opts, opt)
-		}
-	}
-	util.Logger().Infof("delete dependency rule, consumer Key is %s.", conKey)
-	opts = append(opts, registry.OpDel(registry.WithStrKey(conKey)))
-
-	//作为provider的依赖规则
-	providerKey := apt.GenerateProviderDependencyRuleKey(domainProject, service)
-
-	util.Logger().Infof("delete dependency rule, providerKey is %s", providerKey)
-	opts = append(opts, registry.OpDel(registry.WithStrKey(providerKey)))
-
-	return opts, nil
-}
-
 func TransferToMicroServiceDependency(ctx context.Context, key string) (*pb.MicroServiceDependency, error) {
 	microServiceDependency := &pb.MicroServiceDependency{
 		Dependency: []*pb.MicroServiceKey{},
@@ -505,8 +467,8 @@ func CreateDependencyRule(ctx context.Context, dep *Dependency) error {
 }
 
 func isDependencyAll(dep *pb.MicroServiceDependency) bool {
-	for _, servicedep := range dep.Dependency {
-		if servicedep.ServiceName == "*" {
+	for _, serviceDep := range dep.Dependency {
+		if serviceDep.ServiceName == "*" {
 			return true
 		}
 	}
@@ -604,7 +566,7 @@ func validateMicroServiceKey(in *pb.MicroServiceKey, fuzzyMatch bool) error {
 }
 
 func BadParamsResponse(detailErr string) *pb.CreateDependenciesResponse {
-	util.Logger().Errorf(nil, "Request params is invalid.")
+	util.Logger().Errorf(nil, "Request params is invalid.%s", detailErr)
 	if len(detailErr) == 0 {
 		detailErr = "Request params is invalid."
 	}
@@ -1054,10 +1016,15 @@ func (dr *DependencyRelation) getConsumerOfSameServiceNameAndAppId(provider *pb.
 	return allConsumers, nil
 }
 
-func DependencyLock(lockKey string) (*etcdsync.DLock, error) {
-	return mux.Lock(mux.MuxType(lockKey))
-}
-
-func NewDependencyLockKey(domainProject, env string) string {
-	return util.StringJoin([]string{"", "env-lock", domainProject, env}, "/")
+func DeleteDependencyForDeleteService(domainProject string, serviceId string, service *pb.MicroServiceKey) (registry.PluginOp, error) {
+	key := apt.GenerateConsumerDependencyQueueKey(domainProject, serviceId, "0")
+	conDep := new(pb.ConsumerDependency)
+	conDep.Consumer = service
+	conDep.Providers = []*pb.MicroServiceKey{}
+	conDep.Override = true
+	data, err := json.Marshal(conDep)
+	if err != nil {
+		return registry.PluginOp{}, err
+	}
+	return registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)), nil
 }

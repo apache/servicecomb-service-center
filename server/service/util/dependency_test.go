@@ -33,9 +33,9 @@ func TestRefreshDependencyCache(t *testing.T) {
 }
 
 func TestDeleteDependencyForService(t *testing.T) {
-	_, err := DeleteDependencyForService(context.Background(), &proto.MicroServiceKey{})
-	if err == nil {
-		fmt.Printf(`DeleteDependencyForService failed`)
+	_, err := DeleteDependencyForDeleteService("", "", &proto.MicroServiceKey{})
+	if err != nil {
+		fmt.Printf(`DeleteDependencyForDeleteService failed`)
 		t.FailNow()
 	}
 
