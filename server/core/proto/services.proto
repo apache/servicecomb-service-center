@@ -358,6 +358,8 @@ message MicroServiceInstance {
     DataCenterInfo dataCenterInfo = 9;
 
     string modTimestamp = 10;
+
+    string version = 11;
 }
 
 message DataCenterInfo {
