@@ -66,8 +66,9 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	domainProject := util.ParseDomainProject(ctx)
 
 	// service id存在性校验
-	if !serviceUtil.ServiceExist(ctx, domainProject, instance.ServiceId) {
-		util.Logger().Errorf(nil, "register instance failed, service %s, operator %s: service not exist.", instanceFlag, remoteIP)
+	service, err := serviceUtil.GetService(ctx, domainProject, instance.ServiceId)
+	if service == nil || err != nil {
+		util.Logger().Errorf(err, "register instance failed, service %s, operator %s: service not exist.", instanceFlag, remoteIP)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
@@ -164,6 +165,8 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 		}
 	}
 	ttl := int64(renewalInterval * (retryTimes + 1))
+
+	instance.Version = service.Version
 
 	data, err := json.Marshal(instance)
 	if err != nil {
