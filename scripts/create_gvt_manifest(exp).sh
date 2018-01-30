@@ -63,3 +63,14 @@ gvt fetch -precaire -no-recurse -revision 7b8002443fd4a3ce5f25ef93087c524546799a
 gvt fetch -precaire -no-recurse -revision 553a641470496b2327abcac10b36396bd98e45c9 github.com/golang/snappy
 gvt fetch -precaire -no-recurse -revision 3c33c26290b747350f8650c7d38bcc51b42dc785 github.com/grpc/grpc-go
 gvt fetch -precaire -no-recurse -revision aa2eb687b4d3e17154372564ad8d6bf11c3cf21f github.com/google/go-genproto
+gvt fetch -precaire -no-recurse -revision 1949ddbfd147afd4d964a9f00b24eb291e0e7c38 github.com/opentracing/opentracing-go
+gvt fetch -precaire -no-recurse -revision 6bb822a7f15fdc5800b9822a6ac1bfa0b7d9195d github.com/openzipkin/zipkin-go-opentracing
+gvt fetch -precaire -no-recurse -revision 9bb4a68d57ff6f623363aa172f0a8297aa289ba7 github.com/Shopify/sarama
+gvt fetch -precaire -no-recurse -revision 3d556248a8b97310da49939195330691dfe9d9ad github.com/apache/thrift
+gvt fetch -precaire -no-recurse -revision 390ab7935ee28ec6b286364bba9b4dd6410cb3d5 github.com/go-logfmt/logfmt
+gvt fetch -precaire -no-recurse -revision a52f2342449246d5bcc273e65cbdcfa5f7d6c63c github.com/opentracing-contrib/go-observer
+gvt fetch -precaire -no-recurse -revision 6cf5744a041a0022271cefed95ba843f6d87fd51 github.com/davecgh/go-spew
+gvt fetch -precaire -no-recurse -revision 6800482f2c813e689c88b7ed3282262385011890 github.com/eapache/go-resiliency
+gvt fetch -precaire -no-recurse -revision bb955e01b9346ac19dc29eb16586c90ded99a98c github.com/eapache/go-xerial-snappy
+gvt fetch -precaire -no-recurse -revision ded5959c0d4e360646dc9e9908cff48666781367 github.com/eapache/queue
+gvt fetch -precaire -no-recurse -revision cb6bfca970f6908083f26f39a79009d608efd5cd github.com/klauspost/crc32
