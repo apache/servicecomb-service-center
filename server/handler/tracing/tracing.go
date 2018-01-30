@@ -30,7 +30,7 @@ import (
 var tracer opentracing.Tracer
 
 func init() {
-	collector, err := zipkin.NewHTTPCollector("127.0.0.1:9411")
+	collector, err := zipkin.NewHTTPCollector("http://127.0.0.1:9411/api/v1/spans")
 	if err != nil {
 		return
 	}
