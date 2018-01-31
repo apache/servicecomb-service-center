@@ -121,14 +121,12 @@ func (this *ROAServerHandler) serve(ph *urlPatternHandler, w http.ResponseWriter
 		*r = *nr
 	}
 
-	ch := make(chan struct{})
 	inv := chain.NewInvocation(ctx, chain.NewChain(SERVER_CHAIN_NAME, hs))
 	inv.WithContext(CTX_RESPONSE, w).
 		WithContext(CTX_REQUEST, r).
 		WithContext(CTX_MATCH_PATTERN, ph.Path)
-	inv.Invoke(func(ret chain.Result) {
+	inv.Next(chain.WithFunc(func(ret chain.Result) {
 		defer func() {
-			defer close(ch)
 			err := ret.Err
 			itf := recover()
 			if itf != nil {
@@ -148,8 +146,7 @@ func (this *ROAServerHandler) serve(ph *urlPatternHandler, w http.ResponseWriter
 		if ret.OK {
 			ph.ServeHTTP(w, r)
 		}
-	})
-	<-ch
+	}))
 }
 
 func (this *urlPatternHandler) try(path string) (p string, _ bool) {

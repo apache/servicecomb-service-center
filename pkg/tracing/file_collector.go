@@ -17,22 +17,24 @@
 package tracing
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/chain"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"github.com/apache/incubator-servicecomb-service-center/server/tracing"
+	"encoding/json"
+	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
+	"os"
 )
 
-type TracingHandler struct {
+type FileCollector struct {
+	Fd *os.File
 }
 
-func (h *TracingHandler) Handle(i *chain.Invocation) {
-	span := tracing.StartServerSpan(i.Context(), "handle")
-
-	i.Next(chain.WithAsyncFunc(func(r chain.Result) {
-		tracing.FinishServerSpan(i.Context(), span)
-	}))
+func (f *FileCollector) Collect(span *zipkincore.Span) error {
+	b, err := json.Marshal(span)
+	if err != nil {
+		return err
+	}
+	_, err = f.Fd.Write(append(b, '\n'))
+	return err
 }
 
-func RegisterHandlers() {
-	chain.RegisterHandler(rest.SERVER_CHAIN_NAME, &TracingHandler{})
+func (f *FileCollector) Close() error {
+	return f.Fd.Close()
 }

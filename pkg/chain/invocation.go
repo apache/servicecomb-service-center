@@ -21,6 +21,20 @@ import (
 	"golang.org/x/net/context"
 )
 
+type InvocationOption func(op InvocationOp) InvocationOp
+
+type InvocationOp struct {
+	Func  func(r Result)
+	Async bool
+}
+
+func WithFunc(f func(r Result)) InvocationOption {
+	return func(op InvocationOp) InvocationOp { op.Func = f; return op }
+}
+func WithAsyncFunc(f func(r Result)) InvocationOption {
+	return func(op InvocationOp) InvocationOp { op.Func = f; op.Async = true; return op }
+}
+
 type Invocation struct {
 	Callback
 	context *util.StringContext
@@ -41,17 +55,45 @@ func (i *Invocation) WithContext(key string, val interface{}) *Invocation {
 	return i
 }
 
-func (i *Invocation) Next() {
+func (i *Invocation) Next(opts ...InvocationOption) {
+	var op InvocationOp
+	for _, opt := range opts {
+		op = opt(op)
+	}
+
+	i.setCallback(op.Func, op.Async)
 	i.chain.Next(i)
+}
+
+func (i *Invocation) setCallback(f func(r Result), async bool) {
+	if f == nil {
+		return
+	}
+
+	if i.Func == nil {
+		i.Func = f
+		i.Async = async
+		return
+	}
+
+	cb := i.Func
+	i.Func = func(r Result) {
+		cb(r)
+		callback(f, async, r)
+	}
+}
+
+func callback(f func(r Result), async bool, r Result) {
+	c := Callback{Func: f, Async: async}
+	c.Invoke(r)
 }
 
 func (i *Invocation) Invoke(f func(r Result)) {
 	i.Func = f
-	i.Next()
+	i.chain.Next(i)
 }
 
-func NewInvocation(ctx context.Context, ch Chain) Invocation {
-	var inv Invocation
+func NewInvocation(ctx context.Context, ch Chain) (inv Invocation) {
 	inv.Init(ctx, ch)
 	return inv
 }

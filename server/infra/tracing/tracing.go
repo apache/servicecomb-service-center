@@ -16,23 +16,7 @@
  */
 package tracing
 
-import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/chain"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"github.com/apache/incubator-servicecomb-service-center/server/tracing"
-)
-
-type TracingHandler struct {
-}
-
-func (h *TracingHandler) Handle(i *chain.Invocation) {
-	span := tracing.StartServerSpan(i.Context(), "handle")
-
-	i.Next(chain.WithAsyncFunc(func(r chain.Result) {
-		tracing.FinishServerSpan(i.Context(), span)
-	}))
-}
-
-func RegisterHandlers() {
-	chain.RegisterHandler(rest.SERVER_CHAIN_NAME, &TracingHandler{})
+type Collector interface {
+	Collect(span interface{}) error
+	Close() error
 }
