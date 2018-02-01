@@ -14,26 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package util
+package buildin
 
 import (
 	"os"
-	"unsafe"
+	"path/filepath"
 )
 
-const INT_SIZE int = int(unsafe.Sizeof(0))
-
-func IsBigEndian() bool {
-	return !IsLittleEndian()
+func GetFilePath(defName string) string {
+	path := os.Getenv("TRACING_FILE_PATH")
+	if len(path) == 0 {
+		wd, _ := os.Getwd()
+		return filepath.Join(wd, defName)
+	}
+	return path
 }
 
-func IsLittleEndian() bool {
-	i := 0x1
-	bs := (*[INT_SIZE]byte)(unsafe.Pointer(&i))
-	return bs[0] == 0
-}
-
-func PathExist(path string) bool {
-	_, err := os.Stat(path)
-	return err == nil || os.IsExist(err)
+func GetServerEndpoint() string {
+	sa := os.Getenv("TRACING_SERVER_ADDRESS")
+	if len(sa) == 0 {
+		sa = "http://127.0.0.1:9411"
+	}
+	return sa
 }

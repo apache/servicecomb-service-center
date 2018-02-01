@@ -19,17 +19,27 @@ package tracing
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/chain"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"github.com/apache/incubator-servicecomb-service-center/server/tracing"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
+	"net/http"
+	"strconv"
 )
 
 type TracingHandler struct {
 }
 
 func (h *TracingHandler) Handle(i *chain.Invocation) {
-	span := tracing.StartServerSpan(i.Context(), "handle")
+	w, r := i.Context().Value(rest.CTX_RESPONSE).(http.ResponseWriter),
+		i.Context().Value(rest.CTX_REQUEST).(*http.Request)
 
-	i.Next(chain.WithAsyncFunc(func(r chain.Result) {
-		tracing.FinishServerSpan(i.Context(), span)
+	plugin.Plugins().Tracing().StartServerSpan("api", r)
+
+	i.Next(chain.WithAsyncFunc(func(ret chain.Result) {
+		statusCode := w.Header().Get("X-Response-Status")
+		code, _ := strconv.ParseInt(statusCode, 10, 64)
+		if code == 0 {
+			code = 200
+		}
+		plugin.Plugins().Tracing().FinishServerSpan(r, int(code), statusCode)
 	}))
 }
 

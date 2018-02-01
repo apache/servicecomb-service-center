@@ -16,7 +16,13 @@
  */
 package tracing
 
-type Collector interface {
-	Collect(span interface{}) error
-	Close() error
+import (
+	"net/http"
+)
+
+const CTX_TRACE_SPAN = "x-trace-span"
+
+type Tracing interface {
+	StartServerSpan(operationName string, r *http.Request)
+	FinishServerSpan(r *http.Request, code int, message string)
 }

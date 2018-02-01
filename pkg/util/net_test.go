@@ -14,27 +14,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package tracing
+package util
 
-import (
-	"encoding/json"
-	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
-	"os"
+import "testing"
+
+const (
+	ip1 = "127.0.0.1"       // 2130706433
+	ip2 = "0.0.0.0"         // 0
+	ip3 = "255.255.255.255" // 4294967295
+	n1  = 2130706433        // "127.0.0.1"
+	n2  = 0                 // "0.0.0.0"
+	n3  = 4294967295        // "255.255.255.255"
 )
 
-type FileCollector struct {
-	Fd *os.File
-}
-
-func (f *FileCollector) Collect(span *zipkincore.Span) error {
-	b, err := json.Marshal(span)
-	if err != nil {
-		return err
+func TestInetAton(t *testing.T) {
+	i := InetAton(ip1)
+	if i != 2130706433 {
+		fail(t, "InetAton(%s) error", ip1)
 	}
-	_, err = f.Fd.Write(append(b, '\n'))
-	return err
+	i = InetAton(ip2)
+	if i != 0 {
+		fail(t, "InetAton(%s) error", ip2)
+	}
+	i = InetAton(ip3)
+	if i != 4294967295 {
+		fail(t, "InetAton(%s) error", ip3)
+	}
 }
 
-func (f *FileCollector) Close() error {
-	return f.Fd.Close()
+func TestInetNtoa(t *testing.T) {
+	ip := InetNtoa(n1)
+	if ip != ip1 {
+		fail(t, "InetNtoa(%d) error", n1)
+	}
+	ip = InetNtoa(n2)
+	if ip != ip2 {
+		fail(t, "InetNtoa(%d) error", n2)
+	}
+	ip = InetNtoa(n3)
+	if ip != ip3 {
+		fail(t, "InetNtoa(%d) error", n3)
+	}
 }

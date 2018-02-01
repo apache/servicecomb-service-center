@@ -39,6 +39,9 @@ import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/i
 // uuid
 import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/uuid/buildin"
 
+// tracing
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/tracing/buildin"
+
 // module
 import _ "github.com/apache/incubator-servicecomb-service-center/server/govern"
 
