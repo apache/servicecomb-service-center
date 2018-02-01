@@ -33,6 +33,7 @@ type URLPattern struct {
 }
 
 type urlPatternHandler struct {
+	Name string
 	Path string
 	http.Handler
 }
@@ -68,7 +69,8 @@ func (this *ROAServerHandler) addRoute(route *Route) (err error) {
 		return errors.New(message)
 	}
 
-	this.handlers[method] = append(this.handlers[method], &urlPatternHandler{route.Path, http.HandlerFunc(route.Func)})
+	this.handlers[method] = append(this.handlers[method], &urlPatternHandler{
+		util.FormatFuncName(util.FuncName(route.Func)), route.Path, http.HandlerFunc(route.Func)})
 	util.Logger().Infof("register route %s(%s).", route.Path, method)
 
 	return nil
@@ -124,7 +126,8 @@ func (this *ROAServerHandler) serve(ph *urlPatternHandler, w http.ResponseWriter
 	inv := chain.NewInvocation(ctx, chain.NewChain(SERVER_CHAIN_NAME, hs))
 	inv.WithContext(CTX_RESPONSE, w).
 		WithContext(CTX_REQUEST, r).
-		WithContext(CTX_MATCH_PATTERN, ph.Path)
+		WithContext(CTX_MATCH_PATTERN, ph.Path).
+		WithContext(CTX_MATCH_FUNC, ph.Name)
 	inv.Next(chain.WithFunc(func(ret chain.Result) {
 		defer func() {
 			err := ret.Err

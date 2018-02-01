@@ -16,13 +16,14 @@
  */
 package tracing
 
-import (
-	"net/http"
-)
-
 const CTX_TRACE_SPAN = "x-trace-span"
 
+type Request interface{}
+type Span interface{}
+
 type Tracing interface {
-	StartServerSpan(operationName string, r *http.Request)
-	FinishServerSpan(r *http.Request, code int, message string)
+	ServerBegin(operationName string, r Request) Span
+	ServerEnd(span Span, code int, message string)
+	ClientBegin(operationName string, r Request) Span
+	ClientEnd(span Span, code int, message string)
 }

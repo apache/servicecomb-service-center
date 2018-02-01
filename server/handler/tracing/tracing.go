@@ -28,10 +28,11 @@ type TracingHandler struct {
 }
 
 func (h *TracingHandler) Handle(i *chain.Invocation) {
-	w, r := i.Context().Value(rest.CTX_RESPONSE).(http.ResponseWriter),
-		i.Context().Value(rest.CTX_REQUEST).(*http.Request)
+	w, r, op := i.Context().Value(rest.CTX_RESPONSE).(http.ResponseWriter),
+		i.Context().Value(rest.CTX_REQUEST).(*http.Request),
+		i.Context().Value(rest.CTX_MATCH_FUNC).(string)
 
-	plugin.Plugins().Tracing().StartServerSpan("api", r)
+	span := plugin.Plugins().Tracing().ServerBegin(op, r)
 
 	i.Next(chain.WithAsyncFunc(func(ret chain.Result) {
 		statusCode := w.Header().Get("X-Response-Status")
@@ -39,7 +40,7 @@ func (h *TracingHandler) Handle(i *chain.Invocation) {
 		if code == 0 {
 			code = 200
 		}
-		plugin.Plugins().Tracing().FinishServerSpan(r, int(code), statusCode)
+		plugin.Plugins().Tracing().ServerEnd(span, int(code), statusCode)
 	}))
 }
 

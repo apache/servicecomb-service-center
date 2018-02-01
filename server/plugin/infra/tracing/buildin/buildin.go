@@ -17,6 +17,7 @@
 package buildin
 
 import (
+	"context"
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
@@ -87,73 +88,104 @@ func getTracer() opentracing.Tracer {
 type Zipkin struct {
 }
 
-func (zp *Zipkin) StartServerSpan(operationName string, r *http.Request) {
-	wireContext, err := getTracer().Extract(opentracing.TextMap, opentracing.HTTPHeadersCarrier(r.Header))
-	switch err {
-	case nil:
-	case opentracing.ErrSpanContextNotFound:
+func (zp *Zipkin) ServerBegin(operationName string, itf tracing.Request) tracing.Span {
+	var (
+		span opentracing.Span
+		ctx  context.Context
+	)
+	switch itf.(type) {
+	case *http.Request:
+		r := itf.(*http.Request)
+		ctx = r.Context()
+
+		wireContext, err := getTracer().Extract(opentracing.TextMap, opentracing.HTTPHeadersCarrier(r.Header))
+		switch err {
+		case nil:
+		case opentracing.ErrSpanContextNotFound:
+		default:
+			util.Logger().Errorf(err, "tracer extract request failed")
+			return nil
+		}
+
+		span = getTracer().StartSpan(operationName, ext.RPCServerOption(wireContext))
+		ext.SpanKindRPCServer.Set(span)
+		ext.HTTPMethod.Set(span, r.Method)
+		ext.HTTPUrl.Set(span, r.URL.String())
+
+		span.SetTag("protocol", "HTTP")
+		span.SetTag(zipkincore.HTTP_PATH, r.URL.Path)
+		span.SetTag(zipkincore.HTTP_HOST, r.URL.Host)
 	default:
-		util.Logger().Errorf(err, "tracer extract request failed")
+		// grpc?
+		return nil
 	}
 
-	span := getTracer().StartSpan(operationName, ext.RPCServerOption(wireContext))
-	ext.SpanKindRPCServer.Set(span)
-	ext.HTTPMethod.Set(span, r.Method)
-	ext.HTTPUrl.Set(span, r.URL.String())
-
-	span.SetTag("protocol", "HTTP")
-	span.SetTag(zipkincore.HTTP_PATH, r.URL.Path)
-	span.SetTag(zipkincore.HTTP_HOST, r.URL.Host)
-
-	util.SetContext(r.Context(), tracing.CTX_TRACE_SPAN, span)
+	util.SetContext(ctx, tracing.CTX_TRACE_SPAN, span)
+	return span
 }
 
-func (zp *Zipkin) FinishServerSpan(r *http.Request, code int, message string) {
-	span, ok := r.Context().Value(tracing.CTX_TRACE_SPAN).(opentracing.Span)
+func (zp *Zipkin) ServerEnd(itf tracing.Span, code int, message string) {
+	span, ok := itf.(opentracing.Span)
 	if !ok {
 		return
 	}
-	result := 0
-	if code >= http.StatusBadRequest {
-		result = 1
-		if len(message) == 0 {
-			message = fmt.Sprint(code)
-		}
-		span.SetTag("error", message)
-	}
-	span.SetTag("resultCode", code)
-	span.SetTag("result", result)
-	ext.HTTPStatusCode.Set(span, uint16(code))
+	setResultTags(span, code, message)
 	span.Finish()
 }
 
-func (zp *Zipkin) StartClientSpan(operationName string, r *http.Request) {
-	span, ok := r.Context().Value(tracing.CTX_TRACE_SPAN).(opentracing.Span)
-	if !ok {
-		return
-	}
-	ext.SpanKindRPCClient.Set(span)
-	ext.HTTPMethod.Set(span, r.Method)
-	ext.HTTPUrl.Set(span, r.URL.String())
+func (zp *Zipkin) ClientBegin(operationName string, itf tracing.Request) tracing.Span {
+	var (
+		span    opentracing.Span
+		ctx     context.Context
+		carrier interface{}
+	)
+	switch itf.(type) {
+	case *http.Request:
+		r := itf.(*http.Request)
+		ctx = r.Context()
 
-	span.SetTag("protocol", "HTTP")
-	span.SetTag(zipkincore.HTTP_PATH, r.URL.Path)
-	span.SetTag(zipkincore.HTTP_HOST, r.URL.Host)
+		parentSpan, ok := ctx.Value(tracing.CTX_TRACE_SPAN).(opentracing.Span)
+		if !ok {
+			return nil
+		}
+		span = getTracer().StartSpan(operationName, opentracing.ChildOf(parentSpan.Context()))
+		ext.SpanKindRPCClient.Set(span)
+		ext.HTTPMethod.Set(span, r.Method)
+		ext.HTTPUrl.Set(span, r.URL.String())
+
+		span.SetTag("protocol", "HTTP")
+		span.SetTag(zipkincore.HTTP_PATH, r.URL.Path)
+		span.SetTag(zipkincore.HTTP_HOST, r.URL.Host)
+
+		carrier = opentracing.HTTPHeadersCarrier(r.Header)
+	default:
+		// grpc?
+		return nil
+	}
+
+	util.SetContext(ctx, tracing.CTX_TRACE_SPAN, span)
 
 	if err := getTracer().Inject(
 		span.Context(),
 		opentracing.TextMap,
-		opentracing.HTTPHeadersCarrier(r.Header),
+		carrier,
 	); err != nil {
 		util.Logger().Errorf(err, "tracer inject request failed")
 	}
+
+	return span
 }
 
-func (zp *Zipkin) FinishClientSpan(r *http.Request, code int, message string) {
-	span, ok := r.Context().Value(tracing.CTX_TRACE_SPAN).(opentracing.Span)
+func (zp *Zipkin) ClientEnd(itf tracing.Span, code int, message string) {
+	span, ok := itf.(opentracing.Span)
 	if !ok {
 		return
 	}
+	setResultTags(span, code, message)
+	span.Finish()
+}
+
+func setResultTags(span opentracing.Span, code int, message string) {
 	result := 0
 	if code >= http.StatusBadRequest {
 		result = 1
@@ -165,5 +197,4 @@ func (zp *Zipkin) FinishClientSpan(r *http.Request, code int, message string) {
 	span.SetTag("resultCode", code)
 	span.SetTag("result", result)
 	ext.HTTPStatusCode.Set(span, uint16(code))
-	span.Finish()
 }
