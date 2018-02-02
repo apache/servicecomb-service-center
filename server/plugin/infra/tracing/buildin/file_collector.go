@@ -47,13 +47,7 @@ func (f *FileCollector) Close() error {
 	return f.Fd.Close()
 }
 
-func (f *FileCollector) write(batch []*zipkincore.Span) {
-	if len(batch) > 0 {
-		traceutils.LogRotateFile(f.Fd.Name(),
-			int(core.ServerInfo.Config.LogRotateSize),
-			int(core.ServerInfo.Config.LogBackupCount),
-		)
-	}
+func (f *FileCollector) write(batch []*zipkincore.Span) (c int) {
 	for _, span := range batch {
 		s := FromZipkinSpan(span)
 		b, err := json.Marshal(s)
@@ -67,15 +61,20 @@ func (f *FileCollector) write(batch []*zipkincore.Span) {
 		}
 		if err != nil {
 			util.Logger().Errorf(err, "write span failed")
+			continue
 		}
+		c++
 	}
+	return
 }
 
 func (f *FileCollector) loop(stopCh <-chan struct{}) {
 	var (
 		batch []*zipkincore.Span
 		prev  []*zipkincore.Span
+		i     = f.Interval * 10
 		t     = time.NewTicker(f.Interval)
+		nr    = time.Now().Add(i)
 	)
 	for {
 		select {
@@ -85,16 +84,31 @@ func (f *FileCollector) loop(stopCh <-chan struct{}) {
 		case span := <-f.c:
 			batch = append(batch, span)
 			if len(batch) >= f.QueueSize {
-				f.write(batch)
+				if c := f.write(batch); c == 0 {
+					continue
+				}
 				if prev != nil {
 					batch, prev = prev[:0], batch
 				} else {
 					prev, batch = batch, batch[len(batch):] // new one
 				}
+
+				nr = time.Now().Add(i)
 			}
 		case <-t.C:
-			f.write(batch)
-			batch = batch[:0]
+			b := time.Now().After(nr)
+			if b {
+				traceutils.LogRotateFile(f.Fd.Name(),
+					int(core.ServerInfo.Config.LogRotateSize),
+					int(core.ServerInfo.Config.LogBackupCount),
+				)
+			}
+
+			if c := f.write(batch); c > 0 || b {
+				batch = batch[:0]
+
+				nr = time.Now().Add(i)
+			}
 		}
 	}
 }
