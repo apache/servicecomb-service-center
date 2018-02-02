@@ -575,7 +575,7 @@
 		    "vcs": "git",
 		    "revision": "879c5887cd475cd7864858769793b2ceb0d44feb",
 		    "branch": "HEAD",
-            "notests": true
+		    "notests": true
 		}
 	]
 }
