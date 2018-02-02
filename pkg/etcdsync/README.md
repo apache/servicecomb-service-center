@@ -2,8 +2,8 @@
 
 ## example
 
-```bash
-lock, _ := etcdsync.Lock("/test")
+```go
+lock, _ := etcdsync.Lock("/test", true)
 defer lock.Unlock()
 //do something
 g += 1

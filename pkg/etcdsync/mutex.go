@@ -35,7 +35,6 @@ const (
 	ROOT_PATH  = "/cse/etcdsync"
 )
 
-// A Mutex is a mutual exclusion lock which is distributed across a cluster.
 type DLockFactory struct {
 	key    string
 	ctx    context.Context
@@ -69,9 +68,6 @@ func init() {
 	pid = os.Getpid()
 }
 
-// New creates a Mutex with the given key which must be the same
-// across the cluster nodes.
-// machines are the ectd cluster addresses
 func NewLockFactory(key string, ttl int64) *DLockFactory {
 	if len(key) == 0 {
 		return nil
@@ -88,10 +84,6 @@ func NewLockFactory(key string, ttl int64) *DLockFactory {
 	}
 }
 
-// Lock locks m.
-// If the lock is already in use, the calling goroutine
-// blocks until the mutex is available. Flag wait is false,
-// this function is non-block when lock exist.
 func (m *DLockFactory) NewDLock(wait bool) (l *DLock, err error) {
 	if !IsDebug {
 		m.mutex.Lock()
@@ -182,12 +174,6 @@ func (m *DLock) Lock(wait bool) error {
 	}
 }
 
-// Unlock unlocks m.
-// It is a run-time error if m is not locked on entry to Unlock.
-//
-// A locked Mutex is not associated with a particular goroutine.
-// It is allowed for one goroutine to lock a Mutex and then
-// arrange for another goroutine to unlock it.
 func (m *DLock) Unlock() (err error) {
 	opts := []registry.PluginOpOption{
 		registry.DEL,

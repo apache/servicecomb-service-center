@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/cache"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
@@ -30,24 +29,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"golang.org/x/net/context"
 	"strings"
-	"time"
 )
-
-var consumerCache *cache.Cache
-var providerCache *cache.Cache
-
-/*
-缓存2分钟过期
-1分钟周期缓存consumers 遍历所有serviceid并查询consumers 做缓存
-当发现新查询到的consumers列表变成0时则不做cache set操作
-这样当consumers关系完全被删除也有1分钟的时间窗让实例变化推送到相应的consumers里 1分鐘后緩存也會自動清理
-实例推送中的依赖发现实时性为T+1分钟
-*/
-func init() {
-	d, _ := time.ParseDuration("2m")
-	consumerCache = cache.New(d, d)
-	providerCache = cache.New(d, d)
-}
 
 func GetConsumersInCache(ctx context.Context, domainProject string, provider *pb.MicroService) ([]string, error) {
 	// 查询所有consumer
@@ -57,17 +39,6 @@ func GetConsumersInCache(ctx context.Context, domainProject string, provider *pb
 		util.Logger().Errorf(err, "Get dependency consumerIds failed.%s", provider.ServiceId)
 		return nil, err
 	}
-
-	if len(consumerIds) == 0 {
-		consumerIds, found := consumerCache.Get(provider.ServiceId)
-		if found && len(consumerIds.([]string)) > 0 {
-			return consumerIds.([]string), nil
-		}
-		util.Logger().Warnf(nil, "Can not find any consumer from local cache and backend. provider is %s",
-			provider.ServiceId)
-		return nil, nil
-	}
-
 	return consumerIds, nil
 }
 
@@ -79,42 +50,7 @@ func GetProvidersInCache(ctx context.Context, domainProject string, consumer *pb
 		util.Logger().Errorf(err, "Get dependency providerIds failed.%s", consumer.ServiceId)
 		return nil, err
 	}
-
-	if len(providerIds) == 0 {
-		providerIds, found := providerCache.Get(consumer.ServiceId)
-		if found && len(providerIds.([]string)) > 0 {
-			return providerIds.([]string), nil
-		}
-		util.Logger().Warnf(nil, "Can not find any provider from local cache and backend. consumer is %s",
-			consumer.ServiceId)
-		return nil, nil
-	}
-
 	return providerIds, nil
-}
-
-func RefreshDependencyCache(ctx context.Context, domainProject string, service *pb.MicroService) error {
-	dr := NewDependencyRelation(ctx, domainProject, service, service)
-	consumerIds, err := dr.GetDependencyConsumerIds()
-	if err != nil {
-		util.Logger().Errorf(err, "%s,refresh dependency cache failed, get consumerIds failed.", service.ServiceId)
-		return err
-	}
-	providerIds, err := dr.GetDependencyProviderIds()
-	if err != nil {
-		util.Logger().Errorf(err, "%s,refresh dependency cache failed, get providerIds failed.", service.ServiceId)
-		return err
-	}
-	MsCache().Set(service.ServiceId, service, 5*time.Minute)
-	if len(consumerIds) > 0 {
-		util.Logger().Infof("refresh %s dependency cache: cached %d consumerId(s) for 5min.", service.ServiceId, len(consumerIds))
-		consumerCache.Set(service.ServiceId, consumerIds, 5*time.Minute)
-	}
-	if len(providerIds) > 0 {
-		util.Logger().Infof("refresh %s dependency cache: cached %d providerId(s) for 5min.", service.ServiceId, len(providerIds))
-		providerCache.Set(service.ServiceId, providerIds, 5*time.Minute)
-	}
-	return nil
 }
 
 func GetConsumerIdsByProvider(ctx context.Context, domainProject string, provider *pb.MicroService) (allow []string, deny []string, _ error) {

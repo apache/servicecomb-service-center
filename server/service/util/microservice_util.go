@@ -18,7 +18,6 @@ package util
 
 import (
 	"encoding/json"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/cache"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
@@ -28,19 +27,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
-	"time"
 )
-
-var msCache *cache.Cache
-
-func MsCache() *cache.Cache {
-	return msCache
-}
-
-func init() {
-	d, _ := time.ParseDuration("1m")
-	msCache = cache.New(d, d)
-}
 
 /*
 	get Service by service id
@@ -65,17 +52,7 @@ func GetServiceWithRev(ctx context.Context, domain string, id string, rev int64)
 }
 
 func GetServiceInCache(ctx context.Context, domain string, id string) (*pb.MicroService, error) {
-	ms, ok := msCache.Get(id)
-	if !ok {
-		ms, err := GetService(ctx, domain, id)
-		if ms == nil {
-			return nil, err
-		}
-		msCache.Set(id, ms, 0)
-		return ms, nil
-	}
-
-	return ms.(*pb.MicroService), nil
+	return GetService(ctx, domain, id)
 }
 
 func GetService(ctx context.Context, domainProject string, serviceId string) (*pb.MicroService, error) {

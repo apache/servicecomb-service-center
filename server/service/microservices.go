@@ -254,13 +254,6 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, serviceId st
 		}
 	}
 
-	//refresh msCache consumerCache, ensure that watch can notify consumers when no cache.
-	err = serviceUtil.RefreshDependencyCache(ctx, domainProject, service)
-	if err != nil {
-		util.Logger().Errorf(err, "%s micro-service failed, serviceId is %s: inner err, refresh service dependency cache failed.", title, serviceId)
-		return pb.CreateResponse(scerr.ErrInternal, "Refresh dependency cache failed."), err
-	}
-
 	serviceKey := &pb.MicroServiceKey{
 		Tenant:      domainProject,
 		Environment: service.Environment,

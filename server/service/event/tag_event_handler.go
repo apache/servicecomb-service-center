@@ -57,12 +57,8 @@ func (apt *TagsChangedAsyncTask) publish(ctx context.Context, domainProject, con
 		return err
 	}
 	if consumer == nil {
-		consumerTmp, found := serviceUtil.MsCache().Get(consumerId)
-		if !found {
-			util.Logger().Errorf(nil, "service not exist, %s", consumerId)
-			return fmt.Errorf("service not exist, %s", consumerId)
-		}
-		consumer = consumerTmp.(*pb.MicroService)
+		util.Logger().Errorf(nil, "service not exist, %s", consumerId)
+		return fmt.Errorf("service not exist, %s", consumerId)
 	}
 	providerIds, err := serviceUtil.GetProvidersInCache(ctx, domainProject, consumer)
 	if err != nil {
