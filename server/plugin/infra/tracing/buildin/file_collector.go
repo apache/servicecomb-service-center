@@ -95,22 +95,18 @@ func (f *FileCollector) loop(stopCh <-chan struct{}) {
 				} else {
 					prev, batch = batch, batch[len(batch):] // new one
 				}
-
-				nr = time.Now().Add(i)
 			}
 		case <-t.C:
-			b := time.Now().After(nr)
-			if b {
+			if time.Now().After(nr) {
 				traceutils.LogRotateFile(f.Fd.Name(),
 					int(core.ServerInfo.Config.LogRotateSize),
 					int(core.ServerInfo.Config.LogBackupCount),
 				)
+				nr = time.Now().Add(i)
 			}
 
-			if c := f.write(batch); c > 0 || b {
+			if c := f.write(batch); c > 0 {
 				batch = batch[:0]
-
-				nr = time.Now().Add(i)
 			}
 		}
 	}
@@ -123,7 +119,7 @@ func NewFileCollector(path string) (*FileCollector, error) {
 	}
 	fc := &FileCollector{
 		Fd:        fd,
-		Interval:  30 * time.Second,
+		Interval:  10 * time.Second,
 		QueueSize: 100,
 		c:         make(chan *zipkincore.Span, 1000),
 	}
