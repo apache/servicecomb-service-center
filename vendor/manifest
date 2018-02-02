@@ -568,6 +568,14 @@
 			"revision": "d670f9405373e636a5a2765eea47fac0c9bc91a4",
 			"branch": "HEAD",
 			"notests": true
+		},
+		{
+		    "importpath": "github.com/satori/go.uuid",
+		    "repository": "https://github.com/satori/go.uuid",
+		    "vcs": "git",
+		    "revision": "879c5887cd475cd7864858769793b2ceb0d44feb",
+		    "branch": "HEAD",
+		    "notests": true
 		}
 	]
 }

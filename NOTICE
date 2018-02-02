@@ -12,6 +12,7 @@ The following components are provided under the  MIT License  (http://www.openso
 
 github.com/beorn7/perks/quantile
 github.com/boltdb/bolt
+github.com/satori/go.uuid
 AngularJS v1.6.6 (http://angularjs.org)
 Bootstrap v3.3.7 (http://getbootstrap.com)
 
