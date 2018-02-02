@@ -34,7 +34,7 @@ func initTracer() {
 		return
 	}
 	ipPort, _ := util.ParseEndpoint(core.Instance.Endpoints[0])
-	recorder := zipkin.NewRecorder(collector, false, ipPort, core.Service.ServiceName)
+	recorder := zipkin.NewRecorder(collector, false, ipPort, strings.ToLower(core.Service.ServiceName))
 	tracer, err := zipkin.NewTracer(recorder, zipkin.TraceID128Bit(true))
 	if err != nil {
 		return

@@ -18,7 +18,6 @@ package buildin
 
 import (
 	"context"
-	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/tracing"
 	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
@@ -52,7 +51,7 @@ func (zp *Zipkin) ServerBegin(operationName string, itf tracing.Request) tracing
 		r := itf.(*http.Request)
 		ctx = r.Context()
 
-		wireContext, err := ZipkinTracer().Extract(opentracing.TextMap, opentracing.HTTPHeadersCarrier(r.Header))
+		wireContext, err := ZipkinTracer().Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
 		switch err {
 		case nil:
 		case opentracing.ErrSpanContextNotFound:
@@ -121,7 +120,7 @@ func (zp *Zipkin) ClientBegin(operationName string, itf tracing.Request) tracing
 
 	if err := ZipkinTracer().Inject(
 		span.Context(),
-		opentracing.TextMap,
+		opentracing.HTTPHeaders,
 		carrier,
 	); err != nil {
 		util.Logger().Errorf(err, "tracer inject request failed")
@@ -140,15 +139,8 @@ func (zp *Zipkin) ClientEnd(itf tracing.Span, code int, message string) {
 }
 
 func setResultTags(span opentracing.Span, code int, message string) {
-	result := 0
-	if code >= http.StatusBadRequest {
-		result = 1
-		if len(message) == 0 {
-			message = fmt.Sprint(code)
-		}
+	if code >= http.StatusBadRequest && len(message) > 0 {
 		span.SetTag("error", message)
 	}
-	span.SetTag("resultCode", code)
-	span.SetTag("result", result)
 	ext.HTTPStatusCode.Set(span, uint16(code))
 }
