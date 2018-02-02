@@ -50,7 +50,7 @@ func (s *MicroServiceService) AddOrUpdateDependencies(ctx context.Context, depen
 	opts := make([]registry.PluginOp, 0, len(dependencyInfos))
 	domainProject := util.ParseDomainProject(ctx)
 	for _, dependencyInfo := range dependencyInfos {
-		if (len(dependencyInfo.Providers) == 0  && !override) || dependencyInfo.Consumer == nil {
+		if (len(dependencyInfo.Providers) == 0 && !override) || dependencyInfo.Consumer == nil {
 			return serviceUtil.BadParamsResponse("Provider is invalid").Response, nil
 		}
 

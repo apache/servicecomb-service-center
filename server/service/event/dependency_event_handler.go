@@ -161,7 +161,6 @@ func (h *DependencyEventHandler) dependencyRuleHandle(res interface{}) error {
 	r := dependencyEventHandlerRes.dep
 	consumerFlag := util.StringJoin([]string{r.Consumer.AppId, r.Consumer.ServiceName, r.Consumer.Version}, "/")
 
-
 	domainProject := dependencyEventHandlerRes.domainProject
 	consumerInfo := pb.DependenciesToKeys([]*pb.MicroServiceKey{r.Consumer}, domainProject)[0]
 	providersInfo := pb.DependenciesToKeys(r.Providers, domainProject)
