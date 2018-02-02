@@ -17,6 +17,7 @@
 package buildin
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/logrotate"
@@ -48,6 +49,11 @@ func (f *FileCollector) Close() error {
 }
 
 func (f *FileCollector) write(batch []*zipkincore.Span) (c int) {
+	if len(batch) == 0 {
+		return
+	}
+	newLine := [...]byte{'\n'}
+	w := bufio.NewWriter(f.Fd)
 	for _, span := range batch {
 		s := FromZipkinSpan(span)
 		b, err := json.Marshal(s)
@@ -55,15 +61,12 @@ func (f *FileCollector) write(batch []*zipkincore.Span) (c int) {
 			util.Logger().Errorf(err, "marshal span failed")
 			continue
 		}
-		_, err = f.Fd.Write(b)
-		if err == nil {
-			_, err = f.Fd.Write([]byte{'\n'})
-		}
-		if err != nil {
-			util.Logger().Errorf(err, "write span failed")
-			continue
-		}
+		w.Write(b)
+		w.Write(newLine[:])
 		c++
+	}
+	if err := w.Flush(); err != nil {
+		util.Logger().Errorf(err, "write span to file failed")
 	}
 	return
 }
