@@ -41,7 +41,7 @@ func BenchmarkLock(b *testing.B) {
 	var g = 0
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			lock, _ := etcdsync.Lock("/test")
+			lock, _ := etcdsync.Lock("/test", true)
 			defer lock.Unlock()
 			//do something
 			g += 1

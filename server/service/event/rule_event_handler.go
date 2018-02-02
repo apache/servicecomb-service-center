@@ -57,12 +57,8 @@ func (apt *RulesChangedAsyncTask) publish(ctx context.Context, domainProject, pr
 		return err
 	}
 	if provider == nil {
-		tmpProvider, found := serviceUtil.MsCache().Get(providerId)
-		if !found {
-			util.Logger().Errorf(nil, "provider %s does not exist", providerId)
-			return fmt.Errorf("provider %s does not exist", providerId)
-		}
-		provider = tmpProvider.(*pb.MicroService)
+		util.Logger().Errorf(nil, "provider %s does not exist", providerId)
+		return fmt.Errorf("provider %s does not exist", providerId)
 	}
 
 	consumerIds, err := serviceUtil.GetConsumersInCache(ctx, domainProject, provider)
