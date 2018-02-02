@@ -1,8 +1,8 @@
-package tree
+package util
 
 //The tree is binary sort tree
 type tree struct {
-	root *Node
+	root        *Node
 	isAddToLeft func(node *Node, addRes interface{}) bool
 }
 
@@ -17,7 +17,7 @@ type Node struct {
 	left, right *Node
 }
 
-func (t *tree) GetRoot()*Node {
+func (t *tree) GetRoot() *Node {
 	return t.root
 }
 
@@ -26,7 +26,7 @@ func (t *tree) AddNode(res interface{}) *Node {
 	return t.addNode(t.root, res)
 }
 
-func (t *tree) addNode(n *Node, res interface{}) *Node{
+func (t *tree) addNode(n *Node, res interface{}) *Node {
 	if n == nil {
 		n = new(Node)
 		n.Res = res

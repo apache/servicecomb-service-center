@@ -203,6 +203,30 @@ var _ = Describe("MicroService Api Test", func() {
 
 			})
 		})
+
+		By("Get All Apps by Governance API", func() {
+			It("Get All App Ids", func() {
+				req, _ := http.NewRequest(GET, SCURL+GETALLAPPS, nil)
+				req.Header.Set("X-Domain-Name", "default")
+				resp, err := scclient.Do(req)
+				Expect(err).To(BeNil())
+				defer resp.Body.Close()
+				respbody, _ := ioutil.ReadAll(resp.Body)
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				appIdsStruct := map[string][]string{}
+
+				json.Unmarshal(respbody, &appIdsStruct)
+				found := false
+				for _, appId := range appIdsStruct["appIds"] {
+					if strings.Index(appId, serviceAppId) == 0 {
+						found = true
+						break
+					}
+				}
+				Expect(found).To(Equal(true))
+
+			})
+		})
 	})
 
 })

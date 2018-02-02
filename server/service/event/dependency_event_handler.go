@@ -30,7 +30,6 @@ import (
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"time"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/tree"
 )
 
 type DependencyEventHandler struct {
@@ -105,7 +104,7 @@ func NewDependencyEventHandlerResource(dep *pb.ConsumerDependency, kv *mvccpb.Ke
 	}
 }
 
-func isAddToLeft(centerNode *tree.Node, addRes interface{}) bool {
+func isAddToLeft(centerNode *util.Node, addRes interface{}) bool {
 	res := addRes.(*DependencyEventHandlerResource)
 	compareRes := centerNode.Res.(*DependencyEventHandlerResource)
 	if res.kv.ModRevision > compareRes.kv.ModRevision {
@@ -131,7 +130,7 @@ func (h *DependencyEventHandler) Handle() error {
 
 	ctx := context.Background()
 
-	dependencyTree := tree.NewTree(isAddToLeft)
+	dependencyTree := util.NewTree(isAddToLeft)
 
 	for _, kv := range resp.Kvs {
 		r := &pb.ConsumerDependency{}

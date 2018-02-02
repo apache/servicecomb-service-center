@@ -103,6 +103,15 @@ var _ = Describe("MicroService Api schema Test", func() {
 		defer resp.Body.Close()
 	})
 
+	It("get schemas", func() {
+		url := strings.Replace(GETSCHEMAS, ":serviceId", serviceId, 1)
+		req, _ := http.NewRequest(GET, SCURL+url, nil)
+		req.Header.Set("X-Domain-Name", "default")
+		resp, _ := scclient.Do(req)
+		Expect(resp.StatusCode).To(Equal(http.StatusOK))
+		defer resp.Body.Close()
+	})
+
 	It("delete schema", func() {
 		url := strings.Replace(DELETESCHEMA, ":serviceId", serviceId, 1)
 		url = strings.Replace(url, ":schemaId", "second_schemaId", 1)

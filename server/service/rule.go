@@ -19,7 +19,6 @@ package service
 import (
 	"encoding/json"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/uuid"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
@@ -102,7 +101,7 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 		// 产生全局rule id
 		timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 		ruleAdd := &pb.ServiceRule{
-			RuleId:       uuid.GenerateUuid(),
+			RuleId:       util.GenerateUuid(),
 			RuleType:     rule.RuleType,
 			Attribute:    rule.Attribute,
 			Pattern:      rule.Pattern,

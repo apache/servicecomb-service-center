@@ -18,7 +18,7 @@
 package buildin
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/uuid"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
 )
 
@@ -38,7 +38,7 @@ func (du *BuildinUUID) GetServiceId() string {
 	if ok {
 		return df()
 	}
-	return uuid.GenerateUuid()
+	return util.GenerateUuid()
 }
 
 func (du *BuildinUUID) GetInstanceId() string {
@@ -46,5 +46,5 @@ func (du *BuildinUUID) GetInstanceId() string {
 	if ok {
 		return df()
 	}
-	return uuid.GenerateUuid()
+	return util.GenerateUuid()
 }
