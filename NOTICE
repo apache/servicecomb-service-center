@@ -5,6 +5,29 @@ This product includes software developed at
 The Apache Software Foundation (http://www.apache.org/).
 
 ================================================================
+The Apache License Version 2.0
+================================================================
+The following components are provided under the  Apache License Version 2.0  (http://www.apache.org/licenses/). See project link for details.
+
+github.com/astaxie/beego
+github.com/cockroachdb/cmux
+github.com/coreos/etcd
+github.com/coreos/go-semver/semver
+github.com/coreos/go-systemd/journal
+github.com/coreos/pkg/capnslog
+google.golang.org/genproto/googleapis/rpc/status
+google.golang.org/grpc
+gopkg.in/yaml.v2
+github.com/google/btree
+github.com/grpc-ecosystem/go-grpc-prometheus
+github.com/jonboulle/clockwork
+github.com/matttproud/golang_protobuf_extensions/pbutil
+github.com/prometheus/client_golang/prometheus
+github.com/prometheus/client_model/go
+github.com/prometheus/common
+github.com/prometheus/procfs/xfs
+
+================================================================
 The MIT License
 ================================================================
 
@@ -15,6 +38,10 @@ github.com/boltdb/bolt
 github.com/satori/go.uuid
 AngularJS v1.6.6 (http://angularjs.org)
 Bootstrap v3.3.7 (http://getbootstrap.com)
+Chart.js (https://github.com/chartjs/Chart.js)
+jquery (https://github.com/jquery/jquery)
+JSZip (https://github.com/Stuk/jszip)
+yaml.js (https://github.com/jeremyfa/yaml.js)
 
 ================================================================
 The BSD Licenses
@@ -68,3 +95,100 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+================================================================
+Notice for coreos/etcd
+
+CoreOS Project
+Copyright 2014 CoreOS, Inc
+
+This product includes software developed at CoreOS, Inc.
+(http://www.coreos.com/).
+
+================================================================
+Notice for coreos/go-systemd
+
+CoreOS Project
+Copyright 2018 CoreOS, Inc
+
+This product includes software developed at CoreOS, Inc.
+(http://www.coreos.com/).
+
+================================================================
+Notice for coreos/go-semver
+
+CoreOS Project
+Copyright 2018 CoreOS, Inc
+
+This product includes software developed at CoreOS, Inc.
+(http://www.coreos.com/).
+
+================================================================
+Notice for coreos/pkg
+
+CoreOS Project
+Copyright 2014 CoreOS, Inc
+
+This product includes software developed at CoreOS, Inc.
+(http://www.coreos.com/).
+
+================================================================
+Notice for matttproud/golang_protobuf_extensions
+
+Copyright 2012 Matt T. Proud (matt.proud@gmail.com)
+
+================================================================
+Notice for prometheus/client_golang
+
+Prometheus instrumentation library for Go applications
+Copyright 2012-2015 The Prometheus Authors
+
+This product includes software developed at
+SoundCloud Ltd. (http://soundcloud.com/).
+
+
+The following components are included in this product:
+
+perks - a fork of https://github.com/bmizerany/perks
+https://github.com/beorn7/perks
+Copyright 2013-2015 Blake Mizerany, Björn Rabenstein
+See https://github.com/beorn7/perks/blob/master/README.md for license details.
+
+Go support for Protocol Buffers - Google's data interchange format
+http://github.com/golang/protobuf/
+Copyright 2010 The Go Authors
+See source code for license details.
+
+Support for streaming Protocol Buffer messages for the Go language (golang).
+https://github.com/matttproud/golang_protobuf_extensions
+Copyright 2013 Matt T. Proud
+Licensed under the Apache License, Version 2.0
+
+================================================================
+Notice for prometheus/client_model
+
+Data model artifacts for Prometheus.
+Copyright 2012-2015 The Prometheus Authors
+
+This product includes software developed at
+SoundCloud Ltd. (http://soundcloud.com/).
+
+================================================================
+Notice for prometheus/common
+
+Common libraries shared by Prometheus Go components.
+Copyright 2015 The Prometheus Authors
+
+This product includes software developed at
+SoundCloud Ltd. (http://soundcloud.com/).
+
+================================================================
+Notice for prometheus/procfs
+
+procfs provides functions to retrieve system, kernel and process
+metrics from the pseudo-filesystem proc.
+
+Copyright 2014-2015 The Prometheus Authors
+
+This product includes software developed at
+SoundCloud Ltd. (http://soundcloud.com/).
