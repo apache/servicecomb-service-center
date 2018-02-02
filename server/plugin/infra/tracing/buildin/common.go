@@ -17,9 +17,57 @@
 package buildin
 
 import (
+	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
+	"github.com/opentracing/opentracing-go"
+	zipkin "github.com/openzipkin/zipkin-go-opentracing"
 	"os"
 	"path/filepath"
+	"strings"
 )
+
+func initTracer() {
+	collector, err := newCollector()
+	if err != nil {
+		util.Logger().Errorf(err, "new tracing collector failed")
+		return
+	}
+	ipPort, _ := util.ParseEndpoint(core.Instance.Endpoints[0])
+	recorder := zipkin.NewRecorder(collector, false, ipPort, core.Service.ServiceName)
+	tracer, err := zipkin.NewTracer(recorder, zipkin.TraceID128Bit(true))
+	if err != nil {
+		return
+	}
+	opentracing.SetGlobalTracer(tracer)
+}
+
+func newCollector() (collector zipkin.Collector, err error) {
+	ct := strings.TrimSpace(os.Getenv("TRACING_COLLECTOR"))
+	switch ct {
+	case "server":
+		sa := GetServerEndpoint()
+		collector, err = zipkin.NewHTTPCollector(sa + "/api/v1/spans")
+		if err != nil {
+			return
+		}
+	case "file":
+		fp := GetFilePath(core.Service.ServiceName + ".trace")
+		collector, err = NewFileCollector(fp)
+		if err != nil {
+			return
+		}
+	default:
+		err = fmt.Errorf("unknown tracing collector type '%s'", ct)
+	}
+	return
+}
+
+func ZipkinTracer() opentracing.Tracer {
+	once.Do(initTracer)
+	// use the NOOP tracer if init failed
+	return opentracing.GlobalTracer()
+}
 
 func GetFilePath(defName string) string {
 	path := os.Getenv("TRACING_FILE_PATH")

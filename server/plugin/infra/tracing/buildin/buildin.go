@@ -20,16 +20,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/tracing"
 	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
-	zipkin "github.com/openzipkin/zipkin-go-opentracing"
 	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
 	"net/http"
-	"os"
-	"strings"
 	"sync"
 )
 
@@ -41,48 +37,6 @@ func init() {
 
 func New() mgr.PluginInstance {
 	return &Zipkin{}
-}
-
-func initTracer() {
-	collector, err := newCollector()
-	if err != nil {
-		util.Logger().Errorf(err, "new tracing collector failed")
-		return
-	}
-	ipPort, _ := util.ParseEndpoint(core.Instance.Endpoints[0])
-	recorder := zipkin.NewRecorder(collector, false, ipPort, core.Service.ServiceName)
-	tracer, err := zipkin.NewTracer(recorder, zipkin.TraceID128Bit(true))
-	if err != nil {
-		return
-	}
-	opentracing.SetGlobalTracer(tracer)
-}
-
-func newCollector() (collector zipkin.Collector, err error) {
-	ct := strings.TrimSpace(os.Getenv("TRACING_COLLECTOR"))
-	switch ct {
-	case "server":
-		sa := GetServerEndpoint()
-		collector, err = zipkin.NewHTTPCollector(sa + "/api/v1/spans")
-		if err != nil {
-			return
-		}
-	case "file":
-		fp := GetFilePath(core.Service.ServiceName + ".trace")
-		collector, err = NewFileCollector(fp)
-		if err != nil {
-			return
-		}
-	default:
-		err = fmt.Errorf("unknown tracing collector type '%s'", ct)
-	}
-	return
-}
-
-func getTracer() opentracing.Tracer {
-	once.Do(initTracer)
-	// use the NOOP tracer if init failed
-	return opentracing.GlobalTracer()
 }
 
 type Zipkin struct {
@@ -98,7 +52,7 @@ func (zp *Zipkin) ServerBegin(operationName string, itf tracing.Request) tracing
 		r := itf.(*http.Request)
 		ctx = r.Context()
 
-		wireContext, err := getTracer().Extract(opentracing.TextMap, opentracing.HTTPHeadersCarrier(r.Header))
+		wireContext, err := ZipkinTracer().Extract(opentracing.TextMap, opentracing.HTTPHeadersCarrier(r.Header))
 		switch err {
 		case nil:
 		case opentracing.ErrSpanContextNotFound:
@@ -107,7 +61,7 @@ func (zp *Zipkin) ServerBegin(operationName string, itf tracing.Request) tracing
 			return nil
 		}
 
-		span = getTracer().StartSpan(operationName, ext.RPCServerOption(wireContext))
+		span = ZipkinTracer().StartSpan(operationName, ext.RPCServerOption(wireContext))
 		ext.SpanKindRPCServer.Set(span)
 		ext.HTTPMethod.Set(span, r.Method)
 		ext.HTTPUrl.Set(span, r.URL.String())
@@ -148,7 +102,7 @@ func (zp *Zipkin) ClientBegin(operationName string, itf tracing.Request) tracing
 		if !ok {
 			return nil
 		}
-		span = getTracer().StartSpan(operationName, opentracing.ChildOf(parentSpan.Context()))
+		span = ZipkinTracer().StartSpan(operationName, opentracing.ChildOf(parentSpan.Context()))
 		ext.SpanKindRPCClient.Set(span)
 		ext.HTTPMethod.Set(span, r.Method)
 		ext.HTTPUrl.Set(span, r.URL.String())
@@ -165,7 +119,7 @@ func (zp *Zipkin) ClientBegin(operationName string, itf tracing.Request) tracing
 
 	util.SetContext(ctx, tracing.CTX_TRACE_SPAN, span)
 
-	if err := getTracer().Inject(
+	if err := ZipkinTracer().Inject(
 		span.Context(),
 		opentracing.TextMap,
 		carrier,
