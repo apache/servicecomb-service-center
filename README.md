@@ -3,18 +3,20 @@
 
 Apache ServiceComb (incubating) service-center allows services to register their instance information and to discover providers of a given service. 
 ## Features
- -  Seperated microservice and microservice instance entity management
- -  White and back list configuration for service discovery
- -  Use web socket to notify client about instance change events
- -  Support query instance by criteria
- -  Metadata management for both microservice and microservice instance 
- -  API doc(Open API format) management for microservice
- -  Microservice dependency management
- -  Awesome  [web portal](/frontend)
- -	 Multiple fault tolerance mechanism and design in the architecture
- -	 Performance/Caching design
+ - **Open API**: API doc(Open API format) management for microservice
+ - **Metadata**: Metadata management for both microservice and microservice instance
+ - **Dependency**: Microservice dependency management
+ - **Seperated**: Seperated microservice and microservice instance entity management
+ - **Domains**: Logical multiple domains management
+ - **Security**: White and back list configuration for service discovery
+ - **Discovery**: Support query instance by criteria 
+ - **Subscribe**: Use web socket to notify client about instance change events
+ - **Portal**: Awesome  [web portal](/frontend)
+ -	**Fault tolerance**: Multiple fault tolerance mechanism and design in the architecture
+ -	**Performance**: Performance/Caching design
  - **Metrics**: Able to expose Prometheus metric API automatically
-
+ - **Tracing**: Able to report tracing data to Zipkin server
+ 
 ## Quick Start
 
 ### Getting Service Center
