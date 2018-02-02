@@ -74,3 +74,4 @@ gvt fetch -precaire -no-recurse -revision 6800482f2c813e689c88b7ed32822623850118
 gvt fetch -precaire -no-recurse -revision bb955e01b9346ac19dc29eb16586c90ded99a98c github.com/eapache/go-xerial-snappy
 gvt fetch -precaire -no-recurse -revision ded5959c0d4e360646dc9e9908cff48666781367 github.com/eapache/queue
 gvt fetch -precaire -no-recurse -revision cb6bfca970f6908083f26f39a79009d608efd5cd github.com/klauspost/crc32
+gvt fetch -precaire -no-recurse -revision 879c5887cd475cd7864858769793b2ceb0d44feb github.com/satori/go.uuid
