@@ -116,27 +116,6 @@ func TestGetService(t *testing.T) {
 	}
 }
 
-func TestMsCache(t *testing.T) {
-	defer func() {
-		if r := recover(); r != nil {
-			t.FailNow()
-		}
-	}()
-	_, err := serviceUtil.GetServiceInCache(context.Background(), "", "")
-	if err == nil {
-		t.FailNow()
-	}
-	ms := serviceUtil.MsCache()
-	if ms == nil {
-		t.FailNow()
-	}
-	ms.Set("", &proto.MicroService{}, 0)
-	_, err = serviceUtil.GetServiceInCache(context.Background(), "", "")
-	if err != nil {
-		t.FailNow()
-	}
-}
-
 func TestFromContext(t *testing.T) {
 	ctx := context.WithValue(context.Background(), "noCache", "1")
 	opts := serviceUtil.FromContext(ctx)
