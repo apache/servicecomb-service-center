@@ -35,7 +35,11 @@ func TracingBegin(ctx context.Context, operationName string, op registry.PluginO
 	case registry.Delete:
 		action = http.MethodDelete
 	}
-	r, _ := http.NewRequest(action, util.BytesToStringWithNoCopy(op.Key), nil)
+	r, err := http.NewRequest(action, util.BytesToStringWithNoCopy(op.Key), nil)
+	if err != nil {
+		util.Logger().Errorf(err, "new backend request failed")
+		return nil
+	}
 	r = r.WithContext(ctx)
 	return plugin.Plugins().Tracing().ClientBegin(operationName, r)
 }
