@@ -14,30 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package rest
+package tracing
 
-import (
-	"net/http"
-)
+const CTX_TRACE_SPAN = "x-trace-span"
 
-const (
-	HTTP_METHOD_GET    = http.MethodGet
-	HTTP_METHOD_PUT    = http.MethodPut
-	HTTP_METHOD_POST   = http.MethodPost
-	HTTP_METHOD_DELETE = http.MethodDelete
+type Request interface{}
+type Span interface{}
 
-	CTX_RESPONSE      = "_server_response"
-	CTX_REQUEST       = "_server_request"
-	CTX_MATCH_PATTERN = "_server_match_pattern"
-	CTX_MATCH_FUNC    = "_server_match_func"
-	SERVER_CHAIN_NAME = "_server_chain"
-)
-
-func isValidMethod(method string) bool {
-	switch method {
-	case http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete:
-		return true
-	default:
-		return false
-	}
+type Tracing interface {
+	ServerBegin(operationName string, r Request) Span
+	ServerEnd(span Span, code int, message string)
+	ClientBegin(operationName string, r Request) Span
+	ClientEnd(span Span, code int, message string)
 }

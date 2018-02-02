@@ -17,27 +17,11 @@
 package util
 
 import (
-	"net"
+	"os"
 	"unsafe"
 )
 
 const INT_SIZE int = int(unsafe.Sizeof(0))
-
-func GetLocalIP() string {
-	addrs, err := net.InterfaceAddrs()
-	if err != nil {
-		return ""
-	}
-	for _, address := range addrs {
-		// check the address type and if it is not a loopback the display it
-		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-			if ipnet.IP.To4() != nil {
-				return ipnet.IP.String()
-			}
-		}
-	}
-	return ""
-}
 
 func IsBigEndian() bool {
 	return !IsLittleEndian()
@@ -47,4 +31,9 @@ func IsLittleEndian() bool {
 	i := 0x1
 	bs := (*[INT_SIZE]byte)(unsafe.Pointer(&i))
 	return bs[0] == 0
+}
+
+func PathExist(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil || os.IsExist(err)
 }

@@ -10,6 +10,7 @@
 1. auditlog, Customize audit log for any change done to the service-center.
 1. cipher, Customize encryption and decryption of TLS certificate private key password.
 1. quota, Customize quota for instance registry.
+1. tracing, Customize tracing data reporter.
 
 ## Example: an authentication plug-in
 

@@ -25,6 +25,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/security"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/tracing"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/uuid"
 	"github.com/astaxie/beego"
 	pg "plugin"
@@ -40,6 +41,7 @@ const (
 	CIPHER
 	QUOTA
 	REGISTRY
+	TRACING
 	typeEnd
 )
 
@@ -50,6 +52,7 @@ var pluginNames = map[PluginName]string{
 	CIPHER:    "cipher",
 	QUOTA:     "quota",
 	REGISTRY:  "registry",
+	TRACING:   "trace",
 }
 
 var pluginMgr = &PluginManager{}
@@ -214,6 +217,10 @@ func (pm *PluginManager) Cipher() security.Cipher {
 
 func (pm *PluginManager) Quota() quota.QuotaManager {
 	return pm.Instance(QUOTA).(quota.QuotaManager)
+}
+
+func (pm *PluginManager) Tracing() tracing.Tracing {
+	return pm.Instance(TRACING).(tracing.Tracing)
 }
 
 func Plugins() *PluginManager {

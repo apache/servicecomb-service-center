@@ -22,53 +22,51 @@ import (
 	"testing"
 )
 
+const (
+	times = 1000000
+	count = 100
+)
+
+func init() {
+	for i := 0; i < count; i++ {
+		chain.RegisterHandler("_bench_handlers_", &handler{})
+	}
+}
+
 type handler struct {
 }
 
 func (h *handler) Handle(i *chain.Invocation) {
-	counter := i.Context().Value("counter").(int)
-	counter++
-	i.WithContext("counter", counter)
 	i.Next()
 }
 
-func syncFunc(ctx map[string]interface{}) {
-	counter := ctx["counter"].(int)
-	counter++
-	ctx["counter"] = counter
+func syncFunc() {
+	for i := 0; i < count; i++ {
+	}
 }
 
 func BenchmarkChain(b *testing.B) {
-	b.N = 100
-	if len(chain.Handlers("_bench_handlers_")) == 0 {
-		for i := 0; i < b.N; i++ {
-			chain.RegisterHandler("_bench_handlers_", &handler{})
-		}
-	}
+	var (
+		ctx = context.Background()
+		f   = func(r chain.Result) {}
+	)
+	b.N = times
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			ch := make(chan struct{})
-			inv := chain.NewInvocation(context.Background(),
-				chain.NewChain("_bench_chain_", chain.Handlers("_bench_handlers_")))
-			inv.WithContext("counter", 0)
-			inv.Invoke(func(r chain.Result) { close(ch) })
-			<-ch
+			inv := chain.NewInvocation(ctx, chain.NewChain("_bench_chain_", chain.Handlers("_bench_handlers_")))
+			inv.Next(chain.WithFunc(f))
 		}
 	})
 	b.ReportAllocs()
 }
 
 func BenchmarkSync(b *testing.B) {
-	b.N = 100
+	b.N = times
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			ctx := make(map[string]interface{}, 1)
-			ctx["counter"] = 0
-			for i := 0; i < b.N; i++ {
-				syncFunc(ctx)
-			}
+			syncFunc()
 		}
 	})
 	b.ReportAllocs()

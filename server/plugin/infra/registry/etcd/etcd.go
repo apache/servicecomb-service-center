@@ -324,13 +324,20 @@ func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp) (*clientv
 }
 
 func (c *EtcdClient) Do(ctx context.Context, opts ...registry.PluginOpOption) (*registry.PluginResponse, error) {
+	var (
+		err  error
+		resp *registry.PluginResponse
+	)
+
 	start := time.Now()
 	op := registry.OptionsToOp(opts...)
 
+	span := TracingBegin(ctx, "etcd:do", op)
+	defer TracingEnd(span, err)
+
 	otCtx, cancel := registry.WithTimeout(ctx)
 	defer cancel()
-	var err error
-	var resp *registry.PluginResponse
+
 	switch op.Action {
 	case registry.Get:
 		var etcdResp *clientv3.GetResponse
@@ -378,9 +385,11 @@ func (c *EtcdClient) Do(ctx context.Context, opts ...registry.PluginOpOption) (*
 			Revision: etcdResp.Header.Revision,
 		}
 	}
+
 	if err != nil {
 		return nil, err
 	}
+
 	resp.Succeeded = true
 
 	util.LogNilOrWarnf(start, "registry client do %s", op)
@@ -399,6 +408,8 @@ func (c *EtcdClient) Txn(ctx context.Context, opts []registry.PluginOp) (*regist
 }
 
 func (c *EtcdClient) TxnWithCmp(ctx context.Context, success []registry.PluginOp, cmps []registry.CompareOp, fail []registry.PluginOp) (*registry.PluginResponse, error) {
+	var err error
+
 	otCtx, cancel := registry.WithTimeout(ctx)
 	defer cancel()
 
@@ -406,6 +417,9 @@ func (c *EtcdClient) TxnWithCmp(ctx context.Context, success []registry.PluginOp
 	etcdCmps := c.toCompares(cmps)
 	etcdSuccessOps := c.toTxnRequest(success)
 	etcdFailOps := c.toTxnRequest(fail)
+
+	span := TracingBegin(ctx, "etcd:txn", success[0])
+	defer TracingEnd(span, err)
 
 	kvc := clientv3.NewKV(c.Client)
 	txn := kvc.Txn(otCtx)
@@ -428,6 +442,11 @@ func (c *EtcdClient) TxnWithCmp(ctx context.Context, success []registry.PluginOp
 }
 
 func (c *EtcdClient) LeaseGrant(ctx context.Context, TTL int64) (int64, error) {
+	var err error
+	span := TracingBegin(ctx, "etcd:grant",
+		registry.PluginOp{Action: registry.Put, Key: util.StringToBytesWithNoCopy(fmt.Sprint(TTL))})
+	defer TracingEnd(span, err)
+
 	otCtx, cancel := registry.WithTimeout(ctx)
 	defer cancel()
 	start := time.Now()
@@ -440,6 +459,11 @@ func (c *EtcdClient) LeaseGrant(ctx context.Context, TTL int64) (int64, error) {
 }
 
 func (c *EtcdClient) LeaseRenew(ctx context.Context, leaseID int64) (int64, error) {
+	var err error
+	span := TracingBegin(ctx, "etcd:keepalive",
+		registry.PluginOp{Action: registry.Put, Key: util.StringToBytesWithNoCopy(fmt.Sprint(leaseID))})
+	defer TracingEnd(span, err)
+
 	otCtx, cancel := registry.WithTimeout(ctx)
 	defer cancel()
 	start := time.Now()
@@ -455,10 +479,15 @@ func (c *EtcdClient) LeaseRenew(ctx context.Context, leaseID int64) (int64, erro
 }
 
 func (c *EtcdClient) LeaseRevoke(ctx context.Context, leaseID int64) error {
+	var err error
+	span := TracingBegin(ctx, "etcd:revoke",
+		registry.PluginOp{Action: registry.Delete, Key: util.StringToBytesWithNoCopy(fmt.Sprint(leaseID))})
+	defer TracingEnd(span, err)
+
 	otCtx, cancel := registry.WithTimeout(ctx)
 	defer cancel()
 	start := time.Now()
-	_, err := c.Client.Revoke(otCtx, clientv3.LeaseID(leaseID))
+	_, err = c.Client.Revoke(otCtx, clientv3.LeaseID(leaseID))
 	if err != nil {
 		if err.Error() == grpc.ErrorDesc(rpctypes.ErrGRPCLeaseNotFound) {
 			return err

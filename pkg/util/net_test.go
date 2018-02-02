@@ -14,30 +14,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package rest
+package util
 
-import (
-	"net/http"
-)
+import "testing"
 
 const (
-	HTTP_METHOD_GET    = http.MethodGet
-	HTTP_METHOD_PUT    = http.MethodPut
-	HTTP_METHOD_POST   = http.MethodPost
-	HTTP_METHOD_DELETE = http.MethodDelete
-
-	CTX_RESPONSE      = "_server_response"
-	CTX_REQUEST       = "_server_request"
-	CTX_MATCH_PATTERN = "_server_match_pattern"
-	CTX_MATCH_FUNC    = "_server_match_func"
-	SERVER_CHAIN_NAME = "_server_chain"
+	ip1 = "127.0.0.1"       // 2130706433
+	ip2 = "0.0.0.0"         // 0
+	ip3 = "255.255.255.255" // 4294967295
+	n1  = 2130706433        // "127.0.0.1"
+	n2  = 0                 // "0.0.0.0"
+	n3  = 4294967295        // "255.255.255.255"
 )
 
-func isValidMethod(method string) bool {
-	switch method {
-	case http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete:
-		return true
-	default:
-		return false
+func TestInetAton(t *testing.T) {
+	i := InetAton(ip1)
+	if i != 2130706433 {
+		fail(t, "InetAton(%s) error", ip1)
+	}
+	i = InetAton(ip2)
+	if i != 0 {
+		fail(t, "InetAton(%s) error", ip2)
+	}
+	i = InetAton(ip3)
+	if i != 4294967295 {
+		fail(t, "InetAton(%s) error", ip3)
+	}
+}
+
+func TestInetNtoa(t *testing.T) {
+	ip := InetNtoa(n1)
+	if ip != ip1 {
+		fail(t, "InetNtoa(%d) error", n1)
+	}
+	ip = InetNtoa(n2)
+	if ip != ip2 {
+		fail(t, "InetNtoa(%d) error", n2)
+	}
+	ip = InetNtoa(n3)
+	if ip != ip3 {
+		fail(t, "InetNtoa(%d) error", n3)
 	}
 }

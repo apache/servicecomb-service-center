@@ -21,6 +21,7 @@ import (
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/quota/buildin"
 	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/registry/etcd"
+	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/tracing/buildin"
 	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/uuid/buildin"
 	"github.com/apache/incubator-servicecomb-service-center/server/service"
 	. "github.com/onsi/ginkgo"

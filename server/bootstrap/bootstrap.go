@@ -39,6 +39,9 @@ import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/i
 // uuid
 import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/uuid/buildin"
 
+// tracing
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/tracing/buildin"
+
 // module
 import _ "github.com/apache/incubator-servicecomb-service-center/server/govern"
 
@@ -48,6 +51,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/handler/cache"
 	"github.com/apache/incubator-servicecomb-service-center/server/handler/context"
 	"github.com/apache/incubator-servicecomb-service-center/server/handler/metric"
+	"github.com/apache/incubator-servicecomb-service-center/server/handler/tracing"
 	"github.com/apache/incubator-servicecomb-service-center/server/interceptor"
 	"github.com/apache/incubator-servicecomb-service-center/server/interceptor/access"
 	"github.com/apache/incubator-servicecomb-service-center/server/interceptor/cors"
@@ -64,6 +68,7 @@ func init() {
 
 	// handle requests after routing.
 	metric.RegisterHandlers()
+	tracing.RegisterHandlers()
 	auth.RegisterHandlers()
 	context.RegisterHandlers()
 	cache.RegisterHandlers()
