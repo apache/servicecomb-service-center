@@ -30,13 +30,14 @@ import (
 func initTracer() {
 	collector, err := newCollector()
 	if err != nil {
-		util.Logger().Errorf(err, "new tracing collector failed")
+		util.Logger().Errorf(err, "new tracing collector failed, use the noop tracer")
 		return
 	}
 	ipPort, _ := util.ParseEndpoint(core.Instance.Endpoints[0])
 	recorder := zipkin.NewRecorder(collector, false, ipPort, strings.ToLower(core.Service.ServiceName))
 	tracer, err := zipkin.NewTracer(recorder, zipkin.TraceID128Bit(true))
 	if err != nil {
+		util.Logger().Errorf(err, "new tracer failed")
 		return
 	}
 	opentracing.SetGlobalTracer(tracer)
@@ -65,7 +66,6 @@ func newCollector() (collector zipkin.Collector, err error) {
 
 func ZipkinTracer() opentracing.Tracer {
 	once.Do(initTracer)
-	// use the NOOP tracer if init failed
 	return opentracing.GlobalTracer()
 }
 
