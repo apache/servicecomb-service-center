@@ -36,6 +36,7 @@ The following components are provided under the  MIT License  (http://www.openso
 github.com/beorn7/perks/quantile
 github.com/boltdb/bolt
 github.com/satori/go.uuid
+github.com/rs/cors
 AngularJS v1.6.6 (http://angularjs.org)
 Bootstrap v3.3.7 (http://getbootstrap.com)
 Chart.js (https://github.com/chartjs/Chart.js)
@@ -192,3 +193,16 @@ Copyright 2014-2015 The Prometheus Authors
 
 This product includes software developed at
 SoundCloud Ltd. (http://soundcloud.com/).
+
+================================================================
+
+Notice for rs/cors
+
+rs/cors provides functions to allow CORS for http request, some part
+of the code was used and modified as per the use case.
+
+Credit to :
+
+Copyright (c) 2014 Olivier Poitrey <rs@dailymotion.com>
+
+Licensed under MIT
