@@ -21,14 +21,11 @@ import (
 	"flag"
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/grace"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/lager"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/logrotate"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/plugin"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/version"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"runtime"
 	"syscall"
 	"time"
@@ -79,34 +76,13 @@ func printVersion() {
 }
 
 func initLogger() {
-	util.InitLogger(ServerInfo.Config.LoggerName,
-		&lager.Config{
-			LoggerLevel:   ServerInfo.Config.LogLevel,
-			LoggerFile:    os.ExpandEnv(ServerInfo.Config.LogFilePath),
-			EnableRsyslog: ServerInfo.Config.LogSys,
-			LogFormatText: ServerInfo.Config.LogFormat == "text",
-			EnableStdOut:  version.Ver().RunMode == "dev",
-		})
-
-	// custom loggers
-	util.CustomLogger("Heartbeat", "heartbeat")
-	util.CustomLogger("HeartbeatSet", "heartbeat")
-
-	util.CustomLogger("github.com/apache/incubator-servicecomb-service-center/server/service/event", "event")
-	util.CustomLogger("github.com/apache/incubator-servicecomb-service-center/server/service/notification", "event")
-
-	util.CustomLogger("github.com/apache/incubator-servicecomb-service-center/server/core/backend", "registry")
-
-	initLogRotate()
-}
-
-func initLogRotate() {
-	rotatePeriod := 30 * time.Second
-	traceutils.RunLogRotate(&traceutils.LogRotateConfig{
-		Dir:         filepath.Dir(os.ExpandEnv(ServerInfo.Config.LogFilePath)),
-		MaxFileSize: int(ServerInfo.Config.LogRotateSize),
-		BackupCount: int(ServerInfo.Config.LogBackupCount),
-		Period:      rotatePeriod,
+	util.InitGlobalLogger(util.LoggerConfig{
+		LoggerLevel:     ServerInfo.Config.LogLevel,
+		LoggerFile:      os.ExpandEnv(ServerInfo.Config.LogFilePath),
+		LogFormatText:   ServerInfo.Config.LogFormat == "text",
+		LogRotatePeriod: 30 * time.Second,
+		LogRotateSize:   int(ServerInfo.Config.LogRotateSize),
+		LogBackupCount:  int(ServerInfo.Config.LogBackupCount),
 	})
 }
 

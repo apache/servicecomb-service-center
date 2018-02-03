@@ -18,17 +18,14 @@ package util
 
 import (
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/lager"
 	"testing"
 )
 
 func init() {
-	InitLogger("log_test", &lager.Config{
+	InitGlobalLogger(LoggerConfig{
 		LoggerLevel:   "DEBUG",
 		LoggerFile:    "",
-		EnableRsyslog: false,
 		LogFormatText: true,
-		EnableStdOut:  false,
 	})
 }
 
