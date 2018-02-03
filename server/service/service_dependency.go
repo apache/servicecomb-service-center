@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/uuid"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
@@ -51,7 +50,7 @@ func (s *MicroServiceService) AddOrUpdateDependencies(ctx context.Context, depen
 	opts := make([]registry.PluginOp, 0, len(dependencyInfos))
 	domainProject := util.ParseDomainProject(ctx)
 	for _, dependencyInfo := range dependencyInfos {
-		if (len(dependencyInfo.Providers) == 0  && !override) || dependencyInfo.Consumer == nil {
+		if (len(dependencyInfo.Providers) == 0 && !override) || dependencyInfo.Consumer == nil {
 			return serviceUtil.BadParamsResponse("Provider is invalid").Response, nil
 		}
 
@@ -88,7 +87,7 @@ func (s *MicroServiceService) AddOrUpdateDependencies(ctx context.Context, depen
 
 		id := "0"
 		if !override {
-			id = uuid.GenerateUuid()
+			id = util.GenerateUuid()
 		}
 		key := apt.GenerateConsumerDependencyQueueKey(domainProject, consumerId, id)
 		opts = append(opts, registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)))

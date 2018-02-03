@@ -14,14 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uuid
+package util
 
 import (
-	"strings"
 	"github.com/satori/go.uuid"
+	"strings"
 )
 
-const DASH="-"
+const DASH = "-"
 
 func GenerateUuid() string {
 	return strings.Replace(uuid.NewV1().String(), string(DASH), "", -1)
