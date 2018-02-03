@@ -21,14 +21,6 @@ import (
 	"testing"
 )
 
-func init() {
-	InitGlobalLogger(LoggerConfig{
-		LoggerLevel:   "DEBUG",
-		LoggerFile:    "",
-		LogFormatText: true,
-	})
-}
-
 func TestLogger(t *testing.T) {
 	CustomLogger("Not Exist", "testDefaultLOGGER")
 	l := Logger()
@@ -60,9 +52,12 @@ func BenchmarkLogger(b *testing.B) {
 	l := Logger()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			l.Infof("test")
+			l.Debugf("debug test")
+			l.Infof("info test")
 		}
 	})
+	// after:	50000	     20964 ns/op	    1296 B/op	      18 allocs/op
+	// before:	50000	     31378 ns/op	    2161 B/op	      30 allocs/op
 	b.ReportAllocs()
 }
 
@@ -71,8 +66,11 @@ func BenchmarkLoggerCustom(b *testing.B) {
 	l := Logger()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			l.Infof("test")
+			l.Debugf("debug test")
+			l.Infof("info test")
 		}
 	})
+	// after:	100000	     21374 ns/op	    1296 B/op	      18 allocs/op
+	// before:	50000	     21804 ns/op	    2161 B/op	      30 allocs/op
 	b.ReportAllocs()
 }
