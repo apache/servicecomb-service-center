@@ -18,8 +18,8 @@ package util
 
 import (
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/lager"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/lager/core"
+	"github.com/ServiceComb/paas-lager"
+	"github.com/ServiceComb/paas-lager/third_party/forked/cloudfoundry/lager"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -30,48 +30,89 @@ import (
 
 //log var
 var (
-	LOGGER          core.Logger
-	reBuildLogLevel core.LogLevel
+	LOGGER             lager.Logger
+	defaultLagerConfig = stlager.DefaultConfig()
+	loggerConfig       LoggerConfig
+	logLevel           lager.LogLevel
 
-	loggers     map[string]core.Logger
+	loggers     map[string]lager.Logger
 	loggerNames map[string]string
 	loggersMux  sync.RWMutex
+
+	stdOutWriters = []string{"stdout"}
+	fileWriters   = []string{"file"}
 )
 
-func init() {
-	loggers = make(map[string]core.Logger, 10)
-	loggerNames = make(map[string]string, 10)
-	LOGGER = lager.NewLogger("default")
+// LoggerConfig struct for lager and rotate parameters
+type LoggerConfig struct {
+	LoggerLevel     string
+	LoggerFile      string
+	LogFormatText   bool
+	LogRotatePeriod time.Duration
+	LogRotateSize   int
+	LogBackupCount  int
 }
 
-func InitLogger(loggerName string, cfg *lager.Config) {
-	lager.Init(*cfg)
-	LOGGER = lager.NewLogger(loggerName)
-	LOGGER.Debug("init logger")
+func init() {
+	loggers = make(map[string]lager.Logger, 10)
+	loggerNames = make(map[string]string, 10)
+	// make LOGGER do not be nil, new a stdout logger
+	LOGGER = newLogger(fromLagerConfig(defaultLagerConfig))
+}
 
-	switch strings.ToUpper(lager.GetConfig().LoggerLevel) {
-	case "DEBUG":
-		reBuildLogLevel = core.DEBUG
-	case "INFO":
-		reBuildLogLevel = core.INFO
-	case "WARN":
-		reBuildLogLevel = core.WARN
-	case "ERROR":
-		reBuildLogLevel = core.ERROR
-	case "FATAL":
-		reBuildLogLevel = core.FATAL
-	default:
-		panic(fmt.Errorf("unknown logger level: %s", lager.GetConfig().LoggerLevel))
+func fromLagerConfig(c *stlager.Config) LoggerConfig {
+	return LoggerConfig{
+		LoggerLevel:   c.LoggerLevel,
+		LoggerFile:    c.LoggerFile,
+		LogFormatText: c.LogFormatText,
 	}
+}
 
+func toLagerConfig(c LoggerConfig) stlager.Config {
+	w := fileWriters
+	if len(c.LoggerFile) == 0 {
+		w = stdOutWriters
+	}
+	return stlager.Config{
+		Writers:       w,
+		LoggerLevel:   c.LoggerLevel,
+		LoggerFile:    c.LoggerFile,
+		LogFormatText: c.LogFormatText,
+	}
+}
+
+// newLog new log, unsafe
+func newLogger(cfg LoggerConfig) lager.Logger {
+	stlager.Init(toLagerConfig(cfg))
+	return stlager.NewLogger(cfg.LoggerFile)
+}
+
+func InitGlobalLogger(cfg LoggerConfig) {
+	// renew the global logger
+	if len(cfg.LoggerLevel) == 0 {
+		cfg.LoggerLevel = defaultLagerConfig.LoggerLevel
+	}
+	loggerConfig = cfg
+	LOGGER = newLogger(cfg)
+	// log rotate
+	RunLogDirRotate(cfg)
+	// recreate the deleted log file
+	switch strings.ToUpper(cfg.LoggerLevel) {
+	case "INFO":
+		logLevel = lager.INFO
+	case "WARN":
+		logLevel = lager.WARN
+	case "ERROR":
+		logLevel = lager.ERROR
+	case "FATAL":
+		logLevel = lager.FATAL
+	default:
+		logLevel = lager.DEBUG
+	}
 	monitorLogFile()
 }
 
-func NewLogger(loggerName string, cfg *lager.Config) core.Logger {
-	return lager.NewLoggerExt(loggerName, loggerName, cfg)
-}
-
-func Logger() core.Logger {
+func Logger() lager.Logger {
 	if len(loggerNames) == 0 {
 		return LOGGER
 	}
@@ -99,11 +140,11 @@ func Logger() core.Logger {
 		loggersMux.Lock()
 		logger, ok = loggers[logFile]
 		if !ok {
-			cfg := *lager.GetConfig()
+			cfg := loggerConfig
 			if len(cfg.LoggerFile) != 0 {
 				cfg.LoggerFile = filepath.Join(filepath.Dir(cfg.LoggerFile), logFile+".log")
 			}
-			logger = NewLogger(logFile, &cfg)
+			logger = newLogger(cfg)
 			loggers[logFile] = logger
 			LOGGER.Warnf(nil, "match %s, new logger %s for %s", prefix, logFile, funcFullName)
 		}
@@ -146,6 +187,9 @@ func CustomLogger(pkgOrFunc, fileName string) {
 }
 
 func monitorLogFile() {
+	if len(loggerConfig.LoggerFile) == 0 {
+		return
+	}
 	Go(func(stopCh <-chan struct{}) {
 		for {
 			select {
@@ -154,14 +198,14 @@ func monitorLogFile() {
 			case <-time.After(time.Minute):
 				Logger().Debug(fmt.Sprintf("Check log file at %s", time.Now()))
 
-				if lager.GetConfig().LoggerFile != "" && !PathExist(lager.GetConfig().LoggerFile) {
-					file, err := os.OpenFile(lager.GetConfig().LoggerFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+				if !PathExist(loggerConfig.LoggerFile) {
+					file, err := os.OpenFile(loggerConfig.LoggerFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 					if err != nil {
 						Logger().Errorf(err, "Create log file failed.")
 						return
 					}
 					// TODO Here will lead to file handle leak
-					sink := core.NewReconfigurableSink(core.NewWriterSink(file, core.DEBUG), reBuildLogLevel)
+					sink := lager.NewReconfigurableSink(lager.NewWriterSink("file", file, lager.DEBUG), logLevel)
 					Logger().RegisterSink(sink)
 					Logger().Errorf(nil, "log file is removed, create again.")
 				}

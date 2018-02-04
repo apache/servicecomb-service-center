@@ -10,6 +10,14 @@
 			"notests": true
 		},
 		{
+			"importpath": "github.com/ServiceComb/paas-lager",
+			"repository": "https://github.com/ServiceComb/paas-lager",
+			"vcs": "git",
+			"revision": "378a833fc008d8343083dc73e77db142afccf377",
+			"branch": "HEAD",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/Shopify/sarama",
 			"repository": "https://github.com/Shopify/sarama",
 			"vcs": "git",

@@ -20,7 +20,6 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/logrotate"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
@@ -98,7 +97,7 @@ func (f *FileCollector) loop(stopCh <-chan struct{}) {
 			}
 		case <-t.C:
 			if time.Now().After(nr) {
-				traceutils.LogRotateFile(f.Fd.Name(),
+				util.LogRotateFile(f.Fd.Name(),
 					int(core.ServerInfo.Config.LogRotateSize),
 					int(core.ServerInfo.Config.LogBackupCount),
 				)
