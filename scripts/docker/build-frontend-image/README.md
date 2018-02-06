@@ -28,3 +28,5 @@ Once the script finishes you will see image scfrontend-dev.tgz in the same direc
     docker run -d -p 30103:30103 -t servicecomb/scfrontend
 
 Where HOST_IP is the ip of host machine where docker container for frontend is executing.
+
+Note: The same image can be used to deploy in Huawei Public Cloud using CFE/CCE or just deploy in a VM.
