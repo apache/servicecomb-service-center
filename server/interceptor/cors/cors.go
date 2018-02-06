@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 The original code was modified to fit the Service-Center use case.
-  */
+*/
 package cors
 
 import (
@@ -52,7 +52,7 @@ func New() *CORS {
 	c := new(CORS)
 	c.allowOrigin = "*"
 	c.allowCredentials = false
-	c.allowHeaders = map[string]struct{}{"origin": {}, "content-type": {}, "x-domain-name": {}, "x-consumerid": {}}
+	c.allowHeaders = map[string]struct{}{"origin": {}, "accept": {}, "content-type": {}, "x-domain-name": {}, "x-consumerid": {}}
 	c.allowMethods = map[string]struct{}{"GET": {}, "POST": {}, "PUT": {}, "DELETE": {}, "UPDATE": {}}
 	c.maxAge = 1500
 	return c
@@ -89,7 +89,7 @@ func (cors *CORS) handlePreflightRequest(w http.ResponseWriter, r *http.Request)
 			h = strings.ToLower(strings.TrimSpace(h))
 			if _, ok := cors.allowHeaders[h]; !ok {
 				cors.invalid(w, r)
-				util.Logger().Warnf(nil, "only supported headers: %v", util.MapToList(cors.allowHeaders))
+				util.Logger().Warnf(nil, "invalid header '%s', only supported headers: %v", h, util.MapToList(cors.allowHeaders))
 				return
 			}
 		}
