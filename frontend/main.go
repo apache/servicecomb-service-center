@@ -27,12 +27,8 @@ import (
 )
 
 func main() {
-
 	frontendIp := beego.AppConfig.String("FRONTEND_HOST_IP")
-	frontendPort, err := beego.AppConfig.Int("FRONTEND_HOST_PORT")
-	if err != nil {
-		fmt.Println("error while reading port config value", err)
-	}
+	frontendPort := beego.AppConfig.DefaultInt("FRONTEND_HOST_PORT", 30103)
 
 	// command line flags
 	port := flag.Int("port", frontendPort, "port to serve on")
@@ -52,6 +48,5 @@ func main() {
 
 	addr := fmt.Sprintf("%s:%d", frontendIp, *port)
 	// this call blocks -- the progam runs here forever
-	err = http.ListenAndServe(addr, nil)
-	fmt.Println(err.Error())
+	fmt.Println(http.ListenAndServe(addr, nil))
 }
