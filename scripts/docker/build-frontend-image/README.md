@@ -16,7 +16,10 @@ Example app.conf file,
 	FRONTEND_HOST_IP=0.0.0.0
 	FRONTEND_HOST_PORT=30103
 
+Note: Configuring SC_HOST_IP will enable you to setup the EIP of the Service-center.
+
 Then build docker image of frontend from folder "PROJECT_ROOT/scripts/docker/build-frontend-image/".
+
 
     bash -x build.sh
     
