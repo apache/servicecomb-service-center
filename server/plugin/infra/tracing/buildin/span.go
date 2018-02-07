@@ -48,7 +48,7 @@ type BinaryAnnotation struct {
 	Key   string `thrift:"key,1" db:"key" json:"key"`
 	Value string `thrift:"value,2" db:"value" json:"value"`
 	//AnnotationType AnnotationType `thrift:"annotation_type,3" db:"annotation_type" json:"annotation_type"`
-	//Host *Endpoint `thrift:"end,4" db:"host" json:"endpoint,omitempty"`
+	//Host *Endpoint `thrift:"endpoint,4" db:"endpoint" json:"endpoint,omitempty"`
 }
 
 type Endpoint struct {
