@@ -63,7 +63,7 @@ func (zp *Zipkin) ServerBegin(operationName string, itf tracing.Request) tracing
 		span = ZipkinTracer().StartSpan(operationName, ext.RPCServerOption(wireContext))
 		ext.SpanKindRPCServer.Set(span)
 		ext.HTTPMethod.Set(span, r.Method)
-		ext.HTTPUrl.Set(span, r.URL.String())
+		ext.HTTPUrl.Set(span, util.ParseRequestURL(r))
 
 		span.SetTag("protocol", "HTTP")
 		span.SetTag(zipkincore.HTTP_PATH, r.URL.Path)
@@ -104,7 +104,7 @@ func (zp *Zipkin) ClientBegin(operationName string, itf tracing.Request) tracing
 		span = ZipkinTracer().StartSpan(operationName, opentracing.ChildOf(parentSpan.Context()))
 		ext.SpanKindRPCClient.Set(span)
 		ext.HTTPMethod.Set(span, r.Method)
-		ext.HTTPUrl.Set(span, r.URL.String())
+		ext.HTTPUrl.Set(span, util.ParseRequestURL(r))
 
 		span.SetTag("protocol", "HTTP")
 		span.SetTag(zipkincore.HTTP_PATH, r.URL.Path)

@@ -25,7 +25,7 @@ import (
 	"net/http"
 )
 
-func TracingBegin(ctx context.Context, operationName string, op registry.PluginOp) tracing.Span {
+func ToRequest(op registry.PluginOp) (*http.Request, error) {
 	var action string
 	switch op.Action {
 	case registry.Get:
@@ -35,7 +35,11 @@ func TracingBegin(ctx context.Context, operationName string, op registry.PluginO
 	case registry.Delete:
 		action = http.MethodDelete
 	}
-	r, err := http.NewRequest(action, util.BytesToStringWithNoCopy(op.Key), nil)
+	return http.NewRequest(action, endpoint+"/?"+op.FormatUrlParams(), nil)
+}
+
+func TracingBegin(ctx context.Context, operationName string, op registry.PluginOp) tracing.Span {
+	r, err := ToRequest(op)
 	if err != nil {
 		util.Logger().Errorf(err, "new backend request failed")
 		return nil
