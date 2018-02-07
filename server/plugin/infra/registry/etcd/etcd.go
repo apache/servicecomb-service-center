@@ -39,7 +39,10 @@ const (
 	CONNECT_MANAGER_SERVER_TIMEOUT = 10
 )
 
-var clientTLSConfig *tls.Config
+var (
+	clientTLSConfig *tls.Config
+	endpoint        string
+)
 
 func init() {
 	mgr.RegisterPlugin(mgr.Plugin{mgr.REGISTRY, "etcd", NewRegistry})
@@ -602,6 +605,11 @@ func setResponseAndCallback(pResp *registry.PluginResponse, kvs []*mvccpb.KeyVal
 	return cb("key information changed", pResp)
 }
 
+func sslEnabled() bool {
+	return core.ServerInfo.Config.SslEnabled &&
+		strings.Index(strings.ToLower(registry.RegistryConfig().ClusterAddresses), "https://") >= 0
+}
+
 func NewRegistry() mgr.PluginInstance {
 	util.Logger().Warnf(nil, "starting service center in proxy mode")
 
@@ -611,7 +619,18 @@ func NewRegistry() mgr.PluginInstance {
 	}
 	addrs := strings.Split(registry.RegistryConfig().ClusterAddresses, ",")
 
-	if core.ServerInfo.Config.SslEnabled && strings.Index(registry.RegistryConfig().ClusterAddresses, "https://") >= 0 {
+	endpoints := make([]string, 0, len(addrs))
+	for _, addr := range addrs {
+		if strings.Index(addr, "://") > 0 {
+			// 如果配置格式为"sr-0=http(s)://IP:Port"，则需要分离IP:Port部分
+			endpoints = append(endpoints, addr[strings.Index(addr, "://")+3:])
+		} else {
+			endpoints = append(endpoints, addr)
+		}
+	}
+
+	scheme := "http://"
+	if sslEnabled() {
 		var err error
 		// go client tls限制，提供身份证书、不认证服务端、不校验CN
 		clientTLSConfig, err = sctls.GetClientTLSConfig()
@@ -620,18 +639,9 @@ func NewRegistry() mgr.PluginInstance {
 			inst.err <- err
 			return inst
 		}
+		scheme = "https://"
 	}
-
-	endpoints := []string{}
-	for _, addr := range addrs {
-		if strings.Index(addr, "://") > 0 {
-			// 如果配置格式为"sr-0=http(s)://IP:Port"，则需要分离IP:Port部分
-			endpoints = append(endpoints, addr[strings.Index(addr, "://")+3:])
-		} else {
-			endpoints = append(endpoints, addr)
-		}
-
-	}
+	endpoint = scheme + endpoints[0]
 
 	inv, err := time.ParseDuration(core.ServerInfo.Config.AutoSyncInterval)
 	if err != nil {

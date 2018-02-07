@@ -24,14 +24,14 @@ import (
 )
 
 type Span struct {
-	TraceID string `thrift:"trace_id,1" db:"trace_id" json:"traceId"`
+	TraceID string `thrift:"traceId,1" db:"traceId" json:"traceId"`
 	// unused field # 2
 	Name        string        `thrift:"name,3" db:"name" json:"name"`
 	ID          string        `thrift:"id,4" db:"id" json:"id"`
-	ParentID    string        `thrift:"parent_id,5" db:"parent_id" json:"parentId,omitempty"`
+	ParentID    string        `thrift:"parentId,5" db:"parentId" json:"parentId,omitempty"`
 	Annotations []*Annotation `thrift:"annotations,6" db:"annotations" json:"annotations"`
 	// unused field # 7
-	BinaryAnnotations []*BinaryAnnotation `thrift:"binary_annotations,8" db:"binary_annotations" json:"binaryAnnotations"`
+	BinaryAnnotations []*BinaryAnnotation `thrift:"binaryAnnotations,8" db:"binaryAnnotations" json:"binaryAnnotations"`
 	//Debug bool `thrift:"debug,9" db:"debug" json:"debug,omitempty"`
 	Timestamp *int64 `thrift:"timestamp,10" db:"timestamp" json:"timestamp,omitempty"`
 	Duration  *int64 `thrift:"duration,11" db:"duration" json:"duration,omitempty"`
@@ -41,20 +41,20 @@ type Span struct {
 type Annotation struct {
 	Timestamp int64     `thrift:"timestamp,1" db:"timestamp" json:"timestamp"`
 	Value     string    `thrift:"value,2" db:"value" json:"value"`
-	Host      *Endpoint `thrift:"host,3" db:"host" json:"host,omitempty"`
+	Host      *Endpoint `thrift:"endpoint,3" db:"endpoint" json:"endpoint,omitempty"`
 }
 
 type BinaryAnnotation struct {
 	Key   string `thrift:"key,1" db:"key" json:"key"`
 	Value string `thrift:"value,2" db:"value" json:"value"`
 	//AnnotationType AnnotationType `thrift:"annotation_type,3" db:"annotation_type" json:"annotation_type"`
-	//Host *Endpoint `thrift:"host,4" db:"host" json:"host,omitempty"`
+	//Host *Endpoint `thrift:"endpoint,4" db:"endpoint" json:"endpoint,omitempty"`
 }
 
 type Endpoint struct {
 	Ipv4        string `thrift:"ipv4,1" db:"ipv4" json:"ipv4"`
 	Port        int16  `thrift:"port,2" db:"port" json:"port"`
-	ServiceName string `thrift:"service_name,3" db:"service_name" json:"serviceName"`
+	ServiceName string `thrift:"serviceName,3" db:"serviceName" json:"serviceName"`
 	Ipv6        []byte `thrift:"ipv6,4" db:"ipv6" json:"ipv6,omitempty"`
 }
 

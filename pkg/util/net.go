@@ -109,3 +109,15 @@ func InetAton(ip string) (ipnr uint32) {
 	}
 	return
 }
+
+func ParseRequestURL(r *http.Request) string {
+	if len(r.URL.Scheme) > 0 {
+		return r.URL.String()
+	}
+
+	scheme := "https://"
+	if r.TLS == nil {
+		scheme = "http://"
+	}
+	return scheme + r.Host + r.RequestURI
+}

@@ -17,8 +17,8 @@
 package registry
 
 import (
+	"bytes"
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/astaxie/beego"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
@@ -194,12 +194,54 @@ type PluginOp struct {
 }
 
 func (op PluginOp) String() string {
-	return fmt.Sprintf(
-		"{mode: %s, action: %s, key: %s, end: %s, val: %d, prefix: %t, prev: %t, lease: %d, keyOnly: %t, countOnly: %t, sort: %s, rev: %d, ignoreLease: %t, offset: %d, limit: %d}",
-		op.Mode, op.Action, op.Key, op.EndKey, len(util.BytesToStringWithNoCopy(op.Value)),
-		op.Prefix, op.PrevKV, op.Lease, op.KeyOnly, op.CountOnly,
-		op.SortOrder, op.Revision, op.IgnoreLease, op.Offset, op.Limit,
-	)
+	return op.FormatUrlParams()
+}
+
+func (op PluginOp) FormatUrlParams() string {
+	var buf bytes.Buffer
+	buf.WriteString("action=")
+	buf.WriteString(op.Action.String())
+	buf.WriteString("&mode=true")
+	buf.WriteString(op.Mode.String())
+	buf.WriteString("&key=")
+	buf.Write(op.Key)
+	buf.WriteString(fmt.Sprintf("&value=%d", len(op.Value)))
+	if len(op.EndKey) > 0 {
+		buf.WriteString("&end=")
+		buf.Write(op.EndKey)
+	}
+	if op.Prefix {
+		buf.WriteString("&prefix=true")
+	}
+	if op.PrevKV {
+		buf.WriteString("&prev=true")
+	}
+	if op.Lease > 0 {
+		buf.WriteString(fmt.Sprintf("&lease=%d", op.Lease))
+	}
+	if op.KeyOnly {
+		buf.WriteString("&keyOnly=true")
+	}
+	if op.CountOnly {
+		buf.WriteString("&countOnly=true")
+	}
+	if op.SortOrder != SORT_NONE {
+		buf.WriteString("&sort=")
+		buf.WriteString(op.SortOrder.String())
+	}
+	if op.Revision > 0 {
+		buf.WriteString(fmt.Sprintf("&rev=%d", op.Revision))
+	}
+	if op.IgnoreLease {
+		buf.WriteString("&ignoreLease=true")
+	}
+	if op.Offset > 0 {
+		buf.WriteString(fmt.Sprintf("&offset=%d", op.Offset))
+	}
+	if op.Limit > 0 {
+		buf.WriteString(fmt.Sprintf("&limit=%d", op.Limit))
+	}
+	return buf.String()
 }
 
 type Operation func(...PluginOpOption) (op PluginOp)
