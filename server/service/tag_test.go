@@ -191,7 +191,7 @@ var _ = Describe("'Tag' service", func() {
 
 	})
 
-	Describe("execute 'update' operartion", func() {
+	Describe("execute 'update' operation", func() {
 		var (
 			serviceId string
 		)
@@ -283,9 +283,123 @@ var _ = Describe("'Tag' service", func() {
 
 		})
 
+		Context("find instance, contain tag", func() {
+			It("should pass", func() {
+				By("create consumer")
+				resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						AppId:       "find_inst_tag_group",
+						ServiceName: "find_inst_tag_consumer",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Status:      pb.MS_UP,
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+				consumerId := resp.ServiceId
+
+				By("create provider")
+				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						AppId:       "find_inst_tag_group",
+						ServiceName: "find_inst_tag_provider",
+						Version:     "1.0.1",
+						Level:       "FRONT",
+						Status:      pb.MS_UP,
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+				providerId := resp.ServiceId
+
+				addTagResp, err := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
+					ServiceId: providerId,
+					Tags:      map[string]string{"filter_tag": "filter"},
+				})
+				Expect(err).To(BeNil())
+				Expect(addTagResp.Response.Code).To(Equal(pb.Response_SUCCESS))
+
+				instanceResp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+					Instance: &pb.MicroServiceInstance{
+						ServiceId: providerId,
+						Endpoints: []string{
+							"findInstanceForTagFilter:127.0.0.1:8080",
+						},
+						HostName: "UT-HOST",
+						Status:   pb.MSI_UP,
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(instanceResp.Response.Code).To(Equal(pb.Response_SUCCESS))
+
+				findResp, err := instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: consumerId,
+					AppId:       "find_inst_tag_group",
+					ServiceName: "find_inst_tag_provider",
+					VersionRule: "1.0.0+",
+					Tags:        []string{"not-exist-tag"},
+				})
+				Expect(findResp.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(len(findResp.Instances)).To(Equal(0))
+
+				findResp, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: consumerId,
+					AppId:       "find_inst_tag_group",
+					ServiceName: "find_inst_tag_provider",
+					VersionRule: "1.0.0+",
+					Tags:        []string{"filter_tag"},
+				})
+				Expect(err).To(BeNil())
+				Expect(findResp.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(findResp.Instances[0].InstanceId).To(Equal(instanceResp.InstanceId))
+
+				respAddRule, err := serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
+					ServiceId: providerId,
+					Rules: []*pb.AddOrUpdateServiceRule{
+						&pb.AddOrUpdateServiceRule{
+							RuleType: "WHITE",
+							Attribute: "tag_filter_tag",
+							Pattern: "f*",
+							Description: "test white",
+						},
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(respAddRule.Response.Code).To(Equal(pb.Response_SUCCESS))
+
+				findResp, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: consumerId,
+					AppId:       "find_inst_tag_group",
+					ServiceName: "find_inst_tag_provider",
+					VersionRule: "1.0.0+",
+					Tags:        []string{"filter_tag"},
+				})
+				Expect(findResp.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(len(findResp.Instances)).To(Equal(0))
+
+				addTagResp, err = serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
+					ServiceId: consumerId,
+					Tags:      map[string]string{"filter_tag": "filter"},
+				})
+				Expect(err).To(BeNil())
+				Expect(addTagResp.Response.Code).To(Equal(pb.Response_SUCCESS))
+
+				findResp, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: consumerId,
+					AppId:       "find_inst_tag_group",
+					ServiceName: "find_inst_tag_provider",
+					VersionRule: "1.0.0+",
+					Tags:        []string{"filter_tag"},
+				})
+				Expect(findResp.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(findResp.Instances[0].InstanceId).To(Equal(instanceResp.InstanceId))
+			})
+		})
+
 	})
 
-	Describe("execute 'delete' operartion", func() {
+	Describe("execute 'delete' operation", func() {
 		var (
 			serviceId string
 		)

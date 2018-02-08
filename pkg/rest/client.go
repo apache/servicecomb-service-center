@@ -229,10 +229,10 @@ func (client *HttpClient) httpDo(method string, url string, headers map[string]s
 	var bodyReader io.Reader = nil
 	if body != nil {
 		if headers == nil || len(headers["Content-Type"]) == 0 {
-			// 如果请求头未传入Conent-Type，则按照json格式进行编码（如果是非json类型，需要自行在headers里指定类型）
+			// 如果请求头未传入Content-Type，则按照json格式进行编码（如果是非json类型，需要自行在headers里指定类型）
 			bodyBytes, err = json.Marshal(body)
 			if err != nil {
-				util.Logger().Errorf(err, "mashal object failed.")
+				util.Logger().Errorf(err, "marshal object failed.")
 				return status, result
 			}
 		} else {
@@ -293,7 +293,7 @@ func (client *HttpClient) HttpDo(method string, url string, headers map[string]s
 			// 如果请求头未传入Conent-Type，则按照json格式进行编码（如果是非json类型，需要自行在headers里指定类型）
 			bodyBytes, err = json.Marshal(body)
 			if err != nil {
-				util.Logger().Errorf(err, "mashal object failed.")
+				util.Logger().Errorf(err, "marshal object failed.")
 				return nil, err
 			}
 		} else {
