@@ -157,6 +157,9 @@ func AllowAcrossDimension(ctx context.Context, providerService *pb.MicroService,
 }
 
 func MatchRules(rulesOfProvider []*pb.ServiceRule, consumer *pb.MicroService, tagsOfConsumer map[string]string) *scerr.Error {
+	if consumer == nil {
+		return scerr.NewError(scerr.ErrInvalidParams, "consumer is nil")
+	}
 	consumerId := consumer.ServiceId
 	v := reflect.Indirect(reflect.ValueOf(consumer))
 
