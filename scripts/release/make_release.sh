@@ -39,7 +39,11 @@ prepare_conf() {
     set -e
     mkdir tmp
     cp -r etc/conf tmp/
-    sed -i s@"manager_cluster.*=.*$"@"manager_name = \"sr-0\"\nmanager_addr = \"http://127.0.0.1:2380\"\nmanager_cluster = \"sr-0=http://127.0.0.1:2380\""@g tmp/conf/app.conf
+    sed -i 's/# manager_name = \"sc-0\"/manager_name = \"sr-0\"/g' tmp/conf/app.conf
+    sed -i 's/# manager_addr = \"http:\/\/127.0.0.1:2380\"/manager_addr = \"http:\/\/127.0.0.1:2380\"/g' tmp/conf/app.conf
+    sed -i 's/# manager_cluster = \"sc-0=http:\/\/127.0.0.1:2380\"/manager_cluster = \"sr-0=http:\/\/127.0.0.1:2380\"/g' tmp/conf/app.conf
+    sed -i 's/manager_cluster = \"127.0.0.1:2379\"/# manager_cluster = \"127.0.0.1:2379\"/g' tmp/conf/app.conf
+    #sed -i s@"manager_cluster.*=.*$"@"manager_name = \"sr-0\"\nmanager_addr = \"http://127.0.0.1:2380\"\nmanager_cluster = \"sr-0=http://127.0.0.1:2380\""@g tmp/conf/app.conf
     sed -i 's/registry_plugin = etcd/registry_plugin = embeded_etcd/g' tmp/conf/app.conf
 }
 
