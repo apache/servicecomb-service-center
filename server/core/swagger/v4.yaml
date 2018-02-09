@@ -1857,6 +1857,9 @@ definitions:
       serviceId:
         type: string
         description: 微服务唯一标识，创建实例时，以url里面的为准，不用这里的serviceId。
+      version:
+        type: string
+        description: 微服务版本号
       hostName:
         type: string
       endpoints:
