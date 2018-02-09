@@ -17,7 +17,6 @@
 package util
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -25,64 +24,52 @@ func TestConcurrentMap(t *testing.T) {
 	cm := ConcurrentMap{}
 	s := cm.Size()
 	if s != 0 {
-		fmt.Println("TestConcurrentMap Size failed.")
-		t.Fail()
+		fail(t, "TestConcurrentMap Size failed.")
 	}
 	v, b := cm.Get("a")
 	if b || v != nil {
-		fmt.Println("TestConcurrentMap Get a not exist item failed.")
-		t.Fail()
+		fail(t, "TestConcurrentMap Get a not exist item failed.")
 	}
 	v = cm.Put("a", "1")
 	if v != nil {
-		fmt.Println("TestConcurrentMap Put a new item failed.")
-		t.Fail()
+		fail(t, "TestConcurrentMap Put a new item failed.")
 	}
 	v, b = cm.Get("a")
 	if !b || v.(string) != "1" {
-		fmt.Println("TestConcurrentMap Get an exist item failed.")
-		t.Fail()
+		fail(t, "TestConcurrentMap Get an exist item failed.")
 	}
 	v = cm.Put("a", "2")
 	if v.(string) != "1" {
-		fmt.Println("TestConcurrentMap Put an item again failed.")
-		t.Fail()
+		fail(t, "TestConcurrentMap Put an item again failed.")
 	}
 	v = cm.PutIfAbsent("b", "1")
 	if v != nil {
-		fmt.Println("TestConcurrentMap PutIfAbsent a not exist item failed.")
-		t.Fail()
+		fail(t, "TestConcurrentMap PutIfAbsent a not exist item failed.")
 	}
 	v = cm.PutIfAbsent("a", "3")
 	if v.(string) != "2" {
-		fmt.Println("TestConcurrentMap PutIfAbsent an item failed.")
-		t.Fail()
+		fail(t, "TestConcurrentMap PutIfAbsent an item failed.")
 	}
 	v, b = cm.Get("a")
 	if !b || v.(string) != "2" {
-		fmt.Println("TestConcurrentMap Get an item after PutIfAbsent failed.")
-		t.Fail()
+		fail(t, "TestConcurrentMap Get an item after PutIfAbsent failed.")
 	}
 	v = cm.Remove("a")
 	if v.(string) != "2" {
-		fmt.Println("TestConcurrentMap Remove an item failed.")
-		t.Fail()
+		fail(t, "TestConcurrentMap Remove an item failed.")
 	}
 	v, b = cm.Get("a")
 	if b || v != nil {
-		fmt.Println("TestConcurrentMap Get an item after Remove failed.")
-		t.Fail()
+		fail(t, "TestConcurrentMap Get an item after Remove failed.")
 	}
 	s = cm.Size()
 	if s != 1 { // only 'b' is left
-		fmt.Println("TestConcurrentMap Size after Put failed.")
-		t.Fail()
+		fail(t, "TestConcurrentMap Size after Put failed.")
 	}
 	cm.Clear()
 	s = cm.Size()
 	if s != 0 {
-		fmt.Println("TestConcurrentMap Size after Clear failed.")
-		t.Fail()
+		fail(t, "TestConcurrentMap Size after Clear failed.")
 	}
 }
 
@@ -94,8 +81,7 @@ func TestConcurrentMap_ForEach(t *testing.T) {
 		return true
 	})
 	if l != 0 {
-		fmt.Println("TestConcurrentMap_ForEach failed.")
-		t.Fail()
+		fail(t, "TestConcurrentMap_ForEach failed.")
 	}
 	for i := 0; i < 1000; i++ {
 		cm.Put(i, i)
@@ -106,16 +92,14 @@ func TestConcurrentMap_ForEach(t *testing.T) {
 		return true
 	})
 	if l != 1000 || cm.Size() != 0 {
-		fmt.Println("TestConcurrentMap_ForEach does not empty failed.")
-		t.Fail()
+		fail(t, "TestConcurrentMap_ForEach does not empty failed.")
 	}
 }
 
 func TestNewConcurrentMap(t *testing.T) {
 	cm := NewConcurrentMap(100)
 	if cm.size != 100 {
-		fmt.Println("TestNewConcurrentMap failed.")
-		t.Fail()
+		fail(t, "TestNewConcurrentMap failed.")
 	}
 }
 

@@ -18,13 +18,12 @@ package chain
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/validate"
 	"reflect"
 )
 
 const CAP_SIZE = 10
 
-var handlersMap map[string][]Handler = make(map[string][]Handler, CAP_SIZE)
+var handlersMap = make(map[string][]Handler, CAP_SIZE)
 
 type Handler interface {
 	Handle(i *Invocation)
@@ -38,7 +37,7 @@ func RegisterHandler(catalog string, h Handler) {
 	handlers = append(handlers, h)
 	handlersMap[catalog] = handlers
 
-	t := validate.LoadStruct(reflect.ValueOf(h).Elem().Interface())
+	t := util.LoadStruct(reflect.ValueOf(h).Elem().Interface())
 	util.Logger().Infof("register handler[%s] %s/%s", catalog, t.Type.PkgPath(), t.Type.Name())
 }
 

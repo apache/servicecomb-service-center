@@ -21,40 +21,40 @@ import (
 	"testing"
 )
 
-func fail(t *testing.T, format string, args ...interface{}) {
-	fmt.Printf(format, args...)
-	fmt.Println()
-	t.FailNow()
+type testStru struct {
+	f1 int
+	f2 string
+	f3 testField
+	f4 *testField
 }
 
-func TestBytesToInt32(t *testing.T) {
-	bs := []byte{0, 0, 0, 1}
-	i := BytesToInt32(bs)
-	if i != 1 {
-		t.FailNow()
+type testField struct {
+}
+
+func TestLoadStruct(t *testing.T) {
+	obj1 := testStru{}
+	v := LoadStruct(obj1)
+	if v.Type.String() != "util.testStru" {
+		fail(t, "TestLoadStruct failed, %s != 'testStru'", v.Type.String())
+	}
+	if len(v.Fields) != 4 {
+		fail(t, "TestLoadStruct failed, wrong count of fields")
+	}
+	for _, f := range v.Fields {
+		fmt.Println(f.Name, f.Type.String())
 	}
 
-	bs = []byte{1, 0, 0, 0}
-	i = BytesToInt32(bs)
-	if i != 1<<(3*8) {
-		t.FailNow()
-	}
+	obj2 := testStru{}
+	v = LoadStruct(obj2)
+}
 
-	bs = []byte{0, 0, 0, 0, 1}
-	i = BytesToInt32(bs)
-	if i != 0 {
-		t.FailNow()
-	}
-
-	bs = []byte{1}
-	i = BytesToInt32(bs)
-	if i != 1 {
-		t.FailNow()
-	}
-
-	bs = []byte{1, 0}
-	i = BytesToInt32(bs)
-	if i != 1<<8 {
-		t.FailNow()
-	}
+func BenchmarkLoadStruct(b *testing.B) {
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			obj := testStru{}
+			LoadStruct(obj)
+		}
+	})
+	b.ReportAllocs()
+	// 20000000	        86.9 ns/op	      32 B/op	       1 allocs/op
 }

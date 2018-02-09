@@ -17,7 +17,6 @@
 package util
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -25,25 +24,21 @@ func TestLogger(t *testing.T) {
 	CustomLogger("Not Exist", "testDefaultLOGGER")
 	l := Logger()
 	if l != LOGGER {
-		fmt.Println("should equal to LOGGER")
-		t.FailNow()
+		fail(t, "should equal to LOGGER")
 	}
 	CustomLogger("TestLogger", "testFuncName")
 	l = Logger()
 	if l == LOGGER || l == nil {
-		fmt.Println("should create a new instance for 'TestLogger'")
-		t.FailNow()
+		fail(t, "should create a new instance for 'TestLogger'")
 	}
 	s := Logger()
 	if l != s {
-		fmt.Println("should be the same logger")
-		t.FailNow()
+		fail(t, "should be the same logger")
 	}
 	CustomLogger("github.com/apache/incubator-servicecomb-service-center/pkg/util", "testPkgPath")
 	l = Logger()
 	if l == LOGGER || l == nil {
-		fmt.Println("should create a new instance for 'util'")
-		t.FailNow()
+		fail(t, "should create a new instance for 'util'")
 	}
 	// l.Infof("OK")
 }

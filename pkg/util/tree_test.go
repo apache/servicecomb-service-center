@@ -1,7 +1,6 @@
 package util
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 )
@@ -31,7 +30,6 @@ func TestTree(t *testing.T) {
 
 	testTree.InOrderTraversal(testTree.GetRoot(), handle)
 	if !reflect.DeepEqual(slice, targetSlice) {
-		fmt.Printf(`TestTree failed`)
-		t.FailNow()
+		fail(t, `TestTree failed`)
 	}
 }

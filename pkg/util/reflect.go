@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package validate
+package util
 
 import (
 	"reflect"
@@ -26,21 +26,21 @@ var reflector *Reflector
 
 func init() {
 	reflector = &Reflector{
-		types: make(map[*uintptr]*StructType, 100),
+		types: make(map[*uintptr]StructType, 100),
 	}
 }
 
 type StructType struct {
 	Type   reflect.Type
-	Fields []*reflect.StructField
+	Fields []reflect.StructField
 }
 
 type Reflector struct {
-	types map[*uintptr]*StructType
+	types map[*uintptr]StructType
 	mux   sync.RWMutex
 }
 
-func (r *Reflector) Load(obj interface{}) *StructType {
+func (r *Reflector) Load(obj interface{}) StructType {
 	r.mux.RLock()
 	itab := *(**uintptr)(unsafe.Pointer(&obj))
 	t, ok := r.types[itab]
@@ -55,16 +55,16 @@ func (r *Reflector) Load(obj interface{}) *StructType {
 		r.mux.Unlock()
 		return t
 	}
-	t = &StructType{
+	t = StructType{
 		Type: reflect.TypeOf(obj),
 	}
 
 	fl := t.Type.NumField()
 	if fl > 0 {
-		t.Fields = make([]*reflect.StructField, fl)
+		t.Fields = make([]reflect.StructField, fl)
 		for i := 0; i < fl; i++ {
 			f := t.Type.Field(i)
-			t.Fields[i] = &f
+			t.Fields[i] = f
 		}
 	}
 	r.types[itab] = t
@@ -72,6 +72,6 @@ func (r *Reflector) Load(obj interface{}) *StructType {
 	return t
 }
 
-func LoadStruct(obj interface{}) *StructType {
+func LoadStruct(obj interface{}) StructType {
 	return reflector.Load(obj)
 }
