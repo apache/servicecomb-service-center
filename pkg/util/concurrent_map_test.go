@@ -22,7 +22,12 @@ import (
 )
 
 func TestConcurrentMap(t *testing.T) {
-	cm := &ConcurrentMap{}
+	cm := ConcurrentMap{}
+	s := cm.Size()
+	if s != 0 {
+		fmt.Println("TestConcurrentMap Size failed.")
+		t.Fail()
+	}
 	v, b := cm.Get("a")
 	if b || v != nil {
 		fmt.Println("TestConcurrentMap Get a not exist item failed.")
@@ -58,11 +63,57 @@ func TestConcurrentMap(t *testing.T) {
 		fmt.Println("TestConcurrentMap Get an item after PutIfAbsent failed.")
 		t.Fail()
 	}
+	v = cm.Remove("a")
+	if v.(string) != "2" {
+		fmt.Println("TestConcurrentMap Remove an item failed.")
+		t.Fail()
+	}
+	v, b = cm.Get("a")
+	if b || v != nil {
+		fmt.Println("TestConcurrentMap Get an item after Remove failed.")
+		t.Fail()
+	}
+	s = cm.Size()
+	if s != 1 { // only 'b' is left
+		fmt.Println("TestConcurrentMap Size after Put failed.")
+		t.Fail()
+	}
+	cm.Clear()
+	s = cm.Size()
+	if s != 0 {
+		fmt.Println("TestConcurrentMap Size after Clear failed.")
+		t.Fail()
+	}
+}
+
+func TestConcurrentMap_ForEach(t *testing.T) {
+	l := 0
+	cm := ConcurrentMap{}
+	cm.ForEach(func(item MapItem) bool {
+		l++
+		return true
+	})
+	if l != 0 {
+		fmt.Println("TestConcurrentMap_ForEach failed.")
+		t.Fail()
+	}
+	for i := 0; i < 1000; i++ {
+		cm.Put(i, i)
+	}
+	cm.ForEach(func(item MapItem) bool {
+		l++
+		cm.Remove(item.Key)
+		return true
+	})
+	if l != 1000 || cm.Size() != 0 {
+		fmt.Println("TestConcurrentMap_ForEach does not empty failed.")
+		t.Fail()
+	}
 }
 
 func TestNewConcurrentMap(t *testing.T) {
 	cm := NewConcurrentMap(100)
-	if cm == nil {
+	if cm.size != 100 {
 		fmt.Println("TestNewConcurrentMap failed.")
 		t.Fail()
 	}
@@ -70,7 +121,7 @@ func TestNewConcurrentMap(t *testing.T) {
 
 func BenchmarkConcurrentMap_Get(b *testing.B) {
 	var v interface{}
-	cm := &ConcurrentMap{}
+	cm := ConcurrentMap{}
 	cm.Put("a", "1")
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -106,4 +157,21 @@ func BenchmarkConcurrentMap_PutAndGet(b *testing.B) {
 	})
 	b.ReportAllocs()
 	// 3000000	       560 ns/op	      32 B/op	       2 allocs/op
+}
+
+func BenchmarkConcurrentMap_ForEach(b *testing.B) {
+	cm := ConcurrentMap{}
+	for i := 0; i < 100; i++ {
+		cm.Put(i, i)
+	}
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			cm.ForEach(func(item MapItem) bool {
+				return true
+			})
+		}
+	})
+	b.ReportAllocs()
+	// 500000	      3148 ns/op	    3296 B/op	       2 allocs/op
 }

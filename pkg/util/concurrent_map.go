@@ -18,6 +18,11 @@ package util
 
 import "sync"
 
+type MapItem struct {
+	Key   interface{}
+	Value interface{}
+}
+
 type ConcurrentMap struct {
 	items map[interface{}]interface{}
 	size  int
@@ -25,10 +30,12 @@ type ConcurrentMap struct {
 	once  sync.Once
 }
 
+func (cm *ConcurrentMap) resize() {
+	cm.items = make(map[interface{}]interface{}, cm.size)
+}
+
 func (cm *ConcurrentMap) init() {
-	cm.once.Do(func() {
-		cm.items = make(map[interface{}]interface{}, cm.size)
-	})
+	cm.once.Do(cm.resize)
 }
 
 func (cm *ConcurrentMap) Put(key, val interface{}) (old interface{}) {
@@ -59,6 +66,55 @@ func (cm *ConcurrentMap) Get(key interface{}) (val interface{}, b bool) {
 	return
 }
 
-func NewConcurrentMap(size int) *ConcurrentMap {
-	return &ConcurrentMap{size: size}
+func (cm *ConcurrentMap) Remove(key interface{}) (old interface{}) {
+	var b bool
+	cm.init()
+	cm.mux.Lock()
+	old, b = cm.items[key]
+	if b {
+		delete(cm.items, key)
+	}
+	cm.mux.Unlock()
+	return
+}
+
+func (cm *ConcurrentMap) Clear() {
+	cm.mux.Lock()
+	cm.resize()
+	cm.mux.Unlock()
+}
+
+func (cm *ConcurrentMap) Size() (s int) {
+	return len(cm.items)
+}
+
+func (cm *ConcurrentMap) ForEach(f func(item MapItem) (next bool)) {
+	cm.mux.RLock()
+	s := len(cm.items)
+	if s == 0 {
+		cm.mux.RUnlock()
+		return
+	}
+	// avoid dead lock in function 'f'
+	ch := make(chan MapItem, s)
+	for k, v := range cm.items {
+		ch <- MapItem{k, v}
+	}
+	cm.mux.RUnlock()
+
+	for {
+		select {
+		case item := <-ch:
+			if b := f(item); b {
+				continue
+			}
+		default:
+		}
+		break
+	}
+	close(ch)
+}
+
+func NewConcurrentMap(size int) ConcurrentMap {
+	return ConcurrentMap{size: size}
 }
