@@ -17,12 +17,12 @@
 package ratelimiter
 
 import (
-	"github.com/didip/tollbooth"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"net/http"
 	"net/http/httptest"
 	"time"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/httplimiter"
 )
 
 var _ = Describe("HttpLimiter", func() {
@@ -57,7 +57,7 @@ var _ = Describe("HttpLimiter", func() {
 		Context("Connections > 0", func() {
 			It("should not be router", func() {
 				limiter.conns = 1
-				limiter.httpLimiter = tollbooth.NewLimiter(1, time.Second)
+				limiter.httpLimiter = httplimiter.NewHttpLimiter(1, time.Second)
 				resp, err := http.Get(ts.URL)
 				Expect(err).To(BeNil())
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
@@ -70,7 +70,7 @@ var _ = Describe("HttpLimiter", func() {
 		Context("Connections <= 0", func() {
 			It("should be router", func() {
 				limiter.conns = 0
-				limiter.httpLimiter = tollbooth.NewLimiter(0, time.Second)
+				limiter.httpLimiter = httplimiter.NewHttpLimiter(0, time.Second)
 				resp, err := http.Get(ts.URL)
 				Expect(err).To(BeNil())
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
