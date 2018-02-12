@@ -96,7 +96,8 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 				}, err
 			}
 			if oldInstanceId != "" {
-				util.Logger().Infof("instance more exist.")
+				util.Logger().Infof("register instance successful, reuse service %s instance %s, operator %s",
+					instance.ServiceId, oldInstanceId, remoteIP)
 				return &pb.RegisterInstanceResponse{
 					Response:   pb.CreateResponse(pb.Response_SUCCESS, "instance more exist."),
 					InstanceId: oldInstanceId,

@@ -70,14 +70,17 @@ func SetContext(ctx context.Context, key string, val interface{}) context.Contex
 }
 
 func CloneContext(ctx context.Context) context.Context {
-	strCtx := &StringContext{
-		parentCtx: ctx,
-		kv:        NewConcurrentMap(10),
-	}
-
 	old, ok := ctx.(*StringContext)
 	if !ok {
-		return strCtx
+		return &StringContext{
+			parentCtx: ctx,
+			kv:        NewConcurrentMap(10),
+		}
+	}
+
+	strCtx := &StringContext{
+		parentCtx: ctx,
+		kv:        NewConcurrentMap(old.kv.Size()),
 	}
 
 	old.kv.ForEach(func(item MapItem) bool {

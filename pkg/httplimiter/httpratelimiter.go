@@ -20,6 +20,7 @@ package httplimiter
 import (
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/ratelimiter"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"net/http"
 	"strconv"
 	"strings"
@@ -72,7 +73,7 @@ func LimitByRequest(httpLimiter *HttpLimiter, r *http.Request) *HTTPErrorMessage
 }
 
 func BuildSegments(httpLimiter *HttpLimiter, r *http.Request) [][]string {
-	remoteIP := getRemoteIP(httpLimiter.IPLookups, r)
+	remoteIP := lookupRemoteIP(httpLimiter.IPLookups, r)
 	urlPath := r.URL.Path
 	sliceKeys := make([][]string, 0)
 
@@ -81,18 +82,18 @@ func BuildSegments(httpLimiter *HttpLimiter, r *http.Request) [][]string {
 	}
 
 	if httpLimiter.Methods != nil && httpLimiter.Headers != nil && httpLimiter.BasicAuthUsers != nil {
-		if checkExistence(httpLimiter.Methods, r.Method) {
+		if util.SliceHave(httpLimiter.Methods, r.Method) {
 			for headerKey, headerValues := range httpLimiter.Headers {
 				if (headerValues == nil || len(headerValues) <= 0) && r.Header.Get(headerKey) != "" {
 					username, _, ok := r.BasicAuth()
-					if ok && checkExistence(httpLimiter.BasicAuthUsers, username) {
+					if ok && util.SliceHave(httpLimiter.BasicAuthUsers, username) {
 						sliceKeys = append(sliceKeys, []string{remoteIP, urlPath, r.Method, headerKey, username})
 					}
 
 				} else if len(headerValues) > 0 && r.Header.Get(headerKey) != "" {
 					for _, headerValue := range headerValues {
 						username, _, ok := r.BasicAuth()
-						if ok && checkExistence(httpLimiter.BasicAuthUsers, username) {
+						if ok && util.SliceHave(httpLimiter.BasicAuthUsers, username) {
 							sliceKeys = append(sliceKeys, []string{remoteIP, urlPath, r.Method, headerKey, headerValue, username})
 						}
 					}
@@ -101,7 +102,7 @@ func BuildSegments(httpLimiter *HttpLimiter, r *http.Request) [][]string {
 		}
 
 	} else if httpLimiter.Methods != nil && httpLimiter.Headers != nil {
-		if checkExistence(httpLimiter.Methods, r.Method) {
+		if util.SliceHave(httpLimiter.Methods, r.Method) {
 			for headerKey, headerValues := range httpLimiter.Headers {
 				if (headerValues == nil || len(headerValues) <= 0) && r.Header.Get(headerKey) != "" {
 					sliceKeys = append(sliceKeys, []string{remoteIP, urlPath, r.Method, headerKey})
@@ -115,15 +116,15 @@ func BuildSegments(httpLimiter *HttpLimiter, r *http.Request) [][]string {
 		}
 
 	} else if httpLimiter.Methods != nil && httpLimiter.BasicAuthUsers != nil {
-		if checkExistence(httpLimiter.Methods, r.Method) {
+		if util.SliceHave(httpLimiter.Methods, r.Method) {
 			username, _, ok := r.BasicAuth()
-			if ok && checkExistence(httpLimiter.BasicAuthUsers, username) {
+			if ok && util.SliceHave(httpLimiter.BasicAuthUsers, username) {
 				sliceKeys = append(sliceKeys, []string{remoteIP, urlPath, r.Method, username})
 			}
 		}
 
 	} else if httpLimiter.Methods != nil {
-		if checkExistence(httpLimiter.Methods, r.Method) {
+		if util.SliceHave(httpLimiter.Methods, r.Method) {
 			sliceKeys = append(sliceKeys, []string{remoteIP, urlPath, r.Method})
 		}
 
@@ -141,7 +142,7 @@ func BuildSegments(httpLimiter *HttpLimiter, r *http.Request) [][]string {
 
 	} else if httpLimiter.BasicAuthUsers != nil {
 		username, _, ok := r.BasicAuth()
-		if ok && checkExistence(httpLimiter.BasicAuthUsers, username) {
+		if ok && util.SliceHave(httpLimiter.BasicAuthUsers, username) {
 			sliceKeys = append(sliceKeys, []string{remoteIP, urlPath, username})
 		}
 	} else {
@@ -156,43 +157,21 @@ func SetResponseHeaders(limiter *HttpLimiter, w http.ResponseWriter) {
 	w.Header().Add("X-Rate-Limit-Duration", limiter.TTL.String())
 }
 
-func checkExistence(sliceString []string, needle string) bool {
-	for _, b := range sliceString {
-		if b == needle {
-			return true
-		}
-	}
-	return false
-}
-
-func ipAddrFromRemoteAddr(s string) string {
-	idx := strings.LastIndex(s, ":")
-	if idx == -1 {
-		return s
-	}
-	return s[:idx]
-}
-
-func getRemoteIP(ipLookups []string, r *http.Request) string {
+func lookupRemoteIP(ipLookups []string, r *http.Request) string {
 	realIP := r.Header.Get("X-Real-IP")
 	forwardedFor := r.Header.Get("X-Forwarded-For")
 
 	for _, lookup := range ipLookups {
 		if lookup == "RemoteAddr" {
-			return ipAddrFromRemoteAddr(r.RemoteAddr)
+			return util.ParseIpPort(r.RemoteAddr).IP
 		}
-		if lookup == "X-Forwarded-For" && forwardedFor != "" {
-			parts := strings.Split(forwardedFor, ",")
-			for i, p := range parts {
-				parts[i] = strings.TrimSpace(p)
-			}
-			return parts[0]
+		if lookup == "X-Forwarded-For" && len(forwardedFor) > 0 {
+			return strings.TrimSpace(strings.Split(forwardedFor, ",")[0])
 		}
-		if lookup == "X-Real-IP" && realIP != "" {
+		if lookup == "X-Real-IP" && len(realIP) > 0 {
 			return realIP
 		}
 	}
-
 	return ""
 }
 

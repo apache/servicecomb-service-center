@@ -37,3 +37,12 @@ func PathExist(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil || os.IsExist(err)
 }
+
+func HostName() (hostname string) {
+	var err error
+	hostname, err = os.Hostname()
+	if err != nil {
+		hostname = "UNKNOWN"
+	}
+	return
+}

@@ -79,7 +79,6 @@ func GetAllInstancesOfOneService(ctx context.Context, domainProject string, serv
 
 	instances := make([]*pb.MicroServiceInstance, 0, len(resp.Kvs))
 	for _, kvs := range resp.Kvs {
-		util.Logger().Debugf("start unmarshal service instance file: %s", util.BytesToStringWithNoCopy(kvs.Key))
 		instance := &pb.MicroServiceInstance{}
 		err := json.Unmarshal(kvs.Value, instance)
 		if err != nil {
@@ -159,15 +158,6 @@ func ParseEndpointValue(value []byte) EndpointValue {
 	return endpointValue
 }
 
-func isContain(endpoints []string, endpoint string) bool {
-	for _, tmpEndpoint := range endpoints {
-		if tmpEndpoint == endpoint {
-			return true
-		}
-	}
-	return false
-}
-
 func DeleteServiceAllInstances(ctx context.Context, serviceId string) error {
 	domainProject := util.ParseDomainProject(ctx)
 
@@ -234,8 +224,6 @@ func QueryAllProvidersInstances(ctx context.Context, selfServiceId string) (resu
 
 		util.Logger().Debugf("query provider service %s instances[%d] with revision %d.", providerId, len(kvs), rev)
 		for _, kv := range kvs {
-			util.Logger().Debugf("start unmarshal service instance file with revision %d: %s",
-				rev, util.BytesToStringWithNoCopy(kv.Key))
 			instance := &pb.MicroServiceInstance{}
 			err := json.Unmarshal(kv.Value, instance)
 			if err != nil {

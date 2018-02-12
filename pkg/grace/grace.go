@@ -146,31 +146,42 @@ func fork() (err error) {
 	for name, i := range filesOffsetMap {
 		orderArgs[i] = name
 	}
-	path := os.Args[0]
-	var args []string
-	if len(os.Args) > 1 {
-		for _, arg := range os.Args[1:] {
-			if arg == "-fork" {
-				break
-			}
-			args = append(args, arg)
-		}
-	}
-	args = append(args, "-fork")
+
+	// add fork and file descriptions order flags
+	args := append(parseCommandLine(), "-fork")
 	if len(filesOffsetMap) > 0 {
 		args = append(args, fmt.Sprintf(`-filesorder=%s`, strings.Join(orderArgs, ",")))
 	}
-	cmd := exec.Command(path, args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.ExtraFiles = files
-	err = cmd.Start()
-	if err != nil {
+
+	if err = newCommand(args...); err != nil {
 		util.Logger().Errorf(err, "fork a process failed, %v", args)
 		return
 	}
 	util.Logger().Warnf(nil, "fork process %v", args)
 	return
+}
+
+func parseCommandLine() (args []string) {
+	if len(os.Args) <= 1 {
+		return
+	}
+	// ignore process path
+	for _, arg := range os.Args[1:] {
+		if arg == "-fork" {
+			// ignore fork flags
+			break
+		}
+		args = append(args, arg)
+	}
+	return
+}
+
+func newCommand(args ...string) error {
+	cmd := exec.Command(os.Args[0], args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.ExtraFiles = files
+	return cmd.Start()
 }
 
 func IsFork() bool {
