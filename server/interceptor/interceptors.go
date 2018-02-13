@@ -34,8 +34,6 @@ type Interception struct {
 	function InterceptorFunc
 }
 
-// Invoke performs the given interception.
-// val is a pointer to the App Controller.
 func (i Interception) Invoke(w http.ResponseWriter, req *http.Request) error {
 	return i.function(w, req)
 }
@@ -44,10 +42,6 @@ func init() {
 	interceptors = make([]*Interception, 0, 10)
 }
 
-// InterceptFunc installs a general interceptor.
-// This can be applied to any Controller.
-// It must have the signature of:
-//   func example(c *revel.Controller) revel.Result
 func RegisterInterceptFunc(intc InterceptorFunc) {
 	interceptors = append(interceptors, &Interception{
 		function: intc,
