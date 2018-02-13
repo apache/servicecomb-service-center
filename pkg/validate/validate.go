@@ -208,7 +208,7 @@ func (v *Validator) Validate(s interface{}) error {
 		return errors.New("not support validate type")
 	}
 
-	st := LoadStruct(s)
+	st := util.LoadStruct(s)
 	for i, l := 0, sv.NumField(); i < l; i++ {
 		field := sv.Field(i)
 		fieldName := st.Fields[i].Name

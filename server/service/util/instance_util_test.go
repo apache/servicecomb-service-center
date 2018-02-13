@@ -97,18 +97,6 @@ func TestCheckEndPoints(t *testing.T) {
 		fmt.Printf(`CheckEndPoints failed`)
 		t.FailNow()
 	}
-
-	b := isContain([]string{"a"}, "a")
-	if !b {
-		fmt.Printf(`isContain contain failed`)
-		t.FailNow()
-	}
-
-	b = isContain([]string{}, "a")
-	if b {
-		fmt.Printf(`isContain empty failed`)
-		t.FailNow()
-	}
 }
 
 func TestDeleteServiceAllInstances(t *testing.T) {

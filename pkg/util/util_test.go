@@ -17,8 +17,15 @@
 package util
 
 import (
+	"fmt"
 	"testing"
 )
+
+func fail(t *testing.T, format string, args ...interface{}) {
+	fmt.Printf(format, args...)
+	fmt.Println()
+	t.FailNow()
+}
 
 func TestBytesToInt32(t *testing.T) {
 	bs := []byte{0, 0, 0, 1}

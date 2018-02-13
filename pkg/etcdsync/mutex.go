@@ -23,24 +23,22 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/coreos/etcd/client"
 	"golang.org/x/net/context"
-	"io"
 	"os"
 	"sync"
 	"time"
 )
 
 const (
-	defaultTTL = 60
-	defaultTry = 3
-	ROOT_PATH  = "/cse/etcdsync"
+	DEFAULT_LOCK_TTL    = 60
+	DEFAULT_RETRY_TIMES = 3
+	ROOT_PATH           = "/cse/etcdsync"
 )
 
 type DLockFactory struct {
-	key    string
-	ctx    context.Context
-	ttl    int64
-	mutex  *sync.Mutex
-	logger io.Writer
+	key   string
+	ctx   context.Context
+	ttl   int64
+	mutex *sync.Mutex
 }
 
 type DLock struct {
@@ -49,31 +47,19 @@ type DLock struct {
 }
 
 var (
-	globalMap map[string]*DLockFactory
+	globalMap = make(map[string]*DLockFactory)
 	globalMux sync.Mutex
 	IsDebug   bool
-	hostname  string
-	pid       int
+	hostname  string = util.HostName()
+	pid       int    = os.Getpid()
 )
-
-func init() {
-	globalMap = make(map[string]*DLockFactory)
-	IsDebug = false
-
-	var err error
-	hostname, err = os.Hostname()
-	if err != nil {
-		hostname = "UNKNOWN"
-	}
-	pid = os.Getpid()
-}
 
 func NewLockFactory(key string, ttl int64) *DLockFactory {
 	if len(key) == 0 {
 		return nil
 	}
 	if ttl < 1 {
-		ttl = defaultTTL
+		ttl = DEFAULT_LOCK_TTL
 	}
 
 	return &DLockFactory{
@@ -92,7 +78,7 @@ func (m *DLockFactory) NewDLock(wait bool) (l *DLock, err error) {
 		builder: m,
 		id:      fmt.Sprintf("%v-%v-%v", hostname, pid, time.Now().Format("20060102-15:04:05.999999999")),
 	}
-	for try := 1; try <= defaultTry; try++ {
+	for try := 1; try <= DEFAULT_RETRY_TIMES; try++ {
 		err = l.Lock(wait)
 		if err == nil {
 			return l, nil
@@ -103,7 +89,7 @@ func (m *DLockFactory) NewDLock(wait bool) (l *DLock, err error) {
 			break
 		}
 
-		if try <= defaultTry {
+		if try <= DEFAULT_RETRY_TIMES {
 			util.Logger().Warnf(err, "Try to lock key %s again, id=%s", m.key, l.id)
 		} else {
 			util.Logger().Errorf(err, "Lock key %s failed, id=%s", m.key, l.id)
@@ -147,7 +133,7 @@ func (m *DLock) Lock(wait bool) error {
 
 		util.Logger().Warnf(err, "Key %s is locked, waiting for other node releases it, id=%s", m.builder.key, m.id)
 
-		ctx, cancel := context.WithTimeout(m.builder.ctx, defaultTTL*time.Second)
+		ctx, cancel := context.WithTimeout(m.builder.ctx, DEFAULT_LOCK_TTL*time.Second)
 		go func() {
 			err := backend.Registry().Watch(ctx,
 				registry.WithStrKey(m.builder.key),
@@ -179,7 +165,7 @@ func (m *DLock) Unlock() (err error) {
 		registry.DEL,
 		registry.WithStrKey(m.builder.key)}
 
-	for i := 1; i <= defaultTry; i++ {
+	for i := 1; i <= DEFAULT_RETRY_TIMES; i++ {
 		_, err = backend.Registry().Do(m.builder.ctx, opts...)
 		if err == nil {
 			if !IsDebug {

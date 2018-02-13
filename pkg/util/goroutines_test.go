@@ -33,15 +33,13 @@ func TestGoRoutine_Init(t *testing.T) {
 	test.Init(stopCh1)
 	c := test.StopCh()
 	if c != stopCh1 {
-		fmt.Println("init GoRoutine failed.")
-		t.Fail()
+		fail(t, "init GoRoutine failed.")
 	}
 
 	test.Init(stopCh2)
 	c = test.StopCh()
 	if c == stopCh2 {
-		fmt.Println("init GoRoutine twice.")
-		t.Fail()
+		fail(t, "init GoRoutine twice.")
 	}
 }
 
@@ -53,8 +51,7 @@ func TestGoRoutine_Do(t *testing.T) {
 		defer close(stopCh)
 		select {
 		case <-neverStopCh:
-			fmt.Println("neverStopCh should not be closed.")
-			t.Fail()
+			fail(t, "neverStopCh should not be closed.")
 		case <-time.After(time.Second):
 		}
 	})
@@ -69,8 +66,7 @@ func TestGoRoutine_Do(t *testing.T) {
 		select {
 		case <-stopCh:
 		case <-time.After(time.Second):
-			fmt.Println("time out to wait stopCh1 close.")
-			t.Fail()
+			fail(t, "time out to wait stopCh1 close.")
 		}
 	})
 	close(stopCh1)
@@ -102,8 +98,7 @@ func TestGoRoutine_Wait(t *testing.T) {
 	test.Wait()
 	fmt.Println(resultArr)
 	if len(resultArr) != MAX {
-		fmt.Println("fail to wait all goroutines finish.")
-		t.Fail()
+		fail(t, "fail to wait all goroutines finish.")
 	}
 }
 
@@ -114,8 +109,7 @@ func TestGoRoutine_Close(t *testing.T) {
 		select {
 		case <-stopCh:
 		case <-time.After(time.Second):
-			fmt.Println("time out to wait stopCh close.")
-			t.Fail()
+			fail(t, "time out to wait stopCh close.")
 		}
 	})
 	test.Close(true)

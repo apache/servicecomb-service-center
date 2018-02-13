@@ -24,7 +24,7 @@ import (
 
 type StringContext struct {
 	parentCtx context.Context
-	kv        map[string]interface{}
+	kv        ConcurrentMap
 }
 
 func (c *StringContext) Deadline() (deadline time.Time, ok bool) {
@@ -44,11 +44,12 @@ func (c *StringContext) Value(key interface{}) interface{} {
 	if !ok {
 		return c.parentCtx.Value(key)
 	}
-	return c.kv[k]
+	v, _ := c.kv.Get(k)
+	return v
 }
 
 func (c *StringContext) SetKV(key string, val interface{}) {
-	c.kv[key] = val
+	c.kv.Put(key, val)
 }
 
 func NewStringContext(ctx context.Context) *StringContext {
@@ -56,7 +57,7 @@ func NewStringContext(ctx context.Context) *StringContext {
 	if !ok {
 		strCtx = &StringContext{
 			parentCtx: ctx,
-			kv:        make(map[string]interface{}, 10),
+			kv:        NewConcurrentMap(10),
 		}
 	}
 	return strCtx
@@ -69,19 +70,23 @@ func SetContext(ctx context.Context, key string, val interface{}) context.Contex
 }
 
 func CloneContext(ctx context.Context) context.Context {
-	strCtx := &StringContext{
-		parentCtx: ctx,
-		kv:        make(map[string]interface{}, 10),
-	}
-
 	old, ok := ctx.(*StringContext)
 	if !ok {
-		return strCtx
+		return &StringContext{
+			parentCtx: ctx,
+			kv:        NewConcurrentMap(10),
+		}
 	}
 
-	for k, v := range old.kv {
-		strCtx.kv[k] = v
+	strCtx := &StringContext{
+		parentCtx: ctx,
+		kv:        NewConcurrentMap(old.kv.Size()),
 	}
+
+	old.kv.ForEach(func(item MapItem) bool {
+		strCtx.kv.Put(item.Key, item.Value)
+		return true
+	})
 	return strCtx
 }
 

@@ -55,7 +55,6 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/interceptor"
 	"github.com/apache/incubator-servicecomb-service-center/server/interceptor/access"
 	"github.com/apache/incubator-servicecomb-service-center/server/interceptor/cors"
-	"github.com/apache/incubator-servicecomb-service-center/server/interceptor/ratelimiter"
 )
 
 func init() {
@@ -63,7 +62,6 @@ func init() {
 
 	// intercept requests before routing.
 	interceptor.RegisterInterceptFunc(access.Intercept)
-	interceptor.RegisterInterceptFunc(ratelimiter.Intercept)
 	interceptor.RegisterInterceptFunc(cors.Intercept)
 
 	// handle requests after routing.

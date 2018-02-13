@@ -409,10 +409,16 @@ func (s *MicroServiceService) DeleteServices(ctx context.Context, request *pb.De
 	}
 
 	util.Logger().Infof("Batch DeleteServices serviceId = %v , result = %d, ", request.ServiceIds, responseCode)
-	return &pb.DelServicesResponse{
-		Response: pb.CreateResponse(responseCode, "Delete services successfully."),
+
+	resp := &pb.DelServicesResponse{
 		Services: delServiceRspInfo,
-	}, nil
+	}
+	if responseCode != pb.Response_SUCCESS {
+		resp.Response = pb.CreateResponse(responseCode, "Delete services failed.")
+	} else {
+		resp.Response = pb.CreateResponse(responseCode, "Delete services successfully.")
+	}
+	return resp, nil
 }
 
 func (s *MicroServiceService) GetOne(ctx context.Context, in *pb.GetServiceRequest) (*pb.GetServiceResponse, error) {

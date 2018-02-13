@@ -25,12 +25,6 @@ import (
 	"time"
 )
 
-func fail(t *testing.T, format string, args ...interface{}) {
-	fmt.Printf(format, args...)
-	fmt.Println()
-	t.FailNow()
-}
-
 func TestNewUniQueue(t *testing.T) {
 	_, err := newUniQueue(0)
 	if err == nil {

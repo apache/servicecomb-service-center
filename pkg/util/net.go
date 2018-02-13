@@ -21,8 +21,14 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 )
+
+type IpPort struct {
+	IP   string
+	Port uint16
+}
 
 func GetIPFromContext(ctx context.Context) string {
 	v, ok := FromContext(ctx, "x-remote-ip").(string)
@@ -56,6 +62,15 @@ func ParseEndpoint(ep string) (string, error) {
 	return u.Hostname(), nil
 }
 
+func ParseIpPort(addr string) IpPort {
+	idx := strings.LastIndex(addr, ":")
+	if idx == -1 {
+		return IpPort{addr, 0}
+	}
+	p, _ := strconv.Atoi(addr[idx+1:])
+	return IpPort{addr[:idx], uint16(p)}
+}
+
 func GetRealIP(r *http.Request) string {
 	for _, h := range [2]string{"X-Forwarded-For", "X-Real-Ip"} {
 		addresses := strings.Split(r.Header.Get(h), ",")
@@ -71,22 +86,6 @@ func GetRealIP(r *http.Request) string {
 	addrs := strings.Split(r.RemoteAddr, ":")
 	if len(addrs) > 0 {
 		return addrs[0]
-	}
-	return ""
-}
-
-func GetLocalIP() string {
-	addrs, err := net.InterfaceAddrs()
-	if err != nil {
-		return ""
-	}
-	for _, address := range addrs {
-		// check the address type and if it is not a loopback the display it
-		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-			if ipnet.IP.To4() != nil {
-				return ipnet.IP.String()
-			}
-		}
 	}
 	return ""
 }

@@ -79,7 +79,6 @@ func GetRulesUtil(ctx context.Context, domainProject string, serviceId string) (
 
 	rules := []*pb.ServiceRule{}
 	for _, kvs := range resp.Kvs {
-		util.Logger().Debugf("start unmarshal service rule file: %s", util.BytesToStringWithNoCopy(kvs.Key))
 		rule := &pb.ServiceRule{}
 		err := json.Unmarshal(kvs.Value, rule)
 		if err != nil {

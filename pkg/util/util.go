@@ -201,3 +201,12 @@ func FormatFuncName(f string) string {
 func FuncName(f interface{}) string {
 	return runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
 }
+
+func SliceHave(arr []string, str string) bool {
+	for _, item := range arr {
+		if item == str {
+			return true
+		}
+	}
+	return false
+}
