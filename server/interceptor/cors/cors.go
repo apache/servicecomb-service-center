@@ -26,127 +26,24 @@ package cors
 import (
 	"errors"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"io"
+	"github.com/rs/cors"
 	"net/http"
-	"strconv"
-	"strings"
 )
 
-var cors *CORS
+var CORS *cors.Cors
 
 func init() {
-	cors = New()
-}
-
-type CORS struct {
-	allowOrigin      string
-	allowMethods     map[string]struct{}
-	allowHeaders     map[string]struct{}
-	allowCredentials bool
-	exposeHeaders    string
-	maxAge           int
-	userHandler      http.Handler
-}
-
-func New() *CORS {
-	c := new(CORS)
-	c.allowOrigin = "*"
-	c.allowCredentials = false
-	c.allowHeaders = map[string]struct{}{"origin": {}, "accept": {}, "content-type": {}, "x-domain-name": {}, "x-consumerid": {}}
-	c.allowMethods = map[string]struct{}{"GET": {}, "POST": {}, "PUT": {}, "DELETE": {}, "UPDATE": {}}
-	c.maxAge = 1500
-	return c
-}
-
-func (cors *CORS) AllowMethods() []string {
-	return util.MapToList(cors.allowMethods)
-}
-
-func (cors *CORS) AllowHeaders() []string {
-	return util.MapToList(cors.allowHeaders)
-}
-
-func (cors *CORS) handlePreflightRequest(w http.ResponseWriter, r *http.Request) {
-	acrm := r.Header.Get("Access-Control-Request-Method")
-	if acrm == "" {
-		cors.invalid(w, r)
-		util.Logger().Warnf(nil, "header 'Access-Control-Request-Method' is empty")
-		return
-	}
-	methods := strings.Split(strings.TrimSpace(acrm), ",")
-	for _, m := range methods {
-		m = strings.TrimSpace(m)
-		if _, ok := cors.allowMethods[m]; !ok {
-			cors.invalid(w, r)
-			util.Logger().Warnf(nil, "only supported methods: %v", util.MapToList(cors.allowMethods))
-			return
-		}
-	}
-	acrh := r.Header.Get("Access-Control-Request-Headers")
-	if acrh != "" {
-		headers := strings.Split(strings.TrimSpace(acrh), ",")
-		for _, h := range headers {
-			h = strings.ToLower(strings.TrimSpace(h))
-			if _, ok := cors.allowHeaders[h]; !ok {
-				cors.invalid(w, r)
-				util.Logger().Warnf(nil, "invalid header '%s', only supported headers: %v", h, util.MapToList(cors.allowHeaders))
-				return
-			}
-		}
-	}
-
-	w.Header().Add("Access-Control-Allow-Methods", util.StringJoin(cors.AllowMethods(), ","))
-	w.Header().Add("Access-Control-Allow-Headers", util.StringJoin(cors.AllowHeaders(), ","))
-	w.Header().Add("Access-Control-Max-Age", strconv.Itoa(cors.maxAge))
-	cors.addAllowOriginHeader(w, r)
-	cors.addAllowCookiesHeader(w, r)
-	return
-}
-
-func (cors *CORS) invalid(w http.ResponseWriter, r *http.Request) {
-	r.Header.Set("Content-Type", "text/html; charset=utf-8")
-	io.WriteString(w, "CORS Request Invalid")
-	return
-}
-
-func (cors *CORS) handleActualRequest(w http.ResponseWriter, r *http.Request) {
-	if cors.exposeHeaders != "" {
-		w.Header().Add("Access-Control-Expose-Headers", cors.exposeHeaders)
-	}
-	cors.addAllowOriginHeader(w, r)
-	cors.addAllowCookiesHeader(w, r)
-	return
-}
-
-func (cors *CORS) addAllowOriginHeader(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Access-Control-Allow-Origin", cors.allowOrigin)
-	return
-}
-
-func (cors *CORS) addAllowCookiesHeader(w http.ResponseWriter, r *http.Request) {
-	if cors.allowCredentials {
-		w.Header().Add("Access-Control-Allow-Credentials", "true")
-	}
-}
-
-func SetAllowMethods(methods []string) {
-	cors.allowMethods = util.ListToMap(methods)
-}
-
-func SetAllowHeaders(headers []string) {
-	cors.allowHeaders = util.ListToMap(headers)
+	CORS = cors.New(cors.Options{
+		AllowedHeaders: []string{"Origin", "Accept", "Content-Type", "X-Domain-Name", "X-ConsumerId"},
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "UPDATE"},
+	})
 }
 
 func Intercept(w http.ResponseWriter, r *http.Request) (err error) {
-	if origin := r.Header.Get("Origin"); origin == "" {
-	} else if r.Method != "OPTIONS" {
-		cors.handleActualRequest(w, r)
-	} else if acrm := r.Header.Get("Access-Control-Request-Method"); acrm == "" {
-		cors.handleActualRequest(w, r)
-	} else {
-		util.Logger().Debugf("identify the current request is a CORS")
-		cors.handlePreflightRequest(w, r)
-		err = errors.New("Handle preflight request")
+	CORS.HandlerFunc(w, r)
+	if r.Method == "OPTIONS" {
+		util.Logger().Debugf("identify the current request is a CORS, url: %s", r.RequestURI)
+		err = errors.New("Handle the preflight request")
 	}
 	return
 }
