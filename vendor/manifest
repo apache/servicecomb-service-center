@@ -434,6 +434,22 @@
 			"notests": true
 		},
 		{
+			"importpath": "github.com/rs/cors",
+			"repository": "https://github.com/rs/cors",
+			"vcs": "git",
+			"revision": "8dd4211afb5d08dbb39a533b9bb9e4b486351df6",
+			"branch": "HEAD",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/satori/go.uuid",
+			"repository": "https://github.com/satori/go.uuid",
+			"vcs": "git",
+			"revision": "879c5887cd475cd7864858769793b2ceb0d44feb",
+			"branch": "HEAD",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/siddontang/go",
 			"repository": "https://github.com/siddontang/go",
 			"vcs": "git",
@@ -576,14 +592,6 @@
 			"revision": "d670f9405373e636a5a2765eea47fac0c9bc91a4",
 			"branch": "HEAD",
 			"notests": true
-		},
-		{
-		    "importpath": "github.com/satori/go.uuid",
-		    "repository": "https://github.com/satori/go.uuid",
-		    "vcs": "git",
-		    "revision": "879c5887cd475cd7864858769793b2ceb0d44feb",
-		    "branch": "HEAD",
-		    "notests": true
 		}
 	]
 }

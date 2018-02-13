@@ -76,3 +76,4 @@ gvt fetch -precaire -no-recurse -revision ded5959c0d4e360646dc9e9908cff486667813
 gvt fetch -precaire -no-recurse -revision cb6bfca970f6908083f26f39a79009d608efd5cd github.com/klauspost/crc32
 gvt fetch -precaire -no-recurse -revision 879c5887cd475cd7864858769793b2ceb0d44feb github.com/satori/go.uuid
 gvt fetch -precaire -no-recurse -revision 378a833fc008d8343083dc73e77db142afccf377 github.com/ServiceComb/paas-lager
+gvt fetch -precaire -no-recurse -revision 8dd4211afb5d08dbb39a533b9bb9e4b486351df6 github.com/rs/cors

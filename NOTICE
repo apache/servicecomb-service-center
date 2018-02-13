@@ -198,8 +198,7 @@ SoundCloud Ltd. (http://soundcloud.com/).
 
 Notice for rs/cors
 
-rs/cors provides functions to allow CORS for http request, some part
-of the code was used and modified as per the use case.
+rs/cors provides functions to allow CORS for http request
 
 Credit to :
 
