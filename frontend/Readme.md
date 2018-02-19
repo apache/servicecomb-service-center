@@ -21,6 +21,15 @@ go run main.go
 This will bring up the Service-Center UI on [http://127.0.0.1:30103](http://127.0.0.1:30103).
 If you want to change the listening ip/port, you can modify it in the configuration file (service-center/frontend/conf/app.conf : FRONTEND_HOST_IP, FRONTEND_HOST_PORT).
 
+##### NOTE
+If you are running the Service-Center in any another machine then you should update the Service-Center IP in `service-center/frontend/app/apiList/apiList.js`
+```
+		endPoint :{
+			ip : 'http://127.0.0.1',
+			port: '30100'
+		},
+```
+
 ### Preview of Service-Center UI
 ![Service-Center Preview](/docs/Service-Center-UI-Preview.gif)
 
