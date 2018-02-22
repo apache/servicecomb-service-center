@@ -12,8 +12,8 @@ Apache ServiceComb (incubating) service-center allows services to register their
  - **Discovery**: Support query instance by criteria 
  - **Subscribe**: Use web socket to notify client about instance change events
  - **Portal**: Awesome  [web portal](/frontend)
- -	**Fault tolerance**: Multiple fault tolerance mechanism and design in the architecture
- -	**Performance**: Performance/Caching design
+ - **Fault tolerance**: Multiple fault tolerance mechanism and design in the architecture
+ - **Performance**: Performance/Caching design
  - **Metrics**: Able to expose Prometheus metric API automatically
  - **Tracing**: Able to report tracing data to Zipkin server
  
