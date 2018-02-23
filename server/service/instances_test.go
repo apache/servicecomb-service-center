@@ -909,7 +909,7 @@ var _ = Describe("'Instance' service", func() {
 
 				respFind, err = instanceResource.Find(
 					util.SetTargetDomainProject(
-						util.SetDomainProject(context.Background(), "user", "user"),
+						util.SetDomainProject(util.CloneContext(getContext()), "user", "user"),
 						"default", "default"),
 					&pb.FindInstancesRequest{
 						ConsumerServiceId: serviceId6,

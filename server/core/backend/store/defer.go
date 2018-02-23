@@ -30,122 +30,127 @@ type DeferHandler interface {
 	HandleChan() <-chan *Event
 }
 
+type deferItem struct {
+	ttl   *time.Timer
+	event *Event
+}
+
 type InstanceEventDeferHandler struct {
 	Percent float64
-	enabled bool
-	events  map[string]*Event
-	ttls    map[string]int64
-	mux     sync.RWMutex
-	deferCh chan *Event
-}
 
-func (iedh *InstanceEventDeferHandler) deferMode(total int, del int) bool {
-	return iedh.Percent > 0 && total > 0 &&
-		del > 1 &&
-		float64(del/total) >= iedh.Percent
-}
-
-func (iedh *InstanceEventDeferHandler) needDefer(cache Cache, evts []*Event) bool {
-	if !iedh.deferMode(cache.Size(), len(evts)) {
-		return false
-	}
-
-	for _, evt := range evts {
-		if evt.Type != pb.EVT_DELETE {
-			return false
-		}
-	}
-	return true
-}
-
-func (iedh *InstanceEventDeferHandler) init() {
-	if iedh.deferCh == nil {
-		iedh.deferCh = make(chan *Event, event_block_size)
-	}
-
-	if iedh.events == nil {
-		iedh.events = make(map[string]*Event, event_block_size)
-		iedh.ttls = make(map[string]int64, event_block_size)
-		util.Go(iedh.check)
-	}
+	cache     Cache
+	once      sync.Once
+	enabled   bool
+	items     map[string]*deferItem
+	pendingCh chan []*Event
+	deferCh   chan *Event
 }
 
 func (iedh *InstanceEventDeferHandler) OnCondition(cache Cache, evts []*Event) bool {
-	iedh.mux.Lock()
-	if !iedh.enabled && iedh.needDefer(cache, evts) {
-		util.Logger().Warnf(nil, "self preservation is enabled, caught %d(>=%.0f%%) DELETE events",
-			len(evts), iedh.Percent*100)
-		iedh.enabled = true
-	}
-
-	if !iedh.enabled {
-		iedh.mux.Unlock()
+	if iedh.Percent <= 0 {
 		return false
 	}
 
-	iedh.init()
+	iedh.once.Do(func() {
+		iedh.cache = cache
+		iedh.items = make(map[string]*deferItem, event_block_size)
+		iedh.pendingCh = make(chan []*Event, event_block_size)
+		iedh.deferCh = make(chan *Event, event_block_size)
+		util.Go(iedh.check)
+	})
 
-	for _, evt := range evts {
-		kv, ok := evt.Object.(*mvccpb.KeyValue)
-		if !ok {
-			continue
-		}
-		key := util.BytesToStringWithNoCopy(kv.Key)
-		switch evt.Type {
-		case pb.EVT_CREATE, pb.EVT_UPDATE:
-			delete(iedh.events, key)
-			delete(iedh.ttls, key)
-
-			util.Logger().Infof("recovered key %s events", key)
-
-			iedh.deferCh <- evt
-		case pb.EVT_DELETE:
-			var instance pb.MicroServiceInstance
-			err := json.Unmarshal(kv.Value, &instance)
-			if err != nil {
-				util.Logger().Errorf(err, "unmarshal instance file failed, key is %s", key)
-				continue
-			}
-			iedh.events[key] = evt
-			iedh.ttls[key] = int64(instance.HealthCheck.Interval * (instance.HealthCheck.Times + 1))
-		}
-	}
-	iedh.mux.Unlock()
+	iedh.pendingCh <- evts
 	return true
 }
 
-func (iedh *InstanceEventDeferHandler) check(stopCh <-chan struct{}) {
-	defer util.RecoverAndReport()
-	for {
-		select {
-		case <-stopCh:
-			return
-		case <-time.After(time.Second):
-			iedh.mux.Lock()
-			for key, ttl := range iedh.ttls {
-				ttl--
-				if ttl > 0 {
-					iedh.ttls[key] = ttl
-					continue
-				}
+func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt *Event) error {
+	kv := evt.Object.(*mvccpb.KeyValue)
+	key := util.BytesToStringWithNoCopy(kv.Key)
+	_, ok := iedh.items[key]
+	switch evt.Type {
+	case pb.EVT_CREATE, pb.EVT_UPDATE:
+		if ok {
+			util.Logger().Infof("recovered key %s events", key)
+			// return nil // no need to publish event to subscribers?
+		}
+		iedh.recover(evt)
+	case pb.EVT_DELETE:
+		if ok {
+			return nil
+		}
 
-				evt := iedh.events[key]
-				delete(iedh.events, key)
-				delete(iedh.ttls, key)
-
-				util.Logger().Warnf(nil, "defer handle timed out, removed key is %s", key)
-
-				iedh.deferCh <- evt
-			}
-			if iedh.enabled && len(iedh.ttls) == 0 {
-				iedh.enabled = false
-				util.Logger().Warnf(nil, "self preservation is stopped")
-			}
-			iedh.mux.Unlock()
+		var instance pb.MicroServiceInstance
+		err := json.Unmarshal(kv.Value, &instance)
+		if err != nil {
+			util.Logger().Errorf(err, "unmarshal instance file failed, key is %s", key)
+			return err
+		}
+		iedh.items[key] = &deferItem{
+			ttl: time.NewTimer(
+				time.Duration(instance.HealthCheck.Interval*(instance.HealthCheck.Times+1)) * time.Second),
+			event: evt,
 		}
 	}
+	return nil
 }
 
 func (iedh *InstanceEventDeferHandler) HandleChan() <-chan *Event {
 	return iedh.deferCh
+}
+
+func (iedh *InstanceEventDeferHandler) check(stopCh <-chan struct{}) {
+	defer util.RecoverAndReport()
+	t, n := iedh.newTimer(), false
+	for {
+		select {
+		case <-stopCh:
+			return
+		case evts := <-iedh.pendingCh:
+			for _, evt := range evts {
+				iedh.recoverOrDefer(evt)
+			}
+
+			del := len(iedh.items)
+			if del > 0 && !n {
+				t.Stop()
+				t, n = iedh.newTimer(), true
+			}
+
+			total := iedh.cache.Size()
+			if del > 0 && total > 0 && float64(del) >= float64(total)*iedh.Percent {
+				iedh.enabled = true
+				util.Logger().Warnf(nil, "self preservation is enabled, caught %d/%d(>=%.0f%%) DELETE events",
+					del, total, iedh.Percent*100)
+			}
+		case <-t.C:
+			t, n = iedh.newTimer(), false
+
+			for key, item := range iedh.items {
+				if iedh.enabled {
+					select {
+					case <-item.ttl.C:
+					default:
+						continue
+					}
+					util.Logger().Warnf(nil, "defer handle timed out, removed key is %s", key)
+				}
+				iedh.recover(item.event)
+			}
+
+			if iedh.enabled && len(iedh.items) == 0 {
+				iedh.enabled = false
+				util.Logger().Warnf(nil, "self preservation is stopped")
+			}
+		}
+	}
+}
+
+func (iedh *InstanceEventDeferHandler) newTimer() *time.Timer {
+	return time.NewTimer(2 * time.Second) // instance DELETE event will be delay.
+}
+
+func (iedh *InstanceEventDeferHandler) recover(evt *Event) {
+	key := util.BytesToStringWithNoCopy(evt.Object.(*mvccpb.KeyValue).Key)
+	delete(iedh.items, key)
+	iedh.deferCh <- evt
 }

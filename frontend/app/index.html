@@ -24,11 +24,11 @@ limitations under the License.
     <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
     <!-- build:css(.) styles/vendor.css -->
     <!-- bower:css -->
-    <link rel="stylesheet" href="bower_components/angular-material/angular-material.css" />
-    <link rel="stylesheet" href="bower_components/angular-material-data-table/dist/md-data-table.css" />
-    <link rel="stylesheet" href="bower_components/components-font-awesome/css/font-awesome.css" />
-    <link rel="stylesheet" href="bower_components/angular-swagger-ui/dist/css/swagger-ui.min.css" />
-    <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/angular-material/1.1.5/angular-material.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/angular-material-data-table/0.10.10/md-data-table.css" />
+    <link rel="stylesheet" href="https://rawcdn.githack.com/components/font-awesome/4.7.0/css/font-awesome.css" />
+    <link rel="stylesheet" href="https://rawcdn.githack.com/Orange-OpenSource/angular-swagger-ui/0.5.4/dist/css/swagger-ui.min.css" />
+    <link rel="stylesheet" href="https://rawcdn.githack.com/twbs/bootstrap/v3.3.7/dist/css/bootstrap.min.css" />
     <!-- endbower -->
     <!-- endbuild -->
     <!-- build:css(.tmp) styles/main.css -->
@@ -47,41 +47,27 @@ limitations under the License.
       <div class="loader"></div>
     </div>
 
-    <!-- Google Analytics: change UA-XXXXX-X to be your site's ID -->
-     <script>
-       !function(A,n,g,u,l,a,r){A.GoogleAnalyticsObject=l,A[l]=A[l]||function(){
-       (A[l].q=A[l].q||[]).push(arguments)},A[l].l=+new Date,a=n.createElement(g),
-       r=n.getElementsByTagName(g)[0],a.src=u,r.parentNode.insertBefore(a,r)
-       }(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
-
-       ga('create', 'Source-Federation');
-       ga('send', 'pageview');
-    </script>
-
-    <!-- build:js(.) scripts/vendor.js -->
-    <!-- bower:js -->
-    <script src="bower_components/jquery/dist/jquery.js"></script>
-    <script src="bower_components/angular/angular.js"></script>
-    <script src="bower_components/angular-animate/angular-animate.js"></script>
-    <script src="bower_components/angular-aria/angular-aria.js"></script>
-    <script src="bower_components/angular-messages/angular-messages.js"></script>
-    <script src="bower_components/angular-resource/angular-resource.js"></script>
-    <script src="bower_components/angular-sanitize/angular-sanitize.js"></script>
-    <script src="bower_components/angular-ui-router/release/angular-ui-router.js"></script>
-    <script src="bower_components/angular-translate/angular-translate.js"></script>
-    <script src="bower_components/angular-translate-loader-static-files/angular-translate-loader-static-files.js"></script>
-    <script src="bower_components/angular-material/angular-material.js"></script>
-    <script src="bower_components/angular-material-data-table/dist/md-data-table.js"></script>
-    <script src="bower_components/chart.js/dist/Chart.js"></script>
-    <script src="bower_components/angular-chart.js/dist/angular-chart.js"></script>
-    <script src="bower_components/angular-swagger-ui/dist/scripts/swagger-ui.js"></script>
-    <script src="bower_components/angular-yamljs/dist/angular-yamljs.js"></script>
-    <script src="bower_components/yaml.js/dist/yaml.js"></script>
-    <script src="bower_components/angular-swagger-ui/dist/scripts/modules/swagger-yaml-parser.min.js"></script>
-    <script src="bower_components/jszip/vendor/FileSaver.js"></script>
-    <script src="bower_components/jszip/dist/jszip.min.js"></script>
-    <!-- endbower -->
-    <!-- endbuild -->
+    <!-- CDN bower:js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.8/angular.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.8/angular-resource.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.8/angular-animate.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.8/angular-aria.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.8/angular-messages.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.8/angular-sanitize.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-router/0.2.18/angular-ui-router.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-translate/2.15.2/angular-translate.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-translate/2.15.2/angular-translate-loader-static-files/angular-translate-loader-static-files.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-material/1.1.5/angular-material.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-material-data-table/0.10.10/md-data-table.js"></script>
+    <script src="https://rawcdn.githack.com/chartjs/Chart.js/v2.7.0/dist/Chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-chart.js/1.1.1/angular-chart.js"></script>
+    <script src="https://rawcdn.githack.com/Orange-OpenSource/angular-swagger-ui/0.5.4/dist/scripts/swagger-ui.js"></script>
+    <script src="https://rawcdn.githack.com/mmumshad/angular-yamljs/master/dist/angular-yamljs.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/yamljs/0.1.5/yaml.js"></script>
+    <script src="https://rawcdn.githack.com/Orange-OpenSource/angular-swagger-ui/0.5.4/dist/scripts/modules/swagger-yaml-parser.min.js"></script>
+    <script src="https://fastcdn.org/FileSaver.js/1.1.20151003/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.4/jszip.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.3.2/swagger-ui-bundle.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.3.2/swagger-ui-standalone-preset.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/3.10.0/js-yaml.min.js"></script>
@@ -111,3 +97,4 @@ limitations under the License.
     <!-- endbuild -->
 </body>
 </html>
+

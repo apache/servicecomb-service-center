@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/cache"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
@@ -30,26 +29,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"golang.org/x/net/context"
 	"strings"
-	"time"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/etcdsync"
-	"github.com/apache/incubator-servicecomb-service-center/server/mux"
 )
-
-var consumerCache *cache.Cache
-var providerCache *cache.Cache
-
-/*
-缓存2分钟过期
-1分钟周期缓存consumers 遍历所有serviceid并查询consumers 做缓存
-当发现新查询到的consumers列表变成0时则不做cache set操作
-这样当consumers关系完全被删除也有1分钟的时间窗让实例变化推送到相应的consumers里 1分鐘后緩存也會自動清理
-实例推送中的依赖发现实时性为T+1分钟
-*/
-func init() {
-	d, _ := time.ParseDuration("2m")
-	consumerCache = cache.New(d, d)
-	providerCache = cache.New(d, d)
-}
 
 func GetConsumersInCache(ctx context.Context, domainProject string, provider *pb.MicroService) ([]string, error) {
 	// 查询所有consumer
@@ -59,17 +39,6 @@ func GetConsumersInCache(ctx context.Context, domainProject string, provider *pb
 		util.Logger().Errorf(err, "Get dependency consumerIds failed.%s", provider.ServiceId)
 		return nil, err
 	}
-
-	if len(consumerIds) == 0 {
-		consumerIds, found := consumerCache.Get(provider.ServiceId)
-		if found && len(consumerIds.([]string)) > 0 {
-			return consumerIds.([]string), nil
-		}
-		util.Logger().Warnf(nil, "Can not find any consumer from local cache and backend. provider is %s",
-			provider.ServiceId)
-		return nil, nil
-	}
-
 	return consumerIds, nil
 }
 
@@ -81,42 +50,7 @@ func GetProvidersInCache(ctx context.Context, domainProject string, consumer *pb
 		util.Logger().Errorf(err, "Get dependency providerIds failed.%s", consumer.ServiceId)
 		return nil, err
 	}
-
-	if len(providerIds) == 0 {
-		providerIds, found := providerCache.Get(consumer.ServiceId)
-		if found && len(providerIds.([]string)) > 0 {
-			return providerIds.([]string), nil
-		}
-		util.Logger().Warnf(nil, "Can not find any provider from local cache and backend. consumer is %s",
-			consumer.ServiceId)
-		return nil, nil
-	}
-
 	return providerIds, nil
-}
-
-func RefreshDependencyCache(ctx context.Context, domainProject string, service *pb.MicroService) error {
-	dr := NewDependencyRelation(ctx, domainProject, service, service)
-	consumerIds, err := dr.GetDependencyConsumerIds()
-	if err != nil {
-		util.Logger().Errorf(err, "%s,refresh dependency cache failed, get consumerIds failed.", service.ServiceId)
-		return err
-	}
-	providerIds, err := dr.GetDependencyProviderIds()
-	if err != nil {
-		util.Logger().Errorf(err, "%s,refresh dependency cache failed, get providerIds failed.", service.ServiceId)
-		return err
-	}
-	MsCache().Set(service.ServiceId, service, 5*time.Minute)
-	if len(consumerIds) > 0 {
-		util.Logger().Infof("refresh %s dependency cache: cached %d consumerId(s) for 5min.", service.ServiceId, len(consumerIds))
-		consumerCache.Set(service.ServiceId, consumerIds, 5*time.Minute)
-	}
-	if len(providerIds) > 0 {
-		util.Logger().Infof("refresh %s dependency cache: cached %d providerId(s) for 5min.", service.ServiceId, len(providerIds))
-		providerCache.Set(service.ServiceId, providerIds, 5*time.Minute)
-	}
-	return nil
 }
 
 func GetConsumerIdsByProvider(ctx context.Context, domainProject string, provider *pb.MicroService) (allow []string, deny []string, _ error) {
@@ -277,42 +211,6 @@ func AddServiceVersionRule(ctx context.Context, domainProject string, consumer *
 
 	util.Logger().Infof("find request into dependency queue successfully, %s: %v", key, r)
 	return nil
-}
-
-func DeleteDependencyForService(ctx context.Context, service *pb.MicroServiceKey) ([]registry.PluginOp, error) {
-	domainProject := service.Tenant
-	//删除依赖规则
-	conKey := apt.GenerateConsumerDependencyRuleKey(domainProject, service)
-	providerValue, err := TransferToMicroServiceDependency(ctx, conKey)
-	if err != nil {
-		return nil, err
-	}
-	opts := make([]registry.PluginOp, 0)
-	if providerValue != nil && len(providerValue.Dependency) != 0 {
-		providerRuleKey := ""
-		for _, providerRule := range providerValue.Dependency {
-			providerRuleKey = apt.GenerateProviderDependencyRuleKey(domainProject, providerRule)
-			consumers, err := TransferToMicroServiceDependency(ctx, providerRuleKey)
-			if err != nil {
-				return nil, err
-			}
-			opt, err := updateProviderDependencyRuleUtil(consumers, service, providerRuleKey)
-			if err != nil {
-				return nil, err
-			}
-			opts = append(opts, opt)
-		}
-	}
-	util.Logger().Infof("delete dependency rule, consumer Key is %s.", conKey)
-	opts = append(opts, registry.OpDel(registry.WithStrKey(conKey)))
-
-	//作为provider的依赖规则
-	providerKey := apt.GenerateProviderDependencyRuleKey(domainProject, service)
-
-	util.Logger().Infof("delete dependency rule, providerKey is %s", providerKey)
-	opts = append(opts, registry.OpDel(registry.WithStrKey(providerKey)))
-
-	return opts, nil
 }
 
 func TransferToMicroServiceDependency(ctx context.Context, key string) (*pb.MicroServiceDependency, error) {
@@ -505,8 +403,8 @@ func CreateDependencyRule(ctx context.Context, dep *Dependency) error {
 }
 
 func isDependencyAll(dep *pb.MicroServiceDependency) bool {
-	for _, servicedep := range dep.Dependency {
-		if servicedep.ServiceName == "*" {
+	for _, serviceDep := range dep.Dependency {
+		if serviceDep.ServiceName == "*" {
 			return true
 		}
 	}
@@ -604,7 +502,7 @@ func validateMicroServiceKey(in *pb.MicroServiceKey, fuzzyMatch bool) error {
 }
 
 func BadParamsResponse(detailErr string) *pb.CreateDependenciesResponse {
-	util.Logger().Errorf(nil, "Request params is invalid.")
+	util.Logger().Errorf(nil, "Request params is invalid.%s", detailErr)
 	if len(detailErr) == 0 {
 		detailErr = "Request params is invalid."
 	}
@@ -1054,10 +952,15 @@ func (dr *DependencyRelation) getConsumerOfSameServiceNameAndAppId(provider *pb.
 	return allConsumers, nil
 }
 
-func DependencyLock(lockKey string) (*etcdsync.DLock, error) {
-	return mux.Lock(mux.MuxType(lockKey))
-}
-
-func NewDependencyLockKey(domainProject, env string) string {
-	return util.StringJoin([]string{"","env-lock", domainProject, env}, "/")
+func DeleteDependencyForDeleteService(domainProject string, serviceId string, service *pb.MicroServiceKey) (registry.PluginOp, error) {
+	key := apt.GenerateConsumerDependencyQueueKey(domainProject, serviceId, "0")
+	conDep := new(pb.ConsumerDependency)
+	conDep.Consumer = service
+	conDep.Providers = []*pb.MicroServiceKey{}
+	conDep.Override = true
+	data, err := json.Marshal(conDep)
+	if err != nil {
+		return registry.PluginOp{}, err
+	}
+	return registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)), nil
 }

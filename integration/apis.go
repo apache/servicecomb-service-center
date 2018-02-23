@@ -29,6 +29,7 @@ var UPDATEMICROSERVICE = "/v4/default/registry/microservices/:serviceId/properti
 var UNREGISTERMICROSERVICE = "/v4/default/registry/microservices/:serviceId?force=1"
 var GETSCHEMABYID = "/v4/default/registry/microservices/:serviceId/schemas/:schemaId"
 var UPDATESCHEMA = "/v4/default/registry/microservices/:serviceId/schemas/:schemaId"
+var GETSCHEMAS = "/v4/default/registry/microservices/:serviceId/schemas"
 var UPDATESCHEMAS = "/v4/default/registry/microservices/:serviceId/schemas"
 var DELETESCHEMA = "/v4/default/registry/microservices/:serviceId/schemas/:schemaId"
 var CREATEDEPENDENCIES = "/v4/default/registry/dependencies"
@@ -51,6 +52,7 @@ var INSTANCELISTWATCHER = "/v4/default/registry/microservices/:serviceId/listwat
 var GETGOVERNANCESERVICEDETAILS = "/v4/default/govern/microservices/:serviceId"
 var GETRELATIONGRAPH = "/v4/default/govern/relations"
 var GETALLSERVICEGOVERNANCEINFO = "/v4/default/govern/microservices"
+var GETALLAPPS = "/v4/default/govern/apps"
 
 //Rules API's
 var ADDRULE = "/v4/default/registry/microservices/:serviceId/rules"

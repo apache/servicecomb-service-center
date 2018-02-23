@@ -66,8 +66,9 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	domainProject := util.ParseDomainProject(ctx)
 
 	// service id存在性校验
-	if !serviceUtil.ServiceExist(ctx, domainProject, instance.ServiceId) {
-		util.Logger().Errorf(nil, "register instance failed, service %s, operator %s: service not exist.", instanceFlag, remoteIP)
+	service, err := serviceUtil.GetService(ctx, domainProject, instance.ServiceId)
+	if service == nil || err != nil {
+		util.Logger().Errorf(err, "register instance failed, service %s, operator %s: service not exist.", instanceFlag, remoteIP)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
@@ -95,7 +96,8 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 				}, err
 			}
 			if oldInstanceId != "" {
-				util.Logger().Infof("instance more exist.")
+				util.Logger().Infof("register instance successful, reuse service %s instance %s, operator %s",
+					instance.ServiceId, oldInstanceId, remoteIP)
 				return &pb.RegisterInstanceResponse{
 					Response:   pb.CreateResponse(pb.Response_SUCCESS, "instance more exist."),
 					InstanceId: oldInstanceId,
@@ -164,6 +166,8 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 		}
 	}
 	ttl := int64(renewalInterval * (retryTimes + 1))
+
+	instance.Version = service.Version
 
 	data, err := json.Marshal(instance)
 	if err != nil {
@@ -589,9 +593,13 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		}, nil
 	}
 
-	instances := make([]*pb.MicroServiceInstance, 0)
+	var instances []*pb.MicroServiceInstance
+	cloneCtx := ctx
+	if s, ok := ctx.Value("noCache").(string); !ok || s != "1" {
+		cloneCtx = util.SetContext(util.CloneContext(ctx), "cacheOnly", "1")
+	}
 	for _, serviceId := range ids {
-		resp, err := s.GetInstances(ctx, &pb.GetInstancesRequest{
+		resp, err := s.GetInstances(cloneCtx, &pb.GetInstancesRequest{
 			ConsumerServiceId: in.ConsumerServiceId,
 			ProviderServiceId: serviceId,
 			Tags:              in.Tags,

@@ -25,7 +25,7 @@ import (
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{mgr.STATIC, mgr.REGISTRY, "buildin", NewRegistry})
+	mgr.RegisterPlugin(mgr.Plugin{mgr.REGISTRY, "buildin", NewRegistry})
 }
 
 var noPluginErr = fmt.Errorf("register center plugin does not exist")

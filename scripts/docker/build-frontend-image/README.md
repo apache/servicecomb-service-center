@@ -16,7 +16,10 @@ Example app.conf file,
 	FRONTEND_HOST_IP=0.0.0.0
 	FRONTEND_HOST_PORT=30103
 
+Note: Configuring SC_HOST_IP will enable you to setup the EIP of the Service-center.
+
 Then build docker image of frontend from folder "PROJECT_ROOT/scripts/docker/build-frontend-image/".
+
 
     bash -x build.sh
     
@@ -25,3 +28,5 @@ Once the script finishes you will see image scfrontend-dev.tgz in the same direc
     docker run -d -p 30103:30103 -t servicecomb/scfrontend
 
 Where HOST_IP is the ip of host machine where docker container for frontend is executing.
+
+Note: The same image can be used to deploy in Huawei Public Cloud using CFE/CCE or just deploy in a VM.

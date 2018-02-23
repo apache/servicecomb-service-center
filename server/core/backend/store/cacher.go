@@ -120,6 +120,15 @@ func (c *KvCache) Have(k interface{}) (ok bool) {
 	return
 }
 
+func (c *KvCache) RLock() map[string]*mvccpb.KeyValue {
+	c.rwMux.RLock()
+	return c.store
+}
+
+func (c *KvCache) RUnlock() {
+	c.rwMux.RUnlock()
+}
+
 func (c *KvCache) Lock() map[string]*mvccpb.KeyValue {
 	c.rwMux.Lock()
 	return c.store
@@ -251,15 +260,39 @@ func (c *KvCacher) handleWatcher(watcher *Watcher) error {
 }
 
 func (c *KvCacher) needDeferHandle(evts []*Event) bool {
-	if c.Cfg.DeferHander == nil {
+	if c.Cfg.DeferHandler == nil {
 		return false
 	}
 
-	return c.Cfg.DeferHander.OnCondition(c.Cache(), evts)
+	return c.Cfg.DeferHandler.OnCondition(c.Cache(), evts)
+}
+
+func (c *KvCacher) refresh(stopCh <-chan struct{}) {
+	util.Logger().Debugf("start to list and watch %s", c.Cfg)
+	ctx, cancel := context.WithCancel(context.Background())
+	c.goroute.Do(func(stopCh <-chan struct{}) {
+		defer cancel()
+		<-stopCh
+	})
+	for {
+		start := time.Now()
+		c.ListAndWatch(ctx)
+		watchDuration := time.Since(start)
+		nextPeriod := 0 * time.Second
+		if watchDuration > 0 && c.Cfg.Period > watchDuration {
+			nextPeriod = c.Cfg.Period - watchDuration
+		}
+		select {
+		case <-stopCh:
+			util.Logger().Debugf("stop to list and watch %s", c.Cfg)
+			return
+		case <-time.After(nextPeriod):
+		}
+	}
 }
 
 func (c *KvCacher) deferHandle(stopCh <-chan struct{}) {
-	if c.Cfg.DeferHander == nil {
+	if c.Cfg.DeferHandler == nil {
 		return
 	}
 
@@ -268,7 +301,7 @@ func (c *KvCacher) deferHandle(stopCh <-chan struct{}) {
 		select {
 		case <-stopCh:
 			return
-		case evt, ok := <-c.Cfg.DeferHander.HandleChan():
+		case evt, ok := <-c.Cfg.DeferHandler.HandleChan():
 			if !ok {
 				<-time.After(time.Second)
 				continue
@@ -281,7 +314,7 @@ func (c *KvCacher) deferHandle(stopCh <-chan struct{}) {
 
 			evts[i] = evt
 			i++
-		case <-time.After(time.Second):
+		case <-time.After(300 * time.Millisecond):
 			if i == 0 {
 				continue
 			}
@@ -305,9 +338,9 @@ func (c *KvCacher) sync(evts []*Event) {
 }
 
 func (c *KvCacher) filter(rev int64, items []*mvccpb.KeyValue) []*Event {
-	cache := c.Cache().(*KvCache)
-	store := cache.Lock()
-	defer cache.Unlock()
+	store := c.cache.RLock()
+	defer c.cache.RUnlock()
+
 	oc, nc := len(store), len(items)
 	tc := oc + nc
 	if tc == 0 {
@@ -359,7 +392,7 @@ func (c *KvCacher) filterDelete(store map[string]*mvccpb.KeyValue, newStore map[
 		block[i] = &Event{
 			Revision: rev,
 			Type:     proto.EVT_DELETE,
-			Key:      c.Cfg.Key,
+			Prefix:   c.Cfg.Key,
 			Object:   v,
 		}
 		i++
@@ -387,7 +420,7 @@ func (c *KvCacher) filterCreateOrUpdate(store map[string]*mvccpb.KeyValue, newSt
 			block[i] = &Event{
 				Revision: rev,
 				Type:     proto.EVT_CREATE,
-				Key:      c.Cfg.Key,
+				Prefix:   c.Cfg.Key,
 				Object:   v,
 			}
 			i++
@@ -407,7 +440,7 @@ func (c *KvCacher) filterCreateOrUpdate(store map[string]*mvccpb.KeyValue, newSt
 		block[i] = &Event{
 			Revision: rev,
 			Type:     proto.EVT_UPDATE,
-			Key:      c.Cfg.Key,
+			Prefix:   c.Cfg.Key,
 			Object:   v,
 		}
 		i++
@@ -424,10 +457,9 @@ func (c *KvCacher) filterCreateOrUpdate(store map[string]*mvccpb.KeyValue, newSt
 }
 
 func (c *KvCacher) onEvents(evts []*Event) {
-	cache := c.Cache().(*KvCache)
-	idx := 0
+	idx, init := 0, !c.IsReady()
 	kvEvts := make([]*KvEvent, len(evts))
-	store := cache.Lock()
+	store := c.cache.Lock()
 	for _, evt := range evts {
 		kv := evt.Object.(*mvccpb.KeyValue)
 		key := util.BytesToStringWithNoCopy(kv.Key)
@@ -456,7 +488,6 @@ func (c *KvCacher) onEvents(evts []*Event) {
 				Action:   t,
 				KV:       kv,
 			}
-			idx++
 		case proto.EVT_DELETE:
 			if !ok {
 				util.Logger().Warnf(nil, "unexpected %s event! key %s does not exist", evt.Type, key)
@@ -470,10 +501,15 @@ func (c *KvCacher) onEvents(evts []*Event) {
 				Action:   evt.Type,
 				KV:       prevKv,
 			}
-			idx++
 		}
+
+		if init && kvEvts[idx].Action == proto.EVT_CREATE {
+			kvEvts[idx].Action = proto.EVT_INIT
+		}
+
+		idx++
 	}
-	cache.Unlock()
+	c.cache.Unlock()
 
 	c.onKvEvents(kvEvts[:idx])
 }
@@ -488,30 +524,7 @@ func (c *KvCacher) onKvEvents(evts []*KvEvent) {
 }
 
 func (c *KvCacher) run() {
-	c.goroute.Do(func(stopCh <-chan struct{}) {
-		util.Logger().Debugf("start to list and watch %s", c.Cfg)
-		ctx, cancel := context.WithCancel(context.Background())
-		c.goroute.Do(func(stopCh <-chan struct{}) {
-			defer cancel()
-			<-stopCh
-		})
-		for {
-			start := time.Now()
-			c.ListAndWatch(ctx)
-			watchDuration := time.Now().Sub(start)
-			nextPeriod := 0 * time.Second
-			if watchDuration > 0 && c.Cfg.Period > watchDuration {
-				nextPeriod = c.Cfg.Period - watchDuration
-			}
-			select {
-			case <-stopCh:
-				util.Logger().Debugf("stop to list and watch %s", c.Cfg)
-				return
-			case <-time.After(nextPeriod):
-			}
-		}
-	})
-
+	c.goroute.Do(c.refresh)
 	c.goroute.Do(c.deferHandle)
 }
 
@@ -531,6 +544,15 @@ func (c *KvCacher) Stop() {
 
 func (c *KvCacher) Ready() <-chan struct{} {
 	return c.ready
+}
+
+func (c *KvCacher) IsReady() bool {
+	select {
+	case <-c.ready:
+		return true
+	default:
+		return false
+	}
 }
 
 func NewKvCache(c *KvCacher, size int) *KvCache {

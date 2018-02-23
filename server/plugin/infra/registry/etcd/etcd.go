@@ -39,10 +39,13 @@ const (
 	CONNECT_MANAGER_SERVER_TIMEOUT = 10
 )
 
-var clientTLSConfig *tls.Config
+var (
+	clientTLSConfig *tls.Config
+	endpoint        string
+)
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{mgr.STATIC, mgr.REGISTRY, "etcd", NewRegistry})
+	mgr.RegisterPlugin(mgr.Plugin{mgr.REGISTRY, "etcd", NewRegistry})
 }
 
 type EtcdClient struct {
@@ -324,13 +327,20 @@ func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp) (*clientv
 }
 
 func (c *EtcdClient) Do(ctx context.Context, opts ...registry.PluginOpOption) (*registry.PluginResponse, error) {
+	var (
+		err  error
+		resp *registry.PluginResponse
+	)
+
 	start := time.Now()
 	op := registry.OptionsToOp(opts...)
 
+	span := TracingBegin(ctx, "etcd:do", op)
+	defer TracingEnd(span, err)
+
 	otCtx, cancel := registry.WithTimeout(ctx)
 	defer cancel()
-	var err error
-	var resp *registry.PluginResponse
+
 	switch op.Action {
 	case registry.Get:
 		var etcdResp *clientv3.GetResponse
@@ -378,9 +388,11 @@ func (c *EtcdClient) Do(ctx context.Context, opts ...registry.PluginOpOption) (*
 			Revision: etcdResp.Header.Revision,
 		}
 	}
+
 	if err != nil {
 		return nil, err
 	}
+
 	resp.Succeeded = true
 
 	util.LogNilOrWarnf(start, "registry client do %s", op)
@@ -399,6 +411,8 @@ func (c *EtcdClient) Txn(ctx context.Context, opts []registry.PluginOp) (*regist
 }
 
 func (c *EtcdClient) TxnWithCmp(ctx context.Context, success []registry.PluginOp, cmps []registry.CompareOp, fail []registry.PluginOp) (*registry.PluginResponse, error) {
+	var err error
+
 	otCtx, cancel := registry.WithTimeout(ctx)
 	defer cancel()
 
@@ -406,6 +420,9 @@ func (c *EtcdClient) TxnWithCmp(ctx context.Context, success []registry.PluginOp
 	etcdCmps := c.toCompares(cmps)
 	etcdSuccessOps := c.toTxnRequest(success)
 	etcdFailOps := c.toTxnRequest(fail)
+
+	span := TracingBegin(ctx, "etcd:txn", success[0])
+	defer TracingEnd(span, err)
 
 	kvc := clientv3.NewKV(c.Client)
 	txn := kvc.Txn(otCtx)
@@ -428,6 +445,11 @@ func (c *EtcdClient) TxnWithCmp(ctx context.Context, success []registry.PluginOp
 }
 
 func (c *EtcdClient) LeaseGrant(ctx context.Context, TTL int64) (int64, error) {
+	var err error
+	span := TracingBegin(ctx, "etcd:grant",
+		registry.PluginOp{Action: registry.Put, Key: util.StringToBytesWithNoCopy(fmt.Sprint(TTL))})
+	defer TracingEnd(span, err)
+
 	otCtx, cancel := registry.WithTimeout(ctx)
 	defer cancel()
 	start := time.Now()
@@ -440,6 +462,11 @@ func (c *EtcdClient) LeaseGrant(ctx context.Context, TTL int64) (int64, error) {
 }
 
 func (c *EtcdClient) LeaseRenew(ctx context.Context, leaseID int64) (int64, error) {
+	var err error
+	span := TracingBegin(ctx, "etcd:keepalive",
+		registry.PluginOp{Action: registry.Put, Key: util.StringToBytesWithNoCopy(fmt.Sprint(leaseID))})
+	defer TracingEnd(span, err)
+
 	otCtx, cancel := registry.WithTimeout(ctx)
 	defer cancel()
 	start := time.Now()
@@ -455,10 +482,15 @@ func (c *EtcdClient) LeaseRenew(ctx context.Context, leaseID int64) (int64, erro
 }
 
 func (c *EtcdClient) LeaseRevoke(ctx context.Context, leaseID int64) error {
+	var err error
+	span := TracingBegin(ctx, "etcd:revoke",
+		registry.PluginOp{Action: registry.Delete, Key: util.StringToBytesWithNoCopy(fmt.Sprint(leaseID))})
+	defer TracingEnd(span, err)
+
 	otCtx, cancel := registry.WithTimeout(ctx)
 	defer cancel()
 	start := time.Now()
-	_, err := c.Client.Revoke(otCtx, clientv3.LeaseID(leaseID))
+	_, err = c.Client.Revoke(otCtx, clientv3.LeaseID(leaseID))
 	if err != nil {
 		if err.Error() == grpc.ErrorDesc(rpctypes.ErrGRPCLeaseNotFound) {
 			return err
@@ -501,49 +533,55 @@ func (c *EtcdClient) Watch(ctx context.Context, opts ...registry.PluginOpOption)
 				return
 			case resp, ok = <-ws:
 				if !ok {
-					err := errors.New("channel is closed")
-					return err
+					err = errors.New("channel is closed")
+					return
 				}
 				// cause a rpc ResourceExhausted error if watch response body larger then 4MB
 				if err = resp.Err(); err != nil {
-					return err
+					return
 				}
 
-				l := len(resp.Events)
-				kvs := make([]*mvccpb.KeyValue, l)
-				pIdx, prevAction := 0, mvccpb.PUT
-				pResp := &registry.PluginResponse{Action: registry.Put, Succeeded: true}
-
-				for _, evt := range resp.Events {
-					if prevAction != evt.Type {
-						prevAction = evt.Type
-
-						if pIdx > 0 {
-							err = setResponseAndCallback(pResp, kvs[:pIdx], op.WatchCallback)
-							if err != nil {
-								return
-							}
-							pIdx = 0
-						}
-					}
-
-					pResp.Revision = evt.Kv.ModRevision
-					pResp.Action = setKvsAndConvertAction(kvs, pIdx, evt)
-
-					pIdx++
-				}
-
-				if pIdx > 0 {
-					err = setResponseAndCallback(pResp, kvs[:pIdx], op.WatchCallback)
-					if err != nil {
-						return
-					}
+				err = dispatch(resp.Events, op.WatchCallback)
+				if err != nil {
+					return
 				}
 			}
 		}
 	}
-	err = fmt.Errorf("no key has been watched")
-	return
+	return fmt.Errorf("no key has been watched")
+}
+
+func dispatch(evts []*clientv3.Event, cb registry.WatchCallback) error {
+	l := len(evts)
+	kvs := make([]*mvccpb.KeyValue, l)
+	sIdx, eIdx, prevAction := 0, 0, mvccpb.PUT
+	pResp := &registry.PluginResponse{Action: registry.Put, Succeeded: true}
+
+	for _, evt := range evts {
+		if prevAction != evt.Type {
+			prevAction = evt.Type
+
+			if eIdx > 0 {
+				err := setResponseAndCallback(pResp, kvs[sIdx:eIdx], cb)
+				if err != nil {
+					return err
+				}
+				sIdx = eIdx
+			}
+		}
+
+		if pResp.Revision < evt.Kv.ModRevision {
+			pResp.Revision = evt.Kv.ModRevision
+		}
+		pResp.Action = setKvsAndConvertAction(kvs, eIdx, evt)
+
+		eIdx++
+	}
+
+	if eIdx > 0 {
+		return setResponseAndCallback(pResp, kvs[sIdx:eIdx], cb)
+	}
+	return nil
 }
 
 func setKvsAndConvertAction(kvs []*mvccpb.KeyValue, pIdx int, evt *clientv3.Event) registry.ActionType {
@@ -564,12 +602,12 @@ func setKvsAndConvertAction(kvs []*mvccpb.KeyValue, pIdx int, evt *clientv3.Even
 func setResponseAndCallback(pResp *registry.PluginResponse, kvs []*mvccpb.KeyValue, cb registry.WatchCallback) error {
 	pResp.Count = int64(len(kvs))
 	pResp.Kvs = kvs
+	return cb("key information changed", pResp)
+}
 
-	err := cb("key information changed", pResp)
-	if err != nil {
-		return err
-	}
-	return nil
+func sslEnabled() bool {
+	return core.ServerInfo.Config.SslEnabled &&
+		strings.Index(strings.ToLower(registry.RegistryConfig().ClusterAddresses), "https://") >= 0
 }
 
 func NewRegistry() mgr.PluginInstance {
@@ -581,7 +619,18 @@ func NewRegistry() mgr.PluginInstance {
 	}
 	addrs := strings.Split(registry.RegistryConfig().ClusterAddresses, ",")
 
-	if core.ServerInfo.Config.SslEnabled && strings.Index(registry.RegistryConfig().ClusterAddresses, "https://") >= 0 {
+	endpoints := make([]string, 0, len(addrs))
+	for _, addr := range addrs {
+		if strings.Index(addr, "://") > 0 {
+			// 如果配置格式为"sr-0=http(s)://IP:Port"，则需要分离IP:Port部分
+			endpoints = append(endpoints, addr[strings.Index(addr, "://")+3:])
+		} else {
+			endpoints = append(endpoints, addr)
+		}
+	}
+
+	scheme := "http://"
+	if sslEnabled() {
 		var err error
 		// go client tls限制，提供身份证书、不认证服务端、不校验CN
 		clientTLSConfig, err = sctls.GetClientTLSConfig()
@@ -590,18 +639,9 @@ func NewRegistry() mgr.PluginInstance {
 			inst.err <- err
 			return inst
 		}
+		scheme = "https://"
 	}
-
-	endpoints := []string{}
-	for _, addr := range addrs {
-		if strings.Index(addr, "://") > 0 {
-			// 如果配置格式为"sr-0=http(s)://IP:Port"，则需要分离IP:Port部分
-			endpoints = append(endpoints, addr[strings.Index(addr, "://")+3:])
-		} else {
-			endpoints = append(endpoints, addr)
-		}
-
-	}
+	endpoint = scheme + endpoints[0]
 
 	inv, err := time.ParseDuration(core.ServerInfo.Config.AutoSyncInterval)
 	if err != nil {

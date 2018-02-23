@@ -18,21 +18,21 @@ package plugin
 
 import (
 	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/plugin"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/auditlog"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/auth"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/security"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/tracing"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/uuid"
 	"github.com/astaxie/beego"
+	pg "plugin"
 	"sync"
 )
 
-const (
-	STATIC PluginType = iota
-	DYNAMIC
-)
+const BUILDIN = "buildin"
 
 const (
 	UUID PluginName = iota
@@ -41,6 +41,7 @@ const (
 	CIPHER
 	QUOTA
 	REGISTRY
+	TRACING
 	typeEnd
 )
 
@@ -51,21 +52,13 @@ var pluginNames = map[PluginName]string{
 	CIPHER:    "cipher",
 	QUOTA:     "quota",
 	REGISTRY:  "registry",
+	TRACING:   "trace",
 }
 
 var pluginMgr = &PluginManager{}
 
 func init() {
 	pluginMgr.Initialize()
-}
-
-type PluginType int
-
-func (pt PluginType) String() string {
-	if pt == DYNAMIC {
-		return "dynamic"
-	}
-	return "static"
 }
 
 type PluginName int
@@ -78,7 +71,6 @@ func (pn PluginName) String() string {
 }
 
 type Plugin struct {
-	Type  PluginType
 	PName PluginName
 	Name  string
 	New   func() PluginInstance
@@ -87,6 +79,7 @@ type Plugin struct {
 type PluginInstance interface{}
 
 type wrapInstance struct {
+	dynamic  bool
 	instance PluginInstance
 	lock     sync.RWMutex
 }
@@ -121,7 +114,7 @@ func (pm *PluginManager) Register(p Plugin) {
 	}
 	m[p.Name] = &p
 	pm.plugins[p.PName] = m
-	util.Logger().Infof("%s load '%s' plugin named '%s'", p.Type, p.PName, p.Name)
+	util.Logger().Infof("load '%s' plugin named '%s'", p.PName, p.Name)
 }
 
 func (pm *PluginManager) Get(pn PluginName, name string) *Plugin {
@@ -146,33 +139,42 @@ func (pm *PluginManager) Instance(pn PluginName) PluginInstance {
 		wi.lock.Unlock()
 		return wi.instance
 	}
-	wi.instance = pm.New(pn)
+	pm.New(pn)
 	wi.lock.Unlock()
 
 	return wi.instance
 }
 
-func (pm *PluginManager) New(pn PluginName) PluginInstance {
-	var f func() PluginInstance
+func (pm *PluginManager) New(pn PluginName) {
+	var (
+		title = "static"
+		f     func() PluginInstance
+	)
+
+	wi := pm.instances[pn]
 	p := pm.existDynamicPlugin(pn)
 	if p != nil {
+		wi.dynamic = true
+		title = "dynamic"
 		f = p.New
 	} else {
+		wi.dynamic = false
 		m, ok := pm.plugins[pn]
 		if !ok {
-			return nil
+			return
 		}
 
-		name := beego.AppConfig.DefaultString(pn.String()+"_plugin", "buildin")
+		name := beego.AppConfig.DefaultString(pn.String()+"_plugin", BUILDIN)
 		p, ok = m[name]
 		if !ok {
-			return nil
+			return
 		}
 
 		f = p.New
 	}
-	util.Logger().Infof("new '%s' plugin '%s' instance", p.PName, p.Name)
-	return f()
+	util.Logger().Infof("new '%s' instance from '%s' %s plugin", p.Name, p.PName, title)
+
+	wi.instance = f()
 }
 
 func (pm *PluginManager) Reload(pn PluginName) {
@@ -187,10 +189,8 @@ func (pm *PluginManager) existDynamicPlugin(pn PluginName) *Plugin {
 	if !ok {
 		return nil
 	}
-	for _, p := range m {
-		if p.Type == DYNAMIC {
-			return p
-		}
+	if plugin.PluginLoader().Exist(pn.String()) {
+		return m[BUILDIN]
 	}
 	return nil
 }
@@ -219,10 +219,26 @@ func (pm *PluginManager) Quota() quota.QuotaManager {
 	return pm.Instance(QUOTA).(quota.QuotaManager)
 }
 
+func (pm *PluginManager) Tracing() tracing.Tracing {
+	return pm.Instance(TRACING).(tracing.Tracing)
+}
+
 func Plugins() *PluginManager {
 	return pluginMgr
 }
 
 func RegisterPlugin(p Plugin) {
 	Plugins().Register(p)
+}
+
+func DynamicPluginFunc(pn PluginName, funcName string) pg.Symbol {
+	if wi := Plugins().instances[pn]; !wi.dynamic {
+		return nil
+	}
+
+	f, err := plugin.FindFunc(pn.String(), funcName)
+	if err != nil {
+		util.Logger().Errorf(err, "plugin '%s': not implemented function '%s'.", pn, funcName)
+	}
+	return f
 }

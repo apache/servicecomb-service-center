@@ -30,10 +30,7 @@ type Chain struct {
 func (c *Chain) Init(chainName string, hs []Handler) {
 	c.name = chainName
 	c.currentIndex = -1
-	if len(hs) > 0 {
-		c.handlers = make([]Handler, len(hs))
-		copy(c.handlers, hs)
-	}
+	c.handlers = hs
 }
 
 func (c *Chain) Name() string {
@@ -60,11 +57,10 @@ func (c *Chain) syncNext(i *Invocation) {
 }
 
 func (c *Chain) Next(i *Invocation) {
-	go c.syncNext(i)
+	c.syncNext(i)
 }
 
-func NewChain(name string, handlers []Handler) Chain {
-	var ch Chain
+func NewChain(name string, handlers []Handler) (ch Chain) {
 	ch.Init(name, handlers)
 	return ch
 }

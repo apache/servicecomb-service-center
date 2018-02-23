@@ -28,6 +28,8 @@ import (
 	"net/http"
 )
 
+var resultJSON []byte
+
 const API_VERSION = "4.0.0"
 
 type Result struct {
@@ -41,6 +43,12 @@ type MainService struct {
 }
 
 func init() {
+	result := Result{
+		version.Ver(),
+		API_VERSION,
+		core.ServerInfo.Config,
+	}
+	resultJSON, _ = json.Marshal(result)
 }
 
 func (this *MainService) URLPatterns() []rest.Route {
@@ -64,12 +72,6 @@ func (this *MainService) ClusterHealth(w http.ResponseWriter, r *http.Request) {
 }
 
 func (this *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
-	result := Result{
-		version.Ver(),
-		API_VERSION,
-		core.ServerInfo.Config,
-	}
-	resultJSON, _ := json.Marshal(result)
 	w.Header().Set("Content-Type", "application/json;charset=utf-8")
 	w.Write(resultJSON)
 }

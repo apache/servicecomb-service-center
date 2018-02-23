@@ -28,9 +28,9 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"net/url"
 	"reflect"
 	"time"
-	"net/url"
 )
 
 const (

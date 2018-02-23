@@ -18,6 +18,7 @@ package service
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
@@ -33,7 +34,6 @@ import (
 	"golang.org/x/net/context"
 	"strconv"
 	"time"
-	"errors"
 )
 
 type MicroServiceService struct {
@@ -130,6 +130,7 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 	index := apt.GenerateServiceIndexKey(serviceKey)
 	indexBytes := util.StringToBytesWithNoCopy(index)
 	aliasBytes := util.StringToBytesWithNoCopy(apt.GenerateServiceAliasKey(serviceKey))
+
 	opts := []registry.PluginOp{
 		registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)),
 		registry.OpPut(registry.WithKey(indexBytes), registry.WithStrValue(serviceId)),
@@ -253,13 +254,6 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, serviceId st
 		}
 	}
 
-	//refresh msCache consumerCache, ensure that watch can notify consumers when no cache.
-	err = serviceUtil.RefreshDependencyCache(ctx, domainProject, service)
-	if err != nil {
-		util.Logger().Errorf(err, "%s micro-service failed, serviceId is %s: inner err, refresh service dependency cache failed.", title, serviceId)
-		return pb.CreateResponse(scerr.ErrInternal, "Refresh dependency cache failed."), err
-	}
-
 	serviceKey := &pb.MicroServiceKey{
 		Tenant:      domainProject,
 		Environment: service.Environment,
@@ -277,19 +271,12 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, serviceId st
 	}
 
 	//删除依赖规则
-	lock, err := serviceUtil.DependencyLock(serviceUtil.NewDependencyLockKey(domainProject, service.Environment))
-	if err != nil {
-		util.Logger().Errorf(err, "%s micro-service failed, serviceId is %s: inner err, create lock failed.", title, serviceId)
-		return pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()), err
-	}
-
-	defer lock.Unlock()
-	optsTmp, err := serviceUtil.DeleteDependencyForService(ctx, serviceKey)
+	optDeleteDep, err := serviceUtil.DeleteDependencyForDeleteService(domainProject, serviceId, serviceKey)
 	if err != nil {
 		util.Logger().Errorf(err, "%s micro-service failed, serviceId is %s: inner err, delete dependency failed.", title, serviceId)
 		return pb.CreateResponse(scerr.ErrInternal, err.Error()), err
 	}
-	opts = append(opts, optsTmp...)
+	opts = append(opts, optDeleteDep)
 
 	//删除黑白名单
 	opts = append(opts, registry.OpDel(
@@ -422,10 +409,16 @@ func (s *MicroServiceService) DeleteServices(ctx context.Context, request *pb.De
 	}
 
 	util.Logger().Infof("Batch DeleteServices serviceId = %v , result = %d, ", request.ServiceIds, responseCode)
-	return &pb.DelServicesResponse{
-		Response: pb.CreateResponse(responseCode, "Delete services successfully."),
+
+	resp := &pb.DelServicesResponse{
 		Services: delServiceRspInfo,
-	}, nil
+	}
+	if responseCode != pb.Response_SUCCESS {
+		resp.Response = pb.CreateResponse(responseCode, "Delete services failed.")
+	} else {
+		resp.Response = pb.CreateResponse(responseCode, "Delete services successfully.")
+	}
+	return resp, nil
 }
 
 func (s *MicroServiceService) GetOne(ctx context.Context, in *pb.GetServiceRequest) (*pb.GetServiceResponse, error) {

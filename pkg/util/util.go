@@ -20,10 +20,6 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
-	"golang.org/x/net/context"
-	"net"
-	"net/http"
-	"net/url"
 	"os"
 	"reflect"
 	"runtime"
@@ -32,11 +28,6 @@ import (
 	"time"
 	"unsafe"
 )
-
-func PathExist(path string) bool {
-	_, err := os.Stat(path)
-	return err == nil || os.IsExist(err)
-}
 
 func MinInt(x, y int) int {
 	if x <= y {
@@ -66,155 +57,6 @@ func ClearByteMemory(src []byte) {
 	for idx := 0; idx < l; idx = idx + 1 {
 		src[idx] = 0
 	}
-}
-
-type StringContext struct {
-	parentCtx context.Context
-	kv        map[string]interface{}
-}
-
-func (c *StringContext) Deadline() (deadline time.Time, ok bool) {
-	return c.parentCtx.Deadline()
-}
-
-func (c *StringContext) Done() <-chan struct{} {
-	return c.parentCtx.Done()
-}
-
-func (c *StringContext) Err() error {
-	return c.parentCtx.Err()
-}
-
-func (c *StringContext) Value(key interface{}) interface{} {
-	k, ok := key.(string)
-	if !ok {
-		return c.parentCtx.Value(key)
-	}
-	return c.kv[k]
-}
-
-func (c *StringContext) SetKV(key string, val interface{}) {
-	c.kv[key] = val
-}
-
-func NewStringContext(ctx context.Context) *StringContext {
-	strCtx, ok := ctx.(*StringContext)
-	if !ok {
-		strCtx = &StringContext{
-			parentCtx: ctx,
-			kv:        make(map[string]interface{}, 10),
-		}
-	}
-	return strCtx
-}
-
-func SetContext(ctx context.Context, key string, val interface{}) context.Context {
-	strCtx := NewStringContext(ctx)
-	strCtx.SetKV(key, val)
-	return strCtx
-}
-
-func CloneContext(ctx context.Context) context.Context {
-	strCtx := &StringContext{
-		parentCtx: ctx,
-		kv:        make(map[string]interface{}, 10),
-	}
-
-	old, ok := ctx.(*StringContext)
-	if !ok {
-		return strCtx
-	}
-
-	for k, v := range old.kv {
-		strCtx.kv[k] = v
-	}
-	return strCtx
-}
-
-func FromContext(ctx context.Context, key string) interface{} {
-	return ctx.Value(key)
-}
-
-func SetRequestContext(r *http.Request, key string, val interface{}) *http.Request {
-	ctx := r.Context()
-	ctx = SetContext(ctx, key, val)
-	if ctx != r.Context() {
-		nr := r.WithContext(ctx)
-		*r = *nr
-	}
-	return r
-}
-
-func ParseDomainProject(ctx context.Context) string {
-	return ParseDomain(ctx) + "/" + ParseProject(ctx)
-}
-
-func ParseTargetDomainProject(ctx context.Context) string {
-	return ParseTargetDomain(ctx) + "/" + ParseTargetProject(ctx)
-}
-
-func ParseDomain(ctx context.Context) string {
-	v, ok := FromContext(ctx, "domain").(string)
-	if !ok {
-		return ""
-	}
-	return v
-}
-
-func ParseTargetDomain(ctx context.Context) string {
-	v, _ := FromContext(ctx, "target-domain").(string)
-	if len(v) == 0 {
-		return ParseDomain(ctx)
-	}
-	return v
-}
-
-func ParseProject(ctx context.Context) string {
-	v, ok := FromContext(ctx, "project").(string)
-	if !ok {
-		return ""
-	}
-	return v
-}
-
-func ParseTargetProject(ctx context.Context) string {
-	v, _ := FromContext(ctx, "target-project").(string)
-	if len(v) == 0 {
-		return ParseProject(ctx)
-	}
-	return v
-}
-
-func SetDomain(ctx context.Context, domain string) context.Context {
-	return SetContext(ctx, "domain", domain)
-}
-
-func SetProject(ctx context.Context, project string) context.Context {
-	return SetContext(ctx, "project", project)
-}
-
-func SetTargetDomain(ctx context.Context, domain string) context.Context {
-	return SetContext(ctx, "target-domain", domain)
-}
-
-func SetTargetProject(ctx context.Context, project string) context.Context {
-	return SetContext(ctx, "target-project", project)
-}
-
-func SetDomainProject(ctx context.Context, domain string, project string) context.Context {
-	return SetProject(SetDomain(ctx, domain), project)
-}
-
-func SetTargetDomainProject(ctx context.Context, domain string, project string) context.Context {
-	return SetTargetProject(SetTargetDomain(ctx, domain), project)
-}
-
-func GetIPFromContext(ctx context.Context) string {
-	v, ok := FromContext(ctx, "x-remote-ip").(string)
-	if !ok {
-		return ""
-	}
-	return v
 }
 
 func DeepCopy(dst, src interface{}) error {
@@ -325,37 +167,6 @@ func GetCaller(skip int) (string, string, int, bool) {
 	return file, method, line, ok
 }
 
-func ParseEndpoint(ep string) (string, error) {
-	u, err := url.Parse(ep)
-	if err != nil {
-		return "", err
-	}
-	port := u.Port()
-	if len(port) > 0 {
-		return u.Hostname() + ":" + port, nil
-	}
-	return u.Hostname(), nil
-}
-
-func GetRealIP(r *http.Request) string {
-	for _, h := range [2]string{"X-Forwarded-For", "X-Real-Ip"} {
-		addresses := strings.Split(r.Header.Get(h), ",")
-		for _, ip := range addresses {
-			ip = strings.TrimSpace(ip)
-			realIP := net.ParseIP(ip)
-			if !realIP.IsGlobalUnicast() {
-				continue
-			}
-			return ip
-		}
-	}
-	addrs := strings.Split(r.RemoteAddr, ":")
-	if len(addrs) > 0 {
-		return addrs[0]
-	}
-	return ""
-}
-
 func BytesToInt32(bs []byte) (in int32) {
 	l := len(bs)
 	if l > 4 || l == 0 {
@@ -376,18 +187,6 @@ func BytesToInt32(bs []byte) (in int32) {
 	return
 }
 
-func UrlEncode(keys map[string]string) string {
-	l := len(keys)
-	if l == 0 {
-		return ""
-	}
-	arr := make([]string, 0, l)
-	for k, v := range keys {
-		arr = append(arr, url.QueryEscape(k)+"="+url.QueryEscape(v))
-	}
-	return StringJoin(arr, "&")
-}
-
 func FormatFuncName(f string) string {
 	i := strings.LastIndex(f, "/")
 	j := strings.Index(f[i+1:], ".")
@@ -401,4 +200,13 @@ func FormatFuncName(f string) string {
 
 func FuncName(f interface{}) string {
 	return runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
+}
+
+func SliceHave(arr []string, str string) bool {
+	for _, item := range arr {
+		if item == str {
+			return true
+		}
+	}
+	return false
 }

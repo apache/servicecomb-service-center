@@ -102,7 +102,6 @@ func (this *MicroServiceService) Unregister(w http.ResponseWriter, r *http.Reque
 
 func (this *MicroServiceService) GetServices(w http.ResponseWriter, r *http.Request) {
 	request := &pb.GetServicesRequest{}
-	util.Logger().Debugf("domain is %s", util.ParseDomain(r.Context()))
 	resp, _ := core.ServiceAPI.GetServices(r.Context(), request)
 	respInternal := resp.Response
 	resp.Response = nil

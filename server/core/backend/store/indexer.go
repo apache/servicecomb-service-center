@@ -264,11 +264,6 @@ func (i *Indexer) deletePrefixKey(prefix, key string) {
 	if !ok {
 		return
 	}
-	// remove child
-	for k := range i.prefixIndex[key] {
-		i.deletePrefixKey(key, k)
-	}
-
 	delete(m, key)
 
 	// remove parent which has no child

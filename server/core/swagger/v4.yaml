@@ -90,7 +90,7 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
-          type: string
+          type: integer
           default: 0
       tags:
         - microservices
@@ -117,6 +117,10 @@ paths:
           required: true
           type: string
           default: default
+        - name: project
+          in: path
+          required: true
+          type: string
         - name: serviceId
           in: path
           description: 微服务唯一标识。
@@ -158,7 +162,7 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
-          type: string
+          type: integer
           default: 0
       responses:
         200:
@@ -183,6 +187,10 @@ paths:
           required: true
           type: string
           default: default
+        - name: project
+          in: path
+          required: true
+          type: string
         - name: service
           in: body
           description: 创建微服务请求结构体。
@@ -209,6 +217,10 @@ paths:
         批量删除指定的微服务定义及其相关信息，同时注销其所有实例信息。
       operationId: deleteServices
       parameters:
+        - name: project
+          in: path
+          required: true
+          type: string
         - name: serviceIds
           in: body
           description: 批量删除服务的服务ID列表
@@ -315,6 +327,10 @@ paths:
           required: true
           type: string
           default: default
+        - name: project
+          in: path
+          required: true
+          type: string
         - name: serviceId
           in: path
           description: 微服务唯一标识。
@@ -323,7 +339,7 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
-          type: string
+          type: integer
           default: 0
       tags:
         - microservices
@@ -394,6 +410,10 @@ paths:
           required: true
           type: string
           default: default
+        - name: project
+          in: path
+          required: true
+          type: string
         - name: serviceId
           in: path
           description: 微服务唯一标识。
@@ -469,6 +489,10 @@ paths:
           required: true
           type: string
           default: default
+        - name: project
+          in: path
+          required: true
+          type: string
         - name: serviceId
           in: path
           description: 微服务唯一标识。
@@ -477,7 +501,7 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
-          type: string
+          type: integer
           default: 0
       tags:
         - microservices
@@ -551,6 +575,10 @@ paths:
           required: true
           type: string
           default: default
+        - name: project
+          in: path
+          required: true
+          type: string
         - name: serviceId
           in: path
           description: 微服务唯一标识。
@@ -604,7 +632,7 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
-          type: string
+          type: integer
           default: 0
       tags:
         - microservices
@@ -635,6 +663,10 @@ paths:
           required: true
           type: string
           default: default
+        - name: project
+          in: path
+          required: true
+          type: string
         - name: serviceId
           in: path
           description: 微服务唯一标识。
@@ -675,6 +707,10 @@ paths:
           required: true
           type: string
           default: default
+        - name: project
+          in: path
+          required: true
+          type: string
         - name: serviceId
           in: path
           description: 微服务唯一标识。
@@ -759,7 +795,7 @@ paths:
         - name: withSchema
           in: query
           description: 是否查询schema，0只显示summary，1同时显示schema。
-          type: string
+          type: integer
           default: 0
       tags:
         - microservices
@@ -868,7 +904,7 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
-          type: string
+          type: integer
           default: 0
       tags:
         - dependency
@@ -907,7 +943,7 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
-          type: string
+          type: integer
           default: 0
       tags:
         - dependency
@@ -976,7 +1012,7 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
-          type: string
+          type: integer
           default: 0
       tags:
         - schemas
@@ -1048,6 +1084,10 @@ paths:
           required: true
           type: string
           default: default
+        - name: project
+          in: path
+          required: true
+          type: string
         - name: X-ConsumerId
           in: header
           description: 微服务消费者的微服务唯一标识。
@@ -1069,7 +1109,7 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
-          type: string
+          type: integer
           default: 0
       tags:
         - instances
@@ -1138,6 +1178,10 @@ paths:
           description: 微服务消费者的微服务唯一标识。
           required: true
           type: string
+        - name: project
+          in: path
+          required: true
+          type: string
         - name: serviceId
           in: path
           description: 微服务唯一标识。
@@ -1159,7 +1203,7 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
-          type: string
+          type: integer
           default: 0
       tags:
         - instances
@@ -1334,7 +1378,7 @@ paths:
   /v4/{project}/registry/instances:
     get:
       description: |
-        实例注册后可以根据微服务版本规则或字段条件 发现该微服务的实例。
+        实例注册后可以根据微服务版本规则或字段条件 发现该微服务的实例。同时会将此微服务版本规则记录到依赖关系中，当发现相同微服务的不同版本规则时，会覆盖已有的依赖关系。
       operationId: find
       parameters:
         - name: x-domain-name
@@ -1376,7 +1420,7 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
-          type: string
+          type: integer
           default: 0
       tags:
         - instances
@@ -1857,6 +1901,9 @@ definitions:
       serviceId:
         type: string
         description: 微服务唯一标识，创建实例时，以url里面的为准，不用这里的serviceId。
+      version:
+        type: string
+        description: 微服务版本号
       hostName:
         type: string
       endpoints:
@@ -2121,13 +2168,11 @@ definitions:
      type: object
      properties:
         service:
-         description: 单个服务信息
          $ref: "#/definitions/ServiceDetail"
   ServiceDetail:
      type: object
      properties:
        microservice:
-         description: 静态服务信息
          $ref: "#/definitions/MicroService"
        instances:
          type: array
@@ -2168,11 +2213,10 @@ definitions:
      type: object
      properties:
        nodes:
-         description: 图里面的节点信息
          $ref: "#/definitions/Nodes"
   Nodes:
      type: array
-     description: 节点信息
+     description: 图里面的节点信息
      items:
        $ref: "#/definitions/Node"
   Node:
@@ -2213,20 +2257,16 @@ definitions:
          items:
            $ref: "#/definitions/ServiceDetail"
        statistics:
-         description: 静态信息，包含服务个数，实例个数，有实例的服务个数，应用个数等
-         type: object
          $ref: "#/definitions/Statistics"
   Statistics:
      type: object
+     description: 静态信息，包含服务个数，实例个数，有实例的服务个数，应用个数等
      properties:
        services:
-         description: 微服务个数
          $ref: "#/definitions/StService"
        instances:
-         description: 实例个数
          $ref: "#/definitions/StInstance"
        apps:
-         description: 应用个数
          $ref: "#/definitions/StApp"
   StService:
      type: object

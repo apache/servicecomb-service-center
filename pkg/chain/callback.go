@@ -17,7 +17,6 @@
 package chain
 
 import (
-	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 )
 
@@ -31,28 +30,33 @@ func (r Result) String() string {
 	if r.OK {
 		return "OK"
 	}
-	return fmt.Sprintf("FAIL(error: %s)", r.Err)
+	return r.Err.Error()
 }
 
 type Callback struct {
-	Func func(r Result)
+	Func  func(r Result)
+	Async bool
 }
 
 func (cb *Callback) Invoke(r Result) {
-	go cb.syncInvoke(r)
+	if cb.Async {
+		go syncInvoke(cb.Func, r)
+		return
+	}
+	syncInvoke(cb.Func, r)
 }
 
-func (cb *Callback) syncInvoke(r Result) {
+func syncInvoke(f func(r Result), r Result) {
 	defer func() {
 		if itf := recover(); itf != nil {
 			util.LogPanic(itf)
 		}
 	}()
-	if cb.Func == nil {
+	if f == nil {
 		util.Logger().Errorf(nil, "Callback function is nil. result: %s,", r)
 		return
 	}
-	cb.Func(r)
+	f(r)
 }
 
 func (cb *Callback) Fail(err error, args ...interface{}) {

@@ -23,6 +23,7 @@ import (
 	errorsEx "github.com/apache/incubator-servicecomb-service-center/pkg/errors"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -32,6 +33,7 @@ type URLPattern struct {
 }
 
 type urlPatternHandler struct {
+	Name string
 	Path string
 	http.Handler
 }
@@ -67,7 +69,8 @@ func (this *ROAServerHandler) addRoute(route *Route) (err error) {
 		return errors.New(message)
 	}
 
-	this.handlers[method] = append(this.handlers[method], &urlPatternHandler{route.Path, http.HandlerFunc(route.Func)})
+	this.handlers[method] = append(this.handlers[method], &urlPatternHandler{
+		util.FormatFuncName(util.FuncName(route.Func)), route.Path, http.HandlerFunc(route.Func)})
 	util.Logger().Infof("register route %s(%s).", route.Path, method)
 
 	return nil
@@ -77,7 +80,7 @@ func (this *ROAServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	for _, ph := range this.handlers[r.Method] {
 		if params, ok := ph.try(r.URL.Path); ok {
 			if len(params) > 0 {
-				r.URL.RawQuery = util.UrlEncode(params) + "&" + r.URL.RawQuery
+				r.URL.RawQuery = params + r.URL.RawQuery
 			}
 
 			this.serve(ph, w, r)
@@ -120,14 +123,13 @@ func (this *ROAServerHandler) serve(ph *urlPatternHandler, w http.ResponseWriter
 		*r = *nr
 	}
 
-	ch := make(chan struct{})
 	inv := chain.NewInvocation(ctx, chain.NewChain(SERVER_CHAIN_NAME, hs))
 	inv.WithContext(CTX_RESPONSE, w).
 		WithContext(CTX_REQUEST, r).
-		WithContext(CTX_MATCH_PATTERN, ph.Path)
-	inv.Invoke(func(ret chain.Result) {
+		WithContext(CTX_MATCH_PATTERN, ph.Path).
+		WithContext(CTX_MATCH_FUNC, ph.Name)
+	inv.Next(chain.WithFunc(func(ret chain.Result) {
 		defer func() {
-			defer close(ch)
 			err := ret.Err
 			itf := recover()
 			if itf != nil {
@@ -147,11 +149,10 @@ func (this *ROAServerHandler) serve(ph *urlPatternHandler, w http.ResponseWriter
 		if ret.OK {
 			ph.ServeHTTP(w, r)
 		}
-	})
-	<-ch
+	}))
 }
 
-func (this *urlPatternHandler) try(path string) (p map[string]string, _ bool) {
+func (this *urlPatternHandler) try(path string) (p string, _ bool) {
 	var i, j int
 	l, sl := len(this.Path), len(path)
 	for i < sl {
@@ -160,7 +161,7 @@ func (this *urlPatternHandler) try(path string) (p map[string]string, _ bool) {
 			if this.Path != "/" && l > 0 && this.Path[l-1] == '/' {
 				return p, true
 			}
-			return nil, false
+			return "", false
 		case this.Path[j] == ':':
 			var val string
 			var nextc byte
@@ -168,19 +169,16 @@ func (this *urlPatternHandler) try(path string) (p map[string]string, _ bool) {
 			_, nextc, j = match(this.Path, isAlnum, 0, j+1)
 			val, _, i = match(path, matchParticial, nextc, i)
 
-			if p == nil {
-				p = make(map[string]string, 5)
-			}
-			p[this.Path[o:j]] = val
+			p += url.QueryEscape(this.Path[o:j]) + "=" + url.QueryEscape(val) + "&"
 		case path[i] == this.Path[j]:
 			i++
 			j++
 		default:
-			return nil, false
+			return "", false
 		}
 	}
 	if j != l {
-		return nil, false
+		return "", false
 	}
 	return p, true
 }

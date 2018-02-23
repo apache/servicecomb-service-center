@@ -124,13 +124,6 @@ func (s *KvStore) Initialize() {
 
 func (s *KvStore) dispatchEvent(t StoreType, evt *KvEvent) {
 	s.indexers[t].OnCacheEvent(evt)
-	select {
-	case <-s.Ready():
-	default:
-		if evt.Action == pb.EVT_CREATE {
-			evt.Action = pb.EVT_INIT
-		}
-	}
 	EventProxy(t).OnEvent(evt)
 }
 

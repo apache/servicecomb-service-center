@@ -28,7 +28,7 @@ import (
 )
 
 func init() {
-	util.InitLogger("async_task_test", &lager.Config{
+	util.InitGlobalLogger("async_task_test", &log.Config{
 		LoggerLevel:   "DEBUG",
 		LoggerFile:    "",
 		EnableRsyslog: false,

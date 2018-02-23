@@ -69,7 +69,7 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
-          type: string
+          type: integer
           default: 0
       tags:
         - microservices
@@ -134,7 +134,7 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
-          type: string
+          type: integer
           default: 0
       responses:
         200:
@@ -293,7 +293,7 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
-          type: string
+          type: integer
           default: 0
       tags:
         - microservices
@@ -441,7 +441,7 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
-          type: string
+          type: integer
           default: 0
       tags:
         - microservices
@@ -562,7 +562,7 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
-          type: string
+          type: integer
           default: 0
       tags:
         - microservices
@@ -710,7 +710,7 @@ paths:
         - name: withSchema
           in: query
           description: 是否查询schema，0只显示summary，1同时显示schema。
-          type: string
+          type: integer
           default: 0
       tags:
         - microservices
@@ -810,7 +810,7 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
-          type: string
+          type: integer
           default: 0
       tags:
         - dependency
@@ -846,7 +846,7 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
-          type: string
+          type: integer
           default: 0
       tags:
         - dependency
@@ -912,7 +912,7 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
-          type: string
+          type: integer
           default: 0
       tags:
         - schemas
@@ -1002,7 +1002,7 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
-          type: string
+          type: integer
           default: 0
       tags:
         - instances
@@ -1089,7 +1089,7 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
-          type: string
+          type: integer
           default: 0
       tags:
         - instances
@@ -1252,7 +1252,7 @@ paths:
   /registry/v3/instances:
     get:
       description: |
-        实例注册后可以根据微服务版本规则或字段条件 发现该微服务的实例。
+        实例注册后可以根据微服务版本规则或字段条件 发现该微服务的实例。同时会将此微服务版本规则记录到依赖关系中，当发现相同微服务的不同版本规则时，会覆盖已有的依赖关系。
       operationId: find
       parameters:
         - name: x-domain-name
@@ -1291,7 +1291,7 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
-          type: string
+          type: integer
           default: 0
       tags:
         - instances
@@ -1593,6 +1593,9 @@ definitions:
       serviceId:
         type: string
         description: 微服务唯一标识，创建实例时，以url里面的为准，不用这里的serviceId。
+      version:
+        type: string
+        description: 微服务版本号
       hostName:
         type: string
       endpoints:

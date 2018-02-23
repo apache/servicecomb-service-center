@@ -44,7 +44,7 @@ var embedTLSConfig *tls.Config
 const START_MANAGER_SERVER_TIMEOUT = 60
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{mgr.STATIC, mgr.REGISTRY, "embeded_etcd", getEmbedInstance})
+	mgr.RegisterPlugin(mgr.Plugin{mgr.REGISTRY, "embeded_etcd", getEmbedInstance})
 }
 
 type EtcdEmbed struct {

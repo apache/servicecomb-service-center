@@ -26,7 +26,7 @@ import (
 var deh event.DependencyEventHandler
 
 var _ = Describe("'Dependency' service", func() {
-	Describe("execute 'create' operartion", func() {
+	Describe("execute 'create' operation", func() {
 		var (
 			consumerId1 string
 			consumerId2 string
@@ -283,8 +283,21 @@ var _ = Describe("'Dependency' service", func() {
 					Version:     "1.0.0",
 				}
 
-				By("add latest")
+				By("add provider is empty")
 				respCreateDependency, err := serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
+					Dependencies: []*pb.ConsumerDependency{
+						{
+							Consumer: consumer,
+							Providers: []*pb.MicroServiceKey{
+							},
+						},
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(respCreateDependency.Response.Code).To(Equal(pb.Response_SUCCESS))
+
+				By("add latest")
+				respCreateDependency, err = serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
 					Dependencies: []*pb.ConsumerDependency{
 						{
 							Consumer: consumer,
