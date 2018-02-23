@@ -69,7 +69,7 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
-          type: string
+          type: integer
           default: 0
       tags:
         - microservices
@@ -134,7 +134,7 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
-          type: string
+          type: integer
           default: 0
       responses:
         200:
@@ -293,7 +293,7 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
-          type: string
+          type: integer
           default: 0
       tags:
         - microservices
@@ -441,7 +441,7 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
-          type: string
+          type: integer
           default: 0
       tags:
         - microservices
@@ -562,7 +562,7 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
-          type: string
+          type: integer
           default: 0
       tags:
         - microservices
@@ -710,7 +710,7 @@ paths:
         - name: withSchema
           in: query
           description: 是否查询schema，0只显示summary，1同时显示schema。
-          type: string
+          type: integer
           default: 0
       tags:
         - microservices
@@ -810,7 +810,7 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
-          type: string
+          type: integer
           default: 0
       tags:
         - dependency
@@ -846,7 +846,7 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
-          type: string
+          type: integer
           default: 0
       tags:
         - dependency
@@ -912,7 +912,7 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
-          type: string
+          type: integer
           default: 0
       tags:
         - schemas
@@ -1002,7 +1002,7 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
-          type: string
+          type: integer
           default: 0
       tags:
         - instances
@@ -1089,7 +1089,7 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
-          type: string
+          type: integer
           default: 0
       tags:
         - instances
@@ -1291,7 +1291,7 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
-          type: string
+          type: integer
           default: 0
       tags:
         - instances
