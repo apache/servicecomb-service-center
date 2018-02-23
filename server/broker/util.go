@@ -24,11 +24,9 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 
-	"github.com/apache/incubator-servicecomb-service-center/pkg/cache"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/lager"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/lager/core"
+	"github.com/ServiceComb/paas-lager"
+	"github.com/ServiceComb/paas-lager/third_party/forked/cloudfoundry/lager"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	backend "github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
@@ -37,8 +35,7 @@ import (
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 )
 
-var PactLogger core.Logger
-var brokerCache *cache.Cache
+var PactLogger lager.Logger
 
 const (
 	BROKER_HOME_URL                      = "/"
@@ -90,16 +87,13 @@ var brokerAPILinksTitles = map[string]string{
 }
 
 func init() {
-	//define broker objects cache
-	d, _ := time.ParseDuration("2m")
-	brokerCache = cache.New(d, d)
 	//define Broker logger
-	lager.Init(lager.Config{
+	stlager.Init(stlager.Config{
 		LoggerLevel:   "INFO",
 		LoggerFile:    "broker_srvc.log",
 		EnableRsyslog: false,
 	})
-	PactLogger = lager.NewLogger("broker_srvc")
+	PactLogger = stlager.NewLogger("broker_srvc")
 }
 
 func GetDefaultTenantProject() string {
@@ -159,17 +153,11 @@ func CreateBrokerHomeResponse(host string, scheme string) *BrokerHomeResponse {
 
 //GetBrokerHomeResponse gets the homeResponse from cache if it exists
 func GetBrokerHomeResponse(host string, scheme string) *BrokerHomeResponse {
-	brokerResponse, ok := brokerCache.Get(scheme + "://" + host)
-	if !ok {
-		brokerResp := CreateBrokerHomeResponse(host, scheme)
-		if brokerResp == nil {
-			return nil
-		}
-		d, _ := time.ParseDuration("10m")
-		brokerCache.Set(scheme+"://"+host, brokerResp, d)
-		return brokerResp
+	brokerResp := CreateBrokerHomeResponse(host, scheme)
+	if brokerResp == nil {
+		return nil
 	}
-	return brokerResponse.(*BrokerHomeResponse)
+	return brokerResp
 }
 
 //GetBrokerParticipantUtils returns the participant from ETCD
@@ -349,7 +337,7 @@ func StoreData(ctx context.Context, key string, value string) error {
 	return err
 }
 
-func CreateParticipant(pactLogger core.Logger, ctx context.Context, participantKey string, participant Participant) (*PublishPactResponse, error) {
+func CreateParticipant(pactLogger lager.Logger, ctx context.Context, participantKey string, participant Participant) (*PublishPactResponse, error) {
 	data, err := json.Marshal(participant)
 	if err != nil {
 		PactLogger.Errorf(nil, "pact publish failed, participant cannot be created.")
@@ -383,7 +371,7 @@ func CreateParticipant(pactLogger core.Logger, ctx context.Context, participantK
 	return nil, nil
 }
 
-func CreateVersion(pactLogger core.Logger, ctx context.Context, versionKey string,
+func CreateVersion(pactLogger lager.Logger, ctx context.Context, versionKey string,
 	version Version) (*PublishPactResponse, error) {
 	data, err := json.Marshal(version)
 	if err != nil {
@@ -416,7 +404,7 @@ func CreateVersion(pactLogger core.Logger, ctx context.Context, versionKey strin
 	return nil, nil
 }
 
-func CreatePact(pactLogger core.Logger, ctx context.Context,
+func CreatePact(pactLogger lager.Logger, ctx context.Context,
 	pactKey string, pact Pact) (*PublishPactResponse, error) {
 	data, err := json.Marshal(pact)
 	if err != nil {
@@ -451,7 +439,7 @@ func CreatePact(pactLogger core.Logger, ctx context.Context,
 	return nil, nil
 }
 
-func CreatePactVersion(pactLogger core.Logger, ctx context.Context, pactVersionKey string, pactVersion PactVersion) (*PublishPactResponse, error) {
+func CreatePactVersion(pactLogger lager.Logger, ctx context.Context, pactVersionKey string, pactVersion PactVersion) (*PublishPactResponse, error) {
 	data, err := json.Marshal(pactVersion)
 	if err != nil {
 		PactLogger.Errorf(nil, "pact publish failed, pact version cannot be created.")
@@ -482,7 +470,7 @@ func CreatePactVersion(pactLogger core.Logger, ctx context.Context, pactVersionK
 	return nil, nil
 }
 
-func CreateVerification(pactLogger core.Logger, ctx context.Context,
+func CreateVerification(pactLogger lager.Logger, ctx context.Context,
 	verificationKey string, verification Verification) (*PublishVerificationResponse, error) {
 	data, err := json.Marshal(verification)
 	if err != nil {

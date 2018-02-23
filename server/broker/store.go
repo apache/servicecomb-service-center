@@ -141,6 +141,11 @@ func (s *BKvStore) Run() {
 	s.basyncTaskSvc.Run()
 }
 
+func (s *BKvStore) Ready() <-chan struct{} {
+	<-s.basyncTaskSvc.Ready()
+	return s.bready
+}
+
 func (s *BKvStore) Participant() *sstore.Indexer {
 	return s.bindexers[PARTICIPANT]
 }
