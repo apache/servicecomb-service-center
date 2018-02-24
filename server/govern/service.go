@@ -365,25 +365,27 @@ func statistics(ctx context.Context) (*pb.Statistics, error) {
 	key := apt.GetServiceIndexRootKey(domainProject) + "/"
 	svcOpts := append(opts,
 		registry.WithStrKey(key),
-		registry.WithPrefix(),
-		registry.WithKeyOnly())
+		registry.WithPrefix())
 	respSvc, err := store.Store().ServiceIndex().Search(ctx, svcOpts...)
 	if err != nil {
 		return nil, err
 	}
 
-	app := make(map[string]interface{}, respSvc.Count)
-	svcWithNonVersion := make(map[string]interface{}, respSvc.Count)
+	app := make(map[string]struct{}, respSvc.Count)
+	svcWithNonVersion := make(map[string]struct{}, respSvc.Count)
+	svcIdToNonVerKey := make(map[string]string, respSvc.Count)
 	for _, kv := range respSvc.Kvs {
-		key, _ := pb.GetInfoFromSvcIndexKV(kv)
-
+		key, val := pb.GetInfoFromSvcIndexKV(kv)
 		if _, ok := app[key.AppId]; !ok {
-			app[key.AppId] = nil
+			app[key.AppId] = struct{}{}
 		}
 
 		key.Version = ""
 		svcWithNonVersionKey := apt.GenerateServiceIndexKey(key)
-		svcWithNonVersion[svcWithNonVersionKey] = nil
+		if _, ok := svcWithNonVersion[svcWithNonVersionKey]; !ok {
+			svcWithNonVersion[svcWithNonVersionKey] = struct{}{}
+		}
+		svcIdToNonVerKey[util.BytesToStringWithNoCopy(val)] = svcWithNonVersionKey
 	}
 
 	result.Services.Count = int64(len(svcWithNonVersion))
@@ -400,11 +402,15 @@ func statistics(ctx context.Context) (*pb.Statistics, error) {
 		return nil, err
 	}
 
-	onlineServices := make(map[string]interface{}, respSvc.Count)
+	onlineServices := make(map[string]struct{}, respSvc.Count)
 	for _, kv := range respIns.Kvs {
 		serviceId, _, _, _ := pb.GetInfoFromInstKV(kv)
-		if _, ok := onlineServices[serviceId]; !ok {
-			onlineServices[serviceId] = nil
+		key, ok := svcIdToNonVerKey[serviceId]
+		if !ok {
+			continue
+		}
+		if _, ok := onlineServices[key]; !ok {
+			onlineServices[key] = struct{}{}
 		}
 	}
 	result.Instances.Count = respIns.Count
