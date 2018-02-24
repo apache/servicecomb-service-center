@@ -21,13 +21,13 @@ Apache ServiceComb (incubating) service-center allows services to register their
 
 ### Getting Service Center
 
-The easiest way to get Service Center is to use one of the pre-built release binaries which are available for Linux, Windows and Docker. Instructions for using these binaries are on the [GitHub releases page][github-release].
+The easiest way to get Service Center is to use one of the pre-built release binaries which are available for Linux, Windows and Docker. Instructions for using these binaries are on the [Apache SVN page][github-release].
 
-[github-release]: https://github.com/servicecomb/service-center/releases/
+[github-release]: https://dist.apache.org/repos/dist/dev/incubator/servicecomb/incubator-servicecomb-service-center/
 
 ### Running Service Center using the Release
 
-You can download our latest release from [GitHub releases page][github-release]).When you get these release, you can execute the start script to run Service Center.
+You can download our latest release from [Apache SVN][github-release]).When you get these release, you can execute the start script to run Service Center.
 
 Windows(apache-incubator-servicecomb-service-center-XXX-windows-amd64.zip):
 ```
