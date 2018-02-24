@@ -65,29 +65,29 @@ build_linux(){
     fi
 
     set +e
-    rm -rf apache-incubator-servicecomb-frontend-service-center-$PACKAGElinux-amd64
-    rm -rf apache-incubator-servicecomb-frontend-service-center-$PACKAGElinux-amd64.tar.gz
+    rm -rf apache-incubator-servicecomb-frontend-service-center-$PACKAGE-linux-amd64
+    rm -rf apache-incubator-servicecomb-frontend-service-center-$PACKAGE-linux-amd64.tar.gz
 
     set -e
-    mkdir -p apache-incubator-servicecomb-frontend-service-center-$PACKAGElinux-amd64
+    mkdir -p apache-incubator-servicecomb-frontend-service-center-$PACKAGE-linux-amd64
 
     export GOOS=linux
     cd frontend
     go build -o apache-incubator-serviceomb-frontend
-    cp -r apache-incubator-serviceomb-frontend ../apache-incubator-servicecomb-frontend-service-center-$PACKAGElinux-amd64
+    cp -r apache-incubator-serviceomb-frontend ../apache-incubator-servicecomb-frontend-service-center-$PACKAGE-linux-amd64
     cd ..
     prepare_conf
-    cp -r tmp/conf apache-incubator-servicecomb-frontend-service-center-$PACKAGElinux-amd64/
-    cp -r frontend/app apache-incubator-servicecomb-frontend-service-center-$PACKAGElinux-amd64/
-    echo "./apache-incubator-serviceomb-frontend > start-sc-frontend.log 2>&1 &" >> apache-incubator-servicecomb-frontend-service-center-$PACKAGElinux-amd64/start.sh
-    echo "kill -9 \$(ps aux | grep 'apache-incubator-serviceomb-frontend' | awk '{print \$2}')" >> apache-incubator-servicecomb-frontend-service-center-$PACKAGElinux-amd64/stop.sh
-    chmod +x apache-incubator-servicecomb-frontend-service-center-$PACKAGElinux-amd64/start.sh
-    chmod +x apache-incubator-servicecomb-frontend-service-center-$PACKAGElinux-amd64/stop.sh
-    cp -r LICENSE apache-incubator-servicecomb-frontend-service-center-$PACKAGElinux-amd64/
-    cp -r NOTICE apache-incubator-servicecomb-frontend-service-center-$PACKAGElinux-amd64/
-    cp -r DISCLAIMER apache-incubator-servicecomb-frontend-service-center-$PACKAGElinux-amd64/
-    cp -r frontend/Readme.md apache-incubator-servicecomb-frontend-service-center-$PACKAGElinux-amd64/
-    tar -czvf apache-incubator-servicecomb-frontend-service-center-$PACKAGElinux-amd64.tar.gz apache-incubator-servicecomb-frontend-service-center-$PACKAGElinux-amd64
+    cp -r tmp/conf apache-incubator-servicecomb-frontend-service-center-$PACKAGE-linux-amd64/
+    cp -r frontend/app apache-incubator-servicecomb-frontend-service-center-$PACKAGE-linux-amd64/
+    echo "./apache-incubator-serviceomb-frontend > start-sc-frontend.log 2>&1 &" >> apache-incubator-servicecomb-frontend-service-center-$PACKAGE-linux-amd64/start.sh
+    echo "kill -9 \$(ps aux | grep 'apache-incubator-serviceomb-frontend' | awk '{print \$2}')" >> apache-incubator-servicecomb-frontend-service-center-$PACKAGE-linux-amd64/stop.sh
+    chmod +x apache-incubator-servicecomb-frontend-service-center-$PACKAGE-linux-amd64/start.sh
+    chmod +x apache-incubator-servicecomb-frontend-service-center-$PACKAGE-linux-amd64/stop.sh
+    cp -r LICENSE apache-incubator-servicecomb-frontend-service-center-$PACKAGE-linux-amd64/
+    cp -r NOTICE apache-incubator-servicecomb-frontend-service-center-$PACKAGE-linux-amd64/
+    cp -r DISCLAIMER apache-incubator-servicecomb-frontend-service-center-$PACKAGE-linux-amd64/
+    cp -r frontend/Readme.md apache-incubator-servicecomb-frontend-service-center-$PACKAGE-linux-amd64/
+    tar -czvf apache-incubator-servicecomb-frontend-service-center-$PACKAGE-linux-amd64.tar.gz apache-incubator-servicecomb-frontend-service-center-$PACKAGE-linux-amd64
 
 }
 
@@ -101,25 +101,25 @@ build_windows(){
     fi
 
     set +e
-    rm -rf apache-incubator-servicecomb-frontend-service-center-$PACKAGEwindows-amd64
-    rm -rf apache-incubator-servicecomb-frontend-service-center-$PACKAGEwindows-amd64.zip
+    rm -rf apache-incubator-servicecomb-frontend-service-center-$PACKAGE-windows-amd64
+    rm -rf apache-incubator-servicecomb-frontend-service-center-$PACKAGE-windows-amd64.zip
 
     set -e
-    mkdir -p apache-incubator-servicecomb-frontend-service-center-$PACKAGEwindows-amd64
+    mkdir -p apache-incubator-servicecomb-frontend-service-center-$PACKAGE-windows-amd64
     export GOOS=windows
     cd frontend
     go build -o apache-incubator-serviceomb-frontend.exe
-    cp -r apache-incubator-serviceomb-frontend.exe ../apache-incubator-servicecomb-frontend-service-center-$PACKAGEwindows-amd64
+    cp -r apache-incubator-serviceomb-frontend.exe ../apache-incubator-servicecomb-frontend-service-center-$PACKAGE-windows-amd64
     cd ..
     prepare_conf
-    cp -r tmp/conf apache-incubator-servicecomb-frontend-service-center-$PACKAGEwindows-amd64/
-    cp -r frontend/app apache-incubator-servicecomb-frontend-service-center-$PACKAGEwindows-amd64/
-    cp -r LICENSE apache-incubator-servicecomb-frontend-service-center-$PACKAGEwindows-amd64/
-    cp -r NOTICE apache-incubator-servicecomb-frontend-service-center-$PACKAGEwindows-amd64/
-    cp -r DISCLAIMER apache-incubator-servicecomb-frontend-service-center-$PACKAGEwindows-amd64/
-    cp -r frontend/Readme.md apache-incubator-servicecomb-frontend-service-center-$PACKAGEwindows-amd64/
-    echo "apache-incubator-serviceomb-frontend.exe" >> apache-incubator-servicecomb-frontend-service-center-$PACKAGEwindows-amd64/start.bat
-    tar -czvf apache-incubator-servicecomb-frontend-service-center-$PACKAGEwindows-amd64.tar.gz apache-incubator-servicecomb-frontend-service-center-$PACKAGEwindows-amd64
+    cp -r tmp/conf apache-incubator-servicecomb-frontend-service-center-$PACKAGE-windows-amd64/
+    cp -r frontend/app apache-incubator-servicecomb-frontend-service-center-$PACKAGE-windows-amd64/
+    cp -r LICENSE apache-incubator-servicecomb-frontend-service-center-$PACKAGE-windows-amd64/
+    cp -r NOTICE apache-incubator-servicecomb-frontend-service-center-$PACKAGE-windows-amd64/
+    cp -r DISCLAIMER apache-incubator-servicecomb-frontend-service-center-$PACKAGE-windows-amd64/
+    cp -r frontend/Readme.md apache-incubator-servicecomb-frontend-service-center-$PACKAGE-windows-amd64/
+    echo "apache-incubator-serviceomb-frontend.exe" >> apache-incubator-servicecomb-frontend-service-center-$PACKAGE-windows-amd64/start.bat
+    tar -czvf apache-incubator-servicecomb-frontend-service-center-$PACKAGE-windows-amd64.tar.gz apache-incubator-servicecomb-frontend-service-center-$PACKAGE-windows-amd64
 }
 
 ## Compile the binary
