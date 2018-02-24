@@ -59,6 +59,15 @@ vi conf/app.conf
 manager_cluster = "127.0.0.1:2379"
 ```
 
+By default the SC comes up on 127.0.0.1:30100, however you can change the configuration of these address over here.
+
+```
+vi conf/app.conf
+
+httpaddr = 127.0.0.1
+httpport = 30100
+```
+
 
 ### Building & Running Service-Center from source
 
