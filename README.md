@@ -1,4 +1,4 @@
-# service-center 
+# Apache-Incubator-ServiceComb-Service-Center 
 [![Build Status](https://www.travis-ci.org/apache/incubator-servicecomb-service-center.svg?branch=master)](https://www.travis-ci.org/apache/incubator-servicecomb-service-center)  [![Coverage Status](https://coveralls.io/repos/github/apache/incubator-servicecomb-service-center/badge.svg?branch=master)](https://coveralls.io/github/apache/incubator-servicecomb-service-center?branch=master)  [![Go Report Card](https://goreportcard.com/badge/github.com/apache/incubator-servicecomb-service-center)](https://goreportcard.com/report/github.com/apache/incubator-servicecomb-service-center) [![GoDoc](https://godoc.org/github.com/apache/incubator-servicecomb-service-center?status.svg)](https://godoc.org/github.com/apache/incubator-servicecomb-service-center)  
 
 Apache ServiceComb (incubating) service-center allows services to register their instance information and to discover providers of a given service. 
@@ -25,16 +25,16 @@ The easiest way to get Service Center is to use one of the pre-built release bin
 
 [github-release]: https://github.com/servicecomb/service-center/releases/
 
-### Building and Running Service Center
+### Running Service Center using the Release
 
-You don't need to build from source to use Service Center (binaries on the [GitHub releases page][github-release]).When you get these binaries, you can execute the start script to run Service Center.
+You can download our latest release from [GitHub releases page][github-release]).When you get these release, you can execute the start script to run Service Center.
 
-Windows(service-center-xxx-windows-amd64.zip):
+Windows(apache-incubator-servicecomb-service-center-XXX-windows-amd64.zip):
 ```
 start.bat
 ```
 
-Linux(service-center-xxx-linux-amd64.tar.gz):
+Linux(apache-incubator-servicecomb-service-center-XXXX-linux-amd64.tar.gz):
 ```sh
 ./start.sh
 ```
@@ -44,8 +44,23 @@ docker pull servicecomb/service-center
 docker run -d -p 30100:30100 servicecomb/service-center
 ```
 
+Note: The Releases of Service-Center uses emebeded etcd, if you want to use the seperate instance of etcd then you can deploy the etcd seperately and configure the etcd ip over here.
+```
+vi conf/app.conf
 
-##### If you want to try out the latest and greatest, Service Center can be easily built. 
+## Edit this file
+# registry address
+# 1. if registry_plugin equals to 'embeded_etcd'
+# manager_name = "sc-0"
+# manager_addr = "http://127.0.0.1:2380"
+# manager_cluster = "sc-0=http://127.0.0.1:2380"
+# 2. if registry_plugin equals to 'etcd'
+# manager_cluster = "127.0.0.1:2379"
+manager_cluster = "127.0.0.1:2379"
+```
+
+
+### Building & Running Service-Center from source
 
 Download the Code
 ```sh
