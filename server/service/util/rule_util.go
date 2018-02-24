@@ -160,13 +160,23 @@ func MatchRules(rulesOfProvider []*pb.ServiceRule, consumer *pb.MicroService, ta
 	if consumer == nil {
 		return scerr.NewError(scerr.ErrInvalidParams, "consumer is nil")
 	}
-	consumerId := consumer.ServiceId
-	v := reflect.Indirect(reflect.ValueOf(consumer))
 
 	isWhite := false
-	if len(rulesOfProvider) > 0 && rulesOfProvider[0].RuleType == "WHITE" {
+	if len(rulesOfProvider) <= 0 {
+		return nil
+	}
+	if rulesOfProvider[0].RuleType == "WHITE" {
 		isWhite = true
 	}
+	if isWhite {
+		return patternWhiteList(rulesOfProvider, tagsOfConsumer, consumer)
+	}
+	return patternBlackList(rulesOfProvider, tagsOfConsumer, consumer)
+}
+
+func patternWhiteList(rulesOfProvider []*pb.ServiceRule, tagsOfConsumer map[string]string, consumer *pb.MicroService) *scerr.Error {
+	v := reflect.Indirect(reflect.ValueOf(consumer))
+	consumerId := consumer.ServiceId
 	for _, rule := range rulesOfProvider {
 		var value string
 		if strings.HasPrefix(rule.Attribute, "tag_") {
@@ -186,25 +196,44 @@ func MatchRules(rulesOfProvider []*pb.ServiceRule, consumer *pb.MicroService, ta
 			value = key.String()
 		}
 
-		if isWhite {
-			match, _ := regexp.MatchString(rule.Pattern, value)
-			if match {
-				util.Logger().Infof("consumer %s match white list, rule.Pattern is %s, value is %s",
-					consumerId, rule.Pattern, value)
-				return nil
-			}
-		} else {
-			match, _ := regexp.MatchString(rule.Pattern, value)
-			if match {
-				util.Logger().Infof("no permission to access, consumer %s match black list, rule.Pattern is %s, value is %s",
-					consumerId, rule.Pattern, value)
-				return scerr.NewError(scerr.ErrPermissionDeny, "Found in black list")
-			}
+		match, _ := regexp.MatchString(rule.Pattern, value)
+		if match {
+			util.Logger().Infof("consumer %s match white list, rule.Pattern is %s, value is %s",
+				consumerId, rule.Pattern, value)
+			return nil
 		}
 	}
-	if isWhite {
-		util.Logger().Infof("no permission to access, consumer %s do not match white list", consumerId)
-		return scerr.NewError(scerr.ErrPermissionDeny, "Not found in white list")
+	return scerr.NewError(scerr.ErrPermissionDeny, "Not found in white list")
+}
+
+func patternBlackList(rulesOfProvider []*pb.ServiceRule, tagsOfConsumer map[string]string, consumer *pb.MicroService) *scerr.Error {
+	v := reflect.Indirect(reflect.ValueOf(consumer))
+	consumerId := consumer.ServiceId
+	for _, rule := range rulesOfProvider {
+		var value string
+		if strings.HasPrefix(rule.Attribute, "tag_") {
+			key := rule.Attribute[4:]
+			value = tagsOfConsumer[key]
+			if len(value) == 0 {
+				util.Logger().Infof("can not find service %s tag '%s'", consumerId, key)
+				continue
+			}
+		} else {
+			key := v.FieldByName(rule.Attribute)
+			if !key.IsValid() {
+				util.Logger().Errorf(nil, "can not find service %s field '%s', rule %s",
+					consumerId, rule.Attribute, rule.RuleId)
+				return scerr.NewError(scerr.ErrInternal, fmt.Sprintf("Can not find field '%s'", rule.Attribute))
+			}
+			value = key.String()
+		}
+
+		match, _ := regexp.MatchString(rule.Pattern, value)
+		if match {
+			util.Logger().Infof("no permission to access, consumer %s match black list, rule.Pattern is %s, value is %s",
+				consumerId, rule.Pattern, value)
+			return scerr.NewError(scerr.ErrPermissionDeny, "Found in black list")
+		}
 	}
 	return nil
 }
