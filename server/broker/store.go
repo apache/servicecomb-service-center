@@ -19,10 +19,8 @@ package broker
 import (
 	"sync"
 
-	"github.com/apache/incubator-servicecomb-service-center/pkg/async"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	sstore "github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 )
 
 const (
@@ -66,23 +64,10 @@ func (s *BKvStore) StoreSize(t sstore.StoreType) int {
 	return 100
 }
 
-func (s *BKvStore) dispatchEvent(t sstore.StoreType, evt *sstore.KvEvent) {
-	s.bindexers[t].OnCacheEvent(evt)
-	select {
-	case <-s.Ready():
-	default:
-		if evt.Action == pb.EVT_CREATE {
-			evt.Action = pb.EVT_INIT
-		}
-	}
-	sstore.EventProxy(t).OnEvent(evt)
-}
-
 func (s *BKvStore) newStore(t sstore.StoreType, opts ...sstore.KvCacherCfgOption) {
 	opts = append(opts,
 		sstore.WithKey(TypeRoots[t]),
 		sstore.WithInitSize(s.StoreSize(t)),
-		sstore.WithEventFunc(func(evt *sstore.KvEvent) { s.dispatchEvent(t, evt) }),
 	)
 	s.newIndexer(t, sstore.NewKvCacher(opts...))
 }
@@ -107,18 +92,16 @@ func init() {
 
 type BKvStore struct {
 	*sstore.KvStore
-	bindexers     map[sstore.StoreType]*sstore.Indexer
-	basyncTaskSvc *async.AsyncTaskService
-	block         sync.RWMutex
-	bready        chan struct{}
-	bisClose      bool
+	bindexers map[sstore.StoreType]*sstore.Indexer
+	block     sync.RWMutex
+	bready    chan struct{}
+	bisClose  bool
 }
 
 func (s *BKvStore) Initialize() {
 	s.KvStore = sstore.Store()
 	s.KvStore.Initialize()
 	s.bindexers = make(map[sstore.StoreType]*sstore.Indexer)
-	s.basyncTaskSvc = async.NewAsyncTaskService()
 	s.bready = make(chan struct{})
 
 	for i := sstore.StoreType(0); i != typeEnd; i++ {
@@ -138,11 +121,9 @@ func (s *BKvStore) newIndexer(t sstore.StoreType, cacher sstore.Cacher) {
 
 func (s *BKvStore) Run() {
 	go s.store()
-	s.basyncTaskSvc.Run()
 }
 
 func (s *BKvStore) Ready() <-chan struct{} {
-	<-s.basyncTaskSvc.Ready()
 	return s.bready
 }
 
