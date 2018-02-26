@@ -344,6 +344,9 @@ func (c *EtcdClient) Do(ctx context.Context, opts ...registry.PluginOpOption) (*
 	switch op.Action {
 	case registry.Get:
 		var etcdResp *clientv3.GetResponse
+		if op.Prefix && op.Key[len(op.Key)-1] != '/' {
+			op.Key = append(op.Key, '/')
+		}
 		key := util.BytesToStringWithNoCopy(op.Key)
 
 		if (op.Prefix || len(op.EndKey) > 0) && !op.CountOnly {
@@ -517,10 +520,10 @@ func (c *EtcdClient) Watch(ctx context.Context, opts ...registry.PluginOpOption)
 		client := clientv3.NewWatcher(c.Client)
 		defer client.Close()
 
-		key := util.BytesToStringWithNoCopy(op.Key)
-		if op.Prefix && key[len(key)-1] != '/' {
-			key += "/"
+		if op.Prefix && op.Key[len(op.Key)-1] != '/' {
+			op.Key = append(op.Key, '/')
 		}
+		key := util.BytesToStringWithNoCopy(op.Key)
 
 		// 不能设置超时context，内部判断了连接超时和watch超时
 		ws := client.Watch(context.Background(), key, c.toGetRequest(op)...)
