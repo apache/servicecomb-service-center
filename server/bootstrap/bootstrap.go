@@ -45,6 +45,9 @@ import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/i
 // module
 import _ "github.com/apache/incubator-servicecomb-service-center/server/govern"
 
+// module
+import _ "github.com/apache/incubator-servicecomb-service-center/server/broker"
+
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/handler/auth"
