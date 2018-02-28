@@ -250,12 +250,12 @@ func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp) (*clientv
 	start := time.Now()
 	tempOp := op
 	tempOp.CountOnly = true
-	coutResp, err := c.Client.Get(ctx, key, c.toGetRequest(tempOp)...)
+	countResp, err := c.Client.Get(ctx, key, c.toGetRequest(tempOp)...)
 	if err != nil {
 		return nil, err
 	}
 
-	recordCount := coutResp.Count
+	recordCount := countResp.Count
 	if op.Offset == -1 && recordCount < op.Limit {
 		return nil, nil // no paging
 	}
@@ -268,9 +268,9 @@ func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp) (*clientv
 	if len(op.EndKey) > 0 {
 		tempOp.EndKey = op.EndKey
 	}
-	tempOp.Revision = coutResp.Header.Revision
+	tempOp.Revision = countResp.Header.Revision
 
-	etcdResp = coutResp
+	etcdResp = countResp
 	etcdResp.Kvs = make([]*mvccpb.KeyValue, 0, etcdResp.Count)
 
 	pageCount := recordCount / op.Limit
@@ -344,6 +344,9 @@ func (c *EtcdClient) Do(ctx context.Context, opts ...registry.PluginOpOption) (*
 	switch op.Action {
 	case registry.Get:
 		var etcdResp *clientv3.GetResponse
+		if op.Prefix && op.Key[len(op.Key)-1] != '/' {
+			op.Key = append(op.Key, '/')
+		}
 		key := util.BytesToStringWithNoCopy(op.Key)
 
 		if (op.Prefix || len(op.EndKey) > 0) && !op.CountOnly {
@@ -517,10 +520,10 @@ func (c *EtcdClient) Watch(ctx context.Context, opts ...registry.PluginOpOption)
 		client := clientv3.NewWatcher(c.Client)
 		defer client.Close()
 
-		key := util.BytesToStringWithNoCopy(op.Key)
-		if op.Prefix && key[len(key)-1] != '/' {
-			key += "/"
+		if op.Prefix && op.Key[len(op.Key)-1] != '/' {
+			op.Key = append(op.Key, '/')
 		}
+		key := util.BytesToStringWithNoCopy(op.Key)
 
 		// 不能设置超时context，内部判断了连接超时和watch超时
 		ws := client.Watch(context.Background(), key, c.toGetRequest(op)...)
