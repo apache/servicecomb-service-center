@@ -31,12 +31,6 @@ import (
 	"strings"
 )
 
-var tagRegEx *regexp.Regexp
-
-func init() {
-	tagRegEx, _ = regexp.Compile("tag_(.*)")
-}
-
 type RuleFilter struct {
 	DomainProject string
 	Provider      *pb.MicroService
@@ -161,54 +155,84 @@ func AllowAcrossDimension(ctx context.Context, providerService *pb.MicroService,
 	return nil
 }
 
-func MatchRules(rules []*pb.ServiceRule, service *pb.MicroService, serviceTags map[string]string) *scerr.Error {
-	if service == nil {
-		return scerr.NewError(scerr.ErrInvalidParams, "service is nil")
+func MatchRules(rulesOfProvider []*pb.ServiceRule, consumer *pb.MicroService, tagsOfConsumer map[string]string) *scerr.Error {
+	if consumer == nil {
+		return scerr.NewError(scerr.ErrInvalidParams, "consumer is nil")
 	}
 
-	v := reflect.Indirect(reflect.ValueOf(service))
+	isWhite := false
+	if len(rulesOfProvider) <= 0 {
+		return nil
+	}
+	if rulesOfProvider[0].RuleType == "WHITE" {
+		isWhite = true
+	}
+	if isWhite {
+		return patternWhiteList(rulesOfProvider, tagsOfConsumer, consumer)
+	}
+	return patternBlackList(rulesOfProvider, tagsOfConsumer, consumer)
+}
 
-	hasWhite := false
-	for _, rule := range rules {
+func patternWhiteList(rulesOfProvider []*pb.ServiceRule, tagsOfConsumer map[string]string, consumer *pb.MicroService) *scerr.Error {
+	v := reflect.Indirect(reflect.ValueOf(consumer))
+	consumerId := consumer.ServiceId
+	for _, rule := range rulesOfProvider {
+		value, err := parsePattern(v, rule, tagsOfConsumer, consumerId)
+		if err != nil {
+			return err
+		}
+		if len(value) == 0 {
+			continue
+		}
+
+		match, _ := regexp.MatchString(rule.Pattern, value)
+		if match {
+			util.Logger().Infof("consumer %s match white list, rule.Pattern is %s, value is %s",
+				consumerId, rule.Pattern, value)
+			return nil
+		}
+	}
+	return scerr.NewError(scerr.ErrPermissionDeny, "Not found in white list")
+}
+
+func parsePattern(v reflect.Value, rule *pb.ServiceRule, tagsOfConsumer map[string]string, consumerId string) (string, *scerr.Error) {
+	if strings.HasPrefix(rule.Attribute, "tag_") {
+		key := rule.Attribute[4:]
+		value := tagsOfConsumer[key]
+		if len(value) == 0 {
+			util.Logger().Infof("can not find service %s tag '%s'", consumerId, key)
+		}
+		return value, nil
+	}
+	key := v.FieldByName(rule.Attribute)
+	if !key.IsValid() {
+		util.Logger().Errorf(nil, "can not find service %s field '%s', rule %s",
+			consumerId, rule.Attribute, rule.RuleId)
+		return "", scerr.NewError(scerr.ErrInternal, fmt.Sprintf("Can not find field '%s'", rule.Attribute))
+	}
+	return key.String(), nil
+
+}
+
+func patternBlackList(rulesOfProvider []*pb.ServiceRule, tagsOfConsumer map[string]string, consumer *pb.MicroService) *scerr.Error {
+	v := reflect.Indirect(reflect.ValueOf(consumer))
+	consumerId := consumer.ServiceId
+	for _, rule := range rulesOfProvider {
 		var value string
-		if tagRegEx.MatchString(rule.Attribute) {
-			key := tagRegEx.FindStringSubmatch(rule.Attribute)[1]
-			value = serviceTags[key]
-			if len(value) == 0 {
-				util.Logger().Infof("can not find service %s tag '%s'", service.ServiceId, key)
-				continue
-			}
-		} else {
-			key := v.FieldByName(rule.Attribute)
-			if !key.IsValid() {
-				util.Logger().Errorf(nil, "can not find service %s field '%s', rule %s",
-					service.ServiceId, rule.Attribute, rule.RuleId)
-				return scerr.NewError(scerr.ErrInternal, fmt.Sprintf("Can not find field '%s'", rule.Attribute))
-			}
-			value = key.String()
+		value, err := parsePattern(v, rule, tagsOfConsumer, consumerId)
+		if err != nil {
+			return err
+		}
+		if len(value) == 0 {
+			continue
 		}
 
-		switch rule.RuleType {
-		case "WHITE":
-			hasWhite = true
-			match, _ := regexp.MatchString(rule.Pattern, value)
-			if match {
-				util.Logger().Infof("service %s match white list, rule.Pattern is %s, value is %s",
-					service.ServiceId, rule.Pattern, value)
-				return nil
-			}
-		case "BLACK":
-			match, _ := regexp.MatchString(rule.Pattern, value)
-			if match {
-				util.Logger().Infof("service %s match black list, rule.Pattern is %s, value is %s",
-					service.ServiceId, rule.Pattern, value)
-				return scerr.NewError(scerr.ErrPermissionDeny, "Found in black list")
-			}
+		match, _ := regexp.MatchString(rule.Pattern, value)
+		if match {
+			util.Logger().Infof("no permission to access, consumer %s match black list, rule.Pattern is %s, value is %s",
+				consumerId, rule.Pattern, value)
+			return scerr.NewError(scerr.ErrPermissionDeny, "Found in black list")
 		}
-	}
-	if hasWhite {
-		util.Logger().Infof("service %s do not match white list", service.ServiceId)
-		return scerr.NewError(scerr.ErrPermissionDeny, "Not found in white list")
 	}
 	return nil
 }

@@ -568,13 +568,12 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 	if apt.IsShared(provider) {
 		// it means the shared micro-services must be the same env with SC.
 		provider.Environment = apt.Service.Environment
-		findFlag += "(shared services in " + provider.Environment + " environment)"
+		findFlag += "(provider is shared service in " + provider.Environment + " environment)"
 	} else {
 		// provider is not a shared micro-service,
 		// only allow shared micro-service instances found in different domains.
 		util.SetTargetDomainProject(ctx, util.ParseDomain(ctx), util.ParseProject(ctx))
 		provider.Tenant = util.ParseTargetDomainProject(ctx)
-		findFlag += "('" + provider.Environment + "' services of the same domain)"
 	}
 
 	// 版本规则
@@ -586,7 +585,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		}, err
 	}
 	if len(ids) == 0 {
-		mes := fmt.Sprintf("no provider matched, %s", findFlag)
+		mes := fmt.Sprintf("provider not exist, %s", findFlag)
 		util.Logger().Errorf(nil, "find instance failed, %s", mes)
 		return &pb.FindInstancesResponse{
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, mes),
@@ -618,7 +617,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 	//维护version的规则,service name 可能是别名，所以重新获取
 	providerService, err := serviceUtil.GetService(ctx, provider.Tenant, ids[0])
 	if providerService == nil {
-		util.Logger().Errorf(err, "find instance failed, %s: no provider matched.", findFlag)
+		util.Logger().Errorf(err, "find instance failed, %s: provider %s not exist.", findFlag, ids[0])
 		return &pb.FindInstancesResponse{
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "No provider matched."),
 		}, nil
