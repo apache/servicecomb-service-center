@@ -250,12 +250,12 @@ func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp) (*clientv
 	start := time.Now()
 	tempOp := op
 	tempOp.CountOnly = true
-	coutResp, err := c.Client.Get(ctx, key, c.toGetRequest(tempOp)...)
+	countResp, err := c.Client.Get(ctx, key, c.toGetRequest(tempOp)...)
 	if err != nil {
 		return nil, err
 	}
 
-	recordCount := coutResp.Count
+	recordCount := countResp.Count
 	if op.Offset == -1 && recordCount < op.Limit {
 		return nil, nil // no paging
 	}
@@ -268,9 +268,9 @@ func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp) (*clientv
 	if len(op.EndKey) > 0 {
 		tempOp.EndKey = op.EndKey
 	}
-	tempOp.Revision = coutResp.Header.Revision
+	tempOp.Revision = countResp.Header.Revision
 
-	etcdResp = coutResp
+	etcdResp = countResp
 	etcdResp.Kvs = make([]*mvccpb.KeyValue, 0, etcdResp.Count)
 
 	pageCount := recordCount / op.Limit

@@ -78,17 +78,11 @@ func GetServiceAliasRootKey(domainProject string) string {
 	}, "/")
 }
 
-func GetServiceAppIndexKey(domainProject, env string) string {
-	if len(env) != 0 {
-		return util.StringJoin([]string{
-			GetServiceIndexRootKey(domainProject),
-			env,
-		}, "/")
-	}
+func GetServiceAppKey(domainProject, env, appId string) string {
 	return util.StringJoin([]string{
 		GetServiceIndexRootKey(domainProject),
 		env,
-		"",
+		appId,
 	}, "/")
 }
 

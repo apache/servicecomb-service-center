@@ -127,16 +127,18 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 		}, err
 	}
 	key := apt.GenerateServiceKey(domainProject, serviceId)
+	keyBytes := util.StringToBytesWithNoCopy(key)
 	index := apt.GenerateServiceIndexKey(serviceKey)
 	indexBytes := util.StringToBytesWithNoCopy(index)
 	aliasBytes := util.StringToBytesWithNoCopy(apt.GenerateServiceAliasKey(serviceKey))
 
 	opts := []registry.PluginOp{
-		registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)),
+		registry.OpPut(registry.WithKey(keyBytes), registry.WithValue(data)),
 		registry.OpPut(registry.WithKey(indexBytes), registry.WithStrValue(serviceId)),
 	}
 	uniqueCmpOpts := []registry.CompareOp{
 		registry.OpCmp(registry.CmpVer(indexBytes), registry.CMP_EQUAL, 0),
+		registry.OpCmp(registry.CmpVer(keyBytes), registry.CMP_EQUAL, 0),
 	}
 
 	if len(serviceKey.Alias) > 0 {
@@ -204,11 +206,7 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, serviceId st
 		title = "force delete"
 	}
 
-	isServiceCenter := func(serviceId string) bool {
-		return serviceId == apt.Service.ServiceId
-	}
-
-	if isServiceCenter(serviceId) {
+	if serviceId == apt.Service.ServiceId {
 		err := errors.New("not allow to delete service center")
 		util.Logger().Errorf(err, "%s micro-service failed, serviceId is %s", title, serviceId)
 		return pb.CreateResponse(scerr.ErrInvalidParams, err.Error()), nil

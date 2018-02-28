@@ -180,7 +180,7 @@ func (governService *GovernService) GetApplications(ctx context.Context, in *pb.
 	}
 
 	domainProject := util.ParseDomainProject(ctx)
-	key := apt.GetServiceAppIndexKey(domainProject, in.Environment)
+	key := apt.GetServiceAppKey(domainProject, in.Environment, "")
 
 	opts := append(serviceUtil.FromContext(ctx),
 		registry.WithStrKey(key),
