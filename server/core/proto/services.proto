@@ -532,6 +532,8 @@ message CreateDependenciesResponse {
 
 message GetDependenciesRequest {
     string serviceId = 1;
+    bool sameDomain = 2;
+    bool noSelf = 3;
 }
 
 message GetConDependenciesResponse {

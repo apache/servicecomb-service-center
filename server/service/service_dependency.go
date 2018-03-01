@@ -128,7 +128,7 @@ func (s *MicroServiceService) GetProviderDependencies(ctx context.Context, in *p
 	}
 
 	dr := serviceUtil.NewProviderDependencyRelation(ctx, domainProject, provider)
-	services, err := dr.GetDependencyConsumers()
+	services, err := dr.GetDependencyConsumers(toDependencyFilterOptions(in)...)
 	if err != nil {
 		util.Logger().Errorf(err, "GetProviderDependencies failed.")
 		return &pb.GetProDependenciesResponse{
@@ -168,7 +168,7 @@ func (s *MicroServiceService) GetConsumerDependencies(ctx context.Context, in *p
 	}
 
 	dr := serviceUtil.NewConsumerDependencyRelation(ctx, domainProject, consumer)
-	services, err := dr.GetDependencyProviders()
+	services, err := dr.GetDependencyProviders(toDependencyFilterOptions(in)...)
 	if err != nil {
 		util.Logger().Errorf(err, "GetConsumerDependencies failed for get providers failed.")
 		return &pb.GetConDependenciesResponse{
@@ -181,4 +181,14 @@ func (s *MicroServiceService) GetConsumerDependencies(ctx context.Context, in *p
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Get all providers successfully."),
 		Providers: services,
 	}, nil
+}
+
+func toDependencyFilterOptions(in *pb.GetDependenciesRequest) (opts []serviceUtil.DependencyRelationFilterOption) {
+	if in.SameDomain {
+		opts = append(opts, serviceUtil.WithSameDomainProject())
+	}
+	if in.NoSelf {
+		opts = append(opts, serviceUtil.WithoutSelfDependency())
+	}
+	return opts
 }

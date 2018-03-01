@@ -687,13 +687,18 @@ func NewDependencyRelation(ctx context.Context, domainProject string, consumer *
 	}
 }
 
-func (dr *DependencyRelation) GetDependencyProviders() ([]*pb.MicroService, error) {
+func (dr *DependencyRelation) GetDependencyProviders(opts ...DependencyRelationFilterOption) ([]*pb.MicroService, error) {
 	keys, err := dr.getProviderKeys()
 	if err != nil {
 		return nil, err
 	}
 	services := make([]*pb.MicroService, 0, len(keys))
+	op := toDependencyRelationFilterOpt(opts...)
 	for _, key := range keys {
+		if op.SameDomainProject && key.Tenant != dr.domainProject {
+			continue
+		}
+
 		providerIds, err := dr.parseDependencyRule(key)
 		if err != nil {
 			return nil, err
@@ -708,6 +713,9 @@ func (dr *DependencyRelation) GetDependencyProviders() ([]*pb.MicroService, erro
 			if err != nil {
 				util.Logger().Warnf(nil, "Provider does not exist, %s/%s/%s",
 					key.AppId, key.ServiceName, key.Version)
+				continue
+			}
+			if op.NonSelf && providerId == dr.consumer.ServiceId {
 				continue
 			}
 			services = append(services, provider)
@@ -795,15 +803,19 @@ func (dr *DependencyRelation) parseDependencyRule(dependencyRule *pb.MicroServic
 	return
 }
 
-func (dr *DependencyRelation) GetDependencyConsumers() ([]*pb.MicroService, error) {
+func (dr *DependencyRelation) GetDependencyConsumers(opts ...DependencyRelationFilterOption) ([]*pb.MicroService, error) {
 	consumerDependAllList, err := dr.getDependencyConsumersOfProvider()
 	if err != nil {
 		util.Logger().Errorf(err, "Get consumers of provider rule failed, %s", dr.provider.ServiceId)
 		return nil, err
 	}
 	consumers := make([]*pb.MicroService, 0)
-
+	op := toDependencyRelationFilterOpt(opts...)
 	for _, consumer := range consumerDependAllList {
+		if op.SameDomainProject && consumer.Tenant != dr.domainProject {
+			continue
+		}
+
 		service, err := dr.getServiceByMicroServiceKey(consumer)
 		if err != nil {
 			return nil, err
@@ -812,6 +824,11 @@ func (dr *DependencyRelation) GetDependencyConsumers() ([]*pb.MicroService, erro
 			util.Logger().Warnf(nil, "Consumer does not exist, %v", consumer)
 			continue
 		}
+
+		if op.NonSelf && service.ServiceId == dr.provider.ServiceId {
+			continue
+		}
+
 		consumers = append(consumers, service)
 	}
 	return consumers, nil
@@ -963,4 +980,31 @@ func DeleteDependencyForDeleteService(domainProject string, serviceId string, se
 		return registry.PluginOp{}, err
 	}
 	return registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)), nil
+}
+
+type DependencyRelationFilterOpt struct {
+	SameDomainProject bool
+	NonSelf           bool
+}
+
+type DependencyRelationFilterOption func(opt DependencyRelationFilterOpt) DependencyRelationFilterOpt
+
+func WithSameDomainProject() DependencyRelationFilterOption {
+	return func(opt DependencyRelationFilterOpt) DependencyRelationFilterOpt {
+		opt.SameDomainProject = true
+		return opt
+	}
+}
+func WithoutSelfDependency() DependencyRelationFilterOption {
+	return func(opt DependencyRelationFilterOpt) DependencyRelationFilterOpt {
+		opt.NonSelf = true
+		return opt
+	}
+}
+
+func toDependencyRelationFilterOpt(opts ...DependencyRelationFilterOption) (op DependencyRelationFilterOpt) {
+	for _, opt := range opts {
+		op = opt(op)
+	}
+	return
 }

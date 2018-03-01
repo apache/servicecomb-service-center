@@ -54,7 +54,7 @@ func IsURL(str string) bool {
 }
 
 func IsRequestURI(uri string) bool {
-	if uri == "" || len(uri) >= 2048 || len(uri) <= 3 || strings.HasPrefix(uri, ".") {
+	if uri == "" || len(uri) >= 2048 || strings.HasPrefix(uri, ".") {
 		return false
 	}
 	if strings.HasSuffix(uri, ";") || strings.HasSuffix(uri, "&") || strings.HasSuffix(uri, "?") || strings.HasSuffix(uri, "+") || strings.HasSuffix(uri, "@") || strings.Contains(uri, "//") {

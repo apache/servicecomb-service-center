@@ -81,7 +81,9 @@ func (this *DependencyService) CreateDependenciesForMicroServices(w http.Respons
 
 func (this *DependencyService) GetConProDependencies(w http.ResponseWriter, r *http.Request) {
 	request := &pb.GetDependenciesRequest{
-		ServiceId: r.URL.Query().Get(":consumerId"),
+		ServiceId:  r.URL.Query().Get(":consumerId"),
+		SameDomain: r.URL.Query().Get("sameDomain") == "1",
+		NoSelf:     r.URL.Query().Get("noSelf") == "1",
 	}
 	resp, _ := core.ServiceAPI.GetConsumerDependencies(r.Context(), request)
 	respInternal := resp.Response
@@ -91,7 +93,9 @@ func (this *DependencyService) GetConProDependencies(w http.ResponseWriter, r *h
 
 func (this *DependencyService) GetProConDependencies(w http.ResponseWriter, r *http.Request) {
 	request := &pb.GetDependenciesRequest{
-		ServiceId: r.URL.Query().Get(":providerId"),
+		ServiceId:  r.URL.Query().Get(":providerId"),
+		SameDomain: r.URL.Query().Get("sameDomain") == "1",
+		NoSelf:     r.URL.Query().Get("noSelf") == "1",
 	}
 	resp, _ := core.ServiceAPI.GetProviderDependencies(r.Context(), request)
 	respInternal := resp.Response
