@@ -1,8 +1,10 @@
 ## Documentation Index
 
-#### [Api Documentation](https://rawcdn.githack.com/ServiceComb/service-center/master/docs/api-docs.html)
-
 #### [Design](/docs/design.md)
+
+#### [Development Guide](/docs/dev-guide.md) 
+
+- [Api Documentation](https://rawcdn.githack.com/ServiceComb/service-center/master/docs/api-docs.html)
 
 #### [Contribution Guide](/docs/contribution.md) 
 

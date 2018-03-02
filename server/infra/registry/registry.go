@@ -201,11 +201,11 @@ func (op PluginOp) FormatUrlParams() string {
 	var buf bytes.Buffer
 	buf.WriteString("action=")
 	buf.WriteString(op.Action.String())
-	buf.WriteString("&mode=true")
+	buf.WriteString("&mode=")
 	buf.WriteString(op.Mode.String())
 	buf.WriteString("&key=")
 	buf.Write(op.Key)
-	buf.WriteString(fmt.Sprintf("&value=%d", len(op.Value)))
+	buf.WriteString(fmt.Sprintf("&len=%d", len(op.Value)))
 	if len(op.EndKey) > 0 {
 		buf.WriteString("&end=")
 		buf.Write(op.EndKey)
