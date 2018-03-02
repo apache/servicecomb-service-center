@@ -906,6 +906,16 @@ paths:
           description: 是否强一致性，1 是、0 否。
           type: integer
           default: 0
+        - name: noSelf
+          in: query
+          description: 是否取消返回自依赖的关系
+          type: integer
+          default: 0
+        - name: sameDomain
+          in: query
+          description: 是否取消返回共享服务的关系
+          type: integer
+          default: 0
       tags:
         - dependency
       responses:
@@ -943,6 +953,16 @@ paths:
         - name: noCache
           in: query
           description: 是否强一致性，1 是、0 否。
+          type: integer
+          default: 0
+        - name: noSelf
+          in: query
+          description: 是否取消返回自依赖的关系
+          type: integer
+          default: 0
+        - name: sameDomain
+          in: query
+          description: 是否取消返回共享服务的关系
           type: integer
           default: 0
       tags:
