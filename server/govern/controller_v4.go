@@ -99,7 +99,9 @@ func (governService *GovernServiceControllerV4) GetGraph(w http.ResponseWriter, 
 		nodes[index].Version = service.Version
 
 		proRequest := &pb.GetDependenciesRequest{
-			ServiceId: service.ServiceId,
+			ServiceId:  service.ServiceId,
+			SameDomain: true,
+			NoSelf:     true,
 		}
 		proResp, err := core.ServiceAPI.GetConsumerDependencies(ctx, proRequest)
 		if err != nil {

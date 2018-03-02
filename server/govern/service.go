@@ -313,19 +313,21 @@ func getServiceDetailUtil(ctx context.Context, serviceDetailOpt ServiceDetailOpt
 		case "dependencies":
 			service := serviceDetailOpt.service
 			dr := serviceUtil.NewDependencyRelation(ctx, domainProject, service, service)
-			consumers, err := dr.GetDependencyConsumers()
+			consumers, err := dr.GetDependencyConsumers(
+				serviceUtil.WithoutSelfDependency(),
+				serviceUtil.WithSameDomainProject())
 			if err != nil {
 				util.Logger().Errorf(err, "Get service's all consumers for govern service failed.")
 				return nil, err
 			}
-			consumers = skipSelfDependency(consumers, serviceId)
-
-			providers, err := dr.GetDependencyProviders()
+			providers, err := dr.GetDependencyProviders(
+				serviceUtil.WithoutSelfDependency(),
+				serviceUtil.WithSameDomainProject())
 			if err != nil {
 				util.Logger().Errorf(err, "Get service's all providers for govern service failed.")
 				return nil, err
 			}
-			providers = skipSelfDependency(providers, serviceId)
+
 			serviceDetail.Consumers = consumers
 			serviceDetail.Providers = providers
 		case "":
@@ -335,15 +337,6 @@ func getServiceDetailUtil(ctx context.Context, serviceDetailOpt ServiceDetailOpt
 		}
 	}
 	return serviceDetail, nil
-}
-
-func skipSelfDependency(services []*pb.MicroService, serviceId string) []*pb.MicroService {
-	for key, service := range services {
-		if service.ServiceId == serviceId {
-			services = append(services[:key], services[key+1:]...)
-		}
-	}
-	return services
 }
 
 func statistics(ctx context.Context) (*pb.Statistics, error) {

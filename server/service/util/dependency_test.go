@@ -481,3 +481,14 @@ func TestDependency(t *testing.T) {
 		t.FailNow()
 	}
 }
+
+func TestDependencyRelationFilterOpt(t *testing.T) {
+	op := toDependencyRelationFilterOpt(
+		WithSameDomainProject(),
+		WithoutSelfDependency(),
+	)
+	if !op.NonSelf || !op.SameDomainProject {
+		fmt.Printf(`toDependencyRelationFilterOpt failed`)
+		t.FailNow()
+	}
+}
