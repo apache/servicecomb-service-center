@@ -690,7 +690,8 @@ var _ = Describe("'Instance' service", func() {
 			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
 			serviceId7 = respCreate.ServiceId
 
-			respCreate, err = serviceResource.Create(util.SetDomainProject(context.Background(), "user", "user"),
+			respCreate, err = serviceResource.Create(
+				util.SetDomainProject(util.CloneContext(getContext()), "user", "user"),
 				&pb.CreateServiceRequest{
 					Service: &pb.MicroService{
 						AppId:       "default",
@@ -932,6 +933,17 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
 				Expect(len(respFind.Instances)).To(Equal(1))
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId5))
+
+				By("get same domain deps")
+				respGetC, err := serviceResource.GetConsumerDependencies(
+					util.SetDomainProject(util.CloneContext(getContext()), "user", "user"),
+					&pb.GetDependenciesRequest{
+						ServiceId:  serviceId6,
+						SameDomain: true,
+					})
+				Expect(err).To(BeNil())
+				Expect(respGetC.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(len(respGetC.Providers)).To(Equal(0))
 
 				core.Service.Environment = pb.ENV_DEV
 			})

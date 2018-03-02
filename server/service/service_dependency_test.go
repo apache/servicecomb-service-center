@@ -17,12 +17,10 @@
 package service_test
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/service/event"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"golang.org/x/net/context"
 )
 
 var deh event.DependencyEventHandler
@@ -412,7 +410,6 @@ var _ = Describe("'Dependency' service", func() {
 	Describe("execute 'get' operartion", func() {
 		var (
 			consumerId1 string
-			consumerId2 string
 			providerId1 string
 			providerId2 string
 		)
@@ -430,21 +427,6 @@ var _ = Describe("'Dependency' service", func() {
 			Expect(err).To(BeNil())
 			Expect(respCreateService.Response.Code).To(Equal(pb.Response_SUCCESS))
 			consumerId1 = respCreateService.ServiceId
-
-			respCreateService, err = serviceResource.Create(util.SetDomainProject(context.Background(), "user", "user"),
-				&pb.CreateServiceRequest{
-					Service: &pb.MicroService{
-						Environment: pb.ENV_DEV,
-						AppId:       "get_dep_group",
-						ServiceName: "get_same_domain_dep_consumer",
-						Version:     "1.0.0",
-						Level:       "FRONT",
-						Status:      pb.MS_UP,
-					},
-				})
-			Expect(err).To(BeNil())
-			Expect(respCreateService.Response.Code).To(Equal(pb.Response_SUCCESS))
-			consumerId2 = respCreateService.ServiceId
 
 			respCreateService, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 				Service: &pb.MicroService{
@@ -599,30 +581,6 @@ var _ = Describe("'Dependency' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respGetC.Response.Code).To(Equal(pb.Response_SUCCESS))
 				Expect(len(respGetC.Providers)).To(Equal(1))
-
-				By("get same domain deps")
-				respFind, err := instanceResource.Find(
-					util.SetTargetDomainProject(
-						util.SetDomainProject(util.CloneContext(getContext()), "user", "user"),
-						"default", "default"),
-					&pb.FindInstancesRequest{
-						ConsumerServiceId: consumerId2,
-						AppId:             "default",
-						ServiceName:       "SERVICECENTER",
-						VersionRule:       "latest",
-					})
-				Expect(err).To(BeNil())
-				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
-
-				respGetC, err = serviceResource.GetConsumerDependencies(
-					util.SetDomainProject(context.Background(), "user", "user"),
-					&pb.GetDependenciesRequest{
-						ServiceId:  consumerId2,
-						SameDomain: true,
-					})
-				Expect(err).To(BeNil())
-				Expect(respGetC.Response.Code).To(Equal(pb.Response_SUCCESS))
-				Expect(len(respGetC.Providers)).To(Equal(0))
 			})
 		})
 	})
