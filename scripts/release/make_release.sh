@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#!/usr/bin/env bash
+
 ## Get the Release Number
 if [ $2 == "" ]; then
     echo "Invalid version number....exiting...."
@@ -90,8 +90,9 @@ build_linux(){
     echo "kill -9 \$(ps aux | grep 'apache-incubator-servicecomb-service-center' | awk '{print \$2}')" >> apache-incubator-servicecomb-service-center-$PACKAGE-linux-amd64/stop.sh
     chmod +x apache-incubator-servicecomb-service-center-$PACKAGE-linux-amd64/start.sh
     chmod +x apache-incubator-servicecomb-service-center-$PACKAGE-linux-amd64/stop.sh
-    cp -r LICENSE apache-incubator-servicecomb-service-center-$PACKAGE-linux-amd64/
-    cp -r NOTICE apache-incubator-servicecomb-service-center-$PACKAGE-linux-amd64/
+    cp -r scripts/release/LICENSE apache-incubator-servicecomb-service-center-$PACKAGE-linux-amd64/
+    cp -r scripts/release/licenses apache-incubator-servicecomb-service-center-$PACKAGE-linux-amd64/
+    cp -r scripts/release/NOTICE apache-incubator-servicecomb-service-center-$PACKAGE-linux-amd64/
     cp -r DISCLAIMER apache-incubator-servicecomb-service-center-$PACKAGE-linux-amd64/
     cp -r README.md apache-incubator-servicecomb-service-center-$PACKAGE-linux-amd64/
     tar -czvf apache-incubator-servicecomb-service-center-$PACKAGE-linux-amd64.tar.gz apache-incubator-servicecomb-service-center-$PACKAGE-linux-amd64
@@ -123,8 +124,9 @@ build_windows(){
     prepare_conf
     cp -r tmp/conf apache-incubator-servicecomb-service-center-$PACKAGE-windows-amd64/
     echo "apache-incubator-servicecomb-service-center.exe" >> apache-incubator-servicecomb-service-center-$PACKAGE-windows-amd64/start.bat
-    cp -r LICENSE apache-incubator-servicecomb-service-center-$PACKAGE-windows-amd64/
-    cp -r NOTICE apache-incubator-servicecomb-service-center-$PACKAGE-windows-amd64/
+    cp -r scripts/release/LICENSE apache-incubator-servicecomb-service-center-$PACKAGE-windows-amd64/
+    cp -r scripts/release/licenses apache-incubator-servicecomb-service-center-$PACKAGE-windows-amd64/
+    cp -r scripts/release/NOTICE apache-incubator-servicecomb-service-center-$PACKAGE-windows-amd64/
     cp -r DISCLAIMER apache-incubator-servicecomb-service-center-$PACKAGE-windows-amd64/
     cp -r README.md apache-incubator-servicecomb-service-center-$PACKAGE-windows-amd64/
     tar -czvf apache-incubator-servicecomb-service-center-$PACKAGE-windows-amd64.tar.gz apache-incubator-servicecomb-service-center-$PACKAGE-windows-amd64
