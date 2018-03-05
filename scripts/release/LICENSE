@@ -204,22 +204,123 @@
 Apache ServiceComb Service Center Subcomponents:
 
 The Apache ServiceComb Service Center project contains subcomponents with
-seperate copyright notices and license terms. Your use of the source code
+seperate copyright notices and license terms. Your use of the binary release
 for these subcomponents is subject to the terms and conditions of the
 following licenses.
 
 
-=======================================================================
-For vendor/github.com/grpc-ecosystem/grpc-gateway
-=======================================================================
-This product bundles grpc-gateway which is licensed under the the
-3-Clause-BSD License.
+================================================================
+The following components are provided under the Apache License Version 2.0.
+See the respective project link for details.
+================================================================
+
+github.com/astaxie/beego
+github.com/cockroachdb/cmux
+github.com/coreos/etcd
+github.com/coreos/go-semver/semver
+github.com/coreos/go-systemd/journal
+github.com/coreos/pkg/capnslog
+google.golang.org/genproto/googleapis/rpc/status
+google.golang.org/grpc
+gopkg.in/yaml.v2
+github.com/google/btree
+github.com/grpc-ecosystem/go-grpc-prometheus
+github.com/jonboulle/clockwork
+github.com/matttproud/golang_protobuf_extensions/pbutil
+github.com/prometheus/client_golang/prometheus
+github.com/prometheus/client_model/go
+github.com/prometheus/common
+github.com/prometheus/procfs/xfs
+github.com/ServiceComb/paas-lager
+github.com/cloudfoundry/lager
+
+================================================================
+For beorn7/perks
+================================================================
+This product bundles perks which is licensed under the MIT License.
+For details, see https://github.com/beorn7/perks
+You can find a copy of the License at licenses/LICENSE-beorn7-perks
+
+
+================================================================
+For boltdb/bolt
+================================================================
+This product bundles boltdb/bolt which is licensed under the MIT License.
+For details, see https://github.com/boltdb/bolt
+You can find a copy of the License at licenses/LICENSE-boltdb-bolt
+
+================================================================
+For satori/go.uuid 
+================================================================
+This product bundles satori/go.uuid which is licensed under the MIT License.
+For details, see https://github.com/satori/go.uuid 
+You can find a copy of the License at licenses/LICENSE-satori-go.uuid
+
+================================================================
+For rs/cors
+================================================================
+This product bundles rs/cors which is licensed under the MIT License.
+For details, see https://github.com/rs/cors
+You can find a copy of the License at licenses/LICENSE-rs-cors
+
+================================================================
+For ghodss/yaml
+================================================================
+This product bundles ghodss/yaml which is licensed under the MIT License.
+For details, see https://github.com/ghodss/yaml
+You can find a copy of the License at licenses/LICENSE-ghodss-yaml
+
+================================================================
+For gogo/protobuf/
+================================================================
+This product bundles gogo/protobuf which is licensed under
+the 3-Clause BSD License.
+For details, see https://github.com/gogo/protobuf
+You can find a copy of the License at licenses/LICENSE-gogo-protobuf
+
+================================================================
+For golang/protobuf
+================================================================
+This product bundles protobuf which is licensed under the 3-Clause BSD
+License.
+For details, see https://github.com/golang/protobuf
+You can find a copy of the License at licenses/LICENSE-golang-protobuf
+
+================================================================
+For gorilla/websocket
+================================================================
+This product bundles gorilla/websocket which is licensed under
+the 2-Clause BSD License.
+For details, see https://github.com/gorilla/websocket
+You can find a copy of the License at licenses/LICENSE-gorilla-websocket
+
+================================================================
+For grpc-ecosystem/grpc-gateway
+================================================================
+This product bundles grpc-gateway which is licensed under the 3-Clause BSD
+License.
 For details, see https://github.com/grpc-ecosystem/grpc-gateway
 You can find a copy of the License at licenses/LICENSE-grpc-gateway
 
-=======================================================================
-For vendor/github.com/grpc-ecosystem/go-grpc-prometheus
-=======================================================================
-This product bundles go-grpc-prometheus which is licensed under the the
-Apache License v2.
-For details, see https://github.com/grpc-ecosystem/go-grpc-prometheus
+================================================================
+For ugorji/go
+================================================================
+This product bundles ugorji/go which is licensed under the MIT License.
+For details, see https://github.com/ugorji/go
+You can find a copy of the License at licenses/LICENSE-ugorji-go
+
+================================================================
+For xiang90/probing
+================================================================
+This product bundles xiang90/probing which is licensed under the MIT License.
+For details, see https://github.com/xiang90/probing
+You can find a copy of the License at licenses/LICENSE-xiang90-probing
+
+================================================================
+For golang
+================================================================
+This product bundles the golang runtime, standard library and
+libraries from the golang.org/x repository which are licensed
+under the 3-Clause BSD License.
+For details, see https://github.com/golang
+You can find a copy of the License at licenses/LICENSE-golang
