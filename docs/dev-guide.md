@@ -39,10 +39,10 @@ curl -X POST \
   -d '{
 	"instance": 
 	{
-		"hostName":"demo-pc",
+	    "hostName":"demo-pc",
 	    "endpoints": [
-			"rest://127.0.0.1:8080"
-		]
+		    "rest://127.0.0.1:8080"
+	    ]
 	}
 }'
 ```
