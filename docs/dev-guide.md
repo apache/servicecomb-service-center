@@ -29,7 +29,8 @@ and then you can get the 'DemoService' ID like below:
 
 ## Instance registration
 
-mark down the micro-service ID and call the instance registration API:
+mark down the micro-service ID and call the instance registration API,
+according to the ServiceCenter definition: One process should be registered as one instance
 
 ```bash
 curl -X POST \
