@@ -58,7 +58,6 @@ gvt fetch -precaire -no-recurse -revision cab8458c1c4a5a3b4bf5192922be620e6dede1
 gvt fetch -precaire -no-recurse -revision 91e4fb9209910a1de86b67adc0fce5c35f17369f github.com/hsluoyz/casbin
 gvt fetch -precaire -no-recurse -revision baaac160ed234ed06b347cf51202683a0068efe4 github.com/gogo/protobuf
 gvt fetch -precaire -no-recurse -revision 91e4fb9209910a1de86b67adc0fce5c35f17369f github.com/casbin/casbin
-gvt fetch -precaire -no-recurse -revision febf2d34b54a69ce7530036c7503b1c9fbfdf0bb github.com/olekukonko/tablewriter
 gvt fetch -precaire -no-recurse -revision ea4d1f681babbce9545c9c5f3d5194a789c89f5b github.com/gorilla/websocket
 gvt fetch -precaire -no-recurse -revision 8837942c3e09574accbc5f150e2c5e057189cace github.com/lib/pq
 gvt fetch -precaire -no-recurse -revision 4aabc24848ce5fd31929f7d1e4ea74d3709c14cd github.com/bgentry/speakeasy
