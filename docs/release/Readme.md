@@ -27,7 +27,7 @@ cp  apache-rat-0.12/apache-rat-0.12.jar ./
 Run the Rat tool using the below command
 
 ```
-java -jar apache-rat-0.12.jar -a -d incubator-servicecomb-service-center/ -e *.md *.MD .gitignore .gitmodules .travis.yml *.json *.yaml *.tmpl *.conf *.html *.pb.go services.proto manifest **vendor**
+java -jar apache-rat-0.12.jar -a -d incubator-servicecomb-service-center/ -e *.md *.MD .gitignore .gitmodules .travis.yml *.json *.yaml *.tmpl *.conf *.html *.pb.go services.proto  broker.proto manifest **vendor** **licenses**
 ```
 
 Below is the list of the files which has been excluded from the list of RAT tool.
