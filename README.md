@@ -31,12 +31,12 @@ You can download our latest release from [ServiceComb Website][github-release].W
 
 Windows(apache-incubator-servicecomb-service-center-XXX-windows-amd64.zip):
 ```
-start.bat
+start-service-center.bat
 ```
 
 Linux(apache-incubator-servicecomb-service-center-XXXX-linux-amd64.tar.gz):
 ```sh
-./start.sh
+./start-service-center.sh
 ```
 Docker:
 ```sh

@@ -5,18 +5,20 @@ Service-Center UI also offers a unique feature of testing the Schemas of their M
 
 ### QuickStart Guide
 
-Easiest way to get started with Service-Center UI is to download the release from [here](https://dist.apache.org/repos/dist/dev/incubator/servicecomb/incubator-servicecomb-service-center/) and then untar/unzip it based on your OS and run start.sh/start.bat.
+Easiest way to get started with Service-Center UI is to download the release from [here](https://dist.apache.org/repos/dist/dev/incubator/servicecomb/incubator-servicecomb-service-center/) and then untar/unzip it based on your OS and run start-frontend.sh/start-frontend.bat.
 This will bring up the Service-Center UI on [http://127.0.0.1:30103](http://127.0.0.1:30103).
 
-Windows(apache-incubator-servicecomb-frontend-service-center-XXX-windows-amd64.zip):
+Windows(apache-incubator-servicecomb-service-center-XXX-windows-amd64.zip):
 ```
-start.bat
+start-frontend.bat
 ```
 
-Linux(apache-incubator-servicecomb-frontend-service-center-XXXX-linux-amd64.tar.gz):
+Linux(apache-incubator-servicecomb-service-center-XXXX-linux-amd64.tar.gz):
 ```sh
-./start.sh
+./start-frontend.sh
 ```
+
+Note: By default frontend runs on 127.0.0.1, if you want to change this then you can change it in `conf/frontend.conf`. You can also change the the IP of Service-Center to which Frontend is connected over here  `app/apiList/apiList.js`
 
 ##### Running UI from source code
 However if you want to try our latest code then you can follow the below steps
@@ -56,7 +58,8 @@ We Welcome our community members to come forward and help us to build this UI to
 |5|Consumer List for MicroServices|Done|
 |6|Schema List for MicroServices|Done|
 |7|Test Schema for MicroServices|InProgress|
-|8|Generate Client from Schema |TBD|
-|9|Generate Server from Schema|TBD|
+|8|Pact Broker Support|Done|
+|9|Generate Client from Schema |TBD|
+|10|Generate Server from Schema|TBD|
 
 Any Contribution(issues,PR,Documentation,Translation) will be highly appreciated.

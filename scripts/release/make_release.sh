@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+#!/usr/bin/env bash
+
 ## Get the Release Number
 if [ $2 == "" ]; then
     echo "Invalid version number....exiting...."
@@ -20,6 +22,9 @@ if [ $2 == "" ]; then
 else
     RELEASE=$2
 fi
+
+#Package prefix for the release directory
+PACKAGE_PREFIX=apache-incubator-servicecomb-service-center
 
 ## Get the PACKAGE NUMBER
 if [ $3 == "" ]; then
@@ -59,6 +64,14 @@ prepare_conf() {
     sed -i 's/manager_cluster = \"127.0.0.1:2379\"/# manager_cluster = \"127.0.0.1:2379\"/g' tmp/conf/app.conf
     #sed -i s@"manager_cluster.*=.*$"@"manager_name = \"sr-0\"\nmanager_addr = \"http://127.0.0.1:2380\"\nmanager_cluster = \"sr-0=http://127.0.0.1:2380\""@g tmp/conf/app.conf
     sed -i 's/registry_plugin = etcd/registry_plugin = embeded_etcd/g' tmp/conf/app.conf
+
+    ## Prepare conf for frontend
+    set +e
+    rm -rf front-tmp
+
+    set -e
+    mkdir front-tmp
+    cp -r frontend/conf front-tmp/
 }
 
 # Build Linux Release
@@ -71,31 +84,52 @@ build_linux(){
     fi
 
     set +e
-    rm -rf apache-incubator-servicecomb-service-center-$PACKAGE-linux-amd64
-    rm -rf apache-incubator-servicecomb-service-center-$PACKAGE-linux-amd64.tar.gz
+    rm -rf $PACKAGE_PREFIX-$PACKAGE-linux-amd64
+    rm -rf $PACKAGE_PREFIX-$PACKAGE-linux-amd64.tar.gz
 
     set -e
-    mkdir -p apache-incubator-servicecomb-service-center-$PACKAGE-linux-amd64
+    mkdir -p $PACKAGE_PREFIX-$PACKAGE-linux-amd64
 
+    ## Build the Service-Center releases
     export GOOS=linux
     export GIT_COMMIT=$(git log  --pretty=format:'%h' -n 1)
     export BUILD_NUMBER=$RELEASE
     GO_LDFLAGS="${GO_LDFLAGS} -X 'github.com/apache/incubator-servicecomb-service-center/version.BUILD_TAG=$(date +%Y%m%d%H%M%S).$BUILD_NUMBER.$GIT_COMMIT'"
     GO_LDFLAGS="${GO_LDFLAGS} -X 'github.com/apache/incubator-servicecomb-service-center/version.VERSION=$BUILD_NUMBER'"
     go build --ldflags "${GO_LDFLAGS}" -o apache-incubator-servicecomb-service-center
-    cp -r apache-incubator-servicecomb-service-center apache-incubator-servicecomb-service-center-$PACKAGE-linux-amd64
+    cp -r apache-incubator-servicecomb-service-center $PACKAGE_PREFIX-$PACKAGE-linux-amd64
+
+    ## Build Frontend Release
+    cd frontend
+    go build -o apache-incubator-serviceomb-frontend
+    cp -r apache-incubator-serviceomb-frontend ../$PACKAGE_PREFIX-$PACKAGE-linux-amd64
+    cd ..
+
     prepare_conf
-    cp -r tmp/conf apache-incubator-servicecomb-service-center-$PACKAGE-linux-amd64/
-    echo "./apache-incubator-servicecomb-service-center > start-sc.log 2>&1 &" >> apache-incubator-servicecomb-service-center-$PACKAGE-linux-amd64/start.sh
-    echo "kill -9 \$(ps aux | grep 'apache-incubator-servicecomb-service-center' | awk '{print \$2}')" >> apache-incubator-servicecomb-service-center-$PACKAGE-linux-amd64/stop.sh
-    chmod +x apache-incubator-servicecomb-service-center-$PACKAGE-linux-amd64/start.sh
-    chmod +x apache-incubator-servicecomb-service-center-$PACKAGE-linux-amd64/stop.sh
-    cp -r scripts/release/LICENSE apache-incubator-servicecomb-service-center-$PACKAGE-linux-amd64/
-    cp -r scripts/release/licenses apache-incubator-servicecomb-service-center-$PACKAGE-linux-amd64/
-    cp -r scripts/release/NOTICE apache-incubator-servicecomb-service-center-$PACKAGE-linux-amd64/
-    cp -r DISCLAIMER apache-incubator-servicecomb-service-center-$PACKAGE-linux-amd64/
-    cp -r README.md apache-incubator-servicecomb-service-center-$PACKAGE-linux-amd64/
-    tar -czvf apache-incubator-servicecomb-service-center-$PACKAGE-linux-amd64.tar.gz apache-incubator-servicecomb-service-center-$PACKAGE-linux-amd64
+
+    ## Copy the Service-Center Releases
+    cp -r tmp/conf $PACKAGE_PREFIX-$PACKAGE-linux-amd64/
+    echo "./apache-incubator-servicecomb-service-center > start-sc.log 2>&1 &" >> $PACKAGE_PREFIX-$PACKAGE-linux-amd64/start-service-center.sh
+    echo "kill -9 \$(ps aux | grep 'apache-incubator-servicecomb-service-center' | awk '{print \$2}')" >> $PACKAGE_PREFIX-$PACKAGE-linux-amd64/stop-service-center.sh
+    chmod +x $PACKAGE_PREFIX-$PACKAGE-linux-amd64/start-service-center.sh
+    chmod +x $PACKAGE_PREFIX-$PACKAGE-linux-amd64/stop-service-center.sh
+    cp -r scripts/release/LICENSE $PACKAGE_PREFIX-$PACKAGE-linux-amd64/
+    cp -r scripts/release/licenses $PACKAGE_PREFIX-$PACKAGE-linux-amd64/
+    cp -r scripts/release/NOTICE $PACKAGE_PREFIX-$PACKAGE-linux-amd64/
+    cp -r DISCLAIMER $PACKAGE_PREFIX-$PACKAGE-linux-amd64/
+    cp -r README.md $PACKAGE_PREFIX-$PACKAGE-linux-amd64/
+
+    ## Copy the frontend releases
+    cp -r front-tmp/conf/app.conf $PACKAGE_PREFIX-$PACKAGE-linux-amd64/conf/frontend.conf
+    cp -r frontend/app $PACKAGE_PREFIX-$PACKAGE-linux-amd64/
+    echo "./apache-incubator-serviceomb-frontend > start-sc-frontend.log 2>&1 &" >> $PACKAGE_PREFIX-$PACKAGE-linux-amd64/start-frontend.sh
+    echo "kill -9 \$(ps aux | grep 'apache-incubator-serviceomb-frontend' | awk '{print \$2}')" >> $PACKAGE_PREFIX-$PACKAGE-linux-amd64/stop-frontend.sh
+    chmod +x $PACKAGE_PREFIX-$PACKAGE-linux-amd64/start-frontend.sh
+    chmod +x $PACKAGE_PREFIX-$PACKAGE-linux-amd64/stop-frontend.sh
+    cp -r frontend/Readme.md $PACKAGE_PREFIX-$PACKAGE-linux-amd64/frontend-Readme.md
+
+    ## Archive the release
+    tar -czvf $PACKAGE_PREFIX-$PACKAGE-linux-amd64.tar.gz $PACKAGE_PREFIX-$PACKAGE-linux-amd64
 
 }
 
@@ -109,27 +143,46 @@ build_windows(){
     fi
 
     set +e
-    rm -rf apache-incubator-servicecomb-service-center-$PACKAGE-windows-amd64
-    rm -rf apache-incubator-servicecomb-service-center-$PACKAGE-windows-amd64.zip
+    rm -rf $PACKAGE_PREFIX-$PACKAGE-windows-amd64
+    rm -rf $PACKAGE_PREFIX-$PACKAGE-windows-amd64.zip
 
     set -e
-    mkdir -p apache-incubator-servicecomb-service-center-$PACKAGE-windows-amd64
+    mkdir -p $PACKAGE_PREFIX-$PACKAGE-windows-amd64
+
+    ## Build Service-Center Release
     export GOOS=windows
     export GIT_COMMIT=$(git log  --pretty=format:'%h' -n 1)
     export BUILD_NUMBER=$RELEASE
     GO_LDFLAGS="${GO_LDFLAGS} -X 'github.com/apache/incubator-servicecomb-service-center/version.BUILD_TAG=$(date +%Y%m%d%H%M%S).$BUILD_NUMBER.$GIT_COMMIT'"
     GO_LDFLAGS="${GO_LDFLAGS} -X 'github.com/apache/incubator-servicecomb-service-center/version.VERSION=$BUILD_NUMBER'"
     go build --ldflags "${GO_LDFLAGS}" -o apache-incubator-servicecomb-service-center.exe
-    cp -r apache-incubator-servicecomb-service-center.exe apache-incubator-servicecomb-service-center-$PACKAGE-windows-amd64
+    cp -r apache-incubator-servicecomb-service-center.exe $PACKAGE_PREFIX-$PACKAGE-windows-amd64
+
+    ## Build Frontend release
+    cd frontend
+    go build -o apache-incubator-serviceomb-frontend.exe
+    cp -r apache-incubator-serviceomb-frontend.exe ../$PACKAGE_PREFIX-$PACKAGE-windows-amd64
+    cd ..
+
     prepare_conf
-    cp -r tmp/conf apache-incubator-servicecomb-service-center-$PACKAGE-windows-amd64/
-    echo "apache-incubator-servicecomb-service-center.exe" >> apache-incubator-servicecomb-service-center-$PACKAGE-windows-amd64/start.bat
-    cp -r scripts/release/LICENSE apache-incubator-servicecomb-service-center-$PACKAGE-windows-amd64/
-    cp -r scripts/release/licenses apache-incubator-servicecomb-service-center-$PACKAGE-windows-amd64/
-    cp -r scripts/release/NOTICE apache-incubator-servicecomb-service-center-$PACKAGE-windows-amd64/
-    cp -r DISCLAIMER apache-incubator-servicecomb-service-center-$PACKAGE-windows-amd64/
-    cp -r README.md apache-incubator-servicecomb-service-center-$PACKAGE-windows-amd64/
-    tar -czvf apache-incubator-servicecomb-service-center-$PACKAGE-windows-amd64.tar.gz apache-incubator-servicecomb-service-center-$PACKAGE-windows-amd64
+
+    ## Copy the service-center releases
+    cp -r tmp/conf $PACKAGE_PREFIX-$PACKAGE-windows-amd64/
+    echo "apache-incubator-servicecomb-service-center.exe" >> $PACKAGE_PREFIX-$PACKAGE-windows-amd64/start-service-center.bat
+    cp -r scripts/release/LICENSE $PACKAGE_PREFIX-$PACKAGE-windows-amd64/
+    cp -r scripts/release/licenses $PACKAGE_PREFIX-$PACKAGE-windows-amd64/
+    cp -r scripts/release/NOTICE $PACKAGE_PREFIX-$PACKAGE-windows-amd64/
+    cp -r DISCLAIMER $PACKAGE_PREFIX-$PACKAGE-windows-amd64/
+    cp -r README.md $PACKAGE_PREFIX-$PACKAGE-windows-amd64/
+
+    ## Copy the Frontend releases
+    cp -r front-tmp/conf $PACKAGE_PREFIX-$PACKAGE-windows-amd64/conf/frontend.conf
+    cp -r frontend/app $PACKAGE_PREFIX-$PACKAGE-windows-amd64/
+    cp -r frontend/Readme.md $PACKAGE_PREFIX-$PACKAGE-windows-amd64/frontendReadme.md
+    echo "apache-incubator-serviceomb-frontend.exe" >> $PACKAGE_PREFIX-$PACKAGE-windows-amd64/start-frontend.bat
+
+    ## Archive the Release
+    tar -czvf $PACKAGE_PREFIX-$PACKAGE-windows-amd64.tar.gz $PACKAGE_PREFIX-$PACKAGE-windows-amd64
 }
 
 ## Compile the binary
