@@ -27,7 +27,7 @@ The easiest way to get Service Center is to use one of the pre-built release bin
 
 ### Running Service Center using the Release
 
-You can download our latest release from [ServiceComb Website][github-release]).When you get these release, you can execute the start script to run Service Center.
+You can download our latest release from [ServiceComb Website][github-release].When you get these release, you can execute the start script to run Service Center.
 
 Windows(apache-incubator-servicecomb-service-center-XXX-windows-amd64.zip):
 ```
