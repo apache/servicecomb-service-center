@@ -406,7 +406,7 @@ func (s *MicroServiceService) DeleteServices(ctx context.Context, request *pb.De
 		}
 	}
 
-	util.Logger().Infof("Batch DeleteServices serviceId = %v , result = %d, ", request.ServiceIds, responseCode)
+	util.Logger().Infof("Batch DeleteServices,count is %s, serviceId = %v , result = %d, ", len(request.ServiceIds), request.ServiceIds, responseCode)
 
 	resp := &pb.DelServicesResponse{
 		Services: delServiceRspInfo,

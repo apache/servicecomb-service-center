@@ -238,7 +238,7 @@ func (v *Validator) Validate(s interface{}) error {
 			}
 			// TODO null pointer如何校验
 			if field.Kind() != reflect.Ptr && !validate.Match(fi) {
-				return fmt.Errorf("%s validate failed, %s", fieldName, validate)
+				return fmt.Errorf("%s.%s validate failed, %s", st.Type.Name(), fieldName, validate)
 			}
 		}
 	}
