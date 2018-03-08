@@ -18,7 +18,12 @@ Linux(apache-incubator-servicecomb-service-center-XXXX-linux-amd64.tar.gz):
 ./start-frontend.sh
 ```
 
-Note: By default frontend runs on 127.0.0.1, if you want to change this then you can change it in `conf/frontend.conf`. You can also change the the IP of Service-Center to which Frontend is connected over here  `app/apiList/apiList.js`
+Note: By default frontend runs on 127.0.0.1, if you want to change this then you can change it in `conf/app.conf`. 
+```
+frontend_host_ip=127.0.0.1
+frontend_host_port=30103
+```
+You can also change the the IP of Service-Center to which Frontend is connected over here  `app/apiList/apiList.js`
 
 ##### Running UI from source code
 However if you want to try our latest code then you can follow the below steps
@@ -27,7 +32,10 @@ However if you want to try our latest code then you can follow the below steps
 git clone https://github.com/apache/incubator-servicecomb-service-center.git $GOPATH/src/github.com/apache/incubator-servicecomb-service-center
 cd $GOPATH/src/github.com/apache/incubator-servicecomb-service-center
 
+cp -r etc/conf frontend/
+
 cd frontend
+
 go run main.go
 ```
 This will bring up the Service-Center UI on [http://127.0.0.1:30103](http://127.0.0.1:30103).

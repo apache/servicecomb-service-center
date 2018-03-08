@@ -10,11 +10,8 @@ Update "PROJECT_ROOT/frontend/conf/app.conf" with service-center applications IP
 
 Example app.conf file,
 
-	SC_HOST_IP=123.123.123.123
-	SC_HOST_PORT=30100
-	SC_HOST_MODE=http
-	FRONTEND_HOST_IP=0.0.0.0
-	FRONTEND_HOST_PORT=30103
+	frontend_host_ip=0.0.0.0
+	frontend_host_port=30103
 
 Note: Configuring SC_HOST_IP will enable you to setup the EIP of the Service-center.
 

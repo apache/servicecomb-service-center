@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -12,7 +14,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#!/bin/bash
 
 set -e
 
@@ -41,7 +42,7 @@ cp -r app conf $BASE_DIR/scripts/frontend/start_linux.sh $SCRIPT_DIR/frontend
 
 chmod 755 $SCRIPT_DIR/frontend/start_linux.sh $SCRIPT_DIR/frontend/scfrontend
 
-sed -i "s|FRONTEND_HOST_IP=127.0.0.1|FRONTEND_HOST_IP=0.0.0.0|g" $SCRIPT_DIR/frontend/conf/app.conf
+sed -i "s|frontend_host_ip=127.0.0.1|frontend_host_ip=0.0.0.0|g" $SCRIPT_DIR/frontend/conf/app.conf
 
 #go to the script directory
 cd $SCRIPT_DIR
