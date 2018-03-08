@@ -20,8 +20,8 @@ Linux(apache-incubator-servicecomb-service-center-XXXX-linux-amd64.tar.gz):
 
 Note: By default frontend runs on 127.0.0.1, if you want to change this then you can change it in `conf/app.conf`. 
 ```
-FRONTEND_HOST_IP=127.0.0.1
-FRONTEND_HOST_PORT=30103
+frontend_host_ip=127.0.0.1
+frontend_host_port=30103
 ```
 You can also change the the IP of Service-Center to which Frontend is connected over here  `app/apiList/apiList.js`
 

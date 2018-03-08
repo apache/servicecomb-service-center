@@ -27,8 +27,8 @@ import (
 )
 
 func main() {
-	frontendIp := beego.AppConfig.String("FRONTEND_HOST_IP")
-	frontendPort := beego.AppConfig.DefaultInt("FRONTEND_HOST_PORT", 30103)
+	frontendIp := beego.AppConfig.String("frontend_host_ip")
+	frontendPort := beego.AppConfig.DefaultInt("frontend_host_port", 30103)
 
 	// command line flags
 	port := flag.Int("port", frontendPort, "port to serve on")

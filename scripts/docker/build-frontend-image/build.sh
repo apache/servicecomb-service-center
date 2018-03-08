@@ -42,7 +42,7 @@ cp -r app conf $BASE_DIR/scripts/frontend/start_linux.sh $SCRIPT_DIR/frontend
 
 chmod 755 $SCRIPT_DIR/frontend/start_linux.sh $SCRIPT_DIR/frontend/scfrontend
 
-sed -i "s|FRONTEND_HOST_IP=127.0.0.1|FRONTEND_HOST_IP=0.0.0.0|g" $SCRIPT_DIR/frontend/conf/app.conf
+sed -i "s|frontend_host_ip=127.0.0.1|frontend_host_ip=0.0.0.0|g" $SCRIPT_DIR/frontend/conf/app.conf
 
 #go to the script directory
 cd $SCRIPT_DIR
