@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -12,8 +14,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-#!/usr/bin/env bash
 
 ## Get the Release Number
 if [ $2 == "" ]; then
@@ -109,10 +109,6 @@ build_linux(){
 
     ## Copy the Service-Center Releases
     cp -r tmp/conf $PACKAGE_PREFIX-$PACKAGE-linux-amd64/
-    echo "./apache-incubator-servicecomb-service-center > start-sc.log 2>&1 &" >> $PACKAGE_PREFIX-$PACKAGE-linux-amd64/start-service-center.sh
-    echo "kill -9 \$(ps aux | grep 'apache-incubator-servicecomb-service-center' | awk '{print \$2}')" >> $PACKAGE_PREFIX-$PACKAGE-linux-amd64/stop-service-center.sh
-    chmod +x $PACKAGE_PREFIX-$PACKAGE-linux-amd64/start-service-center.sh
-    chmod +x $PACKAGE_PREFIX-$PACKAGE-linux-amd64/stop-service-center.sh
     cp -r scripts/release/LICENSE $PACKAGE_PREFIX-$PACKAGE-linux-amd64/
     cp -r scripts/release/licenses $PACKAGE_PREFIX-$PACKAGE-linux-amd64/
     cp -r scripts/release/NOTICE $PACKAGE_PREFIX-$PACKAGE-linux-amd64/
@@ -120,13 +116,11 @@ build_linux(){
     cp -r README.md $PACKAGE_PREFIX-$PACKAGE-linux-amd64/
 
     ## Copy the frontend releases
-    cp -r front-tmp/conf/app.conf $PACKAGE_PREFIX-$PACKAGE-linux-amd64/conf/frontend.conf
     cp -r frontend/app $PACKAGE_PREFIX-$PACKAGE-linux-amd64/
-    echo "./apache-incubator-serviceomb-frontend > start-sc-frontend.log 2>&1 &" >> $PACKAGE_PREFIX-$PACKAGE-linux-amd64/start-frontend.sh
-    echo "kill -9 \$(ps aux | grep 'apache-incubator-serviceomb-frontend' | awk '{print \$2}')" >> $PACKAGE_PREFIX-$PACKAGE-linux-amd64/stop-frontend.sh
-    chmod +x $PACKAGE_PREFIX-$PACKAGE-linux-amd64/start-frontend.sh
-    chmod +x $PACKAGE_PREFIX-$PACKAGE-linux-amd64/stop-frontend.sh
-    cp -r frontend/Readme.md $PACKAGE_PREFIX-$PACKAGE-linux-amd64/frontend-Readme.md
+
+    ## Copy Start Scripts
+    cp -r scripts/release/start_scripts/linux/* $PACKAGE_PREFIX-$PACKAGE-linux-amd64/
+    chmod +x $PACKAGE_PREFIX-$PACKAGE-linux-amd64/*.sh
 
     ## Archive the release
     tar -czvf $PACKAGE_PREFIX-$PACKAGE-linux-amd64.tar.gz $PACKAGE_PREFIX-$PACKAGE-linux-amd64
@@ -168,7 +162,6 @@ build_windows(){
 
     ## Copy the service-center releases
     cp -r tmp/conf $PACKAGE_PREFIX-$PACKAGE-windows-amd64/
-    echo "apache-incubator-servicecomb-service-center.exe" >> $PACKAGE_PREFIX-$PACKAGE-windows-amd64/start-service-center.bat
     cp -r scripts/release/LICENSE $PACKAGE_PREFIX-$PACKAGE-windows-amd64/
     cp -r scripts/release/licenses $PACKAGE_PREFIX-$PACKAGE-windows-amd64/
     cp -r scripts/release/NOTICE $PACKAGE_PREFIX-$PACKAGE-windows-amd64/
@@ -176,10 +169,10 @@ build_windows(){
     cp -r README.md $PACKAGE_PREFIX-$PACKAGE-windows-amd64/
 
     ## Copy the Frontend releases
-    cp -r front-tmp/conf $PACKAGE_PREFIX-$PACKAGE-windows-amd64/conf/frontend.conf
     cp -r frontend/app $PACKAGE_PREFIX-$PACKAGE-windows-amd64/
-    cp -r frontend/Readme.md $PACKAGE_PREFIX-$PACKAGE-windows-amd64/frontendReadme.md
-    echo "apache-incubator-serviceomb-frontend.exe" >> $PACKAGE_PREFIX-$PACKAGE-windows-amd64/start-frontend.bat
+
+    ## Copy start scripts
+    cp -r scripts/release/start_scripts/windows/* $PACKAGE_PREFIX-$PACKAGE-windows-amd64/
 
     ## Archive the Release
     tar -czvf $PACKAGE_PREFIX-$PACKAGE-windows-amd64.tar.gz $PACKAGE_PREFIX-$PACKAGE-windows-amd64

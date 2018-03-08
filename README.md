@@ -68,6 +68,30 @@ httpaddr = 127.0.0.1
 httpport = 30100
 ```
 
+### Running Frontend using the Release
+
+You can download our latest release from ServiceComb Website and then untar it and run start-frontend.sh/start-frontend.bat.
+This will bring up the Service-Center UI on [http://127.0.0.1:30103](http://127.0.0.1:30103).
+
+Windows(apache-incubator-servicecomb-service-center-XXX-windows-amd64.zip):
+```
+start-frontend.bat
+```
+
+Linux(apache-incubator-servicecomb-service-center-XXXX-linux-amd64.tar.gz):
+```sh
+./start-frontend.sh
+```
+
+Note: By default frontend runs on 127.0.0.1, if you want to change this then you can change it in `conf/app.conf`. 
+```
+FRONTEND_HOST_IP=127.0.0.1
+FRONTEND_HOST_PORT=30103
+```
+You can also change the the IP of Service-Center to which Frontend is connected over here  `app/apiList/apiList.js`
+
+
+You can follow the guide over [here](frontend/Readme.md#running-ui-from-source-code) to run the Frontend from source.
 
 ### Building & Running Service-Center from source
 
