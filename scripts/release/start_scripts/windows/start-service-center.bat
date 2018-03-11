@@ -13,4 +13,4 @@
 :: See the License for the specific language governing permissions and
 :: limitations under the License.
 
-apache-incubator-servicecomb-service-center.exe
+apache-incubating-servicecomb-service-center.exe
