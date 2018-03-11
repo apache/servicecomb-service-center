@@ -15,4 +15,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-kill -9 $(ps aux | grep 'apache-incubator-servicecomb-service-center' | awk '{print $2}')
+kill -9 $(ps aux | grep 'service-center' | awk '{print $2}')
