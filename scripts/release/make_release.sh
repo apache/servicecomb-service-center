@@ -24,7 +24,7 @@ else
 fi
 
 #Package prefix for the release directory
-PACKAGE_PREFIX=apache-incubator-servicecomb-service-center
+PACKAGE_PREFIX=apache-incubating-servicecomb-service-center
 
 ## Get the PACKAGE NUMBER
 if [ $3 == "" ]; then
@@ -88,13 +88,13 @@ build_linux(){
     export BUILD_NUMBER=$RELEASE
     GO_LDFLAGS="${GO_LDFLAGS} -X 'github.com/apache/incubator-servicecomb-service-center/version.BUILD_TAG=$(date +%Y%m%d%H%M%S).$BUILD_NUMBER.$GIT_COMMIT'"
     GO_LDFLAGS="${GO_LDFLAGS} -X 'github.com/apache/incubator-servicecomb-service-center/version.VERSION=$BUILD_NUMBER'"
-    go build --ldflags "${GO_LDFLAGS}" -o apache-incubator-servicecomb-service-center
-    cp -r apache-incubator-servicecomb-service-center $PACKAGE_PREFIX-$PACKAGE-linux-amd64
+    go build --ldflags "${GO_LDFLAGS}" -o apache-incubating-servicecomb-service-center
+    cp -r apache-incubating-servicecomb-service-center $PACKAGE_PREFIX-$PACKAGE-linux-amd64
 
     ## Build Frontend Release
     cd frontend
-    go build -o apache-incubator-serviceomb-frontend
-    cp -r apache-incubator-serviceomb-frontend ../$PACKAGE_PREFIX-$PACKAGE-linux-amd64
+    go build -o apache-incubating-servicecomb-frontend
+    cp -r apache-incubating-servicecomb-frontend ../$PACKAGE_PREFIX-$PACKAGE-linux-amd64
     cd ..
 
     prepare_conf
@@ -141,13 +141,13 @@ build_windows(){
     export BUILD_NUMBER=$RELEASE
     GO_LDFLAGS="${GO_LDFLAGS} -X 'github.com/apache/incubator-servicecomb-service-center/version.BUILD_TAG=$(date +%Y%m%d%H%M%S).$BUILD_NUMBER.$GIT_COMMIT'"
     GO_LDFLAGS="${GO_LDFLAGS} -X 'github.com/apache/incubator-servicecomb-service-center/version.VERSION=$BUILD_NUMBER'"
-    go build --ldflags "${GO_LDFLAGS}" -o apache-incubator-servicecomb-service-center.exe
-    cp -r apache-incubator-servicecomb-service-center.exe $PACKAGE_PREFIX-$PACKAGE-windows-amd64
+    go build --ldflags "${GO_LDFLAGS}" -o apache-incubating-servicecomb-service-center.exe
+    cp -r apache-incubating-servicecomb-service-center.exe $PACKAGE_PREFIX-$PACKAGE-windows-amd64
 
     ## Build Frontend release
     cd frontend
-    go build -o apache-incubator-serviceomb-frontend.exe
-    cp -r apache-incubator-serviceomb-frontend.exe ../$PACKAGE_PREFIX-$PACKAGE-windows-amd64
+    go build -o apache-incubating-servicecomb-frontend.exe
+    cp -r apache-incubating-servicecomb-frontend.exe ../$PACKAGE_PREFIX-$PACKAGE-windows-amd64
     cd ..
 
     prepare_conf
