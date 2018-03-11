@@ -15,4 +15,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-kill -9 $(ps aux | grep 'apache-incubator-serviceomb-frontend' | awk '{print $2}')
+kill -9 $(ps aux | grep 'frontend' | awk '{print $2}')
