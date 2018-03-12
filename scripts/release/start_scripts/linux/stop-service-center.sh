@@ -15,4 +15,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-kill -9 $(ps aux | grep 'service-center' | awk '{print $2}')
+ps -o pid,cmd,args ax | grep 'service-center' | grep -v grep | awk '{print $1}' | xargs kill -9
