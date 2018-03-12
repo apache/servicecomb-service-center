@@ -52,7 +52,10 @@ func (f *FileCollector) write(batch []*zipkincore.Span) (c int) {
 		return
 	}
 
-	f.checkFile()
+	if err := f.checkFile(); err != nil {
+		util.Logger().Errorf(err, "check tracing file failed")
+		return
+	}
 
 	newLine := [...]byte{'\n'}
 	w := bufio.NewWriter(f.Fd)
@@ -73,10 +76,27 @@ func (f *FileCollector) write(batch []*zipkincore.Span) (c int) {
 	return
 }
 
-func (f *FileCollector) checkFile() {
-	if _, err := f.Fd.Stat(); err != nil {
-		util.Logger().Errorf(err, "check the file failed")
+func (f *FileCollector) checkFile() error {
+	if util.PathExist(f.Fd.Name()) {
+		return nil
 	}
+
+	stat, err := f.Fd.Stat()
+	if err != nil {
+		return fmt.Errorf("stat %s: %s", f.Fd.Name(), err)
+	}
+
+	fd, err := os.OpenFile(f.Fd.Name(), os.O_APPEND|os.O_CREATE|os.O_RDWR, stat.Mode())
+	if err != nil {
+		return fmt.Errorf("open %s: %s", f.Fd.Name(), err)
+	}
+
+	var old *os.File
+	f.Fd, old = fd, f.Fd
+	if err := old.Close(); err != nil {
+		util.Logger().Errorf(err, "close %s", f.Fd.Name())
+	}
+	return nil
 }
 
 func (f *FileCollector) loop(stopCh <-chan struct{}) {
