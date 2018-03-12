@@ -51,6 +51,9 @@ func (f *FileCollector) write(batch []*zipkincore.Span) (c int) {
 	if len(batch) == 0 {
 		return
 	}
+
+	f.checkFile()
+
 	newLine := [...]byte{'\n'}
 	w := bufio.NewWriter(f.Fd)
 	for _, span := range batch {
@@ -68,6 +71,12 @@ func (f *FileCollector) write(batch []*zipkincore.Span) (c int) {
 		util.Logger().Errorf(err, "write span to file failed")
 	}
 	return
+}
+
+func (f *FileCollector) checkFile() {
+	if _, err := f.Fd.Stat(); err != nil {
+		util.Logger().Errorf(err, "check the file failed")
+	}
 }
 
 func (f *FileCollector) loop(stopCh <-chan struct{}) {
