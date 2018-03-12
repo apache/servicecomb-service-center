@@ -27,14 +27,12 @@ cp  apache-rat-0.12/apache-rat-0.12.jar ./
 Run the Rat tool using the below command
 
 ```
-java -jar apache-rat-0.12.jar -a -d incubator-servicecomb-service-center/ -e *.md *.MD .gitignore .gitmodules .travis.yml *.json *.yaml *.tmpl *.conf *.html *.pb.go services.proto  broker.proto manifest **vendor** **licenses**
+java -jar apache-rat-0.12.jar -a -d incubator-servicecomb-service-center/ -e *.md *.MD .gitignore .gitmodules .travis.yml manifest **vendor** **licenses**
 ```
 
 Below is the list of the files which has been excluded from the list of RAT tool.
  - *.md  *.MD *.html:  Skip all the Readme and Documentation file like Api Docs.
  - .gitignore .gitmodules .travis.yml : Skip the git files and travis file.
- - *.json *.yaml *.tmpl *.conf : Skip all the json files , yaml files, temp DockerFile and configuration files.
- - *.pb.go services.proto : Skip the Protobuf auto-generated codes.
  - manifest **vendor : Skip manifest and all the files under vendor.
  
 You can access the latest RAT report [here](/docs/release/rat-report)  
