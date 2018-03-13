@@ -23,4 +23,4 @@ cd ${root_path}
 
 sed -i "s|^runmode.*=.*$|runmode = prod|g" conf/app.conf
 
-./service-center &
+./service-center > start-sc.log 2>&1 &
