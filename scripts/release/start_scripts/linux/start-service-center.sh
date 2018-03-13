@@ -15,4 +15,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -e
+
+root_path=$(cd "$(dirname "$0")"; pwd)
+
+cd ${root_path}
+
+sed -i "s|^runmode.*=.*$|runmode = prod|g" conf/app.conf
+
 ./service-center > start-sc.log 2>&1 &
