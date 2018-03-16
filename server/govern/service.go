@@ -121,7 +121,7 @@ func (governService *GovernService) GetServiceDetail(ctx context.Context, in *pb
 
 	if len(in.ServiceId) == 0 {
 		return &pb.GetServiceDetailResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Invalid requtest for getting service detail."),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Invalid request for getting service detail."),
 		}, nil
 	}
 

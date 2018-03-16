@@ -160,14 +160,10 @@ func MatchRules(rulesOfProvider []*pb.ServiceRule, consumer *pb.MicroService, ta
 		return scerr.NewError(scerr.ErrInvalidParams, "consumer is nil")
 	}
 
-	isWhite := false
 	if len(rulesOfProvider) <= 0 {
 		return nil
 	}
 	if rulesOfProvider[0].RuleType == "WHITE" {
-		isWhite = true
-	}
-	if isWhite {
 		return patternWhiteList(rulesOfProvider, tagsOfConsumer, consumer)
 	}
 	return patternBlackList(rulesOfProvider, tagsOfConsumer, consumer)

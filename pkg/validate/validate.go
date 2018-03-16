@@ -238,9 +238,25 @@ func (v *Validator) Validate(s interface{}) error {
 			}
 			// TODO null pointer如何校验
 			if field.Kind() != reflect.Ptr && !validate.Match(fi) {
-				return fmt.Errorf("%s validate failed, %s", fieldName, validate)
+				if filter(fieldName) {
+					return fmt.Errorf("invalid field: %s.%s , %s", st.Type.Name(), fieldName, validate)
+				}
+				return fmt.Errorf("invalid field: %s.%s,  invalid value: {%v} , %s", st.Type.Name(), fieldName, fi, validate)
 			}
 		}
 	}
 	return nil
+}
+
+var (
+	BLACK_LIST_FOR_PRINT = map[string]interface{} {
+		"Properties": nil,
+		}
+)
+
+func filter(fieldName string) bool {
+	if _, ok := BLACK_LIST_FOR_PRINT[fieldName]; ok {
+		return true
+	}
+	return false
 }

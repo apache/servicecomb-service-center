@@ -206,6 +206,39 @@ var _ = Describe("'Micro-service' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
+			It("same serviceId,different service, can not register again,error is same as the service register twice", func() {
+				resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceId:   "same_serviceId",
+						ServiceName: "serviceA",
+						AppId:       "default",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Schemas: []string{
+							"xxxxxxxx",
+						},
+						Status: "UP",
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+
+				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceId:   "same_serviceId",
+						ServiceName: "serviceB",
+						AppId:       "default",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Schemas: []string{
+							"xxxxxxxx",
+						},
+						Status: "UP",
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+			})
 		})
 
 		Context("when creating a diff env service", func() {
@@ -485,7 +518,7 @@ var _ = Describe("'Micro-service' service", func() {
 		})
 	})
 
-	Describe("execute 'exists' operartion", func() {
+	Describe("execute 'exists' operation", func() {
 		var (
 			serviceId1 string
 			serviceId2 string
@@ -667,7 +700,7 @@ var _ = Describe("'Micro-service' service", func() {
 		})
 	})
 
-	Describe("execute 'query' operartion", func() {
+	Describe("execute 'query' operation", func() {
 		Context("when request is nil", func() {
 			It("should be failed", func() {
 				resp, err := serviceResource.GetServices(getContext(), nil)
@@ -707,7 +740,7 @@ var _ = Describe("'Micro-service' service", func() {
 		})
 	})
 
-	Describe("execute 'update' operartion", func() {
+	Describe("execute 'update' operation", func() {
 		var (
 			serviceId string
 		)
