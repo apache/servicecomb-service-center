@@ -88,10 +88,8 @@ func TestInstanceExist(t *testing.T) {
 }
 
 func TestCheckEndPoints(t *testing.T) {
-	_, _, err := CheckEndPoints(context.Background(), &proto.RegisterInstanceRequest{
-		Instance: &proto.MicroServiceInstance{
-			ServiceId: "a",
-		},
+	_, err := CheckEndPoints(context.Background(), &proto.MicroServiceInstance{
+		ServiceId: "a",
 	})
 	if err == nil {
 		fmt.Printf(`CheckEndPoints failed`)
@@ -108,9 +106,9 @@ func TestDeleteServiceAllInstances(t *testing.T) {
 }
 
 func TestParseEndpointValue(t *testing.T) {
-	epv := ParseEndpointValue([]byte("x/y"))
+	epv := ParseEndpointIndexValue([]byte("x/y"))
 	if epv.serviceId != "x" || epv.instanceId != "y" {
-		fmt.Printf(`ParseEndpointValue failed`)
+		fmt.Printf(`ParseEndpointIndexValue failed`)
 		t.FailNow()
 	}
 }

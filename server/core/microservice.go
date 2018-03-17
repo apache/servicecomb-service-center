@@ -163,12 +163,3 @@ func HeartbeatRequest() *pb.HeartbeatRequest {
 		InstanceId: Instance.InstanceId,
 	}
 }
-
-func GetRegionAndAvailableZone(in *pb.DataCenterInfo) (region string, availableZone string) {
-	if in == nil {
-		return "", ""
-	}
-	region = in.Region
-	availableZone = in.AvailableZone
-	return
-}
