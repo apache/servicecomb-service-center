@@ -112,3 +112,11 @@ func TestParseEndpointValue(t *testing.T) {
 		t.FailNow()
 	}
 }
+
+func TestGetInstanceCountOfOneService(t *testing.T) {
+	_, err := GetInstanceCountOfOneService(context.Background(), "", "")
+	if err == nil {
+		fmt.Printf(`GetInstanceCountOfOneService failed`)
+		t.FailNow()
+	}
+}
