@@ -24,15 +24,13 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
-	"sort"
 	"strconv"
 	"strings"
 )
-
-const NODEIP = "nodeIP"
 
 func GetLeaseId(ctx context.Context, domainProject string, serviceId string, instanceId string) (int64, error) {
 	opts := append(FromContext(ctx),
@@ -118,39 +116,32 @@ func InstanceExist(ctx context.Context, domainProject string, serviceId string, 
 	return true, nil
 }
 
-func CheckEndPoints(ctx context.Context, in *pb.RegisterInstanceRequest) (string, string, error) {
+func CheckEndPoints(ctx context.Context, instance *pb.MicroServiceInstance) (string, *scerr.Error) {
 	domainProject := util.ParseDomainProject(ctx)
-	endpoints := in.Instance.Endpoints
-	sort.Strings(endpoints)
-	endpointsJoin := util.StringJoin(endpoints, "/")
-	region, availableZone := apt.GetRegionAndAvailableZone(in.Instance.DataCenterInfo)
-	nodeIP := ""
-	if value, ok := in.Instance.Properties[NODEIP]; ok {
-		nodeIP = value
-	}
-	instanceEndpointsIndexKey := apt.GenerateEndpointsIndexKey(domainProject, region, availableZone, nodeIP, endpointsJoin)
 	resp, err := store.Store().Endpoints().Search(ctx,
-		registry.WithStrKey(instanceEndpointsIndexKey))
+		registry.WithStrKey(apt.GenerateEndpointsIndexKey(domainProject, instance)))
 	if err != nil {
-		return "", "", err
+		return "", scerr.NewError(scerr.ErrInternal, err.Error())
 	}
 	if resp.Count == 0 {
-		return "", instanceEndpointsIndexKey, nil
+		return "", nil
 	}
-	endpointValue := ParseEndpointValue(resp.Kvs[0].Value)
-	if in.Instance.ServiceId != endpointValue.serviceId {
-		return endpointValue.instanceId, "", fmt.Errorf("Find the same endpoints in service %s", endpointValue.serviceId)
+	endpointValue := ParseEndpointIndexValue(resp.Kvs[0].Value)
+	if instance.ServiceId != endpointValue.serviceId {
+		return endpointValue.instanceId,
+			scerr.NewError(scerr.ErrEndpointAlreadyExists,
+				fmt.Sprintf("Find the same endpoints in service %s", endpointValue.serviceId))
 	}
-	return endpointValue.instanceId, "", nil
+	return endpointValue.instanceId, nil
 }
 
-type EndpointValue struct {
+type EndpointIndexValue struct {
 	serviceId  string
 	instanceId string
 }
 
-func ParseEndpointValue(value []byte) EndpointValue {
-	endpointValue := EndpointValue{}
+func ParseEndpointIndexValue(value []byte) EndpointIndexValue {
+	endpointValue := EndpointIndexValue{}
 	tmp := util.BytesToStringWithNoCopy(value)
 	splitedTmp := strings.Split(tmp, "/")
 	endpointValue.serviceId = splitedTmp[0]

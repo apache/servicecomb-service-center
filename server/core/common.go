@@ -67,7 +67,7 @@ func init() {
 	pathRegex, _ := regexp.Compile(`^[A-Za-z0-9.,?'\\/+&amp;%$#=~_\-@{}]*$`)
 	// descriptionRegex, _ := regexp.Compile(`^[\p{Han}\w\s。.:*,\-：”“"]*$`)
 	levelRegex, _ := regexp.Compile(`^(FRONT|MIDDLE|BACK)$`)
-	statusRegex, _ := regexp.Compile("^(" + pb.MS_UP + "|" + pb.MS_DOWN + ")*$")
+	statusRegex, _ := regexp.Compile("^(" + pb.MS_UP + "|" + pb.MS_DOWN + ")?$")
 	serviceIdRegex, _ := regexp.Compile(`^.*$`)
 	aliasRegex, _ := regexp.Compile(`^[a-zA-Z0-9_\-.:]*$`)
 	registerByRegex, _ := regexp.Compile("^(" + util.StringJoin([]string{pb.REGISTERBY_SDK, pb.REGISTERBY_SIDECAR}, "|") + ")*$")
@@ -78,7 +78,7 @@ func init() {
 	// map/slice的长度由validator中的min/max/length控制
 	schemaIdRegex, _ := regexp.Compile(`^[a-zA-Z0-9]{1,160}$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]{0,158}[a-zA-Z0-9]$`) //length:{1,160}
 	instStatusRegex, _ := regexp.Compile("^(" + util.StringJoin([]string{
-		pb.MSI_UP, pb.MSI_DOWN, pb.MSI_STARTING, pb.MSI_OUTOFSERVICE}, "|") + ")$")
+		pb.MSI_UP, pb.MSI_DOWN, pb.MSI_STARTING, pb.MSI_OUTOFSERVICE}, "|") + ")?$")
 	tagRegex, _ := regexp.Compile(`^[a-zA-Z][a-zA-Z0-9_\-.]{0,63}$`)
 	hbModeRegex, _ := regexp.Compile(`^(push|pull)$`)
 	numberAllowEmptyRegex, _ := regexp.Compile(`^[0-9]*$`)
@@ -111,7 +111,7 @@ func init() {
 	MicroServiceValidator.AddRules(MicroServiceKeyValidator.GetRules())
 	MicroServiceValidator.AddRule("Description", &validate.ValidateRule{Length: 256})
 	MicroServiceValidator.AddRule("Level", &validate.ValidateRule{Min: 1, Regexp: levelRegex})
-	MicroServiceValidator.AddRule("Status", &validate.ValidateRule{Min: 1, Regexp: statusRegex})
+	MicroServiceValidator.AddRule("Status", &validate.ValidateRule{Regexp: statusRegex})
 	MicroServiceValidator.AddRule("Schemas", SchemaIdRule)
 	MicroServiceValidator.AddSub("Paths", &ServicePathValidator)
 	MicroServiceValidator.AddRule("Alias", &validate.ValidateRule{Length: 128, Regexp: aliasRegex})
@@ -124,15 +124,15 @@ func init() {
 	GetSchemaExistsReqValidator.AddRule("ServiceId", ServiceIdRule)
 	GetSchemaExistsReqValidator.AddRule("SchemaId", SchemaIdRule)
 
-	var subSchemaValidor validate.Validator
-	subSchemaValidor.AddRule("SchemaId", SchemaIdRule)
-	subSchemaValidor.AddRule("Summary", &validate.ValidateRule{Min: 1, Max: 512, Regexp: SchemaSummaryRegex})
-	subSchemaValidor.AddRule("Schema", &validate.ValidateRule{Min: 1})
+	var subSchemaValidator validate.Validator
+	subSchemaValidator.AddRule("SchemaId", SchemaIdRule)
+	subSchemaValidator.AddRule("Summary", &validate.ValidateRule{Min: 1, Max: 512, Regexp: SchemaSummaryRegex})
+	subSchemaValidator.AddRule("Schema", &validate.ValidateRule{Min: 1})
 
 	SchemasValidator.AddRule("ServiceId", ServiceIdRule)
-	SchemasValidator.AddSub("Schemas", &subSchemaValidor)
+	SchemasValidator.AddSub("Schemas", &subSchemaValidator)
 
-	SchemaValidator.AddRules(subSchemaValidor.GetRules())
+	SchemaValidator.AddRules(subSchemaValidator.GetRules())
 	SchemaValidator.AddRule("ServiceId", ServiceIdRule)
 	SchemaValidator.AddRule("Summary", &validate.ValidateRule{Max: 512, Regexp: SchemaSummaryRegex})
 

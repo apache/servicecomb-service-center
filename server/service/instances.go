@@ -40,103 +40,17 @@ import (
 type InstanceService struct {
 }
 
-func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceRequest) (*pb.RegisterInstanceResponse, error) {
-	if in == nil || in.Instance == nil {
-		util.Logger().Errorf(nil, "register instance failed: invalid params.")
-		return &pb.RegisterInstanceResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
-		}, nil
-	}
-	instance := in.GetInstance()
+func (s *InstanceService) preProcessRegisterInstance(ctx context.Context, instance *pb.MicroServiceInstance) *scerr.Error {
 	if len(instance.Status) == 0 {
 		instance.Status = pb.MSI_UP
 	}
 
-	remoteIP := util.GetIPFromContext(ctx)
-	instanceFlag := util.StringJoin([]string{instance.ServiceId, instance.HostName}, "/")
-	err := apt.Validate(instance)
-	if err != nil {
-		util.Logger().Errorf(err, "register instance failed, service %s, operator %s: invalid instance parameters.",
-			instanceFlag, remoteIP)
-		return &pb.RegisterInstanceResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
-		}, nil
-	}
-	//先以domain/project的方式组装
-	domainProject := util.ParseDomainProject(ctx)
-
-	// service id存在性校验
-	service, err := serviceUtil.GetService(ctx, domainProject, instance.ServiceId)
-	if service == nil || err != nil {
-		util.Logger().Errorf(err, "register instance failed, service %s, operator %s: service not exist.", instanceFlag, remoteIP)
-		return &pb.RegisterInstanceResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
-		}, nil
-	}
-
-	instanceId := instance.InstanceId
-	//允许自定义id
-	//如果没填写 并且endpoints沒重復，則产生新的全局instance id
-	oldInstanceId := ""
-
-	var endpointsIndexKey string
-	if instanceId == "" {
-		util.Logger().Infof("start register a new instance: service %s", instanceFlag)
-		if len(instance.Endpoints) != 0 {
-			oldInstanceId, endpointsIndexKey, err = serviceUtil.CheckEndPoints(ctx, in)
-			if err != nil {
-				util.Logger().Errorf(err, "register instance failed, service %s, operator %s: check endpoints failed.", instanceFlag, remoteIP)
-				if oldInstanceId != "" {
-					return &pb.RegisterInstanceResponse{
-						Response: pb.CreateResponse(scerr.ErrEndpointAlreadyExists, err.Error()),
-					}, nil
-				}
-				return &pb.RegisterInstanceResponse{
-					Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
-				}, err
-			}
-			if oldInstanceId != "" {
-				util.Logger().Infof("register instance successful, reuse service %s instance %s, operator %s",
-					instance.ServiceId, oldInstanceId, remoteIP)
-				return &pb.RegisterInstanceResponse{
-					Response:   pb.CreateResponse(pb.Response_SUCCESS, "instance more exist."),
-					InstanceId: oldInstanceId,
-				}, nil
-			}
-		}
-	}
-
-	var reporter quota.QuotaReporter
-	if len(oldInstanceId) == 0 {
-		if !apt.IsSCInstance(ctx) {
-			res := quota.NewApplyQuotaResource(quota.MicroServiceInstanceQuotaType, domainProject, in.Instance.ServiceId, 1)
-			rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
-			reporter = rst.Reporter
-			err := rst.Err
-			if reporter != nil {
-				defer reporter.Close()
-			}
-			if err != nil {
-				util.Logger().Errorf(err, "register instance failed, service %s, operator %s: no quota apply.", instanceFlag, remoteIP)
-				response := &pb.RegisterInstanceResponse{
-					Response: pb.CreateResponseWithSCErr(err),
-				}
-				if err.InternalError() {
-					return response, err
-				}
-				return response, nil
-			}
-		}
-	}
-
-	if len(instanceId) == 0 {
-		instanceId = plugin.Plugins().UUID().GetInstanceId()
-		instance.InstanceId = instanceId
+	if len(instance.InstanceId) == 0 {
+		instance.InstanceId = plugin.Plugins().UUID().GetInstanceId()
 	}
 
 	instance.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
 	instance.ModTimestamp = instance.Timestamp
-	util.Logger().Debug(fmt.Sprintf("instance ID [%s]", instanceId))
 
 	// 这里应该根据租约计时
 	renewalInterval := apt.REGISTRY_DEFAULT_LEASE_RENEWALINTERVAL
@@ -154,10 +68,7 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 			if instance.HealthCheck.Interval <= 0 || instance.HealthCheck.Interval >= math.MaxInt32 ||
 				instance.HealthCheck.Times <= 0 || instance.HealthCheck.Times >= math.MaxInt32 ||
 				instance.HealthCheck.Interval*(instance.HealthCheck.Times+1) >= math.MaxInt32 {
-				util.Logger().Errorf(err, "register instance %s(%s) failed for invalid health check settings.", instance.ServiceId, instance.HostName)
-				return &pb.RegisterInstanceResponse{
-					Response: pb.CreateResponse(scerr.ErrInvalidParams, "Invalid health check settings."),
-				}, nil
+				return scerr.NewError(scerr.ErrInvalidParams, "Invalid 'healthCheck' settings in request body.")
 			}
 			renewalInterval = instance.HealthCheck.Interval
 			retryTimes = instance.HealthCheck.Times
@@ -165,68 +76,175 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 			// 默认120s
 		}
 	}
-	ttl := int64(renewalInterval * (retryTimes + 1))
 
+	domainProject := util.ParseDomainProject(ctx)
+	service, err := serviceUtil.GetService(ctx, domainProject, instance.ServiceId)
+	if service == nil || err != nil {
+		return scerr.NewError(scerr.ErrServiceNotExists, "Invalid 'serviceId' in request body.")
+	}
 	instance.Version = service.Version
+	return nil
+}
 
+func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceRequest) (*pb.RegisterInstanceResponse, error) {
+	if in == nil || in.Instance == nil {
+		util.Logger().Errorf(nil, "register instance failed: invalid params.")
+		return &pb.RegisterInstanceResponse{
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
+		}, nil
+	}
+
+	instance := in.GetInstance()
+	remoteIP := util.GetIPFromContext(ctx)
+	instanceFlag := util.StringJoin([]string{instance.ServiceId, instance.HostName}, "/")
+
+	if err := apt.Validate(instance); err != nil {
+		util.Logger().Errorf(err, "register instance failed, service %s, operator %s.", instanceFlag, remoteIP)
+		return &pb.RegisterInstanceResponse{
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+		}, nil
+	}
+	//允许自定义id
+	//如果没填写 并且endpoints沒重復，則产生新的全局instance id
+	oldInstanceId, checkErr := serviceUtil.CheckEndPoints(ctx, in.Instance)
+	if checkErr != nil {
+		util.Logger().Errorf(checkErr, "check endpoints index failed, service %s, operator %s.",
+			instanceFlag, remoteIP)
+		resp := pb.CreateResponseWithSCErr(checkErr)
+		if checkErr.InternalError() {
+			return &pb.RegisterInstanceResponse{Response: resp}, checkErr
+		}
+		return &pb.RegisterInstanceResponse{Response: resp}, nil
+	}
+	if len(oldInstanceId) > 0 {
+		util.Logger().Infof("register instance successful, reuse service %s instance %s, operator %s.",
+			instance.ServiceId, oldInstanceId, remoteIP)
+		return &pb.RegisterInstanceResponse{
+			Response:   pb.CreateResponse(pb.Response_SUCCESS, "instance more exist."),
+			InstanceId: oldInstanceId,
+		}, nil
+	}
+
+	if err := s.preProcessRegisterInstance(ctx, instance); err != nil {
+		util.Logger().Errorf(err, "register instance failed, service %s, operator %s.", instanceFlag, remoteIP)
+		return &pb.RegisterInstanceResponse{
+			Response: pb.CreateResponseWithSCErr(err),
+		}, nil
+	}
+
+	//先以domain/project的方式组装
+	domainProject := util.ParseDomainProject(ctx)
+
+	var reporter quota.QuotaReporter
+	if !apt.IsSCInstance(ctx) {
+		res := quota.NewApplyQuotaResource(quota.MicroServiceInstanceQuotaType,
+			domainProject, in.Instance.ServiceId, 1)
+		rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+		reporter = rst.Reporter
+		err := rst.Err
+		if reporter != nil {
+			defer reporter.Close()
+		}
+		if err != nil {
+			util.Logger().Errorf(err, "register instance failed, service %s, operator %s: no quota apply.",
+				instanceFlag, remoteIP)
+			response := &pb.RegisterInstanceResponse{
+				Response: pb.CreateResponseWithSCErr(err),
+			}
+			if err.InternalError() {
+				return response, err
+			}
+			return response, nil
+		}
+	}
+
+	instanceId := instance.InstanceId
 	data, err := json.Marshal(instance)
 	if err != nil {
-		util.Logger().Errorf(err, "register instance failed, service %s, instanceId %s, operator %s: json marshal data failed.",
+		util.Logger().Errorf(err,
+			"register instance failed, service %s, instanceId %s, operator %s: json marshal data failed.",
 			instanceFlag, instanceId, remoteIP)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, "Instance file marshal error."),
 		}, err
 	}
 
-	leaseID, err := grantOrRenewLease(ctx, domainProject, instance.ServiceId, instanceId, ttl)
+	ttl := int64(instance.HealthCheck.Interval * (instance.HealthCheck.Times + 1))
+	leaseID, err := backend.Registry().LeaseGrant(ctx, ttl)
 	if err != nil {
+		util.Logger().Errorf(err, "grant lease failed, instance %s, operator: %s.", instanceFlag, remoteIP)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, "Lease grant or renew failed."),
 		}, err
 	}
+	util.Logger().Infof("lease grant %ds successfully, instance %s, operator: %s.", ttl, instanceFlag, remoteIP)
 
+	// build the request options
 	key := apt.GenerateInstanceKey(domainProject, instance.ServiceId, instanceId)
 	hbKey := apt.GenerateInstanceLeaseKey(domainProject, instance.ServiceId, instanceId)
-
-	util.Logger().Debugf("start register service instance: %s %v, lease: %s %ds", key, instance, hbKey, ttl)
+	cmpBytes := util.StringToBytesWithNoCopy(apt.GenerateEndpointsIndexKey(domainProject, instance))
 
 	opts := []registry.PluginOp{
 		registry.OpPut(registry.WithStrKey(key), registry.WithValue(data),
-			registry.WithLease(leaseID), registry.WithIgnoreLease()),
+			registry.WithLease(leaseID)),
+		registry.OpPut(registry.WithStrKey(hbKey), registry.WithStrValue(fmt.Sprintf("%d", leaseID)),
+			registry.WithLease(leaseID)),
+		registry.OpPut(registry.WithKey(cmpBytes), registry.WithStrValue(instance.ServiceId+"/"+instanceId),
+			registry.WithLease(leaseID)),
 	}
-	if leaseID != 0 {
-		opts = append(opts,
-			registry.OpPut(registry.WithStrKey(hbKey), registry.WithStrValue(fmt.Sprintf("%d", leaseID)),
-				registry.WithLease(leaseID), registry.WithIgnoreLease()))
-	}
-
-	if endpointsIndexKey != "" {
-		value := util.StringJoin([]string{
-			instance.ServiceId,
-			instanceId,
-		}, "/")
-		opts = append(opts, registry.OpPut(registry.WithStrKey(endpointsIndexKey),
-			registry.WithStrValue(value),
-			registry.WithLease(leaseID), registry.WithIgnoreLease()))
+	uniqueCmpOpts := []registry.CompareOp{
+		registry.OpCmp(registry.CmpVer(cmpBytes), registry.CMP_EQUAL, 0),
 	}
 
-	// Set key file
-	_, err = backend.Registry().Txn(ctx, opts)
+	resp, err := backend.Registry().TxnWithCmp(ctx, opts, uniqueCmpOpts, nil)
 	if err != nil {
-		util.Logger().Errorf(err, "register instance failed, service %s, instanceId %s, operator %s: commit data into etcd failed.",
+		util.Logger().Errorf(err,
+			"register instance failed, service %s, instanceId %s, operator %s: commit data into etcd failed.",
 			instanceFlag, instanceId, remoteIP)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, "Commit operations failed."),
 		}, err
 	}
+	if !resp.Succeeded {
+		// revoke the unused lease
+		defer backend.Registry().LeaseRevoke(ctx, leaseID)
+
+		oldInstanceId, checkErr := serviceUtil.CheckEndPoints(ctx, in.Instance)
+		if checkErr != nil {
+			util.Logger().Errorf(checkErr, "register instance failed, service %s, operator %s.",
+				instanceFlag, remoteIP)
+			resp := pb.CreateResponseWithSCErr(checkErr)
+			if checkErr.InternalError() {
+				return &pb.RegisterInstanceResponse{Response: resp}, checkErr
+			}
+			return &pb.RegisterInstanceResponse{Response: resp}, nil
+		}
+		if len(oldInstanceId) == 0 {
+			// re-check and found the older lease was revoked
+			util.Logger().Errorf(errors.New("instance is unregistered at the same time"),
+				"register instance failed, service %s, operator %s.", instanceFlag, remoteIP)
+			return &pb.RegisterInstanceResponse{
+				Response: pb.CreateResponse(scerr.ErrInvalidParams, "Instance is unregistered at the same time"),
+			}, nil
+		}
+		util.Logger().Warnf(errors.New("instance was registered by others"),
+			"register instance successful, service %s instance %s, operator %s.",
+			instance.ServiceId, oldInstanceId, remoteIP)
+		return &pb.RegisterInstanceResponse{
+			Response:   pb.CreateResponse(pb.Response_SUCCESS, "instance more exist."),
+			InstanceId: oldInstanceId,
+		}, nil
+	}
 
 	if reporter != nil {
 		if err := reporter.ReportUsedQuota(ctx); err != nil {
-			util.Logger().Errorf(err, "register instance failed, service %s, instanceId %s, operator %s: report used quota failed.",
+			util.Logger().Errorf(err,
+				"register instance failed, service %s, instanceId %s, operator %s: report used quota failed.",
 				instanceFlag, instanceId, remoteIP)
 		}
 	}
-	util.Logger().Infof("register instance successful service %s, instanceId %s, operator %s.", instanceFlag, instanceId, remoteIP)
+	util.Logger().Infof("register instance successful service %s, instanceId %s, operator %s.",
+		instanceFlag, instanceId, remoteIP)
 	return &pb.RegisterInstanceResponse{
 		Response:   pb.CreateResponse(pb.Response_SUCCESS, "Register service instance successfully."),
 		InstanceId: instanceId,
@@ -319,40 +337,16 @@ func (s *InstanceService) Heartbeat(ctx context.Context, in *pb.HeartbeatRequest
 			Response: pb.CreateResponse(scerr.ErrInstanceNotExists, "Service instance does not exist."),
 		}, nil
 	}
-	util.Logger().Infof("heartbeat successful: %s renew ttl to %d. operator: %s", instanceFlag, ttl, remoteIP)
+
+	if ttl == 0 {
+		util.Logger().Warnf(errors.New("connect backend timed out"),
+			"heartbeat successful, but renew %s failed. operator: %s", instanceFlag, remoteIP)
+	} else {
+		util.Logger().Infof("heartbeat successful: %s renew ttl to %d. operator: %s", instanceFlag, ttl, remoteIP)
+	}
 	return &pb.HeartbeatResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Update service instance heartbeat successfully."),
 	}, nil
-}
-
-func grantOrRenewLease(ctx context.Context, domainProject string, serviceId string, instanceId string, ttl int64) (leaseID int64, err error) {
-	remoteIP := util.GetIPFromContext(ctx)
-	instanceFlag := util.StringJoin([]string{serviceId, instanceId}, "/")
-
-	var (
-		oldTTL int64
-		inner  bool
-	)
-
-	leaseID, oldTTL, err, inner = serviceUtil.HeartbeatUtil(ctx, domainProject, serviceId, instanceId)
-	if inner {
-		util.Logger().Errorf(err, "grant or renew lease failed, instance %s, operator: %s",
-			instanceFlag, remoteIP)
-		return
-	}
-
-	if leaseID < 0 || (oldTTL > 0 && oldTTL != ttl) {
-		leaseID, err = backend.Registry().LeaseGrant(ctx, ttl)
-		if err != nil {
-			util.Logger().Errorf(err, "grant or renew lease failed, instance %s, operator: %s: lease grant failed.",
-				instanceFlag, remoteIP)
-			return
-		}
-		util.Logger().Infof("lease grant %d->%d successfully, instance %s, operator: %s.",
-			oldTTL, ttl, instanceFlag, remoteIP)
-		return
-	}
-	return
 }
 
 func (s *InstanceService) HeartbeatSet(ctx context.Context, in *pb.HeartbeatSetRequest) (*pb.HeartbeatSetResponse, error) {

@@ -19,6 +19,7 @@ package core
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"sort"
 )
 
 const (
@@ -43,6 +44,8 @@ const (
 	REGISTRY_METRICS_KEY        = "metrics"
 	ENDPOINTS_ROOT_KEY          = "eps"
 )
+
+const NODE_IP = "nodeIP"
 
 func GetRootKey() string {
 	return util.StringJoin([]string{
@@ -372,12 +375,28 @@ func GetEndpointsRootKey(domainProject string) string {
 	}, "/")
 }
 
-func GenerateEndpointsIndexKey(domainProject, region, availableZone, nodeIP, endpoints string) string {
+func ParseRegionAndAvailableZone(in *pb.DataCenterInfo) (region string, availableZone string) {
+	if in == nil {
+		return "", ""
+	}
+	region = in.Region
+	availableZone = in.AvailableZone
+	return
+}
+
+func GenerateEndpointsIndexKey(domainProject string, instance *pb.MicroServiceInstance) string {
+	region, availableZone := ParseRegionAndAvailableZone(instance.DataCenterInfo)
+	nodeIP := ""
+	if value, ok := instance.Properties[NODE_IP]; ok {
+		nodeIP = value
+	}
+	sort.Strings(instance.Endpoints)
+	endpointsJoin := util.StringJoin(instance.Endpoints, "/")
 	return util.StringJoin([]string{
 		GetEndpointsRootKey(domainProject),
 		region,
 		availableZone,
 		nodeIP,
-		endpoints,
+		endpointsJoin,
 	}, "/")
 }
