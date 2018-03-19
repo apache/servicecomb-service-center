@@ -48,10 +48,10 @@ func (v *ValidateRule) String() string {
 		idx++
 	}
 	if v.Regexp != nil {
-		arr[idx] = fmt.Sprintf("Length: %s", v.Regexp)
+		arr[idx] = fmt.Sprintf("Regexp: %s", v.Regexp)
 		idx++
 	}
-	return "rule: {" + util.StringJoin(arr[:idx], ",") + "}"
+	return "{" + util.StringJoin(arr[:idx], ",") + "}"
 }
 
 func (v *ValidateRule) Match(s interface{}) bool {
@@ -239,9 +239,9 @@ func (v *Validator) Validate(s interface{}) error {
 			// TODO null pointer如何校验
 			if field.Kind() != reflect.Ptr && !validate.Match(fi) {
 				if filter(fieldName) {
-					return fmt.Errorf("invalid field: %s.%s , %s", st.Type.Name(), fieldName, validate)
+					return fmt.Errorf("The field '%s.%s' value does not match rule: %s", st.Type.Name(), fieldName, validate)
 				}
-				return fmt.Errorf("invalid field: %s.%s,  invalid value: {%v} , %s", st.Type.Name(), fieldName, fi, validate)
+				return fmt.Errorf("The field '%s.%s' value(%v) does not match rule: %s", st.Type.Name(), fieldName, fi, validate)
 			}
 		}
 	}
@@ -249,9 +249,9 @@ func (v *Validator) Validate(s interface{}) error {
 }
 
 var (
-	BLACK_LIST_FOR_PRINT = map[string]interface{} {
-		"Properties": nil,
-		}
+	BLACK_LIST_FOR_PRINT = map[string]struct{}{
+		"Properties": {},
+	}
 )
 
 func filter(fieldName string) bool {

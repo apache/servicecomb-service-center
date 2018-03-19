@@ -98,13 +98,6 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	remoteIP := util.GetIPFromContext(ctx)
 	instanceFlag := util.StringJoin([]string{instance.ServiceId, instance.HostName}, "/")
 
-	if err := s.preProcessRegisterInstance(ctx, instance); err != nil {
-		util.Logger().Errorf(err, "register instance failed, service %s, operator %s.", instanceFlag, remoteIP)
-		return &pb.RegisterInstanceResponse{
-			Response: pb.CreateResponseWithSCErr(err),
-		}, nil
-	}
-
 	if err := apt.Validate(instance); err != nil {
 		util.Logger().Errorf(err, "register instance failed, service %s, operator %s.", instanceFlag, remoteIP)
 		return &pb.RegisterInstanceResponse{
@@ -129,6 +122,13 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 		return &pb.RegisterInstanceResponse{
 			Response:   pb.CreateResponse(pb.Response_SUCCESS, "instance more exist."),
 			InstanceId: oldInstanceId,
+		}, nil
+	}
+
+	if err := s.preProcessRegisterInstance(ctx, instance); err != nil {
+		util.Logger().Errorf(err, "register instance failed, service %s, operator %s.", instanceFlag, remoteIP)
+		return &pb.RegisterInstanceResponse{
+			Response: pb.CreateResponseWithSCErr(err),
 		}, nil
 	}
 
