@@ -206,8 +206,11 @@ var _ = Describe("'Instance' service", func() {
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						ServiceId: serviceId1,
-						HostName:  "UT-HOST",
-						Status:    pb.MSI_UP,
+						Endpoints: []string{
+							"checkpull:127.0.0.1:8080",
+						},
+						HostName: "UT-HOST",
+						Status:   pb.MSI_UP,
 						HealthCheck: &pb.HealthCheck{
 							Mode:     "push",
 							Interval: 30,
@@ -222,8 +225,11 @@ var _ = Describe("'Instance' service", func() {
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						ServiceId: serviceId1,
-						HostName:  "UT-HOST",
-						Status:    pb.MSI_UP,
+						Endpoints: []string{
+							"checkpush:127.0.0.1:8080",
+						},
+						HostName: "UT-HOST",
+						Status:   pb.MSI_UP,
 						HealthCheck: &pb.HealthCheck{
 							Mode:     "pull",
 							Interval: 30,
@@ -239,8 +245,11 @@ var _ = Describe("'Instance' service", func() {
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						ServiceId: serviceId1,
-						HostName:  "UT-HOST",
-						Status:    pb.MSI_UP,
+						Endpoints: []string{
+							"checkpush:127.0.0.1:8081",
+						},
+						HostName: "UT-HOST",
+						Status:   pb.MSI_UP,
 						HealthCheck: &pb.HealthCheck{
 							Mode:     "push",
 							Interval: 30,
@@ -255,8 +264,11 @@ var _ = Describe("'Instance' service", func() {
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						ServiceId: serviceId1,
-						HostName:  "UT-HOST",
-						Status:    pb.MSI_UP,
+						Endpoints: []string{
+							"checkpull:127.0.0.1:8081",
+						},
+						HostName: "UT-HOST",
+						Status:   pb.MSI_UP,
 						HealthCheck: &pb.HealthCheck{
 							Mode:     "pull",
 							Interval: 30,
