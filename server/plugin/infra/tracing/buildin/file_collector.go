@@ -30,7 +30,7 @@ import (
 type FileCollector struct {
 	Fd        *os.File
 	Interval  time.Duration
-	QueueSize int
+	BatchSize int
 	c         chan *zipkincore.Span
 }
 
@@ -100,7 +100,7 @@ func (f *FileCollector) checkFile() error {
 	return nil
 }
 
-func (f *FileCollector) loop(stopCh <-chan struct{}) {
+func (f *FileCollector) Run(stopCh <-chan struct{}) {
 	var (
 		batch []*zipkincore.Span
 		prev  []*zipkincore.Span
@@ -115,7 +115,13 @@ func (f *FileCollector) loop(stopCh <-chan struct{}) {
 			return
 		case span := <-f.c:
 			batch = append(batch, span)
-			if len(batch) >= f.QueueSize {
+			if len(batch) >= f.BatchSize {
+				if len(batch) > f.BatchSize {
+					dispose := len(batch) - f.BatchSize
+					util.Logger().Errorf(nil, "backlog is full, dispose %d span(s), max: %d",
+						dispose, f.BatchSize)
+					batch = batch[dispose:] // allocate more
+				}
 				if c := f.write(batch); c == 0 {
 					continue
 				}
@@ -149,9 +155,9 @@ func NewFileCollector(path string) (*FileCollector, error) {
 	fc := &FileCollector{
 		Fd:        fd,
 		Interval:  10 * time.Second,
-		QueueSize: 100,
+		BatchSize: 100,
 		c:         make(chan *zipkincore.Span, 1000),
 	}
-	util.Go(fc.loop)
+	util.Go(fc.Run)
 	return fc, nil
 }
