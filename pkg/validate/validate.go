@@ -54,8 +54,8 @@ func (v *ValidateRule) String() string {
 	return "{" + util.StringJoin(arr[:idx], ",") + "}"
 }
 
-func (v *ValidateRule) Match(s interface{}) bool {
-	var invalid bool = false
+func (v *ValidateRule) Match(s interface{}) (invalid bool, invalidValue interface{}) {
+	invalidValue = s
 	sv := reflect.ValueOf(s)
 	if v.Min > 0 && !invalid {
 		switch sv.Kind() {
@@ -107,12 +107,14 @@ func (v *ValidateRule) Match(s interface{}) bool {
 			}
 			keys := sv.MapKeys()
 			for _, key := range keys {
-				if !itemV.Match(key.Interface()) {
+				if ok, v := itemV.Match(key.Interface()); !ok {
 					invalid = true
+					invalidValue = v
 					break
 				}
-				if !itemV.Match(sv.MapIndex(key).Interface()) {
+				if ok, v := itemV.Match(sv.MapIndex(key).Interface()); !ok{
 					invalid = true
+					invalidValue = v
 					break
 				}
 			}
@@ -121,8 +123,9 @@ func (v *ValidateRule) Match(s interface{}) bool {
 				Regexp: v.Regexp,
 			}
 			for i, l := 0, sv.Len(); i < l; i++ {
-				if !itemV.Match(sv.Index(i).Interface()) {
+				if ok, v := itemV.Match(sv.Index(i).Interface()) ; !ok{
 					invalid = true
+					invalidValue = v
 					break
 				}
 			}
@@ -148,7 +151,8 @@ func (v *ValidateRule) Match(s interface{}) bool {
 			}
 		}
 	}
-	return !invalid
+	invalid = !invalid
+	return
 }
 
 type Validator struct {
@@ -237,11 +241,14 @@ func (v *Validator) Validate(s interface{}) error {
 				}
 			}
 			// TODO null pointer如何校验
-			if field.Kind() != reflect.Ptr && !validate.Match(fi) {
-				if filter(fieldName) {
-					return fmt.Errorf("The field '%s.%s' value does not match rule: %s", st.Type.Name(), fieldName, validate)
+			if field.Kind() != reflect.Ptr{
+				invalid, invalidValue := validate.Match(fi)
+				if !invalid {
+					if filter(fieldName) {
+						return fmt.Errorf("The field '%s.%s' value does not match rule: %s", st.Type.Name(), fieldName, validate)
+					}
+					return fmt.Errorf("The field '%s.%s' value(%v) does not match rule: %s", st.Type.Name(), fieldName, invalidValue, validate)
 				}
-				return fmt.Errorf("The field '%s.%s' value(%v) does not match rule: %s", st.Type.Name(), fieldName, fi, validate)
 			}
 		}
 	}
