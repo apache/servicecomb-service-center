@@ -6,7 +6,7 @@
 # the License.  You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
-#g
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,6 +21,6 @@ RUN go get github.com/FiloSottile/gvt
 
 RUN cd /go/src/github.com/apache/incubator-servicecomb-service-center && bash -x scripts/release/make_release.sh linux 1.0.0 latest
 
-EXPOSE 30100 30100
+RUN sed -i 's/httpaddr = 127.0.0.1/httpaddr = 0.0.0.0/g' /go/src/github.com/apache/incubator-servicecomb-service-center/apache-servicecomb-incubating-service-center-latest-linux-amd64/conf/app.conf
 
 ENTRYPOINT ["/go/src/github.com/apache/incubator-servicecomb-service-center/apache-servicecomb-incubating-service-center-latest-linux-amd64/service-center"]
