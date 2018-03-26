@@ -67,8 +67,7 @@ func DefaultClientTLSOptions() []tlsutil.SSLConfigOption {
 		tlsutil.WithVerifyHostName(false),
 		tlsutil.WithVersion(tlsutil.ParseSSLProtocol(beego.AppConfig.DefaultString("ssl_client_min_version",
 			core.ServerInfo.Config.SslMinVersion)), tls.VersionTLS12),
-		tlsutil.WithCipherSuits(tlsutil.ParseClientSSLCipherSuites(
-			beego.AppConfig.DefaultString("ssl_client_ciphers", core.ServerInfo.Config.SslCiphers))),
+		tlsutil.WithCipherSuits(tlsutil.ParseDefaultSSLCipherSuites(beego.AppConfig.String("ssl_client_ciphers"))),
 		tlsutil.WithCA(GetSSLPath("trust.cer")),
 		tlsutil.WithCert(GetSSLPath("server.cer")),
 		tlsutil.WithKey(GetSSLPath("server_key.pem")),
@@ -79,7 +78,7 @@ func DefaultServerTLSOptions() []tlsutil.SSLConfigOption {
 	return []tlsutil.SSLConfigOption{
 		tlsutil.WithVerifyPeer(core.ServerInfo.Config.SslVerifyPeer),
 		tlsutil.WithVersion(tlsutil.ParseSSLProtocol(core.ServerInfo.Config.SslMinVersion), tls.VersionTLS12),
-		tlsutil.WithCipherSuits(tlsutil.ParseServerSSLCipherSuites(core.ServerInfo.Config.SslCiphers)),
+		tlsutil.WithCipherSuits(tlsutil.ParseDefaultSSLCipherSuites(core.ServerInfo.Config.SslCiphers)),
 		tlsutil.WithCA(GetSSLPath("trust.cer")),
 		tlsutil.WithCert(GetSSLPath("server.cer")),
 		tlsutil.WithKey(GetSSLPath("server_key.pem")),
