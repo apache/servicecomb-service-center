@@ -54,8 +54,9 @@ func (v *ValidateRule) String() string {
 	return "{" + util.StringJoin(arr[:idx], ",") + "}"
 }
 
-func (v *ValidateRule) Match(s interface{}) (invalid bool, invalidValue interface{}) {
+func (v *ValidateRule) Match(s interface{}) (ok bool, invalidValue interface{}) {
 	invalidValue = s
+	var invalid bool
 	sv := reflect.ValueOf(s)
 	if v.Min > 0 && !invalid {
 		switch sv.Kind() {
@@ -151,7 +152,7 @@ func (v *ValidateRule) Match(s interface{}) (invalid bool, invalidValue interfac
 			}
 		}
 	}
-	invalid = !invalid
+	ok = !invalid
 	return
 }
 
@@ -242,8 +243,8 @@ func (v *Validator) Validate(s interface{}) error {
 			}
 			// TODO null pointer如何校验
 			if field.Kind() != reflect.Ptr{
-				invalid, invalidValue := validate.Match(fi)
-				if !invalid {
+				ok, invalidValue := validate.Match(fi)
+				if !ok {
 					if filter(fieldName) {
 						return fmt.Errorf("The field '%s.%s' value does not match rule: %s", st.Type.Name(), fieldName, validate)
 					}
