@@ -17,7 +17,6 @@
 package etcd
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/tracing"
 	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
@@ -25,26 +24,12 @@ import (
 	"net/http"
 )
 
-func ToRequest(op registry.PluginOp) (*http.Request, error) {
-	var action string
-	switch op.Action {
-	case registry.Get:
-		action = http.MethodGet
-	case registry.Put:
-		action = http.MethodPut
-	case registry.Delete:
-		action = http.MethodDelete
-	}
-	return http.NewRequest(action, endpoint+"/?"+op.FormatUrlParams(), nil)
-}
-
 func TracingBegin(ctx context.Context, operationName string, op registry.PluginOp) tracing.Span {
-	r, err := ToRequest(op)
-	if err != nil {
-		util.Logger().Errorf(err, "new backend request failed")
-		return nil
+	r := &tracing.RegistryRequest{
+		Ctx:      ctx,
+		Options:  op,
+		Endpoint: endpoint,
 	}
-	r = r.WithContext(ctx)
 	return plugin.Plugins().Tracing().ClientBegin(operationName, r)
 }
 
