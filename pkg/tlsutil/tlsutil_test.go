@@ -20,7 +20,7 @@ import "testing"
 
 func TestParseDefaultSSLCipherSuites(t *testing.T) {
 	c := ParseDefaultSSLCipherSuites("")
-	if len(c) != 0 {
+	if c != nil {
 		t.FailNow()
 	}
 	c = ParseDefaultSSLCipherSuites("TLS_RSA_WITH_AES_128_CBC_SHA256")
