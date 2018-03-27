@@ -107,6 +107,7 @@ func (f *FileCollector) Run(stopCh <-chan struct{}) {
 		i     = f.Interval * 10
 		t     = time.NewTicker(f.Interval)
 		nr    = time.Now().Add(i)
+		max   = f.BatchSize * 2
 	)
 	for {
 		select {
@@ -116,10 +117,10 @@ func (f *FileCollector) Run(stopCh <-chan struct{}) {
 		case span := <-f.c:
 			batch = append(batch, span)
 			if len(batch) >= f.BatchSize {
-				if len(batch) > f.BatchSize {
+				if len(batch) > max {
 					dispose := len(batch) - f.BatchSize
 					util.Logger().Errorf(nil, "backlog is full, dispose %d span(s), max: %d",
-						dispose, f.BatchSize)
+						dispose, max)
 					batch = batch[dispose:] // allocate more
 				}
 				if c := f.write(batch); c == 0 {

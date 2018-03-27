@@ -25,6 +25,7 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
 	"net/http"
+	"net/url"
 	"sync"
 )
 
@@ -88,14 +89,12 @@ func (zp *Zipkin) ServerEnd(itf tracing.Span, code int, message string) {
 
 func (zp *Zipkin) ClientBegin(operationName string, itf tracing.Request) tracing.Span {
 	var (
-		span    opentracing.Span
-		ctx     context.Context
-		carrier interface{}
+		span opentracing.Span
 	)
 	switch itf.(type) {
 	case *http.Request:
 		r := itf.(*http.Request)
-		ctx = r.Context()
+		ctx := r.Context()
 
 		parentSpan, ok := ctx.Value(tracing.CTX_TRACE_SPAN).(opentracing.Span)
 		if !ok {
@@ -110,20 +109,50 @@ func (zp *Zipkin) ClientBegin(operationName string, itf tracing.Request) tracing
 		span.SetTag(zipkincore.HTTP_PATH, r.URL.Path)
 		span.SetTag(zipkincore.HTTP_HOST, r.URL.Host)
 
-		carrier = opentracing.HTTPHeadersCarrier(r.Header)
+		carrier := opentracing.HTTPHeadersCarrier(r.Header)
+
+		if err := ZipkinTracer().Inject(
+			span.Context(),
+			opentracing.HTTPHeaders,
+			carrier,
+		); err != nil {
+			util.Logger().Errorf(err, "tracer inject request failed")
+		}
+	case *tracing.RegistryRequest:
+		r := itf.(*tracing.RegistryRequest)
+		ctx := r.Ctx
+
+		parentSpan, ok := ctx.Value(tracing.CTX_TRACE_SPAN).(opentracing.Span)
+		if !ok {
+			return nil
+		}
+
+		u, _ := url.Parse(r.Endpoint + "/?" + r.Options.FormatUrlParams())
+
+		span = ZipkinTracer().StartSpan(operationName, opentracing.ChildOf(parentSpan.Context()))
+		ext.SpanKindRPCClient.Set(span)
+		ext.HTTPMethod.Set(span, r.Options.Action.String())
+		ext.HTTPUrl.Set(span, u.String())
+
+		span.SetTag("protocol", "gRPC")
+		span.SetTag(zipkincore.HTTP_PATH, u.Path)
+		span.SetTag(zipkincore.HTTP_HOST, u.Host)
+
+		carrier := opentracing.HTTPHeadersCarrier{}
+		if err := ZipkinTracer().Inject(
+			span.Context(),
+			opentracing.HTTPHeaders,
+			carrier,
+		); err != nil {
+			util.Logger().Errorf(err, "tracer inject request failed")
+		}
+		// inject context
+		carrier.ForeachKey(func(key, val string) error {
+			util.SetContext(ctx, key, val)
+			return nil
+		})
 	default:
-		// grpc?
 		return nil
-	}
-
-	util.SetContext(ctx, tracing.CTX_TRACE_SPAN, span)
-
-	if err := ZipkinTracer().Inject(
-		span.Context(),
-		opentracing.HTTPHeaders,
-		carrier,
-	); err != nil {
-		util.Logger().Errorf(err, "tracer inject request failed")
 	}
 
 	return span

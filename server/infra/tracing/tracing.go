@@ -16,6 +16,11 @@
  */
 package tracing
 
+import (
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
+	"golang.org/x/net/context"
+)
+
 const CTX_TRACE_SPAN = "x-trace-span"
 
 type Request interface{}
@@ -26,4 +31,10 @@ type Tracing interface {
 	ServerEnd(span Span, code int, message string)
 	ClientBegin(operationName string, r Request) Span
 	ClientEnd(span Span, code int, message string)
+}
+
+type RegistryRequest struct {
+	Ctx      context.Context
+	Endpoint string
+	Options  registry.PluginOp
 }
