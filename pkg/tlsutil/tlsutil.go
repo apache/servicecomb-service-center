@@ -25,14 +25,7 @@ import (
 	"strings"
 )
 
-var SERVER_TLS_CIPHER_SUITE_MAP = map[string]uint16{
-	"TLS_RSA_WITH_AES_128_GCM_SHA256":       tls.TLS_RSA_WITH_AES_128_GCM_SHA256,
-	"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256": tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-	"TLS_RSA_WITH_AES_256_GCM_SHA384":       tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
-	"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384": tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-}
-
-var CLIENT_TLS_CIPHER_SUITE_MAP = map[string]uint16{
+var TLS_CIPHER_SUITE_MAP = map[string]uint16{
 	"TLS_RSA_WITH_AES_128_GCM_SHA256":       tls.TLS_RSA_WITH_AES_128_GCM_SHA256,
 	"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256": tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
 	"TLS_RSA_WITH_AES_256_GCM_SHA384":       tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
@@ -79,6 +72,10 @@ func toSSLConfig(opts ...SSLConfigOption) (op SSLConfig) {
 }
 
 func ParseSSLCipherSuites(ciphers string, permitTlsCipherSuiteMap map[string]uint16) []uint16 {
+	if len(ciphers) == 0 || len(permitTlsCipherSuiteMap) == 0 {
+		return nil
+	}
+
 	cipherSuiteList := make([]uint16, 0)
 	cipherSuiteNameList := strings.Split(ciphers, ",")
 	for _, cipherSuiteName := range cipherSuiteNameList {
@@ -98,12 +95,8 @@ func ParseSSLCipherSuites(ciphers string, permitTlsCipherSuiteMap map[string]uin
 	return cipherSuiteList
 }
 
-func ParseServerSSLCipherSuites(ciphers string) []uint16 {
-	return ParseSSLCipherSuites(ciphers, SERVER_TLS_CIPHER_SUITE_MAP)
-}
-
-func ParseClientSSLCipherSuites(ciphers string) []uint16 {
-	return ParseSSLCipherSuites(ciphers, CLIENT_TLS_CIPHER_SUITE_MAP)
+func ParseDefaultSSLCipherSuites(ciphers string) []uint16 {
+	return ParseSSLCipherSuites(ciphers, TLS_CIPHER_SUITE_MAP)
 }
 
 func ParseSSLProtocol(sprotocol string) uint16 {
