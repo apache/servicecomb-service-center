@@ -29,7 +29,7 @@ Project documentation is available on the [ServiceComb website][servicecomb-webs
 
 The easiest way to get Service Center is to use one of the pre-built release binaries which are available for Linux, Windows and Docker.
 
-[github-release]: http://servicecomb.incubator.apache.org/
+[github-release]: http://servicecomb.incubator.apache.org/release/
 
 ### Running Service Center using the Release
 
