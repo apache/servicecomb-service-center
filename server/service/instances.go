@@ -669,22 +669,20 @@ func (s *InstanceService) UpdateStatus(ctx context.Context, in *pb.UpdateInstanc
 
 	instance.Status = in.Status
 
-	err, isInnerErr := updateInstance(ctx, domainProject, instance)
-	if err != nil {
-		util.Logger().Errorf(err, "update instance status failed, %s: update instance lease failed.", updateStatusFlag)
-		if isInnerErr {
-			return &pb.UpdateInstanceStatusResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, "Update instance status failed."),
-			}, err
+	if err := updateInstance(ctx, domainProject, instance); err != nil {
+		util.Logger().Errorf(err, "update instance status failed, %s", updateStatusFlag)
+		resp := &pb.UpdateInstanceStatusResponse{
+			Response: pb.CreateResponseWithSCErr(err),
 		}
-		return &pb.UpdateInstanceStatusResponse{
-			Response: pb.CreateResponse(scerr.ErrInstanceNotExists, "Update instance status failed."),
-		}, nil
+		if err.InternalError() {
+			return resp, err
+		}
+		return resp, nil
 	}
 
 	util.Logger().Infof("update instance status successful: %s.", updateStatusFlag)
 	return &pb.UpdateInstanceStatusResponse{
-		Response: pb.CreateResponse(pb.Response_SUCCESS, "Update service instance information successfully."),
+		Response: pb.CreateResponse(pb.Response_SUCCESS, "Update service instance status successfully."),
 	}, nil
 }
 
@@ -696,13 +694,10 @@ func (s *InstanceService) UpdateInstanceProperties(ctx context.Context, in *pb.U
 		}, nil
 	}
 
-	var err error
 	domainProject := util.ParseDomainProject(ctx)
 	instanceFlag := util.StringJoin([]string{in.ServiceId, in.InstanceId}, "/")
 
-	var instance *pb.MicroServiceInstance
-
-	instance, err = serviceUtil.GetInstance(ctx, domainProject, in.ServiceId, in.InstanceId)
+	instance, err := serviceUtil.GetInstance(ctx, domainProject, in.ServiceId, in.InstanceId)
 	if err != nil {
 		util.Logger().Errorf(err, "update instance properties failed, %s: get instance from etcd failed.", instanceFlag)
 		return &pb.UpdateInstancePropsResponse{
@@ -721,38 +716,36 @@ func (s *InstanceService) UpdateInstanceProperties(ctx context.Context, in *pb.U
 		instance.Properties[property] = in.Properties[property]
 	}
 
-	err, isInnerErr := updateInstance(ctx, domainProject, instance)
-	if err != nil {
-		util.Logger().Errorf(err, "update instance properties failed, %s: update instance lease failed.", instanceFlag)
-		if isInnerErr {
-			return &pb.UpdateInstancePropsResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, "Update instance lease failed."),
-			}, err
+	if err := updateInstance(ctx, domainProject, instance); err != nil {
+		util.Logger().Errorf(err, "update instance properties failed, %s", instanceFlag)
+		resp := &pb.UpdateInstancePropsResponse{
+			Response: pb.CreateResponseWithSCErr(err),
 		}
-		return &pb.UpdateInstancePropsResponse{
-			Response: pb.CreateResponse(scerr.ErrInstanceNotExists, "Update instance lease failed."),
-		}, nil
+		if err.InternalError() {
+			return resp, err
+		}
+		return resp, nil
 	}
 
 	util.Logger().Infof("update instance properties successful: %s.", instanceFlag)
 	return &pb.UpdateInstancePropsResponse{
-		Response: pb.CreateResponse(pb.Response_SUCCESS, "Update service instance information successfully."),
+		Response: pb.CreateResponse(pb.Response_SUCCESS, "Update service instance properties successfully."),
 	}, nil
 }
 
-func updateInstance(ctx context.Context, domainProject string, instance *pb.MicroServiceInstance) (err error, isInnerErr bool) {
+func updateInstance(ctx context.Context, domainProject string, instance *pb.MicroServiceInstance) *scerr.Error {
 	leaseID, err := serviceUtil.GetLeaseId(ctx, domainProject, instance.ServiceId, instance.InstanceId)
 	if err != nil {
-		return err, true
+		return scerr.NewError(scerr.ErrInternal, err.Error())
 	}
 	if leaseID == -1 {
-		return errors.New("Instance's leaseId not exist."), false
+		return scerr.NewError(scerr.ErrInstanceNotExists, "Instance's leaseId not exist.")
 	}
 
 	instance.ModTimestamp = strconv.FormatInt(time.Now().Unix(), 10)
 	data, err := json.Marshal(instance)
 	if err != nil {
-		return err, true
+		return scerr.NewError(scerr.ErrInternal, err.Error())
 	}
 
 	key := apt.GenerateInstanceKey(domainProject, instance.ServiceId, instance.InstanceId)
@@ -762,9 +755,9 @@ func updateInstance(ctx context.Context, domainProject string, instance *pb.Micr
 		registry.WithValue(data),
 		registry.WithLease(leaseID))
 	if err != nil {
-		return err, true
+		return scerr.NewError(scerr.ErrInternal, err.Error())
 	}
-	return nil, false
+	return nil
 }
 
 func (s *InstanceService) WatchPreOpera(ctx context.Context, in *pb.WatchInstanceRequest) error {
