@@ -357,13 +357,14 @@ func (s *InstanceService) HeartbeatSet(ctx context.Context, in *pb.HeartbeatSetR
 		}, nil
 	}
 	domainProject := util.ParseDomainProject(ctx)
-	instanceHbRstArr := []*pb.InstanceHbRst{}
-	existFlag := map[string]bool{}
-	instancesHbRst := make(chan *pb.InstanceHbRst, len(in.Instances))
+
+	heartBeatCount := len(in.Instances)
+	existFlag := make(map[string]bool, heartBeatCount)
+	instancesHbRst := make(chan *pb.InstanceHbRst, heartBeatCount)
 	noMultiCounter := 0
 	for _, heartbeatElement := range in.Instances {
 		if _, ok := existFlag[heartbeatElement.ServiceId+heartbeatElement.InstanceId]; ok {
-			util.Logger().Warnf(nil, "heartbeatset %s/%s multiple", heartbeatElement.ServiceId, heartbeatElement.InstanceId)
+			util.Logger().Warnf(nil, "heartbeat set %s/%s multiple", heartbeatElement.ServiceId, heartbeatElement.InstanceId)
 			continue
 		} else {
 			existFlag[heartbeatElement.ServiceId+heartbeatElement.InstanceId] = true
@@ -378,7 +379,7 @@ func (s *InstanceService) HeartbeatSet(ctx context.Context, in *pb.HeartbeatSetR
 			_, _, err, _ := serviceUtil.HeartbeatUtil(ctx, domainProject, element.ServiceId, element.InstanceId)
 			if err != nil {
 				hbRst.ErrMessage = err.Error()
-				util.Logger().Errorf(err, "heartbeatset failed, %s/%s", element.ServiceId, element.InstanceId)
+				util.Logger().Errorf(err, "heartbeat set failed, %s/%s", element.ServiceId, element.InstanceId)
 			}
 			instancesHbRst <- hbRst
 		}(heartbeatElement)
@@ -386,6 +387,7 @@ func (s *InstanceService) HeartbeatSet(ctx context.Context, in *pb.HeartbeatSetR
 	count := 0
 	successFlag := false
 	failFlag := false
+	instanceHbRstArr := make([]*pb.InstanceHbRst, 0, heartBeatCount)
 	for heartbeat := range instancesHbRst {
 		count++
 		if len(heartbeat.ErrMessage) != 0 {
@@ -399,15 +401,15 @@ func (s *InstanceService) HeartbeatSet(ctx context.Context, in *pb.HeartbeatSetR
 		}
 	}
 	if !failFlag && successFlag {
-		util.Logger().Infof("heartbeatset success")
+		util.Logger().Infof("heartbeat set success")
 		return &pb.HeartbeatSetResponse{
-			Response:  pb.CreateResponse(pb.Response_SUCCESS, "Heartbeatset successfully."),
+			Response:  pb.CreateResponse(pb.Response_SUCCESS, "Heartbeat set successfully."),
 			Instances: instanceHbRstArr,
 		}, nil
 	} else {
-		util.Logger().Errorf(nil, "heartbeatset failed, %v", in.Instances)
+		util.Logger().Errorf(nil, "heartbeat set failed, %v", in.Instances)
 		return &pb.HeartbeatSetResponse{
-			Response:  pb.CreateResponse(scerr.ErrInstanceNotExists, "Heartbeatset failed."),
+			Response:  pb.CreateResponse(scerr.ErrInstanceNotExists, "Heartbeat set failed."),
 			Instances: instanceHbRstArr,
 		}, nil
 	}
@@ -454,7 +456,7 @@ func (s *InstanceService) getInstancePreCheck(ctx context.Context, in interface{
 	if err != nil {
 		return scerr.NewError(scerr.ErrInvalidParams, err.Error())
 	}
-	var targetDomainProject = util.ParseTargetDomainProject(ctx)
+	targetDomainProject := util.ParseTargetDomainProject(ctx)
 	var providerServiceId, consumerServiceId string
 	var tags []string
 
@@ -586,7 +588,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		}, nil
 	}
 
-	var instances []*pb.MicroServiceInstance
+	instances := make([]*pb.MicroServiceInstance, 0, 10)
 	cloneCtx := ctx
 	if s, ok := ctx.Value("noCache").(string); !ok || s != "1" {
 		cloneCtx = util.SetContext(util.CloneContext(ctx), "cacheOnly", "1")
@@ -635,12 +637,6 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 }
 
 func (s *InstanceService) UpdateStatus(ctx context.Context, in *pb.UpdateInstanceStatusRequest) (*pb.UpdateInstanceStatusResponse, error) {
-	if in == nil || len(in.ServiceId) == 0 || len(in.InstanceId) == 0 {
-		util.Logger().Errorf(nil, "update instance status failed: invalid params.")
-		return &pb.UpdateInstanceStatusResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
-		}, nil
-	}
 	domainProject := util.ParseDomainProject(ctx)
 	updateStatusFlag := util.StringJoin([]string{in.ServiceId, in.InstanceId, in.Status}, "/")
 	if err := apt.Validate(in); err != nil {
@@ -650,10 +646,7 @@ func (s *InstanceService) UpdateStatus(ctx context.Context, in *pb.UpdateInstanc
 		}, nil
 	}
 
-	var err error
-
-	var instance *pb.MicroServiceInstance
-	instance, err = serviceUtil.GetInstance(ctx, domainProject, in.ServiceId, in.InstanceId)
+	instance, err := serviceUtil.GetInstance(ctx, domainProject, in.ServiceId, in.InstanceId)
 	if err != nil {
 		util.Logger().Errorf(err, "update instance status failed, %s: get instance from etcd failed.", updateStatusFlag)
 		return &pb.UpdateInstanceStatusResponse{
@@ -669,7 +662,7 @@ func (s *InstanceService) UpdateStatus(ctx context.Context, in *pb.UpdateInstanc
 
 	instance.Status = in.Status
 
-	if err := updateInstance(ctx, domainProject, instance); err != nil {
+	if err := serviceUtil.UpdateInstance(ctx, domainProject, instance); err != nil {
 		util.Logger().Errorf(err, "update instance status failed, %s", updateStatusFlag)
 		resp := &pb.UpdateInstanceStatusResponse{
 			Response: pb.CreateResponseWithSCErr(err),
@@ -711,12 +704,9 @@ func (s *InstanceService) UpdateInstanceProperties(ctx context.Context, in *pb.U
 		}, nil
 	}
 
-	instance.Properties = map[string]string{}
-	for property := range in.Properties {
-		instance.Properties[property] = in.Properties[property]
-	}
+	instance.Properties = in.Properties
 
-	if err := updateInstance(ctx, domainProject, instance); err != nil {
+	if err := serviceUtil.UpdateInstance(ctx, domainProject, instance); err != nil {
 		util.Logger().Errorf(err, "update instance properties failed, %s", instanceFlag)
 		resp := &pb.UpdateInstancePropsResponse{
 			Response: pb.CreateResponseWithSCErr(err),
@@ -733,32 +723,6 @@ func (s *InstanceService) UpdateInstanceProperties(ctx context.Context, in *pb.U
 	}, nil
 }
 
-func updateInstance(ctx context.Context, domainProject string, instance *pb.MicroServiceInstance) *scerr.Error {
-	leaseID, err := serviceUtil.GetLeaseId(ctx, domainProject, instance.ServiceId, instance.InstanceId)
-	if err != nil {
-		return scerr.NewError(scerr.ErrInternal, err.Error())
-	}
-	if leaseID == -1 {
-		return scerr.NewError(scerr.ErrInstanceNotExists, "Instance's leaseId not exist.")
-	}
-
-	instance.ModTimestamp = strconv.FormatInt(time.Now().Unix(), 10)
-	data, err := json.Marshal(instance)
-	if err != nil {
-		return scerr.NewError(scerr.ErrInternal, err.Error())
-	}
-
-	key := apt.GenerateInstanceKey(domainProject, instance.ServiceId, instance.InstanceId)
-	_, err = backend.Registry().Do(ctx,
-		registry.PUT,
-		registry.WithStrKey(key),
-		registry.WithValue(data),
-		registry.WithLease(leaseID))
-	if err != nil {
-		return scerr.NewError(scerr.ErrInternal, err.Error())
-	}
-	return nil
-}
 
 func (s *InstanceService) WatchPreOpera(ctx context.Context, in *pb.WatchInstanceRequest) error {
 	if in == nil || len(in.SelfServiceId) == 0 {
@@ -826,8 +790,8 @@ func (s *InstanceService) ClusterHealth(ctx context.Context) (*pb.GetInstancesRe
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service center serviceId not exist."),
 		}, nil
 	}
-	instances := []*pb.MicroServiceInstance{}
-	instances, err = serviceUtil.GetAllInstancesOfOneService(ctx, domainProject, serviceId)
+
+	instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, domainProject, serviceId)
 	if err != nil {
 		util.Logger().Errorf(err, "health check failed: get service center instances failed.")
 		return &pb.GetInstancesResponse{
