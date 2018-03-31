@@ -50,6 +50,7 @@ var (
 	SchemasValidator              validate.Validator
 	SchemaValidator               validate.Validator
 	FrameWKValidator              validate.Validator
+	UpdateInstanceValidator       validate.Validator
 
 	SchemaIdRule *validate.ValidateRule
 	TagRule      *validate.ValidateRule
@@ -58,6 +59,7 @@ var (
 func init() {
 	// 非map/slice的validator
 	nameRegex, _ := regexp.Compile(`^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]*[a-zA-Z0-9]$`)
+	// find 支持alias，多个:
 	serviceNameForFindRegex, _ := regexp.Compile(`^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.:]*[a-zA-Z0-9]$`)
 	//name模糊规则: name, *
 	nameFuzzyRegex, _ := regexp.Compile(`^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]*[a-zA-Z0-9]$|^\*$`)
@@ -79,6 +81,8 @@ func init() {
 	schemaIdRegex, _ := regexp.Compile(`^[a-zA-Z0-9]{1,160}$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]{0,158}[a-zA-Z0-9]$`) //length:{1,160}
 	instStatusRegex, _ := regexp.Compile("^(" + util.StringJoin([]string{
 		pb.MSI_UP, pb.MSI_DOWN, pb.MSI_STARTING, pb.MSI_OUTOFSERVICE}, "|") + ")?$")
+	updateInstStatusRegex, _ := regexp.Compile("^(" + util.StringJoin([]string{
+		pb.MSI_UP, pb.MSI_DOWN, pb.MSI_STARTING, pb.MSI_OUTOFSERVICE}, "|") + ")$")
 	tagRegex, _ := regexp.Compile(`^[a-zA-Z][a-zA-Z0-9_\-.]{0,63}$`)
 	hbModeRegex, _ := regexp.Compile(`^(push|pull)$`)
 	numberAllowEmptyRegex, _ := regexp.Compile(`^[0-9]*$`)
@@ -93,14 +97,16 @@ func init() {
 
 	ServiceIdRule := &validate.ValidateRule{Min: 1, Length: 64, Regexp: serviceIdRegex}
 	InstanceStatusRule := &validate.ValidateRule{Regexp: instStatusRegex}
+	UpdateInstStatusRule := &validate.ValidateRule{Regexp: updateInstStatusRegex}
 	SchemaIdRule = &validate.ValidateRule{Regexp: schemaIdRegex}
-	nameRule := &validate.ValidateRule{Min: 1, Max: 128, Regexp: nameRegex}
+	ServiceNameRule := &validate.ValidateRule{Min: 1, Max: 128, Regexp: nameRegex}
 	versionFuzzyRule := &validate.ValidateRule{Min: 1, Max: 128, Regexp: versionFuzzyRegex}
 	TagRule = &validate.ValidateRule{Regexp: tagRegex}
+	InstanceRule := &validate.ValidateRule{Length: 64, Regexp: simpleNameAllowEmptyRegex}
 
 	MicroServiceKeyValidator.AddRule("Environment", &validate.ValidateRule{Regexp: envRegex})
 	MicroServiceKeyValidator.AddRule("AppId", &validate.ValidateRule{Min: 1, Max: 160, Regexp: nameRegex})
-	MicroServiceKeyValidator.AddRule("ServiceName", nameRule)
+	MicroServiceKeyValidator.AddRule("ServiceName", ServiceNameRule)
 	MicroServiceKeyValidator.AddRule("Version", &validate.ValidateRule{Min: 1, Max: 64, Regexp: VersionRegex})
 
 	ServicePathValidator.AddRule("Path", &validate.ValidateRule{Regexp: pathRegex})
@@ -159,7 +165,7 @@ func init() {
 	HealthCheckInfoValidator.AddRule("Interval", &validate.ValidateRule{Max: math.MaxInt32, Regexp: numberRegex})
 	HealthCheckInfoValidator.AddRule("Url", &validate.ValidateRule{Regexp: pathRegex})
 
-	MicroServiceInstanceValidator.AddRule("InstanceId", &validate.ValidateRule{Length: 64, Regexp: simpleNameAllowEmptyRegex})
+	MicroServiceInstanceValidator.AddRule("InstanceId", InstanceRule)
 	MicroServiceInstanceValidator.AddRule("ServiceId", ServiceIdRule)
 	MicroServiceInstanceValidator.AddRule("Endpoints", &validate.ValidateRule{Regexp: epRegex})
 	MicroServiceInstanceValidator.AddRule("HostName", &validate.ValidateRule{Length: 64, Regexp: simpleNameRegex})
@@ -184,8 +190,12 @@ func init() {
 
 	GetInstanceValidator.AddRule("ConsumerServiceId", ServiceIdRule)
 	GetInstanceValidator.AddRule("ProviderServiceId", ServiceIdRule)
-	GetInstanceValidator.AddRule("ProviderInstanceId", &validate.ValidateRule{Min: 1, Max: 64, Regexp: simpleNameAllowEmptyRegex})
+	GetInstanceValidator.AddRule("ProviderInstanceId", InstanceRule)
 	GetInstanceValidator.AddRule("Tags", TagRule)
+
+	UpdateInstanceValidator.AddRule("ServiceId", ServiceIdRule)
+	UpdateInstanceValidator.AddRule("InstanceId", InstanceRule)
+	UpdateInstanceValidator.AddRule("Status", UpdateInstStatusRule)
 }
 
 func Validate(v interface{}) error {
@@ -199,12 +209,12 @@ func Validate(v interface{}) error {
 		return errors.New("Pointer is nil!")
 	}
 	switch t := v.(type) {
-	case (*pb.MicroService):
+	case *pb.MicroService:
 		return MicroServiceValidator.Validate(v)
-	case *pb.MicroServiceInstance, *pb.UpdateInstanceStatusRequest:
+	case *pb.MicroServiceInstance:
 		return MicroServiceInstanceValidator.Validate(v)
-	case (*pb.AddOrUpdateServiceRule):
-		return ServiceRuleValidator.Validate(v)
+	case *pb.FindInstancesRequest:
+		return FindInstanceReqValidator.Validate(v)
 	case *pb.GetServiceRequest, *pb.UpdateServicePropsRequest,
 		*pb.DeleteServiceRequest, *pb.GetDependenciesRequest,
 		*pb.GetAllSchemaRequest:
@@ -218,10 +228,12 @@ func Validate(v interface{}) error {
 		return SchemaValidator.Validate(v)
 	case *pb.ModifySchemasRequest:
 		return SchemasValidator.Validate(v)
-	case *pb.FindInstancesRequest:
-		return FindInstanceReqValidator.Validate(v)
 	case *pb.GetOneInstanceRequest, *pb.GetInstancesRequest:
 		return GetInstanceValidator.Validate(v)
+	case *pb.UpdateInstanceStatusRequest:
+		return UpdateInstanceValidator.Validate(v)
+	case *pb.AddOrUpdateServiceRule:
+		return ServiceRuleValidator.Validate(v)
 	case *pb.GetAppsRequest:
 		return MicroServiceKeyValidator.Validate(v)
 	default:
