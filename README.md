@@ -1,7 +1,8 @@
 # Apache-Incubator-ServiceComb-Service-Center 
 [![Build Status](https://www.travis-ci.org/apache/incubator-servicecomb-service-center.svg?branch=master)](https://www.travis-ci.org/apache/incubator-servicecomb-service-center)  [![Coverage Status](https://coveralls.io/repos/github/apache/incubator-servicecomb-service-center/badge.svg?branch=master)](https://coveralls.io/github/apache/incubator-servicecomb-service-center?branch=master)  [![Go Report Card](https://goreportcard.com/badge/github.com/apache/incubator-servicecomb-service-center)](https://goreportcard.com/report/github.com/apache/incubator-servicecomb-service-center) [![GoDoc](https://godoc.org/github.com/apache/incubator-servicecomb-service-center?status.svg)](https://godoc.org/github.com/apache/incubator-servicecomb-service-center)  [![HitCount](http://hits.dwyl.io/apache/incubator-servicecomb-service-center.svg)](http://hits.dwyl.io/apache/incubator-servicecomb-service-center)  
 
-Apache ServiceComb (incubating) service-center allows services to register their instance information and to discover providers of a given service. 
+Apache ServiceComb (incubating) Service-Center is a Restful based service-registry that provides micro-services discovery and micro-service management. It is based on Open API format and provides features like service-discovery, fault-tolerance, dynamic routing, notify subscription and scalable by design. It has high performance cache design and separate entity management for micro-services and their instances. It provides out of box support for metrics and tracing. It has a web portal to manage the micro-services.  
+
 ## Features
  - **Open API**: API doc(Open API format) management for microservice
  - **Metadata**: Metadata management for both microservice and microservice instance
