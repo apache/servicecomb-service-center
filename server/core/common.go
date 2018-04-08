@@ -30,7 +30,6 @@ var (
 	ServiceAPI  pb.ServiceCtrlServer
 	InstanceAPI pb.SerivceInstanceCtrlServerEx
 
-
 	MicroServiceValidator         validate.Validator
 	MicroServiceInstanceValidator validate.Validator
 	ServiceRuleValidator          validate.Validator
@@ -54,8 +53,6 @@ var (
 
 	SchemaIdRule *validate.ValidateRule
 	TagRule      *validate.ValidateRule
-
-	versionRegex *regexp.Regexp
 )
 
 func init() {
@@ -65,7 +62,7 @@ func init() {
 	serviceNameForFindRegex, _ := regexp.Compile(`^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.:]*[a-zA-Z0-9]$`)
 	//name模糊规则: name, *
 	nameFuzzyRegex, _ := regexp.Compile(`^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]*[a-zA-Z0-9]$|^\*$`)
-	versionRegex, _ = regexp.Compile(`^[0-9]+(\.[0-9]+){0,2}$`)
+	versionRegex, _ := regexp.Compile(`^[0-9]+(\.[0-9]+){0,2}$`)
 	// version模糊规则: 1.0, 1.0+, 1.0-2.0, latest
 	versionFuzzyRegex, _ := regexp.Compile(`^[0-9]*$|^[0-9]+(\.[0-9]+)*\+{0,1}$|^[0-9]+(\.[0-9]+)*-[0-9]+(\.[0-9]+)*$|^latest$`)
 	pathRegex, _ := regexp.Compile(`^[A-Za-z0-9.,?'\\/+&amp;%$#=~_\-@{}]*$`)
@@ -97,10 +94,8 @@ func init() {
 	ruleAttrRegex, _ := regexp.Compile(`((^tag_[a-zA-Z][a-zA-Z0-9_\-.]{0,63}$)|(^ServiceId$)|(^AppId$)|(^ServiceName$)|(^Version$)|(^Description$)|(^Level$)|(^Status$))`)
 	schemaSummaryRegex, _ := regexp.Compile(`(a-zA-Z0-9)*`)
 
-
 	SchemaIdRule = &validate.ValidateRule{Regexp: schemaIdRegex}
 	TagRule = &validate.ValidateRule{Regexp: tagRegex}
-
 
 	serviceIdRule := &validate.ValidateRule{Min: 1, Length: 64, Regexp: serviceIdRegex}
 	instanceStatusRule := &validate.ValidateRule{Regexp: instStatusRegex}
