@@ -30,7 +30,6 @@ var (
 	ServiceAPI  pb.ServiceCtrlServer
 	InstanceAPI pb.SerivceInstanceCtrlServerEx
 
-	VersionRegex                  *regexp.Regexp
 	MicroServiceValidator         validate.Validator
 	MicroServiceInstanceValidator validate.Validator
 	ServiceRuleValidator          validate.Validator
@@ -50,6 +49,7 @@ var (
 	SchemasValidator              validate.Validator
 	SchemaValidator               validate.Validator
 	FrameWKValidator              validate.Validator
+	UpdateInstanceValidator       validate.Validator
 
 	SchemaIdRule *validate.ValidateRule
 	TagRule      *validate.ValidateRule
@@ -58,10 +58,11 @@ var (
 func init() {
 	// 非map/slice的validator
 	nameRegex, _ := regexp.Compile(`^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]*[a-zA-Z0-9]$`)
+	// find 支持alias，多个:
 	serviceNameForFindRegex, _ := regexp.Compile(`^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.:]*[a-zA-Z0-9]$`)
 	//name模糊规则: name, *
 	nameFuzzyRegex, _ := regexp.Compile(`^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]*[a-zA-Z0-9]$|^\*$`)
-	VersionRegex, _ = regexp.Compile(`^[0-9]+(\.[0-9]+){0,2}$`)
+	versionRegex, _ := regexp.Compile(`^[0-9]+(\.[0-9]+){0,2}$`)
 	// version模糊规则: 1.0, 1.0+, 1.0-2.0, latest
 	versionFuzzyRegex, _ := regexp.Compile(`^[0-9]*$|^[0-9]+(\.[0-9]+)*\+{0,1}$|^[0-9]+(\.[0-9]+)*-[0-9]+(\.[0-9]+)*$|^latest$`)
 	pathRegex, _ := regexp.Compile(`^[A-Za-z0-9.,?'\\/+&amp;%$#=~_\-@{}]*$`)
@@ -79,6 +80,8 @@ func init() {
 	schemaIdRegex, _ := regexp.Compile(`^[a-zA-Z0-9]{1,160}$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]{0,158}[a-zA-Z0-9]$`) //length:{1,160}
 	instStatusRegex, _ := regexp.Compile("^(" + util.StringJoin([]string{
 		pb.MSI_UP, pb.MSI_DOWN, pb.MSI_STARTING, pb.MSI_OUTOFSERVICE}, "|") + ")?$")
+	updateInstStatusRegex, _ := regexp.Compile("^(" + util.StringJoin([]string{
+		pb.MSI_UP, pb.MSI_DOWN, pb.MSI_STARTING, pb.MSI_OUTOFSERVICE}, "|") + ")$")
 	tagRegex, _ := regexp.Compile(`^[a-zA-Z][a-zA-Z0-9_\-.]{0,63}$`)
 	hbModeRegex, _ := regexp.Compile(`^(push|pull)$`)
 	numberAllowEmptyRegex, _ := regexp.Compile(`^[0-9]*$`)
@@ -89,19 +92,22 @@ func init() {
 	regionRegex, _ := regexp.Compile(`^[A-Za-z0-9_.-]+$`)
 	ruleRegex, _ := regexp.Compile(`^(WHITE|BLACK)$`)
 	ruleAttrRegex, _ := regexp.Compile(`((^tag_[a-zA-Z][a-zA-Z0-9_\-.]{0,63}$)|(^ServiceId$)|(^AppId$)|(^ServiceName$)|(^Version$)|(^Description$)|(^Level$)|(^Status$))`)
-	SchemaSummaryRegex, _ := regexp.Compile(`(a-zA-Z0-9)*`)
+	schemaSummaryRegex, _ := regexp.Compile(`(a-zA-Z0-9)*`)
 
-	ServiceIdRule := &validate.ValidateRule{Min: 1, Length: 64, Regexp: serviceIdRegex}
-	InstanceStatusRule := &validate.ValidateRule{Regexp: instStatusRegex}
 	SchemaIdRule = &validate.ValidateRule{Regexp: schemaIdRegex}
-	nameRule := &validate.ValidateRule{Min: 1, Max: 128, Regexp: nameRegex}
-	versionFuzzyRule := &validate.ValidateRule{Min: 1, Max: 128, Regexp: versionFuzzyRegex}
 	TagRule = &validate.ValidateRule{Regexp: tagRegex}
+
+	serviceIdRule := &validate.ValidateRule{Min: 1, Length: 64, Regexp: serviceIdRegex}
+	instanceStatusRule := &validate.ValidateRule{Regexp: instStatusRegex}
+	updateInstStatusRule := &validate.ValidateRule{Regexp: updateInstStatusRegex}
+	serviceNameRule := &validate.ValidateRule{Min: 1, Max: 128, Regexp: nameRegex}
+	versionFuzzyRule := &validate.ValidateRule{Min: 1, Max: 128, Regexp: versionFuzzyRegex}
+	instanceRule := &validate.ValidateRule{Length: 64, Regexp: simpleNameAllowEmptyRegex}
 
 	MicroServiceKeyValidator.AddRule("Environment", &validate.ValidateRule{Regexp: envRegex})
 	MicroServiceKeyValidator.AddRule("AppId", &validate.ValidateRule{Min: 1, Max: 160, Regexp: nameRegex})
-	MicroServiceKeyValidator.AddRule("ServiceName", nameRule)
-	MicroServiceKeyValidator.AddRule("Version", &validate.ValidateRule{Min: 1, Max: 64, Regexp: VersionRegex})
+	MicroServiceKeyValidator.AddRule("ServiceName", serviceNameRule)
+	MicroServiceKeyValidator.AddRule("Version", &validate.ValidateRule{Min: 1, Max: 64, Regexp: versionRegex})
 
 	ServicePathValidator.AddRule("Path", &validate.ValidateRule{Regexp: pathRegex})
 
@@ -121,24 +127,24 @@ func init() {
 	GetMSExistsReqValidator.AddRules(MicroServiceKeyValidator.GetRules())
 	GetMSExistsReqValidator.AddRule("Version", versionFuzzyRule)
 
-	GetSchemaExistsReqValidator.AddRule("ServiceId", ServiceIdRule)
+	GetSchemaExistsReqValidator.AddRule("ServiceId", serviceIdRule)
 	GetSchemaExistsReqValidator.AddRule("SchemaId", SchemaIdRule)
 
 	var subSchemaValidator validate.Validator
 	subSchemaValidator.AddRule("SchemaId", SchemaIdRule)
-	subSchemaValidator.AddRule("Summary", &validate.ValidateRule{Min: 1, Max: 512, Regexp: SchemaSummaryRegex})
+	subSchemaValidator.AddRule("Summary", &validate.ValidateRule{Min: 1, Max: 512, Regexp: schemaSummaryRegex})
 	subSchemaValidator.AddRule("Schema", &validate.ValidateRule{Min: 1})
 
-	SchemasValidator.AddRule("ServiceId", ServiceIdRule)
+	SchemasValidator.AddRule("ServiceId", serviceIdRule)
 	SchemasValidator.AddSub("Schemas", &subSchemaValidator)
 
 	SchemaValidator.AddRules(subSchemaValidator.GetRules())
-	SchemaValidator.AddRule("ServiceId", ServiceIdRule)
-	SchemaValidator.AddRule("Summary", &validate.ValidateRule{Max: 512, Regexp: SchemaSummaryRegex})
+	SchemaValidator.AddRule("ServiceId", serviceIdRule)
+	SchemaValidator.AddRule("Summary", &validate.ValidateRule{Max: 512, Regexp: schemaSummaryRegex})
 
-	GetServiceReqValidator.AddRule("ServiceId", ServiceIdRule)
+	GetServiceReqValidator.AddRule("ServiceId", serviceIdRule)
 
-	GetSchemaReqValidator.AddRule("ServiceId", ServiceIdRule)
+	GetSchemaReqValidator.AddRule("ServiceId", serviceIdRule)
 	GetSchemaReqValidator.AddRule("SchemaId", SchemaIdRule)
 
 	ConsumerMsValidator.AddRules(MicroServiceKeyValidator.GetRules())
@@ -147,7 +153,7 @@ func init() {
 	ProviderMsValidator.AddRule("ServiceName", &validate.ValidateRule{Min: 1, Max: 128, Regexp: nameFuzzyRegex})
 	ProviderMsValidator.AddRule("Version", versionFuzzyRule)
 
-	TagReqValidator.AddRule("ServiceId", ServiceIdRule)
+	TagReqValidator.AddRule("ServiceId", serviceIdRule)
 	TagReqValidator.AddRule("Tags", TagRule)
 	TagReqValidator.AddRule("Keys", &validate.ValidateRule{Regexp: tagRegex})
 	TagReqValidator.AddRule("Key", &validate.ValidateRule{Regexp: tagRegex})
@@ -159,12 +165,12 @@ func init() {
 	HealthCheckInfoValidator.AddRule("Interval", &validate.ValidateRule{Max: math.MaxInt32, Regexp: numberRegex})
 	HealthCheckInfoValidator.AddRule("Url", &validate.ValidateRule{Regexp: pathRegex})
 
-	MicroServiceInstanceValidator.AddRule("InstanceId", &validate.ValidateRule{Length: 64, Regexp: simpleNameAllowEmptyRegex})
-	MicroServiceInstanceValidator.AddRule("ServiceId", ServiceIdRule)
+	MicroServiceInstanceValidator.AddRule("InstanceId", instanceRule)
+	MicroServiceInstanceValidator.AddRule("ServiceId", serviceIdRule)
 	MicroServiceInstanceValidator.AddRule("Endpoints", &validate.ValidateRule{Regexp: epRegex})
 	MicroServiceInstanceValidator.AddRule("HostName", &validate.ValidateRule{Length: 64, Regexp: simpleNameRegex})
 	MicroServiceInstanceValidator.AddSub("HealthCheck", &HealthCheckInfoValidator)
-	MicroServiceInstanceValidator.AddRule("Status", InstanceStatusRule)
+	MicroServiceInstanceValidator.AddRule("Status", instanceStatusRule)
 	MicroServiceInstanceValidator.AddSub("DataCenterInfo", &DataCenterInfoValidator)
 
 	DataCenterInfoValidator.AddRule("Name", &validate.ValidateRule{Length: 128, Regexp: simpleNameRegex})
@@ -176,16 +182,20 @@ func init() {
 	ServiceRuleValidator.AddRule("Pattern", &validate.ValidateRule{Max: 64, Min: 1})
 	ServiceRuleValidator.AddRule("Description", MicroServiceValidator.GetRule("Description"))
 
-	FindInstanceReqValidator.AddRule("ConsumerServiceId", ServiceIdRule)
+	FindInstanceReqValidator.AddRule("ConsumerServiceId", serviceIdRule)
 	FindInstanceReqValidator.AddRule("AppId", MicroServiceKeyValidator.GetRule("AppId"))
 	FindInstanceReqValidator.AddRule("ServiceName", &validate.ValidateRule{Min: 1, Max: 128, Regexp: serviceNameForFindRegex})
 	FindInstanceReqValidator.AddRule("VersionRule", versionFuzzyRule)
 	FindInstanceReqValidator.AddRule("Tags", TagRule)
 
-	GetInstanceValidator.AddRule("ConsumerServiceId", ServiceIdRule)
-	GetInstanceValidator.AddRule("ProviderServiceId", ServiceIdRule)
-	GetInstanceValidator.AddRule("ProviderInstanceId", &validate.ValidateRule{Min: 1, Max: 64, Regexp: simpleNameAllowEmptyRegex})
+	GetInstanceValidator.AddRule("ConsumerServiceId", serviceIdRule)
+	GetInstanceValidator.AddRule("ProviderServiceId", serviceIdRule)
+	GetInstanceValidator.AddRule("ProviderInstanceId", instanceRule)
 	GetInstanceValidator.AddRule("Tags", TagRule)
+
+	UpdateInstanceValidator.AddRule("ServiceId", serviceIdRule)
+	UpdateInstanceValidator.AddRule("InstanceId", instanceRule)
+	UpdateInstanceValidator.AddRule("Status", updateInstStatusRule)
 }
 
 func Validate(v interface{}) error {
@@ -199,12 +209,12 @@ func Validate(v interface{}) error {
 		return errors.New("Pointer is nil!")
 	}
 	switch t := v.(type) {
-	case (*pb.MicroService):
+	case *pb.MicroService:
 		return MicroServiceValidator.Validate(v)
-	case *pb.MicroServiceInstance, *pb.UpdateInstanceStatusRequest:
+	case *pb.MicroServiceInstance:
 		return MicroServiceInstanceValidator.Validate(v)
-	case (*pb.AddOrUpdateServiceRule):
-		return ServiceRuleValidator.Validate(v)
+	case *pb.FindInstancesRequest:
+		return FindInstanceReqValidator.Validate(v)
 	case *pb.GetServiceRequest, *pb.UpdateServicePropsRequest,
 		*pb.DeleteServiceRequest, *pb.GetDependenciesRequest,
 		*pb.GetAllSchemaRequest:
@@ -218,10 +228,12 @@ func Validate(v interface{}) error {
 		return SchemaValidator.Validate(v)
 	case *pb.ModifySchemasRequest:
 		return SchemasValidator.Validate(v)
-	case *pb.FindInstancesRequest:
-		return FindInstanceReqValidator.Validate(v)
 	case *pb.GetOneInstanceRequest, *pb.GetInstancesRequest:
 		return GetInstanceValidator.Validate(v)
+	case *pb.UpdateInstanceStatusRequest:
+		return UpdateInstanceValidator.Validate(v)
+	case *pb.AddOrUpdateServiceRule:
+		return ServiceRuleValidator.Validate(v)
 	case *pb.GetAppsRequest:
 		return MicroServiceKeyValidator.Validate(v)
 	default:

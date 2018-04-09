@@ -246,9 +246,9 @@ func (v *Validator) Validate(s interface{}) error {
 				ok, invalidValue := validate.Match(fi)
 				if !ok {
 					if filter(fieldName) {
-						return fmt.Errorf("The field '%s.%s' value does not match rule: %s", st.Type.Name(), fieldName, validate)
+						return fmt.Errorf("The field '%s.%s' invalid-value does not match rule: %s", st.Type.Name(), fieldName, validate)
 					}
-					return fmt.Errorf("The field '%s.%s' value(%v) does not match rule: %s", st.Type.Name(), fieldName, invalidValue, validate)
+					return fmt.Errorf("The field '%s.%s' invalid-value(%v) does not match rule: %s", st.Type.Name(), fieldName, invalidValue, validate)
 				}
 			}
 		}

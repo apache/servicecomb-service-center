@@ -30,6 +30,7 @@ import (
 	"golang.org/x/net/context"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func GetLeaseId(ctx context.Context, domainProject string, serviceId string, instanceId string) (int64, error) {
@@ -251,4 +252,31 @@ func queryServiceInstancesKvs(ctx context.Context, serviceId string, rev int64) 
 		return nil, err
 	}
 	return resp.Kvs, nil
+}
+
+func UpdateInstance(ctx context.Context, domainProject string, instance *pb.MicroServiceInstance) *scerr.Error {
+	leaseID, err := GetLeaseId(ctx, domainProject, instance.ServiceId, instance.InstanceId)
+	if err != nil {
+		return scerr.NewError(scerr.ErrInternal, err.Error())
+	}
+	if leaseID == -1 {
+		return scerr.NewError(scerr.ErrInstanceNotExists, "Instance's leaseId not exist.")
+	}
+
+	instance.ModTimestamp = strconv.FormatInt(time.Now().Unix(), 10)
+	data, err := json.Marshal(instance)
+	if err != nil {
+		return scerr.NewError(scerr.ErrInternal, err.Error())
+	}
+
+	key := apt.GenerateInstanceKey(domainProject, instance.ServiceId, instance.InstanceId)
+	_, err = backend.Registry().Do(ctx,
+		registry.PUT,
+		registry.WithStrKey(key),
+		registry.WithValue(data),
+		registry.WithLease(leaseID))
+	if err != nil {
+		return scerr.NewError(scerr.ErrInternal, err.Error())
+	}
+	return nil
 }
