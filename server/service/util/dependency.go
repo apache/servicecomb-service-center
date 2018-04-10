@@ -644,6 +644,18 @@ func (dep *Dependency) addConsumerOfProviderRule() {
 }
 
 func (dep *Dependency) UpdateProvidersRuleOfConsumer(conKey string) error {
+	if len(dep.ProvidersRule) == 0 {
+		_, err := backend.Registry().Do(context.TODO(),
+			registry.DEL,
+			registry.WithStrKey(conKey),
+			)
+		if err != nil {
+			util.Logger().Errorf(nil, "Upload dependency rule failed.")
+			return err
+		}
+		return nil
+	}
+
 	dependency := &pb.MicroServiceDependency{
 		Dependency: dep.ProvidersRule,
 	}
