@@ -24,11 +24,13 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
 	"os"
+	"strings"
 	"time"
 )
 
 type FileCollector struct {
 	Fd        *os.File
+	Timeout   time.Duration
 	Interval  time.Duration
 	BatchSize int
 	c         chan *zipkincore.Span
@@ -39,7 +41,11 @@ func (f *FileCollector) Collect(span *zipkincore.Span) error {
 		return fmt.Errorf("required FD to write")
 	}
 
-	f.c <- span
+	select {
+	case f.c <- span:
+	case <-time.After(f.Timeout):
+		util.Logger().Errorf(nil, "send span to handle channel timed out(%s)", f.Timeout)
+	}
 	return nil
 }
 
@@ -77,7 +83,7 @@ func (f *FileCollector) write(batch []*zipkincore.Span) (c int) {
 }
 
 func (f *FileCollector) checkFile() error {
-	if util.PathExist(f.Fd.Name()) {
+	if util.PathExist(f.Fd.Name()) || strings.Index(f.Fd.Name(), "/dev/") == 0 {
 		return nil
 	}
 
@@ -155,6 +161,7 @@ func NewFileCollector(path string) (*FileCollector, error) {
 	}
 	fc := &FileCollector{
 		Fd:        fd,
+		Timeout:   5 * time.Second,
 		Interval:  10 * time.Second,
 		BatchSize: 100,
 		c:         make(chan *zipkincore.Span, 1000),

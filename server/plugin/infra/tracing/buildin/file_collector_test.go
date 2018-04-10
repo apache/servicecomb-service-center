@@ -17,6 +17,7 @@
 package buildin
 
 import (
+	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
 	"os"
@@ -25,26 +26,22 @@ import (
 )
 
 func TestFileCollector_Collect(t *testing.T) {
-	fileName := "./test"
-	fd, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0600)
-	if err != nil {
-		t.FailNow()
-	}
 	fc := &FileCollector{
-		Fd:        fd,
+		Fd:        os.Stdout,
+		Timeout:   1 * time.Second,
 		Interval:  100 * time.Second,
 		BatchSize: 2,
-		c:         make(chan *zipkincore.Span, 1000),
+		c:         make(chan *zipkincore.Span, 100),
 	}
 	defer func() {
 		fc.Close()
-		os.Remove(fileName)
 	}()
 	util.Go(fc.Run)
 
-	for i := int64(0); i < 3; i++ {
-		err := fc.Collect(&zipkincore.Span{ParentID: &i, TraceIDHigh: &i})
+	for i := int64(0); i < 10; i++ {
+		err := fc.Collect(&zipkincore.Span{})
 		if err != nil {
+			fmt.Println(err)
 			t.FailNow()
 		}
 	}
