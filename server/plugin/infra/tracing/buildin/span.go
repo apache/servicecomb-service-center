@@ -61,7 +61,9 @@ type Endpoint struct {
 func (s *Span) FromZipkinSpan(span *zipkincore.Span) {
 	traceId := new(types.TraceID)
 	traceId.Low = uint64(span.TraceID)
-	traceId.High = uint64(*(span.TraceIDHigh))
+	if span.TraceIDHigh != nil {
+		traceId.High = uint64(*(span.TraceIDHigh))
+	}
 	s.TraceID = traceId.ToHex()
 	s.Duration = span.Duration
 
