@@ -38,7 +38,7 @@ func TestFileCollector_Collect(t *testing.T) {
 	}()
 	util.Go(fc.Run)
 
-	for i := int64(0); i < 10; i++ {
+	for i := 0; i < 10; i++ {
 		err := fc.Collect(&zipkincore.Span{})
 		if err != nil {
 			fmt.Println(err)
