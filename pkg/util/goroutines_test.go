@@ -127,6 +127,10 @@ func TestGo(t *testing.T) {
 			}
 		}
 	})
+	Go(func(stopCh <-chan struct{}) {
+		var a *int
+		fmt.Println(*a)
+	})
 	GoCloseAndWait()
 }
 

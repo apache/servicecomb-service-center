@@ -16,7 +16,11 @@
  */
 package util
 
-import "sync"
+import (
+	"log"
+	"runtime/debug"
+	"sync"
+)
 
 type GoRoutine struct {
 	stopCh chan struct{}
@@ -39,7 +43,12 @@ func (g *GoRoutine) StopCh() <-chan struct{} {
 func (g *GoRoutine) Do(f func(<-chan struct{})) {
 	g.wg.Add(1)
 	go func() {
-		defer g.wg.Done()
+		defer func() {
+			if e := recover(); e != nil {
+				log.Printf("%s\n%s\n", e, BytesToStringWithNoCopy(debug.Stack()))
+			}
+			g.wg.Done()
+		}()
 		f(g.StopCh())
 	}()
 }
