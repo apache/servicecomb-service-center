@@ -19,6 +19,7 @@ package util
 import (
 	"archive/zip"
 	"fmt"
+	"golang.org/x/net/context"
 	"io"
 	"os"
 	"path/filepath"
@@ -293,10 +294,10 @@ func CopyFile(srcFile, destFile string) error {
 }
 
 func RunLogDirRotate(cfg LoggerConfig) {
-	Go(func(stopCh <-chan struct{}) {
+	Go(func(ctx context.Context) {
 		for {
 			select {
-			case <-stopCh:
+			case <-ctx.Done():
 				return
 			case <-time.After(cfg.LogRotatePeriod):
 				LogRotate(filepath.Dir(cfg.LoggerFile), cfg.LogRotateSize, cfg.LogBackupCount)

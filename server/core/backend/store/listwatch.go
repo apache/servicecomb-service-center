@@ -131,17 +131,17 @@ func (w *Watcher) EventBus() <-chan []*Event {
 	return w.bus
 }
 
-func (w *Watcher) process() {
+func (w *Watcher) process(_ context.Context) {
 	stopCh := make(chan struct{})
 	ctx, cancel := context.WithTimeout(w.ListOps.Context, w.ListOps.Timeout)
-	go func() {
+	util.Go(func(_ context.Context) {
 		defer close(stopCh)
 		w.lw.doWatch(ctx, w.sendEvent)
-	}()
+	})
 
 	select {
 	case <-stopCh:
-		// time out
+		// timed out or exception
 		w.Stop()
 	case <-w.stopCh:
 		cancel()
@@ -180,6 +180,6 @@ func newWatcher(lw *ListWatcher, listOps *ListOptions) *Watcher {
 		bus:     make(chan []*Event, EVENT_BUS_MAX_SIZE),
 		stopCh:  make(chan struct{}),
 	}
-	go w.process()
+	util.Go(w.process)
 	return w
 }

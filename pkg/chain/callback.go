@@ -47,11 +47,7 @@ func (cb *Callback) Invoke(r Result) {
 }
 
 func syncInvoke(f func(r Result), r Result) {
-	defer func() {
-		if itf := recover(); itf != nil {
-			util.LogPanic(itf)
-		}
-	}()
+	defer util.RecoverAndReport()
 	if f == nil {
 		util.Logger().Errorf(nil, "Callback function is nil. result: %s,", r)
 		return

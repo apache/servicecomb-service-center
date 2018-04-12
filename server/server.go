@@ -43,6 +43,7 @@ func init() {
 		store:         st.Store(),
 		notifyService: nf.GetNotifyService(),
 		apiServer:     GetAPIServer(),
+		goroutine:     util.NewGo(context.Background()),
 	}
 }
 
@@ -50,6 +51,7 @@ type ServiceCenterServer struct {
 	apiServer     *APIServer
 	notifyService *nf.NotifyService
 	store         *st.KvStore
+	goroutine     *util.GoRoutine
 }
 
 func (s *ServiceCenterServer) Run() {
@@ -119,12 +121,12 @@ func (s *ServiceCenterServer) autoCompactBackend() {
 		util.Logger().Errorf(err, "invalid compact interval %s, reset to default interval 12h", core.ServerInfo.Config.CompactInterval)
 		interval = 12 * time.Hour
 	}
-	util.Go(func(stopCh <-chan struct{}) {
+	s.goroutine.Do(func(ctx context.Context) {
 		util.Logger().Infof("enabled the automatic compact mechanism, compact once every %s, reserve %d",
 			core.ServerInfo.Config.CompactInterval, delta)
 		for {
 			select {
-			case <-stopCh:
+			case <-ctx.Done():
 				return
 			case <-time.After(interval):
 				lock, err := mux.Try(mux.GLOBAL_LOCK)
@@ -133,7 +135,7 @@ func (s *ServiceCenterServer) autoCompactBackend() {
 					continue
 				}
 
-				backend.Registry().Compact(context.Background(), delta)
+				backend.Registry().Compact(ctx, delta)
 
 				lock.Unlock()
 			}
@@ -190,9 +192,7 @@ func (s *ServiceCenterServer) Stop() {
 		s.store.Stop()
 	}
 
-	util.GoCloseAndWait()
-
-	backend.Registry().Close()
+	s.goroutine.Close(true)
 }
 
 func Run() {

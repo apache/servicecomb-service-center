@@ -62,6 +62,7 @@ type WebSocketHandler struct {
 	watcher         *ListWatcher
 	needPingWatcher bool
 	closed          chan struct{}
+	goroutine       *util.GoRoutine
 }
 
 func (wh *WebSocketHandler) Init() error {
@@ -101,7 +102,7 @@ func (wh *WebSocketHandler) websocketHeartbeat(messageType int) error {
 	return nil
 }
 
-func (wh *WebSocketHandler) HandleWatchWebSocketControlMessage() {
+func (wh *WebSocketHandler) HandleWatchWebSocketControlMessage(ctx context.Context) {
 	defer close(wh.closed)
 
 	remoteAddr := wh.conn.RemoteAddr().String()
@@ -128,17 +129,23 @@ func (wh *WebSocketHandler) HandleWatchWebSocketControlMessage() {
 	})
 
 	for {
-		_, _, err := wh.conn.ReadMessage()
-		if err != nil {
-			wh.watcher.SetError(err)
+		select {
+		case <-ctx.Done():
 			return
+		default:
+			_, _, err := wh.conn.ReadMessage()
+			if err != nil {
+				wh.watcher.SetError(err)
+				return
+			}
 		}
 	}
 }
 
 func (wh *WebSocketHandler) HandleWatchWebSocketJob() {
-	remoteAddr := wh.conn.RemoteAddr().String()
+	wh.goroutine.Do(wh.HandleWatchWebSocketControlMessage)
 
+	remoteAddr := wh.conn.RemoteAddr().String()
 	for {
 		select {
 		case <-wh.closed:
@@ -224,8 +231,10 @@ func (wh *WebSocketHandler) HandleWatchWebSocketJob() {
 }
 
 func (wh *WebSocketHandler) Close(code int, text string) error {
+	defer wh.goroutine.Close(true)
+
 	remoteAddr := wh.conn.RemoteAddr().String()
-	message := []byte{}
+	var message []byte
 	if code != websocket.CloseNoStatusReceived {
 		message = websocket.FormatCloseMessage(code, text)
 	}
@@ -238,18 +247,6 @@ func (wh *WebSocketHandler) Close(code int, text string) error {
 	return nil
 }
 
-func DoWebSocketWatch(ctx context.Context, serviceId string, conn *websocket.Conn) {
-	domainProject := util.ParseDomainProject(ctx)
-	handler := &WebSocketHandler{
-		ctx:             ctx,
-		conn:            conn,
-		watcher:         NewInstanceWatcher(serviceId, apt.GetInstanceRootKey(domainProject)+"/"),
-		needPingWatcher: true,
-		closed:          make(chan struct{}),
-	}
-	processHandler(handler)
-}
-
 func DoWebSocketListAndWatch(ctx context.Context, serviceId string, f func() ([]*pb.WatchInstanceResponse, int64), conn *websocket.Conn) {
 	domainProject := util.ParseDomainProject(ctx)
 	handler := &WebSocketHandler{
@@ -258,6 +255,7 @@ func DoWebSocketListAndWatch(ctx context.Context, serviceId string, f func() ([]
 		watcher:         NewInstanceListWatcher(serviceId, apt.GetInstanceRootKey(domainProject)+"/", f),
 		needPingWatcher: true,
 		closed:          make(chan struct{}),
+		goroutine:       util.NewGo(context.Background()),
 	}
 	processHandler(handler)
 }
@@ -266,7 +264,6 @@ func processHandler(handler *WebSocketHandler) {
 	if err := handler.Init(); err != nil {
 		return
 	}
-	go handler.HandleWatchWebSocketControlMessage()
 	handler.HandleWatchWebSocketJob()
 }
 
@@ -292,10 +289,6 @@ func PublishInstanceEvent(domainProject string, action pb.EventType, serviceKey 
 		// TODO add超时怎么处理？
 		GetNotifyService().AddJob(job)
 	}
-}
-
-func NewInstanceWatcher(selfServiceId, instanceRoot string) *ListWatcher {
-	return NewWatcher(INSTANCE, selfServiceId, instanceRoot)
 }
 
 func NewInstanceListWatcher(selfServiceId, instanceRoot string, listFunc func() (results []*pb.WatchInstanceResponse, rev int64)) *ListWatcher {

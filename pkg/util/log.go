@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"github.com/ServiceComb/paas-lager"
 	"github.com/ServiceComb/paas-lager/third_party/forked/cloudfoundry/lager"
+	"golang.org/x/net/context"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -190,10 +191,10 @@ func monitorLogFile() {
 	if len(loggerConfig.LoggerFile) == 0 {
 		return
 	}
-	Go(func(stopCh <-chan struct{}) {
+	Go(func(ctx context.Context) {
 		for {
 			select {
-			case <-stopCh:
+			case <-ctx.Done():
 				return
 			case <-time.After(time.Minute):
 				Logger().Debug(fmt.Sprintf("Check log file at %s", time.Now()))

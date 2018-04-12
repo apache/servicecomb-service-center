@@ -21,6 +21,7 @@ import (
 
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	sstore "github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
+	"golang.org/x/net/context"
 )
 
 const (
@@ -72,12 +73,16 @@ func (s *BKvStore) newStore(t sstore.StoreType, opts ...sstore.KvCacherCfgOption
 	s.newIndexer(t, sstore.NewKvCacher(opts...))
 }
 
-func (s *BKvStore) store() {
+func (s *BKvStore) store(ctx context.Context) {
 	for t := sstore.StoreType(0); t != typeEnd; t++ {
 		s.newStore(t)
 	}
 	for _, i := range s.bindexers {
-		<-i.Ready()
+		select {
+		case <-ctx.Done():
+			return
+		case <-i.Ready():
+		}
 	}
 	util.SafeCloseChan(s.bready)
 
@@ -92,10 +97,11 @@ func init() {
 
 type BKvStore struct {
 	*sstore.KvStore
-	bindexers map[sstore.StoreType]*sstore.Indexer
-	block     sync.RWMutex
-	bready    chan struct{}
-	bisClose  bool
+	bindexers  map[sstore.StoreType]*sstore.Indexer
+	block      sync.RWMutex
+	bready     chan struct{}
+	bgoroutine *util.GoRoutine
+	bisClose   bool
 }
 
 func (s *BKvStore) Initialize() {
@@ -103,6 +109,7 @@ func (s *BKvStore) Initialize() {
 	s.KvStore.Initialize()
 	s.bindexers = make(map[sstore.StoreType]*sstore.Indexer)
 	s.bready = make(chan struct{})
+	s.bgoroutine = util.NewGo(context.Background())
 
 	for i := sstore.StoreType(0); i != typeEnd; i++ {
 		store.newNullStore(i)
@@ -120,7 +127,7 @@ func (s *BKvStore) newIndexer(t sstore.StoreType, cacher sstore.Cacher) {
 }
 
 func (s *BKvStore) Run() {
-	go s.store()
+	s.bgoroutine.Do(s.store)
 }
 
 func (s *BKvStore) Ready() <-chan struct{} {

@@ -370,19 +370,7 @@ func (s *InstanceService) HeartbeatSet(ctx context.Context, in *pb.HeartbeatSetR
 			existFlag[heartbeatElement.ServiceId+heartbeatElement.InstanceId] = true
 			noMultiCounter++
 		}
-		go func(element *pb.HeartbeatSetElement) {
-			hbRst := &pb.InstanceHbRst{
-				ServiceId:  element.ServiceId,
-				InstanceId: element.InstanceId,
-				ErrMessage: "",
-			}
-			_, _, err, _ := serviceUtil.HeartbeatUtil(ctx, domainProject, element.ServiceId, element.InstanceId)
-			if err != nil {
-				hbRst.ErrMessage = err.Error()
-				util.Logger().Errorf(err, "heartbeat set failed, %s/%s", element.ServiceId, element.InstanceId)
-			}
-			instancesHbRst <- hbRst
-		}(heartbeatElement)
+		util.Go(getHeartbeatFunc(ctx, domainProject, instancesHbRst, heartbeatElement))
 	}
 	count := 0
 	successFlag := false
@@ -412,6 +400,22 @@ func (s *InstanceService) HeartbeatSet(ctx context.Context, in *pb.HeartbeatSetR
 			Response:  pb.CreateResponse(scerr.ErrInstanceNotExists, "Heartbeat set failed."),
 			Instances: instanceHbRstArr,
 		}, nil
+	}
+}
+
+func getHeartbeatFunc(ctx context.Context, domainProject string, instancesHbRst chan<- *pb.InstanceHbRst, element *pb.HeartbeatSetElement) func(context.Context) {
+	return func(_ context.Context) {
+		hbRst := &pb.InstanceHbRst{
+			ServiceId:  element.ServiceId,
+			InstanceId: element.InstanceId,
+			ErrMessage: "",
+		}
+		_, _, err, _ := serviceUtil.HeartbeatUtil(ctx, domainProject, element.ServiceId, element.InstanceId)
+		if err != nil {
+			hbRst.ErrMessage = err.Error()
+			util.Logger().Errorf(err, "heartbeat set failed, %s/%s", element.ServiceId, element.InstanceId)
+		}
+		instancesHbRst <- hbRst
 	}
 }
 
@@ -723,7 +727,6 @@ func (s *InstanceService) UpdateInstanceProperties(ctx context.Context, in *pb.U
 	}, nil
 }
 
-
 func (s *InstanceService) WatchPreOpera(ctx context.Context, in *pb.WatchInstanceRequest) error {
 	if in == nil || len(in.SelfServiceId) == 0 {
 		return errors.New("Request format invalid.")
@@ -754,7 +757,7 @@ func (s *InstanceService) WebSocketWatch(ctx context.Context, in *pb.WatchInstan
 		nf.EstablishWebSocketError(conn, err)
 		return
 	}
-	nf.DoWebSocketWatch(ctx, in.SelfServiceId, conn)
+	nf.DoWebSocketListAndWatch(ctx, in.SelfServiceId, nil, conn)
 }
 
 func (s *InstanceService) WebSocketListAndWatch(ctx context.Context, in *pb.WatchInstanceRequest, conn *websocket.Conn) {

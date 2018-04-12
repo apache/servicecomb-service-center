@@ -24,6 +24,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/plugin"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/version"
+	"golang.org/x/net/context"
 	"os"
 	"os/signal"
 	"runtime"
@@ -44,7 +45,7 @@ func Initialize() {
 
 	printVersion()
 
-	go handleSignals()
+	util.Go(handleSignals)
 
 	grace.Init()
 }
@@ -86,7 +87,7 @@ func initLogger() {
 	})
 }
 
-func handleSignals() {
+func handleSignals(ctx context.Context) {
 	var sig os.Signal
 	sigCh := make(chan os.Signal)
 	signal.Notify(sigCh,
@@ -94,14 +95,22 @@ func handleSignals() {
 		syscall.SIGKILL,
 		syscall.SIGTERM,
 	)
-	wait := 5 * time.Second
+	wait := 60 * time.Second
 	for {
-		sig = <-sigCh
-		switch sig {
-		case syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM:
-			<-time.After(wait)
-			util.Logger().Warnf(nil, "Waiting for server response timed out(%s), force shutdown.", wait)
-			os.Exit(1)
+		select {
+		case <-ctx.Done():
+			return
+		case sig = <-sigCh:
+			switch sig {
+			case syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM:
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(wait):
+				}
+				util.Logger().Warnf(nil, "Waiting for server response timed out(%s), force shutdown.", wait)
+				os.Exit(1)
+			}
 		}
 	}
 }

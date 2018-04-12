@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
+	"golang.org/x/net/context"
 	"os"
 	"testing"
 	"time"
@@ -32,11 +33,12 @@ func TestFileCollector_Collect(t *testing.T) {
 		Interval:  100 * time.Second,
 		BatchSize: 2,
 		c:         make(chan *zipkincore.Span, 100),
+		goroutine: util.NewGo(context.Background()),
 	}
 	defer func() {
 		fc.Close()
 	}()
-	util.Go(fc.Run)
+	fc.Run()
 
 	for i := 0; i < 10; i++ {
 		err := fc.Collect(&zipkincore.Span{})

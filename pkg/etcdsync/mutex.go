@@ -134,7 +134,8 @@ func (m *DLock) Lock(wait bool) error {
 		util.Logger().Warnf(err, "Key %s is locked, waiting for other node releases it, id=%s", m.builder.key, m.id)
 
 		ctx, cancel := context.WithTimeout(m.builder.ctx, DEFAULT_LOCK_TTL*time.Second)
-		go func() {
+		util.Go(func(context.Context) {
+			defer cancel()
 			err := backend.Registry().Watch(ctx,
 				registry.WithStrKey(m.builder.key),
 				registry.WithWatchCallback(
@@ -146,10 +147,9 @@ func (m *DLock) Lock(wait bool) error {
 						return nil
 					}))
 			if err != nil {
-				util.Logger().Errorf(nil, "%s, key=%s, id=%s", err.Error(), m.builder.key, m.id)
+				util.Logger().Warnf(nil, "%s, key=%s, id=%s", err.Error(), m.builder.key, m.id)
 			}
-			cancel()
-		}()
+		})
 		select {
 		case <-ctx.Done():
 			continue // 可以重新尝试获取锁

@@ -359,11 +359,6 @@ func (s *MicroServiceService) DeleteServices(ctx context.Context, request *pb.De
 			nuoMultilCount++
 		}
 
-		serviceRst := &pb.DelServicesRspInfo{
-			ServiceId:  serviceId,
-			ErrMessage: "",
-		}
-
 		//检查服务ID合法性
 		in := &pb.DeleteServiceRequest{
 			ServiceId: serviceId,
@@ -372,22 +367,15 @@ func (s *MicroServiceService) DeleteServices(ctx context.Context, request *pb.De
 		err := apt.Validate(in)
 		if err != nil {
 			util.Logger().Errorf(err, "delete micro-service failed, serviceId is %s: invalid parameters.", in.ServiceId)
-			serviceRst.ErrMessage = err.Error()
-			serviceRespChan <- serviceRst
+			serviceRespChan <- &pb.DelServicesRspInfo{
+				ServiceId:  serviceId,
+				ErrMessage: err.Error(),
+			}
 			continue
 		}
 
 		//执行删除服务操作
-		go func(serviceItem string) {
-			resp, err := s.DeleteServicePri(ctx, serviceItem, request.Force)
-			if err != nil {
-				serviceRst.ErrMessage = err.Error()
-			} else if resp.Code != pb.Response_SUCCESS {
-				serviceRst.ErrMessage = resp.Message
-			}
-
-			serviceRespChan <- serviceRst
-		}(serviceId)
+		util.Go(s.getDeleteServiceFunc(ctx, serviceId, request.Force, serviceRespChan))
 	}
 
 	//获取批量删除服务的结果
@@ -419,6 +407,23 @@ func (s *MicroServiceService) DeleteServices(ctx context.Context, request *pb.De
 	return resp, nil
 }
 
+func (s *MicroServiceService) getDeleteServiceFunc(ctx context.Context, serviceId string, force bool, serviceRespChan chan<- *pb.DelServicesRspInfo) func(context.Context) {
+	return func(_ context.Context) {
+		serviceRst := &pb.DelServicesRspInfo{
+			ServiceId:  serviceId,
+			ErrMessage: "",
+		}
+		resp, err := s.DeleteServicePri(ctx, serviceId, force)
+		if err != nil {
+			serviceRst.ErrMessage = err.Error()
+		} else if resp.Code != pb.Response_SUCCESS {
+			serviceRst.ErrMessage = resp.Message
+		}
+
+		serviceRespChan <- serviceRst
+	}
+}
+
 func (s *MicroServiceService) GetOne(ctx context.Context, in *pb.GetServiceRequest) (*pb.GetServiceResponse, error) {
 	if in == nil || len(in.ServiceId) == 0 {
 		return &pb.GetServiceResponse{
@@ -437,7 +442,7 @@ func (s *MicroServiceService) GetOne(ctx context.Context, in *pb.GetServiceReque
 	service, err := serviceUtil.GetService(ctx, domainProject, in.ServiceId)
 
 	if err != nil {
-		util.Logger().Errorf(err, "get micro-service failed, serviceId is %s: inner err,get service failed.", in.ServiceId)
+		util.Logger().Errorf(err, "get micro-service failed, serviceId is %s: inner err, get service failed.", in.ServiceId)
 		return &pb.GetServiceResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, "Get service file failed."),
 		}, err
@@ -655,7 +660,7 @@ func (s *MicroServiceService) CreateServiceEx(ctx context.Context, in *pb.Create
 	//create rules
 	if in.Rules != nil && len(in.Rules) != 0 {
 		chanLen++
-		go func() {
+		util.Go(func(_ context.Context) {
 			req := &pb.AddServiceRulesRequest{
 				ServiceId: serviceId,
 				Rules:     in.Rules,
@@ -670,12 +675,12 @@ func (s *MicroServiceService) CreateServiceEx(ctx context.Context, in *pb.Create
 				chanRsp.Message = rsp.Response.Message
 			}
 			createRespChan <- chanRsp
-		}()
+		})
 	}
 	//create tags
 	if in.Tags != nil && len(in.Tags) != 0 {
 		chanLen++
-		go func() {
+		util.Go(func(_ context.Context) {
 			req := &pb.AddServiceTagsRequest{
 				ServiceId: serviceId,
 				Tags:      in.Tags,
@@ -690,12 +695,12 @@ func (s *MicroServiceService) CreateServiceEx(ctx context.Context, in *pb.Create
 				chanRsp.Message = rsp.Response.Message
 			}
 			createRespChan <- chanRsp
-		}()
+		})
 	}
 	// create instance
 	if in.Instances != nil && len(in.Instances) != 0 {
 		chanLen++
-		go func() {
+		util.Go(func(_ context.Context) {
 			chanRsp := &pb.Response{}
 			for _, ins := range in.Instances {
 				req := &pb.RegisterInstanceRequest{
@@ -711,7 +716,7 @@ func (s *MicroServiceService) CreateServiceEx(ctx context.Context, in *pb.Create
 				}
 				createRespChan <- chanRsp
 			}
-		}()
+		})
 	}
 
 	// handle result

@@ -21,6 +21,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/coreos/etcd/mvcc/mvccpb"
+	"golang.org/x/net/context"
 	"sync"
 	"time"
 )
@@ -98,12 +99,12 @@ func (iedh *InstanceEventDeferHandler) HandleChan() <-chan *Event {
 	return iedh.deferCh
 }
 
-func (iedh *InstanceEventDeferHandler) check(stopCh <-chan struct{}) {
+func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 	defer util.RecoverAndReport()
 	t, n := iedh.newTimer(), false
 	for {
 		select {
-		case <-stopCh:
+		case <-ctx.Done():
 			return
 		case evts := <-iedh.pendingCh:
 			for _, evt := range evts {

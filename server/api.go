@@ -36,8 +36,9 @@ func init() {
 	InitAPI()
 
 	apiServer = &APIServer{
-		isClose: true,
-		err:     make(chan error, 1),
+		isClose:   true,
+		err:       make(chan error, 1),
+		goroutine: util.NewGo(context.Background()),
 	}
 }
 
@@ -66,6 +67,7 @@ type APIServer struct {
 	isClose   bool
 	forked    bool
 	err       chan error
+	goroutine *util.GoRoutine
 }
 
 const (
@@ -176,16 +178,18 @@ func (s *APIServer) doAPIServerHeartBeat(pCtx context.Context) {
 }
 
 func (s *APIServer) startHeartBeatService() {
-	go func() {
+	s.goroutine.Do(func(ctx context.Context) {
 		for {
 			select {
+			case <-ctx.Done():
+				return
 			case <-s.err:
 				return
 			case <-time.After(time.Duration(core.Instance.HealthCheck.Interval) * time.Second):
 				s.doAPIServerHeartBeat(context.Background())
 			}
 		}
-	}()
+	})
 }
 
 func (s *APIServer) graceDone() {
@@ -211,14 +215,14 @@ func (s *APIServer) startRESTServer() (err error) {
 	}
 	util.Logger().Infof("Local listen address: %s, host: %s.", ep, s.HostName)
 
-	go func() {
+	s.goroutine.Do(func(_ context.Context) {
 		err := s.restSrv.Serve()
 		if s.isClose {
 			return
 		}
 		util.Logger().Errorf(err, "error to start REST API server %s", ep)
 		s.err <- err
-	}()
+	})
 	return
 }
 
@@ -234,14 +238,14 @@ func (s *APIServer) startRPCServer() (err error) {
 	}
 	util.Logger().Infof("Local listen address: %s, host: %s.", ep, s.HostName)
 
-	go func() {
+	s.goroutine.Do(func(_ context.Context) {
 		err := s.rpcSrv.Serve()
 		if s.isClose {
 			return
 		}
 		util.Logger().Errorf(err, "error to start RPC API server %s", ep)
 		s.err <- err
-	}()
+	})
 	return
 }
 
@@ -300,6 +304,8 @@ func (s *APIServer) Stop() {
 	}
 
 	close(s.err)
+
+	s.goroutine.Close(true)
 
 	util.Logger().Info("api server stopped.")
 }

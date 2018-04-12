@@ -20,6 +20,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"golang.org/x/net/context"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -71,7 +72,7 @@ func Init() {
 		flag.Parse()
 	}
 
-	go handleSignals()
+	util.Go(handleSignals)
 }
 
 func Before(f func()) {
@@ -111,26 +112,30 @@ func fireSignalHook(ppFlag int, sig os.Signal) {
 	}
 }
 
-func handleSignals() {
+func handleSignals(ctx context.Context) {
 	var sig os.Signal
 
 	sigCh := make(chan os.Signal)
 	signal.Notify(sigCh, registerSignals...)
 
 	for {
-		sig = <-sigCh
-		fireSignalHook(PreSignal, sig)
-		switch sig {
-		case syscall.SIGHUP:
-			util.Logger().Debugf("received signal 'SIGHUP', now forking")
-			err := fork()
-			if err != nil {
-				util.Logger().Errorf(err, "fork a process failed")
+		select {
+		case <-ctx.Done():
+			return
+		case sig = <-sigCh:
+			fireSignalHook(PreSignal, sig)
+			switch sig {
+			case syscall.SIGHUP:
+				util.Logger().Debugf("received signal 'SIGHUP', now forking")
+				err := fork()
+				if err != nil {
+					util.Logger().Errorf(err, "fork a process failed")
+				}
+			default:
+				util.Logger().Warnf(nil, "received signal '%v'", sig)
 			}
-		default:
-			util.Logger().Warnf(nil, "received signal '%v'", sig)
+			fireSignalHook(PostSignal, sig)
 		}
-		fireSignalHook(PostSignal, sig)
 	}
 }
 
