@@ -19,34 +19,30 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/frontend/schema"
+
 	"github.com/astaxie/beego"
-	"log"
-	"net/http"
-	//"strconv"
 )
+
+type Config struct {
+	frontendAddr string
+	scAddr       string
+}
 
 func main() {
 	frontendIp := beego.AppConfig.String("frontend_host_ip")
 	frontendPort := beego.AppConfig.DefaultInt("frontend_host_port", 30103)
 
+	scIp := beego.AppConfig.DefaultString("httpadr", "127.0.0.1")
+	scPort := beego.AppConfig.DefaultInt("httpport", 30100)
+
 	// command line flags
 	port := flag.Int("port", frontendPort, "port to serve on")
-	dir := flag.String("directory", "app/", "directory of web files")
-
 	flag.Parse()
 
-	// handle all requests by serving a file of the same name
-	fs := http.Dir(*dir)
-	fileHandler := http.FileServer(fs)
-	http.Handle("/", fileHandler)
+	cfg := Config{}
+	cfg.scAddr = fmt.Sprintf("http://%s:%d", scIp, scPort)
+	cfg.frontendAddr = fmt.Sprintf("%s:%d", frontendIp, *port)
 
-	schemaHandler := schema.TestSchema()
-	http.Handle("/testSchema/", schemaHandler)
-
-	log.Printf("Running on port %d\n", *port)
-
-	addr := fmt.Sprintf("%s:%d", frontendIp, *port)
-	// this call blocks -- the progam runs here forever
-	fmt.Println(http.ListenAndServe(addr, nil))
+	// run frontend web server
+	Serve(cfg)
 }
