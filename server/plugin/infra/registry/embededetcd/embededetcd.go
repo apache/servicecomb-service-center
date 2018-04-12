@@ -25,7 +25,6 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/registry/etcd"
 	sctls "github.com/apache/incubator-servicecomb-service-center/server/tls"
 	"github.com/astaxie/beego"
 	"github.com/coreos/etcd/embed"
@@ -571,7 +570,7 @@ func getEmbedInstance() mgr.PluginInstance {
 }
 
 func parseURL(addrs string) ([]url.URL, error) {
-	urls := []url.URL{}
+	var urls []url.URL
 	ips := strings.Split(addrs, ",")
 	for _, ip := range ips {
 		addr, err := url.Parse(ip)

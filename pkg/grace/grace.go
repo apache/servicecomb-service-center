@@ -126,13 +126,11 @@ func handleSignals(ctx context.Context) {
 			fireSignalHook(PreSignal, sig)
 			switch sig {
 			case syscall.SIGHUP:
-				util.Logger().Debugf("received signal 'SIGHUP', now forking")
+				util.Logger().Debugf("received signal '%v', now forking", sig)
 				err := fork()
 				if err != nil {
 					util.Logger().Errorf(err, "fork a process failed")
 				}
-			default:
-				util.Logger().Warnf(nil, "received signal '%v'", sig)
 			}
 			fireSignalHook(PostSignal, sig)
 		}

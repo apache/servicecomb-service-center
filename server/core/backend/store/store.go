@@ -224,7 +224,7 @@ func (s *KvStore) Stop() {
 
 	util.SafeCloseChan(s.ready)
 
-	util.Logger().Debugf("store daemon stopped.")
+	util.Logger().Debugf("store daemon stopped")
 }
 
 func (s *KvStore) Ready() <-chan struct{} {

@@ -76,7 +76,7 @@ func (s *ServiceCenterServer) waitForQuit() {
 
 	s.Stop()
 
-	util.Logger().Warn("service center quit", nil)
+	util.Logger().Debugf("service center stopped")
 }
 
 func (s *ServiceCenterServer) needUpgrade() bool {

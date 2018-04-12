@@ -34,7 +34,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-var BrokerServiceAPI *BrokerService = &BrokerService{}
+var BrokerServiceAPI = &BrokerService{}
 
 type BrokerService struct {
 }

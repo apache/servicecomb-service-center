@@ -30,4 +30,6 @@ func main() {
 	util.GoCloseAndWait()
 
 	backend.Registry().Close()
+
+	util.Logger().Warn("service center exited", nil)
 }

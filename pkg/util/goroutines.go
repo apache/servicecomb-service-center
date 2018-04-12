@@ -68,6 +68,7 @@ func Go(f func(context.Context)) {
 
 func GoCloseAndWait() {
 	defaultGo.Close(true)
+	Logger().Debugf("all goroutines exited")
 }
 
 func NewGo(ctx context.Context) *GoRoutine {

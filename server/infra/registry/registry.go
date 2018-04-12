@@ -144,7 +144,7 @@ const (
 )
 
 const (
-	REQUEST_TIMEOUT = 300
+	REQUEST_TIMEOUT = 30 * time.Second
 
 	DEFAULT_PAGE_COUNT = 4096 // grpc does not allow to transport a large body more then 4MB in a request.
 )
@@ -359,7 +359,7 @@ func OpCmp(opt CompareOperation, result CompareResult, v interface{}) (cmp Compa
 }
 
 func WithTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
-	return context.WithTimeout(ctx, REQUEST_TIMEOUT*time.Second)
+	return context.WithTimeout(ctx, REQUEST_TIMEOUT)
 }
 
 func RegistryConfig() *Config {

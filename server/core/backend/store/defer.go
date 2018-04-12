@@ -118,7 +118,7 @@ func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 			}
 
 			total := iedh.cache.Size()
-			if !iedh.enabled && del > 0 && total > 0 && float64(del) >= float64(total)*iedh.Percent {
+			if !iedh.enabled && del > 0 && total > 5 && float64(del) >= float64(total)*iedh.Percent {
 				iedh.enabled = true
 				util.Logger().Warnf(nil, "self preservation is enabled, caught %d/%d(>=%.0f%%) DELETE events",
 					del, total, iedh.Percent*100)

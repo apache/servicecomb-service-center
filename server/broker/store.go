@@ -97,11 +97,10 @@ func init() {
 
 type BKvStore struct {
 	*sstore.KvStore
-	bindexers  map[sstore.StoreType]*sstore.Indexer
-	block      sync.RWMutex
-	bready     chan struct{}
-	bgoroutine *util.GoRoutine
-	bisClose   bool
+	bindexers map[sstore.StoreType]*sstore.Indexer
+	block     sync.RWMutex
+	bready    chan struct{}
+	bisClose  bool
 }
 
 func (s *BKvStore) Initialize() {
@@ -109,7 +108,6 @@ func (s *BKvStore) Initialize() {
 	s.KvStore.Initialize()
 	s.bindexers = make(map[sstore.StoreType]*sstore.Indexer)
 	s.bready = make(chan struct{})
-	s.bgoroutine = util.NewGo(context.Background())
 
 	for i := sstore.StoreType(0); i != typeEnd; i++ {
 		store.newNullStore(i)
@@ -127,7 +125,13 @@ func (s *BKvStore) newIndexer(t sstore.StoreType, cacher sstore.Cacher) {
 }
 
 func (s *BKvStore) Run() {
-	s.bgoroutine.Do(s.store)
+	util.Go(func(ctx context.Context) {
+		s.store(ctx)
+		select {
+		case <-ctx.Done():
+			s.Stop()
+		}
+	})
 }
 
 func (s *BKvStore) Ready() <-chan struct{} {
@@ -160,4 +164,19 @@ func (s *BKvStore) Verification() *sstore.Indexer {
 
 func (s *BKvStore) PactLatest() *sstore.Indexer {
 	return s.bindexers[PACT_LATEST]
+}
+
+func (s *BKvStore) Stop() {
+	if s.bisClose {
+		return
+	}
+	s.bisClose = true
+
+	for _, i := range s.bindexers {
+		i.Stop()
+	}
+
+	util.SafeCloseChan(s.bready)
+
+	util.Logger().Debugf("broker store daemon stopped")
 }
