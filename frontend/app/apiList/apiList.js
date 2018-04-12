@@ -17,11 +17,7 @@
 'use strict';
 angular.module('serviceCenter')
 	.constant('apiConstant', {
-		endPoint :{
-			ip : 'http://127.0.0.1',
-			port: '30100'
-		},
-//		 v4 api's
+            // v4 api's
 		api : {
             microservice: {
                 url: 'v4/default/registry/microservices',

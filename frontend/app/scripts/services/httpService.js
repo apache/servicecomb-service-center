@@ -16,21 +16,21 @@
  */
 'use strict';
 angular.module('serviceCenter')
-	.service('httpService', ['$http', '$q', '$mdDialog', 'apiConstant', function($http, $q, $mdDialog, apiConstant){
+    .service('httpService', ['$http', '$q', '$mdDialog', 'apiConstant', function($http, $q, $mdDialog, apiConstant){
 
-		function apiRequest(requrl, method, payload, headers, nopopup){
+	function apiRequest(requrl, method, payload, headers, nopopup){
             var tenant = localStorage.getItem('tenant');
             if(!tenant || tenant == undefined || tenant == null){
                 tenant = 'default';
                 localStorage.setItem('tenant', 'default');
             }
 
-			var defer = $q.defer();
+	    var defer = $q.defer();
             if(undefined === requrl || null === requrl || undefined === method || null === method){
                 defer.reject("invalid params");
                 return defer.promise;
             }
-            var baseUrl = apiConstant.endPoint.ip + ':' + apiConstant.endPoint.port;
+            var baseUrl = "/sc"
             if(undefined === headers || null === headers){
                 headers = {
                     'x-domain-name' : tenant
@@ -49,8 +49,8 @@ angular.module('serviceCenter')
                 defer.resolve(response);
             }, function(error) {
                 if(nopopup){
-                   defer.reject(error);
-                   return;
+                    defer.reject(error);
+                    return;
                 }
                 var parentEl = angular.element(document.body);
                 $mdDialog.show({
@@ -70,9 +70,9 @@ angular.module('serviceCenter')
                 defer.reject(error);
             });
             return defer.promise;
-		}
+	}
 
-		return {
-			apiRequest : apiRequest
-		};
-	}]);
+	return {
+	    apiRequest : apiRequest
+	};
+    }]);
