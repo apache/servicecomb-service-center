@@ -19,6 +19,7 @@ package notification
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"golang.org/x/net/context"
 	"time"
 )
 
@@ -44,10 +45,10 @@ func (w *ListWatcher) OnAccept() {
 	}
 
 	util.Logger().Debugf("accepted by notify service, %s watcher %s %s", w.Type(), w.Id(), w.Subject())
-	go w.listAndPublishJobs()
+	util.Go(w.listAndPublishJobs)
 }
 
-func (w *ListWatcher) listAndPublishJobs() {
+func (w *ListWatcher) listAndPublishJobs(_ context.Context) {
 	defer close(w.listCh)
 	if w.ListFunc == nil {
 		return
@@ -110,10 +111,6 @@ func NewWatchJob(nType NotifyType, subscriberId, subject string, rev int64, resp
 		Revision: rev,
 		Response: response,
 	}
-}
-
-func NewWatcher(nType NotifyType, id string, subject string) *ListWatcher {
-	return NewListWatcher(nType, id, subject, nil)
 }
 
 func NewListWatcher(nType NotifyType, id string, subject string,

@@ -20,6 +20,7 @@ import (
 	"container/list"
 	"errors"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"golang.org/x/net/context"
 	"sync"
 	"time"
 )
@@ -33,7 +34,8 @@ var notifyService *NotifyService
 
 func init() {
 	notifyService = &NotifyService{
-		isClose: true,
+		isClose:   true,
+		goroutine: util.NewGo(context.Background()),
 	}
 }
 
@@ -46,13 +48,14 @@ type serviceIndex map[NotifyType]subscriberSubjectIndex
 type NotifyService struct {
 	Config NotifyServiceConfig
 
-	services serviceIndex
-	queues   map[NotifyType]chan NotifyJob
-	waits    sync.WaitGroup
-	mutexes  map[NotifyType]*sync.Mutex
-	err      chan error
-	closeMux sync.RWMutex
-	isClose  bool
+	services  serviceIndex
+	queues    map[NotifyType]chan NotifyJob
+	waits     sync.WaitGroup
+	mutexes   map[NotifyType]*sync.Mutex
+	err       chan error
+	closeMux  sync.RWMutex
+	isClose   bool
+	goroutine *util.GoRoutine
 }
 
 func (s *NotifyService) Err() <-chan error {
@@ -150,41 +153,52 @@ func (s *NotifyService) AddJob(job NotifyJob) error {
 	}
 }
 
-func (s *NotifyService) publish2Subscriber(t NotifyType) {
-	defer s.waits.Done()
-	for job := range s.queues[t] {
-		util.Logger().Infof("notification service got a job %s: %s to notify subscriber %s",
-			job.Type(), job.Subject(), job.SubscriberId())
+func (s *NotifyService) getPublish2SubscriberFunc(t NotifyType) func(context.Context) {
+	return func(ctx context.Context) {
+		defer s.waits.Done()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case job, ok := <-s.queues[t]:
+				if !ok {
+					return
+				}
 
-		s.mutexes[t].Lock()
+				util.Logger().Infof("notification service got a job %s: %s to notify subscriber %s",
+					job.Type(), job.Subject(), job.SubscriberId())
 
-		if s.Closed() && len(s.services[t]) == 0 {
-			s.mutexes[t].Unlock()
-			return
-		}
+				s.mutexes[t].Lock()
 
-		m, ok := s.services[t][job.Subject()]
-		if ok {
-			// publish的subject如果带上id，则单播，否则广播
-			if len(job.SubscriberId()) != 0 {
-				ns, ok := m[job.SubscriberId()]
+				if s.Closed() && len(s.services[t]) == 0 {
+					s.mutexes[t].Unlock()
+					return
+				}
+
+				m, ok := s.services[t][job.Subject()]
 				if ok {
-					for n := ns.Front(); n != nil; n = n.Next() {
-						n.Value.(Subscriber).OnMessage(job)
+					// publish的subject如果带上id，则单播，否则广播
+					if len(job.SubscriberId()) != 0 {
+						ns, ok := m[job.SubscriberId()]
+						if ok {
+							for n := ns.Front(); n != nil; n = n.Next() {
+								n.Value.(Subscriber).OnMessage(job)
+							}
+						}
+						s.mutexes[t].Unlock()
+						continue
+					}
+					for key := range m {
+						ns := m[key]
+						for n := ns.Front(); n != nil; n = n.Next() {
+							n.Value.(Subscriber).OnMessage(job)
+						}
 					}
 				}
+
 				s.mutexes[t].Unlock()
-				continue
-			}
-			for key := range m {
-				ns := m[key]
-				for n := ns.Front(); n != nil; n = n.Next() {
-					n.Value.(Subscriber).OnMessage(job)
-				}
 			}
 		}
-
-		s.mutexes[t].Unlock()
 	}
 }
 
@@ -227,7 +241,7 @@ func (s *NotifyService) Start() {
 	util.Logger().Debugf("notify service is started with config %s", s.Config)
 
 	for i := NotifyType(0); i != typeEnd; i++ {
-		go s.publish2Subscriber(i)
+		s.goroutine.Do(s.getPublish2SubscriberFunc(i))
 	}
 }
 
@@ -254,6 +268,8 @@ func (s *NotifyService) Stop() {
 	s.RemoveAllSubscribers()
 
 	close(s.err)
+
+	s.goroutine.Close(true)
 
 	util.Logger().Debug("notify service stopped.")
 }

@@ -557,11 +557,10 @@ type Dependency struct {
 
 func (dep *Dependency) RemoveConsumerOfProviderRule() {
 	dep.chanNum++
-	go dep.removeConsumerOfProviderRule()
+	util.Go(dep.removeConsumerOfProviderRule)
 }
 
-func (dep *Dependency) removeConsumerOfProviderRule() {
-	ctx := context.TODO()
+func (dep *Dependency) removeConsumerOfProviderRule(ctx context.Context) {
 	opts := make([]registry.PluginOp, 0, len(dep.removedDependencyRuleList))
 	for _, providerRule := range dep.removedDependencyRuleList {
 		proProkey := apt.GenerateProviderDependencyRuleKey(providerRule.Tenant, providerRule)
@@ -605,11 +604,10 @@ func (dep *Dependency) removeConsumerOfProviderRule() {
 
 func (dep *Dependency) AddConsumerOfProviderRule() {
 	dep.chanNum++
-	go dep.addConsumerOfProviderRule()
+	util.Go(dep.addConsumerOfProviderRule)
 }
 
-func (dep *Dependency) addConsumerOfProviderRule() {
-	ctx := context.TODO()
+func (dep *Dependency) addConsumerOfProviderRule(ctx context.Context) {
 	opts := []registry.PluginOp{}
 	for _, providerRule := range dep.NewDependencyRuleList {
 		proProkey := apt.GenerateProviderDependencyRuleKey(providerRule.Tenant, providerRule)

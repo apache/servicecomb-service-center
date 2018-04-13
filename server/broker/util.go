@@ -25,14 +25,16 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ServiceComb/paas-lager"
 	"github.com/ServiceComb/paas-lager/third_party/forked/cloudfoundry/lager"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	backend "github.com/apache/incubator-servicecomb-service-center/server/core/backend"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
+	"path/filepath"
+	"time"
 )
 
 var PactLogger lager.Logger
@@ -88,12 +90,18 @@ var brokerAPILinksTitles = map[string]string{
 
 func init() {
 	//define Broker logger
-	stlager.Init(stlager.Config{
-		LoggerLevel:   "INFO",
-		LoggerFile:    "broker_srvc.log",
-		EnableRsyslog: false,
+	name := ""
+	if len(core.ServerInfo.Config.LogFilePath) != 0 {
+		name = filepath.Join(filepath.Dir(core.ServerInfo.Config.LogFilePath), "broker_srvc.log")
+	}
+	PactLogger = util.NewLogger(util.LoggerConfig{
+		LoggerLevel:     core.ServerInfo.Config.LogLevel,
+		LoggerFile:      name,
+		LogFormatText:   core.ServerInfo.Config.LogFormat == "text",
+		LogRotatePeriod: 30 * time.Second,
+		LogRotateSize:   int(core.ServerInfo.Config.LogRotateSize),
+		LogBackupCount:  int(core.ServerInfo.Config.LogBackupCount),
 	})
-	PactLogger = stlager.NewLogger("broker_srvc")
 }
 
 func GetDefaultTenantProject() string {

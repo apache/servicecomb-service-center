@@ -23,15 +23,19 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
+	"golang.org/x/net/context"
 	"os"
+	"strings"
 	"time"
 )
 
 type FileCollector struct {
 	Fd        *os.File
+	Timeout   time.Duration
 	Interval  time.Duration
 	BatchSize int
 	c         chan *zipkincore.Span
+	goroutine *util.GoRoutine
 }
 
 func (f *FileCollector) Collect(span *zipkincore.Span) error {
@@ -39,11 +43,16 @@ func (f *FileCollector) Collect(span *zipkincore.Span) error {
 		return fmt.Errorf("required FD to write")
 	}
 
-	f.c <- span
+	select {
+	case f.c <- span:
+	case <-time.After(f.Timeout):
+		util.Logger().Errorf(nil, "send span to handle channel timed out(%s)", f.Timeout)
+	}
 	return nil
 }
 
 func (f *FileCollector) Close() error {
+	f.goroutine.Close(true)
 	return f.Fd.Close()
 }
 
@@ -77,7 +86,7 @@ func (f *FileCollector) write(batch []*zipkincore.Span) (c int) {
 }
 
 func (f *FileCollector) checkFile() error {
-	if util.PathExist(f.Fd.Name()) {
+	if util.PathExist(f.Fd.Name()) || strings.Index(f.Fd.Name(), "/dev/") == 0 {
 		return nil
 	}
 
@@ -100,52 +109,54 @@ func (f *FileCollector) checkFile() error {
 	return nil
 }
 
-func (f *FileCollector) Run(stopCh <-chan struct{}) {
-	var (
-		batch []*zipkincore.Span
-		prev  []*zipkincore.Span
-		i     = f.Interval * 10
-		t     = time.NewTicker(f.Interval)
-		nr    = time.Now().Add(i)
-		max   = f.BatchSize * 2
-	)
-	for {
-		select {
-		case <-stopCh:
-			f.write(batch)
-			return
-		case span := <-f.c:
-			batch = append(batch, span)
-			if len(batch) >= f.BatchSize {
-				if len(batch) > max {
-					dispose := len(batch) - f.BatchSize
-					util.Logger().Errorf(nil, "backlog is full, dispose %d span(s), max: %d",
-						dispose, max)
-					batch = batch[dispose:] // allocate more
+func (f *FileCollector) Run() {
+	f.goroutine.Do(func(ctx context.Context) {
+		var (
+			batch []*zipkincore.Span
+			prev  []*zipkincore.Span
+			i     = f.Interval * 10
+			t     = time.NewTicker(f.Interval)
+			nr    = time.Now().Add(i)
+			max   = f.BatchSize * 2
+		)
+		for {
+			select {
+			case <-ctx.Done():
+				f.write(batch)
+				return
+			case span := <-f.c:
+				batch = append(batch, span)
+				if len(batch) >= f.BatchSize {
+					if len(batch) > max {
+						dispose := len(batch) - f.BatchSize
+						util.Logger().Errorf(nil, "backlog is full, dispose %d span(s), max: %d",
+							dispose, max)
+						batch = batch[dispose:] // allocate more
+					}
+					if c := f.write(batch); c == 0 {
+						continue
+					}
+					if prev != nil {
+						batch, prev = prev[:0], batch
+					} else {
+						prev, batch = batch, batch[len(batch):] // new one
+					}
 				}
-				if c := f.write(batch); c == 0 {
-					continue
+			case <-t.C:
+				if time.Now().After(nr) {
+					util.LogRotateFile(f.Fd.Name(),
+						int(core.ServerInfo.Config.LogRotateSize),
+						int(core.ServerInfo.Config.LogBackupCount),
+					)
+					nr = time.Now().Add(i)
 				}
-				if prev != nil {
-					batch, prev = prev[:0], batch
-				} else {
-					prev, batch = batch, batch[len(batch):] // new one
-				}
-			}
-		case <-t.C:
-			if time.Now().After(nr) {
-				util.LogRotateFile(f.Fd.Name(),
-					int(core.ServerInfo.Config.LogRotateSize),
-					int(core.ServerInfo.Config.LogBackupCount),
-				)
-				nr = time.Now().Add(i)
-			}
 
-			if c := f.write(batch); c > 0 {
-				batch = batch[:0]
+				if c := f.write(batch); c > 0 {
+					batch = batch[:0]
+				}
 			}
 		}
-	}
+	})
 }
 
 func NewFileCollector(path string) (*FileCollector, error) {
@@ -155,10 +166,12 @@ func NewFileCollector(path string) (*FileCollector, error) {
 	}
 	fc := &FileCollector{
 		Fd:        fd,
+		Timeout:   5 * time.Second,
 		Interval:  10 * time.Second,
 		BatchSize: 100,
 		c:         make(chan *zipkincore.Span, 1000),
+		goroutine: util.NewGo(context.Background()),
 	}
-	util.Go(fc.Run)
+	fc.Run()
 	return fc, nil
 }

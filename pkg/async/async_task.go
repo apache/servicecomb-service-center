@@ -39,6 +39,7 @@ type scheduler struct {
 	queue      *util.UniQueue
 	latestTask AsyncTask
 	once       sync.Once
+	goroutine  *util.GoRoutine
 }
 
 func (s *scheduler) AddTask(ctx context.Context, task AsyncTask) (err error) {
@@ -47,7 +48,7 @@ func (s *scheduler) AddTask(ctx context.Context, task AsyncTask) (err error) {
 	}
 
 	s.once.Do(func() {
-		go s.do()
+		s.goroutine.Do(s.do)
 	})
 
 	err = s.queue.Put(ctx, task)
@@ -57,15 +58,17 @@ func (s *scheduler) AddTask(ctx context.Context, task AsyncTask) (err error) {
 	return s.latestTask.Err()
 }
 
-func (s *scheduler) do() {
+func (s *scheduler) do(ctx context.Context) {
 	for {
 		select {
+		case <-ctx.Done():
+			return
 		case task, ok := <-s.queue.Chan():
 			if !ok {
 				return
 			}
 			at := task.(AsyncTask)
-			at.Do(context.Background())
+			at.Do(ctx)
 			s.latestTask = at
 		}
 	}
@@ -73,6 +76,15 @@ func (s *scheduler) do() {
 
 func (s *scheduler) Close() {
 	s.queue.Close()
+	s.goroutine.Close(true)
+}
+
+func newScheduler(task AsyncTask) *scheduler {
+	return &scheduler{
+		queue:      util.NewUniQueue(),
+		latestTask: task,
+		goroutine:  util.NewGo(context.Background()),
+	}
 }
 
 type AsyncTaskService struct {
@@ -99,10 +111,7 @@ func (lat *AsyncTaskService) getOrNewScheduler(task AsyncTask) (s *scheduler, is
 		s, ok = lat.schedules[key]
 		if !ok {
 			isNew = true
-			s = &scheduler{
-				queue:      util.NewUniQueue(),
-				latestTask: task,
-			}
+			s = newScheduler(task)
 			lat.schedules[key] = s
 		}
 		lat.lock.Unlock()
@@ -166,11 +175,11 @@ func (lat *AsyncTaskService) LatestHandled(key string) (AsyncTask, error) {
 	return s.latestTask, nil
 }
 
-func (lat *AsyncTaskService) daemon(stopCh <-chan struct{}) {
+func (lat *AsyncTaskService) daemon(ctx context.Context) {
 	util.SafeCloseChan(lat.ready)
 	for {
 		select {
-		case <-stopCh:
+		case <-ctx.Done():
 			util.Logger().Debugf("daemon thread exited for AsyncTaskService is stopped")
 			return
 		case <-time.After(DEFAULT_REMOVE_TASKS_INTERVAL):
@@ -228,7 +237,7 @@ func NewAsyncTaskService() *AsyncTaskService {
 	return &AsyncTaskService{
 		schedules:   make(map[string]*scheduler, DEFAULT_MAX_SCHEDULE_COUNT),
 		removeTasks: make(map[string]struct{}, DEFAULT_MAX_SCHEDULE_COUNT),
-		goroutine:   util.NewGo(make(chan struct{})),
+		goroutine:   util.NewGo(context.Background()),
 		ready:       make(chan struct{}),
 		isClose:     true,
 	}

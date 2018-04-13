@@ -16,42 +16,37 @@
  */
 package util
 
-import "sync"
+import (
+	"golang.org/x/net/context"
+	"sync"
+)
 
 type GoRoutine struct {
-	stopCh chan struct{}
+	ctx    context.Context
+	cancel context.CancelFunc
 	wg     sync.WaitGroup
 	mux    sync.RWMutex
-	once   sync.Once
 	closed bool
 }
 
-func (g *GoRoutine) Init(stopCh chan struct{}) {
-	g.once.Do(func() {
-		g.stopCh = stopCh
-	})
-}
-
-func (g *GoRoutine) StopCh() <-chan struct{} {
-	return g.stopCh
-}
-
-func (g *GoRoutine) Do(f func(<-chan struct{})) {
+func (g *GoRoutine) Do(f func(context.Context)) {
 	g.wg.Add(1)
 	go func() {
 		defer g.wg.Done()
-		f(g.StopCh())
+		defer RecoverAndReport()
+		f(g.ctx)
 	}()
 }
 
 func (g *GoRoutine) Close(wait bool) {
 	g.mux.Lock()
 	defer g.mux.Unlock()
+
 	if g.closed {
 		return
 	}
 	g.closed = true
-	close(g.stopCh)
+	g.cancel()
 	if wait {
 		g.Wait()
 	}
@@ -61,27 +56,26 @@ func (g *GoRoutine) Wait() {
 	g.wg.Wait()
 }
 
-var defaultGo GoRoutine
+var defaultGo *GoRoutine
 
 func init() {
-	GoInit()
+	defaultGo = NewGo(context.Background())
 }
 
-func Go(f func(<-chan struct{})) {
+func Go(f func(context.Context)) {
 	defaultGo.Do(f)
-}
-
-func GoInit() {
-	defaultGo.Init(make(chan struct{}))
 }
 
 func GoCloseAndWait() {
 	defaultGo.Close(true)
-	Logger().Debugf("all goroutines quit normally")
+	Logger().Debugf("all goroutines exited")
 }
 
-func NewGo(stopCh chan struct{}) *GoRoutine {
-	gr := &GoRoutine{}
-	gr.Init(stopCh)
+func NewGo(ctx context.Context) *GoRoutine {
+	ctx, cancel := context.WithCancel(ctx)
+	gr := &GoRoutine{
+		ctx:    ctx,
+		cancel: cancel,
+	}
 	return gr
 }

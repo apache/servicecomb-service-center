@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"github.com/ServiceComb/paas-lager"
 	"github.com/ServiceComb/paas-lager/third_party/forked/cloudfoundry/lager"
+	"golang.org/x/net/context"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -57,7 +58,7 @@ func init() {
 	loggers = make(map[string]lager.Logger, 10)
 	loggerNames = make(map[string]string, 10)
 	// make LOGGER do not be nil, new a stdout logger
-	LOGGER = newLogger(fromLagerConfig(defaultLagerConfig))
+	LOGGER = NewLogger(fromLagerConfig(defaultLagerConfig))
 }
 
 func fromLagerConfig(c *stlager.Config) LoggerConfig {
@@ -82,7 +83,7 @@ func toLagerConfig(c LoggerConfig) stlager.Config {
 }
 
 // newLog new log, unsafe
-func newLogger(cfg LoggerConfig) lager.Logger {
+func NewLogger(cfg LoggerConfig) lager.Logger {
 	stlager.Init(toLagerConfig(cfg))
 	return stlager.NewLogger(cfg.LoggerFile)
 }
@@ -93,7 +94,7 @@ func InitGlobalLogger(cfg LoggerConfig) {
 		cfg.LoggerLevel = defaultLagerConfig.LoggerLevel
 	}
 	loggerConfig = cfg
-	LOGGER = newLogger(cfg)
+	LOGGER = NewLogger(cfg)
 	// log rotate
 	RunLogDirRotate(cfg)
 	// recreate the deleted log file
@@ -144,7 +145,7 @@ func Logger() lager.Logger {
 			if len(cfg.LoggerFile) != 0 {
 				cfg.LoggerFile = filepath.Join(filepath.Dir(cfg.LoggerFile), logFile+".log")
 			}
-			logger = newLogger(cfg)
+			logger = NewLogger(cfg)
 			loggers[logFile] = logger
 			LOGGER.Warnf(nil, "match %s, new logger %s for %s", prefix, logFile, funcFullName)
 		}
@@ -190,10 +191,10 @@ func monitorLogFile() {
 	if len(loggerConfig.LoggerFile) == 0 {
 		return
 	}
-	Go(func(stopCh <-chan struct{}) {
+	Go(func(ctx context.Context) {
 		for {
 			select {
-			case <-stopCh:
+			case <-ctx.Done():
 				return
 			case <-time.After(time.Minute):
 				Logger().Debug(fmt.Sprintf("Check log file at %s", time.Now()))

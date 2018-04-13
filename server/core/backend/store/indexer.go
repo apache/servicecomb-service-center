@@ -186,11 +186,11 @@ func (i *Indexer) OnCacheEvent(evt *KvEvent) {
 }
 
 func (i *Indexer) buildIndex() {
-	i.goroutine.Do(func(stopCh <-chan struct{}) {
+	i.goroutine.Do(func(ctx context.Context) {
 		util.SafeCloseChan(i.ready)
 		for {
 			select {
-			case <-stopCh:
+			case <-ctx.Done():
 				return
 			case evt, ok := <-i.prefixBuildQueue:
 				if !ok {
@@ -317,7 +317,7 @@ func NewCacheIndexer(t StoreType, cr Cacher) *Indexer {
 		cacheType:        t,
 		prefixIndex:      make(map[string]map[string]struct{}, DEFAULT_MAX_EVENT_COUNT),
 		prefixBuildQueue: make(chan *KvEvent, DEFAULT_MAX_EVENT_COUNT),
-		goroutine:        util.NewGo(make(chan struct{})),
+		goroutine:        util.NewGo(context.Background()),
 		ready:            make(chan struct{}),
 		isClose:          true,
 	}

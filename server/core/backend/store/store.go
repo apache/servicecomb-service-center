@@ -109,6 +109,7 @@ type KvStore struct {
 	asyncTaskSvc *async.AsyncTaskService
 	lock         sync.RWMutex
 	ready        chan struct{}
+	goroutine    *util.GoRoutine
 	isClose      bool
 }
 
@@ -116,6 +117,7 @@ func (s *KvStore) Initialize() {
 	s.indexers = make(map[StoreType]*Indexer)
 	s.asyncTaskSvc = async.NewAsyncTaskService()
 	s.ready = make(chan struct{})
+	s.goroutine = util.NewGo(context.Background())
 
 	for i := StoreType(0); i != typeEnd; i++ {
 		store.newNullStore(i)
@@ -147,7 +149,7 @@ func (s *KvStore) newIndexer(t StoreType, cacher Cacher) {
 }
 
 func (s *KvStore) Run() {
-	go s.store()
+	s.goroutine.Do(s.store)
 	s.asyncTaskSvc.Run()
 }
 
@@ -166,7 +168,7 @@ func (s *KvStore) SelfPreservationHandler() DeferHandler {
 	return &InstanceEventDeferHandler{Percent: DEFAULT_SELF_PRESERVATION_PERCENT}
 }
 
-func (s *KvStore) store() {
+func (s *KvStore) store(ctx context.Context) {
 	for t := StoreType(0); t != typeEnd; t++ {
 		switch t {
 		case INSTANCE:
@@ -178,7 +180,11 @@ func (s *KvStore) store() {
 		}
 	}
 	for _, i := range s.indexers {
-		<-i.Ready()
+		select {
+		case <-ctx.Done():
+			return
+		case <-i.Ready():
+		}
 	}
 	util.SafeCloseChan(s.ready)
 
@@ -214,9 +220,11 @@ func (s *KvStore) Stop() {
 
 	s.asyncTaskSvc.Stop()
 
+	s.goroutine.Close(true)
+
 	util.SafeCloseChan(s.ready)
 
-	util.Logger().Debugf("store daemon stopped.")
+	util.Logger().Debugf("store daemon stopped")
 }
 
 func (s *KvStore) Ready() <-chan struct{} {

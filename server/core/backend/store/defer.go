@@ -21,6 +21,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/coreos/etcd/mvcc/mvccpb"
+	"golang.org/x/net/context"
 	"sync"
 	"time"
 )
@@ -98,12 +99,12 @@ func (iedh *InstanceEventDeferHandler) HandleChan() <-chan *Event {
 	return iedh.deferCh
 }
 
-func (iedh *InstanceEventDeferHandler) check(stopCh <-chan struct{}) {
+func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 	defer util.RecoverAndReport()
 	t, n := iedh.newTimer(), false
 	for {
 		select {
-		case <-stopCh:
+		case <-ctx.Done():
 			return
 		case evts := <-iedh.pendingCh:
 			for _, evt := range evts {
@@ -117,7 +118,7 @@ func (iedh *InstanceEventDeferHandler) check(stopCh <-chan struct{}) {
 			}
 
 			total := iedh.cache.Size()
-			if !iedh.enabled && del > 0 && total > 0 && float64(del) >= float64(total)*iedh.Percent {
+			if !iedh.enabled && del > 0 && total > 5 && float64(del) >= float64(total)*iedh.Percent {
 				iedh.enabled = true
 				util.Logger().Warnf(nil, "self preservation is enabled, caught %d/%d(>=%.0f%%) DELETE events",
 					del, total, iedh.Percent*100)

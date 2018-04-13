@@ -50,7 +50,7 @@ func (h *DependencyEventHandler) OnEvent(evt *store.KvEvent) {
 }
 
 func (h *DependencyEventHandler) loop() {
-	util.Go(func(stopCh <-chan struct{}) {
+	util.Go(func(ctx context.Context) {
 		waitDelayIndex := 0
 		waitDelay := []int{1, 1, 5, 10, 20, 30, 60}
 		retry := func() {
@@ -64,7 +64,7 @@ func (h *DependencyEventHandler) loop() {
 		}
 		for {
 			select {
-			case <-stopCh:
+			case <-ctx.Done():
 				return
 			case <-h.signals.Chan():
 				lock, err := mux.Try(mux.DEP_QUEUE_LOCK)

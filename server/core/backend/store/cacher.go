@@ -169,12 +169,12 @@ type KvCacher struct {
 	lastRev         int64
 	noEventInterval int
 
-	ready   chan struct{}
-	lw      ListWatcher
-	mux     sync.Mutex
-	once    sync.Once
-	cache   *KvCache
-	goroute *util.GoRoutine
+	ready     chan struct{}
+	lw        ListWatcher
+	mux       sync.Mutex
+	once      sync.Once
+	cache     *KvCache
+	goroutine *util.GoRoutine
 }
 
 func (c *KvCacher) needList() bool {
@@ -267,23 +267,18 @@ func (c *KvCacher) needDeferHandle(evts []*Event) bool {
 	return c.Cfg.DeferHandler.OnCondition(c.Cache(), evts)
 }
 
-func (c *KvCacher) refresh(stopCh <-chan struct{}) {
+func (c *KvCacher) refresh(ctx context.Context) {
 	util.Logger().Debugf("start to list and watch %s", c.Cfg)
-	ctx, cancel := context.WithCancel(context.Background())
-	c.goroute.Do(func(stopCh <-chan struct{}) {
-		defer cancel()
-		<-stopCh
-	})
 	for {
 		start := time.Now()
 		c.ListAndWatch(ctx)
 		watchDuration := time.Since(start)
-		nextPeriod := 0 * time.Second
+		nextPeriod := c.Cfg.Period
 		if watchDuration > 0 && c.Cfg.Period > watchDuration {
 			nextPeriod = c.Cfg.Period - watchDuration
 		}
 		select {
-		case <-stopCh:
+		case <-ctx.Done():
 			util.Logger().Debugf("stop to list and watch %s", c.Cfg)
 			return
 		case <-time.After(nextPeriod):
@@ -291,7 +286,7 @@ func (c *KvCacher) refresh(stopCh <-chan struct{}) {
 	}
 }
 
-func (c *KvCacher) deferHandle(stopCh <-chan struct{}) {
+func (c *KvCacher) deferHandle(ctx context.Context) {
 	if c.Cfg.DeferHandler == nil {
 		return
 	}
@@ -299,7 +294,7 @@ func (c *KvCacher) deferHandle(stopCh <-chan struct{}) {
 	i, evts := 0, make([]*Event, event_block_size)
 	for {
 		select {
-		case <-stopCh:
+		case <-ctx.Done():
 			return
 		case evt, ok := <-c.Cfg.DeferHandler.HandleChan():
 			if !ok {
@@ -524,8 +519,8 @@ func (c *KvCacher) onKvEvents(evts []*KvEvent) {
 }
 
 func (c *KvCacher) run() {
-	c.goroute.Do(c.refresh)
-	c.goroute.Do(c.deferHandle)
+	c.goroutine.Do(c.refresh)
+	c.goroutine.Do(c.deferHandle)
 }
 
 func (c *KvCacher) Cache() Cache {
@@ -537,7 +532,7 @@ func (c *KvCacher) Run() {
 }
 
 func (c *KvCacher) Stop() {
-	c.goroute.Close(true)
+	c.goroutine.Close(true)
 
 	util.SafeCloseChan(c.ready)
 }
@@ -577,7 +572,7 @@ func NewKvCacher(opts ...KvCacherCfgOption) *KvCacher {
 			Client: backend.Registry(),
 			Key:    cfg.Key,
 		},
-		goroute: util.NewGo(make(chan struct{})),
+		goroutine: util.NewGo(context.Background()),
 	}
 	cacher.cache = NewKvCache(cacher, cfg.InitSize)
 	return cacher

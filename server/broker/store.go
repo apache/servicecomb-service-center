@@ -21,6 +21,7 @@ import (
 
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	sstore "github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
+	"golang.org/x/net/context"
 )
 
 const (
@@ -72,12 +73,16 @@ func (s *BKvStore) newStore(t sstore.StoreType, opts ...sstore.KvCacherCfgOption
 	s.newIndexer(t, sstore.NewKvCacher(opts...))
 }
 
-func (s *BKvStore) store() {
+func (s *BKvStore) store(ctx context.Context) {
 	for t := sstore.StoreType(0); t != typeEnd; t++ {
 		s.newStore(t)
 	}
 	for _, i := range s.bindexers {
-		<-i.Ready()
+		select {
+		case <-ctx.Done():
+			return
+		case <-i.Ready():
+		}
 	}
 	util.SafeCloseChan(s.bready)
 
@@ -120,7 +125,13 @@ func (s *BKvStore) newIndexer(t sstore.StoreType, cacher sstore.Cacher) {
 }
 
 func (s *BKvStore) Run() {
-	go s.store()
+	util.Go(func(ctx context.Context) {
+		s.store(ctx)
+		select {
+		case <-ctx.Done():
+			s.Stop()
+		}
+	})
 }
 
 func (s *BKvStore) Ready() <-chan struct{} {
@@ -153,4 +164,19 @@ func (s *BKvStore) Verification() *sstore.Indexer {
 
 func (s *BKvStore) PactLatest() *sstore.Indexer {
 	return s.bindexers[PACT_LATEST]
+}
+
+func (s *BKvStore) Stop() {
+	if s.bisClose {
+		return
+	}
+	s.bisClose = true
+
+	for _, i := range s.bindexers {
+		i.Stop()
+	}
+
+	util.SafeCloseChan(s.bready)
+
+	util.Logger().Debugf("broker store daemon stopped")
 }

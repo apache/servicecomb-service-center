@@ -18,72 +18,66 @@ package util
 
 import (
 	"fmt"
+	"golang.org/x/net/context"
 	"sync"
 	"testing"
 	"time"
 )
 
-func TestGoRoutine_Init(t *testing.T) {
-	var test GoRoutine
-	stopCh1 := make(chan struct{})
-	defer close(stopCh1)
-	stopCh2 := make(chan struct{})
-	defer close(stopCh2)
-
-	test.Init(stopCh1)
-	c := test.StopCh()
-	if c != stopCh1 {
-		fail(t, "init GoRoutine failed.")
-	}
-
-	test.Init(stopCh2)
-	c = test.StopCh()
-	if c == stopCh2 {
-		fail(t, "init GoRoutine twice.")
-	}
-}
-
 func TestGoRoutine_Do(t *testing.T) {
-	var test1 GoRoutine
-	stopCh := make(chan struct{})
-	test1.Init(make(chan struct{}))
-	test1.Do(func(neverStopCh <-chan struct{}) {
-		defer close(stopCh)
+	test1 := NewGo(context.Background())
+	defer test1.Close(true)
+	stopCh1 := make(chan struct{})
+	test1.Do(func(ctx context.Context) {
+		defer close(stopCh1)
 		select {
-		case <-neverStopCh:
-			fail(t, "neverStopCh should not be closed.")
+		case <-ctx.Done():
+			fail(t, "ctx should not be done.")
 		case <-time.After(time.Second):
 		}
 	})
-	<-stopCh
+	<-stopCh1
 
-	var test2 GoRoutine
-	stopCh1 := make(chan struct{})
+	ctx, cancel := context.WithCancel(context.Background())
+	test2 := NewGo(ctx)
+	defer test2.Close(true)
 	stopCh2 := make(chan struct{})
-	test2.Init(stopCh1)
-	test2.Do(func(stopCh <-chan struct{}) {
+	test2.Do(func(ctx context.Context) {
 		defer close(stopCh2)
 		select {
-		case <-stopCh:
+		case <-ctx.Done():
 		case <-time.After(time.Second):
-			fail(t, "time out to wait stopCh1 close.")
+			fail(t, "time out to wait stopCh2 close.")
 		}
 	})
-	close(stopCh1)
+	cancel()
 	<-stopCh2
+
+	ctx, _ = context.WithTimeout(context.Background(), 0)
+	test3 := NewGo(ctx)
+	defer test3.Close(true)
+	stopCh3 := make(chan struct{})
+	test3.Do(func(ctx context.Context) {
+		defer close(stopCh3)
+		select {
+		case <-ctx.Done():
+		case <-time.After(time.Second):
+			fail(t, "time out to wait ctx done.")
+		}
+	})
+	<-stopCh3
 }
 
 func TestGoRoutine_Wait(t *testing.T) {
-	var test GoRoutine
 	var mux sync.Mutex
 	MAX := 10
 	resultArr := make([]int, 0, MAX)
-	test.Init(make(chan struct{}))
+	test := NewGo(context.Background())
 	for i := 0; i < MAX; i++ {
 		func(i int) {
-			test.Do(func(neverStopCh <-chan struct{}) {
+			test.Do(func(ctx context.Context) {
 				select {
-				case <-neverStopCh:
+				case <-ctx.Done():
 				case <-time.After(time.Second):
 					mux.Lock()
 					resultArr = append(resultArr, i)
@@ -103,13 +97,12 @@ func TestGoRoutine_Wait(t *testing.T) {
 }
 
 func TestGoRoutine_Close(t *testing.T) {
-	var test GoRoutine
-	test.Init(make(chan struct{}))
-	test.Do(func(stopCh <-chan struct{}) {
+	test := NewGo(context.Background())
+	test.Do(func(ctx context.Context) {
 		select {
-		case <-stopCh:
+		case <-ctx.Done():
 		case <-time.After(time.Second):
-			fail(t, "time out to wait stopCh close.")
+			fail(t, "time out to wait ctx close.")
 		}
 	})
 	test.Close(true)
@@ -117,20 +110,18 @@ func TestGoRoutine_Close(t *testing.T) {
 }
 
 func TestGo(t *testing.T) {
-	GoInit()
-	Go(func(stopCh <-chan struct{}) {
+	Go(func(ctx context.Context) {
 		for {
 			select {
-			case <-stopCh:
+			case <-ctx.Done():
 				return
 			case <-time.After(time.Second):
 			}
 		}
 	})
+	Go(func(ctx context.Context) {
+		var a *int
+		fmt.Println(*a)
+	})
 	GoCloseAndWait()
-}
-
-func TestNewGo(t *testing.T) {
-	g := NewGo(make(chan struct{}))
-	defer g.Close(true)
 }

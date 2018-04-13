@@ -41,16 +41,17 @@ import (
 
 var embedTLSConfig *tls.Config
 
-const START_MANAGER_SERVER_TIMEOUT = 60
+const START_MANAGER_SERVER_TIMEOUT = 10
 
 func init() {
 	mgr.RegisterPlugin(mgr.Plugin{mgr.REGISTRY, "embeded_etcd", getEmbedInstance})
 }
 
 type EtcdEmbed struct {
-	Server *embed.Etcd
-	err    chan error
-	ready  chan int
+	Embed     *embed.Etcd
+	err       chan error
+	ready     chan int
+	goroutine *util.GoRoutine
 }
 
 func (s *EtcdEmbed) Err() <-chan error {
@@ -62,9 +63,10 @@ func (s *EtcdEmbed) Ready() <-chan int {
 }
 
 func (s *EtcdEmbed) Close() {
-	if s.Server != nil {
-		s.Server.Close()
+	if s.Embed != nil {
+		s.Embed.Close()
 	}
+	s.goroutine.Close(true)
 	util.Logger().Debugf("embedded etcd client stopped.")
 }
 
@@ -232,7 +234,7 @@ func (s *EtcdEmbed) Compact(ctx context.Context, reserve int64) error {
 	}
 
 	util.Logger().Infof("Compacting... revision is %d(current: %d, reserve %d)", revToCompact, curRev, reserve)
-	_, err := s.Server.Server.Compact(ctx, &etcdserverpb.CompactionRequest{
+	_, err := s.Embed.Server.Compact(ctx, &etcdserverpb.CompactionRequest{
 		Revision: revToCompact,
 		Physical: true,
 	})
@@ -250,7 +252,7 @@ func (s *EtcdEmbed) Compact(ctx context.Context, reserve int64) error {
 }
 
 func (s *EtcdEmbed) getLeaderCurrentRevision(ctx context.Context) int64 {
-	return s.Server.Server.KV().Rev()
+	return s.Embed.Server.KV().Rev()
 }
 
 func (s *EtcdEmbed) PutNoOverride(ctx context.Context, opts ...registry.PluginOpOption) (bool, error) {
@@ -275,7 +277,7 @@ func (s *EtcdEmbed) Do(ctx context.Context, opts ...registry.PluginOpOption) (*r
 	switch op.Action {
 	case registry.Get:
 		var etcdResp *etcdserverpb.RangeResponse
-		etcdResp, err = s.Server.Server.Range(otCtx, s.toGetRequest(op))
+		etcdResp, err = s.Embed.Server.Range(otCtx, s.toGetRequest(op))
 		if err != nil {
 			break
 		}
@@ -286,7 +288,7 @@ func (s *EtcdEmbed) Do(ctx context.Context, opts ...registry.PluginOpOption) (*r
 		}
 	case registry.Put:
 		var etcdResp *etcdserverpb.PutResponse
-		etcdResp, err = s.Server.Server.Put(otCtx, s.toPutRequest(op))
+		etcdResp, err = s.Embed.Server.Put(otCtx, s.toPutRequest(op))
 		if err != nil {
 			break
 		}
@@ -295,7 +297,7 @@ func (s *EtcdEmbed) Do(ctx context.Context, opts ...registry.PluginOpOption) (*r
 		}
 	case registry.Delete:
 		var etcdResp *etcdserverpb.DeleteRangeResponse
-		etcdResp, err = s.Server.Server.DeleteRange(otCtx, s.toDeleteRequest(op))
+		etcdResp, err = s.Embed.Server.DeleteRange(otCtx, s.toDeleteRequest(op))
 		if err != nil {
 			break
 		}
@@ -338,7 +340,7 @@ func (s *EtcdEmbed) TxnWithCmp(ctx context.Context, success []registry.PluginOp,
 	if len(etcdFailOps) > 0 {
 		txnRequest.Failure = etcdFailOps
 	}
-	resp, err := s.Server.Server.Txn(otCtx, txnRequest)
+	resp, err := s.Embed.Server.Txn(otCtx, txnRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -351,7 +353,7 @@ func (s *EtcdEmbed) TxnWithCmp(ctx context.Context, success []registry.PluginOp,
 func (s *EtcdEmbed) LeaseGrant(ctx context.Context, TTL int64) (int64, error) {
 	otCtx, cancel := registry.WithTimeout(ctx)
 	defer cancel()
-	etcdResp, err := s.Server.Server.LeaseGrant(otCtx, &etcdserverpb.LeaseGrantRequest{
+	etcdResp, err := s.Embed.Server.LeaseGrant(otCtx, &etcdserverpb.LeaseGrantRequest{
 		TTL: TTL,
 	})
 	if err != nil {
@@ -363,7 +365,7 @@ func (s *EtcdEmbed) LeaseGrant(ctx context.Context, TTL int64) (int64, error) {
 func (s *EtcdEmbed) LeaseRenew(ctx context.Context, leaseID int64) (int64, error) {
 	otCtx, cancel := registry.WithTimeout(ctx)
 	defer cancel()
-	ttl, err := s.Server.Server.LeaseRenew(otCtx, lease.LeaseID(leaseID))
+	ttl, err := s.Embed.Server.LeaseRenew(otCtx, lease.LeaseID(leaseID))
 	if err != nil {
 		if err.Error() == grpc.ErrorDesc(rpctypes.ErrGRPCLeaseNotFound) {
 			return 0, err
@@ -376,7 +378,7 @@ func (s *EtcdEmbed) LeaseRenew(ctx context.Context, leaseID int64) (int64, error
 func (s *EtcdEmbed) LeaseRevoke(ctx context.Context, leaseID int64) error {
 	otCtx, cancel := registry.WithTimeout(ctx)
 	defer cancel()
-	_, err := s.Server.Server.LeaseRevoke(otCtx, &etcdserverpb.LeaseRevokeRequest{
+	_, err := s.Embed.Server.LeaseRevoke(otCtx, &etcdserverpb.LeaseRevokeRequest{
 		ID: leaseID,
 	})
 	if err != nil {
@@ -392,7 +394,7 @@ func (s *EtcdEmbed) Watch(ctx context.Context, opts ...registry.PluginOpOption) 
 	op := registry.OpGet(opts...)
 
 	if len(op.Key) > 0 {
-		watchable := s.Server.Server.Watchable()
+		watchable := s.Embed.Server.Watchable()
 		ws := watchable.NewWatchStream()
 		defer ws.Close()
 
@@ -455,6 +457,29 @@ func (s *EtcdEmbed) Watch(ctx context.Context, opts ...registry.PluginOpOption) 
 	return
 }
 
+func (s *EtcdEmbed) ReadyNotify() {
+	timeout := START_MANAGER_SERVER_TIMEOUT * time.Second
+	select {
+	case <-s.Embed.Server.ReadyNotify():
+		close(s.ready)
+		s.goroutine.Do(func(ctx context.Context) {
+			select {
+			case <-ctx.Done():
+				return
+			case err := <-s.Embed.Err():
+				s.err <- err
+			}
+		})
+	case <-time.After(timeout):
+		err := fmt.Errorf("timed out(%s)", timeout)
+		util.Logger().Errorf(err, "read notify failed")
+
+		s.Embed.Server.Stop()
+
+		s.err <- err
+	}
+}
+
 func setKvsAndConvertAction(kvs []*mvccpb.KeyValue, pIdx int, evt *mvccpb.Event) registry.ActionType {
 	switch evt.Type {
 	case mvccpb.DELETE:
@@ -488,8 +513,9 @@ func getEmbedInstance() mgr.PluginInstance {
 	addrs := beego.AppConfig.DefaultString("manager_addr", "http://127.0.0.1:2380")
 
 	inst := &EtcdEmbed{
-		err:   make(chan error, 1),
-		ready: make(chan int),
+		err:       make(chan error, 1),
+		ready:     make(chan int),
+		goroutine: util.NewGo(context.Background()),
 	}
 
 	if core.ServerInfo.Config.SslEnabled {
@@ -537,30 +563,14 @@ func getEmbedInstance() mgr.PluginInstance {
 		inst.err <- err
 		return inst
 	}
-	inst.Server = etcd
+	inst.Embed = etcd
 
-	select {
-	case <-etcd.Server.ReadyNotify():
-		close(inst.ready)
-		go func() {
-			select {
-			case err := <-etcd.Err():
-				inst.err <- err
-			}
-		}()
-	case <-time.After(START_MANAGER_SERVER_TIMEOUT * time.Second):
-		message := "etcd server took too long to start"
-		util.Logger().Error(message, nil)
-
-		etcd.Server.Stop()
-
-		inst.err <- errors.New(message)
-	}
+	inst.ReadyNotify()
 	return inst
 }
 
 func parseURL(addrs string) ([]url.URL, error) {
-	urls := []url.URL{}
+	var urls []url.URL
 	ips := strings.Split(addrs, ",")
 	for _, ip := range ips {
 		addr, err := url.Parse(ip)

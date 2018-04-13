@@ -158,4 +158,12 @@ func TestFromZipkinSpan(t *testing.T) {
 		t.FailNow()
 	}
 	fmt.Println(string(b))
+
+	s = FromZipkinSpan(&zipkincore.Span{})
+	b, err = json.Marshal(s)
+	if err != nil {
+		fmt.Println("TestFromZipkinSpan Marshal", err)
+		t.FailNow()
+	}
+	fmt.Println(string(b))
 }
