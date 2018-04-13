@@ -93,7 +93,7 @@ func handleSignals() {
 		syscall.SIGKILL,
 		syscall.SIGTERM,
 	)
-	wait := 30 * time.Second
+	wait := 5 * time.Second
 	for sig := range sigCh {
 		switch sig {
 		case syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM:
