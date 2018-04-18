@@ -26,6 +26,8 @@ import (
 	"time"
 )
 
+const DEFAULT_CHECK_WINDOW = 2 * time.Second // instance DELETE event will be delay.
+
 type DeferHandler interface {
 	OnCondition(Cache, []*Event) bool
 	HandleChan() <-chan *Event
@@ -101,7 +103,7 @@ func (iedh *InstanceEventDeferHandler) HandleChan() <-chan *Event {
 
 func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 	defer util.RecoverAndReport()
-	t, n := iedh.newTimer(), false
+	t, n := time.NewTimer(DEFAULT_CHECK_WINDOW), false
 	for {
 		select {
 		case <-ctx.Done():
@@ -113,8 +115,11 @@ func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 
 			del := len(iedh.items)
 			if del > 0 && !n {
-				t.Stop()
-				t, n = iedh.newTimer(), true
+				if !t.Stop() {
+					<-t.C
+				}
+				t.Reset(DEFAULT_CHECK_WINDOW)
+				n = true
 			}
 
 			total := iedh.cache.Size()
@@ -124,7 +129,8 @@ func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 					del, total, iedh.Percent*100)
 			}
 		case <-t.C:
-			t, n = iedh.newTimer(), false
+			t.Reset(DEFAULT_CHECK_WINDOW)
+			n = false
 
 			for key, item := range iedh.items {
 				if iedh.enabled {
@@ -144,10 +150,6 @@ func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 			}
 		}
 	}
-}
-
-func (iedh *InstanceEventDeferHandler) newTimer() *time.Timer {
-	return time.NewTimer(2 * time.Second) // instance DELETE event will be delay.
 }
 
 func (iedh *InstanceEventDeferHandler) recover(evt *Event) {
