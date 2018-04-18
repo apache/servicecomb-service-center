@@ -17,9 +17,10 @@
 package main
 
 import (
+	"io/ioutil"
 	"net/http"
+	"sync"
 	"testing"
-	"time"
 
 	"github.com/labstack/echo"
 )
@@ -30,14 +31,20 @@ const (
 )
 
 func TestStatic(t *testing.T) {
+	var wg sync.WaitGroup
+
 	cfg := Config{
 		scAddr:       "http://" + SCAddr,
 		frontendAddr: FrontAddr,
 	}
 
-	go Serve(cfg)
-	time.Sleep(1 * time.Second)
+	wg.Add(1)
+	go func() {
+		wg.Done()
+		Serve(cfg)
+	}()
 
+	wg.Wait()
 	res, err := http.Get("http://" + FrontAddr)
 	if err != nil {
 		t.Errorf("Error accessing frontend: %s", err)
@@ -49,23 +56,36 @@ func TestStatic(t *testing.T) {
 }
 
 func TestSCProxy(t *testing.T) {
+	var wg sync.WaitGroup
+	greeting := "Hi, there!"
+
+	wg.Add(1)
 	// simulate service center backend
 	go func() {
 		e := echo.New()
 		e.HideBanner = true
 		e.GET("/sayHi", func(c echo.Context) error {
-			return c.String(http.StatusOK, "Hi, there!")
+			return c.String(http.StatusOK, greeting)
 		})
+		wg.Done()
 		e.Start(SCAddr)
 	}()
-	time.Sleep(1 * time.Second)
 
+	wg.Wait()
 	res, err := http.Get("http://" + FrontAddr + "/sc/sayHi")
 	if err != nil {
 		t.Errorf("Error accessing sc proxy: %s", err)
 	}
 	if res.StatusCode != http.StatusOK {
 		t.Errorf("Expected http %d, got %d", http.StatusOK, res.StatusCode)
+	}
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		t.Errorf("Error reading body: %s", err)
+	}
+	if string(body) != greeting {
+		t.Errorf("Expected %s, got %s", greeting, string(body))
 	}
 
 }
