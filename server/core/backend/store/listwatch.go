@@ -56,6 +56,8 @@ func (lw *ListWatcher) List(op *ListOptions) ([]*mvccpb.KeyValue, error) {
 	otCtx, _ := context.WithTimeout(op.Context, op.Timeout)
 	resp, err := lw.Client.Do(otCtx, registry.WatchPrefixOpOptions(lw.Key)...)
 	if err != nil {
+		util.Logger().Errorf(err, "list key %s failed, rev: %d->0", lw.Key, lw.Revision())
+		lw.setRevision(0)
 		return nil, err
 	}
 	lw.setRevision(resp.Revision)
@@ -111,7 +113,9 @@ func (lw *ListWatcher) doWatch(ctx context.Context, f func(evt []*Event)) error 
 			}))
 
 	err := lw.Client.Watch(ctx, opts...)
-	if err != nil { // compact可能会导致watch失败
+	if err != nil { // compact可能会导致watch失败 or message body size lager than 4MB
+		util.Logger().Errorf(err, "watch key %s failed, start rev: %d+1->0", lw.Key, lw.Revision())
+
 		lw.setRevision(0)
 		f([]*Event{errEvent(lw.Key, err)})
 	}

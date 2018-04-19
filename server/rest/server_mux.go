@@ -14,37 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package rest
 
-import (
-	roa "github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/interceptor"
-	"net/http"
-	"time"
-)
+import "net/http"
 
-const CTX_START_TIMESTAMP = "x-start-timestamp"
+var DefaultServerMux = http.NewServeMux()
 
-func init() {
-	// api
-	RegisterServerHandler("/", &ServerHandler{})
+func RegisterServerHandleFunc(pattern string, f http.HandlerFunc) {
+	DefaultServerMux.HandleFunc(pattern, f)
 }
 
-type ServerHandler struct {
-}
-
-func (s *ServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	util.SetRequestContext(r, CTX_START_TIMESTAMP, time.Now())
-
-	err := interceptor.InvokeInterceptors(w, r)
-	if err != nil {
-		return
-	}
-
-	roa.GetRouter().ServeHTTP(w, r)
-
-	// CAUTION: There will be cause a concurrent problem,
-	// if here get/set the HTTP request headers.
+func RegisterServerHandler(pattern string, h http.Handler) {
+	DefaultServerMux.Handle(pattern, h)
 }
