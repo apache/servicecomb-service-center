@@ -80,16 +80,17 @@ func (lw *ListWatcher) Watch(op ListOptions) *Watcher {
 }
 
 func (lw *ListWatcher) doWatch(ctx context.Context, f func(evt []Event)) error {
+	rev := lw.Revision()
 	opts := append(
 		registry.WatchPrefixOpOptions(lw.Key),
-		registry.WithRev(lw.Revision()+1),
+		registry.WithRev(rev+1),
 		registry.WithWatchCallback(
 			func(message string, resp *registry.PluginResponse) error {
 				if resp == nil || len(resp.Kvs) == 0 {
 					return fmt.Errorf("unknown event %s", resp)
 				}
 
-				util.Logger().Infof("key %s: got a watch response %s from etcd server", lw.Key, resp)
+				util.Logger().Infof("watch prefix key %s, start rev %d+1, event: %s", lw.Key, rev, resp)
 
 				lw.setRevision(resp.Revision)
 
@@ -114,7 +115,7 @@ func (lw *ListWatcher) doWatch(ctx context.Context, f func(evt []Event)) error {
 
 	err := lw.Client.Watch(ctx, opts...)
 	if err != nil { // compact可能会导致watch失败 or message body size lager than 4MB
-		util.Logger().Errorf(err, "watch key %s failed, start rev: %d+1->0", lw.Key, lw.Revision())
+		util.Logger().Errorf(err, "watch key %s failed, start rev: %d+1->%d->0", lw.Key, rev, lw.Revision())
 
 		lw.setRevision(0)
 		f([]Event{errEvent(lw.Key, err)})

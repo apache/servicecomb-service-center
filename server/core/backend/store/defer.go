@@ -31,7 +31,7 @@ const DEFAULT_CHECK_WINDOW = 2 * time.Second // instance DELETE event will be de
 type DeferHandler interface {
 	OnCondition(Cache, []Event) bool
 	HandleChan() <-chan Event
-	Reset()
+	Reset() bool
 }
 
 type deferItem struct {
@@ -48,7 +48,7 @@ type InstanceEventDeferHandler struct {
 	items     map[string]deferItem
 	pendingCh chan []Event
 	deferCh   chan Event
-	goroutine *util.GoRoutine
+	resetCh   chan struct{}
 }
 
 func (iedh *InstanceEventDeferHandler) OnCondition(cache Cache, evts []Event) bool {
@@ -61,7 +61,8 @@ func (iedh *InstanceEventDeferHandler) OnCondition(cache Cache, evts []Event) bo
 		iedh.items = make(map[string]deferItem, event_block_size)
 		iedh.pendingCh = make(chan []Event, event_block_size)
 		iedh.deferCh = make(chan Event, event_block_size)
-		iedh.goroutine.Do(iedh.check)
+		iedh.resetCh = make(chan struct{})
+		util.Go(iedh.check)
 	})
 
 	iedh.pendingCh <- evts
@@ -150,6 +151,10 @@ func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 				iedh.enabled = false
 				util.Logger().Warnf(nil, "self preservation is stopped")
 			}
+		case <-iedh.resetCh:
+			iedh.enabled = false
+			iedh.items = make(map[string]deferItem, event_block_size)
+			util.Logger().Warnf(nil, "self preservation is reset")
 		}
 	}
 }
@@ -160,11 +165,10 @@ func (iedh *InstanceEventDeferHandler) recover(evt Event) {
 	iedh.deferCh <- evt
 }
 
-func (iedh *InstanceEventDeferHandler) Reset() {
+func (iedh *InstanceEventDeferHandler) Reset() bool {
 	if iedh.enabled {
-		iedh.goroutine.Close(true)
-		iedh.enabled = false
-		iedh.items = make(map[string]deferItem, event_block_size)
-		iedh.goroutine.Do(iedh.check)
+		iedh.resetCh <- struct {}{}
+		return true
 	}
+	return false
 }

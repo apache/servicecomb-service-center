@@ -207,7 +207,12 @@ func (c *KvCacher) doList(listOps ListOptions) error {
 	}
 
 	start := time.Now()
-	c.sync(c.filter(c.lw.Revision(), kvs))
+	evts := c.filter(c.lw.Revision(), kvs)
+	if ec, kc := len(evts), len(kvs); c.Cfg.DeferHandler != nil && ec == 0 && kc > 0 &&
+		c.Cfg.DeferHandler.Reset() {
+		util.Logger().Warnf(nil, "most of the protected data(%d/%d) are recovered", kc, c.cache.Size())
+	}
+	c.sync(evts)
 	util.LogDebugOrWarnf(start, "finish to cache key %s, %d items, rev: %d", c.Cfg.Key, len(kvs), c.lw.Revision())
 
 	return nil
