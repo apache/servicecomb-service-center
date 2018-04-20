@@ -48,7 +48,7 @@ type Indexer struct {
 	cacheType        StoreType
 	prefixIndex      map[string]map[string]struct{}
 	prefixLock       sync.RWMutex
-	prefixBuildQueue chan *KvEvent
+	prefixBuildQueue chan KvEvent
 	goroutine        *util.GoRoutine
 	ready            chan struct{}
 	isClose          bool
@@ -163,7 +163,7 @@ func (i *Indexer) searchPrefixKeyWithCache(ctx context.Context, op registry.Plug
 	return resp, nil
 }
 
-func (i *Indexer) OnCacheEvent(evt *KvEvent) {
+func (i *Indexer) OnCacheEvent(evt KvEvent) {
 	switch evt.Action {
 	case pb.EVT_INIT, pb.EVT_CREATE, pb.EVT_DELETE:
 	default:
@@ -316,7 +316,7 @@ func NewCacheIndexer(t StoreType, cr Cacher) *Indexer {
 		cacher:           cr,
 		cacheType:        t,
 		prefixIndex:      make(map[string]map[string]struct{}, DEFAULT_MAX_EVENT_COUNT),
-		prefixBuildQueue: make(chan *KvEvent, DEFAULT_MAX_EVENT_COUNT),
+		prefixBuildQueue: make(chan KvEvent, DEFAULT_MAX_EVENT_COUNT),
 		goroutine:        util.NewGo(context.Background()),
 		ready:            make(chan struct{}),
 		isClose:          true,

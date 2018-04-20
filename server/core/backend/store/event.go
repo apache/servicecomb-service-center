@@ -35,7 +35,7 @@ func init() {
 	}
 }
 
-type KvEventFunc func(evt *KvEvent)
+type KvEventFunc func(evt KvEvent)
 
 type KvEvent struct {
 	Revision int64
@@ -45,7 +45,7 @@ type KvEvent struct {
 
 type KvEventHandler interface {
 	Type() StoreType
-	OnEvent(evt *KvEvent)
+	OnEvent(evt KvEvent)
 }
 
 type KvEventProxy struct {
@@ -59,7 +59,7 @@ func (h *KvEventProxy) AddHandleFunc(f KvEventFunc) {
 	h.lock.Unlock()
 }
 
-func (h *KvEventProxy) OnEvent(evt *KvEvent) {
+func (h *KvEventProxy) OnEvent(evt KvEvent) {
 	h.lock.RLock()
 	for _, f := range h.evtHandleFuncs {
 		f(evt)

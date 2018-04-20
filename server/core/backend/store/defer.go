@@ -29,13 +29,14 @@ import (
 const DEFAULT_CHECK_WINDOW = 2 * time.Second // instance DELETE event will be delay.
 
 type DeferHandler interface {
-	OnCondition(Cache, []*Event) bool
-	HandleChan() <-chan *Event
+	OnCondition(Cache, []Event) bool
+	HandleChan() <-chan Event
+	Reset()
 }
 
 type deferItem struct {
 	ttl   *time.Timer
-	event *Event
+	event Event
 }
 
 type InstanceEventDeferHandler struct {
@@ -44,29 +45,30 @@ type InstanceEventDeferHandler struct {
 	cache     Cache
 	once      sync.Once
 	enabled   bool
-	items     map[string]*deferItem
-	pendingCh chan []*Event
-	deferCh   chan *Event
+	items     map[string]deferItem
+	pendingCh chan []Event
+	deferCh   chan Event
+	goroutine *util.GoRoutine
 }
 
-func (iedh *InstanceEventDeferHandler) OnCondition(cache Cache, evts []*Event) bool {
+func (iedh *InstanceEventDeferHandler) OnCondition(cache Cache, evts []Event) bool {
 	if iedh.Percent <= 0 {
 		return false
 	}
 
 	iedh.once.Do(func() {
 		iedh.cache = cache
-		iedh.items = make(map[string]*deferItem, event_block_size)
-		iedh.pendingCh = make(chan []*Event, event_block_size)
-		iedh.deferCh = make(chan *Event, event_block_size)
-		util.Go(iedh.check)
+		iedh.items = make(map[string]deferItem, event_block_size)
+		iedh.pendingCh = make(chan []Event, event_block_size)
+		iedh.deferCh = make(chan Event, event_block_size)
+		iedh.goroutine.Do(iedh.check)
 	})
 
 	iedh.pendingCh <- evts
 	return true
 }
 
-func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt *Event) error {
+func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt Event) error {
 	kv := evt.Object.(*mvccpb.KeyValue)
 	key := util.BytesToStringWithNoCopy(kv.Key)
 	_, ok := iedh.items[key]
@@ -88,7 +90,7 @@ func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt *Event) error {
 			util.Logger().Errorf(err, "unmarshal instance file failed, key is %s", key)
 			return err
 		}
-		iedh.items[key] = &deferItem{
+		iedh.items[key] = deferItem{
 			ttl: time.NewTimer(
 				time.Duration(instance.HealthCheck.Interval*(instance.HealthCheck.Times+1)) * time.Second),
 			event: evt,
@@ -97,7 +99,7 @@ func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt *Event) error {
 	return nil
 }
 
-func (iedh *InstanceEventDeferHandler) HandleChan() <-chan *Event {
+func (iedh *InstanceEventDeferHandler) HandleChan() <-chan Event {
 	return iedh.deferCh
 }
 
@@ -152,8 +154,17 @@ func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 	}
 }
 
-func (iedh *InstanceEventDeferHandler) recover(evt *Event) {
+func (iedh *InstanceEventDeferHandler) recover(evt Event) {
 	key := util.BytesToStringWithNoCopy(evt.Object.(*mvccpb.KeyValue).Key)
 	delete(iedh.items, key)
 	iedh.deferCh <- evt
+}
+
+func (iedh *InstanceEventDeferHandler) Reset() {
+	if iedh.enabled {
+		iedh.goroutine.Close(true)
+		iedh.enabled = false
+		iedh.items = make(map[string]deferItem, event_block_size)
+		iedh.goroutine.Do(iedh.check)
+	}
 }

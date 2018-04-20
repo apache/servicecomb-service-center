@@ -40,7 +40,7 @@ func (h *DependencyEventHandler) Type() store.StoreType {
 	return store.DEPENDENCY_QUEUE
 }
 
-func (h *DependencyEventHandler) OnEvent(evt *store.KvEvent) {
+func (h *DependencyEventHandler) OnEvent(evt store.KvEvent) {
 	action := evt.Action
 	if action != pb.EVT_CREATE && action != pb.EVT_UPDATE && action != pb.EVT_INIT {
 		return

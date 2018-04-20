@@ -79,7 +79,7 @@ func (h *RuleEventHandler) Type() store.StoreType {
 	return store.RULE
 }
 
-func (h *RuleEventHandler) OnEvent(evt *store.KvEvent) {
+func (h *RuleEventHandler) OnEvent(evt store.KvEvent) {
 	action := evt.Action
 	if action == pb.EVT_INIT {
 		return

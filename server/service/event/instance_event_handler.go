@@ -35,7 +35,7 @@ func (h *InstanceEventHandler) Type() store.StoreType {
 	return store.INSTANCE
 }
 
-func (h *InstanceEventHandler) OnEvent(evt *store.KvEvent) {
+func (h *InstanceEventHandler) OnEvent(evt store.KvEvent) {
 	action := evt.Action
 	if action == pb.EVT_INIT {
 		return

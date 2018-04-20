@@ -90,7 +90,7 @@ func (h *TagEventHandler) Type() store.StoreType {
 	return store.SERVICE_TAG
 }
 
-func (h *TagEventHandler) OnEvent(evt *store.KvEvent) {
+func (h *TagEventHandler) OnEvent(evt store.KvEvent) {
 	action := evt.Action
 	if action == pb.EVT_INIT {
 		return

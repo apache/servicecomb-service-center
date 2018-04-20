@@ -32,7 +32,7 @@ func (h *ServiceEventHandler) Type() store.StoreType {
 	return store.SERVICE
 }
 
-func (h *ServiceEventHandler) OnEvent(evt *store.KvEvent) {
+func (h *ServiceEventHandler) OnEvent(evt store.KvEvent) {
 	action := evt.Action
 	if action != pb.EVT_CREATE && action != pb.EVT_INIT {
 		return

@@ -124,7 +124,7 @@ func (s *KvStore) Initialize() {
 	}
 }
 
-func (s *KvStore) dispatchEvent(t StoreType, evt *KvEvent) {
+func (s *KvStore) dispatchEvent(t StoreType, evt KvEvent) {
 	s.indexers[t].OnCacheEvent(evt)
 	EventProxy(t).OnEvent(evt)
 }
@@ -133,7 +133,7 @@ func (s *KvStore) newStore(t StoreType, opts ...KvCacherCfgOption) {
 	opts = append(opts,
 		WithKey(TypeRoots[t]),
 		WithInitSize(s.StoreSize(t)),
-		WithEventFunc(func(evt *KvEvent) { s.dispatchEvent(t, evt) }),
+		WithEventFunc(func(evt KvEvent) { s.dispatchEvent(t, evt) }),
 	)
 	s.newIndexer(t, NewKvCacher(opts...))
 }
@@ -191,7 +191,7 @@ func (s *KvStore) store(ctx context.Context) {
 	util.Logger().Debugf("all indexers are ready")
 }
 
-func (s *KvStore) onLeaseEvent(evt *KvEvent) {
+func (s *KvStore) onLeaseEvent(evt KvEvent) {
 	if evt.Action != pb.EVT_DELETE {
 		return
 	}
