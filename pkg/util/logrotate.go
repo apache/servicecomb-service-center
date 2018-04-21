@@ -66,7 +66,7 @@ func removeExceededFiles(path string, baseFileName string,
 	} else {
 		return
 	}
-	fileList, err := FilterFileList(path, pat)
+	fileList, err := FilterFileList(path, pat, 0777)
 	if err != nil {
 		Logger().Error("filepath.Walk() "+EscapPath(path)+" failed", err)
 		return
@@ -176,7 +176,7 @@ func doBackup(fPath string, MaxBackupCount int) {
 		return
 	}
 	pat := fmt.Sprintf(`%s\.[0-9]{1,17}$`, filepath.Base(fPath))
-	rotateFileList, err := FilterFileList(filepath.Dir(fPath), pat)
+	rotateFileList, err := FilterFileList(filepath.Dir(fPath), pat, 0777)
 	if err != nil {
 		Logger().Error("walk"+EscapPath(fPath)+" failed", err)
 		return
@@ -229,7 +229,7 @@ func LogRotate(path string, MaxFileSize int, MaxBackupCount int) {
 	}()
 
 	pat := `.(\.log|\.trace|\.out)$`
-	fileList, err := FilterFileList(path, pat)
+	fileList, err := FilterFileList(path, pat, 0200)
 	if err != nil {
 		Logger().Error("filepath.Walk() "+EscapPath(path)+" failed", err)
 		return
@@ -240,14 +240,15 @@ func LogRotate(path string, MaxFileSize int, MaxBackupCount int) {
 	}
 }
 
-func isSkip(f os.FileInfo) bool {
-	//dir or non write permission,skip
-	return f.IsDir() || (f.Mode()&0200 == 0000)
+func isSkip(f os.FileInfo, permits os.FileMode) bool {
+	//dir or permission deny
+	return f.IsDir() || (f.Mode()&permits == 0000)
 }
 
-//path : where the file will be filtered
-//pat  : regexp pattern to filter the matched file
-func FilterFileList(path, pat string) ([]string, error) {
+//path    : where the file will be filtered
+//pat     : regexp pattern to filter the matched file
+//permit  : check the file whether match any of the permits or not
+func FilterFileList(path, pat string, permits os.FileMode) ([]string, error) {
 	capacity := 10
 	//initialize a fileName slice, len=0, cap=10
 	fileList := make([]string, 0, capacity)
@@ -257,7 +258,7 @@ func FilterFileList(path, pat string) ([]string, error) {
 			if f == nil {
 				return e
 			}
-			if isSkip(f) {
+			if isSkip(f, permits) {
 				return nil
 			}
 			if pat != "" {
