@@ -173,6 +173,8 @@ func (s *EtcdClient) toDeleteRequest(op registry.PluginOp) []clientv3.OpOption {
 	opts := []clientv3.OpOption{}
 	if op.Prefix {
 		opts = append(opts, clientv3.WithPrefix())
+	} else if len(op.EndKey) > 0 {
+		opts = append(opts, clientv3.WithRange(util.BytesToStringWithNoCopy(op.EndKey)))
 	}
 	if op.PrevKV {
 		opts = append(opts, clientv3.WithPrevKV())
