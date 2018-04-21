@@ -240,14 +240,15 @@ func LogRotate(path string, MaxFileSize int, MaxBackupCount int) {
 	}
 }
 
-func isSkip(f os.FileInfo, umask os.FileMode) bool {
-	//dir or umask mismatch
-	return f.IsDir() || (f.Mode()&umask == 0000)
+func isSkip(f os.FileInfo, permits os.FileMode) bool {
+	//dir or permission deny
+	return f.IsDir() || (f.Mode()&permits == 0000)
 }
 
-//path : where the file will be filtered
-//pat  : regexp pattern to filter the matched file
-func FilterFileList(path, pat string, umask os.FileMode) ([]string, error) {
+//path    : where the file will be filtered
+//pat     : regexp pattern to filter the matched file
+//permit  : check the file whether match any of the permits or not
+func FilterFileList(path, pat string, permits os.FileMode) ([]string, error) {
 	capacity := 10
 	//initialize a fileName slice, len=0, cap=10
 	fileList := make([]string, 0, capacity)
@@ -257,7 +258,7 @@ func FilterFileList(path, pat string, umask os.FileMode) ([]string, error) {
 			if f == nil {
 				return e
 			}
-			if isSkip(f, umask) {
+			if isSkip(f, permits) {
 				return nil
 			}
 			if pat != "" {
