@@ -232,14 +232,13 @@ func (c *KvCacher) ListAndWatch(ctx context.Context) error {
 		Context: ctx,
 	}
 	if c.needList() {
-		err := c.doList(listOps)
-
-		util.SafeCloseChan(c.ready)
-
-		if err != nil {
+		if err := c.doList(listOps); err != nil {
 			return err
 		}
 	}
+
+	util.SafeCloseChan(c.ready)
+
 	return c.doWatch(listOps)
 }
 
