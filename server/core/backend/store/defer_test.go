@@ -22,7 +22,6 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"math/rand"
 	"testing"
 	"time"
 )
@@ -178,61 +177,4 @@ func getEvents(t *testing.T, iedh *InstanceEventDeferHandler) {
 		}
 		break
 	}
-}
-
-func BenchmarkFilter(b *testing.B) {
-	inst := &pb.MicroServiceInstance{
-		HealthCheck: &pb.HealthCheck{
-			Interval: 4,
-			Times:    0,
-		},
-	}
-	v, _ := json.Marshal(inst)
-
-	cacher := &KvCacher{}
-
-	n := 300 * 1000 // 30w
-	cache := NewKvCache(cacher, n)
-	items := make([]*mvccpb.KeyValue, 0, n)
-	for ; n > 0; n-- {
-		k := fmt.Sprintf("/%d", n)
-		if n <= 10*1000 {
-			// create
-			items = append(items, &mvccpb.KeyValue{
-				Key:         util.StringToBytesWithNoCopy(k),
-				Value:       v,
-				ModRevision: int64(rand.Int()),
-			})
-		} else if n > 100*1000 && n <= 20*1000 {
-			// update
-			cache.store[k] = &mvccpb.KeyValue{
-				Key:         util.StringToBytesWithNoCopy(k),
-				Value:       v,
-				ModRevision: 1,
-			}
-			items = append(items, &mvccpb.KeyValue{
-				Key:         util.StringToBytesWithNoCopy(k),
-				Value:       v,
-				ModRevision: int64(rand.Int()),
-			})
-		} else {
-			// delete
-			cache.store[k] = &mvccpb.KeyValue{
-				Key:         util.StringToBytesWithNoCopy(k),
-				Value:       v,
-				ModRevision: 1,
-			}
-		}
-	}
-	cacher.cache = cache
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		cacher.filter(1, items)
-	}
-	b.ReportAllocs()
-
-	// TODO bad performance!!!
-	//10	 120612060 ns/op	37128035 B/op	     134 allocs/op
-	//
 }

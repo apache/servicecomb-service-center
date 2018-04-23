@@ -24,21 +24,23 @@ import (
 )
 
 var (
-	cacheSizeSummary = prometheus.NewSummaryVec(
-		prometheus.SummaryOpts{
-			Namespace:  "service_center",
-			Subsystem:  "local",
-			Name:       "cache_size",
-			Help:       "Local cache size summary of backend store",
-			Objectives: prometheus.DefObjectives,
+	cacheSizeGauge = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: "service_center",
+			Subsystem: "local",
+			Name:      "cache_size_bytes",
+			Help:      "Local cache size summary of backend store",
 		}, []string{"instance", "resource"})
 )
 
 func init() {
-	prometheus.MustRegister(cacheSizeSummary)
+	prometheus.MustRegister(cacheSizeGauge)
 }
 
-func StoreMetric(i *Indexer) {
+func ReportStoreMetrics(s *KvStore) {
 	instance := fmt.Sprint(core.Instance.Endpoints)
-	cacheSizeSummary.WithLabelValues(instance, i.cacheType.String()).Observe(float64(util.Sizeof(i)))
+	for _, i := range s.indexers {
+		cacheSizeGauge.WithLabelValues(instance, i.cacheType.String()).Set(float64(util.Sizeof(i)))
+	}
+	cacheSizeGauge.WithLabelValues(instance, "HEARTBEAT").Set(float64(util.Sizeof(s.asyncTaskSvc)))
 }

@@ -26,6 +26,7 @@ import (
 	"golang.org/x/net/context"
 	"strconv"
 	"sync"
+	"time"
 )
 
 const (
@@ -190,6 +191,15 @@ func (s *KvStore) store(ctx context.Context) {
 	util.SafeCloseChan(s.ready)
 
 	util.Logger().Debugf("all indexers are ready")
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(10 * time.Second):
+			ReportStoreMetrics(s)
+		}
+	}
 }
 
 func (s *KvStore) onLeaseEvent(evt KvEvent) {
