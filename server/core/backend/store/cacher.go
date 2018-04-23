@@ -208,7 +208,7 @@ func (c *KvCacher) doList(listOps ListOptions) error {
 
 	start := time.Now()
 	evts := c.filter(c.lw.Revision(), kvs)
-	if ec, kc := len(evts), len(kvs); c.Cfg.DeferHandler != nil && ec == 0 && kc > 0 &&
+	if ec, kc := len(evts), len(kvs); c.Cfg.DeferHandler != nil && ec == 0 && kc != 0 &&
 		c.Cfg.DeferHandler.Reset() {
 		util.Logger().Warnf(nil, "most of the protected data(%d/%d) are recovered", kc, c.cache.Size())
 	}

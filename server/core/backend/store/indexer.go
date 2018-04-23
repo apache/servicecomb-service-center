@@ -211,6 +211,8 @@ func (i *Indexer) buildIndex() {
 
 				util.LogNilOrWarnf(t, "too long to rebuild(action: %s) index[%d], key is %s",
 					evt.Type, key, len(i.prefixIndex))
+			case <-time.After(10 * time.Second):
+				StoreMetric(i)
 			}
 		}
 		util.Logger().Debugf("build %s index goroutine is stopped", i.cacheType)

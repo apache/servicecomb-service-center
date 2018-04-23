@@ -18,6 +18,7 @@ package util
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 )
 
@@ -35,10 +36,10 @@ func TestLoadStruct(t *testing.T) {
 	obj1 := testStru{}
 	v := LoadStruct(obj1)
 	if v.Type.String() != "util.testStru" {
-		fail(t, "TestLoadStruct failed, %s != 'testStru'", v.Type.String())
+		t.Fatalf("TestLoadStruct failed, %s != 'testStru'", v.Type.String())
 	}
 	if len(v.Fields) != 4 {
-		fail(t, "TestLoadStruct failed, wrong count of fields")
+		t.Fatalf("TestLoadStruct failed, wrong count of fields")
 	}
 	for _, f := range v.Fields {
 		fmt.Println(f.Name, f.Type.String())
@@ -51,10 +52,39 @@ func TestLoadStruct(t *testing.T) {
 func BenchmarkLoadStruct(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			obj := testStru{}
-			LoadStruct(obj)
+			LoadStruct(testStru{})
 		}
 	})
 	b.ReportAllocs()
 	// 20000000	        86.9 ns/op	      32 B/op	       1 allocs/op
+}
+
+var (
+	sliceSize  = uint64(reflect.TypeOf(reflect.SliceHeader{}).Size())
+	stringSize = uint64(reflect.TypeOf(reflect.StringHeader{}).Size())
+)
+
+type S struct {
+	a  int
+	s  string
+	p  *S
+	m  map[int32]uint32
+	u  []uint64
+	ua [8]uint64
+	ch chan int
+	i  interface{}
+}
+
+func BenchmarkSizeof(b *testing.B) {
+	s := &S{}
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			Sizeof(S{
+				p: s,
+				i: s,
+			})
+		}
+	})
+	b.ReportAllocs()
+	// 2000000	       650 ns/op	     160 B/op	       1 allocs/op
 }

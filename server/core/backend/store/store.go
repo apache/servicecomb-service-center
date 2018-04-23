@@ -198,12 +198,7 @@ func (s *KvStore) onLeaseEvent(evt KvEvent) {
 	}
 
 	key := util.BytesToStringWithNoCopy(evt.Object.(*mvccpb.KeyValue).Key)
-	leaseID := util.BytesToStringWithNoCopy(evt.Object.(*mvccpb.KeyValue).Value)
-
 	s.asyncTaskSvc.DeferRemove(ToLeaseAsyncTaskKey(key))
-
-	util.Logger().Debugf("push task to async remove queue successfully, key %s %s [%s] event",
-		key, leaseID, evt.Type)
 }
 func (s *KvStore) closed() bool {
 	return s.isClose

@@ -22,7 +22,11 @@ import (
 	"unsafe"
 )
 
-var reflector *Reflector
+var (
+	reflector      *Reflector
+	sliceTypeSize  = uint64(reflect.TypeOf(reflect.SliceHeader{}).Size())
+	stringTypeSize = uint64(reflect.TypeOf(reflect.StringHeader{}).Size())
+)
 
 func init() {
 	reflector = &Reflector{
@@ -74,4 +78,83 @@ func (r *Reflector) Load(obj interface{}) StructType {
 
 func LoadStruct(obj interface{}) StructType {
 	return reflector.Load(obj)
+}
+
+func Sizeof(obj interface{}) uint64 {
+	selfRecurseMap := make(map[uintptr]struct{})
+	return sizeof(reflect.ValueOf(obj), selfRecurseMap)
+}
+
+func sizeof(v reflect.Value, selfRecurseMap map[uintptr]struct{}) (s uint64) {
+	if !v.IsValid() {
+		return
+	}
+
+	if v.CanAddr() {
+		selfRecurseMap[v.Addr().Pointer()] = struct{}{}
+	}
+
+	t := v.Type()
+	s += uint64(t.Size())
+	switch v.Kind() {
+	case reflect.Ptr:
+		if v.IsNil() {
+			break
+		}
+		if _, ok := selfRecurseMap[v.Pointer()]; ok {
+			break
+		}
+		fallthrough
+	case reflect.Interface:
+		s += sizeof(v.Elem(), selfRecurseMap)
+	case reflect.Struct:
+		s -= uint64(t.Size())
+		for i := 0; i < v.NumField(); i++ {
+			s += sizeof(v.Field(i), selfRecurseMap)
+		}
+	case reflect.Array:
+		if isValueType(t.Elem().Kind()) {
+			break
+		}
+		s -= uint64(t.Size())
+		for i := 0; i < v.Len(); i++ {
+			s += sizeof(v.Index(i), selfRecurseMap)
+		}
+	case reflect.Slice:
+		et := t.Elem()
+		if isValueType(et.Kind()) {
+			s += uint64(v.Len()) * uint64(et.Size())
+			break
+		}
+		for i := 0; i < v.Len(); i++ {
+			s += sizeof(v.Index(i), selfRecurseMap)
+		}
+	case reflect.Map:
+		if v.IsNil() {
+			break
+		}
+		kt, vt := t.Key(), t.Elem()
+		if isValueType(kt.Kind()) && isValueType(vt.Kind()) {
+			s += uint64(kt.Size()+vt.Size()) * uint64(v.Len())
+			break
+		}
+		for _, k := range v.MapKeys() {
+			s += sizeof(k, selfRecurseMap)
+			s += sizeof(v.MapIndex(k), selfRecurseMap)
+		}
+	case reflect.String:
+		s += uint64(v.Len())
+	}
+	return
+}
+
+func isValueType(kind reflect.Kind) bool {
+	switch kind {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr,
+		reflect.Float32, reflect.Float64, reflect.Complex64, reflect.Complex128:
+		return true
+	default:
+		return false
+	}
 }
