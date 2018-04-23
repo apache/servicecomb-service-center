@@ -22,6 +22,7 @@ import (
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"strconv"
 	"sync"
@@ -192,17 +193,17 @@ func (s *KvStore) store(ctx context.Context) {
 }
 
 func (s *KvStore) onLeaseEvent(evt KvEvent) {
-	if evt.Action != pb.EVT_DELETE {
+	if evt.Type != pb.EVT_DELETE {
 		return
 	}
 
-	key := util.BytesToStringWithNoCopy(evt.KV.Key)
-	leaseID := util.BytesToStringWithNoCopy(evt.KV.Value)
+	key := util.BytesToStringWithNoCopy(evt.Object.(*mvccpb.KeyValue).Key)
+	leaseID := util.BytesToStringWithNoCopy(evt.Object.(*mvccpb.KeyValue).Value)
 
 	s.asyncTaskSvc.DeferRemove(ToLeaseAsyncTaskKey(key))
 
 	util.Logger().Debugf("push task to async remove queue successfully, key %s %s [%s] event",
-		key, leaseID, evt.Action)
+		key, leaseID, evt.Type)
 }
 func (s *KvStore) closed() bool {
 	return s.isClose

@@ -29,14 +29,14 @@ import (
 const DEFAULT_CHECK_WINDOW = 2 * time.Second // instance DELETE event will be delay.
 
 type DeferHandler interface {
-	OnCondition(Cache, []Event) bool
-	HandleChan() <-chan Event
+	OnCondition(Cache, []KvEvent) bool
+	HandleChan() <-chan KvEvent
 	Reset() bool
 }
 
 type deferItem struct {
 	ttl   *time.Timer
-	event Event
+	event KvEvent
 }
 
 type InstanceEventDeferHandler struct {
@@ -46,12 +46,12 @@ type InstanceEventDeferHandler struct {
 	once      sync.Once
 	enabled   bool
 	items     map[string]deferItem
-	pendingCh chan []Event
-	deferCh   chan Event
+	pendingCh chan []KvEvent
+	deferCh   chan KvEvent
 	resetCh   chan struct{}
 }
 
-func (iedh *InstanceEventDeferHandler) OnCondition(cache Cache, evts []Event) bool {
+func (iedh *InstanceEventDeferHandler) OnCondition(cache Cache, evts []KvEvent) bool {
 	if iedh.Percent <= 0 {
 		return false
 	}
@@ -59,8 +59,8 @@ func (iedh *InstanceEventDeferHandler) OnCondition(cache Cache, evts []Event) bo
 	iedh.once.Do(func() {
 		iedh.cache = cache
 		iedh.items = make(map[string]deferItem, event_block_size)
-		iedh.pendingCh = make(chan []Event, event_block_size)
-		iedh.deferCh = make(chan Event, event_block_size)
+		iedh.pendingCh = make(chan []KvEvent, event_block_size)
+		iedh.deferCh = make(chan KvEvent, event_block_size)
 		iedh.resetCh = make(chan struct{})
 		util.Go(iedh.check)
 	})
@@ -69,7 +69,7 @@ func (iedh *InstanceEventDeferHandler) OnCondition(cache Cache, evts []Event) bo
 	return true
 }
 
-func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt Event) error {
+func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt KvEvent) error {
 	kv := evt.Object.(*mvccpb.KeyValue)
 	key := util.BytesToStringWithNoCopy(kv.Key)
 	_, ok := iedh.items[key]
@@ -100,7 +100,7 @@ func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt Event) error {
 	return nil
 }
 
-func (iedh *InstanceEventDeferHandler) HandleChan() <-chan Event {
+func (iedh *InstanceEventDeferHandler) HandleChan() <-chan KvEvent {
 	return iedh.deferCh
 }
 
@@ -159,7 +159,7 @@ func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 	}
 }
 
-func (iedh *InstanceEventDeferHandler) recover(evt Event) {
+func (iedh *InstanceEventDeferHandler) recover(evt KvEvent) {
 	key := util.BytesToStringWithNoCopy(evt.Object.(*mvccpb.KeyValue).Key)
 	delete(iedh.items, key)
 	iedh.deferCh <- evt
@@ -167,7 +167,7 @@ func (iedh *InstanceEventDeferHandler) recover(evt Event) {
 
 func (iedh *InstanceEventDeferHandler) Reset() bool {
 	if iedh.enabled {
-		iedh.resetCh <- struct {}{}
+		iedh.resetCh <- struct{}{}
 		return true
 	}
 	return false

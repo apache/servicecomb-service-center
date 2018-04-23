@@ -24,6 +24,7 @@ import (
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	nf "github.com/apache/incubator-servicecomb-service-center/server/service/notification"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 )
 
@@ -80,12 +81,12 @@ func (h *RuleEventHandler) Type() store.StoreType {
 }
 
 func (h *RuleEventHandler) OnEvent(evt store.KvEvent) {
-	action := evt.Action
+	action := evt.Type
 	if action == pb.EVT_INIT {
 		return
 	}
 
-	kv := evt.KV
+	kv := evt.Object.(*mvccpb.KeyValue)
 	providerId, ruleId, domainProject, data := pb.GetInfoFromRuleKV(kv)
 	if data == nil {
 		util.Logger().Errorf(nil,

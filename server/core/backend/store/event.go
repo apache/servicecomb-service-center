@@ -18,7 +18,6 @@ package store
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"sync"
 )
 
@@ -39,8 +38,9 @@ type KvEventFunc func(evt KvEvent)
 
 type KvEvent struct {
 	Revision int64
-	Action   proto.EventType
-	KV       *mvccpb.KeyValue
+	Type     proto.EventType
+	Prefix   string
+	Object   interface{}
 }
 
 type KvEventHandler interface {

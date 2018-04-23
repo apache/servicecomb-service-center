@@ -21,6 +21,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"strings"
 )
@@ -33,12 +34,12 @@ func (h *ServiceEventHandler) Type() store.StoreType {
 }
 
 func (h *ServiceEventHandler) OnEvent(evt store.KvEvent) {
-	action := evt.Action
+	action := evt.Type
 	if action != pb.EVT_CREATE && action != pb.EVT_INIT {
 		return
 	}
 
-	kv := evt.KV
+	kv := evt.Object.(*mvccpb.KeyValue)
 	serviceId, domainProject, data := pb.GetInfoFromSvcKV(kv)
 	if data == nil {
 		util.Logger().Errorf(nil,

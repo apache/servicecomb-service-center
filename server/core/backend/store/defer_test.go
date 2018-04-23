@@ -85,7 +85,7 @@ func TestInstanceEventDeferHandler_HandleChan(t *testing.T) {
 	cache.store["/5"] = kv5
 	cache.store["/6"] = kv6
 
-	evts1 := []Event{
+	evts1 := []KvEvent{
 		{
 			Type:   pb.EVT_CREATE,
 			Object: kv1,
@@ -95,7 +95,7 @@ func TestInstanceEventDeferHandler_HandleChan(t *testing.T) {
 			Object: kv1,
 		},
 	}
-	evts2 := []Event{
+	evts2 := []KvEvent{
 		{
 			Type:   pb.EVT_DELETE,
 			Object: kv2,
@@ -117,7 +117,7 @@ func TestInstanceEventDeferHandler_HandleChan(t *testing.T) {
 			Object: kv6,
 		},
 	}
-	evts3 := []Event{
+	evts3 := []KvEvent{
 		{
 			Type:   pb.EVT_CREATE,
 			Object: kv2,
@@ -157,7 +157,7 @@ func TestInstanceEventDeferHandler_HandleChan(t *testing.T) {
 func getEvents(t *testing.T, iedh *InstanceEventDeferHandler) {
 	fmt.Println(time.Now())
 	c := time.After(3 * time.Second)
-	var evt3 *Event
+	var evt3 *KvEvent
 	for {
 		select {
 		case evt := <-iedh.HandleChan():

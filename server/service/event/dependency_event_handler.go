@@ -41,7 +41,7 @@ func (h *DependencyEventHandler) Type() store.StoreType {
 }
 
 func (h *DependencyEventHandler) OnEvent(evt store.KvEvent) {
-	action := evt.Action
+	action := evt.Type
 	if action != pb.EVT_CREATE && action != pb.EVT_UPDATE && action != pb.EVT_INIT {
 		return
 	}

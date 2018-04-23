@@ -164,7 +164,7 @@ func (i *Indexer) searchPrefixKeyWithCache(ctx context.Context, op registry.Plug
 }
 
 func (i *Indexer) OnCacheEvent(evt KvEvent) {
-	switch evt.Action {
+	switch evt.Type {
 	case pb.EVT_INIT, pb.EVT_CREATE, pb.EVT_DELETE:
 	default:
 		return
@@ -178,9 +178,9 @@ func (i *Indexer) OnCacheEvent(evt KvEvent) {
 	ctx, _ := context.WithTimeout(context.Background(), i.BuildTimeout)
 	select {
 	case <-ctx.Done():
-		key := util.BytesToStringWithNoCopy(evt.KV.Key)
+		key := util.BytesToStringWithNoCopy(evt.Object.(*mvccpb.KeyValue).Key)
 		util.Logger().Warnf(nil, "add event to build index queue timed out(%s), key is %s [%s] event",
-			i.BuildTimeout, key, evt.Action)
+			i.BuildTimeout, key, evt.Type)
 	case i.prefixBuildQueue <- evt:
 	}
 }
@@ -197,11 +197,11 @@ func (i *Indexer) buildIndex() {
 					return
 				}
 				t := time.Now()
-				key := util.BytesToStringWithNoCopy(evt.KV.Key)
+				key := util.BytesToStringWithNoCopy(evt.Object.(*mvccpb.KeyValue).Key)
 				prefix := key[:strings.LastIndex(key[:len(key)-1], "/")+1]
 
 				i.prefixLock.Lock()
-				switch evt.Action {
+				switch evt.Type {
 				case pb.EVT_DELETE:
 					i.deletePrefixKey(prefix, key)
 				default:
@@ -210,7 +210,7 @@ func (i *Indexer) buildIndex() {
 				i.prefixLock.Unlock()
 
 				util.LogNilOrWarnf(t, "too long to rebuild(action: %s) index[%d], key is %s",
-					evt.Action, key, len(i.prefixIndex))
+					evt.Type, key, len(i.prefixIndex))
 			}
 		}
 		util.Logger().Debugf("build %s index goroutine is stopped", i.cacheType)
