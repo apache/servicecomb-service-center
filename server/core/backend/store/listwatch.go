@@ -27,8 +27,6 @@ import (
 	"time"
 )
 
-const EVENT_BUS_MAX_SIZE = 1000
-
 type ListOptions struct {
 	Timeout time.Duration
 	Context context.Context

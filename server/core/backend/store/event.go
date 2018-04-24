@@ -26,7 +26,7 @@ var (
 )
 
 func init() {
-	evtProxies = make(map[StoreType]*KvEventProxy)
+	evtProxies = make(map[StoreType]*KvEventProxy, typeEnd)
 	for i := StoreType(0); i != typeEnd; i++ {
 		evtProxies[i] = &KvEventProxy{
 			evtHandleFuncs: make([]KvEventFunc, 0, 5),

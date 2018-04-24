@@ -30,17 +30,14 @@ var (
 			Subsystem: "local",
 			Name:      "cache_size_bytes",
 			Help:      "Local cache size summary of backend store",
-		}, []string{"instance", "resource"})
+		}, []string{"instance", "resource", "type"})
 )
 
 func init() {
 	prometheus.MustRegister(cacheSizeGauge)
 }
 
-func ReportStoreMetrics(s *KvStore) {
+func ReportCacheMetrics(resource, t string, obj interface{}) {
 	instance := fmt.Sprint(core.Instance.Endpoints)
-	for _, i := range s.indexers {
-		cacheSizeGauge.WithLabelValues(instance, i.cacheType.String()).Set(float64(util.Sizeof(i)))
-	}
-	cacheSizeGauge.WithLabelValues(instance, "HEARTBEAT").Set(float64(util.Sizeof(s.asyncTaskSvc)))
+	cacheSizeGauge.WithLabelValues(instance, resource, t).Set(float64(util.Sizeof(obj)))
 }

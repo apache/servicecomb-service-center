@@ -16,7 +16,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "hideControls": false,
-  "id": 3,
+  "id": 6,
   "links": [
     {
       "icon": "external link",
@@ -582,6 +582,7 @@
               "format": "time_series",
               "instant": false,
               "intervalFactor": 2,
+              "legendFormat": "cpu",
               "refId": "A"
             }
           ],
@@ -1001,7 +1002,7 @@
               "expr": "service_center_local_cache_size_bytes",
               "format": "time_series",
               "intervalFactor": 2,
-              "legendFormat": "{{resource}}",
+              "legendFormat": "{{resource}}.{{type}}",
               "refId": "A"
             },
             {
@@ -1094,5 +1095,5 @@
   },
   "timezone": "",
   "title": "ServiceCenter",
-  "version": 14
+  "version": 2
 }

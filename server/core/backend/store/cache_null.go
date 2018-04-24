@@ -16,17 +16,50 @@
  */
 package store
 
-type Cache interface {
-	Version() int64
-	Data(interface{}) interface{}
-	Have(interface{}) bool
-	Size() int
+var (
+	NullCache  = &nullCache{}
+	NullCacher = &nullCacher{}
+	closedCh   = make(chan struct{})
+)
+
+func init() {
+	close(closedCh)
 }
 
-type Cacher interface {
-	Name() string
-	Cache() Cache
-	Run()
-	Stop()
-	Ready() <-chan struct{}
+type nullCache struct {
+}
+
+func (n *nullCache) Version() int64 {
+	return 0
+}
+
+func (n *nullCache) Data(interface{}) interface{} {
+	return nil
+}
+
+func (n *nullCache) Have(interface{}) bool {
+	return false
+}
+
+func (n *nullCache) Size() int {
+	return 0
+}
+
+type nullCacher struct {
+}
+
+func (n *nullCacher) Name() string {
+	return ""
+}
+
+func (n *nullCacher) Cache() Cache {
+	return NullCache
+}
+
+func (n *nullCacher) Run() {}
+
+func (n *nullCacher) Stop() {}
+
+func (n *nullCacher) Ready() <-chan struct{} {
+	return closedCh
 }
