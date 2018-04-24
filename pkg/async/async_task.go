@@ -191,13 +191,13 @@ func (lat *TaskService) daemon(ctx context.Context) {
 			for key := range lat.removeTasks {
 				lat.removeScheduler(key)
 			}
+
+			if l > DEFAULT_MAX_SCHEDULE_COUNT {
+				lat.renew()
+			}
 			lat.lock.Unlock()
 			if l > 0 {
 				util.Logger().Infof("daemon thread completed, %d scheduler(s) removed", l)
-
-				if l > DEFAULT_MAX_SCHEDULE_COUNT {
-					lat.renew()
-				}
 			}
 		}
 	}
