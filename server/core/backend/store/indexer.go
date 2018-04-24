@@ -245,7 +245,7 @@ func (i *Indexer) addPrefixKey(prefix, key string) {
 
 	keys, ok := i.prefixIndex[prefix]
 	if !ok {
-		keys = make(map[string]struct{})
+		keys = make(map[string]struct{}, DEFAULT_CACHE_INIT_SIZE)
 		i.prefixIndex[prefix] = keys
 	} else if _, ok := keys[key]; ok {
 		return
@@ -312,7 +312,7 @@ func NewCacheIndexer(cr Cacher) *Indexer {
 	return &Indexer{
 		BuildTimeout:     DEFAULT_ADD_QUEUE_TIMEOUT,
 		cacher:           cr,
-		prefixIndex:      make(map[string]map[string]struct{}, DEFAULT_MAX_EVENT_COUNT),
+		prefixIndex:      make(map[string]map[string]struct{}, DEFAULT_CACHE_INIT_SIZE),
 		prefixBuildQueue: make(chan KvEvent, DEFAULT_MAX_EVENT_COUNT),
 		goroutine:        util.NewGo(context.Background()),
 		ready:            make(chan struct{}),

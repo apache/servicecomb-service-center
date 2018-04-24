@@ -46,8 +46,7 @@ func (c *KvCache) Data(k interface{}) interface{} {
 	if !ok {
 		return nil
 	}
-	copied := *kv
-	return &copied
+	return kv
 }
 
 func (c *KvCache) Have(k interface{}) (ok bool) {

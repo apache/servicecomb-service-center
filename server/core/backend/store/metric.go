@@ -38,6 +38,9 @@ func init() {
 }
 
 func ReportCacheMetrics(resource, t string, obj interface{}) {
+	if len(resource) == 0 {
+		return
+	}
 	instance := fmt.Sprint(core.Instance.Endpoints)
 	cacheSizeGauge.WithLabelValues(instance, resource, t).Set(float64(util.Sizeof(obj)))
 }

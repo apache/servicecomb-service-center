@@ -142,12 +142,11 @@ func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 			}
 
 			if iedh.enabled && len(iedh.items) == 0 {
-				iedh.enabled = false
+				iedh.renew()
 				util.Logger().Warnf(nil, "self preservation is stopped")
 			}
 		case <-iedh.resetCh:
-			iedh.enabled = false
-			iedh.items = make(map[string]deferItem, event_block_size)
+			iedh.renew()
 			util.Logger().Warnf(nil, "self preservation is reset")
 		}
 	}
@@ -157,6 +156,11 @@ func (iedh *InstanceEventDeferHandler) recover(evt KvEvent) {
 	key := util.BytesToStringWithNoCopy(evt.Object.(*mvccpb.KeyValue).Key)
 	delete(iedh.items, key)
 	iedh.deferCh <- evt
+}
+
+func (iedh *InstanceEventDeferHandler) renew() {
+	iedh.enabled = false
+	iedh.items = make(map[string]deferItem, event_block_size)
 }
 
 func (iedh *InstanceEventDeferHandler) Reset() bool {

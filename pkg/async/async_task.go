@@ -191,6 +191,9 @@ func (lat *AsyncTaskService) daemon(ctx context.Context) {
 			for key := range lat.removeTasks {
 				lat.removeScheduler(key)
 			}
+			if l > DEFAULT_MAX_SCHEDULE_COUNT {
+				lat.renew()
+			}
 			lat.lock.Unlock()
 			if l > 0 {
 				util.Logger().Infof("daemon thread completed, %d scheduler(s) removed", l)
@@ -233,12 +236,17 @@ func (lat *AsyncTaskService) Ready() <-chan struct{} {
 	return lat.ready
 }
 
-func NewAsyncTaskService() *AsyncTaskService {
-	return &AsyncTaskService{
-		schedules:   make(map[string]*scheduler, DEFAULT_MAX_SCHEDULE_COUNT),
-		removeTasks: make(map[string]struct{}, DEFAULT_MAX_SCHEDULE_COUNT),
-		goroutine:   util.NewGo(context.Background()),
-		ready:       make(chan struct{}),
-		isClose:     true,
+func (lat *AsyncTaskService) renew() {
+	lat.schedules = make(map[string]*scheduler, DEFAULT_MAX_SCHEDULE_COUNT)
+	lat.removeTasks = make(map[string]struct{}, DEFAULT_MAX_SCHEDULE_COUNT)
+}
+
+func NewAsyncTaskService() (lat *AsyncTaskService) {
+	lat = &AsyncTaskService{
+		goroutine: util.NewGo(context.Background()),
+		ready:     make(chan struct{}),
+		isClose:   true,
 	}
+	lat.renew()
+	return
 }
