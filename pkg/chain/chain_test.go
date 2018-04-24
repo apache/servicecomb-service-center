@@ -59,6 +59,7 @@ func BenchmarkChain(b *testing.B) {
 		}
 	})
 	b.ReportAllocs()
+	// 1000000	      5119 ns/op	     176 B/op	       3 allocs/op
 }
 
 func BenchmarkSync(b *testing.B) {
@@ -70,4 +71,5 @@ func BenchmarkSync(b *testing.B) {
 		}
 	})
 	b.ReportAllocs()
+	// 1000000	        13.7 ns/op	       0 B/op	       0 allocs/op
 }

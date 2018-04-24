@@ -17,7 +17,6 @@
 package util
 
 import (
-	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"golang.org/x/net/context"
@@ -28,62 +27,53 @@ func TestGetLeaseId(t *testing.T) {
 
 	_, err := GetLeaseId(util.SetContext(context.Background(), "cacheOnly", "1"), "", "", "")
 	if err != nil {
-		fmt.Printf(`GetLeaseId WithCacheOnly failed`)
-		t.FailNow()
+		t.Fatalf(`GetLeaseId WithCacheOnly failed`)
 	}
 
 	_, err = GetLeaseId(context.Background(), "", "", "")
 	if err == nil {
-		fmt.Printf(`GetLeaseId failed`)
-		t.FailNow()
+		t.Fatalf(`GetLeaseId failed`)
 	}
 }
 
 func TestGetInstance(t *testing.T) {
 	_, err := GetInstance(util.SetContext(context.Background(), "cacheOnly", "1"), "", "", "")
 	if err != nil {
-		fmt.Printf(`GetInstance WithCacheOnly failed`)
-		t.FailNow()
+		t.Fatalf(`GetInstance WithCacheOnly failed`)
 	}
 
 	_, err = GetInstance(context.Background(), "", "", "")
 	if err == nil {
-		fmt.Printf(`GetInstance failed`)
-		t.FailNow()
+		t.Fatalf(`GetInstance failed`)
 	}
 
 	_, err = GetAllInstancesOfOneService(util.SetContext(context.Background(), "cacheOnly", "1"), "", "")
 	if err != nil {
-		fmt.Printf(`GetAllInstancesOfOneService WithCacheOnly failed`)
-		t.FailNow()
+		t.Fatalf(`GetAllInstancesOfOneService WithCacheOnly failed`)
 	}
 
 	_, err = GetAllInstancesOfOneService(context.Background(), "", "")
 	if err == nil {
-		fmt.Printf(`GetAllInstancesOfOneService failed`)
-		t.FailNow()
+		t.Fatalf(`GetAllInstancesOfOneService failed`)
 	}
 
 	QueryAllProvidersInstances(context.Background(), "")
 
 	_, err = queryServiceInstancesKvs(context.Background(), "", 0)
 	if err == nil {
-		fmt.Printf(`queryServiceInstancesKvs failed`)
-		t.FailNow()
+		t.Fatalf(`queryServiceInstancesKvs failed`)
 	}
 }
 
 func TestInstanceExist(t *testing.T) {
 	_, err := InstanceExist(util.SetContext(context.Background(), "cacheOnly", "1"), "", "", "")
 	if err != nil {
-		fmt.Printf(`InstanceExist WithCacheOnly failed`)
-		t.FailNow()
+		t.Fatalf(`InstanceExist WithCacheOnly failed`)
 	}
 
 	_, err = InstanceExist(context.Background(), "", "", "")
 	if err == nil {
-		fmt.Printf(`InstanceExist failed`)
-		t.FailNow()
+		t.Fatalf(`InstanceExist failed`)
 	}
 }
 
@@ -92,31 +82,27 @@ func TestCheckEndPoints(t *testing.T) {
 		ServiceId: "a",
 	})
 	if err == nil {
-		fmt.Printf(`CheckEndPoints failed`)
-		t.FailNow()
+		t.Fatalf(`CheckEndPoints failed`)
 	}
 }
 
 func TestDeleteServiceAllInstances(t *testing.T) {
 	err := DeleteServiceAllInstances(context.Background(), "")
 	if err == nil {
-		fmt.Printf(`DeleteServiceAllInstances failed`)
-		t.FailNow()
+		t.Fatalf(`DeleteServiceAllInstances failed`)
 	}
 }
 
 func TestParseEndpointValue(t *testing.T) {
 	epv := ParseEndpointIndexValue([]byte("x/y"))
 	if epv.serviceId != "x" || epv.instanceId != "y" {
-		fmt.Printf(`ParseEndpointIndexValue failed`)
-		t.FailNow()
+		t.Fatalf(`ParseEndpointIndexValue failed`)
 	}
 }
 
 func TestGetInstanceCountOfOneService(t *testing.T) {
 	_, err := GetInstanceCountOfOneService(context.Background(), "", "")
 	if err == nil {
-		fmt.Printf(`GetInstanceCountOfOneService failed`)
-		t.FailNow()
+		t.Fatalf(`GetInstanceCountOfOneService failed`)
 	}
 }

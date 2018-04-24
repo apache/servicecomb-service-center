@@ -46,6 +46,6 @@ func TestTree(t *testing.T) {
 
 	testTree.InOrderTraversal(testTree.GetRoot(), handle)
 	if !reflect.DeepEqual(slice, targetSlice) {
-		fail(t, `TestTree failed`)
+		t.Fatalf(`TestTree failed`)
 	}
 }

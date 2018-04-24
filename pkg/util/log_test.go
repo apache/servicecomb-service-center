@@ -24,21 +24,21 @@ func TestLogger(t *testing.T) {
 	CustomLogger("Not Exist", "testDefaultLOGGER")
 	l := Logger()
 	if l != LOGGER {
-		fail(t, "should equal to LOGGER")
+		t.Fatalf("should equal to LOGGER")
 	}
 	CustomLogger("TestLogger", "testFuncName")
 	l = Logger()
 	if l == LOGGER || l == nil {
-		fail(t, "should create a new instance for 'TestLogger'")
+		t.Fatalf("should create a new instance for 'TestLogger'")
 	}
 	s := Logger()
 	if l != s {
-		fail(t, "should be the same logger")
+		t.Fatalf("should be the same logger")
 	}
 	CustomLogger("github.com/apache/incubator-servicecomb-service-center/pkg/util", "testPkgPath")
 	l = Logger()
 	if l == LOGGER || l == nil {
-		fail(t, "should create a new instance for 'util'")
+		t.Fatalf("should create a new instance for 'util'")
 	}
 	// l.Infof("OK")
 }

@@ -30,40 +30,40 @@ const (
 func TestInetAton(t *testing.T) {
 	i := InetAton(ip1)
 	if i != 2130706433 {
-		fail(t, "InetAton(%s) error", ip1)
+		t.Fatalf("InetAton(%s) error", ip1)
 	}
 	i = InetAton(ip2)
 	if i != 0 {
-		fail(t, "InetAton(%s) error", ip2)
+		t.Fatalf("InetAton(%s) error", ip2)
 	}
 	i = InetAton(ip3)
 	if i != 4294967295 {
-		fail(t, "InetAton(%s) error", ip3)
+		t.Fatalf("InetAton(%s) error", ip3)
 	}
 }
 
 func TestInetNtoa(t *testing.T) {
 	ip := InetNtoa(n1)
 	if ip != ip1 {
-		fail(t, "InetNtoa(%d) error", n1)
+		t.Fatalf("InetNtoa(%d) error", n1)
 	}
 	ip = InetNtoa(n2)
 	if ip != ip2 {
-		fail(t, "InetNtoa(%d) error", n2)
+		t.Fatalf("InetNtoa(%d) error", n2)
 	}
 	ip = InetNtoa(n3)
 	if ip != ip3 {
-		fail(t, "InetNtoa(%d) error", n3)
+		t.Fatalf("InetNtoa(%d) error", n3)
 	}
 }
 
 func TestParseIpPort(t *testing.T) {
 	ipPort := ParseIpPort("0.0.0.0")
 	if ipPort.IP != "0.0.0.0" || ipPort.Port != 0 {
-		fail(t, "ParseIpPort(0.0.0.0) error", n3)
+		t.Fatalf("ParseIpPort(0.0.0.0) error", n3)
 	}
 	ipPort = ParseIpPort("0.0.0.0:1")
 	if ipPort.IP != "0.0.0.0" || ipPort.Port != 1 {
-		fail(t, "ParseIpPort(0.0.0.0) error", n3)
+		t.Fatalf("ParseIpPort(0.0.0.0) error", n3)
 	}
 }

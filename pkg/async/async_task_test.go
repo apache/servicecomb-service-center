@@ -21,27 +21,9 @@ import (
 
 	"errors"
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/lager"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"golang.org/x/net/context"
 	"time"
 )
-
-func init() {
-	util.InitGlobalLogger("async_task_test", &log.Config{
-		LoggerLevel:   "DEBUG",
-		LoggerFile:    "",
-		EnableRsyslog: false,
-		LogFormatText: true,
-		EnableStdOut:  true,
-	})
-}
-
-func fail(t *testing.T, format string, args ...interface{}) {
-	fmt.Printf(format, args...)
-	fmt.Println()
-	t.FailNow()
-}
 
 type testTask struct {
 	done   context.CancelFunc
@@ -82,7 +64,7 @@ func TestBaseAsyncTasker_AddTask(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	err := at.Add(ctx, nil)
 	if err == nil {
-		fail(t, "add nil task should be error")
+		t.Fatalf("add nil task should be error")
 	}
 	cancel()
 
@@ -92,11 +74,11 @@ func TestBaseAsyncTasker_AddTask(t *testing.T) {
 		test: "test1",
 	})
 	if testCtx1.Err() == nil || err == nil || err.Error() != "test1" {
-		fail(t, "first time add task should be sync")
+		t.Fatalf("first time add task should be sync")
 	}
 	lt, _ := at.LatestHandled("test")
 	if lt.Err().Error() != "test1" {
-		fail(t, "should get first handled task 'test1'")
+		t.Fatalf("should get first handled task 'test1'")
 	}
 
 	testCtx2, testC2 := context.WithTimeout(context.Background(), 3*time.Second)
@@ -105,12 +87,12 @@ func TestBaseAsyncTasker_AddTask(t *testing.T) {
 		test: "test2",
 	})
 	if err.Error() != "test1" {
-		fail(t, "second time add task should return prev result")
+		t.Fatalf("second time add task should return prev result")
 	}
 	<-testCtx2.Done()
 	lt, _ = at.LatestHandled("test")
 	if lt.Err().Error() != "test2" {
-		fail(t, "should get second handled task 'test2'")
+		t.Fatalf("should get second handled task 'test2'")
 	}
 }
 
@@ -126,7 +108,7 @@ func TestBaseAsyncTasker_Stop(t *testing.T) {
 		result: true,
 	})
 	if err != nil {
-		fail(t, "add task should be ok")
+		t.Fatalf("add task should be ok")
 	}
 	_, cancel = context.WithCancel(context.Background())
 	err = at.Add(context.Background(), &testTask{
@@ -136,14 +118,14 @@ func TestBaseAsyncTasker_Stop(t *testing.T) {
 		result: true,
 	})
 	if err != nil {
-		fail(t, "add task should be ok")
+		t.Fatalf("add task should be ok")
 	}
 	<-time.After(time.Second)
 	at.Stop()
 
 	err = at.Add(context.Background(), &testTask{result: true})
 	if err != nil {
-		fail(t, "add task should be ok when Tasker is stopped")
+		t.Fatalf("add task should be ok when Tasker is stopped")
 	}
 
 	at.Stop()
@@ -155,7 +137,7 @@ func TestBaseAsyncTasker_RemoveTask(t *testing.T) {
 
 	err := at.DeferRemove("test")
 	if err != nil {
-		fail(t, "remove task should be ok")
+		t.Fatalf("remove task should be ok")
 	}
 	_, cancel := context.WithCancel(context.Background())
 	err = at.Add(context.Background(), &testTask{
@@ -165,18 +147,18 @@ func TestBaseAsyncTasker_RemoveTask(t *testing.T) {
 		wait:   33 * time.Second,
 	})
 	if err != nil {
-		fail(t, "add task should be ok")
+		t.Fatalf("add task should be ok")
 	}
 	fmt.Println("OK")
 
 	err = at.DeferRemove("test")
 	if err != nil {
-		fail(t, "remove task should be ok")
+		t.Fatalf("remove task should be ok")
 	}
 	at.Stop()
 
 	err = at.DeferRemove("test")
 	if err == nil {
-		fail(t, "remove task should be error when Tasker is stopped")
+		t.Fatalf("remove task should be error when Tasker is stopped")
 	}
 }

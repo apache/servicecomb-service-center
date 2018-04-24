@@ -159,36 +159,31 @@ func TestSetDefault(t *testing.T) {
 	serviceUtil.SetServiceDefaultValue(service)
 	if len(service.Level) == 0 ||
 		len(service.Status) == 0 {
-		fmt.Printf(`TestSetDefault failed`)
-		t.FailNow()
+		t.Fatalf(`TestSetDefault failed`)
 	}
 }
 
 func TestGetOneDomainProjectServiceCount(t *testing.T) {
 	_, err := serviceUtil.GetOneDomainProjectServiceCount(util.SetContext(context.Background(), "cacheOnly", "1"), "")
 	if err != nil {
-		fmt.Printf("GetOneDomainProjectServiceCount WithCacheOnly failed")
-		t.FailNow()
+		t.Fatalf("GetOneDomainProjectServiceCount WithCacheOnly failed")
 	}
 
 	_, err = serviceUtil.GetOneDomainProjectServiceCount(context.Background(), "")
 	if err == nil {
-		fmt.Printf("GetOneDomainProjectServiceCount failed")
-		t.FailNow()
+		t.Fatalf("GetOneDomainProjectServiceCount failed")
 	}
 }
 
 func TestGetOneDomainProjectInstanceCount(t *testing.T) {
 	_, err := serviceUtil.GetOneDomainProjectInstanceCount(util.SetContext(context.Background(), "cacheOnly", "1"), "")
 	if err != nil {
-		fmt.Printf("GetOneDomainProjectInstanceCount WithCacheOnly failed")
-		t.FailNow()
+		t.Fatalf("GetOneDomainProjectInstanceCount WithCacheOnly failed")
 	}
 
 	_, err = serviceUtil.GetOneDomainProjectInstanceCount(context.Background(), "")
 	if err == nil {
-		fmt.Printf("GetOneDomainProjectInstanceCount failed")
-		t.FailNow()
+		t.Fatalf("GetOneDomainProjectInstanceCount failed")
 	}
 }
 

@@ -32,14 +32,12 @@ func TestInstanceEventDeferHandler_OnCondition(t *testing.T) {
 	}
 
 	if iedh.OnCondition(nil, nil) {
-		fmt.Printf(`TestInstanceEventDeferHandler_OnCondition with 0%% failed`)
-		t.FailNow()
+		t.Fatalf(`TestInstanceEventDeferHandler_OnCondition with 0%% failed`)
 	}
 
 	iedh.Percent = 0.01
 	if !iedh.OnCondition(nil, nil) {
-		fmt.Printf(`TestInstanceEventDeferHandler_OnCondition with 1%% failed`)
-		t.FailNow()
+		t.Fatalf(`TestInstanceEventDeferHandler_OnCondition with 1%% failed`)
 	}
 }
 
@@ -164,15 +162,13 @@ func getEvents(t *testing.T, iedh *InstanceEventDeferHandler) {
 			if string(evt.Object.(*mvccpb.KeyValue).Key) == "/3" {
 				evt3 = &evt
 				if iedh.Percent == 0.01 && evt.Type == pb.EVT_DELETE {
-					fmt.Printf(`TestInstanceEventDeferHandler_HandleChan with 1%% failed`)
-					t.FailNow()
+					t.Fatalf(`TestInstanceEventDeferHandler_HandleChan with 1%% failed`)
 				}
 			}
 			continue
 		case <-c:
 			if iedh.Percent == 0.8 && evt3 == nil {
-				fmt.Printf(`TestInstanceEventDeferHandler_HandleChan with 80%% failed`)
-				t.FailNow()
+				t.Fatalf(`TestInstanceEventDeferHandler_HandleChan with 80%% failed`)
 			}
 		}
 		break

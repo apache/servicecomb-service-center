@@ -17,7 +17,6 @@
 package util_test
 
 import (
-	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
@@ -34,42 +33,36 @@ func TestRuleFilter_Filter(t *testing.T) {
 	}
 	_, err := rf.Filter(context.Background(), "")
 	if err != nil {
-		fmt.Printf("RuleFilter Filter failed")
-		t.FailNow()
+		t.Fatalf("RuleFilter Filter failed")
 	}
 }
 
 func TestGetRulesUtil(t *testing.T) {
 	_, err := serviceUtil.GetRulesUtil(util.SetContext(context.Background(), "cacheOnly", "1"), "", "")
 	if err != nil {
-		fmt.Printf("GetRulesUtil WithCacheOnly failed")
-		t.FailNow()
+		t.Fatalf("GetRulesUtil WithCacheOnly failed")
 	}
 
 	_, err = serviceUtil.GetRulesUtil(context.Background(), "", "")
 	if err == nil {
-		fmt.Printf("GetRulesUtil failed")
-		t.FailNow()
+		t.Fatalf("GetRulesUtil failed")
 	}
 
 	_, err = serviceUtil.GetOneRule(util.SetContext(context.Background(), "cacheOnly", "1"), "", "", "")
 	if err != nil {
-		fmt.Printf("GetOneRule WithCacheOnly failed")
-		t.FailNow()
+		t.Fatalf("GetOneRule WithCacheOnly failed")
 	}
 
 	_, err = serviceUtil.GetOneRule(context.Background(), "", "", "")
 	if err == nil {
-		fmt.Printf("GetOneRule failed")
-		t.FailNow()
+		t.Fatalf("GetOneRule failed")
 	}
 }
 
 func TestRuleExist(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Printf("TestRuleExist panic")
-			t.FailNow()
+			t.Fatalf("TestRuleExist panic")
 		}
 	}()
 	serviceUtil.RuleExist(util.SetContext(context.Background(), "cacheOnly", "1"), "", "", "", "")
@@ -79,14 +72,12 @@ func TestRuleExist(t *testing.T) {
 func TestGetServiceRuleType(t *testing.T) {
 	_, _, err := serviceUtil.GetServiceRuleType(util.SetContext(context.Background(), "cacheOnly", "1"), "", "")
 	if err != nil {
-		fmt.Printf("GetServiceRuleType WithCacheOnly failed")
-		t.FailNow()
+		t.Fatalf("GetServiceRuleType WithCacheOnly failed")
 	}
 
 	_, _, err = serviceUtil.GetServiceRuleType(context.Background(), "", "")
 	if err == nil {
-		fmt.Printf("GetServiceRuleType failed")
-		t.FailNow()
+		t.Fatalf("GetServiceRuleType failed")
 	}
 }
 
@@ -97,8 +88,7 @@ func TestAllowAcrossApp(t *testing.T) {
 		AppId: "a",
 	})
 	if err != nil {
-		fmt.Printf("AllowAcrossApp with the same appId and no property failed")
-		t.FailNow()
+		t.Fatalf("AllowAcrossApp with the same appId and no property failed")
 	}
 
 	err = serviceUtil.AllowAcrossDimension(context.Background(), &proto.MicroService{
@@ -107,8 +97,7 @@ func TestAllowAcrossApp(t *testing.T) {
 		AppId: "c",
 	})
 	if err == nil {
-		fmt.Printf("AllowAcrossApp with the diff appId and no property failed")
-		t.FailNow()
+		t.Fatalf("AllowAcrossApp with the diff appId and no property failed")
 	}
 
 	err = serviceUtil.AllowAcrossDimension(context.Background(), &proto.MicroService{
@@ -120,8 +109,7 @@ func TestAllowAcrossApp(t *testing.T) {
 		AppId: "a",
 	})
 	if err != nil {
-		fmt.Printf("AllowAcrossApp with the same appId and allow property failed")
-		t.FailNow()
+		t.Fatalf("AllowAcrossApp with the same appId and allow property failed")
 	}
 
 	err = serviceUtil.AllowAcrossDimension(context.Background(), &proto.MicroService{
@@ -133,8 +121,7 @@ func TestAllowAcrossApp(t *testing.T) {
 		AppId: "b",
 	})
 	if err != nil {
-		fmt.Printf("AllowAcrossApp with the diff appId and allow property failed")
-		t.FailNow()
+		t.Fatalf("AllowAcrossApp with the diff appId and allow property failed")
 	}
 
 	err = serviceUtil.AllowAcrossDimension(context.Background(), &proto.MicroService{
@@ -146,8 +133,7 @@ func TestAllowAcrossApp(t *testing.T) {
 		AppId: "b",
 	})
 	if err == nil {
-		fmt.Printf("AllowAcrossApp with the diff appId and deny property failed")
-		t.FailNow()
+		t.Fatalf("AllowAcrossApp with the diff appId and deny property failed")
 	}
 
 	err = serviceUtil.AllowAcrossDimension(context.Background(), &proto.MicroService{
@@ -159,8 +145,7 @@ func TestAllowAcrossApp(t *testing.T) {
 		AppId: "b",
 	})
 	if err == nil {
-		fmt.Printf("AllowAcrossApp with the diff appId and empty property failed")
-		t.FailNow()
+		t.Fatalf("AllowAcrossApp with the diff appId and empty property failed")
 	}
 }
 
@@ -173,8 +158,7 @@ func TestMatchRules(t *testing.T) {
 		},
 	}, nil, nil)
 	if err == nil {
-		fmt.Printf("MatchRules nil failed")
-		t.FailNow()
+		t.Fatalf("MatchRules nil failed")
 	}
 
 	err = serviceUtil.MatchRules([]*proto.ServiceRule{
@@ -185,8 +169,7 @@ func TestMatchRules(t *testing.T) {
 		},
 	}, &proto.MicroService{}, nil)
 	if err == nil {
-		fmt.Printf("MatchRules invalid WHITE failed")
-		t.FailNow()
+		t.Fatalf("MatchRules invalid WHITE failed")
 	}
 
 	err = serviceUtil.MatchRules([]*proto.ServiceRule{
@@ -199,8 +182,7 @@ func TestMatchRules(t *testing.T) {
 		ServiceName: "a",
 	}, nil)
 	if err != nil {
-		fmt.Printf("MatchRules WHITE with field ServiceName failed")
-		t.FailNow()
+		t.Fatalf("MatchRules WHITE with field ServiceName failed")
 	}
 
 	err = serviceUtil.MatchRules([]*proto.ServiceRule{
@@ -213,8 +195,7 @@ func TestMatchRules(t *testing.T) {
 		"a": "b",
 	})
 	if err != nil {
-		fmt.Printf("MatchRules WHITE with tag b failed")
-		t.FailNow()
+		t.Fatalf("MatchRules WHITE with tag b failed")
 	}
 
 	err = serviceUtil.MatchRules([]*proto.ServiceRule{
@@ -227,8 +208,7 @@ func TestMatchRules(t *testing.T) {
 		"a": "c",
 	})
 	if err == nil {
-		fmt.Printf("MatchRules WHITE with tag c failed")
-		t.FailNow()
+		t.Fatalf("MatchRules WHITE with tag c failed")
 	}
 
 	err = serviceUtil.MatchRules([]*proto.ServiceRule{
@@ -241,8 +221,7 @@ func TestMatchRules(t *testing.T) {
 		"a": "b",
 	})
 	if err == nil {
-		fmt.Printf("MatchRules BLACK with tag b failed")
-		t.FailNow()
+		t.Fatalf("MatchRules BLACK with tag b failed")
 	}
 
 	err = serviceUtil.MatchRules([]*proto.ServiceRule{
@@ -255,8 +234,7 @@ func TestMatchRules(t *testing.T) {
 		ServiceName: "a",
 	}, nil)
 	if err == nil {
-		fmt.Printf("MatchRules BLACK with field ServiceName failed")
-		t.FailNow()
+		t.Fatalf("MatchRules BLACK with field ServiceName failed")
 	}
 
 	err = serviceUtil.MatchRules([]*proto.ServiceRule{
@@ -269,8 +247,7 @@ func TestMatchRules(t *testing.T) {
 		"a": "c",
 	})
 	if err != nil {
-		fmt.Printf("MatchRules BLACK with tag c failed")
-		t.FailNow()
+		t.Fatalf("MatchRules BLACK with tag c failed")
 	}
 
 	err = serviceUtil.MatchRules([]*proto.ServiceRule{
@@ -283,24 +260,21 @@ func TestMatchRules(t *testing.T) {
 		"b": "b",
 	})
 	if err != nil {
-		fmt.Printf("MatchRules with not exist tag failed")
-		t.FailNow()
+		t.Fatalf("MatchRules with not exist tag failed")
 	}
 }
 
 func TestGetConsumer(t *testing.T) {
 	_, _, err := serviceUtil.GetConsumerIdsByProvider(context.Background(), "", &proto.MicroService{})
 	if err == nil {
-		fmt.Printf("GetConsumerIdsByProvider invalid failed")
-		t.FailNow()
+		t.Fatalf("GetConsumerIdsByProvider invalid failed")
 	}
 
 	_, _, err = serviceUtil.GetConsumerIdsByProvider(context.Background(), "", &proto.MicroService{
 		ServiceId: "a",
 	})
 	if err == nil {
-		fmt.Printf("GetConsumerIdsByProvider not exist service failed")
-		t.FailNow()
+		t.Fatalf("GetConsumerIdsByProvider not exist service failed")
 	}
 
 	_, err = serviceUtil.GetConsumersInCache(util.SetContext(context.Background(), "cacheOnly", "1"), "",
@@ -308,8 +282,7 @@ func TestGetConsumer(t *testing.T) {
 			ServiceId: "a",
 		})
 	if err != nil {
-		fmt.Printf("GetConsumersInCache WithCacheOnly failed")
-		t.FailNow()
+		t.Fatalf("GetConsumersInCache WithCacheOnly failed")
 	}
 }
 
@@ -319,34 +292,29 @@ func TestGetProvider(t *testing.T) {
 			ServiceId: "a",
 		})
 	if err != nil {
-		fmt.Printf("GetProvidersInCache WithCacheOnly failed")
-		t.FailNow()
+		t.Fatalf("GetProvidersInCache WithCacheOnly failed")
 	}
 
 	_, _, err = serviceUtil.GetProviderIdsByConsumer(context.Background(), "", &proto.MicroService{})
 	if err == nil {
-		fmt.Printf("GetProviderIdsByConsumer invalid failed")
-		t.FailNow()
+		t.Fatalf("GetProviderIdsByConsumer invalid failed")
 	}
 
 	_, _, err = serviceUtil.GetProviderIdsByConsumer(util.SetContext(context.Background(), "cacheOnly", "1"),
 		"", &proto.MicroService{})
 	if err != nil {
-		fmt.Printf("GetProviderIdsByConsumer WithCacheOnly failed")
-		t.FailNow()
+		t.Fatalf("GetProviderIdsByConsumer WithCacheOnly failed")
 	}
 }
 
 func TestAccessible(t *testing.T) {
 	err := serviceUtil.Accessible(context.Background(), "", "")
 	if err.StatusCode() != http.StatusInternalServerError {
-		fmt.Printf("Accessible invalid failed")
-		t.FailNow()
+		t.Fatalf("Accessible invalid failed")
 	}
 
 	err = serviceUtil.Accessible(util.SetContext(context.Background(), "cacheOnly", "1"), "", "")
 	if err.StatusCode() == http.StatusInternalServerError {
-		fmt.Printf("Accessible WithCacheOnly failed")
-		t.FailNow()
+		t.Fatalf("Accessible WithCacheOnly failed")
 	}
 }

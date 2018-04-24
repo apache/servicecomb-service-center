@@ -69,7 +69,6 @@ func TestEtcdClient_Delete(t *testing.T) {
 		panic(err)
 	}
 	if len(resp.Kvs) != 1 || string(resp.Kvs[0].Key) != "/test_range/a" {
-		fmt.Println("TestEtcdClient_Delete failed, %#v", resp.Kvs)
-		t.FailNow()
+		t.Fatalf("TestEtcdClient_Delete failed, %#v", resp.Kvs)
 	}
 }
