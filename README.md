@@ -134,8 +134,6 @@ Note: By default frontend runs on 127.0.0.1, if you want to change this then you
 frontend_host_ip=127.0.0.1
 frontend_host_port=30103
 ```
-You can also change the the IP of Service-Center to which Frontend is connected over here  `app/apiList/apiList.js`
-
 
 You can follow the guide over [here](frontend/Readme.md#running-ui-from-source-code) to run the Frontend from source.
       

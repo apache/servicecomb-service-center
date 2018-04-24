@@ -324,3 +324,45 @@ libraries from the golang.org/x repository which are licensed
 under the 3-Clause BSD License.
 For details, see https://github.com/golang
 You can find a copy of the License at licenses/LICENSE-golang
+
+================================================================
+For dgrijalva/jwt-go
+================================================================
+This product bundles dgrijalva/jwt-go which is licensed under the MIT License.
+For details, see https://github.com/dgrijalva/jwt-go
+You can find a copy of the License at licenses/LICENSE-jwt-go
+
+================================================================
+For labstack/echo
+================================================================
+This product bundles labstack/echo which is licensed under the MIT License.
+For details, see https://github.com/labstack/echo
+You can find a copy of the License at licenses/LICENSE-echo
+
+================================================================
+For labstack/gommon
+================================================================
+This product bundles labstack/gommon which is licensed under the MIT License.
+For details, see https://github.com/labstack/gommon
+You can find a copy of the License at licenses/LICENSE-gommon
+
+================================================================
+For mattn/go-colorable
+================================================================
+This product bundles mattn/go-colorable which is licensed under the MIT License.
+For details, see https://github.com/mattn/go-colorable
+You can find a copy of the License at licenses/LICENSE-go-colorable
+
+================================================================
+For mattn/go-isatty
+================================================================
+This product bundles mattn/go-isatty which is licensed under the MIT License.
+For details, see https://github.com/mattn/go-isatty
+You can find a copy of the License at licenses/LICENSE-go-isatty
+
+================================================================
+For valyala/fasttemplate
+================================================================
+This product bundles valyala/fasttemplate which is licensed under the MIT License.
+For details, see https://github.com/valyala/fasttemplate
+You can find a copy of the License at licenses/LICENSE-fasttemplate

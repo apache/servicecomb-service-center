@@ -23,21 +23,17 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/labstack/echo"
 )
 
-type schemaHandler struct {
-}
+func SchemaHandleFunc(c echo.Context) (err error) {
+	r := c.Request()
 
-func TestSchema() http.Handler {
-	return &schemaHandler{}
-}
-
-func (sc schemaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	//	protocol:= r.Header.Get("X-InstanceProtocol")
 	//	sslActive:=r.Header.Get("X-InstanceSSL")
 	var (
 		response   *http.Response
-		err        error
 		req        *http.Request
 		instanceIP = r.Header.Get("X-InstanceIP")
 		schemaName = r.Header.Get("X-SchemaName")
@@ -55,13 +51,14 @@ func (sc schemaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "DELETE":
 		req, err = http.NewRequest(http.MethodDelete, url, r.Body)
 	default:
-		w.Write([]byte("Method not found"))
+		c.String(http.StatusNotFound, "Method not found")
 		return
 
 	}
 
 	if err != nil {
-		w.Write([]byte(fmt.Sprintf("( Error while creating request due to : %s", err)))
+		c.String(http.StatusInternalServerError,
+			fmt.Sprintf("( Error while creating request due to : %s", err))
 		return
 	}
 
@@ -74,15 +71,18 @@ func (sc schemaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	client := http.Client{Timeout: time.Second * 20}
 	response, err = client.Do(req)
 	if err != nil {
-		w.Write([]byte(fmt.Sprintf("( Error while sending request due to : %s", err)))
+		c.String(http.StatusNotFound,
+			fmt.Sprintf("( Error while sending request due to : %s", err))
 		return
 	}
 
 	respBody, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		w.Write([]byte(fmt.Sprintf("(could not fetch response body for error %s", err)))
+		c.String(http.StatusNotFound,
+			fmt.Sprintf("(could not fetch response body for error %s", err))
 		return
 	}
 
-	w.Write(respBody)
+	c.String(http.StatusOK, string(respBody))
+	return nil
 }
