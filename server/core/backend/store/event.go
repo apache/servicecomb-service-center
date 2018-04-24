@@ -18,7 +18,6 @@ package store
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"sync"
 )
 
@@ -27,7 +26,7 @@ var (
 )
 
 func init() {
-	evtProxies = make(map[StoreType]*KvEventProxy)
+	evtProxies = make(map[StoreType]*KvEventProxy, typeEnd)
 	for i := StoreType(0); i != typeEnd; i++ {
 		evtProxies[i] = &KvEventProxy{
 			evtHandleFuncs: make([]KvEventFunc, 0, 5),
@@ -35,17 +34,18 @@ func init() {
 	}
 }
 
-type KvEventFunc func(evt *KvEvent)
+type KvEventFunc func(evt KvEvent)
 
 type KvEvent struct {
 	Revision int64
-	Action   proto.EventType
-	KV       *mvccpb.KeyValue
+	Type     proto.EventType
+	Prefix   string
+	Object   interface{}
 }
 
 type KvEventHandler interface {
 	Type() StoreType
-	OnEvent(evt *KvEvent)
+	OnEvent(evt KvEvent)
 }
 
 type KvEventProxy struct {
@@ -59,7 +59,7 @@ func (h *KvEventProxy) AddHandleFunc(f KvEventFunc) {
 	h.lock.Unlock()
 }
 
-func (h *KvEventProxy) OnEvent(evt *KvEvent) {
+func (h *KvEventProxy) OnEvent(evt KvEvent) {
 	h.lock.RLock()
 	for _, f := range h.evtHandleFuncs {
 		f(evt)

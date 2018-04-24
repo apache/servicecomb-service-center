@@ -14,40 +14,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package util
+package store
 
 import (
-	"testing"
+	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
-func TestBytesToInt32(t *testing.T) {
-	bs := []byte{0, 0, 0, 1}
-	i := BytesToInt32(bs)
-	if i != 1 {
-		t.FailNow()
-	}
+var (
+	cacheSizeGauge = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: "service_center",
+			Subsystem: "local",
+			Name:      "cache_size_bytes",
+			Help:      "Local cache size summary of backend store",
+		}, []string{"instance", "resource", "type"})
+)
 
-	bs = []byte{1, 0, 0, 0}
-	i = BytesToInt32(bs)
-	if i != 1<<(3*8) {
-		t.FailNow()
-	}
+func init() {
+	prometheus.MustRegister(cacheSizeGauge)
+}
 
-	bs = []byte{0, 0, 0, 0, 1}
-	i = BytesToInt32(bs)
-	if i != 0 {
-		t.FailNow()
-	}
-
-	bs = []byte{1}
-	i = BytesToInt32(bs)
-	if i != 1 {
-		t.FailNow()
-	}
-
-	bs = []byte{1, 0}
-	i = BytesToInt32(bs)
-	if i != 1<<8 {
-		t.FailNow()
-	}
+func ReportCacheMetrics(resource, t string, obj interface{}) {
+	instance := fmt.Sprint(core.Instance.Endpoints)
+	cacheSizeGauge.WithLabelValues(instance, resource, t).Set(float64(util.Sizeof(obj)))
 }

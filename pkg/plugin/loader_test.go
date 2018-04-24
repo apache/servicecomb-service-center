@@ -17,7 +17,6 @@
 package plugin
 
 import (
-	"fmt"
 	pg "plugin"
 	"testing"
 )
@@ -25,8 +24,7 @@ import (
 func TestLoader_Init(t *testing.T) {
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Printf(`TestLoader_Init failed, %v`, err)
-			t.FailNow()
+			t.Fatalf(`TestLoader_Init failed, %v`, err)
 		}
 	}()
 	loader := Loader{}
@@ -38,15 +36,13 @@ func TestLoader_ReloadPlugins(t *testing.T) {
 	loader.Init()
 	err := loader.ReloadPlugins()
 	if err != nil {
-		fmt.Printf(`TestLoader_ReloadPlugins failed, %s`, err.Error())
-		t.FailNow()
+		t.Fatalf(`TestLoader_ReloadPlugins failed, %s`, err.Error())
 	}
 
 	loader.Dir = "xxx"
 	err = loader.ReloadPlugins()
 	if err == nil {
-		fmt.Printf(`TestLoader_ReloadPlugins failed`)
-		t.FailNow()
+		t.Fatalf(`TestLoader_ReloadPlugins failed`)
 	}
 }
 
@@ -55,8 +51,7 @@ func TestLoader_Exist(t *testing.T) {
 	loader.Init()
 	b := loader.Exist("")
 	if b {
-		fmt.Printf(`TestLoader_Exist failed`)
-		t.FailNow()
+		t.Fatalf(`TestLoader_Exist failed`)
 	}
 }
 
@@ -65,15 +60,13 @@ func TestLoader_Find(t *testing.T) {
 	loader.Init()
 	f, err := loader.Find("", "")
 	if err == nil || f != nil {
-		fmt.Printf(`TestLoader_Find failed`)
-		t.FailNow()
+		t.Fatalf(`TestLoader_Find failed`)
 	}
 
 	loader.Plugins["a"] = &wrapPlugin{&pg.Plugin{}, make(map[string]pg.Symbol)}
 	f, err = loader.Find("a", "")
 	if err == nil || f != nil {
-		fmt.Printf(`TestLoader_Find failed`)
-		t.FailNow()
+		t.Fatalf(`TestLoader_Find failed`)
 	}
 }
 
@@ -84,19 +77,16 @@ func TestSetPluginDir(t *testing.T) {
 func TestPluginLoader(t *testing.T) {
 	loader := PluginLoader()
 	if loader == nil {
-		fmt.Printf(`TestPluginLoader failed`)
-		t.FailNow()
+		t.Fatalf(`TestPluginLoader failed`)
 	}
 
 	err := Reload()
 	if err != nil {
-		fmt.Printf(`TestPluginLoader Reload failed, %s`, err)
-		t.FailNow()
+		t.Fatalf(`TestPluginLoader Reload failed, %s`, err)
 	}
 
 	f, err := FindFunc("", "")
 	if err == nil || f != nil {
-		fmt.Printf(`TestPluginLoader FindFunc failed`)
-		t.FailNow()
+		t.Fatalf(`TestPluginLoader FindFunc failed`)
 	}
 }

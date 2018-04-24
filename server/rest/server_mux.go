@@ -14,40 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package util
+package rest
 
-import (
-	"testing"
-)
+import "net/http"
 
-func TestBytesToInt32(t *testing.T) {
-	bs := []byte{0, 0, 0, 1}
-	i := BytesToInt32(bs)
-	if i != 1 {
-		t.FailNow()
-	}
+var DefaultServerMux = http.NewServeMux()
 
-	bs = []byte{1, 0, 0, 0}
-	i = BytesToInt32(bs)
-	if i != 1<<(3*8) {
-		t.FailNow()
-	}
+func RegisterServerHandleFunc(pattern string, f http.HandlerFunc) {
+	DefaultServerMux.HandleFunc(pattern, f)
+}
 
-	bs = []byte{0, 0, 0, 0, 1}
-	i = BytesToInt32(bs)
-	if i != 0 {
-		t.FailNow()
-	}
-
-	bs = []byte{1}
-	i = BytesToInt32(bs)
-	if i != 1 {
-		t.FailNow()
-	}
-
-	bs = []byte{1, 0}
-	i = BytesToInt32(bs)
-	if i != 1<<8 {
-		t.FailNow()
-	}
+func RegisterServerHandler(pattern string, h http.Handler) {
+	DefaultServerMux.Handle(pattern, h)
 }

@@ -21,12 +21,6 @@ import (
 	"time"
 )
 
-const (
-	DEFAULT_MAX_NO_EVENT_INTERVAL     = 1 // TODO it should be set to 1 for prevent etcd data is lost accidentally.
-	DEFAULT_LISTWATCH_TIMEOUT         = 30 * time.Second
-	DEFAULT_SELF_PRESERVATION_PERCENT = 0.8
-)
-
 type KvCacherCfg struct {
 	Key                string
 	InitSize           int
@@ -74,5 +68,6 @@ func DefaultKvCacherConfig() KvCacherCfg {
 		Timeout:            DEFAULT_LISTWATCH_TIMEOUT,
 		Period:             time.Second,
 		NoEventMaxInterval: DEFAULT_MAX_NO_EVENT_INTERVAL,
+		InitSize:           DEFAULT_CACHE_INIT_SIZE,
 	}
 }

@@ -100,6 +100,8 @@ type ServerConfig struct {
 	CompactIndexDelta int64  `json:"compactIndexDelta"`
 	CompactInterval   string `json:"compactInterval"`
 
+	EnablePProf bool `json:"enablePProf"`
+
 	LoggerName     string `json:"-"`
 	LogRotateSize  int64  `json:"logRotateSize"`
 	LogBackupCount int64  `json:"logBackupCount"`

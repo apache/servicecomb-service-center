@@ -28,19 +28,19 @@ import (
 func TestNewUniQueue(t *testing.T) {
 	_, err := newUniQueue(0)
 	if err == nil {
-		fail(t, "newUniQueue(0) should return error")
+		t.Fatalf("newUniQueue(0) should return error")
 	}
 	_, err = newUniQueue(math.MaxInt32)
 	if err == nil {
-		fail(t, "newUniQueue(math.MaxInt32) should return error")
+		t.Fatalf("newUniQueue(math.MaxInt32) should return error")
 	}
 	uq, err := newUniQueue(1)
 	if err != nil || uq == nil {
-		fail(t, "newUniQueue(1) should return ok")
+		t.Fatalf("newUniQueue(1) should return ok")
 	}
 	uq = NewUniQueue()
 	if uq == nil {
-		fail(t, "NewUniQueue should return ok")
+		t.Fatalf("NewUniQueue should return ok")
 	}
 }
 
@@ -48,14 +48,14 @@ func TestUniQueue_Close(t *testing.T) {
 	uq := NewUniQueue()
 	err := uq.Put(context.Background(), "abc")
 	if err != nil {
-		fail(t, "NewUniQueue should return ok")
+		t.Fatalf("NewUniQueue should return ok")
 	}
 
 	uq.Close()
 
 	item := uq.Get(context.Background())
 	if item != nil {
-		fail(t, "Get expect '%v' to 'nil' when queue closed", item)
+		t.Fatalf("Get expect '%v' to 'nil' when queue closed", item)
 	}
 
 	uq.Close()
@@ -69,16 +69,16 @@ func TestUniQueue_Get(t *testing.T) {
 	start := time.Now()
 	item := uq.Get(ctx)
 	if time.Now().Sub(start) < time.Second || item != nil {
-		fail(t, "Get should be timed out, result: %v", item)
+		t.Fatalf("Get should be timed out, result: %v", item)
 	}
 
 	err := uq.Put(context.Background(), "abc")
 	if err != nil {
-		fail(t, "Put('abc') should be ok")
+		t.Fatalf("Put('abc') should be ok")
 	}
 	err = uq.Put(context.Background(), "efg")
 	if err != nil {
-		fail(t, "Put('efg') should be ok")
+		t.Fatalf("Put('efg') should be ok")
 	}
 
 	time.Sleep(time.Second)
@@ -86,7 +86,7 @@ func TestUniQueue_Get(t *testing.T) {
 	ctx, _ = context.WithTimeout(context.Background(), time.Second)
 	item = uq.Get(ctx)
 	if item == nil || item.(string) != "efg" {
-		fail(t, "Get expect '%v' to 'efg'", item)
+		t.Fatalf("Get expect '%v' to 'efg'", item)
 	}
 }
 
@@ -96,17 +96,17 @@ func TestUniQueue_Put(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	err = uq.Put(ctx, 1)
 	if err != nil {
-		fail(t, "Put(1) should be ok")
+		t.Fatalf("Put(1) should be ok")
 	}
 	cancel()
 	err = uq.Put(ctx, 2)
 	if err == nil {
-		fail(t, "Put(2) should return 'timed out' error ")
+		t.Fatalf("Put(2) should return 'timed out' error ")
 	}
 	uq.Close()
 	err = uq.Put(context.Background(), 3)
 	if err == nil {
-		fail(t, "Put(3) should return 'channel is closed' error")
+		t.Fatalf("Put(3) should return 'channel is closed' error")
 	}
 }
 

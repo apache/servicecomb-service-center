@@ -70,7 +70,7 @@ func (s *BKvStore) newStore(t sstore.StoreType, opts ...sstore.KvCacherCfgOption
 		sstore.WithKey(TypeRoots[t]),
 		sstore.WithInitSize(s.StoreSize(t)),
 	)
-	s.newIndexer(t, sstore.NewKvCacher(opts...))
+	s.newIndexer(t, sstore.NewKvCacher(t.String(), opts...))
 }
 
 func (s *BKvStore) store(ctx context.Context) {
@@ -119,7 +119,7 @@ func (s *BKvStore) newNullStore(t sstore.StoreType) {
 }
 
 func (s *BKvStore) newIndexer(t sstore.StoreType, cacher sstore.Cacher) {
-	indexer := sstore.NewCacheIndexer(t, cacher)
+	indexer := sstore.NewCacheIndexer(cacher)
 	s.bindexers[t] = indexer
 	indexer.Run()
 }

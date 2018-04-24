@@ -17,7 +17,6 @@
 package buildin
 
 import (
-	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
 	"golang.org/x/net/context"
@@ -43,8 +42,7 @@ func TestFileCollector_Collect(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		err := fc.Collect(&zipkincore.Span{})
 		if err != nil {
-			fmt.Println(err)
-			t.FailNow()
+			t.Fatal(err)
 		}
 	}
 

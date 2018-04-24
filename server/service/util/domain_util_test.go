@@ -17,7 +17,6 @@
 package util_test
 
 import (
-	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
@@ -27,77 +26,66 @@ import (
 func TestGetDomain(t *testing.T) {
 	_, err := serviceUtil.GetAllDomainRawData(util.SetContext(context.Background(), "cacheOnly", "1"))
 	if err != nil {
-		fmt.Printf("GetAllDomainRawData WithCacheOnly failed")
-		t.FailNow()
+		t.Fatalf("GetAllDomainRawData WithCacheOnly failed")
 	}
 
 	_, err = serviceUtil.GetAllDomainRawData(context.Background())
 	if err == nil {
-		fmt.Printf("GetAllDomainRawData failed")
-		t.FailNow()
+		t.Fatalf("GetAllDomainRawData failed")
 	}
 
 	_, err = serviceUtil.GetAllDomain(util.SetContext(context.Background(), "cacheOnly", "1"))
 	if err != nil {
-		fmt.Printf("GetAllDomain WithCacheOnly failed")
-		t.FailNow()
+		t.Fatalf("GetAllDomain WithCacheOnly failed")
 	}
 
 	_, err = serviceUtil.GetAllDomain(context.Background())
 	if err == nil {
-		fmt.Printf("GetAllDomain failed")
-		t.FailNow()
+		t.Fatalf("GetAllDomain failed")
 	}
 }
 
 func TestDomainExist(t *testing.T) {
 	_, err := serviceUtil.DomainExist(util.SetContext(context.Background(), "cacheOnly", "1"), "")
 	if err != nil {
-		fmt.Printf("DomainExist WithCacheOnly failed")
-		t.FailNow()
+		t.Fatalf("DomainExist WithCacheOnly failed")
 	}
 
 	_, err = serviceUtil.DomainExist(context.Background(), "")
 	if err == nil {
-		fmt.Printf("DomainExist failed")
-		t.FailNow()
+		t.Fatalf("DomainExist failed")
 	}
 }
 
 func TestNewDomain(t *testing.T) {
 	err := serviceUtil.NewDomain(context.Background(), "")
 	if err == nil {
-		fmt.Printf("NewDomain failed")
-		t.FailNow()
+		t.Fatalf("NewDomain failed")
 	}
 }
 
 func TestProjectExist(t *testing.T) {
 	_, err := serviceUtil.ProjectExist(util.SetContext(context.Background(), "cacheOnly", "1"), "", "")
 	if err != nil {
-		fmt.Printf("DomainExist WithCacheOnly failed")
-		t.FailNow()
+		t.Fatalf("DomainExist WithCacheOnly failed")
 	}
 
 	_, err = serviceUtil.ProjectExist(context.Background(), "", "")
 	if err == nil {
-		fmt.Printf("DomainExist failed")
-		t.FailNow()
+		t.Fatalf("DomainExist failed")
 	}
 }
 
 func TestNewProject(t *testing.T) {
 	err := serviceUtil.NewProject(context.Background(), "", "")
 	if err == nil {
-		fmt.Printf("NewProject failed")
-		t.FailNow()
+		t.Fatalf("NewProject failed")
 	}
 }
 
 func TestNewDomainProject(t *testing.T) {
 	err := serviceUtil.NewDomainProject(context.Background(), "", "")
 	if err == nil {
-		fmt.Printf("NewDomainProject failed")
-		t.FailNow()
+		t.Fatalf("NewDomainProject failed")
 	}
 }

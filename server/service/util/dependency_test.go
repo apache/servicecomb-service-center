@@ -17,7 +17,6 @@
 package util
 
 import (
-	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"golang.org/x/net/context"
@@ -27,8 +26,7 @@ import (
 func TestDeleteDependencyForService(t *testing.T) {
 	_, err := DeleteDependencyForDeleteService("", "", &proto.MicroServiceKey{})
 	if err != nil {
-		fmt.Printf(`DeleteDependencyForDeleteService failed`)
-		t.FailNow()
+		t.Fatalf(`DeleteDependencyForDeleteService failed`)
 	}
 
 	_, err = updateProviderDependencyRuleUtil(
@@ -41,8 +39,7 @@ func TestDeleteDependencyForService(t *testing.T) {
 			AppId: "a",
 		}, "")
 	if err != nil {
-		fmt.Printf(`deleteDependencyRuleUtil with the same deps failed`)
-		t.FailNow()
+		t.Fatalf(`deleteDependencyRuleUtil with the same deps failed`)
 	}
 
 	_, err = updateProviderDependencyRuleUtil(
@@ -55,42 +52,36 @@ func TestDeleteDependencyForService(t *testing.T) {
 			AppId: "a",
 		}, "")
 	if err != nil {
-		fmt.Printf(`deleteDependencyRuleUtil failed`)
-		t.FailNow()
+		t.Fatalf(`deleteDependencyRuleUtil failed`)
 	}
 
 	_, err = deleteConsumerDepOfProviderRule(context.Background(), "", &proto.MicroServiceKey{}, &proto.MicroServiceKey{})
 	if err == nil {
-		fmt.Printf(`deleteConsumerDepOfProviderRule failed`)
-		t.FailNow()
+		t.Fatalf(`deleteConsumerDepOfProviderRule failed`)
 	}
 
 	_, err = deleteDepRuleUtil("", &proto.MicroServiceDependency{}, &proto.MicroServiceKey{})
 	if err != nil {
-		fmt.Printf(`deleteDepRuleUtil failed`)
-		t.FailNow()
+		t.Fatalf(`deleteDepRuleUtil failed`)
 	}
 }
 
 func TestTransferToMicroServiceDependency(t *testing.T) {
 	_, err := TransferToMicroServiceDependency(util.SetContext(context.Background(), "cacheOnly", "1"), "")
 	if err != nil {
-		fmt.Printf(`TransferToMicroServiceDependency WithCacheOnly failed`)
-		t.FailNow()
+		t.Fatalf(`TransferToMicroServiceDependency WithCacheOnly failed`)
 	}
 
 	_, err = TransferToMicroServiceDependency(context.Background(), "")
 	if err == nil {
-		fmt.Printf(`TransferToMicroServiceDependency failed`)
-		t.FailNow()
+		t.Fatalf(`TransferToMicroServiceDependency failed`)
 	}
 }
 
 func TestEqualServiceDependency(t *testing.T) {
 	b := equalServiceDependency(&proto.MicroServiceKey{}, &proto.MicroServiceKey{})
 	if !b {
-		fmt.Printf(`equalServiceDependency failed`)
-		t.FailNow()
+		t.Fatalf(`equalServiceDependency failed`)
 	}
 
 	b = equalServiceDependency(&proto.MicroServiceKey{
@@ -99,8 +90,7 @@ func TestEqualServiceDependency(t *testing.T) {
 		AppId: "b",
 	})
 	if b {
-		fmt.Printf(`equalServiceDependency failed`)
-		t.FailNow()
+		t.Fatalf(`equalServiceDependency failed`)
 	}
 }
 
@@ -109,28 +99,24 @@ func TestCreateDependencyRule(t *testing.T) {
 		Consumer: &proto.MicroServiceKey{},
 	})
 	if err != nil {
-		fmt.Printf(`CreateDependencyRule failed`)
-		t.FailNow()
+		t.Fatalf(`CreateDependencyRule failed`)
 	}
 
 	err = AddDependencyRule(context.Background(), &Dependency{
 		Consumer: &proto.MicroServiceKey{},
 	})
 	if err != nil {
-		fmt.Printf(`AddDependencyRule failed`)
-		t.FailNow()
+		t.Fatalf(`AddDependencyRule failed`)
 	}
 
 	err = AddServiceVersionRule(context.Background(), "", &proto.MicroService{}, &proto.MicroServiceKey{})
 	if err == nil {
-		fmt.Printf(`AddServiceVersionRule failed`)
-		t.FailNow()
+		t.Fatalf(`AddServiceVersionRule failed`)
 	}
 
 	_, err = addDepRuleUtil("", &proto.MicroServiceDependency{}, &proto.MicroServiceKey{})
 	if err != nil {
-		fmt.Printf(`addDepRuleUtil failed`)
-		t.FailNow()
+		t.Fatalf(`addDepRuleUtil failed`)
 	}
 
 	b, err := containServiceDependency([]*proto.MicroServiceKey{
@@ -139,8 +125,7 @@ func TestCreateDependencyRule(t *testing.T) {
 		AppId: "b",
 	})
 	if b {
-		fmt.Printf(`containServiceDependency contain failed`)
-		t.FailNow()
+		t.Fatalf(`containServiceDependency contain failed`)
 	}
 
 	b, err = containServiceDependency([]*proto.MicroServiceKey{
@@ -149,14 +134,12 @@ func TestCreateDependencyRule(t *testing.T) {
 		AppId: "a",
 	})
 	if !b {
-		fmt.Printf(`containServiceDependency not contain failed`)
-		t.FailNow()
+		t.Fatalf(`containServiceDependency not contain failed`)
 	}
 
 	_, err = containServiceDependency(nil, nil)
 	if err == nil {
-		fmt.Printf(`containServiceDependency invalid failed`)
-		t.FailNow()
+		t.Fatalf(`containServiceDependency invalid failed`)
 	}
 
 	ok := diffServiceVersion(&proto.MicroServiceKey{
@@ -169,20 +152,17 @@ func TestCreateDependencyRule(t *testing.T) {
 		Version:     "2",
 	})
 	if !ok {
-		fmt.Printf(`diffServiceVersion failed`)
-		t.FailNow()
+		t.Fatalf(`diffServiceVersion failed`)
 	}
 
 	err = validateMicroServiceKey(&proto.MicroServiceKey{}, false)
 	if err == nil {
-		fmt.Printf(`validateMicroServiceKey false invalid failed`)
-		t.FailNow()
+		t.Fatalf(`validateMicroServiceKey false invalid failed`)
 	}
 
 	err = validateMicroServiceKey(&proto.MicroServiceKey{}, true)
 	if err == nil {
-		fmt.Printf(`validateMicroServiceKey true invalid failed`)
-		t.FailNow()
+		t.Fatalf(`validateMicroServiceKey true invalid failed`)
 	}
 
 	err = validateMicroServiceKey(&proto.MicroServiceKey{
@@ -191,8 +171,7 @@ func TestCreateDependencyRule(t *testing.T) {
 		Version:     "latest",
 	}, true)
 	if err != nil {
-		fmt.Printf(`validateMicroServiceKey true failed`)
-		t.FailNow()
+		t.Fatalf(`validateMicroServiceKey true failed`)
 	}
 
 	err = validateMicroServiceKey(&proto.MicroServiceKey{
@@ -201,14 +180,12 @@ func TestCreateDependencyRule(t *testing.T) {
 		Version:     "1.0.0",
 	}, false)
 	if err != nil {
-		fmt.Printf(`validateMicroServiceKey false failed`)
-		t.FailNow()
+		t.Fatalf(`validateMicroServiceKey false failed`)
 	}
 
 	ok = isDependencyAll(&proto.MicroServiceDependency{})
 	if ok {
-		fmt.Printf(`isDependencyAll not * failed`)
-		t.FailNow()
+		t.Fatalf(`isDependencyAll not * failed`)
 	}
 
 	ok = isDependencyAll(&proto.MicroServiceDependency{
@@ -219,8 +196,7 @@ func TestCreateDependencyRule(t *testing.T) {
 		},
 	})
 	if !ok {
-		fmt.Printf(`isDependencyAll * failed`)
-		t.FailNow()
+		t.Fatalf(`isDependencyAll * failed`)
 	}
 
 	ok = isExist([]*proto.MicroServiceKey{
@@ -231,24 +207,21 @@ func TestCreateDependencyRule(t *testing.T) {
 		ServiceName: "*",
 	})
 	if !ok {
-		fmt.Printf(`isExist failed`)
-		t.FailNow()
+		t.Fatalf(`isExist failed`)
 	}
 }
 
 func TestBadParamsResponse(t *testing.T) {
 	p := BadParamsResponse("a")
 	if p == nil {
-		fmt.Printf(`BadParamsResponse failed`)
-		t.FailNow()
+		t.Fatalf(`BadParamsResponse failed`)
 	}
 }
 
 func TestParamsChecker(t *testing.T) {
 	p := ParamsChecker(nil, nil)
 	if p == nil || p.Response.Code == proto.Response_SUCCESS {
-		fmt.Printf(`ParamsChecker invalid failed`)
-		t.FailNow()
+		t.Fatalf(`ParamsChecker invalid failed`)
 	}
 
 	p = ParamsChecker(&proto.MicroServiceKey{
@@ -257,8 +230,7 @@ func TestParamsChecker(t *testing.T) {
 		Version:     "1.0.0",
 	}, nil)
 	if p == nil || p.Response.Code == proto.Response_SUCCESS {
-		fmt.Printf(`ParamsChecker invalid failed`)
-		t.FailNow()
+		t.Fatalf(`ParamsChecker invalid failed`)
 	}
 
 	p = ParamsChecker(&proto.MicroServiceKey{
@@ -269,8 +241,7 @@ func TestParamsChecker(t *testing.T) {
 		{ServiceName: "*"},
 	})
 	if p != nil {
-		fmt.Printf(`ParamsChecker * failed`)
-		t.FailNow()
+		t.Fatalf(`ParamsChecker * failed`)
 	}
 
 	p = ParamsChecker(&proto.MicroServiceKey{
@@ -281,8 +252,7 @@ func TestParamsChecker(t *testing.T) {
 		{},
 	})
 	if p == nil {
-		fmt.Printf(`ParamsChecker invalid provider key failed`)
-		t.FailNow()
+		t.Fatalf(`ParamsChecker invalid provider key failed`)
 	}
 
 	p = ParamsChecker(&proto.MicroServiceKey{
@@ -294,30 +264,26 @@ func TestParamsChecker(t *testing.T) {
 		{ServiceName: "a", Version: "1"},
 	})
 	if p == nil {
-		fmt.Printf(`ParamsChecker duplicate provider key failed`)
-		t.FailNow()
+		t.Fatalf(`ParamsChecker duplicate provider key failed`)
 	}
 }
 
 func TestServiceDependencyRuleExist(t *testing.T) {
 	_, err := ProviderDependencyRuleExist(util.SetContext(context.Background(), "cacheOnly", "1"), &proto.MicroServiceKey{}, &proto.MicroServiceKey{})
 	if err != nil {
-		fmt.Printf(`ServiceDependencyRuleExist WithCacheOnly failed`)
-		t.FailNow()
+		t.Fatalf(`ServiceDependencyRuleExist WithCacheOnly failed`)
 	}
 
 	_, err = ProviderDependencyRuleExist(context.Background(), &proto.MicroServiceKey{}, &proto.MicroServiceKey{})
 	if err == nil {
-		fmt.Printf(`ServiceDependencyRuleExist failed`)
-		t.FailNow()
+		t.Fatalf(`ServiceDependencyRuleExist failed`)
 	}
 }
 
 func TestUpdateServiceForAddDependency(t *testing.T) {
 	_, _, err := updateDepRuleUtil("", &proto.MicroServiceDependency{}, &proto.MicroServiceKey{})
 	if err != nil {
-		fmt.Printf(`updateDepRuleUtil failed`)
-		t.FailNow()
+		t.Fatalf(`updateDepRuleUtil failed`)
 	}
 
 	old := isNeedUpdate([]*proto.MicroServiceKey{
@@ -332,28 +298,24 @@ func TestUpdateServiceForAddDependency(t *testing.T) {
 		Version:     "2",
 	})
 	if old == nil {
-		fmt.Printf(`isNeedUpdate failed`)
-		t.FailNow()
+		t.Fatalf(`isNeedUpdate failed`)
 	}
 }
 
 func TestFilter(t *testing.T) {
 	_, _, err := getConsumerIdsWithFilter(context.Background(), "", &proto.MicroService{}, noFilter)
 	if err == nil {
-		fmt.Printf(`getConsumerIdsWithFilter failed`)
-		t.FailNow()
+		t.Fatalf(`getConsumerIdsWithFilter failed`)
 	}
 
 	_, _, err = filterConsumerIds(context.Background(), []string{}, noFilter)
 	if err != nil {
-		fmt.Printf(`filterConsumerIds invalid failed`)
-		t.FailNow()
+		t.Fatalf(`filterConsumerIds invalid failed`)
 	}
 
 	_, _, err = filterConsumerIds(context.Background(), []string{"a"}, noFilter)
 	if err != nil {
-		fmt.Printf(`filterConsumerIds invalid failed`)
-		t.FailNow()
+		t.Fatalf(`filterConsumerIds invalid failed`)
 	}
 
 	rf := RuleFilter{
@@ -363,8 +325,7 @@ func TestFilter(t *testing.T) {
 	}
 	_, _, err = filterConsumerIds(context.Background(), []string{"a"}, rf.Filter)
 	if err != nil {
-		fmt.Printf(`filterConsumerIds invalid failed`)
-		t.FailNow()
+		t.Fatalf(`filterConsumerIds invalid failed`)
 	}
 }
 
@@ -381,8 +342,7 @@ func TestDependency(t *testing.T) {
 	d.AddConsumerOfProviderRule()
 	err := d.UpdateProvidersRuleOfConsumer("")
 	if err == nil {
-		fmt.Printf(`Dependency_UpdateProvidersRuleOfConsumer failed`)
-		t.FailNow()
+		t.Fatalf(`Dependency_UpdateProvidersRuleOfConsumer failed`)
 	}
 
 	dr := &DependencyRelation{
@@ -392,8 +352,7 @@ func TestDependency(t *testing.T) {
 	}
 	_, err = dr.GetDependencyProviders()
 	if err != nil {
-		fmt.Printf(`DependencyRelation_GetDependencyProviders failed`)
-		t.FailNow()
+		t.Fatalf(`DependencyRelation_GetDependencyProviders failed`)
 	}
 
 	_, err = dr.getDependencyProviderIds([]*proto.MicroServiceKey{
@@ -402,34 +361,29 @@ func TestDependency(t *testing.T) {
 		{ServiceName: "b", Version: "latest"},
 	})
 	if err != nil {
-		fmt.Printf(`DependencyRelation_getDependencyProviderIds * WithCacheOnly failed`)
-		t.FailNow()
+		t.Fatalf(`DependencyRelation_getDependencyProviderIds * WithCacheOnly failed`)
 	}
 	_, err = dr.getDependencyProviderIds([]*proto.MicroServiceKey{
 		{ServiceName: "a", Version: "1.0.0"},
 		{ServiceName: "b", Version: "latest"},
 	})
 	if err != nil {
-		fmt.Printf(`DependencyRelation_getDependencyProviderIds WithCacheOnly failed`)
-		t.FailNow()
+		t.Fatalf(`DependencyRelation_getDependencyProviderIds WithCacheOnly failed`)
 	}
 
 	_, err = dr.GetDependencyConsumers()
 	if err != nil {
-		fmt.Printf(`DependencyRelation_GetDependencyConsumers WithCacheOnly failed`)
-		t.FailNow()
+		t.Fatalf(`DependencyRelation_GetDependencyConsumers WithCacheOnly failed`)
 	}
 
 	_, err = dr.getServiceByMicroServiceKey(&proto.MicroServiceKey{})
 	if err != nil {
-		fmt.Printf(`DependencyRelation_getServiceByMicroServiceKey WithCacheOnly failed`)
-		t.FailNow()
+		t.Fatalf(`DependencyRelation_getServiceByMicroServiceKey WithCacheOnly failed`)
 	}
 
 	_, err = dr.getConsumerOfSameServiceNameAndAppId(&proto.MicroServiceKey{})
 	if err != nil {
-		fmt.Printf(`DependencyRelation_getConsumerOfSameServiceNameAndAppId WithCacheOnly failed`)
-		t.FailNow()
+		t.Fatalf(`DependencyRelation_getConsumerOfSameServiceNameAndAppId WithCacheOnly failed`)
 	}
 
 	dr = &DependencyRelation{
@@ -441,34 +395,29 @@ func TestDependency(t *testing.T) {
 		{ServiceName: "*"},
 	})
 	if err == nil {
-		fmt.Printf(`DependencyRelation_getDependencyProviderIds * failed`)
-		t.FailNow()
+		t.Fatalf(`DependencyRelation_getDependencyProviderIds * failed`)
 	}
 	_, err = dr.getDependencyProviderIds([]*proto.MicroServiceKey{
 		{ServiceName: "a", Version: "1.0.0"},
 		{ServiceName: "b", Version: "latest"},
 	})
 	if err == nil {
-		fmt.Printf(`DependencyRelation_getDependencyProviderIds failed`)
-		t.FailNow()
+		t.Fatalf(`DependencyRelation_getDependencyProviderIds failed`)
 	}
 
 	_, err = dr.GetDependencyConsumers()
 	if err == nil {
-		fmt.Printf(`DependencyRelation_GetDependencyConsumers failed`)
-		t.FailNow()
+		t.Fatalf(`DependencyRelation_GetDependencyConsumers failed`)
 	}
 
 	_, err = dr.getServiceByMicroServiceKey(&proto.MicroServiceKey{})
 	if err == nil {
-		fmt.Printf(`DependencyRelation_getServiceByMicroServiceKey failed`)
-		t.FailNow()
+		t.Fatalf(`DependencyRelation_getServiceByMicroServiceKey failed`)
 	}
 
 	_, err = dr.getConsumerOfSameServiceNameAndAppId(&proto.MicroServiceKey{})
 	if err == nil {
-		fmt.Printf(`DependencyRelation_getConsumerOfSameServiceNameAndAppId failed`)
-		t.FailNow()
+		t.Fatalf(`DependencyRelation_getConsumerOfSameServiceNameAndAppId failed`)
 	}
 
 	dr = &DependencyRelation{
@@ -477,8 +426,7 @@ func TestDependency(t *testing.T) {
 	}
 	_, err = dr.getDependencyConsumersOfProvider()
 	if err == nil {
-		fmt.Printf(`DependencyRelation_getDependencyConsumersOfProvider failed`)
-		t.FailNow()
+		t.Fatalf(`DependencyRelation_getDependencyConsumersOfProvider failed`)
 	}
 }
 
@@ -488,7 +436,6 @@ func TestDependencyRelationFilterOpt(t *testing.T) {
 		WithoutSelfDependency(),
 	)
 	if !op.NonSelf || !op.SameDomainProject {
-		fmt.Printf(`toDependencyRelationFilterOpt failed`)
-		t.FailNow()
+		t.Fatalf(`toDependencyRelationFilterOpt failed`)
 	}
 }

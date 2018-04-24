@@ -14,40 +14,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package util
+package store
 
-import (
-	"testing"
+var (
+	NullCache  = &nullCache{}
+	NullCacher = &nullCacher{}
+	closedCh   = make(chan struct{})
 )
 
-func TestBytesToInt32(t *testing.T) {
-	bs := []byte{0, 0, 0, 1}
-	i := BytesToInt32(bs)
-	if i != 1 {
-		t.FailNow()
-	}
+func init() {
+	close(closedCh)
+}
 
-	bs = []byte{1, 0, 0, 0}
-	i = BytesToInt32(bs)
-	if i != 1<<(3*8) {
-		t.FailNow()
-	}
+type nullCache struct {
+}
 
-	bs = []byte{0, 0, 0, 0, 1}
-	i = BytesToInt32(bs)
-	if i != 0 {
-		t.FailNow()
-	}
+func (n *nullCache) Version() int64 {
+	return 0
+}
 
-	bs = []byte{1}
-	i = BytesToInt32(bs)
-	if i != 1 {
-		t.FailNow()
-	}
+func (n *nullCache) Data(interface{}) interface{} {
+	return nil
+}
 
-	bs = []byte{1, 0}
-	i = BytesToInt32(bs)
-	if i != 1<<8 {
-		t.FailNow()
-	}
+func (n *nullCache) Have(interface{}) bool {
+	return false
+}
+
+func (n *nullCache) Size() int {
+	return 0
+}
+
+type nullCacher struct {
+}
+
+func (n *nullCacher) Name() string {
+	return ""
+}
+
+func (n *nullCacher) Cache() Cache {
+	return NullCache
+}
+
+func (n *nullCacher) Run() {}
+
+func (n *nullCacher) Stop() {}
+
+func (n *nullCacher) Ready() <-chan struct{} {
+	return closedCh
 }

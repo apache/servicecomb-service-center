@@ -19,73 +19,12 @@ package store
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/async"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
-	"strconv"
 	"sync"
 )
-
-const (
-	DOMAIN StoreType = iota
-	PROJECT
-	SERVICE
-	SERVICE_INDEX
-	SERVICE_ALIAS
-	SERVICE_TAG
-	RULE
-	RULE_INDEX
-	DEPENDENCY
-	DEPENDENCY_RULE
-	DEPENDENCY_QUEUE
-	SCHEMA // big data should not be stored in memory.
-	SCHEMA_SUMMARY
-	INSTANCE
-	LEASE
-	ENDPOINTS
-	typeEnd
-)
-
-const TIME_FORMAT = "15:04:05.000"
-
-var TypeNames = []string{
-	SERVICE:          "SERVICE",
-	INSTANCE:         "INSTANCE",
-	DOMAIN:           "DOMAIN",
-	SCHEMA:           "SCHEMA",
-	SCHEMA_SUMMARY:   "SCHEMA_SUMMARY",
-	RULE:             "RULE",
-	LEASE:            "LEASE",
-	SERVICE_INDEX:    "SERVICE_INDEX",
-	SERVICE_ALIAS:    "SERVICE_ALIAS",
-	SERVICE_TAG:      "SERVICE_TAG",
-	RULE_INDEX:       "RULE_INDEX",
-	DEPENDENCY:       "DEPENDENCY",
-	DEPENDENCY_RULE:  "DEPENDENCY_RULE",
-	DEPENDENCY_QUEUE: "DEPENDENCY_QUEUE",
-	PROJECT:          "PROJECT",
-	ENDPOINTS:        "ENDPOINTS",
-}
-
-var TypeRoots = map[StoreType]string{
-	SERVICE:          apt.GetServiceRootKey(""),
-	INSTANCE:         apt.GetInstanceRootKey(""),
-	DOMAIN:           apt.GetDomainRootKey() + "/",
-	SCHEMA:           apt.GetServiceSchemaRootKey(""),
-	SCHEMA_SUMMARY:   apt.GetServiceSchemaSummaryRootKey(""),
-	RULE:             apt.GetServiceRuleRootKey(""),
-	LEASE:            apt.GetInstanceLeaseRootKey(""),
-	SERVICE_INDEX:    apt.GetServiceIndexRootKey(""),
-	SERVICE_ALIAS:    apt.GetServiceAliasRootKey(""),
-	SERVICE_TAG:      apt.GetServiceTagRootKey(""),
-	RULE_INDEX:       apt.GetServiceRuleIndexRootKey(""),
-	DEPENDENCY:       apt.GetServiceDependencyRootKey(""),
-	DEPENDENCY_RULE:  apt.GetServiceDependencyRuleRootKey(""),
-	DEPENDENCY_QUEUE: apt.GetServiceDependencyQueueRootKey(""),
-	PROJECT:          apt.GetProjectRootKey(""),
-	ENDPOINTS:        apt.GetEndpointsRootKey(""),
-}
 
 var store = &KvStore{}
 
@@ -93,15 +32,6 @@ func init() {
 	store.Initialize()
 
 	AddEventHandleFunc(LEASE, store.onLeaseEvent)
-}
-
-type StoreType int
-
-func (st StoreType) String() string {
-	if int(st) < len(TypeNames) {
-		return TypeNames[st]
-	}
-	return "TYPE" + strconv.Itoa(int(st))
 }
 
 type KvStore struct {
@@ -124,26 +54,21 @@ func (s *KvStore) Initialize() {
 	}
 }
 
-func (s *KvStore) dispatchEvent(t StoreType, evt *KvEvent) {
+func (s *KvStore) dispatchEvent(t StoreType, evt KvEvent) {
 	s.indexers[t].OnCacheEvent(evt)
 	EventProxy(t).OnEvent(evt)
 }
 
 func (s *KvStore) newStore(t StoreType, opts ...KvCacherCfgOption) {
-	opts = append(opts,
-		WithKey(TypeRoots[t]),
-		WithInitSize(s.StoreSize(t)),
-		WithEventFunc(func(evt *KvEvent) { s.dispatchEvent(t, evt) }),
-	)
-	s.newIndexer(t, NewKvCacher(opts...))
+	s.newIndexBuilder(t, NewKvCacher(t.String(), s.getKvCacherCfgOptions(t)...))
 }
 
 func (s *KvStore) newNullStore(t StoreType) {
-	s.newIndexer(t, NullCacher)
+	s.newIndexBuilder(t, NullCacher)
 }
 
-func (s *KvStore) newIndexer(t StoreType, cacher Cacher) {
-	indexer := NewCacheIndexer(t, cacher)
+func (s *KvStore) newIndexBuilder(t StoreType, cacher Cacher) {
+	indexer := NewCacheIndexer(cacher)
 	s.indexers[t] = indexer
 	indexer.Run()
 }
@@ -153,15 +78,19 @@ func (s *KvStore) Run() {
 	s.asyncTaskSvc.Run()
 }
 
-func (s *KvStore) StoreSize(t StoreType) int {
+func (s *KvStore) getKvCacherCfgOptions(t StoreType) (opts []KvCacherCfgOption) {
 	switch t {
-	case DOMAIN:
-		return 10
-	case INSTANCE, LEASE:
-		return 1000
-	default:
-		return 100
+	case INSTANCE:
+		opts = append(opts, WithDeferHandler(s.SelfPreservationHandler()))
 	}
+	sz := TypeInitSize[t]
+	if sz > 0 {
+		opts = append(opts, WithInitSize(sz))
+	}
+	opts = append(opts,
+		WithKey(TypeRoots[t]),
+		WithEventFunc(func(evt KvEvent) { s.dispatchEvent(t, evt) }))
+	return
 }
 
 func (s *KvStore) SelfPreservationHandler() DeferHandler {
@@ -171,14 +100,17 @@ func (s *KvStore) SelfPreservationHandler() DeferHandler {
 func (s *KvStore) store(ctx context.Context) {
 	for t := StoreType(0); t != typeEnd; t++ {
 		switch t {
-		case INSTANCE:
-			s.newStore(t, WithDeferHandler(s.SelfPreservationHandler()))
 		case SCHEMA:
 			continue
 		default:
 			s.newStore(t)
 		}
 	}
+
+	s.wait(ctx)
+}
+
+func (s *KvStore) wait(ctx context.Context) {
 	for _, i := range s.indexers {
 		select {
 		case <-ctx.Done():
@@ -191,18 +123,13 @@ func (s *KvStore) store(ctx context.Context) {
 	util.Logger().Debugf("all indexers are ready")
 }
 
-func (s *KvStore) onLeaseEvent(evt *KvEvent) {
-	if evt.Action != pb.EVT_DELETE {
+func (s *KvStore) onLeaseEvent(evt KvEvent) {
+	if evt.Type != pb.EVT_DELETE {
 		return
 	}
 
-	key := util.BytesToStringWithNoCopy(evt.KV.Key)
-	leaseID := util.BytesToStringWithNoCopy(evt.KV.Value)
-
+	key := util.BytesToStringWithNoCopy(evt.Object.(*mvccpb.KeyValue).Key)
 	s.asyncTaskSvc.DeferRemove(ToLeaseAsyncTaskKey(key))
-
-	util.Logger().Debugf("push task to async remove queue successfully, key %s %s [%s] event",
-		key, leaseID, evt.Action)
 }
 func (s *KvStore) closed() bool {
 	return s.isClose

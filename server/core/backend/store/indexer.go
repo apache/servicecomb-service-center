@@ -28,11 +28,6 @@ import (
 	"time"
 )
 
-const (
-	DEFAULT_MAX_EVENT_COUNT   = 1000
-	DEFAULT_ADD_QUEUE_TIMEOUT = 5 * time.Second
-)
-
 var defaultRootKeys map[string]struct{}
 
 func init() {
@@ -45,10 +40,9 @@ func init() {
 type Indexer struct {
 	BuildTimeout     time.Duration
 	cacher           Cacher
-	cacheType        StoreType
 	prefixIndex      map[string]map[string]struct{}
 	prefixLock       sync.RWMutex
-	prefixBuildQueue chan *KvEvent
+	prefixBuildQueue chan KvEvent
 	goroutine        *util.GoRoutine
 	ready            chan struct{}
 	isClose          bool
@@ -63,7 +57,7 @@ func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (
 		op.Revision > 0 ||
 		(op.Offset >= 0 && op.Limit > 0) {
 		util.Logger().Debugf("search %s match special options, request etcd server, opts: %s",
-			i.cacheType, op)
+			i.cacher.Name(), op)
 		return backend.Registry().Do(ctx, opts...)
 	}
 
@@ -78,7 +72,7 @@ func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (
 		}
 
 		util.Logger().Debugf("can not find any key from %s cache with prefix, request etcd server, key: %s",
-			i.cacheType, key)
+			i.cacher.Name(), key)
 		return backend.Registry().Do(ctx, opts...)
 	}
 
@@ -98,7 +92,7 @@ func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (
 			return resp, nil
 		}
 
-		util.Logger().Debugf("%s cache does not store this key, request etcd server, key: %s", i.cacheType, key)
+		util.Logger().Debugf("%s cache does not store this key, request etcd server, key: %s", i.cacher.Name(), key)
 		return backend.Registry().Do(ctx, opts...)
 	}
 
@@ -109,7 +103,7 @@ func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (
 		}
 
 		util.Logger().Debugf("do not match any key in %s cache store, request etcd server, key: %s",
-			i.cacheType, key)
+			i.cacher.Name(), key)
 		return backend.Registry().Do(ctx, opts...)
 	}
 
@@ -163,8 +157,8 @@ func (i *Indexer) searchPrefixKeyWithCache(ctx context.Context, op registry.Plug
 	return resp, nil
 }
 
-func (i *Indexer) OnCacheEvent(evt *KvEvent) {
-	switch evt.Action {
+func (i *Indexer) OnCacheEvent(evt KvEvent) {
+	switch evt.Type {
 	case pb.EVT_INIT, pb.EVT_CREATE, pb.EVT_DELETE:
 	default:
 		return
@@ -178,9 +172,9 @@ func (i *Indexer) OnCacheEvent(evt *KvEvent) {
 	ctx, _ := context.WithTimeout(context.Background(), i.BuildTimeout)
 	select {
 	case <-ctx.Done():
-		key := util.BytesToStringWithNoCopy(evt.KV.Key)
+		key := util.BytesToStringWithNoCopy(evt.Object.(*mvccpb.KeyValue).Key)
 		util.Logger().Warnf(nil, "add event to build index queue timed out(%s), key is %s [%s] event",
-			i.BuildTimeout, key, evt.Action)
+			i.BuildTimeout, key, evt.Type)
 	case i.prefixBuildQueue <- evt:
 	}
 }
@@ -197,11 +191,11 @@ func (i *Indexer) buildIndex() {
 					return
 				}
 				t := time.Now()
-				key := util.BytesToStringWithNoCopy(evt.KV.Key)
+				key := util.BytesToStringWithNoCopy(evt.Object.(*mvccpb.KeyValue).Key)
 				prefix := key[:strings.LastIndex(key[:len(key)-1], "/")+1]
 
 				i.prefixLock.Lock()
-				switch evt.Action {
+				switch evt.Type {
 				case pb.EVT_DELETE:
 					i.deletePrefixKey(prefix, key)
 				default:
@@ -210,10 +204,14 @@ func (i *Indexer) buildIndex() {
 				i.prefixLock.Unlock()
 
 				util.LogNilOrWarnf(t, "too long to rebuild(action: %s) index[%d], key is %s",
-					evt.Action, key, len(i.prefixIndex))
+					evt.Type, key, len(i.prefixIndex))
+			case <-time.After(10 * time.Second):
+				i.prefixLock.RLock()
+				ReportCacheMetrics(i.cacher.Name(), "index", i.prefixIndex)
+				i.prefixLock.RUnlock()
 			}
 		}
-		util.Logger().Debugf("build %s index goroutine is stopped", i.cacheType)
+		util.Logger().Debugf("build %s index goroutine is stopped", i.cacher.Name())
 	})
 }
 
@@ -310,13 +308,12 @@ func (i *Indexer) Ready() <-chan struct{} {
 	return i.ready
 }
 
-func NewCacheIndexer(t StoreType, cr Cacher) *Indexer {
+func NewCacheIndexer(cr Cacher) *Indexer {
 	return &Indexer{
 		BuildTimeout:     DEFAULT_ADD_QUEUE_TIMEOUT,
 		cacher:           cr,
-		cacheType:        t,
 		prefixIndex:      make(map[string]map[string]struct{}, DEFAULT_MAX_EVENT_COUNT),
-		prefixBuildQueue: make(chan *KvEvent, DEFAULT_MAX_EVENT_COUNT),
+		prefixBuildQueue: make(chan KvEvent, DEFAULT_MAX_EVENT_COUNT),
 		goroutine:        util.NewGo(context.Background()),
 		ready:            make(chan struct{}),
 		isClose:          true,

@@ -32,7 +32,7 @@ func TestGoRoutine_Do(t *testing.T) {
 		defer close(stopCh1)
 		select {
 		case <-ctx.Done():
-			fail(t, "ctx should not be done.")
+			t.Fatalf("ctx should not be done.")
 		case <-time.After(time.Second):
 		}
 	})
@@ -47,7 +47,7 @@ func TestGoRoutine_Do(t *testing.T) {
 		select {
 		case <-ctx.Done():
 		case <-time.After(time.Second):
-			fail(t, "time out to wait stopCh2 close.")
+			t.Fatalf("time out to wait stopCh2 close.")
 		}
 	})
 	cancel()
@@ -62,7 +62,7 @@ func TestGoRoutine_Do(t *testing.T) {
 		select {
 		case <-ctx.Done():
 		case <-time.After(time.Second):
-			fail(t, "time out to wait ctx done.")
+			t.Fatalf("time out to wait ctx done.")
 		}
 	})
 	<-stopCh3
@@ -92,7 +92,7 @@ func TestGoRoutine_Wait(t *testing.T) {
 	test.Wait()
 	fmt.Println(resultArr)
 	if len(resultArr) != MAX {
-		fail(t, "fail to wait all goroutines finish.")
+		t.Fatalf("fail to wait all goroutines finish.")
 	}
 }
 
@@ -102,7 +102,7 @@ func TestGoRoutine_Close(t *testing.T) {
 		select {
 		case <-ctx.Done():
 		case <-time.After(time.Second):
-			fail(t, "time out to wait ctx close.")
+			t.Fatalf("time out to wait ctx close.")
 		}
 	})
 	test.Close(true)

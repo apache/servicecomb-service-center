@@ -27,15 +27,6 @@ import (
 	"time"
 )
 
-const EVENT_BUS_MAX_SIZE = 1000
-
-type Event struct {
-	Revision int64
-	Type     proto.EventType
-	Prefix   string
-	Object   interface{}
-}
-
 type ListOptions struct {
 	Timeout time.Duration
 	Context context.Context
@@ -52,10 +43,12 @@ type ListWatcher struct {
 	rev int64
 }
 
-func (lw *ListWatcher) List(op *ListOptions) ([]*mvccpb.KeyValue, error) {
+func (lw *ListWatcher) List(op ListOptions) ([]*mvccpb.KeyValue, error) {
 	otCtx, _ := context.WithTimeout(op.Context, op.Timeout)
 	resp, err := lw.Client.Do(otCtx, registry.WatchPrefixOpOptions(lw.Key)...)
 	if err != nil {
+		util.Logger().Errorf(err, "list key %s failed, rev: %d->0", lw.Key, lw.Revision())
+		lw.setRevision(0)
 		return nil, err
 	}
 	lw.setRevision(resp.Revision)
@@ -73,27 +66,28 @@ func (lw *ListWatcher) setRevision(rev int64) {
 	lw.rev = rev
 }
 
-func (lw *ListWatcher) Watch(op *ListOptions) *Watcher {
+func (lw *ListWatcher) Watch(op ListOptions) *Watcher {
 	return newWatcher(lw, op)
 }
 
-func (lw *ListWatcher) doWatch(ctx context.Context, f func(evt []*Event)) error {
+func (lw *ListWatcher) doWatch(ctx context.Context, f func(evt []KvEvent)) error {
+	rev := lw.Revision()
 	opts := append(
 		registry.WatchPrefixOpOptions(lw.Key),
-		registry.WithRev(lw.Revision()+1),
+		registry.WithRev(rev+1),
 		registry.WithWatchCallback(
 			func(message string, resp *registry.PluginResponse) error {
 				if resp == nil || len(resp.Kvs) == 0 {
 					return fmt.Errorf("unknown event %s", resp)
 				}
 
-				util.Logger().Infof("key %s: got a watch response %s from etcd server", lw.Key, resp)
+				util.Logger().Infof("watch prefix key %s, start rev %d+1, event: %s", lw.Key, rev, resp)
 
 				lw.setRevision(resp.Revision)
 
-				evts := make([]*Event, len(resp.Kvs))
+				evts := make([]KvEvent, len(resp.Kvs))
 				for i, kv := range resp.Kvs {
-					evt := &Event{Prefix: lw.Key, Revision: kv.ModRevision}
+					evt := KvEvent{Prefix: lw.Key, Revision: kv.ModRevision}
 					switch {
 					case resp.Action == registry.Put && kv.Version == 1:
 						evt.Type, evt.Object = proto.EVT_CREATE, kv
@@ -111,23 +105,25 @@ func (lw *ListWatcher) doWatch(ctx context.Context, f func(evt []*Event)) error 
 			}))
 
 	err := lw.Client.Watch(ctx, opts...)
-	if err != nil { // compact可能会导致watch失败
+	if err != nil { // compact可能会导致watch失败 or message body size lager than 4MB
+		util.Logger().Errorf(err, "watch key %s failed, start rev: %d+1->%d->0", lw.Key, rev, lw.Revision())
+
 		lw.setRevision(0)
-		f([]*Event{errEvent(lw.Key, err)})
+		f([]KvEvent{errEvent(lw.Key, err)})
 	}
 	return err
 }
 
 type Watcher struct {
-	ListOps *ListOptions
+	ListOps ListOptions
 	lw      *ListWatcher
-	bus     chan []*Event
+	bus     chan []KvEvent
 	stopCh  chan struct{}
 	stop    bool
 	mux     sync.Mutex
 }
 
-func (w *Watcher) EventBus() <-chan []*Event {
+func (w *Watcher) EventBus() <-chan []KvEvent {
 	return w.bus
 }
 
@@ -148,7 +144,7 @@ func (w *Watcher) process(_ context.Context) {
 	}
 }
 
-func (w *Watcher) sendEvent(evts []*Event) {
+func (w *Watcher) sendEvent(evts []KvEvent) {
 	defer util.RecoverAndReport()
 	w.bus <- evts
 }
@@ -165,19 +161,19 @@ func (w *Watcher) Stop() {
 	w.mux.Unlock()
 }
 
-func errEvent(key string, err error) *Event {
-	return &Event{
+func errEvent(key string, err error) KvEvent {
+	return KvEvent{
 		Type:   proto.EVT_ERROR,
 		Prefix: key,
 		Object: err,
 	}
 }
 
-func newWatcher(lw *ListWatcher, listOps *ListOptions) *Watcher {
+func newWatcher(lw *ListWatcher, listOps ListOptions) *Watcher {
 	w := &Watcher{
 		ListOps: listOps,
 		lw:      lw,
-		bus:     make(chan []*Event, EVENT_BUS_MAX_SIZE),
+		bus:     make(chan []KvEvent, EVENT_BUS_MAX_SIZE),
 		stopCh:  make(chan struct{}),
 	}
 	util.Go(w.process)

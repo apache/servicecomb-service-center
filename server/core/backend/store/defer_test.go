@@ -32,14 +32,12 @@ func TestInstanceEventDeferHandler_OnCondition(t *testing.T) {
 	}
 
 	if iedh.OnCondition(nil, nil) {
-		fmt.Printf(`TestInstanceEventDeferHandler_OnCondition with 0%% failed`)
-		t.FailNow()
+		t.Fatalf(`TestInstanceEventDeferHandler_OnCondition with 0%% failed`)
 	}
 
 	iedh.Percent = 0.01
 	if !iedh.OnCondition(nil, nil) {
-		fmt.Printf(`TestInstanceEventDeferHandler_OnCondition with 1%% failed`)
-		t.FailNow()
+		t.Fatalf(`TestInstanceEventDeferHandler_OnCondition with 1%% failed`)
 	}
 }
 
@@ -63,13 +61,28 @@ func TestInstanceEventDeferHandler_HandleChan(t *testing.T) {
 		Key:   util.StringToBytesWithNoCopy("/3"),
 		Value: b,
 	}
+	kv4 := &mvccpb.KeyValue{
+		Key:   util.StringToBytesWithNoCopy("/4"),
+		Value: b,
+	}
+	kv5 := &mvccpb.KeyValue{
+		Key:   util.StringToBytesWithNoCopy("/5"),
+		Value: b,
+	}
+	kv6 := &mvccpb.KeyValue{
+		Key:   util.StringToBytesWithNoCopy("/6"),
+		Value: b,
+	}
 
 	cache := NewKvCache(nil, 1)
 	cache.store["/1"] = kv1
 	cache.store["/2"] = kv2
 	cache.store["/3"] = kv3
+	cache.store["/4"] = kv4
+	cache.store["/5"] = kv5
+	cache.store["/6"] = kv6
 
-	evts1 := []*Event{
+	evts1 := []KvEvent{
 		{
 			Type:   pb.EVT_CREATE,
 			Object: kv1,
@@ -79,7 +92,7 @@ func TestInstanceEventDeferHandler_HandleChan(t *testing.T) {
 			Object: kv1,
 		},
 	}
-	evts2 := []*Event{
+	evts2 := []KvEvent{
 		{
 			Type:   pb.EVT_DELETE,
 			Object: kv2,
@@ -88,11 +101,35 @@ func TestInstanceEventDeferHandler_HandleChan(t *testing.T) {
 			Type:   pb.EVT_DELETE,
 			Object: kv3,
 		},
+		{
+			Type:   pb.EVT_DELETE,
+			Object: kv4,
+		},
+		{
+			Type:   pb.EVT_DELETE,
+			Object: kv5,
+		},
+		{
+			Type:   pb.EVT_DELETE,
+			Object: kv6,
+		},
 	}
-	evts3 := []*Event{
+	evts3 := []KvEvent{
 		{
 			Type:   pb.EVT_CREATE,
 			Object: kv2,
+		},
+		{
+			Type:   pb.EVT_UPDATE,
+			Object: kv4,
+		},
+		{
+			Type:   pb.EVT_UPDATE,
+			Object: kv5,
+		},
+		{
+			Type:   pb.EVT_CREATE,
+			Object: kv6,
 		},
 	}
 
@@ -117,23 +154,21 @@ func TestInstanceEventDeferHandler_HandleChan(t *testing.T) {
 func getEvents(t *testing.T, iedh *InstanceEventDeferHandler) {
 	fmt.Println(time.Now())
 	c := time.After(3 * time.Second)
-	var evt3 *Event
+	var evt3 *KvEvent
 	for {
 		select {
 		case evt := <-iedh.HandleChan():
 			fmt.Println(time.Now(), evt)
 			if string(evt.Object.(*mvccpb.KeyValue).Key) == "/3" {
-				evt3 = evt
+				evt3 = &evt
 				if iedh.Percent == 0.01 && evt.Type == pb.EVT_DELETE {
-					fmt.Printf(`TestInstanceEventDeferHandler_HandleChan with 1%% failed`)
-					t.FailNow()
+					t.Fatalf(`TestInstanceEventDeferHandler_HandleChan with 1%% failed`)
 				}
 			}
 			continue
 		case <-c:
 			if iedh.Percent == 0.8 && evt3 == nil {
-				fmt.Printf(`TestInstanceEventDeferHandler_HandleChan with 80%% failed`)
-				t.FailNow()
+				t.Fatalf(`TestInstanceEventDeferHandler_HandleChan with 80%% failed`)
 			}
 		}
 		break

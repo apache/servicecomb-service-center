@@ -29,7 +29,7 @@ const CTX_START_TIMESTAMP = "x-start-timestamp"
 
 func init() {
 	// api
-	http.Handle("/", &ServerHandler{})
+	RegisterServerHandler("/", &ServerHandler{})
 }
 
 type ServerHandler struct {

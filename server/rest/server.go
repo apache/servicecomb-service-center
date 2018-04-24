@@ -107,6 +107,7 @@ func NewServer(ep string) (srv *rest.Server, err error) {
 	}
 	srvCfg.Addr = ipAddr
 	srv = rest.NewServer(srvCfg)
+	srv.Handler = DefaultServerMux
 
 	if srvCfg.TLSConfig == nil {
 		err = srv.Listen()

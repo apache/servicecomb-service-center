@@ -57,7 +57,7 @@ var (
 func init() {
 	prometheus.MustRegister(incomingRequests, successfulRequests, reqDurations)
 
-	http.Handle("/metrics", prometheus.Handler())
+	RegisterServerHandler("/metrics", prometheus.Handler())
 }
 
 func ReportRequestCompleted(w http.ResponseWriter, r *http.Request, start time.Time) {
