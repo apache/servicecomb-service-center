@@ -25,7 +25,7 @@ import (
 	"time"
 )
 
-type LeaseAsyncTask struct {
+type LeaseTask struct {
 	key        string
 	LeaseID    int64
 	TTL        int64
@@ -35,11 +35,11 @@ type LeaseAsyncTask struct {
 	err        error
 }
 
-func (lat *LeaseAsyncTask) Key() string {
+func (lat *LeaseTask) Key() string {
 	return lat.key
 }
 
-func (lat *LeaseAsyncTask) Do(ctx context.Context) (err error) {
+func (lat *LeaseTask) Do(ctx context.Context) (err error) {
 	lat.StartTime = time.Now()
 	lat.TTL, err = backend.Registry().LeaseRenew(ctx, lat.LeaseID)
 	lat.EndTime = time.Now()
@@ -66,12 +66,12 @@ func (lat *LeaseAsyncTask) Do(ctx context.Context) (err error) {
 	return
 }
 
-func (lat *LeaseAsyncTask) Err() error {
+func (lat *LeaseTask) Err() error {
 	return lat.err
 }
 
-func NewLeaseAsyncTask(op registry.PluginOp) *LeaseAsyncTask {
-	return &LeaseAsyncTask{
+func NewLeaseAsyncTask(op registry.PluginOp) *LeaseTask {
+	return &LeaseTask{
 		key:        ToLeaseAsyncTaskKey(util.BytesToStringWithNoCopy(op.Key)),
 		LeaseID:    op.Lease,
 		CreateTime: time.Now(),

@@ -19,6 +19,7 @@ package event
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/async"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
@@ -28,7 +29,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-type TagsChangedAsyncTask struct {
+type TagsChangedTask struct {
 	key string
 	err error
 
@@ -37,21 +38,21 @@ type TagsChangedAsyncTask struct {
 	Rev           int64
 }
 
-func (apt *TagsChangedAsyncTask) Key() string {
+func (apt *TagsChangedTask) Key() string {
 	return apt.key
 }
 
-func (apt *TagsChangedAsyncTask) Do(ctx context.Context) error {
-	defer store.AsyncTaskService().DeferRemove(apt.Key())
+func (apt *TagsChangedTask) Do(ctx context.Context) error {
+	defer async.Service().DeferRemove(apt.Key())
 	apt.err = apt.publish(ctx, apt.DomainProject, apt.consumerId, apt.Rev)
 	return apt.err
 }
 
-func (apt *TagsChangedAsyncTask) Err() error {
+func (apt *TagsChangedTask) Err() error {
 	return apt.err
 }
 
-func (apt *TagsChangedAsyncTask) publish(ctx context.Context, domainProject, consumerId string, rev int64) error {
+func (apt *TagsChangedTask) publish(ctx context.Context, domainProject, consumerId string, rev int64) error {
 	consumer, err := serviceUtil.GetService(ctx, domainProject, consumerId)
 	if err != nil {
 		util.Logger().Errorf(err, "get comsumer for publish event %s failed", consumerId)
@@ -120,7 +121,7 @@ func (h *TagEventHandler) OnEvent(evt store.KvEvent) {
 		return
 	}
 
-	store.AsyncTaskService().Add(context.Background(),
+	async.Service().Add(context.Background(),
 		NewTagsChangedAsyncTask(domainProject, consumerId, evt.Revision))
 }
 
@@ -128,8 +129,8 @@ func NewTagEventHandler() *TagEventHandler {
 	return &TagEventHandler{}
 }
 
-func NewTagsChangedAsyncTask(domainProject, consumerId string, rev int64) *TagsChangedAsyncTask {
-	return &TagsChangedAsyncTask{
+func NewTagsChangedAsyncTask(domainProject, consumerId string, rev int64) *TagsChangedTask {
+	return &TagsChangedTask{
 		key:           "TagsChangedAsyncTask_" + consumerId,
 		DomainProject: domainProject,
 		consumerId:    consumerId,

@@ -19,6 +19,7 @@ package event
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/async"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
@@ -28,7 +29,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-type RulesChangedAsyncTask struct {
+type RulesChangedTask struct {
 	key string
 	err error
 
@@ -37,21 +38,21 @@ type RulesChangedAsyncTask struct {
 	Rev           int64
 }
 
-func (apt *RulesChangedAsyncTask) Key() string {
+func (apt *RulesChangedTask) Key() string {
 	return apt.key
 }
 
-func (apt *RulesChangedAsyncTask) Do(ctx context.Context) error {
-	defer store.AsyncTaskService().DeferRemove(apt.Key())
+func (apt *RulesChangedTask) Do(ctx context.Context) error {
+	defer async.Service().DeferRemove(apt.Key())
 	apt.err = apt.publish(ctx, apt.DomainProject, apt.ProviderId, apt.Rev)
 	return apt.err
 }
 
-func (apt *RulesChangedAsyncTask) Err() error {
+func (apt *RulesChangedTask) Err() error {
 	return apt.err
 }
 
-func (apt *RulesChangedAsyncTask) publish(ctx context.Context, domainProject, providerId string, rev int64) error {
+func (apt *RulesChangedTask) publish(ctx context.Context, domainProject, providerId string, rev int64) error {
 	provider, err := serviceUtil.GetService(ctx, domainProject, providerId)
 	if err != nil {
 		util.Logger().Errorf(err, "get provider %s service file failed", providerId)
@@ -110,7 +111,7 @@ func (h *RuleEventHandler) OnEvent(evt store.KvEvent) {
 		return
 	}
 
-	store.AsyncTaskService().Add(context.Background(),
+	async.Service().Add(context.Background(),
 		NewRulesChangedAsyncTask(domainProject, providerId, evt.Revision))
 }
 
@@ -118,8 +119,8 @@ func NewRuleEventHandler() *RuleEventHandler {
 	return &RuleEventHandler{}
 }
 
-func NewRulesChangedAsyncTask(domainProject, providerId string, rev int64) *RulesChangedAsyncTask {
-	return &RulesChangedAsyncTask{
+func NewRulesChangedAsyncTask(domainProject, providerId string, rev int64) *RulesChangedTask {
+	return &RulesChangedTask{
 		key:           "RulesChangedAsyncTask_" + providerId,
 		DomainProject: domainProject,
 		ProviderId:    providerId,

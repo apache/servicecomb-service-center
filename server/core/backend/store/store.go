@@ -35,17 +35,17 @@ func init() {
 }
 
 type KvStore struct {
-	indexers     map[StoreType]*Indexer
-	asyncTaskSvc *async.AsyncTaskService
-	lock         sync.RWMutex
-	ready        chan struct{}
-	goroutine    *util.GoRoutine
-	isClose      bool
+	indexers    map[StoreType]*Indexer
+	taskService *async.TaskService
+	lock        sync.RWMutex
+	ready       chan struct{}
+	goroutine   *util.GoRoutine
+	isClose     bool
 }
 
 func (s *KvStore) Initialize() {
 	s.indexers = make(map[StoreType]*Indexer)
-	s.asyncTaskSvc = async.NewAsyncTaskService()
+	s.taskService = async.NewTaskService()
 	s.ready = make(chan struct{})
 	s.goroutine = util.NewGo(context.Background())
 
@@ -75,7 +75,7 @@ func (s *KvStore) newIndexBuilder(t StoreType, cacher Cacher) {
 
 func (s *KvStore) Run() {
 	s.goroutine.Do(s.store)
-	s.asyncTaskSvc.Run()
+	s.taskService.Run()
 }
 
 func (s *KvStore) getKvCacherCfgOptions(t StoreType) (opts []KvCacherCfgOption) {
@@ -129,7 +129,7 @@ func (s *KvStore) onLeaseEvent(evt KvEvent) {
 	}
 
 	key := util.BytesToStringWithNoCopy(evt.Object.(*mvccpb.KeyValue).Key)
-	s.asyncTaskSvc.DeferRemove(ToLeaseAsyncTaskKey(key))
+	s.taskService.DeferRemove(ToLeaseAsyncTaskKey(key))
 }
 func (s *KvStore) closed() bool {
 	return s.isClose
@@ -145,7 +145,7 @@ func (s *KvStore) Stop() {
 		i.Stop()
 	}
 
-	s.asyncTaskSvc.Stop()
+	s.taskService.Stop()
 
 	s.goroutine.Close(true)
 
@@ -155,7 +155,7 @@ func (s *KvStore) Stop() {
 }
 
 func (s *KvStore) Ready() <-chan struct{} {
-	<-s.asyncTaskSvc.Ready()
+	<-s.taskService.Ready()
 	return s.ready
 }
 
@@ -234,15 +234,15 @@ func (s *KvStore) KeepAlive(ctx context.Context, opts ...registry.PluginOpOption
 		return ttl, err
 	}
 
-	err := s.asyncTaskSvc.Add(ctx, t)
+	err := s.taskService.Add(ctx, t)
 	if err != nil {
 		return 0, err
 	}
-	itf, err := s.asyncTaskSvc.LatestHandled(t.Key())
+	itf, err := s.taskService.LatestHandled(t.Key())
 	if err != nil {
 		return 0, err
 	}
-	pt := itf.(*LeaseAsyncTask)
+	pt := itf.(*LeaseTask)
 	return pt.TTL, pt.Err()
 }
 

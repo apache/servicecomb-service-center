@@ -29,7 +29,7 @@ const (
 	DEFAULT_REMOVE_TASKS_INTERVAL = 30 * time.Second
 )
 
-type AsyncTask interface {
+type Task interface {
 	Key() string
 	Do(ctx context.Context) error
 	Err() error
@@ -37,12 +37,12 @@ type AsyncTask interface {
 
 type scheduler struct {
 	queue      *util.UniQueue
-	latestTask AsyncTask
+	latestTask Task
 	once       sync.Once
 	goroutine  *util.GoRoutine
 }
 
-func (s *scheduler) AddTask(ctx context.Context, task AsyncTask) (err error) {
+func (s *scheduler) AddTask(ctx context.Context, task Task) (err error) {
 	if task == nil || ctx == nil {
 		return errors.New("invalid parameters")
 	}
@@ -67,7 +67,7 @@ func (s *scheduler) do(ctx context.Context) {
 			if !ok {
 				return
 			}
-			at := task.(AsyncTask)
+			at := task.(Task)
 			at.Do(ctx)
 			s.latestTask = at
 		}
@@ -79,7 +79,7 @@ func (s *scheduler) Close() {
 	s.goroutine.Close(true)
 }
 
-func newScheduler(task AsyncTask) *scheduler {
+func newScheduler(task Task) *scheduler {
 	return &scheduler{
 		queue:      util.NewUniQueue(),
 		latestTask: task,
@@ -87,7 +87,7 @@ func newScheduler(task AsyncTask) *scheduler {
 	}
 }
 
-type AsyncTaskService struct {
+type TaskService struct {
 	schedules   map[string]*scheduler
 	removeTasks map[string]struct{}
 	goroutine   *util.GoRoutine
@@ -96,7 +96,7 @@ type AsyncTaskService struct {
 	isClose     bool
 }
 
-func (lat *AsyncTaskService) getOrNewScheduler(task AsyncTask) (s *scheduler, isNew bool) {
+func (lat *TaskService) getOrNewScheduler(task Task) (s *scheduler, isNew bool) {
 	var (
 		ok  bool
 		key = task.Key()
@@ -127,7 +127,7 @@ func (lat *AsyncTaskService) getOrNewScheduler(task AsyncTask) (s *scheduler, is
 	return
 }
 
-func (lat *AsyncTaskService) Add(ctx context.Context, task AsyncTask) error {
+func (lat *TaskService) Add(ctx context.Context, task Task) error {
 	if task == nil || ctx == nil {
 		return errors.New("invalid parameters")
 	}
@@ -140,11 +140,11 @@ func (lat *AsyncTaskService) Add(ctx context.Context, task AsyncTask) error {
 	return s.AddTask(ctx, task)
 }
 
-func (lat *AsyncTaskService) DeferRemove(key string) error {
+func (lat *TaskService) DeferRemove(key string) error {
 	lat.lock.Lock()
 	if lat.isClose {
 		lat.lock.Unlock()
-		return errors.New("AsyncTaskService is stopped")
+		return errors.New("TaskService is stopped")
 	}
 	_, exist := lat.schedules[key]
 	if !exist {
@@ -156,7 +156,7 @@ func (lat *AsyncTaskService) DeferRemove(key string) error {
 	return nil
 }
 
-func (lat *AsyncTaskService) removeScheduler(key string) {
+func (lat *TaskService) removeScheduler(key string) {
 	if s, ok := lat.schedules[key]; ok {
 		s.Close()
 		delete(lat.schedules, key)
@@ -165,7 +165,7 @@ func (lat *AsyncTaskService) removeScheduler(key string) {
 	util.Logger().Debugf("remove scheduler, key is %s", key)
 }
 
-func (lat *AsyncTaskService) LatestHandled(key string) (AsyncTask, error) {
+func (lat *TaskService) LatestHandled(key string) (Task, error) {
 	lat.lock.RLock()
 	s, ok := lat.schedules[key]
 	lat.lock.RUnlock()
@@ -175,12 +175,12 @@ func (lat *AsyncTaskService) LatestHandled(key string) (AsyncTask, error) {
 	return s.latestTask, nil
 }
 
-func (lat *AsyncTaskService) daemon(ctx context.Context) {
+func (lat *TaskService) daemon(ctx context.Context) {
 	util.SafeCloseChan(lat.ready)
 	for {
 		select {
 		case <-ctx.Done():
-			util.Logger().Debugf("daemon thread exited for AsyncTaskService is stopped")
+			util.Logger().Debugf("daemon thread exited for TaskService is stopped")
 			return
 		case <-time.After(DEFAULT_REMOVE_TASKS_INTERVAL):
 			if lat.isClose {
@@ -191,18 +191,19 @@ func (lat *AsyncTaskService) daemon(ctx context.Context) {
 			for key := range lat.removeTasks {
 				lat.removeScheduler(key)
 			}
-			if l > DEFAULT_MAX_SCHEDULE_COUNT {
-				lat.renew()
-			}
 			lat.lock.Unlock()
 			if l > 0 {
 				util.Logger().Infof("daemon thread completed, %d scheduler(s) removed", l)
+
+				if l > DEFAULT_MAX_SCHEDULE_COUNT {
+					lat.renew()
+				}
 			}
 		}
 	}
 }
 
-func (lat *AsyncTaskService) Run() {
+func (lat *TaskService) Run() {
 	lat.lock.Lock()
 	if !lat.isClose {
 		lat.lock.Unlock()
@@ -213,7 +214,7 @@ func (lat *AsyncTaskService) Run() {
 	lat.goroutine.Do(lat.daemon)
 }
 
-func (lat *AsyncTaskService) Stop() {
+func (lat *TaskService) Stop() {
 	lat.lock.Lock()
 	if lat.isClose {
 		lat.lock.Unlock()
@@ -232,17 +233,17 @@ func (lat *AsyncTaskService) Stop() {
 	util.SafeCloseChan(lat.ready)
 }
 
-func (lat *AsyncTaskService) Ready() <-chan struct{} {
+func (lat *TaskService) Ready() <-chan struct{} {
 	return lat.ready
 }
 
-func (lat *AsyncTaskService) renew() {
+func (lat *TaskService) renew() {
 	lat.schedules = make(map[string]*scheduler, DEFAULT_MAX_SCHEDULE_COUNT)
 	lat.removeTasks = make(map[string]struct{}, DEFAULT_MAX_SCHEDULE_COUNT)
 }
 
-func NewAsyncTaskService() (lat *AsyncTaskService) {
-	lat = &AsyncTaskService{
+func NewTaskService() (lat *TaskService) {
+	lat = &TaskService{
 		goroutine: util.NewGo(context.Background()),
 		ready:     make(chan struct{}),
 		isClose:   true,

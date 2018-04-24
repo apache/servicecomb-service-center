@@ -182,6 +182,7 @@ func (i *Indexer) OnCacheEvent(evt KvEvent) {
 func (i *Indexer) buildIndex() {
 	i.goroutine.Do(func(ctx context.Context) {
 		util.SafeCloseChan(i.ready)
+		changed := false
 		for {
 			select {
 			case <-ctx.Done():
@@ -198,6 +199,7 @@ func (i *Indexer) buildIndex() {
 				switch evt.Type {
 				case pb.EVT_DELETE:
 					i.deletePrefixKey(prefix, key)
+					changed = true
 				default:
 					i.addPrefixKey(prefix, key)
 				}
@@ -206,13 +208,40 @@ func (i *Indexer) buildIndex() {
 				util.LogNilOrWarnf(t, "too long to rebuild(action: %s) index[%d], key is %s",
 					evt.Type, key, len(i.prefixIndex))
 			case <-time.After(10 * time.Second):
-				i.prefixLock.RLock()
+				i.prefixLock.Lock()
 				ReportCacheMetrics(i.cacher.Name(), "index", i.prefixIndex)
-				i.prefixLock.RUnlock()
+				if changed {
+					changed = false
+					i.compact()
+				}
+				i.prefixLock.Unlock()
 			}
 		}
 		util.Logger().Debugf("build %s index goroutine is stopped", i.cacher.Name())
 	})
+}
+
+func (i *Indexer) compact() {
+	l := len(i.prefixIndex)
+	if l < DEFAULT_CACHE_INIT_SIZE {
+		l = DEFAULT_CACHE_INIT_SIZE
+	}
+	n := make(map[string]map[string]struct{}, l)
+	for k, v := range i.prefixIndex {
+		c, ok := n[k]
+		if !ok {
+			l := len(v)
+			if l < DEFAULT_CACHE_INIT_SIZE {
+				l = DEFAULT_CACHE_INIT_SIZE
+			}
+			c = make(map[string]struct{}, l)
+			n[k] = c
+		}
+		for ck, cv := range v {
+			c[ck] = cv
+		}
+	}
+	i.prefixIndex = n
 }
 
 func (i *Indexer) getPrefixKey(arr *[]string, prefix string) (count int) {
