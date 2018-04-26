@@ -78,19 +78,25 @@ func (c *KvCache) Unlock() {
 	if c.size >= l &&
 		c.lastMaxSize > c.size*DEFAULT_COMPACT_TIMES &&
 		time.Now().Sub(c.lastRefresh) >= DEFAULT_COMPACT_TIMEOUT {
-		util.Logger().Infof("cache %s is not in use over %s, compact capacity to size %d->%d",
-			c.owner.Cfg.Key, DEFAULT_COMPACT_TIMEOUT, c.lastMaxSize, c.size)
-		// gc
-		newCache := make(map[string]*mvccpb.KeyValue, c.size)
-		for k, v := range c.store {
-			newCache[k] = v
-		}
-		c.store = newCache
+		c.compact()
 		c.lastMaxSize = l
 		c.lastRefresh = time.Now()
 	}
 
 	c.rwMux.Unlock()
+}
+
+func (c *KvCache) compact() {
+	// gc
+	newCache := make(map[string]*mvccpb.KeyValue, c.size)
+	for k, v := range c.store {
+		newCache[k] = v
+	}
+	c.store = newCache
+
+	util.Logger().Infof("cache %s is not in use over %s, compact capacity to size %d->%d",
+		c.owner.Cfg.Key, DEFAULT_COMPACT_TIMEOUT, c.lastMaxSize, c.size)
+
 }
 
 func (c *KvCache) Size() (l int) {

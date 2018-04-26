@@ -240,9 +240,11 @@ func getServiceAllVersions(ctx context.Context, serviceKey *pb.MicroServiceKey) 
 func getSchemaInfoUtil(ctx context.Context, domainProject string, serviceId string) ([]*pb.Schema, error) {
 	key := apt.GenerateServiceSchemaKey(domainProject, serviceId, "")
 
-	resp, err := store.Store().Schema().Search(ctx,
+	opts := append(serviceUtil.FromContext(ctx),
 		registry.WithStrKey(key),
 		registry.WithPrefix())
+
+	resp, err := store.Store().Schema().Search(ctx, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "Get schema failed")
 		return make([]*pb.Schema, 0), err

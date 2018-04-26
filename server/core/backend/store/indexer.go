@@ -182,7 +182,7 @@ func (i *Indexer) OnCacheEvent(evt KvEvent) {
 func (i *Indexer) buildIndex() {
 	i.goroutine.Do(func(ctx context.Context) {
 		util.SafeCloseChan(i.ready)
-		changed := false
+		lastCompactTime := time.Now()
 		for {
 			select {
 			case <-ctx.Done():
@@ -199,7 +199,6 @@ func (i *Indexer) buildIndex() {
 				switch evt.Type {
 				case pb.EVT_DELETE:
 					i.deletePrefixKey(prefix, key)
-					changed = true
 				default:
 					i.addPrefixKey(prefix, key)
 				}
@@ -209,16 +208,17 @@ func (i *Indexer) buildIndex() {
 					evt.Type, key, len(i.prefixIndex))
 			case <-time.After(10 * time.Second):
 				i.prefixLock.Lock()
-				ReportCacheMetrics(i.cacher.Name(), "index", i.prefixIndex)
-				if changed {
-					changed = false
+				if time.Now().Sub(lastCompactTime) >= DEFAULT_COMPACT_TIMEOUT {
 					i.compact()
+					lastCompactTime = time.Now()
 				}
+				ReportCacheMetrics(i.cacher.Name(), "index", i.prefixIndex)
 				i.prefixLock.Unlock()
 			}
 		}
-		util.Logger().Debugf("build %s index goroutine is stopped", i.cacher.Name())
+		util.Logger().Debugf("the goroutine building index %s is stopped", i.cacher.Name())
 	})
+	<-i.ready
 }
 
 func (i *Indexer) compact() {
@@ -230,11 +230,7 @@ func (i *Indexer) compact() {
 	for k, v := range i.prefixIndex {
 		c, ok := n[k]
 		if !ok {
-			l := len(v)
-			if l < DEFAULT_CACHE_INIT_SIZE {
-				l = DEFAULT_CACHE_INIT_SIZE
-			}
-			c = make(map[string]struct{}, l)
+			c = make(map[string]struct{}, len(v))
 			n[k] = c
 		}
 		for ck, cv := range v {
@@ -242,6 +238,9 @@ func (i *Indexer) compact() {
 		}
 	}
 	i.prefixIndex = n
+
+	util.Logger().Infof("index %s(%s): compact root capacity to size %d",
+		i.cacher.Name(), DEFAULT_COMPACT_TIMEOUT, l)
 }
 
 func (i *Indexer) getPrefixKey(arr *[]string, prefix string) (count int) {
@@ -274,7 +273,8 @@ func (i *Indexer) addPrefixKey(prefix, key string) {
 
 	keys, ok := i.prefixIndex[prefix]
 	if !ok {
-		keys = make(map[string]struct{}, DEFAULT_CACHE_INIT_SIZE)
+		// build parent index key and new child nodes
+		keys = make(map[string]struct{})
 		i.prefixIndex[prefix] = keys
 	} else if _, ok := keys[key]; ok {
 		return
@@ -308,6 +308,11 @@ func (i *Indexer) Run() {
 	}
 	i.isClose = false
 	i.prefixLock.Unlock()
+
+	if _, ok := i.cacher.(*nullCacher); ok {
+		util.SafeCloseChan(i.ready)
+		return
+	}
 
 	i.buildIndex()
 

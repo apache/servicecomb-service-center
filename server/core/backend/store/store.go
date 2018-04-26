@@ -19,6 +19,7 @@ package store
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/async"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
@@ -50,21 +51,13 @@ func (s *KvStore) Initialize() {
 	s.goroutine = util.NewGo(context.Background())
 
 	for i := StoreType(0); i != typeEnd; i++ {
-		store.newNullStore(i)
+		s.newIndexBuilder(i, NullCacher)
 	}
 }
 
 func (s *KvStore) dispatchEvent(t StoreType, evt KvEvent) {
 	s.indexers[t].OnCacheEvent(evt)
 	EventProxy(t).OnEvent(evt)
-}
-
-func (s *KvStore) newStore(t StoreType, opts ...KvCacherCfgOption) {
-	s.newIndexBuilder(t, NewKvCacher(t.String(), s.getKvCacherCfgOptions(t)...))
-}
-
-func (s *KvStore) newNullStore(t StoreType) {
-	s.newIndexBuilder(t, NullCacher)
 }
 
 func (s *KvStore) newIndexBuilder(t StoreType, cacher Cacher) {
@@ -98,16 +91,23 @@ func (s *KvStore) SelfPreservationHandler() DeferHandler {
 }
 
 func (s *KvStore) store(ctx context.Context) {
+	defer s.wait(ctx)
+
+	if !core.ServerInfo.Config.EnableCache {
+		util.Logger().Warnf(nil, "registry cache mechanism is disabled")
+		return
+	}
+
 	for t := StoreType(0); t != typeEnd; t++ {
 		switch t {
 		case SCHEMA:
+			util.Logger().Infof("service center will not cache '%s'", SCHEMA)
 			continue
 		default:
-			s.newStore(t)
+			s.indexers[t].Stop() // release the exist indexer
+			s.newIndexBuilder(t, NewKvCacher(t.String(), s.getKvCacherCfgOptions(t)...))
 		}
 	}
-
-	s.wait(ctx)
 }
 
 func (s *KvStore) wait(ctx context.Context) {

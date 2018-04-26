@@ -35,8 +35,11 @@ func (l *CacheResponse) Handle(i *chain.Invocation) {
 	scRev := store.Revision()
 	w.Header().Set("X-Resource-Revision", fmt.Sprint(scRev))
 
-	noCache := r.URL.Query().Get("noCache") == "1"
 	rev, _ := strconv.ParseInt(r.URL.Query().Get("rev"), 10, 64)
+	if rev == 0 {
+		i.Next()
+		return
+	}
 
 	if rev == scRev && r.Method == http.MethodGet {
 		w.WriteHeader(http.StatusNotModified)
@@ -44,16 +47,14 @@ func (l *CacheResponse) Handle(i *chain.Invocation) {
 		return
 	}
 
-	if rev > scRev {
-		w.Header().Set("X-Resource-Revision", fmt.Sprint(rev))
-	}
+	noCache := r.URL.Query().Get("noCache") == "1"
+	cacheOnly := r.URL.Query().Get("cacheOnly") == "1"
 
 	if rev > scRev || noCache {
 		i.WithContext("noCache", "1")
 	}
 
-	cacheOnly := r.URL.Query().Get("cacheOnly") == "1"
-	if cacheOnly {
+	if cacheOnly && !noCache {
 		i.WithContext("cacheOnly", "1")
 	}
 

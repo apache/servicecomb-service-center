@@ -72,6 +72,9 @@ func newInfo() *pb.ServerInformation {
 			LogSys:         beego.AppConfig.DefaultBool("log_sys", false),
 
 			PluginsDir: beego.AppConfig.DefaultString("plugins_dir", "./plugins"),
+
+			EnablePProf: beego.AppConfig.DefaultInt("enable_pprof", 0) != 0,
+			EnableCache: beego.AppConfig.DefaultInt("enable_cache", 1) != 0,
 		},
 	}
 }
