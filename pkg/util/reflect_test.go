@@ -34,7 +34,7 @@ type testField struct {
 
 func TestLoadStruct(t *testing.T) {
 	obj1 := testStru{}
-	v := LoadStruct(obj1)
+	v := ReflectObject(obj1)
 	if v.Type.String() != "util.testStru" {
 		t.Fatalf("TestLoadStruct failed, %s != 'testStru'", v.Type.String())
 	}
@@ -46,13 +46,15 @@ func TestLoadStruct(t *testing.T) {
 	}
 
 	obj2 := testStru{}
-	v = LoadStruct(obj2)
+	v = ReflectObject(obj2)
+	v = ReflectObject(&obj2)
+	v = ReflectObject(nil)
 }
 
 func BenchmarkLoadStruct(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			LoadStruct(testStru{})
+			ReflectObject(testStru{})
 		}
 	})
 	b.ReportAllocs()

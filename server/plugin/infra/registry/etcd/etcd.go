@@ -529,7 +529,11 @@ func (c *EtcdClient) Watch(ctx context.Context, opts ...registry.PluginOpOption)
 		key := util.BytesToStringWithNoCopy(op.Key)
 
 		// 不能设置超时context，内部判断了连接超时和watch超时
-		ws := client.Watch(context.Background(), key, c.toGetRequest(op)...)
+		wCtx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		// #9103: must be not a context.TODO/Background, because the WatchChan will not closed when finish.
+		ws := client.Watch(wCtx, key, c.toGetRequest(op)...)
 
 		var ok bool
 		var resp clientv3.WatchResponse

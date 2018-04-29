@@ -30,21 +30,21 @@ var (
 
 func init() {
 	reflector = &Reflector{
-		types: make(map[*uintptr]StructType, 100),
+		types: make(map[*uintptr]reflectObject, 100),
 	}
 }
 
-type StructType struct {
+type reflectObject struct {
 	Type   reflect.Type
 	Fields []reflect.StructField
 }
 
 type Reflector struct {
-	types map[*uintptr]StructType
+	types map[*uintptr]reflectObject
 	mux   sync.RWMutex
 }
 
-func (r *Reflector) Load(obj interface{}) StructType {
+func (r *Reflector) Load(obj interface{}) reflectObject {
 	r.mux.RLock()
 	itab := *(**uintptr)(unsafe.Pointer(&obj))
 	t, ok := r.types[itab]
@@ -59,8 +59,31 @@ func (r *Reflector) Load(obj interface{}) StructType {
 		r.mux.Unlock()
 		return t
 	}
-	t = StructType{
-		Type: reflect.TypeOf(obj),
+
+	v := reflect.ValueOf(obj)
+	if !v.IsValid() {
+		r.mux.Unlock()
+		return reflectObject{}
+	}
+	switch v.Kind() {
+	case reflect.Ptr:
+		if v.IsNil() {
+			r.mux.Unlock()
+			return reflectObject{}
+		}
+		fallthrough
+	case reflect.Interface:
+		r.mux.Unlock()
+		return r.Load(v.Elem().Interface())
+	default:
+		t = reflectObject{
+			Type: reflect.TypeOf(obj),
+		}
+	}
+
+	if v.Kind() != reflect.Struct {
+		r.mux.Unlock()
+		return t
 	}
 
 	fl := t.Type.NumField()
@@ -76,7 +99,7 @@ func (r *Reflector) Load(obj interface{}) StructType {
 	return t
 }
 
-func LoadStruct(obj interface{}) StructType {
+func ReflectObject(obj interface{}) (s reflectObject) {
 	return reflector.Load(obj)
 }
 

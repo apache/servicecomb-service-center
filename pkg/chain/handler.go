@@ -18,7 +18,6 @@ package chain
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"reflect"
 )
 
 const CAP_SIZE = 10
@@ -37,7 +36,7 @@ func RegisterHandler(catalog string, h Handler) {
 	handlers = append(handlers, h)
 	handlersMap[catalog] = handlers
 
-	t := util.LoadStruct(reflect.ValueOf(h).Elem().Interface())
+	t := util.ReflectObject(h)
 	util.Logger().Infof("register handler[%s] %s/%s", catalog, t.Type.PkgPath(), t.Type.Name())
 }
 
