@@ -182,6 +182,7 @@ func (i *Indexer) OnCacheEvent(evt KvEvent) {
 func (i *Indexer) buildIndex() {
 	i.goroutine.Do(func(ctx context.Context) {
 		util.SafeCloseChan(i.ready)
+		lastCompactTime := time.Now()
 		for {
 			select {
 			case <-ctx.Done():
@@ -206,13 +207,40 @@ func (i *Indexer) buildIndex() {
 				util.LogNilOrWarnf(t, "too long to rebuild(action: %s) index[%d], key is %s",
 					evt.Type, key, len(i.prefixIndex))
 			case <-time.After(10 * time.Second):
-				i.prefixLock.RLock()
+				i.prefixLock.Lock()
+				if time.Now().Sub(lastCompactTime) >= DEFAULT_COMPACT_TIMEOUT {
+					i.compact()
+					lastCompactTime = time.Now()
+				}
 				ReportCacheMetrics(i.cacher.Name(), "index", i.prefixIndex)
-				i.prefixLock.RUnlock()
+				i.prefixLock.Unlock()
 			}
 		}
-		util.Logger().Debugf("build %s index goroutine is stopped", i.cacher.Name())
+		util.Logger().Debugf("the goroutine building index %s is stopped", i.cacher.Name())
 	})
+	<-i.ready
+}
+
+func (i *Indexer) compact() {
+	l := len(i.prefixIndex)
+	if l < DEFAULT_CACHE_INIT_SIZE {
+		l = DEFAULT_CACHE_INIT_SIZE
+	}
+	n := make(map[string]map[string]struct{}, l)
+	for k, v := range i.prefixIndex {
+		c, ok := n[k]
+		if !ok {
+			c = make(map[string]struct{}, len(v))
+			n[k] = c
+		}
+		for ck, cv := range v {
+			c[ck] = cv
+		}
+	}
+	i.prefixIndex = n
+
+	util.Logger().Infof("index %s(%s): compact root capacity to size %d",
+		i.cacher.Name(), DEFAULT_COMPACT_TIMEOUT, l)
 }
 
 func (i *Indexer) getPrefixKey(arr *[]string, prefix string) (count int) {
@@ -245,6 +273,7 @@ func (i *Indexer) addPrefixKey(prefix, key string) {
 
 	keys, ok := i.prefixIndex[prefix]
 	if !ok {
+		// build parent index key and new child nodes
 		keys = make(map[string]struct{})
 		i.prefixIndex[prefix] = keys
 	} else if _, ok := keys[key]; ok {
@@ -280,6 +309,11 @@ func (i *Indexer) Run() {
 	i.isClose = false
 	i.prefixLock.Unlock()
 
+	if _, ok := i.cacher.(*nullCacher); ok {
+		util.SafeCloseChan(i.ready)
+		return
+	}
+
 	i.buildIndex()
 
 	i.cacher.Run()
@@ -312,7 +346,7 @@ func NewCacheIndexer(cr Cacher) *Indexer {
 	return &Indexer{
 		BuildTimeout:     DEFAULT_ADD_QUEUE_TIMEOUT,
 		cacher:           cr,
-		prefixIndex:      make(map[string]map[string]struct{}, DEFAULT_MAX_EVENT_COUNT),
+		prefixIndex:      make(map[string]map[string]struct{}, DEFAULT_CACHE_INIT_SIZE),
 		prefixBuildQueue: make(chan KvEvent, DEFAULT_MAX_EVENT_COUNT),
 		goroutine:        util.NewGo(context.Background()),
 		ready:            make(chan struct{}),

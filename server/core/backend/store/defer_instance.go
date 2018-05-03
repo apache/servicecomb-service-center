@@ -52,9 +52,9 @@ func (iedh *InstanceEventDeferHandler) OnCondition(cache Cache, evts []KvEvent) 
 
 	iedh.once.Do(func() {
 		iedh.cache = cache
-		iedh.items = make(map[string]deferItem, event_block_size)
-		iedh.pendingCh = make(chan []KvEvent, event_block_size)
-		iedh.deferCh = make(chan KvEvent, event_block_size)
+		iedh.items = make(map[string]deferItem, eventBlockSize)
+		iedh.pendingCh = make(chan []KvEvent, eventBlockSize)
+		iedh.deferCh = make(chan KvEvent, eventBlockSize)
 		iedh.resetCh = make(chan struct{})
 		util.Go(iedh.check)
 	})
@@ -142,12 +142,11 @@ func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 			}
 
 			if iedh.enabled && len(iedh.items) == 0 {
-				iedh.enabled = false
+				iedh.renew()
 				util.Logger().Warnf(nil, "self preservation is stopped")
 			}
 		case <-iedh.resetCh:
-			iedh.enabled = false
-			iedh.items = make(map[string]deferItem, event_block_size)
+			iedh.renew()
 			util.Logger().Warnf(nil, "self preservation is reset")
 		}
 	}
@@ -157,6 +156,11 @@ func (iedh *InstanceEventDeferHandler) recover(evt KvEvent) {
 	key := util.BytesToStringWithNoCopy(evt.Object.(*mvccpb.KeyValue).Key)
 	delete(iedh.items, key)
 	iedh.deferCh <- evt
+}
+
+func (iedh *InstanceEventDeferHandler) renew() {
+	iedh.enabled = false
+	iedh.items = make(map[string]deferItem, eventBlockSize)
 }
 
 func (iedh *InstanceEventDeferHandler) Reset() bool {

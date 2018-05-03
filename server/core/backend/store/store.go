@@ -19,6 +19,7 @@ package store
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/async"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
@@ -35,36 +36,28 @@ func init() {
 }
 
 type KvStore struct {
-	indexers     map[StoreType]*Indexer
-	asyncTaskSvc *async.AsyncTaskService
-	lock         sync.RWMutex
-	ready        chan struct{}
-	goroutine    *util.GoRoutine
-	isClose      bool
+	indexers    map[StoreType]*Indexer
+	taskService *async.TaskService
+	lock        sync.RWMutex
+	ready       chan struct{}
+	goroutine   *util.GoRoutine
+	isClose     bool
 }
 
 func (s *KvStore) Initialize() {
 	s.indexers = make(map[StoreType]*Indexer)
-	s.asyncTaskSvc = async.NewAsyncTaskService()
+	s.taskService = async.NewTaskService()
 	s.ready = make(chan struct{})
 	s.goroutine = util.NewGo(context.Background())
 
 	for i := StoreType(0); i != typeEnd; i++ {
-		store.newNullStore(i)
+		s.newIndexBuilder(i, NullCacher)
 	}
 }
 
 func (s *KvStore) dispatchEvent(t StoreType, evt KvEvent) {
 	s.indexers[t].OnCacheEvent(evt)
 	EventProxy(t).OnEvent(evt)
-}
-
-func (s *KvStore) newStore(t StoreType, opts ...KvCacherCfgOption) {
-	s.newIndexBuilder(t, NewKvCacher(t.String(), s.getKvCacherCfgOptions(t)...))
-}
-
-func (s *KvStore) newNullStore(t StoreType) {
-	s.newIndexBuilder(t, NullCacher)
 }
 
 func (s *KvStore) newIndexBuilder(t StoreType, cacher Cacher) {
@@ -75,7 +68,7 @@ func (s *KvStore) newIndexBuilder(t StoreType, cacher Cacher) {
 
 func (s *KvStore) Run() {
 	s.goroutine.Do(s.store)
-	s.asyncTaskSvc.Run()
+	s.taskService.Run()
 }
 
 func (s *KvStore) getKvCacherCfgOptions(t StoreType) (opts []KvCacherCfgOption) {
@@ -98,16 +91,23 @@ func (s *KvStore) SelfPreservationHandler() DeferHandler {
 }
 
 func (s *KvStore) store(ctx context.Context) {
+	defer s.wait(ctx)
+
+	if !core.ServerInfo.Config.EnableCache {
+		util.Logger().Warnf(nil, "registry cache mechanism is disabled")
+		return
+	}
+
 	for t := StoreType(0); t != typeEnd; t++ {
 		switch t {
 		case SCHEMA:
+			util.Logger().Infof("service center will not cache '%s'", SCHEMA)
 			continue
 		default:
-			s.newStore(t)
+			s.indexers[t].Stop() // release the exist indexer
+			s.newIndexBuilder(t, NewKvCacher(t.String(), s.getKvCacherCfgOptions(t)...))
 		}
 	}
-
-	s.wait(ctx)
 }
 
 func (s *KvStore) wait(ctx context.Context) {
@@ -129,7 +129,7 @@ func (s *KvStore) onLeaseEvent(evt KvEvent) {
 	}
 
 	key := util.BytesToStringWithNoCopy(evt.Object.(*mvccpb.KeyValue).Key)
-	s.asyncTaskSvc.DeferRemove(ToLeaseAsyncTaskKey(key))
+	s.taskService.DeferRemove(ToLeaseAsyncTaskKey(key))
 }
 func (s *KvStore) closed() bool {
 	return s.isClose
@@ -145,7 +145,7 @@ func (s *KvStore) Stop() {
 		i.Stop()
 	}
 
-	s.asyncTaskSvc.Stop()
+	s.taskService.Stop()
 
 	s.goroutine.Close(true)
 
@@ -155,7 +155,7 @@ func (s *KvStore) Stop() {
 }
 
 func (s *KvStore) Ready() <-chan struct{} {
-	<-s.asyncTaskSvc.Ready()
+	<-s.taskService.Ready()
 	return s.ready
 }
 
@@ -234,15 +234,15 @@ func (s *KvStore) KeepAlive(ctx context.Context, opts ...registry.PluginOpOption
 		return ttl, err
 	}
 
-	err := s.asyncTaskSvc.Add(ctx, t)
+	err := s.taskService.Add(ctx, t)
 	if err != nil {
 		return 0, err
 	}
-	itf, err := s.asyncTaskSvc.LatestHandled(t.Key())
+	itf, err := s.taskService.LatestHandled(t.Key())
 	if err != nil {
 		return 0, err
 	}
-	pt := itf.(*LeaseAsyncTask)
+	pt := itf.(*LeaseTask)
 	return pt.TTL, pt.Err()
 }
 

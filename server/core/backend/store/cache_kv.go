@@ -46,8 +46,7 @@ func (c *KvCache) Data(k interface{}) interface{} {
 	if !ok {
 		return nil
 	}
-	copied := *kv
-	return &copied
+	return kv
 }
 
 func (c *KvCache) Have(k interface{}) (ok bool) {
@@ -79,19 +78,25 @@ func (c *KvCache) Unlock() {
 	if c.size >= l &&
 		c.lastMaxSize > c.size*DEFAULT_COMPACT_TIMES &&
 		time.Now().Sub(c.lastRefresh) >= DEFAULT_COMPACT_TIMEOUT {
-		util.Logger().Infof("cache %s is not in use over %s, compact capacity to size %d->%d",
-			c.owner.Cfg.Key, DEFAULT_COMPACT_TIMEOUT, c.lastMaxSize, c.size)
-		// gc
-		newCache := make(map[string]*mvccpb.KeyValue, c.size)
-		for k, v := range c.store {
-			newCache[k] = v
-		}
-		c.store = newCache
+		c.compact()
 		c.lastMaxSize = l
 		c.lastRefresh = time.Now()
 	}
 
 	c.rwMux.Unlock()
+}
+
+func (c *KvCache) compact() {
+	// gc
+	newCache := make(map[string]*mvccpb.KeyValue, c.size)
+	for k, v := range c.store {
+		newCache[k] = v
+	}
+	c.store = newCache
+
+	util.Logger().Infof("cache %s is not in use over %s, compact capacity to size %d->%d",
+		c.owner.Cfg.Key, DEFAULT_COMPACT_TIMEOUT, c.lastMaxSize, c.size)
+
 }
 
 func (c *KvCache) Size() (l int) {
@@ -211,7 +216,7 @@ func (c *KvCacher) refresh(ctx context.Context) {
 		start := time.Now()
 		c.ListAndWatch(ctx)
 		watchDuration := time.Since(start)
-		nextPeriod := c.Cfg.Period
+		nextPeriod := minWaitInterval
 		if watchDuration > 0 && c.Cfg.Period > watchDuration {
 			nextPeriod = c.Cfg.Period - watchDuration
 		}
@@ -220,8 +225,7 @@ func (c *KvCacher) refresh(ctx context.Context) {
 			util.Logger().Debugf("stop to list and watch %s", c.Cfg)
 			return
 		case <-time.After(nextPeriod):
-			r := c.cache.RLock()
-			ReportCacheMetrics(c.Name(), "raw", r)
+			ReportCacheMetrics(c.Name(), "raw", c.cache.RLock())
 			c.cache.RUnlock()
 		}
 	}
@@ -233,7 +237,7 @@ func (c *KvCacher) deferHandle(ctx context.Context) {
 	}
 
 	var (
-		evts [event_block_size]KvEvent
+		evts [eventBlockSize]KvEvent
 		i    int
 	)
 	for {
@@ -246,7 +250,7 @@ func (c *KvCacher) deferHandle(ctx context.Context) {
 				continue
 			}
 
-			if i >= event_block_size {
+			if i >= eventBlockSize {
 				c.onEvents(evts[:i])
 				i = 0
 			}
@@ -295,7 +299,7 @@ func (c *KvCacher) filter(rev int64, items []*mvccpb.KeyValue) []KvEvent {
 		newStore[util.BytesToStringWithNoCopy(kv.Key)] = kv
 	}
 	filterStopCh := make(chan struct{})
-	eventsCh := make(chan [event_block_size]KvEvent, max/event_block_size+2)
+	eventsCh := make(chan [eventBlockSize]KvEvent, max/eventBlockSize+2)
 
 	go c.filterDelete(store, newStore, rev, eventsCh, filterStopCh)
 
@@ -314,8 +318,8 @@ func (c *KvCacher) filter(rev int64, items []*mvccpb.KeyValue) []KvEvent {
 }
 
 func (c *KvCacher) filterDelete(store map[string]*mvccpb.KeyValue, newStore map[string]*mvccpb.KeyValue,
-	rev int64, eventsCh chan [event_block_size]KvEvent, filterStopCh chan struct{}) {
-	var block [event_block_size]KvEvent
+	rev int64, eventsCh chan [eventBlockSize]KvEvent, filterStopCh chan struct{}) {
+	var block [eventBlockSize]KvEvent
 	i := 0
 	for k, v := range store {
 		_, ok := newStore[k]
@@ -323,9 +327,9 @@ func (c *KvCacher) filterDelete(store map[string]*mvccpb.KeyValue, newStore map[
 			continue
 		}
 
-		if i >= event_block_size {
+		if i >= eventBlockSize {
 			eventsCh <- block
-			block = [event_block_size]KvEvent{}
+			block = [eventBlockSize]KvEvent{}
 			i = 0
 		}
 
@@ -346,15 +350,15 @@ func (c *KvCacher) filterDelete(store map[string]*mvccpb.KeyValue, newStore map[
 }
 
 func (c *KvCacher) filterCreateOrUpdate(store map[string]*mvccpb.KeyValue, newStore map[string]*mvccpb.KeyValue,
-	rev int64, eventsCh chan [event_block_size]KvEvent, filterStopCh chan struct{}) {
-	var block [event_block_size]KvEvent
+	rev int64, eventsCh chan [eventBlockSize]KvEvent, filterStopCh chan struct{}) {
+	var block [eventBlockSize]KvEvent
 	i := 0
 	for k, v := range newStore {
 		ov, ok := store[k]
 		if !ok {
-			if i >= event_block_size {
+			if i >= eventBlockSize {
 				eventsCh <- block
-				block = [event_block_size]KvEvent{}
+				block = [eventBlockSize]KvEvent{}
 				i = 0
 			}
 
@@ -372,9 +376,9 @@ func (c *KvCacher) filterCreateOrUpdate(store map[string]*mvccpb.KeyValue, newSt
 			continue
 		}
 
-		if i >= event_block_size {
+		if i >= eventBlockSize {
 			eventsCh <- block
-			block = [event_block_size]KvEvent{}
+			block = [eventBlockSize]KvEvent{}
 			i = 0
 		}
 

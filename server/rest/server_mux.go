@@ -16,14 +16,22 @@
  */
 package rest
 
-import "net/http"
+import (
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"net/http"
+)
 
 var DefaultServerMux = http.NewServeMux()
 
 func RegisterServerHandleFunc(pattern string, f http.HandlerFunc) {
 	DefaultServerMux.HandleFunc(pattern, f)
+
+	util.Logger().Infof("register server http handle function %s(), pattern %s", util.FuncName(f), pattern)
 }
 
 func RegisterServerHandler(pattern string, h http.Handler) {
 	DefaultServerMux.Handle(pattern, h)
+
+	t := util.ReflectObject(h).Type
+	util.Logger().Infof("register server http handler %s/%s, pattern %s", t.PkgPath(), t.Name(), pattern)
 }

@@ -57,7 +57,7 @@ func (tt *testTask) Do(ctx context.Context) error {
 }
 
 func TestBaseAsyncTasker_AddTask(t *testing.T) {
-	at := NewAsyncTaskService()
+	at := NewTaskService()
 	at.Run()
 	defer at.Stop()
 
@@ -97,7 +97,7 @@ func TestBaseAsyncTasker_AddTask(t *testing.T) {
 }
 
 func TestBaseAsyncTasker_Stop(t *testing.T) {
-	at := NewAsyncTaskService()
+	at := NewTaskService()
 	at.Stop()
 	at.Run()
 
@@ -132,7 +132,7 @@ func TestBaseAsyncTasker_Stop(t *testing.T) {
 }
 
 func TestBaseAsyncTasker_RemoveTask(t *testing.T) {
-	at := NewAsyncTaskService()
+	at := NewTaskService()
 	at.Run()
 
 	err := at.DeferRemove("test")

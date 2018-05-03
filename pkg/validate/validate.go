@@ -113,7 +113,7 @@ func (v *ValidateRule) Match(s interface{}) (ok bool, invalidValue interface{}) 
 					invalidValue = v
 					break
 				}
-				if ok, v := itemV.Match(sv.MapIndex(key).Interface()); !ok{
+				if ok, v := itemV.Match(sv.MapIndex(key).Interface()); !ok {
 					invalid = true
 					invalidValue = v
 					break
@@ -124,7 +124,7 @@ func (v *ValidateRule) Match(s interface{}) (ok bool, invalidValue interface{}) 
 				Regexp: v.Regexp,
 			}
 			for i, l := 0, sv.Len(); i < l; i++ {
-				if ok, v := itemV.Match(sv.Index(i).Interface()) ; !ok{
+				if ok, v := itemV.Match(sv.Index(i).Interface()); !ok {
 					invalid = true
 					invalidValue = v
 					break
@@ -213,7 +213,7 @@ func (v *Validator) Validate(s interface{}) error {
 		return errors.New("not support validate type")
 	}
 
-	st := util.LoadStruct(s)
+	st := util.ReflectObject(s)
 	for i, l := 0, sv.NumField(); i < l; i++ {
 		field := sv.Field(i)
 		fieldName := st.Fields[i].Name
@@ -242,7 +242,7 @@ func (v *Validator) Validate(s interface{}) error {
 				}
 			}
 			// TODO null pointer如何校验
-			if field.Kind() != reflect.Ptr{
+			if field.Kind() != reflect.Ptr {
 				ok, invalidValue := validate.Match(fi)
 				if !ok {
 					if filter(fieldName) {

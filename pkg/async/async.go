@@ -14,17 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package store
+package async
 
-import "github.com/apache/incubator-servicecomb-service-center/pkg/async"
+import "sync"
 
-var service *async.AsyncTaskService
+var (
+	service *TaskService
+	once    sync.Once
+)
 
 func init() {
-	service = async.NewAsyncTaskService()
-	service.Run()
+	service = NewTaskService()
 }
 
-func AsyncTaskService() *async.AsyncTaskService {
+func Service() *TaskService {
+	once.Do(service.Run)
 	return service
 }
