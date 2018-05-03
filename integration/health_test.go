@@ -37,7 +37,6 @@ var _ = Describe("Basic Api Test", func() {
 				Expect(err).To(BeNil())
 				defer resp.Body.Close()
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 			})
 		})
 

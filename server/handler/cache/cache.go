@@ -36,12 +36,7 @@ func (l *CacheResponse) Handle(i *chain.Invocation) {
 	w.Header().Set("X-Resource-Revision", fmt.Sprint(scRev))
 
 	rev, _ := strconv.ParseInt(r.URL.Query().Get("rev"), 10, 64)
-	if rev == 0 {
-		i.Next()
-		return
-	}
-
-	if rev == scRev && r.Method == http.MethodGet {
+	if rev != 0 && rev == scRev && r.Method == http.MethodGet {
 		w.WriteHeader(http.StatusNotModified)
 		i.Fail(nil)
 		return
