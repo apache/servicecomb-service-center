@@ -29,7 +29,6 @@ import (
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"github.com/coreos/pkg/capnslog"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"strings"
@@ -46,9 +45,7 @@ var (
 )
 
 func init() {
-	l := &clientLogger{}
-	capnslog.SetFormatter(l)
-	clientv3.SetLogger(l)
+	clientv3.SetLogger(&clientLogger{})
 	mgr.RegisterPlugin(mgr.Plugin{mgr.REGISTRY, "etcd", NewRegistry})
 }
 

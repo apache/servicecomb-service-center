@@ -20,7 +20,6 @@ import (
 	"flag"
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"golang.org/x/net/context"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -72,7 +71,7 @@ func Init() {
 		flag.Parse()
 	}
 
-	util.Go(handleSignals)
+	go handleSignals()
 }
 
 func Before(f func()) {
@@ -112,7 +111,7 @@ func fireSignalHook(ppFlag int, sig os.Signal) {
 	}
 }
 
-func handleSignals(ctx context.Context) {
+func handleSignals() {
 	var sig os.Signal
 
 	sigCh := make(chan os.Signal)
@@ -120,8 +119,6 @@ func handleSignals(ctx context.Context) {
 
 	for {
 		select {
-		case <-ctx.Done():
-			return
 		case sig = <-sigCh:
 			fireSignalHook(PreSignal, sig)
 			switch sig {

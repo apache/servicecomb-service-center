@@ -903,7 +903,7 @@ var _ = Describe("'Schema' service", func() {
 			})
 			Expect(err).To(BeNil())
 			Expect(respGetAllSchema.Response.Code).To(Equal(pb.Response_SUCCESS))
-			schemas := respGetAllSchema.Schema
+			schemas := respGetAllSchema.Schemas
 			for _, schema := range schemas {
 				if schema.SchemaId == schemaId1 {
 					Expect(schema.Summary).To(BeEmpty())
@@ -925,7 +925,7 @@ var _ = Describe("'Schema' service", func() {
 			})
 			Expect(err).To(BeNil())
 			Expect(respGetAllSchema.Response.Code).To(Equal(pb.Response_SUCCESS))
-			schemas = respGetAllSchema.Schema
+			schemas = respGetAllSchema.Schemas
 			for _, schema := range schemas {
 				if schema.SchemaId == schemaId1 {
 					Expect(schema.Schema).To(BeEmpty())

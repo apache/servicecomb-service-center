@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/coreos/pkg/capnslog"
+	"runtime"
+	"strings"
 )
 
 // clientLogger implement from grcplog.LoggerV2s and capnslog.Formatter
@@ -27,21 +29,29 @@ type clientLogger struct {
 }
 
 func (l *clientLogger) Format(pkg string, level capnslog.LogLevel, depth int, entries ...interface{}) {
+	fmt := "\b" + l.getCaller(depth) + " " + pkg + " %s"
 	switch level {
-	case capnslog.CRITICAL:
-		l.Fatalf(pkg+": %s", entries...)
-	case capnslog.ERROR:
-		l.Errorf(pkg+": %s", entries...)
-	case capnslog.WARNING:
-		l.Warningf(pkg+": %s", entries...)
-	case capnslog.NOTICE, capnslog.INFO:
-		l.Infof(pkg+": %s", entries...)
-	case capnslog.DEBUG, capnslog.TRACE:
-		return
+	case capnslog.CRITICAL, capnslog.ERROR, capnslog.WARNING, capnslog.INFO:
+		l.Errorf(fmt, entries...)
+	case capnslog.NOTICE, capnslog.DEBUG, capnslog.TRACE:
 	default:
 		return
 	}
 	l.Flush()
+}
+
+func (l *clientLogger) getCaller(depth int) string {
+	_, file, line, ok := runtime.Caller(depth + 4)
+	if !ok {
+		return "???"
+	}
+
+	if sp1 := strings.LastIndex(file, "/"); sp1 >= 0 {
+		if sp2 := strings.LastIndex(file[:sp1], "/"); sp2 >= 0 {
+			file = file[sp2+1:]
+		}
+	}
+	return fmt.Sprintf("%s:%d", file, line)
 }
 
 func (l *clientLogger) Flush() {
