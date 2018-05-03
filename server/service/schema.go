@@ -125,7 +125,7 @@ func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAl
 		util.Logger().Infof("service %s schemaId set is empty.", in.ServiceId)
 		return &pb.GetAllSchemaResponse{
 			Response: pb.CreateResponse(pb.Response_SUCCESS, "Do not have this schema info."),
-			Schema:   []*pb.Schema{},
+			Schemas:  []*pb.Schema{},
 		}, nil
 	}
 
@@ -174,7 +174,7 @@ func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAl
 
 	return &pb.GetAllSchemaResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Get all schema info successfully."),
-		Schema:   schemas,
+		Schemas:  schemas,
 	}, nil
 
 }

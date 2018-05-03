@@ -502,7 +502,7 @@ message GetSchemaResponse {
 
 message GetAllSchemaResponse {
     Response response = 1;
-    repeated Schema schema = 2;
+    repeated Schema schemas = 2;
 }
 
 message DeleteSchemaRequest {
