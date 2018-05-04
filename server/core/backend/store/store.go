@@ -61,7 +61,7 @@ func (s *KvStore) dispatchEvent(t StoreType, evt KvEvent) {
 }
 
 func (s *KvStore) newIndexBuilder(t StoreType, cacher Cacher) {
-	indexer := NewCacheIndexer(cacher)
+	indexer := NewCacheIndexer(TypeRoots[t], cacher)
 	s.indexers[t] = indexer
 	indexer.Run()
 }
@@ -81,7 +81,7 @@ func (s *KvStore) getKvCacherCfgOptions(t StoreType) (opts []KvCacherCfgOption) 
 		opts = append(opts, WithInitSize(sz))
 	}
 	opts = append(opts,
-		WithKey(TypeRoots[t]),
+		WithPrefix(TypeRoots[t]),
 		WithEventFunc(func(evt KvEvent) { s.dispatchEvent(t, evt) }))
 	return
 }
@@ -244,6 +244,33 @@ func (s *KvStore) KeepAlive(ctx context.Context, opts ...registry.PluginOpOption
 	}
 	pt := itf.(*LeaseTask)
 	return pt.TTL, pt.Err()
+}
+
+func (s *KvStore) Entity(id StoreType) *Indexer {
+	return s.indexers[id]
+}
+
+func (s *KvStore) Install(e Entity) (id StoreType, err error) {
+	if id, err = InstallType(e); err != nil {
+		return
+	}
+
+	util.Logger().Infof("install new store entity %d:%s->%s", id, e.Name(), e.Prefix())
+
+	if !core.ServerInfo.Config.EnableCache {
+		s.newIndexBuilder(id, NullCacher)
+		return
+	}
+	s.newIndexBuilder(id, NewKvCacher(id.String(), s.getKvCacherCfgOptions(id)...))
+	return
+}
+
+func (s *KvStore) MustInstall(e Entity) StoreType {
+	id, err := s.Install(e)
+	if err != nil {
+		panic(err)
+	}
+	return id
 }
 
 func Store() *KvStore {

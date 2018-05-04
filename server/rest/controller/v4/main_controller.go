@@ -28,7 +28,10 @@ import (
 	"net/http"
 )
 
-var resultJSON []byte
+var (
+	versionJsonCache []byte
+	versionResp      *pb.Response
+)
 
 const API_VERSION = "4.0.0"
 
@@ -48,7 +51,8 @@ func init() {
 		API_VERSION,
 		core.ServerInfo.Config,
 	}
-	resultJSON, _ = json.Marshal(result)
+	versionJsonCache, _ = json.Marshal(result)
+	versionResp = pb.CreateResponse(pb.Response_SUCCESS, "get version successfully")
 }
 
 func (this *MainService) URLPatterns() []rest.Route {
@@ -72,6 +76,5 @@ func (this *MainService) ClusterHealth(w http.ResponseWriter, r *http.Request) {
 }
 
 func (this *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json;charset=utf-8")
-	w.Write(resultJSON)
+	controller.WriteBytes(w, versionResp, versionJsonCache)
 }

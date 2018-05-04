@@ -25,15 +25,23 @@ import (
 	"net/http"
 )
 
+const (
+	contentTypeJson = "application/json; charset=UTF-8"
+	contentTypeText = "text/plain; charset=UTF-8"
+)
+
 func WriteError(w http.ResponseWriter, code int32, detail string) {
 	err := error.NewError(code, detail)
-	err.HttpWrite(w)
+	w.Header().Add("X-Response-Status", fmt.Sprint(err.StatusCode()))
+	w.Header().Set("Content-Type", contentTypeJson)
+	w.WriteHeader(err.StatusCode())
+	fmt.Fprintln(w, util.BytesToStringWithNoCopy(err.Marshal()))
 }
 
 func WriteJsonObject(w http.ResponseWriter, obj interface{}) {
 	if obj == nil {
 		w.Header().Add("X-Response-Status", fmt.Sprint(http.StatusOK))
-		w.Header().Set("Content-Type", "text/plain; charset=UTF-8")
+		w.Header().Set("Content-Type", contentTypeText)
 		w.WriteHeader(http.StatusOK)
 		return
 	}
@@ -44,7 +52,7 @@ func WriteJsonObject(w http.ResponseWriter, obj interface{}) {
 		return
 	}
 	w.Header().Add("X-Response-Status", fmt.Sprint(http.StatusOK))
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set("Content-Type", contentTypeJson)
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintln(w, util.BytesToStringWithNoCopy(objJson))
 }
@@ -61,11 +69,10 @@ func WriteResponse(w http.ResponseWriter, resp *pb.Response, obj interface{}) {
 func WriteBytes(w http.ResponseWriter, resp *pb.Response, json []byte) {
 	if resp.GetCode() == pb.Response_SUCCESS {
 		w.Header().Add("X-Response-Status", fmt.Sprint(http.StatusOK))
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.Header().Set("Content-Type", contentTypeJson)
 		w.WriteHeader(http.StatusOK)
 		w.Write(json)
 		return
 	}
 	WriteError(w, resp.GetCode(), resp.GetMessage())
 }
-

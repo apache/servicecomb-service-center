@@ -38,16 +38,16 @@ func (lo *ListOptions) String() string {
 
 type ListWatcher struct {
 	Client registry.Registry
-	Key    string
+	Prefix string
 
 	rev int64
 }
 
 func (lw *ListWatcher) List(op ListOptions) ([]*mvccpb.KeyValue, error) {
 	otCtx, _ := context.WithTimeout(op.Context, op.Timeout)
-	resp, err := lw.Client.Do(otCtx, registry.WatchPrefixOpOptions(lw.Key)...)
+	resp, err := lw.Client.Do(otCtx, registry.WatchPrefixOpOptions(lw.Prefix)...)
 	if err != nil {
-		util.Logger().Errorf(err, "list key %s failed, rev: %d->0", lw.Key, lw.Revision())
+		util.Logger().Errorf(err, "list prefix %s failed, rev: %d->0", lw.Prefix, lw.Revision())
 		lw.setRevision(0)
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func (lw *ListWatcher) Watch(op ListOptions) *Watcher {
 func (lw *ListWatcher) doWatch(ctx context.Context, f func(evt []KvEvent)) error {
 	rev := lw.Revision()
 	opts := append(
-		registry.WatchPrefixOpOptions(lw.Key),
+		registry.WatchPrefixOpOptions(lw.Prefix),
 		registry.WithRev(rev+1),
 		registry.WithWatchCallback(
 			func(message string, resp *registry.PluginResponse) error {
@@ -81,13 +81,13 @@ func (lw *ListWatcher) doWatch(ctx context.Context, f func(evt []KvEvent)) error
 					return fmt.Errorf("unknown event %s", resp)
 				}
 
-				util.Logger().Infof("watch prefix key %s, start rev %d+1, event: %s", lw.Key, rev, resp)
+				util.Logger().Infof("watch prefix %s, start rev %d+1, event: %s", lw.Prefix, rev, resp)
 
 				lw.setRevision(resp.Revision)
 
 				evts := make([]KvEvent, len(resp.Kvs))
 				for i, kv := range resp.Kvs {
-					evt := KvEvent{Prefix: lw.Key, Revision: kv.ModRevision}
+					evt := KvEvent{Prefix: lw.Prefix, Revision: kv.ModRevision}
 					switch {
 					case resp.Action == registry.Put && kv.Version == 1:
 						evt.Type, evt.Object = proto.EVT_CREATE, kv
@@ -106,10 +106,10 @@ func (lw *ListWatcher) doWatch(ctx context.Context, f func(evt []KvEvent)) error
 
 	err := lw.Client.Watch(ctx, opts...)
 	if err != nil { // compact可能会导致watch失败 or message body size lager than 4MB
-		util.Logger().Errorf(err, "watch key %s failed, start rev: %d+1->%d->0", lw.Key, rev, lw.Revision())
+		util.Logger().Errorf(err, "watch prefix %s failed, start rev: %d+1->%d->0", lw.Prefix, rev, lw.Revision())
 
 		lw.setRevision(0)
-		f([]KvEvent{errEvent(lw.Key, err)})
+		f([]KvEvent{errEvent(lw.Prefix, err)})
 	}
 	return err
 }

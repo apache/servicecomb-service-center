@@ -25,11 +25,16 @@ import (
 type StoreType int
 
 func (st StoreType) String() string {
+	if int(st) < 0 {
+		return "NONEXIST"
+	}
 	if int(st) < len(TypeNames) {
 		return TypeNames[st]
 	}
 	return "TYPE" + strconv.Itoa(int(st))
 }
+
+const NONEXIST = StoreType(-1)
 
 const (
 	DOMAIN StoreType = iota
@@ -48,25 +53,25 @@ const (
 	INSTANCE
 	LEASE
 	ENDPOINTS
-	typeEnd
+	typeEnd // end of the base store types
 )
 
 var TypeNames = []string{
-	SERVICE:          "SERVICE",
-	INSTANCE:         "INSTANCE",
 	DOMAIN:           "DOMAIN",
-	SCHEMA:           "SCHEMA",
-	SCHEMA_SUMMARY:   "SCHEMA_SUMMARY",
-	RULE:             "RULE",
-	LEASE:            "LEASE",
+	PROJECT:          "PROJECT",
+	SERVICE:          "SERVICE",
 	SERVICE_INDEX:    "SERVICE_INDEX",
 	SERVICE_ALIAS:    "SERVICE_ALIAS",
 	SERVICE_TAG:      "SERVICE_TAG",
+	RULE:             "RULE",
 	RULE_INDEX:       "RULE_INDEX",
 	DEPENDENCY:       "DEPENDENCY",
 	DEPENDENCY_RULE:  "DEPENDENCY_RULE",
 	DEPENDENCY_QUEUE: "DEPENDENCY_QUEUE",
-	PROJECT:          "PROJECT",
+	SCHEMA:           "SCHEMA",
+	SCHEMA_SUMMARY:   "SCHEMA_SUMMARY",
+	INSTANCE:         "INSTANCE",
+	LEASE:            "LEASE",
 	ENDPOINTS:        "ENDPOINTS",
 }
 

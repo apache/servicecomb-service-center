@@ -95,7 +95,7 @@ func (c *KvCache) compact() {
 	c.store = newCache
 
 	util.Logger().Infof("cache %s is not in use over %s, compact capacity to size %d->%d",
-		c.owner.Cfg.Key, DEFAULT_COMPACT_TIMEOUT, c.lastMaxSize, c.size)
+		c.owner.Cfg.Prefix, DEFAULT_COMPACT_TIMEOUT, c.lastMaxSize, c.size)
 
 }
 
@@ -143,7 +143,7 @@ func (c *KvCacher) needList() bool {
 	}
 
 	util.Logger().Debugf("no events come in more then %s, need to list key %s, rev: %d",
-		time.Duration(c.noEventCount)*c.Cfg.Timeout, c.Cfg.Key, rev)
+		time.Duration(c.noEventCount)*c.Cfg.Timeout, c.Cfg.Prefix, rev)
 	c.noEventCount = 0
 	return true
 }
@@ -161,7 +161,7 @@ func (c *KvCacher) doList(listOps ListOptions) error {
 		util.Logger().Warnf(nil, "most of the protected data(%d/%d) are recovered", kc, c.cache.Size())
 	}
 	c.sync(evts)
-	util.LogDebugOrWarnf(start, "finish to cache key %s, %d items, rev: %d", c.Cfg.Key, len(kvs), c.lw.Revision())
+	util.LogDebugOrWarnf(start, "finish to cache key %s, %d items, rev: %d", c.Cfg.Prefix, len(kvs), c.lw.Revision())
 
 	return nil
 }
@@ -336,7 +336,7 @@ func (c *KvCacher) filterDelete(store map[string]*mvccpb.KeyValue, newStore map[
 		block[i] = KvEvent{
 			Revision: rev,
 			Type:     proto.EVT_DELETE,
-			Prefix:   c.Cfg.Key,
+			Prefix:   c.Cfg.Prefix,
 			Object:   v,
 		}
 		i++
@@ -365,7 +365,7 @@ func (c *KvCacher) filterCreateOrUpdate(store map[string]*mvccpb.KeyValue, newSt
 			block[i] = KvEvent{
 				Revision: rev,
 				Type:     proto.EVT_CREATE,
-				Prefix:   c.Cfg.Key,
+				Prefix:   c.Cfg.Prefix,
 				Object:   v,
 			}
 			i++
@@ -385,7 +385,7 @@ func (c *KvCacher) filterCreateOrUpdate(store map[string]*mvccpb.KeyValue, newSt
 		block[i] = KvEvent{
 			Revision: rev,
 			Type:     proto.EVT_UPDATE,
-			Prefix:   c.Cfg.Key,
+			Prefix:   c.Cfg.Prefix,
 			Object:   v,
 		}
 		i++
@@ -504,7 +504,7 @@ func NewKvCacher(name string, opts ...KvCacherCfgOption) *KvCacher {
 		ready: make(chan struct{}),
 		lw: ListWatcher{
 			Client: backend.Registry(),
-			Key:    cfg.Key,
+			Prefix: cfg.Prefix,
 		},
 		goroutine: util.NewGo(context.Background()),
 	}

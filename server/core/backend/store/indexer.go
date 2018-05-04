@@ -28,23 +28,16 @@ import (
 	"time"
 )
 
-var defaultRootKeys map[string]struct{}
-
-func init() {
-	defaultRootKeys = make(map[string]struct{}, len(defaultRootKeys))
-	for _, root := range TypeRoots {
-		defaultRootKeys[root] = struct{}{}
-	}
-}
-
 type Indexer struct {
-	BuildTimeout     time.Duration
+	BuildTimeout time.Duration
+	Root         string
+
 	cacher           Cacher
-	prefixIndex      map[string]map[string]struct{}
-	prefixLock       sync.RWMutex
-	prefixBuildQueue chan KvEvent
 	goroutine        *util.GoRoutine
 	ready            chan struct{}
+	prefixIndex      map[string]map[string]struct{}
+	prefixBuildQueue chan KvEvent
+	prefixLock       sync.RWMutex
 	isClose          bool
 }
 
@@ -266,8 +259,7 @@ func (i *Indexer) getPrefixKey(arr *[]string, prefix string) (count int) {
 }
 
 func (i *Indexer) addPrefixKey(prefix, key string) {
-	_, ok := defaultRootKeys[key]
-	if ok {
+	if i.Root == key {
 		return
 	}
 
@@ -342,9 +334,10 @@ func (i *Indexer) Ready() <-chan struct{} {
 	return i.ready
 }
 
-func NewCacheIndexer(cr Cacher) *Indexer {
+func NewCacheIndexer(root string, cr Cacher) *Indexer {
 	return &Indexer{
 		BuildTimeout:     DEFAULT_ADD_QUEUE_TIMEOUT,
+		Root:             root,
 		cacher:           cr,
 		prefixIndex:      make(map[string]map[string]struct{}, DEFAULT_CACHE_INIT_SIZE),
 		prefixBuildQueue: make(chan KvEvent, DEFAULT_MAX_EVENT_COUNT),

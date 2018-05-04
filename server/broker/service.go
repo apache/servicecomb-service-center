@@ -62,7 +62,7 @@ func (*BrokerService) GetPactsOfProvider(ctx context.Context,
 		PactLogger.Errorf(nil, "Get pacts of provider failed: %s\n",
 			resp.Response.Message)
 		return &GetProviderConsumerVersionPactResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: resp.GetResponse(),
 		}, err
 	}
 

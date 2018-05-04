@@ -17,28 +17,37 @@
 package store
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"errors"
+	"fmt"
 )
 
-type KvEventFunc func(evt KvEvent)
-
-type KvEvent struct {
-	Revision int64
-	Type     proto.EventType
-	Prefix   string
-	Object   interface{}
+type Entity interface {
+	Name() string
+	Prefix() string
+	InitSize() int
 }
 
-type KvEventHandler interface {
-	Type() StoreType
-	OnEvent(evt KvEvent)
-}
+func InstallType(e Entity) (id StoreType, err error) {
+	if e == nil {
+		return NONEXIST, errors.New("invalid parameter")
+	}
+	for _, n := range TypeNames {
+		if n == e.Name() {
+			return NONEXIST, fmt.Errorf("redeclare store type '%s'", n)
+		}
+	}
+	for _, r := range TypeRoots {
+		if r == e.Prefix() {
+			return NONEXIST, fmt.Errorf("redeclare store root '%s'", r)
+		}
+	}
 
-// the event handler/func must be good performance, or will block the event bus.
-func AddEventHandleFunc(t StoreType, f KvEventFunc) {
-	EventProxy(t).AddHandleFunc(f)
-}
+	TypeNames = append(TypeNames, e.Name())
+	id = StoreType(len(TypeNames) + 1) // +1 for typeEnd
 
-func AddEventHandler(h KvEventHandler) {
-	AddEventHandleFunc(h.Type(), h.OnEvent)
+	TypeRoots[id] = e.Prefix()
+	TypeInitSize[id] = e.InitSize()
+
+	EventProxies[id] = NewEventProxy()
+	return
 }

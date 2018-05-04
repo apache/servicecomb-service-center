@@ -22,7 +22,7 @@ import (
 )
 
 type KvCacherCfg struct {
-	Key                string
+	Prefix             string
 	InitSize           int
 	NoEventMaxInterval int
 	Timeout            time.Duration
@@ -32,14 +32,14 @@ type KvCacherCfg struct {
 }
 
 func (cfg KvCacherCfg) String() string {
-	return fmt.Sprintf("{key: %s, timeout: %s, period: %s}",
-		cfg.Key, cfg.Timeout, cfg.Period)
+	return fmt.Sprintf("{prefix: %s, timeout: %s, period: %s}",
+		cfg.Prefix, cfg.Timeout, cfg.Period)
 }
 
 type KvCacherCfgOption func(*KvCacherCfg)
 
-func WithKey(key string) KvCacherCfgOption {
-	return func(cfg *KvCacherCfg) { cfg.Key = key }
+func WithPrefix(key string) KvCacherCfgOption {
+	return func(cfg *KvCacherCfg) { cfg.Prefix = key }
 }
 
 func WithInitSize(size int) KvCacherCfgOption {
@@ -64,7 +64,7 @@ func WithDeferHandler(h DeferHandler) KvCacherCfgOption {
 
 func DefaultKvCacherConfig() KvCacherCfg {
 	return KvCacherCfg{
-		Key:                "/",
+		Prefix:             "/",
 		Timeout:            DEFAULT_LISTWATCH_TIMEOUT,
 		Period:             time.Second,
 		NoEventMaxInterval: DEFAULT_MAX_NO_EVENT_INTERVAL,
