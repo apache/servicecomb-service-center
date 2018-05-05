@@ -27,6 +27,24 @@ type Entity interface {
 	InitSize() int
 }
 
+type entity struct {
+	name     string
+	prefix   string
+	initSize int
+}
+
+func (e *entity) Name() string {
+	return e.name
+}
+
+func (e *entity) Prefix() string {
+	return e.prefix
+}
+
+func (e *entity) InitSize() int {
+	return e.initSize
+}
+
 func InstallType(e Entity) (id StoreType, err error) {
 	if e == nil {
 		return NONEXIST, errors.New("invalid parameter")
@@ -50,4 +68,17 @@ func InstallType(e Entity) (id StoreType, err error) {
 
 	EventProxies[id] = NewEventProxy()
 	return
+}
+
+func NewEntity(name, prefix string, opts ...ConfigOption) Entity {
+	cfg := DefaultConfig()
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+	cfg.Prefix = prefix
+	return &entity{
+		name:     name,
+		prefix:   cfg.Prefix,
+		initSize: cfg.InitSize,
+	}
 }

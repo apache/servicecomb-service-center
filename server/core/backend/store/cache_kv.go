@@ -107,7 +107,7 @@ func (c *KvCache) Size() (l int) {
 }
 
 type KvCacher struct {
-	Cfg KvCacherCfg
+	Cfg Config
 
 	name         string
 	lastRev      int64
@@ -148,8 +148,8 @@ func (c *KvCacher) needList() bool {
 	return true
 }
 
-func (c *KvCacher) doList(listOps ListOptions) error {
-	kvs, err := c.lw.List(listOps)
+func (c *KvCacher) doList(cfg ListWatchConfig) error {
+	kvs, err := c.lw.List(cfg)
 	if err != nil {
 		return err
 	}
@@ -166,8 +166,8 @@ func (c *KvCacher) doList(listOps ListOptions) error {
 	return nil
 }
 
-func (c *KvCacher) doWatch(listOps ListOptions) error {
-	watcher := c.lw.Watch(listOps)
+func (c *KvCacher) doWatch(cfg ListWatchConfig) error {
+	watcher := c.lw.Watch(cfg)
 	return c.handleWatcher(watcher)
 }
 
@@ -175,19 +175,19 @@ func (c *KvCacher) ListAndWatch(ctx context.Context) error {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 
-	listOps := ListOptions{
+	cfg := ListWatchConfig{
 		Timeout: c.Cfg.Timeout,
 		Context: ctx,
 	}
 	if c.needList() {
-		if err := c.doList(listOps); err != nil {
+		if err := c.doList(cfg); err != nil {
 			return err
 		}
 	}
 
 	util.SafeCloseChan(c.ready)
 
-	return c.doWatch(listOps)
+	return c.doWatch(cfg)
 }
 
 func (c *KvCacher) handleWatcher(watcher *Watcher) error {
@@ -492,8 +492,8 @@ func NewKvCache(c *KvCacher, size int) *KvCache {
 	}
 }
 
-func NewKvCacher(name string, opts ...KvCacherCfgOption) *KvCacher {
-	cfg := DefaultKvCacherConfig()
+func NewKvCacher(name string, opts ...ConfigOption) *KvCacher {
+	cfg := DefaultConfig()
 	for _, opt := range opts {
 		opt(&cfg)
 	}

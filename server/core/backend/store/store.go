@@ -71,7 +71,7 @@ func (s *KvStore) Run() {
 	s.taskService.Run()
 }
 
-func (s *KvStore) getKvCacherCfgOptions(t StoreType) (opts []KvCacherCfgOption) {
+func (s *KvStore) getKvCacherCfgOptions(t StoreType) (opts []ConfigOption) {
 	switch t {
 	case INSTANCE:
 		opts = append(opts, WithDeferHandler(s.SelfPreservationHandler()))

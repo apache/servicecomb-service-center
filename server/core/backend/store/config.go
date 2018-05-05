@@ -18,10 +18,11 @@ package store
 
 import (
 	"fmt"
+	"golang.org/x/net/context"
 	"time"
 )
 
-type KvCacherCfg struct {
+type Config struct {
 	Prefix             string
 	InitSize           int
 	NoEventMaxInterval int
@@ -31,43 +32,52 @@ type KvCacherCfg struct {
 	DeferHandler       DeferHandler
 }
 
-func (cfg KvCacherCfg) String() string {
+func (cfg Config) String() string {
 	return fmt.Sprintf("{prefix: %s, timeout: %s, period: %s}",
 		cfg.Prefix, cfg.Timeout, cfg.Period)
 }
 
-type KvCacherCfgOption func(*KvCacherCfg)
+type ConfigOption func(*Config)
 
-func WithPrefix(key string) KvCacherCfgOption {
-	return func(cfg *KvCacherCfg) { cfg.Prefix = key }
+func WithPrefix(key string) ConfigOption {
+	return func(cfg *Config) { cfg.Prefix = key }
 }
 
-func WithInitSize(size int) KvCacherCfgOption {
-	return func(cfg *KvCacherCfg) { cfg.InitSize = size }
+func WithInitSize(size int) ConfigOption {
+	return func(cfg *Config) { cfg.InitSize = size }
 }
 
-func WithTimeout(ot time.Duration) KvCacherCfgOption {
-	return func(cfg *KvCacherCfg) { cfg.Timeout = ot }
+func WithTimeout(ot time.Duration) ConfigOption {
+	return func(cfg *Config) { cfg.Timeout = ot }
 }
 
-func WithPeriod(ot time.Duration) KvCacherCfgOption {
-	return func(cfg *KvCacherCfg) { cfg.Period = ot }
+func WithPeriod(ot time.Duration) ConfigOption {
+	return func(cfg *Config) { cfg.Period = ot }
 }
 
-func WithEventFunc(f KvEventFunc) KvCacherCfgOption {
-	return func(cfg *KvCacherCfg) { cfg.OnEvent = f }
+func WithEventFunc(f KvEventFunc) ConfigOption {
+	return func(cfg *Config) { cfg.OnEvent = f }
 }
 
-func WithDeferHandler(h DeferHandler) KvCacherCfgOption {
-	return func(cfg *KvCacherCfg) { cfg.DeferHandler = h }
+func WithDeferHandler(h DeferHandler) ConfigOption {
+	return func(cfg *Config) { cfg.DeferHandler = h }
 }
 
-func DefaultKvCacherConfig() KvCacherCfg {
-	return KvCacherCfg{
+func DefaultConfig() Config {
+	return Config{
 		Prefix:             "/",
 		Timeout:            DEFAULT_LISTWATCH_TIMEOUT,
 		Period:             time.Second,
 		NoEventMaxInterval: DEFAULT_MAX_NO_EVENT_INTERVAL,
 		InitSize:           DEFAULT_CACHE_INIT_SIZE,
 	}
+}
+
+type ListWatchConfig struct {
+	Timeout time.Duration
+	Context context.Context
+}
+
+func (lo *ListWatchConfig) String() string {
+	return fmt.Sprintf("{timeout: %s}", lo.Timeout)
 }

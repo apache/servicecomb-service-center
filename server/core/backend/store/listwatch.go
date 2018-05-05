@@ -24,17 +24,7 @@ import (
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"sync"
-	"time"
 )
-
-type ListOptions struct {
-	Timeout time.Duration
-	Context context.Context
-}
-
-func (lo *ListOptions) String() string {
-	return fmt.Sprintf("{timeout: %s}", lo.Timeout)
-}
 
 type ListWatcher struct {
 	Client registry.Registry
@@ -43,7 +33,7 @@ type ListWatcher struct {
 	rev int64
 }
 
-func (lw *ListWatcher) List(op ListOptions) ([]*mvccpb.KeyValue, error) {
+func (lw *ListWatcher) List(op ListWatchConfig) ([]*mvccpb.KeyValue, error) {
 	otCtx, _ := context.WithTimeout(op.Context, op.Timeout)
 	resp, err := lw.Client.Do(otCtx, registry.WatchPrefixOpOptions(lw.Prefix)...)
 	if err != nil {
@@ -66,7 +56,7 @@ func (lw *ListWatcher) setRevision(rev int64) {
 	lw.rev = rev
 }
 
-func (lw *ListWatcher) Watch(op ListOptions) *Watcher {
+func (lw *ListWatcher) Watch(op ListWatchConfig) *Watcher {
 	return newWatcher(lw, op)
 }
 
@@ -115,7 +105,7 @@ func (lw *ListWatcher) doWatch(ctx context.Context, f func(evt []KvEvent)) error
 }
 
 type Watcher struct {
-	ListOps ListOptions
+	ListOps ListWatchConfig
 	lw      *ListWatcher
 	bus     chan []KvEvent
 	stopCh  chan struct{}
@@ -169,7 +159,7 @@ func errEvent(key string, err error) KvEvent {
 	}
 }
 
-func newWatcher(lw *ListWatcher, listOps ListOptions) *Watcher {
+func newWatcher(lw *ListWatcher, listOps ListWatchConfig) *Watcher {
 	w := &Watcher{
 		ListOps: listOps,
 		lw:      lw,
