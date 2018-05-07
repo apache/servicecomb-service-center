@@ -70,10 +70,10 @@ func (s *InstanceService) preProcessRegisterInstance(ctx context.Context, instan
 				instance.HealthCheck.Interval*(instance.HealthCheck.Times+1) >= math.MaxInt32 {
 				return scerr.NewError(scerr.ErrInvalidParams, "Invalid 'healthCheck' settings in request body.")
 			}
-			renewalInterval = instance.HealthCheck.Interval
-			retryTimes = instance.HealthCheck.Times
 		case pb.CHECK_BY_PLATFORM:
 			// 默认120s
+			instance.HealthCheck.Interval = renewalInterval
+			instance.HealthCheck.Times = retryTimes
 		}
 	}
 
@@ -182,21 +182,18 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	// build the request options
 	key := apt.GenerateInstanceKey(domainProject, instance.ServiceId, instanceId)
 	hbKey := apt.GenerateInstanceLeaseKey(domainProject, instance.ServiceId, instanceId)
-	cmpBytes := util.StringToBytesWithNoCopy(apt.GenerateEndpointsIndexKey(domainProject, instance))
+	epKey := util.StringToBytesWithNoCopy(apt.GenerateEndpointsIndexKey(domainProject, instance))
 
 	opts := []registry.PluginOp{
 		registry.OpPut(registry.WithStrKey(key), registry.WithValue(data),
 			registry.WithLease(leaseID)),
 		registry.OpPut(registry.WithStrKey(hbKey), registry.WithStrValue(fmt.Sprintf("%d", leaseID)),
 			registry.WithLease(leaseID)),
-		registry.OpPut(registry.WithKey(cmpBytes), registry.WithStrValue(instance.ServiceId+"/"+instanceId),
+		registry.OpPut(registry.WithKey(epKey), registry.WithStrValue(instance.ServiceId+"/"+instanceId),
 			registry.WithLease(leaseID)),
 	}
-	uniqueCmpOpts := []registry.CompareOp{
-		registry.OpCmp(registry.CmpVer(cmpBytes), registry.CMP_EQUAL, 0),
-	}
 
-	resp, err := backend.Registry().TxnWithCmp(ctx, opts, uniqueCmpOpts, nil)
+	_, err = backend.Registry().Txn(ctx, opts)
 	if err != nil {
 		util.Logger().Errorf(err,
 			"register instance failed, service %s, instanceId %s, operator %s: commit data into etcd failed.",
@@ -204,36 +201,6 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, "Commit operations failed."),
 		}, err
-	}
-	if !resp.Succeeded {
-		// revoke the unused lease
-		defer backend.Registry().LeaseRevoke(ctx, leaseID)
-
-		oldInstanceId, checkErr := serviceUtil.CheckEndPoints(ctx, in.Instance)
-		if checkErr != nil {
-			util.Logger().Errorf(checkErr, "register instance failed, service %s, operator %s.",
-				instanceFlag, remoteIP)
-			resp := pb.CreateResponseWithSCErr(checkErr)
-			if checkErr.InternalError() {
-				return &pb.RegisterInstanceResponse{Response: resp}, checkErr
-			}
-			return &pb.RegisterInstanceResponse{Response: resp}, nil
-		}
-		if len(oldInstanceId) == 0 {
-			// re-check and found the older lease was revoked
-			util.Logger().Errorf(errors.New("instance is unregistered at the same time"),
-				"register instance failed, service %s, operator %s.", instanceFlag, remoteIP)
-			return &pb.RegisterInstanceResponse{
-				Response: pb.CreateResponse(scerr.ErrInvalidParams, "Instance is unregistered at the same time"),
-			}, nil
-		}
-		util.Logger().Warnf(errors.New("instance was registered by others"),
-			"register instance successful, service %s instance %s, operator %s.",
-			instance.ServiceId, oldInstanceId, remoteIP)
-		return &pb.RegisterInstanceResponse{
-			Response:   pb.CreateResponse(pb.Response_SUCCESS, "instance more exist."),
-			InstanceId: oldInstanceId,
-		}, nil
 	}
 
 	if reporter != nil {
