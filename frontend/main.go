@@ -32,7 +32,7 @@ func main() {
 	frontendIp := beego.AppConfig.String("frontend_host_ip")
 	frontendPort := beego.AppConfig.DefaultInt("frontend_host_port", 30103)
 
-	scIp := beego.AppConfig.DefaultString("httpadr", "127.0.0.1")
+	scIp := beego.AppConfig.DefaultString("httpaddr", "127.0.0.1")
 	scPort := beego.AppConfig.DefaultInt("httpport", 30100)
 
 	// command line flags
