@@ -20,7 +20,6 @@ import (
 	"fmt"
 
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -41,8 +40,6 @@ const (
 	TEST_BROKER_PROVIDER_APP     = "broker_group_provider"
 )
 
-var brokerResource = BrokerServiceAPI
-var serviceResource = core.ServiceAPI
 var consumerServiceId string
 var providerServiceId string
 

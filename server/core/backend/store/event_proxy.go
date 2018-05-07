@@ -16,29 +16,44 @@
  */
 package store
 
-import (
-	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+import "sync"
+
+var (
+	EventProxies map[StoreType]*KvEventProxy
 )
 
-type KvEventFunc func(evt KvEvent)
-
-type KvEvent struct {
-	Revision int64
-	Type     proto.EventType
-	Prefix   string
-	Object   interface{}
+func init() {
+	EventProxies = make(map[StoreType]*KvEventProxy, typeEnd)
+	for i := StoreType(0); i != typeEnd; i++ {
+		EventProxies[i] = NewEventProxy()
+	}
 }
 
-type KvEventHandler interface {
-	Type() StoreType
-	OnEvent(evt KvEvent)
+type KvEventProxy struct {
+	evtHandleFuncs []KvEventFunc
+	lock           sync.RWMutex
 }
 
-// the event handler/func must be good performance, or will block the event bus.
-func AddEventHandleFunc(t StoreType, f KvEventFunc) {
-	EventProxy(t).AddHandleFunc(f)
+func (h *KvEventProxy) AddHandleFunc(f KvEventFunc) {
+	h.lock.Lock()
+	h.evtHandleFuncs = append(h.evtHandleFuncs, f)
+	h.lock.Unlock()
 }
 
-func AddEventHandler(h KvEventHandler) {
-	AddEventHandleFunc(h.Type(), h.OnEvent)
+func (h *KvEventProxy) OnEvent(evt KvEvent) {
+	h.lock.RLock()
+	for _, f := range h.evtHandleFuncs {
+		f(evt)
+	}
+	h.lock.RUnlock()
+}
+
+func NewEventProxy() *KvEventProxy {
+	return &KvEventProxy{
+		evtHandleFuncs: make([]KvEventFunc, 0, 5),
+	}
+}
+
+func EventProxy(t StoreType) *KvEventProxy {
+	return EventProxies[t]
 }

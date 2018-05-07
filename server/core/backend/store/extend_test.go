@@ -16,29 +16,34 @@
  */
 package store
 
-import (
-	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-)
+import "testing"
 
-type KvEventFunc func(evt KvEvent)
-
-type KvEvent struct {
-	Revision int64
-	Type     proto.EventType
-	Prefix   string
-	Object   interface{}
+type extend struct {
 }
 
-type KvEventHandler interface {
-	Type() StoreType
-	OnEvent(evt KvEvent)
+func (e *extend) Name() string {
+	return "test"
 }
 
-// the event handler/func must be good performance, or will block the event bus.
-func AddEventHandleFunc(t StoreType, f KvEventFunc) {
-	EventProxy(t).AddHandleFunc(f)
+func (e *extend) Prefix() string {
+	return "/test"
 }
 
-func AddEventHandler(h KvEventHandler) {
-	AddEventHandleFunc(h.Type(), h.OnEvent)
+func (e *extend) InitSize() int {
+	return 0
+}
+
+func TestInstallType(t *testing.T) {
+	id, err := InstallType(&extend{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if id == NONEXIST {
+		t.Fatal(err)
+	}
+
+	id, err = InstallType(&extend{})
+	if id != NONEXIST || err == nil {
+		t.Fatal("InstallType fail", err)
+	}
 }

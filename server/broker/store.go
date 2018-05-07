@@ -17,166 +17,63 @@
 package broker
 
 import (
-	"sync"
-
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	sstore "github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
-	"golang.org/x/net/context"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
 )
 
-const (
-	PARTICIPANT sstore.StoreType = iota
-	VERSION
-	PACT
-	PACT_VERSION
-	PACT_TAG
-	VERIFICATION
-	PACT_LATEST
-	typeEnd
+var (
+	PARTICIPANT  store.StoreType
+	VERSION      store.StoreType
+	PACT         store.StoreType
+	PACT_VERSION store.StoreType
+	PACT_TAG     store.StoreType
+	VERIFICATION store.StoreType
+	PACT_LATEST  store.StoreType
 )
 
-var TypeNames = []string{
-	PARTICIPANT:  "PARTICIPANT",
-	VERSION:      "VERSION",
-	PACT:         "PACT",
-	PACT_VERSION: "PACT_VERSION",
-	PACT_TAG:     "PACT_TAG",
-	VERIFICATION: "VERIFICATION",
-	PACT_LATEST:  "PACT_LATEST",
-}
-
-var TypeRoots = map[sstore.StoreType]string{
-	PARTICIPANT:  GetBrokerParticipantKey(""),
-	VERSION:      GetBrokerVersionKey(""),
-	PACT:         GetBrokerPactKey(""),
-	PACT_VERSION: GetBrokerPactVersionKey(""),
-	PACT_TAG:     GetBrokerTagKey(""),
-	VERIFICATION: GetBrokerVerificationKey(""),
-	PACT_LATEST:  GetBrokerLatestKey(""),
-}
-
-var store = &BKvStore{}
-
-func Store() *BKvStore {
-	return store
-}
-
-func (s *BKvStore) StoreSize(t sstore.StoreType) int {
-	return 100
-}
-
-func (s *BKvStore) newStore(t sstore.StoreType, opts ...sstore.KvCacherCfgOption) {
-	opts = append(opts,
-		sstore.WithKey(TypeRoots[t]),
-		sstore.WithInitSize(s.StoreSize(t)),
-	)
-	s.newIndexer(t, sstore.NewKvCacher(t.String(), opts...))
-}
-
-func (s *BKvStore) store(ctx context.Context) {
-	for t := sstore.StoreType(0); t != typeEnd; t++ {
-		s.newStore(t)
-	}
-	for _, i := range s.bindexers {
-		select {
-		case <-ctx.Done():
-			return
-		case <-i.Ready():
-		}
-	}
-	util.SafeCloseChan(s.bready)
-
-	util.Logger().Debugf("all indexers are ready")
-}
+var brokerKvStore = &BKvStore{}
 
 func init() {
-	store.Initialize()
-	store.Run()
-	store.Ready()
+	PARTICIPANT = store.Store().MustInstall(store.NewEntity("PARTICIPANT", GetBrokerParticipantKey("")))
+	VERSION = store.Store().MustInstall(store.NewEntity("VERSION", GetBrokerVersionKey("")))
+	PACT = store.Store().MustInstall(store.NewEntity("PACT", GetBrokerPactKey("")))
+	PACT_VERSION = store.Store().MustInstall(store.NewEntity("PACT_VERSION", GetBrokerPactVersionKey("")))
+	PACT_TAG = store.Store().MustInstall(store.NewEntity("PACT_TAG", GetBrokerTagKey("")))
+	VERIFICATION = store.Store().MustInstall(store.NewEntity("VERIFICATION", GetBrokerVerificationKey("")))
+	PACT_LATEST = store.Store().MustInstall(store.NewEntity("PACT_LATEST", GetBrokerLatestKey("")))
+
 }
 
 type BKvStore struct {
-	*sstore.KvStore
-	bindexers map[sstore.StoreType]*sstore.Indexer
-	block     sync.RWMutex
-	bready    chan struct{}
-	bisClose  bool
 }
 
-func (s *BKvStore) Initialize() {
-	s.KvStore = sstore.Store()
-	s.KvStore.Initialize()
-	s.bindexers = make(map[sstore.StoreType]*sstore.Indexer)
-	s.bready = make(chan struct{})
-
-	for i := sstore.StoreType(0); i != typeEnd; i++ {
-		store.newNullStore(i)
-	}
+func (s *BKvStore) Participant() *store.Indexer {
+	return store.Store().Entity(PARTICIPANT)
 }
 
-func (s *BKvStore) newNullStore(t sstore.StoreType) {
-	s.newIndexer(t, sstore.NullCacher)
+func (s *BKvStore) Version() *store.Indexer {
+	return store.Store().Entity(VERSION)
 }
 
-func (s *BKvStore) newIndexer(t sstore.StoreType, cacher sstore.Cacher) {
-	indexer := sstore.NewCacheIndexer(cacher)
-	s.bindexers[t] = indexer
-	indexer.Run()
+func (s *BKvStore) Pact() *store.Indexer {
+	return store.Store().Entity(PACT)
 }
 
-func (s *BKvStore) Run() {
-	util.Go(func(ctx context.Context) {
-		s.store(ctx)
-		select {
-		case <-ctx.Done():
-			s.Stop()
-		}
-	})
+func (s *BKvStore) PactVersion() *store.Indexer {
+	return store.Store().Entity(PACT_VERSION)
 }
 
-func (s *BKvStore) Ready() <-chan struct{} {
-	return s.bready
+func (s *BKvStore) PactTag() *store.Indexer {
+	return store.Store().Entity(PACT_TAG)
 }
 
-func (s *BKvStore) Participant() *sstore.Indexer {
-	return s.bindexers[PARTICIPANT]
+func (s *BKvStore) Verification() *store.Indexer {
+	return store.Store().Entity(VERIFICATION)
 }
 
-func (s *BKvStore) Version() *sstore.Indexer {
-	return s.bindexers[VERSION]
+func (s *BKvStore) PactLatest() *store.Indexer {
+	return store.Store().Entity(PACT_LATEST)
 }
 
-func (s *BKvStore) Pact() *sstore.Indexer {
-	return s.bindexers[PACT]
-}
-
-func (s *BKvStore) PactVersion() *sstore.Indexer {
-	return s.bindexers[PACT_VERSION]
-}
-
-func (s *BKvStore) PactTag() *sstore.Indexer {
-	return s.bindexers[PACT_TAG]
-}
-
-func (s *BKvStore) Verification() *sstore.Indexer {
-	return s.bindexers[VERIFICATION]
-}
-
-func (s *BKvStore) PactLatest() *sstore.Indexer {
-	return s.bindexers[PACT_LATEST]
-}
-
-func (s *BKvStore) Stop() {
-	if s.bisClose {
-		return
-	}
-	s.bisClose = true
-
-	for _, i := range s.bindexers {
-		i.Stop()
-	}
-
-	util.SafeCloseChan(s.bready)
-
-	util.Logger().Debugf("broker store daemon stopped")
+func Store() *BKvStore {
+	return brokerKvStore
 }

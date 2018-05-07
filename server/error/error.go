@@ -18,8 +18,6 @@ package error
 
 import (
 	"encoding/json"
-	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"net/http"
 )
 
@@ -104,9 +102,9 @@ func (e Error) Error() string {
 	return e.Message + "(" + e.Detail + ")"
 }
 
-func (e Error) toJson() string {
+func (e Error) Marshal() []byte {
 	bs, _ := json.Marshal(e)
-	return util.BytesToStringWithNoCopy(bs)
+	return bs
 }
 
 func (e Error) StatusCode() int {
@@ -121,14 +119,6 @@ func (e Error) InternalError() bool {
 		return true
 	}
 	return false
-}
-
-func (e Error) HttpWrite(w http.ResponseWriter) {
-	status := e.StatusCode()
-	w.Header().Add("X-Response-Status", fmt.Sprint(status))
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(status)
-	fmt.Fprintln(w, e.toJson())
 }
 
 func NewError(code int32, detail string) *Error {

@@ -19,12 +19,28 @@ package v3
 import (
 	"encoding/json"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
+	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/server/rest/controller"
 	"github.com/apache/incubator-servicecomb-service-center/server/rest/controller/v4"
 	"github.com/apache/incubator-servicecomb-service-center/version"
 	"net/http"
 )
 
+var (
+	versionJsonCache []byte
+	versionResp      *pb.Response
+)
+
 const API_VERSION = "3.0.0"
+
+func init() {
+	result := v4.Result{
+		VersionSet: version.Ver(),
+		ApiVersion: API_VERSION,
+	}
+	versionJsonCache, _ = json.Marshal(result)
+	versionResp = pb.CreateResponse(pb.Response_SUCCESS, "get version successfully")
+}
 
 type MainService struct {
 	v4.MainService
@@ -38,11 +54,5 @@ func (this *MainService) URLPatterns() []rest.Route {
 }
 
 func (this *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
-	result := v4.Result{
-		VersionSet: version.Ver(),
-		ApiVersion: API_VERSION,
-	}
-	resultJSON, _ := json.Marshal(result)
-	w.Header().Set("Content-Type", "application/json;charset=utf-8")
-	w.Write(resultJSON)
+	controller.WriteBytes(w, versionResp, versionJsonCache)
 }

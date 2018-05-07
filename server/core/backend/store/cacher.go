@@ -24,6 +24,7 @@ type Cache interface {
 }
 
 type Cacher interface {
+	// Name is the cache size metric name
 	Name() string
 	Cache() Cache
 	Run()
