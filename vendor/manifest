@@ -37,7 +37,7 @@
 			"importpath": "github.com/astaxie/beego",
 			"repository": "https://github.com/astaxie/beego",
 			"vcs": "git",
-			"revision": "cab8458c1c4a5a3b4bf5192922be620e6dede15b",
+			"revision": "323a1c4214101331a4b71922c23d19b7409ac71f",
 			"branch": "HEAD",
 			"notests": true
 		},
