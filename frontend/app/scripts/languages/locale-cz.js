@@ -68,6 +68,7 @@ angular.module('serviceCenter')
 	"serviceStatistics": "服务统计",
 	"updated": "更新",
 	"footerValue": "ServiceComb",
+	"copyright": "版权所有",
 	"language": "语言",
 	"testSchema": "测试契约",
 	"noSchemaExists": "契约不存在",
