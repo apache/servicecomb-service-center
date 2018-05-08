@@ -35,12 +35,7 @@ func (srv *Server) Serve() error {
 	return srv.Server.Serve(srv.innerListener)
 }
 
-func NewServer(ep string) (_ *Server, err error) {
-	ipAddr, err := util.ParseEndpoint(ep)
-	if err != nil {
-		return
-	}
-
+func NewServer(ipAddr string) (_ *Server, err error) {
 	var grpcSrv *grpc.Server
 	if core.ServerInfo.Config.SslEnabled {
 		tlsConfig, err := sctls.GetServerTLSConfig()

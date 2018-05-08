@@ -61,6 +61,7 @@ func (t APIType) String() string {
 
 type APIServer struct {
 	HostName  string
+	Listeners map[APIType]string
 	Endpoints map[APIType]string
 	restSrv   *rest.Server
 	rpcSrv    *rpc.Server
@@ -205,45 +206,45 @@ func (s *APIServer) MarkForked() {
 }
 
 func (s *APIServer) startRESTServer() (err error) {
-	ep, ok := s.Endpoints[REST]
+	addr, ok := s.Listeners[REST]
 	if !ok {
 		return
 	}
-	s.restSrv, err = rs.NewServer(ep)
+	s.restSrv, err = rs.NewServer(addr)
 	if err != nil {
 		return
 	}
-	util.Logger().Infof("Local listen address: %s, host: %s.", ep, s.HostName)
+	util.Logger().Infof("Local listen address: %s, host: %s.", addr, s.HostName)
 
 	s.goroutine.Do(func(_ context.Context) {
 		err := s.restSrv.Serve()
 		if s.isClose {
 			return
 		}
-		util.Logger().Errorf(err, "error to start REST API server %s", ep)
+		util.Logger().Errorf(err, "error to start REST API server %s", addr)
 		s.err <- err
 	})
 	return
 }
 
 func (s *APIServer) startRPCServer() (err error) {
-	ep, ok := s.Endpoints[RPC]
+	addr, ok := s.Listeners[RPC]
 	if !ok {
 		return
 	}
 
-	s.rpcSrv, err = rpc.NewServer(ep)
+	s.rpcSrv, err = rpc.NewServer(addr)
 	if err != nil {
 		return
 	}
-	util.Logger().Infof("Local listen address: %s, host: %s.", ep, s.HostName)
+	util.Logger().Infof("Local listen address: %s, host: %s.", addr, s.HostName)
 
 	s.goroutine.Do(func(_ context.Context) {
 		err := s.rpcSrv.Serve()
 		if s.isClose {
 			return
 		}
-		util.Logger().Errorf(err, "error to start RPC API server %s", ep)
+		util.Logger().Errorf(err, "error to start RPC API server %s", addr)
 		s.err <- err
 	})
 	return

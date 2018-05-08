@@ -34,7 +34,7 @@ const (
 
 var (
 	tooLongSchemaId = strings.Repeat("x", 161)
-	tooLongSummary  = strings.Repeat("x", 513)
+	tooLongSummary  = strings.Repeat("x", 129)
 )
 
 var _ = Describe("'Schema' service", func() {

@@ -60,10 +60,37 @@ func TestInetNtoa(t *testing.T) {
 func TestParseIpPort(t *testing.T) {
 	ipPort := ParseIpPort("0.0.0.0")
 	if ipPort.IP != "0.0.0.0" || ipPort.Port != 0 {
-		t.Fatalf("ParseIpPort(0.0.0.0) error", n3)
+		t.Fatalf("ParseIpPort(0.0.0.0) error")
 	}
 	ipPort = ParseIpPort("0.0.0.0:1")
 	if ipPort.IP != "0.0.0.0" || ipPort.Port != 1 {
-		t.Fatalf("ParseIpPort(0.0.0.0) error", n3)
+		t.Fatalf("ParseIpPort(0.0.0.0) error")
+	}
+}
+
+func TestParseEndpoint(t *testing.T) {
+	ep, err := ParseEndpoint("")
+	if err != nil || len(ep) > 0 {
+		t.Fatalf("ParseEndpoint(\"\") failed, err = %s, ep = %s", err, ep)
+	}
+	ep, err = ParseEndpoint(":sssss")
+	if err == nil || len(ep) > 0 {
+		t.Fatalf("ParseEndpoint(\":sssss\") failed, err = %s, ep = %s", err, ep)
+	}
+	ep, err = ParseEndpoint("rest://127.0.0.1/?a=b")
+	if err != nil || ep != "127.0.0.1" {
+		t.Fatalf("ParseEndpoint(\"rest://127.0.0.1/?a=b\") failed, err = %s, ep = %s", err, ep)
+	}
+	ep, err = ParseEndpoint("rest://127.0.0.1:30100/?a=b")
+	if err != nil || ep != "127.0.0.1:30100" {
+		t.Fatalf("ParseEndpoint(\"rest://127.0.0.1:30100/?a=b\") failed, err = %s, ep = %s", err, ep)
+	}
+	ep, err = ParseEndpoint("rest://[2400:A480:AAAA:200::159]:30100/?a=b")
+	if err != nil || ep != "[2400:A480:AAAA:200::159]:30100" {
+		t.Fatalf("ParseEndpoint(\"rest://[2400:A480:AAAA:200::159]:30100/?a=b\") failed, err = %s, ep = %s", err, ep)
+	}
+	ep, err = ParseEndpoint("rest://[fe80::f816:3eff:fe17:c38b%25eht0]:30100/?a=b")
+	if err != nil || ep != "[fe80::f816:3eff:fe17:c38b%eht0]:30100" {
+		t.Fatalf("ParseEndpoint(\"rest://[fe80::f816:3eff:fe17:c38b%%25eht0]:30100/?a=b\") failed, err = %s, ep = %s", err, ep)
 	}
 }
