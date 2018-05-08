@@ -60,8 +60,8 @@ func InstallType(e Entity) (id StoreType, err error) {
 		}
 	}
 
+	id = StoreType(len(TypeNames))
 	TypeNames = append(TypeNames, e.Name())
-	id = StoreType(len(TypeNames) + 1) // +1 for typeEnd
 
 	TypeRoots[id] = e.Prefix()
 	TypeInitSize[id] = e.InitSize()

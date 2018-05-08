@@ -73,6 +73,7 @@ var TypeNames = []string{
 	INSTANCE:         "INSTANCE",
 	LEASE:            "LEASE",
 	ENDPOINTS:        "ENDPOINTS",
+	typeEnd:          "TYPEEND",
 }
 
 var TypeRoots = map[StoreType]string{
