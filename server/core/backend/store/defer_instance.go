@@ -80,9 +80,17 @@ func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt KvEvent) error {
 		}
 
 		var instance pb.MicroServiceInstance
+
+		// it will happen in embed mode, and then need to get the cache value to unmarshal
+		if kv.Value == nil {
+			if c, ok := iedh.cache.Data(key).(*mvccpb.KeyValue); ok {
+				kv.Value = c.Value
+			}
+		}
 		err := json.Unmarshal(kv.Value, &instance)
 		if err != nil {
-			util.Logger().Errorf(err, "unmarshal instance file failed, key is %s", key)
+			util.Logger().Errorf(err, "unmarshal instance file failed, key is %s, value is %s", key,
+				util.BytesToStringWithNoCopy(kv.Value))
 			return err
 		}
 		iedh.items[key] = deferItem{
