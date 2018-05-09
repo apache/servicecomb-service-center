@@ -55,11 +55,7 @@ func ParseEndpoint(ep string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	port := u.Port()
-	if len(port) > 0 {
-		return u.Hostname() + ":" + port, nil
-	}
-	return u.Hostname(), nil
+	return u.Host, nil
 }
 
 func ParseIpPort(addr string) IpPort {

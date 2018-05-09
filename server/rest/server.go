@@ -95,12 +95,7 @@ func DefaultServer() *rest.Server {
 	return defaultRESTfulServer
 }
 
-func NewServer(ep string) (srv *rest.Server, err error) {
-	ipAddr, err := util.ParseEndpoint(ep)
-	if err != nil {
-		return
-	}
-
+func NewServer(ipAddr string) (srv *rest.Server, err error) {
 	srvCfg, err := LoadConfig()
 	if err != nil {
 		return

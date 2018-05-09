@@ -29,6 +29,8 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/version"
 	"github.com/astaxie/beego"
 	"golang.org/x/net/context"
+	"net"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -167,16 +169,18 @@ func (s *ServiceCenterServer) startApiServer() {
 
 func (s *ServiceCenterServer) addEndpoint(t APIType, ip, port string) {
 	if s.apiServer.Endpoints == nil {
+		s.apiServer.Listeners = map[APIType]string{}
 		s.apiServer.Endpoints = map[APIType]string{}
 	}
 	if len(ip) == 0 {
 		return
 	}
-	address := util.StringJoin([]string{ip, port}, ":")
+	address := fmt.Sprintf("%s://%s/", t, net.JoinHostPort(url.PathEscape(ip), port))
 	if core.ServerInfo.Config.SslEnabled {
 		address += "?sslEnabled=true"
 	}
-	s.apiServer.Endpoints[t] = fmt.Sprintf("%s://%s", t, address)
+	s.apiServer.Listeners[t] = net.JoinHostPort(ip, port)
+	s.apiServer.Endpoints[t] = address
 }
 
 func (s *ServiceCenterServer) Stop() {
