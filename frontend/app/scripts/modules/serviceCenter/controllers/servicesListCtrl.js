@@ -101,7 +101,7 @@ angular.module('serviceCenter.sc', [])
 							var headers = {"X-ConsumerId": service.serviceId};
 							if(filter && service.status.toLowerCase() === filter) {
 								var servicesList = {
-									serviceName: service.serviceName.charAt(0).toUpperCase()+service.serviceName.slice(1).toLowerCase(),
+									serviceName: service.serviceName,
 									status: service.status.toLowerCase(),
 									appId: service.appId.toLowerCase(),
 									version: service.version,
@@ -124,7 +124,7 @@ angular.module('serviceCenter.sc', [])
 							}
 							if(!filter){
 								var servicesList = {
-									serviceName: service.serviceName.charAt(0).toUpperCase()+service.serviceName.slice(1).toLowerCase(),
+									serviceName: service.serviceName,
 									status: service.status.toLowerCase(),
 									appId: service.appId.toLowerCase(),
 									version: service.version,

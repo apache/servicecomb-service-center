@@ -24,7 +24,7 @@ angular.module('serviceCenter.sc')
 				serviceInfo.data.services.forEach(function(services){
 	                if(services.serviceId == serviceId){
 	                    $scope.serviceDetail = {
-	                        serviceName: services.serviceName.toUpperCase(),
+	                        serviceName: services.serviceName,
 	                        status: services.status.toLowerCase(),
 	                        appId: services.appId.toLowerCase(),
 	                        version: services.version,
