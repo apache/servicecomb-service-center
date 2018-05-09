@@ -17,10 +17,10 @@
 package store
 
 import (
-	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/prometheus/client_golang/prometheus"
+	"sync"
 )
 
 var (
@@ -33,11 +33,18 @@ var (
 		}, []string{"instance", "resource", "type"})
 )
 
+var (
+	instance string
+	once     sync.Once
+)
+
 func init() {
 	prometheus.MustRegister(cacheSizeGauge)
 }
 
 func ReportCacheMetrics(resource, t string, obj interface{}) {
-	instance := fmt.Sprint(core.Instance.Endpoints)
+	once.Do(func() {
+		instance, _ = util.ParseEndpoint(core.Instance.Endpoints[0])
+	})
 	cacheSizeGauge.WithLabelValues(instance, resource, t).Set(float64(util.Sizeof(obj)))
 }

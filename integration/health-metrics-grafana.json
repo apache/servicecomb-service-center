@@ -555,7 +555,7 @@
           "format": "time_series",
           "instant": false,
           "intervalFactor": 2,
-          "legendFormat": "goroutines",
+          "legendFormat": "goroutines_{{instance}}",
           "refId": "A"
         }
       ],
@@ -642,7 +642,7 @@
           "format": "time_series",
           "instant": false,
           "intervalFactor": 2,
-          "legendFormat": "cpu",
+          "legendFormat": "cpu_{{instance}}",
           "refId": "A"
         }
       ],
@@ -725,11 +725,11 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "max(max_over_time(go_gc_duration_seconds{job=\"service-center\"}[1m]))",
+          "expr": "max(max_over_time(go_gc_duration_seconds{job=\"service-center\"}[1m])) by (instance)",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 2,
-          "legendFormat": "gc",
+          "legendFormat": "gc_{{instance}}",
           "refId": "A"
         }
       ],
@@ -830,7 +830,7 @@
           "expr": "go_threads{job=\"service-center\"}",
           "format": "time_series",
           "intervalFactor": 2,
-          "legendFormat": "threads",
+          "legendFormat": "threads_{{instance}}",
           "refId": "A"
         }
       ],
@@ -915,7 +915,7 @@
           "expr": "process_open_fds{job=\"service-center\"}",
           "format": "time_series",
           "intervalFactor": 2,
-          "legendFormat": "fds",
+          "legendFormat": "fds_{{instance}}",
           "refId": "A"
         }
       ],
@@ -1000,21 +1000,21 @@
           "expr": "go_memstats_heap_inuse_bytes{job=\"service-center\"} + go_memstats_heap_idle_bytes{job=\"service-center\"}",
           "format": "time_series",
           "intervalFactor": 1,
-          "legendFormat": "heap",
+          "legendFormat": "heap_{{instance}}",
           "refId": "B"
         },
         {
           "expr": "go_memstats_heap_inuse_bytes{job=\"service-center\"}",
           "format": "time_series",
           "intervalFactor": 1,
-          "legendFormat": "inuse",
+          "legendFormat": "inuse_{{instance}}",
           "refId": "C"
         },
         {
           "expr": "process_resident_memory_bytes{job=\"service-center\"}",
           "format": "time_series",
           "intervalFactor": 1,
-          "legendFormat": "all",
+          "legendFormat": "all_{{instance}}",
           "refId": "A"
         }
       ],
@@ -1099,17 +1099,17 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(service_center_local_cache_size_bytes{job=\"service-center\"}) by (resource)",
+          "expr": "sum(service_center_local_cache_size_bytes{job=\"service-center\"}) by (resource,instance)",
           "format": "time_series",
           "intervalFactor": 2,
-          "legendFormat": "{{resource}}",
+          "legendFormat": "{{resource}}_{{instance}}",
           "refId": "A"
         },
         {
-          "expr": "sum(service_center_local_cache_size_bytes{job=\"service-center\"})",
+          "expr": "sum(service_center_local_cache_size_bytes{job=\"service-center\"}) by (instance)",
           "format": "time_series",
           "intervalFactor": 2,
-          "legendFormat": "ALL",
+          "legendFormat": "ALL_{{instance}}",
           "refId": "B"
         }
       ],
@@ -1154,7 +1154,7 @@
       }
     }
   ],
-  "refresh": false,
+  "refresh": "5s",
   "schemaVersion": 16,
   "style": "dark",
   "tags": [],
@@ -1193,5 +1193,5 @@
   "timezone": "",
   "title": "ServiceCenter",
   "uid": "Zg6NoHGiz",
-  "version": 5
+  "version": 6
 }
