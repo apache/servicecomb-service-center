@@ -117,8 +117,22 @@ func InstanceExist(ctx context.Context, domainProject string, serviceId string, 
 	return true, nil
 }
 
-func CheckEndPoints(ctx context.Context, instance *pb.MicroServiceInstance) (string, *scerr.Error) {
+func CheckExistence(ctx context.Context, instance *pb.MicroServiceInstance) (string, *scerr.Error) {
 	domainProject := util.ParseDomainProject(ctx)
+	// check id index
+	if len(instance.InstanceId) > 0 {
+		resp, err := store.Store().Lease().Search(ctx,
+			registry.WithStrKey(apt.GenerateInstanceLeaseKey(domainProject, instance.ServiceId, instance.InstanceId)),
+			registry.WithKeyOnly())
+		if err != nil {
+			return "", scerr.NewError(scerr.ErrInternal, err.Error())
+		}
+		if resp.Count != 0 {
+			return instance.InstanceId, nil
+		}
+	}
+
+	// check endpoint index
 	resp, err := store.Store().Endpoints().Search(ctx,
 		registry.WithStrKey(apt.GenerateEndpointsIndexKey(domainProject, instance)))
 	if err != nil {

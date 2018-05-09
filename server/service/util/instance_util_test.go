@@ -77,12 +77,19 @@ func TestInstanceExist(t *testing.T) {
 	}
 }
 
-func TestCheckEndPoints(t *testing.T) {
-	_, err := CheckEndPoints(context.Background(), &proto.MicroServiceInstance{
+func TestCheckExistence(t *testing.T) {
+	_, err := CheckExistence(context.Background(), &proto.MicroServiceInstance{
 		ServiceId: "a",
 	})
 	if err == nil {
-		t.Fatalf(`CheckEndPoints failed`)
+		t.Fatalf(`CheckExistence endpoint failed`)
+	}
+	_, err = CheckExistence(context.Background(), &proto.MicroServiceInstance{
+		ServiceId:  "a",
+		InstanceId: "a",
+	})
+	if err == nil {
+		t.Fatalf(`CheckExistence instanceId failed`)
 	}
 }
 
