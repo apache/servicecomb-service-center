@@ -106,7 +106,7 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	}
 	//允许自定义id
 	//如果没填写 并且endpoints沒重復，則产生新的全局instance id
-	oldInstanceId, checkErr := serviceUtil.CheckExistence(ctx, in.Instance)
+	oldInstanceId, checkErr := serviceUtil.InstanceExist(ctx, in.Instance)
 	if checkErr != nil {
 		util.Logger().Errorf(checkErr, "check endpoints index failed, service %s, operator %s.",
 			instanceFlag, remoteIP)
@@ -232,7 +232,7 @@ func (s *InstanceService) Unregister(ctx context.Context, in *pb.UnregisterInsta
 
 	instanceFlag := util.StringJoin([]string{serviceId, instanceId}, "/")
 	remoteIP := util.GetIPFromContext(ctx)
-	isExist, err := serviceUtil.InstanceExist(ctx, domainProject, serviceId, instanceId)
+	isExist, err := serviceUtil.InstanceExistById(ctx, domainProject, serviceId, instanceId)
 	if err != nil {
 		util.Logger().Errorf(err, "unregister instance failed, instance %s, operator %s: query instance failed.", instanceFlag, remoteIP)
 		return &pb.UnregisterInstanceResponse{
