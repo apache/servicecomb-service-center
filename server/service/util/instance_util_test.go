@@ -65,24 +65,31 @@ func TestGetInstance(t *testing.T) {
 	}
 }
 
-func TestInstanceExist(t *testing.T) {
-	_, err := InstanceExist(util.SetContext(context.Background(), "cacheOnly", "1"), "", "", "")
+func TestInstanceExistById(t *testing.T) {
+	_, err := InstanceExistById(util.SetContext(context.Background(), "cacheOnly", "1"), "", "", "")
 	if err != nil {
-		t.Fatalf(`InstanceExist WithCacheOnly failed`)
+		t.Fatalf(`InstanceExistById WithCacheOnly failed`)
 	}
 
-	_, err = InstanceExist(context.Background(), "", "", "")
+	_, err = InstanceExistById(context.Background(), "", "", "")
 	if err == nil {
-		t.Fatalf(`InstanceExist failed`)
+		t.Fatalf(`InstanceExistById failed`)
 	}
 }
 
-func TestCheckEndPoints(t *testing.T) {
-	_, err := CheckEndPoints(context.Background(), &proto.MicroServiceInstance{
+func TestInstanceExist(t *testing.T) {
+	_, err := InstanceExist(context.Background(), &proto.MicroServiceInstance{
 		ServiceId: "a",
 	})
 	if err == nil {
-		t.Fatalf(`CheckEndPoints failed`)
+		t.Fatalf(`InstanceExist endpoint failed`)
+	}
+	_, err = InstanceExist(context.Background(), &proto.MicroServiceInstance{
+		ServiceId:  "a",
+		InstanceId: "a",
+	})
+	if err == nil {
+		t.Fatalf(`InstanceExist instanceId failed`)
 	}
 }
 
