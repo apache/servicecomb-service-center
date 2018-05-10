@@ -18,7 +18,6 @@ package error
 
 import (
 	"encoding/json"
-	"net/http"
 )
 
 var errors = map[int32]string{
@@ -108,10 +107,7 @@ func (e Error) Marshal() []byte {
 }
 
 func (e Error) StatusCode() int {
-	if e.Code >= 500000 {
-		return http.StatusInternalServerError
-	}
-	return http.StatusBadRequest
+	return int(e.Code / 1000)
 }
 
 func (e Error) InternalError() bool {
