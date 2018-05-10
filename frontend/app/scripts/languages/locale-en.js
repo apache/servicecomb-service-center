@@ -86,6 +86,8 @@ angular.module('serviceCenter')
 	"areYouSureToDelete": "Are you sure to delete ?",
 	"cannotDeleteServiceWhenInstanceIsAvailable": "Cannot delete service when instance is available",
 	"serviceDeletedSuccessfully": "Service Deleted Successfully",
-	"unableToDeleteService": "Unable to delete service..Try again"
-
+	"unableToDeleteService": "Unable to delete service..Try again",
+	"back": "back",
+    "highwayErr": "Highway is not supported currently",
+    "noInstanceTip": "Instance is not available"
 });

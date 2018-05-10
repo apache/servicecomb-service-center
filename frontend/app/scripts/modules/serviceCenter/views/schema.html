@@ -23,8 +23,13 @@ limitations under the License.
 	<tbody>
 		<tr ng-repeat="schema in schemaName">
 			<td>{{ schema }}</td>
-			<td><md-button class="md-raised schemaBtn" ng-click="testSchema(schema)">{{ "testSchema" | translate }}</md-button>
-        	<md-button class="md-raised schemaBtn"  ng-click="downloadSchema(schema)" >{{ "download" | translate }} HTML</md-button>
+			<td>
+        		<div class="tooltip-wrapper inline" title="{{(noInstance ? ('noInstanceTip' | translate) : '')}}">
+					<md-button class="md-raised" ng-disabled="noInstance" ng-class="{schemaBtn: !noInstance}" ng-click="testSchema(schema)">
+						{{ "testSchema" | translate }}
+					</md-button>
+				</div>
+        		<md-button class="md-raised schemaBtn"  ng-click="downloadSchema(schema)" >{{ "download" | translate }} HTML</md-button>
 			</td>
 		</tr>
 		<tr ng-if="schemaName.length == 0" class="text-center">

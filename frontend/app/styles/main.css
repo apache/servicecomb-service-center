@@ -411,4 +411,12 @@ md-table-pagination .md-select-icon {
 table, md-toolbar {
   font-family: sans-serif;
 }
+.highwayErr {
+    color: red;
+    text-align: center;
+    padding-top: 10px;
+}
+.inline {
+    display: inline;
+}
 /*# sourceMappingURL=main.css.map */

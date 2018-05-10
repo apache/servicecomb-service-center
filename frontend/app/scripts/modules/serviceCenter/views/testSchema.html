@@ -45,6 +45,7 @@ limitations under the License.
             <select class="form-control" ng-model="selectedAddress" ng-change="setAddress(selectedAddress)">
               <option ng-repeat="address in addresses" value="{{address}}"> {{ address }} </option>
             </select>
+            <p class="highwayErr" ng-if="disableNext">{{"highwayErr" | translate}}</p>
           </div>
           <div flex="25"></div>    
        </div>
@@ -56,9 +57,12 @@ limitations under the License.
   </md-dialog-content>
   <md-dialog-actions layout="row">
     <span flex></span>
-    <md-button class="md-raised schemaBtn" ng-show="(!showSchema) && (instances.length != 0) " ng-click="getSchema()">
+    <md-button class="md-raised" ng-disabled="disableNext" ng-class="{schemaBtn: !disableNext}" ng-show="(!showSchema) && (instances.length != 0) " ng-click="getSchema()">
       {{ "next" | translate}}
     </md-button>
+      <md-button class="schemaBtn" ng-show="showSchema" ng-click="goBack()">
+        {{"back" | translate}}
+      </md-button>
     <md-button ng-click="cancel()">
       {{ "close" | translate}}
     </md-button>

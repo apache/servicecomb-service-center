@@ -21,6 +21,8 @@ angular.module('serviceCenter.sc')
 		
 		var serviceId = $stateParams.serviceId;
 		$scope.schemaName = [];
+		$scope.selectedAddress = '';
+		$scope.disableNext = false;
         var addresses = [];
         var instances = [];
         var promises = [];
@@ -101,21 +103,23 @@ angular.module('serviceCenter.sc')
 			var instanceApi = instanceUrl.replace('{{serviceId}}', serviceId);
 			var instanceMethod = apiConstant.api.instances.method;
 			var instanceHeaders = {"X-ConsumerId": serviceId};
-			httpService.apiRequest(instanceApi, instanceMethod, null, instanceHeaders, "nopopup").then(function(response){
-			  if(response && response.data && response.data.instances) {
-					for(var i = 0; i < response.data.instances.length; i++){
-						addresses[i] = [];
-						instances.push(response.data.instances[i].hostName + '-' +response.data.instances[i].instanceId);
-						for(var j = 0; j< response.data.instances[i].endpoints.length; j++){
-							addresses[i].push(response.data.instances[i].endpoints[j])
-						}
-					}
-			  }
-			  else {
-			  	addresses = [[]];
-			  }
-			},function(error){
+			httpService.apiRequest(instanceApi, instanceMethod, null, instanceHeaders, "nopopup").then(function(response) {
+                if (response && response.data && response.data.instances && response.data.instances.length > 0) {
+                    for (var i = 0; i < response.data.instances.length; i++) {
+                        addresses[i] = [];
+                        instances.push(response.data.instances[i].hostName + '-' + response.data.instances[i].instanceId);
+                        for (var j = 0; j < response.data.instances[i].endpoints.length; j++) {
+                            addresses[i].push(response.data.instances[i].endpoints[j])
+                        }
+                    }
+                    $scope.noInstance = false;
+                } else {
+                    addresses = [[]];
+                    $scope.noInstance = true;
+                }
+            },function(error){
 				addresses = [[]];
+                $scope.noInstance = true;
 			});
 		}
 		$scope.instanceDetails();
@@ -207,7 +211,13 @@ angular.module('serviceCenter.sc')
 				    $scope.selectedInstance =  instances[0] || '';
 
 				    $scope.addresses = addresses[0];
-				    $scope.selectedAddress = addresses[0][0] || '';
+				    angular.forEach($scope.addresses, function(addr){
+				    	if(addr.indexOf("rest") >= 0){
+                            $scope.selectedAddress = addr;
+                        }
+				  	});
+                    $scope.selectedAddress = ($scope.selectedAddress == '') ? addresses[0][0] : $scope.selectedAddress;
+                    $scope.disableNext = $scope.selectedAddress.indexOf("highway") >= 0 ? true : false;
 
 				    $scope.setInstance = function(instance) {
 				    	for(var i = 0; i < $scope.instances.length; i++){
@@ -221,6 +231,7 @@ angular.module('serviceCenter.sc')
 				    };
 
 				    $scope.setAddress = function(address) {
+                        $scope.disableNext = address.indexOf("highway") >= 0 ? true : false;
 				    	$scope.selectedAddress = address;
 				    };
 
@@ -243,7 +254,7 @@ angular.module('serviceCenter.sc')
 				    			}
 								var schema = response.data.schema;
 								var json = YAML.parse(schema);
-								json.basePath = "/testSchema";
+								json.basePath = "/testSchema" + json.basePath;
 								json.instanceIP = ip;
 								json.schemaName = selectedSchema;
 								var yamlString = YAML.stringify(json);
@@ -259,6 +270,10 @@ angular.module('serviceCenter.sc')
 					$scope.hide = function() {
 				      $mdDialog.hide();
 				    };
+
+				    $scope.goBack = function() {
+                        $scope.showSchema = false;
+					}
 
 				    $scope.cancel = function() {
 				      $mdDialog.cancel();
