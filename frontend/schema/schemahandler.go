@@ -36,7 +36,7 @@ func SchemaHandleFunc(c echo.Context) (err error) {
 		response   *http.Response
 		req        *http.Request
 		instanceIP = r.Header.Get("X-InstanceIP")
-		requestUrl = strings.Replace(r.RequestURI, "testSchema/", "", -1)
+		requestUrl = strings.Replace(r.RequestURI, "testSchema/", "", 1)
 		url        = "http://" + instanceIP + requestUrl
 	)
 
