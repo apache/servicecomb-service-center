@@ -88,13 +88,11 @@ build_linux(){
     export BUILD_NUMBER=$RELEASE
     GO_LDFLAGS="${GO_LDFLAGS} -X 'github.com/apache/incubator-servicecomb-service-center/version.BUILD_TAG=$(date +%Y%m%d%H%M%S).$BUILD_NUMBER.$GIT_COMMIT'"
     GO_LDFLAGS="${GO_LDFLAGS} -X 'github.com/apache/incubator-servicecomb-service-center/version.VERSION=$BUILD_NUMBER'"
-    go build --ldflags "${GO_LDFLAGS}" -o service-center
-    cp -r service-center $PACKAGE_PREFIX-$PACKAGE-linux-amd64
+    go build --ldflags "${GO_LDFLAGS}" -o $PACKAGE_PREFIX-$PACKAGE-linux-amd64/service-center
 
     ## Build Frontend Release
     cd frontend
-    go build -o frontend
-    cp -r frontend ../$PACKAGE_PREFIX-$PACKAGE-linux-amd64
+    go build -o ../$PACKAGE_PREFIX-$PACKAGE-linux-amd64/frontend
     cd ..
 
     prepare_conf
@@ -116,7 +114,6 @@ build_linux(){
 
     ## Archive the release
     tar -czvf $PACKAGE_PREFIX-$PACKAGE-linux-amd64.tar.gz $PACKAGE_PREFIX-$PACKAGE-linux-amd64
-
 }
 
 # Build Windows Release

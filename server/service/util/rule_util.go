@@ -204,7 +204,7 @@ func parsePattern(v reflect.Value, rule *pb.ServiceRule, tagsOfConsumer map[stri
 	if !key.IsValid() {
 		util.Logger().Errorf(nil, "can not find service %s field '%s', rule %s",
 			consumerId, rule.Attribute, rule.RuleId)
-		return "", scerr.NewError(scerr.ErrInternal, fmt.Sprintf("Can not find field '%s'", rule.Attribute))
+		return "", scerr.NewErrorf(scerr.ErrInternal, "Can not find field '%s'", rule.Attribute)
 	}
 	return key.String(), nil
 
@@ -239,7 +239,7 @@ func Accessible(ctx context.Context, consumerId string, providerId string) *scer
 
 	consumerService, err := GetService(ctx, domainProject, consumerId)
 	if err != nil {
-		return scerr.NewError(scerr.ErrInternal, fmt.Sprintf("An error occurred in query consumer(%s)", err.Error()))
+		return scerr.NewErrorf(scerr.ErrInternal, "An error occurred in query consumer(%s)", err.Error())
 	}
 	if consumerService == nil {
 		return scerr.NewError(scerr.ErrServiceNotExists, "consumer serviceId is invalid")
@@ -248,7 +248,7 @@ func Accessible(ctx context.Context, consumerId string, providerId string) *scer
 	// 跨应用权限
 	providerService, err := GetService(ctx, targetDomainProject, providerId)
 	if err != nil {
-		return scerr.NewError(scerr.ErrInternal, fmt.Sprintf("An error occurred in query provider(%s)", err.Error()))
+		return scerr.NewErrorf(scerr.ErrInternal, "An error occurred in query provider(%s)", err.Error())
 	}
 	if providerService == nil {
 		return scerr.NewError(scerr.ErrServiceNotExists, "provider serviceId is invalid")
@@ -264,7 +264,7 @@ func Accessible(ctx context.Context, consumerId string, providerId string) *scer
 	// 黑白名单
 	rules, err := GetRulesUtil(ctx, targetDomainProject, providerId)
 	if err != nil {
-		return scerr.NewError(scerr.ErrInternal, fmt.Sprintf("An error occurred in query provider rules(%s)", err.Error()))
+		return scerr.NewErrorf(scerr.ErrInternal, "An error occurred in query provider rules(%s)", err.Error())
 	}
 
 	if len(rules) == 0 {
@@ -273,7 +273,7 @@ func Accessible(ctx context.Context, consumerId string, providerId string) *scer
 
 	validateTags, err := GetTagsUtils(ctx, domainProject, consumerService.ServiceId)
 	if err != nil {
-		return scerr.NewError(scerr.ErrInternal, fmt.Sprintf("An error occurred in query consumer tags(%s)", err.Error()))
+		return scerr.NewErrorf(scerr.ErrInternal, "An error occurred in query consumer tags(%s)", err.Error())
 	}
 
 	return MatchRules(rules, consumerService, validateTags)

@@ -57,17 +57,3 @@ func TestRegisterGrpcServices(t *testing.T) {
 	}()
 	service.RegisterGrpcServices(nil)
 }
-
-func TestInstanceService_WebSocketWatch(t *testing.T) {
-	defer func() {
-		recover()
-	}()
-	instanceResource.WebSocketWatch(context.Background(), &pb.WatchInstanceRequest{}, nil)
-}
-
-func TestInstanceService_WebSocketListAndWatch(t *testing.T) {
-	defer func() {
-		recover()
-	}()
-	instanceResource.WebSocketListAndWatch(context.Background(), &pb.WatchInstanceRequest{}, nil)
-}

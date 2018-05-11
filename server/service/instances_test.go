@@ -21,25 +21,10 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
-	"github.com/apache/incubator-servicecomb-service-center/server/service"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	"os"
 )
-
-type grpcWatchServer struct {
-	grpc.ServerStream
-}
-
-func (x *grpcWatchServer) Send(m *pb.WatchInstanceResponse) error {
-	return nil
-}
-
-func (x *grpcWatchServer) Context() context.Context {
-	return getContext()
-}
 
 var _ = Describe("'Instance' service", func() {
 	Describe("execute 'register' operartion", func() {
@@ -1253,56 +1238,6 @@ var _ = Describe("'Instance' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
-			})
-		})
-	})
-
-	Describe("execute 'watch' operartion", func() {
-		var (
-			serviceId string
-		)
-
-		It("should be passed", func() {
-			respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-				Service: &pb.MicroService{
-					ServiceName: "service_name_watch",
-					AppId:       "service_name_watch",
-					Version:     "1.0.0",
-					Level:       "BACK",
-					Status:      pb.MS_UP,
-				},
-			})
-			Expect(err).To(BeNil())
-			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
-			serviceId = respCreate.ServiceId
-		})
-
-		Context("when request is invalid", func() {
-			It("should be failed", func() {
-				By("service does not exist")
-				IC := instanceResource.(*service.InstanceService)
-				err := IC.WatchPreOpera(getContext(), &pb.WatchInstanceRequest{
-					SelfServiceId: "-1",
-				})
-				Expect(err).NotTo(BeNil())
-
-				err = IC.Watch(&pb.WatchInstanceRequest{
-					SelfServiceId: "-1",
-				}, &grpcWatchServer{})
-				Expect(err).NotTo(BeNil())
-
-				By("service id is empty")
-				err = instanceResource.(*service.InstanceService).WatchPreOpera(getContext(), &pb.WatchInstanceRequest{
-					SelfServiceId: "",
-				})
-				Expect(err).NotTo(BeNil())
-
-				By("request is valid")
-				err = instanceResource.(*service.InstanceService).WatchPreOpera(getContext(),
-					&pb.WatchInstanceRequest{
-						SelfServiceId: serviceId,
-					})
-				Expect(err).To(BeNil())
 			})
 		})
 	})
