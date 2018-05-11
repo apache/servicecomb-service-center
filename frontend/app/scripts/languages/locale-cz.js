@@ -87,8 +87,8 @@ angular.module('serviceCenter')
 	"cannotDeleteServiceWhenInstanceIsAvailable": "实例可用时无法删除服务",
 	"serviceDeletedSuccessfully": "服务已成功删除",
 	"unableToDeleteService": "无法删除服务 再试一次",
-	"back": "背部",
-	"highwayErr": "高速公路目前不受支持",
+	"back": "返回",
+	"highwayErr": "Highway目前不受支持",
 	"noInstanceTip": "实例不可用"
 
 });
