@@ -38,7 +38,7 @@ func Serve(c Config) {
 	staticPath := filepath.Join(dir, "app")
 	e.Static("/", staticPath)
 
-	e.Any("/testSchema/", schema.SchemaHandleFunc)
+	e.Any("/testSchema/*", schema.SchemaHandleFunc)
 
 	scProxy(c, e)
 

@@ -36,8 +36,7 @@ func SchemaHandleFunc(c echo.Context) (err error) {
 		response   *http.Response
 		req        *http.Request
 		instanceIP = r.Header.Get("X-InstanceIP")
-		schemaName = r.Header.Get("X-SchemaName")
-		requestUrl = strings.Replace(r.RequestURI, "testSchema", schemaName, -1)
+		requestUrl = strings.Replace(r.RequestURI, "testSchema/", "", 1)
 		url        = "http://" + instanceIP + requestUrl
 	)
 
@@ -64,10 +63,15 @@ func SchemaHandleFunc(c echo.Context) (err error) {
 
 	for key, values := range r.Header {
 		for _, val := range values {
-			req.Header.Add(key, val)
+			if key == "Accept-Encoding" || key == "Connection" || key == "X-Schemaname" || key == "Cookie" || key == "User-Agent" || key == "AppleWebKit" || key == "Dnt" || key == "Referer" || key == "Accept-Language" {
+				continue
+			} else {
+				req.Header.Add(key, val)
+			}
+
 		}
 	}
-
+	req.Header.Add("Content-Type", "application/json")
 	client := http.Client{Timeout: time.Second * 20}
 	response, err = client.Do(req)
 	if err != nil {
@@ -75,7 +79,6 @@ func SchemaHandleFunc(c echo.Context) (err error) {
 			fmt.Sprintf("( Error while sending request due to : %s", err))
 		return
 	}
-
 	respBody, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		c.String(http.StatusNotFound,

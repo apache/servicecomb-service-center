@@ -85,4 +85,20 @@ angular.module('serviceCenter.sc')
 				return commonService.timeFormat(timestamp);
 			};
 
+			$scope.getActiveTab = function(){
+                if($state.current.name == "sc.info.instance"){
+                    $scope.selectedTab = 0;
+                }
+                if($state.current.name == "sc.info.provider"){
+                    $scope.selectedTab = 1;
+                }
+                if($state.current.name == "sc.info.consumer"){
+                    $scope.selectedTab = 2;
+                }
+                if($state.current.name == "sc.info.schema"){
+                    $scope.selectedTab = 3;
+                }
+			}
+            $scope.getActiveTab();
+
 }]);
