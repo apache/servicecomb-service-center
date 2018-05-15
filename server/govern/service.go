@@ -380,6 +380,11 @@ func statistics(ctx context.Context) (*pb.Statistics, error) {
 	result.Services.Count = int64(len(svcWithNonVersion))
 	result.Apps.Count = int64(len(app))
 
+	respGetInstanceCountByDomain := make(chan GetInstanceCountByDomainResponse, 1)
+	util.Go(func(_ context.Context) {
+		getInstanceCountByDomain(ctx, respGetInstanceCountByDomain)
+	})
+
 	// instance
 	key = apt.GetInstanceRootKey(domainProject) + "/"
 	instOpts := append(opts,
@@ -404,5 +409,35 @@ func statistics(ctx context.Context) (*pb.Statistics, error) {
 	}
 	result.Instances.Count = respIns.Count
 	result.Services.OnlineCount = int64(len(onlineServices))
+
+	data := <-respGetInstanceCountByDomain
+	close(respGetInstanceCountByDomain)
+	if data.err != nil {
+		return nil, data.err
+	}
+	result.Instances.CountByDomain = data.countByDomain
 	return result, err
+}
+
+type GetInstanceCountByDomainResponse struct {
+	err           error
+	countByDomain int64
+}
+
+func getInstanceCountByDomain(ctx context.Context, resp chan GetInstanceCountByDomainResponse) {
+	domainId := util.ParseDomain(ctx)
+	key := apt.GetInstanceRootKey(domainId) + "/"
+	instOpts := append([]registry.PluginOpOption{},
+		registry.WithStrKey(key),
+		registry.WithPrefix(),
+		registry.WithKeyOnly(),
+		registry.WithCountOnly())
+	respIns, err := store.Store().Instance().Search(ctx, instOpts...)
+	if err != nil {
+		util.Logger().Errorf(err, "get instance count under same domainId %s", domainId)
+	}
+	resp <- GetInstanceCountByDomainResponse{
+		err:           err,
+		countByDomain: respIns.Count,
+	}
 }
