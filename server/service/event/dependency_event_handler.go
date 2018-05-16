@@ -51,14 +51,10 @@ func (h *DependencyEventHandler) OnEvent(evt store.KvEvent) {
 
 func (h *DependencyEventHandler) loop() {
 	util.Go(func(ctx context.Context) {
-		waitDelayIndex := 0
-		waitDelay := []int{1, 1, 5, 10, 20, 30, 60}
-		retry := func() {
-			if waitDelayIndex >= len(waitDelay) {
-				waitDelayIndex = 0
-			}
-			<-time.After(time.Duration(waitDelay[waitDelayIndex]) * time.Second)
-			waitDelayIndex++
+		retries := 0
+		delay := func() {
+			<-time.After(util.GetBackoff().Delay(retries))
+			retries++
 
 			h.signals.Put(context.Background(), struct{}{})
 		}
@@ -70,11 +66,12 @@ func (h *DependencyEventHandler) loop() {
 				lock, err := mux.Try(mux.DEP_QUEUE_LOCK)
 				if err != nil {
 					util.Logger().Errorf(err, "try to lock %s failed", mux.DEP_QUEUE_LOCK)
-					retry()
+					delay()
 					continue
 				}
 
 				if lock == nil {
+					retries = 0
 					continue
 				}
 
@@ -82,9 +79,11 @@ func (h *DependencyEventHandler) loop() {
 				lock.Unlock()
 				if err != nil {
 					util.Logger().Errorf(err, "handle dependency event failed")
-					retry()
+					delay()
 					continue
 				}
+
+				retries = 0
 			}
 		}
 	})

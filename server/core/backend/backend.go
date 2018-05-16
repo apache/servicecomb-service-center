@@ -29,7 +29,6 @@ import (
 var (
 	registryInstance registry.Registry
 	singletonLock    sync.Mutex
-	wait_delay       = []int{1, 1, 5, 10, 20, 30, 60}
 )
 
 const (
@@ -65,10 +64,7 @@ func Registry() registry.Registry {
 				return registryInstance
 			}
 
-			if i >= len(wait_delay) {
-				i = len(wait_delay) - 1
-			}
-			t := time.Duration(wait_delay[i]) * time.Second
+			t := util.GetBackoff().Delay(i)
 			util.Logger().Errorf(nil, "initialize service center failed, retry after %s", t)
 			<-time.After(t)
 		}

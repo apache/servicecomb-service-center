@@ -142,23 +142,24 @@ func LogPanic(args ...interface{}) {
 		}
 
 		if strings.Index(file, "service-center") > 0 || strings.Index(file, "servicecenter") > 0 {
-			idx := strings.LastIndex(file, "/")
-			if idx >= 0 {
-				file = file[idx+1:]
-			}
-			Logger().Errorf(nil, "recover from %s %s():%d! %s", file, method, line, fmt.Sprint(args...))
+			Logger().Errorf(nil, "recover from %s %s():%d! %s", FileLastName(file), method, line, fmt.Sprint(args...))
 			return
 		}
 	}
 
 	file, method, line, _ := GetCaller(0)
-	idx := strings.LastIndex(file, "/")
-	if idx >= 0 {
-		file = file[idx+1:]
-	}
 	fmt.Fprintln(os.Stderr, time.Now().Format("2006-01-02T15:04:05.000Z07:00"), "FATAL", "system", os.Getpid(),
-		fmt.Sprintf("%s %s():%d", file, method, line), fmt.Sprint(args...))
+		fmt.Sprintf("%s %s():%d", FileLastName(file), method, line), fmt.Sprint(args...))
 	fmt.Fprintln(os.Stderr, BytesToStringWithNoCopy(debug.Stack()))
+}
+
+func FileLastName(file string) string {
+	if sp1 := strings.LastIndex(file, "/"); sp1 >= 0 {
+		if sp2 := strings.LastIndex(file[:sp1], "/"); sp2 >= 0 {
+			file = file[sp2+1:]
+		}
+	}
+	return file
 }
 
 func GetCaller(skip int) (string, string, int, bool) {

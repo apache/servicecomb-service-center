@@ -124,7 +124,7 @@ const (
 const (
 	DEFAULT_COMPACT_TIMES   = 3
 	DEFAULT_COMPACT_TIMEOUT = 5 * time.Minute
-	minWaitInterval         = 100 * time.Millisecond
+	minWaitInterval         = 1 * time.Second
 	eventBlockSize          = 1000
 )
 

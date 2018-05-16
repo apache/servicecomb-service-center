@@ -17,7 +17,9 @@
 package store
 
 import (
+	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
@@ -46,7 +48,8 @@ func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (
 
 	key := util.BytesToStringWithNoCopy(op.Key)
 
-	if op.Mode == registry.MODE_NO_CACHE ||
+	if !core.ServerInfo.Config.EnableCache ||
+		op.Mode == registry.MODE_NO_CACHE ||
 		op.Revision > 0 ||
 		(op.Offset >= 0 && op.Limit > 0) {
 		util.Logger().Debugf("search %s match special options, request etcd server, opts: %s",
@@ -301,7 +304,7 @@ func (i *Indexer) Run() {
 	i.isClose = false
 	i.prefixLock.Unlock()
 
-	if _, ok := i.cacher.(*nullCacher); ok {
+	if !core.ServerInfo.Config.EnableCache {
 		util.SafeCloseChan(i.ready)
 		return
 	}

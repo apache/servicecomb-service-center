@@ -212,21 +212,23 @@ func (c *KvCacher) needDeferHandle(evts []KvEvent) bool {
 
 func (c *KvCacher) refresh(ctx context.Context) {
 	util.Logger().Debugf("start to list and watch %s", c.Cfg)
+	retries := 0
 	for {
-		start := time.Now()
-		c.ListAndWatch(ctx)
-		watchDuration := time.Since(start)
 		nextPeriod := minWaitInterval
-		if watchDuration > 0 && c.Cfg.Period > watchDuration {
-			nextPeriod = c.Cfg.Period - watchDuration
+		if err := c.ListAndWatch(ctx); err != nil {
+			nextPeriod = util.GetBackoff().Delay(retries)
+			retries++
+		} else {
+			retries = 0
+
+			ReportCacheMetrics(c.Name(), "raw", c.cache.RLock())
+			c.cache.RUnlock()
 		}
 		select {
 		case <-ctx.Done():
 			util.Logger().Debugf("stop to list and watch %s", c.Cfg)
 			return
 		case <-time.After(nextPeriod):
-			ReportCacheMetrics(c.Name(), "raw", c.cache.RLock())
-			c.cache.RUnlock()
 		}
 	}
 }
