@@ -646,7 +646,7 @@ func (dep *Dependency) UpdateProvidersRuleOfConsumer(conKey string) error {
 		_, err := backend.Registry().Do(context.TODO(),
 			registry.DEL,
 			registry.WithStrKey(conKey),
-			)
+		)
 		if err != nil {
 			util.Logger().Errorf(nil, "Upload dependency rule failed.")
 			return err
@@ -723,6 +723,9 @@ func (dr *DependencyRelation) GetDependencyProviders(opts ...DependencyRelationF
 			if err != nil {
 				util.Logger().Warnf(nil, "Provider does not exist, %s/%s/%s",
 					key.AppId, key.ServiceName, key.Version)
+				continue
+			}
+			if provider == nil {
 				continue
 			}
 			if op.NonSelf && providerId == dr.consumer.ServiceId {
