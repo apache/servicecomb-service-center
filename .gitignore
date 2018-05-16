@@ -14,9 +14,11 @@ vendor/**
 
 # for local UT
 server/service/conf/
+frontend/conf/
 etc/data/
 etc/ssl/
 integration/conf/
 frontend/bower_components/
 frontend/node_modules/
 server/govern/conf/
+tmp/

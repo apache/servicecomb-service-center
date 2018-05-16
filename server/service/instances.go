@@ -28,9 +28,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
-	nf "github.com/apache/incubator-servicecomb-service-center/server/service/notification"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
-	"github.com/gorilla/websocket"
 	"golang.org/x/net/context"
 	"math"
 	"strconv"
@@ -450,14 +448,14 @@ func (s *InstanceService) getInstancePreCheck(ctx context.Context, in interface{
 	if len(tags) > 0 {
 		tagsFromETCD, err := serviceUtil.GetTagsUtils(ctx, targetDomainProject, providerServiceId)
 		if err != nil {
-			return scerr.NewError(scerr.ErrInternal, fmt.Sprintf("An error occurred in query provider tags(%s)", err.Error()))
+			return scerr.NewErrorf(scerr.ErrInternal, "An error occurred in query provider tags(%s)", err.Error())
 		}
 		if len(tagsFromETCD) == 0 {
 			return scerr.NewError(scerr.ErrTagNotExists, "Provider has no tag")
 		}
 		for _, tag := range tags {
 			if _, ok := tagsFromETCD[tag]; !ok {
-				return scerr.NewError(scerr.ErrTagNotExists, fmt.Sprintf("Provider tags do not contain '%s'", tag))
+				return scerr.NewErrorf(scerr.ErrTagNotExists, "Provider tags do not contain '%s'", tag)
 			}
 		}
 	}
@@ -692,50 +690,6 @@ func (s *InstanceService) UpdateInstanceProperties(ctx context.Context, in *pb.U
 	return &pb.UpdateInstancePropsResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Update service instance properties successfully."),
 	}, nil
-}
-
-func (s *InstanceService) WatchPreOpera(ctx context.Context, in *pb.WatchInstanceRequest) error {
-	if in == nil || len(in.SelfServiceId) == 0 {
-		return errors.New("Request format invalid.")
-	}
-	domainProject := util.ParseDomainProject(ctx)
-	if !serviceUtil.ServiceExist(ctx, domainProject, in.SelfServiceId) {
-		return errors.New("Service does not exist.")
-	}
-	return nil
-}
-
-func (s *InstanceService) Watch(in *pb.WatchInstanceRequest, stream pb.ServiceInstanceCtrl_WatchServer) error {
-	var err error
-	if err = s.WatchPreOpera(stream.Context(), in); err != nil {
-		util.Logger().Errorf(err, "establish watch failed: invalid params.")
-		return err
-	}
-	domainProject := util.ParseDomainProject(stream.Context())
-	watcher := nf.NewInstanceListWatcher(in.SelfServiceId, apt.GetInstanceRootKey(domainProject)+"/", nil)
-	err = nf.GetNotifyService().AddSubscriber(watcher)
-	util.Logger().Infof("start watch instance status, watcher %s %s", watcher.Subject(), watcher.Id())
-	return nf.HandleWatchJob(watcher, stream, nf.GetNotifyService().Config.NotifyTimeout)
-}
-
-func (s *InstanceService) WebSocketWatch(ctx context.Context, in *pb.WatchInstanceRequest, conn *websocket.Conn) {
-	util.Logger().Infof("New a web socket watch with %s", in.SelfServiceId)
-	if err := s.WatchPreOpera(ctx, in); err != nil {
-		nf.EstablishWebSocketError(conn, err)
-		return
-	}
-	nf.DoWebSocketListAndWatch(ctx, in.SelfServiceId, nil, conn)
-}
-
-func (s *InstanceService) WebSocketListAndWatch(ctx context.Context, in *pb.WatchInstanceRequest, conn *websocket.Conn) {
-	util.Logger().Infof("New a web socket list and watch with %s", in.SelfServiceId)
-	if err := s.WatchPreOpera(ctx, in); err != nil {
-		nf.EstablishWebSocketError(conn, err)
-		return
-	}
-	nf.DoWebSocketListAndWatch(ctx, in.SelfServiceId, func() ([]*pb.WatchInstanceResponse, int64) {
-		return serviceUtil.QueryAllProvidersInstances(ctx, in.SelfServiceId)
-	}, conn)
 }
 
 func (s *InstanceService) ClusterHealth(ctx context.Context) (*pb.GetInstancesResponse, error) {

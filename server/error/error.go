@@ -18,6 +18,7 @@ package error
 
 import (
 	"encoding/json"
+	"fmt"
 )
 
 var errors = map[int32]string{
@@ -94,23 +95,23 @@ type Error struct {
 	Detail  string `json:"detail,omitempty"`
 }
 
-func (e Error) Error() string {
+func (e *Error) Error() string {
 	if len(e.Detail) == 0 {
 		return e.Message
 	}
 	return e.Message + "(" + e.Detail + ")"
 }
 
-func (e Error) Marshal() []byte {
+func (e *Error) Marshal() []byte {
 	bs, _ := json.Marshal(e)
 	return bs
 }
 
-func (e Error) StatusCode() int {
+func (e *Error) StatusCode() int {
 	return int(e.Code / 1000)
 }
 
-func (e Error) InternalError() bool {
+func (e *Error) InternalError() bool {
 	if e.Code >= 500000 {
 		return true
 	}
@@ -123,6 +124,10 @@ func NewError(code int32, detail string) *Error {
 		Message: errors[code],
 		Detail:  detail,
 	}
+}
+
+func NewErrorf(code int32, format string, args ...interface{}) *Error {
+	return NewError(code, fmt.Sprintf(format, args...))
 }
 
 func RegisterErrors(errs map[int32]string) {
