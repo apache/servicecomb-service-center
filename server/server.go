@@ -82,7 +82,7 @@ func (s *ServiceCenterServer) waitForQuit() {
 	util.Logger().Debugf("service center stopped")
 }
 
-func (s *ServiceCenterServer) LoadServerInformation() error {
+func LoadServerInformation() error {
 	resp, err := backend.Registry().Do(context.Background(),
 		registry.GET, registry.WithStrKey(core.GetServerInfoKey()))
 	if err != nil {
@@ -100,7 +100,7 @@ func (s *ServiceCenterServer) LoadServerInformation() error {
 	return nil
 }
 
-func (s *ServiceCenterServer) UpgradeServerVersion() error {
+func UpgradeServerVersion() error {
 	core.ServerInfo.Version = version.Ver().Version
 
 	bytes, err := json.Marshal(core.ServerInfo)
@@ -117,7 +117,7 @@ func (s *ServiceCenterServer) UpgradeServerVersion() error {
 
 func (s *ServiceCenterServer) needUpgrade() bool {
 	if core.ServerInfo.Version == "0" {
-		err := s.LoadServerInformation()
+		err := LoadServerInformation()
 		if err != nil {
 			util.Logger().Errorf(err, "check version failed, can not load the system config")
 			return false
@@ -136,7 +136,7 @@ func (s *ServiceCenterServer) initialize() {
 		os.Exit(1)
 	}
 	if s.needUpgrade() {
-		s.UpgradeServerVersion()
+		UpgradeServerVersion()
 	}
 
 	// cache mechanism
