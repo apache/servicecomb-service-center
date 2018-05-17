@@ -180,14 +180,11 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	// build the request options
 	key := apt.GenerateInstanceKey(domainProject, instance.ServiceId, instanceId)
 	hbKey := apt.GenerateInstanceLeaseKey(domainProject, instance.ServiceId, instanceId)
-	epKey := util.StringToBytesWithNoCopy(apt.GenerateEndpointsIndexKey(domainProject, instance))
 
 	opts := []registry.PluginOp{
 		registry.OpPut(registry.WithStrKey(key), registry.WithValue(data),
 			registry.WithLease(leaseID)),
 		registry.OpPut(registry.WithStrKey(hbKey), registry.WithStrValue(fmt.Sprintf("%d", leaseID)),
-			registry.WithLease(leaseID)),
-		registry.OpPut(registry.WithKey(epKey), registry.WithStrValue(instance.ServiceId+"/"+instanceId),
 			registry.WithLease(leaseID)),
 	}
 

@@ -18,7 +18,6 @@ package util
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
@@ -128,23 +127,7 @@ func InstanceExist(ctx context.Context, instance *pb.MicroServiceInstance) (stri
 			return instance.InstanceId, nil
 		}
 	}
-
-	// check endpoint index
-	resp, err := backend.Store().Endpoints().Search(ctx,
-		registry.WithStrKey(apt.GenerateEndpointsIndexKey(domainProject, instance)))
-	if err != nil {
-		return "", scerr.NewError(scerr.ErrInternal, err.Error())
-	}
-	if resp.Count == 0 {
-		return "", nil
-	}
-	endpointValue := ParseEndpointIndexValue(resp.Kvs[0].Value)
-	if instance.ServiceId != endpointValue.serviceId {
-		return endpointValue.instanceId,
-			scerr.NewError(scerr.ErrEndpointAlreadyExists,
-				fmt.Sprintf("Find the same endpoints in service %s", endpointValue.serviceId))
-	}
-	return endpointValue.instanceId, nil
+	return "", nil
 }
 
 type EndpointIndexValue struct {
