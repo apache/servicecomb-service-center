@@ -17,7 +17,6 @@
 package store
 
 import (
-	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
@@ -37,6 +36,7 @@ type Indexer struct {
 	cacher           Cacher
 	goroutine        *util.GoRoutine
 	ready            chan struct{}
+	lastMaxSize      int
 	prefixIndex      map[string]map[string]struct{}
 	prefixBuildQueue chan KvEvent
 	prefixLock       sync.RWMutex
@@ -198,18 +198,27 @@ func (i *Indexer) buildIndex() {
 				default:
 					i.addPrefixKey(prefix, key)
 				}
+
+				// compact
+				initSize, l := DEFAULT_CACHE_INIT_SIZE, len(i.prefixIndex)
+				if i.lastMaxSize < l {
+					i.lastMaxSize = l
+				}
+				if initSize >= l &&
+					i.lastMaxSize >= initSize*DEFAULT_COMPACT_TIMES &&
+					time.Now().Sub(lastCompactTime) >= DEFAULT_COMPACT_TIMEOUT {
+					i.compact()
+					i.lastMaxSize = l
+					lastCompactTime = time.Now()
+				}
+
+				// report metrics
+				ReportCacheMetrics(i.cacher.Name(), "index", i.prefixIndex)
+
 				i.prefixLock.Unlock()
 
 				util.LogNilOrWarnf(t, "too long to rebuild(action: %s) index[%d], key is %s",
 					evt.Type, key, len(i.prefixIndex))
-			case <-time.After(10 * time.Second):
-				i.prefixLock.Lock()
-				if time.Now().Sub(lastCompactTime) >= DEFAULT_COMPACT_TIMEOUT {
-					i.compact()
-					lastCompactTime = time.Now()
-				}
-				ReportCacheMetrics(i.cacher.Name(), "index", i.prefixIndex)
-				i.prefixLock.Unlock()
 			}
 		}
 		util.Logger().Debugf("the goroutine building index %s is stopped", i.cacher.Name())
@@ -218,11 +227,7 @@ func (i *Indexer) buildIndex() {
 }
 
 func (i *Indexer) compact() {
-	l := len(i.prefixIndex)
-	if l < DEFAULT_CACHE_INIT_SIZE {
-		l = DEFAULT_CACHE_INIT_SIZE
-	}
-	n := make(map[string]map[string]struct{}, l)
+	n := make(map[string]map[string]struct{}, DEFAULT_CACHE_INIT_SIZE)
 	for k, v := range i.prefixIndex {
 		c, ok := n[k]
 		if !ok {
@@ -235,8 +240,8 @@ func (i *Indexer) compact() {
 	}
 	i.prefixIndex = n
 
-	util.Logger().Infof("index %s(%s): compact root capacity to size %d",
-		i.cacher.Name(), DEFAULT_COMPACT_TIMEOUT, l)
+	util.Logger().Infof("index %s: compact root capacity to size %d",
+		i.cacher.Name(), DEFAULT_CACHE_INIT_SIZE)
 }
 
 func (i *Indexer) getPrefixKey(arr *[]string, prefix string) (count int) {
