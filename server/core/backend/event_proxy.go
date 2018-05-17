@@ -14,36 +14,46 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package store
+package backend
 
-import "testing"
+import "sync"
 
-type extend struct {
-}
+var (
+	EventProxies map[StoreType]*KvEventProxy
+)
 
-func (e *extend) Name() string {
-	return "test"
-}
-
-func (e *extend) Prefix() string {
-	return "/test"
-}
-
-func (e *extend) InitSize() int {
-	return 0
-}
-
-func TestInstallType(t *testing.T) {
-	id, err := InstallType(&extend{})
-	if err != nil {
-		t.Fatal(err)
+func init() {
+	EventProxies = make(map[StoreType]*KvEventProxy, typeEnd)
+	for i := StoreType(0); i != typeEnd; i++ {
+		EventProxies[i] = NewEventProxy()
 	}
-	if id == NONEXIST {
-		t.Fatal(err)
-	}
+}
 
-	id, err = InstallType(&extend{})
-	if id != NONEXIST || err == nil {
-		t.Fatal("InstallType fail", err)
+type KvEventProxy struct {
+	evtHandleFuncs []KvEventFunc
+	lock           sync.RWMutex
+}
+
+func (h *KvEventProxy) AddHandleFunc(f KvEventFunc) {
+	h.lock.Lock()
+	h.evtHandleFuncs = append(h.evtHandleFuncs, f)
+	h.lock.Unlock()
+}
+
+func (h *KvEventProxy) OnEvent(evt KvEvent) {
+	h.lock.RLock()
+	for _, f := range h.evtHandleFuncs {
+		f(evt)
 	}
+	h.lock.RUnlock()
+}
+
+func NewEventProxy() *KvEventProxy {
+	return &KvEventProxy{
+		evtHandleFuncs: make([]KvEventFunc, 0, 5),
+	}
+}
+
+func EventProxy(t StoreType) *KvEventProxy {
+	return EventProxies[t]
 }

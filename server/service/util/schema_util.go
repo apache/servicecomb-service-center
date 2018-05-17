@@ -17,14 +17,14 @@
 package util
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"golang.org/x/net/context"
 )
 
 func CheckSchemaInfoExist(ctx context.Context, key string) (bool, error) {
 	opts := append(FromContext(ctx), registry.WithStrKey(key), registry.WithCountOnly())
-	resp, errDo := store.Store().Schema().Search(ctx, opts...)
+	resp, errDo := backend.Store().Schema().Search(ctx, opts...)
 	if errDo != nil {
 		return false, errDo
 	}

@@ -14,12 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package store
+package backend
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
@@ -54,7 +53,7 @@ func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (
 		(op.Offset >= 0 && op.Limit > 0) {
 		util.Logger().Debugf("search %s match special options, request etcd server, opts: %s",
 			i.cacher.Name(), op)
-		return backend.Registry().Do(ctx, opts...)
+		return Registry().Do(ctx, opts...)
 	}
 
 	if op.Prefix {
@@ -69,7 +68,7 @@ func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (
 
 		util.Logger().Debugf("can not find any key from %s cache with prefix, request etcd server, key: %s",
 			i.cacher.Name(), key)
-		return backend.Registry().Do(ctx, opts...)
+		return Registry().Do(ctx, opts...)
 	}
 
 	resp := &registry.PluginResponse{
@@ -89,7 +88,7 @@ func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (
 		}
 
 		util.Logger().Debugf("%s cache does not store this key, request etcd server, key: %s", i.cacher.Name(), key)
-		return backend.Registry().Do(ctx, opts...)
+		return Registry().Do(ctx, opts...)
 	}
 
 	cacheData := i.Cache().Data(key)
@@ -100,7 +99,7 @@ func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (
 
 		util.Logger().Debugf("do not match any key in %s cache store, request etcd server, key: %s",
 			i.cacher.Name(), key)
-		return backend.Registry().Do(ctx, opts...)
+		return Registry().Do(ctx, opts...)
 	}
 
 	resp.Count = 1

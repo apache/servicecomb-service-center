@@ -14,12 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package store
+package backend
 
 import (
 	errorsEx "github.com/apache/incubator-servicecomb-service-center/pkg/errors"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"golang.org/x/net/context"
 	"time"
@@ -41,7 +40,7 @@ func (lat *LeaseTask) Key() string {
 
 func (lat *LeaseTask) Do(ctx context.Context) (err error) {
 	lat.StartTime = time.Now()
-	lat.TTL, err = backend.Registry().LeaseRenew(ctx, lat.LeaseID)
+	lat.TTL, err = Registry().LeaseRenew(ctx, lat.LeaseID)
 	lat.EndTime = time.Now()
 	if err != nil {
 		util.Logger().Errorf(err, "[%s]renew lease %d failed(rev: %s, run: %s), key %s",

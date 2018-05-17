@@ -17,13 +17,13 @@
 package event
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 )
 
 func init() {
-	store.AddEventHandler(NewServiceEventHandler())
-	store.AddEventHandler(NewInstanceEventHandler())
-	store.AddEventHandler(NewRuleEventHandler())
-	store.AddEventHandler(NewTagEventHandler())
-	store.AddEventHandler(NewDependencyEventHandler())
+	backend.AddEventHandler(NewServiceEventHandler())
+	backend.AddEventHandler(NewInstanceEventHandler())
+	backend.AddEventHandler(NewRuleEventHandler())
+	backend.AddEventHandler(NewTagEventHandler())
+	backend.AddEventHandler(NewDependencyEventHandler())
 }

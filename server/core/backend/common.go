@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package store
+package backend
 
 import (
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"

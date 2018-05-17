@@ -14,10 +14,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package store
+package backend
 
-type DeferHandler interface {
-	OnCondition(Cache, []KvEvent) bool
-	HandleChan() <-chan KvEvent
-	Reset() bool
+import (
+	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+)
+
+type KvEventFunc func(evt KvEvent)
+
+type KvEvent struct {
+	Revision int64
+	Type     proto.EventType
+	Prefix   string
+	Object   interface{}
+}
+
+type KvEventHandler interface {
+	Type() StoreType
+	OnEvent(evt KvEvent)
+}
+
+// the event handler/func must be good performance, or will block the event bus.
+func AddEventHandleFunc(t StoreType, f KvEventFunc) {
+	EventProxy(t).AddHandleFunc(f)
+}
+
+func AddEventHandler(h KvEventHandler) {
+	AddEventHandleFunc(h.Type(), h.OnEvent)
 }

@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
@@ -34,7 +34,7 @@ import (
 */
 func GetServiceWithRev(ctx context.Context, domain string, id string, rev int64) (*pb.MicroService, error) {
 	key := apt.GenerateServiceKey(domain, id)
-	serviceResp, err := store.Store().Service().Search(ctx,
+	serviceResp, err := backend.Store().Service().Search(ctx,
 		registry.WithStrKey(key),
 		registry.WithRev(rev))
 	if err != nil {
@@ -58,7 +58,7 @@ func GetServiceInCache(ctx context.Context, domain string, id string) (*pb.Micro
 func GetService(ctx context.Context, domainProject string, serviceId string) (*pb.MicroService, error) {
 	key := apt.GenerateServiceKey(domainProject, serviceId)
 	opts := append(FromContext(ctx), registry.WithStrKey(key))
-	serviceResp, err := store.Store().Service().Search(ctx, opts...)
+	serviceResp, err := backend.Store().Service().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func GetServicesRawData(ctx context.Context, domainProject string) ([]*mvccpb.Ke
 	opts := append(FromContext(ctx),
 		registry.WithStrKey(key),
 		registry.WithPrefix())
-	resp, err := store.Store().Service().Search(ctx, opts...)
+	resp, err := backend.Store().Service().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +118,7 @@ func GetServiceId(ctx context.Context, key *pb.MicroServiceKey) (serviceId strin
 
 func searchServiceId(ctx context.Context, key *pb.MicroServiceKey) (string, error) {
 	opts := append(FromContext(ctx), registry.WithStrKey(apt.GenerateServiceIndexKey(key)))
-	resp, err := store.Store().ServiceIndex().Search(ctx, opts...)
+	resp, err := backend.Store().ServiceIndex().Search(ctx, opts...)
 	if err != nil {
 		return "", err
 	}
@@ -130,7 +130,7 @@ func searchServiceId(ctx context.Context, key *pb.MicroServiceKey) (string, erro
 
 func searchServiceIdFromAlias(ctx context.Context, key *pb.MicroServiceKey) (string, error) {
 	opts := append(FromContext(ctx), registry.WithStrKey(apt.GenerateServiceAliasKey(key)))
-	resp, err := store.Store().ServiceAlias().Search(ctx, opts...)
+	resp, err := backend.Store().ServiceAlias().Search(ctx, opts...)
 	if err != nil {
 		return "", err
 	}
@@ -152,7 +152,7 @@ func GetServiceAllVersions(ctx context.Context, key *pb.MicroServiceKey, alias b
 		registry.WithStrKey(prefix),
 		registry.WithPrefix(),
 		registry.WithDescendOrder())
-	resp, err := store.Store().ServiceIndex().Search(ctx, opts...)
+	resp, err := backend.Store().ServiceIndex().Search(ctx, opts...)
 	return resp, err
 }
 
@@ -195,7 +195,7 @@ func ServiceExist(ctx context.Context, domainProject string, serviceId string) b
 	opts := append(FromContext(ctx),
 		registry.WithStrKey(apt.GenerateServiceKey(domainProject, serviceId)),
 		registry.WithCountOnly())
-	resp, err := store.Store().Service().Search(ctx, opts...)
+	resp, err := backend.Store().Service().Search(ctx, opts...)
 	if err != nil || resp.Count == 0 {
 		return false
 	}
@@ -237,7 +237,7 @@ func GetOneDomainProjectServiceCount(ctx context.Context, domainProject string) 
 		registry.WithStrKey(key),
 		registry.WithCountOnly(),
 		registry.WithPrefix())
-	resp, err := store.Store().Service().Search(ctx, opts...)
+	resp, err := backend.Store().Service().Search(ctx, opts...)
 	if err != nil {
 		return 0, err
 	}
@@ -250,7 +250,7 @@ func GetOneDomainProjectInstanceCount(ctx context.Context, domainProject string)
 		registry.WithStrKey(key),
 		registry.WithCountOnly(),
 		registry.WithPrefix())
-	resp, err := store.Store().Instance().Search(ctx, opts...)
+	resp, err := backend.Store().Instance().Search(ctx, opts...)
 	if err != nil {
 		return 0, err
 	}

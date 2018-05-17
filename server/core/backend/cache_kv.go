@@ -14,11 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package store
+package backend
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
@@ -505,7 +504,7 @@ func NewKvCacher(name string, opts ...ConfigOption) *KvCacher {
 		Cfg:   cfg,
 		ready: make(chan struct{}),
 		lw: ListWatcher{
-			Client: backend.Registry(),
+			Client: Registry(),
 			Prefix: cfg.Prefix,
 		},
 		goroutine: util.NewGo(context.Background()),

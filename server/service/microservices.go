@@ -24,7 +24,6 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
@@ -237,7 +236,7 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, serviceId st
 		}
 
 		instancesKey := apt.GenerateInstanceKey(domainProject, serviceId, "")
-		rsp, err := store.Store().Instance().Search(ctx,
+		rsp, err := backend.Store().Instance().Search(ctx,
 			registry.WithStrKey(instancesKey),
 			registry.WithPrefix(),
 			registry.WithCountOnly())

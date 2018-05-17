@@ -17,61 +17,61 @@
 package broker
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 )
 
 var (
-	PARTICIPANT  store.StoreType
-	VERSION      store.StoreType
-	PACT         store.StoreType
-	PACT_VERSION store.StoreType
-	PACT_TAG     store.StoreType
-	VERIFICATION store.StoreType
-	PACT_LATEST  store.StoreType
+	PARTICIPANT  backend.StoreType
+	VERSION      backend.StoreType
+	PACT         backend.StoreType
+	PACT_VERSION backend.StoreType
+	PACT_TAG     backend.StoreType
+	VERIFICATION backend.StoreType
+	PACT_LATEST  backend.StoreType
 )
 
 var brokerKvStore = &BKvStore{}
 
 func init() {
-	PARTICIPANT = store.Store().MustInstall(store.NewEntity("PARTICIPANT", GetBrokerParticipantKey("")))
-	VERSION = store.Store().MustInstall(store.NewEntity("VERSION", GetBrokerVersionKey("")))
-	PACT = store.Store().MustInstall(store.NewEntity("PACT", GetBrokerPactKey("")))
-	PACT_VERSION = store.Store().MustInstall(store.NewEntity("PACT_VERSION", GetBrokerPactVersionKey("")))
-	PACT_TAG = store.Store().MustInstall(store.NewEntity("PACT_TAG", GetBrokerTagKey("")))
-	VERIFICATION = store.Store().MustInstall(store.NewEntity("VERIFICATION", GetBrokerVerificationKey("")))
-	PACT_LATEST = store.Store().MustInstall(store.NewEntity("PACT_LATEST", GetBrokerLatestKey("")))
+	PARTICIPANT = backend.Store().MustInstall(backend.NewEntity("PARTICIPANT", GetBrokerParticipantKey("")))
+	VERSION = backend.Store().MustInstall(backend.NewEntity("VERSION", GetBrokerVersionKey("")))
+	PACT = backend.Store().MustInstall(backend.NewEntity("PACT", GetBrokerPactKey("")))
+	PACT_VERSION = backend.Store().MustInstall(backend.NewEntity("PACT_VERSION", GetBrokerPactVersionKey("")))
+	PACT_TAG = backend.Store().MustInstall(backend.NewEntity("PACT_TAG", GetBrokerTagKey("")))
+	VERIFICATION = backend.Store().MustInstall(backend.NewEntity("VERIFICATION", GetBrokerVerificationKey("")))
+	PACT_LATEST = backend.Store().MustInstall(backend.NewEntity("PACT_LATEST", GetBrokerLatestKey("")))
 
 }
 
 type BKvStore struct {
 }
 
-func (s *BKvStore) Participant() *store.Indexer {
-	return store.Store().Entity(PARTICIPANT)
+func (s *BKvStore) Participant() *backend.Indexer {
+	return backend.Store().Entity(PARTICIPANT)
 }
 
-func (s *BKvStore) Version() *store.Indexer {
-	return store.Store().Entity(VERSION)
+func (s *BKvStore) Version() *backend.Indexer {
+	return backend.Store().Entity(VERSION)
 }
 
-func (s *BKvStore) Pact() *store.Indexer {
-	return store.Store().Entity(PACT)
+func (s *BKvStore) Pact() *backend.Indexer {
+	return backend.Store().Entity(PACT)
 }
 
-func (s *BKvStore) PactVersion() *store.Indexer {
-	return store.Store().Entity(PACT_VERSION)
+func (s *BKvStore) PactVersion() *backend.Indexer {
+	return backend.Store().Entity(PACT_VERSION)
 }
 
-func (s *BKvStore) PactTag() *store.Indexer {
-	return store.Store().Entity(PACT_TAG)
+func (s *BKvStore) PactTag() *backend.Indexer {
+	return backend.Store().Entity(PACT_TAG)
 }
 
-func (s *BKvStore) Verification() *store.Indexer {
-	return store.Store().Entity(VERIFICATION)
+func (s *BKvStore) Verification() *backend.Indexer {
+	return backend.Store().Entity(VERIFICATION)
 }
 
-func (s *BKvStore) PactLatest() *store.Indexer {
-	return store.Store().Entity(PACT_LATEST)
+func (s *BKvStore) PactLatest() *backend.Indexer {
+	return backend.Store().Entity(PACT_LATEST)
 }
 
 func Store() *BKvStore {

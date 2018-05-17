@@ -18,7 +18,7 @@ package event
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"github.com/coreos/etcd/mvcc/mvccpb"
@@ -29,11 +29,11 @@ import (
 type ServiceEventHandler struct {
 }
 
-func (h *ServiceEventHandler) Type() store.StoreType {
-	return store.SERVICE
+func (h *ServiceEventHandler) Type() backend.StoreType {
+	return backend.SERVICE
 }
 
-func (h *ServiceEventHandler) OnEvent(evt store.KvEvent) {
+func (h *ServiceEventHandler) OnEvent(evt backend.KvEvent) {
 	action := evt.Type
 	if action != pb.EVT_CREATE && action != pb.EVT_INIT {
 		return

@@ -22,7 +22,6 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
@@ -36,7 +35,7 @@ import (
 func GetLeaseId(ctx context.Context, domainProject string, serviceId string, instanceId string) (int64, error) {
 	opts := append(FromContext(ctx),
 		registry.WithStrKey(apt.GenerateInstanceLeaseKey(domainProject, serviceId, instanceId)))
-	resp, err := store.Store().Lease().Search(ctx, opts...)
+	resp, err := backend.Store().Lease().Search(ctx, opts...)
 	if err != nil {
 		return -1, err
 	}
@@ -51,7 +50,7 @@ func GetInstance(ctx context.Context, domainProject string, serviceId string, in
 	key := apt.GenerateInstanceKey(domainProject, serviceId, instanceId)
 	opts := append(FromContext(ctx), registry.WithStrKey(key))
 
-	resp, err := store.Store().Instance().Search(ctx, opts...)
+	resp, err := backend.Store().Instance().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +69,7 @@ func GetInstance(ctx context.Context, domainProject string, serviceId string, in
 func GetAllInstancesOfOneService(ctx context.Context, domainProject string, serviceId string) ([]*pb.MicroServiceInstance, error) {
 	key := apt.GenerateInstanceKey(domainProject, serviceId, "")
 	opts := append(FromContext(ctx), registry.WithStrKey(key), registry.WithPrefix())
-	resp, err := store.Store().Instance().Search(ctx, opts...)
+	resp, err := backend.Store().Instance().Search(ctx, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "Get instance of service %s from etcd failed.", serviceId)
 		return nil, err
@@ -95,7 +94,7 @@ func GetInstanceCountOfOneService(ctx context.Context, domainProject string, ser
 		registry.WithStrKey(key),
 		registry.WithPrefix(),
 		registry.WithCountOnly())
-	resp, err := store.Store().Instance().Search(ctx, opts...)
+	resp, err := backend.Store().Instance().Search(ctx, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "Get instance count of service %s from etcd failed.", serviceId)
 		return 0, err
@@ -107,7 +106,7 @@ func InstanceExistById(ctx context.Context, domainProject string, serviceId stri
 	opts := append(FromContext(ctx),
 		registry.WithStrKey(apt.GenerateInstanceKey(domainProject, serviceId, instanceId)),
 		registry.WithCountOnly())
-	resp, err := store.Store().Instance().Search(ctx, opts...)
+	resp, err := backend.Store().Instance().Search(ctx, opts...)
 	if err != nil {
 		return false, err
 	}
@@ -131,7 +130,7 @@ func InstanceExist(ctx context.Context, instance *pb.MicroServiceInstance) (stri
 	}
 
 	// check endpoint index
-	resp, err := store.Store().Endpoints().Search(ctx,
+	resp, err := backend.Store().Endpoints().Search(ctx,
 		registry.WithStrKey(apt.GenerateEndpointsIndexKey(domainProject, instance)))
 	if err != nil {
 		return "", scerr.NewError(scerr.ErrInternal, err.Error())
@@ -166,7 +165,7 @@ func DeleteServiceAllInstances(ctx context.Context, serviceId string) error {
 	domainProject := util.ParseDomainProject(ctx)
 
 	instanceLeaseKey := apt.GenerateInstanceLeaseKey(domainProject, serviceId, "")
-	resp, err := store.Store().Lease().Search(ctx,
+	resp, err := backend.Store().Lease().Search(ctx,
 		registry.WithStrKey(instanceLeaseKey),
 		registry.WithPrefix(),
 		registry.WithNoCache())
@@ -205,7 +204,7 @@ func QueryAllProvidersInstances(ctx context.Context, selfServiceId string) (resu
 		return
 	}
 
-	rev = store.Revision()
+	rev = backend.Revision()
 
 	for _, providerId := range providerIds {
 		service, err := GetServiceWithRev(ctx, domainProject, providerId, rev)
@@ -254,7 +253,7 @@ func QueryAllProvidersInstances(ctx context.Context, selfServiceId string) (resu
 func queryServiceInstancesKvs(ctx context.Context, serviceId string, rev int64) ([]*mvccpb.KeyValue, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	key := apt.GenerateInstanceKey(domainProject, serviceId, "")
-	resp, err := store.Store().Instance().Search(ctx,
+	resp, err := backend.Store().Instance().Search(ctx,
 		registry.WithStrKey(key),
 		registry.WithPrefix(),
 		registry.WithRev(rev))

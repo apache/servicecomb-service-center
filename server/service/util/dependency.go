@@ -23,7 +23,6 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
@@ -219,7 +218,7 @@ func TransferToMicroServiceDependency(ctx context.Context, key string) (*pb.Micr
 	}
 
 	opts := append(FromContext(ctx), registry.WithStrKey(key))
-	res, err := store.Store().DependencyRule().Search(ctx, opts...)
+	res, err := backend.Store().DependencyRule().Search(ctx, opts...)
 	if err != nil {
 		util.Logger().Errorf(nil, "Get dependency rule failed.")
 		return nil, err
@@ -802,7 +801,7 @@ func (dr *DependencyRelation) parseDependencyRule(dependencyRule *pb.MicroServic
 		sopts := append(opts,
 			registry.WithStrKey(allServiceKey),
 			registry.WithPrefix())
-		resp, err := store.Store().Service().Search(dr.ctx, sopts...)
+		resp, err := backend.Store().Service().Search(dr.ctx, sopts...)
 		if err != nil {
 			return nil, err
 		}
@@ -908,7 +907,7 @@ func (dr *DependencyRelation) getConsumerOfDependAllServices() ([]*pb.MicroServi
 	providerService.ServiceName = "*"
 	relyAllKey := apt.GenerateProviderDependencyRuleKey(dr.domainProject, providerService)
 	opts := append(FromContext(dr.ctx), registry.WithStrKey(relyAllKey))
-	rsp, err := store.Store().DependencyRule().Search(dr.ctx, opts...)
+	rsp, err := backend.Store().DependencyRule().Search(dr.ctx, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "get consumer that rely all service failed.")
 		return nil, err
@@ -934,7 +933,7 @@ func (dr *DependencyRelation) getConsumerOfSameServiceNameAndAppId(provider *pb.
 	opts := append(FromContext(dr.ctx),
 		registry.WithStrKey(prefix),
 		registry.WithPrefix())
-	rsp, err := store.Store().DependencyRule().Search(dr.ctx, opts...)
+	rsp, err := backend.Store().DependencyRule().Search(dr.ctx, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "get all dependency rule failed: provider rule key %v.", provider)
 		return nil, err

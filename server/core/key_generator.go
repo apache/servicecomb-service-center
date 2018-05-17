@@ -328,7 +328,7 @@ func GenerateDomainKey(domain string) string {
 	}, "/")
 }
 
-func GetSystemKey() string {
+func GetServerInfoKey() string {
 	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_SYS_KEY,

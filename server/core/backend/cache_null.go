@@ -14,46 +14,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package store
-
-import "sync"
+package backend
 
 var (
-	EventProxies map[StoreType]*KvEventProxy
+	NullCache  = &nullCache{}
+	NullCacher = &nullCacher{}
+	closedCh   = make(chan struct{})
 )
 
 func init() {
-	EventProxies = make(map[StoreType]*KvEventProxy, typeEnd)
-	for i := StoreType(0); i != typeEnd; i++ {
-		EventProxies[i] = NewEventProxy()
-	}
+	close(closedCh)
 }
 
-type KvEventProxy struct {
-	evtHandleFuncs []KvEventFunc
-	lock           sync.RWMutex
+type nullCache struct {
 }
 
-func (h *KvEventProxy) AddHandleFunc(f KvEventFunc) {
-	h.lock.Lock()
-	h.evtHandleFuncs = append(h.evtHandleFuncs, f)
-	h.lock.Unlock()
+func (n *nullCache) Version() int64 {
+	return 0
 }
 
-func (h *KvEventProxy) OnEvent(evt KvEvent) {
-	h.lock.RLock()
-	for _, f := range h.evtHandleFuncs {
-		f(evt)
-	}
-	h.lock.RUnlock()
+func (n *nullCache) Data(interface{}) interface{} {
+	return nil
 }
 
-func NewEventProxy() *KvEventProxy {
-	return &KvEventProxy{
-		evtHandleFuncs: make([]KvEventFunc, 0, 5),
-	}
+func (n *nullCache) Have(interface{}) bool {
+	return false
 }
 
-func EventProxy(t StoreType) *KvEventProxy {
-	return EventProxies[t]
+func (n *nullCache) Size() int {
+	return 0
+}
+
+type nullCacher struct {
+}
+
+func (n *nullCacher) Name() string {
+	return ""
+}
+
+func (n *nullCacher) Cache() Cache {
+	return NullCache
+}
+
+func (n *nullCacher) Run() {}
+
+func (n *nullCacher) Stop() {}
+
+func (n *nullCacher) Ready() <-chan struct{} {
+	return closedCh
 }

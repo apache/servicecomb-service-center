@@ -22,7 +22,6 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/apache/incubator-servicecomb-service-center/server/mux"
@@ -36,11 +35,11 @@ type DependencyEventHandler struct {
 	signals *util.UniQueue
 }
 
-func (h *DependencyEventHandler) Type() store.StoreType {
-	return store.DEPENDENCY_QUEUE
+func (h *DependencyEventHandler) Type() backend.StoreType {
+	return backend.DEPENDENCY_QUEUE
 }
 
-func (h *DependencyEventHandler) OnEvent(evt store.KvEvent) {
+func (h *DependencyEventHandler) OnEvent(evt backend.KvEvent) {
 	action := evt.Type
 	if action != pb.EVT_CREATE && action != pb.EVT_UPDATE && action != pb.EVT_INIT {
 		return
@@ -114,7 +113,7 @@ func isAddToLeft(centerNode *util.Node, addRes interface{}) bool {
 
 func (h *DependencyEventHandler) Handle() error {
 	key := core.GetServiceDependencyQueueRootKey("")
-	resp, err := store.Store().DependencyQueue().Search(context.Background(),
+	resp, err := backend.Store().DependencyQueue().Search(context.Background(),
 		registry.WithStrKey(key),
 		registry.WithPrefix())
 	if err != nil {

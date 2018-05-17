@@ -20,7 +20,6 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
@@ -31,7 +30,7 @@ func GetAllDomainRawData(ctx context.Context) ([]*mvccpb.KeyValue, error) {
 	opts := append(FromContext(ctx),
 		registry.WithStrKey(apt.GenerateDomainKey("")),
 		registry.WithPrefix())
-	rsp, err := store.Store().Domain().Search(ctx, opts...)
+	rsp, err := backend.Store().Domain().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +65,7 @@ func DomainExist(ctx context.Context, domain string) (bool, error) {
 	opts := append(FromContext(ctx),
 		registry.WithStrKey(apt.GenerateDomainKey(domain)),
 		registry.WithCountOnly())
-	rsp, err := store.Store().Domain().Search(ctx, opts...)
+	rsp, err := backend.Store().Domain().Search(ctx, opts...)
 	if err != nil {
 		return false, err
 	}
@@ -77,7 +76,7 @@ func ProjectExist(ctx context.Context, domain, project string) (bool, error) {
 	opts := append(FromContext(ctx),
 		registry.WithStrKey(apt.GenerateProjectKey(domain, project)),
 		registry.WithCountOnly())
-	rsp, err := store.Store().Project().Search(ctx, opts...)
+	rsp, err := backend.Store().Project().Search(ctx, opts...)
 	if err != nil {
 		return false, err
 	}
