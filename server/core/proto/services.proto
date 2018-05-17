@@ -81,8 +81,8 @@ message ModifySchemasRequest {
 
 message Schema {
     string schemaId = 1;
-    string summary  = 2;
-    string schema   = 3;
+    string summary = 2;
+    string schema = 3;
 }
 
 message ModifySchemasResponse {
@@ -116,6 +116,7 @@ message StService {
 
 message StInstance {
     int64 count = 1;
+    int64 countByDomain = 2;
 }
 
 message StApp {
@@ -125,14 +126,14 @@ message StApp {
 message Statistics {
     StService services = 1;
     StInstance instances = 2;
-    StApp     apps = 3;
+    StApp apps = 3;
 }
 
 message GetServicesInfoRequest {
     repeated string options = 1;
     string appId = 2;
     string serviceName = 3;
-    bool   countOnly = 4;
+    bool countOnly = 4;
 }
 
 message GetServicesInfoResponse {
@@ -221,7 +222,7 @@ message GetExistenceResponse {
     Response response = 1;
     string serviceId = 2;
     string schemaId = 3;
-    string summary  = 4;
+    string summary = 4;
 }
 
 message CreateServiceRequest {
