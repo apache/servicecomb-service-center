@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/chain"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	"net/http"
 	"strconv"
 )
@@ -32,7 +32,7 @@ func (l *CacheResponse) Handle(i *chain.Invocation) {
 	r := i.Context().Value(rest.CTX_REQUEST).(*http.Request)
 	w := i.Context().Value(rest.CTX_RESPONSE).(http.ResponseWriter)
 
-	scRev := store.Revision()
+	scRev := backend.Revision()
 	w.Header().Set("X-Resource-Revision", fmt.Sprint(scRev))
 
 	rev, _ := strconv.ParseInt(r.URL.Query().Get("rev"), 10, 64)

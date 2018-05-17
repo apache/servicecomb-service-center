@@ -17,19 +17,41 @@
 package util
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
-	"golang.org/x/net/context"
+	"testing"
+	"time"
 )
 
-func CheckSchemaInfoExist(ctx context.Context, key string) (bool, error) {
-	opts := append(FromContext(ctx), registry.WithStrKey(key), registry.WithCountOnly())
-	resp, errDo := backend.Store().Schema().Search(ctx, opts...)
-	if errDo != nil {
-		return false, errDo
+func TestPowerBackoff_Delay(t *testing.T) {
+	i, m := time.Second, 30*time.Second
+	b := &PowerBackoff{
+		MaxDelay:  30 * time.Second,
+		InitDelay: 1 * time.Second,
+		Factor:    1.6,
 	}
-	if resp.Count == 0 {
-		return false, nil
+	r := b.Delay(-1)
+	if r != i {
+		t.Fatalf("TestPowerBackoff_Delay -1 failed, result is %s", r)
 	}
-	return true, nil
+	r = b.Delay(0)
+	if r != i {
+		t.Fatalf("TestPowerBackoff_Delay 0 failed, result is %s", r)
+	}
+	r = b.Delay(1)
+	if r != 1600*time.Millisecond {
+		t.Fatalf("TestPowerBackoff_Delay 1 failed, result is %s", r)
+	}
+	r = b.Delay(4)
+	if r != 6553600*time.Microsecond {
+		t.Fatalf("TestPowerBackoff_Delay 4 failed, result is %s", r)
+	}
+	r = b.Delay(8)
+	if r != m {
+		t.Fatalf("TestPowerBackoff_Delay 8 failed, result is %s", r)
+	}
+}
+
+func TestGetBackoff(t *testing.T) {
+	if GetBackoff() == nil {
+		t.Fatalf("TestGetBackoff failed")
+	}
 }

@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/async"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	nf "github.com/apache/incubator-servicecomb-service-center/server/service/notification"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
@@ -77,11 +77,11 @@ func (apt *RulesChangedTask) publish(ctx context.Context, domainProject, provide
 type RuleEventHandler struct {
 }
 
-func (h *RuleEventHandler) Type() store.StoreType {
-	return store.RULE
+func (h *RuleEventHandler) Type() backend.StoreType {
+	return backend.RULE
 }
 
-func (h *RuleEventHandler) OnEvent(evt store.KvEvent) {
+func (h *RuleEventHandler) OnEvent(evt backend.KvEvent) {
 	action := evt.Type
 	if action == pb.EVT_INIT {
 		return

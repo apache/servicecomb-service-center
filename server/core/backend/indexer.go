@@ -14,11 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package store
+package backend
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
@@ -35,6 +35,7 @@ type Indexer struct {
 	cacher           Cacher
 	goroutine        *util.GoRoutine
 	ready            chan struct{}
+	lastMaxSize      int
 	prefixIndex      map[string]map[string]struct{}
 	prefixBuildQueue chan KvEvent
 	prefixLock       sync.RWMutex
@@ -46,12 +47,13 @@ func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (
 
 	key := util.BytesToStringWithNoCopy(op.Key)
 
-	if op.Mode == registry.MODE_NO_CACHE ||
+	if !core.ServerInfo.Config.EnableCache ||
+		op.Mode == registry.MODE_NO_CACHE ||
 		op.Revision > 0 ||
 		(op.Offset >= 0 && op.Limit > 0) {
 		util.Logger().Debugf("search %s match special options, request etcd server, opts: %s",
 			i.cacher.Name(), op)
-		return backend.Registry().Do(ctx, opts...)
+		return Registry().Do(ctx, opts...)
 	}
 
 	if op.Prefix {
@@ -66,7 +68,7 @@ func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (
 
 		util.Logger().Debugf("can not find any key from %s cache with prefix, request etcd server, key: %s",
 			i.cacher.Name(), key)
-		return backend.Registry().Do(ctx, opts...)
+		return Registry().Do(ctx, opts...)
 	}
 
 	resp := &registry.PluginResponse{
@@ -86,7 +88,7 @@ func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (
 		}
 
 		util.Logger().Debugf("%s cache does not store this key, request etcd server, key: %s", i.cacher.Name(), key)
-		return backend.Registry().Do(ctx, opts...)
+		return Registry().Do(ctx, opts...)
 	}
 
 	cacheData := i.Cache().Data(key)
@@ -97,7 +99,7 @@ func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (
 
 		util.Logger().Debugf("do not match any key in %s cache store, request etcd server, key: %s",
 			i.cacher.Name(), key)
-		return backend.Registry().Do(ctx, opts...)
+		return Registry().Do(ctx, opts...)
 	}
 
 	resp.Count = 1
@@ -195,18 +197,27 @@ func (i *Indexer) buildIndex() {
 				default:
 					i.addPrefixKey(prefix, key)
 				}
+
+				// compact
+				initSize, l := DEFAULT_CACHE_INIT_SIZE, len(i.prefixIndex)
+				if i.lastMaxSize < l {
+					i.lastMaxSize = l
+				}
+				if initSize >= l &&
+					i.lastMaxSize >= initSize*DEFAULT_COMPACT_TIMES &&
+					time.Now().Sub(lastCompactTime) >= DEFAULT_COMPACT_TIMEOUT {
+					i.compact()
+					i.lastMaxSize = l
+					lastCompactTime = time.Now()
+				}
+
+				// report metrics
+				ReportCacheMetrics(i.cacher.Name(), "index", i.prefixIndex)
+
 				i.prefixLock.Unlock()
 
 				util.LogNilOrWarnf(t, "too long to rebuild(action: %s) index[%d], key is %s",
 					evt.Type, key, len(i.prefixIndex))
-			case <-time.After(10 * time.Second):
-				i.prefixLock.Lock()
-				if time.Now().Sub(lastCompactTime) >= DEFAULT_COMPACT_TIMEOUT {
-					i.compact()
-					lastCompactTime = time.Now()
-				}
-				ReportCacheMetrics(i.cacher.Name(), "index", i.prefixIndex)
-				i.prefixLock.Unlock()
 			}
 		}
 		util.Logger().Debugf("the goroutine building index %s is stopped", i.cacher.Name())
@@ -215,11 +226,7 @@ func (i *Indexer) buildIndex() {
 }
 
 func (i *Indexer) compact() {
-	l := len(i.prefixIndex)
-	if l < DEFAULT_CACHE_INIT_SIZE {
-		l = DEFAULT_CACHE_INIT_SIZE
-	}
-	n := make(map[string]map[string]struct{}, l)
+	n := make(map[string]map[string]struct{}, DEFAULT_CACHE_INIT_SIZE)
 	for k, v := range i.prefixIndex {
 		c, ok := n[k]
 		if !ok {
@@ -232,8 +239,8 @@ func (i *Indexer) compact() {
 	}
 	i.prefixIndex = n
 
-	util.Logger().Infof("index %s(%s): compact root capacity to size %d",
-		i.cacher.Name(), DEFAULT_COMPACT_TIMEOUT, l)
+	util.Logger().Infof("index %s: compact root capacity to size %d",
+		i.cacher.Name(), DEFAULT_CACHE_INIT_SIZE)
 }
 
 func (i *Indexer) getPrefixKey(arr *[]string, prefix string) (count int) {
@@ -301,7 +308,7 @@ func (i *Indexer) Run() {
 	i.isClose = false
 	i.prefixLock.Unlock()
 
-	if _, ok := i.cacher.(*nullCacher); ok {
+	if !core.ServerInfo.Config.EnableCache {
 		util.SafeCloseChan(i.ready)
 		return
 	}

@@ -14,10 +14,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package store
+package util
 
-type DeferHandler interface {
-	OnCondition(Cache, []KvEvent) bool
-	HandleChan() <-chan KvEvent
-	Reset() bool
+import (
+	"math"
+	"time"
+)
+
+var DefaultBackoff Backoff = &PowerBackoff{
+	MaxDelay:  30 * time.Second,
+	InitDelay: 1 * time.Second,
+	Factor:    1.6,
+}
+
+type Backoff interface {
+	Delay(retries int) time.Duration
+}
+
+// delay = min(MaxDelay, InitDelay * power(Factor, retries))
+type PowerBackoff struct {
+	MaxDelay  time.Duration
+	InitDelay time.Duration
+	Factor    float64
+}
+
+func (pb *PowerBackoff) Delay(retries int) time.Duration {
+	if retries <= 0 {
+		return pb.InitDelay
+	}
+
+	return time.Duration(math.Min(float64(pb.MaxDelay), float64(pb.InitDelay)*math.Pow(pb.Factor, float64(retries))))
+}
+
+func GetBackoff() Backoff {
+	return DefaultBackoff
 }

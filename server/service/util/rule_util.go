@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
@@ -66,7 +66,7 @@ func GetRulesUtil(ctx context.Context, domainProject string, serviceId string) (
 	}, "/")
 
 	opts := append(FromContext(ctx), registry.WithStrKey(key), registry.WithPrefix())
-	resp, err := store.Store().Rule().Search(ctx, opts...)
+	resp, err := backend.Store().Rule().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func RuleExist(ctx context.Context, domainProject string, serviceId string, attr
 	opts := append(FromContext(ctx),
 		registry.WithStrKey(apt.GenerateRuleIndexKey(domainProject, serviceId, attr, pattern)),
 		registry.WithCountOnly())
-	resp, err := store.Store().RuleIndex().Search(ctx, opts...)
+	resp, err := backend.Store().RuleIndex().Search(ctx, opts...)
 	if err != nil || resp.Count == 0 {
 		return false
 	}
@@ -99,7 +99,7 @@ func GetServiceRuleType(ctx context.Context, domainProject string, serviceId str
 	opts := append(FromContext(ctx),
 		registry.WithStrKey(key),
 		registry.WithPrefix())
-	resp, err := store.Store().Rule().Search(ctx, opts...)
+	resp, err := backend.Store().Rule().Search(ctx, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "Get rule failed.%s", err.Error())
 		return "", 0, err
@@ -118,7 +118,7 @@ func GetServiceRuleType(ctx context.Context, domainProject string, serviceId str
 func GetOneRule(ctx context.Context, domainProject, serviceId, ruleId string) (*pb.ServiceRule, error) {
 	opts := append(FromContext(ctx),
 		registry.WithStrKey(apt.GenerateServiceRuleKey(domainProject, serviceId, ruleId)))
-	resp, err := store.Store().Rule().Search(ctx, opts...)
+	resp, err := backend.Store().Rule().Search(ctx, opts...)
 	if err != nil {
 		util.Logger().Errorf(nil, "Get rule for service failed for %s.", err.Error())
 		return nil, err

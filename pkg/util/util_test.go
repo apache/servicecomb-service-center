@@ -51,3 +51,30 @@ func TestBytesToInt32(t *testing.T) {
 		t.FailNow()
 	}
 }
+
+func TestFileLastName(t *testing.T) {
+	n := FileLastName("")
+	if n != "" {
+		t.Fatal("TestFileLastName '' failed", n)
+	}
+	n = FileLastName("a")
+	if n != "a" {
+		t.Fatal("TestFileLastName 'a' failed", n)
+	}
+	n = FileLastName("a/b")
+	if n != "a/b" {
+		t.Fatal("TestFileLastName 'a/b' failed", n)
+	}
+	n = FileLastName("a/b/c")
+	if n != "b/c" {
+		t.Fatal("TestFileLastName 'b/c' failed", n)
+	}
+	n = FileLastName("b/")
+	if n != "b/" {
+		t.Fatal("TestFileLastName 'b' failed", n)
+	}
+	n = FileLastName("/")
+	if n != "/" {
+		t.Fatal("TestFileLastName 'b' failed", n)
+	}
+}

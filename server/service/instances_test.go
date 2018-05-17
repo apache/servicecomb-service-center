@@ -115,15 +115,6 @@ var _ = Describe("'Instance' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
-
-				instance.InstanceId = ""
-				instance.ServiceId = serviceId2
-				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
-					Instance: instance,
-				})
-				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).To(Equal(scerr.ErrEndpointAlreadyExists))
-
 			})
 		})
 

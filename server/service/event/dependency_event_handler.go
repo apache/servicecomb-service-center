@@ -22,7 +22,6 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/apache/incubator-servicecomb-service-center/server/mux"
@@ -36,11 +35,11 @@ type DependencyEventHandler struct {
 	signals *util.UniQueue
 }
 
-func (h *DependencyEventHandler) Type() store.StoreType {
-	return store.DEPENDENCY_QUEUE
+func (h *DependencyEventHandler) Type() backend.StoreType {
+	return backend.DEPENDENCY_QUEUE
 }
 
-func (h *DependencyEventHandler) OnEvent(evt store.KvEvent) {
+func (h *DependencyEventHandler) OnEvent(evt backend.KvEvent) {
 	action := evt.Type
 	if action != pb.EVT_CREATE && action != pb.EVT_UPDATE && action != pb.EVT_INIT {
 		return
@@ -51,14 +50,10 @@ func (h *DependencyEventHandler) OnEvent(evt store.KvEvent) {
 
 func (h *DependencyEventHandler) loop() {
 	util.Go(func(ctx context.Context) {
-		waitDelayIndex := 0
-		waitDelay := []int{1, 1, 5, 10, 20, 30, 60}
-		retry := func() {
-			if waitDelayIndex >= len(waitDelay) {
-				waitDelayIndex = 0
-			}
-			<-time.After(time.Duration(waitDelay[waitDelayIndex]) * time.Second)
-			waitDelayIndex++
+		retries := 0
+		delay := func() {
+			<-time.After(util.GetBackoff().Delay(retries))
+			retries++
 
 			h.signals.Put(context.Background(), struct{}{})
 		}
@@ -70,11 +65,12 @@ func (h *DependencyEventHandler) loop() {
 				lock, err := mux.Try(mux.DEP_QUEUE_LOCK)
 				if err != nil {
 					util.Logger().Errorf(err, "try to lock %s failed", mux.DEP_QUEUE_LOCK)
-					retry()
+					delay()
 					continue
 				}
 
 				if lock == nil {
+					retries = 0
 					continue
 				}
 
@@ -82,9 +78,11 @@ func (h *DependencyEventHandler) loop() {
 				lock.Unlock()
 				if err != nil {
 					util.Logger().Errorf(err, "handle dependency event failed")
-					retry()
+					delay()
 					continue
 				}
+
+				retries = 0
 			}
 		}
 	})
@@ -115,7 +113,7 @@ func isAddToLeft(centerNode *util.Node, addRes interface{}) bool {
 
 func (h *DependencyEventHandler) Handle() error {
 	key := core.GetServiceDependencyQueueRootKey("")
-	resp, err := store.Store().DependencyQueue().Search(context.Background(),
+	resp, err := backend.Store().DependencyQueue().Search(context.Background(),
 		registry.WithStrKey(key),
 		registry.WithPrefix())
 	if err != nil {

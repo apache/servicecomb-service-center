@@ -14,52 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package store
+package backend
 
-var (
-	NullCache  = &nullCache{}
-	NullCacher = &nullCacher{}
-	closedCh   = make(chan struct{})
-)
-
-func init() {
-	close(closedCh)
-}
-
-type nullCache struct {
-}
-
-func (n *nullCache) Version() int64 {
-	return 0
-}
-
-func (n *nullCache) Data(interface{}) interface{} {
-	return nil
-}
-
-func (n *nullCache) Have(interface{}) bool {
-	return false
-}
-
-func (n *nullCache) Size() int {
-	return 0
-}
-
-type nullCacher struct {
-}
-
-func (n *nullCacher) Name() string {
-	return ""
-}
-
-func (n *nullCacher) Cache() Cache {
-	return NullCache
-}
-
-func (n *nullCacher) Run() {}
-
-func (n *nullCacher) Stop() {}
-
-func (n *nullCacher) Ready() <-chan struct{} {
-	return closedCh
+type DeferHandler interface {
+	OnCondition(Cache, []KvEvent) bool
+	HandleChan() <-chan KvEvent
+	Reset() bool
 }

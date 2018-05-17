@@ -81,7 +81,7 @@ func TestInstanceExist(t *testing.T) {
 	_, err := InstanceExist(context.Background(), &proto.MicroServiceInstance{
 		ServiceId: "a",
 	})
-	if err == nil {
+	if err != nil {
 		t.Fatalf(`InstanceExist endpoint failed`)
 	}
 	_, err = InstanceExist(context.Background(), &proto.MicroServiceInstance{

@@ -19,7 +19,7 @@ package govern
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
@@ -187,7 +187,7 @@ func (governService *GovernService) GetApplications(ctx context.Context, in *pb.
 		registry.WithPrefix(),
 		registry.WithKeyOnly())
 
-	resp, err := store.Store().ServiceIndex().Search(ctx, opts...)
+	resp, err := backend.Store().ServiceIndex().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -223,7 +223,7 @@ func getServiceAllVersions(ctx context.Context, serviceKey *pb.MicroServiceKey) 
 		registry.WithStrKey(key),
 		registry.WithPrefix())
 
-	resp, err := store.Store().ServiceIndex().Search(ctx, opts...)
+	resp, err := backend.Store().ServiceIndex().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -244,7 +244,7 @@ func getSchemaInfoUtil(ctx context.Context, domainProject string, serviceId stri
 		registry.WithStrKey(key),
 		registry.WithPrefix())
 
-	resp, err := store.Store().Schema().Search(ctx, opts...)
+	resp, err := backend.Store().Schema().Search(ctx, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "Get schema failed")
 		return make([]*pb.Schema, 0), err
@@ -355,7 +355,7 @@ func statistics(ctx context.Context) (*pb.Statistics, error) {
 	svcOpts := append(opts,
 		registry.WithStrKey(key),
 		registry.WithPrefix())
-	respSvc, err := store.Store().ServiceIndex().Search(ctx, svcOpts...)
+	respSvc, err := backend.Store().ServiceIndex().Search(ctx, svcOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -391,7 +391,7 @@ func statistics(ctx context.Context) (*pb.Statistics, error) {
 		registry.WithStrKey(key),
 		registry.WithPrefix(),
 		registry.WithKeyOnly())
-	respIns, err := store.Store().Instance().Search(ctx, instOpts...)
+	respIns, err := backend.Store().Instance().Search(ctx, instOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -432,7 +432,7 @@ func getInstanceCountByDomain(ctx context.Context, resp chan GetInstanceCountByD
 		registry.WithPrefix(),
 		registry.WithKeyOnly(),
 		registry.WithCountOnly())
-	respIns, err := store.Store().Instance().Search(ctx, instOpts...)
+	respIns, err := backend.Store().Instance().Search(ctx, instOpts...)
 	if err != nil {
 		util.Logger().Errorf(err, "get instance count under same domainId %s", domainId)
 	}

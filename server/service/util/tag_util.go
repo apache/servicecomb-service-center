@@ -21,7 +21,6 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"golang.org/x/net/context"
 )
@@ -48,7 +47,7 @@ func AddTagIntoETCD(ctx context.Context, domainProject string, serviceId string,
 func GetTagsUtils(ctx context.Context, domainProject, serviceId string) (tags map[string]string, err error) {
 	key := apt.GenerateServiceTagKey(domainProject, serviceId)
 	opts := append(FromContext(ctx), registry.WithStrKey(key))
-	resp, err := store.Store().ServiceTag().Search(ctx, opts...)
+	resp, err := backend.Store().ServiceTag().Search(ctx, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "get service %s tags file failed", key)
 		return tags, err

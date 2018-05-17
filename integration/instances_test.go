@@ -168,6 +168,7 @@ var _ = Describe("MicroService Api Test", func() {
 					"times":    2,
 				}
 				instance := map[string]interface{}{
+					"instanceId":  serviceInstanceID,
 					"endpoints":   endpoints,
 					"hostName":    "cse",
 					"status":      "UP",

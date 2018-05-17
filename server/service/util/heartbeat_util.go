@@ -19,7 +19,7 @@ package util
 import (
 	"errors"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"golang.org/x/net/context"
 )
@@ -37,7 +37,7 @@ func KeepAliveLease(ctx context.Context, domainProject, serviceId, instanceId st
 	if leaseID == -1 {
 		return ttl, errors.New("leaseId not exist, instance not exist.")
 	}
-	ttl, err = store.Store().KeepAlive(ctx,
+	ttl, err = backend.Store().KeepAlive(ctx,
 		registry.WithStrKey(apt.GenerateInstanceLeaseKey(domainProject, serviceId, instanceId)),
 		registry.WithLease(leaseID))
 	if err != nil {

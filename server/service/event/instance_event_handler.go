@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	nf "github.com/apache/incubator-servicecomb-service-center/server/service/notification"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
@@ -32,11 +32,11 @@ import (
 type InstanceEventHandler struct {
 }
 
-func (h *InstanceEventHandler) Type() store.StoreType {
-	return store.INSTANCE
+func (h *InstanceEventHandler) Type() backend.StoreType {
+	return backend.INSTANCE
 }
 
-func (h *InstanceEventHandler) OnEvent(evt store.KvEvent) {
+func (h *InstanceEventHandler) OnEvent(evt backend.KvEvent) {
 	action := evt.Type
 	if action == pb.EVT_INIT {
 		return

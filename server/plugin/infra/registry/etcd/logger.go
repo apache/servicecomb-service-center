@@ -21,7 +21,6 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/coreos/pkg/capnslog"
 	"runtime"
-	"strings"
 )
 
 // clientLogger implement from grcplog.LoggerV2s and capnslog.Formatter
@@ -45,13 +44,7 @@ func (l *clientLogger) getCaller(depth int) string {
 	if !ok {
 		return "???"
 	}
-
-	if sp1 := strings.LastIndex(file, "/"); sp1 >= 0 {
-		if sp2 := strings.LastIndex(file[:sp1], "/"); sp2 >= 0 {
-			file = file[sp2+1:]
-		}
-	}
-	return fmt.Sprintf("%s:%d", file, line)
+	return fmt.Sprintf("%s:%d", util.FileLastName(file), line)
 }
 
 func (l *clientLogger) Flush() {

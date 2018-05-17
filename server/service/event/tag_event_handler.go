@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/async"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	nf "github.com/apache/incubator-servicecomb-service-center/server/service/notification"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
@@ -88,11 +88,11 @@ func (apt *TagsChangedTask) publish(ctx context.Context, domainProject, consumer
 type TagEventHandler struct {
 }
 
-func (h *TagEventHandler) Type() store.StoreType {
-	return store.SERVICE_TAG
+func (h *TagEventHandler) Type() backend.StoreType {
+	return backend.SERVICE_TAG
 }
 
-func (h *TagEventHandler) OnEvent(evt store.KvEvent) {
+func (h *TagEventHandler) OnEvent(evt backend.KvEvent) {
 	action := evt.Type
 	if action == pb.EVT_INIT {
 		return

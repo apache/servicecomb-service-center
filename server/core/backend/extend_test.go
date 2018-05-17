@@ -14,20 +14,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package store
+package backend
 
-type Cache interface {
-	Version() int64
-	Data(interface{}) interface{}
-	Have(interface{}) bool
-	Size() int
+import "testing"
+
+type extend struct {
 }
 
-type Cacher interface {
-	// Name is the cache size metric name
-	Name() string
-	Cache() Cache
-	Run()
-	Stop()
-	Ready() <-chan struct{}
+func (e *extend) Name() string {
+	return "test"
+}
+
+func (e *extend) Prefix() string {
+	return "/test"
+}
+
+func (e *extend) InitSize() int {
+	return 0
+}
+
+func TestInstallType(t *testing.T) {
+	id, err := InstallType(&extend{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if id == NONEXIST {
+		t.Fatal(err)
+	}
+
+	id, err = InstallType(&extend{})
+	if id != NONEXIST || err == nil {
+		t.Fatal("InstallType fail", err)
+	}
 }

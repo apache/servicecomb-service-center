@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
@@ -85,7 +85,7 @@ func (q *BuildInQuota) RemandQuotas(ctx context.Context, quotaType quota.Resourc
 func ResourceLimitHandler(ctx context.Context, res *quota.ApplyQuotaResource) *quota.ApplyQuotaResult {
 	var key string
 	var max int64 = 0
-	var indexer *store.Indexer
+	var indexer *backend.Indexer
 
 	domainProject := res.DomainProject
 	serviceId := res.ServiceId
@@ -93,11 +93,11 @@ func ResourceLimitHandler(ctx context.Context, res *quota.ApplyQuotaResource) *q
 	case quota.RuleQuotaType:
 		key = core.GenerateServiceRuleKey(domainProject, serviceId, "")
 		max = RULE_NUM_MAX_LIMIT_PER_SERVICE
-		indexer = store.Store().Rule()
+		indexer = backend.Store().Rule()
 	case quota.SchemaQuotaType:
 		key = core.GenerateServiceSchemaKey(domainProject, serviceId, "")
 		max = SCHEMA_NUM_MAX_LIMIT_PER_SERVICE
-		indexer = store.Store().Schema()
+		indexer = backend.Store().Schema()
 	case quota.TagQuotaType:
 		applyNum := res.QuotaSize
 		max = TAG_NUM_MAX_LIMIT_PER_SERVICE
@@ -193,7 +193,7 @@ func getInstanceMaxLimit() int64 {
 }
 
 func getInstancesNum(ctx context.Context, key string) (int64, error) {
-	resp, err := store.Store().Instance().Search(ctx,
+	resp, err := backend.Store().Instance().Search(ctx,
 		registry.WithStrKey(key),
 		registry.WithPrefix(),
 		registry.WithCountOnly())
@@ -229,7 +229,7 @@ func getServiceMaxLimit() int64 {
 }
 
 func getServicesNum(ctx context.Context, key string) (int64, error) {
-	resp, err := store.Store().Service().Search(ctx,
+	resp, err := backend.Store().Service().Search(ctx,
 		registry.WithStrKey(key),
 		registry.WithPrefix(),
 		registry.WithCountOnly())

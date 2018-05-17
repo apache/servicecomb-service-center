@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package store
+package backend
 
 import (
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
@@ -124,7 +124,7 @@ const (
 const (
 	DEFAULT_COMPACT_TIMES   = 3
 	DEFAULT_COMPACT_TIMEOUT = 5 * time.Minute
-	minWaitInterval         = 100 * time.Millisecond
+	minWaitInterval         = 1 * time.Second
 	eventBlockSize          = 1000
 )
 

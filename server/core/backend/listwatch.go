@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package store
+package backend
 
 import (
 	"fmt"
@@ -71,7 +71,7 @@ func (lw *ListWatcher) doWatch(ctx context.Context, f func(evt []KvEvent)) error
 					return fmt.Errorf("unknown event %s", resp)
 				}
 
-				util.Logger().Infof("watch prefix %s, start rev %d+1, event: %s", lw.Prefix, rev, resp)
+				util.Logger().Infof("caught event %s, watch prefix %s, start rev %d+1,", resp, lw.Prefix, rev)
 
 				lw.setRevision(resp.Revision)
 

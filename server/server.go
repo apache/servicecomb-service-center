@@ -18,11 +18,12 @@ package server
 
 import _ "github.com/apache/incubator-servicecomb-service-center/server/service/event"
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	st "github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/apache/incubator-servicecomb-service-center/server/mux"
 	nf "github.com/apache/incubator-servicecomb-service-center/server/service/notification"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
@@ -42,7 +43,7 @@ var (
 
 func init() {
 	server = &ServiceCenterServer{
-		store:         st.Store(),
+		store:         backend.Store(),
 		notifyService: nf.GetNotifyService(),
 		apiServer:     GetAPIServer(),
 		goroutine:     util.NewGo(context.Background()),
@@ -52,7 +53,7 @@ func init() {
 type ServiceCenterServer struct {
 	apiServer     *APIServer
 	notifyService *nf.NotifyService
-	store         *st.KvStore
+	store         *backend.KvStore
 	goroutine     *util.GoRoutine
 }
 
@@ -81,9 +82,42 @@ func (s *ServiceCenterServer) waitForQuit() {
 	util.Logger().Debugf("service center stopped")
 }
 
+func LoadServerInformation() error {
+	resp, err := backend.Registry().Do(context.Background(),
+		registry.GET, registry.WithStrKey(core.GetServerInfoKey()))
+	if err != nil {
+		return err
+	}
+	if len(resp.Kvs) == 0 {
+		return nil
+	}
+
+	err = json.Unmarshal(resp.Kvs[0].Value, core.ServerInfo)
+	if err != nil {
+		util.Logger().Errorf(err, "load system config failed, maybe incompatible")
+		return nil
+	}
+	return nil
+}
+
+func UpgradeServerVersion() error {
+	core.ServerInfo.Version = version.Ver().Version
+
+	bytes, err := json.Marshal(core.ServerInfo)
+	if err != nil {
+		return err
+	}
+	_, err = backend.Registry().Do(context.Background(),
+		registry.PUT, registry.WithStrKey(core.GetServerInfoKey()), registry.WithValue(bytes))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *ServiceCenterServer) needUpgrade() bool {
 	if core.ServerInfo.Version == "0" {
-		err := core.LoadServerInformation()
+		err := LoadServerInformation()
 		if err != nil {
 			util.Logger().Errorf(err, "check version failed, can not load the system config")
 			return false
@@ -102,7 +136,7 @@ func (s *ServiceCenterServer) initialize() {
 		os.Exit(1)
 	}
 	if s.needUpgrade() {
-		core.UpgradeServerVersion()
+		UpgradeServerVersion()
 	}
 
 	// cache mechanism

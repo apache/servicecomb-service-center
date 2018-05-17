@@ -17,14 +17,8 @@
 package core
 
 import (
-	"encoding/json"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
-	"github.com/apache/incubator-servicecomb-service-center/version"
 	"github.com/astaxie/beego"
-	"golang.org/x/net/context"
 )
 
 var ServerInfo *pb.ServerInformation = newInfo()
@@ -77,37 +71,4 @@ func newInfo() *pb.ServerInformation {
 			EnableCache: beego.AppConfig.DefaultInt("enable_cache", 1) != 0,
 		},
 	}
-}
-
-func LoadServerInformation() error {
-	resp, err := backend.Registry().Do(context.Background(),
-		registry.GET, registry.WithStrKey(GetSystemKey()))
-	if err != nil {
-		return err
-	}
-	if len(resp.Kvs) == 0 {
-		return nil
-	}
-
-	err = json.Unmarshal(resp.Kvs[0].Value, ServerInfo)
-	if err != nil {
-		util.Logger().Errorf(err, "load system config failed, maybe incompatible")
-		return nil
-	}
-	return nil
-}
-
-func UpgradeServerVersion() error {
-	ServerInfo.Version = version.Ver().Version
-
-	bytes, err := json.Marshal(ServerInfo)
-	if err != nil {
-		return err
-	}
-	_, err = backend.Registry().Do(context.Background(),
-		registry.PUT, registry.WithStrKey(GetSystemKey()), registry.WithValue(bytes))
-	if err != nil {
-		return err
-	}
-	return nil
 }

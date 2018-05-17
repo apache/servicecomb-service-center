@@ -21,7 +21,6 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend/store"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
@@ -59,7 +58,7 @@ func (s *MicroServiceService) GetSchemaInfo(ctx context.Context, in *pb.GetSchem
 
 	key := apt.GenerateServiceSchemaKey(domainProject, in.ServiceId, in.SchemaId)
 	opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(key))
-	resp, errDo := store.Store().Schema().Search(ctx, opts...)
+	resp, errDo := backend.Store().Schema().Search(ctx, opts...)
 	if errDo != nil {
 		util.Logger().Errorf(errDo, "get schema failed, serviceId %s, schemaId %s: get schema info failed.", in.ServiceId, in.SchemaId)
 		return &pb.GetSchemaResponse{
@@ -130,7 +129,7 @@ func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAl
 
 	key := apt.GenerateServiceSchemaSummaryKey(domainProject, in.ServiceId, "")
 	opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(key), registry.WithPrefix())
-	resp, errDo := store.Store().SchemaSummary().Search(ctx, opts...)
+	resp, errDo := backend.Store().SchemaSummary().Search(ctx, opts...)
 	if errDo != nil {
 		util.Logger().Errorf(errDo, "get schema failed, serviceId %s: get schema info failed.", in.ServiceId)
 		return &pb.GetAllSchemaResponse{
@@ -142,7 +141,7 @@ func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAl
 	if in.WithSchema {
 		key := apt.GenerateServiceSchemaKey(domainProject, in.ServiceId, "")
 		opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(key), registry.WithPrefix())
-		respWithSchema, errDo = store.Store().Schema().Search(ctx, opts...)
+		respWithSchema, errDo = backend.Store().Schema().Search(ctx, opts...)
 		if errDo != nil {
 			util.Logger().Errorf(errDo, "get schema failed, serviceId %s: get schema info failed.", in.ServiceId)
 			return &pb.GetAllSchemaResponse{
@@ -565,7 +564,7 @@ func (s *MicroServiceService) modifySchema(ctx context.Context, serviceId string
 		}
 
 		key := apt.GenerateServiceSchemaKey(domainProject, serviceId, schemaId)
-		respSchema, err := store.Store().Schema().Search(ctx, registry.WithStrKey(key), registry.WithCountOnly())
+		respSchema, err := backend.Store().Schema().Search(ctx, registry.WithStrKey(key), registry.WithCountOnly())
 		if err != nil {
 			util.Logger().Errorf(err, "modify schema failed, get schema summary failed, %s %s", serviceId, schemaId)
 			return scerr.NewError(scerr.ErrInternal, "get schema summary failed")
@@ -622,7 +621,7 @@ func (s *MicroServiceService) modifySchema(ctx context.Context, serviceId string
 
 func isExistSchemaSummary(ctx context.Context, domainProject, serviceId, schemaId string) (bool, error) {
 	key := apt.GenerateServiceSchemaSummaryKey(domainProject, serviceId, schemaId)
-	resp, err := store.Store().SchemaSummary().Search(ctx, registry.WithStrKey(key), registry.WithCountOnly())
+	resp, err := backend.Store().SchemaSummary().Search(ctx, registry.WithStrKey(key), registry.WithCountOnly())
 	if err != nil {
 		return true, err
 	}
@@ -656,7 +655,7 @@ func containsValueInSlice(in []string, value string) bool {
 
 func getSchemaSummary(ctx context.Context, domainProject string, serviceId string, schemaId string) (string, error) {
 	key := apt.GenerateServiceSchemaSummaryKey(domainProject, serviceId, schemaId)
-	resp, err := store.Store().SchemaSummary().Search(ctx,
+	resp, err := backend.Store().SchemaSummary().Search(ctx,
 		registry.WithStrKey(key),
 	)
 	if err != nil {

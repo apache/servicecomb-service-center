@@ -41,7 +41,7 @@ import (
 
 var embedTLSConfig *tls.Config
 
-const START_MANAGER_SERVER_TIMEOUT = 10
+const START_MANAGER_SERVER_TIMEOUT = 10 * time.Second
 
 func init() {
 	mgr.RegisterPlugin(mgr.Plugin{mgr.REGISTRY, "embeded_etcd", getEmbedInstance})
@@ -458,7 +458,7 @@ func (s *EtcdEmbed) Watch(ctx context.Context, opts ...registry.PluginOpOption) 
 }
 
 func (s *EtcdEmbed) ReadyNotify() {
-	timeout := START_MANAGER_SERVER_TIMEOUT * time.Second
+	timeout := START_MANAGER_SERVER_TIMEOUT
 	select {
 	case <-s.Embed.Server.ReadyNotify():
 		close(s.ready)

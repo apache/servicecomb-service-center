@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package store
+package backend
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
@@ -43,6 +43,11 @@ func init() {
 }
 
 func ReportCacheMetrics(resource, t string, obj interface{}) {
+	if len(core.Instance.Endpoints) == 0 {
+		// endpoints list will be empty when initializing
+		return
+	}
+
 	once.Do(func() {
 		instance, _ = util.ParseEndpoint(core.Instance.Endpoints[0])
 	})
