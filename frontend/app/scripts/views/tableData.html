@@ -56,10 +56,10 @@ limitations under the License.
                                 <a ui-sref="sc.info.instance({serviceId:'{{appData.serviceId}}'})">{{appData.serviceName}}</a>
                             </span>
                             <span ng-if="key == 'status'">
-                                <div ng-if="value == 'up'" class="serviceStatus up">{{value}}</div>
-                                <div ng-if="value == 'down'" class="serviceStatus down">{{value}}</div>
-                                <div ng-if="value == 'starting'" class="serviceStatus starting">{{value}}</div>
-                                <div ng-if="value == 'outofservice'" class="serviceStatus outofservice">{{value}}</div>
+                                <div ng-if="value == 'UP'" class="serviceStatus up" ng-class="{'outofservice' : appData.instances == 0}">{{value}}</div>
+                                <div ng-if="value == 'DOWN'" class="serviceStatus down">{{value}}</div>
+                                <div ng-if="value == 'STARTING'" class="serviceStatus starting">{{value}}</div>
+                                <div ng-if="value == 'OUTOFSERVICE'" class="serviceStatus outofservice">{{value}}</div>
                             </span>
                             <span ng-if="key == 'operation'">
                                 <md-button class="md-icon-button" ng-disabled="appData.instances != 0" ng-click="remove(appData.serviceId, appData.instances)" aria-label="{{ 'delete' | translate }}" title="{{ 'delete' | translate }}">

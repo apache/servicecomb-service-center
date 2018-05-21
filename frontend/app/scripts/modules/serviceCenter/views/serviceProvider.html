@@ -24,8 +24,8 @@ limitations under the License.
 	</thead>
 	<tbody>
 		<tr ng-repeat="provider in providers">
-			<td>{{provider.serviceName | lowercase}}</td>
-			<td>{{provider.status | lowercase}}</td>
+			<td>{{provider.serviceName}}</td>
+			<td>{{provider.status}}</td>
 			<td>{{provider.version}}</td>
 			<td>{{convertTime(provider.timestamp)}}</td>
 			<td>{{provider.description || '-' }}</td>
