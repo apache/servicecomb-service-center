@@ -28,10 +28,7 @@ limitations under the License.
     <md-content >
     	<div layout="column" layout-align="space-around stretch">
 	    	<div class="md-padding">
-                <span class="strongText">{{ "errorCode" | translate }}</span>: {{ error.status }}
-	    	</div>
-	    	<div class="md-padding">
-                <span class="strongText">{{ "errorText" | translate }}</span>: {{ error.statusText || "No Error Text found" }}
+                <span class="strongText">{{ "errorCode" | translate }}</span>: {{ error.status }} , {{ error.statusText || "No Error Text found" }}
 	    	</div>
 	    	<div class="md-padding">
                 <span class="strongText">{{ "errorStatus" | translate }}</span>: {{ error.data || "No Error Status Found" }}

@@ -389,19 +389,19 @@ md-table-pagination .md-select-icon {
 .mainCard .consumers {
   background-color: #A9A9A9;
 }
-.card .starting {
+.card .STARTING {
   background-color: #00c0ef;
   border-radius: 6px 0px 0px 6px;
 }
-.card .up {
+.card .UP {
   background-color: #00a65a;
   border-radius: 6px 0px 0px 6px;
 }
-.card .down {
+.card .DOWN {
   background-color: #dd4b39;
   border-radius: 6px 0px 0px 6px;
 }
-.card .outofservice {
+.card .OUTOFSERVICE {
   background-color: #A9A9A9;
   border-radius: 6px 0px 0px 6px;
 }

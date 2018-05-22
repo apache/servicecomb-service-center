@@ -52,7 +52,7 @@ angular.module('serviceCenter.sc')
 				var url = apis[i];
 				var method = "GET";
 				var headers = {"X-ConsumerId": serviceId};
-				promises.push(httpService.apiRequest(url,method,null,headers,"nopopup"));
+				promises.push(httpService.apiRequest(url,method,null,headers,null));
 			}
 
 			$q.all(promises).then(function(response){

@@ -16,39 +16,39 @@
  */
 'use strict';
 angular.module('serviceCenter')
-    .service('httpService', ['$http', '$q', '$mdDialog', 'apiConstant', function($http, $q, $mdDialog, apiConstant){
+    .service('httpService', ['$http', '$q', '$mdDialog', 'apiConstant', function($http, $q, $mdDialog, apiConstant) {
 
-	function apiRequest(requrl, method, payload, headers, nopopup){
+        function apiRequest(requrl, method, payload, headers, nopopup) {
             var tenant = localStorage.getItem('tenant');
-            if(!tenant || tenant == undefined || tenant == null){
+            if (!tenant || tenant == undefined || tenant == null) {
                 tenant = 'default';
                 localStorage.setItem('tenant', 'default');
             }
 
-	    var defer = $q.defer();
-            if(undefined === requrl || null === requrl || undefined === method || null === method){
+            var defer = $q.defer();
+            if (undefined === requrl || null === requrl || undefined === method || null === method) {
                 defer.reject("invalid params");
                 return defer.promise;
             }
             var baseUrl = "/sc"
-            if(undefined === headers || null === headers){
+            if (undefined === headers || null === headers) {
                 headers = {
-                    'x-domain-name' : tenant
+                    'x-domain-name': tenant
                 };
-            }else{
+            } else {
                 headers['x-domain-name'] = tenant;
             }
 
-            var url = baseUrl + '/'+ requrl;
+            var url = baseUrl + '/' + requrl;
             $http({
                 url: url,
                 method: method,
                 data: payload,
-                headers : headers
+                headers: headers
             }).then(function(response) {
                 defer.resolve(response);
             }, function(error) {
-                if(nopopup){
+                if (nopopup) {
                     defer.reject(error);
                     return;
                 }
@@ -59,8 +59,22 @@ angular.module('serviceCenter')
                     locals: {
                         error: error
                     },
-                    skipHide : true,
+                    skipHide: true,
                     controller: function($scope, $mdDialog, error) {
+                        switch (error.status) {
+                            case 502:
+                                error.data = "Service-Center is not reachable"
+                                break;
+                            case 500:
+                                error.data = "Mostly probably the Service-Center is not running or crashed"
+                                break;
+                            case 400:
+                                error.data = "The request is in-appropriate"
+                                break;
+                            case 404:
+                                error.data = "Requested entity was not found"
+                                break;
+                        }
                         $scope.error = error;
                         $scope.closeDialog = function() {
                             $mdDialog.hide();
@@ -70,9 +84,9 @@ angular.module('serviceCenter')
                 defer.reject(error);
             });
             return defer.promise;
-	}
+        }
 
-	return {
-	    apiRequest : apiRequest
-	};
+        return {
+            apiRequest: apiRequest
+        };
     }]);
