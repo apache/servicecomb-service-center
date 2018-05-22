@@ -24,8 +24,8 @@ limitations under the License.
 	</thead>
 	<tbody>
 		<tr ng-repeat="consumer in consumers">
-			<td>{{consumer.serviceName | lowercase}}</td>
-			<td>{{consumer.status | lowercase}}</td>
+			<td>{{consumer.serviceName}}</td>
+			<td>{{consumer.status}}</td>
 			<td>{{consumer.version}}</td>
 			<td>{{convertTime(consumer.timestamp)}}</td>
 			<td>{{consumer.description || '-' }}</td>

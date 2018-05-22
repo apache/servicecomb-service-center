@@ -23,8 +23,8 @@ limitations under the License.
 	</thead>
 	<tbody>
 		<tr ng-repeat="instance in instances">
-			<td>{{instance.hostName | lowercase}}</td>
-			<td>{{instance.status | lowercase}}</td>
+			<td>{{instance.hostName}}</td>
+			<td>{{instance.status}}</td>
 			<td>{{convertTime(instance.timestamp)}}</td>
 			<td>
 			<span ng-repeat="endpoints in instance.endpoints track by $index">

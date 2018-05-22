@@ -25,8 +25,8 @@ angular.module('serviceCenter.sc')
 	                if(services.serviceId == serviceId){
 	                    $scope.serviceDetail = {
 	                        serviceName: services.serviceName,
-	                        status: services.status.toLowerCase(),
-	                        appId: services.appId.toLowerCase(),
+	                        status: services.status,
+	                        appId: services.appId,
 	                        version: services.version,
 	                        createdAt: commonService.timeFormat(services.timestamp),
 	                        serviceId: services.serviceId

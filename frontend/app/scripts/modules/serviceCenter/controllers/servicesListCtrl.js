@@ -99,11 +99,11 @@ angular.module('serviceCenter.sc', [])
 							var instanceUrl = instanceApi.replace("{{serviceId}}", service.serviceId);
 							var instanceMethod = apiConstant.api.instances.method;
 							var headers = {"X-ConsumerId": service.serviceId};
-							if(filter && service.status.toLowerCase() === filter) {
+							if(filter && service.status === filter) {
 								var servicesList = {
 									serviceName: service.serviceName,
-									status: service.status.toLowerCase(),
-									appId: service.appId.toLowerCase(),
+									status: service.status,
+									appId: service.appId,
 									version: service.version,
 									createdAt: commonService.timeFormat(service.timestamp),
 									instances: 0,
@@ -125,8 +125,8 @@ angular.module('serviceCenter.sc', [])
 							if(!filter){
 								var servicesList = {
 									serviceName: service.serviceName,
-									status: service.status.toLowerCase(),
-									appId: service.appId.toLowerCase(),
+									status: service.status,
+									appId: service.appId,
 									version: service.version,
 									createdAt: commonService.timeFormat(service.timestamp),
 									instances: 0,
