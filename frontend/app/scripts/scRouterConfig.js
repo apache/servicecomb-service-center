@@ -59,7 +59,7 @@ angular.module('serviceCenter.router', [])
                     var deferred = $q.defer();
                     var url = apiConstant.api.microservice.url;
                     var method = apiConstant.api.microservice.method;
-                    httpService.apiRequest(url, method, null, null, "nopopup").then(function(response){
+                    httpService.apiRequest(url, method, null, null, null).then(function(response){
                         $(".loader").hide();
                         if(response && response.data && response.data.services){
                             deferred.resolve(response);
@@ -114,7 +114,7 @@ angular.module('serviceCenter.router', [])
                     var deferred = $q.defer();
                     var url = apiConstant.api.microservice.url;
                     var method = apiConstant.api.microservice.method;
-                    httpService.apiRequest(url, method, null, null, "nopopup").then(function(response){
+                    httpService.apiRequest(url, method, null, null, null).then(function(response){
                         $(".loader").hide();
                         if(response && response.data && response.data.services){
                             deferred.resolve(response);

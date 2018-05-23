@@ -58,7 +58,7 @@ angular.module('serviceCenter.sc', [])
         			var url = apiConstant.api.deleteService.url;
         			var api =  url.replace("{{serviceId}}", $scope.deleteServiceId);
 					var method = apiConstant.api.deleteService.method;
-					httpService.apiRequest(api, method, null, null, "nopopup").then(function(response){
+					httpService.apiRequest(api, method, null, null, null).then(function(response){
 						if(response && response.status == 200){
 							$(".loader").hide();
 							$scope.refreshAppList();
@@ -111,7 +111,7 @@ angular.module('serviceCenter.sc', [])
 									serviceId: service.serviceId,
 									disableBtn: false
 								};
-								httpService.apiRequest(instanceUrl, instanceMethod, null, headers, "nopopup").then(function(resp){
+								httpService.apiRequest(instanceUrl, instanceMethod, null, headers, null).then(function(resp){
 									if(resp && resp.data && resp.data.instances){
 									   servicesList.instances = resp.data.instances.length;
 									   if(servicesList.instances > 0){
@@ -134,7 +134,7 @@ angular.module('serviceCenter.sc', [])
 									serviceId: service.serviceId,
 									disableBtn: false
 								};
-								httpService.apiRequest(instanceUrl, instanceMethod, null, headers, "nopopup").then(function(resp){
+								httpService.apiRequest(instanceUrl, instanceMethod, null, headers, null).then(function(resp){
 									if(resp && resp.data && resp.data.instances){
 									   servicesList.instances = resp.data.instances.length;
 									   if(servicesList.instances > 0){

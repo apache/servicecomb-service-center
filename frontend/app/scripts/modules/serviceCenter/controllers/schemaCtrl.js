@@ -44,7 +44,7 @@ angular.module('serviceCenter.sc')
                     var headers = {
                         "X-ConsumerId": serviceId
                     };
-                    promises.push(httpService.apiRequest(url, method, null, headers, "nopopup"));
+                    promises.push(httpService.apiRequest(url, method, null, headers, null));
                 }
 
                 $q.all(promises).then(function(response) {
@@ -109,7 +109,7 @@ angular.module('serviceCenter.sc')
                 var instanceHeaders = {
                     "X-ConsumerId": serviceId
                 };
-                httpService.apiRequest(instanceApi, instanceMethod, null, instanceHeaders, "nopopup").then(function(response) {
+                httpService.apiRequest(instanceApi, instanceMethod, null, instanceHeaders, null).then(function(response) {
                     if (response && response.data && response.data.instances && response.data.instances.length > 0) {
                         for (var i = 0; i < response.data.instances.length; i++) {
                             addresses[i] = [];

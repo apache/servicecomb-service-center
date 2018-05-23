@@ -18,29 +18,29 @@
 angular.module('serviceCenter.dashboard', [])
 	.controller('dashboardController', ['$scope', '$state','apiConstant', 'httpService','$q', '$interval', function($scope, $state, apiConstant, httpService, $q, $interval){
 
-		$scope.labels = ["STRATING", "UP", "DOWN", "OUT OF SERVICE"];
+		$scope.labels = ["STARTING", "UP", "DOWN", "OUT OF SERVICE"];
 		$scope.colors = ["#00c0ef","#00a65a", "#dd4b39", "#A9A9A9"];
 		$scope.servicesChartData = [];
 		
 		$scope.servicesStatusData = [
 			{
 				count: 0,
-				title: "starting",
+				title: "STARTING",
 				iconName: "fa-spinner"
 			},
 			{
 				count: 0,
-				title: "up",
+				title: "UP",
 				iconName: "fa-arrow-up"
 			},
 			{
 				count: 0,
-				title: "down",
+				title: "DOWN",
 				iconName: "fa-arrow-down"
 			},
 			{
 				count: 0,
-				title: "outofservice",
+				title: "OUTOFSERVICE",
 				iconName: "fa-ban"
 			}
 		];
@@ -84,16 +84,16 @@ angular.module('serviceCenter.dashboard', [])
 				if(response && response.data && response.data.allServicesDetail) {
 					$scope.dashboardInfo[0].count = response.data.allServicesDetail.length;
 					response.data.allServicesDetail.forEach(function(services){
-						if(services.microService.status.toLowerCase() == "starting") {
+						if(services.microService.status == "STARTING") {
 							$scope.startingServices.push(services);
 						}
-						if(services.microService.status.toLowerCase() == "up"){		
+						if(services.microService.status == "UP"){
 							$scope.runningServices.push(services);
 						}
-						if(services.microService.status.toLowerCase() == "down"){
+						if(services.microService.status == "DOWN"){
 							$scope.stoppedServices.push(services);
 						}
-						if(services.microService.status.toLowerCase() == "outofservice"){
+						if(services.microService.status == "OUTOFSERVICE"){
 							$scope.outofserviceServices.push(services);
 						}
 
