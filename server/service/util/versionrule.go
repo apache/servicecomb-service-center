@@ -69,22 +69,22 @@ func (sks *serviceKeySorter) Less(i, j int) bool {
 	return sks.cmp(sks.sortArr[i], sks.sortArr[j])
 }
 
-func versionToInt(versionStr string) (ret int32) {
-	verBytes := [4]byte{}
+func versionToInt(versionStr string) (ret uint64) {
+	verBytes := [4]uint16{}
 	idx := 0
 	for i := 0; i < 4 && idx < len(versionStr); i++ {
 		f := strings.IndexRune(versionStr[idx:], '.')
 		if f < 0 {
 			f = len(versionStr) - idx
 		}
-		integer, err := strconv.ParseInt(versionStr[idx:idx+f], 10, 8)
-		if err != nil || integer < 0 {
+		integer, err := strconv.ParseUint(versionStr[idx:idx+f], 10, 16)
+		if err != nil {
 			return 0
 		}
-		verBytes[i] = byte(integer)
+		verBytes[i] = uint16(integer)
 		idx += f + 1
 	}
-	ret = util.BytesToInt32(verBytes[:])
+	ret = util.Uint16ToUint64(verBytes[:])
 	return
 }
 

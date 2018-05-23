@@ -351,6 +351,20 @@ var _ = Describe("'Micro-service' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
+				By("invalid version")
+				r = &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						AppId:       "default",
+						ServiceName: "service-validate",
+						Version:     "1.1000.0",
+						Level:       "BACK",
+						Status:      "UP",
+					},
+				}
+				resp, err = serviceResource.Create(getContext(), r)
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+
 				By("invalid level")
 				r = &pb.CreateServiceRequest{
 					Service: &pb.MicroService{

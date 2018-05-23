@@ -254,6 +254,7 @@ func (i *Indexer) getPrefixKey(arr *[]string, prefix string) (count int) {
 		if n == 0 {
 			count += len(keysRef)
 			if arr != nil {
+				// TODO support sort option
 				for k := range keysRef {
 					*arr = append(*arr, k)
 				}

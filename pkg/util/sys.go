@@ -21,15 +21,20 @@ import (
 	"unsafe"
 )
 
-const INT_SIZE int = int(unsafe.Sizeof(0))
+const intSize = int(unsafe.Sizeof(0))
+
+var bs *[intSize]byte
+
+func init() {
+	i := 0x1
+	bs = (*[intSize]byte)(unsafe.Pointer(&i))
+}
 
 func IsBigEndian() bool {
 	return !IsLittleEndian()
 }
 
 func IsLittleEndian() bool {
-	i := 0x1
-	bs := (*[INT_SIZE]byte)(unsafe.Pointer(&i))
 	return bs[0] == 0
 }
 

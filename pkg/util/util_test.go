@@ -22,33 +22,53 @@ import (
 
 func TestBytesToInt32(t *testing.T) {
 	bs := []byte{0, 0, 0, 1}
-	i := BytesToInt32(bs)
+	i := BytesToUInt32(bs)
 	if i != 1 {
-		t.FailNow()
+		t.Fatalf("BytesToUInt32 failed, %v %d != %d", bs, i, 1)
 	}
 
 	bs = []byte{1, 0, 0, 0}
-	i = BytesToInt32(bs)
+	i = BytesToUInt32(bs)
 	if i != 1<<(3*8) {
-		t.FailNow()
-	}
-
-	bs = []byte{0, 0, 0, 0, 1}
-	i = BytesToInt32(bs)
-	if i != 0 {
-		t.FailNow()
+		t.Fatalf("BytesToUInt32 failed, %v %d != %d", bs, i, 1<<(3*8))
 	}
 
 	bs = []byte{1}
-	i = BytesToInt32(bs)
+	i = BytesToUInt32(bs)
 	if i != 1 {
-		t.FailNow()
+		t.Fatalf("BytesToUInt32 failed, %v %d != %d", bs, i, 1)
 	}
 
 	bs = []byte{1, 0}
-	i = BytesToInt32(bs)
+	i = BytesToUInt32(bs)
 	if i != 1<<8 {
-		t.FailNow()
+		t.Fatalf("BytesToUInt32 failed, %v %d != %d", bs, i, 1<<8)
+	}
+}
+
+func TestUint16ToUint64(t *testing.T) {
+	bs := []uint16{0, 0, 0, 1}
+	i := Uint16ToUint64(bs)
+	if i != 1 {
+		t.Fatalf("Uint16ToUint64 failed, %v %d != %d", bs, i, 1)
+	}
+
+	bs = []uint16{1, 0, 0, 0}
+	i = Uint16ToUint64(bs)
+	if i != 1<<(3*16) {
+		t.Fatalf("Uint16ToUint64 failed, %v %d != %d", bs, i, 1<<(3*16))
+	}
+
+	bs = []uint16{1}
+	i = Uint16ToUint64(bs)
+	if i != 1 {
+		t.Fatalf("Uint16ToUint64 failed, %v %d != %d", bs, i, 1)
+	}
+
+	bs = []uint16{1, 0}
+	i = Uint16ToUint64(bs)
+	if i != 1<<16 {
+		t.Fatalf("Uint16ToUint64 failed, %v %d != %d", bs, i, 1<<16)
 	}
 }
 

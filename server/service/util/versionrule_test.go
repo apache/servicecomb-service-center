@@ -22,7 +22,33 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"sort"
+	"testing"
 )
+
+func BenchmarkParseVersionRule(b *testing.B) {
+	f := ParseVersionRule("latest")
+	kvs := []*mvccpb.KeyValue{
+		{
+			Key:   []byte("/service/ver/1.0.300"),
+			Value: []byte("1.0.300"),
+		},
+		{
+			Key:   []byte("/service/ver/1.0.303"),
+			Value: []byte("1.0.303"),
+		},
+		{
+			Key:   []byte("/service/ver/1.0.304"),
+			Value: []byte("1.0.304"),
+		},
+	}
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			f(kvs)
+		}
+	})
+	b.ReportAllocs()
+}
 
 var _ = Describe("Version Rule sorter", func() {
 	Describe("Sorter", func() {
@@ -89,15 +115,15 @@ var _ = Describe("Version Rule sorter", func() {
 				Expect(kvs[0]).To(Equal("1.a"))
 				Expect(kvs[1]).To(Equal("1.0.1.a"))
 			})
-			It("invalid version2 > 127", func() {
-				kvs := []string{"1.0", "1.0.1.128"}
+			It("invalid version2 > 65536", func() {
+				kvs := []string{"1.0", "1.0.1.65536"}
 				sort.Sort(&serviceKeySorter{
 					sortArr: kvs,
 					kvs:     make(map[string]*mvccpb.KeyValue),
 					cmp:     Larger,
 				})
 				Expect(kvs[0]).To(Equal("1.0"))
-				Expect(kvs[1]).To(Equal("1.0.1.128"))
+				Expect(kvs[1]).To(Equal("1.0.1.65536"))
 			})
 		})
 	})
