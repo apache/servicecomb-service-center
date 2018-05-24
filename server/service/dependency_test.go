@@ -154,17 +154,6 @@ var _ = Describe("'Dependency' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respCreateDependency.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
-				By("provider is nil")
-				respCreateDependency, err = serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
-					Dependencies: []*pb.ConsumerDependency{
-						{
-							Consumer: consumer,
-						},
-					},
-				})
-				Expect(err).To(BeNil())
-				Expect(respCreateDependency.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
-
 				By("provider app is invalid")
 				respCreateDependency, err = serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
 					Dependencies: []*pb.ConsumerDependency{
@@ -289,6 +278,15 @@ var _ = Describe("'Dependency' service", func() {
 						{
 							Consumer:  consumer,
 							Providers: []*pb.MicroServiceKey{},
+						},
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(respCreateDependency.Response.Code).To(Equal(pb.Response_SUCCESS))
+				respCreateDependency, err = serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
+					Dependencies: []*pb.ConsumerDependency{
+						{
+							Consumer: consumer,
 						},
 					},
 				})

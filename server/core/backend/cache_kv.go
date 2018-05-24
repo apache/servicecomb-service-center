@@ -238,7 +238,8 @@ func (c *KvCacher) deferHandle(ctx context.Context) {
 	}
 
 	var (
-		evts [eventBlockSize]KvEvent
+		// does not escape to heap
+		evts = make([]KvEvent, eventBlockSize)
 		i    int
 	)
 	for {
@@ -253,6 +254,7 @@ func (c *KvCacher) deferHandle(ctx context.Context) {
 
 			if i >= eventBlockSize {
 				c.onEvents(evts[:i])
+				evts = make([]KvEvent, eventBlockSize)
 				i = 0
 			}
 
@@ -264,6 +266,7 @@ func (c *KvCacher) deferHandle(ctx context.Context) {
 			}
 
 			c.onEvents(evts[:i])
+			evts = make([]KvEvent, eventBlockSize)
 			i = 0
 		}
 	}
@@ -300,7 +303,7 @@ func (c *KvCacher) filter(rev int64, items []*mvccpb.KeyValue) []KvEvent {
 		newStore[util.BytesToStringWithNoCopy(kv.Key)] = kv
 	}
 	filterStopCh := make(chan struct{})
-	eventsCh := make(chan [eventBlockSize]KvEvent, max/eventBlockSize+2)
+	eventsCh := make(chan [eventBlockSize]KvEvent, 2)
 
 	go c.filterDelete(store, newStore, rev, eventsCh, filterStopCh)
 

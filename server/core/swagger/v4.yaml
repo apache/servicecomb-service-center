@@ -1815,9 +1815,7 @@ definitions:
   MicroService:
     type: object
     required:
-    - appId
     - serviceName
-    - version
     properties:
       serviceId:
         type: string

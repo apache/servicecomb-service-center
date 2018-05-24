@@ -14,36 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package unlimit
+package validate
 
-import (
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
-	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
-	"github.com/astaxie/beego"
-	"golang.org/x/net/context"
-)
-
-func init() {
-	mgr.RegisterPlugin(mgr.Plugin{mgr.QUOTA, "unlimit", New})
-
-	quataType := beego.AppConfig.DefaultString("quota_plugin", "")
-	if quataType != "unlimit" {
-		return
-	}
-	quota.DefaultSchemaQuota = 0
-	quota.DefaultTagQuota = 0
-}
-
-type Unlimit struct {
-}
-
-func New() mgr.PluginInstance {
-	return &Unlimit{}
-}
-
-func (q *Unlimit) Apply4Quotas(ctx context.Context, res *quota.ApplyQuotaResource) *quota.ApplyQuotaResult {
-	return quota.NewApplyQuotaResult(nil, nil)
-}
-
-func (q *Unlimit) RemandQuotas(ctx context.Context, quotaType quota.ResourceType) {
+type ValidateFunc interface {
+	MatchString(s string) bool
+	String() string
 }

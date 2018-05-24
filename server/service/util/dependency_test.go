@@ -155,34 +155,6 @@ func TestCreateDependencyRule(t *testing.T) {
 		t.Fatalf(`diffServiceVersion failed`)
 	}
 
-	err = validateMicroServiceKey(&proto.MicroServiceKey{}, false)
-	if err == nil {
-		t.Fatalf(`validateMicroServiceKey false invalid failed`)
-	}
-
-	err = validateMicroServiceKey(&proto.MicroServiceKey{}, true)
-	if err == nil {
-		t.Fatalf(`validateMicroServiceKey true invalid failed`)
-	}
-
-	err = validateMicroServiceKey(&proto.MicroServiceKey{
-		AppId:       "a",
-		ServiceName: "b",
-		Version:     "latest",
-	}, true)
-	if err != nil {
-		t.Fatalf(`validateMicroServiceKey true failed`)
-	}
-
-	err = validateMicroServiceKey(&proto.MicroServiceKey{
-		AppId:       "a",
-		ServiceName: "b",
-		Version:     "1.0.0",
-	}, false)
-	if err != nil {
-		t.Fatalf(`validateMicroServiceKey false failed`)
-	}
-
 	ok = isDependencyAll(&proto.MicroServiceDependency{})
 	if ok {
 		t.Fatalf(`isDependencyAll not * failed`)
@@ -227,7 +199,7 @@ func TestDependencyRuleExistUtil(t *testing.T) {
 
 func TestParamsChecker(t *testing.T) {
 	p := ParamsChecker(nil, nil)
-	if p == nil || p.Response.Code == proto.Response_SUCCESS {
+	if p != nil {
 		t.Fatalf(`ParamsChecker invalid failed`)
 	}
 
@@ -236,7 +208,7 @@ func TestParamsChecker(t *testing.T) {
 		ServiceName: "b",
 		Version:     "1.0.0",
 	}, nil)
-	if p == nil || p.Response.Code == proto.Response_SUCCESS {
+	if p != nil {
 		t.Fatalf(`ParamsChecker invalid failed`)
 	}
 

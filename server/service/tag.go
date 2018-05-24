@@ -38,7 +38,7 @@ func (s *MicroServiceService) AddTags(ctx context.Context, in *pb.AddServiceTags
 		}, nil
 	}
 
-	err := apt.Validate(in)
+	err := Validate(in)
 	if err != nil {
 		util.Logger().Errorf(err, "add service tags failed, serviceId %s, tags %v: invalid parameters.", in.ServiceId, in.Tags)
 		return &pb.AddServiceTagsResponse{
@@ -107,7 +107,7 @@ func (s *MicroServiceService) UpdateTag(ctx context.Context, in *pb.UpdateServic
 		}, nil
 	}
 	tagFlag := util.StringJoin([]string{in.Key, in.Value}, "/")
-	err := apt.Validate(in)
+	err := Validate(in)
 	if err != nil {
 		util.Logger().Errorf(err, "update service tag failed, serviceId %s, tag %s: invalid params.", in.ServiceId, tagFlag)
 		return &pb.UpdateServiceTagResponse{
@@ -162,7 +162,7 @@ func (s *MicroServiceService) DeleteTags(ctx context.Context, in *pb.DeleteServi
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
 		}, nil
 	}
-	err := apt.Validate(in)
+	err := Validate(in)
 	if err != nil {
 		util.Logger().Errorf(err, "delete service tags failed, serviceId %s, tags %v: invalid params.", in.ServiceId, in.Keys)
 		return &pb.DeleteServiceTagsResponse{
@@ -232,7 +232,7 @@ func (s *MicroServiceService) GetTags(ctx context.Context, in *pb.GetServiceTags
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
 		}, nil
 	}
-	err := apt.Validate(in)
+	err := Validate(in)
 	if err != nil {
 		util.Logger().Errorf(err, "get service tags failed, serviceId %s: invalid parameters.", in.ServiceId)
 		return &pb.GetServiceTagsResponse{

@@ -96,7 +96,7 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	remoteIP := util.GetIPFromContext(ctx)
 	instanceFlag := util.StringJoin([]string{instance.ServiceId, instance.HostName}, "/")
 
-	if err := apt.Validate(instance); err != nil {
+	if err := Validate(in); err != nil {
 		util.Logger().Errorf(err, "register instance failed, service %s, operator %s.", instanceFlag, remoteIP)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
@@ -382,7 +382,7 @@ func getHeartbeatFunc(ctx context.Context, domainProject string, instancesHbRst 
 }
 
 func (s *InstanceService) GetOneInstance(ctx context.Context, in *pb.GetOneInstanceRequest) (*pb.GetOneInstanceResponse, error) {
-	if err := apt.Validate(in); err != nil {
+	if err := Validate(in); err != nil {
 		util.Logger().Errorf(err, "get instance failed: invalid parameters.")
 		return &pb.GetOneInstanceResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
@@ -449,7 +449,7 @@ func (s *InstanceService) getInstancePreCheck(ctx context.Context, providerServi
 }
 
 func (s *InstanceService) GetInstances(ctx context.Context, in *pb.GetInstancesRequest) (*pb.GetInstancesResponse, error) {
-	if err := apt.Validate(in); err != nil {
+	if err := Validate(in); err != nil {
 		util.Logger().Errorf(err, "get instances failed: invalid parameters.")
 		return &pb.GetInstancesResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
@@ -481,7 +481,7 @@ func (s *InstanceService) GetInstances(ctx context.Context, in *pb.GetInstancesR
 }
 
 func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest) (*pb.FindInstancesResponse, error) {
-	err := apt.Validate(in)
+	err := Validate(in)
 	if err != nil {
 		util.Logger().Errorf(err, "find instance failed: invalid parameters.")
 		return &pb.FindInstancesResponse{
@@ -587,7 +587,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 func (s *InstanceService) UpdateStatus(ctx context.Context, in *pb.UpdateInstanceStatusRequest) (*pb.UpdateInstanceStatusResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	updateStatusFlag := util.StringJoin([]string{in.ServiceId, in.InstanceId, in.Status}, "/")
-	if err := apt.Validate(in); err != nil {
+	if err := Validate(in); err != nil {
 		util.Logger().Errorf(nil, "update instance status failed, %s.", updateStatusFlag)
 		return &pb.UpdateInstanceStatusResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),

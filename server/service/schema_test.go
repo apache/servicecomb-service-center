@@ -199,28 +199,32 @@ var _ = Describe("'Schema' service", func() {
 			}
 
 			It("should be failed in dev env", func() {
-				By("batch modify schemas")
+				By("batch modify schemas 1")
 				respCreateSchemas, err := serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
 					ServiceId: serviceIdDev,
 					Schemas:   schemas,
 				})
 				Expect(err).To(BeNil())
-				Expect(respCreateSchemas.Response.Code).To(Equal(scerr.ErrNotEnoughQuota))
+				Expect(respCreateSchemas.Response.Code).To(Equal(scerr.ErrInvalidParams))
 
-				/*By("modify one schema")
+				By("batch modify schemas 2")
+				respCreateSchemas, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+					ServiceId: serviceIdDev,
+					Schemas:   schemas[:buildin.SCHEMA_NUM_MAX_LIMIT_PER_SERVICE],
+				})
+				Expect(err).To(BeNil())
+				Expect(respCreateSchemas.Response.Code).To(Equal(pb.Response_SUCCESS))
+
+				By("modify one schema")
 				respCreateService := &pb.ModifySchemaResponse{}
-				for _, schema := range schemas {
-					respCreateService, err = serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
-						ServiceId: serviceId,
-						SchemaId:  schema.SchemaId,
-						Schema:    schema.Schema,
-					})
-					Expect(err).To(BeNil())
-					if respCreateService.Response.Code != pb.Response_SUCCESS {
-						Expect(respCreateService.Response.Code).To(Equal(scerr.ErrNotEnoughQuota))
-						break
-					}
-				}*/
+				schema := schemas[buildin.SCHEMA_NUM_MAX_LIMIT_PER_SERVICE]
+				respCreateService, err = serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
+					ServiceId: serviceIdDev,
+					SchemaId:  schema.SchemaId,
+					Schema:    schema.Schema,
+				})
+				Expect(err).To(BeNil())
+				Expect(respCreateService.Response.Code).To(Equal(scerr.ErrNotEnoughQuota))
 			})
 
 			It("should be failed in prod env", func() {
@@ -297,7 +301,7 @@ var _ = Describe("'Schema' service", func() {
 					{
 						SchemaId: "first_schemaId",
 						Schema:   "first_schema",
-						Summary:  "first_summary",
+						Summary:  "first0summary",
 					},
 				}
 				respCreateService, err := serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
@@ -314,14 +318,14 @@ var _ = Describe("'Schema' service", func() {
 					Schemas:   schemas,
 				})
 				Expect(err).To(BeNil())
-				Expect(respCreateService.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respCreateService.Response.Code).To(Equal(scerr.ErrInvalidParams))
 
 				By("modify schemas")
 				schemas = []*pb.Schema{
 					{
 						SchemaId: "first_schemaId",
 						Schema:   "first_schema_change",
-						Summary:  "first_summary_change",
+						Summary:  "first0summary1change",
 					},
 				}
 				respCreateService, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
@@ -336,7 +340,7 @@ var _ = Describe("'Schema' service", func() {
 					{
 						SchemaId: "second_schemaId",
 						Schema:   "second_schema",
-						Summary:  "second_summary",
+						Summary:  "second0summary",
 					},
 				}
 				respCreateService, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
@@ -360,14 +364,14 @@ var _ = Describe("'Schema' service", func() {
 					Schemas:   schemas,
 				})
 				Expect(err).To(BeNil())
-				Expect(respCreateService.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respCreateService.Response.Code).To(Equal(scerr.ErrInvalidParams))
 
 				By("add new schemaId not exist in service schemaId")
 				schemas = []*pb.Schema{
 					{
 						SchemaId: "second_schemaId",
 						Schema:   "second_schema",
-						Summary:  "second_summary",
+						Summary:  "second0summary",
 					},
 				}
 				respCreateService, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
@@ -433,7 +437,7 @@ var _ = Describe("'Schema' service", func() {
 					{
 						SchemaId: "first_schemaId",
 						Schema:   "first_schema",
-						Summary:  "first_summary",
+						Summary:  "first0summary",
 					},
 				}
 				respModifySchemas, err := serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
@@ -463,7 +467,7 @@ var _ = Describe("'Schema' service", func() {
 					{
 						SchemaId: "second_schemaId",
 						Schema:   "second_schema",
-						Summary:  "second_summary",
+						Summary:  "second0summary",
 					},
 				}
 				respModifySchemas, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
@@ -480,7 +484,7 @@ var _ = Describe("'Schema' service", func() {
 				})
 
 				Expect(err).To(BeNil())
-				Expect(respExist.Summary).To(Equal("first_summary"))
+				Expect(respExist.Summary).To(Equal("first0summary"))
 			})
 
 			It("should be passed", func() {
@@ -498,7 +502,7 @@ var _ = Describe("'Schema' service", func() {
 					{
 						SchemaId: "first_schemaId",
 						Schema:   "first_schema",
-						Summary:  "first_summary",
+						Summary:  "first0summary",
 					},
 				}
 
@@ -516,13 +520,13 @@ var _ = Describe("'Schema' service", func() {
 				})
 
 				Expect(err).To(BeNil())
-				Expect(respExist.Summary).To(Equal("first_summary"))
+				Expect(respExist.Summary).To(Equal("first0summary"))
 
 				schemas = []*pb.Schema{
 					{
 						SchemaId: "second_schemaId",
 						Schema:   "second_schema",
-						Summary:  "second_summary",
+						Summary:  "second0summary",
 					},
 				}
 				respModifySchemas, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
@@ -597,7 +601,7 @@ var _ = Describe("'Schema' service", func() {
 					ServiceId: serviceIdDev1,
 					SchemaId:  "first_schemaId",
 					Schema:    "first_schema_change",
-					Summary:   "first_summary_change",
+					Summary:   "first0summary1change",
 				})
 				Expect(err).To(BeNil())
 				Expect(respModifySchema.Response.Code).To(Equal(pb.Response_SUCCESS))
@@ -607,7 +611,7 @@ var _ = Describe("'Schema' service", func() {
 					ServiceId: serviceIdDev1,
 					SchemaId:  "first_schemaId",
 					Schema:    "first_schema",
-					Summary:   "first_summary",
+					Summary:   "first0summary",
 				})
 				Expect(err).To(BeNil())
 				Expect(respModifySchema.Response.Code).To(Equal(pb.Response_SUCCESS))
@@ -678,7 +682,7 @@ var _ = Describe("'Schema' service", func() {
 					ServiceId: serviceIdPro1,
 					SchemaId:  "first_schemaId",
 					Schema:    "first_schema_change",
-					Summary:   "first_summary_change",
+					Summary:   "first0summary1change",
 				})
 				Expect(err).To(BeNil())
 				Expect(respModifySchema.Response.Code).To(Equal(pb.Response_SUCCESS))
@@ -688,7 +692,7 @@ var _ = Describe("'Schema' service", func() {
 					ServiceId: serviceIdPro1,
 					SchemaId:  "first_schemaId",
 					Schema:    "first_schema",
-					Summary:   "first_summary",
+					Summary:   "first0summary",
 				})
 				Expect(err).To(BeNil())
 				Expect(respModifySchema.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
@@ -832,7 +836,7 @@ var _ = Describe("'Schema' service", func() {
 			schemaId1     string = "all_schema1"
 			schemaId2     string = "all_schema2"
 			schemaId3     string = "all_schema3"
-			summary       string = "this is a test"
+			summary       string = "this0is1a2test"
 			schemaContent string = "the content is vary large"
 		)
 
@@ -857,7 +861,7 @@ var _ = Describe("'Schema' service", func() {
 				ServiceId: serviceId,
 				SchemaId:  "com.huawei.test",
 				Schema:    "get schema",
-				Summary:   "schema-summary",
+				Summary:   "schema0summary",
 			})
 			Expect(err).To(BeNil())
 			Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
@@ -996,7 +1000,7 @@ var _ = Describe("'Schema' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 				Expect(resp.Schema).To(Equal("get schema"))
-				Expect(resp.SchemaSummary).To(Equal("schema-summary"))
+				Expect(resp.SchemaSummary).To(Equal("schema0summary"))
 			})
 		})
 	})

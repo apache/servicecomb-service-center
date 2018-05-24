@@ -40,6 +40,14 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 		}, nil
 	}
 
+	err := Validate(in)
+	if err != nil {
+		util.Logger().Errorf(err, "add rule failed, serviceId is %s: invalid rule.", in.ServiceId)
+		return &pb.AddServiceRulesResponse{
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+		}, nil
+	}
+
 	domainProject := util.ParseDomainProject(ctx)
 
 	// service id存在性校验
@@ -73,13 +81,6 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 	ruleIds := make([]string, 0, len(in.Rules))
 	opts := make([]registry.PluginOp, 0, 2*len(in.Rules))
 	for _, rule := range in.Rules {
-		err := apt.Validate(rule)
-		if err != nil {
-			util.Logger().Errorf(err, "add rule failed, serviceId is %s: invalid rule.", in.ServiceId)
-			return &pb.AddServiceRulesResponse{
-				Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
-			}, nil
-		}
 		//黑白名单只能存在一种，黑名单 or 白名单
 		if len(ruleType) == 0 {
 			ruleType = rule.RuleType
@@ -165,7 +166,7 @@ func (s *MicroServiceService) UpdateRule(ctx context.Context, in *pb.UpdateServi
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
-	err := apt.Validate(in.Rule)
+	err := Validate(in)
 	if err != nil {
 		util.Logger().Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: invalid service rule.", in.ServiceId, in.RuleId)
 		return &pb.UpdateServiceRuleResponse{
