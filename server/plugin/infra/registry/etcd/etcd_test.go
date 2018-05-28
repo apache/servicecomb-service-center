@@ -33,7 +33,7 @@ import (
 func TestEtcdClient_Delete(t *testing.T) {
 	client, err := clientv3.New(clientv3.Config{
 		Endpoints:   []string{"127.0.0.1:2379"},
-		DialTimeout: CONNECT_MANAGER_SERVER_TIMEOUT * time.Second,
+		DialTimeout: connectRegistryServerTimeout,
 	})
 	if err != nil {
 		panic(err)
