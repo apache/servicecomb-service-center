@@ -269,12 +269,12 @@ func TestParamsChecker(t *testing.T) {
 }
 
 func TestServiceDependencyRuleExist(t *testing.T) {
-	_, err := ProviderDependencyRuleExist(util.SetContext(context.Background(), "cacheOnly", "1"), &proto.MicroServiceKey{}, &proto.MicroServiceKey{})
+	_, err := DependencyRuleExist(util.SetContext(context.Background(), "cacheOnly", "1"), &proto.MicroServiceKey{}, &proto.MicroServiceKey{})
 	if err != nil {
 		t.Fatalf(`ServiceDependencyRuleExist WithCacheOnly failed`)
 	}
 
-	_, err = ProviderDependencyRuleExist(context.Background(), &proto.MicroServiceKey{}, &proto.MicroServiceKey{})
+	_, err = DependencyRuleExist(context.Background(), &proto.MicroServiceKey{}, &proto.MicroServiceKey{})
 	if err == nil {
 		t.Fatalf(`ServiceDependencyRuleExist failed`)
 	}
