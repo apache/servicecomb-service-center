@@ -144,8 +144,7 @@ const (
 )
 
 const (
-	REQUEST_TIMEOUT = 30 * time.Second
-
+	REQUEST_TIMEOUT    = 30 * time.Second
 	DEFAULT_PAGE_COUNT = 4096 // grpc does not allow to transport a large body more then 4MB in a request.
 )
 
