@@ -167,28 +167,22 @@ func DependencyRuleExist(ctx context.Context, provider *pb.MicroServiceKey, cons
 	}
 
 	consumerKey := apt.GenerateConsumerDependencyRuleKey(targetDomainProject, consumer)
-	providerRules, err := TransferToMicroServiceDependency(ctx, consumerKey)
-	if err != nil {
-		return false, err
-	}
-	if len(providerRules.Dependency) != 0 {
-		isEqual, err := containServiceDependency(providerRules.Dependency, provider)
-		if err != nil {
-			return false, err
-		}
-		if isEqual {
-			//删除之前的依赖
-			return true, nil
-		}
+	existed, err := dependencyRuleExistUtil(ctx, consumerKey, provider)
+	if err != nil || existed{
+		return existed, err
 	}
 
 	providerKey := apt.GenerateProviderDependencyRuleKey(targetDomainProject, provider)
-	consumers, err := TransferToMicroServiceDependency(ctx, providerKey)
+	return dependencyRuleExistUtil(ctx, providerKey, consumer)
+}
+
+func dependencyRuleExistUtil(ctx context.Context, key string, target *pb.MicroServiceKey)(bool, error){
+	compareData, err := TransferToMicroServiceDependency(ctx, key)
 	if err != nil {
 		return false, err
 	}
-	if len(consumers.Dependency) != 0 {
-		isEqual, err := containServiceDependency(consumers.Dependency, consumer)
+	if len(compareData.Dependency) != 0 {
+		isEqual, err := containServiceDependency(compareData.Dependency, target)
 		if err != nil {
 			return false, err
 		}
