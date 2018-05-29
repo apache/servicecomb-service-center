@@ -74,7 +74,7 @@ var _ = Describe("MicroService Api Test", func() {
 
 				// UNRegister Service
 				url := strings.Replace(UNREGISTERMICROSERVICE, ":serviceId", serviceId, 1)
-				req, _ = http.NewRequest(DELETE, SCURL+url+"&force=true", nil)
+				req, _ = http.NewRequest(DELETE, SCURL+url, nil)
 				req.Header.Set("X-Domain-Name", "default")
 				resp, _ = scclient.Do(req)
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
