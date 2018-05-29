@@ -698,7 +698,7 @@ var _ = Describe("'Instance' service", func() {
 
 			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 				Service: &pb.MicroService{
-					AppId:       "default",
+					AppId:       "query_instance",
 					ServiceName: "query_instance_with_rev",
 					Version:     "1.0.0",
 					Level:       "FRONT",
@@ -901,7 +901,7 @@ var _ = Describe("'Instance' service", func() {
 				By("find with rev")
 				ctx := getContext()
 				respFind, err = instanceResource.Find(ctx, &pb.FindInstancesRequest{
-					ConsumerServiceId: serviceId4,
+					ConsumerServiceId: instanceId8,
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_with_rev",
 					VersionRule:       "1.0.0",
@@ -915,7 +915,7 @@ var _ = Describe("'Instance' service", func() {
 
 				util.SetContext(ctx, serviceUtil.CTX_REQUEST_REVISION, rev-1)
 				respFind, err = instanceResource.Find(ctx, &pb.FindInstancesRequest{
-					ConsumerServiceId: serviceId4,
+					ConsumerServiceId: instanceId8,
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_with_rev",
 					VersionRule:       "1.0.0",
@@ -928,7 +928,7 @@ var _ = Describe("'Instance' service", func() {
 
 				util.SetContext(ctx, serviceUtil.CTX_REQUEST_REVISION, rev+1)
 				respFind, err = instanceResource.Find(ctx, &pb.FindInstancesRequest{
-					ConsumerServiceId: serviceId4,
+					ConsumerServiceId: instanceId8,
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_with_rev",
 					VersionRule:       "1.0.0",
@@ -941,7 +941,7 @@ var _ = Describe("'Instance' service", func() {
 
 				util.SetContext(ctx, serviceUtil.CTX_REQUEST_REVISION, rev)
 				respFind, err = instanceResource.Find(ctx, &pb.FindInstancesRequest{
-					ConsumerServiceId: serviceId4,
+					ConsumerServiceId: instanceId8,
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_with_rev",
 					VersionRule:       "1.0.0",
