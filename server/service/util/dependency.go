@@ -160,18 +160,29 @@ func GetProviderIdsByConsumer(ctx context.Context, domainProject string, service
 	return providerIds[:allowIdx], providerIds[denyIdx:], nil
 }
 
-func ProviderDependencyRuleExist(ctx context.Context, provider *pb.MicroServiceKey, consumer *pb.MicroServiceKey) (bool, error) {
+func DependencyRuleExist(ctx context.Context, provider *pb.MicroServiceKey, consumer *pb.MicroServiceKey) (bool, error) {
 	targetDomainProject := provider.Tenant
 	if len(targetDomainProject) == 0 {
 		targetDomainProject = consumer.Tenant
 	}
+
+	consumerKey := apt.GenerateConsumerDependencyRuleKey(targetDomainProject, consumer)
+	existed, err := dependencyRuleExistUtil(ctx, consumerKey, provider)
+	if err != nil || existed {
+		return existed, err
+	}
+
 	providerKey := apt.GenerateProviderDependencyRuleKey(targetDomainProject, provider)
-	consumers, err := TransferToMicroServiceDependency(ctx, providerKey)
+	return dependencyRuleExistUtil(ctx, providerKey, consumer)
+}
+
+func dependencyRuleExistUtil(ctx context.Context, key string, target *pb.MicroServiceKey) (bool, error) {
+	compareData, err := TransferToMicroServiceDependency(ctx, key)
 	if err != nil {
 		return false, err
 	}
-	if len(consumers.Dependency) != 0 {
-		isEqual, err := containServiceDependency(consumers.Dependency, consumer)
+	if len(compareData.Dependency) != 0 {
+		isEqual, err := containServiceDependency(compareData.Dependency, target)
 		if err != nil {
 			return false, err
 		}
@@ -186,7 +197,7 @@ func ProviderDependencyRuleExist(ctx context.Context, provider *pb.MicroServiceK
 func AddServiceVersionRule(ctx context.Context, domainProject string, consumer *pb.MicroService, provider *pb.MicroServiceKey) error {
 	//创建依赖一致
 	consumerKey := pb.MicroServiceToKey(domainProject, consumer)
-	exist, err := ProviderDependencyRuleExist(ctx, provider, consumerKey)
+	exist, err := DependencyRuleExist(ctx, provider, consumerKey)
 	if exist || err != nil {
 		return err
 	}
