@@ -36,12 +36,14 @@ import (
 )
 
 const (
-	CONNECT_MANAGER_SERVER_TIMEOUT = 10
+	connectRegistryServerTimeout = 10 * time.Second
+	healthCheckTimeout           = 5 * time.Second
+	healthCheckRetryTimes        = 3
 )
 
 var (
 	clientTLSConfig *tls.Config
-	endpoint        string
+	firstEndpoint   string
 )
 
 func init() {
@@ -50,9 +52,11 @@ func init() {
 }
 
 type EtcdClient struct {
-	Client *clientv3.Client
-	err    chan error
-	ready  chan int
+	Endpoints []string
+	Client    *clientv3.Client
+	err       chan error
+	ready     chan int
+	goroutine *util.GoRoutine
 }
 
 func (s *EtcdClient) Err() <-chan error {
@@ -64,6 +68,8 @@ func (s *EtcdClient) Ready() <-chan int {
 }
 
 func (s *EtcdClient) Close() {
+	s.goroutine.Close(true)
+
 	if s.Client != nil {
 		s.Client.Close()
 	}
@@ -561,6 +567,74 @@ func (c *EtcdClient) Watch(ctx context.Context, opts ...registry.PluginOpOption)
 	return fmt.Errorf("no key has been watched")
 }
 
+func (c *EtcdClient) HealthCheck(ctx context.Context) {
+	retries := healthCheckRetryTimes
+	inv, err := time.ParseDuration(core.ServerInfo.Config.AutoSyncInterval)
+	if err != nil {
+		util.Logger().Errorf(err, "invalid auto sync interval '%s'.", core.ServerInfo.Config.AutoSyncInterval)
+		return
+	}
+hcLoop:
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(inv):
+			var err error
+			for i := 0; i < retries; i++ {
+				if err = c.SyncMembers(); err != nil {
+					select {
+					case <-ctx.Done():
+						return
+					case <-time.After(util.GetBackoff().Delay(i)):
+						continue
+					}
+				}
+				retries = healthCheckRetryTimes
+				continue hcLoop
+			}
+
+			retries = 1 // fail fast
+			client, cerr := newClient(c.Endpoints)
+			if cerr != nil {
+				util.Logger().Errorf(cerr, "re-get etcd client %v failed.", c.Endpoints)
+				continue
+			}
+			cerr = c.Client.Close()
+			if cerr != nil {
+				util.Logger().Errorf(cerr, "close unavailable etcd client failed.")
+			}
+			c.Client = client
+
+			util.Logger().Errorf(err, "Auto sync etcd members failed and re-connected etcd successfully")
+		}
+	}
+}
+
+func (c *EtcdClient) parseEndpoints() {
+	addrs := strings.Split(registry.RegistryConfig().ClusterAddresses, ",")
+
+	endpoints := make([]string, 0, len(addrs))
+	for _, addr := range addrs {
+		if strings.Index(addr, "://") > 0 {
+			// 如果配置格式为"sr-0=http(s)://IP:Port"，则需要分离IP:Port部分
+			endpoints = append(endpoints, addr[strings.Index(addr, "://")+3:])
+		} else {
+			endpoints = append(endpoints, addr)
+		}
+	}
+
+	c.Endpoints = endpoints
+}
+
+func (c *EtcdClient) SyncMembers() error {
+	ctx, _ := context.WithTimeout(c.Client.Ctx(), healthCheckTimeout)
+	if err := c.Client.Sync(ctx); err != nil && err != c.Client.Ctx().Err() {
+		return err
+	}
+	return nil
+}
+
 func dispatch(evts []*clientv3.Event, cb registry.WatchCallback) error {
 	l := len(evts)
 	kvs := make([]*mvccpb.KeyValue, l)
@@ -624,20 +698,13 @@ func NewRegistry() mgr.PluginInstance {
 	util.Logger().Warnf(nil, "starting service center in proxy mode")
 
 	inst := &EtcdClient{
-		err:   make(chan error, 1),
-		ready: make(chan int),
+		err:       make(chan error, 1),
+		ready:     make(chan int),
+		goroutine: util.NewGo(context.Background()),
 	}
-	addrs := strings.Split(registry.RegistryConfig().ClusterAddresses, ",")
 
-	endpoints := make([]string, 0, len(addrs))
-	for _, addr := range addrs {
-		if strings.Index(addr, "://") > 0 {
-			// 如果配置格式为"sr-0=http(s)://IP:Port"，则需要分离IP:Port部分
-			endpoints = append(endpoints, addr[strings.Index(addr, "://")+3:])
-		} else {
-			endpoints = append(endpoints, addr)
-		}
-	}
+	// parse the endpoints from config
+	inst.parseEndpoints()
 
 	scheme := "http://"
 	if sslEnabled() {
@@ -651,32 +718,31 @@ func NewRegistry() mgr.PluginInstance {
 		}
 		scheme = "https://"
 	}
-	endpoint = scheme + endpoints[0]
 
-	inv, err := time.ParseDuration(core.ServerInfo.Config.AutoSyncInterval)
+	firstEndpoint = scheme + inst.Endpoints[0]
+
+	client, err := newClient(inst.Endpoints)
 	if err != nil {
-		util.Logger().Errorf(err, "invalid auto sync interval '%s'.", core.ServerInfo.Config.AutoSyncInterval)
-	}
-	client, err := newClient(endpoints, inv)
-	if err != nil {
-		util.Logger().Errorf(err, "get etcd client %v failed.", endpoints)
+		util.Logger().Errorf(err, "get etcd client %v failed.", inst.Endpoints)
 		inst.err <- err
 		return inst
 	}
 
 	util.Logger().Warnf(nil, "get etcd client %v completed, auto sync endpoints interval is %s.",
-		endpoints, core.ServerInfo.Config.AutoSyncInterval)
+		inst.Endpoints, core.ServerInfo.Config.AutoSyncInterval)
 	inst.Client = client
+	inst.goroutine.Do(inst.HealthCheck)
+
 	close(inst.ready)
 	return inst
 }
 
-func newClient(endpoints []string, autoSyncInterval time.Duration) (*clientv3.Client, error) {
+func newClient(endpoints []string) (*clientv3.Client, error) {
 	client, err := clientv3.New(clientv3.Config{
 		Endpoints:        endpoints,
-		DialTimeout:      CONNECT_MANAGER_SERVER_TIMEOUT * time.Second,
+		DialTimeout:      connectRegistryServerTimeout,
 		TLS:              clientTLSConfig, // 暂时与API Server共用一套证书
-		AutoSyncInterval: autoSyncInterval,
+		AutoSyncInterval: 0,
 	})
 	if err != nil {
 		return nil, err

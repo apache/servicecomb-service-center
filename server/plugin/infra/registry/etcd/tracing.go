@@ -28,7 +28,7 @@ func TracingBegin(ctx context.Context, operationName string, op registry.PluginO
 	r := &tracing.RegistryRequest{
 		Ctx:      ctx,
 		Options:  op,
-		Endpoint: endpoint,
+		Endpoint: firstEndpoint,
 	}
 	return plugin.Plugins().Tracing().ClientBegin(operationName, r)
 }
