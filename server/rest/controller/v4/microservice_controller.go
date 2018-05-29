@@ -88,13 +88,13 @@ func (this *MicroServiceService) Update(w http.ResponseWriter, r *http.Request) 
 func (this *MicroServiceService) Unregister(w http.ResponseWriter, r *http.Request) {
 	force := r.URL.Query().Get("force")
 	serviceId := r.URL.Query().Get(":serviceId")
-	if force != "0" && force != "1" && strings.TrimSpace(force) != "" {
-		controller.WriteError(w, scerr.ErrInvalidParams, "parameter force must be 1 or 0")
+	if force != "false" && force != "true" && strings.TrimSpace(force) != "" {
+		controller.WriteError(w, scerr.ErrInvalidParams, "parameter force must be false or true")
 		return
 	}
 	request := &pb.DeleteServiceRequest{
 		ServiceId: serviceId,
-		Force:     force == "1",
+		Force:     force == "true",
 	}
 	resp, _ := core.ServiceAPI.Delete(r.Context(), request)
 	controller.WriteResponse(w, resp.Response, nil)
