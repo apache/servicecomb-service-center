@@ -328,6 +328,26 @@ var _ = Describe("MicroService Api Test", func() {
 				resp, _ := scclient.Do(req)
 				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
 			})
+
+			It("Find Micro-Service Instance with rev", func() {
+				req, _ := http.NewRequest(GET, SCURL+FINDINSTANCE+"?noCache=1&appId="+serviceAppId+"&serviceName="+serviceName+"&version="+serviceVersion, nil)
+				req.Header.Set("X-Domain-Name", "default")
+				req.Header.Set("X-ConsumerId", serviceId)
+				resp, _ := scclient.Do(req)
+				ioutil.ReadAll(resp.Body)
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				rev := resp.Header.Get("X-Resource-Revision")
+				Expect(rev).NotTo(BeEmpty())
+
+				req, _ = http.NewRequest(GET, SCURL+FINDINSTANCE+"?appId="+serviceAppId+"&serviceName="+serviceName+"&version="+serviceVersion+"&rev="+rev, nil)
+				req.Header.Set("X-Domain-Name", "default")
+				req.Header.Set("X-ConsumerId", serviceId)
+				resp, _ = scclient.Do(req)
+				ioutil.ReadAll(resp.Body)
+				Expect(resp.StatusCode).To(Equal(http.StatusNotModified))
+				rev = resp.Header.Get("X-Resource-Revision")
+				Expect(rev).NotTo(BeEmpty())
+			})
 		})
 		By("Update Micro-Service Instance Information API's", func() {
 			It("Update Micro-Service Instance Properties", func() {

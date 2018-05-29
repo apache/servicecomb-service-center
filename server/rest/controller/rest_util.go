@@ -19,29 +19,30 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/error"
 	"net/http"
 )
 
-const (
-	contentTypeJson = "application/json; charset=UTF-8"
-	contentTypeText = "text/plain; charset=UTF-8"
-)
-
 func WriteError(w http.ResponseWriter, code int32, detail string) {
 	err := error.NewError(code, detail)
-	w.Header().Add("X-Response-Status", fmt.Sprint(err.StatusCode()))
-	w.Header().Set("Content-Type", contentTypeJson)
+	w.Header().Set(rest.HEADER_RESPONSE_STATUS, fmt.Sprint(err.StatusCode()))
+	w.Header().Set(rest.HEADER_CONTENT_TYPE, rest.CONTENT_TYPE_JSON)
 	w.WriteHeader(err.StatusCode())
 	fmt.Fprintln(w, util.BytesToStringWithNoCopy(err.Marshal()))
 }
 
-func WriteJsonObject(w http.ResponseWriter, obj interface{}) {
+func WriteResponse(w http.ResponseWriter, resp *pb.Response, obj interface{}) {
+	if resp != nil && resp.GetCode() != pb.Response_SUCCESS {
+		WriteError(w, resp.GetCode(), resp.GetMessage())
+		return
+	}
+
 	if obj == nil {
-		w.Header().Add("X-Response-Status", fmt.Sprint(http.StatusOK))
-		w.Header().Set("Content-Type", contentTypeText)
+		w.Header().Set(rest.HEADER_RESPONSE_STATUS, fmt.Sprint(http.StatusOK))
+		w.Header().Set(rest.HEADER_CONTENT_TYPE, rest.CONTENT_TYPE_TEXT)
 		w.WriteHeader(http.StatusOK)
 		return
 	}
@@ -51,25 +52,16 @@ func WriteJsonObject(w http.ResponseWriter, obj interface{}) {
 		WriteError(w, error.ErrInternal, err.Error())
 		return
 	}
-	w.Header().Add("X-Response-Status", fmt.Sprint(http.StatusOK))
-	w.Header().Set("Content-Type", contentTypeJson)
+	w.Header().Set(rest.HEADER_RESPONSE_STATUS, fmt.Sprint(http.StatusOK))
+	w.Header().Set(rest.HEADER_CONTENT_TYPE, rest.CONTENT_TYPE_JSON)
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintln(w, util.BytesToStringWithNoCopy(objJson))
 }
 
-func WriteResponse(w http.ResponseWriter, resp *pb.Response, obj interface{}) {
+func WriteJsonBytes(w http.ResponseWriter, resp *pb.Response, json []byte) {
 	if resp.GetCode() == pb.Response_SUCCESS {
-		WriteJsonObject(w, obj)
-		return
-	}
-
-	WriteError(w, resp.GetCode(), resp.GetMessage())
-}
-
-func WriteBytes(w http.ResponseWriter, resp *pb.Response, json []byte) {
-	if resp.GetCode() == pb.Response_SUCCESS {
-		w.Header().Add("X-Response-Status", fmt.Sprint(http.StatusOK))
-		w.Header().Set("Content-Type", contentTypeJson)
+		w.Header().Set(rest.HEADER_RESPONSE_STATUS, fmt.Sprint(http.StatusOK))
+		w.Header().Set(rest.HEADER_CONTENT_TYPE, rest.CONTENT_TYPE_JSON)
 		w.WriteHeader(http.StatusOK)
 		w.Write(json)
 		return

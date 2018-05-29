@@ -313,6 +313,15 @@ type PluginResponse struct {
 	Succeeded bool
 }
 
+func (pr *PluginResponse) MaxModRevision() (max int64) {
+	for _, kv := range pr.Kvs {
+		if max < kv.ModRevision {
+			max = kv.ModRevision
+		}
+	}
+	return
+}
+
 func (pr *PluginResponse) String() string {
 	return fmt.Sprintf("{action: %s, count: %d/%d, rev: %d, succeed: %v}",
 		pr.Action, len(pr.Kvs), pr.Count, pr.Revision, pr.Succeeded)

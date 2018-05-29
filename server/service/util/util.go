@@ -24,9 +24,9 @@ import (
 func FromContext(ctx context.Context) []registry.PluginOpOption {
 	opts := make([]registry.PluginOpOption, 0, 5)
 	switch {
-	case ctx.Value("noCache") == "1":
+	case ctx.Value(CTX_NOCACHE) == "1":
 		opts = append(opts, registry.WithNoCache())
-	case ctx.Value("cacheOnly") == "1":
+	case ctx.Value(CTX_CACHEONLY) == "1":
 		opts = append(opts, registry.WithCacheOnly())
 	}
 	return opts

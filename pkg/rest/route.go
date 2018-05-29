@@ -106,7 +106,7 @@ func (this *ROAServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	w.Header().Add("Allow", util.StringJoin(allowed, ", "))
+	w.Header().Add(HEADER_ALLOW, util.StringJoin(allowed, ", "))
 	http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 }
 

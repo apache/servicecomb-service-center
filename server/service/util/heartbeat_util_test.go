@@ -14,10 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package util_test
+package util
 
 import (
-	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
 	"testing"
 )
@@ -28,16 +27,16 @@ func TestHeartbeatUtil(t *testing.T) {
 			t.FailNow()
 		}
 	}()
-	serviceUtil.HeartbeatUtil(context.Background(), "", "", "")
+	HeartbeatUtil(context.Background(), "", "", "")
 }
 
 func TestKeepAliveLease(t *testing.T) {
-	_, err := serviceUtil.KeepAliveLease(context.Background(), "", "", "", -1)
+	_, err := KeepAliveLease(context.Background(), "", "", "", -1)
 	if err == nil {
 		t.Fatalf("KeepAliveLease -1 failed")
 	}
 
-	_, err = serviceUtil.KeepAliveLease(context.Background(), "", "", "", 0)
+	_, err = KeepAliveLease(context.Background(), "", "", "", 0)
 	if err == nil {
 		t.Fatalf("KeepAliveLease failed")
 	}

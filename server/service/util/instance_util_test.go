@@ -25,7 +25,7 @@ import (
 
 func TestGetLeaseId(t *testing.T) {
 
-	_, err := GetLeaseId(util.SetContext(context.Background(), "cacheOnly", "1"), "", "", "")
+	_, err := GetLeaseId(util.SetContext(context.Background(), CTX_CACHEONLY, "1"), "", "", "")
 	if err != nil {
 		t.Fatalf(`GetLeaseId WithCacheOnly failed`)
 	}
@@ -37,7 +37,7 @@ func TestGetLeaseId(t *testing.T) {
 }
 
 func TestGetInstance(t *testing.T) {
-	_, err := GetInstance(util.SetContext(context.Background(), "cacheOnly", "1"), "", "", "")
+	_, err := GetInstance(util.SetContext(context.Background(), CTX_CACHEONLY, "1"), "", "", "")
 	if err != nil {
 		t.Fatalf(`GetInstance WithCacheOnly failed`)
 	}
@@ -47,7 +47,7 @@ func TestGetInstance(t *testing.T) {
 		t.Fatalf(`GetInstance failed`)
 	}
 
-	_, err = GetAllInstancesOfOneService(util.SetContext(context.Background(), "cacheOnly", "1"), "", "")
+	_, err = GetAllInstancesOfOneService(util.SetContext(context.Background(), CTX_CACHEONLY, "1"), "", "")
 	if err != nil {
 		t.Fatalf(`GetAllInstancesOfOneService WithCacheOnly failed`)
 	}
@@ -66,7 +66,7 @@ func TestGetInstance(t *testing.T) {
 }
 
 func TestInstanceExistById(t *testing.T) {
-	_, err := InstanceExistById(util.SetContext(context.Background(), "cacheOnly", "1"), "", "", "")
+	_, err := InstanceExistById(util.SetContext(context.Background(), CTX_CACHEONLY, "1"), "", "", "")
 	if err != nil {
 		t.Fatalf(`InstanceExistById WithCacheOnly failed`)
 	}
@@ -111,5 +111,24 @@ func TestGetInstanceCountOfOneService(t *testing.T) {
 	_, err := GetInstanceCountOfOneService(context.Background(), "", "")
 	if err == nil {
 		t.Fatalf(`GetInstanceCountOfOneService failed`)
+	}
+}
+
+func TestGetInstanceCountOfServices(t *testing.T) {
+	_, err := GetAllInstancesOfServices(util.SetContext(context.Background(), CTX_CACHEONLY, "1"), "", []string{"1"})
+	if err == nil {
+		t.Fatalf(`GetAllInstancesOfServices CTX_CACHEONLY failed`)
+	}
+	_, err = GetAllInstancesOfServices(util.SetContext(context.Background(), CTX_NOCACHE, "1"), "", []string{"1"})
+	if err == nil {
+		t.Fatalf(`GetAllInstancesOfServices CTX_NOCACHE failed`)
+	}
+	_, err = GetAllInstancesOfServices(util.SetContext(context.Background(), CTX_REQUEST_REVISION, 1), "", []string{"1"})
+	if err == nil {
+		t.Fatalf(`GetAllInstancesOfServices CTX_REQUEST_REVISION failed`)
+	}
+	_, err = GetAllInstancesOfServices(context.Background(), "", []string{"1"})
+	if err == nil {
+		t.Fatalf(`GetAllInstancesOfServices failed`)
 	}
 }

@@ -18,6 +18,7 @@ package util
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
@@ -63,6 +64,63 @@ func GetInstance(ctx context.Context, domainProject string, serviceId string, in
 		return nil, err
 	}
 	return instance, nil
+}
+
+func GetAllInstancesOfServices(ctx context.Context, domainProject string, ids []string) (instances []*pb.MicroServiceInstance, err error) {
+	cloneCtx := util.CloneContext(ctx)
+	if ctx.Value(CTX_NOCACHE) == "1" || ctx.Value(CTX_CACHEONLY) == "1" {
+		util.SetContext(cloneCtx, CTX_REQUEST_REVISION, 0)
+	}
+	rev, _ := cloneCtx.Value(CTX_REQUEST_REVISION).(int64)
+
+	var (
+		max int64
+		kvs []*mvccpb.KeyValue
+	)
+	for i := 0; i < 2; i++ {
+		for _, serviceId := range ids {
+			key := apt.GenerateInstanceKey(domainProject, serviceId, "")
+			opts := append(FromContext(cloneCtx), registry.WithStrKey(key), registry.WithPrefix())
+			resp, err := backend.Store().Instance().Search(cloneCtx, opts...)
+			if err != nil {
+				return nil, err
+			}
+
+			if len(resp.Kvs) > 0 {
+				kvs = append(kvs, resp.Kvs...)
+			}
+			if cmax := resp.MaxModRevision(); max < cmax {
+				max = cmax
+			}
+		}
+
+		if rev > 0 && rev == max {
+			// return not modified
+			break
+		}
+
+		if rev < max || i != 0 {
+			for _, kv := range kvs {
+				instance := &pb.MicroServiceInstance{}
+				err := json.Unmarshal(kv.Value, instance)
+				if err != nil {
+					return nil, fmt.Errorf("unmarshal %s faild, %s",
+						util.BytesToStringWithNoCopy(kv.Key), err.Error())
+				}
+				instances = append(instances, instance)
+			}
+			break
+		}
+
+		kvs = kvs[:0]
+		// find the newest data
+		util.SetContext(util.SetContext(cloneCtx,
+			CTX_REQUEST_REVISION, 0),
+			CTX_NOCACHE, "1")
+	}
+
+	util.SetContext(ctx, CTX_RESPONSE_REVISION, max)
+	return
 }
 
 func GetAllInstancesOfOneService(ctx context.Context, domainProject string, serviceId string) ([]*pb.MicroServiceInstance, error) {

@@ -17,10 +17,9 @@
 package cache
 
 import (
-	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/chain"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
+	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"net/http"
 	"strconv"
 )
@@ -29,31 +28,28 @@ type CacheResponse struct {
 }
 
 func (l *CacheResponse) Handle(i *chain.Invocation) {
+	defer i.Next()
+
 	r := i.Context().Value(rest.CTX_REQUEST).(*http.Request)
-	w := i.Context().Value(rest.CTX_RESPONSE).(http.ResponseWriter)
 
-	scRev := backend.Revision()
-	w.Header().Set("X-Resource-Revision", fmt.Sprint(scRev))
-
+	noCache := r.URL.Query().Get(serviceUtil.CTX_NOCACHE) == "1"
+	cacheOnly := r.URL.Query().Get(serviceUtil.CTX_CACHEONLY) == "1"
 	rev, _ := strconv.ParseInt(r.URL.Query().Get("rev"), 10, 64)
-	if rev != 0 && rev == scRev && r.Method == http.MethodGet {
-		w.WriteHeader(http.StatusNotModified)
-		i.Fail(nil)
+
+	if noCache {
+		i.WithContext(serviceUtil.CTX_NOCACHE, "1")
 		return
 	}
 
-	noCache := r.URL.Query().Get("noCache") == "1"
-	cacheOnly := r.URL.Query().Get("cacheOnly") == "1"
-
-	if rev > scRev || noCache {
-		i.WithContext("noCache", "1")
+	if cacheOnly {
+		i.WithContext(serviceUtil.CTX_CACHEONLY, "1")
+		return
 	}
 
-	if cacheOnly && !noCache {
-		i.WithContext("cacheOnly", "1")
+	if rev != 0 {
+		i.WithContext(serviceUtil.CTX_REQUEST_REVISION, rev)
+		return
 	}
-
-	i.Next()
 }
 
 func RegisterHandlers() {

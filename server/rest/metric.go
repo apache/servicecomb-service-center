@@ -79,7 +79,7 @@ func ReportRequestCompleted(w http.ResponseWriter, r *http.Request, start time.T
 }
 
 func codeOf(h http.Header) (bool, string) {
-	statusCode := h.Get("X-Response-Status")
+	statusCode := h.Get(rest.HEADER_RESPONSE_STATUS)
 	if statusCode == "" {
 		return true, "200"
 	}

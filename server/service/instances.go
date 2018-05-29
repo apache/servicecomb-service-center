@@ -554,28 +554,6 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		}, nil
 	}
 
-	instances := make([]*pb.MicroServiceInstance, 0, 10)
-	cloneCtx := ctx
-	if s, ok := ctx.Value("noCache").(string); !ok || s != "1" {
-		cloneCtx = util.SetContext(util.CloneContext(ctx), "cacheOnly", "1")
-	}
-	for _, serviceId := range ids {
-		resp, err := s.GetInstances(cloneCtx, &pb.GetInstancesRequest{
-			ConsumerServiceId: in.ConsumerServiceId,
-			ProviderServiceId: serviceId,
-			Tags:              in.Tags,
-		})
-		if err != nil {
-			util.Logger().Errorf(err, "find instance failed, %s: get service %s 's instance failed.", findFlag, serviceId)
-			return &pb.FindInstancesResponse{
-				Response: resp.Response,
-			}, err
-		}
-		if len(resp.GetInstances()) > 0 {
-			instances = append(instances, resp.GetInstances()...)
-		}
-	}
-
 	//维护version的规则,service name 可能是别名，所以重新获取
 	providerService, err := serviceUtil.GetService(ctx, provider.Tenant, ids[0])
 	if providerService == nil {
@@ -596,6 +574,13 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		}, err
 	}
 
+	instances, err := serviceUtil.GetAllInstancesOfServices(ctx, domainProject, ids)
+	if err != nil {
+		util.Logger().Errorf(err, "find instance failed, %s: GetAllInstancesOfServices failed.", findFlag)
+		return &pb.FindInstancesResponse{
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
 	return &pb.FindInstancesResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Query service instances successfully."),
 		Instances: instances,

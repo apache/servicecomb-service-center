@@ -21,6 +21,7 @@ import (
 
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"golang.org/x/net/context"
@@ -192,6 +193,6 @@ func getContext() context.Context {
 	ctx := context.TODO()
 	ctx = util.SetContext(ctx, "domain", "default")
 	ctx = util.SetContext(ctx, "project", "default")
-	ctx = util.SetContext(ctx, "noCache", "1")
+	ctx = util.SetContext(ctx, serviceUtil.CTX_NOCACHE, "1")
 	return ctx
 }

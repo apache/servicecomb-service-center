@@ -21,6 +21,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
+	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"os"
@@ -588,10 +589,12 @@ var _ = Describe("'Instance' service", func() {
 			serviceId5  string
 			serviceId6  string
 			serviceId7  string
+			serviceId8  string
 			instanceId1 string
 			instanceId2 string
 			instanceId4 string
 			instanceId5 string
+			instanceId8 string
 		)
 
 		It("should be passed", func() {
@@ -665,19 +668,6 @@ var _ = Describe("'Instance' service", func() {
 			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
 			serviceId5 = respCreate.ServiceId
 
-			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-				Service: &pb.MicroService{
-					AppId:       "default",
-					ServiceName: "query_instance_shared_consumer",
-					Version:     "1.0.0",
-					Level:       "FRONT",
-					Status:      pb.MS_UP,
-				},
-			})
-			Expect(err).To(BeNil())
-			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
-			serviceId7 = respCreate.ServiceId
-
 			respCreate, err = serviceResource.Create(
 				util.SetDomainProject(util.CloneContext(getContext()), "user", "user"),
 				&pb.CreateServiceRequest{
@@ -692,6 +682,32 @@ var _ = Describe("'Instance' service", func() {
 			Expect(err).To(BeNil())
 			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
 			serviceId6 = respCreate.ServiceId
+
+			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "default",
+					ServiceName: "query_instance_shared_consumer",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
+			serviceId7 = respCreate.ServiceId
+
+			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "default",
+					ServiceName: "query_instance_with_rev",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
+			serviceId8 = respCreate.ServiceId
 
 			resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 				Instance: &pb.MicroServiceInstance{
@@ -748,6 +764,20 @@ var _ = Describe("'Instance' service", func() {
 			Expect(err).To(BeNil())
 			Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 			instanceId5 = resp.InstanceId
+
+			resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				Instance: &pb.MicroServiceInstance{
+					ServiceId: serviceId8,
+					HostName:  "UT-HOST",
+					Endpoints: []string{
+						"find:127.0.0.8:8080",
+					},
+					Status: pb.MSI_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+			instanceId8 = resp.InstanceId
 		})
 
 		Context("when query invalid parameters", func() {
@@ -867,6 +897,59 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
 				Expect(len(respFind.Instances)).To(Equal(1))
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId4))
+
+				By("find with rev")
+				ctx := getContext()
+				respFind, err = instanceResource.Find(ctx, &pb.FindInstancesRequest{
+					ConsumerServiceId: serviceId4,
+					AppId:             "query_instance",
+					ServiceName:       "query_instance_with_rev",
+					VersionRule:       "1.0.0",
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(len(respFind.Instances)).To(Equal(1))
+				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId8))
+				rev, _ := ctx.Value(serviceUtil.CTX_RESPONSE_REVISION).(int64)
+				Expect(rev).NotTo(Equal(0))
+
+				util.SetContext(ctx, serviceUtil.CTX_REQUEST_REVISION, rev-1)
+				respFind, err = instanceResource.Find(ctx, &pb.FindInstancesRequest{
+					ConsumerServiceId: serviceId4,
+					AppId:             "query_instance",
+					ServiceName:       "query_instance_with_rev",
+					VersionRule:       "1.0.0",
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(len(respFind.Instances)).To(Equal(1))
+				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId8))
+				Expect(ctx.Value(serviceUtil.CTX_RESPONSE_REVISION)).To(Equal(rev))
+
+				util.SetContext(ctx, serviceUtil.CTX_REQUEST_REVISION, rev+1)
+				respFind, err = instanceResource.Find(ctx, &pb.FindInstancesRequest{
+					ConsumerServiceId: serviceId4,
+					AppId:             "query_instance",
+					ServiceName:       "query_instance_with_rev",
+					VersionRule:       "1.0.0",
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(len(respFind.Instances)).To(Equal(1))
+				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId8))
+				Expect(ctx.Value(serviceUtil.CTX_RESPONSE_REVISION)).To(Equal(rev))
+
+				util.SetContext(ctx, serviceUtil.CTX_REQUEST_REVISION, rev)
+				respFind, err = instanceResource.Find(ctx, &pb.FindInstancesRequest{
+					ConsumerServiceId: serviceId4,
+					AppId:             "query_instance",
+					ServiceName:       "query_instance_with_rev",
+					VersionRule:       "1.0.0",
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(len(respFind.Instances)).To(Equal(0))
+				Expect(ctx.Value(serviceUtil.CTX_RESPONSE_REVISION)).To(Equal(rev))
 
 				By("find should return 200 even if consumer permission deny")
 				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{

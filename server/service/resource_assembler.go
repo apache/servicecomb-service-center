@@ -22,10 +22,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-const (
-	CTX_REQUEST_VERSION = "_registry_request_version"
-)
-
 var (
 	serviceService  pb.ServiceCtrlServer
 	instanceService pb.SerivceInstanceCtrlServerEx
