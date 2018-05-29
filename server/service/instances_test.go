@@ -899,9 +899,9 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId4))
 
 				By("find with rev")
-				ctx := getContext()
+				ctx := util.SetContext(getContext(), serviceUtil.CTX_NOCACHE, 0)
 				respFind, err = instanceResource.Find(ctx, &pb.FindInstancesRequest{
-					ConsumerServiceId: instanceId8,
+					ConsumerServiceId: serviceId8,
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_with_rev",
 					VersionRule:       "1.0.0",
@@ -915,7 +915,7 @@ var _ = Describe("'Instance' service", func() {
 
 				util.SetContext(ctx, serviceUtil.CTX_REQUEST_REVISION, rev-1)
 				respFind, err = instanceResource.Find(ctx, &pb.FindInstancesRequest{
-					ConsumerServiceId: instanceId8,
+					ConsumerServiceId: serviceId8,
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_with_rev",
 					VersionRule:       "1.0.0",
@@ -928,7 +928,7 @@ var _ = Describe("'Instance' service", func() {
 
 				util.SetContext(ctx, serviceUtil.CTX_REQUEST_REVISION, rev+1)
 				respFind, err = instanceResource.Find(ctx, &pb.FindInstancesRequest{
-					ConsumerServiceId: instanceId8,
+					ConsumerServiceId: serviceId8,
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_with_rev",
 					VersionRule:       "1.0.0",
@@ -941,7 +941,7 @@ var _ = Describe("'Instance' service", func() {
 
 				util.SetContext(ctx, serviceUtil.CTX_REQUEST_REVISION, rev)
 				respFind, err = instanceResource.Find(ctx, &pb.FindInstancesRequest{
-					ConsumerServiceId: instanceId8,
+					ConsumerServiceId: serviceId8,
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_with_rev",
 					VersionRule:       "1.0.0",

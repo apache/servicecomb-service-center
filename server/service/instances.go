@@ -571,7 +571,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		}
 	}
 
-	instances, err := serviceUtil.GetAllInstancesOfServices(ctx, domainProject, ids)
+	instances, err := serviceUtil.GetAllInstancesOfServices(ctx, util.ParseTargetDomainProject(ctx), ids)
 	if err != nil {
 		util.Logger().Errorf(err, "find instance failed, %s: GetAllInstancesOfServices failed.", findFlag)
 		return &pb.FindInstancesResponse{

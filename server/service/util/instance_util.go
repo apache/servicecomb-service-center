@@ -68,10 +68,13 @@ func GetInstance(ctx context.Context, domainProject string, serviceId string, in
 
 func GetAllInstancesOfServices(ctx context.Context, domainProject string, ids []string) (instances []*pb.MicroServiceInstance, err error) {
 	cloneCtx := util.CloneContext(ctx)
-	if ctx.Value(CTX_NOCACHE) == "1" || ctx.Value(CTX_CACHEONLY) == "1" {
-		util.SetContext(cloneCtx, CTX_REQUEST_REVISION, 0)
-	}
+	noCache, cacheOnly := ctx.Value(CTX_NOCACHE) == "1", ctx.Value(CTX_CACHEONLY) == "1"
+
 	rev, _ := cloneCtx.Value(CTX_REQUEST_REVISION).(int64)
+	if !noCache && !cacheOnly && rev > 0 {
+		// force to find in cache at first time when rev > 0
+		util.SetContext(cloneCtx, CTX_CACHEONLY, "1")
+	}
 
 	var (
 		max int64
@@ -94,29 +97,35 @@ func GetAllInstancesOfServices(ctx context.Context, domainProject string, ids []
 			}
 		}
 
-		if rev > 0 && rev == max {
+		if noCache || cacheOnly || rev == 0 {
+			break
+		}
+
+		if rev == max {
 			// return not modified
+			kvs = kvs[:0]
 			break
 		}
 
 		if rev < max || i != 0 {
-			for _, kv := range kvs {
-				instance := &pb.MicroServiceInstance{}
-				err := json.Unmarshal(kv.Value, instance)
-				if err != nil {
-					return nil, fmt.Errorf("unmarshal %s faild, %s",
-						util.BytesToStringWithNoCopy(kv.Key), err.Error())
-				}
-				instances = append(instances, instance)
-			}
 			break
 		}
 
 		kvs = kvs[:0]
-		// find the newest data
+		// find from remote server at second time
 		util.SetContext(util.SetContext(cloneCtx,
-			CTX_REQUEST_REVISION, 0),
+			CTX_CACHEONLY, ""),
 			CTX_NOCACHE, "1")
+	}
+
+	for _, kv := range kvs {
+		instance := &pb.MicroServiceInstance{}
+		err := json.Unmarshal(kv.Value, instance)
+		if err != nil {
+			return nil, fmt.Errorf("unmarshal %s faild, %s",
+				util.BytesToStringWithNoCopy(kv.Key), err.Error())
+		}
+		instances = append(instances, instance)
 	}
 
 	util.SetContext(ctx, CTX_RESPONSE_REVISION, max)

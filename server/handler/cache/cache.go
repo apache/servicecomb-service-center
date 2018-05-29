@@ -46,7 +46,7 @@ func (l *CacheResponse) Handle(i *chain.Invocation) {
 		return
 	}
 
-	if rev != 0 {
+	if rev > 0 {
 		i.WithContext(serviceUtil.CTX_REQUEST_REVISION, rev)
 		return
 	}
