@@ -18,6 +18,7 @@ package access
 
 import (
 	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/validate"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
@@ -33,7 +34,7 @@ func init() {
 }
 
 func Intercept(w http.ResponseWriter, r *http.Request) error {
-	w.Header().Add("server", serverName)
+	w.Header().Add(rest.HEADER_SERVER, serverName)
 
 	r.Body = http.MaxBytesReader(w, r.Body, core.ServerInfo.Config.MaxBodyBytes)
 

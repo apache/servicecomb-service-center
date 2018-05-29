@@ -131,7 +131,7 @@ func (governService *GovernServiceControllerV4) GetGraph(w http.ResponseWriter, 
 		}
 	}
 	graph.Nodes = nodes
-	controller.WriteJsonObject(w, graph)
+	controller.WriteResponse(w, nil, graph)
 }
 
 // GetServiceDetail 查询服务详细信息

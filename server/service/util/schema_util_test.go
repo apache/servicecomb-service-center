@@ -14,22 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package util_test
+package util
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
 	"testing"
 )
 
 func TestCheckSchemaInfoExist(t *testing.T) {
-	_, err := serviceUtil.CheckSchemaInfoExist(util.SetContext(context.Background(), "cacheOnly", "1"), "")
+	_, err := CheckSchemaInfoExist(util.SetContext(context.Background(), CTX_CACHEONLY, "1"), "")
 	if err != nil {
 		t.FailNow()
 	}
 
-	_, err = serviceUtil.CheckSchemaInfoExist(context.Background(), "")
+	_, err = CheckSchemaInfoExist(context.Background(), "")
 	if err == nil {
 		t.FailNow()
 	}

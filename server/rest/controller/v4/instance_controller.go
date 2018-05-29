@@ -18,12 +18,14 @@ package v4
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	"github.com/apache/incubator-servicecomb-service-center/server/rest/controller"
+	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -99,7 +101,7 @@ func (this *MicroServiceInstanceService) HeartbeatSet(w http.ResponseWriter, r *
 	resp, _ := core.InstanceAPI.HeartbeatSet(r.Context(), request)
 
 	if resp.Response.Code == pb.Response_SUCCESS {
-		controller.WriteJsonObject(w, nil)
+		controller.WriteResponse(w, nil, nil)
 		return
 	}
 	respInternal := resp.Response
@@ -136,6 +138,15 @@ func (this *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r 
 	resp, _ := core.InstanceAPI.Find(r.Context(), request)
 	respInternal := resp.Response
 	resp.Response = nil
+
+	iv, _ := r.Context().Value(serviceUtil.CTX_REQUEST_REVISION).(int64)
+	ov, _ := r.Context().Value(serviceUtil.CTX_RESPONSE_REVISION).(int64)
+	w.Header().Set(serviceUtil.HEADER_REV, fmt.Sprint(ov))
+	if iv > 0 && iv == ov {
+		w.WriteHeader(http.StatusNotModified)
+		return
+	}
+
 	controller.WriteResponse(w, respInternal, resp)
 }
 

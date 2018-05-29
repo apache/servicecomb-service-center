@@ -76,5 +76,5 @@ func (this *MainService) ClusterHealth(w http.ResponseWriter, r *http.Request) {
 }
 
 func (this *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
-	controller.WriteBytes(w, versionResp, versionJsonCache)
+	controller.WriteJsonBytes(w, versionResp, versionJsonCache)
 }

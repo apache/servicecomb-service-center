@@ -127,7 +127,7 @@ func (*BrokerController) GetPactsOfProvider(w http.ResponseWriter, r *http.Reque
 	respInternal := resp.Response
 	resp.Response = nil
 	//controller.WriteResponse(w, respInternal, resp.Pact)
-	controller.WriteBytes(w, respInternal, resp.Pact)
+	controller.WriteJsonBytes(w, respInternal, resp.Pact)
 }
 
 func (*BrokerController) DeletePacts(w http.ResponseWriter, r *http.Request) {

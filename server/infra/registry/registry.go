@@ -144,8 +144,7 @@ const (
 )
 
 const (
-	REQUEST_TIMEOUT = 30 * time.Second
-
+	REQUEST_TIMEOUT    = 30 * time.Second
 	DEFAULT_PAGE_COUNT = 4096 // grpc does not allow to transport a large body more then 4MB in a request.
 )
 
@@ -312,6 +311,15 @@ type PluginResponse struct {
 	Count     int64
 	Revision  int64
 	Succeeded bool
+}
+
+func (pr *PluginResponse) MaxModRevision() (max int64) {
+	for _, kv := range pr.Kvs {
+		if max < kv.ModRevision {
+			max = kv.ModRevision
+		}
+	}
+	return
 }
 
 func (pr *PluginResponse) String() string {

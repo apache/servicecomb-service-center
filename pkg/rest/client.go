@@ -174,13 +174,13 @@ func getHttpsClient(gzip, verifyPeer, supplyCert, verifyCN bool) (client *HttpCl
 func (client *HttpClient) getHeaders(method string, headers map[string]string, body interface{}) map[string]string {
 	newHeaders := make(map[string]string)
 	if body != nil {
-		newHeaders["Content-Type"] = "application/json;utf-8"
-		newHeaders["Accept"] = "application/json"
+		newHeaders[HEADER_CONTENT_TYPE] = CONTENT_TYPE_JSON
+		newHeaders[HEADER_ACCEPT] = ACCEPT_JSON
 	}
 
 	if client.gzip {
-		newHeaders["Accept-Encoding"] = "gzip"
-		newHeaders["Content-Encoding"] = "gzip"
+		newHeaders[HEADER_ACCEPT_ENCODING] = ENCODING_GZIP
+		newHeaders[HEADER_CONTENT_ENCODING] = ENCODING_GZIP
 	}
 
 	if headers != nil {
@@ -228,7 +228,7 @@ func (client *HttpClient) httpDo(method string, url string, headers map[string]s
 	var err error = nil
 	var bodyReader io.Reader = nil
 	if body != nil {
-		if headers == nil || len(headers["Content-Type"]) == 0 {
+		if headers == nil || len(headers[HEADER_CONTENT_TYPE]) == 0 {
 			// 如果请求头未传入Content-Type，则按照json格式进行编码（如果是非json类型，需要自行在headers里指定类型）
 			bodyBytes, err = json.Marshal(body)
 			if err != nil {
@@ -240,13 +240,13 @@ func (client *HttpClient) httpDo(method string, url string, headers map[string]s
 			var ok bool = false
 			bodyBytes, ok = body.([]byte)
 			if !ok {
-				util.Logger().Errorf(nil, "invalid body type '%s'(%s), body must type of byte array if Content-Type specified.", reflect.TypeOf(body), headers["Content-Type"])
+				util.Logger().Errorf(nil, "invalid body type '%s'(%s), body must type of byte array if Content-Type specified.", reflect.TypeOf(body), headers[HEADER_CONTENT_TYPE])
 				return status, result
 			}
 		}
 
 		//如果配置了gzip压缩，则对body压缩一次(如果请求头里传入已经gzip压缩了，则不重复压缩)
-		if client.gzip && (headers == nil || headers["Content-Encoding"] != "gzip") {
+		if client.gzip && (headers == nil || headers[HEADER_CONTENT_ENCODING] != ENCODING_GZIP) {
 			bodyBytes = gzipCompress(bodyBytes)
 		}
 
@@ -273,7 +273,7 @@ func (client *HttpClient) httpDo(method string, url string, headers map[string]s
 	defer resp.Body.Close()
 	status = resp.StatusCode
 	var respBody []byte
-	if resp.Header.Get("Content-Encoding") == "gzip" {
+	if resp.Header.Get(HEADER_CONTENT_ENCODING) == ENCODING_GZIP {
 		// 如果响应头里包含了响应消息的压缩格式为gzip，则在返回前先解压缩
 		respBody, _ = readAndGunzip(resp.Body)
 	} else {
@@ -289,7 +289,7 @@ func (client *HttpClient) HttpDo(method string, url string, headers map[string]s
 	var err error = nil
 	var bodyReader io.Reader = nil
 	if body != nil {
-		if headers == nil || len(headers["Content-Type"]) == 0 {
+		if headers == nil || len(headers[HEADER_CONTENT_TYPE]) == 0 {
 			// 如果请求头未传入Conent-Type，则按照json格式进行编码（如果是非json类型，需要自行在headers里指定类型）
 			bodyBytes, err = json.Marshal(body)
 			if err != nil {
@@ -302,14 +302,14 @@ func (client *HttpClient) HttpDo(method string, url string, headers map[string]s
 			bodyBytes, ok = body.([]byte)
 			if !ok {
 				err := fmt.Errorf("invalid body type '%s'(%s), body must type of byte array if Content-Type specified.",
-					reflect.TypeOf(body), headers["Content-Type"])
+					reflect.TypeOf(body), headers[HEADER_CONTENT_TYPE])
 				util.Logger().Errorf(err, "")
 				return nil, err
 			}
 		}
 
 		//如果配置了gzip压缩，则对body压缩一次(如果请求头里传入已经gzip压缩了，则不重复压缩)
-		if client.gzip && (headers == nil || headers["Content-Encoding"] != "gzip") {
+		if client.gzip && (headers == nil || headers[HEADER_CONTENT_ENCODING] != ENCODING_GZIP) {
 			bodyBytes = gzipCompress(bodyBytes)
 		}
 

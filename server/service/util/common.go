@@ -16,27 +16,10 @@
  */
 package util
 
-import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"golang.org/x/net/context"
-	"testing"
+const (
+	HEADER_REV            = "X-Resource-Revision"
+	CTX_NOCACHE           = "noCache"
+	CTX_CACHEONLY         = "cacheOnly"
+	CTX_REQUEST_REVISION  = "requestRev"
+	CTX_RESPONSE_REVISION = "responseRev"
 )
-
-func TestAddTagIntoETCD(t *testing.T) {
-	err := AddTagIntoETCD(context.Background(), "", "", map[string]string{"a": "1"})
-	if err == nil {
-		t.Fatalf(`AddTagIntoETCD with {"a": "1"} tags failed`)
-	}
-}
-
-func TestGetTagsUtils(t *testing.T) {
-	_, err := GetTagsUtils(util.SetContext(context.Background(), CTX_CACHEONLY, "1"), "", "")
-	if err != nil {
-		t.Fatalf(`GetTagsUtils WithCacheOnly failed`)
-	}
-
-	_, err = GetTagsUtils(context.Background(), "", "")
-	if err == nil {
-		t.Fatalf(`GetTagsUtils failed`)
-	}
-}

@@ -45,19 +45,19 @@ func TestMicroservice(t *testing.T) {
 }
 
 func TestFindServiceIds(t *testing.T) {
-	_, err := serviceUtil.FindServiceIds(util.SetContext(context.Background(), "cacheOnly", "1"),
+	_, err := serviceUtil.FindServiceIds(util.SetContext(context.Background(), serviceUtil.CTX_CACHEONLY, "1"),
 		"latest", &proto.MicroServiceKey{})
 	if err != nil {
 		t.FailNow()
 	}
 
-	_, err = serviceUtil.FindServiceIds(util.SetContext(context.Background(), "cacheOnly", "1"),
+	_, err = serviceUtil.FindServiceIds(util.SetContext(context.Background(), serviceUtil.CTX_CACHEONLY, "1"),
 		"1.0.0", &proto.MicroServiceKey{})
 	if err != nil {
 		t.FailNow()
 	}
 
-	_, err = serviceUtil.FindServiceIds(util.SetContext(context.Background(), "cacheOnly", "1"),
+	_, err = serviceUtil.FindServiceIds(util.SetContext(context.Background(), serviceUtil.CTX_CACHEONLY, "1"),
 		"1.0+", &proto.MicroServiceKey{Alias: "test"})
 	if err != nil {
 		t.FailNow()
@@ -65,7 +65,7 @@ func TestFindServiceIds(t *testing.T) {
 }
 
 func TestGetService(t *testing.T) {
-	_, err := serviceUtil.GetService(util.SetContext(context.Background(), "cacheOnly", "1"), "", "")
+	_, err := serviceUtil.GetService(util.SetContext(context.Background(), serviceUtil.CTX_CACHEONLY, "1"), "", "")
 	if err != nil {
 		t.FailNow()
 	}
@@ -75,7 +75,7 @@ func TestGetService(t *testing.T) {
 		t.FailNow()
 	}
 
-	_, err = serviceUtil.GetServicesRawData(util.SetContext(context.Background(), "cacheOnly", "1"), "")
+	_, err = serviceUtil.GetServicesRawData(util.SetContext(context.Background(), serviceUtil.CTX_CACHEONLY, "1"), "")
 	if err != nil {
 		t.FailNow()
 	}
@@ -85,7 +85,7 @@ func TestGetService(t *testing.T) {
 		t.FailNow()
 	}
 
-	_, err = serviceUtil.GetServicesByDomain(util.SetContext(context.Background(), "cacheOnly", "1"), "")
+	_, err = serviceUtil.GetServicesByDomain(util.SetContext(context.Background(), serviceUtil.CTX_CACHEONLY, "1"), "")
 	if err != nil {
 		t.FailNow()
 	}
@@ -95,7 +95,7 @@ func TestGetService(t *testing.T) {
 		t.FailNow()
 	}
 
-	_, err = serviceUtil.GetAllServiceUtil(util.SetContext(context.Background(), "cacheOnly", "1"))
+	_, err = serviceUtil.GetAllServiceUtil(util.SetContext(context.Background(), serviceUtil.CTX_CACHEONLY, "1"))
 	if err != nil {
 		t.FailNow()
 	}
@@ -117,7 +117,7 @@ func TestGetService(t *testing.T) {
 }
 
 func TestFromContext(t *testing.T) {
-	ctx := context.WithValue(context.Background(), "noCache", "1")
+	ctx := context.WithValue(context.Background(), serviceUtil.CTX_NOCACHE, "1")
 	opts := serviceUtil.FromContext(ctx)
 	if len(opts) == 0 {
 		t.FailNow()
@@ -128,7 +128,7 @@ func TestFromContext(t *testing.T) {
 		t.FailNow()
 	}
 
-	ctx = context.WithValue(context.Background(), "cacheOnly", "1")
+	ctx = context.WithValue(context.Background(), serviceUtil.CTX_CACHEONLY, "1")
 	opts = serviceUtil.FromContext(ctx)
 	if len(opts) == 0 {
 		t.FailNow()
@@ -146,7 +146,7 @@ func TestServiceExist(t *testing.T) {
 			t.FailNow()
 		}
 	}()
-	serviceUtil.ServiceExist(util.SetContext(context.Background(), "cacheOnly", "1"), "", "")
+	serviceUtil.ServiceExist(util.SetContext(context.Background(), serviceUtil.CTX_CACHEONLY, "1"), "", "")
 }
 
 func TestRemandQuota(t *testing.T) {
@@ -164,7 +164,7 @@ func TestSetDefault(t *testing.T) {
 }
 
 func TestGetOneDomainProjectServiceCount(t *testing.T) {
-	_, err := serviceUtil.GetOneDomainProjectServiceCount(util.SetContext(context.Background(), "cacheOnly", "1"), "")
+	_, err := serviceUtil.GetOneDomainProjectServiceCount(util.SetContext(context.Background(), serviceUtil.CTX_CACHEONLY, "1"), "")
 	if err != nil {
 		t.Fatalf("GetOneDomainProjectServiceCount WithCacheOnly failed")
 	}
@@ -176,7 +176,7 @@ func TestGetOneDomainProjectServiceCount(t *testing.T) {
 }
 
 func TestGetOneDomainProjectInstanceCount(t *testing.T) {
-	_, err := serviceUtil.GetOneDomainProjectInstanceCount(util.SetContext(context.Background(), "cacheOnly", "1"), "")
+	_, err := serviceUtil.GetOneDomainProjectInstanceCount(util.SetContext(context.Background(), serviceUtil.CTX_CACHEONLY, "1"), "")
 	if err != nil {
 		t.Fatalf("GetOneDomainProjectInstanceCount WithCacheOnly failed")
 	}

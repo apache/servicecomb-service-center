@@ -35,7 +35,7 @@ func (h *TracingHandler) Handle(i *chain.Invocation) {
 	span := plugin.Plugins().Tracing().ServerBegin(op, r)
 
 	i.Next(chain.WithAsyncFunc(func(ret chain.Result) {
-		statusCode := w.Header().Get("X-Response-Status")
+		statusCode := w.Header().Get(rest.HEADER_RESPONSE_STATUS)
 		code, _ := strconv.ParseInt(statusCode, 10, 64)
 		if code == 0 {
 			code = 200

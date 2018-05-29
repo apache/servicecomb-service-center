@@ -24,6 +24,7 @@ import (
 	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/tracing/buildin"
 	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/uuid/buildin"
 	"github.com/apache/incubator-servicecomb-service-center/server/service"
+	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
@@ -42,7 +43,7 @@ var _ = BeforeSuite(func() {
 func getContext() context.Context {
 	return util.SetContext(
 		util.SetDomainProject(context.Background(), "default", "default"),
-		"noCache", "1")
+		serviceUtil.CTX_NOCACHE, "1")
 }
 
 func TestGrpc(t *testing.T) {

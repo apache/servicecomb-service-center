@@ -58,7 +58,7 @@ func GetConsumerIdsByProvider(ctx context.Context, domainProject string, provide
 	}
 
 	//todo 删除服务，最后实例推送有误差
-	providerRules, err := GetRulesUtil(util.SetContext(util.CloneContext(ctx), "cacheOnly", "1"),
+	providerRules, err := GetRulesUtil(util.SetContext(util.CloneContext(ctx), CTX_CACHEONLY, "1"),
 		domainProject, provider.ServiceId)
 	if err != nil {
 		return nil, nil, err
@@ -128,7 +128,7 @@ func GetProviderIdsByConsumer(ctx context.Context, domainProject string, service
 	}
 	allowIdx, denyIdx := 0, l
 	providerIds := make([]string, l)
-	copyCtx := util.SetContext(util.CloneContext(ctx), "cacheOnly", "1")
+	copyCtx := util.SetContext(util.CloneContext(ctx), CTX_CACHEONLY, "1")
 	for _, providerId := range providerIdsInCache {
 		provider, err := GetService(ctx, domainProject, providerId)
 		if provider == nil {

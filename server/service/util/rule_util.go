@@ -38,7 +38,7 @@ type RuleFilter struct {
 }
 
 func (rf *RuleFilter) Filter(ctx context.Context, consumerId string) (bool, error) {
-	copyCtx := util.SetContext(util.CloneContext(ctx), "cacheOnly", "1")
+	copyCtx := util.SetContext(util.CloneContext(ctx), CTX_CACHEONLY, "1")
 	consumer, err := GetService(copyCtx, rf.DomainProject, consumerId)
 	if consumer == nil {
 		return false, err
@@ -225,7 +225,7 @@ func patternBlackList(rulesOfProvider []*pb.ServiceRule, tagsOfConsumer map[stri
 
 		match, _ := regexp.MatchString(rule.Pattern, value)
 		if match {
-			util.Logger().Infof("no permission to access, consumer %s match black list, rule.Pattern is %s, value is %s",
+			util.Logger().Warnf(nil, "no permission to access, consumer %s match black list, rule.Pattern is %s, value is %s",
 				consumerId, rule.Pattern, value)
 			return scerr.NewError(scerr.ErrPermissionDeny, "Found in black list")
 		}
@@ -259,7 +259,7 @@ func Accessible(ctx context.Context, consumerId string, providerId string) *scer
 		return scerr.NewError(scerr.ErrPermissionDeny, err.Error())
 	}
 
-	ctx = util.SetContext(util.CloneContext(ctx), "cacheOnly", "1")
+	ctx = util.SetContext(util.CloneContext(ctx), CTX_CACHEONLY, "1")
 
 	// 黑白名单
 	rules, err := GetRulesUtil(ctx, targetDomainProject, providerId)

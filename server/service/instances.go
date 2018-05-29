@@ -382,8 +382,13 @@ func getHeartbeatFunc(ctx context.Context, domainProject string, instancesHbRst 
 }
 
 func (s *InstanceService) GetOneInstance(ctx context.Context, in *pb.GetOneInstanceRequest) (*pb.GetOneInstanceResponse, error) {
-	checkErr := s.getInstancePreCheck(ctx, in)
-	if checkErr != nil {
+	if err := apt.Validate(in); err != nil {
+		util.Logger().Errorf(err, "get instance failed: invalid parameters.")
+		return &pb.GetOneInstanceResponse{
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+		}, nil
+	}
+	if checkErr := s.getInstancePreCheck(ctx, in.ProviderServiceId, in.ConsumerServiceId, in.Tags); checkErr != nil {
 		util.Logger().Errorf(checkErr, "get instance failed: pre check failed.")
 		resp := &pb.GetOneInstanceResponse{
 			Response: pb.CreateResponseWithSCErr(checkErr),
@@ -417,26 +422,8 @@ func (s *InstanceService) GetOneInstance(ctx context.Context, in *pb.GetOneInsta
 	}, nil
 }
 
-func (s *InstanceService) getInstancePreCheck(ctx context.Context, in interface{}) *scerr.Error {
-	err := apt.Validate(in)
-	if err != nil {
-		return scerr.NewError(scerr.ErrInvalidParams, err.Error())
-	}
+func (s *InstanceService) getInstancePreCheck(ctx context.Context, providerServiceId, consumerServiceId string, tags []string) *scerr.Error {
 	targetDomainProject := util.ParseTargetDomainProject(ctx)
-	var providerServiceId, consumerServiceId string
-	var tags []string
-
-	switch in.(type) {
-	case *pb.GetOneInstanceRequest:
-		providerServiceId = in.(*pb.GetOneInstanceRequest).ProviderServiceId
-		consumerServiceId = in.(*pb.GetOneInstanceRequest).ConsumerServiceId
-		tags = in.(*pb.GetOneInstanceRequest).Tags
-	case *pb.GetInstancesRequest:
-		providerServiceId = in.(*pb.GetInstancesRequest).ProviderServiceId
-		consumerServiceId = in.(*pb.GetInstancesRequest).ConsumerServiceId
-		tags = in.(*pb.GetInstancesRequest).Tags
-	}
-
 	if !serviceUtil.ServiceExist(ctx, targetDomainProject, providerServiceId) {
 		return scerr.NewError(scerr.ErrServiceNotExists, "Provider serviceId is invalid")
 	}
@@ -458,18 +445,17 @@ func (s *InstanceService) getInstancePreCheck(ctx context.Context, in interface{
 	}
 	// 黑白名单
 	// 跨应用调用
-	forbid := serviceUtil.Accessible(ctx, consumerServiceId, providerServiceId)
-	if forbid != nil {
-		util.Logger().Errorf(forbid,
-			"consumer %s can't access provider %s", consumerServiceId, providerServiceId)
-		return forbid
-	}
-	return nil
+	return serviceUtil.Accessible(ctx, consumerServiceId, providerServiceId)
 }
 
 func (s *InstanceService) GetInstances(ctx context.Context, in *pb.GetInstancesRequest) (*pb.GetInstancesResponse, error) {
-	checkErr := s.getInstancePreCheck(ctx, in)
-	if checkErr != nil {
+	if err := apt.Validate(in); err != nil {
+		util.Logger().Errorf(err, "get instances failed: invalid parameters.")
+		return &pb.GetInstancesResponse{
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+		}, nil
+	}
+	if checkErr := s.getInstancePreCheck(ctx, in.ProviderServiceId, in.ConsumerServiceId, in.Tags); checkErr != nil {
 		util.Logger().Errorf(checkErr, "get instances failed: pre check failed.")
 		resp := &pb.GetInstancesResponse{
 			Response: pb.CreateResponseWithSCErr(checkErr),
@@ -546,6 +532,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 			Response: pb.CreateResponse(scerr.ErrInternal, "Get serviceId failed."),
 		}, err
 	}
+
 	if len(ids) == 0 {
 		mes := fmt.Sprintf("provider not exist, %s", findFlag)
 		util.Logger().Errorf(nil, "find instance failed, %s", mes)
@@ -554,48 +541,43 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		}, nil
 	}
 
-	instances := make([]*pb.MicroServiceInstance, 0, 10)
-	cloneCtx := ctx
-	if s, ok := ctx.Value("noCache").(string); !ok || s != "1" {
-		cloneCtx = util.SetContext(util.CloneContext(ctx), "cacheOnly", "1")
-	}
-	for _, serviceId := range ids {
-		resp, err := s.GetInstances(cloneCtx, &pb.GetInstancesRequest{
-			ConsumerServiceId: in.ConsumerServiceId,
-			ProviderServiceId: serviceId,
-			Tags:              in.Tags,
-		})
+	for i := 0; i < len(ids); i++ {
+		err := s.getInstancePreCheck(ctx, ids[i], in.ConsumerServiceId, in.Tags)
 		if err != nil {
-			util.Logger().Errorf(err, "find instance failed, %s: get service %s 's instance failed.", findFlag, serviceId)
+			ids = append(ids[:i], ids[i+1:]...)
+			i--
+		}
+	}
+
+	if len(ids) > 0 {
+		//维护version的规则,service name 可能是别名，所以重新获取
+		providerService, err := serviceUtil.GetService(ctx, provider.Tenant, ids[0])
+		if providerService == nil {
+			util.Logger().Errorf(err, "find instance failed, %s: provider %s not exist.", findFlag, ids[0])
 			return &pb.FindInstancesResponse{
-				Response: resp.Response,
+				Response: pb.CreateResponse(scerr.ErrServiceNotExists, "No provider matched."),
+			}, nil
+		}
+
+		provider = pb.MicroServiceToKey(provider.Tenant, providerService)
+		provider.Version = in.VersionRule
+
+		err = serviceUtil.AddServiceVersionRule(ctx, domainProject, service, provider)
+		if err != nil {
+			util.Logger().Errorf(err, "find instance failed, %s: add service version rule failed.", findFlag)
+			return &pb.FindInstancesResponse{
+				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 			}, err
 		}
-		if len(resp.GetInstances()) > 0 {
-			instances = append(instances, resp.GetInstances()...)
-		}
 	}
 
-	//维护version的规则,service name 可能是别名，所以重新获取
-	providerService, err := serviceUtil.GetService(ctx, provider.Tenant, ids[0])
-	if providerService == nil {
-		util.Logger().Errorf(err, "find instance failed, %s: provider %s not exist.", findFlag, ids[0])
-		return &pb.FindInstancesResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "No provider matched."),
-		}, nil
-	}
-
-	provider = pb.MicroServiceToKey(provider.Tenant, providerService)
-	provider.Version = in.VersionRule
-
-	err = serviceUtil.AddServiceVersionRule(ctx, domainProject, service, provider)
+	instances, err := serviceUtil.GetAllInstancesOfServices(ctx, util.ParseTargetDomainProject(ctx), ids)
 	if err != nil {
-		util.Logger().Errorf(err, "find instance failed, %s: add service version rule failed.", findFlag)
+		util.Logger().Errorf(err, "find instance failed, %s: GetAllInstancesOfServices failed.", findFlag)
 		return &pb.FindInstancesResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
-
 	return &pb.FindInstancesResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Query service instances successfully."),
 		Instances: instances,
