@@ -218,6 +218,13 @@ func TestBadParamsResponse(t *testing.T) {
 	}
 }
 
+func TestDependencyRuleExistUtil(t *testing.T) {
+	_, err := dependencyRuleExistUtil(context.Background(), "", &proto.MicroServiceKey{})
+	if err == nil {
+		t.Fatalf(`dependencyRuleExistUtil failed`)
+	}
+}
+
 func TestParamsChecker(t *testing.T) {
 	p := ParamsChecker(nil, nil)
 	if p == nil || p.Response.Code == proto.Response_SUCCESS {
