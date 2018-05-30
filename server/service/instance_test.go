@@ -24,6 +24,7 @@ import (
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"math"
 	"os"
 )
 
@@ -110,12 +111,12 @@ var _ = Describe("'Instance' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 
-				instance.InstanceId = ""
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: instance,
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.InstanceId).To(Equal(instance.InstanceId))
 			})
 		})
 
@@ -163,6 +164,18 @@ var _ = Describe("'Instance' service", func() {
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						ServiceId: serviceId1,
+						Endpoints: []string{
+							"check:127.0.0.1:8080",
+						},
+						Status: pb.MSI_UP,
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+					Instance: &pb.MicroServiceInstance{
+						ServiceId: serviceId1,
+						HostName:  " ",
 						Endpoints: []string{
 							"check:127.0.0.1:8080",
 						},
@@ -251,6 +264,24 @@ var _ = Describe("'Instance' service", func() {
 							Interval: 30,
 							Times:    1,
 							Url:      "*",
+						},
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+					Instance: &pb.MicroServiceInstance{
+						ServiceId: serviceId1,
+						Endpoints: []string{
+							"checkpull:127.0.0.1:8081",
+						},
+						HostName: "UT-HOST",
+						Status:   pb.MSI_UP,
+						HealthCheck: &pb.HealthCheck{
+							Mode:     "pull",
+							Interval: 30,
+							Times:    1,
+							Port:     math.MaxUint16 + 1,
 						},
 					},
 				})

@@ -350,7 +350,7 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 					opts := schemaWithDatabaseOpera(registry.OpPut, domainProject, serviceId, needUpdateSchema)
 					pluginOps = append(pluginOps, opts...)
 				} else {
-					util.Logger().Warnf(nil, "schema and summary more existed, skip,serviceId %s, schemaId %s", serviceId, needUpdateSchema.SchemaId)
+					util.Logger().Warnf(nil, "schema and summary already exist, skip,serviceId %s, schemaId %s", serviceId, needUpdateSchema.SchemaId)
 				}
 			}
 		}
@@ -572,8 +572,8 @@ func (s *MicroServiceService) modifySchema(ctx context.Context, serviceId string
 
 		if respSchema.Count != 0 {
 			if len(schema.Summary) == 0 {
-				util.Logger().Errorf(err, "prod mode, schema more exist, can not change, %s %s", serviceId, schemaId)
-				return scerr.NewError(scerr.ErrModifySchemaNotAllow, "schema more exist, can not change, environment is production")
+				util.Logger().Errorf(err, "prod mode, schema already exist, can not change, %s %s", serviceId, schemaId)
+				return scerr.NewError(scerr.ErrModifySchemaNotAllow, "schema already exist, can not change, environment is production")
 			}
 
 			exist, err := isExistSchemaSummary(ctx, domainProject, serviceId, schemaId)
@@ -582,8 +582,8 @@ func (s *MicroServiceService) modifySchema(ctx context.Context, serviceId string
 				return scerr.NewError(scerr.ErrInternal, "check schema summary existence failed")
 			}
 			if exist {
-				util.Logger().Errorf(err, "prod mode, schema more exist, can not change, %s %s", serviceId, schemaId)
-				return scerr.NewError(scerr.ErrModifySchemaNotAllow, "schema more exist, can not change, environment is production")
+				util.Logger().Errorf(err, "prod mode, schema already exist, can not change, %s %s", serviceId, schemaId)
+				return scerr.NewError(scerr.ErrModifySchemaNotAllow, "schema already exist, can not change, environment is production")
 			}
 		}
 

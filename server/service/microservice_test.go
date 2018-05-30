@@ -320,8 +320,23 @@ var _ = Describe("'Micro-service' service", func() {
 
 		Context("when service body is invalid", func() {
 			It("should be failed", func() {
-				By("invalid appId")
+				By("invalid serviceId")
 				r := &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceId:   " ",
+						AppId:       "default",
+						ServiceName: "service-validate",
+						Version:     "1.0.0",
+						Level:       "BACK",
+						Status:      "UP",
+					},
+				}
+				resp, err := serviceResource.Create(getContext(), r)
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
+
+				By("invalid appId")
+				r = &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
 						AppId:       TOO_LONG_APPID,
 						ServiceName: "service-validate",
@@ -330,7 +345,7 @@ var _ = Describe("'Micro-service' service", func() {
 						Status:      "UP",
 					},
 				}
-				resp, err := serviceResource.Create(getContext(), r)
+				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
 

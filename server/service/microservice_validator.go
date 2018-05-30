@@ -45,7 +45,7 @@ var (
 	pathRegex, _       = regexp.Compile(`^[A-Za-z0-9.,?'\\/+&amp;%$#=~_\-@{}]*$`)
 	levelRegex, _      = regexp.Compile(`^(FRONT|MIDDLE|BACK)$`)
 	statusRegex, _     = regexp.Compile("^(" + pb.MS_UP + "|" + pb.MS_DOWN + ")?$")
-	serviceIdRegex, _  = regexp.Compile(`^.*$`)
+	serviceIdRegex, _  = regexp.Compile(`^\S*$`)
 	aliasRegex, _      = regexp.Compile(`^[a-zA-Z0-9_\-.:]*$`)
 	registerByRegex, _ = regexp.Compile("^(" + util.StringJoin([]string{pb.REGISTERBY_SDK, pb.REGISTERBY_SIDECAR}, "|") + ")*$")
 	envRegex, _        = regexp.Compile("^(" + util.StringJoin([]string{

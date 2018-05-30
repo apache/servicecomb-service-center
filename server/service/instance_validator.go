@@ -38,7 +38,7 @@ var (
 	updateInstStatusRegex, _ = regexp.Compile("^(" + util.StringJoin([]string{
 		pb.MSI_UP, pb.MSI_DOWN, pb.MSI_STARTING, pb.MSI_OUTOFSERVICE}, "|") + ")$")
 	hbModeRegex, _               = regexp.Compile(`^(push|pull)$`)
-	epRegex, _                   = regexp.Compile(`.+`)
+	epRegex, _                   = regexp.Compile(`\S+`)
 	simpleNameAllowEmptyRegex, _ = regexp.Compile(`^[A-Za-z0-9_.-]*$`)
 	simpleNameRegex, _           = regexp.Compile(`^[A-Za-z0-9_.-]+$`)
 	regionRegex, _               = regexp.Compile(`^[A-Za-z0-9_.-]+$`)
@@ -75,7 +75,7 @@ func RegisterInstanceReqValidator() *validate.Validator {
 	return registerInstanceReqValidator.Init(func(v *validate.Validator) {
 		var healthCheckInfoValidator validate.Validator
 		healthCheckInfoValidator.AddRule("Mode", &validate.ValidateRule{Regexp: hbModeRegex})
-		healthCheckInfoValidator.AddRule("Port", &validate.ValidateRule{Max: math.MaxInt16})
+		healthCheckInfoValidator.AddRule("Port", &validate.ValidateRule{Max: math.MaxUint16, Min: 0})
 		healthCheckInfoValidator.AddRule("Times", &validate.ValidateRule{Max: math.MaxInt32})
 		healthCheckInfoValidator.AddRule("Interval", &validate.ValidateRule{Min: 1, Max: math.MaxInt32})
 		healthCheckInfoValidator.AddRule("Url", &validate.ValidateRule{Regexp: urlRegex})
@@ -89,7 +89,7 @@ func RegisterInstanceReqValidator() *validate.Validator {
 		microServiceInstanceValidator.AddRule("InstanceId", &validate.ValidateRule{Max: 64, Regexp: simpleNameAllowEmptyRegex})
 		microServiceInstanceValidator.AddRule("ServiceId", GetServiceReqValidator().GetRule("ServiceId"))
 		microServiceInstanceValidator.AddRule("Endpoints", &validate.ValidateRule{Regexp: epRegex})
-		microServiceInstanceValidator.AddRule("HostName", &validate.ValidateRule{Max: 64, Min: 1})
+		microServiceInstanceValidator.AddRule("HostName", &validate.ValidateRule{Max: 64, Min: 1, Regexp: epRegex})
 		microServiceInstanceValidator.AddSub("HealthCheck", &healthCheckInfoValidator)
 		microServiceInstanceValidator.AddRule("Status", &validate.ValidateRule{Regexp: instStatusRegex})
 		microServiceInstanceValidator.AddSub("DataCenterInfo", &dataCenterInfoValidator)
