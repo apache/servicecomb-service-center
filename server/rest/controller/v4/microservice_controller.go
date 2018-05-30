@@ -26,8 +26,9 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/rest/controller"
 	"io/ioutil"
 	"net/http"
-	"strings"
 )
+
+var trueOrFalse = map[string]bool{"true": true, "false": false, "1": true, "0": false}
 
 type MicroServiceService struct {
 	//
@@ -86,15 +87,18 @@ func (this *MicroServiceService) Update(w http.ResponseWriter, r *http.Request) 
 }
 
 func (this *MicroServiceService) Unregister(w http.ResponseWriter, r *http.Request) {
-	force := r.URL.Query().Get("force")
 	serviceId := r.URL.Query().Get(":serviceId")
-	if force != "false" && force != "true" && strings.TrimSpace(force) != "" {
+	force := r.URL.Query().Get("force")
+
+	b, ok := trueOrFalse[force]
+	if force != "" && !ok {
 		controller.WriteError(w, scerr.ErrInvalidParams, "parameter force must be false or true")
 		return
 	}
+
 	request := &pb.DeleteServiceRequest{
 		ServiceId: serviceId,
-		Force:     force == "true",
+		Force:     b,
 	}
 	resp, _ := core.ServiceAPI.Delete(r.Context(), request)
 	controller.WriteResponse(w, resp.Response, nil)
