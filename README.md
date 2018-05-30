@@ -136,7 +136,11 @@ frontend_host_port=30103
 ```
 
 You can follow the guide over [here](frontend/Readme.md#running-ui-from-source-code) to run the Frontend from source.
-      
+
+## Get The Latest Release
+
+[Download Service Center](http://servicecomb.incubator.apache.org/release/service-center-downloads/)
+
 ## Contact
 
 Bugs: [issues](https://issues.apache.org/jira/browse/SCB)
