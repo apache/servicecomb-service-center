@@ -318,7 +318,7 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 	needUpdateSchemas, needAddSchemas, nonExistSchemaIds := schemasAnalysis(schemas, schemasFromDatabase, service.Schemas)
 
 	pluginOps := make([]registry.PluginOp, 0)
-	if service.Environment == pb.ENV_PROD {
+	if len(service.Environment) == 0 || service.Environment == pb.ENV_PROD {
 		if len(service.Schemas) == 0 {
 			res := quota.NewApplyQuotaResource(quota.SchemaQuotaType, domainProject, serviceId, int64(len(schemas)))
 			rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
@@ -558,7 +558,7 @@ func (s *MicroServiceService) modifySchema(ctx context.Context, serviceId string
 	pluginOps := make([]registry.PluginOp, 0, 10)
 	isExist := isExistSchemaId(service, []*pb.Schema{schema})
 
-	if service.Environment == pb.ENV_PROD {
+	if len(service.Environment) == 0 || service.Environment == pb.ENV_PROD {
 		if len(service.Schemas) != 0 && !isExist {
 			return scerr.NewError(scerr.ErrUndefinedSchemaId, "schemaId non-exist， can't be added, environment is production")
 		}
@@ -611,7 +611,7 @@ func (s *MicroServiceService) modifySchema(ctx context.Context, serviceId string
 	opts := CommitSchemaInfo(domainProject, serviceId, schema)
 	pluginOps = append(pluginOps, opts...)
 
-	_, err = backend.Registry().Txn(ctx, pluginOps)
+	err = backend.BatchCommit(ctx, pluginOps)
 	if err != nil {
 		util.Logger().Errorf(err, "commit update schema failed, serviceId %s, schemaId %s", serviceId, schemaId)
 		return scerr.NewError(scerr.ErrInternal, "commit update schema failed")

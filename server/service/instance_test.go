@@ -26,6 +26,13 @@ import (
 	. "github.com/onsi/gomega"
 	"math"
 	"os"
+	"strconv"
+	"strings"
+)
+
+var (
+	TOO_LONG_HOSTNAME = strings.Repeat("x", 65)
+	TOO_LONG_URL      = strings.Repeat("x", 513)
 )
 
 var _ = Describe("'Instance' service", func() {
@@ -92,6 +99,39 @@ var _ = Describe("'Instance' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 				Expect(resp.InstanceId).To(Not(Equal("")))
+
+				By("all max")
+				size := 1000
+				var eps []string
+				properties := make(map[string]string, size)
+				for i := 0; i < size; i++ {
+					s := strconv.Itoa(i) + strings.Repeat("x", 253)
+					eps = append(eps, s)
+					properties[s] = s
+				}
+				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+					Instance: &pb.MicroServiceInstance{
+						ServiceId:  serviceId1,
+						Endpoints:  eps,
+						HostName:   TOO_LONG_HOSTNAME[:len(TOO_LONG_HOSTNAME)-1],
+						Properties: properties,
+						HealthCheck: &pb.HealthCheck{
+							Mode:     "pull",
+							Port:     math.MaxUint16,
+							Interval: math.MaxInt32,
+							Times:    math.MaxInt32,
+							Url:      TOO_LONG_URL[:len(TOO_LONG_URL)-1],
+						},
+						DataCenterInfo: &pb.DataCenterInfo{
+							Name:          TOO_LONG_SERVICENAME[:len(TOO_LONG_SERVICENAME)-1],
+							Region:        TOO_LONG_SERVICENAME[:len(TOO_LONG_SERVICENAME)-1],
+							AvailableZone: TOO_LONG_SERVICENAME[:len(TOO_LONG_SERVICENAME)-1],
+						},
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.InstanceId).To(Not(Equal("")))
 			})
 		})
 
@@ -131,7 +171,17 @@ var _ = Describe("'Instance' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
+				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+					Instance: &pb.MicroServiceInstance{
+						ServiceId: serviceId1,
+						Endpoints: []string{""},
+						HostName:  "UT-HOST",
+						Status:    pb.MSI_UP,
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
 
 				By("serviceId is empty")
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
@@ -176,6 +226,18 @@ var _ = Describe("'Instance' service", func() {
 					Instance: &pb.MicroServiceInstance{
 						ServiceId: serviceId1,
 						HostName:  " ",
+						Endpoints: []string{
+							"check:127.0.0.1:8080",
+						},
+						Status: pb.MSI_UP,
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+					Instance: &pb.MicroServiceInstance{
+						ServiceId: serviceId1,
+						HostName:  TOO_LONG_HOSTNAME,
 						Endpoints: []string{
 							"check:127.0.0.1:8080",
 						},
@@ -248,7 +310,7 @@ var _ = Describe("'Instance' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
 
 				By("check invalid pull healthChceck")
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
@@ -263,12 +325,29 @@ var _ = Describe("'Instance' service", func() {
 							Mode:     "pull",
 							Interval: 30,
 							Times:    1,
-							Url:      "*",
+							Url:      " ",
 						},
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
+				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+					Instance: &pb.MicroServiceInstance{
+						ServiceId: serviceId1,
+						Endpoints: []string{
+							"checkpull:127.0.0.1:8081",
+						},
+						HostName: "UT-HOST",
+						Status:   pb.MSI_UP,
+						HealthCheck: &pb.HealthCheck{
+							Mode:     "pull",
+							Interval: 0,
+							Times:    0,
+						},
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						ServiceId: serviceId1,
@@ -286,7 +365,7 @@ var _ = Describe("'Instance' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
 
 				By("invalid status")
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
@@ -572,6 +651,22 @@ var _ = Describe("'Instance' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respUpdateProperties.Response.Code).To(Equal(pb.Response_SUCCESS))
 
+				By("all max")
+				size := 1000
+				properties := make(map[string]string, size)
+				for i := 0; i < size; i++ {
+					s := strconv.Itoa(i) + strings.Repeat("x", 253)
+					properties[s] = s
+				}
+				respUpdateProperties, err = instanceResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
+					ServiceId:  serviceId,
+					InstanceId: instanceId,
+					Properties: properties,
+				})
+
+				Expect(err).To(BeNil())
+				Expect(respUpdateProperties.Response.Code).To(Equal(pb.Response_SUCCESS))
+
 				By("instance does not exist")
 				respUpdateProperties, err = instanceResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
 					ServiceId:  serviceId,
@@ -813,8 +908,94 @@ var _ = Describe("'Instance' service", func() {
 
 		Context("when query invalid parameters", func() {
 			It("should be failed", func() {
-				By("consumerId is empty")
+				By("invalid appId")
 				respFind, err := instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: serviceId1,
+					AppId:             TOO_LONG_APPID,
+					ServiceName:       "query_instance_service",
+					VersionRule:       "1.0.0",
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.Response.Code).To(Equal(scerr.ErrInvalidParams))
+				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: serviceId1,
+					AppId:             "",
+					ServiceName:       "query_instance_service",
+					VersionRule:       "1.0.0",
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.Response.Code).To(Equal(scerr.ErrInvalidParams))
+				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: serviceId1,
+					AppId:             " ",
+					ServiceName:       "query_instance_service",
+					VersionRule:       "1.0.0",
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.Response.Code).To(Equal(scerr.ErrInvalidParams))
+
+				By("invalid serviceName")
+				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: serviceId1,
+					AppId:             "query_instance",
+					ServiceName:       TOO_LONG_EXISTENCE,
+					VersionRule:       "1.0.0",
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.Response.Code).To(Equal(scerr.ErrInvalidParams))
+				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: serviceId1,
+					AppId:             "query_instance",
+					ServiceName:       "",
+					VersionRule:       "1.0.0",
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.Response.Code).To(Equal(scerr.ErrInvalidParams))
+				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: serviceId1,
+					AppId:             "query_instance",
+					ServiceName:       "",
+					VersionRule:       "1.0.0",
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.Response.Code).To(Equal(scerr.ErrInvalidParams))
+
+				By("invalid version")
+				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: serviceId1,
+					AppId:             "query_instance",
+					ServiceName:       "query_instance_service",
+					VersionRule:       "1.32768.0",
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.Response.Code).To(Equal(scerr.ErrInvalidParams))
+				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: serviceId1,
+					AppId:             "query_instance",
+					ServiceName:       "query_instance_service",
+					VersionRule:       "1.0.0-1.32768.0",
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.Response.Code).To(Equal(scerr.ErrInvalidParams))
+				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: serviceId1,
+					AppId:             "query_instance",
+					ServiceName:       "query_instance_service",
+					VersionRule:       " ",
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.Response.Code).To(Equal(scerr.ErrInvalidParams))
+				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: serviceId1,
+					AppId:             "query_instance",
+					ServiceName:       "query_instance_service",
+					VersionRule:       "",
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.Response.Code).To(Equal(scerr.ErrInvalidParams))
+
+				By("consumerId is empty")
+				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: "",
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_service",

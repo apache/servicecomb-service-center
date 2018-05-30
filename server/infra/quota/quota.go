@@ -25,6 +25,7 @@ import (
 var (
 	DefaultSchemaQuota = 0
 	DefaultTagQuota    = 0
+	DefaultRuleQuota   = 0
 )
 
 const (

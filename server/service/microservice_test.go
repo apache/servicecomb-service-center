@@ -29,6 +29,7 @@ import (
 
 var (
 	TOO_LONG_APPID       = strings.Repeat("x", 161)
+	TOO_LONG_SCHEMAID    = strings.Repeat("x", 161)
 	TOO_LONG_SERVICEID   = strings.Repeat("x", 65)
 	TOO_LONG_SERVICENAME = strings.Repeat("x", 129)
 	TOO_LONG_EXISTENCE   = strings.Repeat("x", 128+160+2)
@@ -46,6 +47,40 @@ var _ = Describe("'Micro-service' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
+			})
+		})
+
+		Context("all max", func() {
+			It("should be passed", func() {
+				size := buildin.SCHEMA_NUM_MAX_LIMIT_PER_SERVICE + 1
+				paths := make([]*pb.ServicePath, 0, size)
+				properties := make(map[string]string, size)
+				for i := 0; i < size; i++ {
+					s := strconv.Itoa(i) + strings.Repeat("x", 253)
+					paths = append(paths, &pb.ServicePath{Path: s, Property: map[string]string{s: s}})
+					properties[s] = s
+				}
+				r := &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						AppId:       TOO_LONG_APPID[:len(TOO_LONG_APPID)-1],
+						ServiceName: TOO_LONG_SERVICENAME[:len(TOO_LONG_SERVICENAME)-1],
+						Version:     "32767.32767.32767",
+						Alias:       TOO_LONG_ALIAS[:len(TOO_LONG_ALIAS)-1],
+						Level:       "BACK",
+						Status:      "UP",
+						Schemas:     []string{TOO_LONG_SCHEMAID[:len(TOO_LONG_SCHEMAID)-1]},
+						Paths:       paths,
+						Properties:  properties,
+						Framework: &pb.FrameWorkProperty{
+							Name:    TOO_LONG_FRAMEWORK[:len(TOO_LONG_FRAMEWORK)-1],
+							Version: TOO_LONG_FRAMEWORK[:len(TOO_LONG_FRAMEWORK)-1],
+						},
+						RegisterBy: "SDK",
+					},
+				}
+				resp, err := serviceResource.Create(getContext(), r)
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 			})
 		})
 
@@ -562,67 +597,19 @@ var _ = Describe("'Micro-service' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
 
-				By("schemaIds out of range")
-				size := buildin.SCHEMA_NUM_MAX_LIMIT_PER_SERVICE + 1
-				schemaIds := make([]string, 0, size)
-				for i := 0; i < size; i++ {
-					s := strconv.Itoa(i) + strings.Repeat("x", 157)
-					schemaIds = append(schemaIds, s)
-				}
+				By("schemaId out of range")
 				r = &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
 						AppId:       "default",
 						ServiceName: "schema-test",
 						Level:       "BACK",
 						Status:      "UP",
-						Schemas:     schemaIds,
+						Schemas:     []string{TOO_LONG_SCHEMAID},
 					},
 				}
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
-				r = &pb.CreateServiceRequest{
-					Service: &pb.MicroService{
-						AppId:       "default",
-						ServiceName: "schema-test",
-						Level:       "BACK",
-						Status:      "UP",
-						Schemas:     []string{strings.Repeat("x", 161)},
-					},
-				}
-				resp, err = serviceResource.Create(getContext(), r)
-				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
-
-				By("all max")
-				paths := make([]*pb.ServicePath, 0, size)
-				properties := make(map[string]string, size)
-				for i := 0; i < size; i++ {
-					s := strconv.Itoa(i) + strings.Repeat("x", 253)
-					paths = append(paths, &pb.ServicePath{Path: s, Property: map[string]string{s: s}})
-					properties[s] = s
-				}
-				r = &pb.CreateServiceRequest{
-					Service: &pb.MicroService{
-						AppId:       TOO_LONG_APPID[:len(TOO_LONG_APPID)-1],
-						ServiceName: TOO_LONG_SERVICENAME[:len(TOO_LONG_SERVICENAME)-1],
-						Version:     "32767.32767.32767",
-						Alias:       TOO_LONG_ALIAS[:len(TOO_LONG_ALIAS)-1],
-						Level:       "BACK",
-						Status:      "UP",
-						Schemas:     schemaIds[:buildin.SCHEMA_NUM_MAX_LIMIT_PER_SERVICE],
-						Paths:       paths,
-						Properties:  properties,
-						Framework: &pb.FrameWorkProperty{
-							Name:    TOO_LONG_FRAMEWORK[:len(TOO_LONG_FRAMEWORK)-1],
-							Version: TOO_LONG_FRAMEWORK[:len(TOO_LONG_FRAMEWORK)-1],
-						},
-						RegisterBy: "SDK",
-					},
-				}
-				resp, err = serviceResource.Create(getContext(), r)
-				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 			})
 		})
 

@@ -310,5 +310,15 @@ var _ = Describe("Version Rule sorter", func() {
 				Expect(vr.MatchString("1.4")).To(BeTrue())
 			})
 		})
+		Context("Exception", func() {
+			It("MatchString & String", func() {
+				vr := VersionRegexp{}
+				Expect(vr.MatchString("")).To(BeTrue())
+				Expect(vr.String()).NotTo(BeEmpty())
+				vr = VersionRegexp{Fuzzy: true}
+				Expect(vr.MatchString("")).To(BeTrue())
+				Expect(vr.String()).NotTo(BeEmpty())
+			})
+		})
 	})
 })

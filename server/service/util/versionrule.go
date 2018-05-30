@@ -17,7 +17,6 @@
 package util
 
 import (
-	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"regexp"
@@ -197,28 +196,28 @@ func VersionMatchRule(version string, versionRule string) bool {
 	})) > 0
 }
 
-type versionRegexp struct {
+type VersionRegexp struct {
 	Regex *regexp.Regexp
 	Fuzzy bool
 }
 
-func (vr *versionRegexp) MatchString(s string) bool {
-	if !vr.Regex.MatchString(s) {
+func (vr *VersionRegexp) MatchString(s string) bool {
+	if vr.Regex != nil && !vr.Regex.MatchString(s) {
 		return false
 	}
 	return vr.validateVersionRule(s) == nil
 }
 
-func (vr *versionRegexp) String() string {
+func (vr *VersionRegexp) String() string {
 	if vr.Fuzzy {
 		return "x[.y[.z]] or x[.y[.z]]+ or x[.y[.z]]-x[.y[.z]] or latest, x y and z should be int16 format"
 	}
 	return "x[.y[.z]], x y and z should be int16 format"
 }
 
-func (vr *versionRegexp) validateVersionRule(versionRule string) (err error) {
+func (vr *VersionRegexp) validateVersionRule(versionRule string) (err error) {
 	if len(versionRule) == 0 {
-		return fmt.Errorf("required version")
+		return
 	}
 
 	if !vr.Fuzzy {
@@ -229,7 +228,7 @@ func (vr *versionRegexp) validateVersionRule(versionRule string) (err error) {
 	rangeIdx := strings.Index(versionRule, "-")
 	switch {
 	case versionRule == "latest":
-		return nil
+		return
 	case versionRule[len(versionRule)-1:] == "+":
 		// 取最低版本及高版本集合
 		start := versionRule[:len(versionRule)-1]
@@ -249,10 +248,10 @@ func (vr *versionRegexp) validateVersionRule(versionRule string) (err error) {
 	return
 }
 
-func NewVersionRegexp(fuzzy bool) (vr *versionRegexp) {
-	vr = &versionRegexp{Fuzzy: fuzzy}
+func NewVersionRegexp(fuzzy bool) (vr *VersionRegexp) {
+	vr = &VersionRegexp{Fuzzy: fuzzy}
 	if fuzzy {
-		vr.Regex, _ = regexp.Compile(`^\d+(\.\d+){0,2}\+{0,1}$|^\d+(\.\d+){0,2}-\d+(\.\d+){0,2}$|^latest$`)
+		vr.Regex, _ = regexp.Compile(`^\d+(\.\d+){0,2}\+?$|^\d+(\.\d+){0,2}-\d+(\.\d+){0,2}$|^latest$`)
 		return
 	}
 	vr.Regex, _ = regexp.Compile(`^\d+(\.\d+){0,2}$`)

@@ -18,6 +18,7 @@ package service
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/validate"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
 	"regexp"
 )
 
@@ -48,6 +49,7 @@ func UpdateRuleReqValidator() *validate.Validator {
 func AddRulesReqValidator() *validate.Validator {
 	return addRulesReqValidator.Init(func(v *validate.Validator) {
 		v.AddRule("ServiceId", GetServiceReqValidator().GetRule("ServiceId"))
+		v.AddRule("Rules", &validate.ValidateRule{Min: 1, Max: quota.DefaultRuleQuota})
 		v.AddSub("Rules", UpdateRuleReqValidator().GetSub("Rule"))
 	})
 }

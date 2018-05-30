@@ -18,6 +18,7 @@ package service
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/validate"
+	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"regexp"
 )
 
@@ -28,42 +29,48 @@ var (
 
 var (
 	nameFuzzyRegex, _         = regexp.Compile(`^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]*[a-zA-Z0-9]$|^\*$`)
-	versionAllowEmptyRegex, _ = regexp.Compile(`^$|^\d+(\.\d+){0,2}\+{0,1}$|^\d+(\.\d+){0,2}-\d+(\.\d+){0,2}$|^latest$`)
+	versionAllowEmptyRegex, _ = regexp.Compile(`^(^\d+(\.\d+){0,2}\+?$|^\d+(\.\d+){0,2}-\d+(\.\d+){0,2}$|^latest$)?$`)
 )
 
-func AddDependenciesReqValidator() *validate.Validator {
-	return addDependenciesReqValidator.Init(func(v *validate.Validator) {
-		v.AddRules(CreateDependenciesReqValidator().GetRules())
-		v.AddSubs(CreateDependenciesReqValidator().GetSubs())
-		v.GetSub("Dependencies").AddRule("Providers", &validate.ValidateRule{Min: 1})
-	})
-}
-
-func CreateDependenciesReqValidator() *validate.Validator {
+func defaultDependencyValidator() *validate.Validator {
 	appIdRule := *(MicroServiceKeyValidator().GetRule("AppId"))
 	appIdRule.Min = 0
 	serviceNameRule := *(MicroServiceKeyValidator().GetRule("ServiceName"))
 	serviceNameRule.Regexp = nameFuzzyRegex
-	versionRule := &validate.ValidateRule{Max: 128, Regexp: versionAllowEmptyRegex}
+	versionRule := &validate.ValidateRule{Max: 128, Regexp: &serviceUtil.VersionRegexp{Fuzzy: true, Regex: versionAllowEmptyRegex}}
+
+	var (
+		consumerMsValidator validate.Validator
+		providerMsValidator validate.Validator
+	)
+	consumerMsValidator.AddRules(MicroServiceKeyValidator().GetRules())
+
+	providerMsValidator.AddRules(MicroServiceKeyValidator().GetRules())
+	providerMsValidator.AddRule("AppId", &appIdRule)
+	providerMsValidator.AddRule("ServiceName", &serviceNameRule)
+	providerMsValidator.AddRule("Version", versionRule)
+
+	var dependenciesValidator validate.Validator
+	dependenciesValidator.AddRule("Consumer", &validate.ValidateRule{Min: 1})
+	dependenciesValidator.AddSub("Consumer", &consumerMsValidator)
+	dependenciesValidator.AddSub("Providers", &providerMsValidator)
+
+	return &dependenciesValidator
+}
+
+func AddDependenciesReqValidator() *validate.Validator {
+	return addDependenciesReqValidator.Init(func(v *validate.Validator) {
+		dep := defaultDependencyValidator()
+		dep.AddRule("Providers", &validate.ValidateRule{Min: 1})
+		v.AddRule("Dependencies", &validate.ValidateRule{Min: 1})
+		v.AddSub("Dependencies", dep)
+	})
+}
+
+func CreateDependenciesReqValidator() *validate.Validator {
 
 	return overwriteDependenciesReqValidator.Init(func(v *validate.Validator) {
-		var (
-			consumerMsValidator validate.Validator
-			providerMsValidator validate.Validator
-		)
-		consumerMsValidator.AddRules(MicroServiceKeyValidator().GetRules())
-
-		providerMsValidator.AddRules(MicroServiceKeyValidator().GetRules())
-		providerMsValidator.AddRule("AppId", &appIdRule)
-		providerMsValidator.AddRule("ServiceName", &serviceNameRule)
-		providerMsValidator.AddRule("Version", versionRule)
-
-		var dependenciesValidator validate.Validator
-		dependenciesValidator.AddRule("Consumer", &validate.ValidateRule{Min: 1})
-		dependenciesValidator.AddSub("Consumer", &consumerMsValidator)
-		dependenciesValidator.AddSub("Providers", &providerMsValidator)
-
 		v.AddRule("Dependencies", &validate.ValidateRule{Min: 1})
-		v.AddSub("Dependencies", &dependenciesValidator)
+		v.AddSub("Dependencies", defaultDependencyValidator())
 	})
 }

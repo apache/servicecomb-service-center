@@ -31,7 +31,8 @@ var tooLongTag = strings.Repeat("x", 65)
 var _ = Describe("'Tag' service", func() {
 	Describe("execute 'create' operartion", func() {
 		var (
-			serviceId string
+			serviceId1 string
+			serviceId2 string
 		)
 
 		It("should be passed", func() {
@@ -46,7 +47,20 @@ var _ = Describe("'Tag' service", func() {
 			})
 			Expect(err).To(BeNil())
 			Expect(respCreateService.Response.Code).To(Equal(pb.Response_SUCCESS))
-			serviceId = respCreateService.ServiceId
+			serviceId1 = respCreateService.ServiceId
+
+			respCreateService, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "create_tag_group",
+					ServiceName: "create_tag_service",
+					Version:     "1.0.1",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.Response.Code).To(Equal(pb.Response_SUCCESS))
+			serviceId2 = respCreateService.ServiceId
 		})
 
 		Context("when request is invalid", func() {
@@ -71,14 +85,14 @@ var _ = Describe("'Tag' service", func() {
 
 				By("tag is empty")
 				respAddTags, _ = serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
-					ServiceId: serviceId,
+					ServiceId: serviceId1,
 					Tags:      map[string]string{},
 				})
 				Expect(respAddTags.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
 				By("tag key is empty")
 				respAddTags, _ = serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
-					ServiceId: serviceId,
+					ServiceId: serviceId1,
 					Tags: map[string]string{
 						"": "value",
 					},
@@ -89,12 +103,16 @@ var _ = Describe("'Tag' service", func() {
 
 		Context("when request is valid", func() {
 			It("should be passed", func() {
+				By("all max")
+				size := buildin.TAG_NUM_MAX_LIMIT_PER_SERVICE
+				tags := make(map[string]string, size)
+				for i := 0; i < size; i++ {
+					s := "tag" + strconv.Itoa(i)
+					tags[s] = s
+				}
 				respAddTags, err := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
-					ServiceId: serviceId,
-					Tags: map[string]string{
-						"a": "test",
-						"b": "b",
-					},
+					ServiceId: serviceId1,
+					Tags:      tags,
 				})
 				Expect(err).To(BeNil())
 				Expect(respAddTags.Response.Code).To(Equal(pb.Response_SUCCESS))
@@ -103,21 +121,35 @@ var _ = Describe("'Tag' service", func() {
 
 		Context("when create tag out of gauge", func() {
 			It("should be failed", func() {
-				size := buildin.TAG_NUM_MAX_LIMIT_PER_SERVICE / 2
+				size := buildin.TAG_NUM_MAX_LIMIT_PER_SERVICE + 1
 				tags := make(map[string]string, size)
 				for i := 0; i < size; i++ {
 					s := "tag" + strconv.Itoa(i)
 					tags[s] = s
 				}
 				respAddTags, err := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
-					ServiceId: serviceId,
+					ServiceId: serviceId2,
+					Tags:      tags,
+				})
+				Expect(err).To(BeNil())
+				Expect(respAddTags.Response.Code).To(Equal(scerr.ErrInvalidParams))
+
+				size = buildin.TAG_NUM_MAX_LIMIT_PER_SERVICE / 2
+				tags = make(map[string]string, size)
+				for i := 0; i < size; i++ {
+					s := "tag" + strconv.Itoa(i)
+					tags[s] = s
+				}
+				respAddTags, err = serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
+					ServiceId: serviceId2,
 					Tags:      tags,
 				})
 				Expect(err).To(BeNil())
 				Expect(respAddTags.Response.Code).To(Equal(pb.Response_SUCCESS))
 
+				tags["out"] = "range"
 				respAddTags, _ = serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
-					ServiceId: serviceId,
+					ServiceId: serviceId2,
 					Tags:      tags,
 				})
 				Expect(err).To(BeNil())
@@ -335,20 +367,20 @@ var _ = Describe("'Tag' service", func() {
 
 				findResp, err := instanceResource.Find(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: consumerId,
-					AppId:       "find_inst_tag_group",
-					ServiceName: "find_inst_tag_provider",
-					VersionRule: "1.0.0+",
-					Tags:        []string{"not-exist-tag"},
+					AppId:             "find_inst_tag_group",
+					ServiceName:       "find_inst_tag_provider",
+					VersionRule:       "1.0.0+",
+					Tags:              []string{"not-exist-tag"},
 				})
 				Expect(findResp.Response.Code).To(Equal(pb.Response_SUCCESS))
 				Expect(len(findResp.Instances)).To(Equal(0))
 
 				findResp, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: consumerId,
-					AppId:       "find_inst_tag_group",
-					ServiceName: "find_inst_tag_provider",
-					VersionRule: "1.0.0+",
-					Tags:        []string{"filter_tag"},
+					AppId:             "find_inst_tag_group",
+					ServiceName:       "find_inst_tag_provider",
+					VersionRule:       "1.0.0+",
+					Tags:              []string{"filter_tag"},
 				})
 				Expect(err).To(BeNil())
 				Expect(findResp.Response.Code).To(Equal(pb.Response_SUCCESS))
@@ -358,9 +390,9 @@ var _ = Describe("'Tag' service", func() {
 					ServiceId: providerId,
 					Rules: []*pb.AddOrUpdateServiceRule{
 						&pb.AddOrUpdateServiceRule{
-							RuleType: "WHITE",
-							Attribute: "tag_filter_tag",
-							Pattern: "f*",
+							RuleType:    "WHITE",
+							Attribute:   "tag_filter_tag",
+							Pattern:     "f*",
 							Description: "test white",
 						},
 					},
@@ -370,10 +402,10 @@ var _ = Describe("'Tag' service", func() {
 
 				findResp, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: consumerId,
-					AppId:       "find_inst_tag_group",
-					ServiceName: "find_inst_tag_provider",
-					VersionRule: "1.0.0+",
-					Tags:        []string{"filter_tag"},
+					AppId:             "find_inst_tag_group",
+					ServiceName:       "find_inst_tag_provider",
+					VersionRule:       "1.0.0+",
+					Tags:              []string{"filter_tag"},
 				})
 				Expect(findResp.Response.Code).To(Equal(pb.Response_SUCCESS))
 				Expect(len(findResp.Instances)).To(Equal(0))
@@ -387,10 +419,10 @@ var _ = Describe("'Tag' service", func() {
 
 				findResp, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: consumerId,
-					AppId:       "find_inst_tag_group",
-					ServiceName: "find_inst_tag_provider",
-					VersionRule: "1.0.0+",
-					Tags:        []string{"filter_tag"},
+					AppId:             "find_inst_tag_group",
+					ServiceName:       "find_inst_tag_provider",
+					VersionRule:       "1.0.0+",
+					Tags:              []string{"filter_tag"},
 				})
 				Expect(findResp.Response.Code).To(Equal(pb.Response_SUCCESS))
 				Expect(findResp.Instances[0].InstanceId).To(Equal(instanceResp.InstanceId))

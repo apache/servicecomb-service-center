@@ -41,6 +41,7 @@ const (
 func init() {
 	quota.DefaultSchemaQuota = SCHEMA_NUM_MAX_LIMIT_PER_SERVICE
 	quota.DefaultTagQuota = TAG_NUM_MAX_LIMIT_PER_SERVICE
+	quota.DefaultRuleQuota = RULE_NUM_MAX_LIMIT_PER_SERVICE
 
 	mgr.RegisterPlugin(mgr.Plugin{mgr.QUOTA, "buildin", New})
 }

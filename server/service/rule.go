@@ -33,13 +33,6 @@ import (
 )
 
 func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRulesRequest) (*pb.AddServiceRulesResponse, error) {
-	if in == nil || len(in.ServiceId) == 0 || len(in.GetRules()) == 0 {
-		util.Logger().Errorf(nil, "add rule failed: invalid parameters.")
-		return &pb.AddServiceRulesResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
-		}, nil
-	}
-
 	err := Validate(in)
 	if err != nil {
 		util.Logger().Errorf(err, "add rule failed, serviceId is %s: invalid rule.", in.ServiceId)
@@ -72,7 +65,6 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 	}
 
 	ruleType, _, err := serviceUtil.GetServiceRuleType(ctx, domainProject, in.ServiceId)
-	util.Logger().Debugf("ruleType is %s", ruleType)
 	if err != nil {
 		return &pb.AddServiceRulesResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
@@ -129,12 +121,12 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 		opts = append(opts, registry.OpPut(registry.WithStrKey(indexKey), registry.WithStrValue(ruleAdd.RuleId)))
 	}
 	if len(opts) <= 0 {
-		util.Logger().Infof("add rule successful, serviceId is %s: rule more exists,no rules to add.", in.ServiceId)
+		util.Logger().Infof("add rule successful, serviceId is %s: rule already exists, no rules to add.", in.ServiceId)
 		return &pb.AddServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_SUCCESS, "Service rules has been added."),
 		}, nil
 	}
-	_, err = backend.Registry().Txn(ctx, opts)
+	err = backend.BatchCommit(ctx, opts)
 	if err != nil {
 		util.Logger().Errorf(err, "add rule failed, serviceId is %s:commit date into etcd failed.", in.ServiceId)
 		return &pb.AddServiceRulesResponse{
@@ -150,13 +142,6 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 }
 
 func (s *MicroServiceService) UpdateRule(ctx context.Context, in *pb.UpdateServiceRuleRequest) (*pb.UpdateServiceRuleResponse, error) {
-	if in == nil || in.GetRule() == nil || len(in.ServiceId) == 0 || len(in.RuleId) == 0 {
-		util.Logger().Errorf(nil, "update rule failed: invalid parameters.")
-		return &pb.UpdateServiceRuleResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
-		}, nil
-	}
-
 	domainProject := util.ParseDomainProject(ctx)
 
 	// service id存在性校验
@@ -253,13 +238,6 @@ func (s *MicroServiceService) UpdateRule(ctx context.Context, in *pb.UpdateServi
 }
 
 func (s *MicroServiceService) GetRule(ctx context.Context, in *pb.GetServiceRulesRequest) (*pb.GetServiceRulesResponse, error) {
-	if in == nil || len(in.ServiceId) == 0 {
-		util.Logger().Errorf(nil, "get service rule failed, serviceId is %s: invalid params.", in.ServiceId)
-		return &pb.GetServiceRulesResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
-		}, nil
-	}
-
 	domainProject := util.ParseDomainProject(ctx)
 
 	// service id存在性校验
@@ -285,13 +263,6 @@ func (s *MicroServiceService) GetRule(ctx context.Context, in *pb.GetServiceRule
 }
 
 func (s *MicroServiceService) DeleteRule(ctx context.Context, in *pb.DeleteServiceRulesRequest) (*pb.DeleteServiceRulesResponse, error) {
-	if in == nil || len(in.ServiceId) == 0 {
-		util.Logger().Errorf(nil, "delete service rule failed: invalid parameters.")
-		return &pb.DeleteServiceRulesResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
-		}, nil
-	}
-
 	domainProject := util.ParseDomainProject(ctx)
 	// service id存在性校验
 	if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId) {

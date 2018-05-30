@@ -73,7 +73,7 @@ var _ = Describe("MicroService Api schema Test", func() {
 	It("create schemas", func() {
 		schema := map[string]string{
 			"schema":   "second_schema",
-			"summary":  "second_summary",
+			"summary":  "second0summary",
 			"schemaId": "second_schemaId",
 		}
 		schemas := map[string][]map[string]string{

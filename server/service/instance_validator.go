@@ -32,12 +32,12 @@ var (
 )
 
 var (
-	urlRegex, _        = regexp.Compile(`^[A-Za-z0-9.,?'\\/+&amp;%$#=~_\-@{}]*$`)
 	instStatusRegex, _ = regexp.Compile("^(" + util.StringJoin([]string{
 		pb.MSI_UP, pb.MSI_DOWN, pb.MSI_STARTING, pb.MSI_OUTOFSERVICE}, "|") + ")?$")
 	updateInstStatusRegex, _ = regexp.Compile("^(" + util.StringJoin([]string{
 		pb.MSI_UP, pb.MSI_DOWN, pb.MSI_STARTING, pb.MSI_OUTOFSERVICE}, "|") + ")$")
 	hbModeRegex, _               = regexp.Compile(`^(push|pull)$`)
+	urlRegex, _                  = regexp.Compile(`^\S*$`)
 	epRegex, _                   = regexp.Compile(`\S+`)
 	simpleNameAllowEmptyRegex, _ = regexp.Compile(`^[A-Za-z0-9_.-]*$`)
 	simpleNameRegex, _           = regexp.Compile(`^[A-Za-z0-9_.-]+$`)
@@ -88,7 +88,7 @@ func RegisterInstanceReqValidator() *validate.Validator {
 		var microServiceInstanceValidator validate.Validator
 		microServiceInstanceValidator.AddRule("InstanceId", &validate.ValidateRule{Max: 64, Regexp: simpleNameAllowEmptyRegex})
 		microServiceInstanceValidator.AddRule("ServiceId", GetServiceReqValidator().GetRule("ServiceId"))
-		microServiceInstanceValidator.AddRule("Endpoints", &validate.ValidateRule{Regexp: epRegex})
+		microServiceInstanceValidator.AddRule("Endpoints", &validate.ValidateRule{Min: 1, Regexp: epRegex})
 		microServiceInstanceValidator.AddRule("HostName", &validate.ValidateRule{Max: 64, Min: 1, Regexp: epRegex})
 		microServiceInstanceValidator.AddSub("HealthCheck", &healthCheckInfoValidator)
 		microServiceInstanceValidator.AddRule("Status", &validate.ValidateRule{Regexp: instStatusRegex})

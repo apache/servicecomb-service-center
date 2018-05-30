@@ -32,6 +32,7 @@ func init() {
 	}
 	quota.DefaultSchemaQuota = 0
 	quota.DefaultTagQuota = 0
+	quota.DefaultRuleQuota = 0
 }
 
 type Unlimit struct {

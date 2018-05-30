@@ -28,7 +28,8 @@ import (
 var _ = Describe("'Rule' service", func() {
 	Describe("execute 'create' operartion", func() {
 		var (
-			serviceId string
+			serviceId1 string
+			serviceId2 string
 		)
 
 		It("should be passed", func() {
@@ -43,14 +44,27 @@ var _ = Describe("'Rule' service", func() {
 			})
 			Expect(err).To(BeNil())
 			Expect(respCreateService.Response.Code).To(Equal(pb.Response_SUCCESS))
-			serviceId = respCreateService.ServiceId
+			serviceId1 = respCreateService.ServiceId
+
+			respCreateService, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "create_rule_group",
+					ServiceName: "create_rule_service",
+					Version:     "1.0.1",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.Response.Code).To(Equal(pb.Response_SUCCESS))
+			serviceId2 = respCreateService.ServiceId
 		})
 
 		Context("when request is invalid", func() {
 			It("should be failed", func() {
 				By("attribute is empty")
 				respAddRule, err := serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
-					ServiceId: serviceId,
+					ServiceId: serviceId1,
 					Rules: []*pb.AddOrUpdateServiceRule{
 						{
 							RuleType:    "BLACK",
@@ -65,7 +79,7 @@ var _ = Describe("'Rule' service", func() {
 
 				By("attribute is tag but name is invalid")
 				respAddRule, err = serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
-					ServiceId: serviceId,
+					ServiceId: serviceId1,
 					Rules: []*pb.AddOrUpdateServiceRule{
 						{
 							RuleType:    "BLACK",
@@ -80,7 +94,7 @@ var _ = Describe("'Rule' service", func() {
 
 				By("attribute is a invalid field name")
 				respAddRule, err = serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
-					ServiceId: serviceId,
+					ServiceId: serviceId1,
 					Rules: []*pb.AddOrUpdateServiceRule{
 						{
 							RuleType:    "BLACK",
@@ -123,12 +137,12 @@ var _ = Describe("'Rule' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respAddRule.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
-				By("rule is nil")
+				By("rules is nil")
 				respAddRule, err = serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
-					ServiceId: serviceId,
+					ServiceId: serviceId1,
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respAddRule.Response.Code).To(Equal(scerr.ErrInvalidParams))
 			})
 		})
 
@@ -136,7 +150,7 @@ var _ = Describe("'Rule' service", func() {
 			It("should be passed", func() {
 				By("create a new black list")
 				respAddRule, err := serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
-					ServiceId: serviceId,
+					ServiceId: serviceId1,
 					Rules: []*pb.AddOrUpdateServiceRule{
 						{
 							RuleType:    "BLACK",
@@ -153,7 +167,7 @@ var _ = Describe("'Rule' service", func() {
 
 				By("create the black list again")
 				respAddRule, err = serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
-					ServiceId: serviceId,
+					ServiceId: serviceId1,
 					Rules: []*pb.AddOrUpdateServiceRule{
 						{
 							RuleType:    "BLACK",
@@ -169,7 +183,7 @@ var _ = Describe("'Rule' service", func() {
 
 				By("create a new white list when black list already exists")
 				respAddRule, err = serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
-					ServiceId: serviceId,
+					ServiceId: serviceId1,
 					Rules: []*pb.AddOrUpdateServiceRule{
 						{
 							RuleType:    "WHITE",
@@ -197,11 +211,25 @@ var _ = Describe("'Rule' service", func() {
 					})
 				}
 				resp, err := serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
-					ServiceId: serviceId,
+					ServiceId: serviceId2,
 					Rules:     rules,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
+
+				resp, err = serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
+					ServiceId: serviceId2,
+					Rules:     rules[:size-1],
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+
+				resp, err = serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
+					ServiceId: serviceId2,
+					Rules:     rules[size-1:],
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(scerr.ErrNotEnoughQuota))
 			})
 		})
 	})
