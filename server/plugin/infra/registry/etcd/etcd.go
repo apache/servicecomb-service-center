@@ -600,13 +600,14 @@ hcLoop:
 				util.Logger().Errorf(cerr, "re-get etcd client %v failed.", c.Endpoints)
 				continue
 			}
-			cerr = c.Client.Close()
-			if cerr != nil {
+
+			c.Client, client = client, c.Client
+			util.Logger().Errorf(err, "Auto sync etcd members failed and re-connected etcd successfully")
+
+			if cerr = client.Close(); cerr != nil {
 				util.Logger().Errorf(cerr, "close unavailable etcd client failed.")
 			}
-			c.Client = client
-
-			util.Logger().Errorf(err, "Auto sync etcd members failed and re-connected etcd successfully")
+			client = nil
 		}
 	}
 }
