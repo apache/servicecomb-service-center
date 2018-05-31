@@ -217,7 +217,7 @@ func (i *Indexer) buildIndex() {
 				i.prefixLock.Unlock()
 
 				util.LogNilOrWarnf(t, "too long to rebuild(action: %s) index[%d], key is %s",
-					evt.Type, key, len(i.prefixIndex))
+					evt.Type, len(i.prefixIndex), key)
 			}
 		}
 		util.Logger().Debugf("the goroutine building index %s is stopped", i.cacher.Name())
@@ -254,6 +254,7 @@ func (i *Indexer) getPrefixKey(arr *[]string, prefix string) (count int) {
 		if n == 0 {
 			count += len(keysRef)
 			if arr != nil {
+				// TODO support sort option
 				for k := range keysRef {
 					*arr = append(*arr, k)
 				}

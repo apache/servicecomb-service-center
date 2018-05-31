@@ -19,6 +19,7 @@ package util
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/coreos/etcd/mvcc/mvccpb"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -69,27 +70,29 @@ func (sks *serviceKeySorter) Less(i, j int) bool {
 	return sks.cmp(sks.sortArr[i], sks.sortArr[j])
 }
 
-func versionToInt(versionStr string) (ret int32) {
-	verBytes := [4]byte{}
+func VersionToInt64(versionStr string) (ret int64, err error) {
+	verBytes := [4]int16{}
 	idx := 0
 	for i := 0; i < 4 && idx < len(versionStr); i++ {
 		f := strings.IndexRune(versionStr[idx:], '.')
 		if f < 0 {
 			f = len(versionStr) - idx
 		}
-		integer, err := strconv.ParseInt(versionStr[idx:idx+f], 10, 8)
-		if err != nil || integer < 0 {
-			return 0
+		integer, err := strconv.ParseInt(versionStr[idx:idx+f], 10, 16)
+		if err != nil {
+			return 0, err
 		}
-		verBytes[i] = byte(integer)
+		verBytes[i] = int16(integer)
 		idx += f + 1
 	}
-	ret = util.BytesToInt32(verBytes[:])
+	ret = util.Int16ToInt64(verBytes[:])
 	return
 }
 
 func Larger(start, end string) bool {
-	return versionToInt(start) > versionToInt(end)
+	s, _ := VersionToInt64(start)
+	e, _ := VersionToInt64(end)
+	return s > e
 }
 
 func LessEqual(start, end string) bool {
@@ -153,6 +156,10 @@ func AtLess(sorted []string, kvs map[string]*mvccpb.KeyValue, start, end string)
 }
 
 func ParseVersionRule(versionRule string) func(kvs []*mvccpb.KeyValue) []string {
+	if len(versionRule) == 0 {
+		return nil
+	}
+
 	rangeIdx := strings.Index(versionRule, "-")
 	switch {
 	case versionRule == "latest":
@@ -187,4 +194,66 @@ func VersionMatchRule(version string, versionRule string) bool {
 	return len(match([]*mvccpb.KeyValue{
 		{Key: util.StringToBytesWithNoCopy("/" + version)},
 	})) > 0
+}
+
+type VersionRegexp struct {
+	Regex *regexp.Regexp
+	Fuzzy bool
+}
+
+func (vr *VersionRegexp) MatchString(s string) bool {
+	if vr.Regex != nil && !vr.Regex.MatchString(s) {
+		return false
+	}
+	return vr.validateVersionRule(s) == nil
+}
+
+func (vr *VersionRegexp) String() string {
+	if vr.Fuzzy {
+		return "x[.y[.z]] or x[.y[.z]]+ or x[.y[.z]]-x[.y[.z]] or latest, x y and z should be int16 format"
+	}
+	return "x[.y[.z]], x y and z should be int16 format"
+}
+
+func (vr *VersionRegexp) validateVersionRule(versionRule string) (err error) {
+	if len(versionRule) == 0 {
+		return
+	}
+
+	if !vr.Fuzzy {
+		_, err = VersionToInt64(versionRule)
+		return
+	}
+
+	rangeIdx := strings.Index(versionRule, "-")
+	switch {
+	case versionRule == "latest":
+		return
+	case versionRule[len(versionRule)-1:] == "+":
+		// 取最低版本及高版本集合
+		start := versionRule[:len(versionRule)-1]
+		_, err = VersionToInt64(start)
+	case rangeIdx > 0:
+		// 取版本范围集合
+		start := versionRule[:rangeIdx]
+		end := versionRule[rangeIdx+1:]
+		_, err = VersionToInt64(start)
+		if err == nil {
+			_, err = VersionToInt64(end)
+		}
+	default:
+		// 精确匹配
+		_, err = VersionToInt64(versionRule)
+	}
+	return
+}
+
+func NewVersionRegexp(fuzzy bool) (vr *VersionRegexp) {
+	vr = &VersionRegexp{Fuzzy: fuzzy}
+	if fuzzy {
+		vr.Regex, _ = regexp.Compile(`^\d+(\.\d+){0,2}\+?$|^\d+(\.\d+){0,2}-\d+(\.\d+){0,2}$|^latest$`)
+		return
+	}
+	vr.Regex, _ = regexp.Compile(`^\d+(\.\d+){0,2}$`)
+	return
 }

@@ -26,8 +26,6 @@ import (
 	"time"
 )
 
-var defInstanceEventDeferHandler = &InstanceEventDeferHandler{Percent: DEFAULT_SELF_PRESERVATION_PERCENT}
-
 type deferItem struct {
 	ttl   *time.Timer
 	event KvEvent

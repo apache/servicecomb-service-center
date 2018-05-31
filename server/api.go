@@ -118,6 +118,7 @@ func (s *APIServer) registryService(pCtx context.Context) error {
 }
 
 func (s *APIServer) registryInstance(pCtx context.Context) error {
+	core.Instance.InstanceId = ""
 	core.Instance.ServiceId = core.Service.ServiceId
 
 	endpoints := make([]string, 0, len(s.Endpoints))

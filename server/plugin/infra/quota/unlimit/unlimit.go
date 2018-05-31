@@ -17,7 +17,6 @@
 package unlimit
 
 import (
-	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
 	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	"github.com/astaxie/beego"
@@ -31,7 +30,9 @@ func init() {
 	if quataType != "unlimit" {
 		return
 	}
-	apt.MicroServiceValidator.GetRule("Schemas").Length = 0
+	quota.DefaultSchemaQuota = 0
+	quota.DefaultTagQuota = 0
+	quota.DefaultRuleQuota = 0
 }
 
 type Unlimit struct {

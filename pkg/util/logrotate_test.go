@@ -17,37 +17,12 @@
 package util
 
 import (
-	"os"
-	"unsafe"
+	"testing"
 )
 
-const intSize = int(unsafe.Sizeof(0))
-
-var bs *[intSize]byte
-
-func init() {
-	i := 0x1
-	bs = (*[intSize]byte)(unsafe.Pointer(&i))
-}
-
-func IsBigEndian() bool {
-	return !IsLittleEndian()
-}
-
-func IsLittleEndian() bool {
-	return bs[0] == 0
-}
-
-func PathExist(path string) bool {
-	_, err := os.Stat(path)
-	return err == nil || os.IsExist(err)
-}
-
-func HostName() (hostname string) {
-	var err error
-	hostname, err = os.Hostname()
-	if err != nil {
-		hostname = "UNKNOWN"
+func TestLogRotate(t *testing.T) {
+	s := pathReplacer.Replace("./sc.log")
+	if s != "./sc.log" {
+		t.Fatal("pathReplacer failed", s)
 	}
-	return
 }

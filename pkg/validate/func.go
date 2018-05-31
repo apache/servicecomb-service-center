@@ -14,40 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package util
+package validate
 
-import (
-	"os"
-	"unsafe"
-)
-
-const intSize = int(unsafe.Sizeof(0))
-
-var bs *[intSize]byte
-
-func init() {
-	i := 0x1
-	bs = (*[intSize]byte)(unsafe.Pointer(&i))
-}
-
-func IsBigEndian() bool {
-	return !IsLittleEndian()
-}
-
-func IsLittleEndian() bool {
-	return bs[0] == 0
-}
-
-func PathExist(path string) bool {
-	_, err := os.Stat(path)
-	return err == nil || os.IsExist(err)
-}
-
-func HostName() (hostname string) {
-	var err error
-	hostname, err = os.Hostname()
-	if err != nil {
-		hostname = "UNKNOWN"
-	}
-	return
+type ValidateFunc interface {
+	MatchString(s string) bool
+	String() string
 }

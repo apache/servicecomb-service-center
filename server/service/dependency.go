@@ -30,6 +30,12 @@ import (
 )
 
 func (s *MicroServiceService) AddDependenciesForMicroServices(ctx context.Context, in *pb.AddDependenciesRequest) (*pb.AddDependenciesResponse, error) {
+	if err := Validate(in); err != nil {
+		return &pb.AddDependenciesResponse{
+			Response: serviceUtil.BadParamsResponse(err.Error()).Response,
+		}, nil
+	}
+
 	resp, err := s.AddOrUpdateDependencies(ctx, in.Dependencies, false)
 	return &pb.AddDependenciesResponse{
 		Response: resp,
@@ -37,6 +43,12 @@ func (s *MicroServiceService) AddDependenciesForMicroServices(ctx context.Contex
 }
 
 func (s *MicroServiceService) CreateDependenciesForMicroServices(ctx context.Context, in *pb.CreateDependenciesRequest) (*pb.CreateDependenciesResponse, error) {
+	if err := Validate(in); err != nil {
+		return &pb.CreateDependenciesResponse{
+			Response: serviceUtil.BadParamsResponse(err.Error()).Response,
+		}, nil
+	}
+
 	resp, err := s.AddOrUpdateDependencies(ctx, in.Dependencies, true)
 	return &pb.CreateDependenciesResponse{
 		Response: resp,
@@ -44,16 +56,9 @@ func (s *MicroServiceService) CreateDependenciesForMicroServices(ctx context.Con
 }
 
 func (s *MicroServiceService) AddOrUpdateDependencies(ctx context.Context, dependencyInfos []*pb.ConsumerDependency, override bool) (*pb.Response, error) {
-	if len(dependencyInfos) == 0 {
-		return serviceUtil.BadParamsResponse("Invalid request body.").Response, nil
-	}
 	opts := make([]registry.PluginOp, 0, len(dependencyInfos))
 	domainProject := util.ParseDomainProject(ctx)
 	for _, dependencyInfo := range dependencyInfos {
-		if (len(dependencyInfo.Providers) == 0 && !override) || dependencyInfo.Consumer == nil {
-			return serviceUtil.BadParamsResponse("Provider is invalid").Response, nil
-		}
-
 		consumerFlag := util.StringJoin([]string{dependencyInfo.Consumer.AppId, dependencyInfo.Consumer.ServiceName, dependencyInfo.Consumer.Version}, "/")
 		consumerInfo := pb.DependenciesToKeys([]*pb.MicroServiceKey{dependencyInfo.Consumer}, domainProject)[0]
 		providersInfo := pb.DependenciesToKeys(dependencyInfo.Providers, domainProject)
@@ -93,7 +98,7 @@ func (s *MicroServiceService) AddOrUpdateDependencies(ctx context.Context, depen
 		opts = append(opts, registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)))
 	}
 
-	_, err := backend.Registry().Txn(ctx, opts)
+	err := backend.BatchCommit(ctx, opts)
 	if err != nil {
 		util.Logger().Errorf(err, "put request into dependency queue failed, override: %t, %v", override, dependencyInfos)
 		return pb.CreateResponse(scerr.ErrInternal, err.Error()), err
@@ -105,7 +110,7 @@ func (s *MicroServiceService) AddOrUpdateDependencies(ctx context.Context, depen
 }
 
 func (s *MicroServiceService) GetProviderDependencies(ctx context.Context, in *pb.GetDependenciesRequest) (*pb.GetProDependenciesResponse, error) {
-	err := apt.Validate(in)
+	err := Validate(in)
 	if err != nil {
 		util.Logger().Errorf(err, "GetProviderDependencies failed for validating parameters failed.")
 		return &pb.GetProDependenciesResponse{
@@ -143,7 +148,7 @@ func (s *MicroServiceService) GetProviderDependencies(ctx context.Context, in *p
 }
 
 func (s *MicroServiceService) GetConsumerDependencies(ctx context.Context, in *pb.GetDependenciesRequest) (*pb.GetConDependenciesResponse, error) {
-	err := apt.Validate(in)
+	err := Validate(in)
 	if err != nil {
 		util.Logger().Errorf(err, "GetConsumerDependencies failed for validating parameters failed.")
 		return &pb.GetConDependenciesResponse{

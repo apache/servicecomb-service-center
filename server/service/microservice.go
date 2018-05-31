@@ -73,7 +73,7 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 
 	serviceUtil.SetServiceDefaultValue(service)
 
-	err := apt.Validate(service)
+	err := Validate(in)
 	if err != nil {
 		util.Logger().Errorf(err, "create micro-service failed, %s: invalid parameters. operator: %s",
 			serviceFlag, remoteIP)
@@ -320,7 +320,7 @@ func (s *MicroServiceService) Delete(ctx context.Context, in *pb.DeleteServiceRe
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
 		}, nil
 	}
-	err := apt.Validate(in)
+	err := Validate(in)
 	if err != nil {
 		util.Logger().Errorf(err, "delete micro-service failed, serviceId is %s: invalid parameters.", in.ServiceId)
 		return &pb.DeleteServiceResponse{
@@ -363,7 +363,7 @@ func (s *MicroServiceService) DeleteServices(ctx context.Context, request *pb.De
 			ServiceId: serviceId,
 			Force:     request.Force,
 		}
-		err := apt.Validate(in)
+		err := Validate(in)
 		if err != nil {
 			util.Logger().Errorf(err, "delete micro-service failed, serviceId is %s: invalid parameters.", in.ServiceId)
 			serviceRespChan <- &pb.DelServicesRspInfo{
@@ -429,7 +429,7 @@ func (s *MicroServiceService) GetOne(ctx context.Context, in *pb.GetServiceReque
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
 		}, nil
 	}
-	err := apt.Validate(in)
+	err := Validate(in)
 	if err != nil {
 		util.Logger().Errorf(err, "get micro-service failed, serviceId is %s: invalid parameters.",
 			in.ServiceId)
@@ -486,7 +486,7 @@ func (s *MicroServiceService) UpdateProperties(ctx context.Context, in *pb.Updat
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, "request format invalid."),
 		}, nil
 	}
-	err := apt.Validate(in)
+	err := Validate(in)
 	if err != nil {
 		util.Logger().Errorf(err, "update service properties failed, serviceId is %s: invalid parameters.", in.ServiceId)
 		return &pb.UpdateServicePropsResponse{
@@ -559,7 +559,7 @@ func (s *MicroServiceService) Exist(ctx context.Context, in *pb.GetExistenceRequ
 				Response: pb.CreateResponse(scerr.ErrInvalidParams, "invalid request."),
 			}, nil
 		}
-		err := apt.GetMSExistsReqValidator.Validate(in)
+		err := ExistenceReqValidator().Validate(in)
 		serviceFlag := util.StringJoin([]string{in.AppId, in.ServiceName, in.Version}, "/")
 		if err != nil {
 			util.Logger().Errorf(err, "micro-service exist failed, service %s: invalid params.", serviceFlag)
@@ -600,7 +600,7 @@ func (s *MicroServiceService) Exist(ctx context.Context, in *pb.GetExistenceRequ
 			}, nil
 		}
 
-		err := apt.GetSchemaExistsReqValidator.Validate(in)
+		err := GetSchemaReqValidator().Validate(in)
 		if err != nil {
 			util.Logger().Errorf(err, "schema exist failed, serviceId %s, schemaId %s: invalid params.", in.ServiceId, in.SchemaId)
 			return &pb.GetExistenceResponse{

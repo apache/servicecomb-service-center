@@ -22,6 +22,21 @@ import (
 	"golang.org/x/net/context"
 )
 
+var (
+	DefaultSchemaQuota = 0
+	DefaultTagQuota    = 0
+	DefaultRuleQuota   = 0
+)
+
+const (
+	RuleQuotaType ResourceType = iota
+	SchemaQuotaType
+	TagQuotaType
+	MicroServiceQuotaType
+	MicroServiceInstanceQuotaType
+	typeEnd
+)
+
 type ApplyQuotaResult struct {
 	Reporter QuotaReporter
 	Err      *scerr.Error
@@ -59,15 +74,6 @@ type QuotaReporter interface {
 	ReportUsedQuota(ctx context.Context) error
 	Close()
 }
-
-const (
-	RuleQuotaType ResourceType = iota
-	SchemaQuotaType
-	TagQuotaType
-	MicroServiceQuotaType
-	MicroServiceInstanceQuotaType
-	typeEnd
-)
 
 type ResourceType int
 

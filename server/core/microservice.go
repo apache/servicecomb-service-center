@@ -26,6 +26,8 @@ import (
 )
 
 var (
+	ServiceAPI         pb.ServiceCtrlServer
+	InstanceAPI        pb.SerivceInstanceCtrlServerEx
 	Service            *pb.MicroService
 	Instance           *pb.MicroServiceInstance
 	sharedServiceNames map[string]struct{}

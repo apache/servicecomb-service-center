@@ -20,35 +20,29 @@ import (
 	"testing"
 )
 
-func TestBytesToInt32(t *testing.T) {
-	bs := []byte{0, 0, 0, 1}
-	i := BytesToInt32(bs)
+func TestInt16ToInt64(t *testing.T) {
+	bs := []int16{0, 0, 0, 1}
+	i := Int16ToInt64(bs)
 	if i != 1 {
-		t.FailNow()
+		t.Fatalf("Int16ToInt64 failed, %v %d != %d", bs, i, 1)
 	}
 
-	bs = []byte{1, 0, 0, 0}
-	i = BytesToInt32(bs)
-	if i != 1<<(3*8) {
-		t.FailNow()
+	bs = []int16{1, 0, 0, 0}
+	i = Int16ToInt64(bs)
+	if i != 1<<(3*16) {
+		t.Fatalf("Int16ToInt64 failed, %v %d != %d", bs, i, 1<<(3*16))
 	}
 
-	bs = []byte{0, 0, 0, 0, 1}
-	i = BytesToInt32(bs)
-	if i != 0 {
-		t.FailNow()
-	}
-
-	bs = []byte{1}
-	i = BytesToInt32(bs)
+	bs = []int16{1}
+	i = Int16ToInt64(bs)
 	if i != 1 {
-		t.FailNow()
+		t.Fatalf("Int16ToInt64 failed, %v %d != %d", bs, i, 1)
 	}
 
-	bs = []byte{1, 0}
-	i = BytesToInt32(bs)
-	if i != 1<<8 {
-		t.FailNow()
+	bs = []int16{1, 0}
+	i = Int16ToInt64(bs)
+	if i != 1<<16 {
+		t.Fatalf("Int16ToInt64 failed, %v %d != %d", bs, i, 1<<16)
 	}
 }
 

@@ -22,7 +22,33 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"sort"
+	"testing"
 )
+
+func BenchmarkParseVersionRule(b *testing.B) {
+	f := ParseVersionRule("latest")
+	kvs := []*mvccpb.KeyValue{
+		{
+			Key:   []byte("/service/ver/1.0.300"),
+			Value: []byte("1.0.300"),
+		},
+		{
+			Key:   []byte("/service/ver/1.0.303"),
+			Value: []byte("1.0.303"),
+		},
+		{
+			Key:   []byte("/service/ver/1.0.304"),
+			Value: []byte("1.0.304"),
+		},
+	}
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			f(kvs)
+		}
+	})
+	b.ReportAllocs()
+}
 
 var _ = Describe("Version Rule sorter", func() {
 	Describe("Sorter", func() {
@@ -80,7 +106,7 @@ var _ = Describe("Version Rule sorter", func() {
 		})
 		Context("Exception", func() {
 			It("invalid version1", func() {
-				kvs := []string{"1.a", "1.0.1.a"}
+				kvs := []string{"1.a", "1.0.1.a", ""}
 				sort.Sort(&serviceKeySorter{
 					sortArr: kvs,
 					kvs:     make(map[string]*mvccpb.KeyValue),
@@ -88,16 +114,25 @@ var _ = Describe("Version Rule sorter", func() {
 				})
 				Expect(kvs[0]).To(Equal("1.a"))
 				Expect(kvs[1]).To(Equal("1.0.1.a"))
+				Expect(kvs[2]).To(Equal(""))
 			})
-			It("invalid version2 > 127", func() {
-				kvs := []string{"1.0", "1.0.1.128"}
+			It("invalid version2 > 32767", func() {
+				kvs := []string{"1.0", "1.0.1.32768"}
 				sort.Sort(&serviceKeySorter{
 					sortArr: kvs,
 					kvs:     make(map[string]*mvccpb.KeyValue),
 					cmp:     Larger,
 				})
 				Expect(kvs[0]).To(Equal("1.0"))
-				Expect(kvs[1]).To(Equal("1.0.1.128"))
+				Expect(kvs[1]).To(Equal("1.0.1.32768"))
+				kvs = []string{"1.0", "1.0.1.32767"}
+				sort.Sort(&serviceKeySorter{
+					sortArr: kvs,
+					kvs:     make(map[string]*mvccpb.KeyValue),
+					cmp:     Larger,
+				})
+				Expect(kvs[0]).To(Equal("1.0.1.32767"))
+				Expect(kvs[1]).To(Equal("1.0"))
 			})
 		})
 	})
@@ -177,6 +212,7 @@ var _ = Describe("Version Rule sorter", func() {
 				Expect(len(results)).To(Equal(0))
 				results = VersionRule(Range).Match(nil)
 				Expect(len(results)).To(Equal(0))
+				Expect(ParseVersionRule("")).To(BeNil())
 				Expect(ParseVersionRule("abc")).To(BeNil())
 				Expect(VersionMatchRule("1.0", "1.0")).To(BeTrue())
 				Expect(VersionMatchRule("1.0", "1.2")).To(BeFalse())
@@ -219,6 +255,69 @@ var _ = Describe("Version Rule sorter", func() {
 				Expect(VersionMatchRule("1.6", "1.6+")).To(BeTrue())
 				Expect(VersionMatchRule("1.9", "1.6+")).To(BeTrue())
 				Expect(VersionMatchRule("1.0", "1.6+")).To(BeFalse())
+			})
+		})
+	})
+	Describe("NewVersionRegexp", func() {
+		Context("Normal", func() {
+			It("Latest", func() {
+				vr := NewVersionRegexp(false)
+				Expect(vr.MatchString("latest")).To(BeFalse())
+				vr = NewVersionRegexp(true)
+				Expect(vr.MatchString("latest")).To(BeTrue())
+			})
+			It("Range", func() {
+				vr := NewVersionRegexp(false)
+				Expect(vr.MatchString("1.1-2.2")).To(BeFalse())
+				vr = NewVersionRegexp(true)
+				Expect(vr.MatchString("-")).To(BeFalse())
+				Expect(vr.MatchString("1.1-")).To(BeFalse())
+				Expect(vr.MatchString("-1.1")).To(BeFalse())
+				Expect(vr.MatchString("1.a-2.b")).To(BeFalse())
+				Expect(vr.MatchString("1.-.2")).To(BeFalse())
+				Expect(vr.MatchString("60000-1")).To(BeFalse())
+				Expect(vr.MatchString("1.1-2.2")).To(BeTrue())
+			})
+			It("AtLess", func() {
+				vr := NewVersionRegexp(false)
+				Expect(vr.MatchString("1.0+")).To(BeFalse())
+				vr = NewVersionRegexp(true)
+				Expect(vr.MatchString("+")).To(BeFalse())
+				Expect(vr.MatchString("+1.0")).To(BeFalse())
+				Expect(vr.MatchString("1.a+")).To(BeFalse())
+				Expect(vr.MatchString(".1+")).To(BeFalse())
+				Expect(vr.MatchString("1.+")).To(BeFalse())
+				Expect(vr.MatchString(".+")).To(BeFalse())
+				Expect(vr.MatchString("60000+")).To(BeFalse())
+				Expect(vr.MatchString("1.0+")).To(BeTrue())
+			})
+			It("Explicit", func() {
+				vr := NewVersionRegexp(false)
+				Expect(vr.MatchString("")).To(BeFalse())
+				Expect(vr.MatchString("a")).To(BeFalse())
+				Expect(vr.MatchString("60000")).To(BeFalse())
+				Expect(vr.MatchString(".")).To(BeFalse())
+				Expect(vr.MatchString("1.")).To(BeFalse())
+				Expect(vr.MatchString(".1")).To(BeFalse())
+				Expect(vr.MatchString("1.4")).To(BeTrue())
+				vr = NewVersionRegexp(true)
+				Expect(vr.MatchString("")).To(BeFalse())
+				Expect(vr.MatchString("a")).To(BeFalse())
+				Expect(vr.MatchString("60000")).To(BeFalse())
+				Expect(vr.MatchString(".")).To(BeFalse())
+				Expect(vr.MatchString("1.")).To(BeFalse())
+				Expect(vr.MatchString(".1")).To(BeFalse())
+				Expect(vr.MatchString("1.4")).To(BeTrue())
+			})
+		})
+		Context("Exception", func() {
+			It("MatchString & String", func() {
+				vr := VersionRegexp{}
+				Expect(vr.MatchString("")).To(BeTrue())
+				Expect(vr.String()).NotTo(BeEmpty())
+				vr = VersionRegexp{Fuzzy: true}
+				Expect(vr.MatchString("")).To(BeTrue())
+				Expect(vr.String()).NotTo(BeEmpty())
 			})
 		})
 	})

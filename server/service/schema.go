@@ -39,7 +39,7 @@ func (s *MicroServiceService) GetSchemaInfo(ctx context.Context, in *pb.GetSchem
 		}, nil
 	}
 
-	err := apt.Validate(in)
+	err := Validate(in)
 	if err != nil {
 		util.Logger().Errorf(nil, "get schema failed, serviceId %s, schemaId %s: invalid params.", in.ServiceId, in.SchemaId)
 		return &pb.GetSchemaResponse{
@@ -95,7 +95,7 @@ func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAl
 		}, nil
 	}
 
-	err := apt.Validate(in)
+	err := Validate(in)
 	if err != nil {
 		util.Logger().Errorf(nil, "get schema failed, serviceId %s: invalid params.", in.ServiceId)
 		return &pb.GetAllSchemaResponse{
@@ -177,70 +177,70 @@ func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAl
 
 }
 
-func (s *MicroServiceService) DeleteSchema(ctx context.Context, request *pb.DeleteSchemaRequest) (*pb.DeleteSchemaResponse, error) {
-	if request == nil || len(request.ServiceId) == 0 || len(request.SchemaId) == 0 {
+func (s *MicroServiceService) DeleteSchema(ctx context.Context, in *pb.DeleteSchemaRequest) (*pb.DeleteSchemaResponse, error) {
+	if in == nil || len(in.ServiceId) == 0 || len(in.SchemaId) == 0 {
 		util.Logger().Errorf(nil, "delete schema failed: invalid params.")
 		return &pb.DeleteSchemaResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Invalid request path."),
 		}, nil
 	}
-	err := apt.Validate(request)
+	err := Validate(in)
 	if err != nil {
-		util.Logger().Errorf(err, "delete schema failed, serviceId %s, schemaId %s: invalid params.", request.ServiceId, request.SchemaId)
+		util.Logger().Errorf(err, "delete schema failed, serviceId %s, schemaId %s: invalid params.", in.ServiceId, in.SchemaId)
 		return &pb.DeleteSchemaResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 	domainProject := util.ParseDomainProject(ctx)
 
-	if !serviceUtil.ServiceExist(ctx, domainProject, request.ServiceId) {
-		util.Logger().Errorf(nil, "delete schema failed, serviceId %s, schemaId %s: service not exist.", request.ServiceId, request.SchemaId)
+	if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId) {
+		util.Logger().Errorf(nil, "delete schema failed, serviceId %s, schemaId %s: service not exist.", in.ServiceId, in.SchemaId)
 		return &pb.DeleteSchemaResponse{
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
-	key := apt.GenerateServiceSchemaKey(domainProject, request.ServiceId, request.SchemaId)
+	key := apt.GenerateServiceSchemaKey(domainProject, in.ServiceId, in.SchemaId)
 	exist, err := serviceUtil.CheckSchemaInfoExist(ctx, key)
 	if err != nil {
-		util.Logger().Errorf(err, "delete schema failed, serviceId %s, schemaId %s: get schema failed.", request.ServiceId, request.SchemaId)
+		util.Logger().Errorf(err, "delete schema failed, serviceId %s, schemaId %s: get schema failed.", in.ServiceId, in.SchemaId)
 		return &pb.DeleteSchemaResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, "Schema info does not exist."),
 		}, err
 	}
 	if !exist {
-		util.Logger().Errorf(nil, "delete schema failed, serviceId %s, schemaId %s: schema not exist.", request.ServiceId, request.SchemaId)
+		util.Logger().Errorf(nil, "delete schema failed, serviceId %s, schemaId %s: schema not exist.", in.ServiceId, in.SchemaId)
 		return &pb.DeleteSchemaResponse{
 			Response: pb.CreateResponse(scerr.ErrSchemaNotExists, "Schema info does not exist."),
 		}, nil
 	}
-	epSummaryKey := apt.GenerateServiceSchemaSummaryKey(domainProject, request.ServiceId, request.SchemaId)
+	epSummaryKey := apt.GenerateServiceSchemaSummaryKey(domainProject, in.ServiceId, in.SchemaId)
 	opts := []registry.PluginOp{
 		registry.OpDel(registry.WithStrKey(epSummaryKey)),
 		registry.OpDel(registry.WithStrKey(key)),
 	}
 	_, errDo := backend.Registry().Txn(ctx, opts)
 	if errDo != nil {
-		util.Logger().Errorf(errDo, "delete schema failed, serviceId %s, schemaId %s: delete schema from etcd failed.", request.ServiceId, request.SchemaId)
+		util.Logger().Errorf(errDo, "delete schema failed, serviceId %s, schemaId %s: delete schema from etcd failed.", in.ServiceId, in.SchemaId)
 		return &pb.DeleteSchemaResponse{
 			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, "Delete schema info failed."),
 		}, errDo
 	}
-	util.Logger().Infof("delete schema info successfully.%s", request.SchemaId)
+	util.Logger().Infof("delete schema info successfully.%s", in.SchemaId)
 	return &pb.DeleteSchemaResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Delete schema info successfully."),
 	}, nil
 }
 
-func (s *MicroServiceService) ModifySchemas(ctx context.Context, request *pb.ModifySchemasRequest) (*pb.ModifySchemasResponse, error) {
-	err := apt.Validate(request)
+func (s *MicroServiceService) ModifySchemas(ctx context.Context, in *pb.ModifySchemasRequest) (*pb.ModifySchemasResponse, error) {
+	err := Validate(in)
 	if err != nil {
 		util.Logger().Errorf(err, "modify schemas failed: invalid params.")
 		return &pb.ModifySchemasResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Invalid request."),
 		}, nil
 	}
-	serviceId := request.ServiceId
+	serviceId := in.ServiceId
 
 	domainProject := util.ParseDomainProject(ctx)
 
@@ -258,8 +258,9 @@ func (s *MicroServiceService) ModifySchemas(ctx context.Context, request *pb.Mod
 		}, nil
 	}
 
-	respErr := modifySchemas(ctx, domainProject, service, request.Schemas)
+	respErr := modifySchemas(ctx, domainProject, service, in.Schemas)
 	if respErr != nil {
+		util.Logger().Errorf(nil, "modify schemas failed: commit data failed, serviceId %s", serviceId)
 		resp := &pb.ModifySchemasResponse{
 			Response: pb.CreateResponseWithSCErr(respErr),
 		}
@@ -274,11 +275,20 @@ func (s *MicroServiceService) ModifySchemas(ctx context.Context, request *pb.Mod
 	}, nil
 }
 
-func schemasAnalysis(schemas []*pb.Schema, schemasFromDb []*pb.Schema, schemaIdsInService []string) ([]*pb.Schema, []*pb.Schema, []string) {
+func schemasAnalysis(schemas []*pb.Schema, schemasFromDb []*pb.Schema, schemaIdsInService []string) (
+	[]*pb.Schema, []*pb.Schema, []*pb.Schema, []string) {
 	needUpdateSchemas := make([]*pb.Schema, 0, len(schemas))
 	needAddSchemas := make([]*pb.Schema, 0, len(schemas))
+	needDeleteSchemas := make([]*pb.Schema, 0, len(schemasFromDb))
+	nonExistSchemaIds := make([]string, 0, len(schemas))
 
+	duplicate := make(map[string]struct{})
 	for _, schema := range schemas {
+		if _, ok := duplicate[schema.SchemaId]; ok {
+			continue
+		}
+		duplicate[schema.SchemaId] = struct{}{}
+
 		exist := false
 		for _, schemaFromDb := range schemasFromDb {
 			if schema.SchemaId == schemaFromDb.SchemaId {
@@ -290,11 +300,8 @@ func schemasAnalysis(schemas []*pb.Schema, schemasFromDb []*pb.Schema, schemaIds
 		if !exist {
 			needAddSchemas = append(needAddSchemas, schema)
 		}
-	}
 
-	nonExistSchemaIds := make([]string, 0, len(schemas))
-	for _, schema := range schemas {
-		exist := false
+		exist = false
 		for _, schemaId := range schemaIdsInService {
 			if schema.SchemaId == schemaId {
 				exist = true
@@ -304,7 +311,21 @@ func schemasAnalysis(schemas []*pb.Schema, schemasFromDb []*pb.Schema, schemaIds
 			nonExistSchemaIds = append(nonExistSchemaIds, schema.SchemaId)
 		}
 	}
-	return needUpdateSchemas, needAddSchemas, nonExistSchemaIds
+
+	for _, schemaFromDb := range schemasFromDb {
+		exist := false
+		for _, schema := range schemas {
+			if schema.SchemaId == schemaFromDb.SchemaId {
+				exist = true
+				break
+			}
+		}
+		if !exist {
+			needDeleteSchemas = append(needDeleteSchemas, schemaFromDb)
+		}
+	}
+
+	return needUpdateSchemas, needAddSchemas, needDeleteSchemas, nonExistSchemaIds
 }
 
 func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroService, schemas []*pb.Schema) *scerr.Error {
@@ -315,12 +336,12 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 		return scerr.NewError(scerr.ErrInternal, err.Error())
 	}
 
-	needUpdateSchemas, needAddSchemas, nonExistSchemaIds := schemasAnalysis(schemas, schemasFromDatabase, service.Schemas)
+	needUpdateSchemas, needAddSchemas, needDeleteSchemas, nonExistSchemaIds := schemasAnalysis(schemas, schemasFromDatabase, service.Schemas)
 
 	pluginOps := make([]registry.PluginOp, 0)
-	if service.Environment == pb.ENV_PROD {
+	if len(service.Environment) == 0 || service.Environment == pb.ENV_PROD {
 		if len(service.Schemas) == 0 {
-			res := quota.NewApplyQuotaResource(quota.SchemaQuotaType, domainProject, serviceId, int64(len(schemas)))
+			res := quota.NewApplyQuotaResource(quota.SchemaQuotaType, domainProject, serviceId, int64(len(nonExistSchemaIds)))
 			rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
 			errQuota := rst.Err
 			if errQuota != nil {
@@ -339,7 +360,7 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 			if len(nonExistSchemaIds) != 0 {
 				errInfo := fmt.Sprintf("non-exist schemaId %s", util.StringJoin(nonExistSchemaIds, " ,"))
 				util.Logger().Errorf(nil, "modify schemas failed, serviceId %s, %s", serviceId, errInfo)
-				return scerr.NewError(scerr.ErrInvalidParams, errInfo)
+				return scerr.NewError(scerr.ErrUndefinedSchemaId, errInfo)
 			}
 			for _, needUpdateSchema := range needUpdateSchemas {
 				exist, err := isExistSchemaSummary(ctx, domainProject, serviceId, needUpdateSchema.SchemaId)
@@ -350,25 +371,11 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 					opts := schemaWithDatabaseOpera(registry.OpPut, domainProject, serviceId, needUpdateSchema)
 					pluginOps = append(pluginOps, opts...)
 				} else {
-					util.Logger().Warnf(nil, "schema and summary more existed, skip,serviceId %s, schemaId %s", serviceId, needUpdateSchema.SchemaId)
+					util.Logger().Warnf(nil, "schema and summary already exist, skip to update, serviceId %s, schemaId %s", serviceId, needUpdateSchema.SchemaId)
 				}
 			}
 		}
 	} else {
-		needDeleteSchemas := make([]*pb.Schema, 0, len(schemasFromDatabase))
-		for _, schemaFromDb := range schemasFromDatabase {
-			exist := false
-			for _, schema := range schemas {
-				if schema.SchemaId == schemaFromDb.SchemaId {
-					exist = true
-					break
-				}
-			}
-			if !exist {
-				needDeleteSchemas = append(needDeleteSchemas, schemaFromDb)
-			}
-		}
-
 		quotaSize := len(needAddSchemas) - len(needDeleteSchemas)
 		if quotaSize > 0 {
 			res := quota.NewApplyQuotaResource(quota.SchemaQuotaType, domainProject, serviceId, int64(quotaSize))
@@ -514,14 +521,14 @@ func (s *MicroServiceService) ModifySchema(ctx context.Context, request *pb.Modi
 	}, nil
 }
 
-func (s *MicroServiceService) canModifySchema(ctx context.Context, domainProject string, request *pb.ModifySchemaRequest) *scerr.Error {
-	serviceId := request.ServiceId
-	schemaId := request.SchemaId
+func (s *MicroServiceService) canModifySchema(ctx context.Context, domainProject string, in *pb.ModifySchemaRequest) *scerr.Error {
+	serviceId := in.ServiceId
+	schemaId := in.SchemaId
 	if len(schemaId) == 0 || len(serviceId) == 0 {
 		util.Logger().Errorf(nil, "update schema failed: invalid params.")
 		return scerr.NewError(scerr.ErrInvalidParams, "serviceId or schemaId is nil")
 	}
-	err := apt.Validate(request)
+	err := Validate(in)
 	if err != nil {
 		util.Logger().Errorf(err, "update schema failed, serviceId %s, schemaId %s: invalid params.", serviceId, schemaId)
 		return scerr.NewError(scerr.ErrInvalidParams, err.Error())
@@ -534,8 +541,8 @@ func (s *MicroServiceService) canModifySchema(ctx context.Context, domainProject
 		util.Logger().Errorf(errQuota, "modify schema info failed, check resource num failed, %s, %s", serviceId, schemaId)
 		return errQuota
 	}
-	if len(request.Summary) == 0 {
-		util.Logger().Warnf(nil, "service %s schema %s summary is empty.", request.ServiceId, schemaId)
+	if len(in.Summary) == 0 {
+		util.Logger().Warnf(nil, "service %s schema %s summary is empty.", in.ServiceId, schemaId)
 	}
 	return nil
 }
@@ -558,7 +565,7 @@ func (s *MicroServiceService) modifySchema(ctx context.Context, serviceId string
 	pluginOps := make([]registry.PluginOp, 0, 10)
 	isExist := isExistSchemaId(service, []*pb.Schema{schema})
 
-	if service.Environment == pb.ENV_PROD {
+	if len(service.Environment) == 0 || service.Environment == pb.ENV_PROD {
 		if len(service.Schemas) != 0 && !isExist {
 			return scerr.NewError(scerr.ErrUndefinedSchemaId, "schemaId non-exist， can't be added, environment is production")
 		}
@@ -572,8 +579,8 @@ func (s *MicroServiceService) modifySchema(ctx context.Context, serviceId string
 
 		if respSchema.Count != 0 {
 			if len(schema.Summary) == 0 {
-				util.Logger().Errorf(err, "prod mode, schema more exist, can not change, %s %s", serviceId, schemaId)
-				return scerr.NewError(scerr.ErrModifySchemaNotAllow, "schema more exist, can not change, environment is production")
+				util.Logger().Errorf(err, "prod mode, schema already exist, can not change, %s %s", serviceId, schemaId)
+				return scerr.NewError(scerr.ErrModifySchemaNotAllow, "schema already exist, can not change, environment is production")
 			}
 
 			exist, err := isExistSchemaSummary(ctx, domainProject, serviceId, schemaId)
@@ -582,8 +589,8 @@ func (s *MicroServiceService) modifySchema(ctx context.Context, serviceId string
 				return scerr.NewError(scerr.ErrInternal, "check schema summary existence failed")
 			}
 			if exist {
-				util.Logger().Errorf(err, "prod mode, schema more exist, can not change, %s %s", serviceId, schemaId)
-				return scerr.NewError(scerr.ErrModifySchemaNotAllow, "schema more exist, can not change, environment is production")
+				util.Logger().Errorf(err, "prod mode, schema already exist, can not change, %s %s", serviceId, schemaId)
+				return scerr.NewError(scerr.ErrModifySchemaNotAllow, "schema already exist, can not change, environment is production")
 			}
 		}
 
@@ -611,7 +618,7 @@ func (s *MicroServiceService) modifySchema(ctx context.Context, serviceId string
 	opts := CommitSchemaInfo(domainProject, serviceId, schema)
 	pluginOps = append(pluginOps, opts...)
 
-	_, err = backend.Registry().Txn(ctx, pluginOps)
+	err = backend.BatchCommit(ctx, pluginOps)
 	if err != nil {
 		util.Logger().Errorf(err, "commit update schema failed, serviceId %s, schemaId %s", serviceId, schemaId)
 		return scerr.NewError(scerr.ErrInternal, "commit update schema failed")

@@ -308,12 +308,28 @@ func RunLogDirRotate(cfg LoggerConfig) {
 }
 
 func init() {
-	pathReplacer = strings.NewReplacer(
-		os.ExpandEnv("${APP_ROOT}"), "APP_ROOT",
-		os.ExpandEnv("${_APP_SHARE_DIR}"), "_APP_SHARE_DIR",
-		os.ExpandEnv("${_APP_TMP_DIR}"), "_APP_TMP_DIR",
-		os.ExpandEnv("${SSL_ROOT}"), "SSL_ROOT",
-		os.ExpandEnv("${CIPHER_ROOT}"), "CIPHER_ROOT",
-		os.ExpandEnv("${_APP_LOG_DIR}"), "_APP_LOG_DIR",
-		os.ExpandEnv("${INSTALL_ROOT}"), "INSTALL_ROOT")
+	var s []string
+	if e := os.Getenv("INSTALL_ROOT"); len(e) > 0 {
+		s = append(s, e, "INSTALL_ROOT")
+	}
+	if e := os.Getenv("SSL_ROOT"); len(e) > 0 {
+		s = append(s, e, "SSL_ROOT")
+	}
+	if e := os.Getenv("CIPHER_ROOT"); len(e) > 0 {
+		s = append(s, e, "CIPHER_ROOT")
+	}
+	if e := os.Getenv("APP_ROOT"); len(e) > 0 {
+		s = append(s, e, "APP_ROOT")
+	}
+	if e := os.Getenv("_APP_LOG_DIR"); len(e) > 0 {
+		s = append(s, e, "_APP_LOG_DIR")
+	}
+	if e := os.Getenv("_APP_SHARE_DIR"); len(e) > 0 {
+		s = append(s, e, "_APP_SHARE_DIR")
+	}
+	if e := os.Getenv("_APP_TMP_DIR"); len(e) > 0 {
+		s = append(s, e, "_APP_TMP_DIR")
+	}
+
+	pathReplacer = strings.NewReplacer(s...)
 }

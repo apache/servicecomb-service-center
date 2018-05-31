@@ -168,13 +168,13 @@ func GetCaller(skip int) (string, string, int, bool) {
 	return file, method, line, ok
 }
 
-func BytesToInt32(bs []byte) (in int32) {
+func Int16ToInt64(bs []int16) (in int64) {
 	l := len(bs)
 	if l > 4 || l == 0 {
 		return 0
 	}
 
-	pi := (*[4]byte)(unsafe.Pointer(&in))
+	pi := (*[4]int16)(unsafe.Pointer(&in))
 	if IsBigEndian() {
 		for i := range bs {
 			pi[i] = bs[l-i-1]

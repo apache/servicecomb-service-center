@@ -501,18 +501,8 @@ func containServiceDependency(services []*pb.MicroServiceKey, service *pb.MicroS
 	return false, nil
 }
 
-// fuzzyMatch: 是否使用模糊规则
-func validateMicroServiceKey(in *pb.MicroServiceKey, fuzzyMatch bool) error {
-	if fuzzyMatch {
-		// provider的ServiceName, Version支持模糊规则
-		return apt.ProviderMsValidator.Validate(in)
-	} else {
-		return apt.ConsumerMsValidator.Validate(in)
-	}
-}
-
 func BadParamsResponse(detailErr string) *pb.CreateDependenciesResponse {
-	util.Logger().Errorf(nil, "Request params is invalid.%s", detailErr)
+	util.Logger().Errorf(nil, "Request params is invalid. %s", detailErr)
 	if len(detailErr) == 0 {
 		detailErr = "Request params is invalid."
 	}
@@ -522,12 +512,6 @@ func BadParamsResponse(detailErr string) *pb.CreateDependenciesResponse {
 }
 
 func ParamsChecker(consumerInfo *pb.MicroServiceKey, providersInfo []*pb.MicroServiceKey) *pb.CreateDependenciesResponse {
-	if err := validateMicroServiceKey(consumerInfo, false); err != nil {
-		return BadParamsResponse(err.Error())
-	}
-	if providersInfo == nil {
-		return BadParamsResponse("Invalid request body for provider info.")
-	}
 	flag := make(map[string]bool, len(providersInfo))
 	for _, providerInfo := range providersInfo {
 		//存在带*的情况，后面的数据就不校验了
@@ -538,14 +522,15 @@ func ParamsChecker(consumerInfo *pb.MicroServiceKey, providersInfo []*pb.MicroSe
 		if len(providerInfo.AppId) == 0 {
 			providerInfo.AppId = consumerInfo.AppId
 		}
-		if err := validateMicroServiceKey(providerInfo, true); err != nil {
-			return BadParamsResponse(err.Error())
-		}
 
 		version := providerInfo.Version
+		if len(version) == 0 {
+			return BadParamsResponse("Required provider version")
+		}
+
 		providerInfo.Version = ""
 		if _, ok := flag[toString(providerInfo)]; ok {
-			return BadParamsResponse("Invalid request body for provider info.Duplicate provider or (serviceName and appid is same).")
+			return BadParamsResponse("Invalid request body for provider info.Duplicate provider or (serviceName and appId is same).")
 		} else {
 			flag[toString(providerInfo)] = true
 		}
@@ -603,7 +588,7 @@ func (dep *Dependency) removeConsumerOfProviderRule(ctx context.Context) {
 			registry.WithValue(data)))
 	}
 	if len(opts) != 0 {
-		_, err := backend.Registry().Txn(ctx, opts)
+		err := backend.BatchCommit(ctx, opts)
 		if err != nil {
 			dep.err <- err
 			return
@@ -642,7 +627,7 @@ func (dep *Dependency) addConsumerOfProviderRule(ctx context.Context) {
 		}
 	}
 	if len(opts) != 0 {
-		_, err := backend.Registry().Txn(ctx, opts)
+		err := backend.BatchCommit(ctx, opts)
 		if err != nil {
 			dep.err <- err
 			return
