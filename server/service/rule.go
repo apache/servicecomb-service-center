@@ -302,7 +302,7 @@ func (s *MicroServiceService) DeleteRule(ctx context.Context, in *pb.DeleteServi
 			Response: pb.CreateResponse(scerr.ErrRuleNotExists, "No service rule has been deleted."),
 		}, nil
 	}
-	_, err := backend.Registry().Txn(ctx, opts)
+	err := backend.BatchCommit(ctx, opts)
 	if err != nil {
 		util.Logger().Errorf(err, "delete service rule failed, serviceId is %s, rule is %v: commit data into etcd failed.", in.ServiceId, in.RuleIds)
 		return &pb.DeleteServiceRulesResponse{

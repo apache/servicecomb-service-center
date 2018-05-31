@@ -98,7 +98,7 @@ func (s *MicroServiceService) AddOrUpdateDependencies(ctx context.Context, depen
 		opts = append(opts, registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)))
 	}
 
-	_, err := backend.Registry().Txn(ctx, opts)
+	err := backend.BatchCommit(ctx, opts)
 	if err != nil {
 		util.Logger().Errorf(err, "put request into dependency queue failed, override: %t, %v", override, dependencyInfos)
 		return pb.CreateResponse(scerr.ErrInternal, err.Error()), err

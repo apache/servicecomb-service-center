@@ -588,7 +588,7 @@ func (dep *Dependency) removeConsumerOfProviderRule(ctx context.Context) {
 			registry.WithValue(data)))
 	}
 	if len(opts) != 0 {
-		_, err := backend.Registry().Txn(ctx, opts)
+		err := backend.BatchCommit(ctx, opts)
 		if err != nil {
 			dep.err <- err
 			return
@@ -627,7 +627,7 @@ func (dep *Dependency) addConsumerOfProviderRule(ctx context.Context) {
 		}
 	}
 	if len(opts) != 0 {
-		_, err := backend.Registry().Txn(ctx, opts)
+		err := backend.BatchCommit(ctx, opts)
 		if err != nil {
 			dep.err <- err
 			return

@@ -212,7 +212,7 @@ var _ = Describe("'Schema' service", func() {
 			schemaIds := make([]string, 0, size)
 			schemas := make([]*pb.Schema, 0, size)
 			for i := 0; i < size; i++ {
-				s := strconv.Itoa(i)
+				s := "ServiceCombTestTheLimitOfSchemas" + strconv.Itoa(i)
 
 				schemaIds = append(schemaIds, s)
 				schemas = append(schemas, &pb.Schema{
