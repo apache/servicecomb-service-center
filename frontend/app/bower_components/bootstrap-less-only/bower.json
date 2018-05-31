@@ -1,0 +1,11 @@
+{
+	  "name": "bootstrap-less-only",
+	  "version": "3.3.7",
+	  "main": "less/bootstrap.less",
+	  "ignore": [
+		".jshintrc",
+		"**/*.txt"
+	  ],
+	  "dependencies": {  },
+	  "devDependencies": {  }
+}
