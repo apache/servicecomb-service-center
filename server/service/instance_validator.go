@@ -88,7 +88,8 @@ func RegisterInstanceReqValidator() *validate.Validator {
 		var microServiceInstanceValidator validate.Validator
 		microServiceInstanceValidator.AddRule("InstanceId", &validate.ValidateRule{Max: 64, Regexp: simpleNameAllowEmptyRegex})
 		microServiceInstanceValidator.AddRule("ServiceId", GetServiceReqValidator().GetRule("ServiceId"))
-		microServiceInstanceValidator.AddRule("Endpoints", &validate.ValidateRule{Min: 1, Regexp: epRegex})
+		// allow empty endpoint register for client only
+		microServiceInstanceValidator.AddRule("Endpoints", &validate.ValidateRule{Regexp: epRegex})
 		microServiceInstanceValidator.AddRule("HostName", &validate.ValidateRule{Max: 64, Min: 1, Regexp: epRegex})
 		microServiceInstanceValidator.AddSub("HealthCheck", &healthCheckInfoValidator)
 		microServiceInstanceValidator.AddRule("Status", &validate.ValidateRule{Regexp: instStatusRegex})

@@ -166,15 +166,6 @@ var _ = Describe("'Instance' service", func() {
 				resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						ServiceId: serviceId1,
-						HostName:  "UT-HOST",
-						Status:    pb.MSI_UP,
-					},
-				})
-				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
-				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
-					Instance: &pb.MicroServiceInstance{
-						ServiceId: serviceId1,
 						Endpoints: []string{""},
 						HostName:  "UT-HOST",
 						Status:    pb.MSI_UP,

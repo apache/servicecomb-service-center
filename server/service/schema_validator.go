@@ -37,6 +37,7 @@ func GetSchemaReqValidator() *validate.Validator {
 	schemaIdRule := &validate.ValidateRule{Min: 1, Max: 160, Regexp: schemaIdUnlimitedRegex}
 
 	return getSchemaReqValidator.Init(func(v *validate.Validator) {
+		v.AddRule("ServiceId", GetServiceReqValidator().GetRule("ServiceId"))
 		v.AddRule("SchemaId", schemaIdRule)
 	})
 }

@@ -260,6 +260,7 @@ func (s *MicroServiceService) ModifySchemas(ctx context.Context, in *pb.ModifySc
 
 	respErr := modifySchemas(ctx, domainProject, service, in.Schemas)
 	if respErr != nil {
+		util.Logger().Errorf(nil, "modify schemas failed: commit data failed, serviceId %s", serviceId)
 		resp := &pb.ModifySchemasResponse{
 			Response: pb.CreateResponseWithSCErr(respErr),
 		}
@@ -274,11 +275,20 @@ func (s *MicroServiceService) ModifySchemas(ctx context.Context, in *pb.ModifySc
 	}, nil
 }
 
-func schemasAnalysis(schemas []*pb.Schema, schemasFromDb []*pb.Schema, schemaIdsInService []string) ([]*pb.Schema, []*pb.Schema, []string) {
+func schemasAnalysis(schemas []*pb.Schema, schemasFromDb []*pb.Schema, schemaIdsInService []string) (
+	[]*pb.Schema, []*pb.Schema, []*pb.Schema, []string) {
 	needUpdateSchemas := make([]*pb.Schema, 0, len(schemas))
 	needAddSchemas := make([]*pb.Schema, 0, len(schemas))
+	needDeleteSchemas := make([]*pb.Schema, 0, len(schemasFromDb))
+	nonExistSchemaIds := make([]string, 0, len(schemas))
 
+	duplicate := make(map[string]struct{})
 	for _, schema := range schemas {
+		if _, ok := duplicate[schema.SchemaId]; ok {
+			continue
+		}
+		duplicate[schema.SchemaId] = struct{}{}
+
 		exist := false
 		for _, schemaFromDb := range schemasFromDb {
 			if schema.SchemaId == schemaFromDb.SchemaId {
@@ -290,11 +300,8 @@ func schemasAnalysis(schemas []*pb.Schema, schemasFromDb []*pb.Schema, schemaIds
 		if !exist {
 			needAddSchemas = append(needAddSchemas, schema)
 		}
-	}
 
-	nonExistSchemaIds := make([]string, 0, len(schemas))
-	for _, schema := range schemas {
-		exist := false
+		exist = false
 		for _, schemaId := range schemaIdsInService {
 			if schema.SchemaId == schemaId {
 				exist = true
@@ -304,7 +311,21 @@ func schemasAnalysis(schemas []*pb.Schema, schemasFromDb []*pb.Schema, schemaIds
 			nonExistSchemaIds = append(nonExistSchemaIds, schema.SchemaId)
 		}
 	}
-	return needUpdateSchemas, needAddSchemas, nonExistSchemaIds
+
+	for _, schemaFromDb := range schemasFromDb {
+		exist := false
+		for _, schema := range schemas {
+			if schema.SchemaId == schemaFromDb.SchemaId {
+				exist = true
+				break
+			}
+		}
+		if !exist {
+			needDeleteSchemas = append(needDeleteSchemas, schemaFromDb)
+		}
+	}
+
+	return needUpdateSchemas, needAddSchemas, needDeleteSchemas, nonExistSchemaIds
 }
 
 func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroService, schemas []*pb.Schema) *scerr.Error {
@@ -315,12 +336,12 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 		return scerr.NewError(scerr.ErrInternal, err.Error())
 	}
 
-	needUpdateSchemas, needAddSchemas, nonExistSchemaIds := schemasAnalysis(schemas, schemasFromDatabase, service.Schemas)
+	needUpdateSchemas, needAddSchemas, needDeleteSchemas, nonExistSchemaIds := schemasAnalysis(schemas, schemasFromDatabase, service.Schemas)
 
 	pluginOps := make([]registry.PluginOp, 0)
 	if len(service.Environment) == 0 || service.Environment == pb.ENV_PROD {
 		if len(service.Schemas) == 0 {
-			res := quota.NewApplyQuotaResource(quota.SchemaQuotaType, domainProject, serviceId, int64(len(schemas)))
+			res := quota.NewApplyQuotaResource(quota.SchemaQuotaType, domainProject, serviceId, int64(len(nonExistSchemaIds)))
 			rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
 			errQuota := rst.Err
 			if errQuota != nil {
@@ -339,7 +360,7 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 			if len(nonExistSchemaIds) != 0 {
 				errInfo := fmt.Sprintf("non-exist schemaId %s", util.StringJoin(nonExistSchemaIds, " ,"))
 				util.Logger().Errorf(nil, "modify schemas failed, serviceId %s, %s", serviceId, errInfo)
-				return scerr.NewError(scerr.ErrInvalidParams, errInfo)
+				return scerr.NewError(scerr.ErrUndefinedSchemaId, errInfo)
 			}
 			for _, needUpdateSchema := range needUpdateSchemas {
 				exist, err := isExistSchemaSummary(ctx, domainProject, serviceId, needUpdateSchema.SchemaId)
@@ -350,25 +371,11 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 					opts := schemaWithDatabaseOpera(registry.OpPut, domainProject, serviceId, needUpdateSchema)
 					pluginOps = append(pluginOps, opts...)
 				} else {
-					util.Logger().Warnf(nil, "schema and summary already exist, skip,serviceId %s, schemaId %s", serviceId, needUpdateSchema.SchemaId)
+					util.Logger().Warnf(nil, "schema and summary already exist, skip to update, serviceId %s, schemaId %s", serviceId, needUpdateSchema.SchemaId)
 				}
 			}
 		}
 	} else {
-		needDeleteSchemas := make([]*pb.Schema, 0, len(schemasFromDatabase))
-		for _, schemaFromDb := range schemasFromDatabase {
-			exist := false
-			for _, schema := range schemas {
-				if schema.SchemaId == schemaFromDb.SchemaId {
-					exist = true
-					break
-				}
-			}
-			if !exist {
-				needDeleteSchemas = append(needDeleteSchemas, schemaFromDb)
-			}
-		}
-
 		quotaSize := len(needAddSchemas) - len(needDeleteSchemas)
 		if quotaSize > 0 {
 			res := quota.NewApplyQuotaResource(quota.SchemaQuotaType, domainProject, serviceId, int64(quotaSize))
