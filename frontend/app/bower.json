@@ -1,0 +1,35 @@
+{
+  "name": "Service-Center Management Console",
+  "homepage": "https://github.com/apache/incubator-servicecomb-service-center",
+  "authors": [
+    "asifdxtreme <mohammad.asif.siddiqui1@huawei.com>"
+  ],
+  "description": "Frontend to manage the micro-services",
+  "main": "index.html",
+  "license": "Apache 2.0",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angular-animate": "^1.4.0",
+    "angular-aria": "^1.4.0",
+    "angular-material-data-table": "^0.10.10",
+    "angular-chart.js": "^1.1.1",
+    "angular-mocks": "^1.4.0",
+    "angular-resource": "^1.4.0",
+    "angular-sanitize": "^1.4.0",
+    "angular-swagger-ui": "^0.4.4",
+    "angular-translate-loader-static-files": "^2.11.0",
+    "angular-ui-router": "^0.2.18",
+    "angular-yamljs": "*",
+    "bootstrap": "^3.3.7",
+    "components-font-awesome": "^4.7.0",
+    "js-yaml": "3.11.0",
+    "jszip": "Stuk/jszip#^3.1.4",
+    "swagger-ui": "3.3.2"
+  }
+}
