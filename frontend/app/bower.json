@@ -22,7 +22,6 @@
     "angular-mocks": "^1.4.0",
     "angular-resource": "^1.4.0",
     "angular-sanitize": "^1.4.0",
-    "angular-swagger-ui": "^0.4.4",
     "angular-translate-loader-static-files": "^2.11.0",
     "angular-ui-router": "^0.2.18",
     "angular-yamljs": "*",
@@ -30,6 +29,7 @@
     "components-font-awesome": "^4.7.0",
     "js-yaml": "3.11.0",
     "jszip": "Stuk/jszip#^3.1.4",
-    "swagger-ui": "3.3.2"
+    "swagger-ui": "3.3.2",
+    "angular-swagger-ui": "https://github.com/asifdxtreme/angular-swagger-ui.git#master"
   }
 }
