@@ -93,7 +93,12 @@ build_linux(){
     ## Build Frontend Release
     cd frontend
     go build -o ../$PACKAGE_PREFIX-$PACKAGE-linux-amd64/frontend
-    cd ..
+
+    ## Download the frontend dependencies using bower
+    cd app
+    bower install
+
+    cd ../..
 
     prepare_conf
 
@@ -145,7 +150,12 @@ build_windows(){
     cd frontend
     go build -o frontend.exe
     cp -r frontend.exe ../$PACKAGE_PREFIX-$PACKAGE-windows-amd64
-    cd ..
+
+    ## Download the frontend dependencies using bower
+    cd app
+    bower install
+
+    cd ../..
 
     prepare_conf
 

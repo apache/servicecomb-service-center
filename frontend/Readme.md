@@ -33,7 +33,11 @@ cd $GOPATH/src/github.com/apache/incubator-servicecomb-service-center
 
 cp -r etc/conf frontend/
 
-cd frontend
+cd frontend/app
+
+bower install
+
+cd ..
 
 go run main.go
 ```
@@ -55,9 +59,8 @@ We Welcome our community members to come forward and help us to build this UI to
 |4|Provider List for MicroServices|Done|
 |5|Consumer List for MicroServices|Done|
 |6|Schema List for MicroServices|Done|
-|7|Test Schema for MicroServices|InProgress|
+|7|Test Schema for MicroServices|Done|
 |8|Pact Broker Support|Done|
-|9|Generate Client from Schema |TBD|
-|10|Generate Server from Schema|TBD|
+|9|Topology View for Microservices Relationship|TBD|
 
 Any Contribution(issues,PR,Documentation,Translation) will be highly appreciated.
