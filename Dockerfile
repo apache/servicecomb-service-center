@@ -13,14 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang
+FROM ubuntu
 
-ADD . /go/src/github.com/apache/incubator-servicecomb-service-center
+ADD apache-servicecomb-incubating-service-center-latest-linux-amd64 /app/
 
-RUN go get github.com/FiloSottile/gvt
+RUN sed -i 's/httpaddr = 127.0.0.1/httpaddr = 0.0.0.0/g' /app/conf/app.conf
 
-RUN cd /go/src/github.com/apache/incubator-servicecomb-service-center && bash -x scripts/release/make_release.sh linux 1.0.0 latest
-
-RUN sed -i 's/httpaddr = 127.0.0.1/httpaddr = 0.0.0.0/g' /go/src/github.com/apache/incubator-servicecomb-service-center/apache-servicecomb-incubating-service-center-latest-linux-amd64/conf/app.conf
-
-ENTRYPOINT ["/go/src/github.com/apache/incubator-servicecomb-service-center/apache-servicecomb-incubating-service-center-latest-linux-amd64/service-center"]
+ENTRYPOINT ["/app/service-center"]
