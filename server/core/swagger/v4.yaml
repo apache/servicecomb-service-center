@@ -102,18 +102,13 @@ paths:
           description: 微服务唯一标识。
           required: true
           type: string
-        - name: noCache
-          in: query
-          description: 是否强一致性，1 是、0 否。
-          type: integer
-          default: 0
       tags:
         - microservices
       responses:
         200:
           description: 微服务结构体
           schema:
-            $ref: '#/definitions/CreateMicroService'
+            $ref: '#/definitions/GetMicroServicesResponse'
         400:
           description: 错误的请求
           schema:
@@ -144,7 +139,7 @@ paths:
         - name: force
           in: query
           description: 不传即默认为false。true表示强制删除，则与该服务相关的信息删除，false表示非强制删除：如果作为该被依赖（作为provider，提供服务,且不是只存在自依赖）或者存在实例，则不能删除,其它均删除。
-          type: string
+          type: boolean
       tags:
         - microservices
       responses:
@@ -174,11 +169,6 @@ paths:
           in: path
           required: true
           type: string
-        - name: noCache
-          in: query
-          description: 是否强一致性，1 是、0 否。
-          type: integer
-          default: 0
       responses:
         200:
           description: 查询成功
@@ -351,11 +341,6 @@ paths:
           description: 微服务唯一标识。
           required: true
           type: string
-        - name: noCache
-          in: query
-          description: 是否强一致性，1 是、0 否。
-          type: integer
-          default: 0
       tags:
         - microservices
         - tag
@@ -513,11 +498,6 @@ paths:
           description: 微服务唯一标识。
           required: true
           type: string
-        - name: noCache
-          in: query
-          description: 是否强一致性，1 是、0 否。
-          type: integer
-          default: 0
       tags:
         - microservices
         - rule
@@ -644,11 +624,6 @@ paths:
           description: 微服务契约唯一标识。
           required: true
           type: string
-        - name: noCache
-          in: query
-          description: 是否强一致性，1 是、0 否。
-          type: integer
-          default: 0
       tags:
         - microservices
         - schema
@@ -916,11 +891,6 @@ paths:
           description: 消费者的服务id。
           required: true
           type: string
-        - name: noCache
-          in: query
-          description: 是否强一致性，1 是、0 否。
-          type: integer
-          default: 0
         - name: noSelf
           in: query
           description: 是否取消返回自依赖的关系
@@ -965,11 +935,6 @@ paths:
           description: 提供者的服务id。
           required: true
           type: string
-        - name: noCache
-          in: query
-          description: 是否强一致性，1 是、0 否。
-          type: integer
-          default: 0
         - name: noSelf
           in: query
           description: 是否取消返回自依赖的关系
@@ -1044,11 +1009,6 @@ paths:
           description: 资源类型为 schema时 需传入schema唯一标识。
           type: string
           required: true
-        - name: noCache
-          in: query
-          description: 是否强一致性，1 是、0 否。
-          type: integer
-          default: 0
       tags:
         - schemas
         - microservices
@@ -1141,11 +1101,6 @@ paths:
           in: query
           description: 实例的environment。
           type: string
-        - name: noCache
-          in: query
-          description: 是否强一致性，1 是、0 否。
-          type: integer
-          default: 0
       tags:
         - instances
       responses:
@@ -1235,11 +1190,6 @@ paths:
           in: query
           description: 实例的environment。
           type: string
-        - name: noCache
-          in: query
-          description: 是否强一致性，1 是、0 否。
-          type: integer
-          default: 0
       tags:
         - instances
       responses:
@@ -1452,11 +1402,6 @@ paths:
           in: query
           description: 实例的environment。
           type: string
-        - name: noCache
-          in: query
-          description: 是否强一致性，1 是、0 否。
-          type: integer
-          default: 0
       tags:
         - instances
       responses:
@@ -1559,11 +1504,6 @@ paths:
           description: 微服务消费者的微服务唯一标识。
           required: true
           type: string
-        - name: noCache
-          in: query
-          description: 查询的东西是否用缓存，值为0或者1，0使用缓存，1不使用，默认为使用。
-          required: false
-          type: integer
       tags:
         - governance
       responses:
@@ -1594,11 +1534,6 @@ paths:
           in: path
           required: true
           type: string
-        - name: noCache
-          in: query
-          description: 查询的东西是否用缓存，值为0或者1，0使用缓存，1不使用，默认为使用。
-          required: false
-          type: integer
         - name: options
           in: query
           description: 获取对应options相对应的信息，all,tag,rules,instances,schemas,dependencies,statistics,没有默认返回服务信息
@@ -1636,11 +1571,6 @@ paths:
           description: 项目名字
           required: true
           type: string
-        - name: noCache
-          in: query
-          description: 查询的东西是否用缓存，值为0或者1，0使用缓存，1不使用，默认为使用。
-          required: false
-          type: integer
       tags:
         - governance
       responses:
@@ -1677,11 +1607,6 @@ paths:
           in: query
           description: development|testing|acceptance|production
           type: string
-        - name: noCache
-          in: query
-          description: 查询的东西是否用缓存，值为0或者1，0使用缓存，1不使用，默认为使用。
-          required: false
-          type: integer
       tags:
         - governance
       responses:
@@ -1762,7 +1687,7 @@ definitions:
         items:
            $ref: '#/definitions/MicroServiceInstance'
       tags:
-           $ref: '#/definitions/Tags'
+           $ref: "#/definitions/Properties"
 
   GetMicroServicesResponse:
     type: object
@@ -1864,13 +1789,7 @@ definitions:
         description: 服务路由
         items:
           $ref: '#/definitions/ServicePath'
-      providers:
-        type: array
-        items:
-          $ref: '#/definitions/DependencyKey'
       properties:
-        $ref: '#/definitions/Properties'
-      LBStrategy:
         $ref: '#/definitions/Properties'
   HealthCheck:
     type: object

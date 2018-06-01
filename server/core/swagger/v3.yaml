@@ -92,7 +92,7 @@ paths:
         200:
           description: 微服务结构体
           schema:
-            $ref: '#/definitions/CreateMicroService'
+            $ref: '#/definitions/GetMicroServicesResponse'
         400:
           description: 错误的请求
           schema:
@@ -1454,7 +1454,7 @@ definitions:
         items:
            $ref: '#/definitions/MicroServiceInstance'
       tags:
-           $ref: '#/definitions/Tags'
+           $ref: "#/definitions/Properties"
 
   GetMicroServicesResponse:
     type: object
@@ -1558,13 +1558,7 @@ definitions:
         description: 服务路由
         items:
           $ref: '#/definitions/ServicePath'
-      providers:
-        type: array
-        items:
-          $ref: '#/definitions/DependencyKey'
       properties:
-        $ref: '#/definitions/Properties'
-      LBStrategy:
         $ref: '#/definitions/Properties'
   HealthCheck:
     type: object
