@@ -44,7 +44,7 @@ angular.module('serviceCenter')
                 method: 'GET'
             },
             deleteService: {
-                url: 'v4/default/registry/microservices/{{serviceId}}',
+                url: 'v4/default/registry/microservices/{{serviceId}}?force=1',
                 method: 'DELETE'
             }
         }
