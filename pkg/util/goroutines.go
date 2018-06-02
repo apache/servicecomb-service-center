@@ -19,7 +19,19 @@ package util
 import (
 	"golang.org/x/net/context"
 	"sync"
+	"time"
 )
+
+var GlobalPoolConfig = &PoolConfig{
+	PutTimeout:  50 * time.Millisecond,
+	IdleTimeout: 30 * time.Second,
+}
+
+type PoolConfig struct {
+	Max         int
+	PutTimeout  time.Duration
+	IdleTimeout time.Duration
+}
 
 type GoRoutine struct {
 	ctx    context.Context
@@ -27,25 +39,52 @@ type GoRoutine struct {
 	wg     sync.WaitGroup
 	mux    sync.RWMutex
 	closed bool
+	pool   chan func(ctx context.Context)
+}
+
+func (g *GoRoutine) execute(f func(ctx context.Context)) {
+	defer RecoverAndReport()
+	f(g.ctx)
 }
 
 func (g *GoRoutine) Do(f func(context.Context)) {
+	defer RecoverAndReport()
+	for {
+		select {
+		case g.pool <- f:
+			return
+		case <-time.After(GlobalPoolConfig.PutTimeout):
+			go g.loop()
+		}
+	}
+}
+
+func (g *GoRoutine) loop() {
 	g.wg.Add(1)
-	go func() {
-		defer g.wg.Done()
-		defer RecoverAndReport()
-		f(g.ctx)
-	}()
+	defer g.wg.Done()
+	for {
+		select {
+		case <-time.After(GlobalPoolConfig.IdleTimeout):
+			return
+		case f, ok := <-g.pool:
+			if !ok {
+				return
+			}
+			g.execute(f)
+		}
+	}
 }
 
 func (g *GoRoutine) Close(wait bool) {
 	g.mux.Lock()
-	defer g.mux.Unlock()
-
 	if g.closed {
+		g.mux.Unlock()
 		return
 	}
 	g.closed = true
+	g.mux.Unlock()
+
+	close(g.pool)
 	g.cancel()
 	if wait {
 		g.Wait()
@@ -76,6 +115,7 @@ func NewGo(ctx context.Context) *GoRoutine {
 	gr := &GoRoutine{
 		ctx:    ctx,
 		cancel: cancel,
+		pool:   make(chan func(context.Context)),
 	}
 	return gr
 }

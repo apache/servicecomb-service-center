@@ -37,8 +37,7 @@ func (lw *ListWatcher) List(op ListWatchConfig) ([]*mvccpb.KeyValue, error) {
 	otCtx, _ := context.WithTimeout(op.Context, op.Timeout)
 	resp, err := lw.Client.Do(otCtx, registry.WatchPrefixOpOptions(lw.Prefix)...)
 	if err != nil {
-		util.Logger().Errorf(err, "list prefix %s failed, rev: %d->0", lw.Prefix, lw.Revision())
-		lw.setRevision(0)
+		util.Logger().Errorf(err, "list prefix %s failed, current rev: %d", lw.Prefix, lw.Revision())
 		return nil, err
 	}
 	lw.setRevision(resp.Revision)

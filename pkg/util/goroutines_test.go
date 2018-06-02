@@ -52,23 +52,11 @@ func TestGoRoutine_Do(t *testing.T) {
 	})
 	cancel()
 	<-stopCh2
-
-	ctx, _ = context.WithTimeout(context.Background(), 0)
-	test3 := NewGo(ctx)
-	defer test3.Close(true)
-	stopCh3 := make(chan struct{})
-	test3.Do(func(ctx context.Context) {
-		defer close(stopCh3)
-		select {
-		case <-ctx.Done():
-		case <-time.After(time.Second):
-			t.Fatalf("time out to wait ctx done.")
-		}
-	})
-	<-stopCh3
 }
 
 func TestGoRoutine_Wait(t *testing.T) {
+	GlobalPoolConfig.IdleTimeout = time.Second
+
 	var mux sync.Mutex
 	MAX := 10
 	resultArr := make([]int, 0, MAX)
@@ -105,7 +93,14 @@ func TestGoRoutine_Close(t *testing.T) {
 			t.Fatalf("time out to wait ctx close.")
 		}
 	})
-	test.Close(true)
+	test.Close(false)
+	test.Do(func(ctx context.Context) {
+		select {
+		case <-ctx.Done():
+			t.Fatalf("can not execute f after closed.")
+		}
+	})
+	test.Wait()
 	test.Close(true)
 }
 

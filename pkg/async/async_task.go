@@ -51,7 +51,7 @@ func (s *scheduler) AddTask(ctx context.Context, task Task) (err error) {
 		s.goroutine.Do(s.do)
 	})
 
-	err = s.queue.Put(ctx, task)
+	err = s.queue.Put(task)
 	if err != nil {
 		return
 	}

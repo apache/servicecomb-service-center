@@ -179,9 +179,7 @@ func (c *KvCacher) ListAndWatch(ctx context.Context) error {
 		Context: ctx,
 	}
 	if c.needList() {
-		if err := c.doList(cfg); err != nil {
-			return err
-		}
+		c.doList(cfg)
 	}
 
 	util.SafeCloseChan(c.ready)

@@ -17,26 +17,16 @@
 package util
 
 import (
-	"errors"
+	"fmt"
 	"golang.org/x/net/context"
-	"math"
-	"sync"
 )
 
-const DEFAULT_MAX_BUFFER_SIZE = 1000
-
 type UniQueue struct {
-	size   int
-	buffer chan interface{}
-	queue  chan interface{}
-	close  chan struct{}
-	once   sync.Once
+	queue chan interface{}
 }
 
 func (uq *UniQueue) Get(ctx context.Context) interface{} {
 	select {
-	case <-uq.close:
-		return nil
 	case <-ctx.Done():
 		return nil
 	case item := <-uq.queue:
@@ -48,82 +38,43 @@ func (uq *UniQueue) Chan() <-chan interface{} {
 	return uq.queue
 }
 
-func (uq *UniQueue) Put(ctx context.Context, value interface{}) error {
-	uq.once.Do(func() {
-		go uq.do()
-	})
-	select {
-	case <-uq.close:
-		return errors.New("channel is closed")
-	default:
-		defer RecoverAndReport()
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case uq.buffer <- value:
-		}
-	}
-	return nil
-}
+func (uq *UniQueue) Put(value interface{}) (e error) {
+	defer func() {
+		if r := recover(); r != nil {
+			LogPanic(r)
 
-func (uq *UniQueue) do() {
-	for {
-		select {
-		case item, ok := <-uq.buffer:
-			if !ok {
-				return
-			}
-			select {
-			case _, ok := <-uq.queue:
-				if !ok {
-					return
-				}
-			default:
-			}
-			// 1. drop the old item
-			// 2. if queue is empty
-			uq.sendToQueue(item)
+			e = fmt.Errorf("%v", r)
 		}
-	}
-}
+	}()
 
-func (uq *UniQueue) sendToQueue(item interface{}) {
-	defer RecoverAndReport()
 	select {
-	case <-uq.close:
-		return
-	default:
-		select {
-		case uq.queue <- item:
-		default:
-			// drop item
+	case _, ok := <-uq.queue:
+		if !ok {
+			return fmt.Errorf("channel is closed")
 		}
+	default:
 	}
+
+	select {
+	case uq.queue <- value:
+	default:
+	}
+	return
 }
 
 func (uq *UniQueue) Close() {
 	select {
-	case <-uq.close:
+	case _, ok := <-uq.queue:
+		if !ok {
+			return
+		}
 	default:
-		close(uq.close)
-		close(uq.queue)
-		close(uq.buffer)
 	}
-}
-
-func newUniQueue(size int) (*UniQueue, error) {
-	if size <= 0 || size >= math.MaxInt32 {
-		return nil, errors.New("invalid buffer size")
-	}
-	return &UniQueue{
-		size:   size,
-		queue:  make(chan interface{}, 1),
-		buffer: make(chan interface{}, size),
-		close:  make(chan struct{}),
-	}, nil
+	close(uq.queue)
 }
 
 func NewUniQueue() (uq *UniQueue) {
-	uq, _ = newUniQueue(DEFAULT_MAX_BUFFER_SIZE)
-	return
+	return &UniQueue{
+		queue: make(chan interface{}, 1),
+	}
 }

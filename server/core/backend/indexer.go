@@ -87,7 +87,8 @@ func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (
 			return resp, nil
 		}
 
-		util.Logger().Debugf("%s cache does not store this key, request etcd server, key: %s", i.cacher.Name(), key)
+		util.Logger().Debugf("%s cache does not store this key, request etcd server, key: %s",
+			i.cacher.Name(), key)
 		return Registry().Do(ctx, opts...)
 	}
 
@@ -178,10 +179,16 @@ func (i *Indexer) buildIndex() {
 	i.goroutine.Do(func(ctx context.Context) {
 		util.SafeCloseChan(i.ready)
 		lastCompactTime := time.Now()
+		ticker := time.NewTicker(DEFAULT_LISTWATCH_TIMEOUT)
 		for {
 			select {
 			case <-ctx.Done():
 				return
+			case <-ticker.C:
+				i.prefixLock.RLock()
+				// report metrics
+				ReportCacheMetrics(i.cacher.Name(), "index", i.prefixIndex)
+				i.prefixLock.RUnlock()
 			case evt, ok := <-i.prefixBuildQueue:
 				if !ok {
 					return
@@ -210,9 +217,6 @@ func (i *Indexer) buildIndex() {
 					i.lastMaxSize = l
 					lastCompactTime = time.Now()
 				}
-
-				// report metrics
-				ReportCacheMetrics(i.cacher.Name(), "index", i.prefixIndex)
 
 				i.prefixLock.Unlock()
 

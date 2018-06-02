@@ -274,9 +274,9 @@ func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp) (*clientv
 	tempOp.CountOnly = false
 	tempOp.Prefix = false
 	tempOp.SortOrder = registry.SORT_ASCEND
-	tempOp.EndKey = util.StringToBytesWithNoCopy(clientv3.GetPrefixRangeEnd(key))
-	if len(op.EndKey) > 0 {
-		tempOp.EndKey = op.EndKey
+	tempOp.EndKey = op.EndKey
+	if len(op.EndKey) == 0 {
+		tempOp.EndKey = util.StringToBytesWithNoCopy(clientv3.GetPrefixRangeEnd(key))
 	}
 	tempOp.Revision = countResp.Header.Revision
 
@@ -294,9 +294,13 @@ func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp) (*clientv
 
 	nextKey := key
 	for i := int64(0); i < pageCount; i++ {
-		limit := op.Limit
+		limit, start := op.Limit, 0
 		if remainCount > 0 && i == pageCount-1 {
 			limit = remainCount
+		}
+		if i != 0 {
+			limit += 1
+			start = 1
 		}
 		ops := append(baseOps, clientv3.WithLimit(int64(limit)))
 		recordResp, err := c.Client.Get(ctx, nextKey, ops...)
@@ -304,7 +308,7 @@ func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp) (*clientv
 			return nil, err
 		}
 		l := int64(len(recordResp.Kvs))
-		nextKey = clientv3.GetPrefixRangeEnd(util.BytesToStringWithNoCopy(recordResp.Kvs[l-1].Key))
+		nextKey = util.BytesToStringWithNoCopy(recordResp.Kvs[l-1].Key)
 
 		if op.Offset >= 0 {
 			if op.Offset < i*op.Limit {
@@ -313,11 +317,11 @@ func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp) (*clientv
 				break
 			}
 		}
-		etcdResp.Kvs = append(etcdResp.Kvs, recordResp.Kvs...)
+		etcdResp.Kvs = append(etcdResp.Kvs, recordResp.Kvs[start:]...)
 	}
 
 	if op.Offset == -1 {
-		util.LogInfoOrWarnf(start, "get too many KeyValues(%s) from etcdserver, now paging.(%d vs %d)",
+		util.LogInfoOrWarnf(start, "get too many KeyValues(%s) from etcd, now paging.(%d vs %d)",
 			key, recordCount, op.Limit)
 	}
 
@@ -598,15 +602,16 @@ hcLoop:
 			retries = 1 // fail fast
 			client, cerr := newClient(c.Endpoints)
 			if cerr != nil {
-				util.Logger().Errorf(cerr, "re-get etcd client %v failed.", c.Endpoints)
+				util.Logger().Errorf(cerr, "create a new connection to etcd %v failed.",
+					c.Endpoints)
 				continue
 			}
 
 			c.Client, client = client, c.Client
-			util.Logger().Errorf(err, "Auto sync etcd members failed and re-connected etcd successfully")
+			util.Logger().Errorf(err, "re-connected to etcd %s", c.Endpoints)
 
 			if cerr = client.Close(); cerr != nil {
-				util.Logger().Errorf(cerr, "close unavailable etcd client failed.")
+				util.Logger().Errorf(cerr, "failed to close the unavailable etcd client.")
 			}
 			client = nil
 		}
