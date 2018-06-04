@@ -58,6 +58,6 @@ func UpdateTagReqValidator() *validate.Validator {
 func DeleteTagReqValidator() *validate.Validator {
 	return deleteTagReqValidator.Init(func(v *validate.Validator) {
 		v.AddRule("ServiceId", GetServiceReqValidator().GetRule("ServiceId"))
-		v.AddRule("Keys", UpdateTagReqValidator().GetRule("Key"))
+		v.AddRule("Keys", &validate.ValidateRule{Min: 1, Max: quota.DefaultTagQuota, Regexp: tagRegex})
 	})
 }

@@ -99,6 +99,7 @@ func CreateServiceReqValidator() *validate.Validator {
 		microServiceValidator.AddRule("RegisterBy", &validate.ValidateRule{Max: 64, Regexp: registerByRegex})
 		microServiceValidator.AddSub("Framework", &frameworkValidator)
 
+		v.AddRule("Service", &validate.ValidateRule{Min: 1})
 		v.AddSub("Service", &microServiceValidator)
 	})
 
@@ -107,6 +108,6 @@ func CreateServiceReqValidator() *validate.Validator {
 func UpdateServicePropsReqValidator() *validate.Validator {
 	return updateServicePropsReqValidator.Init(func(v *validate.Validator) {
 		v.AddRule("ServiceId", GetServiceReqValidator().GetRule("ServiceId"))
-		// v.AddRule("Properties", &validate.ValidateRule{Max: 100})
+		v.AddRule("Properties", &validate.ValidateRule{Min: 1})
 	})
 }

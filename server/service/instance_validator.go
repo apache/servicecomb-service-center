@@ -25,10 +25,12 @@ import (
 )
 
 var (
-	findInstanceReqValidator     validate.Validator
-	getInstanceReqValidator      validate.Validator
-	updateInstanceReqValidator   validate.Validator
-	registerInstanceReqValidator validate.Validator
+	findInstanceReqValidator        validate.Validator
+	getInstanceReqValidator         validate.Validator
+	updateInstanceReqValidator      validate.Validator
+	registerInstanceReqValidator    validate.Validator
+	heartbeatReqValidator           validate.Validator
+	updateInstancePropsReqValidator validate.Validator
 )
 
 var (
@@ -57,16 +59,29 @@ func GetInstanceReqValidator() *validate.Validator {
 	return getInstanceReqValidator.Init(func(v *validate.Validator) {
 		v.AddRule("ConsumerServiceId", GetServiceReqValidator().GetRule("ServiceId"))
 		v.AddRule("ProviderServiceId", GetServiceReqValidator().GetRule("ServiceId"))
-		v.AddRule("ProviderInstanceId", UpdateInstanceReqValidator().GetRule("InstanceId"))
+		v.AddRule("ProviderInstanceId", HeartbeatReqValidator().GetRule("InstanceId"))
 		v.AddRule("Tags", UpdateTagReqValidator().GetRule("Key"))
+	})
+}
+
+func HeartbeatReqValidator() *validate.Validator {
+	return heartbeatReqValidator.Init(func(v *validate.Validator) {
+		v.AddRule("ServiceId", GetServiceReqValidator().GetRule("ServiceId"))
+		v.AddRule("InstanceId", &validate.ValidateRule{Min: 1, Max: 64, Regexp: simpleNameAllowEmptyRegex})
 	})
 }
 
 func UpdateInstanceReqValidator() *validate.Validator {
 	return updateInstanceReqValidator.Init(func(v *validate.Validator) {
-		v.AddRule("ServiceId", GetServiceReqValidator().GetRule("ServiceId"))
-		v.AddRule("InstanceId", &validate.ValidateRule{Min: 1, Max: 64, Regexp: simpleNameAllowEmptyRegex})
+		v.AddRules(heartbeatReqValidator.GetRules())
 		v.AddRule("Status", &validate.ValidateRule{Regexp: updateInstStatusRegex})
+	})
+}
+
+func UpdateInstancePropsReqValidator() *validate.Validator {
+	return updateInstancePropsReqValidator.Init(func(v *validate.Validator) {
+		v.AddRules(heartbeatReqValidator.GetRules())
+		v.AddRule("Properties", UpdateServicePropsReqValidator().GetRule("Properties"))
 	})
 }
 
@@ -94,6 +109,7 @@ func RegisterInstanceReqValidator() *validate.Validator {
 		microServiceInstanceValidator.AddRule("Status", &validate.ValidateRule{Regexp: instStatusRegex})
 		microServiceInstanceValidator.AddSub("DataCenterInfo", &dataCenterInfoValidator)
 
+		v.AddRule("Instance", &validate.ValidateRule{Min: 1})
 		v.AddSub("Instance", &microServiceInstanceValidator)
 	})
 }

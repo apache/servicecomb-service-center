@@ -915,11 +915,6 @@ var _ = Describe("'Schema' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
-
-				By("request is nil")
-				resp, err = serviceResource.Exist(getContext(), nil)
-				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 		})
 

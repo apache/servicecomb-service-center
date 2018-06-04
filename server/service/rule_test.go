@@ -17,6 +17,7 @@
 package service_test
 
 import (
+	"fmt"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	"github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/quota/buildin"
@@ -273,19 +274,25 @@ var _ = Describe("'Rule' service", func() {
 
 		Context("when request is invalid", func() {
 			It("should be failed", func() {
-				By("service id is empty")
+				By("service id is invalid")
 				respGetRule, err := serviceResource.GetRule(getContext(), &pb.GetServiceRulesRequest{
 					ServiceId: "",
 				})
 				Expect(err).To(BeNil())
-				Expect(respGetRule.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respGetRule.Response.Code).To(Equal(scerr.ErrInvalidParams))
+
+				respGetRule, err = serviceResource.GetRule(getContext(), &pb.GetServiceRulesRequest{
+					ServiceId: TOO_LONG_SERVICEID,
+				})
+				Expect(err).To(BeNil())
+				Expect(respGetRule.Response.Code).To(Equal(scerr.ErrInvalidParams))
 
 				By("service does not exist")
 				respGetRule, err = serviceResource.GetRule(getContext(), &pb.GetServiceRulesRequest{
 					ServiceId: "notexist",
 				})
 				Expect(err).To(BeNil())
-				Expect(respGetRule.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respGetRule.Response.Code).To(Equal(scerr.ErrServiceNotExists))
 			})
 		})
 
@@ -503,7 +510,7 @@ var _ = Describe("'Rule' service", func() {
 					RuleIds:   []string{"1000000"},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respAddRule.Response.Code).To(Equal(scerr.ErrInvalidParams))
 
 				By("service does not exist")
 				respAddRule, err = serviceResource.DeleteRule(getContext(), &pb.DeleteServiceRulesRequest{
@@ -511,7 +518,7 @@ var _ = Describe("'Rule' service", func() {
 					RuleIds:   []string{"1000000"},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respAddRule.Response.Code).To(Equal(scerr.ErrServiceNotExists))
 
 				By("rule does not exist")
 				respAddRule, err = serviceResource.DeleteRule(getContext(), &pb.DeleteServiceRulesRequest{
@@ -519,14 +526,26 @@ var _ = Describe("'Rule' service", func() {
 					RuleIds:   []string{"notexistrule"},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respAddRule.Response.Code).To(Equal(scerr.ErrRuleNotExists))
 
 				By("rules is empty")
 				respAddRule, err = serviceResource.DeleteRule(getContext(), &pb.DeleteServiceRulesRequest{
 					ServiceId: serviceId,
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respAddRule.Response.Code).To(Equal(scerr.ErrInvalidParams))
+
+				By("rules is invalid")
+				var arr []string
+				for i := 0; i < buildin.RULE_NUM_MAX_LIMIT_PER_SERVICE+1; i++ {
+					arr = append(arr, fmt.Sprint(i))
+				}
+				respAddRule, err = serviceResource.DeleteRule(getContext(), &pb.DeleteServiceRulesRequest{
+					ServiceId: serviceId,
+					RuleIds:   arr,
+				})
+				Expect(err).To(BeNil())
+				Expect(respAddRule.Response.Code).To(Equal(scerr.ErrInvalidParams))
 
 			})
 		})

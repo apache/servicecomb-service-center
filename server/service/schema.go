@@ -32,13 +32,6 @@ import (
 )
 
 func (s *MicroServiceService) GetSchemaInfo(ctx context.Context, in *pb.GetSchemaRequest) (*pb.GetSchemaResponse, error) {
-	if in == nil || len(in.ServiceId) == 0 || len(in.SchemaId) == 0 {
-		util.Logger().Errorf(nil, "get schema failed: invalid params.")
-		return &pb.GetSchemaResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Invalid request path."),
-		}, nil
-	}
-
 	err := Validate(in)
 	if err != nil {
 		util.Logger().Errorf(nil, "get schema failed, serviceId %s, schemaId %s: invalid params.", in.ServiceId, in.SchemaId)
@@ -88,13 +81,6 @@ func (s *MicroServiceService) GetSchemaInfo(ctx context.Context, in *pb.GetSchem
 }
 
 func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAllSchemaRequest) (*pb.GetAllSchemaResponse, error) {
-	if in == nil || len(in.ServiceId) == 0 {
-		util.Logger().Errorf(nil, "get all schema failed: invalid params.")
-		return &pb.GetAllSchemaResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Invalid request path."),
-		}, nil
-	}
-
 	err := Validate(in)
 	if err != nil {
 		util.Logger().Errorf(nil, "get schema failed, serviceId %s: invalid params.", in.ServiceId)
@@ -178,12 +164,6 @@ func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAl
 }
 
 func (s *MicroServiceService) DeleteSchema(ctx context.Context, in *pb.DeleteSchemaRequest) (*pb.DeleteSchemaResponse, error) {
-	if in == nil || len(in.ServiceId) == 0 || len(in.SchemaId) == 0 {
-		util.Logger().Errorf(nil, "delete schema failed: invalid params.")
-		return &pb.DeleteSchemaResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Invalid request path."),
-		}, nil
-	}
 	err := Validate(in)
 	if err != nil {
 		util.Logger().Errorf(err, "delete schema failed, serviceId %s, schemaId %s: invalid params.", in.ServiceId, in.SchemaId)

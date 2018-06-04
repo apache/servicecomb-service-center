@@ -435,13 +435,37 @@ var _ = Describe("'Instance' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 
-				By("serviceId is empty")
+				By("serviceId/instanceId is invalid")
 				resp, err = instanceResource.Heartbeat(getContext(), &pb.HeartbeatRequest{
 					ServiceId:  "",
 					InstanceId: instanceId1,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
+				resp, err = instanceResource.Heartbeat(getContext(), &pb.HeartbeatRequest{
+					ServiceId:  TOO_LONG_SERVICEID,
+					InstanceId: instanceId1,
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
+				resp, err = instanceResource.Heartbeat(getContext(), &pb.HeartbeatRequest{
+					ServiceId:  serviceId,
+					InstanceId: "",
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
+				resp, err = instanceResource.Heartbeat(getContext(), &pb.HeartbeatRequest{
+					ServiceId:  serviceId,
+					InstanceId: "@",
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
+				resp, err = instanceResource.Heartbeat(getContext(), &pb.HeartbeatRequest{
+					ServiceId:  serviceId,
+					InstanceId: TOO_LONG_SERVICEID,
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
 
 				By("serviceId does not exist")
 				resp, err = instanceResource.Heartbeat(getContext(), &pb.HeartbeatRequest{
@@ -670,7 +694,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respUpdateProperties.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
-				By("serviceId is empty")
+				By("serviceId/instanceId/props is invalid")
 				respUpdateProperties, err = instanceResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
 					ServiceId:  "",
 					InstanceId: instanceId,
@@ -680,7 +704,54 @@ var _ = Describe("'Instance' service", func() {
 				})
 
 				Expect(err).To(BeNil())
-				Expect(respUpdateProperties.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respUpdateProperties.Response.Code).To(Equal(scerr.ErrInvalidParams))
+				respUpdateProperties, err = instanceResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
+					ServiceId:  TOO_LONG_SERVICEID,
+					InstanceId: instanceId,
+					Properties: map[string]string{
+						"test": "test",
+					},
+				})
+
+				Expect(err).To(BeNil())
+				Expect(respUpdateProperties.Response.Code).To(Equal(scerr.ErrInvalidParams))
+				respUpdateProperties, err = instanceResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
+					ServiceId:  serviceId,
+					InstanceId: "",
+					Properties: map[string]string{
+						"test": "test",
+					},
+				})
+
+				Expect(err).To(BeNil())
+				Expect(respUpdateProperties.Response.Code).To(Equal(scerr.ErrInvalidParams))
+				respUpdateProperties, err = instanceResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
+					ServiceId:  serviceId,
+					InstanceId: "@",
+					Properties: map[string]string{
+						"test": "test",
+					},
+				})
+
+				Expect(err).To(BeNil())
+				Expect(respUpdateProperties.Response.Code).To(Equal(scerr.ErrInvalidParams))
+				respUpdateProperties, err = instanceResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
+					ServiceId:  serviceId,
+					InstanceId: TOO_LONG_SERVICEID,
+					Properties: map[string]string{
+						"test": "test",
+					},
+				})
+
+				Expect(err).To(BeNil())
+				Expect(respUpdateProperties.Response.Code).To(Equal(scerr.ErrInvalidParams))
+				respUpdateProperties, err = instanceResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
+					ServiceId:  serviceId,
+					InstanceId: instanceId,
+				})
+
+				Expect(err).To(BeNil())
+				Expect(respUpdateProperties.Response.Code).To(Equal(scerr.ErrInvalidParams))
 
 				By("service does not exist")
 				respUpdateProperties, err = instanceResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
@@ -1484,13 +1555,19 @@ var _ = Describe("'Instance' service", func() {
 
 		Context("when request is invalid", func() {
 			It("should be failed", func() {
-				By("service id is empty")
+				By("service id is invalid")
 				resp, err := instanceResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
 					ServiceId:  "",
 					InstanceId: instanceId,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
+				resp, err = instanceResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
+					ServiceId:  TOO_LONG_SERVICEID,
+					InstanceId: instanceId,
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
 
 				By("service does not exist")
 				resp, err = instanceResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
@@ -1500,13 +1577,25 @@ var _ = Describe("'Instance' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 
-				By("instance is empty")
+				By("instance is invalid")
 				resp, err = instanceResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
 					ServiceId:  serviceId,
 					InstanceId: "",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
+				resp, err = instanceResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
+					ServiceId:  serviceId,
+					InstanceId: "@",
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
+				resp, err = instanceResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
+					ServiceId:  serviceId,
+					InstanceId: TOO_LONG_SERVICEID,
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
 
 				By("instance does not exist")
 				resp, err = instanceResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{

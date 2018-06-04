@@ -17,6 +17,7 @@
 package service_test
 
 import (
+	"fmt"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	"github.com/apache/incubator-servicecomb-service-center/server/service/event"
@@ -348,6 +349,30 @@ var _ = Describe("'Dependency' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respCon.Response.Code).To(Equal(pb.Response_SUCCESS))
 				Expect(len(respCon.Providers)).To(Equal(0))
+
+				By("dependencies is invalid")
+				var deps []*pb.ConsumerDependency
+				for i := 0; i < 101; i++ {
+					deps = append(deps, &pb.ConsumerDependency{
+						Consumer: &pb.MicroServiceKey{
+							AppId:       "create_dep_group",
+							ServiceName: "create_dep_consumer" + fmt.Sprint(i),
+							Version:     "1.0.0",
+						},
+						Providers: []*pb.MicroServiceKey{
+							{
+								AppId:       "service_group_provider",
+								ServiceName: "service_name_provider",
+								Version:     "latest",
+							},
+						},
+					})
+				}
+				respCreateDependency, err = serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
+					Dependencies: deps,
+				})
+				Expect(err).To(BeNil())
+				Expect(respCreateDependency.Response.Code).To(Equal(scerr.ErrInvalidParams))
 			})
 		})
 

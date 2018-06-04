@@ -32,6 +32,7 @@ var (
 )
 
 const (
+	// the same as v3rpc.MaxOpsPerTxn = 128
 	MAX_TXN_NUMBER_ONE_TIME = 128
 )
 

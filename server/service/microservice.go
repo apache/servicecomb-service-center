@@ -314,12 +314,6 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, serviceId st
 }
 
 func (s *MicroServiceService) Delete(ctx context.Context, in *pb.DeleteServiceRequest) (*pb.DeleteServiceResponse, error) {
-	if in == nil || len(in.ServiceId) == 0 {
-		util.Logger().Errorf(nil, "delete micro-service failed: service empty.")
-		return &pb.DeleteServiceResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
-		}, nil
-	}
 	err := Validate(in)
 	if err != nil {
 		util.Logger().Errorf(err, "delete micro-service failed, serviceId is %s: invalid parameters.", in.ServiceId)
@@ -337,7 +331,7 @@ func (s *MicroServiceService) Delete(ctx context.Context, in *pb.DeleteServiceRe
 
 func (s *MicroServiceService) DeleteServices(ctx context.Context, request *pb.DelServicesRequest) (*pb.DelServicesResponse, error) {
 	// 合法性检查
-	if request == nil || request.ServiceIds == nil || len(request.ServiceIds) == 0 {
+	if len(request.ServiceIds) == 0 {
 		return &pb.DelServicesResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Invalid request param."),
 			Services: nil,
@@ -424,11 +418,6 @@ func (s *MicroServiceService) getDeleteServiceFunc(ctx context.Context, serviceI
 }
 
 func (s *MicroServiceService) GetOne(ctx context.Context, in *pb.GetServiceRequest) (*pb.GetServiceResponse, error) {
-	if in == nil || len(in.ServiceId) == 0 {
-		return &pb.GetServiceResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
-		}, nil
-	}
 	err := Validate(in)
 	if err != nil {
 		util.Logger().Errorf(err, "get micro-service failed, serviceId is %s: invalid parameters.",
@@ -459,12 +448,6 @@ func (s *MicroServiceService) GetOne(ctx context.Context, in *pb.GetServiceReque
 }
 
 func (s *MicroServiceService) GetServices(ctx context.Context, in *pb.GetServicesRequest) (*pb.GetServicesResponse, error) {
-	if in == nil {
-		util.Logger().Errorf(nil, "get services failed: invalid params.")
-		return &pb.GetServicesResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "request format invalid."),
-		}, nil
-	}
 	services, err := serviceUtil.GetAllServiceUtil(ctx)
 	if err != nil {
 		util.Logger().Errorf(err, "get services failed: inner err.")
@@ -480,12 +463,6 @@ func (s *MicroServiceService) GetServices(ctx context.Context, in *pb.GetService
 }
 
 func (s *MicroServiceService) UpdateProperties(ctx context.Context, in *pb.UpdateServicePropsRequest) (*pb.UpdateServicePropsResponse, error) {
-	if in == nil || len(in.ServiceId) == 0 || in.Properties == nil {
-		util.Logger().Errorf(nil, "update service properties failed: invalid params.")
-		return &pb.UpdateServicePropsResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "request format invalid."),
-		}, nil
-	}
 	err := Validate(in)
 	if err != nil {
 		util.Logger().Errorf(err, "update service properties failed, serviceId is %s: invalid parameters.", in.ServiceId)
@@ -543,22 +520,9 @@ func (s *MicroServiceService) UpdateProperties(ctx context.Context, in *pb.Updat
 }
 
 func (s *MicroServiceService) Exist(ctx context.Context, in *pb.GetExistenceRequest) (*pb.GetExistenceResponse, error) {
-	if in == nil {
-		util.Logger().Errorf(nil, "exist failed: invalid params")
-		return &pb.GetExistenceResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "request format invalid"),
-		}, nil
-	}
-
 	domainProject := util.ParseDomainProject(ctx)
 	switch in.Type {
 	case EXIST_TYPE_MICROSERVICE:
-		if len(in.AppId) == 0 || len(in.ServiceName) == 0 || len(in.Version) == 0 {
-			util.Logger().Errorf(nil, "micro-service exist failed: invalid params.")
-			return &pb.GetExistenceResponse{
-				Response: pb.CreateResponse(scerr.ErrInvalidParams, "invalid request."),
-			}, nil
-		}
 		err := ExistenceReqValidator().Validate(in)
 		serviceFlag := util.StringJoin([]string{in.AppId, in.ServiceName, in.Version}, "/")
 		if err != nil {
@@ -593,13 +557,6 @@ func (s *MicroServiceService) Exist(ctx context.Context, in *pb.GetExistenceRequ
 			ServiceId: ids[0], // 约定多个时，取较新版本
 		}, nil
 	case EXIST_TYPE_SCHEMA:
-		if len(in.SchemaId) == 0 || len(in.ServiceId) == 0 {
-			util.Logger().Errorf(nil, "schema exist failed, serviceId %s, schemaId %s: invalid params.", in.ServiceId, in.SchemaId)
-			return &pb.GetExistenceResponse{
-				Response: pb.CreateResponse(scerr.ErrInvalidParams, "invalid request."),
-			}, nil
-		}
-
 		err := GetSchemaReqValidator().Validate(in)
 		if err != nil {
 			util.Logger().Errorf(err, "schema exist failed, serviceId %s, schemaId %s: invalid params.", in.ServiceId, in.SchemaId)
