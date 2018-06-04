@@ -24,16 +24,18 @@ import (
 	"golang.org/x/net/context"
 	"strconv"
 	"time"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 )
 
 var defaultRegistryConfig Config
-var err error
 
 func init() {
 	defaultRegistryConfig.ClusterAddresses = beego.AppConfig.DefaultString("manager_cluster", "sc-0=http://127.0.0.1:2380")
 	requestTimeConfig := beego.AppConfig.DefaultString("registry_timeout", "30s")
+	var err error
 	defaultRegistryConfig.RequestTimeOut, err = time.ParseDuration(requestTimeConfig)
 	if err != nil {
+		util.Logger().Errorf(err, "registry_timeout is invaild, use default time 30s")
 	    defaultRegistryConfig.RequestTimeOut, _ = time.ParseDuration("30s")
 	}
 }
