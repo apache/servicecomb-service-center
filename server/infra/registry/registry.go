@@ -27,9 +27,15 @@ import (
 )
 
 var defaultRegistryConfig Config
+var err error
 
 func init() {
 	defaultRegistryConfig.ClusterAddresses = beego.AppConfig.DefaultString("manager_cluster", "sc-0=http://127.0.0.1:2380")
+	requestTimeConfig := beego.AppConfig.DefaultString("registry_timeout", "30s")
+	defaultRegistryConfig.RequestTimeOut, err = time.ParseDuration(requestTimeConfig)
+	if err != nil {
+	    defaultRegistryConfig.RequestTimeOut, _ = time.ParseDuration("30s")
+	}
 }
 
 type ActionType int
@@ -144,7 +150,6 @@ const (
 )
 
 const (
-	REQUEST_TIMEOUT    = 30 * time.Second
 	DEFAULT_PAGE_COUNT = 4096 // grpc does not allow to transport a large body more then 4MB in a request.
 )
 
@@ -171,6 +176,7 @@ type Registry interface {
 type Config struct {
 	EmbedMode        string
 	ClusterAddresses string
+	RequestTimeOut   time.Duration
 }
 
 type PluginOp struct {
@@ -367,7 +373,7 @@ func OpCmp(opt CompareOperation, result CompareResult, v interface{}) (cmp Compa
 }
 
 func WithTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
-	return context.WithTimeout(ctx, REQUEST_TIMEOUT)
+	return context.WithTimeout(ctx, defaultRegistryConfig.RequestTimeOut)
 }
 
 func RegistryConfig() *Config {
