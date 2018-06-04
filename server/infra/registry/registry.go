@@ -35,7 +35,7 @@ func init() {
 	var err error
 	defaultRegistryConfig.RequestTimeOut, err = time.ParseDuration(requestTimeConfig)
 	if err != nil {
-		util.Logger().Errorf(err, "registry_timeout is invaild, use default time 30s")
+	    util.Logger().Errorf(err, "registry_timeout is invaild, use default time 30s")
 	    defaultRegistryConfig.RequestTimeOut, _ = time.ParseDuration("30s")
 	}
 }
