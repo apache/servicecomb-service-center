@@ -68,7 +68,6 @@ func AddDependenciesReqValidator() *validate.Validator {
 }
 
 func CreateDependenciesReqValidator() *validate.Validator {
-
 	return overwriteDependenciesReqValidator.Init(func(v *validate.Validator) {
 		v.AddRule("Dependencies", &validate.ValidateRule{Min: 1})
 		v.AddSub("Dependencies", defaultDependencyValidator())

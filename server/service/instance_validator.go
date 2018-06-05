@@ -63,11 +63,10 @@ func GetInstanceReqValidator() *validate.Validator {
 }
 
 func UpdateInstanceReqValidator() *validate.Validator {
-	updateInstStatusRule := &validate.ValidateRule{Regexp: updateInstStatusRegex}
 	return updateInstanceReqValidator.Init(func(v *validate.Validator) {
 		v.AddRule("ServiceId", GetServiceReqValidator().GetRule("ServiceId"))
 		v.AddRule("InstanceId", &validate.ValidateRule{Min: 1, Max: 64, Regexp: simpleNameAllowEmptyRegex})
-		v.AddRule("Status", updateInstStatusRule)
+		v.AddRule("Status", &validate.ValidateRule{Regexp: updateInstStatusRegex})
 	})
 }
 

@@ -33,13 +33,13 @@ var (
 )
 
 func UpdateRuleReqValidator() *validate.Validator {
-	var ruleValidator validate.Validator
-	ruleValidator.AddRule("RuleType", &validate.ValidateRule{Regexp: ruleRegex})
-	ruleValidator.AddRule("Attribute", &validate.ValidateRule{Regexp: ruleAttrRegex})
-	ruleValidator.AddRule("Pattern", &validate.ValidateRule{Min: 1, Max: 64})
-	ruleValidator.AddRule("Description", CreateServiceReqValidator().GetSub("Service").GetRule("Description"))
-
 	return updateRuleReqValidator.Init(func(v *validate.Validator) {
+		var ruleValidator validate.Validator
+		ruleValidator.AddRule("RuleType", &validate.ValidateRule{Regexp: ruleRegex})
+		ruleValidator.AddRule("Attribute", &validate.ValidateRule{Regexp: ruleAttrRegex})
+		ruleValidator.AddRule("Pattern", &validate.ValidateRule{Min: 1, Max: 64})
+		ruleValidator.AddRule("Description", CreateServiceReqValidator().GetSub("Service").GetRule("Description"))
+
 		v.AddRule("ServiceId", GetServiceReqValidator().GetRule("ServiceId"))
 		v.AddRule("RuleId", GetServiceReqValidator().GetRule("ServiceId"))
 		v.AddSub("Rule", &ruleValidator)
