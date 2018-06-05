@@ -37,9 +37,12 @@ import (
 )
 
 const (
+	// the timeout dial to etcd
 	connectRegistryServerTimeout = 10 * time.Second
-	healthCheckTimeout           = 5 * time.Second
-	healthCheckRetryTimes        = 3
+	// here will new an etcd connection after about 30s(=5s * 3 + (backoff:8s))
+	// when the connected etcd member was hung but tcp is still alive
+	healthCheckTimeout    = 5 * time.Second
+	healthCheckRetryTimes = 3
 )
 
 var (

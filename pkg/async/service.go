@@ -25,102 +25,46 @@ import (
 )
 
 const (
-	DEFAULT_MAX_SCHEDULE_COUNT    = 1000
-	DEFAULT_REMOVE_TASKS_INTERVAL = 30 * time.Second
+	maxExecutorCount    = 1000
+	removeTasksInterval = 30 * time.Second
+	executeInterval     = 100 * time.Millisecond
+	compactTimes        = 2
 )
 
-type Task interface {
-	Key() string
-	Do(ctx context.Context) error
-	Err() error
-}
-
-type scheduler struct {
-	queue      *util.UniQueue
-	latestTask Task
-	once       sync.Once
-	goroutine  *util.GoRoutine
-}
-
-func (s *scheduler) AddTask(ctx context.Context, task Task) (err error) {
-	if task == nil || ctx == nil {
-		return errors.New("invalid parameters")
-	}
-
-	s.once.Do(func() {
-		s.goroutine.Do(s.do)
-	})
-
-	err = s.queue.Put(task)
-	if err != nil {
-		return
-	}
-	return s.latestTask.Err()
-}
-
-func (s *scheduler) do(ctx context.Context) {
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case task, ok := <-s.queue.Chan():
-			if !ok {
-				return
-			}
-			at := task.(Task)
-			at.Do(ctx)
-			s.latestTask = at
-		}
-	}
-}
-
-func (s *scheduler) Close() {
-	s.queue.Close()
-	s.goroutine.Close(true)
-}
-
-func newScheduler(task Task) *scheduler {
-	return &scheduler{
-		queue:      util.NewUniQueue(),
-		latestTask: task,
-		goroutine:  util.NewGo(context.Background()),
-	}
-}
-
 type TaskService struct {
-	schedules   map[string]*scheduler
-	removeTasks map[string]struct{}
-	goroutine   *util.GoRoutine
-	lock        sync.RWMutex
-	ready       chan struct{}
-	isClose     bool
+	executors         map[string]*Executor
+	removingExecutors map[string]struct{}
+	goroutine         *util.GoRoutine
+	lock              sync.RWMutex
+	ready             chan struct{}
+	isClose           bool
 }
 
-func (lat *TaskService) getOrNewScheduler(task Task) (s *scheduler, isNew bool) {
+func (lat *TaskService) getOrNewExecutor(task Task) (s *Executor, isNew bool) {
 	var (
 		ok  bool
 		key = task.Key()
 	)
 
 	lat.lock.RLock()
-	s, ok = lat.schedules[key]
-	_, remove := lat.removeTasks[key]
+	s, ok = lat.executors[key]
+	_, remove := lat.removingExecutors[key]
 	lat.lock.RUnlock()
 	if !ok {
 		lat.lock.Lock()
-		s, ok = lat.schedules[key]
+		s, ok = lat.executors[key]
 		if !ok {
 			isNew = true
-			s = newScheduler(task)
-			lat.schedules[key] = s
+			s = NewExecutor(lat.goroutine, task)
+			lat.executors[key] = s
 		}
 		lat.lock.Unlock()
 	}
 	if remove && ok {
 		lat.lock.Lock()
-		_, remove = lat.removeTasks[key]
+		_, remove = lat.removingExecutors[key]
 		if remove {
-			delete(lat.removeTasks, key)
+			delete(lat.removingExecutors, key)
 		}
 		lat.lock.Unlock()
 	}
@@ -132,12 +76,12 @@ func (lat *TaskService) Add(ctx context.Context, task Task) error {
 		return errors.New("invalid parameters")
 	}
 
-	s, isNew := lat.getOrNewScheduler(task)
+	s, isNew := lat.getOrNewExecutor(task)
 	if isNew {
 		// do immediately at first time
 		return task.Do(ctx)
 	}
-	return s.AddTask(ctx, task)
+	return s.AddTask(task)
 }
 
 func (lat *TaskService) DeferRemove(key string) error {
@@ -146,28 +90,28 @@ func (lat *TaskService) DeferRemove(key string) error {
 		lat.lock.Unlock()
 		return errors.New("TaskService is stopped")
 	}
-	_, exist := lat.schedules[key]
+	_, exist := lat.executors[key]
 	if !exist {
 		lat.lock.Unlock()
 		return nil
 	}
-	lat.removeTasks[key] = struct{}{}
+	lat.removingExecutors[key] = struct{}{}
 	lat.lock.Unlock()
 	return nil
 }
 
-func (lat *TaskService) removeScheduler(key string) {
-	if s, ok := lat.schedules[key]; ok {
+func (lat *TaskService) removeExecutor(key string) {
+	if s, ok := lat.executors[key]; ok {
 		s.Close()
-		delete(lat.schedules, key)
+		delete(lat.executors, key)
 	}
-	delete(lat.removeTasks, key)
-	util.Logger().Debugf("remove scheduler, key is %s", key)
+	delete(lat.removingExecutors, key)
+	util.Logger().Debugf("remove executor, key is %s", key)
 }
 
 func (lat *TaskService) LatestHandled(key string) (Task, error) {
 	lat.lock.RLock()
-	s, ok := lat.schedules[key]
+	s, ok := lat.executors[key]
 	lat.lock.RUnlock()
 	if !ok {
 		return nil, errors.New("expired behavior")
@@ -177,27 +121,42 @@ func (lat *TaskService) LatestHandled(key string) (Task, error) {
 
 func (lat *TaskService) daemon(ctx context.Context) {
 	util.SafeCloseChan(lat.ready)
+	ticker := time.NewTicker(removeTasksInterval)
+	max := 0
 	for {
 		select {
 		case <-ctx.Done():
 			util.Logger().Debugf("daemon thread exited for TaskService is stopped")
 			return
-		case <-time.After(DEFAULT_REMOVE_TASKS_INTERVAL):
-			if lat.isClose {
-				return
+		case <-time.After(executeInterval):
+			start := time.Now()
+			lat.lock.RLock()
+			l := len(lat.executors)
+			for _, s := range lat.executors {
+				s.Execute() // non-blocked
 			}
+			lat.lock.RUnlock()
+			util.LogNilOrWarnf(start, "cost too long to execute tasks[%s]", l)
+		case <-ticker.C:
 			lat.lock.Lock()
-			l := len(lat.removeTasks)
-			for key := range lat.removeTasks {
-				lat.removeScheduler(key)
+			l, rl := len(lat.executors), len(lat.removingExecutors)
+			if l > max {
+				max = l
 			}
 
-			if l > DEFAULT_MAX_SCHEDULE_COUNT {
+			for key := range lat.removingExecutors {
+				lat.removeExecutor(key)
+			}
+
+			l = len(lat.executors)
+			if max > maxExecutorCount && max > l*compactTimes {
 				lat.renew()
+				max = l
 			}
 			lat.lock.Unlock()
-			if l > 0 {
-				util.Logger().Infof("daemon thread completed, %d scheduler(s) removed", l)
+
+			if rl > 0 {
+				util.Logger().Debugf("daemon thread completed, %d executor(s) removed", rl)
 			}
 		}
 	}
@@ -222,8 +181,8 @@ func (lat *TaskService) Stop() {
 	}
 	lat.isClose = true
 
-	for key := range lat.schedules {
-		lat.removeScheduler(key)
+	for key := range lat.executors {
+		lat.removeExecutor(key)
 	}
 
 	lat.lock.Unlock()
@@ -238,8 +197,12 @@ func (lat *TaskService) Ready() <-chan struct{} {
 }
 
 func (lat *TaskService) renew() {
-	lat.schedules = make(map[string]*scheduler, DEFAULT_MAX_SCHEDULE_COUNT)
-	lat.removeTasks = make(map[string]struct{}, DEFAULT_MAX_SCHEDULE_COUNT)
+	newExecutor := make(map[string]*Executor, maxExecutorCount)
+	for k, e := range lat.executors {
+		newExecutor[k] = e
+	}
+	lat.executors = newExecutor
+	lat.removingExecutors = make(map[string]struct{}, maxExecutorCount)
 }
 
 func NewTaskService() (lat *TaskService) {

@@ -23,23 +23,25 @@ import (
 )
 
 var GlobalPoolConfig = &PoolConfig{
-	PutTimeout:  50 * time.Millisecond,
-	IdleTimeout: 30 * time.Second,
+	Concurrent:  1000,
+	WaitTimeout: time.Second,
+	IdleTimeout: 60 * time.Second,
 }
 
 type PoolConfig struct {
-	Max         int
-	PutTimeout  time.Duration
+	Concurrent  int
+	WaitTimeout time.Duration
 	IdleTimeout time.Duration
 }
 
 type GoRoutine struct {
-	ctx    context.Context
-	cancel context.CancelFunc
-	wg     sync.WaitGroup
-	mux    sync.RWMutex
-	closed bool
-	pool   chan func(ctx context.Context)
+	ctx        context.Context
+	cancel     context.CancelFunc
+	wg         sync.WaitGroup
+	mux        sync.RWMutex
+	closed     bool
+	task       chan func(ctx context.Context)
+	concurrent chan struct{}
 }
 
 func (g *GoRoutine) execute(f func(ctx context.Context)) {
@@ -49,28 +51,34 @@ func (g *GoRoutine) execute(f func(ctx context.Context)) {
 
 func (g *GoRoutine) Do(f func(context.Context)) {
 	defer RecoverAndReport()
-	for {
-		select {
-		case g.pool <- f:
-			return
-		case <-time.After(GlobalPoolConfig.PutTimeout):
-			go g.loop()
-		}
+	select {
+	case g.task <- f:
+		return
+	case g.concurrent <- struct{}{}:
+		go g.loop(f)
 	}
 }
 
-func (g *GoRoutine) loop() {
+func (g *GoRoutine) loop(f func(context.Context)) {
 	g.wg.Add(1)
 	defer g.wg.Done()
+	defer func() { <-g.concurrent }()
+	timer := time.NewTimer(GlobalPoolConfig.IdleTimeout)
 	for {
+		g.execute(f)
+
+		if !timer.Stop() {
+			<-timer.C
+		}
+		timer.Reset(GlobalPoolConfig.IdleTimeout)
+
 		select {
-		case <-time.After(GlobalPoolConfig.IdleTimeout):
+		case <-timer.C:
 			return
-		case f, ok := <-g.pool:
-			if !ok {
+		case f = <-g.task:
+			if f == nil {
 				return
 			}
-			g.execute(f)
 		}
 	}
 }
@@ -84,7 +92,8 @@ func (g *GoRoutine) Close(wait bool) {
 	g.closed = true
 	g.mux.Unlock()
 
-	close(g.pool)
+	close(g.task)
+	close(g.concurrent)
 	g.cancel()
 	if wait {
 		g.Wait()
@@ -113,9 +122,10 @@ func GoCloseAndWait() {
 func NewGo(ctx context.Context) *GoRoutine {
 	ctx, cancel := context.WithCancel(ctx)
 	gr := &GoRoutine{
-		ctx:    ctx,
-		cancel: cancel,
-		pool:   make(chan func(context.Context)),
+		ctx:        ctx,
+		cancel:     cancel,
+		task:       make(chan func(context.Context)),
+		concurrent: make(chan struct{}, GlobalPoolConfig.Concurrent),
 	}
 	return gr
 }

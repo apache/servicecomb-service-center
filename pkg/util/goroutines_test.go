@@ -62,25 +62,23 @@ func TestGoRoutine_Wait(t *testing.T) {
 	resultArr := make([]int, 0, MAX)
 	test := NewGo(context.Background())
 	for i := 0; i < MAX; i++ {
-		func(i int) {
-			test.Do(func(ctx context.Context) {
-				select {
-				case <-ctx.Done():
-				case <-time.After(time.Second):
-					mux.Lock()
-					resultArr = append(resultArr, i)
-					fmt.Printf("goroutine %d finish.\n", i)
-					mux.Unlock()
-				}
-
-			})
-		}(i)
+		test.Do(func(ctx context.Context) {
+			select {
+			case <-ctx.Done():
+			case <-time.After(time.Second):
+				mux.Lock()
+				resultArr = append(resultArr, i)
+				fmt.Printf("goroutine %d finish.\n", i)
+				mux.Unlock()
+			}
+		})
 	}
+	<-time.After(time.Second)
 	fmt.Println("waiting for all goroutines finish.")
 	test.Wait()
 	fmt.Println(resultArr)
 	if len(resultArr) != MAX {
-		t.Fatalf("fail to wait all goroutines finish.")
+		t.Fatalf("fail to wait all goroutines finish. expected %d to %d", len(resultArr), MAX)
 	}
 }
 

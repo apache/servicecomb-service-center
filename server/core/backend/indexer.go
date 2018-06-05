@@ -35,7 +35,6 @@ type Indexer struct {
 	cacher           Cacher
 	goroutine        *util.GoRoutine
 	ready            chan struct{}
-	lastMaxSize      int
 	prefixIndex      map[string]map[string]struct{}
 	prefixBuildQueue chan KvEvent
 	prefixLock       sync.RWMutex
@@ -179,7 +178,8 @@ func (i *Indexer) buildIndex() {
 	i.goroutine.Do(func(ctx context.Context) {
 		util.SafeCloseChan(i.ready)
 		lastCompactTime := time.Now()
-		ticker := time.NewTicker(DEFAULT_LISTWATCH_TIMEOUT)
+		ticker := time.NewTicker(DEFAULT_METRICS_INTERVAL)
+		max := 0
 		for {
 			select {
 			case <-ctx.Done():
@@ -207,14 +207,14 @@ func (i *Indexer) buildIndex() {
 
 				// compact
 				initSize, l := DEFAULT_CACHE_INIT_SIZE, len(i.prefixIndex)
-				if i.lastMaxSize < l {
-					i.lastMaxSize = l
+				if max < l {
+					max = l
 				}
 				if initSize >= l &&
-					i.lastMaxSize >= initSize*DEFAULT_COMPACT_TIMES &&
+					max >= initSize*DEFAULT_COMPACT_TIMES &&
 					time.Now().Sub(lastCompactTime) >= DEFAULT_COMPACT_TIMEOUT {
 					i.compact()
-					i.lastMaxSize = l
+					max = l
 					lastCompactTime = time.Now()
 				}
 

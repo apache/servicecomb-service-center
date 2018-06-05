@@ -67,17 +67,10 @@ func (h *InstanceEventHandler) OnEvent(evt backend.KvEvent) {
 	}
 	util.Logger().Infof("caught instance %s/%s [%s] event", providerId, providerInstanceId, action)
 
-	var instance pb.MicroServiceInstance
-	err := json.Unmarshal(data, &instance)
-	if err != nil {
-		util.Logger().Errorf(err, "unmarshal provider service instance %s/%s file failed",
-			providerId, providerInstanceId)
-		return
-	}
 	// 查询服务版本信息
 	ms, err := serviceUtil.GetServiceInCache(context.Background(), domainProject, providerId)
 	if ms == nil {
-		util.Logger().Errorf(err, "get provider service %s/%s id in cache failed",
+		util.Logger().Warnf(err, "get provider service %s/%s id in cache failed",
 			providerId, providerInstanceId)
 		return
 	}
@@ -86,6 +79,17 @@ func (h *InstanceEventHandler) OnEvent(evt backend.KvEvent) {
 	consumerIds, _, err := serviceUtil.GetConsumerIdsByProvider(context.Background(), domainProject, ms)
 	if err != nil {
 		util.Logger().Errorf(err, "query service %s consumers failed", providerId)
+		return
+	}
+	if len(consumerIds) == 0 {
+		return
+	}
+
+	var instance pb.MicroServiceInstance
+	err = json.Unmarshal(data, &instance)
+	if err != nil {
+		util.Logger().Errorf(err, "unmarshal provider service instance %s/%s file failed",
+			providerId, providerInstanceId)
 		return
 	}
 

@@ -95,7 +95,6 @@ func (c *KvCache) compact() {
 
 	util.Logger().Infof("cache %s is not in use over %s, compact capacity to size %d->%d",
 		c.owner.Cfg.Prefix, DEFAULT_COMPACT_TIMEOUT, c.lastMaxSize, c.size)
-
 }
 
 func (c *KvCache) Size() (l int) {
@@ -160,7 +159,8 @@ func (c *KvCacher) doList(cfg ListWatchConfig) error {
 		util.Logger().Warnf(nil, "most of the protected data(%d/%d) are recovered", kc, c.cache.Size())
 	}
 	c.sync(evts)
-	util.LogDebugOrWarnf(start, "finish to cache key %s, %d items, rev: %d", c.Cfg.Prefix, len(kvs), c.lw.Revision())
+	util.LogDebugOrWarnf(start, "finish to cache key %s, %d items, rev: %d",
+		c.Cfg.Prefix, len(kvs), c.lw.Revision())
 
 	return nil
 }
@@ -210,6 +210,7 @@ func (c *KvCacher) needDeferHandle(evts []KvEvent) bool {
 func (c *KvCacher) refresh(ctx context.Context) {
 	util.Logger().Debugf("start to list and watch %s", c.Cfg)
 	retries := 0
+	ticker := time.NewTicker(DEFAULT_METRICS_INTERVAL)
 	for {
 		nextPeriod := minWaitInterval
 		if err := c.ListAndWatch(ctx); err != nil {
@@ -217,14 +218,14 @@ func (c *KvCacher) refresh(ctx context.Context) {
 			retries++
 		} else {
 			retries = 0
-
-			ReportCacheMetrics(c.Name(), "raw", c.cache.RLock())
-			c.cache.RUnlock()
 		}
 		select {
 		case <-ctx.Done():
 			util.Logger().Debugf("stop to list and watch %s", c.Cfg)
 			return
+		case <-ticker.C:
+			ReportCacheMetrics(c.Name(), "raw", c.cache.RLock())
+			c.cache.RUnlock()
 		case <-time.After(nextPeriod):
 		}
 	}
@@ -236,7 +237,6 @@ func (c *KvCacher) deferHandle(ctx context.Context) {
 	}
 
 	var (
-		// does not escape to heap
 		evts = make([]KvEvent, eventBlockSize)
 		i    int
 	)

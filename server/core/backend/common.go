@@ -115,14 +115,18 @@ var TypeInitSize = map[StoreType]int{
 }
 
 const (
-	DEFAULT_MAX_NO_EVENT_INTERVAL     = 1 // TODO it should be set to 1 for prevent etcd data is lost accidentally.
-	DEFAULT_LISTWATCH_TIMEOUT         = 30 * time.Second
+	// re-list etcd when there is no event coming in more than 5m(=10*30s)
+	DEFAULT_MAX_NO_EVENT_INTERVAL = 10
+	DEFAULT_LISTWATCH_TIMEOUT     = 30 * time.Second
+
 	DEFAULT_SELF_PRESERVATION_PERCENT = 0.8
 	DEFAULT_CACHE_INIT_SIZE           = 100
 )
 
 const (
-	DEFAULT_COMPACT_TIMES   = 3
+	DEFAULT_METRICS_INTERVAL = 30 * time.Second
+
+	DEFAULT_COMPACT_TIMES   = 2
 	DEFAULT_COMPACT_TIMEOUT = 5 * time.Minute
 	minWaitInterval         = 1 * time.Second
 	eventBlockSize          = 1000
