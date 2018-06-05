@@ -375,6 +375,12 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 				}
 			}
 		}
+
+		for _, schema := range needAddSchemas {
+			util.Logger().Infof("add new schema: serviceId %s, schemaId %s", serviceId, schema.SchemaId)
+			opts := schemaWithDatabaseOpera(registry.OpPut, domainProject, service.ServiceId, schema)
+			pluginOps = append(pluginOps, opts...)
+		}
 	} else {
 		quotaSize := len(needAddSchemas) - len(needDeleteSchemas)
 		if quotaSize > 0 {
@@ -387,32 +393,34 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 			}
 		}
 
+		var schemaIds []string
+		for _, schema := range needAddSchemas {
+			util.Logger().Infof("add new schema: serviceId %s, schemaId %s", serviceId, schema.SchemaId)
+			opts := schemaWithDatabaseOpera(registry.OpPut, domainProject, service.ServiceId, schema)
+			pluginOps = append(pluginOps, opts...)
+			schemaIds = append(schemaIds, schema.SchemaId)
+		}
+
 		for _, schema := range needUpdateSchemas {
 			util.Logger().Infof("update schema: serviceId %s, schemaId %s", serviceId, schema.SchemaId)
 			opts := schemaWithDatabaseOpera(registry.OpPut, domainProject, serviceId, schema)
 			pluginOps = append(pluginOps, opts...)
+			schemaIds = append(schemaIds, schema.SchemaId)
 		}
+
 		for _, schema := range needDeleteSchemas {
 			util.Logger().Infof("delete non-exist schema: serviceId %s, schemaId %s", serviceId, schema.SchemaId)
 			opts := schemaWithDatabaseOpera(registry.OpDel, domainProject, serviceId, schema)
 			pluginOps = append(pluginOps, opts...)
 		}
 
-		if len(nonExistSchemaIds) != 0 {
-			service.Schemas = append(service.Schemas, nonExistSchemaIds...)
-			opt, err := serviceUtil.UpdateService(domainProject, serviceId, service)
-			if err != nil {
-				util.Logger().Errorf(err, "modify schema info failed, update service failed , %s", serviceId)
-				return scerr.NewError(scerr.ErrInternal, err.Error())
-			}
-			pluginOps = append(pluginOps, opt)
+		service.Schemas = schemaIds
+		opt, err := serviceUtil.UpdateService(domainProject, serviceId, service)
+		if err != nil {
+			util.Logger().Errorf(err, "modify schema info failed, update service failed , %s", serviceId)
+			return scerr.NewError(scerr.ErrInternal, err.Error())
 		}
-	}
-
-	for _, schema := range needAddSchemas {
-		util.Logger().Infof("add new schema: serviceId %s, schemaId %s", serviceId, schema.SchemaId)
-		opts := schemaWithDatabaseOpera(registry.OpPut, domainProject, service.ServiceId, schema)
-		pluginOps = append(pluginOps, opts...)
+		pluginOps = append(pluginOps, opt)
 	}
 
 	if len(pluginOps) != 0 {
@@ -458,9 +466,7 @@ func schemaWithDatabaseOpera(invoke registry.Operation, domainProject string, se
 
 func GetSchemasFromDatabase(ctx context.Context, domainProject string, serviceId string) ([]*pb.Schema, error) {
 	key := apt.GenerateServiceSchemaKey(domainProject, serviceId, "")
-	util.Logger().Debugf("key is %s", key)
-	resp, err := backend.Registry().Do(ctx,
-		registry.GET,
+	resp, err := backend.Store().Schema().Search(ctx,
 		registry.WithPrefix(),
 		registry.WithStrKey(key))
 	if err != nil {

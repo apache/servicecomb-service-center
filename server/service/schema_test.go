@@ -387,7 +387,7 @@ var _ = Describe("'Schema' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respGetOne.Response.Code).To(Equal(pb.Response_SUCCESS))
-				Expect(respGetOne.Service.Schemas).To(Equal([]string{"first_schemaId", "second_schemaId"}))
+				Expect(respGetOne.Service.Schemas).To(Equal([]string{"second_schemaId"}))
 
 				By("create empty")
 				schemas = []*pb.Schema{}
@@ -418,7 +418,7 @@ var _ = Describe("'Schema' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respGetOne.Response.Code).To(Equal(pb.Response_SUCCESS))
-				Expect(respGetOne.Service.Schemas).To(Equal([]string{"first_schemaId", "second_schemaId"}))
+				Expect(respGetOne.Service.Schemas).To(Equal([]string{"second_schemaId"}))
 			})
 		})
 
@@ -463,7 +463,6 @@ var _ = Describe("'Schema' service", func() {
 			})
 
 			It("should be passed", func() {
-
 				By("add schemas when service schema id set is empty")
 				schemas := []*pb.Schema{
 					{
@@ -519,7 +518,7 @@ var _ = Describe("'Schema' service", func() {
 					Schemas:   schemas,
 				})
 				Expect(err).To(BeNil())
-				Expect(respModifySchemas.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respModifySchemas.Response.Code).To(Equal(scerr.ErrUndefinedSchemaId))
 
 				respExist, err := serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
 					Type:      service.EXIST_TYPE_SCHEMA,
@@ -531,7 +530,7 @@ var _ = Describe("'Schema' service", func() {
 				Expect(respExist.Summary).To(Equal("first0summary"))
 			})
 
-			It("should be passed", func() {
+			It("summary is empty", func() {
 				By("add schema when summary is empty")
 				respModifySchema, err := serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
 					ServiceId: serviceIdPro2,
