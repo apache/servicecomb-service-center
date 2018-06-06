@@ -27,7 +27,7 @@ fi
 PACKAGE_PREFIX=apache-servicecomb-incubating-service-center
 
 ## Get the PACKAGE NUMBER
-if [ $3 == "" ]; then
+if [ "X"$3 == "X" ]; then
     PACKAGE=RELEASE
 else
     PACKAGE=$3
@@ -68,10 +68,10 @@ prepare_conf() {
 
 # Build Linux Release
 build_linux(){
-    if [ $RELEASE == "" ] ; then
+    if [ "X"$RELEASE == "X" ] ; then
          echo "Error in Making Linux Release.....Release Number not specified"
     fi
-    if [ $PACKAGE = "" ]; then
+    if [ "X"$PACKAGE == "X" ]; then
         echo "Error in Making Linux Release.....Package Number not specified"
     fi
 
@@ -123,10 +123,10 @@ build_linux(){
 
 # Build Windows Release
 build_windows(){
-    if [ $RELEASE == "" ] ; then
+    if [ "X"$RELEASE == "X" ] ; then
          echo "Error in Making Windows Release.....Release Number not specified"
     fi
-    if [ $PACKAGE = "" ]; then
+    if [ "X"$PACKAGE == "X" ]; then
         echo "Error in Making Windows Release.....Package Number not specified"
     fi
 
