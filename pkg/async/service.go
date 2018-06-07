@@ -129,14 +129,17 @@ func (lat *TaskService) daemon(ctx context.Context) {
 			util.Logger().Debugf("daemon thread exited for TaskService is stopped")
 			return
 		case <-time.After(executeInterval):
-			start := time.Now()
 			lat.lock.RLock()
 			l := len(lat.executors)
+			slice := make([]*Executor, 0, l)
 			for _, s := range lat.executors {
-				s.Execute() // non-blocked
+				slice = append(slice, s)
 			}
 			lat.lock.RUnlock()
-			util.LogNilOrWarnf(start, "cost too long to execute tasks[%s]", l)
+
+			for _, s := range slice {
+				s.Execute() // non-blocked
+			}
 		case <-ticker.C:
 			lat.lock.Lock()
 			l, rl := len(lat.executors), len(lat.removingExecutors)
