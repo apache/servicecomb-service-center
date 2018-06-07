@@ -52,7 +52,7 @@ func GetServiceWithRev(ctx context.Context, domain string, id string, rev int64)
 }
 
 func GetServiceInCache(ctx context.Context, domain string, id string) (*pb.MicroService, error) {
-	return GetService(ctx, domain, id)
+	return GetService(util.SetContext(util.CloneContext(ctx), CTX_CACHEONLY, "1"), domain, id)
 }
 
 func GetService(ctx context.Context, domainProject string, serviceId string) (*pb.MicroService, error) {

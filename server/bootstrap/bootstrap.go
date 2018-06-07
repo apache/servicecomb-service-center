@@ -42,10 +42,10 @@ import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/i
 // tracing
 import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/tracing/buildin"
 
-// module
+// module 'govern'
 import _ "github.com/apache/incubator-servicecomb-service-center/server/govern"
 
-// module
+// module 'broker'
 import _ "github.com/apache/incubator-servicecomb-service-center/server/broker"
 
 // metrics
@@ -56,6 +56,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/handler/auth"
 	"github.com/apache/incubator-servicecomb-service-center/server/handler/cache"
 	"github.com/apache/incubator-servicecomb-service-center/server/handler/context"
+	"github.com/apache/incubator-servicecomb-service-center/server/handler/maxbody"
 	"github.com/apache/incubator-servicecomb-service-center/server/handler/metric"
 	"github.com/apache/incubator-servicecomb-service-center/server/handler/tracing"
 	"github.com/apache/incubator-servicecomb-service-center/server/interceptor"
@@ -71,6 +72,7 @@ func init() {
 	interceptor.RegisterInterceptFunc(cors.Intercept)
 
 	// handle requests after routing.
+	maxbody.RegisterHandlers()
 	metric.RegisterHandlers()
 	tracing.RegisterHandlers()
 	auth.RegisterHandlers()

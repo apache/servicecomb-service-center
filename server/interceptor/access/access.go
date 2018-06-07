@@ -36,8 +36,6 @@ func init() {
 func Intercept(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Add(rest.HEADER_SERVER, serverName)
 
-	r.Body = http.MaxBytesReader(w, r.Body, core.ServerInfo.Config.MaxBodyBytes)
-
 	if !validate.IsRequestURI(r.RequestURI) {
 		err := fmt.Errorf("Invalid Request URI %s", r.RequestURI)
 		w.WriteHeader(http.StatusBadRequest)

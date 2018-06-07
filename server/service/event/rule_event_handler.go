@@ -53,7 +53,7 @@ func (apt *RulesChangedTask) Err() error {
 }
 
 func (apt *RulesChangedTask) publish(ctx context.Context, domainProject, providerId string, rev int64) error {
-	provider, err := serviceUtil.GetService(ctx, domainProject, providerId)
+	provider, err := serviceUtil.GetServiceInCache(ctx, domainProject, providerId)
 	if err != nil {
 		util.Logger().Errorf(err, "get provider %s service file failed", providerId)
 		return err
