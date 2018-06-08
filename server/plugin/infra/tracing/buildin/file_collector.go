@@ -43,9 +43,11 @@ func (f *FileCollector) Collect(span *zipkincore.Span) error {
 		return fmt.Errorf("required FD to write")
 	}
 
+	timer := time.NewTimer(f.Timeout)
 	select {
 	case f.c <- span:
-	case <-time.After(f.Timeout):
+		timer.Stop()
+	case <-timer.C:
 		util.Logger().Errorf(nil, "send span to handle channel timed out(%s)", f.Timeout)
 	}
 	return nil

@@ -144,10 +144,13 @@ func (s *NotifyService) AddJob(job NotifyJob) error {
 	}
 
 	defer util.RecoverAndReport()
+
+	timer := time.NewTimer(s.Config.AddTimeout)
 	select {
 	case s.queues[job.Type()] <- job:
+		timer.Stop()
 		return nil
-	case <-time.After(s.Config.AddTimeout):
+	case <-timer.C:
 		util.Logger().Errorf(nil, "Add job failed.%s")
 		return errors.New("add notify job timeout")
 	}

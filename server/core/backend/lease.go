@@ -25,13 +25,13 @@ import (
 )
 
 type LeaseTask struct {
-	key        string
-	LeaseID    int64
-	TTL        int64
-	CreateTime time.Time
-	StartTime  time.Time
-	EndTime    time.Time
-	err        error
+	key     string
+	LeaseID int64
+	TTL     int64
+
+	recvSec  int64
+	recvNsec int64
+	err      error
 }
 
 func (lat *LeaseTask) Key() string {
@@ -39,15 +39,14 @@ func (lat *LeaseTask) Key() string {
 }
 
 func (lat *LeaseTask) Do(ctx context.Context) (err error) {
-	lat.StartTime = time.Now()
+	recv, start := lat.ReceiveTime(), time.Now()
 	lat.TTL, err = Registry().LeaseRenew(ctx, lat.LeaseID)
-	lat.EndTime = time.Now()
 	if err != nil {
-		util.Logger().Errorf(err, "[%s]renew lease %d failed(rev: %s, run: %s), key %s",
-			time.Now().Sub(lat.CreateTime),
+		util.Logger().Errorf(err, "[%s]renew lease %d failed(recv: %s, send: %s), key %s",
+			time.Now().Sub(recv),
 			lat.LeaseID,
-			lat.CreateTime.Format(TIME_FORMAT),
-			lat.StartTime.Format(TIME_FORMAT),
+			recv.Format(TIME_FORMAT),
+			start.Format(TIME_FORMAT),
 			lat.Key())
 		if _, ok := err.(errorsEx.InternalError); !ok {
 			// it means lease not found if err is not the InternalError type
@@ -57,10 +56,10 @@ func (lat *LeaseTask) Do(ctx context.Context) (err error) {
 	}
 
 	lat.err, err = nil, nil
-	util.LogNilOrWarnf(lat.CreateTime, "renew lease %d(rev: %s, run: %s), key %s",
+	util.LogNilOrWarnf(recv, "renew lease %d(recv: %s, send: %s), key %s",
 		lat.LeaseID,
-		lat.CreateTime.Format(TIME_FORMAT),
-		lat.StartTime.Format(TIME_FORMAT),
+		recv.Format(TIME_FORMAT),
+		start.Format(TIME_FORMAT),
 		lat.Key())
 	return
 }
@@ -69,11 +68,17 @@ func (lat *LeaseTask) Err() error {
 	return lat.err
 }
 
+func (lat *LeaseTask) ReceiveTime() time.Time {
+	return time.Unix(lat.recvSec, lat.recvNsec).Local()
+}
+
 func NewLeaseAsyncTask(op registry.PluginOp) *LeaseTask {
+	now := time.Now().UTC()
 	return &LeaseTask{
-		key:        ToLeaseAsyncTaskKey(util.BytesToStringWithNoCopy(op.Key)),
-		LeaseID:    op.Lease,
-		CreateTime: time.Now(),
+		key:      ToLeaseAsyncTaskKey(util.BytesToStringWithNoCopy(op.Key)),
+		LeaseID:  op.Lease,
+		recvSec:  now.Unix(),
+		recvNsec: int64(now.Nanosecond()),
 	}
 }
 

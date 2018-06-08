@@ -115,8 +115,8 @@ var TypeInitSize = map[StoreType]int{
 }
 
 const (
-	// re-list etcd when there is no event coming in more than 15m(=30*30s)
-	DEFAULT_MAX_NO_EVENT_INTERVAL = 30
+	// re-list etcd when there is no event coming in more than 2h(=240*30s)
+	DEFAULT_MAX_NO_EVENT_INTERVAL = 240
 	DEFAULT_LISTWATCH_TIMEOUT     = 30 * time.Second
 
 	DEFAULT_SELF_PRESERVATION_PERCENT = 0.8

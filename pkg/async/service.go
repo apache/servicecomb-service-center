@@ -124,11 +124,14 @@ func (lat *TaskService) daemon(ctx context.Context) {
 	ticker := time.NewTicker(removeTasksInterval)
 	max := 0
 	for {
+		timer := time.NewTimer(executeInterval)
 		select {
 		case <-ctx.Done():
+			timer.Stop()
+
 			util.Logger().Debugf("daemon thread exited for TaskService is stopped")
 			return
-		case <-time.After(executeInterval):
+		case <-timer.C:
 			lat.lock.RLock()
 			l := len(lat.executors)
 			slice := make([]*Executor, 0, l)
@@ -141,6 +144,8 @@ func (lat *TaskService) daemon(ctx context.Context) {
 				s.Execute() // non-blocked
 			}
 		case <-ticker.C:
+			timer.Stop()
+
 			lat.lock.Lock()
 			l, rl := len(lat.executors), len(lat.removingExecutors)
 			if l > max {

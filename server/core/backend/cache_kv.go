@@ -219,14 +219,20 @@ func (c *KvCacher) refresh(ctx context.Context) {
 		} else {
 			retries = 0
 		}
+
+		timer := time.NewTimer(nextPeriod)
 		select {
 		case <-ctx.Done():
+			timer.Stop()
+
 			util.Logger().Debugf("stop to list and watch %s", c.Cfg)
 			return
 		case <-ticker.C:
+			timer.Stop()
+
 			ReportCacheMetrics(c.Name(), "raw", c.cache.RLock())
 			c.cache.RUnlock()
-		case <-time.After(nextPeriod):
+		case <-timer.C:
 		}
 	}
 }
@@ -241,10 +247,14 @@ func (c *KvCacher) deferHandle(ctx context.Context) {
 		i    int
 	)
 	for {
+		timer := time.NewTimer(300 * time.Millisecond)
 		select {
 		case <-ctx.Done():
+			timer.Stop()
 			return
 		case evt, ok := <-c.Cfg.DeferHandler.HandleChan():
+			timer.Stop()
+
 			if !ok {
 				<-time.After(time.Second)
 				continue
@@ -258,7 +268,7 @@ func (c *KvCacher) deferHandle(ctx context.Context) {
 
 			evts[i] = evt
 			i++
-		case <-time.After(300 * time.Millisecond):
+		case <-timer.C:
 			if i == 0 {
 				continue
 			}

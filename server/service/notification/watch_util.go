@@ -31,10 +31,13 @@ import (
 
 func HandleWatchJob(watcher *ListWatcher, stream pb.ServiceInstanceCtrl_WatchServer, timeout time.Duration) (err error) {
 	for {
+		timer := time.NewTimer(timeout)
 		select {
-		case <-time.After(timeout):
+		case <-timer.C:
 		// TODO grpc 长连接心跳？
 		case job := <-watcher.Job:
+			timer.Stop()
+
 			if job == nil {
 				err = errors.New("channel is closed")
 				util.Logger().Errorf(err, "watcher %s %s caught an exception",
@@ -147,14 +150,18 @@ func (wh *WebSocketHandler) HandleWatchWebSocketJob() {
 
 	remoteAddr := wh.conn.RemoteAddr().String()
 	for {
+		timer := time.NewTimer(wh.Timeout())
 		select {
 		case <-wh.closed:
+			timer.Stop()
 			return
 		case <-wh.ctx.Done():
+			timer.Stop()
+
 			util.Logger().Warnf(nil, "handle timed out, watcher[%s] %s %s", remoteAddr,
 				wh.watcher.Subject(), wh.watcher.Id())
 			return
-		case <-time.After(wh.Timeout()):
+		case <-timer.C:
 			if wh.watcher.Err() != nil {
 				return
 			}
@@ -181,6 +188,8 @@ func (wh *WebSocketHandler) HandleWatchWebSocketJob() {
 				return
 			}
 		case job := <-wh.watcher.Job:
+			timer.Stop()
+
 			if wh.watcher.Err() != nil {
 				return
 			}
