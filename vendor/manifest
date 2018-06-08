@@ -660,6 +660,23 @@
 			"revision": "d670f9405373e636a5a2765eea47fac0c9bc91a4",
 			"branch": "HEAD",
 			"notests": true
-		}
+		},
+                {
+                        "importpath": "github.com/grpc-ecosystem/go-grpc-prometheus",
+                        "repository": "https://github.com/grpc-ecosystem/go-grpc-prometheus",
+                        "vcs": "git",
+                        "revision": "6b7015e65d366bf3f19b2b2a000a831940f0f7e0",
+                        "branch": "HEAD",
+                        "notests": true
+                },
+                {
+                        "importpath": "github.com/grpc-ecosystem/grpc-gateway",
+                        "repository": "https://github.com/grpc-ecosystem/grpc-gateway",
+                        "vcs": "git",
+                        "revision": "84398b94e188ee336f307779b57b3aa91af7063c",
+                        "branch": "HEAD",
+                        "notests": true
+                }
+
 	]
 }

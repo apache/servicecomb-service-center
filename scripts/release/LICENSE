@@ -221,7 +221,7 @@ github.com/coreos/go-semver/semver (1817cd4bea52af76542157eeabd74b057d1a199e)
 github.com/coreos/go-systemd/journal (24036eb3df68550d24a2736c5d013f4e83366866)
 github.com/coreos/pkg/capnslog (8dbaa491b063ed47e2474b5363de0c0db91cf9f2)
 github.com/google/btree (316fb6d3f031ae8f4d457c6c5186b9e3ded70435)
-github.com/grpc-ecosystem/go-grpc-prometheus
+github.com/grpc-ecosystem/go-grpc-prometheus (6b7015e65d366bf3f19b2b2a000a831940f0f7e0)
 github.com/jonboulle/clockwork (bcac9884e7502bb2b474c0339d889cb981a2f27f)
 github.com/matttproud/golang_protobuf_extensions/pbutil (c12348ce28de40eed0136aa2b644d0ee0650e56c)
 github.com/opentracing-contrib/go-observer (a52f2342449246d5bcc273e65cbdcfa5f7d6c63c)
@@ -295,7 +295,7 @@ For details, see https://github.com/gorilla/websocket
 You can find a copy of the License at licenses/LICENSE-gorilla-websocket
 
 ================================================================
-For grpc-ecosystem/grpc-gateway
+For grpc-ecosystem/grpc-gateway (84398b94e188ee336f307779b57b3aa91af7063c)
 ================================================================
 This product bundles grpc-gateway which is licensed under the 3-Clause BSD
 License.
