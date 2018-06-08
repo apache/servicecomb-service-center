@@ -21,23 +21,30 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"golang.org/x/net/context"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
 const (
-	maxExecutorCount    = 1000
-	removeTasksInterval = 30 * time.Second
-	executeInterval     = 100 * time.Millisecond
-	compactTimes        = 2
+	maxExecutorCount       = 1000
+	removeExecutorInterval = 30 * time.Second
+	initExecutorTTL        = 4
+	executeInterval        = 100 * time.Millisecond
+	compactTimes           = 2
 )
 
+type executorWithTTL struct {
+	*Executor
+
+	TTL int64
+}
+
 type TaskService struct {
-	executors         map[string]*Executor
-	removingExecutors map[string]struct{}
-	goroutine         *util.GoRoutine
-	lock              sync.RWMutex
-	ready             chan struct{}
-	isClose           bool
+	executors map[string]*executorWithTTL
+	goroutine *util.GoRoutine
+	lock      sync.RWMutex
+	ready     chan struct{}
+	isClose   bool
 }
 
 func (lat *TaskService) getOrNewExecutor(task Task) (s *Executor, isNew bool) {
@@ -47,28 +54,23 @@ func (lat *TaskService) getOrNewExecutor(task Task) (s *Executor, isNew bool) {
 	)
 
 	lat.lock.RLock()
-	s, ok = lat.executors[key]
-	_, remove := lat.removingExecutors[key]
+	se, ok := lat.executors[key]
 	lat.lock.RUnlock()
 	if !ok {
 		lat.lock.Lock()
-		s, ok = lat.executors[key]
+		se, ok = lat.executors[key]
 		if !ok {
 			isNew = true
-			s = NewExecutor(lat.goroutine, task)
-			lat.executors[key] = s
+			se = &executorWithTTL{
+				Executor: NewExecutor(lat.goroutine, task),
+				TTL:      initExecutorTTL,
+			}
+			lat.executors[key] = se
 		}
 		lat.lock.Unlock()
 	}
-	if remove && ok {
-		lat.lock.Lock()
-		_, remove = lat.removingExecutors[key]
-		if remove {
-			delete(lat.removingExecutors, key)
-		}
-		lat.lock.Unlock()
-	}
-	return
+	atomic.StoreInt64(&se.TTL, initExecutorTTL)
+	return se.Executor, isNew
 }
 
 func (lat *TaskService) Add(ctx context.Context, task Task) error {
@@ -84,29 +86,11 @@ func (lat *TaskService) Add(ctx context.Context, task Task) error {
 	return s.AddTask(task)
 }
 
-func (lat *TaskService) DeferRemove(key string) error {
-	lat.lock.Lock()
-	if lat.isClose {
-		lat.lock.Unlock()
-		return errors.New("TaskService is stopped")
-	}
-	_, exist := lat.executors[key]
-	if !exist {
-		lat.lock.Unlock()
-		return nil
-	}
-	lat.removingExecutors[key] = struct{}{}
-	lat.lock.Unlock()
-	return nil
-}
-
 func (lat *TaskService) removeExecutor(key string) {
 	if s, ok := lat.executors[key]; ok {
 		s.Close()
 		delete(lat.executors, key)
 	}
-	delete(lat.removingExecutors, key)
-	util.Logger().Debugf("remove executor, key is %s", key)
 }
 
 func (lat *TaskService) LatestHandled(key string) (Task, error) {
@@ -121,7 +105,7 @@ func (lat *TaskService) LatestHandled(key string) (Task, error) {
 
 func (lat *TaskService) daemon(ctx context.Context) {
 	util.SafeCloseChan(lat.ready)
-	ticker := time.NewTicker(removeTasksInterval)
+	ticker := time.NewTicker(removeExecutorInterval)
 	max := 0
 	for {
 		timer := time.NewTimer(executeInterval)
@@ -134,7 +118,7 @@ func (lat *TaskService) daemon(ctx context.Context) {
 		case <-timer.C:
 			lat.lock.RLock()
 			l := len(lat.executors)
-			slice := make([]*Executor, 0, l)
+			slice := make([]*executorWithTTL, 0, l)
 			for _, s := range lat.executors {
 				slice = append(slice, s)
 			}
@@ -146,13 +130,26 @@ func (lat *TaskService) daemon(ctx context.Context) {
 		case <-ticker.C:
 			timer.Stop()
 
-			lat.lock.Lock()
-			l, rl := len(lat.executors), len(lat.removingExecutors)
+			lat.lock.RLock()
+			l := len(lat.executors)
 			if l > max {
 				max = l
 			}
 
-			for key := range lat.removingExecutors {
+			removes := make([]string, 0, l)
+			for key, se := range lat.executors {
+				if atomic.AddInt64(&se.TTL, -1) == 0 {
+					removes = append(removes, key)
+				}
+			}
+			lat.lock.RUnlock()
+
+			if len(removes) == 0 {
+				continue
+			}
+
+			lat.lock.Lock()
+			for _, key := range removes {
 				lat.removeExecutor(key)
 			}
 
@@ -163,9 +160,7 @@ func (lat *TaskService) daemon(ctx context.Context) {
 			}
 			lat.lock.Unlock()
 
-			if rl > 0 {
-				util.Logger().Debugf("daemon thread completed, %d executor(s) removed", rl)
-			}
+			util.Logger().Debugf("daemon thread completed, %d executor(s) removed", len(removes))
 		}
 	}
 }
@@ -205,12 +200,11 @@ func (lat *TaskService) Ready() <-chan struct{} {
 }
 
 func (lat *TaskService) renew() {
-	newExecutor := make(map[string]*Executor, maxExecutorCount)
+	newExecutor := make(map[string]*executorWithTTL, maxExecutorCount)
 	for k, e := range lat.executors {
 		newExecutor[k] = e
 	}
 	lat.executors = newExecutor
-	lat.removingExecutors = make(map[string]struct{}, maxExecutorCount)
 }
 
 func NewTaskService() (lat *TaskService) {

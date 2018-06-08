@@ -43,7 +43,6 @@ func (apt *TagsChangedTask) Key() string {
 }
 
 func (apt *TagsChangedTask) Do(ctx context.Context) error {
-	defer async.Service().DeferRemove(apt.Key())
 	apt.err = apt.publish(ctx, apt.DomainProject, apt.consumerId, apt.Rev)
 	return apt.err
 }

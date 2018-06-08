@@ -20,9 +20,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/async"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"sync"
 )
@@ -31,8 +29,6 @@ var store = &KvStore{}
 
 func init() {
 	store.Initialize()
-
-	AddEventHandleFunc(LEASE, store.onLeaseEvent)
 }
 
 type KvStore struct {
@@ -127,14 +123,6 @@ func (s *KvStore) wait(ctx context.Context) {
 	util.Logger().Debugf("all indexers are ready")
 }
 
-func (s *KvStore) onLeaseEvent(evt KvEvent) {
-	if evt.Type != pb.EVT_DELETE {
-		return
-	}
-
-	key := util.BytesToStringWithNoCopy(evt.Object.(*mvccpb.KeyValue).Key)
-	s.taskService.DeferRemove(ToLeaseAsyncTaskKey(key))
-}
 func (s *KvStore) closed() bool {
 	return s.isClose
 }
