@@ -29,13 +29,13 @@ type MetricsHandler struct {
 }
 
 func (h *MetricsHandler) Handle(i *chain.Invocation) {
-	w, r := i.Context().Value(rest.CTX_RESPONSE).(http.ResponseWriter),
-		i.Context().Value(rest.CTX_REQUEST).(*http.Request)
 	i.Next(chain.WithAsyncFunc(func(ret chain.Result) {
 		start, ok := i.Context().Value(svr.CTX_START_TIMESTAMP).(time.Time)
 		if !ok {
 			return
 		}
+		w, r := i.Context().Value(rest.CTX_RESPONSE).(http.ResponseWriter),
+			i.Context().Value(rest.CTX_REQUEST).(*http.Request)
 		svr.ReportRequestCompleted(w, r, start)
 		util.LogNilOrWarnf(start, "%s %s", r.Method, r.RequestURI)
 	}))
