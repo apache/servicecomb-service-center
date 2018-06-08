@@ -199,27 +199,3 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-
-=======================================================================
-Apache ServiceComb Service Center Subcomponents:
-
-The Apache ServiceComb Service Center project contains subcomponents with
-seperate copyright notices and license terms. Your use of the source code
-for these subcomponents is subject to the terms and conditions of the
-following licenses.
-
-
-=======================================================================
-For vendor/github.com/grpc-ecosystem/grpc-gateway
-=======================================================================
-This product bundles grpc-gateway which is licensed under the the
-3-Clause-BSD License.
-For details, see https://github.com/grpc-ecosystem/grpc-gateway
-You can find a copy of the License at licenses/LICENSE-grpc-gateway
-
-=======================================================================
-For vendor/github.com/grpc-ecosystem/go-grpc-prometheus
-=======================================================================
-This product bundles go-grpc-prometheus which is licensed under the the
-Apache License v2.
-For details, see https://github.com/grpc-ecosystem/go-grpc-prometheus
