@@ -13,8 +13,9 @@ cd $GOPATH/src/github.com/apache/incubator-servicecomb-service-center
 ## Download all the dependency
 go get github.com/FiloSottile/gvt
 gvt restore
-
 ```
+
+##### Note: [bower](https://www.npmjs.com/package/bower) should be installed in this machine
 
 #### Linux Release
 
