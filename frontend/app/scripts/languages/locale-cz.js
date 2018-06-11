@@ -75,7 +75,7 @@ angular.module('serviceCenter')
 	"noInstance": "没有可用的实例",
 	"instanceName":"实例名称",
 	"address": "地址",
-	"next":"下一个",
+	"next":"下一步",
 	"noSchemaAvailableToDownload": "没有可用契约",
 	"download": "下载",
 	"downloadAll": "全部下载",
