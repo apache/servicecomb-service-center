@@ -19,6 +19,7 @@ package util
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"golang.org/x/net/context"
 	"testing"
 )
@@ -130,5 +131,16 @@ func TestGetInstanceCountOfServices(t *testing.T) {
 	_, err = GetAllInstancesOfServices(context.Background(), "", []string{"1"})
 	if err == nil {
 		t.Fatalf(`GetAllInstancesOfServices failed`)
+	}
+}
+
+func TestUpdateInstance(t *testing.T) {
+	err := UpdateInstance(util.SetContext(context.Background(), CTX_CACHEONLY, "1"), "", &pb.MicroServiceInstance{})
+	if err == nil {
+		t.Fatalf(`UpdateInstance CTX_CACHEONLY failed`)
+	}
+	err = UpdateInstance(util.SetContext(context.Background(), CTX_NOCACHE, "1"), "", &pb.MicroServiceInstance{})
+	if err == nil {
+		t.Fatalf(`UpdateInstance CTX_NOCACHE failed`)
 	}
 }
