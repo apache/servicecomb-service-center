@@ -211,10 +211,6 @@ func (s *KvStore) Project() *Indexer {
 	return s.indexers[PROJECT]
 }
 
-func (s *KvStore) Endpoints() *Indexer {
-	return s.indexers[ENDPOINTS]
-}
-
 func (s *KvStore) KeepAlive(ctx context.Context, opts ...registry.PluginOpOption) (int64, error) {
 	op := registry.OpPut(opts...)
 

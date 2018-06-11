@@ -63,13 +63,7 @@ func (this *MainService) URLPatterns() []rest.Route {
 }
 
 func (this *MainService) ClusterHealth(w http.ResponseWriter, r *http.Request) {
-	resp, err := core.InstanceAPI.ClusterHealth(r.Context())
-	if err != nil {
-		util.Logger().Error("health check failed", err)
-		controller.WriteError(w, scerr.ErrInternal, "health check failed")
-		return
-	}
-
+	resp, _ := core.InstanceAPI.ClusterHealth(r.Context())
 	respInternal := resp.Response
 	resp.Response = nil
 	controller.WriteResponse(w, respInternal, resp)

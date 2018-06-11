@@ -52,7 +52,6 @@ const (
 	SCHEMA_SUMMARY
 	INSTANCE
 	LEASE
-	ENDPOINTS
 	typeEnd // end of the base store types
 )
 
@@ -72,7 +71,6 @@ var TypeNames = []string{
 	SCHEMA_SUMMARY:   "SCHEMA_SUMMARY",
 	INSTANCE:         "INSTANCE",
 	LEASE:            "LEASE",
-	ENDPOINTS:        "ENDPOINTS",
 	typeEnd:          "TYPEEND",
 }
 
@@ -92,7 +90,6 @@ var TypeRoots = map[StoreType]string{
 	DEPENDENCY_RULE:  apt.GetServiceDependencyRuleRootKey(""),
 	DEPENDENCY_QUEUE: apt.GetServiceDependencyQueueRootKey(""),
 	PROJECT:          apt.GetProjectRootKey(""),
-	ENDPOINTS:        apt.GetEndpointsRootKey(""),
 }
 
 var TypeInitSize = map[StoreType]int{
@@ -111,7 +108,6 @@ var TypeInitSize = map[StoreType]int{
 	DEPENDENCY_RULE:  100,
 	DEPENDENCY_QUEUE: 100,
 	PROJECT:          100,
-	ENDPOINTS:        1000,
 }
 
 const (
