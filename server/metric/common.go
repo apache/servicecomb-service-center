@@ -25,6 +25,5 @@ const (
 var sysMetricNames = map[string]struct{}{
 	"process_resident_memory_bytes": {},
 	"process_cpu_seconds_total":     {},
-	"go_goroutines":                 {},
 	"go_threads":                    {},
 }
