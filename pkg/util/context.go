@@ -24,7 +24,7 @@ import (
 
 type StringContext struct {
 	parentCtx context.Context
-	kv        ConcurrentMap
+	kv        *ConcurrentMap
 }
 
 func (c *StringContext) Deadline() (deadline time.Time, ok bool) {
