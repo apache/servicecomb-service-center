@@ -60,7 +60,7 @@ func (mm *MetricsGatherer) Start() {
 }
 
 func (mm *MetricsGatherer) loop(ctx context.Context) {
-	ticker := time.NewTicker(time.Second)
+	ticker := time.NewTicker(collectInterval)
 	for {
 		select {
 		case <-ctx.Done():

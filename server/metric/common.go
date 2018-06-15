@@ -16,8 +16,11 @@
  */
 package metric
 
+import "time"
+
 const (
 	defaultMetricsSize = 100
+	collectInterval    = 5 * time.Second
 
 	familyName = "service_center_"
 )
