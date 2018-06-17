@@ -31,6 +31,7 @@ import (
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -747,6 +748,33 @@ func newClient(endpoints []string) (*clientv3.Client, error) {
 	})
 	if err != nil {
 		return nil, err
+	}
+	if len(endpoints) == 1 {
+		return client, nil
+	}
+
+	ctx, _ := context.WithTimeout(client.Ctx(), healthCheckTimeout)
+	resp, err := client.MemberList(ctx)
+	if err != nil {
+		return nil, err
+	}
+epLoop:
+	for _, ep := range endpoints {
+		var cluster []string
+		for _, mem := range resp.Members {
+			for _, curl := range mem.ClientURLs {
+				u, err := url.Parse(curl)
+				if err != nil {
+					return nil, err
+				}
+				cluster = append(cluster, u.Host)
+				if u.Host == ep {
+					continue epLoop
+				}
+			}
+		}
+		// maybe endpoints = [domain A, domain B] or there are more than one cluster
+		return nil, fmt.Errorf("the etcd cluster endpoint list%v does not contain %s", cluster, ep)
 	}
 	return client, nil
 }

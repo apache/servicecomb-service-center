@@ -115,6 +115,6 @@ func (cm *ConcurrentMap) ForEach(f func(item MapItem) (next bool)) {
 	close(ch)
 }
 
-func NewConcurrentMap(size int) ConcurrentMap {
-	return ConcurrentMap{size: size}
+func NewConcurrentMap(size int) *ConcurrentMap {
+	return &ConcurrentMap{size: size}
 }
