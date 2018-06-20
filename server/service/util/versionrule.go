@@ -212,7 +212,7 @@ func (vr *VersionRegexp) String() string {
 	if vr.Fuzzy {
 		return "the form x[.y[.z]] or x[.y[.z]]+ or x[.y[.z]]-x[.y[.z]] or 'latest' where x y and z are 0-32767 range"
 	}
-	return "the form x[.y[.z]] when x y and z are 0-32767 range"
+	return "the form x[.y[.z]] where x y and z are 0-32767 range"
 }
 
 func (vr *VersionRegexp) validateVersionRule(versionRule string) (err error) {
