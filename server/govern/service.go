@@ -41,6 +41,8 @@ type ServiceDetailOpt struct {
 }
 
 func (governService *GovernService) GetServicesInfo(ctx context.Context, in *pb.GetServicesInfoRequest) (*pb.GetServicesInfoResponse, error) {
+	util.SetContext(ctx, serviceUtil.CTX_CACHEONLY, "1")
+
 	optionMap := make(map[string]struct{}, len(in.Options))
 	for _, opt := range in.Options {
 		optionMap[opt] = struct{}{}
@@ -117,6 +119,8 @@ func (governService *GovernService) GetServicesInfo(ctx context.Context, in *pb.
 }
 
 func (governService *GovernService) GetServiceDetail(ctx context.Context, in *pb.GetServiceRequest) (*pb.GetServiceDetailResponse, error) {
+	util.SetContext(ctx, serviceUtil.CTX_CACHEONLY, "1")
+
 	domainProject := util.ParseDomainProject(ctx)
 	options := []string{"tags", "rules", "instances", "schemas", "dependencies"}
 
@@ -241,11 +245,9 @@ func getServiceAllVersions(ctx context.Context, serviceKey *pb.MicroServiceKey) 
 func getSchemaInfoUtil(ctx context.Context, domainProject string, serviceId string) ([]*pb.Schema, error) {
 	key := apt.GenerateServiceSchemaKey(domainProject, serviceId, "")
 
-	opts := append(serviceUtil.FromContext(ctx),
+	resp, err := backend.Store().Schema().Search(ctx,
 		registry.WithStrKey(key),
 		registry.WithPrefix())
-
-	resp, err := backend.Store().Schema().Search(ctx, opts...)
 	if err != nil {
 		util.Logger().Errorf(err, "Get schema failed")
 		return make([]*pb.Schema, 0), err
