@@ -32,7 +32,7 @@ type WatchJob struct {
 
 type ListWatcher struct {
 	BaseSubscriber
-	Job          chan NotifyJob
+	Job          chan *WatchJob
 	ListRevision int64
 	ListFunc     func() (results []*pb.WatchInstanceResponse, rev int64)
 
@@ -56,13 +56,18 @@ func (w *ListWatcher) listAndPublishJobs(_ context.Context) {
 	results, rev := w.ListFunc()
 	w.ListRevision = rev
 	for _, response := range results {
-		w.sendMessage(NewWatchJob(w.Type(), w.Id(), w.Subject(), w.ListRevision, response))
+		w.sendMessage(NewWatchJob(w.Id(), w.Subject(), w.ListRevision, response))
 	}
 }
 
 //被通知
 func (w *ListWatcher) OnMessage(job NotifyJob) {
 	if w.Err() != nil {
+		return
+	}
+
+	wJob, ok := job.(*WatchJob)
+	if !ok {
 		return
 	}
 
@@ -77,16 +82,16 @@ func (w *ListWatcher) OnMessage(job NotifyJob) {
 		return
 	}
 
-	if job.(*WatchJob).Revision <= w.ListRevision {
+	if wJob.Revision <= w.ListRevision {
 		util.Logger().Warnf(nil,
 			"unexpected notify %s job is coming in, watcher %s %s, job is %v, current revision is %v",
 			w.Type(), w.Id(), w.Subject(), job, w.ListRevision)
 		return
 	}
-	w.sendMessage(job)
+	w.sendMessage(wJob)
 }
 
-func (w *ListWatcher) sendMessage(job NotifyJob) {
+func (w *ListWatcher) sendMessage(job *WatchJob) {
 	util.Logger().Debugf("start to notify %s watcher %s %s, job is %v, current revision is %v", w.Type(),
 		w.Id(), w.Subject(), job, w.ListRevision)
 	defer util.RecoverAndReport()
@@ -105,27 +110,27 @@ func (w *ListWatcher) Close() {
 	close(w.Job)
 }
 
-func NewWatchJob(nType NotifyType, subscriberId, subject string, rev int64, response *pb.WatchInstanceResponse) *WatchJob {
+func NewWatchJob(subscriberId, subject string, rev int64, response *pb.WatchInstanceResponse) *WatchJob {
 	return &WatchJob{
 		BaseNotifyJob: BaseNotifyJob{
 			subscriberId: subscriberId,
 			subject:      subject,
-			nType:        nType,
+			nType:        INSTANCE,
 		},
 		Revision: rev,
 		Response: response,
 	}
 }
 
-func NewListWatcher(nType NotifyType, id string, subject string,
+func NewListWatcher(id string, subject string,
 	listFunc func() (results []*pb.WatchInstanceResponse, rev int64)) *ListWatcher {
 	watcher := &ListWatcher{
 		BaseSubscriber: BaseSubscriber{
 			id:      id,
 			subject: subject,
-			nType:   nType,
+			nType:   INSTANCE,
 		},
-		Job:      make(chan NotifyJob, DEFAULT_MAX_QUEUE),
+		Job:      make(chan *WatchJob, DEFAULT_MAX_QUEUE),
 		ListFunc: listFunc,
 		listCh:   make(chan struct{}),
 	}

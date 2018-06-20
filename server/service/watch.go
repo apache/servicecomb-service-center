@@ -45,7 +45,7 @@ func (s *InstanceService) Watch(in *pb.WatchInstanceRequest, stream pb.ServiceIn
 		return err
 	}
 	domainProject := util.ParseDomainProject(stream.Context())
-	watcher := nf.NewInstanceListWatcher(in.SelfServiceId, apt.GetInstanceRootKey(domainProject)+"/", nil)
+	watcher := nf.NewListWatcher(in.SelfServiceId, apt.GetInstanceRootKey(domainProject)+"/", nil)
 	err = nf.GetNotifyService().AddSubscriber(watcher)
 	util.Logger().Infof("start watch instance status, watcher %s %s", watcher.Subject(), watcher.Id())
 	return nf.HandleWatchJob(watcher, stream, nf.GetNotifyService().Config.NotifyTimeout)
