@@ -45,7 +45,7 @@ func (h *DependencyEventHandler) OnEvent(evt backend.KvEvent) {
 		return
 	}
 
-	h.signals.Put(context.Background(), struct{}{})
+	h.signals.Put(struct{}{})
 }
 
 func (h *DependencyEventHandler) loop() {
@@ -55,7 +55,7 @@ func (h *DependencyEventHandler) loop() {
 			<-time.After(util.GetBackoff().Delay(retries))
 			retries++
 
-			h.signals.Put(context.Background(), struct{}{})
+			h.signals.Put(struct{}{})
 		}
 		for {
 			select {

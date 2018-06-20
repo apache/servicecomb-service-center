@@ -34,21 +34,19 @@ var (
 )
 
 func GetSchemaReqValidator() *validate.Validator {
-	schemaIdRule := &validate.ValidateRule{Min: 1, Max: 160, Regexp: schemaIdUnlimitedRegex}
-
 	return getSchemaReqValidator.Init(func(v *validate.Validator) {
 		v.AddRule("ServiceId", GetServiceReqValidator().GetRule("ServiceId"))
-		v.AddRule("SchemaId", schemaIdRule)
+		v.AddRule("SchemaId", &validate.ValidateRule{Min: 1, Max: 160, Regexp: schemaIdUnlimitedRegex})
 	})
 }
 
 func ModifySchemasReqValidator() *validate.Validator {
-	var subSchemaValidator validate.Validator
-	subSchemaValidator.AddRule("SchemaId", GetSchemaReqValidator().GetRule("SchemaId"))
-	subSchemaValidator.AddRule("Summary", &validate.ValidateRule{Min: 1, Max: 128, Regexp: schemaSummaryRegex})
-	subSchemaValidator.AddRule("Schema", &validate.ValidateRule{Min: 1})
-
 	return modifySchemasReqValidator.Init(func(v *validate.Validator) {
+		var subSchemaValidator validate.Validator
+		subSchemaValidator.AddRule("SchemaId", GetSchemaReqValidator().GetRule("SchemaId"))
+		subSchemaValidator.AddRule("Summary", &validate.ValidateRule{Min: 1, Max: 128, Regexp: schemaSummaryRegex})
+		subSchemaValidator.AddRule("Schema", &validate.ValidateRule{Min: 1})
+
 		v.AddRule("ServiceId", GetServiceReqValidator().GetRule("ServiceId"))
 		v.AddRule("Schemas", &validate.ValidateRule{Min: 1, Max: quota.DefaultSchemaQuota})
 		v.AddSub("Schemas", &subSchemaValidator)

@@ -283,7 +283,7 @@ func TestUpdateServiceForAddDependency(t *testing.T) {
 
 func TestFilter(t *testing.T) {
 	_, _, err := getConsumerIdsWithFilter(context.Background(), "", &proto.MicroService{}, noFilter)
-	if err == nil {
+	if err != nil {
 		t.Fatalf(`getConsumerIdsWithFilter failed`)
 	}
 

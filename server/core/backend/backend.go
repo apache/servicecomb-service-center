@@ -32,6 +32,7 @@ var (
 )
 
 const (
+	// the same as v3rpc.MaxOpsPerTxn = 128
 	MAX_TXN_NUMBER_ONE_TIME = 128
 )
 
@@ -74,10 +75,15 @@ func Registry() registry.Registry {
 }
 
 func BatchCommit(ctx context.Context, opts []registry.PluginOp) error {
+	_, err := BatchCommitWithCmp(ctx, opts, nil, nil)
+	return err
+}
+
+func BatchCommitWithCmp(ctx context.Context, opts []registry.PluginOp,
+	cmp []registry.CompareOp, fail []registry.PluginOp) (resp *registry.PluginResponse, err error) {
 	lenOpts := len(opts)
 	tmpLen := lenOpts
 	tmpOpts := []registry.PluginOp{}
-	var err error
 	for i := 0; tmpLen > 0; i++ {
 		tmpLen = lenOpts - (i+1)*MAX_TXN_NUMBER_ONE_TIME
 		if tmpLen > 0 {
@@ -85,10 +91,10 @@ func BatchCommit(ctx context.Context, opts []registry.PluginOp) error {
 		} else {
 			tmpOpts = opts[i*MAX_TXN_NUMBER_ONE_TIME : lenOpts]
 		}
-		_, err = Registry().Txn(ctx, tmpOpts)
-		if err != nil {
-			return err
+		resp, err = Registry().TxnWithCmp(ctx, tmpOpts, cmp, fail)
+		if err != nil || !resp.Succeeded {
+			return
 		}
 	}
-	return nil
+	return
 }

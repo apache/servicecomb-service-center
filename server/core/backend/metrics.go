@@ -43,8 +43,9 @@ func init() {
 }
 
 func ReportCacheMetrics(resource, t string, obj interface{}) {
-	if len(core.Instance.Endpoints) == 0 {
+	if len(core.Instance.Endpoints) == 0 || len(resource) == 0 {
 		// endpoints list will be empty when initializing
+		// resource may be empty when report SCHEMA
 		return
 	}
 

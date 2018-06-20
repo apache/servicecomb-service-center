@@ -331,13 +331,21 @@ func UpdateInstance(ctx context.Context, domainProject string, instance *pb.Micr
 	}
 
 	key := apt.GenerateInstanceKey(domainProject, instance.ServiceId, instance.InstanceId)
-	_, err = backend.Registry().Do(ctx,
-		registry.PUT,
-		registry.WithStrKey(key),
-		registry.WithValue(data),
-		registry.WithLease(leaseID))
+
+	resp, err := backend.Registry().TxnWithCmp(ctx,
+		[]registry.PluginOp{registry.OpPut(
+			registry.WithStrKey(key),
+			registry.WithValue(data),
+			registry.WithLease(leaseID))},
+		[]registry.CompareOp{registry.OpCmp(
+			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, instance.ServiceId))),
+			registry.CMP_NOT_EQUAL, 0)},
+		nil)
 	if err != nil {
-		return scerr.NewError(scerr.ErrInternal, err.Error())
+		return scerr.NewError(scerr.ErrUnavailableBackend, err.Error())
+	}
+	if !resp.Succeeded {
+		return scerr.NewError(scerr.ErrServiceNotExists, "Service does not exist.")
 	}
 	return nil
 }

@@ -32,7 +32,8 @@ import (
 
 func GetConsumersInCache(ctx context.Context, domainProject string, provider *pb.MicroService) ([]string, error) {
 	// 查询所有consumer
-	dr := NewProviderDependencyRelation(ctx, domainProject, provider)
+	dr := NewProviderDependencyRelation(util.SetContext(util.CloneContext(ctx), CTX_CACHEONLY, "1"),
+		domainProject, provider)
 	consumerIds, err := dr.GetDependencyConsumerIds()
 	if err != nil {
 		util.Logger().Errorf(err, "Get dependency consumerIds failed.%s", provider.ServiceId)
@@ -43,7 +44,8 @@ func GetConsumersInCache(ctx context.Context, domainProject string, provider *pb
 
 func GetProvidersInCache(ctx context.Context, domainProject string, consumer *pb.MicroService) ([]string, error) {
 	// 查询所有provider
-	dr := NewConsumerDependencyRelation(ctx, domainProject, consumer)
+	dr := NewConsumerDependencyRelation(util.SetContext(util.CloneContext(ctx), CTX_CACHEONLY, "1"),
+		domainProject, consumer)
 	providerIds, err := dr.GetDependencyProviderIds()
 	if err != nil {
 		util.Logger().Errorf(err, "Get dependency providerIds failed.%s", consumer.ServiceId)

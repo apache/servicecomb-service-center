@@ -52,7 +52,6 @@ const (
 	SCHEMA_SUMMARY
 	INSTANCE
 	LEASE
-	ENDPOINTS
 	typeEnd // end of the base store types
 )
 
@@ -72,7 +71,6 @@ var TypeNames = []string{
 	SCHEMA_SUMMARY:   "SCHEMA_SUMMARY",
 	INSTANCE:         "INSTANCE",
 	LEASE:            "LEASE",
-	ENDPOINTS:        "ENDPOINTS",
 	typeEnd:          "TYPEEND",
 }
 
@@ -92,7 +90,6 @@ var TypeRoots = map[StoreType]string{
 	DEPENDENCY_RULE:  apt.GetServiceDependencyRuleRootKey(""),
 	DEPENDENCY_QUEUE: apt.GetServiceDependencyQueueRootKey(""),
 	PROJECT:          apt.GetProjectRootKey(""),
-	ENDPOINTS:        apt.GetEndpointsRootKey(""),
 }
 
 var TypeInitSize = map[StoreType]int{
@@ -111,18 +108,21 @@ var TypeInitSize = map[StoreType]int{
 	DEPENDENCY_RULE:  100,
 	DEPENDENCY_QUEUE: 100,
 	PROJECT:          100,
-	ENDPOINTS:        1000,
 }
 
 const (
-	DEFAULT_MAX_NO_EVENT_INTERVAL     = 1 // TODO it should be set to 1 for prevent etcd data is lost accidentally.
-	DEFAULT_LISTWATCH_TIMEOUT         = 30 * time.Second
+	// re-list etcd when there is no event coming in more than 2h(=240*30s)
+	DEFAULT_MAX_NO_EVENT_INTERVAL = 240
+	DEFAULT_LISTWATCH_TIMEOUT     = 30 * time.Second
+
 	DEFAULT_SELF_PRESERVATION_PERCENT = 0.8
 	DEFAULT_CACHE_INIT_SIZE           = 100
 )
 
 const (
-	DEFAULT_COMPACT_TIMES   = 3
+	DEFAULT_METRICS_INTERVAL = 30 * time.Second
+
+	DEFAULT_COMPACT_TIMES   = 2
 	DEFAULT_COMPACT_TIMEOUT = 5 * time.Minute
 	minWaitInterval         = 1 * time.Second
 	eventBlockSize          = 1000

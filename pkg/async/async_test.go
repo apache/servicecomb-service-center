@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	"errors"
-	"fmt"
 	"golang.org/x/net/context"
 	"time"
 )
@@ -129,36 +128,4 @@ func TestBaseAsyncTasker_Stop(t *testing.T) {
 	}
 
 	at.Stop()
-}
-
-func TestBaseAsyncTasker_RemoveTask(t *testing.T) {
-	at := NewTaskService()
-	at.Run()
-
-	err := at.DeferRemove("test")
-	if err != nil {
-		t.Fatalf("remove task should be ok")
-	}
-	_, cancel := context.WithCancel(context.Background())
-	err = at.Add(context.Background(), &testTask{
-		done:   cancel,
-		test:   "test remove task",
-		result: true,
-		wait:   33 * time.Second,
-	})
-	if err != nil {
-		t.Fatalf("add task should be ok")
-	}
-	fmt.Println("OK")
-
-	err = at.DeferRemove("test")
-	if err != nil {
-		t.Fatalf("remove task should be ok")
-	}
-	at.Stop()
-
-	err = at.DeferRemove("test")
-	if err == nil {
-		t.Fatalf("remove task should be error when Tasker is stopped")
-	}
 }

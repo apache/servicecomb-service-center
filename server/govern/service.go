@@ -62,7 +62,7 @@ func (governService *GovernService) GetServicesInfo(ctx context.Context, in *pb.
 		st, err = statistics(ctx)
 		if err != nil {
 			return &pb.GetServicesInfoResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, "Statistics failed."),
+				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 			}, err
 		}
 		if len(optionMap) == 1 {
@@ -78,7 +78,7 @@ func (governService *GovernService) GetServicesInfo(ctx context.Context, in *pb.
 	if err != nil {
 		util.Logger().Errorf(err, "Get all services for govern service failed.")
 		return &pb.GetServicesInfoResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, "Get all service failed."),
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 
@@ -102,7 +102,7 @@ func (governService *GovernService) GetServicesInfo(ctx context.Context, in *pb.
 		})
 		if err != nil {
 			return &pb.GetServicesInfoResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, "Get one service detail failed."),
+				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 			}, err
 		}
 		serviceDetail.MicroService = service
@@ -134,7 +134,7 @@ func (governService *GovernService) GetServiceDetail(ctx context.Context, in *pb
 	}
 	if err != nil {
 		return &pb.GetServiceDetailResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, "Get service failed."),
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 
@@ -149,7 +149,7 @@ func (governService *GovernService) GetServiceDetail(ctx context.Context, in *pb
 	if err != nil {
 		util.Logger().Errorf(err, "Get service all version failed.")
 		return &pb.GetServiceDetailResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, "Get all versions of the service failed."),
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 
@@ -160,7 +160,7 @@ func (governService *GovernService) GetServiceDetail(ctx context.Context, in *pb
 	})
 	if err != nil {
 		return &pb.GetServiceDetailResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, "Get service detail failed."),
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 

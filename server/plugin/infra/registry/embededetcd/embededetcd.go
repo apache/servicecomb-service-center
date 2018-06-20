@@ -457,7 +457,7 @@ func (s *EtcdEmbed) Watch(ctx context.Context, opts ...registry.PluginOpOption) 
 	return
 }
 
-func (s *EtcdEmbed) ReadyNotify() {
+func (s *EtcdEmbed) readyNotify() {
 	timeout := START_MANAGER_SERVER_TIMEOUT
 	select {
 	case <-s.Embed.Server.ReadyNotify():
@@ -565,7 +565,7 @@ func getEmbedInstance() mgr.PluginInstance {
 	}
 	inst.Embed = etcd
 
-	inst.ReadyNotify()
+	inst.readyNotify()
 	return inst
 }
 

@@ -21,25 +21,29 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
+	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"golang.org/x/net/context"
 )
 
-func AddTagIntoETCD(ctx context.Context, domainProject string, serviceId string, dataTags map[string]string) error {
+func AddTagIntoETCD(ctx context.Context, domainProject string, serviceId string, dataTags map[string]string) *scerr.Error {
 	key := apt.GenerateServiceTagKey(domainProject, serviceId)
 	data, err := json.Marshal(dataTags)
 	if err != nil {
-		util.Logger().Errorf(err, "add tag into etcd,serviceId %s:json marshal tag data failed.", serviceId)
-		return err
+		return scerr.NewError(scerr.ErrInternal, err.Error())
 	}
 
-	_, err = backend.Registry().Do(ctx,
-		registry.PUT,
-		registry.WithStrKey(key),
-		registry.WithValue(data))
+	resp, err := backend.Registry().TxnWithCmp(ctx,
+		[]registry.PluginOp{registry.OpPut(registry.WithStrKey(key), registry.WithValue(data))},
+		[]registry.CompareOp{registry.OpCmp(
+			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, serviceId))),
+			registry.CMP_NOT_EQUAL, 0)},
+		nil)
 	if err != nil {
-		util.Logger().Errorf(err, "add tag into etcd,serviceId %s: commit tag data into etcd failed.", serviceId)
-		return err
+		return scerr.NewError(scerr.ErrUnavailableBackend, err.Error())
+	}
+	if !resp.Succeeded {
+		return scerr.NewError(scerr.ErrServiceNotExists, "Service does not exist.")
 	}
 	return nil
 }

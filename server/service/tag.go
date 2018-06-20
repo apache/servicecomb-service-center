@@ -31,13 +31,6 @@ import (
 )
 
 func (s *MicroServiceService) AddTags(ctx context.Context, in *pb.AddServiceTagsRequest) (*pb.AddServiceTagsResponse, error) {
-	if in == nil || len(in.ServiceId) == 0 || len(in.GetTags()) == 0 {
-		util.Logger().Errorf(nil, "add service tags failed: invalid parameters.")
-		return &pb.AddServiceTagsResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
-		}, nil
-	}
-
 	err := Validate(in)
 	if err != nil {
 		util.Logger().Errorf(err, "add service tags failed, serviceId %s, tags %v: invalid parameters.", in.ServiceId, in.Tags)
@@ -74,7 +67,7 @@ func (s *MicroServiceService) AddTags(ctx context.Context, in *pb.AddServiceTags
 	if err != nil {
 		util.Logger().Errorf(err, "add service tags failed, serviceId %s, tags %v: get existed tag failed.", in.ServiceId, in.Tags)
 		return &pb.AddServiceTagsResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, "Get tags failed."),
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 	if len(dataTags) > 0 {
@@ -85,12 +78,16 @@ func (s *MicroServiceService) AddTags(ctx context.Context, in *pb.AddServiceTags
 		dataTags = addTags
 	}
 
-	err = serviceUtil.AddTagIntoETCD(ctx, domainProject, in.ServiceId, dataTags)
-	if err != nil {
-		util.Logger().Errorf(err, "add service tags failed, serviceId %s, tags %v: commit tag data into etcd failed.", in.ServiceId, in.Tags)
-		return &pb.AddServiceTagsResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, "Commit operations failed."),
-		}, err
+	checkErr := serviceUtil.AddTagIntoETCD(ctx, domainProject, in.ServiceId, dataTags)
+	if checkErr != nil {
+		util.Logger().Errorf(checkErr, "add service tags failed, serviceId %s, tags %v", in.ServiceId, in.Tags)
+		resp := &pb.AddServiceTagsResponse{
+			Response: pb.CreateResponseWithSCErr(checkErr),
+		}
+		if checkErr.InternalError() {
+			return resp, checkErr
+		}
+		return resp, nil
 	}
 
 	util.Logger().Infof("add service tags successful, serviceId %s, tags %v.", in.ServiceId, in.Tags)
@@ -100,12 +97,6 @@ func (s *MicroServiceService) AddTags(ctx context.Context, in *pb.AddServiceTags
 }
 
 func (s *MicroServiceService) UpdateTag(ctx context.Context, in *pb.UpdateServiceTagRequest) (*pb.UpdateServiceTagResponse, error) {
-	if in == nil || len(in.ServiceId) == 0 || len(in.Key) == 0 || len(in.Value) == 0 {
-		util.Logger().Errorf(nil, "update service tag failed: invalid parameters.")
-		return &pb.UpdateServiceTagResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
-		}, nil
-	}
 	tagFlag := util.StringJoin([]string{in.Key, in.Value}, "/")
 	err := Validate(in)
 	if err != nil {
@@ -128,25 +119,28 @@ func (s *MicroServiceService) UpdateTag(ctx context.Context, in *pb.UpdateServic
 	if err != nil {
 		util.Logger().Errorf(err, "update service tag failed, serviceId %s, tag %s: get tag failed.", in.ServiceId, tagFlag)
 		return &pb.UpdateServiceTagResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, "Get tags for service failed."),
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 	//check tag 是否存在
 	if _, ok := tags[in.Key]; !ok {
-		util.Logger().Errorf(nil, "update service tag failed, serviceId %s, tag %s: tag not exist,please add first.", in.ServiceId, tagFlag)
+		util.Logger().Errorf(nil, "update service tag failed, serviceId %s, tag %s: tag not exist, please add first.", in.ServiceId, tagFlag)
 		return &pb.UpdateServiceTagResponse{
 			Response: pb.CreateResponse(scerr.ErrTagNotExists, "Update tag for service failed for update tags not exist, please add first."),
 		}, nil
 	}
 	tags[in.Key] = in.Value
 
-	err = serviceUtil.AddTagIntoETCD(ctx, domainProject, in.ServiceId, tags)
-
-	if err != nil {
-		util.Logger().Errorf(err, "update service tag failed, serviceId %s, tag %s: adding service tags failed.", in.ServiceId, tagFlag)
-		return &pb.UpdateServiceTagResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, "Commit into etcd failed."),
-		}, err
+	checkErr := serviceUtil.AddTagIntoETCD(ctx, domainProject, in.ServiceId, tags)
+	if checkErr != nil {
+		util.Logger().Errorf(checkErr, "update service tag failed, serviceId %s, tag %s.", in.ServiceId, tagFlag)
+		resp := &pb.UpdateServiceTagResponse{
+			Response: pb.CreateResponseWithSCErr(checkErr),
+		}
+		if checkErr.InternalError() {
+			return resp, checkErr
+		}
+		return resp, nil
 	}
 
 	util.Logger().Infof("update tag successful, serviceId %s, tag %s.", in.ServiceId, tagFlag)
@@ -156,12 +150,6 @@ func (s *MicroServiceService) UpdateTag(ctx context.Context, in *pb.UpdateServic
 }
 
 func (s *MicroServiceService) DeleteTags(ctx context.Context, in *pb.DeleteServiceTagsRequest) (*pb.DeleteServiceTagsResponse, error) {
-	if in == nil || len(in.ServiceId) == 0 || len(in.Keys) == 0 {
-		util.Logger().Errorf(nil, "delete service tags failed: invalid parameters.")
-		return &pb.DeleteServiceTagsResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
-		}, nil
-	}
 	err := Validate(in)
 	if err != nil {
 		util.Logger().Errorf(err, "delete service tags failed, serviceId %s, tags %v: invalid params.", in.ServiceId, in.Keys)
@@ -183,7 +171,7 @@ func (s *MicroServiceService) DeleteTags(ctx context.Context, in *pb.DeleteServi
 	if err != nil {
 		util.Logger().Errorf(err, "delete service tags failed, serviceId %s, tags %v: query service failed.", in.ServiceId, in.Keys)
 		return &pb.DeleteServiceTagsResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, "Get service tags file failed."),
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 	for _, key := range in.Keys {
@@ -201,22 +189,29 @@ func (s *MicroServiceService) DeleteTags(ctx context.Context, in *pb.DeleteServi
 	if err != nil {
 		util.Logger().Errorf(err, "delete service tags failed, serviceId %s, tags %v: marshall service tag failed.", in.ServiceId, in.Keys)
 		return &pb.DeleteServiceTagsResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, "Marshal service tags file failed."),
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 
 	key := apt.GenerateServiceTagKey(domainProject, in.ServiceId)
 
-	util.Logger().Debugf("start delete service tags file: %s %v", key, in.Keys)
-	_, err = backend.Registry().Do(ctx,
-		registry.PUT,
-		registry.WithStrKey(key),
-		registry.WithValue(data))
+	resp, err := backend.Registry().TxnWithCmp(ctx,
+		[]registry.PluginOp{registry.OpPut(registry.WithStrKey(key), registry.WithValue(data))},
+		[]registry.CompareOp{registry.OpCmp(
+			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, in.ServiceId))),
+			registry.CMP_NOT_EQUAL, 0)},
+		nil)
 	if err != nil {
 		util.Logger().Errorf(err, "delete service tags failed, serviceId %s, tags %v: commit tag data into etcd failed.", in.ServiceId, in.Keys)
 		return &pb.DeleteServiceTagsResponse{
-			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, "Commit operations failed."),
+			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
 		}, err
+	}
+	if !resp.Succeeded {
+		util.Logger().Errorf(err, "delete service properties failed, serviceId is %s, tags %v: service does not exist.", in.ServiceId, in.Keys)
+		return &pb.DeleteServiceTagsResponse{
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+		}, nil
 	}
 
 	util.Logger().Infof("delete service tags successful: serviceId %s, tag %v.", in.ServiceId, in.Keys)
@@ -226,12 +221,6 @@ func (s *MicroServiceService) DeleteTags(ctx context.Context, in *pb.DeleteServi
 }
 
 func (s *MicroServiceService) GetTags(ctx context.Context, in *pb.GetServiceTagsRequest) (*pb.GetServiceTagsResponse, error) {
-	if in == nil || len(in.ServiceId) == 0 {
-		util.Logger().Errorf(nil, "get service tags failed: invalid params.")
-		return &pb.GetServiceTagsResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
-		}, nil
-	}
 	err := Validate(in)
 	if err != nil {
 		util.Logger().Errorf(err, "get service tags failed, serviceId %s: invalid parameters.", in.ServiceId)
@@ -253,7 +242,7 @@ func (s *MicroServiceService) GetTags(ctx context.Context, in *pb.GetServiceTags
 	if err != nil {
 		util.Logger().Errorf(err, "get service tags failed, serviceId %s: get tag failed.", in.ServiceId)
 		return &pb.GetServiceTagsResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, "Get tags for service failed."),
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 

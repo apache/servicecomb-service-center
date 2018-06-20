@@ -19,26 +19,13 @@ package util
 import (
 	"fmt"
 	"golang.org/x/net/context"
-	"math"
 	"sync/atomic"
 	"testing"
 	"time"
 )
 
 func TestNewUniQueue(t *testing.T) {
-	_, err := newUniQueue(0)
-	if err == nil {
-		t.Fatalf("newUniQueue(0) should return error")
-	}
-	_, err = newUniQueue(math.MaxInt32)
-	if err == nil {
-		t.Fatalf("newUniQueue(math.MaxInt32) should return error")
-	}
-	uq, err := newUniQueue(1)
-	if err != nil || uq == nil {
-		t.Fatalf("newUniQueue(1) should return ok")
-	}
-	uq = NewUniQueue()
+	uq := NewUniQueue()
 	if uq == nil {
 		t.Fatalf("NewUniQueue should return ok")
 	}
@@ -46,7 +33,7 @@ func TestNewUniQueue(t *testing.T) {
 
 func TestUniQueue_Close(t *testing.T) {
 	uq := NewUniQueue()
-	err := uq.Put(context.Background(), "abc")
+	err := uq.Put("abc")
 	if err != nil {
 		t.Fatalf("NewUniQueue should return ok")
 	}
@@ -72,41 +59,52 @@ func TestUniQueue_Get(t *testing.T) {
 		t.Fatalf("Get should be timed out, result: %v", item)
 	}
 
-	err := uq.Put(context.Background(), "abc")
+	err := uq.Put("abc")
 	if err != nil {
 		t.Fatalf("Put('abc') should be ok")
 	}
-	err = uq.Put(context.Background(), "efg")
+	err = uq.Put("efg")
 	if err != nil {
 		t.Fatalf("Put('efg') should be ok")
 	}
-
-	time.Sleep(time.Second)
 
 	ctx, _ = context.WithTimeout(context.Background(), time.Second)
 	item = uq.Get(ctx)
 	if item == nil || item.(string) != "efg" {
 		t.Fatalf("Get expect '%v' to 'efg'", item)
 	}
+
+	err = uq.Put("abc")
+	if err != nil {
+		t.Fatalf("Put('abc') should be ok")
+	}
+	err = uq.Put("efg")
+	if err != nil {
+		t.Fatalf("Put('efg') should be ok")
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		item = <-uq.Chan()
+		if item == nil || item.(string) != "efg" {
+			t.Fatalf("Get expect '%v' to 'efg'", item)
+		}
+		cancel()
+	}()
+	<-ctx.Done()
 }
 
 func TestUniQueue_Put(t *testing.T) {
-	uq, err := newUniQueue(1)
+	uq := NewUniQueue()
 
-	ctx, cancel := context.WithCancel(context.Background())
-	err = uq.Put(ctx, 1)
+	err := uq.Put(1)
 	if err != nil {
 		t.Fatalf("Put(1) should be ok")
 	}
-	cancel()
-	err = uq.Put(ctx, 2)
-	if err == nil {
-		t.Fatalf("Put(2) should return 'timed out' error ")
-	}
 	uq.Close()
-	err = uq.Put(context.Background(), 3)
+	err = uq.Put(2)
 	if err == nil {
-		t.Fatalf("Put(3) should return 'channel is closed' error")
+		t.Fatalf("Put(2) should return 'channel is closed' error")
 	}
 }
 
@@ -128,7 +126,7 @@ func BenchmarkUniQueue_Get(b *testing.B) {
 	}()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			err := uq.Put(context.Background(), atomic.AddInt32(&g, 1))
+			err := uq.Put(atomic.AddInt32(&g, 1))
 			if err != nil {
 				b.FailNow()
 			}
@@ -137,4 +135,5 @@ func BenchmarkUniQueue_Get(b *testing.B) {
 	uq.Close()
 	<-closed
 	b.ReportAllocs()
+	// 5000000	       389 ns/op	       4 B/op	       1 allocs/op
 }

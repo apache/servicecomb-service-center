@@ -66,9 +66,11 @@ func (w *ListWatcher) OnMessage(job NotifyJob) {
 		return
 	}
 
+	timer := time.NewTimer(DEFAULT_ON_MESSAGE_TIMEOUT)
 	select {
 	case <-w.listCh:
-	case <-time.After(DEFAULT_ON_MESSAGE_TIMEOUT):
+		timer.Stop()
+	case <-timer.C:
 		util.Logger().Errorf(nil,
 			"the %s listwatcher %s %s is not ready[over %s], drop the event %v",
 			w.Type(), w.Id(), w.Subject(), DEFAULT_ON_MESSAGE_TIMEOUT, job)
@@ -88,9 +90,11 @@ func (w *ListWatcher) sendMessage(job NotifyJob) {
 	util.Logger().Debugf("start to notify %s watcher %s %s, job is %v, current revision is %v", w.Type(),
 		w.Id(), w.Subject(), job, w.ListRevision)
 	defer util.RecoverAndReport()
+	timer := time.NewTimer(DEFAULT_ON_MESSAGE_TIMEOUT)
 	select {
 	case w.Job <- job:
-	case <-time.After(DEFAULT_ON_MESSAGE_TIMEOUT):
+		timer.Stop()
+	case <-timer.C:
 		util.Logger().Errorf(nil,
 			"the %s watcher %s %s event queue is full[over %s], drop the event %v",
 			w.Type(), w.Id(), w.Subject(), DEFAULT_ON_MESSAGE_TIMEOUT, job)

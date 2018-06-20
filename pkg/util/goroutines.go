@@ -19,33 +19,81 @@ package util
 import (
 	"golang.org/x/net/context"
 	"sync"
+	"time"
 )
 
+var GlobalPoolConfig = &PoolConfig{
+	Concurrent:  1000,
+	WaitTimeout: time.Second,
+	IdleTimeout: 60 * time.Second,
+}
+
+type PoolConfig struct {
+	Concurrent  int
+	WaitTimeout time.Duration
+	IdleTimeout time.Duration
+}
+
 type GoRoutine struct {
-	ctx    context.Context
-	cancel context.CancelFunc
-	wg     sync.WaitGroup
-	mux    sync.RWMutex
-	closed bool
+	ctx        context.Context
+	cancel     context.CancelFunc
+	wg         sync.WaitGroup
+	mux        sync.RWMutex
+	closed     bool
+	task       chan func(ctx context.Context)
+	concurrent chan struct{}
+}
+
+func (g *GoRoutine) execute(f func(ctx context.Context)) {
+	defer RecoverAndReport()
+	f(g.ctx)
 }
 
 func (g *GoRoutine) Do(f func(context.Context)) {
+	defer RecoverAndReport()
+	select {
+	case g.task <- f:
+		return
+	case g.concurrent <- struct{}{}:
+		go g.loop(f)
+	}
+}
+
+func (g *GoRoutine) loop(f func(context.Context)) {
 	g.wg.Add(1)
-	go func() {
-		defer g.wg.Done()
-		defer RecoverAndReport()
-		f(g.ctx)
-	}()
+	defer g.wg.Done()
+	defer func() { <-g.concurrent }()
+	timer := time.NewTimer(GlobalPoolConfig.IdleTimeout)
+	for {
+		g.execute(f)
+
+		if !timer.Stop() {
+			<-timer.C
+		}
+		timer.Reset(GlobalPoolConfig.IdleTimeout)
+
+		select {
+		case <-timer.C:
+			return
+		case f = <-g.task:
+			if f == nil {
+				return
+			}
+		}
+	}
 }
 
 func (g *GoRoutine) Close(wait bool) {
 	g.mux.Lock()
-	defer g.mux.Unlock()
-
 	if g.closed {
+		g.mux.Unlock()
 		return
 	}
 	g.closed = true
+	g.mux.Unlock()
+
+	close(g.task)
+	close(g.concurrent)
 	g.cancel()
 	if wait {
 		g.Wait()
@@ -74,8 +122,10 @@ func GoCloseAndWait() {
 func NewGo(ctx context.Context) *GoRoutine {
 	ctx, cancel := context.WithCancel(ctx)
 	gr := &GoRoutine{
-		ctx:    ctx,
-		cancel: cancel,
+		ctx:        ctx,
+		cancel:     cancel,
+		task:       make(chan func(context.Context)),
+		concurrent: make(chan struct{}, GlobalPoolConfig.Concurrent),
 	}
 	return gr
 }

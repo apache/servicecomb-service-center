@@ -43,7 +43,6 @@ func (apt *TagsChangedTask) Key() string {
 }
 
 func (apt *TagsChangedTask) Do(ctx context.Context) error {
-	defer async.Service().DeferRemove(apt.Key())
 	apt.err = apt.publish(ctx, apt.DomainProject, apt.consumerId, apt.Rev)
 	return apt.err
 }
@@ -53,7 +52,7 @@ func (apt *TagsChangedTask) Err() error {
 }
 
 func (apt *TagsChangedTask) publish(ctx context.Context, domainProject, consumerId string, rev int64) error {
-	consumer, err := serviceUtil.GetService(ctx, domainProject, consumerId)
+	consumer, err := serviceUtil.GetServiceInCache(ctx, domainProject, consumerId)
 	if err != nil {
 		util.Logger().Errorf(err, "get comsumer for publish event %s failed", consumerId)
 		return err
@@ -69,7 +68,7 @@ func (apt *TagsChangedTask) publish(ctx context.Context, domainProject, consumer
 	}
 
 	for _, providerId := range providerIds {
-		provider, err := serviceUtil.GetService(ctx, domainProject, providerId)
+		provider, err := serviceUtil.GetServiceInCache(ctx, domainProject, providerId)
 		if provider == nil {
 			util.Logger().Warnf(err, "get service %s file failed", providerId)
 			continue

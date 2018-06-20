@@ -74,11 +74,19 @@ func Validate(v interface{}) error {
 		return RegisterInstanceReqValidator().Validate(v)
 	case *pb.FindInstancesRequest:
 		return FindInstanceReqValidator().Validate(v)
+	case *pb.HeartbeatRequest, *pb.UnregisterInstanceRequest:
+		return HeartbeatReqValidator().Validate(v)
+	case *pb.UpdateInstancePropsRequest:
+		return UpdateInstancePropsReqValidator().Validate(v)
 
+	case *pb.GetServiceRulesRequest:
+		return GetRulesReqValidator().Validate(v)
 	case *pb.AddServiceRulesRequest:
 		return AddRulesReqValidator().Validate(v)
 	case *pb.UpdateServiceRuleRequest:
 		return UpdateRuleReqValidator().Validate(v)
+	case *pb.DeleteServiceRulesRequest:
+		return DeleteRulesReqValidator().Validate(v)
 
 	case *pb.GetAppsRequest:
 		return MicroServiceKeyValidator().Validate(v)

@@ -14,33 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package access
+package async
 
-import (
-	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/validate"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	"net/http"
-)
+import "golang.org/x/net/context"
 
-var (
-	serverName string
-)
-
-func init() {
-	serverName = core.Service.ServiceName + "/" + core.Service.Version
-}
-
-func Intercept(w http.ResponseWriter, r *http.Request) error {
-	w.Header().Add(rest.HEADER_SERVER, serverName)
-
-	if !validate.IsRequestURI(r.RequestURI) {
-		err := fmt.Errorf("Invalid Request URI %s", r.RequestURI)
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write(util.StringToBytesWithNoCopy(err.Error()))
-		return err
-	}
-	return nil
+type Task interface {
+	Key() string
+	Do(ctx context.Context) error
+	Err() error
 }

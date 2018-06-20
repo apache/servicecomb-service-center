@@ -1752,7 +1752,7 @@ definitions:
         description: 应用App唯一标识
       serviceName:
         type: string
-        description: 微服务名称，同一个App要保证唯一
+        description: 微服务名称，同一个App要保证唯一，允许使用英文字母和数字
       version:
         type: string
         description: 微服务版本号

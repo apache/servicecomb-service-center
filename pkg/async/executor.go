@@ -14,33 +14,55 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package metric
+package async
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/chain"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
+	"errors"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	svr "github.com/apache/incubator-servicecomb-service-center/server/rest"
-	"net/http"
-	"time"
+	"golang.org/x/net/context"
 )
 
-type MetricsHandler struct {
+type Executor struct {
+	pool       *util.GoRoutine
+	tasks      *util.UniQueue
+	latestTask Task
 }
 
-func (h *MetricsHandler) Handle(i *chain.Invocation) {
-	i.Next(chain.WithAsyncFunc(func(ret chain.Result) {
-		start, ok := i.Context().Value(svr.CTX_START_TIMESTAMP).(time.Time)
+func (s *Executor) AddTask(task Task) (err error) {
+	if task == nil {
+		return errors.New("invalid parameters")
+	}
+
+	err = s.tasks.Put(task)
+	if err != nil {
+		return
+	}
+	return s.latestTask.Err()
+}
+
+func (s *Executor) Execute() {
+	select {
+	case task, ok := <-s.tasks.Chan():
 		if !ok {
 			return
 		}
-		w, r := i.Context().Value(rest.CTX_RESPONSE).(http.ResponseWriter),
-			i.Context().Value(rest.CTX_REQUEST).(*http.Request)
-		svr.ReportRequestCompleted(w, r, start)
-		util.LogNilOrWarnf(start, "%s %s", r.Method, r.RequestURI)
-	}))
+		s.pool.Do(func(ctx context.Context) {
+			at := task.(Task)
+			at.Do(ctx)
+			s.latestTask = at
+		})
+	default:
+	}
 }
 
-func RegisterHandlers() {
-	chain.RegisterHandler(rest.SERVER_CHAIN_NAME, &MetricsHandler{})
+func (s *Executor) Close() {
+	s.tasks.Close()
+}
+
+func NewExecutor(pool *util.GoRoutine, task Task) *Executor {
+	return &Executor{
+		pool:       pool,
+		tasks:      util.NewUniQueue(),
+		latestTask: task,
+	}
 }

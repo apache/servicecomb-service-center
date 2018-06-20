@@ -881,14 +881,6 @@ var _ = Describe("'Micro-service' service", func() {
 	})
 
 	Describe("execute 'query' operation", func() {
-		Context("when request is nil", func() {
-			It("should be failed", func() {
-				resp, err := serviceResource.GetServices(getContext(), nil)
-				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
-			})
-		})
-
 		Context("when query all services", func() {
 			It("should be larger than 0", func() {
 				resp, err := serviceResource.GetServices(getContext(), &pb.GetServicesRequest{})

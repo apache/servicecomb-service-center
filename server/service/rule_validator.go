@@ -23,8 +23,10 @@ import (
 )
 
 var (
-	updateRuleReqValidator validate.Validator
-	addRulesReqValidator   validate.Validator
+	getRulesReqValidator    validate.Validator
+	updateRuleReqValidator  validate.Validator
+	addRulesReqValidator    validate.Validator
+	deleteRulesReqValidator validate.Validator
 )
 
 var (
@@ -32,14 +34,20 @@ var (
 	ruleAttrRegex, _ = regexp.Compile(`((^tag_[a-zA-Z][a-zA-Z0-9_\-.]{0,63}$)|(^ServiceId$)|(^AppId$)|(^ServiceName$)|(^Version$)|(^Description$)|(^Level$)|(^Status$))`)
 )
 
-func UpdateRuleReqValidator() *validate.Validator {
-	var ruleValidator validate.Validator
-	ruleValidator.AddRule("RuleType", &validate.ValidateRule{Regexp: ruleRegex})
-	ruleValidator.AddRule("Attribute", &validate.ValidateRule{Regexp: ruleAttrRegex})
-	ruleValidator.AddRule("Pattern", &validate.ValidateRule{Min: 1, Max: 64})
-	ruleValidator.AddRule("Description", CreateServiceReqValidator().GetSub("Service").GetRule("Description"))
+func GetRulesReqValidator() *validate.Validator {
+	return getRulesReqValidator.Init(func(v *validate.Validator) {
+		v.AddRule("ServiceId", GetServiceReqValidator().GetRule("ServiceId"))
+	})
+}
 
+func UpdateRuleReqValidator() *validate.Validator {
 	return updateRuleReqValidator.Init(func(v *validate.Validator) {
+		var ruleValidator validate.Validator
+		ruleValidator.AddRule("RuleType", &validate.ValidateRule{Regexp: ruleRegex})
+		ruleValidator.AddRule("Attribute", &validate.ValidateRule{Regexp: ruleAttrRegex})
+		ruleValidator.AddRule("Pattern", &validate.ValidateRule{Min: 1, Max: 64})
+		ruleValidator.AddRule("Description", CreateServiceReqValidator().GetSub("Service").GetRule("Description"))
+
 		v.AddRule("ServiceId", GetServiceReqValidator().GetRule("ServiceId"))
 		v.AddRule("RuleId", GetServiceReqValidator().GetRule("ServiceId"))
 		v.AddSub("Rule", &ruleValidator)
@@ -51,5 +59,12 @@ func AddRulesReqValidator() *validate.Validator {
 		v.AddRule("ServiceId", GetServiceReqValidator().GetRule("ServiceId"))
 		v.AddRule("Rules", &validate.ValidateRule{Min: 1, Max: quota.DefaultRuleQuota})
 		v.AddSub("Rules", UpdateRuleReqValidator().GetSub("Rule"))
+	})
+}
+
+func DeleteRulesReqValidator() *validate.Validator {
+	return deleteRulesReqValidator.Init(func(v *validate.Validator) {
+		v.AddRule("ServiceId", GetServiceReqValidator().GetRule("ServiceId"))
+		v.AddRule("RuleIds", &validate.ValidateRule{Min: 1, Max: quota.DefaultRuleQuota})
 	})
 }
