@@ -542,10 +542,14 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		noCache, cacheOnly := ctx.Value(serviceUtil.CTX_NOCACHE) == "1", ctx.Value(serviceUtil.CTX_CACHEONLY) == "1"
 		rev, _ := ctx.Value(serviceUtil.CTX_REQUEST_REVISION).(int64)
 		if !noCache && (cacheOnly || rev <= item.Rev) {
+			instances := item.Instances
+			if rev == item.Rev {
+				instances = instances[:0]
+			}
 			util.SetContext(ctx, serviceUtil.CTX_RESPONSE_REVISION, item.Rev)
 			return &pb.FindInstancesResponse{
 				Response:  pb.CreateResponse(pb.Response_SUCCESS, "Query service instances successfully."),
-				Instances: item.Instances,
+				Instances: instances,
 			}, nil
 		}
 	}
