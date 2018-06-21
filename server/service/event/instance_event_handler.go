@@ -113,10 +113,11 @@ func PublishInstanceEvent(domainProject string, action pb.EventType, serviceKey 
 		Instance: instance,
 	}
 	for _, consumerId := range subscribers {
-		job := nf.NewWatchJob(consumerId, apt.GetInstanceRootKey(domainProject)+"/", rev, response)
-		util.Logger().Debugf("publish event to notify service, %v", job)
+		// expires cache
+		serviceUtil.FindInstancesCache.Delete(domainProject, consumerId, serviceKey)
 
 		// TODO add超时怎么处理？
+		job := nf.NewWatchJob(consumerId, apt.GetInstanceRootKey(domainProject)+"/", rev, response)
 		nf.GetNotifyService().AddJob(job)
 	}
 }

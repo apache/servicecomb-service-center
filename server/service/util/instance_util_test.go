@@ -116,19 +116,19 @@ func TestGetInstanceCountOfOneService(t *testing.T) {
 }
 
 func TestGetInstanceCountOfServices(t *testing.T) {
-	_, err := GetAllInstancesOfServices(util.SetContext(context.Background(), CTX_CACHEONLY, "1"), "", []string{"1"})
+	_, _, err := GetAllInstancesOfServices(util.SetContext(context.Background(), CTX_CACHEONLY, "1"), "", []string{"1"})
 	if err != nil {
 		t.Fatalf(`GetAllInstancesOfServices CTX_CACHEONLY failed`)
 	}
-	_, err = GetAllInstancesOfServices(util.SetContext(context.Background(), CTX_NOCACHE, "1"), "", []string{"1"})
+	_, _, err = GetAllInstancesOfServices(util.SetContext(context.Background(), CTX_NOCACHE, "1"), "", []string{"1"})
 	if err == nil {
 		t.Fatalf(`GetAllInstancesOfServices CTX_NOCACHE failed`)
 	}
-	_, err = GetAllInstancesOfServices(util.SetContext(context.Background(), CTX_REQUEST_REVISION, 1), "", []string{"1"})
+	_, _, err = GetAllInstancesOfServices(util.SetContext(context.Background(), CTX_REQUEST_REVISION, 1), "", []string{"1"})
 	if err == nil {
 		t.Fatalf(`GetAllInstancesOfServices CTX_REQUEST_REVISION failed`)
 	}
-	_, err = GetAllInstancesOfServices(context.Background(), "", []string{"1"})
+	_, _, err = GetAllInstancesOfServices(context.Background(), "", []string{"1"})
 	if err == nil {
 		t.Fatalf(`GetAllInstancesOfServices failed`)
 	}

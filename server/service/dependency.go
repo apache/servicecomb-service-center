@@ -140,7 +140,6 @@ func (s *MicroServiceService) GetProviderDependencies(ctx context.Context, in *p
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
-	util.Logger().Debugf("GetProviderDependencies successfully, providerId is %s.", in.ServiceId)
 	return &pb.GetProDependenciesResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Get all consumers successful."),
 		Consumers: services,
@@ -181,7 +180,6 @@ func (s *MicroServiceService) GetConsumerDependencies(ctx context.Context, in *p
 		}, err
 	}
 
-	util.Logger().Debugf("GetConsumerDependencies successfully, consumerId is %s.", consumerId)
 	return &pb.GetConDependenciesResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Get all providers successfully."),
 		Providers: services,

@@ -16,10 +16,14 @@
  */
 package util
 
+import "time"
+
 const (
 	HEADER_REV            = "X-Resource-Revision"
 	CTX_NOCACHE           = "noCache"
 	CTX_CACHEONLY         = "cacheOnly"
 	CTX_REQUEST_REVISION  = "requestRev"
 	CTX_RESPONSE_REVISION = "responseRev"
+
+	cacheTTL = 5 * time.Minute
 )
