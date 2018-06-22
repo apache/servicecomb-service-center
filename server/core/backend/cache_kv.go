@@ -17,8 +17,10 @@
 package backend
 
 import (
+	"errors"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"sync"
@@ -28,13 +30,13 @@ import (
 type KvCache struct {
 	owner       *KvCacher
 	size        int
-	store       map[string]*mvccpb.KeyValue
+	store       map[string]*KeyValue
 	rwMux       sync.RWMutex
 	lastRefresh time.Time
 	lastMaxSize int
 }
 
-func (c *KvCache) Version() int64 {
+func (c *KvCache) Revision() int64 {
 	return c.owner.lw.Revision()
 }
 
@@ -55,7 +57,7 @@ func (c *KvCache) Have(k interface{}) (ok bool) {
 	return
 }
 
-func (c *KvCache) RLock() map[string]*mvccpb.KeyValue {
+func (c *KvCache) RLock() map[string]*KeyValue {
 	c.rwMux.RLock()
 	return c.store
 }
@@ -64,7 +66,7 @@ func (c *KvCache) RUnlock() {
 	c.rwMux.RUnlock()
 }
 
-func (c *KvCache) Lock() map[string]*mvccpb.KeyValue {
+func (c *KvCache) Lock() map[string]*KeyValue {
 	c.rwMux.Lock()
 	return c.store
 }
@@ -87,7 +89,7 @@ func (c *KvCache) Unlock() {
 
 func (c *KvCache) compact() {
 	// gc
-	newCache := make(map[string]*mvccpb.KeyValue, c.size)
+	newCache := make(map[string]*KeyValue, c.size)
 	for k, v := range c.store {
 		newCache[k] = v
 	}
@@ -105,7 +107,7 @@ func (c *KvCache) Size() (l int) {
 }
 
 type KvCacher struct {
-	Cfg Config
+	Cfg *Config
 
 	name         string
 	lastRev      int64
@@ -147,11 +149,12 @@ func (c *KvCacher) needList() bool {
 }
 
 func (c *KvCacher) doList(cfg ListWatchConfig) error {
-	kvs, err := c.lw.List(cfg)
+	resp, err := c.lw.List(cfg)
 	if err != nil {
 		return err
 	}
 
+	kvs := resp.Kvs
 	start := time.Now()
 	evts := c.filter(c.lw.Revision(), kvs)
 	if ec, kc := len(evts), len(kvs); c.Cfg.DeferHandler != nil && ec == 0 && kc != 0 &&
@@ -189,10 +192,26 @@ func (c *KvCacher) ListAndWatch(ctx context.Context) error {
 
 func (c *KvCacher) handleWatcher(watcher *Watcher) error {
 	defer watcher.Stop()
-	for evts := range watcher.EventBus() {
-		if evts[0].Type == proto.EVT_ERROR {
-			err := evts[0].Object.(error)
-			return err
+	for resp := range watcher.EventBus() {
+		if resp == nil {
+			return errors.New("handle watcher error")
+		}
+
+		evts := make([]KvEvent, len(resp.Kvs))
+		for _, kv := range resp.Kvs {
+			evt := KvEvent{Prefix: c.lw.Prefix, Revision: kv.ModRevision}
+			switch {
+			case resp.Action == registry.Put && kv.Version == 1:
+				evt.Type, evt.KV = proto.EVT_CREATE, c.doParse(kv)
+			case resp.Action == registry.Put:
+				evt.Type, evt.KV = proto.EVT_UPDATE, c.doParse(kv)
+			case resp.Action == registry.Delete:
+				evt.Type, evt.KV = proto.EVT_DELETE, c.doParse(kv)
+			default:
+				util.Logger().Errorf(nil, "unknown KeyValue %v", kv)
+				continue
+			}
+			evts = append(evts, evt)
 		}
 		c.sync(evts)
 	}
@@ -320,7 +339,7 @@ func (c *KvCacher) filter(rev int64, items []*mvccpb.KeyValue) []KvEvent {
 	evts := make([]KvEvent, 0, max)
 	for block := range eventsCh {
 		for _, e := range block {
-			if e.Object == nil {
+			if e.KV == nil {
 				break
 			}
 			evts = append(evts, e)
@@ -329,7 +348,7 @@ func (c *KvCacher) filter(rev int64, items []*mvccpb.KeyValue) []KvEvent {
 	return evts
 }
 
-func (c *KvCacher) filterDelete(store map[string]*mvccpb.KeyValue, newStore map[string]*mvccpb.KeyValue,
+func (c *KvCacher) filterDelete(store map[string]*KeyValue, newStore map[string]*mvccpb.KeyValue,
 	rev int64, eventsCh chan [eventBlockSize]KvEvent, filterStopCh chan struct{}) {
 	var block [eventBlockSize]KvEvent
 	i := 0
@@ -349,7 +368,7 @@ func (c *KvCacher) filterDelete(store map[string]*mvccpb.KeyValue, newStore map[
 			Revision: rev,
 			Type:     proto.EVT_DELETE,
 			Prefix:   c.Cfg.Prefix,
-			Object:   v,
+			KV:       v,
 		}
 		i++
 	}
@@ -361,7 +380,7 @@ func (c *KvCacher) filterDelete(store map[string]*mvccpb.KeyValue, newStore map[
 	close(filterStopCh)
 }
 
-func (c *KvCacher) filterCreateOrUpdate(store map[string]*mvccpb.KeyValue, newStore map[string]*mvccpb.KeyValue,
+func (c *KvCacher) filterCreateOrUpdate(store map[string]*KeyValue, newStore map[string]*mvccpb.KeyValue,
 	rev int64, eventsCh chan [eventBlockSize]KvEvent, filterStopCh chan struct{}) {
 	var block [eventBlockSize]KvEvent
 	i := 0
@@ -378,7 +397,7 @@ func (c *KvCacher) filterCreateOrUpdate(store map[string]*mvccpb.KeyValue, newSt
 				Revision: rev,
 				Type:     proto.EVT_CREATE,
 				Prefix:   c.Cfg.Prefix,
-				Object:   v,
+				KV:       c.doParse(v),
 			}
 			i++
 			continue
@@ -398,7 +417,7 @@ func (c *KvCacher) filterCreateOrUpdate(store map[string]*mvccpb.KeyValue, newSt
 			Revision: rev,
 			Type:     proto.EVT_UPDATE,
 			Prefix:   c.Cfg.Prefix,
-			Object:   v,
+			KV:       c.doParse(v),
 		}
 		i++
 	}
@@ -416,7 +435,7 @@ func (c *KvCacher) onEvents(evts []KvEvent) {
 	init := !c.IsReady()
 	store := c.cache.Lock()
 	for i, evt := range evts {
-		kv := evt.Object.(*mvccpb.KeyValue)
+		kv := evt.KV
 		key := util.BytesToStringWithNoCopy(kv.Key)
 		prevKv, ok := store[key]
 
@@ -443,7 +462,7 @@ func (c *KvCacher) onEvents(evts []KvEvent) {
 			} else {
 				delete(store, key)
 			}
-			evt.Object = prevKv // maybe nil
+			evt.KV = prevKv // maybe nil
 			evts[i] = evt
 		}
 	}
@@ -460,10 +479,23 @@ func (c *KvCacher) onKvEvents(evts []KvEvent) {
 	defer util.RecoverAndReport()
 
 	for _, evt := range evts {
-		if evt.Object == nil {
+		if evt.KV == nil {
 			continue
 		}
 		c.Cfg.OnEvent(evt)
+	}
+}
+
+func (c *KvCacher) doParse(src *mvccpb.KeyValue) *KeyValue {
+	v, err := c.Cfg.Parser.Unmarshal(src.Value)
+	if err != nil {
+		util.Logger().Errorf(err, "cacher doParse failed")
+	}
+	return &KeyValue{
+		Key:            src.Key,
+		Value:          v,
+		CreateRevision: src.CreateRevision,
+		ModRevision:    src.ModRevision,
 	}
 }
 
@@ -501,17 +533,12 @@ func NewKvCache(c *KvCacher, size int) *KvCache {
 	return &KvCache{
 		owner:       c,
 		size:        size,
-		store:       make(map[string]*mvccpb.KeyValue, size),
+		store:       make(map[string]*KeyValue, size),
 		lastRefresh: time.Now(),
 	}
 }
 
-func NewKvCacher(name string, opts ...ConfigOption) *KvCacher {
-	cfg := DefaultConfig()
-	for _, opt := range opts {
-		opt(&cfg)
-	}
-
+func NewKvCacher(name string, cfg *Config) *KvCacher {
 	cacher := &KvCacher{
 		name:  name,
 		Cfg:   cfg,

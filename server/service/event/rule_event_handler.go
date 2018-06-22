@@ -86,7 +86,7 @@ func (h *RuleEventHandler) OnEvent(evt backend.KvEvent) {
 		return
 	}
 
-	kv := evt.Object.(*mvccpb.KeyValue)
+	kv := evt.KV.(*mvccpb.KeyValue)
 	providerId, ruleId, domainProject, data := pb.GetInfoFromRuleKV(kv)
 	if data == nil {
 		util.Logger().Errorf(nil,

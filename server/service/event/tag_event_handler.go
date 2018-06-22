@@ -97,7 +97,7 @@ func (h *TagEventHandler) OnEvent(evt backend.KvEvent) {
 		return
 	}
 
-	kv := evt.Object.(*mvccpb.KeyValue)
+	kv := evt.KV.(*mvccpb.KeyValue)
 	consumerId, domainProject, data := pb.GetInfoFromTagKV(kv)
 	if data == nil {
 		util.Logger().Errorf(nil,

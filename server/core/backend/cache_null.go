@@ -29,7 +29,7 @@ func init() {
 type nullCache struct {
 }
 
-func (n *nullCache) Version() int64 {
+func (n *nullCache) Revision() int64 {
 	return 0
 }
 

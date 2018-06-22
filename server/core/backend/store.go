@@ -45,13 +45,6 @@ func (s *KvStore) Initialize() {
 	s.taskService = async.NewTaskService()
 	s.ready = make(chan struct{})
 	s.goroutine = util.NewGo(context.Background())
-
-	for i := StoreType(0); i != typeEnd; i++ {
-		s.newIndexBuilder(i, NullCacher)
-	}
-	for i := StoreType(0); i != typeEnd; i++ {
-		s.indexers[i].Run()
-	}
 }
 
 func (s *KvStore) dispatchEvent(t StoreType, evt KvEvent) {
@@ -59,32 +52,21 @@ func (s *KvStore) dispatchEvent(t StoreType, evt KvEvent) {
 	EventProxy(t).OnEvent(evt)
 }
 
-func (s *KvStore) newIndexBuilder(t StoreType, cacher Cacher) {
-	s.indexers[t] = NewCacheIndexer(TypeRoots[t], cacher)
+func (s *KvStore) newIndexer(t StoreType, cfg *Config) {
+	var indexer *Indexer
+	switch {
+	case core.ServerInfo.Config.EnableCache && cfg.InitSize > 0:
+		indexer = NewCacheIndexer(cfg.Prefix, NewKvCacher(t.String(), cfg))
+	default:
+		indexer = NewCacheIndexer(cfg.Prefix, NullCacher)
+	}
+	s.indexers[t] = indexer
+	indexer.Run()
 }
 
 func (s *KvStore) Run() {
 	s.goroutine.Do(s.store)
 	s.taskService.Run()
-}
-
-func (s *KvStore) getKvCacherCfgOptions(t StoreType) (opts []ConfigOption) {
-	switch t {
-	case INSTANCE:
-		opts = append(opts, WithDeferHandler(s.SelfPreservationHandler()))
-	}
-	sz := TypeInitSize[t]
-	if sz > 0 {
-		opts = append(opts, WithInitSize(sz))
-	}
-	opts = append(opts,
-		WithPrefix(TypeRoots[t]),
-		WithEventFunc(func(evt KvEvent) { s.dispatchEvent(t, evt) }))
-	return
-}
-
-func (s *KvStore) SelfPreservationHandler() DeferHandler {
-	return &InstanceEventDeferHandler{Percent: DEFAULT_SELF_PRESERVATION_PERCENT}
 }
 
 func (s *KvStore) store(ctx context.Context) {
@@ -96,14 +78,14 @@ func (s *KvStore) store(ctx context.Context) {
 	}
 
 	for t := StoreType(0); t != typeEnd; t++ {
-		switch t {
-		case SCHEMA:
-			util.Logger().Infof("service center will not cache '%s'", SCHEMA)
+		cfg := TypeConfig[t]
+		if cfg.InitSize == 0 {
+			util.Logger().Infof("service center will not cache '%s'", t)
 			continue
-		default:
-			s.indexers[t].Stop() // release the exist indexer
-			s.newIndexBuilder(t, NewKvCacher(t.String(), s.getKvCacherCfgOptions(t)...))
 		}
+		s.indexers[t].Stop() // release the exist indexer
+
+		s.newIndexer(t, cfg.WithEventFunc(func(evt KvEvent) { s.dispatchEvent(t, evt) }))
 	}
 	for t := StoreType(0); t != typeEnd; t++ {
 		s.indexers[t].Run()
@@ -243,13 +225,9 @@ func (s *KvStore) Install(e Entity) (id StoreType, err error) {
 		return
 	}
 
-	util.Logger().Infof("install new store entity %d:%s->%s", id, e.Name(), e.Prefix())
+	util.Logger().Infof("install new store entity %d:%s->%s", id, e.Name(), e.Config().Prefix)
 
-	var cacher Cacher = NullCacher
-	if core.ServerInfo.Config.EnableCache {
-		cacher = NewKvCacher(id.String(), s.getKvCacherCfgOptions(id)...)
-	}
-	s.newIndexBuilder(id, cacher)
+	s.newIndexer(id, e.Config())
 	s.indexers[id].Run()
 	return
 }
@@ -268,8 +246,8 @@ func Store() *KvStore {
 
 func Revision() (rev int64) {
 	for _, i := range Store().indexers {
-		if rev < i.Cache().Version() {
-			rev = i.Cache().Version()
+		if rev < i.Cache().Revision() {
+			rev = i.Cache().Revision()
 		}
 	}
 	return

@@ -17,7 +17,7 @@
 package backend
 
 type Cache interface {
-	Version() int64
+	Revision() int64
 	Data(interface{}) interface{}
 	Have(interface{}) bool
 	Size() int

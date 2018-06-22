@@ -35,7 +35,7 @@ func BenchmarkFilter(b *testing.B) {
 	}
 	v, _ := json.Marshal(inst)
 
-	cacher := &KvCacher{}
+	cacher := &KvCacher{Cfg: DefaultConfig().WithParser(InstanceParser)}
 
 	n := 300 * 1000 // 30w
 	cache := NewKvCache(cacher, n)
@@ -51,9 +51,9 @@ func BenchmarkFilter(b *testing.B) {
 			})
 		} else if n > 100*1000 && n <= 20*1000 {
 			// update
-			cache.store[k] = &mvccpb.KeyValue{
+			cache.store[k] = &KeyValue{
 				Key:         util.StringToBytesWithNoCopy(k),
-				Value:       v,
+				Value:       inst,
 				ModRevision: 1,
 			}
 			items = append(items, &mvccpb.KeyValue{
@@ -63,9 +63,9 @@ func BenchmarkFilter(b *testing.B) {
 			})
 		} else {
 			// delete
-			cache.store[k] = &mvccpb.KeyValue{
+			cache.store[k] = &KeyValue{
 				Key:         util.StringToBytesWithNoCopy(k),
-				Value:       v,
+				Value:       inst,
 				ModRevision: 1,
 			}
 		}
@@ -79,6 +79,5 @@ func BenchmarkFilter(b *testing.B) {
 	b.ReportAllocs()
 
 	// TODO bad performance!!!
-	//10	 120612060 ns/op	37128035 B/op	     134 allocs/op
-	//
+	//20	  82367261 ns/op	37964987 B/op	   80132 allocs/op
 }

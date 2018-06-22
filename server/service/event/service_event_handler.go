@@ -39,7 +39,10 @@ func (h *ServiceEventHandler) OnEvent(evt backend.KvEvent) {
 		return
 	}
 
-	kv := evt.Object.(*mvccpb.KeyValue)
+	kv, ok := evt.KV.(*mvccpb.KeyValue)
+	if !ok {
+		return
+	}
 	serviceId, domainProject, data := pb.GetInfoFromSvcKV(kv)
 	if data == nil {
 		util.Logger().Errorf(nil,

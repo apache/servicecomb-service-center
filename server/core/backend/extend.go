@@ -23,26 +23,20 @@ import (
 
 type Entity interface {
 	Name() string
-	Prefix() string
-	InitSize() int
+	Config() *Config
 }
 
 type entity struct {
-	name     string
-	prefix   string
-	initSize int
+	name string
+	cfg  *Config
 }
 
 func (e *entity) Name() string {
 	return e.name
 }
 
-func (e *entity) Prefix() string {
-	return e.prefix
-}
-
-func (e *entity) InitSize() int {
-	return e.initSize
+func (e *entity) Config() *Config {
+	return e.cfg
 }
 
 func InstallType(e Entity) (id StoreType, err error) {
@@ -54,31 +48,22 @@ func InstallType(e Entity) (id StoreType, err error) {
 			return NONEXIST, fmt.Errorf("redeclare store type '%s'", n)
 		}
 	}
-	for _, r := range TypeRoots {
-		if r == e.Prefix() {
+	for _, r := range TypeConfig {
+		if r.Prefix == e.Config().Prefix {
 			return NONEXIST, fmt.Errorf("redeclare store root '%s'", r)
 		}
 	}
 
 	id = StoreType(len(TypeNames))
 	TypeNames = append(TypeNames, e.Name())
-
-	TypeRoots[id] = e.Prefix()
-	TypeInitSize[id] = e.InitSize()
-
+	TypeConfig[id] = e.Config()
 	EventProxies[id] = NewEventProxy()
 	return
 }
 
-func NewEntity(name, prefix string, opts ...ConfigOption) Entity {
-	cfg := DefaultConfig()
-	for _, opt := range opts {
-		opt(&cfg)
-	}
-	cfg.Prefix = prefix
+func NewEntity(name string, cfg *Config) Entity {
 	return &entity{
-		name:     name,
-		prefix:   cfg.Prefix,
-		initSize: cfg.InitSize,
+		name: name,
+		cfg:  cfg,
 	}
 }

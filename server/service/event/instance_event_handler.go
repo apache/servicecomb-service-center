@@ -42,7 +42,7 @@ func (h *InstanceEventHandler) OnEvent(evt backend.KvEvent) {
 		return
 	}
 
-	kv := evt.Object.(*mvccpb.KeyValue)
+	kv := evt.KV.(*mvccpb.KeyValue)
 	providerId, providerInstanceId, domainProject, data := pb.GetInfoFromInstKV(kv)
 	if data == nil {
 		util.Logger().Errorf(nil,

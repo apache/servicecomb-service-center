@@ -16,30 +16,9 @@
  */
 package backend
 
-import "testing"
-
-type extend struct {
-}
-
-func (e *extend) Name() string {
-	return "test"
-}
-
-func (e *extend) Config() *Config {
-	return DefaultConfig().WithPrefix("/test")
-}
-
-func TestInstallType(t *testing.T) {
-	id, err := InstallType(&extend{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if id == NONEXIST {
-		t.Fatal(err)
-	}
-
-	id, err = InstallType(&extend{})
-	if id != NONEXIST || err == nil {
-		t.Fatal("InstallType fail", err)
-	}
+type KeyValue struct {
+	Key            []byte
+	Value          interface{}
+	CreateRevision int64
+	ModRevision    int64
 }
