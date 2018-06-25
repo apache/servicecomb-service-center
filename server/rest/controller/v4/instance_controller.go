@@ -139,10 +139,10 @@ func (this *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r 
 	respInternal := resp.Response
 	resp.Response = nil
 
-	iv, _ := r.Context().Value(serviceUtil.CTX_REQUEST_REVISION).(int64)
-	ov, _ := r.Context().Value(serviceUtil.CTX_RESPONSE_REVISION).(int64)
+	iv, _ := r.Context().Value(serviceUtil.CTX_REQUEST_REVISION).(string)
+	ov, _ := r.Context().Value(serviceUtil.CTX_RESPONSE_REVISION).(string)
 	w.Header().Set(serviceUtil.HEADER_REV, fmt.Sprint(ov))
-	if iv > 0 && iv == ov {
+	if len(iv) > 0 && iv == ov {
 		w.WriteHeader(http.StatusNotModified)
 		return
 	}

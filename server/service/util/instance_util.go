@@ -66,20 +66,36 @@ func GetInstance(ctx context.Context, domainProject string, serviceId string, in
 	return instance, nil
 }
 
+func ParseRevision(rev string) (int64, int64) {
+	arrRev := strings.Split(rev, ".")
+	reqRev, _ := strconv.ParseInt(arrRev[0], 10, 64)
+	reqCount := int64(0)
+	if len(arrRev) > 1 {
+		reqCount, _ = strconv.ParseInt(arrRev[1], 10, 64)
+	}
+	return reqRev, reqCount
+}
+
+func FormatRevision(rev, count int64) string {
+	return fmt.Sprintf("%d.%d", rev, count)
+}
+
 func GetAllInstancesOfServices(ctx context.Context, domainProject string, ids []string) (
-	instances []*pb.MicroServiceInstance, rev int64, err error) {
+	instances []*pb.MicroServiceInstance, rev string, err error) {
 	cloneCtx := util.CloneContext(ctx)
 	noCache, cacheOnly := ctx.Value(CTX_NOCACHE) == "1", ctx.Value(CTX_CACHEONLY) == "1"
 
-	rev, _ = cloneCtx.Value(CTX_REQUEST_REVISION).(int64)
-	if !noCache && !cacheOnly && rev > 0 {
-		// force to find in cache at first time when rev > 0
+	rawRev, _ := cloneCtx.Value(CTX_REQUEST_REVISION).(string)
+	reqRev, reqCount := ParseRevision(rawRev)
+	if !noCache && !cacheOnly && reqRev > 0 {
+		// force to find in cache at first time when rev is not empty
 		util.SetContext(cloneCtx, CTX_CACHEONLY, "1")
 	}
 
 	var (
-		max int64
-		kvs []*mvccpb.KeyValue
+		maxRev    int64
+		instCount int64
+		kvs       []*mvccpb.KeyValue
 	)
 	for i := 0; i < 2; i++ {
 		for _, serviceId := range ids {
@@ -87,28 +103,31 @@ func GetAllInstancesOfServices(ctx context.Context, domainProject string, ids []
 			opts := append(FromContext(cloneCtx), registry.WithStrKey(key), registry.WithPrefix())
 			resp, err := backend.Store().Instance().Search(cloneCtx, opts...)
 			if err != nil {
-				return nil, 0, err
+				return nil, "", err
 			}
 
-			if len(resp.Kvs) > 0 {
-				kvs = append(kvs, resp.Kvs...)
+			if len(resp.Kvs) == 0 {
+				continue
 			}
-			if cmax := resp.MaxModRevision(); max < cmax {
-				max = cmax
+
+			if cmax := resp.MaxModRevision(); maxRev < cmax {
+				maxRev = cmax
 			}
+			instCount += int64(len(resp.Kvs))
+			kvs = append(kvs, resp.Kvs...)
 		}
 
-		if noCache || cacheOnly || rev == 0 {
+		if noCache || cacheOnly || len(rev) == 0 {
 			break
 		}
 
-		if rev == max {
+		if reqRev == maxRev && reqCount == instCount {
 			// return not modified
 			kvs = kvs[:0]
 			break
 		}
 
-		if rev < max || i != 0 {
+		if reqRev < maxRev || i != 0 {
 			break
 		}
 
@@ -123,13 +142,13 @@ func GetAllInstancesOfServices(ctx context.Context, domainProject string, ids []
 		instance := &pb.MicroServiceInstance{}
 		err := json.Unmarshal(kv.Value, instance)
 		if err != nil {
-			return nil, 0, fmt.Errorf("unmarshal %s faild, %s",
+			return nil, "", fmt.Errorf("unmarshal %s faild, %s",
 				util.BytesToStringWithNoCopy(kv.Key), err.Error())
 		}
 		instances = append(instances, instance)
 	}
 
-	rev = max
+	rev = FormatRevision(maxRev, instCount)
 	return
 }
 
