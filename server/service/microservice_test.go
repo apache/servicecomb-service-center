@@ -75,7 +75,7 @@ var _ = Describe("'Micro-service' service", func() {
 							Name:    TOO_LONG_FRAMEWORK[:len(TOO_LONG_FRAMEWORK)-1],
 							Version: TOO_LONG_FRAMEWORK[:len(TOO_LONG_FRAMEWORK)-1],
 						},
-						RegisterBy: "SDK",
+						RegisterBy: pb.REGISTERBY_SDK,
 					},
 				}
 				resp, err := serviceResource.Create(getContext(), r)
@@ -131,7 +131,7 @@ var _ = Describe("'Micro-service' service", func() {
 				tags["second"] = "second"
 				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
-						ServiceName: "create_serivce_rule_tag",
+						ServiceName: "create_service_rule_tag",
 						AppId:       "default",
 						Version:     "1.0.0",
 						Level:       "FRONT",
@@ -581,6 +581,36 @@ var _ = Describe("'Micro-service' service", func() {
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
+
+				By("valid registerBy")
+				r = &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						AppId:       "default",
+						ServiceName: "registerBy-test",
+						Version:     "1.0.10",
+						Level:       "BACK",
+						Status:      "UP",
+						RegisterBy:  pb.REGISTERBY_PLATFORM,
+					},
+				}
+				resp, err = serviceResource.Create(getContext(), r)
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+
+				By("valid registerBy")
+				r = &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						AppId:       "default",
+						ServiceName: "registerBy-test",
+						Version:     "1.0.11",
+						Level:       "BACK",
+						Status:      "UP",
+						RegisterBy:  pb.REGISTERBY_SIDECAR,
+					},
+				}
+				resp, err = serviceResource.Create(getContext(), r)
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 
 				By("invalid description")
 				r = &pb.CreateServiceRequest{

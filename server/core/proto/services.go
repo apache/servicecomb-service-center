@@ -60,6 +60,7 @@ const (
 
 	REGISTERBY_SDK     string = "SDK"
 	REGISTERBY_SIDECAR string = "SIDECAR"
+	REGISTERBY_PLATFORM string = "PLATFORM"
 
 	APP_ID  = "default"
 	VERSION = "0.0.1"

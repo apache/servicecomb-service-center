@@ -47,7 +47,7 @@ var (
 	statusRegex, _     = regexp.Compile("^(" + pb.MS_UP + "|" + pb.MS_DOWN + ")?$")
 	serviceIdRegex, _  = regexp.Compile(`^\S*$`)
 	aliasRegex, _      = regexp.Compile(`^[a-zA-Z0-9_\-.:]*$`)
-	registerByRegex, _ = regexp.Compile("^(" + util.StringJoin([]string{pb.REGISTERBY_SDK, pb.REGISTERBY_SIDECAR}, "|") + ")*$")
+	registerByRegex, _ = regexp.Compile("^(" + util.StringJoin([]string{pb.REGISTERBY_SDK, pb.REGISTERBY_SIDECAR, pb.REGISTERBY_PLATFORM}, "|") + ")*$")
 	envRegex, _        = regexp.Compile("^(" + util.StringJoin([]string{
 		pb.ENV_DEV, pb.ENV_TEST, pb.ENV_ACCEPT, pb.ENV_PROD}, "|") + ")*$")
 	schemaIdRegex, _ = regexp.Compile(`^[a-zA-Z0-9]{1,160}$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]{0,158}[a-zA-Z0-9]$`)
