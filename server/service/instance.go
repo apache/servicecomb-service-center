@@ -540,8 +540,10 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 	// cache
 	if item := serviceUtil.FindInstancesCache.Get(provider.Tenant, in.ConsumerServiceId, provider); item != nil {
 		noCache, cacheOnly := ctx.Value(serviceUtil.CTX_NOCACHE) == "1", ctx.Value(serviceUtil.CTX_CACHEONLY) == "1"
-		rev, _ := ctx.Value(serviceUtil.CTX_REQUEST_REVISION).(int64)
-		if !noCache && (cacheOnly || rev <= item.Rev) {
+		rev, _ := ctx.Value(serviceUtil.CTX_REQUEST_REVISION).(string)
+		reqRev, _ := serviceUtil.ParseRevision(rev)
+		cacheRev, _ := serviceUtil.ParseRevision(item.Rev)
+		if !noCache && (cacheOnly || reqRev <= cacheRev) {
 			instances := item.Instances
 			if rev == item.Rev {
 				instances = instances[:0]

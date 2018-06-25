@@ -29,7 +29,7 @@ var FindInstancesCache = &VersionRuleCache{
 
 type VersionRuleCacheItem struct {
 	Instances []*pb.MicroServiceInstance
-	Rev       int64
+	Rev       string
 }
 
 type VersionRuleCache struct {

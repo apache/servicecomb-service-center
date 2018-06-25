@@ -21,7 +21,6 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"net/http"
-	"strconv"
 )
 
 type CacheResponse struct {
@@ -34,7 +33,7 @@ func (l *CacheResponse) Handle(i *chain.Invocation) {
 
 	noCache := r.URL.Query().Get(serviceUtil.CTX_NOCACHE) == "1"
 	cacheOnly := r.URL.Query().Get(serviceUtil.CTX_CACHEONLY) == "1"
-	rev, _ := strconv.ParseInt(r.URL.Query().Get("rev"), 10, 64)
+	rev := r.URL.Query().Get("rev")
 
 	if noCache {
 		i.WithContext(serviceUtil.CTX_NOCACHE, "1")
@@ -46,7 +45,7 @@ func (l *CacheResponse) Handle(i *chain.Invocation) {
 		return
 	}
 
-	if rev > 0 {
+	if len(rev) > 0 {
 		i.WithContext(serviceUtil.CTX_REQUEST_REVISION, rev)
 		return
 	}

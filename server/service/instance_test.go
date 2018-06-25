@@ -1182,12 +1182,13 @@ var _ = Describe("'Instance' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
-				Expect(len(respFind.Instances)).To(Equal(1))
+				rev, _ := ctx.Value(serviceUtil.CTX_RESPONSE_REVISION).(string)
+				reqRev, reqCount := serviceUtil.ParseRevision(rev)
+				Expect(int64(len(respFind.Instances))).To(Equal(reqCount))
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId8))
-				rev, _ := ctx.Value(serviceUtil.CTX_RESPONSE_REVISION).(int64)
-				Expect(rev).NotTo(Equal(0))
+				Expect(reqRev).NotTo(Equal(0))
 
-				util.SetContext(ctx, serviceUtil.CTX_REQUEST_REVISION, rev-1)
+				util.SetContext(ctx, serviceUtil.CTX_REQUEST_REVISION, reqRev-1)
 				respFind, err = instanceResource.Find(ctx, &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId8,
 					AppId:             "query_instance",
@@ -1196,11 +1197,11 @@ var _ = Describe("'Instance' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
-				Expect(len(respFind.Instances)).To(Equal(1))
+				Expect(int64(len(respFind.Instances))).To(Equal(reqCount))
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId8))
 				Expect(ctx.Value(serviceUtil.CTX_RESPONSE_REVISION)).To(Equal(rev))
 
-				util.SetContext(ctx, serviceUtil.CTX_REQUEST_REVISION, rev+1)
+				util.SetContext(ctx, serviceUtil.CTX_REQUEST_REVISION, reqRev+1)
 				respFind, err = instanceResource.Find(ctx, &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId8,
 					AppId:             "query_instance",
@@ -1209,7 +1210,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
-				Expect(len(respFind.Instances)).To(Equal(1))
+				Expect(int64(len(respFind.Instances))).To(Equal(reqCount))
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId8))
 				Expect(ctx.Value(serviceUtil.CTX_RESPONSE_REVISION)).To(Equal(rev))
 
