@@ -28,13 +28,13 @@ func TestVersionRuleCache_Get(t *testing.T) {
 		t.Fatalf("TestVersionRuleCache_Get failed, %v", c)
 	}
 
-	r := &VersionRuleCacheItem{Rev: 1}
+	r := &VersionRuleCacheItem{Rev: "1"}
 	FindInstancesCache.Set("d", "c", p, r)
 	c = FindInstancesCache.Get("d", "c", p)
 	if c == nil {
 		t.Fatalf("TestVersionRuleCache_Get failed, %v", c)
 	}
-	if c.Rev != 1 {
+	if c.Rev != "1" {
 		t.Fatalf("TestVersionRuleCache_Get failed, rev %d != 1", c.Rev)
 	}
 	c = FindInstancesCache.Get("d", "c2", p)
@@ -54,7 +54,7 @@ func TestVersionRuleCache_Get(t *testing.T) {
 	if c == nil {
 		t.Fatalf("TestVersionRuleCache_Get failed, %v", c)
 	}
-	if c.Rev != 1 {
+	if c.Rev != "1" {
 		t.Fatalf("TestVersionRuleCache_Get failed, rev %d != 1", c.Rev)
 	}
 }
