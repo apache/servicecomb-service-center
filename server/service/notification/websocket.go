@@ -18,7 +18,6 @@ package notification
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
@@ -28,36 +27,6 @@ import (
 	"golang.org/x/net/context"
 	"time"
 )
-
-func HandleWatchJob(watcher *ListWatcher, stream pb.ServiceInstanceCtrl_WatchServer, timeout time.Duration) (err error) {
-	for {
-		timer := time.NewTimer(timeout)
-		select {
-		case <-timer.C:
-		// TODO grpc 长连接心跳？
-		case job := <-watcher.Job:
-			timer.Stop()
-
-			if job == nil {
-				err = errors.New("channel is closed")
-				util.Logger().Errorf(err, "watcher %s %s caught an exception",
-					watcher.Subject(), watcher.Id())
-				return
-			}
-			resp := job.(*WatchJob).Response
-			util.Logger().Infof("event is coming in, watcher %s %s",
-				watcher.Subject(), watcher.Id())
-
-			err = stream.Send(resp)
-			if err != nil {
-				util.Logger().Errorf(err, "send message error, watcher %s %s",
-					watcher.Subject(), watcher.Id())
-				watcher.SetError(err)
-				return
-			}
-		}
-	}
-}
 
 type WebSocketHandler struct {
 	ctx             context.Context
@@ -71,7 +40,7 @@ type WebSocketHandler struct {
 func (wh *WebSocketHandler) Init() error {
 	remoteAddr := wh.conn.RemoteAddr().String()
 	if err := GetNotifyService().AddSubscriber(wh.watcher); err != nil {
-		err = fmt.Errorf("establish[%s] websocket watch failed: notify service error, %s.",
+		err = fmt.Errorf("establish[%s] websocket watch failed: notify service error, %s",
 			remoteAddr, err.Error())
 		util.Logger().Errorf(nil, err.Error())
 
@@ -207,7 +176,7 @@ func (wh *WebSocketHandler) HandleWatchWebSocketJob() {
 				return
 			}
 
-			resp := job.(*WatchJob).Response
+			resp := job.Response
 
 			providerFlag := fmt.Sprintf("%s/%s/%s", resp.Key.AppId, resp.Key.ServiceName, resp.Key.Version)
 			if resp.Action != string(pb.EVT_EXPIRE) {
@@ -261,7 +230,7 @@ func DoWebSocketListAndWatch(ctx context.Context, serviceId string, f func() ([]
 	handler := &WebSocketHandler{
 		ctx:             ctx,
 		conn:            conn,
-		watcher:         NewInstanceListWatcher(serviceId, apt.GetInstanceRootKey(domainProject)+"/", f),
+		watcher:         NewListWatcher(serviceId, apt.GetInstanceRootKey(domainProject)+"/", f),
 		needPingWatcher: true,
 		closed:          make(chan struct{}),
 		goroutine:       util.NewGo(context.Background()),
@@ -282,24 +251,4 @@ func EstablishWebSocketError(conn *websocket.Conn, err error) {
 	if err := conn.WriteMessage(websocket.TextMessage, util.StringToBytesWithNoCopy(err.Error())); err != nil {
 		util.Logger().Errorf(err, "establish[%s] websocket watch failed: write message failed.", remoteAddr)
 	}
-}
-
-func PublishInstanceEvent(domainProject string, action pb.EventType, serviceKey *pb.MicroServiceKey, instance *pb.MicroServiceInstance, rev int64, subscribers []string) {
-	response := &pb.WatchInstanceResponse{
-		Response: pb.CreateResponse(pb.Response_SUCCESS, "Watch instance successfully."),
-		Action:   string(action),
-		Key:      serviceKey,
-		Instance: instance,
-	}
-	for _, consumerId := range subscribers {
-		job := NewWatchJob(INSTANCE, consumerId, apt.GetInstanceRootKey(domainProject)+"/", rev, response)
-		util.Logger().Debugf("publish event to notify service, %v", job)
-
-		// TODO add超时怎么处理？
-		GetNotifyService().AddJob(job)
-	}
-}
-
-func NewInstanceListWatcher(selfServiceId, instanceRoot string, listFunc func() (results []*pb.WatchInstanceResponse, rev int64)) *ListWatcher {
-	return NewListWatcher(INSTANCE, selfServiceId, instanceRoot, listFunc)
 }

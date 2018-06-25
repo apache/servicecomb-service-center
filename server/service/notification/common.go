@@ -17,7 +17,6 @@
 package notification
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -52,91 +51,4 @@ type NotifyServiceConfig struct {
 func (nsc NotifyServiceConfig) String() string {
 	return fmt.Sprintf("{acceptQueue: %d, accept: %s, notify: %s}",
 		nsc.MaxQueue, nsc.AddTimeout, nsc.NotifyTimeout)
-}
-
-type Subscriber interface {
-	Err() error
-	SetError(err error)
-	Id() string
-	Subject() string
-	Type() NotifyType
-	Service() *NotifyService
-	SetService(*NotifyService)
-	OnAccept()
-	// The event bus will callback this function, so it must be non-blocked.
-	OnMessage(job NotifyJob)
-	Close()
-}
-
-type NotifyJob interface {
-	SubscriberId() string
-	Subject() string
-	Type() NotifyType
-}
-
-type BaseSubscriber struct {
-	id      string
-	subject string
-	nType   NotifyType
-	service *NotifyService
-	err     error
-}
-
-func (s *BaseSubscriber) Err() error {
-	return s.err
-}
-
-func (s *BaseSubscriber) SetError(err error) {
-	s.err = err
-	// 触发清理job
-	s.Service().AddJob(NewNotifyServiceHealthCheckJob(s))
-}
-
-func (s *BaseSubscriber) Id() string {
-	return s.id
-}
-
-func (s *BaseSubscriber) Subject() string {
-	return s.subject
-}
-
-func (s *BaseSubscriber) Type() NotifyType {
-	return s.nType
-}
-
-func (s *BaseSubscriber) Service() *NotifyService {
-	return s.service
-}
-
-func (s *BaseSubscriber) SetService(svc *NotifyService) {
-	s.service = svc
-}
-
-func (s *BaseSubscriber) OnAccept() {
-}
-
-func (s *BaseSubscriber) OnMessage(job NotifyJob) {
-	s.SetError(errors.New("do not call base notifier OnMessage method"))
-}
-
-func (s *BaseSubscriber) Close() {
-
-}
-
-type BaseNotifyJob struct {
-	subscriberId string
-	subject      string
-	nType        NotifyType
-}
-
-func (s *BaseNotifyJob) SubscriberId() string {
-	return s.subscriberId
-}
-
-func (s *BaseNotifyJob) Subject() string {
-	return s.subject
-}
-
-func (s *BaseNotifyJob) Type() NotifyType {
-	return s.nType
 }

@@ -524,6 +524,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		AppId:       in.AppId,
 		ServiceName: in.ServiceName,
 		Alias:       in.ServiceName,
+		Version:     in.VersionRule,
 	}
 	if apt.IsShared(provider) {
 		// it means the shared micro-services must be the same env with SC.
@@ -534,6 +535,23 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		// only allow shared micro-service instances found in different domains.
 		util.SetTargetDomainProject(ctx, util.ParseDomain(ctx), util.ParseProject(ctx))
 		provider.Tenant = util.ParseTargetDomainProject(ctx)
+	}
+
+	// cache
+	if item := serviceUtil.FindInstancesCache.Get(provider.Tenant, in.ConsumerServiceId, provider); item != nil {
+		noCache, cacheOnly := ctx.Value(serviceUtil.CTX_NOCACHE) == "1", ctx.Value(serviceUtil.CTX_CACHEONLY) == "1"
+		rev, _ := ctx.Value(serviceUtil.CTX_REQUEST_REVISION).(int64)
+		if !noCache && (cacheOnly || rev <= item.Rev) {
+			instances := item.Instances
+			if rev == item.Rev {
+				instances = instances[:0]
+			}
+			util.SetContext(ctx, serviceUtil.CTX_RESPONSE_REVISION, item.Rev)
+			return &pb.FindInstancesResponse{
+				Response:  pb.CreateResponse(pb.Response_SUCCESS, "Query service instances successfully."),
+				Instances: instances,
+			}, nil
+		}
 	}
 
 	// 版本规则
@@ -583,13 +601,19 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		}
 	}
 
-	instances, err := serviceUtil.GetAllInstancesOfServices(ctx, util.ParseTargetDomainProject(ctx), ids)
+	instances, rev, err := serviceUtil.GetAllInstancesOfServices(ctx, util.ParseTargetDomainProject(ctx), ids)
 	if err != nil {
 		util.Logger().Errorf(err, "find instance failed, %s: GetAllInstancesOfServices failed.", findFlag)
 		return &pb.FindInstancesResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
+
+	serviceUtil.FindInstancesCache.Set(provider.Tenant, in.ConsumerServiceId, provider, &serviceUtil.VersionRuleCacheItem{
+		Instances: instances,
+		Rev:       rev,
+	})
+	util.SetContext(ctx, serviceUtil.CTX_RESPONSE_REVISION, rev)
 	return &pb.FindInstancesResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Query service instances successfully."),
 		Instances: instances,

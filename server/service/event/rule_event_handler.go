@@ -69,7 +69,7 @@ func (apt *RulesChangedTask) publish(ctx context.Context, domainProject, provide
 	}
 	providerKey := pb.MicroServiceToKey(domainProject, provider)
 
-	nf.PublishInstanceEvent(domainProject, pb.EVT_EXPIRE, providerKey, nil, rev, consumerIds)
+	PublishInstanceEvent(domainProject, pb.EVT_EXPIRE, providerKey, nil, rev, consumerIds)
 	return nil
 }
 

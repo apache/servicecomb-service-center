@@ -14,16 +14,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package util
+package notification
 
-import "time"
+type NotifyJob interface {
+	SubscriberId() string
+	Subject() string
+	Type() NotifyType
+}
 
-const (
-	HEADER_REV            = "X-Resource-Revision"
-	CTX_NOCACHE           = "noCache"
-	CTX_CACHEONLY         = "cacheOnly"
-	CTX_REQUEST_REVISION  = "requestRev"
-	CTX_RESPONSE_REVISION = "responseRev"
+type BaseNotifyJob struct {
+	subscriberId string
+	subject      string
+	nType        NotifyType
+}
 
-	cacheTTL = 5 * time.Minute
-)
+func (s *BaseNotifyJob) SubscriberId() string {
+	return s.subscriberId
+}
+
+func (s *BaseNotifyJob) Subject() string {
+	return s.subject
+}
+
+func (s *BaseNotifyJob) Type() NotifyType {
+	return s.nType
+}

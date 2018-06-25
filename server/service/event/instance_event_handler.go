@@ -93,7 +93,7 @@ func (h *InstanceEventHandler) OnEvent(evt backend.KvEvent) {
 		return
 	}
 
-	nf.PublishInstanceEvent(domainProject, action, &pb.MicroServiceKey{
+	PublishInstanceEvent(domainProject, action, &pb.MicroServiceKey{
 		Environment: ms.Environment,
 		AppId:       ms.AppId,
 		ServiceName: ms.ServiceName,
@@ -103,4 +103,21 @@ func (h *InstanceEventHandler) OnEvent(evt backend.KvEvent) {
 
 func NewInstanceEventHandler() *InstanceEventHandler {
 	return &InstanceEventHandler{}
+}
+
+func PublishInstanceEvent(domainProject string, action pb.EventType, serviceKey *pb.MicroServiceKey, instance *pb.MicroServiceInstance, rev int64, subscribers []string) {
+	response := &pb.WatchInstanceResponse{
+		Response: pb.CreateResponse(pb.Response_SUCCESS, "Watch instance successfully."),
+		Action:   string(action),
+		Key:      serviceKey,
+		Instance: instance,
+	}
+	for _, consumerId := range subscribers {
+		// expires cache
+		serviceUtil.FindInstancesCache.Delete(domainProject, consumerId, serviceKey)
+
+		// TODO add超时怎么处理？
+		job := nf.NewWatchJob(consumerId, apt.GetInstanceRootKey(domainProject)+"/", rev, response)
+		nf.GetNotifyService().AddJob(job)
+	}
 }
