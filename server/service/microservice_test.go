@@ -75,7 +75,7 @@ var _ = Describe("'Micro-service' service", func() {
 							Name:    TOO_LONG_FRAMEWORK[:len(TOO_LONG_FRAMEWORK)-1],
 							Version: TOO_LONG_FRAMEWORK[:len(TOO_LONG_FRAMEWORK)-1],
 						},
-						RegisterBy: pb.REGISTERBY_SDK,
+						RegisterBy: "SDK",
 					},
 				}
 				resp, err := serviceResource.Create(getContext(), r)
@@ -110,7 +110,7 @@ var _ = Describe("'Micro-service' service", func() {
 				By("first: create")
 				resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
-						ServiceName: "create_serivce_rule_tag",
+						ServiceName: "create_service_rule_tag",
 						AppId:       "default",
 						Version:     "1.0.0",
 						Level:       "FRONT",
@@ -590,7 +590,7 @@ var _ = Describe("'Micro-service' service", func() {
 						Version:     "1.0.10",
 						Level:       "BACK",
 						Status:      "UP",
-						RegisterBy:  pb.REGISTERBY_PLATFORM,
+						RegisterBy:  "PLATFORM",
 					},
 				}
 				resp, err = serviceResource.Create(getContext(), r)
@@ -605,7 +605,7 @@ var _ = Describe("'Micro-service' service", func() {
 						Version:     "1.0.11",
 						Level:       "BACK",
 						Status:      "UP",
-						RegisterBy:  pb.REGISTERBY_SIDECAR,
+						RegisterBy:  "SIDECAR",
 					},
 				}
 				resp, err = serviceResource.Create(getContext(), r)
