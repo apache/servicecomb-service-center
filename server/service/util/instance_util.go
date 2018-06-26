@@ -87,7 +87,7 @@ func GetAllInstancesOfServices(ctx context.Context, domainProject string, ids []
 
 	rawRev, _ := cloneCtx.Value(CTX_REQUEST_REVISION).(string)
 	reqRev, reqCount := ParseRevision(rawRev)
-	if !noCache && !cacheOnly && reqRev > 0 {
+	if !noCache && !cacheOnly && len(rawRev) > 0 {
 		// force to find in cache at first time when rev is not empty
 		util.SetContext(cloneCtx, CTX_CACHEONLY, "1")
 	}
