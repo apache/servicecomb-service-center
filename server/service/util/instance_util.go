@@ -98,6 +98,9 @@ func GetAllInstancesOfServices(ctx context.Context, domainProject string, ids []
 		kvs       []*mvccpb.KeyValue
 	)
 	for i := 0; i < 2; i++ {
+		maxRev = 0
+		kvs = kvs[:0]
+
 		for _, serviceId := range ids {
 			key := apt.GenerateInstanceKey(domainProject, serviceId, "")
 			opts := append(FromContext(cloneCtx), registry.WithStrKey(key), registry.WithPrefix())
@@ -132,7 +135,6 @@ func GetAllInstancesOfServices(ctx context.Context, domainProject string, ids []
 			break
 		}
 
-		kvs = kvs[:0]
 		// find from remote server at second time
 		util.SetContext(util.SetContext(cloneCtx,
 			CTX_CACHEONLY, ""),
