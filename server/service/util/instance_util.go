@@ -87,7 +87,7 @@ func GetAllInstancesOfServices(ctx context.Context, domainProject string, ids []
 
 	rawRev, _ := cloneCtx.Value(CTX_REQUEST_REVISION).(string)
 	reqRev, reqCount := ParseRevision(rawRev)
-	if !noCache && !cacheOnly && reqRev > 0 {
+	if !noCache && !cacheOnly && len(rawRev) > 0 {
 		// force to find in cache at first time when rev is not empty
 		util.SetContext(cloneCtx, CTX_CACHEONLY, "1")
 	}
@@ -98,6 +98,9 @@ func GetAllInstancesOfServices(ctx context.Context, domainProject string, ids []
 		kvs       []*mvccpb.KeyValue
 	)
 	for i := 0; i < 2; i++ {
+		maxRev = 0
+		kvs = kvs[:0]
+
 		for _, serviceId := range ids {
 			key := apt.GenerateInstanceKey(domainProject, serviceId, "")
 			opts := append(FromContext(cloneCtx), registry.WithStrKey(key), registry.WithPrefix())
@@ -113,11 +116,12 @@ func GetAllInstancesOfServices(ctx context.Context, domainProject string, ids []
 			if cmax := resp.MaxModRevision(); maxRev < cmax {
 				maxRev = cmax
 			}
-			instCount += int64(len(resp.Kvs))
 			kvs = append(kvs, resp.Kvs...)
 		}
 
-		if noCache || cacheOnly || len(rev) == 0 {
+		instCount = int64(len(kvs))
+
+		if noCache || cacheOnly || len(rawRev) == 0 {
 			break
 		}
 
@@ -131,7 +135,6 @@ func GetAllInstancesOfServices(ctx context.Context, domainProject string, ids []
 			break
 		}
 
-		kvs = kvs[:0]
 		// find from remote server at second time
 		util.SetContext(util.SetContext(cloneCtx,
 			CTX_CACHEONLY, ""),
