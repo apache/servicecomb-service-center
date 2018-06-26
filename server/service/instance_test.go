@@ -17,6 +17,7 @@
 package service_test
 
 import (
+	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
@@ -1173,7 +1174,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId4))
 
 				By("find with rev")
-				ctx := util.SetContext(getContext(), serviceUtil.CTX_NOCACHE, 0)
+				ctx := util.SetContext(getContext(), serviceUtil.CTX_NOCACHE, "")
 				respFind, err = instanceResource.Find(ctx, &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId8,
 					AppId:             "query_instance",
@@ -1188,7 +1189,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId8))
 				Expect(reqRev).NotTo(Equal(0))
 
-				util.SetContext(ctx, serviceUtil.CTX_REQUEST_REVISION, reqRev-1)
+				util.SetContext(ctx, serviceUtil.CTX_REQUEST_REVISION, fmt.Sprint(reqRev-1))
 				respFind, err = instanceResource.Find(ctx, &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId8,
 					AppId:             "query_instance",
@@ -1201,7 +1202,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId8))
 				Expect(ctx.Value(serviceUtil.CTX_RESPONSE_REVISION)).To(Equal(rev))
 
-				util.SetContext(ctx, serviceUtil.CTX_REQUEST_REVISION, reqRev+1)
+				util.SetContext(ctx, serviceUtil.CTX_REQUEST_REVISION, fmt.Sprint(reqRev+1))
 				respFind, err = instanceResource.Find(ctx, &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId8,
 					AppId:             "query_instance",

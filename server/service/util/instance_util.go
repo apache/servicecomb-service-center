@@ -113,11 +113,12 @@ func GetAllInstancesOfServices(ctx context.Context, domainProject string, ids []
 			if cmax := resp.MaxModRevision(); maxRev < cmax {
 				maxRev = cmax
 			}
-			instCount += int64(len(resp.Kvs))
 			kvs = append(kvs, resp.Kvs...)
 		}
 
-		if noCache || cacheOnly || len(rev) == 0 {
+		instCount = int64(len(kvs))
+
+		if noCache || cacheOnly || len(rawRev) == 0 {
 			break
 		}
 
