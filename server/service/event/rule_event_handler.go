@@ -17,7 +17,6 @@
 package event
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/async"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
@@ -25,7 +24,6 @@ import (
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	nf "github.com/apache/incubator-servicecomb-service-center/server/service/notification"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 )
 
@@ -86,29 +84,13 @@ func (h *RuleEventHandler) OnEvent(evt backend.KvEvent) {
 		return
 	}
 
-	kv := evt.KV.(*mvccpb.KeyValue)
-	providerId, ruleId, domainProject, data := pb.GetInfoFromRuleKV(kv)
-	if data == nil {
-		util.Logger().Errorf(nil,
-			"unmarshal service rule file failed, service %s rule %s [%s] event, data is nil",
-			providerId, ruleId, action)
-		return
-	}
-
+	providerId, ruleId, domainProject := backend.GetInfoFromRuleKV(evt.KV)
 	if nf.GetNotifyService().Closed() {
 		util.Logger().Warnf(nil, "caught service %s rule %s [%s] event, but notify service is closed",
 			providerId, ruleId, action)
 		return
 	}
 	util.Logger().Infof("caught service %s rule %s [%s] event", providerId, ruleId, action)
-
-	var rule pb.ServiceRule
-	err := json.Unmarshal(data, &rule)
-	if err != nil {
-		util.Logger().Errorf(err, "unmarshal service %s rule %s file failed",
-			providerId, ruleId)
-		return
-	}
 
 	async.Service().Add(context.Background(),
 		NewRulesChangedAsyncTask(domainProject, providerId, evt.Revision))

@@ -18,8 +18,10 @@ package backend
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"strings"
 )
 
 // event
@@ -83,3 +85,120 @@ var (
 	RuleParser           = &Parser{newRule, jsonUnmarshal}
 	DependencyRuleParser = &Parser{newDependencyRule, jsonUnmarshal}
 )
+
+func KvToResponse(kv *KeyValue) (keys []string) {
+	return strings.Split(util.BytesToStringWithNoCopy(kv.Key), "/")
+}
+
+func GetInfoFromSvcKV(kv *KeyValue) (serviceId, domainProject string) {
+	keys := KvToResponse(kv)
+	l := len(keys)
+	if l < 4 {
+		return
+	}
+	serviceId = keys[l-1]
+	domainProject = fmt.Sprintf("%s/%s", keys[l-3], keys[l-2])
+	return
+}
+
+func GetInfoFromInstKV(kv *KeyValue) (serviceId, instanceId, domainProject string) {
+	keys := KvToResponse(kv)
+	l := len(keys)
+	if l < 4 {
+		return
+	}
+	serviceId = keys[l-2]
+	instanceId = keys[l-1]
+	domainProject = fmt.Sprintf("%s/%s", keys[l-4], keys[l-3])
+	return
+}
+
+func GetInfoFromDomainKV(kv *KeyValue) (domain string) {
+	keys := KvToResponse(kv)
+	l := len(keys)
+	if l < 1 {
+		return
+	}
+	domain = keys[l-1]
+	return
+}
+
+func GetInfoFromProjectKV(kv *KeyValue) (domainProject string) {
+	keys := KvToResponse(kv)
+	l := len(keys)
+	if l < 2 {
+		return
+	}
+	domainProject = fmt.Sprintf("%s/%s", keys[l-2], keys[l-1])
+	return
+}
+
+func GetInfoFromRuleKV(kv *KeyValue) (serviceId, ruleId, domainProject string) {
+	keys := KvToResponse(kv)
+	l := len(keys)
+	if l < 4 {
+		return
+	}
+	serviceId = keys[l-2]
+	ruleId = keys[l-1]
+	domainProject = fmt.Sprintf("%s/%s", keys[l-4], keys[l-3])
+	return
+}
+
+func GetInfoFromTagKV(kv *KeyValue) (serviceId, domainProject string) {
+	keys := KvToResponse(kv)
+	l := len(keys)
+	if l < 3 {
+		return
+	}
+	serviceId = keys[l-1]
+	domainProject = fmt.Sprintf("%s/%s", keys[l-3], keys[l-2])
+	return
+}
+
+func GetInfoFromSvcIndexKV(kv *KeyValue) (key *pb.MicroServiceKey) {
+	keys := KvToResponse(kv)
+	l := len(keys)
+	if l < 6 {
+		return
+	}
+	domainProject := fmt.Sprintf("%s/%s", keys[l-6], keys[l-5])
+	return &pb.MicroServiceKey{
+		Tenant:      domainProject,
+		Environment: keys[l-4],
+		AppId:       keys[l-3],
+		ServiceName: keys[l-2],
+		Version:     keys[l-1],
+	}
+}
+
+func GetInfoFromSchemaSummaryKV(kv *KeyValue) (schemaId string) {
+	keys := KvToResponse(kv)
+	l := len(keys)
+	if l < 1 {
+		return
+	}
+
+	return keys[l-1]
+}
+
+func GetInfoFromSchemaKV(kv *KeyValue) (schemaId string) {
+	keys := KvToResponse(kv)
+	l := len(keys)
+	if l < 1 {
+		return
+	}
+
+	return keys[l-1]
+}
+
+func GetInfoFromDependencyQueueKV(kv *KeyValue) (consumerId, domainProject string) {
+	keys := KvToResponse(kv)
+	l := len(keys)
+	if l < 4 {
+		return
+	}
+	consumerId = keys[l-2]
+	domainProject = fmt.Sprintf("%s/%s", keys[l-4], keys[l-3])
+	return
+}

@@ -25,7 +25,6 @@ import (
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"strconv"
 	"strings"
@@ -42,7 +41,7 @@ func GetLeaseId(ctx context.Context, domainProject string, serviceId string, ins
 	if len(resp.Kvs) <= 0 {
 		return -1, nil
 	}
-	leaseID, _ := strconv.ParseInt(util.BytesToStringWithNoCopy(resp.Kvs[0].Value), 10, 64)
+	leaseID, _ := strconv.ParseInt(resp.Kvs[0].Value.(string), 10, 64)
 	return leaseID, nil
 }
 
@@ -58,12 +57,7 @@ func GetInstance(ctx context.Context, domainProject string, serviceId string, in
 		return nil, nil
 	}
 
-	var instance *pb.MicroServiceInstance
-	err = json.Unmarshal(resp.Kvs[0].Value, &instance)
-	if err != nil {
-		return nil, err
-	}
-	return instance, nil
+	return resp.Kvs[0].Value.(*pb.MicroServiceInstance), nil
 }
 
 func ParseRevision(rev string) (int64, int64) {
@@ -95,7 +89,7 @@ func GetAllInstancesOfServices(ctx context.Context, domainProject string, ids []
 	var (
 		maxRev    int64
 		instCount int64
-		kvs       []*mvccpb.KeyValue
+		kvs       []*backend.KeyValue
 	)
 	for i := 0; i < 2; i++ {
 		maxRev = 0
@@ -142,13 +136,7 @@ func GetAllInstancesOfServices(ctx context.Context, domainProject string, ids []
 	}
 
 	for _, kv := range kvs {
-		instance := &pb.MicroServiceInstance{}
-		err := json.Unmarshal(kv.Value, instance)
-		if err != nil {
-			return nil, "", fmt.Errorf("unmarshal %s faild, %s",
-				util.BytesToStringWithNoCopy(kv.Key), err.Error())
-		}
-		instances = append(instances, instance)
+		instances = append(instances, kv.Value.(*pb.MicroServiceInstance))
 	}
 
 	rev = FormatRevision(maxRev, instCount)
@@ -165,14 +153,8 @@ func GetAllInstancesOfOneService(ctx context.Context, domainProject string, serv
 	}
 
 	instances := make([]*pb.MicroServiceInstance, 0, len(resp.Kvs))
-	for _, kvs := range resp.Kvs {
-		instance := &pb.MicroServiceInstance{}
-		err := json.Unmarshal(kvs.Value, instance)
-		if err != nil {
-			util.Logger().Errorf(err, "Unmarshal instance of service %s failed.", serviceId)
-			return nil, err
-		}
-		instances = append(instances, instance)
+	for _, kv := range resp.Kvs {
+		instances = append(instances, kv.Value.(*pb.MicroServiceInstance))
 	}
 	return instances, nil
 }
@@ -251,7 +233,7 @@ func DeleteServiceAllInstances(ctx context.Context, serviceId string) error {
 		return nil
 	}
 	for _, v := range resp.Kvs {
-		leaseID, _ := strconv.ParseInt(util.BytesToStringWithNoCopy(v.Value), 10, 64)
+		leaseID, _ := strconv.ParseInt(v.Value.(string), 10, 64)
 		backend.Registry().LeaseRevoke(ctx, leaseID)
 	}
 	return nil
@@ -300,13 +282,6 @@ func QueryAllProvidersInstances(ctx context.Context, selfServiceId string) (resu
 
 		util.Logger().Debugf("query provider service %s instances[%d] with revision %d.", providerId, len(kvs), rev)
 		for _, kv := range kvs {
-			instance := &pb.MicroServiceInstance{}
-			err := json.Unmarshal(kv.Value, instance)
-			if err != nil {
-				util.Logger().Errorf(err, "unmarshal instance of service %s with revision %d failed.",
-					providerId, rev)
-				return
-			}
 			results = append(results, &pb.WatchInstanceResponse{
 				Response: pb.CreateResponse(pb.Response_SUCCESS, "List instance successfully."),
 				Action:   string(pb.EVT_INIT),
@@ -316,14 +291,14 @@ func QueryAllProvidersInstances(ctx context.Context, selfServiceId string) (resu
 					ServiceName: service.ServiceName,
 					Version:     service.Version,
 				},
-				Instance: instance,
+				Instance: kv.Value.(*pb.MicroServiceInstance),
 			})
 		}
 	}
 	return
 }
 
-func queryServiceInstancesKvs(ctx context.Context, serviceId string, rev int64) ([]*mvccpb.KeyValue, error) {
+func queryServiceInstancesKvs(ctx context.Context, serviceId string, rev int64) ([]*backend.KeyValue, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	key := apt.GenerateInstanceKey(domainProject, serviceId, "")
 	resp, err := backend.Store().Instance().Search(ctx,

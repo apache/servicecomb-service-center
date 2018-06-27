@@ -47,19 +47,11 @@ func (s *KvStore) Initialize() {
 	s.goroutine = util.NewGo(context.Background())
 }
 
-func (s *KvStore) dispatchEvent(t StoreType, evt KvEvent) {
-	s.indexers[t].OnCacheEvent(evt)
-	EventProxy(t).OnEvent(evt)
-}
-
-func (s *KvStore) newIndexer(t StoreType, cfg *Config) {
-	var indexer *Indexer
-	switch {
-	case core.ServerInfo.Config.EnableCache && cfg.InitSize > 0:
-		indexer = NewCacheIndexer(cfg.Prefix, NewKvCacher(t.String(), cfg))
-	default:
-		indexer = NewCacheIndexer(cfg.Prefix, NullCacher)
+func (s *KvStore) setupIndexer(t StoreType, cfg *Config) {
+	if e, ok := EventProxies[t]; ok {
+		cfg.WithEventFunc(e.OnEvent)
 	}
+	var indexer = NewCacheIndexer(t.String(), cfg)
 	s.indexers[t] = indexer
 	indexer.Run()
 }
@@ -78,17 +70,7 @@ func (s *KvStore) store(ctx context.Context) {
 	}
 
 	for t := StoreType(0); t != typeEnd; t++ {
-		cfg := TypeConfig[t]
-		if cfg.InitSize == 0 {
-			util.Logger().Infof("service center will not cache '%s'", t)
-			continue
-		}
-		s.indexers[t].Stop() // release the exist indexer
-
-		s.newIndexer(t, cfg.WithEventFunc(func(evt KvEvent) { s.dispatchEvent(t, evt) }))
-	}
-	for t := StoreType(0); t != typeEnd; t++ {
-		s.indexers[t].Run()
+		s.setupIndexer(t, TypeConfig[t])
 	}
 }
 
@@ -227,8 +209,7 @@ func (s *KvStore) Install(e Entity) (id StoreType, err error) {
 
 	util.Logger().Infof("install new store entity %d:%s->%s", id, e.Name(), e.Config().Prefix)
 
-	s.newIndexer(id, e.Config())
-	s.indexers[id].Run()
+	s.setupIndexer(id, e.Config())
 	return
 }
 

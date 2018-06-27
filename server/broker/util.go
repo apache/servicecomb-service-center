@@ -187,7 +187,7 @@ func GetBrokerParticipantUtils(ctx context.Context, tenant string, appId string,
 	}
 
 	participant := &Participant{}
-	err = json.Unmarshal(participants.Kvs[0].Value, participant)
+	err = json.Unmarshal(participants.Kvs[0].Value.([]byte), participant)
 	if err != nil {
 		return nil, err
 	}
@@ -259,7 +259,7 @@ func GetParticipant(ctx context.Context, domain string, appId string,
 		return nil, nil
 	}
 	participant := &Participant{}
-	err = json.Unmarshal(participants.Kvs[0].Value, participant)
+	err = json.Unmarshal(participants.Kvs[0].Value.([]byte), participant)
 	if err != nil {
 		return nil, err
 	}
@@ -278,7 +278,7 @@ func GetVersion(ctx context.Context, domain string, number string,
 		return nil, nil
 	}
 	version := &Version{}
-	err = json.Unmarshal(versions.Kvs[0].Value, version)
+	err = json.Unmarshal(versions.Kvs[0].Value.([]byte), version)
 	if err != nil {
 		return nil, err
 	}
@@ -296,7 +296,7 @@ func GetPact(ctx context.Context, domain string, consumerParticipantId int32, pr
 		return nil, nil
 	}
 	pact := &Pact{}
-	err = json.Unmarshal(versions.Kvs[0].Value, pact)
+	err = json.Unmarshal(versions.Kvs[0].Value.([]byte), pact)
 	if err != nil {
 		return nil, err
 	}
@@ -315,7 +315,7 @@ func GetPactVersion(ctx context.Context, domain string, versionId int32,
 		return nil, nil
 	}
 	pactVersion := &PactVersion{}
-	err = json.Unmarshal(versions.Kvs[0].Value, pactVersion)
+	err = json.Unmarshal(versions.Kvs[0].Value.([]byte), pactVersion)
 	if err != nil {
 		return nil, err
 	}
@@ -331,7 +331,7 @@ func GetData(ctx context.Context, key string) (int, error) {
 	if len(values.Kvs) == 0 {
 		return -1, nil
 	}
-	id, err := strconv.Atoi(string(values.Kvs[0].Value))
+	id, err := strconv.Atoi(string(values.Kvs[0].Value.([]byte)))
 	if err != nil {
 		return -1, err
 	}
@@ -525,7 +525,7 @@ func GetLastestVersionNumberForParticipant(ctx context.Context,
 	order := int32(math.MinInt32)
 	for i := 0; i < len(versions.Kvs); i++ {
 		version := &Version{}
-		err = json.Unmarshal(versions.Kvs[i].Value, &version)
+		err = json.Unmarshal(versions.Kvs[i].Value.([]byte), &version)
 		if err != nil {
 			return -1
 		}
@@ -622,7 +622,7 @@ func RetrieveProviderConsumerPact(ctx context.Context,
 	pactIds := make(map[int32]int32)
 	for i := 0; i < len(pactVersions.Kvs); i++ {
 		pactVersion := &PactVersion{}
-		err = json.Unmarshal(pactVersions.Kvs[i].Value, pactVersion)
+		err = json.Unmarshal(pactVersions.Kvs[i].Value.([]byte), pactVersion)
 		if err != nil {
 			return nil, -1, err
 		}
@@ -656,7 +656,7 @@ func RetrieveProviderConsumerPact(ctx context.Context,
 	}
 	for i := 0; i < len(pacts.Kvs); i++ {
 		pactObj := &Pact{}
-		err = json.Unmarshal(pacts.Kvs[i].Value, pactObj)
+		err = json.Unmarshal(pacts.Kvs[i].Value.([]byte), pactObj)
 		if err != nil {
 			return nil, -1, err
 		}

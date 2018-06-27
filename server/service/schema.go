@@ -75,7 +75,7 @@ func (s *MicroServiceService) GetSchemaInfo(ctx context.Context, in *pb.GetSchem
 
 	return &pb.GetSchemaResponse{
 		Response:      pb.CreateResponse(pb.Response_SUCCESS, "Get schema info successfully."),
-		Schema:        util.BytesToStringWithNoCopy(resp.Kvs[0].Value),
+		Schema:        util.BytesToStringWithNoCopy(resp.Kvs[0].Value.([]byte)),
 		SchemaSummary: schemaSummary,
 	}, nil
 }
@@ -123,7 +123,7 @@ func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAl
 		}, errDo
 	}
 
-	respWithSchema := &registry.PluginResponse{}
+	respWithSchema := &backend.Response{}
 	if in.WithSchema {
 		key := apt.GenerateServiceSchemaKey(domainProject, in.ServiceId, "")
 		opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(key), registry.WithPrefix())
@@ -141,16 +141,16 @@ func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAl
 		tempSchema := &pb.Schema{}
 		tempSchema.SchemaId = schemaId
 		for _, summarySchema := range resp.Kvs {
-			schemaIdOfSummary, summaryData := pb.GetInfoFromSchemaSummaryKV(summarySchema)
+			schemaIdOfSummary := backend.GetInfoFromSchemaSummaryKV(summarySchema)
 			if schemaId == schemaIdOfSummary {
-				tempSchema.Summary = util.BytesToStringWithNoCopy(summaryData)
+				tempSchema.Summary = summarySchema.Value.(string)
 			}
 		}
 
 		for _, contentSchema := range respWithSchema.Kvs {
-			schemaIdOfSchema, schemaData := pb.GetInfoFromSchemaKV(contentSchema)
+			schemaIdOfSchema := backend.GetInfoFromSchemaKV(contentSchema)
 			if schemaId == schemaIdOfSchema {
-				tempSchema.Schema = util.BytesToStringWithNoCopy(schemaData)
+				tempSchema.Schema = util.BytesToStringWithNoCopy(contentSchema.Value.([]byte))
 			}
 		}
 		schemas = append(schemas, tempSchema)
@@ -467,7 +467,7 @@ func GetSchemasFromDatabase(ctx context.Context, domainProject string, serviceId
 		key := util.BytesToStringWithNoCopy(kv.Key)
 		tmp := strings.Split(key, "/")
 		schemaId := tmp[len(tmp)-1]
-		schema := util.BytesToStringWithNoCopy(kv.Value)
+		schema := util.BytesToStringWithNoCopy(kv.Value.([]byte))
 		schemaStruct := &pb.Schema{
 			SchemaId: schemaId,
 			Schema:   schema,
@@ -672,5 +672,5 @@ func getSchemaSummary(ctx context.Context, domainProject string, serviceId strin
 	if len(resp.Kvs) == 0 {
 		return "", nil
 	}
-	return util.BytesToStringWithNoCopy(resp.Kvs[0].Value), nil
+	return resp.Kvs[0].Value.(string), nil
 }

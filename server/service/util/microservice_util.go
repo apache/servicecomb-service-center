@@ -25,7 +25,6 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 )
 
@@ -43,12 +42,7 @@ func GetServiceWithRev(ctx context.Context, domain string, id string, rev int64)
 	if len(serviceResp.Kvs) == 0 {
 		return nil, nil
 	}
-	service := &pb.MicroService{}
-	err = json.Unmarshal(serviceResp.Kvs[0].Value, &service)
-	if err != nil {
-		return nil, err
-	}
-	return service, nil
+	return serviceResp.Kvs[0].Value.(*pb.MicroService), nil
 }
 
 func GetServiceInCache(ctx context.Context, domain string, id string) (*pb.MicroService, error) {
@@ -65,15 +59,10 @@ func GetService(ctx context.Context, domainProject string, serviceId string) (*p
 	if len(serviceResp.Kvs) == 0 {
 		return nil, nil
 	}
-	service := &pb.MicroService{}
-	err = json.Unmarshal(serviceResp.Kvs[0].Value, &service)
-	if err != nil {
-		return nil, err
-	}
-	return service, nil
+	return serviceResp.Kvs[0].Value.(*pb.MicroService), nil
 }
 
-func GetServicesRawData(ctx context.Context, domainProject string) ([]*mvccpb.KeyValue, error) {
+func GetServicesRawData(ctx context.Context, domainProject string) ([]*backend.KeyValue, error) {
 	key := apt.GenerateServiceKey(domainProject, "")
 	opts := append(FromContext(ctx),
 		registry.WithStrKey(key),
@@ -91,13 +80,8 @@ func GetServicesByDomain(ctx context.Context, domainProject string) ([]*pb.Micro
 		return nil, err
 	}
 	services := []*pb.MicroService{}
-	for _, kvs := range kvs {
-		service := &pb.MicroService{}
-		err := json.Unmarshal(kvs.Value, service)
-		if err != nil {
-			return nil, err
-		}
-		services = append(services, service)
+	for _, kv := range kvs {
+		services = append(services, kv.Value.(*pb.MicroService))
 	}
 	return services, nil
 }
@@ -125,7 +109,7 @@ func searchServiceId(ctx context.Context, key *pb.MicroServiceKey) (string, erro
 	if len(resp.Kvs) == 0 {
 		return "", nil
 	}
-	return util.BytesToStringWithNoCopy(resp.Kvs[0].Value), nil
+	return resp.Kvs[0].Value.(string), nil
 }
 
 func searchServiceIdFromAlias(ctx context.Context, key *pb.MicroServiceKey) (string, error) {
@@ -137,15 +121,15 @@ func searchServiceIdFromAlias(ctx context.Context, key *pb.MicroServiceKey) (str
 	if len(resp.Kvs) == 0 {
 		return "", nil
 	}
-	return util.BytesToStringWithNoCopy(resp.Kvs[0].Value), nil
+	return resp.Kvs[0].Value.(string), nil
 }
 
-func GetServiceAllVersions(ctx context.Context, key *pb.MicroServiceKey, alias bool) (*registry.PluginResponse, error) {
+func GetServiceAllVersions(ctx context.Context, key *pb.MicroServiceKey, alias bool) (*backend.Response, error) {
 	copy := *key
 	copy.Version = ""
 	var (
 		prefix  string
-		indexer *backend.Indexer
+		indexer backend.Indexer
 	)
 	if alias {
 		prefix = apt.GenerateServiceAliasKey(&copy)

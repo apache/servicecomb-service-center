@@ -21,12 +21,11 @@ import (
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"strings"
 )
 
-func GetAllDomainRawData(ctx context.Context) ([]*mvccpb.KeyValue, error) {
+func GetAllDomainRawData(ctx context.Context) ([]*backend.KeyValue, error) {
 	opts := append(FromContext(ctx),
 		registry.WithStrKey(apt.GenerateDomainKey("")),
 		registry.WithPrefix())

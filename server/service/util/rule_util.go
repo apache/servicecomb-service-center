@@ -17,7 +17,6 @@
 package util
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
@@ -72,13 +71,8 @@ func GetRulesUtil(ctx context.Context, domainProject string, serviceId string) (
 	}
 
 	rules := []*pb.ServiceRule{}
-	for _, kvs := range resp.Kvs {
-		rule := &pb.ServiceRule{}
-		err := json.Unmarshal(kvs.Value, rule)
-		if err != nil {
-			return nil, err
-		}
-		rules = append(rules, rule)
+	for _, kv := range resp.Kvs {
+		rules = append(rules, kv.Value.(*pb.ServiceRule))
 	}
 	return rules, nil
 }
@@ -107,12 +101,7 @@ func GetServiceRuleType(ctx context.Context, domainProject string, serviceId str
 	if len(resp.Kvs) == 0 {
 		return "", 0, nil
 	}
-	rule := &pb.ServiceRule{}
-	err = json.Unmarshal(resp.Kvs[0].Value, rule)
-	if err != nil {
-		util.Logger().Errorf(err, "Unmarshal rule data failed.%s", err.Error())
-	}
-	return rule.RuleType, len(resp.Kvs), nil
+	return resp.Kvs[0].Value.(*pb.ServiceRule).RuleType, len(resp.Kvs), nil
 }
 
 func GetOneRule(ctx context.Context, domainProject, serviceId, ruleId string) (*pb.ServiceRule, error) {
@@ -123,17 +112,11 @@ func GetOneRule(ctx context.Context, domainProject, serviceId, ruleId string) (*
 		util.Logger().Errorf(nil, "Get rule for service failed for %s.", err.Error())
 		return nil, err
 	}
-	rule := &pb.ServiceRule{}
 	if len(resp.Kvs) == 0 {
 		util.Logger().Errorf(nil, "Get rule failed, ruleId is %s.", ruleId)
 		return nil, nil
 	}
-	err = json.Unmarshal(resp.Kvs[0].Value, rule)
-	if err != nil {
-		util.Logger().Errorf(nil, "unmarshal resp failed for %s.", err.Error())
-		return nil, err
-	}
-	return rule, nil
+	return resp.Kvs[0].Value.(*pb.ServiceRule), nil
 }
 
 func AllowAcrossDimension(ctx context.Context, providerService *pb.MicroService, consumerService *pb.MicroService) error {

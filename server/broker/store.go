@@ -33,13 +33,13 @@ var (
 var brokerKvStore = &BKvStore{}
 
 func init() {
-	PARTICIPANT = backend.Store().MustInstall(backend.NewEntity("PARTICIPANT", GetBrokerParticipantKey("")))
-	VERSION = backend.Store().MustInstall(backend.NewEntity("VERSION", GetBrokerVersionKey("")))
-	PACT = backend.Store().MustInstall(backend.NewEntity("PACT", GetBrokerPactKey("")))
-	PACT_VERSION = backend.Store().MustInstall(backend.NewEntity("PACT_VERSION", GetBrokerPactVersionKey("")))
-	PACT_TAG = backend.Store().MustInstall(backend.NewEntity("PACT_TAG", GetBrokerTagKey("")))
-	VERIFICATION = backend.Store().MustInstall(backend.NewEntity("VERIFICATION", GetBrokerVerificationKey("")))
-	PACT_LATEST = backend.Store().MustInstall(backend.NewEntity("PACT_LATEST", GetBrokerLatestKey("")))
+	PARTICIPANT = backend.Store().MustInstall(backend.NewEntity("PARTICIPANT", backend.DefaultConfig().WithPrefix(GetBrokerParticipantKey(""))))
+	VERSION = backend.Store().MustInstall(backend.NewEntity("VERSION", backend.DefaultConfig().WithPrefix(GetBrokerVersionKey(""))))
+	PACT = backend.Store().MustInstall(backend.NewEntity("PACT", backend.DefaultConfig().WithPrefix(GetBrokerPactKey(""))))
+	PACT_VERSION = backend.Store().MustInstall(backend.NewEntity("PACT_VERSION", backend.DefaultConfig().WithPrefix(GetBrokerPactVersionKey(""))))
+	PACT_TAG = backend.Store().MustInstall(backend.NewEntity("PACT_TAG", backend.DefaultConfig().WithPrefix(GetBrokerTagKey(""))))
+	VERIFICATION = backend.Store().MustInstall(backend.NewEntity("VERIFICATION", backend.DefaultConfig().WithPrefix(GetBrokerVerificationKey(""))))
+	PACT_LATEST = backend.Store().MustInstall(backend.NewEntity("PACT_LATEST", backend.DefaultConfig().WithPrefix(GetBrokerLatestKey(""))))
 
 }
 

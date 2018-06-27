@@ -197,7 +197,7 @@ func (c *KvCacher) handleWatcher(watcher *Watcher) error {
 			return errors.New("handle watcher error")
 		}
 
-		evts := make([]KvEvent, len(resp.Kvs))
+		evts := make([]KvEvent, 0, len(resp.Kvs))
 		for _, kv := range resp.Kvs {
 			evt := KvEvent{Prefix: c.lw.Prefix, Revision: kv.ModRevision}
 			switch {
@@ -486,17 +486,12 @@ func (c *KvCacher) onKvEvents(evts []KvEvent) {
 	}
 }
 
-func (c *KvCacher) doParse(src *mvccpb.KeyValue) *KeyValue {
-	v, err := c.Cfg.Parser.Unmarshal(src.Value)
-	if err != nil {
-		util.Logger().Errorf(err, "cacher doParse failed")
+func (c *KvCacher) doParse(src *mvccpb.KeyValue) (kv *KeyValue) {
+	kv = new(KeyValue)
+	if err := kv.From(c.Cfg.Parser, src); err != nil {
+		util.Logger().Errorf(err, "parse %s value failed", util.BytesToStringWithNoCopy(src.Key))
 	}
-	return &KeyValue{
-		Key:            src.Key,
-		Value:          v,
-		CreateRevision: src.CreateRevision,
-		ModRevision:    src.ModRevision,
-	}
+	return kv
 }
 
 func (c *KvCacher) Cache() Cache {

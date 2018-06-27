@@ -21,16 +21,29 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"strings"
 	"sync"
 	"time"
 )
 
+type Response struct {
+	Kvs   []*KeyValue
+	Count int64
+}
+
+func (pr *Response) MaxModRevision() (max int64) {
+	for _, kv := range pr.Kvs {
+		if max < kv.ModRevision {
+			max = kv.ModRevision
+		}
+	}
+	return
+}
+
 type Indexer struct {
 	BuildTimeout time.Duration
-	Root         string
+	Cfg          *Config
 
 	cacher           Cacher
 	goroutine        *util.GoRoutine
@@ -41,7 +54,31 @@ type Indexer struct {
 	isClose          bool
 }
 
-func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (*registry.PluginResponse, error) {
+func (i *Indexer) searchWithNoCache(ctx context.Context, opts ...registry.PluginOpOption) (r *Response, err error) {
+	resp, err := Registry().Do(ctx, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	r = new(Response)
+	r.Count = resp.Count
+	if len(resp.Kvs) == 0 {
+		return
+	}
+
+	kvs := make([]*KeyValue, 0, len(resp.Kvs))
+	for _, src := range resp.Kvs {
+		kv := new(KeyValue)
+		if err = kv.From(i.Cfg.Parser, src); err != nil {
+			return nil, err
+		}
+		kvs = append(kvs, kv)
+	}
+	r.Kvs = kvs
+	return
+}
+
+func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (*Response, error) {
 	op := registry.OpGet(opts...)
 
 	key := util.BytesToStringWithNoCopy(op.Key)
@@ -52,7 +89,7 @@ func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (
 		(op.Offset >= 0 && op.Limit > 0) {
 		util.Logger().Debugf("search %s match special options, request etcd server, opts: %s",
 			i.cacher.Name(), op)
-		return Registry().Do(ctx, opts...)
+		return i.searchWithNoCache(ctx, opts...)
 	}
 
 	if op.Prefix {
@@ -67,16 +104,10 @@ func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (
 
 		util.Logger().Debugf("can not find any key from %s cache with prefix, request etcd server, key: %s",
 			i.cacher.Name(), key)
-		return Registry().Do(ctx, opts...)
+		return i.searchWithNoCache(ctx, opts...)
 	}
 
-	resp := &registry.PluginResponse{
-		Action:    op.Action,
-		Count:     0,
-		Revision:  i.Cache().Revision(),
-		Succeeded: true,
-	}
-
+	resp := new(Response)
 	if op.CountOnly {
 		if i.Cache().Have(key) {
 			resp.Count = 1
@@ -88,7 +119,7 @@ func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (
 
 		util.Logger().Debugf("%s cache does not store this key, request etcd server, key: %s",
 			i.cacher.Name(), key)
-		return Registry().Do(ctx, opts...)
+		return i.searchWithNoCache(ctx, opts...)
 	}
 
 	cacheData := i.Cache().Data(key)
@@ -99,11 +130,11 @@ func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (
 
 		util.Logger().Debugf("do not match any key in %s cache store, request etcd server, key: %s",
 			i.cacher.Name(), key)
-		return Registry().Do(ctx, opts...)
+		return i.searchWithNoCache(ctx, opts...)
 	}
 
 	resp.Count = 1
-	resp.Kvs = []*mvccpb.KeyValue{cacheData.(*mvccpb.KeyValue)}
+	resp.Kvs = []*KeyValue{cacheData.(*KeyValue)}
 	return resp, nil
 }
 
@@ -111,14 +142,8 @@ func (i *Indexer) Cache() Cache {
 	return i.cacher.Cache()
 }
 
-func (i *Indexer) searchPrefixKeyWithCache(ctx context.Context, op registry.PluginOp) (*registry.PluginResponse, error) {
-	resp := &registry.PluginResponse{
-		Action:    op.Action,
-		Kvs:       []*mvccpb.KeyValue{},
-		Count:     0,
-		Revision:  i.Cache().Revision(),
-		Succeeded: true,
-	}
+func (i *Indexer) searchPrefixKeyWithCache(ctx context.Context, op registry.PluginOp) (*Response, error) {
+	resp := new(Response)
 
 	prefix := util.BytesToStringWithNoCopy(op.Key)
 
@@ -134,7 +159,7 @@ func (i *Indexer) searchPrefixKeyWithCache(ctx context.Context, op registry.Plug
 	i.getPrefixKey(&keys, prefix)
 	i.prefixLock.RUnlock()
 
-	kvs := make([]*mvccpb.KeyValue, resp.Count)
+	kvs := make([]*KeyValue, resp.Count)
 	idx := 0
 	for _, key := range keys {
 		c := i.Cache().Data(key) // TODO too slow when big data is requested
@@ -143,7 +168,7 @@ func (i *Indexer) searchPrefixKeyWithCache(ctx context.Context, op registry.Plug
 			util.Logger().Warnf(nil, "unexpected nil cache, maybe it is removed, key is %s", key)
 			continue
 		}
-		kvs[idx] = c.(*mvccpb.KeyValue)
+		kvs[idx] = c.(*KeyValue)
 		idx++
 	}
 	util.LogNilOrWarnf(t, "too long to copy data[%d] from cache[%d] with prefix %s", idx, len(i.prefixIndex), prefix)
@@ -164,13 +189,14 @@ func (i *Indexer) OnCacheEvent(evt KvEvent) {
 	}
 	defer util.RecoverAndReport()
 
-	ctx, _ := context.WithTimeout(context.Background(), i.BuildTimeout)
+	t := time.NewTimer(i.BuildTimeout)
 	select {
-	case <-ctx.Done():
+	case <-t.C:
 		key := util.BytesToStringWithNoCopy(evt.KV.Key)
-		util.Logger().Warnf(nil, "add event to build index queue timed out(%s), key is %s [%s] event",
+		util.Logger().Errorf(nil, "add event to build index queue timed out(%s), key is %s [%s] event",
 			i.BuildTimeout, key, evt.Type)
 	case i.prefixBuildQueue <- evt:
+		t.Stop()
 	}
 }
 
@@ -178,17 +204,11 @@ func (i *Indexer) buildIndex() {
 	i.goroutine.Do(func(ctx context.Context) {
 		util.SafeCloseChan(i.ready)
 		lastCompactTime := time.Now()
-		ticker := time.NewTicker(DEFAULT_METRICS_INTERVAL)
 		max := 0
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case <-ticker.C:
-				i.prefixLock.RLock()
-				// report metrics
-				ReportCacheMetrics(i.cacher.Name(), "index", i.prefixIndex)
-				i.prefixLock.RUnlock()
 			case evt, ok := <-i.prefixBuildQueue:
 				if !ok {
 					return
@@ -225,6 +245,21 @@ func (i *Indexer) buildIndex() {
 			}
 		}
 		util.Logger().Debugf("the goroutine building index %s is stopped", i.cacher.Name())
+	})
+
+	i.goroutine.Do(func(ctx context.Context) {
+		ticker := time.NewTicker(DEFAULT_METRICS_INTERVAL)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				i.prefixLock.RLock()
+				// report metrics
+				ReportCacheMetrics(i.cacher.Name(), "index", i.prefixIndex)
+				i.prefixLock.RUnlock()
+			}
+		}
 	})
 	<-i.ready
 }
@@ -271,7 +306,7 @@ func (i *Indexer) getPrefixKey(arr *[]string, prefix string) (count int) {
 }
 
 func (i *Indexer) addPrefixKey(prefix, key string) {
-	if i.Root == key {
+	if i.Cfg.Prefix == key {
 		return
 	}
 
@@ -346,15 +381,32 @@ func (i *Indexer) Ready() <-chan struct{} {
 	return i.ready
 }
 
-func NewCacheIndexer(root string, cr Cacher) *Indexer {
-	return &Indexer{
+func NewCacheIndexer(name string, cfg *Config) (indexer *Indexer) {
+	indexer = &Indexer{
 		BuildTimeout:     DEFAULT_ADD_QUEUE_TIMEOUT,
-		Root:             root,
-		cacher:           cr,
+		Cfg:              cfg,
 		prefixIndex:      make(map[string]map[string]struct{}, DEFAULT_CACHE_INIT_SIZE),
 		prefixBuildQueue: make(chan KvEvent, DEFAULT_MAX_EVENT_COUNT),
 		goroutine:        util.NewGo(context.Background()),
 		ready:            make(chan struct{}),
 		isClose:          true,
 	}
+
+	switch {
+	case core.ServerInfo.Config.EnableCache && cfg.InitSize > 0:
+		old := cfg.OnEvent
+		if old != nil {
+			cfg.WithEventFunc(func(evt KvEvent) {
+				indexer.OnCacheEvent(evt)
+				old(evt)
+			})
+		} else {
+			cfg.WithEventFunc(indexer.OnCacheEvent)
+		}
+		indexer.cacher = NewKvCacher(name, cfg)
+	default:
+		util.Logger().Infof("service center will not cache '%s'", name)
+		indexer.cacher = NullCacher
+	}
+	return
 }

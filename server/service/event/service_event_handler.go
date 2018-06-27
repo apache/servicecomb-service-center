@@ -21,7 +21,6 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"strings"
 )
@@ -39,18 +38,7 @@ func (h *ServiceEventHandler) OnEvent(evt backend.KvEvent) {
 		return
 	}
 
-	kv, ok := evt.KV.(*mvccpb.KeyValue)
-	if !ok {
-		return
-	}
-	serviceId, domainProject, data := pb.GetInfoFromSvcKV(kv)
-	if data == nil {
-		util.Logger().Errorf(nil,
-			"unmarshal service file failed, service %s [%s] event, data is nil",
-			serviceId, action)
-		return
-	}
-
+	_, domainProject := backend.GetInfoFromSvcKV(evt.KV)
 	newDomain := domainProject[:strings.Index(domainProject, "/")]
 	newProject := domainProject[strings.Index(domainProject, "/")+1:]
 	err := serviceUtil.NewDomainProject(context.Background(), newDomain, newProject)

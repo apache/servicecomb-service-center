@@ -151,7 +151,7 @@ func (*BrokerService) RetrieveProviderPacts(ctx context.Context,
 	versionObjects := make(map[int32]Version)
 	for i := 0; i < len(versions.Kvs); i++ {
 		version := &Version{}
-		err = json.Unmarshal(versions.Kvs[i].Value, version)
+		err = json.Unmarshal(versions.Kvs[i].Value.([]byte), version)
 		if err != nil {
 			return nil, err
 		}
@@ -174,7 +174,7 @@ func (*BrokerService) RetrieveProviderPacts(ctx context.Context,
 	participantToVersionObj := make(map[int32]Version)
 	for i := 0; i < len(pactVersions.Kvs); i++ {
 		pactVersion := &PactVersion{}
-		err = json.Unmarshal(pactVersions.Kvs[i].Value, pactVersion)
+		err = json.Unmarshal(pactVersions.Kvs[i].Value.([]byte), pactVersion)
 		if err != nil {
 			return nil, err
 		}
@@ -206,7 +206,7 @@ func (*BrokerService) RetrieveProviderPacts(ctx context.Context,
 	consumerInfoArr := make([]*ConsumerInfo, 0)
 	for i := 0; i < len(participants.Kvs); i++ {
 		participant := &Participant{}
-		err = json.Unmarshal(participants.Kvs[i].Value, participant)
+		err = json.Unmarshal(participants.Kvs[i].Value.([]byte), participant)
 		if err != nil {
 			return nil, err
 		}
@@ -304,7 +304,7 @@ func (*BrokerService) GetAllProviderPacts(ctx context.Context,
 	versionObjects := make(map[int32]Version)
 	for i := 0; i < len(versions.Kvs); i++ {
 		version := &Version{}
-		err = json.Unmarshal(versions.Kvs[i].Value, version)
+		err = json.Unmarshal(versions.Kvs[i].Value.([]byte), version)
 		if err != nil {
 			return nil, err
 		}
@@ -327,7 +327,7 @@ func (*BrokerService) GetAllProviderPacts(ctx context.Context,
 	participantToVersionObj := make(map[int32]Version)
 	for i := 0; i < len(pactVersions.Kvs); i++ {
 		pactVersion := &PactVersion{}
-		err = json.Unmarshal(pactVersions.Kvs[i].Value, pactVersion)
+		err = json.Unmarshal(pactVersions.Kvs[i].Value.([]byte), pactVersion)
 		if err != nil {
 			return nil, err
 		}
@@ -359,7 +359,7 @@ func (*BrokerService) GetAllProviderPacts(ctx context.Context,
 	consumerInfoArr := make([]*ConsumerInfo, 0)
 	for i := 0; i < len(participants.Kvs); i++ {
 		participant := &Participant{}
-		err = json.Unmarshal(participants.Kvs[i].Value, participant)
+		err = json.Unmarshal(participants.Kvs[i].Value.([]byte), participant)
 		if err != nil {
 			return nil, err
 		}
@@ -466,7 +466,7 @@ func (*BrokerService) RetrieveVerificationResults(ctx context.Context, in *Retri
 	verificationDetailsArr := make([]*VerificationDetail, 0)
 	for j := 0; j < len(pactVersions.Kvs); j++ {
 		pactVersion := &PactVersion{}
-		err = json.Unmarshal(pactVersions.Kvs[j].Value, &pactVersion)
+		err = json.Unmarshal(pactVersions.Kvs[j].Value.([]byte), &pactVersion)
 		if err != nil {
 			PactLogger.Errorf(nil, "verification result retrieve request failed, pact version cannot be searched.")
 			return &RetrieveVerificationResponse{
@@ -488,7 +488,7 @@ func (*BrokerService) RetrieveVerificationResults(ctx context.Context, in *Retri
 		var lastVerificationResult *Verification
 		for i := 0; i < len(verifications.Kvs); i++ {
 			verification := &Verification{}
-			err = json.Unmarshal(verifications.Kvs[i].Value, &verification)
+			err = json.Unmarshal(verifications.Kvs[i].Value.([]byte), &verification)
 			if err != nil {
 				PactLogger.Errorf(nil, "verification result retrieve request failed, verification result unmarshall error.")
 				return &RetrieveVerificationResponse{
@@ -525,7 +525,7 @@ func (*BrokerService) RetrieveVerificationResults(ctx context.Context, in *Retri
 		var providerParticipant *Participant
 		for i := 0; i < len(participants.Kvs); i++ {
 			participant := &Participant{}
-			err = json.Unmarshal(participants.Kvs[i].Value, &participant)
+			err = json.Unmarshal(participants.Kvs[i].Value.([]byte), &participant)
 			if err != nil {
 				PactLogger.Errorf(nil, "verification result retrieve request failed, verification result unmarshall error.")
 				return &RetrieveVerificationResponse{
@@ -635,7 +635,7 @@ func (*BrokerService) PublishVerificationResults(ctx context.Context, in *Publis
 	pactExists := false
 	for i := 0; i < len(pacts.Kvs); i++ {
 		pact := &Pact{}
-		err = json.Unmarshal(pacts.Kvs[i].Value, &pact)
+		err = json.Unmarshal(pacts.Kvs[i].Value.([]byte), &pact)
 		if err != nil {
 			PactLogger.Errorf(nil, "verification result publish request failed, pact cannot be searched.")
 			return &PublishVerificationResponse{
@@ -675,7 +675,7 @@ func (*BrokerService) PublishVerificationResults(ctx context.Context, in *Publis
 	if len(verifications.Kvs) != 0 {
 		for i := 0; i < len(verifications.Kvs); i++ {
 			verification := &Verification{}
-			err = json.Unmarshal(verifications.Kvs[i].Value, &verification)
+			err = json.Unmarshal(verifications.Kvs[i].Value.([]byte), &verification)
 			if err != nil {
 				PactLogger.Errorf(nil, "verification result publish request failed, verification result unmarshall error.")
 				return &PublishVerificationResponse{

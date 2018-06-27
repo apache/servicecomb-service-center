@@ -26,7 +26,6 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/apache/incubator-servicecomb-service-center/server/mux"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"time"
 )
@@ -90,11 +89,11 @@ func (h *DependencyEventHandler) loop() {
 
 type DependencyEventHandlerResource struct {
 	dep           *pb.ConsumerDependency
-	kv            *mvccpb.KeyValue
+	kv            *backend.KeyValue
 	domainProject string
 }
 
-func NewDependencyEventHandlerResource(dep *pb.ConsumerDependency, kv *mvccpb.KeyValue, domainProject string) *DependencyEventHandlerResource {
+func NewDependencyEventHandlerResource(dep *pb.ConsumerDependency, kv *backend.KeyValue, domainProject string) *DependencyEventHandlerResource {
 	return &DependencyEventHandlerResource{
 		dep,
 		kv,
@@ -132,7 +131,8 @@ func (h *DependencyEventHandler) Handle() error {
 
 	for _, kv := range resp.Kvs {
 		r := &pb.ConsumerDependency{}
-		consumerId, domainProject, data := pb.GetInfoFromDependencyQueueKV(kv)
+		data := kv.Value.([]byte)
+		consumerId, domainProject := backend.GetInfoFromDependencyQueueKV(kv)
 
 		err := json.Unmarshal(data, r)
 		if err != nil {
@@ -188,7 +188,7 @@ func (h *DependencyEventHandler) dependencyRuleHandle(res interface{}) error {
 	return nil
 }
 
-func (h *DependencyEventHandler) removeKV(ctx context.Context, kv *mvccpb.KeyValue) error {
+func (h *DependencyEventHandler) removeKV(ctx context.Context, kv *backend.KeyValue) error {
 	dResp, err := backend.Registry().TxnWithCmp(ctx, []registry.PluginOp{registry.OpDel(registry.WithKey(kv.Key))},
 		[]registry.CompareOp{registry.OpCmp(registry.CmpVer(kv.Key), registry.CMP_EQUAL, kv.Version)},
 		nil)

@@ -16,9 +16,25 @@
  */
 package backend
 
+import (
+	"github.com/coreos/etcd/mvcc/mvccpb"
+)
+
 type KeyValue struct {
 	Key            []byte
 	Value          interface{}
+	Version        int64
 	CreateRevision int64
 	ModRevision    int64
+}
+
+func (kv *KeyValue) From(p *Parser, s *mvccpb.KeyValue) error {
+	kv.Key = s.Key
+	kv.Version = s.Version
+	kv.CreateRevision = s.CreateRevision
+	kv.ModRevision = s.ModRevision
+
+	v, err := p.Unmarshal(s.Value)
+	kv.Value = v
+	return err
 }

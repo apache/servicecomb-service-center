@@ -241,11 +241,7 @@ func TransferToMicroServiceDependency(ctx context.Context, key string) (*pb.Micr
 		return nil, err
 	}
 	if len(res.Kvs) != 0 {
-		err = json.Unmarshal(res.Kvs[0].Value, microServiceDependency)
-		if err != nil {
-			util.Logger().Errorf(nil, "Unmarshal res failed.")
-			return nil, err
-		}
+		return res.Kvs[0].Value.(*pb.MicroServiceDependency), nil
 	}
 	return microServiceDependency, nil
 }
@@ -809,7 +805,7 @@ func (dr *DependencyRelation) parseDependencyRule(dependencyRule *pb.MicroServic
 		}
 
 		for _, kv := range resp.Kvs {
-			serviceIds = append(serviceIds, util.BytesToStringWithNoCopy(kv.Value))
+			serviceIds = append(serviceIds, kv.Value.(string))
 		}
 	default:
 		serviceIds, err = FindServiceIds(dr.ctx, dependencyRule.Version, dependencyRule)
@@ -914,16 +910,11 @@ func (dr *DependencyRelation) getConsumerOfDependAllServices() ([]*pb.MicroServi
 		util.Logger().Errorf(err, "get consumer that rely all service failed.")
 		return nil, err
 	}
-	dependency := &pb.MicroServiceDependency{}
 	if len(rsp.Kvs) != 0 {
 		util.Logger().Infof("consumer that rely all service exist.ServiceName: %s.", dr.provider.ServiceName)
-		err = json.Unmarshal(rsp.Kvs[0].Value, dependency)
-		if err != nil {
-			return nil, err
-		}
-		return dependency.Dependency, nil
+		return rsp.Kvs[0].Value.(*pb.MicroServiceDependency).Dependency, nil
 	}
-	return dependency.Dependency, nil
+	return nil, nil
 }
 
 func (dr *DependencyRelation) getConsumerOfSameServiceNameAndAppId(provider *pb.MicroServiceKey) ([]*pb.MicroServiceKey, error) {
@@ -945,9 +936,6 @@ func (dr *DependencyRelation) getConsumerOfSameServiceNameAndAppId(provider *pb.
 	var latestServiceId []string
 
 	for _, kv := range rsp.Kvs {
-		dependency := &pb.MicroServiceDependency{
-			Dependency: []*pb.MicroServiceKey{},
-		}
 		providerVersionRuleArr := strings.Split(util.BytesToStringWithNoCopy(kv.Key), "/")
 		providerVersionRule := providerVersionRuleArr[len(providerVersionRuleArr)-1]
 		if providerVersionRule == "latest" {
@@ -973,12 +961,7 @@ func (dr *DependencyRelation) getConsumerOfSameServiceNameAndAppId(provider *pb.
 		}
 
 		util.Logger().Debugf("providerETCD is %s", providerVersionRuleArr)
-		err = json.Unmarshal(kv.Value, dependency)
-		if err != nil {
-			util.Logger().Errorf(err, "Unmarshal consumers failed.")
-			return nil, err
-		}
-		allConsumers = append(allConsumers, dependency.Dependency...)
+		allConsumers = append(allConsumers, kv.Value.(*pb.MicroServiceDependency).Dependency...)
 	}
 	return allConsumers, nil
 }

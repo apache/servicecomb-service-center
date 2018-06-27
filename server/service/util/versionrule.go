@@ -18,19 +18,19 @@ package util
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/coreos/etcd/mvcc/mvccpb"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 )
 
-type VersionRule func(sorted []string, kvs map[string]*mvccpb.KeyValue, start, end string) []string
+type VersionRule func(sorted []string, kvs map[string]*backend.KeyValue, start, end string) []string
 
-func (vr VersionRule) Match(kvs []*mvccpb.KeyValue, ops ...string) []string {
+func (vr VersionRule) Match(kvs []*backend.KeyValue, ops ...string) []string {
 	sorter := &serviceKeySorter{
 		sortArr: make([]string, len(kvs)),
-		kvs:     make(map[string]*mvccpb.KeyValue, len(kvs)),
+		kvs:     make(map[string]*backend.KeyValue, len(kvs)),
 		cmp:     Larger,
 	}
 	for i, kv := range kvs {
@@ -54,7 +54,7 @@ func (vr VersionRule) Match(kvs []*mvccpb.KeyValue, ops ...string) []string {
 
 type serviceKeySorter struct {
 	sortArr []string
-	kvs     map[string]*mvccpb.KeyValue
+	kvs     map[string]*backend.KeyValue
 	cmp     func(i, j string) bool
 }
 
@@ -99,14 +99,14 @@ func LessEqual(start, end string) bool {
 	return !Larger(start, end)
 }
 
-func Latest(sorted []string, kvs map[string]*mvccpb.KeyValue, start, end string) []string {
+func Latest(sorted []string, kvs map[string]*backend.KeyValue, start, end string) []string {
 	if len(sorted) == 0 {
 		return []string{}
 	}
-	return []string{util.BytesToStringWithNoCopy(kvs[sorted[0]].Value)}
+	return []string{kvs[sorted[0]].Value.(string)}
 }
 
-func Range(sorted []string, kvs map[string]*mvccpb.KeyValue, start, end string) []string {
+func Range(sorted []string, kvs map[string]*backend.KeyValue, start, end string) []string {
 	result := make([]string, len(sorted))
 	i, flag := 0, 0
 
@@ -133,13 +133,13 @@ func Range(sorted []string, kvs map[string]*mvccpb.KeyValue, start, end string) 
 			}
 		}
 
-		result[i] = util.BytesToStringWithNoCopy(kvs[k].Value)
+		result[i] = kvs[k].Value.(string)
 		i++
 	}
 	return result[:i]
 }
 
-func AtLess(sorted []string, kvs map[string]*mvccpb.KeyValue, start, end string) []string {
+func AtLess(sorted []string, kvs map[string]*backend.KeyValue, start, end string) []string {
 	result := make([]string, len(sorted))
 
 	if len(sorted) == 0 || Larger(start, sorted[0]) {
@@ -150,12 +150,12 @@ func AtLess(sorted []string, kvs map[string]*mvccpb.KeyValue, start, end string)
 		if Larger(start, k) {
 			return result[:i]
 		}
-		result[i] = util.BytesToStringWithNoCopy(kvs[k].Value)
+		result[i] = kvs[k].Value.(string)
 	}
 	return result[:]
 }
 
-func ParseVersionRule(versionRule string) func(kvs []*mvccpb.KeyValue) []string {
+func ParseVersionRule(versionRule string) func(kvs []*backend.KeyValue) []string {
 	if len(versionRule) == 0 {
 		return nil
 	}
@@ -163,20 +163,20 @@ func ParseVersionRule(versionRule string) func(kvs []*mvccpb.KeyValue) []string 
 	rangeIdx := strings.Index(versionRule, "-")
 	switch {
 	case versionRule == "latest":
-		return func(kvs []*mvccpb.KeyValue) []string {
+		return func(kvs []*backend.KeyValue) []string {
 			return VersionRule(Latest).Match(kvs)
 		}
 	case versionRule[len(versionRule)-1:] == "+":
 		// 取最低版本及高版本集合
 		start := versionRule[:len(versionRule)-1]
-		return func(kvs []*mvccpb.KeyValue) []string {
+		return func(kvs []*backend.KeyValue) []string {
 			return VersionRule(AtLess).Match(kvs, start)
 		}
 	case rangeIdx > 0:
 		// 取版本范围集合
 		start := versionRule[:rangeIdx]
 		end := versionRule[rangeIdx+1:]
-		return func(kvs []*mvccpb.KeyValue) []string {
+		return func(kvs []*backend.KeyValue) []string {
 			return VersionRule(Range).Match(kvs, start, end)
 		}
 	default:
@@ -191,8 +191,11 @@ func VersionMatchRule(version string, versionRule string) bool {
 		return version == versionRule
 	}
 
-	return len(match([]*mvccpb.KeyValue{
-		{Key: util.StringToBytesWithNoCopy("/" + version)},
+	return len(match([]*backend.KeyValue{
+		{
+			Key:   util.StringToBytesWithNoCopy("/" + version),
+			Value: "",
+		},
 	})) > 0
 }
 

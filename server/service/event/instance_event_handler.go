@@ -17,14 +17,12 @@
 package event
 
 import (
-	"encoding/json"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	nf "github.com/apache/incubator-servicecomb-service-center/server/service/notification"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"strings"
 )
@@ -42,14 +40,7 @@ func (h *InstanceEventHandler) OnEvent(evt backend.KvEvent) {
 		return
 	}
 
-	kv := evt.KV.(*mvccpb.KeyValue)
-	providerId, providerInstanceId, domainProject, data := pb.GetInfoFromInstKV(kv)
-	if data == nil {
-		util.Logger().Errorf(nil,
-			"unmarshal provider service instance file failed, instance %s/%s [%s] event, data is nil",
-			providerId, providerInstanceId, action)
-		return
-	}
+	providerId, providerInstanceId, domainProject := backend.GetInfoFromInstKV(evt.KV)
 	if action == pb.EVT_DELETE {
 		splited := strings.Split(domainProject, "/")
 		if len(splited) == 2 && !apt.IsDefaultDomainProject(domainProject) {
@@ -85,20 +76,12 @@ func (h *InstanceEventHandler) OnEvent(evt backend.KvEvent) {
 		return
 	}
 
-	var instance pb.MicroServiceInstance
-	err = json.Unmarshal(data, &instance)
-	if err != nil {
-		util.Logger().Errorf(err, "unmarshal provider service instance %s/%s file failed",
-			providerId, providerInstanceId)
-		return
-	}
-
 	PublishInstanceEvent(domainProject, action, &pb.MicroServiceKey{
 		Environment: ms.Environment,
 		AppId:       ms.AppId,
 		ServiceName: ms.ServiceName,
 		Version:     ms.Version,
-	}, &instance, evt.Revision, consumerIds)
+	}, evt.KV.Value.(*pb.MicroServiceInstance), evt.Revision, consumerIds)
 }
 
 func NewInstanceEventHandler() *InstanceEventHandler {

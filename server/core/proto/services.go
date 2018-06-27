@@ -17,13 +17,9 @@
 package proto
 
 import (
-	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/gorilla/websocket"
 	"golang.org/x/net/context"
-	"strings"
 )
 
 type EventType string
@@ -58,8 +54,8 @@ const (
 	ENV_ACCEPT string = "acceptance"
 	ENV_PROD   string = "production"
 
-	REGISTERBY_SDK     string = "SDK"
-	REGISTERBY_SIDECAR string = "SIDECAR"
+	REGISTERBY_SDK      string = "SDK"
+	REGISTERBY_SIDECAR  string = "SIDECAR"
 	REGISTERBY_PLATFORM string = "PLATFORM"
 
 	APP_ID  = "default"
@@ -140,125 +136,6 @@ func CreateResponseWithSCErr(err *scerr.Error) *Response {
 		Code:    err.Code,
 		Message: err.Detail,
 	}
-}
-
-func KvToResponse(kv *mvccpb.KeyValue) (keys []string, data []byte) {
-	keys = strings.Split(util.BytesToStringWithNoCopy(kv.Key), "/")
-	data = kv.Value
-	return
-}
-
-func GetInfoFromSvcKV(kv *mvccpb.KeyValue) (serviceId, domainProject string, data []byte) {
-	keys, data := KvToResponse(kv)
-	l := len(keys)
-	if l < 4 {
-		return
-	}
-	serviceId = keys[l-1]
-	domainProject = fmt.Sprintf("%s/%s", keys[l-3], keys[l-2])
-	return
-}
-
-func GetInfoFromInstKV(kv *mvccpb.KeyValue) (serviceId, instanceId, domainProject string, data []byte) {
-	keys, data := KvToResponse(kv)
-	l := len(keys)
-	if l < 4 {
-		return
-	}
-	serviceId = keys[l-2]
-	instanceId = keys[l-1]
-	domainProject = fmt.Sprintf("%s/%s", keys[l-4], keys[l-3])
-	return
-}
-
-func GetInfoFromDomainKV(kv *mvccpb.KeyValue) (domain string, data []byte) {
-	keys, data := KvToResponse(kv)
-	l := len(keys)
-	if l < 1 {
-		return
-	}
-	domain = keys[l-1]
-	return
-}
-
-func GetInfoFromProjectKV(kv *mvccpb.KeyValue) (domainProject string, data []byte) {
-	keys, data := KvToResponse(kv)
-	l := len(keys)
-	if l < 2 {
-		return
-	}
-	domainProject = fmt.Sprintf("%s/%s", keys[l-2], keys[l-1])
-	return
-}
-
-func GetInfoFromRuleKV(kv *mvccpb.KeyValue) (serviceId, ruleId, domainProject string, data []byte) {
-	keys, data := KvToResponse(kv)
-	l := len(keys)
-	if l < 4 {
-		return
-	}
-	serviceId = keys[l-2]
-	ruleId = keys[l-1]
-	domainProject = fmt.Sprintf("%s/%s", keys[l-4], keys[l-3])
-	return
-}
-
-func GetInfoFromTagKV(kv *mvccpb.KeyValue) (serviceId, domainProject string, data []byte) {
-	keys, data := KvToResponse(kv)
-	l := len(keys)
-	if l < 3 {
-		return
-	}
-	serviceId = keys[l-1]
-	domainProject = fmt.Sprintf("%s/%s", keys[l-3], keys[l-2])
-	return
-}
-
-func GetInfoFromSvcIndexKV(kv *mvccpb.KeyValue) (key *MicroServiceKey, data []byte) {
-	keys, data := KvToResponse(kv)
-	l := len(keys)
-	if l < 6 {
-		return
-	}
-	domainProject := fmt.Sprintf("%s/%s", keys[l-6], keys[l-5])
-	return &MicroServiceKey{
-		Tenant:      domainProject,
-		Environment: keys[l-4],
-		AppId:       keys[l-3],
-		ServiceName: keys[l-2],
-		Version:     keys[l-1],
-	}, data
-}
-
-func GetInfoFromSchemaSummaryKV(kv *mvccpb.KeyValue) (schemaId string, data []byte) {
-	keys, data := KvToResponse(kv)
-	l := len(keys)
-	if l < 1 {
-		return
-	}
-
-	return keys[l-1], data
-}
-
-func GetInfoFromSchemaKV(kv *mvccpb.KeyValue) (schemaId string, data []byte) {
-	keys, data := KvToResponse(kv)
-	l := len(keys)
-	if l < 1 {
-		return
-	}
-
-	return keys[l-1], data
-}
-
-func GetInfoFromDependencyQueueKV(kv *mvccpb.KeyValue) (consumerId, domainProject string, data []byte) {
-	keys, data := KvToResponse(kv)
-	l := len(keys)
-	if l < 4 {
-		return
-	}
-	consumerId = keys[l-2]
-	domainProject = fmt.Sprintf("%s/%s", keys[l-4], keys[l-3])
-	return
 }
 
 func DependenciesToKeys(in []*MicroServiceKey, domainProject string) []*MicroServiceKey {

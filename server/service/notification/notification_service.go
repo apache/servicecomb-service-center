@@ -151,8 +151,8 @@ func (s *NotifyService) AddJob(job NotifyJob) error {
 		timer.Stop()
 		return nil
 	case <-timer.C:
-		util.Logger().Errorf(nil, "Add job failed.%s")
-		return errors.New("add notify job timeout")
+		util.Logger().Errorf(nil, "add job timed out, job: %v", job)
+		return errors.New("add notify job timed out")
 	}
 }
 
