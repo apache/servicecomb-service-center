@@ -19,12 +19,7 @@ package backend
 var (
 	NullCache  = &nullCache{}
 	NullCacher = &nullCacher{}
-	closedCh   = make(chan struct{})
 )
-
-func init() {
-	close(closedCh)
-}
 
 type nullCache struct {
 }

@@ -86,7 +86,7 @@ func (q *BuildInQuota) RemandQuotas(ctx context.Context, quotaType quota.Resourc
 func ResourceLimitHandler(ctx context.Context, res *quota.ApplyQuotaResource) *quota.ApplyQuotaResult {
 	var key string
 	var max int64 = 0
-	var indexer *backend.Indexer
+	var indexer backend.Indexer
 
 	domainProject := res.DomainProject
 	serviceId := res.ServiceId

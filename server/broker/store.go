@@ -46,31 +46,31 @@ func init() {
 type BKvStore struct {
 }
 
-func (s *BKvStore) Participant() *backend.Indexer {
+func (s *BKvStore) Participant() backend.Indexer {
 	return backend.Store().Entity(PARTICIPANT)
 }
 
-func (s *BKvStore) Version() *backend.Indexer {
+func (s *BKvStore) Version() backend.Indexer {
 	return backend.Store().Entity(VERSION)
 }
 
-func (s *BKvStore) Pact() *backend.Indexer {
+func (s *BKvStore) Pact() backend.Indexer {
 	return backend.Store().Entity(PACT)
 }
 
-func (s *BKvStore) PactVersion() *backend.Indexer {
+func (s *BKvStore) PactVersion() backend.Indexer {
 	return backend.Store().Entity(PACT_VERSION)
 }
 
-func (s *BKvStore) PactTag() *backend.Indexer {
+func (s *BKvStore) PactTag() backend.Indexer {
 	return backend.Store().Entity(PACT_TAG)
 }
 
-func (s *BKvStore) Verification() *backend.Indexer {
+func (s *BKvStore) Verification() backend.Indexer {
 	return backend.Store().Entity(VERIFICATION)
 }
 
-func (s *BKvStore) PactLatest() *backend.Indexer {
+func (s *BKvStore) PactLatest() backend.Indexer {
 	return backend.Store().Entity(PACT_LATEST)
 }
 

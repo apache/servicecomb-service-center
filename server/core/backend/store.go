@@ -32,26 +32,37 @@ func init() {
 }
 
 type KvStore struct {
-	indexers    map[StoreType]*Indexer
+	indexers    map[StoreType]Indexer
 	taskService *async.TaskService
 	lock        sync.RWMutex
 	ready       chan struct{}
 	goroutine   *util.GoRoutine
 	isClose     bool
+	rev         int64
 }
 
 func (s *KvStore) Initialize() {
-	s.indexers = make(map[StoreType]*Indexer)
+	s.indexers = make(map[StoreType]Indexer)
 	s.taskService = async.NewTaskService()
 	s.ready = make(chan struct{})
 	s.goroutine = util.NewGo(context.Background())
+	for t := StoreType(0); t != typeEnd; t++ {
+		s.setupIndexer(t, NewBaseIndexer(s.injectConfig(t)))
+	}
 }
 
-func (s *KvStore) setupIndexer(t StoreType, cfg *Config) {
-	if e, ok := EventProxies[t]; ok {
-		cfg.WithEventFunc(e.OnEvent)
+func (s *KvStore) OnCacheEvent(evt KvEvent) {
+	if s.rev < evt.Revision {
+		s.rev = evt.Revision
 	}
-	var indexer = NewCacheIndexer(t.String(), cfg)
+}
+
+func (s *KvStore) injectConfig(t StoreType) *Config {
+	return TypeConfig[t].AppendEventFunc(s.OnCacheEvent).
+		AppendEventFunc(EventProxies[t].OnEvent)
+}
+
+func (s *KvStore) setupIndexer(t StoreType, indexer Indexer) {
 	s.indexers[t] = indexer
 	indexer.Run()
 }
@@ -70,7 +81,7 @@ func (s *KvStore) store(ctx context.Context) {
 	}
 
 	for t := StoreType(0); t != typeEnd; t++ {
-		s.setupIndexer(t, TypeConfig[t])
+		s.setupIndexer(t, NewCacheIndexer(t.String(), TypeConfig[t]))
 	}
 }
 
@@ -115,63 +126,63 @@ func (s *KvStore) Ready() <-chan struct{} {
 	return s.ready
 }
 
-func (s *KvStore) Service() *Indexer {
+func (s *KvStore) Service() Indexer {
 	return s.indexers[SERVICE]
 }
 
-func (s *KvStore) SchemaSummary() *Indexer {
+func (s *KvStore) SchemaSummary() Indexer {
 	return s.indexers[SCHEMA_SUMMARY]
 }
 
-func (s *KvStore) Instance() *Indexer {
+func (s *KvStore) Instance() Indexer {
 	return s.indexers[INSTANCE]
 }
 
-func (s *KvStore) Lease() *Indexer {
+func (s *KvStore) Lease() Indexer {
 	return s.indexers[LEASE]
 }
 
-func (s *KvStore) ServiceIndex() *Indexer {
+func (s *KvStore) ServiceIndex() Indexer {
 	return s.indexers[SERVICE_INDEX]
 }
 
-func (s *KvStore) ServiceAlias() *Indexer {
+func (s *KvStore) ServiceAlias() Indexer {
 	return s.indexers[SERVICE_ALIAS]
 }
 
-func (s *KvStore) ServiceTag() *Indexer {
+func (s *KvStore) ServiceTag() Indexer {
 	return s.indexers[SERVICE_TAG]
 }
 
-func (s *KvStore) Rule() *Indexer {
+func (s *KvStore) Rule() Indexer {
 	return s.indexers[RULE]
 }
 
-func (s *KvStore) RuleIndex() *Indexer {
+func (s *KvStore) RuleIndex() Indexer {
 	return s.indexers[RULE_INDEX]
 }
 
-func (s *KvStore) Schema() *Indexer {
+func (s *KvStore) Schema() Indexer {
 	return s.indexers[SCHEMA]
 }
 
-func (s *KvStore) Dependency() *Indexer {
+func (s *KvStore) Dependency() Indexer {
 	return s.indexers[DEPENDENCY]
 }
 
-func (s *KvStore) DependencyRule() *Indexer {
+func (s *KvStore) DependencyRule() Indexer {
 	return s.indexers[DEPENDENCY_RULE]
 }
 
-func (s *KvStore) DependencyQueue() *Indexer {
+func (s *KvStore) DependencyQueue() Indexer {
 	return s.indexers[DEPENDENCY_QUEUE]
 }
 
-func (s *KvStore) Domain() *Indexer {
+func (s *KvStore) Domain() Indexer {
 	return s.indexers[DOMAIN]
 }
 
-func (s *KvStore) Project() *Indexer {
+func (s *KvStore) Project() Indexer {
 	return s.indexers[PROJECT]
 }
 
@@ -198,7 +209,7 @@ func (s *KvStore) KeepAlive(ctx context.Context, opts ...registry.PluginOpOption
 	return pt.TTL, pt.Err()
 }
 
-func (s *KvStore) Entity(id StoreType) *Indexer {
+func (s *KvStore) Entity(id StoreType) Indexer {
 	return s.indexers[id]
 }
 
@@ -209,7 +220,7 @@ func (s *KvStore) Install(e Entity) (id StoreType, err error) {
 
 	util.Logger().Infof("install new store entity %d:%s->%s", id, e.Name(), e.Config().Prefix)
 
-	s.setupIndexer(id, e.Config())
+	s.setupIndexer(id, NewCacheIndexer(id.String(), e.Config()))
 	return
 }
 
@@ -225,11 +236,6 @@ func Store() *KvStore {
 	return store
 }
 
-func Revision() (rev int64) {
-	for _, i := range Store().indexers {
-		if rev < i.Cache().Revision() {
-			rev = i.Cache().Revision()
-		}
-	}
-	return
+func Revision() int64 {
+	return store.rev
 }

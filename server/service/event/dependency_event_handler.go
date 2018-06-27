@@ -17,7 +17,6 @@
 package event
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
@@ -125,26 +124,12 @@ func (h *DependencyEventHandler) Handle() error {
 		return nil
 	}
 
-	ctx := context.Background()
-
 	dependencyTree := util.NewTree(isAddToLeft)
 
 	for _, kv := range resp.Kvs {
-		r := &pb.ConsumerDependency{}
-		data := kv.Value.([]byte)
-		consumerId, domainProject := backend.GetInfoFromDependencyQueueKV(kv)
+		r := kv.Value.(*pb.ConsumerDependency)
 
-		err := json.Unmarshal(data, r)
-		if err != nil {
-			util.Logger().Errorf(err, "maintain dependency failed, unmarshal failed, consumer %s dependency: %s",
-				consumerId, util.BytesToStringWithNoCopy(data))
-
-			if err = h.removeKV(ctx, kv); err != nil {
-				return err
-			}
-			continue
-		}
-
+		_, domainProject := backend.GetInfoFromDependencyQueueKV(kv)
 		res := NewDependencyEventHandlerResource(r, kv, domainProject)
 
 		dependencyTree.AddNode(res)

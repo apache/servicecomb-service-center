@@ -206,9 +206,18 @@ func (c *KvCacher) handleWatcher(watcher *Watcher) error {
 			case resp.Action == registry.Put:
 				evt.Type, evt.KV = proto.EVT_UPDATE, c.doParse(kv)
 			case resp.Action == registry.Delete:
-				evt.Type, evt.KV = proto.EVT_DELETE, c.doParse(kv)
+				evt.Type = proto.EVT_DELETE
+				if kv.Value == nil {
+					// it will happen in embed mode, and then need to get the cache value to unmarshal
+					evt.KV, _ = c.cache.Data(util.BytesToStringWithNoCopy(kv.Key)).(*KeyValue)
+				} else {
+					evt.KV = c.doParse(kv)
+				}
 			default:
 				util.Logger().Errorf(nil, "unknown KeyValue %v", kv)
+				continue
+			}
+			if evt.KV == nil {
 				continue
 			}
 			evts = append(evts, evt)
@@ -299,6 +308,7 @@ func (c *KvCacher) deferHandle(ctx context.Context) {
 	}
 }
 
+// keep the evts valid when call sync
 func (c *KvCacher) sync(evts []KvEvent) {
 	if len(evts) == 0 {
 		return
@@ -393,13 +403,15 @@ func (c *KvCacher) filterCreateOrUpdate(store map[string]*KeyValue, newStore map
 				i = 0
 			}
 
-			block[i] = KvEvent{
-				Revision: rev,
-				Type:     proto.EVT_CREATE,
-				Prefix:   c.Cfg.Prefix,
-				KV:       c.doParse(v),
+			if kv := c.doParse(v); kv != nil {
+				block[i] = KvEvent{
+					Revision: rev,
+					Type:     proto.EVT_CREATE,
+					Prefix:   c.Cfg.Prefix,
+					KV:       kv,
+				}
+				i++
 			}
-			i++
 			continue
 		}
 
@@ -413,13 +425,15 @@ func (c *KvCacher) filterCreateOrUpdate(store map[string]*KeyValue, newStore map
 			i = 0
 		}
 
-		block[i] = KvEvent{
-			Revision: rev,
-			Type:     proto.EVT_UPDATE,
-			Prefix:   c.Cfg.Prefix,
-			KV:       c.doParse(v),
+		if kv := c.doParse(v); kv != nil {
+			block[i] = KvEvent{
+				Revision: rev,
+				Type:     proto.EVT_UPDATE,
+				Prefix:   c.Cfg.Prefix,
+				KV:       kv,
+			}
+			i++
 		}
-		i++
 	}
 
 	if i > 0 {
@@ -458,11 +472,12 @@ func (c *KvCacher) onEvents(evts []KvEvent) {
 			evts[i] = evt
 		case proto.EVT_DELETE:
 			if !ok {
-				util.Logger().Warnf(nil, "unexpected %s event! key %s does not cache", evt.Type, key)
+				util.Logger().Warnf(nil, "unexpected %s event! key %s does not cache",
+					evt.Type, key)
 			} else {
+				evt.KV = prevKv
 				delete(store, key)
 			}
-			evt.KV = prevKv // maybe nil
 			evts[i] = evt
 		}
 	}
@@ -479,9 +494,6 @@ func (c *KvCacher) onKvEvents(evts []KvEvent) {
 	defer util.RecoverAndReport()
 
 	for _, evt := range evts {
-		if evt.KV == nil {
-			continue
-		}
 		c.Cfg.OnEvent(evt)
 	}
 }

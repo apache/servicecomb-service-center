@@ -75,14 +75,7 @@ func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt KvEvent) error {
 			return nil
 		}
 
-		// it will happen in embed mode, and then need to get the cache value to unmarshal
-		if kv.Value == nil {
-			if c, ok := iedh.cache.Data(key).(*KeyValue); ok {
-				kv.Value = c.Value
-			}
-		}
 		instance := kv.Value.(*pb.MicroServiceInstance)
-
 		iedh.items[key] = deferItem{
 			ttl: time.NewTimer(
 				time.Duration(instance.HealthCheck.Interval*(instance.HealthCheck.Times+1)) * time.Second),

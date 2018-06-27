@@ -53,12 +53,12 @@ func ServiceSelector(domainProject string) serviceSelector {
 }
 
 type ServiceIndexer struct {
-	*Indexer
+	*CacheIndexer
 }
 
 func (i *ServiceIndexer) GetAll(ctx context.Context, cfg serviceSelector) ([]*pb.MicroService, error) {
 	if len(cfg.serviceId) > 0 {
-		i.Indexer.Search(ctx)
+		i.CacheIndexer.Search(ctx)
 	}
 	return nil, nil
 }

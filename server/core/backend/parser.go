@@ -31,13 +31,14 @@ type KvEventFunc func(evt KvEvent)
 type CreateValueFunc func() interface{}
 
 var (
-	newBytes          CreateValueFunc = func() interface{} { return []byte(nil) }
-	newString         CreateValueFunc = func() interface{} { return "" }
-	newMap            CreateValueFunc = func() interface{} { return make(map[string]string) }
-	newService        CreateValueFunc = func() interface{} { return new(pb.MicroService) }
-	newInstance       CreateValueFunc = func() interface{} { return new(pb.MicroServiceInstance) }
-	newRule           CreateValueFunc = func() interface{} { return new(pb.ServiceRule) }
-	newDependencyRule CreateValueFunc = func() interface{} { return new(pb.MicroServiceDependency) }
+	newBytes           CreateValueFunc = func() interface{} { return []byte(nil) }
+	newString          CreateValueFunc = func() interface{} { return "" }
+	newMap             CreateValueFunc = func() interface{} { return make(map[string]string) }
+	newService         CreateValueFunc = func() interface{} { return new(pb.MicroService) }
+	newInstance        CreateValueFunc = func() interface{} { return new(pb.MicroServiceInstance) }
+	newRule            CreateValueFunc = func() interface{} { return new(pb.ServiceRule) }
+	newDependencyRule  CreateValueFunc = func() interface{} { return new(pb.MicroServiceDependency) }
+	newDependencyQueue CreateValueFunc = func() interface{} { return new(pb.ConsumerDependency) }
 )
 
 // parse
@@ -77,13 +78,14 @@ func (p *Parser) Unmarshal(src []byte) (interface{}, error) {
 }
 
 var (
-	BytesParser          = &Parser{newBytes, unParse}
-	StringParser         = &Parser{newString, textUnmarshal}
-	MapParser            = &Parser{newMap, mapUnmarshal}
-	ServiceParser        = &Parser{newService, jsonUnmarshal}
-	InstanceParser       = &Parser{newInstance, jsonUnmarshal}
-	RuleParser           = &Parser{newRule, jsonUnmarshal}
-	DependencyRuleParser = &Parser{newDependencyRule, jsonUnmarshal}
+	BytesParser           = &Parser{newBytes, unParse}
+	StringParser          = &Parser{newString, textUnmarshal}
+	MapParser             = &Parser{newMap, mapUnmarshal}
+	ServiceParser         = &Parser{newService, jsonUnmarshal}
+	InstanceParser        = &Parser{newInstance, jsonUnmarshal}
+	RuleParser            = &Parser{newRule, jsonUnmarshal}
+	DependencyRuleParser  = &Parser{newDependencyRule, jsonUnmarshal}
+	DependencyQueueParser = &Parser{newDependencyQueue, jsonUnmarshal}
 )
 
 func KvToResponse(kv *KeyValue) (keys []string) {

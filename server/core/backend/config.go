@@ -68,6 +68,18 @@ func (cfg *Config) WithEventFunc(f KvEventFunc) *Config {
 	return cfg
 }
 
+func (cfg *Config) AppendEventFunc(f KvEventFunc) *Config {
+	if prev := cfg.OnEvent; prev != nil {
+		next := f
+		f = func(evt KvEvent) {
+			prev(evt)
+			next(evt)
+		}
+	}
+	cfg.OnEvent = f
+	return cfg
+}
+
 func (cfg *Config) WithParser(parser *Parser) *Config {
 	cfg.Parser = parser
 	return cfg

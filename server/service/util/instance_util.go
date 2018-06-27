@@ -271,7 +271,6 @@ func QueryAllProvidersInstances(ctx context.Context, selfServiceId string) (resu
 		if service == nil {
 			continue
 		}
-		util.Logger().Debugf("query provider service %v with revision %d.", service, rev)
 
 		kvs, err := queryServiceInstancesKvs(ctx, providerId, rev)
 		if err != nil {
@@ -280,7 +279,6 @@ func QueryAllProvidersInstances(ctx context.Context, selfServiceId string) (resu
 			return
 		}
 
-		util.Logger().Debugf("query provider service %s instances[%d] with revision %d.", providerId, len(kvs), rev)
 		for _, kv := range kvs {
 			results = append(results, &pb.WatchInstanceResponse{
 				Response: pb.CreateResponse(pb.Response_SUCCESS, "List instance successfully."),

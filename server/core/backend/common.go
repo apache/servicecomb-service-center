@@ -116,7 +116,7 @@ var TypeConfig = map[StoreType]*Config{
 		WithInitSize(100).WithParser(DependencyRuleParser),
 
 	DEPENDENCY_QUEUE: DefaultConfig().WithPrefix(apt.GetServiceDependencyQueueRootKey("")).
-		WithInitSize(0),
+		WithInitSize(100).WithParser(DependencyQueueParser),
 
 	PROJECT: DefaultConfig().WithPrefix(apt.GetProjectRootKey("")).
 		WithInitSize(100).WithParser(StringParser),
@@ -150,3 +150,9 @@ const DEFAULT_CHECK_WINDOW = 2 * time.Second // instance DELETE event will be de
 const TIME_FORMAT = "15:04:05.000"
 
 const EVENT_BUS_MAX_SIZE = 1000
+
+var closedCh = make(chan struct{})
+
+func init() {
+	close(closedCh)
+}
