@@ -22,6 +22,7 @@ import (
 )
 
 const (
+	SPLIT                       = "/"
 	REGISTRY_ROOT_KEY           = "cse-sr"
 	REGISTRY_SYS_KEY            = "sys"
 	REGISTRY_SERVICE_KEY        = "ms"
@@ -44,10 +45,7 @@ const (
 )
 
 func GetRootKey() string {
-	return util.StringJoin([]string{
-		"",
-		REGISTRY_ROOT_KEY,
-	}, "/")
+	return SPLIT + REGISTRY_ROOT_KEY
 }
 
 func GetServiceRootKey(domainProject string) string {
@@ -56,7 +54,7 @@ func GetServiceRootKey(domainProject string) string {
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_FILE,
 		domainProject,
-	}, "/")
+	}, SPLIT)
 }
 
 func GetServiceIndexRootKey(domainProject string) string {
@@ -65,7 +63,7 @@ func GetServiceIndexRootKey(domainProject string) string {
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_INDEX,
 		domainProject,
-	}, "/")
+	}, SPLIT)
 }
 
 func GetServiceAliasRootKey(domainProject string) string {
@@ -74,7 +72,7 @@ func GetServiceAliasRootKey(domainProject string) string {
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_ALIAS_KEY,
 		domainProject,
-	}, "/")
+	}, SPLIT)
 }
 
 func GetServiceAppKey(domainProject, env, appId string) string {
@@ -82,7 +80,7 @@ func GetServiceAppKey(domainProject, env, appId string) string {
 		GetServiceIndexRootKey(domainProject),
 		env,
 		appId,
-	}, "/")
+	}, SPLIT)
 }
 
 func GetServiceRuleRootKey(domainProject string) string {
@@ -91,7 +89,7 @@ func GetServiceRuleRootKey(domainProject string) string {
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_RULE_KEY,
 		domainProject,
-	}, "/")
+	}, SPLIT)
 }
 
 func GetServiceRuleIndexRootKey(domainProject string) string {
@@ -100,7 +98,7 @@ func GetServiceRuleIndexRootKey(domainProject string) string {
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_RULE_INDEX_KEY,
 		domainProject,
-	}, "/")
+	}, SPLIT)
 }
 
 func GetServiceTagRootKey(domainProject string) string {
@@ -109,7 +107,7 @@ func GetServiceTagRootKey(domainProject string) string {
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_TAG_KEY,
 		domainProject,
-	}, "/")
+	}, SPLIT)
 }
 
 func GetServiceSchemaRootKey(domainProject string) string {
@@ -118,7 +116,7 @@ func GetServiceSchemaRootKey(domainProject string) string {
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_SCHEMA_KEY,
 		domainProject,
-	}, "/")
+	}, SPLIT)
 }
 
 func GetInstanceRootKey(domainProject string) string {
@@ -127,7 +125,7 @@ func GetInstanceRootKey(domainProject string) string {
 		REGISTRY_INSTANCE_KEY,
 		REGISTRY_FILE,
 		domainProject,
-	}, "/")
+	}, SPLIT)
 }
 
 func GetInstanceLeaseRootKey(domainProject string) string {
@@ -136,14 +134,14 @@ func GetInstanceLeaseRootKey(domainProject string) string {
 		REGISTRY_INSTANCE_KEY,
 		REGISTRY_LEASE_KEY,
 		domainProject,
-	}, "/")
+	}, SPLIT)
 }
 
 func GenerateServiceKey(domainProject string, serviceId string) string {
 	return util.StringJoin([]string{
 		GetServiceRootKey(domainProject),
 		serviceId,
-	}, "/")
+	}, SPLIT)
 }
 
 func GenerateRuleIndexKey(domainProject string, serviceId string, attr string, pattern string) string {
@@ -152,7 +150,7 @@ func GenerateRuleIndexKey(domainProject string, serviceId string, attr string, p
 		serviceId,
 		attr,
 		pattern,
-	}, "/")
+	}, SPLIT)
 }
 
 func GenerateServiceIndexKey(key *pb.MicroServiceKey) string {
@@ -162,7 +160,7 @@ func GenerateServiceIndexKey(key *pb.MicroServiceKey) string {
 		key.AppId,
 		key.ServiceName,
 		key.Version,
-	}, "/")
+	}, SPLIT)
 }
 
 func GenerateServiceAliasKey(key *pb.MicroServiceKey) string {
@@ -172,7 +170,7 @@ func GenerateServiceAliasKey(key *pb.MicroServiceKey) string {
 		key.AppId,
 		key.Alias,
 		key.Version,
-	}, "/")
+	}, SPLIT)
 }
 
 func GenerateServiceRuleKey(domainProject string, serviceId string, ruleId string) string {
@@ -180,14 +178,14 @@ func GenerateServiceRuleKey(domainProject string, serviceId string, ruleId strin
 		GetServiceRuleRootKey(domainProject),
 		serviceId,
 		ruleId,
-	}, "/")
+	}, SPLIT)
 }
 
 func GenerateServiceTagKey(domainProject string, serviceId string) string {
 	return util.StringJoin([]string{
 		GetServiceTagRootKey(domainProject),
 		serviceId,
-	}, "/")
+	}, SPLIT)
 }
 
 func GenerateServiceSchemaKey(domainProject string, serviceId string, schemaId string) string {
@@ -195,7 +193,7 @@ func GenerateServiceSchemaKey(domainProject string, serviceId string, schemaId s
 		GetServiceSchemaRootKey(domainProject),
 		serviceId,
 		schemaId,
-	}, "/")
+	}, SPLIT)
 }
 
 func GenerateServiceSchemaSummaryKey(domainProject string, serviceId string, schemaId string) string {
@@ -203,7 +201,7 @@ func GenerateServiceSchemaSummaryKey(domainProject string, serviceId string, sch
 		GetServiceSchemaSummaryRootKey(domainProject),
 		serviceId,
 		schemaId,
-	}, "/")
+	}, SPLIT)
 }
 
 func GetServiceSchemaSummaryRootKey(domainProject string) string {
@@ -212,7 +210,7 @@ func GetServiceSchemaSummaryRootKey(domainProject string) string {
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_SCHEMA_SUMMARY_KEY,
 		domainProject,
-	}, "/")
+	}, SPLIT)
 }
 
 func GenerateInstanceKey(domainProject string, serviceId string, instanceId string) string {
@@ -220,7 +218,7 @@ func GenerateInstanceKey(domainProject string, serviceId string, instanceId stri
 		GetInstanceRootKey(domainProject),
 		serviceId,
 		instanceId,
-	}, "/")
+	}, SPLIT)
 }
 
 func GenerateInstanceLeaseKey(domainProject string, serviceId string, instanceId string) string {
@@ -228,7 +226,7 @@ func GenerateInstanceLeaseKey(domainProject string, serviceId string, instanceId
 		GetInstanceLeaseRootKey(domainProject),
 		serviceId,
 		instanceId,
-	}, "/")
+	}, SPLIT)
 }
 
 func GenerateServiceDependencyRuleKey(serviceType string, domainProject string, in *pb.MicroServiceKey) string {
@@ -238,7 +236,7 @@ func GenerateServiceDependencyRuleKey(serviceType string, domainProject string, 
 			serviceType,
 			in.Environment,
 			in.ServiceName,
-		}, "/")
+		}, SPLIT)
 	}
 	return util.StringJoin([]string{
 		GetServiceDependencyRuleRootKey(domainProject),
@@ -247,7 +245,7 @@ func GenerateServiceDependencyRuleKey(serviceType string, domainProject string, 
 		in.AppId,
 		in.ServiceName,
 		in.Version,
-	}, "/")
+	}, SPLIT)
 }
 
 func GenerateConsumerDependencyRuleKey(domainProject string, in *pb.MicroServiceKey) string {
@@ -264,7 +262,7 @@ func GetServiceDependencyRuleRootKey(domainProject string) string {
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_DEPS_RULE_KEY,
 		domainProject,
-	}, "/")
+	}, SPLIT)
 }
 
 func GetServiceDependencyQueueRootKey(domainProject string) string {
@@ -273,7 +271,7 @@ func GetServiceDependencyQueueRootKey(domainProject string) string {
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_DEPS_QUEUE_KEY,
 		domainProject,
-	}, "/")
+	}, SPLIT)
 }
 
 func GenerateConsumerDependencyKey(domainProject string, consumerId string, providerId string) string {
@@ -286,7 +284,7 @@ func GenerateServiceDependencyKey(serviceType string, domainProject string, serv
 		serviceType,
 		serviceId1,
 		serviceId2,
-	}, "/")
+	}, SPLIT)
 }
 
 func GenerateProviderDependencyKey(domainProject string, providerId string, consumerId string) string {
@@ -298,7 +296,7 @@ func GenerateConsumerDependencyQueueKey(domainProject, consumerId, uuid string) 
 		GetServiceDependencyQueueRootKey(domainProject),
 		consumerId,
 		uuid,
-	}, "/")
+	}, SPLIT)
 }
 
 func GetServiceDependencyRootKey(domainProject string) string {
@@ -307,35 +305,35 @@ func GetServiceDependencyRootKey(domainProject string) string {
 		REGISTRY_SERVICE_KEY,
 		REGISTRY_DEPENDENCY_KEY,
 		domainProject,
-	}, "/")
+	}, SPLIT)
 }
 
 func GetDomainRootKey() string {
 	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_DOMAIN_KEY,
-	}, "/")
+	}, SPLIT)
 }
 
 func GenerateDomainKey(domain string) string {
 	return util.StringJoin([]string{
 		GetDomainRootKey(),
 		domain,
-	}, "/")
+	}, SPLIT)
 }
 
 func GetServerInfoKey() string {
 	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_SYS_KEY,
-	}, "/")
+	}, SPLIT)
 }
 
 func GetMetricsRootKey() string {
 	return util.StringJoin([]string{
 		GetRootKey(),
 		REGISTRY_METRICS_KEY,
-	}, "/")
+	}, SPLIT)
 }
 
 func GenerateMetricsKey(name, utc, domain string) string {
@@ -344,7 +342,7 @@ func GenerateMetricsKey(name, utc, domain string) string {
 		name,
 		utc,
 		domain,
-	}, "/")
+	}, SPLIT)
 }
 
 func GetProjectRootKey(domain string) string {
@@ -352,12 +350,12 @@ func GetProjectRootKey(domain string) string {
 		GetRootKey(),
 		REGISTRY_PROJECT_KEY,
 		domain,
-	}, "/")
+	}, SPLIT)
 }
 
 func GenerateProjectKey(domain, project string) string {
 	return util.StringJoin([]string{
 		GetProjectRootKey(domain),
 		project,
-	}, "/")
+	}, SPLIT)
 }

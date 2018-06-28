@@ -238,7 +238,6 @@ func (c *KvCacher) needDeferHandle(evts []KvEvent) bool {
 func (c *KvCacher) refresh(ctx context.Context) {
 	util.Logger().Debugf("start to list and watch %s", c.Cfg)
 	retries := 0
-	ticker := time.NewTicker(DEFAULT_METRICS_INTERVAL)
 	for {
 		nextPeriod := minWaitInterval
 		if err := c.ListAndWatch(ctx); err != nil {
@@ -252,14 +251,8 @@ func (c *KvCacher) refresh(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			timer.Stop()
-
 			util.Logger().Debugf("stop to list and watch %s", c.Cfg)
 			return
-		case <-ticker.C:
-			timer.Stop()
-
-			ReportCacheMetrics(c.Name(), "raw", c.cache.RLock())
-			c.cache.RUnlock()
 		case <-timer.C:
 		}
 	}

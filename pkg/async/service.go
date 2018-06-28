@@ -29,7 +29,7 @@ const (
 	maxExecutorCount       = 1000
 	removeExecutorInterval = 30 * time.Second
 	initExecutorTTL        = 4
-	executeInterval        = 100 * time.Millisecond
+	executeInterval        = 1 * time.Second
 	compactTimes           = 2
 )
 

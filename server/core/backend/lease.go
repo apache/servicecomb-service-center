@@ -56,11 +56,15 @@ func (lat *LeaseTask) Do(ctx context.Context) (err error) {
 	}
 
 	lat.err, err = nil, nil
-	util.LogNilOrWarnf(recv, "renew lease %d(recv: %s, send: %s), key %s",
-		lat.LeaseID,
-		recv.Format(TIME_FORMAT),
-		start.Format(TIME_FORMAT),
-		lat.Key())
+
+	cost := time.Now().Sub(recv)
+	if cost >= 2*time.Second {
+		util.Logger().Warnf(nil, "[%s]renew lease %d(recv: %s, send: %s), key %s", cost,
+			lat.LeaseID,
+			recv.Format(TIME_FORMAT),
+			start.Format(TIME_FORMAT),
+			lat.Key())
+	}
 	return
 }
 

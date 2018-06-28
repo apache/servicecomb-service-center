@@ -35,7 +35,7 @@ type CacheIndexer struct {
 	cacher           Cacher
 	goroutine        *util.GoRoutine
 	ready            chan struct{}
-	prefixIndex      map[string]map[string]struct{}
+	prefixIndex      map[string]map[string]*KeyValue
 	prefixBuildQueue chan KvEvent
 	prefixLock       sync.RWMutex
 	isClose          bool
@@ -55,57 +55,51 @@ func (i *CacheIndexer) Search(ctx context.Context, opts ...registry.PluginOpOpti
 		return i.baseIndexer.Search(ctx, opts...)
 	}
 
+	var resp *Response
 	if op.Prefix {
-		resp, err := i.searchPrefixKeyWithCache(ctx, op)
-		if err != nil {
-			return nil, err
-		}
-
-		if len(resp.Kvs) > 0 || op.Mode == registry.MODE_CACHE {
-			return resp, nil
-		}
-
-		util.Logger().Debugf("can not find any key from %s cache with prefix, request etcd server, key: %s",
-			i.cacher.Name(), key)
-		return i.baseIndexer.Search(ctx, opts...)
+		resp = i.searchByPrefix(op)
+	} else {
+		resp = i.search(op)
 	}
 
+	if resp.Count > 0 || op.Mode == registry.MODE_CACHE {
+		return resp, nil
+	}
+
+	util.Logger().Debugf("can not find any key from %s cache with prefix, request etcd server, key: %s",
+		i.cacher.Name(), key)
+	return i.baseIndexer.Search(ctx, opts...)
+}
+
+func (i *CacheIndexer) prefix(key string) string {
+	return key[:strings.LastIndex(key[:len(key)-1], "/")+1]
+}
+
+func (i *CacheIndexer) search(op registry.PluginOp) *Response {
 	resp := new(Response)
-	if op.CountOnly {
-		if i.Cache().Have(key) {
+
+	key := util.BytesToStringWithNoCopy(op.Key)
+	prefix := i.prefix(key)
+
+	var kv *KeyValue
+
+	i.prefixLock.RLock()
+	if sub, ok := i.prefixIndex[prefix]; ok {
+		if kv, ok = sub[key]; ok {
 			resp.Count = 1
-			return resp, nil
 		}
-		if op.Mode == registry.MODE_CACHE {
-			return resp, nil
-		}
-
-		util.Logger().Debugf("%s cache does not store this key, request etcd server, key: %s",
-			i.cacher.Name(), key)
-		return i.baseIndexer.Search(ctx, opts...)
 	}
-
-	cacheData := i.Cache().Data(key)
-	if cacheData == nil {
-		if op.Mode == registry.MODE_CACHE {
-			return resp, nil
-		}
-
-		util.Logger().Debugf("do not match any key in %s cache store, request etcd server, key: %s",
-			i.cacher.Name(), key)
-		return i.baseIndexer.Search(ctx, opts...)
+	if kv == nil || op.CountOnly {
+		i.prefixLock.RUnlock()
+		return resp
 	}
+	i.prefixLock.RUnlock()
 
-	resp.Count = 1
-	resp.Kvs = []*KeyValue{cacheData.(*KeyValue)}
-	return resp, nil
+	resp.Kvs = []*KeyValue{kv}
+	return resp
 }
 
-func (i *CacheIndexer) Cache() Cache {
-	return i.cacher.Cache()
-}
-
-func (i *CacheIndexer) searchPrefixKeyWithCache(ctx context.Context, op registry.PluginOp) (*Response, error) {
+func (i *CacheIndexer) searchByPrefix(op registry.PluginOp) *Response {
 	resp := new(Response)
 
 	prefix := util.BytesToStringWithNoCopy(op.Key)
@@ -114,30 +108,74 @@ func (i *CacheIndexer) searchPrefixKeyWithCache(ctx context.Context, op registry
 	resp.Count = int64(i.getPrefixKey(nil, prefix))
 	if resp.Count == 0 || op.CountOnly {
 		i.prefixLock.RUnlock()
-		return resp, nil
+		return resp
 	}
 
 	t := time.Now()
-	keys := make([]string, 0, resp.Count)
-	i.getPrefixKey(&keys, prefix)
+	kvs := make([]*KeyValue, 0, resp.Count)
+	i.getPrefixKey(&kvs, prefix)
 	i.prefixLock.RUnlock()
+	util.LogNilOrWarnf(t, "too long to copy data[%d] from cache[%d] with prefix %s", len(kvs), len(i.prefixIndex), prefix)
 
-	kvs := make([]*KeyValue, resp.Count)
-	idx := 0
-	for _, key := range keys {
-		c := i.Cache().Data(key) // TODO too slow when big data is requested
-		if c == nil {
-			// it means resp.Count is not equal to len(keys)
-			util.Logger().Warnf(nil, "unexpected nil cache, maybe it is removed, key is %s", key)
-			continue
-		}
-		kvs[idx] = c.(*KeyValue)
-		idx++
+	resp.Kvs = kvs
+	return resp
+}
+
+func (i *CacheIndexer) getPrefixKey(arr *[]*KeyValue, prefix string) (count int) {
+	keysRef, ok := i.prefixIndex[prefix]
+	if !ok {
+		return 0
 	}
-	util.LogNilOrWarnf(t, "too long to copy data[%d] from cache[%d] with prefix %s", idx, len(i.prefixIndex), prefix)
 
-	resp.Kvs = kvs[:idx]
-	return resp, nil
+	for key := range keysRef {
+		n := i.getPrefixKey(arr, key)
+		if n == 0 {
+			count += len(keysRef)
+			if arr != nil {
+				// TODO support sort option
+				for _, v := range keysRef {
+					*arr = append(*arr, v)
+				}
+			}
+			break
+		}
+		count += n
+	}
+	return count
+}
+
+func (i *CacheIndexer) addPrefixKey(prefix, key string, val *KeyValue) {
+	if i.Cfg.Prefix == key {
+		return
+	}
+
+	keys, ok := i.prefixIndex[prefix]
+	if !ok {
+		// build parent index key and new child nodes
+		keys = make(map[string]*KeyValue)
+		i.prefixIndex[prefix] = keys
+	} else if _, ok := keys[key]; ok {
+		return
+	}
+
+	keys[key], key = val, prefix
+	prefix = i.prefix(key)
+
+	i.addPrefixKey(prefix, key, nil)
+}
+
+func (i *CacheIndexer) deletePrefixKey(prefix, key string) {
+	m, ok := i.prefixIndex[prefix]
+	if !ok {
+		return
+	}
+	delete(m, key)
+
+	// remove parent which has no child
+	if len(m) == 0 {
+		delete(i.prefixIndex, prefix)
+		i.deletePrefixKey(i.prefix(prefix), prefix)
+	}
 }
 
 func (i *CacheIndexer) OnCacheEvent(evt KvEvent) {
@@ -178,14 +216,14 @@ func (i *CacheIndexer) buildIndex() {
 				}
 				t := time.Now()
 				key := util.BytesToStringWithNoCopy(evt.KV.Key)
-				prefix := key[:strings.LastIndex(key[:len(key)-1], "/")+1]
+				prefix := i.prefix(key)
 
 				i.prefixLock.Lock()
 				switch evt.Type {
 				case pb.EVT_DELETE:
 					i.deletePrefixKey(prefix, key)
 				default:
-					i.addPrefixKey(prefix, key)
+					i.addPrefixKey(prefix, key, evt.KV)
 				}
 
 				// compact
@@ -228,11 +266,11 @@ func (i *CacheIndexer) buildIndex() {
 }
 
 func (i *CacheIndexer) compact() {
-	n := make(map[string]map[string]struct{}, DEFAULT_CACHE_INIT_SIZE)
+	n := make(map[string]map[string]*KeyValue, DEFAULT_CACHE_INIT_SIZE)
 	for k, v := range i.prefixIndex {
 		c, ok := n[k]
 		if !ok {
-			c = make(map[string]struct{}, len(v))
+			c = make(map[string]*KeyValue, len(v))
 			n[k] = c
 		}
 		for ck, cv := range v {
@@ -243,63 +281,6 @@ func (i *CacheIndexer) compact() {
 
 	util.Logger().Infof("index %s: compact root capacity to size %d",
 		i.cacher.Name(), DEFAULT_CACHE_INIT_SIZE)
-}
-
-func (i *CacheIndexer) getPrefixKey(arr *[]string, prefix string) (count int) {
-	keysRef, ok := i.prefixIndex[prefix]
-	if !ok {
-		return 0
-	}
-
-	for key := range keysRef {
-		n := i.getPrefixKey(arr, key)
-		if n == 0 {
-			count += len(keysRef)
-			if arr != nil {
-				// TODO support sort option
-				for k := range keysRef {
-					*arr = append(*arr, k)
-				}
-			}
-			break
-		}
-		count += n
-	}
-	return count
-}
-
-func (i *CacheIndexer) addPrefixKey(prefix, key string) {
-	if i.Cfg.Prefix == key {
-		return
-	}
-
-	keys, ok := i.prefixIndex[prefix]
-	if !ok {
-		// build parent index key and new child nodes
-		keys = make(map[string]struct{})
-		i.prefixIndex[prefix] = keys
-	} else if _, ok := keys[key]; ok {
-		return
-	}
-
-	keys[key], key = struct{}{}, prefix
-	prefix = key[:strings.LastIndex(key[:len(key)-1], "/")+1]
-
-	i.addPrefixKey(prefix, key)
-}
-
-func (i *CacheIndexer) deletePrefixKey(prefix, key string) {
-	m, ok := i.prefixIndex[prefix]
-	if !ok {
-		return
-	}
-	delete(m, key)
-
-	// remove parent which has no child
-	if len(m) == 0 {
-		delete(i.prefixIndex, prefix)
-		i.deletePrefixKey(prefix[:strings.LastIndex(prefix[:len(prefix)-1], "/")+1], prefix)
-	}
 }
 
 func (i *CacheIndexer) Run() {
@@ -349,7 +330,7 @@ func NewCacheIndexer(name string, cfg *Config) (indexer *CacheIndexer) {
 		baseIndexer:      NewBaseIndexer(cfg),
 		BuildTimeout:     DEFAULT_ADD_QUEUE_TIMEOUT,
 		cacher:           NullCacher,
-		prefixIndex:      make(map[string]map[string]struct{}, DEFAULT_CACHE_INIT_SIZE),
+		prefixIndex:      make(map[string]map[string]*KeyValue, DEFAULT_CACHE_INIT_SIZE),
 		prefixBuildQueue: make(chan KvEvent, DEFAULT_MAX_EVENT_COUNT),
 		goroutine:        util.NewGo(context.Background()),
 		ready:            make(chan struct{}),
