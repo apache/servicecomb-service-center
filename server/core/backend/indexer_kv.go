@@ -204,8 +204,6 @@ func (i *CacheIndexer) OnCacheEvent(evt KvEvent) {
 func (i *CacheIndexer) buildIndex() {
 	i.goroutine.Do(func(ctx context.Context) {
 		util.SafeCloseChan(i.ready)
-		lastCompactTime := time.Now()
-		max := 0
 		for {
 			select {
 			case <-ctx.Done():
@@ -226,19 +224,6 @@ func (i *CacheIndexer) buildIndex() {
 					i.addPrefixKey(prefix, key, evt.KV)
 				}
 
-				// compact
-				initSize, l := DEFAULT_CACHE_INIT_SIZE, len(i.prefixIndex)
-				if max < l {
-					max = l
-				}
-				if initSize >= l &&
-					max >= initSize*DEFAULT_COMPACT_TIMES &&
-					time.Now().Sub(lastCompactTime) >= DEFAULT_COMPACT_TIMEOUT {
-					i.compact()
-					max = l
-					lastCompactTime = time.Now()
-				}
-
 				i.prefixLock.Unlock()
 
 				util.LogNilOrWarnf(t, "too long to rebuild(action: %s) index[%d], key is %s",
@@ -250,6 +235,8 @@ func (i *CacheIndexer) buildIndex() {
 
 	i.goroutine.Do(func(ctx context.Context) {
 		ticker := time.NewTicker(DEFAULT_METRICS_INTERVAL)
+		lastCompactTime := time.Now()
+		max := 0
 		for {
 			select {
 			case <-ctx.Done():
@@ -259,6 +246,27 @@ func (i *CacheIndexer) buildIndex() {
 				// report metrics
 				ReportCacheMetrics(i.cacher.Name(), "index", i.prefixIndex)
 				i.prefixLock.RUnlock()
+
+				i.prefixLock.Lock()
+
+				// compact
+				initSize, l := DEFAULT_CACHE_INIT_SIZE, len(i.prefixIndex)
+				if max < l {
+					max = l
+				}
+				if initSize >= l &&
+					max >= initSize*DEFAULT_COMPACT_TIMES &&
+					time.Now().Sub(lastCompactTime) >= DEFAULT_COMPACT_TIMEOUT {
+					i.compact()
+
+					util.Logger().Infof("index '%s' is not in use over %s, compact capacity to size %d->%d",
+						i.cacher.Name(), DEFAULT_COMPACT_TIMEOUT, max, l)
+
+					max = l
+					lastCompactTime = time.Now()
+				}
+
+				i.prefixLock.Unlock()
 			}
 		}
 	})
@@ -266,7 +274,7 @@ func (i *CacheIndexer) buildIndex() {
 }
 
 func (i *CacheIndexer) compact() {
-	n := make(map[string]map[string]*KeyValue, DEFAULT_CACHE_INIT_SIZE)
+	n := make(map[string]map[string]*KeyValue)
 	for k, v := range i.prefixIndex {
 		c, ok := n[k]
 		if !ok {
@@ -278,9 +286,6 @@ func (i *CacheIndexer) compact() {
 		}
 	}
 	i.prefixIndex = n
-
-	util.Logger().Infof("index %s: compact root capacity to size %d",
-		i.cacher.Name(), DEFAULT_CACHE_INIT_SIZE)
 }
 
 func (i *CacheIndexer) Run() {
@@ -330,7 +335,7 @@ func NewCacheIndexer(name string, cfg *Config) (indexer *CacheIndexer) {
 		baseIndexer:      NewBaseIndexer(cfg),
 		BuildTimeout:     DEFAULT_ADD_QUEUE_TIMEOUT,
 		cacher:           NullCacher,
-		prefixIndex:      make(map[string]map[string]*KeyValue, DEFAULT_CACHE_INIT_SIZE),
+		prefixIndex:      make(map[string]map[string]*KeyValue),
 		prefixBuildQueue: make(chan KvEvent, DEFAULT_MAX_EVENT_COUNT),
 		goroutine:        util.NewGo(context.Background()),
 		ready:            make(chan struct{}),

@@ -31,25 +31,15 @@ func TestRuleFilter_Filter(t *testing.T) {
 		ProviderRules: []*proto.ServiceRule{},
 	}
 	_, err := rf.Filter(context.Background(), "")
-	if err != nil {
+	if err == nil {
 		t.Fatalf("RuleFilter Filter failed")
 	}
 }
 
 func TestGetRulesUtil(t *testing.T) {
-	_, err := GetRulesUtil(util.SetContext(context.Background(), CTX_CACHEONLY, "1"), "", "")
-	if err != nil {
-		t.Fatalf("GetRulesUtil WithCacheOnly failed")
-	}
-
-	_, err = GetRulesUtil(context.Background(), "", "")
+	_, err := GetRulesUtil(context.Background(), "", "")
 	if err == nil {
 		t.Fatalf("GetRulesUtil failed")
-	}
-
-	_, err = GetOneRule(util.SetContext(context.Background(), CTX_CACHEONLY, "1"), "", "", "")
-	if err != nil {
-		t.Fatalf("GetOneRule WithCacheOnly failed")
 	}
 
 	_, err = GetOneRule(context.Background(), "", "", "")
@@ -69,12 +59,7 @@ func TestRuleExist(t *testing.T) {
 }
 
 func TestGetServiceRuleType(t *testing.T) {
-	_, _, err := GetServiceRuleType(util.SetContext(context.Background(), CTX_CACHEONLY, "1"), "", "")
-	if err != nil {
-		t.Fatalf("GetServiceRuleType WithCacheOnly failed")
-	}
-
-	_, _, err = GetServiceRuleType(context.Background(), "", "")
+	_, _, err := GetServiceRuleType(context.Background(), "", "")
 	if err == nil {
 		t.Fatalf("GetServiceRuleType failed")
 	}
@@ -272,7 +257,7 @@ func TestGetConsumer(t *testing.T) {
 	_, _, err = GetConsumerIdsByProvider(context.Background(), "", &proto.MicroService{
 		ServiceId: "a",
 	})
-	if err != nil {
+	if err == nil {
 		t.Fatalf("GetConsumerIdsByProvider WithCacheOnly not exist service failed")
 	}
 
@@ -280,7 +265,7 @@ func TestGetConsumer(t *testing.T) {
 		&proto.MicroService{
 			ServiceId: "a",
 		})
-	if err != nil {
+	if err == nil {
 		t.Fatalf("GetConsumersInCache WithCacheOnly failed")
 	}
 }
@@ -290,12 +275,12 @@ func TestGetProvider(t *testing.T) {
 		&proto.MicroService{
 			ServiceId: "a",
 		})
-	if err != nil {
+	if err == nil {
 		t.Fatalf("GetProvidersInCache WithCacheOnly failed")
 	}
 
 	_, _, err = GetProviderIdsByConsumer(context.Background(), "", &proto.MicroService{})
-	if err != nil {
+	if err == nil {
 		t.Fatalf("GetProviderIdsByConsumer WithCacheOnly failed")
 	}
 }
@@ -304,10 +289,5 @@ func TestAccessible(t *testing.T) {
 	err := Accessible(context.Background(), "", "")
 	if err.StatusCode() != http.StatusInternalServerError {
 		t.Fatalf("Accessible invalid failed")
-	}
-
-	err = Accessible(util.SetContext(context.Background(), CTX_CACHEONLY, "1"), "", "")
-	if err.StatusCode() == http.StatusInternalServerError {
-		t.Fatalf("Accessible WithCacheOnly failed")
 	}
 }

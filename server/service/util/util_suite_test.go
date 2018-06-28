@@ -22,12 +22,10 @@ import (
 )
 
 import (
-	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
@@ -45,38 +43,28 @@ func TestMicroservice(t *testing.T) {
 }
 
 func TestFindServiceIds(t *testing.T) {
-	_, err := serviceUtil.FindServiceIds(util.SetContext(context.Background(), serviceUtil.CTX_CACHEONLY, "1"),
+	_, err := serviceUtil.FindServiceIds(context.Background(),
 		"latest", &proto.MicroServiceKey{})
-	if err != nil {
+	if err == nil {
 		t.FailNow()
 	}
 
-	_, err = serviceUtil.FindServiceIds(util.SetContext(context.Background(), serviceUtil.CTX_CACHEONLY, "1"),
+	_, err = serviceUtil.FindServiceIds(context.Background(),
 		"1.0.0", &proto.MicroServiceKey{})
-	if err != nil {
+	if err == nil {
 		t.FailNow()
 	}
 
-	_, err = serviceUtil.FindServiceIds(util.SetContext(context.Background(), serviceUtil.CTX_CACHEONLY, "1"),
+	_, err = serviceUtil.FindServiceIds(context.Background(),
 		"1.0+", &proto.MicroServiceKey{Alias: "test"})
-	if err != nil {
+	if err == nil {
 		t.FailNow()
 	}
 }
 
 func TestGetService(t *testing.T) {
-	_, err := serviceUtil.GetService(util.SetContext(context.Background(), serviceUtil.CTX_CACHEONLY, "1"), "", "")
-	if err != nil {
-		t.FailNow()
-	}
-
-	_, err = serviceUtil.GetService(context.Background(), "", "")
+	_, err := serviceUtil.GetService(context.Background(), "", "")
 	if err == nil {
-		t.FailNow()
-	}
-
-	_, err = serviceUtil.GetServicesRawData(util.SetContext(context.Background(), serviceUtil.CTX_CACHEONLY, "1"), "")
-	if err != nil {
 		t.FailNow()
 	}
 
@@ -85,18 +73,8 @@ func TestGetService(t *testing.T) {
 		t.FailNow()
 	}
 
-	_, err = serviceUtil.GetServicesByDomain(util.SetContext(context.Background(), serviceUtil.CTX_CACHEONLY, "1"), "")
-	if err != nil {
-		t.FailNow()
-	}
-
 	_, err = serviceUtil.GetServicesByDomain(context.Background(), "")
 	if err == nil {
-		t.FailNow()
-	}
-
-	_, err = serviceUtil.GetAllServiceUtil(util.SetContext(context.Background(), serviceUtil.CTX_CACHEONLY, "1"))
-	if err != nil {
 		t.FailNow()
 	}
 
@@ -114,6 +92,15 @@ func TestGetService(t *testing.T) {
 	if err == nil {
 		t.FailNow()
 	}
+}
+
+func TestServiceExist(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.FailNow()
+		}
+	}()
+	serviceUtil.ServiceExist(util.SetContext(context.Background(), serviceUtil.CTX_CACHEONLY, "1"), "", "")
 }
 
 func TestFromContext(t *testing.T) {
@@ -140,15 +127,6 @@ func TestFromContext(t *testing.T) {
 	}
 }
 
-func TestServiceExist(t *testing.T) {
-	defer func() {
-		if r := recover(); r != nil {
-			t.FailNow()
-		}
-	}()
-	serviceUtil.ServiceExist(util.SetContext(context.Background(), serviceUtil.CTX_CACHEONLY, "1"), "", "")
-}
-
 func TestRemandQuota(t *testing.T) {
 	serviceUtil.RemandServiceQuota(context.Background())
 	serviceUtil.RemandInstanceQuota(context.Background())
@@ -161,81 +139,4 @@ func TestSetDefault(t *testing.T) {
 		len(service.Status) == 0 {
 		t.Fatalf(`TestSetDefault failed`)
 	}
-}
-
-func TestGetOneDomainProjectServiceCount(t *testing.T) {
-	_, err := serviceUtil.GetOneDomainProjectServiceCount(util.SetContext(context.Background(), serviceUtil.CTX_CACHEONLY, "1"), "")
-	if err != nil {
-		t.Fatalf("GetOneDomainProjectServiceCount WithCacheOnly failed")
-	}
-
-	_, err = serviceUtil.GetOneDomainProjectServiceCount(context.Background(), "")
-	if err == nil {
-		t.Fatalf("GetOneDomainProjectServiceCount failed")
-	}
-}
-
-func TestGetOneDomainProjectInstanceCount(t *testing.T) {
-	_, err := serviceUtil.GetOneDomainProjectInstanceCount(util.SetContext(context.Background(), serviceUtil.CTX_CACHEONLY, "1"), "")
-	if err != nil {
-		t.Fatalf("GetOneDomainProjectInstanceCount WithCacheOnly failed")
-	}
-
-	_, err = serviceUtil.GetOneDomainProjectInstanceCount(context.Background(), "")
-	if err == nil {
-		t.Fatalf("GetOneDomainProjectInstanceCount failed")
-	}
-}
-
-const VERSIONRULE_BASE = 5000
-
-func BenchmarkVersionRule_Latest_GetServicesIds(b *testing.B) {
-	var kvs = make([]*mvccpb.KeyValue, VERSIONRULE_BASE)
-	for i := 1; i <= VERSIONRULE_BASE; i++ {
-		kvs[i-1] = &mvccpb.KeyValue{
-			Key:   []byte(fmt.Sprintf("/service/ver/1.%d", i)),
-			Value: []byte(fmt.Sprintf("%d", i)),
-		}
-	}
-	b.N = VERSIONRULE_BASE
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		serviceUtil.VersionRule(serviceUtil.Latest).Match(kvs)
-	}
-	b.ReportAllocs()
-	// 5000	   7105020 ns/op	 2180198 B/op	   39068 allocs/op
-}
-
-func BenchmarkVersionRule_Range_GetServicesIds(b *testing.B) {
-	var kvs = make([]*mvccpb.KeyValue, VERSIONRULE_BASE)
-	for i := 1; i <= VERSIONRULE_BASE; i++ {
-		kvs[i-1] = &mvccpb.KeyValue{
-			Key:   []byte(fmt.Sprintf("/service/ver/1.%d", i)),
-			Value: []byte(fmt.Sprintf("%d", i)),
-		}
-	}
-	b.N = VERSIONRULE_BASE
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		serviceUtil.VersionRule(serviceUtil.Range).Match(kvs, fmt.Sprintf("1.%d", i), fmt.Sprintf("1.%d", i+VERSIONRULE_BASE/10))
-	}
-	b.ReportAllocs()
-	// 5000	   7244029 ns/op	 2287389 B/op	   39584 allocs/op
-}
-
-func BenchmarkVersionRule_AtLess_GetServicesIds(b *testing.B) {
-	var kvs = make([]*mvccpb.KeyValue, VERSIONRULE_BASE)
-	for i := 1; i <= VERSIONRULE_BASE; i++ {
-		kvs[i-1] = &mvccpb.KeyValue{
-			Key:   []byte(fmt.Sprintf("/service/ver/1.%d", i)),
-			Value: []byte(fmt.Sprintf("%d", i)),
-		}
-	}
-	b.N = VERSIONRULE_BASE
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		serviceUtil.VersionRule(serviceUtil.AtLess).Match(kvs, fmt.Sprintf("1.%d", i))
-	}
-	b.ReportAllocs()
-	// 5000	  11221098 ns/op	 3174720 B/op	   58064 allocs/op
 }

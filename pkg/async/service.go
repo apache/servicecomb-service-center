@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	maxExecutorCount       = 1000
+	initExecutorCount      = 1000
 	removeExecutorInterval = 30 * time.Second
 	initExecutorTTL        = 4
 	executeInterval        = 1 * time.Second
@@ -154,7 +154,7 @@ func (lat *TaskService) daemon(ctx context.Context) {
 			}
 
 			l = len(lat.executors)
-			if max > maxExecutorCount && max > l*compactTimes {
+			if max > initExecutorCount && max > l*compactTimes {
 				lat.renew()
 				max = l
 			}
@@ -200,7 +200,7 @@ func (lat *TaskService) Ready() <-chan struct{} {
 }
 
 func (lat *TaskService) renew() {
-	newExecutor := make(map[string]*executorWithTTL, maxExecutorCount)
+	newExecutor := make(map[string]*executorWithTTL)
 	for k, e := range lat.executors {
 		newExecutor[k] = e
 	}

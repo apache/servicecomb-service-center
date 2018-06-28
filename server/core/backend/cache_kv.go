@@ -80,6 +80,10 @@ func (c *KvCache) Unlock() {
 		c.lastMaxSize > c.size*DEFAULT_COMPACT_TIMES &&
 		time.Now().Sub(c.lastRefresh) >= DEFAULT_COMPACT_TIMEOUT {
 		c.compact()
+
+		util.Logger().Infof("cache '%s' is not in use over %s, compact capacity to size %d->%d",
+			c.owner.Name(), DEFAULT_COMPACT_TIMEOUT, c.lastMaxSize, l)
+
 		c.lastMaxSize = l
 		c.lastRefresh = time.Now()
 	}
@@ -89,14 +93,11 @@ func (c *KvCache) Unlock() {
 
 func (c *KvCache) compact() {
 	// gc
-	newCache := make(map[string]*KeyValue, c.size)
+	newCache := make(map[string]*KeyValue)
 	for k, v := range c.store {
 		newCache[k] = v
 	}
 	c.store = newCache
-
-	util.Logger().Infof("cache %s is not in use over %s, compact capacity to size %d->%d",
-		c.owner.Cfg.Prefix, DEFAULT_COMPACT_TIMEOUT, c.lastMaxSize, c.size)
 }
 
 func (c *KvCache) Size() (l int) {
@@ -533,7 +534,7 @@ func NewKvCache(c *KvCacher, size int) *KvCache {
 	return &KvCache{
 		owner:       c,
 		size:        size,
-		store:       make(map[string]*KeyValue, size),
+		store:       make(map[string]*KeyValue),
 		lastRefresh: time.Now(),
 	}
 }

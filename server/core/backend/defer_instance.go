@@ -48,7 +48,7 @@ func (iedh *InstanceEventDeferHandler) OnCondition(cache Cache, evts []KvEvent) 
 
 	iedh.once.Do(func() {
 		iedh.cache = cache
-		iedh.items = make(map[string]deferItem, eventBlockSize)
+		iedh.items = make(map[string]deferItem)
 		iedh.pendingCh = make(chan []KvEvent, eventBlockSize)
 		iedh.deferCh = make(chan KvEvent, eventBlockSize)
 		iedh.resetCh = make(chan struct{})
@@ -151,7 +151,7 @@ func (iedh *InstanceEventDeferHandler) recover(evt KvEvent) {
 
 func (iedh *InstanceEventDeferHandler) renew() {
 	iedh.enabled = false
-	iedh.items = make(map[string]deferItem, eventBlockSize)
+	iedh.items = make(map[string]deferItem)
 }
 
 func (iedh *InstanceEventDeferHandler) Reset() bool {
