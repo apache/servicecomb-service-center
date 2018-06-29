@@ -31,7 +31,7 @@ limitations under the License.
         <md-toolbar class="md-table-toolbar md-raised md-default" ng-if="showSearch">
           <div class="md-toolbar-tools">
             <form flex name="filter.form" class="no-padding" >
-              <input id="search" class="form-control" type="search" ng-model="filter.search" autofocus 
+              <input id="search" class="form-control" type="search" ng-model="filter.search" ng-change="fnSearch(filter.search)" autofocus
               placeholder="{{ 'search' | translate }}" autocomplete="off">
             </form>
             <md-button class="md-icon-button"  aria-label="{{ 'close' | translate }}" title="{{ 'close' | translate }}">
@@ -50,7 +50,7 @@ limitations under the License.
                     </tr>
                 </thead>
                 <tbody>
-                    <tr md-row md-select="appData" id="target" data-ng-repeat="appData in data | filter: filter.search | orderBy: 'serviceName' | limitTo: paginationQuery.limit : (paginationQuery.page - 1) * paginationQuery.limit">
+                    <tr md-row md-select="appData" id="target" data-ng-repeat="appData in data | orderBy: 'serviceName' | limitTo: paginationQuery.limit : (paginationQuery.page - 1) * paginationQuery.limit">
                         <td md-cell ng-repeat="(key, value) in appData">
                             <span ng-if="key == 'serviceName'">
                                 <a ui-sref="sc.info.instance({serviceId:'{{appData.serviceId}}'})">{{appData.serviceName}}</a>
