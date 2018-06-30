@@ -17,15 +17,18 @@
 package backend
 
 type Cache interface {
-	Revision() int64
-	Data(interface{}) interface{}
-	Have(interface{}) bool
+	Name() string
 	Size() int
+
+	Get(k string) *KeyValue
+	GetAll(prefix string, arr *[]*KeyValue) int
+	ForEach(iter func(k string, v *KeyValue) (next bool))
+
+	Put(k string, v *KeyValue)
+	Remove(k string)
 }
 
 type Cacher interface {
-	// Name is the cache size metric name
-	Name() string
 	Cache() Cache
 	Run()
 	Stop()

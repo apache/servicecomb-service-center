@@ -35,10 +35,10 @@ func BenchmarkFilter(b *testing.B) {
 	}
 	v, _ := json.Marshal(inst)
 
-	cacher := &KvCacher{Cfg: DefaultConfig().WithParser(InstanceParser)}
+	cfg := DefaultConfig().WithParser(InstanceParser)
 
 	n := 300 * 1000 // 30w
-	cache := NewKvCache(cacher, n)
+	cache := NewKvCache("test", cfg)
 	items := make([]*mvccpb.KeyValue, 0, n)
 	for ; n > 0; n-- {
 		k := fmt.Sprintf("/%d", n)
@@ -51,11 +51,11 @@ func BenchmarkFilter(b *testing.B) {
 			})
 		} else if n > 100*1000 && n <= 20*1000 {
 			// update
-			cache.store[k] = &KeyValue{
+			cache.Put(k, &KeyValue{
 				Key:         util.StringToBytesWithNoCopy(k),
 				Value:       inst,
 				ModRevision: 1,
-			}
+			})
 			items = append(items, &mvccpb.KeyValue{
 				Key:         util.StringToBytesWithNoCopy(k),
 				Value:       v,
@@ -63,13 +63,14 @@ func BenchmarkFilter(b *testing.B) {
 			})
 		} else {
 			// delete
-			cache.store[k] = &KeyValue{
+			cache.Put(k, &KeyValue{
 				Key:         util.StringToBytesWithNoCopy(k),
 				Value:       inst,
 				ModRevision: 1,
-			}
+			})
 		}
 	}
+	cacher := &KvCacher{Cfg: cfg}
 	cacher.cache = cache
 
 	b.ResetTimer()
@@ -80,4 +81,60 @@ func BenchmarkFilter(b *testing.B) {
 
 	// TODO bad performance!!!
 	//20	  82367261 ns/op	37964987 B/op	   80132 allocs/op
+}
+
+func TestKvCache_Get(t *testing.T) {
+	c := NewKvCache("test", DefaultConfig())
+	c.Put("", &KeyValue{Version: 1})
+	c.Put("/", &KeyValue{Version: 1})
+	c.Put("/a/b/c/d/e/1", &KeyValue{Version: 1})
+	c.Put("/a/b/c/d/e/2", &KeyValue{Version: 2})
+	c.Put("/a/b/d/d/f/3", &KeyValue{Version: 3})
+	c.Put("/a/b/e/d/g/4", &KeyValue{Version: 4})
+
+	if l := c.Size(); l != 4 {
+		t.Fatalf("TestKvCache Size() failed, %d", l)
+	}
+
+	if kv := c.Get("/a/b/c/d/e/2"); kv == nil || kv.Version != 2 {
+		t.Fatalf("TestKvCache Get() failed, %v", kv)
+	}
+
+	if l := c.GetAll("/", nil); l != 4 {
+		t.Fatalf("TestKvCache GetAll() failed, %d", l)
+	}
+
+	var arr []*KeyValue
+	if l := c.GetAll("/a/b/c/", &arr); l != 2 || (arr[0].Version != 1 && arr[1].Version != 1) {
+		t.Fatalf("TestKvCache GetAll() failed, %d, %v", l, arr)
+	}
+
+	l, b := -1, false
+	c.ForEach(func(k string, v *KeyValue) (next bool) {
+		next = false
+		l++
+		return
+	})
+	if l != 0 {
+		t.Fatalf("TestKvCache ForEach() failed, %d", l)
+	}
+	c.ForEach(func(k string, v *KeyValue) (next bool) {
+		next = true
+		l++
+		if v.Version == 4 {
+			b = true
+		}
+		return
+	})
+	if l != 4 || !b {
+		t.Fatalf("TestKvCache ForEach() failed, %d, %v", l, b)
+	}
+
+	c.Remove("")
+	c.Remove("/")
+	c.Remove("/a/b/c/d/e/2")
+	c.Remove("/a/b/d/d/f/3")
+	if l := c.Size(); l != 2 {
+		t.Fatalf("TestKvCache Size() failed, %d", l)
+	}
 }

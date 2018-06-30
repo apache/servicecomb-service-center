@@ -24,37 +24,22 @@ var (
 type nullCache struct {
 }
 
-func (n *nullCache) Revision() int64 {
-	return 0
-}
-
-func (n *nullCache) Data(interface{}) interface{} {
-	return nil
-}
-
-func (n *nullCache) Have(interface{}) bool {
-	return false
-}
-
-func (n *nullCache) Size() int {
-	return 0
-}
+func (n *nullCache) Name() string                                         { return "null" }
+func (n *nullCache) Size() int                                            { return 0 }
+func (n *nullCache) RLock()                                               {}
+func (n *nullCache) RUnlock()                                             {}
+func (n *nullCache) Get(k string) *KeyValue                               { return nil }
+func (n *nullCache) GetAll(prefix string, arr *[]*KeyValue) int           { return 0 }
+func (n *nullCache) ForEach(iter func(k string, v *KeyValue) (next bool)) {}
+func (n *nullCache) Lock()                                                {}
+func (n *nullCache) Unlock()                                              {}
+func (n *nullCache) Put(k string, v *KeyValue)                            {}
+func (n *nullCache) Remove(k string)                                      {}
 
 type nullCacher struct {
 }
 
-func (n *nullCacher) Name() string {
-	return ""
-}
-
-func (n *nullCacher) Cache() Cache {
-	return NullCache
-}
-
-func (n *nullCacher) Run() {}
-
-func (n *nullCacher) Stop() {}
-
-func (n *nullCacher) Ready() <-chan struct{} {
-	return closedCh
-}
+func (n *nullCacher) Cache() Cache           { return NullCache }
+func (n *nullCacher) Run()                   {}
+func (n *nullCacher) Stop()                  {}
+func (n *nullCacher) Ready() <-chan struct{} { return closedCh }

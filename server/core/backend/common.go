@@ -133,16 +133,11 @@ const (
 
 const (
 	DEFAULT_METRICS_INTERVAL = 30 * time.Second
+	DEFAULT_COMPACT_TIMES    = 2
+	DEFAULT_COMPACT_TIMEOUT  = 5 * time.Minute
 
-	DEFAULT_COMPACT_TIMES   = 2
-	DEFAULT_COMPACT_TIMEOUT = 5 * time.Minute
-	minWaitInterval         = 1 * time.Second
-	eventBlockSize          = 1000
-)
-
-const (
-	DEFAULT_MAX_EVENT_COUNT   = 1000
-	DEFAULT_ADD_QUEUE_TIMEOUT = 5 * time.Second
+	minWaitInterval = 1 * time.Second
+	eventBlockSize  = 1000
 )
 
 const DEFAULT_CHECK_WINDOW = 2 * time.Second // instance DELETE event will be delay.

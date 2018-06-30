@@ -71,13 +71,13 @@ func TestInstanceEventDeferHandler_HandleChan(t *testing.T) {
 		Value: b,
 	}
 
-	cache := NewKvCache(nil, 1)
-	cache.store["/1"] = kv1
-	cache.store["/2"] = kv2
-	cache.store["/3"] = kv3
-	cache.store["/4"] = kv4
-	cache.store["/5"] = kv5
-	cache.store["/6"] = kv6
+	cache := NewKvCache("test", DefaultConfig())
+	cache.Put("/1", kv1)
+	cache.Put("/2", kv2)
+	cache.Put("/3", kv3)
+	cache.Put("/4", kv4)
+	cache.Put("/5", kv5)
+	cache.Put("/6", kv6)
 
 	evts1 := []KvEvent{
 		{
