@@ -29,8 +29,9 @@ angular.module('serviceCenter')
                 dialogClose: '=dialogClose',
                 buttons: '=buttons',
                 enableSearch: '=search',
-                appList:'=appList',
-                apiInfo:'=apiInfo'
+                appList: '=appList',
+                apiInfo: '=apiInfo',
+                searchFn: '=searchFn'
             },
             templateUrl: 'scripts/views/tableData.html',
             link: function(scope) {
@@ -64,6 +65,7 @@ angular.module('serviceCenter')
                 scope.searchClose = function() {
                     scope.showSearch = false;
                     scope.filter.search = "";
+                    scope.refresh();
                 };
 
                 scope.searchOpen = function() {
@@ -81,6 +83,10 @@ angular.module('serviceCenter')
                 scope.remove = function(serviceId, instances) {
                     scope.removes(serviceId, instances)
                 };
+
+                scope.fnSearch = function(searchData) {
+                    scope.searchFn(searchData);
+                }
             }
         };
     }]);
