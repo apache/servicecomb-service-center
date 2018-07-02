@@ -29,8 +29,8 @@ angular.module('serviceCenter')
                 dialogClose: '=dialogClose',
                 buttons: '=buttons',
                 enableSearch: '=search',
-                appList:'=appList',
-                apiInfo:'=apiInfo',
+                appList: '=appList',
+                apiInfo: '=apiInfo',
                 searchFn: '=searchFn'
             },
             templateUrl: 'scripts/views/tableData.html',

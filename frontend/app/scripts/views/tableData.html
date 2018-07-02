@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <md-content>
-	<md-card>
+    <md-card>
         <md-toolbar class="table-header">
             <div class="md-toolbar-tools">
                 {{heading | translate}}
@@ -29,57 +29,56 @@ limitations under the License.
             </div>
         </md-toolbar>
         <md-toolbar class="md-table-toolbar md-raised md-default" ng-if="showSearch">
-          <div class="md-toolbar-tools">
-            <form flex name="filter.form" class="no-padding" >
-              <input id="search" class="form-control" type="search" ng-model="filter.search" ng-change="fnSearch(filter.search)" autofocus
-              placeholder="{{ 'search' | translate }}" autocomplete="off">
-            </form>
-            <md-button class="md-icon-button"  aria-label="{{ 'close' | translate }}" title="{{ 'close' | translate }}">
-              <md-icon><i class="fa fa-close fa-lg" ng-click="searchClose()" ></i></md-icon>
-            </md-button>
-          </div>
+            <div class="md-toolbar-tools">
+                <form flex name="filter.form" class="no-padding">
+                    <input id="search" class="form-control" type="search" ng-model="filter.search" ng-change="fnSearch(filter.search)" autofocus placeholder="{{ 'search' | translate }}" autocomplete="off">
+                </form>
+                <md-button class="md-icon-button" aria-label="{{ 'close' | translate }}" title="{{ 'close' | translate }}">
+                    <md-icon><i class="fa fa-close fa-lg" ng-click="searchClose()"></i></md-icon>
+                </md-button>
+            </div>
         </md-toolbar>
         <fetching-no-data data="appList" info="apiInfo"></fetching-no-data>
-        <md-table-container  ng-if="appList == ''" >
+        <md-table-container ng-if="appList == ''">
             <table data-md-table>
                 <thead md-head>
-                    <tr md-row>
-                        <th md-column ng-repeat="header in headers">
-                            {{ header.key | translate }}
-                        </th>
-                    </tr>
+                <tr md-row>
+                    <th md-column ng-repeat="header in headers">
+                        {{ header.key | translate }}
+                    </th>
+                </tr>
                 </thead>
                 <tbody>
-                    <tr md-row md-select="appData" id="target" data-ng-repeat="appData in data | orderBy: 'serviceName' | limitTo: paginationQuery.limit : (paginationQuery.page - 1) * paginationQuery.limit">
-                        <td md-cell ng-repeat="(key, value) in appData">
+                <tr md-row md-select="appData" id="target" data-ng-repeat="appData in data | orderBy: 'serviceName' | limitTo: paginationQuery.limit : (paginationQuery.page - 1) * paginationQuery.limit">
+                    <td md-cell ng-repeat="(key, value) in appData">
                             <span ng-if="key == 'serviceName'">
                                 <a ui-sref="sc.info.instance({serviceId:'{{appData.serviceId}}'})">{{appData.serviceName}}</a>
                             </span>
-                            <span ng-if="key == 'status'">
+                        <span ng-if="key == 'status'">
                                 <div ng-if="value == 'UP'" class="serviceStatus up" ng-class="{'outofservice' : appData.instances == 0}">{{value}}</div>
                                 <div ng-if="value == 'DOWN'" class="serviceStatus down">{{value}}</div>
                                 <div ng-if="value == 'STARTING'" class="serviceStatus starting">{{value}}</div>
                                 <div ng-if="value == 'OUTOFSERVICE'" class="serviceStatus outofservice">{{value}}</div>
                             </span>
-                            <span ng-if="key == 'operation'">
+                        <span ng-if="key == 'operation'">
                                 <md-button class="md-icon-button" ng-disabled="appData.instances != 0" ng-click="remove(appData.serviceId, appData.instances)" aria-label="{{ 'delete' | translate }}" title="{{ 'delete' | translate }}">
                                     <span class="glyphicon glyphicon-trash"></span>
-                                </md-button>
+                            </md-button>
                             </span>
-                            <span ng-if="key == 'address'">
+                        <span ng-if="key == 'address'">
                                 <span ng-repeat="endpoints in value track by $index">
                                     <li>{{endpoints}}</li>
                                 </span>
                             </span>
-                            <span ng-if="key != 'serviceId' && key != 'serviceName' && key != 'disableBtn' && key != 'address' && key != 'operation' && key !='status'">
+                        <span ng-if="key != 'serviceId' && key != 'serviceName' && key != 'disableBtn' && key != 'address' && key != 'operation' && key !='status'">
                                 {{value}}
                             </span>
-                        </td>
-                    </tr>
+                    </td>
+                </tr>
                 </tbody>
             </table>
         </md-table-container>
-         <md-table-pagination ng-if="(data && (data.length != 0))" class="pagination-class" md-limit="paginationQuery.limit" md-limit-options="pagination" md-page="paginationQuery.page" md-total="{{data.length}}" md-page-select="paginationOptions.pageSelect" md-boundary-links="paginationOptions.boundaryLinks" md-label="{page: 'Page:', rowsPerPage: 'Rows Per Page:', of: '&nbsp of &nbsp'}">
+        <md-table-pagination ng-if="(data && (data.length != 0))" class="pagination-class" md-limit="paginationQuery.limit" md-limit-options="pagination" md-page="paginationQuery.page" md-total="{{data.length}}" md-page-select="paginationOptions.pageSelect" md-boundary-links="paginationOptions.boundaryLinks" md-label="{page: 'Page:', rowsPerPage: 'Rows Per Page:', of: '&nbsp of &nbsp'}">
         </md-table-pagination>
-	</md-card>
+    </md-card>
 </md-content>
