@@ -17,8 +17,11 @@
 package backend
 
 import (
+	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"golang.org/x/net/context"
+	"strings"
 )
 
 type Response struct {
@@ -47,6 +50,12 @@ type baseIndexer struct {
 }
 
 func (i *baseIndexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (r *Response, err error) {
+	op := registry.OpGet(opts...)
+	key := util.BytesToStringWithNoCopy(op.Key)
+	if strings.Index(key, i.Cfg.Prefix) != 0 {
+		return nil, fmt.Errorf("search %s mismatch pattern %s", key, i.Cfg.Prefix)
+	}
+
 	resp, err := Registry().Do(ctx, opts...)
 	if err != nil {
 		return nil, err

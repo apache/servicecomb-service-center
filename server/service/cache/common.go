@@ -14,12 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package util
+package cache
 
 const (
-	HEADER_REV            = "X-Resource-Revision"
-	CTX_NOCACHE           = "noCache"
-	CTX_CACHEONLY         = "cacheOnly"
-	CTX_REQUEST_REVISION  = "requestRev"
-	CTX_RESPONSE_REVISION = "responseRev"
+	CTX_FIND_CONSUMER = "consumer"
+	CTX_FIND_PROVIDER = "provider"
+	CTX_FIND_TAGS     = "tags"
+	CACHE_FIND        = "find"
+)
+
+const (
+	cacheFindProviderIds = "findProviderIds"
 )

@@ -14,12 +14,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package util
+package cache
 
-const (
-	HEADER_REV            = "X-Resource-Revision"
-	CTX_NOCACHE           = "noCache"
-	CTX_CACHEONLY         = "cacheOnly"
-	CTX_REQUEST_REVISION  = "requestRev"
-	CTX_RESPONSE_REVISION = "responseRev"
+import (
+	"github.com/apache/incubator-servicecomb-service-center/pkg/cache"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"golang.org/x/net/context"
 )
+
+type ServiceFilter struct {
+}
+
+func (f *ServiceFilter) Name(ctx context.Context) string {
+	provider := ctx.Value(CTX_FIND_PROVIDER).(*pb.MicroServiceKey)
+	return util.StringJoin([]string{
+		provider.Tenant,
+		provider.Environment,
+		provider.AppId,
+		provider.ServiceName}, "/")
+}
+
+func (f *ServiceFilter) Init(ctx context.Context, parent *cache.Node) (node *cache.Node, err error) {
+	node = cache.NewNode()
+	return
+}

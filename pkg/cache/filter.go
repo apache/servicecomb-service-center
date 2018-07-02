@@ -14,12 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package util
+package cache
 
-const (
-	HEADER_REV            = "X-Resource-Revision"
-	CTX_NOCACHE           = "noCache"
-	CTX_CACHEONLY         = "cacheOnly"
-	CTX_REQUEST_REVISION  = "requestRev"
-	CTX_RESPONSE_REVISION = "responseRev"
-)
+import "golang.org/x/net/context"
+
+type Filter interface {
+	Name(ctx context.Context) string
+	Init(ctx context.Context, parent *Node) (*Node, error)
+}

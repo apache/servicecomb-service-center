@@ -71,13 +71,9 @@ func (apt *TagsChangedTask) publish(ctx context.Context, domainProject, consumer
 			util.Logger().Warnf(err, "get service %s file failed", providerId)
 			continue
 		}
-		PublishInstanceEvent(domainProject, pb.EVT_EXPIRE,
-			&pb.MicroServiceKey{
-				Environment: provider.Environment,
-				AppId:       provider.AppId,
-				ServiceName: provider.ServiceName,
-				Version:     provider.Version,
-			}, nil, rev, []string{consumerId})
+		providerKey := pb.MicroServiceToKey(domainProject, provider)
+
+		PublishInstanceEvent(domainProject, pb.EVT_EXPIRE, providerKey, nil, rev, []string{consumerId})
 	}
 	return nil
 }

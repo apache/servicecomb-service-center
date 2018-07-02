@@ -14,12 +14,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package util
+package cache
 
-const (
-	HEADER_REV            = "X-Resource-Revision"
-	CTX_NOCACHE           = "noCache"
-	CTX_CACHEONLY         = "cacheOnly"
-	CTX_REQUEST_REVISION  = "requestRev"
-	CTX_RESPONSE_REVISION = "responseRev"
-)
+import "time"
+
+type Config struct {
+	ttl time.Duration
+	max int64
+}
+
+func (c *Config) TTL() time.Duration {
+	return c.ttl
+}
+
+func (c *Config) WithTTL(ttl time.Duration) *Config {
+	c.ttl = ttl
+	return c
+}
+
+func (c *Config) MaxSize() int64 {
+	return c.max
+}
+
+func (c *Config) WithMaxSize(s int64) *Config {
+	c.max = s
+	return c
+}
+
+func Configure() *Config {
+	return &Config{
+		ttl: 5 * time.Minute,
+		max: 5000,
+	}
+}

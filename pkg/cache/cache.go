@@ -14,12 +14,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package util
+package cache
 
-const (
-	HEADER_REV            = "X-Resource-Revision"
-	CTX_NOCACHE           = "noCache"
-	CTX_CACHEONLY         = "cacheOnly"
-	CTX_REQUEST_REVISION  = "requestRev"
-	CTX_RESPONSE_REVISION = "responseRev"
+import (
+	"golang.org/x/net/context"
+	"sync"
 )
+
+type Cache struct {
+	data context.Context
+	lock sync.RWMutex
+}
+
+func (c *Cache) Set(k string, v interface{}) {
+	c.lock.Lock()
+	c.data = context.WithValue(c.data, k, v)
+	c.lock.Unlock()
+}
+
+func (c *Cache) Get(k string) (v interface{}) {
+	c.lock.RLock()
+	v = c.data.Value(k)
+	c.lock.RUnlock()
+	return
+}
+
+func NewCache() *Cache {
+	return &Cache{
+		data: context.Background(),
+	}
+}

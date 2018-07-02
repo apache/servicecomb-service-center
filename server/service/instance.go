@@ -28,6 +28,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
+	"github.com/apache/incubator-servicecomb-service-center/server/service/cache"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
 	"math"
@@ -537,89 +538,82 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		provider.Tenant = util.ParseTargetDomainProject(ctx)
 	}
 
+	noCache, cacheOnly := ctx.Value(serviceUtil.CTX_NOCACHE) == "1", ctx.Value(serviceUtil.CTX_CACHEONLY) == "1"
+	rev, _ := ctx.Value(serviceUtil.CTX_REQUEST_REVISION).(string)
+	reqRev, _ := serviceUtil.ParseRevision(rev)
+	cloneCtx := util.CloneContext(ctx)
+
 	// cache
-	if item := serviceUtil.FindInstancesCache.Get(provider.Tenant, in.ConsumerServiceId, provider); item != nil {
-		noCache, cacheOnly := ctx.Value(serviceUtil.CTX_NOCACHE) == "1", ctx.Value(serviceUtil.CTX_CACHEONLY) == "1"
-		rev, _ := ctx.Value(serviceUtil.CTX_REQUEST_REVISION).(string)
-		reqRev, _ := serviceUtil.ParseRevision(rev)
-		cacheRev, _ := serviceUtil.ParseRevision(item.Rev)
-		if !noCache && (cacheOnly || reqRev <= cacheRev) {
-			instances := item.Instances
-			if rev == item.Rev {
-				instances = instances[:0]
-			}
-			util.SetContext(ctx, serviceUtil.CTX_RESPONSE_REVISION, item.Rev)
-			return &pb.FindInstancesResponse{
-				Response:  pb.CreateResponse(pb.Response_SUCCESS, "Query service instances successfully."),
-				Instances: instances,
-			}, nil
-		}
+	var (
+		item *cache.VersionRuleCacheItem
+		i    = 0
+	)
+	if noCache {
+		i = 1
 	}
-
-	// 版本规则
-	ids, err := serviceUtil.FindServiceIds(ctx, in.VersionRule, provider)
-	if err != nil {
-		util.Logger().Errorf(err, "find instance failed, %s: get providers failed.", findFlag)
-		return &pb.FindInstancesResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
-		}, err
-	}
-
-	if len(ids) == 0 {
-		mes := fmt.Sprintf("provider not exist, %s", findFlag)
-		util.Logger().Errorf(nil, "find instance failed, %s", mes)
-		return &pb.FindInstancesResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, mes),
-		}, nil
-	}
-
-	for i := 0; i < len(ids); i++ {
-		err := s.getInstancePreCheck(ctx, ids[i], in.ConsumerServiceId, in.Tags)
+	for ; i < 2; i++ {
+		item, err = cache.FindInstances.Get(cloneCtx, service, provider, in.Tags)
 		if err != nil {
-			ids = append(ids[:i], ids[i+1:]...)
-			i--
-		}
-	}
-
-	if len(ids) > 0 {
-		//维护version的规则,service name 可能是别名，所以重新获取
-		providerService, err := serviceUtil.GetService(ctx, provider.Tenant, ids[0])
-		if providerService == nil {
-			util.Logger().Errorf(err, "find instance failed, %s: provider %s not exist.", findFlag, ids[0])
-			return &pb.FindInstancesResponse{
-				Response: pb.CreateResponse(scerr.ErrServiceNotExists, "No provider matched."),
-			}, nil
-		}
-
-		provider = pb.MicroServiceToKey(provider.Tenant, providerService)
-		provider.Version = in.VersionRule
-
-		err = serviceUtil.AddServiceVersionRule(ctx, domainProject, service, provider)
-		if err != nil {
-			util.Logger().Errorf(err, "find instance failed, %s: add service version rule failed.", findFlag)
+			util.Logger().Errorf(err, "FindInstancesCache.Get failed, %s", findFlag)
 			return &pb.FindInstancesResponse{
 				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 			}, err
 		}
+		if item == nil {
+			mes := fmt.Sprintf("provider not exist, %s", findFlag)
+			util.Logger().Errorf(nil, "FindInstancesCache.Get failed, %s", mes)
+			return &pb.FindInstancesResponse{
+				Response: pb.CreateResponse(scerr.ErrServiceNotExists, mes),
+			}, nil
+		}
+
+		cacheRev, _ := serviceUtil.ParseRevision(item.Rev)
+		if noCache || cacheOnly || reqRev <= cacheRev {
+			break
+		}
+		util.SetContext(cloneCtx, serviceUtil.CTX_NOCACHE, "1")
 	}
 
-	instances, rev, err := serviceUtil.GetAllInstancesOfServices(ctx, util.ParseTargetDomainProject(ctx), ids)
+	// add dependency queue
+	provider, err = s.reshapeProviderKey(ctx, provider, item.ServiceIds[0])
+	if provider != nil {
+		err = serviceUtil.AddServiceVersionRule(ctx, domainProject, service, provider)
+	} else {
+		mes := fmt.Sprintf("provider not exist, %s", findFlag)
+		util.Logger().Errorf(nil, "AddServiceVersionRule failed, %s", mes)
+		return &pb.FindInstancesResponse{
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists, mes),
+		}, nil
+	}
 	if err != nil {
-		util.Logger().Errorf(err, "find instance failed, %s: GetAllInstancesOfServices failed.", findFlag)
+		util.Logger().Errorf(err, "AddServiceVersionRule failed, %s", findFlag)
 		return &pb.FindInstancesResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 
-	serviceUtil.FindInstancesCache.Set(provider.Tenant, in.ConsumerServiceId, provider, &serviceUtil.VersionRuleCacheItem{
-		Instances: instances,
-		Rev:       rev,
-	})
-	util.SetContext(ctx, serviceUtil.CTX_RESPONSE_REVISION, rev)
+	instances := item.Instances
+	if rev == item.Rev {
+		instances = instances[:0]
+	}
+	util.SetContext(ctx, serviceUtil.CTX_RESPONSE_REVISION, item.Rev)
 	return &pb.FindInstancesResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Query service instances successfully."),
 		Instances: instances,
 	}, nil
+}
+
+func (s *InstanceService) reshapeProviderKey(ctx context.Context, provider *pb.MicroServiceKey, providerId string) (*pb.MicroServiceKey, error) {
+	//维护version的规则,service name 可能是别名，所以重新获取
+	providerService, err := serviceUtil.GetService(ctx, provider.Tenant, providerId)
+	if providerService == nil {
+		return nil, err
+	}
+
+	versionRule := provider.Version
+	provider = pb.MicroServiceToKey(provider.Tenant, providerService)
+	provider.Version = versionRule
+	return provider, nil
 }
 
 func (s *InstanceService) UpdateStatus(ctx context.Context, in *pb.UpdateInstanceStatusRequest) (*pb.UpdateInstanceStatusResponse, error) {

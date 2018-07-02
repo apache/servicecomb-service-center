@@ -21,6 +21,7 @@ import (
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/server/service/cache"
 	nf "github.com/apache/incubator-servicecomb-service-center/server/service/notification"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
@@ -76,12 +77,8 @@ func (h *InstanceEventHandler) OnEvent(evt backend.KvEvent) {
 		return
 	}
 
-	PublishInstanceEvent(domainProject, action, &pb.MicroServiceKey{
-		Environment: ms.Environment,
-		AppId:       ms.AppId,
-		ServiceName: ms.ServiceName,
-		Version:     ms.Version,
-	}, evt.KV.Value.(*pb.MicroServiceInstance), evt.Revision, consumerIds)
+	PublishInstanceEvent(domainProject, action, pb.MicroServiceToKey(domainProject, ms),
+		evt.KV.Value.(*pb.MicroServiceInstance), evt.Revision, consumerIds)
 }
 
 func NewInstanceEventHandler() *InstanceEventHandler {
@@ -96,11 +93,11 @@ func PublishInstanceEvent(domainProject string, action pb.EventType, serviceKey 
 		Instance: instance,
 	}
 	for _, consumerId := range subscribers {
-		// expires cache
-		serviceUtil.FindInstancesCache.Delete(domainProject, consumerId, serviceKey)
-
 		// TODO add超时怎么处理？
 		job := nf.NewWatchJob(consumerId, apt.GetInstanceRootKey(domainProject)+"/", rev, response)
 		nf.GetNotifyService().AddJob(job)
 	}
+
+	// expires cache
+	cache.FindInstances.Remove(serviceKey)
 }

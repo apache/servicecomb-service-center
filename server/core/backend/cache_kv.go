@@ -74,7 +74,6 @@ func (c *KvCache) compact() {
 	c.store = newCache
 }
 
-// unsafe
 func (c *KvCache) Get(key string) (v *KeyValue) {
 	c.rwMux.RLock()
 	prefix := c.prefix(key)
@@ -85,7 +84,6 @@ func (c *KvCache) Get(key string) (v *KeyValue) {
 	return
 }
 
-// unsafe
 func (c *KvCache) GetAll(prefix string, arr *[]*KeyValue) (count int) {
 	c.rwMux.RLock()
 	count = c.getPrefixKey(arr, prefix)
@@ -93,21 +91,18 @@ func (c *KvCache) GetAll(prefix string, arr *[]*KeyValue) (count int) {
 	return
 }
 
-// unsafe
 func (c *KvCache) Put(key string, v *KeyValue) {
 	c.rwMux.Lock()
 	c.addPrefixKey(key, v)
 	c.rwMux.Unlock()
 }
 
-// unsafe
 func (c *KvCache) Remove(key string) {
 	c.rwMux.Lock()
 	c.deletePrefixKey(key)
 	c.rwMux.Unlock()
 }
 
-// unsafe
 func (c *KvCache) ForEach(iter func(k string, v *KeyValue) (next bool)) {
 	c.rwMux.RLock()
 loopParent:

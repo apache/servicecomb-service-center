@@ -94,21 +94,6 @@ func TestGetInstanceCountOfOneService(t *testing.T) {
 	}
 }
 
-func TestGetInstanceCountOfServices(t *testing.T) {
-	_, _, err := GetAllInstancesOfServices(util.SetContext(context.Background(), CTX_NOCACHE, "1"), "", []string{"1"})
-	if err == nil {
-		t.Fatalf(`GetAllInstancesOfServices CTX_NOCACHE failed`)
-	}
-	_, _, err = GetAllInstancesOfServices(util.SetContext(context.Background(), CTX_REQUEST_REVISION, 1), "", []string{"1"})
-	if err == nil {
-		t.Fatalf(`GetAllInstancesOfServices CTX_REQUEST_REVISION failed`)
-	}
-	_, _, err = GetAllInstancesOfServices(context.Background(), "", []string{"1"})
-	if err == nil {
-		t.Fatalf(`GetAllInstancesOfServices failed`)
-	}
-}
-
 func TestUpdateInstance(t *testing.T) {
 	err := UpdateInstance(util.SetContext(context.Background(), CTX_NOCACHE, "1"), "", &pb.MicroServiceInstance{})
 	if err == nil {

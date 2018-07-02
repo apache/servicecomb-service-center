@@ -17,10 +17,12 @@
 package backend
 
 import (
+	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"golang.org/x/net/context"
+	"strings"
 	"sync"
 	"time"
 )
@@ -35,8 +37,11 @@ type CacheIndexer struct {
 
 func (i *CacheIndexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (*Response, error) {
 	op := registry.OpGet(opts...)
-
 	key := util.BytesToStringWithNoCopy(op.Key)
+	if strings.Index(key, i.baseIndexer.Cfg.Prefix) != 0 {
+		return nil, fmt.Errorf("search %s mismatch %s pattern %s",
+			key, i.cacher.Cache().Name(), i.baseIndexer.Cfg.Prefix)
+	}
 
 	if !core.ServerInfo.Config.EnableCache ||
 		op.Mode == registry.MODE_NO_CACHE ||

@@ -1235,8 +1235,7 @@ var _ = Describe("'Instance' service", func() {
 					VersionRule:       "1.0.5",
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
-				Expect(len(respFind.Instances)).To(Equal(0))
+				Expect(respFind.Response.Code).To(Equal(scerr.ErrServiceNotExists))
 
 				By("provider tag does not exist")
 				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
@@ -1247,8 +1246,7 @@ var _ = Describe("'Instance' service", func() {
 					Tags:              []string{"notexisttag"},
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
-				Expect(len(respFind.Instances)).To(Equal(0))
+				Expect(respFind.Response.Code).To(Equal(scerr.ErrServiceNotExists))
 
 				By("shared service discovery")
 				os.Setenv("CSE_SHARED_SERVICES", "query_instance_shared_provider")

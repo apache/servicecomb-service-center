@@ -14,12 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package util
+package cache
 
-const (
-	HEADER_REV            = "X-Resource-Revision"
-	CTX_NOCACHE           = "noCache"
-	CTX_CACHEONLY         = "cacheOnly"
-	CTX_REQUEST_REVISION  = "requestRev"
-	CTX_RESPONSE_REVISION = "responseRev"
-)
+type Node struct {
+	// user data
+	Cache *Cache
+	// tree will set the value below after the node added in.
+	Name   string
+	Tree   *Tree
+	Childs []*Node
+	Level  int
+}
+
+func NewNode() *Node {
+	return &Node{
+		Cache: NewCache(),
+	}
+}
