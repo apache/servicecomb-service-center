@@ -24,14 +24,14 @@ limitations under the License..
     <div class="col-sm-12 col-md-12 col-lg-3" ng-repeat="info in dashboardInfo">
         <div class="mainCard">
             <div class="col-sm-3 col-md-3 col-lg-3 mainCardIcon {{ info.title }}">
-                <i class="fa {{ info.iconName }} fa-3x icon-color"></i>
+                <i class="fa {{ info.iconName }} fa-2x icon-color"></i>
             </div>
             <div class="col-sm-9 col-md-9">
                 <div class="row">
                     <div class="col-sm-8 col-md-8 no-padding mainCardTitleStyle">
                         <span class="mainCardTitle">{{ info.title | translate }}</span>
                     </div>
-                    <div class="col-sm-4 col-md-4 m5">
+                    <div class="col-sm-4 col-md-4 count">
                         <span class="mainCardCount">{{ info.count }}</span>
                     </div>
                 </div>
@@ -49,7 +49,7 @@ limitations under the License..
                 <div class="col-md-6 servicesChart">
                     <canvas class="chart chart-doughnut" chart-data="servicesChartData" chart-colors="colors" chart-labels="labels"></canvas> 
                     <div class="chart-legend">
-                        <i class="fa fa-circle legendStarting"></i>{{ "starting" | translate }}
+                        <i class="fa fa-circle legendStarting"></i><span class="pl-3">{{ "starting" | translate }}</span>
                         <i class="fa fa-circle legendUp"></i> {{ "up" | translate }}
                         <i class="fa fa-circle legendDown"></i> {{ "down" | translate }}
                         <i class="fa fa-circle legendUnavailable"></i> {{ "outofservice" | translate }}
@@ -60,12 +60,12 @@ limitations under the License..
                         <div class="col-sm-12 col-md-12 dashboardCount" ng-repeat="service in servicesStatusData">
                             <div class="row" ng-click="goToServices(service.title)">
                                 <div class="col-xs-4 col-sm-6 col-md-3 statusIcon {{ service.title }}">
-                                    <i class="fa {{ service.iconName }} fa-3x icon-color"></i>
+                                    <i class="fa {{ service.iconName }} fa-2x icon-color"></i>
                                 </div>
-                                <div class="col-xs-4 col-sm-4 col-md-5 statusTitle">
+                                <div class="col-xs-4 col-sm-4 col-md-6 statusTitle">
                                     <span>{{ service.title | translate }}</span>
                                 </div>
-                                <div class="col-xs-4 col-sm-2 col-md-4 statusCount">
+                                <div class="col-xs-4 col-sm-2 col-md-3 statusCount">
                                     <span class="pull-right">{{ service.count }}</span>
                                 </div>
                             </div>

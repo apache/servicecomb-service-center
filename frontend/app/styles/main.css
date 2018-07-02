@@ -278,7 +278,7 @@ body {
 }
 .dashboardCount .statusIcon {
   height: 65px;
-  padding: 12px;
+  padding: 15px;
 }
 .statusTitle, .statusCount {
   background-color: #fff;
@@ -358,7 +358,7 @@ md-table-pagination .md-select-icon {
 }
 .mainCard .mainCardIcon {
   height: 100%;
-  padding-top: 10px;
+  padding-top: 6%;
   text-align: center;
 }
 .mainCardTitle {
@@ -418,5 +418,41 @@ table, md-toolbar {
 }
 .inline {
     display: inline;
+}
+.h-50 {
+    height: 50px;
+}
+.count {
+    margin: 5px 0px;
+}
+.pl-3 {
+    padding-left: 3px
+}
+
+@media only screen
+and (min-width: 1030px)
+and (max-width: 1366px) {
+    .mainCard .mainCardIcon{
+        padding-top: 10%;
+    }
+    .mainCardCount {
+        padding-left: 12px;
+        font-size: 20px;
+    }
+    .count {
+        margin: 16px 0px !important;
+     }
+     .fa-cog {
+        margin-left: -4px;
+     }
+     .fa-cogs, .fa-server, .fa-users {
+        margin-left: -7px;
+     }
+     .servicesChart {
+        margin-top: 8%;
+     }
+     .mainCardTitle {
+        font-weight: 500;
+     }
 }
 /*# sourceMappingURL=main.css.map */
