@@ -113,6 +113,7 @@ func (c *KvCacher) handleWatcher(watcher *Watcher) error {
 			return errors.New("handle watcher error")
 		}
 
+		start := time.Now()
 		evts := make([]KvEvent, 0, len(resp.Kvs))
 		for _, kv := range resp.Kvs {
 			evt := KvEvent{Prefix: c.lw.Prefix, Revision: kv.ModRevision}
@@ -139,6 +140,8 @@ func (c *KvCacher) handleWatcher(watcher *Watcher) error {
 			evts = append(evts, evt)
 		}
 		c.sync(evts)
+		util.LogDebugOrWarnf(start, "finish to handle %d events, prefix: %s, rev: %d",
+			len(evts), c.Cfg.Prefix, c.lw.Revision())
 	}
 	return nil
 }

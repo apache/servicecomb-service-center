@@ -62,10 +62,8 @@ func (lw *ListWatcher) doWatch(ctx context.Context, f func(*registry.PluginRespo
 		registry.WithWatchCallback(
 			func(message string, resp *registry.PluginResponse) error {
 				if resp == nil || len(resp.Kvs) == 0 {
-					return fmt.Errorf("unknown event %s", resp)
+					return fmt.Errorf("unknown event %s, watch prefix %s", resp, lw.Prefix)
 				}
-
-				util.Logger().Infof("caught event %s, watch prefix %s, start rev %d+1,", resp, lw.Prefix, rev)
 
 				lw.setRevision(resp.Revision)
 

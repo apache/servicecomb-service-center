@@ -71,15 +71,14 @@ func (w *ListWatcher) OnMessage(job NotifyJob) {
 		return
 	}
 
-	timer := time.NewTimer(DEFAULT_ON_MESSAGE_TIMEOUT)
+	timer := time.NewTimer(GetNotifyService().Config.AddTimeout)
 	select {
 	case <-w.listCh:
 		timer.Stop()
 	case <-timer.C:
 		util.Logger().Errorf(nil,
-			"the %s listwatcher %s %s is not ready[over %s], drop the event %v",
-			w.Type(), w.Id(), w.Subject(), DEFAULT_ON_MESSAGE_TIMEOUT, job)
-		return
+			"the %s listwatcher %s %s is not ready[over %s], send the event %v",
+			w.Type(), w.Id(), w.Subject(), GetNotifyService().Config.AddTimeout, job)
 	}
 
 	if wJob.Revision <= w.ListRevision {
@@ -95,14 +94,14 @@ func (w *ListWatcher) sendMessage(job *WatchJob) {
 	util.Logger().Debugf("start to notify %s watcher %s %s, job is %v, current revision is %v", w.Type(),
 		w.Id(), w.Subject(), job, w.ListRevision)
 	defer util.RecoverAndReport()
-	timer := time.NewTimer(DEFAULT_ON_MESSAGE_TIMEOUT)
+	timer := time.NewTimer(GetNotifyService().Config.AddTimeout)
 	select {
 	case w.Job <- job:
 		timer.Stop()
 	case <-timer.C:
 		util.Logger().Errorf(nil,
 			"the %s watcher %s %s event queue is full[over %s], drop the event %v",
-			w.Type(), w.Id(), w.Subject(), DEFAULT_ON_MESSAGE_TIMEOUT, job)
+			w.Type(), w.Id(), w.Subject(), GetNotifyService().Config.AddTimeout, job)
 	}
 }
 

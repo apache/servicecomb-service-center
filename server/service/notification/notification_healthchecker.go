@@ -43,8 +43,8 @@ func (s *NotifyServiceHealthChecker) OnMessage(job NotifyJob) {
 		return
 	}
 
-	util.Logger().Warnf(err, "notification service remove %s watcher %s %s",
-		j.ErrorSubscriber.Type(), j.ErrorSubscriber.Subject(), j.ErrorSubscriber.Id())
+	util.Logger().Debugf("notification service remove %s watcher, error: %s, subject: %s, id: %s",
+		j.ErrorSubscriber.Type(), err.Error(), j.ErrorSubscriber.Subject(), j.ErrorSubscriber.Id())
 	s.Service().RemoveSubscriber(j.ErrorSubscriber)
 }
 

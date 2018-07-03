@@ -17,7 +17,6 @@
 package backend
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"strings"
 	"sync"
 	"time"
@@ -39,39 +38,6 @@ func (c *KvCache) Name() string {
 func (c *KvCache) Size() (l int) {
 	l = c.GetAll(c.Cfg.Prefix, nil)
 	return
-}
-
-func (c *KvCache) Lock() {
-	c.rwMux.Lock()
-}
-
-func (c *KvCache) Unlock() {
-	l := len(c.store)
-	if l > c.lastMaxSize {
-		c.lastMaxSize = l
-	}
-	if c.Cfg.InitSize >= l &&
-		c.lastMaxSize > c.Cfg.InitSize*DEFAULT_COMPACT_TIMES &&
-		time.Now().Sub(c.lastRefresh) >= DEFAULT_COMPACT_TIMEOUT {
-		c.compact()
-
-		util.Logger().Infof("cache '%s' is not in use over %s, compact capacity to size %d->%d",
-			c.Name(), DEFAULT_COMPACT_TIMEOUT, c.lastMaxSize, l)
-
-		c.lastMaxSize = l
-		c.lastRefresh = time.Now()
-	}
-
-	c.rwMux.Unlock()
-}
-
-func (c *KvCache) compact() {
-	// gc
-	newCache := make(map[string]map[string]*KeyValue)
-	for k, v := range c.store {
-		newCache[k] = v
-	}
-	c.store = newCache
 }
 
 func (c *KvCache) Get(key string) (v *KeyValue) {

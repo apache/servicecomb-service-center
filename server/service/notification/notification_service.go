@@ -168,9 +168,6 @@ func (s *NotifyService) getPublish2SubscriberFunc(t NotifyType) func(context.Con
 					return
 				}
 
-				util.Logger().Infof("notification service got a job %s: %s to notify subscriber %s",
-					job.Type(), job.Subject(), job.SubscriberId())
-
 				s.mutexes[t].Lock()
 
 				if s.Closed() && len(s.services[t]) == 0 {
