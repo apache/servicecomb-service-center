@@ -63,8 +63,12 @@ func (s *KvStore) injectConfig(t StoreType) *Config {
 }
 
 func (s *KvStore) setupIndexer(t StoreType, indexer Indexer) {
+	old := s.indexers[t]
 	s.indexers[t] = indexer
 	indexer.Run()
+	if old != nil {
+		old.Stop()
+	}
 }
 
 func (s *KvStore) Run() {
