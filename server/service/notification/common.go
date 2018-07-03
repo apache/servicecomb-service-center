@@ -24,7 +24,6 @@ import (
 
 const (
 	DEFAULT_MAX_QUEUE          = 1000
-	DEFAULT_INIT_SUBSCRIBERS   = 1000
 	DEFAULT_ON_MESSAGE_TIMEOUT = 100 * time.Millisecond
 	DEFAULT_TIMEOUT            = 30 * time.Second
 

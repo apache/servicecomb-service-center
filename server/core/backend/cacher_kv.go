@@ -390,6 +390,9 @@ func (c *KvCacher) onKvEvents(evts []KvEvent) {
 	if c.Cfg.OnEvent == nil {
 		return
 	}
+
+	defer util.RecoverAndReport()
+
 	for _, evt := range evts {
 		c.Cfg.OnEvent(evt)
 	}

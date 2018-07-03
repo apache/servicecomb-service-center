@@ -130,7 +130,7 @@ func NewListWatcher(id string, subject string,
 			subject: subject,
 			nType:   INSTANCE,
 		},
-		Job:      make(chan *WatchJob, DEFAULT_MAX_QUEUE),
+		Job:      make(chan *WatchJob, GetNotifyService().Config.MaxQueue),
 		ListFunc: listFunc,
 		listCh:   make(chan struct{}),
 	}

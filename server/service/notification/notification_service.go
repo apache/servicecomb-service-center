@@ -76,7 +76,7 @@ func (s *NotifyService) AddSubscriber(n Subscriber) error {
 
 	sr, ok := ss[n.Subject()]
 	if !ok {
-		sr = make(subscriberIndex, DEFAULT_INIT_SUBSCRIBERS)
+		sr = make(subscriberIndex)
 		ss[n.Subject()] = sr // add a subscriber
 	}
 
@@ -207,7 +207,7 @@ func (s *NotifyService) getPublish2SubscriberFunc(t NotifyType) func(context.Con
 
 func (s *NotifyService) init() {
 	if s.Config.AddTimeout <= 0 {
-		s.Config.AddTimeout = DEFAULT_TIMEOUT
+		s.Config.AddTimeout = DEFAULT_ON_MESSAGE_TIMEOUT
 	}
 	if s.Config.NotifyTimeout <= 0 {
 		s.Config.NotifyTimeout = DEFAULT_TIMEOUT
@@ -221,7 +221,7 @@ func (s *NotifyService) init() {
 	s.queues = make(map[NotifyType]chan NotifyJob, typeEnd)
 	s.mutexes = make(map[NotifyType]*sync.Mutex, typeEnd)
 	for i := NotifyType(0); i != typeEnd; i++ {
-		s.services[i] = make(subscriberSubjectIndex, DEFAULT_INIT_SUBSCRIBERS)
+		s.services[i] = make(subscriberSubjectIndex)
 		s.queues[i] = make(chan NotifyJob, s.Config.MaxQueue)
 		s.mutexes[i] = &sync.Mutex{}
 		s.waits.Add(1)

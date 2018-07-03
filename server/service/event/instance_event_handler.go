@@ -45,10 +45,9 @@ func (h *InstanceEventHandler) OnEvent(evt backend.KvEvent) {
 	if action == pb.EVT_DELETE {
 		splited := strings.Split(domainProject, "/")
 		if len(splited) == 2 && !apt.IsDefaultDomainProject(domainProject) {
-			domainName := splited[0]
-			projectName := splited[1]
-			ctx := util.SetDomainProject(context.Background(), domainName, projectName)
-			serviceUtil.RemandInstanceQuota(ctx)
+			domainName, projectName := splited[0], splited[1]
+			serviceUtil.RemandInstanceQuota(
+				util.SetDomainProject(context.Background(), domainName, projectName))
 		}
 	}
 
@@ -73,9 +72,6 @@ func (h *InstanceEventHandler) OnEvent(evt backend.KvEvent) {
 		util.Logger().Errorf(err, "query service %s consumers failed", providerId)
 		return
 	}
-	if len(consumerIds) == 0 {
-		return
-	}
 
 	PublishInstanceEvent(domainProject, action, pb.MicroServiceToKey(domainProject, ms),
 		evt.KV.Value.(*pb.MicroServiceInstance), evt.Revision, consumerIds)
@@ -86,6 +82,12 @@ func NewInstanceEventHandler() *InstanceEventHandler {
 }
 
 func PublishInstanceEvent(domainProject string, action pb.EventType, serviceKey *pb.MicroServiceKey, instance *pb.MicroServiceInstance, rev int64, subscribers []string) {
+	defer cache.FindInstances.Remove(serviceKey)
+
+	if len(subscribers) == 0 {
+		return
+	}
+
 	response := &pb.WatchInstanceResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Watch instance successfully."),
 		Action:   string(action),
@@ -97,7 +99,4 @@ func PublishInstanceEvent(domainProject string, action pb.EventType, serviceKey 
 		job := nf.NewWatchJob(consumerId, apt.GetInstanceRootKey(domainProject)+"/", rev, response)
 		nf.GetNotifyService().AddJob(job)
 	}
-
-	// expires cache
-	cache.FindInstances.Remove(serviceKey)
 }
