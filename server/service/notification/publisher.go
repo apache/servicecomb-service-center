@@ -23,34 +23,34 @@ import (
 	"time"
 )
 
-var websocketHandler *WebSocketHandler
+var publisher *Publisher
 
 func init() {
-	websocketHandler = NewWebSocketHandler()
-	websocketHandler.Run()
+	publisher = NewPublisher()
+	publisher.Run()
 }
 
-type WebSocketHandler struct {
+type Publisher struct {
 	wss       []*WebSocket
 	lock      sync.Mutex
 	goroutine *util.GoRoutine
 }
 
-func (wh *WebSocketHandler) Run() {
-	util.Go(websocketHandler.loop)
+func (wh *Publisher) Run() {
+	util.Go(publisher.loop)
 }
 
-func (wh *WebSocketHandler) Stop() {
+func (wh *Publisher) Stop() {
 	wh.goroutine.Close(true)
 }
 
-func (wh *WebSocketHandler) dispatch(ws *WebSocket, payload interface{}) {
+func (wh *Publisher) dispatch(ws *WebSocket, payload interface{}) {
 	wh.goroutine.Do(func(ctx context.Context) {
 		ws.HandleWatchWebSocketJob(payload)
 	})
 }
 
-func (wh *WebSocketHandler) loop(ctx context.Context) {
+func (wh *Publisher) loop(ctx context.Context) {
 	defer wh.Stop()
 	ticker := time.NewTicker(500 * time.Millisecond)
 	for {
@@ -87,14 +87,14 @@ func (wh *WebSocketHandler) loop(ctx context.Context) {
 	}
 }
 
-func (wh *WebSocketHandler) Accept(ws *WebSocket) {
+func (wh *Publisher) Accept(ws *WebSocket) {
 	wh.lock.Lock()
 	wh.wss = append(wh.wss, ws)
 	wh.lock.Unlock()
 }
 
-func NewWebSocketHandler() *WebSocketHandler {
-	return &WebSocketHandler{
+func NewPublisher() *Publisher {
+	return &Publisher{
 		goroutine: util.NewGo(context.Background()),
 	}
 }

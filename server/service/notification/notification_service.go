@@ -119,6 +119,13 @@ func (s *NotifyService) RemoveSubscriber(n Subscriber) {
 			break
 		}
 	}
+
+	if ns.Len() == 0 {
+		delete(m, n.Id())
+	}
+	if len(m) == 0 {
+		delete(ss, n.Subject())
+	}
 }
 
 func (s *NotifyService) RemoveAllSubscribers() {

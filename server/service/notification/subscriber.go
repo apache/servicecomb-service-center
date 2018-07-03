@@ -48,8 +48,6 @@ func (s *BaseSubscriber) Err() error {
 
 func (s *BaseSubscriber) SetError(err error) {
 	s.err = err
-	// 触发清理job
-	s.Service().AddJob(NewNotifyServiceHealthCheckJob(s))
 }
 
 func (s *BaseSubscriber) Id() string {

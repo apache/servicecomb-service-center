@@ -39,6 +39,12 @@ type ListWatcher struct {
 	listCh chan struct{}
 }
 
+func (s *ListWatcher) SetError(err error) {
+	s.BaseSubscriber.SetError(err)
+	// 触发清理job
+	s.Service().AddJob(NewNotifyServiceHealthCheckJob(s))
+}
+
 func (w *ListWatcher) OnAccept() {
 	if w.Err() != nil {
 		return
