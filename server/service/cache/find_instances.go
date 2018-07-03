@@ -21,9 +21,14 @@ import (
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
+	"math"
+	"time"
 )
 
-var FindInstances = &FindInstancesCache{Tree: cache.NewTree(cache.Configure())}
+var FindInstances = &FindInstancesCache{
+	Tree: cache.NewTree(cache.Configure().
+		WithTTL(2 * time.Minute).
+		WithMaxSize(math.MaxInt64))}
 
 func init() {
 	FindInstances.AddFilter(

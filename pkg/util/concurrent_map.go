@@ -46,11 +46,10 @@ func (cm *ConcurrentMap) Put(key, val interface{}) (old interface{}) {
 	return
 }
 
-func (cm *ConcurrentMap) PutIfAbsent(key, val interface{}) (old interface{}) {
-	var b bool
+func (cm *ConcurrentMap) PutIfAbsent(key, val interface{}) {
 	cm.init()
 	cm.mux.Lock()
-	old, b = cm.items[key]
+	_, b := cm.items[key]
 	if !b {
 		cm.items[key] = val
 	}

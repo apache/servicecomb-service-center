@@ -17,6 +17,7 @@
 package cache
 
 import (
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/karlseguin/ccache"
 	"golang.org/x/net/context"
 	"sync"
@@ -29,8 +30,13 @@ type Tree struct {
 	lock    sync.RWMutex
 }
 
-func (t *Tree) AddFilter(f ...Filter) *Tree {
-	t.filters = append(t.filters, f...)
+func (t *Tree) AddFilter(fs ...Filter) *Tree {
+	t.lock.Lock()
+	for _, f := range fs {
+		t.filters = append(t.filters, f)
+		t.nodes = append(t.nodes, ccache.New(ccache.Configure().MaxSize(t.Config.MaxSize())))
+	}
+	t.lock.Unlock()
 	return t
 }
 
@@ -50,19 +56,17 @@ func (t *Tree) Remove(ctx context.Context) {
 		return
 	}
 
-	filter := t.filters[0]
-	if parent := t.getNode(0, filter.Name(ctx)); parent != nil {
-		t.lock.Lock()
-		t.remove(parent)
-		t.lock.Unlock()
-	}
+	t.remove(0, t.filters[0].Name(ctx))
 }
 
-func (t *Tree) remove(parent *Node) {
-	for _, child := range parent.Childs {
-		t.remove(child)
+func (t *Tree) remove(idx int, name string) {
+	if parent := t.getNode(idx, name); parent != nil {
+		parent.Childs.ForEach(func(item util.MapItem) (next bool) {
+			t.remove(idx+1, item.Key.(string))
+			return true
+		})
+		t.nodes[parent.Level].Delete(parent.Name)
 	}
-	t.nodes[parent.Level].Delete(parent.Name)
 }
 
 func (t *Tree) getOrCreateNode(ctx context.Context, idx int, parent *Node) (node *Node, err error) {
@@ -72,31 +76,14 @@ func (t *Tree) getOrCreateNode(ctx context.Context, idx int, parent *Node) (node
 
 	filter := t.filters[idx]
 	name := t.nodeFullName(filter.Name(ctx), parent)
-
-	t.lock.RLock()
-	if node = t.getNode(idx, name); node != nil {
-		t.lock.RUnlock()
+	item, err := t.nodes[idx].Fetch(name, t.Config.TTL(), func() (interface{}, error) {
+		// if node is miss or stale
+		return t.createNode(ctx, idx, name, parent)
+	})
+	if err != nil {
 		return
 	}
-	t.lock.RUnlock()
-
-	t.lock.Lock()
-	if len(t.nodes) <= idx {
-		t.nodes = append(t.nodes, ccache.New(ccache.Configure().MaxSize(t.Config.MaxSize())))
-	}
-	if node = t.getNode(idx, name); node != nil {
-		t.lock.Unlock()
-		return
-	}
-
-	node, err = t.createNode(ctx, idx, name, parent)
-	if node == nil {
-		t.lock.Unlock()
-		return
-	}
-	t.nodes[idx].Set(name, node, t.Config.TTL())
-	t.lock.Unlock()
-	return
+	return item.Value().(*Node), nil
 }
 
 func (t *Tree) nodeFullName(name string, parent *Node) string {
@@ -126,7 +113,7 @@ func (t *Tree) createNode(ctx context.Context, idx int, name string, parent *Nod
 	node.Tree = t
 	node.Level = idx
 	if parent != nil {
-		parent.Childs = append(parent.Childs, node)
+		parent.Childs.PutIfAbsent(name, struct{}{})
 	}
 	return
 }

@@ -16,18 +16,21 @@
  */
 package cache
 
+import "github.com/apache/incubator-servicecomb-service-center/pkg/util"
+
 type Node struct {
 	// user data
 	Cache *Cache
 	// tree will set the value below after the node added in.
 	Name   string
 	Tree   *Tree
-	Childs []*Node
+	Childs *util.ConcurrentMap
 	Level  int
 }
 
 func NewNode() *Node {
 	return &Node{
-		Cache: NewCache(),
+		Cache:  NewCache(),
+		Childs: util.NewConcurrentMap(0),
 	}
 }
