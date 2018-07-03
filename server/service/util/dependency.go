@@ -168,7 +168,7 @@ func DependencyRuleExist(ctx context.Context, provider *pb.MicroServiceKey, cons
 		targetDomainProject = consumer.Tenant
 	}
 
-	consumerKey := apt.GenerateConsumerDependencyRuleKey(targetDomainProject, consumer)
+	consumerKey := apt.GenerateConsumerDependencyRuleKey(consumer.Tenant, consumer)
 	existed, err := dependencyRuleExistUtil(ctx, consumerKey, provider)
 	if err != nil || existed {
 		return existed, err
@@ -216,12 +216,16 @@ func AddServiceVersionRule(ctx context.Context, domainProject string, consumer *
 
 	id := util.StringJoin([]string{provider.AppId, provider.ServiceName}, "_")
 	key := apt.GenerateConsumerDependencyQueueKey(domainProject, consumer.ServiceId, id)
-	_, err = backend.Registry().Do(ctx, registry.PUT, registry.WithStrKey(key), registry.WithValue(data))
+	resp, err := backend.Registry().TxnWithCmp(ctx,
+		nil,
+		[]registry.CompareOp{registry.OpCmp(registry.CmpStrVal(key), registry.CMP_EQUAL, util.BytesToStringWithNoCopy(data))},
+		[]registry.PluginOp{registry.OpPut(registry.WithStrKey(key), registry.WithValue(data))})
 	if err != nil {
 		return err
 	}
-
-	util.Logger().Infof("find request into dependency queue successfully, %s: %v", key, r)
+	if !resp.Succeeded {
+		util.Logger().Infof("find request into dependency queue successfully, %s: %v", key, r)
+	}
 	return nil
 }
 
