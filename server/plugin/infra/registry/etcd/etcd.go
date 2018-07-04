@@ -25,7 +25,6 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
-	sctls "github.com/apache/incubator-servicecomb-service-center/server/tls"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
 	"github.com/coreos/etcd/mvcc/mvccpb"
@@ -729,7 +728,7 @@ func NewRegistry() mgr.PluginInstance {
 	if sslEnabled() {
 		var err error
 		// go client tls限制，提供身份证书、不认证服务端、不校验CN
-		clientTLSConfig, err = sctls.GetClientTLSConfig()
+		clientTLSConfig, err = mgr.Plugins().TLS().ClientConfig()
 		if err != nil {
 			util.Logger().Error("get etcd client tls config failed", err)
 			inst.err <- err

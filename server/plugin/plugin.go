@@ -25,6 +25,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/security"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/tls"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/tracing"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/uuid"
 	"github.com/astaxie/beego"
@@ -42,6 +43,7 @@ const (
 	QUOTA
 	REGISTRY
 	TRACING
+	TLS
 	typeEnd
 )
 
@@ -53,6 +55,7 @@ var pluginNames = map[PluginName]string{
 	QUOTA:     "quota",
 	REGISTRY:  "registry",
 	TRACING:   "trace",
+	TLS:       "ssl",
 }
 
 var pluginMgr = &PluginManager{}
@@ -221,6 +224,10 @@ func (pm *PluginManager) Quota() quota.QuotaManager {
 
 func (pm *PluginManager) Tracing() tracing.Tracing {
 	return pm.Instance(TRACING).(tracing.Tracing)
+}
+
+func (pm *PluginManager) TLS() tls.TLS {
+	return pm.Instance(TLS).(tls.TLS)
 }
 
 func Plugins() *PluginManager {

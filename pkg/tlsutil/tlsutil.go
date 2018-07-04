@@ -25,52 +25,6 @@ import (
 	"strings"
 )
 
-var TLS_CIPHER_SUITE_MAP = map[string]uint16{
-	"TLS_RSA_WITH_AES_128_GCM_SHA256":       tls.TLS_RSA_WITH_AES_128_GCM_SHA256,
-	"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256": tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-	"TLS_RSA_WITH_AES_256_GCM_SHA384":       tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
-	"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384": tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-	"TLS_RSA_WITH_AES_128_CBC_SHA256":       tls.TLS_RSA_WITH_AES_128_CBC_SHA256,
-}
-
-var TLS_VERSION_MAP = map[string]uint16{
-	"TLSv1.0": tls.VersionTLS10,
-	"TLSv1.1": tls.VersionTLS11,
-	"TLSv1.2": tls.VersionTLS12,
-}
-
-type SSLConfig struct {
-	VerifyPeer     bool
-	VerifyHostName bool
-	CipherSuites   []uint16
-	MinVersion     uint16
-	MaxVersion     uint16
-	CACertFile     string
-	CertFile       string
-	KeyFile        string
-	KeyPassphase   string
-}
-
-type SSLConfigOption func(*SSLConfig)
-
-func WithVerifyPeer(b bool) SSLConfigOption      { return func(c *SSLConfig) { c.VerifyPeer = b } }
-func WithVerifyHostName(b bool) SSLConfigOption  { return func(c *SSLConfig) { c.VerifyHostName = b } }
-func WithCipherSuits(s []uint16) SSLConfigOption { return func(c *SSLConfig) { c.CipherSuites = s } }
-func WithVersion(min, max uint16) SSLConfigOption {
-	return func(c *SSLConfig) { c.MinVersion, c.MaxVersion = min, max }
-}
-func WithCert(f string) SSLConfigOption    { return func(c *SSLConfig) { c.CertFile = f } }
-func WithKey(k string) SSLConfigOption     { return func(c *SSLConfig) { c.KeyFile = k } }
-func WithKeyPass(p string) SSLConfigOption { return func(c *SSLConfig) { c.KeyPassphase = p } }
-func WithCA(f string) SSLConfigOption      { return func(c *SSLConfig) { c.CACertFile = f } }
-
-func toSSLConfig(opts ...SSLConfigOption) (op SSLConfig) {
-	for _, opt := range opts {
-		opt(&op)
-	}
-	return
-}
-
 func ParseSSLCipherSuites(ciphers string, permitTlsCipherSuiteMap map[string]uint16) []uint16 {
 	if len(ciphers) == 0 || len(permitTlsCipherSuiteMap) == 0 {
 		return nil
@@ -221,9 +175,11 @@ func GetServerTLSConfig(opts ...SSLConfigOption) (tlsConfig *tls.Config, err err
 	}
 
 	var certs []tls.Certificate
-	certs, err = LoadTLSCertificate(cfg.CertFile, cfg.KeyFile, cfg.KeyPassphase)
-	if err != nil {
-		return nil, err
+	if len(cfg.CertFile) > 0 {
+		certs, err = LoadTLSCertificate(cfg.CertFile, cfg.KeyFile, cfg.KeyPassphase)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	tlsConfig = &tls.Config{

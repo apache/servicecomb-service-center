@@ -21,14 +21,11 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/tlsutil"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	sctls "github.com/apache/incubator-servicecomb-service-center/server/tls"
 	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
-	"net/url"
 	"reflect"
 	"time"
 )
@@ -43,7 +40,7 @@ const (
 
 type HttpClient struct {
 	gzip   bool
-	client *http.Client
+	Client *http.Client
 }
 
 func NewDialer() *net.Dialer {
@@ -58,36 +55,8 @@ func NewTransport() *http.Transport {
 		Dial:                  NewDialer().Dial,
 		MaxIdleConnsPerHost:   5,
 		ResponseHeaderTimeout: DEFAULT_HTTP_RESPONSE_TIMEOUT,
+		TLSHandshakeTimeout:   DEFAULT_TLS_HANDSHAKE_TIMEOUT,
 	}
-}
-
-func getTLSTransport(verifyPeer bool, supplyCert bool, verifyCN bool) (transport *http.Transport, err error) {
-	opts := append(sctls.DefaultClientTLSOptions(),
-		tlsutil.WithVerifyPeer(verifyPeer),
-		tlsutil.WithVerifyHostName(verifyCN),
-	)
-
-	if supplyCert {
-		_, decrypt := sctls.GetPassphase()
-		opts = append(opts,
-			tlsutil.WithKeyPass(decrypt),
-		)
-	} else {
-		opts = append(opts,
-			tlsutil.WithCert(""),
-			tlsutil.WithKey(""),
-		)
-	}
-
-	tlsConfig, err := tlsutil.GetClientTLSConfig(opts...)
-	if err != nil {
-		return nil, err
-	}
-
-	transport = NewTransport()
-	transport.TLSClientConfig = tlsConfig
-	transport.TLSHandshakeTimeout = DEFAULT_TLS_HANDSHAKE_TIMEOUT
-	return transport, nil
 }
 
 /**
@@ -97,78 +66,15 @@ func getTLSTransport(verifyPeer bool, supplyCert bool, verifyCN bool) (transport
 func GetHttpClient(gzip bool) (client *HttpClient, err error) {
 	return &HttpClient{
 		gzip: gzip,
-		client: &http.Client{
+		Client: &http.Client{
 			Transport: NewTransport(),
 			Timeout:   DEFAULT_REQUEST_TIMEOUT,
 		},
 	}, nil
 }
 
-/**
-  获取匿名认证HTTP客户端（支持压缩, 不校验对端, 不提供证书, 不校验CN）
-*/
-func GetAnonymousHttpsClient(gzip bool) (client *HttpClient, err error) {
-	return getHttpsClient(gzip, false, false, false)
-}
-
-/**
-  获取TLS认证HTTP客户端（支持压缩，提供证书，是否认证对端通过参数控制）
-*/
-func GetHttpsClient(gzip, verifyPeer bool) (client *HttpClient, err error) {
-	return getHttpsClient(gzip, verifyPeer, true, false)
-}
-
-func getClientByScheme(scheme string) (*HttpClient, error) {
-	var err error
-	var client *HttpClient
-	if scheme == "https" {
-		client, err = getHttpsClient(false, false, true, false)
-		if err != nil {
-			util.Logger().Error("Create https rest.client failed.", err)
-			return nil, err
-		}
-		return client, nil
-	}
-	client, err = GetHttpClient(false)
-	if err != nil {
-		util.Logger().Error("Create http rest.client failed.", err)
-		return nil, err
-	}
-	return client, nil
-}
-
-func GetClient(urlPath string) (*HttpClient, error) {
-	var err error
-	urlParsed, err := url.Parse(urlPath)
-	if err != nil {
-		util.Logger().Errorf(err, "nonstandard url %s", urlPath)
-		return nil, err
-	}
-	return getClientByScheme(urlParsed.Scheme)
-}
-
-/**
-  获取TLS认证HTTP客户端
-  gzip  控制是否支持压缩
-  verifyPeer  控制是否认证客户端
-  supplyCert  控制是否加载和发送证书
-  verifyCN    控制是否认证对端CN
-*/
-func getHttpsClient(gzip, verifyPeer, supplyCert, verifyCN bool) (client *HttpClient, err error) {
-	transport, err := getTLSTransport(verifyPeer, supplyCert, verifyCN)
-	if err != nil {
-		util.Logger().Errorf(err, "get tls transport failed.")
-	}
-
-	client = &HttpClient{
-		gzip: gzip,
-		client: &http.Client{
-			Transport: transport,
-			Timeout:   DEFAULT_REQUEST_TIMEOUT,
-		},
-	}
-
-	return client, nil
+func GetClient() (*HttpClient, error) {
+	return GetHttpClient(false)
 }
 
 func (client *HttpClient) getHeaders(method string, headers map[string]string, body interface{}) map[string]string {
@@ -264,7 +170,7 @@ func (client *HttpClient) httpDo(method string, url string, headers map[string]s
 		req.Header.Set(key, value)
 	}
 
-	resp, err := client.client.Do(req)
+	resp, err := client.Client.Do(req)
 	if err != nil {
 		util.Logger().Errorf(err, "invoke request failed.")
 		return status, result
@@ -327,7 +233,7 @@ func (client *HttpClient) HttpDo(method string, url string, headers map[string]s
 		req.Header.Set(key, value)
 	}
 
-	resp, err := client.client.Do(req)
+	resp, err := client.Client.Do(req)
 	if err != nil {
 		util.Logger().Errorf(err, "Request -----> %s failed.", url)
 		return resp, err
@@ -352,5 +258,5 @@ func (client *HttpClient) Delete(url string, headers map[string]string) (int, st
 }
 
 func (client *HttpClient) Do(req *http.Request) (*http.Response, error) {
-	return client.client.Do(req)
+	return client.Client.Do(req)
 }
