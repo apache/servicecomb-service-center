@@ -175,9 +175,11 @@ func GetServerTLSConfig(opts ...SSLConfigOption) (tlsConfig *tls.Config, err err
 	}
 
 	var certs []tls.Certificate
-	certs, err = LoadTLSCertificate(cfg.CertFile, cfg.KeyFile, cfg.KeyPassphase)
-	if err != nil {
-		return nil, err
+	if len(cfg.CertFile) > 0 {
+		certs, err = LoadTLSCertificate(cfg.CertFile, cfg.KeyFile, cfg.KeyPassphase)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	tlsConfig = &tls.Config{
