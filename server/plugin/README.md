@@ -3,6 +3,7 @@
 1. Go version 1.8(+)
 1. Compile service-center with GO_EXTLINK_ENABLED=1 and CGO_ENABLED=1
 1. The plugin file name must has suffix '_plugin.so'
+1. All plugin interface files are in [infra](/server/infra) package
 
 ## Plug-in names
 1. auth, Customize authentication of service-center.
