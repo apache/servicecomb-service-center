@@ -17,25 +17,25 @@
 package notification
 
 type NotifyJob interface {
-	SubscriberId() string
-	Subject() string
 	Type() NotifyType
+	Group() string
+	Subject() string
 }
 
 type BaseNotifyJob struct {
-	subscriberId string
-	subject      string
-	nType        NotifyType
-}
-
-func (s *BaseNotifyJob) SubscriberId() string {
-	return s.subscriberId
-}
-
-func (s *BaseNotifyJob) Subject() string {
-	return s.subject
+	nType   NotifyType
+	group   string
+	subject string
 }
 
 func (s *BaseNotifyJob) Type() NotifyType {
 	return s.nType
+}
+
+func (s *BaseNotifyJob) Group() string {
+	return s.group
+}
+
+func (s *BaseNotifyJob) Subject() string {
+	return s.subject
 }

@@ -58,8 +58,8 @@ func (wh *WebSocket) Init() error {
 	// publish events
 	publisher.Accept(wh)
 
-	util.Logger().Debugf("start watching instance status, watcher[%s], subject: %s, id: %s",
-		remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
+	util.Logger().Debugf("start watching instance status, watcher[%s], subject: %s, group: %s",
+		remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
 	return nil
 }
 
@@ -74,8 +74,8 @@ func (wh *WebSocket) heartbeat(messageType int) error {
 		if messageType == websocket.PongMessage {
 			messageTypeName = "Pong"
 		}
-		util.Logger().Errorf(err, "fail to send '%s' to watcher[%s], subject: %s, id: %s",
-			messageTypeName, wh.conn.RemoteAddr(), wh.watcher.Subject(), wh.watcher.Id())
+		util.Logger().Errorf(err, "fail to send '%s' to watcher[%s], subject: %s, group: %s",
+			messageTypeName, wh.conn.RemoteAddr(), wh.watcher.Subject(), wh.watcher.Group())
 		//wh.watcher.SetError(err)
 		return err
 	}
@@ -89,22 +89,22 @@ func (wh *WebSocket) HandleWatchWebSocketControlMessage() {
 	// PING
 	wh.conn.SetPingHandler(func(message string) error {
 		if wh.needPingWatcher {
-			util.Logger().Infof("received 'Ping' message '%s' from watcher[%s], no longer send 'Ping' to it, subject: %s, id: %s",
-				message, remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
+			util.Logger().Infof("received 'Ping' message '%s' from watcher[%s], no longer send 'Ping' to it, subject: %s, group: %s",
+				message, remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
 		}
 		wh.needPingWatcher = false
 		return wh.heartbeat(websocket.PongMessage)
 	})
 	// PONG
 	wh.conn.SetPongHandler(func(message string) error {
-		util.Logger().Debugf("received 'Pong' message '%s' from watcher[%s], subject: %s, id: %s",
-			message, remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
+		util.Logger().Debugf("received 'Pong' message '%s' from watcher[%s], subject: %s, group: %s",
+			message, remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
 		return nil
 	})
 	// CLOSE
 	wh.conn.SetCloseHandler(func(code int, text string) error {
-		util.Logger().Warnf(nil, "watcher[%s] active closed, subject: %s, id: %s",
-			remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
+		util.Logger().Warnf(nil, "watcher[%s] active closed, subject: %s, group: %s",
+			remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
 		return wh.sendClose(code, text)
 	})
 
@@ -125,8 +125,8 @@ func (wh *WebSocket) sendClose(code int, text string) error {
 	}
 	err := wh.conn.WriteControl(websocket.CloseMessage, message, time.Now().Add(wh.Timeout()))
 	if err != nil {
-		util.Logger().Errorf(err, "watcher[%s] catch an err, subject: %s, id: %s",
-			remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
+		util.Logger().Errorf(err, "watcher[%s] catch an err, subject: %s, group: %s",
+			remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
 		return err
 	}
 	return nil
@@ -156,13 +156,13 @@ func (wh *WebSocket) HandleWatchWebSocketJob(o interface{}) {
 	switch o.(type) {
 	case error:
 		err := o.(error)
-		util.Logger().Warnf(err, "watcher[%s] catch an err, subject: %s, id: %s",
-			remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
+		util.Logger().Warnf(err, "watcher[%s] catch an err, subject: %s, group: %s",
+			remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
 
 		message = util.StringToBytesWithNoCopy(fmt.Sprintf("watcher catch an err: %s", err.Error()))
 	case time.Time:
 		domainProject := util.ParseDomainProject(wh.ctx)
-		if !serviceUtil.ServiceExist(context.Background(), domainProject, wh.watcher.Id()) {
+		if !serviceUtil.ServiceExist(context.Background(), domainProject, wh.watcher.Group()) {
 			err := fmt.Errorf("Service does not exit.")
 			wh.watcher.SetError(err)
 			message = util.StringToBytesWithNoCopy(err.Error())
@@ -173,8 +173,8 @@ func (wh *WebSocket) HandleWatchWebSocketJob(o interface{}) {
 			return
 		}
 
-		util.Logger().Debugf("send 'Ping' message to watcher[%s], subject: %s, id: %s",
-			remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
+		util.Logger().Debugf("send 'Ping' message to watcher[%s], subject: %s, group: %s",
+			remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
 		err := wh.heartbeat(websocket.PingMessage)
 		if err != nil {
 			wh.watcher.SetError(err)
@@ -188,8 +188,8 @@ func (wh *WebSocket) HandleWatchWebSocketJob(o interface{}) {
 		if resp.Action != string(pb.EVT_EXPIRE) {
 			providerFlag = fmt.Sprintf("%s/%s(%s)", resp.Instance.ServiceId, resp.Instance.InstanceId, providerFlag)
 		}
-		util.Logger().Infof("event[%s] is coming in, watcher[%s] watch %s, subject: %s, id: %s",
-			resp.Action, remoteAddr, providerFlag, wh.watcher.Subject(), wh.watcher.Id())
+		util.Logger().Infof("event[%s] is coming in, watcher[%s] watch %s, subject: %s, group: %s",
+			resp.Action, remoteAddr, providerFlag, wh.watcher.Subject(), wh.watcher.Group())
 
 		resp.Response = nil
 		data, err := json.Marshal(resp)
@@ -212,8 +212,8 @@ func (wh *WebSocket) HandleWatchWebSocketJob(o interface{}) {
 
 	err := wh.conn.WriteMessage(websocket.TextMessage, message)
 	if err != nil {
-		util.Logger().Errorf(err, "watcher[%s] catch an err, subject: %s, id: %s",
-			remoteAddr, wh.watcher.Subject(), wh.watcher.Id())
+		util.Logger().Errorf(err, "watcher[%s] catch an err, subject: %s, group: %s",
+			remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
 	}
 }
 

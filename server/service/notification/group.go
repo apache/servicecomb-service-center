@@ -17,44 +17,48 @@
 package notification
 
 import (
-	"fmt"
-	"strconv"
-	"time"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 )
 
-const (
-	DEFAULT_MAX_QUEUE          = 1000
-	DEFAULT_ON_MESSAGE_TIMEOUT = 100 * time.Millisecond
-	DEFAULT_TIMEOUT            = 30 * time.Second
-)
+type Group struct {
+	name        string
+	subscribers *util.ConcurrentMap
+}
 
-const (
-	NOTIFTY NotifyType = iota
-	INSTANCE
-	typeEnd
-)
+func (g *Group) Name() string {
+	return g.name
+}
 
-type NotifyType int
+func (g *Group) Notify(job NotifyJob) {
+	g.subscribers.ForEach(func(item util.MapItem) (next bool) {
+		item.Value.(Subscriber).OnMessage(job)
+		return true
+	})
+}
 
-func (nt NotifyType) String() string {
-	if int(nt) < len(notifyTypeNames) {
-		return notifyTypeNames[nt]
+func (g *Group) Subscribers(name string) Subscriber {
+	s, ok := g.subscribers.Get(name)
+	if !ok {
+		return nil
 	}
-	return "NotifyType" + strconv.Itoa(int(nt))
+	return s.(Subscriber)
 }
 
-var notifyTypeNames = []string{
-	NOTIFTY:  "NOTIFTY",
-	INSTANCE: "INSTANCE",
+func (g *Group) Add(subscriber Subscriber) {
+	g.subscribers.PutIfAbsent(subscriber.Id(), subscriber)
 }
 
-type NotifyServiceConfig struct {
-	AddTimeout    time.Duration
-	NotifyTimeout time.Duration
-	MaxQueue      int64
+func (g *Group) Remove(name string) {
+	g.subscribers.Remove(name)
 }
 
-func (nsc NotifyServiceConfig) String() string {
-	return fmt.Sprintf("{acceptQueue: %d, accept: %s, notify: %s}",
-		nsc.MaxQueue, nsc.AddTimeout, nsc.NotifyTimeout)
+func (g *Group) Size() int {
+	return g.subscribers.Size()
+}
+
+func NewGroup(name string) *Group {
+	return &Group{
+		name:        name,
+		subscribers: util.NewConcurrentMap(0),
+	}
 }

@@ -25,13 +25,13 @@ import (
 
 // 状态变化推送
 type WatchJob struct {
-	BaseNotifyJob
+	*BaseNotifyJob
 	Revision int64
 	Response *pb.WatchInstanceResponse
 }
 
 type ListWatcher struct {
-	BaseSubscriber
+	*BaseSubscriber
 	Job          chan *WatchJob
 	ListRevision int64
 	ListFunc     func() (results []*pb.WatchInstanceResponse, rev int64)
@@ -50,7 +50,7 @@ func (w *ListWatcher) OnAccept() {
 		return
 	}
 
-	util.Logger().Debugf("accepted by notify service, %s watcher %s %s", w.Type(), w.Id(), w.Subject())
+	util.Logger().Debugf("accepted by notify service, %s watcher %s %s", w.Type(), w.Group(), w.Subject())
 	util.Go(w.listAndPublishJobs)
 }
 
@@ -62,7 +62,7 @@ func (w *ListWatcher) listAndPublishJobs(_ context.Context) {
 	results, rev := w.ListFunc()
 	w.ListRevision = rev
 	for _, response := range results {
-		w.sendMessage(NewWatchJob(w.Id(), w.Subject(), w.ListRevision, response))
+		w.sendMessage(NewWatchJob(w.Group(), w.Subject(), w.ListRevision, response))
 	}
 }
 
@@ -84,13 +84,13 @@ func (w *ListWatcher) OnMessage(job NotifyJob) {
 	case <-timer.C:
 		util.Logger().Errorf(nil,
 			"the %s listwatcher %s %s is not ready[over %s], send the event %v",
-			w.Type(), w.Id(), w.Subject(), GetNotifyService().Config.AddTimeout, job)
+			w.Type(), w.Group(), w.Subject(), GetNotifyService().Config.AddTimeout, job)
 	}
 
 	if wJob.Revision <= w.ListRevision {
 		util.Logger().Warnf(nil,
 			"unexpected notify %s job is coming in, watcher %s %s, job is %v, current revision is %v",
-			w.Type(), w.Id(), w.Subject(), job, w.ListRevision)
+			w.Type(), w.Group(), w.Subject(), job, w.ListRevision)
 		return
 	}
 	w.sendMessage(wJob)
@@ -98,7 +98,7 @@ func (w *ListWatcher) OnMessage(job NotifyJob) {
 
 func (w *ListWatcher) sendMessage(job *WatchJob) {
 	util.Logger().Debugf("start to notify %s watcher %s %s, job is %v, current revision is %v", w.Type(),
-		w.Id(), w.Subject(), job, w.ListRevision)
+		w.Group(), w.Subject(), job, w.ListRevision)
 	defer util.RecoverAndReport()
 	timer := time.NewTimer(GetNotifyService().Config.AddTimeout)
 	select {
@@ -107,7 +107,7 @@ func (w *ListWatcher) sendMessage(job *WatchJob) {
 	case <-timer.C:
 		util.Logger().Errorf(nil,
 			"the %s watcher %s %s event queue is full[over %s], drop the event %v",
-			w.Type(), w.Id(), w.Subject(), GetNotifyService().Config.AddTimeout, job)
+			w.Type(), w.Group(), w.Subject(), GetNotifyService().Config.AddTimeout, job)
 	}
 }
 
@@ -117,27 +117,23 @@ func (w *ListWatcher) Close() {
 
 func NewWatchJob(subscriberId, subject string, rev int64, response *pb.WatchInstanceResponse) *WatchJob {
 	return &WatchJob{
-		BaseNotifyJob: BaseNotifyJob{
-			subscriberId: subscriberId,
-			subject:      subject,
-			nType:        INSTANCE,
+		BaseNotifyJob: &BaseNotifyJob{
+			group:   subscriberId,
+			subject: subject,
+			nType:   INSTANCE,
 		},
 		Revision: rev,
 		Response: response,
 	}
 }
 
-func NewListWatcher(id string, subject string,
+func NewListWatcher(group string, subject string,
 	listFunc func() (results []*pb.WatchInstanceResponse, rev int64)) *ListWatcher {
 	watcher := &ListWatcher{
-		BaseSubscriber: BaseSubscriber{
-			id:      id,
-			subject: subject,
-			nType:   INSTANCE,
-		},
-		Job:      make(chan *WatchJob, GetNotifyService().Config.MaxQueue),
-		ListFunc: listFunc,
-		listCh:   make(chan struct{}),
+		BaseSubscriber: NewSubscriber(INSTANCE, subject, group),
+		Job:            make(chan *WatchJob, GetNotifyService().Config.MaxQueue),
+		ListFunc:       listFunc,
+		listCh:         make(chan struct{}),
 	}
 	return watcher
 }

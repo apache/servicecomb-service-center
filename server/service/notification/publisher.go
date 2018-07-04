@@ -81,6 +81,9 @@ func (wh *Publisher) loop(ctx context.Context) {
 				news = append(news, wh.wss[s:e]...)
 				s = e + 1
 			}
+			if s < len(wh.wss) {
+				news = append(news, wh.wss[s:]...)
+			}
 			wh.wss = news
 			wh.lock.Unlock()
 		}

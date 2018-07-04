@@ -18,65 +18,54 @@ package notification
 
 import (
 	"errors"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 )
 
 type Subscriber interface {
-	Err() error
-	SetError(err error)
 	Id() string
 	Subject() string
+	Group() string
 	Type() NotifyType
 	Service() *NotifyService
 	SetService(*NotifyService)
+
+	Err() error
+	SetError(err error)
+
+	Close()
 	OnAccept()
 	// The event bus will callback this function, so it must be non-blocked.
 	OnMessage(job NotifyJob)
-	Close()
 }
 
 type BaseSubscriber struct {
 	id      string
 	subject string
+	group   string
 	nType   NotifyType
 	service *NotifyService
 	err     error
 }
 
-func (s *BaseSubscriber) Err() error {
-	return s.err
-}
-
-func (s *BaseSubscriber) SetError(err error) {
-	s.err = err
-}
-
-func (s *BaseSubscriber) Id() string {
-	return s.id
-}
-
-func (s *BaseSubscriber) Subject() string {
-	return s.subject
-}
-
-func (s *BaseSubscriber) Type() NotifyType {
-	return s.nType
-}
-
-func (s *BaseSubscriber) Service() *NotifyService {
-	return s.service
-}
-
-func (s *BaseSubscriber) SetService(svc *NotifyService) {
-	s.service = svc
-}
-
-func (s *BaseSubscriber) OnAccept() {
-}
-
+func (s *BaseSubscriber) Id() string                    { return s.id }
+func (s *BaseSubscriber) Subject() string               { return s.subject }
+func (s *BaseSubscriber) Group() string                 { return s.group }
+func (s *BaseSubscriber) Type() NotifyType              { return s.nType }
+func (s *BaseSubscriber) Service() *NotifyService       { return s.service }
+func (s *BaseSubscriber) SetService(svc *NotifyService) { s.service = svc }
+func (s *BaseSubscriber) Err() error                    { return s.err }
+func (s *BaseSubscriber) SetError(err error)            { s.err = err }
+func (s *BaseSubscriber) Close()                        {}
+func (s *BaseSubscriber) OnAccept()                     {}
 func (s *BaseSubscriber) OnMessage(job NotifyJob) {
 	s.SetError(errors.New("do not call base notifier OnMessage method"))
 }
 
-func (s *BaseSubscriber) Close() {
-
+func NewSubscriber(nType NotifyType, subject, group string) *BaseSubscriber {
+	return &BaseSubscriber{
+		id:      util.GenerateUuid(),
+		group:   group,
+		subject: subject,
+		nType:   nType,
+	}
 }
