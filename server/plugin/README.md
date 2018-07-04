@@ -11,6 +11,7 @@
 1. cipher, Customize encryption and decryption of TLS certificate private key password.
 1. quota, Customize quota for instance registry.
 1. tracing, Customize tracing data reporter.
+1. tls, Customize loading the tls certificates in server
 
 ## Example: an authentication plug-in
 

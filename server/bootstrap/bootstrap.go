@@ -42,6 +42,9 @@ import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/i
 // tracing
 import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/tracing/buildin"
 
+// tls
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/tls/buildin"
+
 // module 'govern'
 import _ "github.com/apache/incubator-servicecomb-service-center/server/govern"
 

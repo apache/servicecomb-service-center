@@ -21,7 +21,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	sctls "github.com/apache/incubator-servicecomb-service-center/server/tls"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	"net/http"
 	"time"
 )
@@ -39,7 +39,7 @@ func LoadConfig() (srvCfg *rest.ServerConfig, err error) {
 	maxHeaderBytes := int(core.ServerInfo.Config.MaxHeaderBytes)
 	var tlsConfig *tls.Config
 	if core.ServerInfo.Config.SslEnabled {
-		tlsConfig, err = sctls.GetServerTLSConfig()
+		tlsConfig, err = plugin.Plugins().TLS().ServerConfig()
 		if err != nil {
 			return
 		}

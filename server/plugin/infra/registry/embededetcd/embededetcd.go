@@ -25,7 +25,6 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
-	sctls "github.com/apache/incubator-servicecomb-service-center/server/tls"
 	"github.com/astaxie/beego"
 	"github.com/coreos/etcd/embed"
 	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
@@ -520,7 +519,7 @@ func getEmbedInstance() mgr.PluginInstance {
 
 	if core.ServerInfo.Config.SslEnabled {
 		var err error
-		embedTLSConfig, err = sctls.GetServerTLSConfig()
+		embedTLSConfig, err = mgr.Plugins().TLS().ServerConfig()
 		if err != nil {
 			util.Logger().Error("get service center tls config failed", err)
 			inst.err <- err

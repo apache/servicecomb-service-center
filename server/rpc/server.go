@@ -20,7 +20,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/rpc"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	sctls "github.com/apache/incubator-servicecomb-service-center/server/tls"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"net"
@@ -38,7 +38,7 @@ func (srv *Server) Serve() error {
 func NewServer(ipAddr string) (_ *Server, err error) {
 	var grpcSrv *grpc.Server
 	if core.ServerInfo.Config.SslEnabled {
-		tlsConfig, err := sctls.GetServerTLSConfig()
+		tlsConfig, err := plugin.Plugins().TLS().ServerConfig()
 		if err != nil {
 			util.Logger().Error("error to get server tls config", err)
 			return nil, err

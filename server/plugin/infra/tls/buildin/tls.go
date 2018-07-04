@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package tls
+package buildin
 
 import (
 	"crypto/tls"
@@ -61,30 +61,6 @@ func GetPassphase() (pass string, decrypt string) {
 	return pass, decrypt
 }
 
-func DefaultClientTLSOptions() []tlsutil.SSLConfigOption {
-	return []tlsutil.SSLConfigOption{
-		tlsutil.WithVerifyPeer(core.ServerInfo.Config.SslVerifyPeer),
-		tlsutil.WithVerifyHostName(false),
-		tlsutil.WithVersion(tlsutil.ParseSSLProtocol(beego.AppConfig.DefaultString("ssl_client_min_version",
-			core.ServerInfo.Config.SslMinVersion)), tls.VersionTLS12),
-		tlsutil.WithCipherSuits(tlsutil.ParseDefaultSSLCipherSuites(beego.AppConfig.String("ssl_client_ciphers"))),
-		tlsutil.WithCA(GetSSLPath("trust.cer")),
-		tlsutil.WithCert(GetSSLPath("server.cer")),
-		tlsutil.WithKey(GetSSLPath("server_key.pem")),
-	}
-}
-
-func DefaultServerTLSOptions() []tlsutil.SSLConfigOption {
-	return []tlsutil.SSLConfigOption{
-		tlsutil.WithVerifyPeer(core.ServerInfo.Config.SslVerifyPeer),
-		tlsutil.WithVersion(tlsutil.ParseSSLProtocol(core.ServerInfo.Config.SslMinVersion), tls.VersionTLS12),
-		tlsutil.WithCipherSuits(tlsutil.ParseDefaultSSLCipherSuites(core.ServerInfo.Config.SslCiphers)),
-		tlsutil.WithCA(GetSSLPath("trust.cer")),
-		tlsutil.WithCert(GetSSLPath("server.cer")),
-		tlsutil.WithKey(GetSSLPath("server_key.pem")),
-	}
-}
-
 func GetClientTLSConfig() (_ *tls.Config, err error) {
 	mux.Lock()
 	defer mux.Unlock()
@@ -94,8 +70,18 @@ func GetClientTLSConfig() (_ *tls.Config, err error) {
 
 	passphase, decrypt := GetPassphase()
 
-	opts := append(DefaultClientTLSOptions(),
+	opts := append(tlsutil.DefaultClientTLSOptions(),
+		tlsutil.WithVerifyPeer(core.ServerInfo.Config.SslVerifyPeer),
+		tlsutil.WithVerifyHostName(false),
+		tlsutil.WithVersion(
+			tlsutil.ParseSSLProtocol(
+				beego.AppConfig.DefaultString("ssl_client_min_version", core.ServerInfo.Config.SslMinVersion)),
+			tls.VersionTLS12),
+		tlsutil.WithCipherSuits(tlsutil.ParseDefaultSSLCipherSuites(beego.AppConfig.String("ssl_client_ciphers"))),
 		tlsutil.WithKeyPass(decrypt),
+		tlsutil.WithCA(GetSSLPath("trust.cer")),
+		tlsutil.WithCert(GetSSLPath("server.cer")),
+		tlsutil.WithKey(GetSSLPath("server_key.pem")),
 	)
 	clientTLSConfig, err = tlsutil.GetClientTLSConfig(opts...)
 
@@ -118,8 +104,14 @@ func GetServerTLSConfig() (_ *tls.Config, err error) {
 
 	passphase, decrypt := GetPassphase()
 
-	opts := append(DefaultServerTLSOptions(),
+	opts := append(tlsutil.DefaultServerTLSOptions(),
+		tlsutil.WithVerifyPeer(core.ServerInfo.Config.SslVerifyPeer),
+		tlsutil.WithVersion(tlsutil.ParseSSLProtocol(core.ServerInfo.Config.SslMinVersion), tls.VersionTLS12),
+		tlsutil.WithCipherSuits(tlsutil.ParseDefaultSSLCipherSuites(core.ServerInfo.Config.SslCiphers)),
 		tlsutil.WithKeyPass(decrypt),
+		tlsutil.WithCA(GetSSLPath("trust.cer")),
+		tlsutil.WithCert(GetSSLPath("server.cer")),
+		tlsutil.WithKey(GetSSLPath("server_key.pem")),
 	)
 
 	serverTLSConfig, err = tlsutil.GetServerTLSConfig(opts...)
