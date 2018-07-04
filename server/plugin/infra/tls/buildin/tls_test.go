@@ -14,46 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package tlsutil
+package buildin
 
 import (
 	"crypto/tls"
-	"io/ioutil"
+	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/security/buildin"
+	"os"
 	"testing"
 )
 
-func TestParseDefaultSSLCipherSuites(t *testing.T) {
-	c := ParseDefaultSSLCipherSuites("")
-	if c != nil {
-		t.FailNow()
-	}
-	c = ParseDefaultSSLCipherSuites("TLS_RSA_WITH_AES_128_CBC_SHA256")
-	if len(c) != 1 {
-		t.FailNow()
-	}
-	c = ParseDefaultSSLCipherSuites("a")
-	if len(c) != 0 {
-		t.FailNow()
-	}
-	c = ParseDefaultSSLCipherSuites("a,,b")
-	if len(c) != 0 {
-		t.FailNow()
-	}
+func init() {
+	sslRoot := "../../../../../etc/ssl/"
+	os.Setenv("SSL_ROOT", sslRoot)
 }
 
 func TestGetServerTLSConfig(t *testing.T) {
-	sslRoot := "../../etc/ssl/"
-	pw, _ := ioutil.ReadFile(sslRoot + "cert_pwd")
-	opts := append(DefaultServerTLSOptions(),
-		WithVerifyPeer(true),
-		WithVersion(ParseSSLProtocol("TLSv1.0"), tls.VersionTLS12),
-		WithCipherSuits(ParseDefaultSSLCipherSuites("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384")),
-		WithKeyPass(string(pw)),
-		WithCA(sslRoot+"trust.cer"),
-		WithCert(sslRoot+"server.cer"),
-		WithKey(sslRoot+"server_key.pem"),
-	)
-	serverTLSConfig, err := GetServerTLSConfig(opts...)
+	serverTLSConfig, err := GetServerTLSConfig()
 	if err != nil {
 		t.Fatalf("GetServerTLSConfig failed")
 	}
@@ -63,10 +39,10 @@ func TestGetServerTLSConfig(t *testing.T) {
 	if serverTLSConfig.ClientCAs == nil {
 		t.Fatalf("GetServerTLSConfig failed")
 	}
-	if len(serverTLSConfig.CipherSuites) != 2 {
+	if len(serverTLSConfig.CipherSuites) != 4 {
 		t.Fatalf("GetServerTLSConfig failed")
 	}
-	if serverTLSConfig.MinVersion != tls.VersionTLS10 {
+	if serverTLSConfig.MinVersion != tls.VersionTLS12 {
 		t.Fatalf("GetServerTLSConfig failed")
 	}
 	if serverTLSConfig.MaxVersion != tls.VersionTLS12 {
@@ -78,19 +54,7 @@ func TestGetServerTLSConfig(t *testing.T) {
 }
 
 func TestGetClientTLSConfig(t *testing.T) {
-	sslRoot := "../../etc/ssl/"
-	pw, _ := ioutil.ReadFile(sslRoot + "cert_pwd")
-	opts := append(DefaultServerTLSOptions(),
-		WithVerifyPeer(true),
-		WithVerifyHostName(false),
-		WithVersion(ParseSSLProtocol("TLSv1.0"), tls.VersionTLS12),
-		WithCipherSuits(ParseDefaultSSLCipherSuites("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384")),
-		WithKeyPass(string(pw)),
-		WithCA(sslRoot+"trust.cer"),
-		WithCert(sslRoot+"server.cer"),
-		WithKey(sslRoot+"server_key.pem"),
-	)
-	clientTLSConfig, err := GetClientTLSConfig(opts...)
+	clientTLSConfig, err := GetClientTLSConfig()
 	if err != nil {
 		t.Fatalf("GetClientTLSConfig failed")
 	}
@@ -100,10 +64,10 @@ func TestGetClientTLSConfig(t *testing.T) {
 	if clientTLSConfig.RootCAs == nil {
 		t.Fatalf("GetClientTLSConfig failed")
 	}
-	if len(clientTLSConfig.CipherSuites) != 2 {
+	if len(clientTLSConfig.CipherSuites) != 0 {
 		t.Fatalf("GetClientTLSConfig failed")
 	}
-	if clientTLSConfig.MinVersion != tls.VersionTLS10 {
+	if clientTLSConfig.MinVersion != tls.VersionTLS12 {
 		t.Fatalf("GetClientTLSConfig failed")
 	}
 	if clientTLSConfig.MaxVersion != tls.VersionTLS12 {
