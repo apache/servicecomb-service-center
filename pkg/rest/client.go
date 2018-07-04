@@ -73,7 +73,7 @@ func GetHttpClient(gzip bool) (client *HttpClient, err error) {
 	}, nil
 }
 
-func GetClient(urlPath string) (*HttpClient, error) {
+func GetClient() (*HttpClient, error) {
 	return GetHttpClient(false)
 }
 
