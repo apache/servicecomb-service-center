@@ -18,6 +18,8 @@
 
 ### Step 1: code auth.go
 
+auth.go is the implement from [auth interface](/server/infra/auth/auth.go)
+
 ```go
 package main
 
