@@ -462,7 +462,8 @@ func (c *EtcdClient) TxnWithCmp(ctx context.Context, success []registry.PluginOp
 	if err != nil {
 		return nil, err
 	}
-	util.LogNilOrWarnf(start, "registry client txn {if: %s, then: %d, else: %d}", cmps, len(success), len(fail))
+	util.LogNilOrWarnf(start, "registry client txn {if(%v): %s, then: %d, else: %d}, rev: %d",
+		resp.Succeeded, cmps, len(success), len(fail), resp.Header.Revision)
 	return &registry.PluginResponse{
 		Succeeded: resp.Succeeded,
 		Revision:  resp.Header.Revision,

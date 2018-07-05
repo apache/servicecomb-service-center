@@ -22,6 +22,36 @@ import (
 	"time"
 )
 
+const (
+	// re-list etcd when there is no event coming in more than 1h(=120*30s)
+	DEFAULT_MAX_NO_EVENT_INTERVAL = 120
+	DEFAULT_LISTWATCH_TIMEOUT     = 30 * time.Second
+
+	DEFAULT_SELF_PRESERVATION_PERCENT = 0.8
+	DEFAULT_CACHE_INIT_SIZE           = 100
+)
+
+const (
+	DEFAULT_METRICS_INTERVAL = 30 * time.Second
+	DEFAULT_COMPACT_TIMES    = 2
+	DEFAULT_COMPACT_TIMEOUT  = 5 * time.Minute
+
+	minWaitInterval = 1 * time.Second
+	eventBlockSize  = 1000
+)
+
+const DEFAULT_CHECK_WINDOW = 2 * time.Second // instance DELETE event will be delay.
+
+const TIME_FORMAT = "15:04:05.000"
+
+const EVENT_BUS_MAX_SIZE = 1000
+
+var closedCh = make(chan struct{})
+
+func init() {
+	close(closedCh)
+}
+
 type StoreType int
 
 func (st StoreType) String() string {
@@ -120,34 +150,4 @@ var TypeConfig = map[StoreType]*Config{
 
 	PROJECT: DefaultConfig().WithPrefix(apt.GetProjectRootKey("")).
 		WithInitSize(100).WithParser(StringParser),
-}
-
-const (
-	// re-list etcd when there is no event coming in more than 2h(=240*30s)
-	DEFAULT_MAX_NO_EVENT_INTERVAL = 240
-	DEFAULT_LISTWATCH_TIMEOUT     = 30 * time.Second
-
-	DEFAULT_SELF_PRESERVATION_PERCENT = 0.8
-	DEFAULT_CACHE_INIT_SIZE           = 100
-)
-
-const (
-	DEFAULT_METRICS_INTERVAL = 30 * time.Second
-	DEFAULT_COMPACT_TIMES    = 2
-	DEFAULT_COMPACT_TIMEOUT  = 5 * time.Minute
-
-	minWaitInterval = 1 * time.Second
-	eventBlockSize  = 1000
-)
-
-const DEFAULT_CHECK_WINDOW = 2 * time.Second // instance DELETE event will be delay.
-
-const TIME_FORMAT = "15:04:05.000"
-
-const EVENT_BUS_MAX_SIZE = 1000
-
-var closedCh = make(chan struct{})
-
-func init() {
-	close(closedCh)
 }

@@ -19,6 +19,7 @@ package backend
 import (
 	"errors"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
@@ -37,7 +38,7 @@ type KvCacher struct {
 	lw        ListWatcher
 	mux       sync.Mutex
 	once      sync.Once
-	cache     Cache
+	cache     *KvCache
 	goroutine *util.GoRoutine
 }
 
@@ -186,15 +187,19 @@ func (c *KvCacher) deferHandle(ctx context.Context) {
 		evts = make([]KvEvent, eventBlockSize)
 		i    int
 	)
+	interval := 300 * time.Millisecond
+	timer := time.NewTimer(interval)
 	for {
-		timer := time.NewTimer(300 * time.Millisecond)
+		if !timer.Stop() {
+			<-timer.C
+		}
+		timer.Reset(interval)
+
 		select {
 		case <-ctx.Done():
 			timer.Stop()
 			return
 		case evt, ok := <-c.Cfg.DeferHandler.HandleChan():
-			timer.Stop()
-
 			if !ok {
 				<-time.After(time.Second)
 				continue
@@ -417,6 +422,7 @@ func (c *KvCacher) Run() {
 	c.once.Do(func() {
 		c.goroutine.Do(c.refresh)
 		c.goroutine.Do(c.deferHandle)
+		c.goroutine.Do(c.reportMetrics)
 	})
 }
 
@@ -436,6 +442,27 @@ func (c *KvCacher) IsReady() bool {
 		return true
 	default:
 		return false
+	}
+}
+
+func (c *KvCacher) reportMetrics(ctx context.Context) {
+	if !core.ServerInfo.Config.EnablePProf ||
+		!core.ServerInfo.Config.EnableCache {
+		return
+	}
+	timer := time.NewTimer(DEFAULT_METRICS_INTERVAL)
+	for {
+		if !timer.Stop() {
+			<-timer.C
+		}
+		timer.Reset(DEFAULT_METRICS_INTERVAL)
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-timer.C:
+			c.cache.ReportMetrics()
+		}
 	}
 }
 

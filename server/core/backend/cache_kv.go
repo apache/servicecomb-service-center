@@ -155,6 +155,12 @@ func (c *KvCache) deletePrefixKey(key string) {
 	}
 }
 
+func (c *KvCache) ReportMetrics() {
+	c.rwMux.RLock()
+	ReportCacheMetrics(c.Name(), "raw", c.store)
+	c.rwMux.RUnlock()
+}
+
 func NewKvCache(name string, cfg *Config) *KvCache {
 	return &KvCache{
 		Cfg:         cfg,
