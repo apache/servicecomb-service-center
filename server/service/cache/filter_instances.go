@@ -37,16 +37,13 @@ func (f *InstancesFilter) Name(ctx context.Context) string {
 
 func (f *InstancesFilter) Init(ctx context.Context, parent *cache.Node) (node *cache.Node, err error) {
 	provider := ctx.Value(CTX_FIND_PROVIDER).(*pb.MicroServiceKey)
-	providerIds := parent.Cache.Get(cacheFindProviderIds).([]string)
-	if len(providerIds) == 0 {
-		return
-	}
+	pCopy := *parent.Cache.Get(CACHE_FIND).(*VersionRuleCacheItem)
 
 	var (
 		instances []*pb.MicroServiceInstance
 		rev       int64
 	)
-	for _, providerServiceId := range providerIds {
+	for _, providerServiceId := range pCopy.ServiceIds {
 		key := apt.GenerateInstanceKey(provider.Tenant, providerServiceId, "")
 		opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(key), registry.WithPrefix())
 		resp, err := backend.Store().Instance().Search(ctx, opts...)
@@ -66,11 +63,10 @@ func (f *InstancesFilter) Init(ctx context.Context, parent *cache.Node) (node *c
 		}
 	}
 
+	pCopy.Instances = instances
+	pCopy.Rev = serviceUtil.FormatRevision(rev, int64(len(instances)))
+
 	node = cache.NewNode()
-	node.Cache.Set(CACHE_FIND, &VersionRuleCacheItem{
-		ServiceIds: providerIds,
-		Instances:  instances,
-		Rev:        serviceUtil.FormatRevision(rev, int64(len(instances))),
-	})
+	node.Cache.Set(CACHE_FIND, &pCopy)
 	return
 }

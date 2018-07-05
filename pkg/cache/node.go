@@ -28,6 +28,16 @@ type Node struct {
 	Level  int
 }
 
+func (n *Node) ChildNodes() (nodes []*Node) {
+	n.Childs.ForEach(func(item util.MapItem) (next bool) {
+		if node := n.Tree.Nodes(n.Level+1, item.Key.(string)); node != nil {
+			nodes = append(nodes, node)
+		}
+		return true
+	})
+	return
+}
+
 func NewNode() *Node {
 	return &Node{
 		Cache:  NewCache(),

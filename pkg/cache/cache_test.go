@@ -124,4 +124,17 @@ func TestTree_Get(t *testing.T) {
 	if node.Cache.Get("aa") != "b" {
 		t.Fatalf("TestTree_Get failed")
 	}
+
+	node, err = tree.Get(context.WithValue(ctx, "key1", "1"), Options().BeforeLevel(1))
+	if node == nil || err != nil {
+		t.Fatalf("TestTree_Get failed")
+	}
+	if node.Cache.Get("a") != "a" || node.Cache.Get("aa") != nil {
+		t.Fatalf("TestTree_Get failed")
+	}
+
+	childs := node.ChildNodes()
+	if len(childs) != 1 || childs[0].Cache.Get("aa") != "changed" {
+		t.Fatalf("TestTree_Get failed")
+	}
 }

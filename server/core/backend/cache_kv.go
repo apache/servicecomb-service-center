@@ -129,6 +129,10 @@ func (c *KvCache) addPrefixKey(key string, val *KeyValue) {
 		keys = make(map[string]*KeyValue)
 		c.store[prefix] = keys
 	} else if _, ok := keys[key]; ok {
+		if val != nil {
+			// override the value
+			keys[key] = val
+		}
 		return
 	}
 

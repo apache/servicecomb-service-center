@@ -17,11 +17,14 @@
 package cache
 
 import (
+	"errors"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/karlseguin/ccache"
 	"golang.org/x/net/context"
 	"sync"
 )
+
+var errNilNode = errors.New("nil node")
 
 type Tree struct {
 	Config  *Config
@@ -40,9 +43,17 @@ func (t *Tree) AddFilter(fs ...Filter) *Tree {
 	return t
 }
 
-func (t *Tree) Get(ctx context.Context) (node *Node, err error) {
+func (t *Tree) Get(ctx context.Context, ops ...Option) (node *Node, err error) {
+	var op Option
+	if len(ops) > 0 {
+		op = ops[0]
+	}
+
 	var parent *Node
 	for i := range t.filters {
+		if op.Level > 0 && op.Level == i {
+			break
+		}
 		if parent, err = t.getOrCreateNode(ctx, i, parent); parent == nil || err != nil {
 			break
 		}
@@ -60,7 +71,7 @@ func (t *Tree) Remove(ctx context.Context) {
 }
 
 func (t *Tree) remove(idx int, name string) {
-	if parent := t.getNode(idx, name); parent != nil {
+	if parent := t.Nodes(idx, name); parent != nil {
 		parent.Childs.ForEach(func(item util.MapItem) (next bool) {
 			t.remove(idx+1, item.Key.(string))
 			return true
@@ -78,12 +89,22 @@ func (t *Tree) getOrCreateNode(ctx context.Context, idx int, parent *Node) (node
 	name := t.nodeFullName(filter.Name(ctx), parent)
 	item, err := t.nodes[idx].Fetch(name, t.Config.TTL(), func() (interface{}, error) {
 		// if node is miss or stale
-		return t.createNode(ctx, idx, name, parent)
+		node, err := t.createNode(ctx, idx, name, parent)
+		if err != nil {
+			return nil, err
+		}
+		if node == nil {
+			return nil, errNilNode
+		}
+		return node, nil
 	})
-	if err != nil {
-		return
+	switch err {
+	case nil:
+		node = item.Value().(*Node)
+	case errNilNode:
+		err = nil
 	}
-	return item.Value().(*Node), nil
+	return
 }
 
 func (t *Tree) nodeFullName(name string, parent *Node) string {
@@ -93,7 +114,7 @@ func (t *Tree) nodeFullName(name string, parent *Node) string {
 	return name
 }
 
-func (t *Tree) getNode(idx int, name string) *Node {
+func (t *Tree) Nodes(idx int, name string) *Node {
 	if len(t.nodes) <= idx {
 		return nil
 	}

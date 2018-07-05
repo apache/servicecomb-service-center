@@ -545,8 +545,9 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 
 	// cache
 	var (
-		item *cache.VersionRuleCacheItem
-		i    = 0
+		item           *cache.VersionRuleCacheItem
+		i              = 0
+		newVersionRule = !cache.FindInstances.ExistVersionRule(cloneCtx, provider)
 	)
 	if noCache {
 		i = 1
@@ -575,21 +576,23 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 	}
 
 	// add dependency queue
-	provider, err = s.reshapeProviderKey(ctx, provider, item.ServiceIds[0])
-	if provider != nil {
-		err = serviceUtil.AddServiceVersionRule(ctx, domainProject, service, provider)
-	} else {
-		mes := fmt.Sprintf("provider not exist, %s", findFlag)
-		util.Logger().Errorf(nil, "AddServiceVersionRule failed, %s", mes)
-		return &pb.FindInstancesResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, mes),
-		}, nil
-	}
-	if err != nil {
-		util.Logger().Errorf(err, "AddServiceVersionRule failed, %s", findFlag)
-		return &pb.FindInstancesResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
-		}, err
+	if newVersionRule {
+		provider, err = s.reshapeProviderKey(ctx, provider, item.ServiceIds[0])
+		if provider != nil {
+			err = serviceUtil.AddServiceVersionRule(ctx, domainProject, service, provider)
+		} else {
+			mes := fmt.Sprintf("provider not exist, %s", findFlag)
+			util.Logger().Errorf(nil, "AddServiceVersionRule failed, %s", mes)
+			return &pb.FindInstancesResponse{
+				Response: pb.CreateResponse(scerr.ErrServiceNotExists, mes),
+			}, nil
+		}
+		if err != nil {
+			util.Logger().Errorf(err, "AddServiceVersionRule failed, %s", findFlag)
+			return &pb.FindInstancesResponse{
+				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			}, err
+		}
 	}
 
 	instances := item.Instances

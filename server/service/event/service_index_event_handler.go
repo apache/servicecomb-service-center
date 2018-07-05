@@ -14,11 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package cache
+package event
 
-const (
-	CTX_FIND_CONSUMER = "consumer"
-	CTX_FIND_PROVIDER = "provider"
-	CTX_FIND_TAGS     = "tags"
-	CACHE_FIND        = "find"
+import (
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
+	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/server/service/cache"
 )
+
+type ServiceIndexEventHandler struct {
+}
+
+func (h *ServiceIndexEventHandler) Type() backend.StoreType {
+	return backend.SERVICE_INDEX
+}
+
+func (h *ServiceIndexEventHandler) OnEvent(evt backend.KvEvent) {
+	switch evt.Type {
+	case pb.EVT_DELETE:
+		providerKey := backend.GetInfoFromSvcIndexKV(evt.KV)
+		cache.FindInstances.Remove(providerKey)
+	}
+}
+
+func NewServiceIndexEventHandler() *ServiceIndexEventHandler {
+	return &ServiceIndexEventHandler{}
+}

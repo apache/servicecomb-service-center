@@ -48,7 +48,10 @@ func (f *VersionRuleFilter) Init(ctx context.Context, parent *cache.Node) (node 
 		return
 	}
 
+	pCopy := *parent.Cache.Get(CACHE_FIND).(*VersionRuleCacheItem)
+	pCopy.ServiceIds = ids
+
 	node = cache.NewNode()
-	node.Cache.Set(cacheFindProviderIds, ids)
+	node.Cache.Set(CACHE_FIND, &pCopy)
 	return
 }

@@ -40,6 +40,7 @@ func init() {
 }
 
 type VersionRuleCacheItem struct {
+	Version    string
 	ServiceIds []string
 	Instances  []*pb.MicroServiceInstance
 	Rev        string
@@ -69,6 +70,21 @@ func (f *FindInstancesCache) Get(ctx context.Context, consumer *pb.MicroService,
 		return nil, err
 	}
 	return node.Cache.Get(CACHE_FIND).(*VersionRuleCacheItem), nil
+}
+
+func (f *FindInstancesCache) ExistVersionRule(ctx context.Context, provider *pb.MicroServiceKey) bool {
+	cloneCtx := context.WithValue(ctx, CTX_FIND_PROVIDER, provider)
+	node, _ := f.Tree.Get(cloneCtx, cache.Options().BeforeLevel(1))
+	if node == nil {
+		return false
+	}
+	v := node.Cache.Get(CACHE_FIND).(*VersionRuleCacheItem)
+	if v.Version != provider.Version || node.Childs.Size() == 0 {
+		v.Version = provider.Version
+		node.Cache.Set(CACHE_FIND, v)
+		return false
+	}
+	return true
 }
 
 func (f *FindInstancesCache) Remove(provider *pb.MicroServiceKey) {

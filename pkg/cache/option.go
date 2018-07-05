@@ -16,9 +16,15 @@
  */
 package cache
 
-const (
-	CTX_FIND_CONSUMER = "consumer"
-	CTX_FIND_PROVIDER = "provider"
-	CTX_FIND_TAGS     = "tags"
-	CACHE_FIND        = "find"
-)
+type Option struct {
+	Level int
+}
+
+func (op Option) BeforeLevel(l int) Option {
+	op.Level = l
+	return op
+}
+
+func Options() (op Option) {
+	return
+}

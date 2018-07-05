@@ -36,8 +36,8 @@ func (f *AccessibleFilter) Name(ctx context.Context) string {
 func (f *AccessibleFilter) Init(ctx context.Context, parent *cache.Node) (node *cache.Node, err error) {
 	var ids []string
 	consumerId := f.Name(ctx)
-	providerIds := parent.Cache.Get(cacheFindProviderIds).([]string)
-	for _, providerServiceId := range providerIds {
+	pCopy := *parent.Cache.Get(CACHE_FIND).(*VersionRuleCacheItem)
+	for _, providerServiceId := range pCopy.ServiceIds {
 		if err := serviceUtil.Accessible(ctx, consumerId, providerServiceId); err != nil {
 			provider := ctx.Value(CTX_FIND_PROVIDER).(*pb.MicroServiceKey)
 			findFlag := fmt.Sprintf("consumer %s find provider %s/%s/%s", consumerId,
@@ -52,7 +52,9 @@ func (f *AccessibleFilter) Init(ctx context.Context, parent *cache.Node) (node *
 		return
 	}
 
+	pCopy.ServiceIds = ids
+
 	node = cache.NewNode()
-	node.Cache.Set(cacheFindProviderIds, ids)
+	node.Cache.Set(CACHE_FIND, &pCopy)
 	return
 }

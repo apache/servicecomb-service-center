@@ -47,10 +47,10 @@ func (f *TagsFilter) Init(ctx context.Context, parent *cache.Node) (node *cache.
 	var ids []string
 
 	targetDomainProject := util.ParseTargetDomainProject(ctx)
-	providerIds := parent.Cache.Get(cacheFindProviderIds).([]string)
+	pCopy := *parent.Cache.Get(CACHE_FIND).(*VersionRuleCacheItem)
 
 loopProviderIds:
-	for _, providerServiceId := range providerIds {
+	for _, providerServiceId := range pCopy.ServiceIds {
 		tagsFromETCD, err := serviceUtil.GetTagsUtils(ctx, targetDomainProject, providerServiceId)
 		if err != nil {
 			consumer := ctx.Value(CTX_FIND_CONSUMER).(*pb.MicroService)
@@ -75,7 +75,9 @@ loopProviderIds:
 		return
 	}
 
+	pCopy.ServiceIds = ids
+
 	node = cache.NewNode()
-	node.Cache.Set(cacheFindProviderIds, ids)
+	node.Cache.Set(CACHE_FIND, &pCopy)
 	return
 }

@@ -16,9 +16,17 @@
  */
 package cache
 
-const (
-	CTX_FIND_CONSUMER = "consumer"
-	CTX_FIND_PROVIDER = "provider"
-	CTX_FIND_TAGS     = "tags"
-	CACHE_FIND        = "find"
-)
+import "testing"
+
+func BenchmarkWithLevel(b *testing.B) {
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			op := Options().BeforeLevel(3).BeforeLevel(2).BeforeLevel(1)
+			if op.Level != 1 {
+				b.Fatalf("BenchmarkWithLevel failed")
+			}
+		}
+	})
+	b.ReportAllocs()
+	// 2000000000	         0.28 ns/op	       0 B/op	       0 allocs/op
+}
