@@ -48,7 +48,7 @@ func (s *InstanceService) Watch(in *pb.WatchInstanceRequest, stream pb.ServiceIn
 	watcher := nf.NewListWatcher(in.SelfServiceId, apt.GetInstanceRootKey(domainProject)+"/", nil)
 	err = nf.GetNotifyService().AddSubscriber(watcher)
 	util.Logger().Infof("start watch instance status, watcher %s %s", watcher.Subject(), watcher.Group())
-	return nf.HandleWatchJob(watcher, stream, nf.GetNotifyService().Config.NotifyTimeout)
+	return nf.HandleWatchJob(watcher, stream)
 }
 
 func (s *InstanceService) WebSocketWatch(ctx context.Context, in *pb.WatchInstanceRequest, conn *websocket.Conn) {

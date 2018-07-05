@@ -37,21 +37,16 @@ func (p *Processor) Notify(job NotifyJob) {
 	}
 }
 
-func (p *Processor) Add(n Subscriber) {
-	itf, ok := p.subjects.Get(n.Subject())
+func (p *Processor) Subjects(name string) *Subject {
+	itf, ok := p.subjects.Get(name)
 	if !ok {
-		itf = NewSubject(n.Subject())
-		p.subjects.PutIfAbsent(n.Subject(), itf)
+		return nil
 	}
+	return itf.(*Subject)
+}
 
-	s := itf.(*Subject)
-	g := s.Groups(n.Group())
-	if g == nil {
-		g = NewGroup(n.Group())
-		s.Add(g)
-	}
-
-	g.Add(n)
+func (p *Processor) AddSubscriber(n Subscriber) {
+	p.subjects.Fetch(n.Subject(), func() interface{} { return NewSubject(n.Subject()) }).(*Subject).GetOrNewGroup(n.Group()).AddSubscriber(n)
 }
 
 func (p *Processor) Remove(n Subscriber) {
@@ -99,10 +94,10 @@ func (p *Processor) Do(ctx context.Context) {
 	}
 }
 
-func NewProcessor(name string) *Processor {
+func NewProcessor(name string, queue int) *Processor {
 	return &Processor{
 		name:     name,
 		subjects: util.NewConcurrentMap(0),
-		queue:    make(chan NotifyJob, GetNotifyService().Config.MaxQueue),
+		queue:    make(chan NotifyJob, queue),
 	}
 }

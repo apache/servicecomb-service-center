@@ -53,8 +53,11 @@ func (s *Subject) Groups(name string) *Group {
 	return g.(*Group)
 }
 
-func (s *Subject) Add(group *Group) {
-	s.groups.PutIfAbsent(group.Name(), group)
+func (s *Subject) GetOrNewGroup(name string) (exist *Group) {
+	exist = s.groups.Fetch(name, func() interface{} {
+		return NewGroup(name)
+	}).(*Group)
+	return
 }
 
 func (s *Subject) Remove(name string) {

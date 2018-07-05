@@ -29,8 +29,8 @@ import (
 )
 
 type WebSocket struct {
-	ticker          *time.Ticker
 	ctx             context.Context
+	ticker          *time.Ticker
 	conn            *websocket.Conn
 	watcher         *ListWatcher
 	needPingWatcher bool
@@ -64,7 +64,7 @@ func (wh *WebSocket) Init() error {
 }
 
 func (wh *WebSocket) Timeout() time.Duration {
-	return GetNotifyService().Config.NotifyTimeout
+	return DEFAULT_SEND_TIMEOUT
 }
 
 func (wh *WebSocket) heartbeat(messageType int) error {
@@ -162,7 +162,7 @@ func (wh *WebSocket) HandleWatchWebSocketJob(o interface{}) {
 		message = util.StringToBytesWithNoCopy(fmt.Sprintf("watcher catch an err: %s", err.Error()))
 	case time.Time:
 		domainProject := util.ParseDomainProject(wh.ctx)
-		if !serviceUtil.ServiceExist(context.Background(), domainProject, wh.watcher.Group()) {
+		if !serviceUtil.ServiceExist(wh.ctx, domainProject, wh.watcher.Group()) {
 			err := fmt.Errorf("Service does not exit.")
 			wh.watcher.SetError(err)
 			message = util.StringToBytesWithNoCopy(err.Error())

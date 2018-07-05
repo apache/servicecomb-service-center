@@ -23,9 +23,9 @@ import (
 	"time"
 )
 
-func HandleWatchJob(watcher *ListWatcher, stream pb.ServiceInstanceCtrl_WatchServer, timeout time.Duration) (err error) {
+func HandleWatchJob(watcher *ListWatcher, stream pb.ServiceInstanceCtrl_WatchServer) (err error) {
 	for {
-		timer := time.NewTimer(timeout)
+		timer := time.NewTimer(DEFAULT_SEND_TIMEOUT)
 		select {
 		case <-timer.C:
 			// TODO grpc 长连接心跳？

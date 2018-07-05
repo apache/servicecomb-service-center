@@ -33,8 +33,6 @@ func init() {
 }
 
 type NotifyService struct {
-	Config NotifyServiceConfig
-
 	processors *util.ConcurrentMap
 	goroutine  *util.GoRoutine
 	err        chan error
@@ -47,26 +45,16 @@ func (s *NotifyService) Err() <-chan error {
 }
 
 func (s *NotifyService) init() {
-	if s.Config.AddTimeout <= 0 {
-		s.Config.AddTimeout = DEFAULT_ON_MESSAGE_TIMEOUT
-	}
-	if s.Config.NotifyTimeout <= 0 {
-		s.Config.NotifyTimeout = DEFAULT_TIMEOUT
-	}
-	if s.Config.MaxQueue <= 0 || s.Config.MaxQueue > DEFAULT_MAX_QUEUE {
-		s.Config.MaxQueue = DEFAULT_MAX_QUEUE
-	}
-
 	s.processors = util.NewConcurrentMap(int(typeEnd))
 	s.err = make(chan error, 1)
 	for i := NotifyType(0); i != typeEnd; i++ {
-		s.processors.Put(i, NewProcessor(i.String()))
+		s.processors.Put(i, NewProcessor(i.String(), i.QueueSize()))
 	}
 }
 
 func (s *NotifyService) Start() {
 	if !s.Closed() {
-		util.Logger().Warnf(nil, "notify service is already running with config %s", s.Config)
+		util.Logger().Warnf(nil, "notify service is already running")
 		return
 	}
 	s.closeMux.Lock()
@@ -77,7 +65,7 @@ func (s *NotifyService) Start() {
 	// 错误subscriber清理
 	s.AddSubscriber(NewNotifyServiceHealthChecker())
 
-	util.Logger().Debugf("notify service is started with config %s", s.Config)
+	util.Logger().Debugf("notify service is started")
 
 	s.processors.ForEach(func(item util.MapItem) (next bool) {
 		s.goroutine.Do(item.Value.(*Processor).Do)
@@ -94,9 +82,10 @@ func (s *NotifyService) AddSubscriber(n Subscriber) error {
 	if !ok {
 		return errors.New("Unknown subscribe type")
 	}
-	itf.(*Processor).Add(n)
 	n.SetService(s)
 	n.OnAccept()
+
+	itf.(*Processor).AddSubscriber(n)
 	return nil
 }
 

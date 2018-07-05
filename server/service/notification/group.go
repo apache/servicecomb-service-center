@@ -44,8 +44,8 @@ func (g *Group) Subscribers(name string) Subscriber {
 	return s.(Subscriber)
 }
 
-func (g *Group) Add(subscriber Subscriber) {
-	g.subscribers.PutIfAbsent(subscriber.Id(), subscriber)
+func (g *Group) AddSubscriber(subscriber Subscriber) Subscriber {
+	return g.subscribers.PutIfAbsent(subscriber.Id(), subscriber).(Subscriber)
 }
 
 func (g *Group) Remove(name string) {
