@@ -24,7 +24,7 @@ import (
 func TestProcessor_Do(t *testing.T) {
 	mock1 := &mockSubscriber{BaseSubscriber: NewSubscriber(INSTANCE, "s1", "g1")}
 	mock2 := &mockSubscriber{BaseSubscriber: NewSubscriber(INSTANCE, "s1", "g2")}
-	p := NewProcessor("p1")
+	p := NewProcessor("p1", 0)
 	util.Go(p.Do)
 	if p.Name() != "p1" {
 		t.Fatalf("TestProcessor_Do")
