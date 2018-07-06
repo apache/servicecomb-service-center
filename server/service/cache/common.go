@@ -20,5 +20,7 @@ const (
 	CTX_FIND_CONSUMER = "consumer"
 	CTX_FIND_PROVIDER = "provider"
 	CTX_FIND_TAGS     = "tags"
-	CACHE_FIND        = "find"
+
+	CACHE_FIND = "find"
+	CACHE_DEP  = "dep"
 )

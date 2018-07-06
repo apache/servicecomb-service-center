@@ -91,7 +91,9 @@ func (iedh *InstanceEventDeferHandler) HandleChan() <-chan KvEvent {
 
 func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 	defer util.RecoverAndReport()
+
 	t, n := time.NewTimer(DEFAULT_CHECK_WINDOW), false
+	defer t.Stop()
 	for {
 		select {
 		case <-ctx.Done():
@@ -103,10 +105,7 @@ func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 
 			del := len(iedh.items)
 			if del > 0 && !n {
-				if !t.Stop() {
-					<-t.C
-				}
-				t.Reset(DEFAULT_CHECK_WINDOW)
+				util.ResetTimer(t, DEFAULT_CHECK_WINDOW)
 				n = true
 			}
 
@@ -117,7 +116,6 @@ func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 					del, total, iedh.Percent*100)
 			}
 		case <-t.C:
-			t.Reset(DEFAULT_CHECK_WINDOW)
 			n = false
 
 			for key, item := range iedh.items {
@@ -136,9 +134,13 @@ func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 				iedh.renew()
 				util.Logger().Warnf(nil, "self preservation is stopped")
 			}
+
+			t.Reset(DEFAULT_CHECK_WINDOW)
 		case <-iedh.resetCh:
 			iedh.renew()
 			util.Logger().Warnf(nil, "self preservation is reset")
+
+			util.ResetTimer(t, DEFAULT_CHECK_WINDOW)
 		}
 	}
 }
@@ -151,6 +153,9 @@ func (iedh *InstanceEventDeferHandler) recover(evt KvEvent) {
 
 func (iedh *InstanceEventDeferHandler) renew() {
 	iedh.enabled = false
+	for _, item := range iedh.items {
+		item.ttl.Stop()
+	}
 	iedh.items = make(map[string]deferItem)
 }
 

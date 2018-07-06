@@ -20,6 +20,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/server/service/cache"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
 	"strings"
@@ -33,19 +34,30 @@ func (h *ServiceEventHandler) Type() backend.StoreType {
 }
 
 func (h *ServiceEventHandler) OnEvent(evt backend.KvEvent) {
-	action := evt.Type
-	if action != pb.EVT_CREATE && action != pb.EVT_INIT {
+	ms := evt.KV.Value.(*pb.MicroService)
+	_, domainProject := backend.GetInfoFromSvcKV(evt.KV)
+
+	switch evt.Type {
+	case pb.EVT_INIT, pb.EVT_CREATE:
+		newDomain := domainProject[:strings.Index(domainProject, "/")]
+		newProject := domainProject[strings.Index(domainProject, "/")+1:]
+		err := serviceUtil.NewDomainProject(context.Background(), newDomain, newProject)
+		if err != nil {
+			util.Logger().Errorf(err, "new domain(%s) or project(%s) failed", newDomain, newProject)
+		}
+	default:
+	}
+
+	if evt.Type == pb.EVT_INIT {
 		return
 	}
 
-	_, domainProject := backend.GetInfoFromSvcKV(evt.KV)
-	newDomain := domainProject[:strings.Index(domainProject, "/")]
-	newProject := domainProject[strings.Index(domainProject, "/")+1:]
-	err := serviceUtil.NewDomainProject(context.Background(), newDomain, newProject)
-	if err != nil {
-		util.Logger().Errorf(err, "new domain(%s) or project(%s) failed", newDomain, newProject)
-		return
-	}
+	util.Logger().Infof("caught [%s] service %s/%s/%s event",
+		evt.Type, ms.AppId, ms.ServiceName, ms.Version)
+
+	// cache
+	providerKey := pb.MicroServiceToKey(domainProject, ms)
+	cache.FindInstances.Remove(providerKey)
 }
 
 func NewServiceEventHandler() *ServiceEventHandler {

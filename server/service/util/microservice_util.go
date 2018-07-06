@@ -45,10 +45,6 @@ func GetServiceWithRev(ctx context.Context, domain string, id string, rev int64)
 	return serviceResp.Kvs[0].Value.(*pb.MicroService), nil
 }
 
-func GetServiceInCache(ctx context.Context, domain string, id string) (*pb.MicroService, error) {
-	return GetService(util.SetContext(util.CloneContext(ctx), CTX_CACHEONLY, "1"), domain, id)
-}
-
 func GetService(ctx context.Context, domainProject string, serviceId string) (*pb.MicroService, error) {
 	key := apt.GenerateServiceKey(domainProject, serviceId)
 	opts := append(FromContext(ctx), registry.WithStrKey(key))
@@ -62,7 +58,7 @@ func GetService(ctx context.Context, domainProject string, serviceId string) (*p
 	return serviceResp.Kvs[0].Value.(*pb.MicroService), nil
 }
 
-func GetServicesRawData(ctx context.Context, domainProject string) ([]*backend.KeyValue, error) {
+func getServicesRawData(ctx context.Context, domainProject string) ([]*backend.KeyValue, error) {
 	key := apt.GenerateServiceKey(domainProject, "")
 	opts := append(FromContext(ctx),
 		registry.WithStrKey(key),
@@ -74,8 +70,8 @@ func GetServicesRawData(ctx context.Context, domainProject string) ([]*backend.K
 	return resp.Kvs, err
 }
 
-func GetServicesByDomain(ctx context.Context, domainProject string) ([]*pb.MicroService, error) {
-	kvs, err := GetServicesRawData(ctx, domainProject)
+func GetServicesByDomainProject(ctx context.Context, domainProject string) ([]*pb.MicroService, error) {
+	kvs, err := getServicesRawData(ctx, domainProject)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +191,7 @@ func ServiceExist(ctx context.Context, domainProject string, serviceId string) b
 
 func GetAllServiceUtil(ctx context.Context) ([]*pb.MicroService, error) {
 	domainProject := util.ParseDomainProject(ctx)
-	services, err := GetServicesByDomain(ctx, domainProject)
+	services, err := GetServicesByDomainProject(ctx, domainProject)
 	if err != nil {
 		return nil, err
 	}

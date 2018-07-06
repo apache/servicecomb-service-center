@@ -18,6 +18,7 @@ package util
 
 import (
 	"testing"
+	"time"
 )
 
 func TestInt16ToInt64(t *testing.T) {
@@ -71,4 +72,13 @@ func TestFileLastName(t *testing.T) {
 	if n != "/" {
 		t.Fatal("TestFileLastName 'b' failed", n)
 	}
+}
+
+func TestResetTimer(t *testing.T) {
+	timer := time.NewTimer(time.Microsecond)
+	<-timer.C
+	ResetTimer(timer, time.Microsecond)
+	<-timer.C
+	ResetTimer(timer, time.Second)
+	<-timer.C
 }

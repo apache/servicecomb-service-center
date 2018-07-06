@@ -58,16 +58,22 @@ func (cm *ConcurrentMap) PutIfAbsent(key, val interface{}) (exist interface{}) {
 	return
 }
 
-func (cm *ConcurrentMap) Fetch(key interface{}, f func() interface{}) (exist interface{}) {
+func (cm *ConcurrentMap) Fetch(key interface{}, f func() (interface{}, error)) (exist interface{}, err error) {
 	cm.init()
-	cm.mux.Lock()
+	cm.mux.RLock()
 	var b bool
 	exist, b = cm.items[key]
+	cm.mux.RUnlock()
 	if !b {
-		exist = f()
-		cm.items[key] = exist
+		cm.mux.Lock()
+		exist, b = cm.items[key]
+		if !b {
+			if exist, err = f(); err == nil {
+				cm.items[key] = exist
+			}
+		}
+		cm.mux.Unlock()
 	}
-	cm.mux.Unlock()
 	return
 }
 

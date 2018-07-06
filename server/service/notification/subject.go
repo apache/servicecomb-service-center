@@ -53,11 +53,11 @@ func (s *Subject) Groups(name string) *Group {
 	return g.(*Group)
 }
 
-func (s *Subject) GetOrNewGroup(name string) (exist *Group) {
-	exist = s.groups.Fetch(name, func() interface{} {
-		return NewGroup(name)
-	}).(*Group)
-	return
+func (s *Subject) GetOrNewGroup(name string) *Group {
+	item, _ := s.groups.Fetch(name, func() (interface{}, error) {
+		return NewGroup(name), nil
+	})
+	return item.(*Group)
 }
 
 func (s *Subject) Remove(name string) {

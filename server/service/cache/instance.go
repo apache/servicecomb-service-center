@@ -40,10 +40,10 @@ func init() {
 }
 
 type VersionRuleCacheItem struct {
-	Version    string
-	ServiceIds []string
-	Instances  []*pb.MicroServiceInstance
-	Rev        string
+	VersionRule string
+	ServiceIds  []string
+	Instances   []*pb.MicroServiceInstance
+	Rev         string
 }
 
 type FindInstancesCache struct {
@@ -51,42 +51,23 @@ type FindInstancesCache struct {
 }
 
 func (f *FindInstancesCache) Get(ctx context.Context, consumer *pb.MicroService, provider *pb.MicroServiceKey, tags []string) (*VersionRuleCacheItem, error) {
-	noCache := ctx.Value(serviceUtil.CTX_NOCACHE) == "1"
 	cloneCtx := context.WithValue(context.WithValue(context.WithValue(ctx,
 		CTX_FIND_CONSUMER, consumer),
 		CTX_FIND_PROVIDER, provider),
 		CTX_FIND_TAGS, tags)
 
-	var (
-		node *cache.Node
-		err  error
-	)
-	if !noCache {
-		node, err = f.Tree.Get(cloneCtx)
-	} else {
-		node, err = f.Tree.Simulate(cloneCtx)
-	}
+	node, err := f.Tree.Get(cloneCtx, cache.Options().Temporary(ctx.Value(serviceUtil.CTX_NOCACHE) == "1"))
 	if node == nil {
 		return nil, err
 	}
 	return node.Cache.Get(CACHE_FIND).(*VersionRuleCacheItem), nil
 }
 
-func (f *FindInstancesCache) ExistVersionRule(ctx context.Context, provider *pb.MicroServiceKey) bool {
-	cloneCtx := context.WithValue(ctx, CTX_FIND_PROVIDER, provider)
-	node, _ := f.Tree.Get(cloneCtx, cache.Options().BeforeLevel(1))
-	if node == nil {
-		return false
-	}
-	v := node.Cache.Get(CACHE_FIND).(*VersionRuleCacheItem)
-	if v.Version != provider.Version || node.Childs.Size() == 0 {
-		v.Version = provider.Version
-		node.Cache.Set(CACHE_FIND, v)
-		return false
-	}
-	return true
-}
-
 func (f *FindInstancesCache) Remove(provider *pb.MicroServiceKey) {
 	f.Tree.Remove(context.WithValue(context.Background(), CTX_FIND_PROVIDER, provider))
+	if len(provider.Alias) > 0 {
+		copy := *provider
+		copy.ServiceName = copy.Alias
+		f.Tree.Remove(context.WithValue(context.Background(), CTX_FIND_PROVIDER, &copy))
+	}
 }

@@ -68,12 +68,7 @@ func TestGetService(t *testing.T) {
 		t.FailNow()
 	}
 
-	_, err = serviceUtil.GetServicesRawData(context.Background(), "")
-	if err == nil {
-		t.FailNow()
-	}
-
-	_, err = serviceUtil.GetServicesByDomain(context.Background(), "")
+	_, err = serviceUtil.GetServicesByDomainProject(context.Background(), "")
 	if err == nil {
 		t.FailNow()
 	}

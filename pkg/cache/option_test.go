@@ -21,7 +21,7 @@ import "testing"
 func BenchmarkWithLevel(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			op := Options().BeforeLevel(3).BeforeLevel(2).BeforeLevel(1)
+			op := Options().ToLevel(3).ToLevel(2).ToLevel(1)
 			if op.Level != 1 {
 				b.Fatalf("BenchmarkWithLevel failed")
 			}

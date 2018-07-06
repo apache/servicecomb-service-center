@@ -46,7 +46,10 @@ func (p *Processor) Subjects(name string) *Subject {
 }
 
 func (p *Processor) AddSubscriber(n Subscriber) {
-	p.subjects.Fetch(n.Subject(), func() interface{} { return NewSubject(n.Subject()) }).(*Subject).GetOrNewGroup(n.Group()).AddSubscriber(n)
+	item, _ := p.subjects.Fetch(n.Subject(), func() (interface{}, error) {
+		return NewSubject(n.Subject()), nil
+	})
+	item.(*Subject).GetOrNewGroup(n.Group()).AddSubscriber(n)
 }
 
 func (p *Processor) Remove(n Subscriber) {

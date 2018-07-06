@@ -17,11 +17,19 @@
 package cache
 
 type Option struct {
-	Level int
+	Level   int
+	NoCache bool
 }
 
-func (op Option) BeforeLevel(l int) Option {
+// get node before level l
+func (op Option) ToLevel(l int) Option {
 	op.Level = l
+	return op
+}
+
+// get node without cache
+func (op Option) Temporary(b bool) Option {
+	op.NoCache = b
 	return op
 }
 

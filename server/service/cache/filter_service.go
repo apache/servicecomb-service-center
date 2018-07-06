@@ -36,10 +36,6 @@ func (f *ServiceFilter) Name(ctx context.Context) string {
 }
 
 func (f *ServiceFilter) Init(ctx context.Context, parent *cache.Node) (node *cache.Node, err error) {
-	provider := ctx.Value(CTX_FIND_PROVIDER).(*pb.MicroServiceKey)
 	node = cache.NewNode()
-	node.Cache.Set(CACHE_FIND, &VersionRuleCacheItem{
-		Version: provider.Version,
-	})
 	return
 }

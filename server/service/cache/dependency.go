@@ -17,41 +17,48 @@
 package cache
 
 import (
-	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/cache"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
+	"math"
 )
 
-type VersionRuleFilter struct {
+var DependencyRule = &DependencyRuleCache{
+	Tree: cache.NewTree(cache.Configure().
+		WithMaxSize(math.MaxInt64))}
+
+func init() {
+	DependencyRule.AddFilter(
+		&ServiceFilter{},
+		&ConsumerFilter{})
 }
 
-func (f *VersionRuleFilter) Name(ctx context.Context) string {
-	provider := ctx.Value(CTX_FIND_PROVIDER).(*pb.MicroServiceKey)
-	return provider.Version
+type DependencyRuleItem struct {
+	VersionRule string
 }
 
-func (f *VersionRuleFilter) Init(ctx context.Context, parent *cache.Node) (node *cache.Node, err error) {
-	provider := ctx.Value(CTX_FIND_PROVIDER).(*pb.MicroServiceKey)
-	// 版本规则
-	ids, err := serviceUtil.FindServiceIds(ctx, provider.Version, provider)
-	if err != nil {
-		consumer := ctx.Value(CTX_FIND_CONSUMER).(*pb.MicroService)
-		findFlag := fmt.Sprintf("consumer %s find provider %s/%s/%s", consumer.ServiceId,
-			provider.AppId, provider.ServiceName, provider.Version)
-		util.Logger().Errorf(err, "VersionRuleFilter failed, %s", findFlag)
-		return
-	}
-	if len(ids) == 0 {
-		return
-	}
+type DependencyRuleCache struct {
+	*cache.Tree
+}
 
-	node = cache.NewNode()
-	node.Cache.Set(CACHE_FIND, &VersionRuleCacheItem{
-		VersionRule: provider.Version,
-		ServiceIds:  ids,
-	})
-	return
+func (f *DependencyRuleCache) ExistVersionRule(ctx context.Context, consumerId string, provider *pb.MicroServiceKey) bool {
+	cloneCtx := context.WithValue(context.WithValue(ctx,
+		CTX_FIND_CONSUMER, consumerId),
+		CTX_FIND_PROVIDER, provider)
+
+	node, _ := f.Tree.Get(cloneCtx, cache.Options().Temporary(ctx.Value(serviceUtil.CTX_NOCACHE) == "1"))
+	if node == nil {
+		return false
+	}
+	v := node.Cache.Get(CACHE_DEP).(*DependencyRuleItem)
+	if v.VersionRule != provider.Version {
+		v.VersionRule = provider.Version
+		return false
+	}
+	return true
+}
+
+func (f *DependencyRuleCache) Remove(provider *pb.MicroServiceKey) {
+	f.Tree.Remove(context.WithValue(context.Background(), CTX_FIND_PROVIDER, provider))
 }

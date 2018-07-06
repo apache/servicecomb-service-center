@@ -63,14 +63,11 @@ func (g *GoRoutine) loop(f func(context.Context)) {
 	g.wg.Add(1)
 	defer g.wg.Done()
 	defer func() { <-g.concurrent }()
+
 	timer := time.NewTimer(GlobalPoolConfig.IdleTimeout)
+	defer timer.Stop()
 	for {
 		g.execute(f)
-
-		if !timer.Stop() {
-			<-timer.C
-		}
-		timer.Reset(GlobalPoolConfig.IdleTimeout)
 
 		select {
 		case <-timer.C:
@@ -79,6 +76,7 @@ func (g *GoRoutine) loop(f func(context.Context)) {
 			if f == nil {
 				return
 			}
+			ResetTimer(timer, GlobalPoolConfig.IdleTimeout)
 		}
 	}
 }

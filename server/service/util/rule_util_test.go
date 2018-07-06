@@ -27,12 +27,22 @@ import (
 func TestRuleFilter_Filter(t *testing.T) {
 	rf := RuleFilter{
 		DomainProject: "",
-		Provider:      &proto.MicroService{},
 		ProviderRules: []*proto.ServiceRule{},
 	}
 	_, err := rf.Filter(context.Background(), "")
 	if err == nil {
 		t.Fatalf("RuleFilter Filter failed")
+	}
+	_, _, err = rf.FilterAll(context.Background(), []string{""})
+	if err != nil {
+		t.Fatalf("RuleFilter FilterAll failed")
+	}
+	rf.ProviderRules = []*proto.ServiceRule{
+		{},
+	}
+	_, _, err = rf.FilterAll(context.Background(), []string{""})
+	if err == nil {
+		t.Fatalf("RuleFilter FilterAll failed")
 	}
 }
 
@@ -249,39 +259,39 @@ func TestMatchRules(t *testing.T) {
 }
 
 func TestGetConsumer(t *testing.T) {
-	_, _, err := GetConsumerIdsByProvider(context.Background(), "", &proto.MicroService{})
+	_, _, err := GetAllProviderIds(context.Background(), "", &proto.MicroService{})
 	if err == nil {
 		t.Fatalf("GetConsumerIdsByProvider invalid failed")
 	}
 
-	_, _, err = GetConsumerIdsByProvider(context.Background(), "", &proto.MicroService{
+	_, _, err = GetAllConsumerIds(context.Background(), "", &proto.MicroService{
 		ServiceId: "a",
 	})
 	if err == nil {
 		t.Fatalf("GetConsumerIdsByProvider WithCacheOnly not exist service failed")
 	}
 
-	_, err = GetConsumersInCache(context.Background(), "",
+	_, err = GetConsumerIds(context.Background(), "",
 		&proto.MicroService{
 			ServiceId: "a",
 		})
 	if err == nil {
-		t.Fatalf("GetConsumersInCache WithCacheOnly failed")
+		t.Fatalf("GetConsumerIds WithCacheOnly failed")
 	}
 }
 
 func TestGetProvider(t *testing.T) {
-	_, err := GetProvidersInCache(context.Background(), "",
+	_, err := GetProviderIds(context.Background(), "",
 		&proto.MicroService{
 			ServiceId: "a",
 		})
 	if err == nil {
-		t.Fatalf("GetProvidersInCache WithCacheOnly failed")
+		t.Fatalf("GetProviderIds WithCacheOnly failed")
 	}
 
-	_, _, err = GetProviderIdsByConsumer(context.Background(), "", &proto.MicroService{})
+	_, _, err = GetAllProviderIds(context.Background(), "", &proto.MicroService{})
 	if err == nil {
-		t.Fatalf("GetProviderIdsByConsumer WithCacheOnly failed")
+		t.Fatalf("GetAllProviderIds WithCacheOnly failed")
 	}
 }
 

@@ -32,7 +32,6 @@ import (
 
 type RuleFilter struct {
 	DomainProject string
-	Provider      *pb.MicroService
 	ProviderRules []*pb.ServiceRule
 }
 
@@ -41,6 +40,10 @@ func (rf *RuleFilter) Filter(ctx context.Context, consumerId string) (bool, erro
 	consumer, err := GetService(copyCtx, rf.DomainProject, consumerId)
 	if consumer == nil {
 		return false, err
+	}
+
+	if len(rf.ProviderRules) == 0 {
+		return true, nil
 	}
 
 	tags, err := GetTagsUtils(copyCtx, rf.DomainProject, consumerId)
@@ -55,6 +58,30 @@ func (rf *RuleFilter) Filter(ctx context.Context, consumerId string) (bool, erro
 		return false, matchErr
 	}
 	return true, nil
+}
+
+func (rf *RuleFilter) FilterAll(ctx context.Context, consumerIds []string) (allow []string, deny []string, err error) {
+	l := len(consumerIds)
+	if l == 0 || len(rf.ProviderRules) == 0 {
+		return consumerIds, nil, nil
+	}
+
+	allowIdx, denyIdx := 0, l
+	consumers := make([]string, l)
+	for _, consumerId := range consumerIds {
+		ok, err := rf.Filter(ctx, consumerId)
+		if err != nil {
+			return nil, nil, err
+		}
+		if ok {
+			consumers[allowIdx] = consumerId
+			allowIdx++
+		} else {
+			denyIdx--
+			consumers[denyIdx] = consumerId
+		}
+	}
+	return consumers[:allowIdx], consumers[denyIdx:], nil
 }
 
 func GetRulesUtil(ctx context.Context, domainProject string, serviceId string) ([]*pb.ServiceRule, error) {

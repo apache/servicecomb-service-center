@@ -14,29 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package event
+package cache
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	"github.com/apache/incubator-servicecomb-service-center/server/service/cache"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/cache"
+	"golang.org/x/net/context"
 )
 
-type ServiceIndexEventHandler struct {
+type ConsumerFilter struct {
 }
 
-func (h *ServiceIndexEventHandler) Type() backend.StoreType {
-	return backend.SERVICE_INDEX
+func (f *ConsumerFilter) Name(ctx context.Context) string {
+	return ctx.Value(CTX_FIND_CONSUMER).(string)
 }
 
-func (h *ServiceIndexEventHandler) OnEvent(evt backend.KvEvent) {
-	switch evt.Type {
-	case pb.EVT_DELETE:
-		providerKey := backend.GetInfoFromSvcIndexKV(evt.KV)
-		cache.FindInstances.Remove(providerKey)
-	}
-}
-
-func NewServiceIndexEventHandler() *ServiceIndexEventHandler {
-	return &ServiceIndexEventHandler{}
+func (f *ConsumerFilter) Init(ctx context.Context, parent *cache.Node) (node *cache.Node, err error) {
+	node = cache.NewNode()
+	node.Cache.Set(CACHE_DEP, &DependencyRuleItem{})
+	return
 }

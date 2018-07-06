@@ -184,7 +184,7 @@ func QueryAllProvidersInstances(ctx context.Context, selfServiceId string) (resu
 		util.Logger().Errorf(nil, "service not exist, %s", selfServiceId)
 		return
 	}
-	providerIds, _, err := GetProviderIdsByConsumer(ctx, domainProject, service)
+	providerIds, _, err := GetAllProviderIds(ctx, domainProject, service)
 	if err != nil {
 		util.Logger().Errorf(err, "get service %s providers id set failed.", selfServiceId)
 		return

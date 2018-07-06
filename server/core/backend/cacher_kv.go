@@ -158,6 +158,9 @@ func (c *KvCacher) needDeferHandle(evts []KvEvent) bool {
 func (c *KvCacher) refresh(ctx context.Context) {
 	util.Logger().Debugf("start to list and watch %s", c.Cfg)
 	retries := 0
+
+	timer := time.NewTimer(minWaitInterval)
+	defer timer.Stop()
 	for {
 		nextPeriod := minWaitInterval
 		if err := c.ListAndWatch(ctx); err != nil {
@@ -167,60 +170,12 @@ func (c *KvCacher) refresh(ctx context.Context) {
 			retries = 0
 		}
 
-		timer := time.NewTimer(nextPeriod)
 		select {
 		case <-ctx.Done():
-			timer.Stop()
 			util.Logger().Debugf("stop to list and watch %s", c.Cfg)
 			return
 		case <-timer.C:
-		}
-	}
-}
-
-func (c *KvCacher) deferHandle(ctx context.Context) {
-	if c.Cfg.DeferHandler == nil {
-		return
-	}
-
-	var (
-		evts = make([]KvEvent, eventBlockSize)
-		i    int
-	)
-	interval := 300 * time.Millisecond
-	timer := time.NewTimer(interval)
-	for {
-		if !timer.Stop() {
-			<-timer.C
-		}
-		timer.Reset(interval)
-
-		select {
-		case <-ctx.Done():
-			timer.Stop()
-			return
-		case evt, ok := <-c.Cfg.DeferHandler.HandleChan():
-			if !ok {
-				<-time.After(time.Second)
-				continue
-			}
-
-			if i >= eventBlockSize {
-				c.onEvents(evts[:i])
-				evts = make([]KvEvent, eventBlockSize)
-				i = 0
-			}
-
-			evts[i] = evt
-			i++
-		case <-timer.C:
-			if i == 0 {
-				continue
-			}
-
-			c.onEvents(evts[:i])
-			evts = make([]KvEvent, eventBlockSize)
-			i = 0
+			timer.Reset(nextPeriod)
 		}
 	}
 }
@@ -355,6 +310,51 @@ func (c *KvCacher) filterCreateOrUpdate(newStore map[string]*mvccpb.KeyValue,
 	close(eventsCh)
 }
 
+func (c *KvCacher) deferHandle(ctx context.Context) {
+	if c.Cfg.DeferHandler == nil {
+		return
+	}
+
+	var (
+		evts = make([]KvEvent, eventBlockSize)
+		i    int
+	)
+	interval := 300 * time.Millisecond
+	timer := time.NewTimer(interval)
+	defer timer.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case evt, ok := <-c.Cfg.DeferHandler.HandleChan():
+			if !ok {
+				return
+			}
+
+			if i >= eventBlockSize {
+				c.onEvents(evts[:i])
+				evts = make([]KvEvent, eventBlockSize)
+				i = 0
+			}
+
+			evts[i] = evt
+			i++
+
+			util.ResetTimer(timer, interval)
+		case <-timer.C:
+			timer.Reset(interval)
+
+			if i == 0 {
+				continue
+			}
+
+			c.onEvents(evts[:i])
+			evts = make([]KvEvent, eventBlockSize)
+			i = 0
+		}
+	}
+}
+
 func (c *KvCacher) onEvents(evts []KvEvent) {
 	init := !c.IsReady()
 	for i, evt := range evts {
@@ -451,17 +451,15 @@ func (c *KvCacher) reportMetrics(ctx context.Context) {
 		return
 	}
 	timer := time.NewTimer(DEFAULT_METRICS_INTERVAL)
+	defer timer.Stop()
 	for {
-		if !timer.Stop() {
-			<-timer.C
-		}
-		timer.Reset(DEFAULT_METRICS_INTERVAL)
-
 		select {
 		case <-ctx.Done():
 			return
 		case <-timer.C:
 			c.cache.ReportMetrics()
+
+			timer.Reset(DEFAULT_METRICS_INTERVAL)
 		}
 	}
 }

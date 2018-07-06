@@ -24,6 +24,15 @@ import (
 	"testing"
 )
 
+func TestFormatRevision(t *testing.T) {
+	if "1.1" != FormatRevision(1, 1) {
+		t.Fatalf("TestFormatRevision failed")
+	}
+	if a, b := ParseRevision("1.1"); a != 1 || b != 1 {
+		t.Fatalf("TestFormatRevision failed")
+	}
+}
+
 func TestGetLeaseId(t *testing.T) {
 	_, err := GetLeaseId(context.Background(), "", "", "")
 	if err == nil {

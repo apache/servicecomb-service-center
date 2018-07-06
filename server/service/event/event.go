@@ -22,8 +22,6 @@ import (
 
 func init() {
 	backend.AddEventHandler(NewServiceEventHandler())
-	backend.AddEventHandler(NewServiceIndexEventHandler())
-	backend.AddEventHandler(NewServiceAliasEventHandler())
 	backend.AddEventHandler(NewInstanceEventHandler())
 	backend.AddEventHandler(NewRuleEventHandler())
 	backend.AddEventHandler(NewTagEventHandler())

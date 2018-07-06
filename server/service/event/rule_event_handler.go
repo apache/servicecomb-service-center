@@ -50,7 +50,9 @@ func (apt *RulesChangedTask) Err() error {
 }
 
 func (apt *RulesChangedTask) publish(ctx context.Context, domainProject, providerId string, rev int64) error {
-	provider, err := serviceUtil.GetServiceInCache(ctx, domainProject, providerId)
+	ctx = util.SetContext(ctx, serviceUtil.CTX_CACHEONLY, "1")
+
+	provider, err := serviceUtil.GetService(ctx, domainProject, providerId)
 	if err != nil {
 		util.Logger().Errorf(err, "get provider %s service file failed", providerId)
 		return err
@@ -60,7 +62,7 @@ func (apt *RulesChangedTask) publish(ctx context.Context, domainProject, provide
 		return fmt.Errorf("provider %s does not exist", providerId)
 	}
 
-	consumerIds, err := serviceUtil.GetConsumersInCache(ctx, domainProject, provider)
+	consumerIds, err := serviceUtil.GetConsumerIds(ctx, domainProject, provider)
 	if err != nil {
 		util.Logger().Errorf(err, "get consumer services by provider %s failed", providerId)
 		return err
@@ -86,11 +88,11 @@ func (h *RuleEventHandler) OnEvent(evt backend.KvEvent) {
 
 	providerId, ruleId, domainProject := backend.GetInfoFromRuleKV(evt.KV)
 	if nf.GetNotifyService().Closed() {
-		util.Logger().Warnf(nil, "caught service %s rule %s [%s] event, but notify service is closed",
-			providerId, ruleId, action)
+		util.Logger().Warnf(nil, "caught [%s] service rule event %s/%s, but notify service is closed",
+			action, providerId, ruleId)
 		return
 	}
-	util.Logger().Infof("caught service %s rule %s [%s] event", providerId, ruleId, action)
+	util.Logger().Infof("caught [%s] service rule event %s/%s", action, providerId, ruleId)
 
 	async.Service().Add(context.Background(),
 		NewRulesChangedAsyncTask(domainProject, providerId, evt.Revision))

@@ -52,14 +52,15 @@ func (h *InstanceEventHandler) OnEvent(evt backend.KvEvent) {
 	}
 
 	if nf.GetNotifyService().Closed() {
-		util.Logger().Warnf(nil, "caught instance %s/%s [%s] event, but notify service is closed",
-			providerId, providerInstanceId, action)
+		util.Logger().Warnf(nil, "caught [%s] instance event %s/%s, but notify service is closed",
+			action, providerId, providerInstanceId)
 		return
 	}
-	util.Logger().Infof("caught instance %s/%s [%s] event", providerId, providerInstanceId, action)
+	util.Logger().Infof("caught [%s] instance event %s/%s", action, providerId, providerInstanceId)
 
 	// 查询服务版本信息
-	ms, err := serviceUtil.GetServiceInCache(context.Background(), domainProject, providerId)
+	ctx := util.SetContext(context.Background(), serviceUtil.CTX_CACHEONLY, "1")
+	ms, err := serviceUtil.GetService(ctx, domainProject, providerId)
 	if ms == nil {
 		util.Logger().Warnf(err, "get provider service %s/%s id in cache failed",
 			providerId, providerInstanceId)
@@ -67,7 +68,7 @@ func (h *InstanceEventHandler) OnEvent(evt backend.KvEvent) {
 	}
 
 	// 查询所有consumer
-	consumerIds, _, err := serviceUtil.GetConsumerIdsByProvider(context.Background(), domainProject, ms)
+	consumerIds, _, err := serviceUtil.GetAllConsumerIds(ctx, domainProject, ms)
 	if err != nil {
 		util.Logger().Errorf(err, "query service %s consumers failed", providerId)
 		return

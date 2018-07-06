@@ -547,7 +547,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 	var (
 		item           *cache.VersionRuleCacheItem
 		i              = 0
-		newVersionRule = !cache.FindInstances.ExistVersionRule(cloneCtx, provider)
+		newVersionRule = !cache.DependencyRule.ExistVersionRule(cloneCtx, in.ConsumerServiceId, provider)
 	)
 	if noCache {
 		i = 1
