@@ -29,7 +29,7 @@ type NotifyServiceHealthChecker struct {
 }
 
 type NotifyServiceHealthCheckJob struct {
-	BaseNotifyJob
+	*BaseNotifyJob
 	ErrorSubscriber Subscriber
 }
 
@@ -60,7 +60,7 @@ func NewNotifyServiceHealthChecker() *NotifyServiceHealthChecker {
 
 func NewNotifyServiceHealthCheckJob(s Subscriber) *NotifyServiceHealthCheckJob {
 	return &NotifyServiceHealthCheckJob{
-		BaseNotifyJob: BaseNotifyJob{
+		BaseNotifyJob: &BaseNotifyJob{
 			group:   NOTIFY_SERVER_CHECKER_NAME,
 			subject: NOTIFY_SERVER_CHECK_SUBJECT,
 			nType:   NOTIFTY,

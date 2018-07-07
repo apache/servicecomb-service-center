@@ -16,26 +16,19 @@
  */
 package notification
 
-type NotifyJob interface {
-	Type() NotifyType
-	Group() string
-	Subject() string
-}
+import "testing"
 
-type BaseNotifyJob struct {
-	nType   NotifyType
-	subject string
-	group   string
-}
-
-func (s *BaseNotifyJob) Type() NotifyType {
-	return s.nType
-}
-
-func (s *BaseNotifyJob) Group() string {
-	return s.group
-}
-
-func (s *BaseNotifyJob) Subject() string {
-	return s.subject
+func TestHandleWatchJob(t *testing.T) {
+	defer func() { recover() }()
+	w := NewListWatcher("g", "s", nil)
+	w.Job <- nil
+	err := HandleWatchJob(w, nil)
+	if err == nil {
+		t.Fatalf("TestHandleWatchJob failed")
+	}
+	w.Job <- NewWatchJob("g", "s", 1, nil)
+	err = HandleWatchJob(w, nil)
+	if err != nil {
+		t.Fatalf("TestHandleWatchJob failed")
+	}
 }

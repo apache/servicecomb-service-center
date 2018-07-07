@@ -61,7 +61,7 @@ func TestGroup_Add(t *testing.T) {
 	if g.Subscribers(mock.Id()) != mock {
 		t.Fatalf("TestGroup_Add failed")
 	}
-	job := &BaseNotifyJob{}
+	job := &BaseNotifyJob{nType: INSTANCE}
 	g.Notify(job)
 	if mock.job != job {
 		t.Fatalf("TestGroup_Add failed")

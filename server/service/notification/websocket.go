@@ -48,9 +48,9 @@ func (wh *WebSocket) Init() error {
 			remoteAddr, err.Error())
 		util.Logger().Errorf(nil, err.Error())
 
-		err = wh.conn.WriteMessage(websocket.TextMessage, util.StringToBytesWithNoCopy(err.Error()))
-		if err != nil {
-			util.Logger().Errorf(err, "establish[%s] websocket watch failed: write message failed.", remoteAddr)
+		werr := wh.conn.WriteMessage(websocket.TextMessage, util.StringToBytesWithNoCopy(err.Error()))
+		if werr != nil {
+			util.Logger().Errorf(werr, "establish[%s] websocket watch failed: write message failed.", remoteAddr)
 		}
 		return err
 	}
