@@ -23,32 +23,35 @@ import (
 	"time"
 )
 
-func HandleWatchJob(watcher *ListWatcher, stream pb.ServiceInstanceCtrl_WatchServer, timeout time.Duration) (err error) {
+func HandleWatchJob(watcher *ListWatcher, stream pb.ServiceInstanceCtrl_WatchServer) (err error) {
+	timer := time.NewTimer(DEFAULT_SEND_TIMEOUT)
+	defer timer.Stop()
 	for {
-		timer := time.NewTimer(timeout)
 		select {
 		case <-timer.C:
+			timer.Reset(DEFAULT_SEND_TIMEOUT)
+
 			// TODO grpc 长连接心跳？
 		case job := <-watcher.Job:
-			timer.Stop()
-
 			if job == nil {
 				err = errors.New("channel is closed")
-				util.Logger().Errorf(err, "watcher %s %s caught an exception",
-					watcher.Subject(), watcher.Id())
+				util.Logger().Errorf(err, "watcher caught an exception, subject: %s, group: %s",
+					watcher.Subject(), watcher.Group())
 				return
 			}
 			resp := job.Response
-			util.Logger().Infof("event is coming in, watcher %s %s",
-				watcher.Subject(), watcher.Id())
+			util.Logger().Infof("event is coming in, watcher, subject: %s, group: %s",
+				watcher.Subject(), watcher.Group())
 
 			err = stream.Send(resp)
 			if err != nil {
-				util.Logger().Errorf(err, "send message error, watcher %s %s",
-					watcher.Subject(), watcher.Id())
+				util.Logger().Errorf(err, "send message error, subject: %s, group: %s",
+					watcher.Subject(), watcher.Group())
 				watcher.SetError(err)
 				return
 			}
+
+			util.ResetTimer(timer, DEFAULT_SEND_TIMEOUT)
 		}
 	}
 }

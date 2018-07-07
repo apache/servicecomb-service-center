@@ -17,10 +17,8 @@
 package backend
 
 import (
-	"encoding/json"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"sync"
 	"time"
@@ -50,7 +48,7 @@ func (iedh *InstanceEventDeferHandler) OnCondition(cache Cache, evts []KvEvent) 
 
 	iedh.once.Do(func() {
 		iedh.cache = cache
-		iedh.items = make(map[string]deferItem, eventBlockSize)
+		iedh.items = make(map[string]deferItem)
 		iedh.pendingCh = make(chan []KvEvent, eventBlockSize)
 		iedh.deferCh = make(chan KvEvent, eventBlockSize)
 		iedh.resetCh = make(chan struct{})
@@ -62,7 +60,7 @@ func (iedh *InstanceEventDeferHandler) OnCondition(cache Cache, evts []KvEvent) 
 }
 
 func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt KvEvent) error {
-	kv := evt.Object.(*mvccpb.KeyValue)
+	kv := evt.KV
 	key := util.BytesToStringWithNoCopy(kv.Key)
 	_, ok := iedh.items[key]
 	switch evt.Type {
@@ -77,20 +75,7 @@ func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt KvEvent) error {
 			return nil
 		}
 
-		var instance pb.MicroServiceInstance
-
-		// it will happen in embed mode, and then need to get the cache value to unmarshal
-		if kv.Value == nil {
-			if c, ok := iedh.cache.Data(key).(*mvccpb.KeyValue); ok {
-				kv.Value = c.Value
-			}
-		}
-		err := json.Unmarshal(kv.Value, &instance)
-		if err != nil {
-			util.Logger().Errorf(err, "unmarshal instance file failed, key is %s, value is %s", key,
-				util.BytesToStringWithNoCopy(kv.Value))
-			return err
-		}
+		instance := kv.Value.(*pb.MicroServiceInstance)
 		iedh.items[key] = deferItem{
 			ttl: time.NewTimer(
 				time.Duration(instance.HealthCheck.Interval*(instance.HealthCheck.Times+1)) * time.Second),
@@ -106,7 +91,9 @@ func (iedh *InstanceEventDeferHandler) HandleChan() <-chan KvEvent {
 
 func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 	defer util.RecoverAndReport()
+
 	t, n := time.NewTimer(DEFAULT_CHECK_WINDOW), false
+	defer t.Stop()
 	for {
 		select {
 		case <-ctx.Done():
@@ -118,10 +105,7 @@ func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 
 			del := len(iedh.items)
 			if del > 0 && !n {
-				if !t.Stop() {
-					<-t.C
-				}
-				t.Reset(DEFAULT_CHECK_WINDOW)
+				util.ResetTimer(t, DEFAULT_CHECK_WINDOW)
 				n = true
 			}
 
@@ -132,7 +116,6 @@ func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 					del, total, iedh.Percent*100)
 			}
 		case <-t.C:
-			t.Reset(DEFAULT_CHECK_WINDOW)
 			n = false
 
 			for key, item := range iedh.items {
@@ -151,22 +134,29 @@ func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 				iedh.renew()
 				util.Logger().Warnf(nil, "self preservation is stopped")
 			}
+
+			t.Reset(DEFAULT_CHECK_WINDOW)
 		case <-iedh.resetCh:
 			iedh.renew()
 			util.Logger().Warnf(nil, "self preservation is reset")
+
+			util.ResetTimer(t, DEFAULT_CHECK_WINDOW)
 		}
 	}
 }
 
 func (iedh *InstanceEventDeferHandler) recover(evt KvEvent) {
-	key := util.BytesToStringWithNoCopy(evt.Object.(*mvccpb.KeyValue).Key)
+	key := util.BytesToStringWithNoCopy(evt.KV.Key)
 	delete(iedh.items, key)
 	iedh.deferCh <- evt
 }
 
 func (iedh *InstanceEventDeferHandler) renew() {
 	iedh.enabled = false
-	iedh.items = make(map[string]deferItem, eventBlockSize)
+	for _, item := range iedh.items {
+		item.ttl.Stop()
+	}
+	iedh.items = make(map[string]deferItem)
 }
 
 func (iedh *InstanceEventDeferHandler) Reset() bool {
@@ -175,4 +165,8 @@ func (iedh *InstanceEventDeferHandler) Reset() bool {
 		return true
 	}
 	return false
+}
+
+func NewInstanceEventDeferHandler() *InstanceEventDeferHandler {
+	return &InstanceEventDeferHandler{Percent: DEFAULT_SELF_PRESERVATION_PERCENT}
 }

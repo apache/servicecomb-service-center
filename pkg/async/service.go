@@ -26,10 +26,10 @@ import (
 )
 
 const (
-	maxExecutorCount       = 1000
+	initExecutorCount      = 1000
 	removeExecutorInterval = 30 * time.Second
 	initExecutorTTL        = 4
-	executeInterval        = 100 * time.Millisecond
+	executeInterval        = 1 * time.Second
 	compactTimes           = 2
 )
 
@@ -107,12 +107,11 @@ func (lat *TaskService) daemon(ctx context.Context) {
 	util.SafeCloseChan(lat.ready)
 	ticker := time.NewTicker(removeExecutorInterval)
 	max := 0
+	timer := time.NewTimer(executeInterval)
+	defer timer.Stop()
 	for {
-		timer := time.NewTimer(executeInterval)
 		select {
 		case <-ctx.Done():
-			timer.Stop()
-
 			util.Logger().Debugf("daemon thread exited for TaskService is stopped")
 			return
 		case <-timer.C:
@@ -127,8 +126,10 @@ func (lat *TaskService) daemon(ctx context.Context) {
 			for _, s := range slice {
 				s.Execute() // non-blocked
 			}
+
+			timer.Reset(executeInterval)
 		case <-ticker.C:
-			timer.Stop()
+			util.ResetTimer(timer, executeInterval)
 
 			lat.lock.RLock()
 			l := len(lat.executors)
@@ -154,7 +155,7 @@ func (lat *TaskService) daemon(ctx context.Context) {
 			}
 
 			l = len(lat.executors)
-			if max > maxExecutorCount && max > l*compactTimes {
+			if max > initExecutorCount && max > l*compactTimes {
 				lat.renew()
 				max = l
 			}
@@ -200,7 +201,7 @@ func (lat *TaskService) Ready() <-chan struct{} {
 }
 
 func (lat *TaskService) renew() {
-	newExecutor := make(map[string]*executorWithTTL, maxExecutorCount)
+	newExecutor := make(map[string]*executorWithTTL)
 	for k, e := range lat.executors {
 		newExecutor[k] = e
 	}

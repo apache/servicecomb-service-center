@@ -17,19 +17,13 @@
 package util
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"golang.org/x/net/context"
 	"testing"
 )
 
 func TestCheckSchemaInfoExist(t *testing.T) {
-	_, err := CheckSchemaInfoExist(util.SetContext(context.Background(), CTX_CACHEONLY, "1"), "")
-	if err != nil {
-		t.FailNow()
-	}
-
-	_, err = CheckSchemaInfoExist(context.Background(), "")
+	_, err := CheckSchemaInfoExist(context.Background(), "")
 	if err == nil {
-		t.FailNow()
+		t.Fatalf("TestCheckSchemaInfoExist failed")
 	}
 }

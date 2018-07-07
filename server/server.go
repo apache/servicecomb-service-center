@@ -180,11 +180,6 @@ func (s *ServiceCenterServer) autoCompactBackend() {
 }
 
 func (s *ServiceCenterServer) startNotifyService() {
-	s.notifyService.Config = nf.NotifyServiceConfig{
-		AddTimeout:    30 * time.Second,
-		NotifyTimeout: 30 * time.Second,
-		MaxQueue:      100,
-	}
 	s.notifyService.Start()
 }
 

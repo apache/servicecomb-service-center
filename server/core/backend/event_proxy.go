@@ -49,9 +49,7 @@ func (h *KvEventProxy) OnEvent(evt KvEvent) {
 }
 
 func NewEventProxy() *KvEventProxy {
-	return &KvEventProxy{
-		evtHandleFuncs: make([]KvEventFunc, 0, 5),
-	}
+	return &KvEventProxy{}
 }
 
 func EventProxy(t StoreType) *KvEventProxy {

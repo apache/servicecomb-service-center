@@ -17,17 +17,17 @@
 package notification
 
 import (
-	"fmt"
 	"strconv"
 	"time"
 )
 
 const (
-	DEFAULT_MAX_QUEUE          = 1000
-	DEFAULT_INIT_SUBSCRIBERS   = 1000
-	DEFAULT_ON_MESSAGE_TIMEOUT = 100 * time.Millisecond
-	DEFAULT_TIMEOUT            = 30 * time.Second
+	DEFAULT_MAX_QUEUE       = 1000
+	DEFAULT_ADD_JOB_TIMEOUT = 1 * time.Second
+	DEFAULT_SEND_TIMEOUT    = 30 * time.Second
+)
 
+const (
 	NOTIFTY NotifyType = iota
 	INSTANCE
 	typeEnd
@@ -42,13 +42,21 @@ func (nt NotifyType) String() string {
 	return "NotifyType" + strconv.Itoa(int(nt))
 }
 
-type NotifyServiceConfig struct {
-	AddTimeout    time.Duration
-	NotifyTimeout time.Duration
-	MaxQueue      int64
+func (nt NotifyType) QueueSize() (s int) {
+	if int(nt) < len(notifyTypeQueues) {
+		s = notifyTypeQueues[nt]
+	}
+	if s <= 0 {
+		s = DEFAULT_MAX_QUEUE
+	}
+	return
 }
 
-func (nsc NotifyServiceConfig) String() string {
-	return fmt.Sprintf("{acceptQueue: %d, accept: %s, notify: %s}",
-		nsc.MaxQueue, nsc.AddTimeout, nsc.NotifyTimeout)
+var notifyTypeNames = []string{
+	NOTIFTY:  "NOTIFTY",
+	INSTANCE: "INSTANCE",
+}
+
+var notifyTypeQueues = []int{
+	INSTANCE: 100 * 1000,
 }

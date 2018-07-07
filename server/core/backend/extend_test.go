@@ -25,12 +25,8 @@ func (e *extend) Name() string {
 	return "test"
 }
 
-func (e *extend) Prefix() string {
-	return "/test"
-}
-
-func (e *extend) InitSize() int {
-	return 0
+func (e *extend) Config() *Config {
+	return DefaultConfig().WithPrefix("/test")
 }
 
 func TestInstallType(t *testing.T) {

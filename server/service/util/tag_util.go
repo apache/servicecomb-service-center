@@ -57,14 +57,8 @@ func GetTagsUtils(ctx context.Context, domainProject, serviceId string) (tags ma
 		return tags, err
 	}
 
-	l := len(resp.Kvs)
-	if l != 0 {
-		tags = make(map[string]string, l)
-		err = json.Unmarshal(resp.Kvs[0].Value, &tags)
-		if err != nil {
-			util.Logger().Errorf(err, "unmarshal service %s tags file failed", key)
-			return nil, err
-		}
+	if len(resp.Kvs) != 0 {
+		tags = resp.Kvs[0].Value.(map[string]string)
 	}
 	return tags, nil
 }

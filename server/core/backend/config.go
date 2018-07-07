@@ -28,48 +28,71 @@ type Config struct {
 	NoEventMaxInterval int
 	Timeout            time.Duration
 	Period             time.Duration
-	OnEvent            KvEventFunc
 	DeferHandler       DeferHandler
+	OnEvent            KvEventFunc
+	Parser             *Parser
 }
 
-func (cfg Config) String() string {
+func (cfg *Config) String() string {
 	return fmt.Sprintf("{prefix: %s, timeout: %s, period: %s}",
 		cfg.Prefix, cfg.Timeout, cfg.Period)
 }
 
-type ConfigOption func(*Config)
-
-func WithPrefix(key string) ConfigOption {
-	return func(cfg *Config) { cfg.Prefix = key }
+func (cfg *Config) WithPrefix(key string) *Config {
+	cfg.Prefix = key
+	return cfg
 }
 
-func WithInitSize(size int) ConfigOption {
-	return func(cfg *Config) { cfg.InitSize = size }
+func (cfg *Config) WithInitSize(size int) *Config {
+	cfg.InitSize = size
+	return cfg
 }
 
-func WithTimeout(ot time.Duration) ConfigOption {
-	return func(cfg *Config) { cfg.Timeout = ot }
+func (cfg *Config) WithTimeout(ot time.Duration) *Config {
+	cfg.Timeout = ot
+	return cfg
 }
 
-func WithPeriod(ot time.Duration) ConfigOption {
-	return func(cfg *Config) { cfg.Period = ot }
+func (cfg *Config) WithPeriod(ot time.Duration) *Config {
+	cfg.Period = ot
+	return cfg
 }
 
-func WithEventFunc(f KvEventFunc) ConfigOption {
-	return func(cfg *Config) { cfg.OnEvent = f }
+func (cfg *Config) WithDeferHandler(h DeferHandler) *Config {
+	cfg.DeferHandler = h
+	return cfg
 }
 
-func WithDeferHandler(h DeferHandler) ConfigOption {
-	return func(cfg *Config) { cfg.DeferHandler = h }
+func (cfg *Config) WithEventFunc(f KvEventFunc) *Config {
+	cfg.OnEvent = f
+	return cfg
 }
 
-func DefaultConfig() Config {
-	return Config{
+func (cfg *Config) AppendEventFunc(f KvEventFunc) *Config {
+	if prev := cfg.OnEvent; prev != nil {
+		next := f
+		f = func(evt KvEvent) {
+			prev(evt)
+			next(evt)
+		}
+	}
+	cfg.OnEvent = f
+	return cfg
+}
+
+func (cfg *Config) WithParser(parser *Parser) *Config {
+	cfg.Parser = parser
+	return cfg
+}
+
+func DefaultConfig() *Config {
+	return &Config{
 		Prefix:             "/",
 		Timeout:            DEFAULT_LISTWATCH_TIMEOUT,
 		Period:             time.Second,
 		NoEventMaxInterval: DEFAULT_MAX_NO_EVENT_INTERVAL,
 		InitSize:           DEFAULT_CACHE_INIT_SIZE,
+		Parser:             BytesParser,
 	}
 }
 

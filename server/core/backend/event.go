@@ -20,13 +20,11 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 )
 
-type KvEventFunc func(evt KvEvent)
-
 type KvEvent struct {
 	Revision int64
 	Type     proto.EventType
 	Prefix   string
-	Object   interface{}
+	KV       *KeyValue
 }
 
 type KvEventHandler interface {

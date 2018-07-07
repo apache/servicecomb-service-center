@@ -14,20 +14,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package backend
+package cache
 
-type Cache interface {
-	Version() int64
-	Data(interface{}) interface{}
-	Have(interface{}) bool
-	Size() int
+import "github.com/apache/incubator-servicecomb-service-center/pkg/util"
+
+type Node struct {
+	// user data
+	Cache *Cache
+	// tree will set the value below after the node added in.
+	Name   string
+	Tree   *Tree
+	Childs *util.ConcurrentMap
+	Level  int
 }
 
-type Cacher interface {
-	// Name is the cache size metric name
-	Name() string
-	Cache() Cache
-	Run()
-	Stop()
-	Ready() <-chan struct{}
+func (n *Node) ChildNodes() (nodes []*Node) {
+	n.Childs.ForEach(func(item util.MapItem) (next bool) {
+		nodes = append(nodes, item.Value.(*Node))
+		return true
+	})
+	return
+}
+
+func NewNode() *Node {
+	return &Node{
+		Cache:  NewCache(),
+		Childs: util.NewConcurrentMap(0),
+	}
 }

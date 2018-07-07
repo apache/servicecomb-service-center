@@ -211,3 +211,19 @@ func SliceHave(arr []string, str string) bool {
 	}
 	return false
 }
+
+// do not call after drain timer.C channel
+func ResetTimer(timer *time.Timer, d time.Duration) {
+	if !timer.Stop() {
+		// timer is expired: can not find the timer in timer stack
+		// select {
+		// case <-timer.C:
+		// 	// here block when drain channel call before timer.Stop()
+		// default:
+		// 	// here will cause a BUG When sendTime() after drain channel
+		// 	// BUG: timer.C still trigger even after timer.Reset()
+		// }
+		<-timer.C
+	}
+	timer.Reset(d)
+}

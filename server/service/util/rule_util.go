@@ -17,7 +17,6 @@
 package util
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
@@ -33,7 +32,6 @@ import (
 
 type RuleFilter struct {
 	DomainProject string
-	Provider      *pb.MicroService
 	ProviderRules []*pb.ServiceRule
 }
 
@@ -42,6 +40,10 @@ func (rf *RuleFilter) Filter(ctx context.Context, consumerId string) (bool, erro
 	consumer, err := GetService(copyCtx, rf.DomainProject, consumerId)
 	if consumer == nil {
 		return false, err
+	}
+
+	if len(rf.ProviderRules) == 0 {
+		return true, nil
 	}
 
 	tags, err := GetTagsUtils(copyCtx, rf.DomainProject, consumerId)
@@ -58,6 +60,30 @@ func (rf *RuleFilter) Filter(ctx context.Context, consumerId string) (bool, erro
 	return true, nil
 }
 
+func (rf *RuleFilter) FilterAll(ctx context.Context, consumerIds []string) (allow []string, deny []string, err error) {
+	l := len(consumerIds)
+	if l == 0 || len(rf.ProviderRules) == 0 {
+		return consumerIds, nil, nil
+	}
+
+	allowIdx, denyIdx := 0, l
+	consumers := make([]string, l)
+	for _, consumerId := range consumerIds {
+		ok, err := rf.Filter(ctx, consumerId)
+		if err != nil {
+			return nil, nil, err
+		}
+		if ok {
+			consumers[allowIdx] = consumerId
+			allowIdx++
+		} else {
+			denyIdx--
+			consumers[denyIdx] = consumerId
+		}
+	}
+	return consumers[:allowIdx], consumers[denyIdx:], nil
+}
+
 func GetRulesUtil(ctx context.Context, domainProject string, serviceId string) ([]*pb.ServiceRule, error) {
 	key := util.StringJoin([]string{
 		apt.GetServiceRuleRootKey(domainProject),
@@ -72,13 +98,8 @@ func GetRulesUtil(ctx context.Context, domainProject string, serviceId string) (
 	}
 
 	rules := []*pb.ServiceRule{}
-	for _, kvs := range resp.Kvs {
-		rule := &pb.ServiceRule{}
-		err := json.Unmarshal(kvs.Value, rule)
-		if err != nil {
-			return nil, err
-		}
-		rules = append(rules, rule)
+	for _, kv := range resp.Kvs {
+		rules = append(rules, kv.Value.(*pb.ServiceRule))
 	}
 	return rules, nil
 }
@@ -107,12 +128,7 @@ func GetServiceRuleType(ctx context.Context, domainProject string, serviceId str
 	if len(resp.Kvs) == 0 {
 		return "", 0, nil
 	}
-	rule := &pb.ServiceRule{}
-	err = json.Unmarshal(resp.Kvs[0].Value, rule)
-	if err != nil {
-		util.Logger().Errorf(err, "Unmarshal rule data failed.%s", err.Error())
-	}
-	return rule.RuleType, len(resp.Kvs), nil
+	return resp.Kvs[0].Value.(*pb.ServiceRule).RuleType, len(resp.Kvs), nil
 }
 
 func GetOneRule(ctx context.Context, domainProject, serviceId, ruleId string) (*pb.ServiceRule, error) {
@@ -123,17 +139,11 @@ func GetOneRule(ctx context.Context, domainProject, serviceId, ruleId string) (*
 		util.Logger().Errorf(nil, "Get rule for service failed for %s.", err.Error())
 		return nil, err
 	}
-	rule := &pb.ServiceRule{}
 	if len(resp.Kvs) == 0 {
 		util.Logger().Errorf(nil, "Get rule failed, ruleId is %s.", ruleId)
 		return nil, nil
 	}
-	err = json.Unmarshal(resp.Kvs[0].Value, rule)
-	if err != nil {
-		util.Logger().Errorf(nil, "unmarshal resp failed for %s.", err.Error())
-		return nil, err
-	}
-	return rule, nil
+	return resp.Kvs[0].Value.(*pb.ServiceRule), nil
 }
 
 func AllowAcrossDimension(ctx context.Context, providerService *pb.MicroService, consumerService *pb.MicroService) error {

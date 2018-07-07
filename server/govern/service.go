@@ -206,7 +206,7 @@ func (governService *GovernService) GetApplications(ctx context.Context, in *pb.
 	apps := make([]string, 0, l)
 	appMap := make(map[string]struct{}, l)
 	for _, kv := range resp.Kvs {
-		key, _ := pb.GetInfoFromSvcIndexKV(kv)
+		key := backend.GetInfoFromSvcIndexKV(kv)
 		if _, ok := appMap[key.AppId]; ok {
 			continue
 		}
@@ -236,7 +236,7 @@ func getServiceAllVersions(ctx context.Context, serviceKey *pb.MicroServiceKey) 
 		return versions, nil
 	}
 	for _, kv := range resp.Kvs {
-		key, _ := pb.GetInfoFromSvcIndexKV(kv)
+		key := backend.GetInfoFromSvcIndexKV(kv)
 		versions = append(versions, key.Version)
 	}
 	return versions, nil
@@ -255,7 +255,7 @@ func getSchemaInfoUtil(ctx context.Context, domainProject string, serviceId stri
 	schemas := make([]*pb.Schema, 0, len(resp.Kvs))
 	for _, kv := range resp.Kvs {
 		schemaInfo := &pb.Schema{}
-		schemaInfo.Schema = util.BytesToStringWithNoCopy(kv.Value)
+		schemaInfo.Schema = util.BytesToStringWithNoCopy(kv.Value.([]byte))
 		schemaInfo.SchemaId = util.BytesToStringWithNoCopy(kv.Key[len(key):])
 		schemas = append(schemas, schemaInfo)
 	}
@@ -367,7 +367,7 @@ func statistics(ctx context.Context) (*pb.Statistics, error) {
 	svcWithNonVersion := make(map[string]struct{}, respSvc.Count)
 	svcIdToNonVerKey := make(map[string]string, respSvc.Count)
 	for _, kv := range respSvc.Kvs {
-		key, val := pb.GetInfoFromSvcIndexKV(kv)
+		key := backend.GetInfoFromSvcIndexKV(kv)
 		if _, ok := app[key.AppId]; !ok {
 			app[key.AppId] = struct{}{}
 		}
@@ -377,7 +377,7 @@ func statistics(ctx context.Context) (*pb.Statistics, error) {
 		if _, ok := svcWithNonVersion[svcWithNonVersionKey]; !ok {
 			svcWithNonVersion[svcWithNonVersionKey] = struct{}{}
 		}
-		svcIdToNonVerKey[util.BytesToStringWithNoCopy(val)] = svcWithNonVersionKey
+		svcIdToNonVerKey[kv.Value.(string)] = svcWithNonVersionKey
 	}
 
 	result.Services.Count = int64(len(svcWithNonVersion))
@@ -401,7 +401,7 @@ func statistics(ctx context.Context) (*pb.Statistics, error) {
 
 	onlineServices := make(map[string]struct{}, respSvc.Count)
 	for _, kv := range respIns.Kvs {
-		serviceId, _, _, _ := pb.GetInfoFromInstKV(kv)
+		serviceId, _, _ := backend.GetInfoFromInstKV(kv)
 		key, ok := svcIdToNonVerKey[serviceId]
 		if !ok {
 			continue

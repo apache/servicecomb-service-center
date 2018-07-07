@@ -17,11 +17,9 @@
 package backend
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"testing"
 	"time"
 )
@@ -42,94 +40,93 @@ func TestInstanceEventDeferHandler_OnCondition(t *testing.T) {
 }
 
 func TestInstanceEventDeferHandler_HandleChan(t *testing.T) {
-	inst := &pb.MicroServiceInstance{
+	b := &pb.MicroServiceInstance{
 		HealthCheck: &pb.HealthCheck{
 			Interval: 4,
 			Times:    0,
 		},
 	}
-	b, _ := json.Marshal(inst)
-	kv1 := &mvccpb.KeyValue{
+	kv1 := &KeyValue{
 		Key:   util.StringToBytesWithNoCopy("/1"),
 		Value: b,
 	}
-	kv2 := &mvccpb.KeyValue{
+	kv2 := &KeyValue{
 		Key:   util.StringToBytesWithNoCopy("/2"),
 		Value: b,
 	}
-	kv3 := &mvccpb.KeyValue{
+	kv3 := &KeyValue{
 		Key:   util.StringToBytesWithNoCopy("/3"),
 		Value: b,
 	}
-	kv4 := &mvccpb.KeyValue{
+	kv4 := &KeyValue{
 		Key:   util.StringToBytesWithNoCopy("/4"),
 		Value: b,
 	}
-	kv5 := &mvccpb.KeyValue{
+	kv5 := &KeyValue{
 		Key:   util.StringToBytesWithNoCopy("/5"),
 		Value: b,
 	}
-	kv6 := &mvccpb.KeyValue{
+	kv6 := &KeyValue{
 		Key:   util.StringToBytesWithNoCopy("/6"),
 		Value: b,
 	}
 
-	cache := NewKvCache(nil, 1)
-	cache.store["/1"] = kv1
-	cache.store["/2"] = kv2
-	cache.store["/3"] = kv3
-	cache.store["/4"] = kv4
-	cache.store["/5"] = kv5
-	cache.store["/6"] = kv6
+	cache := NewKvCache("test", DefaultConfig())
+	cache.Put("/1", kv1)
+	cache.Put("/2", kv2)
+	cache.Put("/3", kv3)
+	cache.Put("/4", kv4)
+	cache.Put("/5", kv5)
+	cache.Put("/6", kv6)
 
 	evts1 := []KvEvent{
 		{
-			Type:   pb.EVT_CREATE,
-			Object: kv1,
+			Type: pb.EVT_CREATE,
+			KV:   kv1,
 		},
 		{
-			Type:   pb.EVT_UPDATE,
-			Object: kv1,
+			Type: pb.EVT_UPDATE,
+			KV:   kv1,
 		},
 	}
 	evts2 := []KvEvent{
 		{
-			Type:   pb.EVT_DELETE,
-			Object: kv2,
+			Type: pb.EVT_DELETE,
+			KV:   kv2,
 		},
 		{
-			Type:   pb.EVT_DELETE,
-			Object: kv3,
+			Type: pb.EVT_DELETE,
+			KV:   kv3,
 		},
 		{
-			Type:   pb.EVT_DELETE,
-			Object: kv4,
+			Type: pb.EVT_DELETE,
+			KV:   kv4,
 		},
 		{
-			Type:   pb.EVT_DELETE,
-			Object: kv5,
+			Type: pb.EVT_DELETE,
+			KV:   kv5,
 		},
 		{
-			Type:   pb.EVT_DELETE,
-			Object: kv6,
+			Type: pb.EVT_DELETE,
+			KV:   kv6,
 		},
 	}
 	evts3 := []KvEvent{
 		{
-			Type:   pb.EVT_CREATE,
-			Object: kv2,
+			Type: pb.EVT_CREATE,
+			KV:   kv2,
 		},
 		{
-			Type:   pb.EVT_UPDATE,
-			Object: kv4,
+			Type: pb.EVT_UPDATE,
+			KV:   kv4,
 		},
 		{
-			Type:   pb.EVT_UPDATE,
-			Object: kv5,
+			Type: pb.EVT_UPDATE,
+			KV:   kv5,
 		},
 		{
-			Type:   pb.EVT_CREATE,
-			Object: kv6,
+			Type: pb.EVT_CREATE,
+			KV:   kv6,
 		},
 	}
 
@@ -159,7 +156,7 @@ func getEvents(t *testing.T, iedh *InstanceEventDeferHandler) {
 		select {
 		case evt := <-iedh.HandleChan():
 			fmt.Println(time.Now(), evt)
-			if string(evt.Object.(*mvccpb.KeyValue).Key) == "/3" {
+			if string(evt.KV.Key) == "/3" {
 				evt3 = &evt
 				if iedh.Percent == 0.01 && evt.Type == pb.EVT_DELETE {
 					t.Fatalf(`TestInstanceEventDeferHandler_HandleChan with 1%% failed`)

@@ -17,18 +17,11 @@
 package notification
 
 import (
-	"container/list"
 	"errors"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"golang.org/x/net/context"
 	"sync"
-	"time"
 )
-
-var notifyTypeNames = []string{
-	NOTIFTY:  "NOTIFTY",
-	INSTANCE: "INSTANCE",
-}
 
 var notifyService *NotifyService
 
@@ -39,198 +32,29 @@ func init() {
 	}
 }
 
-type subscriberIndex map[string]*list.List
-
-type subscriberSubjectIndex map[string]subscriberIndex
-
-type serviceIndex map[NotifyType]subscriberSubjectIndex
-
 type NotifyService struct {
-	Config NotifyServiceConfig
-
-	services  serviceIndex
-	queues    map[NotifyType]chan NotifyJob
-	waits     sync.WaitGroup
-	mutexes   map[NotifyType]*sync.Mutex
-	err       chan error
-	closeMux  sync.RWMutex
-	isClose   bool
-	goroutine *util.GoRoutine
+	processors *util.ConcurrentMap
+	goroutine  *util.GoRoutine
+	err        chan error
+	closeMux   sync.RWMutex
+	isClose    bool
 }
 
 func (s *NotifyService) Err() <-chan error {
 	return s.err
 }
 
-func (s *NotifyService) AddSubscriber(n Subscriber) error {
-	if s.Closed() {
-		return errors.New("server is shutting down")
-	}
-
-	s.mutexes[n.Type()].Lock()
-	ss, ok := s.services[n.Type()]
-	if !ok {
-		s.mutexes[n.Type()].Unlock()
-		return errors.New("Unknown subscribe type")
-	}
-
-	sr, ok := ss[n.Subject()]
-	if !ok {
-		sr = make(subscriberIndex, DEFAULT_INIT_SUBSCRIBERS)
-		ss[n.Subject()] = sr // add a subscriber
-	}
-
-	ns, ok := sr[n.Id()]
-	if !ok {
-		ns = list.New()
-	}
-	ns.PushBack(n) // add a connection
-	sr[n.Id()] = ns
-
-	n.SetService(s)
-	s.mutexes[n.Type()].Unlock()
-
-	n.OnAccept()
-	return nil
-}
-
-func (s *NotifyService) RemoveSubscriber(n Subscriber) {
-	s.mutexes[n.Type()].Lock()
-	defer s.mutexes[n.Type()].Unlock()
-	ss, ok := s.services[n.Type()]
-	if !ok {
-		return
-	}
-
-	m, ok := ss[n.Subject()]
-	if !ok {
-		return
-	}
-
-	ns, ok := m[n.Id()]
-	if !ok {
-		return
-	}
-
-	for sr := ns.Front(); sr != nil; sr = sr.Next() {
-		if sr.Value == n {
-			ns.Remove(sr)
-			n.Close()
-			break
-		}
-	}
-}
-
-func (s *NotifyService) RemoveAllSubscribers() {
-	for t, ss := range s.services {
-		s.mutexes[t].Lock()
-		for _, subscribers := range ss {
-			for _, ns := range subscribers {
-				for e, n := ns.Front(), ns.Front(); e != nil; e = n {
-					e.Value.(Subscriber).Close()
-					n = e.Next()
-					ns.Remove(e)
-				}
-			}
-		}
-		s.mutexes[t].Unlock()
-	}
-}
-
-//通知内容塞到队列里
-func (s *NotifyService) AddJob(job NotifyJob) error {
-	if s.Closed() {
-		return errors.New("add notify job failed for server shutdown")
-	}
-
-	defer util.RecoverAndReport()
-
-	timer := time.NewTimer(s.Config.AddTimeout)
-	select {
-	case s.queues[job.Type()] <- job:
-		timer.Stop()
-		return nil
-	case <-timer.C:
-		util.Logger().Errorf(nil, "Add job failed.%s")
-		return errors.New("add notify job timeout")
-	}
-}
-
-func (s *NotifyService) getPublish2SubscriberFunc(t NotifyType) func(context.Context) {
-	return func(ctx context.Context) {
-		defer s.waits.Done()
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case job, ok := <-s.queues[t]:
-				if !ok {
-					return
-				}
-
-				util.Logger().Infof("notification service got a job %s: %s to notify subscriber %s",
-					job.Type(), job.Subject(), job.SubscriberId())
-
-				s.mutexes[t].Lock()
-
-				if s.Closed() && len(s.services[t]) == 0 {
-					s.mutexes[t].Unlock()
-					return
-				}
-
-				m, ok := s.services[t][job.Subject()]
-				if ok {
-					// publish的subject如果带上id，则单播，否则广播
-					if len(job.SubscriberId()) != 0 {
-						ns, ok := m[job.SubscriberId()]
-						if ok {
-							for n := ns.Front(); n != nil; n = n.Next() {
-								n.Value.(Subscriber).OnMessage(job)
-							}
-						}
-						s.mutexes[t].Unlock()
-						continue
-					}
-					for key := range m {
-						ns := m[key]
-						for n := ns.Front(); n != nil; n = n.Next() {
-							n.Value.(Subscriber).OnMessage(job)
-						}
-					}
-				}
-
-				s.mutexes[t].Unlock()
-			}
-		}
-	}
-}
-
 func (s *NotifyService) init() {
-	if s.Config.AddTimeout <= 0 {
-		s.Config.AddTimeout = DEFAULT_TIMEOUT
-	}
-	if s.Config.NotifyTimeout <= 0 {
-		s.Config.NotifyTimeout = DEFAULT_TIMEOUT
-	}
-	if s.Config.MaxQueue <= 0 || s.Config.MaxQueue > DEFAULT_MAX_QUEUE {
-		s.Config.MaxQueue = DEFAULT_MAX_QUEUE
-	}
-
-	s.services = make(serviceIndex, typeEnd)
+	s.processors = util.NewConcurrentMap(int(typeEnd))
 	s.err = make(chan error, 1)
-	s.queues = make(map[NotifyType]chan NotifyJob, typeEnd)
-	s.mutexes = make(map[NotifyType]*sync.Mutex, typeEnd)
 	for i := NotifyType(0); i != typeEnd; i++ {
-		s.services[i] = make(subscriberSubjectIndex, DEFAULT_INIT_SUBSCRIBERS)
-		s.queues[i] = make(chan NotifyJob, s.Config.MaxQueue)
-		s.mutexes[i] = &sync.Mutex{}
-		s.waits.Add(1)
+		s.processors.Put(i, NewProcessor(i.String(), i.QueueSize()))
 	}
 }
 
 func (s *NotifyService) Start() {
 	if !s.Closed() {
-		util.Logger().Warnf(nil, "notify service is already running with config %s", s.Config)
+		util.Logger().Warnf(nil, "notify service is already running")
 		return
 	}
 	s.closeMux.Lock()
@@ -241,11 +65,59 @@ func (s *NotifyService) Start() {
 	// 错误subscriber清理
 	s.AddSubscriber(NewNotifyServiceHealthChecker())
 
-	util.Logger().Debugf("notify service is started with config %s", s.Config)
+	util.Logger().Debugf("notify service is started")
 
-	for i := NotifyType(0); i != typeEnd; i++ {
-		s.goroutine.Do(s.getPublish2SubscriberFunc(i))
+	s.processors.ForEach(func(item util.MapItem) (next bool) {
+		s.goroutine.Do(item.Value.(*Processor).Do)
+		return true
+	})
+}
+
+func (s *NotifyService) AddSubscriber(n Subscriber) error {
+	if s.Closed() {
+		return errors.New("server is shutting down")
 	}
+
+	itf, ok := s.processors.Get(n.Type())
+	if !ok {
+		return errors.New("Unknown subscribe type")
+	}
+	n.SetService(s)
+	n.OnAccept()
+
+	itf.(*Processor).AddSubscriber(n)
+	return nil
+}
+
+func (s *NotifyService) RemoveSubscriber(n Subscriber) {
+	itf, ok := s.processors.Get(n.Type())
+	if !ok {
+		return
+	}
+
+	itf.(*Processor).Remove(n)
+	n.Close()
+}
+
+func (s *NotifyService) RemoveAllSubscribers() {
+	s.processors.ForEach(func(item util.MapItem) (next bool) {
+		item.Value.(*Processor).Clear()
+		return true
+	})
+}
+
+//通知内容塞到队列里
+func (s *NotifyService) AddJob(job NotifyJob) error {
+	if s.Closed() {
+		return errors.New("add notify job failed for server shutdown")
+	}
+
+	itf, ok := s.processors.Get(job.Type())
+	if !ok {
+		return errors.New("Unknown job type")
+	}
+	itf.(*Processor).Accept(job)
+	return nil
 }
 
 func (s *NotifyService) Closed() (b bool) {
@@ -263,16 +135,11 @@ func (s *NotifyService) Stop() {
 	s.isClose = true
 	s.closeMux.Unlock()
 
-	for _, c := range s.queues {
-		close(c)
-	}
-	s.waits.Wait()
+	s.goroutine.Close(true)
 
 	s.RemoveAllSubscribers()
 
 	close(s.err)
-
-	s.goroutine.Close(true)
 
 	util.Logger().Debug("notify service stopped.")
 }

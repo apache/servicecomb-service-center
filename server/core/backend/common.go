@@ -22,6 +22,36 @@ import (
 	"time"
 )
 
+const (
+	// re-list etcd when there is no event coming in more than 1h(=120*30s)
+	DEFAULT_MAX_NO_EVENT_INTERVAL = 120
+	DEFAULT_LISTWATCH_TIMEOUT     = 30 * time.Second
+
+	DEFAULT_SELF_PRESERVATION_PERCENT = 0.8
+	DEFAULT_CACHE_INIT_SIZE           = 100
+)
+
+const (
+	DEFAULT_METRICS_INTERVAL = 30 * time.Second
+	DEFAULT_COMPACT_TIMES    = 2
+	DEFAULT_COMPACT_TIMEOUT  = 5 * time.Minute
+
+	minWaitInterval = 1 * time.Second
+	eventBlockSize  = 1000
+)
+
+const DEFAULT_CHECK_WINDOW = 2 * time.Second // instance DELETE event will be delay.
+
+const TIME_FORMAT = "15:04:05.000"
+
+const EVENT_BUS_MAX_SIZE = 1000
+
+var closedCh = make(chan struct{})
+
+func init() {
+	close(closedCh)
+}
+
 type StoreType int
 
 func (st StoreType) String() string {
@@ -74,67 +104,50 @@ var TypeNames = []string{
 	typeEnd:          "TYPEEND",
 }
 
-var TypeRoots = map[StoreType]string{
-	SERVICE:          apt.GetServiceRootKey(""),
-	INSTANCE:         apt.GetInstanceRootKey(""),
-	DOMAIN:           apt.GetDomainRootKey() + "/",
-	SCHEMA:           apt.GetServiceSchemaRootKey(""),
-	SCHEMA_SUMMARY:   apt.GetServiceSchemaSummaryRootKey(""),
-	RULE:             apt.GetServiceRuleRootKey(""),
-	LEASE:            apt.GetInstanceLeaseRootKey(""),
-	SERVICE_INDEX:    apt.GetServiceIndexRootKey(""),
-	SERVICE_ALIAS:    apt.GetServiceAliasRootKey(""),
-	SERVICE_TAG:      apt.GetServiceTagRootKey(""),
-	RULE_INDEX:       apt.GetServiceRuleIndexRootKey(""),
-	DEPENDENCY:       apt.GetServiceDependencyRootKey(""),
-	DEPENDENCY_RULE:  apt.GetServiceDependencyRuleRootKey(""),
-	DEPENDENCY_QUEUE: apt.GetServiceDependencyQueueRootKey(""),
-	PROJECT:          apt.GetProjectRootKey(""),
+var TypeConfig = map[StoreType]*Config{
+	SERVICE: DefaultConfig().WithPrefix(apt.GetServiceRootKey("")).
+		WithInitSize(500).WithParser(ServiceParser),
+
+	INSTANCE: DefaultConfig().WithPrefix(apt.GetInstanceRootKey("")).
+		WithInitSize(1000).WithParser(InstanceParser).
+		WithDeferHandler(NewInstanceEventDeferHandler()),
+
+	DOMAIN: DefaultConfig().WithPrefix(apt.GetDomainRootKey() + "/").
+		WithInitSize(100).WithParser(StringParser),
+
+	SCHEMA: DefaultConfig().WithPrefix(apt.GetServiceSchemaRootKey("")).
+		WithInitSize(0),
+
+	SCHEMA_SUMMARY: DefaultConfig().WithPrefix(apt.GetServiceSchemaSummaryRootKey("")).
+		WithInitSize(100).WithParser(StringParser),
+
+	RULE: DefaultConfig().WithPrefix(apt.GetServiceRuleRootKey("")).
+		WithInitSize(100).WithParser(RuleParser),
+
+	LEASE: DefaultConfig().WithPrefix(apt.GetInstanceLeaseRootKey("")).
+		WithInitSize(1000).WithParser(StringParser),
+
+	SERVICE_INDEX: DefaultConfig().WithPrefix(apt.GetServiceIndexRootKey("")).
+		WithInitSize(500).WithParser(StringParser),
+
+	SERVICE_ALIAS: DefaultConfig().WithPrefix(apt.GetServiceAliasRootKey("")).
+		WithInitSize(100).WithParser(StringParser),
+
+	SERVICE_TAG: DefaultConfig().WithPrefix(apt.GetServiceTagRootKey("")).
+		WithInitSize(100).WithParser(MapParser),
+
+	RULE_INDEX: DefaultConfig().WithPrefix(apt.GetServiceRuleIndexRootKey("")).
+		WithInitSize(100).WithParser(StringParser),
+
+	DEPENDENCY: DefaultConfig().WithPrefix(apt.GetServiceDependencyRootKey("")).
+		WithInitSize(100),
+
+	DEPENDENCY_RULE: DefaultConfig().WithPrefix(apt.GetServiceDependencyRuleRootKey("")).
+		WithInitSize(100).WithParser(DependencyRuleParser),
+
+	DEPENDENCY_QUEUE: DefaultConfig().WithPrefix(apt.GetServiceDependencyQueueRootKey("")).
+		WithInitSize(100).WithParser(DependencyQueueParser),
+
+	PROJECT: DefaultConfig().WithPrefix(apt.GetProjectRootKey("")).
+		WithInitSize(100).WithParser(StringParser),
 }
-
-var TypeInitSize = map[StoreType]int{
-	SERVICE:          500,
-	INSTANCE:         1000,
-	DOMAIN:           100,
-	SCHEMA:           0,
-	SCHEMA_SUMMARY:   100,
-	RULE:             100,
-	LEASE:            1000,
-	SERVICE_INDEX:    500,
-	SERVICE_ALIAS:    100,
-	SERVICE_TAG:      100,
-	RULE_INDEX:       100,
-	DEPENDENCY:       100,
-	DEPENDENCY_RULE:  100,
-	DEPENDENCY_QUEUE: 100,
-	PROJECT:          100,
-}
-
-const (
-	// re-list etcd when there is no event coming in more than 2h(=240*30s)
-	DEFAULT_MAX_NO_EVENT_INTERVAL = 240
-	DEFAULT_LISTWATCH_TIMEOUT     = 30 * time.Second
-
-	DEFAULT_SELF_PRESERVATION_PERCENT = 0.8
-	DEFAULT_CACHE_INIT_SIZE           = 100
-)
-
-const (
-	DEFAULT_METRICS_INTERVAL = 30 * time.Second
-
-	DEFAULT_COMPACT_TIMES   = 2
-	DEFAULT_COMPACT_TIMEOUT = 5 * time.Minute
-	minWaitInterval         = 1 * time.Second
-	eventBlockSize          = 1000
-)
-
-const (
-	DEFAULT_MAX_EVENT_COUNT   = 1000
-	DEFAULT_ADD_QUEUE_TIMEOUT = 5 * time.Second
-)
-
-const DEFAULT_CHECK_WINDOW = 2 * time.Second // instance DELETE event will be delay.
-
-const TIME_FORMAT = "15:04:05.000"
-
-const EVENT_BUS_MAX_SIZE = 1000

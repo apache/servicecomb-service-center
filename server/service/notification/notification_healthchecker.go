@@ -29,7 +29,7 @@ type NotifyServiceHealthChecker struct {
 }
 
 type NotifyServiceHealthCheckJob struct {
-	BaseNotifyJob
+	*BaseNotifyJob
 	ErrorSubscriber Subscriber
 }
 
@@ -39,19 +39,19 @@ func (s *NotifyServiceHealthChecker) OnMessage(job NotifyJob) {
 
 	if j.ErrorSubscriber.Type() == NOTIFTY {
 		util.Logger().Errorf(nil, "remove %s watcher %s %s failed, here cause a dead lock",
-			j.ErrorSubscriber.Type(), j.ErrorSubscriber.Subject(), j.ErrorSubscriber.Id())
+			j.ErrorSubscriber.Type(), j.ErrorSubscriber.Subject(), j.ErrorSubscriber.Group())
 		return
 	}
 
-	util.Logger().Warnf(err, "notification service remove %s watcher %s %s",
-		j.ErrorSubscriber.Type(), j.ErrorSubscriber.Subject(), j.ErrorSubscriber.Id())
+	util.Logger().Debugf("notification service remove %s watcher, error: %s, subject: %s, group: %s",
+		j.ErrorSubscriber.Type(), err.Error(), j.ErrorSubscriber.Subject(), j.ErrorSubscriber.Group())
 	s.Service().RemoveSubscriber(j.ErrorSubscriber)
 }
 
 func NewNotifyServiceHealthChecker() *NotifyServiceHealthChecker {
 	return &NotifyServiceHealthChecker{
 		BaseSubscriber: BaseSubscriber{
-			id:      NOTIFY_SERVER_CHECKER_NAME,
+			group:   NOTIFY_SERVER_CHECKER_NAME,
 			subject: NOTIFY_SERVER_CHECK_SUBJECT,
 			nType:   NOTIFTY,
 		},
@@ -60,10 +60,10 @@ func NewNotifyServiceHealthChecker() *NotifyServiceHealthChecker {
 
 func NewNotifyServiceHealthCheckJob(s Subscriber) *NotifyServiceHealthCheckJob {
 	return &NotifyServiceHealthCheckJob{
-		BaseNotifyJob: BaseNotifyJob{
-			subscriberId: NOTIFY_SERVER_CHECKER_NAME,
-			subject:      NOTIFY_SERVER_CHECK_SUBJECT,
-			nType:        NOTIFTY,
+		BaseNotifyJob: &BaseNotifyJob{
+			group:   NOTIFY_SERVER_CHECKER_NAME,
+			subject: NOTIFY_SERVER_CHECK_SUBJECT,
+			nType:   NOTIFTY,
 		},
 		ErrorSubscriber: s,
 	}

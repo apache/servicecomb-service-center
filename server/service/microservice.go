@@ -189,7 +189,7 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 
 func checkQuota(ctx context.Context, domainProject string) (quota.QuotaReporter, *scerr.Error) {
 	if core.IsSCInstance(ctx) {
-		util.Logger().Infof("it is service-center")
+		util.Logger().Debugf("service-center self register")
 		return nil, nil
 	}
 	res := quota.NewApplyQuotaResource(quota.MicroServiceQuotaType, domainProject, "", 1)

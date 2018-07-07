@@ -17,7 +17,6 @@
 package util
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"golang.org/x/net/context"
 	"testing"
 )
@@ -30,12 +29,7 @@ func TestAddTagIntoETCD(t *testing.T) {
 }
 
 func TestGetTagsUtils(t *testing.T) {
-	_, err := GetTagsUtils(util.SetContext(context.Background(), CTX_CACHEONLY, "1"), "", "")
-	if err != nil {
-		t.Fatalf(`GetTagsUtils WithCacheOnly failed`)
-	}
-
-	_, err = GetTagsUtils(context.Background(), "", "")
+	_, err := GetTagsUtils(context.Background(), "", "")
 	if err == nil {
 		t.Fatalf(`GetTagsUtils failed`)
 	}

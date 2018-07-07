@@ -42,14 +42,8 @@ func TestConcurrentMap(t *testing.T) {
 	if v.(string) != "1" {
 		t.Fatalf("TestConcurrentMap Put an item again failed.")
 	}
-	v = cm.PutIfAbsent("b", "1")
-	if v != nil {
-		t.Fatalf("TestConcurrentMap PutIfAbsent a not exist item failed.")
-	}
-	v = cm.PutIfAbsent("a", "3")
-	if v.(string) != "2" {
-		t.Fatalf("TestConcurrentMap PutIfAbsent an item failed.")
-	}
+	cm.PutIfAbsent("b", "1")
+	cm.PutIfAbsent("a", "3")
 	v, b = cm.Get("a")
 	if !b || v.(string) != "2" {
 		t.Fatalf("TestConcurrentMap Get an item after PutIfAbsent failed.")

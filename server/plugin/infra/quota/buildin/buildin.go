@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	SERVICE_NUM_MAX_LIMIT            = 12000
+	SERVICE_NUM_MAX_LIMIT            = 50000
 	INSTANCE_NUM_MAX_LIMIT           = 150000
 	RULE_NUM_MAX_LIMIT_PER_SERVICE   = 100
 	SCHEMA_NUM_MAX_LIMIT_PER_SERVICE = 100
@@ -86,7 +86,7 @@ func (q *BuildInQuota) RemandQuotas(ctx context.Context, quotaType quota.Resourc
 func ResourceLimitHandler(ctx context.Context, res *quota.ApplyQuotaResource) *quota.ApplyQuotaResult {
 	var key string
 	var max int64 = 0
-	var indexer *backend.Indexer
+	var indexer backend.Indexer
 
 	domainProject := res.DomainProject
 	serviceId := res.ServiceId

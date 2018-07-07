@@ -24,33 +24,26 @@ import (
 	"testing"
 )
 
-func TestGetLeaseId(t *testing.T) {
-
-	_, err := GetLeaseId(util.SetContext(context.Background(), CTX_CACHEONLY, "1"), "", "", "")
-	if err != nil {
-		t.Fatalf(`GetLeaseId WithCacheOnly failed`)
+func TestFormatRevision(t *testing.T) {
+	if "1.1" != FormatRevision(1, 1) {
+		t.Fatalf("TestFormatRevision failed")
 	}
+	if a, b := ParseRevision("1.1"); a != 1 || b != 1 {
+		t.Fatalf("TestFormatRevision failed")
+	}
+}
 
-	_, err = GetLeaseId(context.Background(), "", "", "")
+func TestGetLeaseId(t *testing.T) {
+	_, err := GetLeaseId(context.Background(), "", "", "")
 	if err == nil {
 		t.Fatalf(`GetLeaseId failed`)
 	}
 }
 
 func TestGetInstance(t *testing.T) {
-	_, err := GetInstance(util.SetContext(context.Background(), CTX_CACHEONLY, "1"), "", "", "")
-	if err != nil {
-		t.Fatalf(`GetInstance WithCacheOnly failed`)
-	}
-
-	_, err = GetInstance(context.Background(), "", "", "")
+	_, err := GetInstance(context.Background(), "", "", "")
 	if err == nil {
 		t.Fatalf(`GetInstance failed`)
-	}
-
-	_, err = GetAllInstancesOfOneService(util.SetContext(context.Background(), CTX_CACHEONLY, "1"), "", "")
-	if err != nil {
-		t.Fatalf(`GetAllInstancesOfOneService WithCacheOnly failed`)
 	}
 
 	_, err = GetAllInstancesOfOneService(context.Background(), "", "")
@@ -67,12 +60,7 @@ func TestGetInstance(t *testing.T) {
 }
 
 func TestInstanceExistById(t *testing.T) {
-	_, err := InstanceExistById(util.SetContext(context.Background(), CTX_CACHEONLY, "1"), "", "", "")
-	if err != nil {
-		t.Fatalf(`InstanceExistById WithCacheOnly failed`)
-	}
-
-	_, err = InstanceExistById(context.Background(), "", "", "")
+	_, err := InstanceExistById(context.Background(), "", "", "")
 	if err == nil {
 		t.Fatalf(`InstanceExistById failed`)
 	}
@@ -115,31 +103,8 @@ func TestGetInstanceCountOfOneService(t *testing.T) {
 	}
 }
 
-func TestGetInstanceCountOfServices(t *testing.T) {
-	_, _, err := GetAllInstancesOfServices(util.SetContext(context.Background(), CTX_CACHEONLY, "1"), "", []string{"1"})
-	if err != nil {
-		t.Fatalf(`GetAllInstancesOfServices CTX_CACHEONLY failed`)
-	}
-	_, _, err = GetAllInstancesOfServices(util.SetContext(context.Background(), CTX_NOCACHE, "1"), "", []string{"1"})
-	if err == nil {
-		t.Fatalf(`GetAllInstancesOfServices CTX_NOCACHE failed`)
-	}
-	_, _, err = GetAllInstancesOfServices(util.SetContext(context.Background(), CTX_REQUEST_REVISION, 1), "", []string{"1"})
-	if err == nil {
-		t.Fatalf(`GetAllInstancesOfServices CTX_REQUEST_REVISION failed`)
-	}
-	_, _, err = GetAllInstancesOfServices(context.Background(), "", []string{"1"})
-	if err == nil {
-		t.Fatalf(`GetAllInstancesOfServices failed`)
-	}
-}
-
 func TestUpdateInstance(t *testing.T) {
-	err := UpdateInstance(util.SetContext(context.Background(), CTX_CACHEONLY, "1"), "", &pb.MicroServiceInstance{})
-	if err == nil {
-		t.Fatalf(`UpdateInstance CTX_CACHEONLY failed`)
-	}
-	err = UpdateInstance(util.SetContext(context.Background(), CTX_NOCACHE, "1"), "", &pb.MicroServiceInstance{})
+	err := UpdateInstance(util.SetContext(context.Background(), CTX_NOCACHE, "1"), "", &pb.MicroServiceInstance{})
 	if err == nil {
 		t.Fatalf(`UpdateInstance CTX_NOCACHE failed`)
 	}
