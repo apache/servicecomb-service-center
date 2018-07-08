@@ -572,7 +572,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		if noCache || cacheOnly || reqRev <= cacheRev {
 			break
 		}
-		util.SetContext(cloneCtx, serviceUtil.CTX_NOCACHE, "1")
+		cloneCtx = util.SetContext(cloneCtx, serviceUtil.CTX_NOCACHE, "1")
 	}
 
 	// add dependency queue
@@ -599,7 +599,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 	if rev == item.Rev {
 		instances = instances[:0]
 	}
-	util.SetContext(ctx, serviceUtil.CTX_RESPONSE_REVISION, item.Rev)
+	ctx = util.SetContext(ctx, serviceUtil.CTX_RESPONSE_REVISION, item.Rev)
 	return &pb.FindInstancesResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Query service instances successfully."),
 		Instances: instances,

@@ -41,7 +41,7 @@ type ServiceDetailOpt struct {
 }
 
 func (governService *GovernService) GetServicesInfo(ctx context.Context, in *pb.GetServicesInfoRequest) (*pb.GetServicesInfoResponse, error) {
-	util.SetContext(ctx, serviceUtil.CTX_CACHEONLY, "1")
+	ctx = util.SetContext(ctx, serviceUtil.CTX_CACHEONLY, "1")
 
 	optionMap := make(map[string]struct{}, len(in.Options))
 	for _, opt := range in.Options {
@@ -119,7 +119,7 @@ func (governService *GovernService) GetServicesInfo(ctx context.Context, in *pb.
 }
 
 func (governService *GovernService) GetServiceDetail(ctx context.Context, in *pb.GetServiceRequest) (*pb.GetServiceDetailResponse, error) {
-	util.SetContext(ctx, serviceUtil.CTX_CACHEONLY, "1")
+	ctx = util.SetContext(ctx, serviceUtil.CTX_CACHEONLY, "1")
 
 	domainProject := util.ParseDomainProject(ctx)
 	options := []string{"tags", "rules", "instances", "schemas", "dependencies"}

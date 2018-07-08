@@ -74,7 +74,7 @@ func (zp *Zipkin) ServerBegin(operationName string, itf tracing.Request) tracing
 		return nil
 	}
 
-	util.SetContext(ctx, tracing.CTX_TRACE_SPAN, span)
+	ctx = util.SetContext(ctx, tracing.CTX_TRACE_SPAN, span)
 	return span
 }
 
@@ -148,7 +148,7 @@ func (zp *Zipkin) ClientBegin(operationName string, itf tracing.Request) tracing
 		}
 		// inject context
 		carrier.ForeachKey(func(key, val string) error {
-			util.SetContext(ctx, key, val)
+			ctx = util.SetContext(ctx, key, val)
 			return nil
 		})
 	default:
