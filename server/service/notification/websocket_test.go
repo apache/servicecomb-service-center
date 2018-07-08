@@ -59,11 +59,34 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 	conn, _, _ := websocket.DefaultDialer.Dial(
 		strings.Replace(s.URL, "http://", "ws://", 1), nil)
 
-	go DoWebSocketListAndWatch(context.Background(), "", nil, conn)
+	go func() {
+		DoWebSocketListAndWatch(context.Background(), "", nil, conn)
+
+		w2 := NewListWatcher("g", "s", func() (results []*proto.WatchInstanceResponse, rev int64) {
+			return
+		})
+		ws2 := &WebSocket{
+			ctx:             context.Background(),
+			conn:            conn,
+			watcher:         w2,
+			needPingWatcher: true,
+			closed:          make(chan struct{}),
+		}
+		err := ws2.Init()
+		if err != nil {
+			t.Fatalf("TestPublisher_Run")
+		}
+	}()
 
 	EstablishWebSocketError(conn, errors.New("error"))
 
 	w := NewListWatcher("g", "s", func() (results []*proto.WatchInstanceResponse, rev int64) {
+		results = append(results, &proto.WatchInstanceResponse{
+			Response: proto.CreateResponse(proto.Response_SUCCESS, "ok"),
+			Action:   string(proto.EVT_CREATE),
+			Key:      &proto.MicroServiceKey{},
+			Instance: &proto.MicroServiceInstance{},
+		})
 		return
 	})
 	w.nType = -1
@@ -87,9 +110,6 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 	}
 	go ws.HandleWatchWebSocketControlMessage()
 
-	w.SetError(errors.New("err"))
-	w.OnMessage(nil)
-	w.SetError(nil)
 	w.OnMessage(nil)
 	w.OnMessage(&WatchJob{})
 
@@ -115,6 +135,9 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 
 	ws.heartbeat(websocket.PingMessage)
 	ws.heartbeat(websocket.PongMessage)
+
+	w.SetError(errors.New("err"))
+	w.OnMessage(nil)
 
 	publisher.Stop()
 }
