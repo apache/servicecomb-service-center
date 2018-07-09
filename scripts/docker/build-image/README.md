@@ -6,7 +6,7 @@ Here quay.io/coreos/etcd:v3.1.0 used as etcd base image. start.sh will be the en
 
 ### How To Run
 
-This script assumes you have already downloaded all the dependencies using 'gvt restore'.
+This script assumes you have already downloaded all the dependencies using 'glide install'.
 
     bash -x build.sh
     

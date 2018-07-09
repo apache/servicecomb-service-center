@@ -19,14 +19,14 @@ before_install:
   - go get github.com/astaxie/beego
   - go get github.com/onsi/gomega
   - go get github.com/onsi/gomega/gbytes		
-  - go get github.com/FiloSottile/gvt
+  - curl https://glide.sh/get | sh
   
 before_script:
   - mkdir -p $HOME/gopath/src/github.com/apache/incubator-servicecomb-service-center
   - rsync -az ${TRAVIS_BUILD_DIR}/ $HOME/gopath/src/github.com/apache/incubator-servicecomb-service-center/
   - export TRAVIS_BUILD_DIR=$HOME/gopath/src/github.com/apache/incubator-servicecomb-service-center
   - cd $HOME/gopath/src/github.com/apache/incubator-servicecomb-service-center
-  - gvt restore
+  - glide install
   
 install: true
 

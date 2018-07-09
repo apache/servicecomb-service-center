@@ -12,8 +12,8 @@ However if you want to customize the service-center and make your own docker ima
 git clone https://github.com/apache/incubator-servicecomb-service-center.git $GOPATH/src/github.com/apache/incubator-servicecomb-service-center
 cd $GOPATH/src/github.com/apache/incubator-servicecomb-service-center
 
-go get github.com/FiloSottile/gvt
-gvt restore
+curl https://glide.sh/get | sh
+glide install
 ```
 
 ##### 2. Run the build script to make the docker image
