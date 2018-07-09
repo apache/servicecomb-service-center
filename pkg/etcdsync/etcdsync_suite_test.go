@@ -17,8 +17,8 @@
 package etcdsync_test
 
 import (
-	_ "github.com/apache/incubator-servicecomb-service-center/server/core/registry/embededetcd"
-	_ "github.com/apache/incubator-servicecomb-service-center/server/core/registry/etcd"
+	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/registry/embededetcd"
+	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/registry/etcd"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

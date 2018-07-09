@@ -15,11 +15,11 @@ cd $GOPATH/src/github.com/apache/incubator-servicecomb-service-center
 
 #### Download the Dependencies
 
-We use gvt for dependency management, please follow the below steps for downloading all the dependencies required for building this project.
+We use glide for dependency management, please follow the below steps for downloading all the dependencies required for building this project.
 
 ```
-go get github.com/FiloSottile/gvt
-gvt restore
+curl https://glide.sh/get | sh
+glide install
 ```
 
 #### Make your Changes

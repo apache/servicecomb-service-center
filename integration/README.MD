@@ -5,7 +5,7 @@ These tests assumes that you have docker installed in your system.
 
 ## How to run:
 This test starts etcd in docker container and then builds and runs the service-center from source present in your GOPATH.
-This test assumes you have already downloaded all the dependencies using 'gvt restore'.
+This test assumes you have already downloaded all the dependencies using 'glide install'.
 
 ```
 bash -x scripts/integration_test.sh 

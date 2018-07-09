@@ -3,7 +3,7 @@
 ###### Step 1: 
 Clone the Dependency
 ```
-gvt restore
+glide install
 ```
 
 ###### Step 2:

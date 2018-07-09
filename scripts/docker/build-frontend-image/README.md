@@ -4,7 +4,7 @@ This script helps you to make the docker image of service-center frontend presen
 
 ### How To Run
 
-This script assumes you have already downloaded all the dependencies using 'gvt restore'. Make sure service-center application is running and get service-center applications IP and PORT addresses.
+This script assumes you have already downloaded all the dependencies using 'glide install'. Make sure service-center application is running and get service-center applications IP and PORT addresses.
 
 Update "PROJECT_ROOT/frontend/conf/app.conf" with service-center applications IP and PORT address.
 
