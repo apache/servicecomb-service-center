@@ -47,6 +47,9 @@ func init() {
 }
 
 func New() mgr.PluginInstance {
+	util.Logger().Infof("quota init, service: %d, instance: %d, schema: %d/service, tag: %d/service, rule: %d/service",
+		SERVICE_NUM_MAX_LIMIT, INSTANCE_NUM_MAX_LIMIT,
+		quota.DefaultSchemaQuota, quota.DefaultTagQuota, quota.DefaultRuleQuota)
 	return &BuildInQuota{}
 }
 
