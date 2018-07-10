@@ -96,15 +96,15 @@ func ResourceLimitHandler(ctx context.Context, res *quota.ApplyQuotaResource) *q
 	switch res.QuotaType {
 	case quota.RuleQuotaType:
 		key = core.GenerateServiceRuleKey(domainProject, serviceId, "")
-		max = RULE_NUM_MAX_LIMIT_PER_SERVICE
+		max = int64(quota.DefaultRuleQuota)
 		indexer = backend.Store().Rule()
 	case quota.SchemaQuotaType:
 		key = core.GenerateServiceSchemaKey(domainProject, serviceId, "")
-		max = SCHEMA_NUM_MAX_LIMIT_PER_SERVICE
+		max = int64(quota.DefaultSchemaQuota)
 		indexer = backend.Store().Schema()
 	case quota.TagQuotaType:
 		applyNum := res.QuotaSize
-		max = TAG_NUM_MAX_LIMIT_PER_SERVICE
+		max = int64(quota.DefaultTagQuota)
 		tags, err := serviceUtil.GetTagsUtils(ctx, domainProject, serviceId)
 		if err != nil {
 			return quota.NewApplyQuotaResult(nil, scerr.NewError(scerr.ErrInternal, err.Error()))
