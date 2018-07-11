@@ -111,45 +111,40 @@ func (this *ROAServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 }
 
 func (this *ROAServerHandler) serve(ph *urlPatternHandler, w http.ResponseWriter, r *http.Request) {
-	hs := chain.Handlers(SERVER_CHAIN_NAME)
-	if len(hs) == 0 {
-		ph.ServeHTTP(w, r)
-		return
-	}
-
 	ctx := util.NewStringContext(r.Context())
 	if ctx != r.Context() {
 		nr := r.WithContext(ctx)
 		*r = *nr
 	}
 
-	inv := chain.NewInvocation(ctx, chain.NewChain(SERVER_CHAIN_NAME, hs))
+	inv := chain.NewInvocation(ctx, chain.NewChain(SERVER_CHAIN_NAME, chain.Handlers(SERVER_CHAIN_NAME)))
 	inv.WithContext(CTX_RESPONSE, w).
 		WithContext(CTX_REQUEST, r).
 		WithContext(CTX_MATCH_PATTERN, ph.Path).
-		WithContext(CTX_MATCH_FUNC, ph.Name)
-	inv.Next(chain.WithFunc(func(ret chain.Result) {
-		defer func() {
-			err := ret.Err
-			itf := recover()
-			if itf != nil {
-				util.LogPanic(itf)
+		WithContext(CTX_MATCH_FUNC, ph.Name).
+		Invoke(
+			func(ret chain.Result) {
+				defer func() {
+					err := ret.Err
+					itf := recover()
+					if itf != nil {
+						util.LogPanic(itf)
 
-				err = errorsEx.RaiseError(itf)
-			}
-			if _, ok := err.(errorsEx.InternalError); ok {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return
-			}
-		}()
-		if ret.OK {
-			ph.ServeHTTP(w, r)
-		}
-	}))
+						err = errorsEx.RaiseError(itf)
+					}
+					if _, ok := err.(errorsEx.InternalError); ok {
+						http.Error(w, err.Error(), http.StatusInternalServerError)
+						return
+					}
+					if err != nil {
+						http.Error(w, err.Error(), http.StatusBadRequest)
+						return
+					}
+				}()
+				if ret.OK {
+					ph.ServeHTTP(w, r)
+				}
+			})
 }
 
 func (this *urlPatternHandler) try(path string) (p string, _ bool) {
@@ -209,9 +204,4 @@ func isDigit(ch byte) bool {
 
 func isAlnum(ch byte) bool {
 	return isAlpha(ch) || isDigit(ch)
-}
-
-type Filter interface {
-	IsMatch(r *http.Request) bool
-	Do(r *http.Request) error
 }

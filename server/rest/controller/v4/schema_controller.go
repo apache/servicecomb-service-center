@@ -44,9 +44,10 @@ func (this *SchemaService) URLPatterns() []rest.Route {
 }
 
 func (this *SchemaService) GetSchemas(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
 	request := &pb.GetSchemaRequest{
-		ServiceId: r.URL.Query().Get(":serviceId"),
-		SchemaId:  r.URL.Query().Get(":schemaId"),
+		ServiceId: query.Get(":serviceId"),
+		SchemaId:  query.Get(":schemaId"),
 	}
 	resp, _ := core.ServiceAPI.GetSchemaInfo(r.Context(), request)
 	w.Header().Add("X-Schema-Summary", resp.SchemaSummary)
@@ -71,8 +72,9 @@ func (this *SchemaService) ModifySchema(w http.ResponseWriter, r *http.Request) 
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
-	request.ServiceId = r.URL.Query().Get(":serviceId")
-	request.SchemaId = r.URL.Query().Get(":schemaId")
+	query := r.URL.Query()
+	request.ServiceId = query.Get(":serviceId")
+	request.SchemaId = query.Get(":schemaId")
 	resp, err := core.ServiceAPI.ModifySchema(r.Context(), request)
 	controller.WriteResponse(w, resp.Response, nil)
 }
@@ -98,17 +100,19 @@ func (this *SchemaService) ModifySchemas(w http.ResponseWriter, r *http.Request)
 }
 
 func (this *SchemaService) DeleteSchemas(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
 	request := &pb.DeleteSchemaRequest{
-		ServiceId: r.URL.Query().Get(":serviceId"),
-		SchemaId:  r.URL.Query().Get(":schemaId"),
+		ServiceId: query.Get(":serviceId"),
+		SchemaId:  query.Get(":schemaId"),
 	}
 	resp, _ := core.ServiceAPI.DeleteSchema(r.Context(), request)
 	controller.WriteResponse(w, resp.Response, nil)
 }
 
 func (this *SchemaService) GetAllSchemas(w http.ResponseWriter, r *http.Request) {
-	withSchema := r.URL.Query().Get("withSchema")
-	serviceId := r.URL.Query().Get(":serviceId")
+	query := r.URL.Query()
+	withSchema := query.Get("withSchema")
+	serviceId := query.Get(":serviceId")
 	if withSchema != "0" && withSchema != "1" && strings.TrimSpace(withSchema) != "" {
 		controller.WriteError(w, scerr.ErrInvalidParams, "parameter withSchema must be 1 or 0")
 		return

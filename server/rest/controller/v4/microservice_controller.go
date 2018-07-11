@@ -87,8 +87,9 @@ func (this *MicroServiceService) Update(w http.ResponseWriter, r *http.Request) 
 }
 
 func (this *MicroServiceService) Unregister(w http.ResponseWriter, r *http.Request) {
-	serviceId := r.URL.Query().Get(":serviceId")
-	force := r.URL.Query().Get("force")
+	query := r.URL.Query()
+	serviceId := query.Get(":serviceId")
+	force := query.Get("force")
 
 	b, ok := trueOrFalse[force]
 	if force != "" && !ok {
@@ -113,14 +114,15 @@ func (this *MicroServiceService) GetServices(w http.ResponseWriter, r *http.Requ
 }
 
 func (this *MicroServiceService) GetExistence(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
 	request := &pb.GetExistenceRequest{
-		Type:        r.URL.Query().Get("type"),
-		Environment: r.URL.Query().Get("env"),
-		AppId:       r.URL.Query().Get("appId"),
-		ServiceName: r.URL.Query().Get("serviceName"),
-		Version:     r.URL.Query().Get("version"),
-		ServiceId:   r.URL.Query().Get("serviceId"),
-		SchemaId:    r.URL.Query().Get("schemaId"),
+		Type:        query.Get("type"),
+		Environment: query.Get("env"),
+		AppId:       query.Get("appId"),
+		ServiceName: query.Get("serviceName"),
+		Version:     query.Get("version"),
+		ServiceId:   query.Get("serviceId"),
+		SchemaId:    query.Get("schemaId"),
 	}
 	resp, _ := core.ServiceAPI.Exist(r.Context(), request)
 	w.Header().Add("X-Schema-Summary", resp.Summary)
