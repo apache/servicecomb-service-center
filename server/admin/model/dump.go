@@ -20,15 +20,64 @@ import (
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 )
 
-type Cache map[string][]KV
+type Cache struct {
+	Microservices   []Microservice               `json:"services,omitempty"`
+	Indexes         []MicroserviceIndex          `json:"serviceIndexes,omitempty"`
+	Aliases         []MicroserviceAlias          `json:"serviceAliases,omitempty"`
+	Tags            []Tag                        `json:"serviceTags,omitempty"`
+	Rules           []MicroServiceRule           `json:"serviceRules,omitempty"`
+	DependencyRules []MicroServiceDependencyRule `json:"dependencyRules,omitempty"`
+	Summaries       []Summary                    `json:"summaries,omitempty"`
+	Instances       []Instance                   `json:"instances,omitempty"`
+}
 
 type KV struct {
-	Key   string      `json:"key"`
-	Value interface{} `json:"value,omitempty"`
-	Rev   int64       `json:"rev"`
+	Key string `json:"key"`
+	Rev int64  `json:"rev"`
+}
+
+type Microservice struct {
+	KV
+	Value *pb.MicroService `json:"value,omitempty"`
+}
+
+type MicroserviceIndex struct {
+	KV
+	Value string `json:"value,omitempty"`
+}
+
+type MicroserviceAlias struct {
+	KV
+	Value string `json:"value,omitempty"`
+}
+
+type MicroServiceDependencyRule struct {
+	KV
+	Value *pb.MicroServiceDependency `json:"value,omitempty"`
+}
+
+type MicroServiceRule struct {
+	KV
+	Value *pb.ServiceRule `json:"value,omitempty"`
+}
+
+type Summary struct {
+	KV
+	Value string `json:"value,omitempty"`
+}
+
+type Tag struct {
+	KV
+	Value map[string]string `json:"value,omitempty"`
+}
+
+type Instance struct {
+	KV
+	Value *pb.MicroServiceInstance `json:"value,omitempty"`
 }
 
 type DumpRequest struct {
+	Options []string
 }
 
 type DumpResponse struct {
