@@ -51,6 +51,9 @@ import _ "github.com/apache/incubator-servicecomb-service-center/server/govern"
 // module 'broker'
 import _ "github.com/apache/incubator-servicecomb-service-center/server/broker"
 
+// module 'admin'
+import _ "github.com/apache/incubator-servicecomb-service-center/server/admin"
+
 // metrics
 import _ "github.com/apache/incubator-servicecomb-service-center/server/metric"
 

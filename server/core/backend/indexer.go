@@ -39,6 +39,7 @@ func (pr *Response) MaxModRevision() (max int64) {
 }
 
 type Indexer interface {
+	Cacher() Cacher
 	Search(ctx context.Context, opts ...registry.PluginOpOption) (*Response, error)
 	Run()
 	Stop()
@@ -47,6 +48,10 @@ type Indexer interface {
 
 type baseIndexer struct {
 	Cfg *Config
+}
+
+func (i *baseIndexer) Cacher() Cacher {
+	return NullCacher
 }
 
 func (i *baseIndexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (r *Response, err error) {

@@ -14,24 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package backend
+package admin
 
-type Cache interface {
-	Name() string
-	Size() int
+import (
+	roa "github.com/apache/incubator-servicecomb-service-center/pkg/rest"
+)
 
-	Get(k string) *KeyValue
-	GetAll(prefix string, arr *[]*KeyValue) int
-	ForEach(iter func(k string, v *KeyValue) (next bool))
-
-	Put(k string, v *KeyValue)
-	Remove(k string)
+func init() {
+	registerREST()
 }
 
-type Cacher interface {
-	Config() *Config
-	Cache() Cache
-	Run()
-	Stop()
-	Ready() <-chan struct{}
+func registerREST() {
+	roa.RegisterServent(&AdminServiceControllerV4{})
 }

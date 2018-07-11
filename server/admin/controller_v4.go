@@ -14,24 +14,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package backend
+package admin
 
-type Cache interface {
-	Name() string
-	Size() int
+import (
+	"net/http"
 
-	Get(k string) *KeyValue
-	GetAll(prefix string, arr *[]*KeyValue) int
-	ForEach(iter func(k string, v *KeyValue) (next bool))
+	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
+	"github.com/apache/incubator-servicecomb-service-center/server/admin/model"
+	"github.com/apache/incubator-servicecomb-service-center/server/rest/controller"
+)
 
-	Put(k string, v *KeyValue)
-	Remove(k string)
+// AdminService 治理相关接口服务
+type AdminServiceControllerV4 struct {
 }
 
-type Cacher interface {
-	Config() *Config
-	Cache() Cache
-	Run()
-	Stop()
-	Ready() <-chan struct{}
+// URLPatterns 路由
+func (ctrl *AdminServiceControllerV4) URLPatterns() []rest.Route {
+	return []rest.Route{
+		{rest.HTTP_METHOD_GET, "/v4/:project/admin/dump", ctrl.Dump},
+	}
+}
+
+func (ctrl *AdminServiceControllerV4) Dump(w http.ResponseWriter, r *http.Request) {
+	request := &model.DumpRequest{}
+	ctx := r.Context()
+	resp, _ := AdminServiceAPI.Dump(ctx, request)
+
+	respInternal := resp.Response
+	resp.Response = nil
+	controller.WriteResponse(w, respInternal, resp)
 }
