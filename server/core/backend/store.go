@@ -217,6 +217,10 @@ func (s *KvStore) Entity(id StoreType) Indexer {
 	return s.indexers[id]
 }
 
+func (s *KvStore) Entities() map[StoreType]Indexer {
+	return s.indexers
+}
+
 func (s *KvStore) Install(e Entity) (id StoreType, err error) {
 	if id, err = InstallType(e); err != nil {
 		return

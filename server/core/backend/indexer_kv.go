@@ -35,6 +35,10 @@ type CacheIndexer struct {
 	isClose bool
 }
 
+func (i *CacheIndexer) Cacher() Cacher {
+	return i.cacher
+}
+
 func (i *CacheIndexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (*Response, error) {
 	op := registry.OpGet(opts...)
 	key := util.BytesToStringWithNoCopy(op.Key)
