@@ -42,6 +42,10 @@ type KvCacher struct {
 	goroutine *util.GoRoutine
 }
 
+func (c *KvCacher) Config() *Config {
+	return c.Cfg
+}
+
 func (c *KvCacher) needList() bool {
 	rev := c.lw.Revision()
 	defer func() { c.lastRev = rev }()

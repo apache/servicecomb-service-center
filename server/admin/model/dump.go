@@ -14,24 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package backend
+package model
 
-type Cache interface {
-	Name() string
-	Size() int
+import (
+	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+)
 
-	Get(k string) *KeyValue
-	GetAll(prefix string, arr *[]*KeyValue) int
-	ForEach(iter func(k string, v *KeyValue) (next bool))
+type Cache map[string][]KV
 
-	Put(k string, v *KeyValue)
-	Remove(k string)
+type KV struct {
+	Key   string      `json:"key"`
+	Value interface{} `json:"value,omitempty"`
+	Rev   int64       `json:"rev"`
 }
 
-type Cacher interface {
-	Config() *Config
-	Cache() Cache
-	Run()
-	Stop()
-	Ready() <-chan struct{}
+type DumpRequest struct {
+}
+
+type DumpResponse struct {
+	Response *pb.Response `json:"response,omitempty"`
+	Cache    Cache        `json:"cache,omitempty"`
 }
