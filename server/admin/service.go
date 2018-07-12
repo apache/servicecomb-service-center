@@ -40,7 +40,6 @@ func (service *AdminService) Dump(ctx context.Context, in *model.DumpRequest) (*
 	if !core.IsDefaultDomainProject(domainProject) {
 		return &model.DumpResponse{
 			Response: pb.CreateResponse(scerr.ErrForbidden, "Required admin permission"),
-			Cache:    cache,
 		}, nil
 	}
 
@@ -48,7 +47,7 @@ func (service *AdminService) Dump(ctx context.Context, in *model.DumpRequest) (*
 
 	return &model.DumpResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Admin dump successfully"),
-		Cache:    cache,
+		Cache:    &cache,
 	}, nil
 }
 

@@ -82,5 +82,5 @@ type DumpRequest struct {
 
 type DumpResponse struct {
 	Response *pb.Response `json:"response,omitempty"`
-	Cache    Cache        `json:"cache,omitempty"`
+	Cache    *Cache       `json:"cache,omitempty"`
 }
