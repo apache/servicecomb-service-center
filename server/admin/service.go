@@ -24,7 +24,6 @@ import (
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	"golang.org/x/net/context"
-	"sync"
 )
 
 var AdminServiceAPI = &AdminService{}
@@ -43,7 +42,7 @@ func (service *AdminService) Dump(ctx context.Context, in *model.DumpRequest) (*
 		}, nil
 	}
 
-	service.dumpAll(&cache)
+	service.dumpAll(ctx, &cache)
 
 	return &model.DumpResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Admin dump successfully"),
@@ -51,87 +50,22 @@ func (service *AdminService) Dump(ctx context.Context, in *model.DumpRequest) (*
 	}, nil
 }
 
-func (service *AdminService) dumpAll(cache *model.Cache) {
-	var wg sync.WaitGroup
-
-	service.parallel(&wg, func() {
-		backend.Store().Service().Cacher().Cache().ForEach(func(k string, v *backend.KeyValue) (next bool) {
-			cache.Microservices = append(cache.Microservices, &model.Microservice{
-				KV:    model.KV{Key: k, Rev: v.ModRevision},
-				Value: v.Value.(*pb.MicroService),
-			})
-			return true
-		})
-	})
-	service.parallel(&wg, func() {
-		backend.Store().ServiceIndex().Cacher().Cache().ForEach(func(k string, v *backend.KeyValue) (next bool) {
-			cache.Indexes = append(cache.Indexes, &model.MicroserviceIndex{
-				KV:    model.KV{Key: k, Rev: v.ModRevision},
-				Value: v.Value.(string),
-			})
-			return true
-		})
-	})
-	service.parallel(&wg, func() {
-		backend.Store().ServiceAlias().Cacher().Cache().ForEach(func(k string, v *backend.KeyValue) (next bool) {
-			cache.Aliases = append(cache.Aliases, &model.MicroserviceAlias{
-				KV:    model.KV{Key: k, Rev: v.ModRevision},
-				Value: v.Value.(string),
-			})
-			return true
-		})
-	})
-	service.parallel(&wg, func() {
-		backend.Store().ServiceTag().Cacher().Cache().ForEach(func(k string, v *backend.KeyValue) (next bool) {
-			cache.Tags = append(cache.Tags, &model.Tag{
-				KV:    model.KV{Key: k, Rev: v.ModRevision},
-				Value: v.Value.(map[string]string),
-			})
-			return true
-		})
-	})
-	service.parallel(&wg, func() {
-		backend.Store().Rule().Cacher().Cache().ForEach(func(k string, v *backend.KeyValue) (next bool) {
-			cache.Rules = append(cache.Rules, &model.MicroServiceRule{
-				KV:    model.KV{Key: k, Rev: v.ModRevision},
-				Value: v.Value.(*pb.ServiceRule),
-			})
-			return true
-		})
-		backend.Store().DependencyRule().Cacher().Cache().ForEach(func(k string, v *backend.KeyValue) (next bool) {
-			cache.DependencyRules = append(cache.DependencyRules, &model.MicroServiceDependencyRule{
-				KV:    model.KV{Key: k, Rev: v.ModRevision},
-				Value: v.Value.(*pb.MicroServiceDependency),
-			})
-			return true
-		})
-	})
-	service.parallel(&wg, func() {
-		backend.Store().SchemaSummary().Cacher().Cache().ForEach(func(k string, v *backend.KeyValue) (next bool) {
-			cache.Summaries = append(cache.Summaries, &model.Summary{
-				KV:    model.KV{Key: k, Rev: v.ModRevision},
-				Value: v.Value.(string),
-			})
-			return true
-		})
-	})
-	service.parallel(&wg, func() {
-		backend.Store().Instance().Cacher().Cache().ForEach(func(k string, v *backend.KeyValue) (next bool) {
-			cache.Instances = append(cache.Instances, &model.Instance{
-				KV:    model.KV{Key: k, Rev: v.ModRevision},
-				Value: v.Value.(*pb.MicroServiceInstance),
-			})
-			return true
-		})
-	})
-
-	wg.Wait()
+func (service *AdminService) dumpAll(ctx context.Context, cache *model.Cache) {
+	util.NewGo(ctx, util.PoolConfigure().Workers(2)).
+		Do(func(_ context.Context) { setValue(backend.Store().Service(), &cache.Microservices) }).
+		Do(func(_ context.Context) { setValue(backend.Store().ServiceIndex(), &cache.Indexes) }).
+		Do(func(_ context.Context) { setValue(backend.Store().ServiceAlias(), &cache.Aliases) }).
+		Do(func(_ context.Context) { setValue(backend.Store().ServiceTag(), &cache.Tags) }).
+		Do(func(_ context.Context) { setValue(backend.Store().Rule(), &cache.Rules) }).
+		Do(func(_ context.Context) { setValue(backend.Store().DependencyRule(), &cache.DependencyRules) }).
+		Do(func(_ context.Context) { setValue(backend.Store().SchemaSummary(), &cache.Summaries) }).
+		Do(func(_ context.Context) { setValue(backend.Store().Instance(), &cache.Instances) }).
+		Done()
 }
 
-func (service *AdminService) parallel(wg *sync.WaitGroup, f func()) {
-	wg.Add(1)
-	util.Go(func(_ context.Context) {
-		f()
-		wg.Done()
+func setValue(indexer backend.Indexer, setter model.Setter) {
+	indexer.Cacher().Cache().ForEach(func(k string, kv *backend.KeyValue) (next bool) {
+		setter.SetValue(&model.KV{Key: k, Rev: kv.ModRevision, Value: kv.Value})
+		return true
 	})
 }

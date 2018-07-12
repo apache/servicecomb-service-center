@@ -20,59 +20,115 @@ import (
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 )
 
+type Setter interface {
+	SetValue(v interface{})
+}
+
+type MicroserviceSlice []*Microservice
+type MicroserviceIndexSlice []*MicroserviceIndex
+type MicroserviceAliasSlice []*MicroserviceAlias
+type TagSlice []*Tag
+type MicroServiceRuleSlice []*MicroServiceRule
+type MicroServiceDependencyRuleSlice []*MicroServiceDependencyRule
+type SummarySlice []*Summary
+type InstanceSlice []*Instance
+
+func (s *MicroserviceSlice) SetValue(v interface{}) {
+	*s = append(*s, NewMicroservice(v.(*KV)))
+}
+func (s *MicroserviceIndexSlice) SetValue(v interface{}) {
+	*s = append(*s, NewMicroserviceIndex(v.(*KV)))
+}
+func (s *MicroserviceAliasSlice) SetValue(v interface{}) {
+	*s = append(*s, NewMicroserviceAlias(v.(*KV)))
+}
+func (s *TagSlice) SetValue(v interface{}) { *s = append(*s, NewTag(v.(*KV))) }
+func (s *MicroServiceRuleSlice) SetValue(v interface{}) {
+	*s = append(*s, NewMicroServiceRule(v.(*KV)))
+}
+func (s *MicroServiceDependencyRuleSlice) SetValue(v interface{}) {
+	*s = append(*s, NewMicroServiceDependencyRule(v.(*KV)))
+}
+func (s *SummarySlice) SetValue(v interface{}) { *s = append(*s, NewSummary(v.(*KV))) }
+func (s *InstanceSlice) SetValue(v interface{}) {
+	*s = append(*s, NewInstance(v.(*KV)))
+}
+
+func NewMicroservice(kv *KV) *Microservice {
+	return &Microservice{kv, kv.Value.(*pb.MicroService)}
+}
+func NewMicroserviceIndex(kv *KV) *MicroserviceIndex {
+	return &MicroserviceIndex{kv, kv.Value.(string)}
+}
+func NewMicroserviceAlias(kv *KV) *MicroserviceAlias {
+	return &MicroserviceAlias{kv, kv.Value.(string)}
+}
+func NewTag(kv *KV) *Tag { return &Tag{kv, kv.Value.(map[string]string)} }
+func NewMicroServiceRule(kv *KV) *MicroServiceRule {
+	return &MicroServiceRule{kv, kv.Value.(*pb.ServiceRule)}
+}
+func NewMicroServiceDependencyRule(kv *KV) *MicroServiceDependencyRule {
+	return &MicroServiceDependencyRule{kv, kv.Value.(*pb.MicroServiceDependency)}
+}
+func NewSummary(kv *KV) *Summary { return &Summary{kv, kv.Value.(string)} }
+func NewInstance(kv *KV) *Instance {
+	return &Instance{kv, kv.Value.(*pb.MicroServiceInstance)}
+}
+
 type Cache struct {
-	Microservices   []*Microservice               `json:"services,omitempty"`
-	Indexes         []*MicroserviceIndex          `json:"serviceIndexes,omitempty"`
-	Aliases         []*MicroserviceAlias          `json:"serviceAliases,omitempty"`
-	Tags            []*Tag                        `json:"serviceTags,omitempty"`
-	Rules           []*MicroServiceRule           `json:"serviceRules,omitempty"`
-	DependencyRules []*MicroServiceDependencyRule `json:"dependencyRules,omitempty"`
-	Summaries       []*Summary                    `json:"summaries,omitempty"`
-	Instances       []*Instance                   `json:"instances,omitempty"`
+	Microservices   MicroserviceSlice               `json:"services,omitempty"`
+	Indexes         MicroserviceIndexSlice          `json:"serviceIndexes,omitempty"`
+	Aliases         MicroserviceAliasSlice          `json:"serviceAliases,omitempty"`
+	Tags            TagSlice                        `json:"serviceTags,omitempty"`
+	Rules           MicroServiceRuleSlice           `json:"serviceRules,omitempty"`
+	DependencyRules MicroServiceDependencyRuleSlice `json:"dependencyRules,omitempty"`
+	Summaries       SummarySlice                    `json:"summaries,omitempty"`
+	Instances       InstanceSlice                   `json:"instances,omitempty"`
 }
 
 type KV struct {
-	Key string `json:"key"`
-	Rev int64  `json:"rev"`
+	Key   string      `json:"key"`
+	Rev   int64       `json:"rev"`
+	Value interface{} `json:"-"`
 }
 
 type Microservice struct {
-	KV
+	*KV
 	Value *pb.MicroService `json:"value,omitempty"`
 }
 
 type MicroserviceIndex struct {
-	KV
+	*KV
 	Value string `json:"value,omitempty"`
 }
 
 type MicroserviceAlias struct {
-	KV
+	*KV
 	Value string `json:"value,omitempty"`
 }
 
 type MicroServiceDependencyRule struct {
-	KV
+	*KV
 	Value *pb.MicroServiceDependency `json:"value,omitempty"`
 }
 
 type MicroServiceRule struct {
-	KV
+	*KV
 	Value *pb.ServiceRule `json:"value,omitempty"`
 }
 
 type Summary struct {
-	KV
+	*KV
 	Value string `json:"value,omitempty"`
 }
 
 type Tag struct {
-	KV
+	*KV
 	Value map[string]string `json:"value,omitempty"`
 }
 
 type Instance struct {
-	KV
+	*KV
 	Value *pb.MicroServiceInstance `json:"value,omitempty"`
 }
 

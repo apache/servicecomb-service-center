@@ -55,12 +55,10 @@ func TestGoRoutine_Do(t *testing.T) {
 }
 
 func TestGoRoutine_Wait(t *testing.T) {
-	GlobalPoolConfig.IdleTimeout = time.Second
-
 	var mux sync.Mutex
 	MAX := 10
 	resultArr := make([]int, 0, MAX)
-	test := NewGo(context.Background())
+	test := NewGo(context.Background(), PoolConfigure().Idle(time.Second).Workers(5))
 	for i := 0; i < MAX; i++ {
 		test.Do(func(ctx context.Context) {
 			select {
@@ -75,14 +73,14 @@ func TestGoRoutine_Wait(t *testing.T) {
 	}
 	<-time.After(time.Second)
 	fmt.Println("waiting for all goroutines finish.")
-	test.Wait()
+	test.Done()
 	fmt.Println(resultArr)
 	if len(resultArr) != MAX {
 		t.Fatalf("fail to wait all goroutines finish. expected %d to %d", len(resultArr), MAX)
 	}
 }
 
-func TestGoRoutine_Close(t *testing.T) {
+func TestGoRoutine_Exception1(t *testing.T) {
 	test := NewGo(context.Background())
 	test.Do(func(ctx context.Context) {
 		select {
@@ -98,11 +96,11 @@ func TestGoRoutine_Close(t *testing.T) {
 			t.Fatalf("can not execute f after closed.")
 		}
 	})
-	test.Wait()
+	test.Done()
 	test.Close(true)
 }
 
-func TestGo(t *testing.T) {
+func TestGoRoutine_Exception2(t *testing.T) {
 	Go(func(ctx context.Context) {
 		for {
 			select {
