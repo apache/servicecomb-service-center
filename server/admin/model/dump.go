@@ -21,14 +21,14 @@ import (
 )
 
 type Cache struct {
-	Microservices   []Microservice               `json:"services,omitempty"`
-	Indexes         []MicroserviceIndex          `json:"serviceIndexes,omitempty"`
-	Aliases         []MicroserviceAlias          `json:"serviceAliases,omitempty"`
-	Tags            []Tag                        `json:"serviceTags,omitempty"`
-	Rules           []MicroServiceRule           `json:"serviceRules,omitempty"`
-	DependencyRules []MicroServiceDependencyRule `json:"dependencyRules,omitempty"`
-	Summaries       []Summary                    `json:"summaries,omitempty"`
-	Instances       []Instance                   `json:"instances,omitempty"`
+	Microservices   []*Microservice               `json:"services,omitempty"`
+	Indexes         []*MicroserviceIndex          `json:"serviceIndexes,omitempty"`
+	Aliases         []*MicroserviceAlias          `json:"serviceAliases,omitempty"`
+	Tags            []*Tag                        `json:"serviceTags,omitempty"`
+	Rules           []*MicroServiceRule           `json:"serviceRules,omitempty"`
+	DependencyRules []*MicroServiceDependencyRule `json:"dependencyRules,omitempty"`
+	Summaries       []*Summary                    `json:"summaries,omitempty"`
+	Instances       []*Instance                   `json:"instances,omitempty"`
 }
 
 type KV struct {

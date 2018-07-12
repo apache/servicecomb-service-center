@@ -57,7 +57,7 @@ func (service *AdminService) dumpAll(cache *model.Cache) {
 
 	service.parallel(&wg, func() {
 		backend.Store().Service().Cacher().Cache().ForEach(func(k string, v *backend.KeyValue) (next bool) {
-			cache.Microservices = append(cache.Microservices, model.Microservice{
+			cache.Microservices = append(cache.Microservices, &model.Microservice{
 				KV:    model.KV{Key: k, Rev: v.ModRevision},
 				Value: v.Value.(*pb.MicroService),
 			})
@@ -66,7 +66,7 @@ func (service *AdminService) dumpAll(cache *model.Cache) {
 	})
 	service.parallel(&wg, func() {
 		backend.Store().ServiceIndex().Cacher().Cache().ForEach(func(k string, v *backend.KeyValue) (next bool) {
-			cache.Indexes = append(cache.Indexes, model.MicroserviceIndex{
+			cache.Indexes = append(cache.Indexes, &model.MicroserviceIndex{
 				KV:    model.KV{Key: k, Rev: v.ModRevision},
 				Value: v.Value.(string),
 			})
@@ -75,7 +75,7 @@ func (service *AdminService) dumpAll(cache *model.Cache) {
 	})
 	service.parallel(&wg, func() {
 		backend.Store().ServiceAlias().Cacher().Cache().ForEach(func(k string, v *backend.KeyValue) (next bool) {
-			cache.Aliases = append(cache.Aliases, model.MicroserviceAlias{
+			cache.Aliases = append(cache.Aliases, &model.MicroserviceAlias{
 				KV:    model.KV{Key: k, Rev: v.ModRevision},
 				Value: v.Value.(string),
 			})
@@ -84,7 +84,7 @@ func (service *AdminService) dumpAll(cache *model.Cache) {
 	})
 	service.parallel(&wg, func() {
 		backend.Store().ServiceTag().Cacher().Cache().ForEach(func(k string, v *backend.KeyValue) (next bool) {
-			cache.Tags = append(cache.Tags, model.Tag{
+			cache.Tags = append(cache.Tags, &model.Tag{
 				KV:    model.KV{Key: k, Rev: v.ModRevision},
 				Value: v.Value.(map[string]string),
 			})
@@ -93,14 +93,14 @@ func (service *AdminService) dumpAll(cache *model.Cache) {
 	})
 	service.parallel(&wg, func() {
 		backend.Store().Rule().Cacher().Cache().ForEach(func(k string, v *backend.KeyValue) (next bool) {
-			cache.Rules = append(cache.Rules, model.MicroServiceRule{
+			cache.Rules = append(cache.Rules, &model.MicroServiceRule{
 				KV:    model.KV{Key: k, Rev: v.ModRevision},
 				Value: v.Value.(*pb.ServiceRule),
 			})
 			return true
 		})
 		backend.Store().DependencyRule().Cacher().Cache().ForEach(func(k string, v *backend.KeyValue) (next bool) {
-			cache.DependencyRules = append(cache.DependencyRules, model.MicroServiceDependencyRule{
+			cache.DependencyRules = append(cache.DependencyRules, &model.MicroServiceDependencyRule{
 				KV:    model.KV{Key: k, Rev: v.ModRevision},
 				Value: v.Value.(*pb.MicroServiceDependency),
 			})
@@ -109,7 +109,7 @@ func (service *AdminService) dumpAll(cache *model.Cache) {
 	})
 	service.parallel(&wg, func() {
 		backend.Store().SchemaSummary().Cacher().Cache().ForEach(func(k string, v *backend.KeyValue) (next bool) {
-			cache.Summaries = append(cache.Summaries, model.Summary{
+			cache.Summaries = append(cache.Summaries, &model.Summary{
 				KV:    model.KV{Key: k, Rev: v.ModRevision},
 				Value: v.Value.(string),
 			})
@@ -118,7 +118,7 @@ func (service *AdminService) dumpAll(cache *model.Cache) {
 	})
 	service.parallel(&wg, func() {
 		backend.Store().Instance().Cacher().Cache().ForEach(func(k string, v *backend.KeyValue) (next bool) {
-			cache.Instances = append(cache.Instances, model.Instance{
+			cache.Instances = append(cache.Instances, &model.Instance{
 				KV:    model.KV{Key: k, Rev: v.ModRevision},
 				Value: v.Value.(*pb.MicroServiceInstance),
 			})
