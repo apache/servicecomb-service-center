@@ -36,7 +36,7 @@ func (f *VersionRuleFilter) Name(ctx context.Context) string {
 func (f *VersionRuleFilter) Init(ctx context.Context, parent *cache.Node) (node *cache.Node, err error) {
 	provider := ctx.Value(CTX_FIND_PROVIDER).(*pb.MicroServiceKey)
 	// 版本规则
-	ids, err := serviceUtil.FindServiceIds(ctx, provider.Version, provider)
+	ids, exist, err := serviceUtil.FindServiceIds(ctx, provider.Version, provider)
 	if err != nil {
 		consumer := ctx.Value(CTX_FIND_CONSUMER).(*pb.MicroService)
 		findFlag := fmt.Sprintf("consumer %s find provider %s/%s/%s", consumer.ServiceId,
@@ -44,7 +44,7 @@ func (f *VersionRuleFilter) Init(ctx context.Context, parent *cache.Node) (node 
 		util.Logger().Errorf(err, "VersionRuleFilter failed, %s", findFlag)
 		return
 	}
-	if len(ids) == 0 {
+	if !exist {
 		return
 	}
 

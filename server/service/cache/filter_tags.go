@@ -71,10 +71,6 @@ loopProviderIds:
 		ids = append(ids, providerServiceId)
 	}
 
-	if len(ids) == 0 {
-		return
-	}
-
 	pCopy.ServiceIds = ids
 
 	node = cache.NewNode()

@@ -65,10 +65,11 @@ func (this *TagService) AddTags(w http.ResponseWriter, r *http.Request) {
 }
 
 func (this *TagService) UpdateTag(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
 	resp, _ := core.ServiceAPI.UpdateTag(r.Context(), &pb.UpdateServiceTagRequest{
-		ServiceId: r.URL.Query().Get(":serviceId"),
-		Key:       r.URL.Query().Get(":key"),
-		Value:     r.URL.Query().Get("value"),
+		ServiceId: query.Get(":serviceId"),
+		Key:       query.Get(":key"),
+		Value:     query.Get("value"),
 	})
 	controller.WriteResponse(w, resp.Response, nil)
 }
@@ -83,11 +84,12 @@ func (this *TagService) GetTags(w http.ResponseWriter, r *http.Request) {
 }
 
 func (this *TagService) DeleteTags(w http.ResponseWriter, r *http.Request) {
-	keys := r.URL.Query().Get(":key")
+	query := r.URL.Query()
+	keys := query.Get(":key")
 	ids := strings.Split(keys, ",")
 
 	resp, _ := core.ServiceAPI.DeleteTags(r.Context(), &pb.DeleteServiceTagsRequest{
-		ServiceId: r.URL.Query().Get(":serviceId"),
+		ServiceId: query.Get(":serviceId"),
 		Keys:      ids,
 	})
 	controller.WriteResponse(w, resp.Response, nil)

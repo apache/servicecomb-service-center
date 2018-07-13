@@ -403,7 +403,7 @@ func (s *MicroServiceService) DeleteServices(ctx context.Context, request *pb.De
 		}
 	}
 
-	util.Logger().Infof("Batch DeleteServices, count is %s, serviceId = %v , result = %d, ", len(request.ServiceIds), request.ServiceIds, responseCode)
+	util.Logger().Infof("Batch DeleteServices, count is %d, serviceId = %v , result = %d, ", len(request.ServiceIds), request.ServiceIds, responseCode)
 
 	resp := &pb.DelServicesResponse{
 		Services: delServiceRspInfo,
@@ -556,7 +556,7 @@ func (s *MicroServiceService) Exist(ctx context.Context, in *pb.GetExistenceRequ
 			}, nil
 		}
 
-		ids, err := serviceUtil.FindServiceIds(ctx, in.Version, &pb.MicroServiceKey{
+		ids, exist, err := serviceUtil.FindServiceIds(ctx, in.Version, &pb.MicroServiceKey{
 			Environment: in.Environment,
 			AppId:       in.AppId,
 			ServiceName: in.ServiceName,
@@ -565,15 +565,21 @@ func (s *MicroServiceService) Exist(ctx context.Context, in *pb.GetExistenceRequ
 			Tenant:      domainProject,
 		})
 		if err != nil {
-			util.Logger().Errorf(err, "micro-service exist failed, service %s: find serviceIds failed.", serviceFlag)
+			util.Logger().Errorf(err, "micro-service exist failed, find %s serviceIds failed.", serviceFlag)
 			return &pb.GetExistenceResponse{
 				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 			}, err
 		}
-		if len(ids) <= 0 {
-			util.Logger().Infof("micro-service exist failed, service %s: service not exist.", serviceFlag)
+		if !exist {
+			util.Logger().Infof("micro-service exist failed, service %s does not exist.", serviceFlag)
 			return &pb.GetExistenceResponse{
-				Response: pb.CreateResponse(scerr.ErrServiceNotExists, "service does not exist."),
+				Response: pb.CreateResponse(scerr.ErrServiceNotExists, serviceFlag+" does not exist."),
+			}, nil
+		}
+		if len(ids) == 0 {
+			util.Logger().Infof("micro-service exist failed, %s version mismatch.", serviceFlag)
+			return &pb.GetExistenceResponse{
+				Response: pb.CreateResponse(scerr.ErrServiceVersionNotExists, serviceFlag+" version mismatch."),
 			}, nil
 		}
 		return &pb.GetExistenceResponse{

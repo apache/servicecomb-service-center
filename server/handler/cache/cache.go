@@ -30,21 +30,21 @@ func (l *CacheResponse) Handle(i *chain.Invocation) {
 	defer i.Next()
 
 	r := i.Context().Value(rest.CTX_REQUEST).(*http.Request)
+	query := r.URL.Query()
 
-	noCache := r.URL.Query().Get(serviceUtil.CTX_NOCACHE) == "1"
-	cacheOnly := r.URL.Query().Get(serviceUtil.CTX_CACHEONLY) == "1"
-	rev := r.URL.Query().Get("rev")
-
+	noCache := query.Get(serviceUtil.CTX_NOCACHE) == "1"
 	if noCache {
 		i.WithContext(serviceUtil.CTX_NOCACHE, "1")
 		return
 	}
 
+	cacheOnly := query.Get(serviceUtil.CTX_CACHEONLY) == "1"
 	if cacheOnly {
 		i.WithContext(serviceUtil.CTX_CACHEONLY, "1")
 		return
 	}
 
+	rev := query.Get("rev")
 	if len(rev) > 0 {
 		i.WithContext(serviceUtil.CTX_REQUEST_REVISION, rev)
 		return

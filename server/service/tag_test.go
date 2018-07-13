@@ -375,7 +375,9 @@ var _ = Describe("'Tag' service", func() {
 					VersionRule:       "1.0.0+",
 					Tags:              []string{"not-exist-tag"},
 				})
-				Expect(findResp.Response.Code).To(Equal(scerr.ErrServiceNotExists))
+				Expect(err).To(BeNil())
+				Expect(findResp.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(len(findResp.Instances)).To(Equal(0))
 
 				findResp, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: consumerId,
@@ -391,7 +393,7 @@ var _ = Describe("'Tag' service", func() {
 				respAddRule, err := serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
 					ServiceId: providerId,
 					Rules: []*pb.AddOrUpdateServiceRule{
-						&pb.AddOrUpdateServiceRule{
+						{
 							RuleType:    "WHITE",
 							Attribute:   "tag_consumer_tag",
 							Pattern:     "f*",
@@ -409,7 +411,9 @@ var _ = Describe("'Tag' service", func() {
 					VersionRule:       "1.0.0+",
 					Tags:              []string{"filter_tag"},
 				})
-				Expect(findResp.Response.Code).To(Equal(scerr.ErrServiceNotExists))
+				Expect(err).To(BeNil())
+				Expect(findResp.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(len(findResp.Instances)).To(Equal(0))
 
 				addTagResp, err = serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
 					ServiceId: consumerId,

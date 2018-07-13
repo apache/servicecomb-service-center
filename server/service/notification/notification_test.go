@@ -24,6 +24,11 @@ import (
 )
 
 func TestGetNotifyService(t *testing.T) {
+	n := NotifyType(999)
+	if n.String() != "NotifyType999" {
+		t.Fatalf("TestGetNotifyService failed")
+	}
+
 	notifyService := &NotifyService{
 		isClose:   true,
 		goroutine: util.NewGo(context.Background()),

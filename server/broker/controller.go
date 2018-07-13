@@ -78,10 +78,11 @@ func (*BrokerController) PublishPact(w http.ResponseWriter, r *http.Request) {
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
+	query := r.URL.Query()
 	request := &PublishPactRequest{
-		ProviderId: r.URL.Query().Get(":providerId"),
-		ConsumerId: r.URL.Query().Get(":consumerId"),
-		Version:    r.URL.Query().Get(":number"),
+		ProviderId: query.Get(":providerId"),
+		ConsumerId: query.Get(":consumerId"),
+		Version:    query.Get(":number"),
 		Pact:       message,
 	}
 	PactLogger.Infof("PublishPact: providerId = %s, consumerId = %s, version = %s\n",
@@ -113,10 +114,11 @@ func (*BrokerController) GetAllProviderPacts(w http.ResponseWriter, r *http.Requ
 }
 
 func (*BrokerController) GetPactsOfProvider(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
 	request := &GetProviderConsumerVersionPactRequest{
-		ProviderId: r.URL.Query().Get(":providerId"),
-		ConsumerId: r.URL.Query().Get(":consumerId"),
-		Version:    r.URL.Query().Get(":number"),
+		ProviderId: query.Get(":providerId"),
+		ConsumerId: query.Get(":consumerId"),
+		Version:    query.Get(":number"),
 		BaseUrl: &BaseBrokerRequest{
 			HostAddress: r.Host,
 			Scheme:      getScheme(r),
@@ -152,9 +154,10 @@ func (*BrokerController) PublishVerificationResults(w http.ResponseWriter, r *ht
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
-	request.ProviderId = r.URL.Query().Get(":providerId")
-	request.ConsumerId = r.URL.Query().Get(":consumerId")
-	i, err := strconv.ParseInt(r.URL.Query().Get(":sha"), 10, 32)
+	query := r.URL.Query()
+	request.ProviderId = query.Get(":providerId")
+	request.ConsumerId = query.Get(":consumerId")
+	i, err := strconv.ParseInt(query.Get(":sha"), 10, 32)
 	if err != nil {
 		PactLogger.Error("Invalid pactId", err)
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
@@ -173,8 +176,9 @@ func (*BrokerController) PublishVerificationResults(w http.ResponseWriter, r *ht
 
 func (*BrokerController) RetrieveVerificationResults(w http.ResponseWriter, r *http.Request) {
 	request := &RetrieveVerificationRequest{}
-	request.ConsumerId = r.URL.Query().Get(":consumerId")
-	request.ConsumerVersion = r.URL.Query().Get(":consumerVersion")
+	query := r.URL.Query()
+	request.ConsumerId = query.Get(":consumerId")
+	request.ConsumerVersion = query.Get(":consumerVersion")
 	PactLogger.Infof("Retrieve verification results for: %s, %s\n",
 		request.ConsumerId, request.ConsumerVersion)
 	resp, _ := BrokerServiceAPI.RetrieveVerificationResults(r.Context(), request)

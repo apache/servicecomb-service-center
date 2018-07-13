@@ -22,7 +22,7 @@ import (
 
 const CAP_SIZE = 10
 
-var handlersMap = make(map[string][]Handler, CAP_SIZE)
+var handlersMap = make(map[string][]Handler)
 
 type Handler interface {
 	Handle(i *Invocation)

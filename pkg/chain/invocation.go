@@ -24,7 +24,7 @@ import (
 type InvocationOption func(op InvocationOp) InvocationOp
 
 type InvocationOp struct {
-	Func  func(r Result)
+	Func  CallbackFunc
 	Async bool
 }
 
@@ -65,7 +65,7 @@ func (i *Invocation) Next(opts ...InvocationOption) {
 	i.chain.Next(i)
 }
 
-func (i *Invocation) setCallback(f func(r Result), async bool) {
+func (i *Invocation) setCallback(f CallbackFunc, async bool) {
 	if f == nil {
 		return
 	}
@@ -76,6 +76,10 @@ func (i *Invocation) setCallback(f func(r Result), async bool) {
 		return
 	}
 
+	// the callbacks seq like below
+	// i.Success() -> CB1 ---> CB3 ----------> END           goroutine 0
+	//                     \-> CB2(async) \                  goroutine 1
+	//                                     \-> CB4(async)    goroutine 1 or 2
 	cb := i.Func
 	i.Func = func(r Result) {
 		cb(r)
@@ -83,12 +87,12 @@ func (i *Invocation) setCallback(f func(r Result), async bool) {
 	}
 }
 
-func callback(f func(r Result), async bool, r Result) {
+func callback(f CallbackFunc, async bool, r Result) {
 	c := Callback{Func: f, Async: async}
 	c.Invoke(r)
 }
 
-func (i *Invocation) Invoke(f func(r Result)) {
+func (i *Invocation) Invoke(f CallbackFunc) {
 	i.Func = f
 	i.chain.Next(i)
 }

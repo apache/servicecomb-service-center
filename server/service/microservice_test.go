@@ -830,6 +830,24 @@ var _ = Describe("'Micro-service' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).To(Equal(scerr.ErrServiceNotExists))
+
+				By("version mismatch")
+				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
+					Type:        "microservice",
+					AppId:       "exist_appId",
+					ServiceName: "exist_service",
+					Version:     "2.0.0",
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(scerr.ErrServiceNotExists))
+				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
+					Type:        "microservice",
+					AppId:       "exist_appId",
+					ServiceName: "exist_service",
+					Version:     "0.0.0-1.0.0",
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(scerr.ErrServiceVersionNotExists))
 			})
 		})
 

@@ -75,9 +75,10 @@ func (this *MicroServiceInstanceService) RegisterInstance(w http.ResponseWriter,
 
 //TODO 什么样的服务允许更新服务心跳，只能是本服务才可以更新自己，如何屏蔽其他服务伪造的心跳更新？
 func (this *MicroServiceInstanceService) Heartbeat(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
 	request := &pb.HeartbeatRequest{
-		ServiceId:  r.URL.Query().Get(":serviceId"),
-		InstanceId: r.URL.Query().Get(":instanceId"),
+		ServiceId:  query.Get(":serviceId"),
+		InstanceId: query.Get(":instanceId"),
 	}
 	resp, _ := core.InstanceAPI.Heartbeat(r.Context(), request)
 	controller.WriteResponse(w, resp.Response, nil)
@@ -111,9 +112,10 @@ func (this *MicroServiceInstanceService) HeartbeatSet(w http.ResponseWriter, r *
 }
 
 func (this *MicroServiceInstanceService) UnregisterInstance(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
 	request := &pb.UnregisterInstanceRequest{
-		ServiceId:  r.URL.Query().Get(":serviceId"),
-		InstanceId: r.URL.Query().Get(":instanceId"),
+		ServiceId:  query.Get(":serviceId"),
+		InstanceId: query.Get(":instanceId"),
 	}
 	resp, _ := core.InstanceAPI.Unregister(r.Context(), request)
 	controller.WriteResponse(w, resp.Response, nil)
@@ -121,19 +123,20 @@ func (this *MicroServiceInstanceService) UnregisterInstance(w http.ResponseWrite
 
 func (this *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r *http.Request) {
 	var ids []string
-	keys := r.URL.Query().Get("tags")
+	query := r.URL.Query()
+	keys := query.Get("tags")
 	if len(keys) > 0 {
 		ids = strings.Split(keys, ",")
 	}
 	request := &pb.FindInstancesRequest{
 		ConsumerServiceId: r.Header.Get("X-ConsumerId"),
-		AppId:             r.URL.Query().Get("appId"),
-		ServiceName:       r.URL.Query().Get("serviceName"),
-		VersionRule:       r.URL.Query().Get("version"),
+		AppId:             query.Get("appId"),
+		ServiceName:       query.Get("serviceName"),
+		VersionRule:       query.Get("version"),
 		Tags:              ids,
 	}
 
-	util.SetTargetDomainProject(r.Context(), r.Header.Get("X-Domain-Name"), r.URL.Query().Get(":project"))
+	util.SetTargetDomainProject(r.Context(), r.Header.Get("X-Domain-Name"), query.Get(":project"))
 
 	resp, _ := core.InstanceAPI.Find(r.Context(), request)
 	respInternal := resp.Response
@@ -152,14 +155,15 @@ func (this *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r 
 
 func (this *MicroServiceInstanceService) GetOneInstance(w http.ResponseWriter, r *http.Request) {
 	var ids []string
-	keys := r.URL.Query().Get("tags")
+	query := r.URL.Query()
+	keys := query.Get("tags")
 	if len(keys) > 0 {
 		ids = strings.Split(keys, ",")
 	}
 	request := &pb.GetOneInstanceRequest{
 		ConsumerServiceId:  r.Header.Get("X-ConsumerId"),
-		ProviderServiceId:  r.URL.Query().Get(":serviceId"),
-		ProviderInstanceId: r.URL.Query().Get(":instanceId"),
+		ProviderServiceId:  query.Get(":serviceId"),
+		ProviderInstanceId: query.Get(":instanceId"),
 		Tags:               ids,
 	}
 	resp, _ := core.InstanceAPI.GetOneInstance(r.Context(), request)
@@ -170,13 +174,14 @@ func (this *MicroServiceInstanceService) GetOneInstance(w http.ResponseWriter, r
 
 func (this *MicroServiceInstanceService) GetInstances(w http.ResponseWriter, r *http.Request) {
 	var ids []string
-	keys := r.URL.Query().Get("tags")
+	query := r.URL.Query()
+	keys := query.Get("tags")
 	if len(keys) > 0 {
 		ids = strings.Split(keys, ",")
 	}
 	request := &pb.GetInstancesRequest{
 		ConsumerServiceId: r.Header.Get("X-ConsumerId"),
-		ProviderServiceId: r.URL.Query().Get(":serviceId"),
+		ProviderServiceId: query.Get(":serviceId"),
 		Tags:              ids,
 	}
 	resp, _ := core.InstanceAPI.GetInstances(r.Context(), request)
@@ -186,10 +191,11 @@ func (this *MicroServiceInstanceService) GetInstances(w http.ResponseWriter, r *
 }
 
 func (this *MicroServiceInstanceService) UpdateStatus(w http.ResponseWriter, r *http.Request) {
-	status := r.URL.Query().Get("value")
+	query := r.URL.Query()
+	status := query.Get("value")
 	request := &pb.UpdateInstanceStatusRequest{
-		ServiceId:  r.URL.Query().Get(":serviceId"),
-		InstanceId: r.URL.Query().Get(":instanceId"),
+		ServiceId:  query.Get(":serviceId"),
+		InstanceId: query.Get(":instanceId"),
 		Status:     status,
 	}
 	resp, _ := core.InstanceAPI.UpdateStatus(r.Context(), request)
@@ -197,6 +203,7 @@ func (this *MicroServiceInstanceService) UpdateStatus(w http.ResponseWriter, r *
 }
 
 func (this *MicroServiceInstanceService) UpdateMetadata(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		util.Logger().Error("body err", err)
@@ -204,8 +211,8 @@ func (this *MicroServiceInstanceService) UpdateMetadata(w http.ResponseWriter, r
 		return
 	}
 	request := &pb.UpdateInstancePropsRequest{
-		ServiceId:  r.URL.Query().Get(":serviceId"),
-		InstanceId: r.URL.Query().Get(":instanceId"),
+		ServiceId:  query.Get(":serviceId"),
+		InstanceId: query.Get(":instanceId"),
 	}
 	err = json.Unmarshal(message, request)
 	if err != nil {

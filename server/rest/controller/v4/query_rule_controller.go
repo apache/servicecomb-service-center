@@ -66,11 +66,12 @@ func (this *RuleService) AddRule(w http.ResponseWriter, r *http.Request) {
 }
 
 func (this *RuleService) DeleteRule(w http.ResponseWriter, r *http.Request) {
-	rule_id := r.URL.Query().Get(":rule_id")
+	query := r.URL.Query()
+	rule_id := query.Get(":rule_id")
 	ids := strings.Split(rule_id, ",")
 
 	resp, _ := core.ServiceAPI.DeleteRule(r.Context(), &pb.DeleteServiceRulesRequest{
-		ServiceId: r.URL.Query().Get(":serviceId"),
+		ServiceId: query.Get(":serviceId"),
 		RuleIds:   ids,
 	})
 	controller.WriteResponse(w, resp.Response, nil)
@@ -91,9 +92,10 @@ func (this *RuleService) UpdateRule(w http.ResponseWriter, r *http.Request) {
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
+	query := r.URL.Query()
 	resp, err := core.ServiceAPI.UpdateRule(r.Context(), &pb.UpdateServiceRuleRequest{
-		ServiceId: r.URL.Query().Get(":serviceId"),
-		RuleId:    r.URL.Query().Get(":rule_id"),
+		ServiceId: query.Get(":serviceId"),
+		RuleId:    query.Get(":rule_id"),
 		Rule:      &rule,
 	})
 	controller.WriteResponse(w, resp.Response, nil)

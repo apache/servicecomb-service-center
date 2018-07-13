@@ -19,6 +19,7 @@ package chain_test
 import (
 	"context"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/chain"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"testing"
 )
 
@@ -40,26 +41,46 @@ func (h *handler) Handle(i *chain.Invocation) {
 	i.Next()
 }
 
-func syncFunc() {
-	for i := 0; i < count; i++ {
+func syncFunc(i int) {
+	if i >= count {
+		return
 	}
+	syncFunc(i + 1)
+}
+
+func BenchmarkInvocationOption(b *testing.B) {
+	var (
+		op   chain.InvocationOp
+		f    = func(r chain.Result) {}
+		opts = []chain.InvocationOption{chain.WithFunc(f), chain.WithAsyncFunc(f)}
+	)
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			for _, opt := range opts {
+				op = opt(op)
+			}
+		}
+	})
+	b.ReportAllocs()
+	// 50000000	        26.8 ns/op	       0 B/op	       0 allocs/op
 }
 
 func BenchmarkChain(b *testing.B) {
 	var (
-		ctx = context.Background()
+		ctx = util.NewStringContext(context.Background())
 		f   = func(r chain.Result) {}
 	)
+
 	b.N = times
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			inv := chain.NewInvocation(ctx, chain.NewChain("_bench_chain_", chain.Handlers("_bench_handlers_")))
-			inv.Next(chain.WithFunc(f))
+			inv.Invoke(f)
 		}
 	})
 	b.ReportAllocs()
-	// 1000000	      5119 ns/op	     176 B/op	       3 allocs/op
+	// 1000000	      6607 ns/op	      80 B/op	       1 allocs/op
 }
 
 func BenchmarkSync(b *testing.B) {
@@ -67,9 +88,9 @@ func BenchmarkSync(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			syncFunc()
+			syncFunc(0)
 		}
 	})
 	b.ReportAllocs()
-	// 1000000	        13.7 ns/op	       0 B/op	       0 allocs/op
+	// 1000000	        46.9 ns/op	       0 B/op	       0 allocs/op
 }

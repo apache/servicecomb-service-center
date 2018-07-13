@@ -28,13 +28,11 @@ type KeyValue struct {
 	ModRevision    int64
 }
 
-func (kv *KeyValue) From(p *Parser, s *mvccpb.KeyValue) error {
+func (kv *KeyValue) From(p *Parser, s *mvccpb.KeyValue) (err error) {
 	kv.Key = s.Key
 	kv.Version = s.Version
 	kv.CreateRevision = s.CreateRevision
 	kv.ModRevision = s.ModRevision
-
-	v, err := p.Unmarshal(s.Value)
-	kv.Value = v
-	return err
+	kv.Value, err = p.Unmarshal(s.Value)
+	return
 }

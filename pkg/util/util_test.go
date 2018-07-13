@@ -76,9 +76,7 @@ func TestFileLastName(t *testing.T) {
 
 func TestResetTimer(t *testing.T) {
 	timer := time.NewTimer(time.Microsecond)
-	<-timer.C
 	ResetTimer(timer, time.Microsecond)
-	<-timer.C
 	ResetTimer(timer, time.Second)
 	<-timer.C
 }

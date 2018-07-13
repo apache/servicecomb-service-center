@@ -142,21 +142,20 @@ func GetServiceAllVersions(ctx context.Context, key *pb.MicroServiceKey, alias b
 	return resp, err
 }
 
-func FindServiceIds(ctx context.Context, versionRule string, key *pb.MicroServiceKey) ([]string, error) {
+func FindServiceIds(ctx context.Context, versionRule string, key *pb.MicroServiceKey) ([]string, bool, error) {
 	// 版本规则
-	ids := []string{}
 	match := ParseVersionRule(versionRule)
 	if match == nil {
 		copy := *key
 		copy.Version = versionRule
 		serviceId, err := GetServiceId(ctx, &copy)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		if len(serviceId) > 0 {
-			ids = append(ids, serviceId)
+			return []string{serviceId}, true, nil
 		}
-		return ids, nil
+		return nil, false, nil
 	}
 
 	searchAlias := false
@@ -165,17 +164,17 @@ func FindServiceIds(ctx context.Context, versionRule string, key *pb.MicroServic
 FIND_RULE:
 	resp, err := GetServiceAllVersions(ctx, key, searchAlias)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	if len(resp.Kvs) > 0 {
-		ids = match(resp.Kvs)
-	}
-	if len(ids) == 0 && alsoFindAlias {
+	if len(resp.Kvs) == 0 {
+		if !alsoFindAlias {
+			return nil, false, nil
+		}
 		searchAlias = true
 		alsoFindAlias = false
 		goto FIND_RULE
 	}
-	return ids, nil
+	return match(resp.Kvs), true, nil
 }
 
 func ServiceExist(ctx context.Context, domainProject string, serviceId string) bool {
