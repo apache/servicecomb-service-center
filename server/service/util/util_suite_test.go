@@ -43,19 +43,19 @@ func TestMicroservice(t *testing.T) {
 }
 
 func TestFindServiceIds(t *testing.T) {
-	_, err := serviceUtil.FindServiceIds(context.Background(),
+	_, _, err := serviceUtil.FindServiceIds(context.Background(),
 		"latest", &proto.MicroServiceKey{})
 	if err == nil {
 		t.FailNow()
 	}
 
-	_, err = serviceUtil.FindServiceIds(context.Background(),
+	_, _, err = serviceUtil.FindServiceIds(context.Background(),
 		"1.0.0", &proto.MicroServiceKey{})
 	if err == nil {
 		t.FailNow()
 	}
 
-	_, err = serviceUtil.FindServiceIds(context.Background(),
+	_, _, err = serviceUtil.FindServiceIds(context.Background(),
 		"1.0+", &proto.MicroServiceKey{Alias: "test"})
 	if err == nil {
 		t.FailNow()

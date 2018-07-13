@@ -576,7 +576,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 	}
 
 	// add dependency queue
-	if newVersionRule {
+	if newVersionRule && len(item.ServiceIds) > 0 {
 		provider, err = s.reshapeProviderKey(ctx, provider, item.ServiceIds[0])
 		if provider != nil {
 			err = serviceUtil.AddServiceVersionRule(ctx, domainProject, service, provider)

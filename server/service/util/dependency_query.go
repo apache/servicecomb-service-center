@@ -175,7 +175,7 @@ func (dr *DependencyRelation) parseDependencyRule(dependencyRule *pb.MicroServic
 			serviceIds = append(serviceIds, kv.Value.(string))
 		}
 	default:
-		serviceIds, err = FindServiceIds(dr.ctx, dependencyRule.Version, dependencyRule)
+		serviceIds, _, err = FindServiceIds(dr.ctx, dependencyRule.Version, dependencyRule)
 	}
 	return
 }
@@ -307,7 +307,7 @@ func (dr *DependencyRelation) getConsumerOfSameServiceNameAndAppId(provider *pb.
 		providerVersionRule := providerVersionRuleArr[len(providerVersionRuleArr)-1]
 		if providerVersionRule == "latest" {
 			if latestServiceId == nil {
-				latestServiceId, err = FindServiceIds(dr.ctx, providerVersionRule, provider)
+				latestServiceId, _, err = FindServiceIds(dr.ctx, providerVersionRule, provider)
 				if err != nil {
 					util.Logger().Errorf(err, "Get latest service failed.")
 					return nil, err

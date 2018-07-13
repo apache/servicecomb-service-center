@@ -48,10 +48,6 @@ func (f *AccessibleFilter) Init(ctx context.Context, parent *cache.Node) (node *
 		ids = append(ids, providerServiceId)
 	}
 
-	if len(ids) == 0 {
-		return
-	}
-
 	pCopy.ServiceIds = ids
 
 	node = cache.NewNode()

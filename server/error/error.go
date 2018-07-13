@@ -24,10 +24,11 @@ import (
 var errors = map[int32]string{
 	ErrInvalidParams: "Invalid parameter(s)",
 
-	ErrServiceAlreadyExists: "Micro-service already exists",
-	ErrServiceNotExists:     "Micro-service does not exist",
-	ErrDeployedInstance:     "Micro-service has deployed instance(s)",
-	ErrDependedOnConsumer:   "Consumer(s) depends on this micro-service",
+	ErrServiceAlreadyExists:    "Micro-service already exists",
+	ErrServiceNotExists:        "Micro-service does not exist",
+	ErrServiceVersionNotExists: "Micro-service version does not exist",
+	ErrDeployedInstance:        "Micro-service has deployed instance(s)",
+	ErrDependedOnConsumer:      "Consumer(s) depends on this micro-service",
 
 	ErrUndefinedSchemaId:    "Undefined schema id",
 	ErrModifySchemaNotAllow: "Not allowed to modify schema",
@@ -84,6 +85,8 @@ const (
 	ErrPermissionDeny int32 = 400024
 
 	ErrEndpointAlreadyExists int32 = 400025
+
+	ErrServiceVersionNotExists int32 = 400026
 
 	ErrNotEnoughQuota   int32 = 400100
 	ErrUnavailableQuota int32 = 500101
