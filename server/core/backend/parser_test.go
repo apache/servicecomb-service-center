@@ -38,6 +38,11 @@ func TestParseValueFunc(t *testing.T) {
 		t.Fatalf("StringParser.Unmarshal failed, %s", v)
 	}
 
+	r, err = ServiceParser.Unmarshal([]byte(`xxx`))
+	if err == nil || r != nil {
+		t.Fatalf("ServiceParser.Unmarshal failed")
+	}
+
 	r, err = ServiceParser.Unmarshal([]byte(`{"serviceName": "abc"}`))
 	if err != nil {
 		t.Fatalf("ServiceParser.Unmarshal failed, %s", err.Error())

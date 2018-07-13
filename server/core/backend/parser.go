@@ -73,8 +73,10 @@ type Parser struct {
 
 func (p *Parser) Unmarshal(src []byte) (interface{}, error) {
 	v := p.c()
-	err := p.p(src, &v)
-	return v, err
+	if err := p.p(src, &v); err != nil {
+		return nil, err
+	}
+	return v, nil
 }
 
 var (

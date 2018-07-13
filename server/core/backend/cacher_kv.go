@@ -410,8 +410,9 @@ func (c *KvCacher) doParse(src *mvccpb.KeyValue) (kv *KeyValue) {
 	kv = new(KeyValue)
 	if err := kv.From(c.Cfg.Parser, src); err != nil {
 		util.Logger().Errorf(err, "parse %s value failed", util.BytesToStringWithNoCopy(src.Key))
+		return nil
 	}
-	return kv
+	return
 }
 
 func (c *KvCacher) Cache() Cache {
