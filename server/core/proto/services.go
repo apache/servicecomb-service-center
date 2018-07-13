@@ -75,7 +75,7 @@ type GovernServiceCtrlServerEx interface {
 }
 
 type MicroServiceDependency struct {
-	Dependency []*MicroServiceKey `json:"keys,omitempty"`
+	Dependency []*MicroServiceKey `json:"Dependency,omitempty"`
 }
 
 type ServerConfig struct {
