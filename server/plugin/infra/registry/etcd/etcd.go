@@ -76,7 +76,7 @@ func (s *EtcdClient) Close() {
 	if s.Client != nil {
 		s.Client.Close()
 	}
-	util.Logger().Debugf("etcd client stopped.")
+	util.Logger().Debugf("etcd client stopped")
 }
 
 func (c *EtcdClient) Compact(ctx context.Context, reserve int64) error {

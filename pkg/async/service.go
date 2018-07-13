@@ -112,7 +112,7 @@ func (lat *TaskService) daemon(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			util.Logger().Debugf("daemon thread exited for TaskService is stopped")
+			util.Logger().Debugf("daemon thread exited for TaskService stopped")
 			return
 		case <-timer.C:
 			lat.lock.RLock()

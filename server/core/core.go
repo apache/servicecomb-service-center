@@ -31,12 +31,10 @@ import (
 	"time"
 )
 
-func init() {
-	Initialize()
-}
-
 func Initialize() {
 	initCommandLine()
+
+	Configure()
 
 	plugin.SetPluginDir(ServerInfo.Config.PluginsDir)
 

@@ -37,19 +37,6 @@ import (
 	"time"
 )
 
-var (
-	server *ServiceCenterServer
-)
-
-func init() {
-	server = &ServiceCenterServer{
-		store:         backend.Store(),
-		notifyService: nf.GetNotifyService(),
-		apiServer:     GetAPIServer(),
-		goroutine:     util.NewGo(context.Background()),
-	}
-}
-
 type ServiceCenterServer struct {
 	apiServer     *APIServer
 	notifyService *nf.NotifyService
@@ -78,8 +65,6 @@ func (s *ServiceCenterServer) waitForQuit() {
 	}
 
 	s.Stop()
-
-	util.Logger().Debugf("service center stopped")
 }
 
 func LoadServerInformation() error {
@@ -128,6 +113,11 @@ func (s *ServiceCenterServer) needUpgrade() bool {
 }
 
 func (s *ServiceCenterServer) initialize() {
+	s.store = backend.Store()
+	s.notifyService = nf.GetNotifyService()
+	s.apiServer = GetAPIServer()
+	s.goroutine = util.NewGo(context.Background())
+
 	// check version
 	lock, err := mux.Lock(mux.GLOBAL_LOCK)
 	defer lock.Unlock()
@@ -226,8 +216,10 @@ func (s *ServiceCenterServer) Stop() {
 	}
 
 	s.goroutine.Close(true)
-}
 
-func Run() {
-	server.Run()
+	util.GoCloseAndWait()
+
+	backend.Registry().Close()
+
+	util.Logger().Warnf(nil, "service center stopped")
 }

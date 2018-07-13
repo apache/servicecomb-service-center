@@ -141,7 +141,7 @@ func (s *NotifyService) Stop() {
 
 	close(s.err)
 
-	util.Logger().Debug("notify service stopped.")
+	util.Logger().Debug("notify service stopped")
 }
 
 func GetNotifyService() *NotifyService {

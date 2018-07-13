@@ -16,8 +16,6 @@
  */
 package bootstrap
 
-import _ "github.com/apache/incubator-servicecomb-service-center/server/core" // initialize
-
 // rest
 import _ "github.com/apache/incubator-servicecomb-service-center/server/rest/controller/v3"
 import _ "github.com/apache/incubator-servicecomb-service-center/server/rest/controller/v4"

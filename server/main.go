@@ -14,14 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package main
+package server
 
-import _ "github.com/apache/incubator-servicecomb-service-center/server/init"
-import _ "github.com/apache/incubator-servicecomb-service-center/server/bootstrap"
-import (
-	"github.com/apache/incubator-servicecomb-service-center/server"
-)
+var server ServiceCenterServer
 
-func main() {
+func Run() {
 	server.Run()
 }

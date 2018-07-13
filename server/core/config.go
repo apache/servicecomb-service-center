@@ -21,7 +21,11 @@ import (
 	"github.com/astaxie/beego"
 )
 
-var ServerInfo = newInfo()
+var ServerInfo *pb.ServerInformation
+
+func Configure() {
+	ServerInfo = newInfo()
+}
 
 func newInfo() *pb.ServerInformation {
 	maxLogFileSize := beego.AppConfig.DefaultInt64("log_rotate_size", 20)
