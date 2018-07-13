@@ -20,8 +20,12 @@ import (
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 )
 
+type Getter interface {
+	ForEach(i func(i int, v *KV))
+}
+
 type Setter interface {
-	SetValue(v interface{})
+	SetValue(v *KV)
 }
 
 type MicroserviceSlice []*Microservice
@@ -33,26 +37,65 @@ type MicroServiceDependencyRuleSlice []*MicroServiceDependencyRule
 type SummarySlice []*Summary
 type InstanceSlice []*Instance
 
-func (s *MicroserviceSlice) SetValue(v interface{}) {
-	*s = append(*s, NewMicroservice(v.(*KV)))
+func (s *MicroserviceSlice) ForEach(f func(i int, v *KV)) {
+	for i, v := range *s {
+		v.KV.Value = v.Value
+		f(i, v.KV)
+	}
 }
-func (s *MicroserviceIndexSlice) SetValue(v interface{}) {
-	*s = append(*s, NewMicroserviceIndex(v.(*KV)))
+func (s *MicroserviceIndexSlice) ForEach(f func(i int, v *KV)) {
+	for i, v := range *s {
+		v.KV.Value = v.Value
+		f(i, v.KV)
+	}
 }
-func (s *MicroserviceAliasSlice) SetValue(v interface{}) {
-	*s = append(*s, NewMicroserviceAlias(v.(*KV)))
+func (s *MicroserviceAliasSlice) ForEach(f func(i int, v *KV)) {
+	for i, v := range *s {
+		v.KV.Value = v.Value
+		f(i, v.KV)
+	}
 }
-func (s *TagSlice) SetValue(v interface{}) { *s = append(*s, NewTag(v.(*KV))) }
-func (s *MicroServiceRuleSlice) SetValue(v interface{}) {
-	*s = append(*s, NewMicroServiceRule(v.(*KV)))
+func (s *TagSlice) ForEach(f func(i int, v *KV)) {
+	for i, v := range *s {
+		v.KV.Value = v.Value
+		f(i, v.KV)
+	}
 }
-func (s *MicroServiceDependencyRuleSlice) SetValue(v interface{}) {
-	*s = append(*s, NewMicroServiceDependencyRule(v.(*KV)))
+func (s *MicroServiceRuleSlice) ForEach(f func(i int, v *KV)) {
+	for i, v := range *s {
+		v.KV.Value = v.Value
+		f(i, v.KV)
+	}
 }
-func (s *SummarySlice) SetValue(v interface{}) { *s = append(*s, NewSummary(v.(*KV))) }
-func (s *InstanceSlice) SetValue(v interface{}) {
-	*s = append(*s, NewInstance(v.(*KV)))
+func (s *MicroServiceDependencyRuleSlice) ForEach(f func(i int, v *KV)) {
+	for i, v := range *s {
+		v.KV.Value = v.Value
+		f(i, v.KV)
+	}
 }
+func (s *SummarySlice) ForEach(f func(i int, v *KV)) {
+	for i, v := range *s {
+		v.KV.Value = v.Value
+		f(i, v.KV)
+	}
+}
+func (s *InstanceSlice) ForEach(f func(i int, v *KV)) {
+	for i, v := range *s {
+		v.KV.Value = v.Value
+		f(i, v.KV)
+	}
+}
+
+func (s *MicroserviceSlice) SetValue(v *KV)      { *s = append(*s, NewMicroservice(v)) }
+func (s *MicroserviceIndexSlice) SetValue(v *KV) { *s = append(*s, NewMicroserviceIndex(v)) }
+func (s *MicroserviceAliasSlice) SetValue(v *KV) { *s = append(*s, NewMicroserviceAlias(v)) }
+func (s *TagSlice) SetValue(v *KV)               { *s = append(*s, NewTag(v)) }
+func (s *MicroServiceRuleSlice) SetValue(v *KV)  { *s = append(*s, NewMicroServiceRule(v)) }
+func (s *MicroServiceDependencyRuleSlice) SetValue(v *KV) {
+	*s = append(*s, NewMicroServiceDependencyRule(v))
+}
+func (s *SummarySlice) SetValue(v *KV)  { *s = append(*s, NewSummary(v)) }
+func (s *InstanceSlice) SetValue(v *KV) { *s = append(*s, NewInstance(v)) }
 
 func NewMicroservice(kv *KV) *Microservice {
 	return &Microservice{kv, kv.Value.(*pb.MicroService)}
