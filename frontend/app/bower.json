@@ -18,7 +18,6 @@
     "angular-animate": "^1.4.0",
     "angular-aria": "^1.4.0",
     "angular-material-data-table": "^0.10.10",
-    "angular-chart.js": "^1.1.1",
     "angular-mocks": "^1.4.0",
     "angular-resource": "^1.4.0",
     "angular-sanitize": "^1.4.0",
@@ -30,6 +29,8 @@
     "js-yaml": "3.11.0",
     "jszip": "Stuk/jszip#^3.1.4",
     "swagger-ui": "3.3.2",
-    "angular-swagger-ui": "https://github.com/asifdxtreme/angular-swagger-ui.git#master"
+    "angular-swagger-ui": "https://github.com/asifdxtreme/angular-swagger-ui.git#master",
+    "css-percentage-circle": "https://github.com/afuersch/css-percentage-circle.git#master",
+    "vis": "^4.21.0"
   }
 }

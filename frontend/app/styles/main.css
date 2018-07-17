@@ -26,7 +26,7 @@ body {
   padding: 0;
   font-family: sans-serif !important; }
   body .loader {
-    background: rgba(0, 0, 0, 0.2) url("../images/loader.gif") no-repeat 50% center;
+    background: rgba(0, 0, 0, 0.2) url("../images/load.gif") no-repeat 50% center;
     width: 100%;
     height: 100%;
     position: fixed;
@@ -60,7 +60,7 @@ body {
     z-index: 1;
   }
   .navbar-fixed-top {
-    z-index: 1 !important;
+    z-index: 10 !important;
   }
   body .navbar {
     border-radius: unset !important; }
@@ -151,11 +151,8 @@ body {
         line-height: 30px; }
   body .serviceInfoTab {
     margin-left: 8px;
-    margin-top: 50px; }
-  body canvas {
-    max-width: 70% !important;
-    margin: 0px auto;
-    padding: 15px; }
+    margin-top: 50px;
+    padding-bottom: 100px; }
     body canvas:hover {
       cursor: pointer; }
   body .margin20 {
@@ -183,112 +180,8 @@ body {
     display: block;
     font-size: 40px;
   }
-.dashboard {
-  width: 80%;
-}
-.legendStarting {
-  color: #00c0ef;
-}
-.legendUp {
-  color: #00a65a; 
-}
-.legendDown {
-  color: #dd4b39; 
-}
-.legendUnavailable {
-  color: #A9A9A9; 
-}
-.card {
-  border-radius: 6px;
-  box-shadow: 0 2px 2px rgba(204, 197, 185, 0.5);
-  background-color: whitesmoke;
-  margin-bottom: 20px; 
-}
-.card .content {
-    padding: 15px 15px 10px 15px;
- }
-.icon-color {    
-    color: white;
-}
-.card .icon-small {
-    font-size: 2em;
-    min-height: 32px;
- }
-.icon-warning {
-  color: #F3BB45;
- }
-
-.card .footer {
-    padding: 0;
-    line-height: 30px;
- }
-.card .footer .legend {
-    padding: 5px 0;
- }
-.card .footer hr {
-    margin-top: 5px;
-    margin-bottom: 5px;
- }
-.card .stats {
-  color: #a9a9a9;
-  font-weight: 300;
- }
-.card .stats i {
-  margin-right: 2px;
-  min-width: 15px;
-  display: inline-block;
- }
-.card .header {
-  padding: 20px 20px 0;
-  font-family: sans-serif;
- }
-.card .title {
-  margin: 0;
-  color: grey;
-  font-weight: 600;
- }
-.chart-legend {
-  text-align: center;
-  font-family: sans-serif;
-}
-.chartAlign {
-  padding: 0px 15px;
-}
-.dashboardRefresh {
-    width: 30px;
-    height: 30px;
-    background: whitesmoke;
-    padding: 6px 7px;
-    border-radius: 5px;
-    font-size: 20px;
-    box-shadow: 0 2px 2px rgba(204, 197, 185, 0.5);
-}
-.dashboardRefresh:hover {
-  cursor: pointer;
-}
-
-.dashboardCount {
-    width: 245px !important;
-    height: 65px;
-    margin: 3% 2% 2% 0%;
-    border-radius: 6px;
-    background-color: whitesmoke;
-    text-align: center;
-    font-weight: bold;
-}
-.dashboardCount .statusIcon {
-  height: 65px;
-  padding: 15px;
-}
-.statusTitle, .statusCount {
-  background-color: #fff;
-  height: 63px;
-  border-radius: 0px 5px 5px 0px;
-  font-family: sans-serif;
-  padding: 20px;
-  font-weight: normal;
-  padding-left: 8px !important;
-  text-align: left;
+.userGuide-list {
+    line-height: 2;
 }
 .mainFooter {
     position: fixed;
@@ -299,7 +192,7 @@ body {
     background-color: #0091EA !important;
     color: #fff;
     padding-top: 5px;
-    z-index: 9999;
+    z-index: 0;
 }
 md-card {
     margin-left: 0px;
@@ -342,71 +235,13 @@ md-table-pagination .md-select-icon {
   color: grey !important;
   padding-top: 10px;
 }
-.serviceStatusCount {
-   font-size: 18px;
-   padding-top: 10px
-}
-.dashboardCount :hover {
+.pointer {
   cursor: pointer;
 }
-.mainCard {
-  height: 65px;
-  border-radius: 5px;
-  box-shadow: 0 2px 2px rgba(204, 197, 185, 0.5);
-  background-color: whitesmoke;
-  margin-bottom: 20px;
-}
-.mainCard .mainCardIcon {
-  height: 100%;
-  padding-top: 6%;
-  text-align: center;
-}
-.mainCardTitle {
-  font-size: 20px;
-  font-family: sans-serif;
-  font-weight: 700;
-  color: grey;
-  padding-left: 5px !important;
-}
-.mainCardTitleStyle {
-  margin-top: 15px;
-  text-align: center;
-}
-.mainCardCount {
-  font-size: 35px;
-  padding-left: 8px;
-  font-family: sans-serif;
-}
-.mainCard .services {
-  background-color: #00c0ef;
-}
-.mainCard .instances {
-  background-color: #00a65a;
-}
-.mainCard .providers {
-  background-color: #dd4b39;
-}
-.mainCard .consumers {
-  background-color: #A9A9A9;
-}
-.card .STARTING {
-  background-color: #00c0ef;
-  border-radius: 6px 0px 0px 6px;
-}
-.card .UP {
-  background-color: #00a65a;
-  border-radius: 6px 0px 0px 6px;
-}
-.card .DOWN {
-  background-color: #dd4b39;
-  border-radius: 6px 0px 0px 6px;
-}
-.card .OUTOFSERVICE {
-  background-color: #A9A9A9;
-  border-radius: 6px 0px 0px 6px;
-}
-.updatedTime {
-  padding-right: 10px;
+.appId-label {
+    color: white;
+    position: absolute;
+    left: 10px;
 }
 table, md-toolbar {
   font-family: sans-serif;
@@ -419,40 +254,136 @@ table, md-toolbar {
 .inline {
     display: inline;
 }
+.block {
+    display: block;
+}
+.h-42 {
+    height: 42px;
+}
 .h-50 {
     height: 50px;
 }
-.count {
-    margin: 5px 0px;
-}
 .pl-3 {
     padding-left: 3px
+}
+.pl-60 {
+    padding-left: 60px;
+}
+.pt-5 {
+    padding-top: 5px;
+}
+.pt-15 {
+    padding-top: 15px !important;
+}
+.pb-100 {
+    padding-bottom: 100px;
+}
+.m0 {
+    margin: 0px;
+}
+.mr-0 {
+    margin-right: 0px !important;
+}
+.md-toolbar-tools {
+    font-size: 15px;
+}
+.no-data{
+    text-align: center;
+    padding-top: 5%;
+}
+.box {
+    background: #f5f5f5;
+    height: 200px;
+    margin-right: 11%;
+}
+.box:last-of-type {
+    margin-right: 0px;
+}
+.fw-600 {
+    font-weight: 600;
+}
+.circle {
+    height: 100px;
+    width: 100px;
+    background-color: #28a77226;
+    border-radius:  50%;
+    margin: 15% auto;
+}
+.fa-exclamation-triangle {
+    font-size: 25px;
+}
+.panel-body-height {
+   height: 178px;
+}
+.stat-icon-size {
+    font-size: 35px;
+    color: grey;
+    display: block;
+    padding-top: 30px;
+    text-align: center;
+}
+.c100 {
+    margin-left: 22%;
+    margin-top: 15%;
+    font-size: 100px !important;
+}
+.c100 > span {
+    color: #808080 !important;
+}
+.ins-stat-title {
+    padding-top: 5%;
+    clear: both;
+    text-align: center;
+}
+.dashboardTable th, .dashboardTable td {
+    max-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.dashboardTable .columnA, .dashboardTable .columnB, .dashboardTable .columnC {
+    width: 33%;
+}
+.dashboardTable .columnA:hover, .dashboardTable .columnA:hover, .dashboardTable .columnB:hover, .dashboardTable .columnB:hover, .dashboardTable .columnC:hover, .dashboardTable .columnC:hover {
+    text-overflow: clip;
+    white-space: normal;
+    word-break: break-all;
+}
+.topology-header {
+    background: #0091EA;
+    color: white;
+    height: 50px;
+    margin-right: 20px;
+}
+a.disabled {
+    pointer-events: none;
+    cursor: default;
+    color: grey;
 }
 
 @media only screen
 and (min-width: 1030px)
 and (max-width: 1366px) {
-    .mainCard .mainCardIcon{
-        padding-top: 10%;
-    }
-    .mainCardCount {
-        padding-left: 12px;
-        font-size: 20px;
-    }
-    .count {
-        margin: 16px 0px !important;
+     .pb-50 {
+         padding-bottom: 50px;
      }
-     .fa-cog {
-        margin-left: -4px;
+     .box {
+        height: 160px !important;
      }
-     .fa-cogs, .fa-server, .fa-users {
-        margin-left: -7px;
+     .circle {
+        height: 80px !important;
+        width: 80px !important;
      }
-     .servicesChart {
-        margin-top: 8%;
+     .stat-icon-size {
+        padding-top: 27% !important;
      }
-     .mainCardTitle {
-        font-weight: 500;
+     .c100 {
+        margin-left: 8% !important;
+        margin-top: 20% !important;
+        font-size: 75px !important;
+     }
+     md-table-container {
+        overflow-x: hidden;
      }
 }
 /*# sourceMappingURL=main.css.map */

@@ -16,122 +16,134 @@
  */
 'use strict';
 angular.module('serviceCenter.router', [])
-	.config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $urlRouterProvider) {
-    $urlRouterProvider.otherwise('/sc/dashboard');
-    $stateProvider
-        .state('sc', {
-            url: '/sc',
-            abstract: true,
-            templateUrl: 'scripts/views/index.html',
-            controller: 'serviceCenterController'
-        })
-        .state('sc.dashboard', {
-            url: '/dashboard',
-            views:{
-                'base' :{
-                    templateUrl: 'scripts/modules/dashboard/views/dashboard.html',
-                    controller: 'dashboardController'
+    .config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $urlRouterProvider) {
+        $urlRouterProvider.otherwise('/sc/dashboard');
+        $stateProvider
+            .state('sc', {
+                url: '/sc',
+                abstract: true,
+                templateUrl: 'scripts/views/index.html',
+                controller: 'serviceCenterController'
+            })
+            .state('sc.dashboard', {
+                url: '/dashboard',
+                views: {
+                    'base': {
+                        templateUrl: 'scripts/modules/dashboard/views/dashboard.html',
+                        controller: 'dashboardController'
+                    }
                 }
-            }
-        })
-        .state('sc.allServices', {
-            url: '/services/:status',
-            views:{
-                'base' :{
-                    templateUrl: 'scripts/modules/serviceCenter/views/servicesList.html',
-                    controller: 'servicesListController'
+            })
+            .state('sc.allServices', {
+                url: '/services/:status',
+                views: {
+                    'base': {
+                        templateUrl: 'scripts/modules/serviceCenter/views/servicesList.html',
+                        controller: 'servicesListController'
+                    }
                 }
-            }
-        })
-        .state('sc.info',{
-            url: '/:serviceId',
-            abstract: true,
-            views: {
-                'base': {
-                    templateUrl: 'scripts/modules/serviceCenter/views/serviceInfo.html',
-                    controller: 'serviceInfoController'
+            })
+            .state('sc.info', {
+                url: '/:serviceId',
+                abstract: true,
+                views: {
+                    'base': {
+                        templateUrl: 'scripts/modules/serviceCenter/views/serviceInfo.html',
+                        controller: 'serviceInfoController'
+                    }
+                },
+                resolve: {
+                    serviceInfo: ['$q', 'httpService', 'commonService', 'apiConstant', '$stateParams', '$state', function($q, httpService, commonService, apiConstant, $stateParams, $state) {
+                        $(".loader").show();
+                        var serviceId = $stateParams.serviceId;
+                        var deferred = $q.defer();
+                        var url = apiConstant.api.microservice.url;
+                        var method = apiConstant.api.microservice.method;
+                        httpService.apiRequest(url, method, null, null, null).then(function(response) {
+                            $(".loader").hide();
+                            if (response && response.data && response.data.services) {
+                                deferred.resolve(response);
+                            } else {
+                                deferred.resolve(response);
+                            }
+                        }, function(error) {
+                            $(".loader").hide();
+                            deferred.reject(error);
+                            $state.go("sc.dashboard");
+                        });
+                        return deferred.promise;
+                    }]
                 }
-            },
-            resolve: {
-                serviceInfo: ['$q', 'httpService', 'commonService', 'apiConstant', '$stateParams', '$state', function($q, httpService, commonService, apiConstant, $stateParams, $state){
-                    $(".loader").show();
-                    var serviceId = $stateParams.serviceId;
-                    var deferred = $q.defer();
-                    var url = apiConstant.api.microservice.url;
-                    var method = apiConstant.api.microservice.method;
-                    httpService.apiRequest(url, method, null, null, null).then(function(response){
-                        $(".loader").hide();
-                        if(response && response.data && response.data.services){
-                            deferred.resolve(response);
-                        }
-                        else {
-                            deferred.resolve(response);
-                        }
-                    },function(error){
-                        $(".loader").hide();
-                        deferred.reject(error);
-                        $state.go("sc.dashboard");
-                    });
-                    return deferred.promise;
-                }]
-            }
-        })
-        .state('sc.info.instance', {
-            url: '/instance',
-            views: {
-                "info" : {
-                    templateUrl: 'scripts/modules/serviceCenter/views/serviceInstance.html'
+            })
+            .state('sc.info.instance', {
+                url: '/instance',
+                views: {
+                    "info": {
+                        templateUrl: 'scripts/modules/serviceCenter/views/serviceInstance.html'
+                    }
                 }
-            }
-        })
-        .state('sc.info.provider', {
-            url: '/provider',
-            views: {
-                "info" : {
-                    templateUrl: 'scripts/modules/serviceCenter/views/serviceProvider.html'
+            })
+            .state('sc.info.provider', {
+                url: '/provider',
+                views: {
+                    "info": {
+                        templateUrl: 'scripts/modules/serviceCenter/views/serviceProvider.html'
+                    }
                 }
-            }
-        })
-        .state('sc.info.consumer', {
-            url: '/consumer',
-            views: {
-                "info" : {
-                    templateUrl: 'scripts/modules/serviceCenter/views/serviceConsumer.html'
+            })
+            .state('sc.info.consumer', {
+                url: '/consumer',
+                views: {
+                    "info": {
+                        templateUrl: 'scripts/modules/serviceCenter/views/serviceConsumer.html'
+                    }
                 }
-            }
-        })
-        .state('sc.info.schema', {
-            url: '/schema',
-            views: {
-                "info" : {
-                    templateUrl: 'scripts/modules/serviceCenter/views/schema.html',
-                    controller: 'schemaController'
+            })
+            .state('sc.info.schema', {
+                url: '/schema',
+                views: {
+                    "info": {
+                        templateUrl: 'scripts/modules/serviceCenter/views/schema.html',
+                        controller: 'schemaController'
+                    }
+                },
+                resolve: {
+                    servicesList: ['$q', 'httpService', 'apiConstant', function($q, httpService, apiConstant) {
+                        $(".loader").show();
+                        var deferred = $q.defer();
+                        var url = apiConstant.api.microservice.url;
+                        var method = apiConstant.api.microservice.method;
+                        httpService.apiRequest(url, method, null, null, null).then(function(response) {
+                            $(".loader").hide();
+                            if (response && response.data && response.data.services) {
+                                deferred.resolve(response);
+                            } else {
+                                deferred.resolve(response);
+                            }
+                        }, function(error) {
+                            $(".loader").hide();
+                            deferred.reject(error);
+                        });
+                        return deferred.promise;
+                    }]
                 }
-            },
-            resolve: {
-                servicesList: ['$q', 'httpService', 'apiConstant', function($q, httpService, apiConstant){
-                    $(".loader").show();
-                    var deferred = $q.defer();
-                    var url = apiConstant.api.microservice.url;
-                    var method = apiConstant.api.microservice.method;
-                    httpService.apiRequest(url, method, null, null, null).then(function(response){
-                        $(".loader").hide();
-                        if(response && response.data && response.data.services){
-                            deferred.resolve(response);
-                        }
-                        else {
-                            deferred.resolve(response);
-                        }
-                    },function(error){
-                        $(".loader").hide();
-                        deferred.reject(error);
-                    });
-                    return deferred.promise;
-                }]
-            }
-        })
-        .state('error', {
-        	url: '/error',
-        	templateUrl: 'views/error.html'
-        });
-}]);
+            })
+            .state('sc.instances', {
+                url: '/instances',
+                views: {
+                    'base': {
+                        templateUrl: 'scripts/modules/instances/views/instances.html',
+                        controller: 'instancesController'
+                    }
+                }
+            })
+            .state('sc.topology', {
+                url: '/topology',
+                views: {
+                    'base': {
+                        templateUrl: 'scripts/modules/topology/views/topology.html',
+                        controller: 'topologyController'
+                    }
+                }
+            })
+    }]);

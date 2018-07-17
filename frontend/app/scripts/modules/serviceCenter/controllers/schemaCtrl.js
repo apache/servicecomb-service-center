@@ -44,7 +44,7 @@ angular.module('serviceCenter.sc')
                     var headers = {
                         "X-ConsumerId": serviceId
                     };
-                    promises.push(httpService.apiRequest(url, method, null, headers, null));
+                    promises.push(httpService.apiRequest(url, method, null, headers, "nopopup"));
                 }
 
                 $q.all(promises).then(function(response) {
@@ -146,7 +146,7 @@ angular.module('serviceCenter.sc')
                 httpService.apiRequest(url, method, null, headers, "nopopup").then(function(response) {
                     if (response && response.data && response.data.schema) {
                         $scope.template = response.data.schema;
-                        $scope.template =  $scope.template.replace(/\\/g, "");
+                        $scope.template = $scope.template.replace(/\\/g, "");
                         $scope.json = YAML.parse($scope.template);
                         const ui = SwaggerUIBundle({
                             spec: $scope.json,
@@ -198,7 +198,7 @@ angular.module('serviceCenter.sc')
                                   </div>
                              </md-toolbar>
                              <md-dialog-content>
-                                <h3 class="text-center" style="margin-top:15px;">{{ "noSchemaAvailableToDownload" | translate }}</h3>
+                                <h4 class="text-center" style="margin-top:15px;">{{ "noSchemaAvailableToDownload" | translate }}</h4>
                              </md-dialog-content>
                              <md-dialog-actions layout="row">
                                 <span flex></span>
