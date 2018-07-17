@@ -41,6 +41,9 @@ case $1 in
  windows )
     OSNAME=windows ;;
 
+ mac )
+    OSNAME=mac ;;
+
  all )
     OSNAME=all ;;
 
@@ -177,6 +180,61 @@ build_windows(){
     tar -czvf $PACKAGE_PREFIX-$PACKAGE-windows-amd64.tar.gz $PACKAGE_PREFIX-$PACKAGE-windows-amd64
 }
 
+# Build Mac Release
+build_mac(){
+    if [ "X"$RELEASE == "X" ] ; then
+         echo "Error in Making Mac Release.....Release Number not specified"
+    fi
+    if [ "X"$PACKAGE == "X" ]; then
+        echo "Error in Making Mac Release.....Package Number not specified"
+    fi
+
+    set +e
+    rm -rf $PACKAGE_PREFIX-$PACKAGE-darwin-amd64
+    rm -rf $PACKAGE_PREFIX-$PACKAGE-darwin-amd64.tar.gz
+
+    set -e
+    mkdir -p $PACKAGE_PREFIX-$PACKAGE-darwin-amd64
+
+    ## Build the Service-Center releases
+    export GOOS=darwin
+    export GIT_COMMIT=$(git log  --pretty=format:'%h' -n 1)
+    export BUILD_NUMBER=$RELEASE
+    GO_LDFLAGS="${GO_LDFLAGS} -X 'github.com/apache/incubator-servicecomb-service-center/version.BUILD_TAG=$(date +%Y%m%d%H%M%S).$BUILD_NUMBER.$GIT_COMMIT'"
+    GO_LDFLAGS="${GO_LDFLAGS} -X 'github.com/apache/incubator-servicecomb-service-center/version.VERSION=$BUILD_NUMBER'"
+    go build --ldflags "${GO_LDFLAGS}" -o $PACKAGE_PREFIX-$PACKAGE-darwin-amd64/service-center
+
+    ## Build Frontend Release
+    cd frontend
+    go build -o ../$PACKAGE_PREFIX-$PACKAGE-darwin-amd64/frontend
+
+    ## Download the frontend dependencies using bower
+    cd app
+    bower install
+
+    cd ../..
+
+    prepare_conf
+
+    ## Copy the Service-Center Releases
+    cp -r tmp/conf $PACKAGE_PREFIX-$PACKAGE-darwin-amd64/
+    cp -r scripts/release/LICENSE $PACKAGE_PREFIX-$PACKAGE-darwin-amd64/
+    cp -r scripts/release/licenses $PACKAGE_PREFIX-$PACKAGE-darwin-amd64/
+    cp -r scripts/release/NOTICE $PACKAGE_PREFIX-$PACKAGE-darwin-amd64/
+    cp -r DISCLAIMER $PACKAGE_PREFIX-$PACKAGE-darwin-amd64/
+    cp -r README.md $PACKAGE_PREFIX-$PACKAGE-darwin-amd64/
+
+    ## Copy the frontend releases
+    cp -r frontend/app $PACKAGE_PREFIX-$PACKAGE-darwin-amd64/
+
+    ## Copy Start Scripts
+    cp -r scripts/release/start_scripts/linux/* $PACKAGE_PREFIX-$PACKAGE-darwin-amd64/
+    chmod +x $PACKAGE_PREFIX-$PACKAGE-darwin-amd64/*.sh
+
+    ## Archive the release
+    tar -czvf $PACKAGE_PREFIX-$PACKAGE-darwin-amd64.tar.gz $PACKAGE_PREFIX-$PACKAGE-darwin-amd64
+}
+
 ## Compile the binary
 case $OSNAME in
  linux )
@@ -185,8 +243,12 @@ case $OSNAME in
  windows )
     build_windows ;;
 
+ mac )
+    build_mac ;;
+
  all )
     build_linux
-    build_windows ;;
+    build_windows
+    build_mac ;;
 
 esac
