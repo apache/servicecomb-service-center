@@ -581,7 +581,7 @@ var _ = Describe("'Rule' service", func() {
 			respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 				Service: &pb.MicroService{
 					AppId:       "query_instance_tag",
-					ServiceName: "query_instance_tag_service",
+					ServiceName: "query_instance_version_consumer",
 					Version:     "1.0.0",
 					Level:       "FRONT",
 					Status:      pb.MS_UP,
@@ -656,7 +656,7 @@ var _ = Describe("'Rule' service", func() {
 			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 				Service: &pb.MicroService{
 					AppId:       "query_instance_tag",
-					ServiceName: "query_instance_tag_service",
+					ServiceName: "query_instance_tag_consumer",
 					Version:     "1.0.4",
 					Level:       "FRONT",
 					Status:      pb.MS_UP,
@@ -691,6 +691,26 @@ var _ = Describe("'Rule' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).To(Equal(scerr.ErrPermissionDeny))
+
+				By("find should return 200 even if consumer permission deny")
+				respFind, err := instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: consumerVersion,
+					AppId:             "query_instance_tag",
+					ServiceName:       "query_instance_tag_service",
+					VersionRule:       "0+",
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(len(respFind.Instances)).To(Equal(0))
+				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: consumerTag,
+					AppId:             "query_instance_tag",
+					ServiceName:       "query_instance_tag_service",
+					VersionRule:       "0+",
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(len(respFind.Instances)).To(Equal(0))
 
 				By("consumer not in black list")
 				resp, err = instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{

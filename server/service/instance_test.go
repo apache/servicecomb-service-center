@@ -1240,7 +1240,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(len(respFind.Instances)).To(Equal(0))
 				Expect(ctx.Value(serviceUtil.CTX_RESPONSE_REVISION)).To(Equal(rev))
 
-				By("find should return 200 even if consumer permission deny")
+				By("find should return 200 even if consumer is diff apps")
 				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId3,
 					AppId:             "query_instance",

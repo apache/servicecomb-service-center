@@ -159,8 +159,9 @@ var _ = Describe("MicroService Api Test", func() {
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 
 				//Get Tags
+				<-time.After(time.Second)
 				url = strings.Replace(GETTAGS, ":serviceId", serviceId, 1)
-				req, _ = http.NewRequest(GET, SCURL+url+"?noCache=1", nil)
+				req, _ = http.NewRequest(GET, SCURL+url, nil)
 				req.Header.Set("X-Domain-Name", "default")
 				req.Header.Set("X-ConsumerId", serviceId)
 				resp, _ = scclient.Do(req)
@@ -215,9 +216,10 @@ var _ = Describe("MicroService Api Test", func() {
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 
 				//Update Tags
+				<-time.After(time.Second)
 				url = strings.Replace(UPDATETAG, ":serviceId", serviceId, 1)
 				url = strings.Replace(url, ":key", "testkey", 1)
-				req, _ = http.NewRequest(UPDATE, SCURL+url+"?value=newValue&noCache=1", nil)
+				req, _ = http.NewRequest(UPDATE, SCURL+url+"?value=newValue", nil)
 				req.Header.Set("X-Domain-Name", "default")
 				resp, err = scclient.Do(req)
 				Expect(err).To(BeNil())
@@ -227,7 +229,7 @@ var _ = Describe("MicroService Api Test", func() {
 				//Verify the Tags
 				<-time.After(time.Second)
 				url = strings.Replace(GETTAGS, ":serviceId", serviceId, 1)
-				req, _ = http.NewRequest(GET, SCURL+url+"?noCache=1", nil)
+				req, _ = http.NewRequest(GET, SCURL+url, nil)
 				req.Header.Set("X-Domain-Name", "default")
 				req.Header.Set("X-ConsumerId", serviceId)
 				resp, _ = scclient.Do(req)
@@ -266,9 +268,10 @@ var _ = Describe("MicroService Api Test", func() {
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 
 				//Update Tags
+				<-time.After(time.Second)
 				url = strings.Replace(UPDATETAG, ":serviceId", serviceId, 1)
 				url = strings.Replace(url, ":key", "unknownkey", 1)
-				req, _ = http.NewRequest(UPDATE, SCURL+url+"?value=newValue&noCache=1", nil)
+				req, _ = http.NewRequest(UPDATE, SCURL+url+"?value=newValue", nil)
 				req.Header.Set("X-Domain-Name", "default")
 				resp, err = scclient.Do(req)
 				Expect(err).To(BeNil())
@@ -311,9 +314,10 @@ var _ = Describe("MicroService Api Test", func() {
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 
 				//Delete the tag
+				<-time.After(time.Second)
 				url = strings.Replace(DELETETAG, ":serviceId", serviceId, 1)
 				url = strings.Replace(url, ":key", "testkey", 1)
-				req, _ = http.NewRequest(DELETE, SCURL+url+"?noCache=1", nil)
+				req, _ = http.NewRequest(DELETE, SCURL+url, nil)
 				req.Header.Set("X-Domain-Name", "default")
 				resp, err = scclient.Do(req)
 				Expect(err).To(BeNil())
@@ -323,7 +327,7 @@ var _ = Describe("MicroService Api Test", func() {
 				//verify Delete
 				<-time.After(time.Second)
 				url = strings.Replace(GETTAGS, ":serviceId", serviceId, 1)
-				req, _ = http.NewRequest(GET, SCURL+url+"?noCache=1", nil)
+				req, _ = http.NewRequest(GET, SCURL+url, nil)
 				req.Header.Set("X-Domain-Name", "default")
 				req.Header.Set("X-ConsumerId", serviceId)
 				resp, _ = scclient.Do(req)
@@ -353,9 +357,10 @@ var _ = Describe("MicroService Api Test", func() {
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 
 				//Delete the tag
+				<-time.After(time.Second)
 				url = strings.Replace(DELETETAG, ":serviceId", serviceId, 1)
 				url = strings.Replace(url, ":key", "unknowTag", 1)
-				req, _ = http.NewRequest(DELETE, SCURL+url+"?noCache=1", nil)
+				req, _ = http.NewRequest(DELETE, SCURL+url, nil)
 				req.Header.Set("X-Domain-Name", "default")
 				resp, err = scclient.Do(req)
 				Expect(err).To(BeNil())
@@ -363,8 +368,9 @@ var _ = Describe("MicroService Api Test", func() {
 				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
 
 				//verify Non-deleted of exsiting tag
+				<-time.After(time.Second)
 				url = strings.Replace(GETTAGS, ":serviceId", serviceId, 1)
-				req, _ = http.NewRequest(GET, SCURL+url+"?noCache=1", nil)
+				req, _ = http.NewRequest(GET, SCURL+url, nil)
 				req.Header.Set("X-Domain-Name", "default")
 				req.Header.Set("X-ConsumerId", serviceId)
 				resp, _ = scclient.Do(req)

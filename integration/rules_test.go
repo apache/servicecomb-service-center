@@ -28,6 +28,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var _ = Describe("MicroService Api Test", func() {
@@ -185,8 +186,9 @@ var _ = Describe("MicroService Api Test", func() {
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 
 				//Duplicate Request
+				<-time.After(time.Second)
 				bodyBuf = bytes.NewReader(body)
-				req, _ = http.NewRequest(POST, SCURL+url+"?noCache=1", bodyBuf)
+				req, _ = http.NewRequest(POST, SCURL+url, bodyBuf)
 				req.Header.Set("X-Domain-Name", "default")
 				resp, err = scclient.Do(req)
 				Expect(err).To(BeNil())
@@ -224,8 +226,9 @@ var _ = Describe("MicroService Api Test", func() {
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 
 				//Get Rules
+				<-time.After(time.Second)
 				url = strings.Replace(GETRULES, ":serviceId", serviceId, 1)
-				req, _ = http.NewRequest(GET, SCURL+url+"?noCache=1", nil)
+				req, _ = http.NewRequest(GET, SCURL+url, nil)
 				req.Header.Set("X-Domain-Name", "default")
 				req.Header.Set("X-ConsumerId", serviceId)
 				resp, _ = scclient.Do(req)
@@ -295,6 +298,7 @@ var _ = Describe("MicroService Api Test", func() {
 				}
 
 				//Update Rules
+				<-time.After(time.Second)
 				updateParams := map[string]interface{}{
 					"ruleType":    "WHITE",
 					"attribute":   "tag_b",
@@ -305,7 +309,7 @@ var _ = Describe("MicroService Api Test", func() {
 				url = strings.Replace(url, ":rule_id", ruleID, 1)
 				body, _ = json.Marshal(updateParams)
 				bodyBuf = bytes.NewReader(body)
-				req, _ = http.NewRequest(UPDATE, SCURL+url+"?noCache=1", bodyBuf)
+				req, _ = http.NewRequest(UPDATE, SCURL+url, bodyBuf)
 				req.Header.Set("X-Domain-Name", "default")
 				resp, err = scclient.Do(req)
 				Expect(err).To(BeNil())
@@ -314,8 +318,9 @@ var _ = Describe("MicroService Api Test", func() {
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 
 				//Get Rules
+				<-time.After(time.Second)
 				url = strings.Replace(GETRULES, ":serviceId", serviceId, 1)
-				req, _ = http.NewRequest(GET, SCURL+url+"?noCache=1", nil)
+				req, _ = http.NewRequest(GET, SCURL+url, nil)
 				req.Header.Set("X-Domain-Name", "default")
 				req.Header.Set("X-ConsumerId", serviceId)
 				resp, _ = scclient.Do(req)
@@ -362,6 +367,7 @@ var _ = Describe("MicroService Api Test", func() {
 				}
 
 				//Update Rules with invalid RuleType
+				<-time.After(time.Second)
 				updateParams := map[string]interface{}{
 					"ruleType":    "UNKNOWN",
 					"attribute":   "tag_b",
@@ -372,7 +378,7 @@ var _ = Describe("MicroService Api Test", func() {
 				url = strings.Replace(url, ":rule_id", ruleID, 1)
 				body, _ = json.Marshal(updateParams)
 				bodyBuf = bytes.NewReader(body)
-				req, _ = http.NewRequest(UPDATE, SCURL+url+"?noCache=1", bodyBuf)
+				req, _ = http.NewRequest(UPDATE, SCURL+url, bodyBuf)
 				req.Header.Set("X-Domain-Name", "default")
 				resp, err = scclient.Do(req)
 				Expect(err).To(BeNil())
@@ -380,6 +386,7 @@ var _ = Describe("MicroService Api Test", func() {
 				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
 
 				//Update Rules with invalid pattern
+				<-time.After(time.Second)
 				updateParams = map[string]interface{}{
 					"ruleType":    "WHITE",
 					"attribute":   "tag_b",
@@ -390,7 +397,7 @@ var _ = Describe("MicroService Api Test", func() {
 				url = strings.Replace(url, ":rule_id", ruleID, 1)
 				body, _ = json.Marshal(updateParams)
 				bodyBuf = bytes.NewReader(body)
-				req, _ = http.NewRequest(UPDATE, SCURL+url+"?noCache=1", bodyBuf)
+				req, _ = http.NewRequest(UPDATE, SCURL+url, bodyBuf)
 				req.Header.Set("X-Domain-Name", "default")
 				resp, err = scclient.Do(req)
 				Expect(err).To(BeNil())
@@ -398,6 +405,7 @@ var _ = Describe("MicroService Api Test", func() {
 				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
 
 				//Update Rules with invalid different ruleType
+				<-time.After(time.Second)
 				updateParams = map[string]interface{}{
 					"ruleType":    "BLACK",
 					"attribute":   "tag_b",
@@ -408,7 +416,7 @@ var _ = Describe("MicroService Api Test", func() {
 				url = strings.Replace(url, ":rule_id", ruleID, 1)
 				body, _ = json.Marshal(updateParams)
 				bodyBuf = bytes.NewReader(body)
-				req, _ = http.NewRequest(UPDATE, SCURL+url+"?noCache=1", bodyBuf)
+				req, _ = http.NewRequest(UPDATE, SCURL+url, bodyBuf)
 				req.Header.Set("X-Domain-Name", "default")
 				resp, err = scclient.Do(req)
 				Expect(err).To(BeNil())
@@ -470,9 +478,10 @@ var _ = Describe("MicroService Api Test", func() {
 				}
 
 				//Delete the Rules
+				<-time.After(time.Second)
 				url = strings.Replace(DELETERULES, ":serviceId", serviceId, 1)
 				url = strings.Replace(url, ":rule_id", ruleID, 1)
-				req, _ = http.NewRequest(DELETE, SCURL+url+"?noCache=1", nil)
+				req, _ = http.NewRequest(DELETE, SCURL+url, nil)
 				req.Header.Set("X-Domain-Name", "default")
 				resp, err = scclient.Do(req)
 				Expect(err).To(BeNil())
@@ -480,8 +489,9 @@ var _ = Describe("MicroService Api Test", func() {
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 
 				//verify Delete
+				<-time.After(time.Second)
 				url = strings.Replace(GETTAGS, ":serviceId", serviceId, 1)
-				req, _ = http.NewRequest(GET, SCURL+url+"?noCache=1", nil)
+				req, _ = http.NewRequest(GET, SCURL+url, nil)
 				req.Header.Set("X-Domain-Name", "default")
 				req.Header.Set("X-ConsumerId", serviceId)
 				resp, _ = scclient.Do(req)
