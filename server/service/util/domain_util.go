@@ -82,30 +82,30 @@ func ProjectExist(ctx context.Context, domain, project string) (bool, error) {
 	return rsp.Count > 0, nil
 }
 
-func NewDomain(ctx context.Context, domain string) error {
-	_, err := backend.Registry().PutNoOverride(ctx,
+func NewDomain(ctx context.Context, domain string) (bool, error) {
+	ok, err := backend.Registry().PutNoOverride(ctx,
 		registry.WithStrKey(apt.GenerateDomainKey(domain)))
 	if err != nil {
-		return err
+		return false, err
 	}
-	return nil
+	return ok, nil
 }
 
-func NewProject(ctx context.Context, domain, project string) error {
-	_, err := backend.Registry().PutNoOverride(ctx,
+func NewProject(ctx context.Context, domain, project string) (bool, error) {
+	ok, err := backend.Registry().PutNoOverride(ctx,
 		registry.WithStrKey(apt.GenerateProjectKey(domain, project)))
 	if err != nil {
-		return err
+		return ok, err
 	}
-	return nil
+	return ok, nil
 }
 
 func NewDomainProject(ctx context.Context, domain, project string) error {
 	copyCtx := util.SetContext(util.CloneContext(ctx), CTX_CACHEONLY, "1")
 	ok, err := DomainExist(copyCtx, domain)
 	if !ok && err == nil {
-		err = NewDomain(ctx, domain)
-		if err == nil {
+		ok, err = NewDomain(ctx, domain)
+		if ok {
 			util.Logger().Infof("new domain(%s)", domain)
 		}
 	}
@@ -114,8 +114,8 @@ func NewDomainProject(ctx context.Context, domain, project string) error {
 	}
 	ok, err = ProjectExist(copyCtx, domain, project)
 	if !ok && err == nil {
-		err = NewProject(ctx, domain, project)
-		if err == nil {
+		ok, err = NewProject(ctx, domain, project)
+		if ok {
 			util.Logger().Infof("new project(%s/%s)", domain, project)
 		}
 	}
