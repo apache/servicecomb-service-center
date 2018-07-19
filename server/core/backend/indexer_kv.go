@@ -22,12 +22,11 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"golang.org/x/net/context"
-	"strings"
 	"sync"
 	"time"
 )
 
-type CacheIndexer struct {
+type cacheIndexer struct {
 	*baseIndexer
 
 	cacher  Cacher
@@ -35,16 +34,15 @@ type CacheIndexer struct {
 	isClose bool
 }
 
-func (i *CacheIndexer) Cacher() Cacher {
+func (i *cacheIndexer) Cacher() Cacher {
 	return i.cacher
 }
 
-func (i *CacheIndexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (*Response, error) {
+func (i *cacheIndexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (*Response, error) {
 	op := registry.OpGet(opts...)
 	key := util.BytesToStringWithNoCopy(op.Key)
-	if strings.Index(key, i.baseIndexer.Cfg.Prefix) != 0 {
-		return nil, fmt.Errorf("search %s mismatch %s pattern %s",
-			key, i.cacher.Cache().Name(), i.baseIndexer.Cfg.Prefix)
+	if err := i.CheckPrefix(key); err != nil {
+		return nil, fmt.Errorf("%s, cache is '%s'", err.Error(), i.cacher.Cache().Name())
 	}
 
 	if !core.ServerInfo.Config.EnableCache ||
@@ -72,7 +70,7 @@ func (i *CacheIndexer) Search(ctx context.Context, opts ...registry.PluginOpOpti
 	return i.baseIndexer.Search(ctx, opts...)
 }
 
-func (i *CacheIndexer) search(op registry.PluginOp) *Response {
+func (i *cacheIndexer) search(op registry.PluginOp) *Response {
 	resp := new(Response)
 
 	key := util.BytesToStringWithNoCopy(op.Key)
@@ -89,19 +87,19 @@ func (i *CacheIndexer) search(op registry.PluginOp) *Response {
 	return resp
 }
 
-func (i *CacheIndexer) searchByPrefix(op registry.PluginOp) *Response {
+func (i *cacheIndexer) searchByPrefix(op registry.PluginOp) *Response {
 	resp := new(Response)
 
 	prefix := util.BytesToStringWithNoCopy(op.Key)
 
-	resp.Count = int64(i.cacher.Cache().GetAll(prefix, nil))
+	resp.Count = int64(i.cacher.Cache().GetPrefix(prefix, nil))
 	if resp.Count == 0 || op.CountOnly {
 		return resp
 	}
 
 	t := time.Now()
 	kvs := make([]*KeyValue, 0, resp.Count)
-	i.cacher.Cache().GetAll(prefix, &kvs)
+	i.cacher.Cache().GetPrefix(prefix, &kvs)
 
 	util.LogNilOrWarnf(t, "too long to index data[%d] from cache '%s'", len(kvs), i.cacher.Cache().Name())
 
@@ -109,7 +107,7 @@ func (i *CacheIndexer) searchByPrefix(op registry.PluginOp) *Response {
 	return resp
 }
 
-func (i *CacheIndexer) Run() {
+func (i *cacheIndexer) Run() {
 	i.lock.Lock()
 	if !i.isClose {
 		i.lock.Unlock()
@@ -121,7 +119,7 @@ func (i *CacheIndexer) Run() {
 	i.cacher.Run()
 }
 
-func (i *CacheIndexer) Stop() {
+func (i *cacheIndexer) Stop() {
 	i.lock.Lock()
 	if i.isClose {
 		i.lock.Unlock()
@@ -133,22 +131,6 @@ func (i *CacheIndexer) Stop() {
 	i.cacher.Stop()
 }
 
-func (i *CacheIndexer) Ready() <-chan struct{} {
+func (i *cacheIndexer) Ready() <-chan struct{} {
 	return i.cacher.Ready()
-}
-
-func NewCacheIndexer(name string, cfg *Config) (indexer *CacheIndexer) {
-	indexer = &CacheIndexer{
-		baseIndexer: NewBaseIndexer(cfg),
-		cacher:      NullCacher,
-		isClose:     true,
-	}
-
-	switch {
-	case core.ServerInfo.Config.EnableCache && cfg.InitSize > 0:
-		indexer.cacher = NewKvCacher(name, cfg)
-	default:
-		util.Logger().Infof("service center will not cache '%s'", name)
-	}
-	return
 }

@@ -24,15 +24,12 @@ var (
 type nullCache struct {
 }
 
-func (n *nullCache) Name() string                                         { return "null" }
+func (n *nullCache) Name() string                                         { return "NULL" }
 func (n *nullCache) Size() int                                            { return 0 }
-func (n *nullCache) RLock()                                               {}
-func (n *nullCache) RUnlock()                                             {}
 func (n *nullCache) Get(k string) *KeyValue                               { return nil }
-func (n *nullCache) GetAll(prefix string, arr *[]*KeyValue) int           { return 0 }
+func (n *nullCache) GetAll(arr *[]*KeyValue) int                          { return 0 }
+func (n *nullCache) GetPrefix(prefix string, arr *[]*KeyValue) int        { return 0 }
 func (n *nullCache) ForEach(iter func(k string, v *KeyValue) (next bool)) {}
-func (n *nullCache) Lock()                                                {}
-func (n *nullCache) Unlock()                                              {}
 func (n *nullCache) Put(k string, v *KeyValue)                            {}
 func (n *nullCache) Remove(k string)                                      {}
 

@@ -33,6 +33,9 @@ func (kv *KeyValue) From(p *Parser, s *mvccpb.KeyValue) (err error) {
 	kv.Version = s.Version
 	kv.CreateRevision = s.CreateRevision
 	kv.ModRevision = s.ModRevision
+	if p == nil {
+		return
+	}
 	kv.Value, err = p.Unmarshal(s.Value)
 	return
 }

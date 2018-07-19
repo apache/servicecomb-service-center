@@ -16,7 +16,23 @@
  */
 package backend
 
-import "testing"
+import (
+	"context"
+	"testing"
+)
+
+func TestStore(t *testing.T) {
+	s := &KvStore{}
+	s.Initialize()
+	e := s.Entity(999)
+	if e == nil {
+		t.Fatalf("TestStore failed")
+	}
+	resp, err := e.Search(context.Background())
+	if resp != nil || err != ErrNoImpl {
+		t.Fatalf("TestStore failed")
+	}
+}
 
 type extend struct {
 }
@@ -30,16 +46,21 @@ func (e *extend) Config() *Config {
 }
 
 func TestInstallType(t *testing.T) {
-	id, err := InstallType(&extend{})
+	s := &KvStore{}
+	s.Initialize()
+	id, err := s.Install(&extend{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if id == NONEXIST {
+	if id == NOT_EXIST {
 		t.Fatal(err)
 	}
+	if id.String() != "test" {
+		t.Fatalf("TestInstallType failed")
+	}
 
-	id, err = InstallType(&extend{})
-	if id != NONEXIST || err == nil {
-		t.Fatal("InstallType fail", err)
+	id, err = s.Install(&extend{})
+	if id != NOT_EXIST || err == nil {
+		t.Fatal("installType fail", err)
 	}
 }

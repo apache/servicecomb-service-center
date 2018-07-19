@@ -16,27 +16,34 @@
  */
 package backend
 
-type Entity interface {
-	Name() string
-	Config() *Config
-}
+import (
+	"context"
+	"fmt"
+	errorsEx "github.com/apache/incubator-servicecomb-service-center/pkg/errors"
+	"testing"
+	"time"
+)
 
-type entity struct {
-	name string
-	cfg  *Config
-}
+func TestLeaseTask_Do(t *testing.T) {
+	now := time.Now().UTC()
+	c := &mockRegistry{}
+	lt := &LeaseTask{
+		Client:   c,
+		key:      ToLeaseAsyncTaskKey("/a"),
+		LeaseID:  1,
+		recvSec:  now.Unix(),
+		recvNsec: int64(now.Nanosecond()),
+	}
 
-func (e *entity) Name() string {
-	return e.name
-}
+	c.LeaseErr = errorsEx.InternalError("lease not found")
+	err := lt.Do(context.Background())
+	if err != nil || lt.Err() != nil {
+		t.Fatalf("TestLeaseTask_Do failed")
+	}
 
-func (e *entity) Config() *Config {
-	return e.cfg
-}
-
-func NewEntity(name string, cfg *Config) Entity {
-	return &entity{
-		name: name,
-		cfg:  cfg,
+	c.LeaseErr = fmt.Errorf("network error")
+	err = lt.Do(context.Background())
+	if err == nil || lt.Err() == nil {
+		t.Fatalf("TestLeaseTask_Do failed")
 	}
 }

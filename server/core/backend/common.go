@@ -17,6 +17,7 @@
 package backend
 
 import (
+	"errors"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"strconv"
 	"time"
@@ -46,6 +47,11 @@ const TIME_FORMAT = "15:04:05.000"
 
 const EVENT_BUS_MAX_SIZE = 1000
 
+// errors
+var (
+	ErrNoImpl = errors.New("no implement")
+)
+
 var closedCh = make(chan struct{})
 
 func init() {
@@ -56,7 +62,7 @@ type StoreType int
 
 func (st StoreType) String() string {
 	if int(st) < 0 {
-		return "NONEXIST"
+		return "NOT_EXIST"
 	}
 	if int(st) < len(TypeNames) {
 		return TypeNames[st]
@@ -64,7 +70,7 @@ func (st StoreType) String() string {
 	return "TYPE" + strconv.Itoa(int(st))
 }
 
-const NONEXIST = StoreType(-1)
+const NOT_EXIST = StoreType(-1)
 
 const (
 	DOMAIN StoreType = iota

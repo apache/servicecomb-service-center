@@ -23,14 +23,14 @@ import (
 )
 
 type Config struct {
-	Prefix             string
-	InitSize           int
-	NoEventMaxInterval int
-	Timeout            time.Duration
-	Period             time.Duration
-	DeferHandler       DeferHandler
-	OnEvent            KvEventFunc
-	Parser             *Parser
+	Prefix         string
+	InitSize       int
+	NoEventPeriods int
+	Timeout        time.Duration
+	Period         time.Duration
+	DeferHandler   DeferHandler
+	OnEvent        KvEventFunc
+	Parser         *Parser
 }
 
 func (cfg *Config) String() string {
@@ -68,6 +68,11 @@ func (cfg *Config) WithEventFunc(f KvEventFunc) *Config {
 	return cfg
 }
 
+func (cfg *Config) WithNoEventPeriods(p int) *Config {
+	cfg.NoEventPeriods = p
+	return cfg
+}
+
 func (cfg *Config) AppendEventFunc(f KvEventFunc) *Config {
 	if prev := cfg.OnEvent; prev != nil {
 		next := f
@@ -87,12 +92,12 @@ func (cfg *Config) WithParser(parser *Parser) *Config {
 
 func DefaultConfig() *Config {
 	return &Config{
-		Prefix:             "/",
-		Timeout:            DEFAULT_LISTWATCH_TIMEOUT,
-		Period:             time.Second,
-		NoEventMaxInterval: DEFAULT_MAX_NO_EVENT_INTERVAL,
-		InitSize:           DEFAULT_CACHE_INIT_SIZE,
-		Parser:             BytesParser,
+		Prefix:         "/",
+		Timeout:        DEFAULT_LISTWATCH_TIMEOUT,
+		Period:         time.Second,
+		NoEventPeriods: DEFAULT_MAX_NO_EVENT_INTERVAL,
+		InitSize:       DEFAULT_CACHE_INIT_SIZE,
+		Parser:         BytesParser,
 	}
 }
 

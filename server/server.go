@@ -18,12 +18,10 @@ package server
 
 import _ "github.com/apache/incubator-servicecomb-service-center/server/service/event"
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/apache/incubator-servicecomb-service-center/server/mux"
 	nf "github.com/apache/incubator-servicecomb-service-center/server/service/notification"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
@@ -67,42 +65,9 @@ func (s *ServiceCenterServer) waitForQuit() {
 	s.Stop()
 }
 
-func LoadServerInformation() error {
-	resp, err := backend.Registry().Do(context.Background(),
-		registry.GET, registry.WithStrKey(core.GetServerInfoKey()))
-	if err != nil {
-		return err
-	}
-	if len(resp.Kvs) == 0 {
-		return nil
-	}
-
-	err = json.Unmarshal(resp.Kvs[0].Value, core.ServerInfo)
-	if err != nil {
-		util.Logger().Errorf(err, "load system config failed, maybe incompatible")
-		return nil
-	}
-	return nil
-}
-
-func UpgradeServerVersion() error {
-	core.ServerInfo.Version = version.Ver().Version
-
-	bytes, err := json.Marshal(core.ServerInfo)
-	if err != nil {
-		return err
-	}
-	_, err = backend.Registry().Do(context.Background(),
-		registry.PUT, registry.WithStrKey(core.GetServerInfoKey()), registry.WithValue(bytes))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (s *ServiceCenterServer) needUpgrade() bool {
 	if core.ServerInfo.Version == "0" {
-		err := LoadServerInformation()
+		err := LoadServerVersion()
 		if err != nil {
 			util.Logger().Errorf(err, "check version failed, can not load the system config")
 			return false
@@ -112,15 +77,8 @@ func (s *ServiceCenterServer) needUpgrade() bool {
 		fmt.Sprintf("%s+", version.Ver().Version))
 }
 
-func (s *ServiceCenterServer) initialize() {
-	s.store = backend.Store()
-	s.notifyService = nf.GetNotifyService()
-	s.apiServer = GetAPIServer()
-	s.goroutine = util.NewGo(context.Background())
-
-	// check version
+func (s *ServiceCenterServer) loadOrUpgradeServerVersion() {
 	lock, err := mux.Lock(mux.GLOBAL_LOCK)
-	defer lock.Unlock()
 	if err != nil {
 		util.Logger().Errorf(err, "wait for server ready failed")
 		os.Exit(1)
@@ -128,6 +86,17 @@ func (s *ServiceCenterServer) initialize() {
 	if s.needUpgrade() {
 		UpgradeServerVersion()
 	}
+	lock.Unlock()
+}
+
+func (s *ServiceCenterServer) initialize() {
+	s.store = backend.Store()
+	s.notifyService = nf.GetNotifyService()
+	s.apiServer = GetAPIServer()
+	s.goroutine = util.NewGo(context.Background())
+
+	// check version
+	s.loadOrUpgradeServerVersion()
 
 	// cache mechanism
 	s.store.Run()

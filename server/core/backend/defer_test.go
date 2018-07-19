@@ -42,7 +42,7 @@ func TestInstanceEventDeferHandler_OnCondition(t *testing.T) {
 func TestInstanceEventDeferHandler_HandleChan(t *testing.T) {
 	b := &pb.MicroServiceInstance{
 		HealthCheck: &pb.HealthCheck{
-			Interval: 4,
+			Interval: 3,
 			Times:    0,
 		},
 	}
@@ -140,7 +140,7 @@ func TestInstanceEventDeferHandler_HandleChan(t *testing.T) {
 
 	getEvents(t, iedh)
 
-	iedh.Percent = 0.8
+	iedh.Percent = 0.9
 	iedh.OnCondition(cache, evts1)
 	iedh.OnCondition(cache, evts2)
 	iedh.OnCondition(cache, evts3)
@@ -150,12 +150,12 @@ func TestInstanceEventDeferHandler_HandleChan(t *testing.T) {
 
 func getEvents(t *testing.T, iedh *InstanceEventDeferHandler) {
 	fmt.Println(time.Now())
-	c := time.After(3 * time.Second)
+	c := time.After(3500 * time.Millisecond)
 	var evt3 *KvEvent
 	for {
 		select {
 		case evt := <-iedh.HandleChan():
-			fmt.Println(time.Now(), evt)
+			fmt.Println(time.Now(), evt.Type, string(evt.KV.Key))
 			if string(evt.KV.Key) == "/3" {
 				evt3 = &evt
 				if iedh.Percent == 0.01 && evt.Type == pb.EVT_DELETE {
@@ -164,8 +164,8 @@ func getEvents(t *testing.T, iedh *InstanceEventDeferHandler) {
 			}
 			continue
 		case <-c:
-			if iedh.Percent == 0.8 && evt3 == nil {
-				t.Fatalf(`TestInstanceEventDeferHandler_HandleChan with 80%% failed`)
+			if iedh.Percent == 0.9 && evt3 == nil {
+				t.Fatalf(`TestInstanceEventDeferHandler_HandleChan with 90%% failed`)
 			}
 		}
 		break

@@ -14,49 +14,47 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package backend
+package server
 
 import (
+	"encoding/json"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
+	"github.com/apache/incubator-servicecomb-service-center/version"
 	"golang.org/x/net/context"
 )
 
-type Response struct {
-	Kvs   []*KeyValue
-	Count int64
-}
-
-func (pr *Response) MaxModRevision() (max int64) {
-	for _, kv := range pr.Kvs {
-		if max < kv.ModRevision {
-			max = kv.ModRevision
-		}
+func LoadServerVersion() error {
+	resp, err := backend.Registry().Do(context.Background(),
+		registry.GET, registry.WithStrKey(core.GetServerInfoKey()))
+	if err != nil {
+		return err
 	}
-	return
-}
-
-type Indexer interface {
-	Cacher() Cacher
-	Search(ctx context.Context, opts ...registry.PluginOpOption) (*Response, error)
-	Run()
-	Stop()
-	Ready() <-chan struct{}
-}
-
-func NewIndexer(name string, cfg *Config) Indexer {
-	ci := &cacheIndexer{
-		baseIndexer: newBaseIndexer(cfg),
-		cacher:      NullCacher,
-		isClose:     true,
+	if len(resp.Kvs) == 0 {
+		return nil
 	}
 
-	switch {
-	case core.ServerInfo.Config.EnableCache && cfg.InitSize > 0:
-		ci.cacher = NewKvCacher(name, cfg)
-	default:
-		util.Logger().Infof("core will not cache '%s' and ignore all events of it", name)
+	err = json.Unmarshal(resp.Kvs[0].Value, core.ServerInfo)
+	if err != nil {
+		util.Logger().Errorf(err, "load server version failed, maybe incompatible")
+		return nil
 	}
-	return ci
+	return nil
+}
+
+func UpgradeServerVersion() error {
+	core.ServerInfo.Version = version.Ver().Version
+
+	bytes, err := json.Marshal(core.ServerInfo)
+	if err != nil {
+		return err
+	}
+	_, err = backend.Registry().Do(context.Background(),
+		registry.PUT, registry.WithStrKey(core.GetServerInfoKey()), registry.WithValue(bytes))
+	if err != nil {
+		return err
+	}
+	return nil
 }

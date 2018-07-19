@@ -16,27 +16,20 @@
  */
 package backend
 
-type Entity interface {
-	Name() string
-	Config() *Config
+import (
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
+	"golang.org/x/net/context"
+)
+
+var NullIndexer = &nullIndexer{}
+
+type nullIndexer struct {
 }
 
-type entity struct {
-	name string
-	cfg  *Config
+func (n *nullIndexer) Cacher() Cacher { return NullCacher }
+func (n *nullIndexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (*Response, error) {
+	return nil, ErrNoImpl
 }
-
-func (e *entity) Name() string {
-	return e.name
-}
-
-func (e *entity) Config() *Config {
-	return e.cfg
-}
-
-func NewEntity(name string, cfg *Config) Entity {
-	return &entity{
-		name: name,
-		cfg:  cfg,
-	}
-}
+func (n *nullIndexer) Run()                   {}
+func (n *nullIndexer) Stop()                  {}
+func (n *nullIndexer) Ready() <-chan struct{} { return closedCh }

@@ -42,7 +42,7 @@ func init() {
 	prometheus.MustRegister(cacheSizeGauge)
 }
 
-func ReportCacheMetrics(resource, t string, obj interface{}) {
+func ReportCacheSize(resource, t string, s int) {
 	if len(core.Instance.Endpoints) == 0 || len(resource) == 0 {
 		// endpoints list will be empty when initializing
 		// resource may be empty when report SCHEMA
@@ -52,5 +52,5 @@ func ReportCacheMetrics(resource, t string, obj interface{}) {
 	once.Do(func() {
 		instance, _ = util.ParseEndpoint(core.Instance.Endpoints[0])
 	})
-	cacheSizeGauge.WithLabelValues(instance, resource, t).Set(float64(util.Sizeof(obj)))
+	cacheSizeGauge.WithLabelValues(instance, resource, t).Set(float64(s))
 }
