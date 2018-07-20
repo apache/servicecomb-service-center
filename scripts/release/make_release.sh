@@ -228,7 +228,7 @@ build_mac(){
     cp -r frontend/app $PACKAGE_PREFIX-$PACKAGE-darwin-amd64/
 
     ## Copy Start Scripts
-    cp -r scripts/release/start_scripts/linux/* $PACKAGE_PREFIX-$PACKAGE-darwin-amd64/
+    cp -r scripts/release/start_scripts/mac/* $PACKAGE_PREFIX-$PACKAGE-darwin-amd64/
     chmod +x $PACKAGE_PREFIX-$PACKAGE-darwin-amd64/*.sh
 
     ## Archive the release
