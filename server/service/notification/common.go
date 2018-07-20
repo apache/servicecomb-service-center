@@ -22,9 +22,10 @@ import (
 )
 
 const (
-	DEFAULT_MAX_QUEUE       = 1000
-	DEFAULT_ADD_JOB_TIMEOUT = 1 * time.Second
-	DEFAULT_SEND_TIMEOUT    = 30 * time.Second
+	DEFAULT_MAX_QUEUE          = 1000
+	DEFAULT_ADD_JOB_TIMEOUT    = 1 * time.Second
+	DEFAULT_SEND_TIMEOUT       = 5 * time.Second
+	DEFAULT_HEARTBEAT_INTERVAL = 30 * time.Second
 )
 
 const (

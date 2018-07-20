@@ -29,20 +29,27 @@ import (
 )
 
 type WebSocket struct {
-	ctx             context.Context
-	ticker          *time.Ticker
-	conn            *websocket.Conn
+	ctx    context.Context
+	ticker *time.Ticker
+	conn   *websocket.Conn
+	// watcher subscribe the notification service event
 	watcher         *ListWatcher
 	needPingWatcher bool
+	free            chan struct{}
 	closed          chan struct{}
 }
 
 func (wh *WebSocket) Init() error {
-	wh.ticker = time.NewTicker(wh.Timeout())
+	wh.ticker = time.NewTicker(DEFAULT_HEARTBEAT_INTERVAL)
+	wh.needPingWatcher = true
+	wh.free = make(chan struct{}, 1)
+	wh.closed = make(chan struct{})
+
+	wh.SetReady()
 
 	remoteAddr := wh.conn.RemoteAddr().String()
 
-	// subscribe backend
+	// put in notification service queue
 	if err := GetNotifyService().AddSubscriber(wh.watcher); err != nil {
 		err = fmt.Errorf("establish[%s] websocket watch failed: notify service error, %s",
 			remoteAddr, err.Error())
@@ -55,7 +62,7 @@ func (wh *WebSocket) Init() error {
 		return err
 	}
 
-	// publish events
+	// put in publisher queue
 	publisher.Accept(wh)
 
 	util.Logger().Debugf("start watching instance status, watcher[%s], subject: %s, group: %s",
@@ -83,8 +90,6 @@ func (wh *WebSocket) heartbeat(messageType int) error {
 }
 
 func (wh *WebSocket) HandleWatchWebSocketControlMessage() {
-	defer close(wh.closed)
-
 	remoteAddr := wh.conn.RemoteAddr().String()
 	// PING
 	wh.conn.SetPingHandler(func(message string) error {
@@ -103,14 +108,15 @@ func (wh *WebSocket) HandleWatchWebSocketControlMessage() {
 	})
 	// CLOSE
 	wh.conn.SetCloseHandler(func(code int, text string) error {
-		util.Logger().Warnf(nil, "watcher[%s] active closed, subject: %s, group: %s",
-			remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
+		util.Logger().Infof("watcher[%s] active closed, code: %d, message: '%s', subject: %s, group: %s",
+			remoteAddr, code, text, wh.watcher.Subject(), wh.watcher.Group())
 		return wh.sendClose(code, text)
 	})
 
 	for {
 		_, _, err := wh.conn.ReadMessage()
 		if err != nil {
+			// client close or conn broken
 			wh.watcher.SetError(err)
 			return
 		}
@@ -132,24 +138,36 @@ func (wh *WebSocket) sendClose(code int, text string) error {
 	return nil
 }
 
+// Pick will be called by publisher
 func (wh *WebSocket) Pick() interface{} {
-	if wh.watcher.Err() != nil {
-		return wh.watcher.Err()
-	}
 	select {
-	case t := <-wh.ticker.C:
-		return t
-	case j := <-wh.watcher.Job:
-		if j == nil {
-			return fmt.Errorf("server shutdown")
+	case <-wh.Ready():
+		if wh.watcher.Err() != nil {
+			return wh.watcher.Err()
 		}
-		return j
+
+		select {
+		case t := <-wh.ticker.C:
+			return t
+		case j := <-wh.watcher.Job:
+			if j == nil {
+				return fmt.Errorf("server shutdown")
+			}
+			return j
+		default:
+			// reset if idle
+			wh.SetReady()
+		}
 	default:
-		return nil
 	}
+
+	return nil
 }
 
+// HandleWatchWebSocketJob will be called if Pick() returns not nil
 func (wh *WebSocket) HandleWatchWebSocketJob(o interface{}) {
+	defer wh.SetReady()
+
 	remoteAddr := wh.conn.RemoteAddr().String()
 	var message []byte
 
@@ -163,9 +181,7 @@ func (wh *WebSocket) HandleWatchWebSocketJob(o interface{}) {
 	case time.Time:
 		domainProject := util.ParseDomainProject(wh.ctx)
 		if !serviceUtil.ServiceExist(wh.ctx, domainProject, wh.watcher.Group()) {
-			err := fmt.Errorf("Service does not exit.")
-			wh.watcher.SetError(err)
-			message = util.StringToBytesWithNoCopy(err.Error())
+			message = util.StringToBytesWithNoCopy("Service does not exit.")
 			break
 		}
 
@@ -175,10 +191,7 @@ func (wh *WebSocket) HandleWatchWebSocketJob(o interface{}) {
 
 		util.Logger().Debugf("send 'Ping' message to watcher[%s], subject: %s, group: %s",
 			remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
-		err := wh.heartbeat(websocket.PingMessage)
-		if err != nil {
-			wh.watcher.SetError(err)
-		}
+		wh.heartbeat(websocket.PingMessage)
 		return
 	case *WatchJob:
 		job := o.(*WatchJob)
@@ -194,13 +207,15 @@ func (wh *WebSocket) HandleWatchWebSocketJob(o interface{}) {
 		resp.Response = nil
 		data, err := json.Marshal(resp)
 		if err != nil {
-			wh.watcher.SetError(err)
+			util.Logger().Errorf(err, "watcher[%s] watch %s, subject: %s, group: %s",
+				remoteAddr, providerFlag, o, wh.watcher.Subject(), wh.watcher.Group())
 			message = util.StringToBytesWithNoCopy(fmt.Sprintf("marshal output file error, %s", err.Error()))
 			break
 		}
 		message = data
 	default:
-		wh.watcher.SetError(fmt.Errorf("unknown input %v", o))
+		util.Logger().Errorf(nil, "watcher[%s] unknown input %v, subject: %s, group: %s",
+			remoteAddr, o, wh.watcher.Subject(), wh.watcher.Group())
 		return
 	}
 
@@ -217,14 +232,27 @@ func (wh *WebSocket) HandleWatchWebSocketJob(o interface{}) {
 	}
 }
 
+func (wh *WebSocket) Ready() <-chan struct{} {
+	return wh.free
+}
+
+func (wh *WebSocket) SetReady() {
+	select {
+	case wh.free <- struct{}{}:
+	default:
+	}
+}
+
+func (wh *WebSocket) Stop() {
+	close(wh.closed)
+}
+
 func DoWebSocketListAndWatch(ctx context.Context, serviceId string, f func() ([]*pb.WatchInstanceResponse, int64), conn *websocket.Conn) {
 	domainProject := util.ParseDomainProject(ctx)
 	socket := &WebSocket{
-		ctx:             ctx,
-		conn:            conn,
-		watcher:         NewListWatcher(serviceId, apt.GetInstanceRootKey(domainProject)+"/", f),
-		needPingWatcher: true,
-		closed:          make(chan struct{}),
+		ctx:     ctx,
+		conn:    conn,
+		watcher: NewListWatcher(serviceId, apt.GetInstanceRootKey(domainProject)+"/", f),
 	}
 	process(socket)
 }
@@ -233,7 +261,10 @@ func process(socket *WebSocket) {
 	if err := socket.Init(); err != nil {
 		return
 	}
+
 	socket.HandleWatchWebSocketControlMessage()
+
+	socket.Stop()
 }
 
 func EstablishWebSocketError(conn *websocket.Conn, err error) {
