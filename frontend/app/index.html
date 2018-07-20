@@ -15,11 +15,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <!doctype html>
-<html>
+<html ng-app="serviceCenter">
 
 <head>
     <meta charset="utf-8">
-    <title></title>
+    <title>{{ "serviceCenter" | translate }}</title>
     <meta name="description" content="Service-Center Management Console">
     <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
     <link rel="stylesheet" href="bower_components/angular-material/angular-material.css" />
@@ -27,11 +27,12 @@ limitations under the License.
     <link rel="stylesheet" href="bower_components/components-font-awesome/css/font-awesome.css" />
     <link rel="stylesheet" href="bower_components/angular-swagger-ui/dist/css/swagger-ui.min.css" />
     <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="bower_components/vis/dist/vis.min.css">
+    <link rel="stylesheet" href="bower_components/css-percentage-circle/css/circle.css">
     <link rel="stylesheet" href="styles/main.css">
-
 </head>
 
-<body ng-app="serviceCenter">
+<body>
 <!--[if lte IE 8]>
 <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
 <![endif]-->
@@ -57,19 +58,16 @@ limitations under the License.
 <script src="bower_components/angular-translate-loader-static-files/angular-translate-loader-static-files.js"></script>
 <script src="bower_components/angular-material/angular-material.js"></script>
 <script src="bower_components/angular-material-data-table/dist/md-data-table.js"></script>
-<script src="bower_components/chart.js/dist/Chart.js"></script>
-<script src="bower_components/angular-chart.js/dist/angular-chart.js"></script>
 <script src="bower_components/angular-swagger-ui/dist/scripts/swagger-ui.js"></script>
 <script src="bower_components/angular-yamljs/dist/angular-yamljs.js"></script>
+<script src="bower_components/yaml.js/dist/yaml.js"></script>
 <script src="bower_components/angular-swagger-ui/dist/scripts/modules/swagger-yaml-parser.min.js"></script>
 <script src="bower_components/jszip/vendor/FileSaver.js"></script>
 <script src="bower_components/jszip/dist/jszip.min.js"></script>
-
-
 <script src="bower_components/js-yaml/dist/js-yaml.min.js"></script>
 <script src="bower_components/swagger-ui/dist/swagger-ui-bundle.js"></script>
 <script src="bower_components/swagger-ui/dist/swagger-ui-standalone-preset.js"></script>
-<script src="bower_components/yaml.js/dist/yaml.js"></script>
+<script src="bower_components/vis/dist/vis.min.js"></script>
 <!-- build:js({.tmp,app}) scripts/scripts.js -->
 <script src="scripts/app.js"></script>
 <!-- Load common services -->
@@ -87,6 +85,10 @@ limitations under the License.
 <script src="scripts/modules/serviceCenter/controllers/schemaCtrl.js"></script>
 <!-- Load all the serviceCenter modules filter files here -->
 <script src="scripts/modules/serviceCenter/filters/formatSchema.js"></script>
+<!-- Load all the instances modules controller files here -->
+<script src="scripts/modules/instances/controllers/instancesCtrl.js"></script>
+<!-- Load all the topology modules controller files here -->
+<script src="scripts/modules/topology/controllers/topologyCtrl.js"></script>
 <!-- Load the serviceCenter router modules files here -->
 <script src="scripts/scRouterConfig.js"></script>
 <script src="scripts/controllers/serviceCenterCtrl.js"></script>

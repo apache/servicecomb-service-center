@@ -14,14 +14,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<md-content>
+<md-content class="pb-100">
     <md-card>
         <md-toolbar class="table-header">
             <div class="md-toolbar-tools">
                 {{heading | translate}}
                 <span flex></span>
+                <md-select class="pt-5" ng-if="statusList.length > 0" placeholder="Select Status" ng-model="filter.status" ng-change="fnSearch(filter.search, filter.status)">
+                    <md-option ng-repeat="status in statusList" ng-value="status.id">{{status.name}}</md-option>
+                </md-select>
                 <md-button ng-if="(enableSearch && data && (data.length > 0))" class="md-icon-button" ng-click="searchOpen()" ng-hide="showSearch" aria-label="{{ 'search' | translate }}" title="{{ 'search' | translate }}">
-                    <i class="fa fa-search fa-lg"></i>
+                    <i class="fa fa-search fa-lg pl-12"></i>
                 </md-button>
                 <md-button ng-if="refresh" class="md-icon-button" ng-click="reload()" aria-label="{{ 'refresh' | translate }}" title="{{ 'refresh' | translate }}">
                     <i class="fa fa-refresh fa-lg"></i>
@@ -31,7 +34,7 @@ limitations under the License.
         <md-toolbar class="md-table-toolbar md-raised md-default" ng-if="showSearch">
             <div class="md-toolbar-tools">
                 <form flex name="filter.form" class="no-padding">
-                    <input id="search" class="form-control" type="search" ng-model="filter.search" ng-change="fnSearch(filter.search)" autofocus placeholder="{{ 'search' | translate }}" autocomplete="off">
+                    <input id="search" class="form-control" type="search" ng-model="filter.search" ng-change="fnSearch(filter.search, filter.status)" autofocus placeholder="{{ 'search' | translate }}" autocomplete="off">
                 </form>
                 <md-button class="md-icon-button" aria-label="{{ 'close' | translate }}" title="{{ 'close' | translate }}">
                     <md-icon><i class="fa fa-close fa-lg" ng-click="searchClose()"></i></md-icon>
@@ -49,7 +52,7 @@ limitations under the License.
                 </tr>
                 </thead>
                 <tbody>
-                <tr md-row md-select="appData" id="target" data-ng-repeat="appData in data | orderBy: 'serviceName' | limitTo: paginationQuery.limit : (paginationQuery.page - 1) * paginationQuery.limit">
+                <tr md-row md-select="appData" id="target" data-ng-repeat="appData in data | orderBy: ['serviceName', 'instanceHostName'] | limitTo: paginationQuery.limit : (paginationQuery.page - 1) * paginationQuery.limit">
                     <td md-cell ng-repeat="(key, value) in appData">
                             <span ng-if="key == 'serviceName'">
                                 <a ui-sref="sc.info.instance({serviceId:'{{appData.serviceId}}'})">{{appData.serviceName}}</a>
@@ -78,7 +81,7 @@ limitations under the License.
                 </tbody>
             </table>
         </md-table-container>
-        <md-table-pagination ng-if="(data && (data.length != 0))" class="pagination-class" md-limit="paginationQuery.limit" md-limit-options="pagination" md-page="paginationQuery.page" md-total="{{data.length}}" md-page-select="paginationOptions.pageSelect" md-boundary-links="paginationOptions.boundaryLinks" md-label="{page: 'Page:', rowsPerPage: 'Rows Per Page:', of: '&nbsp of &nbsp'}">
+        <md-table-pagination ng-if="(data && (data.length != 0))" class="pagination-class" md-limit="paginationQuery.limit" md-limit-options="pagination" md-page="paginationQuery.page" md-total="{{data.length}}" md-page-select="paginationOptions.pageSelect" md-boundary-links="paginationOptions.boundaryLinks" md-label="{{paginationLabel}}">
         </md-table-pagination>
     </md-card>
 </md-content>

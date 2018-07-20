@@ -15,56 +15,55 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <md-dialog flex="70">
-  <md-toolbar>
-      <div class="md-toolbar-tools">
-        <h2>{{ "schemaTest" | translate }}</h2>
-        <span flex></span>
-        <md-button class="md-icon-button" ng-click="cancel()">
-          <md-icon class="glyphicon glyphicon-remove" aria-label="Close dialog"></md-icon>
-        </md-button>
-      </div>
-  </md-toolbar>
-  <md-dialog-content>
-     <div ng-show="showSchema">
-        <div ng-if="testSchema" class="swaggerDiv" swagger-ui input-type="yaml" input="testSchema" api-explorer="true" 
-          try-it="true"></div>
-       <div ng-if="!testSchema">
-        <h2 class="text-center">{{ "noSchemaExists" | translate }}</h2>
-       </div>
-      </div>
-      
-      <div ng-show="!showSchema">
-        <div ng-if="(instances.length > 0)" layout="row" style="margin-top:15px;">
-          <div flex="25"></div>
-          <div flex="50">
-            <label>{{ "instanceName" | translate }}:</label>
-            <select class="form-control" ng-model="selectedInstance" ng-change="setInstance(selectedInstance)">
-              <option ng-repeat="instance in instances" value="{{instance}}"> {{ instance }} </option>
-            </select>
-            <label>{{ "address" | translate }}:</label>
-            <select class="form-control" ng-model="selectedAddress" ng-change="setAddress(selectedAddress)">
-              <option ng-repeat="address in addresses" value="{{address}}"> {{ address }} </option>
-            </select>
-            <p class="highwayErr" ng-if="disableNext">{{"highwayErr" | translate}}</p>
-          </div>
-          <div flex="25"></div>    
-       </div>
-       <div ng-if="(instances.length == 0)">
-          <h3 class="text-center">{{ "noInstance" | translate }}</h3>
-       </div>
-      </div>
+    <md-toolbar>
+        <div class="md-toolbar-tools">
+            <h2>{{ "schemaTest" | translate }}</h2>
+            <span flex></span>
+            <md-button class="md-icon-button" ng-click="cancel()">
+                <md-icon class="glyphicon glyphicon-remove" aria-label="Close dialog"></md-icon>
+            </md-button>
+        </div>
+    </md-toolbar>
+    <md-dialog-content>
+        <div ng-show="showSchema">
+            <div ng-if="testSchema" class="swaggerDiv" swagger-ui input-type="yaml" input="testSchema" api-explorer="true" try-it="true"></div>
+            <div ng-if="!testSchema">
+                <h4 class="text-center">{{ "noSchemaExists" | translate }}</h4>
+            </div>
+        </div>
 
-  </md-dialog-content>
-  <md-dialog-actions layout="row">
-    <span flex></span>
-    <md-button class="md-raised" ng-disabled="disableNext" ng-class="{schemaBtn: !disableNext}" ng-show="(!showSchema) && (instances.length != 0) " ng-click="getSchema()">
-      {{ "next" | translate}}
-    </md-button>
-      <md-button class="schemaBtn" ng-show="showSchema" ng-click="goBack()">
-        {{"back" | translate}}
-      </md-button>
-    <md-button ng-click="cancel()">
-      {{ "close" | translate}}
-    </md-button>
-  </md-dialog-actions>
+        <div ng-show="!showSchema">
+            <div ng-if="(instances.length > 0)" layout="row" style="margin-top:15px;">
+                <div flex="25"></div>
+                <div flex="50">
+                    <label>{{ "instanceName" | translate }}:</label>
+                    <select class="form-control" ng-model="selectedInstance" ng-change="setInstance(selectedInstance)">
+                        <option ng-repeat="instance in instances" value="{{instance}}"> {{ instance }} </option>
+                    </select>
+                    <label>{{ "address" | translate }}:</label>
+                    <select class="form-control" ng-model="selectedAddress" ng-change="setAddress(selectedAddress)">
+                        <option ng-repeat="address in addresses" value="{{address}}"> {{ address }} </option>
+                    </select>
+                    <p class="highwayErr" ng-if="disableNext">{{"highwayErr" | translate}}</p>
+                </div>
+                <div flex="25"></div>
+            </div>
+            <div ng-if="(instances.length == 0)">
+                <h3 class="text-center">{{ "noInstance" | translate }}</h3>
+            </div>
+        </div>
+
+    </md-dialog-content>
+    <md-dialog-actions layout="row">
+        <span flex></span>
+        <md-button class="md-raised" ng-disabled="disableNext" ng-class="{schemaBtn: !disableNext}" ng-show="(!showSchema) && (instances.length != 0) " ng-click="getSchema()">
+            {{ "next" | translate}}
+        </md-button>
+        <md-button class="schemaBtn" ng-show="showSchema" ng-click="goBack()">
+            {{"back" | translate}}
+        </md-button>
+        <md-button ng-click="cancel()">
+            {{ "close" | translate}}
+        </md-button>
+    </md-dialog-actions>
 </md-dialog>

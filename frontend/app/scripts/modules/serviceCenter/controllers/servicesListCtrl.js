@@ -46,16 +46,44 @@ angular.module('serviceCenter.sc', [])
                 }
             ];
 
+            $scope.statusList = [{
+                    id: 'ALL STATUS',
+                    name: 'All Status'
+                },
+                {
+                    id: 'UP',
+                    name: 'Up'
+                },
+                {
+                    id: 'DOWN',
+                    name: 'Down'
+                },
+                {
+                    id: 'STARTING',
+                    name: 'Starting'
+                },
+                {
+                    id: 'OUTOFSERVICE',
+                    name: 'Out of service'
+                }
+            ];
+
             $scope.refreshAppList = function() {
                 angular.element(document.querySelector('.fa-refresh')).addClass('fa-spin');
                 $scope.services = [];
                 $scope.getAllServices();
             };
 
-            $scope.searchFn = function(value) {
-                $scope.services = $scope.servicesCopy.filter((service) => {
-                    return service.serviceName.toLowerCase().indexOf(value.toLowerCase()) >= 0;
-                });
+            $scope.searchFn = function(search, status) {
+                if (status == $scope.statusList[0].id) {
+                    $scope.services = $scope.servicesCopy.filter((service) => {
+                        return !search ? service : service.serviceName.toLowerCase().indexOf(search.toLowerCase()) >= 0;
+                    });
+                } else {
+                    $scope.services = $scope.servicesCopy.filter((service) => {
+                        return !search ? service.status.toLowerCase() === status.toLowerCase() : (service.status.toLowerCase() === status.toLowerCase() && service.serviceName.toLowerCase().indexOf(search.toLowerCase()) >= 0);
+                    });
+                }
                 $scope.appList = $scope.services.length <= 0 ? 'empty' : '';
             }
 
@@ -103,14 +131,12 @@ angular.module('serviceCenter.sc', [])
                         $scope.services = [];
                         $scope.servicesCopy = [];
                         response.data.services.forEach(function(service) {
-                            if (filter && service.status === filter) {
-                                processService(service);
-                            }
-                            if (!filter) {
-                                processService(service);
-                            }
+                            processService(service);
                         });
 
+                        if (filter) {
+                            $scope.searchFn('', filter);
+                        }
                         if ($scope.services.length <= 0) {
                             $scope.appList = 'empty';
                         } else {

@@ -16,7 +16,7 @@
  */
 'use strict';
 angular.module('serviceCenter')
-    .directive('tableData', ['$mdDialog', function($mdDialog) {
+    .directive('tableData', ['$rootScope', '$mdDialog', '$state', '$translate', function($rootScope, $mdDialog, $state, $translate) {
         return {
             restrict: 'E',
             scope: {
@@ -31,7 +31,8 @@ angular.module('serviceCenter')
                 enableSearch: '=search',
                 appList: '=appList',
                 apiInfo: '=apiInfo',
-                searchFn: '=searchFn'
+                searchFn: '=searchFn',
+                statusList: '=statusList'
             },
             templateUrl: 'scripts/views/tableData.html',
             link: function(scope) {
@@ -44,6 +45,18 @@ angular.module('serviceCenter')
                     limit: 10,
                     page: 1
                 };
+
+                $rootScope.$on('$translateChangeSuccess', function() {
+                    scope.changePaginationLabel();
+                });
+
+                scope.changePaginationLabel = function() {
+                    scope.paginationLabel = {
+                        page: $translate.instant('page'),
+                        rowsPerPage: $translate.instant('rowsPerPage'),
+                        of: $translate.instant('of')
+                    }
+                }
 
                 scope.paginationOptions = {
                     rowSelection: false,
@@ -60,12 +73,18 @@ angular.module('serviceCenter')
                     options: {
                         debounce: 500
                     },
+                    status: scope.statusList ? scope.statusList[0].id : []
                 };
+
+                if (scope.statusList && scope.statusList.length > 0) {
+                    scope.filter.status = $state.params.status ? $state.params.status : scope.statusList[0].id;
+                }
+
                 scope.showSearch = false;
                 scope.searchClose = function() {
                     scope.showSearch = false;
                     scope.filter.search = "";
-                    scope.refresh();
+                    scope.fnSearch(scope.filter.search, scope.filter.status);
                 };
 
                 scope.searchOpen = function() {
@@ -73,7 +92,12 @@ angular.module('serviceCenter')
                 };
 
                 scope.reload = function() {
+                    scope.showSearch = false;
+                    scope.filter.search = "";
                     scope.refresh();
+                    if (scope.statusList && scope.statusList.length > 0) {
+                        scope.filter.status = $state.params.status ? $state.params.status : scope.statusList[0].id;
+                    }
                 };
 
                 scope.close = function() {
@@ -84,9 +108,11 @@ angular.module('serviceCenter')
                     scope.removes(serviceId, instances)
                 };
 
-                scope.fnSearch = function(searchData) {
-                    scope.searchFn(searchData);
+                scope.fnSearch = function(searchData, status) {
+                    scope.filter.status = status !== undefined ? status : scope.statusList[0].id;
+                    scope.searchFn(searchData, status);
                 }
+
             }
         };
     }]);

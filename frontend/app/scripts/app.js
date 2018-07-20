@@ -16,19 +16,19 @@
  */
 'use strict';
 
-angular.module('serviceCenter', ['ngAnimate', 'ngMaterial', 'ngAria', 'ngMessages', 'ngResource', 'ngSanitize', 'ui.router', 'pascalprecht.translate', 'serviceCenter.router', 
-  'serviceCenter.dashboard', 'serviceCenter.sc', 'md.data.table', 'chart.js', 'swaggerUi', 'mmumshad.yamljs'])
-  .config(['$translateProvider', 'english', 'chinese', function($translateProvider, english, chinese) {
+angular.module('serviceCenter', ['ngAnimate', 'ngMaterial', 'ngAria', 'ngMessages', 'ngResource', 'ngSanitize', 'ui.router', 'pascalprecht.translate', 'serviceCenter.router',
+        'serviceCenter.dashboard', 'serviceCenter.sc', 'serviceCenter.instances', 'serviceCenter.topology', 'md.data.table', 'swaggerUi', 'mmumshad.yamljs'
+    ])
+    .config(['$translateProvider', 'english', 'chinese', function($translateProvider, english, chinese) {
         $translateProvider.useSanitizeValueStrategy(null);
-        
+
         $translateProvider.translations('en', english);
         $translateProvider.translations('cz', chinese);
-  
+
         var lang = "";
-        if(localStorage.getItem("lang") && localStorage.getItem("lang")!= ''){
-            lang= localStorage.getItem("lang");
-        }
-        else if (navigator.language) {
+        if (localStorage.getItem("lang") && localStorage.getItem("lang") != '') {
+            lang = localStorage.getItem("lang");
+        } else if (navigator.language) {
             lang = navigator.language.indexOf("zh") > -1 ? "cz" : "en";
         } else {
             lang = navigator.userLanguage.indexOf("zh") > -1 ? "cz" : "en";
@@ -36,7 +36,7 @@ angular.module('serviceCenter', ['ngAnimate', 'ngMaterial', 'ngAria', 'ngMessage
 
         $translateProvider.preferredLanguage(lang);
     }])
-  .config(['$httpProvider','$injector', '$compileProvider', function($httpProvider,$injector, $compileProvider) {
+    .config(['$httpProvider', '$injector', '$compileProvider', function($httpProvider, $injector, $compileProvider) {
         $httpProvider.defaults.useXDomain = true;
         delete $httpProvider.defaults.headers.common['X-Requested-With'];
 
@@ -47,15 +47,15 @@ angular.module('serviceCenter', ['ngAnimate', 'ngMaterial', 'ngAria', 'ngMessage
         $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|tel|file|blob):/)
 
     }])
-  .config(function($mdThemingProvider) { 
-    $mdThemingProvider.theme('default')
-      .primaryPalette('indigo', {
-        'default': '400',
-        'hue-1': '100',
-        'hue-2': '600', 
-        'hue-3': 'A100' 
-      })
-      .accentPalette('purple', {
-        'default': '200'
-      });
-  });
+    .config(function($mdThemingProvider) {
+        $mdThemingProvider.theme('default')
+            .primaryPalette('indigo', {
+                'default': '400',
+                'hue-1': '100',
+                'hue-2': '600',
+                'hue-3': 'A100'
+            })
+            .accentPalette('purple', {
+                'default': '200'
+            });
+    });
