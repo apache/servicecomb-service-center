@@ -18,13 +18,16 @@ package buildin
 
 import (
 	"crypto/tls"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/security/buildin"
 	"os"
 	"testing"
 )
 
 func init() {
-	sslRoot := "../../../../../etc/ssl/"
+	core.Initialize()
+
+	sslRoot := "../../../../../examples/service_center/ssl/"
 	os.Setenv("SSL_ROOT", sslRoot)
 }
 

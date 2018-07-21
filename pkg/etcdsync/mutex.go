@@ -50,10 +50,11 @@ var (
 	globalMap = make(map[string]*DLockFactory)
 	globalMux sync.Mutex
 	IsDebug   bool
-	hostname  string = util.HostName()
-	pid       int    = os.Getpid()
+	hostname  = util.HostName()
+	pid       = os.Getpid()
 )
 
+// lock will not be release automatically if ttl = 0
 func NewLockFactory(key string, ttl int64) *DLockFactory {
 	if len(key) == 0 {
 		return nil
@@ -81,86 +82,92 @@ func (m *DLockFactory) NewDLock(wait bool) (l *DLock, err error) {
 	for try := 1; try <= DEFAULT_RETRY_TIMES; try++ {
 		err = l.Lock(wait)
 		if err == nil {
-			return l, nil
+			return
 		}
 
 		if !wait {
-			l, err = nil, nil
 			break
 		}
-
-		if try <= DEFAULT_RETRY_TIMES {
-			util.Logger().Warnf(err, "Try to lock key %s again, id=%s", m.key, l.id)
-		} else {
-			util.Logger().Errorf(err, "Lock key %s failed, id=%s", m.key, l.id)
-		}
 	}
+	// failed
+	util.Logger().Errorf(err, "Lock key %s failed, id=%s", m.key, l.id)
+	l = nil
+
 	if !IsDebug {
 		m.mutex.Unlock()
 	}
-	return l, err
+	return
 }
 
 func (m *DLock) ID() string {
 	return m.id
 }
 
-func (m *DLock) Lock(wait bool) error {
+func (m *DLock) Lock(wait bool) (err error) {
 	opts := []registry.PluginOpOption{
 		registry.WithStrKey(m.builder.key),
 		registry.WithStrValue(m.id)}
 
-	for {
-		util.Logger().Infof("Trying to create a lock: key=%s, id=%s", m.builder.key, m.id)
+	util.Logger().Infof("Trying to create a lock: key=%s, id=%s", m.builder.key, m.id)
 
-		putOpts := opts
-		if m.builder.ttl > 0 {
-			leaseID, err := backend.Registry().LeaseGrant(m.builder.ctx, m.builder.ttl)
-			if err != nil {
-				return err
-			}
-			putOpts = append(opts, registry.WithLease(leaseID))
+	var leaseID int64
+	putOpts := opts
+	if m.builder.ttl > 0 {
+		leaseID, err = backend.Registry().LeaseGrant(m.builder.ctx, m.builder.ttl)
+		if err != nil {
+			return err
 		}
-		success, err := backend.Registry().PutNoOverride(m.builder.ctx, putOpts...)
-		if err == nil && success {
-			util.Logger().Infof("Create Lock OK, key=%s, id=%s", m.builder.key, m.id)
-			return nil
-		}
+		putOpts = append(opts, registry.WithLease(leaseID))
+	}
+	success, err := backend.Registry().PutNoOverride(m.builder.ctx, putOpts...)
+	if err == nil && success {
+		util.Logger().Infof("Create Lock OK, key=%s, id=%s", m.builder.key, m.id)
+		return nil
+	}
 
-		if !wait {
-			return fmt.Errorf("Key %s is locked by id=%s", m.builder.key, m.id)
-		}
+	if leaseID > 0 {
+		backend.Registry().LeaseRevoke(m.builder.ctx, leaseID)
+	}
 
-		util.Logger().Warnf(err, "Key %s is locked, waiting for other node releases it, id=%s", m.builder.key, m.id)
+	if m.builder.ttl == 0 || !wait {
+		return fmt.Errorf("Key %s is locked by id=%s", m.builder.key, m.id)
+	}
 
-		ctx, cancel := context.WithTimeout(m.builder.ctx, DEFAULT_LOCK_TTL*time.Second)
-		util.Go(func(context.Context) {
-			defer cancel()
-			err := backend.Registry().Watch(ctx,
-				registry.WithStrKey(m.builder.key),
-				registry.WithWatchCallback(
-					func(message string, evt *registry.PluginResponse) error {
-						if evt != nil && evt.Action == registry.Delete {
-							// break this for-loop, and try to create the node again.
-							return fmt.Errorf("Lock released")
-						}
-						return nil
-					}))
-			if err != nil {
-				util.Logger().Warnf(nil, "%s, key=%s, id=%s", err.Error(), m.builder.key, m.id)
-			}
-		})
-		select {
-		case <-ctx.Done():
-			continue // 可以重新尝试获取锁
-		case <-m.builder.ctx.Done():
-			cancel()
-			return m.builder.ctx.Err() // 机制错误，不应该超时的
+	util.Logger().Warnf(err, "Key %s is locked, waiting for other node releases it, id=%s", m.builder.key, m.id)
+
+	ctx, cancel := context.WithTimeout(m.builder.ctx, time.Duration(m.builder.ttl)*time.Second)
+	util.Go(func(context.Context) {
+		defer cancel()
+		err := backend.Registry().Watch(ctx,
+			registry.WithStrKey(m.builder.key),
+			registry.WithWatchCallback(
+				func(message string, evt *registry.PluginResponse) error {
+					if evt != nil && evt.Action == registry.Delete {
+						// break this for-loop, and try to create the node again.
+						return fmt.Errorf("Lock released")
+					}
+					return nil
+				}))
+		if err != nil {
+			util.Logger().Warnf(nil, "%s, key=%s, id=%s", err.Error(), m.builder.key, m.id)
 		}
+	})
+	select {
+	case <-ctx.Done():
+		return ctx.Err() // 可以重新尝试获取锁
+	case <-m.builder.ctx.Done():
+		cancel()
+		return m.builder.ctx.Err() // 机制错误，不应该超时的
 	}
 }
 
 func (m *DLock) Unlock() (err error) {
+	defer func() {
+		if !IsDebug {
+			m.builder.mutex.Unlock()
+		}
+	}()
+
 	opts := []registry.PluginOpOption{
 		registry.DEL,
 		registry.WithStrKey(m.builder.key)}
@@ -168,23 +175,14 @@ func (m *DLock) Unlock() (err error) {
 	for i := 1; i <= DEFAULT_RETRY_TIMES; i++ {
 		_, err = backend.Registry().Do(m.builder.ctx, opts...)
 		if err == nil {
-			if !IsDebug {
-				m.builder.mutex.Unlock()
-			}
 			util.Logger().Infof("Delete lock OK, key=%s, id=%s", m.builder.key, m.id)
 			return nil
 		}
-		util.Logger().Errorf(err, "Delete lock falied, key=%s, id=%s", m.builder.key, m.id)
+		util.Logger().Errorf(err, "Delete lock failed, key=%s, id=%s", m.builder.key, m.id)
 		e, ok := err.(client.Error)
 		if ok && e.Code == client.ErrorCodeKeyNotFound {
-			if !IsDebug {
-				m.builder.mutex.Unlock()
-			}
 			return nil
 		}
-	}
-	if !IsDebug {
-		m.builder.mutex.Unlock()
 	}
 	return err
 }

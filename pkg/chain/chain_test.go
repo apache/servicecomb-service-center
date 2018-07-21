@@ -14,11 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package chain_test
+package chain
 
 import (
 	"context"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/chain"
+	"errors"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"testing"
 )
@@ -30,14 +30,14 @@ const (
 
 func init() {
 	for i := 0; i < count; i++ {
-		chain.RegisterHandler("_bench_handlers_", &handler{})
+		RegisterHandler("_bench_handlers_", &handler{})
 	}
 }
 
 type handler struct {
 }
 
-func (h *handler) Handle(i *chain.Invocation) {
+func (h *handler) Handle(i *Invocation) {
 	i.Next()
 }
 
@@ -50,9 +50,9 @@ func syncFunc(i int) {
 
 func BenchmarkInvocationOption(b *testing.B) {
 	var (
-		op   chain.InvocationOp
-		f    = func(r chain.Result) {}
-		opts = []chain.InvocationOption{chain.WithFunc(f), chain.WithAsyncFunc(f)}
+		op   InvocationOp
+		f    = func(r Result) {}
+		opts = []InvocationOption{WithFunc(f), WithAsyncFunc(f)}
 	)
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -68,14 +68,14 @@ func BenchmarkInvocationOption(b *testing.B) {
 func BenchmarkChain(b *testing.B) {
 	var (
 		ctx = util.NewStringContext(context.Background())
-		f   = func(r chain.Result) {}
+		f   = func(r Result) {}
 	)
 
 	b.N = times
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			inv := chain.NewInvocation(ctx, chain.NewChain("_bench_chain_", chain.Handlers("_bench_handlers_")))
+			inv := NewInvocation(ctx, NewChain("_bench_chain_", Handlers("_bench_handlers_")))
 			inv.Invoke(f)
 		}
 	})
@@ -93,4 +93,136 @@ func BenchmarkSync(b *testing.B) {
 	})
 	b.ReportAllocs()
 	// 1000000	        46.9 ns/op	       0 B/op	       0 allocs/op
+}
+
+type mockHandler struct {
+}
+
+func (h *mockHandler) Handle(i *Invocation) {
+	x := i.Context().Value("x").(int)
+	switch x {
+	case 1:
+		i.Success(x)
+	case 2:
+		i.Fail(errors.New("error"), x)
+	case 3:
+		i.Next(WithFunc(func(r Result) {
+			i.WithContext("x", x*x)
+		}))
+	case 4:
+		i.Next(WithAsyncFunc(func(r Result) {
+			i.WithContext("x", x*x)
+			i.Context().Value("ch").(chan struct{}) <- struct{}{}
+		}))
+	case 5:
+		panic(errors.New("error"))
+	case 6:
+		i.Next(WithFunc(func(r Result) {
+			panic(errors.New("error"))
+		}))
+	case 7:
+		i.Next(WithAsyncFunc(func(r Result) {
+			panic(errors.New("error"))
+		}))
+	default:
+		i.WithContext("x", x-1)
+		i.Next()
+	}
+}
+
+func TestChain_Next(t *testing.T) {
+	h := &mockHandler{}
+	hs := Handlers("test")
+	hs = []Handler{h, h, h}
+
+	x := 0
+	ch := NewChain("test", hs)
+	if ch.Name() != "test" {
+		t.Fatalf("TestChain_Next")
+	}
+	i := NewInvocation(context.Background(), ch)
+	i.WithContext("x", x)
+	i.Invoke(func(r Result) {
+		if !r.OK || i.Context().Value("x").(int) != -len(hs) {
+			t.Fatalf("TestChain_Next")
+		}
+	})
+
+	x = 1
+	ch = NewChain("test", hs)
+	i = NewInvocation(context.Background(), ch)
+	i.WithContext("x", x)
+	i.Invoke(func(r Result) {
+		if !r.OK || r.Args[0].(int) != x {
+			t.Fatalf("TestChain_Next")
+		}
+	})
+
+	x = 2
+	ch = NewChain("test", hs)
+	i = NewInvocation(context.Background(), ch)
+	i.WithContext("x", x)
+	i.Invoke(func(r Result) {
+		if r.OK || r.Args[0].(int) != x {
+			t.Fatalf("TestChain_Next")
+		}
+	})
+
+	x = 3
+	ch = NewChain("test", hs)
+	i = NewInvocation(context.Background(), ch)
+	i.WithContext("x", x)
+	i.Invoke(func(r Result) {
+		if !r.OK || i.Context().Value("x").(int) != x {
+			t.Fatalf("TestChain_Next")
+		}
+	})
+	if i.Context().Value("x").(int) != x*x {
+		t.Fatalf("TestChain_Next")
+	}
+
+	x = 4
+	ch = NewChain("test", hs)
+	i = NewInvocation(context.Background(), ch)
+	i.WithContext("x", x)
+	i.WithContext("ch", make(chan struct{}))
+	i.Invoke(func(r Result) {
+		if !r.OK || i.Context().Value("x").(int) != x {
+			t.Fatalf("TestChain_Next")
+		}
+	})
+	<-i.Context().Value("ch").(chan struct{})
+	if i.Context().Value("x").(int) != x*x {
+		t.Fatalf("TestChain_Next")
+	}
+
+	x = 5
+	ch = NewChain("test", hs)
+	i = NewInvocation(context.Background(), ch)
+	i.WithContext("x", x)
+	i.Invoke(func(r Result) {
+		if r.OK || r.Err == nil {
+			t.Fatalf("TestChain_Next")
+		}
+	})
+
+	x = 6
+	ch = NewChain("test", hs)
+	i = NewInvocation(context.Background(), ch)
+	i.WithContext("x", x)
+	i.Invoke(func(r Result) {
+		if !r.OK || r.Err != nil {
+			t.Fatalf("TestChain_Next")
+		}
+	})
+
+	x = 7
+	ch = NewChain("test", hs)
+	i = NewInvocation(context.Background(), ch)
+	i.WithContext("x", x)
+	i.Invoke(func(r Result) {
+		if !r.OK || r.Err != nil {
+			t.Fatalf("TestChain_Next")
+		}
+	})
 }

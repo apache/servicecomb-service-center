@@ -120,7 +120,7 @@ func GetInfoFromInstKV(kv *KeyValue) (serviceId, instanceId, domainProject strin
 func GetInfoFromDomainKV(kv *KeyValue) (domain string) {
 	keys := KvToResponse(kv)
 	l := len(keys)
-	if l < 1 {
+	if l < 2 {
 		return
 	}
 	domain = keys[l-1]
@@ -179,7 +179,7 @@ func GetInfoFromSvcIndexKV(kv *KeyValue) (key *pb.MicroServiceKey) {
 func GetInfoFromSchemaSummaryKV(kv *KeyValue) (schemaId string) {
 	keys := KvToResponse(kv)
 	l := len(keys)
-	if l < 1 {
+	if l < 2 {
 		return
 	}
 
@@ -189,7 +189,7 @@ func GetInfoFromSchemaSummaryKV(kv *KeyValue) (schemaId string) {
 func GetInfoFromSchemaKV(kv *KeyValue) (schemaId string) {
 	keys := KvToResponse(kv)
 	l := len(keys)
-	if l < 1 {
+	if l < 2 {
 		return
 	}
 

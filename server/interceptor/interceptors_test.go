@@ -14,51 +14,49 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package util
+package interceptor
 
 import (
-	dto "github.com/prometheus/client_model/go"
+	"errors"
+	"net/http"
+	"net/http/httptest"
+	"testing"
 )
 
-// Get value of metricFamily
-func MetricValueOf(mf *dto.MetricFamily) float64 {
-	if len(mf.GetMetric()) == 0 {
-		return 0
-	}
+var i = 0
 
-	switch mf.GetType() {
-	case dto.MetricType_GAUGE:
-		return mf.GetMetric()[0].GetGauge().GetValue()
-	case dto.MetricType_COUNTER:
-		return metricCounterOf(mf.GetMetric())
-	case dto.MetricType_SUMMARY:
-		return metricSummaryOf(mf.GetMetric())
+func mockFunc(w http.ResponseWriter, r *http.Request) error {
+	switch i {
+	case 1:
+		return errors.New("error")
+	case 0:
+		panic(errors.New("panic"))
 	default:
-		return 0
+		i++
 	}
+	return nil
 }
 
-func metricCounterOf(m []*dto.Metric) float64 {
-	var sum float64 = 0
-	for _, d := range m {
-		sum += d.GetCounter().GetValue()
-	}
-	return sum
-}
+func TestInterception_Invoke(t *testing.T) {
+	RegisterInterceptFunc(mockFunc)
+	RegisterInterceptFunc(mockFunc)
+	RegisterInterceptFunc(mockFunc)
 
-func metricSummaryOf(m []*dto.Metric) float64 {
-	var (
-		count uint64  = 0
-		sum   float64 = 0
-	)
-	for _, d := range m {
-		count += d.GetSummary().GetSampleCount()
-		sum += d.GetSummary().GetSampleSum()
+	i = 1
+	err := InvokeInterceptors(nil, nil)
+	if err == nil || err.Error() != "error" {
+		t.Fatalf("TestInterception_Invoke failed")
 	}
 
-	if count == 0 {
-		return 0
+	i = 0
+	err = InvokeInterceptors(httptest.NewRecorder(), nil)
+	if err == nil || err.Error() != "panic" {
+		t.Fatalf("TestInterception_Invoke failed")
 	}
 
-	return sum / float64(count)
+	i = 2
+	err = InvokeInterceptors(nil, nil)
+	if err != nil || i != 2+len(interceptors) {
+		t.Fatalf("TestInterception_Invoke failed")
+	}
 }

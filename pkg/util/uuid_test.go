@@ -14,12 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package async
+package util
 
-import "golang.org/x/net/context"
+import (
+	"strings"
+	"testing"
+)
 
-type Task interface {
-	Key() string
-	Do(ctx context.Context) error
-	Err() error
+func TestGenerateUuid(t *testing.T) {
+	uuid := GenerateUuid()
+	if len(uuid) == 0 || strings.Contains(uuid, "-") {
+		t.Fatalf("TestGenerateUuid failed")
+	}
 }

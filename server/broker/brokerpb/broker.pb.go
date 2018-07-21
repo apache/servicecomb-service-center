@@ -49,7 +49,7 @@ It has these top-level messages:
 	BrokerAPIInfoEntry
 	BrokerHomeResponse
 */
-package broker
+package brokerpb
 
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"

@@ -36,6 +36,6 @@ func registerGRPC() {
 }
 
 func registerREST() {
-	roa.RegisterServent(&GovernServiceControllerV3{})
-	roa.RegisterServent(&GovernServiceControllerV4{})
+	roa.RegisterServant(&GovernServiceControllerV3{})
+	roa.RegisterServant(&GovernServiceControllerV4{})
 }

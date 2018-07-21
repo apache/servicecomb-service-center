@@ -21,22 +21,20 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/coreos/etcd/clientv3"
 	"testing"
-	"time"
 )
 
 // tracing
 import (
-	"fmt"
 	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/tracing/buildin"
 )
 
-func TestEtcdClient_Delete(t *testing.T) {
+func TestEtcdClient(t *testing.T) {
 	client, err := clientv3.New(clientv3.Config{
 		Endpoints:   []string{"127.0.0.1:2379"},
 		DialTimeout: connectRegistryServerTimeout,
 	})
 	if err != nil {
-		panic(err)
+		t.Fatalf("TestEtcdClient failed, %#v", err)
 	}
 	etcd := &EtcdClient{
 		err:    make(chan error, 1),
@@ -45,30 +43,32 @@ func TestEtcdClient_Delete(t *testing.T) {
 	}
 	_, err = etcd.Do(context.Background(), registry.DEL, registry.WithStrKey("/test_range/"), registry.WithPrefix())
 	if err != nil {
-		panic(err)
+		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
 	_, err = etcd.Do(context.Background(), registry.PUT, registry.WithStrKey("/test_range/b"), registry.WithStrValue("b"))
 	if err != nil {
-		panic(err)
+		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
 	_, err = etcd.Do(context.Background(), registry.PUT, registry.WithStrKey("/test_range/a"), registry.WithStrValue("a"))
 	if err != nil {
-		panic(err)
+		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
 	_, err = etcd.Do(context.Background(), registry.PUT, registry.WithStrKey("/test_range/c"), registry.WithStrValue("c"))
 	if err != nil {
-		panic(err)
+		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
-	_, err = etcd.Do(context.Background(), registry.DEL, registry.WithStrKey("/test_range/b"),
+	_, err = etcd.Do(context.Background(), registry.DEL,
+		registry.WithStrKey("/test_range/b"),
 		registry.WithStrEndKey("/test_range/d")) // [b, d) !!!
 	if err != nil {
-		panic(err)
+		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
 	resp, err := etcd.Do(context.Background(), registry.GET, registry.WithStrKey("/test_range/"), registry.WithPrefix())
 	if err != nil {
-		panic(err)
+		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
 	if len(resp.Kvs) != 1 || string(resp.Kvs[0].Key) != "/test_range/a" {
 		t.Fatalf("TestEtcdClient_Delete failed, %#v", resp.Kvs)
 	}
+
 }

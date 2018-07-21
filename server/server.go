@@ -66,15 +66,21 @@ func (s *ServiceCenterServer) waitForQuit() {
 }
 
 func (s *ServiceCenterServer) needUpgrade() bool {
-	if core.ServerInfo.Version == "0" {
-		err := LoadServerVersion()
-		if err != nil {
-			util.Logger().Errorf(err, "check version failed, can not load the system config")
-			return false
-		}
+	err := LoadServerVersion()
+	if err != nil {
+		util.Logger().Errorf(err, "check version failed, can not load the system config")
+		return false
 	}
-	return !serviceUtil.VersionMatchRule(core.ServerInfo.Version,
+
+	update := !serviceUtil.VersionMatchRule(core.ServerInfo.Version,
 		fmt.Sprintf("%s+", version.Ver().Version))
+	if !update && version.Ver().Version != core.ServerInfo.Version {
+		util.Logger().Warnf(nil,
+			"there is a higher version '%s' in cluster, now running '%s' version may be incompatible",
+			core.ServerInfo.Version, version.Ver().Version)
+	}
+
+	return update
 }
 
 func (s *ServiceCenterServer) loadOrUpgradeServerVersion() {
@@ -84,6 +90,8 @@ func (s *ServiceCenterServer) loadOrUpgradeServerVersion() {
 		os.Exit(1)
 	}
 	if s.needUpgrade() {
+		core.ServerInfo.Version = version.Ver().Version
+
 		UpgradeServerVersion()
 	}
 	lock.Unlock()

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package async
+package task
 
 import (
 	"testing"
@@ -58,6 +58,7 @@ func (tt *testTask) Do(ctx context.Context) error {
 func TestBaseAsyncTasker_AddTask(t *testing.T) {
 	at := NewTaskService()
 	at.Run()
+	<-at.Ready()
 	defer at.Stop()
 
 	ctx, cancel := context.WithCancel(context.Background())

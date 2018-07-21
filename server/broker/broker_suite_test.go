@@ -17,7 +17,7 @@
 package broker
 
 import (
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/quota/buildin"
 	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/registry/etcd"
 	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/tracing/buildin"
@@ -29,13 +29,12 @@ import (
 	"testing"
 )
 
-var serviceResource pb.ServiceCtrlServer
-var instanceResource pb.SerivceInstanceCtrlServerEx
 var brokerResource = BrokerServiceAPI
 
 var _ = BeforeSuite(func() {
 	//init plugin
-	serviceResource, instanceResource = service.AssembleResources()
+	core.ServerInfo.Config.EnableCache = false
+	core.ServiceAPI, core.InstanceAPI = service.AssembleResources()
 })
 
 func TestBroker(t *testing.T) {

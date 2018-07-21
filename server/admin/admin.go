@@ -25,5 +25,5 @@ func init() {
 }
 
 func registerREST() {
-	roa.RegisterServent(&AdminServiceControllerV4{})
+	roa.RegisterServant(&AdminServiceControllerV4{})
 }

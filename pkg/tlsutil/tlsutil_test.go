@@ -22,6 +22,8 @@ import (
 	"testing"
 )
 
+const sslRoot = "../../examples/service_center/ssl/"
+
 func TestParseDefaultSSLCipherSuites(t *testing.T) {
 	c := ParseDefaultSSLCipherSuites("")
 	if c != nil {
@@ -42,7 +44,6 @@ func TestParseDefaultSSLCipherSuites(t *testing.T) {
 }
 
 func TestGetServerTLSConfig(t *testing.T) {
-	sslRoot := "../../etc/ssl/"
 	pw, _ := ioutil.ReadFile(sslRoot + "cert_pwd")
 	opts := append(DefaultServerTLSOptions(),
 		WithVerifyPeer(true),
@@ -78,7 +79,6 @@ func TestGetServerTLSConfig(t *testing.T) {
 }
 
 func TestGetClientTLSConfig(t *testing.T) {
-	sslRoot := "../../etc/ssl/"
 	pw, _ := ioutil.ReadFile(sslRoot + "cert_pwd")
 	opts := append(DefaultServerTLSOptions(),
 		WithVerifyPeer(true),

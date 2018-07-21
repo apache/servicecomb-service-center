@@ -69,7 +69,7 @@ func TestNewKvCacher(t *testing.T) {
 	w.lw = lw
 
 	cr := &KvCacher{
-		Cfg:       DefaultConfig(),
+		Cfg:       Configure(),
 		ready:     make(chan struct{}),
 		lw:        lw,
 		goroutine: util.NewGo(context.Background()),
@@ -90,7 +90,7 @@ func TestNewKvCacher(t *testing.T) {
 	// normal
 	var evt KvEvent
 	cr = &KvCacher{
-		Cfg: DefaultConfig().
+		Cfg: Configure().
 			WithNoEventPeriods(0).
 			WithEventFunc(func(e KvEvent) {
 				evt = e

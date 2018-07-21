@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package async
+package task
 
 import (
 	"errors"
@@ -35,11 +35,10 @@ const (
 
 type executorWithTTL struct {
 	*Executor
-
 	TTL int64
 }
 
-type TaskService struct {
+type AsyncTaskService struct {
 	executors map[string]*executorWithTTL
 	goroutine *util.GoRoutine
 	lock      sync.RWMutex
@@ -47,7 +46,7 @@ type TaskService struct {
 	isClose   bool
 }
 
-func (lat *TaskService) getOrNewExecutor(task Task) (s *Executor, isNew bool) {
+func (lat *AsyncTaskService) getOrNewExecutor(task Task) (s *Executor, isNew bool) {
 	var (
 		ok  bool
 		key = task.Key()
@@ -73,7 +72,7 @@ func (lat *TaskService) getOrNewExecutor(task Task) (s *Executor, isNew bool) {
 	return se.Executor, isNew
 }
 
-func (lat *TaskService) Add(ctx context.Context, task Task) error {
+func (lat *AsyncTaskService) Add(ctx context.Context, task Task) error {
 	if task == nil || ctx == nil {
 		return errors.New("invalid parameters")
 	}
@@ -86,14 +85,14 @@ func (lat *TaskService) Add(ctx context.Context, task Task) error {
 	return s.AddTask(task)
 }
 
-func (lat *TaskService) removeExecutor(key string) {
+func (lat *AsyncTaskService) removeExecutor(key string) {
 	if s, ok := lat.executors[key]; ok {
 		s.Close()
 		delete(lat.executors, key)
 	}
 }
 
-func (lat *TaskService) LatestHandled(key string) (Task, error) {
+func (lat *AsyncTaskService) LatestHandled(key string) (Task, error) {
 	lat.lock.RLock()
 	s, ok := lat.executors[key]
 	lat.lock.RUnlock()
@@ -103,7 +102,7 @@ func (lat *TaskService) LatestHandled(key string) (Task, error) {
 	return s.latestTask, nil
 }
 
-func (lat *TaskService) daemon(ctx context.Context) {
+func (lat *AsyncTaskService) daemon(ctx context.Context) {
 	util.SafeCloseChan(lat.ready)
 	ticker := time.NewTicker(removeExecutorInterval)
 	max := 0
@@ -112,7 +111,7 @@ func (lat *TaskService) daemon(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			util.Logger().Debugf("daemon thread exited for TaskService stopped")
+			util.Logger().Debugf("daemon thread exited for AsyncTaskService stopped")
 			return
 		case <-timer.C:
 			lat.lock.RLock()
@@ -166,7 +165,7 @@ func (lat *TaskService) daemon(ctx context.Context) {
 	}
 }
 
-func (lat *TaskService) Run() {
+func (lat *AsyncTaskService) Run() {
 	lat.lock.Lock()
 	if !lat.isClose {
 		lat.lock.Unlock()
@@ -177,7 +176,7 @@ func (lat *TaskService) Run() {
 	lat.goroutine.Do(lat.daemon)
 }
 
-func (lat *TaskService) Stop() {
+func (lat *AsyncTaskService) Stop() {
 	lat.lock.Lock()
 	if lat.isClose {
 		lat.lock.Unlock()
@@ -196,11 +195,11 @@ func (lat *TaskService) Stop() {
 	util.SafeCloseChan(lat.ready)
 }
 
-func (lat *TaskService) Ready() <-chan struct{} {
+func (lat *AsyncTaskService) Ready() <-chan struct{} {
 	return lat.ready
 }
 
-func (lat *TaskService) renew() {
+func (lat *AsyncTaskService) renew() {
 	newExecutor := make(map[string]*executorWithTTL)
 	for k, e := range lat.executors {
 		newExecutor[k] = e
@@ -208,12 +207,12 @@ func (lat *TaskService) renew() {
 	lat.executors = newExecutor
 }
 
-func NewTaskService() (lat *TaskService) {
-	lat = &TaskService{
+func NewTaskService() TaskService {
+	lat := &AsyncTaskService{
 		goroutine: util.NewGo(context.Background()),
 		ready:     make(chan struct{}),
 		isClose:   true,
 	}
 	lat.renew()
-	return
+	return lat
 }

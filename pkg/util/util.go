@@ -17,11 +17,8 @@
 package util
 
 import (
-	"bytes"
-	"encoding/gob"
 	"fmt"
 	"os"
-	"reflect"
 	"runtime"
 	"runtime/debug"
 	"strings"
@@ -29,45 +26,11 @@ import (
 	"unsafe"
 )
 
-func MinInt(x, y int) int {
-	if x <= y {
-		return x
-	} else {
-		return y
-	}
-}
-
-func ClearStringMemory(src *string) {
-	p := (*struct {
-		ptr uintptr
-		len int
-	})(unsafe.Pointer(src))
-
-	l := MinInt(p.len, 32)
-	ptr := p.ptr
-	for idx := 0; idx < l; idx = idx + 1 {
-		b := (*byte)(unsafe.Pointer(ptr))
-		*b = 0
-		ptr += 1
-	}
-}
-
-func ClearByteMemory(src []byte) {
-	l := MinInt(len(src), 32)
-	for idx := 0; idx < l; idx = idx + 1 {
-		src[idx] = 0
-	}
-}
-
-func DeepCopy(dst, src interface{}) error {
-	var buf bytes.Buffer
-	if err := gob.NewEncoder(&buf).Encode(src); err != nil {
-		return err
-	}
-	return gob.NewDecoder(bytes.NewBuffer(buf.Bytes())).Decode(dst)
-}
-
 func SafeCloseChan(c chan struct{}) {
+	if c == nil {
+		return
+	}
+
 	select {
 	case _, ok := <-c:
 		if ok {
@@ -133,6 +96,12 @@ func RecoverAndReport() (r interface{}) {
 	return
 }
 
+func GetCaller(skip int) (string, string, int, bool) {
+	pc, file, line, ok := runtime.Caller(skip + 1)
+	method := FormatFuncName(runtime.FuncForPC(pc).Name())
+	return file, method, line, ok
+}
+
 // this function can only be called in recover().
 func LogPanic(args ...interface{}) {
 	for i := 2; i < 10; i++ {
@@ -151,21 +120,6 @@ func LogPanic(args ...interface{}) {
 	fmt.Fprintln(os.Stderr, time.Now().Format("2006-01-02T15:04:05.000Z07:00"), "FATAL", "system", os.Getpid(),
 		fmt.Sprintf("%s %s():%d", FileLastName(file), method, line), fmt.Sprint(args...))
 	fmt.Fprintln(os.Stderr, BytesToStringWithNoCopy(debug.Stack()))
-}
-
-func FileLastName(file string) string {
-	if sp1 := strings.LastIndex(file, "/"); sp1 >= 0 {
-		if sp2 := strings.LastIndex(file[:sp1], "/"); sp2 >= 0 {
-			file = file[sp2+1:]
-		}
-	}
-	return file
-}
-
-func GetCaller(skip int) (string, string, int, bool) {
-	pc, file, line, ok := runtime.Caller(skip + 1)
-	method := FormatFuncName(runtime.FuncForPC(pc).Name())
-	return file, method, line, ok
 }
 
 func Int16ToInt64(bs []int16) (in int64) {
@@ -188,19 +142,13 @@ func Int16ToInt64(bs []int16) (in int64) {
 	return
 }
 
-func FormatFuncName(f string) string {
-	i := strings.LastIndex(f, "/")
-	j := strings.Index(f[i+1:], ".")
-	if j < 1 {
-		return "???"
+func FileLastName(file string) string {
+	if sp1 := strings.LastIndex(file, "/"); sp1 >= 0 {
+		if sp2 := strings.LastIndex(file[:sp1], "/"); sp2 >= 0 {
+			file = file[sp2+1:]
+		}
 	}
-	_, fun := f[:i+j+1], f[i+j+2:]
-	i = strings.LastIndex(fun, ".")
-	return fun[i+1:]
-}
-
-func FuncName(f interface{}) string {
-	return runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
+	return file
 }
 
 func SliceHave(arr []string, str string) bool {

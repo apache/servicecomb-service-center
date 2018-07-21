@@ -27,7 +27,7 @@ import (
 func TestBaseIndexer_Search(t *testing.T) {
 	data := &registry.PluginResponse{Revision: 1}
 	c := &mockRegistry{}
-	i := &baseIndexer{Cfg: DefaultConfig(), Client: c}
+	i := &baseIndexer{Cfg: Configure(), Client: c}
 
 	// case: key does not contain prefix
 	resp, err := i.Search(context.Background(), registry.WithStrKey("a"))
@@ -86,8 +86,6 @@ type mockCacher struct {
 func (n *mockCacher) Cache() Cache { return n.cache }
 
 func TestCacheIndexer_Search(t *testing.T) {
-	core.Configure()
-
 	c := &mockCache{}
 	cr := &mockCacher{cache: c}
 	cli := &mockRegistry{Response: &registry.PluginResponse{
@@ -97,7 +95,7 @@ func TestCacheIndexer_Search(t *testing.T) {
 	}}
 	i := &cacheIndexer{
 		baseIndexer: &baseIndexer{
-			Cfg:    DefaultConfig(),
+			Cfg:    Configure(),
 			Client: cli,
 		},
 		cacher:  cr,
@@ -114,12 +112,10 @@ func TestCacheIndexer_Search(t *testing.T) {
 	}
 
 	// case: not match cache search remote
-	core.ServerInfo.Config.EnableCache = false
 	resp, err = i.Search(context.Background(), registry.WithStrKey("/a"))
 	if err != nil || resp == nil || resp.Count != 1 || string(resp.Kvs[0].Key) != "/a/b" {
 		t.Fatalf("TestBaseIndexer_Search failed, %v, %v", err, resp)
 	}
-	core.ServerInfo.Config.EnableCache = true
 
 	// no cache
 	resp, err = i.Search(context.Background(), registry.WithStrKey("/a"), registry.WithNoCache())
@@ -169,6 +165,9 @@ func TestCacheIndexer_Search(t *testing.T) {
 	if err != nil || resp == nil || resp.Count != 1 || string(resp.Kvs[0].Value.([]byte)) != "va" {
 		t.Fatalf("TestBaseIndexer_Search failed, %v, %v", err, resp)
 	}
+	if resp.MaxModRevision() != 1 {
+		t.Fatalf("TestBaseIndexer_Search failed, %v, %v", err, resp)
+	}
 	resp, err = i.Search(context.Background(), registry.WithStrKey("/a"), registry.WithCountOnly())
 	if err != nil || resp == nil || resp.Count != 1 || len(resp.Kvs) != 0 {
 		t.Fatalf("TestBaseIndexer_Search failed, %v, %v", err, resp)
@@ -191,4 +190,21 @@ func TestCacheIndexer_Search(t *testing.T) {
 	}
 
 	i.Stop()
+}
+
+func TestNewIndexer(t *testing.T) {
+	core.ServerInfo.Config.EnableCache = false
+	i := NewIndexer("a", Configure().WithInitSize(1))
+	if _, ok := i.(*baseIndexer); !ok {
+		t.Fatalf("TestNewIndexer failed")
+	}
+	core.ServerInfo.Config.EnableCache = true
+	i = NewIndexer("a", Configure().WithInitSize(0))
+	if _, ok := i.(*baseIndexer); !ok {
+		t.Fatalf("TestNewIndexer failed")
+	}
+	i = NewIndexer("a", Configure())
+	if _, ok := i.(*cacheIndexer); !ok {
+		t.Fatalf("TestNewIndexer failed")
+	}
 }

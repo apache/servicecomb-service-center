@@ -55,6 +55,12 @@ func (i *Invocation) WithContext(key string, val interface{}) *Invocation {
 	return i
 }
 
+// Next is the method to go next step in handler chain
+// WithFunc and WithAsyncFunc options can add customize callbacks in chain
+// and the callbacks seq like below
+// i.Success/Fail() -> CB1 ---> CB3 ----------> END           goroutine 0
+//                          \-> CB2(async) \                  goroutine 1
+//                                          \-> CB4(async)    goroutine 1 or 2
 func (i *Invocation) Next(opts ...InvocationOption) {
 	var op InvocationOp
 	for _, opt := range opts {
@@ -75,11 +81,6 @@ func (i *Invocation) setCallback(f CallbackFunc, async bool) {
 		i.Async = async
 		return
 	}
-
-	// the callbacks seq like below
-	// i.Success() -> CB1 ---> CB3 ----------> END           goroutine 0
-	//                     \-> CB2(async) \                  goroutine 1
-	//                                     \-> CB4(async)    goroutine 1 or 2
 	cb := i.Func
 	i.Func = func(r Result) {
 		cb(r)

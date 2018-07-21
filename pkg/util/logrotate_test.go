@@ -17,6 +17,7 @@
 package util
 
 import (
+	"os"
 	"testing"
 )
 
@@ -24,5 +25,21 @@ func TestLogRotate(t *testing.T) {
 	s := pathReplacer.Replace("./sc.log")
 	if s != "./sc.log" {
 		t.Fatal("pathReplacer failed", s)
+	}
+
+	LogRotate("../../etc", 1, 1)
+
+	LogRotateFile("../../etc/conf/app.conf", 1, 1)
+
+	if err := compressFile(
+		"../../etc/conf/app.conf",
+		"app",
+		false); err != nil {
+		t.Fatal("TestLogRotate failed", err)
+	}
+
+	os.Chmod("../../etc/conf/app.conf.zip", 0640)
+	if err := removeFile("../../etc/conf/app.conf.zip"); err != nil {
+		t.Fatal("TestLogRotate failed", err)
 	}
 }

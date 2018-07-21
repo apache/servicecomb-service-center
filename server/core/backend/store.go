@@ -19,7 +19,7 @@ package backend
 import (
 	"errors"
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/async"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/task"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"golang.org/x/net/context"
@@ -34,7 +34,7 @@ func init() {
 
 type KvStore struct {
 	indexers    *util.ConcurrentMap
-	taskService *async.TaskService
+	taskService task.TaskService
 	lock        sync.RWMutex
 	ready       chan struct{}
 	goroutine   *util.GoRoutine
@@ -44,7 +44,7 @@ type KvStore struct {
 
 func (s *KvStore) Initialize() {
 	s.indexers = util.NewConcurrentMap(0)
-	s.taskService = async.NewTaskService()
+	s.taskService = task.NewTaskService()
 	s.ready = make(chan struct{})
 	s.goroutine = util.NewGo(context.Background())
 }

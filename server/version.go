@@ -22,7 +22,6 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
-	"github.com/apache/incubator-servicecomb-service-center/version"
 	"golang.org/x/net/context"
 )
 
@@ -36,7 +35,7 @@ func LoadServerVersion() error {
 		return nil
 	}
 
-	err = json.Unmarshal(resp.Kvs[0].Value, core.ServerInfo)
+	err = json.Unmarshal(resp.Kvs[0].Value, &core.ServerInfo)
 	if err != nil {
 		util.Logger().Errorf(err, "load server version failed, maybe incompatible")
 		return nil
@@ -45,8 +44,6 @@ func LoadServerVersion() error {
 }
 
 func UpgradeServerVersion() error {
-	core.ServerInfo.Version = version.Ver().Version
-
 	bytes, err := json.Marshal(core.ServerInfo)
 	if err != nil {
 		return err

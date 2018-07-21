@@ -21,6 +21,13 @@ import (
 	"net/http"
 )
 
+// The rest middleware design:
+//   http requests -> DefaultServerMux [ -> ROA router -> handler chain ] -> services
+// Usages:
+//   1. if use rest.RegisterServant:
+//      to register in ROA and requests will go through the handler chain
+//   2. if use RegisterServerHandleFunc or RegisterServerHandler:
+//      to register in ServeMux directly
 var DefaultServerMux = http.NewServeMux()
 
 func RegisterServerHandleFunc(pattern string, f http.HandlerFunc) {
@@ -32,6 +39,6 @@ func RegisterServerHandleFunc(pattern string, f http.HandlerFunc) {
 func RegisterServerHandler(pattern string, h http.Handler) {
 	DefaultServerMux.Handle(pattern, h)
 
-	t := util.ReflectObject(h).Type
+	t := util.Reflect(h).Type
 	util.Logger().Infof("register server http handler %s/%s, pattern %s", t.PkgPath(), t.Name(), pattern)
 }

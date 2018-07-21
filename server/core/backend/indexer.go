@@ -46,17 +46,12 @@ type Indexer interface {
 }
 
 func NewIndexer(name string, cfg *Config) Indexer {
-	ci := &cacheIndexer{
-		baseIndexer: newBaseIndexer(cfg),
-		cacher:      NullCacher,
-		isClose:     true,
-	}
-
 	switch {
 	case core.ServerInfo.Config.EnableCache && cfg.InitSize > 0:
-		ci.cacher = NewKvCacher(name, cfg)
+		return newCacheIndexer(name, cfg)
 	default:
-		util.Logger().Infof("core will not cache '%s' and ignore all events of it", name)
+		util.Logger().Infof("core will not cache '%s' and ignore all events of it, cache enabled: %v, init size: %d",
+			name, core.ServerInfo.Config.EnableCache, cfg.InitSize)
+		return newBaseIndexer(cfg)
 	}
-	return ci
 }

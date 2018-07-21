@@ -19,7 +19,6 @@ package backend
 import (
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"golang.org/x/net/context"
 	"sync"
@@ -45,8 +44,7 @@ func (i *cacheIndexer) Search(ctx context.Context, opts ...registry.PluginOpOpti
 		return nil, fmt.Errorf("%s, cache is '%s'", err.Error(), i.cacher.Cache().Name())
 	}
 
-	if !core.ServerInfo.Config.EnableCache ||
-		op.Mode == registry.MODE_NO_CACHE ||
+	if op.Mode == registry.MODE_NO_CACHE ||
 		op.Revision > 0 ||
 		(op.Offset >= 0 && op.Limit > 0) {
 		util.Logger().Debugf("search %s match special options, request etcd server, opts: %s",
@@ -133,4 +131,12 @@ func (i *cacheIndexer) Stop() {
 
 func (i *cacheIndexer) Ready() <-chan struct{} {
 	return i.cacher.Ready()
+}
+
+func newCacheIndexer(name string, cfg *Config) *cacheIndexer {
+	return &cacheIndexer{
+		baseIndexer: newBaseIndexer(cfg),
+		cacher:      NewKvCacher(name, cfg),
+		isClose:     true,
+	}
 }

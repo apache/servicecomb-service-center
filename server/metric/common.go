@@ -16,17 +16,61 @@
  */
 package metric
 
-import "time"
+import (
+	dto "github.com/prometheus/client_model/go"
+	"time"
+)
 
 const (
-	defaultMetricsSize = 100
-	collectInterval    = 5 * time.Second
-
-	familyName = "service_center_"
+	collectInterval = 5 * time.Second
+	familyName      = "service_center_"
 )
 
 var sysMetricNames = map[string]struct{}{
 	"process_resident_memory_bytes": {},
 	"process_cpu_seconds_total":     {},
 	"go_threads":                    {},
+}
+
+// Get value of metricFamily
+func MetricValueOf(mf *dto.MetricFamily) float64 {
+	if len(mf.GetMetric()) == 0 {
+		return 0
+	}
+
+	switch mf.GetType() {
+	case dto.MetricType_GAUGE:
+		return mf.GetMetric()[0].GetGauge().GetValue()
+	case dto.MetricType_COUNTER:
+		return metricCounterOf(mf.GetMetric())
+	case dto.MetricType_SUMMARY:
+		return metricSummaryOf(mf.GetMetric())
+	default:
+		return 0
+	}
+}
+
+func metricCounterOf(m []*dto.Metric) float64 {
+	var sum float64 = 0
+	for _, d := range m {
+		sum += d.GetCounter().GetValue()
+	}
+	return sum
+}
+
+func metricSummaryOf(m []*dto.Metric) float64 {
+	var (
+		count uint64  = 0
+		sum   float64 = 0
+	)
+	for _, d := range m {
+		count += d.GetSummary().GetSampleCount()
+		sum += d.GetSummary().GetSampleSum()
+	}
+
+	if count == 0 {
+		return 0
+	}
+
+	return sum / float64(count)
 }

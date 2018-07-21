@@ -14,22 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package etcdsync_test
+package etcdsync
 
 import (
-	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/registry/embededetcd"
+	"fmt"
 	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/registry/etcd"
+	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/tracing/buildin"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-)
-import (
-	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/etcdsync"
 	"testing"
 )
 
 func init() {
-	etcdsync.IsDebug = true
+	IsDebug = true
 }
 
 func TestEtcdsync(t *testing.T) {
@@ -41,11 +38,11 @@ func BenchmarkLock(b *testing.B) {
 	var g = 0
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			lock, _ := etcdsync.Lock("/test", true)
-			defer lock.Unlock()
+			lock, _ := Lock("/test", true)
 			//do something
 			g += 1
 			fmt.Println(g)
+			lock.Unlock()
 		}
 	})
 	fmt.Println("Parallel:", b.N)

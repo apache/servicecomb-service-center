@@ -55,7 +55,7 @@ func TestDomainExist(t *testing.T) {
 }
 
 func TestNewDomain(t *testing.T) {
-	err := NewDomain(context.Background(), "")
+	_, err := NewDomain(context.Background(), "")
 	if err == nil {
 		t.Fatalf("NewDomain failed")
 	}
@@ -69,7 +69,7 @@ func TestProjectExist(t *testing.T) {
 }
 
 func TestNewProject(t *testing.T) {
-	err := NewProject(context.Background(), "", "")
+	_, err := NewProject(context.Background(), "", "")
 	if err == nil {
 		t.Fatalf("NewProject failed")
 	}

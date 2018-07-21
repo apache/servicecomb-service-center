@@ -14,55 +14,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package async
+package plugin
 
 import (
-	"errors"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"golang.org/x/net/context"
+	"net/http"
+	"testing"
 )
 
-type Executor struct {
-	pool       *util.GoRoutine
-	tasks      *util.UniQueue
-	latestTask Task
+type mockAuthPlugin struct {
+	Times int
 }
 
-func (s *Executor) AddTask(task Task) (err error) {
-	if task == nil {
-		return errors.New("invalid parameters")
+func (*mockAuthPlugin) Identify(r *http.Request) error {
+	return nil
+}
+
+func TestPluginManager_New(t *testing.T) {
+	pm := &PluginManager{}
+	pm.Initialize()
+
+	p := pm.Get(AUTH, "buildin")
+	if p != nil {
+		t.Fatalf("TestPluginManager_New failed")
 	}
 
-	err = s.tasks.Put(task)
-	if err != nil {
-		return
+	times := 0
+	fn := func() PluginInstance {
+		times++
+		return &mockAuthPlugin{times}
 	}
-	return s.latestTask.Err()
-}
+	pm.Register(Plugin{AUTH, "buildin", fn})
 
-func (s *Executor) Execute() {
-	select {
-	case task, ok := <-s.tasks.Chan():
-		if !ok {
-			return
-		}
-		s.pool.Do(func(ctx context.Context) {
-			at := task.(Task)
-			at.Do(ctx)
-			s.latestTask = at
-		})
-	default:
+	i := pm.Instance(AUTH)
+	if i != pm.Instance(AUTH) {
+		t.Fatalf("TestPluginManager_New failed")
 	}
-}
 
-func (s *Executor) Close() {
-	s.tasks.Close()
-}
-
-func NewExecutor(pool *util.GoRoutine, task Task) *Executor {
-	return &Executor{
-		pool:       pool,
-		tasks:      util.NewUniQueue(),
-		latestTask: task,
+	pm.ReloadAll()
+	n := pm.Instance(AUTH)
+	if i == n {
+		t.Fatalf("TestPluginManager_New failed")
 	}
 }

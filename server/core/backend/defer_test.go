@@ -71,7 +71,7 @@ func TestInstanceEventDeferHandler_HandleChan(t *testing.T) {
 		Value: b,
 	}
 
-	cache := NewKvCache("test", DefaultConfig())
+	cache := NewKvCache("test", Configure())
 	cache.Put("/1", kv1)
 	cache.Put("/2", kv2)
 	cache.Put("/3", kv3)

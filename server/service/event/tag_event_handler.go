@@ -18,7 +18,7 @@ package event
 
 import (
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/async"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/task"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
@@ -107,7 +107,7 @@ func (h *TagEventHandler) OnEvent(evt backend.KvEvent) {
 	}
 	util.Logger().Infof("caught [%s] service tags event %s/%s", action, consumerId, evt.KV.Value)
 
-	async.Service().Add(context.Background(),
+	task.Service().Add(context.Background(),
 		NewTagsChangedAsyncTask(domainProject, consumerId, evt.Revision))
 }
 

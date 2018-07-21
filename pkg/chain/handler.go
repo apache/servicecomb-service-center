@@ -36,8 +36,8 @@ func RegisterHandler(catalog string, h Handler) {
 	handlers = append(handlers, h)
 	handlersMap[catalog] = handlers
 
-	t := util.ReflectObject(h)
-	util.Logger().Infof("register handler[%s] %s/%s", catalog, t.Type.PkgPath(), t.Type.Name())
+	t := util.Reflect(h)
+	util.Logger().Infof("register handler[%s] %s", catalog, t.Name())
 }
 
 func Handlers(catalog string) []Handler {

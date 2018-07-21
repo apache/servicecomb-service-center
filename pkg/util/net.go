@@ -38,18 +38,6 @@ func GetIPFromContext(ctx context.Context) string {
 	return v
 }
 
-func UrlEncode(keys map[string]string) string {
-	l := len(keys)
-	if l == 0 {
-		return ""
-	}
-	arr := make([]string, 0, l)
-	for k, v := range keys {
-		arr = append(arr, url.QueryEscape(k)+"="+url.QueryEscape(v))
-	}
-	return StringJoin(arr, "&")
-}
-
 func ParseEndpoint(ep string) (string, error) {
 	u, err := url.Parse(ep)
 	if err != nil {
@@ -79,11 +67,7 @@ func GetRealIP(r *http.Request) string {
 			return ip
 		}
 	}
-	addrs := strings.Split(r.RemoteAddr, ":")
-	if len(addrs) > 0 {
-		return addrs[0]
-	}
-	return ""
+	return strings.Split(r.RemoteAddr, ":")[0]
 }
 
 func InetNtoIP(ipnr uint32) net.IP {

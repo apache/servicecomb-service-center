@@ -51,6 +51,7 @@ var (
 
 func init() {
 	clientv3.SetLogger(&clientLogger{})
+	mgr.RegisterPlugin(mgr.Plugin{mgr.REGISTRY, "buildin", NewRegistry})
 	mgr.RegisterPlugin(mgr.Plugin{mgr.REGISTRY, "etcd", NewRegistry})
 }
 

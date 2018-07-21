@@ -83,7 +83,7 @@ func (mm *MetricsGatherer) Collect() error {
 	for _, mf := range mfs {
 		name := mf.GetName()
 		if _, ok := sysMetricNames[name]; strings.Index(name, familyName) == 0 || ok {
-			mm.Records.Put(strings.TrimPrefix(name, familyName), util.MetricValueOf(mf))
+			mm.Records.Put(strings.TrimPrefix(name, familyName), MetricValueOf(mf))
 		}
 	}
 	return nil

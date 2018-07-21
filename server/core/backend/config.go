@@ -90,7 +90,7 @@ func (cfg *Config) WithParser(parser *Parser) *Config {
 	return cfg
 }
 
-func DefaultConfig() *Config {
+func Configure() *Config {
 	return &Config{
 		Prefix:         "/",
 		Timeout:        DEFAULT_LISTWATCH_TIMEOUT,

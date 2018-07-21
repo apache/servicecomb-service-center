@@ -20,6 +20,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/admin/model"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"golang.org/x/net/context"
@@ -40,7 +41,7 @@ var _ = Describe("'Admin' service", func() {
 					util.SetDomainProject(context.Background(), "x", "x"),
 					&model.DumpRequest{})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(scerr.ErrForbidden))
 			})
 		})
 	})

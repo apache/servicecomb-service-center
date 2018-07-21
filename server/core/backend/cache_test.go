@@ -35,7 +35,7 @@ func BenchmarkFilter(b *testing.B) {
 	}
 	v, _ := json.Marshal(inst)
 
-	cfg := DefaultConfig().WithParser(InstanceParser)
+	cfg := Configure().WithParser(InstanceParser)
 
 	n := 300 * 1000 // 30w
 	cache := NewKvCache("test", cfg)
@@ -84,7 +84,7 @@ func BenchmarkFilter(b *testing.B) {
 }
 
 func TestKvCache_Get(t *testing.T) {
-	c := NewKvCache("test", DefaultConfig())
+	c := NewKvCache("test", Configure())
 	c.Put("", &KeyValue{Version: 1})
 	c.Put("/", &KeyValue{Version: 1})
 	c.Put("/a/b/c/d/e/1", &KeyValue{Version: 1})
