@@ -30,7 +30,7 @@
     "jszip": "Stuk/jszip#^3.1.4",
     "swagger-ui": "3.3.2",
     "angular-swagger-ui": "https://github.com/asifdxtreme/angular-swagger-ui.git#master",
-    "css-percentage-circle": "https://github.com/afuersch/css-percentage-circle.git#master",
+    "css-percentage-circle": "https://github.com/afuersch/css-percentage-circle.git#c9f4ea10400cb321c424692868f9e712822cd4e6",
     "vis": "^4.21.0"
   }
 }
