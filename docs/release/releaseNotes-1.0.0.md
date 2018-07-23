@@ -2,14 +2,12 @@
 
 ### Apache ServiceComb Service-Center (incubating) version 1.0.0
 
-#### API Changes :
- - Optimize Governance API
- - Optimize Find Instance API
-
 #### New Features/Improvements:
  - Make ETCD connection more Resilient
  - Make ETCD request timeout configurable
  - Support TLS Plugin
+ - Optimize Governance API for Searching Schema
+ - Optimize Find Instance API
  - Use glide for dependency management
  - Add release binaries for MacOS
  - Add Toplogy View and Instance View in UI
