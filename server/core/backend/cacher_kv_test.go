@@ -17,12 +17,12 @@
 package backend
 
 import (
-	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
+	"strconv"
 	"testing"
 )
 
@@ -306,8 +306,8 @@ func TestNewKvCacher(t *testing.T) {
 	test.Kvs = nil
 	for i := 0; i < eventBlockSize+1; i++ {
 		kv := *data
-		kv.Key = []byte(fmt.Sprint(i))
-		kv.Value = []byte(fmt.Sprint(i))
+		kv.Key = []byte(strconv.Itoa(i))
+		kv.Value = []byte(strconv.Itoa(i))
 		kv.Version = int64(i)
 		kv.ModRevision = int64(i)
 		test.Kvs = append(test.Kvs, &kv)
@@ -324,7 +324,7 @@ func TestNewKvCacher(t *testing.T) {
 	cr.refresh(ctx)
 	// check all events
 	for i := 0; i < eventBlockSize+1; i++ {
-		s := fmt.Sprint(i)
+		s := strconv.Itoa(i)
 		if evt, ok := evts[s]; !ok || evt.Type != proto.EVT_CREATE || evt.KV.ModRevision != int64(i) || string(evt.KV.Value.([]byte)) != s {
 			t.Fatalf("TestNewKvCacher failed, %v", evt)
 		}

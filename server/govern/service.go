@@ -221,8 +221,11 @@ func (governService *GovernService) GetApplications(ctx context.Context, in *pb.
 }
 
 func getServiceAllVersions(ctx context.Context, serviceKey *pb.MicroServiceKey) ([]string, error) {
-	versions := []string{}
-	key := apt.GenerateServiceIndexKey(serviceKey)
+	var versions []string
+
+	copyKey := *serviceKey
+	copyKey.Version = ""
+	key := apt.GenerateServiceIndexKey(&copyKey)
 
 	opts := append(serviceUtil.FromContext(ctx),
 		registry.WithStrKey(key),

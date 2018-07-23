@@ -19,7 +19,6 @@ package broker
 import (
 	"crypto/sha1"
 	"encoding/json"
-	"fmt"
 	"math"
 	"strconv"
 	"strings"
@@ -74,7 +73,7 @@ func (*BrokerService) GetPactsOfProvider(ctx context.Context,
 		BROKER_PUBLISH_VERIFICATION_URL,
 		strings.NewReplacer(":providerId", in.ProviderId,
 			":consumerId", in.ConsumerId,
-			":pact", fmt.Sprint(pactId)))
+			":pact", strconv.FormatInt(int64(pactId), 10)))
 
 	links := ",\"_links\": {" +
 		"\"pb:publish-verification-results\": {" +

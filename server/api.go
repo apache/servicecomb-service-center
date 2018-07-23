@@ -27,6 +27,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/rpc"
 	"github.com/apache/incubator-servicecomb-service-center/server/service"
 	"golang.org/x/net/context"
+	"strconv"
 	"time"
 )
 
@@ -55,7 +56,7 @@ func (t APIType) String() string {
 	case REST:
 		return "rest"
 	default:
-		return fmt.Sprintf("SCHEME%d", t)
+		return "SCHEME" + strconv.Itoa(int(t))
 	}
 }
 
@@ -215,7 +216,7 @@ func (s *APIServer) startRESTServer() (err error) {
 	if err != nil {
 		return
 	}
-	util.Logger().Infof("Local listen address: %s, host: %s", addr, s.HostName)
+	util.Logger().Infof("listen address: %s, host: %s.", addr, s.HostName)
 
 	s.goroutine.Do(func(_ context.Context) {
 		err := s.restSrv.Serve()

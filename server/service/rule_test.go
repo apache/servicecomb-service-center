@@ -17,7 +17,6 @@
 package service_test
 
 import (
-	"fmt"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	"github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/quota/buildin"
@@ -538,7 +537,7 @@ var _ = Describe("'Rule' service", func() {
 				By("rules is invalid")
 				var arr []string
 				for i := 0; i < buildin.RULE_NUM_MAX_LIMIT_PER_SERVICE+1; i++ {
-					arr = append(arr, fmt.Sprint(i))
+					arr = append(arr, strconv.Itoa(i))
 				}
 				respAddRule, err = serviceResource.DeleteRule(getContext(), &pb.DeleteServiceRulesRequest{
 					ServiceId: serviceId,

@@ -17,12 +17,12 @@
 package service_test
 
 import (
-	"fmt"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	"github.com/apache/incubator-servicecomb-service-center/server/service/event"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"strconv"
 )
 
 var deh event.DependencyEventHandler
@@ -356,7 +356,7 @@ var _ = Describe("'Dependency' service", func() {
 					deps = append(deps, &pb.ConsumerDependency{
 						Consumer: &pb.MicroServiceKey{
 							AppId:       "create_dep_group",
-							ServiceName: "create_dep_consumer" + fmt.Sprint(i),
+							ServiceName: "create_dep_consumer" + strconv.Itoa(i),
 							Version:     "1.0.0",
 						},
 						Providers: []*pb.MicroServiceKey{

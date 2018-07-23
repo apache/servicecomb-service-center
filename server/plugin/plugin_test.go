@@ -55,4 +55,12 @@ func TestPluginManager_New(t *testing.T) {
 	if i == n {
 		t.Fatalf("TestPluginManager_New failed")
 	}
+
+	defer func() {
+		if err := recover(); err != nil {
+			t.Fatalf("TestPluginManager_New failed")
+		}
+	}()
+	RegisterPlugin(Plugin{PluginName(999), "999", nil})
+	DynamicPluginFunc(PluginName(999), "999")
 }

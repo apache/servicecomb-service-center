@@ -22,7 +22,6 @@ import (
 	"fmt"
 	errorsEx "github.com/apache/incubator-servicecomb-service-center/pkg/errors"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	"github.com/astaxie/beego"
@@ -39,8 +38,6 @@ import (
 )
 
 var embedTLSConfig *tls.Config
-
-const START_MANAGER_SERVER_TIMEOUT = 10 * time.Second
 
 func init() {
 	mgr.RegisterPlugin(mgr.Plugin{mgr.REGISTRY, "embeded_etcd", getEmbedInstance})
@@ -457,7 +454,7 @@ func (s *EtcdEmbed) Watch(ctx context.Context, opts ...registry.PluginOpOption) 
 }
 
 func (s *EtcdEmbed) readyNotify() {
-	timeout := START_MANAGER_SERVER_TIMEOUT
+	timeout := registry.RegistryConfig().DialTimeout
 	select {
 	case <-s.Embed.Server.ReadyNotify():
 		close(s.ready)
@@ -517,7 +514,7 @@ func getEmbedInstance() mgr.PluginInstance {
 		goroutine: util.NewGo(context.Background()),
 	}
 
-	if core.ServerInfo.Config.SslEnabled {
+	if registry.RegistryConfig().SslEnabled {
 		var err error
 		embedTLSConfig, err = mgr.Plugins().TLS().ServerConfig()
 		if err != nil {

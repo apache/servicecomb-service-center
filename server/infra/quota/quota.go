@@ -17,9 +17,9 @@
 package quota
 
 import (
-	"fmt"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	"golang.org/x/net/context"
+	"strconv"
 )
 
 var (
@@ -90,6 +90,6 @@ func (r ResourceType) String() string {
 	case MicroServiceInstanceQuotaType:
 		return "INSTANCE"
 	default:
-		return "RESOURCE" + fmt.Sprint(r)
+		return "RESOURCE" + strconv.Itoa(int(r))
 	}
 }

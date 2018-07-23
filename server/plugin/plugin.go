@@ -17,7 +17,6 @@
 package plugin
 
 import (
-	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/plugin"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/auditlog"
@@ -30,6 +29,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/uuid"
 	"github.com/astaxie/beego"
 	pg "plugin"
+	"strconv"
 	"sync"
 )
 
@@ -70,7 +70,7 @@ func (pn PluginName) String() string {
 	if name, ok := pluginNames[pn]; ok {
 		return name
 	}
-	return "PLUGIN" + fmt.Sprint(pn)
+	return "PLUGIN" + strconv.Itoa(int(pn))
 }
 
 type Plugin struct {
@@ -193,6 +193,7 @@ func (pm *PluginManager) existDynamicPlugin(pn PluginName) *Plugin {
 	if !ok {
 		return nil
 	}
+	// 'buildin' implement of all plugins should call DynamicPluginFunc()
 	if plugin.PluginLoader().Exist(pn.String()) {
 		return m[BUILDIN]
 	}
@@ -220,8 +221,9 @@ func RegisterPlugin(p Plugin) {
 	Plugins().Register(p)
 }
 
+// DynamicPluginFunc should be called in buildin implement
 func DynamicPluginFunc(pn PluginName, funcName string) pg.Symbol {
-	if wi := Plugins().instances[pn]; !wi.dynamic {
+	if wi, ok := Plugins().instances[pn]; ok && !wi.dynamic {
 		return nil
 	}
 

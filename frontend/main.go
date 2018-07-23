@@ -23,6 +23,7 @@ import (
 	"github.com/astaxie/beego"
 	"net"
 	"net/url"
+	"strconv"
 )
 
 type Config struct {
@@ -42,8 +43,8 @@ func main() {
 	flag.Parse()
 
 	cfg := Config{}
-	cfg.scAddr = fmt.Sprintf("http://%s/", net.JoinHostPort(url.PathEscape(scIp), fmt.Sprint(scPort)))
-	cfg.frontendAddr = net.JoinHostPort(frontendIp, fmt.Sprint(*port))
+	cfg.scAddr = fmt.Sprintf("http://%s/", net.JoinHostPort(url.PathEscape(scIp), strconv.Itoa(scPort)))
+	cfg.frontendAddr = net.JoinHostPort(frontendIp, strconv.Itoa(*port))
 
 	// run frontend web server
 	Serve(cfg)
