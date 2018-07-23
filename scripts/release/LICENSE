@@ -424,6 +424,14 @@ For details, see https://github.com/openzipkin/zipkin-go-opentracing
 You can find a copy of the License at licenses/LICENSE-zipkin-go-opentracing
 
 ================================================================
+For karlseguin/ccache (3ba9789cfd2cb7b4fb4657efc994cc1c599a648c)
+================================================================
+This product bundles the karlseguin/ccache library which is
+licensed under the MIT License.
+For details, see https://github.com/karlseguin/ccache
+You can find a copy of the License at licenses/LICENSE-ccache
+
+================================================================
 For angular (1.7.0)
 ================================================================
 This product bundles the angular library which is
@@ -568,12 +576,12 @@ For details, see https://github.com/IberaSoft/bower-bootstrap-less
 You can find a copy of the License at licenses/LICENSE-bootstrap-less-only
 
 ================================================================
-For chart.js (2.7.2)
+For vis (4.21.0)
 ================================================================
-This product bundles the chart.js library which is
+This product bundles the vis library which is
 licensed under the MIT License.
-For details, see http://www.chartjs.org
-You can find a copy of the License at licenses/LICENSE-chart.js
+For details, see https://github.com/almende/vis
+You can find a copy of the License at licenses/LICENSE-vis
 
 ================================================================
 For components-font-awesome (4.7.0)
@@ -622,3 +630,11 @@ This product bundles the yaml.js library which is
 licensed under the MIT License.
 For details, see https://github.com/jeremyfa/yaml.js
 You can find a copy of the License at licenses/LICENSE-yaml.js
+
+================================================================
+For css-percentage-circle
+================================================================
+This product bundles the css-percentage-circle library which is
+licensed under the MIT License.
+For details, see https://github.com/afuersch/css-percentage-circle
+You can find a copy of the License at licenses/LICENSE-css-percentage-circle
