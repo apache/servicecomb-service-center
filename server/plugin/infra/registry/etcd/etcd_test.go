@@ -529,7 +529,6 @@ func TestEtcdClient_Watch(t *testing.T) {
 
 	ch := make(chan struct{})
 	go func() {
-		ch <- struct{}{}
 		defer func() { ch <- struct{}{} }()
 		err = etcd.Watch(context.Background(), registry.WithStrKey("/test_watch/a"),
 			registry.WithWatchCallback(func(message string, evt *registry.PluginResponse) error {
@@ -543,7 +542,8 @@ func TestEtcdClient_Watch(t *testing.T) {
 			t.Fatalf("TestEtcdClient failed, %#v", err)
 		}
 	}()
-	<-ch
+
+	<-time.After(500 * time.Millisecond)
 	resp, err := etcd.Do(context.Background(), registry.PUT, registry.WithStrKey("/test_watch/a"),
 		registry.WithStrValue("a"))
 	if err != nil || !resp.Succeeded {
@@ -552,7 +552,6 @@ func TestEtcdClient_Watch(t *testing.T) {
 	<-ch
 
 	go func() {
-		ch <- struct{}{}
 		defer func() { ch <- struct{}{} }()
 		err = etcd.Watch(context.Background(), registry.WithStrKey("/test_watch/"),
 			registry.WithPrefix(),
@@ -569,7 +568,7 @@ func TestEtcdClient_Watch(t *testing.T) {
 		}
 	}()
 
-	<-ch
+	<-time.After(500 * time.Millisecond)
 	resp, err = etcd.Txn(context.Background(), []registry.PluginOp{
 		{Action: registry.Put, Key: []byte("/test_watch/a"), Value: []byte("a")},
 		{Action: registry.Put, Key: []byte("/test_watch/b"), Value: []byte("b")},
@@ -581,7 +580,6 @@ func TestEtcdClient_Watch(t *testing.T) {
 
 	// diff action type will be split
 	go func() {
-		ch <- struct{}{}
 		defer func() { ch <- struct{}{} }()
 		var times = 3
 		err = etcd.Watch(context.Background(), registry.WithStrKey("/test_watch/"),
@@ -604,7 +602,7 @@ func TestEtcdClient_Watch(t *testing.T) {
 		}
 	}()
 
-	<-ch
+	<-time.After(500 * time.Millisecond)
 	resp, err = etcd.Txn(context.Background(), []registry.PluginOp{
 		{Action: registry.Put, Key: []byte("/test_watch/c"), Value: []byte("c")},
 		{Action: registry.Delete, Key: []byte("/test_watch/a"), Value: []byte("a")},
@@ -623,7 +621,6 @@ func TestEtcdClient_Watch(t *testing.T) {
 	}
 	rev := resp.Revision
 	go func() {
-		ch <- struct{}{}
 		defer func() { ch <- struct{}{} }()
 		err = etcd.Watch(context.Background(), registry.WithStrKey("/test_watch/"),
 			registry.WithPrefix(),
@@ -639,13 +636,10 @@ func TestEtcdClient_Watch(t *testing.T) {
 			t.Fatalf("TestEtcdClient failed, %#v", err)
 		}
 	}()
-
-	<-ch
 	<-ch
 
 	// delete with prevKV
 	go func() {
-		ch <- struct{}{}
 		defer func() { ch <- struct{}{} }()
 		err = etcd.Watch(context.Background(), registry.WithStrKey("/test_watch/"),
 			registry.WithPrefix(), registry.WithPrevKv(),
@@ -660,7 +654,7 @@ func TestEtcdClient_Watch(t *testing.T) {
 			t.Fatalf("TestEtcdClient failed, %#v", err)
 		}
 	}()
-	<-ch
+	<-time.After(500 * time.Millisecond)
 	resp, err = etcd.Do(context.Background(), registry.DEL, registry.WithStrKey("/test_watch/b"))
 	if err != nil || !resp.Succeeded {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
