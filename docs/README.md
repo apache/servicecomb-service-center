@@ -8,7 +8,9 @@
 
 #### [Contribution Guide](/docs/contribution.md) 
 
-#### [Docker Image Guide](/docs/create-docker-image.md) 
+#### [Docker Image Guide](/scripts/docker) 
+
+- [Making Service-Center Image](/scripts/docker/build-image)
 
 - [Making Front-end Image](/scripts/docker/build-frontend-image)
 

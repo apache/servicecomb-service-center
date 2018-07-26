@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -15,17 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
+FROM golang:1.8.3
 
-umask 027
+WORKDIR /go/src/github.com/apache/incubator-servicecomb-service-center
 
-cd /opt/service-center
+COPY . .
 
-sed -i 's/^httpaddr.*=.*$/httpaddr = 0.0.0.0/g' conf/app.conf
-
-if [ ! -z "${BACKEND_ADDRESS}" ]; then
-    sed -i "s|^registry_plugin.*=.*$|registry_plugin = etcd|g" conf/app.conf
-    sed -i "s|^# manager_cluster.*=.*$|manager_cluster = ${BACKEND_ADDRESS}|g" conf/app.conf
-fi
-
-./service-center
+RUN bash -x scripts/build/local.sh linux 1.0.0 latest

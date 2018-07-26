@@ -17,15 +17,27 @@
 
 set -e
 
-umask 027
+export GOOS=${1:-"linux"}
+export GOARCH=${4:-"amd64"}
 
-cd /opt/service-center
+RELEASE=${2:-"0.0.1"}
 
-sed -i 's/^httpaddr.*=.*$/httpaddr = 0.0.0.0/g' conf/app.conf
+PACKAGE=${3:-"${RELEASE}"}
 
-if [ ! -z "${BACKEND_ADDRESS}" ]; then
-    sed -i "s|^registry_plugin.*=.*$|registry_plugin = etcd|g" conf/app.conf
-    sed -i "s|^# manager_cluster.*=.*$|manager_cluster = ${BACKEND_ADDRESS}|g" conf/app.conf
-fi
+PACKAGE_PREFIX=apache-servicecomb-incubating-service-center
 
-./service-center
+script_path=$(cd "$(dirname "$0")"; pwd)
+
+source ${script_path}/tools.sh
+
+personal_build() {
+    source ${script_path}/deps.sh
+
+    build_service_center
+
+    build_frontend
+
+    package
+}
+
+personal_build

@@ -6,6 +6,8 @@ service-center.iml
 .idea/
 **/*junit.xml
 **/*.exe
+**/*.tgz
+**/apache-servicecomb-incubating-service-center-*
 
 vendor/**
 !vendor/manifest
