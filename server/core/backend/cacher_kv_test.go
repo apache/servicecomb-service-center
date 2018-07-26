@@ -79,15 +79,13 @@ func TestNewKvCacher(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	// cause internal error
+	// case: cause list internal error
 	cr.refresh(ctx)
-
-	<-cr.Ready()
-	if !cr.IsReady() {
+	if cr.IsReady() {
 		t.Fatalf("TestNewKvCacher failed")
 	}
 
-	// normal
+	// prepare data
 	var evt KvEvent
 	cr = &KvCacher{
 		Cfg: Configure().
@@ -114,6 +112,10 @@ func TestNewKvCacher(t *testing.T) {
 	lw.Bus <- nil
 
 	cr.refresh(ctx)
+	// check ready
+	if !cr.IsReady() {
+		t.Fatalf("TestNewKvCacher failed")
+	}
 	// check event
 	if evt.Type != proto.EVT_INIT || evt.Revision != 3 || evt.KV.ModRevision != 2 || string(evt.KV.Key) != "ka" || string(evt.KV.Value.([]byte)) != "va" {
 		t.Fatalf("TestNewKvCacher failed, %v", evt)
@@ -335,5 +337,4 @@ func TestNewKvCacher(t *testing.T) {
 		t.Fatalf("TestNewKvCacher failed, %v %v", evts, evt)
 	}
 	delete(evts, string(data.Key))
-
 }

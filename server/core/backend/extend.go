@@ -16,7 +16,7 @@
  */
 package backend
 
-type Entity interface {
+type Extension interface {
 	Name() string
 	Config() *Config
 }
@@ -34,7 +34,7 @@ func (e *entity) Config() *Config {
 	return e.cfg
 }
 
-func NewEntity(name string, cfg *Config) Entity {
+func NewExtension(name string, cfg *Config) Extension {
 	return &entity{
 		name: name,
 		cfg:  cfg,

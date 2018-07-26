@@ -62,7 +62,7 @@ func (c *mockRegistry) LeaseRenew(ctx context.Context, leaseID int64) (TTL int64
 }
 
 func TestPrefixListWatch(t *testing.T) {
-	lw := &PrefixListWatch{
+	lw := &innerListWatch{
 		Client: &mockRegistry{},
 		Prefix: "a",
 		rev:    1,
@@ -81,7 +81,7 @@ func TestPrefixListWatch(t *testing.T) {
 	test := &registry.PluginResponse{
 		Revision: 2,
 	}
-	lw = &PrefixListWatch{
+	lw = &innerListWatch{
 		Client: &mockRegistry{Response: test},
 		Prefix: "a",
 		rev:    1,
@@ -101,7 +101,7 @@ func TestPrefixListWatch(t *testing.T) {
 		Kvs:      []*mvccpb.KeyValue{{ModRevision: 3}},
 		Revision: 4,
 	}
-	lw = &PrefixListWatch{
+	lw = &innerListWatch{
 		Client: &mockRegistry{Response: test},
 		Prefix: "a",
 		rev:    1,

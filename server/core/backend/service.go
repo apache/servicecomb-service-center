@@ -16,16 +16,8 @@
  */
 package backend
 
-import (
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
-	"golang.org/x/net/context"
-)
-
-type ListWatch interface {
-	List(op ListWatchConfig) (*registry.PluginResponse, error)
-	// not support new multiple watchers
-	Watch(op ListWatchConfig) Watcher
-	//
-	DoWatch(ctx context.Context, f func(*registry.PluginResponse)) error
-	Revision() int64
+type Runnable interface {
+	Run()
+	Stop()
+	Ready() <-chan struct{}
 }

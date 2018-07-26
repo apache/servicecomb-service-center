@@ -83,6 +83,34 @@ func BenchmarkFilter(b *testing.B) {
 	//20	  82367261 ns/op	37964987 B/op	   80132 allocs/op
 }
 
+func TestNullCache_Name(t *testing.T) {
+	NullCache.Put("", nil)
+	if NullCache.Name() != "NULL" {
+		t.Fatalf("TestNullCache_Name failed")
+	}
+	if NullCache.Size() != 0 {
+		t.Fatalf("TestNullCache_Name failed")
+	}
+	if NullCache.Get("") != nil {
+		t.Fatalf("TestNullCache_Name failed")
+	}
+	if NullCache.GetAll(nil) != 0 {
+		t.Fatalf("TestNullCache_Name failed")
+	}
+	if NullCache.GetPrefix("", nil) != 0 {
+		t.Fatalf("TestNullCache_Name failed")
+	}
+	NullCache.ForEach(func(k string, v *KeyValue) (next bool) {
+		t.Fatalf("TestNullCache_Name failed")
+		return false
+	})
+	NullCache.Remove("")
+
+	if NullCacher.Cache() != NullCache || NullCacher.Config() != nil {
+		t.Fatalf("TestNullCache_Name failed")
+	}
+}
+
 func TestKvCache_Get(t *testing.T) {
 	c := NewKvCache("test", Configure())
 	c.Put("", &KeyValue{Version: 1})

@@ -36,8 +36,5 @@ func (n *nullCache) Remove(k string)                                      {}
 type nullCacher struct {
 }
 
-func (n *nullCacher) Config() *Config        { return nil }
-func (n *nullCacher) Cache() Cache           { return NullCache }
-func (n *nullCacher) Run()                   {}
-func (n *nullCacher) Stop()                  {}
-func (n *nullCacher) Ready() <-chan struct{} { return closedCh }
+func (n *nullCacher) Config() *Config { return nil }
+func (n *nullCacher) Cache() Cache    { return NullCache }

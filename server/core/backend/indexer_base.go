@@ -24,28 +24,24 @@ import (
 	"strings"
 )
 
-type baseIndexer struct {
-	Cfg    *Config
+type CommonIndexer struct {
 	Client registry.Registry
+	Parser Parser
+	Root   string
 }
 
-func (i *baseIndexer) Cacher() Cacher {
-	return NullCacher
-}
-
-func (i *baseIndexer) CheckPrefix(key string) error {
-	if i.Cfg == nil {
-		return fmt.Errorf("required config")
-	}
-	if strings.Index(key, i.Cfg.Prefix) != 0 {
-		return fmt.Errorf("search %s mismatch pattern %s", key, i.Cfg.Prefix)
+func (i *CommonIndexer) CheckPrefix(key string) error {
+	if strings.Index(key, i.Root) != 0 {
+		return fmt.Errorf("search '%s' mismatch pattern %s", key, i.Root)
 	}
 	return nil
 }
 
-func (i *baseIndexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (r *Response, err error) {
+func (i *CommonIndexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (r *Response, err error) {
 	op := registry.OpGet(opts...)
+
 	key := util.BytesToStringWithNoCopy(op.Key)
+
 	if err := i.CheckPrefix(key); err != nil {
 		return nil, err
 	}
@@ -61,7 +57,7 @@ func (i *baseIndexer) Search(ctx context.Context, opts ...registry.PluginOpOptio
 		return
 	}
 
-	p := i.Cfg.Parser
+	p := i.Parser
 	if op.KeyOnly {
 		p = nil
 	}
@@ -78,16 +74,6 @@ func (i *baseIndexer) Search(ctx context.Context, opts ...registry.PluginOpOptio
 	return
 }
 
-func (i *baseIndexer) Run() {
-}
-
-func (i *baseIndexer) Stop() {
-}
-
-func (i *baseIndexer) Ready() <-chan struct{} {
-	return closedCh
-}
-
-func newBaseIndexer(cfg *Config) (indexer *baseIndexer) {
-	return &baseIndexer{Cfg: cfg, Client: Registry()}
+func NewCommonIndexer(root string, p Parser) (indexer *CommonIndexer) {
+	return &CommonIndexer{Client: Registry(), Parser: p, Root: root}
 }

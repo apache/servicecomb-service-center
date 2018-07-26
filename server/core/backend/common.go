@@ -62,7 +62,7 @@ type StoreType int
 
 func (st StoreType) String() string {
 	if int(st) < 0 {
-		return "NOT_EXIST"
+		return "TypeError"
 	}
 	if int(st) < len(TypeNames) {
 		return TypeNames[st]
@@ -70,7 +70,7 @@ func (st StoreType) String() string {
 	return "TYPE" + strconv.Itoa(int(st))
 }
 
-const NOT_EXIST = StoreType(-1)
+const TypeError = StoreType(-1)
 
 const (
 	DOMAIN StoreType = iota

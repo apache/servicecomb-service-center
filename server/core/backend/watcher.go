@@ -17,71 +17,10 @@
 package backend
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
-	"golang.org/x/net/context"
-	"sync"
 )
 
 type Watcher interface {
 	EventBus() <-chan *registry.PluginResponse
 	Stop()
-}
-
-type innerWatcher struct {
-	ListOps ListWatchConfig
-	lw      ListWatch
-	bus     chan *registry.PluginResponse
-	stopCh  chan struct{}
-	stop    bool
-	mux     sync.Mutex
-}
-
-func (w *innerWatcher) EventBus() <-chan *registry.PluginResponse {
-	return w.bus
-}
-
-func (w *innerWatcher) process(_ context.Context) {
-	stopCh := make(chan struct{})
-	ctx, cancel := context.WithTimeout(w.ListOps.Context, w.ListOps.Timeout)
-	util.Go(func(_ context.Context) {
-		defer close(stopCh)
-		w.lw.DoWatch(ctx, w.sendEvent)
-	})
-
-	select {
-	case <-stopCh:
-		// timed out or exception
-		w.Stop()
-	case <-w.stopCh:
-		cancel()
-	}
-}
-
-func (w *innerWatcher) sendEvent(resp *registry.PluginResponse) {
-	defer util.RecoverAndReport()
-	w.bus <- resp
-}
-
-func (w *innerWatcher) Stop() {
-	w.mux.Lock()
-	if w.stop {
-		w.mux.Unlock()
-		return
-	}
-	w.stop = true
-	close(w.stopCh)
-	close(w.bus)
-	w.mux.Unlock()
-}
-
-func NewWatcher(lw ListWatch, listOps ListWatchConfig) Watcher {
-	w := &innerWatcher{
-		ListOps: listOps,
-		lw:      lw,
-		bus:     make(chan *registry.PluginResponse, EVENT_BUS_MAX_SIZE),
-		stopCh:  make(chan struct{}),
-	}
-	util.Go(w.process)
-	return w
 }

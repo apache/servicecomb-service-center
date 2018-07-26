@@ -23,23 +23,23 @@ import (
 )
 
 type Config struct {
-	Prefix         string
+	Key            string
 	InitSize       int
 	NoEventPeriods int
 	Timeout        time.Duration
 	Period         time.Duration
 	DeferHandler   DeferHandler
 	OnEvent        KvEventFunc
-	Parser         *Parser
+	Parser         Parser
 }
 
 func (cfg *Config) String() string {
-	return fmt.Sprintf("{prefix: %s, timeout: %s, period: %s}",
-		cfg.Prefix, cfg.Timeout, cfg.Period)
+	return fmt.Sprintf("{key: %s, timeout: %s, period: %s}",
+		cfg.Key, cfg.Timeout, cfg.Period)
 }
 
 func (cfg *Config) WithPrefix(key string) *Config {
-	cfg.Prefix = key
+	cfg.Key = key
 	return cfg
 }
 
@@ -85,14 +85,14 @@ func (cfg *Config) AppendEventFunc(f KvEventFunc) *Config {
 	return cfg
 }
 
-func (cfg *Config) WithParser(parser *Parser) *Config {
+func (cfg *Config) WithParser(parser Parser) *Config {
 	cfg.Parser = parser
 	return cfg
 }
 
 func Configure() *Config {
 	return &Config{
-		Prefix:         "/",
+		Key:            "/",
 		Timeout:        DEFAULT_LISTWATCH_TIMEOUT,
 		Period:         time.Second,
 		NoEventPeriods: DEFAULT_MAX_NO_EVENT_INTERVAL,

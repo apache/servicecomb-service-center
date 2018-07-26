@@ -63,8 +63,8 @@ func (service *AdminService) dumpAll(ctx context.Context, cache *model.Cache) {
 		Done()
 }
 
-func setValue(indexer backend.Indexer, setter model.Setter) {
-	indexer.Cacher().Cache().ForEach(func(k string, kv *backend.KeyValue) (next bool) {
+func setValue(e backend.Entity, setter model.Setter) {
+	e.Cache().ForEach(func(k string, kv *backend.KeyValue) (next bool) {
 		setter.SetValue(&model.KV{Key: k, Rev: kv.ModRevision, Value: kv.Value})
 		return true
 	})

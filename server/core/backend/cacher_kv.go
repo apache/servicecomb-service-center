@@ -63,7 +63,7 @@ func (c *KvCacher) needList() bool {
 	}
 
 	util.Logger().Debugf("no events come in more then %s, need to list key %s, rev: %d",
-		time.Duration(c.noEventPeriods)*c.Cfg.Timeout, c.Cfg.Prefix, rev)
+		time.Duration(c.noEventPeriods)*c.Cfg.Timeout, c.Cfg.Key, rev)
 	c.noEventPeriods = 0
 	return true
 }
@@ -85,7 +85,7 @@ func (c *KvCacher) doList(cfg ListWatchConfig) error {
 	}
 	c.sync(evts)
 	util.LogDebugOrWarnf(start, "finish to cache key %s, %d items, rev: %d",
-		c.Cfg.Prefix, len(kvs), c.lw.Revision())
+		c.Cfg.Key, len(kvs), c.lw.Revision())
 
 	return nil
 }
@@ -106,7 +106,10 @@ func (c *KvCacher) ListAndWatch(ctx context.Context) error {
 		Context: ctx,
 	}
 	if c.needList() {
-		c.doList(cfg)
+		if err := c.doList(cfg); err != nil && !c.IsReady() {
+			// cacher is not ready, so it need to retry util the cache is created
+			return err
+		}
 	}
 
 	util.SafeCloseChan(c.ready)
@@ -122,9 +125,10 @@ func (c *KvCacher) handleWatcher(watcher Watcher) error {
 		}
 
 		start := time.Now()
+		rev := resp.Revision
 		evts := make([]KvEvent, 0, len(resp.Kvs))
 		for _, kv := range resp.Kvs {
-			evt := KvEvent{Prefix: c.Cfg.Prefix, Revision: kv.ModRevision}
+			evt := KvEvent{Prefix: c.Cfg.Key, Revision: kv.ModRevision}
 			switch {
 			case resp.Action == registry.Put && kv.Version == 1:
 				evt.Type, evt.KV = proto.EVT_CREATE, c.doParse(kv)
@@ -149,7 +153,7 @@ func (c *KvCacher) handleWatcher(watcher Watcher) error {
 		}
 		c.sync(evts)
 		util.LogDebugOrWarnf(start, "finish to handle %d events, prefix: %s, rev: %d",
-			len(evts), c.Cfg.Prefix, c.lw.Revision())
+			len(evts), c.Cfg.Key, rev)
 	}
 	return nil
 }
@@ -247,7 +251,7 @@ func (c *KvCacher) filterDelete(newStore map[string]*mvccpb.KeyValue,
 		block[i] = KvEvent{
 			Revision: rev,
 			Type:     proto.EVT_DELETE,
-			Prefix:   c.Cfg.Prefix,
+			Prefix:   c.Cfg.Key,
 			KV:       v,
 		}
 		i++
@@ -279,7 +283,7 @@ func (c *KvCacher) filterCreateOrUpdate(newStore map[string]*mvccpb.KeyValue,
 				block[i] = KvEvent{
 					Revision: rev,
 					Type:     proto.EVT_CREATE,
-					Prefix:   c.Cfg.Prefix,
+					Prefix:   c.Cfg.Key,
 					KV:       kv,
 				}
 				i++
@@ -301,7 +305,7 @@ func (c *KvCacher) filterCreateOrUpdate(newStore map[string]*mvccpb.KeyValue,
 			block[i] = KvEvent{
 				Revision: rev,
 				Type:     proto.EVT_UPDATE,
-				Prefix:   c.Cfg.Prefix,
+				Prefix:   c.Cfg.Key,
 				KV:       kv,
 			}
 			i++
@@ -474,9 +478,9 @@ func NewKvCacher(name string, cfg *Config) *KvCacher {
 	cacher := &KvCacher{
 		Cfg:   cfg,
 		ready: make(chan struct{}),
-		lw: &PrefixListWatch{
+		lw: &innerListWatch{
 			Client: Registry(),
-			Prefix: cfg.Prefix,
+			Prefix: cfg.Key,
 		},
 		goroutine: util.NewGo(context.Background()),
 	}

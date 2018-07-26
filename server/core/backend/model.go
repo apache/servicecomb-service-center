@@ -17,15 +17,39 @@
 package backend
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
-	"golang.org/x/net/context"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 )
 
-type ListWatch interface {
-	List(op ListWatchConfig) (*registry.PluginResponse, error)
-	// not support new multiple watchers
-	Watch(op ListWatchConfig) Watcher
-	//
-	DoWatch(ctx context.Context, f func(*registry.PluginResponse)) error
-	Revision() int64
+type KeyValue struct {
+	Key            []byte
+	Value          interface{}
+	Version        int64
+	CreateRevision int64
+	ModRevision    int64
+}
+
+func (kv *KeyValue) From(p Parser, s *mvccpb.KeyValue) (err error) {
+	kv.Key = s.Key
+	kv.Version = s.Version
+	kv.CreateRevision = s.CreateRevision
+	kv.ModRevision = s.ModRevision
+	if p == nil {
+		return
+	}
+	kv.Value, err = p.Unmarshal(s.Value)
+	return
+}
+
+type Response struct {
+	Kvs   []*KeyValue
+	Count int64
+}
+
+func (pr *Response) MaxModRevision() (max int64) {
+	for _, kv := range pr.Kvs {
+		if max < kv.ModRevision {
+			max = kv.ModRevision
+		}
+	}
+	return
 }

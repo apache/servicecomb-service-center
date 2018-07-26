@@ -33,13 +33,13 @@ var (
 var brokerKvStore = &BKvStore{}
 
 func init() {
-	PARTICIPANT = backend.Store().MustInstall(backend.NewEntity("PARTICIPANT", backend.Configure().WithPrefix(GetBrokerParticipantKey(""))))
-	VERSION = backend.Store().MustInstall(backend.NewEntity("VERSION", backend.Configure().WithPrefix(GetBrokerVersionKey(""))))
-	PACT = backend.Store().MustInstall(backend.NewEntity("PACT", backend.Configure().WithPrefix(GetBrokerPactKey(""))))
-	PACT_VERSION = backend.Store().MustInstall(backend.NewEntity("PACT_VERSION", backend.Configure().WithPrefix(GetBrokerPactVersionKey(""))))
-	PACT_TAG = backend.Store().MustInstall(backend.NewEntity("PACT_TAG", backend.Configure().WithPrefix(GetBrokerTagKey(""))))
-	VERIFICATION = backend.Store().MustInstall(backend.NewEntity("VERIFICATION", backend.Configure().WithPrefix(GetBrokerVerificationKey(""))))
-	PACT_LATEST = backend.Store().MustInstall(backend.NewEntity("PACT_LATEST", backend.Configure().WithPrefix(GetBrokerLatestKey(""))))
+	PARTICIPANT = backend.Store().MustInstall(backend.NewExtension("PARTICIPANT", backend.Configure().WithPrefix(GetBrokerParticipantKey(""))))
+	VERSION = backend.Store().MustInstall(backend.NewExtension("VERSION", backend.Configure().WithPrefix(GetBrokerVersionKey(""))))
+	PACT = backend.Store().MustInstall(backend.NewExtension("PACT", backend.Configure().WithPrefix(GetBrokerPactKey(""))))
+	PACT_VERSION = backend.Store().MustInstall(backend.NewExtension("PACT_VERSION", backend.Configure().WithPrefix(GetBrokerPactVersionKey(""))))
+	PACT_TAG = backend.Store().MustInstall(backend.NewExtension("PACT_TAG", backend.Configure().WithPrefix(GetBrokerTagKey(""))))
+	VERIFICATION = backend.Store().MustInstall(backend.NewExtension("VERIFICATION", backend.Configure().WithPrefix(GetBrokerVerificationKey(""))))
+	PACT_LATEST = backend.Store().MustInstall(backend.NewExtension("PACT_LATEST", backend.Configure().WithPrefix(GetBrokerLatestKey(""))))
 
 }
 
@@ -47,31 +47,31 @@ type BKvStore struct {
 }
 
 func (s *BKvStore) Participant() backend.Indexer {
-	return backend.Store().Entity(PARTICIPANT)
+	return backend.Store().Entities(PARTICIPANT)
 }
 
 func (s *BKvStore) Version() backend.Indexer {
-	return backend.Store().Entity(VERSION)
+	return backend.Store().Entities(VERSION)
 }
 
 func (s *BKvStore) Pact() backend.Indexer {
-	return backend.Store().Entity(PACT)
+	return backend.Store().Entities(PACT)
 }
 
 func (s *BKvStore) PactVersion() backend.Indexer {
-	return backend.Store().Entity(PACT_VERSION)
+	return backend.Store().Entities(PACT_VERSION)
 }
 
 func (s *BKvStore) PactTag() backend.Indexer {
-	return backend.Store().Entity(PACT_TAG)
+	return backend.Store().Entities(PACT_TAG)
 }
 
 func (s *BKvStore) Verification() backend.Indexer {
-	return backend.Store().Entity(VERIFICATION)
+	return backend.Store().Entities(VERIFICATION)
 }
 
 func (s *BKvStore) PactLatest() backend.Indexer {
-	return backend.Store().Entity(PACT_LATEST)
+	return backend.Store().Entities(PACT_LATEST)
 }
 
 func Store() *BKvStore {

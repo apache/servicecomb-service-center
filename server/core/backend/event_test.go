@@ -19,21 +19,33 @@ package backend
 import "testing"
 
 type mockEventHandler struct {
-	Evt KvEvent
+	StoreType StoreType
+	Evt       KvEvent
 }
 
 func (h *mockEventHandler) Type() StoreType {
-	return SERVICE
+	return h.StoreType
 }
 func (h *mockEventHandler) OnEvent(evt KvEvent) {
 	h.Evt = evt
 }
 
 func TestAddEventHandler(t *testing.T) {
-	h := &mockEventHandler{}
+	h := &mockEventHandler{StoreType: SERVICE}
 	evt := KvEvent{Revision: 1}
+
+	// case: add
+	proxy := EventProxy(SERVICE)
+	if nil == proxy {
+		t.Fatalf("TestAddEventHandler failed")
+	}
+	if NewEventProxy(SERVICE) != proxy {
+		t.Fatalf("TestAddEventHandler failed")
+	}
+
+	// case: normal
 	AddEventHandler(h)
-	EventProxy(SERVICE).OnEvent(evt)
+	proxy.OnEvent(evt)
 	if h.Evt != evt {
 		t.Fatalf("TestAddEventHandler failed")
 	}

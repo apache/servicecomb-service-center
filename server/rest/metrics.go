@@ -17,13 +17,14 @@
 package rest
 
 import (
-	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/prometheus/client_golang/prometheus"
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -52,6 +53,9 @@ var (
 			Help:       "HTTP request latency summary of ROA handler",
 			Objectives: prometheus.DefObjectives,
 		}, []string{"method", "instance", "api"})
+
+	instance        string
+	getEndpointOnce sync.Once
 )
 
 func init() {
@@ -61,7 +65,9 @@ func init() {
 }
 
 func ReportRequestCompleted(w http.ResponseWriter, r *http.Request, start time.Time) {
-	instance := fmt.Sprint(core.Instance.Endpoints)
+	getEndpointOnce.Do(func() {
+		instance, _ = util.ParseEndpoint(core.Instance.Endpoints[0])
+	})
 	elapsed := float64(time.Since(start).Nanoseconds()) / float64(time.Microsecond)
 	route, _ := r.Context().Value(rest.CTX_MATCH_PATTERN).(string)
 

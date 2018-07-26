@@ -25,31 +25,30 @@ import (
 	"time"
 )
 
-type cacheIndexer struct {
-	*baseIndexer
+type CacheIndexer struct {
+	*CommonIndexer
 
-	cacher  Cacher
-	lock    sync.Mutex
-	isClose bool
+	Cache Cache
+
+	lock sync.Mutex
 }
 
-func (i *cacheIndexer) Cacher() Cacher {
-	return i.cacher
-}
-
-func (i *cacheIndexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (*Response, error) {
+func (i *CacheIndexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (*Response, error) {
 	op := registry.OpGet(opts...)
-	key := util.BytesToStringWithNoCopy(op.Key)
-	if err := i.CheckPrefix(key); err != nil {
-		return nil, fmt.Errorf("%s, cache is '%s'", err.Error(), i.cacher.Cache().Name())
-	}
 
-	if op.Mode == registry.MODE_NO_CACHE ||
+	key := util.BytesToStringWithNoCopy(op.Key)
+
+	if i.Cache == nil ||
+		op.Mode == registry.MODE_NO_CACHE ||
 		op.Revision > 0 ||
 		(op.Offset >= 0 && op.Limit > 0) {
-		util.Logger().Debugf("search %s match special options, request etcd server, opts: %s",
-			i.cacher.Cache().Name(), op)
-		return i.baseIndexer.Search(ctx, opts...)
+		util.Logger().Debugf("search '%s' match special options, request etcd server, opts: %s",
+			key, op)
+		return i.CommonIndexer.Search(ctx, opts...)
+	}
+
+	if err := i.CheckPrefix(key); err != nil {
+		return nil, fmt.Errorf("%s, cache is '%s'", err.Error(), i.Cache.Name())
 	}
 
 	var resp *Response
@@ -63,17 +62,17 @@ func (i *cacheIndexer) Search(ctx context.Context, opts ...registry.PluginOpOpti
 		return resp, nil
 	}
 
-	util.Logger().Debugf("can not find any key from %s cache with prefix, request etcd server, key: %s",
-		i.cacher.Cache().Name(), key)
-	return i.baseIndexer.Search(ctx, opts...)
+	util.Logger().Debugf("can not find any key from %s cache, request etcd server, key: %s",
+		i.Cache.Name(), key)
+	return i.CommonIndexer.Search(ctx, opts...)
 }
 
-func (i *cacheIndexer) search(op registry.PluginOp) *Response {
+func (i *CacheIndexer) search(op registry.PluginOp) *Response {
 	resp := new(Response)
 
 	key := util.BytesToStringWithNoCopy(op.Key)
 
-	kv := i.cacher.Cache().Get(key)
+	kv := i.Cache.Get(key)
 	if kv != nil {
 		resp.Count = 1
 	}
@@ -85,58 +84,29 @@ func (i *cacheIndexer) search(op registry.PluginOp) *Response {
 	return resp
 }
 
-func (i *cacheIndexer) searchByPrefix(op registry.PluginOp) *Response {
+func (i *CacheIndexer) searchByPrefix(op registry.PluginOp) *Response {
 	resp := new(Response)
 
 	prefix := util.BytesToStringWithNoCopy(op.Key)
 
-	resp.Count = int64(i.cacher.Cache().GetPrefix(prefix, nil))
+	resp.Count = int64(i.Cache.GetPrefix(prefix, nil))
 	if resp.Count == 0 || op.CountOnly {
 		return resp
 	}
 
 	t := time.Now()
 	kvs := make([]*KeyValue, 0, resp.Count)
-	i.cacher.Cache().GetPrefix(prefix, &kvs)
+	i.Cache.GetPrefix(prefix, &kvs)
 
-	util.LogNilOrWarnf(t, "too long to index data[%d] from cache '%s'", len(kvs), i.cacher.Cache().Name())
+	util.LogNilOrWarnf(t, "too long to index data[%d] from cache '%s'", len(kvs), i.Cache.Name())
 
 	resp.Kvs = kvs
 	return resp
 }
 
-func (i *cacheIndexer) Run() {
-	i.lock.Lock()
-	if !i.isClose {
-		i.lock.Unlock()
-		return
-	}
-	i.isClose = false
-	i.lock.Unlock()
-
-	i.cacher.Run()
-}
-
-func (i *cacheIndexer) Stop() {
-	i.lock.Lock()
-	if i.isClose {
-		i.lock.Unlock()
-		return
-	}
-	i.isClose = true
-	i.lock.Unlock()
-
-	i.cacher.Stop()
-}
-
-func (i *cacheIndexer) Ready() <-chan struct{} {
-	return i.cacher.Ready()
-}
-
-func newCacheIndexer(name string, cfg *Config) *cacheIndexer {
-	return &cacheIndexer{
-		baseIndexer: newBaseIndexer(cfg),
-		cacher:      NewKvCacher(name, cfg),
-		isClose:     true,
+func NewCacheIndexer(cfg *Config, cache Cache) *CacheIndexer {
+	return &CacheIndexer{
+		CommonIndexer: NewCommonIndexer(cfg.Key, cfg.Parser),
+		Cache:         cache,
 	}
 }

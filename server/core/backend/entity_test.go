@@ -17,25 +17,32 @@
 package backend
 
 import (
-	"github.com/coreos/etcd/mvcc/mvccpb"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
+	"testing"
 )
 
-type KeyValue struct {
-	Key            []byte
-	Value          interface{}
-	Version        int64
-	CreateRevision int64
-	ModRevision    int64
-}
-
-func (kv *KeyValue) From(p *Parser, s *mvccpb.KeyValue) (err error) {
-	kv.Key = s.Key
-	kv.Version = s.Version
-	kv.CreateRevision = s.CreateRevision
-	kv.ModRevision = s.ModRevision
-	if p == nil {
-		return
+func TestNewKvEntity(t *testing.T) {
+	core.ServerInfo.Config.EnableCache = false
+	i := NewKvEntity("a", Configure().WithInitSize(1))
+	if _, ok := i.Indexer.(*CommonIndexer); !ok {
+		t.Fatalf("TestNewIndexer failed")
 	}
-	kv.Value, err = p.Unmarshal(s.Value)
-	return
+	core.ServerInfo.Config.EnableCache = true
+
+	i.Run()
+	<-i.Ready()
+	i.Stop()
+
+	i = NewKvEntity("a", Configure().WithInitSize(0))
+	if _, ok := i.Indexer.(*CommonIndexer); !ok {
+		t.Fatalf("TestNewIndexer failed")
+	}
+
+	i = NewKvEntity("a", Configure())
+	if _, ok := i.Indexer.(*CacheIndexer); !ok {
+		t.Fatalf("TestNewIndexer failed")
+	}
+	if _, ok := i.Cacher.(*KvCacher); !ok {
+		t.Fatalf("TestNewIndexer failed")
+	}
 }

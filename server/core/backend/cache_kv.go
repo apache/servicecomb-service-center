@@ -55,7 +55,7 @@ func (c *KvCache) Get(key string) (v *KeyValue) {
 
 func (c *KvCache) GetAll(arr *[]*KeyValue) (count int) {
 	c.rwMux.RLock()
-	count = c.getPrefixKey(arr, c.Cfg.Prefix)
+	count = c.getPrefixKey(arr, c.Cfg.Key)
 	c.rwMux.RUnlock()
 	return
 }
@@ -126,7 +126,7 @@ func (c *KvCache) getPrefixKey(arr *[]*KeyValue, prefix string) (count int) {
 }
 
 func (c *KvCache) addPrefixKey(key string, val *KeyValue) {
-	if len(c.Cfg.Prefix) >= len(key) {
+	if len(c.Cfg.Key) >= len(key) {
 		return
 	}
 	prefix := c.prefix(key)

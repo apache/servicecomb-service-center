@@ -34,8 +34,8 @@ var (
 )
 
 var (
-	instance string
-	once     sync.Once
+	instance        string
+	getEndpointOnce sync.Once
 )
 
 func init() {
@@ -49,7 +49,7 @@ func ReportCacheSize(resource, t string, s int) {
 		return
 	}
 
-	once.Do(func() {
+	getEndpointOnce.Do(func() {
 		instance, _ = util.ParseEndpoint(core.Instance.Endpoints[0])
 	})
 	cacheSizeGauge.WithLabelValues(instance, resource, t).Set(float64(s))

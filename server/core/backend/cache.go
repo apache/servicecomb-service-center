@@ -30,9 +30,5 @@ type Cache interface {
 }
 
 type Cacher interface {
-	Config() *Config
 	Cache() Cache
-	Run()
-	Stop()
-	Ready() <-chan struct{}
 }

@@ -33,7 +33,7 @@ func init() {
 }
 
 type KvStore struct {
-	indexers    *util.ConcurrentMap
+	entities    *util.ConcurrentMap
 	taskService task.TaskService
 	lock        sync.RWMutex
 	ready       chan struct{}
@@ -43,7 +43,7 @@ type KvStore struct {
 }
 
 func (s *KvStore) Initialize() {
-	s.indexers = util.NewConcurrentMap(0)
+	s.entities = util.NewConcurrentMap(0)
 	s.taskService = task.NewTaskService()
 	s.ready = make(chan struct{})
 	s.goroutine = util.NewGo(context.Background())
@@ -56,25 +56,27 @@ func (s *KvStore) OnCacheEvent(evt KvEvent) {
 }
 
 func (s *KvStore) injectConfig(t StoreType) *Config {
-	return TypeConfig[t].AppendEventFunc(s.OnCacheEvent).
-		AppendEventFunc(EventProxies[t].OnEvent)
+	return TypeConfig[t].AppendEventFunc(s.OnCacheEvent)
 }
 
-func (s *KvStore) getOrCreateIndexer(t StoreType) Indexer {
-	v, err := s.indexers.Fetch(t, func() (interface{}, error) {
-		if _, ok := TypeConfig[t]; !ok {
+func (s *KvStore) getOrCreateEntity(t StoreType) Entity {
+	v, err := s.entities.Fetch(t, func() (interface{}, error) {
+		cfg, ok := TypeConfig[t]
+		if !ok {
+			// do not new instance
 			return nil, ErrNoImpl
 		}
 
-		i := NewIndexer(t.String(), s.injectConfig(t))
-		i.Run()
-		return i, nil
+		e := NewKvEntity(t.String(), cfg)
+		e.Run()
+		return e, nil
 	})
 	if err != nil {
-		util.Logger().Errorf(err, "can not find entity '%s', new base indexer for it", t.String())
-		return NullIndexer
+		util.Logger().Errorf(err, "can not find entity '%s', new default one", t.String())
+		return DefaultKvEntity()
+
 	}
-	return v.(Indexer)
+	return v.(Entity)
 }
 
 func (s *KvStore) Run() {
@@ -87,13 +89,13 @@ func (s *KvStore) store(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case <-s.Entity(i).Ready():
+		case <-s.Entities(i).Ready():
 		}
 	}
 
 	util.SafeCloseChan(s.ready)
 
-	util.Logger().Debugf("all indexers are ready")
+	util.Logger().Debugf("all entities are ready")
 }
 
 func (s *KvStore) closed() bool {
@@ -106,8 +108,8 @@ func (s *KvStore) Stop() {
 	}
 	s.isClose = true
 
-	s.indexers.ForEach(func(item util.MapItem) bool {
-		item.Value.(Indexer).Stop()
+	s.entities.ForEach(func(item util.MapItem) bool {
+		item.Value.(Entity).Stop()
 		return true
 	})
 
@@ -125,38 +127,42 @@ func (s *KvStore) Ready() <-chan struct{} {
 	return s.ready
 }
 
-func (s *KvStore) installType(e Entity) (id StoreType, err error) {
+func (s *KvStore) installType(e Extension) (id StoreType, err error) {
 	if e == nil {
-		return NOT_EXIST, errors.New("invalid parameter")
+		return TypeError, errors.New("invalid parameter")
 	}
 	for _, n := range TypeNames {
 		if n == e.Name() {
-			return NOT_EXIST, fmt.Errorf("redeclare store type '%s'", n)
+			return TypeError, fmt.Errorf("redeclare store type '%s'", n)
 		}
 	}
 	for _, r := range TypeConfig {
-		if r.Prefix == e.Config().Prefix {
-			return NOT_EXIST, fmt.Errorf("redeclare store root '%s'", r)
+		if r.Key == e.Config().Key {
+			return TypeError, fmt.Errorf("redeclare store root '%s'", r)
 		}
 	}
 
 	id = StoreType(len(TypeNames))
 	TypeNames = append(TypeNames, e.Name())
+	// config
 	TypeConfig[id] = e.Config()
-	EventProxies[id] = NewEventProxy()
+	// event proxy
+	NewEventProxy(id)
+
+	s.injectConfig(id)
 	return
 }
 
-func (s *KvStore) Install(e Entity) (id StoreType, err error) {
+func (s *KvStore) Install(e Extension) (id StoreType, err error) {
 	if id, err = s.installType(e); err != nil {
 		return
 	}
 
-	util.Logger().Infof("install new store entity %d:%s->%s", id, e.Name(), e.Config().Prefix)
+	util.Logger().Infof("install new store entity %d:%s->%s", id, e.Name(), e.Config().Key)
 	return
 }
 
-func (s *KvStore) MustInstall(e Entity) StoreType {
+func (s *KvStore) MustInstall(e Extension) StoreType {
 	id, err := s.Install(e)
 	if err != nil {
 		panic(err)
@@ -164,22 +170,22 @@ func (s *KvStore) MustInstall(e Entity) StoreType {
 	return id
 }
 
-func (s *KvStore) Entity(id StoreType) Indexer { return s.getOrCreateIndexer(id) }
-func (s *KvStore) Service() Indexer            { return s.Entity(SERVICE) }
-func (s *KvStore) SchemaSummary() Indexer      { return s.Entity(SCHEMA_SUMMARY) }
-func (s *KvStore) Instance() Indexer           { return s.Entity(INSTANCE) }
-func (s *KvStore) Lease() Indexer              { return s.Entity(LEASE) }
-func (s *KvStore) ServiceIndex() Indexer       { return s.Entity(SERVICE_INDEX) }
-func (s *KvStore) ServiceAlias() Indexer       { return s.Entity(SERVICE_ALIAS) }
-func (s *KvStore) ServiceTag() Indexer         { return s.Entity(SERVICE_TAG) }
-func (s *KvStore) Rule() Indexer               { return s.Entity(RULE) }
-func (s *KvStore) RuleIndex() Indexer          { return s.Entity(RULE_INDEX) }
-func (s *KvStore) Schema() Indexer             { return s.Entity(SCHEMA) }
-func (s *KvStore) Dependency() Indexer         { return s.Entity(DEPENDENCY) }
-func (s *KvStore) DependencyRule() Indexer     { return s.Entity(DEPENDENCY_RULE) }
-func (s *KvStore) DependencyQueue() Indexer    { return s.Entity(DEPENDENCY_QUEUE) }
-func (s *KvStore) Domain() Indexer             { return s.Entity(DOMAIN) }
-func (s *KvStore) Project() Indexer            { return s.Entity(PROJECT) }
+func (s *KvStore) Entities(id StoreType) Entity { return s.getOrCreateEntity(id) }
+func (s *KvStore) Service() Entity              { return s.Entities(SERVICE) }
+func (s *KvStore) SchemaSummary() Entity        { return s.Entities(SCHEMA_SUMMARY) }
+func (s *KvStore) Instance() Entity             { return s.Entities(INSTANCE) }
+func (s *KvStore) Lease() Entity                { return s.Entities(LEASE) }
+func (s *KvStore) ServiceIndex() Entity         { return s.Entities(SERVICE_INDEX) }
+func (s *KvStore) ServiceAlias() Entity         { return s.Entities(SERVICE_ALIAS) }
+func (s *KvStore) ServiceTag() Entity           { return s.Entities(SERVICE_TAG) }
+func (s *KvStore) Rule() Entity                 { return s.Entities(RULE) }
+func (s *KvStore) RuleIndex() Entity            { return s.Entities(RULE_INDEX) }
+func (s *KvStore) Schema() Entity               { return s.Entities(SCHEMA) }
+func (s *KvStore) Dependency() Entity           { return s.Entities(DEPENDENCY) }
+func (s *KvStore) DependencyRule() Entity       { return s.Entities(DEPENDENCY_RULE) }
+func (s *KvStore) DependencyQueue() Entity      { return s.Entities(DEPENDENCY_QUEUE) }
+func (s *KvStore) Domain() Entity               { return s.Entities(DOMAIN) }
+func (s *KvStore) Project() Entity              { return s.Entities(PROJECT) }
 
 func (s *KvStore) KeepAlive(ctx context.Context, opts ...registry.PluginOpOption) (int64, error) {
 	op := registry.OpPut(opts...)

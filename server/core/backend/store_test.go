@@ -50,12 +50,8 @@ func (a *mockAsyncTaskService) LatestHandled(key string) (task.Task, error) {
 func TestStore(t *testing.T) {
 	s := &KvStore{}
 	s.Initialize()
-	e := s.Entity(999)
-	if e == nil {
-		t.Fatalf("TestStore failed")
-	}
-	resp, err := e.Search(context.Background())
-	if resp != nil || err != ErrNoImpl {
+	e := s.Entities(999)
+	if e != DefaultKvEntity() {
 		t.Fatalf("TestStore failed")
 	}
 
@@ -95,6 +91,7 @@ func TestStore(t *testing.T) {
 }
 
 type extend struct {
+	evts []KvEvent
 }
 
 func (e *extend) Name() string {
@@ -102,25 +99,43 @@ func (e *extend) Name() string {
 }
 
 func (e *extend) Config() *Config {
-	return Configure().WithPrefix("/test")
+	return Configure().WithPrefix("/test").WithEventFunc(func(evt KvEvent) {
+		e.evts = append(e.evts, evt)
+	})
 }
 
 func TestInstallType(t *testing.T) {
 	s := &KvStore{}
 	s.Initialize()
-	id, err := s.Install(&extend{})
+
+	// case: normal
+	e := &extend{}
+	id, err := s.Install(e)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if id == NOT_EXIST {
+	if id == TypeError {
 		t.Fatal(err)
 	}
 	if id.String() != "test" {
 		t.Fatalf("TestInstallType failed")
 	}
+	if TypeConfig[id] == nil || TypeConfig[id].OnEvent == nil || EventProxy(id) == nil {
+		t.Fatal("installType fail", err)
+	}
 
-	id, err = s.Install(NewEntity("test", Configure().WithPrefix("/test")))
-	if id != NOT_EXIST || err == nil {
+	// case: test event
+	h := &mockEventHandler{StoreType: id}
+	AddEventHandler(h)
+	TypeConfig[id].OnEvent(KvEvent{Revision: 1})
+	if len(e.evts) != 1 || e.evts[0].Revision != 1 || h.Evt.Revision != 1 || s.rev != 1 {
+		t.Fatalf("TestInstallType failed")
+	}
+
+	// case: install again
+	cfg := Configure().WithPrefix("/test")
+	id, err = s.Install(NewExtension("test", cfg))
+	if id != TypeError || err == nil {
 		t.Fatal("installType fail", err)
 	}
 }

@@ -67,7 +67,7 @@ func (lw *mockListWatch) Revision() int64 {
 }
 
 func TestInnerWatcher_EventBus(t *testing.T) {
-	w := NewWatcher(&mockListWatch{}, ListWatchConfig{Timeout: time.Second, Context: context.Background()})
+	w := newInnerWatcher(&mockListWatch{}, ListWatchConfig{Timeout: time.Second, Context: context.Background()})
 	resp := <-w.EventBus()
 	if resp != nil {
 		t.Fatalf("TestInnerWatcher_EventBus failed")
@@ -77,7 +77,7 @@ func TestInnerWatcher_EventBus(t *testing.T) {
 	test := &registry.PluginResponse{
 		Action: registry.Put,
 	}
-	w = NewWatcher(&mockListWatch{ListResponse: test}, ListWatchConfig{Timeout: time.Second, Context: context.Background()})
+	w = newInnerWatcher(&mockListWatch{ListResponse: test}, ListWatchConfig{Timeout: time.Second, Context: context.Background()})
 	resp = <-w.EventBus()
 	if resp == nil || resp.Action != registry.Put {
 		t.Fatalf("TestInnerWatcher_EventBus failed")

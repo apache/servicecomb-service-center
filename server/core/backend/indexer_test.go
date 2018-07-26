@@ -18,16 +18,15 @@ package backend
 
 import (
 	"context"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"testing"
 )
 
-func TestBaseIndexer_Search(t *testing.T) {
+func TestCommonIndexer_Search(t *testing.T) {
 	data := &registry.PluginResponse{Revision: 1}
 	c := &mockRegistry{}
-	i := &baseIndexer{Cfg: Configure(), Client: c}
+	i := &CommonIndexer{Client: c, Root: "/", Parser: BytesParser}
 
 	// case: key does not contain prefix
 	resp, err := i.Search(context.Background(), registry.WithStrKey("a"))
@@ -51,14 +50,14 @@ func TestBaseIndexer_Search(t *testing.T) {
 	// case: parse error
 	data.Count = 2
 	data.Kvs = []*mvccpb.KeyValue{{Key: []byte("/a/b"), Value: []byte("abc")}, {Key: []byte("/a/c"), Value: []byte("{}")}}
-	old := *i.Cfg
-	i.Cfg.WithParser(MapParser)
+	old := i.Parser
+	i.Parser = MapParser
 	c.Response = data
 	resp, err = i.Search(context.Background(), registry.WithStrKey("/a"))
-	*i.Cfg = old
 	if err != nil || resp == nil || resp.Count != 2 || len(resp.Kvs) != 1 {
 		t.Fatalf("TestBaseIndexer_Search failed, %v, %v", err, resp)
 	}
+	i.Parser = old
 
 	// case: normal
 	data.Count = 2
@@ -78,32 +77,20 @@ func TestBaseIndexer_Search(t *testing.T) {
 	}
 }
 
-type mockCacher struct {
-	*nullCacher
-	cache Cache
-}
-
-func (n *mockCacher) Cache() Cache { return n.cache }
-
 func TestCacheIndexer_Search(t *testing.T) {
 	c := &mockCache{}
-	cr := &mockCacher{cache: c}
 	cli := &mockRegistry{Response: &registry.PluginResponse{
 		Revision: 1,
 		Kvs:      []*mvccpb.KeyValue{{Key: []byte("/a/b"), Value: []byte("abc")}},
 		Count:    1,
 	}}
-	i := &cacheIndexer{
-		baseIndexer: &baseIndexer{
-			Cfg:    Configure(),
+	i := &CacheIndexer{
+		CommonIndexer: &CommonIndexer{
+			Root:   "/",
 			Client: cli,
 		},
-		cacher:  cr,
-		isClose: true,
+		Cache: c,
 	}
-
-	i.Run()
-	<-i.Ready()
 
 	// case: key does not contain prefix
 	resp, err := i.Search(context.Background(), registry.WithStrKey("a"))
@@ -187,24 +174,5 @@ func TestCacheIndexer_Search(t *testing.T) {
 	resp, err = i.Search(context.Background(), registry.WithStrKey("/a/b"), registry.WithCacheOnly())
 	if err != nil || resp == nil || resp.Count != 0 || len(resp.Kvs) != 0 {
 		t.Fatalf("TestBaseIndexer_Search failed, %v, %v", err, resp)
-	}
-
-	i.Stop()
-}
-
-func TestNewIndexer(t *testing.T) {
-	core.ServerInfo.Config.EnableCache = false
-	i := NewIndexer("a", Configure().WithInitSize(1))
-	if _, ok := i.(*baseIndexer); !ok {
-		t.Fatalf("TestNewIndexer failed")
-	}
-	core.ServerInfo.Config.EnableCache = true
-	i = NewIndexer("a", Configure().WithInitSize(0))
-	if _, ok := i.(*baseIndexer); !ok {
-		t.Fatalf("TestNewIndexer failed")
-	}
-	i = NewIndexer("a", Configure())
-	if _, ok := i.(*cacheIndexer); !ok {
-		t.Fatalf("TestNewIndexer failed")
 	}
 }
