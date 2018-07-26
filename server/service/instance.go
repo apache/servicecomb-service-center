@@ -89,21 +89,20 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	remoteIP := util.GetIPFromContext(ctx)
 
 	if err := Validate(in); err != nil {
-		util.Logger().Errorf(err, "register instance failed, invalid parameters, operator %s.", remoteIP)
+		util.Logger().Errorf(err, "register instance failed, invalid parameters, operator %s", remoteIP)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
 	instance := in.GetInstance()
-	instanceFlag := util.StringJoin([]string{instance.ServiceId, instance.HostName}, "/")
 
 	//允许自定义id
 	//如果没填写 并且endpoints沒重復，則产生新的全局instance id
 	oldInstanceId, checkErr := serviceUtil.InstanceExist(ctx, in.Instance)
 	if checkErr != nil {
-		util.Logger().Errorf(checkErr, "instance existence check failed, service %s, operator %s.",
-			instanceFlag, remoteIP)
+		util.Logger().Errorf(checkErr, "instance existence check failed, endpoints %v, host '%s', serviceId %s, operator %s",
+			instance.Endpoints, instance.HostName, instance.ServiceId, remoteIP)
 		resp := pb.CreateResponseWithSCErr(checkErr)
 		if checkErr.InternalError() {
 			return &pb.RegisterInstanceResponse{Response: resp}, checkErr
@@ -111,20 +110,25 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 		return &pb.RegisterInstanceResponse{Response: resp}, nil
 	}
 	if len(oldInstanceId) > 0 {
-		util.Logger().Infof("register instance successful, reuse service %s instance %s, operator %s.",
+		util.Logger().Infof("register instance successful, reuse service %s instance %s, operator %s",
 			instance.ServiceId, oldInstanceId, remoteIP)
 		return &pb.RegisterInstanceResponse{
-			Response:   pb.CreateResponse(pb.Response_SUCCESS, "instance more exist."),
+			Response:   pb.CreateResponse(pb.Response_SUCCESS, "instance more exist"),
 			InstanceId: oldInstanceId,
 		}, nil
 	}
 
 	if err := s.preProcessRegisterInstance(ctx, instance); err != nil {
-		util.Logger().Errorf(err, "register instance failed, service %s, operator %s.", instanceFlag, remoteIP)
+		util.Logger().Errorf(err, "register instance failed, endpoints %v, host '%s', serviceId %s, operator %s",
+			instance.Endpoints, instance.HostName, instance.ServiceId, remoteIP)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponseWithSCErr(err),
 		}, nil
 	}
+
+	ttl := int64(instance.HealthCheck.Interval * (instance.HealthCheck.Times + 1))
+	instanceFlag := fmt.Sprintf("ttl %ds, endpoints %v, host '%s', serviceId %s",
+		ttl, instance.Endpoints, instance.HostName, instance.ServiceId)
 
 	//先以domain/project的方式组装
 	domainProject := util.ParseDomainProject(ctx)
@@ -140,7 +144,7 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 			defer reporter.Close()
 		}
 		if err != nil {
-			util.Logger().Errorf(err, "register instance failed, service %s, operator %s: no quota apply.",
+			util.Logger().Errorf(err, "register instance failed, %s, operator %s",
 				instanceFlag, remoteIP)
 			response := &pb.RegisterInstanceResponse{
 				Response: pb.CreateResponseWithSCErr(err),
@@ -156,22 +160,20 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	data, err := json.Marshal(instance)
 	if err != nil {
 		util.Logger().Errorf(err,
-			"register instance failed, service %s, instanceId %s, operator %s: json marshal data failed.",
+			"register instance failed, %s, instanceId %s, operator %s",
 			instanceFlag, instanceId, remoteIP)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 
-	ttl := int64(instance.HealthCheck.Interval * (instance.HealthCheck.Times + 1))
 	leaseID, err := backend.Registry().LeaseGrant(ctx, ttl)
 	if err != nil {
-		util.Logger().Errorf(err, "grant lease failed, instance %s, operator: %s.", instanceFlag, remoteIP)
+		util.Logger().Errorf(err, "grant lease failed, %s, operator: %s", instanceFlag, remoteIP)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
 		}, err
 	}
-	util.Logger().Infof("lease grant %ds successfully, instance %s, operator: %s.", ttl, instanceFlag, remoteIP)
 
 	// build the request options
 	key := apt.GenerateInstanceKey(domainProject, instance.ServiceId, instanceId)
@@ -191,7 +193,7 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 		nil)
 	if err != nil {
 		util.Logger().Errorf(err,
-			"register instance failed, service %s, instanceId %s, operator %s: commit data into etcd failed.",
+			"register instance failed, %s, instanceId %s, operator %s",
 			instanceFlag, instanceId, remoteIP)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
@@ -199,7 +201,7 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	}
 	if !resp.Succeeded {
 		util.Logger().Errorf(nil,
-			"register instance failed, service %s, instanceId %s, operator %s: service does not exist.",
+			"register instance failed, %s, instanceId %s, operator %s: service does not exist",
 			instanceFlag, instanceId, remoteIP)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
@@ -209,11 +211,11 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	if reporter != nil {
 		if err := reporter.ReportUsedQuota(ctx); err != nil {
 			util.Logger().Errorf(err,
-				"register instance failed, service %s, instanceId %s, operator %s: report used quota failed.",
+				"register instance failed, %s, instanceId %s, operator %s",
 				instanceFlag, instanceId, remoteIP)
 		}
 	}
-	util.Logger().Infof("register instance successful service %s, instanceId %s, operator %s.",
+	util.Logger().Infof("register instance %s, instanceId %s, operator %s",
 		instanceFlag, instanceId, remoteIP)
 	return &pb.RegisterInstanceResponse{
 		Response:   pb.CreateResponse(pb.Response_SUCCESS, "Register service instance successfully."),
@@ -264,7 +266,7 @@ func (s *InstanceService) Unregister(ctx context.Context, in *pb.UnregisterInsta
 		}, nil
 	}
 
-	util.Logger().Infof("unregister instance successful isntance %s, operator %s.", instanceFlag, remoteIP)
+	util.Logger().Infof("unregister instance %s, operator %s.", instanceFlag, remoteIP)
 	return &pb.UnregisterInstanceResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Unregister service instance successfully."),
 	}, nil
@@ -503,22 +505,24 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 	}
 
 	domainProject := util.ParseDomainProject(ctx)
-	findFlag := fmt.Sprintf("consumer %s find provider %s/%s/%s", in.ConsumerServiceId, in.AppId, in.ServiceName, in.VersionRule)
 
 	service, err := serviceUtil.GetService(ctx, domainProject, in.ConsumerServiceId)
 	if err != nil {
-		util.Logger().Errorf(err, "find instance failed, %s: get consumer failed.", findFlag)
+		util.Logger().Errorf(err, "get consumer failed, consumer %s find provider %s/%s/%s",
+			in.ConsumerServiceId, in.AppId, in.ServiceName, in.VersionRule)
 		return &pb.FindInstancesResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 	if service == nil {
-		util.Logger().Errorf(nil, "find instance failed, %s: consumer not exist.", findFlag)
+		util.Logger().Errorf(nil, "consumer not exist, consumer %s find provider %s/%s/%s",
+			in.ConsumerServiceId, in.AppId, in.ServiceName, in.VersionRule)
 		return &pb.FindInstancesResponse{
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Consumer does not exist."),
 		}, nil
 	}
 
+	var findFlag string
 	provider := &pb.MicroServiceKey{
 		Tenant:      util.ParseTargetDomainProject(ctx),
 		Environment: service.Environment,
@@ -530,12 +534,17 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 	if apt.IsShared(provider) {
 		// it means the shared micro-services must be the same env with SC.
 		provider.Environment = apt.Service.Environment
-		findFlag += "(provider is shared service in " + provider.Environment + " environment)"
+
+		findFlag = fmt.Sprintf("consumer %s find shared service %s/%s/%s/%s", in.ConsumerServiceId,
+			service.Environment, in.AppId, in.ServiceName, in.VersionRule)
 	} else {
 		// provider is not a shared micro-service,
 		// only allow shared micro-service instances found in different domains.
 		util.SetTargetDomainProject(ctx, util.ParseDomain(ctx), util.ParseProject(ctx))
 		provider.Tenant = util.ParseTargetDomainProject(ctx)
+
+		findFlag = fmt.Sprintf("consumer %s find service %s/%s/%s/%s", in.ConsumerServiceId,
+			service.Environment, in.AppId, in.ServiceName, in.VersionRule)
 	}
 
 	noCache, cacheOnly := ctx.Value(serviceUtil.CTX_NOCACHE) == "1", ctx.Value(serviceUtil.CTX_CACHEONLY) == "1"
@@ -561,10 +570,10 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 			}, err
 		}
 		if item == nil {
-			mes := fmt.Sprintf("provider not exist, %s", findFlag)
-			util.Logger().Errorf(nil, "FindInstancesCache.Get failed, %s", mes)
+			mes := fmt.Errorf("provider does not exist, %s", findFlag)
+			util.Logger().Errorf(mes, "FindInstancesCache.Get failed")
 			return &pb.FindInstancesResponse{
-				Response: pb.CreateResponse(scerr.ErrServiceNotExists, mes),
+				Response: pb.CreateResponse(scerr.ErrServiceNotExists, mes.Error()),
 			}, nil
 		}
 
@@ -581,10 +590,10 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		if provider != nil {
 			err = serviceUtil.AddServiceVersionRule(ctx, domainProject, service, provider)
 		} else {
-			mes := fmt.Sprintf("provider not exist, %s", findFlag)
-			util.Logger().Errorf(nil, "AddServiceVersionRule failed, %s", mes)
+			mes := fmt.Errorf("provider does not exist, %s", findFlag)
+			util.Logger().Errorf(mes, "AddServiceVersionRule failed")
 			return &pb.FindInstancesResponse{
-				Response: pb.CreateResponse(scerr.ErrServiceNotExists, mes),
+				Response: pb.CreateResponse(scerr.ErrServiceNotExists, mes.Error()),
 			}, nil
 		}
 		if err != nil {
