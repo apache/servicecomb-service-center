@@ -25,6 +25,7 @@ import (
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -55,7 +56,8 @@ func RegistryConfig() *Config {
 			util.Logger().Errorf(err, "registry_timeout is invalid, use default time %s", defaultRequestTimeout)
 			defaultRegistryConfig.RequestTimeOut = defaultRequestTimeout
 		}
-		defaultRegistryConfig.SslEnabled = core.ServerInfo.Config.SslEnabled
+		defaultRegistryConfig.SslEnabled = core.ServerInfo.Config.SslEnabled &&
+			strings.Index(strings.ToLower(defaultRegistryConfig.ClusterAddresses), "https://") >= 0
 		defaultRegistryConfig.AutoSyncInterval, err = time.ParseDuration(core.ServerInfo.Config.AutoSyncInterval)
 		if err != nil {
 			util.Logger().Errorf(err, "auto_sync_interval is invalid")

@@ -184,10 +184,12 @@ func GetServerTLSConfig(opts ...SSLConfigOption) (tlsConfig *tls.Config, err err
 		ClientCAs:                pool,
 		Certificates:             certs,
 		CipherSuites:             cfg.CipherSuites,
+		CurvePreferences:         []tls.CurveID{tls.X25519, tls.CurveP256},
 		PreferServerCipherSuites: true,
 		ClientAuth:               clientAuthMode,
 		MinVersion:               cfg.MinVersion,
 		MaxVersion:               cfg.MaxVersion,
+		NextProtos:               []string{"h2", "http/1.1"},
 	}
 
 	return tlsConfig, nil

@@ -42,10 +42,7 @@ const (
 	healthCheckRetryTimes = 3
 )
 
-var (
-	clientTLSConfig *tls.Config
-	firstEndpoint   string
-)
+var firstEndpoint string
 
 func init() {
 	clientv3.SetLogger(&clientLogger{})
@@ -75,10 +72,10 @@ func (c *EtcdClient) Initialize() (err error) {
 		// parse the endpoints from config
 		c.parseEndpoints()
 	}
-	if c.TLSConfig == nil && sslEnabled() {
+	if c.TLSConfig == nil && registry.RegistryConfig().SslEnabled {
 		var err error
 		// go client tls限制，提供身份证书、不认证服务端、不校验CN
-		clientTLSConfig, err = mgr.Plugins().TLS().ClientConfig()
+		c.TLSConfig, err = mgr.Plugins().TLS().ClientConfig()
 		if err != nil {
 			util.Logger().Error("get etcd client tls config failed", err)
 			return err
@@ -682,19 +679,20 @@ func (c *EtcdClient) HealthCheck() {
 	}
 }
 
-func (c *EtcdClient) healthCheckLoop(ctx context.Context) {
+func (c *EtcdClient) healthCheckLoop(pctx context.Context) {
 	retries := healthCheckRetryTimes
 hcLoop:
 	for {
 		select {
-		case <-ctx.Done():
+		case <-pctx.Done():
 			return
 		case <-time.After(c.AutoSyncInterval):
 			var err error
 			for i := 0; i < retries; i++ {
-				if err = c.SyncMembers(); err != nil {
+				ctx, _ := context.WithTimeout(c.Client.Ctx(), healthCheckTimeout)
+				if err = c.SyncMembers(ctx); err != nil {
 					select {
-					case <-ctx.Done():
+					case <-pctx.Done():
 						return
 					case <-time.After(util.GetBackoff().Delay(i)):
 						continue
@@ -728,6 +726,7 @@ func (c *EtcdClient) ReOpen() error {
 }
 
 func (c *EtcdClient) parseEndpoints() {
+	// use the default cluster endpoints
 	addrs := strings.Split(registry.RegistryConfig().ClusterAddresses, ",")
 
 	endpoints := make([]string, 0, len(addrs))
@@ -743,8 +742,7 @@ func (c *EtcdClient) parseEndpoints() {
 	c.Endpoints = endpoints
 }
 
-func (c *EtcdClient) SyncMembers() error {
-	ctx, _ := context.WithTimeout(c.Client.Ctx(), healthCheckTimeout)
+func (c *EtcdClient) SyncMembers(ctx context.Context) error {
 	if err := c.Client.Sync(ctx); err != nil && err != c.Client.Ctx().Err() {
 		return err
 	}
@@ -806,11 +804,6 @@ func callback(action registry.ActionType, rev int64, kvs []*mvccpb.KeyValue, cb 
 		Revision:  rev,
 		Succeeded: true,
 	})
-}
-
-func sslEnabled() bool {
-	return registry.RegistryConfig().SslEnabled &&
-		strings.Index(strings.ToLower(registry.RegistryConfig().ClusterAddresses), "https://") >= 0
 }
 
 func NewRegistry() mgr.PluginInstance {

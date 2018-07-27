@@ -216,7 +216,7 @@ func (s *APIServer) startRESTServer() (err error) {
 	if err != nil {
 		return
 	}
-	util.Logger().Infof("listen address: %s, host: %s.", addr, s.HostName)
+	util.Logger().Infof("listen address: %s://%s, host: %s.", REST, addr, s.HostName)
 
 	s.goroutine.Do(func(_ context.Context) {
 		err := s.restSrv.Serve()
@@ -239,7 +239,7 @@ func (s *APIServer) startRPCServer() (err error) {
 	if err != nil {
 		return
 	}
-	util.Logger().Infof("Local listen address: %s, host: %s.", addr, s.HostName)
+	util.Logger().Infof("listen address: %s://%s, host: %s.", RPC, addr, s.HostName)
 
 	s.goroutine.Do(func(_ context.Context) {
 		err := s.rpcSrv.Serve()

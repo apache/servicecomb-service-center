@@ -16,22 +16,25 @@
  */
 package etcd
 
-import (
-	"context"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
-	"testing"
-)
-
-// tracing
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/tracing/buildin"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/security/buildin"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/tls/buildin"
 import (
 	"fmt"
-	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/tracing/buildin"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
+	"github.com/apache/incubator-servicecomb-service-center/server/rpc"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc/status"
+	"net/http"
+	"os"
 	"strconv"
 	"sync"
+	"testing"
 	"time"
 )
 
-const dialTimeout = time.Second
+const dialTimeout = 500 * time.Millisecond
 
 func TestEtcdClient(t *testing.T) {
 	etcd := &EtcdClient{
@@ -463,7 +466,8 @@ func TestEtcdClient_HealthCheck(t *testing.T) {
 	if err != nil {
 		t.Fatalf("TestEtcdClient failed, %#v", err)
 	}
-	err = etcd.SyncMembers()
+	ctx, _ := context.WithTimeout(context.Background(), dialTimeout)
+	err = etcd.SyncMembers(ctx)
 	if err != nil {
 		t.Fatalf("TestEtcdClient failed, %#v", err)
 	}
@@ -472,7 +476,8 @@ func TestEtcdClient_HealthCheck(t *testing.T) {
 	if err == nil {
 		t.Fatalf("TestEtcdClient failed, %#v", err)
 	}
-	err = etcd.SyncMembers()
+	ctx, _ = context.WithTimeout(context.Background(), dialTimeout)
+	err = etcd.SyncMembers(ctx)
 	if err != nil {
 		t.Fatalf("TestEtcdClient failed, %#v", err)
 	}
@@ -671,6 +676,48 @@ func TestNewRegistry(t *testing.T) {
 	err := etcd.Initialize()
 	if err == nil {
 		// should be err, member list does not contain one of the endpoints.
+		t.Fatalf("TestEtcdClient failed, %#v", err)
+	}
+}
+
+type mockTLSHandler struct {
+}
+
+func (m *mockTLSHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+}
+
+func TestWithTLS(t *testing.T) {
+	sslRoot := "../../../../../examples/service_center/ssl/"
+	os.Setenv("SSL_ROOT", sslRoot)
+
+	core.ServerInfo.Config.SslEnabled = true
+	registry.RegistryConfig().SslEnabled = true
+	defer func() {
+		core.ServerInfo.Config.SslEnabled = false
+		registry.RegistryConfig().SslEnabled = false
+		os.Setenv("SSL_ROOT", "")
+	}()
+
+	svr, err := rpc.NewServer("127.0.0.1:0")
+	go func() {
+		svr.Serve()
+	}()
+	defer svr.Stop()
+
+	etcd := &EtcdClient{
+		DialTimeout: dialTimeout,
+		Endpoints:   []string{svr.Listener.Addr().String()},
+	}
+
+	err = etcd.Initialize()
+	if err != nil {
+		t.Fatalf("TestEtcdClient failed, %#v", err)
+	}
+	defer etcd.Close()
+
+	ctx, _ := context.WithTimeout(context.Background(), dialTimeout)
+	err = etcd.SyncMembers(ctx)
+	if _, ok := status.FromError(err); !ok {
 		t.Fatalf("TestEtcdClient failed, %#v", err)
 	}
 }

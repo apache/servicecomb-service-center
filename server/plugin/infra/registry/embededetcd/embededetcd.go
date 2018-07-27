@@ -506,7 +506,7 @@ func getEmbedInstance() mgr.PluginInstance {
 	util.Logger().Warnf(nil, "starting service center in embed mode")
 
 	hostName := beego.AppConfig.DefaultString("manager_name", "sc-0")
-	addrs := beego.AppConfig.DefaultString("manager_addr", "http://127.0.0.1:2380")
+	mgrAddrs := beego.AppConfig.DefaultString("manager_addr", "http://127.0.0.1:2380")
 
 	inst := &EtcdEmbed{
 		err:       make(chan error, 1),
@@ -525,7 +525,7 @@ func getEmbedInstance() mgr.PluginInstance {
 	}
 
 	serverCfg := embed.NewConfig()
-	// TODO 不支持加密的TLS证书 ? managerTLSConfig
+	// TODO 不支持使用TLS通信
 	// 存储目录，相对于工作目录
 	serverCfg.Dir = "data"
 
@@ -533,8 +533,8 @@ func getEmbedInstance() mgr.PluginInstance {
 	serverCfg.Name = hostName
 	serverCfg.InitialCluster = registry.RegistryConfig().ClusterAddresses
 
-	// 管理端口
-	urls, err := parseURL(addrs)
+	// 1. 管理端口
+	urls, err := parseURL(mgrAddrs)
 	if err != nil {
 		util.Logger().Error(`"manager_addr" field configure error`, err)
 		inst.err <- err
@@ -542,13 +542,13 @@ func getEmbedInstance() mgr.PluginInstance {
 	}
 	serverCfg.LPUrls = urls
 	serverCfg.APUrls = urls
-	util.Logger().Debugf("--initial-cluster %s --initial-advertise-peer-urls %s --listen-peer-urls %s",
-		serverCfg.InitialCluster, addrs, addrs)
 
-	// 业务端口，关闭默认2379端口
-	// clients := beego.AppConfig.String("clientcluster")
+	// 2. 业务端口，关闭默认2379端口
 	serverCfg.LCUrls = nil
 	serverCfg.ACUrls = nil
+
+	util.Logger().Debugf("--initial-cluster %s --initial-advertise-peer-urls %s --listen-peer-urls %s",
+		serverCfg.InitialCluster, mgrAddrs, mgrAddrs)
 
 	// 自动压缩历史, 1 hour
 	serverCfg.AutoCompactionRetention = 1
