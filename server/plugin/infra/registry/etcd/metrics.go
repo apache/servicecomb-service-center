@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package backend
+package etcd
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/server/metric"
@@ -22,26 +22,20 @@ import (
 )
 
 var (
-	cacheSizeGauge = prometheus.NewGaugeVec(
+	backendCounter = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: metric.FamilyName,
-			Subsystem: "local",
-			Name:      "cache_size_bytes",
-			Help:      "Local cache size summary of backend store",
-		}, []string{"instance", "resource", "type"})
+			Subsystem: "db",
+			Name:      "backend_total",
+			Help:      "Gauge of the backend instance",
+		}, []string{"instance"})
 )
 
 func init() {
-	prometheus.MustRegister(cacheSizeGauge)
+	prometheus.MustRegister(backendCounter)
 }
 
-func ReportCacheSize(resource, t string, s int) {
+func ReportBackendInstance(c int) {
 	instance := metric.InstanceName()
-	if len(instance) == 0 || len(resource) == 0 {
-		// endpoints list will be empty when initializing
-		// resource may be empty when report SCHEMA
-		return
-	}
-
-	cacheSizeGauge.WithLabelValues(instance, resource, t).Set(float64(s))
+	backendCounter.WithLabelValues(instance).Set(float64(c))
 }

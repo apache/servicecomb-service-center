@@ -17,24 +17,18 @@
 package backend
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/metric"
+	"github.com/astaxie/beego"
 	"testing"
 )
+
+func init() {
+	beego.AppConfig.Set("httpaddr", "127.0.0.1")
+}
 
 func TestReportCacheSize(t *testing.T) {
 	ReportCacheSize("a", "b", 100)
 	err := metric.Gatherer.Collect()
-	if err != nil {
-		t.Fatalf("TestReportCacheSize failed")
-	}
-	if metric.Gatherer.Records.Get("local_cache_size_bytes") != 0 {
-		t.Fatalf("TestReportCacheSize failed")
-	}
-
-	core.RegisterInstanceRequest("x", []string{"x"})
-	ReportCacheSize("a", "b", 100)
-	err = metric.Gatherer.Collect()
 	if err != nil {
 		t.Fatalf("TestReportCacheSize failed")
 	}

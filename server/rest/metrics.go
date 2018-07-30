@@ -18,20 +18,18 @@ package rest
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
+	"github.com/apache/incubator-servicecomb-service-center/server/metric"
 	"github.com/prometheus/client_golang/prometheus"
 	"net/http"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
 var (
 	incomingRequests = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Namespace: "service_center",
+			Namespace: metric.FamilyName,
 			Subsystem: "http",
 			Name:      "request_total",
 			Help:      "Counter of requests received into ROA handler",
@@ -39,7 +37,7 @@ var (
 
 	successfulRequests = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Namespace: "service_center",
+			Namespace: metric.FamilyName,
 			Subsystem: "http",
 			Name:      "success_total",
 			Help:      "Counter of successful requests processed by ROA handler",
@@ -47,15 +45,12 @@ var (
 
 	reqDurations = prometheus.NewSummaryVec(
 		prometheus.SummaryOpts{
-			Namespace:  "service_center",
+			Namespace:  metric.FamilyName,
 			Subsystem:  "http",
 			Name:       "request_durations_microseconds",
 			Help:       "HTTP request latency summary of ROA handler",
 			Objectives: prometheus.DefObjectives,
 		}, []string{"method", "instance", "api"})
-
-	instance        string
-	getEndpointOnce sync.Once
 )
 
 func init() {
@@ -65,9 +60,7 @@ func init() {
 }
 
 func ReportRequestCompleted(w http.ResponseWriter, r *http.Request, start time.Time) {
-	getEndpointOnce.Do(func() {
-		instance, _ = util.ParseEndpoint(core.Instance.Endpoints[0])
-	})
+	instance := metric.InstanceName()
 	elapsed := float64(time.Since(start).Nanoseconds()) / float64(time.Microsecond)
 	route, _ := r.Context().Value(rest.CTX_MATCH_PATTERN).(string)
 

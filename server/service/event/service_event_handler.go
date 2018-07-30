@@ -21,6 +21,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/service/cache"
+	"github.com/apache/incubator-servicecomb-service-center/server/service/metrics"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
 	"strings"
@@ -36,15 +37,20 @@ func (h *ServiceEventHandler) Type() backend.StoreType {
 func (h *ServiceEventHandler) OnEvent(evt backend.KvEvent) {
 	ms := evt.KV.Value.(*pb.MicroService)
 	_, domainProject := backend.GetInfoFromSvcKV(evt.KV)
+	fn, fv := getFramework(ms)
 
 	switch evt.Type {
 	case pb.EVT_INIT, pb.EVT_CREATE:
+		metrics.ReportServices(fn, fv, 1)
+
 		newDomain := domainProject[:strings.Index(domainProject, "/")]
 		newProject := domainProject[strings.Index(domainProject, "/")+1:]
 		err := serviceUtil.NewDomainProject(context.Background(), newDomain, newProject)
 		if err != nil {
 			util.Logger().Errorf(err, "new domain(%s) or project(%s) failed", newDomain, newProject)
 		}
+	case pb.EVT_DELETE:
+		metrics.ReportServices(fn, fv, -1)
 	default:
 	}
 
@@ -58,6 +64,17 @@ func (h *ServiceEventHandler) OnEvent(evt backend.KvEvent) {
 	// cache
 	providerKey := pb.MicroServiceToKey(domainProject, ms)
 	cache.FindInstances.Remove(providerKey)
+}
+
+func getFramework(ms *pb.MicroService) (string, string) {
+	if ms.Framework != nil && len(ms.Framework.Name) > 0 {
+		version := ms.Framework.Version
+		if len(ms.Framework.Version) == 0 {
+			version = "UNKNOWN"
+		}
+		return ms.Framework.Name, version
+	}
+	return "UNKNOWN", "UNKNOWN"
 }
 
 func NewServiceEventHandler() *ServiceEventHandler {

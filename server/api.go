@@ -280,9 +280,10 @@ func (s *APIServer) Start() {
 		s.err <- err
 		return
 	}
-
 	// 心跳
 	s.startHeartBeatService()
+
+	ReportScInstance()
 
 	util.Logger().Info("api server is ready")
 }

@@ -14,34 +14,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package backend
+package event
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/server/metric"
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
+	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/server/service/metrics"
 )
 
-var (
-	cacheSizeGauge = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Namespace: metric.FamilyName,
-			Subsystem: "local",
-			Name:      "cache_size_bytes",
-			Help:      "Local cache size summary of backend store",
-		}, []string{"instance", "resource", "type"})
-)
-
-func init() {
-	prometheus.MustRegister(cacheSizeGauge)
+type DomainEventHandler struct {
 }
 
-func ReportCacheSize(resource, t string, s int) {
-	instance := metric.InstanceName()
-	if len(instance) == 0 || len(resource) == 0 {
-		// endpoints list will be empty when initializing
-		// resource may be empty when report SCHEMA
-		return
-	}
+func (h *DomainEventHandler) Type() backend.StoreType {
+	return backend.DOMAIN
+}
 
-	cacheSizeGauge.WithLabelValues(instance, resource, t).Set(float64(s))
+func (h *DomainEventHandler) OnEvent(evt backend.KvEvent) {
+	action := evt.Type
+	switch action {
+	case pb.EVT_INIT, pb.EVT_CREATE:
+		metrics.ReportDomains(1)
+	case pb.EVT_DELETE:
+		metrics.ReportDomains(-1)
+	}
+}
+
+func NewDomainEventHandler() *DomainEventHandler {
+	return &DomainEventHandler{}
 }

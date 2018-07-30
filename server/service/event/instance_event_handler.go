@@ -22,6 +22,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/service/cache"
+	"github.com/apache/incubator-servicecomb-service-center/server/service/metrics"
 	nf "github.com/apache/incubator-servicecomb-service-center/server/service/notification"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
@@ -37,12 +38,17 @@ func (h *InstanceEventHandler) Type() backend.StoreType {
 
 func (h *InstanceEventHandler) OnEvent(evt backend.KvEvent) {
 	action := evt.Type
-	if action == pb.EVT_INIT {
-		return
-	}
-
 	providerId, providerInstanceId, domainProject := backend.GetInfoFromInstKV(evt.KV)
-	if action == pb.EVT_DELETE {
+
+	switch action {
+	case pb.EVT_INIT:
+		metrics.ReportInstances(1)
+		return
+	case pb.EVT_CREATE:
+		metrics.ReportInstances(1)
+	case pb.EVT_DELETE:
+		metrics.ReportInstances(-1)
+
 		splited := strings.Split(domainProject, "/")
 		if len(splited) == 2 && !apt.IsDefaultDomainProject(domainProject) {
 			domainName, projectName := splited[0], splited[1]
