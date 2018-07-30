@@ -19,15 +19,9 @@ package rest
 import (
 	"crypto/tls"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
-	"net/http"
 	"time"
-)
-
-var (
-	defaultRESTfulServer *rest.Server
 )
 
 func LoadConfig() (srvCfg *rest.ServerConfig, err error) {
@@ -51,48 +45,6 @@ func LoadConfig() (srvCfg *rest.ServerConfig, err error) {
 	srvCfg.MaxHeaderBytes = maxHeaderBytes
 	srvCfg.TLSConfig = tlsConfig
 	return
-}
-
-func newDefaultServer(addr string, handler http.Handler) error {
-	if defaultRESTfulServer != nil {
-		return nil
-	}
-	srvCfg, err := LoadConfig()
-	if err != nil {
-		return err
-	}
-	srvCfg.Handler = handler
-	defaultRESTfulServer = rest.NewServer(srvCfg)
-	util.Logger().Warnf(nil, "listen on server %s.", addr)
-
-	return nil
-}
-
-func ListenAndServeTLS(addr string, handler http.Handler) (err error) {
-	err = newDefaultServer(addr, handler)
-	if err != nil {
-		return err
-	}
-	// 证书已经在config里加载，这里不需要再重新加载
-	return defaultRESTfulServer.ListenAndServeTLS("", "")
-}
-func ListenAndServe(addr string, handler http.Handler) (err error) {
-	err = newDefaultServer(addr, handler)
-	if err != nil {
-		return err
-	}
-	return defaultRESTfulServer.ListenAndServe()
-}
-
-func GracefulStop() {
-	if defaultRESTfulServer == nil {
-		return
-	}
-	defaultRESTfulServer.Shutdown()
-}
-
-func DefaultServer() *rest.Server {
-	return defaultRESTfulServer
 }
 
 func NewServer(ipAddr string) (srv *rest.Server, err error) {
