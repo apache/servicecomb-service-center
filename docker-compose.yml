@@ -1,0 +1,33 @@
+version: '3'
+services:
+  etcd:
+    image: 'quay.io/coreos/etcd:latest'
+    # restart: always
+    #ports:
+    #  - "2379:2379"
+    environment:
+      ETCD_ADVERTISE_CLIENT_URLS: http://etcd:2379
+      ETCD_LISTEN_CLIENT_URLS: http://0.0.0.0:2379
+      ETCD_INITIAL_ADVERTISE_PEER_URLS: http://etcd:2380
+      ETCD_LISTEN_PEER_URLS: http://0.0.0.0:2380
+      ETCD_INITIAL_CLUSTER: default=http://etcd:2380
+
+  service-center:
+    depends_on:
+      - etcd
+    image: 'servicecomb/service-center:latest'
+    # restart: always
+    ports:
+      - "30100:30100"
+    environment:
+      BACKEND_ADDRESS: http://etcd:2379
+
+  scfrontend:
+    depends_on:
+      - service-center
+    image: 'servicecomb/scfrontend:latest'
+    # restart: always
+    ports:
+      - "30103:30103"
+    environment:
+      BACKEND_ADDRESS: http://service-center:30100

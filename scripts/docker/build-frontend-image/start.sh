@@ -19,13 +19,19 @@ set -e
 
 umask 027
 
-cd /opt/service-center
+cd /opt/frontend
 
-sed -i 's/^httpaddr.*=.*$/httpaddr = 0.0.0.0/g' conf/app.conf
+sed -i 's/^frontend_host_ip.*=.*$/frontend_host_ip = 0.0.0.0/g' conf/app.conf
 
-if [ ! -z "${BACKEND_ADDRESS}" ]; then
-    sed -i "s|^registry_plugin.*=.*$|registry_plugin = etcd|g" conf/app.conf
-    sed -i "s|^# manager_cluster.*=.*$|manager_cluster = ${BACKEND_ADDRESS}|g" conf/app.conf
+sc_ip_port=${BACKEND_ADDRESS#*//}
+sc_ip=${sc_ip_port%:*}
+sc_port=${sc_ip_port#*:}
+
+if [ ! -z "${sc_ip}" ]; then
+    sed -i "s|^httpaddr.*=.*$|httpaddr = ${sc_ip}|g" conf/app.conf
+fi
+if [ "X"${sc_port} != "X"${sc_ip} ]; then
+    sed -i "s|^httpport.*=.*$|httpport = ${sc_port}|g" conf/app.conf
 fi
 
-./service-center
+./frontend

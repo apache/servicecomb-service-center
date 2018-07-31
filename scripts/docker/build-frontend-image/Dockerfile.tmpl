@@ -13,10 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM ubuntu
+FROM {{.BASE_IMAGE}}:{{.BASE_IMAGE_VERSION}}
 
-ADD frontend.tar.gz /opt
+ADD ./frontend /opt/frontend
 
-WORKDIR /opt/frontend
+EXPOSE 30103
 
-ENTRYPOINT ["/opt/frontend/start_linux.sh"]
+ENTRYPOINT ["/opt/frontend/start.sh"]

@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -13,10 +15,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM ubuntu
+set -e
 
-ADD apache-servicecomb-incubating-service-center-latest-linux-amd64 /app/
+script_path=$(cd "$(dirname "$0")"; pwd)
 
-RUN sed -i 's/httpaddr = 127.0.0.1/httpaddr = 0.0.0.0/g' /app/conf/app.conf
+project_path=$script_path/../..
 
-ENTRYPOINT ["/app/service-center"]
+source $script_path/tools.sh
+
+prepare_env() {
+    local force=${1:-""}
+
+    cd $project_path
+
+    mkdir -p vendor
+
+    if [ "X"$force != "X"-f ]; then
+        if [ ! $(ls vendor | wc -l) -gt 0 ]; then
+            sc_deps
+        fi
+
+        if [ ! -d frontend/app/bower_components ]; then
+            frontend_deps
+        fi
+    else
+        sc_deps
+
+        frontend_deps
+    fi
+}
+
+prepare_env $@
