@@ -33,7 +33,7 @@ type IpPort struct {
 func GetIPFromContext(ctx context.Context) string {
 	v, ok := FromContext(ctx, "x-remote-ip").(string)
 	if !ok {
-		return ""
+		return "UNKNOWN"
 	}
 	return v
 }

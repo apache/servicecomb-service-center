@@ -97,10 +97,10 @@ func (s *APIServer) registryService(pCtx context.Context) error {
 		return err
 	}
 	if respE.Response.Code == pb.Response_SUCCESS {
-		util.Logger().Warnf(nil, "service center service already registered, service id %s", respE.ServiceId)
+		util.Logger().Warnf(nil, "service center service already registered, serviceId %s", respE.ServiceId)
 		respG, err := core.ServiceAPI.GetOne(ctx, core.GetServiceRequest(respE.ServiceId))
 		if respG.Response.Code != pb.Response_SUCCESS {
-			util.Logger().Errorf(err, "query service center service info failed, service id %s", respE.ServiceId)
+			util.Logger().Errorf(err, "query service center service info failed, serviceId %s", respE.ServiceId)
 			return fmt.Errorf("service center service file lost.")
 		}
 		core.Service = respG.Service
@@ -113,7 +113,7 @@ func (s *APIServer) registryService(pCtx context.Context) error {
 		return err
 	}
 	core.Service.ServiceId = respS.ServiceId
-	util.Logger().Infof("register service center service successfully, service id %s", respS.ServiceId)
+	util.Logger().Infof("register service center service %s", respS.ServiceId)
 	return nil
 }
 
@@ -136,7 +136,7 @@ func (s *APIServer) registryInstance(pCtx context.Context) error {
 		return err
 	}
 	core.Instance.InstanceId = respI.InstanceId
-	util.Logger().Infof("register service center instance successfully, instance %s/%s, endpoints %s",
+	util.Logger().Infof("register service center instance %s/%s, endpoints %s",
 		core.Service.ServiceId, respI.InstanceId, endpoints)
 	return nil
 }
@@ -152,7 +152,7 @@ func (s *APIServer) unregisterInstance(pCtx context.Context) error {
 		util.Logger().Error(err.Error(), nil)
 		return err
 	}
-	util.Logger().Warnf(nil, "unregister service center instance successfully, %s/%s",
+	util.Logger().Warnf(nil, "unregister service center instance %s/%s",
 		core.Service.ServiceId, core.Instance.InstanceId)
 	return nil
 }
@@ -164,11 +164,11 @@ func (s *APIServer) doAPIServerHeartBeat(pCtx context.Context) {
 	ctx := core.AddDefaultContextValue(pCtx)
 	respI, err := core.InstanceAPI.Heartbeat(ctx, core.HeartbeatRequest())
 	if respI.Response.Code == pb.Response_SUCCESS {
-		util.Logger().Debugf("update service center %s heartbeat %s successfully",
+		util.Logger().Debugf("update service center instance %s/%s heartbeat",
 			core.Instance.ServiceId, core.Instance.InstanceId)
 		return
 	}
-	util.Logger().Errorf(err, "update service center %s instance %s heartbeat failed",
+	util.Logger().Errorf(err, "update service center instance %s/%s heartbeat failed",
 		core.Instance.ServiceId, core.Instance.InstanceId)
 
 	//服务不存在，创建服务
@@ -215,7 +215,7 @@ func (s *APIServer) startRESTServer() (err error) {
 	if err != nil {
 		return
 	}
-	util.Logger().Infof("Local listen address: %s, host: %s.", addr, s.HostName)
+	util.Logger().Infof("Local listen address: %s, host: %s", addr, s.HostName)
 
 	s.goroutine.Do(func(_ context.Context) {
 		err := s.restSrv.Serve()

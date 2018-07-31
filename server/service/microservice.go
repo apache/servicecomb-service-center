@@ -69,7 +69,8 @@ func (s *MicroServiceService) Create(ctx context.Context, in *pb.CreateServiceRe
 func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.CreateServiceRequest) (*pb.CreateServiceResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	service := in.Service
-	serviceFlag := util.StringJoin([]string{service.AppId, service.ServiceName, service.Version}, "/")
+	serviceFlag := util.StringJoin([]string{
+		service.Environment, service.AppId, service.ServiceName, service.Version}, "/")
 
 	serviceUtil.SetServiceDefaultValue(service)
 
@@ -179,7 +180,7 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 			util.Logger().Errorf(err, "report used quota failed.")
 		}
 	}
-	util.Logger().Infof("create micro-service successful, %s, serviceId: %s. operator: %s",
+	util.Logger().Infof("create micro-service %s, serviceId: %s. operator: %s",
 		serviceFlag, service.ServiceId, remoteIP)
 	return &pb.CreateServiceResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Register service successfully."),
