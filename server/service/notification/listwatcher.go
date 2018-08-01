@@ -90,8 +90,7 @@ func (w *ListWatcher) OnMessage(job NotifyJob) {
 	}
 
 	if wJob.Revision <= w.ListRevision {
-		util.Logger().Warnf(nil,
-			"unexpected notify %s job is coming in, watcher %s %s, job is %v, current revision is %v",
+		util.Logger().Warnf("unexpected notify %s job is coming in, watcher %s %s, job is %v, current revision is %v",
 			w.Type(), w.Group(), w.Subject(), job, w.ListRevision)
 		return
 	}

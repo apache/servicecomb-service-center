@@ -24,7 +24,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ServiceComb/paas-lager/third_party/forked/cloudfoundry/lager"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/broker/brokerpb"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
@@ -33,6 +32,7 @@ import (
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
+	"github.com/go-chassis/paas-lager/third_party/forked/cloudfoundry/lager"
 	"path/filepath"
 	"time"
 )

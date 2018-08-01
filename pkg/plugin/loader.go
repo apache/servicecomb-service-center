@@ -49,7 +49,7 @@ func (pm *Loader) Init() {
 
 	err := pm.ReloadPlugins()
 	if len(pm.Plugins) == 0 {
-		util.Logger().Warnf(err, "no any plugin has been loaded.")
+		util.Logger().Errorf(err, "no any plugin has been loaded.")
 	}
 }
 

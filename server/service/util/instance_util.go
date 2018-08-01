@@ -160,7 +160,7 @@ func DeleteServiceAllInstances(ctx context.Context, serviceId string) error {
 		return err
 	}
 	if resp.Count <= 0 {
-		util.Logger().Warnf(nil, "service %s has no deployment of instance.", serviceId)
+		util.Logger().Warnf("service %s has no deployment of instance.", serviceId)
 		return nil
 	}
 	for _, v := range resp.Kvs {

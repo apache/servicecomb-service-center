@@ -75,7 +75,7 @@ func (s *ServiceCenterServer) needUpgrade() bool {
 	update := !serviceUtil.VersionMatchRule(core.ServerInfo.Version,
 		fmt.Sprintf("%s+", version.Ver().Version))
 	if !update && version.Ver().Version != core.ServerInfo.Version {
-		util.Logger().Warnf(nil,
+		util.Logger().Warnf(
 			"there is a higher version '%s' in cluster, now running '%s' version may be incompatible",
 			core.ServerInfo.Version, version.Ver().Version)
 	}
@@ -134,7 +134,7 @@ func (s *ServiceCenterServer) autoCompactBackend() {
 			case <-time.After(interval):
 				lock, err := mux.Try(mux.GLOBAL_LOCK)
 				if lock == nil {
-					util.Logger().Warnf(err, "can not compact backend by this service center instance now")
+					util.Logger().Errorf(err, "can not compact backend by this service center instance now")
 					continue
 				}
 
@@ -198,5 +198,5 @@ func (s *ServiceCenterServer) Stop() {
 
 	backend.Registry().Close()
 
-	util.Logger().Warnf(nil, "service center stopped")
+	util.Logger().Warnf("service center stopped")
 }

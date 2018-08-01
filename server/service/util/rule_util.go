@@ -235,7 +235,7 @@ func patternBlackList(rulesOfProvider []*pb.ServiceRule, tagsOfConsumer map[stri
 
 		match, _ := regexp.MatchString(rule.Pattern, value)
 		if match {
-			util.Logger().Warnf(nil, "no permission to access, consumer %s match black list, rule.Pattern is %s, value is %s",
+			util.Logger().Warnf("no permission to access, consumer %s match black list, rule.Pattern is %s, value is %s",
 				consumerId, rule.Pattern, value)
 			return scerr.NewError(scerr.ErrPermissionDeny, "Found in black list")
 		}

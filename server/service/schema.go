@@ -363,7 +363,7 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 					opts := schemaWithDatabaseOpera(registry.OpPut, domainProject, serviceId, needUpdateSchema)
 					pluginOps = append(pluginOps, opts...)
 				} else {
-					util.Logger().Warnf(nil, "schema and summary already exist, skip to update, serviceId %s, schemaId %s", serviceId, needUpdateSchema.SchemaId)
+					util.Logger().Warnf("schema and summary already exist, skip to update, serviceId %s, schemaId %s", serviceId, needUpdateSchema.SchemaId)
 				}
 			}
 		}
@@ -537,7 +537,7 @@ func (s *MicroServiceService) canModifySchema(ctx context.Context, domainProject
 		return errQuota
 	}
 	if len(in.Summary) == 0 {
-		util.Logger().Warnf(nil, "service %s schema %s summary is empty.", in.ServiceId, schemaId)
+		util.Logger().Warnf("service %s schema %s summary is empty.", in.ServiceId, schemaId)
 	}
 	return nil
 }

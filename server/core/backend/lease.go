@@ -61,7 +61,7 @@ func (lat *LeaseTask) Do(ctx context.Context) (err error) {
 
 	cost := time.Now().Sub(recv)
 	if cost >= 2*time.Second {
-		util.Logger().Warnf(nil, "[%s]renew lease %d(recv: %s, send: %s), key %s", cost,
+		util.Logger().Warnf("[%s]renew lease %d(recv: %s, send: %s), key %s", cost,
 			lat.LeaseID,
 			recv.Format(TIME_FORMAT),
 			start.Format(TIME_FORMAT),

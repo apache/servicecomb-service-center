@@ -503,7 +503,7 @@ func setResponseAndCallback(pResp *registry.PluginResponse, kvs []*mvccpb.KeyVal
 }
 
 func getEmbedInstance() mgr.PluginInstance {
-	util.Logger().Warnf(nil, "starting service center in embed mode")
+	util.Logger().Warnf("starting service center in embed mode")
 
 	hostName := beego.AppConfig.DefaultString("manager_name", "sc-0")
 	mgrAddrs := beego.AppConfig.DefaultString("manager_addr", "http://127.0.0.1:2380")

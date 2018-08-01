@@ -96,10 +96,10 @@ func handleSignals() {
 		switch sig {
 		case syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM:
 			<-time.After(wait)
-			util.Logger().Warnf(nil, "waiting for server response timed out(%s), force shutdown", wait)
+			util.Logger().Warnf("waiting for server response timed out(%s), force shutdown", wait)
 			os.Exit(1)
 		default:
-			util.Logger().Warnf(nil, "received signal '%v'", sig)
+			util.Logger().Warnf("received signal '%v'", sig)
 		}
 	}
 }

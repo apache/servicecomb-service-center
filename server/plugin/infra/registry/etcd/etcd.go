@@ -98,7 +98,7 @@ func (c *EtcdClient) Initialize() (err error) {
 
 	close(c.ready)
 
-	util.Logger().Warnf(nil, "get etcd client %v completed, auto sync endpoints interval is %s.",
+	util.Logger().Warnf("get etcd client %v completed, auto sync endpoints interval is %s.",
 		c.Endpoints, c.AutoSyncInterval)
 	return
 }
@@ -809,7 +809,7 @@ func callback(action registry.ActionType, rev int64, kvs []*mvccpb.KeyValue, cb 
 }
 
 func NewRegistry() mgr.PluginInstance {
-	util.Logger().Warnf(nil, "starting service center in proxy mode")
+	util.Logger().Warnf("starting service center in proxy mode")
 
 	inst := &EtcdClient{}
 	if err := inst.Initialize(); err != nil {

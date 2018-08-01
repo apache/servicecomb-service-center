@@ -85,7 +85,7 @@ func (dr *DependencyRelation) GetDependencyProviders(opts ...DependencyRelationF
 		for _, providerId := range providerIds {
 			provider, err := GetService(dr.ctx, key.Tenant, providerId)
 			if err != nil {
-				util.Logger().Warnf(nil, "Provider does not exist, %s/%s/%s",
+				util.Logger().Warnf("Provider does not exist, %s/%s/%s",
 					key.AppId, key.ServiceName, key.Version)
 				continue
 			}
@@ -146,7 +146,7 @@ func (dr *DependencyRelation) getDependencyProviderIds(providerRules []*pb.Micro
 				return provideServiceIds, err
 			}
 			if len(serviceIds) == 0 {
-				util.Logger().Warnf(nil, "Get providerIds is empty, service: %s/%s/%s does not exist",
+				util.Logger().Warnf("Get providerIds is empty, service: %s/%s/%s does not exist",
 					provider.AppId, provider.ServiceName, provider.Version)
 				continue
 			}
@@ -198,7 +198,7 @@ func (dr *DependencyRelation) GetDependencyConsumers(opts ...DependencyRelationF
 			return nil, err
 		}
 		if service == nil {
-			util.Logger().Warnf(nil, "Consumer does not exist, %v", consumer)
+			util.Logger().Warnf("Consumer does not exist, %v", consumer)
 			continue
 		}
 
@@ -217,7 +217,7 @@ func (dr *DependencyRelation) getServiceByMicroServiceKey(service *pb.MicroServi
 		return nil, err
 	}
 	if len(serviceId) == 0 {
-		util.Logger().Warnf(nil, "Service not exist,%v", service)
+		util.Logger().Warnf("Service not exist,%v", service)
 		return nil, nil
 	}
 	return GetService(dr.ctx, service.Tenant, serviceId)
@@ -236,7 +236,7 @@ func (dr *DependencyRelation) GetDependencyConsumerIds() ([]string, error) {
 			return nil, err
 		}
 		if len(consumerId) == 0 {
-			util.Logger().Warnf(nil, "Get consumer not exist, %v", consumer)
+			util.Logger().Warnf("Get consumer not exist, %v", consumer)
 			continue
 		}
 		consumerIds = append(consumerIds, consumerId)

@@ -157,7 +157,7 @@ func fork() (err error) {
 		util.Logger().Errorf(err, "fork a process failed, %v", args)
 		return
 	}
-	util.Logger().Warnf(nil, "fork process %v", args)
+	util.Logger().Warnf("fork process %v", args)
 	return
 }
 

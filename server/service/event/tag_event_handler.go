@@ -75,7 +75,7 @@ func (apt *TagsChangedTask) publish(ctx context.Context, domainProject, consumer
 	for _, providerId := range providerIds {
 		provider, err := serviceUtil.GetService(ctx, domainProject, providerId)
 		if provider == nil {
-			util.Logger().Warnf(err, "get service %s file failed", providerId)
+			util.Logger().Errorf(err, "get service %s file failed", providerId)
 			continue
 		}
 		providerKey := pb.MicroServiceToKey(domainProject, provider)
@@ -101,7 +101,7 @@ func (h *TagEventHandler) OnEvent(evt backend.KvEvent) {
 	consumerId, domainProject := backend.GetInfoFromTagKV(evt.KV)
 
 	if nf.GetNotifyService().Closed() {
-		util.Logger().Warnf(nil, "caught [%s] service tags event %s/%s, but notify service is closed",
+		util.Logger().Warnf("caught [%s] service tags event %s/%s, but notify service is closed",
 			action, consumerId, evt.KV.Value)
 		return
 	}

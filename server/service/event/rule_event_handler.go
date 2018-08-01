@@ -88,7 +88,7 @@ func (h *RuleEventHandler) OnEvent(evt backend.KvEvent) {
 
 	providerId, ruleId, domainProject := backend.GetInfoFromRuleKV(evt.KV)
 	if nf.GetNotifyService().Closed() {
-		util.Logger().Warnf(nil, "caught [%s] service rule event %s/%s, but notify service is closed",
+		util.Logger().Warnf("caught [%s] service rule event %s/%s, but notify service is closed",
 			action, providerId, ruleId)
 		return
 	}

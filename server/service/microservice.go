@@ -158,7 +158,7 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 	if !resp.Succeeded {
 		if s.isCreateServiceEx(in) == true {
 			serviceIdInner, _ := serviceUtil.GetServiceId(ctx, serviceKey)
-			util.Logger().Warnf(nil, "create micro-service failed, serviceId = %s , flag = %s: service already exists. operator: %s",
+			util.Logger().Warnf("create micro-service failed, serviceId = %s , flag = %s: service already exists. operator: %s",
 				serviceIdInner, serviceFlag, remoteIP)
 
 			return &pb.CreateServiceResponse{
@@ -167,7 +167,7 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 			}, nil
 		}
 
-		util.Logger().Warnf(nil, "create micro-service failed, %s: service already exists. operator: %s",
+		util.Logger().Warnf("create micro-service failed, %s: service already exists. operator: %s",
 			serviceFlag, remoteIP)
 
 		return &pb.CreateServiceResponse{
@@ -362,7 +362,7 @@ func (s *MicroServiceService) DeleteServices(ctx context.Context, request *pb.De
 	for _, serviceId := range request.ServiceIds {
 		//ServiceId重复性检查
 		if _, ok := existFlag[serviceId]; ok {
-			util.Logger().Warnf(nil, "delete micro-service %s , multiple.", serviceId)
+			util.Logger().Warnf("delete micro-service %s , multiple.", serviceId)
 			continue
 		} else {
 			existFlag[serviceId] = true
@@ -597,7 +597,7 @@ func (s *MicroServiceService) Exist(ctx context.Context, in *pb.GetExistenceRequ
 		}
 
 		if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId) {
-			util.Logger().Warnf(nil, "schema exist failed, serviceId %s, schemaId %s: service not exist.", in.ServiceId, in.SchemaId)
+			util.Logger().Warnf("schema exist failed, serviceId %s, schemaId %s: service not exist.", in.ServiceId, in.SchemaId)
 			return &pb.GetExistenceResponse{
 				Response: pb.CreateResponse(scerr.ErrServiceNotExists, "service does not exist."),
 			}, nil
@@ -630,7 +630,7 @@ func (s *MicroServiceService) Exist(ctx context.Context, in *pb.GetExistenceRequ
 			Summary:  schemaSummary,
 		}, nil
 	default:
-		util.Logger().Warnf(nil, "unexpected type '%s' for query.", in.Type)
+		util.Logger().Warnf("unexpected type '%s' for query.", in.Type)
 		return &pb.GetExistenceResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Only micro-service and schema can be used as type."),
 		}, nil

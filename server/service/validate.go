@@ -91,7 +91,7 @@ func Validate(v interface{}) error {
 	case *pb.GetAppsRequest:
 		return MicroServiceKeyValidator().Validate(v)
 	default:
-		util.Logger().Warnf(nil, "No validator for %T.", t)
+		util.Logger().Warnf("No validator for %T.", t)
 		return nil
 	}
 }

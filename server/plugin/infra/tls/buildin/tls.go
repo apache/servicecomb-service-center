@@ -47,14 +47,14 @@ func GetSSLPath(path string) string {
 func GetPassphase() (pass string, decrypt string) {
 	passphase, err := ioutil.ReadFile(GetSSLPath("cert_pwd"))
 	if err != nil {
-		util.Logger().Warn("read file cert_pwd failed.", err)
+		util.Logger().Errorf(err, "read file cert_pwd failed.")
 	}
 
 	pass = util.BytesToStringWithNoCopy(passphase)
 	if len(pass) > 0 {
 		decrypt, err = plugin.Plugins().Cipher().Decrypt(pass)
 		if err != nil {
-			util.Logger().Warnf(err, "decrypt ssl passphase(%d) failed.", len(pass))
+			util.Logger().Errorf(err, "decrypt ssl passphase(%d) failed.", len(pass))
 			decrypt = ""
 		}
 	}

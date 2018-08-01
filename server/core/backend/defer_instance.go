@@ -115,7 +115,7 @@ func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 			total := iedh.cache.GetAll(nil)
 			if total > 5 && float64(del) >= float64(total)*iedh.Percent {
 				iedh.enabled = true
-				util.Logger().Warnf(nil, "self preservation is enabled, caught %d/%d(>=%.0f%%) DELETE events",
+				util.Logger().Warnf("self preservation is enabled, caught %d/%d(>=%.0f%%) DELETE events",
 					del, total, iedh.Percent*100)
 			}
 
@@ -133,20 +133,20 @@ func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 					default:
 						continue
 					}
-					util.Logger().Warnf(nil, "defer handle timed out, removed key is %s", key)
+					util.Logger().Warnf("defer handle timed out, removed key is %s", key)
 				}
 				iedh.recover(item.event)
 			}
 
 			if iedh.enabled && len(iedh.items) == 0 {
 				iedh.renew()
-				util.Logger().Warnf(nil, "self preservation is stopped")
+				util.Logger().Warnf("self preservation is stopped")
 			}
 
 			t.Reset(DEFAULT_CHECK_WINDOW)
 		case <-iedh.resetCh:
 			iedh.renew()
-			util.Logger().Warnf(nil, "self preservation is reset")
+			util.Logger().Warnf("self preservation is reset")
 
 			util.ResetTimer(t, DEFAULT_CHECK_WINDOW)
 		}
