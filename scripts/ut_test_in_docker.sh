@@ -37,9 +37,14 @@ echo "${green}Preparing the env for UT....${reset}"
 ./scripts/prepare_env_ut.sh
 
 echo "${green}Running UT for Service-Center server"
-bash -x ./scripts/ut.sh server/service
-  
-if [ $? == 0 ]; then
+bash -x ./scripts/ut.sh pkg
+ret=$?
+if [ ${ret} == 0 ]; then
+    bash -x ./scripts/ut.sh server
+    ret=$?
+fi
+
+if [ ${ret} == 0 ]; then
 	echo "${green}All the unit test passed..${reset}"
 	echo "${green}Coverage is created in the file ./coverage.txt${reset}"
 else

@@ -14,55 +14,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package async
+package backend
 
 import (
-	"errors"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"golang.org/x/net/context"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
+	"testing"
 )
 
-type Executor struct {
-	pool       *util.GoRoutine
-	tasks      *util.UniQueue
-	latestTask Task
-}
+func TestNewKvEntity(t *testing.T) {
+	core.ServerInfo.Config.EnableCache = false
+	i := NewKvEntity("a", Configure().WithInitSize(1))
+	if _, ok := i.Indexer.(*CommonIndexer); !ok {
+		t.Fatalf("TestNewIndexer failed")
+	}
+	core.ServerInfo.Config.EnableCache = true
 
-func (s *Executor) AddTask(task Task) (err error) {
-	if task == nil {
-		return errors.New("invalid parameters")
+	i.Run()
+	<-i.Ready()
+	i.Stop()
+
+	i = NewKvEntity("a", Configure().WithInitSize(0))
+	if _, ok := i.Indexer.(*CommonIndexer); !ok {
+		t.Fatalf("TestNewIndexer failed")
 	}
 
-	err = s.tasks.Put(task)
-	if err != nil {
-		return
+	i = NewKvEntity("a", Configure())
+	if _, ok := i.Indexer.(*CacheIndexer); !ok {
+		t.Fatalf("TestNewIndexer failed")
 	}
-	return s.latestTask.Err()
-}
-
-func (s *Executor) Execute() {
-	select {
-	case task, ok := <-s.tasks.Chan():
-		if !ok {
-			return
-		}
-		s.pool.Do(func(ctx context.Context) {
-			at := task.(Task)
-			at.Do(ctx)
-			s.latestTask = at
-		})
-	default:
-	}
-}
-
-func (s *Executor) Close() {
-	s.tasks.Close()
-}
-
-func NewExecutor(pool *util.GoRoutine, task Task) *Executor {
-	return &Executor{
-		pool:       pool,
-		tasks:      util.NewUniQueue(),
-		latestTask: task,
+	if _, ok := i.Cacher.(*KvCacher); !ok {
+		t.Fatalf("TestNewIndexer failed")
 	}
 }

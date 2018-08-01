@@ -30,7 +30,7 @@ func RegisterService(f RegisterServiceFunc) {
 	registerFuncs = append(registerFuncs, f)
 }
 
-func RegisterServer(s *grpc.Server) {
+func RegisterGRpcServer(s *grpc.Server) {
 	for _, f := range registerFuncs {
 		f(s)
 	}

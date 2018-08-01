@@ -16,13 +16,14 @@
  */
 package govern_test
 
+// initialize
+import _ "github.com/apache/incubator-servicecomb-service-center/server/init"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/bootstrap"
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/govern"
-	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/quota/buildin"
-	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/registry/etcd"
-	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/uuid/buildin"
 	"github.com/apache/incubator-servicecomb-service-center/server/service"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
@@ -37,13 +38,11 @@ func TestGovern(t *testing.T) {
 	RunSpecsWithDefaultAndCustomReporters(t, "model Suite", []Reporter{junitReporter})
 }
 
-var serviceResource pb.ServiceCtrlServer
-var instanceResource pb.SerivceInstanceCtrlServerEx
 var governService pb.GovernServiceCtrlServerEx
 
 var _ = BeforeSuite(func() {
 	//init plugin
-	serviceResource, instanceResource = service.AssembleResources()
+	core.ServiceAPI, core.InstanceAPI = service.AssembleResources()
 	governService = govern.GovernServiceAPI
 })
 

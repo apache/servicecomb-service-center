@@ -14,12 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package async
+package task
 
 import "sync"
 
 var (
-	service *TaskService
+	service TaskService
 	once    sync.Once
 )
 
@@ -27,7 +27,7 @@ func init() {
 	service = NewTaskService()
 }
 
-func Service() *TaskService {
+func Service() TaskService {
 	once.Do(service.Run)
 	return service
 }

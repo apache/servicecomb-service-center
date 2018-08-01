@@ -104,16 +104,24 @@ func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 			}
 
 			del := len(iedh.items)
-			if del > 0 && !n {
-				util.ResetTimer(t, DEFAULT_CHECK_WINDOW)
-				n = true
+			if del == 0 {
+				continue
 			}
 
-			total := iedh.cache.Size()
-			if !iedh.enabled && del > 0 && total > 5 && float64(del) >= float64(total)*iedh.Percent {
+			if iedh.enabled {
+				continue
+			}
+
+			total := iedh.cache.GetAll(nil)
+			if total > 5 && float64(del) >= float64(total)*iedh.Percent {
 				iedh.enabled = true
 				util.Logger().Warnf(nil, "self preservation is enabled, caught %d/%d(>=%.0f%%) DELETE events",
 					del, total, iedh.Percent*100)
+			}
+
+			if !n {
+				util.ResetTimer(t, DEFAULT_CHECK_WINDOW)
+				n = true
 			}
 		case <-t.C:
 			n = false

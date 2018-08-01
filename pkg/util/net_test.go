@@ -16,7 +16,10 @@
  */
 package util
 
-import "testing"
+import (
+	"net/http"
+	"testing"
+)
 
 const (
 	ip1 = "127.0.0.1"       // 2130706433
@@ -92,5 +95,47 @@ func TestParseEndpoint(t *testing.T) {
 	ep, err = ParseEndpoint("rest://[fe80::f816:3eff:fe17:c38b%25eht0]:30100/?a=b")
 	if err != nil || ep != "[fe80::f816:3eff:fe17:c38b%eht0]:30100" {
 		t.Fatalf("ParseEndpoint(\"rest://[fe80::f816:3eff:fe17:c38b%%25eht0]:30100/?a=b\") failed, err = %s, ep = %s", err, ep)
+	}
+}
+
+func TestParseRequestURL(t *testing.T) {
+	req, _ := http.NewRequest(http.MethodGet, "https://127.0.0.1:30100/x/?a=b&c=d#e", nil)
+	url := ParseRequestURL(req)
+	if url != "https://127.0.0.1:30100/x/?a=b&c=d#e" {
+		t.Fatalf("TestParseRequestURL failed")
+	}
+	req.URL.Scheme = ""
+	req.Host = "127.0.0.1:30100"
+	req.RequestURI = "/x/?a=b&c=d#e"
+	url = ParseRequestURL(req)
+	if url != "http://127.0.0.1:30100/x/?a=b&c=d#e" {
+		t.Fatalf("TestParseRequestURL failed")
+	}
+}
+
+func TestGetRealIP(t *testing.T) {
+	req, _ := http.NewRequest(http.MethodGet, "https://127.0.0.1:30100/x/?a=b&c=d#e", nil)
+	req.RemoteAddr = "127.0.0.1:30100"
+	ip := GetRealIP(req)
+	if ip != "127.0.0.1" {
+		t.Fatalf("TestGetRealIP failed")
+	}
+
+	req.Header.Set("X-Real-Ip", "255.255.255.255")
+	ip = GetRealIP(req)
+	if ip != "127.0.0.1" {
+		t.Fatalf("TestGetRealIP failed")
+	}
+
+	req.Header.Set("X-Real-Ip", "4.4.4.4")
+	ip = GetRealIP(req)
+	if ip != "4.4.4.4" {
+		t.Fatalf("TestGetRealIP failed")
+	}
+
+	req.Header.Set("X-Forwarded-For", "1.1.1.1, 2.2.2.2, 3.3.3.3")
+	ip = GetRealIP(req)
+	if ip != "1.1.1.1" {
+		t.Fatalf("TestGetRealIP failed")
 	}
 }

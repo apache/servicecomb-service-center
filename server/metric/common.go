@@ -16,17 +16,44 @@
  */
 package metric
 
-import "time"
-
-const (
-	defaultMetricsSize = 100
-	collectInterval    = 5 * time.Second
-
-	familyName = "service_center_"
+import (
+	"github.com/astaxie/beego"
+	"net"
+	"sync"
+	"time"
 )
 
-var sysMetricNames = map[string]struct{}{
-	"process_resident_memory_bytes": {},
-	"process_cpu_seconds_total":     {},
-	"go_threads":                    {},
+const (
+	collectInterval  = 5 * time.Second
+	FamilyName       = "service_center"
+	familyNamePrefix = FamilyName + "_"
+)
+
+var (
+	sysMetricNames = map[string]struct{}{
+		"process_resident_memory_bytes": {},
+		"process_cpu_seconds_total":     {},
+		"go_threads":                    {},
+	}
+	getEndpointOnce sync.Once
+	instance        string
+)
+
+func InstanceName() string {
+	getEndpointOnce.Do(func() {
+		restIp := beego.AppConfig.String("httpaddr")
+		restPort := beego.AppConfig.String("httpport")
+		if len(restIp) > 0 {
+			instance = net.JoinHostPort(restIp, restPort)
+			return
+		}
+
+		rpcIp := beego.AppConfig.String("rpcaddr")
+		rpcPort := beego.AppConfig.String("rpcport")
+		if len(rpcIp) > 0 {
+			instance = net.JoinHostPort(rpcIp, rpcPort)
+			return
+		}
+	})
+	return instance
 }

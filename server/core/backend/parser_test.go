@@ -17,6 +17,7 @@
 package backend
 
 import (
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"testing"
 )
@@ -81,5 +82,113 @@ func TestParseValueFunc(t *testing.T) {
 	}
 	if v, ok := r.(map[string]string); !ok || v["a"] != "abc" {
 		t.Fatalf("MapParser.Unmarshal failed, %s", v)
+	}
+}
+
+func TestGetInfoFromKV(t *testing.T) {
+	s, d := GetInfoFromSvcKV(&KeyValue{Key: []byte(core.GenerateServiceKey("a/b", "c"))})
+	if d != "a/b" || s != "c" {
+		t.Fatalf("TestGetInfoFromKV failed")
+	}
+	s, d = GetInfoFromSvcKV(&KeyValue{Key: []byte("sdf")})
+	if d != "" || s != "" {
+		t.Fatalf("TestGetInfoFromKV failed")
+	}
+
+	var i string
+	s, i, d = GetInfoFromInstKV(&KeyValue{Key: []byte(core.GenerateInstanceKey("a/b", "c", "d"))})
+	if d != "a/b" || s != "c" || i != "d" {
+		t.Fatalf("TestGetInfoFromKV failed")
+	}
+	s, i, d = GetInfoFromInstKV(&KeyValue{Key: []byte("sdf")})
+	if d != "" || s != "" || i != "" {
+		t.Fatalf("TestGetInfoFromKV failed")
+	}
+
+	d = GetInfoFromDomainKV(&KeyValue{Key: []byte(core.GenerateDomainKey("a"))})
+	if d != "a" {
+		t.Fatalf("TestGetInfoFromKV failed")
+	}
+	d = GetInfoFromDomainKV(&KeyValue{Key: []byte("sdf")})
+	if d != "" {
+		t.Fatalf("TestGetInfoFromKV failed")
+	}
+
+	d = GetInfoFromProjectKV(&KeyValue{Key: []byte(core.GenerateProjectKey("a", "b"))})
+	if d != "a/b" {
+		t.Fatalf("TestGetInfoFromKV failed")
+	}
+	d = GetInfoFromProjectKV(&KeyValue{Key: []byte("sdf")})
+	if d != "" {
+		t.Fatalf("TestGetInfoFromKV failed")
+	}
+
+	var r string
+	s, r, d = GetInfoFromRuleKV(&KeyValue{Key: []byte(core.GenerateServiceRuleKey("a/b", "c", "d"))})
+	if d != "a/b" || s != "c" || r != "d" {
+		t.Fatalf("TestGetInfoFromKV failed")
+	}
+	s, r, d = GetInfoFromRuleKV(&KeyValue{Key: []byte("sdf")})
+	if d != "" || s != "" || r != "" {
+		t.Fatalf("TestGetInfoFromKV failed")
+	}
+
+	s, d = GetInfoFromTagKV(&KeyValue{Key: []byte(core.GenerateServiceTagKey("a/b", "c"))})
+	if d != "a/b" || s != "c" {
+		t.Fatalf("TestGetInfoFromKV failed")
+	}
+	s, d = GetInfoFromTagKV(&KeyValue{Key: []byte("sdf")})
+	if d != "" || s != "" {
+		t.Fatalf("TestGetInfoFromKV failed")
+	}
+
+	key := GetInfoFromSvcIndexKV(&KeyValue{Key: []byte(core.GenerateServiceIndexKey(&proto.MicroServiceKey{
+		Tenant:      "a/b",
+		Project:     "",
+		AppId:       "c",
+		ServiceName: "d",
+		Version:     "e",
+		Environment: "f",
+		Alias:       "g",
+	}))})
+	if key.Tenant != "a/b" ||
+		key.AppId != "c" ||
+		key.ServiceName != "d" ||
+		key.Version != "e" ||
+		key.Environment != "f" ||
+		key.Project != "" ||
+		key.Alias != "" {
+		t.Fatalf("TestGetInfoFromKV failed")
+	}
+	key = GetInfoFromSvcIndexKV(&KeyValue{Key: []byte("sdf")})
+	if key != nil {
+		t.Fatalf("TestGetInfoFromKV failed")
+	}
+
+	m := GetInfoFromSchemaSummaryKV(&KeyValue{Key: []byte(core.GenerateServiceSchemaSummaryKey("a/b", "c", "d"))})
+	if m != "d" {
+		t.Fatalf("TestGetInfoFromKV failed")
+	}
+	m = GetInfoFromSchemaSummaryKV(&KeyValue{Key: []byte("sdf")})
+	if m != "" {
+		t.Fatalf("TestGetInfoFromKV failed")
+	}
+
+	m = GetInfoFromSchemaKV(&KeyValue{Key: []byte(core.GenerateServiceSchemaKey("a/b", "c", "d"))})
+	if m != "d" {
+		t.Fatalf("TestGetInfoFromKV failed")
+	}
+	m = GetInfoFromSchemaKV(&KeyValue{Key: []byte("sdf")})
+	if m != "" {
+		t.Fatalf("TestGetInfoFromKV failed")
+	}
+
+	s, d = GetInfoFromDependencyQueueKV(&KeyValue{Key: []byte(core.GenerateConsumerDependencyQueueKey("a/b", "c", "d"))})
+	if s != "c" || d != "a/b" {
+		t.Fatalf("TestGetInfoFromKV failed")
+	}
+	s, d = GetInfoFromDependencyQueueKV(&KeyValue{Key: []byte("sdf")})
+	if s != "" || d != "" {
+		t.Fatalf("TestGetInfoFromKV failed")
 	}
 }

@@ -19,25 +19,51 @@ package registry
 import (
 	"bytes"
 	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/astaxie/beego"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"strconv"
+	"strings"
+	"sync"
 	"time"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 )
 
-var defaultRegistryConfig Config
+const (
+	// the timeout dial to etcd
+	defaultDialTimeout    = 10 * time.Second
+	defaultRequestTimeout = 30 * time.Second
+)
 
-func init() {
-	defaultRegistryConfig.ClusterAddresses = beego.AppConfig.DefaultString("manager_cluster", "sc-0=http://127.0.0.1:2380")
-	requestTimeConfig := beego.AppConfig.DefaultString("registry_timeout", "30s")
-	var err error
-	defaultRegistryConfig.RequestTimeOut, err = time.ParseDuration(requestTimeConfig)
-	if err != nil {
-	    util.Logger().Errorf(err, "registry_timeout is invaild, use default time 30s")
-	    defaultRegistryConfig.RequestTimeOut, _ = time.ParseDuration("30s")
-	}
+var (
+	defaultRegistryConfig Config
+	once                  sync.Once
+)
+
+func RegistryConfig() *Config {
+	once.Do(func() {
+		var err error
+
+		defaultRegistryConfig.ClusterAddresses = beego.AppConfig.DefaultString("manager_cluster", "http://127.0.0.1:2379")
+		defaultRegistryConfig.DialTimeout, err = time.ParseDuration(beego.AppConfig.DefaultString("registry_timeout", "30s"))
+		if err != nil {
+			util.Logger().Errorf(err, "connect_timeout is invalid, use default time %s", defaultDialTimeout)
+			defaultRegistryConfig.DialTimeout = defaultDialTimeout
+		}
+		defaultRegistryConfig.RequestTimeOut, err = time.ParseDuration(beego.AppConfig.DefaultString("registry_timeout", "30s"))
+		if err != nil {
+			util.Logger().Errorf(err, "registry_timeout is invalid, use default time %s", defaultRequestTimeout)
+			defaultRegistryConfig.RequestTimeOut = defaultRequestTimeout
+		}
+		defaultRegistryConfig.SslEnabled = core.ServerInfo.Config.SslEnabled &&
+			strings.Index(strings.ToLower(defaultRegistryConfig.ClusterAddresses), "https://") >= 0
+		defaultRegistryConfig.AutoSyncInterval, err = time.ParseDuration(core.ServerInfo.Config.AutoSyncInterval)
+		if err != nil {
+			util.Logger().Errorf(err, "auto_sync_interval is invalid")
+		}
+	})
+	return &defaultRegistryConfig
 }
 
 type ActionType int
@@ -176,9 +202,12 @@ type Registry interface {
 }
 
 type Config struct {
+	SslEnabled       bool
 	EmbedMode        string
 	ClusterAddresses string
+	DialTimeout      time.Duration
 	RequestTimeOut   time.Duration
+	AutoSyncInterval time.Duration
 }
 
 type PluginOp struct {
@@ -376,8 +405,4 @@ func OpCmp(opt CompareOperation, result CompareResult, v interface{}) (cmp Compa
 
 func WithTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
 	return context.WithTimeout(ctx, defaultRegistryConfig.RequestTimeOut)
-}
-
-func RegistryConfig() *Config {
-	return &defaultRegistryConfig
 }

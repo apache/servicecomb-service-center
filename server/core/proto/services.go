@@ -75,7 +75,7 @@ type GovernServiceCtrlServerEx interface {
 }
 
 type MicroServiceDependency struct {
-	Dependency []*MicroServiceKey
+	Dependency []*MicroServiceKey `json:"Dependency,omitempty"`
 }
 
 type ServerConfig struct {
@@ -119,8 +119,8 @@ func (c *ServerConfig) LogPrint() {
 }
 
 type ServerInformation struct {
-	Version string        `json:"version"`
-	Config  *ServerConfig `json:"-"`
+	Version string       `json:"version"`
+	Config  ServerConfig `json:"-"`
 }
 
 func CreateResponse(code int32, message string) *Response {

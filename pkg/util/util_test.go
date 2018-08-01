@@ -80,3 +80,45 @@ func TestResetTimer(t *testing.T) {
 	ResetTimer(timer, time.Second)
 	<-timer.C
 }
+
+func TestStringJoin(t *testing.T) {
+	if StringJoin([]string{"a", "b", "c"}, ",") != "a,b,c" {
+		t.Fatalf("TestStringJoin failed")
+	}
+	if StringJoin([]string{"a"}, ",") != "a" {
+		t.Fatalf("TestStringJoin failed")
+	}
+	if StringJoin([]string{"a", "b", "c"}, "") != "abc" {
+		t.Fatalf("TestStringJoin failed")
+	}
+	if StringJoin([]string{}, ",") != "" {
+		t.Fatalf("TestStringJoin failed")
+	}
+	if StringJoin(nil, ",") != "" {
+		t.Fatalf("TestStringJoin failed")
+	}
+}
+
+func TestStringToBytesWithNoCopy(t *testing.T) {
+	b := StringToBytesWithNoCopy("ab")
+	if b[0] != 'a' || b[1] != 'b' {
+		t.Fatalf("TestStringToBytesWithNoCopy failed")
+	}
+}
+
+func TestSafeCloseChan(t *testing.T) {
+	var ch chan struct{}
+	SafeCloseChan(ch)
+	ch = make(chan struct{})
+	SafeCloseChan(ch)
+	SafeCloseChan(ch)
+}
+
+func TestSystemPackage(t *testing.T) {
+	if HostName() == "" {
+		t.Fatalf("TestSystemPackage failed")
+	}
+	if !PathExist("../../etc/conf/app.conf") {
+		t.Fatalf("TestSystemPackage failed")
+	}
+}

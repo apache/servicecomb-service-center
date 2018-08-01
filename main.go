@@ -16,20 +16,12 @@
  */
 package main
 
-// plugins
+import _ "github.com/apache/incubator-servicecomb-service-center/server/init"
 import _ "github.com/apache/incubator-servicecomb-service-center/server/bootstrap"
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 )
 
 func main() {
 	server.Run()
-
-	util.GoCloseAndWait()
-
-	backend.Registry().Close()
-
-	util.Logger().Warn("service center exited", nil)
 }

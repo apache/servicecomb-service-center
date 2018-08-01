@@ -19,6 +19,7 @@ package notification
 import (
 	"context"
 	"errors"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/registry/buildin"
 	"github.com/gorilla/websocket"
@@ -30,6 +31,10 @@ import (
 )
 
 var closeCh = make(chan struct{})
+
+func init() {
+	core.Initialize()
+}
 
 type watcherConn struct {
 }
@@ -66,11 +71,9 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 			return
 		})
 		ws2 := &WebSocket{
-			ctx:             context.Background(),
-			conn:            conn,
-			watcher:         w2,
-			needPingWatcher: true,
-			closed:          make(chan struct{}),
+			ctx:     context.Background(),
+			conn:    conn,
+			watcher: w2,
 		}
 		err := ws2.Init()
 		if err != nil {
@@ -92,11 +95,9 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 	w.nType = -1
 
 	ws := &WebSocket{
-		ctx:             context.Background(),
-		conn:            conn,
-		watcher:         w,
-		needPingWatcher: true,
-		closed:          make(chan struct{}),
+		ctx:     context.Background(),
+		conn:    conn,
+		watcher: w,
 	}
 	err := ws.Init()
 	if err == nil {

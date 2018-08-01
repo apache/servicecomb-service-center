@@ -18,29 +18,42 @@ package util
 
 import (
 	"testing"
+	"time"
 )
 
 func TestLogger(t *testing.T) {
+	InitGlobalLogger(LoggerConfig{
+		LoggerLevel: "DEBUG",
+	})
+
 	CustomLogger("Not Exist", "testDefaultLOGGER")
 	l := Logger()
-	if l != LOGGER {
-		t.Fatalf("should equal to LOGGER")
+	if l != globalLogger {
+		t.Fatalf("should equal to globalLogger")
 	}
 	CustomLogger("TestLogger", "testFuncName")
 	l = Logger()
-	if l == LOGGER || l == nil {
+	if l == globalLogger || l == nil {
 		t.Fatalf("should create a new instance for 'TestLogger'")
 	}
 	s := Logger()
 	if l != s {
-		t.Fatalf("should be the same logger")
+		t.Fatalf("should be the same globalLogger")
 	}
 	CustomLogger("github.com/apache/incubator-servicecomb-service-center/pkg/util", "testPkgPath")
 	l = Logger()
-	if l == LOGGER || l == nil {
+	if l == globalLogger || l == nil {
 		t.Fatalf("should create a new instance for 'util'")
 	}
 	// l.Infof("OK")
+
+	LogDebugOrWarnf(time.Now().Add(-time.Second), "x")
+	LogNilOrWarnf(time.Now().Add(-time.Second), "x")
+	LogInfoOrWarnf(time.Now().Add(-time.Second), "x")
+
+	LogDebugOrWarnf(time.Now(), "x")
+	LogNilOrWarnf(time.Now(), "x")
+	LogInfoOrWarnf(time.Now(), "x")
 }
 
 func BenchmarkLogger(b *testing.B) {

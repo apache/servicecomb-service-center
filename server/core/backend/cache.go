@@ -18,10 +18,11 @@ package backend
 
 type Cache interface {
 	Name() string
-	Size() int
+	Size() int // the bytes size of the cache
 
 	Get(k string) *KeyValue
-	GetAll(prefix string, arr *[]*KeyValue) int
+	GetAll(arr *[]*KeyValue) int
+	GetPrefix(prefix string, arr *[]*KeyValue) int
 	ForEach(iter func(k string, v *KeyValue) (next bool))
 
 	Put(k string, v *KeyValue)
@@ -30,7 +31,4 @@ type Cache interface {
 
 type Cacher interface {
 	Cache() Cache
-	Run()
-	Stop()
-	Ready() <-chan struct{}
 }

@@ -31,10 +31,10 @@ import (
 
 //log var
 var (
-	LOGGER             lager.Logger
-	defaultLagerConfig = stlager.DefaultConfig()
-	loggerConfig       LoggerConfig
-	logLevel           lager.LogLevel
+	globalLogger     lager.Logger
+	globalConfig     LoggerConfig
+	innerLagerConfig = stlager.DefaultConfig()
+	logLevel         lager.LogLevel
 
 	loggers     map[string]lager.Logger
 	loggerNames map[string]string
@@ -57,8 +57,8 @@ type LoggerConfig struct {
 func init() {
 	loggers = make(map[string]lager.Logger, 10)
 	loggerNames = make(map[string]string, 10)
-	// make LOGGER do not be nil, new a stdout logger
-	LOGGER = NewLogger(fromLagerConfig(defaultLagerConfig))
+	// make globalLogger do not be nil, new a stdout for it
+	globalLogger = NewLogger(fromLagerConfig(innerLagerConfig))
 }
 
 func fromLagerConfig(c *stlager.Config) LoggerConfig {
@@ -89,14 +89,12 @@ func NewLogger(cfg LoggerConfig) lager.Logger {
 }
 
 func InitGlobalLogger(cfg LoggerConfig) {
-	// renew the global logger
+	// renew the global globalLogger
 	if len(cfg.LoggerLevel) == 0 {
-		cfg.LoggerLevel = defaultLagerConfig.LoggerLevel
+		cfg.LoggerLevel = innerLagerConfig.LoggerLevel
 	}
-	loggerConfig = cfg
-	LOGGER = NewLogger(cfg)
-	// log rotate
-	RunLogDirRotate(cfg)
+	globalConfig = cfg
+	globalLogger = NewLogger(cfg)
 	// recreate the deleted log file
 	switch strings.ToUpper(cfg.LoggerLevel) {
 	case "INFO":
@@ -110,12 +108,15 @@ func InitGlobalLogger(cfg LoggerConfig) {
 	default:
 		logLevel = lager.DEBUG
 	}
+
+	RunLogDirRotate(cfg)
+
 	monitorLogFile()
 }
 
 func Logger() lager.Logger {
 	if len(loggerNames) == 0 {
-		return LOGGER
+		return globalLogger
 	}
 	funcFullName := getCalleeFuncName()
 
@@ -141,19 +142,19 @@ func Logger() lager.Logger {
 		loggersMux.Lock()
 		logger, ok = loggers[logFile]
 		if !ok {
-			cfg := loggerConfig
+			cfg := globalConfig
 			if len(cfg.LoggerFile) != 0 {
 				cfg.LoggerFile = filepath.Join(filepath.Dir(cfg.LoggerFile), logFile+".log")
 			}
 			logger = NewLogger(cfg)
 			loggers[logFile] = logger
-			LOGGER.Warnf(nil, "match %s, new logger %s for %s", prefix, logFile, funcFullName)
+			logger.Warnf(nil, "match %s, new globalLogger %s for %s", prefix, logFile, funcFullName)
 		}
 		loggersMux.Unlock()
 		return logger
 	}
 
-	return LOGGER
+	return globalLogger
 }
 
 func getCalleeFuncName() string {
@@ -188,7 +189,7 @@ func CustomLogger(pkgOrFunc, fileName string) {
 }
 
 func monitorLogFile() {
-	if len(loggerConfig.LoggerFile) == 0 {
+	if len(globalConfig.LoggerFile) == 0 {
 		return
 	}
 	Go(func(ctx context.Context) {
@@ -198,18 +199,20 @@ func monitorLogFile() {
 				return
 			case <-time.After(time.Minute):
 				Logger().Debug(fmt.Sprintf("Check log file at %s", time.Now()))
-
-				if !PathExist(loggerConfig.LoggerFile) {
-					file, err := os.OpenFile(loggerConfig.LoggerFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
-					if err != nil {
-						Logger().Errorf(err, "Create log file failed.")
-						return
-					}
-					// TODO Here will lead to file handle leak
-					sink := lager.NewReconfigurableSink(lager.NewWriterSink("file", file, lager.DEBUG), logLevel)
-					Logger().RegisterSink(sink)
-					Logger().Errorf(nil, "log file is removed, create again.")
+				if PathExist(globalConfig.LoggerFile) {
+					continue
 				}
+
+				file, err := os.OpenFile(globalConfig.LoggerFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+				if err != nil {
+					Logger().Errorf(err, "Create log file failed.")
+					continue
+				}
+
+				// TODO Here will lead to file handle leak
+				sink := lager.NewReconfigurableSink(lager.NewWriterSink("file", file, lager.DEBUG), logLevel)
+				Logger().RegisterSink(sink)
+				Logger().Errorf(nil, "log file is removed, create again.")
 			}
 		}
 	})

@@ -43,40 +43,6 @@ func (governService *GovernServiceControllerV4) URLPatterns() []rest.Route {
 	}
 }
 
-//Node 节点信息
-type Node struct {
-	Id       string   `json:"id"`
-	Name     string   `json:"name"`
-	AppID    string   `json:"appId"`
-	Version  string   `json:"version"`
-	Type     string   `json:"type"`
-	Color    string   `json:"color"`
-	Position string   `json:"position"`
-	Visits   []string `json:"-"`
-}
-
-//Line 连接线信息
-type Line struct {
-	From        Node   `json:"from"`
-	To          Node   `json:"to"`
-	Type        string `json:"type"`
-	Color       string `json:"color"`
-	Description string `json:"descriptor"`
-}
-
-//Circle 环信息
-type Circle struct {
-	Nodes []Node `json:"nodes"`
-}
-
-//Graph 图全集信息
-type Graph struct {
-	Nodes   []Node   `json:"nodes"`
-	Lines   []Line   `json:"lines"`
-	Circles []Circle `json:"circles"`
-	Visits  []string `json:"-"`
-}
-
 // GetGraph 获取依赖连接图详细依赖关系
 func (governService *GovernServiceControllerV4) GetGraph(w http.ResponseWriter, r *http.Request) {
 	var graph Graph

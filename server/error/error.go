@@ -53,6 +53,8 @@ var errors = map[int32]string{
 	ErrUnavailableQuota:   "Quota service is unavailable",
 
 	ErrEndpointAlreadyExists: "Endpoint is already belong to other service",
+
+	ErrForbidden: "Forbidden",
 }
 
 const (
@@ -90,6 +92,8 @@ const (
 
 	ErrNotEnoughQuota   int32 = 400100
 	ErrUnavailableQuota int32 = 500101
+
+	ErrForbidden int32 = 403001
 )
 
 type Error struct {

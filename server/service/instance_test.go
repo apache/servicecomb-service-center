@@ -17,7 +17,6 @@
 package service_test
 
 import (
-	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
@@ -1202,7 +1201,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId8))
 				Expect(reqRev).NotTo(Equal(0))
 
-				util.SetContext(ctx, serviceUtil.CTX_REQUEST_REVISION, fmt.Sprint(reqRev-1))
+				util.SetContext(ctx, serviceUtil.CTX_REQUEST_REVISION, strconv.FormatInt(reqRev-1, 10))
 				respFind, err = instanceResource.Find(ctx, &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId8,
 					AppId:             "query_instance",
@@ -1215,7 +1214,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId8))
 				Expect(ctx.Value(serviceUtil.CTX_RESPONSE_REVISION)).To(Equal(rev))
 
-				util.SetContext(ctx, serviceUtil.CTX_REQUEST_REVISION, fmt.Sprint(reqRev+1))
+				util.SetContext(ctx, serviceUtil.CTX_REQUEST_REVISION, strconv.FormatInt(reqRev+1, 10))
 				respFind, err = instanceResource.Find(ctx, &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId8,
 					AppId:             "query_instance",
@@ -1240,7 +1239,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(len(respFind.Instances)).To(Equal(0))
 				Expect(ctx.Value(serviceUtil.CTX_RESPONSE_REVISION)).To(Equal(rev))
 
-				By("find should return 200 even if consumer permission deny")
+				By("find should return 200 even if consumer is diff apps")
 				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId3,
 					AppId:             "query_instance",

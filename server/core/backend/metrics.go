@@ -17,40 +17,31 @@
 package backend
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
+	"github.com/apache/incubator-servicecomb-service-center/server/metric"
 	"github.com/prometheus/client_golang/prometheus"
-	"sync"
 )
 
 var (
 	cacheSizeGauge = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Namespace: "service_center",
+			Namespace: metric.FamilyName,
 			Subsystem: "local",
 			Name:      "cache_size_bytes",
 			Help:      "Local cache size summary of backend store",
 		}, []string{"instance", "resource", "type"})
 )
 
-var (
-	instance string
-	once     sync.Once
-)
-
 func init() {
 	prometheus.MustRegister(cacheSizeGauge)
 }
 
-func ReportCacheMetrics(resource, t string, obj interface{}) {
-	if len(core.Instance.Endpoints) == 0 || len(resource) == 0 {
+func ReportCacheSize(resource, t string, s int) {
+	instance := metric.InstanceName()
+	if len(instance) == 0 || len(resource) == 0 {
 		// endpoints list will be empty when initializing
 		// resource may be empty when report SCHEMA
 		return
 	}
 
-	once.Do(func() {
-		instance, _ = util.ParseEndpoint(core.Instance.Endpoints[0])
-	})
-	cacheSizeGauge.WithLabelValues(instance, resource, t).Set(float64(util.Sizeof(obj)))
+	cacheSizeGauge.WithLabelValues(instance, resource, t).Set(float64(s))
 }

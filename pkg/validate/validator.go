@@ -105,7 +105,7 @@ func (v *Validator) Validate(s interface{}) error {
 		return fmt.Errorf("not support validate type '%s'", k)
 	}
 
-	st := util.ReflectObject(s)
+	st := util.Reflect(s)
 	for i, l := 0, sv.NumField(); i < l; i++ {
 		field := sv.Field(i)
 		fieldName := st.Fields[i].Name

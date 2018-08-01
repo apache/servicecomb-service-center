@@ -168,7 +168,7 @@ func (zp *Zipkin) ClientEnd(itf tracing.Span, code int, message string) {
 }
 
 func setResultTags(span opentracing.Span, code int, message string) {
-	if code >= http.StatusBadRequest && len(message) > 0 {
+	if code >= http.StatusBadRequest {
 		span.SetTag("error", message)
 	}
 	ext.HTTPStatusCode.Set(span, uint16(code))

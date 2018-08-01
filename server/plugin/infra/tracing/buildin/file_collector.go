@@ -82,6 +82,7 @@ func (f *FileCollector) write(batch []*zipkincore.Span) (c int) {
 		c++
 	}
 	if err := w.Flush(); err != nil {
+		c = 0
 		util.Logger().Errorf(err, "write span to file failed")
 	}
 	return
@@ -127,22 +128,29 @@ func (f *FileCollector) Run() {
 				f.write(batch)
 				return
 			case span := <-f.c:
+				l := len(batch)
+				if l >= max {
+					dispose := l - f.BatchSize
+					util.Logger().Errorf(nil, "backlog is full, dispose %d span(s), max: %d",
+						dispose, max)
+					batch = batch[dispose:] // allocate more
+				}
+
 				batch = append(batch, span)
-				if len(batch) >= f.BatchSize {
-					if len(batch) > max {
-						dispose := len(batch) - f.BatchSize
-						util.Logger().Errorf(nil, "backlog is full, dispose %d span(s), max: %d",
-							dispose, max)
-						batch = batch[dispose:] // allocate more
-					}
-					if c := f.write(batch); c == 0 {
-						continue
-					}
-					if prev != nil {
-						batch, prev = prev[:0], batch
-					} else {
-						prev, batch = batch, batch[len(batch):] // new one
-					}
+
+				l = len(batch)
+				if l < f.BatchSize {
+					continue
+				}
+
+				if c := f.write(batch); c == 0 {
+					continue
+				}
+
+				if prev != nil {
+					batch, prev = prev[:0], batch
+				} else {
+					prev, batch = batch, batch[len(batch):] // new one
 				}
 			case <-t.C:
 				if time.Now().After(nr) {

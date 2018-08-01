@@ -295,6 +295,9 @@ func CopyFile(srcFile, destFile string) error {
 }
 
 func RunLogDirRotate(cfg LoggerConfig) {
+	if len(cfg.LoggerFile) == 0 {
+		return
+	}
 	Go(func(ctx context.Context) {
 		for {
 			select {

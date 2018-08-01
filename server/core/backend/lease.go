@@ -25,6 +25,8 @@ import (
 )
 
 type LeaseTask struct {
+	Client registry.Registry
+
 	key     string
 	LeaseID int64
 	TTL     int64
@@ -40,7 +42,7 @@ func (lat *LeaseTask) Key() string {
 
 func (lat *LeaseTask) Do(ctx context.Context) (err error) {
 	recv, start := lat.ReceiveTime(), time.Now()
-	lat.TTL, err = Registry().LeaseRenew(ctx, lat.LeaseID)
+	lat.TTL, err = lat.Client.LeaseRenew(ctx, lat.LeaseID)
 	if err != nil {
 		util.Logger().Errorf(err, "[%s]renew lease %d failed(recv: %s, send: %s), key %s",
 			time.Now().Sub(recv),
@@ -79,6 +81,7 @@ func (lat *LeaseTask) ReceiveTime() time.Time {
 func NewLeaseAsyncTask(op registry.PluginOp) *LeaseTask {
 	now := time.Now().UTC()
 	return &LeaseTask{
+		Client:   Registry(),
 		key:      ToLeaseAsyncTaskKey(util.BytesToStringWithNoCopy(op.Key)),
 		LeaseID:  op.Lease,
 		recvSec:  now.Unix(),

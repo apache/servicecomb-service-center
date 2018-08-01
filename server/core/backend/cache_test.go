@@ -35,7 +35,7 @@ func BenchmarkFilter(b *testing.B) {
 	}
 	v, _ := json.Marshal(inst)
 
-	cfg := DefaultConfig().WithParser(InstanceParser)
+	cfg := Configure().WithParser(InstanceParser)
 
 	n := 300 * 1000 // 30w
 	cache := NewKvCache("test", cfg)
@@ -83,8 +83,36 @@ func BenchmarkFilter(b *testing.B) {
 	//20	  82367261 ns/op	37964987 B/op	   80132 allocs/op
 }
 
+func TestNullCache_Name(t *testing.T) {
+	NullCache.Put("", nil)
+	if NullCache.Name() != "NULL" {
+		t.Fatalf("TestNullCache_Name failed")
+	}
+	if NullCache.Size() != 0 {
+		t.Fatalf("TestNullCache_Name failed")
+	}
+	if NullCache.Get("") != nil {
+		t.Fatalf("TestNullCache_Name failed")
+	}
+	if NullCache.GetAll(nil) != 0 {
+		t.Fatalf("TestNullCache_Name failed")
+	}
+	if NullCache.GetPrefix("", nil) != 0 {
+		t.Fatalf("TestNullCache_Name failed")
+	}
+	NullCache.ForEach(func(k string, v *KeyValue) (next bool) {
+		t.Fatalf("TestNullCache_Name failed")
+		return false
+	})
+	NullCache.Remove("")
+
+	if NullCacher.Cache() != NullCache || NullCacher.Config() != nil {
+		t.Fatalf("TestNullCache_Name failed")
+	}
+}
+
 func TestKvCache_Get(t *testing.T) {
-	c := NewKvCache("test", DefaultConfig())
+	c := NewKvCache("test", Configure())
 	c.Put("", &KeyValue{Version: 1})
 	c.Put("/", &KeyValue{Version: 1})
 	c.Put("/a/b/c/d/e/1", &KeyValue{Version: 1})
@@ -92,21 +120,25 @@ func TestKvCache_Get(t *testing.T) {
 	c.Put("/a/b/d/d/f/3", &KeyValue{Version: 3})
 	c.Put("/a/b/e/d/g/4", &KeyValue{Version: 4})
 
-	if l := c.Size(); l != 4 {
-		t.Fatalf("TestKvCache Size() failed, %d", l)
+	if s := c.Size(); s == 0 {
+		t.Fatalf("TestKvCache Size() failed, %d", s)
+	}
+
+	if l := c.GetAll(nil); l != 4 {
+		t.Fatalf("TestKvCache GetAll() failed, %d", l)
 	}
 
 	if kv := c.Get("/a/b/c/d/e/2"); kv == nil || kv.Version != 2 {
 		t.Fatalf("TestKvCache Get() failed, %v", kv)
 	}
 
-	if l := c.GetAll("/", nil); l != 4 {
-		t.Fatalf("TestKvCache GetAll() failed, %d", l)
+	if l := c.GetPrefix("/", nil); l != 4 {
+		t.Fatalf("TestKvCache GetPrefix() failed, %d", l)
 	}
 
 	var arr []*KeyValue
-	if l := c.GetAll("/a/b/c/", &arr); l != 2 || (arr[0].Version != 1 && arr[1].Version != 1) {
-		t.Fatalf("TestKvCache GetAll() failed, %d, %v", l, arr)
+	if l := c.GetPrefix("/a/b/c/", &arr); l != 2 || (arr[0].Version != 1 && arr[1].Version != 1) {
+		t.Fatalf("TestKvCache GetPrefix() failed, %d, %v", l, arr)
 	}
 
 	l, b := -1, false
@@ -134,7 +166,12 @@ func TestKvCache_Get(t *testing.T) {
 	c.Remove("/")
 	c.Remove("/a/b/c/d/e/2")
 	c.Remove("/a/b/d/d/f/3")
-	if l := c.Size(); l != 2 {
-		t.Fatalf("TestKvCache Size() failed, %d", l)
+	if l := c.GetAll(nil); l != 2 {
+		t.Fatalf("TestKvCache GetAll() failed, %d", l)
+	}
+
+	c.Put("/a/b/c/d/e/1", &KeyValue{Version: 2})
+	if kv := c.Get("/a/b/c/d/e/1"); kv == nil || kv.Version != 2 {
+		t.Fatalf("TestKvCache Put() failed, %v", kv)
 	}
 }

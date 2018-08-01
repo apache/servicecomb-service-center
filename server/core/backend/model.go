@@ -14,12 +14,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package async
+package backend
 
-import "golang.org/x/net/context"
+import (
+	"github.com/coreos/etcd/mvcc/mvccpb"
+)
 
-type Task interface {
-	Key() string
-	Do(ctx context.Context) error
-	Err() error
+type KeyValue struct {
+	Key            []byte
+	Value          interface{}
+	Version        int64
+	CreateRevision int64
+	ModRevision    int64
+}
+
+func (kv *KeyValue) From(p Parser, s *mvccpb.KeyValue) (err error) {
+	kv.Key = s.Key
+	kv.Version = s.Version
+	kv.CreateRevision = s.CreateRevision
+	kv.ModRevision = s.ModRevision
+	if p == nil {
+		return
+	}
+	kv.Value, err = p.Unmarshal(s.Value)
+	return
+}
+
+type Response struct {
+	Kvs   []*KeyValue
+	Count int64
+}
+
+func (pr *Response) MaxModRevision() (max int64) {
+	for _, kv := range pr.Kvs {
+		if max < kv.ModRevision {
+			max = kv.ModRevision
+		}
+	}
+	return
 }

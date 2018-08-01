@@ -40,31 +40,31 @@ func initROAServerHandler() *ROAServerHandler {
 }
 
 // servant must be an pointer to service object
-func RegisterServent(servant interface{}) {
+func RegisterServant(servant interface{}) {
 	val := reflect.ValueOf(servant)
 	ind := reflect.Indirect(val)
 	typ := ind.Type()
-	name := typ.PkgPath() + "." + typ.Name()
+	name := util.FileLastName(typ.PkgPath() + "." + typ.Name())
 	if val.Kind() != reflect.Ptr {
-		util.Logger().Errorf(nil, "<rest.RegisterServent> cannot use non-ptr servant struct `%s`", name)
+		util.Logger().Errorf(nil, "<rest.RegisterServant> cannot use non-ptr servant struct `%s`", name)
 		return
 	}
 
 	urlPatternFunc := val.MethodByName("URLPatterns")
 	if !urlPatternFunc.IsValid() {
-		util.Logger().Errorf(nil, "<rest.RegisterServent> no 'URLPatterns' function in servant struct `%s`", name)
+		util.Logger().Errorf(nil, "<rest.RegisterServant> no 'URLPatterns' function in servant struct `%s`", name)
 		return
 	}
 
 	vals := urlPatternFunc.Call([]reflect.Value{})
 	if len(vals) <= 0 {
-		util.Logger().Errorf(nil, "<rest.RegisterServent> call 'URLPatterns' function failed in servant struct `%s`", name)
+		util.Logger().Errorf(nil, "<rest.RegisterServant> call 'URLPatterns' function failed in servant struct `%s`", name)
 		return
 	}
 
 	val0 := vals[0]
 	if !val.CanInterface() {
-		util.Logger().Errorf(nil, "<rest.RegisterServent> result of 'URLPatterns' function not interface type in servant struct `%s`", name)
+		util.Logger().Errorf(nil, "<rest.RegisterServant> result of 'URLPatterns' function not interface type in servant struct `%s`", name)
 		return
 	}
 
@@ -77,7 +77,7 @@ func RegisterServent(servant interface{}) {
 			}
 		}
 	} else {
-		util.Logger().Errorf(nil, "<rest.RegisterServent> result of 'URLPatterns' function not []*Route type in servant struct `%s`", name)
+		util.Logger().Errorf(nil, "<rest.RegisterServant> result of 'URLPatterns' function not []*Route type in servant struct `%s`", name)
 	}
 }
 

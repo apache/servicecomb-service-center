@@ -25,5 +25,5 @@ func init() {
 }
 
 func registerREST() {
-	roa.RegisterServent(&BrokerController{})
+	roa.RegisterServant(&BrokerController{})
 }

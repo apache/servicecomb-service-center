@@ -44,7 +44,10 @@ func (c *StringContext) Value(key interface{}) interface{} {
 	if !ok {
 		return c.parentCtx.Value(key)
 	}
-	v, _ := c.kv.Get(k)
+	v, ok := c.kv.Get(k)
+	if !ok {
+		return c.parentCtx.Value(key)
+	}
 	return v
 }
 
@@ -57,7 +60,7 @@ func NewStringContext(ctx context.Context) *StringContext {
 	if !ok {
 		strCtx = &StringContext{
 			parentCtx: ctx,
-			kv:        NewConcurrentMap(10),
+			kv:        NewConcurrentMap(0),
 		}
 	}
 	return strCtx
@@ -74,13 +77,13 @@ func CloneContext(ctx context.Context) context.Context {
 	if !ok {
 		return &StringContext{
 			parentCtx: ctx,
-			kv:        NewConcurrentMap(10),
+			kv:        NewConcurrentMap(0),
 		}
 	}
 
 	strCtx := &StringContext{
 		parentCtx: ctx,
-		kv:        NewConcurrentMap(old.kv.Size()),
+		kv:        NewConcurrentMap(0),
 	}
 
 	old.kv.ForEach(func(item MapItem) bool {

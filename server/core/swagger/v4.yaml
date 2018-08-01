@@ -310,7 +310,7 @@ paths:
             $ref: '#/definitions/Tags'
       tags:
         - microservices
-        - tag
+        - tags
       responses:
         200:
           description: 创建成功
@@ -343,7 +343,7 @@ paths:
           type: string
       tags:
         - microservices
-        - tag
+        - tags
       responses:
         200:
           description: 查询成功
@@ -388,7 +388,7 @@ paths:
           type: string
       tags:
         - microservices
-        - tag
+        - tags
       responses:
         200:
           description: 更新成功
@@ -426,7 +426,7 @@ paths:
           type: string
       tags:
         - microservices
-        - tag
+        - tags
       responses:
         200:
           description: 删除成功
@@ -465,7 +465,7 @@ paths:
             $ref: '#/definitions/AddRules'
       tags:
         - microservices
-        - rule
+        - rules
       responses:
         200:
           description: 创建成功
@@ -500,7 +500,7 @@ paths:
           type: string
       tags:
         - microservices
-        - rule
+        - rules
       responses:
         200:
           description: 查询成功
@@ -546,7 +546,7 @@ paths:
             $ref: "#/definitions/AddOrUpdateRule"
       tags:
         - microservices
-        - rule
+        - rules
       responses:
         200:
           description: 修改成功
@@ -586,7 +586,7 @@ paths:
           type: string
       tags:
         - microservices
-        - rule
+        - rules
       responses:
         200:
           description: 删除成功
@@ -626,7 +626,7 @@ paths:
           type: string
       tags:
         - microservices
-        - schema
+        - schemas
       responses:
         200:
           description: 查询成功,如果summary存在，则header里面的X-Schema-Summary的value为该schema对应的摘要
@@ -675,7 +675,7 @@ paths:
             $ref: '#/definitions/CreateSchema'
       tags:
         - microservices
-        - schema
+        - schemas
       responses:
         200:
           description: 修改成功
@@ -713,7 +713,7 @@ paths:
           type: string
       tags:
         - microservices
-        - schema
+        - schemas
       responses:
         200:
           description: 删除成功
@@ -752,7 +752,7 @@ paths:
             $ref: '#/definitions/ModifySchemasRequest'
       tags:
         - microservices
-        - schema
+        - schemas
       responses:
         200:
           description: 創建成功
@@ -789,7 +789,7 @@ paths:
           default: 0
       tags:
         - microservices
-        - schema
+        - schemas
       responses:
         200:
           description: 查询成功
@@ -824,7 +824,7 @@ paths:
           schema:
             $ref: '#/definitions/CreateDependenciesRequest'
       tags:
-        - dependency
+        - dependencies
       responses:
         200:
           description: 创建成功
@@ -858,7 +858,7 @@ paths:
           schema:
             $ref: '#/definitions/CreateDependenciesRequest'
       tags:
-        - dependency
+        - dependencies
       responses:
         200:
           description: 创建成功
@@ -902,7 +902,7 @@ paths:
           type: integer
           default: 0
       tags:
-        - dependency
+        - dependencies
       responses:
         200:
           description: 查询成功
@@ -946,7 +946,7 @@ paths:
           type: integer
           default: 0
       tags:
-        - dependency
+        - dependencies
       responses:
         200:
           description: 查询成功
@@ -1622,6 +1622,34 @@ paths:
           description: 内部错误
           schema:
             type: string
+  /v4/{project}/admin/dump:
+    get:
+      description: |
+        Dump the information of service center runtime
+      operationId: dump
+      parameters:
+        - name: x-domain-name
+          in: header
+          type: string
+          default: default
+          description: default租户
+          required: true
+        - name: project
+          in: path
+          description: default项目
+          required: true
+          type: string
+      tags:
+        - admin
+      responses:
+        200:
+          description: dump information
+          schema:
+            $ref: '#/definitions/DumpResponse'
+        403:
+          description: Forbidden
+          schema:
+            type: string
 definitions:
   Version:
     type: object
@@ -2224,3 +2252,104 @@ definitions:
        schema:
          description: shema
          type: string
+  MicroServiceKV:
+    type: object
+    properties:
+      key:
+        type: string
+      rev:
+        type: integer
+      value:
+        $ref: "#/definitions/MicroService"
+  MicroServiceInstanceKV:
+    type: object
+    properties:
+      key:
+        type: string
+      rev:
+        type: integer
+      value:
+        $ref: "#/definitions/MicroServiceInstance"
+  StringKV:
+    type: object
+    properties:
+      key:
+        type: string
+      rev:
+        type: integer
+      value:
+        type: string
+  MicroserviceTagKV:
+    type: object
+    properties:
+      key:
+        type: string
+      rev:
+        type: integer
+      value:
+        $ref: '#/definitions/Properties'
+  MicroserviceRuleKV:
+    type: object
+    properties:
+      key:
+        type: string
+      rev:
+        type: integer
+      value:
+        $ref: '#/definitions/Rule'
+  MicroServiceDependencyRule:
+    type: object
+    properties:
+      Dependency:
+        type: array
+        items:
+          $ref: '#/definitions/DependencyKey'
+  DependencyKV:
+    type: object
+    properties:
+      key:
+        type: string
+      rev:
+        type: integer
+      value:
+        $ref: '#/definitions/MicroServiceDependencyRule'
+  Cache:
+    type: object
+    properties:
+      services:
+        type: array
+        items:
+          $ref: "#/definitions/MicroServiceKV"
+      serviceIndexes:
+        type: array
+        items:
+          $ref: "#/definitions/StringKV"
+      serviceAliases:
+        type: array
+        items:
+          $ref: "#/definitions/StringKV"
+      serviceTags:
+        type: array
+        items:
+          $ref: "#/definitions/MicroserviceTagKV"
+      serviceRules:
+        type: array
+        items:
+          $ref: "#/definitions/MicroserviceRuleKV"
+      dependencyRules:
+        type: array
+        items:
+          $ref: "#/definitions/DependencyKV"
+      summaries:
+        type: array
+        items:
+          $ref: "#/definitions/StringKV"
+      instances:
+        type: array
+        items:
+          $ref: "#/definitions/MicroServiceInstanceKV"
+  DumpResponse:
+    type: object
+    properties:
+      cache:
+        $ref: "#/definitions/Cache"

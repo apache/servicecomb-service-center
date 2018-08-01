@@ -17,9 +17,10 @@
 package backend
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/async"
+	"errors"
+	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/task"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"golang.org/x/net/context"
 	"sync"
@@ -32,8 +33,8 @@ func init() {
 }
 
 type KvStore struct {
-	indexers    map[StoreType]Indexer
-	taskService *async.TaskService
+	entities    *util.ConcurrentMap
+	taskService task.TaskService
 	lock        sync.RWMutex
 	ready       chan struct{}
 	goroutine   *util.GoRoutine
@@ -42,13 +43,10 @@ type KvStore struct {
 }
 
 func (s *KvStore) Initialize() {
-	s.indexers = make(map[StoreType]Indexer)
-	s.taskService = async.NewTaskService()
+	s.entities = util.NewConcurrentMap(0)
+	s.taskService = task.NewTaskService()
 	s.ready = make(chan struct{})
 	s.goroutine = util.NewGo(context.Background())
-	for t := StoreType(0); t != typeEnd; t++ {
-		s.setupIndexer(t, NewBaseIndexer(s.injectConfig(t)))
-	}
 }
 
 func (s *KvStore) OnCacheEvent(evt KvEvent) {
@@ -58,17 +56,27 @@ func (s *KvStore) OnCacheEvent(evt KvEvent) {
 }
 
 func (s *KvStore) injectConfig(t StoreType) *Config {
-	return TypeConfig[t].AppendEventFunc(s.OnCacheEvent).
-		AppendEventFunc(EventProxies[t].OnEvent)
+	return TypeConfig[t].AppendEventFunc(s.OnCacheEvent)
 }
 
-func (s *KvStore) setupIndexer(t StoreType, indexer Indexer) {
-	old := s.indexers[t]
-	s.indexers[t] = indexer
-	indexer.Run()
-	if old != nil {
-		old.Stop()
+func (s *KvStore) getOrCreateEntity(t StoreType) Entity {
+	v, err := s.entities.Fetch(t, func() (interface{}, error) {
+		cfg, ok := TypeConfig[t]
+		if !ok {
+			// do not new instance
+			return nil, ErrNoImpl
+		}
+
+		e := NewKvEntity(t.String(), cfg)
+		e.Run()
+		return e, nil
+	})
+	if err != nil {
+		util.Logger().Errorf(err, "can not find entity '%s', new default one", t.String())
+		return DefaultKvEntity()
+
 	}
+	return v.(Entity)
 }
 
 func (s *KvStore) Run() {
@@ -77,29 +85,17 @@ func (s *KvStore) Run() {
 }
 
 func (s *KvStore) store(ctx context.Context) {
-	defer s.wait(ctx)
-
-	if !core.ServerInfo.Config.EnableCache {
-		util.Logger().Warnf(nil, "registry cache mechanism is disabled")
-		return
-	}
-
-	for t := StoreType(0); t != typeEnd; t++ {
-		s.setupIndexer(t, NewCacheIndexer(t.String(), TypeConfig[t]))
-	}
-}
-
-func (s *KvStore) wait(ctx context.Context) {
-	for _, i := range s.indexers {
+	for i := range TypeConfig {
 		select {
 		case <-ctx.Done():
 			return
-		case <-i.Ready():
+		case <-s.Entities(i).Ready():
 		}
 	}
+
 	util.SafeCloseChan(s.ready)
 
-	util.Logger().Debugf("all indexers are ready")
+	util.Logger().Debugf("all entities are ready")
 }
 
 func (s *KvStore) closed() bool {
@@ -112,9 +108,10 @@ func (s *KvStore) Stop() {
 	}
 	s.isClose = true
 
-	for _, i := range s.indexers {
-		i.Stop()
-	}
+	s.entities.ForEach(func(item util.MapItem) bool {
+		item.Value.(Entity).Stop()
+		return true
+	})
 
 	s.taskService.Stop()
 
@@ -130,65 +127,65 @@ func (s *KvStore) Ready() <-chan struct{} {
 	return s.ready
 }
 
-func (s *KvStore) Service() Indexer {
-	return s.indexers[SERVICE]
+func (s *KvStore) installType(e Extension) (id StoreType, err error) {
+	if e == nil {
+		return TypeError, errors.New("invalid parameter")
+	}
+	for _, n := range TypeNames {
+		if n == e.Name() {
+			return TypeError, fmt.Errorf("redeclare store type '%s'", n)
+		}
+	}
+	for _, r := range TypeConfig {
+		if r.Key == e.Config().Key {
+			return TypeError, fmt.Errorf("redeclare store root '%s'", r)
+		}
+	}
+
+	id = StoreType(len(TypeNames))
+	TypeNames = append(TypeNames, e.Name())
+	// config
+	TypeConfig[id] = e.Config()
+	// event proxy
+	NewEventProxy(id)
+
+	s.injectConfig(id)
+	return
 }
 
-func (s *KvStore) SchemaSummary() Indexer {
-	return s.indexers[SCHEMA_SUMMARY]
+func (s *KvStore) Install(e Extension) (id StoreType, err error) {
+	if id, err = s.installType(e); err != nil {
+		return
+	}
+
+	util.Logger().Infof("install new store entity %d:%s->%s", id, e.Name(), e.Config().Key)
+	return
 }
 
-func (s *KvStore) Instance() Indexer {
-	return s.indexers[INSTANCE]
+func (s *KvStore) MustInstall(e Extension) StoreType {
+	id, err := s.Install(e)
+	if err != nil {
+		panic(err)
+	}
+	return id
 }
 
-func (s *KvStore) Lease() Indexer {
-	return s.indexers[LEASE]
-}
-
-func (s *KvStore) ServiceIndex() Indexer {
-	return s.indexers[SERVICE_INDEX]
-}
-
-func (s *KvStore) ServiceAlias() Indexer {
-	return s.indexers[SERVICE_ALIAS]
-}
-
-func (s *KvStore) ServiceTag() Indexer {
-	return s.indexers[SERVICE_TAG]
-}
-
-func (s *KvStore) Rule() Indexer {
-	return s.indexers[RULE]
-}
-
-func (s *KvStore) RuleIndex() Indexer {
-	return s.indexers[RULE_INDEX]
-}
-
-func (s *KvStore) Schema() Indexer {
-	return s.indexers[SCHEMA]
-}
-
-func (s *KvStore) Dependency() Indexer {
-	return s.indexers[DEPENDENCY]
-}
-
-func (s *KvStore) DependencyRule() Indexer {
-	return s.indexers[DEPENDENCY_RULE]
-}
-
-func (s *KvStore) DependencyQueue() Indexer {
-	return s.indexers[DEPENDENCY_QUEUE]
-}
-
-func (s *KvStore) Domain() Indexer {
-	return s.indexers[DOMAIN]
-}
-
-func (s *KvStore) Project() Indexer {
-	return s.indexers[PROJECT]
-}
+func (s *KvStore) Entities(id StoreType) Entity { return s.getOrCreateEntity(id) }
+func (s *KvStore) Service() Entity              { return s.Entities(SERVICE) }
+func (s *KvStore) SchemaSummary() Entity        { return s.Entities(SCHEMA_SUMMARY) }
+func (s *KvStore) Instance() Entity             { return s.Entities(INSTANCE) }
+func (s *KvStore) Lease() Entity                { return s.Entities(LEASE) }
+func (s *KvStore) ServiceIndex() Entity         { return s.Entities(SERVICE_INDEX) }
+func (s *KvStore) ServiceAlias() Entity         { return s.Entities(SERVICE_ALIAS) }
+func (s *KvStore) ServiceTag() Entity           { return s.Entities(SERVICE_TAG) }
+func (s *KvStore) Rule() Entity                 { return s.Entities(RULE) }
+func (s *KvStore) RuleIndex() Entity            { return s.Entities(RULE_INDEX) }
+func (s *KvStore) Schema() Entity               { return s.Entities(SCHEMA) }
+func (s *KvStore) Dependency() Entity           { return s.Entities(DEPENDENCY) }
+func (s *KvStore) DependencyRule() Entity       { return s.Entities(DEPENDENCY_RULE) }
+func (s *KvStore) DependencyQueue() Entity      { return s.Entities(DEPENDENCY_QUEUE) }
+func (s *KvStore) Domain() Entity               { return s.Entities(DOMAIN) }
+func (s *KvStore) Project() Entity              { return s.Entities(PROJECT) }
 
 func (s *KvStore) KeepAlive(ctx context.Context, opts ...registry.PluginOpOption) (int64, error) {
 	op := registry.OpPut(opts...)
@@ -211,29 +208,6 @@ func (s *KvStore) KeepAlive(ctx context.Context, opts ...registry.PluginOpOption
 	}
 	pt := itf.(*LeaseTask)
 	return pt.TTL, pt.Err()
-}
-
-func (s *KvStore) Entity(id StoreType) Indexer {
-	return s.indexers[id]
-}
-
-func (s *KvStore) Install(e Entity) (id StoreType, err error) {
-	if id, err = InstallType(e); err != nil {
-		return
-	}
-
-	util.Logger().Infof("install new store entity %d:%s->%s", id, e.Name(), e.Config().Prefix)
-
-	s.setupIndexer(id, NewCacheIndexer(id.String(), e.Config()))
-	return
-}
-
-func (s *KvStore) MustInstall(e Entity) StoreType {
-	id, err := s.Install(e)
-	if err != nil {
-		panic(err)
-	}
-	return id
 }
 
 func Store() *KvStore {

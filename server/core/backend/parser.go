@@ -66,28 +66,32 @@ var (
 	}
 )
 
-type Parser struct {
-	c CreateValueFunc
-	p ParseValueFunc
+type Parser interface {
+	Unmarshal(src []byte) (interface{}, error)
 }
 
-func (p *Parser) Unmarshal(src []byte) (interface{}, error) {
-	v := p.c()
-	if err := p.p(src, &v); err != nil {
+type CommonParser struct {
+	NewFunc  CreateValueFunc
+	FromFunc ParseValueFunc
+}
+
+func (p *CommonParser) Unmarshal(src []byte) (interface{}, error) {
+	v := p.NewFunc()
+	if err := p.FromFunc(src, &v); err != nil {
 		return nil, err
 	}
 	return v, nil
 }
 
 var (
-	BytesParser           = &Parser{newBytes, unParse}
-	StringParser          = &Parser{newString, textUnmarshal}
-	MapParser             = &Parser{newMap, mapUnmarshal}
-	ServiceParser         = &Parser{newService, jsonUnmarshal}
-	InstanceParser        = &Parser{newInstance, jsonUnmarshal}
-	RuleParser            = &Parser{newRule, jsonUnmarshal}
-	DependencyRuleParser  = &Parser{newDependencyRule, jsonUnmarshal}
-	DependencyQueueParser = &Parser{newDependencyQueue, jsonUnmarshal}
+	BytesParser           = &CommonParser{newBytes, unParse}
+	StringParser          = &CommonParser{newString, textUnmarshal}
+	MapParser             = &CommonParser{newMap, mapUnmarshal}
+	ServiceParser         = &CommonParser{newService, jsonUnmarshal}
+	InstanceParser        = &CommonParser{newInstance, jsonUnmarshal}
+	RuleParser            = &CommonParser{newRule, jsonUnmarshal}
+	DependencyRuleParser  = &CommonParser{newDependencyRule, jsonUnmarshal}
+	DependencyQueueParser = &CommonParser{newDependencyQueue, jsonUnmarshal}
 )
 
 func KvToResponse(kv *KeyValue) (keys []string) {
@@ -120,7 +124,7 @@ func GetInfoFromInstKV(kv *KeyValue) (serviceId, instanceId, domainProject strin
 func GetInfoFromDomainKV(kv *KeyValue) (domain string) {
 	keys := KvToResponse(kv)
 	l := len(keys)
-	if l < 1 {
+	if l < 2 {
 		return
 	}
 	domain = keys[l-1]
@@ -179,7 +183,7 @@ func GetInfoFromSvcIndexKV(kv *KeyValue) (key *pb.MicroServiceKey) {
 func GetInfoFromSchemaSummaryKV(kv *KeyValue) (schemaId string) {
 	keys := KvToResponse(kv)
 	l := len(keys)
-	if l < 1 {
+	if l < 2 {
 		return
 	}
 
@@ -189,7 +193,7 @@ func GetInfoFromSchemaSummaryKV(kv *KeyValue) (schemaId string) {
 func GetInfoFromSchemaKV(kv *KeyValue) (schemaId string) {
 	keys := KvToResponse(kv)
 	l := len(keys)
-	if l < 1 {
+	if l < 2 {
 		return
 	}
 

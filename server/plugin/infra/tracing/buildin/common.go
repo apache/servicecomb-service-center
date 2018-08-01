@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
+	"github.com/apache/incubator-servicecomb-service-center/server/metric"
 	"github.com/opentracing/opentracing-go"
 	zipkin "github.com/openzipkin/zipkin-go-opentracing"
 	"os"
@@ -33,7 +34,7 @@ func initTracer() {
 		util.Logger().Warnf(err, "new tracing collector failed, use the noop tracer")
 		return
 	}
-	ipPort, _ := util.ParseEndpoint(core.Instance.Endpoints[0])
+	ipPort := metric.InstanceName()
 	recorder := zipkin.NewRecorder(collector, false, ipPort, strings.ToLower(core.Service.ServiceName))
 	tracer, err := zipkin.NewTracer(recorder, zipkin.TraceID128Bit(true))
 	if err != nil {

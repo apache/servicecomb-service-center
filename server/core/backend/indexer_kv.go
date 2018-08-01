@@ -19,37 +19,36 @@ package backend
 import (
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"golang.org/x/net/context"
-	"strings"
 	"sync"
 	"time"
 )
 
 type CacheIndexer struct {
-	*baseIndexer
+	*CommonIndexer
 
-	cacher  Cacher
-	lock    sync.Mutex
-	isClose bool
+	Cache Cache
+
+	lock sync.Mutex
 }
 
 func (i *CacheIndexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (*Response, error) {
 	op := registry.OpGet(opts...)
-	key := util.BytesToStringWithNoCopy(op.Key)
-	if strings.Index(key, i.baseIndexer.Cfg.Prefix) != 0 {
-		return nil, fmt.Errorf("search %s mismatch %s pattern %s",
-			key, i.cacher.Cache().Name(), i.baseIndexer.Cfg.Prefix)
-	}
 
-	if !core.ServerInfo.Config.EnableCache ||
+	key := util.BytesToStringWithNoCopy(op.Key)
+
+	if i.Cache == nil ||
 		op.Mode == registry.MODE_NO_CACHE ||
 		op.Revision > 0 ||
 		(op.Offset >= 0 && op.Limit > 0) {
-		util.Logger().Debugf("search %s match special options, request etcd server, opts: %s",
-			i.cacher.Cache().Name(), op)
-		return i.baseIndexer.Search(ctx, opts...)
+		util.Logger().Debugf("search '%s' match special options, request etcd server, opts: %s",
+			key, op)
+		return i.CommonIndexer.Search(ctx, opts...)
+	}
+
+	if err := i.CheckPrefix(key); err != nil {
+		return nil, fmt.Errorf("%s, cache is '%s'", err.Error(), i.Cache.Name())
 	}
 
 	var resp *Response
@@ -63,9 +62,9 @@ func (i *CacheIndexer) Search(ctx context.Context, opts ...registry.PluginOpOpti
 		return resp, nil
 	}
 
-	util.Logger().Debugf("can not find any key from %s cache with prefix, request etcd server, key: %s",
-		i.cacher.Cache().Name(), key)
-	return i.baseIndexer.Search(ctx, opts...)
+	util.Logger().Debugf("can not find any key from %s cache, request etcd server, key: %s",
+		i.Cache.Name(), key)
+	return i.CommonIndexer.Search(ctx, opts...)
 }
 
 func (i *CacheIndexer) search(op registry.PluginOp) *Response {
@@ -73,7 +72,7 @@ func (i *CacheIndexer) search(op registry.PluginOp) *Response {
 
 	key := util.BytesToStringWithNoCopy(op.Key)
 
-	kv := i.cacher.Cache().Get(key)
+	kv := i.Cache.Get(key)
 	if kv != nil {
 		resp.Count = 1
 	}
@@ -90,61 +89,24 @@ func (i *CacheIndexer) searchByPrefix(op registry.PluginOp) *Response {
 
 	prefix := util.BytesToStringWithNoCopy(op.Key)
 
-	resp.Count = int64(i.cacher.Cache().GetAll(prefix, nil))
+	resp.Count = int64(i.Cache.GetPrefix(prefix, nil))
 	if resp.Count == 0 || op.CountOnly {
 		return resp
 	}
 
 	t := time.Now()
 	kvs := make([]*KeyValue, 0, resp.Count)
-	i.cacher.Cache().GetAll(prefix, &kvs)
+	i.Cache.GetPrefix(prefix, &kvs)
 
-	util.LogNilOrWarnf(t, "too long to index data[%d] from cache '%s'", len(kvs), i.cacher.Cache().Name())
+	util.LogNilOrWarnf(t, "too long to index data[%d] from cache '%s'", len(kvs), i.Cache.Name())
 
 	resp.Kvs = kvs
 	return resp
 }
 
-func (i *CacheIndexer) Run() {
-	i.lock.Lock()
-	if !i.isClose {
-		i.lock.Unlock()
-		return
+func NewCacheIndexer(cfg *Config, cache Cache) *CacheIndexer {
+	return &CacheIndexer{
+		CommonIndexer: NewCommonIndexer(cfg.Key, cfg.Parser),
+		Cache:         cache,
 	}
-	i.isClose = false
-	i.lock.Unlock()
-
-	i.cacher.Run()
-}
-
-func (i *CacheIndexer) Stop() {
-	i.lock.Lock()
-	if i.isClose {
-		i.lock.Unlock()
-		return
-	}
-	i.isClose = true
-	i.lock.Unlock()
-
-	i.cacher.Stop()
-}
-
-func (i *CacheIndexer) Ready() <-chan struct{} {
-	return i.cacher.Ready()
-}
-
-func NewCacheIndexer(name string, cfg *Config) (indexer *CacheIndexer) {
-	indexer = &CacheIndexer{
-		baseIndexer: NewBaseIndexer(cfg),
-		cacher:      NullCacher,
-		isClose:     true,
-	}
-
-	switch {
-	case core.ServerInfo.Config.EnableCache && cfg.InitSize > 0:
-		indexer.cacher = NewKvCacher(name, cfg)
-	default:
-		util.Logger().Infof("service center will not cache '%s'", name)
-	}
-	return
 }

@@ -16,16 +16,18 @@
  */
 package backend
 
-import "sync"
+import (
+	"sync"
+)
 
 var (
-	EventProxies map[StoreType]*KvEventProxy
+	eventProxies map[StoreType]*KvEventProxy
 )
 
 func init() {
-	EventProxies = make(map[StoreType]*KvEventProxy, typeEnd)
+	eventProxies = make(map[StoreType]*KvEventProxy)
 	for i := StoreType(0); i != typeEnd; i++ {
-		EventProxies[i] = NewEventProxy()
+		NewEventProxy(i)
 	}
 }
 
@@ -48,10 +50,21 @@ func (h *KvEventProxy) OnEvent(evt KvEvent) {
 	h.lock.RUnlock()
 }
 
-func NewEventProxy() *KvEventProxy {
-	return &KvEventProxy{}
+func (h *KvEventProxy) injectConfig(t StoreType) *Config {
+	return TypeConfig[t].AppendEventFunc(h.OnEvent)
+}
+
+// unsafe
+func NewEventProxy(t StoreType) *KvEventProxy {
+	if proxy, ok := eventProxies[t]; ok {
+		return proxy
+	}
+	proxy := &KvEventProxy{}
+	proxy.injectConfig(t)
+	eventProxies[t] = proxy
+	return proxy
 }
 
 func EventProxy(t StoreType) *KvEventProxy {
-	return EventProxies[t]
+	return eventProxies[t]
 }

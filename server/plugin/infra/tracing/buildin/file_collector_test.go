@@ -17,6 +17,7 @@
 package buildin
 
 import (
+	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
 	"golang.org/x/net/context"
@@ -26,25 +27,31 @@ import (
 )
 
 func TestFileCollector_Collect(t *testing.T) {
+	bad := os.NewFile(0, "/dev/null") // bad fd
 	fc := &FileCollector{
-		Fd:        os.Stdout,
-		Timeout:   1 * time.Second,
-		Interval:  100 * time.Second,
+		Fd:        bad,
+		Timeout:   2 * time.Second,
+		Interval:  1 * time.Second,
 		BatchSize: 2,
 		c:         make(chan *zipkincore.Span, 100),
 		goroutine: util.NewGo(context.Background()),
 	}
-	defer func() {
-		fc.Close()
-	}()
 	fc.Run()
 
-	for i := 0; i < 10; i++ {
-		err := fc.Collect(&zipkincore.Span{})
-		if err != nil {
-			t.Fatal(err)
+	// 0, 1 drop [2, 3, 4, 5], [6, 7] ok, 8 delay ok
+	for i := 0; i < 9; i++ {
+		if i > 4 {
+			fc.Fd = os.Stdout
 		}
+		err := fc.Collect(&zipkincore.Span{ID: int64(i)})
+		if err != nil {
+			t.Fatalf("TestFileCollector_Collect failed, %s", err.Error())
+		}
+		<-time.After(100 * time.Millisecond)
+		fmt.Println(i)
 	}
 
-	<-time.After(time.Second)
+	<-time.After(1 * time.Second)
+
+	// fc.Close()
 }

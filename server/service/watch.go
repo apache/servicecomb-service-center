@@ -52,7 +52,7 @@ func (s *InstanceService) Watch(in *pb.WatchInstanceRequest, stream pb.ServiceIn
 }
 
 func (s *InstanceService) WebSocketWatch(ctx context.Context, in *pb.WatchInstanceRequest, conn *websocket.Conn) {
-	util.Logger().Infof("New a web socket watch with %s", in.SelfServiceId)
+	util.Logger().Infof("new a web socket watch with %s", in.SelfServiceId)
 	if err := s.WatchPreOpera(ctx, in); err != nil {
 		nf.EstablishWebSocketError(conn, err)
 		return
@@ -61,7 +61,7 @@ func (s *InstanceService) WebSocketWatch(ctx context.Context, in *pb.WatchInstan
 }
 
 func (s *InstanceService) WebSocketListAndWatch(ctx context.Context, in *pb.WatchInstanceRequest, conn *websocket.Conn) {
-	util.Logger().Infof("New a web socket list and watch with %s", in.SelfServiceId)
+	util.Logger().Infof("new a web socket list and watch with %s", in.SelfServiceId)
 	if err := s.WatchPreOpera(ctx, in); err != nil {
 		nf.EstablishWebSocketError(conn, err)
 		return

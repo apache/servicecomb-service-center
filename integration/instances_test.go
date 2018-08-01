@@ -249,7 +249,7 @@ var _ = Describe("MicroService Api Test", func() {
 
 		By("Discover MicroService Instance API", func() {
 			It("Find Micro-service Info by AppID", func() {
-				req, _ := http.NewRequest(GET, SCURL+FINDINSTANCE+"?noCache=1&appId="+serviceAppId+"&serviceName="+serviceName+"&version="+serviceVersion, nil)
+				req, _ := http.NewRequest(GET, SCURL+FINDINSTANCE+"?appId="+serviceAppId+"&serviceName="+serviceName+"&version="+serviceVersion, nil)
 				req.Header.Set("X-Domain-Name", "default")
 				req.Header.Set("X-ConsumerId", serviceId)
 				resp, _ := scclient.Do(req)
@@ -330,7 +330,7 @@ var _ = Describe("MicroService Api Test", func() {
 			})
 
 			It("Find Micro-Service Instance with rev", func() {
-				req, _ := http.NewRequest(GET, SCURL+FINDINSTANCE+"?noCache=1&appId="+serviceAppId+"&serviceName="+serviceName+"&version="+serviceVersion, nil)
+				req, _ := http.NewRequest(GET, SCURL+FINDINSTANCE+"?appId="+serviceAppId+"&serviceName="+serviceName+"&version="+serviceVersion, nil)
 				req.Header.Set("X-Domain-Name", "default")
 				req.Header.Set("X-ConsumerId", serviceId)
 				resp, _ := scclient.Do(req)
@@ -349,6 +349,7 @@ var _ = Describe("MicroService Api Test", func() {
 				Expect(rev).NotTo(BeEmpty())
 			})
 		})
+
 		By("Update Micro-Service Instance Information API's", func() {
 			It("Update Micro-Service Instance Properties", func() {
 				propertiesInstance := map[string]interface{}{
@@ -473,6 +474,7 @@ var _ = Describe("MicroService Api Test", func() {
 				}
 			})
 		})
+
 		By("Micro-Service Instance heartbeat API", func() {
 			It("Send HeartBeat for micro-service instance", func() {
 				url := strings.Replace(INSTANCEHEARTBEAT, ":serviceId", serviceId, 1)

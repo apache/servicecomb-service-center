@@ -146,7 +146,9 @@ func (client *HttpClient) httpDo(method string, url string, headers map[string]s
 			var ok bool = false
 			bodyBytes, ok = body.([]byte)
 			if !ok {
-				util.Logger().Errorf(nil, "invalid body type '%s'(%s), body must type of byte array if Content-Type specified.", reflect.TypeOf(body), headers[HEADER_CONTENT_TYPE])
+				util.Logger().Errorf(nil,
+					"invalid body type '%s'(%s), body must type of byte array if Content-Type specified.",
+					reflect.TypeOf(body), headers[HEADER_CONTENT_TYPE])
 				return status, result
 			}
 		}

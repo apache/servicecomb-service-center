@@ -28,11 +28,11 @@ import (
 
 type Server struct {
 	*grpc.Server
-	innerListener net.Listener
+	Listener net.Listener
 }
 
 func (srv *Server) Serve() error {
-	return srv.Server.Serve(srv.innerListener)
+	return srv.Server.Serve(srv.Listener)
 }
 
 func NewServer(ipAddr string) (_ *Server, err error) {
@@ -49,7 +49,7 @@ func NewServer(ipAddr string) (_ *Server, err error) {
 		grpcSrv = grpc.NewServer()
 	}
 
-	rpc.RegisterServer(grpcSrv)
+	rpc.RegisterGRpcServer(grpcSrv)
 
 	ls, err := net.Listen("tcp", ipAddr)
 	if err != nil {
@@ -58,7 +58,7 @@ func NewServer(ipAddr string) (_ *Server, err error) {
 	}
 
 	return &Server{
-		Server:        grpcSrv,
-		innerListener: ls,
+		Server:   grpcSrv,
+		Listener: ls,
 	}, nil
 }

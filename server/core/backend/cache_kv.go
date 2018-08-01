@@ -17,6 +17,7 @@
 package backend
 
 import (
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"strings"
 	"sync"
 	"time"
@@ -36,7 +37,9 @@ func (c *KvCache) Name() string {
 }
 
 func (c *KvCache) Size() (l int) {
-	l = c.GetAll(c.Cfg.Prefix, nil)
+	c.rwMux.RLock()
+	l = int(util.Sizeof(c.store))
+	c.rwMux.RUnlock()
 	return
 }
 
@@ -50,7 +53,14 @@ func (c *KvCache) Get(key string) (v *KeyValue) {
 	return
 }
 
-func (c *KvCache) GetAll(prefix string, arr *[]*KeyValue) (count int) {
+func (c *KvCache) GetAll(arr *[]*KeyValue) (count int) {
+	c.rwMux.RLock()
+	count = c.getPrefixKey(arr, c.Cfg.Key)
+	c.rwMux.RUnlock()
+	return
+}
+
+func (c *KvCache) GetPrefix(prefix string, arr *[]*KeyValue) (count int) {
 	c.rwMux.RLock()
 	count = c.getPrefixKey(arr, prefix)
 	c.rwMux.RUnlock()
@@ -116,7 +126,7 @@ func (c *KvCache) getPrefixKey(arr *[]*KeyValue, prefix string) (count int) {
 }
 
 func (c *KvCache) addPrefixKey(key string, val *KeyValue) {
-	if len(c.Cfg.Prefix) >= len(key) {
+	if len(c.Cfg.Key) >= len(key) {
 		return
 	}
 	prefix := c.prefix(key)
@@ -153,12 +163,6 @@ func (c *KvCache) deletePrefixKey(key string) {
 		delete(c.store, prefix)
 		c.deletePrefixKey(prefix)
 	}
-}
-
-func (c *KvCache) ReportMetrics() {
-	c.rwMux.RLock()
-	ReportCacheMetrics(c.Name(), "raw", c.store)
-	c.rwMux.RUnlock()
 }
 
 func NewKvCache(name string, cfg *Config) *KvCache {

@@ -18,7 +18,6 @@ package v4
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
@@ -144,7 +143,7 @@ func (this *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r 
 
 	iv, _ := r.Context().Value(serviceUtil.CTX_REQUEST_REVISION).(string)
 	ov, _ := r.Context().Value(serviceUtil.CTX_RESPONSE_REVISION).(string)
-	w.Header().Set(serviceUtil.HEADER_REV, fmt.Sprint(ov))
+	w.Header().Set(serviceUtil.HEADER_REV, ov)
 	if len(iv) > 0 && iv == ov {
 		w.WriteHeader(http.StatusNotModified)
 		return

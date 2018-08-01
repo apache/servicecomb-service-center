@@ -18,7 +18,7 @@ package event
 
 import (
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/async"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/task"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
@@ -94,7 +94,7 @@ func (h *RuleEventHandler) OnEvent(evt backend.KvEvent) {
 	}
 	util.Logger().Infof("caught [%s] service rule event %s/%s", action, providerId, ruleId)
 
-	async.Service().Add(context.Background(),
+	task.Service().Add(context.Background(),
 		NewRulesChangedAsyncTask(domainProject, providerId, evt.Revision))
 }
 

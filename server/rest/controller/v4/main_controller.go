@@ -47,7 +47,7 @@ func init() {
 	result := Result{
 		version.Ver(),
 		API_VERSION,
-		core.ServerInfo.Config,
+		&core.ServerInfo.Config,
 	}
 	versionJsonCache, _ = json.Marshal(result)
 	versionResp = pb.CreateResponse(pb.Response_SUCCESS, "get version successfully")

@@ -21,9 +21,17 @@ import (
 	"github.com/astaxie/beego"
 )
 
-var ServerInfo = newInfo()
+const (
+	INIT_VERSION = "0"
+)
 
-func newInfo() *pb.ServerInformation {
+var ServerInfo = new(pb.ServerInformation)
+
+func Configure() {
+	*ServerInfo = newInfo()
+}
+
+func newInfo() pb.ServerInformation {
 	maxLogFileSize := beego.AppConfig.DefaultInt64("log_rotate_size", 20)
 	if maxLogFileSize <= 0 || maxLogFileSize > 50 {
 		maxLogFileSize = 20
@@ -32,9 +40,9 @@ func newInfo() *pb.ServerInformation {
 	if maxLogBackupCount < 0 || maxLogBackupCount > 100 {
 		maxLogBackupCount = 50
 	}
-	return &pb.ServerInformation{
-		Version: "0",
-		Config: &pb.ServerConfig{
+	return pb.ServerInformation{
+		Version: INIT_VERSION,
+		Config: pb.ServerConfig{
 			MaxHeaderBytes: int64(beego.AppConfig.DefaultInt("max_header_bytes", 16384)),
 			MaxBodyBytes:   beego.AppConfig.DefaultInt64("max_body_bytes", 2097152),
 

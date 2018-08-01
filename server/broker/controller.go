@@ -23,6 +23,7 @@ import (
 	"strconv"
 
 	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
+	"github.com/apache/incubator-servicecomb-service-center/server/broker/brokerpb"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	"github.com/apache/incubator-servicecomb-service-center/server/rest/controller"
 )
@@ -60,7 +61,7 @@ func (brokerService *BrokerController) URLPatterns() []rest.Route {
 }
 
 func (brokerService *BrokerController) GetHome(w http.ResponseWriter, r *http.Request) {
-	request := &BaseBrokerRequest{
+	request := &brokerpb.BaseBrokerRequest{
 		HostAddress: r.Host,
 		Scheme:      getScheme(r),
 	}
@@ -79,7 +80,7 @@ func (*BrokerController) PublishPact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	query := r.URL.Query()
-	request := &PublishPactRequest{
+	request := &brokerpb.PublishPactRequest{
 		ProviderId: query.Get(":providerId"),
 		ConsumerId: query.Get(":consumerId"),
 		Version:    query.Get(":number"),
@@ -95,9 +96,9 @@ func (*BrokerController) PublishPact(w http.ResponseWriter, r *http.Request) {
 }
 
 func (*BrokerController) GetAllProviderPacts(w http.ResponseWriter, r *http.Request) {
-	request := &GetAllProviderPactsRequest{
+	request := &brokerpb.GetAllProviderPactsRequest{
 		ProviderId: r.URL.Query().Get(":providerId"),
-		BaseUrl: &BaseBrokerRequest{
+		BaseUrl: &brokerpb.BaseBrokerRequest{
 			HostAddress: r.Host,
 			Scheme:      getScheme(r),
 		},
@@ -115,11 +116,11 @@ func (*BrokerController) GetAllProviderPacts(w http.ResponseWriter, r *http.Requ
 
 func (*BrokerController) GetPactsOfProvider(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	request := &GetProviderConsumerVersionPactRequest{
+	request := &brokerpb.GetProviderConsumerVersionPactRequest{
 		ProviderId: query.Get(":providerId"),
 		ConsumerId: query.Get(":consumerId"),
 		Version:    query.Get(":number"),
-		BaseUrl: &BaseBrokerRequest{
+		BaseUrl: &brokerpb.BaseBrokerRequest{
 			HostAddress: r.Host,
 			Scheme:      getScheme(r),
 		},
@@ -133,7 +134,7 @@ func (*BrokerController) GetPactsOfProvider(w http.ResponseWriter, r *http.Reque
 }
 
 func (*BrokerController) DeletePacts(w http.ResponseWriter, r *http.Request) {
-	resp, _ := BrokerServiceAPI.DeletePacts(r.Context(), &BaseBrokerRequest{
+	resp, _ := BrokerServiceAPI.DeletePacts(r.Context(), &brokerpb.BaseBrokerRequest{
 		HostAddress: r.Host,
 		Scheme:      getScheme(r),
 	})
@@ -147,7 +148,7 @@ func (*BrokerController) PublishVerificationResults(w http.ResponseWriter, r *ht
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
-	request := &PublishVerificationRequest{}
+	request := &brokerpb.PublishVerificationRequest{}
 	err = json.Unmarshal(requestBody, request)
 	if err != nil {
 		PactLogger.Error("Unmarshal error", err)
@@ -175,7 +176,7 @@ func (*BrokerController) PublishVerificationResults(w http.ResponseWriter, r *ht
 }
 
 func (*BrokerController) RetrieveVerificationResults(w http.ResponseWriter, r *http.Request) {
-	request := &RetrieveVerificationRequest{}
+	request := &brokerpb.RetrieveVerificationRequest{}
 	query := r.URL.Query()
 	request.ConsumerId = query.Get(":consumerId")
 	request.ConsumerVersion = query.Get(":consumerVersion")

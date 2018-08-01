@@ -1,6 +1,8 @@
 bin/
 output
 **/*.coverprofile
+**/coverage.out
+**/coverage.txt
 
 service-center.iml
 .idea/

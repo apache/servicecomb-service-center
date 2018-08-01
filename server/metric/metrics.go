@@ -20,7 +20,7 @@ import "github.com/apache/incubator-servicecomb-service-center/pkg/util"
 
 func NewMetrics() *Metrics {
 	return &Metrics{
-		ConcurrentMap: util.NewConcurrentMap(defaultMetricsSize),
+		ConcurrentMap: util.NewConcurrentMap(0),
 	}
 }
 

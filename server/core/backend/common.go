@@ -17,6 +17,7 @@
 package backend
 
 import (
+	"errors"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"strconv"
 	"time"
@@ -46,6 +47,11 @@ const TIME_FORMAT = "15:04:05.000"
 
 const EVENT_BUS_MAX_SIZE = 1000
 
+// errors
+var (
+	ErrNoImpl = errors.New("no implement")
+)
+
 var closedCh = make(chan struct{})
 
 func init() {
@@ -56,7 +62,7 @@ type StoreType int
 
 func (st StoreType) String() string {
 	if int(st) < 0 {
-		return "NONEXIST"
+		return "TypeError"
 	}
 	if int(st) < len(TypeNames) {
 		return TypeNames[st]
@@ -64,7 +70,7 @@ func (st StoreType) String() string {
 	return "TYPE" + strconv.Itoa(int(st))
 }
 
-const NONEXIST = StoreType(-1)
+const TypeError = StoreType(-1)
 
 const (
 	DOMAIN StoreType = iota
@@ -105,49 +111,49 @@ var TypeNames = []string{
 }
 
 var TypeConfig = map[StoreType]*Config{
-	SERVICE: DefaultConfig().WithPrefix(apt.GetServiceRootKey("")).
+	SERVICE: Configure().WithPrefix(apt.GetServiceRootKey("")).
 		WithInitSize(500).WithParser(ServiceParser),
 
-	INSTANCE: DefaultConfig().WithPrefix(apt.GetInstanceRootKey("")).
+	INSTANCE: Configure().WithPrefix(apt.GetInstanceRootKey("")).
 		WithInitSize(1000).WithParser(InstanceParser).
 		WithDeferHandler(NewInstanceEventDeferHandler()),
 
-	DOMAIN: DefaultConfig().WithPrefix(apt.GetDomainRootKey() + "/").
+	DOMAIN: Configure().WithPrefix(apt.GetDomainRootKey() + "/").
 		WithInitSize(100).WithParser(StringParser),
 
-	SCHEMA: DefaultConfig().WithPrefix(apt.GetServiceSchemaRootKey("")).
+	SCHEMA: Configure().WithPrefix(apt.GetServiceSchemaRootKey("")).
 		WithInitSize(0),
 
-	SCHEMA_SUMMARY: DefaultConfig().WithPrefix(apt.GetServiceSchemaSummaryRootKey("")).
+	SCHEMA_SUMMARY: Configure().WithPrefix(apt.GetServiceSchemaSummaryRootKey("")).
 		WithInitSize(100).WithParser(StringParser),
 
-	RULE: DefaultConfig().WithPrefix(apt.GetServiceRuleRootKey("")).
+	RULE: Configure().WithPrefix(apt.GetServiceRuleRootKey("")).
 		WithInitSize(100).WithParser(RuleParser),
 
-	LEASE: DefaultConfig().WithPrefix(apt.GetInstanceLeaseRootKey("")).
+	LEASE: Configure().WithPrefix(apt.GetInstanceLeaseRootKey("")).
 		WithInitSize(1000).WithParser(StringParser),
 
-	SERVICE_INDEX: DefaultConfig().WithPrefix(apt.GetServiceIndexRootKey("")).
+	SERVICE_INDEX: Configure().WithPrefix(apt.GetServiceIndexRootKey("")).
 		WithInitSize(500).WithParser(StringParser),
 
-	SERVICE_ALIAS: DefaultConfig().WithPrefix(apt.GetServiceAliasRootKey("")).
+	SERVICE_ALIAS: Configure().WithPrefix(apt.GetServiceAliasRootKey("")).
 		WithInitSize(100).WithParser(StringParser),
 
-	SERVICE_TAG: DefaultConfig().WithPrefix(apt.GetServiceTagRootKey("")).
+	SERVICE_TAG: Configure().WithPrefix(apt.GetServiceTagRootKey("")).
 		WithInitSize(100).WithParser(MapParser),
 
-	RULE_INDEX: DefaultConfig().WithPrefix(apt.GetServiceRuleIndexRootKey("")).
+	RULE_INDEX: Configure().WithPrefix(apt.GetServiceRuleIndexRootKey("")).
 		WithInitSize(100).WithParser(StringParser),
 
-	DEPENDENCY: DefaultConfig().WithPrefix(apt.GetServiceDependencyRootKey("")).
+	DEPENDENCY: Configure().WithPrefix(apt.GetServiceDependencyRootKey("")).
 		WithInitSize(100),
 
-	DEPENDENCY_RULE: DefaultConfig().WithPrefix(apt.GetServiceDependencyRuleRootKey("")).
+	DEPENDENCY_RULE: Configure().WithPrefix(apt.GetServiceDependencyRuleRootKey("")).
 		WithInitSize(100).WithParser(DependencyRuleParser),
 
-	DEPENDENCY_QUEUE: DefaultConfig().WithPrefix(apt.GetServiceDependencyQueueRootKey("")).
+	DEPENDENCY_QUEUE: Configure().WithPrefix(apt.GetServiceDependencyQueueRootKey("")).
 		WithInitSize(100).WithParser(DependencyQueueParser),
 
-	PROJECT: DefaultConfig().WithPrefix(apt.GetProjectRootKey("")).
+	PROJECT: Configure().WithPrefix(apt.GetProjectRootKey("")).
 		WithInitSize(100).WithParser(StringParser),
 }

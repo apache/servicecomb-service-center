@@ -22,7 +22,6 @@ import (
 	"fmt"
 	errorsEx "github.com/apache/incubator-servicecomb-service-center/pkg/errors"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	"github.com/coreos/etcd/clientv3"
@@ -31,52 +30,143 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 )
 
 const (
-	// the timeout dial to etcd
-	connectRegistryServerTimeout = 10 * time.Second
 	// here will new an etcd connection after about 30s(=5s * 3 + (backoff:8s))
 	// when the connected etcd member was hung but tcp is still alive
 	healthCheckTimeout    = 5 * time.Second
 	healthCheckRetryTimes = 3
 )
 
-var (
-	clientTLSConfig *tls.Config
-	firstEndpoint   string
-)
+var firstEndpoint string
 
 func init() {
 	clientv3.SetLogger(&clientLogger{})
+	mgr.RegisterPlugin(mgr.Plugin{mgr.REGISTRY, "buildin", NewRegistry})
 	mgr.RegisterPlugin(mgr.Plugin{mgr.REGISTRY, "etcd", NewRegistry})
 }
 
 type EtcdClient struct {
-	Endpoints []string
-	Client    *clientv3.Client
+	Client *clientv3.Client
+
+	Endpoints        []string
+	DialTimeout      time.Duration
+	TLSConfig        *tls.Config
+	AutoSyncInterval time.Duration
+
 	err       chan error
 	ready     chan int
 	goroutine *util.GoRoutine
 }
 
-func (s *EtcdClient) Err() <-chan error {
-	return s.err
-}
+func (c *EtcdClient) Initialize() (err error) {
+	c.err = make(chan error, 1)
+	c.ready = make(chan int)
+	c.goroutine = util.NewGo(context.Background())
 
-func (s *EtcdClient) Ready() <-chan int {
-	return s.ready
-}
-
-func (s *EtcdClient) Close() {
-	s.goroutine.Close(true)
-
-	if s.Client != nil {
-		s.Client.Close()
+	if len(c.Endpoints) == 0 {
+		// parse the endpoints from config
+		c.parseEndpoints()
 	}
-	util.Logger().Debugf("etcd client stopped.")
+	if c.TLSConfig == nil && registry.RegistryConfig().SslEnabled {
+		var err error
+		// go client tls限制，提供身份证书、不认证服务端、不校验CN
+		c.TLSConfig, err = mgr.Plugins().TLS().ClientConfig()
+		if err != nil {
+			util.Logger().Error("get etcd client tls config failed", err)
+			return err
+		}
+	}
+	if c.DialTimeout == 0 {
+		c.DialTimeout = registry.RegistryConfig().DialTimeout
+	}
+	if c.AutoSyncInterval == 0 {
+		c.AutoSyncInterval = registry.RegistryConfig().AutoSyncInterval
+	}
+
+	c.Client, err = c.newClient()
+	if err != nil {
+		util.Logger().Errorf(err, "get etcd client %v failed.", c.Endpoints)
+		return
+	}
+
+	c.HealthCheck()
+
+	close(c.ready)
+
+	util.Logger().Warnf(nil, "get etcd client %v completed, auto sync endpoints interval is %s.",
+		c.Endpoints, c.AutoSyncInterval)
+	return
+}
+
+func (c *EtcdClient) newClient() (*clientv3.Client, error) {
+	client, err := clientv3.New(clientv3.Config{
+		Endpoints:        c.Endpoints,
+		DialTimeout:      c.DialTimeout,
+		TLS:              c.TLSConfig,
+		AutoSyncInterval: 0,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(c.Endpoints) == 1 {
+		ReportBackendInstance(1)
+		return client, nil
+	}
+
+	defer func() {
+		if err != nil {
+			client.Close()
+		}
+	}()
+
+	ctx, _ := context.WithTimeout(client.Ctx(), healthCheckTimeout)
+	resp, err := client.MemberList(ctx)
+	if err != nil {
+		return nil, err
+	}
+epLoop:
+	for _, ep := range c.Endpoints {
+		var cluster []string
+		for _, mem := range resp.Members {
+			for _, curl := range mem.ClientURLs {
+				u, err := url.Parse(curl)
+				if err != nil {
+					return nil, err
+				}
+				cluster = append(cluster, u.Host)
+				if u.Host == ep {
+					continue epLoop
+				}
+			}
+		}
+		// maybe endpoints = [domain A, domain B] or there are more than one cluster
+		err = fmt.Errorf("the etcd cluster endpoint list%v does not contain %s", cluster, ep)
+		return nil, err
+	}
+	ReportBackendInstance(len(resp.Members))
+	return client, nil
+}
+
+func (c *EtcdClient) Err() <-chan error {
+	return c.err
+}
+
+func (c *EtcdClient) Ready() <-chan int {
+	return c.ready
+}
+
+func (c *EtcdClient) Close() {
+	c.goroutine.Close(true)
+
+	if c.Client != nil {
+		c.Client.Close()
+	}
+	util.Logger().Debugf("etcd client stopped")
 }
 
 func (c *EtcdClient) Compact(ctx context.Context, reserve int64) error {
@@ -137,8 +227,8 @@ func max(n1, n2 int64) int64 {
 	return n2
 }
 
-func (s *EtcdClient) toGetRequest(op registry.PluginOp) []clientv3.OpOption {
-	opts := []clientv3.OpOption{}
+func (c *EtcdClient) toGetRequest(op registry.PluginOp) []clientv3.OpOption {
+	var opts []clientv3.OpOption
 	if op.Prefix {
 		opts = append(opts, clientv3.WithPrefix())
 	} else if len(op.EndKey) > 0 {
@@ -165,8 +255,8 @@ func (s *EtcdClient) toGetRequest(op registry.PluginOp) []clientv3.OpOption {
 	return opts
 }
 
-func (s *EtcdClient) toPutRequest(op registry.PluginOp) []clientv3.OpOption {
-	opts := []clientv3.OpOption{}
+func (c *EtcdClient) toPutRequest(op registry.PluginOp) []clientv3.OpOption {
+	var opts []clientv3.OpOption
 	if op.PrevKV {
 		opts = append(opts, clientv3.WithPrevKV())
 	}
@@ -179,8 +269,8 @@ func (s *EtcdClient) toPutRequest(op registry.PluginOp) []clientv3.OpOption {
 	return opts
 }
 
-func (s *EtcdClient) toDeleteRequest(op registry.PluginOp) []clientv3.OpOption {
-	opts := []clientv3.OpOption{}
+func (c *EtcdClient) toDeleteRequest(op registry.PluginOp) []clientv3.OpOption {
+	var opts []clientv3.OpOption
 	if op.Prefix {
 		opts = append(opts, clientv3.WithPrefix())
 	} else if len(op.EndKey) > 0 {
@@ -193,13 +283,13 @@ func (s *EtcdClient) toDeleteRequest(op registry.PluginOp) []clientv3.OpOption {
 }
 
 func (c *EtcdClient) toTxnRequest(opts []registry.PluginOp) []clientv3.Op {
-	etcdOps := []clientv3.Op{}
+	var etcdOps []clientv3.Op
 	for _, op := range opts {
 		switch op.Action {
 		case registry.Get:
 			etcdOps = append(etcdOps, clientv3.OpGet(util.BytesToStringWithNoCopy(op.Key), c.toGetRequest(op)...))
 		case registry.Put:
-			var value string = ""
+			var value string
 			if len(op.Value) > 0 {
 				value = util.BytesToStringWithNoCopy(op.Value)
 			}
@@ -212,7 +302,7 @@ func (c *EtcdClient) toTxnRequest(opts []registry.PluginOp) []clientv3.Op {
 }
 
 func (c *EtcdClient) toCompares(cmps []registry.CompareOp) []clientv3.Cmp {
-	etcdCmps := []clientv3.Cmp{}
+	var etcdCmps []clientv3.Cmp
 	for _, cmp := range cmps {
 		var cmpType clientv3.Cmp
 		var cmpResult string
@@ -267,11 +357,10 @@ func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp) (*clientv
 	}
 
 	recordCount := countResp.Count
-	if op.Offset == -1 && recordCount < op.Limit {
-		return nil, nil // no paging
+	if op.Offset == -1 && recordCount <= op.Limit {
+		return nil, nil // no need to do paging
 	}
 
-	tempOp.KeyOnly = false
 	tempOp.CountOnly = false
 	tempOp.Prefix = false
 	tempOp.SortOrder = registry.SORT_ASCEND
@@ -289,12 +378,25 @@ func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp) (*clientv
 	if remainCount > 0 {
 		pageCount++
 	}
+	minPage, maxPage := int64(0), pageCount
+	if op.Offset >= 0 {
+		count := op.Offset + 1
+		maxPage = count / op.Limit
+		if count%op.Limit > 0 {
+			maxPage++
+		}
+		minPage = maxPage - 1
+	}
 
-	baseOps := []clientv3.OpOption{}
+	var baseOps []clientv3.OpOption
 	baseOps = append(baseOps, c.toGetRequest(tempOp)...)
 
 	nextKey := key
 	for i := int64(0); i < pageCount; i++ {
+		if i >= maxPage {
+			break
+		}
+
 		limit, start := op.Limit, 0
 		if remainCount > 0 && i == pageCount-1 {
 			limit = remainCount
@@ -308,15 +410,13 @@ func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp) (*clientv
 		if err != nil {
 			return nil, err
 		}
+
 		l := int64(len(recordResp.Kvs))
 		nextKey = util.BytesToStringWithNoCopy(recordResp.Kvs[l-1].Key)
-
-		if op.Offset >= 0 {
-			if op.Offset < i*op.Limit {
-				continue
-			} else if op.Offset >= (i+1)*op.Limit {
-				break
-			}
+		if i < minPage {
+			// even through current page index less then the min page index,
+			// but here must to get the nextKey and then continue
+			continue
 		}
 		etcdResp.Kvs = append(etcdResp.Kvs, recordResp.Kvs[start:]...)
 	}
@@ -359,9 +459,6 @@ func (c *EtcdClient) Do(ctx context.Context, opts ...registry.PluginOpOption) (*
 	switch op.Action {
 	case registry.Get:
 		var etcdResp *clientv3.GetResponse
-		if op.Prefix && op.Key[len(op.Key)-1] != '/' {
-			op.Key = append(op.Key, '/')
-		}
 		key := util.BytesToStringWithNoCopy(op.Key)
 
 		if (op.Prefix || len(op.EndKey) > 0) && !op.CountOnly {
@@ -384,7 +481,7 @@ func (c *EtcdClient) Do(ctx context.Context, opts ...registry.PluginOpOption) (*
 			Revision: etcdResp.Header.Revision,
 		}
 	case registry.Put:
-		var value string = ""
+		var value string
 		if len(op.Value) > 0 {
 			value = util.BytesToStringWithNoCopy(op.Value)
 		}
@@ -473,7 +570,7 @@ func (c *EtcdClient) TxnWithCmp(ctx context.Context, success []registry.PluginOp
 func (c *EtcdClient) LeaseGrant(ctx context.Context, TTL int64) (int64, error) {
 	var err error
 	span := TracingBegin(ctx, "etcd:grant",
-		registry.PluginOp{Action: registry.Put, Key: util.StringToBytesWithNoCopy(fmt.Sprint(TTL))})
+		registry.PluginOp{Action: registry.Put, Key: util.StringToBytesWithNoCopy(strconv.FormatInt(TTL, 10))})
 	defer TracingEnd(span, err)
 
 	otCtx, cancel := registry.WithTimeout(ctx)
@@ -490,7 +587,7 @@ func (c *EtcdClient) LeaseGrant(ctx context.Context, TTL int64) (int64, error) {
 func (c *EtcdClient) LeaseRenew(ctx context.Context, leaseID int64) (int64, error) {
 	var err error
 	span := TracingBegin(ctx, "etcd:keepalive",
-		registry.PluginOp{Action: registry.Put, Key: util.StringToBytesWithNoCopy(fmt.Sprint(leaseID))})
+		registry.PluginOp{Action: registry.Put, Key: util.StringToBytesWithNoCopy(strconv.FormatInt(leaseID, 10))})
 	defer TracingEnd(span, err)
 
 	otCtx, cancel := registry.WithTimeout(ctx)
@@ -510,7 +607,7 @@ func (c *EtcdClient) LeaseRenew(ctx context.Context, leaseID int64) (int64, erro
 func (c *EtcdClient) LeaseRevoke(ctx context.Context, leaseID int64) error {
 	var err error
 	span := TracingBegin(ctx, "etcd:revoke",
-		registry.PluginOp{Action: registry.Delete, Key: util.StringToBytesWithNoCopy(fmt.Sprint(leaseID))})
+		registry.PluginOp{Action: registry.Delete, Key: util.StringToBytesWithNoCopy(strconv.FormatInt(leaseID, 10))})
 	defer TracingEnd(span, err)
 
 	otCtx, cancel := registry.WithTimeout(ctx)
@@ -543,9 +640,6 @@ func (c *EtcdClient) Watch(ctx context.Context, opts ...registry.PluginOpOption)
 		client := clientv3.NewWatcher(c.Client)
 		defer client.Close()
 
-		if op.Prefix && op.Key[len(op.Key)-1] != '/' {
-			op.Key = append(op.Key, '/')
-		}
 		key := util.BytesToStringWithNoCopy(op.Key)
 
 		// 不能设置超时context，内部判断了连接超时和watch超时
@@ -581,24 +675,26 @@ func (c *EtcdClient) Watch(ctx context.Context, opts ...registry.PluginOpOption)
 	return fmt.Errorf("no key has been watched")
 }
 
-func (c *EtcdClient) HealthCheck(ctx context.Context) {
-	retries := healthCheckRetryTimes
-	inv, err := time.ParseDuration(core.ServerInfo.Config.AutoSyncInterval)
-	if err != nil {
-		util.Logger().Errorf(err, "invalid auto sync interval '%s'.", core.ServerInfo.Config.AutoSyncInterval)
-		return
+func (c *EtcdClient) HealthCheck() {
+	if c.AutoSyncInterval >= time.Second {
+		c.goroutine.Do(c.healthCheckLoop)
 	}
+}
+
+func (c *EtcdClient) healthCheckLoop(pctx context.Context) {
+	retries := healthCheckRetryTimes
 hcLoop:
 	for {
 		select {
-		case <-ctx.Done():
+		case <-pctx.Done():
 			return
-		case <-time.After(inv):
+		case <-time.After(c.AutoSyncInterval):
 			var err error
 			for i := 0; i < retries; i++ {
-				if err = c.SyncMembers(); err != nil {
+				ctx, _ := context.WithTimeout(c.Client.Ctx(), healthCheckTimeout)
+				if err = c.SyncMembers(ctx); err != nil {
 					select {
-					case <-ctx.Done():
+					case <-pctx.Done():
 						return
 					case <-time.After(util.GetBackoff().Delay(i)):
 						continue
@@ -609,25 +705,30 @@ hcLoop:
 			}
 
 			retries = 1 // fail fast
-			client, cerr := newClient(c.Endpoints)
-			if cerr != nil {
-				util.Logger().Errorf(cerr, "create a new connection to etcd %v failed.",
-					c.Endpoints)
-				continue
+			if cerr := c.ReOpen(); cerr == nil {
+				util.Logger().Errorf(err, "re-connected to etcd %s", c.Endpoints)
 			}
-
-			c.Client, client = client, c.Client
-			util.Logger().Errorf(err, "re-connected to etcd %s", c.Endpoints)
-
-			if cerr = client.Close(); cerr != nil {
-				util.Logger().Errorf(cerr, "failed to close the unavailable etcd client.")
-			}
-			client = nil
 		}
 	}
 }
 
+func (c *EtcdClient) ReOpen() error {
+	client, cerr := c.newClient()
+	if cerr != nil {
+		util.Logger().Errorf(cerr, "create a new connection to etcd %v failed.",
+			c.Endpoints)
+		return cerr
+	}
+	c.Client, client = client, c.Client
+	if cerr = client.Close(); cerr != nil {
+		util.Logger().Errorf(cerr, "failed to close the unavailable etcd client.")
+	}
+	client = nil
+	return nil
+}
+
 func (c *EtcdClient) parseEndpoints() {
+	// use the default cluster endpoints
 	addrs := strings.Split(registry.RegistryConfig().ClusterAddresses, ",")
 
 	endpoints := make([]string, 0, len(addrs))
@@ -643,8 +744,7 @@ func (c *EtcdClient) parseEndpoints() {
 	c.Endpoints = endpoints
 }
 
-func (c *EtcdClient) SyncMembers() error {
-	ctx, _ := context.WithTimeout(c.Client.Ctx(), healthCheckTimeout)
+func (c *EtcdClient) SyncMembers(ctx context.Context) error {
 	if err := c.Client.Sync(ctx); err != nil && err != c.Client.Ctx().Err() {
 		return err
 	}
@@ -708,97 +808,20 @@ func callback(action registry.ActionType, rev int64, kvs []*mvccpb.KeyValue, cb 
 	})
 }
 
-func sslEnabled() bool {
-	return core.ServerInfo.Config.SslEnabled &&
-		strings.Index(strings.ToLower(registry.RegistryConfig().ClusterAddresses), "https://") >= 0
-}
-
 func NewRegistry() mgr.PluginInstance {
 	util.Logger().Warnf(nil, "starting service center in proxy mode")
 
-	inst := &EtcdClient{
-		err:       make(chan error, 1),
-		ready:     make(chan int),
-		goroutine: util.NewGo(context.Background()),
-	}
-
-	// parse the endpoints from config
-	inst.parseEndpoints()
-
-	scheme := "http://"
-	if sslEnabled() {
-		var err error
-		// go client tls限制，提供身份证书、不认证服务端、不校验CN
-		clientTLSConfig, err = mgr.Plugins().TLS().ClientConfig()
-		if err != nil {
-			util.Logger().Error("get etcd client tls config failed", err)
-			inst.err <- err
-			return inst
-		}
-		scheme = "https://"
-	}
-
-	firstEndpoint = scheme + inst.Endpoints[0]
-
-	client, err := newClient(inst.Endpoints)
-	if err != nil {
-		util.Logger().Errorf(err, "get etcd client %v failed.", inst.Endpoints)
+	inst := &EtcdClient{}
+	if err := inst.Initialize(); err != nil {
 		inst.err <- err
 		return inst
 	}
 
-	util.Logger().Warnf(nil, "get etcd client %v completed, auto sync endpoints interval is %s.",
-		inst.Endpoints, core.ServerInfo.Config.AutoSyncInterval)
-	inst.Client = client
-	inst.goroutine.Do(inst.HealthCheck)
+	scheme := "http://"
+	if inst.TLSConfig != nil {
+		scheme = "https://"
+	}
+	firstEndpoint = scheme + inst.Endpoints[0]
 
-	close(inst.ready)
 	return inst
-}
-
-func newClient(endpoints []string) (*clientv3.Client, error) {
-	client, err := clientv3.New(clientv3.Config{
-		Endpoints:        endpoints,
-		DialTimeout:      connectRegistryServerTimeout,
-		TLS:              clientTLSConfig, // 暂时与API Server共用一套证书
-		AutoSyncInterval: 0,
-	})
-	if err != nil {
-		return nil, err
-	}
-	if len(endpoints) == 1 {
-		return client, nil
-	}
-
-	defer func() {
-		if err != nil {
-			client.Close()
-		}
-	}()
-
-	ctx, _ := context.WithTimeout(client.Ctx(), healthCheckTimeout)
-	resp, err := client.MemberList(ctx)
-	if err != nil {
-		return nil, err
-	}
-epLoop:
-	for _, ep := range endpoints {
-		var cluster []string
-		for _, mem := range resp.Members {
-			for _, curl := range mem.ClientURLs {
-				u, err := url.Parse(curl)
-				if err != nil {
-					return nil, err
-				}
-				cluster = append(cluster, u.Host)
-				if u.Host == ep {
-					continue epLoop
-				}
-			}
-		}
-		// maybe endpoints = [domain A, domain B] or there are more than one cluster
-		err = fmt.Errorf("the etcd cluster endpoint list%v does not contain %s", cluster, ep)
-		return nil, err
-	}
-	return client, nil
 }

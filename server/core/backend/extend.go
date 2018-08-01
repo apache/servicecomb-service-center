@@ -16,12 +16,7 @@
  */
 package backend
 
-import (
-	"errors"
-	"fmt"
-)
-
-type Entity interface {
+type Extension interface {
 	Name() string
 	Config() *Config
 }
@@ -39,29 +34,7 @@ func (e *entity) Config() *Config {
 	return e.cfg
 }
 
-func InstallType(e Entity) (id StoreType, err error) {
-	if e == nil {
-		return NONEXIST, errors.New("invalid parameter")
-	}
-	for _, n := range TypeNames {
-		if n == e.Name() {
-			return NONEXIST, fmt.Errorf("redeclare store type '%s'", n)
-		}
-	}
-	for _, r := range TypeConfig {
-		if r.Prefix == e.Config().Prefix {
-			return NONEXIST, fmt.Errorf("redeclare store root '%s'", r)
-		}
-	}
-
-	id = StoreType(len(TypeNames))
-	TypeNames = append(TypeNames, e.Name())
-	TypeConfig[id] = e.Config()
-	EventProxies[id] = NewEventProxy()
-	return
-}
-
-func NewEntity(name string, cfg *Config) Entity {
+func NewExtension(name string, cfg *Config) Extension {
 	return &entity{
 		name: name,
 		cfg:  cfg,

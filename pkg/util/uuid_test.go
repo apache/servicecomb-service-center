@@ -14,25 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package backend
+package util
 
 import (
-	"github.com/coreos/etcd/mvcc/mvccpb"
+	"strings"
+	"testing"
 )
 
-type KeyValue struct {
-	Key            []byte
-	Value          interface{}
-	Version        int64
-	CreateRevision int64
-	ModRevision    int64
-}
-
-func (kv *KeyValue) From(p *Parser, s *mvccpb.KeyValue) (err error) {
-	kv.Key = s.Key
-	kv.Version = s.Version
-	kv.CreateRevision = s.CreateRevision
-	kv.ModRevision = s.ModRevision
-	kv.Value, err = p.Unmarshal(s.Value)
-	return
+func TestGenerateUuid(t *testing.T) {
+	uuid := GenerateUuid()
+	if len(uuid) == 0 || strings.Contains(uuid, "-") {
+		t.Fatalf("TestGenerateUuid failed")
+	}
 }

@@ -14,6 +14,5 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-cp -r etc/conf server/interceptor/ratelimiter/
-cp -r etc/conf server/service/
+cp -r etc/conf server/plugin/infra/tls/buildin
 echo "mode: atomic" > coverage.txt

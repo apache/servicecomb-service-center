@@ -17,7 +17,6 @@
 package plugin
 
 import (
-	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/plugin"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/auditlog"
@@ -30,6 +29,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/uuid"
 	"github.com/astaxie/beego"
 	pg "plugin"
+	"strconv"
 	"sync"
 )
 
@@ -70,13 +70,15 @@ func (pn PluginName) String() string {
 	if name, ok := pluginNames[pn]; ok {
 		return name
 	}
-	return "PLUGIN" + fmt.Sprint(pn)
+	return "PLUGIN" + strconv.Itoa(int(pn))
 }
 
 type Plugin struct {
+	// plugin class name
 	PName PluginName
-	Name  string
-	New   func() PluginInstance
+	// plugin name
+	Name string
+	New  func() PluginInstance
 }
 
 type PluginInstance interface{}
@@ -97,15 +99,13 @@ func (pm *PluginManager) Initialize() {
 	pm.instances = make(map[PluginName]*wrapInstance, int(typeEnd))
 
 	for t := PluginName(0); t != typeEnd; t++ {
-		pluginMgr.instances[t] = &wrapInstance{}
+		pm.instances[t] = &wrapInstance{}
 	}
 }
 
 func (pm *PluginManager) ReloadAll() {
-	for _, i := range pm.instances {
-		i.lock.Lock()
-		i.instance = nil
-		i.lock.Unlock()
+	for pn := range pm.instances {
+		pm.Reload(pn)
 	}
 }
 
@@ -175,7 +175,8 @@ func (pm *PluginManager) New(pn PluginName) {
 
 		f = p.New
 	}
-	util.Logger().Infof("new '%s' instance from '%s' %s plugin", p.Name, p.PName, title)
+	util.Logger().Infof("call %s '%s' plugin %s(), new a '%s' instance",
+		title, p.PName, util.FuncName(f), p.Name)
 
 	wi.instance = f()
 }
@@ -192,6 +193,7 @@ func (pm *PluginManager) existDynamicPlugin(pn PluginName) *Plugin {
 	if !ok {
 		return nil
 	}
+	// 'buildin' implement of all plugins should call DynamicPluginFunc()
 	if plugin.PluginLoader().Exist(pn.String()) {
 		return m[BUILDIN]
 	}
@@ -201,34 +203,15 @@ func (pm *PluginManager) existDynamicPlugin(pn PluginName) *Plugin {
 func (pm *PluginManager) Registry() registry.Registry {
 	return pm.Instance(REGISTRY).(registry.Registry)
 }
-
-func (pm *PluginManager) UUID() uuid.UUID {
-	return pm.Instance(UUID).(uuid.UUID)
-}
-
+func (pm *PluginManager) UUID() uuid.UUID { return pm.Instance(UUID).(uuid.UUID) }
 func (pm *PluginManager) AuditLog() auditlog.AuditLogger {
 	return pm.Instance(AUDIT_LOG).(auditlog.AuditLogger)
 }
-
-func (pm *PluginManager) Auth() auth.Auth {
-	return pm.Instance(AUTH).(auth.Auth)
-}
-
-func (pm *PluginManager) Cipher() security.Cipher {
-	return pm.Instance(CIPHER).(security.Cipher)
-}
-
-func (pm *PluginManager) Quota() quota.QuotaManager {
-	return pm.Instance(QUOTA).(quota.QuotaManager)
-}
-
-func (pm *PluginManager) Tracing() tracing.Tracing {
-	return pm.Instance(TRACING).(tracing.Tracing)
-}
-
-func (pm *PluginManager) TLS() tls.TLS {
-	return pm.Instance(TLS).(tls.TLS)
-}
+func (pm *PluginManager) Auth() auth.Auth              { return pm.Instance(AUTH).(auth.Auth) }
+func (pm *PluginManager) Cipher() security.Cipher      { return pm.Instance(CIPHER).(security.Cipher) }
+func (pm *PluginManager) Quota() quota.QuotaManager    { return pm.Instance(QUOTA).(quota.QuotaManager) }
+func (pm *PluginManager) Tracing() (v tracing.Tracing) { return pm.Instance(TRACING).(tracing.Tracing) }
+func (pm *PluginManager) TLS() tls.TLS                 { return pm.Instance(TLS).(tls.TLS) }
 
 func Plugins() *PluginManager {
 	return pluginMgr
@@ -238,8 +221,9 @@ func RegisterPlugin(p Plugin) {
 	Plugins().Register(p)
 }
 
+// DynamicPluginFunc should be called in buildin implement
 func DynamicPluginFunc(pn PluginName, funcName string) pg.Symbol {
-	if wi := Plugins().instances[pn]; !wi.dynamic {
+	if wi, ok := Plugins().instances[pn]; ok && !wi.dynamic {
 		return nil
 	}
 

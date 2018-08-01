@@ -115,7 +115,7 @@ func (dr *DependencyRelation) GetDependencyProviderIds() ([]string, error) {
 
 func (dr *DependencyRelation) getProviderKeys() ([]*pb.MicroServiceKey, error) {
 	if dr.consumer == nil {
-		util.LOGGER.Infof("dr.consumer is nil ------->")
+		util.Logger().Infof("dr.consumer is nil ------->")
 		return nil, fmt.Errorf("Invalid consumer")
 	}
 	consumerMicroServiceKey := pb.MicroServiceToKey(dr.domainProject, dr.consumer)
@@ -247,7 +247,7 @@ func (dr *DependencyRelation) GetDependencyConsumerIds() ([]string, error) {
 
 func (dr *DependencyRelation) getDependencyConsumersOfProvider() ([]*pb.MicroServiceKey, error) {
 	if dr.provider == nil {
-		util.LOGGER.Infof("dr.provider is nil ------->")
+		util.Logger().Infof("dr.provider is nil ------->")
 		return nil, fmt.Errorf("Invalid provider")
 	}
 	providerService := pb.MicroServiceToKey(dr.domainProject, dr.provider)

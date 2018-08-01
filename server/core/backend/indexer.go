@@ -17,78 +17,10 @@
 package backend
 
 import (
-	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"golang.org/x/net/context"
-	"strings"
 )
-
-type Response struct {
-	Kvs   []*KeyValue
-	Count int64
-}
-
-func (pr *Response) MaxModRevision() (max int64) {
-	for _, kv := range pr.Kvs {
-		if max < kv.ModRevision {
-			max = kv.ModRevision
-		}
-	}
-	return
-}
 
 type Indexer interface {
 	Search(ctx context.Context, opts ...registry.PluginOpOption) (*Response, error)
-	Run()
-	Stop()
-	Ready() <-chan struct{}
-}
-
-type baseIndexer struct {
-	Cfg *Config
-}
-
-func (i *baseIndexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (r *Response, err error) {
-	op := registry.OpGet(opts...)
-	key := util.BytesToStringWithNoCopy(op.Key)
-	if strings.Index(key, i.Cfg.Prefix) != 0 {
-		return nil, fmt.Errorf("search %s mismatch pattern %s", key, i.Cfg.Prefix)
-	}
-
-	resp, err := Registry().Do(ctx, opts...)
-	if err != nil {
-		return nil, err
-	}
-
-	r = new(Response)
-	r.Count = resp.Count
-	if len(resp.Kvs) == 0 {
-		return
-	}
-
-	kvs := make([]*KeyValue, 0, len(resp.Kvs))
-	for _, src := range resp.Kvs {
-		kv := new(KeyValue)
-		if err = kv.From(i.Cfg.Parser, src); err != nil {
-			continue
-		}
-		kvs = append(kvs, kv)
-	}
-	r.Kvs = kvs
-	return
-}
-
-func (i *baseIndexer) Run() {
-}
-
-func (i *baseIndexer) Stop() {
-}
-
-func (i *baseIndexer) Ready() <-chan struct{} {
-	return closedCh
-}
-
-func NewBaseIndexer(cfg *Config) (indexer *baseIndexer) {
-	return &baseIndexer{Cfg: cfg}
 }

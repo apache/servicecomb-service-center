@@ -21,6 +21,7 @@ import (
 )
 
 func init() {
+	backend.AddEventHandler(NewDomainEventHandler())
 	backend.AddEventHandler(NewServiceEventHandler())
 	backend.AddEventHandler(NewInstanceEventHandler())
 	backend.AddEventHandler(NewRuleEventHandler())
