@@ -156,7 +156,7 @@ angular.module('serviceCenter.dashboard', [])
         };
 
         $scope.goToServices = function(status) {
-            $state.go("sc.allServices", {
+            $state.go("sc.instances", {
                 status: status
             });
         };
