@@ -6,7 +6,7 @@
 
 - [Api Documentation](https://rawcdn.githack.com/ServiceComb/service-center/master/docs/api-docs.html)
 
-#### [Contribution Guide](/docs/contribution.md) 
+- [Plug-in Extension](/server/plugin/README.md)
 
 #### [Docker Image Guide](/scripts/docker) 
 
@@ -14,4 +14,14 @@
 
 - [Making Front-end Image](/scripts/docker/build-frontend-image)
 
-#### [Deploy Service-Center in Cluster](/docs/sc-cluster.md)
+#### Deploy Service-Center
+
+- [Cluster Deployment](/docs/sc-cluster.md)
+
+- [Deploy with TLS](/docs/security-tls.md)
+
+#### Monitoring Service-Center
+
+- [Integrate with Grafana](/docs/integration-grafana.md)
+
+#### [Contribution Guide](/docs/contribution.md) 
