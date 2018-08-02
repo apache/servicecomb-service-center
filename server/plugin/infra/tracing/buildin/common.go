@@ -31,7 +31,7 @@ import (
 func initTracer() {
 	collector, err := newCollector()
 	if err != nil {
-		util.Logger().Warnf(err, "new tracing collector failed, use the noop tracer")
+		util.Logger().Errorf(err, "new tracing collector failed, use the noop tracer")
 		return
 	}
 	ipPort := metric.InstanceName()

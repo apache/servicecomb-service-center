@@ -133,7 +133,7 @@ func (m *DLock) Lock(wait bool) (err error) {
 		return fmt.Errorf("Key %s is locked by id=%s", m.builder.key, m.id)
 	}
 
-	util.Logger().Warnf(err, "Key %s is locked, waiting for other node releases it, id=%s", m.builder.key, m.id)
+	util.Logger().Errorf(err, "Key %s is locked, waiting for other node releases it, id=%s, %s", m.builder.key, m.id)
 
 	ctx, cancel := context.WithTimeout(m.builder.ctx, time.Duration(m.builder.ttl)*time.Second)
 	util.Go(func(context.Context) {
@@ -149,7 +149,7 @@ func (m *DLock) Lock(wait bool) (err error) {
 					return nil
 				}))
 		if err != nil {
-			util.Logger().Warnf(nil, "%s, key=%s, id=%s", err.Error(), m.builder.key, m.id)
+			util.Logger().Warnf("%s, key=%s, id=%s", err.Error(), m.builder.key, m.id)
 		}
 	})
 	select {

@@ -98,7 +98,7 @@ func (f *FileCollector) checkFile() error {
 		return fmt.Errorf("stat %s: %s", f.Fd.Name(), err)
 	}
 
-	util.Logger().Warnf(nil, "tracing file %s does not exist, re-create one", f.Fd.Name())
+	util.Logger().Warnf("tracing file %s does not exist, re-create one", f.Fd.Name())
 	fd, err := os.OpenFile(f.Fd.Name(), os.O_APPEND|os.O_CREATE|os.O_RDWR, stat.Mode())
 	if err != nil {
 		return fmt.Errorf("open %s: %s", f.Fd.Name(), err)

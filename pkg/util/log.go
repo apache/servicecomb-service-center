@@ -18,8 +18,8 @@ package util
 
 import (
 	"fmt"
-	"github.com/ServiceComb/paas-lager"
-	"github.com/ServiceComb/paas-lager/third_party/forked/cloudfoundry/lager"
+	stlager "github.com/go-chassis/paas-lager"
+	"github.com/go-chassis/paas-lager/third_party/forked/cloudfoundry/lager"
 	"golang.org/x/net/context"
 	"os"
 	"path/filepath"
@@ -148,7 +148,7 @@ func Logger() lager.Logger {
 			}
 			logger = NewLogger(cfg)
 			loggers[logFile] = logger
-			logger.Warnf(nil, "match %s, new globalLogger %s for %s", prefix, logFile, funcFullName)
+			logger.Warnf("match %s, new globalLogger %s for %s", prefix, logFile, funcFullName)
 		}
 		loggersMux.Unlock()
 		return logger
@@ -223,7 +223,7 @@ func LogNilOrWarnf(start time.Time, format string, args ...interface{}) {
 	if cost < time.Second {
 		return
 	}
-	Logger().Warnf(nil, "[%s]%s", cost, fmt.Sprintf(format, args...))
+	Logger().Warnf("[%s]%s", cost, fmt.Sprintf(format, args...))
 }
 
 func LogDebugOrWarnf(start time.Time, format string, args ...interface{}) {
@@ -232,7 +232,7 @@ func LogDebugOrWarnf(start time.Time, format string, args ...interface{}) {
 		Logger().Debugf("[%s]%s", cost, fmt.Sprintf(format, args...))
 		return
 	}
-	Logger().Warnf(nil, "[%s]%s", cost, fmt.Sprintf(format, args...))
+	Logger().Warnf("[%s]%s", cost, fmt.Sprintf(format, args...))
 }
 
 func LogInfoOrWarnf(start time.Time, format string, args ...interface{}) {
@@ -241,5 +241,5 @@ func LogInfoOrWarnf(start time.Time, format string, args ...interface{}) {
 		Logger().Infof("[%s]%s", cost, fmt.Sprintf(format, args...))
 		return
 	}
-	Logger().Warnf(nil, "[%s]%s", cost, fmt.Sprintf(format, args...))
+	Logger().Warnf("[%s]%s", cost, fmt.Sprintf(format, args...))
 }

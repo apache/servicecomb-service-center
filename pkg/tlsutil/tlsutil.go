@@ -42,7 +42,7 @@ func ParseSSLCipherSuites(ciphers string, permitTlsCipherSuiteMap map[string]uin
 			cipherSuiteList = append(cipherSuiteList, cipherSuite)
 		} else {
 			// 配置算法不存在
-			util.Logger().Warnf(nil, "cipher %s not exist.", cipherSuiteName)
+			util.Logger().Warnf("cipher %s not exist.", cipherSuiteName)
 		}
 	}
 
@@ -58,7 +58,7 @@ func ParseSSLProtocol(sprotocol string) uint16 {
 	if protocol, ok := TLS_VERSION_MAP[sprotocol]; ok {
 		result = protocol
 	} else {
-		util.Logger().Warnf(nil, "invalid ssl minimal version(%s), use default.", sprotocol)
+		util.Logger().Warnf("invalid ssl minimal version(%s), use default.", sprotocol)
 	}
 
 	return result

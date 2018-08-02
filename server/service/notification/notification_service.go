@@ -54,7 +54,7 @@ func (s *NotifyService) init() {
 
 func (s *NotifyService) Start() {
 	if !s.Closed() {
-		util.Logger().Warnf(nil, "notify service is already running")
+		util.Logger().Warnf("notify service is already running")
 		return
 	}
 	s.closeMux.Lock()

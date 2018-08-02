@@ -3,9 +3,9 @@ import:
 - package: github.com/Knetic/govaluate
   version: 91facc4ae520fef82c9aee6b6ae720d9ae789131
   repo: https://github.com/Knetic/govaluate
-- package: github.com/ServiceComb/paas-lager
-  version: 378a833fc008d8343083dc73e77db142afccf377
-  repo: https://github.com/ServiceComb/paas-lager
+- package: github.com/go-chassis/paas-lager
+  version: master
+  repo: https://github.com/go-chassis/paas-lager
   subpackages:
   - third_party/forked/cloudfoundry/lager
 - package: github.com/Shopify/sarama

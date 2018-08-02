@@ -316,7 +316,7 @@ func (s *InstanceService) Heartbeat(ctx context.Context, in *pb.HeartbeatRequest
 	}
 
 	if ttl == 0 {
-		util.Logger().Warnf(errors.New("connect backend timed out"),
+		util.Logger().Errorf(errors.New("connect backend timed out"),
 			"heartbeat successful, but renew %s failed. operator: %s", instanceFlag, remoteIP)
 	} else {
 		util.Logger().Infof("heartbeat successful: %s renew ttl to %d. operator: %s", instanceFlag, ttl, remoteIP)
@@ -341,7 +341,7 @@ func (s *InstanceService) HeartbeatSet(ctx context.Context, in *pb.HeartbeatSetR
 	noMultiCounter := 0
 	for _, heartbeatElement := range in.Instances {
 		if _, ok := existFlag[heartbeatElement.ServiceId+heartbeatElement.InstanceId]; ok {
-			util.Logger().Warnf(nil, "heartbeat set %s/%s multiple", heartbeatElement.ServiceId, heartbeatElement.InstanceId)
+			util.Logger().Warnf("heartbeat set %s/%s multiple", heartbeatElement.ServiceId, heartbeatElement.InstanceId)
 			continue
 		} else {
 			existFlag[heartbeatElement.ServiceId+heartbeatElement.InstanceId] = true

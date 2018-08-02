@@ -80,7 +80,7 @@ func (c *KvCacher) doList(cfg ListWatchConfig) error {
 	evts := c.filter(c.lw.Revision(), kvs)
 	if ec, kc := len(evts), len(kvs); c.Cfg.DeferHandler != nil && ec == 0 && kc != 0 &&
 		c.Cfg.DeferHandler.Reset() {
-		util.Logger().Warnf(nil, "most of the protected data(%d/%d) are recovered",
+		util.Logger().Warnf("most of the protected data(%d/%d) are recovered",
 			kc, c.cache.GetAll(nil))
 	}
 	c.sync(evts)
@@ -379,11 +379,11 @@ func (c *KvCacher) onEvents(evts []KvEvent) {
 			case init:
 				evt.Type = proto.EVT_INIT
 			case !ok && evt.Type != proto.EVT_CREATE:
-				util.Logger().Warnf(nil, "unexpected %s event! it should be %s key %s",
+				util.Logger().Warnf("unexpected %s event! it should be %s key %s",
 					evt.Type, proto.EVT_CREATE, key)
 				evt.Type = proto.EVT_CREATE
 			case ok && evt.Type != proto.EVT_UPDATE:
-				util.Logger().Warnf(nil, "unexpected %s event! it should be %s key %s",
+				util.Logger().Warnf("unexpected %s event! it should be %s key %s",
 					evt.Type, proto.EVT_UPDATE, key)
 				evt.Type = proto.EVT_UPDATE
 			}
@@ -392,7 +392,7 @@ func (c *KvCacher) onEvents(evts []KvEvent) {
 			evts[i] = evt
 		case proto.EVT_DELETE:
 			if !ok {
-				util.Logger().Warnf(nil, "unexpected %s event! key %s does not cache",
+				util.Logger().Warnf("unexpected %s event! key %s does not cache",
 					evt.Type, key)
 			} else {
 				evt.KV = prevKv

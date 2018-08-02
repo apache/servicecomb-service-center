@@ -260,10 +260,10 @@ func (srv *Server) gracefulStop(d time.Duration) {
 	}
 
 	if n != 0 {
-		util.Logger().Warnf(nil, "%s timed out, force close %d connection(s)", d, n)
+		util.Logger().Warnf("%s timed out, force close %d connection(s)", d, n)
 		err := srv.Server.Close()
 		if err != nil {
-			util.Logger().Warnf(err, "server close failed")
+			util.Logger().Errorf(err, "server close failed")
 		}
 	}
 }

@@ -71,7 +71,7 @@ func (l *clientLogger) Warningln(args ...interface{}) {
 }
 
 func (l *clientLogger) Warningf(format string, args ...interface{}) {
-	util.Logger().Warnf(nil, format, args...)
+	util.Logger().Warnf(format, args...)
 }
 
 func (l *clientLogger) Error(args ...interface{}) {

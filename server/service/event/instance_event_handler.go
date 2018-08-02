@@ -58,7 +58,7 @@ func (h *InstanceEventHandler) OnEvent(evt backend.KvEvent) {
 	}
 
 	if nf.GetNotifyService().Closed() {
-		util.Logger().Warnf(nil, "caught [%s] instance event %s/%s, but notify service is closed",
+		util.Logger().Warnf("caught [%s] instance event %s/%s, but notify service is closed",
 			action, providerId, providerInstanceId)
 		return
 	}
@@ -68,7 +68,7 @@ func (h *InstanceEventHandler) OnEvent(evt backend.KvEvent) {
 	ctx := util.SetContext(context.Background(), serviceUtil.CTX_CACHEONLY, "1")
 	ms, err := serviceUtil.GetService(ctx, domainProject, providerId)
 	if ms == nil {
-		util.Logger().Warnf(err, "get provider service %s/%s id in cache failed",
+		util.Logger().Errorf(err, "get provider service %s/%s id in cache failed",
 			providerId, providerInstanceId)
 		return
 	}

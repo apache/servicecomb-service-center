@@ -98,7 +98,7 @@ func (s *APIServer) registryService(pCtx context.Context) error {
 		return err
 	}
 	if respE.Response.Code == pb.Response_SUCCESS {
-		util.Logger().Warnf(nil, "service center service already registered, serviceId %s", respE.ServiceId)
+		util.Logger().Warnf("service center service already registered, serviceId %s", respE.ServiceId)
 		respG, err := core.ServiceAPI.GetOne(ctx, core.GetServiceRequest(respE.ServiceId))
 		if respG.Response.Code != pb.Response_SUCCESS {
 			util.Logger().Errorf(err, "query service center service info failed, serviceId %s", respE.ServiceId)
@@ -153,7 +153,7 @@ func (s *APIServer) unregisterInstance(pCtx context.Context) error {
 		util.Logger().Error(err.Error(), nil)
 		return err
 	}
-	util.Logger().Warnf(nil, "unregister service center instance %s/%s",
+	util.Logger().Warnf("unregister service center instance %s/%s",
 		core.Service.ServiceId, core.Instance.InstanceId)
 	return nil
 }

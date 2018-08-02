@@ -174,7 +174,7 @@ func (wh *WebSocket) HandleWatchWebSocketJob(o interface{}) {
 	switch o.(type) {
 	case error:
 		err := o.(error)
-		util.Logger().Warnf(err, "watcher[%s] catch an err, subject: %s, group: %s",
+		util.Logger().Errorf(err, "watcher[%s] catch an err, subject: %s, group: %s",
 			remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
 
 		message = util.StringToBytesWithNoCopy(fmt.Sprintf("watcher catch an err: %s", err.Error()))
