@@ -21,14 +21,9 @@ import (
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 	"net/http"
+	"os"
 	"testing"
 )
-
-func TestIntegration(t *testing.T) {
-	RegisterFailHandler(Fail)
-	junitReporter := reporters.NewJUnitReporter("model.junit.xml")
-	RunSpecsWithDefaultAndCustomReporters(t, "Integration Test for SC", []Reporter{junitReporter})
-}
 
 var scclient *http.Client
 
@@ -39,3 +34,16 @@ var SCURL = "http://127.0.0.1:30100"
 var _ = BeforeSuite(func() {
 	scclient = insecurityConnection
 })
+
+func init() {
+	addr, ok := os.LookupEnv("CSE_REGISTRY_ADDRESS")
+	if ok {
+		SCURL = addr
+	}
+}
+
+func TestIntegration(t *testing.T) {
+	RegisterFailHandler(Fail)
+	junitReporter := reporters.NewJUnitReporter("model.junit.xml")
+	RunSpecsWithDefaultAndCustomReporters(t, "Integration Test for SC", []Reporter{junitReporter})
+}

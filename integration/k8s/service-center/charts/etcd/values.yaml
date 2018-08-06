@@ -1,0 +1,24 @@
+# Default values for etcd.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+etcdOperator:
+  image:
+    pullPolicy: IfNotPresent
+backupOperator:
+  image:
+    pullPolicy: IfNotPresent
+restoreOperator:
+  image:
+    pullPolicy: IfNotPresent
+etcdCluster:
+  name: etcd-cluster
+  size: 3
+  version: 3.2.13
+  image:
+    pullPolicy: IfNotPresent
+cluster:
+  annotations:
+    ## Adding this annotation make this cluster managed by clusterwide operators
+    ## namespaced operators ignore it
+    # annotations:
+    #   etcd.database.coreos.com/scope: clusterwide

@@ -21,7 +21,7 @@ umask 027
 
 cd /opt/frontend
 
-sed -i 's/^frontend_host_ip.*=.*$/frontend_host_ip = 0.0.0.0/g' conf/app.conf
+sed -i "s/^frontend_host_ip.*=.*$/frontend_host_ip = $(hostname)/g" conf/app.conf
 
 sc_ip_port=${BACKEND_ADDRESS#*//}
 sc_ip=${sc_ip_port%:*}

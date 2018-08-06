@@ -28,10 +28,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/version"
 	"github.com/astaxie/beego"
 	"golang.org/x/net/context"
-	"net"
-	"net/url"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -156,27 +153,15 @@ func (s *ServiceCenterServer) startApiServer() {
 	rpcIp := beego.AppConfig.DefaultString("rpcaddr", "")
 	rpcPort := beego.AppConfig.DefaultString("rpcport", "")
 
-	s.apiServer.HostName = fmt.Sprintf("%s_%s", core.ServerInfo.Config.LoggerName,
-		strings.Replace(restIp, ".", "_", -1))
-	s.addEndpoint(REST, restIp, restPort)
-	s.addEndpoint(RPC, rpcIp, rpcPort)
+	host, err := os.Hostname()
+	if err != nil {
+		host = restIp
+		util.Logger().Errorf(err, "parse hostname failed")
+	}
+	s.apiServer.HostName = host
+	s.apiServer.AddListener(REST, restIp, restPort)
+	s.apiServer.AddListener(RPC, rpcIp, rpcPort)
 	s.apiServer.Start()
-}
-
-func (s *ServiceCenterServer) addEndpoint(t APIType, ip, port string) {
-	if s.apiServer.Endpoints == nil {
-		s.apiServer.Listeners = map[APIType]string{}
-		s.apiServer.Endpoints = map[APIType]string{}
-	}
-	if len(ip) == 0 {
-		return
-	}
-	address := fmt.Sprintf("%s://%s/", t, net.JoinHostPort(url.PathEscape(ip), port))
-	if core.ServerInfo.Config.SslEnabled {
-		address += "?sslEnabled=true"
-	}
-	s.apiServer.Listeners[t] = net.JoinHostPort(ip, port)
-	s.apiServer.Endpoints[t] = address
 }
 
 func (s *ServiceCenterServer) Stop() {

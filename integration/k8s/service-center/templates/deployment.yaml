@@ -1,0 +1,85 @@
+{{- $serviceName := include "service-center.fullname" . -}}
+{{- $servicePort := .Values.sc.service.externalPort -}}
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "service-center.fullname" . }}
+  labels:
+    app: {{ template "service-center.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.sc.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "service-center.name" . }}
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.sc.image.repository }}:{{ .Values.sc.image.tag }}"
+          imagePullPolicy: {{ .Values.sc.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.sc.service.internalPort }}
+          env:
+          - name: BACKEND_ADDRESS
+            value: http://{{ .Release.Name }}-etcd-client:2379
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.sc.service.internalPort }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.sc.service.internalPort }}
+          resources:
+{{ toYaml .Values.sc.resources | indent 12 }}
+    {{- if .Values.sc.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.sc.nodeSelector | indent 8 }}
+    {{- end }}
+
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "service-center.fullname" . }}-frontend
+  labels:
+    app: {{ template "service-center.name" . }}-frontend
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.frontend.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "service-center.name" . }}-frontend
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}-frontend
+          image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"
+          imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.frontend.service.internalPort }}
+          env:
+          - name: BACKEND_ADDRESS
+            value: http://{{ $serviceName }}:{{ $servicePort }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.frontend.service.internalPort }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.frontend.service.internalPort }}
+          resources:
+{{ toYaml .Values.frontend.resources | indent 12 }}
+    {{- if .Values.frontend.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.frontend.nodeSelector | indent 8 }}
+    {{- end }}
