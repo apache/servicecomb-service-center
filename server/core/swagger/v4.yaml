@@ -2348,8 +2348,53 @@ definitions:
         type: array
         items:
           $ref: "#/definitions/MicroServiceInstanceKV"
+  Config:
+    type: object
+    properties:
+      maxHeaderBytes:
+        type: integer
+      maxBodyBytes:
+        type: integer
+      readHeaderTimeout:
+        type: string
+      readTimeout:
+        type: string
+      idleTimeout:
+        type: string
+      writeTimeout:
+        type: string
+      limitTTLUnit:
+        type: string
+      limitConnections:
+        type: integer
+      limitIPLookup:
+        type: string
+      sslEnabled:
+        type: string
+      sslMinVersion:
+        type: string
+      sslVerifyPeer:
+        type: string
+      sslCiphers:
+        type: string
+      autoSyncInterval:
+        type: string
+      compactIndexDelta:
+        type: integer
+      compactInterval:
+        type: string
+      logRotateSize:
+        type: integer
+      logBackupCount:
+        type: integer
   DumpResponse:
     type: object
     properties:
+      info:
+        $ref: '#/definitions/Version'
+      config:
+        $ref: '#/definitions/Config'
+      environments:
+        $ref: '#/definitions/Properties'
       cache:
         $ref: "#/definitions/Cache"

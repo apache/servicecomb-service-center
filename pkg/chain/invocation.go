@@ -17,6 +17,8 @@
 package chain
 
 import (
+	errorsEx "github.com/apache/incubator-servicecomb-service-center/pkg/errors"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"golang.org/x/net/context"
 )
@@ -94,6 +96,15 @@ func callback(f CallbackFunc, async bool, r Result) {
 }
 
 func (i *Invocation) Invoke(f CallbackFunc) {
+	defer func() {
+		itf := recover()
+		if itf == nil {
+			return
+		}
+		log.LogPanic(itf)
+
+		i.Fail(errorsEx.RaiseError(itf))
+	}()
 	i.Func = f
 	i.chain.Next(i)
 }
