@@ -17,27 +17,46 @@
 package metric
 
 import (
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/astaxie/beego"
 	"net"
+	"os"
 	"sync"
 	"time"
 )
 
 const (
-	collectInterval  = 5 * time.Second
-	FamilyName       = "service_center"
-	familyNamePrefix = FamilyName + "_"
+	defaultCollectPeriod = 30 * time.Second
+	FamilyName           = "service_center"
+	familyNamePrefix     = FamilyName + "_"
 )
 
 var (
-	sysMetricNames = map[string]struct{}{
-		"process_resident_memory_bytes": {},
-		"process_cpu_seconds_total":     {},
-		"go_threads":                    {},
-	}
+	// metrics collect period
+	Period = 30 * time.Second
+	// system metrics map
+	SysMetrics util.ConcurrentMap
+
 	getEndpointOnce sync.Once
 	instance        string
 )
+
+func init() {
+	Period = getPeriod()
+	SysMetrics.Put("process_resident_memory_bytes", struct{}{})
+	SysMetrics.Put("process_cpu_seconds_total", struct{}{})
+	SysMetrics.Put("go_threads", struct{}{})
+	SysMetrics.Put("go_goroutines", struct{}{})
+}
+
+func getPeriod() time.Duration {
+	inv := os.Getenv("METRICS_INTERVAL")
+	d, err := time.ParseDuration(inv)
+	if err == nil && d >= time.Second {
+		return d
+	}
+	return defaultCollectPeriod
+}
 
 func InstanceName() string {
 	getEndpointOnce.Do(func() {

@@ -18,17 +18,14 @@ package metric
 
 import (
 	dto "github.com/prometheus/client_model/go"
-	"strings"
 )
 
 var (
-	calculators       = make(map[string]Calculator)
-	DefaultCalculator = &CommonCalculator{}
+	DefaultCalculator Calculator = &CommonCalculator{}
 )
 
 type Calculator interface {
 	Calc(mf *dto.MetricFamily) float64
-	ReShape()
 }
 
 type CommonCalculator struct {
@@ -50,9 +47,6 @@ func (c *CommonCalculator) Calc(mf *dto.MetricFamily) float64 {
 	default:
 		return 0
 	}
-}
-
-func (c *CommonCalculator) ReShape() {
 }
 
 func metricCounterOf(m []*dto.Metric) float64 {
@@ -80,19 +74,10 @@ func metricSummaryOf(m []*dto.Metric) float64 {
 	return sum / float64(count)
 }
 
-func RegisterCalculator(family string, c Calculator) {
-	calculators[family] = c
+func RegisterCalculator(c Calculator) {
+	DefaultCalculator = c
 }
 
 func Calculate(mf *dto.MetricFamily) float64 {
-	if c, ok := calculators[strings.TrimPrefix(mf.GetName(), familyNamePrefix)]; ok {
-		return c.Calc(mf)
-	}
 	return DefaultCalculator.Calc(mf)
-}
-
-func ReShape() {
-	for _, c := range calculators {
-		c.ReShape()
-	}
 }

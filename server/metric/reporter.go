@@ -14,36 +14,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package integrationtest_test
+package metric
 
-import (
-	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/reporters"
-	. "github.com/onsi/gomega"
-	"net/http"
-	"os"
-	"testing"
-)
+import "github.com/apache/incubator-servicecomb-service-center/pkg/util"
 
-var scclient *http.Client
+var reporters = make(map[string]Reporter)
 
-var insecurityConnection = &http.Client{}
-
-var SCURL = "http://127.0.0.1:30100"
-
-var _ = BeforeSuite(func() {
-	scclient = insecurityConnection
-})
-
-func init() {
-	addr, ok := os.LookupEnv("CSE_REGISTRY_ADDRESS")
-	if ok {
-		SCURL = addr
-	}
+type Reporter interface {
+	Report()
 }
 
-func TestIntegration(t *testing.T) {
-	RegisterFailHandler(Fail)
-	junitReporter := reporters.NewJUnitReporter("model.junit.xml")
-	RunSpecsWithDefaultAndCustomReporters(t, "Integration Test for SC", []Reporter{junitReporter})
+type noopReporter struct {
+}
+
+func (*noopReporter) Report() {}
+
+func RegisterReporter(name string, r Reporter) {
+	reporters[name] = r
+	util.Logger().Infof("register metrics reporter '%s'", name)
+}
+
+func Report() {
+	for _, r := range reporters {
+		r.Report()
+	}
 }
