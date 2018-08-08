@@ -114,10 +114,6 @@ type ServerConfig struct {
 	PluginsDir string `json:"-"`
 }
 
-func (c *ServerConfig) LogPrint() {
-
-}
-
 type ServerInformation struct {
 	Version string       `json:"version"`
 	Config  ServerConfig `json:"-"`

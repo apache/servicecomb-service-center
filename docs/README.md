@@ -14,9 +14,15 @@
 
 - [Making Front-end Image](/scripts/docker/build-frontend-image)
 
-#### Deploy Service-Center
+#### Deploy Service-Center Locally
 
-- [Cluster Deployment](/docs/sc-cluster.md)
+- [In Docker](/integration/docker)
+
+#### Deploy Service-Center Cluster
+
+- [In Kubernetes Cluster](/integration/k8s)
+
+- [In VM](/docs/sc-cluster.md)
 
 - [Deploy with TLS](/docs/security-tls.md)
 

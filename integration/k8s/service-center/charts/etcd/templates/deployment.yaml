@@ -1,0 +1,20 @@
+apiVersion: "etcd.database.coreos.com/v1beta2"
+kind: "EtcdCluster"
+metadata:
+  ## Adding this annotation make this cluster managed by clusterwide operators
+  ## namespaced operators ignore it
+  # annotations:
+  #   etcd.database.coreos.com/scope: clusterwide
+  annotations:
+  {{- range $key, $value := .Values.cluster.annotations }}
+    {{ $key }}: {{ $value | quote }}
+  {{- end }}
+  name: {{ template "etcd.fullname" . }}
+  labels:
+    app: {{ template "etcd.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  size: {{ .Values.etcdCluster.size }}
+version: {{ .Values.etcdCluster.version }}
