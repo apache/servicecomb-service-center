@@ -14,36 +14,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package integrationtest_test
+package metric
 
-import (
-	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/reporters"
-	. "github.com/onsi/gomega"
-	"net/http"
-	"os"
-	"testing"
-)
+import "testing"
 
-var scclient *http.Client
-
-var insecurityConnection = &http.Client{}
-
-var SCURL = "http://127.0.0.1:30100"
-
-var _ = BeforeSuite(func() {
-	scclient = insecurityConnection
-})
-
-func init() {
-	addr, ok := os.LookupEnv("CSE_REGISTRY_ADDRESS")
-	if ok {
-		SCURL = addr
-	}
+type mockReporter struct {
+	V bool
 }
 
-func TestIntegration(t *testing.T) {
-	RegisterFailHandler(Fail)
-	junitReporter := reporters.NewJUnitReporter("model.junit.xml")
-	RunSpecsWithDefaultAndCustomReporters(t, "Integration Test for SC", []Reporter{junitReporter})
+func (m *mockReporter) Report() {
+	m.V = true
+}
+
+func TestRegisterReporter(t *testing.T) {
+	r := &mockReporter{}
+	RegisterReporter("test", r)
+	Report()
+	if !r.V {
+		t.Fatalf("TestRegisterReporter failed")
+	}
 }
