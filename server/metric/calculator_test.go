@@ -26,40 +26,45 @@ func TestCommonCalculator_Calc(t *testing.T) {
 
 	mf := &dto.MetricFamily{}
 	mt := dto.MetricType_UNTYPED
-	v := float64(0)
+	v1 := float64(0)
+	v2 := float64(0)
 	n := uint64(0)
 
-	if c.Calc(mf) != 0 {
+	if c.Calc(mf) != nil {
 		t.Fatalf("TestCommonCalculator_Calc failed")
 	}
 
 	mf = &dto.MetricFamily{Type: &mt, Metric: []*dto.Metric{{}}}
-	if c.Calc(mf) != 0 {
+	if c.Calc(mf) == nil {
 		t.Fatalf("TestCommonCalculator_Calc failed")
 	}
 
 	mt = dto.MetricType_GAUGE
-	v = 1
+	v1 = 1
+	v2 = 2
 	mf = &dto.MetricFamily{Type: &mt, Metric: []*dto.Metric{
-		{Gauge: &dto.Gauge{Value: &v}}, {Gauge: &dto.Gauge{Value: &v}}}}
-	if c.Calc(mf) != 1 {
+		{Gauge: &dto.Gauge{Value: &v1}}, {Gauge: &dto.Gauge{Value: &v2}}}}
+	details := c.Calc(mf)
+	if details.Value != 1 {
 		t.Fatalf("TestCommonCalculator_Calc failed")
 	}
 
 	mt = dto.MetricType_COUNTER
-	v = 1
+	v1 = 1
 	mf = &dto.MetricFamily{Type: &mt, Metric: []*dto.Metric{
-		{Counter: &dto.Counter{Value: &v}}, {Counter: &dto.Counter{Value: &v}}}}
-	if c.Calc(mf) != 2 {
+		{Counter: &dto.Counter{Value: &v1}}, {Counter: &dto.Counter{Value: &v1}}}}
+	details = c.Calc(mf)
+	if details.Value != 2 {
 		t.Fatalf("TestCommonCalculator_Calc failed")
 	}
 
 	mt = dto.MetricType_SUMMARY
-	v = 3
+	v1 = 3
 	n = 2
 	mf = &dto.MetricFamily{Type: &mt, Metric: []*dto.Metric{
-		{Summary: &dto.Summary{SampleCount: &n, SampleSum: &v}}, {Summary: &dto.Summary{SampleCount: &n, SampleSum: &v}}}}
-	if c.Calc(mf) != v/float64(n) {
+		{Summary: &dto.Summary{SampleCount: &n, SampleSum: &v1}}, {Summary: &dto.Summary{SampleCount: &n, SampleSum: &v1}}}}
+	details = c.Calc(mf)
+	if details.Value != v1/float64(n) {
 		t.Fatalf("TestCommonCalculator_Calc failed")
 	}
 }
