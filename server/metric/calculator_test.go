@@ -45,7 +45,7 @@ func TestCommonCalculator_Calc(t *testing.T) {
 	mf = &dto.MetricFamily{Type: &mt, Metric: []*dto.Metric{
 		{Gauge: &dto.Gauge{Value: &v1}}, {Gauge: &dto.Gauge{Value: &v2}}}}
 	details := c.Calc(mf)
-	if details.Value != 1 {
+	if details.Value != 3 {
 		t.Fatalf("TestCommonCalculator_Calc failed")
 	}
 
