@@ -211,7 +211,7 @@ func FormatFuncName(f string) string {
 	}
 	_, fun := f[:i+j+1], f[i+j+2:]
 	i = strings.LastIndex(fun, ".")
-	return fun[i+1:]
+	return strings.TrimSuffix(fun[i+1:], "-fm") // trim the suffix of function closure name
 }
 
 func FuncName(f interface{}) string {

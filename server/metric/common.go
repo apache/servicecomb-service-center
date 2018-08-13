@@ -29,6 +29,7 @@ const (
 	defaultCollectPeriod = 30 * time.Second
 	FamilyName           = "service_center"
 	familyNamePrefix     = FamilyName + "_"
+	bufferSize           = 1024
 )
 
 var (
