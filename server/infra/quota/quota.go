@@ -17,15 +17,18 @@
 package quota
 
 import (
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	"golang.org/x/net/context"
 	"strconv"
 )
 
-var (
-	DefaultSchemaQuota = 0
-	DefaultTagQuota    = 0
-	DefaultRuleQuota   = 0
+const (
+	defaultServiceLimit  = 50000
+	defaultInstanceLimit = 150000
+	defaultSchemaLimit   = 100
+	defaultRuleLimit     = 100
+	defaultTagLimit      = 100
 )
 
 const (
@@ -35,6 +38,14 @@ const (
 	MicroServiceQuotaType
 	MicroServiceInstanceQuotaType
 	typeEnd
+)
+
+var (
+	DefaultServiceQuota  = util.GetEnvInt("QUOTA_SERVICE", defaultServiceLimit)
+	DefaultInstanceQuota = util.GetEnvInt("QUOTA_INSTANCE", defaultInstanceLimit)
+	DefaultSchemaQuota   = util.GetEnvInt("QUOTA_SCHEMA", defaultSchemaLimit)
+	DefaultTagQuota      = util.GetEnvInt("QUOTA_TAG", defaultTagLimit)
+	DefaultRuleQuota     = util.GetEnvInt("QUOTA_RULE", defaultRuleLimit)
 )
 
 type ApplyQuotaResult struct {
