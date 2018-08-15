@@ -114,7 +114,7 @@ angular.module('serviceCenter.topology', [])
         }
 
         function createTopology() {
-            var microServices = new vis.DataSet($scope.microServices);
+            var microServices = new vis.DataSet($scope.microServices.slice(0,100));
             var prosAndCons = new vis.DataSet($scope.prosAndCons);
             var container = document.getElementById('topology');
             var data = {
