@@ -27,6 +27,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/rpc"
 	"github.com/apache/incubator-servicecomb-service-center/server/service"
 	"golang.org/x/net/context"
+	"net"
 	"strconv"
 	"time"
 )
@@ -207,6 +208,30 @@ func (s *APIServer) MarkForked() {
 	s.forked = true
 }
 
+func (s *APIServer) AddListener(t APIType, ip, port string) {
+	if s.Listeners == nil {
+		s.Listeners = map[APIType]string{}
+	}
+	if len(ip) == 0 {
+		return
+	}
+	s.Listeners[t] = net.JoinHostPort(ip, port)
+}
+
+func (s *APIServer) AddEndpoint(t APIType, ipPort string) {
+	if s.Endpoints == nil {
+		s.Endpoints = map[APIType]string{}
+	}
+	if len(ipPort) == 0 {
+		return
+	}
+	address := fmt.Sprintf("%s://%s/", t, ipPort)
+	if core.ServerInfo.Config.SslEnabled {
+		address += "?sslEnabled=true"
+	}
+	s.Endpoints[t] = address
+}
+
 func (s *APIServer) startRESTServer() (err error) {
 	addr, ok := s.Listeners[REST]
 	if !ok {
@@ -216,7 +241,10 @@ func (s *APIServer) startRESTServer() (err error) {
 	if err != nil {
 		return
 	}
-	util.Logger().Infof("listen address: %s://%s, host: %s.", REST, addr, s.HostName)
+	util.Logger().Infof("listen address: %s://%s, host: %s.",
+		REST, s.restSrv.Listener.Addr().String(), s.HostName)
+
+	s.AddEndpoint(REST, s.restSrv.Listener.Addr().String())
 
 	s.goroutine.Do(func(_ context.Context) {
 		err := s.restSrv.Serve()
@@ -239,7 +267,10 @@ func (s *APIServer) startRPCServer() (err error) {
 	if err != nil {
 		return
 	}
-	util.Logger().Infof("listen address: %s://%s, host: %s.", RPC, addr, s.HostName)
+	util.Logger().Infof("listen address: %s://%s, host: %s.",
+		RPC, s.rpcSrv.Listener.Addr().String(), s.HostName)
+
+	s.AddEndpoint(RPC, s.rpcSrv.Listener.Addr().String())
 
 	s.goroutine.Do(func(_ context.Context) {
 		err := s.rpcSrv.Serve()

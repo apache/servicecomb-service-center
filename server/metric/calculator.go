@@ -18,52 +18,54 @@ package metric
 
 import (
 	dto "github.com/prometheus/client_model/go"
-	"strings"
 )
 
 var (
-	calculators       = make(map[string]Calculator)
-	DefaultCalculator = &CommonCalculator{}
+	DefaultCalculator Calculator = &CommonCalculator{}
 )
 
 type Calculator interface {
-	Calc(mf *dto.MetricFamily) float64
-	ReShape()
+	Calc(mf *dto.MetricFamily) *Details
 }
 
 type CommonCalculator struct {
 }
 
 // Get value of metricFamily
-func (c *CommonCalculator) Calc(mf *dto.MetricFamily) float64 {
+func (c *CommonCalculator) Calc(mf *dto.MetricFamily) *Details {
 	if len(mf.GetMetric()) == 0 {
-		return 0
+		return nil
 	}
 
+	details := NewDetails()
 	switch mf.GetType() {
 	case dto.MetricType_GAUGE:
-		return mf.GetMetric()[0].GetGauge().GetValue()
+		metricGaugeOf(details, mf.GetMetric())
 	case dto.MetricType_COUNTER:
-		return metricCounterOf(mf.GetMetric())
+		metricCounterOf(details, mf.GetMetric())
 	case dto.MetricType_SUMMARY:
-		return metricSummaryOf(mf.GetMetric())
-	default:
-		return 0
+		metricSummaryOf(details, mf.GetMetric())
+	case dto.MetricType_HISTOGRAM:
+		metricHistogramOf(details, mf.GetMetric())
 	}
+	return details
 }
 
-func (c *CommonCalculator) ReShape() {
-}
-
-func metricCounterOf(m []*dto.Metric) float64 {
-	var sum float64 = 0
+func metricGaugeOf(details *Details, m []*dto.Metric) {
 	for _, d := range m {
-		sum += d.GetCounter().GetValue()
+		details.Value += d.GetGauge().GetValue()
+		details.Put(d.GetLabel(), d.GetGauge().GetValue())
 	}
-	return sum
 }
 
-func metricSummaryOf(m []*dto.Metric) float64 {
+func metricCounterOf(details *Details, m []*dto.Metric) {
+	for _, d := range m {
+		details.Value += d.GetCounter().GetValue()
+		details.Put(d.GetLabel(), d.GetCounter().GetValue())
+	}
+}
+
+func metricSummaryOf(details *Details, m []*dto.Metric) {
 	var (
 		count uint64  = 0
 		sum   float64 = 0
@@ -71,28 +73,38 @@ func metricSummaryOf(m []*dto.Metric) float64 {
 	for _, d := range m {
 		count += d.GetSummary().GetSampleCount()
 		sum += d.GetSummary().GetSampleSum()
+		details.Put(d.GetLabel(), d.GetSummary().GetSampleSum()/float64(d.GetSummary().GetSampleCount()))
 	}
 
 	if count == 0 {
-		return 0
+		return
 	}
 
-	return sum / float64(count)
+	details.Value = sum / float64(count)
 }
 
-func RegisterCalculator(family string, c Calculator) {
-	calculators[family] = c
-}
-
-func Calculate(mf *dto.MetricFamily) float64 {
-	if c, ok := calculators[strings.TrimPrefix(mf.GetName(), familyNamePrefix)]; ok {
-		return c.Calc(mf)
+func metricHistogramOf(details *Details, m []*dto.Metric) {
+	var (
+		count uint64  = 0
+		sum   float64 = 0
+	)
+	for _, d := range m {
+		count += d.GetHistogram().GetSampleCount()
+		sum += d.GetHistogram().GetSampleSum()
+		details.Put(d.GetLabel(), d.GetHistogram().GetSampleSum()/float64(d.GetHistogram().GetSampleCount()))
 	}
+
+	if count == 0 {
+		return
+	}
+
+	details.Value = sum / float64(count)
+}
+
+func RegisterCalculator(c Calculator) {
+	DefaultCalculator = c
+}
+
+func Calculate(mf *dto.MetricFamily) *Details {
 	return DefaultCalculator.Calc(mf)
-}
-
-func ReShape() {
-	for _, c := range calculators {
-		c.ReShape()
-	}
 }

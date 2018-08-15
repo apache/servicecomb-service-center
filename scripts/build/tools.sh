@@ -102,11 +102,8 @@ package() {
     local app=$PACKAGE_PREFIX-$PACKAGE-$GOOS-$GOARCH
 
     cp -r etc/conf $app/
-    sed -i 's/# manager_name = \"sc-0\"/manager_name = \"sr-0\"/g' $app/conf/app.conf
-    sed -i 's/# manager_addr = \"http:\/\/127.0.0.1:2380\"/manager_addr = \"http:\/\/127.0.0.1:2380\"/g' $app/conf/app.conf
-    sed -i 's/# manager_cluster = \"sc-0=http:\/\/127.0.0.1:2380\"/manager_cluster = \"sr-0=http:\/\/127.0.0.1:2380\"/g' $app/conf/app.conf
-    sed -i 's/manager_cluster = \"127.0.0.1:2379\"/# manager_cluster = \"127.0.0.1:2379\"/g' $app/conf/app.conf
-    sed -i 's/registry_plugin = etcd/registry_plugin = embeded_etcd/g' $app/conf/app.conf
+    sed -i 's/^manager_cluster.*=.*/manager_name = \"sr-0\"\nmanager_addr = \"http:\/\/127.0.0.1:2380\"\nmanager_cluster = \"sr-0=http:\/\/127.0.0.1:2380\"/g' $app/conf/app.conf
+    sed -i 's/^registry_plugin.*=.*/registry_plugin = embeded_etcd/g' $app/conf/app.conf
 
     ## Copy the Service-Center Releases
     cp -r scripts/release/LICENSE $app/

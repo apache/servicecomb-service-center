@@ -113,10 +113,6 @@ func (c *EtcdClient) newClient() (*clientv3.Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(c.Endpoints) == 1 {
-		ReportBackendInstance(1)
-		return client, nil
-	}
 
 	defer func() {
 		if err != nil {
@@ -129,6 +125,14 @@ func (c *EtcdClient) newClient() (*clientv3.Client, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	ReportBackendInstance(len(resp.Members))
+
+	if len(c.Endpoints) == 1 {
+		// no need to check remote endpoints
+		return client, nil
+	}
+
 epLoop:
 	for _, ep := range c.Endpoints {
 		var cluster []string
@@ -148,7 +152,7 @@ epLoop:
 		err = fmt.Errorf("the etcd cluster endpoint list%v does not contain %s", cluster, ep)
 		return nil, err
 	}
-	ReportBackendInstance(len(resp.Members))
+
 	return client, nil
 }
 

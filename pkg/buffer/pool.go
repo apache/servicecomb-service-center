@@ -14,36 +14,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package integrationtest_test
+package buffer
 
 import (
-	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/reporters"
-	. "github.com/onsi/gomega"
-	"net/http"
-	"os"
-	"testing"
+	"bytes"
+	"sync"
 )
 
-var scclient *http.Client
-
-var insecurityConnection = &http.Client{}
-
-var SCURL = "http://127.0.0.1:30100"
-
-var _ = BeforeSuite(func() {
-	scclient = insecurityConnection
-})
-
-func init() {
-	addr, ok := os.LookupEnv("CSE_REGISTRY_ADDRESS")
-	if ok {
-		SCURL = addr
-	}
+type Pool struct {
+	pool sync.Pool
 }
 
-func TestIntegration(t *testing.T) {
-	RegisterFailHandler(Fail)
-	junitReporter := reporters.NewJUnitReporter("model.junit.xml")
-	RunSpecsWithDefaultAndCustomReporters(t, "Integration Test for SC", []Reporter{junitReporter})
+func (p *Pool) Get() *bytes.Buffer {
+	return p.pool.Get().(*bytes.Buffer)
+}
+
+func (p *Pool) Put(buf *bytes.Buffer) {
+	buf.Reset()
+	p.pool.Put(buf)
+}
+
+func NewPool(s int) *Pool {
+	return &Pool{
+		pool: sync.Pool{
+			New: func() interface{} {
+				b := bytes.NewBuffer(make([]byte, s))
+				b.Reset()
+				return b
+			},
+		},
+	}
 }

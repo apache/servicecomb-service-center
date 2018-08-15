@@ -71,7 +71,7 @@ func (this *ROAServerHandler) addRoute(route *Route) (err error) {
 
 	this.handlers[method] = append(this.handlers[method], &urlPatternHandler{
 		util.FormatFuncName(util.FuncName(route.Func)), route.Path, http.HandlerFunc(route.Func)})
-	util.Logger().Infof("register route %s(%s).", route.Path, method)
+	util.Logger().Infof("register route %s(%s)", route.Path, method)
 
 	return nil
 }

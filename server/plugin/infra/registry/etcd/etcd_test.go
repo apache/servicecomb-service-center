@@ -34,11 +34,14 @@ import (
 	"time"
 )
 
-const dialTimeout = 500 * time.Millisecond
+const (
+	dialTimeout = 500 * time.Millisecond
+	endpoint    = "127.0.0.1:2379"
+)
 
 func TestEtcdClient(t *testing.T) {
 	etcd := &EtcdClient{
-		Endpoints:   []string{"127.0.0.1:2379"},
+		Endpoints:   []string{endpoint},
 		DialTimeout: dialTimeout,
 	}
 	err := etcd.Initialize()
@@ -54,8 +57,9 @@ func TestEtcdClient(t *testing.T) {
 	}
 
 	// base test
+	registry.RegistryConfig().ClusterAddresses = endpoint
 	inst := NewRegistry()
-	if inst == nil || firstEndpoint != "http://127.0.0.1:2379" {
+	if inst == nil || firstEndpoint != "http://"+endpoint {
 		t.Fatalf("TestEtcdClient failed, %#v", firstEndpoint)
 	}
 	old1 := registry.RegistryConfig().ClusterAddresses
@@ -324,7 +328,7 @@ func TestEtcdClient(t *testing.T) {
 
 func TestEtcdClient_Compact(t *testing.T) {
 	etcd := &EtcdClient{
-		Endpoints:   []string{"127.0.0.1:2379"},
+		Endpoints:   []string{endpoint},
 		DialTimeout: dialTimeout,
 	}
 	err := etcd.Initialize()
@@ -345,7 +349,7 @@ func TestEtcdClient_Compact(t *testing.T) {
 
 func TestEtcdClient_Txn(t *testing.T) {
 	etcd := &EtcdClient{
-		Endpoints:   []string{"127.0.0.1:2379"},
+		Endpoints:   []string{endpoint},
 		DialTimeout: dialTimeout,
 	}
 	err := etcd.Initialize()
@@ -415,7 +419,7 @@ func TestEtcdClient_Txn(t *testing.T) {
 
 func TestEtcdClient_LeaseRenew(t *testing.T) {
 	etcd := &EtcdClient{
-		Endpoints:   []string{"127.0.0.1:2379"},
+		Endpoints:   []string{endpoint},
 		DialTimeout: dialTimeout,
 	}
 	err := etcd.Initialize()
@@ -452,7 +456,7 @@ func TestEtcdClient_LeaseRenew(t *testing.T) {
 
 func TestEtcdClient_HealthCheck(t *testing.T) {
 	etcd := &EtcdClient{
-		Endpoints:        []string{"127.0.0.1:2379"},
+		Endpoints:        []string{endpoint},
 		DialTimeout:      dialTimeout,
 		AutoSyncInterval: time.Millisecond,
 	}
@@ -481,7 +485,7 @@ func TestEtcdClient_HealthCheck(t *testing.T) {
 	if err != nil {
 		t.Fatalf("TestEtcdClient failed, %#v", err)
 	}
-	etcd.Endpoints = []string{"127.0.0.1:2379"}
+	etcd.Endpoints = []string{endpoint}
 
 	etcd.Close()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
@@ -508,7 +512,7 @@ func TestEtcdClient_HealthCheck(t *testing.T) {
 
 func TestEtcdClient_Watch(t *testing.T) {
 	etcd := &EtcdClient{
-		Endpoints:   []string{"127.0.0.1:2379"},
+		Endpoints:   []string{endpoint},
 		DialTimeout: dialTimeout,
 	}
 	err := etcd.Initialize()
@@ -669,7 +673,7 @@ func TestEtcdClient_Watch(t *testing.T) {
 
 func TestNewRegistry(t *testing.T) {
 	etcd := &EtcdClient{
-		Endpoints:        []string{"127.0.0.1:2379", "0.0.0.0:2379"},
+		Endpoints:        []string{endpoint, "0.0.0.0:2379"},
 		DialTimeout:      dialTimeout,
 		AutoSyncInterval: time.Millisecond,
 	}
@@ -710,14 +714,10 @@ func TestWithTLS(t *testing.T) {
 	}
 
 	err = etcd.Initialize()
-	if err != nil {
-		t.Fatalf("TestEtcdClient failed, %#v", err)
-	}
-	defer etcd.Close()
-
-	ctx, _ := context.WithTimeout(context.Background(), dialTimeout)
-	err = etcd.SyncMembers(ctx)
+	// initialize the etcd client will check member list firstly,
+	// so will raise an grpc error but not TLS errors.
 	if _, ok := status.FromError(err); !ok {
 		t.Fatalf("TestEtcdClient failed, %#v", err)
 	}
+	defer etcd.Close()
 }

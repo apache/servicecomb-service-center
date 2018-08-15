@@ -60,7 +60,7 @@ func (mm *MetricsGatherer) Start() {
 }
 
 func (mm *MetricsGatherer) loop(ctx context.Context) {
-	ticker := time.NewTicker(collectInterval)
+	ticker := time.NewTicker(Period)
 	for {
 		select {
 		case <-ctx.Done():
@@ -70,6 +70,8 @@ func (mm *MetricsGatherer) loop(ctx context.Context) {
 				util.Logger().Errorf(err, "metrics collect failed.")
 				return
 			}
+
+			Report()
 		}
 	}
 }
@@ -82,10 +84,11 @@ func (mm *MetricsGatherer) Collect() error {
 
 	for _, mf := range mfs {
 		name := mf.GetName()
-		if _, ok := sysMetricNames[name]; strings.Index(name, familyNamePrefix) == 0 || ok {
-			mm.Records.Put(strings.TrimPrefix(name, familyNamePrefix), Calculate(mf))
+		if _, ok := SysMetrics.Get(name); strings.Index(name, familyNamePrefix) == 0 || ok {
+			if d := Calculate(mf); d != nil {
+				mm.Records.Put(strings.TrimPrefix(name, familyNamePrefix), d)
+			}
 		}
 	}
-	ReShape()
 	return nil
 }

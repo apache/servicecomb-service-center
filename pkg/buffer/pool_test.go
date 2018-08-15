@@ -14,36 +14,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package integrationtest_test
+package buffer
 
 import (
-	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/reporters"
-	. "github.com/onsi/gomega"
-	"net/http"
-	"os"
+	"strings"
 	"testing"
 )
 
-var scclient *http.Client
-
-var insecurityConnection = &http.Client{}
-
-var SCURL = "http://127.0.0.1:30100"
-
-var _ = BeforeSuite(func() {
-	scclient = insecurityConnection
-})
-
-func init() {
-	addr, ok := os.LookupEnv("CSE_REGISTRY_ADDRESS")
-	if ok {
-		SCURL = addr
+func TestNewPool(t *testing.T) {
+	p := NewPool(10)
+	b := p.Get()
+	if b == nil {
+		t.Fatalf("TestNewPool falied")
+	}
+	b.WriteString("a")
+	if b.String() != "a" {
+		t.Fatalf("TestNewPool falied")
+	}
+	p.Put(b)
+	b = p.Get()
+	if b == nil || b.Len() != 0 {
+		t.Fatalf("TestNewPool falied")
 	}
 }
 
-func TestIntegration(t *testing.T) {
-	RegisterFailHandler(Fail)
-	junitReporter := reporters.NewJUnitReporter("model.junit.xml")
-	RunSpecsWithDefaultAndCustomReporters(t, "Integration Test for SC", []Reporter{junitReporter})
+func BenchmarkNewPool(b *testing.B) {
+	p := NewPool(4 * 10)
+	s := strings.Repeat("a", 4*1024)
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			buf := p.Get()
+			buf.WriteString(s)
+			_ = buf.String()
+			p.Put(buf)
+		}
+	})
+	b.ReportAllocs()
+	// 2000000	       872 ns/op	    4098 B/op	       1 allocs/op
 }

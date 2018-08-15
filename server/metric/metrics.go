@@ -16,39 +16,90 @@
  */
 package metric
 
-import "github.com/apache/incubator-servicecomb-service-center/pkg/util"
+import (
+	"github.com/apache/incubator-servicecomb-service-center/pkg/buffer"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	dto "github.com/prometheus/client_model/go"
+	"strings"
+)
 
 func NewMetrics() *Metrics {
 	return &Metrics{
-		ConcurrentMap: util.NewConcurrentMap(0),
+		mapper: util.NewConcurrentMap(0),
 	}
+}
+
+func NewDetails() *Details {
+	return &Details{
+		mapper: util.NewConcurrentMap(0),
+		buffer: buffer.NewPool(bufferSize),
+	}
+}
+
+type Details struct {
+	Value float64
+
+	mapper *util.ConcurrentMap
+	buffer *buffer.Pool
+}
+
+// to format 'N1=L1,N2=L2,N3=L3,...'
+func (cm *Details) toKey(labels []*dto.LabelPair) string {
+	b := cm.buffer.Get()
+	for _, label := range labels {
+		b.WriteString(label.GetName())
+		b.WriteRune('=')
+		b.WriteString(label.GetValue())
+		b.WriteRune(',')
+	}
+	key := b.String()
+	cm.buffer.Put(b)
+	return key
+}
+
+func (cm *Details) toLabels(key string) (p []*dto.LabelPair) {
+	pairs := strings.Split(key, ",")
+	pairs = pairs[:len(pairs)-1]
+	p = make([]*dto.LabelPair, 0, len(pairs))
+	for _, pair := range pairs {
+		kv := strings.Split(pair, "=")
+		p = append(p, &dto.LabelPair{Name: &kv[0], Value: &kv[1]})
+	}
+	return
+}
+
+func (cm *Details) Put(labels []*dto.LabelPair, val float64) {
+	cm.mapper.Put(cm.toKey(labels), val)
+	return
+}
+
+func (cm *Details) ForEach(f func(labels []*dto.LabelPair, v float64) (next bool)) {
+	cm.mapper.ForEach(func(item util.MapItem) (next bool) {
+		k, _ := item.Key.(string)
+		v, _ := item.Value.(float64)
+		return f(cm.toLabels(k), v)
+	})
 }
 
 type Metrics struct {
-	*util.ConcurrentMap
+	mapper *util.ConcurrentMap
 }
 
-func (cm *Metrics) Put(key string, val float64) (old float64) {
-	old, _ = cm.ConcurrentMap.Put(key, val).(float64)
-	return
+func (cm *Metrics) Put(key string, val *Details) {
+	cm.mapper.Put(key, val)
 }
 
 func (cm *Metrics) Get(key string) (val float64) {
-	if v, ok := cm.ConcurrentMap.Get(key); ok {
-		val, _ = v.(float64)
+	if v, ok := cm.mapper.Get(key); ok {
+		val = v.(*Details).Value
 	}
 	return
 }
 
-func (cm *Metrics) Remove(key string) (old float64) {
-	old, _ = cm.ConcurrentMap.Remove(key).(float64)
-	return
-}
-
-func (cm *Metrics) ForEach(f func(k string, v float64) (next bool)) {
-	cm.ConcurrentMap.ForEach(func(item util.MapItem) (next bool) {
+func (cm *Metrics) ForEach(f func(k string, v *Details) (next bool)) {
+	cm.mapper.ForEach(func(item util.MapItem) (next bool) {
 		k, _ := item.Key.(string)
-		v, _ := item.Value.(float64)
+		v, _ := item.Value.(*Details)
 		return f(k, v)
 	})
 }

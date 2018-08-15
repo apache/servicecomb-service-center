@@ -109,7 +109,7 @@ import:
   version: baaac160ed234ed06b347cf51202683a0068efe4
   repo: https://github.com/gogo/protobuf
 - package: github.com/golang/protobuf
-  version: 7b8002443fd4a3ce5f25ef93087c524546799a56
+  version: 925541529c1fa6821df4e44ce2723319eb2be768
   repo: https://github.com/golang/protobuf
   subpackages:
   - proto
