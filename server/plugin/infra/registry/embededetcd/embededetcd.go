@@ -21,6 +21,8 @@ import (
 	"errors"
 	"fmt"
 	errorsEx "github.com/apache/incubator-servicecomb-service-center/pkg/errors"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
@@ -47,7 +49,7 @@ type EtcdEmbed struct {
 	Embed     *embed.Etcd
 	err       chan error
 	ready     chan int
-	goroutine *util.GoRoutine
+	goroutine *gopool.Pool
 }
 
 func (s *EtcdEmbed) Err() <-chan error {
@@ -63,7 +65,7 @@ func (s *EtcdEmbed) Close() {
 		s.Embed.Close()
 	}
 	s.goroutine.Close(true)
-	util.Logger().Debugf("embedded etcd client stopped.")
+	log.Debugf("embedded etcd client stopped.")
 }
 
 func (s *EtcdEmbed) getPrefixEndKey(prefix []byte) []byte {
@@ -225,24 +227,24 @@ func (s *EtcdEmbed) Compact(ctx context.Context, reserve int64) error {
 	curRev := s.getLeaderCurrentRevision(ctx)
 	revToCompact := max(0, curRev-reserve)
 	if revToCompact <= 0 {
-		util.Logger().Infof("revision is %d, <=%d, no nead to compact", curRev, reserve)
+		log.Infof("revision is %d, <=%d, no nead to compact", curRev, reserve)
 		return nil
 	}
 
-	util.Logger().Infof("Compacting... revision is %d(current: %d, reserve %d)", revToCompact, curRev, reserve)
+	log.Infof("Compacting... revision is %d(current: %d, reserve %d)", revToCompact, curRev, reserve)
 	_, err := s.Embed.Server.Compact(ctx, &etcdserverpb.CompactionRequest{
 		Revision: revToCompact,
 		Physical: true,
 	})
 	if err != nil {
-		util.Logger().Errorf(err, "Compact locally failed, revision is %d(current: %d, reserve %d)",
+		log.Errorf(err, "Compact locally failed, revision is %d(current: %d, reserve %d)",
 			revToCompact, curRev, reserve)
 		return err
 	}
-	util.Logger().Infof("Compacted locally, revision is %d(current: %d, reserve %d)", revToCompact, curRev, reserve)
+	log.Infof("Compacted locally, revision is %d(current: %d, reserve %d)", revToCompact, curRev, reserve)
 
 	// TODO defragment
-	util.Logger().Infof("Defraged locally")
+	log.Infof("Defraged locally")
 
 	return nil
 }
@@ -256,7 +258,7 @@ func (s *EtcdEmbed) PutNoOverride(ctx context.Context, opts ...registry.PluginOp
 	resp, err := s.TxnWithCmp(ctx, []registry.PluginOp{op}, []registry.CompareOp{
 		registry.OpCmp(registry.CmpCreateRev(op.Key), registry.CMP_EQUAL, 0),
 	}, nil)
-	util.Logger().Debugf("response %s %v %v", op.Key, resp.Succeeded, resp.Revision)
+	log.Debugf("response %s %v %v", op.Key, resp.Succeeded, resp.Revision)
 	if err != nil {
 		return false, err
 	}
@@ -468,7 +470,7 @@ func (s *EtcdEmbed) readyNotify() {
 		})
 	case <-time.After(timeout):
 		err := fmt.Errorf("timed out(%s)", timeout)
-		util.Logger().Errorf(err, "read notify failed")
+		log.Errorf(err, "read notify failed")
 
 		s.Embed.Server.Stop()
 
@@ -503,7 +505,7 @@ func setResponseAndCallback(pResp *registry.PluginResponse, kvs []*mvccpb.KeyVal
 }
 
 func getEmbedInstance() mgr.PluginInstance {
-	util.Logger().Warnf("starting service center in embed mode")
+	log.Warnf("starting service center in embed mode")
 
 	hostName := beego.AppConfig.DefaultString("manager_name", "sc-0")
 	mgrAddrs := beego.AppConfig.DefaultString("manager_addr", "http://127.0.0.1:2380")
@@ -511,14 +513,14 @@ func getEmbedInstance() mgr.PluginInstance {
 	inst := &EtcdEmbed{
 		err:       make(chan error, 1),
 		ready:     make(chan int),
-		goroutine: util.NewGo(context.Background()),
+		goroutine: gopool.New(context.Background()),
 	}
 
 	if registry.RegistryConfig().SslEnabled {
 		var err error
 		embedTLSConfig, err = mgr.Plugins().TLS().ServerConfig()
 		if err != nil {
-			util.Logger().Error("get service center tls config failed", err)
+			log.Error("get service center tls config failed", err)
 			inst.err <- err
 			return inst
 		}
@@ -536,7 +538,7 @@ func getEmbedInstance() mgr.PluginInstance {
 	// 1. 管理端口
 	urls, err := parseURL(mgrAddrs)
 	if err != nil {
-		util.Logger().Error(`"manager_addr" field configure error`, err)
+		log.Error(`"manager_addr" field configure error`, err)
 		inst.err <- err
 		return inst
 	}
@@ -547,7 +549,7 @@ func getEmbedInstance() mgr.PluginInstance {
 	serverCfg.LCUrls = nil
 	serverCfg.ACUrls = nil
 
-	util.Logger().Debugf("--initial-cluster %s --initial-advertise-peer-urls %s --listen-peer-urls %s",
+	log.Debugf("--initial-cluster %s --initial-advertise-peer-urls %s --listen-peer-urls %s",
 		serverCfg.InitialCluster, mgrAddrs, mgrAddrs)
 
 	// 自动压缩历史, 1 hour
@@ -555,7 +557,7 @@ func getEmbedInstance() mgr.PluginInstance {
 
 	etcd, err := embed.StartEtcd(serverCfg)
 	if err != nil {
-		util.Logger().Error("error to start etcd server", err)
+		log.Error("error to start etcd server", err)
 		inst.err <- err
 		return inst
 	}
@@ -571,7 +573,7 @@ func parseURL(addrs string) ([]url.URL, error) {
 	for _, ip := range ips {
 		addr, err := url.Parse(ip)
 		if err != nil {
-			util.Logger().Error("Error to parse ip address string", err)
+			log.Error("Error to parse ip address string", err)
 			return nil, err
 		}
 		urls = append(urls, *addr)

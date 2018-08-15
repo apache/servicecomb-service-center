@@ -17,6 +17,8 @@
 package backend
 
 import (
+	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"golang.org/x/net/context"
@@ -52,7 +54,7 @@ func (iedh *InstanceEventDeferHandler) OnCondition(cache Cache, evts []KvEvent) 
 		iedh.pendingCh = make(chan []KvEvent, eventBlockSize)
 		iedh.deferCh = make(chan KvEvent, eventBlockSize)
 		iedh.resetCh = make(chan struct{})
-		util.Go(iedh.check)
+		gopool.Go(iedh.check)
 	})
 
 	iedh.pendingCh <- evts
@@ -66,7 +68,7 @@ func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt KvEvent) error {
 	switch evt.Type {
 	case pb.EVT_CREATE, pb.EVT_UPDATE:
 		if ok {
-			util.Logger().Infof("recovered key %s events", key)
+			log.Infof("recovered key %s events", key)
 			// return nil // no need to publish event to subscribers?
 		}
 		iedh.recover(evt)
@@ -90,7 +92,7 @@ func (iedh *InstanceEventDeferHandler) HandleChan() <-chan KvEvent {
 }
 
 func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
-	defer util.RecoverAndReport()
+	defer log.Recover()
 
 	t, n := time.NewTimer(DEFAULT_CHECK_WINDOW), false
 	defer t.Stop()
@@ -115,7 +117,7 @@ func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 			total := iedh.cache.GetAll(nil)
 			if total > 5 && float64(del) >= float64(total)*iedh.Percent {
 				iedh.enabled = true
-				util.Logger().Warnf("self preservation is enabled, caught %d/%d(>=%.0f%%) DELETE events",
+				log.Warnf("self preservation is enabled, caught %d/%d(>=%.0f%%) DELETE events",
 					del, total, iedh.Percent*100)
 			}
 
@@ -133,20 +135,20 @@ func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 					default:
 						continue
 					}
-					util.Logger().Warnf("defer handle timed out, removed key is %s", key)
+					log.Warnf("defer handle timed out, removed key is %s", key)
 				}
 				iedh.recover(item.event)
 			}
 
 			if iedh.enabled && len(iedh.items) == 0 {
 				iedh.renew()
-				util.Logger().Warnf("self preservation is stopped")
+				log.Warnf("self preservation is stopped")
 			}
 
 			t.Reset(DEFAULT_CHECK_WINDOW)
 		case <-iedh.resetCh:
 			iedh.renew()
-			util.Logger().Warnf("self preservation is reset")
+			log.Warnf("self preservation is reset")
 
 			util.ResetTimer(t, DEFAULT_CHECK_WINDOW)
 		}

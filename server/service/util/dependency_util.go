@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
@@ -35,7 +36,7 @@ func GetConsumerIds(ctx context.Context, domainProject string, provider *pb.Micr
 	dr := NewProviderDependencyRelation(ctx, domainProject, provider)
 	consumerIds, err := dr.GetDependencyConsumerIds()
 	if err != nil {
-		util.Logger().Errorf(err, "Get dependency consumerIds failed.%s", provider.ServiceId)
+		log.Errorf(err, "Get dependency consumerIds failed.%s", provider.ServiceId)
 		return nil, err
 	}
 	return consumerIds, nil
@@ -46,7 +47,7 @@ func GetProviderIds(ctx context.Context, domainProject string, consumer *pb.Micr
 	dr := NewConsumerDependencyRelation(ctx, domainProject, consumer)
 	providerIds, err := dr.GetDependencyProviderIds()
 	if err != nil {
-		util.Logger().Errorf(err, "Get dependency providerIds failed.%s", consumer.ServiceId)
+		log.Errorf(err, "Get dependency providerIds failed.%s", consumer.ServiceId)
 		return nil, err
 	}
 	return providerIds, nil
@@ -184,7 +185,7 @@ func AddServiceVersionRule(ctx context.Context, domainProject string, consumer *
 		return err
 	}
 	if !resp.Succeeded {
-		util.Logger().Infof("find request into dependency queue successfully, %s: %v", key, r)
+		log.Infof("find request into dependency queue successfully, %s: %v", key, r)
 	}
 	return nil
 }
@@ -197,7 +198,7 @@ func TransferToMicroServiceDependency(ctx context.Context, key string) (*pb.Micr
 	opts := append(FromContext(ctx), registry.WithStrKey(key))
 	res, err := backend.Store().DependencyRule().Search(ctx, opts...)
 	if err != nil {
-		util.Logger().Errorf(nil, "Get dependency rule failed.")
+		log.Errorf(nil, "Get dependency rule failed.")
 		return nil, err
 	}
 	if len(res.Kvs) != 0 {
@@ -234,7 +235,7 @@ func parseAddOrUpdateRules(ctx context.Context, dep *Dependency) (newDependencyR
 
 	oldProviderRules, err := TransferToMicroServiceDependency(ctx, conKey)
 	if err != nil {
-		util.Logger().Errorf(err, "maintain dependency rule failed, consumer %s/%s/%s: get consumer depedency rule failed.",
+		log.Errorf(err, "maintain dependency rule failed, consumer %s/%s/%s: get consumer depedency rule failed.",
 			dep.Consumer.AppId, dep.Consumer.ServiceName, dep.Consumer.Version)
 		return
 	}
@@ -279,7 +280,7 @@ func parseOverrideRules(ctx context.Context, dep *Dependency) (newDependencyRule
 
 	oldProviderRules, err := TransferToMicroServiceDependency(ctx, conKey)
 	if err != nil {
-		util.Logger().Errorf(err, "maintain dependency rule failed, consumer %s/%s/%s: get consumer depedency rule failed.",
+		log.Errorf(err, "maintain dependency rule failed, consumer %s/%s/%s: get consumer depedency rule failed.",
 			dep.Consumer.AppId, dep.Consumer.ServiceName, dep.Consumer.Version)
 		return
 	}
@@ -314,13 +315,13 @@ func syncDependencyRule(ctx context.Context, dep *Dependency, filter func(contex
 	dep.err = make(chan error, 5)
 	dep.chanNum = 0
 	if len(deleteDependencyRuleList) != 0 {
-		util.Logger().Infof("Delete dependency rule remove for consumer %s, %v, ", consumerFlag, deleteDependencyRuleList)
+		log.Infof("Delete dependency rule remove for consumer %s, %v, ", consumerFlag, deleteDependencyRuleList)
 		dep.removedDependencyRuleList = deleteDependencyRuleList
 		dep.RemoveConsumerOfProviderRule()
 	}
 
 	if len(newDependencyRuleList) != 0 {
-		util.Logger().Infof("New dependency rule add for consumer %s, %v, ", consumerFlag, newDependencyRuleList)
+		log.Infof("New dependency rule add for consumer %s, %v, ", consumerFlag, newDependencyRuleList)
 		dep.NewDependencyRuleList = newDependencyRuleList
 		dep.AddConsumerOfProviderRule()
 	}
@@ -376,7 +377,7 @@ func containServiceDependency(services []*pb.MicroServiceKey, service *pb.MicroS
 }
 
 func BadParamsResponse(detailErr string) *pb.CreateDependenciesResponse {
-	util.Logger().Errorf(nil, "Request params is invalid. %s", detailErr)
+	log.Errorf(nil, "Request params is invalid. %s", detailErr)
 	if len(detailErr) == 0 {
 		detailErr = "Request params is invalid."
 	}
@@ -390,7 +391,7 @@ func ParamsChecker(consumerInfo *pb.MicroServiceKey, providersInfo []*pb.MicroSe
 	for _, providerInfo := range providersInfo {
 		//存在带*的情况，后面的数据就不校验了
 		if providerInfo.ServiceName == "*" {
-			util.Logger().Debugf("%s 's provider contains *.", consumerInfo.ServiceName)
+			log.Debugf("%s 's provider contains *.", consumerInfo.ServiceName)
 			break
 		}
 		if len(providerInfo.AppId) == 0 {

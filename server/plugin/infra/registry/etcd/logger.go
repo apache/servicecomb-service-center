@@ -18,6 +18,7 @@ package etcd
 
 import (
 	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/coreos/pkg/capnslog"
 	"runtime"
@@ -51,39 +52,39 @@ func (l *clientLogger) Flush() {
 }
 
 func (l *clientLogger) Info(args ...interface{}) {
-	util.Logger().Info(fmt.Sprint(args...))
+	log.Info(fmt.Sprint(args...))
 }
 
 func (l *clientLogger) Infoln(args ...interface{}) {
-	util.Logger().Info(fmt.Sprint(args...))
+	log.Info(fmt.Sprint(args...))
 }
 
 func (l *clientLogger) Infof(format string, args ...interface{}) {
-	util.Logger().Infof(format, args...)
+	log.Infof(format, args...)
 }
 
 func (l *clientLogger) Warning(args ...interface{}) {
-	util.Logger().Warn(fmt.Sprint(args...), nil)
+	log.Warn(fmt.Sprint(args...))
 }
 
 func (l *clientLogger) Warningln(args ...interface{}) {
-	util.Logger().Warn(fmt.Sprint(args...), nil)
+	log.Warn(fmt.Sprint(args...))
 }
 
 func (l *clientLogger) Warningf(format string, args ...interface{}) {
-	util.Logger().Warnf(format, args...)
+	log.Warnf(format, args...)
 }
 
 func (l *clientLogger) Error(args ...interface{}) {
-	util.Logger().Error(fmt.Sprint(args...), nil)
+	log.Error(fmt.Sprint(args...), nil)
 }
 
 func (l *clientLogger) Errorln(args ...interface{}) {
-	util.Logger().Error(fmt.Sprint(args...), nil)
+	log.Error(fmt.Sprint(args...), nil)
 }
 
 func (l *clientLogger) Errorf(format string, args ...interface{}) {
-	util.Logger().Errorf(nil, format, args...)
+	log.Errorf(nil, format, args...)
 }
 
 // V reports whether verbosity level l is at least the requested verbose level.
@@ -92,25 +93,25 @@ func (l *clientLogger) V(_ int) bool {
 }
 
 func (l *clientLogger) Fatal(args ...interface{}) {
-	util.Logger().Fatal(fmt.Sprint(args...), nil)
+	log.Fatal(fmt.Sprint(args...), nil)
 }
 
 func (l *clientLogger) Fatalf(format string, args ...interface{}) {
-	util.Logger().Fatalf(nil, format, args...)
+	log.Fatalf(nil, format, args...)
 }
 
 func (l *clientLogger) Fatalln(args ...interface{}) {
-	util.Logger().Fatal(fmt.Sprint(args...), nil)
+	log.Fatal(fmt.Sprint(args...), nil)
 }
 
 func (l *clientLogger) Print(args ...interface{}) {
-	util.Logger().Error(fmt.Sprint(args...), nil)
+	log.Error(fmt.Sprint(args...), nil)
 }
 
 func (l *clientLogger) Printf(format string, args ...interface{}) {
-	util.Logger().Errorf(nil, format, args...)
+	log.Errorf(nil, format, args...)
 }
 
 func (l *clientLogger) Println(args ...interface{}) {
-	util.Logger().Error(fmt.Sprint(args...), nil)
+	log.Error(fmt.Sprint(args...), nil)
 }

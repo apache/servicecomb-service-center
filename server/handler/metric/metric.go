@@ -18,8 +18,8 @@ package metric
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/chain"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	svr "github.com/apache/incubator-servicecomb-service-center/server/rest"
 	"net/http"
 	"time"
@@ -37,7 +37,7 @@ func (h *MetricsHandler) Handle(i *chain.Invocation) {
 		w, r := i.Context().Value(rest.CTX_RESPONSE).(http.ResponseWriter),
 			i.Context().Value(rest.CTX_REQUEST).(*http.Request)
 		svr.ReportRequestCompleted(w, r, start)
-		util.LogNilOrWarnf(start, "%s %s", r.Method, r.RequestURI)
+		log.LogNilOrWarnf(start, "%s %s", r.Method, r.RequestURI)
 	}))
 }
 

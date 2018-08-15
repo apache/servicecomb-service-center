@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package util
+package gopool
 
 import (
 	"fmt"
@@ -25,7 +25,7 @@ import (
 )
 
 func TestGoRoutine_Do(t *testing.T) {
-	test1 := NewGo(context.Background())
+	test1 := New(context.Background())
 	defer test1.Close(true)
 	stopCh1 := make(chan struct{})
 	test1.Do(func(ctx context.Context) {
@@ -39,7 +39,7 @@ func TestGoRoutine_Do(t *testing.T) {
 	<-stopCh1
 
 	ctx, cancel := context.WithCancel(context.Background())
-	test2 := NewGo(ctx)
+	test2 := New(ctx)
 	defer test2.Close(true)
 	stopCh2 := make(chan struct{})
 	test2.Do(func(ctx context.Context) {
@@ -58,7 +58,7 @@ func TestGoRoutine_Wait(t *testing.T) {
 	var mux sync.Mutex
 	MAX := 10
 	resultArr := make([]int, 0, MAX)
-	test := NewGo(context.Background(), PoolConfigure().Idle(time.Second).Workers(5))
+	test := New(context.Background(), Configure().Idle(time.Second).Workers(5))
 	for i := 0; i < MAX; i++ {
 		test.Do(func(ctx context.Context) {
 			select {
@@ -81,7 +81,7 @@ func TestGoRoutine_Wait(t *testing.T) {
 }
 
 func TestGoRoutine_Exception1(t *testing.T) {
-	test := NewGo(context.Background())
+	test := New(context.Background())
 	test.Do(func(ctx context.Context) {
 		select {
 		case <-ctx.Done():
@@ -114,5 +114,5 @@ func TestGoRoutine_Exception2(t *testing.T) {
 		var a *int
 		fmt.Println(*a)
 	})
-	GoCloseAndWait()
+	CloseAndWait()
 }

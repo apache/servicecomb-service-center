@@ -17,8 +17,8 @@
 package rpc
 
 import (
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/rpc"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	"google.golang.org/grpc"
@@ -40,7 +40,7 @@ func NewServer(ipAddr string) (_ *Server, err error) {
 	if core.ServerInfo.Config.SslEnabled {
 		tlsConfig, err := plugin.Plugins().TLS().ServerConfig()
 		if err != nil {
-			util.Logger().Error("error to get server tls config", err)
+			log.Error("error to get server tls config", err)
 			return nil, err
 		}
 		creds := credentials.NewTLS(tlsConfig)
@@ -53,7 +53,7 @@ func NewServer(ipAddr string) (_ *Server, err error) {
 
 	ls, err := net.Listen("tcp", ipAddr)
 	if err != nil {
-		util.Logger().Error("error to start Grpc API server "+ipAddr, err)
+		log.Error("error to start Grpc API server "+ipAddr, err)
 		return
 	}
 

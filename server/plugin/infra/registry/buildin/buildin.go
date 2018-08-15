@@ -18,7 +18,7 @@ package buildin
 
 import (
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	"golang.org/x/net/context"
@@ -35,7 +35,7 @@ type BuildinRegistry struct {
 }
 
 func (ec *BuildinRegistry) safeClose(chan int) {
-	defer util.RecoverAndReport()
+	defer log.Recover()
 	close(ec.ready)
 }
 func (ec *BuildinRegistry) Err() (err <-chan error) {

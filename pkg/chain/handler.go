@@ -17,6 +17,7 @@
 package chain
 
 import (
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 )
 
@@ -37,7 +38,7 @@ func RegisterHandler(catalog string, h Handler) {
 	handlersMap[catalog] = handlers
 
 	t := util.Reflect(h)
-	util.Logger().Infof("register handler[%s] %s", catalog, t.Name())
+	log.Infof("register handler[%s] %s", catalog, t.Name())
 }
 
 func Handlers(catalog string) []Handler {

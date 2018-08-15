@@ -19,6 +19,7 @@ package cache
 import (
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/cache"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
@@ -57,7 +58,7 @@ loopProviderIds:
 			provider := ctx.Value(CTX_FIND_PROVIDER).(*pb.MicroServiceKey)
 			findFlag := fmt.Sprintf("consumer %s find provider %s/%s/%s", consumer.ServiceId,
 				provider.AppId, provider.ServiceName, provider.Version)
-			util.Logger().Errorf(err, "TagsFilter failed, %s", findFlag)
+			log.Errorf(err, "TagsFilter failed, %s", findFlag)
 			return nil, err
 		}
 		if len(tagsFromETCD) == 0 {

@@ -21,6 +21,8 @@ import (
 	"errors"
 	"fmt"
 	errorsEx "github.com/apache/incubator-servicecomb-service-center/pkg/errors"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
@@ -60,13 +62,13 @@ type EtcdClient struct {
 
 	err       chan error
 	ready     chan int
-	goroutine *util.GoRoutine
+	goroutine *gopool.Pool
 }
 
 func (c *EtcdClient) Initialize() (err error) {
 	c.err = make(chan error, 1)
 	c.ready = make(chan int)
-	c.goroutine = util.NewGo(context.Background())
+	c.goroutine = gopool.New(context.Background())
 
 	if len(c.Endpoints) == 0 {
 		// parse the endpoints from config
@@ -77,7 +79,7 @@ func (c *EtcdClient) Initialize() (err error) {
 		// go client tls限制，提供身份证书、不认证服务端、不校验CN
 		c.TLSConfig, err = mgr.Plugins().TLS().ClientConfig()
 		if err != nil {
-			util.Logger().Error("get etcd client tls config failed", err)
+			log.Error("get etcd client tls config failed", err)
 			return err
 		}
 	}
@@ -90,7 +92,7 @@ func (c *EtcdClient) Initialize() (err error) {
 
 	c.Client, err = c.newClient()
 	if err != nil {
-		util.Logger().Errorf(err, "get etcd client %v failed.", c.Endpoints)
+		log.Errorf(err, "get etcd client %v failed.", c.Endpoints)
 		return
 	}
 
@@ -98,7 +100,7 @@ func (c *EtcdClient) Initialize() (err error) {
 
 	close(c.ready)
 
-	util.Logger().Warnf("get etcd client %v completed, auto sync endpoints interval is %s.",
+	log.Warnf("get etcd client %v completed, auto sync endpoints interval is %s.",
 		c.Endpoints, c.AutoSyncInterval)
 	return
 }
@@ -170,7 +172,7 @@ func (c *EtcdClient) Close() {
 	if c.Client != nil {
 		c.Client.Close()
 	}
-	util.Logger().Debugf("etcd client stopped")
+	log.Debugf("etcd client stopped")
 }
 
 func (c *EtcdClient) Compact(ctx context.Context, reserve int64) error {
@@ -179,28 +181,28 @@ func (c *EtcdClient) Compact(ctx context.Context, reserve int64) error {
 
 	revToCompact := max(0, curRev-reserve)
 	if revToCompact <= 0 {
-		util.Logger().Infof("revision is %d, <=%d, no nead to compact %s", curRev, reserve, eps)
+		log.Infof("revision is %d, <=%d, no nead to compact %s", curRev, reserve, eps)
 		return nil
 	}
 
 	t := time.Now()
 	_, err := c.Client.Compact(ctx, revToCompact, clientv3.WithCompactPhysical())
 	if err != nil {
-		util.Logger().Errorf(err, "Compact %s failed, revision is %d(current: %d, reserve %d)",
+		log.Errorf(err, "Compact %s failed, revision is %d(current: %d, reserve %d)",
 			eps, revToCompact, curRev, reserve)
 		return err
 	}
-	util.LogInfoOrWarnf(t, "Compacted %s, revision is %d(current: %d, reserve %d)", eps, revToCompact, curRev, reserve)
+	log.LogInfoOrWarnf(t, "Compacted %s, revision is %d(current: %d, reserve %d)", eps, revToCompact, curRev, reserve)
 
 	// TODO can not defrag! because backend will always be unavailable when space in used is too large.
 	/*for _, ep := range eps {
 		t = time.Now()
 		_, err := c.Client.Defragment(ctx, ep)
 		if err != nil {
-			util.Logger().Errorf(err, "Defrag %s failed", ep)
+			log.Errorf(err, "Defrag %s failed", ep)
 			continue
 		}
-		util.LogInfoOrWarnf(t, "Defraged %s", ep)
+		log.LogInfoOrWarnf(t, "Defraged %s", ep)
 	}*/
 
 	return nil
@@ -212,12 +214,12 @@ func (c *EtcdClient) getLeaderCurrentRevision(ctx context.Context) int64 {
 	for _, ep := range eps {
 		resp, err := c.Client.Status(ctx, ep)
 		if err != nil {
-			util.Logger().Error(fmt.Sprintf("Compact error ,can not get status from %s", ep), err)
+			log.Error(fmt.Sprintf("Compact error ,can not get status from %s", ep), err)
 			continue
 		}
 		curRev = resp.Header.Revision
 		if resp.Leader == resp.Header.MemberId {
-			util.Logger().Infof("Get leader endpoint: %s, revision is %d", ep, curRev)
+			log.Infof("Get leader endpoint: %s, revision is %d", ep, curRev)
 			break
 		}
 	}
@@ -342,7 +344,7 @@ func (c *EtcdClient) PutNoOverride(ctx context.Context, opts ...registry.PluginO
 		registry.OpCmp(registry.CmpCreateRev(op.Key), registry.CMP_EQUAL, 0),
 	}, nil)
 	if err != nil {
-		util.Logger().Errorf(err, "PutNoOverride %s failed", op.Key)
+		log.Errorf(err, "PutNoOverride %s failed", op.Key)
 		return false, err
 	}
 	return resp.Succeeded, nil
@@ -426,7 +428,7 @@ func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp) (*clientv
 	}
 
 	if op.Offset == -1 {
-		util.LogInfoOrWarnf(start, "get too many KeyValues(%s) from etcd, now paging.(%d vs %d)",
+		log.LogInfoOrWarnf(start, "get too many KeyValues(%s) from etcd, now paging.(%d vs %d)",
 			key, recordCount, op.Limit)
 	}
 
@@ -440,7 +442,7 @@ func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp) (*clientv
 			}
 			etcdResp.Kvs[i], etcdResp.Kvs[last] = etcdResp.Kvs[last], etcdResp.Kvs[i]
 		}
-		util.LogNilOrWarnf(t, "sorted descend %d KeyValues(%s)", recordCount, key)
+		log.LogNilOrWarnf(t, "sorted descend %d KeyValues(%s)", recordCount, key)
 	}
 	return etcdResp, nil
 }
@@ -514,7 +516,7 @@ func (c *EtcdClient) Do(ctx context.Context, opts ...registry.PluginOpOption) (*
 
 	resp.Succeeded = true
 
-	util.LogNilOrWarnf(start, "registry client do %s", op)
+	log.LogNilOrWarnf(start, "registry client do %s", op)
 	return resp, nil
 }
 
@@ -563,7 +565,7 @@ func (c *EtcdClient) TxnWithCmp(ctx context.Context, success []registry.PluginOp
 	if err != nil {
 		return nil, err
 	}
-	util.LogNilOrWarnf(start, "registry client txn {if(%v): %s, then: %d, else: %d}, rev: %d",
+	log.LogNilOrWarnf(start, "registry client txn {if(%v): %s, then: %d, else: %d}, rev: %d",
 		resp.Succeeded, cmps, len(success), len(fail), resp.Header.Revision)
 	return &registry.PluginResponse{
 		Succeeded: resp.Succeeded,
@@ -584,7 +586,7 @@ func (c *EtcdClient) LeaseGrant(ctx context.Context, TTL int64) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	util.LogNilOrWarnf(start, "registry client grant lease %ds", TTL)
+	log.LogNilOrWarnf(start, "registry client grant lease %ds", TTL)
 	return int64(etcdResp.ID), nil
 }
 
@@ -604,7 +606,7 @@ func (c *EtcdClient) LeaseRenew(ctx context.Context, leaseID int64) (int64, erro
 		}
 		return 0, errorsEx.RaiseError(err)
 	}
-	util.LogNilOrWarnf(start, "registry client renew lease %d", leaseID)
+	log.LogNilOrWarnf(start, "registry client renew lease %d", leaseID)
 	return etcdResp.TTL, nil
 }
 
@@ -624,7 +626,7 @@ func (c *EtcdClient) LeaseRevoke(ctx context.Context, leaseID int64) error {
 		}
 		return errorsEx.RaiseError(err)
 	}
-	util.LogNilOrWarnf(start, "registry client revoke lease %d", leaseID)
+	log.LogNilOrWarnf(start, "registry client revoke lease %d", leaseID)
 	return nil
 }
 
@@ -636,7 +638,7 @@ func (c *EtcdClient) Watch(ctx context.Context, opts ...registry.PluginOpOption)
 		// 必须创建新的client连接
 		/*client, err := newClient(c.Client.Endpoints())
 		  if err != nil {
-		          util.Logger().Error("get manager client failed", err)
+		          log.Error("get manager client failed", err)
 		          return err
 		  }
 		  defer client.Close()*/
@@ -710,7 +712,7 @@ hcLoop:
 
 			retries = 1 // fail fast
 			if cerr := c.ReOpen(); cerr == nil {
-				util.Logger().Errorf(err, "re-connected to etcd %s", c.Endpoints)
+				log.Errorf(err, "re-connected to etcd %s", c.Endpoints)
 			}
 		}
 	}
@@ -719,13 +721,13 @@ hcLoop:
 func (c *EtcdClient) ReOpen() error {
 	client, cerr := c.newClient()
 	if cerr != nil {
-		util.Logger().Errorf(cerr, "create a new connection to etcd %v failed.",
+		log.Errorf(cerr, "create a new connection to etcd %v failed.",
 			c.Endpoints)
 		return cerr
 	}
 	c.Client, client = client, c.Client
 	if cerr = client.Close(); cerr != nil {
-		util.Logger().Errorf(cerr, "failed to close the unavailable etcd client.")
+		log.Errorf(cerr, "failed to close the unavailable etcd client.")
 	}
 	client = nil
 	return nil
@@ -813,7 +815,7 @@ func callback(action registry.ActionType, rev int64, kvs []*mvccpb.KeyValue, cb 
 }
 
 func NewRegistry() mgr.PluginInstance {
-	util.Logger().Warnf("starting service center in proxy mode")
+	log.Warnf("starting service center in proxy mode")
 
 	inst := &EtcdClient{}
 	if err := inst.Initialize(); err != nil {

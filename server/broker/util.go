@@ -24,6 +24,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/broker/brokerpb"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
@@ -32,12 +33,10 @@ import (
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
-	"github.com/go-chassis/paas-lager/third_party/forked/cloudfoundry/lager"
 	"path/filepath"
-	"time"
 )
 
-var PactLogger lager.Logger
+var PactLogger *log.Logger
 
 const (
 	BROKER_HOME_URL                      = "/"
@@ -94,13 +93,12 @@ func init() {
 	if len(core.ServerInfo.Config.LogFilePath) != 0 {
 		name = filepath.Join(filepath.Dir(core.ServerInfo.Config.LogFilePath), "broker_srvc.log")
 	}
-	PactLogger = util.NewLogger(util.LoggerConfig{
-		LoggerLevel:     core.ServerInfo.Config.LogLevel,
-		LoggerFile:      name,
-		LogFormatText:   core.ServerInfo.Config.LogFormat == "text",
-		LogRotatePeriod: 30 * time.Second,
-		LogRotateSize:   int(core.ServerInfo.Config.LogRotateSize),
-		LogBackupCount:  int(core.ServerInfo.Config.LogBackupCount),
+	PactLogger = log.NewLogger(log.Config{
+		LoggerLevel:    core.ServerInfo.Config.LogLevel,
+		LoggerFile:     name,
+		LogFormatText:  core.ServerInfo.Config.LogFormat == "text",
+		LogRotateSize:  int(core.ServerInfo.Config.LogRotateSize),
+		LogBackupCount: int(core.ServerInfo.Config.LogBackupCount),
 	})
 }
 
@@ -266,7 +264,7 @@ func StoreData(ctx context.Context, key string, value string) error {
 	return err
 }
 
-func CreateParticipant(pactLogger lager.Logger, ctx context.Context, participantKey string, participant brokerpb.Participant) (*brokerpb.PublishPactResponse, error) {
+func CreateParticipant(pactLogger *log.Logger, ctx context.Context, participantKey string, participant brokerpb.Participant) (*brokerpb.PublishPactResponse, error) {
 	data, err := json.Marshal(participant)
 	if err != nil {
 		PactLogger.Errorf(nil, "pact publish failed, participant cannot be created.")
@@ -300,7 +298,7 @@ func CreateParticipant(pactLogger lager.Logger, ctx context.Context, participant
 	return nil, nil
 }
 
-func CreateVersion(pactLogger lager.Logger, ctx context.Context, versionKey string,
+func CreateVersion(pactLogger *log.Logger, ctx context.Context, versionKey string,
 	version brokerpb.Version) (*brokerpb.PublishPactResponse, error) {
 	data, err := json.Marshal(version)
 	if err != nil {
@@ -333,7 +331,7 @@ func CreateVersion(pactLogger lager.Logger, ctx context.Context, versionKey stri
 	return nil, nil
 }
 
-func CreatePact(pactLogger lager.Logger, ctx context.Context,
+func CreatePact(pactLogger *log.Logger, ctx context.Context,
 	pactKey string, pact brokerpb.Pact) (*brokerpb.PublishPactResponse, error) {
 	data, err := json.Marshal(pact)
 	if err != nil {
@@ -368,7 +366,7 @@ func CreatePact(pactLogger lager.Logger, ctx context.Context,
 	return nil, nil
 }
 
-func CreatePactVersion(pactLogger lager.Logger, ctx context.Context, pactVersionKey string, pactVersion brokerpb.PactVersion) (*brokerpb.PublishPactResponse, error) {
+func CreatePactVersion(pactLogger *log.Logger, ctx context.Context, pactVersionKey string, pactVersion brokerpb.PactVersion) (*brokerpb.PublishPactResponse, error) {
 	data, err := json.Marshal(pactVersion)
 	if err != nil {
 		PactLogger.Errorf(nil, "pact publish failed, pact version cannot be created.")
@@ -399,7 +397,7 @@ func CreatePactVersion(pactLogger lager.Logger, ctx context.Context, pactVersion
 	return nil, nil
 }
 
-func CreateVerification(pactLogger lager.Logger, ctx context.Context,
+func CreateVerification(pactLogger *log.Logger, ctx context.Context,
 	verificationKey string, verification brokerpb.Verification) (*brokerpb.PublishVerificationResponse, error) {
 	data, err := json.Marshal(verification)
 	if err != nil {

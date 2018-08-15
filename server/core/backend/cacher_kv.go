@@ -19,6 +19,8 @@ package backend
 import (
 	"errors"
 	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
@@ -40,7 +42,7 @@ type KvCacher struct {
 	mux       sync.Mutex
 	once      sync.Once
 	cache     Cache
-	goroutine *util.GoRoutine
+	goroutine *gopool.Pool
 }
 
 func (c *KvCacher) Config() *Config {
@@ -62,7 +64,7 @@ func (c *KvCacher) needList() bool {
 		return false
 	}
 
-	util.Logger().Debugf("no events come in more then %s, need to list key %s, rev: %d",
+	log.Debugf("no events come in more then %s, need to list key %s, rev: %d",
 		time.Duration(c.noEventPeriods)*c.Cfg.Timeout, c.Cfg.Key, rev)
 	c.noEventPeriods = 0
 	return true
@@ -80,11 +82,11 @@ func (c *KvCacher) doList(cfg ListWatchConfig) error {
 	evts := c.filter(c.lw.Revision(), kvs)
 	if ec, kc := len(evts), len(kvs); c.Cfg.DeferHandler != nil && ec == 0 && kc != 0 &&
 		c.Cfg.DeferHandler.Reset() {
-		util.Logger().Warnf("most of the protected data(%d/%d) are recovered",
+		log.Warnf("most of the protected data(%d/%d) are recovered",
 			kc, c.cache.GetAll(nil))
 	}
 	c.sync(evts)
-	util.LogDebugOrWarnf(start, "finish to cache key %s, %d items, rev: %d",
+	log.LogDebugOrWarnf(start, "finish to cache key %s, %d items, rev: %d",
 		c.Cfg.Key, len(kvs), c.lw.Revision())
 
 	return nil
@@ -143,7 +145,7 @@ func (c *KvCacher) handleWatcher(watcher Watcher) error {
 					evt.KV = c.doParse(kv)
 				}
 			default:
-				util.Logger().Errorf(nil, "unknown KeyValue %v", kv)
+				log.Errorf(nil, "unknown KeyValue %v", kv)
 				continue
 			}
 			if evt.KV == nil {
@@ -152,7 +154,7 @@ func (c *KvCacher) handleWatcher(watcher Watcher) error {
 			evts = append(evts, evt)
 		}
 		c.sync(evts)
-		util.LogDebugOrWarnf(start, "finish to handle %d events, prefix: %s, rev: %d",
+		log.LogDebugOrWarnf(start, "finish to handle %d events, prefix: %s, rev: %d",
 			len(evts), c.Cfg.Key, rev)
 	}
 	return nil
@@ -167,7 +169,7 @@ func (c *KvCacher) needDeferHandle(evts []KvEvent) bool {
 }
 
 func (c *KvCacher) refresh(ctx context.Context) {
-	util.Logger().Debugf("start to list and watch %s", c.Cfg)
+	log.Debugf("start to list and watch %s", c.Cfg)
 	retries := 0
 
 	timer := time.NewTimer(minWaitInterval)
@@ -183,7 +185,7 @@ func (c *KvCacher) refresh(ctx context.Context) {
 
 		select {
 		case <-ctx.Done():
-			util.Logger().Debugf("stop to list and watch %s", c.Cfg)
+			log.Debugf("stop to list and watch %s", c.Cfg)
 			return
 		case <-timer.C:
 			timer.Reset(nextPeriod)
@@ -379,11 +381,11 @@ func (c *KvCacher) onEvents(evts []KvEvent) {
 			case init:
 				evt.Type = proto.EVT_INIT
 			case !ok && evt.Type != proto.EVT_CREATE:
-				util.Logger().Warnf("unexpected %s event! it should be %s key %s",
+				log.Warnf("unexpected %s event! it should be %s key %s",
 					evt.Type, proto.EVT_CREATE, key)
 				evt.Type = proto.EVT_CREATE
 			case ok && evt.Type != proto.EVT_UPDATE:
-				util.Logger().Warnf("unexpected %s event! it should be %s key %s",
+				log.Warnf("unexpected %s event! it should be %s key %s",
 					evt.Type, proto.EVT_UPDATE, key)
 				evt.Type = proto.EVT_UPDATE
 			}
@@ -392,7 +394,7 @@ func (c *KvCacher) onEvents(evts []KvEvent) {
 			evts[i] = evt
 		case proto.EVT_DELETE:
 			if !ok {
-				util.Logger().Warnf("unexpected %s event! key %s does not cache",
+				log.Warnf("unexpected %s event! key %s does not cache",
 					evt.Type, key)
 			} else {
 				evt.KV = prevKv
@@ -410,7 +412,7 @@ func (c *KvCacher) onKvEvents(evts []KvEvent) {
 		return
 	}
 
-	defer util.RecoverAndReport()
+	defer log.Recover()
 
 	for _, evt := range evts {
 		c.Cfg.OnEvent(evt)
@@ -420,7 +422,7 @@ func (c *KvCacher) onKvEvents(evts []KvEvent) {
 func (c *KvCacher) doParse(src *mvccpb.KeyValue) (kv *KeyValue) {
 	kv = new(KeyValue)
 	if err := kv.From(c.Cfg.Parser, src); err != nil {
-		util.Logger().Errorf(err, "parse %s value failed", util.BytesToStringWithNoCopy(src.Key))
+		log.Errorf(err, "parse %s value failed", util.BytesToStringWithNoCopy(src.Key))
 		return nil
 	}
 	return
@@ -482,7 +484,7 @@ func NewKvCacher(name string, cfg *Config) *KvCacher {
 			Client: Registry(),
 			Prefix: cfg.Key,
 		},
-		goroutine: util.NewGo(context.Background()),
+		goroutine: gopool.New(context.Background()),
 	}
 	cacher.cache = NewKvCache(name, cfg)
 	return cacher

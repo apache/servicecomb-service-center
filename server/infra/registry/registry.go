@@ -19,7 +19,7 @@ package registry
 import (
 	"bytes"
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/astaxie/beego"
 	"github.com/coreos/etcd/mvcc/mvccpb"
@@ -48,19 +48,19 @@ func RegistryConfig() *Config {
 		defaultRegistryConfig.ClusterAddresses = beego.AppConfig.DefaultString("manager_cluster", "http://127.0.0.1:2379")
 		defaultRegistryConfig.DialTimeout, err = time.ParseDuration(beego.AppConfig.DefaultString("registry_timeout", "30s"))
 		if err != nil {
-			util.Logger().Errorf(err, "connect_timeout is invalid, use default time %s", defaultDialTimeout)
+			log.Errorf(err, "connect_timeout is invalid, use default time %s", defaultDialTimeout)
 			defaultRegistryConfig.DialTimeout = defaultDialTimeout
 		}
 		defaultRegistryConfig.RequestTimeOut, err = time.ParseDuration(beego.AppConfig.DefaultString("registry_timeout", "30s"))
 		if err != nil {
-			util.Logger().Errorf(err, "registry_timeout is invalid, use default time %s", defaultRequestTimeout)
+			log.Errorf(err, "registry_timeout is invalid, use default time %s", defaultRequestTimeout)
 			defaultRegistryConfig.RequestTimeOut = defaultRequestTimeout
 		}
 		defaultRegistryConfig.SslEnabled = core.ServerInfo.Config.SslEnabled &&
 			strings.Index(strings.ToLower(defaultRegistryConfig.ClusterAddresses), "https://") >= 0
 		defaultRegistryConfig.AutoSyncInterval, err = time.ParseDuration(core.ServerInfo.Config.AutoSyncInterval)
 		if err != nil {
-			util.Logger().Errorf(err, "auto_sync_interval is invalid")
+			log.Errorf(err, "auto_sync_interval is invalid")
 		}
 	})
 	return &defaultRegistryConfig

@@ -17,7 +17,8 @@
 package backend
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"golang.org/x/net/context"
 	"sync"
@@ -39,7 +40,7 @@ func (w *innerWatcher) EventBus() <-chan *registry.PluginResponse {
 func (w *innerWatcher) process(_ context.Context) {
 	stopCh := make(chan struct{})
 	ctx, cancel := context.WithTimeout(w.Cfg.Context, w.Cfg.Timeout)
-	util.Go(func(_ context.Context) {
+	gopool.Go(func(_ context.Context) {
 		defer close(stopCh)
 		w.lw.DoWatch(ctx, w.sendEvent)
 	})
@@ -54,7 +55,7 @@ func (w *innerWatcher) process(_ context.Context) {
 }
 
 func (w *innerWatcher) sendEvent(resp *registry.PluginResponse) {
-	defer util.RecoverAndReport()
+	defer log.Recover()
 	w.bus <- resp
 }
 
@@ -77,6 +78,6 @@ func newInnerWatcher(lw ListWatch, cfg ListWatchConfig) *innerWatcher {
 		bus:    make(chan *registry.PluginResponse, EVENT_BUS_MAX_SIZE),
 		stopCh: make(chan struct{}),
 	}
-	util.Go(w.process)
+	gopool.Go(w.process)
 	return w
 }

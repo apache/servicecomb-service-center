@@ -18,8 +18,8 @@ package auth
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/chain"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	"github.com/apache/incubator-servicecomb-service-center/server/rest/controller"
@@ -37,7 +37,7 @@ func (h *AuthRequest) Handle(i *chain.Invocation) {
 		return
 	}
 
-	util.Logger().Errorf(err, "authenticate request failed, %s %s", r.Method, r.RequestURI)
+	log.Errorf(err, "authenticate request failed, %s %s", r.Method, r.RequestURI)
 
 	w := i.Context().Value(rest.CTX_RESPONSE).(http.ResponseWriter)
 	controller.WriteError(w, scerr.ErrUnauthorized, err.Error())

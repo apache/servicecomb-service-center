@@ -18,6 +18,7 @@ package event
 
 import (
 	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/task"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
@@ -54,17 +55,17 @@ func (apt *RulesChangedTask) publish(ctx context.Context, domainProject, provide
 
 	provider, err := serviceUtil.GetService(ctx, domainProject, providerId)
 	if err != nil {
-		util.Logger().Errorf(err, "get provider %s service file failed", providerId)
+		log.Errorf(err, "get provider %s service file failed", providerId)
 		return err
 	}
 	if provider == nil {
-		util.Logger().Errorf(nil, "provider %s does not exist", providerId)
+		log.Errorf(nil, "provider %s does not exist", providerId)
 		return fmt.Errorf("provider %s does not exist", providerId)
 	}
 
 	consumerIds, err := serviceUtil.GetConsumerIds(ctx, domainProject, provider)
 	if err != nil {
-		util.Logger().Errorf(err, "get consumer services by provider %s failed", providerId)
+		log.Errorf(err, "get consumer services by provider %s failed", providerId)
 		return err
 	}
 	providerKey := pb.MicroServiceToKey(domainProject, provider)
@@ -88,11 +89,11 @@ func (h *RuleEventHandler) OnEvent(evt backend.KvEvent) {
 
 	providerId, ruleId, domainProject := backend.GetInfoFromRuleKV(evt.KV)
 	if nf.GetNotifyService().Closed() {
-		util.Logger().Warnf("caught [%s] service rule event %s/%s, but notify service is closed",
+		log.Warnf("caught [%s] service rule event %s/%s, but notify service is closed",
 			action, providerId, ruleId)
 		return
 	}
-	util.Logger().Infof("caught [%s] service rule event %s/%s", action, providerId, ruleId)
+	log.Infof("caught [%s] service rule event %s/%s", action, providerId, ruleId)
 
 	task.Service().Add(context.Background(),
 		NewRulesChangedAsyncTask(domainProject, providerId, evt.Revision))

@@ -19,6 +19,7 @@ package util
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
@@ -79,7 +80,7 @@ func GetAllInstancesOfOneService(ctx context.Context, domainProject string, serv
 	opts := append(FromContext(ctx), registry.WithStrKey(key), registry.WithPrefix())
 	resp, err := backend.Store().Instance().Search(ctx, opts...)
 	if err != nil {
-		util.Logger().Errorf(err, "Get instance of service %s from etcd failed.", serviceId)
+		log.Errorf(err, "Get instance of service %s from etcd failed.", serviceId)
 		return nil, err
 	}
 
@@ -98,7 +99,7 @@ func GetInstanceCountOfOneService(ctx context.Context, domainProject string, ser
 		registry.WithCountOnly())
 	resp, err := backend.Store().Instance().Search(ctx, opts...)
 	if err != nil {
-		util.Logger().Errorf(err, "Get instance count of service %s from etcd failed.", serviceId)
+		log.Errorf(err, "Get instance count of service %s from etcd failed.", serviceId)
 		return 0, err
 	}
 	return resp.Count, nil
@@ -156,11 +157,11 @@ func DeleteServiceAllInstances(ctx context.Context, serviceId string) error {
 		registry.WithPrefix(),
 		registry.WithNoCache())
 	if err != nil {
-		util.Logger().Errorf(err, "delete service %s all instance failed: get instance lease failed.", serviceId)
+		log.Errorf(err, "delete service %s all instance failed: get instance lease failed.", serviceId)
 		return err
 	}
 	if resp.Count <= 0 {
-		util.Logger().Warnf("service %s has no deployment of instance.", serviceId)
+		log.Warnf("service %s has no deployment of instance.", serviceId)
 		return nil
 	}
 	for _, v := range resp.Kvs {
@@ -177,16 +178,16 @@ func QueryAllProvidersInstances(ctx context.Context, selfServiceId string) (resu
 
 	service, err := GetService(ctx, domainProject, selfServiceId)
 	if err != nil {
-		util.Logger().Errorf(err, "get service %s failed", selfServiceId)
+		log.Errorf(err, "get service %s failed", selfServiceId)
 		return
 	}
 	if service == nil {
-		util.Logger().Errorf(nil, "service not exist, %s", selfServiceId)
+		log.Errorf(nil, "service not exist, %s", selfServiceId)
 		return
 	}
 	providerIds, _, err := GetAllProviderIds(ctx, domainProject, service)
 	if err != nil {
-		util.Logger().Errorf(err, "get service %s providers id set failed.", selfServiceId)
+		log.Errorf(err, "get service %s providers id set failed.", selfServiceId)
 		return
 	}
 
@@ -195,7 +196,7 @@ func QueryAllProvidersInstances(ctx context.Context, selfServiceId string) (resu
 	for _, providerId := range providerIds {
 		service, err := GetServiceWithRev(ctx, domainProject, providerId, rev)
 		if err != nil {
-			util.Logger().Errorf(err, "get service %s provider service %s file with revision %d failed.",
+			log.Errorf(err, "get service %s provider service %s file with revision %d failed.",
 				selfServiceId, providerId, rev)
 			return
 		}
@@ -205,7 +206,7 @@ func QueryAllProvidersInstances(ctx context.Context, selfServiceId string) (resu
 
 		kvs, err := queryServiceInstancesKvs(ctx, providerId, rev)
 		if err != nil {
-			util.Logger().Errorf(err, "get service %s provider %s instances with revision %d failed.",
+			log.Errorf(err, "get service %s provider %s instances with revision %d failed.",
 				selfServiceId, providerId, rev)
 			return
 		}
@@ -235,7 +236,7 @@ func queryServiceInstancesKvs(ctx context.Context, serviceId string, rev int64) 
 		registry.WithPrefix(),
 		registry.WithRev(rev))
 	if err != nil {
-		util.Logger().Errorf(err, "query instance of service %s with revision %d from etcd failed.",
+		log.Errorf(err, "query instance of service %s with revision %d from etcd failed.",
 			serviceId, rev)
 		return nil, err
 	}

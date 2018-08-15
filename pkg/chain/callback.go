@@ -17,11 +17,12 @@
 package chain
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"golang.org/x/net/context"
 )
 
-var pool = util.NewGo(context.Background())
+var pool = gopool.New(context.Background())
 
 type CallbackFunc func(r Result)
 
@@ -54,9 +55,9 @@ func (cb *Callback) Invoke(r Result) {
 }
 
 func (cb *Callback) syncInvoke(r Result) {
-	defer util.RecoverAndReport()
+	defer log.Recover()
 	if cb.Func == nil {
-		util.Logger().Errorf(nil, "Callback function is nil. result: %s,", r)
+		log.Errorf(nil, "Callback function is nil. result: %s,", r)
 		return
 	}
 	cb.Func(r)

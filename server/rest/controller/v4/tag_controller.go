@@ -18,8 +18,8 @@ package v4
 
 import (
 	"encoding/json"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
@@ -45,14 +45,14 @@ func (this *TagService) URLPatterns() []rest.Route {
 func (this *TagService) AddTags(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		util.Logger().Error("body err", err)
+		log.Error("body err", err)
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
 	var tags map[string]map[string]string
 	err = json.Unmarshal(message, &tags)
 	if err != nil {
-		util.Logger().Error("Unmarshal error", err)
+		log.Error("Unmarshal error", err)
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}

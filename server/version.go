@@ -18,7 +18,7 @@ package server
 
 import (
 	"encoding/json"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
@@ -37,7 +37,7 @@ func LoadServerVersion() error {
 
 	err = json.Unmarshal(resp.Kvs[0].Value, &core.ServerInfo)
 	if err != nil {
-		util.Logger().Errorf(err, "load server version failed, maybe incompatible")
+		log.Errorf(err, "load server version failed, maybe incompatible")
 		return nil
 	}
 	return nil

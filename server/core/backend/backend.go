@@ -18,6 +18,7 @@ package backend
 
 import (
 	"errors"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
@@ -56,7 +57,7 @@ func Registry() registry.Registry {
 		for i := 0; registryInstance == nil; i++ {
 			inst, err := New()
 			if err != nil {
-				util.Logger().Errorf(err, "get register center client failed")
+				log.Errorf(err, "get register center client failed")
 			}
 			registryInstance = inst
 
@@ -66,7 +67,7 @@ func Registry() registry.Registry {
 			}
 
 			t := util.GetBackoff().Delay(i)
-			util.Logger().Errorf(nil, "initialize service center failed, retry after %s", t)
+			log.Errorf(nil, "initialize service center failed, retry after %s", t)
 			<-time.After(t)
 		}
 		singletonLock.Unlock()

@@ -17,7 +17,7 @@
 package event
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/service/cache"
@@ -47,7 +47,7 @@ func (h *ServiceEventHandler) OnEvent(evt backend.KvEvent) {
 		newProject := domainProject[strings.Index(domainProject, "/")+1:]
 		err := serviceUtil.NewDomainProject(context.Background(), newDomain, newProject)
 		if err != nil {
-			util.Logger().Errorf(err, "new domain(%s) or project(%s) failed", newDomain, newProject)
+			log.Errorf(err, "new domain(%s) or project(%s) failed", newDomain, newProject)
 		}
 	case pb.EVT_DELETE:
 		metrics.ReportServices(fn, fv, -1)
@@ -58,7 +58,7 @@ func (h *ServiceEventHandler) OnEvent(evt backend.KvEvent) {
 		return
 	}
 
-	util.Logger().Infof("caught [%s] service %s/%s/%s event",
+	log.Infof("caught [%s] service %s/%s/%s event",
 		evt.Type, ms.AppId, ms.ServiceName, ms.Version)
 
 	// cache

@@ -18,6 +18,7 @@ package util
 
 import (
 	"encoding/json"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
@@ -53,7 +54,7 @@ func GetTagsUtils(ctx context.Context, domainProject, serviceId string) (tags ma
 	opts := append(FromContext(ctx), registry.WithStrKey(key))
 	resp, err := backend.Store().ServiceTag().Search(ctx, opts...)
 	if err != nil {
-		util.Logger().Errorf(err, "get service %s tags file failed", key)
+		log.Errorf(err, "get service %s tags file failed", key)
 		return tags, err
 	}
 

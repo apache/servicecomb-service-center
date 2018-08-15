@@ -18,7 +18,7 @@ package chain
 
 import (
 	errorsEx "github.com/apache/incubator-servicecomb-service-center/pkg/errors"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 )
 
 type Chain struct {
@@ -43,7 +43,7 @@ func (c *Chain) syncNext(i *Invocation) {
 		if itf == nil {
 			return
 		}
-		util.LogPanic(itf)
+		log.LogPanic(itf)
 
 		i.Fail(errorsEx.RaiseError(itf))
 	}()

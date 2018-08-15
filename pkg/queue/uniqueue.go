@@ -14,10 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package util
+package queue
 
 import (
 	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"golang.org/x/net/context"
 )
 
@@ -41,7 +42,7 @@ func (uq *UniQueue) Chan() <-chan interface{} {
 func (uq *UniQueue) Put(value interface{}) (e error) {
 	defer func() {
 		if r := recover(); r != nil {
-			LogPanic(r)
+			log.LogPanic(r)
 
 			e = fmt.Errorf("%v", r)
 		}

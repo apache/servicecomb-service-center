@@ -18,13 +18,14 @@ package task
 
 import (
 	"errors"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/queue"
 	"golang.org/x/net/context"
 )
 
 type Executor struct {
-	pool       *util.GoRoutine
-	tasks      *util.UniQueue
+	pool       *gopool.Pool
+	tasks      *queue.UniQueue
 	latestTask Task
 }
 
@@ -59,10 +60,10 @@ func (s *Executor) Close() {
 	s.tasks.Close()
 }
 
-func NewExecutor(pool *util.GoRoutine, task Task) *Executor {
+func NewExecutor(pool *gopool.Pool, task Task) *Executor {
 	return &Executor{
 		pool:       pool,
-		tasks:      util.NewUniQueue(),
+		tasks:      queue.NewUniQueue(),
 		latestTask: task,
 	}
 }
