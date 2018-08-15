@@ -41,6 +41,7 @@ cd ..
 
 go build
 
+```
 Windows:
 ```
 frontend.exe
