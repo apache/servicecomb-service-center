@@ -18,6 +18,7 @@ package util
 
 import (
 	"os"
+	"strconv"
 	"unsafe"
 )
 
@@ -50,4 +51,17 @@ func HostName() (hostname string) {
 		hostname = "UNKNOWN"
 	}
 	return
+}
+
+func GetEnvInt(name string, def int) int {
+	env, ok := os.LookupEnv(name)
+	if ok {
+		i64, err := strconv.ParseInt(env, 10, 0)
+		if err != nil {
+			Logger().Errorf(err, "get env '%s' value failed, return default value '%d'", name, def)
+			return def
+		}
+		return int(i64)
+	}
+	return def
 }

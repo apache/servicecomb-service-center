@@ -19,7 +19,7 @@ package service_test
 import (
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/quota/buildin"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
 	"github.com/apache/incubator-servicecomb-service-center/server/service"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -208,7 +208,7 @@ var _ = Describe("'Schema' service", func() {
 		})
 
 		Context("when create schemas out of gauge", func() {
-			size := buildin.SCHEMA_NUM_MAX_LIMIT_PER_SERVICE + 1
+			size := quota.DefaultSchemaQuota + 1
 			schemaIds := make([]string, 0, size)
 			schemas := make([]*pb.Schema, 0, size)
 			for i := 0; i < size; i++ {
@@ -234,14 +234,14 @@ var _ = Describe("'Schema' service", func() {
 				By("batch modify schemas 2")
 				respCreateSchemas, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
 					ServiceId: serviceIdDev,
-					Schemas:   schemas[:buildin.SCHEMA_NUM_MAX_LIMIT_PER_SERVICE],
+					Schemas:   schemas[:quota.DefaultSchemaQuota],
 				})
 				Expect(err).To(BeNil())
 				Expect(respCreateSchemas.Response.Code).To(Equal(pb.Response_SUCCESS))
 
 				By("modify one schema")
 				respCreateService := &pb.ModifySchemaResponse{}
-				schema := schemas[buildin.SCHEMA_NUM_MAX_LIMIT_PER_SERVICE]
+				schema := schemas[quota.DefaultSchemaQuota]
 				respCreateService, err = serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
 					ServiceId: serviceIdDev,
 					SchemaId:  schema.SchemaId,

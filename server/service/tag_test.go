@@ -19,7 +19,7 @@ package service_test
 import (
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/quota/buildin"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"strconv"
@@ -106,7 +106,7 @@ var _ = Describe("'Tag' service", func() {
 		Context("when request is valid", func() {
 			It("should be passed", func() {
 				By("all max")
-				size := buildin.TAG_NUM_MAX_LIMIT_PER_SERVICE
+				size := quota.DefaultRuleQuota
 				tags := make(map[string]string, size)
 				for i := 0; i < size; i++ {
 					s := "tag" + strconv.Itoa(i)
@@ -123,7 +123,7 @@ var _ = Describe("'Tag' service", func() {
 
 		Context("when create tag out of gauge", func() {
 			It("should be failed", func() {
-				size := buildin.TAG_NUM_MAX_LIMIT_PER_SERVICE + 1
+				size := quota.DefaultRuleQuota + 1
 				tags := make(map[string]string, size)
 				for i := 0; i < size; i++ {
 					s := "tag" + strconv.Itoa(i)
@@ -136,7 +136,7 @@ var _ = Describe("'Tag' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respAddTags.Response.Code).To(Equal(scerr.ErrInvalidParams))
 
-				size = buildin.TAG_NUM_MAX_LIMIT_PER_SERVICE / 2
+				size = quota.DefaultRuleQuota / 2
 				tags = make(map[string]string, size)
 				for i := 0; i < size; i++ {
 					s := "tag" + strconv.Itoa(i)
@@ -513,7 +513,7 @@ var _ = Describe("'Tag' service", func() {
 				Expect(respAddTags.Response.Code).To(Equal(scerr.ErrInvalidParams))
 
 				var arr []string
-				for i := 0; i < buildin.TAG_NUM_MAX_LIMIT_PER_SERVICE+1; i++ {
+				for i := 0; i < quota.DefaultRuleQuota+1; i++ {
 					arr = append(arr, strconv.Itoa(i))
 				}
 				respAddTags, err = serviceResource.DeleteTags(getContext(), &pb.DeleteServiceTagsRequest{

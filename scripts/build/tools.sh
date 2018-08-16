@@ -126,7 +126,7 @@ package() {
 }
 
 docker_builder_pattern() {
-    local dockerfile=${1:-"."}
+    local dockerfile_dir=${1:-"."}
     local output=${2:-"."}
     local builder_name=servicecomb/service-center:build
     local builder_path=/go/src/github.com/apache/incubator-servicecomb-service-center
@@ -138,7 +138,8 @@ docker_builder_pattern() {
 
     set -e
 
-    docker build -t $builder_name . -f $dockerfile/Dockerfile.build
+    cd $dockerfile_dir
+    docker build -t $builder_name . -f Dockerfile.build
     docker create --name builder $builder_name
     docker cp builder:$builder_path/$app $output
     docker rm -f builder
