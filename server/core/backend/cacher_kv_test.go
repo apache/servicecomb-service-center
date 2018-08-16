@@ -17,7 +17,7 @@
 package backend
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
@@ -72,7 +72,7 @@ func TestNewKvCacher(t *testing.T) {
 		Cfg:       Configure(),
 		ready:     make(chan struct{}),
 		lw:        lw,
-		goroutine: util.NewGo(context.Background()),
+		goroutine: gopool.New(context.Background()),
 		cache:     &mockCache{},
 	}
 
@@ -95,7 +95,7 @@ func TestNewKvCacher(t *testing.T) {
 			}),
 		ready:     make(chan struct{}),
 		lw:        lw,
-		goroutine: util.NewGo(context.Background()),
+		goroutine: gopool.New(context.Background()),
 		cache:     &mockCache{},
 	}
 

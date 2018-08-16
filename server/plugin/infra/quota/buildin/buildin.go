@@ -17,7 +17,7 @@
 package buildin
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
 	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	"golang.org/x/net/context"
@@ -28,7 +28,7 @@ func init() {
 }
 
 func New() mgr.PluginInstance {
-	util.Logger().Infof("quota init, service: %d, instance: %d, schema: %d/service, tag: %d/service, rule: %d/service",
+	log.Infof("quota init, service: %d, instance: %d, schema: %d/service, tag: %d/service, rule: %d/service",
 		quota.DefaultServiceQuota, quota.DefaultInstanceQuota,
 		quota.DefaultSchemaQuota, quota.DefaultTagQuota, quota.DefaultRuleQuota)
 	return &BuildInQuota{}
@@ -45,7 +45,6 @@ func (q *BuildInQuota) Apply4Quotas(ctx context.Context, res *quota.ApplyQuotaRe
 	}
 
 	return CommonQuotaCheck(ctx, res, resourceQuota(res.QuotaType), resourceLimitHandler)
-
 }
 
 //向配额中心上报配额使用量

@@ -19,7 +19,8 @@ package util
 import (
 	"encoding/json"
 	"errors"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
@@ -40,14 +41,14 @@ type Dependency struct {
 
 func (dep *Dependency) RemoveConsumerOfProviderRule() {
 	dep.chanNum++
-	util.Go(dep.removeConsumerOfProviderRule)
+	gopool.Go(dep.removeConsumerOfProviderRule)
 }
 
 func (dep *Dependency) removeConsumerOfProviderRule(ctx context.Context) {
 	opts := make([]registry.PluginOp, 0, len(dep.removedDependencyRuleList))
 	for _, providerRule := range dep.removedDependencyRuleList {
 		proProkey := apt.GenerateProviderDependencyRuleKey(providerRule.Tenant, providerRule)
-		util.Logger().Debugf("This proProkey is %s.", proProkey)
+		log.Debugf("This proProkey is %s.", proProkey)
 		consumerValue, err := TransferToMicroServiceDependency(ctx, proProkey)
 		if err != nil {
 			dep.err <- err
@@ -58,7 +59,7 @@ func (dep *Dependency) removeConsumerOfProviderRule(ctx context.Context) {
 				consumerValue.Dependency = append(consumerValue.Dependency[:key], consumerValue.Dependency[key+1:]...)
 				break
 			}
-			util.Logger().Debugf("tmp and dep.Consumer not equal, tmp %v, consumer %v", tmp, dep.Consumer)
+			log.Debugf("tmp and dep.Consumer not equal, tmp %v, consumer %v", tmp, dep.Consumer)
 		}
 		//删除后，如果不存在依赖规则了，就删除该provider的依赖规则，如果有，则更新该依赖规则
 		if len(consumerValue.Dependency) == 0 {
@@ -67,7 +68,7 @@ func (dep *Dependency) removeConsumerOfProviderRule(ctx context.Context) {
 		}
 		data, err := json.Marshal(consumerValue)
 		if err != nil {
-			util.Logger().Errorf(nil, "Marshal tmpValue failed.")
+			log.Errorf(nil, "Marshal tmpValue failed.")
 			dep.err <- err
 			return
 		}
@@ -87,7 +88,7 @@ func (dep *Dependency) removeConsumerOfProviderRule(ctx context.Context) {
 
 func (dep *Dependency) AddConsumerOfProviderRule() {
 	dep.chanNum++
-	util.Go(dep.addConsumerOfProviderRule)
+	gopool.Go(dep.addConsumerOfProviderRule)
 }
 
 func (dep *Dependency) addConsumerOfProviderRule(ctx context.Context) {
@@ -103,7 +104,7 @@ func (dep *Dependency) addConsumerOfProviderRule(ctx context.Context) {
 
 		data, errMarshal := json.Marshal(tmpValue)
 		if errMarshal != nil {
-			util.Logger().Errorf(nil, "Marshal tmpValue failed.")
+			log.Errorf(nil, "Marshal tmpValue failed.")
 			dep.err <- errors.New("Marshal tmpValue failed.")
 			return
 		}
@@ -131,7 +132,7 @@ func (dep *Dependency) UpdateProvidersRuleOfConsumer(conKey string) error {
 			registry.WithStrKey(conKey),
 		)
 		if err != nil {
-			util.Logger().Errorf(nil, "Upload dependency rule failed.")
+			log.Errorf(nil, "Upload dependency rule failed.")
 			return err
 		}
 		return nil
@@ -142,7 +143,7 @@ func (dep *Dependency) UpdateProvidersRuleOfConsumer(conKey string) error {
 	}
 	data, err := json.Marshal(dependency)
 	if err != nil {
-		util.Logger().Errorf(nil, "Marshal tmpValue fialed.")
+		log.Errorf(nil, "Marshal tmpValue fialed.")
 		return err
 	}
 	_, err = backend.Registry().Do(context.TODO(),
@@ -150,7 +151,7 @@ func (dep *Dependency) UpdateProvidersRuleOfConsumer(conKey string) error {
 		registry.WithStrKey(conKey),
 		registry.WithValue(data))
 	if err != nil {
-		util.Logger().Errorf(nil, "Upload dependency rule failed.")
+		log.Errorf(nil, "Upload dependency rule failed.")
 		return err
 	}
 	return nil

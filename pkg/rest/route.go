@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/chain"
 	errorsEx "github.com/apache/incubator-servicecomb-service-center/pkg/errors"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"net/http"
 	"net/url"
@@ -65,13 +66,13 @@ func (this *ROAServerHandler) addRoute(route *Route) (err error) {
 	method := strings.ToUpper(route.Method)
 	if !isValidMethod(method) || !strings.HasPrefix(route.Path, "/") || route.Func == nil {
 		message := fmt.Sprintf("Invalid route parameters(method: %s, path: %s)", method, route.Path)
-		util.Logger().Errorf(nil, message)
+		log.Errorf(nil, message)
 		return errors.New(message)
 	}
 
 	this.handlers[method] = append(this.handlers[method], &urlPatternHandler{
 		util.FormatFuncName(util.FuncName(route.Func)), route.Path, http.HandlerFunc(route.Func)})
-	util.Logger().Infof("register route %s(%s)", route.Path, method)
+	log.Infof("register route %s(%s)", route.Path, method)
 
 	return nil
 }
@@ -128,7 +129,7 @@ func (this *ROAServerHandler) serve(ph *urlPatternHandler, w http.ResponseWriter
 					err := ret.Err
 					itf := recover()
 					if itf != nil {
-						util.LogPanic(itf)
+						log.LogPanic(itf)
 
 						err = errorsEx.RaiseError(itf)
 					}

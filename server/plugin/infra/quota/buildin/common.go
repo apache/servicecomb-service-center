@@ -17,8 +17,9 @@
 package buildin
 
 import (
+	"errors"
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
@@ -33,16 +34,22 @@ type GetLimitQuota func() int64
 
 func CommonQuotaCheck(ctx context.Context, res *quota.ApplyQuotaResource,
 	getLimitQuota GetLimitQuota, getCurUsedNum GetCurUsedNum) *quota.ApplyQuotaResult {
+	if res == nil || getLimitQuota == nil || getCurUsedNum == nil {
+		err := errors.New("invalid parameters")
+		log.Errorf(err, "quota check failed")
+		return quota.NewApplyQuotaResult(nil, scerr.NewError(scerr.ErrInternal, err.Error()))
+	}
+
 	limitQuota := getLimitQuota()
 	curNum, err := getCurUsedNum(ctx, res)
 	if err != nil {
-		util.Logger().Errorf(err, "%s quota check failed", res.QuotaType)
+		log.Errorf(err, "%s quota check failed", res.QuotaType)
 		return quota.NewApplyQuotaResult(nil, scerr.NewError(scerr.ErrInternal, err.Error()))
 	}
 	if curNum+res.QuotaSize > limitQuota {
 		mes := fmt.Sprintf("no quota to create %s, max num is %d, curNum is %d, apply num is %d",
 			res.QuotaType, limitQuota, curNum, res.QuotaSize)
-		util.Logger().Errorf(nil, mes)
+		log.Errorf(nil, mes)
 		return quota.NewApplyQuotaResult(nil, scerr.NewError(scerr.ErrNotEnoughQuota, mes))
 	}
 	return quota.NewApplyQuotaResult(nil, nil)

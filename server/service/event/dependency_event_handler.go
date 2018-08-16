@@ -18,6 +18,9 @@ package event
 
 import (
 	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/queue"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
@@ -30,7 +33,7 @@ import (
 )
 
 type DependencyEventHandler struct {
-	signals *util.UniQueue
+	signals *queue.UniQueue
 }
 
 func (h *DependencyEventHandler) Type() backend.StoreType {
@@ -47,7 +50,7 @@ func (h *DependencyEventHandler) OnEvent(evt backend.KvEvent) {
 }
 
 func (h *DependencyEventHandler) loop() {
-	util.Go(func(ctx context.Context) {
+	gopool.Go(func(ctx context.Context) {
 		retries := 0
 		delay := func() {
 			<-time.After(util.GetBackoff().Delay(retries))
@@ -62,7 +65,7 @@ func (h *DependencyEventHandler) loop() {
 			case <-h.signals.Chan():
 				lock, err := mux.Try(mux.DEP_QUEUE_LOCK)
 				if err != nil {
-					util.Logger().Errorf(err, "try to lock %s failed", mux.DEP_QUEUE_LOCK)
+					log.Errorf(err, "try to lock %s failed", mux.DEP_QUEUE_LOCK)
 					delay()
 					continue
 				}
@@ -75,7 +78,7 @@ func (h *DependencyEventHandler) loop() {
 				err = h.Handle()
 				lock.Unlock()
 				if err != nil {
-					util.Logger().Errorf(err, "handle dependency event failed")
+					log.Errorf(err, "handle dependency event failed")
 					delay()
 					continue
 				}
@@ -160,16 +163,16 @@ func (h *DependencyEventHandler) dependencyRuleHandle(res interface{}) error {
 	}
 
 	if err != nil {
-		util.Logger().Errorf(err, "modify dependency rule failed, override: %t, consumer %s", r.Override, consumerFlag)
+		log.Errorf(err, "modify dependency rule failed, override: %t, consumer %s", r.Override, consumerFlag)
 		return fmt.Errorf("override: %t, consumer is %s, %s", r.Override, consumerFlag, err.Error())
 	}
 
 	if err = h.removeKV(ctx, dependencyEventHandlerRes.kv); err != nil {
-		util.Logger().Errorf(err, "remove dependency rule failed, override: %t, consumer %s", r.Override, consumerFlag)
+		log.Errorf(err, "remove dependency rule failed, override: %t, consumer %s", r.Override, consumerFlag)
 		return err
 	}
 
-	util.Logger().Infof("maintain dependency %v successfully, override: %t", r, r.Override)
+	log.Infof("maintain dependency %v successfully, override: %t", r, r.Override)
 	return nil
 }
 
@@ -181,14 +184,14 @@ func (h *DependencyEventHandler) removeKV(ctx context.Context, kv *backend.KeyVa
 		return fmt.Errorf("can not remove the dependency %s request, %s", util.BytesToStringWithNoCopy(kv.Key), err.Error())
 	}
 	if !dResp.Succeeded {
-		util.Logger().Infof("the dependency %s request is changed", util.BytesToStringWithNoCopy(kv.Key))
+		log.Infof("the dependency %s request is changed", util.BytesToStringWithNoCopy(kv.Key))
 	}
 	return nil
 }
 
 func NewDependencyEventHandler() *DependencyEventHandler {
 	h := &DependencyEventHandler{
-		signals: util.NewUniQueue(),
+		signals: queue.NewUniQueue(),
 	}
 	h.loop()
 	return h

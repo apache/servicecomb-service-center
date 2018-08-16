@@ -17,6 +17,7 @@
 package admin
 
 import (
+	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/admin/model"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
@@ -51,7 +52,7 @@ func (service *AdminService) Dump(ctx context.Context, in *model.DumpRequest) (*
 }
 
 func (service *AdminService) dumpAll(ctx context.Context, cache *model.Cache) {
-	util.NewGo(ctx, util.PoolConfigure().Workers(2)).
+	gopool.New(ctx, gopool.Configure().Workers(2)).
 		Do(func(_ context.Context) { setValue(backend.Store().Service(), &cache.Microservices) }).
 		Do(func(_ context.Context) { setValue(backend.Store().ServiceIndex(), &cache.Indexes) }).
 		Do(func(_ context.Context) { setValue(backend.Store().ServiceAlias(), &cache.Aliases) }).

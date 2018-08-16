@@ -17,7 +17,8 @@
 package notification
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"golang.org/x/net/context"
 	"time"
@@ -48,8 +49,8 @@ func (w *ListWatcher) OnAccept() {
 	if w.Err() != nil {
 		return
 	}
-	util.Logger().Debugf("accepted by notify service, %s watcher %s %s", w.Type(), w.Group(), w.Subject())
-	util.Go(w.listAndPublishJobs)
+	log.Debugf("accepted by notify service, %s watcher %s %s", w.Type(), w.Group(), w.Subject())
+	gopool.Go(w.listAndPublishJobs)
 }
 
 func (w *ListWatcher) listAndPublishJobs(_ context.Context) {
@@ -83,14 +84,14 @@ func (w *ListWatcher) OnMessage(job NotifyJob) {
 		case <-w.listCh:
 			timer.Stop()
 		case <-timer.C:
-			util.Logger().Errorf(nil,
+			log.Errorf(nil,
 				"the %s listwatcher %s %s is not ready[over %s], send the event %v",
 				w.Type(), w.Group(), w.Subject(), w.Timeout(), job)
 		}
 	}
 
 	if wJob.Revision <= w.ListRevision {
-		util.Logger().Warnf("unexpected notify %s job is coming in, watcher %s %s, job is %v, current revision is %v",
+		log.Warnf("unexpected notify %s job is coming in, watcher %s %s, job is %v, current revision is %v",
 			w.Type(), w.Group(), w.Subject(), job, w.ListRevision)
 		return
 	}
@@ -98,7 +99,7 @@ func (w *ListWatcher) OnMessage(job NotifyJob) {
 }
 
 func (w *ListWatcher) sendMessage(job *WatchJob) {
-	defer util.RecoverAndReport()
+	defer log.Recover()
 	select {
 	case w.Job <- job:
 	default:
@@ -107,7 +108,7 @@ func (w *ListWatcher) sendMessage(job *WatchJob) {
 		case w.Job <- job:
 			timer.Stop()
 		case <-timer.C:
-			util.Logger().Errorf(nil,
+			log.Errorf(nil,
 				"the %s watcher %s %s event queue is full[over %s], drop the event %v",
 				w.Type(), w.Group(), w.Subject(), w.Timeout(), job)
 		}

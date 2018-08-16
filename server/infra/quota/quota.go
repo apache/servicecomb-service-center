@@ -49,14 +49,29 @@ var (
 )
 
 type ApplyQuotaResult struct {
-	Reporter QuotaReporter
-	Err      *scerr.Error
+	Err *scerr.Error
+
+	reporter QuotaReporter
+}
+
+func (r *ApplyQuotaResult) ReportUsedQuota(ctx context.Context) error {
+	if r == nil || r.reporter == nil {
+		return nil
+	}
+	return r.reporter.ReportUsedQuota(ctx)
+}
+
+func (r *ApplyQuotaResult) Close(ctx context.Context) {
+	if r == nil || r.reporter == nil {
+		return
+	}
+	r.reporter.Close(ctx)
 }
 
 func NewApplyQuotaResult(reporter QuotaReporter, err *scerr.Error) *ApplyQuotaResult {
 	return &ApplyQuotaResult{
-		reporter,
-		err,
+		reporter: reporter,
+		Err:      err,
 	}
 }
 
@@ -83,7 +98,7 @@ type QuotaManager interface {
 
 type QuotaReporter interface {
 	ReportUsedQuota(ctx context.Context) error
-	Close()
+	Close(ctx context.Context)
 }
 
 type ResourceType int

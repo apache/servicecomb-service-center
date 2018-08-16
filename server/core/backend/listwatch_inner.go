@@ -18,7 +18,7 @@ package backend
 
 import (
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"golang.org/x/net/context"
 )
@@ -34,7 +34,7 @@ func (lw *innerListWatch) List(op ListWatchConfig) (*registry.PluginResponse, er
 	otCtx, _ := context.WithTimeout(op.Context, op.Timeout)
 	resp, err := lw.Client.Do(otCtx, registry.WatchPrefixOpOptions(lw.Prefix)...)
 	if err != nil {
-		util.Logger().Errorf(err, "list prefix %s failed, current rev: %d", lw.Prefix, lw.Revision())
+		log.Errorf(err, "list prefix %s failed, current rev: %d", lw.Prefix, lw.Revision())
 		return nil, err
 	}
 	lw.setRevision(resp.Revision)
@@ -72,7 +72,7 @@ func (lw *innerListWatch) DoWatch(ctx context.Context, f func(*registry.PluginRe
 
 	err := lw.Client.Watch(ctx, opts...)
 	if err != nil { // compact可能会导致watch失败 or message body size lager than 4MB
-		util.Logger().Errorf(err, "watch prefix %s failed, start rev: %d+1->%d->0", lw.Prefix, rev, lw.Revision())
+		log.Errorf(err, "watch prefix %s failed, start rev: %d+1->%d->0", lw.Prefix, rev, lw.Revision())
 
 		lw.setRevision(0)
 		f(nil)

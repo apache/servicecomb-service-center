@@ -19,8 +19,8 @@ package govern
 import (
 	"net/http"
 
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
@@ -71,7 +71,7 @@ func (governService *GovernServiceControllerV4) GetGraph(w http.ResponseWriter, 
 		}
 		proResp, err := core.ServiceAPI.GetConsumerDependencies(ctx, proRequest)
 		if err != nil {
-			util.Logger().Errorf(err, "get providers failed. service %s", service.ServiceId)
+			log.Errorf(err, "get providers failed. service %s", service.ServiceId)
 			controller.WriteResponse(w, proResp.Response, nil)
 			return
 		}

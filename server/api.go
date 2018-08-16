@@ -18,9 +18,10 @@ package server
 
 import (
 	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/grace"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	rs "github.com/apache/incubator-servicecomb-service-center/server/rest"
@@ -40,7 +41,7 @@ func init() {
 	apiServer = &APIServer{
 		isClose:   true,
 		err:       make(chan error, 1),
-		goroutine: util.NewGo(context.Background()),
+		goroutine: gopool.New(context.Background()),
 	}
 }
 
@@ -70,7 +71,7 @@ type APIServer struct {
 	isClose   bool
 	forked    bool
 	err       chan error
-	goroutine *util.GoRoutine
+	goroutine *gopool.Pool
 }
 
 const (
@@ -95,14 +96,14 @@ func (s *APIServer) registryService(pCtx context.Context) error {
 	ctx := core.AddDefaultContextValue(pCtx)
 	respE, err := core.ServiceAPI.Exist(ctx, core.GetExistenceRequest())
 	if err != nil {
-		util.Logger().Error("query service center existence failed", err)
+		log.Error("query service center existence failed", err)
 		return err
 	}
 	if respE.Response.Code == pb.Response_SUCCESS {
-		util.Logger().Warnf("service center service already registered, serviceId %s", respE.ServiceId)
+		log.Warnf("service center service already registered, serviceId %s", respE.ServiceId)
 		respG, err := core.ServiceAPI.GetOne(ctx, core.GetServiceRequest(respE.ServiceId))
 		if respG.Response.Code != pb.Response_SUCCESS {
-			util.Logger().Errorf(err, "query service center service info failed, serviceId %s", respE.ServiceId)
+			log.Errorf(err, "query service center service info failed, serviceId %s", respE.ServiceId)
 			return fmt.Errorf("service center service file lost.")
 		}
 		core.Service = respG.Service
@@ -111,11 +112,11 @@ func (s *APIServer) registryService(pCtx context.Context) error {
 
 	respS, err := core.ServiceAPI.Create(ctx, core.CreateServiceRequest())
 	if err != nil {
-		util.Logger().Error("register service center failed", err)
+		log.Error("register service center failed", err)
 		return err
 	}
 	core.Service.ServiceId = respS.ServiceId
-	util.Logger().Infof("register service center service %s", respS.ServiceId)
+	log.Infof("register service center service %s", respS.ServiceId)
 	return nil
 }
 
@@ -134,11 +135,11 @@ func (s *APIServer) registryInstance(pCtx context.Context) error {
 		core.RegisterInstanceRequest(s.HostName, endpoints))
 	if respI.Response.Code != pb.Response_SUCCESS {
 		err = fmt.Errorf("register service center instance failed, %s", respI.Response.Message)
-		util.Logger().Error(err.Error(), nil)
+		log.Error(err.Error(), nil)
 		return err
 	}
 	core.Instance.InstanceId = respI.InstanceId
-	util.Logger().Infof("register service center instance %s/%s, endpoints %s",
+	log.Infof("register service center instance %s/%s, endpoints %s",
 		core.Service.ServiceId, respI.InstanceId, endpoints)
 	return nil
 }
@@ -151,10 +152,10 @@ func (s *APIServer) unregisterInstance(pCtx context.Context) error {
 	respI, err := core.InstanceAPI.Unregister(ctx, core.UnregisterInstanceRequest())
 	if respI.Response.Code != pb.Response_SUCCESS {
 		err = fmt.Errorf("unregister service center instance failed, %s", respI.Response.Message)
-		util.Logger().Error(err.Error(), nil)
+		log.Error(err.Error(), nil)
 		return err
 	}
-	util.Logger().Warnf("unregister service center instance %s/%s",
+	log.Warnf("unregister service center instance %s/%s",
 		core.Service.ServiceId, core.Instance.InstanceId)
 	return nil
 }
@@ -166,17 +167,17 @@ func (s *APIServer) doAPIServerHeartBeat(pCtx context.Context) {
 	ctx := core.AddDefaultContextValue(pCtx)
 	respI, err := core.InstanceAPI.Heartbeat(ctx, core.HeartbeatRequest())
 	if respI.Response.Code == pb.Response_SUCCESS {
-		util.Logger().Debugf("update service center instance %s/%s heartbeat",
+		log.Debugf("update service center instance %s/%s heartbeat",
 			core.Instance.ServiceId, core.Instance.InstanceId)
 		return
 	}
-	util.Logger().Errorf(err, "update service center instance %s/%s heartbeat failed",
+	log.Errorf(err, "update service center instance %s/%s heartbeat failed",
 		core.Instance.ServiceId, core.Instance.InstanceId)
 
 	//服务不存在，创建服务
 	err = s.registerServiceCenter()
 	if err != nil {
-		util.Logger().Errorf(err, "retry to register %s/%s/%s failed.",
+		log.Errorf(err, "retry to register %s/%s/%s failed.",
 			core.Service.AppId, core.Service.ServiceName, core.Service.Version)
 	}
 }
@@ -200,7 +201,7 @@ func (s *APIServer) graceDone() {
 	grace.Before(s.MarkForked)
 	grace.After(s.Stop)
 	if err := grace.Done(); err != nil {
-		util.Logger().Errorf(err, "server reload failed")
+		log.Errorf(err, "server reload failed")
 	}
 }
 
@@ -241,7 +242,7 @@ func (s *APIServer) startRESTServer() (err error) {
 	if err != nil {
 		return
 	}
-	util.Logger().Infof("listen address: %s://%s, host: %s.",
+	log.Infof("listen address: %s://%s, host: %s.",
 		REST, s.restSrv.Listener.Addr().String(), s.HostName)
 
 	s.AddEndpoint(REST, s.restSrv.Listener.Addr().String())
@@ -251,7 +252,7 @@ func (s *APIServer) startRESTServer() (err error) {
 		if s.isClose {
 			return
 		}
-		util.Logger().Errorf(err, "error to start REST API server %s", addr)
+		log.Errorf(err, "error to start REST API server %s", addr)
 		s.err <- err
 	})
 	return
@@ -267,7 +268,7 @@ func (s *APIServer) startRPCServer() (err error) {
 	if err != nil {
 		return
 	}
-	util.Logger().Infof("listen address: %s://%s, host: %s.",
+	log.Infof("listen address: %s://%s, host: %s.",
 		RPC, s.rpcSrv.Listener.Addr().String(), s.HostName)
 
 	s.AddEndpoint(RPC, s.rpcSrv.Listener.Addr().String())
@@ -277,7 +278,7 @@ func (s *APIServer) startRPCServer() (err error) {
 		if s.isClose {
 			return
 		}
-		util.Logger().Errorf(err, "error to start RPC API server %s", addr)
+		log.Errorf(err, "error to start RPC API server %s", addr)
 		s.err <- err
 	})
 	return
@@ -316,7 +317,7 @@ func (s *APIServer) Start() {
 
 	ReportScInstance()
 
-	util.Logger().Info("api server is ready")
+	log.Info("api server is ready")
 }
 
 func (s *APIServer) Stop() {
@@ -342,7 +343,7 @@ func (s *APIServer) Stop() {
 
 	s.goroutine.Close(true)
 
-	util.Logger().Info("api server stopped.")
+	log.Info("api server stopped.")
 }
 
 func GetAPIServer() *APIServer {

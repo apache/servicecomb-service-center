@@ -18,6 +18,7 @@ package backend
 
 import (
 	errorsEx "github.com/apache/incubator-servicecomb-service-center/pkg/errors"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"golang.org/x/net/context"
@@ -44,7 +45,7 @@ func (lat *LeaseTask) Do(ctx context.Context) (err error) {
 	recv, start := lat.ReceiveTime(), time.Now()
 	lat.TTL, err = lat.Client.LeaseRenew(ctx, lat.LeaseID)
 	if err != nil {
-		util.Logger().Errorf(err, "[%s]renew lease %d failed(recv: %s, send: %s), key %s",
+		log.Errorf(err, "[%s]renew lease %d failed(recv: %s, send: %s), key %s",
 			time.Now().Sub(recv),
 			lat.LeaseID,
 			recv.Format(TIME_FORMAT),
@@ -61,7 +62,7 @@ func (lat *LeaseTask) Do(ctx context.Context) (err error) {
 
 	cost := time.Now().Sub(recv)
 	if cost >= 2*time.Second {
-		util.Logger().Warnf("[%s]renew lease %d(recv: %s, send: %s), key %s", cost,
+		log.Warnf("[%s]renew lease %d(recv: %s, send: %s), key %s", cost,
 			lat.LeaseID,
 			recv.Format(TIME_FORMAT),
 			start.Format(TIME_FORMAT),

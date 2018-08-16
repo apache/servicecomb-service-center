@@ -17,6 +17,7 @@
 package rest
 
 import (
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"net/http"
 )
@@ -45,7 +46,7 @@ func RegisterServeMux(name string) {
 func RegisterServeMuxHandleFunc(name, pattern string, f http.HandlerFunc) {
 	serveMuxMap[name].HandleFunc(pattern, f)
 
-	util.Logger().Infof("register serve mux '%s' http handle function %s(), pattern %s",
+	log.Infof("register serve mux '%s' http handle function %s(), pattern %s",
 		name, util.FuncName(f), pattern)
 }
 
@@ -53,7 +54,7 @@ func RegisterServeMuxHandler(name, pattern string, h http.Handler) {
 	serveMuxMap[name].Handle(pattern, h)
 
 	t := util.Reflect(h).Type
-	util.Logger().Infof("register serve mux '%s' http handler %s/%s, pattern %s",
+	log.Infof("register serve mux '%s' http handler %s/%s, pattern %s",
 		name, t.PkgPath(), t.Name(), pattern)
 }
 

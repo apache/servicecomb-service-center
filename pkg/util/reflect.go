@@ -25,10 +25,8 @@ import (
 )
 
 var (
-	reflector      *Reflector
-	sliceTypeSize  = uint64(reflect.TypeOf(reflect.SliceHeader{}).Size())
-	stringTypeSize = uint64(reflect.TypeOf(reflect.StringHeader{}).Size())
-	unknown        = new(reflectObject)
+	reflector *Reflector
+	unknown   = new(reflectObject)
 )
 
 func init() {

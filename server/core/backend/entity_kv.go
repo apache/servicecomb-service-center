@@ -17,7 +17,7 @@
 package backend
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"sync"
 )
@@ -58,7 +58,7 @@ func NewKvEntity(name string, cfg *Config) *KvEntity {
 		entity.Cacher = NewKvCacher(name, cfg)
 		entity.Indexer = NewCacheIndexer(cfg, entity.Cache())
 	default:
-		util.Logger().Infof(
+		log.Infof(
 			"core will not cache '%s' and ignore all events of it, cache enabled: %v, init size: %d",
 			name, core.ServerInfo.Config.EnableCache, cfg.InitSize)
 		entity.Indexer = NewCommonIndexer(cfg.Key, cfg.Parser)

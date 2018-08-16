@@ -17,8 +17,8 @@
 package v4
 
 import (
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/gorilla/websocket"
@@ -47,7 +47,7 @@ func upgrade(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error) {
 	}
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		util.Logger().Error("upgrade failed.", err)
+		log.Error("upgrade failed.", err)
 		// controller.WriteError(w, scerr.ErrInternal, "Upgrade error")
 	}
 	return conn, err

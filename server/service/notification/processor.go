@@ -17,6 +17,7 @@
 package notification
 
 import (
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"golang.org/x/net/context"
 )
@@ -79,7 +80,7 @@ func (p *Processor) Clear() {
 }
 
 func (p *Processor) Accept(job NotifyJob) {
-	defer util.RecoverAndReport()
+	defer log.Recover()
 	p.queue <- job
 }
 

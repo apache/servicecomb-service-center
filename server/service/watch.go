@@ -18,6 +18,7 @@ package service
 
 import (
 	"errors"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
@@ -41,18 +42,18 @@ func (s *InstanceService) WatchPreOpera(ctx context.Context, in *pb.WatchInstanc
 func (s *InstanceService) Watch(in *pb.WatchInstanceRequest, stream pb.ServiceInstanceCtrl_WatchServer) error {
 	var err error
 	if err = s.WatchPreOpera(stream.Context(), in); err != nil {
-		util.Logger().Errorf(err, "establish watch failed: invalid params.")
+		log.Errorf(err, "establish watch failed: invalid params.")
 		return err
 	}
 	domainProject := util.ParseDomainProject(stream.Context())
 	watcher := nf.NewListWatcher(in.SelfServiceId, apt.GetInstanceRootKey(domainProject)+"/", nil)
 	err = nf.GetNotifyService().AddSubscriber(watcher)
-	util.Logger().Infof("start watch instance status, watcher %s %s", watcher.Subject(), watcher.Group())
+	log.Infof("start watch instance status, watcher %s %s", watcher.Subject(), watcher.Group())
 	return nf.HandleWatchJob(watcher, stream)
 }
 
 func (s *InstanceService) WebSocketWatch(ctx context.Context, in *pb.WatchInstanceRequest, conn *websocket.Conn) {
-	util.Logger().Infof("new a web socket watch with %s", in.SelfServiceId)
+	log.Infof("new a web socket watch with %s", in.SelfServiceId)
 	if err := s.WatchPreOpera(ctx, in); err != nil {
 		nf.EstablishWebSocketError(conn, err)
 		return
@@ -61,7 +62,7 @@ func (s *InstanceService) WebSocketWatch(ctx context.Context, in *pb.WatchInstan
 }
 
 func (s *InstanceService) WebSocketListAndWatch(ctx context.Context, in *pb.WatchInstanceRequest, conn *websocket.Conn) {
-	util.Logger().Infof("new a web socket list and watch with %s", in.SelfServiceId)
+	log.Infof("new a web socket list and watch with %s", in.SelfServiceId)
 	if err := s.WatchPreOpera(ctx, in); err != nil {
 		nf.EstablishWebSocketError(conn, err)
 		return

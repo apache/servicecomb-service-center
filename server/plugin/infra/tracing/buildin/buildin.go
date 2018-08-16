@@ -18,6 +18,7 @@ package buildin
 
 import (
 	"context"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/tracing"
 	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
@@ -57,7 +58,7 @@ func (zp *Zipkin) ServerBegin(operationName string, itf tracing.Request) tracing
 		case nil:
 		case opentracing.ErrSpanContextNotFound:
 		default:
-			util.Logger().Errorf(err, "tracer extract request failed")
+			log.Errorf(err, "tracer extract request failed")
 			return nil
 		}
 
@@ -116,7 +117,7 @@ func (zp *Zipkin) ClientBegin(operationName string, itf tracing.Request) tracing
 			opentracing.HTTPHeaders,
 			carrier,
 		); err != nil {
-			util.Logger().Errorf(err, "tracer inject request failed")
+			log.Errorf(err, "tracer inject request failed")
 		}
 	case *tracing.RegistryRequest:
 		r := itf.(*tracing.RegistryRequest)
@@ -144,7 +145,7 @@ func (zp *Zipkin) ClientBegin(operationName string, itf tracing.Request) tracing
 			opentracing.HTTPHeaders,
 			carrier,
 		); err != nil {
-			util.Logger().Errorf(err, "tracer inject request failed")
+			log.Errorf(err, "tracer inject request failed")
 		}
 		// inject context
 		carrier.ForeachKey(func(key, val string) error {

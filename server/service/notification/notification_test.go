@@ -17,7 +17,7 @@
 package notification
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
 	"golang.org/x/net/context"
 	"testing"
 	"time"
@@ -31,7 +31,7 @@ func TestGetNotifyService(t *testing.T) {
 
 	notifyService := &NotifyService{
 		isClose:   true,
-		goroutine: util.NewGo(context.Background()),
+		goroutine: gopool.New(context.Background()),
 	}
 	if notifyService == nil {
 		t.Fatalf("TestGetNotifyService failed")

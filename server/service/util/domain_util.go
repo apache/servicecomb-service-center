@@ -17,6 +17,7 @@
 package util
 
 import (
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
@@ -106,7 +107,7 @@ func NewDomainProject(ctx context.Context, domain, project string) error {
 	if !ok && err == nil {
 		ok, err = NewDomain(ctx, domain)
 		if ok {
-			util.Logger().Infof("new domain(%s)", domain)
+			log.Infof("new domain(%s)", domain)
 		}
 	}
 	if err != nil {
@@ -116,7 +117,7 @@ func NewDomainProject(ctx context.Context, domain, project string) error {
 	if !ok && err == nil {
 		ok, err = NewProject(ctx, domain, project)
 		if ok {
-			util.Logger().Infof("new project(%s/%s)", domain, project)
+			log.Infof("new project(%s/%s)", domain, project)
 		}
 	}
 	return err

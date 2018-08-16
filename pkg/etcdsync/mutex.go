@@ -18,6 +18,8 @@ package etcdsync
 
 import (
 	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
@@ -90,7 +92,7 @@ func (m *DLockFactory) NewDLock(wait bool) (l *DLock, err error) {
 		}
 	}
 	// failed
-	util.Logger().Errorf(err, "Lock key %s failed, id=%s", m.key, l.id)
+	log.Errorf(err, "Lock key %s failed, id=%s", m.key, l.id)
 	l = nil
 
 	if !IsDebug {
@@ -108,7 +110,7 @@ func (m *DLock) Lock(wait bool) (err error) {
 		registry.WithStrKey(m.builder.key),
 		registry.WithStrValue(m.id)}
 
-	util.Logger().Infof("Trying to create a lock: key=%s, id=%s", m.builder.key, m.id)
+	log.Infof("Trying to create a lock: key=%s, id=%s", m.builder.key, m.id)
 
 	var leaseID int64
 	putOpts := opts
@@ -121,7 +123,7 @@ func (m *DLock) Lock(wait bool) (err error) {
 	}
 	success, err := backend.Registry().PutNoOverride(m.builder.ctx, putOpts...)
 	if err == nil && success {
-		util.Logger().Infof("Create Lock OK, key=%s, id=%s", m.builder.key, m.id)
+		log.Infof("Create Lock OK, key=%s, id=%s", m.builder.key, m.id)
 		return nil
 	}
 
@@ -133,10 +135,10 @@ func (m *DLock) Lock(wait bool) (err error) {
 		return fmt.Errorf("Key %s is locked by id=%s", m.builder.key, m.id)
 	}
 
-	util.Logger().Errorf(err, "Key %s is locked, waiting for other node releases it, id=%s, %s", m.builder.key, m.id)
+	log.Errorf(err, "Key %s is locked, waiting for other node releases it, id=%s, %s", m.builder.key, m.id)
 
 	ctx, cancel := context.WithTimeout(m.builder.ctx, time.Duration(m.builder.ttl)*time.Second)
-	util.Go(func(context.Context) {
+	gopool.Go(func(context.Context) {
 		defer cancel()
 		err := backend.Registry().Watch(ctx,
 			registry.WithStrKey(m.builder.key),
@@ -149,7 +151,7 @@ func (m *DLock) Lock(wait bool) (err error) {
 					return nil
 				}))
 		if err != nil {
-			util.Logger().Warnf("%s, key=%s, id=%s", err.Error(), m.builder.key, m.id)
+			log.Warnf("%s, key=%s, id=%s", err.Error(), m.builder.key, m.id)
 		}
 	})
 	select {
@@ -175,10 +177,10 @@ func (m *DLock) Unlock() (err error) {
 	for i := 1; i <= DEFAULT_RETRY_TIMES; i++ {
 		_, err = backend.Registry().Do(m.builder.ctx, opts...)
 		if err == nil {
-			util.Logger().Infof("Delete lock OK, key=%s, id=%s", m.builder.key, m.id)
+			log.Infof("Delete lock OK, key=%s, id=%s", m.builder.key, m.id)
 			return nil
 		}
-		util.Logger().Errorf(err, "Delete lock failed, key=%s, id=%s", m.builder.key, m.id)
+		log.Errorf(err, "Delete lock failed, key=%s, id=%s", m.builder.key, m.id)
 		e, ok := err.(client.Error)
 		if ok && e.Code == client.ErrorCodeKeyNotFound {
 			return nil

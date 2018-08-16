@@ -18,7 +18,7 @@ package buildin
 
 import (
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
 	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
 	"golang.org/x/net/context"
 	"os"
@@ -34,7 +34,7 @@ func TestFileCollector_Collect(t *testing.T) {
 		Interval:  1 * time.Second,
 		BatchSize: 2,
 		c:         make(chan *zipkincore.Span, 100),
-		goroutine: util.NewGo(context.Background()),
+		goroutine: gopool.New(context.Background()),
 	}
 	fc.Run()
 

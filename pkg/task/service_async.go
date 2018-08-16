@@ -18,6 +18,8 @@ package task
 
 import (
 	"errors"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"golang.org/x/net/context"
 	"sync"
@@ -40,7 +42,7 @@ type executorWithTTL struct {
 
 type AsyncTaskService struct {
 	executors map[string]*executorWithTTL
-	goroutine *util.GoRoutine
+	goroutine *gopool.Pool
 	lock      sync.RWMutex
 	ready     chan struct{}
 	isClose   bool
@@ -111,7 +113,7 @@ func (lat *AsyncTaskService) daemon(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			util.Logger().Debugf("daemon thread exited for AsyncTaskService stopped")
+			log.Debugf("daemon thread exited for AsyncTaskService stopped")
 			return
 		case <-timer.C:
 			lat.lock.RLock()
@@ -160,7 +162,7 @@ func (lat *AsyncTaskService) daemon(ctx context.Context) {
 			}
 			lat.lock.Unlock()
 
-			util.Logger().Debugf("daemon thread completed, %d executor(s) removed", len(removes))
+			log.Debugf("daemon thread completed, %d executor(s) removed", len(removes))
 		}
 	}
 }
@@ -209,7 +211,7 @@ func (lat *AsyncTaskService) renew() {
 
 func NewTaskService() TaskService {
 	lat := &AsyncTaskService{
-		goroutine: util.NewGo(context.Background()),
+		goroutine: gopool.New(context.Background()),
 		ready:     make(chan struct{}),
 		isClose:   true,
 	}

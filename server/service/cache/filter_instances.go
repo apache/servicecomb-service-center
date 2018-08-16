@@ -19,7 +19,7 @@ package cache
 import (
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/cache"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
@@ -51,7 +51,7 @@ func (f *InstancesFilter) Init(ctx context.Context, parent *cache.Node) (node *c
 			consumer := ctx.Value(CTX_FIND_CONSUMER).(*pb.MicroService)
 			findFlag := fmt.Sprintf("consumer %s find provider %s/%s/%s", consumer.ServiceId,
 				provider.AppId, provider.ServiceName, provider.Version)
-			util.Logger().Errorf(err, "Instance().Search failed, %s", findFlag)
+			log.Errorf(err, "Instance().Search failed, %s", findFlag)
 			return nil, err
 		}
 

@@ -18,6 +18,7 @@ package backend
 
 import (
 	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"golang.org/x/net/context"
@@ -42,7 +43,7 @@ func (i *CacheIndexer) Search(ctx context.Context, opts ...registry.PluginOpOpti
 		op.Mode == registry.MODE_NO_CACHE ||
 		op.Revision > 0 ||
 		(op.Offset >= 0 && op.Limit > 0) {
-		util.Logger().Debugf("search '%s' match special options, request etcd server, opts: %s",
+		log.Debugf("search '%s' match special options, request etcd server, opts: %s",
 			key, op)
 		return i.CommonIndexer.Search(ctx, opts...)
 	}
@@ -62,7 +63,7 @@ func (i *CacheIndexer) Search(ctx context.Context, opts ...registry.PluginOpOpti
 		return resp, nil
 	}
 
-	util.Logger().Debugf("can not find any key from %s cache, request etcd server, key: %s",
+	log.Debugf("can not find any key from %s cache, request etcd server, key: %s",
 		i.Cache.Name(), key)
 	return i.CommonIndexer.Search(ctx, opts...)
 }
@@ -98,7 +99,7 @@ func (i *CacheIndexer) searchByPrefix(op registry.PluginOp) *Response {
 	kvs := make([]*KeyValue, 0, resp.Count)
 	i.Cache.GetPrefix(prefix, &kvs)
 
-	util.LogNilOrWarnf(t, "too long to index data[%d] from cache '%s'", len(kvs), i.Cache.Name())
+	log.LogNilOrWarnf(t, "too long to index data[%d] from cache '%s'", len(kvs), i.Cache.Name())
 
 	resp.Kvs = kvs
 	return resp
