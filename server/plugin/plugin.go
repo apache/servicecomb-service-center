@@ -23,6 +23,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/auditlog"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/auth"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/security"
@@ -51,6 +52,7 @@ const (
 	REGISTRY
 	TRACING
 	TLS
+	DISCOVERY
 	typeEnd
 )
 
@@ -62,6 +64,7 @@ var pluginNames = map[PluginName]string{
 	QUOTA:     "quota",
 	REGISTRY:  "registry",
 	TRACING:   "trace",
+	DISCOVERY: "discovery",
 	TLS:       "ssl",
 }
 
@@ -217,6 +220,9 @@ func (pm *PluginManager) existDynamicPlugin(pn PluginName) *Plugin {
 	return nil
 }
 
+func (pm *PluginManager) Discovery() discovery.EntityRepository {
+	return pm.Instance(DISCOVERY).(discovery.EntityRepository)
+}
 func (pm *PluginManager) Registry() registry.Registry {
 	return pm.Instance(REGISTRY).(registry.Registry)
 }

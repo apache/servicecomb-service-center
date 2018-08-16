@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
 	"testing"
 	"time"
 )
@@ -46,32 +47,32 @@ func TestInstanceEventDeferHandler_HandleChan(t *testing.T) {
 			Times:    0,
 		},
 	}
-	kv1 := &KeyValue{
+	kv1 := &discovery.KeyValue{
 		Key:   util.StringToBytesWithNoCopy("/1"),
 		Value: b,
 	}
-	kv2 := &KeyValue{
+	kv2 := &discovery.KeyValue{
 		Key:   util.StringToBytesWithNoCopy("/2"),
 		Value: b,
 	}
-	kv3 := &KeyValue{
+	kv3 := &discovery.KeyValue{
 		Key:   util.StringToBytesWithNoCopy("/3"),
 		Value: b,
 	}
-	kv4 := &KeyValue{
+	kv4 := &discovery.KeyValue{
 		Key:   util.StringToBytesWithNoCopy("/4"),
 		Value: b,
 	}
-	kv5 := &KeyValue{
+	kv5 := &discovery.KeyValue{
 		Key:   util.StringToBytesWithNoCopy("/5"),
 		Value: b,
 	}
-	kv6 := &KeyValue{
+	kv6 := &discovery.KeyValue{
 		Key:   util.StringToBytesWithNoCopy("/6"),
 		Value: b,
 	}
 
-	cache := NewKvCache("test", Configure())
+	cache := etcd.NewKvCache("test", discovery.Configure())
 	cache.Put("/1", kv1)
 	cache.Put("/2", kv2)
 	cache.Put("/3", kv3)
@@ -79,7 +80,7 @@ func TestInstanceEventDeferHandler_HandleChan(t *testing.T) {
 	cache.Put("/5", kv5)
 	cache.Put("/6", kv6)
 
-	evts1 := []KvEvent{
+	evts1 := []discovery.KvEvent{
 		{
 			Type: pb.EVT_CREATE,
 			KV:   kv1,
@@ -89,7 +90,7 @@ func TestInstanceEventDeferHandler_HandleChan(t *testing.T) {
 			KV:   kv1,
 		},
 	}
-	evts2 := []KvEvent{
+	evts2 := []discovery.KvEvent{
 		{
 			Type: pb.EVT_DELETE,
 			KV:   kv2,
@@ -111,7 +112,7 @@ func TestInstanceEventDeferHandler_HandleChan(t *testing.T) {
 			KV:   kv6,
 		},
 	}
-	evts3 := []KvEvent{
+	evts3 := []discovery.KvEvent{
 		{
 			Type: pb.EVT_CREATE,
 			KV:   kv2,
@@ -151,7 +152,7 @@ func TestInstanceEventDeferHandler_HandleChan(t *testing.T) {
 func getEvents(t *testing.T, iedh *InstanceEventDeferHandler) {
 	fmt.Println(time.Now())
 	c := time.After(3500 * time.Millisecond)
-	var evt3 *KvEvent
+	var evt3 *discovery.KvEvent
 	for {
 		select {
 		case evt := <-iedh.HandleChan():

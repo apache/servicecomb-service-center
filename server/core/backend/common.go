@@ -1,159 +1,231 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package backend
 
 import (
-	"errors"
-	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
-	"strconv"
+	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
+	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
+	"strings"
 	"time"
 )
 
 const (
-	// re-list etcd when there is no event coming in more than 1h(=120*30s)
-	DEFAULT_MAX_NO_EVENT_INTERVAL = 120
-	DEFAULT_LISTWATCH_TIMEOUT     = 30 * time.Second
-
-	DEFAULT_SELF_PRESERVATION_PERCENT = 0.8
-	DEFAULT_CACHE_INIT_SIZE           = 100
+	leaseProfTimeFmt           = "15:04:05.000"
+	eventBlockSize             = 1000
+	deferCheckWindow           = 2 * time.Second // instance DELETE event will be delay.
+	selfPreservationPercentage = 0.8
 )
 
-const (
-	DEFAULT_METRICS_INTERVAL = 30 * time.Second
-	DEFAULT_COMPACT_TIMES    = 2
-	DEFAULT_COMPACT_TIMEOUT  = 5 * time.Minute
-
-	minWaitInterval = 1 * time.Second
-	eventBlockSize  = 1000
-)
-
-const DEFAULT_CHECK_WINDOW = 2 * time.Second // instance DELETE event will be delay.
-
-const TIME_FORMAT = "15:04:05.000"
-
-const EVENT_BUS_MAX_SIZE = 1000
-
-// errors
 var (
-	ErrNoImpl = errors.New("no implement")
+	DOMAIN           discovery.StoreType
+	PROJECT          discovery.StoreType
+	SERVICE          discovery.StoreType
+	SERVICE_INDEX    discovery.StoreType
+	SERVICE_ALIAS    discovery.StoreType
+	SERVICE_TAG      discovery.StoreType
+	RULE             discovery.StoreType
+	RULE_INDEX       discovery.StoreType
+	DEPENDENCY       discovery.StoreType
+	DEPENDENCY_RULE  discovery.StoreType
+	DEPENDENCY_QUEUE discovery.StoreType
+	SCHEMA           discovery.StoreType
+	SCHEMA_SUMMARY   discovery.StoreType
+	INSTANCE         discovery.StoreType
+	LEASE            discovery.StoreType
 )
 
-var closedCh = make(chan struct{})
+var (
+	newService         discovery.CreateValueFunc = func() interface{} { return new(pb.MicroService) }
+	newInstance        discovery.CreateValueFunc = func() interface{} { return new(pb.MicroServiceInstance) }
+	newRule            discovery.CreateValueFunc = func() interface{} { return new(pb.ServiceRule) }
+	newDependencyRule  discovery.CreateValueFunc = func() interface{} { return new(pb.MicroServiceDependency) }
+	newDependencyQueue discovery.CreateValueFunc = func() interface{} { return new(pb.ConsumerDependency) }
 
-func init() {
-	close(closedCh)
-}
-
-type StoreType int
-
-func (st StoreType) String() string {
-	if int(st) < 0 {
-		return "TypeError"
-	}
-	if int(st) < len(TypeNames) {
-		return TypeNames[st]
-	}
-	return "TYPE" + strconv.Itoa(int(st))
-}
-
-const TypeError = StoreType(-1)
-
-const (
-	DOMAIN StoreType = iota
-	PROJECT
-	SERVICE
-	SERVICE_INDEX
-	SERVICE_ALIAS
-	SERVICE_TAG
-	RULE
-	RULE_INDEX
-	DEPENDENCY
-	DEPENDENCY_RULE
-	DEPENDENCY_QUEUE
-	SCHEMA // big data should not be stored in memory.
-	SCHEMA_SUMMARY
-	INSTANCE
-	LEASE
-	typeEnd // end of the base store types
+	ServiceParser         = &discovery.CommonParser{newService, discovery.JsonUnmarshal}
+	InstanceParser        = &discovery.CommonParser{newInstance, discovery.JsonUnmarshal}
+	RuleParser            = &discovery.CommonParser{newRule, discovery.JsonUnmarshal}
+	DependencyRuleParser  = &discovery.CommonParser{newDependencyRule, discovery.JsonUnmarshal}
+	DependencyQueueParser = &discovery.CommonParser{newDependencyQueue, discovery.JsonUnmarshal}
 )
 
-var TypeNames = []string{
-	DOMAIN:           "DOMAIN",
-	PROJECT:          "PROJECT",
-	SERVICE:          "SERVICE",
-	SERVICE_INDEX:    "SERVICE_INDEX",
-	SERVICE_ALIAS:    "SERVICE_ALIAS",
-	SERVICE_TAG:      "SERVICE_TAG",
-	RULE:             "RULE",
-	RULE_INDEX:       "RULE_INDEX",
-	DEPENDENCY:       "DEPENDENCY",
-	DEPENDENCY_RULE:  "DEPENDENCY_RULE",
-	DEPENDENCY_QUEUE: "DEPENDENCY_QUEUE",
-	SCHEMA:           "SCHEMA",
-	SCHEMA_SUMMARY:   "SCHEMA_SUMMARY",
-	INSTANCE:         "INSTANCE",
-	LEASE:            "LEASE",
-	typeEnd:          "TYPEEND",
+func KvToResponse(kv *discovery.KeyValue) (keys []string) {
+	return strings.Split(util.BytesToStringWithNoCopy(kv.Key), "/")
 }
 
-var TypeConfig = map[StoreType]*Config{
-	SERVICE: Configure().WithPrefix(apt.GetServiceRootKey("")).
-		WithInitSize(500).WithParser(ServiceParser),
+func GetInfoFromSvcKV(kv *discovery.KeyValue) (serviceId, domainProject string) {
+	keys := KvToResponse(kv)
+	l := len(keys)
+	if l < 4 {
+		return
+	}
+	serviceId = keys[l-1]
+	domainProject = fmt.Sprintf("%s/%s", keys[l-3], keys[l-2])
+	return
+}
 
-	INSTANCE: Configure().WithPrefix(apt.GetInstanceRootKey("")).
-		WithInitSize(1000).WithParser(InstanceParser).
-		WithDeferHandler(NewInstanceEventDeferHandler()),
+func GetInfoFromInstKV(kv *discovery.KeyValue) (serviceId, instanceId, domainProject string) {
+	keys := KvToResponse(kv)
+	l := len(keys)
+	if l < 4 {
+		return
+	}
+	serviceId = keys[l-2]
+	instanceId = keys[l-1]
+	domainProject = fmt.Sprintf("%s/%s", keys[l-4], keys[l-3])
+	return
+}
 
-	DOMAIN: Configure().WithPrefix(apt.GetDomainRootKey() + "/").
-		WithInitSize(100).WithParser(StringParser),
+func GetInfoFromDomainKV(kv *discovery.KeyValue) (domain string) {
+	keys := KvToResponse(kv)
+	l := len(keys)
+	if l < 2 {
+		return
+	}
+	domain = keys[l-1]
+	return
+}
 
-	SCHEMA: Configure().WithPrefix(apt.GetServiceSchemaRootKey("")).
-		WithInitSize(0),
+func GetInfoFromProjectKV(kv *discovery.KeyValue) (domainProject string) {
+	keys := KvToResponse(kv)
+	l := len(keys)
+	if l < 2 {
+		return
+	}
+	domainProject = fmt.Sprintf("%s/%s", keys[l-2], keys[l-1])
+	return
+}
 
-	SCHEMA_SUMMARY: Configure().WithPrefix(apt.GetServiceSchemaSummaryRootKey("")).
-		WithInitSize(100).WithParser(StringParser),
+func GetInfoFromRuleKV(kv *discovery.KeyValue) (serviceId, ruleId, domainProject string) {
+	keys := KvToResponse(kv)
+	l := len(keys)
+	if l < 4 {
+		return
+	}
+	serviceId = keys[l-2]
+	ruleId = keys[l-1]
+	domainProject = fmt.Sprintf("%s/%s", keys[l-4], keys[l-3])
+	return
+}
 
-	RULE: Configure().WithPrefix(apt.GetServiceRuleRootKey("")).
-		WithInitSize(100).WithParser(RuleParser),
+func GetInfoFromTagKV(kv *discovery.KeyValue) (serviceId, domainProject string) {
+	keys := KvToResponse(kv)
+	l := len(keys)
+	if l < 3 {
+		return
+	}
+	serviceId = keys[l-1]
+	domainProject = fmt.Sprintf("%s/%s", keys[l-3], keys[l-2])
+	return
+}
 
-	LEASE: Configure().WithPrefix(apt.GetInstanceLeaseRootKey("")).
-		WithInitSize(1000).WithParser(StringParser),
+func GetInfoFromSvcIndexKV(kv *discovery.KeyValue) (key *pb.MicroServiceKey) {
+	keys := KvToResponse(kv)
+	l := len(keys)
+	if l < 6 {
+		return
+	}
+	domainProject := fmt.Sprintf("%s/%s", keys[l-6], keys[l-5])
+	return &pb.MicroServiceKey{
+		Tenant:      domainProject,
+		Environment: keys[l-4],
+		AppId:       keys[l-3],
+		ServiceName: keys[l-2],
+		Version:     keys[l-1],
+	}
+}
 
-	SERVICE_INDEX: Configure().WithPrefix(apt.GetServiceIndexRootKey("")).
-		WithInitSize(500).WithParser(StringParser),
+func GetInfoFromSchemaSummaryKV(kv *discovery.KeyValue) (schemaId string) {
+	keys := KvToResponse(kv)
+	l := len(keys)
+	if l < 2 {
+		return
+	}
 
-	SERVICE_ALIAS: Configure().WithPrefix(apt.GetServiceAliasRootKey("")).
-		WithInitSize(100).WithParser(StringParser),
+	return keys[l-1]
+}
 
-	SERVICE_TAG: Configure().WithPrefix(apt.GetServiceTagRootKey("")).
-		WithInitSize(100).WithParser(MapParser),
+func GetInfoFromSchemaKV(kv *discovery.KeyValue) (schemaId string) {
+	keys := KvToResponse(kv)
+	l := len(keys)
+	if l < 2 {
+		return
+	}
 
-	RULE_INDEX: Configure().WithPrefix(apt.GetServiceRuleIndexRootKey("")).
-		WithInitSize(100).WithParser(StringParser),
+	return keys[l-1]
+}
 
-	DEPENDENCY: Configure().WithPrefix(apt.GetServiceDependencyRootKey("")).
-		WithInitSize(100),
+func GetInfoFromDependencyQueueKV(kv *discovery.KeyValue) (consumerId, domainProject string) {
+	keys := KvToResponse(kv)
+	l := len(keys)
+	if l < 4 {
+		return
+	}
+	consumerId = keys[l-2]
+	domainProject = fmt.Sprintf("%s/%s", keys[l-4], keys[l-3])
+	return
+}
 
-	DEPENDENCY_RULE: Configure().WithPrefix(apt.GetServiceDependencyRuleRootKey("")).
-		WithInitSize(100).WithParser(DependencyRuleParser),
-
-	DEPENDENCY_QUEUE: Configure().WithPrefix(apt.GetServiceDependencyQueueRootKey("")).
-		WithInitSize(100).WithParser(DependencyQueueParser),
-
-	PROJECT: Configure().WithPrefix(apt.GetProjectRootKey("")).
-		WithInitSize(100).WithParser(StringParser),
+func registerInnerTypes() {
+	SERVICE = Store().MustInstall(discovery.NewAddOn("SERVICE",
+		discovery.Configure().WithPrefix(core.GetServiceRootKey("")).
+			WithInitSize(500).WithParser(ServiceParser)))
+	INSTANCE = Store().MustInstall(discovery.NewAddOn("INSTANCE",
+		discovery.Configure().WithPrefix(core.GetInstanceRootKey("")).
+			WithInitSize(1000).WithParser(InstanceParser).
+			WithDeferHandler(NewInstanceEventDeferHandler())))
+	DOMAIN = Store().MustInstall(discovery.NewAddOn("DOMAIN",
+		discovery.Configure().WithPrefix(core.GetDomainRootKey()+core.SPLIT).
+			WithInitSize(100).WithParser(discovery.StringParser)))
+	SCHEMA = Store().MustInstall(discovery.NewAddOn("SCHEMA",
+		discovery.Configure().WithPrefix(core.GetServiceSchemaRootKey("")).
+			WithInitSize(0)))
+	SCHEMA_SUMMARY = Store().MustInstall(discovery.NewAddOn("SCHEMA_SUMMARY",
+		discovery.Configure().WithPrefix(core.GetServiceSchemaSummaryRootKey("")).
+			WithInitSize(100).WithParser(discovery.StringParser)))
+	RULE = Store().MustInstall(discovery.NewAddOn("RULE",
+		discovery.Configure().WithPrefix(core.GetServiceRuleRootKey("")).
+			WithInitSize(100).WithParser(RuleParser)))
+	LEASE = Store().MustInstall(discovery.NewAddOn("LEASE",
+		discovery.Configure().WithPrefix(core.GetInstanceLeaseRootKey("")).
+			WithInitSize(1000).WithParser(discovery.StringParser)))
+	SERVICE_INDEX = Store().MustInstall(discovery.NewAddOn("SERVICE_INDEX",
+		discovery.Configure().WithPrefix(core.GetServiceIndexRootKey("")).
+			WithInitSize(500).WithParser(discovery.StringParser)))
+	SERVICE_ALIAS = Store().MustInstall(discovery.NewAddOn("SERVICE_ALIAS",
+		discovery.Configure().WithPrefix(core.GetServiceAliasRootKey("")).
+			WithInitSize(100).WithParser(discovery.StringParser)))
+	SERVICE_TAG = Store().MustInstall(discovery.NewAddOn("SERVICE_TAG",
+		discovery.Configure().WithPrefix(core.GetServiceTagRootKey("")).
+			WithInitSize(100).WithParser(discovery.MapParser)))
+	RULE_INDEX = Store().MustInstall(discovery.NewAddOn("RULE_INDEX",
+		discovery.Configure().WithPrefix(core.GetServiceRuleIndexRootKey("")).
+			WithInitSize(100).WithParser(discovery.StringParser)))
+	DEPENDENCY = Store().MustInstall(discovery.NewAddOn("DEPENDENCY",
+		discovery.Configure().WithPrefix(core.GetServiceDependencyRootKey("")).
+			WithInitSize(100)))
+	DEPENDENCY_RULE = Store().MustInstall(discovery.NewAddOn("DEPENDENCY_RULE",
+		discovery.Configure().WithPrefix(core.GetServiceDependencyRuleRootKey("")).
+			WithInitSize(100).WithParser(DependencyRuleParser)))
+	DEPENDENCY_QUEUE = Store().MustInstall(discovery.NewAddOn("DEPENDENCY_QUEUE",
+		discovery.Configure().WithPrefix(core.GetServiceDependencyQueueRootKey("")).
+			WithInitSize(100).WithParser(DependencyQueueParser)))
+	PROJECT = Store().MustInstall(discovery.NewAddOn("PROJECT",
+		discovery.Configure().WithPrefix(core.GetProjectRootKey("")).
+			WithInitSize(100).WithParser(discovery.StringParser)))
 }

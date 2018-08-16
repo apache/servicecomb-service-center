@@ -25,6 +25,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/apache/incubator-servicecomb-service-center/server/mux"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
@@ -36,11 +37,11 @@ type DependencyEventHandler struct {
 	signals *queue.UniQueue
 }
 
-func (h *DependencyEventHandler) Type() backend.StoreType {
+func (h *DependencyEventHandler) Type() discovery.StoreType {
 	return backend.DEPENDENCY_QUEUE
 }
 
-func (h *DependencyEventHandler) OnEvent(evt backend.KvEvent) {
+func (h *DependencyEventHandler) OnEvent(evt discovery.KvEvent) {
 	action := evt.Type
 	if action != pb.EVT_CREATE && action != pb.EVT_UPDATE && action != pb.EVT_INIT {
 		return
@@ -97,11 +98,11 @@ func (h *DependencyEventHandler) eventLoop() {
 
 type DependencyEventHandlerResource struct {
 	dep           *pb.ConsumerDependency
-	kv            *backend.KeyValue
+	kv            *discovery.KeyValue
 	domainProject string
 }
 
-func NewDependencyEventHandlerResource(dep *pb.ConsumerDependency, kv *backend.KeyValue, domainProject string) *DependencyEventHandlerResource {
+func NewDependencyEventHandlerResource(dep *pb.ConsumerDependency, kv *discovery.KeyValue, domainProject string) *DependencyEventHandlerResource {
 	return &DependencyEventHandlerResource{
 		dep,
 		kv,
@@ -188,7 +189,7 @@ func (h *DependencyEventHandler) dependencyRuleHandle(res interface{}) error {
 	return nil
 }
 
-func (h *DependencyEventHandler) removeKV(ctx context.Context, kv *backend.KeyValue) error {
+func (h *DependencyEventHandler) removeKV(ctx context.Context, kv *discovery.KeyValue) error {
 	dResp, err := backend.Registry().TxnWithCmp(ctx, []registry.PluginOp{registry.OpDel(registry.WithKey(kv.Key))},
 		[]registry.CompareOp{registry.OpCmp(registry.CmpVer(kv.Key), registry.CMP_EQUAL, kv.Version)},
 		nil)

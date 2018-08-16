@@ -22,6 +22,7 @@ import (
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
 	"github.com/apache/incubator-servicecomb-service-center/server/service/cache"
 	"github.com/apache/incubator-servicecomb-service-center/server/service/metrics"
 	nf "github.com/apache/incubator-servicecomb-service-center/server/service/notification"
@@ -33,11 +34,11 @@ import (
 type InstanceEventHandler struct {
 }
 
-func (h *InstanceEventHandler) Type() backend.StoreType {
+func (h *InstanceEventHandler) Type() discovery.StoreType {
 	return backend.INSTANCE
 }
 
-func (h *InstanceEventHandler) OnEvent(evt backend.KvEvent) {
+func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
 	action := evt.Type
 	providerId, providerInstanceId, domainProject := backend.GetInfoFromInstKV(evt.KV)
 

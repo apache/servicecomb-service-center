@@ -18,19 +18,19 @@ package util
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 )
 
-type VersionRule func(sorted []string, kvs map[string]*backend.KeyValue, start, end string) []string
+type VersionRule func(sorted []string, kvs map[string]*discovery.KeyValue, start, end string) []string
 
-func (vr VersionRule) Match(kvs []*backend.KeyValue, ops ...string) []string {
+func (vr VersionRule) Match(kvs []*discovery.KeyValue, ops ...string) []string {
 	sorter := &serviceKeySorter{
 		sortArr: make([]string, len(kvs)),
-		kvs:     make(map[string]*backend.KeyValue, len(kvs)),
+		kvs:     make(map[string]*discovery.KeyValue, len(kvs)),
 		cmp:     Larger,
 	}
 	for i, kv := range kvs {
@@ -54,7 +54,7 @@ func (vr VersionRule) Match(kvs []*backend.KeyValue, ops ...string) []string {
 
 type serviceKeySorter struct {
 	sortArr []string
-	kvs     map[string]*backend.KeyValue
+	kvs     map[string]*discovery.KeyValue
 	cmp     func(i, j string) bool
 }
 
@@ -99,14 +99,14 @@ func LessEqual(start, end string) bool {
 	return !Larger(start, end)
 }
 
-func Latest(sorted []string, kvs map[string]*backend.KeyValue, start, end string) []string {
+func Latest(sorted []string, kvs map[string]*discovery.KeyValue, start, end string) []string {
 	if len(sorted) == 0 {
 		return []string{}
 	}
 	return []string{kvs[sorted[0]].Value.(string)}
 }
 
-func Range(sorted []string, kvs map[string]*backend.KeyValue, start, end string) []string {
+func Range(sorted []string, kvs map[string]*discovery.KeyValue, start, end string) []string {
 	result := make([]string, len(sorted))
 	i, flag := 0, 0
 
@@ -139,7 +139,7 @@ func Range(sorted []string, kvs map[string]*backend.KeyValue, start, end string)
 	return result[:i]
 }
 
-func AtLess(sorted []string, kvs map[string]*backend.KeyValue, start, end string) []string {
+func AtLess(sorted []string, kvs map[string]*discovery.KeyValue, start, end string) []string {
 	result := make([]string, len(sorted))
 
 	if len(sorted) == 0 || Larger(start, sorted[0]) {
@@ -155,7 +155,7 @@ func AtLess(sorted []string, kvs map[string]*backend.KeyValue, start, end string
 	return result[:]
 }
 
-func ParseVersionRule(versionRule string) func(kvs []*backend.KeyValue) []string {
+func ParseVersionRule(versionRule string) func(kvs []*discovery.KeyValue) []string {
 	if len(versionRule) == 0 {
 		return nil
 	}
@@ -163,20 +163,20 @@ func ParseVersionRule(versionRule string) func(kvs []*backend.KeyValue) []string
 	rangeIdx := strings.Index(versionRule, "-")
 	switch {
 	case versionRule == "latest":
-		return func(kvs []*backend.KeyValue) []string {
+		return func(kvs []*discovery.KeyValue) []string {
 			return VersionRule(Latest).Match(kvs)
 		}
 	case versionRule[len(versionRule)-1:] == "+":
 		// 取最低版本及高版本集合
 		start := versionRule[:len(versionRule)-1]
-		return func(kvs []*backend.KeyValue) []string {
+		return func(kvs []*discovery.KeyValue) []string {
 			return VersionRule(AtLess).Match(kvs, start)
 		}
 	case rangeIdx > 0:
 		// 取版本范围集合
 		start := versionRule[:rangeIdx]
 		end := versionRule[rangeIdx+1:]
-		return func(kvs []*backend.KeyValue) []string {
+		return func(kvs []*discovery.KeyValue) []string {
 			return VersionRule(Range).Match(kvs, start, end)
 		}
 	default:
@@ -191,7 +191,7 @@ func VersionMatchRule(version string, versionRule string) bool {
 		return version == versionRule
 	}
 
-	return len(match([]*backend.KeyValue{
+	return len(match([]*discovery.KeyValue{
 		{
 			Key:   util.StringToBytesWithNoCopy("/" + version),
 			Value: "",

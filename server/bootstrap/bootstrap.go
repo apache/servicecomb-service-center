@@ -24,6 +24,9 @@ import _ "github.com/apache/incubator-servicecomb-service-center/server/rest/con
 import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/registry/etcd"
 import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/registry/embededetcd"
 
+// discovery
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/discovery/etcd"
+
 // cipher
 import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/security/buildin"
 

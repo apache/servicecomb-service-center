@@ -23,6 +23,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
 	"github.com/apache/incubator-servicecomb-service-center/server/service/cache"
 	nf "github.com/apache/incubator-servicecomb-service-center/server/service/notification"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
@@ -89,11 +90,11 @@ func (apt *TagsChangedTask) publish(ctx context.Context, domainProject, consumer
 type TagEventHandler struct {
 }
 
-func (h *TagEventHandler) Type() backend.StoreType {
+func (h *TagEventHandler) Type() discovery.StoreType {
 	return backend.SERVICE_TAG
 }
 
-func (h *TagEventHandler) OnEvent(evt backend.KvEvent) {
+func (h *TagEventHandler) OnEvent(evt discovery.KvEvent) {
 	action := evt.Type
 	if action == pb.EVT_INIT {
 		return

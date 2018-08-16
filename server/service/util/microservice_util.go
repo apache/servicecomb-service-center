@@ -23,6 +23,7 @@ import (
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
@@ -59,7 +60,7 @@ func GetService(ctx context.Context, domainProject string, serviceId string) (*p
 	return serviceResp.Kvs[0].Value.(*pb.MicroService), nil
 }
 
-func getServicesRawData(ctx context.Context, domainProject string) ([]*backend.KeyValue, error) {
+func getServicesRawData(ctx context.Context, domainProject string) ([]*discovery.KeyValue, error) {
 	key := apt.GenerateServiceKey(domainProject, "")
 	opts := append(FromContext(ctx),
 		registry.WithStrKey(key),
@@ -121,12 +122,12 @@ func searchServiceIdFromAlias(ctx context.Context, key *pb.MicroServiceKey) (str
 	return resp.Kvs[0].Value.(string), nil
 }
 
-func GetServiceAllVersions(ctx context.Context, key *pb.MicroServiceKey, alias bool) (*backend.Response, error) {
+func GetServiceAllVersions(ctx context.Context, key *pb.MicroServiceKey, alias bool) (*discovery.Response, error) {
 	copy := *key
 	copy.Version = ""
 	var (
 		prefix  string
-		indexer backend.Indexer
+		indexer discovery.Indexer
 	)
 	if alias {
 		prefix = apt.GenerateServiceAliasKey(&copy)

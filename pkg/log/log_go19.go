@@ -19,21 +19,12 @@ package log
 
 import (
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 const globalCallerSkip = 2
 
 var (
 	logger = NewLogger(Configure().WithCallerSkip(globalCallerSkip))
-
-	zapLevelMap = map[string]zapcore.Level{
-		"DEBUG": zap.DebugLevel,
-		"INFO":  zap.InfoLevel,
-		"WARN":  zap.WarnLevel,
-		"ERROR": zap.ErrorLevel,
-		"FATAL": zap.FatalLevel,
-	}
 )
 
 func SetGlobal(cfg Config) {

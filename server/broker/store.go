@@ -18,59 +18,59 @@ package broker
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
 )
 
 var (
-	PARTICIPANT  backend.StoreType
-	VERSION      backend.StoreType
-	PACT         backend.StoreType
-	PACT_VERSION backend.StoreType
-	PACT_TAG     backend.StoreType
-	VERIFICATION backend.StoreType
-	PACT_LATEST  backend.StoreType
+	PARTICIPANT  discovery.StoreType
+	VERSION      discovery.StoreType
+	PACT         discovery.StoreType
+	PACT_VERSION discovery.StoreType
+	PACT_TAG     discovery.StoreType
+	VERIFICATION discovery.StoreType
+	PACT_LATEST  discovery.StoreType
 )
 
 var brokerKvStore = &BKvStore{}
 
 func init() {
-	PARTICIPANT = backend.Store().MustInstall(backend.NewExtension("PARTICIPANT", backend.Configure().WithPrefix(GetBrokerParticipantKey(""))))
-	VERSION = backend.Store().MustInstall(backend.NewExtension("VERSION", backend.Configure().WithPrefix(GetBrokerVersionKey(""))))
-	PACT = backend.Store().MustInstall(backend.NewExtension("PACT", backend.Configure().WithPrefix(GetBrokerPactKey(""))))
-	PACT_VERSION = backend.Store().MustInstall(backend.NewExtension("PACT_VERSION", backend.Configure().WithPrefix(GetBrokerPactVersionKey(""))))
-	PACT_TAG = backend.Store().MustInstall(backend.NewExtension("PACT_TAG", backend.Configure().WithPrefix(GetBrokerTagKey(""))))
-	VERIFICATION = backend.Store().MustInstall(backend.NewExtension("VERIFICATION", backend.Configure().WithPrefix(GetBrokerVerificationKey(""))))
-	PACT_LATEST = backend.Store().MustInstall(backend.NewExtension("PACT_LATEST", backend.Configure().WithPrefix(GetBrokerLatestKey(""))))
-
+	PARTICIPANT = backend.Store().MustInstall(discovery.NewAddOn("PARTICIPANT", discovery.Configure().WithPrefix(GetBrokerParticipantKey(""))))
+	VERSION = backend.Store().MustInstall(discovery.NewAddOn("VERSION", discovery.Configure().WithPrefix(GetBrokerVersionKey(""))))
+	PACT = backend.Store().MustInstall(discovery.NewAddOn("PACT", discovery.Configure().WithPrefix(GetBrokerPactKey(""))))
+	PACT_VERSION = backend.Store().MustInstall(discovery.NewAddOn("PACT_VERSION", discovery.Configure().WithPrefix(GetBrokerPactVersionKey(""))))
+	PACT_TAG = backend.Store().MustInstall(discovery.NewAddOn("PACT_TAG", discovery.Configure().WithPrefix(GetBrokerTagKey(""))))
+	VERIFICATION = backend.Store().MustInstall(discovery.NewAddOn("VERIFICATION", discovery.Configure().WithPrefix(GetBrokerVerificationKey(""))))
+	PACT_LATEST = backend.Store().MustInstall(discovery.NewAddOn("PACT_LATEST", discovery.Configure().WithPrefix(GetBrokerLatestKey(""))))
 }
 
 type BKvStore struct {
 }
 
-func (s *BKvStore) Participant() backend.Indexer {
+func (s *BKvStore) Participant() discovery.Indexer {
 	return backend.Store().Entities(PARTICIPANT)
 }
 
-func (s *BKvStore) Version() backend.Indexer {
+func (s *BKvStore) Version() discovery.Indexer {
 	return backend.Store().Entities(VERSION)
 }
 
-func (s *BKvStore) Pact() backend.Indexer {
+func (s *BKvStore) Pact() discovery.Indexer {
 	return backend.Store().Entities(PACT)
 }
 
-func (s *BKvStore) PactVersion() backend.Indexer {
+func (s *BKvStore) PactVersion() discovery.Indexer {
 	return backend.Store().Entities(PACT_VERSION)
 }
 
-func (s *BKvStore) PactTag() backend.Indexer {
+func (s *BKvStore) PactTag() discovery.Indexer {
 	return backend.Store().Entities(PACT_TAG)
 }
 
-func (s *BKvStore) Verification() backend.Indexer {
+func (s *BKvStore) Verification() discovery.Indexer {
 	return backend.Store().Entities(VERIFICATION)
 }
 
-func (s *BKvStore) PactLatest() backend.Indexer {
+func (s *BKvStore) PactLatest() discovery.Indexer {
 	return backend.Store().Entities(PACT_LATEST)
 }
 

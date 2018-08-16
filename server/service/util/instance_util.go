@@ -25,6 +25,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"golang.org/x/net/context"
 	"strconv"
@@ -228,7 +229,7 @@ func QueryAllProvidersInstances(ctx context.Context, selfServiceId string) (resu
 	return
 }
 
-func queryServiceInstancesKvs(ctx context.Context, serviceId string, rev int64) ([]*backend.KeyValue, error) {
+func queryServiceInstancesKvs(ctx context.Context, serviceId string, rev int64) ([]*discovery.KeyValue, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	key := apt.GenerateInstanceKey(domainProject, serviceId, "")
 	resp, err := backend.Store().Instance().Search(ctx,

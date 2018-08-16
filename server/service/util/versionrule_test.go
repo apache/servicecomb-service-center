@@ -28,9 +28,9 @@ import (
 const VERSIONRULE_BASE = 5000
 
 func BenchmarkVersionRule_Latest_GetServicesIds(b *testing.B) {
-	var kvs = make([]*backend.KeyValue, VERSIONRULE_BASE)
+	var kvs = make([]*discovery.KeyValue, VERSIONRULE_BASE)
 	for i := 1; i <= VERSIONRULE_BASE; i++ {
-		kvs[i-1] = &backend.KeyValue{
+		kvs[i-1] = &discovery.KeyValue{
 			Key:   []byte(fmt.Sprintf("/service/ver/1.%d", i)),
 			Value: []byte(fmt.Sprintf("%d", i)),
 		}
@@ -45,9 +45,9 @@ func BenchmarkVersionRule_Latest_GetServicesIds(b *testing.B) {
 }
 
 func BenchmarkVersionRule_Range_GetServicesIds(b *testing.B) {
-	var kvs = make([]*backend.KeyValue, VERSIONRULE_BASE)
+	var kvs = make([]*discovery.KeyValue, VERSIONRULE_BASE)
 	for i := 1; i <= VERSIONRULE_BASE; i++ {
-		kvs[i-1] = &backend.KeyValue{
+		kvs[i-1] = &discovery.KeyValue{
 			Key:   []byte(fmt.Sprintf("/service/ver/1.%d", i)),
 			Value: []byte(fmt.Sprintf("%d", i)),
 		}
@@ -62,9 +62,9 @@ func BenchmarkVersionRule_Range_GetServicesIds(b *testing.B) {
 }
 
 func BenchmarkVersionRule_AtLess_GetServicesIds(b *testing.B) {
-	var kvs = make([]*backend.KeyValue, VERSIONRULE_BASE)
+	var kvs = make([]*discovery.KeyValue, VERSIONRULE_BASE)
 	for i := 1; i <= VERSIONRULE_BASE; i++ {
-		kvs[i-1] = &backend.KeyValue{
+		kvs[i-1] = &discovery.KeyValue{
 			Key:   []byte(fmt.Sprintf("/service/ver/1.%d", i)),
 			Value: []byte(fmt.Sprintf("%d", i)),
 		}
@@ -80,7 +80,7 @@ func BenchmarkVersionRule_AtLess_GetServicesIds(b *testing.B) {
 
 func BenchmarkParseVersionRule(b *testing.B) {
 	f := ParseVersionRule("latest")
-	kvs := []*backend.KeyValue{
+	kvs := []*discovery.KeyValue{
 		{
 			Key:   []byte("/service/ver/1.0.300"),
 			Value: "1.0.300",
@@ -110,7 +110,7 @@ var _ = Describe("Version Rule sorter", func() {
 				kvs := []string{"1.0.0", "1.0.1"}
 				sort.Sort(&serviceKeySorter{
 					sortArr: kvs,
-					kvs:     make(map[string]*backend.KeyValue),
+					kvs:     make(map[string]*discovery.KeyValue),
 					cmp:     Larger,
 				})
 				Expect(kvs[0]).To(Equal("1.0.1"))
@@ -120,7 +120,7 @@ var _ = Describe("Version Rule sorter", func() {
 				kvs := []string{"1.0.1", "1.0.0"}
 				sort.Sort(&serviceKeySorter{
 					sortArr: kvs,
-					kvs:     make(map[string]*backend.KeyValue),
+					kvs:     make(map[string]*discovery.KeyValue),
 					cmp:     Larger,
 				})
 				Expect(kvs[0]).To(Equal("1.0.1"))
@@ -130,7 +130,7 @@ var _ = Describe("Version Rule sorter", func() {
 				kvs := []string{"1.0.0.0", "1.0.1"}
 				sort.Sort(&serviceKeySorter{
 					sortArr: kvs,
-					kvs:     make(map[string]*backend.KeyValue),
+					kvs:     make(map[string]*discovery.KeyValue),
 					cmp:     Larger,
 				})
 				Expect(kvs[0]).To(Equal("1.0.1"))
@@ -140,7 +140,7 @@ var _ = Describe("Version Rule sorter", func() {
 				kvs := []string{"1.0.9", "1.0.10"}
 				sort.Sort(&serviceKeySorter{
 					sortArr: kvs,
-					kvs:     make(map[string]*backend.KeyValue),
+					kvs:     make(map[string]*discovery.KeyValue),
 					cmp:     Larger,
 				})
 				Expect(kvs[0]).To(Equal("1.0.10"))
@@ -150,7 +150,7 @@ var _ = Describe("Version Rule sorter", func() {
 				kvs := []string{"1.10", "4"}
 				sort.Sort(&serviceKeySorter{
 					sortArr: kvs,
-					kvs:     make(map[string]*backend.KeyValue),
+					kvs:     make(map[string]*discovery.KeyValue),
 					cmp:     Larger,
 				})
 				Expect(kvs[0]).To(Equal("4"))
@@ -162,7 +162,7 @@ var _ = Describe("Version Rule sorter", func() {
 				kvs := []string{"1.a", "1.0.1.a", ""}
 				sort.Sort(&serviceKeySorter{
 					sortArr: kvs,
-					kvs:     make(map[string]*backend.KeyValue),
+					kvs:     make(map[string]*discovery.KeyValue),
 					cmp:     Larger,
 				})
 				Expect(kvs[0]).To(Equal("1.a"))
@@ -173,7 +173,7 @@ var _ = Describe("Version Rule sorter", func() {
 				kvs := []string{"1.0", "1.0.1.32768"}
 				sort.Sort(&serviceKeySorter{
 					sortArr: kvs,
-					kvs:     make(map[string]*backend.KeyValue),
+					kvs:     make(map[string]*discovery.KeyValue),
 					cmp:     Larger,
 				})
 				Expect(kvs[0]).To(Equal("1.0"))
@@ -181,7 +181,7 @@ var _ = Describe("Version Rule sorter", func() {
 				kvs = []string{"1.0", "1.0.1.32767"}
 				sort.Sort(&serviceKeySorter{
 					sortArr: kvs,
-					kvs:     make(map[string]*backend.KeyValue),
+					kvs:     make(map[string]*discovery.KeyValue),
 					cmp:     Larger,
 				})
 				Expect(kvs[0]).To(Equal("1.0.1.32767"))
@@ -191,10 +191,10 @@ var _ = Describe("Version Rule sorter", func() {
 	})
 	Describe("VersionRule", func() {
 		const count = 10
-		var kvs = [count]*backend.KeyValue{}
+		var kvs = [count]*discovery.KeyValue{}
 		BeforeEach(func() {
 			for i := 1; i <= count; i++ {
-				kvs[i-1] = &backend.KeyValue{
+				kvs[i-1] = &discovery.KeyValue{
 					Key:   []byte(fmt.Sprintf("/service/ver/1.%d", i)),
 					Value: fmt.Sprintf("%d", i),
 				}

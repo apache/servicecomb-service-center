@@ -21,6 +21,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
 	"golang.org/x/net/context"
 	"sync"
 	"time"
@@ -28,22 +29,22 @@ import (
 
 type deferItem struct {
 	ttl   *time.Timer
-	event KvEvent
+	event discovery.KvEvent
 }
 
 type InstanceEventDeferHandler struct {
 	Percent float64
 
-	cache     Cache
+	cache     discovery.Cache
 	once      sync.Once
 	enabled   bool
 	items     map[string]deferItem
-	pendingCh chan []KvEvent
-	deferCh   chan KvEvent
+	pendingCh chan []discovery.KvEvent
+	deferCh   chan discovery.KvEvent
 	resetCh   chan struct{}
 }
 
-func (iedh *InstanceEventDeferHandler) OnCondition(cache Cache, evts []KvEvent) bool {
+func (iedh *InstanceEventDeferHandler) OnCondition(cache discovery.Cache, evts []discovery.KvEvent) bool {
 	if iedh.Percent <= 0 {
 		return false
 	}
@@ -51,8 +52,8 @@ func (iedh *InstanceEventDeferHandler) OnCondition(cache Cache, evts []KvEvent) 
 	iedh.once.Do(func() {
 		iedh.cache = cache
 		iedh.items = make(map[string]deferItem)
-		iedh.pendingCh = make(chan []KvEvent, eventBlockSize)
-		iedh.deferCh = make(chan KvEvent, eventBlockSize)
+		iedh.pendingCh = make(chan []discovery.KvEvent, eventBlockSize)
+		iedh.deferCh = make(chan discovery.KvEvent, eventBlockSize)
 		iedh.resetCh = make(chan struct{})
 		gopool.Go(iedh.check)
 	})
@@ -61,7 +62,7 @@ func (iedh *InstanceEventDeferHandler) OnCondition(cache Cache, evts []KvEvent) 
 	return true
 }
 
-func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt KvEvent) error {
+func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt discovery.KvEvent) error {
 	kv := evt.KV
 	key := util.BytesToStringWithNoCopy(kv.Key)
 	_, ok := iedh.items[key]
@@ -87,14 +88,14 @@ func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt KvEvent) error {
 	return nil
 }
 
-func (iedh *InstanceEventDeferHandler) HandleChan() <-chan KvEvent {
+func (iedh *InstanceEventDeferHandler) HandleChan() <-chan discovery.KvEvent {
 	return iedh.deferCh
 }
 
 func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 	defer log.Recover()
 
-	t, n := time.NewTimer(DEFAULT_CHECK_WINDOW), false
+	t, n := time.NewTimer(deferCheckWindow), false
 	defer t.Stop()
 	for {
 		select {
@@ -122,7 +123,7 @@ func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 			}
 
 			if !n {
-				util.ResetTimer(t, DEFAULT_CHECK_WINDOW)
+				util.ResetTimer(t, deferCheckWindow)
 				n = true
 			}
 		case <-t.C:
@@ -145,17 +146,17 @@ func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 				log.Warnf("self preservation is stopped")
 			}
 
-			t.Reset(DEFAULT_CHECK_WINDOW)
+			t.Reset(deferCheckWindow)
 		case <-iedh.resetCh:
 			iedh.renew()
 			log.Warnf("self preservation is reset")
 
-			util.ResetTimer(t, DEFAULT_CHECK_WINDOW)
+			util.ResetTimer(t, deferCheckWindow)
 		}
 	}
 }
 
-func (iedh *InstanceEventDeferHandler) recover(evt KvEvent) {
+func (iedh *InstanceEventDeferHandler) recover(evt discovery.KvEvent) {
 	key := util.BytesToStringWithNoCopy(evt.KV.Key)
 	delete(iedh.items, key)
 	iedh.deferCh <- evt
@@ -178,5 +179,5 @@ func (iedh *InstanceEventDeferHandler) Reset() bool {
 }
 
 func NewInstanceEventDeferHandler() *InstanceEventDeferHandler {
-	return &InstanceEventDeferHandler{Percent: DEFAULT_SELF_PRESERVATION_PERCENT}
+	return &InstanceEventDeferHandler{Percent: selfPreservationPercentage}
 }

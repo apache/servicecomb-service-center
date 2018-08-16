@@ -38,7 +38,7 @@ func RegisterHandler(catalog string, h Handler) {
 	handlersMap[catalog] = handlers
 
 	t := util.Reflect(h)
-	log.Infof("register handler[%s] %s", catalog, t.Name())
+	log.Infof("register chain handler[%s] %s", catalog, t.Name())
 }
 
 func Handlers(catalog string) []Handler {

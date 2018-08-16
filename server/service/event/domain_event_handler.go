@@ -19,17 +19,18 @@ package event
 import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
 	"github.com/apache/incubator-servicecomb-service-center/server/service/metrics"
 )
 
 type DomainEventHandler struct {
 }
 
-func (h *DomainEventHandler) Type() backend.StoreType {
+func (h *DomainEventHandler) Type() discovery.StoreType {
 	return backend.DOMAIN
 }
 
-func (h *DomainEventHandler) OnEvent(evt backend.KvEvent) {
+func (h *DomainEventHandler) OnEvent(evt discovery.KvEvent) {
 	action := evt.Type
 	switch action {
 	case pb.EVT_INIT, pb.EVT_CREATE:

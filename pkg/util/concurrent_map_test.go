@@ -18,6 +18,7 @@ package util
 
 import (
 	"errors"
+	"math/rand"
 	"testing"
 )
 
@@ -141,13 +142,14 @@ func BenchmarkConcurrentMap_PutAndGet(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			cm.Put("a", "1")
-			_, _ = cm.Get("a")
+			i := rand.Intn(10)
+			cm.Put(i, i)
+			_, _ = cm.Get(i)
 		}
 	})
 	b.ReportAllocs()
 	// go1.9- 5000000	       300 ns/op	      32 B/op	       2 allocs/op
-	// go1.9+ 10000000	       150 ns/op	      16 B/op	       1 allocs/op
+	// go1.9+ 5000000	       294 ns/op	      30 B/op	       2 allocs/op
 }
 
 func BenchmarkConcurrentMap_ForEach(b *testing.B) {
@@ -168,17 +170,51 @@ func BenchmarkConcurrentMap_ForEach(b *testing.B) {
 	// go1.9+ 3000000	       394 ns/op	       0 B/op	       0 allocs/op
 }
 
+func BenchmarkConcurrentMap_PutAndForEach(b *testing.B) {
+	cm := ConcurrentMap{}
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			i := rand.Intn(10)
+			cm.ForEach(func(item MapItem) bool {
+				return true
+			})
+			cm.Put(i, i)
+		}
+	})
+	b.ReportAllocs()
+	// go1.9- 2000000	       747 ns/op	     336 B/op	       3 allocs/op
+	// go1.9+ 5000000	       301 ns/op	      30 B/op	       2 allocs/op
+}
+
 func BenchmarkConcurrentMap_Fetch(b *testing.B) {
 	cm := ConcurrentMap{}
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			_, _ = cm.Fetch("a", func() (interface{}, error) {
-				return "a", nil
+			i := rand.Intn(10)
+			_, _ = cm.Fetch(i, func() (interface{}, error) {
+				return i, nil
 			})
 		}
 	})
 	b.ReportAllocs()
-	// go1.9- 20000000	       101 ns/op	      16 B/op	       1 allocs/op
-	// go1.9+ 200000000	         8.63 ns/op	       0 B/op	       0 allocs/op
+	// go1.9- 5000000	       274 ns/op	       8 B/op	       1 allocs/op
+	// go1.9+ 5000000	       277 ns/op	       7 B/op	       0 allocs/op
+}
+
+func BenchmarkConcurrentMap_PutAndFetch(b *testing.B) {
+	cm := ConcurrentMap{}
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			i := rand.Intn(10)
+			_, _ = cm.Fetch(i, func() (interface{}, error) {
+				return i, nil
+			})
+			cm.Put(i, i)
+		}
+	})
+	b.ReportAllocs()
+	// go1.9- 5000000	       346 ns/op	      24 B/op	       3 allocs/op
+	// go1.9+ 5000000	       305 ns/op	      37 B/op	       3 allocs/op
 }

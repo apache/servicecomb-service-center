@@ -17,13 +17,13 @@
 package backend
 
 import (
-	"errors"
-	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/task"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	"golang.org/x/net/context"
 	"sync"
 )
@@ -32,9 +32,11 @@ var store = &KvStore{}
 
 func init() {
 	store.Initialize()
+	registerInnerTypes()
 }
 
 type KvStore struct {
+	addOns      *util.ConcurrentMap
 	entities    *util.ConcurrentMap
 	taskService task.TaskService
 	lock        sync.RWMutex
@@ -45,40 +47,37 @@ type KvStore struct {
 }
 
 func (s *KvStore) Initialize() {
+	s.addOns = util.NewConcurrentMap(0)
 	s.entities = util.NewConcurrentMap(0)
 	s.taskService = task.NewTaskService()
 	s.ready = make(chan struct{})
 	s.goroutine = gopool.New(context.Background())
 }
 
-func (s *KvStore) OnCacheEvent(evt KvEvent) {
+func (s *KvStore) OnCacheEvent(evt discovery.KvEvent) {
 	if s.rev < evt.Revision {
 		s.rev = evt.Revision
 	}
 }
 
-func (s *KvStore) injectConfig(t StoreType) *Config {
-	return TypeConfig[t].AppendEventFunc(s.OnCacheEvent)
+func (s *KvStore) InjectConfig(cfg *discovery.Config) *discovery.Config {
+	return cfg.AppendEventFunc(s.OnCacheEvent)
 }
 
-func (s *KvStore) getOrCreateEntity(t StoreType) Entity {
-	v, err := s.entities.Fetch(t, func() (interface{}, error) {
-		cfg, ok := TypeConfig[t]
-		if !ok {
-			// do not new instance
-			return nil, ErrNoImpl
+func (s *KvStore) repo() discovery.EntityRepository {
+	return plugin.Plugins().Discovery()
+}
+
+func (s *KvStore) getOrCreateEntity(t discovery.StoreType) discovery.Entity {
+	v, _ := s.entities.Fetch(t, func() (interface{}, error) {
+		addOn, ok := s.addOns.Get(t)
+		if ok {
+			return s.repo().NewEntity(t, addOn.(discovery.AddOn).Config()), nil
 		}
-
-		e := NewKvEntity(t.String(), cfg)
-		e.Run()
-		return e, nil
+		log.Warnf("type '%s' not found", t)
+		return s.repo().NewEntity(t, nil), nil
 	})
-	if err != nil {
-		log.Errorf(err, "can not find entity '%s', new default one", t.String())
-		return DefaultKvEntity()
-
-	}
-	return v.(Entity)
+	return v.(discovery.Entity)
 }
 
 func (s *KvStore) Run() {
@@ -87,11 +86,12 @@ func (s *KvStore) Run() {
 }
 
 func (s *KvStore) store(ctx context.Context) {
-	for i := range TypeConfig {
+	// new all types
+	for _, t := range discovery.StoreTypes() {
 		select {
 		case <-ctx.Done():
 			return
-		case <-s.Entities(i).Ready():
+		case <-s.getOrCreateEntity(t).Ready():
 		}
 	}
 
@@ -111,7 +111,7 @@ func (s *KvStore) Stop() {
 	s.isClose = true
 
 	s.entities.ForEach(func(item util.MapItem) bool {
-		item.Value.(Entity).Stop()
+		item.Value.(discovery.Entity).Stop()
 		return true
 	})
 
@@ -129,65 +129,42 @@ func (s *KvStore) Ready() <-chan struct{} {
 	return s.ready
 }
 
-func (s *KvStore) installType(e Extension) (id StoreType, err error) {
-	if e == nil {
-		return TypeError, errors.New("invalid parameter")
-	}
-	for _, n := range TypeNames {
-		if n == e.Name() {
-			return TypeError, fmt.Errorf("redeclare store type '%s'", n)
-		}
-	}
-	for _, r := range TypeConfig {
-		if r.Key == e.Config().Key {
-			return TypeError, fmt.Errorf("redeclare store root '%s'", r)
-		}
-	}
-
-	id = StoreType(len(TypeNames))
-	TypeNames = append(TypeNames, e.Name())
-	// config
-	TypeConfig[id] = e.Config()
-	// event proxy
-	NewEventProxy(id)
-
-	s.injectConfig(id)
-	return
-}
-
-func (s *KvStore) Install(e Extension) (id StoreType, err error) {
-	if id, err = s.installType(e); err != nil {
+func (s *KvStore) Install(addOn discovery.AddOn) (id discovery.StoreType, err error) {
+	if id, err = discovery.Install(addOn); err != nil {
 		return
 	}
+	s.InjectConfig(addOn.Config())
 
-	log.Infof("install new store entity %d:%s->%s", id, e.Name(), e.Config().Key)
+	s.addOns.Put(id, addOn)
+
+	log.Infof("install new type %d:%s->%s", id, addOn.Name(), addOn.Config().Key)
 	return
 }
 
-func (s *KvStore) MustInstall(e Extension) StoreType {
-	id, err := s.Install(e)
+func (s *KvStore) MustInstall(addOn discovery.AddOn) discovery.StoreType {
+	id, err := s.Install(addOn)
 	if err != nil {
 		panic(err)
 	}
 	return id
 }
 
-func (s *KvStore) Entities(id StoreType) Entity { return s.getOrCreateEntity(id) }
-func (s *KvStore) Service() Entity              { return s.Entities(SERVICE) }
-func (s *KvStore) SchemaSummary() Entity        { return s.Entities(SCHEMA_SUMMARY) }
-func (s *KvStore) Instance() Entity             { return s.Entities(INSTANCE) }
-func (s *KvStore) Lease() Entity                { return s.Entities(LEASE) }
-func (s *KvStore) ServiceIndex() Entity         { return s.Entities(SERVICE_INDEX) }
-func (s *KvStore) ServiceAlias() Entity         { return s.Entities(SERVICE_ALIAS) }
-func (s *KvStore) ServiceTag() Entity           { return s.Entities(SERVICE_TAG) }
-func (s *KvStore) Rule() Entity                 { return s.Entities(RULE) }
-func (s *KvStore) RuleIndex() Entity            { return s.Entities(RULE_INDEX) }
-func (s *KvStore) Schema() Entity               { return s.Entities(SCHEMA) }
-func (s *KvStore) Dependency() Entity           { return s.Entities(DEPENDENCY) }
-func (s *KvStore) DependencyRule() Entity       { return s.Entities(DEPENDENCY_RULE) }
-func (s *KvStore) DependencyQueue() Entity      { return s.Entities(DEPENDENCY_QUEUE) }
-func (s *KvStore) Domain() Entity               { return s.Entities(DOMAIN) }
-func (s *KvStore) Project() Entity              { return s.Entities(PROJECT) }
+func (s *KvStore) Entities(id discovery.StoreType) discovery.Entity { return s.getOrCreateEntity(id) }
+func (s *KvStore) Service() discovery.Entity                        { return s.Entities(SERVICE) }
+func (s *KvStore) SchemaSummary() discovery.Entity                  { return s.Entities(SCHEMA_SUMMARY) }
+func (s *KvStore) Instance() discovery.Entity                       { return s.Entities(INSTANCE) }
+func (s *KvStore) Lease() discovery.Entity                          { return s.Entities(LEASE) }
+func (s *KvStore) ServiceIndex() discovery.Entity                   { return s.Entities(SERVICE_INDEX) }
+func (s *KvStore) ServiceAlias() discovery.Entity                   { return s.Entities(SERVICE_ALIAS) }
+func (s *KvStore) ServiceTag() discovery.Entity                     { return s.Entities(SERVICE_TAG) }
+func (s *KvStore) Rule() discovery.Entity                           { return s.Entities(RULE) }
+func (s *KvStore) RuleIndex() discovery.Entity                      { return s.Entities(RULE_INDEX) }
+func (s *KvStore) Schema() discovery.Entity                         { return s.Entities(SCHEMA) }
+func (s *KvStore) Dependency() discovery.Entity                     { return s.Entities(DEPENDENCY) }
+func (s *KvStore) DependencyRule() discovery.Entity                 { return s.Entities(DEPENDENCY_RULE) }
+func (s *KvStore) DependencyQueue() discovery.Entity                { return s.Entities(DEPENDENCY_QUEUE) }
+func (s *KvStore) Domain() discovery.Entity                         { return s.Entities(DOMAIN) }
+func (s *KvStore) Project() discovery.Entity                        { return s.Entities(PROJECT) }
 
 func (s *KvStore) KeepAlive(ctx context.Context, opts ...registry.PluginOpOption) (int64, error) {
 	op := registry.OpPut(opts...)

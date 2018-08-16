@@ -20,6 +20,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
 	"github.com/apache/incubator-servicecomb-service-center/server/service/cache"
 	"github.com/apache/incubator-servicecomb-service-center/server/service/metrics"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
@@ -30,11 +31,11 @@ import (
 type ServiceEventHandler struct {
 }
 
-func (h *ServiceEventHandler) Type() backend.StoreType {
+func (h *ServiceEventHandler) Type() discovery.StoreType {
 	return backend.SERVICE
 }
 
-func (h *ServiceEventHandler) OnEvent(evt backend.KvEvent) {
+func (h *ServiceEventHandler) OnEvent(evt discovery.KvEvent) {
 	ms := evt.KV.Value.(*pb.MicroService)
 	_, domainProject := backend.GetInfoFromSvcKV(evt.KV)
 	fn, fv := getFramework(ms)

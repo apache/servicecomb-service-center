@@ -20,9 +20,22 @@ import (
 	"context"
 	"fmt"
 	errorsEx "github.com/apache/incubator-servicecomb-service-center/pkg/errors"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/registry/buildin"
 	"testing"
 	"time"
 )
+
+type mockRegistry struct {
+	*buildin.BuildinRegistry
+	LeaseErr error
+}
+
+func (c *mockRegistry) LeaseRenew(ctx context.Context, leaseID int64) (TTL int64, err error) {
+	if c.LeaseErr != nil {
+		return 0, c.LeaseErr
+	}
+	return 1, nil
+}
 
 func TestLeaseTask_Do(t *testing.T) {
 	now := time.Now().UTC()

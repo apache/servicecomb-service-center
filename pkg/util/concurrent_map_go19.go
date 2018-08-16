@@ -25,28 +25,42 @@ type MapItem struct {
 }
 
 type ConcurrentMap struct {
-	mapper sync.Map
+	mapper    sync.Map
+	fetchLock sync.RWMutex
 }
 
 func (cm *ConcurrentMap) Put(key, val interface{}) {
+	cm.fetchLock.RLock()
 	cm.mapper.Store(key, val)
+	cm.fetchLock.RUnlock()
 	return
 }
 
 func (cm *ConcurrentMap) PutIfAbsent(key, val interface{}) (exist interface{}) {
+	cm.fetchLock.RLock()
 	exist, _ = cm.mapper.LoadOrStore(key, val)
+	cm.fetchLock.RUnlock()
 	return
 }
 
-func (cm *ConcurrentMap) Fetch(key interface{}, f func() (interface{}, error)) (exist interface{}, err error) {
+func (cm *ConcurrentMap) Fetch(key interface{}, f func() (interface{}, error)) (v interface{}, err error) {
 	if exist, b := cm.mapper.Load(key); b {
 		return exist, nil
 	}
-	v, err := f()
-	if err != nil {
+
+	cm.fetchLock.Lock()
+	if exist, b := cm.mapper.Load(key); b {
+		cm.fetchLock.Unlock()
+		return exist, nil
+	}
+
+	if v, err = f(); err != nil {
+		cm.fetchLock.Unlock()
 		return nil, err
 	}
-	exist, _ = cm.mapper.LoadOrStore(key, v)
+
+	cm.mapper.Store(key, v)
+	cm.fetchLock.Unlock()
 	return
 }
 
@@ -55,11 +69,15 @@ func (cm *ConcurrentMap) Get(key interface{}) (val interface{}, b bool) {
 }
 
 func (cm *ConcurrentMap) Remove(key interface{}) {
+	cm.fetchLock.RLock()
 	cm.mapper.Delete(key)
+	cm.fetchLock.RUnlock()
 }
 
 func (cm *ConcurrentMap) Clear() {
+	cm.fetchLock.RLock()
 	cm.mapper = sync.Map{}
+	cm.fetchLock.RUnlock()
 }
 
 func (cm *ConcurrentMap) Size() (s int) {

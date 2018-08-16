@@ -38,6 +38,14 @@ const (
 var (
 	StdoutSyncer = zapcore.AddSync(os.Stdout)
 	StderrSyncer = zapcore.AddSync(os.Stderr)
+
+	zapLevelMap = map[string]zapcore.Level{
+		"DEBUG": zap.DebugLevel,
+		"INFO":  zap.InfoLevel,
+		"WARN":  zap.WarnLevel,
+		"ERROR": zap.ErrorLevel,
+		"FATAL": zap.FatalLevel,
+	}
 )
 
 // Config struct for lager and rotate parameters

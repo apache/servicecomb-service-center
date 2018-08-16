@@ -24,6 +24,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
 	"github.com/apache/incubator-servicecomb-service-center/version"
 	"github.com/astaxie/beego"
 	"golang.org/x/net/context"
@@ -88,8 +89,8 @@ func (service *AdminService) dumpAll(ctx context.Context, cache *model.Cache) {
 		Done()
 }
 
-func setValue(e backend.Entity, setter model.Setter) {
-	e.Cache().ForEach(func(k string, kv *backend.KeyValue) (next bool) {
+func setValue(e discovery.Entity, setter model.Setter) {
+	e.Cache().ForEach(func(k string, kv *discovery.KeyValue) (next bool) {
 		setter.SetValue(&model.KV{Key: k, Rev: kv.ModRevision, Value: kv.Value})
 		return true
 	})

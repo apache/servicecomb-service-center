@@ -23,6 +23,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
@@ -77,7 +78,7 @@ func resourceQuota(t quota.ResourceType) GetLimitQuota {
 
 func resourceLimitHandler(ctx context.Context, res *quota.ApplyQuotaResource) (int64, error) {
 	var key string
-	var indexer backend.Indexer
+	var indexer discovery.Indexer
 
 	domainProject := res.DomainProject
 	serviceId := res.ServiceId

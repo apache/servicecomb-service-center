@@ -21,12 +21,13 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"golang.org/x/net/context"
 	"strings"
 )
 
-func GetAllDomainRawData(ctx context.Context) ([]*backend.KeyValue, error) {
+func GetAllDomainRawData(ctx context.Context) ([]*discovery.KeyValue, error) {
 	opts := append(FromContext(ctx),
 		registry.WithStrKey(apt.GenerateDomainKey("")),
 		registry.WithPrefix())

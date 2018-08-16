@@ -23,6 +23,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
 	nf "github.com/apache/incubator-servicecomb-service-center/server/service/notification"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
@@ -77,11 +78,11 @@ func (apt *RulesChangedTask) publish(ctx context.Context, domainProject, provide
 type RuleEventHandler struct {
 }
 
-func (h *RuleEventHandler) Type() backend.StoreType {
+func (h *RuleEventHandler) Type() discovery.StoreType {
 	return backend.RULE
 }
 
-func (h *RuleEventHandler) OnEvent(evt backend.KvEvent) {
+func (h *RuleEventHandler) OnEvent(evt discovery.KvEvent) {
 	action := evt.Type
 	if action == pb.EVT_INIT {
 		return
