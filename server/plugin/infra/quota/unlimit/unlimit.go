@@ -17,7 +17,7 @@
 package unlimit
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
 	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	"github.com/astaxie/beego"
@@ -42,7 +42,7 @@ type Unlimit struct {
 }
 
 func New() mgr.PluginInstance {
-	util.Logger().Infof("quota init, all resources are unlimited")
+	log.Infof("quota init, all resources are unlimited")
 	return &Unlimit{}
 }
 

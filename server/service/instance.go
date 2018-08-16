@@ -135,24 +135,21 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	//先以domain/project的方式组装
 	domainProject := util.ParseDomainProject(ctx)
 
-	var reporter quota.QuotaReporter
+	var reporter *quota.ApplyQuotaResult
 	if !apt.IsSCInstance(ctx) {
 		res := quota.NewApplyQuotaResource(quota.MicroServiceInstanceQuotaType,
 			domainProject, in.Instance.ServiceId, 1)
-		rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
-		reporter = rst.Reporter
-		err := rst.Err
-		if reporter != nil {
-			defer reporter.Close()
-		}
-		if err != nil {
-			log.Errorf(err, "register instance failed, %s, operator %s",
+		reporter = plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+		defer reporter.Close(ctx)
+
+		if reporter.Err != nil {
+			log.Errorf(reporter.Err, "register instance failed, %s, operator %s",
 				instanceFlag, remoteIP)
 			response := &pb.RegisterInstanceResponse{
-				Response: pb.CreateResponseWithSCErr(err),
+				Response: pb.CreateResponseWithSCErr(reporter.Err),
 			}
-			if err.InternalError() {
-				return response, err
+			if reporter.Err.InternalError() {
+				return response, reporter.Err
 			}
 			return response, nil
 		}
@@ -210,13 +207,12 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 		}, nil
 	}
 
-	if reporter != nil {
-		if err := reporter.ReportUsedQuota(ctx); err != nil {
-			log.Errorf(err,
-				"register instance failed, %s, instanceId %s, operator %s",
-				instanceFlag, instanceId, remoteIP)
-		}
+	if err := reporter.ReportUsedQuota(ctx); err != nil {
+		log.Errorf(err,
+			"register instance failed, %s, instanceId %s, operator %s",
+			instanceFlag, instanceId, remoteIP)
 	}
+
 	log.Infof("register instance %s, instanceId %s, operator %s",
 		instanceFlag, instanceId, remoteIP)
 	return &pb.RegisterInstanceResponse{

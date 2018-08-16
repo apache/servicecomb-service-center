@@ -58,7 +58,6 @@ func GetEnvInt(name string, def int) int {
 	if ok {
 		i64, err := strconv.ParseInt(env, 10, 0)
 		if err != nil {
-			Logger().Errorf(err, "get env '%s' value failed, return default value '%d'", name, def)
 			return def
 		}
 		return int(i64)

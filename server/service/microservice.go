@@ -95,18 +95,17 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 		Alias:       service.Alias,
 		Version:     service.Version,
 	}
-	reporter, quotaErr := checkQuota(ctx, domainProject)
-	if reporter != nil {
-		defer reporter.Close()
-	}
-	if quotaErr != nil {
-		log.Errorf(quotaErr, "create micro-service failed, %s: check service failed before create. operator: %s",
+	reporter := checkQuota(ctx, domainProject)
+	defer reporter.Close(ctx)
+
+	if reporter != nil && reporter.Err != nil {
+		log.Errorf(reporter.Err, "create micro-service failed, %s: check service failed before create. operator: %s",
 			serviceFlag, remoteIP)
 		resp := &pb.CreateServiceResponse{
-			Response: pb.CreateResponseWithSCErr(quotaErr),
+			Response: pb.CreateResponseWithSCErr(reporter.Err),
 		}
-		if quotaErr.InternalError() {
-			return resp, quotaErr
+		if reporter.Err.InternalError() {
+			return resp, reporter.Err
 		}
 		return resp, nil
 	}
@@ -177,11 +176,10 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 		}, nil
 	}
 
-	if reporter != nil {
-		if err := reporter.ReportUsedQuota(ctx); err != nil {
-			log.Errorf(err, "report used quota failed.")
-		}
+	if err := reporter.ReportUsedQuota(ctx); err != nil {
+		log.Errorf(err, "report used quota failed.")
 	}
+
 	log.Infof("create micro-service %s, serviceId: %s. operator: %s",
 		serviceFlag, service.ServiceId, remoteIP)
 	return &pb.CreateServiceResponse{
@@ -190,14 +188,14 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 	}, nil
 }
 
-func checkQuota(ctx context.Context, domainProject string) (quota.QuotaReporter, *scerr.Error) {
+func checkQuota(ctx context.Context, domainProject string) *quota.ApplyQuotaResult {
 	if core.IsSCInstance(ctx) {
 		log.Debugf("service-center self register")
-		return nil, nil
+		return nil
 	}
 	res := quota.NewApplyQuotaResource(quota.MicroServiceQuotaType, domainProject, "", 1)
 	rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
-	return rst.Reporter, rst.Err
+	return rst
 }
 
 func (s *MicroServiceService) DeleteServicePri(ctx context.Context, serviceId string, force bool) (*pb.Response, error) {
