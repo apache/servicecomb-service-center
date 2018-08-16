@@ -21,6 +21,10 @@ import (
 	"time"
 )
 
+func Default() *Logger {
+	return logger
+}
+
 func Debug(msg string) {
 	logger.Debug(msg)
 }

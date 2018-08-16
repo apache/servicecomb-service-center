@@ -124,13 +124,14 @@ func toZapConfig(c Config) zapcore.Core {
 }
 
 type Logger struct {
-	Config   Config
-	zapLoger *zap.Logger
-	zapSugar *zap.SugaredLogger
+	Config Config
+
+	zapLogger *zap.Logger
+	zapSugar  *zap.SugaredLogger
 }
 
 func (l *Logger) Debug(msg string) {
-	l.zapLoger.Debug(msg)
+	l.zapLogger.Debug(msg)
 }
 
 func (l *Logger) Debugf(format string, args ...interface{}) {
@@ -138,7 +139,7 @@ func (l *Logger) Debugf(format string, args ...interface{}) {
 }
 
 func (l *Logger) Info(msg string) {
-	l.zapLoger.Info(msg)
+	l.zapLogger.Info(msg)
 }
 
 func (l *Logger) Infof(format string, args ...interface{}) {
@@ -146,7 +147,7 @@ func (l *Logger) Infof(format string, args ...interface{}) {
 }
 
 func (l *Logger) Warn(msg string) {
-	l.zapLoger.Warn(msg)
+	l.zapLogger.Warn(msg)
 }
 
 func (l *Logger) Warnf(format string, args ...interface{}) {
@@ -155,10 +156,10 @@ func (l *Logger) Warnf(format string, args ...interface{}) {
 
 func (l *Logger) Error(msg string, err error) {
 	if err == nil {
-		l.zapLoger.Error(msg)
+		l.zapLogger.Error(msg)
 		return
 	}
-	l.zapLoger.Error(msg, zap.String("error", err.Error()))
+	l.zapLogger.Error(msg, zap.String("error", err.Error()))
 }
 
 func (l *Logger) Errorf(err error, format string, args ...interface{}) {
@@ -171,10 +172,10 @@ func (l *Logger) Errorf(err error, format string, args ...interface{}) {
 
 func (l *Logger) Fatal(msg string, err error) {
 	if err == nil {
-		l.zapLoger.Panic(msg)
+		l.zapLogger.Panic(msg)
 		return
 	}
-	l.zapLoger.Panic(msg, zap.String("error", err.Error()))
+	l.zapLogger.Panic(msg, zap.String("error", err.Error()))
 }
 
 func (l *Logger) Fatalf(err error, format string, args ...interface{}) {
@@ -193,7 +194,7 @@ func (l *Logger) Recover(r interface{}, callerSkip int) {
 		Caller: zapcore.NewEntryCaller(runtime.Caller(callerSkip + l.Config.CallerSkip)),
 		Stack:  zap.Stack("stack").String,
 	}
-	if err := l.zapLoger.Core().With([]zap.Field{zap.Reflect("recover", r)}).Write(e, nil); err != nil {
+	if err := l.zapLogger.Core().With([]zap.Field{zap.Reflect("recover", r)}).Write(e, nil); err != nil {
 		file, _, line, _ := util.GetCaller(0)
 		fmt.Fprintf(StderrSyncer, "%s\tERROR\t%s:%d\t%v\n",
 			time.Now().Format("2006-01-02T15:04:05.000Z0700"),
@@ -205,7 +206,7 @@ func (l *Logger) Recover(r interface{}, callerSkip int) {
 }
 
 func (l *Logger) Sync() {
-	l.zapLoger.Sync()
+	l.zapLogger.Sync()
 }
 
 func NewLogger(cfg Config) *Logger {
@@ -215,8 +216,8 @@ func NewLogger(cfg Config) *Logger {
 		zap.AddCallerSkip(cfg.CallerSkip),
 	)
 	return &Logger{
-		Config:   cfg,
-		zapLoger: l,
-		zapSugar: l.Sugar(),
+		Config:    cfg,
+		zapLogger: l,
+		zapSugar:  l.Sugar(),
 	}
 }

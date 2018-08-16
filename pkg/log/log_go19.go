@@ -39,8 +39,8 @@ var (
 func SetGlobal(cfg Config) {
 	logger = NewLogger(cfg.WithCallerSkip(globalCallerSkip))
 
-	// golang log
-	_ = zap.RedirectStdLog(logger.zapLoger)
 	// zap internal log
-	_ = zap.ReplaceGlobals(logger.zapLoger)
+	_ = zap.ReplaceGlobals(logger.zapLogger)
+	// golang log
+	_ = zap.RedirectStdLog(logger.zapLogger)
 }
