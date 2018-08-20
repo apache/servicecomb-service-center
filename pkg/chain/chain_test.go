@@ -21,11 +21,12 @@ import (
 	"errors"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"testing"
+	"time"
 )
 
 const (
 	times = 1000000
-	count = 100
+	count = 10
 )
 
 func init() {
@@ -73,26 +74,13 @@ func BenchmarkChain(b *testing.B) {
 
 	b.N = times
 	b.ResetTimer()
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			inv := NewInvocation(ctx, NewChain("_bench_chain_", Handlers("_bench_handlers_")))
-			inv.Invoke(f)
-		}
-	})
-	b.ReportAllocs()
-	// 1000000	      6607 ns/op	      80 B/op	       1 allocs/op
-}
+	for i := 0; i < b.N; i++ {
+		inv := NewInvocation(ctx, NewChain("_bench_chain_", Handlers("_bench_handlers_")))
+		inv.Invoke(f)
 
-func BenchmarkSync(b *testing.B) {
-	b.N = times
-	b.ResetTimer()
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			syncFunc(0)
-		}
-	})
+	}
 	b.ReportAllocs()
-	// 1000000	        46.9 ns/op	       0 B/op	       0 allocs/op
+	// 1000000	       735 ns/op	      80 B/op	       1 allocs/op
 }
 
 type mockHandler struct {
@@ -112,7 +100,8 @@ func (h *mockHandler) Handle(i *Invocation) {
 	case 4:
 		i.Next(WithAsyncFunc(func(r Result) {
 			i.WithContext("x", x*x)
-			i.Context().Value("ch").(chan struct{}) <- struct{}{}
+			ch, _ := i.Context().Value("ch").(chan struct{})
+			ch <- struct{}{}
 		}))
 	case 5:
 		panic(errors.New("error"))
@@ -181,7 +170,7 @@ func TestChain_Next(t *testing.T) {
 		t.Fatalf("TestChain_Next")
 	}
 
-	x = 4
+	x = 4 // async call back
 	ch = NewChain("test", hs)
 	i = NewInvocation(context.Background(), ch)
 	i.WithContext("x", x)
@@ -216,7 +205,7 @@ func TestChain_Next(t *testing.T) {
 		}
 	})
 
-	x = 7
+	x = 7 // async call back
 	ch = NewChain("test", hs)
 	i = NewInvocation(context.Background(), ch)
 	i.WithContext("x", x)
@@ -225,4 +214,5 @@ func TestChain_Next(t *testing.T) {
 			t.Fatalf("TestChain_Next")
 		}
 	})
+	<-time.After(500 * time.Millisecond)
 }

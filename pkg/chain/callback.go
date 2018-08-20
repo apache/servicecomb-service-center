@@ -47,19 +47,11 @@ type Callback struct {
 func (cb *Callback) Invoke(r Result) {
 	if cb.Async {
 		pool.Do(func(_ context.Context) {
-			cb.syncInvoke(r)
+			cb.Func(r)
 		})
 		return
 	}
-	cb.syncInvoke(r)
-}
-
-func (cb *Callback) syncInvoke(r Result) {
 	defer log.Recover()
-	if cb.Func == nil {
-		log.Errorf(nil, "Callback function is nil. result: %s,", r)
-		return
-	}
 	cb.Func(r)
 }
 

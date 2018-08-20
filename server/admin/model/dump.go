@@ -18,6 +18,7 @@ package model
 
 import (
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/version"
 )
 
 type Getter interface {
@@ -180,6 +181,9 @@ type DumpRequest struct {
 }
 
 type DumpResponse struct {
-	Response *pb.Response `json:"response,omitempty"`
-	Cache    *Cache       `json:"cache,omitempty"`
+	Response     *pb.Response        `json:"response,omitempty"`
+	Info         *version.VersionSet `json:"info,omitempty"`
+	Config       *pb.ServerConfig    `json:"config,omitempty"`
+	Environments map[string]string   `json:"environments,omitempty"`
+	Cache        *Cache              `json:"cache,omitempty"`
 }
