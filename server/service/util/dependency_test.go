@@ -202,13 +202,13 @@ func TestDependency(t *testing.T) {
 		removedDependencyRuleList: []*proto.MicroServiceKey{
 			{ServiceName: "a", Version: "1.0.0"},
 		},
-		NewDependencyRuleList: []*proto.MicroServiceKey{
+		newDependencyRuleList: []*proto.MicroServiceKey{
 			{ServiceName: "a", Version: "1.0.0"},
 		},
 	}
 	d.RemoveConsumerOfProviderRule()
 	d.AddConsumerOfProviderRule()
-	err := d.UpdateProvidersRuleOfConsumer("")
+	err := d.UpdateProvidersRuleOfConsumer(context.Background(), "")
 	if err == nil {
 		t.Fatalf(`Dependency_UpdateProvidersRuleOfConsumer failed`)
 	}
@@ -258,6 +258,21 @@ func TestDependency(t *testing.T) {
 	_, err = dr.GetDependencyProviders()
 	if err == nil {
 		t.Fatalf(`DependencyRelation_GetDependencyProviders failed`)
+	}
+
+	err = CleanUpDependencyRules(context.Background(), "")
+	if err == nil {
+		t.Fatalf(`DependencyRelation_CleanUpDependencyRules failed`)
+	}
+
+	err = CleanUpDependencyRules(context.Background(), "a/b")
+	if err == nil {
+		t.Fatalf(`DependencyRelation_CleanUpDependencyRules failed`)
+	}
+
+	_, err = removeProviderRuleKeys(context.Background(), "a/b", nil)
+	if err == nil {
+		t.Fatalf(`DependencyRelation_removeProviderRuleKeys failed`)
 	}
 }
 

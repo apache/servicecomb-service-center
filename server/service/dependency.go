@@ -91,7 +91,7 @@ func (s *MicroServiceService) AddOrUpdateDependencies(ctx context.Context, depen
 			return pb.CreateResponse(scerr.ErrInternal, err.Error()), err
 		}
 
-		id := "0"
+		id := apt.DEPS_QUEUE_UUID
 		if !override {
 			id = util.GenerateUuid()
 		}
