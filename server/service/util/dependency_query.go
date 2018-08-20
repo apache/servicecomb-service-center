@@ -167,7 +167,7 @@ func (dr *DependencyRelation) parseDependencyRule(dependencyRule *pb.MicroServic
 		sopts := append(opts,
 			registry.WithStrKey(allServiceKey),
 			registry.WithPrefix())
-		resp, err := backend.Store().Service().Search(dr.ctx, sopts...)
+		resp, err := backend.Store().ServiceIndex().Search(dr.ctx, sopts...)
 		if err != nil {
 			return nil, err
 		}
