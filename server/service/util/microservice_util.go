@@ -18,6 +18,7 @@ package util
 
 import (
 	"encoding/json"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
@@ -89,7 +90,7 @@ func GetServiceId(ctx context.Context, key *pb.MicroServiceKey) (serviceId strin
 	}
 	if len(serviceId) == 0 {
 		// 别名查询
-		util.Logger().Debugf("could not search microservice %s/%s/%s id by field 'serviceName', now try field 'alias'.",
+		log.Debugf("could not search microservice %s/%s/%s id by field 'serviceName', now try field 'alias'.",
 			key.AppId, key.ServiceName, key.Version)
 		return searchServiceIdFromAlias(ctx, key)
 	}
@@ -210,7 +211,7 @@ func UpdateService(domainProject string, serviceId string, service *pb.MicroServ
 	key := apt.GenerateServiceKey(domainProject, serviceId)
 	data, err := json.Marshal(service)
 	if err != nil {
-		util.Logger().Errorf(err, "marshal service failed.")
+		log.Errorf(err, "marshal service failed.")
 		return
 	}
 	opt = registry.OpPut(registry.WithStrKey(key), registry.WithValue(data))

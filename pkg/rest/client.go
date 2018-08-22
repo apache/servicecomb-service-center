@@ -21,6 +21,7 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"io"
 	"io/ioutil"
@@ -113,14 +114,14 @@ func gzipCompress(src []byte) (dst []byte) {
 func readAndGunzip(reader io.Reader) (dst []byte, err error) {
 	gzipReader, err := gzip.NewReader(reader)
 	if err != nil {
-		util.Logger().Errorf(err, "duplicate gzip reader failed.")
+		log.Errorf(err, "duplicate gzip reader failed.")
 		return nil, err
 	}
 
 	defer gzipReader.Close()
 	dst, err = ioutil.ReadAll(gzipReader)
 	if err != nil {
-		util.Logger().Errorf(err, "read from gzip reader failed.")
+		log.Errorf(err, "read from gzip reader failed.")
 		return nil, err
 	}
 
@@ -138,7 +139,7 @@ func (client *HttpClient) httpDo(method string, url string, headers map[string]s
 			// 如果请求头未传入Content-Type，则按照json格式进行编码（如果是非json类型，需要自行在headers里指定类型）
 			bodyBytes, err = json.Marshal(body)
 			if err != nil {
-				util.Logger().Errorf(err, "marshal object failed.")
+				log.Errorf(err, "marshal object failed.")
 				return status, result
 			}
 		} else {
@@ -146,7 +147,7 @@ func (client *HttpClient) httpDo(method string, url string, headers map[string]s
 			var ok bool = false
 			bodyBytes, ok = body.([]byte)
 			if !ok {
-				util.Logger().Errorf(nil,
+				log.Errorf(nil,
 					"invalid body type '%s'(%s), body must type of byte array if Content-Type specified.",
 					reflect.TypeOf(body), headers[HEADER_CONTENT_TYPE])
 				return status, result
@@ -163,7 +164,7 @@ func (client *HttpClient) httpDo(method string, url string, headers map[string]s
 
 	req, err := http.NewRequest(method, url, bodyReader)
 	if err != nil {
-		util.Logger().Errorf(err, "create request failed.")
+		log.Errorf(err, "create request failed.")
 		return status, result
 	}
 
@@ -174,7 +175,7 @@ func (client *HttpClient) httpDo(method string, url string, headers map[string]s
 
 	resp, err := client.Client.Do(req)
 	if err != nil {
-		util.Logger().Errorf(err, "invoke request failed.")
+		log.Errorf(err, "invoke request failed.")
 		return status, result
 	}
 
@@ -201,7 +202,7 @@ func (client *HttpClient) HttpDo(method string, url string, headers map[string]s
 			// 如果请求头未传入Conent-Type，则按照json格式进行编码（如果是非json类型，需要自行在headers里指定类型）
 			bodyBytes, err = json.Marshal(body)
 			if err != nil {
-				util.Logger().Errorf(err, "marshal object failed.")
+				log.Errorf(err, "marshal object failed.")
 				return nil, err
 			}
 		} else {
@@ -211,7 +212,7 @@ func (client *HttpClient) HttpDo(method string, url string, headers map[string]s
 			if !ok {
 				err := fmt.Errorf("invalid body type '%s'(%s), body must type of byte array if Content-Type specified.",
 					reflect.TypeOf(body), headers[HEADER_CONTENT_TYPE])
-				util.Logger().Errorf(err, "")
+				log.Errorf(err, "")
 				return nil, err
 			}
 		}
@@ -226,7 +227,7 @@ func (client *HttpClient) HttpDo(method string, url string, headers map[string]s
 
 	req, err := http.NewRequest(method, url, bodyReader)
 	if err != nil {
-		util.Logger().Errorf(err, "create request failed.")
+		log.Errorf(err, "create request failed.")
 		return nil, err
 	}
 
@@ -237,7 +238,7 @@ func (client *HttpClient) HttpDo(method string, url string, headers map[string]s
 
 	resp, err := client.Client.Do(req)
 	if err != nil {
-		util.Logger().Errorf(err, "Request -----> %s failed.", url)
+		log.Errorf(err, "Request -----> %s failed.", url)
 		return resp, err
 	}
 	return resp, err

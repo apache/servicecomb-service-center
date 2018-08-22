@@ -3,6 +3,7 @@ output
 **/*.coverprofile
 **/coverage.out
 **/coverage.txt
+**/*.log
 
 service-center.iml
 .idea/

@@ -17,6 +17,7 @@
 package util
 
 import (
+	"os"
 	"testing"
 	"time"
 )
@@ -120,5 +121,23 @@ func TestSystemPackage(t *testing.T) {
 	}
 	if !PathExist("../../etc/conf/app.conf") {
 		t.Fatalf("TestSystemPackage failed")
+	}
+}
+
+func TestGetEnvInt(t *testing.T) {
+	if GetEnvInt("a", 1) != 1 {
+		t.Fatalf("TestGetEnvInt failed")
+	}
+	os.Setenv("a", "")
+	if GetEnvInt("a", 1) != 1 {
+		t.Fatalf("TestGetEnvInt failed")
+	}
+	os.Setenv("a", "x")
+	if GetEnvInt("a", 1) != 1 {
+		t.Fatalf("TestGetEnvInt failed")
+	}
+	os.Setenv("a", "2")
+	if GetEnvInt("a", 1) != 2 {
+		t.Fatalf("TestGetEnvInt failed")
 	}
 }

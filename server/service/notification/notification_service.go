@@ -18,6 +18,8 @@ package notification
 
 import (
 	"errors"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"golang.org/x/net/context"
 	"sync"
@@ -28,13 +30,13 @@ var notifyService *NotifyService
 func init() {
 	notifyService = &NotifyService{
 		isClose:   true,
-		goroutine: util.NewGo(context.Background()),
+		goroutine: gopool.New(context.Background()),
 	}
 }
 
 type NotifyService struct {
 	processors *util.ConcurrentMap
-	goroutine  *util.GoRoutine
+	goroutine  *gopool.Pool
 	err        chan error
 	closeMux   sync.RWMutex
 	isClose    bool
@@ -54,7 +56,7 @@ func (s *NotifyService) init() {
 
 func (s *NotifyService) Start() {
 	if !s.Closed() {
-		util.Logger().Warnf("notify service is already running")
+		log.Warnf("notify service is already running")
 		return
 	}
 	s.closeMux.Lock()
@@ -65,7 +67,7 @@ func (s *NotifyService) Start() {
 	// 错误subscriber清理
 	s.AddSubscriber(NewNotifyServiceHealthChecker())
 
-	util.Logger().Debugf("notify service is started")
+	log.Debugf("notify service is started")
 
 	s.processors.ForEach(func(item util.MapItem) (next bool) {
 		s.goroutine.Do(item.Value.(*Processor).Do)
@@ -141,7 +143,7 @@ func (s *NotifyService) Stop() {
 
 	close(s.err)
 
-	util.Logger().Debug("notify service stopped")
+	log.Debug("notify service stopped")
 }
 
 func GetNotifyService() *NotifyService {

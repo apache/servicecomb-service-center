@@ -17,7 +17,8 @@
 package metric
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	pm "github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/net/context"
 	"strings"
@@ -54,7 +55,7 @@ func (mm *MetricsGatherer) Start() {
 	}
 	mm.closed = false
 
-	util.Go(mm.loop)
+	gopool.Go(mm.loop)
 
 	mm.lock.Unlock()
 }
@@ -67,7 +68,7 @@ func (mm *MetricsGatherer) loop(ctx context.Context) {
 			return
 		case <-ticker.C:
 			if err := mm.Collect(); err != nil {
-				util.Logger().Errorf(err, "metrics collect failed.")
+				log.Errorf(err, "metrics collect failed.")
 				return
 			}
 

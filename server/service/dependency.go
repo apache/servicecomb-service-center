@@ -19,6 +19,7 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
@@ -65,19 +66,19 @@ func (s *MicroServiceService) AddOrUpdateDependencies(ctx context.Context, depen
 
 		rsp := serviceUtil.ParamsChecker(consumerInfo, providersInfo)
 		if rsp != nil {
-			util.Logger().Errorf(nil, "put request into dependency queue failed, override: %t, consumer is %s, %s",
+			log.Errorf(nil, "put request into dependency queue failed, override: %t, consumer is %s, %s",
 				override, consumerFlag, rsp.Response.Message)
 			return rsp.Response, nil
 		}
 
 		consumerId, err := serviceUtil.GetServiceId(ctx, consumerInfo)
 		if err != nil {
-			util.Logger().Errorf(err, "put request into dependency queue failed, override: %t, get consumer %s id failed",
+			log.Errorf(err, "put request into dependency queue failed, override: %t, get consumer %s id failed",
 				override, consumerFlag)
 			return pb.CreateResponse(scerr.ErrInternal, err.Error()), err
 		}
 		if len(consumerId) == 0 {
-			util.Logger().Errorf(nil, "put request into dependency queue failed, override: %t, consumer %s does not exist.",
+			log.Errorf(nil, "put request into dependency queue failed, override: %t, consumer %s does not exist.",
 				override, consumerFlag)
 			return pb.CreateResponse(scerr.ErrServiceNotExists, fmt.Sprintf("Consumer %s does not exist.", consumerFlag)), nil
 		}
@@ -85,7 +86,7 @@ func (s *MicroServiceService) AddOrUpdateDependencies(ctx context.Context, depen
 		dependencyInfo.Override = override
 		data, err := json.Marshal(dependencyInfo)
 		if err != nil {
-			util.Logger().Errorf(err, "put request into dependency queue failed, override: %t, marshal consumer %s dependency failed",
+			log.Errorf(err, "put request into dependency queue failed, override: %t, marshal consumer %s dependency failed",
 				override, consumerFlag)
 			return pb.CreateResponse(scerr.ErrInternal, err.Error()), err
 		}
@@ -100,11 +101,11 @@ func (s *MicroServiceService) AddOrUpdateDependencies(ctx context.Context, depen
 
 	err := backend.BatchCommit(ctx, opts)
 	if err != nil {
-		util.Logger().Errorf(err, "put request into dependency queue failed, override: %t, %v", override, dependencyInfos)
+		log.Errorf(err, "put request into dependency queue failed, override: %t, %v", override, dependencyInfos)
 		return pb.CreateResponse(scerr.ErrInternal, err.Error()), err
 	}
 
-	util.Logger().Infof("put request into dependency queue successfully, override: %t, %v, from remote %s",
+	log.Infof("put request into dependency queue successfully, override: %t, %v, from remote %s",
 		override, dependencyInfos, util.GetIPFromContext(ctx))
 	return pb.CreateResponse(pb.Response_SUCCESS, "Create dependency successfully."), nil
 }
@@ -112,7 +113,7 @@ func (s *MicroServiceService) AddOrUpdateDependencies(ctx context.Context, depen
 func (s *MicroServiceService) GetProviderDependencies(ctx context.Context, in *pb.GetDependenciesRequest) (*pb.GetProDependenciesResponse, error) {
 	err := Validate(in)
 	if err != nil {
-		util.Logger().Errorf(err, "GetProviderDependencies failed for validating parameters failed.")
+		log.Errorf(err, "GetProviderDependencies failed for validating parameters failed.")
 		return &pb.GetProDependenciesResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
@@ -122,11 +123,11 @@ func (s *MicroServiceService) GetProviderDependencies(ctx context.Context, in *p
 
 	provider, err := serviceUtil.GetService(ctx, domainProject, providerServiceId)
 	if err != nil {
-		util.Logger().Errorf(err, "GetProviderDependencies failed, %s.", providerServiceId)
+		log.Errorf(err, "GetProviderDependencies failed, %s.", providerServiceId)
 		return nil, err
 	}
 	if provider == nil {
-		util.Logger().Errorf(err, "GetProviderDependencies failed for provider does not exist, %s.", providerServiceId)
+		log.Errorf(err, "GetProviderDependencies failed for provider does not exist, %s.", providerServiceId)
 		return &pb.GetProDependenciesResponse{
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Provider does not exist"),
 		}, nil
@@ -135,7 +136,7 @@ func (s *MicroServiceService) GetProviderDependencies(ctx context.Context, in *p
 	dr := serviceUtil.NewProviderDependencyRelation(ctx, domainProject, provider)
 	services, err := dr.GetDependencyConsumers(toDependencyFilterOptions(in)...)
 	if err != nil {
-		util.Logger().Errorf(err, "GetProviderDependencies failed.")
+		log.Errorf(err, "GetProviderDependencies failed.")
 		return &pb.GetProDependenciesResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
@@ -149,7 +150,7 @@ func (s *MicroServiceService) GetProviderDependencies(ctx context.Context, in *p
 func (s *MicroServiceService) GetConsumerDependencies(ctx context.Context, in *pb.GetDependenciesRequest) (*pb.GetConDependenciesResponse, error) {
 	err := Validate(in)
 	if err != nil {
-		util.Logger().Errorf(err, "GetConsumerDependencies failed for validating parameters failed.")
+		log.Errorf(err, "GetConsumerDependencies failed for validating parameters failed.")
 		return &pb.GetConDependenciesResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
@@ -159,13 +160,13 @@ func (s *MicroServiceService) GetConsumerDependencies(ctx context.Context, in *p
 
 	consumer, err := serviceUtil.GetService(ctx, domainProject, consumerId)
 	if err != nil {
-		util.Logger().Errorf(err, "GetConsumerDependencies failed for get consumer failed.")
+		log.Errorf(err, "GetConsumerDependencies failed for get consumer failed.")
 		return &pb.GetConDependenciesResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 	if consumer == nil {
-		util.Logger().Errorf(err, "GetConsumerDependencies failed for consumer does not exist, %s.", consumerId)
+		log.Errorf(err, "GetConsumerDependencies failed for consumer does not exist, %s.", consumerId)
 		return &pb.GetConDependenciesResponse{
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Consumer does not exist"),
 		}, nil
@@ -174,7 +175,7 @@ func (s *MicroServiceService) GetConsumerDependencies(ctx context.Context, in *p
 	dr := serviceUtil.NewConsumerDependencyRelation(ctx, domainProject, consumer)
 	services, err := dr.GetDependencyProviders(toDependencyFilterOptions(in)...)
 	if err != nil {
-		util.Logger().Errorf(err, "GetConsumerDependencies failed for get providers failed.")
+		log.Errorf(err, "GetConsumerDependencies failed for get providers failed.")
 		return &pb.GetConDependenciesResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err

@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/broker/brokerpb"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
@@ -766,7 +767,7 @@ func (*BrokerService) PublishPact(ctx context.Context, in *brokerpb.PublishPactR
 
 	// check that the consumer has that vesion in the url
 	if strings.Compare(consumer.GetVersion(), in.Version) != 0 {
-		util.Logger().Errorf(nil,
+		log.Errorf(nil,
 			"pact publish failed, version (%s) does not exist for consmer", in.Version)
 		return &brokerpb.PublishPactResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Consumer Version does not exist."),

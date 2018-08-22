@@ -19,7 +19,7 @@ package service_test
 import (
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/quota/buildin"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"strconv"
@@ -200,7 +200,7 @@ var _ = Describe("'Rule' service", func() {
 
 		Context("when create rule out of gauge", func() {
 			It("should be failed", func() {
-				size := buildin.RULE_NUM_MAX_LIMIT_PER_SERVICE + 1
+				size := quota.DefaultRuleQuota + 1
 				rules := make([]*pb.AddOrUpdateServiceRule, 0, size)
 				for i := 0; i < size; i++ {
 					rules = append(rules, &pb.AddOrUpdateServiceRule{
@@ -536,7 +536,7 @@ var _ = Describe("'Rule' service", func() {
 
 				By("rules is invalid")
 				var arr []string
-				for i := 0; i < buildin.RULE_NUM_MAX_LIMIT_PER_SERVICE+1; i++ {
+				for i := 0; i < quota.DefaultRuleQuota+1; i++ {
 					arr = append(arr, strconv.Itoa(i))
 				}
 				respAddRule, err = serviceResource.DeleteRule(getContext(), &pb.DeleteServiceRulesRequest{

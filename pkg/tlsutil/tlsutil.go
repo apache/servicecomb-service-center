@@ -20,6 +20,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"io/ioutil"
 	"strings"
@@ -42,7 +43,7 @@ func ParseSSLCipherSuites(ciphers string, permitTlsCipherSuiteMap map[string]uin
 			cipherSuiteList = append(cipherSuiteList, cipherSuite)
 		} else {
 			// 配置算法不存在
-			util.Logger().Warnf("cipher %s not exist.", cipherSuiteName)
+			log.Warnf("cipher %s not exist.", cipherSuiteName)
 		}
 	}
 
@@ -58,7 +59,7 @@ func ParseSSLProtocol(sprotocol string) uint16 {
 	if protocol, ok := TLS_VERSION_MAP[sprotocol]; ok {
 		result = protocol
 	} else {
-		util.Logger().Warnf("invalid ssl minimal version(%s), use default.", sprotocol)
+		log.Warnf("invalid ssl minimal version(%s), use default.", sprotocol)
 	}
 
 	return result
@@ -68,7 +69,7 @@ func GetX509CACertPool(caCertFile string) (caCertPool *x509.CertPool, err error)
 	pool := x509.NewCertPool()
 	caCert, err := ioutil.ReadFile(caCertFile)
 	if err != nil {
-		util.Logger().Errorf(err, "read ca cert file %s failed.", caCertFile)
+		log.Errorf(err, "read ca cert file %s failed.", caCertFile)
 		return nil, err
 	}
 
@@ -79,19 +80,19 @@ func GetX509CACertPool(caCertFile string) (caCertPool *x509.CertPool, err error)
 func LoadTLSCertificate(certFile, keyFile, plainPassphase string) (tlsCert []tls.Certificate, err error) {
 	certContent, err := ioutil.ReadFile(certFile)
 	if err != nil {
-		util.Logger().Errorf(err, "read cert file %s failed.", certFile)
+		log.Errorf(err, "read cert file %s failed.", certFile)
 		return nil, err
 	}
 
 	keyContent, err := ioutil.ReadFile(keyFile)
 	if err != nil {
-		util.Logger().Errorf(err, "read key file %s failed.", keyFile)
+		log.Errorf(err, "read key file %s failed.", keyFile)
 		return nil, err
 	}
 
 	keyBlock, _ := pem.Decode(keyContent)
 	if keyBlock == nil {
-		util.Logger().Errorf(err, "decode key file %s failed.", keyFile)
+		log.Errorf(err, "decode key file %s failed.", keyFile)
 		return nil, err
 	}
 
@@ -99,7 +100,7 @@ func LoadTLSCertificate(certFile, keyFile, plainPassphase string) (tlsCert []tls
 		plainPassphaseBytes := util.StringToBytesWithNoCopy(plainPassphase)
 		keyData, err := x509.DecryptPEMBlock(keyBlock, plainPassphaseBytes)
 		if err != nil {
-			util.Logger().Errorf(err, "decrypt key file %s failed.", keyFile)
+			log.Errorf(err, "decrypt key file %s failed.", keyFile)
 			return nil, err
 		}
 
@@ -114,7 +115,7 @@ func LoadTLSCertificate(certFile, keyFile, plainPassphase string) (tlsCert []tls
 
 	cert, err := tls.X509KeyPair(certContent, keyContent)
 	if err != nil {
-		util.Logger().Errorf(err, "load X509 key pair from cert file %s with key file %s failed.", certFile, keyFile)
+		log.Errorf(err, "load X509 key pair from cert file %s with key file %s failed.", certFile, keyFile)
 		return nil, err
 	}
 

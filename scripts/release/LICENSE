@@ -852,3 +852,31 @@ This product bundles the css-percentage-circle library which is
 licensed under the MIT License.
 For details, see https://github.com/afuersch/css-percentage-circle
 You can find a copy of the License at licenses/LICENSE-css-percentage-circle
+
+================================================================
+For zap (4d45f9617f7d90f7a663ff21c7a4321dbe78098b)
+================================================================
+This product bundles the zap library which is licensed under the MIT License.
+For details, see https://github.com/uber-go/zap
+You can find a copy of the License at licenses/LICENSE-uber-go-zap
+
+================================================================
+For atomic (1ea20fb1cbb1cc08cbd0d913a96dead89aa18289)
+================================================================
+This product bundles the atomic library which is licensed under the MIT License.
+For details, see https://github.com/uber-go/atomic
+You can find a copy of the License at licenses/LICENSE-uber-go-atomic
+
+================================================================
+For multierr (3c4937480c32f4c13a875a1829af76c98ca3d40a)
+================================================================
+This product bundles the multierr library which is licensed under the MIT License.
+For details, see https://github.com/uber-go/multierr
+You can find a copy of the License at licenses/LICENSE-uber-go-multierr
+
+================================================================
+For lumberjack (a96e63847dc3c67d17befa69c303767e2f84e54f)
+================================================================
+This product bundles the lumberjack library which is licensed under the MIT License.
+For details, see https://github.com/natefinch/lumberjack
+You can find a copy of the License at licenses/LICENSE-natefinch-lumberjack

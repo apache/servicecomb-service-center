@@ -18,6 +18,7 @@ package notification
 
 import (
 	"errors"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"time"
@@ -35,17 +36,17 @@ func HandleWatchJob(watcher *ListWatcher, stream pb.ServiceInstanceCtrl_WatchSer
 		case job := <-watcher.Job:
 			if job == nil {
 				err = errors.New("channel is closed")
-				util.Logger().Errorf(err, "watcher caught an exception, subject: %s, group: %s",
+				log.Errorf(err, "watcher caught an exception, subject: %s, group: %s",
 					watcher.Subject(), watcher.Group())
 				return
 			}
 			resp := job.Response
-			util.Logger().Infof("event is coming in, watcher, subject: %s, group: %s",
+			log.Infof("event is coming in, watcher, subject: %s, group: %s",
 				watcher.Subject(), watcher.Group())
 
 			err = stream.Send(resp)
 			if err != nil {
-				util.Logger().Errorf(err, "send message error, subject: %s, group: %s",
+				log.Errorf(err, "send message error, subject: %s, group: %s",
 					watcher.Subject(), watcher.Group())
 				watcher.SetError(err)
 				return

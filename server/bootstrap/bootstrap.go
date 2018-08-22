@@ -56,7 +56,7 @@ import _ "github.com/apache/incubator-servicecomb-service-center/server/admin"
 import _ "github.com/apache/incubator-servicecomb-service-center/server/metric"
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/server/handler/auth"
 	"github.com/apache/incubator-servicecomb-service-center/server/handler/cache"
 	"github.com/apache/incubator-servicecomb-service-center/server/handler/context"
@@ -69,7 +69,7 @@ import (
 )
 
 func init() {
-	util.Logger().Info("BootStrap ServiceComb.io Edition")
+	log.Info("BootStrap ServiceComb.io Edition")
 
 	// intercept requests before routing.
 	interceptor.RegisterInterceptFunc(access.Intercept)

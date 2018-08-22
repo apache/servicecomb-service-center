@@ -18,6 +18,7 @@ package v4
 
 import (
 	"encoding/json"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
@@ -50,7 +51,7 @@ func (this *MicroServiceInstanceService) URLPatterns() []rest.Route {
 func (this *MicroServiceInstanceService) RegisterInstance(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		util.Logger().Error("register instance failed, body err", err)
+		log.Error("register instance failed, body err", err)
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
@@ -58,7 +59,7 @@ func (this *MicroServiceInstanceService) RegisterInstance(w http.ResponseWriter,
 	request := &pb.RegisterInstanceRequest{}
 	err = json.Unmarshal(message, request)
 	if err != nil {
-		util.Logger().Error("register instance failed, Unmarshal error", err)
+		log.Error("register instance failed, Unmarshal error", err)
 		controller.WriteError(w, scerr.ErrInvalidParams, "Unmarshal error")
 		return
 	}
@@ -86,7 +87,7 @@ func (this *MicroServiceInstanceService) Heartbeat(w http.ResponseWriter, r *htt
 func (this *MicroServiceInstanceService) HeartbeatSet(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		util.Logger().Error("register instance failed, body err", err)
+		log.Error("register instance failed, body err", err)
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
@@ -94,7 +95,7 @@ func (this *MicroServiceInstanceService) HeartbeatSet(w http.ResponseWriter, r *
 	request := &pb.HeartbeatSetRequest{}
 	err = json.Unmarshal(message, request)
 	if err != nil {
-		util.Logger().Error("register instance failed, Unmarshal error", err)
+		log.Error("register instance failed, Unmarshal error", err)
 		controller.WriteError(w, scerr.ErrInvalidParams, "Unmarshal error")
 		return
 	}
@@ -205,7 +206,7 @@ func (this *MicroServiceInstanceService) UpdateMetadata(w http.ResponseWriter, r
 	query := r.URL.Query()
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		util.Logger().Error("body err", err)
+		log.Error("body err", err)
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
@@ -215,7 +216,7 @@ func (this *MicroServiceInstanceService) UpdateMetadata(w http.ResponseWriter, r
 	}
 	err = json.Unmarshal(message, request)
 	if err != nil {
-		util.Logger().Error("Unmarshal error", err)
+		log.Error("Unmarshal error", err)
 		controller.WriteError(w, scerr.ErrInvalidParams, "Unmarshal error")
 		return
 	}

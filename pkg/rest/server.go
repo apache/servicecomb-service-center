@@ -19,7 +19,7 @@ package rest
 import (
 	"crypto/tls"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/grace"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"net"
 	"net/http"
 	"os"
@@ -102,22 +102,22 @@ func (srv *Server) Serve() (err error) {
 	defer func() {
 		srv.state = serverStateClosed
 	}()
-	defer util.RecoverAndReport()
+	defer log.Recover()
 	srv.state = serverStateRunning
 	err = srv.Server.Serve(srv.Listener)
-	util.Logger().Debugf("server serve failed(%s)", err)
+	log.Debugf("server serve failed(%s)", err)
 	srv.wg.Wait()
 	return
 }
 
 func (srv *Server) AcceptOne() {
-	defer util.RecoverAndReport()
+	defer log.Recover()
 	srv.wg.Add(1)
 	atomic.AddInt64(&srv.conns, 1)
 }
 
 func (srv *Server) CloseOne() bool {
-	defer util.RecoverAndReport()
+	defer log.Recover()
 	for {
 		left := atomic.LoadInt64(&srv.conns)
 		if left <= 0 {
@@ -231,7 +231,7 @@ func (srv *Server) Shutdown() {
 	srv.state = serverStateTerminating
 	err := srv.Listener.Close()
 	if err != nil {
-		util.Logger().Errorf(err, "server listener close failed")
+		log.Errorf(err, "server listener close failed")
 	}
 
 	if srv.GraceTimeout >= 0 {
@@ -260,10 +260,10 @@ func (srv *Server) gracefulStop(d time.Duration) {
 	}
 
 	if n != 0 {
-		util.Logger().Warnf("%s timed out, force close %d connection(s)", d, n)
+		log.Warnf("%s timed out, force close %d connection(s)", d, n)
 		err := srv.Server.Close()
 		if err != nil {
-			util.Logger().Errorf(err, "server close failed")
+			log.Errorf(err, "server close failed")
 		}
 	}
 }

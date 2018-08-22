@@ -19,6 +19,8 @@ package backend
 import (
 	"errors"
 	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/task"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
@@ -37,7 +39,7 @@ type KvStore struct {
 	taskService task.TaskService
 	lock        sync.RWMutex
 	ready       chan struct{}
-	goroutine   *util.GoRoutine
+	goroutine   *gopool.Pool
 	isClose     bool
 	rev         int64
 }
@@ -46,7 +48,7 @@ func (s *KvStore) Initialize() {
 	s.entities = util.NewConcurrentMap(0)
 	s.taskService = task.NewTaskService()
 	s.ready = make(chan struct{})
-	s.goroutine = util.NewGo(context.Background())
+	s.goroutine = gopool.New(context.Background())
 }
 
 func (s *KvStore) OnCacheEvent(evt KvEvent) {
@@ -72,7 +74,7 @@ func (s *KvStore) getOrCreateEntity(t StoreType) Entity {
 		return e, nil
 	})
 	if err != nil {
-		util.Logger().Errorf(err, "can not find entity '%s', new default one", t.String())
+		log.Errorf(err, "can not find entity '%s', new default one", t.String())
 		return DefaultKvEntity()
 
 	}
@@ -95,7 +97,7 @@ func (s *KvStore) store(ctx context.Context) {
 
 	util.SafeCloseChan(s.ready)
 
-	util.Logger().Debugf("all entities are ready")
+	log.Debugf("all entities are ready")
 }
 
 func (s *KvStore) closed() bool {
@@ -119,7 +121,7 @@ func (s *KvStore) Stop() {
 
 	util.SafeCloseChan(s.ready)
 
-	util.Logger().Debugf("store daemon stopped")
+	log.Debugf("store daemon stopped")
 }
 
 func (s *KvStore) Ready() <-chan struct{} {
@@ -158,7 +160,7 @@ func (s *KvStore) Install(e Extension) (id StoreType, err error) {
 		return
 	}
 
-	util.Logger().Infof("install new store entity %d:%s->%s", id, e.Name(), e.Config().Key)
+	log.Infof("install new store entity %d:%s->%s", id, e.Name(), e.Config().Key)
 	return
 }
 
@@ -192,7 +194,7 @@ func (s *KvStore) KeepAlive(ctx context.Context, opts ...registry.PluginOpOption
 
 	t := NewLeaseAsyncTask(op)
 	if op.Mode == registry.MODE_NO_CACHE {
-		util.Logger().Debugf("keep alive lease WitchNoCache, request etcd server, op: %s", op)
+		log.Debugf("keep alive lease WitchNoCache, request etcd server, op: %s", op)
 		err := t.Do(ctx)
 		ttl := t.TTL
 		return ttl, err

@@ -18,6 +18,7 @@ package event
 
 import (
 	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/task"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
@@ -55,11 +56,11 @@ func (apt *TagsChangedTask) publish(ctx context.Context, domainProject, consumer
 
 	consumer, err := serviceUtil.GetService(ctx, domainProject, consumerId)
 	if err != nil {
-		util.Logger().Errorf(err, "get consumer for publish event %s failed", consumerId)
+		log.Errorf(err, "get consumer for publish event %s failed", consumerId)
 		return err
 	}
 	if consumer == nil {
-		util.Logger().Errorf(nil, "service not exist, %s", consumerId)
+		log.Errorf(nil, "service not exist, %s", consumerId)
 		return fmt.Errorf("service not exist, %s", consumerId)
 	}
 
@@ -68,14 +69,14 @@ func (apt *TagsChangedTask) publish(ctx context.Context, domainProject, consumer
 
 	providerIds, err := serviceUtil.GetProviderIds(ctx, domainProject, consumer)
 	if err != nil {
-		util.Logger().Errorf(err, "get provider services by consumer %s failed", consumerId)
+		log.Errorf(err, "get provider services by consumer %s failed", consumerId)
 		return err
 	}
 
 	for _, providerId := range providerIds {
 		provider, err := serviceUtil.GetService(ctx, domainProject, providerId)
 		if provider == nil {
-			util.Logger().Errorf(err, "get service %s file failed", providerId)
+			log.Errorf(err, "get service %s file failed", providerId)
 			continue
 		}
 		providerKey := pb.MicroServiceToKey(domainProject, provider)
@@ -101,11 +102,11 @@ func (h *TagEventHandler) OnEvent(evt backend.KvEvent) {
 	consumerId, domainProject := backend.GetInfoFromTagKV(evt.KV)
 
 	if nf.GetNotifyService().Closed() {
-		util.Logger().Warnf("caught [%s] service tags event %s/%s, but notify service is closed",
+		log.Warnf("caught [%s] service tags event %s/%s, but notify service is closed",
 			action, consumerId, evt.KV.Value)
 		return
 	}
-	util.Logger().Infof("caught [%s] service tags event %s/%s", action, consumerId, evt.KV.Value)
+	log.Infof("caught [%s] service tags event %s/%s", action, consumerId, evt.KV.Value)
 
 	task.Service().Add(context.Background(),
 		NewTagsChangedAsyncTask(domainProject, consumerId, evt.Revision))

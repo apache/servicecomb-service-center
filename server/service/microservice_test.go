@@ -20,7 +20,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/quota/buildin"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"strconv"
@@ -52,7 +52,7 @@ var _ = Describe("'Micro-service' service", func() {
 
 		Context("all max", func() {
 			It("should be passed", func() {
-				size := buildin.SCHEMA_NUM_MAX_LIMIT_PER_SERVICE + 1
+				size := quota.DefaultSchemaQuota + 1
 				paths := make([]*pb.ServicePath, 0, size)
 				properties := make(map[string]string, size)
 				for i := 0; i < size; i++ {

@@ -18,7 +18,7 @@ package service
 
 import (
 	"errors"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"reflect"
 )
@@ -91,7 +91,7 @@ func Validate(v interface{}) error {
 	case *pb.GetAppsRequest:
 		return MicroServiceKeyValidator().Validate(v)
 	default:
-		util.Logger().Warnf("No validator for %T.", t)
+		log.Warnf("No validator for %T.", t)
 		return nil
 	}
 }

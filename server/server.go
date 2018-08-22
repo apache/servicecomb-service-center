@@ -19,7 +19,8 @@ package server
 import _ "github.com/apache/incubator-servicecomb-service-center/server/service/event"
 import (
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	"github.com/apache/incubator-servicecomb-service-center/server/mux"
@@ -36,7 +37,7 @@ type ServiceCenterServer struct {
 	apiServer     *APIServer
 	notifyService *nf.NotifyService
 	store         *backend.KvStore
-	goroutine     *util.GoRoutine
+	goroutine     *gopool.Pool
 }
 
 func (s *ServiceCenterServer) Run() {
@@ -56,7 +57,7 @@ func (s *ServiceCenterServer) waitForQuit() {
 	case err = <-s.notifyService.Err():
 	}
 	if err != nil {
-		util.Logger().Errorf(err, "service center catch errors")
+		log.Errorf(err, "service center catch errors")
 	}
 
 	s.Stop()
@@ -65,14 +66,14 @@ func (s *ServiceCenterServer) waitForQuit() {
 func (s *ServiceCenterServer) needUpgrade() bool {
 	err := LoadServerVersion()
 	if err != nil {
-		util.Logger().Errorf(err, "check version failed, can not load the system config")
+		log.Errorf(err, "check version failed, can not load the system config")
 		return false
 	}
 
 	update := !serviceUtil.VersionMatchRule(core.ServerInfo.Version,
 		fmt.Sprintf("%s+", version.Ver().Version))
 	if !update && version.Ver().Version != core.ServerInfo.Version {
-		util.Logger().Warnf(
+		log.Warnf(
 			"there is a higher version '%s' in cluster, now running '%s' version may be incompatible",
 			core.ServerInfo.Version, version.Ver().Version)
 	}
@@ -83,7 +84,7 @@ func (s *ServiceCenterServer) needUpgrade() bool {
 func (s *ServiceCenterServer) loadOrUpgradeServerVersion() {
 	lock, err := mux.Lock(mux.GLOBAL_LOCK)
 	if err != nil {
-		util.Logger().Errorf(err, "wait for server ready failed")
+		log.Errorf(err, "wait for server ready failed")
 		os.Exit(1)
 	}
 	if s.needUpgrade() {
@@ -98,7 +99,7 @@ func (s *ServiceCenterServer) initialize() {
 	s.store = backend.Store()
 	s.notifyService = nf.GetNotifyService()
 	s.apiServer = GetAPIServer()
-	s.goroutine = util.NewGo(context.Background())
+	s.goroutine = gopool.New(context.Background())
 
 	// check version
 	s.loadOrUpgradeServerVersion()
@@ -118,11 +119,11 @@ func (s *ServiceCenterServer) autoCompactBackend() {
 	}
 	interval, err := time.ParseDuration(core.ServerInfo.Config.CompactInterval)
 	if err != nil {
-		util.Logger().Errorf(err, "invalid compact interval %s, reset to default interval 12h", core.ServerInfo.Config.CompactInterval)
+		log.Errorf(err, "invalid compact interval %s, reset to default interval 12h", core.ServerInfo.Config.CompactInterval)
 		interval = 12 * time.Hour
 	}
 	s.goroutine.Do(func(ctx context.Context) {
-		util.Logger().Infof("enabled the automatic compact mechanism, compact once every %s, reserve %d",
+		log.Infof("enabled the automatic compact mechanism, compact once every %s, reserve %d",
 			core.ServerInfo.Config.CompactInterval, delta)
 		for {
 			select {
@@ -131,7 +132,7 @@ func (s *ServiceCenterServer) autoCompactBackend() {
 			case <-time.After(interval):
 				lock, err := mux.Try(mux.GLOBAL_LOCK)
 				if lock == nil {
-					util.Logger().Errorf(err, "can not compact backend by this service center instance now")
+					log.Errorf(err, "can not compact backend by this service center instance now")
 					continue
 				}
 
@@ -156,7 +157,7 @@ func (s *ServiceCenterServer) startApiServer() {
 	host, err := os.Hostname()
 	if err != nil {
 		host = restIp
-		util.Logger().Errorf(err, "parse hostname failed")
+		log.Errorf(err, "parse hostname failed")
 	}
 	s.apiServer.HostName = host
 	s.apiServer.AddListener(REST, restIp, restPort)
@@ -179,9 +180,10 @@ func (s *ServiceCenterServer) Stop() {
 
 	s.goroutine.Close(true)
 
-	util.GoCloseAndWait()
+	gopool.CloseAndWait()
 
 	backend.Registry().Close()
 
-	util.Logger().Warnf("service center stopped")
+	log.Warnf("service center stopped")
+	log.Sync()
 }

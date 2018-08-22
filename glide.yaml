@@ -277,3 +277,15 @@ import:
 - package: github.com/grpc-ecosystem/grpc-gateway
   version: 84398b94e188ee336f307779b57b3aa91af7063c
   repo: https://github.com/grpc-ecosystem/grpc-gateway
+- package: go.uber.org/zap
+  version: 4d45f9617f7d90f7a663ff21c7a4321dbe78098b
+  repo: https://github.com/uber-go/zap
+- package: go.uber.org/atomic
+  version: 1ea20fb1cbb1cc08cbd0d913a96dead89aa18289
+  repo: https://github.com/uber-go/atomic
+- package: go.uber.org/multierr
+  version: 3c4937480c32f4c13a875a1829af76c98ca3d40a
+  repo: https://github.com/uber-go/multierr
+- package: github.com/natefinch/lumberjack
+  version: a96e63847dc3c67d17befa69c303767e2f84e54f
+  repo: https://github.com/natefinch/lumberjack

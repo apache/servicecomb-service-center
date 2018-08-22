@@ -19,7 +19,7 @@ package cache
 import (
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/cache"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
@@ -42,7 +42,7 @@ func (f *AccessibleFilter) Init(ctx context.Context, parent *cache.Node) (node *
 			provider := ctx.Value(CTX_FIND_PROVIDER).(*pb.MicroServiceKey)
 			findFlag := fmt.Sprintf("consumer %s find provider %s/%s/%s", consumerId,
 				provider.AppId, provider.ServiceName, provider.Version)
-			util.Logger().Errorf(err, "AccessibleFilter failed, %s", findFlag)
+			log.Errorf(err, "AccessibleFilter failed, %s", findFlag)
 			continue
 		}
 		ids = append(ids, providerServiceId)

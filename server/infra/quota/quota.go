@@ -17,15 +17,18 @@
 package quota
 
 import (
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	"golang.org/x/net/context"
 	"strconv"
 )
 
-var (
-	DefaultSchemaQuota = 0
-	DefaultTagQuota    = 0
-	DefaultRuleQuota   = 0
+const (
+	defaultServiceLimit  = 50000
+	defaultInstanceLimit = 150000
+	defaultSchemaLimit   = 100
+	defaultRuleLimit     = 100
+	defaultTagLimit      = 100
 )
 
 const (
@@ -37,15 +40,38 @@ const (
 	typeEnd
 )
 
+var (
+	DefaultServiceQuota  = util.GetEnvInt("QUOTA_SERVICE", defaultServiceLimit)
+	DefaultInstanceQuota = util.GetEnvInt("QUOTA_INSTANCE", defaultInstanceLimit)
+	DefaultSchemaQuota   = util.GetEnvInt("QUOTA_SCHEMA", defaultSchemaLimit)
+	DefaultTagQuota      = util.GetEnvInt("QUOTA_TAG", defaultTagLimit)
+	DefaultRuleQuota     = util.GetEnvInt("QUOTA_RULE", defaultRuleLimit)
+)
+
 type ApplyQuotaResult struct {
-	Reporter QuotaReporter
-	Err      *scerr.Error
+	Err *scerr.Error
+
+	reporter QuotaReporter
+}
+
+func (r *ApplyQuotaResult) ReportUsedQuota(ctx context.Context) error {
+	if r == nil || r.reporter == nil {
+		return nil
+	}
+	return r.reporter.ReportUsedQuota(ctx)
+}
+
+func (r *ApplyQuotaResult) Close(ctx context.Context) {
+	if r == nil || r.reporter == nil {
+		return
+	}
+	r.reporter.Close(ctx)
 }
 
 func NewApplyQuotaResult(reporter QuotaReporter, err *scerr.Error) *ApplyQuotaResult {
 	return &ApplyQuotaResult{
-		reporter,
-		err,
+		reporter: reporter,
+		Err:      err,
 	}
 }
 
@@ -72,7 +98,7 @@ type QuotaManager interface {
 
 type QuotaReporter interface {
 	ReportUsedQuota(ctx context.Context) error
-	Close()
+	Close(ctx context.Context)
 }
 
 type ResourceType int

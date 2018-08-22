@@ -19,7 +19,7 @@ package grace
 import (
 	"flag"
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -123,10 +123,10 @@ func handleSignals() {
 			fireSignalHook(PreSignal, sig)
 			switch sig {
 			case syscall.SIGHUP:
-				util.Logger().Debugf("received signal '%v', now forking", sig)
+				log.Debugf("received signal '%v', now forking", sig)
 				err := fork()
 				if err != nil {
-					util.Logger().Errorf(err, "fork a process failed")
+					log.Errorf(err, "fork a process failed")
 				}
 			}
 			fireSignalHook(PostSignal, sig)
@@ -154,10 +154,10 @@ func fork() (err error) {
 	}
 
 	if err = newCommand(args...); err != nil {
-		util.Logger().Errorf(err, "fork a process failed, %v", args)
+		log.Errorf(err, "fork a process failed, %v", args)
 		return
 	}
-	util.Logger().Warnf("fork process %v", args)
+	log.Warnf("fork process %v", args)
 	return
 }
 

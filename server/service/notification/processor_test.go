@@ -17,7 +17,7 @@
 package notification
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
 	"testing"
 )
 
@@ -25,7 +25,7 @@ func TestProcessor_Do(t *testing.T) {
 	mock1 := &mockSubscriber{BaseSubscriber: NewSubscriber(INSTANCE, "s1", "g1")}
 	mock2 := &mockSubscriber{BaseSubscriber: NewSubscriber(INSTANCE, "s1", "g2")}
 	p := NewProcessor("p1", 0)
-	util.Go(p.Do)
+	gopool.Go(p.Do)
 	if p.Name() != "p1" {
 		t.Fatalf("TestProcessor_Do")
 	}

@@ -18,6 +18,7 @@ package buildin
 
 import (
 	"crypto/tls"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/tlsutil"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
@@ -47,14 +48,14 @@ func GetSSLPath(path string) string {
 func GetPassphase() (pass string, decrypt string) {
 	passphase, err := ioutil.ReadFile(GetSSLPath("cert_pwd"))
 	if err != nil {
-		util.Logger().Errorf(err, "read file cert_pwd failed.")
+		log.Errorf(err, "read file cert_pwd failed.")
 	}
 
 	pass = util.BytesToStringWithNoCopy(passphase)
 	if len(pass) > 0 {
 		decrypt, err = plugin.Plugins().Cipher().Decrypt(pass)
 		if err != nil {
-			util.Logger().Errorf(err, "decrypt ssl passphase(%d) failed.", len(pass))
+			log.Errorf(err, "decrypt ssl passphase(%d) failed.", len(pass))
 			decrypt = ""
 		}
 	}
@@ -86,7 +87,7 @@ func GetClientTLSConfig() (_ *tls.Config, err error) {
 	clientTLSConfig, err = tlsutil.GetClientTLSConfig(opts...)
 
 	if clientTLSConfig != nil {
-		util.Logger().Infof("client ssl configs enabled, verifyclient %t, minv %#x, cipers %d, pphase %d.",
+		log.Infof("client ssl configs enabled, verifyclient %t, minv %#x, cipers %d, pphase %d.",
 			core.ServerInfo.Config.SslVerifyPeer,
 			clientTLSConfig.MinVersion,
 			len(clientTLSConfig.CipherSuites),
@@ -117,7 +118,7 @@ func GetServerTLSConfig() (_ *tls.Config, err error) {
 	serverTLSConfig, err = tlsutil.GetServerTLSConfig(opts...)
 
 	if serverTLSConfig != nil {
-		util.Logger().Infof("server ssl configs enabled, verifyClient %t, minv %#x, ciphers %d, phase %d.",
+		log.Infof("server ssl configs enabled, verifyClient %t, minv %#x, ciphers %d, phase %d.",
 			core.ServerInfo.Config.SslVerifyPeer,
 			serverTLSConfig.MinVersion,
 			len(serverTLSConfig.CipherSuites),

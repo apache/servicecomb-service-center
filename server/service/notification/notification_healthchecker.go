@@ -16,7 +16,7 @@
  */
 package notification
 
-import "github.com/apache/incubator-servicecomb-service-center/pkg/util"
+import "github.com/apache/incubator-servicecomb-service-center/pkg/log"
 
 const (
 	NOTIFY_SERVER_CHECKER_NAME  = "__HealthChecker__"
@@ -38,12 +38,12 @@ func (s *NotifyServiceHealthChecker) OnMessage(job NotifyJob) {
 	err := j.ErrorSubscriber.Err()
 
 	if j.ErrorSubscriber.Type() == NOTIFTY {
-		util.Logger().Errorf(nil, "remove %s watcher %s %s failed, here cause a dead lock",
+		log.Errorf(nil, "remove %s watcher %s %s failed, here cause a dead lock",
 			j.ErrorSubscriber.Type(), j.ErrorSubscriber.Subject(), j.ErrorSubscriber.Group())
 		return
 	}
 
-	util.Logger().Debugf("notification service remove %s watcher, error: %s, subject: %s, group: %s",
+	log.Debugf("notification service remove %s watcher, error: %s, subject: %s, group: %s",
 		j.ErrorSubscriber.Type(), err.Error(), j.ErrorSubscriber.Subject(), j.ErrorSubscriber.Group())
 	s.Service().RemoveSubscriber(j.ErrorSubscriber)
 }

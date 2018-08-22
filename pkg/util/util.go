@@ -17,10 +17,7 @@
 package util
 
 import (
-	"fmt"
-	"os"
 	"runtime"
-	"runtime/debug"
 	"strings"
 	"time"
 	"unsafe"
@@ -89,37 +86,10 @@ func StringJoin(args []string, sep string) string {
 	}
 }
 
-func RecoverAndReport() (r interface{}) {
-	if r = recover(); r != nil {
-		LogPanic(r)
-	}
-	return
-}
-
 func GetCaller(skip int) (string, string, int, bool) {
 	pc, file, line, ok := runtime.Caller(skip + 1)
 	method := FormatFuncName(runtime.FuncForPC(pc).Name())
 	return file, method, line, ok
-}
-
-// this function can only be called in recover().
-func LogPanic(args ...interface{}) {
-	for i := 2; i < 10; i++ {
-		file, method, line, ok := GetCaller(i)
-		if !ok {
-			break
-		}
-
-		if strings.Index(file, "service-center") > 0 || strings.Index(file, "servicecenter") > 0 {
-			Logger().Errorf(nil, "recover from %s %s():%d! %s", FileLastName(file), method, line, fmt.Sprint(args...))
-			return
-		}
-	}
-
-	file, method, line, _ := GetCaller(0)
-	fmt.Fprintln(os.Stderr, time.Now().Format("2006-01-02T15:04:05.000Z07:00"), "FATAL", "system", os.Getpid(),
-		fmt.Sprintf("%s %s():%d", FileLastName(file), method, line), fmt.Sprint(args...))
-	fmt.Fprintln(os.Stderr, BytesToStringWithNoCopy(debug.Stack()))
 }
 
 func Int16ToInt64(bs []int16) (in int64) {

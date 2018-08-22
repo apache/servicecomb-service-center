@@ -17,6 +17,7 @@
 package event
 
 import (
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
@@ -58,17 +59,17 @@ func (h *InstanceEventHandler) OnEvent(evt backend.KvEvent) {
 	}
 
 	if nf.GetNotifyService().Closed() {
-		util.Logger().Warnf("caught [%s] instance event %s/%s, but notify service is closed",
+		log.Warnf("caught [%s] instance event %s/%s, but notify service is closed",
 			action, providerId, providerInstanceId)
 		return
 	}
-	util.Logger().Infof("caught [%s] instance event %s/%s", action, providerId, providerInstanceId)
+	log.Infof("caught [%s] instance event %s/%s", action, providerId, providerInstanceId)
 
 	// 查询服务版本信息
 	ctx := util.SetContext(context.Background(), serviceUtil.CTX_CACHEONLY, "1")
 	ms, err := serviceUtil.GetService(ctx, domainProject, providerId)
 	if ms == nil {
-		util.Logger().Errorf(err, "get provider service %s/%s id in cache failed",
+		log.Errorf(err, "get provider service %s/%s id in cache failed",
 			providerId, providerInstanceId)
 		return
 	}
@@ -76,7 +77,7 @@ func (h *InstanceEventHandler) OnEvent(evt backend.KvEvent) {
 	// 查询所有consumer
 	consumerIds, _, err := serviceUtil.GetAllConsumerIds(ctx, domainProject, ms)
 	if err != nil {
-		util.Logger().Errorf(err, "query service %s consumers failed", providerId)
+		log.Errorf(err, "query service %s consumers failed", providerId)
 		return
 	}
 

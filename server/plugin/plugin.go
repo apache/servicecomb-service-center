@@ -17,6 +17,7 @@
 package plugin
 
 import (
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/plugin"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/auditlog"
@@ -117,7 +118,7 @@ func (pm *PluginManager) Register(p Plugin) {
 	}
 	m[p.Name] = &p
 	pm.plugins[p.PName] = m
-	util.Logger().Infof("load '%s' plugin named '%s'", p.PName, p.Name)
+	log.Infof("load '%s' plugin named '%s'", p.PName, p.Name)
 }
 
 func (pm *PluginManager) Get(pn PluginName, name string) *Plugin {
@@ -175,7 +176,7 @@ func (pm *PluginManager) New(pn PluginName) {
 
 		f = p.New
 	}
-	util.Logger().Infof("call %s '%s' plugin %s(), new a '%s' instance",
+	log.Infof("call %s '%s' plugin %s(), new a '%s' instance",
 		title, p.PName, util.FuncName(f), p.Name)
 
 	wi.instance = f()
@@ -229,7 +230,7 @@ func DynamicPluginFunc(pn PluginName, funcName string) pg.Symbol {
 
 	f, err := plugin.FindFunc(pn.String(), funcName)
 	if err != nil {
-		util.Logger().Errorf(err, "plugin '%s': not implemented function '%s'.", pn, funcName)
+		log.Errorf(err, "plugin '%s': not implemented function '%s'.", pn, funcName)
 	}
 	return f
 }

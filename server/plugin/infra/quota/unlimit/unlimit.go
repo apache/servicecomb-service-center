@@ -17,6 +17,7 @@
 package unlimit
 
 import (
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
 	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	"github.com/astaxie/beego"
@@ -30,6 +31,8 @@ func init() {
 	if quataType != "unlimit" {
 		return
 	}
+	quota.DefaultServiceQuota = 0
+	quota.DefaultInstanceQuota = 0
 	quota.DefaultSchemaQuota = 0
 	quota.DefaultTagQuota = 0
 	quota.DefaultRuleQuota = 0
@@ -39,6 +42,7 @@ type Unlimit struct {
 }
 
 func New() mgr.PluginInstance {
+	log.Infof("quota init, all resources are unlimited")
 	return &Unlimit{}
 }
 

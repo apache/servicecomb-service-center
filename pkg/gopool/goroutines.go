@@ -14,51 +14,53 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package util
+package gopool
 
 import (
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"golang.org/x/net/context"
 	"sync"
 	"time"
 )
 
-var GlobalPoolConfig = PoolConfigure()
+var GlobalConfig = Configure()
 
-var defaultGo *GoRoutine
+var defaultGo *Pool
 
 func init() {
-	defaultGo = NewGo(context.Background())
+	defaultGo = New(context.Background())
 }
 
-type PoolConfig struct {
+type Config struct {
 	Concurrent  int
 	IdleTimeout time.Duration
 }
 
-func (c *PoolConfig) Workers(max int) *PoolConfig {
+func (c *Config) Workers(max int) *Config {
 	c.Concurrent = max
 	return c
 }
 
-func (c *PoolConfig) Idle(time time.Duration) *PoolConfig {
+func (c *Config) Idle(time time.Duration) *Config {
 	c.IdleTimeout = time
 	return c
 }
 
-func PoolConfigure() *PoolConfig {
-	return &PoolConfig{
+func Configure() *Config {
+	return &Config{
 		Concurrent:  1000,
 		IdleTimeout: 60 * time.Second,
 	}
 }
 
-type GoRoutine struct {
-	Cfg *PoolConfig
+type Pool struct {
+	Cfg *Config
 
 	// job context
 	ctx    context.Context
 	cancel context.CancelFunc
-	// pending is the chan to block GoRoutine.Do() when go pool is full
+	// pending is the chan to block Pool.Do() when go pool is full
 	pending chan func(ctx context.Context)
 	// workers is the counter of the worker
 	workers chan struct{}
@@ -68,13 +70,13 @@ type GoRoutine struct {
 	closed bool
 }
 
-func (g *GoRoutine) execute(f func(ctx context.Context)) {
-	defer RecoverAndReport()
+func (g *Pool) execute(f func(ctx context.Context)) {
+	defer log.Recover()
 	f(g.ctx)
 }
 
-func (g *GoRoutine) Do(f func(context.Context)) *GoRoutine {
-	defer RecoverAndReport()
+func (g *Pool) Do(f func(context.Context)) *Pool {
+	defer log.Recover()
 	select {
 	case g.pending <- f:
 	case g.workers <- struct{}{}:
@@ -84,7 +86,7 @@ func (g *GoRoutine) Do(f func(context.Context)) *GoRoutine {
 	return g
 }
 
-func (g *GoRoutine) loop(f func(context.Context)) {
+func (g *Pool) loop(f func(context.Context)) {
 	defer g.wg.Done()
 	defer func() { <-g.workers }()
 
@@ -100,13 +102,13 @@ func (g *GoRoutine) loop(f func(context.Context)) {
 			if f == nil {
 				return
 			}
-			ResetTimer(timer, g.Cfg.IdleTimeout)
+			util.ResetTimer(timer, g.Cfg.IdleTimeout)
 		}
 	}
 }
 
 // Close will call context.Cancel(), so all goroutines maybe exit when job does not complete
-func (g *GoRoutine) Close(grace bool) {
+func (g *Pool) Close(grace bool) {
 	g.mux.Lock()
 	if g.closed {
 		g.mux.Unlock()
@@ -124,7 +126,7 @@ func (g *GoRoutine) Close(grace bool) {
 }
 
 // Done will wait for all goroutines complete the jobs and then close the pool
-func (g *GoRoutine) Done() {
+func (g *Pool) Done() {
 	g.mux.Lock()
 	if g.closed {
 		g.mux.Unlock()
@@ -138,13 +140,13 @@ func (g *GoRoutine) Done() {
 	g.wg.Wait()
 }
 
-func NewGo(ctx context.Context, cfgs ...*PoolConfig) *GoRoutine {
+func New(ctx context.Context, cfgs ...*Config) *Pool {
 	ctx, cancel := context.WithCancel(ctx)
 	if len(cfgs) == 0 {
-		cfgs = append(cfgs, GlobalPoolConfig)
+		cfgs = append(cfgs, GlobalConfig)
 	}
 	cfg := cfgs[0]
-	gr := &GoRoutine{
+	gr := &Pool{
 		Cfg:     cfg,
 		ctx:     ctx,
 		cancel:  cancel,
@@ -158,7 +160,7 @@ func Go(f func(context.Context)) {
 	defaultGo.Do(f)
 }
 
-func GoCloseAndWait() {
+func CloseAndWait() {
 	defaultGo.Close(true)
-	Logger().Debugf("all goroutines exited")
+	log.Debugf("all goroutines exited")
 }

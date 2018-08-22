@@ -16,7 +16,7 @@
  */
 package metric
 
-import "github.com/apache/incubator-servicecomb-service-center/pkg/util"
+import "github.com/apache/incubator-servicecomb-service-center/pkg/log"
 
 var reporters = make(map[string]Reporter)
 
@@ -31,7 +31,7 @@ func (*noopReporter) Report() {}
 
 func RegisterReporter(name string, r Reporter) {
 	reporters[name] = r
-	util.Logger().Infof("register metrics reporter '%s'", name)
+	log.Infof("register metrics reporter '%s'", name)
 }
 
 func Report() {

@@ -17,7 +17,7 @@
 package notification
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
 	"golang.org/x/net/context"
 	"sync"
 	"time"
@@ -33,11 +33,11 @@ func init() {
 type Publisher struct {
 	wss       []*WebSocket
 	lock      sync.Mutex
-	goroutine *util.GoRoutine
+	goroutine *gopool.Pool
 }
 
 func (wh *Publisher) Run() {
-	util.Go(publisher.loop)
+	gopool.Go(publisher.loop)
 }
 
 func (wh *Publisher) Stop() {
@@ -98,6 +98,6 @@ func (wh *Publisher) Accept(ws *WebSocket) {
 
 func NewPublisher() *Publisher {
 	return &Publisher{
-		goroutine: util.NewGo(context.Background()),
+		goroutine: gopool.New(context.Background()),
 	}
 }

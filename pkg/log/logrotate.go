@@ -14,12 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package util
+package log
 
 import (
 	"archive/zip"
 	"fmt"
-	"golang.org/x/net/context"
 	"io"
 	"os"
 	"path/filepath"
@@ -68,7 +67,7 @@ func removeExceededFiles(path string, baseFileName string,
 	}
 	fileList, err := FilterFileList(path, pat, 0777)
 	if err != nil {
-		Logger().Error("filepath.Walk() "+EscapPath(path)+" failed", err)
+		Error("filepath.Walk() "+EscapPath(path)+" failed", err)
 		return
 	}
 	sort.Strings(fileList)
@@ -78,10 +77,10 @@ func removeExceededFiles(path string, baseFileName string,
 	//remove exceeded files, keep file count below maxBackupCount
 	for len(fileList) > maxKeptCount {
 		filePath := fileList[0]
-		Logger().Warn("remove "+EscapPath(filePath), nil)
+		Warn("remove " + EscapPath(filePath))
 		err := removeFile(filePath)
 		if err != nil {
-			Logger().Error("remove "+EscapPath(filePath)+" failed", err)
+			Error("remove "+EscapPath(filePath)+" failed", err)
 			break
 		}
 		//remove the first element of a list
@@ -136,7 +135,7 @@ func shouldRollover(fPath string, MaxFileSize int) bool {
 
 	fileInfo, err := os.Stat(fPath)
 	if err != nil {
-		Logger().Error("state "+EscapPath(fPath)+" failed", err)
+		Error("state "+EscapPath(fPath)+" failed", err)
 		return false
 	}
 
@@ -156,13 +155,13 @@ func doRollover(fPath string, MaxFileSize int, MaxBackupCount int) {
 	rotateFile := fPath + "." + timeStamp
 	err := CopyFile(fPath, rotateFile)
 	if err != nil {
-		Logger().Error("copy "+EscapPath(fPath)+" failed", err)
+		Error("copy "+EscapPath(fPath)+" failed", err)
 	}
 
 	//truncate the file
 	f, err := os.OpenFile(fPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
 	if err != nil {
-		Logger().Error("truncate "+EscapPath(fPath)+" failed", err)
+		Error("truncate "+EscapPath(fPath)+" failed", err)
 		return
 	}
 	f.Close()
@@ -178,7 +177,7 @@ func doBackup(fPath string, MaxBackupCount int) {
 	pat := fmt.Sprintf(`%s\.[0-9]{1,17}$`, filepath.Base(fPath))
 	rotateFileList, err := FilterFileList(filepath.Dir(fPath), pat, 0777)
 	if err != nil {
-		Logger().Error("walk"+EscapPath(fPath)+" failed", err)
+		Error("walk"+EscapPath(fPath)+" failed", err)
 		return
 	}
 
@@ -193,12 +192,12 @@ func doBackup(fPath string, MaxBackupCount int) {
 			err = compressFile(file, filepath.Base(fPath), true)
 		}
 		if err != nil {
-			Logger().Error("compress"+EscapPath(file)+" failed", err)
+			Error("compress"+EscapPath(file)+" failed", err)
 			continue
 		}
 		err = removeFile(file)
 		if err != nil {
-			Logger().Error("remove"+EscapPath(file)+" failed", err)
+			Error("remove"+EscapPath(file)+" failed", err)
 		}
 	}
 
@@ -209,7 +208,7 @@ func doBackup(fPath string, MaxBackupCount int) {
 func LogRotateFile(file string, MaxFileSize int, MaxBackupCount int) {
 	defer func() {
 		if e := recover(); e != nil {
-			Logger().Errorf(nil, "LogRotate file %s catch an exception, err: %v.", EscapPath(file), e)
+			Errorf(nil, "LogRotate file %s catch an exception, err: %v.", EscapPath(file), e)
 		}
 	}()
 
@@ -224,14 +223,14 @@ func LogRotate(path string, MaxFileSize int, MaxBackupCount int) {
 	//filter .log .trace files
 	defer func() {
 		if e := recover(); e != nil {
-			Logger().Errorf(nil, "LogRotate catch an exception, err: %v.", e)
+			Errorf(nil, "LogRotate catch an exception, err: %v.", e)
 		}
 	}()
 
 	pat := `.(\.log|\.trace|\.out)$`
 	fileList, err := FilterFileList(path, pat, 0200)
 	if err != nil {
-		Logger().Error("filepath.Walk() "+EscapPath(path)+" failed", err)
+		Error("filepath.Walk() "+EscapPath(path)+" failed", err)
 		return
 	}
 
@@ -292,22 +291,6 @@ func CopyFile(srcFile, destFile string) error {
 	defer dest.Close()
 	_, err = io.Copy(dest, file)
 	return err
-}
-
-func RunLogDirRotate(cfg LoggerConfig) {
-	if len(cfg.LoggerFile) == 0 {
-		return
-	}
-	Go(func(ctx context.Context) {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(cfg.LogRotatePeriod):
-				LogRotate(filepath.Dir(cfg.LoggerFile), cfg.LogRotateSize, cfg.LogBackupCount)
-			}
-		}
-	})
 }
 
 func init() {

@@ -20,6 +20,8 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
@@ -35,7 +37,7 @@ type FileCollector struct {
 	Interval  time.Duration
 	BatchSize int
 	c         chan *zipkincore.Span
-	goroutine *util.GoRoutine
+	goroutine *gopool.Pool
 }
 
 func (f *FileCollector) Collect(span *zipkincore.Span) error {
@@ -48,7 +50,7 @@ func (f *FileCollector) Collect(span *zipkincore.Span) error {
 	case f.c <- span:
 		timer.Stop()
 	case <-timer.C:
-		util.Logger().Errorf(nil, "send span to handle channel timed out(%s)", f.Timeout)
+		log.Errorf(nil, "send span to handle channel timed out(%s)", f.Timeout)
 	}
 	return nil
 }
@@ -64,7 +66,7 @@ func (f *FileCollector) write(batch []*zipkincore.Span) (c int) {
 	}
 
 	if err := f.checkFile(); err != nil {
-		util.Logger().Errorf(err, "check tracing file failed")
+		log.Errorf(err, "check tracing file failed")
 		return
 	}
 
@@ -74,7 +76,7 @@ func (f *FileCollector) write(batch []*zipkincore.Span) (c int) {
 		s := FromZipkinSpan(span)
 		b, err := json.Marshal(s)
 		if err != nil {
-			util.Logger().Errorf(err, "marshal span failed")
+			log.Errorf(err, "marshal span failed")
 			continue
 		}
 		w.Write(b)
@@ -83,7 +85,7 @@ func (f *FileCollector) write(batch []*zipkincore.Span) (c int) {
 	}
 	if err := w.Flush(); err != nil {
 		c = 0
-		util.Logger().Errorf(err, "write span to file failed")
+		log.Errorf(err, "write span to file failed")
 	}
 	return
 }
@@ -98,7 +100,7 @@ func (f *FileCollector) checkFile() error {
 		return fmt.Errorf("stat %s: %s", f.Fd.Name(), err)
 	}
 
-	util.Logger().Warnf("tracing file %s does not exist, re-create one", f.Fd.Name())
+	log.Warnf("tracing file %s does not exist, re-create one", f.Fd.Name())
 	fd, err := os.OpenFile(f.Fd.Name(), os.O_APPEND|os.O_CREATE|os.O_RDWR, stat.Mode())
 	if err != nil {
 		return fmt.Errorf("open %s: %s", f.Fd.Name(), err)
@@ -107,7 +109,7 @@ func (f *FileCollector) checkFile() error {
 	var old *os.File
 	f.Fd, old = fd, f.Fd
 	if err := old.Close(); err != nil {
-		util.Logger().Errorf(err, "close %s", f.Fd.Name())
+		log.Errorf(err, "close %s", f.Fd.Name())
 	}
 	return nil
 }
@@ -131,7 +133,7 @@ func (f *FileCollector) Run() {
 				l := len(batch)
 				if l >= max {
 					dispose := l - f.BatchSize
-					util.Logger().Errorf(nil, "backlog is full, dispose %d span(s), max: %d",
+					log.Errorf(nil, "backlog is full, dispose %d span(s), max: %d",
 						dispose, max)
 					batch = batch[dispose:] // allocate more
 				}
@@ -154,7 +156,7 @@ func (f *FileCollector) Run() {
 				}
 			case <-t.C:
 				if time.Now().After(nr) {
-					util.LogRotateFile(f.Fd.Name(),
+					log.LogRotateFile(f.Fd.Name(),
 						int(core.ServerInfo.Config.LogRotateSize),
 						int(core.ServerInfo.Config.LogBackupCount),
 					)
@@ -180,7 +182,7 @@ func NewFileCollector(path string) (*FileCollector, error) {
 		Interval:  10 * time.Second,
 		BatchSize: 100,
 		c:         make(chan *zipkincore.Span, 1000),
-		goroutine: util.NewGo(context.Background()),
+		goroutine: gopool.New(context.Background()),
 	}
 	fc.Run()
 	return fc, nil

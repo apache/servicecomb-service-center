@@ -18,29 +18,30 @@ package etcd
 
 import (
 	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/coreos/pkg/capnslog"
 	"runtime"
 )
+
+const grpcCallerSkip = 2
 
 // clientLogger implement from grcplog.LoggerV2s and capnslog.Formatter
 type clientLogger struct {
 }
 
 func (l *clientLogger) Format(pkg string, level capnslog.LogLevel, depth int, entries ...interface{}) {
-	fmt := "\b" + l.getCaller(depth) + " " + pkg + " %s"
+	fmt := l.getCaller(depth+1+grpcCallerSkip) + " " + pkg + " %s"
 	switch level {
-	case capnslog.CRITICAL, capnslog.ERROR, capnslog.WARNING, capnslog.INFO:
-		l.Errorf(fmt, entries...)
 	case capnslog.NOTICE, capnslog.DEBUG, capnslog.TRACE:
+		log.Default().Debugf(fmt, entries...)
 	default:
-		return
+		log.Default().Errorf(nil, fmt, entries...)
 	}
-	l.Flush()
 }
 
 func (l *clientLogger) getCaller(depth int) string {
-	_, file, line, ok := runtime.Caller(depth + 4)
+	_, file, line, ok := runtime.Caller(depth + 1)
 	if !ok {
 		return "???"
 	}
@@ -48,42 +49,55 @@ func (l *clientLogger) getCaller(depth int) string {
 }
 
 func (l *clientLogger) Flush() {
+	log.Default().Sync()
+}
+
+func (l *clientLogger) Debug(args ...interface{}) {
+	log.Default().Debug(fmt.Sprint(args...))
+}
+
+func (l *clientLogger) Debugln(args ...interface{}) {
+	log.Default().Debug(fmt.Sprint(args...))
+}
+
+func (l *clientLogger) Debugf(format string, args ...interface{}) {
+	log.Default().Debugf(format, args...)
 }
 
 func (l *clientLogger) Info(args ...interface{}) {
-	util.Logger().Info(fmt.Sprint(args...))
+	log.Default().Info(fmt.Sprint(args...))
 }
 
 func (l *clientLogger) Infoln(args ...interface{}) {
-	util.Logger().Info(fmt.Sprint(args...))
+	log.Default().Info(fmt.Sprint(args...))
 }
 
 func (l *clientLogger) Infof(format string, args ...interface{}) {
-	util.Logger().Infof(format, args...)
+	log.Default().Infof(format, args...)
 }
 
 func (l *clientLogger) Warning(args ...interface{}) {
-	util.Logger().Warn(fmt.Sprint(args...), nil)
+	log.Default().Warn(fmt.Sprint(args...))
 }
 
 func (l *clientLogger) Warningln(args ...interface{}) {
-	util.Logger().Warn(fmt.Sprint(args...), nil)
+	log.Default().Warn(fmt.Sprint(args...))
 }
 
 func (l *clientLogger) Warningf(format string, args ...interface{}) {
-	util.Logger().Warnf(format, args...)
+	log.Default().Warnf(format, args...)
 }
 
 func (l *clientLogger) Error(args ...interface{}) {
-	util.Logger().Error(fmt.Sprint(args...), nil)
+	log.Default().Error(fmt.Sprint(args...), nil)
 }
 
 func (l *clientLogger) Errorln(args ...interface{}) {
-	util.Logger().Error(fmt.Sprint(args...), nil)
+	log.Default().Error(fmt.Sprint(args...), nil)
 }
 
 func (l *clientLogger) Errorf(format string, args ...interface{}) {
-	util.Logger().Errorf(nil, format, args...)
+	log.Default().Errorf(nil, format, args...)
 }
 
 // V reports whether verbosity level l is at least the requested verbose level.
@@ -92,25 +106,25 @@ func (l *clientLogger) V(_ int) bool {
 }
 
 func (l *clientLogger) Fatal(args ...interface{}) {
-	util.Logger().Fatal(fmt.Sprint(args...), nil)
+	log.Default().Fatal(fmt.Sprint(args...), nil)
 }
 
 func (l *clientLogger) Fatalf(format string, args ...interface{}) {
-	util.Logger().Fatalf(nil, format, args...)
+	log.Default().Fatalf(nil, format, args...)
 }
 
 func (l *clientLogger) Fatalln(args ...interface{}) {
-	util.Logger().Fatal(fmt.Sprint(args...), nil)
+	log.Default().Fatal(fmt.Sprint(args...), nil)
 }
 
 func (l *clientLogger) Print(args ...interface{}) {
-	util.Logger().Error(fmt.Sprint(args...), nil)
+	log.Default().Error(fmt.Sprint(args...), nil)
 }
 
 func (l *clientLogger) Printf(format string, args ...interface{}) {
-	util.Logger().Errorf(nil, format, args...)
+	log.Default().Errorf(nil, format, args...)
 }
 
 func (l *clientLogger) Println(args ...interface{}) {
-	util.Logger().Error(fmt.Sprint(args...), nil)
+	log.Default().Error(fmt.Sprint(args...), nil)
 }
