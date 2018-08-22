@@ -12,11 +12,11 @@ Then build docker image of frontend from folder "PROJECT_ROOT/scripts/docker/bui
     
 Once the script finishes you will see image scfrontend-dev.tgz in the same directory. You can use this this image to load the docker and start using. Run following command, open Web Browser and connect to URL "http://<HOST_IP>:30103" to view frontend UI.
 
-    docker run -d -p 30103:30103 -e BACKEND_ADDRESS=${BACKEND_ADDRESS} -t servicecomb/scfrontend
+    docker run -d -p 30103:30103 -e SC_ADDRESS=${SC_ADDRESS} -t servicecomb/scfrontend
 
 Where HOST_IP is the ip of host machine where docker container for frontend is executing.
 
 Note: 
 
 1. The same image can be used to deploy in Huawei Public Cloud using CFE/CCE or just deploy in a VM.
-1. Configuring BACKEND_ADDRESS will enable you to setup the EIP of the Service-center.
+1. Configuring SC_ADDRESS will enable you to setup the EIP of the service-center.
