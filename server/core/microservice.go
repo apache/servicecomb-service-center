@@ -93,7 +93,12 @@ func IsDefaultDomainProject(domainProject string) bool {
 }
 
 func SetSharedMode() {
-	sharedServiceNames = util.ListToMap(strings.Split(os.Getenv("CSE_SHARED_SERVICES"), ","))
+	sharedServiceNames = make(map[string]struct{})
+	for _, s := range strings.Split(os.Getenv("CSE_SHARED_SERVICES"), ",") {
+		if len(s) > 0 {
+			sharedServiceNames[s] = struct{}{}
+		}
+	}
 	sharedServiceNames[Service.ServiceName] = struct{}{}
 }
 
@@ -108,18 +113,9 @@ func IsShared(key *pb.MicroServiceKey) bool {
 	return ok
 }
 
-func IsSCKey(key *pb.MicroServiceKey) bool {
-	if !IsDefaultDomainProject(key.Tenant) {
-		return false
-	}
-	return key.AppId == Service.AppId && key.ServiceName == Service.ServiceName
-}
-
 func IsSCInstance(ctx context.Context) bool {
-	if ctx.Value(IS_SC_SELF) != nil && ctx.Value(IS_SC_SELF).(bool) {
-		return true
-	}
-	return false
+	b, _ := ctx.Value(IS_SC_SELF).(bool)
+	return b
 }
 
 func GetExistenceRequest() *pb.GetExistenceRequest {

@@ -107,6 +107,21 @@ func TestStringToBytesWithNoCopy(t *testing.T) {
 	}
 }
 
+func TestListToMap(t *testing.T) {
+	m := ListToMap(nil)
+	if m == nil || len(m) > 0 {
+		t.Fatalf("TestListToMap falied")
+	}
+	m = ListToMap([]string{})
+	if m == nil || len(m) > 0 {
+		t.Fatalf("TestListToMap falied")
+	}
+	m = ListToMap([]string{"a"})
+	if m == nil || len(m) != 1 || m["a"] != struct{}{} {
+		t.Fatalf("TestListToMap falied")
+	}
+}
+
 func TestSafeCloseChan(t *testing.T) {
 	var ch chan struct{}
 	SafeCloseChan(ch)

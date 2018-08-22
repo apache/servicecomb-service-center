@@ -283,15 +283,6 @@ func GetServiceDependencyQueueRootKey(domainProject string) string {
 	}, SPLIT)
 }
 
-func GenerateServiceDependencyKey(serviceType string, domainProject string, serviceId1 string, serviceId2 string) string {
-	return util.StringJoin([]string{
-		GetServiceDependencyRootKey(domainProject),
-		serviceType,
-		serviceId1,
-		serviceId2,
-	}, SPLIT)
-}
-
 func GenerateConsumerDependencyQueueKey(domainProject, consumerId, uuid string) string {
 	return util.StringJoin([]string{
 		GetServiceDependencyQueueRootKey(domainProject),
