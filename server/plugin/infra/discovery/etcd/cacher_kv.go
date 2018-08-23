@@ -132,7 +132,7 @@ func (c *KvCacher) handleWatcher(watcher Watcher) error {
 		rev := resp.Revision
 		evts := make([]discovery.KvEvent, 0, len(resp.Kvs))
 		for _, kv := range resp.Kvs {
-			evt := discovery.KvEvent{Prefix: c.Cfg.Key, Revision: kv.ModRevision}
+			evt := discovery.KvEvent{Revision: kv.ModRevision}
 			switch {
 			case resp.Action == registry.Put && kv.Version == 1:
 				evt.Type, evt.KV = proto.EVT_CREATE, c.doParse(kv)
@@ -255,7 +255,6 @@ func (c *KvCacher) filterDelete(newStore map[string]*mvccpb.KeyValue,
 		block[i] = discovery.KvEvent{
 			Revision: rev,
 			Type:     proto.EVT_DELETE,
-			Prefix:   c.Cfg.Key,
 			KV:       v,
 		}
 		i++
@@ -287,7 +286,6 @@ func (c *KvCacher) filterCreateOrUpdate(newStore map[string]*mvccpb.KeyValue,
 				block[i] = discovery.KvEvent{
 					Revision: rev,
 					Type:     proto.EVT_CREATE,
-					Prefix:   c.Cfg.Key,
 					KV:       kv,
 				}
 				i++
@@ -309,7 +307,6 @@ func (c *KvCacher) filterCreateOrUpdate(newStore map[string]*mvccpb.KeyValue,
 			block[i] = discovery.KvEvent{
 				Revision: rev,
 				Type:     proto.EVT_UPDATE,
-				Prefix:   c.Cfg.Key,
 				KV:       kv,
 			}
 			i++
@@ -406,16 +403,15 @@ func (c *KvCacher) onEvents(evts []discovery.KvEvent) {
 		}
 	}
 
-	c.onKvEvents(evts)
+	c.notify(evts)
 }
 
-func (c *KvCacher) onKvEvents(evts []discovery.KvEvent) {
+func (c *KvCacher) notify(evts []discovery.KvEvent) {
 	if c.Cfg.OnEvent == nil {
 		return
 	}
 
 	defer log.Recover()
-
 	for _, evt := range evts {
 		c.Cfg.OnEvent(evt)
 	}

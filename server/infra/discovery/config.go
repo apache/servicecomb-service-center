@@ -22,6 +22,7 @@ import (
 )
 
 type Config struct {
+	// Key is the prefix to unique specify resource type
 	Key            string
 	InitSize       int
 	NoEventPeriods int

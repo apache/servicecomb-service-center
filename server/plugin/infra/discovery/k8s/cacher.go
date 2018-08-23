@@ -17,14 +17,18 @@ package k8s
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
 	"golang.org/x/net/context"
 )
 
 type K8sCacher struct {
 	Cfg *discovery.Config
+	// cache for indexer
+	cache discovery.Cache
 
-	cache     discovery.Cache
 	ready     chan struct{}
 	goroutine *gopool.Pool
 }
@@ -33,12 +37,21 @@ func (c *K8sCacher) Cache() discovery.Cache {
 	return c.cache
 }
 
+func (c *K8sCacher) OnEvents(evt discovery.KvEvent) {
+	if c.Cfg.OnEvent == nil {
+		return
+	}
+
+	defer log.Recover()
+	c.Cfg.OnEvent(evt)
+}
+
 func (c *K8sCacher) Run() {
-	// TODO init kube client and list&watch
+	util.SafeCloseChan(c.ready)
 }
 
 func (c *K8sCacher) Stop() {
-
+	c.goroutine.Close(true)
 }
 
 func (c *K8sCacher) Ready() <-chan struct{} {
@@ -51,5 +64,19 @@ func NewK8sCacher(cfg *discovery.Config, cache discovery.Cache) *K8sCacher {
 		cache:     cache,
 		ready:     make(chan struct{}),
 		goroutine: gopool.New(context.Background()),
+	}
+}
+
+func BuildCacher(t discovery.Type, cfg *discovery.Config, cache discovery.Cache) discovery.Cacher {
+	kc := NewK8sCacher(cfg, cache)
+	switch t {
+	case backend.SERVICE:
+		return NewServiceCacher(kc)
+	case backend.SERVICE_INDEX:
+		return NewServiceIndexCacher(kc)
+	case backend.INSTANCE:
+		return NewInstanceCacher(kc)
+	default:
+		return kc
 	}
 }

@@ -16,7 +16,10 @@
 package discovery
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"encoding/json"
+	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"strconv"
 )
 
@@ -59,6 +62,12 @@ type KeyValue struct {
 	ModRevision    int64
 }
 
+func (kv *KeyValue) String() string {
+	b, _ := json.Marshal(kv.Value)
+	return fmt.Sprintf("{key: '%s', value: '%s', version: %d}",
+		util.BytesToStringWithNoCopy(kv.Key), util.BytesToStringWithNoCopy(b), kv.Version)
+}
+
 type Response struct {
 	Kvs   []*KeyValue
 	Count int64
@@ -66,8 +75,7 @@ type Response struct {
 
 type KvEvent struct {
 	Revision int64
-	Type     proto.EventType
-	Prefix   string
+	Type     pb.EventType
 	KV       *KeyValue
 }
 

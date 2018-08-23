@@ -28,13 +28,13 @@ func init() {
 type K8sRepository struct {
 }
 
-func (r *K8sRepository) NewEntity(t discovery.Type, cfg *discovery.Config) discovery.Adaptor {
+func (r *K8sRepository) New(t discovery.Type, cfg *discovery.Config) discovery.Adaptor {
 	if cfg == nil {
 		// do not new instance
 		log.Warnf("type '%s' config is nil", t)
 		return nil
 	}
-	e := NewK8sAdaptor(t.String(), cfg)
+	e := NewK8sAdaptor(t, cfg)
 	e.Run()
 	return e
 }

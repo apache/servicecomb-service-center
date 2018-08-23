@@ -26,6 +26,7 @@ import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/i
 
 // discovery
 import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/discovery/etcd"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/discovery/k8s"
 
 // cipher
 import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/security/buildin"

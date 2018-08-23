@@ -13,41 +13,47 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package k8s
+package queue
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
+	"golang.org/x/net/context"
+	"testing"
 )
 
-// K8sAdaptor is a discovery service adaptor implement of one kubernetes cluster
-type K8sAdaptor struct {
-	discovery.Cacher
-	discovery.Indexer
+type mockWorker struct {
+	Object chan interface{}
 }
 
-func (se *K8sAdaptor) Run() {
-	if r, ok := se.Cacher.(discovery.Runnable); ok {
-		r.Run()
-	}
+func (h *mockWorker) Handle(ctx context.Context, obj interface{}) {
+	h.Object <- obj
 }
 
-func (se *K8sAdaptor) Stop() {
-	if r, ok := se.Cacher.(discovery.Runnable); ok {
-		r.Stop()
-	}
-}
+func TestNewEventQueue(t *testing.T) {
+	h := &mockWorker{make(chan interface{}, 1)}
 
-func (se *K8sAdaptor) Ready() <-chan struct{} {
-	if r, ok := se.Cacher.(discovery.Runnable); ok {
-		return r.Ready()
-	}
-	return nil //closedCh
-}
+	q := NewTaskQueue(0)
+	q.AddWorker(h)
 
-func NewK8sAdaptor(t discovery.Type, cfg *discovery.Config) *K8sAdaptor {
-	cache := discovery.NewKvCache(t.String(), cfg)
-	return &K8sAdaptor{
-		Indexer: discovery.NewCacheIndexer(cache),
-		Cacher:  BuildCacher(t, cfg, cache),
+	q.Do(context.Background(), Task{Object: 1})
+	if <-h.Object != 1 {
+		t.Fatalf("TestNewEventQueue failed")
 	}
+
+	q.Do(context.Background(), Task{Object: 11, Async: true})
+	if <-h.Object != 11 {
+		t.Fatalf("TestNewEventQueue failed")
+	}
+
+	q.Run()
+	q.Add(Task{Object: 2})
+	if <-h.Object != 2 {
+		t.Fatalf("TestNewEventQueue failed")
+	}
+
+	q.Add(Task{Object: 22, Async: true})
+	if <-h.Object != 22 {
+		t.Fatalf("TestNewEventQueue failed")
+	}
+	q.Stop()
+	q.Add(Task{Object: 3})
 }

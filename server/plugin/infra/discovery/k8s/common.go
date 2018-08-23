@@ -16,11 +16,45 @@
 package k8s
 
 import (
+	"github.com/apache/incubator-servicecomb-service-center/pkg/queue"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"time"
 )
 
-var closedCh = make(chan struct{})
+const (
+	TypeService  K8sType = "Service"
+	TypeEndpoint K8sType = "Endpoints"
+	TypeNode     K8sType = "Node"
+	TypePod      K8sType = "Pod"
+
+	SchemaTCP  = "TCP"
+	SchemaHTTP = "http"
+
+	defaultDomainProject = "default/default"
+
+	// k8s labels
+	LabelApp         = "app"
+	LabelVersion     = "version"
+	LabelEnvironment = "environment"
+	LabelNodeRegion  = "failure-domain.beta.kubernetes.io/region"
+	LabelNodeAZ      = "failure-domain.beta.kubernetes.io/zone"
+
+	// properties
+	PropNamespace    = "namespace"
+	PropExternalName = "externalName"
+	PropServiceType  = "type"
+
+	minWaitInterval       = 5 * time.Second
+	defaultResyncInterval = 60 * time.Second
+	eventQueueSize        = 1000
+)
+
+var (
+	closedCh    = make(chan struct{})
+	eventQueues = util.NewConcurrentMap(0)
+)
 
 func init() {
 	close(closedCh)
@@ -32,4 +66,13 @@ func createKubeClient(kubeConfigPath string) (kubernetes.Interface, error) {
 		return nil, err
 	}
 	return kubernetes.NewForConfig(cfg)
+}
+
+func Queue(t K8sType) *queue.TaskQueue {
+	q, _ := eventQueues.Fetch(t, func() (interface{}, error) {
+		q := queue.NewTaskQueue(eventQueueSize)
+		q.Run()
+		return q, nil
+	})
+	return q.(*queue.TaskQueue)
 }
