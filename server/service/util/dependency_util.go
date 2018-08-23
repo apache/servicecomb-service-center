@@ -322,12 +322,12 @@ func syncDependencyRule(ctx context.Context, dep *Dependency, filter func(contex
 
 	if len(newDependencyRuleList) != 0 {
 		log.Infof("New dependency rule add for consumer %s, %v, ", consumerFlag, newDependencyRuleList)
-		dep.NewDependencyRuleList = newDependencyRuleList
+		dep.newDependencyRuleList = newDependencyRuleList
 		dep.AddConsumerOfProviderRule()
 	}
 
 	conKey := apt.GenerateConsumerDependencyRuleKey(dep.DomainProject, dep.Consumer)
-	err := dep.UpdateProvidersRuleOfConsumer(conKey)
+	err := dep.UpdateProvidersRuleOfConsumer(ctx, conKey)
 	if err != nil {
 		return err
 	}
@@ -415,7 +415,7 @@ func ParamsChecker(consumerInfo *pb.MicroServiceKey, providersInfo []*pb.MicroSe
 }
 
 func DeleteDependencyForDeleteService(domainProject string, serviceId string, service *pb.MicroServiceKey) (registry.PluginOp, error) {
-	key := apt.GenerateConsumerDependencyQueueKey(domainProject, serviceId, "0")
+	key := apt.GenerateConsumerDependencyQueueKey(domainProject, serviceId, apt.DEPS_QUEUE_UUID)
 	conDep := new(pb.ConsumerDependency)
 	conDep.Consumer = service
 	conDep.Providers = []*pb.MicroServiceKey{}
@@ -425,4 +425,110 @@ func DeleteDependencyForDeleteService(domainProject string, serviceId string, se
 		return registry.PluginOp{}, err
 	}
 	return registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)), nil
+}
+
+func removeProviderRuleOfConsumer(ctx context.Context, domainProject string, cache map[string]bool) ([]registry.PluginOp, error) {
+	key := apt.GenerateConsumerDependencyRuleKey(domainProject, nil) + apt.SPLIT
+	resp, err := backend.Store().DependencyRule().Search(ctx, registry.WithStrKey(key), registry.WithPrefix())
+	if err != nil {
+		return nil, err
+	}
+
+	var ops []registry.PluginOp
+loop:
+	for _, kv := range resp.Kvs {
+		var left []*pb.MicroServiceKey
+		all := kv.Value.(*pb.MicroServiceDependency).Dependency
+		for _, key := range all {
+			if key.ServiceName == "*" {
+				continue loop
+			}
+
+			id := apt.GenerateProviderDependencyRuleKey(domainProject, key)
+			exist, ok := cache[id]
+			if !ok {
+				_, exist, err = FindServiceIds(ctx, key.Version, key)
+				if err != nil {
+					return nil, fmt.Errorf("%v, find service %s/%s/%s/%s",
+						err, domainProject, key.AppId, key.ServiceName, key.Version)
+				}
+				cache[id] = exist
+			}
+
+			if exist {
+				left = append(left, key)
+			}
+		}
+
+		if len(all) == len(left) {
+			continue
+		}
+
+		if len(left) == 0 {
+			ops = append(ops, registry.OpDel(registry.WithKey(kv.Key)))
+		} else {
+			val, err := json.Marshal(&pb.MicroServiceDependency{Dependency: left})
+			if err != nil {
+				return nil, fmt.Errorf("%v, marshal %v", err, left)
+			}
+			ops = append(ops, registry.OpPut(registry.WithKey(kv.Key), registry.WithValue(val)))
+		}
+	}
+	return ops, nil
+}
+
+func removeProviderRuleKeys(ctx context.Context, domainProject string, cache map[string]bool) ([]registry.PluginOp, error) {
+	key := apt.GenerateProviderDependencyRuleKey(domainProject, nil) + apt.SPLIT
+	resp, err := backend.Store().DependencyRule().Search(ctx, registry.WithStrKey(key), registry.WithPrefix())
+	if err != nil {
+		return nil, err
+	}
+
+	var ops []registry.PluginOp
+	for _, kv := range resp.Kvs {
+		id := util.BytesToStringWithNoCopy(kv.Key)
+		exist, ok := cache[id]
+		if !ok {
+			key := backend.GetInfoFromDependencyRuleKV(kv)
+			if key == nil || key.ServiceName == "*" {
+				continue
+			}
+
+			_, exist, err = FindServiceIds(ctx, key.Version, key)
+			if err != nil {
+				return nil, fmt.Errorf("find service %s/%s/%s/%s, %v",
+					domainProject, key.AppId, key.ServiceName, key.Version, err)
+			}
+			cache[id] = exist
+		}
+
+		if !exist {
+			ops = append(ops, registry.OpDel(registry.WithKey(kv.Key)))
+		}
+	}
+	return ops, nil
+}
+
+func CleanUpDependencyRules(ctx context.Context, domainProject string) error {
+	if len(domainProject) == 0 {
+		return errors.New("required domainProject")
+	}
+
+	cache := make(map[string]bool)
+	pOps, err := removeProviderRuleOfConsumer(ctx, domainProject, cache)
+	if err != nil {
+		return err
+	}
+
+	kOps, err := removeProviderRuleKeys(ctx, domainProject, cache)
+	if err != nil {
+		return err
+	}
+
+	ops := append(append([]registry.PluginOp(nil), pOps...), kOps...)
+	if len(ops) == 0 {
+		return nil
+	}
+
+	return backend.BatchCommit(ctx, ops)
 }

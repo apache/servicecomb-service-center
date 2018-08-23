@@ -29,14 +29,16 @@ import (
 )
 
 type Dependency struct {
-	ConsumerId                string
-	DomainProject             string
+	DomainProject string
+	// store the consumer Dependency from dep-queue object
+	Consumer      *pb.MicroServiceKey
+	ProvidersRule []*pb.MicroServiceKey
+	// store the parsed rules from Dependency object
 	removedDependencyRuleList []*pb.MicroServiceKey
-	NewDependencyRuleList     []*pb.MicroServiceKey
-	err                       chan error
-	chanNum                   int8
-	Consumer                  *pb.MicroServiceKey
-	ProvidersRule             []*pb.MicroServiceKey
+	newDependencyRuleList     []*pb.MicroServiceKey
+
+	err     chan error
+	chanNum int8
 }
 
 func (dep *Dependency) RemoveConsumerOfProviderRule() {
@@ -93,7 +95,7 @@ func (dep *Dependency) AddConsumerOfProviderRule() {
 
 func (dep *Dependency) addConsumerOfProviderRule(ctx context.Context) {
 	opts := []registry.PluginOp{}
-	for _, providerRule := range dep.NewDependencyRuleList {
+	for _, providerRule := range dep.newDependencyRuleList {
 		proProkey := apt.GenerateProviderDependencyRuleKey(providerRule.Tenant, providerRule)
 		tmpValue, err := TransferToMicroServiceDependency(ctx, proProkey)
 		if err != nil {
@@ -125,9 +127,9 @@ func (dep *Dependency) addConsumerOfProviderRule(ctx context.Context) {
 	dep.err <- nil
 }
 
-func (dep *Dependency) UpdateProvidersRuleOfConsumer(conKey string) error {
+func (dep *Dependency) UpdateProvidersRuleOfConsumer(ctx context.Context, conKey string) error {
 	if len(dep.ProvidersRule) == 0 {
-		_, err := backend.Registry().Do(context.TODO(),
+		_, err := backend.Registry().Do(ctx,
 			registry.DEL,
 			registry.WithStrKey(conKey),
 		)
@@ -146,7 +148,7 @@ func (dep *Dependency) UpdateProvidersRuleOfConsumer(conKey string) error {
 		log.Errorf(nil, "Marshal tmpValue fialed.")
 		return err
 	}
-	_, err = backend.Registry().Do(context.TODO(),
+	_, err = backend.Registry().Do(ctx,
 		registry.PUT,
 		registry.WithStrKey(conKey),
 		registry.WithValue(data))

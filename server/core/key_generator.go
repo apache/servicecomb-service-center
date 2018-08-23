@@ -42,6 +42,9 @@ const (
 	REGISTRY_DEPS_RULE_KEY      = "dep-rules"
 	REGISTRY_DEPS_QUEUE_KEY     = "dep-queue"
 	REGISTRY_METRICS_KEY        = "metrics"
+	DEPS_QUEUE_UUID             = "0"
+	DEPS_CONSUMER               = "c"
+	DEPS_PROVIDER               = "p"
 )
 
 func GetRootKey() string {
@@ -230,6 +233,12 @@ func GenerateInstanceLeaseKey(domainProject string, serviceId string, instanceId
 }
 
 func GenerateServiceDependencyRuleKey(serviceType string, domainProject string, in *pb.MicroServiceKey) string {
+	if in == nil {
+		return util.StringJoin([]string{
+			GetServiceDependencyRuleRootKey(domainProject),
+			serviceType,
+		}, SPLIT)
+	}
 	if in.ServiceName == "*" {
 		return util.StringJoin([]string{
 			GetServiceDependencyRuleRootKey(domainProject),
@@ -249,11 +258,11 @@ func GenerateServiceDependencyRuleKey(serviceType string, domainProject string, 
 }
 
 func GenerateConsumerDependencyRuleKey(domainProject string, in *pb.MicroServiceKey) string {
-	return GenerateServiceDependencyRuleKey("c", domainProject, in)
+	return GenerateServiceDependencyRuleKey(DEPS_CONSUMER, domainProject, in)
 }
 
 func GenerateProviderDependencyRuleKey(domainProject string, in *pb.MicroServiceKey) string {
-	return GenerateServiceDependencyRuleKey("p", domainProject, in)
+	return GenerateServiceDependencyRuleKey(DEPS_PROVIDER, domainProject, in)
 }
 
 func GetServiceDependencyRuleRootKey(domainProject string) string {
@@ -272,23 +281,6 @@ func GetServiceDependencyQueueRootKey(domainProject string) string {
 		REGISTRY_DEPS_QUEUE_KEY,
 		domainProject,
 	}, SPLIT)
-}
-
-func GenerateConsumerDependencyKey(domainProject string, consumerId string, providerId string) string {
-	return GenerateServiceDependencyKey("c", domainProject, consumerId, providerId)
-}
-
-func GenerateServiceDependencyKey(serviceType string, domainProject string, serviceId1 string, serviceId2 string) string {
-	return util.StringJoin([]string{
-		GetServiceDependencyRootKey(domainProject),
-		serviceType,
-		serviceId1,
-		serviceId2,
-	}, SPLIT)
-}
-
-func GenerateProviderDependencyKey(domainProject string, providerId string, consumerId string) string {
-	return GenerateServiceDependencyKey("p", domainProject, providerId, consumerId)
 }
 
 func GenerateConsumerDependencyQueueKey(domainProject, consumerId, uuid string) string {

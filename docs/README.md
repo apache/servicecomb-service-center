@@ -22,7 +22,7 @@
 
 - [In Kubernetes Cluster](/integration/k8s)
 
-- [In VM](/docs/sc-cluster.md)
+- [In VMs](/docs/sc-cluster.md)
 
 - [Deploy with TLS](/docs/security-tls.md)
 

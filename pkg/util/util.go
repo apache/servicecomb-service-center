@@ -71,6 +71,8 @@ func StringJoin(args []string, sep string) string {
 		return ""
 	case 1:
 		return args[0]
+	case 2:
+		return args[0] + sep + args[1]
 	default:
 		n := len(sep) * (l - 1)
 		for i := 0; i < l; i++ {

@@ -45,45 +45,51 @@ func (h *DependencyEventHandler) OnEvent(evt backend.KvEvent) {
 	if action != pb.EVT_CREATE && action != pb.EVT_UPDATE && action != pb.EVT_INIT {
 		return
 	}
+	h.notify()
+}
 
+func (h *DependencyEventHandler) notify() {
 	h.signals.Put(struct{}{})
 }
 
-func (h *DependencyEventHandler) loop() {
+func (h *DependencyEventHandler) backoff(backoff func(), retries int) int {
+	if backoff != nil {
+		<-time.After(util.GetBackoff().Delay(retries))
+		backoff()
+	}
+	return retries + 1
+}
+
+func (h *DependencyEventHandler) tryWithBackoff(success func() error, backoff func(), retries int) (error, int) {
+	lock, err := mux.Try(mux.DEP_QUEUE_LOCK)
+	if err != nil {
+		log.Errorf(err, "try to lock %s failed", mux.DEP_QUEUE_LOCK)
+		return err, h.backoff(backoff, retries)
+	}
+
+	if lock == nil {
+		return nil, 0
+	}
+
+	err = success()
+	lock.Unlock()
+	if err != nil {
+		log.Errorf(err, "handle dependency event failed")
+		return err, h.backoff(backoff, retries)
+	}
+
+	return nil, 0
+}
+
+func (h *DependencyEventHandler) eventLoop() {
 	gopool.Go(func(ctx context.Context) {
 		retries := 0
-		delay := func() {
-			<-time.After(util.GetBackoff().Delay(retries))
-			retries++
-
-			h.signals.Put(struct{}{})
-		}
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			case <-h.signals.Chan():
-				lock, err := mux.Try(mux.DEP_QUEUE_LOCK)
-				if err != nil {
-					log.Errorf(err, "try to lock %s failed", mux.DEP_QUEUE_LOCK)
-					delay()
-					continue
-				}
-
-				if lock == nil {
-					retries = 0
-					continue
-				}
-
-				err = h.Handle()
-				lock.Unlock()
-				if err != nil {
-					log.Errorf(err, "handle dependency event failed")
-					delay()
-					continue
-				}
-
-				retries = 0
+				_, retries = h.tryWithBackoff(h.Handle, h.notify, retries)
 			}
 		}
 	})
@@ -129,10 +135,16 @@ func (h *DependencyEventHandler) Handle() error {
 
 	dependencyTree := util.NewTree(isAddToLeft)
 
+	cleanUpDomainProjects := make(map[string]struct{})
+	defer h.CleanUp(cleanUpDomainProjects)
+
 	for _, kv := range resp.Kvs {
 		r := kv.Value.(*pb.ConsumerDependency)
 
-		_, domainProject := backend.GetInfoFromDependencyQueueKV(kv)
+		_, domainProject, uuid := backend.GetInfoFromDependencyQueueKV(kv)
+		if uuid == core.DEPS_QUEUE_UUID {
+			cleanUpDomainProjects[domainProject] = struct{}{}
+		}
 		res := NewDependencyEventHandlerResource(r, kv, domainProject)
 
 		dependencyTree.AddNode(res)
@@ -189,10 +201,18 @@ func (h *DependencyEventHandler) removeKV(ctx context.Context, kv *backend.KeyVa
 	return nil
 }
 
+func (h *DependencyEventHandler) CleanUp(domainProjects map[string]struct{}) {
+	for domainProject := range domainProjects {
+		if err := serviceUtil.CleanUpDependencyRules(context.Background(), domainProject); err != nil {
+			log.Errorf(err, "clean up '%s' dependency rules failed")
+		}
+	}
+}
+
 func NewDependencyEventHandler() *DependencyEventHandler {
 	h := &DependencyEventHandler{
 		signals: queue.NewUniQueue(),
 	}
-	h.loop()
+	h.eventLoop()
 	return h
 }

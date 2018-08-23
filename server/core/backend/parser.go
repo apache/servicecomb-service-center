@@ -200,7 +200,7 @@ func GetInfoFromSchemaKV(kv *KeyValue) (schemaId string) {
 	return keys[l-1]
 }
 
-func GetInfoFromDependencyQueueKV(kv *KeyValue) (consumerId, domainProject string) {
+func GetInfoFromDependencyQueueKV(kv *KeyValue) (consumerId, domainProject, uuid string) {
 	keys := KvToResponse(kv)
 	l := len(keys)
 	if l < 4 {
@@ -208,5 +208,29 @@ func GetInfoFromDependencyQueueKV(kv *KeyValue) (consumerId, domainProject strin
 	}
 	consumerId = keys[l-2]
 	domainProject = fmt.Sprintf("%s/%s", keys[l-4], keys[l-3])
+	uuid = keys[l-1]
 	return
+}
+
+func GetInfoFromDependencyRuleKV(kv *KeyValue) (key *pb.MicroServiceKey) {
+	keys := KvToResponse(kv)
+	l := len(keys)
+	if l < 5 {
+		return
+	}
+	if keys[l-1] == "*" {
+		return &pb.MicroServiceKey{
+			Tenant:      fmt.Sprintf("%s/%s", keys[l-5], keys[l-4]),
+			Environment: keys[l-2],
+			ServiceName: keys[l-1],
+		}
+	}
+
+	return &pb.MicroServiceKey{
+		Tenant:      fmt.Sprintf("%s/%s", keys[l-7], keys[l-6]),
+		Environment: keys[l-4],
+		AppId:       keys[l-3],
+		ServiceName: keys[l-2],
+		Version:     keys[l-1],
+	}
 }

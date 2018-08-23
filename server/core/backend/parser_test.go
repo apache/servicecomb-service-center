@@ -183,12 +183,37 @@ func TestGetInfoFromKV(t *testing.T) {
 		t.Fatalf("TestGetInfoFromKV failed")
 	}
 
-	s, d = GetInfoFromDependencyQueueKV(&KeyValue{Key: []byte(core.GenerateConsumerDependencyQueueKey("a/b", "c", "d"))})
-	if s != "c" || d != "a/b" {
+	u := ""
+	s, d, u = GetInfoFromDependencyQueueKV(&KeyValue{Key: []byte(core.GenerateConsumerDependencyQueueKey("a/b", "c", "d"))})
+	if s != "c" || d != "a/b" || u != "d" {
 		t.Fatalf("TestGetInfoFromKV failed")
 	}
-	s, d = GetInfoFromDependencyQueueKV(&KeyValue{Key: []byte("sdf")})
-	if s != "" || d != "" {
+	s, d, u = GetInfoFromDependencyQueueKV(&KeyValue{Key: []byte("sdf")})
+	if s != "" || d != "" || u != "" {
+		t.Fatalf("TestGetInfoFromKV failed")
+	}
+
+	k := GetInfoFromDependencyRuleKV(&KeyValue{Key: []byte(core.GenerateProviderDependencyRuleKey("a/b", &proto.MicroServiceKey{
+		Tenant:      "a/b",
+		AppId:       "c",
+		ServiceName: "*",
+	}))})
+	if k == nil || k.AppId != "" || k.ServiceName != "*" {
+		t.Fatalf("TestGetInfoFromKV failed")
+	}
+
+	k = GetInfoFromDependencyRuleKV(&KeyValue{Key: []byte(core.GenerateProviderDependencyRuleKey("a/b", &proto.MicroServiceKey{
+		Tenant:      "a/b",
+		AppId:       "c",
+		ServiceName: "d",
+		Version:     "e",
+	}))})
+	if k == nil || k.AppId != "c" || k.ServiceName != "d" {
+		t.Fatalf("TestGetInfoFromKV failed")
+	}
+
+	k = GetInfoFromDependencyRuleKV(&KeyValue{Key: []byte("abc")})
+	if k != nil {
 		t.Fatalf("TestGetInfoFromKV failed")
 	}
 }
