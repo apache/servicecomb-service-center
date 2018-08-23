@@ -93,7 +93,7 @@ frontend_deps() {
 
     ## Download the frontend dependencies using bower
     cd frontend/app
-    bower install
+    bower install --allow-root
     cd ../..
 }
 
