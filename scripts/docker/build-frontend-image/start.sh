@@ -23,7 +23,7 @@ cd /opt/frontend
 
 sed -i "s/^frontend_host_ip.*=.*$/frontend_host_ip = $(hostname)/g" conf/app.conf
 
-sc_ip_port=${BACKEND_ADDRESS#*//}
+sc_ip_port=${SC_ADDRESS#*//}
 sc_ip=${sc_ip_port%:*}
 sc_port=${sc_ip_port#*:}
 

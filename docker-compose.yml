@@ -30,4 +30,4 @@ services:
     ports:
       - "30103:30103"
     environment:
-      BACKEND_ADDRESS: http://service-center:30100
+      SC_ADDRESS: http://service-center:30100

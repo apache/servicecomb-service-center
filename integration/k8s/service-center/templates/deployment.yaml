@@ -67,7 +67,7 @@ spec:
           ports:
             - containerPort: {{ .Values.frontend.service.internalPort }}
           env:
-          - name: BACKEND_ADDRESS
+          - name: SC_ADDRESS
             value: http://{{ $serviceName }}:{{ $servicePort }}
           livenessProbe:
             httpGet:
