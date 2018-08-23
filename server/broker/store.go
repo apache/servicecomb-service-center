@@ -22,13 +22,13 @@ import (
 )
 
 var (
-	PARTICIPANT  discovery.StoreType
-	VERSION      discovery.StoreType
-	PACT         discovery.StoreType
-	PACT_VERSION discovery.StoreType
-	PACT_TAG     discovery.StoreType
-	VERIFICATION discovery.StoreType
-	PACT_LATEST  discovery.StoreType
+	PARTICIPANT  discovery.Type
+	VERSION      discovery.Type
+	PACT         discovery.Type
+	PACT_VERSION discovery.Type
+	PACT_TAG     discovery.Type
+	VERIFICATION discovery.Type
+	PACT_LATEST  discovery.Type
 )
 
 var brokerKvStore = &BKvStore{}
@@ -47,31 +47,31 @@ type BKvStore struct {
 }
 
 func (s *BKvStore) Participant() discovery.Indexer {
-	return backend.Store().Entities(PARTICIPANT)
+	return backend.Store().Adaptors(PARTICIPANT)
 }
 
 func (s *BKvStore) Version() discovery.Indexer {
-	return backend.Store().Entities(VERSION)
+	return backend.Store().Adaptors(VERSION)
 }
 
 func (s *BKvStore) Pact() discovery.Indexer {
-	return backend.Store().Entities(PACT)
+	return backend.Store().Adaptors(PACT)
 }
 
 func (s *BKvStore) PactVersion() discovery.Indexer {
-	return backend.Store().Entities(PACT_VERSION)
+	return backend.Store().Adaptors(PACT_VERSION)
 }
 
 func (s *BKvStore) PactTag() discovery.Indexer {
-	return backend.Store().Entities(PACT_TAG)
+	return backend.Store().Adaptors(PACT_TAG)
 }
 
 func (s *BKvStore) Verification() discovery.Indexer {
-	return backend.Store().Entities(VERIFICATION)
+	return backend.Store().Adaptors(VERIFICATION)
 }
 
 func (s *BKvStore) PactLatest() discovery.Indexer {
-	return backend.Store().Entities(PACT_LATEST)
+	return backend.Store().Adaptors(PACT_LATEST)
 }
 
 func Store() *BKvStore {

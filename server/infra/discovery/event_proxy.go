@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	eventProxies = make(map[StoreType]*KvEventProxy)
+	eventProxies = make(map[Type]*KvEventProxy)
 )
 
 type KvEventProxy struct {
@@ -51,7 +51,7 @@ func (h *KvEventProxy) InjectConfig(cfg *Config) *Config {
 }
 
 // unsafe
-func EventProxy(t StoreType) *KvEventProxy {
+func EventProxy(t Type) *KvEventProxy {
 	proxy, ok := eventProxies[t]
 	if !ok {
 		proxy = &KvEventProxy{}
@@ -61,7 +61,7 @@ func EventProxy(t StoreType) *KvEventProxy {
 }
 
 // the event handler/func must be good performance, or will block the event bus.
-func AddEventHandleFunc(t StoreType, f KvEventFunc) {
+func AddEventHandleFunc(t Type, f KvEventFunc) {
 	EventProxy(t).AddHandleFunc(f)
 	log.Infof("register event handle function[%s] %s", t, util.FuncName(f))
 }

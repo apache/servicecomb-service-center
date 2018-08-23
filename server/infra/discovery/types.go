@@ -23,12 +23,12 @@ import (
 var typeNames []string
 
 const (
-	TypeError = StoreType(-1)
+	TypeError = Type(-1)
 )
 
-type StoreType int
+type Type int
 
-func (st StoreType) String() string {
+func (st Type) String() string {
 	if int(st) < 0 {
 		return "TypeError"
 	}
@@ -38,15 +38,15 @@ func (st StoreType) String() string {
 	return "TYPE" + strconv.Itoa(int(st))
 }
 
-func StoreTypes() (ids []StoreType) {
+func Types() (ids []Type) {
 	for i := range typeNames {
-		ids = append(ids, StoreType(i))
+		ids = append(ids, Type(i))
 	}
 	return
 }
 
-func RegisterStoreType(name string) (newId StoreType) {
-	newId = StoreType(len(typeNames))
+func RegisterType(name string) (newId Type) {
+	newId = Type(len(typeNames))
 	typeNames = append(typeNames, name)
 	return
 }
@@ -64,15 +64,6 @@ type Response struct {
 	Count int64
 }
 
-func (pr *Response) MaxModRevision() (max int64) {
-	for _, kv := range pr.Kvs {
-		if max < kv.ModRevision {
-			max = kv.ModRevision
-		}
-	}
-	return
-}
-
 type KvEvent struct {
 	Revision int64
 	Type     proto.EventType
@@ -83,6 +74,6 @@ type KvEvent struct {
 type KvEventFunc func(evt KvEvent)
 
 type KvEventHandler interface {
-	Type() StoreType
+	Type() Type
 	OnEvent(evt KvEvent)
 }

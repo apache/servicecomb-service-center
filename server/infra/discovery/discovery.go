@@ -16,13 +16,13 @@
  */
 package discovery
 
-type Entity interface {
+type Adaptor interface {
 	Runnable
 	Indexer
 	Cacher
 }
 
-type EntityRepository interface {
-	// NewEntity is the method new an instance of specify StoreType entity
-	NewEntity(t StoreType, cfg *Config) Entity
+type AdaptorRepository interface {
+	// New is the method new an instance of specify Type adaptor
+	New(t Type, cfg *Config) Adaptor
 }

@@ -37,7 +37,7 @@ type DependencyEventHandler struct {
 	signals *queue.UniQueue
 }
 
-func (h *DependencyEventHandler) Type() discovery.StoreType {
+func (h *DependencyEventHandler) Type() discovery.Type {
 	return backend.DEPENDENCY_QUEUE
 }
 

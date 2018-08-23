@@ -14,20 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package etcd
+package discovery
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
 	"strings"
 	"sync"
 	"time"
 )
 
 type KvCache struct {
-	Cfg         *discovery.Config
+	Cfg         *Config
 	name        string
-	store       map[string]map[string]*discovery.KeyValue
+	store       map[string]map[string]*KeyValue
 	rwMux       sync.RWMutex
 	lastRefresh time.Time
 	lastMaxSize int
@@ -44,7 +43,7 @@ func (c *KvCache) Size() (l int) {
 	return
 }
 
-func (c *KvCache) Get(key string) (v *discovery.KeyValue) {
+func (c *KvCache) Get(key string) (v *KeyValue) {
 	c.rwMux.RLock()
 	prefix := c.prefix(key)
 	if p, ok := c.store[prefix]; ok {
@@ -54,21 +53,21 @@ func (c *KvCache) Get(key string) (v *discovery.KeyValue) {
 	return
 }
 
-func (c *KvCache) GetAll(arr *[]*discovery.KeyValue) (count int) {
+func (c *KvCache) GetAll(arr *[]*KeyValue) (count int) {
 	c.rwMux.RLock()
 	count = c.getPrefixKey(arr, c.Cfg.Key)
 	c.rwMux.RUnlock()
 	return
 }
 
-func (c *KvCache) GetPrefix(prefix string, arr *[]*discovery.KeyValue) (count int) {
+func (c *KvCache) GetPrefix(prefix string, arr *[]*KeyValue) (count int) {
 	c.rwMux.RLock()
 	count = c.getPrefixKey(arr, prefix)
 	c.rwMux.RUnlock()
 	return
 }
 
-func (c *KvCache) Put(key string, v *discovery.KeyValue) {
+func (c *KvCache) Put(key string, v *KeyValue) {
 	c.rwMux.Lock()
 	c.addPrefixKey(key, v)
 	c.rwMux.Unlock()
@@ -80,7 +79,7 @@ func (c *KvCache) Remove(key string) {
 	c.rwMux.Unlock()
 }
 
-func (c *KvCache) ForEach(iter func(k string, v *discovery.KeyValue) (next bool)) {
+func (c *KvCache) ForEach(iter func(k string, v *KeyValue) (next bool)) {
 	c.rwMux.RLock()
 loopParent:
 	for _, p := range c.store {
@@ -103,7 +102,7 @@ func (c *KvCache) prefix(key string) string {
 	return key[:strings.LastIndex(key[:len(key)-1], "/")+1]
 }
 
-func (c *KvCache) getPrefixKey(arr *[]*discovery.KeyValue, prefix string) (count int) {
+func (c *KvCache) getPrefixKey(arr *[]*KeyValue, prefix string) (count int) {
 	keysRef, ok := c.store[prefix]
 	if !ok {
 		return 0
@@ -126,7 +125,7 @@ func (c *KvCache) getPrefixKey(arr *[]*discovery.KeyValue, prefix string) (count
 	return count
 }
 
-func (c *KvCache) addPrefixKey(key string, val *discovery.KeyValue) {
+func (c *KvCache) addPrefixKey(key string, val *KeyValue) {
 	if len(c.Cfg.Key) >= len(key) {
 		return
 	}
@@ -137,7 +136,7 @@ func (c *KvCache) addPrefixKey(key string, val *discovery.KeyValue) {
 	keys, ok := c.store[prefix]
 	if !ok {
 		// build parent index key and new child nodes
-		keys = make(map[string]*discovery.KeyValue)
+		keys = make(map[string]*KeyValue)
 		c.store[prefix] = keys
 	} else if _, ok := keys[key]; ok {
 		if val != nil {
@@ -166,11 +165,11 @@ func (c *KvCache) deletePrefixKey(key string) {
 	}
 }
 
-func NewKvCache(name string, cfg *discovery.Config) *KvCache {
+func NewKvCache(name string, cfg *Config) *KvCache {
 	return &KvCache{
 		Cfg:         cfg,
 		name:        name,
-		store:       make(map[string]map[string]*discovery.KeyValue),
+		store:       make(map[string]map[string]*KeyValue),
 		lastRefresh: time.Now(),
 	}
 }

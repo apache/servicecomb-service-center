@@ -111,3 +111,10 @@ func TestPrefixListWatch(t *testing.T) {
 	}
 	w.Stop()
 }
+
+func TestListWatchConfig_String(t *testing.T) {
+	lw := ListWatchConfig{Timeout: time.Second, Context: context.Background()}
+	if lw.String() != "{timeout: 1s}" {
+		t.Fatalf("TestListWatchConfig_String failed")
+	}
+}

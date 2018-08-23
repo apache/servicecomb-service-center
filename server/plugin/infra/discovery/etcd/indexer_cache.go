@@ -18,97 +18,47 @@ package etcd
 
 import (
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"golang.org/x/net/context"
-	"sync"
-	"time"
 )
 
 type CacheIndexer struct {
-	*CommonIndexer
-
-	Cache discovery.Cache
-
-	lock sync.Mutex
+	*EtcdIndexer
+	*discovery.CacheIndexer
 }
 
 func (i *CacheIndexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (*discovery.Response, error) {
 	op := registry.OpGet(opts...)
-
 	key := util.BytesToStringWithNoCopy(op.Key)
 
 	if i.Cache == nil ||
 		op.Mode == registry.MODE_NO_CACHE ||
 		op.Revision > 0 ||
 		(op.Offset >= 0 && op.Limit > 0) {
-		log.Debugf("search '%s' match special options, request etcd server, opts: %s",
-			key, op)
-		return i.CommonIndexer.Search(ctx, opts...)
+		return i.EtcdIndexer.Search(ctx, opts...)
 	}
 
 	if err := i.CheckPrefix(key); err != nil {
 		return nil, fmt.Errorf("%s, cache is '%s'", err.Error(), i.Cache.Name())
 	}
 
-	var resp *discovery.Response
-	if op.Prefix {
-		resp = i.searchByPrefix(op)
-	} else {
-		resp = i.search(op)
+	resp, err := i.CacheIndexer.Search(ctx, opts...)
+	if err != nil {
+		return nil, err
 	}
 
 	if resp.Count > 0 || op.Mode == registry.MODE_CACHE {
 		return resp, nil
 	}
 
-	log.Debugf("can not find any key from %s cache, request etcd server, key: %s",
-		i.Cache.Name(), key)
-	return i.CommonIndexer.Search(ctx, opts...)
-}
-
-func (i *CacheIndexer) search(op registry.PluginOp) *discovery.Response {
-	resp := new(discovery.Response)
-
-	key := util.BytesToStringWithNoCopy(op.Key)
-
-	kv := i.Cache.Get(key)
-	if kv != nil {
-		resp.Count = 1
-	}
-	if kv == nil || op.CountOnly {
-		return resp
-	}
-
-	resp.Kvs = []*discovery.KeyValue{kv}
-	return resp
-}
-
-func (i *CacheIndexer) searchByPrefix(op registry.PluginOp) *discovery.Response {
-	resp := new(discovery.Response)
-
-	prefix := util.BytesToStringWithNoCopy(op.Key)
-
-	resp.Count = int64(i.Cache.GetPrefix(prefix, nil))
-	if resp.Count == 0 || op.CountOnly {
-		return resp
-	}
-
-	t := time.Now()
-	kvs := make([]*discovery.KeyValue, 0, resp.Count)
-	i.Cache.GetPrefix(prefix, &kvs)
-
-	log.LogNilOrWarnf(t, "too long to index data[%d] from cache '%s'", len(kvs), i.Cache.Name())
-
-	resp.Kvs = kvs
-	return resp
+	return i.EtcdIndexer.Search(ctx, opts...)
 }
 
 func NewCacheIndexer(cfg *discovery.Config, cache discovery.Cache) *CacheIndexer {
 	return &CacheIndexer{
-		CommonIndexer: NewCommonIndexer(cfg.Key, cfg.Parser),
-		Cache:         cache,
+		EtcdIndexer:  NewEtcdIndexer(cfg.Key, cfg.Parser),
+		CacheIndexer: discovery.NewCacheIndexer(cache),
 	}
 }

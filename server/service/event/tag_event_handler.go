@@ -90,7 +90,7 @@ func (apt *TagsChangedTask) publish(ctx context.Context, domainProject, consumer
 type TagEventHandler struct {
 }
 
-func (h *TagEventHandler) Type() discovery.StoreType {
+func (h *TagEventHandler) Type() discovery.Type {
 	return backend.SERVICE_TAG
 }
 

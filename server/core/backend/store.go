@@ -37,7 +37,7 @@ func init() {
 
 type KvStore struct {
 	addOns      *util.ConcurrentMap
-	entities    *util.ConcurrentMap
+	adaptors    *util.ConcurrentMap
 	taskService task.TaskService
 	lock        sync.RWMutex
 	ready       chan struct{}
@@ -48,7 +48,7 @@ type KvStore struct {
 
 func (s *KvStore) Initialize() {
 	s.addOns = util.NewConcurrentMap(0)
-	s.entities = util.NewConcurrentMap(0)
+	s.adaptors = util.NewConcurrentMap(0)
 	s.taskService = task.NewTaskService()
 	s.ready = make(chan struct{})
 	s.goroutine = gopool.New(context.Background())
@@ -64,20 +64,20 @@ func (s *KvStore) InjectConfig(cfg *discovery.Config) *discovery.Config {
 	return cfg.AppendEventFunc(s.OnCacheEvent)
 }
 
-func (s *KvStore) repo() discovery.EntityRepository {
+func (s *KvStore) repo() discovery.AdaptorRepository {
 	return plugin.Plugins().Discovery()
 }
 
-func (s *KvStore) getOrCreateEntity(t discovery.StoreType) discovery.Entity {
-	v, _ := s.entities.Fetch(t, func() (interface{}, error) {
+func (s *KvStore) getOrCreateAdaptor(t discovery.Type) discovery.Adaptor {
+	v, _ := s.adaptors.Fetch(t, func() (interface{}, error) {
 		addOn, ok := s.addOns.Get(t)
 		if ok {
-			return s.repo().NewEntity(t, addOn.(discovery.AddOn).Config()), nil
+			return s.repo().New(t, addOn.(discovery.AddOn).Config()), nil
 		}
 		log.Warnf("type '%s' not found", t)
-		return s.repo().NewEntity(t, nil), nil
+		return s.repo().New(t, nil), nil
 	})
-	return v.(discovery.Entity)
+	return v.(discovery.Adaptor)
 }
 
 func (s *KvStore) Run() {
@@ -87,17 +87,17 @@ func (s *KvStore) Run() {
 
 func (s *KvStore) store(ctx context.Context) {
 	// new all types
-	for _, t := range discovery.StoreTypes() {
+	for _, t := range discovery.Types() {
 		select {
 		case <-ctx.Done():
 			return
-		case <-s.getOrCreateEntity(t).Ready():
+		case <-s.getOrCreateAdaptor(t).Ready():
 		}
 	}
 
 	util.SafeCloseChan(s.ready)
 
-	log.Debugf("all entities are ready")
+	log.Debugf("all adaptors are ready")
 }
 
 func (s *KvStore) closed() bool {
@@ -110,8 +110,8 @@ func (s *KvStore) Stop() {
 	}
 	s.isClose = true
 
-	s.entities.ForEach(func(item util.MapItem) bool {
-		item.Value.(discovery.Entity).Stop()
+	s.adaptors.ForEach(func(item util.MapItem) bool {
+		item.Value.(discovery.Adaptor).Stop()
 		return true
 	})
 
@@ -129,7 +129,7 @@ func (s *KvStore) Ready() <-chan struct{} {
 	return s.ready
 }
 
-func (s *KvStore) Install(addOn discovery.AddOn) (id discovery.StoreType, err error) {
+func (s *KvStore) Install(addOn discovery.AddOn) (id discovery.Type, err error) {
 	if id, err = discovery.Install(addOn); err != nil {
 		return
 	}
@@ -141,7 +141,7 @@ func (s *KvStore) Install(addOn discovery.AddOn) (id discovery.StoreType, err er
 	return
 }
 
-func (s *KvStore) MustInstall(addOn discovery.AddOn) discovery.StoreType {
+func (s *KvStore) MustInstall(addOn discovery.AddOn) discovery.Type {
 	id, err := s.Install(addOn)
 	if err != nil {
 		panic(err)
@@ -149,22 +149,22 @@ func (s *KvStore) MustInstall(addOn discovery.AddOn) discovery.StoreType {
 	return id
 }
 
-func (s *KvStore) Entities(id discovery.StoreType) discovery.Entity { return s.getOrCreateEntity(id) }
-func (s *KvStore) Service() discovery.Entity                        { return s.Entities(SERVICE) }
-func (s *KvStore) SchemaSummary() discovery.Entity                  { return s.Entities(SCHEMA_SUMMARY) }
-func (s *KvStore) Instance() discovery.Entity                       { return s.Entities(INSTANCE) }
-func (s *KvStore) Lease() discovery.Entity                          { return s.Entities(LEASE) }
-func (s *KvStore) ServiceIndex() discovery.Entity                   { return s.Entities(SERVICE_INDEX) }
-func (s *KvStore) ServiceAlias() discovery.Entity                   { return s.Entities(SERVICE_ALIAS) }
-func (s *KvStore) ServiceTag() discovery.Entity                     { return s.Entities(SERVICE_TAG) }
-func (s *KvStore) Rule() discovery.Entity                           { return s.Entities(RULE) }
-func (s *KvStore) RuleIndex() discovery.Entity                      { return s.Entities(RULE_INDEX) }
-func (s *KvStore) Schema() discovery.Entity                         { return s.Entities(SCHEMA) }
-func (s *KvStore) Dependency() discovery.Entity                     { return s.Entities(DEPENDENCY) }
-func (s *KvStore) DependencyRule() discovery.Entity                 { return s.Entities(DEPENDENCY_RULE) }
-func (s *KvStore) DependencyQueue() discovery.Entity                { return s.Entities(DEPENDENCY_QUEUE) }
-func (s *KvStore) Domain() discovery.Entity                         { return s.Entities(DOMAIN) }
-func (s *KvStore) Project() discovery.Entity                        { return s.Entities(PROJECT) }
+func (s *KvStore) Adaptors(id discovery.Type) discovery.Adaptor { return s.getOrCreateAdaptor(id) }
+func (s *KvStore) Service() discovery.Adaptor                   { return s.Adaptors(SERVICE) }
+func (s *KvStore) SchemaSummary() discovery.Adaptor             { return s.Adaptors(SCHEMA_SUMMARY) }
+func (s *KvStore) Instance() discovery.Adaptor                  { return s.Adaptors(INSTANCE) }
+func (s *KvStore) Lease() discovery.Adaptor                     { return s.Adaptors(LEASE) }
+func (s *KvStore) ServiceIndex() discovery.Adaptor              { return s.Adaptors(SERVICE_INDEX) }
+func (s *KvStore) ServiceAlias() discovery.Adaptor              { return s.Adaptors(SERVICE_ALIAS) }
+func (s *KvStore) ServiceTag() discovery.Adaptor                { return s.Adaptors(SERVICE_TAG) }
+func (s *KvStore) Rule() discovery.Adaptor                      { return s.Adaptors(RULE) }
+func (s *KvStore) RuleIndex() discovery.Adaptor                 { return s.Adaptors(RULE_INDEX) }
+func (s *KvStore) Schema() discovery.Adaptor                    { return s.Adaptors(SCHEMA) }
+func (s *KvStore) Dependency() discovery.Adaptor                { return s.Adaptors(DEPENDENCY) }
+func (s *KvStore) DependencyRule() discovery.Adaptor            { return s.Adaptors(DEPENDENCY_RULE) }
+func (s *KvStore) DependencyQueue() discovery.Adaptor           { return s.Adaptors(DEPENDENCY_QUEUE) }
+func (s *KvStore) Domain() discovery.Adaptor                    { return s.Adaptors(DOMAIN) }
+func (s *KvStore) Project() discovery.Adaptor                   { return s.Adaptors(PROJECT) }
 
 func (s *KvStore) KeepAlive(ctx context.Context, opts ...registry.PluginOpOption) (int64, error) {
 	op := registry.OpPut(opts...)

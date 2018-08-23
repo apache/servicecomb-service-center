@@ -24,8 +24,8 @@ import (
 
 func TestNewKvEntity(t *testing.T) {
 	core.ServerInfo.Config.EnableCache = false
-	i := NewKvEntity("a", discovery.Configure().WithInitSize(1))
-	if _, ok := i.Indexer.(*CommonIndexer); !ok {
+	i := NewEtcdAdaptor("a", discovery.Configure().WithInitSize(1))
+	if _, ok := i.Indexer.(*EtcdIndexer); !ok {
 		t.Fatalf("TestNewIndexer failed")
 	}
 	core.ServerInfo.Config.EnableCache = true
@@ -34,16 +34,28 @@ func TestNewKvEntity(t *testing.T) {
 	<-i.Ready()
 	i.Stop()
 
-	i = NewKvEntity("a", discovery.Configure().WithInitSize(0))
-	if _, ok := i.Indexer.(*CommonIndexer); !ok {
+	i = NewEtcdAdaptor("a", discovery.Configure().WithInitSize(0))
+	if _, ok := i.Indexer.(*EtcdIndexer); !ok {
 		t.Fatalf("TestNewIndexer failed")
 	}
 
-	i = NewKvEntity("a", discovery.Configure())
+	i = NewEtcdAdaptor("a", discovery.Configure())
 	if _, ok := i.Indexer.(*CacheIndexer); !ok {
 		t.Fatalf("TestNewIndexer failed")
 	}
 	if _, ok := i.Cacher.(*KvCacher); !ok {
+		t.Fatalf("TestNewIndexer failed")
+	}
+}
+
+func TestNewRepository(t *testing.T) {
+	repo := NewRepository()
+	if repo.(*EtcdRepository).New(0, nil) != DefaultKvEntity() {
+		t.Fatalf("TestNewIndexer failed")
+	}
+
+	i := repo.(*EtcdRepository).New(0, discovery.Configure())
+	if _, ok := i.(*EtcdAdaptor); !ok {
 		t.Fatalf("TestNewIndexer failed")
 	}
 }

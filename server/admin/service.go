@@ -89,7 +89,7 @@ func (service *AdminService) dumpAll(ctx context.Context, cache *model.Cache) {
 		Done()
 }
 
-func setValue(e discovery.Entity, setter model.Setter) {
+func setValue(e discovery.Adaptor, setter model.Setter) {
 	e.Cache().ForEach(func(k string, kv *discovery.KeyValue) (next bool) {
 		setter.SetValue(&model.KV{Key: k, Rev: kv.ModRevision, Value: kv.Value})
 		return true

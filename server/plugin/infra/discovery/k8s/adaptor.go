@@ -14,64 +14,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package etcd
+package k8s
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
-	"sync"
 )
 
-var (
-	defaultKvEntity *KvEntity
-	newKvEntityOnce sync.Once
-)
-
-type KvEntity struct {
+type K8sAdaptor struct {
 	discovery.Cacher
 	discovery.Indexer
 }
 
-func (se *KvEntity) Run() {
+func (se *K8sAdaptor) Run() {
 	if r, ok := se.Cacher.(discovery.Runnable); ok {
 		r.Run()
 	}
 }
 
-func (se *KvEntity) Stop() {
+func (se *K8sAdaptor) Stop() {
 	if r, ok := se.Cacher.(discovery.Runnable); ok {
 		r.Stop()
 	}
 }
 
-func (se *KvEntity) Ready() <-chan struct{} {
+func (se *K8sAdaptor) Ready() <-chan struct{} {
 	if r, ok := se.Cacher.(discovery.Runnable); ok {
 		return r.Ready()
 	}
 	return closedCh
 }
 
-func NewKvEntity(name string, cfg *discovery.Config) *KvEntity {
-	var entity KvEntity
-	switch {
-	case core.ServerInfo.Config.EnableCache && cfg.InitSize > 0:
-		entity.Cacher = NewKvCacher(name, cfg)
-		entity.Indexer = NewCacheIndexer(cfg, entity.Cache())
-	default:
-		log.Infof(
-			"core will not cache '%s' and ignore all events of it, cache enabled: %v, init size: %d",
-			name, core.ServerInfo.Config.EnableCache, cfg.InitSize)
-		entity.Indexer = NewCommonIndexer(cfg.Key, cfg.Parser)
+func NewK8sAdaptor(name string, cfg *discovery.Config) *K8sAdaptor {
+	cache := discovery.NewKvCache(name, cfg)
+	return &K8sAdaptor{
+		Indexer: discovery.NewCacheIndexer(cache),
+		Cacher:  NewK8sCacher(cfg, cache),
 	}
-	return &entity
-}
-
-func DefaultKvEntity() *KvEntity {
-	newKvEntityOnce.Do(func() {
-		defaultKvEntity = &KvEntity{
-			Indexer: NewCommonIndexer(discovery.Configure().Key, discovery.BytesParser),
-		}
-	})
-	return defaultKvEntity
 }

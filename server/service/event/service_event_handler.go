@@ -31,7 +31,7 @@ import (
 type ServiceEventHandler struct {
 }
 
-func (h *ServiceEventHandler) Type() discovery.StoreType {
+func (h *ServiceEventHandler) Type() discovery.Type {
 	return backend.SERVICE
 }
 

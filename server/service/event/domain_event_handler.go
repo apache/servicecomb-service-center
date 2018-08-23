@@ -26,7 +26,7 @@ import (
 type DomainEventHandler struct {
 }
 
-func (h *DomainEventHandler) Type() discovery.StoreType {
+func (h *DomainEventHandler) Type() discovery.Type {
 	return backend.DOMAIN
 }
 

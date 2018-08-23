@@ -13,33 +13,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package etcd
+package discovery
 
-import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
-	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
-)
+import "testing"
 
-func init() {
-	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "buildin", NewRepository})
-	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "etcd", NewRepository})
-}
-
-type EtcdRepository struct {
-}
-
-func (r *EtcdRepository) New(t discovery.Type, cfg *discovery.Config) discovery.Adaptor {
-	if cfg == nil {
-		// do not new instance
-		log.Warnf("'%s' config is nil, new default entity", t)
-		return DefaultKvEntity()
+func TestTypes(t *testing.T) {
+	id, _ := Install(NewAddOn("TestTypes", Configure()))
+	found := false
+	for _, t := range Types() {
+		if t == id {
+			found = true
+		}
 	}
-	e := NewEtcdAdaptor(t.String(), cfg)
-	e.Run()
-	return e
-}
-
-func NewRepository() mgr.PluginInstance {
-	return &EtcdRepository{}
+	if !found {
+		t.Fatalf("TestTypes failed")
+	}
+	if id.String() != "TestTypes" {
+		t.Fatalf("TestTypes failed")
+	}
+	if TypeError.String() != "TypeError" {
+		t.Fatalf("TestTypes failed")
+	}
 }

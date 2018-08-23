@@ -13,33 +13,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package etcd
+package discovery
 
-import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
-	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
-)
+import "testing"
 
-func init() {
-	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "buildin", NewRepository})
-	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "etcd", NewRepository})
-}
-
-type EtcdRepository struct {
-}
-
-func (r *EtcdRepository) New(t discovery.Type, cfg *discovery.Config) discovery.Adaptor {
-	if cfg == nil {
-		// do not new instance
-		log.Warnf("'%s' config is nil, new default entity", t)
-		return DefaultKvEntity()
+func TestNewAddOn(t *testing.T) {
+	id, err := Install(NewAddOn("TestNewAddOn", nil))
+	if id != TypeError || err == nil {
+		t.Fatalf("TestNewAddOn failed")
 	}
-	e := NewEtcdAdaptor(t.String(), cfg)
-	e.Run()
-	return e
-}
-
-func NewRepository() mgr.PluginInstance {
-	return &EtcdRepository{}
+	id, err = Install(NewAddOn("", Configure()))
+	if id != TypeError || err == nil {
+		t.Fatalf("TestNewAddOn failed")
+	}
+	id, err = Install(nil)
+	if id != TypeError || err == nil {
+		t.Fatalf("TestNewAddOn failed")
+	}
+	id, err = Install(NewAddOn("TestNewAddOn", Configure()))
+	if id == TypeError || err != nil {
+		t.Fatalf("TestNewAddOn failed")
+	}
+	_, err = Install(NewAddOn("TestNewAddOn", Configure()))
+	if err == nil {
+		t.Fatalf("TestNewAddOn failed")
+	}
 }

@@ -78,7 +78,7 @@ func (apt *RulesChangedTask) publish(ctx context.Context, domainProject, provide
 type RuleEventHandler struct {
 }
 
-func (h *RuleEventHandler) Type() discovery.StoreType {
+func (h *RuleEventHandler) Type() discovery.Type {
 	return backend.RULE
 }
 

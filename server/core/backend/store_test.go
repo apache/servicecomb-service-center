@@ -19,11 +19,17 @@ package backend
 import (
 	"errors"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/task"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"golang.org/x/net/context"
 	"testing"
 )
+
+var closedCh = make(chan struct{})
+
+func init() {
+	close(closedCh)
+}
 
 type mockAsyncTaskService struct {
 	Task task.Task
@@ -50,20 +56,10 @@ func (a *mockAsyncTaskService) LatestHandled(key string) (task.Task, error) {
 func TestStore(t *testing.T) {
 	s := &KvStore{}
 	s.Initialize()
-	e := s.Entities(999)
-	if e != DefaultKvEntity() {
-		t.Fatalf("TestStore failed")
-	}
-
-	core.ServerInfo.Config.EnableCache = false
-
-	s.store(context.Background())
 
 	tt := NewLeaseAsyncTask(registry.OpGet())
 	tt.TTL = 1
 	s.taskService = &mockAsyncTaskService{Task: tt}
-
-	<-s.Ready()
 
 	// KeepAlive case: add task error
 	ttl, err := s.KeepAlive(context.Background(), registry.WithKey([]byte("error")))
@@ -85,23 +81,20 @@ func TestStore(t *testing.T) {
 		t.Fatalf("TestStore failed")
 	}
 
-	core.ServerInfo.Config.EnableCache = true
-
 	s.Stop()
 }
 
 type extend struct {
-	evts []KvEvent
+	evts []discovery.KvEvent
+	cfg  *discovery.Config
 }
 
 func (e *extend) Name() string {
 	return "test"
 }
 
-func (e *extend) Config() *Config {
-	return Configure().WithPrefix("/test").WithEventFunc(func(evt KvEvent) {
-		e.evts = append(e.evts, evt)
-	})
+func (e *extend) Config() *discovery.Config {
+	return e.cfg
 }
 
 func TestInstallType(t *testing.T) {
@@ -109,33 +102,37 @@ func TestInstallType(t *testing.T) {
 	s.Initialize()
 
 	// case: normal
-	e := &extend{}
+	e := &extend{cfg: discovery.Configure()}
+	e.cfg.WithPrefix("/test").WithEventFunc(func(evt discovery.KvEvent) {
+		e.evts = append(e.evts, evt)
+	})
 	id, err := s.Install(e)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if id == TypeError {
+	if id == discovery.TypeError {
 		t.Fatal(err)
 	}
 	if id.String() != "test" {
 		t.Fatalf("TestInstallType failed")
 	}
-	if TypeConfig[id] == nil || TypeConfig[id].OnEvent == nil || EventProxy(id) == nil {
+
+	// case: inject config
+	itf, _ := s.addOns.Get(id)
+	cfg := itf.(discovery.AddOn).Config()
+	if cfg == nil || cfg.OnEvent == nil {
 		t.Fatal("installType fail", err)
 	}
 
-	// case: test event
-	h := &mockEventHandler{StoreType: id}
-	AddEventHandler(h)
-	TypeConfig[id].OnEvent(KvEvent{Revision: 1})
-	if len(e.evts) != 1 || e.evts[0].Revision != 1 || h.Evt.Revision != 1 || s.rev != 1 {
+	cfg.OnEvent(discovery.KvEvent{Revision: 1})
+	if s.rev != 1 || len(e.evts) != 1 {
 		t.Fatalf("TestInstallType failed")
 	}
 
 	// case: install again
-	cfg := Configure().WithPrefix("/test")
-	id, err = s.Install(NewExtension("test", cfg))
-	if id != TypeError || err == nil {
+	cfg = discovery.Configure().WithPrefix("/test")
+	id, err = s.Install(discovery.NewAddOn("test", cfg))
+	if id != discovery.TypeError || err == nil {
 		t.Fatal("installType fail", err)
 	}
 }

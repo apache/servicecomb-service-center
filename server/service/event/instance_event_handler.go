@@ -34,7 +34,7 @@ import (
 type InstanceEventHandler struct {
 }
 
-func (h *InstanceEventHandler) Type() discovery.StoreType {
+func (h *InstanceEventHandler) Type() discovery.Type {
 	return backend.INSTANCE
 }
 

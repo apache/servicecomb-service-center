@@ -17,21 +17,29 @@
 package etcd
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
+	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
+	"math/rand"
 	"strconv"
 	"testing"
 )
 
 type mockCache struct {
-	*nullCache
 	Key string
 	KV  *discovery.KeyValue
 }
+
+func (n *mockCache) Name() string                          { return "NULL" }
+func (n *mockCache) Size() int                             { return 0 }
+func (n *mockCache) GetAll(arr *[]*discovery.KeyValue) int { return 0 }
 
 func (n *mockCache) Get(k string) *discovery.KeyValue {
 	if k == n.Key {
@@ -118,7 +126,7 @@ func TestNewKvCacher(t *testing.T) {
 		t.Fatalf("TestNewKvCacher failed")
 	}
 	// check event
-	if evt.Type != proto.EVT_INIT || evt.Revision != 3 || evt.KV.ModRevision != 2 || string(evt.KV.Key) != "ka" || string(evt.KV.Value.([]byte)) != "va" {
+	if evt.Type != pb.EVT_INIT || evt.Revision != 3 || evt.KV.ModRevision != 2 || string(evt.KV.Key) != "ka" || string(evt.KV.Value.([]byte)) != "va" {
 		t.Fatalf("TestNewKvCacher failed, %v", evt)
 	}
 	// check cache
@@ -150,7 +158,7 @@ func TestNewKvCacher(t *testing.T) {
 	cr.Cfg.WithNoEventPeriods(1)
 	cr.refresh(ctx)
 	// check event
-	if evt.Type != proto.EVT_UPDATE || evt.Revision != 4 || evt.KV.ModRevision != 3 || string(evt.KV.Key) != "ka" || string(evt.KV.Value.([]byte)) != "va" {
+	if evt.Type != pb.EVT_UPDATE || evt.Revision != 4 || evt.KV.ModRevision != 3 || string(evt.KV.Key) != "ka" || string(evt.KV.Value.([]byte)) != "va" {
 		t.Fatalf("TestNewKvCacher failed, %v", evt)
 	}
 	// check cache
@@ -165,7 +173,7 @@ func TestNewKvCacher(t *testing.T) {
 	cr.refresh(ctx)
 	*cr.Cfg = old
 	// check event
-	if evt.Type != proto.EVT_DELETE || evt.Revision != 5 || evt.KV.ModRevision != 3 || string(evt.KV.Key) != "ka" || string(evt.KV.Value.([]byte)) != "va" {
+	if evt.Type != pb.EVT_DELETE || evt.Revision != 5 || evt.KV.ModRevision != 3 || string(evt.KV.Key) != "ka" || string(evt.KV.Value.([]byte)) != "va" {
 		t.Fatalf("TestNewKvCacher failed, %v", evt)
 	}
 	// check cache
@@ -182,7 +190,7 @@ func TestNewKvCacher(t *testing.T) {
 
 	cr.refresh(ctx)
 	// check event
-	if evt.Type != proto.EVT_CREATE || evt.Revision != 5 || evt.KV.ModRevision != 5 || string(evt.KV.Key) != "ka" || string(evt.KV.Value.([]byte)) != "va" {
+	if evt.Type != pb.EVT_CREATE || evt.Revision != 5 || evt.KV.ModRevision != 5 || string(evt.KV.Key) != "ka" || string(evt.KV.Value.([]byte)) != "va" {
 		t.Fatalf("TestNewKvCacher failed, %v", evt)
 	}
 	// check cache
@@ -199,7 +207,7 @@ func TestNewKvCacher(t *testing.T) {
 
 	cr.refresh(ctx)
 	// check event
-	if evt.Type != proto.EVT_UPDATE || evt.Revision != 6 || evt.KV.ModRevision != 6 || string(evt.KV.Key) != "ka" || string(evt.KV.Value.([]byte)) != "va" {
+	if evt.Type != pb.EVT_UPDATE || evt.Revision != 6 || evt.KV.ModRevision != 6 || string(evt.KV.Key) != "ka" || string(evt.KV.Value.([]byte)) != "va" {
 		t.Fatalf("TestNewKvCacher failed, %v", evt)
 	}
 	// check cache
@@ -217,7 +225,7 @@ func TestNewKvCacher(t *testing.T) {
 
 	cr.refresh(ctx)
 	// check event
-	if evt.Type != proto.EVT_DELETE || evt.Revision != 6 || evt.KV.ModRevision != 6 || string(evt.KV.Key) != "ka" || string(evt.KV.Value.([]byte)) != "va" {
+	if evt.Type != pb.EVT_DELETE || evt.Revision != 6 || evt.KV.ModRevision != 6 || string(evt.KV.Key) != "ka" || string(evt.KV.Value.([]byte)) != "va" {
 		t.Fatalf("TestNewKvCacher failed, %v", evt)
 	}
 	// check cache
@@ -236,7 +244,7 @@ func TestNewKvCacher(t *testing.T) {
 	evt.KV = nil
 	cr.refresh(ctx)
 	// check event
-	if evt.Type != proto.EVT_CREATE || evt.Revision != 9 || evt.KV.ModRevision != 1 || string(evt.KV.Key) != "ka" || string(evt.KV.Value.([]byte)) != "va" {
+	if evt.Type != pb.EVT_CREATE || evt.Revision != 9 || evt.KV.ModRevision != 1 || string(evt.KV.Key) != "ka" || string(evt.KV.Value.([]byte)) != "va" {
 		t.Fatalf("TestNewKvCacher failed, %v", evt)
 	}
 	// check cache
@@ -257,7 +265,7 @@ func TestNewKvCacher(t *testing.T) {
 	cr.refresh(ctx)
 	data.Value = []byte("va")
 	// check event
-	if evt.Type != proto.EVT_DELETE || evt.Revision != 1 || evt.KV.ModRevision != 1 || string(evt.KV.Key) != "ka" || string(evt.KV.Value.([]byte)) != "va" {
+	if evt.Type != pb.EVT_DELETE || evt.Revision != 1 || evt.KV.ModRevision != 1 || string(evt.KV.Key) != "ka" || string(evt.KV.Value.([]byte)) != "va" {
 		t.Fatalf("TestNewKvCacher failed, %v", evt)
 	}
 	// check cache
@@ -328,14 +336,71 @@ func TestNewKvCacher(t *testing.T) {
 	// check all events
 	for i := 0; i < eventBlockSize+1; i++ {
 		s := strconv.Itoa(i)
-		if evt, ok := evts[s]; !ok || evt.Type != proto.EVT_CREATE || evt.KV.ModRevision != int64(i) || string(evt.KV.Value.([]byte)) != s {
+		if evt, ok := evts[s]; !ok || evt.Type != pb.EVT_CREATE || evt.KV.ModRevision != int64(i) || string(evt.KV.Value.([]byte)) != s {
 			t.Fatalf("TestNewKvCacher failed, %v", evt)
 		}
 		delete(evts, s)
 	}
 	evt = evts[string(data.Key)]
-	if len(evts) != 1 || evt.Type != proto.EVT_CREATE || evt.Revision != 3 || evt.KV.ModRevision != 2 {
+	if len(evts) != 1 || evt.Type != pb.EVT_CREATE || evt.Revision != 3 || evt.KV.ModRevision != 2 {
 		t.Fatalf("TestNewKvCacher failed, %v %v", evts, evt)
 	}
 	delete(evts, string(data.Key))
+}
+
+func BenchmarkFilter(b *testing.B) {
+	inst := &pb.MicroServiceInstance{
+		HealthCheck: &pb.HealthCheck{
+			Interval: 4,
+			Times:    0,
+		},
+	}
+	v, _ := json.Marshal(inst)
+
+	cfg := discovery.Configure().WithParser(backend.InstanceParser)
+
+	n := 300 * 1000 // 30w
+	cache := discovery.NewKvCache("test", cfg)
+	items := make([]*mvccpb.KeyValue, 0, n)
+	for ; n > 0; n-- {
+		k := fmt.Sprintf("/%d", n)
+		if n <= 10*1000 {
+			// create
+			items = append(items, &mvccpb.KeyValue{
+				Key:         util.StringToBytesWithNoCopy(k),
+				Value:       v,
+				ModRevision: int64(rand.Int()),
+			})
+		} else if n > 100*1000 && n <= 20*1000 {
+			// update
+			cache.Put(k, &discovery.KeyValue{
+				Key:         util.StringToBytesWithNoCopy(k),
+				Value:       inst,
+				ModRevision: 1,
+			})
+			items = append(items, &mvccpb.KeyValue{
+				Key:         util.StringToBytesWithNoCopy(k),
+				Value:       v,
+				ModRevision: int64(rand.Int()),
+			})
+		} else {
+			// delete
+			cache.Put(k, &discovery.KeyValue{
+				Key:         util.StringToBytesWithNoCopy(k),
+				Value:       inst,
+				ModRevision: 1,
+			})
+		}
+	}
+	cacher := &KvCacher{Cfg: cfg}
+	cacher.cache = cache
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = cacher.filter(1, items)
+	}
+	b.ReportAllocs()
+
+	// TODO bad performance!!!
+	//10	 167974203 ns/op	92637508 B/op	   80028 allocs/op
 }

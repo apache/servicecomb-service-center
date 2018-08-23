@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build !go1.9
-
 package log
 
 import (
@@ -36,7 +34,9 @@ func TestNewLogger(t *testing.T) {
 			defer func() {
 				l.Recover(recover(), 3)
 
-				defer Recover()
+				defer func() {
+					l.Recover(recover(), 3)
+				}()
 				Fatalf(nil, "a")
 			}()
 			Fatal("a", nil)
@@ -45,13 +45,7 @@ func TestNewLogger(t *testing.T) {
 	}()
 
 	os.Remove("test.log")
-	SetGlobal(Config{
-		LoggerFile:     "test.log",
-		LogFormatText:  true,
-		LogRotateSize:  1,
-		LogBackupCount: 1,
-		CallerSkip:     2,
-	})
+	SetGlobal(Configure().WithCallerSkip(2).WithFile("test.log"))
 
 	Debug("a")
 	l.Debug("a")
@@ -90,14 +84,22 @@ func TestNewLogger(t *testing.T) {
 	l.Fatal("a", nil)
 }
 
-func BenchmarkLagerLogger(b *testing.B) {
+func TestLogPanic(t *testing.T) {
+	defer Recover()
+	panic("aaa")
+}
+
+func BenchmarkLogger(b *testing.B) {
 	cfg := Configure().WithFile("test.log")
 	l := NewLogger(cfg)
 	defer os.Remove("test.log")
 
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		l.Infof("error test")
+		l.Infof("error test %s", "x")
 	}
-	// 200000	      8217 ns/op	     912 B/op	      15 allocs/op
+	l.Sync()
+	// go1.9+ 300000	      6078 ns/op	     176 B/op	       7 allocs/op
+	// go1.9- 200000	      8217 ns/op	     912 B/op	      15 allocs/op
 	b.ReportAllocs()
 }

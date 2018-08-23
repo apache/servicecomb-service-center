@@ -220,8 +220,8 @@ func (pm *PluginManager) existDynamicPlugin(pn PluginName) *Plugin {
 	return nil
 }
 
-func (pm *PluginManager) Discovery() discovery.EntityRepository {
-	return pm.Instance(DISCOVERY).(discovery.EntityRepository)
+func (pm *PluginManager) Discovery() discovery.AdaptorRepository {
+	return pm.Instance(DISCOVERY).(discovery.AdaptorRepository)
 }
 func (pm *PluginManager) Registry() registry.Registry {
 	return pm.Instance(REGISTRY).(registry.Registry)

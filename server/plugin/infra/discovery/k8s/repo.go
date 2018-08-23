@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package etcd
+package k8s
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
@@ -22,24 +22,23 @@ import (
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "buildin", NewRepository})
-	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "etcd", NewRepository})
+	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "k8s", NewRepository})
 }
 
-type EtcdRepository struct {
+type K8sRepository struct {
 }
 
-func (r *EtcdRepository) New(t discovery.Type, cfg *discovery.Config) discovery.Adaptor {
+func (r *K8sRepository) NewEntity(t discovery.Type, cfg *discovery.Config) discovery.Adaptor {
 	if cfg == nil {
 		// do not new instance
-		log.Warnf("'%s' config is nil, new default entity", t)
-		return DefaultKvEntity()
+		log.Warnf("type '%s' config is nil", t)
+		return nil
 	}
-	e := NewEtcdAdaptor(t.String(), cfg)
+	e := NewK8sAdaptor(t.String(), cfg)
 	e.Run()
 	return e
 }
 
 func NewRepository() mgr.PluginInstance {
-	return &EtcdRepository{}
+	return &K8sRepository{}
 }

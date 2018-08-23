@@ -46,8 +46,8 @@ func NewAddOn(name string, cfg *Config) AddOn {
 	}
 }
 
-func Install(e AddOn) (id StoreType, err error) {
-	if e == nil {
+func Install(e AddOn) (id Type, err error) {
+	if e == nil || len(e.Name()) == 0 || e.Config() == nil {
 		return TypeError, errors.New("invalid parameter")
 	}
 	for _, n := range typeNames {
@@ -56,7 +56,7 @@ func Install(e AddOn) (id StoreType, err error) {
 		}
 	}
 
-	id = RegisterStoreType(e.Name())
+	id = RegisterType(e.Name())
 	EventProxy(id).InjectConfig(e.Config())
 	return
 }

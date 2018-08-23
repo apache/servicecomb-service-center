@@ -33,21 +33,21 @@ const (
 )
 
 var (
-	DOMAIN           discovery.StoreType
-	PROJECT          discovery.StoreType
-	SERVICE          discovery.StoreType
-	SERVICE_INDEX    discovery.StoreType
-	SERVICE_ALIAS    discovery.StoreType
-	SERVICE_TAG      discovery.StoreType
-	RULE             discovery.StoreType
-	RULE_INDEX       discovery.StoreType
-	DEPENDENCY       discovery.StoreType
-	DEPENDENCY_RULE  discovery.StoreType
-	DEPENDENCY_QUEUE discovery.StoreType
-	SCHEMA           discovery.StoreType
-	SCHEMA_SUMMARY   discovery.StoreType
-	INSTANCE         discovery.StoreType
-	LEASE            discovery.StoreType
+	DOMAIN           discovery.Type
+	PROJECT          discovery.Type
+	SERVICE          discovery.Type
+	SERVICE_INDEX    discovery.Type
+	SERVICE_ALIAS    discovery.Type
+	SERVICE_TAG      discovery.Type
+	RULE             discovery.Type
+	RULE_INDEX       discovery.Type
+	DEPENDENCY       discovery.Type
+	DEPENDENCY_RULE  discovery.Type
+	DEPENDENCY_QUEUE discovery.Type
+	SCHEMA           discovery.Type
+	SCHEMA_SUMMARY   discovery.Type
+	INSTANCE         discovery.Type
+	LEASE            discovery.Type
 )
 
 var (
@@ -170,7 +170,7 @@ func GetInfoFromSchemaKV(kv *discovery.KeyValue) (schemaId string) {
 	return keys[l-1]
 }
 
-func GetInfoFromDependencyQueueKV(kv *discovery.KeyValue) (consumerId, domainProject string) {
+func GetInfoFromDependencyQueueKV(kv *discovery.KeyValue) (consumerId, domainProject, uuid string) {
 	keys := KvToResponse(kv)
 	l := len(keys)
 	if l < 4 {
@@ -178,7 +178,31 @@ func GetInfoFromDependencyQueueKV(kv *discovery.KeyValue) (consumerId, domainPro
 	}
 	consumerId = keys[l-2]
 	domainProject = fmt.Sprintf("%s/%s", keys[l-4], keys[l-3])
+	uuid = keys[l-1]
 	return
+}
+
+func GetInfoFromDependencyRuleKV(kv *discovery.KeyValue) (key *pb.MicroServiceKey) {
+	keys := KvToResponse(kv)
+	l := len(keys)
+	if l < 5 {
+		return
+	}
+	if keys[l-1] == "*" {
+		return &pb.MicroServiceKey{
+			Tenant:      fmt.Sprintf("%s/%s", keys[l-5], keys[l-4]),
+			Environment: keys[l-2],
+			ServiceName: keys[l-1],
+		}
+	}
+
+	return &pb.MicroServiceKey{
+		Tenant:      fmt.Sprintf("%s/%s", keys[l-7], keys[l-6]),
+		Environment: keys[l-4],
+		AppId:       keys[l-3],
+		ServiceName: keys[l-2],
+		Version:     keys[l-1],
+	}
 }
 
 func registerInnerTypes() {

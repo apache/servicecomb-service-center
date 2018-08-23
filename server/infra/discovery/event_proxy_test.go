@@ -21,27 +21,28 @@ import (
 )
 
 type mockEventHandler struct {
-	StoreType StoreType
-	Evt       KvEvent
+	MockType Type
+	Evt      KvEvent
 }
 
-func (h *mockEventHandler) Type() StoreType {
-	return h.StoreType
+func (h *mockEventHandler) Type() Type {
+	return h.MockType
 }
 func (h *mockEventHandler) OnEvent(evt KvEvent) {
 	h.Evt = evt
 }
 
 func TestAddEventHandler(t *testing.T) {
-	h := &mockEventHandler{StoreType: SERVICE}
+	h := &mockEventHandler{MockType: 0}
 	evt := KvEvent{Revision: 1}
 
 	// case: add
-	proxy := EventProxy(SERVICE)
+	proxy := EventProxy(0)
 	if nil == proxy {
 		t.Fatalf("TestAddEventHandler failed")
 	}
-	if EventProxyInject(SERVICE) != proxy {
+	cfg := Configure()
+	if EventProxy(0).InjectConfig(cfg) != cfg {
 		t.Fatalf("TestAddEventHandler failed")
 	}
 
@@ -51,4 +52,11 @@ func TestAddEventHandler(t *testing.T) {
 	if h.Evt != evt {
 		t.Fatalf("TestAddEventHandler failed")
 	}
+
+	AddEventHandleFunc(0, func(e KvEvent) {
+		if e != evt {
+			t.Fatalf("TestAddEventHandler failed")
+		}
+	})
+	proxy.OnEvent(evt)
 }

@@ -25,6 +25,24 @@ import (
 	"time"
 )
 
+type mockCache struct {
+	c map[string]*discovery.KeyValue
+}
+
+func (n *mockCache) Name() string                     { return "mock" }
+func (n *mockCache) Size() int                        { return 0 }
+func (n *mockCache) Get(k string) *discovery.KeyValue { return nil }
+func (n *mockCache) GetAll(arr *[]*discovery.KeyValue) (i int) {
+	for range n.c {
+		i++
+	}
+	return i
+}
+func (n *mockCache) GetPrefix(prefix string, arr *[]*discovery.KeyValue) int        { return 0 }
+func (n *mockCache) ForEach(iter func(k string, v *discovery.KeyValue) (next bool)) {}
+func (n *mockCache) Put(k string, v *discovery.KeyValue)                            { n.c[k] = v }
+func (n *mockCache) Remove(k string)                                                { delete(n.c, k) }
+
 func TestInstanceEventDeferHandler_OnCondition(t *testing.T) {
 	iedh := &InstanceEventDeferHandler{
 		Percent: 0,
@@ -72,7 +90,7 @@ func TestInstanceEventDeferHandler_HandleChan(t *testing.T) {
 		Value: b,
 	}
 
-	cache := etcd.NewKvCache("test", discovery.Configure())
+	cache := &mockCache{c: make(map[string]*discovery.KeyValue)}
 	cache.Put("/1", kv1)
 	cache.Put("/2", kv2)
 	cache.Put("/3", kv3)

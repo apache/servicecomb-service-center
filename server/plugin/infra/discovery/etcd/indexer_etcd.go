@@ -18,6 +18,7 @@ package etcd
 
 import (
 	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
@@ -26,23 +27,24 @@ import (
 	"strings"
 )
 
-type CommonIndexer struct {
+type EtcdIndexer struct {
 	Client registry.Registry
 	Parser discovery.Parser
 	Root   string
 }
 
-func (i *CommonIndexer) CheckPrefix(key string) error {
+func (i *EtcdIndexer) CheckPrefix(key string) error {
 	if strings.Index(key, i.Root) != 0 {
 		return fmt.Errorf("search '%s' mismatch pattern %s", key, i.Root)
 	}
 	return nil
 }
 
-func (i *CommonIndexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (r *discovery.Response, err error) {
+func (i *EtcdIndexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (r *discovery.Response, err error) {
 	op := registry.OpGet(opts...)
-
 	key := util.BytesToStringWithNoCopy(op.Key)
+
+	log.Debugf("search '%s' match special options, request etcd server, opts: %s", key, op)
 
 	if err := i.CheckPrefix(key); err != nil {
 		return nil, err
@@ -76,6 +78,6 @@ func (i *CommonIndexer) Search(ctx context.Context, opts ...registry.PluginOpOpt
 	return
 }
 
-func NewCommonIndexer(root string, p discovery.Parser) (indexer *CommonIndexer) {
-	return &CommonIndexer{Client: backend.Registry(), Parser: p, Root: root}
+func NewEtcdIndexer(root string, p discovery.Parser) (indexer *EtcdIndexer) {
+	return &EtcdIndexer{Client: backend.Registry(), Parser: p, Root: root}
 }

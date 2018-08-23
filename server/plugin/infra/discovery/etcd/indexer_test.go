@@ -24,28 +24,28 @@ import (
 	"testing"
 )
 
-func TestCommonIndexer_Search(t *testing.T) {
+func TestEtcdIndexer_Search(t *testing.T) {
 	data := &registry.PluginResponse{Revision: 1}
 	c := &mockRegistry{}
-	i := &CommonIndexer{Client: c, Root: "/", Parser: discovery.BytesParser}
+	i := &EtcdIndexer{Client: c, Root: "/", Parser: discovery.BytesParser}
 
 	// case: key does not contain prefix
 	resp, err := i.Search(context.Background(), registry.WithStrKey("a"))
 	if err == nil || resp != nil {
-		t.Fatalf("TestBaseIndexer_Search failed")
+		t.Fatalf("TestEtcdIndexer_Search failed")
 	}
 
 	// case: client return err
 	resp, err = i.Search(context.Background(), registry.WithStrKey("/a"))
 	if err == nil || resp != nil {
-		t.Fatalf("TestBaseIndexer_Search failed")
+		t.Fatalf("TestEtcdIndexer_Search failed")
 	}
 
 	// case: kvs is empty
 	c.Response = data
 	resp, err = i.Search(context.Background(), registry.WithStrKey("/a"))
 	if err != nil || resp == nil || resp.Count != 0 {
-		t.Fatalf("TestBaseIndexer_Search failed")
+		t.Fatalf("TestEtcdIndexer_Search failed")
 	}
 
 	// case: parse error
@@ -56,7 +56,7 @@ func TestCommonIndexer_Search(t *testing.T) {
 	c.Response = data
 	resp, err = i.Search(context.Background(), registry.WithStrKey("/a"))
 	if err != nil || resp == nil || resp.Count != 2 || len(resp.Kvs) != 1 {
-		t.Fatalf("TestBaseIndexer_Search failed, %v, %v", err, resp)
+		t.Fatalf("TestEtcdIndexer_Search failed, %v, %v", err, resp)
 	}
 	i.Parser = old
 
@@ -66,15 +66,15 @@ func TestCommonIndexer_Search(t *testing.T) {
 	c.Response = data
 	resp, err = i.Search(context.Background(), registry.WithStrKey("/a"))
 	if err != nil || resp == nil || resp.Count != 2 || len(resp.Kvs) != 2 {
-		t.Fatalf("TestBaseIndexer_Search failed, %v, %v", err, resp)
+		t.Fatalf("TestEtcdIndexer_Search failed, %v, %v", err, resp)
 	}
 	resp, err = i.Search(context.Background(), registry.WithStrKey("/a"), registry.WithKeyOnly())
 	if err != nil || resp == nil || resp.Count != 2 || len(resp.Kvs) != 2 {
-		t.Fatalf("TestBaseIndexer_Search failed, %v, %v", err, resp)
+		t.Fatalf("TestEtcdIndexer_Search failed, %v, %v", err, resp)
 	}
 	resp, err = i.Search(context.Background(), registry.WithStrKey("/a"), registry.WithCountOnly())
 	if err != nil || resp == nil || resp.Count != 2 || len(resp.Kvs) != 0 {
-		t.Fatalf("TestBaseIndexer_Search failed, %v, %v", err, resp)
+		t.Fatalf("TestEtcdIndexer_Search failed, %v, %v", err, resp)
 	}
 }
 
@@ -86,54 +86,54 @@ func TestCacheIndexer_Search(t *testing.T) {
 		Count:    1,
 	}}
 	i := &CacheIndexer{
-		CommonIndexer: &CommonIndexer{
+		EtcdIndexer: &EtcdIndexer{
 			Root:   "/",
 			Client: cli,
 		},
-		Cache: c,
+		CacheIndexer: discovery.NewCacheIndexer(c),
 	}
 
 	// case: key does not contain prefix
 	resp, err := i.Search(context.Background(), registry.WithStrKey("a"))
 	if err == nil || resp != nil {
-		t.Fatalf("TestBaseIndexer_Search failed, %v, %v", err, resp)
+		t.Fatalf("TestEtcdIndexer_Search failed, %v, %v", err, resp)
 	}
 
 	// case: not match cache search remote
 	resp, err = i.Search(context.Background(), registry.WithStrKey("/a"))
 	if err != nil || resp == nil || resp.Count != 1 || string(resp.Kvs[0].Key) != "/a/b" {
-		t.Fatalf("TestBaseIndexer_Search failed, %v, %v", err, resp)
+		t.Fatalf("TestEtcdIndexer_Search failed, %v, %v", err, resp)
 	}
 
 	// no cache
 	resp, err = i.Search(context.Background(), registry.WithStrKey("/a"), registry.WithNoCache())
 	if err != nil || resp == nil || resp.Count != 1 || string(resp.Kvs[0].Key) != "/a/b" {
-		t.Fatalf("TestBaseIndexer_Search failed, %v, %v", err, resp)
+		t.Fatalf("TestEtcdIndexer_Search failed, %v, %v", err, resp)
 	}
 
 	// rev > 0 or paging
 	resp, err = i.Search(context.Background(), registry.WithStrKey("/a"), registry.WithRev(1))
 	if err != nil || resp == nil || resp.Count != 1 || string(resp.Kvs[0].Key) != "/a/b" {
-		t.Fatalf("TestBaseIndexer_Search failed, %v, %v", err, resp)
+		t.Fatalf("TestEtcdIndexer_Search failed, %v, %v", err, resp)
 	}
 	resp, err = i.Search(context.Background(), registry.WithStrKey("/a"), registry.WithOffset(0), registry.WithLimit(1))
 	if err != nil || resp == nil || resp.Count != 1 || string(resp.Kvs[0].Key) != "/a/b" {
-		t.Fatalf("TestBaseIndexer_Search failed, %v, %v", err, resp)
+		t.Fatalf("TestEtcdIndexer_Search failed, %v, %v", err, resp)
 	}
 
 	// not match cache
 	c.Put("ka", &discovery.KeyValue{Key: []byte("ka"), Value: []byte("va"), Version: 1, ModRevision: 1})
 	resp, err = i.Search(context.Background(), registry.WithStrKey("/a"))
 	if err != nil || resp == nil || resp.Count != 1 || string(resp.Kvs[0].Key) != "/a/b" {
-		t.Fatalf("TestBaseIndexer_Search failed, %v, %v", err, resp)
+		t.Fatalf("TestEtcdIndexer_Search failed, %v, %v", err, resp)
 	}
 	resp, err = i.Search(context.Background(), registry.WithStrKey("/a"), registry.WithPrefix())
 	if err != nil || resp == nil || resp.Count != 1 || string(resp.Kvs[0].Key) != "/a/b" {
-		t.Fatalf("TestBaseIndexer_Search failed, %v, %v", err, resp)
+		t.Fatalf("TestEtcdIndexer_Search failed, %v, %v", err, resp)
 	}
 	resp, err = i.Search(context.Background(), registry.WithStrKey("/a"), registry.WithCountOnly())
 	if err != nil || resp == nil || resp.Count != 1 {
-		t.Fatalf("TestBaseIndexer_Search failed, %v, %v", err, resp)
+		t.Fatalf("TestEtcdIndexer_Search failed, %v, %v", err, resp)
 	}
 
 	// remote err
@@ -141,7 +141,7 @@ func TestCacheIndexer_Search(t *testing.T) {
 	cli.Response = nil
 	resp, err = i.Search(context.Background(), registry.WithStrKey("/a"))
 	if err == nil || resp != nil {
-		t.Fatalf("TestBaseIndexer_Search failed, %v, %v", err, resp)
+		t.Fatalf("TestEtcdIndexer_Search failed, %v, %v", err, resp)
 	}
 	cli.Response = oldResp
 
@@ -151,29 +151,26 @@ func TestCacheIndexer_Search(t *testing.T) {
 	// exact match
 	resp, err = i.Search(context.Background(), registry.WithStrKey("/a"))
 	if err != nil || resp == nil || resp.Count != 1 || string(resp.Kvs[0].Value.([]byte)) != "va" {
-		t.Fatalf("TestBaseIndexer_Search failed, %v, %v", err, resp)
-	}
-	if resp.MaxModRevision() != 1 {
-		t.Fatalf("TestBaseIndexer_Search failed, %v, %v", err, resp)
+		t.Fatalf("TestEtcdIndexer_Search failed, %v, %v", err, resp)
 	}
 	resp, err = i.Search(context.Background(), registry.WithStrKey("/a"), registry.WithCountOnly())
 	if err != nil || resp == nil || resp.Count != 1 || len(resp.Kvs) != 0 {
-		t.Fatalf("TestBaseIndexer_Search failed, %v, %v", err, resp)
+		t.Fatalf("TestEtcdIndexer_Search failed, %v, %v", err, resp)
 	}
 
 	// prefix match
 	resp, err = i.Search(context.Background(), registry.WithStrKey("/a"), registry.WithPrefix())
 	if err != nil || resp == nil || resp.Count != 1 || string(resp.Kvs[0].Value.([]byte)) != "va" {
-		t.Fatalf("TestBaseIndexer_Search failed, %v, %v", err, resp)
+		t.Fatalf("TestEtcdIndexer_Search failed, %v, %v", err, resp)
 	}
 	resp, err = i.Search(context.Background(), registry.WithStrKey("/a"), registry.WithPrefix(), registry.WithCountOnly())
 	if err != nil || resp == nil || resp.Count != 1 || len(resp.Kvs) != 0 {
-		t.Fatalf("TestBaseIndexer_Search failed, %v, %v", err, resp)
+		t.Fatalf("TestEtcdIndexer_Search failed, %v, %v", err, resp)
 	}
 
 	// mismatch cache but cacheonly
 	resp, err = i.Search(context.Background(), registry.WithStrKey("/a/b"), registry.WithCacheOnly())
 	if err != nil || resp == nil || resp.Count != 0 || len(resp.Kvs) != 0 {
-		t.Fatalf("TestBaseIndexer_Search failed, %v, %v", err, resp)
+		t.Fatalf("TestEtcdIndexer_Search failed, %v, %v", err, resp)
 	}
 }

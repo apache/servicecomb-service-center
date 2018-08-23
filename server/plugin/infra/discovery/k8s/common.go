@@ -13,33 +13,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package etcd
+package k8s
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
-	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
+var closedCh = make(chan struct{})
+
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "buildin", NewRepository})
-	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "etcd", NewRepository})
+	close(closedCh)
 }
 
-type EtcdRepository struct {
-}
-
-func (r *EtcdRepository) New(t discovery.Type, cfg *discovery.Config) discovery.Adaptor {
-	if cfg == nil {
-		// do not new instance
-		log.Warnf("'%s' config is nil, new default entity", t)
-		return DefaultKvEntity()
+func createKubeClient(kubeConfigPath string) (kubernetes.Interface, error) {
+	cfg, err := clientcmd.BuildConfigFromFlags("", kubeConfigPath)
+	if err != nil {
+		return nil, err
 	}
-	e := NewEtcdAdaptor(t.String(), cfg)
-	e.Run()
-	return e
-}
-
-func NewRepository() mgr.PluginInstance {
-	return &EtcdRepository{}
+	return kubernetes.NewForConfig(cfg)
 }

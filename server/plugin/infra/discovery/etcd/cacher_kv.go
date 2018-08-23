@@ -478,9 +478,10 @@ func (c *KvCacher) reportMetrics(ctx context.Context) {
 	}
 }
 
-func NewKvCacher(name string, cfg *discovery.Config) *KvCacher {
-	cacher := &KvCacher{
+func NewKvCacher(cfg *discovery.Config, cache discovery.Cache) *KvCacher {
+	return &KvCacher{
 		Cfg:   cfg,
+		cache: cache,
 		ready: make(chan struct{}),
 		lw: &innerListWatch{
 			Client: backend.Registry(),
@@ -488,6 +489,4 @@ func NewKvCacher(name string, cfg *discovery.Config) *KvCacher {
 		},
 		goroutine: gopool.New(context.Background()),
 	}
-	cacher.cache = NewKvCache(name, cfg)
-	return cacher
 }

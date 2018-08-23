@@ -35,4 +35,10 @@ func TestReportCacheSize(t *testing.T) {
 	if metric.Gatherer.Records.Get("local_cache_size_bytes") != 100 {
 		t.Fatalf("TestReportCacheSize failed")
 	}
+
+	ReportCacheSize("", "b", 200)
+	err = metric.Gatherer.Collect()
+	if metric.Gatherer.Records.Get("local_cache_size_bytes") != 100 {
+		t.Fatalf("TestReportCacheSize failed")
+	}
 }

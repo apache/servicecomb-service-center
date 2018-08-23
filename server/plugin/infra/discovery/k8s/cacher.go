@@ -13,33 +13,43 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package etcd
+package k8s
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
-	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
+	"golang.org/x/net/context"
 )
 
-func init() {
-	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "buildin", NewRepository})
-	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "etcd", NewRepository})
+type K8sCacher struct {
+	Cfg *discovery.Config
+
+	cache     discovery.Cache
+	ready     chan struct{}
+	goroutine *gopool.Pool
 }
 
-type EtcdRepository struct {
+func (c *K8sCacher) Cache() discovery.Cache {
+	return c.cache
 }
 
-func (r *EtcdRepository) New(t discovery.Type, cfg *discovery.Config) discovery.Adaptor {
-	if cfg == nil {
-		// do not new instance
-		log.Warnf("'%s' config is nil, new default entity", t)
-		return DefaultKvEntity()
+func (c *K8sCacher) Run() {
+	// TODO init kube client and list&watch
+}
+
+func (c *K8sCacher) Stop() {
+
+}
+
+func (c *K8sCacher) Ready() <-chan struct{} {
+	return c.ready
+}
+
+func NewK8sCacher(cfg *discovery.Config, cache discovery.Cache) *K8sCacher {
+	return &K8sCacher{
+		Cfg:       cfg,
+		cache:     cache,
+		ready:     make(chan struct{}),
+		goroutine: gopool.New(context.Background()),
 	}
-	e := NewEtcdAdaptor(t.String(), cfg)
-	e.Run()
-	return e
-}
-
-func NewRepository() mgr.PluginInstance {
-	return &EtcdRepository{}
 }
