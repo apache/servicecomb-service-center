@@ -444,13 +444,13 @@ loop:
 				continue loop
 			}
 
-			id := apt.GenerateProviderDependencyRuleKey(domainProject, key)
+			id := apt.GenerateProviderDependencyRuleKey(key.Tenant, key)
 			exist, ok := cache[id]
 			if !ok {
 				_, exist, err = FindServiceIds(ctx, key.Version, key)
 				if err != nil {
 					return nil, fmt.Errorf("%v, find service %s/%s/%s/%s",
-						err, domainProject, key.AppId, key.ServiceName, key.Version)
+						err, key.Tenant, key.AppId, key.ServiceName, key.Version)
 				}
 				cache[id] = exist
 			}
@@ -497,7 +497,7 @@ func removeProviderRuleKeys(ctx context.Context, domainProject string, cache map
 			_, exist, err = FindServiceIds(ctx, key.Version, key)
 			if err != nil {
 				return nil, fmt.Errorf("find service %s/%s/%s/%s, %v",
-					domainProject, key.AppId, key.ServiceName, key.Version, err)
+					key.Tenant, key.AppId, key.ServiceName, key.Version, err)
 			}
 			cache[id] = exist
 		}
