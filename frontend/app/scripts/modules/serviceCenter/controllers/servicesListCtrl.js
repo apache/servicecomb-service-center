@@ -16,8 +16,8 @@
  */
 'use strict';
 angular.module('serviceCenter.sc', [])
-    .controller('servicesListController', ['$scope', 'httpService', 'apiConstant', 'commonService', '$stateParams', '$mdDialog',
-        function($scope, httpService, apiConstant, commonService, $stateParams, $mdDialog) {
+    .controller('servicesListController', ['$scope', 'httpService', 'apiConstant', 'commonService', '$stateParams', '$mdDialog', '$interval',
+        function($scope, httpService, apiConstant, commonService, $stateParams, $mdDialog, $interval) {
 
             $scope.appList = 'fetching';
             $scope.serviceList = 'serviceList';
@@ -152,6 +152,14 @@ angular.module('serviceCenter.sc', [])
                 })
             };
             $scope.getAllServices();
+
+            var serviceRefresh = $interval(function(){
+                $scope.getAllServices();
+            }, 10000);
+     
+            $scope.$on('$destroy', function(){
+                $interval.cancel(serviceRefresh);
+            })
 
             function processService(service) {
                 var instanceApi = apiConstant.api.instances.url;
