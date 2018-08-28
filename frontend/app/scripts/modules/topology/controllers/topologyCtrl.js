@@ -30,15 +30,18 @@ angular.module('serviceCenter.topology', [])
             httpService.apiRequest(url, method).then(function(response) {
                 $(".loader").hide();
                 if (response && response.data && response.data.allServicesDetail && response.data.allServicesDetail.length > 0) {
-                    $scope.allAppId.push("All");
-                    $scope.appId = appId ? appId : "All";
                     $scope.allServicesDetail = response.data.allServicesDetail;
-
                     angular.forEach(response.data.allServicesDetail, function(service) {
                         if (!$scope.allAppId.includes(service.microService.appId) && service.microService.serviceName.toLowerCase() !== 'servicecenter') {
                             $scope.allAppId.push(service.microService.appId);
                         }
                     });
+                    if ($scope.allServicesDetail.length > 100){
+                        $scope.appId = $scope.allAppId[0];
+                    } else {
+                        $scope.allAppId.push("All");
+                        $scope.appId = appId ? appId : "All";
+                    }
 
                     if ($scope.appId === "All") {
                         $scope.microServices = [];
