@@ -64,3 +64,11 @@ func GetEnvInt(name string, def int) int {
 	}
 	return def
 }
+
+func GetEnvString(name string, def string) string {
+	env, ok := os.LookupEnv(name)
+	if ok {
+		return env
+	}
+	return def
+}
