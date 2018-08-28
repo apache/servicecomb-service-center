@@ -163,4 +163,11 @@ angular.module('serviceCenter.dashboard', [])
 
         $scope.getAllServices();
 
+        var dashboardRefresh = $interval(function(){
+            $scope.getAllServices();
+        }, 10000);
+ 
+        $scope.$on('$destroy', function(){
+            $interval.cancel(dashboardRefresh);
+        })
     }]);
