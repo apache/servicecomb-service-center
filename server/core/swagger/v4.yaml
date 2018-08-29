@@ -1660,6 +1660,12 @@ definitions:
         type: string
       buildTag:
         type: string
+      goVersion:
+        type: string
+      os:
+        type: string
+      arch:
+        type: string
   Properties:
     type: object
     description: 扩展属性
@@ -2393,7 +2399,7 @@ definitions:
       info:
         $ref: '#/definitions/Version'
       config:
-        $ref: '#/definitions/Config'
+        $ref: '#/definitions/Properties'
       environments:
         $ref: '#/definitions/Properties'
       cache:

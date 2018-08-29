@@ -96,16 +96,16 @@ type ServerConfig struct {
 	SslVerifyPeer bool   `json:"sslVerifyPeer,string"`
 	SslCiphers    string `json:"sslCiphers"`
 
-	AutoSyncInterval  string `json:"autoSyncInterval"`
-	CompactIndexDelta int64  `json:"compactIndexDelta"`
-	CompactInterval   string `json:"compactInterval"`
+	AutoSyncInterval  string `json:"-"`
+	CompactIndexDelta int64  `json:"-"`
+	CompactInterval   string `json:"-"`
 
 	EnablePProf bool `json:"-"`
 	EnableCache bool `json:"-"`
 
 	LoggerName     string `json:"-"`
-	LogRotateSize  int64  `json:"logRotateSize"`
-	LogBackupCount int64  `json:"logBackupCount"`
+	LogRotateSize  int64  `json:"-"`
+	LogBackupCount int64  `json:"-"`
 	LogFilePath    string `json:"-"`
 	LogLevel       string `json:"-"`
 	LogFormat      string `json:"-"`

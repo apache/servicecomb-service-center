@@ -19,14 +19,11 @@ package core
 
 import (
 	"flag"
-	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/grace"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/plugin"
 	"github.com/apache/incubator-servicecomb-service-center/version"
 	"os"
 	"os/signal"
-	"runtime"
 	"syscall"
 	"time"
 )
@@ -34,13 +31,8 @@ import (
 func Initialize() {
 	initCommandLine()
 
+	// initialize configuration
 	Configure()
-
-	plugin.SetPluginDir(ServerInfo.Config.PluginsDir)
-
-	initLogger()
-
-	printVersion()
 
 	go handleSignals()
 
@@ -54,33 +46,9 @@ func initCommandLine() {
 	flag.CommandLine.Parse(os.Args[1:])
 
 	if printVer {
-		fmt.Printf("ServiceCenter version: %s\n", version.Ver().Version)
-		fmt.Printf("Build tag: %s\n", version.Ver().BuildTag)
-		fmt.Printf("Go version: %s\n", runtime.Version())
-		fmt.Printf("Go OS/Arch: %s/%s\n", runtime.GOOS, runtime.GOARCH)
+		version.Ver().Print()
 		os.Exit(0)
 	}
-}
-
-func printVersion() {
-	log.Infof("service center version: %s", version.Ver().Version)
-	log.Infof("Build tag: %s", version.Ver().BuildTag)
-	log.Infof("Go version: %s", runtime.Version())
-	log.Infof("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH)
-
-	cores := runtime.NumCPU()
-	runtime.GOMAXPROCS(cores)
-	log.Infof("service center is running simultaneously with %d CPU cores", cores)
-}
-
-func initLogger() {
-	log.SetGlobal(log.Config{
-		LoggerLevel:    ServerInfo.Config.LogLevel,
-		LoggerFile:     os.ExpandEnv(ServerInfo.Config.LogFilePath),
-		LogFormatText:  ServerInfo.Config.LogFormat == "text",
-		LogRotateSize:  int(ServerInfo.Config.LogRotateSize),
-		LogBackupCount: int(ServerInfo.Config.LogBackupCount),
-	})
 }
 
 func handleSignals() {

@@ -16,7 +16,11 @@
  */
 package version
 
-import "github.com/astaxie/beego"
+import (
+	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
+	"runtime"
+)
 
 var (
 	// no need to modify
@@ -28,19 +32,37 @@ var (
 )
 
 type VersionSet struct {
-	Version  string `json:"version"`
-	BuildTag string `json:"buildTag"`
-	RunMode  string `json:"runMode"`
+	Version   string `json:"version"`
+	BuildTag  string `json:"buildTag"`
+	GoVersion string `json:"goVersion"`
+	OS        string `json:"os"`
+	Arch      string `json:"arch"`
 }
 
-var version VersionSet
+func (vs *VersionSet) Print() {
+	fmt.Printf("ServiceCenter version: %s\n", versionSet.Version)
+	fmt.Printf("Build tag: %s\n", versionSet.BuildTag)
+	fmt.Printf("Go version: %s\n", versionSet.GoVersion)
+	fmt.Printf("OS/Arch: %s/%s\n", versionSet.OS, versionSet.Arch)
+}
+
+func (vs *VersionSet) Log() {
+	log.Infof("service center version: %s", versionSet.Version)
+	log.Infof("Build tag: %s", versionSet.BuildTag)
+	log.Infof("Go version: %s", versionSet.GoVersion)
+	log.Infof("OS/Arch: %s/%s", versionSet.OS, versionSet.Arch)
+}
+
+var versionSet VersionSet
 
 func init() {
-	version.Version = VERSION
-	version.BuildTag = BUILD_TAG
-	version.RunMode = beego.AppConfig.DefaultString("runmode", "prod")
+	versionSet.Version = VERSION
+	versionSet.BuildTag = BUILD_TAG
+	versionSet.GoVersion = runtime.Version()
+	versionSet.OS = runtime.GOOS
+	versionSet.Arch = runtime.GOARCH
 }
 
 func Ver() *VersionSet {
-	return &version
+	return &versionSet
 }
