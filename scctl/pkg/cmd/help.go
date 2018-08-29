@@ -18,6 +18,7 @@ package cmd
 import (
 	"bytes"
 	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/scctl/pkg/version"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"io"
@@ -155,7 +156,7 @@ func UsageFunc(cmd *cobra.Command) error {
 		toolFlagUsages(cmd.LocalFlags()),
 		toolFlagUsages(cmd.InheritedFlags()),
 		subCommands,
-		Version,
+		version.Ver().Version,
 	})
 	tabOut.Flush()
 	return nil

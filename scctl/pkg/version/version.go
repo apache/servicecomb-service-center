@@ -17,52 +17,26 @@
 package version
 
 import (
-	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
-	"runtime"
+	"github.com/apache/incubator-servicecomb-service-center/version"
 )
 
 var (
 	// no need to modify
 	// please use:
-	// 	go build -ldflags "-X github.com/apache/incubator-servicecomb-service-center/version.VERSION=x.x.x"
+	// 	go build -ldflags "-X github.com/apache/incubator-servicecomb-service-center/scctl/pkg/version.VERSION=x.x.x"
 	// to set these values.
 	VERSION   = "0.0.1"
 	BUILD_TAG = "Not provided"
+	TOOL_NAME = "scctl"
 )
 
-type VersionSet struct {
-	Version   string `json:"version"`
-	BuildTag  string `json:"buildTag"`
-	GoVersion string `json:"goVersion"`
-	OS        string `json:"os"`
-	Arch      string `json:"arch"`
-}
-
-func (vs *VersionSet) Print() {
-	fmt.Printf("Version: %s\n", versionSet.Version)
-	fmt.Printf("Build tag: %s\n", versionSet.BuildTag)
-	fmt.Printf("Go version: %s\n", versionSet.GoVersion)
-	fmt.Printf("OS/Arch: %s/%s\n", versionSet.OS, versionSet.Arch)
-}
-
-func (vs *VersionSet) Log() {
-	log.Infof("Version: %s", versionSet.Version)
-	log.Infof("Build tag: %s", versionSet.BuildTag)
-	log.Infof("Go version: %s", versionSet.GoVersion)
-	log.Infof("OS/Arch: %s/%s", versionSet.OS, versionSet.Arch)
-}
-
-var versionSet VersionSet
+var versionSet version.VersionSet
 
 func init() {
 	versionSet.Version = VERSION
 	versionSet.BuildTag = BUILD_TAG
-	versionSet.GoVersion = runtime.Version()
-	versionSet.OS = runtime.GOOS
-	versionSet.Arch = runtime.GOARCH
 }
 
-func Ver() *VersionSet {
+func Ver() *version.VersionSet {
 	return &versionSet
 }

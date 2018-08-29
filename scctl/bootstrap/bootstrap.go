@@ -15,6 +15,7 @@
 
 package bootstrap
 
+import _ "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/version"
 import _ "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/diagnose"
 import _ "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/get/service"
 import _ "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/get/instance"

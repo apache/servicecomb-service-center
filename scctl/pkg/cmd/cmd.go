@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/client/sc"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/scctl/pkg/version"
 	"github.com/spf13/cobra"
 	"os"
 	"path/filepath"
@@ -30,7 +31,7 @@ const (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   ToolName + " <command>",
+	Use:   version.TOOL_NAME + " <command>",
 	Short: "The admin control command of service center",
 }
 

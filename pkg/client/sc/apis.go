@@ -20,13 +20,45 @@ import (
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
 	"github.com/apache/incubator-servicecomb-service-center/server/admin/model"
+	"github.com/apache/incubator-servicecomb-service-center/version"
 	"io/ioutil"
 	"net/http"
 )
 
 const (
-	apiDumpURL = "/v4/default/admin/dump"
+	apiVersionURL = "/version"
+	apiDumpURL    = "/v4/default/admin/dump"
 )
+
+func GetScVersion(scClient *rest.URLClient) (*version.VersionSet, error) {
+	var headers = make(http.Header)
+	if len(Token) > 0 {
+		headers.Set("X-Auth-Token", Token)
+	}
+	resp, err := scClient.HttpDo(http.MethodGet, Addr+apiVersionURL, headers, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("%d %s", resp.StatusCode, string(body))
+	}
+
+	v := &version.VersionSet{}
+	err = json.Unmarshal(body, v)
+	if err != nil {
+		fmt.Println(string(body))
+		return nil, err
+	}
+
+	return v, nil
+}
 
 func GetScCache(scClient *rest.URLClient) (*model.Cache, error) {
 	headers := http.Header{
