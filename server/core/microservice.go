@@ -20,6 +20,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/version"
+	"github.com/astaxie/beego"
 	"golang.org/x/net/context"
 	"os"
 	"strings"
@@ -68,7 +69,7 @@ func prepareSelfRegistration() {
 			pb.PROP_ALLOW_CROSS_APP: "true",
 		},
 	}
-	if version.Ver().RunMode == "dev" {
+	if beego.BConfig.RunMode == "dev" {
 		Service.Environment = pb.ENV_DEV
 	}
 

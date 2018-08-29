@@ -17,20 +17,20 @@ package core
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	"github.com/apache/incubator-servicecomb-service-center/version"
+	"github.com/astaxie/beego"
 	"golang.org/x/net/context"
 	"os"
 	"testing"
 )
 
 func TestPrepareSelfRegistration(t *testing.T) {
-	version.Ver().RunMode = "dev"
+	beego.BConfig.RunMode = "dev"
 	prepareSelfRegistration()
 	if Service == nil || Service.Environment != "development" {
 		t.Fatalf("TestPrepareSelfRegistration faild, %v", Service)
 	}
 
-	version.Ver().RunMode = "prod"
+	beego.BConfig.RunMode = "prod"
 	prepareSelfRegistration()
 	if Service == nil || Service.AppId != "default" || Service.ServiceName != "SERVICECENTER" ||
 		Service.Environment != "production" || Service.Properties["allowCrossApp"] != "true" {

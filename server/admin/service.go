@@ -25,6 +25,7 @@ import (
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	"github.com/apache/incubator-servicecomb-service-center/version"
+	"github.com/astaxie/beego"
 	"golang.org/x/net/context"
 	"os"
 	"strings"
@@ -32,6 +33,7 @@ import (
 
 var (
 	AdminServiceAPI = &AdminService{}
+	configs         map[string]string
 	environments    = make(map[string]string)
 )
 
@@ -39,6 +41,12 @@ func init() {
 	for _, kv := range os.Environ() {
 		arr := strings.Split(kv, "=")
 		environments[arr[0]] = arr[1]
+	}
+	configs, _ = beego.AppConfig.GetSection("default")
+	if section, err := beego.AppConfig.GetSection(beego.BConfig.RunMode); err == nil {
+		for k, v := range section {
+			configs[k] = v
+		}
 	}
 }
 
@@ -61,7 +69,7 @@ func (service *AdminService) Dump(ctx context.Context, in *model.DumpRequest) (*
 	return &model.DumpResponse{
 		Response:     pb.CreateResponse(pb.Response_SUCCESS, "Admin dump successfully"),
 		Info:         version.Ver(),
-		Config:       &core.ServerInfo.Config,
+		Config:       configs,
 		Environments: environments,
 		Cache:        &cache,
 	}, nil

@@ -17,8 +17,13 @@
 package core
 
 import (
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/plugin"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/version"
 	"github.com/astaxie/beego"
+	"os"
+	"runtime"
 )
 
 const (
@@ -28,7 +33,15 @@ const (
 var ServerInfo = new(pb.ServerInformation)
 
 func Configure() {
+	setCPUs()
+
 	*ServerInfo = newInfo()
+
+	plugin.SetPluginDir(ServerInfo.Config.PluginsDir)
+
+	initLogger()
+
+	version.Ver().Log()
 }
 
 func newInfo() pb.ServerInformation {
@@ -79,4 +92,20 @@ func newInfo() pb.ServerInformation {
 			EnableCache: beego.AppConfig.DefaultInt("enable_cache", 1) != 0,
 		},
 	}
+}
+
+func setCPUs() {
+	cores := runtime.NumCPU()
+	runtime.GOMAXPROCS(cores)
+	log.Infof("service center is running simultaneously with %d CPU cores", cores)
+}
+
+func initLogger() {
+	log.SetGlobal(log.Config{
+		LoggerLevel:    ServerInfo.Config.LogLevel,
+		LoggerFile:     os.ExpandEnv(ServerInfo.Config.LogFilePath),
+		LogFormatText:  ServerInfo.Config.LogFormat == "text",
+		LogRotateSize:  int(ServerInfo.Config.LogRotateSize),
+		LogBackupCount: int(ServerInfo.Config.LogBackupCount),
+	})
 }
