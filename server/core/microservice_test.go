@@ -50,11 +50,6 @@ func TestPrepareSelfRegistration(t *testing.T) {
 		exist.AppId != "default" {
 		t.Fatalf("TestPrepareSelfRegistration faild, %v", exist)
 	}
-
-	instance := RegisterInstanceRequest("test", []string{"a"})
-	if instance == nil || instance.Instance.HostName != "test" || instance.Instance.Endpoints[0] != "a" {
-		t.Fatalf("TestPrepareSelfRegistration faild, %v", instance)
-	}
 }
 
 func TestSetSharedMode(t *testing.T) {

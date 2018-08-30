@@ -23,14 +23,13 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	rs "github.com/apache/incubator-servicecomb-service-center/server/rest"
 	"github.com/apache/incubator-servicecomb-service-center/server/rpc"
 	"github.com/apache/incubator-servicecomb-service-center/server/service"
 	"golang.org/x/net/context"
 	"net"
 	"strconv"
-	"time"
 )
 
 var apiServer *APIServer
@@ -63,9 +62,8 @@ func (t APIType) String() string {
 }
 
 type APIServer struct {
-	HostName  string
 	Listeners map[APIType]string
-	Endpoints map[APIType]string
+
 	restSrv   *rest.Server
 	rpcSrv    *rpc.Server
 	isClose   bool
@@ -81,120 +79,6 @@ const (
 
 func (s *APIServer) Err() <-chan error {
 	return s.err
-}
-
-func (s *APIServer) registerServiceCenter() error {
-	err := s.registryService(context.Background())
-	if err != nil {
-		return err
-	}
-	// 实例信息
-	return s.registryInstance(context.Background())
-}
-
-func (s *APIServer) registryService(pCtx context.Context) error {
-	ctx := core.AddDefaultContextValue(pCtx)
-	respE, err := core.ServiceAPI.Exist(ctx, core.GetExistenceRequest())
-	if err != nil {
-		log.Error("query service center existence failed", err)
-		return err
-	}
-	if respE.Response.Code == pb.Response_SUCCESS {
-		log.Warnf("service center service already registered, serviceId %s", respE.ServiceId)
-		respG, err := core.ServiceAPI.GetOne(ctx, core.GetServiceRequest(respE.ServiceId))
-		if respG.Response.Code != pb.Response_SUCCESS {
-			log.Errorf(err, "query service center service info failed, serviceId %s", respE.ServiceId)
-			return fmt.Errorf("service center service file lost.")
-		}
-		core.Service = respG.Service
-		return nil
-	}
-
-	respS, err := core.ServiceAPI.Create(ctx, core.CreateServiceRequest())
-	if err != nil {
-		log.Error("register service center failed", err)
-		return err
-	}
-	core.Service.ServiceId = respS.ServiceId
-	log.Infof("register service center service %s", respS.ServiceId)
-	return nil
-}
-
-func (s *APIServer) registryInstance(pCtx context.Context) error {
-	core.Instance.InstanceId = ""
-	core.Instance.ServiceId = core.Service.ServiceId
-
-	endpoints := make([]string, 0, len(s.Endpoints))
-	for _, address := range s.Endpoints {
-		endpoints = append(endpoints, address)
-	}
-
-	ctx := core.AddDefaultContextValue(pCtx)
-
-	respI, err := core.InstanceAPI.Register(ctx,
-		core.RegisterInstanceRequest(s.HostName, endpoints))
-	if respI.Response.Code != pb.Response_SUCCESS {
-		err = fmt.Errorf("register service center instance failed, %s", respI.Response.Message)
-		log.Error(err.Error(), nil)
-		return err
-	}
-	core.Instance.InstanceId = respI.InstanceId
-	log.Infof("register service center instance %s/%s, endpoints %s",
-		core.Service.ServiceId, respI.InstanceId, endpoints)
-	return nil
-}
-
-func (s *APIServer) unregisterInstance(pCtx context.Context) error {
-	if len(core.Instance.InstanceId) == 0 {
-		return nil
-	}
-	ctx := core.AddDefaultContextValue(pCtx)
-	respI, err := core.InstanceAPI.Unregister(ctx, core.UnregisterInstanceRequest())
-	if respI.Response.Code != pb.Response_SUCCESS {
-		err = fmt.Errorf("unregister service center instance failed, %s", respI.Response.Message)
-		log.Error(err.Error(), nil)
-		return err
-	}
-	log.Warnf("unregister service center instance %s/%s",
-		core.Service.ServiceId, core.Instance.InstanceId)
-	return nil
-}
-
-func (s *APIServer) doAPIServerHeartBeat(pCtx context.Context) {
-	if s.isClose {
-		return
-	}
-	ctx := core.AddDefaultContextValue(pCtx)
-	respI, err := core.InstanceAPI.Heartbeat(ctx, core.HeartbeatRequest())
-	if respI.Response.Code == pb.Response_SUCCESS {
-		log.Debugf("update service center instance %s/%s heartbeat",
-			core.Instance.ServiceId, core.Instance.InstanceId)
-		return
-	}
-	log.Errorf(err, "update service center instance %s/%s heartbeat failed",
-		core.Instance.ServiceId, core.Instance.InstanceId)
-
-	//服务不存在，创建服务
-	err = s.registerServiceCenter()
-	if err != nil {
-		log.Errorf(err, "retry to register %s/%s/%s failed.",
-			core.Service.AppId, core.Service.ServiceName, core.Service.Version)
-	}
-}
-
-func (s *APIServer) startHeartBeatService() {
-	s.goroutine.Do(func(ctx context.Context) {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-s.err:
-				return
-			case <-time.After(time.Duration(core.Instance.HealthCheck.Interval) * time.Second):
-				s.doAPIServerHeartBeat(context.Background())
-			}
-		}
-	})
 }
 
 func (s *APIServer) graceDone() {
@@ -219,10 +103,7 @@ func (s *APIServer) AddListener(t APIType, ip, port string) {
 	s.Listeners[t] = net.JoinHostPort(ip, port)
 }
 
-func (s *APIServer) AddEndpoint(t APIType, ipPort string) {
-	if s.Endpoints == nil {
-		s.Endpoints = map[APIType]string{}
-	}
+func (s *APIServer) populateEndpoint(t APIType, ipPort string) {
 	if len(ipPort) == 0 {
 		return
 	}
@@ -230,7 +111,7 @@ func (s *APIServer) AddEndpoint(t APIType, ipPort string) {
 	if core.ServerInfo.Config.SslEnabled {
 		address += "?sslEnabled=true"
 	}
-	s.Endpoints[t] = address
+	core.Instance.Endpoints = append(core.Instance.Endpoints, address)
 }
 
 func (s *APIServer) startRESTServer() (err error) {
@@ -242,10 +123,9 @@ func (s *APIServer) startRESTServer() (err error) {
 	if err != nil {
 		return
 	}
-	log.Infof("listen address: %s://%s, host: %s.",
-		REST, s.restSrv.Listener.Addr().String(), s.HostName)
+	log.Infof("listen address: %s://%s", REST, s.restSrv.Listener.Addr().String())
 
-	s.AddEndpoint(REST, s.restSrv.Listener.Addr().String())
+	s.populateEndpoint(REST, s.restSrv.Listener.Addr().String())
 
 	s.goroutine.Do(func(_ context.Context) {
 		err := s.restSrv.Serve()
@@ -268,10 +148,9 @@ func (s *APIServer) startRPCServer() (err error) {
 	if err != nil {
 		return
 	}
-	log.Infof("listen address: %s://%s, host: %s.",
-		RPC, s.rpcSrv.Listener.Addr().String(), s.HostName)
+	log.Infof("listen address: %s://%s", RPC, s.rpcSrv.Listener.Addr().String())
 
-	s.AddEndpoint(RPC, s.rpcSrv.Listener.Addr().String())
+	s.populateEndpoint(RPC, s.rpcSrv.Listener.Addr().String())
 
 	s.goroutine.Do(func(_ context.Context) {
 		err := s.rpcSrv.Serve()
@@ -284,15 +163,15 @@ func (s *APIServer) startRPCServer() (err error) {
 	return
 }
 
-// 需保证ETCD启动成功后才执行该方法
 func (s *APIServer) Start() {
 	if !s.isClose {
 		return
 	}
 	s.isClose = false
 
-	var err error
-	err = s.startRESTServer()
+	core.Instance.Endpoints = nil
+
+	err := s.startRESTServer()
 	if err != nil {
 		s.err <- err
 		return
@@ -306,18 +185,19 @@ func (s *APIServer) Start() {
 
 	s.graceDone()
 
+	defer log.Info("api server is ready")
+
+	if !core.ServerInfo.Config.SelfRegister {
+		log.Warnf("self register disabled")
+		return
+	}
+
 	// 自注册
-	err = s.registerServiceCenter()
+	err = backend.RegistryEngine().Start()
 	if err != nil {
 		s.err <- err
 		return
 	}
-	// 心跳
-	s.startHeartBeatService()
-
-	ReportScInstance()
-
-	log.Info("api server is ready")
 }
 
 func (s *APIServer) Stop() {
@@ -326,9 +206,8 @@ func (s *APIServer) Stop() {
 	}
 	s.isClose = true
 
-	if !s.forked {
-		ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
-		s.unregisterInstance(ctx)
+	if !s.forked && core.ServerInfo.Config.SelfRegister {
+		backend.RegistryEngine().Stop()
 	}
 
 	if s.restSrv != nil {

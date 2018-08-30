@@ -183,7 +183,7 @@ const (
 
 type Registry interface {
 	Err() <-chan error
-	Ready() <-chan int
+	Ready() <-chan struct{}
 	PutNoOverride(ctx context.Context, opts ...PluginOpOption) (bool, error)
 	Do(ctx context.Context, opts ...PluginOpOption) (*PluginResponse, error)
 	Txn(ctx context.Context, ops []PluginOp) (*PluginResponse, error)

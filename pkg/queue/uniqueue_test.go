@@ -128,7 +128,7 @@ func BenchmarkUniQueue_Get(b *testing.B) {
 		for pb.Next() {
 			err := uq.Put(atomic.AddInt32(&g, 1))
 			if err != nil {
-				b.FailNow()
+				b.Fatalf("BenchmarkUniQueue_Get failed")
 			}
 		}
 	})

@@ -14,19 +14,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package admin
+package admin_test
 
+import _ "github.com/apache/incubator-servicecomb-service-center/server/init"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/bootstrap"
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/quota/buildin"
-	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/registry/etcd"
-	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/uuid/buildin"
+	"github.com/astaxie/beego"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 	"golang.org/x/net/context"
 	"testing"
 )
+
+func init() {
+	beego.AppConfig.Set("registry_plugin", "etcd")
+}
 
 func TestAdmin(t *testing.T) {
 	RegisterFailHandler(Fail)

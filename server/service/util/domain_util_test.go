@@ -23,61 +23,61 @@ import (
 
 func TestGetOneDomainProjectServiceCount(t *testing.T) {
 	_, err := GetOneDomainProjectServiceCount(context.Background(), "")
-	if err == nil {
+	if err != nil {
 		t.Fatalf("GetOneDomainProjectServiceCount failed")
 	}
 }
 
 func TestGetOneDomainProjectInstanceCount(t *testing.T) {
 	_, err := GetOneDomainProjectInstanceCount(context.Background(), "")
-	if err == nil {
+	if err != nil {
 		t.Fatalf("GetOneDomainProjectInstanceCount failed")
 	}
 }
 
 func TestGetDomain(t *testing.T) {
 	_, err := GetAllDomainRawData(context.Background())
-	if err == nil {
+	if err != nil {
 		t.Fatalf("GetAllDomainRawData failed")
 	}
 
 	_, err = GetAllDomain(context.Background())
-	if err == nil {
+	if err != nil {
 		t.Fatalf("GetAllDomain failed")
 	}
 }
 
 func TestDomainExist(t *testing.T) {
 	_, err := DomainExist(context.Background(), "")
-	if err == nil {
+	if err != nil {
 		t.Fatalf("DomainExist failed")
 	}
 }
 
 func TestNewDomain(t *testing.T) {
 	_, err := NewDomain(context.Background(), "")
-	if err == nil {
+	if err != nil {
 		t.Fatalf("NewDomain failed")
 	}
 }
 
 func TestProjectExist(t *testing.T) {
 	_, err := ProjectExist(context.Background(), "", "")
-	if err == nil {
+	if err != nil {
 		t.Fatalf("DomainExist failed")
 	}
 }
 
 func TestNewProject(t *testing.T) {
 	_, err := NewProject(context.Background(), "", "")
-	if err == nil {
+	if err != nil {
 		t.Fatalf("NewProject failed")
 	}
 }
 
 func TestNewDomainProject(t *testing.T) {
 	err := NewDomainProject(context.Background(), "", "")
-	if err == nil {
+	if err != nil {
 		t.Fatalf("NewDomainProject failed")
 	}
 }

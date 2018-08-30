@@ -35,11 +35,6 @@ var (
 	clientOnce sync.Once
 )
 
-func init() {
-	// init kube client
-	Kubernetes()
-}
-
 type K8sType string
 
 type K8sClient struct {
@@ -233,10 +228,6 @@ func (c *K8sClient) Stop() {
 	close(c.stopCh)
 	c.goroutine.Close(true)
 	log.Debug("kube client is stopped")
-}
-
-func (c *K8sClient) SetReady() {
-	util.SafeCloseChan(c.ready)
 }
 
 func (c *K8sClient) Ready() <-chan struct{} {

@@ -45,10 +45,10 @@ func (c *InstanceCacher) onServiceEvent(evt K8sEvent) {
 	case pb.EVT_DELETE:
 		// instances
 		var kvs []*discovery.KeyValue
-		c.cache.GetPrefix(instKey, &kvs)
+		c.Cache().GetPrefix(instKey, &kvs)
 		for _, kv := range kvs {
 			key := util.BytesToStringWithNoCopy(kv.Key)
-			c.notify(pb.EVT_DELETE, key, kv)
+			c.Notify(pb.EVT_DELETE, key, kv)
 		}
 	}
 }
@@ -56,7 +56,7 @@ func (c *InstanceCacher) onServiceEvent(evt K8sEvent) {
 func (c *InstanceCacher) getInstances(serviceId string) (m map[string]*discovery.KeyValue) {
 	var arr []*discovery.KeyValue
 	key := core.GenerateInstanceKey(Kubernetes().GetDomainProject(), serviceId, "")
-	if l := c.cache.GetPrefix(key, &arr); l > 0 {
+	if l := c.Cache().GetPrefix(key, &arr); l > 0 {
 		m = make(map[string]*discovery.KeyValue, l)
 		for _, kv := range arr {
 			m[util.BytesToStringWithNoCopy(kv.Key)] = kv
@@ -115,14 +115,14 @@ func (c *InstanceCacher) onEndpointsEvent(evt K8sEvent) {
 					inst.Endpoints = append(inst.Endpoints, generateEndpoint(ea.IP, port))
 				}
 
-				old := c.cache.Get(key)
-				kv := FromInstance(key, inst)
+				old := c.Cache().Get(key)
+				kv := AsKeyValue(key, inst, pod.ResourceVersion)
 				newKvs[key] = kv
 
 				if old == nil {
-					c.notify(pb.EVT_CREATE, key, kv)
+					c.Notify(pb.EVT_CREATE, key, kv)
 				} else if !reflect.DeepEqual(old, kv) {
-					c.notify(pb.EVT_UPDATE, key, kv)
+					c.Notify(pb.EVT_UPDATE, key, kv)
 				}
 			case pb.EVT_DELETE:
 			}
@@ -130,19 +130,9 @@ func (c *InstanceCacher) onEndpointsEvent(evt K8sEvent) {
 	}
 	for k, v := range oldKvs {
 		if _, ok := newKvs[k]; !ok {
-			c.notify(pb.EVT_DELETE, k, v)
+			c.Notify(pb.EVT_DELETE, k, v)
 		}
 	}
-}
-
-func (c *InstanceCacher) notify(action pb.EventType, key string, kv *discovery.KeyValue) {
-	switch action {
-	case pb.EVT_DELETE:
-		c.cache.Remove(key)
-	default:
-		c.cache.Put(key, kv)
-	}
-	c.OnEvents(discovery.KvEvent{Type: action, KV: kv})
 }
 
 func NewInstanceCacher(c *K8sCacher) (i *InstanceCacher) {

@@ -43,7 +43,7 @@ func TestNullCache_Name(t *testing.T) {
 	})
 	NullCache.Remove("")
 
-	if NullCacher.Cache() != NullCache || NullCacher.Config() != nil {
+	if NullCacher.Cache() != NullCache {
 		t.Fatalf("TestNullCache_Name failed")
 	}
 }

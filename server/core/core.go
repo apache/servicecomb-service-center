@@ -29,17 +29,16 @@ import (
 )
 
 func Initialize() {
-	initCommandLine()
+	// parse the cmd line
+	ParseCommandLine()
 
 	// initialize configuration
 	Configure()
 
 	go handleSignals()
-
-	grace.Init()
 }
 
-func initCommandLine() {
+func ParseCommandLine() {
 	var printVer bool
 	flag.BoolVar(&printVer, "v", false, "Print the version and exit.")
 	flag.CommandLine.Init(os.Args[0], flag.ContinueOnError)
@@ -49,6 +48,9 @@ func initCommandLine() {
 		version.Ver().Print()
 		os.Exit(0)
 	}
+
+	// import the grace package and parse grace cmd line
+	grace.ParseCommandLine()
 }
 
 func handleSignals() {

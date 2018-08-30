@@ -141,9 +141,7 @@ func CreateServiceRequest() *pb.CreateServiceRequest {
 	}
 }
 
-func RegisterInstanceRequest(hostName string, endpoints []string) *pb.RegisterInstanceRequest {
-	Instance.HostName = hostName
-	Instance.Endpoints = endpoints
+func RegisterInstanceRequest() *pb.RegisterInstanceRequest {
 	return &pb.RegisterInstanceRequest{
 		Instance: Instance,
 	}

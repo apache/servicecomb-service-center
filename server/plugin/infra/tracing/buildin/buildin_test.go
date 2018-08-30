@@ -28,7 +28,7 @@ import (
 
 func TestZipkin_XBegin(t *testing.T) {
 	os.Setenv("TRACING_COLLECTOR", "server")
-	core.RegisterInstanceRequest("x", []string{"x"})
+	core.Instance.HostName, core.Instance.Endpoints = "x", []string{"x"}
 	initTracer()
 
 	zk := New().(*Zipkin)

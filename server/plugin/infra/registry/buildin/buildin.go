@@ -17,45 +17,43 @@
 package buildin
 
 import (
-	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	"golang.org/x/net/context"
 )
 
+var (
+	closeCh           = make(chan struct{})
+	noPluginErr error = nil //fmt.Errorf("register center plugin does not exist")
+	noResponse        = &registry.PluginResponse{}
+)
+
 func init() {
+	close(closeCh)
 	mgr.RegisterPlugin(mgr.Plugin{mgr.REGISTRY, "buildin", NewRegistry})
 }
-
-var noPluginErr = fmt.Errorf("register center plugin does not exist")
 
 type BuildinRegistry struct {
 	ready chan int
 }
 
-func (ec *BuildinRegistry) safeClose(chan int) {
-	defer log.Recover()
-	close(ec.ready)
-}
 func (ec *BuildinRegistry) Err() (err <-chan error) {
 	return
 }
-func (ec *BuildinRegistry) Ready() <-chan int {
-	ec.safeClose(ec.ready)
-	return ec.ready
+func (ec *BuildinRegistry) Ready() <-chan struct{} {
+	return closeCh
 }
 func (ec *BuildinRegistry) PutNoOverride(ctx context.Context, opts ...registry.PluginOpOption) (bool, error) {
 	return false, noPluginErr
 }
 func (ec *BuildinRegistry) Do(ctx context.Context, opts ...registry.PluginOpOption) (*registry.PluginResponse, error) {
-	return nil, noPluginErr
+	return noResponse, noPluginErr
 }
 func (ec *BuildinRegistry) Txn(ctx context.Context, ops []registry.PluginOp) (*registry.PluginResponse, error) {
-	return nil, noPluginErr
+	return noResponse, noPluginErr
 }
 func (ec *BuildinRegistry) TxnWithCmp(ctx context.Context, success []registry.PluginOp, cmp []registry.CompareOp, fail []registry.PluginOp) (*registry.PluginResponse, error) {
-	return nil, noPluginErr
+	return noResponse, noPluginErr
 }
 func (ec *BuildinRegistry) LeaseGrant(ctx context.Context, TTL int64) (leaseID int64, err error) {
 	return 0, noPluginErr
@@ -73,7 +71,6 @@ func (c *BuildinRegistry) Compact(ctx context.Context, reserve int64) error {
 	return noPluginErr
 }
 func (ec *BuildinRegistry) Close() {
-	ec.safeClose(ec.ready)
 }
 
 func NewRegistry() mgr.PluginInstance {

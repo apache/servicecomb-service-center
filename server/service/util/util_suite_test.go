@@ -17,6 +17,7 @@
 package util_test
 
 import (
+	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/discovery/etcd"
 	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/quota/buildin"
 	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/registry/buildin"
 )
@@ -45,54 +46,54 @@ func TestMicroservice(t *testing.T) {
 func TestFindServiceIds(t *testing.T) {
 	_, _, err := serviceUtil.FindServiceIds(context.Background(),
 		"latest", &proto.MicroServiceKey{})
-	if err == nil {
-		t.FailNow()
+	if err != nil {
+		t.Fatalf("TestFindServiceIds failed")
 	}
 
 	_, _, err = serviceUtil.FindServiceIds(context.Background(),
 		"1.0.0", &proto.MicroServiceKey{})
-	if err == nil {
-		t.FailNow()
+	if err != nil {
+		t.Fatalf("TestFindServiceIds failed")
 	}
 
 	_, _, err = serviceUtil.FindServiceIds(context.Background(),
 		"1.0+", &proto.MicroServiceKey{Alias: "test"})
-	if err == nil {
-		t.FailNow()
+	if err != nil {
+		t.Fatalf("TestFindServiceIds failed")
 	}
 }
 
 func TestGetService(t *testing.T) {
 	_, err := serviceUtil.GetService(context.Background(), "", "")
-	if err == nil {
-		t.FailNow()
+	if err != nil {
+		t.Fatalf("TestGetService failed")
 	}
 
 	_, err = serviceUtil.GetServicesByDomainProject(context.Background(), "")
-	if err == nil {
-		t.FailNow()
+	if err != nil {
+		t.Fatalf("TestGetService failed")
 	}
 
 	_, err = serviceUtil.GetAllServiceUtil(context.Background())
-	if err == nil {
-		t.FailNow()
+	if err != nil {
+		t.Fatalf("TestGetService failed")
 	}
 
 	_, err = serviceUtil.GetServiceWithRev(context.Background(), "", "", 0)
-	if err == nil {
-		t.FailNow()
+	if err != nil {
+		t.Fatalf("TestGetService failed")
 	}
 
 	_, err = serviceUtil.GetServiceWithRev(context.Background(), "", "", 1)
-	if err == nil {
-		t.FailNow()
+	if err != nil {
+		t.Fatalf("TestGetService failed")
 	}
 }
 
 func TestServiceExist(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
-			t.FailNow()
+			t.Fatalf("TestServiceExist failed")
 		}
 	}()
 	serviceUtil.ServiceExist(util.SetContext(context.Background(), serviceUtil.CTX_CACHEONLY, "1"), "", "")
@@ -102,23 +103,23 @@ func TestFromContext(t *testing.T) {
 	ctx := context.WithValue(context.Background(), serviceUtil.CTX_NOCACHE, "1")
 	opts := serviceUtil.FromContext(ctx)
 	if len(opts) == 0 {
-		t.FailNow()
+		t.Fatalf("TestFromContext failed")
 	}
 
 	op := registry.OptionsToOp(opts...)
 	if op.Mode != registry.MODE_NO_CACHE {
-		t.FailNow()
+		t.Fatalf("TestFromContext failed")
 	}
 
 	ctx = context.WithValue(context.Background(), serviceUtil.CTX_CACHEONLY, "1")
 	opts = serviceUtil.FromContext(ctx)
 	if len(opts) == 0 {
-		t.FailNow()
+		t.Fatalf("TestFromContext failed")
 	}
 
 	op = registry.OptionsToOp(opts...)
 	if op.Mode != registry.MODE_CACHE {
-		t.FailNow()
+		t.Fatalf("TestFromContext failed")
 	}
 }
 

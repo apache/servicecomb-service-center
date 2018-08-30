@@ -18,7 +18,6 @@ package k8s
 import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
 	"k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -41,15 +40,13 @@ func (c *ServiceCacher) onServiceEvent(evt K8sEvent) {
 	switch evt.EventType {
 	case pb.EVT_CREATE, pb.EVT_UPDATE:
 		ms := FromK8sService(svc)
-		kv := FromService(key, ms)
-		c.cache.Put(key, kv)
-		c.OnEvents(discovery.KvEvent{Type: evt.EventType, KV: kv})
+		kv := AsKeyValue(key, ms, svc.ResourceVersion)
+		c.Notify(evt.EventType, key, kv)
 	case pb.EVT_DELETE:
 		// service
-		kv := c.cache.Get(key)
+		kv := c.Cache().Get(key)
 		if kv != nil {
-			c.cache.Remove(key)
-			c.OnEvents(discovery.KvEvent{Type: evt.EventType, KV: kv})
+			c.Notify(evt.EventType, key, kv)
 		}
 	}
 }

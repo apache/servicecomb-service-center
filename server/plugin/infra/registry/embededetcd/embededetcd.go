@@ -48,7 +48,7 @@ func init() {
 type EtcdEmbed struct {
 	Embed     *embed.Etcd
 	err       chan error
-	ready     chan int
+	ready     chan struct{}
 	goroutine *gopool.Pool
 }
 
@@ -56,7 +56,7 @@ func (s *EtcdEmbed) Err() <-chan error {
 	return s.err
 }
 
-func (s *EtcdEmbed) Ready() <-chan int {
+func (s *EtcdEmbed) Ready() <-chan struct{} {
 	return s.ready
 }
 
@@ -517,7 +517,7 @@ func getEmbedInstance() mgr.PluginInstance {
 
 	inst := &EtcdEmbed{
 		err:       make(chan error, 1),
-		ready:     make(chan int),
+		ready:     make(chan struct{}),
 		goroutine: gopool.New(context.Background()),
 	}
 

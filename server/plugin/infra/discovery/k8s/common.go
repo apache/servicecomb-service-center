@@ -24,6 +24,7 @@ import (
 )
 
 const (
+	Name                 = "Kubernetes"
 	TypeService  K8sType = "Service"
 	TypeEndpoint K8sType = "Endpoints"
 	TypeNode     K8sType = "Node"

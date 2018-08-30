@@ -21,6 +21,7 @@ import _ "github.com/apache/incubator-servicecomb-service-center/server/rest/con
 import _ "github.com/apache/incubator-servicecomb-service-center/server/rest/controller/v4"
 
 // registry
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/registry/buildin"
 import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/registry/etcd"
 import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/registry/embededetcd"
 

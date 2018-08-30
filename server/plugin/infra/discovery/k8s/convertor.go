@@ -87,6 +87,10 @@ func FromK8sService(svc *v1.Service) (ms *pb.MicroService) {
 		Version:     getLabel(svc.Labels, LabelVersion, pb.VERSION),
 		Level:       "BACK",
 		Status:      pb.MS_UP,
+		Framework: &pb.FrameWorkProperty{
+			Name: Name,
+		},
+		RegisterBy: pb.REGISTERBY_PLATFORM,
 		Properties: map[string]string{
 			PropNamespace:    svc.Namespace,
 			PropServiceType:  string(svc.Spec.Type),
@@ -98,16 +102,11 @@ func FromK8sService(svc *v1.Service) (ms *pb.MicroService) {
 	return
 }
 
-func FromService(key string, ms *pb.MicroService) *discovery.KeyValue {
+func AsKeyValue(key string, v interface{}, resourceVersion string) *discovery.KeyValue {
+	rev, _ := strconv.ParseInt(resourceVersion, 10, 64)
 	return &discovery.KeyValue{
-		Key:   util.StringToBytesWithNoCopy(key),
-		Value: ms,
-	}
-}
-
-func FromInstance(key string, inst *pb.MicroServiceInstance) *discovery.KeyValue {
-	return &discovery.KeyValue{
-		Key:   util.StringToBytesWithNoCopy(key),
-		Value: inst,
+		Key:         util.StringToBytesWithNoCopy(key),
+		Value:       v,
+		ModRevision: rev,
 	}
 }

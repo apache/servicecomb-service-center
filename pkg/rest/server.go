@@ -105,7 +105,7 @@ func (srv *Server) Serve() (err error) {
 	defer log.Recover()
 	srv.state = serverStateRunning
 	err = srv.Server.Serve(srv.Listener)
-	log.Debugf("server serve failed(%s)", err)
+	log.Errorf(err, "rest server serve failed")
 	srv.wg.Wait()
 	return
 }

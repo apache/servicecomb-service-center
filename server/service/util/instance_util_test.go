@@ -35,33 +35,33 @@ func TestFormatRevision(t *testing.T) {
 
 func TestGetLeaseId(t *testing.T) {
 	_, err := GetLeaseId(context.Background(), "", "", "")
-	if err == nil {
+	if err != nil {
 		t.Fatalf(`GetLeaseId failed`)
 	}
 }
 
 func TestGetInstance(t *testing.T) {
 	_, err := GetInstance(context.Background(), "", "", "")
-	if err == nil {
+	if err != nil {
 		t.Fatalf(`GetInstance failed`)
 	}
 
 	_, err = GetAllInstancesOfOneService(context.Background(), "", "")
-	if err == nil {
+	if err != nil {
 		t.Fatalf(`GetAllInstancesOfOneService failed`)
 	}
 
 	QueryAllProvidersInstances(context.Background(), "")
 
 	_, err = queryServiceInstancesKvs(context.Background(), "", 0)
-	if err == nil {
+	if err != nil {
 		t.Fatalf(`queryServiceInstancesKvs failed`)
 	}
 }
 
 func TestInstanceExistById(t *testing.T) {
 	_, err := InstanceExistById(context.Background(), "", "", "")
-	if err == nil {
+	if err != nil {
 		t.Fatalf(`InstanceExistById failed`)
 	}
 }
@@ -77,14 +77,14 @@ func TestInstanceExist(t *testing.T) {
 		ServiceId:  "a",
 		InstanceId: "a",
 	})
-	if err == nil {
+	if err != nil {
 		t.Fatalf(`InstanceExist instanceId failed`)
 	}
 }
 
 func TestDeleteServiceAllInstances(t *testing.T) {
 	err := DeleteServiceAllInstances(context.Background(), "")
-	if err == nil {
+	if err != nil {
 		t.Fatalf(`DeleteServiceAllInstances failed`)
 	}
 }
@@ -98,7 +98,7 @@ func TestParseEndpointValue(t *testing.T) {
 
 func TestGetInstanceCountOfOneService(t *testing.T) {
 	_, err := GetInstanceCountOfOneService(context.Background(), "", "")
-	if err == nil {
+	if err != nil {
 		t.Fatalf(`GetInstanceCountOfOneService failed`)
 	}
 }

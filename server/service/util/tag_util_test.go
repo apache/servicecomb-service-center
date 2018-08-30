@@ -30,7 +30,7 @@ func TestAddTagIntoETCD(t *testing.T) {
 
 func TestGetTagsUtils(t *testing.T) {
 	_, err := GetTagsUtils(context.Background(), "", "")
-	if err == nil {
+	if err != nil {
 		t.Fatalf(`GetTagsUtils failed`)
 	}
 }

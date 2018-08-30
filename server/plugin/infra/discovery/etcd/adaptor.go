@@ -63,6 +63,7 @@ func NewEtcdAdaptor(name string, cfg *discovery.Config) *EtcdAdaptor {
 		log.Infof(
 			"core will not cache '%s' and ignore all events of it, cache enabled: %v, init size: %d",
 			name, core.ServerInfo.Config.EnableCache, cfg.InitSize)
+		adaptor.Cacher = discovery.NullCacher
 		adaptor.Indexer = NewEtcdIndexer(cfg.Key, cfg.Parser)
 	}
 	return &adaptor
@@ -71,6 +72,7 @@ func NewEtcdAdaptor(name string, cfg *discovery.Config) *EtcdAdaptor {
 func DefaultKvEntity() *EtcdAdaptor {
 	newEtcdAdaptorOnce.Do(func() {
 		defaultEtcdAdaptor = &EtcdAdaptor{
+			Cacher:  discovery.NullCacher,
 			Indexer: NewEtcdIndexer(discovery.Configure().Key, discovery.BytesParser),
 		}
 	})

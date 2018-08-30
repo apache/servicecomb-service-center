@@ -14,10 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package admin
+package admin_test
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/admin"
 	"github.com/apache/incubator-servicecomb-service-center/server/admin/model"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
@@ -30,14 +31,14 @@ var _ = Describe("'Admin' service", func() {
 	Describe("execute 'dump' operation", func() {
 		Context("when get all", func() {
 			It("should be passed", func() {
-				resp, err := AdminServiceAPI.Dump(getContext(), &model.DumpRequest{})
+				resp, err := admin.AdminServiceAPI.Dump(getContext(), &model.DumpRequest{})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 			})
 		})
 		Context("when get by domain project", func() {
 			It("should be passed", func() {
-				resp, err := AdminServiceAPI.Dump(
+				resp, err := admin.AdminServiceAPI.Dump(
 					util.SetDomainProject(context.Background(), "x", "x"),
 					&model.DumpRequest{})
 				Expect(err).To(BeNil())

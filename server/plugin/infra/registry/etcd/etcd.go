@@ -48,7 +48,6 @@ var firstEndpoint string
 
 func init() {
 	clientv3.SetLogger(&clientLogger{})
-	mgr.RegisterPlugin(mgr.Plugin{mgr.REGISTRY, "buildin", NewRegistry})
 	mgr.RegisterPlugin(mgr.Plugin{mgr.REGISTRY, "etcd", NewRegistry})
 }
 
@@ -61,13 +60,13 @@ type EtcdClient struct {
 	AutoSyncInterval time.Duration
 
 	err       chan error
-	ready     chan int
+	ready     chan struct{}
 	goroutine *gopool.Pool
 }
 
 func (c *EtcdClient) Initialize() (err error) {
 	c.err = make(chan error, 1)
-	c.ready = make(chan int)
+	c.ready = make(chan struct{})
 	c.goroutine = gopool.New(context.Background())
 
 	if len(c.Endpoints) == 0 {
@@ -162,7 +161,7 @@ func (c *EtcdClient) Err() <-chan error {
 	return c.err
 }
 
-func (c *EtcdClient) Ready() <-chan int {
+func (c *EtcdClient) Ready() <-chan struct{} {
 	return c.ready
 }
 

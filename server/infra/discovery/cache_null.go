@@ -36,5 +36,4 @@ func (n *nullCache) Remove(k string)                                      {}
 type nullCacher struct {
 }
 
-func (n *nullCacher) Config() *Config { return nil }
-func (n *nullCacher) Cache() Cache    { return NullCache }
+func (n *nullCacher) Cache() Cache { return NullCache }

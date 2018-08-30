@@ -96,27 +96,7 @@ func (s *ServiceCenterServer) loadOrUpgradeServerVersion() {
 	lock.Unlock()
 }
 
-func (s *ServiceCenterServer) initialize() {
-	s.store = backend.Store()
-	s.notifyService = nf.GetNotifyService()
-	s.apiServer = GetAPIServer()
-	s.goroutine = gopool.New(context.Background())
-
-	// load server plugins
-	plugin.LoadPlugins()
-
-	// check version
-	s.loadOrUpgradeServerVersion()
-
-	// cache mechanism
-	s.store.Run()
-	<-s.store.Ready()
-
-	// auto compact backend
-	s.autoCompactBackend()
-}
-
-func (s *ServiceCenterServer) autoCompactBackend() {
+func (s *ServiceCenterServer) compactBackendService() {
 	delta := core.ServerInfo.Config.CompactIndexDelta
 	if delta <= 0 || len(core.ServerInfo.Config.CompactInterval) == 0 {
 		return
@@ -148,6 +128,27 @@ func (s *ServiceCenterServer) autoCompactBackend() {
 	})
 }
 
+func (s *ServiceCenterServer) initialize() {
+	s.store = backend.Store()
+	s.notifyService = nf.GetNotifyService()
+	s.apiServer = GetAPIServer()
+	s.goroutine = gopool.New(context.Background())
+
+	// load server plugins
+	plugin.LoadPlugins()
+
+	// cache mechanism
+	s.store.Run()
+	<-s.store.Ready()
+
+	if core.ServerInfo.Config.SelfRegister {
+		// check version
+		s.loadOrUpgradeServerVersion()
+		// compact backend automatically
+		s.compactBackendService()
+	}
+}
+
 func (s *ServiceCenterServer) startNotifyService() {
 	s.notifyService.Start()
 }
@@ -163,7 +164,7 @@ func (s *ServiceCenterServer) startApiServer() {
 		host = restIp
 		log.Errorf(err, "parse hostname failed")
 	}
-	s.apiServer.HostName = host
+	core.Instance.HostName = host
 	s.apiServer.AddListener(REST, restIp, restPort)
 	s.apiServer.AddListener(RPC, rpcIp, rpcPort)
 	s.apiServer.Start()

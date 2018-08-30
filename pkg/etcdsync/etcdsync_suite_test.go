@@ -20,14 +20,20 @@ import (
 	"fmt"
 	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/registry/etcd"
 	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/tracing/buildin"
+	"github.com/astaxie/beego"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"testing"
 )
 
 func init() {
-	IsDebug = true
+	beego.AppConfig.Set("registry_plugin", "etcd")
 }
+
+var _ = BeforeSuite(func() {
+	//init plugin
+	IsDebug = true
+})
 
 func TestEtcdsync(t *testing.T) {
 	RegisterFailHandler(Fail)

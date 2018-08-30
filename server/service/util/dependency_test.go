@@ -68,7 +68,7 @@ func TestCreateDependencyRule(t *testing.T) {
 	}
 
 	err = AddServiceVersionRule(context.Background(), "", &proto.MicroService{}, &proto.MicroServiceKey{})
-	if err == nil {
+	if err != nil {
 		t.Fatalf(`AddServiceVersionRule failed`)
 	}
 
@@ -175,7 +175,7 @@ func TestParamsChecker(t *testing.T) {
 
 func TestServiceDependencyRuleExist(t *testing.T) {
 	_, err := DependencyRuleExist(context.Background(), &proto.MicroServiceKey{}, &proto.MicroServiceKey{})
-	if err == nil {
+	if err != nil {
 		t.Fatalf(`ServiceDependencyRuleExist failed`)
 	}
 }
@@ -209,7 +209,7 @@ func TestDependency(t *testing.T) {
 	d.RemoveConsumerOfProviderRule()
 	d.AddConsumerOfProviderRule()
 	err := d.UpdateProvidersRuleOfConsumer(context.Background(), "")
-	if err == nil {
+	if err != nil {
 		t.Fatalf(`Dependency_UpdateProvidersRuleOfConsumer failed`)
 	}
 
@@ -221,29 +221,29 @@ func TestDependency(t *testing.T) {
 	_, err = dr.getDependencyProviderIds([]*proto.MicroServiceKey{
 		{ServiceName: "*"},
 	})
-	if err == nil {
+	if err != nil {
 		t.Fatalf(`DependencyRelation_getDependencyProviderIds * failed`)
 	}
 	_, err = dr.getDependencyProviderIds([]*proto.MicroServiceKey{
 		{ServiceName: "a", Version: "1.0.0"},
 		{ServiceName: "b", Version: "latest"},
 	})
-	if err == nil {
+	if err != nil {
 		t.Fatalf(`DependencyRelation_getDependencyProviderIds failed`)
 	}
 
 	_, err = dr.GetDependencyConsumers()
-	if err == nil {
+	if err != nil {
 		t.Fatalf(`DependencyRelation_GetDependencyConsumers failed`)
 	}
 
 	_, err = dr.getServiceByMicroServiceKey(&proto.MicroServiceKey{})
-	if err == nil {
+	if err != nil {
 		t.Fatalf(`DependencyRelation_getServiceByMicroServiceKey failed`)
 	}
 
 	_, err = dr.getConsumerOfSameServiceNameAndAppId(&proto.MicroServiceKey{})
-	if err == nil {
+	if err != nil {
 		t.Fatalf(`DependencyRelation_getConsumerOfSameServiceNameAndAppId failed`)
 	}
 
@@ -256,7 +256,7 @@ func TestDependency(t *testing.T) {
 		t.Fatalf(`DependencyRelation_getDependencyConsumersOfProvider failed`)
 	}
 	_, err = dr.GetDependencyProviders()
-	if err == nil {
+	if err != nil {
 		t.Fatalf(`DependencyRelation_GetDependencyProviders failed`)
 	}
 
@@ -266,12 +266,12 @@ func TestDependency(t *testing.T) {
 	}
 
 	err = CleanUpDependencyRules(context.Background(), "a/b")
-	if err == nil {
+	if err != nil {
 		t.Fatalf(`DependencyRelation_CleanUpDependencyRules failed`)
 	}
 
 	_, err = removeProviderRuleKeys(context.Background(), "a/b", nil)
-	if err == nil {
+	if err != nil {
 		t.Fatalf(`DependencyRelation_removeProviderRuleKeys failed`)
 	}
 }
@@ -288,7 +288,7 @@ func TestDependencyRelationFilterOpt(t *testing.T) {
 
 func TestGetConsumerIdsWithFilter(t *testing.T) {
 	_, _, err := getConsumerIdsWithFilter(context.Background(), "", &proto.MicroService{}, nil)
-	if err == nil {
+	if err != nil {
 		t.Fatalf(`TestGetConsumerIdsWithFilter failed`)
 	}
 }

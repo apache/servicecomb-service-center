@@ -27,19 +27,19 @@ const sslRoot = "../../examples/service_center/ssl/"
 func TestParseDefaultSSLCipherSuites(t *testing.T) {
 	c := ParseDefaultSSLCipherSuites("")
 	if c != nil {
-		t.FailNow()
+		t.Fatalf("ParseDefaultSSLCipherSuites failed")
 	}
 	c = ParseDefaultSSLCipherSuites("TLS_RSA_WITH_AES_128_CBC_SHA256")
 	if len(c) != 1 {
-		t.FailNow()
+		t.Fatalf("ParseDefaultSSLCipherSuites failed")
 	}
 	c = ParseDefaultSSLCipherSuites("a")
 	if len(c) != 0 {
-		t.FailNow()
+		t.Fatalf("ParseDefaultSSLCipherSuites failed")
 	}
 	c = ParseDefaultSSLCipherSuites("a,,b")
 	if len(c) != 0 {
-		t.FailNow()
+		t.Fatalf("ParseDefaultSSLCipherSuites failed")
 	}
 }
 

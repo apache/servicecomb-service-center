@@ -30,7 +30,7 @@ func TestRuleFilter_Filter(t *testing.T) {
 		ProviderRules: []*proto.ServiceRule{},
 	}
 	_, err := rf.Filter(context.Background(), "")
-	if err == nil {
+	if err != nil {
 		t.Fatalf("RuleFilter Filter failed")
 	}
 	_, _, err = rf.FilterAll(context.Background(), []string{""})
@@ -41,19 +41,19 @@ func TestRuleFilter_Filter(t *testing.T) {
 		{},
 	}
 	_, _, err = rf.FilterAll(context.Background(), []string{""})
-	if err == nil {
+	if err != nil {
 		t.Fatalf("RuleFilter FilterAll failed")
 	}
 }
 
 func TestGetRulesUtil(t *testing.T) {
 	_, err := GetRulesUtil(context.Background(), "", "")
-	if err == nil {
+	if err != nil {
 		t.Fatalf("GetRulesUtil failed")
 	}
 
 	_, err = GetOneRule(context.Background(), "", "", "")
-	if err == nil {
+	if err != nil {
 		t.Fatalf("GetOneRule failed")
 	}
 }
@@ -70,7 +70,7 @@ func TestRuleExist(t *testing.T) {
 
 func TestGetServiceRuleType(t *testing.T) {
 	_, _, err := GetServiceRuleType(context.Background(), "", "")
-	if err == nil {
+	if err != nil {
 		t.Fatalf("GetServiceRuleType failed")
 	}
 }
@@ -260,14 +260,14 @@ func TestMatchRules(t *testing.T) {
 
 func TestGetConsumer(t *testing.T) {
 	_, _, err := GetAllProviderIds(context.Background(), "", &proto.MicroService{})
-	if err == nil {
+	if err != nil {
 		t.Fatalf("GetConsumerIdsByProvider invalid failed")
 	}
 
 	_, _, err = GetAllConsumerIds(context.Background(), "", &proto.MicroService{
 		ServiceId: "a",
 	})
-	if err == nil {
+	if err != nil {
 		t.Fatalf("GetConsumerIdsByProvider WithCacheOnly not exist service failed")
 	}
 
@@ -275,7 +275,7 @@ func TestGetConsumer(t *testing.T) {
 		&proto.MicroService{
 			ServiceId: "a",
 		})
-	if err == nil {
+	if err != nil {
 		t.Fatalf("GetConsumerIds WithCacheOnly failed")
 	}
 }
@@ -285,19 +285,19 @@ func TestGetProvider(t *testing.T) {
 		&proto.MicroService{
 			ServiceId: "a",
 		})
-	if err == nil {
+	if err != nil {
 		t.Fatalf("GetProviderIds WithCacheOnly failed")
 	}
 
 	_, _, err = GetAllProviderIds(context.Background(), "", &proto.MicroService{})
-	if err == nil {
+	if err != nil {
 		t.Fatalf("GetAllProviderIds WithCacheOnly failed")
 	}
 }
 
 func TestAccessible(t *testing.T) {
 	err := Accessible(context.Background(), "", "")
-	if err.StatusCode() != http.StatusInternalServerError {
+	if err.StatusCode() != http.StatusBadRequest {
 		t.Fatalf("Accessible invalid failed")
 	}
 }

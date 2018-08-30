@@ -18,7 +18,7 @@ package util
 
 import (
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"sort"

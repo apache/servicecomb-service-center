@@ -14,12 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package broker
+package broker_test
 
 import (
 	"fmt"
 
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/broker"
 	"github.com/apache/incubator-servicecomb-service-center/server/broker/brokerpb"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
@@ -189,7 +190,7 @@ var _ = Describe("BrokerController", func() {
 			It("PublishVerificationResults", func() {
 				fmt.Println("UT===========PublishVerificationResults")
 
-				id, err := GetData(context.Background(), GetBrokerLatestPactIDKey())
+				id, err := broker.GetData(context.Background(), broker.GetBrokerLatestPactIDKey())
 				Expect(err).To(BeNil())
 				respResults, err := brokerResource.PublishVerificationResults(getContext(),
 					&brokerpb.PublishVerificationRequest{

@@ -16,11 +16,12 @@
  */
 package notification
 
+import _ "github.com/apache/incubator-servicecomb-service-center/server/init"
 import (
 	"context"
 	"errors"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/discovery/etcd"
 	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/registry/buildin"
 	"github.com/gorilla/websocket"
 	"net/http"
@@ -31,10 +32,6 @@ import (
 )
 
 var closeCh = make(chan struct{})
-
-func init() {
-	core.Initialize()
-}
 
 type watcherConn struct {
 }
@@ -137,7 +134,6 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 	ws.heartbeat(websocket.PingMessage)
 	ws.heartbeat(websocket.PongMessage)
 
-	w.SetError(errors.New("err"))
 	w.OnMessage(nil)
 
 	publisher.Stop()

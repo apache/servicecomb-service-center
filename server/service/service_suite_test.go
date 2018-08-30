@@ -25,6 +25,7 @@ import (
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/service"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
+	"github.com/astaxie/beego"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
@@ -34,6 +35,10 @@ import (
 
 var serviceResource pb.ServiceCtrlServer
 var instanceResource pb.ServiceInstanceCtrlServerEx
+
+func init() {
+	beego.AppConfig.Set("registry_plugin", "etcd")
+}
 
 var _ = BeforeSuite(func() {
 	//init plugin

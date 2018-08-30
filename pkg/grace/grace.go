@@ -64,14 +64,14 @@ func init() {
 		SignalHooks[PreSignal][sig] = []func(){}
 		SignalHooks[PostSignal][sig] = []func(){}
 	}
+
+	go handleSignals()
 }
 
-func Init() {
+func ParseCommandLine() {
 	if !flag.Parsed() {
 		flag.Parse()
 	}
-
-	go handleSignals()
 }
 
 func Before(f func()) {

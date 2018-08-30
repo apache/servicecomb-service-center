@@ -90,8 +90,9 @@ func newInfo() pb.ServerInformation {
 			PluginsDir: beego.AppConfig.DefaultString("plugins_dir", "./plugins"),
 			Plugins:    make(util.JSONObject),
 
-			EnablePProf: beego.AppConfig.DefaultInt("enable_pprof", 0) != 0,
-			EnableCache: beego.AppConfig.DefaultInt("enable_cache", 1) != 0,
+			EnablePProf:  beego.AppConfig.DefaultInt("enable_pprof", 0) != 0,
+			EnableCache:  beego.AppConfig.DefaultInt("enable_cache", 1) != 0,
+			SelfRegister: beego.AppConfig.DefaultInt("self_register", 1) != 0,
 		},
 	}
 }

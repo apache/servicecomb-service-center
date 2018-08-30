@@ -14,22 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package broker
+package broker_test
 
+import _ "github.com/apache/incubator-servicecomb-service-center/server/init"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/bootstrap"
 import (
+	"github.com/apache/incubator-servicecomb-service-center/server/broker"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/quota/buildin"
-	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/registry/etcd"
-	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/tracing/buildin"
-	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/uuid/buildin"
 	"github.com/apache/incubator-servicecomb-service-center/server/service"
+	"github.com/astaxie/beego"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 	"testing"
 )
 
-var brokerResource = BrokerServiceAPI
+func init() {
+	beego.AppConfig.Set("registry_plugin", "etcd")
+}
+
+var brokerResource = broker.BrokerServiceAPI
 
 var _ = BeforeSuite(func() {
 	//init plugin

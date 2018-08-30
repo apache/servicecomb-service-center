@@ -20,6 +20,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
 	"golang.org/x/net/context"
 )
@@ -35,6 +36,16 @@ type K8sCacher struct {
 
 func (c *K8sCacher) Cache() discovery.Cache {
 	return c.cache
+}
+
+func (c *K8sCacher) Notify(action proto.EventType, key string, kv *discovery.KeyValue) {
+	switch action {
+	case proto.EVT_DELETE:
+		c.cache.Remove(key)
+	default:
+		c.cache.Put(key, kv)
+	}
+	c.OnEvents(discovery.KvEvent{Type: action, KV: kv})
 }
 
 func (c *K8sCacher) OnEvents(evt discovery.KvEvent) {

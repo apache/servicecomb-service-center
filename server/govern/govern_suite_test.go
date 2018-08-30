@@ -25,12 +25,17 @@ import (
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/govern"
 	"github.com/apache/incubator-servicecomb-service-center/server/service"
+	"github.com/astaxie/beego"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 	"golang.org/x/net/context"
 	"testing"
 )
+
+func init() {
+	beego.AppConfig.Set("registry_plugin", "etcd")
+}
 
 func TestGovern(t *testing.T) {
 	RegisterFailHandler(Fail)
