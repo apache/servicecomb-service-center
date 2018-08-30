@@ -28,9 +28,9 @@ import (
 const neverExpire = "Never"
 
 var (
-	longServiceTableHeader   = []string{"DOMAIN", "HOST", "ENDPOINTS", "VERSION", "SERVICE", "APPID", "ENV", "FRAMEWORK", "LEASE", "AGE"}
-	domainServiceTableHeader = []string{"DOMAIN", "HOST", "ENDPOINTS", "VERSION", "SERVICE", "APPID", "LEASE", "AGE"}
-	shortServiceTableHeader  = []string{"HOST", "ENDPOINTS", "VERSION", "SERVICE", "APPID", "LEASE", "AGE"}
+	longInstanceTableHeader   = []string{"DOMAIN", "HOST", "ENDPOINTS", "VERSION", "SERVICE", "APPID", "ENV", "FRAMEWORK", "LEASE", "AGE"}
+	domainInstanceTableHeader = []string{"DOMAIN", "HOST", "ENDPOINTS", "VERSION", "SERVICE", "APPID", "LEASE", "AGE"}
+	shortInstanceTableHeader  = []string{"HOST", "ENDPOINTS", "VERSION", "SERVICE", "APPID", "LEASE", "AGE"}
 )
 
 type InstanceRecord struct {
@@ -109,10 +109,10 @@ func (sp *InstancePrinter) PrintBody() (slice [][]string) {
 func (sp *InstancePrinter) PrintTitle() []string {
 	switch {
 	case sp.flags[0] == "wide":
-		return longServiceTableHeader
+		return longInstanceTableHeader
 	case sp.flags[1].(bool):
-		return domainServiceTableHeader
+		return domainInstanceTableHeader
 	default:
-		return shortServiceTableHeader
+		return shortInstanceTableHeader
 	}
 }

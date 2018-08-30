@@ -106,7 +106,7 @@ func (client *URLClient) HttpDo(method string, rawURL string, headers http.Heade
 
 	if os.Getenv("DEBUG_MODE") == "1" {
 		fmt.Println("--- BEGIN ---")
-		fmt.Printf("> %s %s %s\n", client.Request.Method, client.Request.URL.Path, client.Request.Proto)
+		fmt.Printf("> %s %s %s\n", client.Request.Method, client.Request.URL.RequestURI(), client.Request.Proto)
 		for key, header := range client.Request.Header {
 			for _, value := range header {
 				fmt.Printf("> %s: %s\n", key, value)
