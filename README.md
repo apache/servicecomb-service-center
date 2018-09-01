@@ -20,7 +20,7 @@ Apache ServiceComb (incubating) Service-Center is a Restful based service-regist
  
 ## Documentation
 
-Project documentation is available on the [ServiceComb website][servicecomb-website]. You can also find some development guide [here](/docs).
+Project documentation is available on the [ServiceComb website][servicecomb-website]. You can also find full document [`here`](/docs).
 
 [servicecomb-website]: http://servicecomb.incubator.apache.org/
 

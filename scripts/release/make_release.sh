@@ -69,6 +69,8 @@ build() {
 
     build_frontend
 
+    build_scctl
+
     package
 }
 

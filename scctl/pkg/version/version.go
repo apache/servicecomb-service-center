@@ -35,6 +35,7 @@ var versionSet version.VersionSet
 func init() {
 	versionSet.Version = VERSION
 	versionSet.BuildTag = BUILD_TAG
+	versionSet.LoadRuntimeInfo()
 }
 
 func Ver() *version.VersionSet {
