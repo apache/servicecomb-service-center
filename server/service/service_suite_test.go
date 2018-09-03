@@ -33,7 +33,7 @@ import (
 )
 
 var serviceResource pb.ServiceCtrlServer
-var instanceResource pb.SerivceInstanceCtrlServerEx
+var instanceResource pb.ServiceInstanceCtrlServerEx
 
 var _ = BeforeSuite(func() {
 	//init plugin

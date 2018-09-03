@@ -25,6 +25,7 @@ import (
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
+	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
 )
@@ -112,4 +113,13 @@ func resourceLimitHandler(ctx context.Context, res *quota.ApplyQuotaResource) (i
 		return 0, err
 	}
 	return resp.Count, nil
+}
+
+func InitConfigs() {
+	mgr.QUOTA.ActiveConfigs().
+		Set("service", quota.DefaultServiceQuota).
+		Set("instance", quota.DefaultInstanceQuota).
+		Set("schema", quota.DefaultSchemaQuota).
+		Set("tag", quota.DefaultTagQuota).
+		Set("rule", quota.DefaultRuleQuota)
 }

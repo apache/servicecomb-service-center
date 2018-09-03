@@ -20,6 +20,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/plugin"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/auditlog"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/auth"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
@@ -34,7 +35,12 @@ import (
 	"sync"
 )
 
-const BUILDIN = "buildin"
+const (
+	BUILDIN       = "buildin"
+	STATIC        = "static"
+	DYNAMIC       = "dynamic"
+	keyPluginName = "name"
+)
 
 const (
 	UUID PluginName = iota
@@ -72,6 +78,14 @@ func (pn PluginName) String() string {
 		return name
 	}
 	return "PLUGIN" + strconv.Itoa(int(pn))
+}
+
+func (pn PluginName) ActiveConfigs() util.JSONObject {
+	return core.ServerInfo.Config.Plugins.Object(pn.String())
+}
+
+func (pn PluginName) ClearConfigs() {
+	core.ServerInfo.Config.Plugins.Set(pn.String(), nil)
 }
 
 type Plugin struct {
@@ -151,7 +165,7 @@ func (pm *PluginManager) Instance(pn PluginName) PluginInstance {
 
 func (pm *PluginManager) New(pn PluginName) {
 	var (
-		title = "static"
+		title = STATIC
 		f     func() PluginInstance
 	)
 
@@ -159,7 +173,7 @@ func (pm *PluginManager) New(pn PluginName) {
 	p := pm.existDynamicPlugin(pn)
 	if p != nil {
 		wi.dynamic = true
-		title = "dynamic"
+		title = DYNAMIC
 		f = p.New
 	} else {
 		wi.dynamic = false
@@ -175,6 +189,7 @@ func (pm *PluginManager) New(pn PluginName) {
 		}
 
 		f = p.New
+		pn.ActiveConfigs().Set(keyPluginName, name)
 	}
 	log.Infof("call %s '%s' plugin %s(), new a '%s' instance",
 		title, p.PName, util.FuncName(f), p.Name)
@@ -186,6 +201,7 @@ func (pm *PluginManager) Reload(pn PluginName) {
 	wi := pm.instances[pn]
 	wi.lock.Lock()
 	wi.instance = nil
+	pn.ClearConfigs()
 	wi.lock.Unlock()
 }
 
@@ -233,4 +249,10 @@ func DynamicPluginFunc(pn PluginName, funcName string) pg.Symbol {
 		log.Errorf(err, "plugin '%s': not implemented function '%s'.", pn, funcName)
 	}
 	return f
+}
+
+func LoadPlugins() {
+	for t := PluginName(0); t != typeEnd; t++ {
+		Plugins().Instance(t)
+	}
 }
