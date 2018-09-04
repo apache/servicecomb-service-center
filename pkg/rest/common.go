@@ -48,6 +48,8 @@ const (
 	CONTENT_TYPE_TEXT = "text/plain; charset=UTF-8"
 
 	ENCODING_GZIP = "gzip"
+
+	DEFAULT_CONN_POOL_PER_HOST_SIZE = 5
 )
 
 func isValidMethod(method string) bool {

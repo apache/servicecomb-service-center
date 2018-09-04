@@ -880,3 +880,10 @@ For lumberjack (a96e63847dc3c67d17befa69c303767e2f84e54f)
 This product bundles the lumberjack library which is licensed under the MIT License.
 For details, see https://github.com/natefinch/lumberjack
 You can find a copy of the License at licenses/LICENSE-natefinch-lumberjack
+
+================================================================
+For tablewriter (d4647c9c7a84d847478d890b816b7d8b62b0b279)
+================================================================
+This product bundles the tablewriter library which is licensed under the MIT License.
+For details, see https://github.com/olekukonko/tablewriter
+You can find a copy of the License at licenses/LICENSE-olekukonko-tablewriter

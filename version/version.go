@@ -40,17 +40,23 @@ type VersionSet struct {
 }
 
 func (vs *VersionSet) Print() {
-	fmt.Printf("ServiceCenter version: %s\n", versionSet.Version)
-	fmt.Printf("Build tag: %s\n", versionSet.BuildTag)
-	fmt.Printf("Go version: %s\n", versionSet.GoVersion)
-	fmt.Printf("OS/Arch: %s/%s\n", versionSet.OS, versionSet.Arch)
+	fmt.Printf("Version: %s\n", vs.Version)
+	fmt.Printf("Build tag: %s\n", vs.BuildTag)
+	fmt.Printf("Go version: %s\n", vs.GoVersion)
+	fmt.Printf("OS/Arch: %s/%s\n", vs.OS, vs.Arch)
 }
 
 func (vs *VersionSet) Log() {
-	log.Infof("service center version: %s", versionSet.Version)
-	log.Infof("Build tag: %s", versionSet.BuildTag)
-	log.Infof("Go version: %s", versionSet.GoVersion)
-	log.Infof("OS/Arch: %s/%s", versionSet.OS, versionSet.Arch)
+	log.Infof("Version: %s", vs.Version)
+	log.Infof("Build tag: %s", vs.BuildTag)
+	log.Infof("Go version: %s", vs.GoVersion)
+	log.Infof("OS/Arch: %s/%s", vs.OS, vs.Arch)
+}
+
+func (vs *VersionSet) LoadRuntimeInfo() {
+	vs.GoVersion = runtime.Version()
+	vs.OS = runtime.GOOS
+	vs.Arch = runtime.GOARCH
 }
 
 var versionSet VersionSet
@@ -58,9 +64,7 @@ var versionSet VersionSet
 func init() {
 	versionSet.Version = VERSION
 	versionSet.BuildTag = BUILD_TAG
-	versionSet.GoVersion = runtime.Version()
-	versionSet.OS = runtime.GOOS
-	versionSet.Arch = runtime.GOARCH
+	versionSet.LoadRuntimeInfo()
 }
 
 func Ver() *VersionSet {

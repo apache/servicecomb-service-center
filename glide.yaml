@@ -289,3 +289,8 @@ import:
 - package: github.com/natefinch/lumberjack
   version: a96e63847dc3c67d17befa69c303767e2f84e54f
   repo: https://github.com/natefinch/lumberjack
+
+# scctl depends
+- package: github.com/olekukonko/tablewriter
+  version: d4647c9c7a84d847478d890b816b7d8b62b0b279
+  repo: https://github.com/olekukonko/tablewriter

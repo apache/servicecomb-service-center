@@ -140,6 +140,7 @@ func TestSystemPackage(t *testing.T) {
 }
 
 func TestGetEnvInt(t *testing.T) {
+	os.Unsetenv("a")
 	if GetEnvInt("a", 1) != 1 {
 		t.Fatalf("TestGetEnvInt failed")
 	}
@@ -153,6 +154,21 @@ func TestGetEnvInt(t *testing.T) {
 	}
 	os.Setenv("a", "2")
 	if GetEnvInt("a", 1) != 2 {
+		t.Fatalf("TestGetEnvInt failed")
+	}
+}
+
+func TestGetEnvString(t *testing.T) {
+	os.Unsetenv("a")
+	if GetEnvString("a", "1") != "1" {
+		t.Fatalf("TestGetEnvInt failed")
+	}
+	os.Setenv("a", "")
+	if GetEnvString("a", "1") != "" {
+		t.Fatalf("TestGetEnvInt failed")
+	}
+	os.Setenv("a", "2")
+	if GetEnvString("a", "1") != "2" {
 		t.Fatalf("TestGetEnvInt failed")
 	}
 }

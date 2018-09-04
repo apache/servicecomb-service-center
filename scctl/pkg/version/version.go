@@ -14,61 +14,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package util
+package version
 
 import (
-	"os"
-	"strconv"
-	"unsafe"
+	"github.com/apache/incubator-servicecomb-service-center/version"
 )
 
-const intSize = int(unsafe.Sizeof(0))
+var (
+	// no need to modify
+	// please use:
+	// 	go build -ldflags "-X github.com/apache/incubator-servicecomb-service-center/scctl/pkg/version.VERSION=x.x.x"
+	// to set these values.
+	VERSION   = "0.0.1"
+	BUILD_TAG = "Not provided"
+	TOOL_NAME = "scctl"
+)
 
-var bs *[intSize]byte
+var versionSet version.VersionSet
 
 func init() {
-	i := 0x1
-	bs = (*[intSize]byte)(unsafe.Pointer(&i))
+	versionSet.Version = VERSION
+	versionSet.BuildTag = BUILD_TAG
+	versionSet.LoadRuntimeInfo()
 }
 
-func IsBigEndian() bool {
-	return !IsLittleEndian()
-}
-
-func IsLittleEndian() bool {
-	return bs[0] == 0
-}
-
-func PathExist(path string) bool {
-	_, err := os.Stat(path)
-	return err == nil || os.IsExist(err)
-}
-
-func HostName() (hostname string) {
-	var err error
-	hostname, err = os.Hostname()
-	if err != nil {
-		hostname = "UNKNOWN"
-	}
-	return
-}
-
-func GetEnvInt(name string, def int) int {
-	env, ok := os.LookupEnv(name)
-	if ok {
-		i64, err := strconv.ParseInt(env, 10, 0)
-		if err != nil {
-			return def
-		}
-		return int(i64)
-	}
-	return def
-}
-
-func GetEnvString(name string, def string) string {
-	env, ok := os.LookupEnv(name)
-	if ok {
-		return env
-	}
-	return def
+func Ver() *version.VersionSet {
+	return &versionSet
 }
