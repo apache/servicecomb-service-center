@@ -60,6 +60,8 @@ type ServerConfig struct {
 
 	PluginsDir string          `json:"-"`
 	Plugins    util.JSONObject `json:"plugins"`
+
+	SelfRegister bool `json:"-"`
 }
 
 type ServerInformation struct {
