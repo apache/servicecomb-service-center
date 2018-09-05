@@ -19,6 +19,7 @@ package etcd
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
+	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
 	"sync"
 )
@@ -73,7 +74,7 @@ func DefaultKvEntity() *EtcdAdaptor {
 	newEtcdAdaptorOnce.Do(func() {
 		defaultEtcdAdaptor = &EtcdAdaptor{
 			Cacher:  discovery.NullCacher,
-			Indexer: NewEtcdIndexer(discovery.Configure().Key, discovery.BytesParser),
+			Indexer: NewEtcdIndexer(discovery.Configure().Key, pb.BytesParser),
 		}
 	})
 	return defaultEtcdAdaptor

@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package discovery
+package proto
 
 import (
 	"encoding/json"
@@ -27,6 +27,12 @@ var (
 	newBytes  CreateValueFunc = func() interface{} { return []byte(nil) }
 	newString CreateValueFunc = func() interface{} { return "" }
 	newMap    CreateValueFunc = func() interface{} { return make(map[string]string) }
+
+	newService         CreateValueFunc = func() interface{} { return new(MicroService) }
+	newInstance        CreateValueFunc = func() interface{} { return new(MicroServiceInstance) }
+	newRule            CreateValueFunc = func() interface{} { return new(ServiceRule) }
+	newDependencyRule  CreateValueFunc = func() interface{} { return new(MicroServiceDependency) }
+	newDependencyQueue CreateValueFunc = func() interface{} { return new(ConsumerDependency) }
 )
 
 // parse
@@ -71,8 +77,15 @@ func (p *CommonParser) Unmarshal(src []byte) (interface{}, error) {
 	return v, nil
 }
 
+// global parser
 var (
 	BytesParser  = &CommonParser{newBytes, UnParse}
 	StringParser = &CommonParser{newString, TextUnmarshal}
 	MapParser    = &CommonParser{newMap, MapUnmarshal}
+
+	ServiceParser         = &CommonParser{newService, JsonUnmarshal}
+	InstanceParser        = &CommonParser{newInstance, JsonUnmarshal}
+	RuleParser            = &CommonParser{newRule, JsonUnmarshal}
+	DependencyRuleParser  = &CommonParser{newDependencyRule, JsonUnmarshal}
+	DependencyQueueParser = &CommonParser{newDependencyQueue, JsonUnmarshal}
 )

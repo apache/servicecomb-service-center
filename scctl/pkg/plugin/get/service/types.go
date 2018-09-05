@@ -16,7 +16,6 @@
 package service
 
 import (
-	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/scctl/pkg/model"
 	"github.com/apache/incubator-servicecomb-service-center/scctl/pkg/writer"
@@ -37,19 +36,19 @@ type ServiceRecord struct {
 }
 
 func (s *ServiceRecord) VersionsString() string {
-	return util.StringJoin(s.Versions, ",")
+	return util.StringJoin(s.Versions, "\n")
 }
 
 func (s *ServiceRecord) FrameworksString() string {
 	var arr []string
 	for _, fw := range s.Frameworks {
-		arr = append(arr, fmt.Sprintf("%s-%s", fw.Name, fw.Version))
+		arr = append(arr, fw.Name)
 	}
-	return util.StringJoin(arr, ",")
+	return util.StringJoin(arr, "\n")
 }
 
 func (s *ServiceRecord) EndpointsString() string {
-	return util.StringJoin(s.Endpoints, ",")
+	return util.StringJoin(s.Endpoints, "\n")
 }
 
 func (s *ServiceRecord) AgeString() string {

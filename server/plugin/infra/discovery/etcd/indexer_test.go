@@ -18,6 +18,7 @@ package etcd
 
 import (
 	"context"
+	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
@@ -27,7 +28,7 @@ import (
 func TestEtcdIndexer_Search(t *testing.T) {
 	data := &registry.PluginResponse{Revision: 1}
 	c := &mockRegistry{}
-	i := &EtcdIndexer{Client: c, Root: "/", Parser: discovery.BytesParser}
+	i := &EtcdIndexer{Client: c, Root: "/", Parser: pb.BytesParser}
 
 	// case: key does not contain prefix
 	resp, err := i.Search(context.Background(), registry.WithStrKey("a"))
@@ -52,7 +53,7 @@ func TestEtcdIndexer_Search(t *testing.T) {
 	data.Count = 2
 	data.Kvs = []*mvccpb.KeyValue{{Key: []byte("/a/b"), Value: []byte("abc")}, {Key: []byte("/a/c"), Value: []byte("{}")}}
 	old := i.Parser
-	i.Parser = discovery.MapParser
+	i.Parser = pb.MapParser
 	c.Response = data
 	resp, err = i.Search(context.Background(), registry.WithStrKey("/a"))
 	if err != nil || resp == nil || resp.Count != 2 || len(resp.Kvs) != 1 {

@@ -142,7 +142,7 @@ func (h *DependencyEventHandler) Handle() error {
 	for _, kv := range resp.Kvs {
 		r := kv.Value.(*pb.ConsumerDependency)
 
-		_, domainProject, uuid := backend.GetInfoFromDependencyQueueKV(kv)
+		_, domainProject, uuid := core.GetInfoFromDependencyQueueKV(kv.Key)
 		if uuid == core.DEPS_QUEUE_UUID {
 			cleanUpDomainProjects[domainProject] = struct{}{}
 		}

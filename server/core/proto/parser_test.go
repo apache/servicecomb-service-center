@@ -14,14 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package discovery
+package proto
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"testing"
 )
 
-func TestParseValueFunc(t *testing.T) {
+func TestParseInnerValueTypeFunc(t *testing.T) {
 	r, err := BytesParser.Unmarshal([]byte("a"))
 	if err != nil {
 		t.Fatalf("BytesParser.Unmarshal failed, %s", err.Error())
@@ -51,12 +50,51 @@ func TestParseValueFunc(t *testing.T) {
 		t.Fatalf("MapParser.Unmarshal failed")
 	}
 
-	var m interface{} = new(proto.MicroService)
+	var m interface{} = new(MicroService)
 	err = JsonUnmarshal([]byte(`{"serviceName": "abc"}`), &m)
 	if err != nil {
 		t.Fatalf("MapParser.Unmarshal failed, %v", err)
 	}
-	if m.(*proto.MicroService).ServiceName != "abc" {
+	if m.(*MicroService).ServiceName != "abc" {
 		t.Fatalf("MapParser.Unmarshal failed, %s", m)
+	}
+}
+
+func TestParseValueTypeFunc(t *testing.T) {
+	r, err := ServiceParser.Unmarshal([]byte(`xxx`))
+	if err == nil || r != nil {
+		t.Fatalf("ServiceParser.Unmarshal failed")
+	}
+
+	r, err = ServiceParser.Unmarshal([]byte(`{"serviceName": "abc"}`))
+	if err != nil {
+		t.Fatalf("ServiceParser.Unmarshal failed, %s", err.Error())
+	}
+	if v, ok := r.(*MicroService); !ok || v.ServiceName != "abc" {
+		t.Fatalf("ServiceParser.Unmarshal failed, %s", v)
+	}
+
+	r, err = InstanceParser.Unmarshal([]byte(`{"hostName": "abc"}`))
+	if err != nil {
+		t.Fatalf("InstanceParser.Unmarshal failed, %s", err.Error())
+	}
+	if v, ok := r.(*MicroServiceInstance); !ok || v.HostName != "abc" {
+		t.Fatalf("InstanceParser.Unmarshal failed, %s", v)
+	}
+
+	r, err = RuleParser.Unmarshal([]byte(`{"ruleId": "abc"}`))
+	if err != nil {
+		t.Fatalf("RuleParser.Unmarshal failed, %s", err.Error())
+	}
+	if v, ok := r.(*ServiceRule); !ok || v.RuleId != "abc" {
+		t.Fatalf("RuleParser.Unmarshal failed, %s", v)
+	}
+
+	r, err = DependencyRuleParser.Unmarshal([]byte(`{"Dependency":[{"tenant":"opsadm/southchina","appId":"csezhq","serviceName":"zhqClient","version":"1.0.0"}]}`))
+	if err != nil {
+		t.Fatalf("DependencyRuleParser.Unmarshal failed, %s", err.Error())
+	}
+	if v, ok := r.(*MicroServiceDependency); !ok || v.Dependency[0].ServiceName != "zhqClient" {
+		t.Fatalf("DependencyRuleParser.Unmarshal failed, %s", v)
 	}
 }

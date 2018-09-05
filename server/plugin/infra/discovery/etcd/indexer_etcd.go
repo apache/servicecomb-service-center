@@ -21,6 +21,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
+	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"golang.org/x/net/context"
@@ -29,7 +30,7 @@ import (
 
 type EtcdIndexer struct {
 	Client registry.Registry
-	Parser discovery.Parser
+	Parser pb.Parser
 	Root   string
 }
 
@@ -78,6 +79,6 @@ func (i *EtcdIndexer) Search(ctx context.Context, opts ...registry.PluginOpOptio
 	return
 }
 
-func NewEtcdIndexer(root string, p discovery.Parser) (indexer *EtcdIndexer) {
+func NewEtcdIndexer(root string, p pb.Parser) (indexer *EtcdIndexer) {
 	return &EtcdIndexer{Client: backend.Registry(), Parser: p, Root: root}
 }

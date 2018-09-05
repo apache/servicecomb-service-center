@@ -21,6 +21,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/task"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
@@ -88,7 +89,7 @@ func (h *RuleEventHandler) OnEvent(evt discovery.KvEvent) {
 		return
 	}
 
-	providerId, ruleId, domainProject := backend.GetInfoFromRuleKV(evt.KV)
+	providerId, ruleId, domainProject := core.GetInfoFromRuleKV(evt.KV.Key)
 	if nf.GetNotifyService().Closed() {
 		log.Warnf("caught [%s] service rule event %s/%s, but notify service is closed",
 			action, providerId, ruleId)

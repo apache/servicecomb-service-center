@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
@@ -283,7 +282,7 @@ func TestNewKvCacher(t *testing.T) {
 	lw.Bus <- nil
 	evt.KV = nil
 	old = *cr.Cfg
-	cr.Cfg.WithParser(discovery.MapParser)
+	cr.Cfg.WithParser(pb.MapParser)
 	cr.refresh(ctx)
 	// check event
 	if evt.KV != nil {
@@ -357,7 +356,7 @@ func BenchmarkFilter(b *testing.B) {
 	}
 	v, _ := json.Marshal(inst)
 
-	cfg := discovery.Configure().WithParser(backend.InstanceParser)
+	cfg := discovery.Configure().WithParser(pb.InstanceParser)
 
 	n := 300 * 1000 // 30w
 	cache := discovery.NewKvCache("test", cfg)

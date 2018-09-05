@@ -208,7 +208,7 @@ func (governService *GovernService) GetApplications(ctx context.Context, in *pb.
 	apps := make([]string, 0, l)
 	appMap := make(map[string]struct{}, l)
 	for _, kv := range resp.Kvs {
-		key := backend.GetInfoFromSvcIndexKV(kv)
+		key := apt.GetInfoFromSvcIndexKV(kv.Key)
 		if _, ok := appMap[key.AppId]; ok {
 			continue
 		}
@@ -241,7 +241,7 @@ func getServiceAllVersions(ctx context.Context, serviceKey *pb.MicroServiceKey) 
 		return versions, nil
 	}
 	for _, kv := range resp.Kvs {
-		key := backend.GetInfoFromSvcIndexKV(kv)
+		key := apt.GetInfoFromSvcIndexKV(kv.Key)
 		versions = append(versions, key.Version)
 	}
 	return versions, nil
@@ -372,7 +372,7 @@ func statistics(ctx context.Context) (*pb.Statistics, error) {
 	svcWithNonVersion := make(map[string]struct{}, respSvc.Count)
 	svcIdToNonVerKey := make(map[string]string, respSvc.Count)
 	for _, kv := range respSvc.Kvs {
-		key := backend.GetInfoFromSvcIndexKV(kv)
+		key := apt.GetInfoFromSvcIndexKV(kv.Key)
 		if _, ok := app[key.AppId]; !ok {
 			app[key.AppId] = struct{}{}
 		}
@@ -406,7 +406,7 @@ func statistics(ctx context.Context) (*pb.Statistics, error) {
 
 	onlineServices := make(map[string]struct{}, respSvc.Count)
 	for _, kv := range respIns.Kvs {
-		serviceId, _, _ := backend.GetInfoFromInstKV(kv)
+		serviceId, _, _ := apt.GetInfoFromInstKV(kv.Key)
 		key, ok := svcIdToNonVerKey[serviceId]
 		if !ok {
 			continue

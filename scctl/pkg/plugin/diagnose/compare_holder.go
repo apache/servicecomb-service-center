@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
 	"github.com/apache/incubator-servicecomb-service-center/server/admin/model"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
@@ -31,7 +30,7 @@ type CompareHolder interface {
 
 type DataStore struct {
 	Data       []*mvccpb.KeyValue
-	DataParser backend.Parser
+	DataParser pb.Parser
 }
 
 func (d *DataStore) ForEach(f func(i int, v *model.KV)) {
@@ -131,7 +130,7 @@ type ServiceCompareHolder struct {
 
 func (h *ServiceCompareHolder) Compare() *CompareResult {
 	h.abstractCompareHolder = &abstractCompareHolder{
-		Cache: &h.Cache, DataStore: &DataStore{Data: h.Kvs, DataParser: backend.ServiceParser}, MismatchFunc: h.toName,
+		Cache: &h.Cache, DataStore: &DataStore{Data: h.Kvs, DataParser: pb.ServiceParser}, MismatchFunc: h.toName,
 	}
 	r := h.abstractCompareHolder.Compare()
 	r.Name = service
@@ -153,7 +152,7 @@ type InstanceCompareHolder struct {
 
 func (h *InstanceCompareHolder) Compare() *CompareResult {
 	h.abstractCompareHolder = &abstractCompareHolder{
-		Cache: &h.Cache, DataStore: &DataStore{Data: h.Kvs, DataParser: backend.InstanceParser}, MismatchFunc: h.toName,
+		Cache: &h.Cache, DataStore: &DataStore{Data: h.Kvs, DataParser: pb.InstanceParser}, MismatchFunc: h.toName,
 	}
 	r := h.abstractCompareHolder.Compare()
 	r.Name = instance

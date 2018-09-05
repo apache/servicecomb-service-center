@@ -16,7 +16,6 @@
 package instance
 
 import (
-	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/scctl/pkg/model"
 	"github.com/apache/incubator-servicecomb-service-center/scctl/pkg/writer"
@@ -41,11 +40,11 @@ func (s *InstanceRecord) FrameworksString() string {
 	if s.Framework == nil || len(s.Framework.Name) == 0 {
 		return ""
 	}
-	return fmt.Sprintf("%s-%s", s.Framework.Name, s.Framework.Version)
+	return s.Framework.Name
 }
 
 func (s *InstanceRecord) EndpointsString() string {
-	return util.StringJoin(s.Endpoints, ",")
+	return util.StringJoin(s.Endpoints, "\n")
 }
 
 func (s *InstanceRecord) LeaseString() string {

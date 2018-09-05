@@ -16,6 +16,7 @@
 package discovery
 
 import (
+	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"testing"
 	"time"
 )
@@ -73,8 +74,8 @@ func TestConfigure(t *testing.T) {
 	if i != 3 {
 		t.Fatalf("TestConfigure failed")
 	}
-	cfg.WithParser(MapParser)
-	if cfg.Parser != MapParser {
+	cfg.WithParser(pb.MapParser)
+	if cfg.Parser != pb.MapParser {
 		t.Fatalf("TestConfigure failed")
 	}
 	if cfg.String() != "{key: /test, timeout: 2s, period: 3s}" {

@@ -489,7 +489,7 @@ func removeProviderRuleKeys(ctx context.Context, domainProject string, cache map
 		id := util.BytesToStringWithNoCopy(kv.Key)
 		exist, ok := cache[id]
 		if !ok {
-			key := backend.GetInfoFromDependencyRuleKV(kv)
+			key := apt.GetInfoFromDependencyRuleKV(kv.Key)
 			if key == nil || key.ServiceName == "*" {
 				continue
 			}

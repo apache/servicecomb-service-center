@@ -36,7 +36,7 @@ import (
 
 const (
 	dialTimeout = 500 * time.Millisecond
-	endpoint    = "127.0.0.1:2379"
+	endpoint    = "127.0.0.1:4001"
 )
 
 func TestEtcdClient(t *testing.T) {

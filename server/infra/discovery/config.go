@@ -18,6 +18,7 @@ package discovery
 
 import (
 	"fmt"
+	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"time"
 )
 
@@ -30,7 +31,7 @@ type Config struct {
 	Period         time.Duration
 	DeferHandler   DeferHandler
 	OnEvent        KvEventFunc
-	Parser         Parser
+	Parser         pb.Parser
 }
 
 func (cfg *Config) String() string {
@@ -85,7 +86,7 @@ func (cfg *Config) AppendEventFunc(f KvEventFunc) *Config {
 	return cfg
 }
 
-func (cfg *Config) WithParser(parser Parser) *Config {
+func (cfg *Config) WithParser(parser pb.Parser) *Config {
 	cfg.Parser = parser
 	return cfg
 }
@@ -97,6 +98,6 @@ func Configure() *Config {
 		Period:         time.Second,
 		NoEventPeriods: DEFAULT_MAX_NO_EVENT_INTERVAL,
 		InitSize:       DEFAULT_CACHE_INIT_SIZE,
-		Parser:         BytesParser,
+		Parser:         pb.BytesParser,
 	}
 }

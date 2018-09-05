@@ -18,7 +18,7 @@ package model
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/admin/model"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"strconv"
 	"time"
@@ -27,11 +27,11 @@ import (
 func GetDomainProject(resouce interface{}) (domainProject string) {
 	switch resouce.(type) {
 	case *model.Microservice:
-		_, domainProject = backend.GetInfoFromSvcKV(&backend.KeyValue{
-			Key: util.StringToBytesWithNoCopy(resouce.(*model.Microservice).Key)})
+		_, domainProject = core.GetInfoFromSvcKV(
+			util.StringToBytesWithNoCopy(resouce.(*model.Microservice).Key))
 	case *model.Instance:
-		_, _, domainProject = backend.GetInfoFromInstKV(&backend.KeyValue{
-			Key: util.StringToBytesWithNoCopy(resouce.(*model.Instance).Key)})
+		_, _, domainProject = core.GetInfoFromInstKV(
+			util.StringToBytesWithNoCopy(resouce.(*model.Instance).Key))
 	}
 	return
 }

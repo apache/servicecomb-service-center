@@ -40,7 +40,7 @@ func (h *InstanceEventHandler) Type() discovery.Type {
 
 func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
 	action := evt.Type
-	providerId, providerInstanceId, domainProject := backend.GetInfoFromInstKV(evt.KV)
+	providerId, providerInstanceId, domainProject := apt.GetInfoFromInstKV(evt.KV.Key)
 
 	switch action {
 	case pb.EVT_INIT:

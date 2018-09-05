@@ -21,6 +21,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/task"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
@@ -100,7 +101,7 @@ func (h *TagEventHandler) OnEvent(evt discovery.KvEvent) {
 		return
 	}
 
-	consumerId, domainProject := backend.GetInfoFromTagKV(evt.KV)
+	consumerId, domainProject := core.GetInfoFromTagKV(evt.KV.Key)
 
 	if nf.GetNotifyService().Closed() {
 		log.Warnf("caught [%s] service tags event %s/%s, but notify service is closed",

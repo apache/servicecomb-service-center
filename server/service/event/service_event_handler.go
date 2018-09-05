@@ -18,6 +18,7 @@ package event
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
@@ -37,7 +38,7 @@ func (h *ServiceEventHandler) Type() discovery.Type {
 
 func (h *ServiceEventHandler) OnEvent(evt discovery.KvEvent) {
 	ms := evt.KV.Value.(*pb.MicroService)
-	_, domainProject := backend.GetInfoFromSvcKV(evt.KV)
+	_, domainProject := core.GetInfoFromSvcKV(evt.KV.Key)
 	fn, fv := getFramework(ms)
 
 	switch evt.Type {
