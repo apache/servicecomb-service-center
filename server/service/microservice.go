@@ -38,7 +38,7 @@ import (
 )
 
 type MicroServiceService struct {
-	instanceService pb.SerivceInstanceCtrlServerEx
+	instanceService pb.ServiceInstanceCtrlServerEx
 }
 
 const (

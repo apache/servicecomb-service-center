@@ -19,6 +19,7 @@ package core
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/plugin"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/version"
 	"github.com/astaxie/beego"
@@ -30,7 +31,7 @@ const (
 	INIT_VERSION = "0"
 )
 
-var ServerInfo = new(pb.ServerInformation)
+var ServerInfo = pb.NewServerInformation()
 
 func Configure() {
 	setCPUs()
@@ -87,6 +88,7 @@ func newInfo() pb.ServerInformation {
 			LogSys:         beego.AppConfig.DefaultBool("log_sys", false),
 
 			PluginsDir: beego.AppConfig.DefaultString("plugins_dir", "./plugins"),
+			Plugins:    make(util.JSONObject),
 
 			EnablePProf: beego.AppConfig.DefaultInt("enable_pprof", 0) != 0,
 			EnableCache: beego.AppConfig.DefaultInt("enable_cache", 1) != 0,

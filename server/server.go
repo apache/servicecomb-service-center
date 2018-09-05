@@ -24,6 +24,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	"github.com/apache/incubator-servicecomb-service-center/server/mux"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	nf "github.com/apache/incubator-servicecomb-service-center/server/service/notification"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"github.com/apache/incubator-servicecomb-service-center/version"
@@ -100,6 +101,9 @@ func (s *ServiceCenterServer) initialize() {
 	s.notifyService = nf.GetNotifyService()
 	s.apiServer = GetAPIServer()
 	s.goroutine = gopool.New(context.Background())
+
+	// load server plugins
+	plugin.LoadPlugins()
 
 	// check version
 	s.loadOrUpgradeServerVersion()

@@ -30,7 +30,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-var GovernServiceAPI pb.GovernServiceCtrlServerEx = &GovernService{}
+var GovernServiceAPI pb.GovernServiceCtrlServer = &GovernService{}
 
 type GovernService struct {
 }

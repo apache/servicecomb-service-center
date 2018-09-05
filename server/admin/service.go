@@ -69,7 +69,7 @@ func (service *AdminService) Dump(ctx context.Context, in *model.DumpRequest) (*
 	return &model.DumpResponse{
 		Response:     pb.CreateResponse(pb.Response_SUCCESS, "Admin dump successfully"),
 		Info:         version.Ver(),
-		Config:       configs,
+		AppConfig:    configs,
 		Environments: environments,
 		Cache:        &cache,
 	}, nil

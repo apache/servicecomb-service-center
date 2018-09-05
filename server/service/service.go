@@ -24,7 +24,7 @@ import (
 
 var (
 	serviceService  pb.ServiceCtrlServer
-	instanceService pb.SerivceInstanceCtrlServerEx
+	instanceService pb.ServiceInstanceCtrlServerEx
 )
 
 func init() {
@@ -40,6 +40,6 @@ func RegisterGrpcServices(s *grpc.Server) {
 	pb.RegisterServiceInstanceCtrlServer(s, instanceService)
 }
 
-func AssembleResources() (pb.ServiceCtrlServer, pb.SerivceInstanceCtrlServerEx) {
+func AssembleResources() (pb.ServiceCtrlServer, pb.ServiceInstanceCtrlServerEx) {
 	return serviceService, instanceService
 }

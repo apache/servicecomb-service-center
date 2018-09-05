@@ -38,7 +38,7 @@ func TestGovern(t *testing.T) {
 	RunSpecsWithDefaultAndCustomReporters(t, "model Suite", []Reporter{junitReporter})
 }
 
-var governService pb.GovernServiceCtrlServerEx
+var governService pb.GovernServiceCtrlServer
 
 var _ = BeforeSuite(func() {
 	//init plugin

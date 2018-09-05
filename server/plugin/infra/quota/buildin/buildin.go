@@ -28,6 +28,7 @@ func init() {
 }
 
 func New() mgr.PluginInstance {
+	InitConfigs()
 	log.Infof("quota init, service: %d, instance: %d, schema: %d/service, tag: %d/service, rule: %d/service",
 		quota.DefaultServiceQuota, quota.DefaultInstanceQuota,
 		quota.DefaultSchemaQuota, quota.DefaultTagQuota, quota.DefaultRuleQuota)

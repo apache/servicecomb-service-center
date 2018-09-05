@@ -183,7 +183,7 @@ type DumpRequest struct {
 type DumpResponse struct {
 	Response     *pb.Response        `json:"response,omitempty"`
 	Info         *version.VersionSet `json:"info,omitempty"`
-	Config       map[string]string   `json:"config,omitempty"`
+	AppConfig    map[string]string   `json:"appConf,omitempty"`
 	Environments map[string]string   `json:"environments,omitempty"`
 	Cache        *Cache              `json:"cache,omitempty"`
 }
