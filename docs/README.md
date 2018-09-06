@@ -4,7 +4,8 @@
 
 #### [Development Guide](/docs/dev-guide.md) 
 
-- [Api Documentation](https://rawcdn.githack.com/ServiceComb/service-center/master/docs/api-docs.html)
+- [Api Documentation](https://rawcdn.githack.com/ServiceComb/service-center/master/docs/api-docs.html),
+Swagger [`v4`](/server/core/swagger/v4.yaml)|[`v3`](/server/core/swagger/v3.yaml)
 - [Plug-in Extension](/server/plugin/README.md)
 - [Command Line Client](/scctl/README.md)
 
