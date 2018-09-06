@@ -79,7 +79,6 @@ func newInfo() pb.ServerInformation {
 			CompactIndexDelta: beego.AppConfig.DefaultInt64("compact_index_delta", 100),
 			CompactInterval:   beego.AppConfig.String("compact_interval"),
 
-			LoggerName:     beego.AppConfig.String("component_name"),
 			LogRotateSize:  maxLogFileSize,
 			LogBackupCount: maxLogBackupCount,
 			LogFilePath:    beego.AppConfig.String("logfile"),

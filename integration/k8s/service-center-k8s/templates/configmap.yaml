@@ -1,0 +1,38 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "service-center.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "service-center.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  app-config: |
+    httpaddr = ${HOSTNAME}
+    httpport = {{ .Values.sc.service.internalPort }}
+    discovery_plugin = k8s
+    registry_plugin = buildin
+    self_register = 0
+    ssl_mode = 0
+    enable_pprof = 1
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "service-center.fullname" . }}-frontend
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "service-center.name" . }}-frontend
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  app-config: |
+    frontend_host_ip = ${HOSTNAME}
+    frontend_host_port = {{ .Values.frontend.service.internalPort }}
+    httpaddr = {{ template "service-center.fullname" . }}
+    httpport = {{ .Values.sc.service.externalPort }}

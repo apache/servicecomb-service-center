@@ -21,11 +21,12 @@ umask 027
 
 cd /opt/service-center
 
+set +e
 sed -i "s/^httpaddr.*=.*$/httpaddr = $(hostname)/g" conf/app.conf
-
 if [ ! -z "${BACKEND_ADDRESS}" ]; then
     sed -i "s|^registry_plugin.*=.*$|registry_plugin = etcd|g" conf/app.conf
     sed -i "s|^manager_cluster.*=.*$|manager_cluster = ${BACKEND_ADDRESS}|g" conf/app.conf
 fi
+set -e
 
 ./service-center

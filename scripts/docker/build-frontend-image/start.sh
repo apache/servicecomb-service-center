@@ -19,19 +19,20 @@ set -e
 
 umask 027
 
-cd /opt/frontend
-
-sed -i "s/^frontend_host_ip.*=.*$/frontend_host_ip = $(hostname)/g" conf/app.conf
-
 sc_ip_port=${SC_ADDRESS#*//}
 sc_ip=${sc_ip_port%:*}
 sc_port=${sc_ip_port#*:}
 
+cd /opt/frontend
+
+set +e
+sed -i "s/^frontend_host_ip.*=.*$/frontend_host_ip = $(hostname)/g" conf/app.conf
 if [ ! -z "${sc_ip}" ]; then
     sed -i "s|^httpaddr.*=.*$|httpaddr = ${sc_ip}|g" conf/app.conf
 fi
 if [ "X"${sc_port} != "X"${sc_ip} ]; then
     sed -i "s|^httpport.*=.*$|httpport = ${sc_port}|g" conf/app.conf
 fi
+set -e
 
 ./frontend
