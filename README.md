@@ -85,8 +85,16 @@ cd $GOPATH/src/github.com/apache/incubator-servicecomb-service-center
 
 Dependencies
 
-We use glide for dependency management, please follow below steps to download all the dependency.
+By default, we use glide to manage dependencies. If the go version greater then `go1.11`, 
+you can download dependencies directly using command `go mod`. Please follow below steps to 
+download all the dependency.
+
 ```sh
+# greater then go1.11
+GO111MODULE=on go mod download
+GO111MODULE=on go mod vendor
+
+# lower than go1.11
 curl https://glide.sh/get | sh
 glide install
 ```

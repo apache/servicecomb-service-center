@@ -26,3 +26,4 @@ frontend/node_modules/
 tmp/
 glide.lock
 incubator-servicecomb-service-center
+go.sum
