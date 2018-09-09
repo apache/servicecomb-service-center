@@ -28,6 +28,7 @@ import (
 	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
+	"github.com/coreos/etcd/etcdserver/etcdserverpb"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -566,9 +567,21 @@ func (c *EtcdClient) TxnWithCmp(ctx context.Context, success []registry.PluginOp
 	}
 	log.LogNilOrWarnf(start, "registry client txn {if(%v): %s, then: %d, else: %d}, rev: %d",
 		resp.Succeeded, cmps, len(success), len(fail), resp.Header.Revision)
+
+	var rangeResponse etcdserverpb.RangeResponse
+	for _, itf := range resp.Responses {
+		if rr, ok := itf.Response.(*etcdserverpb.ResponseOp_ResponseRange); ok {
+			// plz request the same type range kv in txn success/fail options
+			rangeResponse.Kvs = append(rangeResponse.Kvs, rr.ResponseRange.Kvs...)
+			rangeResponse.Count += rr.ResponseRange.Count
+		}
+	}
+
 	return &registry.PluginResponse{
 		Succeeded: resp.Succeeded,
 		Revision:  resp.Header.Revision,
+		Kvs:       rangeResponse.Kvs,
+		Count:     rangeResponse.Count,
 	}, nil
 }
 

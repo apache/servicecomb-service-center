@@ -111,11 +111,10 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 	}
 
 	// 产生全局service id
-	serviceId := in.Service.ServiceId
-	if len(serviceId) == 0 {
-		serviceId = plugin.Plugins().UUID().GetServiceId()
+	requestServiceId := service.ServiceId
+	if len(requestServiceId) == 0 {
+		service.ServiceId = plugin.Plugins().UUID().GetServiceId()
 	}
-	service.ServiceId = serviceId
 	service.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
 	service.ModTimestamp = service.Timestamp
 
@@ -127,7 +126,7 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
-	key := apt.GenerateServiceKey(domainProject, serviceId)
+	key := apt.GenerateServiceKey(domainProject, service.ServiceId)
 	keyBytes := util.StringToBytesWithNoCopy(key)
 	index := apt.GenerateServiceIndexKey(serviceKey)
 	indexBytes := util.StringToBytesWithNoCopy(index)
@@ -135,20 +134,24 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 
 	opts := []registry.PluginOp{
 		registry.OpPut(registry.WithKey(keyBytes), registry.WithValue(data)),
-		registry.OpPut(registry.WithKey(indexBytes), registry.WithStrValue(serviceId)),
+		registry.OpPut(registry.WithKey(indexBytes), registry.WithStrValue(service.ServiceId)),
 	}
 	uniqueCmpOpts := []registry.CompareOp{
 		registry.OpCmp(registry.CmpVer(indexBytes), registry.CMP_EQUAL, 0),
 		registry.OpCmp(registry.CmpVer(keyBytes), registry.CMP_EQUAL, 0),
 	}
-
-	if len(serviceKey.Alias) > 0 {
-		opts = append(opts, registry.OpPut(registry.WithKey(aliasBytes), registry.WithStrValue(serviceId)))
-		uniqueCmpOpts = append(uniqueCmpOpts,
-			registry.OpCmp(registry.CmpVer(aliasBytes), registry.CMP_EQUAL, 0))
+	failOpts := []registry.PluginOp{
+		registry.OpGet(registry.WithKey(indexBytes)),
 	}
 
-	resp, err := backend.Registry().TxnWithCmp(ctx, opts, uniqueCmpOpts, nil)
+	if len(serviceKey.Alias) > 0 {
+		opts = append(opts, registry.OpPut(registry.WithKey(aliasBytes), registry.WithStrValue(service.ServiceId)))
+		uniqueCmpOpts = append(uniqueCmpOpts,
+			registry.OpCmp(registry.CmpVer(aliasBytes), registry.CMP_EQUAL, 0))
+		failOpts = append(failOpts, registry.OpGet(registry.WithKey(aliasBytes)))
+	}
+
+	resp, err := backend.Registry().TxnWithCmp(ctx, opts, uniqueCmpOpts, failOpts)
 	if err != nil {
 		log.Errorf(err, "create micro-service failed, %s: commit data into etcd failed. operator: %s",
 			serviceFlag, remoteIP)
@@ -157,22 +160,33 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 		}, err
 	}
 	if !resp.Succeeded {
-		if s.isCreateServiceEx(in) == true {
-			serviceIdInner, _ := serviceUtil.GetServiceId(ctx, serviceKey)
-			log.Warnf("create micro-service failed, serviceId = %s , flag = %s: service already exists. operator: %s",
-				serviceIdInner, serviceFlag, remoteIP)
+		if len(requestServiceId) != 0 {
+			if len(resp.Kvs) == 0 ||
+				requestServiceId != util.BytesToStringWithNoCopy(resp.Kvs[0].Value) {
+				log.Warnf("create micro-service failed, %s: service already exists. operator: %s",
+					serviceFlag, remoteIP)
+				return &pb.CreateServiceResponse{
+					Response: pb.CreateResponse(scerr.ErrServiceAlreadyExists,
+						"ServiceId conflict or found the same service with different id."),
+				}, nil
+			}
+		}
 
+		if len(resp.Kvs) == 0 {
+			// internal error?
+			log.Errorf(nil, "create micro-service failed, %s: unexpected txn response. operator: %s",
+				serviceFlag, remoteIP)
 			return &pb.CreateServiceResponse{
-				Response:  pb.CreateResponse(pb.Response_SUCCESS, "register service successfully"),
-				ServiceId: serviceIdInner,
+				Response: pb.CreateResponse(scerr.ErrInternal, "Unexpected txn response."),
 			}, nil
 		}
 
-		log.Warnf("create micro-service failed, %s: service already exists. operator: %s",
-			serviceFlag, remoteIP)
-
+		serviceIdInner := util.BytesToStringWithNoCopy(resp.Kvs[0].Value)
+		log.Warnf("create micro-service failed, serviceId = %s , flag = %s: service already exists. operator: %s",
+			serviceIdInner, serviceFlag, remoteIP)
 		return &pb.CreateServiceResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceAlreadyExists, "Service already exists."),
+			Response:  pb.CreateResponse(pb.Response_SUCCESS, "register service successfully"),
+			ServiceId: serviceIdInner,
 		}, nil
 	}
 
@@ -184,7 +198,7 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 		serviceFlag, service.ServiceId, remoteIP)
 	return &pb.CreateServiceResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Register service successfully."),
-		ServiceId: serviceId,
+		ServiceId: service.ServiceId,
 	}, nil
 }
 

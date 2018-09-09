@@ -398,6 +398,18 @@ func TestEtcdClient_Txn(t *testing.T) {
 		t.Fatalf("TestEtcdClient failed, %#v", err)
 	}
 
+	// case: range request
+	resp, err = etcd.TxnWithCmp(context.Background(), nil, []registry.CompareOp{
+		{[]byte("/test_txn/c"), registry.CMP_VALUE, registry.CMP_EQUAL, "c"},
+	}, []registry.PluginOp{
+		{Action: registry.Get, Key: []byte("/test_txn/a")},
+		{Action: registry.Get, Key: []byte("/test_txn/"), Prefix: true},
+	})
+	if err != nil || resp == nil || resp.Succeeded || resp.Count != 3 { // a + [a,b]
+		t.Fatalf("TestEtcdClient failed, %#v", err)
+	}
+
+	// case: test key not exist
 	resp, err = etcd.TxnWithCmp(context.Background(), []registry.PluginOp{
 		{Action: registry.Put, Key: []byte("/test_txn/a"), Value: []byte("a")},
 		{Action: registry.Put, Key: []byte("/test_txn/b"), Value: []byte("b")},

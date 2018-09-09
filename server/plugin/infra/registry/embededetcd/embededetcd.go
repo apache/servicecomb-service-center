@@ -342,9 +342,21 @@ func (s *EtcdEmbed) TxnWithCmp(ctx context.Context, success []registry.PluginOp,
 	if err != nil {
 		return nil, err
 	}
+
+	var rangeResponse etcdserverpb.RangeResponse
+	for _, itf := range resp.Responses {
+		if rr, ok := itf.Response.(*etcdserverpb.ResponseOp_ResponseRange); ok {
+			// plz request the same type range kv in txn success/fail options
+			rangeResponse.Kvs = append(rangeResponse.Kvs, rr.ResponseRange.Kvs...)
+			rangeResponse.Count += rr.ResponseRange.Count
+		}
+	}
+
 	return &registry.PluginResponse{
 		Succeeded: resp.Succeeded,
 		Revision:  resp.Header.Revision,
+		Kvs:       rangeResponse.Kvs,
+		Count:     rangeResponse.Count,
 	}, nil
 }
 
