@@ -213,7 +213,8 @@ var _ = Describe("'Micro-service' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).To(Equal(scerr.ErrServiceAlreadyExists))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.ServiceId).To(Equal(sameId))
 
 				By("the same alias")
 				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
@@ -230,9 +231,64 @@ var _ = Describe("'Micro-service' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).To(Equal(scerr.ErrServiceAlreadyExists))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.ServiceId).To(Equal(sameId))
+
+				By("the same serviceId and the same serviceName")
+				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceId:   sameId,
+						ServiceName: "some-relay",
+						Alias:       "sr1",
+						AppId:       "default",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Schemas: []string{
+							"xxxxxxxx",
+						},
+						Status: "UP",
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.ServiceId).To(Equal(sameId))
+
+				By("the same serviceId and the same alias")
+				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceId:   sameId,
+						ServiceName: "some-relay1",
+						Alias:       "sr",
+						AppId:       "default",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Schemas: []string{
+							"xxxxxxxx",
+						},
+						Status: "UP",
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.ServiceId).To(Equal(sameId))
 
 				By("the same service key but with diff serviceId")
+				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceId:   "customId",
+						ServiceName: "some-relay",
+						Alias:       "sr1",
+						AppId:       "default",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Schemas: []string{
+							"xxxxxxxx",
+						},
+						Status: "UP",
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(scerr.ErrServiceAlreadyExists))
 				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
 						ServiceId:   "customId",
@@ -250,12 +306,12 @@ var _ = Describe("'Micro-service' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).To(Equal(scerr.ErrServiceAlreadyExists))
 
-				By("the same serviceId")
+				By("the same service id but with diff key")
 				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
 						ServiceId:   sameId,
-						ServiceName: "some-relay1",
-						Alias:       "sr",
+						ServiceName: "some-relay2",
+						Alias:       "sr2",
 						AppId:       "default",
 						Version:     "1.0.0",
 						Level:       "FRONT",
