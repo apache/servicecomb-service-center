@@ -19,6 +19,7 @@ set -e
 
 export GOOS=${1:-"linux"}
 export GOARCH=${4:-"amd64"}
+export GO_LDFLAGS=${GO_LDFLAGS:-"-linkmode 'external' -extldflags '-static' -s -w"}
 
 RELEASE=${2:-"0.0.1"}
 

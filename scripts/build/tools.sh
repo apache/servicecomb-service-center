@@ -61,7 +61,7 @@ build_service_center() {
     ## Build the Service-Center releases
     export GIT_COMMIT=$(git log  --pretty=format:'%h' -n 1)
     export BUILD_NUMBER=$RELEASE
-    local ldflags="${GO_LDFLAGS} -s -w -X 'github.com/apache/incubator-servicecomb-service-center/version.BUILD_TAG=$(date +%Y%m%d%H%M%S).$BUILD_NUMBER.$GIT_COMMIT'"
+    local ldflags="${GO_LDFLAGS} -X 'github.com/apache/incubator-servicecomb-service-center/version.BUILD_TAG=$(date +%Y%m%d%H%M%S).$BUILD_NUMBER.$GIT_COMMIT'"
     ldflags="${ldflags} -X 'github.com/apache/incubator-servicecomb-service-center/version.VERSION=$BUILD_NUMBER'"
 
     local BINARY_NAME=$app/service-center
@@ -78,7 +78,7 @@ build_frontend() {
     if [ "$GOOS" == "windows" ]; then
         BINARY_NAME=${BINARY_NAME}.exe
     fi
-    go build --ldflags "-s -w" -o ../$BINARY_NAME
+    go build --ldflags "${GO_LDFLAGS}" -o ../$BINARY_NAME
     cd -
 }
 
@@ -88,7 +88,7 @@ build_scctl() {
     cd scctl
     export GIT_COMMIT=$(git log  --pretty=format:'%h' -n 1)
     export BUILD_NUMBER=$RELEASE
-    local ldflags="${GO_LDFLAGS} -s -w -X 'github.com/apache/incubator-servicecomb-service-center/scctl/pkg/version.BUILD_TAG=$(date +%Y%m%d%H%M%S).$BUILD_NUMBER.$GIT_COMMIT'"
+    local ldflags="${GO_LDFLAGS} -X 'github.com/apache/incubator-servicecomb-service-center/scctl/pkg/version.BUILD_TAG=$(date +%Y%m%d%H%M%S).$BUILD_NUMBER.$GIT_COMMIT'"
     ldflags="${ldflags} -X 'github.com/apache/incubator-servicecomb-service-center/scctl/pkg/version.VERSION=$BUILD_NUMBER'"
 
     local BINARY_NAME=$app/scctl
