@@ -536,7 +536,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		// it means the shared micro-services must be the same env with SC.
 		provider.Environment = apt.Service.Environment
 
-		findFlag = fmt.Sprintf("consumer %s find shared service %s/%s/%s/%s", in.ConsumerServiceId,
+		findFlag = fmt.Sprintf("consumer '%s' find shared service %s/%s/%s/%s", in.ConsumerServiceId,
 			service.Environment, in.AppId, in.ServiceName, in.VersionRule)
 	} else {
 		// provider is not a shared micro-service,
@@ -544,7 +544,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		util.SetTargetDomainProject(ctx, util.ParseDomain(ctx), util.ParseProject(ctx))
 		provider.Tenant = util.ParseTargetDomainProject(ctx)
 
-		findFlag = fmt.Sprintf("consumer %s find service %s/%s/%s/%s", in.ConsumerServiceId,
+		findFlag = fmt.Sprintf("consumer '%s' find service %s/%s/%s/%s", in.ConsumerServiceId,
 			service.Environment, in.AppId, in.ServiceName, in.VersionRule)
 	}
 

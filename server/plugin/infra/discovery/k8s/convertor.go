@@ -51,19 +51,28 @@ func getFullName(namespace, name string) string {
 	return name
 }
 
-func getProtocol(port v1.EndpointPort) string {
+func getProtocol(port v1.EndpointPort) (string, bool) {
 	switch port.Protocol {
 	case SchemaTCP:
-		return SchemaHTTP
+		switch strings.ToUpper(port.Name) {
+		case SchemaHTTPS:
+			return protocolRest, true
+		default:
+			return protocolRest, false
+		}
 	default:
-		return strings.ToLower(string(port.Protocol))
+		return strings.ToLower(string(port.Protocol)), false
 	}
 }
 
 func generateEndpoint(ip string, port v1.EndpointPort) string {
+	protocol, secure := getProtocol(port)
 	u := url.URL{
-		Scheme: getProtocol(port),
+		Scheme: protocol,
 		Host:   ip + ":" + strconv.FormatInt(int64(port.Port), 10),
+	}
+	if secure {
+		u.RawQuery = "sslEnabled=true"
 	}
 	return u.String()
 }

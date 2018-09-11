@@ -36,7 +36,10 @@ import (
 
 const (
 	dialTimeout = 500 * time.Millisecond
-	endpoint    = "127.0.0.1:2379"
+)
+
+var (
+	endpoint = registry.RegistryConfig().ClusterAddresses
 )
 
 func TestEtcdClient(t *testing.T) {
@@ -57,10 +60,9 @@ func TestEtcdClient(t *testing.T) {
 	}
 
 	// base test
-	registry.RegistryConfig().ClusterAddresses = endpoint
 	inst := NewRegistry()
-	if inst == nil || firstEndpoint != "http://"+endpoint {
-		t.Fatalf("TestEtcdClient failed, %#v", firstEndpoint)
+	if inst == nil || firstEndpoint != endpoint {
+		t.Fatalf("TestEtcdClient failed, %s != %s", firstEndpoint, endpoint)
 	}
 	old1 := registry.RegistryConfig().ClusterAddresses
 	old2 := registry.RegistryConfig().DialTimeout

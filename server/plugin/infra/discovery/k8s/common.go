@@ -30,8 +30,10 @@ const (
 	TypeNode     K8sType = "Node"
 	TypePod      K8sType = "Pod"
 
-	SchemaTCP  = "TCP"
-	SchemaHTTP = "http"
+	SchemaTCP    = "TCP"
+	SchemaHTTP   = "HTTP"
+	SchemaHTTPS  = "HTTPS"
+	protocolRest = "rest"
 
 	defaultDomainProject = "default/default"
 

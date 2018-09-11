@@ -296,7 +296,7 @@ func TestGetProvider(t *testing.T) {
 }
 
 func TestAccessible(t *testing.T) {
-	err := Accessible(context.Background(), "", "")
+	err := Accessible(context.Background(), "xxx", "")
 	if err.StatusCode() != http.StatusBadRequest {
 		t.Fatalf("Accessible invalid failed")
 	}
