@@ -504,20 +504,23 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 
 	domainProject := util.ParseDomainProject(ctx)
 
-	service, err := serviceUtil.GetService(ctx, domainProject, in.ConsumerServiceId)
-	if err != nil {
-		log.Errorf(err, "get consumer failed, consumer %s find provider %s/%s/%s",
-			in.ConsumerServiceId, in.AppId, in.ServiceName, in.VersionRule)
-		return &pb.FindInstancesResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
-		}, err
-	}
-	if service == nil {
-		log.Errorf(nil, "consumer not exist, consumer %s find provider %s/%s/%s",
-			in.ConsumerServiceId, in.AppId, in.ServiceName, in.VersionRule)
-		return &pb.FindInstancesResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Consumer does not exist."),
-		}, nil
+	service := &pb.MicroService{}
+	if len(in.ConsumerServiceId) > 0 {
+		service, err = serviceUtil.GetService(ctx, domainProject, in.ConsumerServiceId)
+		if err != nil {
+			log.Errorf(err, "get consumer failed, consumer %s find provider %s/%s/%s",
+				in.ConsumerServiceId, in.AppId, in.ServiceName, in.VersionRule)
+			return &pb.FindInstancesResponse{
+				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			}, err
+		}
+		if service == nil {
+			log.Errorf(nil, "consumer not exist, consumer %s find provider %s/%s/%s",
+				in.ConsumerServiceId, in.AppId, in.ServiceName, in.VersionRule)
+			return &pb.FindInstancesResponse{
+				Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Consumer does not exist."),
+			}, nil
+		}
 	}
 
 	var findFlag string
@@ -583,7 +586,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 	}
 
 	// add dependency queue
-	if newVersionRule && len(item.ServiceIds) > 0 {
+	if len(in.ConsumerServiceId) > 0 && newVersionRule && len(item.ServiceIds) > 0 {
 		provider, err = s.reshapeProviderKey(ctx, provider, item.ServiceIds[0])
 		if provider != nil {
 			err = serviceUtil.AddServiceVersionRule(ctx, domainProject, service, provider)

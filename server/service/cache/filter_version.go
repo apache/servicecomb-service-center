@@ -39,7 +39,7 @@ func (f *VersionRuleFilter) Init(ctx context.Context, parent *cache.Node) (node 
 	ids, exist, err := serviceUtil.FindServiceIds(ctx, provider.Version, provider)
 	if err != nil {
 		consumer := ctx.Value(CTX_FIND_CONSUMER).(*pb.MicroService)
-		findFlag := fmt.Sprintf("consumer %s find provider %s/%s/%s", consumer.ServiceId,
+		findFlag := fmt.Sprintf("consumer '%s' find provider %s/%s/%s", consumer.ServiceId,
 			provider.AppId, provider.ServiceName, provider.Version)
 		log.Errorf(err, "VersionRuleFilter failed, %s", findFlag)
 		return

@@ -49,7 +49,7 @@ func (f *InstancesFilter) Init(ctx context.Context, parent *cache.Node) (node *c
 		resp, err := backend.Store().Instance().Search(ctx, opts...)
 		if err != nil {
 			consumer := ctx.Value(CTX_FIND_CONSUMER).(*pb.MicroService)
-			findFlag := fmt.Sprintf("consumer %s find provider %s/%s/%s", consumer.ServiceId,
+			findFlag := fmt.Sprintf("consumer '%s' find provider %s/%s/%s", consumer.ServiceId,
 				provider.AppId, provider.ServiceName, provider.Version)
 			log.Errorf(err, "Instance().Search failed, %s", findFlag)
 			return nil, err
