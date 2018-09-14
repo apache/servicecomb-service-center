@@ -152,7 +152,7 @@ func GetClientTLSConfig(opts ...SSLConfigOption) (tlsConfig *tls.Config, err err
 		RootCAs:            pool,
 		Certificates:       certs,
 		CipherSuites:       cfg.CipherSuites,
-		InsecureSkipVerify: !cfg.VerifyHostName,
+		InsecureSkipVerify: !cfg.VerifyPeer || !cfg.VerifyHostName,
 		MinVersion:         cfg.MinVersion,
 		MaxVersion:         cfg.MaxVersion,
 	}

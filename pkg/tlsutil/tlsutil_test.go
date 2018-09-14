@@ -112,4 +112,39 @@ func TestGetClientTLSConfig(t *testing.T) {
 	if clientTLSConfig.InsecureSkipVerify != true {
 		t.Fatalf("GetClientTLSConfig failed")
 	}
+
+	// verify peer and peer host
+	opts = append(opts,
+		WithVerifyPeer(false),
+		WithVerifyHostName(true),
+	)
+	clientTLSConfig, err = GetClientTLSConfig(opts...)
+	if err != nil {
+		t.Fatalf("GetClientTLSConfig failed")
+	}
+	if clientTLSConfig.RootCAs != nil || !clientTLSConfig.InsecureSkipVerify {
+		t.Fatalf("GetClientTLSConfig failed")
+	}
+	opts = append(opts,
+		WithVerifyPeer(true),
+		WithVerifyHostName(false),
+	)
+	clientTLSConfig, err = GetClientTLSConfig(opts...)
+	if err != nil {
+		t.Fatalf("GetClientTLSConfig failed")
+	}
+	if clientTLSConfig.RootCAs == nil || !clientTLSConfig.InsecureSkipVerify {
+		t.Fatalf("GetClientTLSConfig failed")
+	}
+	opts = append(opts,
+		WithVerifyPeer(true),
+		WithVerifyHostName(true),
+	)
+	clientTLSConfig, err = GetClientTLSConfig(opts...)
+	if err != nil {
+		t.Fatalf("GetClientTLSConfig failed")
+	}
+	if clientTLSConfig.RootCAs == nil || clientTLSConfig.InsecureSkipVerify {
+		t.Fatalf("GetClientTLSConfig failed")
+	}
 }
