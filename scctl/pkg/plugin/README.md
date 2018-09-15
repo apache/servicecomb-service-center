@@ -77,6 +77,64 @@ Get the instances list from ServiceCenter. `instance` command can be instead of 
 #   desktop-0001 | rest://127.0.0.1:30100/ | 0.0.1   | SERVICECENTER | default | 2m    | 18m
 ```
 
+
+### schema [options]
+
+Get the schemas content from ServiceCenter.
+
+#### Options
+
+- `app` the application name of microservice.
+- `name` the name of microservice.
+- `version` the semantic version of microservice.
+- `save-dir`(s) the directory to save the schema content.
+
+#### Examples
+```bash
+# save schemas to files
+./scctl get schema -s .
+#  2 / 2 [============================================================] 100.00% 0s
+# Finished.
+ls -l microservices/*
+# microservices/web.v0.0.1:
+# total 4
+# -rw-r----- 1 ubuntu ubuntu 611 Sep 15 23:05 show.yaml
+# 
+# microservices/provider.v0.0.1:
+# total 4
+# -rw-r----- 1 ubuntu ubuntu 610 Sep 15 23:05 say.yaml
+
+# print schema to console
+./scctl get schema --name provider
+# ---
+# swagger: "2.0"
+# info:
+#   version: "1.0.0"
+#   title: "swagger definition for com.service.provider.controller.ProviderImpl"
+#   x-java-interface: "cse.gen.springmvc.provider.provider.ProviderImplIntf"
+# basePath: "/say"
+# consumes:
+# - "application/json"
+# produces:
+# - "application/json"
+# paths:
+#   /helloworld:
+#     get:
+#       operationId: "helloworld"
+#       produces:
+#       - "application/json"
+#       parameters:
+#       - name: "name"
+#         in: "query"
+#         required: false
+#         type: "string"
+#       responses:
+#         200:
+#           description: "response of 200"
+#           schema:
+#             type: "string"
+```
+
 ## Diagnose commands
 
 The diagnostic command can output the ServiceCenter health report. 

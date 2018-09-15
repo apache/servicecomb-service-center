@@ -47,7 +47,7 @@ func InstanceCommandFunc(_ *cobra.Command, args []string) {
 	if err != nil {
 		cmd.StopAndExit(cmd.ExitError, err)
 	}
-	cache, err := sc.GetScCache(scClient)
+	cache, err := scClient.GetScCache()
 	if err != nil {
 		cmd.StopAndExit(cmd.ExitError, err)
 	}

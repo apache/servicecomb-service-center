@@ -65,7 +65,7 @@ func DiagnoseCommandFunc(_ *cobra.Command, args []string) {
 	}
 
 	// query sc
-	cache, err := sc.GetScCache(scClient)
+	cache, err := scClient.GetScCache()
 	if err != nil {
 		cmd.StopAndExit(cmd.ExitError, err)
 	}

@@ -20,7 +20,6 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/scctl/pkg/model"
 	"github.com/apache/incubator-servicecomb-service-center/scctl/pkg/writer"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	"strings"
 	"time"
 )
 
@@ -62,10 +61,8 @@ func (s *InstanceRecord) AgeString() string {
 }
 
 func (s *InstanceRecord) Domain() string {
-	if i := strings.Index(s.DomainProject, core.SPLIT); i >= 0 {
-		return s.DomainProject[:i]
-	}
-	return s.DomainProject
+	domain, _ := core.FromDomainProject(s.DomainProject)
+	return domain
 }
 
 func (s *InstanceRecord) PrintBody(fmt string, all bool) []string {

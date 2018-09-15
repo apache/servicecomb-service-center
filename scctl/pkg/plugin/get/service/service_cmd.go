@@ -35,7 +35,7 @@ func NewServiceCommand(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "service [options]",
 		Aliases: []string{"svc"},
-		Short:   "Output the service information of the service center ",
+		Short:   "Output the microservice information of the service center ",
 		Run:     ServiceCommandFunc,
 	}
 
@@ -48,7 +48,7 @@ func ServiceCommandFunc(_ *cobra.Command, args []string) {
 	if err != nil {
 		cmd.StopAndExit(cmd.ExitError, err)
 	}
-	cache, err := sc.GetScCache(scClient)
+	cache, err := scClient.GetScCache()
 	if err != nil {
 		cmd.StopAndExit(cmd.ExitError, err)
 	}

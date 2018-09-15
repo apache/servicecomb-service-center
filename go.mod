@@ -21,6 +21,7 @@ require (
 	github.com/astaxie/beego v1.8.0
 	github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973 // indirect
 	github.com/boltdb/bolt v1.3.1 // indirect
+	github.com/cheggaaa/pb v1.0.25
 	github.com/cockroachdb/cmux v0.0.0-20170110192607-30d10be49292 // indirect
 	github.com/coreos/etcd v3.1.9+incompatible
 	github.com/coreos/go-semver v0.2.0 // indirect

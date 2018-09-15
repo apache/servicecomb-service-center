@@ -13,10 +13,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bootstrap
+package pb
 
-import _ "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/version"
-import _ "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/diagnose"
-import _ "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/get/service"
-import _ "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/get/instance"
-import _ "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/get/schema"
+import (
+	"github.com/cheggaaa/pb"
+	"io"
+)
+
+func NewProgressBar(count int, w io.Writer) *pb.ProgressBar {
+	bar := pb.New(count)
+	bar.Output = w
+	bar.Empty = " "
+	bar.SetMaxWidth(80)
+	bar.ShowTimeLeft = false
+	bar.ShowSpeed = false
+	bar.Start()
+	return bar
+}

@@ -716,7 +716,7 @@ func (s *InstanceService) UpdateInstanceProperties(ctx context.Context, in *pb.U
 }
 
 func (s *InstanceService) ClusterHealth(ctx context.Context) (*pb.GetInstancesResponse, error) {
-	domainProject := util.StringJoin([]string{apt.REGISTRY_DOMAIN, apt.REGISTRY_PROJECT}, "/")
+	domainProject := apt.REGISTRY_DOMAIN_PROJECT
 	serviceId, err := serviceUtil.GetServiceId(ctx, &pb.MicroServiceKey{
 		AppId:       apt.Service.AppId,
 		Environment: apt.Service.Environment,

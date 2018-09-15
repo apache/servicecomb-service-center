@@ -20,7 +20,6 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/scctl/pkg/model"
 	"github.com/apache/incubator-servicecomb-service-center/scctl/pkg/writer"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	"strings"
 )
 
 const maxWidth = 35
@@ -56,10 +55,8 @@ func (s *ServiceRecord) AgeString() string {
 }
 
 func (s *ServiceRecord) Domain() string {
-	if i := strings.Index(s.DomainProject, core.SPLIT); i >= 0 {
-		return s.DomainProject[:i]
-	}
-	return s.DomainProject
+	domain, _ := core.FromDomainProject(s.DomainProject)
+	return domain
 }
 
 func (s *ServiceRecord) PrintBody(fmt string, all bool) []string {
