@@ -22,7 +22,6 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/scctl/pkg/version"
 	"github.com/spf13/cobra"
 	"os"
-	"path/filepath"
 )
 
 const (
@@ -52,18 +51,14 @@ func init() {
 
 	rootCmd.PersistentFlags().BoolVarP(&sc.VerifyPeer, "peer", "p", false,
 		"verify service center certificates.")
-	rootCmd.PersistentFlags().StringVar(&sc.CertPath, "cert",
-		filepath.Join(util.GetEnvString("SSL_ROOT", "."), "server.cer"),
-		"the certificate file path to access service center, can be overrode by $SSL_ROOT/server.cer.")
-	rootCmd.PersistentFlags().StringVar(&sc.KeyPath, "key",
-		filepath.Join(util.GetEnvString("SSL_ROOT", "."), "server_key.pem"),
-		"the key file path to access service center, can be overrode by $SSL_ROOT/server_key.pem.")
-	rootCmd.PersistentFlags().StringVar(&sc.CAPath, "ca",
-		filepath.Join(util.GetEnvString("SSL_ROOT", "."), "trust.cer"),
-		"the CA file path  to access service center, can be overrode by $SSL_ROOT/trust.cer.")
-	rootCmd.PersistentFlags().StringVar(&sc.KeyPassPath, "pass-file",
-		filepath.Join(util.GetEnvString("SSL_ROOT", "."), "cert_pwd"),
-		"the passphase file path to decrypt key file, can be overrode by $SSL_ROOT/cert_pwd.")
+	rootCmd.PersistentFlags().StringVar(&sc.CertPath, "cert", "",
+		"the certificate file path to access service center.")
+	rootCmd.PersistentFlags().StringVar(&sc.KeyPath, "key", "",
+		"the key file path to access service center.")
+	rootCmd.PersistentFlags().StringVar(&sc.CAPath, "ca", "",
+		"the CA file path  to access service center.")
+	rootCmd.PersistentFlags().StringVar(&sc.KeyPassPath, "pass-file", "",
+		"the passphase file path to decrypt key file.")
 	rootCmd.PersistentFlags().StringVar(&sc.KeyPass, "pass", "",
 		"the passphase string to decrypt key file.")
 }
