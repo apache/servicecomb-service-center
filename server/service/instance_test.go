@@ -1064,7 +1064,7 @@ var _ = Describe("'Instance' service", func() {
 					VersionRule:       "1.0.0+",
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
 
 				By("provider does not exist")
 				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
@@ -1436,7 +1436,7 @@ var _ = Describe("'Instance' service", func() {
 					ProviderInstanceId: instanceId2,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 
 				By("consumer does not exist")
 				resp, err = instanceResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
@@ -1497,7 +1497,7 @@ var _ = Describe("'Instance' service", func() {
 					ProviderServiceId: serviceId2,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 
 				By("consumer does not exist")
 				resp, err = instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{

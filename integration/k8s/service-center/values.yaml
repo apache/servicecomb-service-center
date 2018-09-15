@@ -12,9 +12,13 @@ frontend:
     type: NodePort
     externalPort: 30103
     internalPort: 30103
+  resources: {}
 
 sc:
   replicaCount: 2
+  discovery:
+    type: k8s # support local, etcd and k8s discovery mode
+    uris: ""
   image:
     repository: servicecomb/service-center
     tag: latest

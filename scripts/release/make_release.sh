@@ -57,6 +57,7 @@ esac
 
 ## Get the arch type
 export GOARCH=${4:-"amd64"}
+export GO_LDFLAGS=${GO_LDFLAGS:-"-linkmode 'external' -extldflags '-static' -s -w"}
 
 root_path=$(cd "$(dirname "$0")"; pwd)
 

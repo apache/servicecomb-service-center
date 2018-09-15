@@ -48,7 +48,7 @@ var (
 
 func FindInstanceReqValidator() *validate.Validator {
 	return findInstanceReqValidator.Init(func(v *validate.Validator) {
-		v.AddRule("ConsumerServiceId", GetServiceReqValidator().GetRule("ServiceId"))
+		v.AddRule("ConsumerServiceId", GetInstanceReqValidator().GetRule("ConsumerServiceId"))
 		v.AddRules(ExistenceReqValidator().GetRules())
 		v.AddRule("VersionRule", ExistenceReqValidator().GetRule("Version"))
 		v.AddRule("Tags", UpdateTagReqValidator().GetRule("Key"))
@@ -57,7 +57,7 @@ func FindInstanceReqValidator() *validate.Validator {
 
 func GetInstanceReqValidator() *validate.Validator {
 	return getInstanceReqValidator.Init(func(v *validate.Validator) {
-		v.AddRule("ConsumerServiceId", GetServiceReqValidator().GetRule("ServiceId"))
+		v.AddRule("ConsumerServiceId", &validate.ValidateRule{Max: 64, Regexp: serviceIdRegex})
 		v.AddRule("ProviderServiceId", GetServiceReqValidator().GetRule("ServiceId"))
 		v.AddRule("ProviderInstanceId", HeartbeatReqValidator().GetRule("InstanceId"))
 		v.AddRule("Tags", UpdateTagReqValidator().GetRule("Key"))

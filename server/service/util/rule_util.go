@@ -245,6 +245,10 @@ func patternBlackList(rulesOfProvider []*pb.ServiceRule, tagsOfConsumer map[stri
 }
 
 func Accessible(ctx context.Context, consumerId string, providerId string) *scerr.Error {
+	if len(consumerId) == 0 {
+		return nil
+	}
+
 	domainProject := util.ParseDomainProject(ctx)
 	targetDomainProject := util.ParseTargetDomainProject(ctx)
 

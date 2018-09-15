@@ -1,10 +1,12 @@
 {{- if .Values.sc.ingress.enabled -}}
 {{- $serviceName := include "service-center.fullname" . -}}
 {{- $servicePort := .Values.sc.service.externalPort -}}
+---
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: {{ template "service-center.fullname" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     app: {{ template "service-center.name" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}

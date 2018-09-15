@@ -5,6 +5,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: {{ template "service-center.fullname" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     app: {{ template "service-center.name" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
@@ -18,15 +19,24 @@ spec:
         app: {{ template "service-center.name" . }}
         release: {{ .Release.Name }}
     spec:
+      serviceAccountName: {{ template "service-center.fullname" . }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ template "service-center.fullname" . }}
+            items:
+            - key: app-config
+              path: app.conf
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.sc.image.repository }}:{{ .Values.sc.image.tag }}"
           imagePullPolicy: {{ .Values.sc.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.sc.service.internalPort }}
-          env:
-          - name: BACKEND_ADDRESS
-            value: http://{{ .Release.Name }}-etcd-client:2379
+          volumeMounts:
+          - name: config
+            mountPath: /opt/service-center/conf
+            readOnly: false
           livenessProbe:
             httpGet:
               path: /
@@ -47,6 +57,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: {{ template "service-center.fullname" . }}-frontend
+  namespace: {{ .Release.Namespace }}
   labels:
     app: {{ template "service-center.name" . }}-frontend
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
@@ -60,15 +71,23 @@ spec:
         app: {{ template "service-center.name" . }}-frontend
         release: {{ .Release.Name }}
     spec:
+      volumes:
+        - name: config
+          configMap:
+            name: {{ template "service-center.fullname" . }}-frontend
+            items:
+            - key: app-config
+              path: app.conf
       containers:
         - name: {{ .Chart.Name }}-frontend
           image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"
           imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.frontend.service.internalPort }}
-          env:
-          - name: SC_ADDRESS
-            value: http://{{ $serviceName }}:{{ $servicePort }}
+          volumeMounts:
+          - name: config
+            mountPath: /opt/frontend/conf
+            readOnly: false
           livenessProbe:
             httpGet:
               path: /

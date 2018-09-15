@@ -13,9 +13,23 @@ data:
   app-config: |
     httpaddr = ${HOSTNAME}
     httpport = {{ .Values.sc.service.internalPort }}
+    {{- if eq .Values.sc.discovery.type "k8s" }}
     discovery_plugin = k8s
     registry_plugin = buildin
     self_register = 0
+    {{- else if eq .Values.sc.discovery.type "etcd" }}
+    discovery_plugin = etcd
+    registry_plugin = etcd
+    self_register = 1
+    manager_cluster = {{ .Values.sc.discovery.uris }}
+    {{- else }}
+    discovery_plugin = etcd
+    registry_plugin = embeded_etcd
+    self_register = 1
+    manager_name = "sr-0"
+    manager_addr = "http://127.0.0.1:2380"
+    manager_cluster = "sr-0=http://127.0.0.1:2380"
+    {{- end }}
     ssl_mode = 0
     enable_pprof = 1
 
