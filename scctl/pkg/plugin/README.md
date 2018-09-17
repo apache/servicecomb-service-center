@@ -84,10 +84,12 @@ Get the schemas content from ServiceCenter.
 
 #### Options
 
+- `domain`(d) domain name, return all microservice schema contents from `default` domain by default.
 - `app` the application name of microservice.
 - `name` the name of microservice.
 - `version` the semantic version of microservice.
 - `save-dir`(s) the directory to save the schema content.
+- `all-domains` return all microservice schema contents from all domains.
 
 #### Examples
 ```bash
