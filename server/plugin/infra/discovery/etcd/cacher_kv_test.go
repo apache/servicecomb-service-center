@@ -97,7 +97,6 @@ func TestNewKvCacher(t *testing.T) {
 	var evt discovery.KvEvent
 	cr = &KvCacher{
 		Cfg: discovery.Configure().
-			WithNoEventPeriods(0).
 			WithEventFunc(func(e discovery.KvEvent) {
 				evt = e
 			}),
@@ -151,11 +150,13 @@ func TestNewKvCacher(t *testing.T) {
 	}
 
 	// case re-list and over no event times
-	lw.Bus <- nil
+	for i := 0; i < DEFAULT_FORCE_LIST_INTERVAL; i++ {
+		lw.Bus <- nil
+	}
 	evt.KV = nil
-	old := *cr.Cfg
-	cr.Cfg.WithNoEventPeriods(1)
-	cr.refresh(ctx)
+	for i := 0; i < DEFAULT_FORCE_LIST_INTERVAL; i++ {
+		cr.refresh(ctx)
+	}
 	// check event
 	if evt.Type != pb.EVT_UPDATE || evt.Revision != 4 || evt.KV.ModRevision != 3 || string(evt.KV.Key) != "ka" || string(evt.KV.Value.([]byte)) != "va" {
 		t.Fatalf("TestNewKvCacher failed, %v", evt)
@@ -167,10 +168,13 @@ func TestNewKvCacher(t *testing.T) {
 	}
 
 	lw.ListResponse = &registry.PluginResponse{Revision: 5}
-	lw.Bus <- nil
+	for i := 0; i < DEFAULT_FORCE_LIST_INTERVAL; i++ {
+		lw.Bus <- nil
+	}
 	evt.KV = nil
-	cr.refresh(ctx)
-	*cr.Cfg = old
+	for i := 0; i < DEFAULT_FORCE_LIST_INTERVAL; i++ {
+		cr.refresh(ctx)
+	}
 	// check event
 	if evt.Type != pb.EVT_DELETE || evt.Revision != 5 || evt.KV.ModRevision != 3 || string(evt.KV.Key) != "ka" || string(evt.KV.Value.([]byte)) != "va" {
 		t.Fatalf("TestNewKvCacher failed, %v", evt)
@@ -281,7 +285,7 @@ func TestNewKvCacher(t *testing.T) {
 	lw.ListResponse = test
 	lw.Bus <- nil
 	evt.KV = nil
-	old = *cr.Cfg
+	old := *cr.Cfg
 	cr.Cfg.WithParser(pb.MapParser)
 	cr.refresh(ctx)
 	// check event

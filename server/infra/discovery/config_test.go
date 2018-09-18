@@ -55,10 +55,6 @@ func TestConfigure(t *testing.T) {
 	if cfg.Period != 3*time.Second {
 		t.Fatalf("TestConfigure failed")
 	}
-	cfg.WithNoEventPeriods(1)
-	if cfg.NoEventPeriods != 1 {
-		t.Fatalf("TestConfigure failed")
-	}
 	cfg.WithDeferHandler(&mockDeferHandler{})
 	if cfg.DeferHandler == nil {
 		t.Fatalf("TestConfigure failed")
