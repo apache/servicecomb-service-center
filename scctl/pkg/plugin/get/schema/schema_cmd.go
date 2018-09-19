@@ -64,11 +64,19 @@ func NewSchemaCommand(parent *cobra.Command) *cobra.Command {
 	return cmd
 }
 
+// schemas/[${domain}/][${project}/][${env}/]${app}/${microservice}.${version}/${schemaId}.yaml
 func saveDirectory(root string, ms *adminModel.Microservice) string {
 	if len(root) == 0 {
 		return ""
 	}
-	return filepath.Join(root, "microservices", ms.Value.ServiceName+".v"+ms.Value.Version)
+	domain, project := core.FromDomainProject(model.GetDomainProject(ms))
+	if domain == core.REGISTRY_DOMAIN {
+		domain = ""
+	}
+	if project == core.REGISTRY_DOMAIN {
+		project = ""
+	}
+	return filepath.Join(root, "schemas", domain, project, ms.Value.Environment, ms.Value.AppId, ms.Value.ServiceName+".v"+ms.Value.Version)
 }
 
 func SchemaCommandFunc(_ *cobra.Command, args []string) {

@@ -88,7 +88,9 @@ Get the schemas content from ServiceCenter.
 - `app` the application name of microservice.
 - `name` the name of microservice.
 - `version` the semantic version of microservice.
-- `save-dir`(s) the directory to save the schema content.
+- `save-dir`(s) the directory to save the schema content,
+the schema file path structure follows the rule:
+`{save-dir}/schemas/[{domain}/][{project}/][{env}/]{app}/{microservice}.{version}/{schemaId}.yaml` 
 - `all-domains` return all microservice schema contents from all domains.
 
 #### Examples
@@ -97,12 +99,7 @@ Get the schemas content from ServiceCenter.
 ./scctl get schema -s .
 #  2 / 2 [============================================================] 100.00% 0s
 # Finished.
-ls -l microservices/*
-# microservices/web.v0.0.1:
-# total 4
-# -rw-r----- 1 ubuntu ubuntu 611 Sep 15 23:05 show.yaml
-# 
-# microservices/provider.v0.0.1:
+ls -l schemas/springmvc/provider.v0.0.1
 # total 4
 # -rw-r----- 1 ubuntu ubuntu 610 Sep 15 23:05 say.yaml
 
