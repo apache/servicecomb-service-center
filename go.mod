@@ -1,7 +1,7 @@
 module github.com/apache/incubator-servicecomb-service-center
 
 replace (
-	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b => github.com/istio/glog v0.0.0-20180224222734-2cc4b790554d
+	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b => github.com/go-chassis/glog v0.0.0-20180920075250-95a09b2413e9
 	go.uber.org/zap v1.9.0 => github.com/uber-go/zap v1.9.0
 	golang.org/x/crypto v0.0.0-20180820150726-614d502a4dac => github.com/golang/crypto v0.0.0-20180820150726-614d502a4dac
 	golang.org/x/net v0.0.0-20180824152047-4bcd98cce591 => github.com/golang/net v0.0.0-20180824152047-4bcd98cce591
@@ -32,7 +32,7 @@ require (
 	github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21 // indirect
 	github.com/eapache/queue v1.1.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
-	github.com/go-chassis/paas-lager v0.0.0-20180905100939-eff93e5e67db
+	github.com/go-chassis/paas-lager v0.0.0-20180727081842-50655443dc96
 	github.com/go-logfmt/logfmt v0.3.0 // indirect
 	github.com/go-mesh/openlogging v0.0.0-20180905092207-9cc15d7752d3 // indirect
 	github.com/gogo/protobuf v1.1.1 // indirect

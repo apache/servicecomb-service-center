@@ -31,8 +31,7 @@ import (
 )
 
 const (
-	defaultLogLevel  = "DEBUG"
-	loggerCallerSkip = 1
+	defaultLogLevel = "DEBUG"
 )
 
 var (
@@ -76,7 +75,7 @@ func Configure() Config {
 	return Config{
 		LoggerLevel:   defaultLogLevel,
 		LogFormatText: true,
-		CallerSkip:    loggerCallerSkip,
+		CallerSkip:    globalCallerSkip,
 	}
 }
 
@@ -199,14 +198,11 @@ func (l *Logger) Recover(r interface{}, callerSkip int) {
 	e := zapcore.Entry{
 		Level:  zap.PanicLevel, // zapcore sync automatically when larger than ErrorLevel
 		Time:   time.Now(),
-		Caller: zapcore.NewEntryCaller(runtime.Caller(callerSkip + l.Config.CallerSkip)),
+		Caller: zapcore.NewEntryCaller(runtime.Caller(callerSkip + 1)),
 		Stack:  zap.Stack("stack").String,
 	}
 	if err := l.zapLogger.Core().With([]zap.Field{zap.Reflect("recover", r)}).Write(e, nil); err != nil {
-		file, _, line, _ := util.GetCaller(0)
-		fmt.Fprintf(StderrSyncer, "%s\tERROR\t%s:%d\t%v\n",
-			time.Now().Format("2006-01-02T15:04:05.000Z0700"),
-			util.FileLastName(file), line, err)
+		fmt.Fprintf(StderrSyncer, "%s\tERROR\t%v\n", time.Now().Format("2006-01-02T15:04:05.000Z0700"), err)
 		fmt.Fprintln(StderrSyncer, util.BytesToStringWithNoCopy(debug.Stack()))
 		StderrSyncer.Sync()
 		return

@@ -97,7 +97,7 @@ func LogInfoOrWarnf(start time.Time, format string, args ...interface{}) {
 
 // LogPanic is a function can only be called in defer function.
 func LogPanic(r interface{}) {
-	logger.Recover(r, 3) // LogPanic()<-defer()<-panic()<-final caller
+	logger.Recover(r, 3) // LogPanic()<-Recover()<-panic()<-final caller
 }
 
 // Recover is a function call recover() and print the stack in log

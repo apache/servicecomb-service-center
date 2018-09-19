@@ -18,16 +18,11 @@
 package log
 
 import (
-	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	stlager "github.com/go-chassis/paas-lager"
 	"github.com/go-chassis/paas-lager/third_party/forked/cloudfoundry/lager"
-	"os"
 	"runtime/debug"
-	"time"
 )
-
-const loggerCallerSkip = 1
 
 var (
 	defaultLagerConfig = stlager.DefaultConfig()
@@ -84,7 +79,7 @@ func toLagerConfig(c Config) stlager.Config {
 // newLog new log, unsafe
 func NewLogger(cfg Config) *Logger {
 	if cfg.CallerSkip == 0 {
-		cfg.CallerSkip = loggerCallerSkip
+		cfg.CallerSkip = globalCallerSkip
 	}
 	stlager.Init(toLagerConfig(cfg))
 	return &Logger{
@@ -99,17 +94,8 @@ type Logger struct {
 }
 
 func (l *Logger) Recover(r interface{}, callerSkip int) {
-	file, method, line, ok := util.GetCaller(callerSkip + l.Config.CallerSkip)
-	if ok {
-		l.Errorf(nil, "recover from %s %s():%d! %v", util.FileLastName(file), method, line, r)
-		return
-	}
-
-	file, method, line, _ = util.GetCaller(0)
-	fmt.Fprintf(os.Stderr, "%s %s %s %d %s %s():%d %v\n",
-		time.Now().Format("2006-01-02T15:04:05.000Z07:00"), "FATAL", "system", os.Getpid(),
-		util.FileLastName(file), method, line, r)
-	fmt.Fprintln(os.Stderr, util.BytesToStringWithNoCopy(debug.Stack()))
+	l.Errorf(nil, "recover from panic, %v", r)
+	l.Error(util.BytesToStringWithNoCopy(debug.Stack()), nil)
 }
 
 func (l *Logger) Sync() {

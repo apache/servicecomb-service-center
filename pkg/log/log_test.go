@@ -85,8 +85,15 @@ func TestNewLogger(t *testing.T) {
 }
 
 func TestLogPanic(t *testing.T) {
+	defer func() {
+		defer func() {
+			LogPanic(recover())
+		}()
+		panic("bbb")
+	}()
 	defer Recover()
-	panic("aaa")
+	var a *int
+	*a = 0
 }
 
 func BenchmarkLogger(b *testing.B) {

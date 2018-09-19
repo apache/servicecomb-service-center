@@ -4,7 +4,7 @@ import:
   version: 91facc4ae520fef82c9aee6b6ae720d9ae789131
   repo: https://github.com/Knetic/govaluate
 - package: github.com/go-chassis/paas-lager
-  version: master
+  version: 50655443dc96e3d633667ca6310251ba2a3fe5c9
   repo: https://github.com/go-chassis/paas-lager
   subpackages:
   - third_party/forked/cloudfoundry/lager
@@ -356,8 +356,8 @@ import:
   - pkg/version
   - pkg/watch
 - package: github.com/golang/glog
-  version: 2cc4b790554d1a0c48fcc3aeb891e3de70cf8de0
-  repo: https://github.com/istio/glog
+  version: 95a09b2413e9d5d7c26c85f0ed3cff886cba7f1e
+  repo: https://github.com/go-chassis/glog
 - package: github.com/googleapis/gnostic
   version: v0.1.0
   repo: https://github.com/googleapis/gnostic
