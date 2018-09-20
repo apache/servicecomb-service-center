@@ -24,14 +24,13 @@ import (
 
 type Config struct {
 	// Key is the prefix to unique specify resource type
-	Key            string
-	InitSize       int
-	NoEventPeriods int
-	Timeout        time.Duration
-	Period         time.Duration
-	DeferHandler   DeferHandler
-	OnEvent        KvEventFunc
-	Parser         pb.Parser
+	Key          string
+	InitSize     int
+	Timeout      time.Duration
+	Period       time.Duration
+	DeferHandler DeferHandler
+	OnEvent      KvEventFunc
+	Parser       pb.Parser
 }
 
 func (cfg *Config) String() string {
@@ -69,11 +68,6 @@ func (cfg *Config) WithEventFunc(f KvEventFunc) *Config {
 	return cfg
 }
 
-func (cfg *Config) WithNoEventPeriods(p int) *Config {
-	cfg.NoEventPeriods = p
-	return cfg
-}
-
 func (cfg *Config) AppendEventFunc(f KvEventFunc) *Config {
 	if prev := cfg.OnEvent; prev != nil {
 		next := f
@@ -93,11 +87,10 @@ func (cfg *Config) WithParser(parser pb.Parser) *Config {
 
 func Configure() *Config {
 	return &Config{
-		Key:            "/",
-		Timeout:        DEFAULT_TIMEOUT,
-		Period:         time.Second,
-		NoEventPeriods: DEFAULT_MAX_NO_EVENT_INTERVAL,
-		InitSize:       DEFAULT_CACHE_INIT_SIZE,
-		Parser:         pb.BytesParser,
+		Key:      "/",
+		Timeout:  DEFAULT_TIMEOUT,
+		Period:   time.Second,
+		InitSize: DEFAULT_CACHE_INIT_SIZE,
+		Parser:   pb.BytesParser,
 	}
 }

@@ -19,11 +19,24 @@ package notification
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
 	"testing"
+	"time"
 )
 
+type mockSubscriberChan struct {
+	*BaseSubscriber
+	job chan NotifyJob
+}
+
+func (s *mockSubscriberChan) OnMessage(job NotifyJob) {
+	s.job <- job
+}
+
 func TestProcessor_Do(t *testing.T) {
-	mock1 := &mockSubscriber{BaseSubscriber: NewSubscriber(INSTANCE, "s1", "g1")}
-	mock2 := &mockSubscriber{BaseSubscriber: NewSubscriber(INSTANCE, "s1", "g2")}
+	delay := 50 * time.Millisecond
+	mock1 := &mockSubscriberChan{BaseSubscriber: NewSubscriber(INSTANCE, "s1", "g1"),
+		job: make(chan NotifyJob, 1)}
+	mock2 := &mockSubscriberChan{BaseSubscriber: NewSubscriber(INSTANCE, "s1", "g2"),
+		job: make(chan NotifyJob, 1)}
 	p := NewProcessor("p1", 0)
 	gopool.Go(p.Do)
 	if p.Name() != "p1" {
@@ -48,27 +61,55 @@ func TestProcessor_Do(t *testing.T) {
 		t.Fatalf("TestProcessor_Do")
 	}
 	p.AddSubscriber(mock1)
+	p.AddSubscriber(mock2)
 	job := &BaseNotifyJob{group: "g1"}
 	p.Accept(job)
-	if mock1.job != nil {
+	select {
+	case <-mock1.job:
 		t.Fatalf("TestProcessor_Do")
+	case <-time.After(delay):
 	}
 	job.subject = "s1"
 	job.group = "g3"
 	p.Accept(job)
-	if mock1.job != nil {
+	select {
+	case <-mock1.job:
 		t.Fatalf("TestProcessor_Do")
+	case <-time.After(delay):
 	}
 	job.subject = "s1"
 	job.group = "g1"
 	p.Accept(job)
-	if mock1.job != job || mock2.job != nil {
+	select {
+	case j := <-mock1.job:
+		if j != job {
+			t.Fatalf("TestProcessor_Do")
+		}
+	case <-time.After(delay):
 		t.Fatalf("TestProcessor_Do")
+	}
+	select {
+	case <-mock2.job:
+		t.Fatalf("TestProcessor_Do")
+	case <-time.After(delay):
 	}
 	job.subject = "s1"
 	job.group = ""
 	p.Accept(job)
-	if mock1.job != job && mock2.job != job {
+	select {
+	case j := <-mock1.job:
+		if j != job {
+			t.Fatalf("TestProcessor_Do")
+		}
+	case <-time.After(delay):
+		t.Fatalf("TestProcessor_Do")
+	}
+	select {
+	case j := <-mock2.job:
+		if j != job {
+			t.Fatalf("TestProcessor_Do")
+		}
+	case <-time.After(delay):
 		t.Fatalf("TestProcessor_Do")
 	}
 }

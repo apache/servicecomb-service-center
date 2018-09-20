@@ -36,8 +36,8 @@ import (
 type KvCacher struct {
 	Cfg *discovery.Config
 
-	latestListRev  int64
-	noEventPeriods int
+	latestListRev int64
+	reListCount   int
 
 	ready     chan struct{}
 	lw        ListWatch
@@ -53,22 +53,16 @@ func (c *KvCacher) Config() *discovery.Config {
 
 func (c *KvCacher) needList() bool {
 	rev := c.lw.Revision()
+	// init stage or there is a backend error
 	if rev == 0 {
-		c.noEventPeriods = 0
+		c.reListCount = 0
 		return true
 	}
-	if c.latestListRev != rev {
-		c.noEventPeriods = 0
+	c.reListCount++
+	if c.reListCount < DEFAULT_FORCE_LIST_INTERVAL {
 		return false
 	}
-	c.noEventPeriods++
-	if c.Cfg.NoEventPeriods == 0 || c.noEventPeriods < c.Cfg.NoEventPeriods {
-		return false
-	}
-
-	log.Debugf("no events come in more then %s, need to list key %s, rev: %d",
-		time.Duration(c.noEventPeriods)*c.Cfg.Timeout, c.Cfg.Key, rev)
-	c.noEventPeriods = 0
+	c.reListCount = 0
 	return true
 }
 

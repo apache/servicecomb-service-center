@@ -21,8 +21,6 @@ import (
 )
 
 const (
-	// re-list when there is no event coming in more than 1h(=120*30s)
-	DEFAULT_MAX_NO_EVENT_INTERVAL = 120
-	DEFAULT_TIMEOUT               = 30 * time.Second
-	DEFAULT_CACHE_INIT_SIZE       = 100
+	DEFAULT_TIMEOUT         = 30 * time.Second
+	DEFAULT_CACHE_INIT_SIZE = 100
 )
