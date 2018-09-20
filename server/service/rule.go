@@ -199,23 +199,24 @@ func (s *MicroServiceService) UpdateRule(ctx context.Context, in *pb.UpdateServi
 		}, nil
 	}
 
-	oldRulePatten := rule.Pattern
-	oldRuleAttr := rule.Attribute
+	copyRuleRef := *rule
+	oldRulePatten := copyRuleRef.Pattern
+	oldRuleAttr := copyRuleRef.Attribute
 	isChangeIndex := false
-	if rule.Attribute != in.GetRule().Attribute {
+	if copyRuleRef.Attribute != in.GetRule().Attribute {
 		isChangeIndex = true
-		rule.Attribute = in.GetRule().Attribute
+		copyRuleRef.Attribute = in.GetRule().Attribute
 	}
-	if rule.Pattern != in.GetRule().Pattern {
+	if copyRuleRef.Pattern != in.GetRule().Pattern {
 		isChangeIndex = true
-		rule.Pattern = in.GetRule().Pattern
+		copyRuleRef.Pattern = in.GetRule().Pattern
 	}
-	rule.RuleType = in.GetRule().RuleType
-	rule.Description = in.GetRule().Description
-	rule.ModTimestamp = strconv.FormatInt(time.Now().Unix(), 10)
+	copyRuleRef.RuleType = in.GetRule().RuleType
+	copyRuleRef.Description = in.GetRule().Description
+	copyRuleRef.ModTimestamp = strconv.FormatInt(time.Now().Unix(), 10)
 
 	key := apt.GenerateServiceRuleKey(domainProject, in.ServiceId, in.RuleId)
-	data, err := json.Marshal(rule)
+	data, err := json.Marshal(copyRuleRef)
 	if err != nil {
 		log.Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: marshal service rule failed.", in.ServiceId, in.RuleId)
 		return &pb.UpdateServiceRuleResponse{
@@ -225,8 +226,8 @@ func (s *MicroServiceService) UpdateRule(ctx context.Context, in *pb.UpdateServi
 	opts := []registry.PluginOp{}
 	if isChangeIndex {
 		//加入新的rule index
-		indexKey := apt.GenerateRuleIndexKey(domainProject, in.ServiceId, rule.Attribute, rule.Pattern)
-		opts = append(opts, registry.OpPut(registry.WithStrKey(indexKey), registry.WithStrValue(rule.RuleId)))
+		indexKey := apt.GenerateRuleIndexKey(domainProject, in.ServiceId, copyRuleRef.Attribute, copyRuleRef.Pattern)
+		opts = append(opts, registry.OpPut(registry.WithStrKey(indexKey), registry.WithStrValue(copyRuleRef.RuleId)))
 
 		//删除旧的rule index
 		oldIndexKey := apt.GenerateRuleIndexKey(domainProject, in.ServiceId, oldRuleAttr, oldRulePatten)
