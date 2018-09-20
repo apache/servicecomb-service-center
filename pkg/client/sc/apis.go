@@ -18,24 +18,30 @@ package sc
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
 	"github.com/apache/incubator-servicecomb-service-center/server/admin/model"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
+	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/version"
 	"io/ioutil"
 	"net/http"
 )
 
 const (
-	apiVersionURL = "/version"
-	apiDumpURL    = "/v4/default/admin/dump"
+	apiVersionURL    = "/version"
+	apiDumpURL       = "/v4/default/admin/dump"
+	apiGetSchemasURL = "/v4/%s/registry/microservices/%s/schemas"
 )
 
-func GetScVersion(scClient *rest.URLClient) (*version.VersionSet, error) {
+func (c *SCClient) commonHeaders() http.Header {
 	var headers = make(http.Header)
 	if len(Token) > 0 {
 		headers.Set("X-Auth-Token", Token)
 	}
-	resp, err := scClient.HttpDo(http.MethodGet, Addr+apiVersionURL, headers, nil)
+	return headers
+}
+
+func (c *SCClient) GetScVersion() (*version.VersionSet, error) {
+	resp, err := c.client.HttpDo(http.MethodGet, Addr+apiVersionURL, c.commonHeaders(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -60,14 +66,10 @@ func GetScVersion(scClient *rest.URLClient) (*version.VersionSet, error) {
 	return v, nil
 }
 
-func GetScCache(scClient *rest.URLClient) (*model.Cache, error) {
-	headers := http.Header{
-		"X-Domain-Name": []string{"default"},
-	}
-	if len(Token) > 0 {
-		headers.Set("X-Auth-Token", Token)
-	}
-	resp, err := scClient.HttpDo(http.MethodGet, Addr+apiDumpURL, headers, nil)
+func (c *SCClient) GetScCache() (*model.Cache, error) {
+	headers := c.commonHeaders()
+	headers.Set("X-Domain-Name", "default")
+	resp, err := c.client.HttpDo(http.MethodGet, Addr+apiDumpURL, headers, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -90,4 +92,35 @@ func GetScCache(scClient *rest.URLClient) (*model.Cache, error) {
 	}
 
 	return dump.Cache, nil
+}
+
+func (c *SCClient) GetSchemasByServiceId(domainProject, serviceId string) ([]*pb.Schema, error) {
+	domain, project := core.FromDomainProject(domainProject)
+	headers := c.commonHeaders()
+	headers.Set("X-Domain-Name", domain)
+	resp, err := c.client.HttpDo(http.MethodGet,
+		Addr+fmt.Sprintf(apiGetSchemasURL, project, serviceId)+"?withSchema=1",
+		headers, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("%d %s", resp.StatusCode, string(body))
+	}
+
+	schemas := &pb.GetAllSchemaResponse{}
+	err = json.Unmarshal(body, schemas)
+	if err != nil {
+		fmt.Println(string(body))
+		return nil, err
+	}
+
+	return schemas.Schemas, nil
 }

@@ -33,13 +33,13 @@ var (
 	CAPath      string
 )
 
-func NewSCClient() (*rest.URLClient, error) {
+func NewSCClient() (*SCClient, error) {
 	ssl := strings.Index(Addr, "https://") >= 0
 	if ssl && len(KeyPass) == 0 && len(KeyPassPath) > 0 {
 		content, _ := ioutil.ReadFile(KeyPassPath)
 		KeyPass = string(content)
 	}
-	return rest.GetURLClient(&rest.URLClientOption{
+	client, err := rest.GetURLClient(&rest.URLClientOption{
 		SSLEnabled:     ssl,
 		VerifyPeer:     VerifyPeer,
 		CAFile:         CAPath,
@@ -48,4 +48,12 @@ func NewSCClient() (*rest.URLClient, error) {
 		CertKeyPWD:     KeyPass,
 		RequestTimeout: 10 * time.Second,
 	})
+	if err != nil {
+		return nil, err
+	}
+	return &SCClient{client: client}, nil
+}
+
+type SCClient struct {
+	client *rest.URLClient
 }

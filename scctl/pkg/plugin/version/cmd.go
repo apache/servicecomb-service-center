@@ -51,7 +51,7 @@ func VersionCommandFunc(_ *cobra.Command, _ []string) {
 	if err != nil {
 		return
 	}
-	v, err := sc.GetScVersion(scClient)
+	v, err := scClient.GetScVersion()
 	if err != nil {
 		return
 	}

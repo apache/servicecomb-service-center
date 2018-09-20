@@ -35,8 +35,9 @@ var (
 )
 
 const (
-	REGISTRY_DOMAIN  = "default"
-	REGISTRY_PROJECT = "default"
+	REGISTRY_DOMAIN         = "default"
+	REGISTRY_PROJECT        = "default"
+	REGISTRY_DOMAIN_PROJECT = "default/default"
 
 	REGISTRY_APP_ID       = "default"
 	REGISTRY_SERVICE_NAME = "SERVICECENTER"
@@ -90,7 +91,7 @@ func AddDefaultContextValue(ctx context.Context) context.Context {
 }
 
 func IsDefaultDomainProject(domainProject string) bool {
-	return domainProject == util.StringJoin([]string{REGISTRY_DOMAIN, REGISTRY_PROJECT}, "/")
+	return domainProject == REGISTRY_DOMAIN_PROJECT
 }
 
 func SetSharedMode() {

@@ -162,3 +162,15 @@ func GetInfoFromDependencyRuleKV(key []byte) *pb.MicroServiceKey {
 		Version:     keys[l-1],
 	}
 }
+
+func FromDomainProject(domainProject string) (domain, project string) {
+	if i := strings.Index(domainProject, "/"); i >= 0 {
+		return domainProject[:i], domainProject[i+1:]
+	}
+	return domainProject, ""
+}
+
+func ToDomainProject(domain, project string) (domainProject string) {
+	domainProject = domain + "/" + project
+	return
+}

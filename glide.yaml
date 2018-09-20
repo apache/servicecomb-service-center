@@ -404,3 +404,6 @@ import:
 - package: github.com/olekukonko/tablewriter
   version: d4647c9c7a84d847478d890b816b7d8b62b0b279
   repo: https://github.com/olekukonko/tablewriter
+- package: github.com/cheggaaa/pb
+  version: v1.0.25
+  repo: https://github.com/cheggaaa/pb
