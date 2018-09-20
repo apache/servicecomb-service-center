@@ -518,13 +518,12 @@ func (s *MicroServiceService) UpdateProperties(ctx context.Context, in *pb.Updat
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "service does not exist."),
 		}, nil
 	}
-	service.Properties = make(map[string]string)
-	for propertyKey := range in.Properties {
-		service.Properties[propertyKey] = in.Properties[propertyKey]
-	}
-	service.ModTimestamp = strconv.FormatInt(time.Now().Unix(), 10)
 
-	data, err := json.Marshal(service)
+	copyServiceRef := *service
+	copyServiceRef.Properties = in.Properties
+	copyServiceRef.ModTimestamp = strconv.FormatInt(time.Now().Unix(), 10)
+
+	data, err := json.Marshal(copyServiceRef)
 	if err != nil {
 		log.Errorf(err, "update service properties failed, serviceId is %s: json marshal service failed.", in.ServiceId)
 		return &pb.UpdateServicePropsResponse{

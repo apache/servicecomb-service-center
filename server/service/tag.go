@@ -71,13 +71,13 @@ func (s *MicroServiceService) AddTags(ctx context.Context, in *pb.AddServiceTags
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
-	if len(dataTags) > 0 {
-		for key, value := range addTags {
-			dataTags[key] = value
+	for key, value := range dataTags {
+		if _, ok := addTags[key]; ok {
+			continue
 		}
-	} else {
-		dataTags = addTags
+		addTags[key] = value
 	}
+	dataTags = addTags
 
 	checkErr := serviceUtil.AddTagIntoETCD(ctx, domainProject, in.ServiceId, dataTags)
 	if checkErr != nil {
@@ -130,9 +130,14 @@ func (s *MicroServiceService) UpdateTag(ctx context.Context, in *pb.UpdateServic
 			Response: pb.CreateResponse(scerr.ErrTagNotExists, "Update tag for service failed for update tags not exist, please add first."),
 		}, nil
 	}
-	tags[in.Key] = in.Value
 
-	checkErr := serviceUtil.AddTagIntoETCD(ctx, domainProject, in.ServiceId, tags)
+	copyTags := make(map[string]string, len(tags))
+	for k, v := range tags {
+		copyTags[k] = v
+	}
+	copyTags[in.Key] = in.Value
+
+	checkErr := serviceUtil.AddTagIntoETCD(ctx, domainProject, in.ServiceId, copyTags)
 	if checkErr != nil {
 		log.Errorf(checkErr, "update service tag failed, serviceId %s, tag %s.", in.ServiceId, tagFlag)
 		resp := &pb.UpdateServiceTagResponse{
@@ -175,18 +180,23 @@ func (s *MicroServiceService) DeleteTags(ctx context.Context, in *pb.DeleteServi
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
+
+	copyTags := make(map[string]string, len(tags))
+	for k, v := range tags {
+		copyTags[k] = v
+	}
 	for _, key := range in.Keys {
-		if _, ok := tags[key]; !ok {
+		if _, ok := copyTags[key]; !ok {
 			log.Errorf(nil, "delete service tags failed, serviceId %s, tags %v: tag %s not exist.", in.ServiceId, in.Keys, key)
 			return &pb.DeleteServiceTagsResponse{
 				Response: pb.CreateResponse(scerr.ErrTagNotExists, "Delete tags failed for this key "+key+" does not exist."),
 			}, nil
 		}
-		delete(tags, key)
+		delete(copyTags, key)
 	}
 
 	// tags 可能size == 0
-	data, err := json.Marshal(tags)
+	data, err := json.Marshal(copyTags)
 	if err != nil {
 		log.Errorf(err, "delete service tags failed, serviceId %s, tags %v: marshall service tag failed.", in.ServiceId, in.Keys)
 		return &pb.DeleteServiceTagsResponse{

@@ -653,9 +653,10 @@ func (s *InstanceService) UpdateStatus(ctx context.Context, in *pb.UpdateInstanc
 		}, nil
 	}
 
-	instance.Status = in.Status
+	copyInstanceRef := *instance
+	copyInstanceRef.Status = in.Status
 
-	if err := serviceUtil.UpdateInstance(ctx, domainProject, instance); err != nil {
+	if err := serviceUtil.UpdateInstance(ctx, domainProject, &copyInstanceRef); err != nil {
 		log.Errorf(err, "update instance status failed, %s", updateStatusFlag)
 		resp := &pb.UpdateInstanceStatusResponse{
 			Response: pb.CreateResponseWithSCErr(err),
@@ -696,9 +697,10 @@ func (s *InstanceService) UpdateInstanceProperties(ctx context.Context, in *pb.U
 		}, nil
 	}
 
-	instance.Properties = in.Properties
+	copyInstanceRef := *instance
+	copyInstanceRef.Properties = in.Properties
 
-	if err := serviceUtil.UpdateInstance(ctx, domainProject, instance); err != nil {
+	if err := serviceUtil.UpdateInstance(ctx, domainProject, &copyInstanceRef); err != nil {
 		log.Errorf(err, "update instance properties failed, %s", instanceFlag)
 		resp := &pb.UpdateInstancePropsResponse{
 			Response: pb.CreateResponseWithSCErr(err),
