@@ -146,7 +146,7 @@ angular.module('serviceCenter.sc')
                 httpService.apiRequest(url, method, null, headers, "nopopup").then(function(response) {
                     if (response && response.data && response.data.schema) {
                         $scope.template = response.data.schema;
-                        $scope.template = $scope.template.replace(/\\/g, "");
+                        $scope.template = $scope.template.replace(/\\\s/g, "");
                         $scope.json = YAML.parse($scope.template);
                         const ui = SwaggerUIBundle({
                             spec: $scope.json,
@@ -270,7 +270,7 @@ angular.module('serviceCenter.sc')
                                         var ip = highway[1].substring(2, highway[1].length) + ":" + highway[2].substring(0, 4);
                                     }
                                     var schema = response.data.schema;
-                                    schema = schema.replace(/\\/g, "");
+                                    schema = schema.replace(/\\\s/g, "");
                                     var json = YAML.parse(schema);
                                     json.basePath = "/testSchema" + json.basePath;
                                     json.instanceIP = ip;
