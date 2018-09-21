@@ -111,4 +111,22 @@ func TestKvCache_Get(t *testing.T) {
 	if kv := c.Get("/a/b/c/d/e/1"); kv == nil || kv.Version != 2 {
 		t.Fatalf("TestKvCache Put() failed, %v", kv)
 	}
+
+	c.Put("/x//p/*", &KeyValue{Version: 1})
+	c.Put("/x//p/app/name/version1", &KeyValue{Version: 2})
+	c.Put("/x//p/app/name/version2", &KeyValue{Version: 3})
+	n := c.GetPrefix("/x//p/", nil)
+	if n != 3 {
+		t.Fatalf("TestKvCache Put() failed, %v", n)
+	}
+	kvs := make([]*KeyValue, 0, n)
+	c.GetPrefix("/x//p/", &kvs)
+	if len(kvs) != 3 {
+		t.Fatalf("TestKvCache Put() failed, %v", kvs)
+	}
+	for _, kv := range kvs {
+		if kv.Version != 1 && kv.Version != 2 && kv.Version != 3 {
+			t.Fatalf("TestKvCache Put() failed, %v", kvs)
+		}
+	}
 }
