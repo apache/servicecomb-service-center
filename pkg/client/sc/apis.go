@@ -41,7 +41,7 @@ func (c *SCClient) commonHeaders() http.Header {
 }
 
 func (c *SCClient) GetScVersion() (*version.VersionSet, error) {
-	resp, err := c.client.HttpDo(http.MethodGet, Addr+apiVersionURL, c.commonHeaders(), nil)
+	resp, err := c.URLClient.HttpDo(http.MethodGet, Addr+apiVersionURL, c.commonHeaders(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (c *SCClient) GetScVersion() (*version.VersionSet, error) {
 func (c *SCClient) GetScCache() (*model.Cache, error) {
 	headers := c.commonHeaders()
 	headers.Set("X-Domain-Name", "default")
-	resp, err := c.client.HttpDo(http.MethodGet, Addr+apiDumpURL, headers, nil)
+	resp, err := c.URLClient.HttpDo(http.MethodGet, Addr+apiDumpURL, headers, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func (c *SCClient) GetSchemasByServiceId(domainProject, serviceId string) ([]*pb
 	domain, project := core.FromDomainProject(domainProject)
 	headers := c.commonHeaders()
 	headers.Set("X-Domain-Name", domain)
-	resp, err := c.client.HttpDo(http.MethodGet,
+	resp, err := c.URLClient.HttpDo(http.MethodGet,
 		Addr+fmt.Sprintf(apiGetSchemasURL, project, serviceId)+"?withSchema=1",
 		headers, nil)
 	if err != nil {

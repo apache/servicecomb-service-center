@@ -53,8 +53,9 @@ type abstractCompareHolder struct {
 
 func (h *abstractCompareHolder) toMap(getter model.Getter) map[string]*model.KV {
 	m := make(map[string]*model.KV)
-	getter.ForEach(func(i int, v *model.KV) {
+	getter.ForEach(func(i int, v *model.KV) bool {
 		m[v.Key] = v
+		return true
 	})
 	return m
 }

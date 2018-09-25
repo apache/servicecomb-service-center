@@ -522,7 +522,7 @@ func callback(action registry.ActionType, rev int64, kvs []*mvccpb.KeyValue, cb 
 }
 
 func getEmbedInstance() mgr.PluginInstance {
-	log.Warnf("starting service center in embed mode")
+	log.Warnf("enable embedded registry mode")
 
 	hostName := beego.AppConfig.DefaultString("manager_name", "sc-0")
 	mgrAddrs := beego.AppConfig.DefaultString("manager_addr", "http://127.0.0.1:2380")

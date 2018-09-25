@@ -41,7 +41,7 @@ func (se *K8sAdaptor) Ready() <-chan struct{} {
 	if r, ok := se.Cacher.(discovery.Runnable); ok {
 		return r.Ready()
 	}
-	return nil //closedCh
+	return closedCh
 }
 
 func NewK8sAdaptor(t discovery.Type, cfg *discovery.Config) *K8sAdaptor {

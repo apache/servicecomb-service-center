@@ -18,12 +18,13 @@ package k8s
 import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
 	"k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type ServiceCacher struct {
-	*K8sCacher
+	*discovery.CommonCacher
 }
 
 // onServiceEvent is the method to refresh service cache
@@ -51,8 +52,8 @@ func (c *ServiceCacher) onServiceEvent(evt K8sEvent) {
 	}
 }
 
-func NewServiceCacher(c *K8sCacher) (s *ServiceCacher) {
-	s = &ServiceCacher{K8sCacher: c}
+func NewServiceCacher(c *discovery.CommonCacher) (s *ServiceCacher) {
+	s = &ServiceCacher{CommonCacher: c}
 	Kubernetes().AppendEventFunc(TypeService, s.onServiceEvent)
 	return
 }

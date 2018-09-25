@@ -26,6 +26,7 @@ import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/i
 import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/registry/embededetcd"
 
 // discovery
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/discovery/sc"
 import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/discovery/etcd"
 import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/discovery/k8s"
 

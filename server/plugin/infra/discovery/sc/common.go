@@ -13,25 +13,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package etcd
+package sc
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
-	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
+	"os"
+	"time"
+)
+
+const (
+	envScAddress     = "SC_ADDRESS"
+	defaultScAddress = "http://127.0.0.1:30100"
+	reListInterval   = 5 * time.Second
+)
+
+var (
+	closedCh = make(chan struct{})
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "buildin", NewRepository})
-	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "etcd", NewRepository})
+	close(closedCh)
 }
 
-type EtcdRepository struct {
-}
-
-func (r *EtcdRepository) New(t discovery.Type, cfg *discovery.Config) discovery.Adaptor {
-	return NewEtcdAdaptor(t.String(), cfg)
-}
-
-func NewRepository() mgr.PluginInstance {
-	return &EtcdRepository{}
+func GetScAddress() string {
+	addr := os.Getenv(envScAddress)
+	if len(addr) == 0 {
+		return defaultScAddress
+	}
+	return addr
 }

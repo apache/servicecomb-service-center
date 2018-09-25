@@ -19,14 +19,7 @@ package etcd
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
-	"sync"
-)
-
-var (
-	defaultEtcdAdaptor *EtcdAdaptor
-	newEtcdAdaptorOnce sync.Once
 )
 
 type EtcdAdaptor struct {
@@ -68,14 +61,4 @@ func NewEtcdAdaptor(name string, cfg *discovery.Config) *EtcdAdaptor {
 		adaptor.Indexer = NewEtcdIndexer(cfg.Key, cfg.Parser)
 	}
 	return &adaptor
-}
-
-func DefaultKvEntity() *EtcdAdaptor {
-	newEtcdAdaptorOnce.Do(func() {
-		defaultEtcdAdaptor = &EtcdAdaptor{
-			Cacher:  discovery.NullCacher,
-			Indexer: NewEtcdIndexer(discovery.Configure().Key, pb.BytesParser),
-		}
-	})
-	return defaultEtcdAdaptor
 }

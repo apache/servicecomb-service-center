@@ -51,9 +51,9 @@ func NewSCClient() (*SCClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &SCClient{client: client}, nil
+	return &SCClient{URLClient: client}, nil
 }
 
 type SCClient struct {
-	client *rest.URLClient
+	*rest.URLClient
 }

@@ -16,7 +16,6 @@
 package k8s
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
 	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
 )
@@ -29,14 +28,7 @@ type K8sRepository struct {
 }
 
 func (r *K8sRepository) New(t discovery.Type, cfg *discovery.Config) discovery.Adaptor {
-	if cfg == nil {
-		// do not new instance
-		log.Warnf("type '%s' config is nil", t)
-		return nil
-	}
-	e := NewK8sAdaptor(t, cfg)
-	e.Run()
-	return e
+	return NewK8sAdaptor(t, cfg)
 }
 
 func NewRepository() mgr.PluginInstance {

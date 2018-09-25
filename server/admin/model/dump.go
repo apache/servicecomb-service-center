@@ -22,7 +22,7 @@ import (
 )
 
 type Getter interface {
-	ForEach(i func(i int, v *KV))
+	ForEach(i func(i int, v *KV) bool)
 }
 
 type Setter interface {
@@ -38,52 +38,68 @@ type MicroServiceDependencyRuleSlice []*MicroServiceDependencyRule
 type SummarySlice []*Summary
 type InstanceSlice []*Instance
 
-func (s *MicroserviceSlice) ForEach(f func(i int, v *KV)) {
+func (s *MicroserviceSlice) ForEach(f func(i int, v *KV) bool) {
 	for i, v := range *s {
 		v.KV.Value = v.Value
-		f(i, v.KV)
+		if !f(i, v.KV) {
+			break
+		}
 	}
 }
-func (s *MicroserviceIndexSlice) ForEach(f func(i int, v *KV)) {
+func (s *MicroserviceIndexSlice) ForEach(f func(i int, v *KV) bool) {
 	for i, v := range *s {
 		v.KV.Value = v.Value
-		f(i, v.KV)
+		if !f(i, v.KV) {
+			break
+		}
 	}
 }
-func (s *MicroserviceAliasSlice) ForEach(f func(i int, v *KV)) {
+func (s *MicroserviceAliasSlice) ForEach(f func(i int, v *KV) bool) {
 	for i, v := range *s {
 		v.KV.Value = v.Value
-		f(i, v.KV)
+		if !f(i, v.KV) {
+			break
+		}
 	}
 }
-func (s *TagSlice) ForEach(f func(i int, v *KV)) {
+func (s *TagSlice) ForEach(f func(i int, v *KV) bool) {
 	for i, v := range *s {
 		v.KV.Value = v.Value
-		f(i, v.KV)
+		if !f(i, v.KV) {
+			break
+		}
 	}
 }
-func (s *MicroServiceRuleSlice) ForEach(f func(i int, v *KV)) {
+func (s *MicroServiceRuleSlice) ForEach(f func(i int, v *KV) bool) {
 	for i, v := range *s {
 		v.KV.Value = v.Value
-		f(i, v.KV)
+		if !f(i, v.KV) {
+			break
+		}
 	}
 }
-func (s *MicroServiceDependencyRuleSlice) ForEach(f func(i int, v *KV)) {
+func (s *MicroServiceDependencyRuleSlice) ForEach(f func(i int, v *KV) bool) {
 	for i, v := range *s {
 		v.KV.Value = v.Value
-		f(i, v.KV)
+		if !f(i, v.KV) {
+			break
+		}
 	}
 }
-func (s *SummarySlice) ForEach(f func(i int, v *KV)) {
+func (s *SummarySlice) ForEach(f func(i int, v *KV) bool) {
 	for i, v := range *s {
 		v.KV.Value = v.Value
-		f(i, v.KV)
+		if !f(i, v.KV) {
+			break
+		}
 	}
 }
-func (s *InstanceSlice) ForEach(f func(i int, v *KV)) {
+func (s *InstanceSlice) ForEach(f func(i int, v *KV) bool) {
 	for i, v := range *s {
 		v.KV.Value = v.Value
-		f(i, v.KV)
+		if !f(i, v.KV) {
+			break
+		}
 	}
 }
 

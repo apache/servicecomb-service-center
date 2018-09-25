@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package etcd
+package sc
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
@@ -21,17 +21,16 @@ import (
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "buildin", NewRepository})
-	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "etcd", NewRepository})
+	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "servicecenter", NewRepository})
 }
 
-type EtcdRepository struct {
+type ServiceCenterRepository struct {
 }
 
-func (r *EtcdRepository) New(t discovery.Type, cfg *discovery.Config) discovery.Adaptor {
-	return NewEtcdAdaptor(t.String(), cfg)
+func (r *ServiceCenterRepository) New(t discovery.Type, cfg *discovery.Config) discovery.Adaptor {
+	return NewServiceCenterAdaptor(t, cfg)
 }
 
 func NewRepository() mgr.PluginInstance {
-	return &EtcdRepository{}
+	return &ServiceCenterRepository{}
 }

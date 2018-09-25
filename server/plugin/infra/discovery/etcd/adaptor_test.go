@@ -50,10 +50,6 @@ func TestNewKvEntity(t *testing.T) {
 
 func TestNewRepository(t *testing.T) {
 	repo := NewRepository()
-	if repo.(*EtcdRepository).New(0, nil) != DefaultKvEntity() {
-		t.Fatalf("TestNewIndexer failed")
-	}
-
 	i := repo.(*EtcdRepository).New(0, discovery.Configure())
 	if _, ok := i.(*EtcdAdaptor); !ok {
 		t.Fatalf("TestNewIndexer failed")

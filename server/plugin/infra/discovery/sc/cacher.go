@@ -13,25 +13,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package etcd
+package sc
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
-	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
 )
 
-func init() {
-	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "buildin", NewRepository})
-	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "etcd", NewRepository})
+type ServiceCenterCacher struct {
+	*discovery.CommonCacher
 }
 
-type EtcdRepository struct {
+func (c *ServiceCenterCacher) Ready() <-chan struct{} {
+	return ServiceCenter().Ready()
 }
 
-func (r *EtcdRepository) New(t discovery.Type, cfg *discovery.Config) discovery.Adaptor {
-	return NewEtcdAdaptor(t.String(), cfg)
+func NewServiceCenterCacher(cfg *discovery.Config, cache discovery.Cache) *ServiceCenterCacher {
+	return &ServiceCenterCacher{
+		CommonCacher: discovery.NewCommonCacher(cfg, cache),
+	}
 }
 
-func NewRepository() mgr.PluginInstance {
-	return &EtcdRepository{}
+func BuildCacher(t discovery.Type, cfg *discovery.Config, cache discovery.Cache) discovery.Cacher {
+	cr := NewServiceCenterCacher(cfg, cache)
+	ServiceCenter().Register(t, cr)
+	return cr
 }

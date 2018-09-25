@@ -827,7 +827,7 @@ func callback(action registry.ActionType, rev int64, kvs []*mvccpb.KeyValue, cb 
 }
 
 func NewRegistry() mgr.PluginInstance {
-	log.Warnf("starting service center in proxy mode")
+	log.Warnf("enable etcd registry mode")
 
 	inst := &EtcdClient{}
 	if err := inst.Initialize(); err != nil {

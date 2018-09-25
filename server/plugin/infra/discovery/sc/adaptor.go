@@ -13,25 +13,41 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package etcd
+package sc
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
-	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
 )
 
-func init() {
-	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "buildin", NewRepository})
-	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "etcd", NewRepository})
+// ServiceCenterAdaptor is a discovery service adaptor implement of one kubernetes cluster
+type ServiceCenterAdaptor struct {
+	discovery.Cacher
+	discovery.Indexer
 }
 
-type EtcdRepository struct {
+func (se *ServiceCenterAdaptor) Run() {
+	if r, ok := se.Cacher.(discovery.Runnable); ok {
+		r.Run()
+	}
 }
 
-func (r *EtcdRepository) New(t discovery.Type, cfg *discovery.Config) discovery.Adaptor {
-	return NewEtcdAdaptor(t.String(), cfg)
+func (se *ServiceCenterAdaptor) Stop() {
+	if r, ok := se.Cacher.(discovery.Runnable); ok {
+		r.Stop()
+	}
 }
 
-func NewRepository() mgr.PluginInstance {
-	return &EtcdRepository{}
+func (se *ServiceCenterAdaptor) Ready() <-chan struct{} {
+	if r, ok := se.Cacher.(discovery.Runnable); ok {
+		return r.Ready()
+	}
+	return closedCh
+}
+
+func NewServiceCenterAdaptor(t discovery.Type, cfg *discovery.Config) *ServiceCenterAdaptor {
+	cache := discovery.NewKvCache(t.String(), cfg)
+	return &ServiceCenterAdaptor{
+		Indexer: discovery.NewCacheIndexer(cache),
+		Cacher:  BuildCacher(t, cfg, cache),
+	}
 }

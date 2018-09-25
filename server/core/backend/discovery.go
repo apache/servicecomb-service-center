@@ -72,10 +72,12 @@ func (s *KvStore) getOrCreateAdaptor(t discovery.Type) discovery.Adaptor {
 	v, _ := s.adaptors.Fetch(t, func() (interface{}, error) {
 		addOn, ok := s.addOns.Get(t)
 		if ok {
-			return s.repo().New(t, addOn.(discovery.AddOn).Config()), nil
+			adaptor := s.repo().New(t, addOn.(discovery.AddOn).Config())
+			adaptor.Run()
+			return adaptor, nil
 		}
 		log.Warnf("type '%s' not found", t)
-		return s.repo().New(t, nil), nil
+		return nil, nil
 	})
 	return v.(discovery.Adaptor)
 }

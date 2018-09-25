@@ -18,7 +18,10 @@ package discovery
 
 type Adaptor interface {
 	Runnable
+	// Indexer is the key indexer of cache
 	Indexer
+	// Cacher is the cache manager to sync data from registry server
+	// and publish the cache event if cache changed
 	Cacher
 }
 

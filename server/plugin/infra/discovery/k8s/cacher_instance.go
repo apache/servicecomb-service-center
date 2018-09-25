@@ -27,7 +27,7 @@ import (
 )
 
 type InstanceCacher struct {
-	*K8sCacher
+	*discovery.CommonCacher
 }
 
 // onServiceEvent is the method to refresh service cache
@@ -135,8 +135,8 @@ func (c *InstanceCacher) onEndpointsEvent(evt K8sEvent) {
 	}
 }
 
-func NewInstanceCacher(c *K8sCacher) (i *InstanceCacher) {
-	i = &InstanceCacher{K8sCacher: c}
+func NewInstanceCacher(c *discovery.CommonCacher) (i *InstanceCacher) {
+	i = &InstanceCacher{CommonCacher: c}
 	Kubernetes().AppendEventFunc(TypeService, i.onServiceEvent)
 	Kubernetes().AppendEventFunc(TypeEndpoint, i.onEndpointsEvent)
 	return
