@@ -25,7 +25,16 @@ import (
 	zipkin "github.com/openzipkin/zipkin-go-opentracing"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+)
+
+const (
+	collectorType       = "TRACING_COLLECTOR"
+	fileCollectorPath   = "TRACING_FILE_PATH"
+	serverCollectorAddr = "TRACING_SERVER_ADDRESS"
+	samplerRate         = "TRACING_SIMPLER_RATE"
+	defaultSamplerRate  = 1
 )
 
 func initTracer() {
@@ -36,7 +45,9 @@ func initTracer() {
 	}
 	ipPort := metric.InstanceName()
 	recorder := zipkin.NewRecorder(collector, false, ipPort, strings.ToLower(core.Service.ServiceName))
-	tracer, err := zipkin.NewTracer(recorder, zipkin.TraceID128Bit(true))
+	tracer, err := zipkin.NewTracer(recorder,
+		zipkin.TraceID128Bit(true),
+		zipkin.WithSampler(zipkin.NewCountingSampler(GetSamplerRate())))
 	if err != nil {
 		log.Errorf(err, "new tracer failed")
 		return
@@ -45,7 +56,7 @@ func initTracer() {
 }
 
 func newCollector() (collector zipkin.Collector, err error) {
-	ct := strings.TrimSpace(os.Getenv("TRACING_COLLECTOR"))
+	ct := strings.TrimSpace(os.Getenv(collectorType))
 	switch ct {
 	case "server":
 		sa := GetServerEndpoint()
@@ -71,7 +82,7 @@ func ZipkinTracer() opentracing.Tracer {
 }
 
 func GetFilePath(defName string) string {
-	path := os.Getenv("TRACING_FILE_PATH")
+	path := os.Getenv(fileCollectorPath)
 	if len(path) == 0 {
 		wd, _ := os.Getwd()
 		return filepath.Join(wd, defName)
@@ -80,9 +91,18 @@ func GetFilePath(defName string) string {
 }
 
 func GetServerEndpoint() string {
-	sa := os.Getenv("TRACING_SERVER_ADDRESS")
+	sa := os.Getenv(serverCollectorAddr)
 	if len(sa) == 0 {
 		sa = "http://127.0.0.1:9411"
 	}
 	return sa
+}
+
+func GetSamplerRate() float64 {
+	strRate := os.Getenv(samplerRate)
+	rate, err := strconv.ParseFloat(strRate, 64)
+	if rate <= 0 || err != nil {
+		return defaultSamplerRate
+	}
+	return rate
 }
