@@ -27,6 +27,8 @@ const (
 	eventBlockSize             = 1000
 	deferCheckWindow           = 2 * time.Second // instance DELETE event will be delay.
 	selfPreservationPercentage = 0.8
+	selfPreservationMaxTTL     = 10 * 60 // 10min
+	selfPreservationInitCount  = 5
 )
 
 var (
