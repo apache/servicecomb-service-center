@@ -21,7 +21,7 @@ Get the microservices list from ServiceCenter. `service` command can be instead 
 #### Options
 
 - `domain`(d) domain name, return `default` domain microservices list by default.
-- `output`(o) return the complete microservices information(e.g., framework, endpoints).
+- `output`(o) support mode `wide`, return the complete microservices information(e.g., framework, endpoints).
 - `all-domains` return all domains microservices information.
 
 #### Examples
@@ -56,7 +56,7 @@ Get the instances list from ServiceCenter. `instance` command can be instead of 
 #### Options
 
 - `domain`(d) domain name, return `default` domain microservices list by default.
-- `output`(o) return the complete microservices information(e.g., framework, endpoints).
+- `output`(o) support mode `wide`, return the complete microservices information(e.g., framework, endpoints).
 - `all-domains` return all domains microservices information.
 
 #### Examples
