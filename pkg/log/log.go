@@ -29,13 +29,13 @@ import (
 
 const (
 	defaultLogLevel        = "DEBUG"
-	globalCallerSkip       = 2
+	globalCallerSkip       = 1
 	defaultLogRotatePeriod = 30 * time.Second
 )
 
 //log var
 var (
-	logger         = NewLogger(Configure().WithCallerSkip(globalCallerSkip))
+	logger         = NewLogger(Configure())
 	globalConfig   Config
 	globalLogLevel lager.LogLevel
 )

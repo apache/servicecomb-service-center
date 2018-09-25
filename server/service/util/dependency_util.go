@@ -429,7 +429,8 @@ func DeleteDependencyForDeleteService(domainProject string, serviceId string, se
 
 func removeProviderRuleOfConsumer(ctx context.Context, domainProject string, cache map[string]bool) ([]registry.PluginOp, error) {
 	key := apt.GenerateConsumerDependencyRuleKey(domainProject, nil) + apt.SPLIT
-	resp, err := backend.Store().DependencyRule().Search(ctx, registry.WithStrKey(key), registry.WithPrefix())
+	resp, err := backend.Store().DependencyRule().Search(ctx,
+		registry.WithStrKey(key), registry.WithPrefix())
 	if err != nil {
 		return nil, err
 	}
@@ -479,7 +480,8 @@ loop:
 
 func removeProviderRuleKeys(ctx context.Context, domainProject string, cache map[string]bool) ([]registry.PluginOp, error) {
 	key := apt.GenerateProviderDependencyRuleKey(domainProject, nil) + apt.SPLIT
-	resp, err := backend.Store().DependencyRule().Search(ctx, registry.WithStrKey(key), registry.WithPrefix())
+	resp, err := backend.Store().DependencyRule().Search(ctx,
+		registry.WithStrKey(key), registry.WithPrefix(), registry.WithKeyOnly())
 	if err != nil {
 		return nil, err
 	}
