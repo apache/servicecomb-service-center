@@ -108,24 +108,24 @@ func GetInfoFromSvcIndexKV(key []byte) *pb.MicroServiceKey {
 	}
 }
 
-func GetInfoFromSchemaSummaryKV(key []byte) (schemaId string) {
+func GetInfoFromSchemaSummaryKV(key []byte) (domainProject, serviceId, schemaId string) {
 	keys := KvToResponse(key)
 	l := len(keys)
-	if l < 2 {
+	if l < 4 {
 		return
 	}
-
-	return keys[l-1]
+	domainProject = fmt.Sprintf("%s/%s", keys[l-4], keys[l-3])
+	return domainProject, keys[l-2], keys[l-1]
 }
 
-func GetInfoFromSchemaKV(key []byte) (schemaId string) {
+func GetInfoFromSchemaKV(key []byte) (domainProject, serviceId, schemaId string) {
 	keys := KvToResponse(key)
 	l := len(keys)
-	if l < 2 {
+	if l < 4 {
 		return
 	}
-
-	return keys[l-1]
+	domainProject = fmt.Sprintf("%s/%s", keys[l-4], keys[l-3])
+	return domainProject, keys[l-2], keys[l-1]
 }
 
 func GetInfoFromDependencyQueueKV(key []byte) (consumerId, domainProject, uuid string) {

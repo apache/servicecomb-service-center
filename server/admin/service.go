@@ -82,6 +82,7 @@ func (service *AdminService) dumpAll(ctx context.Context, cache *model.Cache) {
 		Do(func(_ context.Context) { setValue(backend.Store().ServiceIndex(), &cache.Indexes) }).
 		Do(func(_ context.Context) { setValue(backend.Store().ServiceAlias(), &cache.Aliases) }).
 		Do(func(_ context.Context) { setValue(backend.Store().ServiceTag(), &cache.Tags) }).
+		Do(func(_ context.Context) { setValue(backend.Store().RuleIndex(), &cache.RuleIndexes) }).
 		Do(func(_ context.Context) { setValue(backend.Store().Rule(), &cache.Rules) }).
 		Do(func(_ context.Context) { setValue(backend.Store().DependencyRule(), &cache.DependencyRules) }).
 		Do(func(_ context.Context) { setValue(backend.Store().SchemaSummary(), &cache.Summaries) }).

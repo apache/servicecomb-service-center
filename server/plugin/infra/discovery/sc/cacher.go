@@ -35,6 +35,6 @@ func NewServiceCenterCacher(cfg *discovery.Config, cache discovery.Cache) *Servi
 
 func BuildCacher(t discovery.Type, cfg *discovery.Config, cache discovery.Cache) discovery.Cacher {
 	cr := NewServiceCenterCacher(cfg, cache)
-	ServiceCenter().Register(t, cr)
+	ServiceCenter().AddCacher(t, cr)
 	return cr
 }

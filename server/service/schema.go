@@ -143,14 +143,14 @@ func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAl
 		tempSchema := &pb.Schema{}
 		tempSchema.SchemaId = schemaId
 		for _, summarySchema := range resp.Kvs {
-			schemaIdOfSummary := apt.GetInfoFromSchemaSummaryKV(summarySchema.Key)
+			_, _, schemaIdOfSummary := apt.GetInfoFromSchemaSummaryKV(summarySchema.Key)
 			if schemaId == schemaIdOfSummary {
 				tempSchema.Summary = summarySchema.Value.(string)
 			}
 		}
 
 		for _, contentSchema := range respWithSchema.Kvs {
-			schemaIdOfSchema := apt.GetInfoFromSchemaKV(contentSchema.Key)
+			_, _, schemaIdOfSchema := apt.GetInfoFromSchemaKV(contentSchema.Key)
 			if schemaId == schemaIdOfSchema {
 				tempSchema.Schema = util.BytesToStringWithNoCopy(contentSchema.Value.([]byte))
 			}

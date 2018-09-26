@@ -27,9 +27,10 @@ import (
 )
 
 const (
-	apiVersionURL    = "/version"
-	apiDumpURL       = "/v4/default/admin/dump"
-	apiGetSchemasURL = "/v4/%s/registry/microservices/%s/schemas"
+	apiVersionURL = "/version"
+	apiDumpURL    = "/v4/default/admin/dump"
+	apiSchemasURL = "/v4/%s/registry/microservices/%s/schemas"
+	apiSchemaURL  = "/v4/%s/registry/microservices/%s/schemas/%s"
 )
 
 func (c *SCClient) commonHeaders() http.Header {
@@ -99,7 +100,7 @@ func (c *SCClient) GetSchemasByServiceId(domainProject, serviceId string) ([]*pb
 	headers := c.commonHeaders()
 	headers.Set("X-Domain-Name", domain)
 	resp, err := c.URLClient.HttpDo(http.MethodGet,
-		Addr+fmt.Sprintf(apiGetSchemasURL, project, serviceId)+"?withSchema=1",
+		Addr+fmt.Sprintf(apiSchemasURL, project, serviceId)+"?withSchema=1",
 		headers, nil)
 	if err != nil {
 		return nil, err
@@ -123,4 +124,39 @@ func (c *SCClient) GetSchemasByServiceId(domainProject, serviceId string) ([]*pb
 	}
 
 	return schemas.Schemas, nil
+}
+
+func (c *SCClient) GetSchemaBySchemaId(domainProject, serviceId, schemaId string) (*pb.Schema, error) {
+	domain, project := core.FromDomainProject(domainProject)
+	headers := c.commonHeaders()
+	headers.Set("X-Domain-Name", domain)
+	resp, err := c.URLClient.HttpDo(http.MethodGet,
+		Addr+fmt.Sprintf(apiSchemaURL, project, serviceId, schemaId),
+		headers, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("%d %s", resp.StatusCode, string(body))
+	}
+
+	schema := &pb.GetSchemaResponse{}
+	err = json.Unmarshal(body, schema)
+	if err != nil {
+		fmt.Println(string(body))
+		return nil, err
+	}
+
+	return &pb.Schema{
+		SchemaId: schemaId,
+		Schema:   schema.Schema,
+		Summary:  schema.SchemaSummary,
+	}, nil
 }

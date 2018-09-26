@@ -101,21 +101,21 @@ func TestGetInfoFromKV(t *testing.T) {
 		t.Fatalf("TestGetInfoFromKV failed")
 	}
 
-	m := GetInfoFromSchemaSummaryKV([]byte(GenerateServiceSchemaSummaryKey("a/b", "c", "d")))
-	if m != "d" {
+	d, s, m := GetInfoFromSchemaSummaryKV([]byte(GenerateServiceSchemaSummaryKey("a/b", "c", "d")))
+	if m != "d" || s != "c" || d != "a/b" {
 		t.Fatalf("TestGetInfoFromKV failed")
 	}
-	m = GetInfoFromSchemaSummaryKV([]byte("sdf"))
-	if m != "" {
+	d, s, m = GetInfoFromSchemaSummaryKV([]byte("sdf"))
+	if m != "" || s != "" || d != "" {
 		t.Fatalf("TestGetInfoFromKV failed")
 	}
 
-	m = GetInfoFromSchemaKV([]byte(GenerateServiceSchemaKey("a/b", "c", "d")))
-	if m != "d" {
+	d, s, m = GetInfoFromSchemaKV([]byte(GenerateServiceSchemaKey("a/b", "c", "d")))
+	if m != "d" || s != "c" || d != "a/b" {
 		t.Fatalf("TestGetInfoFromKV failed")
 	}
-	m = GetInfoFromSchemaKV([]byte("sdf"))
-	if m != "" {
+	d, s, m = GetInfoFromSchemaKV([]byte("sdf"))
+	if m != "" || s != "" || d != "" {
 		t.Fatalf("TestGetInfoFromKV failed")
 	}
 

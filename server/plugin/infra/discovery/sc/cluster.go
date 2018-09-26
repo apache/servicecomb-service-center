@@ -16,16 +16,19 @@
 package sc
 
 import (
+	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/client/sc"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/admin/model"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"golang.org/x/net/context"
+	"strings"
 	"sync"
 	"time"
 )
@@ -36,12 +39,13 @@ var (
 )
 
 type ServiceCenterInterface interface {
-	Register(t discovery.Type, cacher *ServiceCenterCacher)
+	discovery.Indexer
+	AddCacher(t discovery.Type, cacher *ServiceCenterCacher)
 	Sync(ctx context.Context) error
 	Ready() <-chan struct{}
 }
 
-type ServiceCenterListWatcher struct {
+type ServiceCenterCluster struct {
 	Client *sc.SCClient
 
 	cachers map[discovery.Type]*ServiceCenterCacher
@@ -49,12 +53,49 @@ type ServiceCenterListWatcher struct {
 	ready chan struct{}
 }
 
-func (c *ServiceCenterListWatcher) Initialize() {
+func (c *ServiceCenterCluster) Initialize() {
 	c.ready = make(chan struct{})
 	c.cachers = make(map[discovery.Type]*ServiceCenterCacher)
 }
 
-func (c *ServiceCenterListWatcher) Sync(ctx context.Context) error {
+func (c *ServiceCenterCluster) Search(ctx context.Context, opts ...registry.PluginOpOption) (r *discovery.Response, err error) {
+	op := registry.OpGet(opts...)
+	key := util.BytesToStringWithNoCopy(op.Key)
+	switch {
+	case strings.Index(key, core.GetServiceSchemaRootKey("")) == 0:
+		domainProject, serviceId, schemaId := core.GetInfoFromSchemaKV(op.Key)
+		var schemas []*pb.Schema
+		if op.Prefix && len(schemaId) == 0 {
+			schemas, err = c.Client.GetSchemasByServiceId(domainProject, serviceId)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			schema, err := c.Client.GetSchemaBySchemaId(domainProject, serviceId, schemaId)
+			if err != nil {
+				return nil, err
+			}
+			schemas = append(schemas, schema)
+		}
+		var response discovery.Response
+		response.Count = int64(len(schemas))
+		if op.CountOnly {
+			return &response, nil
+		}
+		for _, schema := range schemas {
+			response.Kvs = append(response.Kvs, &discovery.KeyValue{
+				Key: util.StringToBytesWithNoCopy(
+					core.GenerateServiceSchemaKey(domainProject, serviceId, schema.SchemaId)),
+				Value: util.StringToBytesWithNoCopy(schema.Schema),
+			})
+		}
+		return &response, nil
+	default:
+		return nil, fmt.Errorf("no implement")
+	}
+}
+
+func (c *ServiceCenterCluster) Sync(ctx context.Context) error {
 	cache, err := c.Client.GetScCache()
 	if err != nil {
 		log.Errorf(err, "sync failed")
@@ -63,12 +104,11 @@ func (c *ServiceCenterListWatcher) Sync(ctx context.Context) error {
 
 	defer util.SafeCloseChan(c.ready)
 
-	c.syncMicroservice(cache)
-	c.syncInstance(cache)
-	return nil
-}
-
-func (c *ServiceCenterListWatcher) syncMicroservice(cache *model.Cache) {
+	// microservice
+	serviceCacher, ok := c.cachers[backend.SERVICE]
+	if ok {
+		c.check(serviceCacher, &cache.Microservices)
+	}
 	aliasCacher, ok := c.cachers[backend.SERVICE_ALIAS]
 	if ok {
 		c.check(aliasCacher, &cache.Aliases)
@@ -77,20 +117,32 @@ func (c *ServiceCenterListWatcher) syncMicroservice(cache *model.Cache) {
 	if ok {
 		c.check(indexCacher, &cache.Indexes)
 	}
-	serviceCacher, ok := c.cachers[backend.SERVICE]
-	if ok {
-		c.check(serviceCacher, &cache.Microservices)
-	}
-}
-
-func (c *ServiceCenterListWatcher) syncInstance(cache *model.Cache) {
+	// instance
 	instCacher, ok := c.cachers[backend.INSTANCE]
 	if ok {
 		c.check(instCacher, &cache.Instances)
 	}
+	// microservice meta
+	tagCacher, ok := c.cachers[backend.SERVICE_TAG]
+	if ok {
+		c.check(tagCacher, &cache.Tags)
+	}
+	ruleCacher, ok := c.cachers[backend.RULE]
+	if ok {
+		c.check(ruleCacher, &cache.Rules)
+	}
+	ruleIndexCacher, ok := c.cachers[backend.RULE_INDEX]
+	if ok {
+		c.check(ruleIndexCacher, &cache.RuleIndexes)
+	}
+	depRuleCacher, ok := c.cachers[backend.DEPENDENCY_RULE]
+	if ok {
+		c.check(depRuleCacher, &cache.DependencyRules)
+	}
+	return nil
 }
 
-func (c *ServiceCenterListWatcher) check(local *ServiceCenterCacher, remote model.Getter) {
+func (c *ServiceCenterCluster) check(local *ServiceCenterCacher, remote model.Getter) {
 	init := !c.IsReady()
 
 	remote.ForEach(func(_ int, v *model.KV) bool {
@@ -104,11 +156,11 @@ func (c *ServiceCenterListWatcher) check(local *ServiceCenterCacher, remote mode
 		}
 		switch {
 		case kv == nil && init:
-			local.Notify(proto.EVT_INIT, v.Key, newKv)
+			local.Notify(pb.EVT_INIT, v.Key, newKv)
 		case kv == nil && !init:
-			local.Notify(proto.EVT_CREATE, v.Key, newKv)
+			local.Notify(pb.EVT_CREATE, v.Key, newKv)
 		case kv.ModRevision != v.Rev:
-			local.Notify(proto.EVT_UPDATE, v.Key, newKv)
+			local.Notify(pb.EVT_UPDATE, v.Key, newKv)
 		}
 		return true
 	})
@@ -126,11 +178,12 @@ func (c *ServiceCenterListWatcher) check(local *ServiceCenterCacher, remote mode
 		return true
 	})
 	for _, v := range deletes {
-		local.Notify(proto.EVT_DELETE, util.BytesToStringWithNoCopy(v.Key), v)
+		local.Notify(pb.EVT_DELETE, util.BytesToStringWithNoCopy(v.Key), v)
 	}
 }
 
-func (c *ServiceCenterListWatcher) loop(ctx context.Context) {
+func (c *ServiceCenterCluster) loop(ctx context.Context) {
+	c.Sync(ctx)
 	for {
 		select {
 		case <-ctx.Done():
@@ -144,19 +197,19 @@ func (c *ServiceCenterListWatcher) loop(ctx context.Context) {
 }
 
 // unsafe
-func (c *ServiceCenterListWatcher) Register(t discovery.Type, cacher *ServiceCenterCacher) {
+func (c *ServiceCenterCluster) AddCacher(t discovery.Type, cacher *ServiceCenterCacher) {
 	c.cachers[t] = cacher
 }
 
-func (c *ServiceCenterListWatcher) Run() {
+func (c *ServiceCenterCluster) Run() {
 	gopool.Go(c.loop)
 }
 
-func (c *ServiceCenterListWatcher) Ready() <-chan struct{} {
+func (c *ServiceCenterCluster) Ready() <-chan struct{} {
 	return c.ready
 }
 
-func (c *ServiceCenterListWatcher) IsReady() bool {
+func (c *ServiceCenterCluster) IsReady() bool {
 	select {
 	case <-c.ready:
 		return true
@@ -165,7 +218,7 @@ func (c *ServiceCenterListWatcher) IsReady() bool {
 	}
 }
 
-type ServiceCenterAggregate []*ServiceCenterListWatcher
+type ServiceCenterAggregate []*ServiceCenterCluster
 
 func (s *ServiceCenterAggregate) Initialize() {
 	for _, lw := range *s {
@@ -174,10 +227,27 @@ func (s *ServiceCenterAggregate) Initialize() {
 	}
 }
 
-func (s *ServiceCenterAggregate) Register(t discovery.Type, cacher *ServiceCenterCacher) {
+func (s *ServiceCenterAggregate) AddCacher(t discovery.Type, cacher *ServiceCenterCacher) {
 	for _, lw := range *s {
-		lw.Register(t, cacher)
+		lw.AddCacher(t, cacher)
 	}
+}
+
+func (s *ServiceCenterAggregate) Search(ctx context.Context, opts ...registry.PluginOpOption) (r *discovery.Response, err error) {
+	op := registry.OpGet(opts...)
+	key := util.BytesToStringWithNoCopy(op.Key)
+	log.Debugf("search '%s' match special options, request service center, opts: %s", key, op)
+
+	var response discovery.Response
+	for _, lw := range *s {
+		resp, err := lw.Search(ctx, opts...)
+		if err != nil {
+			continue
+		}
+		response.Kvs = append(response.Kvs, resp.Kvs...)
+		response.Count += resp.Count
+	}
+	return &response, nil
 }
 
 func (s *ServiceCenterAggregate) Sync(ctx context.Context) error {
@@ -208,7 +278,7 @@ func NewServiceCenterAggregate() *ServiceCenterAggregate {
 			continue
 		}
 		client.Timeout = registry.RegistryConfig().RequestTimeOut
-		*c = append(*c, &ServiceCenterListWatcher{
+		*c = append(*c, &ServiceCenterCluster{
 			Client: client,
 		})
 		log.Infof("list and watch service center[%s][%s]", name, addr)

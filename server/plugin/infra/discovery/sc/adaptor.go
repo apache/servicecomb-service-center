@@ -16,6 +16,7 @@
 package sc
 
 import (
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
 )
 
@@ -45,6 +46,12 @@ func (se *ServiceCenterAdaptor) Ready() <-chan struct{} {
 }
 
 func NewServiceCenterAdaptor(t discovery.Type, cfg *discovery.Config) *ServiceCenterAdaptor {
+	if t == backend.SCHEMA {
+		return &ServiceCenterAdaptor{
+			Indexer: ServiceCenter(),
+			Cacher:  discovery.NullCacher,
+		}
+	}
 	cache := discovery.NewKvCache(t.String(), cfg)
 	return &ServiceCenterAdaptor{
 		Indexer: discovery.NewCacheIndexer(cache),
