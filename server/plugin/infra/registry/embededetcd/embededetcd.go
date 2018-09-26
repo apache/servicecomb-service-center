@@ -26,7 +26,6 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
-	"github.com/astaxie/beego"
 	"github.com/coreos/etcd/embed"
 	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
 	"github.com/coreos/etcd/etcdserver/etcdserverpb"
@@ -524,8 +523,14 @@ func callback(action registry.ActionType, rev int64, kvs []*mvccpb.KeyValue, cb 
 func getEmbedInstance() mgr.PluginInstance {
 	log.Warnf("enable embedded registry mode")
 
-	hostName := beego.AppConfig.DefaultString("manager_name", "sc-0")
-	mgrAddrs := beego.AppConfig.DefaultString("manager_addr", "http://127.0.0.1:2380")
+	hostName := "sc-0"
+	if len(registry.RegistryConfig().ClusterName) > 0 {
+		hostName = registry.RegistryConfig().ClusterName
+	}
+	mgrAddrs := "http://127.0.0.1:2380"
+	if len(registry.RegistryConfig().ManagerAddress) > 0 {
+		mgrAddrs = registry.RegistryConfig().ManagerAddress
+	}
 
 	inst := &EtcdEmbed{
 		err:       make(chan error, 1),

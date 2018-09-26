@@ -15,29 +15,10 @@
 
 package sc
 
-import (
-	"os"
-	"time"
-)
-
-const (
-	envScAddress     = "SC_ADDRESS"
-	defaultScAddress = "http://127.0.0.1:30100"
-	reListInterval   = 5 * time.Second
-)
-
 var (
 	closedCh = make(chan struct{})
 )
 
 func init() {
 	close(closedCh)
-}
-
-func GetScAddress() string {
-	addr := os.Getenv(envScAddress)
-	if len(addr) == 0 {
-		return defaultScAddress
-	}
-	return addr
 }

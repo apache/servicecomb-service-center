@@ -45,6 +45,8 @@ func RegistryConfig() *Config {
 	once.Do(func() {
 		var err error
 
+		defaultRegistryConfig.ClusterName = beego.AppConfig.String("manager_name")
+		defaultRegistryConfig.ManagerAddress = beego.AppConfig.String("manager_addr")
 		defaultRegistryConfig.ClusterAddresses = beego.AppConfig.DefaultString("manager_cluster", "http://127.0.0.1:2379")
 		defaultRegistryConfig.DialTimeout, err = time.ParseDuration(beego.AppConfig.DefaultString("registry_timeout", "30s"))
 		if err != nil {
@@ -204,10 +206,33 @@ type Registry interface {
 type Config struct {
 	SslEnabled       bool
 	EmbedMode        string
+	ManagerAddress   string
+	ClusterName      string
 	ClusterAddresses string
 	DialTimeout      time.Duration
 	RequestTimeOut   time.Duration
 	AutoSyncInterval time.Duration
+}
+
+func (c *Config) Clusters() map[string]string {
+	clusters := make(map[string]string)
+	kvs := strings.Split(c.ClusterAddresses, ",")
+	for _, cluster := range kvs {
+		// sc-0=http(s)://host:port
+		names := strings.Split(cluster, "=")
+		if len(names) != 2 {
+			continue
+		}
+		clusters[names[0]] = names[1]
+	}
+	if len(clusters) == 0 {
+		clusters[c.ClusterName] = c.ClusterAddresses
+	}
+	return clusters
+}
+
+func (c *Config) ClusterAddress() string {
+	return c.Clusters()[c.ClusterName]
 }
 
 type PluginOp struct {

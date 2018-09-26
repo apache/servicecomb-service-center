@@ -24,36 +24,38 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
+	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"golang.org/x/net/context"
 	"sync"
 	"time"
 )
 
 var (
-	lw     *ServiceCenterListWatcher
-	lwOnce sync.Once
+	client     *ServiceCenterAggregate
+	clientOnce sync.Once
 )
 
-type ServiceCenterListWatcher struct {
-	cachers map[discovery.Type]*ServiceCenterCacher
+type ServiceCenterInterface interface {
+	Register(t discovery.Type, cacher *ServiceCenterCacher)
+	Sync(ctx context.Context) error
+	Ready() <-chan struct{}
+}
 
-	client *sc.SCClient
+type ServiceCenterListWatcher struct {
+	Client *sc.SCClient
+
+	cachers map[discovery.Type]*ServiceCenterCacher
 
 	ready chan struct{}
 }
 
-func (c *ServiceCenterListWatcher) init() {
+func (c *ServiceCenterListWatcher) Initialize() {
 	c.ready = make(chan struct{})
 	c.cachers = make(map[discovery.Type]*ServiceCenterCacher)
-
-	sc.Addr = GetScAddress()
-	c.client, _ = sc.NewSCClient()
-
-	log.Infof("list and watch service center[%s]", sc.Addr)
 }
 
 func (c *ServiceCenterListWatcher) Sync(ctx context.Context) error {
-	cache, err := c.client.GetScCache()
+	cache, err := c.Client.GetScCache()
 	if err != nil {
 		log.Errorf(err, "sync failed")
 		return err
@@ -128,13 +130,14 @@ func (c *ServiceCenterListWatcher) check(local *ServiceCenterCacher, remote mode
 	}
 }
 
-func (c *ServiceCenterListWatcher) List(ctx context.Context) {
+func (c *ServiceCenterListWatcher) loop(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
 			log.Debug("service center client is stopped")
 			return
-		case <-time.After(reListInterval):
+		case <-time.After(registry.RegistryConfig().AutoSyncInterval):
+			// TODO support watching sc
 			c.Sync(ctx)
 		}
 	}
@@ -146,8 +149,7 @@ func (c *ServiceCenterListWatcher) Register(t discovery.Type, cacher *ServiceCen
 }
 
 func (c *ServiceCenterListWatcher) Run() {
-	// TODO support watching sc
-	gopool.Go(c.List)
+	gopool.Go(c.loop)
 }
 
 func (c *ServiceCenterListWatcher) Ready() <-chan struct{} {
@@ -163,11 +165,61 @@ func (c *ServiceCenterListWatcher) IsReady() bool {
 	}
 }
 
-func ServiceCenter() *ServiceCenterListWatcher {
-	lwOnce.Do(func() {
-		lw = &ServiceCenterListWatcher{}
-		lw.init()
+type ServiceCenterAggregate []*ServiceCenterListWatcher
+
+func (s *ServiceCenterAggregate) Initialize() {
+	for _, lw := range *s {
+		lw.Initialize()
 		lw.Run()
+	}
+}
+
+func (s *ServiceCenterAggregate) Register(t discovery.Type, cacher *ServiceCenterCacher) {
+	for _, lw := range *s {
+		lw.Register(t, cacher)
+	}
+}
+
+func (s *ServiceCenterAggregate) Sync(ctx context.Context) error {
+	for _, lw := range *s {
+		lw.Sync(ctx)
+	}
+	return nil
+}
+
+func (s *ServiceCenterAggregate) Ready() <-chan struct{} {
+	for _, lw := range *s {
+		<-lw.Ready()
+	}
+	return closedCh
+}
+
+func NewServiceCenterAggregate() *ServiceCenterAggregate {
+	c := &ServiceCenterAggregate{}
+	clusters := registry.RegistryConfig().Clusters()
+	for name, addr := range clusters {
+		if len(name) == 0 || name == registry.RegistryConfig().ClusterName {
+			continue
+		}
+		sc.Addr = addr
+		client, err := sc.NewSCClient()
+		if err != nil {
+			log.Errorf(err, "new service center[%s][%s] client failed", name, addr)
+			continue
+		}
+		client.Timeout = registry.RegistryConfig().RequestTimeOut
+		*c = append(*c, &ServiceCenterListWatcher{
+			Client: client,
+		})
+		log.Infof("list and watch service center[%s][%s]", name, addr)
+	}
+	return c
+}
+
+func ServiceCenter() ServiceCenterInterface {
+	clientOnce.Do(func() {
+		client = NewServiceCenterAggregate()
+		client.Initialize()
 	})
-	return lw
+	return client
 }

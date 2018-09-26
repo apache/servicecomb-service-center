@@ -747,7 +747,7 @@ func (c *EtcdClient) ReOpen() error {
 
 func (c *EtcdClient) parseEndpoints() {
 	// use the default cluster endpoints
-	addrs := strings.Split(registry.RegistryConfig().ClusterAddresses, ",")
+	addrs := strings.Split(registry.RegistryConfig().ClusterAddress(), ",")
 
 	endpoints := make([]string, 0, len(addrs))
 	for _, addr := range addrs {
