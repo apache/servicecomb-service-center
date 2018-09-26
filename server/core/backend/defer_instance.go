@@ -28,7 +28,7 @@ import (
 )
 
 type deferItem struct {
-	ttl   *time.Timer
+	ttl   int32 // in seconds
 	event discovery.KvEvent
 }
 
@@ -38,7 +38,7 @@ type InstanceEventDeferHandler struct {
 	cache     discovery.Cache
 	once      sync.Once
 	enabled   bool
-	items     map[string]deferItem
+	items     map[string]*deferItem
 	pendingCh chan []discovery.KvEvent
 	deferCh   chan discovery.KvEvent
 	resetCh   chan struct{}
@@ -51,7 +51,7 @@ func (iedh *InstanceEventDeferHandler) OnCondition(cache discovery.Cache, evts [
 
 	iedh.once.Do(func() {
 		iedh.cache = cache
-		iedh.items = make(map[string]deferItem)
+		iedh.items = make(map[string]*deferItem)
 		iedh.pendingCh = make(chan []discovery.KvEvent, eventBlockSize)
 		iedh.deferCh = make(chan discovery.KvEvent, eventBlockSize)
 		iedh.resetCh = make(chan struct{})
@@ -79,9 +79,12 @@ func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt discovery.KvEvent) err
 		}
 
 		instance := kv.Value.(*pb.MicroServiceInstance)
-		iedh.items[key] = deferItem{
-			ttl: time.NewTimer(
-				time.Duration(instance.HealthCheck.Interval*(instance.HealthCheck.Times+1)) * time.Second),
+		ttl := instance.HealthCheck.Interval * (instance.HealthCheck.Times + 1)
+		if ttl <= 0 || ttl > selfPreservationMaxTTL {
+			ttl = selfPreservationMaxTTL
+		}
+		iedh.items[key] = &deferItem{
+			ttl:   ttl,
 			event: evt,
 		}
 	}
@@ -96,6 +99,7 @@ func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 	defer log.Recover()
 
 	t, n := time.NewTimer(deferCheckWindow), false
+	interval := int32(deferCheckWindow / time.Second)
 	defer t.Stop()
 	for {
 		select {
@@ -116,7 +120,7 @@ func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 			}
 
 			total := iedh.cache.GetAll(nil)
-			if total > 5 && float64(del) >= float64(total)*iedh.Percent {
+			if total > selfPreservationInitCount && float64(del) >= float64(total)*iedh.Percent {
 				iedh.enabled = true
 				log.Warnf("self preservation is enabled, caught %d/%d(>=%.0f%%) DELETE events",
 					del, total, iedh.Percent*100)
@@ -128,25 +132,24 @@ func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 			}
 		case <-t.C:
 			n = false
+			t.Reset(deferCheckWindow)
 
-			for key, item := range iedh.items {
-				if iedh.enabled {
-					select {
-					case <-item.ttl.C:
-					default:
-						continue
-					}
-					log.Warnf("defer handle timed out, removed key is %s", key)
-				}
-				iedh.recover(item.event)
+			if !iedh.enabled {
+				continue
 			}
 
-			if iedh.enabled && len(iedh.items) == 0 {
+			for key, item := range iedh.items {
+				item.ttl -= interval
+				if item.ttl > 0 {
+					continue
+				}
+				log.Warnf("defer handle timed out, removed key is %s", key)
+				iedh.recover(item.event)
+			}
+			if len(iedh.items) == 0 {
 				iedh.renew()
 				log.Warnf("self preservation is stopped")
 			}
-
-			t.Reset(deferCheckWindow)
 		case <-iedh.resetCh:
 			iedh.renew()
 			log.Warnf("self preservation is reset")
@@ -164,10 +167,7 @@ func (iedh *InstanceEventDeferHandler) recover(evt discovery.KvEvent) {
 
 func (iedh *InstanceEventDeferHandler) renew() {
 	iedh.enabled = false
-	for _, item := range iedh.items {
-		item.ttl.Stop()
-	}
-	iedh.items = make(map[string]deferItem)
+	iedh.items = make(map[string]*deferItem)
 }
 
 func (iedh *InstanceEventDeferHandler) Reset() bool {
