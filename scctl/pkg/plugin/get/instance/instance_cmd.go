@@ -47,9 +47,9 @@ func InstanceCommandFunc(_ *cobra.Command, args []string) {
 	if err != nil {
 		cmd.StopAndExit(cmd.ExitError, err)
 	}
-	cache, err := scClient.GetScCache()
-	if err != nil {
-		cmd.StopAndExit(cmd.ExitError, err)
+	cache, scErr := scClient.GetScCache()
+	if scErr != nil {
+		cmd.StopAndExit(cmd.ExitError, scErr)
 	}
 
 	svcMap := make(map[string]*admin.Microservice)

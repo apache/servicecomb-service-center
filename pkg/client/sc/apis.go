@@ -80,6 +80,7 @@ func (c *SCClient) GetScVersion() (*version.VersionSet, *scerr.Error) {
 
 func (c *SCClient) GetScCache() (*model.Cache, *scerr.Error) {
 	headers := c.commonHeaders()
+	// only default domain has admin permission
 	headers.Set("X-Domain-Name", "default")
 	resp, err := c.URLClient.HttpDo(http.MethodGet, c.Config.Addr+apiDumpURL, headers, nil)
 	if err != nil {

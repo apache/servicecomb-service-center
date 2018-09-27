@@ -42,7 +42,7 @@ func TestGetServerTLSConfig(t *testing.T) {
 	if serverTLSConfig.ClientCAs == nil {
 		t.Fatalf("GetServerTLSConfig failed")
 	}
-	if len(serverTLSConfig.CipherSuites) != 4 {
+	if len(serverTLSConfig.CipherSuites) != 0 {
 		t.Fatalf("GetServerTLSConfig failed")
 	}
 	if serverTLSConfig.MinVersion != tls.VersionTLS12 {

@@ -84,9 +84,9 @@ func SchemaCommandFunc(_ *cobra.Command, args []string) {
 	if err != nil {
 		cmd.StopAndExit(cmd.ExitError, err)
 	}
-	cache, err := scClient.GetScCache()
-	if err != nil {
-		cmd.StopAndExit(cmd.ExitError, err)
+	cache, scErr := scClient.GetScCache()
+	if scErr != nil {
+		cmd.StopAndExit(cmd.ExitError, scErr)
 	}
 
 	var progressBarWriter io.Writer = os.Stdout
@@ -122,8 +122,7 @@ func SchemaCommandFunc(_ *cobra.Command, args []string) {
 		}
 
 		writer := NewSchemaWriter(Config{SaveDir: saveDirectory(SaveDir, ms)})
-		err = writer.Write(schemas)
-		if err != nil {
+		if err := writer.Write(schemas); err != nil {
 			fmt.Fprintln(os.Stderr, "output schema data failed", err.Error())
 		}
 	}

@@ -22,6 +22,16 @@ data:
     registry_plugin = etcd
     self_register = 1
     manager_cluster = {{ .Values.sc.discovery.uris }}
+    {{- else if eq .Values.sc.discovery.type "servicecenter" }}
+    discovery_plugin = servicecenter
+    registry_plugin = buildin
+    self_register = 0
+    manager_cluster = "{{ .Values.sc.discovery.clusters }}"
+    {{- else if eq .Values.sc.discovery.type "aggregate" }}
+    discovery_plugin = aggregate
+    registry_plugin = buildin
+    self_register = 0
+    manager_cluster = "{{ .Values.sc.discovery.clusters }}"
     {{- else }}
     discovery_plugin = etcd
     registry_plugin = embeded_etcd

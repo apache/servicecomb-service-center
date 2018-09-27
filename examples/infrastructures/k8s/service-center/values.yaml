@@ -17,8 +17,26 @@ frontend:
 sc:
   replicaCount: 2
   discovery:
-    type: k8s # support local, etcd and k8s discovery mode
-    uris: ""
+    # support local, servicecenter, etcd, k8s and aggregate discovery mode
+    # type: local
+    #   bootstrap a lightweight service center, can only support replicaCount is one
+    # type: servicecenter
+    #   The precondition is that one or more service center clusters have been deployed,
+    #   this deployment will bootstrap a service center aggregation service which
+    #   provides micro-services and instances information aggregation queries
+    # type: etcd
+    #   bootstrap a standard service center cluster which micro-services and instances
+    #   information stored in etcd
+    # type: k8s
+    #   bootstrap a standard service center cluster which micro-services and instances
+    #   information discovered from kubernetes services
+    # type: aggregate
+    #   this type not only support aggregate service center cluster but also aggregate
+    #   the kubernetes services
+    type: k8s
+    # the cluster urls list, can only support discovery type is "servicecenter" or "aggregate"
+    # e.g. clusters: "sc-0=http://service-center-1:30100,sc-1=http://service-center-2:30100"
+    clusters: ""
   image:
     repository: servicecomb/service-center
     tag: latest
