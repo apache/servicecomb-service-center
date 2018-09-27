@@ -18,7 +18,7 @@ package util
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery"
 	"regexp"
 	"sort"
 	"strconv"

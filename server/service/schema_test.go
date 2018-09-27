@@ -19,7 +19,7 @@ package service_test
 import (
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/quota"
 	"github.com/apache/incubator-servicecomb-service-center/server/service"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

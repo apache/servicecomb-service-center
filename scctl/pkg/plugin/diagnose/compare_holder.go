@@ -33,10 +33,12 @@ type DataStore struct {
 	DataParser pb.Parser
 }
 
-func (d *DataStore) ForEach(f func(i int, v *model.KV)) {
+func (d *DataStore) ForEach(f func(i int, v *model.KV) bool) {
 	for i, kv := range d.Data {
 		obj, _ := d.DataParser.Unmarshal(kv.Value)
-		f(i, &model.KV{Key: string(kv.Key), Rev: kv.ModRevision, Value: obj})
+		if !f(i, &model.KV{Key: string(kv.Key), Rev: kv.ModRevision, Value: obj}) {
+			return
+		}
 	}
 }
 

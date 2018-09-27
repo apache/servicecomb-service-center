@@ -24,7 +24,7 @@ import (
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/registry"
 	"golang.org/x/net/context"
 )
 

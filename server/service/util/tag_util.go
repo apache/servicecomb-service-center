@@ -23,7 +23,7 @@ import (
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/registry"
 	"golang.org/x/net/context"
 )
 

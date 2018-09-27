@@ -24,7 +24,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery"
 	"github.com/apache/incubator-servicecomb-service-center/version"
 	"github.com/astaxie/beego"
 	"golang.org/x/net/context"

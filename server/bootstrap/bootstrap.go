@@ -21,33 +21,33 @@ import _ "github.com/apache/incubator-servicecomb-service-center/server/rest/con
 import _ "github.com/apache/incubator-servicecomb-service-center/server/rest/controller/v4"
 
 // registry
-import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/registry/buildin"
-import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/registry/etcd"
-import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/registry/embededetcd"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/registry/buildin"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/registry/etcd"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/registry/embededetcd"
 
 // discovery
-import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/discovery/sc"
-import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/discovery/etcd"
-import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/discovery/k8s"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery/sc"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery/etcd"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery/k8s"
 
 // cipher
-import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/security/buildin"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/security/buildin"
 
 // quota
-import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/quota/buildin"
-import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/quota/unlimit"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/quota/buildin"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/quota/unlimit"
 
 // auth
-import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/auth/buildin"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/auth/buildin"
 
 // uuid
-import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/uuid/buildin"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/uuid/buildin"
 
 // tracing
-import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/tracing/buildin"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/tracing/buildin"
 
 // tls
-import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/tls/buildin"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/tls/buildin"
 
 // module 'govern'
 import _ "github.com/apache/incubator-servicecomb-service-center/server/govern"

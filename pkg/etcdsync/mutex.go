@@ -22,7 +22,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/registry"
 	"github.com/coreos/etcd/client"
 	"golang.org/x/net/context"
 	"os"

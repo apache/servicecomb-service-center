@@ -24,7 +24,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery"
 	nf "github.com/apache/incubator-servicecomb-service-center/server/service/notification"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"

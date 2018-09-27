@@ -18,7 +18,7 @@ package util
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/registry"
 	"golang.org/x/net/context"
 )
 
