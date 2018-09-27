@@ -17,7 +17,6 @@ package sc
 
 import (
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/client/sc"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
@@ -34,28 +33,19 @@ import (
 )
 
 var (
-	client     *ServiceCenterAggregate
-	clientOnce sync.Once
+	cluster     *ServiceCenterCluster
+	clusterOnce sync.Once
 )
 
-type ServiceCenterInterface interface {
-	discovery.Indexer
-	AddCacher(t discovery.Type, cacher *ServiceCenterCacher)
-	Sync(ctx context.Context) error
-	Ready() <-chan struct{}
-}
-
 type ServiceCenterCluster struct {
-	Client *sc.SCClient
+	Client *SCClientAggregate
 
 	cachers map[discovery.Type]*ServiceCenterCacher
-
-	ready chan struct{}
 }
 
 func (c *ServiceCenterCluster) Initialize() {
-	c.ready = make(chan struct{})
 	c.cachers = make(map[discovery.Type]*ServiceCenterCacher)
+	c.Client = NewSCClientAggregate()
 }
 
 func (c *ServiceCenterCluster) Search(ctx context.Context, opts ...registry.PluginOpOption) (r *discovery.Response, err error) {
@@ -102,9 +92,8 @@ func (c *ServiceCenterCluster) Sync(ctx context.Context) error {
 		return err
 	}
 
-	defer util.SafeCloseChan(c.ready)
-
 	// microservice
+	// TODO remove duplicate SERVICECENTER
 	serviceCacher, ok := c.cachers[backend.SERVICE]
 	if ok {
 		c.check(serviceCacher, &cache.Microservices)
@@ -143,8 +132,6 @@ func (c *ServiceCenterCluster) Sync(ctx context.Context) error {
 }
 
 func (c *ServiceCenterCluster) check(local *ServiceCenterCacher, remote model.Getter) {
-	init := !c.IsReady()
-
 	remote.ForEach(func(_ int, v *model.KV) bool {
 		kv := local.Cache().Get(v.Key)
 		newKv := &discovery.KeyValue{
@@ -155,9 +142,7 @@ func (c *ServiceCenterCluster) check(local *ServiceCenterCacher, remote model.Ge
 			ModRevision:    v.Rev,
 		}
 		switch {
-		case kv == nil && init:
-			local.Notify(pb.EVT_INIT, v.Key, newKv)
-		case kv == nil && !init:
+		case kv == nil:
 			local.Notify(pb.EVT_CREATE, v.Key, newKv)
 		case kv.ModRevision != v.Rev:
 			local.Notify(pb.EVT_UPDATE, v.Key, newKv)
@@ -183,17 +168,23 @@ func (c *ServiceCenterCluster) check(local *ServiceCenterCacher, remote model.Ge
 }
 
 func (c *ServiceCenterCluster) loop(ctx context.Context) {
-	c.Sync(ctx)
-	for {
-		select {
-		case <-ctx.Done():
-			log.Debug("service center client is stopped")
-			return
-		case <-time.After(registry.Configuration().AutoSyncInterval):
-			// TODO support watching sc
-			c.Sync(ctx)
+	select {
+	case <-ctx.Done():
+	case <-time.After(minWaitInterval):
+		c.Sync(ctx)
+	loop:
+		for {
+			select {
+			case <-ctx.Done():
+				break loop
+			case <-time.After(registry.Configuration().AutoSyncInterval):
+				// TODO support watching sc
+				c.Sync(ctx)
+			}
 		}
 	}
+
+	log.Debug("service center client is stopped")
 }
 
 // unsafe
@@ -202,94 +193,20 @@ func (c *ServiceCenterCluster) AddCacher(t discovery.Type, cacher *ServiceCenter
 }
 
 func (c *ServiceCenterCluster) Run() {
+	c.Initialize()
 	gopool.Go(c.loop)
 }
 
+func (c *ServiceCenterCluster) Stop() {}
+
 func (c *ServiceCenterCluster) Ready() <-chan struct{} {
-	return c.ready
-}
-
-func (c *ServiceCenterCluster) IsReady() bool {
-	select {
-	case <-c.ready:
-		return true
-	default:
-		return false
-	}
-}
-
-type ServiceCenterAggregate []*ServiceCenterCluster
-
-func (s *ServiceCenterAggregate) Initialize() {
-	for _, lw := range *s {
-		lw.Initialize()
-		lw.Run()
-	}
-}
-
-func (s *ServiceCenterAggregate) AddCacher(t discovery.Type, cacher *ServiceCenterCacher) {
-	for _, lw := range *s {
-		lw.AddCacher(t, cacher)
-	}
-}
-
-func (s *ServiceCenterAggregate) Search(ctx context.Context, opts ...registry.PluginOpOption) (r *discovery.Response, err error) {
-	op := registry.OpGet(opts...)
-	key := util.BytesToStringWithNoCopy(op.Key)
-	log.Debugf("search '%s' match special options, request service center, opts: %s", key, op)
-
-	var response discovery.Response
-	for _, lw := range *s {
-		resp, err := lw.Search(ctx, opts...)
-		if err != nil {
-			continue
-		}
-		response.Kvs = append(response.Kvs, resp.Kvs...)
-		response.Count += resp.Count
-	}
-	return &response, nil
-}
-
-func (s *ServiceCenterAggregate) Sync(ctx context.Context) error {
-	for _, lw := range *s {
-		lw.Sync(ctx)
-	}
-	return nil
-}
-
-func (s *ServiceCenterAggregate) Ready() <-chan struct{} {
-	for _, lw := range *s {
-		<-lw.Ready()
-	}
 	return closedCh
 }
 
-func NewServiceCenterAggregate() *ServiceCenterAggregate {
-	c := &ServiceCenterAggregate{}
-	clusters := registry.Configuration().Clusters()
-	for name, addr := range clusters {
-		if len(name) == 0 || name == registry.Configuration().ClusterName {
-			continue
-		}
-		sc.Addr = addr
-		client, err := sc.NewSCClient()
-		if err != nil {
-			log.Errorf(err, "new service center[%s][%s] client failed", name, addr)
-			continue
-		}
-		client.Timeout = registry.Configuration().RequestTimeOut
-		*c = append(*c, &ServiceCenterCluster{
-			Client: client,
-		})
-		log.Infof("list and watch service center[%s][%s]", name, addr)
-	}
-	return c
-}
-
-func ServiceCenter() ServiceCenterInterface {
-	clientOnce.Do(func() {
-		client = NewServiceCenterAggregate()
-		client.Initialize()
+func ServiceCenter() *ServiceCenterCluster {
+	clusterOnce.Do(func() {
+		cluster = &ServiceCenterCluster{}
+		cluster.Run()
 	})
-	return client
+	return cluster
 }

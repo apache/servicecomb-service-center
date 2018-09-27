@@ -29,7 +29,7 @@ import (
 	"time"
 )
 
-var defaultURLClientOption = &URLClientOption{
+var defaultURLClientOption = URLClientOption{
 	Compressed:            true,
 	VerifyPeer:            true,
 	SSLVersion:            tls.VersionTLS12,
@@ -128,7 +128,7 @@ func (client *URLClient) HttpDo(method string, rawURL string, headers http.Heade
 
 func setOptionDefaultValue(o *URLClientOption) URLClientOption {
 	if o == nil {
-		return *defaultURLClientOption
+		return defaultURLClientOption
 	}
 
 	option := *o
@@ -147,8 +147,8 @@ func setOptionDefaultValue(o *URLClientOption) URLClientOption {
 	return option
 }
 
-func GetURLClient(o *URLClientOption) (client *URLClient, err error) {
-	option := setOptionDefaultValue(o)
+func GetURLClient(o URLClientOption) (client *URLClient, err error) {
+	option := setOptionDefaultValue(&o)
 	client = &URLClient{
 		Client: &http.Client{
 			Transport: &http.Transport{

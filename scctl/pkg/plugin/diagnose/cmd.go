@@ -23,6 +23,8 @@ import (
 	"path/filepath"
 )
 
+var EtcdClientConfig etcd.Config
+
 func init() {
 	root.RootCmd().AddCommand(NewDiagnoseCommand(root.RootCmd()))
 }
@@ -35,22 +37,22 @@ func NewDiagnoseCommand(parent *cobra.Command) *cobra.Command {
 		Example: parent.CommandPath() + ` diagnose --addr "http://127.0.0.1:30100" --etcd-addr "http://127.0.0.1:2379";`,
 	}
 
-	cmd.Flags().StringVar(&etcd.Addrs, "etcd-addr",
+	cmd.Flags().StringVar(&EtcdClientConfig.Addrs, "etcd-addr",
 		util.GetEnvString("CSE_REGISTRY_ADDRESS", "http://127.0.0.1:2379"),
 		"the http addr and port of etcd endpoints")
-	cmd.Flags().StringVar(&etcd.CertPath, "etcd-cert",
+	cmd.Flags().StringVar(&EtcdClientConfig.CertFile, "etcd-cert",
 		filepath.Join(util.GetEnvString("SSL_ROOT", "."), "server.cer"),
 		"the certificate file path to access etcd, can be overrode by env $SSL_ROOT/server.cer.")
-	cmd.Flags().StringVar(&etcd.KeyPath, "etcd-key",
+	cmd.Flags().StringVar(&EtcdClientConfig.CertKeyFile, "etcd-key",
 		filepath.Join(util.GetEnvString("SSL_ROOT", "."), "server_key.pem"),
 		"the key file path to access etcd, can be overrode by env $SSL_ROOT/server_key.pem.")
-	cmd.Flags().StringVar(&etcd.CAPath, "etcd-ca",
+	cmd.Flags().StringVar(&EtcdClientConfig.CAFile, "etcd-ca",
 		filepath.Join(util.GetEnvString("SSL_ROOT", "."), "trust.cer"),
 		"the CA file path  to access etcd, can be overrode by env $SSL_ROOT/trust.cer.")
-	cmd.Flags().StringVar(&etcd.KeyPassPath, "etcd-pass-file",
+	cmd.Flags().StringVar(&EtcdClientConfig.CertKeyPWDPath, "etcd-pass-file",
 		filepath.Join(util.GetEnvString("SSL_ROOT", "."), "cert_pwd"),
 		"the passphase file path to decrypt key file, can be overrode by env $SSL_ROOT/cert_pwd.")
-	cmd.Flags().StringVar(&etcd.KeyPass, "etcd-pass", "",
+	cmd.Flags().StringVar(&EtcdClientConfig.CertKeyPWD, "etcd-pass", "",
 		"the passphase string to decrypt key file.")
 
 	return cmd

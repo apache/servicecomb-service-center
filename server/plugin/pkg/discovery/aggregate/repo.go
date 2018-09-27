@@ -16,34 +16,21 @@
 package sc
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"io/ioutil"
-	"strings"
-	"time"
+	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery"
 )
 
-func NewSCClient(cfg Config) (*SCClient, error) {
-	ssl := strings.Index(cfg.Addr, "https://") >= 0
-	if ssl && len(cfg.CertKeyPWD) == 0 && len(cfg.CertKeyPWDPath) > 0 {
-		content, _ := ioutil.ReadFile(cfg.CertKeyPWDPath)
-		cfg.CertKeyPWD = string(content)
-	}
-	client, err := rest.GetURLClient(rest.URLClientOption{
-		SSLEnabled:     ssl,
-		VerifyPeer:     cfg.VerifyPeer,
-		CAFile:         cfg.CAFile,
-		CertFile:       cfg.CertFile,
-		CertKeyFile:    cfg.CertKeyFile,
-		CertKeyPWD:     cfg.CertKeyPWD,
-		RequestTimeout: 10 * time.Second,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &SCClient{Config: cfg, URLClient: client}, nil
+func init() {
+	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "aggregate", NewRepository})
 }
 
-type SCClient struct {
-	*rest.URLClient
-	Config Config
+type AggregateRepository struct {
+}
+
+func (r *AggregateRepository) New(t discovery.Type, cfg *discovery.Config) discovery.Adaptor {
+	return NewAggregator(t, cfg)
+}
+
+func NewRepository() mgr.PluginInstance {
+	return &AggregateRepository{}
 }

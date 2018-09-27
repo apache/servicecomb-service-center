@@ -80,7 +80,7 @@ func saveDirectory(root string, ms *adminModel.Microservice) string {
 }
 
 func SchemaCommandFunc(_ *cobra.Command, args []string) {
-	scClient, err := sc.NewSCClient()
+	scClient, err := sc.NewSCClient(cmd.ScClientConfig)
 	if err != nil {
 		cmd.StopAndExit(cmd.ExitError, err)
 	}

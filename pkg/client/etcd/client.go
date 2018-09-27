@@ -24,31 +24,22 @@ import (
 	"time"
 )
 
-var (
-	Addrs       string
-	CertPath    string
-	KeyPath     string
-	KeyPassPath string
-	KeyPass     string
-	CAPath      string
-)
-
-func NewEtcdClient() (*clientv3.Client, error) {
+func NewEtcdClient(cfg Config) (*clientv3.Client, error) {
 	var (
-		endpoints = strings.Split(Addrs, ",")
+		endpoints = strings.Split(cfg.Addrs, ",")
 		cliTls    *tls.Config
 	)
 	for _, ip := range endpoints {
 		if strings.Index(ip, "https://") >= 0 {
-			if len(KeyPass) == 0 && len(KeyPassPath) > 0 {
-				content, _ := ioutil.ReadFile(KeyPassPath)
-				KeyPass = string(content)
+			if len(cfg.CertKeyPWD) == 0 && len(cfg.CertKeyPWDPath) > 0 {
+				content, _ := ioutil.ReadFile(cfg.CertKeyPWDPath)
+				cfg.CertKeyPWD = string(content)
 			}
 			opts := append(tlsutil.DefaultClientTLSOptions(),
-				tlsutil.WithCA(CAPath),
-				tlsutil.WithCert(CertPath),
-				tlsutil.WithKey(KeyPath),
-				tlsutil.WithKeyPass(KeyPass))
+				tlsutil.WithCA(cfg.CAFile),
+				tlsutil.WithCert(cfg.CertFile),
+				tlsutil.WithKey(cfg.CertKeyFile),
+				tlsutil.WithKeyPass(cfg.CertKeyPWD))
 			cliTls, _ = tlsutil.GetClientTLSConfig(opts...)
 			break
 		}

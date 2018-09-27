@@ -33,6 +33,7 @@ var rootCmd = &cobra.Command{
 	Use:   version.TOOL_NAME + " <command>",
 	Short: "The admin control command of service center",
 }
+var ScClientConfig sc.Config
 
 func init() {
 	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "make the operation more talkative")
@@ -42,24 +43,24 @@ func init() {
 		}
 	}
 
-	rootCmd.PersistentFlags().StringVar(&sc.Addr, "addr",
+	rootCmd.PersistentFlags().StringVar(&ScClientConfig.Addr, "addr",
 		"http://"+util.GetEnvString("HOSTING_SERVER_IP", "127.0.0.1")+":30100",
 		"the http host and port of service center, can be overrode by env HOSTING_SERVER_IP.")
 
-	rootCmd.PersistentFlags().StringVarP(&sc.Token, "token", "t", "",
+	rootCmd.PersistentFlags().StringVarP(&ScClientConfig.Token, "token", "t", "",
 		"the auth token string to access service center.")
 
-	rootCmd.PersistentFlags().BoolVarP(&sc.VerifyPeer, "peer", "p", false,
+	rootCmd.PersistentFlags().BoolVarP(&ScClientConfig.VerifyPeer, "peer", "p", false,
 		"verify service center certificates.")
-	rootCmd.PersistentFlags().StringVar(&sc.CertPath, "cert", "",
+	rootCmd.PersistentFlags().StringVar(&ScClientConfig.CertFile, "cert", "",
 		"the certificate file path to access service center.")
-	rootCmd.PersistentFlags().StringVar(&sc.KeyPath, "key", "",
+	rootCmd.PersistentFlags().StringVar(&ScClientConfig.CertKeyFile, "key", "",
 		"the key file path to access service center.")
-	rootCmd.PersistentFlags().StringVar(&sc.CAPath, "ca", "",
+	rootCmd.PersistentFlags().StringVar(&ScClientConfig.CAFile, "ca", "",
 		"the CA file path  to access service center.")
-	rootCmd.PersistentFlags().StringVar(&sc.KeyPassPath, "pass-file", "",
+	rootCmd.PersistentFlags().StringVar(&ScClientConfig.CertKeyPWDPath, "pass-file", "",
 		"the passphase file path to decrypt key file.")
-	rootCmd.PersistentFlags().StringVar(&sc.KeyPass, "pass", "",
+	rootCmd.PersistentFlags().StringVar(&ScClientConfig.CertKeyPWD, "pass", "",
 		"the passphase string to decrypt key file.")
 }
 
