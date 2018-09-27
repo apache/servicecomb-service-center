@@ -23,7 +23,7 @@ Notes: After deployment, it only create ServiceCenter cluster in the `default` n
 You can use the command `kubectl apply` to deploy ServiceCenter cluster.
 
 ```bash
-cd ${PROJECT_ROOT}/integration/k8s
+cd ${PROJECT_ROOT}/examples/infrastructures/k8s
 kubectl apply -f <(helm template --name servicecomb --namespace default service-center/)
 ```
 
@@ -33,7 +33,7 @@ You can also use the helm commands to deploy ServiceCenter cluster if
 you already deploy helm tiller.
 
 ```bash
-cd ${PROJECT_ROOT}/integration/k8s
+cd ${PROJECT_ROOT}/examples/infrastructures/k8s
 helm install --name servicecomb --namespace default service-center/
 ```
 
@@ -50,7 +50,7 @@ Notes: After deployment, it create ServiceCenter cluster and etcd cluster in the
 You can use the command `kubectl apply` to deploy ServiceCenter cluster.
 
 ```bash
-cd ${PROJECT_ROOT}/integration/k8s
+cd ${PROJECT_ROOT}/examples/infrastructures/k8s
 # install etcd cluster
 kubectl apply -f <(helm template --name coreos --namespace default etcd/)
 # install sc cluster
@@ -66,7 +66,7 @@ You can also use the helm commands to deploy ServiceCenter cluster if
 you already deploy helm tiller.
 
 ```bash
-cd ${PROJECT_ROOT}/integration/k8s
+cd ${PROJECT_ROOT}/examples/infrastructures/k8s
 # install etcd cluster
 helm install --name coreos --namespace default etcd/
 # install sc cluster
@@ -97,7 +97,7 @@ By default, the ServiceCenter frontend use `NodePort` service type to deploy in 
 If you use the kubectl to deploy, take deploy mode `platform registration` as example.
 
 ```bash
-cd ${PROJECT_ROOT}/integration/k8s
+cd ${PROJECT_ROOT}/examples/infrastructures/k8s
 kubectl delete -f <(helm template --name servicecomb --namespace default service-center/)
 ```
 
