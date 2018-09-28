@@ -17,15 +17,15 @@
 package util_test
 
 import (
-	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/discovery/etcd"
-	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/quota/buildin"
-	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/registry/buildin"
+	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery/etcd"
+	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/quota/buildin"
+	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/registry/buildin"
 )
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/registry"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"

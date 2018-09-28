@@ -19,8 +19,8 @@ package backend
 import (
 	"errors"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/task"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/registry"
 	"golang.org/x/net/context"
 	"testing"
 )

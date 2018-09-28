@@ -2338,6 +2338,10 @@ definitions:
         type: array
         items:
           $ref: "#/definitions/MicroserviceTagKV"
+      serviceRuleIndexes:
+        type: array
+        items:
+          $ref: "#/definitions/StringKV"
       serviceRules:
         type: array
         items:

@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery"
 	"testing"
 	"time"
 )

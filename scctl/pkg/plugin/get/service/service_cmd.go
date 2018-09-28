@@ -44,13 +44,13 @@ func NewServiceCommand(parent *cobra.Command) *cobra.Command {
 }
 
 func ServiceCommandFunc(_ *cobra.Command, args []string) {
-	scClient, err := sc.NewSCClient()
+	scClient, err := sc.NewSCClient(cmd.ScClientConfig)
 	if err != nil {
 		cmd.StopAndExit(cmd.ExitError, err)
 	}
-	cache, err := scClient.GetScCache()
-	if err != nil {
-		cmd.StopAndExit(cmd.ExitError, err)
+	cache, scErr := scClient.GetScCache()
+	if scErr != nil {
+		cmd.StopAndExit(cmd.ExitError, scErr)
 	}
 
 	endpointMap := make(map[string][]string)

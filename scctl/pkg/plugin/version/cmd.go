@@ -47,7 +47,7 @@ func VersionCommandFunc(_ *cobra.Command, _ []string) {
 	fmt.Print(version.TOOL_NAME, " ")
 	version.Ver().Print()
 
-	scClient, err := sc.NewSCClient()
+	scClient, err := sc.NewSCClient(cmd.ScClientConfig)
 	if err != nil {
 		return
 	}

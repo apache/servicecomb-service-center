@@ -20,86 +20,15 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/plugin"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/auditlog"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/auth"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/security"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/tls"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/tracing"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/uuid"
 	"github.com/astaxie/beego"
-	pg "plugin"
-	"strconv"
 	"sync"
 )
-
-const (
-	BUILDIN       = "buildin"
-	STATIC        = "static"
-	DYNAMIC       = "dynamic"
-	keyPluginName = "name"
-)
-
-const (
-	UUID PluginName = iota
-	AUDIT_LOG
-	AUTH
-	CIPHER
-	QUOTA
-	REGISTRY
-	TRACING
-	TLS
-	DISCOVERY
-	typeEnd
-)
-
-var pluginNames = map[PluginName]string{
-	UUID:      "uuid",
-	AUDIT_LOG: "auditlog",
-	AUTH:      "auth",
-	CIPHER:    "cipher",
-	QUOTA:     "quota",
-	REGISTRY:  "registry",
-	TRACING:   "trace",
-	DISCOVERY: "discovery",
-	TLS:       "ssl",
-}
 
 var pluginMgr = &PluginManager{}
 
 func init() {
 	pluginMgr.Initialize()
 }
-
-type PluginName int
-
-func (pn PluginName) String() string {
-	if name, ok := pluginNames[pn]; ok {
-		return name
-	}
-	return "PLUGIN" + strconv.Itoa(int(pn))
-}
-
-func (pn PluginName) ActiveConfigs() util.JSONObject {
-	return core.ServerInfo.Config.Plugins.Object(pn.String())
-}
-
-func (pn PluginName) ClearConfigs() {
-	core.ServerInfo.Config.Plugins.Set(pn.String(), nil)
-}
-
-type Plugin struct {
-	// plugin class name
-	PName PluginName
-	// plugin name
-	Name string
-	New  func() PluginInstance
-}
-
-type PluginInstance interface{}
 
 type wrapInstance struct {
 	dynamic  bool
@@ -220,41 +149,12 @@ func (pm *PluginManager) existDynamicPlugin(pn PluginName) *Plugin {
 	return nil
 }
 
-func (pm *PluginManager) Discovery() discovery.AdaptorRepository {
-	return pm.Instance(DISCOVERY).(discovery.AdaptorRepository)
-}
-func (pm *PluginManager) Registry() registry.Registry {
-	return pm.Instance(REGISTRY).(registry.Registry)
-}
-func (pm *PluginManager) UUID() uuid.UUID { return pm.Instance(UUID).(uuid.UUID) }
-func (pm *PluginManager) AuditLog() auditlog.AuditLogger {
-	return pm.Instance(AUDIT_LOG).(auditlog.AuditLogger)
-}
-func (pm *PluginManager) Auth() auth.Auth              { return pm.Instance(AUTH).(auth.Auth) }
-func (pm *PluginManager) Cipher() security.Cipher      { return pm.Instance(CIPHER).(security.Cipher) }
-func (pm *PluginManager) Quota() quota.QuotaManager    { return pm.Instance(QUOTA).(quota.QuotaManager) }
-func (pm *PluginManager) Tracing() (v tracing.Tracing) { return pm.Instance(TRACING).(tracing.Tracing) }
-func (pm *PluginManager) TLS() tls.TLS                 { return pm.Instance(TLS).(tls.TLS) }
-
 func Plugins() *PluginManager {
 	return pluginMgr
 }
 
 func RegisterPlugin(p Plugin) {
 	Plugins().Register(p)
-}
-
-// DynamicPluginFunc should be called in buildin implement
-func DynamicPluginFunc(pn PluginName, funcName string) pg.Symbol {
-	if wi, ok := Plugins().instances[pn]; ok && !wi.dynamic {
-		return nil
-	}
-
-	f, err := plugin.FindFunc(pn.String(), funcName)
-	if err != nil {
-		log.Errorf(err, "plugin '%s': not implemented function '%s'.", pn, funcName)
-	}
-	return f
 }
 
 func LoadPlugins() {

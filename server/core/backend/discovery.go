@@ -21,9 +21,9 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/task"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/registry"
 	"golang.org/x/net/context"
 	"sync"
 )
@@ -72,10 +72,12 @@ func (s *KvStore) getOrCreateAdaptor(t discovery.Type) discovery.Adaptor {
 	v, _ := s.adaptors.Fetch(t, func() (interface{}, error) {
 		addOn, ok := s.addOns.Get(t)
 		if ok {
-			return s.repo().New(t, addOn.(discovery.AddOn).Config()), nil
+			adaptor := s.repo().New(t, addOn.(discovery.AddOn).Config())
+			adaptor.Run()
+			return adaptor, nil
 		}
 		log.Warnf("type '%s' not found", t)
-		return s.repo().New(t, nil), nil
+		return nil, nil
 	})
 	return v.(discovery.Adaptor)
 }
@@ -160,7 +162,6 @@ func (s *KvStore) ServiceTag() discovery.Adaptor                { return s.Adapt
 func (s *KvStore) Rule() discovery.Adaptor                      { return s.Adaptors(RULE) }
 func (s *KvStore) RuleIndex() discovery.Adaptor                 { return s.Adaptors(RULE_INDEX) }
 func (s *KvStore) Schema() discovery.Adaptor                    { return s.Adaptors(SCHEMA) }
-func (s *KvStore) Dependency() discovery.Adaptor                { return s.Adaptors(DEPENDENCY) }
 func (s *KvStore) DependencyRule() discovery.Adaptor            { return s.Adaptors(DEPENDENCY_RULE) }
 func (s *KvStore) DependencyQueue() discovery.Adaptor           { return s.Adaptors(DEPENDENCY_QUEUE) }
 func (s *KvStore) Domain() discovery.Adaptor                    { return s.Adaptors(DOMAIN) }

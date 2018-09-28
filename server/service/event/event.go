@@ -17,7 +17,7 @@
 package event
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery"
 )
 
 func init() {

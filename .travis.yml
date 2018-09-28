@@ -10,17 +10,11 @@ go:
 
 before_install:
   - go get github.com/mattn/goveralls
-  - go get golang.org/x/tools/cmd/cover
-  - go get github.com/tedsuo/rata
-  - go get github.com/onsi/ginkgo
-  - go get github.com/onsi/ginkgo/config		
-  - go get github.com/onsi/ginkgo/types
-  - go get github.com/onsi/ginkgo/ginkgo
-  - go get github.com/astaxie/beego
-  - go get github.com/onsi/gomega
-  - go get github.com/onsi/gomega/gbytes		
   - curl https://glide.sh/get | sh
-  
+  - curl -sL https://deb.nodesource.com/setup_8.x | sudo bash -
+  - sudo apt-get install -y nodejs
+  - npm install -g bower
+
 before_script:
   - mkdir -p $HOME/gopath/src/github.com/apache/incubator-servicecomb-service-center
   - rsync -az ${TRAVIS_BUILD_DIR}/ $HOME/gopath/src/github.com/apache/incubator-servicecomb-service-center/
@@ -33,11 +27,11 @@ install: true
 jobs:
   include:
     - stage: Building Service Center
-      script: go build -o servicecenter
+      script: bash -x scripts/build/local.sh
     - stage: Unit Testing
       script: bash -x scripts/ut_test_in_docker.sh && $HOME/gopath/bin/goveralls -coverprofile=coverage.txt -service=travis-ci
     - stage: Integration Testing
-      script: bash -x scripts/integration_test.sh    
+      script: bash -x scripts/integration_test.sh
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

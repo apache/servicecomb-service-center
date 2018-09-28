@@ -17,6 +17,7 @@ Apache ServiceComb (incubating) Service-Center is a Restful based service-regist
  - **Performance**: Performance/Caching design
  - **Metrics**: Able to expose Prometheus metric API automatically
  - **Tracing**: Able to report tracing data to Zipkin server
+ - **Multi Datacenter**: Additional layer of abstraction to clusters deployed in multiple datacenters
  
 ## Documentation
 

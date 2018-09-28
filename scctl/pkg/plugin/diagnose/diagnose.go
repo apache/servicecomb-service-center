@@ -48,11 +48,11 @@ type etcdResponse map[string][]*mvccpb.KeyValue
 
 func DiagnoseCommandFunc(_ *cobra.Command, args []string) {
 	// initialize sc/etcd clients
-	scClient, err := sc.NewSCClient()
+	scClient, err := sc.NewSCClient(cmd.ScClientConfig)
 	if err != nil {
 		cmd.StopAndExit(cmd.ExitError, err)
 	}
-	etcdClient, err := etcd.NewEtcdClient()
+	etcdClient, err := etcd.NewEtcdClient(EtcdClientConfig)
 	if err != nil {
 		cmd.StopAndExit(cmd.ExitError, err)
 	}
@@ -65,9 +65,9 @@ func DiagnoseCommandFunc(_ *cobra.Command, args []string) {
 	}
 
 	// query sc
-	cache, err := scClient.GetScCache()
-	if err != nil {
-		cmd.StopAndExit(cmd.ExitError, err)
+	cache, scErr := scClient.GetScCache()
+	if scErr != nil {
+		cmd.StopAndExit(cmd.ExitError, scErr)
 	}
 
 	// diagnose go...

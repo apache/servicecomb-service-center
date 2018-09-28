@@ -16,11 +16,11 @@ Swagger [`v4`](/server/core/swagger/v4.yaml)|[`v3`](/server/core/swagger/v3.yaml
 
 #### Deploy Service-Center Locally
 
-- [In Docker](/integration/docker)
+- [In Docker](/examples/infrastructures/docker)
 
 #### Deploy Service-Center Cluster
 
-- [In Kubernetes Cluster](/integration/k8s)
+- [In Kubernetes Cluster](/examples/infrastructures/k8s)
 - [In VMs](/docs/sc-cluster.md)
 - [Deploy with TLS](/docs/security-tls.md)
 

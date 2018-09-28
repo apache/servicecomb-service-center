@@ -1,0 +1,73 @@
+# Default values for service-center.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+frontend:
+  replicaCount: 2
+  image:
+    repository: servicecomb/scfrontend
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    name: scfrontend
+    type: NodePort
+    externalPort: 30103
+    internalPort: 30103
+  resources: {}
+
+sc:
+  replicaCount: 2
+  discovery:
+    # support local, servicecenter, etcd, k8s and aggregate discovery mode
+    # type: local
+    #   bootstrap a lightweight service center, can only support replicaCount is one
+    # type: servicecenter
+    #   The precondition is that one or more service center clusters have been deployed,
+    #   this deployment will bootstrap a service center aggregation service which
+    #   provides micro-services and instances information aggregation queries
+    # type: etcd
+    #   bootstrap a standard service center cluster which micro-services and instances
+    #   information stored in etcd
+    # type: k8s
+    #   bootstrap a standard service center cluster which micro-services and instances
+    #   information discovered from kubernetes services
+    # type: aggregate
+    #   this type not only support aggregate service center cluster but also aggregate
+    #   the kubernetes services
+    type: k8s
+    # the cluster urls list, can only support discovery type is "servicecenter" or "aggregate"
+    # e.g. clusters: "sc-0=http://service-center-1:30100,sc-1=http://service-center-2:30100"
+    clusters: ""
+  image:
+    repository: servicecomb/service-center
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    name: service-center
+    type: ClusterIP
+    externalPort: 30100
+    internalPort: 30100
+
+  ingress:
+    enabled: false
+    # Used to create an Ingress record.
+    hosts:
+      - service-center.local
+    annotations:
+      # kubernetes.io/ingress.class: nginx
+      # kubernetes.io/tls-acme: "true"
+    tls:
+      # Secrets must be manually created in the namespace.
+      # - secretName: chart-example-tls
+      #   hosts:
+      #     - chart-example.local
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #  cpu: 100m
+    #  memory: 128Mi
+    # requests:
+    #  cpu: 100m
+    #  memory: 128Mi

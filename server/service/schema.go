@@ -24,10 +24,10 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
 	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/quota"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/registry"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
 	"strings"
@@ -143,14 +143,14 @@ func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAl
 		tempSchema := &pb.Schema{}
 		tempSchema.SchemaId = schemaId
 		for _, summarySchema := range resp.Kvs {
-			schemaIdOfSummary := apt.GetInfoFromSchemaSummaryKV(summarySchema.Key)
+			_, _, schemaIdOfSummary := apt.GetInfoFromSchemaSummaryKV(summarySchema.Key)
 			if schemaId == schemaIdOfSummary {
 				tempSchema.Summary = summarySchema.Value.(string)
 			}
 		}
 
 		for _, contentSchema := range respWithSchema.Kvs {
-			schemaIdOfSchema := apt.GetInfoFromSchemaKV(contentSchema.Key)
+			_, _, schemaIdOfSchema := apt.GetInfoFromSchemaKV(contentSchema.Key)
 			if schemaId == schemaIdOfSchema {
 				tempSchema.Schema = util.BytesToStringWithNoCopy(contentSchema.Value.([]byte))
 			}

@@ -18,7 +18,7 @@ package backend
 import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/discovery"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery"
 	"time"
 )
 
@@ -40,7 +40,6 @@ var (
 	SERVICE_TAG      discovery.Type
 	RULE             discovery.Type
 	RULE_INDEX       discovery.Type
-	DEPENDENCY       discovery.Type
 	DEPENDENCY_RULE  discovery.Type
 	DEPENDENCY_QUEUE discovery.Type
 	SCHEMA           discovery.Type
@@ -84,9 +83,6 @@ func registerInnerTypes() {
 	RULE_INDEX = Store().MustInstall(discovery.NewAddOn("RULE_INDEX",
 		discovery.Configure().WithPrefix(core.GetServiceRuleIndexRootKey("")).
 			WithInitSize(100).WithParser(pb.StringParser)))
-	DEPENDENCY = Store().MustInstall(discovery.NewAddOn("DEPENDENCY",
-		discovery.Configure().WithPrefix(core.GetServiceDependencyRootKey("")).
-			WithInitSize(100)))
 	DEPENDENCY_RULE = Store().MustInstall(discovery.NewAddOn("DEPENDENCY_RULE",
 		discovery.Configure().WithPrefix(core.GetServiceDependencyRuleRootKey("")).
 			WithInitSize(100).WithParser(pb.DependencyRuleParser)))

@@ -22,38 +22,28 @@ import (
 	"time"
 )
 
-var (
-	Addr        string
-	Token       string
-	VerifyPeer  bool
-	CertPath    string
-	KeyPath     string
-	KeyPassPath string
-	KeyPass     string
-	CAPath      string
-)
-
-func NewSCClient() (*SCClient, error) {
-	ssl := strings.Index(Addr, "https://") >= 0
-	if ssl && len(KeyPass) == 0 && len(KeyPassPath) > 0 {
-		content, _ := ioutil.ReadFile(KeyPassPath)
-		KeyPass = string(content)
+func NewSCClient(cfg Config) (*SCClient, error) {
+	ssl := strings.Index(cfg.Addr, "https://") >= 0
+	if ssl && len(cfg.CertKeyPWD) == 0 && len(cfg.CertKeyPWDPath) > 0 {
+		content, _ := ioutil.ReadFile(cfg.CertKeyPWDPath)
+		cfg.CertKeyPWD = string(content)
 	}
-	client, err := rest.GetURLClient(&rest.URLClientOption{
+	client, err := rest.GetURLClient(rest.URLClientOption{
 		SSLEnabled:     ssl,
-		VerifyPeer:     VerifyPeer,
-		CAFile:         CAPath,
-		CertFile:       CertPath,
-		CertKeyFile:    KeyPath,
-		CertKeyPWD:     KeyPass,
+		VerifyPeer:     cfg.VerifyPeer,
+		CAFile:         cfg.CAFile,
+		CertFile:       cfg.CertFile,
+		CertKeyFile:    cfg.CertKeyFile,
+		CertKeyPWD:     cfg.CertKeyPWD,
 		RequestTimeout: 10 * time.Second,
 	})
 	if err != nil {
 		return nil, err
 	}
-	return &SCClient{client: client}, nil
+	return &SCClient{Config: cfg, URLClient: client}, nil
 }
 
 type SCClient struct {
-	client *rest.URLClient
+	*rest.URLClient
+	Config Config
 }
