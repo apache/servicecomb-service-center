@@ -4,7 +4,7 @@
 Apache ServiceComb (incubating) Service-Center is a Restful based service-registry that provides micro-services discovery and micro-service management. It is based on Open API format and provides features like service-discovery, fault-tolerance, dynamic routing, notify subscription and scalable by design. It has high performance cache design and separate entity management for micro-services and their instances. It provides out of box support for metrics and tracing. It has a web portal to manage the micro-services.  
 
 ## Features
- - **Open API**: API doc(Open API format) management for microservice
+ - **[`Open API`](/server/core/swagger/v4.yaml)**: API doc(Open API format) management for microservice
  - **Metadata**: Metadata management for both microservice and microservice instance
  - **Dependency**: Microservice dependency management
  - **Seperated**: Seperated microservice and microservice instance entity management
@@ -12,12 +12,13 @@ Apache ServiceComb (incubating) Service-Center is a Restful based service-regist
  - **Security**: White and back list configuration for service discovery
  - **Discovery**: Support query instance by criteria 
  - **Subscribe**: Use web socket to notify client about instance change events
- - **Portal**: Awesome  [web portal](/frontend)
+ - **[`Portal`](/frontend)**: Awesome web portal
  - **Fault tolerance**: Multiple fault tolerance mechanism and design in the architecture
  - **Performance**: Performance/Caching design
- - **Metrics**: Able to expose Prometheus metric API automatically
- - **Tracing**: Able to report tracing data to Zipkin server
- - **Multi Datacenter**: Additional layer of abstraction to clusters deployed in multiple datacenters
+ - **[`Metrics`](/docs/integration-grafana.md)**: Able to expose Prometheus metric API automatically
+ - **[`Tracing`](/docs/tracing.md)**: Able to report tracing data to Zipkin server
+ - **[`Multi Datacenter`](/docs/multidcs.md)**: Additional layer of abstraction to clusters deployed in multiple datacenters
+ - **[`Dynmaic Plug-in`](/docs/plugin.md)**: Able to load custom authentication, tls and other dynamic libraries
  
 ## Documentation
 

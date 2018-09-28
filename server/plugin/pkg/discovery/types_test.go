@@ -34,4 +34,9 @@ func TestTypes(t *testing.T) {
 	if TypeError.String() != "TypeError" {
 		t.Fatalf("TestTypes failed")
 	}
+
+	var kv KeyValue
+	if kv.String() != "{key: '', value: null, version: 0}" {
+		t.Fatalf("TestTypes failed, %v", kv.String())
+	}
 }

@@ -64,7 +64,7 @@ type KeyValue struct {
 
 func (kv *KeyValue) String() string {
 	b, _ := json.Marshal(kv.Value)
-	return fmt.Sprintf("{key: '%s', value: '%s', version: %d}",
+	return fmt.Sprintf("{key: '%s', value: %s, version: %d}",
 		util.BytesToStringWithNoCopy(kv.Key), util.BytesToStringWithNoCopy(b), kv.Version)
 }
 

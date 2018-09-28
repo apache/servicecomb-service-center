@@ -130,3 +130,32 @@ func TestKvCache_Get(t *testing.T) {
 		}
 	}
 }
+
+func BenchmarkKvCache_GetAll1(b *testing.B) {
+	c := NewKvCache("test", Configure())
+	c.Put("/a/b/c/d/e/1", &KeyValue{Version: 1})
+	c.Put("/a/b/c/d/e/2", &KeyValue{Version: 2})
+	c.Put("/a/b/d/d/f/3", &KeyValue{Version: 3})
+	c.Put("/a/b/e/d/g/4", &KeyValue{Version: 4})
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = c.GetAll(nil)
+	}
+	b.ReportAllocs()
+	// 1000000	      1269 ns/op	       0 B/op	       0 allocs/op
+}
+
+func BenchmarkKvCache_GetAll2(b *testing.B) {
+	c := NewKvCache("test", Configure())
+	c.Put("/a/b/c/d/e/1", &KeyValue{Version: 1})
+	c.Put("/a/b/c/d/e/2", &KeyValue{Version: 2})
+	c.Put("/a/b/d/d/f/3", &KeyValue{Version: 3})
+	c.Put("/a/b/e/d/g/4", &KeyValue{Version: 4})
+	b.ResetTimer()
+	var arr []*KeyValue
+	for i := 0; i < b.N; i++ {
+		_ = c.GetAll(&arr)
+	}
+	b.ReportAllocs()
+	// 1000000	      2784 ns/op	     173 B/op	       0 allocs/op
+}
