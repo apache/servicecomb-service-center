@@ -23,16 +23,18 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/registry"
 	"github.com/apache/incubator-servicecomb-service-center/version"
 	"io/ioutil"
 	"net/http"
 )
 
 const (
-	apiVersionURL = "/version"
-	apiDumpURL    = "/v4/default/admin/dump"
-	apiSchemasURL = "/v4/%s/registry/microservices/%s/schemas"
-	apiSchemaURL  = "/v4/%s/registry/microservices/%s/schemas/%s"
+	apiVersionURL  = "/version"
+	apiDumpURL     = "/v4/default/admin/dump"
+	apiClustersURL = "/v4/default/admin/clusters"
+	apiSchemasURL  = "/v4/%s/registry/microservices/%s/schemas"
+	apiSchemaURL   = "/v4/%s/registry/microservices/%s/schemas/%s"
 )
 
 func (c *SCClient) toError(body []byte) *scerr.Error {
@@ -171,4 +173,33 @@ func (c *SCClient) GetSchemaBySchemaId(domainProject, serviceId, schemaId string
 		Schema:   schema.Schema,
 		Summary:  schema.SchemaSummary,
 	}, nil
+}
+
+func (c *SCClient) GetClusters() (registry.Clusters, *scerr.Error) {
+	headers := c.commonHeaders()
+	// only default domain has admin permission
+	headers.Set("X-Domain-Name", "default")
+	resp, err := c.URLClient.HttpDo(http.MethodGet, c.Config.Addr+apiClustersURL, headers, nil)
+	if err != nil {
+		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, c.toError(body)
+	}
+
+	clusters := &model.ClustersResponse{}
+	err = json.Unmarshal(body, clusters)
+	if err != nil {
+		fmt.Println(string(body))
+		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+	}
+
+	return clusters.Clusters, nil
 }

@@ -134,6 +134,19 @@ ls -l schemas/springmvc/provider.v0.0.1
 #             type: "string"
 ```
 
+### cluster [options]
+
+Get the registry clusters managed by ServiceCenter.
+
+#### Examples
+```bash
+./scctl get cluster
+#   CLUSTER |        ENDPOINTS         
+# +---------+-------------------------+
+#   sc-1    | http://172.0.1.32:30100  
+#   sc-0    | http://172.0.1.29:30100
+```
+
 ## Diagnose commands
 
 The diagnostic command can output the ServiceCenter health report. 

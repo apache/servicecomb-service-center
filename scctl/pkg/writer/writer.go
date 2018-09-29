@@ -18,6 +18,7 @@ package writer
 import (
 	"github.com/olekukonko/tablewriter"
 	"os"
+	"sort"
 	"strconv"
 	"time"
 )
@@ -28,6 +29,7 @@ type Printer interface {
 	Flags(flags ...interface{}) []interface{}
 	PrintBody() [][]string
 	PrintTitle() []string
+	Sorter() *RecordsSorter
 }
 
 func TimeFormat(delta time.Duration) string {
@@ -63,5 +65,12 @@ func MakeTable(tableName []string, tableContent [][]string) {
 }
 
 func PrintTable(p Printer) {
-	MakeTable(p.PrintTitle(), p.PrintBody())
+	body := p.PrintBody()
+	sorter := p.Sorter()
+	if sorter == nil {
+		sorter = NewRecordsSorter(nil)
+	}
+	sorter.Records = body
+	sort.Sort(sorter)
+	MakeTable(p.PrintTitle(), body)
 }

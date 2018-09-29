@@ -34,38 +34,38 @@ type Config struct {
 	EmbedMode        string
 	ManagerAddress   string
 	ClusterName      string
-	ClusterAddresses string
+	ClusterAddresses string   // the raw string of cluster configuration
+	Clusters         Clusters // parsed from ClusterAddresses
 	DialTimeout      time.Duration
 	RequestTimeOut   time.Duration
 	AutoSyncInterval time.Duration
 }
 
-func (c *Config) Clusters() map[string]string {
-	clusters := make(map[string]string)
+func (c *Config) InitClusters() {
+	c.Clusters = make(Clusters)
 	kvs := strings.Split(c.ClusterAddresses, ",")
 	for _, cluster := range kvs {
-		// sc-0=http(s)://host:port
+		// sc-0=http(s)://host1:port1|http(s)://host2:port2
 		names := strings.Split(cluster, "=")
 		if len(names) != 2 {
 			continue
 		}
-		clusters[names[0]] = names[1]
+		c.Clusters[names[0]] = strings.Split(names[1], "|")
 	}
-	if len(clusters) == 0 {
-		clusters[c.ClusterName] = c.ClusterAddresses
+	if len(c.Clusters) == 0 {
+		c.Clusters[c.ClusterName] = []string{c.ClusterAddresses}
 	}
-	return clusters
 }
 
+// ClusterAddress return the address of current SC's registry backend
 func (c *Config) ClusterAddress() string {
-	return c.Clusters()[c.ClusterName]
+	return c.Clusters[c.ClusterName][0]
 }
 
 func Configuration() *Config {
 	configOnce.Do(func() {
 		var err error
-
-		defaultRegistryConfig.ClusterName = beego.AppConfig.String("manager_name")
+		defaultRegistryConfig.ClusterName = beego.AppConfig.DefaultString("manager_name", "default")
 		defaultRegistryConfig.ManagerAddress = beego.AppConfig.String("manager_addr")
 		defaultRegistryConfig.ClusterAddresses = beego.AppConfig.DefaultString("manager_cluster", "http://127.0.0.1:2379")
 		defaultRegistryConfig.DialTimeout, err = time.ParseDuration(beego.AppConfig.DefaultString("registry_timeout", "30s"))
@@ -84,6 +84,7 @@ func Configuration() *Config {
 		if err != nil {
 			log.Errorf(err, "auto_sync_interval is invalid")
 		}
+		defaultRegistryConfig.InitClusters()
 	})
 	return &defaultRegistryConfig
 }

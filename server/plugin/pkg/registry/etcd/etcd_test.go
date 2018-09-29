@@ -67,6 +67,7 @@ func TestEtcdClient(t *testing.T) {
 	old1 := registry.Configuration().ClusterAddresses
 	old2 := registry.Configuration().DialTimeout
 	registry.Configuration().ClusterAddresses = "x"
+	registry.Configuration().InitClusters()
 	registry.Configuration().DialTimeout = dialTimeout
 	inst = NewRegistry()
 	if inst == nil {
@@ -78,6 +79,7 @@ func TestEtcdClient(t *testing.T) {
 		t.Fatalf("TestEtcdClient failed, %#v", err)
 	}
 	registry.Configuration().ClusterAddresses = old1
+	registry.Configuration().InitClusters()
 	registry.Configuration().DialTimeout = old2
 
 	// case: etcd do

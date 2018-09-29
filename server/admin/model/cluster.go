@@ -13,11 +13,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bootstrap
+package model
 
-import _ "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/version"
-import _ "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/diagnose"
-import _ "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/get/service"
-import _ "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/get/instance"
-import _ "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/get/schema"
-import _ "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/get/cluster"
+import (
+	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/registry"
+)
+
+type ClustersRequest struct {
+}
+
+type ClustersResponse struct {
+	Response *pb.Response      `json:"response,omitempty"`
+	Clusters registry.Clusters `json:"clusters,omitempty"`
+}

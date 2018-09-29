@@ -106,3 +106,7 @@ func (sp *ServicePrinter) PrintTitle() []string {
 		return shortServiceTableHeader
 	}
 }
+
+func (sp *ServicePrinter) Sorter() *writer.RecordsSorter {
+	return nil
+}
