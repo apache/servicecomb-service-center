@@ -6,13 +6,13 @@
 1. All plugin interface files are in [infra](/server/infra) package
 
 ## Plug-in names
-1. auth, Customize authentication of service-center.
-1. uuid, Customize micro-service/instance id format.
-1. auditlog, Customize audit log for any change done to the service-center.
-1. cipher, Customize encryption and decryption of TLS certificate private key password.
-1. quota, Customize quota for instance registry.
-1. tracing, Customize tracing data reporter.
-1. tls, Customize loading the tls certificates in server
+1. **auth**: Customize authentication of service-center.
+1. **uuid**: Customize micro-service/instance id format.
+1. **auditlog**: Customize audit log for any change done to the service-center.
+1. **cipher**: Customize encryption and decryption of TLS certificate private key password.
+1. **quota**: Customize quota for instance registry.
+1. **tracing**: Customize tracing data reporter.
+1. **tls**: Customize loading the tls certificates in server
 
 ## Example: an authentication plug-in
 

@@ -108,20 +108,27 @@ func (c *KvCache) getPrefixKey(arr *[]*KeyValue, prefix string) (count int) {
 		return 0
 	}
 
-	tmp := make([]*KeyValue, 0, len(keysRef))
+	// TODO support sort option
+	if arr == nil {
+		for key := range keysRef {
+			if n := c.getPrefixKey(nil, key); n > 0 {
+				count += n
+				continue
+			}
+			count++
+		}
+		return
+	}
+
 	for key, val := range keysRef {
 		if n := c.getPrefixKey(arr, key); n > 0 {
 			count += n
 			continue
 		}
-		tmp = append(tmp, val)
+		*arr = append(*arr, val)
 		count++
 	}
-	if arr != nil {
-		// TODO support sort option
-		*arr = append(*arr, tmp...)
-	}
-	return count
+	return
 }
 
 func (c *KvCache) addPrefixKey(key string, val *KeyValue) {
