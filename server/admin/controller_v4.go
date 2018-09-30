@@ -32,6 +32,7 @@ type AdminServiceControllerV4 struct {
 func (ctrl *AdminServiceControllerV4) URLPatterns() []rest.Route {
 	return []rest.Route{
 		{rest.HTTP_METHOD_GET, "/v4/:project/admin/dump", ctrl.Dump},
+		{rest.HTTP_METHOD_GET, "/v4/:project/admin/clusters", ctrl.Clusters},
 	}
 }
 
@@ -39,6 +40,16 @@ func (ctrl *AdminServiceControllerV4) Dump(w http.ResponseWriter, r *http.Reques
 	request := &model.DumpRequest{}
 	ctx := r.Context()
 	resp, _ := AdminServiceAPI.Dump(ctx, request)
+
+	respInternal := resp.Response
+	resp.Response = nil
+	controller.WriteResponse(w, respInternal, resp)
+}
+
+func (ctrl *AdminServiceControllerV4) Clusters(w http.ResponseWriter, r *http.Request) {
+	request := &model.ClustersRequest{}
+	ctx := r.Context()
+	resp, _ := AdminServiceAPI.Clusters(ctx, request)
 
 	respInternal := resp.Response
 	resp.Response = nil

@@ -78,12 +78,13 @@ func (c *SCClientAggregate) GetSchemaBySchemaId(domainProject, serviceId, schema
 
 func NewSCClientAggregate() *SCClientAggregate {
 	c := &SCClientAggregate{}
-	clusters := registry.Configuration().Clusters()
+	clusters := registry.Configuration().Clusters
 	for name, addr := range clusters {
 		if len(name) == 0 || name == registry.Configuration().ClusterName {
 			continue
 		}
-		client, err := sc.NewSCClient(sc.Config{Addr: addr})
+		// TODO support endpoints LB
+		client, err := sc.NewSCClient(sc.Config{Addr: addr[0]})
 		if err != nil {
 			log.Errorf(err, "new service center[%s][%s] client failed", name, addr)
 			continue

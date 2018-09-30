@@ -112,3 +112,7 @@ func (sp *InstancePrinter) PrintTitle() []string {
 		return shortInstanceTableHeader
 	}
 }
+
+func (sp *InstancePrinter) Sorter() *writer.RecordsSorter {
+	return nil
+}

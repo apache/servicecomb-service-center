@@ -32,10 +32,6 @@ import (
 	"strings"
 )
 
-const (
-	defaultBufferSize = 64 * 1024
-)
-
 var (
 	AppId       string
 	ServiceName string

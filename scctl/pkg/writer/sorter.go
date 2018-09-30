@@ -13,11 +13,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bootstrap
+package writer
 
-import _ "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/version"
-import _ "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/diagnose"
-import _ "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/get/service"
-import _ "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/get/instance"
-import _ "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/get/schema"
-import _ "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/get/cluster"
+func firstColumnCmpFunc(row1, row2 []string) bool {
+	return row1[0] < row2[0]
+}
+
+type RecordsSorter struct {
+	Records     [][]string
+	CompareFunc func(row1, row2 []string) bool
+}
+
+func (s *RecordsSorter) Len() int {
+	return len(s.Records)
+}
+
+func (s *RecordsSorter) Swap(i, j int) {
+	s.Records[i], s.Records[j] = s.Records[j], s.Records[i]
+}
+
+func (s *RecordsSorter) Less(i, j int) bool {
+	return s.CompareFunc(s.Records[i], s.Records[j])
+}
+
+func NewRecordsSorter(cmp func([]string, []string) bool) *RecordsSorter {
+	if cmp == nil {
+		cmp = firstColumnCmpFunc
+	}
+	return &RecordsSorter{
+		CompareFunc: cmp,
+	}
+}

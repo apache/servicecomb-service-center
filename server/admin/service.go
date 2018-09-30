@@ -25,6 +25,7 @@ import (
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
 	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/registry"
 	"github.com/apache/incubator-servicecomb-service-center/version"
 	"github.com/astaxie/beego"
 	"golang.org/x/net/context"
@@ -39,10 +40,13 @@ var (
 )
 
 func init() {
+	// cache envs
 	for _, kv := range os.Environ() {
 		arr := strings.Split(kv, "=")
 		environments[arr[0]] = arr[1]
 	}
+
+	// cache configs
 	configs, _ = beego.AppConfig.GetSection("default")
 	if section, err := beego.AppConfig.GetSection(beego.BConfig.RunMode); err == nil {
 		for k, v := range section {
@@ -95,4 +99,10 @@ func setValue(e discovery.Adaptor, setter model.Setter) {
 		setter.SetValue(&model.KV{Key: k, Rev: kv.ModRevision, Value: kv.Value})
 		return true
 	})
+}
+
+func (service *AdminService) Clusters(ctx context.Context, in *model.ClustersRequest) (*model.ClustersResponse, error) {
+	return &model.ClustersResponse{
+		Clusters: registry.Configuration().Clusters,
+	}, nil
 }

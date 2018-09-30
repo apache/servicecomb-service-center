@@ -1636,6 +1636,7 @@ paths:
           required: true
         - name: project
           in: path
+          default: default
           description: default项目
           required: true
           type: string
@@ -1650,6 +1651,31 @@ paths:
           description: Forbidden
           schema:
             type: string
+  /v4/{project}/admin/clusters:
+    get:
+      description: |
+        Return the registry clusters managed by Service Center
+      operationId: clusters
+      parameters:
+        - name: x-domain-name
+          in: header
+          type: string
+          default: default
+          description: default租户
+          required: true
+        - name: project
+          in: path
+          default: default
+          description: default项目
+          required: true
+          type: string
+      tags:
+        - admin
+      responses:
+        200:
+          description: clusters information
+          schema:
+            $ref: '#/definitions/ClustersResponse'
 definitions:
   Version:
     type: object
@@ -2408,3 +2434,15 @@ definitions:
         $ref: '#/definitions/Properties'
       cache:
         $ref: "#/definitions/Cache"
+  Clusters:
+    type: object
+    description: Clusters information
+    additionalProperties:
+      type: array
+      items:
+        type: string
+  ClustersResponse:
+    type: object
+    properties:
+      clusters:
+        $ref: '#/definitions/Clusters'
