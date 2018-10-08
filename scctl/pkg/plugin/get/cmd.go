@@ -37,9 +37,9 @@ func NewGetCommand(parent *cobra.Command) *cobra.Command {
 		Short: "Output the resources information of service center",
 	}
 	parent.AddCommand(cmd)
-	cmd.PersistentFlags().StringVarP(&Domain, "domain", "d", "default", "the info of the service center")
-	cmd.PersistentFlags().StringVarP(&Output, "output", "o", "", "print the info of the service center")
-	cmd.PersistentFlags().BoolVar(&AllDomains, "all-domains", false, "print the info of the service center")
+	cmd.PersistentFlags().StringVarP(&Domain, "domain", "d", "default", "print the information under the specified domain in service center")
+	cmd.PersistentFlags().StringVarP(&Output, "output", "o", "", "output the complete microservice information(e.g., framework, endpoints)")
+	cmd.PersistentFlags().BoolVar(&AllDomains, "all-domains", false, "print the information under all domains in service center")
 
 	return cmd
 }
