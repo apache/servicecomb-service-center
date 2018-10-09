@@ -20,9 +20,9 @@ Get the microservices list from ServiceCenter. `service` command can be instead 
 
 #### Options
 
-- `domain`(d) domain name, return `default` domain microservices list by default.
-- `output`(o) support mode `wide`, return the complete microservices information(e.g., framework, endpoints).
-- `all-domains` return all domains microservices information.
+- `domain`(d) print the information under the specified domain in service center, print under the `default` domain by default.
+- `output`(o) support mode `wide`, output the complete microservices information(e.g., framework, endpoints).
+- `all-domains` print the information under all domains in service center.
 
 #### Examples
 
