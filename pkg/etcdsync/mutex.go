@@ -135,7 +135,7 @@ func (m *DLock) Lock(wait bool) (err error) {
 		return fmt.Errorf("Key %s is locked by id=%s", m.builder.key, m.id)
 	}
 
-	log.Errorf(err, "Key %s is locked, waiting for other node releases it, id=%s, %s", m.builder.key, m.id)
+	log.Errorf(err, "Key %s is locked, waiting for other node releases it, id=%s", m.builder.key, m.id)
 
 	ctx, cancel := context.WithTimeout(m.builder.ctx, time.Duration(m.builder.ttl)*time.Second)
 	gopool.Go(func(context.Context) {

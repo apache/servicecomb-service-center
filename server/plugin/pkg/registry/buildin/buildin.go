@@ -23,9 +23,8 @@ import (
 )
 
 var (
-	closeCh           = make(chan struct{})
-	noPluginErr error = nil //fmt.Errorf("register center plugin does not exist")
-	noResponse        = &registry.PluginResponse{}
+	closeCh    = make(chan struct{})
+	noResponse = &registry.PluginResponse{}
 )
 
 func init() {
@@ -44,31 +43,31 @@ func (ec *BuildinRegistry) Ready() <-chan struct{} {
 	return closeCh
 }
 func (ec *BuildinRegistry) PutNoOverride(ctx context.Context, opts ...registry.PluginOpOption) (bool, error) {
-	return false, noPluginErr
+	return false, nil
 }
 func (ec *BuildinRegistry) Do(ctx context.Context, opts ...registry.PluginOpOption) (*registry.PluginResponse, error) {
-	return noResponse, noPluginErr
+	return noResponse, nil
 }
 func (ec *BuildinRegistry) Txn(ctx context.Context, ops []registry.PluginOp) (*registry.PluginResponse, error) {
-	return noResponse, noPluginErr
+	return noResponse, nil
 }
 func (ec *BuildinRegistry) TxnWithCmp(ctx context.Context, success []registry.PluginOp, cmp []registry.CompareOp, fail []registry.PluginOp) (*registry.PluginResponse, error) {
-	return noResponse, noPluginErr
+	return noResponse, nil
 }
 func (ec *BuildinRegistry) LeaseGrant(ctx context.Context, TTL int64) (leaseID int64, err error) {
-	return 0, noPluginErr
+	return 0, nil
 }
 func (ec *BuildinRegistry) LeaseRenew(ctx context.Context, leaseID int64) (TTL int64, err error) {
-	return 0, noPluginErr
+	return 0, nil
 }
 func (ec *BuildinRegistry) LeaseRevoke(ctx context.Context, leaseID int64) error {
-	return noPluginErr
+	return nil
 }
 func (ec *BuildinRegistry) Watch(ctx context.Context, opts ...registry.PluginOpOption) error {
-	return noPluginErr
+	return nil
 }
-func (c *BuildinRegistry) Compact(ctx context.Context, reserve int64) error {
-	return noPluginErr
+func (ec *BuildinRegistry) Compact(ctx context.Context, reserve int64) error {
+	return nil
 }
 func (ec *BuildinRegistry) Close() {
 }

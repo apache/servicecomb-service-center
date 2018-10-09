@@ -34,13 +34,20 @@ var (
 var brokerKvStore = &BKvStore{}
 
 func init() {
-	PARTICIPANT = backend.Store().MustInstall(discovery.NewAddOn("PARTICIPANT", discovery.Configure().WithPrefix(GetBrokerParticipantKey(""))))
-	VERSION = backend.Store().MustInstall(discovery.NewAddOn("VERSION", discovery.Configure().WithPrefix(GetBrokerVersionKey(""))))
-	PACT = backend.Store().MustInstall(discovery.NewAddOn("PACT", discovery.Configure().WithPrefix(GetBrokerPactKey(""))))
-	PACT_VERSION = backend.Store().MustInstall(discovery.NewAddOn("PACT_VERSION", discovery.Configure().WithPrefix(GetBrokerPactVersionKey(""))))
-	PACT_TAG = backend.Store().MustInstall(discovery.NewAddOn("PACT_TAG", discovery.Configure().WithPrefix(GetBrokerTagKey(""))))
-	VERIFICATION = backend.Store().MustInstall(discovery.NewAddOn("VERIFICATION", discovery.Configure().WithPrefix(GetBrokerVerificationKey(""))))
-	PACT_LATEST = backend.Store().MustInstall(discovery.NewAddOn("PACT_LATEST", discovery.Configure().WithPrefix(GetBrokerLatestKey(""))))
+	PARTICIPANT = backend.Store().MustInstall(backend.NewAddOn("PARTICIPANT",
+		discovery.Configure().WithPrefix(GetBrokerParticipantKey(""))))
+	VERSION = backend.Store().MustInstall(backend.NewAddOn("VERSION",
+		discovery.Configure().WithPrefix(GetBrokerVersionKey(""))))
+	PACT = backend.Store().MustInstall(backend.NewAddOn("PACT",
+		discovery.Configure().WithPrefix(GetBrokerPactKey(""))))
+	PACT_VERSION = backend.Store().MustInstall(backend.NewAddOn("PACT_VERSION",
+		discovery.Configure().WithPrefix(GetBrokerPactVersionKey(""))))
+	PACT_TAG = backend.Store().MustInstall(backend.NewAddOn("PACT_TAG",
+		discovery.Configure().WithPrefix(GetBrokerTagKey(""))))
+	VERIFICATION = backend.Store().MustInstall(backend.NewAddOn("VERIFICATION",
+		discovery.Configure().WithPrefix(GetBrokerVerificationKey(""))))
+	PACT_LATEST = backend.Store().MustInstall(backend.NewAddOn("PACT_LATEST",
+		discovery.Configure().WithPrefix(GetBrokerLatestKey(""))))
 }
 
 type BKvStore struct {

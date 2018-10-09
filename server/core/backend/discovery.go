@@ -17,6 +17,7 @@
 package backend
 
 import (
+	"errors"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/task"
@@ -36,8 +37,8 @@ func init() {
 }
 
 type KvStore struct {
-	addOns      *util.ConcurrentMap
-	adaptors    *util.ConcurrentMap
+	AddOns      map[discovery.Type]AddOn
+	adaptors    util.ConcurrentMap
 	taskService task.TaskService
 	lock        sync.RWMutex
 	ready       chan struct{}
@@ -47,8 +48,7 @@ type KvStore struct {
 }
 
 func (s *KvStore) Initialize() {
-	s.addOns = util.NewConcurrentMap(0)
-	s.adaptors = util.NewConcurrentMap(0)
+	s.AddOns = make(map[discovery.Type]AddOn, 0)
 	s.taskService = task.NewTaskService()
 	s.ready = make(chan struct{})
 	s.goroutine = gopool.New(context.Background())
@@ -70,9 +70,9 @@ func (s *KvStore) repo() discovery.AdaptorRepository {
 
 func (s *KvStore) getOrCreateAdaptor(t discovery.Type) discovery.Adaptor {
 	v, _ := s.adaptors.Fetch(t, func() (interface{}, error) {
-		addOn, ok := s.addOns.Get(t)
+		addOn, ok := s.AddOns[t]
 		if ok {
-			adaptor := s.repo().New(t, addOn.(discovery.AddOn).Config())
+			adaptor := s.repo().New(t, addOn.(AddOn).Config())
 			adaptor.Run()
 			return adaptor, nil
 		}
@@ -89,7 +89,7 @@ func (s *KvStore) Run() {
 
 func (s *KvStore) store(ctx context.Context) {
 	// new all types
-	for _, t := range discovery.Types() {
+	for _, t := range discovery.Types {
 		select {
 		case <-ctx.Done():
 			return
@@ -131,19 +131,27 @@ func (s *KvStore) Ready() <-chan struct{} {
 	return s.ready
 }
 
-func (s *KvStore) Install(addOn discovery.AddOn) (id discovery.Type, err error) {
-	if id, err = discovery.Install(addOn); err != nil {
+func (s *KvStore) Install(addOn AddOn) (id discovery.Type, err error) {
+	if addOn == nil || len(addOn.Name()) == 0 || addOn.Config() == nil {
+		return discovery.TypeError, errors.New("invalid parameter")
+	}
+
+	id, err = discovery.RegisterType(addOn.Name())
+	if err != nil {
 		return
 	}
+
+	discovery.EventProxy(id).InjectConfig(addOn.Config())
+
 	s.InjectConfig(addOn.Config())
 
-	s.addOns.Put(id, addOn)
+	s.AddOns[id] = addOn
 
 	log.Infof("install new type %d:%s->%s", id, addOn.Name(), addOn.Config().Key)
 	return
 }
 
-func (s *KvStore) MustInstall(addOn discovery.AddOn) discovery.Type {
+func (s *KvStore) MustInstall(addOn AddOn) discovery.Type {
 	id, err := s.Install(addOn)
 	if err != nil {
 		panic(err)
