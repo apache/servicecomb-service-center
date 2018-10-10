@@ -1,3 +1,4 @@
+{{- if .Values.sc.deployment -}}
 ---
 apiVersion: v1
 kind: Service
@@ -22,7 +23,9 @@ spec:
   selector:
     app: {{ template "service-center.name" . }}
     release: {{ .Release.Name }}
+{{- end }}
 
+{{- if .Values.frontend.deployment -}}
 ---
 apiVersion: v1
 kind: Service
@@ -47,3 +50,4 @@ spec:
   selector:
     app: {{ template "service-center.name" . }}-frontend
     release: {{ .Release.Name }}
+{{- end }}

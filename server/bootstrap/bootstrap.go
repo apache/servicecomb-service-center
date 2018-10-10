@@ -27,7 +27,7 @@ import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/p
 
 // discovery
 import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery/aggregate"
-import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery/sc"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery/servicecenter"
 import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery/etcd"
 import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery/k8s"
 
