@@ -13,29 +13,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package discovery
+// +build nok8s
 
-import "testing"
+package k8s
 
-func TestNewAddOn(t *testing.T) {
-	id, err := Install(NewAddOn("TestNewAddOn", nil))
-	if id != TypeError || err == nil {
-		t.Fatalf("TestNewAddOn failed")
-	}
-	id, err = Install(NewAddOn("", Configure()))
-	if id != TypeError || err == nil {
-		t.Fatalf("TestNewAddOn failed")
-	}
-	id, err = Install(nil)
-	if id != TypeError || err == nil {
-		t.Fatalf("TestNewAddOn failed")
-	}
-	id, err = Install(NewAddOn("TestNewAddOn", Configure()))
-	if id == TypeError || err != nil {
-		t.Fatalf("TestNewAddOn failed")
-	}
-	_, err = Install(NewAddOn("TestNewAddOn", Configure()))
-	if err == nil {
-		t.Fatalf("TestNewAddOn failed")
-	}
+func init() {
 }

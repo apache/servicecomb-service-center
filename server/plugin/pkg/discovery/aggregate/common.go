@@ -13,10 +13,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sc
+package aggregate
 
 var (
 	closedCh = make(chan struct{})
+	repos    = []string{"k8s", "servicecenter"}
 )
 
 func init() {

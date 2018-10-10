@@ -14,49 +14,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package discovery
+package backend
 
 import (
-	"errors"
-	"fmt"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery"
 )
 
 type AddOn interface {
 	Name() string
-	Config() *Config
+	Config() *discovery.Config
 }
 
 type addOn struct {
 	name string
-	cfg  *Config
+	cfg  *discovery.Config
 }
 
 func (e *addOn) Name() string {
 	return e.name
 }
 
-func (e *addOn) Config() *Config {
+func (e *addOn) Config() *discovery.Config {
 	return e.cfg
 }
 
-func NewAddOn(name string, cfg *Config) AddOn {
+func NewAddOn(name string, cfg *discovery.Config) AddOn {
 	return &addOn{
 		name: name,
 		cfg:  cfg,
 	}
-}
-
-func Install(e AddOn) (id Type, err error) {
-	if e == nil || len(e.Name()) == 0 || e.Config() == nil {
-		return TypeError, errors.New("invalid parameter")
-	}
-	for _, n := range typeNames {
-		if n == e.Name() {
-			return TypeError, fmt.Errorf("redeclare store type '%s'", n)
-		}
-	}
-
-	id = RegisterType(e.Name())
-	EventProxy(id).InjectConfig(e.Config())
-	return
 }

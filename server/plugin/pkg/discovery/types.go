@@ -23,7 +23,10 @@ import (
 	"strconv"
 )
 
-var typeNames []string
+var (
+	Types     []Type
+	typeNames []string
+)
 
 const (
 	TypeError = Type(-1)
@@ -41,15 +44,14 @@ func (st Type) String() string {
 	return "TYPE" + strconv.Itoa(int(st))
 }
 
-func Types() (ids []Type) {
-	for i := range typeNames {
-		ids = append(ids, Type(i))
+func RegisterType(name string) (newId Type, err error) {
+	for _, n := range Types {
+		if n.String() == name {
+			return TypeError, fmt.Errorf("redeclare store type '%s'", n)
+		}
 	}
-	return
-}
-
-func RegisterType(name string) (newId Type) {
-	newId = Type(len(typeNames))
+	newId = Type(len(Types))
+	Types = append(Types, newId)
 	typeNames = append(typeNames, name)
 	return
 }

@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package k8s
+package adaptor
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
@@ -23,12 +23,12 @@ import (
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type ServiceCacher struct {
+type ServiceIndexCacher struct {
 	*discovery.CommonCacher
 }
 
 // onServiceEvent is the method to refresh service cache
-func (c *ServiceCacher) onServiceEvent(evt K8sEvent) {
+func (c *ServiceIndexCacher) onServiceEvent(evt K8sEvent) {
 	svc := evt.Object.(*v1.Service)
 	if svc.Namespace == meta.NamespaceSystem {
 		return
@@ -36,24 +36,23 @@ func (c *ServiceCacher) onServiceEvent(evt K8sEvent) {
 
 	domainProject := Kubernetes().GetDomainProject()
 	serviceId := string(svc.UID)
-	key := core.GenerateServiceKey(domainProject, serviceId)
+	indexKey := core.GenerateServiceIndexKey(generateServiceKey(domainProject, svc))
 
 	switch evt.EventType {
-	case pb.EVT_CREATE, pb.EVT_UPDATE:
-		ms := FromK8sService(svc)
-		kv := AsKeyValue(key, ms, svc.ResourceVersion)
-		c.Notify(evt.EventType, key, kv)
+	case pb.EVT_CREATE:
+		kv := AsKeyValue(indexKey, serviceId, svc.ResourceVersion)
+		c.Notify(evt.EventType, indexKey, kv)
+	case pb.EVT_UPDATE:
 	case pb.EVT_DELETE:
-		// service
-		kv := c.Cache().Get(key)
+		kv := c.Cache().Get(indexKey)
 		if kv != nil {
-			c.Notify(evt.EventType, key, kv)
+			c.Notify(evt.EventType, indexKey, kv)
 		}
 	}
 }
 
-func NewServiceCacher(c *discovery.CommonCacher) (s *ServiceCacher) {
-	s = &ServiceCacher{CommonCacher: c}
-	Kubernetes().AppendEventFunc(TypeService, s.onServiceEvent)
+func NewServiceIndexCacher(c *discovery.CommonCacher) (si *ServiceIndexCacher) {
+	si = &ServiceIndexCacher{CommonCacher: c}
+	Kubernetes().AppendEventFunc(TypeService, si.onServiceEvent)
 	return
 }

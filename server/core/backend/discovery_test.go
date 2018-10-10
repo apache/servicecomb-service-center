@@ -118,8 +118,8 @@ func TestInstallType(t *testing.T) {
 	}
 
 	// case: inject config
-	itf, _ := s.addOns.Get(id)
-	cfg := itf.(discovery.AddOn).Config()
+	itf, _ := s.AddOns[id]
+	cfg := itf.(AddOn).Config()
 	if cfg == nil || cfg.OnEvent == nil {
 		t.Fatal("installType fail", err)
 	}
@@ -131,8 +131,34 @@ func TestInstallType(t *testing.T) {
 
 	// case: install again
 	cfg = discovery.Configure().WithPrefix("/test")
-	id, err = s.Install(discovery.NewAddOn("test", cfg))
+	id, err = s.Install(NewAddOn("test", cfg))
 	if id != discovery.TypeError || err == nil {
 		t.Fatal("installType fail", err)
+	}
+}
+
+func TestNewAddOn(t *testing.T) {
+	s := &KvStore{}
+	s.Initialize()
+
+	id, err := s.Install(NewAddOn("TestNewAddOn", nil))
+	if id != discovery.TypeError || err == nil {
+		t.Fatalf("TestNewAddOn failed")
+	}
+	id, err = s.Install(NewAddOn("", discovery.Configure()))
+	if id != discovery.TypeError || err == nil {
+		t.Fatalf("TestNewAddOn failed")
+	}
+	id, err = s.Install(nil)
+	if id != discovery.TypeError || err == nil {
+		t.Fatalf("TestNewAddOn failed")
+	}
+	id, err = s.Install(NewAddOn("TestNewAddOn", discovery.Configure()))
+	if id == discovery.TypeError || err != nil {
+		t.Fatalf("TestNewAddOn failed")
+	}
+	_, err = s.Install(NewAddOn("TestNewAddOn", discovery.Configure()))
+	if err == nil {
+		t.Fatalf("TestNewAddOn failed")
 	}
 }

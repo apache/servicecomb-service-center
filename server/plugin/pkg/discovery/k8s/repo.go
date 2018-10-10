@@ -13,11 +13,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// +build !nok8s
+
 package k8s
 
 import (
 	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery/k8s/adaptor"
 )
 
 func init() {
@@ -28,7 +31,7 @@ type K8sRepository struct {
 }
 
 func (r *K8sRepository) New(t discovery.Type, cfg *discovery.Config) discovery.Adaptor {
-	return NewK8sAdaptor(t, cfg)
+	return adaptor.NewK8sAdaptor(t, cfg)
 }
 
 func NewRepository() mgr.PluginInstance {

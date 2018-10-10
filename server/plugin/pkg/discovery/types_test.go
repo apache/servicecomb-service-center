@@ -18,9 +18,16 @@ package discovery
 import "testing"
 
 func TestTypes(t *testing.T) {
-	id, _ := Install(NewAddOn("TestTypes", Configure()))
+	id, err := RegisterType("TestTypes")
+	if err != nil {
+		t.Fatalf("TestTypes failed")
+	}
+	_, err = RegisterType("TestTypes")
+	if err == nil {
+		t.Fatalf("TestTypes failed")
+	}
 	found := false
-	for _, t := range Types() {
+	for _, t := range Types {
 		if t == id {
 			found = true
 		}

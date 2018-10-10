@@ -13,12 +13,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sc
+package aggregate
 
 import (
+	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery/k8s"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery/sc"
 	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/registry"
 	"golang.org/x/net/context"
 )
@@ -64,7 +63,9 @@ func (as *Aggregator) Ready() <-chan struct{} {
 
 func NewAggregator(t discovery.Type, cfg *discovery.Config) (as *Aggregator) {
 	as = &Aggregator{}
-	*as = append(*as, k8s.NewK8sAdaptor(t, cfg))
-	*as = append(*as, sc.NewServiceCenterAdaptor(t, cfg))
+	for _, name := range repos {
+		repo := mgr.Plugins().Get(mgr.DISCOVERY, name).New().(discovery.AdaptorRepository)
+		*as = append(*as, repo.New(t, cfg))
+	}
 	return as
 }

@@ -68,7 +68,7 @@ func Configuration() *Config {
 		defaultRegistryConfig.ClusterName = beego.AppConfig.DefaultString("manager_name", "default")
 		defaultRegistryConfig.ManagerAddress = beego.AppConfig.String("manager_addr")
 		defaultRegistryConfig.ClusterAddresses = beego.AppConfig.DefaultString("manager_cluster", "http://127.0.0.1:2379")
-		defaultRegistryConfig.DialTimeout, err = time.ParseDuration(beego.AppConfig.DefaultString("registry_timeout", "30s"))
+		defaultRegistryConfig.DialTimeout, err = time.ParseDuration(beego.AppConfig.DefaultString("connect_timeout", "10s"))
 		if err != nil {
 			log.Errorf(err, "connect_timeout is invalid, use default time %s", defaultDialTimeout)
 			defaultRegistryConfig.DialTimeout = defaultDialTimeout
