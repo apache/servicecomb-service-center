@@ -700,7 +700,7 @@ func (c *EtcdClient) HealthCheck() {
 }
 
 func (c *EtcdClient) healthCheckLoop(pctx context.Context) {
-	retries := healthCheckRetryTimes
+	retries, start := healthCheckRetryTimes, time.Now()
 hcLoop:
 	for {
 		select {
@@ -711,20 +711,24 @@ hcLoop:
 			for i := 0; i < retries; i++ {
 				ctx, _ := context.WithTimeout(c.Client.Ctx(), healthCheckTimeout)
 				if err = c.SyncMembers(ctx); err != nil {
+					d := util.GetBackoff().Delay(i)
+					log.Errorf(err, "retry to sync members from etcd %s after %s", c.Endpoints, d)
 					select {
 					case <-pctx.Done():
 						return
-					case <-time.After(util.GetBackoff().Delay(i)):
+					case <-time.After(d):
 						continue
 					}
 				}
-				retries = healthCheckRetryTimes
+				retries, start = healthCheckRetryTimes, time.Now()
 				continue hcLoop
 			}
 
 			retries = 1 // fail fast
-			if cerr := c.ReOpen(); cerr == nil {
-				log.Errorf(err, "re-connected to etcd %s", c.Endpoints)
+			if cerr := c.ReOpen(); cerr != nil {
+				log.Errorf(cerr, "retry to health check etcd %s after %s", c.Endpoints, c.AutoSyncInterval)
+			} else {
+				log.Infof("[%s]re-connected to etcd %s", time.Now().Sub(start), c.Endpoints)
 			}
 		}
 	}
