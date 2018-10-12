@@ -135,6 +135,9 @@ func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 			t.Reset(deferCheckWindow)
 
 			if !iedh.enabled {
+				for _, item := range iedh.items {
+					iedh.recover(item.event)
+				}
 				continue
 			}
 

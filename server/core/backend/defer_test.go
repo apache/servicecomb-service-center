@@ -92,6 +92,27 @@ func TestInstanceEventDeferHandler_HandleChan(t *testing.T) {
 
 	cache := &mockCache{c: make(map[string]*discovery.KeyValue)}
 	cache.Put("/1", kv1)
+	evts0 := []discovery.KvEvent{
+		{
+			Type: pb.EVT_DELETE,
+			KV:   kv1,
+		},
+	}
+
+	iedh := &InstanceEventDeferHandler{
+		Percent: 1,
+	}
+	iedh.OnCondition(cache, evts0)
+	select {
+	case evt := <-iedh.HandleChan():
+		if string(evt.KV.Key) != "/1" || evt.Type != pb.EVT_DELETE {
+			t.Fatalf(`TestInstanceEventDeferHandler_HandleChan DELETE failed`)
+		}
+	case <-time.After(deferCheckWindow + time.Second):
+		t.Fatalf(`TestInstanceEventDeferHandler_HandleChan DELETE timed out`)
+	}
+
+	cache.Put("/1", kv1)
 	cache.Put("/2", kv2)
 	cache.Put("/3", kv3)
 	cache.Put("/4", kv4)
@@ -149,10 +170,7 @@ func TestInstanceEventDeferHandler_HandleChan(t *testing.T) {
 		},
 	}
 
-	iedh := &InstanceEventDeferHandler{
-		Percent: 0.01,
-	}
-
+	iedh.Percent = 0.01
 	iedh.OnCondition(cache, evts1)
 	iedh.OnCondition(cache, evts2)
 	iedh.OnCondition(cache, evts3)
