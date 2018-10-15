@@ -21,7 +21,7 @@ import (
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "aggregate", NewRepository})
+	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, Aggregate, NewRepository})
 }
 
 type AggregateRepository struct {

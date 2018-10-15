@@ -34,6 +34,8 @@ import (
 	"time"
 )
 
+const buildin = "buildin"
+
 type ServiceCenterServer struct {
 	apiServer     *APIServer
 	notifyService *nf.NotifyService
@@ -144,6 +146,8 @@ func (s *ServiceCenterServer) initialize() {
 	if core.ServerInfo.Config.SelfRegister {
 		// check version
 		s.loadOrUpgradeServerVersion()
+	}
+	if buildin != beego.AppConfig.DefaultString("registry_plugin", buildin) {
 		// compact backend automatically
 		s.compactBackendService()
 	}

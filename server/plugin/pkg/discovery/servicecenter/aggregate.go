@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sc
+package servicecenter
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/client/sc"
@@ -51,7 +51,7 @@ func (c *SCClientAggregate) GetSchemasByServiceId(domainProject, serviceId strin
 	var schemas []*pb.Schema
 	for _, client := range *c {
 		ss, err := client.GetSchemasByServiceId(domainProject, serviceId)
-		if err != nil {
+		if err != nil && err.InternalError() {
 			log.Errorf(err, "get schema by serviceId[%s/%s] failed", domainProject, serviceId)
 			continue
 		}
@@ -64,7 +64,7 @@ func (c *SCClientAggregate) GetSchemasByServiceId(domainProject, serviceId strin
 func (c *SCClientAggregate) GetSchemaBySchemaId(domainProject, serviceId, schemaId string) (schema *pb.Schema, err *scerr.Error) {
 	for _, client := range *c {
 		schema, err = client.GetSchemaBySchemaId(domainProject, serviceId, schemaId)
-		if err != nil {
+		if err != nil && err.InternalError() {
 			log.Errorf(err, "get schema by serviceId[%s/%s] failed", domainProject, serviceId)
 			continue
 		}

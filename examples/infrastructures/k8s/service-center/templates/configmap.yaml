@@ -1,3 +1,4 @@
+{{- if .Values.sc.deployment -}}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -13,36 +14,29 @@ data:
   app-config: |
     httpaddr = ${HOSTNAME}
     httpport = {{ .Values.sc.service.internalPort }}
-    {{- if eq .Values.sc.discovery.type "k8s" }}
-    discovery_plugin = k8s
-    registry_plugin = buildin
-    self_register = 0
-    {{- else if eq .Values.sc.discovery.type "etcd" }}
-    discovery_plugin = etcd
-    registry_plugin = etcd
+
+    {{- if .Values.sc.registry.enabled }}
     self_register = 1
-    manager_cluster = {{ .Values.sc.discovery.uris }}
-    {{- else if eq .Values.sc.discovery.type "servicecenter" }}
-    discovery_plugin = servicecenter
-    registry_plugin = buildin
+    {{- else }}
     self_register = 0
-    manager_cluster = "{{ .Values.sc.discovery.clusters }}"
-    {{- else if eq .Values.sc.discovery.type "aggregate" }}
-    discovery_plugin = aggregate
-    registry_plugin = buildin
-    self_register = 0
+    {{- end }}
+    registry_plugin = {{ .Values.sc.registry.type }}
+    manager_name = "{{ .Values.sc.registry.name }}"
+    manager_addr = "{{ .Values.sc.registry.addr }}"
+
+    {{- if ne .Values.sc.discovery.type "local" }}
+    discovery_plugin = {{ .Values.sc.discovery.type }}
+    aggregate_mode = "{{ .Values.sc.discovery.aggregate }}"
     manager_cluster = "{{ .Values.sc.discovery.clusters }}"
     {{- else }}
     discovery_plugin = etcd
-    registry_plugin = embeded_etcd
-    self_register = 1
-    manager_name = "sr-0"
-    manager_addr = "http://127.0.0.1:2380"
-    manager_cluster = "sr-0=http://127.0.0.1:2380"
     {{- end }}
+
     ssl_mode = 0
     enable_pprof = 1
+{{- end }}
 
+{{- if .Values.frontend.deployment -}}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -60,3 +54,4 @@ data:
     frontend_host_port = {{ .Values.frontend.service.internalPort }}
     httpaddr = {{ template "service-center.fullname" . }}
     httpport = {{ .Values.sc.service.externalPort }}
+{{- end }}

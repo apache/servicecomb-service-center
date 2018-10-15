@@ -1,5 +1,6 @@
 {{- $serviceName := include "service-center.fullname" . -}}
 {{- $servicePort := .Values.sc.service.externalPort -}}
+{{- if .Values.sc.deployment -}}
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -51,7 +52,9 @@ spec:
       nodeSelector:
 {{ toYaml .Values.sc.nodeSelector | indent 8 }}
     {{- end }}
+{{- end }}
 
+{{- if .Values.frontend.deployment -}}
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -102,3 +105,4 @@ spec:
       nodeSelector:
 {{ toYaml .Values.frontend.nodeSelector | indent 8 }}
     {{- end }}
+{{- end }}

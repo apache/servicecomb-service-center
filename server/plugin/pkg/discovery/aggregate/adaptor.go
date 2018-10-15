@@ -25,9 +25,9 @@ import (
 // Aggregator is a discovery service adaptor implement of one kubernetes cluster
 type Aggregator []discovery.Adaptor
 
-func (as *Aggregator) Search(ctx context.Context, opts ...registry.PluginOpOption) (*discovery.Response, error) {
+func (as Aggregator) Search(ctx context.Context, opts ...registry.PluginOpOption) (*discovery.Response, error) {
 	var response discovery.Response
-	for _, a := range *as {
+	for _, a := range as {
 		resp, err := a.Search(ctx, opts...)
 		if err != nil {
 			continue
@@ -38,34 +38,37 @@ func (as *Aggregator) Search(ctx context.Context, opts ...registry.PluginOpOptio
 	return &response, nil
 }
 
-func (as *Aggregator) Cache() discovery.Cache {
-	return discovery.NullCache
+func (as Aggregator) Cache() discovery.Cache {
+	var cache Cache
+	for _, a := range as {
+		cache = append(cache, a.Cache())
+	}
+	return cache
 }
 
-func (as *Aggregator) Run() {
-	for _, a := range *as {
+func (as Aggregator) Run() {
+	for _, a := range as {
 		a.Run()
 	}
 }
 
-func (as *Aggregator) Stop() {
-	for _, a := range *as {
+func (as Aggregator) Stop() {
+	for _, a := range as {
 		a.Stop()
 	}
 }
 
-func (as *Aggregator) Ready() <-chan struct{} {
-	for _, a := range *as {
+func (as Aggregator) Ready() <-chan struct{} {
+	for _, a := range as {
 		<-a.Ready()
 	}
 	return closedCh
 }
 
-func NewAggregator(t discovery.Type, cfg *discovery.Config) (as *Aggregator) {
-	as = &Aggregator{}
+func NewAggregator(t discovery.Type, cfg *discovery.Config) (as Aggregator) {
 	for _, name := range repos {
 		repo := mgr.Plugins().Get(mgr.DISCOVERY, name).New().(discovery.AdaptorRepository)
-		*as = append(*as, repo.New(t, cfg))
+		as = append(as, repo.New(t, cfg))
 	}
 	return as
 }

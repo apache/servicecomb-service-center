@@ -1,3 +1,4 @@
+{{- if .Values.sc.deployment -}}
 {{- if .Values.sc.ingress.enabled -}}
 {{- $serviceName := include "service-center.fullname" . -}}
 {{- $servicePort := .Values.sc.service.externalPort -}}
@@ -31,4 +32,5 @@ spec:
   tls:
 {{ toYaml .Values.sc.ingress.tls | indent 4 }}
   {{- end -}}
+{{- end -}}
 {{- end -}}

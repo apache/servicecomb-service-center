@@ -2,7 +2,8 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 frontend:
-  replicaCount: 2
+  deployment: true
+  replicaCount: 1
   image:
     repository: servicecomb/scfrontend
     tag: latest
@@ -15,28 +16,23 @@ frontend:
   resources: {}
 
 sc:
-  replicaCount: 2
+  deployment: true
+  replicaCount: 1
   discovery:
-    # support local, servicecenter, etcd, k8s and aggregate discovery mode
-    # type: local
-    #   bootstrap a lightweight service center, can only support replicaCount is one
-    # type: servicecenter
-    #   The precondition is that one or more service center clusters have been deployed,
-    #   this deployment will bootstrap a service center aggregation service which
-    #   provides micro-services and instances information aggregation queries
-    # type: etcd
-    #   bootstrap a standard service center cluster which micro-services and instances
-    #   information stored in etcd
-    # type: k8s
-    #   bootstrap a standard service center cluster which micro-services and instances
-    #   information discovered from kubernetes services
-    # type: aggregate
-    #   this type not only support aggregate service center cluster but also aggregate
-    #   the kubernetes services
-    type: k8s
+    # support servicecenter, etcd, and aggregate discovery mode
+    type: aggregate
     # the cluster urls list, can only support discovery type is "servicecenter" or "aggregate"
     # e.g. clusters: "sc-0=http://service-center-1:30100,sc-1=http://service-center-2:30100"
-    clusters: ""
+    clusters: "sc-0=http://127.0.0.1:2380"
+    # setting up the configuration of aggregator, only enabled when discovery type is "aggregate"
+    # e.g. aggregate: "k8s,servicecenter"
+    aggregate: "k8s,etcd"
+  registry:
+    enabled: false
+    # support embeded_etcd, etcd, and buildin registry mode
+    type: "embeded_etcd"
+    name: "sc-0"
+    addr: "http://127.0.0.1:2380"
   image:
     repository: servicecomb/service-center
     tag: latest

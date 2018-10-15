@@ -15,11 +15,30 @@
 
 package aggregate
 
+import (
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
+	"github.com/astaxie/beego"
+	"strings"
+)
+
+const (
+	Aggregate      = "aggregate"
+	AggregateModes = "k8s,servicecenter"
+)
+
 var (
 	closedCh = make(chan struct{})
-	repos    = []string{"k8s", "servicecenter"}
+	repos    []string
 )
 
 func init() {
 	close(closedCh)
+
+	if Aggregate != beego.AppConfig.String("discovery_plugin") {
+		return
+	}
+
+	modes := beego.AppConfig.DefaultString("aggregate_mode", AggregateModes)
+	repos = strings.Split(modes, ",")
+	log.Infof("aggregate_mode is %s", repos)
 }
