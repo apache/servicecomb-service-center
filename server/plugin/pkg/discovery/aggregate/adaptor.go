@@ -16,6 +16,7 @@
 package aggregate
 
 import (
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery"
 	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/registry"
@@ -26,13 +27,22 @@ import (
 type Aggregator []discovery.Adaptor
 
 func (as Aggregator) Search(ctx context.Context, opts ...registry.PluginOpOption) (*discovery.Response, error) {
-	var response discovery.Response
+	var (
+		response discovery.Response
+		exists   = make(map[string]struct{})
+	)
 	for _, a := range as {
 		resp, err := a.Search(ctx, opts...)
 		if err != nil {
 			continue
 		}
-		response.Kvs = append(response.Kvs, resp.Kvs...)
+		for _, kv := range resp.Kvs {
+			key := util.BytesToStringWithNoCopy(kv.Key)
+			if _, ok := exists[key]; !ok {
+				exists[key] = struct{}{}
+				response.Kvs = append(response.Kvs, kv)
+			}
+		}
 		response.Count += resp.Count
 	}
 	return &response, nil

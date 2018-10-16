@@ -21,7 +21,6 @@ import (
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery"
 	"k8s.io/api/core/v1"
-	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"reflect"
 	"strconv"
 )
@@ -33,16 +32,11 @@ type InstanceCacher struct {
 // onServiceEvent is the method to refresh service cache
 func (c *InstanceCacher) onServiceEvent(evt K8sEvent) {
 	svc := evt.Object.(*v1.Service)
-	if svc.Namespace == meta.NamespaceSystem {
-		return
-	}
-
 	domainProject := Kubernetes().GetDomainProject()
 	serviceId := string(svc.UID)
 	instKey := core.GenerateInstanceKey(domainProject, serviceId, "")
 
-	switch evt.EventType {
-	case pb.EVT_DELETE:
+	if evt.EventType == pb.EVT_DELETE || !CanRegisterService(svc) {
 		// instances
 		var kvs []*discovery.KeyValue
 		c.Cache().GetPrefix(instKey, &kvs)
@@ -68,12 +62,8 @@ func (c *InstanceCacher) getInstances(serviceId string) (m map[string]*discovery
 // onEndpointsEvent is the method to refresh instance cache
 func (c *InstanceCacher) onEndpointsEvent(evt K8sEvent) {
 	ep := evt.Object.(*v1.Endpoints)
-	if ep.Namespace == meta.NamespaceSystem {
-		return
-	}
-
 	svc := Kubernetes().GetService(ep.Namespace, ep.Name)
-	if svc == nil {
+	if svc == nil || !CanRegisterService(svc) {
 		return
 	}
 
@@ -108,6 +98,9 @@ func (c *InstanceCacher) onEndpointsEvent(evt K8sEvent) {
 					DataCenterInfo: &pb.DataCenterInfo{},
 					Timestamp:      strconv.FormatInt(pod.CreationTimestamp.Unix(), 10),
 					Version:        getLabel(svc.Labels, LabelVersion, pb.VERSION),
+					Properties: map[string]string{
+						PropNodeIP: pod.Status.HostIP,
+					},
 				}
 				inst.DataCenterInfo.Region, inst.DataCenterInfo.AvailableZone = getRegionAZ(node)
 				inst.ModTimestamp = inst.Timestamp

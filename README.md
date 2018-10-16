@@ -19,6 +19,7 @@ Apache ServiceComb (incubating) Service-Center is a Restful based service-regist
  - **[`Tracing`](/docs/tracing.md)**: Able to report tracing data to Zipkin server
  - **[`Multi Datacenter`](/docs/multidcs.md)**: Additional layer of abstraction to clusters deployed in multiple datacenters
  - **[`Dynmaic Plug-in`](/docs/plugin.md)**: Able to load custom authentication, tls and other dynamic libraries
+ - **[`CLI`](/scctl/pkg/plugin/README.md)**: Easy to control service center
  
 ## Documentation
 
