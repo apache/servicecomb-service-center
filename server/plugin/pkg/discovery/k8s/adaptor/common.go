@@ -86,7 +86,7 @@ func Queue(t K8sType) *queue.TaskQueue {
 	return q.(*queue.TaskQueue)
 }
 
-func CanRegisterService(service *v1.Service) bool {
+func ShouldRegisterService(service *v1.Service) bool {
 	if service.Namespace == meta.NamespaceSystem {
 		return false
 	}

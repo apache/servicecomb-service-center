@@ -33,7 +33,7 @@ func (c *ServiceIndexCacher) onServiceEvent(evt K8sEvent) {
 	serviceId := string(svc.UID)
 	indexKey := core.GenerateServiceIndexKey(generateServiceKey(domainProject, svc))
 
-	if !CanRegisterService(svc) {
+	if !ShouldRegisterService(svc) {
 		kv := c.Cache().Get(indexKey)
 		if kv != nil {
 			c.Notify(pb.EVT_DELETE, indexKey, kv)

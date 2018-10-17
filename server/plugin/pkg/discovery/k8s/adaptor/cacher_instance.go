@@ -34,22 +34,23 @@ func (c *InstanceCacher) onServiceEvent(evt K8sEvent) {
 	svc := evt.Object.(*v1.Service)
 	domainProject := Kubernetes().GetDomainProject()
 	serviceId := string(svc.UID)
-	instKey := core.GenerateInstanceKey(domainProject, serviceId, "")
 
-	if evt.EventType == pb.EVT_DELETE || !CanRegisterService(svc) {
-		// instances
-		var kvs []*discovery.KeyValue
-		c.Cache().GetPrefix(instKey, &kvs)
-		for _, kv := range kvs {
-			key := util.BytesToStringWithNoCopy(kv.Key)
-			c.Notify(pb.EVT_DELETE, key, kv)
+	switch evt.EventType {
+	case pb.EVT_DELETE:
+		c.deleteInstances(domainProject, serviceId)
+	case pb.EVT_UPDATE:
+		if !ShouldRegisterService(svc) {
+			c.deleteInstances(domainProject, serviceId)
+			return
 		}
+		ep := Kubernetes().GetEndpoints(svc.Namespace, svc.Name)
+		c.onEndpointsEvent(K8sEvent{pb.EVT_CREATE, ep, nil})
 	}
 }
 
-func (c *InstanceCacher) getInstances(serviceId string) (m map[string]*discovery.KeyValue) {
+func (c *InstanceCacher) getInstances(domainProject, serviceId string) (m map[string]*discovery.KeyValue) {
 	var arr []*discovery.KeyValue
-	key := core.GenerateInstanceKey(Kubernetes().GetDomainProject(), serviceId, "")
+	key := core.GenerateInstanceKey(domainProject, serviceId, "")
 	if l := c.Cache().GetPrefix(key, &arr); l > 0 {
 		m = make(map[string]*discovery.KeyValue, l)
 		for _, kv := range arr {
@@ -59,16 +60,26 @@ func (c *InstanceCacher) getInstances(serviceId string) (m map[string]*discovery
 	return
 }
 
+func (c *InstanceCacher) deleteInstances(domainProject, serviceId string) {
+	var kvs []*discovery.KeyValue
+	c.Cache().GetPrefix(core.GenerateInstanceKey(domainProject, serviceId, ""), &kvs)
+	for _, kv := range kvs {
+		key := util.BytesToStringWithNoCopy(kv.Key)
+		c.Notify(pb.EVT_DELETE, key, kv)
+	}
+}
+
 // onEndpointsEvent is the method to refresh instance cache
 func (c *InstanceCacher) onEndpointsEvent(evt K8sEvent) {
 	ep := evt.Object.(*v1.Endpoints)
 	svc := Kubernetes().GetService(ep.Namespace, ep.Name)
-	if svc == nil || !CanRegisterService(svc) {
+	if svc == nil || !ShouldRegisterService(svc) {
 		return
 	}
 
 	serviceId := string(svc.UID)
-	oldKvs := c.getInstances(serviceId)
+	domainProject := Kubernetes().GetDomainProject()
+	oldKvs := c.getInstances(domainProject, serviceId)
 	newKvs := make(map[string]*discovery.KeyValue)
 	for _, ss := range ep.Subsets {
 		for _, ea := range ss.Addresses {

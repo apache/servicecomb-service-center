@@ -178,6 +178,19 @@ func (c *K8sClient) GetService(namespace, name string) (svc *v1.Service) {
 	return
 }
 
+func (c *K8sClient) GetEndpoints(namespace, name string) (ep *v1.Endpoints) {
+	obj, ok, err := c.Endpoints().GetStore().GetByKey(getFullName(namespace, name))
+	if err != nil {
+		log.Errorf(err, "get k8s endpoints[%s/%s] failed", namespace, name)
+		return
+	}
+	if !ok {
+		return
+	}
+	ep = obj.(*v1.Endpoints)
+	return
+}
+
 func (c *K8sClient) GetPodByIP(ip string) (pod *v1.Pod) {
 	itf, ok := c.ipIndex.Get(ip)
 	if !ok {

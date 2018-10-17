@@ -33,7 +33,7 @@ func (c *ServiceCacher) onServiceEvent(evt K8sEvent) {
 	serviceId := string(svc.UID)
 	key := core.GenerateServiceKey(domainProject, serviceId)
 
-	if !CanRegisterService(svc) {
+	if !ShouldRegisterService(svc) {
 		kv := c.Cache().Get(key)
 		if kv != nil {
 			c.Notify(pb.EVT_DELETE, key, kv)
@@ -45,6 +45,9 @@ func (c *ServiceCacher) onServiceEvent(evt K8sEvent) {
 	case pb.EVT_CREATE, pb.EVT_UPDATE:
 		ms := FromK8sService(svc)
 		kv := AsKeyValue(key, ms, svc.ResourceVersion)
+		if c.Cache().Get(key) == nil {
+			evt.EventType = pb.EVT_CREATE
+		}
 		c.Notify(evt.EventType, key, kv)
 	case pb.EVT_DELETE:
 		// service
