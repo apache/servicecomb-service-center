@@ -93,7 +93,6 @@ func (c *ServiceCenterCluster) Sync(ctx context.Context) error {
 	}
 
 	// microservice
-	// TODO remove duplicate SERVICECENTER
 	serviceCacher, ok := c.cachers[backend.SERVICE]
 	if ok {
 		c.check(serviceCacher, &cache.Microservices)
@@ -132,7 +131,12 @@ func (c *ServiceCenterCluster) Sync(ctx context.Context) error {
 }
 
 func (c *ServiceCenterCluster) check(local *ServiceCenterCacher, remote model.Getter) {
+	exists := make(map[string]struct{})
 	remote.ForEach(func(_ int, v *model.KV) bool {
+		if _, ok := exists[v.Key]; ok {
+			return true
+		}
+		exists[v.Key] = struct{}{}
 		kv := local.Cache().Get(v.Key)
 		newKv := &discovery.KeyValue{
 			Key:            util.StringToBytesWithNoCopy(v.Key),

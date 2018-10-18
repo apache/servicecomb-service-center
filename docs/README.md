@@ -30,7 +30,7 @@ Swagger [`v4`](/server/core/swagger/v4.yaml)|[`v3`](/server/core/swagger/v3.yaml
 + **Kubernetes**
   - [Helm Chart](/docs/helm.md)
   - [Access Distinct Clusters](/docs/kubeclusters.md)
-  - [Multiple Platforms Micro-services Manage](/docs/aggregate.md)
+  - [Multiple Registry Aggregation](/docs/aggregate.md)
 
 #### Monitoring Service-Center
 

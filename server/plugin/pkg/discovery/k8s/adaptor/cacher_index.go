@@ -20,7 +20,6 @@ import (
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery"
 	"k8s.io/api/core/v1"
-	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type ServiceIndexCacher struct {
@@ -30,13 +29,17 @@ type ServiceIndexCacher struct {
 // onServiceEvent is the method to refresh service cache
 func (c *ServiceIndexCacher) onServiceEvent(evt K8sEvent) {
 	svc := evt.Object.(*v1.Service)
-	if svc.Namespace == meta.NamespaceSystem {
-		return
-	}
-
 	domainProject := Kubernetes().GetDomainProject()
 	serviceId := string(svc.UID)
 	indexKey := core.GenerateServiceIndexKey(generateServiceKey(domainProject, svc))
+
+	if !ShouldRegisterService(svc) {
+		kv := c.Cache().Get(indexKey)
+		if kv != nil {
+			c.Notify(pb.EVT_DELETE, indexKey, kv)
+		}
+		return
+	}
 
 	switch evt.EventType {
 	case pb.EVT_CREATE:

@@ -14,6 +14,15 @@ isolated from each other. Another implementation of the discovery plug-in, `Serv
 access multiple SC instances and periodically pull up micro-service instance information so that if some
 micro-services can request aggregate, cross-DCs can be implemented using the same API as SC cluster.
 
+If SC aggregate is not deployed globally, SC also supports another way to implement multiple DCs discovery,
+as shown below.
+
+![architecture](/docs/multidcs2.PNG)
+
+The difference between the two approaches is that global deployment aggregate can divert service discovery traffic,
+the whole architecture is more like a read-write separation architecture, and the SC of each DC manage microservice
+information independently, which reduces the complexity. So we recommend the first architecture.
+
 ## Quick Start
 
 Let's assume you want to install 2 clusters of Service-Center in different DCs with following details.

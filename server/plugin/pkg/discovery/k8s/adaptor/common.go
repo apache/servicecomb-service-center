@@ -18,6 +18,8 @@ package adaptor
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/queue"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"k8s.io/api/core/v1"
+	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"time"
@@ -44,10 +46,14 @@ const (
 	LabelNodeRegion  = "failure-domain.beta.kubernetes.io/region"
 	LabelNodeAZ      = "failure-domain.beta.kubernetes.io/zone"
 
+	// register annotations
+	AnnotationRegister = "service-center.servicecomb.io/register"
+
 	// properties
 	PropNamespace    = "namespace"
 	PropExternalName = "externalName"
 	PropServiceType  = "type"
+	PropNodeIP       = "nodeIP"
 
 	minWaitInterval       = 5 * time.Second
 	defaultResyncInterval = 60 * time.Second
@@ -78,4 +84,14 @@ func Queue(t K8sType) *queue.TaskQueue {
 		return q, nil
 	})
 	return q.(*queue.TaskQueue)
+}
+
+func ShouldRegisterService(service *v1.Service) bool {
+	if service.Namespace == meta.NamespaceSystem {
+		return false
+	}
+	if register, ok := service.ObjectMeta.Annotations[AnnotationRegister]; ok && register == "false" {
+		return false
+	}
+	return true
 }

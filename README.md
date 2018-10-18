@@ -7,7 +7,7 @@ Apache ServiceComb (incubating) Service-Center is a Restful based service-regist
  - **[`Open API`](/server/core/swagger/v4.yaml)**: API doc(Open API format) management for microservice
  - **Metadata**: Metadata management for both microservice and microservice instance
  - **Dependency**: Microservice dependency management
- - **Seperated**: Seperated microservice and microservice instance entity management
+ - **Separated**: Separated microservice and microservice instance entity management
  - **Domains**: Logical multiple domains management
  - **Security**: White and back list configuration for service discovery
  - **Discovery**: Support query instance by criteria 
@@ -17,8 +17,12 @@ Apache ServiceComb (incubating) Service-Center is a Restful based service-regist
  - **Performance**: Performance/Caching design
  - **[`Metrics`](/docs/integration-grafana.md)**: Able to expose Prometheus metric API automatically
  - **[`Tracing`](/docs/tracing.md)**: Able to report tracing data to Zipkin server
- - **[`Multi Datacenter`](/docs/multidcs.md)**: Additional layer of abstraction to clusters deployed in multiple datacenters
- - **[`Dynmaic Plug-in`](/docs/plugin.md)**: Able to load custom authentication, tls and other dynamic libraries
+ - **[`Pluginable`](/docs/plugin.md)**: Able to load custom authentication, tls and other dynamic libraries
+ - **[`CLI`](/scctl/pkg/plugin/README.md)**: Easy to control service center
+ - **[`Kubernetes`](/docs/kubeclusters.md)**: Embrace kubernetes ecosystem and support multi cluster service discovery
+ - **[`Datacenters`](/docs/multidcs.md)**: Additional layer of abstraction to clusters deployed in multiple datacenters
+ - **[`Aggregation`](/docs/aggregate.md)**: Able to aggregate microservices from multiple registry platforms and
+    support platform registry and client side registry at the same time
  
 ## Documentation
 

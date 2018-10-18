@@ -72,25 +72,11 @@ cd ${PROJECT_ROOT}/examples/infrastructures/k8s
 # install etcd cluster
 helm install --name coreos --namespace default etcd/
 # install sc cluster
-helm install --name dc1 --namespace default \
-    --set frontend.deployment=false \
-    --set sc.image.repository="desktop-0028:5000/servicecomb/service-center" \
-    --set sc.discovery.type="aggregate" \
-    --set sc.discovery.aggregate="etcd\,servicecenter" \
-    --set sc.discovery.clusters="sc-1=http://c1-etcd-client:2379\,sc-2=http://dc2-service-center:30100" \
+helm install --name servicecomb --namespace default \
+    --set sc.discovery.type="etcd" \
+    --set sc.discovery.clusters="http://coreos-etcd-client:2379" \
     --set sc.registry.enabled=true \
     --set sc.registry.type="etcd" \
-    --set sc.registry.name="sc-1" \
-    service-center/
-helm install --name dc2 --namespace default \
-    --set frontend.deployment=false \
-    --set sc.image.repository="desktop-0028:5000/servicecomb/service-center" \
-    --set sc.discovery.type="aggregate" \
-    --set sc.discovery.aggregate="etcd\,servicecenter" \
-    --set sc.discovery.clusters="sc-2=http://c2-etcd-client:2379\,sc-1=http://dc1-service-center:30100" \
-    --set sc.registry.enabled=true \
-    --set sc.registry.type="etcd" \
-    --set sc.registry.name="sc-2" \
     service-center/
 ```
 

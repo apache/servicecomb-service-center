@@ -95,7 +95,12 @@ func (service *AdminService) dumpAll(ctx context.Context, cache *model.Cache) {
 }
 
 func setValue(e discovery.Adaptor, setter model.Setter) {
+	exists := make(map[string]struct{})
 	e.Cache().ForEach(func(k string, kv *discovery.KeyValue) (next bool) {
+		if _, ok := exists[k]; ok {
+			return true
+		}
+		exists[k] = struct{}{}
 		setter.SetValue(&model.KV{Key: k, Rev: kv.ModRevision, Value: kv.Value})
 		return true
 	})
