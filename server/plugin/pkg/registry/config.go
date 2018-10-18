@@ -43,23 +43,39 @@ type Config struct {
 
 func (c *Config) InitClusters() {
 	c.Clusters = make(Clusters)
-	kvs := strings.Split(c.ClusterAddresses, ",")
-	for _, cluster := range kvs {
-		// sc-0=http(s)://host1:port1|http(s)://host2:port2
-		names := strings.Split(cluster, "=")
-		if len(names) != 2 {
-			continue
+	// sc-0=http(s)://host1:port1,http(s)://host2:port2,sc-1=http(s)://host3:port3
+	kvs := strings.Split(c.ClusterAddresses, "=")
+	if l := len(kvs); l >= 2 {
+		var (
+			names []string
+			addrs [][]string
+		)
+		for i := 0; i < l; i++ {
+			ss := strings.Split(kvs[i], ",")
+			sl := len(ss)
+			if i != l-1 {
+				names = append(names, ss[sl-1])
+			}
+			if i != 0 {
+				if sl > 1 && i != l-1 {
+					addrs = append(addrs, ss[:sl-1])
+				} else {
+					addrs = append(addrs, ss)
+				}
+			}
 		}
-		c.Clusters[names[0]] = strings.Split(names[1], "|")
+		for i, name := range names {
+			c.Clusters[name] = addrs[i]
+		}
 	}
 	if len(c.Clusters) == 0 {
 		c.Clusters[c.ClusterName] = []string{c.ClusterAddresses}
 	}
 }
 
-// ClusterAddress return the address of current SC's registry backend
-func (c *Config) ClusterAddress() string {
-	return c.Clusters[c.ClusterName][0]
+// RegistryAddresses return the address of current SC's registry backend
+func (c *Config) RegistryAddresses() []string {
+	return c.Clusters[c.ClusterName]
 }
 
 func Configuration() *Config {
