@@ -16,15 +16,29 @@
 package servicecenter
 
 import (
+	"crypto/tls"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/client/sc"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/server/admin/model"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
+	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/registry"
+	"strings"
 )
 
 type SCClientAggregate []*sc.SCClient
+
+var clientTLS *tls.Config
+
+func getClientTLS() (*tls.Config, error) {
+	if clientTLS != nil {
+		return clientTLS, nil
+	}
+	var err error
+	clientTLS, err = mgr.Plugins().TLS().ClientConfig()
+	return clientTLS, err
+}
 
 func (c *SCClientAggregate) GetScCache() (*model.Cache, error) {
 	var caches model.Cache
@@ -90,6 +104,14 @@ func NewSCClientAggregate() *SCClientAggregate {
 			continue
 		}
 		client.Timeout = registry.Configuration().RequestTimeOut
+		if strings.Index(addr[0], "https") >= 0 {
+			client.TLS, err = getClientTLS()
+			if err != nil {
+				log.Errorf(err, "get service center[%s][%s] tls config failed", name, addr)
+				continue
+			}
+		}
+
 		*c = append(*c, client)
 		log.Infof("new service center[%s][%s] client", name, addr)
 	}
