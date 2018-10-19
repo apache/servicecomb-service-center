@@ -67,9 +67,12 @@ func (c *Config) InitClusters() {
 		for i, name := range names {
 			c.Clusters[name] = addrs[i]
 		}
+		if len(c.ManagerAddress) > 0 {
+			c.Clusters[c.ClusterName] = strings.Split(c.ManagerAddress, ",")
+		}
 	}
 	if len(c.Clusters) == 0 {
-		c.Clusters[c.ClusterName] = []string{c.ClusterAddresses}
+		c.Clusters[c.ClusterName] = strings.Split(c.ClusterAddresses, ",")
 	}
 }
 
@@ -84,6 +87,12 @@ func Configuration() *Config {
 		defaultRegistryConfig.ClusterName = beego.AppConfig.DefaultString("manager_name", "default")
 		defaultRegistryConfig.ManagerAddress = beego.AppConfig.String("manager_addr")
 		defaultRegistryConfig.ClusterAddresses = beego.AppConfig.DefaultString("manager_cluster", "http://127.0.0.1:2379")
+		defaultRegistryConfig.InitClusters()
+
+		registryAddresses := strings.Join(defaultRegistryConfig.RegistryAddresses(), ",")
+		defaultRegistryConfig.SslEnabled = core.ServerInfo.Config.SslEnabled &&
+			strings.Index(strings.ToLower(registryAddresses), "https://") >= 0
+
 		defaultRegistryConfig.DialTimeout, err = time.ParseDuration(beego.AppConfig.DefaultString("connect_timeout", "10s"))
 		if err != nil {
 			log.Errorf(err, "connect_timeout is invalid, use default time %s", defaultDialTimeout)
@@ -94,13 +103,10 @@ func Configuration() *Config {
 			log.Errorf(err, "registry_timeout is invalid, use default time %s", defaultRequestTimeout)
 			defaultRegistryConfig.RequestTimeOut = defaultRequestTimeout
 		}
-		defaultRegistryConfig.SslEnabled = core.ServerInfo.Config.SslEnabled &&
-			strings.Index(strings.ToLower(defaultRegistryConfig.ClusterAddresses), "https://") >= 0
 		defaultRegistryConfig.AutoSyncInterval, err = time.ParseDuration(core.ServerInfo.Config.AutoSyncInterval)
 		if err != nil {
 			log.Errorf(err, "auto_sync_interval is invalid")
 		}
-		defaultRegistryConfig.InitClusters()
 	})
 	return &defaultRegistryConfig
 }
