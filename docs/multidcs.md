@@ -69,7 +69,7 @@ scctl --addr http://10.12.0.3:30100 get cluster
 
 ## Example
 
-Here we show an example of multiple datacenters access, where we use an 
+Here we show a `golang` example of multiple datacenters access, where we use an 
 [`example`](https://github.com/go-chassis/go-chassis/tree/master/examples/discovery)
 of the [`go-chassis`](https://github.com/go-chassis/go-chassis) project, assuming that below.
 
@@ -77,6 +77,11 @@ of the [`go-chassis`](https://github.com/go-chassis/go-chassis) project, assumin
 | :-----:      | :---------: | :---------: |  
 | Client       | dc-1        | 10.12.0.4   |   
 | Server       | dc-2        | 10.12.0.5   |
+
+Notes: `go-chassis` application can run perfectly in the above 2 architectures.
+If you are using [`java-chassis`](https://github.com/apache/incubator-servicecomb-java-chassis),
+there are only support the service center with the second architecture at the moment.
+You can ref to [`here`](/docs/multidcs2.md) for more details of the second architecture.
 
 ##### Start Server
 

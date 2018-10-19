@@ -20,8 +20,10 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"strings"
 	"time"
 )
 
@@ -94,4 +96,8 @@ func ShouldRegisterService(service *v1.Service) bool {
 		return false
 	}
 	return true
+}
+
+func uuid(id types.UID) string {
+	return strings.Replace(string(id), "-", "", -1)
 }

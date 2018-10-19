@@ -97,6 +97,11 @@ func TestInitCluster(t *testing.T) {
 }
 
 func TestEtcdClient(t *testing.T) {
+	registry.Configuration().ClusterName = ""
+	registry.Configuration().ManagerAddress = ""
+	registry.Configuration().ClusterAddresses = endpoint
+	registry.Configuration().InitClusters()
+
 	etcd := &EtcdClient{
 		Endpoints:   []string{endpoint},
 		DialTimeout: dialTimeout,

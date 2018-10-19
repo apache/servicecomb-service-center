@@ -33,7 +33,7 @@ type InstanceCacher struct {
 func (c *InstanceCacher) onServiceEvent(evt K8sEvent) {
 	svc := evt.Object.(*v1.Service)
 	domainProject := Kubernetes().GetDomainProject()
-	serviceId := string(svc.UID)
+	serviceId := uuid(svc.UID)
 
 	switch evt.EventType {
 	case pb.EVT_DELETE:
@@ -77,7 +77,7 @@ func (c *InstanceCacher) onEndpointsEvent(evt K8sEvent) {
 		return
 	}
 
-	serviceId := string(svc.UID)
+	serviceId := uuid(svc.UID)
 	domainProject := Kubernetes().GetDomainProject()
 	oldKvs := c.getInstances(domainProject, serviceId)
 	newKvs := make(map[string]*discovery.KeyValue)
@@ -88,7 +88,7 @@ func (c *InstanceCacher) onEndpointsEvent(evt K8sEvent) {
 				continue
 			}
 
-			instanceId := string(pod.UID)
+			instanceId := uuid(pod.UID)
 			key := core.GenerateInstanceKey(Kubernetes().GetDomainProject(), serviceId, instanceId)
 			switch evt.EventType {
 			case pb.EVT_CREATE, pb.EVT_UPDATE:
