@@ -61,7 +61,7 @@ func TestInitCluster(t *testing.T) {
 		t.Fatalf("TestInitCluster failed, %v", registry.Configuration().RegistryAddresses())
 	}
 	if strings.Join(registry.Configuration().Clusters["sc-0"], ",") != "127.0.0.1:2379,127.0.0.2:2379" {
-		t.Fatalf("TestInitCluster failed, %v", registry.Configuration().RegistryAddresses())
+		t.Fatalf("TestInitCluster failed, %v", registry.Configuration().Clusters)
 	}
 	registry.Configuration().ClusterName = "sc-0"
 	registry.Configuration().ClusterAddresses = "sc-1=127.0.0.1:2379,127.0.0.2:2379,sc-2=127.0.0.3:2379"
@@ -70,10 +70,10 @@ func TestInitCluster(t *testing.T) {
 		t.Fatalf("TestInitCluster failed, %v", registry.Configuration().RegistryAddresses())
 	}
 	if strings.Join(registry.Configuration().Clusters["sc-1"], ",") != "127.0.0.1:2379,127.0.0.2:2379" {
-		t.Fatalf("TestInitCluster failed, %v", registry.Configuration().RegistryAddresses())
+		t.Fatalf("TestInitCluster failed, %v", registry.Configuration().Clusters)
 	}
 	if strings.Join(registry.Configuration().Clusters["sc-2"], ",") != "127.0.0.3:2379" {
-		t.Fatalf("TestInitCluster failed, %v", registry.Configuration().RegistryAddresses())
+		t.Fatalf("TestInitCluster failed, %v", registry.Configuration().Clusters)
 	}
 	registry.Configuration().ClusterName = "sc-0"
 	registry.Configuration().ClusterAddresses = "sc-0=127.0.0.1:2379,sc-1=127.0.0.3:2379,127.0.0.4:2379"
@@ -82,11 +82,26 @@ func TestInitCluster(t *testing.T) {
 		t.Fatalf("TestInitCluster failed, %v", registry.Configuration().RegistryAddresses())
 	}
 	if strings.Join(registry.Configuration().Clusters["sc-1"], ",") != "127.0.0.3:2379,127.0.0.4:2379" {
+		t.Fatalf("TestInitCluster failed, %v", registry.Configuration().Clusters)
+	}
+	registry.Configuration().ClusterName = "sc-0"
+	registry.Configuration().ManagerAddress = "127.0.0.1:2379,127.0.0.2:2379"
+	registry.Configuration().ClusterAddresses = "sc-0=127.0.0.1:30100,sc-1=127.0.0.2:30100"
+	registry.Configuration().InitClusters()
+	if strings.Join(registry.Configuration().RegistryAddresses(), ",") != "127.0.0.1:2379,127.0.0.2:2379" {
 		t.Fatalf("TestInitCluster failed, %v", registry.Configuration().RegistryAddresses())
+	}
+	if strings.Join(registry.Configuration().Clusters["sc-1"], ",") != "127.0.0.2:30100" {
+		t.Fatalf("TestInitCluster failed, %v", registry.Configuration().Clusters)
 	}
 }
 
 func TestEtcdClient(t *testing.T) {
+	registry.Configuration().ClusterName = ""
+	registry.Configuration().ManagerAddress = ""
+	registry.Configuration().ClusterAddresses = endpoint
+	registry.Configuration().InitClusters()
+
 	etcd := &EtcdClient{
 		Endpoints:   []string{endpoint},
 		DialTimeout: dialTimeout,

@@ -30,7 +30,7 @@ type ServiceIndexCacher struct {
 func (c *ServiceIndexCacher) onServiceEvent(evt K8sEvent) {
 	svc := evt.Object.(*v1.Service)
 	domainProject := Kubernetes().GetDomainProject()
-	serviceId := string(svc.UID)
+	serviceId := uuid(svc.UID)
 	indexKey := core.GenerateServiceIndexKey(generateServiceKey(domainProject, svc))
 
 	if !ShouldRegisterService(svc) {
