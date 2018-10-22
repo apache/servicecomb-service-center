@@ -31,6 +31,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/quota"
 	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/registry"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/uuid"
 	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
 	"strconv"
@@ -110,10 +111,13 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 		return resp, nil
 	}
 
+	index := apt.GenerateServiceIndexKey(serviceKey)
+
 	// 产生全局service id
 	requestServiceId := service.ServiceId
 	if len(requestServiceId) == 0 {
-		service.ServiceId = plugin.Plugins().UUID().GetServiceId()
+		ctx = util.SetContext(ctx, uuid.ContextKey, index)
+		service.ServiceId = plugin.Plugins().UUID().GetServiceId(ctx)
 	}
 	service.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
 	service.ModTimestamp = service.Timestamp
@@ -126,9 +130,9 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
+
 	key := apt.GenerateServiceKey(domainProject, service.ServiceId)
 	keyBytes := util.StringToBytesWithNoCopy(key)
-	index := apt.GenerateServiceIndexKey(serviceKey)
 	indexBytes := util.StringToBytesWithNoCopy(index)
 	aliasBytes := util.StringToBytesWithNoCopy(apt.GenerateServiceAliasKey(serviceKey))
 

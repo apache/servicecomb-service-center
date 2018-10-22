@@ -47,7 +47,7 @@ func (s *InstanceService) preProcessRegisterInstance(ctx context.Context, instan
 	}
 
 	if len(instance.InstanceId) == 0 {
-		instance.InstanceId = plugin.Plugins().UUID().GetInstanceId()
+		instance.InstanceId = plugin.Plugins().UUID().GetInstanceId(ctx)
 	}
 
 	instance.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)

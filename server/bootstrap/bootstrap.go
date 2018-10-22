@@ -43,6 +43,7 @@ import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/p
 
 // uuid
 import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/uuid/buildin"
+import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/uuid/context"
 
 // tracing
 import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/tracing/buildin"

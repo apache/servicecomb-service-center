@@ -16,7 +16,11 @@
  */
 package uuid
 
+import "golang.org/x/net/context"
+
+const ContextKey = "_uuid_key"
+
 type UUID interface {
-	GetServiceId() string
-	GetInstanceId() string
+	GetServiceId(ctx context.Context) string
+	GetInstanceId(ctx context.Context) string
 }
