@@ -15,37 +15,42 @@
  * limitations under the License.
  */
 
-package buildin
+package context
 
 import (
+	"crypto/sha1"
+	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/uuid"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/uuid/buildin"
 	"golang.org/x/net/context"
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{mgr.UUID, "buildin", New})
+	mgr.RegisterPlugin(mgr.Plugin{mgr.UUID, "context", New})
 }
 
 func New() mgr.PluginInstance {
-	return &BuildinUUID{}
+	return &ContextUUID{}
 }
 
-type BuildinUUID struct {
+type ContextUUID struct {
+	buildin.BuildinUUID
 }
 
-func (du *BuildinUUID) GetServiceId(_ context.Context) string {
-	df, ok := mgr.DynamicPluginFunc(mgr.UUID, "GetServiceId").(func() string)
-	if ok {
-		return df()
+func (cu *ContextUUID) fromContext(ctx context.Context) string {
+	key, ok := ctx.Value(uuid.ContextKey).(string)
+	if !ok {
+		return ""
 	}
-	return util.GenerateUuid()
+	return key
 }
 
-func (du *BuildinUUID) GetInstanceId(_ context.Context) string {
-	df, ok := mgr.DynamicPluginFunc(mgr.UUID, "GetInstanceId").(func() string)
-	if ok {
-		return df()
+func (cu *ContextUUID) GetServiceId(ctx context.Context) string {
+	content := cu.fromContext(ctx)
+	if len(content) == 0 {
+		return cu.BuildinUUID.GetServiceId(ctx)
 	}
-	return util.GenerateUuid()
+	return fmt.Sprintf("%x", sha1.Sum(util.StringToBytesWithNoCopy(content)))
 }

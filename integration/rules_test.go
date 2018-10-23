@@ -66,7 +66,7 @@ var _ = Describe("MicroService Api Test", func() {
 			Expect(resp.StatusCode).To(Equal(http.StatusOK))
 			respbody, _ := ioutil.ReadAll(resp.Body)
 			serviceId = gojson.Json(string(respbody)).Get("serviceId").Tostring()
-			Expect(len(serviceId)).Should(BeNumerically("==", 32))
+			Expect(len(serviceId)).Should(BeNumerically("==", LengthUUID))
 		})
 
 		AfterEach(func() {

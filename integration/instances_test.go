@@ -69,7 +69,7 @@ var _ = Describe("MicroService Api Test", func() {
 			Expect(resp.StatusCode).To(Equal(http.StatusOK))
 			respbody, _ := ioutil.ReadAll(resp.Body)
 			serviceId = gojson.Json(string(respbody)).Get("serviceId").Tostring()
-			Expect(len(serviceId)).Should(BeNumerically("==", 32))
+			Expect(len(serviceId)).Should(BeNumerically("==", LengthUUID))
 
 			//Register MicroService Instance
 			endpoints := []string{"cse://127.0.0.1:9984"}
@@ -108,7 +108,7 @@ var _ = Describe("MicroService Api Test", func() {
 			Expect(resp.StatusCode).To(Equal(http.StatusOK))
 			respbody, _ = ioutil.ReadAll(resp.Body)
 			serviceInstanceID = gojson.Json(string(respbody)).Get("instanceId").Tostring()
-			Expect(len(serviceId)).Should(BeNumerically("==", 32))
+			Expect(len(serviceId)).Should(BeNumerically("==", LengthUUID))
 
 		})
 
@@ -559,7 +559,7 @@ func BenchmarkRegisterMicroServiceInstance(b *testing.B) {
 	Expect(resp.StatusCode).To(Equal(http.StatusOK))
 	respbody, _ := ioutil.ReadAll(resp.Body)
 	serviceId := gojson.Json(string(respbody)).Get("serviceId").Tostring()
-	Expect(len(serviceId)).Should(BeNumerically("==", 32))
+	Expect(len(serviceId)).Should(BeNumerically("==", LengthUUID))
 
 	for i := 0; i < b.N; i++ {
 		//Register MicroService Instance
@@ -599,7 +599,7 @@ func BenchmarkRegisterMicroServiceInstance(b *testing.B) {
 		Expect(resp.StatusCode).To(Equal(http.StatusOK))
 		respbody, _ = ioutil.ReadAll(resp.Body)
 		serviceInstanceID := gojson.Json(string(respbody)).Get("instanceId").Tostring()
-		Expect(len(serviceId)).Should(BeNumerically("==", 32))
+		Expect(len(serviceId)).Should(BeNumerically("==", LengthUUID))
 
 		if serviceInstanceID != "" {
 			url := strings.Replace(UNREGISTERINSTANCE, ":serviceId", serviceId, 1)

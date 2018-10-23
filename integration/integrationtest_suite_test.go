@@ -25,6 +25,8 @@ import (
 	"testing"
 )
 
+const LengthUUID = 40
+
 var scclient *http.Client
 
 var insecurityConnection = &http.Client{}
