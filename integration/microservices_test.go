@@ -70,7 +70,7 @@ var _ = Describe("MicroService Api Test", func() {
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 				respbody, _ := ioutil.ReadAll(resp.Body)
 				serviceId = gojson.Json(string(respbody)).Get("serviceId").Tostring()
-				Expect(len(serviceId)).Should(BeNumerically("==", 32))
+				Expect(len(serviceId)).Should(BeNumerically("==", LengthUUID))
 
 				// UNRegister Service
 				url := strings.Replace(UNREGISTERMICROSERVICE, ":serviceId", serviceId, 1)
@@ -112,7 +112,7 @@ var _ = Describe("MicroService Api Test", func() {
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 				respbody, _ := ioutil.ReadAll(resp.Body)
 				serviceId = gojson.Json(string(respbody)).Get("serviceId").Tostring()
-				Expect(len(serviceId)).Should(BeNumerically("==", 32))
+				Expect(len(serviceId)).Should(BeNumerically("==", LengthUUID))
 			})
 
 			AfterEach(func() {
@@ -573,7 +573,7 @@ func BenchmarkRegisterMicroServiceAndDelete(b *testing.B) {
 		Expect(resp.StatusCode).To(Equal(http.StatusOK))
 		respbody, _ := ioutil.ReadAll(resp.Body)
 		serviceId := gojson.Json(string(respbody)).Get("serviceId").Tostring()
-		Expect(len(serviceId)).Should(BeNumerically("==", 32))
+		Expect(len(serviceId)).Should(BeNumerically("==", LengthUUID))
 		if serviceId != "" {
 			url := strings.Replace(UNREGISTERMICROSERVICE, ":serviceId", serviceId, 1)
 			req, _ := http.NewRequest(DELETE, SCURL+url, nil)
