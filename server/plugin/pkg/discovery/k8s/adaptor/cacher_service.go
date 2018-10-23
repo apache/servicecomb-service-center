@@ -30,7 +30,7 @@ type ServiceCacher struct {
 func (c *ServiceCacher) onServiceEvent(evt K8sEvent) {
 	svc := evt.Object.(*v1.Service)
 	domainProject := Kubernetes().GetDomainProject()
-	serviceId := uuid(svc.UID)
+	serviceId := generateServiceId(domainProject, svc)
 	key := core.GenerateServiceKey(domainProject, serviceId)
 
 	if !ShouldRegisterService(svc) {
@@ -43,7 +43,7 @@ func (c *ServiceCacher) onServiceEvent(evt K8sEvent) {
 
 	switch evt.EventType {
 	case pb.EVT_CREATE, pb.EVT_UPDATE:
-		ms := FromK8sService(svc)
+		ms := FromK8sService(domainProject, svc)
 		kv := AsKeyValue(key, ms, svc.ResourceVersion)
 		if c.Cache().Get(key) == nil {
 			evt.EventType = pb.EVT_CREATE
