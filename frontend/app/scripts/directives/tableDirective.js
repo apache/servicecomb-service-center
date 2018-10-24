@@ -58,6 +58,8 @@ angular.module('serviceCenter')
                     }
                 }
 
+                scope.changePaginationLabel()
+
                 scope.paginationOptions = {
                     rowSelection: false,
                     multiSelect: false,
