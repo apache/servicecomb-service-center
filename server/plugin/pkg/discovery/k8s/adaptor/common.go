@@ -18,6 +18,10 @@ package adaptor
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/queue"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
+	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/uuid"
+	"golang.org/x/net/context"
 	"k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -98,6 +102,12 @@ func ShouldRegisterService(service *v1.Service) bool {
 	return true
 }
 
-func uuid(id types.UID) string {
+func UUID(id types.UID) string {
 	return strings.Replace(string(id), "-", "", -1)
+}
+
+func generateServiceId(domainProject string, svc *v1.Service) string {
+	indexKey := core.GenerateServiceIndexKey(generateServiceKey(domainProject, svc))
+	ctx := context.WithValue(context.Background(), uuid.ContextKey, indexKey)
+	return mgr.Plugins().UUID().GetServiceId(ctx)
 }

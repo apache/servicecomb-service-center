@@ -136,7 +136,7 @@ helm delete --purge servicecomb
         `k8s,servicecenter`(for accessing distinct kubernetes clusters).
         - **`clusters`** (string: "sc-0=http://127.0.0.1:2380") The cluster address managed by Service Center.
         If `type` is set to `etcd`, its format is `http(s)://{etcd-1},http(s)://{etcd-2}`. If `type` is
-        set to other value, its format is `{cluster name 1}=http(s)://{cluster-1-1}|http(s)://{cluster-1-2},{cluster-2}=http(s)://{cluster-2-1}`
+        set to other value, its format is `{cluster name 1}=http(s)://{cluster-1-1},http(s)://{cluster-1-2},{cluster-2}=http(s)://{cluster-2-1}`
     + **registry**
         - **`enabled`** (bool: false) Register Service Center itself or not.
         - **`type`** (string: "embeded_etcd") The class of backend storage provider, this decide how
