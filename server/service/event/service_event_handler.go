@@ -66,6 +66,7 @@ func (h *ServiceEventHandler) OnEvent(evt discovery.KvEvent) {
 	// cache
 	providerKey := pb.MicroServiceToKey(domainProject, ms)
 	cache.FindInstances.Remove(providerKey)
+	cache.DependencyRule.Remove(providerKey)
 }
 
 func getFramework(ms *pb.MicroService) (string, string) {

@@ -774,6 +774,8 @@ var _ = Describe("'Dependency' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 
+				Expect(deh.Handle()).To(BeNil())
+
 				respGetC, err = serviceResource.GetConsumerDependencies(getContext(), &pb.GetDependenciesRequest{
 					ServiceId: consumerId1,
 					NoSelf:    true,
