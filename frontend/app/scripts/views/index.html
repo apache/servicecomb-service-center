@@ -35,9 +35,9 @@ limitations under the License.
                     </md-input-container>
 
                     <md-input-container class="md-block" flex-gt-sm>
-                        <md-select ng-model="language" aria-label="language" ng-change="selectLang(language)">
+                        <md-select ng-model="language" aria-label="language" ng-change="selectLang(language)" ng-init="selectLang(language)">
                             <md-option id="lang-option" value="en">English</md-option>
-                            <md-option value="cz">{{ "chinese" | translate }}</md-option>
+                            <md-option value="zh">{{ "chinese" | translate }}</md-option>
                         </md-select>
                     </md-input-container>
                 </div>
