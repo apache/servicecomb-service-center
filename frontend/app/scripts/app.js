@@ -23,15 +23,15 @@ angular.module('serviceCenter', ['ngAnimate', 'ngMaterial', 'ngAria', 'ngMessage
         $translateProvider.useSanitizeValueStrategy(null);
 
         $translateProvider.translations('en', english);
-        $translateProvider.translations('cz', chinese);
+        $translateProvider.translations('zh', chinese);
 
         var lang = "";
         if (localStorage.getItem("lang") && localStorage.getItem("lang") != '') {
             lang = localStorage.getItem("lang");
         } else if (navigator.language) {
-            lang = navigator.language.indexOf("zh") > -1 ? "cz" : "en";
+            lang = navigator.language.indexOf("zh") > -1 ? "zh" : "en";
         } else {
-            lang = navigator.userLanguage.indexOf("zh") > -1 ? "cz" : "en";
+            lang = navigator.userLanguage.indexOf("zh") > -1 ? "zh" : "en";
         }
 
         $translateProvider.preferredLanguage(lang);
