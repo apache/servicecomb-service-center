@@ -774,6 +774,8 @@ var _ = Describe("'Dependency' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 
+				Expect(deh.Handle()).To(BeNil())
+
 				respGetC, err = serviceResource.GetConsumerDependencies(getContext(), &pb.GetDependenciesRequest{
 					ServiceId: consumerId1,
 					NoSelf:    true,
@@ -781,6 +783,96 @@ var _ = Describe("'Dependency' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respGetC.Response.Code).To(Equal(pb.Response_SUCCESS))
 				Expect(len(respGetC.Providers)).To(Equal(1))
+
+				By("find before provider register")
+				resp, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: providerId2,
+					AppId:             "get_dep_group",
+					ServiceName:       "get_dep_finder",
+					VersionRule:       "1.0.0+",
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(scerr.ErrServiceNotExists))
+
+				respCreateF, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						AppId:       "get_dep_group",
+						ServiceName: "get_dep_finder",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Status:      pb.MS_UP,
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(respCreateF.Response.Code).To(Equal(pb.Response_SUCCESS))
+				finder1 := respCreateF.ServiceId
+
+				resp, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: providerId2,
+					AppId:             "get_dep_group",
+					ServiceName:       "get_dep_finder",
+					VersionRule:       "1.0.0+",
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+
+				Expect(deh.Handle()).To(BeNil())
+
+				respGetC, err = serviceResource.GetConsumerDependencies(getContext(), &pb.GetDependenciesRequest{
+					ServiceId: providerId2,
+				})
+				Expect(err).To(BeNil())
+				Expect(respGetC.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(len(respGetC.Providers)).To(Equal(1))
+				Expect(respGetC.Providers[0].ServiceId).To(Equal(finder1))
+
+				By("find after delete micro service")
+				respDelP, err := serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{
+					ServiceId: finder1, Force: true,
+				})
+				Expect(err).To(BeNil())
+				Expect(respDelP.Response.Code).To(Equal(pb.Response_SUCCESS))
+
+				Expect(deh.Handle()).To(BeNil())
+
+				respGetC, err = serviceResource.GetConsumerDependencies(getContext(), &pb.GetDependenciesRequest{
+					ServiceId: providerId2,
+				})
+				Expect(err).To(BeNil())
+				Expect(respGetC.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(len(respGetC.Providers)).To(Equal(0))
+
+				respCreateF, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceId:   finder1,
+						AppId:       "get_dep_group",
+						ServiceName: "get_dep_finder",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Status:      pb.MS_UP,
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(respCreateF.Response.Code).To(Equal(pb.Response_SUCCESS))
+
+				resp, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: providerId2,
+					AppId:             "get_dep_group",
+					ServiceName:       "get_dep_finder",
+					VersionRule:       "1.0.0+",
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+
+				Expect(deh.Handle()).To(BeNil())
+
+				respGetC, err = serviceResource.GetConsumerDependencies(getContext(), &pb.GetDependenciesRequest{
+					ServiceId: providerId2,
+				})
+				Expect(err).To(BeNil())
+				Expect(respGetC.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(len(respGetC.Providers)).To(Equal(1))
+				Expect(respGetC.Providers[0].ServiceId).To(Equal(finder1))
 			})
 		})
 	})

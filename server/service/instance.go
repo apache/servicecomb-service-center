@@ -548,21 +548,14 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 			service.Environment, in.AppId, in.ServiceName, in.VersionRule)
 	}
 
+	// cache
+	var item *cache.VersionRuleCacheItem
 	noCache, cacheOnly := ctx.Value(serviceUtil.CTX_NOCACHE) == "1", ctx.Value(serviceUtil.CTX_CACHEONLY) == "1"
 	rev, _ := ctx.Value(serviceUtil.CTX_REQUEST_REVISION).(string)
 	reqRev, _ := serviceUtil.ParseRevision(rev)
 	cloneCtx := util.CloneContext(ctx)
 
-	// cache
-	var (
-		item           *cache.VersionRuleCacheItem
-		i              = 0
-		newVersionRule = !cache.DependencyRule.ExistVersionRule(cloneCtx, in.ConsumerServiceId, provider)
-	)
-	if noCache {
-		i = 1
-	}
-	for ; i < 2; i++ {
+	for i := 0; i < 2; i++ {
 		item, err = cache.FindInstances.Get(cloneCtx, service, provider, in.Tags)
 		if err != nil {
 			log.Errorf(err, "FindInstancesCache.Get failed, %s", findFlag)
@@ -586,7 +579,9 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 	}
 
 	// add dependency queue
-	if len(in.ConsumerServiceId) > 0 && newVersionRule && len(item.ServiceIds) > 0 {
+	if len(in.ConsumerServiceId) > 0 &&
+		len(item.ServiceIds) > 0 &&
+		!cache.DependencyRule.ExistVersionRule(ctx, in.ConsumerServiceId, provider) {
 		provider, err = s.reshapeProviderKey(ctx, provider, item.ServiceIds[0])
 		if provider != nil {
 			err = serviceUtil.AddServiceVersionRule(ctx, domainProject, service, provider)

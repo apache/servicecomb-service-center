@@ -129,27 +129,27 @@ func TestGetInfoFromKV(t *testing.T) {
 		t.Fatalf("TestGetInfoFromKV failed")
 	}
 
-	k := GetInfoFromDependencyRuleKV([]byte(GenerateProviderDependencyRuleKey("a/b", &proto.MicroServiceKey{
+	dt, k := GetInfoFromDependencyRuleKV([]byte(GenerateProviderDependencyRuleKey("a/b", &proto.MicroServiceKey{
 		Tenant:      "a/b",
 		AppId:       "c",
 		ServiceName: "*",
 	})))
-	if k == nil || k.AppId != "" || k.ServiceName != "*" {
+	if dt != DEPS_PROVIDER || k == nil || k.AppId != "" || k.ServiceName != "*" {
 		t.Fatalf("TestGetInfoFromKV failed")
 	}
 
-	k = GetInfoFromDependencyRuleKV([]byte(GenerateProviderDependencyRuleKey("a/b", &proto.MicroServiceKey{
+	dt, k = GetInfoFromDependencyRuleKV([]byte(GenerateProviderDependencyRuleKey("a/b", &proto.MicroServiceKey{
 		Tenant:      "a/b",
 		AppId:       "c",
 		ServiceName: "d",
 		Version:     "e",
 	})))
-	if k == nil || k.AppId != "c" || k.ServiceName != "d" {
+	if dt != DEPS_PROVIDER || k == nil || k.AppId != "c" || k.ServiceName != "d" {
 		t.Fatalf("TestGetInfoFromKV failed")
 	}
 
-	k = GetInfoFromDependencyRuleKV([]byte("abc"))
-	if k != nil {
+	dt, k = GetInfoFromDependencyRuleKV([]byte("abc"))
+	if dt != "" || k != nil {
 		t.Fatalf("TestGetInfoFromKV failed")
 	}
 }

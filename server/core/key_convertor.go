@@ -140,21 +140,21 @@ func GetInfoFromDependencyQueueKV(key []byte) (consumerId, domainProject, uuid s
 	return
 }
 
-func GetInfoFromDependencyRuleKV(key []byte) *pb.MicroServiceKey {
+func GetInfoFromDependencyRuleKV(key []byte) (t string, _ *pb.MicroServiceKey) {
 	keys := KvToResponse(key)
 	l := len(keys)
 	if l < 5 {
-		return nil
+		return "", nil
 	}
 	if keys[l-1] == "*" {
-		return &pb.MicroServiceKey{
+		return keys[l-3], &pb.MicroServiceKey{
 			Tenant:      fmt.Sprintf("%s/%s", keys[l-5], keys[l-4]),
 			Environment: keys[l-2],
 			ServiceName: keys[l-1],
 		}
 	}
 
-	return &pb.MicroServiceKey{
+	return keys[l-5], &pb.MicroServiceKey{
 		Tenant:      fmt.Sprintf("%s/%s", keys[l-7], keys[l-6]),
 		Environment: keys[l-4],
 		AppId:       keys[l-3],
