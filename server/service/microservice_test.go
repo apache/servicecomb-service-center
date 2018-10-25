@@ -1079,15 +1079,15 @@ var _ = Describe("'Micro-service' service", func() {
 			})
 		})
 
-		Context("when property is nil or empty", func() {
-			It("should be failed", func() {
+		Context("when remove the properties", func() {
+			It("should be pass", func() {
 				r := &pb.UpdateServicePropsRequest{
 					ServiceId:  serviceId,
 					Properties: nil,
 				}
 				resp, err := serviceResource.UpdateProperties(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 
 				r = &pb.UpdateServicePropsRequest{
 					ServiceId:  "",
