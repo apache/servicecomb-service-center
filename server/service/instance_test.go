@@ -745,13 +745,14 @@ var _ = Describe("'Instance' service", func() {
 
 				Expect(err).To(BeNil())
 				Expect(respUpdateProperties.Response.Code).To(Equal(scerr.ErrInvalidParams))
+
+				By("remove the properties")
 				respUpdateProperties, err = instanceResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
 					ServiceId:  serviceId,
 					InstanceId: instanceId,
 				})
-
 				Expect(err).To(BeNil())
-				Expect(respUpdateProperties.Response.Code).To(Equal(scerr.ErrInvalidParams))
+				Expect(respUpdateProperties.Response.Code).To(Equal(pb.Response_SUCCESS))
 
 				By("service does not exist")
 				respUpdateProperties, err = instanceResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{

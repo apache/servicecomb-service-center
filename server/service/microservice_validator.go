@@ -108,6 +108,5 @@ func CreateServiceReqValidator() *validate.Validator {
 func UpdateServicePropsReqValidator() *validate.Validator {
 	return updateServicePropsReqValidator.Init(func(v *validate.Validator) {
 		v.AddRule("ServiceId", GetServiceReqValidator().GetRule("ServiceId"))
-		v.AddRule("Properties", &validate.ValidateRule{Min: 1})
 	})
 }

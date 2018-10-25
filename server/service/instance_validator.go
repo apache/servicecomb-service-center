@@ -81,7 +81,6 @@ func UpdateInstanceReqValidator() *validate.Validator {
 func UpdateInstancePropsReqValidator() *validate.Validator {
 	return updateInstancePropsReqValidator.Init(func(v *validate.Validator) {
 		v.AddRules(heartbeatReqValidator.GetRules())
-		v.AddRule("Properties", UpdateServicePropsReqValidator().GetRule("Properties"))
 	})
 }
 
