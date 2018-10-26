@@ -230,7 +230,7 @@ func toString(in *pb.MicroServiceKey) string {
 	return apt.GenerateProviderDependencyRuleKey(in.Tenant, in)
 }
 
-func parseAddOrUpdateRules(ctx context.Context, dep *Dependency) (newDependencyRuleList, existDependencyRuleList, deleteDependencyRuleList []*pb.MicroServiceKey) {
+func parseAddOrUpdateRules(ctx context.Context, dep *Dependency) (createDependencyRuleList, existDependencyRuleList, deleteDependencyRuleList []*pb.MicroServiceKey) {
 	conKey := apt.GenerateConsumerDependencyRuleKey(dep.DomainProject, dep.Consumer)
 
 	oldProviderRules, err := TransferToMicroServiceDependency(ctx, conKey)
@@ -241,7 +241,7 @@ func parseAddOrUpdateRules(ctx context.Context, dep *Dependency) (newDependencyR
 	}
 
 	deleteDependencyRuleList = make([]*pb.MicroServiceKey, 0, len(oldProviderRules.Dependency))
-	newDependencyRuleList = make([]*pb.MicroServiceKey, 0, len(dep.ProvidersRule))
+	createDependencyRuleList = make([]*pb.MicroServiceKey, 0, len(dep.ProvidersRule))
 	existDependencyRuleList = make([]*pb.MicroServiceKey, 0, len(oldProviderRules.Dependency))
 	for _, tmpProviderRule := range dep.ProvidersRule {
 		if ok, _ := containServiceDependency(oldProviderRules.Dependency, tmpProviderRule); ok {
@@ -249,12 +249,12 @@ func parseAddOrUpdateRules(ctx context.Context, dep *Dependency) (newDependencyR
 		}
 
 		if tmpProviderRule.ServiceName == "*" {
-			newDependencyRuleList = append([]*pb.MicroServiceKey{}, tmpProviderRule)
+			createDependencyRuleList = append([]*pb.MicroServiceKey{}, tmpProviderRule)
 			deleteDependencyRuleList = oldProviderRules.Dependency
 			break
 		}
 
-		newDependencyRuleList = append(newDependencyRuleList, tmpProviderRule)
+		createDependencyRuleList = append(createDependencyRuleList, tmpProviderRule)
 		old := isNeedUpdate(oldProviderRules.Dependency, tmpProviderRule)
 		if old != nil {
 			deleteDependencyRuleList = append(deleteDependencyRuleList, old)
@@ -262,7 +262,7 @@ func parseAddOrUpdateRules(ctx context.Context, dep *Dependency) (newDependencyR
 	}
 	for _, oldProviderRule := range oldProviderRules.Dependency {
 		if oldProviderRule.ServiceName == "*" {
-			newDependencyRuleList = nil
+			createDependencyRuleList = nil
 			deleteDependencyRuleList = nil
 			return
 		}
@@ -271,11 +271,11 @@ func parseAddOrUpdateRules(ctx context.Context, dep *Dependency) (newDependencyR
 		}
 	}
 
-	dep.ProvidersRule = append(newDependencyRuleList, existDependencyRuleList...)
+	dep.ProvidersRule = append(createDependencyRuleList, existDependencyRuleList...)
 	return
 }
 
-func parseOverrideRules(ctx context.Context, dep *Dependency) (newDependencyRuleList, existDependencyRuleList, deleteDependencyRuleList []*pb.MicroServiceKey) {
+func parseOverrideRules(ctx context.Context, dep *Dependency) (createDependencyRuleList, existDependencyRuleList, deleteDependencyRuleList []*pb.MicroServiceKey) {
 	conKey := apt.GenerateConsumerDependencyRuleKey(dep.DomainProject, dep.Consumer)
 
 	oldProviderRules, err := TransferToMicroServiceDependency(ctx, conKey)
@@ -286,7 +286,7 @@ func parseOverrideRules(ctx context.Context, dep *Dependency) (newDependencyRule
 	}
 
 	deleteDependencyRuleList = make([]*pb.MicroServiceKey, 0, len(oldProviderRules.Dependency))
-	newDependencyRuleList = make([]*pb.MicroServiceKey, 0, len(dep.ProvidersRule))
+	createDependencyRuleList = make([]*pb.MicroServiceKey, 0, len(dep.ProvidersRule))
 	existDependencyRuleList = make([]*pb.MicroServiceKey, 0, len(oldProviderRules.Dependency))
 	for _, oldProviderRule := range oldProviderRules.Dependency {
 		if ok, _ := containServiceDependency(dep.ProvidersRule, oldProviderRule); !ok {
@@ -297,7 +297,7 @@ func parseOverrideRules(ctx context.Context, dep *Dependency) (newDependencyRule
 	}
 	for _, tmpProviderRule := range dep.ProvidersRule {
 		if ok, _ := containServiceDependency(existDependencyRuleList, tmpProviderRule); !ok {
-			newDependencyRuleList = append(newDependencyRuleList, tmpProviderRule)
+			createDependencyRuleList = append(createDependencyRuleList, tmpProviderRule)
 		}
 	}
 	return
@@ -307,43 +307,22 @@ func syncDependencyRule(ctx context.Context, dep *Dependency, filter func(contex
 	//更新consumer的providers的值,consumer的版本是确定的
 	consumerFlag := strings.Join([]string{dep.Consumer.AppId, dep.Consumer.ServiceName, dep.Consumer.Version}, "/")
 
-	newDependencyRuleList, existDependencyRuleList, deleteDependencyRuleList := filter(ctx, dep)
-	if len(newDependencyRuleList) == 0 && len(existDependencyRuleList) == 0 && len(deleteDependencyRuleList) == 0 {
+	createDependencyRuleList, existDependencyRuleList, deleteDependencyRuleList := filter(ctx, dep)
+	if len(createDependencyRuleList) == 0 && len(existDependencyRuleList) == 0 && len(deleteDependencyRuleList) == 0 {
 		return nil
 	}
 
-	dep.err = make(chan error, 5)
-	dep.chanNum = 0
 	if len(deleteDependencyRuleList) != 0 {
 		log.Infof("Delete dependency rule remove for consumer %s, %v, ", consumerFlag, deleteDependencyRuleList)
-		dep.removedDependencyRuleList = deleteDependencyRuleList
-		dep.RemoveConsumerOfProviderRule()
+		dep.DeleteDependencyRuleList = deleteDependencyRuleList
 	}
 
-	if len(newDependencyRuleList) != 0 {
-		log.Infof("New dependency rule add for consumer %s, %v, ", consumerFlag, newDependencyRuleList)
-		dep.newDependencyRuleList = newDependencyRuleList
-		dep.AddConsumerOfProviderRule()
+	if len(createDependencyRuleList) != 0 {
+		log.Infof("New dependency rule add for consumer %s, %v, ", consumerFlag, createDependencyRuleList)
+		dep.CreateDependencyRuleList = createDependencyRuleList
 	}
 
-	conKey := apt.GenerateConsumerDependencyRuleKey(dep.DomainProject, dep.Consumer)
-	err := dep.UpdateProvidersRuleOfConsumer(ctx, conKey)
-	if err != nil {
-		return err
-	}
-
-	if dep.chanNum != 0 {
-		for tmpErr := range dep.err {
-			dep.chanNum--
-			if tmpErr != nil {
-				return tmpErr
-			}
-			if 0 == dep.chanNum {
-				close(dep.err)
-			}
-		}
-	}
-	return nil
+	return dep.Commit(ctx)
 }
 
 func AddDependencyRule(ctx context.Context, dep *Dependency) error {

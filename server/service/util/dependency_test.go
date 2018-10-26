@@ -199,16 +199,14 @@ func TestUpdateServiceForAddDependency(t *testing.T) {
 
 func TestDependency(t *testing.T) {
 	d := &Dependency{
-		removedDependencyRuleList: []*proto.MicroServiceKey{
+		DeleteDependencyRuleList: []*proto.MicroServiceKey{
 			{ServiceName: "a", Version: "1.0.0"},
 		},
-		newDependencyRuleList: []*proto.MicroServiceKey{
+		CreateDependencyRuleList: []*proto.MicroServiceKey{
 			{ServiceName: "a", Version: "1.0.0"},
 		},
 	}
-	d.RemoveConsumerOfProviderRule()
-	d.AddConsumerOfProviderRule()
-	err := d.UpdateProvidersRuleOfConsumer(context.Background(), "")
+	err := d.Commit(context.Background())
 	if err != nil {
 		t.Fatalf(`Dependency_UpdateProvidersRuleOfConsumer failed`)
 	}

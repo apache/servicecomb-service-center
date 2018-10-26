@@ -18,8 +18,6 @@ package util
 
 import (
 	"encoding/json"
-	"errors"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
 	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
@@ -34,27 +32,18 @@ type Dependency struct {
 	Consumer      *pb.MicroServiceKey
 	ProvidersRule []*pb.MicroServiceKey
 	// store the parsed rules from Dependency object
-	removedDependencyRuleList []*pb.MicroServiceKey
-	newDependencyRuleList     []*pb.MicroServiceKey
-
-	err     chan error
-	chanNum int8
+	DeleteDependencyRuleList []*pb.MicroServiceKey
+	CreateDependencyRuleList []*pb.MicroServiceKey
 }
 
-func (dep *Dependency) RemoveConsumerOfProviderRule() {
-	dep.chanNum++
-	gopool.Go(dep.removeConsumerOfProviderRule)
-}
-
-func (dep *Dependency) removeConsumerOfProviderRule(ctx context.Context) {
-	opts := make([]registry.PluginOp, 0, len(dep.removedDependencyRuleList))
-	for _, providerRule := range dep.removedDependencyRuleList {
+func (dep *Dependency) removeConsumerOfProviderRule(ctx context.Context) ([]registry.PluginOp, error) {
+	opts := make([]registry.PluginOp, 0, len(dep.DeleteDependencyRuleList))
+	for _, providerRule := range dep.DeleteDependencyRuleList {
 		proProkey := apt.GenerateProviderDependencyRuleKey(providerRule.Tenant, providerRule)
 		log.Debugf("This proProkey is %s.", proProkey)
 		consumerValue, err := TransferToMicroServiceDependency(ctx, proProkey)
 		if err != nil {
-			dep.err <- err
-			return
+			return nil, err
 		}
 		for key, tmp := range consumerValue.Dependency {
 			if ok := equalServiceDependency(tmp, dep.Consumer); ok {
@@ -70,45 +59,30 @@ func (dep *Dependency) removeConsumerOfProviderRule(ctx context.Context) {
 		}
 		data, err := json.Marshal(consumerValue)
 		if err != nil {
-			log.Errorf(nil, "Marshal tmpValue failed.")
-			dep.err <- err
-			return
+			log.Errorf(err, "Marshal tmpValue failed.")
+			return nil, err
 		}
 		opts = append(opts, registry.OpPut(
 			registry.WithStrKey(proProkey),
 			registry.WithValue(data)))
 	}
-	if len(opts) != 0 {
-		err := backend.BatchCommit(ctx, opts)
-		if err != nil {
-			dep.err <- err
-			return
-		}
-	}
-	dep.err <- nil
+	return opts, nil
 }
 
-func (dep *Dependency) AddConsumerOfProviderRule() {
-	dep.chanNum++
-	gopool.Go(dep.addConsumerOfProviderRule)
-}
-
-func (dep *Dependency) addConsumerOfProviderRule(ctx context.Context) {
-	opts := []registry.PluginOp{}
-	for _, providerRule := range dep.newDependencyRuleList {
+func (dep *Dependency) addConsumerOfProviderRule(ctx context.Context) ([]registry.PluginOp, error) {
+	opts := make([]registry.PluginOp, 0, len(dep.CreateDependencyRuleList))
+	for _, providerRule := range dep.CreateDependencyRuleList {
 		proProkey := apt.GenerateProviderDependencyRuleKey(providerRule.Tenant, providerRule)
 		tmpValue, err := TransferToMicroServiceDependency(ctx, proProkey)
 		if err != nil {
-			dep.err <- err
-			return
+			return nil, err
 		}
 		tmpValue.Dependency = append(tmpValue.Dependency, dep.Consumer)
 
 		data, errMarshal := json.Marshal(tmpValue)
 		if errMarshal != nil {
-			log.Errorf(nil, "Marshal tmpValue failed.")
-			dep.err <- errors.New("Marshal tmpValue failed.")
-			return
+			log.Errorf(errMarshal, "Marshal tmpValue failed.")
+			return nil, errMarshal
 		}
 		opts = append(opts, registry.OpPut(
 			registry.WithStrKey(proProkey),
@@ -117,27 +91,13 @@ func (dep *Dependency) addConsumerOfProviderRule(ctx context.Context) {
 			break
 		}
 	}
-	if len(opts) != 0 {
-		err := backend.BatchCommit(ctx, opts)
-		if err != nil {
-			dep.err <- err
-			return
-		}
-	}
-	dep.err <- nil
+	return opts, nil
 }
 
-func (dep *Dependency) UpdateProvidersRuleOfConsumer(ctx context.Context, conKey string) error {
+func (dep *Dependency) updateProvidersRuleOfConsumer(_ context.Context) ([]registry.PluginOp, error) {
+	conKey := apt.GenerateConsumerDependencyRuleKey(dep.DomainProject, dep.Consumer)
 	if len(dep.ProvidersRule) == 0 {
-		_, err := backend.Registry().Do(ctx,
-			registry.DEL,
-			registry.WithStrKey(conKey),
-		)
-		if err != nil {
-			log.Errorf(nil, "Upload dependency rule failed.")
-			return err
-		}
-		return nil
+		return []registry.PluginOp{registry.OpDel(registry.WithStrKey(conKey))}, nil
 	}
 
 	dependency := &pb.MicroServiceDependency{
@@ -145,16 +105,24 @@ func (dep *Dependency) UpdateProvidersRuleOfConsumer(ctx context.Context, conKey
 	}
 	data, err := json.Marshal(dependency)
 	if err != nil {
-		log.Errorf(nil, "Marshal tmpValue fialed.")
-		return err
+		log.Errorf(err, "Marshal tmpValue failed.")
+		return nil, err
 	}
-	_, err = backend.Registry().Do(ctx,
-		registry.PUT,
-		registry.WithStrKey(conKey),
-		registry.WithValue(data))
+	return []registry.PluginOp{registry.OpPut(registry.WithStrKey(conKey), registry.WithValue(data))}, nil
+}
+
+func (dep *Dependency) Commit(ctx context.Context) error {
+	dopts, err := dep.removeConsumerOfProviderRule(ctx)
 	if err != nil {
-		log.Errorf(nil, "Upload dependency rule failed.")
 		return err
 	}
-	return nil
+	copts, err := dep.addConsumerOfProviderRule(ctx)
+	if err != nil {
+		return err
+	}
+	uopts, err := dep.updateProvidersRuleOfConsumer(ctx)
+	if err != nil {
+		return err
+	}
+	return backend.BatchCommit(ctx, append(append(dopts, copts...), uopts...))
 }
