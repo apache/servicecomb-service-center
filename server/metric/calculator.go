@@ -54,14 +54,14 @@ func (c *CommonCalculator) Calc(mf *dto.MetricFamily) *Details {
 
 func metricGaugeOf(details *Details, m []*dto.Metric) {
 	for _, d := range m {
-		details.Value += d.GetGauge().GetValue()
+		details.Summary += d.GetGauge().GetValue()
 		details.Put(d.GetLabel(), d.GetGauge().GetValue())
 	}
 }
 
 func metricCounterOf(details *Details, m []*dto.Metric) {
 	for _, d := range m {
-		details.Value += d.GetCounter().GetValue()
+		details.Summary += d.GetCounter().GetValue()
 		details.Put(d.GetLabel(), d.GetCounter().GetValue())
 	}
 }
@@ -81,7 +81,7 @@ func metricSummaryOf(details *Details, m []*dto.Metric) {
 		return
 	}
 
-	details.Value = sum / float64(count)
+	details.Summary = sum / float64(count)
 }
 
 func metricHistogramOf(details *Details, m []*dto.Metric) {
@@ -99,7 +99,7 @@ func metricHistogramOf(details *Details, m []*dto.Metric) {
 		return
 	}
 
-	details.Value = sum / float64(count)
+	details.Summary = sum / float64(count)
 }
 
 func RegisterCalculator(c Calculator) {

@@ -38,7 +38,8 @@ func NewDetails() *Details {
 
 // Details is the struct to hold the calculated result and index by metric label
 type Details struct {
-	Value float64
+	// Summary is the calculation results of the details
+	Summary float64
 
 	mapper *util.ConcurrentMap
 	buffer *buffer.Pool
@@ -98,9 +99,9 @@ func (cm *Metrics) Put(key string, val *Details) {
 	cm.mapper.Put(key, val)
 }
 
-func (cm *Metrics) Get(key string) (val float64) {
+func (cm *Metrics) Get(key string) (val *Details) {
 	if v, ok := cm.mapper.Get(key); ok {
-		val = v.(*Details).Value
+		val = v.(*Details)
 	}
 	return
 }
@@ -111,4 +112,11 @@ func (cm *Metrics) ForEach(f func(k string, v *Details) (next bool)) {
 		v, _ := item.Value.(*Details)
 		return f(k, v)
 	})
+}
+
+func (cm *Metrics) Summary(key string) (sum float64) {
+	if v, ok := cm.mapper.Get(key); ok {
+		sum = v.(*Details).Summary
+	}
+	return
 }

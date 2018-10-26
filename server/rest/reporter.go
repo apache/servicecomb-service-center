@@ -36,21 +36,16 @@ type APIReporter struct {
 }
 
 func (r *APIReporter) Report() {
-	metric.Gatherer.Records.ForEach(func(k string, v *metric.Details) (next bool) {
-		if k != httpRequestTotal {
-			return true
-		}
-		defer func() { r.cache = v }()
+	details := metric.Gatherer.Records.Get(httpRequestTotal)
+	defer func() { r.cache = details }()
 
-		if r.cache == nil {
-			return false
-		}
-		v.ForEach(func(labels []*dto.LabelPair, v float64) (next bool) {
-			old := r.cache.Get(labels)
-			queryPerSeconds.WithLabelValues(r.toLabels(labels)...).Set((v - old) / metric.Period.Seconds())
-			return true
-		})
-		return false
+	if r.cache == nil {
+		return
+	}
+	details.ForEach(func(labels []*dto.LabelPair, v float64) (next bool) {
+		old := r.cache.Get(labels)
+		queryPerSeconds.WithLabelValues(r.toLabels(labels)...).Set((v - old) / metric.Period.Seconds())
+		return true
 	})
 }
 
