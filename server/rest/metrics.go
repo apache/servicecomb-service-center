@@ -18,6 +18,7 @@ package rest
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/metric"
 	"github.com/prometheus/client_golang/prometheus"
 	"net/http"
@@ -33,7 +34,7 @@ var (
 			Subsystem: "http",
 			Name:      "request_total",
 			Help:      "Counter of requests received into ROA handler",
-		}, []string{"method", "code", "instance", "api"})
+		}, []string{"method", "code", "instance", "api", "domain"})
 
 	successfulRequests = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
@@ -41,7 +42,7 @@ var (
 			Subsystem: "http",
 			Name:      "success_total",
 			Help:      "Counter of successful requests processed by ROA handler",
-		}, []string{"method", "code", "instance", "api"})
+		}, []string{"method", "code", "instance", "api", "domain"})
 
 	reqDurations = prometheus.NewSummaryVec(
 		prometheus.SummaryOpts{
@@ -50,11 +51,19 @@ var (
 			Name:       "request_durations_microseconds",
 			Help:       "HTTP request latency summary of ROA handler",
 			Objectives: prometheus.DefObjectives,
-		}, []string{"method", "instance", "api"})
+		}, []string{"method", "instance", "api", "domain"})
+
+	queryPerSeconds = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: metric.FamilyName,
+			Subsystem: "http",
+			Name:      "query_per_seconds",
+			Help:      "HTTP requests per seconds of ROA handler",
+		}, []string{"method", "instance", "api", "domain"})
 )
 
 func init() {
-	prometheus.MustRegister(incomingRequests, successfulRequests, reqDurations)
+	prometheus.MustRegister(incomingRequests, successfulRequests, reqDurations, queryPerSeconds)
 
 	RegisterServerHandler("/metrics", prometheus.Handler())
 }
@@ -63,17 +72,18 @@ func ReportRequestCompleted(w http.ResponseWriter, r *http.Request, start time.T
 	instance := metric.InstanceName()
 	elapsed := float64(time.Since(start).Nanoseconds()) / float64(time.Microsecond)
 	route, _ := r.Context().Value(rest.CTX_MATCH_FUNC).(string)
+	domain := util.ParseDomain(r.Context())
 
 	if strings.Index(r.Method, "WATCH") != 0 {
-		reqDurations.WithLabelValues(r.Method, instance, route).Observe(elapsed)
+		reqDurations.WithLabelValues(r.Method, instance, route, domain).Observe(elapsed)
 	}
 
 	success, code := codeOf(w.Header())
 
-	incomingRequests.WithLabelValues(r.Method, code, instance, route).Inc()
+	incomingRequests.WithLabelValues(r.Method, code, instance, route, domain).Inc()
 
 	if success {
-		successfulRequests.WithLabelValues(r.Method, code, instance, route).Inc()
+		successfulRequests.WithLabelValues(r.Method, code, instance, route, domain).Inc()
 	}
 }
 

@@ -62,4 +62,34 @@ func TestDetails_ForEach(t *testing.T) {
 	if l != 3 {
 		t.Fatalf("TestDetails_ForEach failed")
 	}
+
+	ms := NewMetrics()
+	if ms.Summary("x") != 0 {
+		t.Fatalf("TestMetrics_Summary failed")
+	}
+	if ms.Get("x") != nil {
+		t.Fatalf("TestMetrics_Details failed")
+	}
+	find := false
+	ms.ForEach(func(k string, v *Details) (next bool) {
+		find = true
+		return true
+	})
+	if find {
+		t.Fatalf("TestMetrics_ForEach failed")
+	}
+	ms.Put("a", d)
+	if ms.Summary("a") != 0 {
+		t.Fatalf("TestMetrics_Summary failed")
+	}
+	if ms.Get("a") != d {
+		t.Fatalf("TestMetrics_Get failed")
+	}
+	ms.ForEach(func(k string, v *Details) (next bool) {
+		find = true
+		return true
+	})
+	if !find {
+		t.Fatalf("TestMetrics_ForEach failed")
+	}
 }

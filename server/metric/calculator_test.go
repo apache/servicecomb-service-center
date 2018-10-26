@@ -45,7 +45,7 @@ func TestCommonCalculator_Calc(t *testing.T) {
 	mf = &dto.MetricFamily{Type: &mt, Metric: []*dto.Metric{
 		{Gauge: &dto.Gauge{Value: &v1}}, {Gauge: &dto.Gauge{Value: &v2}}}}
 	details := c.Calc(mf)
-	if details.Value != 3 {
+	if details.Summary != 3 {
 		t.Fatalf("TestCommonCalculator_Calc failed")
 	}
 
@@ -54,7 +54,7 @@ func TestCommonCalculator_Calc(t *testing.T) {
 	mf = &dto.MetricFamily{Type: &mt, Metric: []*dto.Metric{
 		{Counter: &dto.Counter{Value: &v1}}, {Counter: &dto.Counter{Value: &v1}}}}
 	details = c.Calc(mf)
-	if details.Value != 2 {
+	if details.Summary != 2 {
 		t.Fatalf("TestCommonCalculator_Calc failed")
 	}
 
@@ -64,7 +64,7 @@ func TestCommonCalculator_Calc(t *testing.T) {
 	mf = &dto.MetricFamily{Type: &mt, Metric: []*dto.Metric{
 		{Summary: &dto.Summary{SampleCount: &n, SampleSum: &v1}}, {Summary: &dto.Summary{SampleCount: &n, SampleSum: &v1}}}}
 	details = c.Calc(mf)
-	if details.Value != v1/float64(n) {
+	if details.Summary != v1/float64(n) {
 		t.Fatalf("TestCommonCalculator_Calc failed")
 	}
 }
