@@ -17,26 +17,10 @@ package sc
 
 import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"io/ioutil"
-	"strings"
-	"time"
 )
 
 func NewSCClient(cfg Config) (*SCClient, error) {
-	ssl := strings.Index(cfg.Addr, "https://") >= 0
-	if ssl && len(cfg.CertKeyPWD) == 0 && len(cfg.CertKeyPWDPath) > 0 {
-		content, _ := ioutil.ReadFile(cfg.CertKeyPWDPath)
-		cfg.CertKeyPWD = string(content)
-	}
-	client, err := rest.GetURLClient(rest.URLClientOption{
-		SSLEnabled:     ssl,
-		VerifyPeer:     cfg.VerifyPeer,
-		CAFile:         cfg.CAFile,
-		CertFile:       cfg.CertFile,
-		CertKeyFile:    cfg.CertKeyFile,
-		CertKeyPWD:     cfg.CertKeyPWD,
-		RequestTimeout: 10 * time.Second,
-	})
+	client, err := rest.GetURLClient(cfg.Merge())
 	if err != nil {
 		return nil, err
 	}

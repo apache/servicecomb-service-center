@@ -33,6 +33,7 @@ const (
 	apiVersionURL  = "/version"
 	apiDumpURL     = "/v4/default/admin/dump"
 	apiClustersURL = "/v4/default/admin/clusters"
+	apiHealthURL   = "/v4/default/registry/health"
 	apiSchemasURL  = "/v4/%s/registry/microservices/%s/schemas"
 	apiSchemaURL   = "/v4/%s/registry/microservices/%s/schemas/%s"
 )
@@ -202,4 +203,25 @@ func (c *SCClient) GetClusters() (registry.Clusters, *scerr.Error) {
 	}
 
 	return clusters.Clusters, nil
+}
+
+func (c *SCClient) HealthCheck() *scerr.Error {
+	headers := c.commonHeaders()
+	// only default domain has admin permission
+	headers.Set("X-Domain-Name", "default")
+	resp, err := c.URLClient.HttpDo(http.MethodGet, c.Config.Addr+apiHealthURL, headers, nil)
+	if err != nil {
+		return scerr.NewError(scerr.ErrUnavailableBackend, err.Error())
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return scerr.NewError(scerr.ErrInternal, err.Error())
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return c.toError(body)
+	}
+	return nil
 }

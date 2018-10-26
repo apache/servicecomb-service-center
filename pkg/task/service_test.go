@@ -90,6 +90,8 @@ func TestBaseAsyncTasker_AddTask(t *testing.T) {
 		t.Fatalf("second time add task should return prev result")
 	}
 	<-testCtx2.Done()
+	// pkg/task/executor.go:53
+	<-time.After(time.Millisecond)
 	lt, _ = at.LatestHandled("test")
 	if lt.Err().Error() != "test2" {
 		t.Fatalf("should get second handled task 'test2'")
