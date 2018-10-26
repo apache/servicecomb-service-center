@@ -36,6 +36,7 @@ func NewDetails() *Details {
 	}
 }
 
+// Details is the struct to hold the calculated result and index by metric label
 type Details struct {
 	Value float64
 
@@ -68,6 +69,13 @@ func (cm *Details) toLabels(key string) (p []*dto.LabelPair) {
 	return
 }
 
+func (cm *Details) Get(labels []*dto.LabelPair) (val float64) {
+	if v, ok := cm.mapper.Get(cm.toKey(labels)); ok {
+		val = v.(float64)
+	}
+	return
+}
+
 func (cm *Details) Put(labels []*dto.LabelPair, val float64) {
 	cm.mapper.Put(cm.toKey(labels), val)
 	return
@@ -81,6 +89,7 @@ func (cm *Details) ForEach(f func(labels []*dto.LabelPair, v float64) (next bool
 	})
 }
 
+// Metrics is the struct to hold the Details objects store and index by metric name
 type Metrics struct {
 	mapper *util.ConcurrentMap
 }

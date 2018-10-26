@@ -20,6 +20,7 @@ import "github.com/apache/incubator-servicecomb-service-center/pkg/log"
 
 var reporters = make(map[string]Reporter)
 
+// Reporter is the interface to implement handler to process metrics after calculate
 type Reporter interface {
 	Report()
 }

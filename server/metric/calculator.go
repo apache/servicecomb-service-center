@@ -24,6 +24,7 @@ var (
 	DefaultCalculator Calculator = &CommonCalculator{}
 )
 
+// Calculator is the interface to implement customize algorithm of MetricFamily
 type Calculator interface {
 	Calc(mf *dto.MetricFamily) *Details
 }

@@ -52,10 +52,18 @@ var (
 			Help:       "HTTP request latency summary of ROA handler",
 			Objectives: prometheus.DefObjectives,
 		}, []string{"method", "instance", "api", "domain"})
+
+	queryPerSeconds = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: metric.FamilyName,
+			Subsystem: "http",
+			Name:      "query_per_seconds",
+			Help:      "HTTP requests per seconds of ROA handler",
+		}, []string{"method", "instance", "api", "domain"})
 )
 
 func init() {
-	prometheus.MustRegister(incomingRequests, successfulRequests, reqDurations)
+	prometheus.MustRegister(incomingRequests, successfulRequests, reqDurations, queryPerSeconds)
 
 	RegisterServerHandler("/metrics", prometheus.Handler())
 }
