@@ -22,6 +22,7 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/scctl/pkg/version"
 	"github.com/spf13/cobra"
 	"os"
+	"time"
 )
 
 const (
@@ -36,10 +37,14 @@ var rootCmd = &cobra.Command{
 var ScClientConfig sc.Config
 
 func init() {
+	var timeout string
 	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "make the operation more talkative")
 	rootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
 		if v, _ := cmd.Flags().GetBool("verbose"); v {
 			os.Setenv("DEBUG_MODE", "1")
+		}
+		if d, err := time.ParseDuration(timeout); err == nil && d > 0 {
+			ScClientConfig.RequestTimeout = d
 		}
 	}
 
@@ -47,7 +52,7 @@ func init() {
 		"http://"+util.GetEnvString("HOSTING_SERVER_IP", "127.0.0.1")+":30100",
 		"the http host and port of service center, can be overrode by env HOSTING_SERVER_IP.")
 
-	rootCmd.PersistentFlags().StringVarP(&ScClientConfig.Token, "token", "t", "",
+	rootCmd.PersistentFlags().StringVar(&ScClientConfig.Token, "token", "",
 		"the auth token string to access service center.")
 
 	rootCmd.PersistentFlags().BoolVarP(&ScClientConfig.VerifyPeer, "peer", "p", false,
@@ -62,6 +67,9 @@ func init() {
 		"the passphase file path to decrypt key file.")
 	rootCmd.PersistentFlags().StringVar(&ScClientConfig.CertKeyPWD, "pass", "",
 		"the passphase string to decrypt key file.")
+
+	rootCmd.PersistentFlags().StringVarP(&timeout, "timeout", "t", "10s",
+		"the maximum time allowed for the request.")
 }
 
 func RootCmd() *cobra.Command {

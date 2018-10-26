@@ -21,3 +21,4 @@ import _ "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugi
 import _ "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/get/instance"
 import _ "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/get/schema"
 import _ "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/get/cluster"
+import _ "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/health"

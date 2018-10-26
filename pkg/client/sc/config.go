@@ -15,11 +15,30 @@
 
 package sc
 
-import "github.com/apache/incubator-servicecomb-service-center/pkg/rest"
+import (
+	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
+	"io/ioutil"
+	"strings"
+	"time"
+)
 
 type Config struct {
 	rest.URLClientOption
-	Addr           string
+	Addr string
+	// TODO Expandable header not only token header
 	Token          string
 	CertKeyPWDPath string
+}
+
+func (cfg *Config) Merge() rest.URLClientOption {
+	ssl := strings.Index(cfg.Addr, "https://") >= 0
+	if ssl && len(cfg.CertKeyPWD) == 0 && len(cfg.CertKeyPWDPath) > 0 {
+		content, _ := ioutil.ReadFile(cfg.CertKeyPWDPath)
+		cfg.CertKeyPWD = string(content)
+	}
+	cfg.SSLEnabled = ssl
+	if cfg.RequestTimeout == 0 {
+		cfg.RequestTimeout = 10 * time.Second
+	}
+	return cfg.URLClientOption
 }
