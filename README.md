@@ -18,7 +18,7 @@ Apache ServiceComb (incubating) Service-Center is a Restful based service-regist
  - **[`Metrics`](/docs/integration-grafana.md)**: Able to expose Prometheus metric API automatically
  - **[`Tracing`](/docs/tracing.md)**: Able to report tracing data to Zipkin server
  - **[`Pluginable`](/docs/plugin.md)**: Able to load custom authentication, tls and other dynamic libraries
- - **[`CLI`](/scctl/pkg/plugin/README.md)**: Easy to control service center
+ - **[`CLI`](/scctl/README.md)**: Easy to control service center
  - **[`Kubernetes`](/docs/kubeclusters.md)**: Embrace kubernetes ecosystem and support multi cluster service discovery
  - **[`Datacenters`](/docs/multidcs.md)**: Additional layer of abstraction to clusters deployed in multiple datacenters
  - **[`Aggregation`](/docs/aggregate.md)**: Able to aggregate microservices from multiple registry platforms and
@@ -83,6 +83,10 @@ httpport = 30100
 
 ### Building & Running Service-Center from source
 
+Requirements
+
++ [Go](https://golang.org) version 1.8+ is required to build the latest version of Service-Center.
+
 Download the Code
 ```sh
 git clone https://github.com/apache/incubator-servicecomb-service-center.git $GOPATH/src/github.com/apache/incubator-servicecomb-service-center
@@ -91,7 +95,7 @@ cd $GOPATH/src/github.com/apache/incubator-servicecomb-service-center
 
 Dependencies
 
-By default, we use glide to manage dependencies. If the go version greater then `go1.11`, 
+By default, we use [glide](https://glide.sh)(version: 0.13+) to manage dependencies. If the go version greater then `go1.11`, 
 you can download dependencies directly using command `go mod`. Please follow below steps to 
 download all the dependency.
 

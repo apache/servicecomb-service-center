@@ -25,6 +25,12 @@ frontend_host_port=30103
 ```
 
 ##### Running UI from source code
+
+Requirements
+
++ [Go](https://golang.org) version 1.8+ is required to build the latest version of UI.
++ [bower](https://bower.io) version 1.8+ is required to download the packages for web.
+
 However if you want to try our latest code then you can follow the below steps
 ```
 #Make sure your GOPATH is set correctly as the UI runs on GO Backend Server
