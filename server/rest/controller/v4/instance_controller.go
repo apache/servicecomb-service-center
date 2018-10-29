@@ -51,7 +51,7 @@ func (this *MicroServiceInstanceService) URLPatterns() []rest.Route {
 func (this *MicroServiceInstanceService) RegisterInstance(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Error("register instance failed, body err", err)
+		log.Error("read body failed", err)
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
@@ -59,7 +59,7 @@ func (this *MicroServiceInstanceService) RegisterInstance(w http.ResponseWriter,
 	request := &pb.RegisterInstanceRequest{}
 	err = json.Unmarshal(message, request)
 	if err != nil {
-		log.Error("register instance failed, Unmarshal error", err)
+		log.Errorf(err, "Invalid json: %s", util.BytesToStringWithNoCopy(message))
 		controller.WriteError(w, scerr.ErrInvalidParams, "Unmarshal error")
 		return
 	}
@@ -87,7 +87,7 @@ func (this *MicroServiceInstanceService) Heartbeat(w http.ResponseWriter, r *htt
 func (this *MicroServiceInstanceService) HeartbeatSet(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Error("register instance failed, body err", err)
+		log.Error("read body failed", err)
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
@@ -95,7 +95,7 @@ func (this *MicroServiceInstanceService) HeartbeatSet(w http.ResponseWriter, r *
 	request := &pb.HeartbeatSetRequest{}
 	err = json.Unmarshal(message, request)
 	if err != nil {
-		log.Error("register instance failed, Unmarshal error", err)
+		log.Errorf(err, "Invalid json: %s", util.BytesToStringWithNoCopy(message))
 		controller.WriteError(w, scerr.ErrInvalidParams, "Unmarshal error")
 		return
 	}
@@ -133,6 +133,7 @@ func (this *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r 
 		AppId:             query.Get("appId"),
 		ServiceName:       query.Get("serviceName"),
 		VersionRule:       query.Get("version"),
+		Environment:       query.Get("env"),
 		Tags:              ids,
 	}
 
@@ -206,7 +207,7 @@ func (this *MicroServiceInstanceService) UpdateMetadata(w http.ResponseWriter, r
 	query := r.URL.Query()
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Error("body err", err)
+		log.Error("read body failed", err)
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
@@ -216,7 +217,7 @@ func (this *MicroServiceInstanceService) UpdateMetadata(w http.ResponseWriter, r
 	}
 	err = json.Unmarshal(message, request)
 	if err != nil {
-		log.Error("Unmarshal error", err)
+		log.Errorf(err, "Invalid json: %s", util.BytesToStringWithNoCopy(message))
 		controller.WriteError(w, scerr.ErrInvalidParams, "Unmarshal error")
 		return
 	}

@@ -36,7 +36,7 @@ func DynamicPluginFunc(pn PluginName, funcName string) pg.Symbol {
 
 	f, err := plugin.FindFunc(pn.String(), funcName)
 	if err != nil {
-		log.Errorf(err, "plugin '%s': not implemented function '%s'.", pn, funcName)
+		log.Errorf(err, "plugin '%s': not implemented function '%s'", pn, funcName)
 	}
 	return f
 }

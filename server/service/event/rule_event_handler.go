@@ -57,17 +57,17 @@ func (apt *RulesChangedTask) publish(ctx context.Context, domainProject, provide
 
 	provider, err := serviceUtil.GetService(ctx, domainProject, providerId)
 	if err != nil {
-		log.Errorf(err, "get provider %s service file failed", providerId)
+		log.Errorf(err, "get provider[%s] service file failed", providerId)
 		return err
 	}
 	if provider == nil {
-		log.Errorf(nil, "provider %s does not exist", providerId)
+		log.Errorf(nil, "provider[%s] does not exist", providerId)
 		return fmt.Errorf("provider %s does not exist", providerId)
 	}
 
 	consumerIds, err := serviceUtil.GetConsumerIds(ctx, domainProject, provider)
 	if err != nil {
-		log.Errorf(err, "get consumer services by provider %s failed", providerId)
+		log.Errorf(err, "get service[%s]'s consumerIds failed", providerId)
 		return err
 	}
 	providerKey := pb.MicroServiceToKey(domainProject, provider)

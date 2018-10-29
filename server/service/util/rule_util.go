@@ -123,7 +123,7 @@ func GetServiceRuleType(ctx context.Context, domainProject string, serviceId str
 		registry.WithPrefix())
 	resp, err := backend.Store().Rule().Search(ctx, opts...)
 	if err != nil {
-		log.Errorf(err, "Get rule failed.%s", err.Error())
+		log.Errorf(err, "get service[%s] rule failed", serviceId)
 		return "", 0, err
 	}
 	if len(resp.Kvs) == 0 {
@@ -137,11 +137,11 @@ func GetOneRule(ctx context.Context, domainProject, serviceId, ruleId string) (*
 		registry.WithStrKey(apt.GenerateServiceRuleKey(domainProject, serviceId, ruleId)))
 	resp, err := backend.Store().Rule().Search(ctx, opts...)
 	if err != nil {
-		log.Errorf(nil, "Get rule for service failed for %s.", err.Error())
+		log.Errorf(err, "get service rule[%s/%s]", serviceId, ruleId)
 		return nil, err
 	}
 	if len(resp.Kvs) == 0 {
-		log.Errorf(nil, "Get rule failed, ruleId is %s.", ruleId)
+		log.Errorf(nil, "get service rule[%s/%s] failed", serviceId, ruleId)
 		return nil, nil
 	}
 	return resp.Kvs[0].Value.(*pb.ServiceRule), nil
@@ -194,8 +194,9 @@ func patternWhiteList(rulesOfProvider []*pb.ServiceRule, tagsOfConsumer map[stri
 
 		match, _ := regexp.MatchString(rule.Pattern, value)
 		if match {
-			log.Infof("consumer %s match white list, rule.Pattern is %s, value is %s",
-				consumerId, rule.Pattern, value)
+			log.Infof("consumer[%s][%s/%s/%s/%s] match white list, rule.Pattern is %s, value is %s",
+				consumerId, consumer.Environment, consumer.AppId, consumer.ServiceName, consumer.Version,
+				rule.Pattern, value)
 			return nil
 		}
 	}
@@ -207,13 +208,13 @@ func parsePattern(v reflect.Value, rule *pb.ServiceRule, tagsOfConsumer map[stri
 		key := rule.Attribute[4:]
 		value := tagsOfConsumer[key]
 		if len(value) == 0 {
-			log.Infof("can not find service %s tag '%s'", consumerId, key)
+			log.Infof("can not find service[%s] tag[%s]", consumerId, key)
 		}
 		return value, nil
 	}
 	key := v.FieldByName(rule.Attribute)
 	if !key.IsValid() {
-		log.Errorf(nil, "can not find service %s field '%s', rule %s",
+		log.Errorf(nil, "can not find service[%] field[%s], ruleId is %s",
 			consumerId, rule.Attribute, rule.RuleId)
 		return "", scerr.NewErrorf(scerr.ErrInternal, "Can not find field '%s'", rule.Attribute)
 	}
@@ -236,8 +237,9 @@ func patternBlackList(rulesOfProvider []*pb.ServiceRule, tagsOfConsumer map[stri
 
 		match, _ := regexp.MatchString(rule.Pattern, value)
 		if match {
-			log.Warnf("no permission to access, consumer %s match black list, rule.Pattern is %s, value is %s",
-				consumerId, rule.Pattern, value)
+			log.Warnf("no permission to access, consumer[%s][%s/%s/%s/%s] match black list, rule.Pattern is %s, value is %s",
+				consumerId, consumer.Environment, consumer.AppId, consumer.ServiceName, consumer.Version,
+				rule.Pattern, value)
 			return scerr.NewError(scerr.ErrPermissionDeny, "Found in black list")
 		}
 	}

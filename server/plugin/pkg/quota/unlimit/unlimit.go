@@ -42,7 +42,7 @@ type Unlimit struct {
 }
 
 func New() mgr.PluginInstance {
-	log.Infof("quota init, all resources are unlimited")
+	log.Warnf("quota init, all resources are unlimited")
 	return &Unlimit{}
 }
 

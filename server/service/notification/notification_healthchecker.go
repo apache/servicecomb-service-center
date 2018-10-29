@@ -38,7 +38,7 @@ func (s *NotifyServiceHealthChecker) OnMessage(job NotifyJob) {
 	err := j.ErrorSubscriber.Err()
 
 	if j.ErrorSubscriber.Type() == NOTIFTY {
-		log.Errorf(nil, "remove %s watcher %s %s failed, here cause a dead lock",
+		log.Errorf(nil, "remove %s watcher failed, here cause a dead lock, subject: %s, group: %s",
 			j.ErrorSubscriber.Type(), j.ErrorSubscriber.Subject(), j.ErrorSubscriber.Group())
 		return
 	}

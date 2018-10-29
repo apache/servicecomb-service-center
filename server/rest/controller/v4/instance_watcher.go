@@ -47,7 +47,7 @@ func upgrade(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error) {
 	}
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Error("upgrade failed.", err)
+		log.Error("upgrade failed", err)
 		// controller.WriteError(w, scerr.ErrInternal, "Upgrade error")
 	}
 	return conn, err

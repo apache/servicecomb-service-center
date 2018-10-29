@@ -151,10 +151,10 @@ func (s *registryEngine) registryService(pCtx context.Context) error {
 		return err
 	}
 	if respE.Response.Code == pb.Response_SUCCESS {
-		log.Warnf("service center service already registered, serviceId %s", respE.ServiceId)
+		log.Warnf("service center service[%s] already registered", respE.ServiceId)
 		respG, err := core.ServiceAPI.GetOne(ctx, core.GetServiceRequest(respE.ServiceId))
 		if respG.Response.Code != pb.Response_SUCCESS {
-			log.Errorf(err, "query service center service info failed, serviceId %s", respE.ServiceId)
+			log.Errorf(err, "query service center service[%s] info failed", respE.ServiceId)
 			return fmt.Errorf("service center service file lost.")
 		}
 		core.Service = respG.Service
@@ -167,7 +167,7 @@ func (s *registryEngine) registryService(pCtx context.Context) error {
 		return err
 	}
 	core.Service.ServiceId = respS.ServiceId
-	log.Infof("register service center service '%s'", respS.ServiceId)
+	log.Infof("register service center service[%s]", respS.ServiceId)
 	return nil
 }
 
@@ -179,12 +179,13 @@ func (s *registryEngine) registryInstance(pCtx context.Context) error {
 
 	respI, err := core.InstanceAPI.Register(ctx, core.RegisterInstanceRequest())
 	if respI.Response.Code != pb.Response_SUCCESS {
-		err = fmt.Errorf("register service center instance failed, %s", respI.Response.Message)
+		err = fmt.Errorf("register service center[%s] instance failed, %s",
+			core.Instance.ServiceId, respI.Response.Message)
 		log.Error(err.Error(), nil)
 		return err
 	}
 	core.Instance.InstanceId = respI.InstanceId
-	log.Infof("register service center instance %s/%s, endpoints %s",
+	log.Infof("register service center instance[%s/%s], endpoints is %s",
 		core.Service.ServiceId, respI.InstanceId, core.Instance.Endpoints)
 	return nil
 }
@@ -196,11 +197,12 @@ func (s *registryEngine) unregisterInstance(pCtx context.Context) error {
 	ctx := core.AddDefaultContextValue(pCtx)
 	respI, err := core.InstanceAPI.Unregister(ctx, core.UnregisterInstanceRequest())
 	if respI.Response.Code != pb.Response_SUCCESS {
-		err = fmt.Errorf("unregister service center instance failed, %s", respI.Response.Message)
+		err = fmt.Errorf("unregister service center instance[%s/%s] failed, %s",
+			core.Instance.ServiceId, core.Instance.InstanceId, respI.Response.Message)
 		log.Error(err.Error(), nil)
 		return err
 	}
-	log.Warnf("unregister service center instance %s/%s",
+	log.Warnf("unregister service center instance[%s/%s]",
 		core.Service.ServiceId, core.Instance.InstanceId)
 	return nil
 }
@@ -209,18 +211,18 @@ func (s *registryEngine) sendHeartBeat(pCtx context.Context) {
 	ctx := core.AddDefaultContextValue(pCtx)
 	respI, err := core.InstanceAPI.Heartbeat(ctx, core.HeartbeatRequest())
 	if respI.Response.Code == pb.Response_SUCCESS {
-		log.Debugf("update service center instance %s/%s heartbeat",
+		log.Debugf("update service center instance[%s/%s] heartbeat",
 			core.Instance.ServiceId, core.Instance.InstanceId)
 		return
 	}
-	log.Errorf(err, "update service center instance %s/%s heartbeat failed",
+	log.Errorf(err, "update service center instance[%s/%s] heartbeat failed",
 		core.Instance.ServiceId, core.Instance.InstanceId)
 
 	//服务不存在，创建服务
 	err = s.selfRegister(pCtx)
 	if err != nil {
-		log.Errorf(err, "retry to register %s/%s/%s failed.",
-			core.Service.AppId, core.Service.ServiceName, core.Service.Version)
+		log.Errorf(err, "retry to register[%s/%s/%s/%s] failed",
+			core.Service.Environment, core.Service.AppId, core.Service.ServiceName, core.Service.Version)
 	}
 }
 

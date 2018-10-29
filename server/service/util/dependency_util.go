@@ -36,7 +36,7 @@ func GetConsumerIds(ctx context.Context, domainProject string, provider *pb.Micr
 	dr := NewProviderDependencyRelation(ctx, domainProject, provider)
 	consumerIds, err := dr.GetDependencyConsumerIds()
 	if err != nil {
-		log.Errorf(err, "Get dependency consumerIds failed.%s", provider.ServiceId)
+		log.Errorf(err, "get service[%s]'s consumerIds failed", provider.ServiceId)
 		return nil, err
 	}
 	return consumerIds, nil
@@ -47,7 +47,7 @@ func GetProviderIds(ctx context.Context, domainProject string, consumer *pb.Micr
 	dr := NewConsumerDependencyRelation(ctx, domainProject, consumer)
 	providerIds, err := dr.GetDependencyProviderIds()
 	if err != nil {
-		log.Errorf(err, "Get dependency providerIds failed.%s", consumer.ServiceId)
+		log.Errorf(err, "get service[%s]'s providerIds failed", consumer.ServiceId)
 		return nil, err
 	}
 	return providerIds, nil
@@ -185,7 +185,9 @@ func AddServiceVersionRule(ctx context.Context, domainProject string, consumer *
 		return err
 	}
 	if !resp.Succeeded {
-		log.Infof("find request into dependency queue successfully, %s: %v", key, r)
+		log.Infof("put in queue[%s/%s]: consumer[%s/%s/%s/%s] -> provider[%s/%s/%s/%s]", consumer.ServiceId, id,
+			consumer.Environment, consumer.AppId, consumer.ServiceName, consumer.Version,
+			provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
 	}
 	return nil
 }
@@ -198,7 +200,7 @@ func TransferToMicroServiceDependency(ctx context.Context, key string) (*pb.Micr
 	opts := append(FromContext(ctx), registry.WithStrKey(key))
 	res, err := backend.Store().DependencyRule().Search(ctx, opts...)
 	if err != nil {
-		log.Errorf(nil, "Get dependency rule failed.")
+		log.Errorf(nil, "get dependency rule[%s] failed", key)
 		return nil, err
 	}
 	if len(res.Kvs) != 0 {
@@ -235,8 +237,8 @@ func parseAddOrUpdateRules(ctx context.Context, dep *Dependency) (createDependen
 
 	oldProviderRules, err := TransferToMicroServiceDependency(ctx, conKey)
 	if err != nil {
-		log.Errorf(err, "maintain dependency rule failed, consumer %s/%s/%s: get consumer depedency rule failed.",
-			dep.Consumer.AppId, dep.Consumer.ServiceName, dep.Consumer.Version)
+		log.Errorf(err, "update dependency rule failed, get consumer[%s/%s/%s/%s]'s dependency rule failed",
+			dep.Consumer.Environment, dep.Consumer.AppId, dep.Consumer.ServiceName, dep.Consumer.Version)
 		return
 	}
 
@@ -280,8 +282,8 @@ func parseOverrideRules(ctx context.Context, dep *Dependency) (createDependencyR
 
 	oldProviderRules, err := TransferToMicroServiceDependency(ctx, conKey)
 	if err != nil {
-		log.Errorf(err, "maintain dependency rule failed, consumer %s/%s/%s: get consumer depedency rule failed.",
-			dep.Consumer.AppId, dep.Consumer.ServiceName, dep.Consumer.Version)
+		log.Errorf(err, "override dependency rule failed, get consumer[%s/%s/%s/%s]'s dependency rule failed",
+			dep.Consumer.Environment, dep.Consumer.AppId, dep.Consumer.ServiceName, dep.Consumer.Version)
 		return
 	}
 
@@ -305,7 +307,7 @@ func parseOverrideRules(ctx context.Context, dep *Dependency) (createDependencyR
 
 func syncDependencyRule(ctx context.Context, dep *Dependency, filter func(context.Context, *Dependency) (_, _, _ []*pb.MicroServiceKey)) error {
 	//更新consumer的providers的值,consumer的版本是确定的
-	consumerFlag := strings.Join([]string{dep.Consumer.AppId, dep.Consumer.ServiceName, dep.Consumer.Version}, "/")
+	consumerFlag := strings.Join([]string{dep.Consumer.Environment, dep.Consumer.AppId, dep.Consumer.ServiceName, dep.Consumer.Version}, "/")
 
 	createDependencyRuleList, existDependencyRuleList, deleteDependencyRuleList := filter(ctx, dep)
 	if len(createDependencyRuleList) == 0 && len(existDependencyRuleList) == 0 && len(deleteDependencyRuleList) == 0 {
@@ -313,12 +315,12 @@ func syncDependencyRule(ctx context.Context, dep *Dependency, filter func(contex
 	}
 
 	if len(deleteDependencyRuleList) != 0 {
-		log.Infof("Delete dependency rule remove for consumer %s, %v, ", consumerFlag, deleteDependencyRuleList)
+		log.Infof("delete consumer[%s]'s dependency rule %v", consumerFlag, deleteDependencyRuleList)
 		dep.DeleteDependencyRuleList = deleteDependencyRuleList
 	}
 
 	if len(createDependencyRuleList) != 0 {
-		log.Infof("New dependency rule add for consumer %s, %v, ", consumerFlag, createDependencyRuleList)
+		log.Infof("create consumer[%s]'s dependency rule %v", consumerFlag, createDependencyRuleList)
 		dep.CreateDependencyRuleList = createDependencyRuleList
 	}
 
@@ -356,7 +358,7 @@ func containServiceDependency(services []*pb.MicroServiceKey, service *pb.MicroS
 }
 
 func BadParamsResponse(detailErr string) *pb.CreateDependenciesResponse {
-	log.Errorf(nil, "Request params is invalid. %s", detailErr)
+	log.Errorf(nil, "request params is invalid. %s", detailErr)
 	if len(detailErr) == 0 {
 		detailErr = "Request params is invalid."
 	}
@@ -370,7 +372,6 @@ func ParamsChecker(consumerInfo *pb.MicroServiceKey, providersInfo []*pb.MicroSe
 	for _, providerInfo := range providersInfo {
 		//存在带*的情况，后面的数据就不校验了
 		if providerInfo.ServiceName == "*" {
-			log.Debugf("%s 's provider contains *.", consumerInfo.ServiceName)
 			break
 		}
 		if len(providerInfo.AppId) == 0 {

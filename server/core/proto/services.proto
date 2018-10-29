@@ -424,6 +424,7 @@ message FindInstancesRequest {
     string serviceName = 3;
     string versionRule = 4; // version rule
     repeated string tags = 5;
+    string environment = 6;
 }
 
 message FindInstancesResponse {

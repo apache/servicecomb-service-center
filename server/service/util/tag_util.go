@@ -54,7 +54,7 @@ func GetTagsUtils(ctx context.Context, domainProject, serviceId string) (tags ma
 	opts := append(FromContext(ctx), registry.WithStrKey(key))
 	resp, err := backend.Store().ServiceTag().Search(ctx, opts...)
 	if err != nil {
-		log.Errorf(err, "get service %s tags file failed", key)
+		log.Errorf(err, "get service[%s] tags file failed", serviceId)
 		return tags, err
 	}
 

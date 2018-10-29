@@ -58,12 +58,12 @@ func (apt *TagsChangedTask) publish(ctx context.Context, domainProject, consumer
 
 	consumer, err := serviceUtil.GetService(ctx, domainProject, consumerId)
 	if err != nil {
-		log.Errorf(err, "get consumer for publish event %s failed", consumerId)
+		log.Errorf(err, "get consumer[%s] for publish event failed", consumerId)
 		return err
 	}
 	if consumer == nil {
-		log.Errorf(nil, "service not exist, %s", consumerId)
-		return fmt.Errorf("service not exist, %s", consumerId)
+		log.Errorf(nil, "consumer[%s] does not exist", consumerId)
+		return fmt.Errorf("consumer[%s] does not exist", consumerId)
 	}
 
 	serviceKey := pb.MicroServiceToKey(domainProject, consumer)
@@ -71,14 +71,14 @@ func (apt *TagsChangedTask) publish(ctx context.Context, domainProject, consumer
 
 	providerIds, err := serviceUtil.GetProviderIds(ctx, domainProject, consumer)
 	if err != nil {
-		log.Errorf(err, "get provider services by consumer %s failed", consumerId)
+		log.Errorf(err, "get service[%s]'s providerIds failed", consumerId)
 		return err
 	}
 
 	for _, providerId := range providerIds {
 		provider, err := serviceUtil.GetService(ctx, domainProject, providerId)
 		if provider == nil {
-			log.Errorf(err, "get service %s file failed", providerId)
+			log.Errorf(err, "get service[%s]'s provider[%s] file failed", consumerId, providerId)
 			continue
 		}
 

@@ -91,8 +91,8 @@ func GetServiceId(ctx context.Context, key *pb.MicroServiceKey) (serviceId strin
 	}
 	if len(serviceId) == 0 {
 		// 别名查询
-		log.Debugf("could not search microservice %s/%s/%s id by field 'serviceName', now try field 'alias'.",
-			key.AppId, key.ServiceName, key.Version)
+		log.Debugf("could not search microservice[%s/%s/%s/%s] id by 'serviceName', now try 'alias'",
+			key.Environment, key.AppId, key.ServiceName, key.Version)
 		return searchServiceIdFromAlias(ctx, key)
 	}
 	return
@@ -212,7 +212,7 @@ func UpdateService(domainProject string, serviceId string, service *pb.MicroServ
 	key := apt.GenerateServiceKey(domainProject, serviceId)
 	data, err := json.Marshal(service)
 	if err != nil {
-		log.Errorf(err, "marshal service failed.")
+		log.Errorf(err, "marshal service file failed")
 		return
 	}
 	opt = registry.OpPut(registry.WithStrKey(key), registry.WithValue(data))

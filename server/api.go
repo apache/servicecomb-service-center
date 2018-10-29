@@ -222,7 +222,7 @@ func (s *APIServer) Stop() {
 
 	s.goroutine.Close(true)
 
-	log.Info("api server stopped.")
+	log.Info("api server stopped")
 }
 
 func GetAPIServer() *APIServer {

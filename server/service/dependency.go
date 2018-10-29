@@ -60,7 +60,7 @@ func (s *MicroServiceService) AddOrUpdateDependencies(ctx context.Context, depen
 	opts := make([]registry.PluginOp, 0, len(dependencyInfos))
 	domainProject := util.ParseDomainProject(ctx)
 	for _, dependencyInfo := range dependencyInfos {
-		consumerFlag := util.StringJoin([]string{dependencyInfo.Consumer.AppId, dependencyInfo.Consumer.ServiceName, dependencyInfo.Consumer.Version}, "/")
+		consumerFlag := util.StringJoin([]string{dependencyInfo.Consumer.Environment, dependencyInfo.Consumer.AppId, dependencyInfo.Consumer.ServiceName, dependencyInfo.Consumer.Version}, "/")
 		consumerInfo := pb.DependenciesToKeys([]*pb.MicroServiceKey{dependencyInfo.Consumer}, domainProject)[0]
 		providersInfo := pb.DependenciesToKeys(dependencyInfo.Providers, domainProject)
 
@@ -73,12 +73,12 @@ func (s *MicroServiceService) AddOrUpdateDependencies(ctx context.Context, depen
 
 		consumerId, err := serviceUtil.GetServiceId(ctx, consumerInfo)
 		if err != nil {
-			log.Errorf(err, "put request into dependency queue failed, override: %t, get consumer %s id failed",
+			log.Errorf(err, "put request into dependency queue failed, override: %t, get consumer[%s] id failed",
 				override, consumerFlag)
 			return pb.CreateResponse(scerr.ErrInternal, err.Error()), err
 		}
 		if len(consumerId) == 0 {
-			log.Errorf(nil, "put request into dependency queue failed, override: %t, consumer %s does not exist.",
+			log.Errorf(nil, "put request into dependency queue failed, override: %t, consumer[%s] does not exist",
 				override, consumerFlag)
 			return pb.CreateResponse(scerr.ErrServiceNotExists, fmt.Sprintf("Consumer %s does not exist.", consumerFlag)), nil
 		}
@@ -86,7 +86,7 @@ func (s *MicroServiceService) AddOrUpdateDependencies(ctx context.Context, depen
 		dependencyInfo.Override = override
 		data, err := json.Marshal(dependencyInfo)
 		if err != nil {
-			log.Errorf(err, "put request into dependency queue failed, override: %t, marshal consumer %s dependency failed",
+			log.Errorf(err, "put request into dependency queue failed, override: %t, marshal consumer[%s] dependency failed",
 				override, consumerFlag)
 			return pb.CreateResponse(scerr.ErrInternal, err.Error()), err
 		}
@@ -113,7 +113,7 @@ func (s *MicroServiceService) AddOrUpdateDependencies(ctx context.Context, depen
 func (s *MicroServiceService) GetProviderDependencies(ctx context.Context, in *pb.GetDependenciesRequest) (*pb.GetProDependenciesResponse, error) {
 	err := Validate(in)
 	if err != nil {
-		log.Errorf(err, "GetProviderDependencies failed for validating parameters failed.")
+		log.Errorf(err, "GetProviderDependencies failed for validating parameters failed")
 		return &pb.GetProDependenciesResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
@@ -123,11 +123,11 @@ func (s *MicroServiceService) GetProviderDependencies(ctx context.Context, in *p
 
 	provider, err := serviceUtil.GetService(ctx, domainProject, providerServiceId)
 	if err != nil {
-		log.Errorf(err, "GetProviderDependencies failed, %s.", providerServiceId)
+		log.Errorf(err, "GetProviderDependencies failed, provider is %s", providerServiceId)
 		return nil, err
 	}
 	if provider == nil {
-		log.Errorf(err, "GetProviderDependencies failed for provider does not exist, %s.", providerServiceId)
+		log.Errorf(err, "GetProviderDependencies failed for provider[%s] does not exist", providerServiceId)
 		return &pb.GetProDependenciesResponse{
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Provider does not exist"),
 		}, nil
@@ -136,7 +136,8 @@ func (s *MicroServiceService) GetProviderDependencies(ctx context.Context, in *p
 	dr := serviceUtil.NewProviderDependencyRelation(ctx, domainProject, provider)
 	services, err := dr.GetDependencyConsumers(toDependencyFilterOptions(in)...)
 	if err != nil {
-		log.Errorf(err, "GetProviderDependencies failed.")
+		log.Errorf(err, "GetProviderDependencies failed, provider is %s/%s/%s/%s",
+			provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
 		return &pb.GetProDependenciesResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
@@ -150,7 +151,7 @@ func (s *MicroServiceService) GetProviderDependencies(ctx context.Context, in *p
 func (s *MicroServiceService) GetConsumerDependencies(ctx context.Context, in *pb.GetDependenciesRequest) (*pb.GetConDependenciesResponse, error) {
 	err := Validate(in)
 	if err != nil {
-		log.Errorf(err, "GetConsumerDependencies failed for validating parameters failed.")
+		log.Errorf(err, "GetConsumerDependencies failed for validating parameters failed")
 		return &pb.GetConDependenciesResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
@@ -160,13 +161,13 @@ func (s *MicroServiceService) GetConsumerDependencies(ctx context.Context, in *p
 
 	consumer, err := serviceUtil.GetService(ctx, domainProject, consumerId)
 	if err != nil {
-		log.Errorf(err, "GetConsumerDependencies failed for get consumer failed.")
+		log.Errorf(err, "GetConsumerDependencies failed, consumer is %s", consumerId)
 		return &pb.GetConDependenciesResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 	if consumer == nil {
-		log.Errorf(err, "GetConsumerDependencies failed for consumer does not exist, %s.", consumerId)
+		log.Errorf(err, "GetConsumerDependencies failed for consumer[%s] does not exist", consumerId)
 		return &pb.GetConDependenciesResponse{
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Consumer does not exist"),
 		}, nil
@@ -175,7 +176,8 @@ func (s *MicroServiceService) GetConsumerDependencies(ctx context.Context, in *p
 	dr := serviceUtil.NewConsumerDependencyRelation(ctx, domainProject, consumer)
 	services, err := dr.GetDependencyProviders(toDependencyFilterOptions(in)...)
 	if err != nil {
-		log.Errorf(err, "GetConsumerDependencies failed for get providers failed.")
+		log.Errorf(err, "GetConsumerDependencies failed, consumer is %s/%s/%s/%s",
+			consumer.Environment, consumer.AppId, consumer.ServiceName, consumer.Version)
 		return &pb.GetConDependenciesResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err

@@ -188,11 +188,11 @@ func (c *EtcdClient) Compact(ctx context.Context, reserve int64) error {
 	t := time.Now()
 	_, err := c.Client.Compact(ctx, revToCompact, clientv3.WithCompactPhysical())
 	if err != nil {
-		log.Errorf(err, "Compact %s failed, revision is %d(current: %d, reserve %d)",
+		log.Errorf(err, "compact %s failed, revision is %d(current: %d, reserve %d)",
 			eps, revToCompact, curRev, reserve)
 		return err
 	}
-	log.LogInfoOrWarnf(t, "Compacted %s, revision is %d(current: %d, reserve %d)", eps, revToCompact, curRev, reserve)
+	log.LogInfoOrWarnf(t, "compacted %s, revision is %d(current: %d, reserve %d)", eps, revToCompact, curRev, reserve)
 
 	// TODO can not defrag! because backend will always be unavailable when space in used is too large.
 	/*for _, ep := range eps {
@@ -214,12 +214,12 @@ func (c *EtcdClient) getLeaderCurrentRevision(ctx context.Context) int64 {
 	for _, ep := range eps {
 		resp, err := c.Client.Status(ctx, ep)
 		if err != nil {
-			log.Error(fmt.Sprintf("Compact error ,can not get status from %s", ep), err)
+			log.Error(fmt.Sprintf("compact error ,can not get status from %s", ep), err)
 			continue
 		}
 		curRev = resp.Header.Revision
 		if resp.Leader == resp.Header.MemberId {
-			log.Infof("Get leader endpoint: %s, revision is %d", ep, curRev)
+			log.Infof("get leader endpoint: %s, revision is %d", ep, curRev)
 			break
 		}
 	}
@@ -647,14 +647,6 @@ func (c *EtcdClient) Watch(ctx context.Context, opts ...registry.PluginOpOption)
 
 	n := len(op.Key)
 	if n > 0 {
-		// 必须创建新的client连接
-		/*client, err := newClient(c.Client.Endpoints())
-		  if err != nil {
-		          log.Error("get manager client failed", err)
-		          return err
-		  }
-		  defer client.Close()*/
-		// 现在跟ETCD仅使用一个连接，共用client即可
 		client := clientv3.NewWatcher(c.Client)
 		defer client.Close()
 
@@ -737,13 +729,13 @@ hcLoop:
 func (c *EtcdClient) ReOpen() error {
 	client, cerr := c.newClient()
 	if cerr != nil {
-		log.Errorf(cerr, "create a new connection to etcd %v failed.",
+		log.Errorf(cerr, "create a new connection to etcd %v failed",
 			c.Endpoints)
 		return cerr
 	}
 	c.Client, client = client, c.Client
 	if cerr = client.Close(); cerr != nil {
-		log.Errorf(cerr, "failed to close the unavailable etcd client.")
+		log.Errorf(cerr, "failed to close the unavailable etcd client")
 	}
 	client = nil
 	return nil

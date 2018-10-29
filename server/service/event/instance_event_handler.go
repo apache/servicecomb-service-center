@@ -70,7 +70,7 @@ func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
 	ctx := util.SetContext(context.Background(), serviceUtil.CTX_CACHEONLY, "1")
 	ms, err := serviceUtil.GetService(ctx, domainProject, providerId)
 	if ms == nil {
-		log.Errorf(err, "get provider service %s/%s id in cache failed",
+		log.Errorf(err, "get cached provider[%s/%s]'s file failed",
 			providerId, providerInstanceId)
 		return
 	}
@@ -78,7 +78,7 @@ func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
 	// 查询所有consumer
 	consumerIds, _, err := serviceUtil.GetAllConsumerIds(ctx, domainProject, ms)
 	if err != nil {
-		log.Errorf(err, "query service %s consumers failed", providerId)
+		log.Errorf(err, "get service[%s]'s consumerIds failed", providerId)
 		return
 	}
 

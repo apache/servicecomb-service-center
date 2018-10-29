@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
@@ -44,14 +45,14 @@ func (this *RuleService) URLPatterns() []rest.Route {
 func (this *RuleService) AddRule(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Error("bory err", err)
+		log.Error("read body failed", err)
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
 	rule := map[string][]*pb.AddOrUpdateServiceRule{}
 	err = json.Unmarshal(message, &rule)
 	if err != nil {
-		log.Errorf(err, "Unmarshal error")
+		log.Errorf(err, "Invalid json: %s", util.BytesToStringWithNoCopy(message))
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
@@ -80,7 +81,7 @@ func (this *RuleService) DeleteRule(w http.ResponseWriter, r *http.Request) {
 func (this *RuleService) UpdateRule(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Error("body err", err)
+		log.Error("read body failed", err)
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
@@ -88,7 +89,7 @@ func (this *RuleService) UpdateRule(w http.ResponseWriter, r *http.Request) {
 	rule := pb.AddOrUpdateServiceRule{}
 	err = json.Unmarshal(message, &rule)
 	if err != nil {
-		log.Error("Unmarshal error", err)
+		log.Errorf(err, "Invalid json: %s", util.BytesToStringWithNoCopy(message))
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
