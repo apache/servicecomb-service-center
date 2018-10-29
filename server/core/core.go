@@ -41,7 +41,6 @@ func Initialize() {
 func ParseCommandLine() {
 	var printVer bool
 	flag.BoolVar(&printVer, "v", false, "Print the version and exit.")
-	flag.CommandLine.Init(os.Args[0], flag.ContinueOnError)
 	flag.CommandLine.Parse(os.Args[1:])
 
 	if printVer {
