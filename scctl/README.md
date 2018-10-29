@@ -25,6 +25,11 @@ Note: If you already bootstrap SC and listen on `127.0.0.1:30100`, this
 command will also print the SC version.
 
 ### Running scctl from source code
+
+Requirements
+
++ [Go](https://golang.org) version 1.8+ is required to build the latest version of scctl.
+
 However if you want to try our latest code then you can follow the below steps
 ```
 #Make sure your GOPATH is set correctly and download all the vendors of SC
