@@ -19,7 +19,8 @@ package core
 
 import (
 	"flag"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/grace"
+	// import the grace package and parse grace cmd line
+	_ "github.com/apache/incubator-servicecomb-service-center/pkg/grace"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/version"
 	"os"
@@ -41,16 +42,12 @@ func Initialize() {
 func ParseCommandLine() {
 	var printVer bool
 	flag.BoolVar(&printVer, "v", false, "Print the version and exit.")
-	flag.CommandLine.Init(os.Args[0], flag.ContinueOnError)
-	flag.CommandLine.Parse(os.Args[1:])
+	flag.Parse()
 
 	if printVer {
 		version.Ver().Print()
 		os.Exit(0)
 	}
-
-	// import the grace package and parse grace cmd line
-	grace.ParseCommandLine()
 }
 
 func handleSignals() {
