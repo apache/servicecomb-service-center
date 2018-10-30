@@ -46,7 +46,7 @@ func (c *StringContext) Value(key interface{}) interface{} {
 	}
 	v, ok := c.kv.Get(k)
 	if !ok {
-		return c.parentCtx.Value(key)
+		return FromContext(c.parentCtx, k)
 	}
 	return v
 }
@@ -94,7 +94,10 @@ func CloneContext(ctx context.Context) context.Context {
 }
 
 func FromContext(ctx context.Context, key string) interface{} {
-	return ctx.Value(key)
+	if v := ctx.Value(key); v != nil {
+		return v
+	}
+	return FromMetadata(ctx, key)
 }
 
 func SetRequestContext(r *http.Request, key string, val interface{}) *http.Request {
