@@ -148,19 +148,19 @@ func TestFromZipkinSpan(t *testing.T) {
 	span := &zipkincore.Span{}
 	err := json.Unmarshal(sample, &span)
 	if err != nil {
-		t.Fatalf("TestFromZipkinSpan Unmarshal", err)
+		t.Fatalf("TestFromZipkinSpan Unmarshal, %v", err)
 	}
 	s := FromZipkinSpan(span)
 	b, err := json.Marshal(s)
 	if err != nil {
-		t.Fatalf("TestFromZipkinSpan Marshal", err)
+		t.Fatalf("TestFromZipkinSpan Marshal, %v", err)
 	}
 	fmt.Println(string(b))
 
 	s = FromZipkinSpan(&zipkincore.Span{})
 	b, err = json.Marshal(s)
 	if err != nil {
-		t.Fatalf("TestFromZipkinSpan Marshal", err)
+		t.Fatalf("TestFromZipkinSpan Marshal, %v", err)
 	}
 	fmt.Println(string(b))
 }
