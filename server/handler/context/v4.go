@@ -44,7 +44,7 @@ func (v *v4Context) Do(r *http.Request) error {
 			log.Errorf(err, "Invalid Request URI %s", r.RequestURI)
 			return err
 		}
-		util.SetDomain(r.Context(), domain)
+		util.SetRequestContext(r, util.CtxDomain, domain)
 	}
 
 	if len(project) == 0 {
@@ -52,7 +52,7 @@ func (v *v4Context) Do(r *http.Request) error {
 		if len(project) == 0 {
 			project = core.REGISTRY_PROJECT
 		}
-		util.SetProject(r.Context(), project)
+		util.SetRequestContext(r, util.CtxProject, project)
 	}
 
 	return nil

@@ -22,6 +22,13 @@ import (
 	"time"
 )
 
+const (
+	CtxDomain        = "domain"
+	CtxProject       = "project"
+	CtxTargetDomain  = "target-domain"
+	CtxTargetProject = "target-project"
+)
+
 type StringContext struct {
 	parentCtx context.Context
 	kv        *ConcurrentMap
@@ -119,7 +126,7 @@ func ParseTargetDomainProject(ctx context.Context) string {
 }
 
 func ParseDomain(ctx context.Context) string {
-	v, ok := FromContext(ctx, "domain").(string)
+	v, ok := FromContext(ctx, CtxDomain).(string)
 	if !ok {
 		return ""
 	}
@@ -127,7 +134,7 @@ func ParseDomain(ctx context.Context) string {
 }
 
 func ParseTargetDomain(ctx context.Context) string {
-	v, _ := FromContext(ctx, "target-domain").(string)
+	v, _ := FromContext(ctx, CtxTargetDomain).(string)
 	if len(v) == 0 {
 		return ParseDomain(ctx)
 	}
@@ -135,7 +142,7 @@ func ParseTargetDomain(ctx context.Context) string {
 }
 
 func ParseProject(ctx context.Context) string {
-	v, ok := FromContext(ctx, "project").(string)
+	v, ok := FromContext(ctx, CtxProject).(string)
 	if !ok {
 		return ""
 	}
@@ -143,7 +150,7 @@ func ParseProject(ctx context.Context) string {
 }
 
 func ParseTargetProject(ctx context.Context) string {
-	v, _ := FromContext(ctx, "target-project").(string)
+	v, _ := FromContext(ctx, CtxTargetProject).(string)
 	if len(v) == 0 {
 		return ParseProject(ctx)
 	}
@@ -151,19 +158,19 @@ func ParseTargetProject(ctx context.Context) string {
 }
 
 func SetDomain(ctx context.Context, domain string) context.Context {
-	return SetContext(ctx, "domain", domain)
+	return SetContext(ctx, CtxDomain, domain)
 }
 
 func SetProject(ctx context.Context, project string) context.Context {
-	return SetContext(ctx, "project", project)
+	return SetContext(ctx, CtxProject, project)
 }
 
 func SetTargetDomain(ctx context.Context, domain string) context.Context {
-	return SetContext(ctx, "target-domain", domain)
+	return SetContext(ctx, CtxTargetDomain, domain)
 }
 
 func SetTargetProject(ctx context.Context, project string) context.Context {
-	return SetContext(ctx, "target-project", project)
+	return SetContext(ctx, CtxTargetProject, project)
 }
 
 func SetDomainProject(ctx context.Context, domain string, project string) context.Context {

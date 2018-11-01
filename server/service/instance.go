@@ -541,7 +541,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 	} else {
 		// provider is not a shared micro-service,
 		// only allow shared micro-service instances found in different domains.
-		util.SetTargetDomainProject(ctx, util.ParseDomain(ctx), util.ParseProject(ctx))
+		ctx = util.SetTargetDomainProject(ctx, util.ParseDomain(ctx), util.ParseProject(ctx))
 		provider.Tenant = util.ParseTargetDomainProject(ctx)
 
 		findFlag = fmt.Sprintf("consumer '%s' find service %s/%s/%s/%s", in.ConsumerServiceId,

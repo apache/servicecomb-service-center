@@ -48,11 +48,11 @@ func (v *v3Context) Do(r *http.Request) error {
 			log.Errorf(err, "Invalid Request URI %s", r.RequestURI)
 			return err
 		}
-		util.SetDomain(r.Context(), domain)
+		util.SetRequestContext(r, util.CtxDomain, domain)
 	}
 
 	if len(project) == 0 {
-		util.SetProject(r.Context(), core.REGISTRY_PROJECT)
+		util.SetRequestContext(r, util.CtxProject, core.REGISTRY_PROJECT)
 	}
 
 	return nil
