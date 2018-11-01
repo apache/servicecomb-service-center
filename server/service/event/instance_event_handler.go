@@ -60,25 +60,28 @@ func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
 	}
 
 	if nf.GetNotifyService().Closed() {
-		log.Warnf("caught [%s] instance event %s/%s, but notify service is closed",
+		log.Warnf("caught [%s] instance[%s/%s] event, but notify service is closed",
 			action, providerId, providerInstanceId)
 		return
 	}
-	log.Infof("caught [%s] instance event %s/%s", action, providerId, providerInstanceId)
 
 	// 查询服务版本信息
 	ctx := util.SetContext(context.Background(), serviceUtil.CTX_CACHEONLY, "1")
 	ms, err := serviceUtil.GetService(ctx, domainProject, providerId)
 	if ms == nil {
-		log.Errorf(err, "get cached provider[%s/%s]'s file failed",
-			providerId, providerInstanceId)
+		log.Errorf(err, "caught [%s] instance[%s/%s] event, get cached provider's file failed",
+			action, providerId, providerInstanceId)
 		return
 	}
+
+	log.Infof("caught [%s] service[%s][%s/%s/%s/%s] instance[%s] event",
+		action, providerId, ms.Environment, ms.AppId, ms.ServiceName, ms.Version, providerInstanceId)
 
 	// 查询所有consumer
 	consumerIds, _, err := serviceUtil.GetAllConsumerIds(ctx, domainProject, ms)
 	if err != nil {
-		log.Errorf(err, "get service[%s]'s consumerIds failed", providerId)
+		log.Errorf(err, "get service[%s][%s/%s/%s/%s]'s consumerIds failed",
+			providerId, ms.Environment, ms.AppId, ms.ServiceName, ms.Version)
 		return
 	}
 
