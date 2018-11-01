@@ -61,8 +61,6 @@ type URLClient struct {
 
 	TLS *tls.Config
 
-	Request *http.Request
-
 	Cfg URLClientOption
 }
 
@@ -95,19 +93,17 @@ func (client *URLClient) HttpDo(method string, rawURL string, headers http.Heade
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("create request failed: %s", err.Error()))
 	}
-	client.Request = req
-
 	req.Header = headers
 
 	resp, err = client.Client.Do(req)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("invoke request failed: %s", err.Error()))
+		return nil, err
 	}
 
 	if os.Getenv("DEBUG_MODE") == "1" {
 		fmt.Println("--- BEGIN ---")
-		fmt.Printf("> %s %s %s\n", client.Request.Method, client.Request.URL.RequestURI(), client.Request.Proto)
-		for key, header := range client.Request.Header {
+		fmt.Printf("> %s %s %s\n", req.Method, req.URL.RequestURI(), req.Proto)
+		for key, header := range req.Header {
 			for _, value := range header {
 				fmt.Printf("> %s: %s\n", key, value)
 			}

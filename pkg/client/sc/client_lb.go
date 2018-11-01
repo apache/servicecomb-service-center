@@ -16,29 +16,42 @@
 package sc
 
 import (
+	"github.com/apache/incubator-servicecomb-service-center/pkg/lb"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"io/ioutil"
-	"strings"
-	"time"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"net/http"
 )
 
-type Config struct {
-	rest.URLClientOption
-	Endpoints []string
-	// TODO Expandable header not only token header
-	Token          string
-	CertKeyPWDPath string
+func NewLBClient(endpoints []string, options rest.URLClientOption) (*LBClient, error) {
+	client, err := rest.GetURLClient(options)
+	if err != nil {
+		return nil, err
+	}
+	return &LBClient{
+		Retries:   len(endpoints),
+		LB:        lb.NewRoundRobinLB(endpoints),
+		URLClient: client,
+	}, nil
 }
 
-func (cfg *Config) Merge() rest.URLClientOption {
-	ssl := strings.Index(cfg.Endpoints[0], "https://") >= 0
-	if ssl && len(cfg.CertKeyPWD) == 0 && len(cfg.CertKeyPWDPath) > 0 {
-		content, _ := ioutil.ReadFile(cfg.CertKeyPWDPath)
-		cfg.CertKeyPWD = string(content)
+type LBClient struct {
+	*rest.URLClient
+	Retries int
+	LB      lb.LoadBalancer
+}
+
+func (c *LBClient) Next() string {
+	return c.LB.Next()
+}
+
+func (c *LBClient) RestDo(method string, api string, headers http.Header, body []byte) (resp *http.Response, err error) {
+	for i := 0; i < c.Retries; i++ {
+		resp, err = c.HttpDo(method, c.Next()+api, headers, body)
+		if err != nil {
+			util.GetBackoff().Delay(i)
+			continue
+		}
+		break
 	}
-	cfg.SSLEnabled = ssl
-	if cfg.RequestTimeout == 0 {
-		cfg.RequestTimeout = 10 * time.Second
-	}
-	return cfg.URLClientOption
+	return
 }

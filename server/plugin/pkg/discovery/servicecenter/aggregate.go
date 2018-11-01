@@ -45,7 +45,7 @@ func (c *SCClientAggregate) GetScCache() (*model.Cache, error) {
 	for _, client := range *c {
 		cache, err := client.GetScCache()
 		if err != nil {
-			log.Errorf(err, "get service center[%s] cache failed", client.Config.Addr)
+			log.Errorf(err, "get service center cache failed")
 			continue
 		}
 		caches.Microservices = append(caches.Microservices, cache.Microservices...)
@@ -93,27 +93,27 @@ func (c *SCClientAggregate) GetSchemaBySchemaId(domainProject, serviceId, schema
 func NewSCClientAggregate() *SCClientAggregate {
 	c := &SCClientAggregate{}
 	clusters := registry.Configuration().Clusters
-	for name, addr := range clusters {
+	for name, endpoints := range clusters {
 		if len(name) == 0 || name == registry.Configuration().ClusterName {
 			continue
 		}
-		// TODO support endpoints LB
-		client, err := sc.NewSCClient(sc.Config{Addr: addr[0]})
+		client, err := sc.NewSCClient(sc.Config{Endpoints: endpoints})
 		if err != nil {
-			log.Errorf(err, "new service center[%s][%s] client failed", name, addr)
+			log.Errorf(err, "new service center[%s]%v client failed", name, endpoints)
 			continue
 		}
 		client.Timeout = registry.Configuration().RequestTimeOut
-		if strings.Index(addr[0], "https") >= 0 {
+		// TLS
+		if strings.Index(endpoints[0], "https") >= 0 {
 			client.TLS, err = getClientTLS()
 			if err != nil {
-				log.Errorf(err, "get service center[%s][%s] tls config failed", name, addr)
+				log.Errorf(err, "get service center[%s]%v tls config failed", name, endpoints)
 				continue
 			}
 		}
 
 		*c = append(*c, client)
-		log.Infof("new service center[%s][%s] client", name, addr)
+		log.Infof("new service center[%s]%v client", name, endpoints)
 	}
 	return c
 }

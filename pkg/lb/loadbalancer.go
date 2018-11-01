@@ -13,29 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sc
+package lb
 
-import (
-	"net/http"
-)
-
-func NewSCClient(cfg Config) (*SCClient, error) {
-	client, err := NewLBClient(cfg.Endpoints, cfg.Merge())
-	if err != nil {
-		return nil, err
-	}
-	return &SCClient{LBClient: client, Token: cfg.Token}, nil
-}
-
-type SCClient struct {
-	*LBClient
-	Token string
-}
-
-func (c *SCClient) CommonHeaders() http.Header {
-	var headers = make(http.Header)
-	if len(c.Token) > 0 {
-		headers.Set("X-Auth-Token", c.Token)
-	}
-	return headers
+type LoadBalancer interface {
+	Next() string
 }

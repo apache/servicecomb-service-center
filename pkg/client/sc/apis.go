@@ -47,16 +47,8 @@ func (c *SCClient) toError(body []byte) *scerr.Error {
 	return message
 }
 
-func (c *SCClient) commonHeaders() http.Header {
-	var headers = make(http.Header)
-	if len(c.Config.Token) > 0 {
-		headers.Set("X-Auth-Token", c.Config.Token)
-	}
-	return headers
-}
-
 func (c *SCClient) GetScVersion() (*version.VersionSet, *scerr.Error) {
-	resp, err := c.URLClient.HttpDo(http.MethodGet, c.Config.Addr+apiVersionURL, c.commonHeaders(), nil)
+	resp, err := c.RestDo(http.MethodGet, apiVersionURL, c.CommonHeaders(), nil)
 	if err != nil {
 		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
 	}
@@ -82,10 +74,10 @@ func (c *SCClient) GetScVersion() (*version.VersionSet, *scerr.Error) {
 }
 
 func (c *SCClient) GetScCache() (*model.Cache, *scerr.Error) {
-	headers := c.commonHeaders()
+	headers := c.CommonHeaders()
 	// only default domain has admin permission
 	headers.Set("X-Domain-Name", "default")
-	resp, err := c.URLClient.HttpDo(http.MethodGet, c.Config.Addr+apiDumpURL, headers, nil)
+	resp, err := c.RestDo(http.MethodGet, apiDumpURL, headers, nil)
 	if err != nil {
 		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
 	}
@@ -112,10 +104,10 @@ func (c *SCClient) GetScCache() (*model.Cache, *scerr.Error) {
 
 func (c *SCClient) GetSchemasByServiceId(domainProject, serviceId string) ([]*pb.Schema, *scerr.Error) {
 	domain, project := core.FromDomainProject(domainProject)
-	headers := c.commonHeaders()
+	headers := c.CommonHeaders()
 	headers.Set("X-Domain-Name", domain)
-	resp, err := c.URLClient.HttpDo(http.MethodGet,
-		c.Config.Addr+fmt.Sprintf(apiSchemasURL, project, serviceId)+"?withSchema=1",
+	resp, err := c.RestDo(http.MethodGet,
+		fmt.Sprintf(apiSchemasURL, project, serviceId)+"?withSchema=1",
 		headers, nil)
 	if err != nil {
 		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
@@ -143,10 +135,10 @@ func (c *SCClient) GetSchemasByServiceId(domainProject, serviceId string) ([]*pb
 
 func (c *SCClient) GetSchemaBySchemaId(domainProject, serviceId, schemaId string) (*pb.Schema, *scerr.Error) {
 	domain, project := core.FromDomainProject(domainProject)
-	headers := c.commonHeaders()
+	headers := c.CommonHeaders()
 	headers.Set("X-Domain-Name", domain)
-	resp, err := c.URLClient.HttpDo(http.MethodGet,
-		c.Config.Addr+fmt.Sprintf(apiSchemaURL, project, serviceId, schemaId),
+	resp, err := c.RestDo(http.MethodGet,
+		fmt.Sprintf(apiSchemaURL, project, serviceId, schemaId),
 		headers, nil)
 	if err != nil {
 		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
@@ -177,10 +169,10 @@ func (c *SCClient) GetSchemaBySchemaId(domainProject, serviceId, schemaId string
 }
 
 func (c *SCClient) GetClusters() (registry.Clusters, *scerr.Error) {
-	headers := c.commonHeaders()
+	headers := c.CommonHeaders()
 	// only default domain has admin permission
 	headers.Set("X-Domain-Name", "default")
-	resp, err := c.URLClient.HttpDo(http.MethodGet, c.Config.Addr+apiClustersURL, headers, nil)
+	resp, err := c.RestDo(http.MethodGet, apiClustersURL, headers, nil)
 	if err != nil {
 		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
 	}
@@ -206,10 +198,10 @@ func (c *SCClient) GetClusters() (registry.Clusters, *scerr.Error) {
 }
 
 func (c *SCClient) HealthCheck() *scerr.Error {
-	headers := c.commonHeaders()
+	headers := c.CommonHeaders()
 	// only default domain has admin permission
 	headers.Set("X-Domain-Name", "default")
-	resp, err := c.URLClient.HttpDo(http.MethodGet, c.Config.Addr+apiHealthURL, headers, nil)
+	resp, err := c.RestDo(http.MethodGet, apiHealthURL, headers, nil)
 	if err != nil {
 		return scerr.NewError(scerr.ErrUnavailableBackend, err.Error())
 	}
