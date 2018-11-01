@@ -45,12 +45,12 @@ func (lat *LeaseTask) Do(ctx context.Context) (err error) {
 	recv, start := lat.ReceiveTime(), time.Now()
 	lat.TTL, err = lat.Client.LeaseRenew(ctx, lat.LeaseID)
 	if err != nil {
-		log.Errorf(err, "[%s]renew lease %d failed(recv: %s, send: %s), key %s",
+		log.Errorf(err, "[%s]task[%s] renew lease[%d] failed(recv: %s, send: %s)",
 			time.Now().Sub(recv),
+			lat.Key(),
 			lat.LeaseID,
 			recv.Format(leaseProfTimeFmt),
-			start.Format(leaseProfTimeFmt),
-			lat.Key())
+			start.Format(leaseProfTimeFmt))
 		if _, ok := err.(errorsEx.InternalError); !ok {
 			// it means lease not found if err is not the InternalError type
 			lat.err = err
@@ -62,11 +62,12 @@ func (lat *LeaseTask) Do(ctx context.Context) (err error) {
 
 	cost := time.Now().Sub(recv)
 	if cost >= 2*time.Second {
-		log.Warnf("[%s]renew lease %d(recv: %s, send: %s), key %s", cost,
+		log.Warnf("[%s]task[%s] renew lease[%d](recv: %s, send: %s)",
+			cost,
+			lat.Key(),
 			lat.LeaseID,
 			recv.Format(leaseProfTimeFmt),
-			start.Format(leaseProfTimeFmt),
-			lat.Key())
+			start.Format(leaseProfTimeFmt))
 	}
 	return
 }

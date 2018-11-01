@@ -64,7 +64,7 @@ func (s *EtcdEmbed) Close() {
 		s.Embed.Close()
 	}
 	s.goroutine.Close(true)
-	log.Debugf("embedded etcd client stopped.")
+	log.Debugf("embedded etcd client stopped")
 }
 
 func (s *EtcdEmbed) getPrefixEndKey(prefix []byte) []byte {
@@ -230,20 +230,20 @@ func (s *EtcdEmbed) Compact(ctx context.Context, reserve int64) error {
 		return nil
 	}
 
-	log.Infof("Compacting... revision is %d(current: %d, reserve %d)", revToCompact, curRev, reserve)
+	log.Infof("compacting... revision is %d(current: %d, reserve %d)", revToCompact, curRev, reserve)
 	_, err := s.Embed.Server.Compact(ctx, &etcdserverpb.CompactionRequest{
 		Revision: revToCompact,
 		Physical: true,
 	})
 	if err != nil {
-		log.Errorf(err, "Compact locally failed, revision is %d(current: %d, reserve %d)",
+		log.Errorf(err, "compact locally failed, revision is %d(current: %d, reserve %d)",
 			revToCompact, curRev, reserve)
 		return err
 	}
-	log.Infof("Compacted locally, revision is %d(current: %d, reserve %d)", revToCompact, curRev, reserve)
+	log.Infof("compacted locally, revision is %d(current: %d, reserve %d)", revToCompact, curRev, reserve)
 
 	// TODO defragment
-	log.Infof("Defraged locally")
+	log.Infof("defraged locally")
 
 	return nil
 }

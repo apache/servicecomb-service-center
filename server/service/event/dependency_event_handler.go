@@ -158,7 +158,7 @@ func (h *DependencyEventHandler) dependencyRuleHandle(res interface{}) error {
 	ctx := context.Background()
 	dependencyEventHandlerRes := res.(*DependencyEventHandlerResource)
 	r := dependencyEventHandlerRes.dep
-	consumerFlag := util.StringJoin([]string{r.Consumer.AppId, r.Consumer.ServiceName, r.Consumer.Version}, "/")
+	consumerFlag := util.StringJoin([]string{r.Consumer.Environment, r.Consumer.AppId, r.Consumer.ServiceName, r.Consumer.Version}, "/")
 
 	domainProject := dependencyEventHandlerRes.domainProject
 	consumerInfo := pb.DependenciesToKeys([]*pb.MicroServiceKey{r.Consumer}, domainProject)[0]
@@ -185,7 +185,7 @@ func (h *DependencyEventHandler) dependencyRuleHandle(res interface{}) error {
 		return err
 	}
 
-	log.Infof("maintain dependency %v successfully, override: %t", r, r.Override)
+	log.Infof("maintain dependency [%v] successfully", r)
 	return nil
 }
 
@@ -205,7 +205,7 @@ func (h *DependencyEventHandler) removeKV(ctx context.Context, kv *discovery.Key
 func (h *DependencyEventHandler) CleanUp(domainProjects map[string]struct{}) {
 	for domainProject := range domainProjects {
 		if err := serviceUtil.CleanUpDependencyRules(context.Background(), domainProject); err != nil {
-			log.Errorf(err, "clean up '%s' dependency rules failed")
+			log.Errorf(err, "clean up '%s' dependency rules failed", domainProject)
 		}
 	}
 }

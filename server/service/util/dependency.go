@@ -40,7 +40,7 @@ func (dep *Dependency) removeConsumerOfProviderRule(ctx context.Context) ([]regi
 	opts := make([]registry.PluginOp, 0, len(dep.DeleteDependencyRuleList))
 	for _, providerRule := range dep.DeleteDependencyRuleList {
 		proProkey := apt.GenerateProviderDependencyRuleKey(providerRule.Tenant, providerRule)
-		log.Debugf("This proProkey is %s.", proProkey)
+		log.Debugf("This proProkey is %s", proProkey)
 		consumerValue, err := TransferToMicroServiceDependency(ctx, proProkey)
 		if err != nil {
 			return nil, err
@@ -59,7 +59,7 @@ func (dep *Dependency) removeConsumerOfProviderRule(ctx context.Context) ([]regi
 		}
 		data, err := json.Marshal(consumerValue)
 		if err != nil {
-			log.Errorf(err, "Marshal tmpValue failed.")
+			log.Errorf(err, "Marshal MicroServiceDependency failed")
 			return nil, err
 		}
 		opts = append(opts, registry.OpPut(
@@ -81,7 +81,7 @@ func (dep *Dependency) addConsumerOfProviderRule(ctx context.Context) ([]registr
 
 		data, errMarshal := json.Marshal(tmpValue)
 		if errMarshal != nil {
-			log.Errorf(errMarshal, "Marshal tmpValue failed.")
+			log.Errorf(errMarshal, "Marshal MicroServiceDependency failed")
 			return nil, errMarshal
 		}
 		opts = append(opts, registry.OpPut(
@@ -105,7 +105,7 @@ func (dep *Dependency) updateProvidersRuleOfConsumer(_ context.Context) ([]regis
 	}
 	data, err := json.Marshal(dependency)
 	if err != nil {
-		log.Errorf(err, "Marshal tmpValue failed.")
+		log.Errorf(err, "Marshal MicroServiceDependency failed")
 		return nil, err
 	}
 	return []registry.PluginOp{registry.OpPut(registry.WithStrKey(conKey), registry.WithValue(data))}, nil

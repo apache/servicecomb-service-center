@@ -52,6 +52,7 @@ func FindInstanceReqValidator() *validate.Validator {
 		v.AddRules(ExistenceReqValidator().GetRules())
 		v.AddRule("VersionRule", ExistenceReqValidator().GetRule("Version"))
 		v.AddRule("Tags", UpdateTagReqValidator().GetRule("Key"))
+		v.AddRule("Environment", MicroServiceKeyValidator().GetRule("Environment"))
 	})
 }
 

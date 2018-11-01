@@ -1186,6 +1186,17 @@ var _ = Describe("'Instance' service", func() {
 				Expect(len(respFind.Instances)).To(Equal(1))
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId4))
 
+				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					Environment: pb.ENV_PROD,
+					AppId:       "query_instance",
+					ServiceName: "query_instance_diff_env_service",
+					VersionRule: "1.0.0",
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(len(respFind.Instances)).To(Equal(1))
+				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId4))
+
 				By("find with rev")
 				ctx := util.SetContext(getContext(), serviceUtil.CTX_NOCACHE, "")
 				respFind, err = instanceResource.Find(ctx, &pb.FindInstancesRequest{

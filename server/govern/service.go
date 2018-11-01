@@ -80,7 +80,7 @@ func (governService *GovernService) GetServicesInfo(ctx context.Context, in *pb.
 	//获取所有服务
 	services, err := serviceUtil.GetAllServiceUtil(ctx)
 	if err != nil {
-		log.Errorf(err, "Get all services for govern service failed.")
+		log.Errorf(err, "get all services by domain failed")
 		return &pb.GetServicesInfoResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
@@ -153,7 +153,8 @@ func (governService *GovernService) GetServiceDetail(ctx context.Context, in *pb
 	}
 	versions, err := getServiceAllVersions(ctx, key)
 	if err != nil {
-		log.Errorf(err, "Get service all version failed.")
+		log.Errorf(err, "get service[%s/%s/%s] all versions failed",
+			service.Environment, service.AppId, service.ServiceName)
 		return &pb.GetServiceDetailResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
@@ -254,7 +255,7 @@ func getSchemaInfoUtil(ctx context.Context, domainProject string, serviceId stri
 		registry.WithStrKey(key),
 		registry.WithPrefix())
 	if err != nil {
-		log.Errorf(err, "Get schema failed")
+		log.Errorf(err, "get service[%s]'s schemas failed", serviceId)
 		return make([]*pb.Schema, 0), err
 	}
 	schemas := make([]*pb.Schema, 0, len(resp.Kvs))
@@ -282,14 +283,14 @@ func getServiceDetailUtil(ctx context.Context, serviceDetailOpt ServiceDetailOpt
 		case "tags":
 			tags, err := serviceUtil.GetTagsUtils(ctx, domainProject, serviceId)
 			if err != nil {
-				log.Errorf(err, "Get all tags for govern service failed.")
+				log.Errorf(err, "get service[%s]'s all tags failed", serviceId)
 				return nil, err
 			}
 			serviceDetail.Tags = tags
 		case "rules":
 			rules, err := serviceUtil.GetRulesUtil(ctx, domainProject, serviceId)
 			if err != nil {
-				log.Errorf(err, "Get all rules for govern service failed.")
+				log.Errorf(err, "get service[%s]'s all rules failed", serviceId)
 				return nil, err
 			}
 			for _, rule := range rules {
@@ -300,7 +301,7 @@ func getServiceDetailUtil(ctx context.Context, serviceDetailOpt ServiceDetailOpt
 			if serviceDetailOpt.countOnly {
 				instanceCount, err := serviceUtil.GetInstanceCountOfOneService(ctx, domainProject, serviceId)
 				if err != nil {
-					log.Errorf(err, "Get service's instances count for govern service failed.")
+					log.Errorf(err, "get number of service[%s]'s instances failed", serviceId)
 					return nil, err
 				}
 				serviceDetail.Statics.Instances = &pb.StInstance{
@@ -309,14 +310,14 @@ func getServiceDetailUtil(ctx context.Context, serviceDetailOpt ServiceDetailOpt
 			}
 			instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, domainProject, serviceId)
 			if err != nil {
-				log.Errorf(err, "Get service's all instances for govern service failed.")
+				log.Errorf(err, "get service[%s]'s all instances failed", serviceId)
 				return nil, err
 			}
 			serviceDetail.Instances = instances
 		case "schemas":
 			schemas, err := getSchemaInfoUtil(ctx, domainProject, serviceId)
 			if err != nil {
-				log.Errorf(err, "Get service's all schemas for govern service failed.")
+				log.Errorf(err, "get service[%s]'s all schemas failed", serviceId)
 				return nil, err
 			}
 			serviceDetail.SchemaInfos = schemas
@@ -327,14 +328,16 @@ func getServiceDetailUtil(ctx context.Context, serviceDetailOpt ServiceDetailOpt
 				serviceUtil.WithoutSelfDependency(),
 				serviceUtil.WithSameDomainProject())
 			if err != nil {
-				log.Errorf(err, "Get service's all consumers for govern service failed.")
+				log.Errorf(err, "get service[%s][%s/%s/%s/%s]'s all consumers failed",
+					service.ServiceId, service.Environment, service.AppId, service.ServiceName, service.Version)
 				return nil, err
 			}
 			providers, err := dr.GetDependencyProviders(
 				serviceUtil.WithoutSelfDependency(),
 				serviceUtil.WithSameDomainProject())
 			if err != nil {
-				log.Errorf(err, "Get service's all providers for govern service failed.")
+				log.Errorf(err, "get service[%s][%s/%s/%s/%s]'s all providers failed",
+					service.ServiceId, service.Environment, service.AppId, service.ServiceName, service.Version)
 				return nil, err
 			}
 
@@ -343,7 +346,7 @@ func getServiceDetailUtil(ctx context.Context, serviceDetailOpt ServiceDetailOpt
 		case "":
 			continue
 		default:
-			log.Errorf(nil, "option %s from request is invalid.", opt)
+			log.Errorf(nil, "request option[%s] is invalid", opt)
 		}
 	}
 	return serviceDetail, nil
@@ -442,7 +445,7 @@ func getInstanceCountByDomain(ctx context.Context, resp chan GetInstanceCountByD
 		registry.WithCountOnly())
 	respIns, err := backend.Store().Instance().Search(ctx, instOpts...)
 	if err != nil {
-		log.Errorf(err, "get instance count under same domainId %s", domainId)
+		log.Errorf(err, "get number of instances by domain[%s]", domainId)
 	}
 	resp <- GetInstanceCountByDomainResponse{
 		err:           err,

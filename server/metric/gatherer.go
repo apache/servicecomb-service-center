@@ -68,7 +68,7 @@ func (mm *MetricsGatherer) loop(ctx context.Context) {
 			return
 		case <-ticker.C:
 			if err := mm.Collect(); err != nil {
-				log.Errorf(err, "metrics collect failed.")
+				log.Errorf(err, "metrics collect failed")
 				return
 			}
 

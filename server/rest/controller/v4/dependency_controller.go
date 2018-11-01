@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/core"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
@@ -44,14 +45,14 @@ func (this *DependencyService) URLPatterns() []rest.Route {
 func (this *DependencyService) AddDependenciesForMicroServices(w http.ResponseWriter, r *http.Request) {
 	requestBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Error("body err", err)
+		log.Error("read body failed", err)
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
 	request := &pb.AddDependenciesRequest{}
 	err = json.Unmarshal(requestBody, request)
 	if err != nil {
-		log.Error("Invalid json", err)
+		log.Errorf(err, "Invalid json: %s", util.BytesToStringWithNoCopy(requestBody))
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
@@ -63,14 +64,14 @@ func (this *DependencyService) AddDependenciesForMicroServices(w http.ResponseWr
 func (this *DependencyService) CreateDependenciesForMicroServices(w http.ResponseWriter, r *http.Request) {
 	requestBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Error("body err", err)
+		log.Error("read body failed", err)
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
 	request := &pb.CreateDependenciesRequest{}
 	err = json.Unmarshal(requestBody, request)
 	if err != nil {
-		log.Error("Invalid json", err)
+		log.Errorf(err, "Invalid json: %s", util.BytesToStringWithNoCopy(requestBody))
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}

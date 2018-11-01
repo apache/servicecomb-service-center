@@ -71,7 +71,8 @@ func (governService *GovernServiceControllerV4) GetGraph(w http.ResponseWriter, 
 		}
 		proResp, err := core.ServiceAPI.GetConsumerDependencies(ctx, proRequest)
 		if err != nil {
-			log.Errorf(err, "get providers failed. service %s", service.ServiceId)
+			log.Errorf(err, "get service[%s/%s/%s/%s]'s providers failed",
+				service.Environment, service.AppId, service.ServiceName, service.Version)
 			controller.WriteResponse(w, proResp.Response, nil)
 			return
 		}

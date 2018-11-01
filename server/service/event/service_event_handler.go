@@ -49,7 +49,7 @@ func (h *ServiceEventHandler) OnEvent(evt discovery.KvEvent) {
 		newProject := domainProject[strings.Index(domainProject, "/")+1:]
 		err := serviceUtil.NewDomainProject(context.Background(), newDomain, newProject)
 		if err != nil {
-			log.Errorf(err, "new domain(%s) or project(%s) failed", newDomain, newProject)
+			log.Errorf(err, "new domain[%s] or project[%s] failed", newDomain, newProject)
 		}
 	case pb.EVT_DELETE:
 		metrics.ReportServices(fn, fv, -1)
