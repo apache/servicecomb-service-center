@@ -137,14 +137,14 @@ func (this *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r 
 		Tags:              ids,
 	}
 
-	util.SetTargetDomainProject(r.Context(), r.Header.Get("X-Domain-Name"), query.Get(":project"))
+	ctx := util.SetTargetDomainProject(r.Context(), r.Header.Get("X-Domain-Name"), query.Get(":project"))
 
-	resp, _ := core.InstanceAPI.Find(r.Context(), request)
+	resp, _ := core.InstanceAPI.Find(ctx, request)
 	respInternal := resp.Response
 	resp.Response = nil
 
-	iv, _ := r.Context().Value(serviceUtil.CTX_REQUEST_REVISION).(string)
-	ov, _ := r.Context().Value(serviceUtil.CTX_RESPONSE_REVISION).(string)
+	iv, _ := ctx.Value(serviceUtil.CTX_REQUEST_REVISION).(string)
+	ov, _ := ctx.Value(serviceUtil.CTX_RESPONSE_REVISION).(string)
 	w.Header().Set(serviceUtil.HEADER_REV, ov)
 	if len(iv) > 0 && iv == ov {
 		w.WriteHeader(http.StatusNotModified)
