@@ -67,7 +67,8 @@ func (apt *RulesChangedTask) publish(ctx context.Context, domainProject, provide
 
 	consumerIds, err := serviceUtil.GetConsumerIds(ctx, domainProject, provider)
 	if err != nil {
-		log.Errorf(err, "get service[%s]'s consumerIds failed", providerId)
+		log.Errorf(err, "get service[%s][%s/%s/%s/%s]'s consumerIds failed",
+			providerId, provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
 		return err
 	}
 	providerKey := pb.MicroServiceToKey(domainProject, provider)
@@ -91,11 +92,11 @@ func (h *RuleEventHandler) OnEvent(evt discovery.KvEvent) {
 
 	providerId, ruleId, domainProject := core.GetInfoFromRuleKV(evt.KV.Key)
 	if nf.GetNotifyService().Closed() {
-		log.Warnf("caught [%s] service rule event %s/%s, but notify service is closed",
+		log.Warnf("caught [%s] service rule[%s/%s] event, but notify service is closed",
 			action, providerId, ruleId)
 		return
 	}
-	log.Infof("caught [%s] service rule event %s/%s", action, providerId, ruleId)
+	log.Infof("caught [%s] service rule[%s/%s] event", action, providerId, ruleId)
 
 	task.Service().Add(context.Background(),
 		NewRulesChangedAsyncTask(domainProject, providerId, evt.Revision))

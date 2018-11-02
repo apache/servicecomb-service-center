@@ -71,14 +71,16 @@ func (apt *TagsChangedTask) publish(ctx context.Context, domainProject, consumer
 
 	providerIds, err := serviceUtil.GetProviderIds(ctx, domainProject, consumer)
 	if err != nil {
-		log.Errorf(err, "get service[%s]'s providerIds failed", consumerId)
+		log.Errorf(err, "get service[%s][%s/%s/%s/%s]'s providerIds failed",
+			consumerId, consumer.Environment, consumer.AppId, consumer.ServiceName, consumer.Version)
 		return err
 	}
 
 	for _, providerId := range providerIds {
 		provider, err := serviceUtil.GetService(ctx, domainProject, providerId)
 		if provider == nil {
-			log.Errorf(err, "get service[%s]'s provider[%s] file failed", consumerId, providerId)
+			log.Errorf(err, "get service[%s][%s/%s/%s/%s]'s provider[%s] file failed",
+				consumerId, consumer.Environment, consumer.AppId, consumer.ServiceName, consumer.Version, providerId)
 			continue
 		}
 
@@ -104,11 +106,11 @@ func (h *TagEventHandler) OnEvent(evt discovery.KvEvent) {
 	consumerId, domainProject := core.GetInfoFromTagKV(evt.KV.Key)
 
 	if nf.GetNotifyService().Closed() {
-		log.Warnf("caught [%s] service tags event %s/%s, but notify service is closed",
+		log.Warnf("caught [%s] service tags[%s/%s] event, but notify service is closed",
 			action, consumerId, evt.KV.Value)
 		return
 	}
-	log.Infof("caught [%s] service tags event %s/%s", action, consumerId, evt.KV.Value)
+	log.Infof("caught [%s] service tags[%s/%s] event", action, consumerId, evt.KV.Value)
 
 	task.Service().Add(context.Background(),
 		NewTagsChangedAsyncTask(domainProject, consumerId, evt.Revision))

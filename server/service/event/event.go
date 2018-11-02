@@ -27,4 +27,5 @@ func init() {
 	discovery.AddEventHandler(NewRuleEventHandler())
 	discovery.AddEventHandler(NewTagEventHandler())
 	discovery.AddEventHandler(NewDependencyEventHandler())
+	discovery.AddEventHandler(NewDependencyRuleEventHandler())
 }
