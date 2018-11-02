@@ -48,8 +48,8 @@ func init() {
 		}
 	}
 
-	rootCmd.PersistentFlags().StringVar(&ScClientConfig.Addr, "addr",
-		"http://"+util.GetEnvString("HOSTING_SERVER_IP", "127.0.0.1")+":30100",
+	rootCmd.PersistentFlags().StringSliceVar(&ScClientConfig.Endpoints, "addr",
+		[]string{"http://" + util.GetEnvString("HOSTING_SERVER_IP", "127.0.0.1") + ":30100"},
 		"the http host and port of service center, can be overrode by env HOSTING_SERVER_IP.")
 
 	rootCmd.PersistentFlags().StringVar(&ScClientConfig.Token, "token", "",

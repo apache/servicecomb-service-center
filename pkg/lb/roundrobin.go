@@ -13,29 +13,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sc
+package lb
 
-import (
-	"net/http"
-)
+import "sync/atomic"
 
-func NewSCClient(cfg Config) (*SCClient, error) {
-	client, err := NewLBClient(cfg.Endpoints, cfg.Merge())
-	if err != nil {
-		return nil, err
-	}
-	return &SCClient{LBClient: client, Token: cfg.Token}, nil
+type RoundRobinLB struct {
+	Endpoints []string
+	index     int32
 }
 
-type SCClient struct {
-	*LBClient
-	Token string
+func (lb *RoundRobinLB) Next() string {
+	l := len(lb.Endpoints)
+	if l == 0 {
+		return ""
+	}
+	c := atomic.LoadInt32(&lb.index)
+	if c >= int32(l)-1 {
+		atomic.StoreInt32(&lb.index, 0)
+		return lb.Endpoints[0]
+	} else if atomic.CompareAndSwapInt32(&lb.index, c, c+1) {
+		return lb.Endpoints[c+1]
+	}
+	return lb.Endpoints[atomic.LoadInt32(&lb.index)]
 }
 
-func (c *SCClient) CommonHeaders() http.Header {
-	var headers = make(http.Header)
-	if len(c.Token) > 0 {
-		headers.Set("X-Auth-Token", c.Token)
+func NewRoundRobinLB(endpoints []string) *RoundRobinLB {
+	lb := &RoundRobinLB{
+		Endpoints: make([]string, len(endpoints)),
+		index:     -1,
 	}
-	return headers
+	copy(lb.Endpoints, endpoints)
+	return lb
 }

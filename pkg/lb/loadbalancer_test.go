@@ -13,29 +13,41 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sc
+package lb
 
 import (
-	"net/http"
+	"testing"
 )
 
-func NewSCClient(cfg Config) (*SCClient, error) {
-	client, err := NewLBClient(cfg.Endpoints, cfg.Merge())
-	if err != nil {
-		return nil, err
+func TestNewRoundRobinLB(t *testing.T) {
+	lb := NewRoundRobinLB(nil)
+	if lb.Next() != "" {
+		t.Fatalf("TestNewRoundRobinLB failed")
 	}
-	return &SCClient{LBClient: client, Token: cfg.Token}, nil
+	lb = NewRoundRobinLB([]string{"1"})
+	if lb.Next() != "1" {
+		t.Fatalf("TestNewRoundRobinLB failed")
+	}
+	if lb.Next() != "1" {
+		t.Fatalf("TestNewRoundRobinLB failed")
+	}
+	lb = NewRoundRobinLB([]string{"1", "2"})
+	if lb.Next() != "1" {
+		t.Fatalf("TestNewRoundRobinLB failed")
+	}
+	if lb.Next() != "2" {
+		t.Fatalf("TestNewRoundRobinLB failed")
+	}
+	if lb.Next() != "1" {
+		t.Fatalf("TestNewRoundRobinLB failed")
+	}
 }
 
-type SCClient struct {
-	*LBClient
-	Token string
-}
-
-func (c *SCClient) CommonHeaders() http.Header {
-	var headers = make(http.Header)
-	if len(c.Token) > 0 {
-		headers.Set("X-Auth-Token", c.Token)
-	}
-	return headers
+func BenchmarkNewRoundLB(b *testing.B) {
+	lb := NewRoundRobinLB([]string{"1", "2", "3"})
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			_ = lb.Next()
+		}
+	})
 }
