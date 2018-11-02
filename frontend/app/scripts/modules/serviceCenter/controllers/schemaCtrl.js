@@ -261,14 +261,8 @@ angular.module('serviceCenter.sc')
                             httpService.apiRequest(url, method, null, headers, "nopopup").then(function(response) {
                                 $(".loader").hide();
                                 if (response && response.data && response.data.schema) {
-                                    if ($scope.selectedAddress.indexOf("rest") != -1) {
-                                        var rest = $scope.selectedAddress.split(':');
-                                        var ip = rest[1].substring(2, rest[1].length) + ":" + rest[2].substring(0, 4);
-                                    }
-                                    if ($scope.selectedAddress.indexOf("highway") != -1) {
-                                        var highway = $scope.selectedAddress.split(':');
-                                        var ip = highway[1].substring(2, highway[1].length) + ":" + highway[2].substring(0, 4);
-                                    }
+                                    var arr = /^(?:\w+:\/\/)?([^\/?#]+)(.*)$/.exec($scope.selectedAddress);
+                                    var ip = arr[1];
                                     var schema = response.data.schema;
                                     schema = schema.replace(/\\\s/g, "");
                                     var json = YAML.parse(schema);
