@@ -42,8 +42,8 @@ func TestTypes(t *testing.T) {
 		t.Fatalf("TestTypes failed")
 	}
 
-	var kv KeyValue
-	if kv.String() != "{key: '', value: null, version: 0}" {
+	kv := NewKeyValue()
+	if kv.String() != "{key: '', value: null, version: 0, cluster: 'default'}" {
 		t.Fatalf("TestTypes failed, %v", kv.String())
 	}
 }

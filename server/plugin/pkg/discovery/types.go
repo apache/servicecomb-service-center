@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/registry"
 	"strconv"
 )
 
@@ -62,12 +63,17 @@ type KeyValue struct {
 	Version        int64
 	CreateRevision int64
 	ModRevision    int64
+	ClusterName    string
 }
 
 func (kv *KeyValue) String() string {
 	b, _ := json.Marshal(kv.Value)
-	return fmt.Sprintf("{key: '%s', value: %s, version: %d}",
-		util.BytesToStringWithNoCopy(kv.Key), util.BytesToStringWithNoCopy(b), kv.Version)
+	return fmt.Sprintf("{key: '%s', value: %s, version: %d, cluster: '%s'}",
+		util.BytesToStringWithNoCopy(kv.Key), util.BytesToStringWithNoCopy(b), kv.Version, kv.ClusterName)
+}
+
+func NewKeyValue() *KeyValue {
+	return &KeyValue{ClusterName: registry.Configuration().ClusterName}
 }
 
 type Response struct {

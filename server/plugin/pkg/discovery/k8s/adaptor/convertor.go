@@ -113,9 +113,9 @@ func FromK8sService(domainProject string, svc *v1.Service) (ms *pb.MicroService)
 
 func AsKeyValue(key string, v interface{}, resourceVersion string) *discovery.KeyValue {
 	rev, _ := strconv.ParseInt(resourceVersion, 10, 64)
-	return &discovery.KeyValue{
-		Key:         util.StringToBytesWithNoCopy(key),
-		Value:       v,
-		ModRevision: rev,
-	}
+	kv := discovery.NewKeyValue()
+	kv.Key = util.StringToBytesWithNoCopy(key)
+	kv.Value = v
+	kv.ModRevision = rev
+	return kv
 }

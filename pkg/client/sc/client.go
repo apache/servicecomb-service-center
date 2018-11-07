@@ -24,18 +24,18 @@ func NewSCClient(cfg Config) (*SCClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &SCClient{LBClient: client, Token: cfg.Token}, nil
+	return &SCClient{LBClient: client, Cfg: cfg}, nil
 }
 
 type SCClient struct {
 	*LBClient
-	Token string
+	Cfg Config
 }
 
 func (c *SCClient) CommonHeaders() http.Header {
 	var headers = make(http.Header)
-	if len(c.Token) > 0 {
-		headers.Set("X-Auth-Token", c.Token)
+	if len(c.Cfg.Token) > 0 {
+		headers.Set("X-Auth-Token", c.Cfg.Token)
 	}
 	return headers
 }

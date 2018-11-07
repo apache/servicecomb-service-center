@@ -16,69 +16,81 @@
 package aggregate
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
+	"github.com/apache/incubator-servicecomb-service-center/server/core"
+	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
 	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
 	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/registry"
-	"golang.org/x/net/context"
 )
 
-// Aggregator is a discovery service adaptor implement of one kubernetes cluster
-type Aggregator []discovery.Adaptor
-
-func (as Aggregator) Search(ctx context.Context, opts ...registry.PluginOpOption) (*discovery.Response, error) {
-	var (
-		response discovery.Response
-		exists   = make(map[string]struct{})
-	)
-	for _, a := range as {
-		resp, err := a.Search(ctx, opts...)
-		if err != nil {
-			continue
-		}
-		for _, kv := range resp.Kvs {
-			key := util.BytesToStringWithNoCopy(kv.Key)
-			if _, ok := exists[key]; !ok {
-				exists[key] = struct{}{}
-				response.Kvs = append(response.Kvs, kv)
-			}
-		}
-		response.Count += resp.Count
-	}
-	return &response, nil
+// Aggregator is a discovery service adaptor implement of one registry cluster
+type Aggregator struct {
+	discovery.Indexer
+	Adaptors []discovery.Adaptor
 }
 
-func (as Aggregator) Cache() discovery.Cache {
+func (as *Aggregator) Cache() discovery.Cache {
 	var cache Cache
-	for _, a := range as {
+	for _, a := range as.Adaptors {
 		cache = append(cache, a.Cache())
 	}
 	return cache
 }
 
-func (as Aggregator) Run() {
-	for _, a := range as {
+func (as *Aggregator) Run() {
+	for _, a := range as.Adaptors {
 		a.Run()
 	}
 }
 
-func (as Aggregator) Stop() {
-	for _, a := range as {
+func (as *Aggregator) Stop() {
+	for _, a := range as.Adaptors {
 		a.Stop()
 	}
 }
 
-func (as Aggregator) Ready() <-chan struct{} {
-	for _, a := range as {
+func (as *Aggregator) Ready() <-chan struct{} {
+	for _, a := range as.Adaptors {
 		<-a.Ready()
 	}
 	return closedCh
 }
 
-func NewAggregator(t discovery.Type, cfg *discovery.Config) (as Aggregator) {
+func getLogConflictFunc(t discovery.Type) func(origin, conflict *discovery.KeyValue) {
+	switch t {
+	case backend.SERVICE_INDEX:
+		return func(origin, conflict *discovery.KeyValue) {
+			if serviceId, conflictId := origin.Value.(string), conflict.Value.(string); conflictId != serviceId {
+				key := core.GetInfoFromSvcIndexKV(conflict.Key)
+				log.Warnf("conflict! can not merge microservice index[%s][%s][%s/%s/%s/%s], found one[%s] in cluster[%s]",
+					conflict.ClusterName, conflictId, key.Environment, key.AppId, key.ServiceName, key.Version,
+					serviceId, origin.ClusterName)
+			}
+		}
+	case backend.SERVICE_ALIAS:
+		return func(origin, conflict *discovery.KeyValue) {
+			if serviceId, conflictId := origin.Value.(string), conflict.Value.(string); conflictId != serviceId {
+				key := core.GetInfoFromSvcAliasKV(conflict.Key)
+				log.Warnf("conflict! can not merge microservice alias[%s][%s][%s/%s/%s/%s], found one[%s] in cluster[%s]",
+					conflict.ClusterName, conflictId, key.Environment, key.AppId, key.ServiceName, key.Version,
+					serviceId, origin.ClusterName)
+			}
+		}
+	}
+	return nil
+}
+
+func NewAggregator(t discovery.Type, cfg *discovery.Config) *Aggregator {
+	as := &Aggregator{}
 	for _, name := range repos {
 		repo := mgr.Plugins().Get(mgr.DISCOVERY, name).New().(discovery.AdaptorRepository)
-		as = append(as, repo.New(t, cfg))
+		as.Adaptors = append(as.Adaptors, repo.New(t, cfg))
+	}
+	as.Indexer = discovery.NewCacheIndexer(as.Cache())
+
+	switch t {
+	case backend.SERVICE_INDEX, backend.SERVICE_ALIAS:
+		NewConflictChecker(as.Cache(), getLogConflictFunc(t))
 	}
 	return as
 }

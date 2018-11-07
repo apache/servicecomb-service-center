@@ -24,6 +24,7 @@ import (
 
 type Config struct {
 	rest.URLClientOption
+	Name      string
 	Endpoints []string
 	// TODO Expandable header not only token header
 	Token          string

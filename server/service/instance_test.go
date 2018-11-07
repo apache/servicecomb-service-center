@@ -264,6 +264,24 @@ var _ = Describe("'Instance' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 
+				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+					Instance: &pb.MicroServiceInstance{
+						ServiceId: serviceId1,
+						Endpoints: []string{
+							"checkpush:127.0.0.1:8081",
+						},
+						HostName: "UT-HOST",
+						Status:   pb.MSI_UP,
+						HealthCheck: &pb.HealthCheck{
+							Mode:     "push",
+							Interval: 30,
+							Times:    0,
+						},
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+
 				By("check normal pull healthChceck")
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
@@ -296,7 +314,7 @@ var _ = Describe("'Instance' service", func() {
 						HealthCheck: &pb.HealthCheck{
 							Mode:     "push",
 							Interval: 30,
-							Times:    0,
+							Times:    -1,
 						},
 					},
 				})
