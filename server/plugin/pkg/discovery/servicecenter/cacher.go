@@ -24,7 +24,7 @@ type ServiceCenterCacher struct {
 }
 
 func (c *ServiceCenterCacher) Ready() <-chan struct{} {
-	return ServiceCenter().Ready()
+	return GetOrCreateClusterIndexer().Ready()
 }
 
 func NewServiceCenterCacher(cfg *discovery.Config, cache discovery.Cache) *ServiceCenterCacher {
@@ -35,6 +35,6 @@ func NewServiceCenterCacher(cfg *discovery.Config, cache discovery.Cache) *Servi
 
 func BuildCacher(t discovery.Type, cfg *discovery.Config, cache discovery.Cache) discovery.Cacher {
 	cr := NewServiceCenterCacher(cfg, cache)
-	ServiceCenter().AddCacher(t, cr)
+	GetOrCreateClusterIndexer().AddCacher(t, cr)
 	return cr
 }

@@ -33,22 +33,22 @@ import (
 )
 
 var (
-	cluster     *ServiceCenterCluster
+	cluster     *ClusterIndexer
 	clusterOnce sync.Once
 )
 
-type ServiceCenterCluster struct {
+type ClusterIndexer struct {
 	Client *SCClientAggregate
 
 	cachers map[discovery.Type]*ServiceCenterCacher
 }
 
-func (c *ServiceCenterCluster) Initialize() {
+func (c *ClusterIndexer) Initialize() {
 	c.cachers = make(map[discovery.Type]*ServiceCenterCacher)
 	c.Client = NewSCClientAggregate()
 }
 
-func (c *ServiceCenterCluster) Search(ctx context.Context, opts ...registry.PluginOpOption) (r *discovery.Response, err error) {
+func (c *ClusterIndexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (r *discovery.Response, err error) {
 	op := registry.OpGet(opts...)
 	key := util.BytesToStringWithNoCopy(op.Key)
 	switch {
@@ -85,7 +85,7 @@ func (c *ServiceCenterCluster) Search(ctx context.Context, opts ...registry.Plug
 	}
 }
 
-func (c *ServiceCenterCluster) Sync(ctx context.Context) error {
+func (c *ClusterIndexer) Sync(ctx context.Context) error {
 	cache, errs := c.Client.GetScCache()
 	if cache == nil && len(errs) > 0 {
 		err := fmt.Errorf("%v", errs)
@@ -131,11 +131,11 @@ func (c *ServiceCenterCluster) Sync(ctx context.Context) error {
 	return nil
 }
 
-func (c *ServiceCenterCluster) check(local *ServiceCenterCacher, remote model.Getter, skipClusters map[string]error) {
+func (c *ClusterIndexer) check(local *ServiceCenterCacher, remote model.Getter, skipClusters map[string]error) {
 	c.checkWithConflictHandleFunc(local, remote, skipClusters, c.skipHandleFunc)
 }
 
-func (c *ServiceCenterCluster) checkWithConflictHandleFunc(local *ServiceCenterCacher, remote model.Getter, skipClusters map[string]error,
+func (c *ClusterIndexer) checkWithConflictHandleFunc(local *ServiceCenterCacher, remote model.Getter, skipClusters map[string]error,
 	conflictHandleFunc func(origin *model.KV, conflict model.Getter, index int)) {
 	exists := make(map[string]*model.KV)
 	remote.ForEach(func(i int, v *model.KV) bool {
@@ -146,15 +146,15 @@ func (c *ServiceCenterCluster) checkWithConflictHandleFunc(local *ServiceCenterC
 		exists[v.Key] = v
 		kv := local.Cache().Get(v.Key)
 		newKv := &discovery.KeyValue{
-			Key:            util.StringToBytesWithNoCopy(v.Key),
-			Value:          v.Value,
-			Version:        v.Rev,
-			CreateRevision: v.Rev,
-			ModRevision:    v.Rev,
-			ClusterName:    v.ClusterName,
+			Key:         util.StringToBytesWithNoCopy(v.Key),
+			Value:       v.Value,
+			ModRevision: v.Rev,
+			ClusterName: v.ClusterName,
 		}
 		switch {
 		case kv == nil:
+			newKv.Version = 1
+			newKv.CreateRevision = v.Rev
 			local.Notify(pb.EVT_CREATE, v.Key, newKv)
 		case kv.ModRevision != v.Rev:
 			// if lose some cluster kvs, then skip to notify changes of this cluster
@@ -164,6 +164,8 @@ func (c *ServiceCenterCluster) checkWithConflictHandleFunc(local *ServiceCenterC
 					kv.ClusterName, v.ClusterName, pb.EVT_UPDATE, v.Key)
 				break
 			}
+			newKv.Version = kv.ModRevision - kv.ModRevision
+			newKv.CreateRevision = kv.CreateRevision
 			local.Notify(pb.EVT_UPDATE, v.Key, newKv)
 		}
 		return true
@@ -191,10 +193,10 @@ func (c *ServiceCenterCluster) checkWithConflictHandleFunc(local *ServiceCenterC
 	}
 }
 
-func (c *ServiceCenterCluster) skipHandleFunc(origin *model.KV, conflict model.Getter, index int) {
+func (c *ClusterIndexer) skipHandleFunc(origin *model.KV, conflict model.Getter, index int) {
 }
 
-func (c *ServiceCenterCluster) logConflictFunc(origin *model.KV, conflict model.Getter, index int) {
+func (c *ClusterIndexer) logConflictFunc(origin *model.KV, conflict model.Getter, index int) {
 	switch conflict.(type) {
 	case *model.MicroserviceIndexSlice:
 		slice := conflict.(*model.MicroserviceIndexSlice)
@@ -217,7 +219,7 @@ func (c *ServiceCenterCluster) logConflictFunc(origin *model.KV, conflict model.
 	}
 }
 
-func (c *ServiceCenterCluster) loop(ctx context.Context) {
+func (c *ClusterIndexer) loop(ctx context.Context) {
 	select {
 	case <-ctx.Done():
 	case <-time.After(minWaitInterval):
@@ -242,24 +244,24 @@ func (c *ServiceCenterCluster) loop(ctx context.Context) {
 }
 
 // unsafe
-func (c *ServiceCenterCluster) AddCacher(t discovery.Type, cacher *ServiceCenterCacher) {
+func (c *ClusterIndexer) AddCacher(t discovery.Type, cacher *ServiceCenterCacher) {
 	c.cachers[t] = cacher
 }
 
-func (c *ServiceCenterCluster) Run() {
+func (c *ClusterIndexer) Run() {
 	c.Initialize()
 	gopool.Go(c.loop)
 }
 
-func (c *ServiceCenterCluster) Stop() {}
+func (c *ClusterIndexer) Stop() {}
 
-func (c *ServiceCenterCluster) Ready() <-chan struct{} {
+func (c *ClusterIndexer) Ready() <-chan struct{} {
 	return closedCh
 }
 
-func ServiceCenter() *ServiceCenterCluster {
+func GetOrCreateClusterIndexer() *ClusterIndexer {
 	clusterOnce.Do(func() {
-		cluster = &ServiceCenterCluster{}
+		cluster = &ClusterIndexer{}
 		cluster.Run()
 	})
 	return cluster

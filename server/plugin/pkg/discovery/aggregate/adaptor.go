@@ -86,11 +86,16 @@ func NewAggregator(t discovery.Type, cfg *discovery.Config) *Aggregator {
 		repo := mgr.Plugins().Get(mgr.DISCOVERY, name).New().(discovery.AdaptorRepository)
 		as.Adaptors = append(as.Adaptors, repo.New(t, cfg))
 	}
-	as.Indexer = discovery.NewCacheIndexer(as.Cache())
 
 	switch t {
+	case backend.SCHEMA:
+		// schema does not been cached, so new the adaptor indexer
+		as.Indexer = NewAdaptorsIndexer(as.Adaptors)
 	case backend.SERVICE_INDEX, backend.SERVICE_ALIAS:
 		NewConflictChecker(as.Cache(), getLogConflictFunc(t))
+		fallthrough
+	default:
+		as.Indexer = discovery.NewCacheIndexer(as.Cache())
 	}
 	return as
 }
