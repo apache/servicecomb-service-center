@@ -40,15 +40,20 @@ func getClientTLS() (*tls.Config, error) {
 	return clientTLS, err
 }
 
-func (c *SCClientAggregate) GetScCache() (*model.Cache, error) {
-	var caches model.Cache
+func (c *SCClientAggregate) GetScCache() (*model.Cache, map[string]error) {
+	var caches *model.Cache
+	errs := make(map[string]error)
 	for _, client := range *c {
 		cache, err := client.GetScCache()
 		if err != nil {
-			// TODO do not publish DELETE events if one registry connection err.
-			log.Errorf(err, "get service center cache failed")
+			errs[client.Cfg.Name] = err
 			continue
 		}
+
+		if caches == nil {
+			caches = &model.Cache{}
+		}
+
 		c.cacheAppend(client.Cfg.Name, &caches.Microservices, &cache.Microservices)
 		c.cacheAppend(client.Cfg.Name, &caches.Indexes, &cache.Indexes)
 		c.cacheAppend(client.Cfg.Name, &caches.Aliases, &cache.Aliases)
@@ -59,7 +64,7 @@ func (c *SCClientAggregate) GetScCache() (*model.Cache, error) {
 		c.cacheAppend(client.Cfg.Name, &caches.Summaries, &cache.Summaries)
 		c.cacheAppend(client.Cfg.Name, &caches.Instances, &cache.Instances)
 	}
-	return &caches, nil
+	return caches, errs
 }
 
 func (c *SCClientAggregate) cacheAppend(name string, setter model.Setter, getter model.Getter) {

@@ -86,8 +86,9 @@ func (c *ServiceCenterCluster) Search(ctx context.Context, opts ...registry.Plug
 }
 
 func (c *ServiceCenterCluster) Sync(ctx context.Context) error {
-	cache, err := c.Client.GetScCache()
-	if err != nil {
+	cache, errs := c.Client.GetScCache()
+	if cache == nil && len(errs) > 0 {
+		err := fmt.Errorf("%v", errs)
 		log.Errorf(err, "sync failed")
 		return err
 	}
@@ -95,46 +96,46 @@ func (c *ServiceCenterCluster) Sync(ctx context.Context) error {
 	// microservice
 	serviceCacher, ok := c.cachers[backend.SERVICE]
 	if ok {
-		c.check(serviceCacher, &cache.Microservices)
+		c.check(serviceCacher, &cache.Microservices, errs)
 	}
 	aliasCacher, ok := c.cachers[backend.SERVICE_ALIAS]
 	if ok {
-		c.checkWithConflictHandleFunc(aliasCacher, &cache.Aliases, c.logConflictFunc)
+		c.checkWithConflictHandleFunc(aliasCacher, &cache.Aliases, errs, c.logConflictFunc)
 	}
 	indexCacher, ok := c.cachers[backend.SERVICE_INDEX]
 	if ok {
-		c.checkWithConflictHandleFunc(indexCacher, &cache.Indexes, c.logConflictFunc)
+		c.checkWithConflictHandleFunc(indexCacher, &cache.Indexes, errs, c.logConflictFunc)
 	}
 	// instance
 	instCacher, ok := c.cachers[backend.INSTANCE]
 	if ok {
-		c.check(instCacher, &cache.Instances)
+		c.check(instCacher, &cache.Instances, errs)
 	}
 	// microservice meta
 	tagCacher, ok := c.cachers[backend.SERVICE_TAG]
 	if ok {
-		c.check(tagCacher, &cache.Tags)
+		c.check(tagCacher, &cache.Tags, errs)
 	}
 	ruleCacher, ok := c.cachers[backend.RULE]
 	if ok {
-		c.check(ruleCacher, &cache.Rules)
+		c.check(ruleCacher, &cache.Rules, errs)
 	}
 	ruleIndexCacher, ok := c.cachers[backend.RULE_INDEX]
 	if ok {
-		c.check(ruleIndexCacher, &cache.RuleIndexes)
+		c.check(ruleIndexCacher, &cache.RuleIndexes, errs)
 	}
 	depRuleCacher, ok := c.cachers[backend.DEPENDENCY_RULE]
 	if ok {
-		c.check(depRuleCacher, &cache.DependencyRules)
+		c.check(depRuleCacher, &cache.DependencyRules, errs)
 	}
 	return nil
 }
 
-func (c *ServiceCenterCluster) check(local *ServiceCenterCacher, remote model.Getter) {
-	c.checkWithConflictHandleFunc(local, remote, c.skipHandleFunc)
+func (c *ServiceCenterCluster) check(local *ServiceCenterCacher, remote model.Getter, skipClusters map[string]error) {
+	c.checkWithConflictHandleFunc(local, remote, skipClusters, c.skipHandleFunc)
 }
 
-func (c *ServiceCenterCluster) checkWithConflictHandleFunc(local *ServiceCenterCacher, remote model.Getter,
+func (c *ServiceCenterCluster) checkWithConflictHandleFunc(local *ServiceCenterCacher, remote model.Getter, skipClusters map[string]error,
 	conflictHandleFunc func(origin *model.KV, conflict model.Getter, index int)) {
 	exists := make(map[string]*model.KV)
 	remote.ForEach(func(i int, v *model.KV) bool {
@@ -156,6 +157,13 @@ func (c *ServiceCenterCluster) checkWithConflictHandleFunc(local *ServiceCenterC
 		case kv == nil:
 			local.Notify(pb.EVT_CREATE, v.Key, newKv)
 		case kv.ModRevision != v.Rev:
+			// if lose some cluster kvs, then skip to notify changes of this cluster
+			// to prevent publish the wrong changes events of kvs
+			if err, ok := skipClusters[kv.ClusterName]; ok {
+				log.Errorf(err, "cluster[%s] temporarily unavailable, skip cluster[%s] event %s %s",
+					kv.ClusterName, v.ClusterName, pb.EVT_UPDATE, v.Key)
+				break
+			}
 			local.Notify(pb.EVT_UPDATE, v.Key, newKv)
 		}
 		return true
@@ -169,6 +177,11 @@ func (c *ServiceCenterCluster) checkWithConflictHandleFunc(local *ServiceCenterC
 			return !exist
 		})
 		if !exist {
+			if err, ok := skipClusters[v.ClusterName]; ok {
+				log.Errorf(err, "cluster[%s] temporarily unavailable, skip event %s %s",
+					v.ClusterName, pb.EVT_DELETE, v.Key)
+				return true
+			}
 			deletes = append(deletes, v)
 		}
 		return true
