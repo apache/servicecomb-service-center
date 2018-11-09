@@ -17,9 +17,9 @@
 package govern
 
 import (
-	roa "github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/rpc"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	roa "github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/pkg/rpc"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"google.golang.org/grpc"
 )
 

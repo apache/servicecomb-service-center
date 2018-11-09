@@ -19,7 +19,7 @@ package validate
 import (
 	"errors"
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"reflect"
 	"sync"
 )

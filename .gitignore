@@ -10,7 +10,7 @@ service-center.iml
 **/*junit.xml
 **/*.exe
 **/*.tgz
-**/apache-servicecomb-incubating-service-center-*
+**/apache-servicecomb-service-center-*
 
 vendor/**
 !vendor/manifest
@@ -25,6 +25,6 @@ frontend/bower_components/
 frontend/node_modules/
 tmp/
 glide.lock
-incubator-servicecomb-service-center
+servicecomb-service-center
 go.sum
 service-center

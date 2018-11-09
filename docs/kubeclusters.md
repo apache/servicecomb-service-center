@@ -36,7 +36,7 @@ Using helm to deploy the service center to kubernetes here, the instructions for
 Take deployment to kubernetes cluster 1 as an example.
 ```bash
 # login the k1 kubernetes master node to deploy sc1
-git clone git@github.com:apache/incubator-servicecomb-service-center.git
+git clone git@github.com:apache/servicecomb-service-center.git
 cd examples/infrastructures/k8s
 helm install --name k1 \
     --set sc.discovery.clusters="sc2=http://10.12.0.2:30100" \

@@ -18,7 +18,7 @@ package cmd
 import (
 	"bytes"
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/scctl/pkg/version"
+	"github.com/apache/servicecomb-service-center/scctl/pkg/version"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"io"

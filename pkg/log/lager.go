@@ -18,7 +18,7 @@
 package log
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	stlager "github.com/go-chassis/paas-lager"
 	"github.com/go-chassis/paas-lager/third_party/forked/cloudfoundry/lager"
 	"runtime/debug"

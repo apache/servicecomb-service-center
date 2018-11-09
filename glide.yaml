@@ -1,4 +1,4 @@
-package: github.com/apache/incubator-servicecomb-service-center
+package: github.com/apache/servicecomb-service-center
 import:
 - package: github.com/Knetic/govaluate
   version: 91facc4ae520fef82c9aee6b6ae720d9ae789131

@@ -17,8 +17,8 @@
 package rest
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"net/http"
 )
 

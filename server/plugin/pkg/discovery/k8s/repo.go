@@ -18,9 +18,9 @@
 package k8s
 
 import (
-	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery/k8s/adaptor"
+	mgr "github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery/k8s/adaptor"
 )
 
 func init() {

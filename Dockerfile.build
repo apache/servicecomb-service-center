@@ -15,7 +15,7 @@
 
 FROM golang:1.9.2
 
-WORKDIR /go/src/github.com/apache/incubator-servicecomb-service-center
+WORKDIR /go/src/github.com/apache/servicecomb-service-center
 
 COPY . .
 

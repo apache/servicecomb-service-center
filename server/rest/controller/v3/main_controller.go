@@ -18,11 +18,11 @@ package v3
 
 import (
 	"encoding/json"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	"github.com/apache/incubator-servicecomb-service-center/server/rest/controller"
-	"github.com/apache/incubator-servicecomb-service-center/server/rest/controller/v4"
-	"github.com/apache/incubator-servicecomb-service-center/version"
+	"github.com/apache/servicecomb-service-center/pkg/rest"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/rest/controller"
+	"github.com/apache/servicecomb-service-center/server/rest/controller/v4"
+	"github.com/apache/servicecomb-service-center/version"
 	"net/http"
 )
 

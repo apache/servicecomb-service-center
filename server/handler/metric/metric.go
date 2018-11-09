@@ -17,10 +17,10 @@
 package metric
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/chain"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	svr "github.com/apache/incubator-servicecomb-service-center/server/rest"
+	"github.com/apache/servicecomb-service-center/pkg/chain"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/rest"
+	svr "github.com/apache/servicecomb-service-center/server/rest"
 	"net/http"
 	"time"
 )

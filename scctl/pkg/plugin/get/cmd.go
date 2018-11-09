@@ -16,7 +16,7 @@
 package get
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/scctl/pkg/cmd"
+	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
 	"github.com/spf13/cobra"
 )
 

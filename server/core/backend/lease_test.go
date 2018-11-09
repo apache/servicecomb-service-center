@@ -18,8 +18,8 @@ package backend
 
 import (
 	"fmt"
-	errorsEx "github.com/apache/incubator-servicecomb-service-center/pkg/errors"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/registry/buildin"
+	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry/buildin"
 	"golang.org/x/net/context"
 	"testing"
 	"time"

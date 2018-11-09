@@ -17,11 +17,11 @@
 package admin_test
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/admin"
-	"github.com/apache/incubator-servicecomb-service-center/server/admin/model"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/admin"
+	"github.com/apache/servicecomb-service-center/server/admin/model"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	scerr "github.com/apache/servicecomb-service-center/server/error"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"golang.org/x/net/context"

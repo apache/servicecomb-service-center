@@ -27,7 +27,7 @@ RELEASE=${2:-"0.0.1"}
 
 PACKAGE=${3:-"${RELEASE}"}
 
-PACKAGE_PREFIX=apache-servicecomb-incubating-service-center
+PACKAGE_PREFIX=apache-servicecomb-service-center
 
 script_path=$(cd "$(dirname "$0")"; pwd)
 

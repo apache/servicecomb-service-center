@@ -18,7 +18,7 @@ package buildin
 
 import (
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
 	"golang.org/x/net/context"
 	"os"

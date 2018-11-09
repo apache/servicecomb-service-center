@@ -17,8 +17,8 @@
 package quota
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	scerr "github.com/apache/servicecomb-service-center/server/error"
 	"golang.org/x/net/context"
 	"strconv"
 )

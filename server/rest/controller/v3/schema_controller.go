@@ -17,8 +17,8 @@
 package v3
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"github.com/apache/incubator-servicecomb-service-center/server/rest/controller/v4"
+	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/server/rest/controller/v4"
 )
 
 type SchemaService struct {

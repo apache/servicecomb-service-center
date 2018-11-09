@@ -17,10 +17,10 @@
 package rpc
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/rpc"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/rpc"
+	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/plugin"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"net"

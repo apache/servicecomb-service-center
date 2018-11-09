@@ -18,8 +18,8 @@ package buildin
 
 import (
 	"crypto/tls"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/security/buildin"
+	"github.com/apache/servicecomb-service-center/server/core"
+	_ "github.com/apache/servicecomb-service-center/server/plugin/pkg/security/buildin"
 	"os"
 	"testing"
 )

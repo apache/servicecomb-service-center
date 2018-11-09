@@ -17,9 +17,9 @@
 package cache
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/chain"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
+	"github.com/apache/servicecomb-service-center/pkg/chain"
+	"github.com/apache/servicecomb-service-center/pkg/rest"
+	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"net/http"
 )
 

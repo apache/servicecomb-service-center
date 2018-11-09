@@ -11,12 +11,12 @@ from [here](https://dist.apache.org/repos/dist/dev/incubator/servicecomb/incubat
 and then untar/unzip it based on your OS.
 
 ##### Check the version
-Windows(apache-incubator-servicecomb-service-center-XXX-windows-amd64.zip):
+Windows(apache-servicecomb-service-center-XXX-windows-amd64.zip):
 ```
 scctl.exe version
 ```
 
-Linux(apache-incubator-servicecomb-service-center-XXXX-linux-amd64.tar.gz):
+Linux(apache-servicecomb-service-center-XXXX-linux-amd64.tar.gz):
 ```sh
 ./scctl version
 ```
@@ -33,8 +33,8 @@ Requirements
 However if you want to try our latest code then you can follow the below steps
 ```
 #Make sure your GOPATH is set correctly and download all the vendors of SC
-git clone https://github.com/apache/incubator-servicecomb-service-center.git $GOPATH/src/github.com/apache/incubator-servicecomb-service-center
-cd $GOPATH/src/github.com/apache/incubator-servicecomb-service-center
+git clone https://github.com/apache/servicecomb-service-center.git $GOPATH/src/github.com/apache/servicecomb-service-center
+cd $GOPATH/src/github.com/apache/servicecomb-service-center
 
 cd scctl
 

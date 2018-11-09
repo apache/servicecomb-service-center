@@ -16,7 +16,7 @@
  */
 package metric
 
-import "github.com/apache/incubator-servicecomb-service-center/pkg/log"
+import "github.com/apache/servicecomb-service-center/pkg/log"
 
 var reporters = make(map[string]Reporter)
 

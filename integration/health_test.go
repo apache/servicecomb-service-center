@@ -20,7 +20,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/apache/incubator-servicecomb-service-center/integration"
+	. "github.com/apache/servicecomb-service-center/integration"
 	"github.com/widuu/gojson"
 	"io/ioutil"
 	"net/http"

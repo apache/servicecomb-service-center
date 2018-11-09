@@ -79,7 +79,7 @@ of the [`go-chassis`](https://github.com/go-chassis/go-chassis) project, assumin
 | Server       | dc-2        | 10.12.0.5   |
 
 Notes: `go-chassis` application can run perfectly in the above 2 architectures.
-If you are using [`java-chassis`](https://github.com/apache/incubator-servicecomb-java-chassis),
+If you are using [`java-chassis`](https://github.com/apache/servicecomb-java-chassis),
 there are only support the service center with the second architecture at the moment.
 You can ref to [`here`](/docs/multidcs2.md) for more details of the second architecture.
 

@@ -19,12 +19,12 @@ package broker_test
 import (
 	"fmt"
 
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/broker"
-	"github.com/apache/incubator-servicecomb-service-center/server/broker/brokerpb"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/broker"
+	"github.com/apache/servicecomb-service-center/server/broker/brokerpb"
+	"github.com/apache/servicecomb-service-center/server/core"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"golang.org/x/net/context"

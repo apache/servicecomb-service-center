@@ -26,7 +26,7 @@ BASE_DIR=${SCRIPT_DIR}/../../../
 # build all
 PACKAGE=${1:-"latest"}
 
-PACKAGE_PREFIX=apache-servicecomb-incubating-service-center
+PACKAGE_PREFIX=apache-servicecomb-service-center
 
 PACKAGE_DIR=$SCRIPT_DIR/../$PACKAGE_PREFIX-$PACKAGE-linux-amd64
 

@@ -96,3 +96,10 @@ Response:
 	}
 }
 ``` 
+
+## protobuf to golang
+
+```bash
+cd brokerpb
+protoc --go_out=plugins=grpc:. -I=$GOPATH/src -I=./  broker.proto 
+```

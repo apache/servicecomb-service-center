@@ -17,9 +17,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/client/sc"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/scctl/pkg/version"
+	"github.com/apache/servicecomb-service-center/pkg/client/sc"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/scctl/pkg/version"
 	"github.com/spf13/cobra"
 	"os"
 	"time"

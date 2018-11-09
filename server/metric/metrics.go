@@ -17,8 +17,8 @@
 package metric
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/buffer"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/pkg/buffer"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	dto "github.com/prometheus/client_model/go"
 	"strings"
 )

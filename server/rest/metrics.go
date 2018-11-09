@@ -17,9 +17,9 @@
 package rest
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/metric"
+	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/metric"
 	"github.com/prometheus/client_golang/prometheus"
 	"net/http"
 	"strconv"

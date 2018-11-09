@@ -19,9 +19,9 @@ package admin
 import (
 	"net/http"
 
-	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"github.com/apache/incubator-servicecomb-service-center/server/admin/model"
-	"github.com/apache/incubator-servicecomb-service-center/server/rest/controller"
+	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/server/admin/model"
+	"github.com/apache/servicecomb-service-center/server/rest/controller"
 )
 
 // AdminService 治理相关接口服务

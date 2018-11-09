@@ -16,8 +16,8 @@
 package adaptor
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/queue"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/pkg/queue"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"golang.org/x/net/context"
 	"k8s.io/client-go/tools/cache"
 	"reflect"

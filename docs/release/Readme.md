@@ -12,7 +12,7 @@ For running the tool please follow the below guidelines.
 ##### Step 1
 Clone the Servcice-Center code and download Apache Rat tool.
 ```
-git clone https://github.com/apache/incubator-servicecomb-service-center
+git clone https://github.com/apache/servicecomb-service-center
 ```
 
 ```
@@ -28,7 +28,7 @@ cp  apache-rat-0.12/apache-rat-0.12.jar ./
 Run the Rat tool using the below command
 
 ```
-java -jar apache-rat-0.12.jar -a -d incubator-servicecomb-service-center/ -e *.md *.MD .gitignore .gitmodules .travis.yml manifest **vendor** **licenses** bower.json
+java -jar apache-rat-0.12.jar -a -d servicecomb-service-center/ -e *.md *.MD .gitignore .gitmodules .travis.yml manifest **vendor** **licenses** bower.json
 ```
 
 Below is the list of the files which has been excluded from the list of RAT tool.

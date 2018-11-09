@@ -61,8 +61,8 @@ build_service_center() {
     ## Build the Service-Center releases
     export GIT_COMMIT=$(git log  --pretty=format:'%h' -n 1)
     export BUILD_NUMBER=$RELEASE
-    local ldflags="${GO_LDFLAGS} -X 'github.com/apache/incubator-servicecomb-service-center/version.BUILD_TAG=$(date +%Y%m%d%H%M%S).$BUILD_NUMBER.$GIT_COMMIT'"
-    ldflags="${ldflags} -X 'github.com/apache/incubator-servicecomb-service-center/version.VERSION=$BUILD_NUMBER'"
+    local ldflags="${GO_LDFLAGS} -X 'github.com/apache/servicecomb-service-center/version.BUILD_TAG=$(date +%Y%m%d%H%M%S).$BUILD_NUMBER.$GIT_COMMIT'"
+    ldflags="${ldflags} -X 'github.com/apache/servicecomb-service-center/version.VERSION=$BUILD_NUMBER'"
 
     local BINARY_NAME=$app/service-center
     if [ "$GOOS" == "windows" ]; then
@@ -88,8 +88,8 @@ build_scctl() {
     cd scctl
     export GIT_COMMIT=$(git log  --pretty=format:'%h' -n 1)
     export BUILD_NUMBER=$RELEASE
-    local ldflags="${GO_LDFLAGS} -X 'github.com/apache/incubator-servicecomb-service-center/scctl/pkg/version.BUILD_TAG=$(date +%Y%m%d%H%M%S).$BUILD_NUMBER.$GIT_COMMIT'"
-    ldflags="${ldflags} -X 'github.com/apache/incubator-servicecomb-service-center/scctl/pkg/version.VERSION=$BUILD_NUMBER'"
+    local ldflags="${GO_LDFLAGS} -X 'github.com/apache/servicecomb-service-center/scctl/pkg/version.BUILD_TAG=$(date +%Y%m%d%H%M%S).$BUILD_NUMBER.$GIT_COMMIT'"
+    ldflags="${ldflags} -X 'github.com/apache/servicecomb-service-center/scctl/pkg/version.VERSION=$BUILD_NUMBER'"
 
     local BINARY_NAME=$app/scctl
     if [ "$GOOS" == "windows" ]; then
@@ -126,7 +126,6 @@ package() {
     cp -r scripts/release/LICENSE $app/
     cp -r scripts/release/licenses $app/
     cp -r scripts/release/NOTICE $app/
-    cp -r DISCLAIMER $app/
     cp -r README.md $app/
 
     ## Copy the frontend releases
@@ -146,7 +145,7 @@ docker_builder_pattern() {
     local dockerfile_dir=${1:-"."}
     local output=${2:-"."}
     local builder_name=servicecomb/service-center:build
-    local builder_path=/go/src/github.com/apache/incubator-servicecomb-service-center
+    local builder_path=/go/src/github.com/apache/servicecomb-service-center
     local app=$PACKAGE_PREFIX-$PACKAGE-linux-amd64
 
     set +e

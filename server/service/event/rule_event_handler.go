@@ -18,15 +18,15 @@ package event
 
 import (
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/task"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery"
-	nf "github.com/apache/incubator-servicecomb-service-center/server/service/notification"
-	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/task"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/backend"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
+	nf "github.com/apache/servicecomb-service-center/server/service/notification"
+	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
 )
 

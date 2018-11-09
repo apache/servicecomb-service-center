@@ -15,10 +15,10 @@
 
 package bootstrap
 
-import _ "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/version"
-import _ "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/diagnose"
-import _ "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/get/service"
-import _ "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/get/instance"
-import _ "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/get/schema"
-import _ "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/get/cluster"
-import _ "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/health"
+import _ "github.com/apache/servicecomb-service-center/scctl/pkg/plugin/version"
+import _ "github.com/apache/servicecomb-service-center/scctl/pkg/plugin/diagnose"
+import _ "github.com/apache/servicecomb-service-center/scctl/pkg/plugin/get/service"
+import _ "github.com/apache/servicecomb-service-center/scctl/pkg/plugin/get/instance"
+import _ "github.com/apache/servicecomb-service-center/scctl/pkg/plugin/get/schema"
+import _ "github.com/apache/servicecomb-service-center/scctl/pkg/plugin/get/cluster"
+import _ "github.com/apache/servicecomb-service-center/scctl/pkg/plugin/health"

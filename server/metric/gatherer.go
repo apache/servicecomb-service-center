@@ -17,8 +17,8 @@
 package metric
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	pm "github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/net/context"
 	"strings"

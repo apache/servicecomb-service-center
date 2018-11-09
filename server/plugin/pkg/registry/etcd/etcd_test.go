@@ -16,14 +16,14 @@
  */
 package etcd
 
-import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/tracing/buildin"
-import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/security/buildin"
-import _ "github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/tls/buildin"
+import _ "github.com/apache/servicecomb-service-center/server/plugin/pkg/tracing/buildin"
+import _ "github.com/apache/servicecomb-service-center/server/plugin/pkg/security/buildin"
+import _ "github.com/apache/servicecomb-service-center/server/plugin/pkg/tls/buildin"
 import (
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/registry"
-	"github.com/apache/incubator-servicecomb-service-center/server/rpc"
+	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
+	"github.com/apache/servicecomb-service-center/server/rpc"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/status"
 	"net/http"

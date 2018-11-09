@@ -17,7 +17,7 @@ package proto
 
 import (
 	"encoding/json"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
 // new

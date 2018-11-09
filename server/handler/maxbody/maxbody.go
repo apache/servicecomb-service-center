@@ -17,9 +17,9 @@
 package maxbody
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/chain"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/pkg/chain"
+	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/server/core"
 	"net/http"
 )
 

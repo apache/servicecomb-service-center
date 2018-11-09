@@ -16,9 +16,9 @@
 package diagnose
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/client/etcd"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	root "github.com/apache/incubator-servicecomb-service-center/scctl/pkg/cmd"
+	"github.com/apache/servicecomb-service-center/pkg/client/etcd"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	root "github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
 	"github.com/spf13/cobra"
 	"path/filepath"
 )

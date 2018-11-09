@@ -17,13 +17,13 @@
 package version
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/version"
+	"github.com/apache/servicecomb-service-center/version"
 )
 
 var (
 	// no need to modify
 	// please use:
-	// 	go build -ldflags "-X github.com/apache/incubator-servicecomb-service-center/scctl/pkg/version.VERSION=x.x.x"
+	// 	go build -ldflags "-X github.com/apache/servicecomb-service-center/scctl/pkg/version.VERSION=x.x.x"
 	// to set these values.
 	VERSION   = "0.0.1"
 	BUILD_TAG = "Not provided"

@@ -17,12 +17,12 @@
 package auth
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/chain"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
-	"github.com/apache/incubator-servicecomb-service-center/server/rest/controller"
+	"github.com/apache/servicecomb-service-center/pkg/chain"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/rest"
+	scerr "github.com/apache/servicecomb-service-center/server/error"
+	"github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	"net/http"
 )
 

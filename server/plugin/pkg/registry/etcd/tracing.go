@@ -17,9 +17,9 @@
 package etcd
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/registry"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/tracing"
+	"github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/tracing"
 	"golang.org/x/net/context"
 	"net/http"
 )

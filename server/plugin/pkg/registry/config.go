@@ -16,8 +16,8 @@
 package registry
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/astaxie/beego"
 	"strings"
 	"sync"

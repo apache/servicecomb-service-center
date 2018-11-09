@@ -18,15 +18,15 @@ package util
 
 import (
 	"encoding/json"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/quota"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/registry"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	apt "github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/backend"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/quota"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 	"golang.org/x/net/context"
 )
 

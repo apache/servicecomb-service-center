@@ -18,7 +18,7 @@ package discovery
 
 import (
 	"fmt"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"time"
 )
 

@@ -17,7 +17,7 @@ package etcd
 
 import (
 	"crypto/tls"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/tlsutil"
+	"github.com/apache/servicecomb-service-center/pkg/tlsutil"
 	"github.com/coreos/etcd/clientv3"
 	"io/ioutil"
 	"strings"

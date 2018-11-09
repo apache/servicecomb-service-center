@@ -18,9 +18,9 @@ package buildin
 
 import (
 	"context"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/registry"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/tracing"
+	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/tracing"
 	"net/http"
 	"os"
 	"testing"

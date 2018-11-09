@@ -3,7 +3,7 @@ Using Java chassis for cross data center access
 
 Now that you've seen two [`multiple data center`](/docs/multidcs.md) architectures of the Service Center, 
 we'll show you how to implement micro-service cross data center access with the 
-[`java-chassis`](https://github.com/apache/incubator-servicecomb-java-chassis) framework.
+[`java-chassis`](https://github.com/apache/servicecomb-java-chassis) framework.
 
 ![architecture](/docs/multidcs2-1.PNG)
 
@@ -58,7 +58,7 @@ scctl --addr http://10.12.0.3:30100 get cluster
 ## Example
 
 Here we show a `java` example of multiple datacenters access, where we use an 
-[`example`](https://github.com/apache/incubator-servicecomb-java-chassis/tree/master/demo/demo-springmvc),
+[`example`](https://github.com/apache/servicecomb-java-chassis/tree/master/demo/demo-springmvc),
 assuming that below.
 
 | Microservice | Datacenter  | Address     |  

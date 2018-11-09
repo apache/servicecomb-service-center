@@ -18,9 +18,9 @@ package util
 
 import (
 	"errors"
-	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/registry"
+	apt "github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/backend"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 	"golang.org/x/net/context"
 )
 

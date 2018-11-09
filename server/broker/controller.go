@@ -22,10 +22,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"github.com/apache/incubator-servicecomb-service-center/server/broker/brokerpb"
-	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
-	"github.com/apache/incubator-servicecomb-service-center/server/rest/controller"
+	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/server/broker/brokerpb"
+	scerr "github.com/apache/servicecomb-service-center/server/error"
+	"github.com/apache/servicecomb-service-center/server/rest/controller"
 )
 
 const DEFAULT_SCHEME = "http"

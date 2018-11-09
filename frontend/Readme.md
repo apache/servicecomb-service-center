@@ -8,12 +8,12 @@ Service-Center UI also offers a unique feature of testing the Schemas of their M
 Easiest way to get started with Service-Center UI is to download the release from [here](https://dist.apache.org/repos/dist/dev/incubator/servicecomb/incubator-servicecomb-service-center/) and then untar/unzip it based on your OS and run start-frontend.sh/start-frontend.bat.
 This will bring up the Service-Center UI on [http://127.0.0.1:30103](http://127.0.0.1:30103).
 
-Windows(apache-incubator-servicecomb-service-center-XXX-windows-amd64.zip):
+Windows(apache-servicecomb-service-center-XXX-windows-amd64.zip):
 ```
 start-frontend.bat
 ```
 
-Linux(apache-incubator-servicecomb-service-center-XXXX-linux-amd64.tar.gz):
+Linux(apache-servicecomb-service-center-XXXX-linux-amd64.tar.gz):
 ```sh
 ./start-frontend.sh
 ```
@@ -34,8 +34,8 @@ Requirements
 However if you want to try our latest code then you can follow the below steps
 ```
 #Make sure your GOPATH is set correctly as the UI runs on GO Backend Server
-git clone https://github.com/apache/incubator-servicecomb-service-center.git $GOPATH/src/github.com/apache/incubator-servicecomb-service-center
-cd $GOPATH/src/github.com/apache/incubator-servicecomb-service-center
+git clone https://github.com/apache/servicecomb-service-center.git $GOPATH/src/github.com/apache/servicecomb-service-center
+cd $GOPATH/src/github.com/apache/servicecomb-service-center
 
 cp -r etc/conf frontend/
 
