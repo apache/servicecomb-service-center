@@ -21,13 +21,11 @@ import (
 	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/registry"
 	"golang.org/x/net/context"
-	"sync"
 	"time"
 )
 
 type CacheIndexer struct {
 	Cache Cache
-	lock  sync.Mutex
 }
 
 func (i *CacheIndexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (resp *Response, _ error) {

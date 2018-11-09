@@ -161,9 +161,10 @@ type Cache struct {
 }
 
 type KV struct {
-	Key   string      `json:"key"`
-	Rev   int64       `json:"rev"`
-	Value interface{} `json:"-"`
+	Key         string      `json:"key"`
+	Rev         int64       `json:"rev"`
+	Value       interface{} `json:"-"`
+	ClusterName string      `json:"cluster"`
 }
 
 type Microservice struct {

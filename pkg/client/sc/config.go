@@ -22,8 +22,11 @@ import (
 	"time"
 )
 
+const defaultRequestTimeout = 10 * time.Second
+
 type Config struct {
 	rest.URLClientOption
+	Name      string
 	Endpoints []string
 	// TODO Expandable header not only token header
 	Token          string
@@ -38,7 +41,7 @@ func (cfg *Config) Merge() rest.URLClientOption {
 	}
 	cfg.SSLEnabled = ssl
 	if cfg.RequestTimeout == 0 {
-		cfg.RequestTimeout = 10 * time.Second
+		cfg.RequestTimeout = defaultRequestTimeout
 	}
 	return cfg.URLClientOption
 }

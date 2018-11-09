@@ -48,7 +48,7 @@ func (se *ServiceCenterAdaptor) Ready() <-chan struct{} {
 func NewServiceCenterAdaptor(t discovery.Type, cfg *discovery.Config) *ServiceCenterAdaptor {
 	if t == backend.SCHEMA {
 		return &ServiceCenterAdaptor{
-			Indexer: ServiceCenter(),
+			Indexer: GetOrCreateClusterIndexer(),
 			Cacher:  discovery.NullCacher,
 		}
 	}

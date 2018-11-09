@@ -412,7 +412,7 @@ func (c *KvCacher) notify(evts []discovery.KvEvent) {
 }
 
 func (c *KvCacher) doParse(src *mvccpb.KeyValue) (kv *discovery.KeyValue) {
-	kv = new(discovery.KeyValue)
+	kv = discovery.NewKeyValue()
 	if err := FromEtcdKeyValue(kv, src, c.Cfg.Parser); err != nil {
 		log.Errorf(err, "parse %s value failed", util.BytesToStringWithNoCopy(src.Key))
 		return nil

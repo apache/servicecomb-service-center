@@ -15,11 +15,20 @@
 
 package aggregate
 
-import "github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery"
+import (
+	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery"
+)
 
 type Cache []discovery.Cache
 
-func (c Cache) Name() string { return c[0].Name() }
+func (c Cache) Name() string {
+	if len(c) == 0 {
+		return ""
+	}
+	return c[0].Name()
+}
+
 func (c Cache) Size() (s int) {
 	for _, cache := range c {
 		s += cache.Size()
@@ -35,20 +44,54 @@ func (c Cache) Get(k string) (kv *discovery.KeyValue) {
 	return
 }
 func (c Cache) GetAll(arr *[]*discovery.KeyValue) (s int) {
+	exists := make(map[string]struct{})
 	for _, cache := range c {
-		s += cache.GetAll(arr)
+		var tmp []*discovery.KeyValue
+		if l := cache.GetAll(&tmp); l == 0 {
+			continue
+		}
+		s += c.append(tmp, arr, exists)
 	}
 	return
 }
 func (c Cache) GetPrefix(prefix string, arr *[]*discovery.KeyValue) (s int) {
+	exists := make(map[string]struct{})
 	for _, cache := range c {
-		s += cache.GetPrefix(prefix, arr)
+		var tmp []*discovery.KeyValue
+		if l := cache.GetPrefix(prefix, &tmp); l == 0 {
+			continue
+		}
+		s += c.append(tmp, arr, exists)
 	}
 	return
 }
+
+func (c Cache) append(tmp []*discovery.KeyValue, arr *[]*discovery.KeyValue,
+	exists map[string]struct{}) (s int) {
+	for _, kv := range tmp {
+		key := util.BytesToStringWithNoCopy(kv.Key)
+		if _, ok := exists[key]; ok {
+			continue
+		}
+		exists[key] = struct{}{}
+		if arr != nil {
+			*arr = append(*arr, kv)
+		}
+		s += 1
+	}
+	return
+}
+
 func (c Cache) ForEach(iter func(k string, v *discovery.KeyValue) (next bool)) {
+	exists := make(map[string]struct{})
 	for _, cache := range c {
-		cache.ForEach(iter)
+		cache.ForEach(func(k string, v *discovery.KeyValue) bool {
+			if _, ok := exists[k]; ok {
+				return true
+			}
+			exists[k] = struct{}{}
+			return iter(k, v)
+		})
 	}
 }
 func (c Cache) Put(k string, v *discovery.KeyValue) { return }

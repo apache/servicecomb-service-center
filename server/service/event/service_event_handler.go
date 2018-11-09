@@ -60,8 +60,8 @@ func (h *ServiceEventHandler) OnEvent(evt discovery.KvEvent) {
 		return
 	}
 
-	log.Infof("caught [%s] service[%s/%s/%s/%s] event",
-		evt.Type, ms.Environment, ms.AppId, ms.ServiceName, ms.Version)
+	log.Infof("caught [%s] service[%s][%s/%s/%s/%s] event",
+		evt.Type, ms.ServiceId, ms.Environment, ms.AppId, ms.ServiceName, ms.Version)
 
 	// cache
 	providerKey := pb.MicroServiceToKey(domainProject, ms)

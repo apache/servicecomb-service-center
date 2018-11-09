@@ -66,9 +66,8 @@ func (s *InstanceService) preProcessRegisterInstance(ctx context.Context, instan
 		// Health check对象仅用于呈现服务健康检查逻辑，如果CHECK_BY_PLATFORM类型，表明由sidecar代发心跳，实例120s超时
 		switch instance.HealthCheck.Mode {
 		case pb.CHECK_BY_HEARTBEAT:
-			if instance.HealthCheck.Interval <= 0 || instance.HealthCheck.Interval >= math.MaxInt32 ||
-				instance.HealthCheck.Times <= 0 || instance.HealthCheck.Times >= math.MaxInt32 ||
-				instance.HealthCheck.Interval*(instance.HealthCheck.Times+1) >= math.MaxInt32 {
+			d := instance.HealthCheck.Interval * (instance.HealthCheck.Times + 1)
+			if d <= 0 || d >= math.MaxInt32 {
 				return scerr.NewError(scerr.ErrInvalidParams, "Invalid 'healthCheck' settings in request body.")
 			}
 		case pb.CHECK_BY_PLATFORM:

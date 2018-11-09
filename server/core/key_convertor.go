@@ -108,6 +108,10 @@ func GetInfoFromSvcIndexKV(key []byte) *pb.MicroServiceKey {
 	}
 }
 
+func GetInfoFromSvcAliasKV(key []byte) *pb.MicroServiceKey {
+	return GetInfoFromSvcIndexKV(key)
+}
+
 func GetInfoFromSchemaSummaryKV(key []byte) (domainProject, serviceId, schemaId string) {
 	keys := KvToResponse(key)
 	l := len(keys)

@@ -33,22 +33,22 @@ import (
 )
 
 var (
-	cluster     *ServiceCenterCluster
+	cluster     *ClusterIndexer
 	clusterOnce sync.Once
 )
 
-type ServiceCenterCluster struct {
+type ClusterIndexer struct {
 	Client *SCClientAggregate
 
 	cachers map[discovery.Type]*ServiceCenterCacher
 }
 
-func (c *ServiceCenterCluster) Initialize() {
+func (c *ClusterIndexer) Initialize() {
 	c.cachers = make(map[discovery.Type]*ServiceCenterCacher)
 	c.Client = NewSCClientAggregate()
 }
 
-func (c *ServiceCenterCluster) Search(ctx context.Context, opts ...registry.PluginOpOption) (r *discovery.Response, err error) {
+func (c *ClusterIndexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (r *discovery.Response, err error) {
 	op := registry.OpGet(opts...)
 	key := util.BytesToStringWithNoCopy(op.Key)
 	switch {
@@ -85,9 +85,10 @@ func (c *ServiceCenterCluster) Search(ctx context.Context, opts ...registry.Plug
 	}
 }
 
-func (c *ServiceCenterCluster) Sync(ctx context.Context) error {
-	cache, err := c.Client.GetScCache()
-	if err != nil {
+func (c *ClusterIndexer) Sync(ctx context.Context) error {
+	cache, errs := c.Client.GetScCache()
+	if cache == nil && len(errs) > 0 {
+		err := fmt.Errorf("%v", errs)
 		log.Errorf(err, "sync failed")
 		return err
 	}
@@ -95,60 +96,76 @@ func (c *ServiceCenterCluster) Sync(ctx context.Context) error {
 	// microservice
 	serviceCacher, ok := c.cachers[backend.SERVICE]
 	if ok {
-		c.check(serviceCacher, &cache.Microservices)
+		c.check(serviceCacher, &cache.Microservices, errs)
 	}
 	aliasCacher, ok := c.cachers[backend.SERVICE_ALIAS]
 	if ok {
-		c.check(aliasCacher, &cache.Aliases)
+		c.checkWithConflictHandleFunc(aliasCacher, &cache.Aliases, errs, c.logConflictFunc)
 	}
 	indexCacher, ok := c.cachers[backend.SERVICE_INDEX]
 	if ok {
-		c.check(indexCacher, &cache.Indexes)
+		c.checkWithConflictHandleFunc(indexCacher, &cache.Indexes, errs, c.logConflictFunc)
 	}
 	// instance
 	instCacher, ok := c.cachers[backend.INSTANCE]
 	if ok {
-		c.check(instCacher, &cache.Instances)
+		c.check(instCacher, &cache.Instances, errs)
 	}
 	// microservice meta
 	tagCacher, ok := c.cachers[backend.SERVICE_TAG]
 	if ok {
-		c.check(tagCacher, &cache.Tags)
+		c.check(tagCacher, &cache.Tags, errs)
 	}
 	ruleCacher, ok := c.cachers[backend.RULE]
 	if ok {
-		c.check(ruleCacher, &cache.Rules)
+		c.check(ruleCacher, &cache.Rules, errs)
 	}
 	ruleIndexCacher, ok := c.cachers[backend.RULE_INDEX]
 	if ok {
-		c.check(ruleIndexCacher, &cache.RuleIndexes)
+		c.check(ruleIndexCacher, &cache.RuleIndexes, errs)
 	}
 	depRuleCacher, ok := c.cachers[backend.DEPENDENCY_RULE]
 	if ok {
-		c.check(depRuleCacher, &cache.DependencyRules)
+		c.check(depRuleCacher, &cache.DependencyRules, errs)
 	}
 	return nil
 }
 
-func (c *ServiceCenterCluster) check(local *ServiceCenterCacher, remote model.Getter) {
-	exists := make(map[string]struct{})
-	remote.ForEach(func(_ int, v *model.KV) bool {
-		if _, ok := exists[v.Key]; ok {
+func (c *ClusterIndexer) check(local *ServiceCenterCacher, remote model.Getter, skipClusters map[string]error) {
+	c.checkWithConflictHandleFunc(local, remote, skipClusters, c.skipHandleFunc)
+}
+
+func (c *ClusterIndexer) checkWithConflictHandleFunc(local *ServiceCenterCacher, remote model.Getter, skipClusters map[string]error,
+	conflictHandleFunc func(origin *model.KV, conflict model.Getter, index int)) {
+	exists := make(map[string]*model.KV)
+	remote.ForEach(func(i int, v *model.KV) bool {
+		if kv, ok := exists[v.Key]; ok {
+			conflictHandleFunc(kv, remote, i)
 			return true
 		}
-		exists[v.Key] = struct{}{}
+		exists[v.Key] = v
 		kv := local.Cache().Get(v.Key)
 		newKv := &discovery.KeyValue{
-			Key:            util.StringToBytesWithNoCopy(v.Key),
-			Value:          v.Value,
-			Version:        v.Rev,
-			CreateRevision: v.Rev,
-			ModRevision:    v.Rev,
+			Key:         util.StringToBytesWithNoCopy(v.Key),
+			Value:       v.Value,
+			ModRevision: v.Rev,
+			ClusterName: v.ClusterName,
 		}
 		switch {
 		case kv == nil:
+			newKv.Version = 1
+			newKv.CreateRevision = v.Rev
 			local.Notify(pb.EVT_CREATE, v.Key, newKv)
 		case kv.ModRevision != v.Rev:
+			// if lose some cluster kvs, then skip to notify changes of this cluster
+			// to prevent publish the wrong changes events of kvs
+			if err, ok := skipClusters[kv.ClusterName]; ok {
+				log.Errorf(err, "cluster[%s] temporarily unavailable, skip cluster[%s] event %s %s",
+					kv.ClusterName, v.ClusterName, pb.EVT_UPDATE, v.Key)
+				break
+			}
+			newKv.Version = kv.ModRevision - kv.ModRevision
+			newKv.CreateRevision = kv.CreateRevision
 			local.Notify(pb.EVT_UPDATE, v.Key, newKv)
 		}
 		return true
@@ -162,6 +179,11 @@ func (c *ServiceCenterCluster) check(local *ServiceCenterCacher, remote model.Ge
 			return !exist
 		})
 		if !exist {
+			if err, ok := skipClusters[v.ClusterName]; ok {
+				log.Errorf(err, "cluster[%s] temporarily unavailable, skip event %s %s",
+					v.ClusterName, pb.EVT_DELETE, v.Key)
+				return true
+			}
 			deletes = append(deletes, v)
 		}
 		return true
@@ -171,17 +193,47 @@ func (c *ServiceCenterCluster) check(local *ServiceCenterCacher, remote model.Ge
 	}
 }
 
-func (c *ServiceCenterCluster) loop(ctx context.Context) {
+func (c *ClusterIndexer) skipHandleFunc(origin *model.KV, conflict model.Getter, index int) {
+}
+
+func (c *ClusterIndexer) logConflictFunc(origin *model.KV, conflict model.Getter, index int) {
+	switch conflict.(type) {
+	case *model.MicroserviceIndexSlice:
+		slice := conflict.(*model.MicroserviceIndexSlice)
+		kv := (*slice)[index]
+		if serviceId := origin.Value.(string); kv.Value != serviceId {
+			key := core.GetInfoFromSvcIndexKV(util.StringToBytesWithNoCopy(kv.Key))
+			log.Warnf("conflict! can not merge microservice index[%s][%s][%s/%s/%s/%s], found one[%s] in cluster[%s]",
+				kv.ClusterName, kv.Value, key.Environment, key.AppId, key.ServiceName, key.Version,
+				serviceId, origin.ClusterName)
+		}
+	case *model.MicroserviceAliasSlice:
+		slice := conflict.(*model.MicroserviceAliasSlice)
+		kv := (*slice)[index]
+		if serviceId := origin.Value.(string); kv.Value != serviceId {
+			key := core.GetInfoFromSvcAliasKV(util.StringToBytesWithNoCopy(kv.Key))
+			log.Warnf("conflict! can not merge microservice alias[%s][%s][%s/%s/%s/%s], found one[%s] in cluster[%s]",
+				kv.ClusterName, kv.Value, key.Environment, key.AppId, key.ServiceName, key.Version,
+				serviceId, origin.ClusterName)
+		}
+	}
+}
+
+func (c *ClusterIndexer) loop(ctx context.Context) {
 	select {
 	case <-ctx.Done():
 	case <-time.After(minWaitInterval):
 		c.Sync(ctx)
+		d := registry.Configuration().AutoSyncInterval
+		if d == 0 {
+			return
+		}
 	loop:
 		for {
 			select {
 			case <-ctx.Done():
 				break loop
-			case <-time.After(registry.Configuration().AutoSyncInterval):
+			case <-time.After(d):
 				// TODO support watching sc
 				c.Sync(ctx)
 			}
@@ -192,24 +244,24 @@ func (c *ServiceCenterCluster) loop(ctx context.Context) {
 }
 
 // unsafe
-func (c *ServiceCenterCluster) AddCacher(t discovery.Type, cacher *ServiceCenterCacher) {
+func (c *ClusterIndexer) AddCacher(t discovery.Type, cacher *ServiceCenterCacher) {
 	c.cachers[t] = cacher
 }
 
-func (c *ServiceCenterCluster) Run() {
+func (c *ClusterIndexer) Run() {
 	c.Initialize()
 	gopool.Go(c.loop)
 }
 
-func (c *ServiceCenterCluster) Stop() {}
+func (c *ClusterIndexer) Stop() {}
 
-func (c *ServiceCenterCluster) Ready() <-chan struct{} {
+func (c *ClusterIndexer) Ready() <-chan struct{} {
 	return closedCh
 }
 
-func ServiceCenter() *ServiceCenterCluster {
+func GetOrCreateClusterIndexer() *ClusterIndexer {
 	clusterOnce.Do(func() {
-		cluster = &ServiceCenterCluster{}
+		cluster = &ClusterIndexer{}
 		cluster.Run()
 	})
 	return cluster
