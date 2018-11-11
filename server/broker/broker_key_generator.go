@@ -19,7 +19,7 @@ package broker
 import (
 	"strconv"
 
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
 const (

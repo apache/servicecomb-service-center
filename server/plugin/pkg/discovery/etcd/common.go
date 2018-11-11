@@ -16,8 +16,8 @@
 package etcd
 
 import (
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"time"
 )

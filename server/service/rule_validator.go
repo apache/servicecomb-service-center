@@ -17,8 +17,8 @@
 package service
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/validate"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/quota"
+	"github.com/apache/servicecomb-service-center/pkg/validate"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/quota"
 	"regexp"
 )
 

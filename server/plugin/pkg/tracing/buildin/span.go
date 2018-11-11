@@ -17,7 +17,7 @@
 package buildin
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
 	"github.com/openzipkin/zipkin-go-opentracing/types"
 	"strconv"

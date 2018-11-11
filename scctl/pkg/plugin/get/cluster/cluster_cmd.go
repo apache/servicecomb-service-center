@@ -16,10 +16,10 @@
 package cluster
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/client/sc"
-	"github.com/apache/incubator-servicecomb-service-center/scctl/pkg/cmd"
-	"github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/get"
-	"github.com/apache/incubator-servicecomb-service-center/scctl/pkg/writer"
+	"github.com/apache/servicecomb-service-center/pkg/client/sc"
+	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
+	"github.com/apache/servicecomb-service-center/scctl/pkg/plugin/get"
+	"github.com/apache/servicecomb-service-center/scctl/pkg/writer"
 	"github.com/spf13/cobra"
 )
 

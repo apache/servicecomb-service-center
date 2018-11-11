@@ -17,7 +17,7 @@
 
 echo "${green}Building Service-center${reset}"
 
-go build -o service-center github.com/apache/incubator-servicecomb-service-center
+go build -o service-center github.com/apache/servicecomb-service-center
 if [ $? == 0 ]; then
 	echo "${green}Service-center built successfully..${reset}"
 else

@@ -14,7 +14,7 @@ Let's assume you want to install 2 instances of Service-Center on VM with follow
 Here we assume your etcd is running on http://10.12.0.4:2379 (you can follow [this](https://github.com/coreos/etcd/blob/master/Documentation/op-guide/container.md) guide to install etcd in cluster mode.)
 
 ##### Step 1
-Download the SC release from [here](https://github.com/apache/incubator-servicecomb-service-center/releases) on all the VM's.
+Download the SC release from [here](https://github.com/apache/servicecomb-service-center/releases) on all the VM's.
 ```
 # Untar the release
 # tar -xvf service-center-X.X.X-linux-amd64.tar.gz
@@ -94,7 +94,7 @@ Verify your instances
 }
 ```
 
-As we can see here the Service-Center can auto-discover all the instances of the Service-Center running in cluster, this auto-discovery feature is used by the [Java-Chassis SDK](https://github.com/apache/incubator-servicecomb-java-chassis) to auto-discover all the instances of the Service-Center by knowing atleast 1 IP of Service-Center running in cluster.
+As we can see here the Service-Center can auto-discover all the instances of the Service-Center running in cluster, this auto-discovery feature is used by the [Java-Chassis SDK](https://github.com/apache/servicecomb-java-chassis) to auto-discover all the instances of the Service-Center by knowing atleast 1 IP of Service-Center running in cluster.
 
 In your microservice.yaml you can provide the SC IP of both the instance or any one instance, sdk can auto-discover other instances and use the other instances to get microservice details in case of failure of the first one.
 ```

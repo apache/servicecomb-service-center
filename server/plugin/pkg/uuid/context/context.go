@@ -20,10 +20,10 @@ package context
 import (
 	"crypto/sha1"
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/uuid"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/uuid/buildin"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	mgr "github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/uuid"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/uuid/buildin"
 	"golang.org/x/net/context"
 )
 

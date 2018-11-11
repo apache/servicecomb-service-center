@@ -18,8 +18,8 @@ package etcdsync
 
 import (
 	"fmt"
-	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/registry/etcd"
-	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/tracing/buildin"
+	_ "github.com/apache/servicecomb-service-center/server/plugin/pkg/registry/etcd"
+	_ "github.com/apache/servicecomb-service-center/server/plugin/pkg/tracing/buildin"
 	"github.com/astaxie/beego"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

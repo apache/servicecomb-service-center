@@ -40,7 +40,7 @@ func TestLoadStruct(t *testing.T) {
 	if len(v.Fields) != 4 {
 		t.Fatalf("TestLoadStruct failed, wrong count of fields")
 	}
-	if v.Name() != "pkg/util.testStru" || v.FullName != "github.com/apache/incubator-servicecomb-service-center/pkg/util.testStru" {
+	if v.Name() != "pkg/util.testStru" || v.FullName != "github.com/apache/servicecomb-service-center/pkg/util.testStru" {
 		t.Fatalf("TestLoadStruct failed")
 	}
 	for _, f := range v.Fields {

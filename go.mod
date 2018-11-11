@@ -1,4 +1,4 @@
-module github.com/apache/incubator-servicecomb-service-center
+module github.com/apache/servicecomb-service-center
 
 replace (
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b => github.com/go-chassis/glog v0.0.0-20180920075250-95a09b2413e9

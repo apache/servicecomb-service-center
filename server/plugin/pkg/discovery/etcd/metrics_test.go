@@ -17,7 +17,7 @@
 package etcd
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/server/metric"
+	"github.com/apache/servicecomb-service-center/server/metric"
 	"github.com/astaxie/beego"
 	"testing"
 )

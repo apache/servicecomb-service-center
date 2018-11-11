@@ -17,7 +17,7 @@
 package v4
 
 import (
-	roa "github.com/apache/incubator-servicecomb-service-center/pkg/rest"
+	roa "github.com/apache/servicecomb-service-center/pkg/rest"
 )
 
 func init() {

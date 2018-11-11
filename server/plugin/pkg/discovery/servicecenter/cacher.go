@@ -16,7 +16,7 @@
 package servicecenter
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
 )
 
 type ServiceCenterCacher struct {

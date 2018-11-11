@@ -17,7 +17,7 @@
 package notification
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
 type Subject struct {

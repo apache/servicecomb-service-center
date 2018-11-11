@@ -16,9 +16,9 @@
 package health
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/client/sc"
-	"github.com/apache/incubator-servicecomb-service-center/scctl/pkg/cmd"
-	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
+	"github.com/apache/servicecomb-service-center/pkg/client/sc"
+	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
+	scerr "github.com/apache/servicecomb-service-center/server/error"
 	"github.com/spf13/cobra"
 )
 

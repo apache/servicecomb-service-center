@@ -20,9 +20,9 @@ package core
 import (
 	"flag"
 	// import the grace package and parse grace cmd line
-	_ "github.com/apache/incubator-servicecomb-service-center/pkg/grace"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
-	"github.com/apache/incubator-servicecomb-service-center/version"
+	_ "github.com/apache/servicecomb-service-center/pkg/grace"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/version"
 	"os"
 	"os/signal"
 	"syscall"

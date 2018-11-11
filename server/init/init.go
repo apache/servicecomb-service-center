@@ -16,7 +16,7 @@
  */
 package init
 
-import "github.com/apache/incubator-servicecomb-service-center/server/core"
+import "github.com/apache/servicecomb-service-center/server/core"
 
 func init() {
 	core.Initialize()

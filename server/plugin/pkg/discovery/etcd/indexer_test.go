@@ -18,9 +18,9 @@ package etcd
 
 import (
 	"context"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/registry"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"testing"
 )

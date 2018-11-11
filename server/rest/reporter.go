@@ -16,7 +16,7 @@
 package rest
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/server/metric"
+	"github.com/apache/servicecomb-service-center/server/metric"
 	dto "github.com/prometheus/client_model/go"
 )
 

@@ -16,8 +16,8 @@
 package servicecenter
 
 import (
-	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery"
+	mgr "github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
 )
 
 func init() {

@@ -16,13 +16,13 @@
 package instance
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/client/sc"
-	"github.com/apache/incubator-servicecomb-service-center/scctl/pkg/cmd"
-	"github.com/apache/incubator-servicecomb-service-center/scctl/pkg/model"
-	"github.com/apache/incubator-servicecomb-service-center/scctl/pkg/plugin/get"
-	"github.com/apache/incubator-servicecomb-service-center/scctl/pkg/writer"
-	admin "github.com/apache/incubator-servicecomb-service-center/server/admin/model"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/pkg/client/sc"
+	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
+	"github.com/apache/servicecomb-service-center/scctl/pkg/model"
+	"github.com/apache/servicecomb-service-center/scctl/pkg/plugin/get"
+	"github.com/apache/servicecomb-service-center/scctl/pkg/writer"
+	admin "github.com/apache/servicecomb-service-center/server/admin/model"
+	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/spf13/cobra"
 	"strings"
 )

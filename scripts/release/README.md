@@ -7,8 +7,8 @@ To make a release of Service-center please follow the below steps
 ```
 ## Clone the code in a proper GOPATH
 
-git clone https://github.com/apache/incubator-servicecomb-service-center.git $GOPATH/src/github.com/apache/incubator-servicecomb-service-center
-cd $GOPATH/src/github.com/apache/incubator-servicecomb-service-center
+git clone https://github.com/apache/servicecomb-service-center.git $GOPATH/src/github.com/apache/servicecomb-service-center
+cd $GOPATH/src/github.com/apache/servicecomb-service-center
 
 ## Download all the dependency
 curl https://glide.sh/get | sh

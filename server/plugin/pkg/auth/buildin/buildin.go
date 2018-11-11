@@ -17,7 +17,7 @@
 package buildin
 
 import (
-	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
+	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"net/http"
 )
 

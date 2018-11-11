@@ -17,14 +17,14 @@
 package govern_test
 
 // initialize
-import _ "github.com/apache/incubator-servicecomb-service-center/server/init"
-import _ "github.com/apache/incubator-servicecomb-service-center/server/bootstrap"
+import _ "github.com/apache/servicecomb-service-center/server/init"
+import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	"github.com/apache/incubator-servicecomb-service-center/server/govern"
-	"github.com/apache/incubator-servicecomb-service-center/server/service"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/core"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/govern"
+	"github.com/apache/servicecomb-service-center/server/service"
 	"github.com/astaxie/beego"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"

@@ -16,18 +16,18 @@
  */
 package server
 
-import _ "github.com/apache/incubator-servicecomb-service-center/server/service/event"
+import _ "github.com/apache/servicecomb-service-center/server/service/event"
 import (
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	"github.com/apache/incubator-servicecomb-service-center/server/mux"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
-	nf "github.com/apache/incubator-servicecomb-service-center/server/service/notification"
-	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
-	"github.com/apache/incubator-servicecomb-service-center/version"
+	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/backend"
+	"github.com/apache/servicecomb-service-center/server/mux"
+	"github.com/apache/servicecomb-service-center/server/plugin"
+	nf "github.com/apache/servicecomb-service-center/server/service/notification"
+	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
+	"github.com/apache/servicecomb-service-center/version"
 	"github.com/astaxie/beego"
 	"golang.org/x/net/context"
 	"os"

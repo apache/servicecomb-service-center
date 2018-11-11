@@ -18,7 +18,7 @@ package buildin
 
 import (
 	"crypto/tls"
-	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
+	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 )
 
 func init() {

@@ -18,7 +18,7 @@ package plugin
 
 import (
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	"io/ioutil"
 	"os"
 	"path/filepath"

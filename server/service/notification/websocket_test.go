@@ -16,13 +16,13 @@
  */
 package notification
 
-import _ "github.com/apache/incubator-servicecomb-service-center/server/init"
+import _ "github.com/apache/servicecomb-service-center/server/init"
 import (
 	"context"
 	"errors"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery/etcd"
-	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/registry/buildin"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
+	_ "github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery/etcd"
+	_ "github.com/apache/servicecomb-service-center/server/plugin/pkg/registry/buildin"
 	"github.com/gorilla/websocket"
 	"net/http"
 	"net/http/httptest"

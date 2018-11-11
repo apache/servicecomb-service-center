@@ -16,7 +16,7 @@
  */
 package cache
 
-import "github.com/apache/incubator-servicecomb-service-center/pkg/util"
+import "github.com/apache/servicecomb-service-center/pkg/util"
 
 type Node struct {
 	// user data

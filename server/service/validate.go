@@ -18,8 +18,8 @@ package service
 
 import (
 	"errors"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"reflect"
 )
 

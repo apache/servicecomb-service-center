@@ -16,15 +16,15 @@
 package plugin
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/auditlog"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/auth"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/quota"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/registry"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/security"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/tls"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/tracing"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/uuid"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/auditlog"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/auth"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/quota"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/security"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/tls"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/tracing"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/uuid"
 )
 
 const (

@@ -17,9 +17,9 @@
 package buildin
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
-	mgr "github.com/apache/incubator-servicecomb-service-center/server/plugin"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/quota"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	mgr "github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/quota"
 	"golang.org/x/net/context"
 )
 

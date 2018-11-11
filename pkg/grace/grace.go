@@ -19,7 +19,7 @@ package grace
 import (
 	"flag"
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	"os"
 	"os/exec"
 	"os/signal"

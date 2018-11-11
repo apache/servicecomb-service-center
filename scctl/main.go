@@ -16,8 +16,8 @@
 package main
 
 import (
-	_ "github.com/apache/incubator-servicecomb-service-center/scctl/bootstrap"
-	"github.com/apache/incubator-servicecomb-service-center/scctl/pkg/cmd"
+	_ "github.com/apache/servicecomb-service-center/scctl/bootstrap"
+	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
 )
 
 func main() {

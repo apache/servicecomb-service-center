@@ -15,7 +15,7 @@
 
 FROM ubuntu:latest
 
-ADD ./apache-servicecomb-incubating-service-center-latest-linux-amd64 /release/
+ADD ./apache-servicecomb-service-center-latest-linux-amd64 /release/
 
 RUN sed -i 's/httpaddr = 127.0.0.1/httpaddr = 0.0.0.0/g' /release/conf/app.conf 
 

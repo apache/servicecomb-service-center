@@ -16,7 +16,7 @@
 package sc
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"io/ioutil"
 	"strings"
 	"time"

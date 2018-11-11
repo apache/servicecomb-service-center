@@ -18,8 +18,8 @@ package task
 
 import (
 	"errors"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/queue"
+	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/queue"
 	"golang.org/x/net/context"
 )
 

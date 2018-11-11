@@ -16,12 +16,12 @@
  */
 package broker_test
 
-import _ "github.com/apache/incubator-servicecomb-service-center/server/init"
-import _ "github.com/apache/incubator-servicecomb-service-center/server/bootstrap"
+import _ "github.com/apache/servicecomb-service-center/server/init"
+import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
 import (
-	"github.com/apache/incubator-servicecomb-service-center/server/broker"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	"github.com/apache/incubator-servicecomb-service-center/server/service"
+	"github.com/apache/servicecomb-service-center/server/broker"
+	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/service"
 	"github.com/astaxie/beego"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"

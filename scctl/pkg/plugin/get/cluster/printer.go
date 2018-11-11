@@ -16,8 +16,8 @@
 package cluster
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/scctl/pkg/writer"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/scctl/pkg/writer"
 )
 
 var (

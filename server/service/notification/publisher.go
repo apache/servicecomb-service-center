@@ -17,7 +17,7 @@
 package notification
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"golang.org/x/net/context"
 	"sync"
 	"time"

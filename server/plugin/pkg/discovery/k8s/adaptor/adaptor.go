@@ -16,7 +16,7 @@
 package adaptor
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/discovery"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
 )
 
 // K8sAdaptor is a discovery service adaptor implement of one kubernetes cluster

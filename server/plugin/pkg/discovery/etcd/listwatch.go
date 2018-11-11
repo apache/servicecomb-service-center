@@ -18,7 +18,7 @@ package etcd
 
 import (
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/pkg/registry"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 	"golang.org/x/net/context"
 	"time"
 )

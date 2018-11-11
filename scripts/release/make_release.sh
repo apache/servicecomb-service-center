@@ -26,7 +26,7 @@ else
 fi
 
 #Package prefix for the release directory
-PACKAGE_PREFIX=apache-servicecomb-incubating-service-center
+PACKAGE_PREFIX=apache-servicecomb-service-center
 
 ## Get the PACKAGE NUMBER
 if [ "X"$3 == "X" ]; then

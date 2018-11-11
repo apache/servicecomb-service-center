@@ -17,7 +17,7 @@
 package metrics
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/server/metric"
+	"github.com/apache/servicecomb-service-center/server/metric"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

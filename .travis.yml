@@ -16,10 +16,10 @@ before_install:
   - npm install -g bower
 
 before_script:
-  - mkdir -p $HOME/gopath/src/github.com/apache/incubator-servicecomb-service-center
-  - rsync -az ${TRAVIS_BUILD_DIR}/ $HOME/gopath/src/github.com/apache/incubator-servicecomb-service-center/
-  - export TRAVIS_BUILD_DIR=$HOME/gopath/src/github.com/apache/incubator-servicecomb-service-center
-  - cd $HOME/gopath/src/github.com/apache/incubator-servicecomb-service-center
+  - mkdir -p $HOME/gopath/src/github.com/apache/servicecomb-service-center
+  - rsync -az ${TRAVIS_BUILD_DIR}/ $HOME/gopath/src/github.com/apache/servicecomb-service-center/
+  - export TRAVIS_BUILD_DIR=$HOME/gopath/src/github.com/apache/servicecomb-service-center
+  - cd $HOME/gopath/src/github.com/apache/servicecomb-service-center
   - glide install
   
 install: true

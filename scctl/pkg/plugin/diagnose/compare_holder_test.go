@@ -16,8 +16,8 @@
 package diagnose
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/server/admin/model"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/admin/model"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"testing"
 )
