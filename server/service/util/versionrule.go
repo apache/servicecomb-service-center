@@ -254,9 +254,9 @@ func (vr *VersionRegexp) validateVersionRule(versionRule string) (err error) {
 func NewVersionRegexp(fuzzy bool) (vr *VersionRegexp) {
 	vr = &VersionRegexp{Fuzzy: fuzzy}
 	if fuzzy {
-		vr.Regex, _ = regexp.Compile(`^\d+(\.\d+){0,2}\+?$|^\d+(\.\d+){0,2}-\d+(\.\d+){0,2}$|^latest$`)
+		vr.Regex, _ = regexp.Compile(`^\d+(\.\d+){0,3}\+?$|^\d+(\.\d+){0,3}-\d+(\.\d+){0,3}$|^latest$`)
 		return
 	}
-	vr.Regex, _ = regexp.Compile(`^\d+(\.\d+){0,2}$`)
+	vr.Regex, _ = regexp.Compile(`^\d+(\.\d+){0,3}$`)
 	return
 }

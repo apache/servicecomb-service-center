@@ -330,6 +330,9 @@ var _ = Describe("Version Rule sorter", func() {
 				Expect(vr.MatchString("1.-.2")).To(BeFalse())
 				Expect(vr.MatchString("60000-1")).To(BeFalse())
 				Expect(vr.MatchString("1.1-2.2")).To(BeTrue())
+				Expect(vr.MatchString("1.1.1.1-2.2.2.2")).To(BeTrue())
+				Expect(vr.MatchString("1.1.1.1.1-2.2.2.2")).To(BeFalse())
+				Expect(vr.MatchString("1.1.1.1-2.2.2.2.2")).To(BeFalse())
 			})
 			It("AtLess", func() {
 				vr := NewVersionRegexp(false)
@@ -343,6 +346,8 @@ var _ = Describe("Version Rule sorter", func() {
 				Expect(vr.MatchString(".+")).To(BeFalse())
 				Expect(vr.MatchString("60000+")).To(BeFalse())
 				Expect(vr.MatchString("1.0+")).To(BeTrue())
+				Expect(vr.MatchString("1.0.0.0+")).To(BeTrue())
+				Expect(vr.MatchString("1.0.0.0.0+")).To(BeFalse())
 			})
 			It("Explicit", func() {
 				vr := NewVersionRegexp(false)
@@ -361,6 +366,8 @@ var _ = Describe("Version Rule sorter", func() {
 				Expect(vr.MatchString("1.")).To(BeFalse())
 				Expect(vr.MatchString(".1")).To(BeFalse())
 				Expect(vr.MatchString("1.4")).To(BeTrue())
+				Expect(vr.MatchString("1.4.0.0")).To(BeTrue())
+				Expect(vr.MatchString("1.4.0.0.0")).To(BeFalse())
 			})
 		})
 		Context("Exception", func() {

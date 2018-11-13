@@ -120,7 +120,7 @@ func TestEtcdClient(t *testing.T) {
 
 	// base test
 	inst := NewRegistry()
-	if inst == nil || firstEndpoint != endpoint {
+	if inst == nil || strings.Index(endpoint, firstEndpoint) < 0 {
 		t.Fatalf("TestEtcdClient failed, %s != %s", firstEndpoint, endpoint)
 	}
 	old1 := registry.Configuration().ClusterAddresses
