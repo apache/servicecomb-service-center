@@ -20,6 +20,7 @@ import _ "github.com/apache/servicecomb-service-center/server/init"
 import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
 import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"github.com/astaxie/beego"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
@@ -45,5 +46,5 @@ var _ = BeforeSuite(func() {
 func getContext() context.Context {
 	return util.SetContext(
 		util.SetDomainProject(context.Background(), "default", "default"),
-		"noCache", "1")
+		serviceUtil.CTX_NOCACHE, "1")
 }

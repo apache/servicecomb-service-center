@@ -58,6 +58,8 @@ const (
 	// the timeout dial to etcd
 	defaultDialTimeout    = 10 * time.Second
 	defaultRequestTimeout = 30 * time.Second
+
+	defaultClusterName = "default"
 )
 
 func WithTimeout(ctx context.Context) (context.Context, context.CancelFunc) {

@@ -27,8 +27,9 @@ const (
 )
 
 var (
-	closedCh = make(chan struct{})
-	repos    []string
+	closedCh      = make(chan struct{})
+	repos         []string
+	registryIndex = 0
 )
 
 func init() {
@@ -41,4 +42,16 @@ func init() {
 	modes := beego.AppConfig.DefaultString("aggregate_mode", AggregateModes)
 	repos = strings.Split(modes, ",")
 	log.Infof("aggregate_mode is %s", repos)
+
+	// here save the index if found the registry plugin in modes list,
+	// it is used for getting the one writable registry to handle requests
+	// from API layer.
+	registry := beego.AppConfig.String("registry_plugin")
+	for i, repo := range repos {
+		if repo == registry {
+			registryIndex = i
+			log.Infof("found the registry index is %d", registryIndex)
+			break
+		}
+	}
 }
