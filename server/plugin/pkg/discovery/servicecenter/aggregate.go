@@ -53,27 +53,17 @@ func (c *SCClientAggregate) GetScCache() (*model.Cache, map[string]error) {
 		if caches == nil {
 			caches = &model.Cache{}
 		}
-
-		c.cacheAppend(client.Cfg.Name, &caches.Microservices, &cache.Microservices)
-		c.cacheAppend(client.Cfg.Name, &caches.Indexes, &cache.Indexes)
-		c.cacheAppend(client.Cfg.Name, &caches.Aliases, &cache.Aliases)
-		c.cacheAppend(client.Cfg.Name, &caches.Tags, &cache.Tags)
-		c.cacheAppend(client.Cfg.Name, &caches.Rules, &cache.Rules)
-		c.cacheAppend(client.Cfg.Name, &caches.RuleIndexes, &cache.RuleIndexes)
-		c.cacheAppend(client.Cfg.Name, &caches.DependencyRules, &cache.DependencyRules)
-		c.cacheAppend(client.Cfg.Name, &caches.Summaries, &cache.Summaries)
-		c.cacheAppend(client.Cfg.Name, &caches.Instances, &cache.Instances)
+		caches.Microservices = append(caches.Microservices, cache.Microservices...)
+		caches.Indexes = append(caches.Indexes, cache.Indexes...)
+		caches.Aliases = append(caches.Aliases, cache.Aliases...)
+		caches.Tags = append(caches.Tags, cache.Tags...)
+		caches.Rules = append(caches.Rules, cache.Rules...)
+		caches.RuleIndexes = append(caches.RuleIndexes, cache.RuleIndexes...)
+		caches.DependencyRules = append(caches.DependencyRules, cache.DependencyRules...)
+		caches.Summaries = append(caches.Summaries, cache.Summaries...)
+		caches.Instances = append(caches.Instances, cache.Instances...)
 	}
 	return caches, errs
-}
-
-func (c *SCClientAggregate) cacheAppend(name string, setter model.Setter, getter model.Getter) {
-	getter.ForEach(func(_ int, v *model.KV) bool {
-		// overwrite the cluster from remote to local
-		v.ClusterName = name
-		setter.SetValue(v)
-		return true
-	})
 }
 
 func (c *SCClientAggregate) GetSchemasByServiceId(domainProject, serviceId string) ([]*pb.Schema, *scerr.Error) {

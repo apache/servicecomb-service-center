@@ -139,6 +139,12 @@ func (c *ClusterIndexer) checkWithConflictHandleFunc(local *ServiceCenterCacher,
 	conflictHandleFunc func(origin *model.KV, conflict model.Getter, index int)) {
 	exists := make(map[string]*model.KV)
 	remote.ForEach(func(i int, v *model.KV) bool {
+		// because the result of the remote return may contain the same data as
+		// the local cache of the current SC. So we need to ignore it and
+		// prevent the aggregation result from increasing.
+		if v.ClusterName == registry.Configuration().ClusterName {
+			return true
+		}
 		if kv, ok := exists[v.Key]; ok {
 			conflictHandleFunc(kv, remote, i)
 			return true
@@ -157,8 +163,8 @@ func (c *ClusterIndexer) checkWithConflictHandleFunc(local *ServiceCenterCacher,
 			newKv.CreateRevision = v.Rev
 			local.Notify(pb.EVT_CREATE, v.Key, newKv)
 		case kv.ModRevision != v.Rev:
-			// if lose some cluster kvs, then skip to notify changes of this cluster
-			// to prevent publish the wrong changes events of kvs
+			// if connect to some cluster failed, then skip to notify changes
+			// of these clusters to prevent publish the wrong changes events of kvs.
 			if err, ok := skipClusters[kv.ClusterName]; ok {
 				log.Errorf(err, "cluster[%s] temporarily unavailable, skip cluster[%s] event %s %s",
 					kv.ClusterName, v.ClusterName, pb.EVT_UPDATE, v.Key)
@@ -175,6 +181,9 @@ func (c *ClusterIndexer) checkWithConflictHandleFunc(local *ServiceCenterCacher,
 	local.Cache().ForEach(func(key string, v *discovery.KeyValue) (next bool) {
 		var exist bool
 		remote.ForEach(func(_ int, v *model.KV) bool {
+			if v.ClusterName == registry.Configuration().ClusterName {
+				return true
+			}
 			exist = v.Key == key
 			return !exist
 		})

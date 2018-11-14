@@ -45,7 +45,8 @@ const (
 	REGISTRY_DEFAULT_LEASE_RENEWALINTERVAL int32 = 30
 	REGISTRY_DEFAULT_LEASE_RETRYTIMES      int32 = 3
 
-	IS_SC_SELF = "sc_self"
+	CTX_SC_SELF     = "_sc_self"
+	CTX_SC_REGISTRY = "_registryOnly"
 )
 
 func init() {
@@ -85,9 +86,10 @@ func prepareSelfRegistration() {
 }
 
 func AddDefaultContextValue(ctx context.Context) context.Context {
-	return util.SetContext(
-		util.SetDomainProject(ctx, REGISTRY_DOMAIN, REGISTRY_PROJECT),
-		IS_SC_SELF, true)
+	return util.SetContext(util.SetContext(util.SetDomainProject(ctx,
+		REGISTRY_DOMAIN, REGISTRY_PROJECT),
+		CTX_SC_SELF, true),
+		CTX_SC_REGISTRY, "1")
 }
 
 func IsDefaultDomainProject(domainProject string) bool {
@@ -116,7 +118,7 @@ func IsShared(key *pb.MicroServiceKey) bool {
 }
 
 func IsSCInstance(ctx context.Context) bool {
-	b, _ := ctx.Value(IS_SC_SELF).(bool)
+	b, _ := ctx.Value(CTX_SC_SELF).(bool)
 	return b
 }
 

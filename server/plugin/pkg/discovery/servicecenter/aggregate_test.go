@@ -13,55 +13,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package registry
+package servicecenter
 
 import (
-	"golang.org/x/net/context"
-	"time"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
+	"testing"
 )
 
-const (
-	Get ActionType = iota
-	Put
-	Delete
-)
-
-const (
-	SORT_NONE SortOrder = iota
-	SORT_ASCEND
-	SORT_DESCEND
-)
-
-const (
-	CMP_VERSION CompareType = iota
-	CMP_CREATE
-	CMP_MOD
-	CMP_VALUE
-)
-
-const (
-	CMP_EQUAL CompareResult = iota
-	CMP_GREATER
-	CMP_LESS
-	CMP_NOT_EQUAL
-)
-
-const (
-	MODE_BOTH CacheMode = iota
-	MODE_CACHE
-	MODE_NO_CACHE
-)
-
-const (
-	// grpc does not allow to transport a large body more then 4MB in a request
-	DEFAULT_PAGE_COUNT = 4096
-	// the timeout dial to etcd
-	defaultDialTimeout    = 10 * time.Second
-	defaultRequestTimeout = 30 * time.Second
-
-	defaultClusterName = "default"
-)
-
-func WithTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
-	return context.WithTimeout(ctx, defaultRegistryConfig.RequestTimeOut)
+func TestNewSCClientAggregate(t *testing.T) {
+	registry.Configuration().ClusterAddresses = "sc-1=127.0.0.1:2379,127.0.0.2:2379"
+	registry.Configuration().InitClusters()
+	c := NewSCClientAggregate()
+	if len(*c) == 0 {
+		t.Fatalf("TestNewSCClientAggregate failed")
+	}
 }

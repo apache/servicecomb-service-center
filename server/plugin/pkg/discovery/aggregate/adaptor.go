@@ -26,6 +26,7 @@ import (
 // Aggregator is a discovery service adaptor implement of one registry cluster
 type Aggregator struct {
 	discovery.Indexer
+	Type     discovery.Type
 	Adaptors []discovery.Adaptor
 }
 
@@ -81,21 +82,16 @@ func getLogConflictFunc(t discovery.Type) func(origin, conflict *discovery.KeyVa
 }
 
 func NewAggregator(t discovery.Type, cfg *discovery.Config) *Aggregator {
-	as := &Aggregator{}
+	as := &Aggregator{Type: t}
 	for _, name := range repos {
 		repo := mgr.Plugins().Get(mgr.DISCOVERY, name).New().(discovery.AdaptorRepository)
 		as.Adaptors = append(as.Adaptors, repo.New(t, cfg))
 	}
+	as.Indexer = NewAggregatorIndexer(as)
 
 	switch t {
-	case backend.SCHEMA:
-		// schema does not been cached, so new the adaptor indexer
-		as.Indexer = NewAdaptorsIndexer(as.Adaptors)
 	case backend.SERVICE_INDEX, backend.SERVICE_ALIAS:
 		NewConflictChecker(as.Cache(), getLogConflictFunc(t))
-		fallthrough
-	default:
-		as.Indexer = discovery.NewCacheIndexer(as.Cache())
 	}
 	return as
 }

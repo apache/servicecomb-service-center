@@ -32,6 +32,10 @@ func (l *CacheResponse) Handle(i *chain.Invocation) {
 	r := i.Context().Value(rest.CTX_REQUEST).(*http.Request)
 	query := r.URL.Query()
 
+	if r.Method != http.MethodGet {
+		i.WithContext(serviceUtil.CTX_REGISTRYONLY, "1")
+	}
+
 	noCache := query.Get(serviceUtil.CTX_NOCACHE) == "1"
 	if noCache {
 		i.WithContext(serviceUtil.CTX_NOCACHE, "1")
