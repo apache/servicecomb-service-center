@@ -64,7 +64,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Service: &pb.MicroService{
 						AppId:       TOO_LONG_APPID[:len(TOO_LONG_APPID)-1],
 						ServiceName: TOO_LONG_SERVICENAME[:len(TOO_LONG_SERVICENAME)-1],
-						Version:     "32767.32767.32767",
+						Version:     "32767.32767.32767.32767",
 						Alias:       TOO_LONG_ALIAS[:len(TOO_LONG_ALIAS)-1],
 						Level:       "BACK",
 						Status:      "UP",
@@ -495,6 +495,20 @@ var _ = Describe("'Micro-service' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
 
+				By("invalid version 4")
+				r = &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						AppId:       "default",
+						ServiceName: "service-validate",
+						Version:     "1.1.0.0.0",
+						Level:       "BACK",
+						Status:      "UP",
+					},
+				}
+				resp, err = serviceResource.Create(getContext(), r)
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
+
 				By("invalid level")
 				r = &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
@@ -837,6 +851,14 @@ var _ = Describe("'Micro-service' service", func() {
 					AppId:       "default",
 					ServiceName: "exist-invalid-version",
 					Version:     "3.32768.0",
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
+				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
+					Type:        "microservice",
+					AppId:       "default",
+					ServiceName: "exist-invalid-version",
+					Version:     "3.0.0.0.0",
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
