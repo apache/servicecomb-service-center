@@ -9,3 +9,6 @@ can be imported in Grafana.
 After the import, you can get the view like blow.
 
 ![Grafana](/docs/integration-grafana.PNG)
+
+Note: As the template has an ASF header, please remove the header first
+if you import this template file.
