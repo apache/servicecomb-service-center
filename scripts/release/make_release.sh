@@ -59,7 +59,7 @@ esac
 export GOARCH=${4:-"amd64"}
 export CGO_ENABLED=${CGO_ENABLED:-0} # prevent to compile cgo file
 export GO_EXTLINK_ENABLED=${GO_EXTLINK_ENABLED:-0} # do not use host linker
-export GO_LDFLAGS=${GO_LDFLAGS:-"-linkmode 'external' -extldflags '-static' -s -w"}
+export GO_LDFLAGS=${GO_LDFLAGS:-" -s -w"}
 
 root_path=$(cd "$(dirname "$0")"; pwd)
 
