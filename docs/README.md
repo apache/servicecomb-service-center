@@ -36,4 +36,4 @@ Swagger [`v4`](/server/core/swagger/v4.yaml)|[`v3`](/server/core/swagger/v3.yaml
 
 - [Integrate with Grafana](/docs/integration-grafana.md)
 
-#### [Contribution Guide](/docs/contribution.md) 
+#### [Contribution Guide](/CONTRIBUTING.md) 
