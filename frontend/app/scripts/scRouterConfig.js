@@ -99,6 +99,14 @@ angular.module('serviceCenter.router', [])
                     }
                 }
             })
+            .state('sc.info.properties', {
+                url: '/properties',
+                views: {
+                    "info": {
+                        templateUrl: 'scripts/modules/serviceCenter/views/serviceProperties.html'
+                    }
+                }
+            })
             .state('sc.info.schema', {
                 url: '/schema',
                 views: {

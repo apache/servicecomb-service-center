@@ -100,5 +100,7 @@ angular.module('serviceCenter')
             "developServiceConsumer": "如何发展服务消费者？",
             "instanceUnregister": "实例何时从服务中心注销？"
         },
-        "viewMoreInfo": "查看更多信息"
+        "viewMoreInfo": "查看更多信息",
+        "properties" : "Properties",
+        "noPropertiesFound" : "No Properties Available for this Microservice"
     });

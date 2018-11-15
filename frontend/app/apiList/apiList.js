@@ -31,6 +31,10 @@ angular.module('serviceCenter')
                 url: 'v4/default/registry/microservices/{{consumerId}}/providers',
                 method: 'GET'
             },
+            particularService: {
+                url: 'v4/default/registry/microservices/{{serviceId}}',
+                method: 'GET'
+            },
             provider: {
                 url: 'v4/default/registry/microservices/{{providerId}}/consumers',
                 method: 'GET'

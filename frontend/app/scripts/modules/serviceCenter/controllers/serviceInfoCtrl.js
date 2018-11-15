@@ -46,6 +46,9 @@ angular.module('serviceCenter.sc')
 			var providerUrl = apiConstant.api.provider.url;
 			var providerApi = providerUrl.replace('{{providerId}}', serviceId);
 			apis.push(providerApi);
+			var serviceUrl = apiConstant.api.particularService.url;
+			var particularServiceAPI = serviceUrl.replace('{{serviceId}}', serviceId);
+			apis.push(particularServiceAPI)
 
 			var promises =[];
 			for (var i = 0; i < apis.length; i++) {
@@ -59,10 +62,12 @@ angular.module('serviceCenter.sc')
 				$scope.instances = response[0].data.instances || [];
 				$scope.providers = response[1].data.providers || [];
 				$scope.consumers = response[2].data.consumers || [];
+				$scope.properties = response[3].data.service.properties || [];
 			},function(error){
 				$scope.instances = [];
 				$scope.providers = [];
 				$scope.consumers = [];
+				$scope.properties = [];
 			});
 
 			$scope.getInstance = function(){
@@ -81,6 +86,12 @@ angular.module('serviceCenter.sc')
 				$state.go('sc.info.schema');
 			};
 
+			$scope.getProperties = function() {
+				$state.go('sc.info.properties');
+			};
+
+
+
 			$scope.convertTime = function(timestamp){
 				return commonService.timeFormat(timestamp);
 			};
@@ -98,6 +109,10 @@ angular.module('serviceCenter.sc')
                 if($state.current.name == "sc.info.schema"){
                     $scope.selectedTab = 3;
                 }
+                if($state.current.name == "sc.info.properties"){
+                    $scope.selectedTab = 4;
+                }
+
 			}
             $scope.getActiveTab();
 

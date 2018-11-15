@@ -57,7 +57,7 @@ limitations under the License.
         <li>
             <a ui-sref="sc.allServices" ui-sref-active="active" ng-class="[{active: $state.current.name === 'sc.info.instance'},
             {activeProvider: $state.current.name === 'sc.info.provider'}, {activeConsumer: $state.current.name === 'sc.info.consumer'},
-            {schemaTab: $state.current.name === 'sc.info.schema'}]"><i class="fa fa-cog" aria-hidden="true"></i> {{ "services" | translate }}</a>
+            {schemaTab: $state.current.name === 'sc.info.schema'},{activeProperties: $state.current.name === 'sc.info.properties'}]"><i class="fa fa-cog" aria-hidden="true"></i> {{ "services" | translate }}</a>
         </li>
         <li>
             <a ui-sref="sc.instances" ui-sref-active="active"><i class="fa fa-cogs" aria-hidden="true"></i> {{ "instances" | translate }}</a>

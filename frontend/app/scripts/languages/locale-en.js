@@ -100,5 +100,7 @@ angular.module('serviceCenter')
             "developServiceConsumer": "How to develop service consumer?",
             "instanceUnregister": "When will the instance get unregistered from service center?"
         },
-        "viewMoreInfo": "View more info"
+        "viewMoreInfo": "View more info",
+        "properties" : "Properties",
+        "noPropertiesFound" : "No Properties Available for this Microservice"
     });
