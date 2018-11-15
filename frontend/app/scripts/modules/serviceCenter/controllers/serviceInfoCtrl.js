@@ -62,12 +62,12 @@ angular.module('serviceCenter.sc')
 				$scope.instances = response[0].data.instances || [];
 				$scope.providers = response[1].data.providers || [];
 				$scope.consumers = response[2].data.consumers || [];
-				$scope.properties = response[3].data.service.properties || [];
+				$scope.service = response[3].data.service || [];
 			},function(error){
 				$scope.instances = [];
 				$scope.providers = [];
 				$scope.consumers = [];
-				$scope.properties = [];
+				$scope.service = [];
 			});
 
 			$scope.getInstance = function(){

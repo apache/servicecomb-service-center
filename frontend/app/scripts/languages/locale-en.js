@@ -101,6 +101,6 @@ angular.module('serviceCenter')
             "instanceUnregister": "When will the instance get unregistered from service center?"
         },
         "viewMoreInfo": "View more info",
-        "properties" : "Properties",
-        "noPropertiesFound" : "No Properties Available for this Microservice"
+        "properties" : "Meta-Data",
+        "noPropertiesFound" : "No Meta-Data Available for this Microservice"
     });

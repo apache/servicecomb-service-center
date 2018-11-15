@@ -17,10 +17,10 @@ limitations under the License.
 <table class="table table-bordered table-responsive margin20" >
     <tbody>
 
-    <div class="well" ng-if="properties.length != 0" style="margin-top: 50px">
-        <pre>{{properties | json}}</pre>
+    <div class="well" ng-if="service.length != 0" style="margin-top: 50px">
+        <pre>{{service | json}}</pre>
     </div>
-    <tr ng-if="properties.length == 0" class="text-center">
+    <tr ng-if="service.length == 0" class="text-center">
         <td colspan="5">{{ "noPropertiesFound" | translate }}</td>
     </tr>
     </tbody>
