@@ -101,6 +101,6 @@ angular.module('serviceCenter')
             "instanceUnregister": "实例何时从服务中心注销？"
         },
         "viewMoreInfo": "查看更多信息",
-        "properties" : "Meta-Data",
-        "noPropertiesFound" : "No Meta-Data Available for this Microservice"
+        "properties" : "元数据",
+        "noPropertiesFound" : "没有查询到更多信息"
     });
