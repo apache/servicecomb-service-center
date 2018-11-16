@@ -20,25 +20,23 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
 
-  etcd:
-    image: 'quay.io/coreos/etcd:latest'
-    # restart: always
-    environment:
-      ETCD_ADVERTISE_CLIENT_URLS: http://etcd:2379
-      ETCD_LISTEN_CLIENT_URLS: http://0.0.0.0:2379
-      ETCD_INITIAL_ADVERTISE_PEER_URLS: http://etcd:2380
-      ETCD_LISTEN_PEER_URLS: http://0.0.0.0:2380
-      ETCD_INITIAL_CLUSTER: default=http://etcd:2380
+  #etcd:
+  #  image: 'quay.io/coreos/etcd:latest'
+  #  # restart: always
+  #  environment:
+  #    ETCD_ADVERTISE_CLIENT_URLS: http://etcd:2379
+  #    ETCD_LISTEN_CLIENT_URLS: http://0.0.0.0:2379
+  #    ETCD_INITIAL_ADVERTISE_PEER_URLS: http://etcd:2380
+  #    ETCD_LISTEN_PEER_URLS: http://0.0.0.0:2380
+  #    ETCD_INITIAL_CLUSTER: default=http://etcd:2380
 
   service-center:
-    depends_on:
-      - etcd
     image: 'servicecomb/service-center:latest'
     # restart: always
     ports:
       - "30100:30100"
-    environment:
-      BACKEND_ADDRESS: etcd:2379
+  #  environment:
+  #    BACKEND_ADDRESS: etcd:2379
 
   scfrontend:
     depends_on:
