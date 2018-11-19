@@ -230,7 +230,7 @@ github.com/prometheus/client_golang/prometheus (ab4214782d022e867e3195b4c9ddb1ca
 github.com/prometheus/client_model/go (6f3806018612930941127f2a7c6c453ba2c527d2)
 github.com/prometheus/common (0866df4b85a18d652b6965be022d007cdf076822)
 github.com/prometheus/procfs/xfs (822d4a1f8edcbcbc71e8d1fd6527b12331a6d0ad)
-github.com/ServiceComb/paas-lager (378a833fc008d8343083dc73e77db142afccf377)
+github.com/go-chassis/paas-lager (50655443dc96e3d633667ca6310251ba2a3fe5c9)
 github.com/bradfitz/gomemcache (1952afaa557dc08e8e0d89eafab110fb501c1a2b)
 github.com/casbin/casbin (91e4fb9209910a1de86b67adc0fce5c35f17369f)
 github.com/garyburd/redigo (57f1cd7de6175c96b423e7ac2534ff2b39e2ef79)
