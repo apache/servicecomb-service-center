@@ -28,7 +28,7 @@ cp  apache-rat-0.12/apache-rat-0.12.jar ./
 Run the Rat tool using the below command
 
 ```
-java -jar apache-rat-0.12.jar -a -d servicecomb-service-center/ -e *.md *.MD .gitignore .gitmodules .travis.yml manifest **vendor** **licenses** bower.json
+java -jar apache-rat-0.12.jar -a -d servicecomb-service-center/ -e *.md *.MD .gitignore .gitmodules .travis.yml manifest **vendor** **licenses** bower.json cert_pwd *.cer *.tpl glide.yaml go.mod go.sum
 ```
 
 Below is the list of the files which has been excluded from the list of RAT tool.
@@ -36,7 +36,9 @@ Below is the list of the files which has been excluded from the list of RAT tool
  - .gitignore .gitmodules .travis.yml : Skip the git files and travis file.
  - manifest **vendor : Skip manifest and all the files under vendor.
  - bower.json :  Skip bower installation file
- 
+ - cert_pwd server.cer trust.cer :  Skip ssl files
+ - *.tpl : Ignore template files
+ - glide.yaml go.mod go.sum : Skip dependency config files 
 You can access the latest RAT report [here](/docs/release/rat-report)  
  
  
