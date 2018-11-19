@@ -77,7 +77,7 @@ func (t *Tree) Remove(ctx context.Context) {
 		return
 	}
 
-	t.roots.Delete(t.filters[0].Name(ctx))
+	t.roots.Delete(t.filters[0].Name(ctx, nil))
 }
 
 func (t *Tree) getOrCreateRoot(ctx context.Context) (node *Node, err error) {
@@ -86,7 +86,7 @@ func (t *Tree) getOrCreateRoot(ctx context.Context) (node *Node, err error) {
 	}
 
 	filter := t.filters[0]
-	name := filter.Name(ctx)
+	name := filter.Name(ctx, nil)
 	item, err := t.roots.Fetch(name, t.Config.TTL(), func() (interface{}, error) {
 		node, err := t.getOrCreateNode(ctx, 0, nil)
 		if err != nil {
@@ -108,7 +108,7 @@ func (t *Tree) getOrCreateRoot(ctx context.Context) (node *Node, err error) {
 
 func (t *Tree) getOrCreateNode(ctx context.Context, idx int, parent *Node) (node *Node, err error) {
 	filter := t.filters[idx]
-	name := t.nodeFullName(filter.Name(ctx), parent)
+	name := t.nodeFullName(filter.Name(ctx, parent), parent)
 
 	if parent == nil {
 		// new a temp node

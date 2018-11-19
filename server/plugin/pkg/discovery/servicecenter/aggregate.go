@@ -61,17 +61,25 @@ func (c *SCClientAggregate) GetScCache(ctx context.Context) (*model.Cache, map[s
 		if caches == nil {
 			caches = &model.Cache{}
 		}
-		caches.Microservices = append(caches.Microservices, cache.Microservices...)
-		caches.Indexes = append(caches.Indexes, cache.Indexes...)
-		caches.Aliases = append(caches.Aliases, cache.Aliases...)
-		caches.Tags = append(caches.Tags, cache.Tags...)
-		caches.Rules = append(caches.Rules, cache.Rules...)
-		caches.RuleIndexes = append(caches.RuleIndexes, cache.RuleIndexes...)
-		caches.DependencyRules = append(caches.DependencyRules, cache.DependencyRules...)
-		caches.Summaries = append(caches.Summaries, cache.Summaries...)
-		caches.Instances = append(caches.Instances, cache.Instances...)
+		c.cacheAppend(client.Cfg.Name, &caches.Microservices, &cache.Microservices)
+		c.cacheAppend(client.Cfg.Name, &caches.Indexes, &cache.Indexes)
+		c.cacheAppend(client.Cfg.Name, &caches.Aliases, &cache.Aliases)
+		c.cacheAppend(client.Cfg.Name, &caches.Tags, &cache.Tags)
+		c.cacheAppend(client.Cfg.Name, &caches.Rules, &cache.Rules)
+		c.cacheAppend(client.Cfg.Name, &caches.RuleIndexes, &cache.RuleIndexes)
+		c.cacheAppend(client.Cfg.Name, &caches.DependencyRules, &cache.DependencyRules)
+		c.cacheAppend(client.Cfg.Name, &caches.Summaries, &cache.Summaries)
+		c.cacheAppend(client.Cfg.Name, &caches.Instances, &cache.Instances)
 	}
 	return caches, errs
+}
+
+func (c *SCClientAggregate) cacheAppend(name string, setter model.Setter, getter model.Getter) {
+	getter.ForEach(func(_ int, v *model.KV) bool {
+		v.ClusterName = name
+		setter.SetValue(v)
+		return true
+	})
 }
 
 func (c *SCClientAggregate) GetSchemasByServiceId(ctx context.Context, domainProject, serviceId string) (*discovery.Response, *scerr.Error) {
@@ -142,7 +150,6 @@ func (c *SCClientAggregate) GetInstancesByServiceId(ctx context.Context, domainP
 				ClusterName: client.Cfg.Name,
 			})
 		}
-		return &response, nil
 	}
 	return &response, nil
 }

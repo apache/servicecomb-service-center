@@ -566,32 +566,20 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 
 	// cache
 	var item *cache.VersionRuleCacheItem
-	noCache, cacheOnly := ctx.Value(serviceUtil.CTX_NOCACHE) == "1", ctx.Value(serviceUtil.CTX_CACHEONLY) == "1"
 	rev, _ := ctx.Value(serviceUtil.CTX_REQUEST_REVISION).(string)
-	reqRev, _ := serviceUtil.ParseRevision(rev)
-	cloneCtx := util.CloneContext(ctx)
-
-	for i := 0; i < 2; i++ {
-		item, err = cache.FindInstances.Get(cloneCtx, service, provider, in.Tags)
-		if err != nil {
-			log.Errorf(err, "FindInstancesCache.Get failed, %s failed", findFlag())
-			return &pb.FindInstancesResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
-			}, err
-		}
-		if item == nil {
-			mes := fmt.Errorf("%s failed, provider does not exist.", findFlag())
-			log.Errorf(mes, "FindInstancesCache.Get failed")
-			return &pb.FindInstancesResponse{
-				Response: pb.CreateResponse(scerr.ErrServiceNotExists, mes.Error()),
-			}, nil
-		}
-
-		cacheRev, _ := serviceUtil.ParseRevision(item.Rev)
-		if noCache || cacheOnly || reqRev <= cacheRev {
-			break
-		}
-		cloneCtx = util.SetContext(cloneCtx, serviceUtil.CTX_NOCACHE, "1")
+	item, err = cache.FindInstances.Get(ctx, service, provider, in.Tags, rev)
+	if err != nil {
+		log.Errorf(err, "FindInstancesCache.Get failed, %s failed", findFlag())
+		return &pb.FindInstancesResponse{
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+	if item == nil {
+		mes := fmt.Errorf("%s failed, provider does not exist.", findFlag())
+		log.Errorf(mes, "FindInstancesCache.Get failed")
+		return &pb.FindInstancesResponse{
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists, mes.Error()),
+		}, nil
 	}
 
 	// add dependency queue
@@ -618,8 +606,9 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 
 	instances := item.Instances
 	if rev == item.Rev {
-		instances = instances[:0]
+		instances = nil // for gRPC
 	}
+	// TODO support gRPC output context
 	ctx = util.SetContext(ctx, serviceUtil.CTX_RESPONSE_REVISION, item.Rev)
 	return &pb.FindInstancesResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Query service instances successfully."),

@@ -36,7 +36,9 @@ func init() {
 		&VersionRuleFilter{},
 		&TagsFilter{},
 		&AccessibleFilter{},
-		&InstancesFilter{})
+		&InstancesFilter{},
+		&RevisionFilter{},
+	)
 }
 
 type VersionRuleCacheItem struct {
@@ -44,17 +46,40 @@ type VersionRuleCacheItem struct {
 	ServiceIds  []string
 	Instances   []*pb.MicroServiceInstance
 	Rev         string
+
+	broken bool
+	queue  chan struct{}
+}
+
+func (vi *VersionRuleCacheItem) InitBrokenQueue() {
+	if vi.queue == nil {
+		vi.queue = make(chan struct{}, 1)
+	}
+	vi.broken = false
+	vi.queue <- struct{}{}
+}
+
+func (vi *VersionRuleCacheItem) BrokenWait() bool {
+	<-vi.queue
+	return vi.broken
+}
+
+func (vi *VersionRuleCacheItem) Broken() {
+	vi.broken = true
+	close(vi.queue)
 }
 
 type FindInstancesCache struct {
 	*cache.Tree
 }
 
-func (f *FindInstancesCache) Get(ctx context.Context, consumer *pb.MicroService, provider *pb.MicroServiceKey, tags []string) (*VersionRuleCacheItem, error) {
-	cloneCtx := context.WithValue(context.WithValue(context.WithValue(ctx,
+func (f *FindInstancesCache) Get(ctx context.Context, consumer *pb.MicroService, provider *pb.MicroServiceKey,
+	tags []string, rev string) (*VersionRuleCacheItem, error) {
+	cloneCtx := context.WithValue(context.WithValue(context.WithValue(context.WithValue(ctx,
 		CTX_FIND_CONSUMER, consumer),
 		CTX_FIND_PROVIDER, provider),
-		CTX_FIND_TAGS, tags)
+		CTX_FIND_TAGS, tags),
+		CTX_FIND_REQUEST_REV, rev)
 
 	node, err := f.Tree.Get(cloneCtx, cache.Options().Temporary(ctx.Value(serviceUtil.CTX_NOCACHE) == "1"))
 	if node == nil {

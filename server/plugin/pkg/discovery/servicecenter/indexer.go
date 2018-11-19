@@ -19,16 +19,17 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/backend"
 	scerr "github.com/apache/servicecomb-service-center/server/error"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 	"golang.org/x/net/context"
-	"strings"
 )
 
 type ClusterIndexer struct {
 	*discovery.CacheIndexer
 	Client *SCClientAggregate
+	Type   discovery.Type
 }
 
 func (i *ClusterIndexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (resp *discovery.Response, err error) {
@@ -54,16 +55,16 @@ func (i *ClusterIndexer) search(ctx context.Context, opts ...registry.PluginOpOp
 	op := registry.OpGet(opts...)
 	key := util.BytesToStringWithNoCopy(op.Key)
 
-	log.Debugf("search '%s' match special options, request sc server, opts: %s", key, op)
-
-	switch {
-	case strings.Index(key, core.GetServiceSchemaRootKey("")) == 0:
-		return i.searchSchemas(ctx, op)
-	case strings.Index(key, core.GetInstanceRootKey("")) == 0:
-		return i.searchInstances(ctx, op)
+	switch i.Type {
+	case backend.SCHEMA:
+		r, err = i.searchSchemas(ctx, op)
+	case backend.INSTANCE:
+		r, err = i.searchInstances(ctx, op)
 	default:
 		return &discovery.Response{}, nil
 	}
+	log.Debugf("search '%s' match special options, request sc server, opts: %s", key, op)
+	return
 }
 
 func (i *ClusterIndexer) searchSchemas(ctx context.Context, op registry.PluginOp) (*discovery.Response, error) {
@@ -100,9 +101,10 @@ func (i *ClusterIndexer) searchInstances(ctx context.Context, op registry.Plugin
 	return resp, nil
 }
 
-func NewClusterIndexer(cache discovery.Cache) *ClusterIndexer {
+func NewClusterIndexer(t discovery.Type, cache discovery.Cache) *ClusterIndexer {
 	return &ClusterIndexer{
 		CacheIndexer: discovery.NewCacheIndexer(cache),
 		Client:       GetOrCreateSCClient(),
+		Type:         t,
 	}
 }

@@ -48,13 +48,13 @@ func (se *ServiceCenterAdaptor) Ready() <-chan struct{} {
 func NewServiceCenterAdaptor(t discovery.Type, cfg *discovery.Config) *ServiceCenterAdaptor {
 	if t == backend.SCHEMA {
 		return &ServiceCenterAdaptor{
-			Indexer: NewClusterIndexer(discovery.NullCache),
+			Indexer: NewClusterIndexer(t, discovery.NullCache),
 			Cacher:  discovery.NullCacher,
 		}
 	} else {
 		cache := discovery.NewKvCache(t.String(), cfg)
 		return &ServiceCenterAdaptor{
-			Indexer: NewClusterIndexer(cache),
+			Indexer: NewClusterIndexer(t, cache),
 			Cacher:  BuildCacher(t, cfg, cache),
 		}
 	}

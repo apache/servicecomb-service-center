@@ -1226,12 +1226,10 @@ var _ = Describe("'Instance' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
 				rev, _ := ctx.Value(serviceUtil.CTX_RESPONSE_REVISION).(string)
-				reqRev, reqCount := serviceUtil.ParseRevision(rev)
-				Expect(int64(len(respFind.Instances))).To(Equal(reqCount))
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId8))
-				Expect(reqRev).NotTo(Equal(0))
+				Expect(len(rev)).NotTo(Equal(0))
 
-				util.SetContext(ctx, serviceUtil.CTX_REQUEST_REVISION, strconv.FormatInt(reqRev-1, 10))
+				util.SetContext(ctx, serviceUtil.CTX_REQUEST_REVISION, "x")
 				respFind, err = instanceResource.Find(ctx, &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId8,
 					AppId:             "query_instance",
@@ -1240,20 +1238,6 @@ var _ = Describe("'Instance' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
-				Expect(int64(len(respFind.Instances))).To(Equal(reqCount))
-				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId8))
-				Expect(ctx.Value(serviceUtil.CTX_RESPONSE_REVISION)).To(Equal(rev))
-
-				util.SetContext(ctx, serviceUtil.CTX_REQUEST_REVISION, strconv.FormatInt(reqRev+1, 10))
-				respFind, err = instanceResource.Find(ctx, &pb.FindInstancesRequest{
-					ConsumerServiceId: serviceId8,
-					AppId:             "query_instance",
-					ServiceName:       "query_instance_with_rev",
-					VersionRule:       "1.0.0",
-				})
-				Expect(err).To(BeNil())
-				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
-				Expect(int64(len(respFind.Instances))).To(Equal(reqCount))
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId8))
 				Expect(ctx.Value(serviceUtil.CTX_RESPONSE_REVISION)).To(Equal(rev))
 

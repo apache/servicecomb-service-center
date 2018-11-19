@@ -26,12 +26,12 @@ import (
 type level1 struct {
 }
 
-func (l *level1) Name(ctx context.Context) string {
+func (l *level1) Name(ctx context.Context, _ *Node) string {
 	return ctx.Value("key1").(string)
 }
 
 func (l *level1) Init(ctx context.Context, parent *Node) (node *Node, err error) {
-	p := l.Name(ctx)
+	p := l.Name(ctx, parent)
 	if p == "err" {
 		return nil, fmt.Errorf("wrong logic")
 	}
@@ -51,7 +51,7 @@ type level2 struct {
 	changed string
 }
 
-func (l *level2) Name(ctx context.Context) string {
+func (l *level2) Name(ctx context.Context, _ *Node) string {
 	return ctx.Value("key2").(string)
 }
 
@@ -60,7 +60,7 @@ func (l *level2) Init(ctx context.Context, parent *Node) (node *Node, err error)
 		return
 	}
 
-	p := l.Name(ctx)
+	p := l.Name(ctx, parent)
 	if p == "err" {
 		return nil, fmt.Errorf("wrong logic")
 	}

@@ -28,14 +28,14 @@ import (
 type AccessibleFilter struct {
 }
 
-func (f *AccessibleFilter) Name(ctx context.Context) string {
+func (f *AccessibleFilter) Name(ctx context.Context, _ *cache.Node) string {
 	consumer := ctx.Value(CTX_FIND_CONSUMER).(*pb.MicroService)
 	return consumer.ServiceId
 }
 
 func (f *AccessibleFilter) Init(ctx context.Context, parent *cache.Node) (node *cache.Node, err error) {
 	var ids []string
-	consumerId := f.Name(ctx)
+	consumerId := ctx.Value(CTX_FIND_CONSUMER).(*pb.MicroService).ServiceId
 	pCopy := *parent.Cache.Get(CACHE_FIND).(*VersionRuleCacheItem)
 	for _, providerServiceId := range pCopy.ServiceIds {
 		if err := serviceUtil.Accessible(ctx, consumerId, providerServiceId); err != nil {

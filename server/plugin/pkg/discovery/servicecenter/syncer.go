@@ -116,7 +116,7 @@ func (c *Syncer) checkWithConflictHandleFunc(local *ServiceCenterCacher, remote 
 			return true
 		}
 		exists[v.Key] = v
-		kv := local.Cache().Get(v.Key)
+		old := local.Cache().Get(v.Key)
 		newKv := &discovery.KeyValue{
 			Key:         util.StringToBytesWithNoCopy(v.Key),
 			Value:       v.Value,
@@ -124,20 +124,20 @@ func (c *Syncer) checkWithConflictHandleFunc(local *ServiceCenterCacher, remote 
 			ClusterName: v.ClusterName,
 		}
 		switch {
-		case kv == nil:
+		case old == nil:
 			newKv.Version = 1
 			newKv.CreateRevision = v.Rev
 			local.Notify(pb.EVT_CREATE, v.Key, newKv)
-		case kv.ModRevision != v.Rev:
+		case old.ModRevision != v.Rev:
 			// if connect to some cluster failed, then skip to notify changes
 			// of these clusters to prevent publish the wrong changes events of kvs.
-			if err, ok := skipClusters[kv.ClusterName]; ok {
+			if err, ok := skipClusters[old.ClusterName]; ok {
 				log.Errorf(err, "cluster[%s] temporarily unavailable, skip cluster[%s] event %s %s",
-					kv.ClusterName, v.ClusterName, pb.EVT_UPDATE, v.Key)
+					old.ClusterName, v.ClusterName, pb.EVT_UPDATE, v.Key)
 				break
 			}
-			newKv.Version = kv.ModRevision - kv.ModRevision
-			newKv.CreateRevision = kv.CreateRevision
+			newKv.Version = 1 + old.Version
+			newKv.CreateRevision = old.CreateRevision
 			local.Notify(pb.EVT_UPDATE, v.Key, newKv)
 		}
 		return true

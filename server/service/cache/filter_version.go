@@ -28,7 +28,7 @@ import (
 type VersionRuleFilter struct {
 }
 
-func (f *VersionRuleFilter) Name(ctx context.Context) string {
+func (f *VersionRuleFilter) Name(ctx context.Context, _ *cache.Node) string {
 	provider := ctx.Value(CTX_FIND_PROVIDER).(*pb.MicroServiceKey)
 	return provider.Version
 }

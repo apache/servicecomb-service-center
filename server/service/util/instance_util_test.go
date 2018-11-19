@@ -25,11 +25,17 @@ import (
 )
 
 func TestFormatRevision(t *testing.T) {
-	if "1.1" != FormatRevision(1, 1) {
-		t.Fatalf("TestFormatRevision failed")
+	// null
+	if x := FormatRevision(nil, nil); "da39a3ee5e6b4b0d3255bfef95601890afd80709" != x {
+		t.Fatalf("TestFormatRevision failed, %s", x)
 	}
-	if a, b := ParseRevision("1.1"); a != 1 || b != 1 {
-		t.Fatalf("TestFormatRevision failed")
+	// 1.1,11.1,
+	if x := FormatRevision([]int64{1, 11}, []int64{1, 1}); "87aa7d310290ff4f93248c0aed6870b928edf45a" != x {
+		t.Fatalf("TestFormatRevision failed, %s", x)
+	}
+	// 1.11,1.1,
+	if x := FormatRevision([]int64{1, 1}, []int64{11, 1}); "24675d196e3dea5be0c774cab281366640fc99ef" != x {
+		t.Fatalf("TestFormatRevision failed, %s", x)
 	}
 }
 

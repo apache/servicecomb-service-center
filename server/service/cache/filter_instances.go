@@ -26,24 +26,49 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
+	"sort"
 )
+
+var clustersIndex = make(map[string]int)
+
+func init() {
+	var clusters []string
+	for name := range registry.Configuration().Clusters {
+		clusters = append(clusters, name)
+	}
+	sort.Strings(clusters)
+	for i, name := range clusters {
+		clustersIndex[name] = i
+	}
+}
 
 type InstancesFilter struct {
 }
 
-func (f *InstancesFilter) Name(ctx context.Context) string {
+func (f *InstancesFilter) Name(ctx context.Context, _ *cache.Node) string {
 	return ""
 }
 
 func (f *InstancesFilter) Init(ctx context.Context, parent *cache.Node) (node *cache.Node, err error) {
-	provider := ctx.Value(CTX_FIND_PROVIDER).(*pb.MicroServiceKey)
 	pCopy := *parent.Cache.Get(CACHE_FIND).(*VersionRuleCacheItem)
+	pCopy.Instances, pCopy.Rev, err = f.FindInstances(ctx, pCopy.ServiceIds)
+	if err != nil {
+		return
+	}
 
+	pCopy.InitBrokenQueue()
+	node = cache.NewNode()
+	node.Cache.Set(CACHE_FIND, &pCopy)
+	return
+}
+
+func (f *InstancesFilter) FindInstances(ctx context.Context, serviceIds []string) (instances []*pb.MicroServiceInstance, rev string, err error) {
+	provider := ctx.Value(CTX_FIND_PROVIDER).(*pb.MicroServiceKey)
 	var (
-		instances []*pb.MicroServiceInstance
-		rev       int64
+		maxRevs = make([]int64, len(clustersIndex))
+		counts  = make([]int64, len(clustersIndex))
 	)
-	for _, providerServiceId := range pCopy.ServiceIds {
+	for _, providerServiceId := range serviceIds {
 		key := apt.GenerateInstanceKey(provider.Tenant, providerServiceId, "")
 		opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(key), registry.WithPrefix())
 		resp, err := backend.Store().Instance().Search(ctx, opts...)
@@ -52,21 +77,20 @@ func (f *InstancesFilter) Init(ctx context.Context, parent *cache.Node) (node *c
 			findFlag := fmt.Sprintf("consumer '%s' find provider %s/%s/%s", consumer.ServiceId,
 				provider.AppId, provider.ServiceName, provider.Version)
 			log.Errorf(err, "Instance().Search failed, %s", findFlag)
-			return nil, err
+			return nil, "", err
 		}
 
 		for _, kv := range resp.Kvs {
-			if kv.ModRevision > rev {
-				rev = kv.ModRevision
+			if i, ok := clustersIndex[kv.ClusterName]; ok {
+				if kv.ModRevision > maxRevs[i] {
+					maxRevs[i] = kv.ModRevision
+				}
+				counts[i]++
 			}
 			instances = append(instances, kv.Value.(*pb.MicroServiceInstance))
 		}
+
 	}
 
-	pCopy.Instances = instances
-	pCopy.Rev = serviceUtil.FormatRevision(rev, int64(len(instances)))
-
-	node = cache.NewNode()
-	node.Cache.Set(CACHE_FIND, &pCopy)
-	return
+	return instances, serviceUtil.FormatRevision(maxRevs, counts), nil
 }

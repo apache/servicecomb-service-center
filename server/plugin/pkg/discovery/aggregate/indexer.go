@@ -25,6 +25,7 @@ import (
 
 type AdaptorsIndexer struct {
 	Adaptors []discovery.Adaptor
+	Unique   bool
 }
 
 func (i *AdaptorsIndexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (*discovery.Response, error) {
@@ -42,43 +43,69 @@ func (i *AdaptorsIndexer) Search(ctx context.Context, opts ...registry.PluginOpO
 			if _, ok := exists[key]; !ok {
 				exists[key] = struct{}{}
 				response.Kvs = append(response.Kvs, kv)
-				response.Count += 1
 			}
+		}
+		response.Count += resp.Count
+		if i.Unique && response.Count > 0 {
+			break
 		}
 	}
 	return &response, nil
 }
 
-func NewAdaptorsIndexer(as []discovery.Adaptor) *AdaptorsIndexer {
-	return &AdaptorsIndexer{Adaptors: as}
+func NewAdaptorsIndexer(t discovery.Type, as []discovery.Adaptor) *AdaptorsIndexer {
+	ai := &AdaptorsIndexer{Adaptors: as}
+	switch t {
+	case backend.INSTANCE, backend.LEASE, backend.DEPENDENCY_RULE:
+	default:
+		ai.Unique = true
+	}
+	return ai
 }
 
 type AggregatorIndexer struct {
-	Indexer  discovery.Indexer
-	Registry discovery.Indexer
+	*discovery.CacheIndexer
+	AdaptorsIndexer discovery.Indexer
+	LocalIndexer    discovery.Indexer
 }
 
-func (i *AggregatorIndexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (*discovery.Response, error) {
-	op := registry.OptionsToOp(opts...)
-	if op.RegistryOnly {
-		return i.Registry.Search(ctx, opts...)
+func (i *AggregatorIndexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (resp *discovery.Response, err error) {
+	op := registry.OpGet(opts...)
+
+	if op.NoCache() {
+		return i.search(ctx, opts...)
 	}
 
-	return i.Indexer.Search(ctx, opts...)
+	resp, err = i.CacheIndexer.Search(ctx, opts...)
+	if err != nil {
+		return
+	}
+
+	if resp.Count > 0 || op.CacheOnly() {
+		return resp, nil
+	}
+
+	return i.search(ctx, opts...)
+}
+
+func (i *AggregatorIndexer) search(ctx context.Context, opts ...registry.PluginOpOption) (*discovery.Response, error) {
+	op := registry.OptionsToOp(opts...)
+	if op.RegistryOnly {
+		return i.LocalIndexer.Search(ctx, opts...)
+	}
+
+	return i.AdaptorsIndexer.Search(ctx, opts...)
 }
 
 func NewAggregatorIndexer(as *Aggregator) *AggregatorIndexer {
-	ai := &AggregatorIndexer{}
-	switch as.Type {
-	case backend.SCHEMA:
-		// schema does not been cached
-		ai.Indexer = NewAdaptorsIndexer(as.Adaptors)
-	default:
-		ai.Indexer = discovery.NewCacheIndexer(as.Cache())
+	indexer := NewAdaptorsIndexer(as.Type, as.Adaptors)
+	ai := &AggregatorIndexer{
+		CacheIndexer:    discovery.NewCacheIndexer(as.Cache()),
+		AdaptorsIndexer: indexer,
+		LocalIndexer:    indexer,
 	}
-	ai.Registry = ai.Indexer
 	if registryIndex >= 0 {
-		ai.Registry = as.Adaptors[registryIndex]
+		ai.LocalIndexer = as.Adaptors[registryIndex]
 	}
 	return ai
 }

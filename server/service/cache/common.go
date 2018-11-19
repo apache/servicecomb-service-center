@@ -17,10 +17,11 @@
 package cache
 
 const (
-	CTX_FIND_CONSUMER = "consumer"
-	CTX_FIND_PROVIDER = "provider"
-	CTX_FIND_TAGS     = "tags"
+	CTX_FIND_CONSUMER    = "_consumer"
+	CTX_FIND_PROVIDER    = "_provider"
+	CTX_FIND_TAGS        = "_tags"
+	CTX_FIND_REQUEST_REV = "_rev"
 
-	CACHE_FIND = "find"
-	CACHE_DEP  = "dep"
+	CACHE_FIND = "_find"
+	CACHE_DEP  = "_dep"
 )

@@ -69,7 +69,7 @@ func (i *EtcdIndexer) Search(ctx context.Context, opts ...registry.PluginOpOptio
 
 	kvs := make([]*discovery.KeyValue, 0, len(resp.Kvs))
 	for _, src := range resp.Kvs {
-		kv := new(discovery.KeyValue)
+		kv := discovery.NewKeyValue()
 		if err = FromEtcdKeyValue(kv, src, p); err != nil {
 			continue
 		}
