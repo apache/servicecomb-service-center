@@ -26,7 +26,7 @@ import (
 )
 
 func TestClusterIndexer_Sync(t *testing.T) {
-	indexer := &ClusterIndexer{}
+	syncer := &Syncer{}
 	cache := discovery.NewKvCache("test", discovery.Configure())
 	cfg := discovery.Configure()
 	sccacher := NewServiceCenterCacher(cfg, cache)
@@ -36,7 +36,7 @@ func TestClusterIndexer_Sync(t *testing.T) {
 	cfg.WithEventFunc(func(discovery.KvEvent) {
 		t.Fatalf("TestClusterIndexer_Sync failed")
 	})
-	indexer.checkWithConflictHandleFunc(sccacher, &arr, nil, func(*model.KV, model.Getter, int) {
+	syncer.checkWithConflictHandleFunc(sccacher, &arr, nil, func(*model.KV, model.Getter, int) {
 		t.Fatalf("TestClusterIndexer_Sync failed")
 	})
 
@@ -49,7 +49,7 @@ func TestClusterIndexer_Sync(t *testing.T) {
 	})
 	arr = model.MicroserviceIndexSlice{}
 	arr.SetValue(&model.KV{Key: "/a", Value: "a", Rev: 1, ClusterName: "a"})
-	indexer.checkWithConflictHandleFunc(sccacher, &arr, nil, func(*model.KV, model.Getter, int) {
+	syncer.checkWithConflictHandleFunc(sccacher, &arr, nil, func(*model.KV, model.Getter, int) {
 		t.Fatalf("TestClusterIndexer_Sync failed")
 	})
 
@@ -62,7 +62,7 @@ func TestClusterIndexer_Sync(t *testing.T) {
 	})
 	arr = model.MicroserviceIndexSlice{}
 	arr.SetValue(&model.KV{Key: "/a", Value: "aa", Rev: 2, ClusterName: "a"})
-	indexer.checkWithConflictHandleFunc(sccacher, &arr, nil, func(kv *model.KV, _ model.Getter, _ int) {
+	syncer.checkWithConflictHandleFunc(sccacher, &arr, nil, func(kv *model.KV, _ model.Getter, _ int) {
 		t.Fatalf("TestClusterIndexer_Sync failed %v", kv)
 	})
 
@@ -70,7 +70,7 @@ func TestClusterIndexer_Sync(t *testing.T) {
 	cfg.WithEventFunc(func(evt discovery.KvEvent) {
 		t.Fatalf("TestClusterIndexer_Sync failed, %v", evt)
 	})
-	indexer.checkWithConflictHandleFunc(sccacher, &arr, nil, func(*model.KV, model.Getter, int) {
+	syncer.checkWithConflictHandleFunc(sccacher, &arr, nil, func(*model.KV, model.Getter, int) {
 		t.Fatalf("TestClusterIndexer_Sync failed")
 	})
 
@@ -81,7 +81,7 @@ func TestClusterIndexer_Sync(t *testing.T) {
 	arr = model.MicroserviceIndexSlice{}
 	arr.SetValue(&model.KV{Key: "/a", Value: "aa", Rev: 2, ClusterName: "a"})
 	arr.SetValue(&model.KV{Key: "/a", Value: "aa", Rev: 2, ClusterName: "b"})
-	indexer.checkWithConflictHandleFunc(sccacher, &arr, nil, indexer.logConflictFunc)
+	syncer.checkWithConflictHandleFunc(sccacher, &arr, nil, syncer.logConflictFunc)
 
 	// case: conflict and print log
 	func() {
@@ -92,7 +92,7 @@ func TestClusterIndexer_Sync(t *testing.T) {
 		arr = model.MicroserviceIndexSlice{}
 		arr.SetValue(&model.KV{Key: "/a", Value: "aa", Rev: 2, ClusterName: "a"})
 		arr.SetValue(&model.KV{Key: "/a", Value: "ab", Rev: 2, ClusterName: "b"})
-		indexer.checkWithConflictHandleFunc(sccacher, &arr, nil, indexer.logConflictFunc)
+		syncer.checkWithConflictHandleFunc(sccacher, &arr, nil, syncer.logConflictFunc)
 		// '/a' is incorrect key and logConflictFunc will be excepted to panic here
 		t.Fatalf("TestClusterIndexer_Sync failed")
 	}()
@@ -103,7 +103,7 @@ func TestClusterIndexer_Sync(t *testing.T) {
 	})
 	arr = model.MicroserviceIndexSlice{}
 	arr.SetValue(&model.KV{Key: "/a", Value: "ab", Rev: 3, ClusterName: "b"})
-	indexer.checkWithConflictHandleFunc(sccacher, &arr, map[string]error{"a": fmt.Errorf("error")}, func(kv *model.KV, _ model.Getter, _ int) {
+	syncer.checkWithConflictHandleFunc(sccacher, &arr, map[string]error{"a": fmt.Errorf("error")}, func(kv *model.KV, _ model.Getter, _ int) {
 		t.Fatalf("TestClusterIndexer_Sync failed %v", kv)
 	})
 
@@ -112,7 +112,7 @@ func TestClusterIndexer_Sync(t *testing.T) {
 		t.Fatalf("TestClusterIndexer_Sync failed, %v", evt)
 	})
 	arr = model.MicroserviceIndexSlice{}
-	indexer.checkWithConflictHandleFunc(sccacher, &arr, map[string]error{"a": fmt.Errorf("error")}, func(kv *model.KV, _ model.Getter, _ int) {
+	syncer.checkWithConflictHandleFunc(sccacher, &arr, map[string]error{"a": fmt.Errorf("error")}, func(kv *model.KV, _ model.Getter, _ int) {
 		t.Fatalf("TestClusterIndexer_Sync failed %v", kv)
 	})
 
@@ -124,7 +124,7 @@ func TestClusterIndexer_Sync(t *testing.T) {
 		}
 	})
 	arr = model.MicroserviceIndexSlice{}
-	indexer.checkWithConflictHandleFunc(sccacher, &arr, nil, func(kv *model.KV, _ model.Getter, _ int) {
+	syncer.checkWithConflictHandleFunc(sccacher, &arr, nil, func(kv *model.KV, _ model.Getter, _ int) {
 		t.Fatalf("TestClusterIndexer_Sync failed %v", kv)
 	})
 
@@ -137,7 +137,7 @@ func TestClusterIndexer_Sync(t *testing.T) {
 	})
 	arr = model.MicroserviceIndexSlice{}
 	arr.SetValue(&model.KV{Key: "/a", Value: "a", Rev: 1, ClusterName: registry.Configuration().ClusterName})
-	indexer.checkWithConflictHandleFunc(sccacher, &arr, nil, func(*model.KV, model.Getter, int) {
+	syncer.checkWithConflictHandleFunc(sccacher, &arr, nil, func(*model.KV, model.Getter, int) {
 		t.Fatalf("TestClusterIndexer_Sync failed")
 	})
 
@@ -151,7 +151,7 @@ func TestClusterIndexer_Sync(t *testing.T) {
 	arr = model.MicroserviceIndexSlice{}
 	arr.SetValue(&model.KV{Key: "/a", Value: "x", Rev: 2, ClusterName: registry.Configuration().ClusterName})
 	arr.SetValue(&model.KV{Key: "/a", Value: "aa", Rev: 2, ClusterName: "a"})
-	indexer.checkWithConflictHandleFunc(sccacher, &arr, nil, func(kv *model.KV, _ model.Getter, _ int) {
+	syncer.checkWithConflictHandleFunc(sccacher, &arr, nil, func(kv *model.KV, _ model.Getter, _ int) {
 		t.Fatalf("TestClusterIndexer_Sync failed %v", kv)
 	})
 }

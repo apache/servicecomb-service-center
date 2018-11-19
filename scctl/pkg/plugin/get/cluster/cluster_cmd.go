@@ -21,6 +21,7 @@ import (
 	"github.com/apache/servicecomb-service-center/scctl/pkg/plugin/get"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/writer"
 	"github.com/spf13/cobra"
+	"golang.org/x/net/context"
 )
 
 func init() {
@@ -43,7 +44,7 @@ func ClusterCommandFunc(_ *cobra.Command, args []string) {
 	if err != nil {
 		cmd.StopAndExit(cmd.ExitError, err)
 	}
-	clusters, scErr := scClient.GetClusters()
+	clusters, scErr := scClient.GetClusters(context.Background())
 	if scErr != nil {
 		cmd.StopAndExit(cmd.ExitError, scErr)
 	}

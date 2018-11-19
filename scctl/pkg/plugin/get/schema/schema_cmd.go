@@ -25,6 +25,7 @@ import (
 	adminModel "github.com/apache/servicecomb-service-center/server/admin/model"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/spf13/cobra"
+	"golang.org/x/net/context"
 	"io"
 	"io/ioutil"
 	"os"
@@ -80,7 +81,7 @@ func SchemaCommandFunc(_ *cobra.Command, args []string) {
 	if err != nil {
 		cmd.StopAndExit(cmd.ExitError, err)
 	}
-	cache, scErr := scClient.GetScCache()
+	cache, scErr := scClient.GetScCache(context.Background())
 	if scErr != nil {
 		cmd.StopAndExit(cmd.ExitError, scErr)
 	}
@@ -109,7 +110,7 @@ func SchemaCommandFunc(_ *cobra.Command, args []string) {
 			continue
 		}
 
-		schemas, err := scClient.GetSchemasByServiceId(domainProject, ms.Value.ServiceId)
+		schemas, err := scClient.GetSchemasByServiceId(context.Background(), domainProject, ms.Value.ServiceId)
 		if err != nil {
 			cmd.StopAndExit(cmd.ExitError, err)
 		}

@@ -24,6 +24,7 @@ import (
 	"github.com/apache/servicecomb-service-center/scctl/pkg/writer"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/spf13/cobra"
+	"golang.org/x/net/context"
 	"strings"
 )
 
@@ -48,7 +49,7 @@ func ServiceCommandFunc(_ *cobra.Command, args []string) {
 	if err != nil {
 		cmd.StopAndExit(cmd.ExitError, err)
 	}
-	cache, scErr := scClient.GetScCache()
+	cache, scErr := scClient.GetScCache(context.Background())
 	if scErr != nil {
 		cmd.StopAndExit(cmd.ExitError, scErr)
 	}

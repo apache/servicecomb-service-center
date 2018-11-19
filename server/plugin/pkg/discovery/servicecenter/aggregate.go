@@ -19,17 +19,25 @@ import (
 	"crypto/tls"
 	"github.com/apache/servicecomb-service-center/pkg/client/sc"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/admin/model"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/core"
 	scerr "github.com/apache/servicecomb-service-center/server/error"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
+	"golang.org/x/net/context"
 	"strings"
+	"sync"
+)
+
+var (
+	scClient   *SCClientAggregate
+	clientOnce sync.Once
+	clientTLS  *tls.Config
 )
 
 type SCClientAggregate []*sc.SCClient
-
-var clientTLS *tls.Config
 
 func getClientTLS() (*tls.Config, error) {
 	if clientTLS != nil {
@@ -40,11 +48,11 @@ func getClientTLS() (*tls.Config, error) {
 	return clientTLS, err
 }
 
-func (c *SCClientAggregate) GetScCache() (*model.Cache, map[string]error) {
+func (c *SCClientAggregate) GetScCache(ctx context.Context) (*model.Cache, map[string]error) {
 	var caches *model.Cache
 	errs := make(map[string]error)
 	for _, client := range *c {
-		cache, err := client.GetScCache()
+		cache, err := client.GetScCache(ctx)
 		if err != nil {
 			errs[client.Cfg.Name] = err
 			continue
@@ -66,59 +74,128 @@ func (c *SCClientAggregate) GetScCache() (*model.Cache, map[string]error) {
 	return caches, errs
 }
 
-func (c *SCClientAggregate) GetSchemasByServiceId(domainProject, serviceId string) ([]*pb.Schema, *scerr.Error) {
-	var schemas []*pb.Schema
+func (c *SCClientAggregate) GetSchemasByServiceId(ctx context.Context, domainProject, serviceId string) (*discovery.Response, *scerr.Error) {
+	var response discovery.Response
 	for _, client := range *c {
-		ss, err := client.GetSchemasByServiceId(domainProject, serviceId)
+		schemas, err := client.GetSchemasByServiceId(ctx, domainProject, serviceId)
 		if err != nil && err.InternalError() {
 			log.Errorf(err, "get schema by serviceId[%s/%s] failed", domainProject, serviceId)
 			continue
 		}
-		schemas = append(schemas, ss...)
+		if schemas == nil {
+			continue
+		}
+		response.Count = int64(len(schemas))
+		for _, schema := range schemas {
+			response.Kvs = append(response.Kvs, &discovery.KeyValue{
+				Key:         []byte(core.GenerateServiceSchemaKey(domainProject, serviceId, schema.SchemaId)),
+				Value:       util.StringToBytesWithNoCopy(schema.Schema),
+				ModRevision: 0,
+				ClusterName: client.Cfg.Name,
+			})
+		}
+		return &response, nil
 	}
-
-	return schemas, nil
+	return &response, nil
 }
 
-func (c *SCClientAggregate) GetSchemaBySchemaId(domainProject, serviceId, schemaId string) (schema *pb.Schema, err *scerr.Error) {
+func (c *SCClientAggregate) GetSchemaBySchemaId(ctx context.Context, domainProject, serviceId, schemaId string) (*discovery.Response, *scerr.Error) {
+	var response discovery.Response
 	for _, client := range *c {
-		schema, err = client.GetSchemaBySchemaId(domainProject, serviceId, schemaId)
+		schema, err := client.GetSchemaBySchemaId(ctx, domainProject, serviceId, schemaId)
 		if err != nil && err.InternalError() {
 			log.Errorf(err, "get schema by serviceId[%s/%s] failed", domainProject, serviceId)
 			continue
 		}
-		if schema != nil {
-			return
+		if schema == nil {
+			continue
 		}
+		response.Count = 1
+		response.Kvs = append(response.Kvs, &discovery.KeyValue{
+			Key:         []byte(core.GenerateServiceSchemaKey(domainProject, serviceId, schema.SchemaId)),
+			Value:       util.StringToBytesWithNoCopy(schema.Schema),
+			ModRevision: 0,
+			ClusterName: client.Cfg.Name,
+		})
+		return &response, nil
 	}
-
-	return
+	return &response, nil
 }
 
-func NewSCClientAggregate() *SCClientAggregate {
-	c := &SCClientAggregate{}
-	clusters := registry.Configuration().Clusters
-	for name, endpoints := range clusters {
-		if len(name) == 0 || name == registry.Configuration().ClusterName {
+func (c *SCClientAggregate) GetInstancesByServiceId(ctx context.Context, domainProject, providerId, consumerId string) (*discovery.Response, *scerr.Error) {
+	var response discovery.Response
+	for _, client := range *c {
+		insts, err := client.GetInstancesByServiceId(ctx, domainProject, providerId, consumerId)
+		if err != nil && err.InternalError() {
+			log.Errorf(err, "consumer[%s] get provider[%s/%s] instances failed", consumerId, domainProject, providerId)
 			continue
 		}
-		client, err := sc.NewSCClient(sc.Config{Name: name, Endpoints: endpoints})
-		if err != nil {
-			log.Errorf(err, "new service center[%s]%v client failed", name, endpoints)
+		if insts == nil {
 			continue
 		}
-		client.Timeout = registry.Configuration().RequestTimeOut
-		// TLS
-		if strings.Index(endpoints[0], "https") >= 0 {
-			client.TLS, err = getClientTLS()
-			if err != nil {
-				log.Errorf(err, "get service center[%s]%v tls config failed", name, endpoints)
+		response.Count = int64(len(insts))
+		for _, instance := range insts {
+			response.Kvs = append(response.Kvs, &discovery.KeyValue{
+				Key:         []byte(core.GenerateInstanceKey(domainProject, providerId, instance.InstanceId)),
+				Value:       instance,
+				ModRevision: 0,
+				ClusterName: client.Cfg.Name,
+			})
+		}
+		return &response, nil
+	}
+	return &response, nil
+}
+
+func (c *SCClientAggregate) GetInstanceByInstanceId(ctx context.Context, domainProject, providerId, instanceId, consumerId string) (*discovery.Response, *scerr.Error) {
+	var response discovery.Response
+	for _, client := range *c {
+		instance, err := client.GetInstanceByInstanceId(ctx, domainProject, providerId, instanceId, consumerId)
+		if err != nil && err.InternalError() {
+			log.Errorf(err, "consumer[%s] get provider[%s/%s] instances failed", consumerId, domainProject, providerId)
+			continue
+		}
+		if instance == nil {
+			continue
+		}
+		response.Count = 1
+		response.Kvs = append(response.Kvs, &discovery.KeyValue{
+			Key:         []byte(core.GenerateInstanceKey(domainProject, providerId, instance.InstanceId)),
+			Value:       instance,
+			ModRevision: 0,
+			ClusterName: client.Cfg.Name,
+		})
+		return &response, nil
+	}
+	return &response, nil
+}
+
+func GetOrCreateSCClient() *SCClientAggregate {
+	clientOnce.Do(func() {
+		scClient = &SCClientAggregate{}
+		clusters := registry.Configuration().Clusters
+		for name, endpoints := range clusters {
+			if len(name) == 0 || name == registry.Configuration().ClusterName {
 				continue
 			}
-		}
+			client, err := sc.NewSCClient(sc.Config{Name: name, Endpoints: endpoints})
+			if err != nil {
+				log.Errorf(err, "new service center[%s]%v client failed", name, endpoints)
+				continue
+			}
+			client.Timeout = registry.Configuration().RequestTimeOut
+			// TLS
+			if strings.Index(endpoints[0], "https") >= 0 {
+				client.TLS, err = getClientTLS()
+				if err != nil {
+					log.Errorf(err, "get service center[%s]%v tls config failed", name, endpoints)
+					continue
+				}
+			}
 
-		*c = append(*c, client)
-		log.Infof("new service center[%s]%v client", name, endpoints)
-	}
-	return c
+			*scClient = append(*scClient, client)
+			log.Infof("new service center[%s]%v client", name, endpoints)
+		}
+	})
+	return scClient
 }

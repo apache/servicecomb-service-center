@@ -94,6 +94,16 @@ func (op PluginOp) FormatUrlParams() string {
 	return buf.String()
 }
 
+func (op PluginOp) NoCache() bool {
+	return op.Mode == MODE_NO_CACHE ||
+		op.Revision > 0 ||
+		(op.Offset >= 0 && op.Limit > 0)
+}
+
+func (op PluginOp) CacheOnly() bool {
+	return op.Mode == MODE_CACHE
+}
+
 type Operation func(...PluginOpOption) (op PluginOp)
 
 type PluginOpOption func(*PluginOp)
