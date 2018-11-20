@@ -1,6 +1,8 @@
 ## Service-Center Release
 
 #### Release Notes
+ - [Service-Center-1.1.0 Release Notes](/docs/release/releaseNotes-1.1.0.md)
+ - [Service-Center-1.0.0 Release Notes](/docs/release/releaseNotes-1.0.0.md)
  - [Service-Center-1.0.0-m1 Release Notes](/docs/release/releaseNotes-1.0.0-m1.md)
  - [Service-Center-1.0.0-m2 Release Notes](/docs/release/releaseNotes-1.0.0-m2.md)
  
