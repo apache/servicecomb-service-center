@@ -17,6 +17,8 @@ glide install
 
 ##### Note: [bower](https://www.npmjs.com/package/bower) should be installed in this machine
 
+##### Note: We have used `go version go1.11` for making this release
+
 #### Linux Release
 
 ```
