@@ -39,6 +39,8 @@ const (
 	apiSchemaURL    = "/v4/%s/registry/microservices/%s/schemas/%s"
 	apiInstancesURL = "/v4/%s/registry/microservices/%s/instances"
 	apiInstanceURL  = "/v4/%s/registry/microservices/%s/instances/%s"
+
+	QueryGlobal = "global"
 )
 
 func (c *SCClient) toError(body []byte) *scerr.Error {
@@ -48,6 +50,16 @@ func (c *SCClient) toError(body []byte) *scerr.Error {
 		return scerr.NewError(scerr.ErrInternal, util.BytesToStringWithNoCopy(body))
 	}
 	return message
+}
+
+func (c *SCClient) parseQuery(ctx context.Context) (q string) {
+	switch {
+	case ctx.Value(QueryGlobal) == "1":
+		q += "global=true"
+	default:
+		q += "global=false"
+	}
+	return
 }
 
 func (c *SCClient) GetScVersion(ctx context.Context) (*version.VersionSet, *scerr.Error) {
@@ -108,7 +120,7 @@ func (c *SCClient) GetSchemasByServiceId(ctx context.Context, domainProject, ser
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 	resp, err := c.RestDoWithContext(ctx, http.MethodGet,
-		fmt.Sprintf(apiSchemasURL, project, serviceId)+"?withSchema=1",
+		fmt.Sprintf(apiSchemasURL, project, serviceId)+"?withSchema=1&"+c.parseQuery(ctx),
 		headers, nil)
 	if err != nil {
 		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
@@ -138,7 +150,7 @@ func (c *SCClient) GetSchemaBySchemaId(ctx context.Context, domainProject, servi
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 	resp, err := c.RestDoWithContext(ctx, http.MethodGet,
-		fmt.Sprintf(apiSchemaURL, project, serviceId, schemaId),
+		fmt.Sprintf(apiSchemaURL, project, serviceId, schemaId)+"?"+c.parseQuery(ctx),
 		headers, nil)
 	if err != nil {
 		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
@@ -222,7 +234,7 @@ func (c *SCClient) GetInstancesByServiceId(ctx context.Context, domainProject, p
 	headers.Set("X-Domain-Name", domain)
 	headers.Set("X-ConsumerId", consumerId)
 	resp, err := c.RestDoWithContext(ctx, http.MethodGet,
-		fmt.Sprintf(apiInstancesURL, project, providerId),
+		fmt.Sprintf(apiInstancesURL, project, providerId)+"?"+c.parseQuery(ctx),
 		headers, nil)
 	if err != nil {
 		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
@@ -253,7 +265,7 @@ func (c *SCClient) GetInstanceByInstanceId(ctx context.Context, domainProject, p
 	headers.Set("X-Domain-Name", domain)
 	headers.Set("X-ConsumerId", consumerId)
 	resp, err := c.RestDoWithContext(ctx, http.MethodGet,
-		fmt.Sprintf(apiInstanceURL, project, providerId, instanceId),
+		fmt.Sprintf(apiInstanceURL, project, providerId, instanceId)+"?"+c.parseQuery(ctx),
 		headers, nil)
 	if err != nil {
 		return nil, scerr.NewError(scerr.ErrInternal, err.Error())

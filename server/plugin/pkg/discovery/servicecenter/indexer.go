@@ -16,6 +16,7 @@
 package servicecenter
 
 import (
+	"github.com/apache/servicecomb-service-center/pkg/client/sc"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
@@ -55,6 +56,7 @@ func (i *ClusterIndexer) search(ctx context.Context, opts ...registry.PluginOpOp
 	op := registry.OpGet(opts...)
 	key := util.BytesToStringWithNoCopy(op.Key)
 
+	ctx = context.WithValue(ctx, sc.QueryGlobal, "0")
 	switch i.Type {
 	case backend.SCHEMA:
 		r, err = i.searchSchemas(ctx, op)
