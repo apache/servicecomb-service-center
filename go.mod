@@ -16,6 +16,7 @@ replace (
 )
 
 require (
+	github.com/NYTimes/gziphandler v1.0.2-0.20180820182813-253f1acb9d9f
 	github.com/Shopify/sarama v1.18.0 // indirect
 	github.com/apache/thrift v0.0.0-20180125231006-3d556248a8b9 // indirect
 	github.com/astaxie/beego v1.8.0

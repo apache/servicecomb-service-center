@@ -44,6 +44,7 @@ func LoadConfig() (srvCfg *rest.ServerConfig, err error) {
 	srvCfg.WriteTimeout = writeTimeout
 	srvCfg.MaxHeaderBytes = maxHeaderBytes
 	srvCfg.TLSConfig = tlsConfig
+	srvCfg.Handler = DefaultServerMux
 	return
 }
 
@@ -54,7 +55,6 @@ func NewServer(ipAddr string) (srv *rest.Server, err error) {
 	}
 	srvCfg.Addr = ipAddr
 	srv = rest.NewServer(srvCfg)
-	srv.Handler = DefaultServerMux
 
 	if srvCfg.TLSConfig == nil {
 		err = srv.Listen()

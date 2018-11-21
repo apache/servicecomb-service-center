@@ -17,12 +17,15 @@ package rest
 
 import (
 	"bytes"
+	"compress/gzip"
 	"crypto/tls"
 	"errors"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/tlsutil"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"golang.org/x/net/context"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -57,6 +60,24 @@ type URLClientOption struct {
 	ConnsPerHost          int
 }
 
+type gzipBodyReader struct {
+	*gzip.Reader
+	Body io.ReadCloser
+}
+
+func (w *gzipBodyReader) Close() error {
+	w.Reader.Close()
+	return w.Body.Close()
+}
+
+func NewGZipBodyReader(body io.ReadCloser) (io.ReadCloser, error) {
+	reader, err := gzip.NewReader(body)
+	if err != nil {
+		return nil, err
+	}
+	return &gzipBodyReader{reader, body}, nil
+}
+
 type URLClient struct {
 	*http.Client
 
@@ -76,18 +97,18 @@ func (client *URLClient) HttpDoWithContext(ctx context.Context, method string, r
 		headers = make(http.Header)
 	}
 
-	if _, ok := headers["Host"]; !ok {
+	if _, ok := headers[HEADER_HOST]; !ok {
 		parsedURL, err := url.Parse(rawURL)
 		if err != nil {
 			return nil, err
 		}
-		headers.Set("Host", parsedURL.Host)
+		headers.Set(HEADER_HOST, parsedURL.Host)
 	}
-	if _, ok := headers["Accept"]; !ok {
-		headers.Set("Accept", "*/*")
+	if _, ok := headers[HEADER_ACCEPT]; !ok {
+		headers.Set(HEADER_ACCEPT, ACCEPT_ANY)
 	}
-	if _, ok := headers["Accept-Encoding"]; !ok && client.Cfg.Compressed {
-		headers.Set("Accept-Encoding", "deflate, gzip")
+	if _, ok := headers[HEADER_ACCEPT_ENCODING]; !ok && client.Cfg.Compressed {
+		headers.Set(HEADER_ACCEPT_ENCODING, "deflate, gzip")
 	}
 
 	req, err := http.NewRequest(method, rawURL, bytes.NewBuffer(body))
@@ -100,6 +121,16 @@ func (client *URLClient) HttpDoWithContext(ctx context.Context, method string, r
 	resp, err = client.Client.Do(req)
 	if err != nil {
 		return nil, err
+	}
+	switch resp.Header.Get(HEADER_CONTENT_ENCODING) {
+	case "gzip":
+		reader, err := NewGZipBodyReader(resp.Body)
+		if err != nil {
+			io.Copy(ioutil.Discard, resp.Body)
+			resp.Body.Close()
+			return nil, err
+		}
+		resp.Body = reader
 	}
 
 	if os.Getenv("DEBUG_MODE") == "1" {

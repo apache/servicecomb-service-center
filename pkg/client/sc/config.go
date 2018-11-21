@@ -43,5 +43,6 @@ func (cfg *Config) Merge() rest.URLClientOption {
 	if cfg.RequestTimeout == 0 {
 		cfg.RequestTimeout = defaultRequestTimeout
 	}
+	cfg.Compressed = true
 	return cfg.URLClientOption
 }

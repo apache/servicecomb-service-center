@@ -289,6 +289,9 @@ import:
 - package: github.com/natefinch/lumberjack
   version: a96e63847dc3c67d17befa69c303767e2f84e54f
   repo: https://github.com/natefinch/lumberjack
+- package: github.com/NYTimes/gziphandler
+  version: master
+  repo: https://github.com/NYTimes/gziphandler
 
 # k8s 1.10.4 deps
 - package: k8s.io/client-go

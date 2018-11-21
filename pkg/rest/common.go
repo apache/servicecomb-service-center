@@ -36,12 +36,14 @@ const (
 	HEADER_RESPONSE_STATUS = "X-Response-Status"
 
 	HEADER_ALLOW            = "Allow"
+	HEADER_HOST             = "Host"
 	HEADER_SERVER           = "Server"
 	HEADER_CONTENT_TYPE     = "Content-Type"
 	HEADER_CONTENT_ENCODING = "Content-Encoding"
 	HEADER_ACCEPT           = "Accept"
 	HEADER_ACCEPT_ENCODING  = "Accept-Encoding"
 
+	ACCEPT_ANY  = "*/*"
 	ACCEPT_JSON = "application/json"
 
 	CONTENT_TYPE_JSON = "application/json; charset=UTF-8"
