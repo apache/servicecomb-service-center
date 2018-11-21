@@ -17,7 +17,6 @@ package aggregate
 
 import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 	"golang.org/x/net/context"
@@ -25,7 +24,6 @@ import (
 
 type AdaptorsIndexer struct {
 	Adaptors []discovery.Adaptor
-	Unique   bool
 }
 
 func (i *AdaptorsIndexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (*discovery.Response, error) {
@@ -46,21 +44,12 @@ func (i *AdaptorsIndexer) Search(ctx context.Context, opts ...registry.PluginOpO
 			}
 		}
 		response.Count += resp.Count
-		if i.Unique && response.Count > 0 {
-			break
-		}
 	}
 	return &response, nil
 }
 
-func NewAdaptorsIndexer(t discovery.Type, as []discovery.Adaptor) *AdaptorsIndexer {
-	ai := &AdaptorsIndexer{Adaptors: as}
-	switch t {
-	case backend.INSTANCE, backend.LEASE, backend.DEPENDENCY_RULE:
-	default:
-		ai.Unique = true
-	}
-	return ai
+func NewAdaptorsIndexer(as []discovery.Adaptor) *AdaptorsIndexer {
+	return &AdaptorsIndexer{Adaptors: as}
 }
 
 type AggregatorIndexer struct {
@@ -72,7 +61,7 @@ type AggregatorIndexer struct {
 func (i *AggregatorIndexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (resp *discovery.Response, err error) {
 	op := registry.OpGet(opts...)
 
-	if op.NoCache() {
+	if op.NoCache() || !op.Global {
 		return i.search(ctx, opts...)
 	}
 
@@ -90,7 +79,7 @@ func (i *AggregatorIndexer) Search(ctx context.Context, opts ...registry.PluginO
 
 func (i *AggregatorIndexer) search(ctx context.Context, opts ...registry.PluginOpOption) (*discovery.Response, error) {
 	op := registry.OptionsToOp(opts...)
-	if op.RegistryOnly {
+	if !op.Global {
 		return i.LocalIndexer.Search(ctx, opts...)
 	}
 
@@ -98,7 +87,7 @@ func (i *AggregatorIndexer) search(ctx context.Context, opts ...registry.PluginO
 }
 
 func NewAggregatorIndexer(as *Aggregator) *AggregatorIndexer {
-	indexer := NewAdaptorsIndexer(as.Type, as.Adaptors)
+	indexer := NewAdaptorsIndexer(as.Adaptors)
 	ai := &AggregatorIndexer{
 		CacheIndexer:    discovery.NewCacheIndexer(as.Cache()),
 		AdaptorsIndexer: indexer,

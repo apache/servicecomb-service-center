@@ -37,7 +37,7 @@ type PluginOp struct {
 	WatchCallback WatchCallback
 	Offset        int64
 	Limit         int64
-	RegistryOnly  bool
+	Global        bool
 }
 
 func (op PluginOp) String() string {
@@ -88,8 +88,8 @@ func (op PluginOp) FormatUrlParams() string {
 	if op.Limit > 0 {
 		buf.WriteString(fmt.Sprintf("&limit=%d", op.Limit))
 	}
-	if op.RegistryOnly {
-		buf.WriteString("&registryOnly=true")
+	if op.Global {
+		buf.WriteString("&global=true")
 	}
 	return buf.String()
 }
@@ -121,7 +121,7 @@ func WithPrevKv() PluginOpOption             { return func(op *PluginOp) { op.Pr
 func WithLease(leaseID int64) PluginOpOption { return func(op *PluginOp) { op.Lease = leaseID } }
 func WithKeyOnly() PluginOpOption            { return func(op *PluginOp) { op.KeyOnly = true } }
 func WithCountOnly() PluginOpOption          { return func(op *PluginOp) { op.CountOnly = true } }
-func WithRegistryOnly() PluginOpOption       { return func(op *PluginOp) { op.RegistryOnly = true } }
+func WithGlobal() PluginOpOption             { return func(op *PluginOp) { op.Global = true } }
 func WithNoneOrder() PluginOpOption          { return func(op *PluginOp) { op.SortOrder = SORT_NONE } }
 func WithAscendOrder() PluginOpOption        { return func(op *PluginOp) { op.SortOrder = SORT_ASCEND } }
 func WithDescendOrder() PluginOpOption       { return func(op *PluginOp) { op.SortOrder = SORT_DESCEND } }
