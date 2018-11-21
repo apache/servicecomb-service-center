@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/task"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
@@ -53,7 +52,9 @@ func (apt *RulesChangedTask) Err() error {
 }
 
 func (apt *RulesChangedTask) publish(ctx context.Context, domainProject, providerId string, rev int64) error {
-	ctx = util.SetContext(ctx, serviceUtil.CTX_CACHEONLY, "1")
+	ctx = context.WithValue(context.WithValue(ctx,
+		serviceUtil.CTX_CACHEONLY, "1"),
+		serviceUtil.CTX_GLOBAL, "1")
 
 	provider, err := serviceUtil.GetService(ctx, domainProject, providerId)
 	if err != nil {

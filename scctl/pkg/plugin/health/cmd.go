@@ -20,6 +20,7 @@ import (
 	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
 	scerr "github.com/apache/servicecomb-service-center/server/error"
 	"github.com/spf13/cobra"
+	"golang.org/x/net/context"
 )
 
 const (
@@ -48,7 +49,7 @@ func HealthCommandFunc(_ *cobra.Command, args []string) {
 	if err != nil {
 		cmd.StopAndExit(ExistInternal, err)
 	}
-	scErr := scClient.HealthCheck()
+	scErr := scClient.HealthCheck(context.Background())
 	if scErr != nil {
 		switch scErr.Code {
 		case scerr.ErrUnavailableBackend:

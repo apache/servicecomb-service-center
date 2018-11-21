@@ -19,6 +19,7 @@ package cache
 import (
 	"github.com/apache/servicecomb-service-center/pkg/chain"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"net/http"
 )
@@ -32,17 +33,18 @@ func (l *CacheResponse) Handle(i *chain.Invocation) {
 	r := i.Context().Value(rest.CTX_REQUEST).(*http.Request)
 	query := r.URL.Query()
 
-	if r.Method != http.MethodGet {
-		i.WithContext(serviceUtil.CTX_REGISTRYONLY, "1")
+	global := util.StringTRUE(query.Get(serviceUtil.CTX_GLOBAL))
+	if global && r.Method == http.MethodGet {
+		i.WithContext(serviceUtil.CTX_GLOBAL, "1")
 	}
 
-	noCache := query.Get(serviceUtil.CTX_NOCACHE) == "1"
+	noCache := util.StringTRUE(query.Get(serviceUtil.CTX_NOCACHE))
 	if noCache {
 		i.WithContext(serviceUtil.CTX_NOCACHE, "1")
 		return
 	}
 
-	cacheOnly := query.Get(serviceUtil.CTX_CACHEONLY) == "1"
+	cacheOnly := util.StringTRUE(query.Get(serviceUtil.CTX_CACHEONLY))
 	if cacheOnly {
 		i.WithContext(serviceUtil.CTX_CACHEONLY, "1")
 		return

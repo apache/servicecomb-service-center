@@ -31,7 +31,7 @@ import (
 type TagsFilter struct {
 }
 
-func (f *TagsFilter) Name(ctx context.Context) string {
+func (f *TagsFilter) Name(ctx context.Context, _ *cache.Node) string {
 	tags, _ := ctx.Value(CTX_FIND_TAGS).([]string)
 	sort.Strings(tags)
 	return strings.Join(tags, ",")

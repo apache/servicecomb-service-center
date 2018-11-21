@@ -26,7 +26,7 @@ import (
 type ServiceFilter struct {
 }
 
-func (f *ServiceFilter) Name(ctx context.Context) string {
+func (f *ServiceFilter) Name(ctx context.Context, _ *cache.Node) string {
 	provider := ctx.Value(CTX_FIND_PROVIDER).(*pb.MicroServiceKey)
 	return util.StringJoin([]string{
 		provider.Tenant,

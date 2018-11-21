@@ -24,7 +24,7 @@ import (
 type ConsumerFilter struct {
 }
 
-func (f *ConsumerFilter) Name(ctx context.Context) string {
+func (f *ConsumerFilter) Name(ctx context.Context, _ *cache.Node) string {
 	return ctx.Value(CTX_FIND_CONSUMER).(string)
 }
 

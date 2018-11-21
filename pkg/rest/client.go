@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/tlsutil"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"golang.org/x/net/context"
 	"net/http"
 	"net/url"
 	"os"
@@ -64,7 +65,7 @@ type URLClient struct {
 	Cfg URLClientOption
 }
 
-func (client *URLClient) HttpDo(method string, rawURL string, headers http.Header, body []byte) (resp *http.Response, err error) {
+func (client *URLClient) HttpDoWithContext(ctx context.Context, method string, rawURL string, headers http.Header, body []byte) (resp *http.Response, err error) {
 	if strings.HasPrefix(rawURL, "https") {
 		if transport, ok := client.Client.Transport.(*http.Transport); ok {
 			transport.TLSClientConfig = client.TLS
@@ -93,6 +94,7 @@ func (client *URLClient) HttpDo(method string, rawURL string, headers http.Heade
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("create request failed: %s", err.Error()))
 	}
+	req = req.WithContext(ctx)
 	req.Header = headers
 
 	resp, err = client.Client.Do(req)
@@ -120,6 +122,10 @@ func (client *URLClient) HttpDo(method string, rawURL string, headers http.Heade
 		fmt.Println("--- END ---")
 	}
 	return resp, nil
+}
+
+func (client *URLClient) HttpDo(method string, rawURL string, headers http.Header, body []byte) (resp *http.Response, err error) {
+	return client.HttpDoWithContext(context.Background(), method, rawURL, headers, body)
 }
 
 func setOptionDefaultValue(o *URLClientOption) URLClientOption {

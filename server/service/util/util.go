@@ -29,8 +29,8 @@ func FromContext(ctx context.Context) []registry.PluginOpOption {
 	case ctx.Value(CTX_CACHEONLY) == "1":
 		opts = append(opts, registry.WithCacheOnly())
 	}
-	if ctx.Value(CTX_REGISTRYONLY) == "1" {
-		opts = append(opts, registry.WithRegistryOnly())
+	if ctx.Value(CTX_GLOBAL) == "1" {
+		opts = append(opts, registry.WithGlobal())
 	}
 	return opts
 }

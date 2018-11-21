@@ -147,3 +147,11 @@ func ResetTimer(timer *time.Timer, d time.Duration) {
 	}
 	timer.Reset(d)
 }
+
+func StringTRUE(s string) bool {
+	s = strings.ToLower(strings.TrimSpace(s))
+	if s == "1" || s == "true" {
+		return true
+	}
+	return false
+}

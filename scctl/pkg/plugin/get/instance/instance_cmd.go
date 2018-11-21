@@ -24,6 +24,7 @@ import (
 	admin "github.com/apache/servicecomb-service-center/server/admin/model"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/spf13/cobra"
+	"golang.org/x/net/context"
 	"strings"
 )
 
@@ -47,7 +48,7 @@ func InstanceCommandFunc(_ *cobra.Command, args []string) {
 	if err != nil {
 		cmd.StopAndExit(cmd.ExitError, err)
 	}
-	cache, scErr := scClient.GetScCache()
+	cache, scErr := scClient.GetScCache(context.Background())
 	if scErr != nil {
 		cmd.StopAndExit(cmd.ExitError, scErr)
 	}

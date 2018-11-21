@@ -18,9 +18,9 @@ package util
 
 const (
 	HEADER_REV            = "X-Resource-Revision"
-	CTX_REGISTRYONLY      = "_registryOnly"
-	CTX_NOCACHE           = "_noCache"
-	CTX_CACHEONLY         = "_cacheOnly"
-	CTX_REQUEST_REVISION  = "_requestRev"
-	CTX_RESPONSE_REVISION = "_responseRev"
+	CTX_GLOBAL            = "global"
+	CTX_NOCACHE           = "noCache"
+	CTX_CACHEONLY         = "cacheOnly"
+	CTX_REQUEST_REVISION  = "requestRev"
+	CTX_RESPONSE_REVISION = "responseRev"
 )

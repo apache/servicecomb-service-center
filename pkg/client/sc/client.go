@@ -16,6 +16,7 @@
 package sc
 
 import (
+	"golang.org/x/net/context"
 	"net/http"
 )
 
@@ -32,8 +33,9 @@ type SCClient struct {
 	Cfg Config
 }
 
-func (c *SCClient) CommonHeaders() http.Header {
+func (c *SCClient) CommonHeaders(ctx context.Context) http.Header {
 	var headers = make(http.Header)
+	// TODO overwrote by context values
 	if len(c.Cfg.Token) > 0 {
 		headers.Set("X-Auth-Token", c.Cfg.Token)
 	}

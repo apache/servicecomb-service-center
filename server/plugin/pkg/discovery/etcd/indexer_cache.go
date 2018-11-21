@@ -33,10 +33,7 @@ func (i *CacheIndexer) Search(ctx context.Context, opts ...registry.PluginOpOpti
 	op := registry.OpGet(opts...)
 	key := util.BytesToStringWithNoCopy(op.Key)
 
-	if i.Cache == nil ||
-		op.Mode == registry.MODE_NO_CACHE ||
-		op.Revision > 0 ||
-		(op.Offset >= 0 && op.Limit > 0) {
+	if op.NoCache() {
 		return i.EtcdIndexer.Search(ctx, opts...)
 	}
 
@@ -49,7 +46,7 @@ func (i *CacheIndexer) Search(ctx context.Context, opts ...registry.PluginOpOpti
 		return nil, err
 	}
 
-	if resp.Count > 0 || op.Mode == registry.MODE_CACHE {
+	if resp.Count > 0 || op.CacheOnly() {
 		return resp, nil
 	}
 

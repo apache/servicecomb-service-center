@@ -21,6 +21,7 @@ import (
 	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/version"
 	"github.com/spf13/cobra"
+	"golang.org/x/net/context"
 )
 
 var (
@@ -51,7 +52,7 @@ func VersionCommandFunc(_ *cobra.Command, _ []string) {
 	if err != nil {
 		return
 	}
-	v, err := scClient.GetScVersion()
+	v, err := scClient.GetScVersion(context.Background())
 	if err != nil {
 		return
 	}

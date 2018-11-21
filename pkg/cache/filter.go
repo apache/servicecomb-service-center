@@ -19,6 +19,6 @@ package cache
 import "golang.org/x/net/context"
 
 type Filter interface {
-	Name(ctx context.Context) string
+	Name(ctx context.Context, parent *Node) string
 	Init(ctx context.Context, parent *Node) (*Node, error)
 }

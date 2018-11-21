@@ -66,7 +66,9 @@ func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
 	}
 
 	// 查询服务版本信息
-	ctx := util.SetContext(context.Background(), serviceUtil.CTX_CACHEONLY, "1")
+	ctx := context.WithValue(context.WithValue(context.Background(),
+		serviceUtil.CTX_CACHEONLY, "1"),
+		serviceUtil.CTX_GLOBAL, "1")
 	ms, err := serviceUtil.GetService(ctx, domainProject, providerId)
 	if ms == nil {
 		log.Errorf(err, "caught [%s] instance[%s/%s] event, get cached provider's file failed",

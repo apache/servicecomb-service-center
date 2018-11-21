@@ -17,6 +17,7 @@
 package util
 
 import (
+	"crypto/sha1"
 	"encoding/json"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -62,18 +63,11 @@ func GetInstance(ctx context.Context, domainProject string, serviceId string, in
 	return resp.Kvs[0].Value.(*pb.MicroServiceInstance), nil
 }
 
-func ParseRevision(rev string) (int64, int64) {
-	arrRev := strings.Split(rev, ".")
-	reqRev, _ := strconv.ParseInt(arrRev[0], 10, 64)
-	reqCount := int64(0)
-	if len(arrRev) > 1 {
-		reqCount, _ = strconv.ParseInt(arrRev[1], 10, 64)
+func FormatRevision(revs, counts []int64) (s string) {
+	for i, rev := range revs {
+		s += fmt.Sprintf("%d.%d,", rev, counts[i])
 	}
-	return reqRev, reqCount
-}
-
-func FormatRevision(rev, count int64) string {
-	return fmt.Sprintf("%d.%d", rev, count)
+	return fmt.Sprintf("%x", sha1.Sum(util.StringToBytesWithNoCopy(s)))
 }
 
 func GetAllInstancesOfOneService(ctx context.Context, domainProject string, serviceId string) ([]*pb.MicroServiceInstance, error) {
