@@ -214,39 +214,40 @@ The following components are provided under the Apache License Version 2.0.
 See the respective project link for details.
 ================================================================
 github.com/apache/thrift/lib/go/thrift (3d556248a8b97310da49939195330691dfe9d9ad)
-github.com/astaxie/beego (323a1c4214101331a4b71922c23d19b7409ac71f)
+github.com/astaxie/beego (v1.8.0)
 github.com/cockroachdb/cmux (30d10be492927e2dcae0089c374c455d42414fcb)
-github.com/coreos/etcd (0f4a535c2fb7a2920e13e2e19b9eaf6b2e9285e5)
-github.com/coreos/go-semver/semver (1817cd4bea52af76542157eeabd74b057d1a199e)
-github.com/coreos/go-systemd/journal (24036eb3df68550d24a2736c5d013f4e83366866)
-github.com/coreos/pkg/capnslog (8dbaa491b063ed47e2474b5363de0c0db91cf9f2)
-github.com/google/btree (316fb6d3f031ae8f4d457c6c5186b9e3ded70435)
-github.com/grpc-ecosystem/go-grpc-prometheus (6b7015e65d366bf3f19b2b2a000a831940f0f7e0)
-github.com/jonboulle/clockwork (bcac9884e7502bb2b474c0339d889cb981a2f27f)
-github.com/matttproud/golang_protobuf_extensions/pbutil (c12348ce28de40eed0136aa2b644d0ee0650e56c)
+github.com/coreos/etcd (v3.1.9)
+github.com/coreos/go-semver/semver (v0.2.0)
+github.com/coreos/go-systemd/journal (v0.0.0-20180828140353-eee3db372b31)
+github.com/coreos/pkg/capnslog (v0.0.0-20180108230652-97fdf19511ea)
+github.com/google/btree (v0.0.0-20180813153112-4030bb1f1f0c)
+github.com/grpc-ecosystem/go-grpc-prometheus (v1.2.0)
+github.com/jonboulle/clockwork (v0.1.0)
+github.com/matttproud/golang_protobuf_extensions/pbutil (v1.0.1)
 github.com/opentracing-contrib/go-observer (a52f2342449246d5bcc273e65cbdcfa5f7d6c63c)
-github.com/opentracing/opentracing-go (1949ddbfd147afd4d964a9f00b24eb291e0e7c38)
-github.com/prometheus/client_golang/prometheus (ab4214782d022e867e3195b4c9ddb1ca45413382)
+github.com/opentracing/opentracing-go (v1.0.2)
+github.com/prometheus/client_golang/prometheus (v0.8.1)
 github.com/prometheus/client_model/go (6f3806018612930941127f2a7c6c453ba2c527d2)
-github.com/prometheus/common (0866df4b85a18d652b6965be022d007cdf076822)
-github.com/prometheus/procfs/xfs (822d4a1f8edcbcbc71e8d1fd6527b12331a6d0ad)
+github.com/prometheus/common (v0.0.0-20180801064454-c7de2306084e)
+github.com/prometheus/procfs/xfs (v0.0.0-20180725123919-05ee40e3a273)
 github.com/go-chassis/paas-lager (50655443dc96e3d633667ca6310251ba2a3fe5c9)
-github.com/bradfitz/gomemcache (1952afaa557dc08e8e0d89eafab110fb501c1a2b)
-github.com/casbin/casbin (91e4fb9209910a1de86b67adc0fce5c35f17369f)
-github.com/garyburd/redigo (57f1cd7de6175c96b423e7ac2534ff2b39e2ef79)
 github.com/google/btree (316fb6d3f031ae8f4d457c6c5186b9e3ded70435)
 github.com/spf13/cobra (4d647c8944eb42504a714e57e97f244ed6344722)
 google.golang.org/genproto/googleapis/rpc/status (aa2eb687b4d3e17154372564ad8d6bf11c3cf21f)
-google.golang.org/grpc (3c33c26290b747350f8650c7d38bcc51b42dc785)
-gopkg.in/yaml.v2 (d670f9405373e636a5a2765eea47fac0c9bc91a4)
-k8s.io/client-go (release-7.0)
-k8s.io/api (kubernetes-1.10.4)
-k8s.io/apimachinery (kubernetes-1.10.4)
-github.com/googleapis/gnostic (v0.1.0)
+google.golang.org/grpc (v1.2.1)
+gopkg.in/yaml.v2 (v2.2.1)
+k8s.io/client-go (v2.0.0-alpha.0.0.20180817174322-745ca8300397)
+k8s.io/api (v0.0.0-20180601181742-8b7507fac302)
+k8s.io/apimachinery (v0.0.0-20180601181227-17529ec7eadb)
+github.com/googleapis/gnostic (v0.2.0)
 github.com/google/gofuzz (24818f796faf91cd76ec7bddd72458fbced7a6c1)
 gopkg.in/inf.v0 (v0.9.1)
-github.com/modern-go/concurrent (1.0.3)
-github.com/modern-go/reflect2 (1.0.0)
+github.com/modern-go/concurrent (v0.0.0-20180306012644-bacd9c7ef1dd)
+github.com/modern-go/reflect2 (v1.0.1)
+github.com/golang/glog (v0.0.0-20160126235308-23def4e6c14b)
+github.com/go-chassis/glog (v0.0.0-20180920075250-95a09b2413e9)
+github.com/go-mesh/openlogging (v0.0.0-20180905092207-9cc15d7752d3)
+github.com/inconshreveable/mousetrap (v1.0.0)
 
 ================================================================
 For beorn7/perks (4c0e84591b9aa9e6dcfdf3e020114cd81f89d5f9)
@@ -256,14 +257,14 @@ For details, see https://github.com/beorn7/perks
 You can find a copy of the License at licenses/LICENSE-beorn7-perks
 
 ================================================================
-For boltdb/bolt (e9cf4fae01b5a8ff89d0ec6b32f0d9c9f79aefdd)
+For boltdb/bolt (v1.3.1)
 ================================================================
 This product bundles boltdb/bolt which is licensed under the MIT License.
 For details, see https://github.com/boltdb/bolt
 You can find a copy of the License at licenses/LICENSE-boltdb-bolt
 
 ================================================================
-For satori/go.uuid (879c5887cd475cd7864858769793b2ceb0d44feb)
+For satori/go.uuid (v1.1.0)
 ================================================================
 This product bundles satori/go.uuid which is licensed under the MIT License.
 For details, see https://github.com/satori/go.uuid 
@@ -277,14 +278,14 @@ For details, see https://github.com/rs/cors
 You can find a copy of the License at licenses/LICENSE-rs-cors
 
 ================================================================
-For ghodss/yaml (0ca9ea5df5451ffdf184b4428c902747c2c11cd7)
+For ghodss/yaml (v1.0.0)
 ================================================================
 This product bundles ghodss/yaml which is licensed under the MIT License.
 For details, see https://github.com/ghodss/yaml
 You can find a copy of the License at licenses/LICENSE-ghodss-yaml
 
 ================================================================
-For gogo/protobuf/ (baaac160ed234ed06b347cf51202683a0068efe4)
+For gogo/protobuf/ (v1.1.1)
 ================================================================
 This product bundles gogo/protobuf which is licensed under
 the 3-Clause BSD License.
@@ -292,7 +293,7 @@ For details, see https://github.com/gogo/protobuf
 You can find a copy of the License at licenses/LICENSE-gogo-protobuf
 
 ================================================================
-For golang/protobuf (7b8002443fd4a3ce5f25ef93087c524546799a56)
+For golang/protobuf (v1.0.0)
 ================================================================
 This product bundles protobuf which is licensed under the 3-Clause BSD
 License.
@@ -300,7 +301,7 @@ For details, see https://github.com/golang/protobuf
 You can find a copy of the License at licenses/LICENSE-golang-protobuf
 
 ================================================================
-For gorilla/websocket (ea4d1f681babbce9545c9c5f3d5194a789c89f5b)
+For gorilla/websocket (v1.2.0)
 ================================================================
 This product bundles gorilla/websocket which is licensed under
 the 2-Clause BSD License.
@@ -308,7 +309,7 @@ For details, see https://github.com/gorilla/websocket
 You can find a copy of the License at licenses/LICENSE-gorilla-websocket
 
 ================================================================
-For grpc-ecosystem/grpc-gateway (84398b94e188ee336f307779b57b3aa91af7063c)
+For grpc-ecosystem/grpc-gateway (v1.1.1)
 ================================================================
 This product bundles grpc-gateway which is licensed under the 3-Clause BSD
 License.
@@ -316,7 +317,7 @@ For details, see https://github.com/grpc-ecosystem/grpc-gateway
 You can find a copy of the License at licenses/LICENSE-grpc-gateway
 
 ================================================================
-For ugorji/go (8dd4211afb5d08dbb39a533b9bb9e4b486351df6)
+For ugorji/go (v0.0.0-20170620104852-5efa3251c7f7)
 ================================================================
 This product bundles ugorji/go which is licensed under the MIT License.
 For details, see https://github.com/ugorji/go
@@ -339,35 +340,35 @@ For details, see https://github.com/golang
 You can find a copy of the License at licenses/LICENSE-golang
 
 ================================================================
-For dgrijalva/jwt-go (06ea1031745cb8b3dab3f6a236daf2b0aa468b7e)
+For dgrijalva/jwt-go (v3.2.0)
 ================================================================
 This product bundles dgrijalva/jwt-go which is licensed under the MIT License.
 For details, see https://github.com/dgrijalva/jwt-go
 You can find a copy of the License at licenses/LICENSE-jwt-go
 
 ================================================================
-For labstack/echo (a5d81b8d4a627f3f49dcb3164ef2bb5239682227)
+For labstack/echo (v3.2.2)
 ================================================================
 This product bundles labstack/echo which is licensed under the MIT License.
 For details, see https://github.com/labstack/echo
 You can find a copy of the License at licenses/LICENSE-echo
 
 ================================================================
-For labstack/gommon (3bc2d333a4c30531c47051369043bcabd62ff4c0)
+For labstack/gommon (v0.2.1)
 ================================================================
 This product bundles labstack/gommon which is licensed under the MIT License.
 For details, see https://github.com/labstack/gommon
 You can find a copy of the License at licenses/LICENSE-gommon
 
 ================================================================
-For mattn/go-colorable (efa589957cd060542a26d2dd7832fd6a6c6c3ade)
+For mattn/go-colorable (v0.0.9)
 ================================================================
 This product bundles mattn/go-colorable which is licensed under the MIT License.
 For details, see https://github.com/mattn/go-colorable
 You can find a copy of the License at licenses/LICENSE-go-colorable
 
 ================================================================
-For mattn/go-isatty (6ca4dbf54d38eea1a992b3c722a76a5d1c4cb25c)
+For mattn/go-isatty (v0.0.4)
 ================================================================
 This product bundles mattn/go-isatty which is licensed under the MIT License.
 For details, see https://github.com/mattn/go-isatty
@@ -381,7 +382,7 @@ For details, see https://github.com/valyala/fasttemplate
 You can find a copy of the License at licenses/LICENSE-fasttemplate
 
 ================================================================
-For davecgh/go-spew (6cf5744a041a0022271cefed95ba843f6d87fd51)
+For davecgh/go-spew (v1.1.1)
 ================================================================
 This product bundles the go-spew library which is licensed under
 the ISC License.
@@ -389,7 +390,7 @@ For details, see https://github.com/davecgh/go-spew
 You can find a copy of the License at licenses/LICENSE-go-spew
 
 ================================================================
-For eapache/queue (ded5959c0d4e360646dc9e9908cff48666781367)
+For eapache/queue (v1.1.0)
 ================================================================
 This product bundles the eapache/queue library which is licensed under
 the MIT License.
@@ -397,7 +398,7 @@ For details, see https://github.com/eapache/queue
 You can find a copy of the License at licenses/LICENSE-eapache-queue
 
 ================================================================
-For eapache/go-xerial-snappy (bb955e01b9346ac19dc29eb16586c90ded99a98c)
+For eapache/go-xerial-snappy (v0.0.0-20180814174437-776d5712da21)
 ================================================================
 This product bundles the eapache/go-xerial-snappy library which is
 licensed under the MIT License.
@@ -405,7 +406,7 @@ For details, see https://github.com/eapache/go-xerial-snappy
 You can find a copy of the License at licenses/LICENSE-go-xerial-snappy
 
 ================================================================
-For eapache/go-resiliency (6800482f2c813e689c88b7ed3282262385011890)
+For eapache/go-resiliency (v1.1.0)
 ================================================================
 This product bundles the eapache/go-resiliency library which is
 licensed under the MIT License.
@@ -413,7 +414,7 @@ For details, see https://github.com/eapache/go-resiliency
 You can find a copy of the License at licenses/LICENSE-go-resiliency
 
 ================================================================
-For go-logfmt/logfmt (390ab7935ee28ec6b286364bba9b4dd6410cb3d5)
+For go-logfmt/logfmt (v0.3.0)
 ================================================================
 This product bundles the go-logfmt/logfmt library which is
 licensed under the MIT License.
@@ -421,15 +422,7 @@ For details, see https://github.com/go-logfmt/logfmt
 You can find a copy of the License at licenses/LICENSE-go-logfmt
 
 ================================================================
-For klauspost/crc32 (cb6bfca970f6908083f26f39a79009d608efd5cd)
-================================================================
-This product bundles the klauspost/crc32 library which is
-licensed under the 3-Clause BSD License.
-For details, see https://github.com/
-You can find a copy of the License at licenses/LICENSE-klauspost-crc32
-
-================================================================
-For openzipkin/zipkin-go-opentracing (6bb822a7f15fdc5800b9822a6ac1bfa0b7d9195d)
+For openzipkin/zipkin-go-opentracing (v0.3.3)
 ================================================================
 This product bundles the openzipkin/zipkin-go-opentracing library which is
 licensed under the MIT License.
@@ -444,94 +437,13 @@ licensed under the MIT License.
 For details, see https://github.com/karlseguin/ccache
 You can find a copy of the License at licenses/LICENSE-ccache
 
-For beego/x2j (a0352aadc5420072ebe692481a5d6913d77f8cf0)
 ================================================================
-This product bundles the beego/x2j library which is
-licensed under the 3-Clause BSD License.
-For details, see https://github.com/beego/x2j
-You can find a copy of the License at licenses/LICENSE-x2j
-
-================================================================
-For belogik/goes (e54d722c3aff588e4c737fe11c07359019240824)
-================================================================
-This product bundles the belogik/goes library which is
-licensed under the 3-Clause BSD License.
-For details, see https://github.com/belogik/goes
-You can find a copy of the License at licenses/LICENSE-goes
-
-================================================================
-For bgentry/speakeasy (4aabc24848ce5fd31929f7d1e4ea74d3709c14cd)
-================================================================
-This product bundles the speakeasy library which is
-licensed under the MIT License for Unix portions and Apache 
-License v2 for windows.
-For details, see https://github.com/bgentry/speakeasy
-You can find a copy of the License at licenses/LICENSE-speakeasy
-and licenses/LICENSE-speakeasy-windows
-
-================================================================
-For cloudflare/golz4 (ef862a3cdc58a6f1fee4e3af3d44fbe279194cde)
-================================================================
-This product bundles the golz4 library which is
-licensed under the 3-Clause BSD License.
-For details, see https://github.com/cloudflare/golz4
-You can find a copy of the License at licenses/LICENSE-golz4
-
-================================================================
-For couchbase/go-couchbase (8f4d4dae4027367687241fb6a3d11c59e76d867e)
-================================================================
-This product bundles the go-couchbase library which is
-licensed under the MIT License.
-For details, see https://github.com/couchbase/go-couchbase
-You can find a copy of the License at licenses/LICENSE-couchbase
-
-================================================================
-For couchbase/gomemcached (4ddb35b8aa8add8e7f6b58199f0bdaed5710e34b)
-================================================================
-This product bundles the gomemcached library which is
-licensed under the MIT License.
-For details, see https://github.com/couchbase/gomemcached
-You can find a copy of the License at licenses/LICENSE-gomemcached
-
-================================================================
-For cupcake/rdb (43ba34106c765f2111c0dc7b74cdf8ee437411e0)
-================================================================
-This product bundles the rdb library which is
-licensed under the MIT License.
-For details, see https://github.com/cupcake/rdb
-You can find a copy of the License at licenses/LICENSE-rdb
-
-================================================================
-For dustin/go-humanize (259d2a102b871d17f30e3cd9881a642961a1e486)
-================================================================
-This product bundles the go-humanize library which is
-licensed under the MIT License.
-For details, see https://github.com/dustin/go-humanize
-You can find a copy of the License at licenses/LICENSE-go-humanize
-
-================================================================
-For edsrzf/mmap-go (0bce6a6887123b67a60366d2c9fe2dfb74289d2e)
-================================================================
-This product bundles the mmap-go library which is
-licensed under the 3-Clause BSD License.
-For details, see https://github.com/edsrzf/mmap-go
-You can find a copy of the License at licenses/LICENSE-mmap-go
-
-================================================================
-For golang/snappy (553a641470496b2327abcac10b36396bd98e45c9)
+For golang/snappy (v0.0.0-20180518054509-2e65f85255db)
 ================================================================
 This product bundles the snappy library which is
 licensed under the 3-Clause BSD License.
 For details, see https://github.com/golang/snappy
 You can find a copy of the License at licenses/LICENSE-snappy
-
-================================================================
-For Knetic/govaluate (91facc4ae520fef82c9aee6b6ae720d9ae789131)
-================================================================
-This product bundles the govaluate library which is
-licensed under the MIT License.
-For details, see https://github.com/Knetic/govalute
-You can find a copy of the License at licenses/LICENSE-govaluate
 
 ================================================================
 For kr/logfmt (b84e30acd515aadc4b783ad4ff83aff3299bdfe0)
@@ -542,23 +454,7 @@ For details, see https://github.com/kr/logfmt
 You can find a copy of the License at licenses/LICENSE-kr-logfmt
 
 ================================================================
-For kr/pty (2c10821df3c3cf905230d078702dfbe9404c9b23)
-================================================================
-This product bundles the kr/pty library which is
-licensed under the MIT License.
-For details, see https://github.com/kr/pty
-You can find a copy of the License at licenses/LICENSE-kr-pty
-
-================================================================
-For lib/pq (8837942c3e09574accbc5f150e2c5e057189cace)
-================================================================
-This product bundles the lib/pq library which is
-licensed under the MIT License.
-For details, see https://github.com/lib/pq
-You can find a copy of the License at licenses/LICENSE-lib-pq
-
-================================================================
-For mattn/go-runewidth (97311d9f7767e3d6f422ea06661bc2c7a19e8a5d)
+For mattn/go-runewidth (v0.0.3)
 ================================================================
 This product bundles the go-runewidth library which is
 licensed under the MIT License.
@@ -566,7 +462,7 @@ For details, see https://github.com/mattn/go-runewidth
 You can find a copy of the License at licenses/LICENSE-go-runewidth
 
 ================================================================
-For onsi/ginkgo (a1f616c97771e46da1722d3aa9dcde0a43f55682)
+For onsi/ginkgo (v1.6.0)
 ================================================================
 This product bundles the ginkgo library which is
 licensed under the MIT License.
@@ -574,7 +470,7 @@ For details, see https://github.com/onsi/ginkgo
 You can find a copy of the License at licenses/LICENSE-ginkgo
 
 ================================================================
-For onsi/gomega (00acfa9d92a386415bd235ab069c52063f925998)
+For onsi/gomega (v1.4.1)
 ================================================================
 This product bundles the gomega library which is
 licensed under the MIT License.
@@ -590,7 +486,7 @@ For details, see https://github.com/pelletier/go-toml
 You can find a copy of the License at licenses/LICENSE-go-toml
 
 ================================================================
-For Shopify/sarama (9bb4a68d57ff6f623363aa172f0a8297aa289ba7)
+For Shopify/sarama (v1.18.0)
 ================================================================
 This product bundles the sarama library which is
 licensed under the MIT License.
@@ -598,52 +494,12 @@ For details, see https://github.com/Shopify/sarama
 You can find a copy of the License at licenses/LICENSE-sarama
 
 ================================================================
-For siddontang/go (cb568a3e5cc06256f91a2da5a87455f717eb33f4)
-================================================================
-This product bundles the siddongtang library which is
-licensed under the MIT License.
-For details, see https://github.com/siddontang
-You can find a copy of the License at licenses/LICENSE-siddontang-go
-
-================================================================
-For siddontang/ledisdb (0cb8e1a348b4877bff4648d59a75b793a0664b41)
-================================================================
-This product bundles the ledisdb library which is
-licensed under the MIT License.
-For details, see https://github.com/siddontang/ledisdb
-You can find a copy of the License at licenses/LICENSE-ledisdb
-
-================================================================
-For siddontang/rdb (fc89ed2e418d27e3ea76e708e54276d2b44ae9cf)
-================================================================
-This product bundles the siddontang/rdb library which is
-licensed under the MIT License.
-For details, see https://github.com/siddontang/rdb
-You can find a copy of the License at licenses/LICENSE-siddontang-rdb
-
-================================================================
-For spf13/pflag (e57e3eeb33f795204c1ca35f56c44f83227c6e66)
+For spf13/pflag (v1.0.0)
 ================================================================
 This product bundles the spf13/pflag library which is
 licensed under the 3-Clause BSD License.
 For details, see https://github.com/spf13/pflag
 You can find a copy of the License at licenses/LICENSE-pflag
-
-================================================================
-For syndtr/goleveldb (8c81ea47d4c41a385645e133e15510fc6a2a74b4)
-================================================================
-This product bundles the goleveldb library which is
-licensed under the 2-Clause BSD License.
-For details, see https://github.com/syndtr/goleveldb
-You can find a copy of the License at licenses/LICENSE-goleveldb
-
-================================================================
-For urfave/cli (b892ba3809cd07fcf2b064e166b0c2e16e0147bd)
-================================================================
-This product bundles the urfave/cli library which is
-licensed under the MIT License.
-For details, see https://github.com/urfave/cli
-You can find a copy of the License at licenses/LICENSE-urfave/cli
 
 ================================================================
 For widuu/gojson (7da9d2cd949b3f1b4e3039dd985773df8cf68a99)
@@ -654,7 +510,126 @@ For details, see https://github.com/widuu/gojson
 You can find a copy of the License at licenses/LICENSE-widuu-gojson
 
 ================================================================
-For angular (1.7.0)
+For zap (v1.9.0)
+================================================================
+This product bundles the zap library which is licensed under the MIT License.
+For details, see https://github.com/uber-go/zap
+You can find a copy of the License at licenses/LICENSE-uber-go-zap
+
+================================================================
+For atomic (v1.3.2)
+================================================================
+This product bundles the atomic library which is licensed under the MIT License.
+For details, see https://github.com/uber-go/atomic
+You can find a copy of the License at licenses/LICENSE-uber-go-atomic
+
+================================================================
+For multierr (v1.1.0)
+================================================================
+This product bundles the multierr library which is licensed under the MIT License.
+For details, see https://github.com/uber-go/multierr
+You can find a copy of the License at licenses/LICENSE-uber-go-multierr
+
+================================================================
+For lumberjack (a96e63847dc3c67d17befa69c303767e2f84e54f)
+================================================================
+This product bundles the lumberjack library which is licensed under the MIT License.
+For details, see https://github.com/natefinch/lumberjack
+You can find a copy of the License at licenses/LICENSE-natefinch-lumberjack
+
+================================================================
+For tablewriter (d4647c9c7a84d847478d890b816b7d8b62b0b279)
+================================================================
+This product bundles the tablewriter library which is licensed under the MIT License.
+For details, see https://github.com/olekukonko/tablewriter
+You can find a copy of the License at licenses/LICENSE-olekukonko-tablewriter
+
+================================================================
+For howeyc/gopass (bf9dde6d0d2c004a008c27aaee91170c786f6db8)
+================================================================
+This product bundles the howeyc/gopass library which is licensed under the ISC License.
+For details, see https://github.com/howeyc/gopass
+You can find a copy of the License at licenses/LICENSE-howeyc-gopass
+
+================================================================
+For imdario/mergo (v0.3.6)
+================================================================
+This product bundles imdario/mergo which is licensed under the 3-Clause BSD
+License.
+For details, see https://github.com/imdario/mergo
+You can find a copy of the License at licenses/LICENSE-imdario-mergo
+
+================================================================
+For hashicorp/golang-lru (v0.5.0)
+================================================================
+This product bundles the hashicorp/golang-lru library which is licensed under
+the MPL 2.0 License.
+For details, see https://github.com/hashicorp/golang-lru
+You can find a copy of the License at licenses/LICENSE-hashicorp-golang-lru
+
+================================================================
+For json-iterator/go (1.1.5)
+================================================================
+This product bundles the json-iterator/go library which is licensed under the MIT License.
+For details, see https://github.com/json-iterator/go
+You can find a copy of the License at licenses/LICENSE-json-iterator-go
+
+================================================================
+For valyala/bytebufferpool (v1.0.0)
+================================================================
+This product bundles valyala/bytebufferpool which is licensed under the MIT License.
+For details, see https://github.com/valyala/bytebufferpool
+You can find a copy of the License at licenses/LICENSE-valyala-bytebufferpool
+
+================================================================
+For cheggaaa/pb (v1.0.25)
+================================================================
+This product bundles cheggaaa/pb which is licensed under the 3-Clause BSD
+License.
+For details, see https://github.com/cheggaaa/pb
+You can find a copy of the License at licenses/LICENSE-cheggaaa-pb
+
+================================================================
+For hpcloud/tail (v1.0.0)
+================================================================
+This product bundles hpcloud/tail which is licensed under the MIT License.
+For details, see https://github.com/hpcloud/tail
+You can find a copy of the License at licenses/LICENSE-hpcloud-tail
+
+================================================================
+For pierrec/lz4 (v2.0.5)
+================================================================
+This product bundles pierrec/lz4 which is licensed under the 3-Clause BSD
+License.
+For details, see https://github.com/pierrec/lz4
+You can find a copy of the License at licenses/LICENSE-pierrec-lz4
+
+================================================================
+For rcrowley/go-metrics (v0.0.0-20180503174638-e2704e165165)
+================================================================
+This product bundles rcrowley/go-metrics which is licensed under the 2-Clause BSD
+License.
+For details, see https://github.com/rcrowley/go-metrics
+You can find a copy of the License at licenses/LICENSE-rcrowley/go-metrics
+
+================================================================
+For fsnotify (v1.4.7)
+================================================================
+This product bundles fsnotify which is licensed under the 3-Clause BSD
+License.
+For details, see https://github.com/fsnotify/fsnotify
+You can find a copy of the License at licenses/LICENSE-fsnotify
+
+================================================================
+For go-tomb (v1.0.0)
+================================================================
+This product bundles go-tomb which is licensed under the 3-Clause BSD
+License.
+For details, see https://github.com/go-tomb/tomb
+You can find a copy of the License at licenses/LICENSE-go-tomb
+
+================================================================
+For angular (1.7.5)
 ================================================================
 This product bundles the angular library which is
 licensed under the MIT License.
@@ -662,7 +637,7 @@ For details, see https://github.com/angular/bower-angular
 You can find a copy of the License at licenses/LICENSE-angular
 
 ================================================================
-For angular-animate (1.7.0)
+For angular-animate (1.7.5)
 ================================================================
 This product bundles the angular-animate library which is
 licensed under the MIT License.
@@ -670,7 +645,7 @@ For details, see https://github.com/angular/bower-angular-animate
 You can find a copy of the License at licenses/LICENSE-angular-animate
 
 ================================================================
-For angular-aria (1.7.0)
+For angular-aria (1.7.5)
 ================================================================
 This product bundles the angular-aria library which is
 licensed under the MIT License.
@@ -678,15 +653,7 @@ For details, see https://github.com/angular/bower-angular-aria
 You can find a copy of the License at licenses/LICENSE-angular-aria
 
 ================================================================
-For angular-chart.js (1.1.1)
-================================================================
-This product bundles the angular-chart.js library which is
-licensed under the 2-Clause BSD License.
-For details, see https://github.com/jtblin/angular-chart.js
-You can find a copy of the License at licenses/LICENSE-angular-chart.js
-
-================================================================
-For angular-material (1.1.9)
+For angular-material (1.1.10)
 ================================================================
 This product bundles the angular-material library which is
 licensed under the MIT License.
@@ -694,7 +661,7 @@ For details, see https://github.com/angular/bower-material
 You can find a copy of the License at licenses/LICENSE-angular-material
 
 ================================================================
-For angular-material-data-table (0.10.10)
+For angular-material-data-table (0.10.9)
 ================================================================
 This product bundles the angular-material-data-table library which is
 licensed under the MIT License.
@@ -702,7 +669,7 @@ For details, see http://danielnagy.me/md-data-table
 You can find a copy of the License at licenses/LICENSE-angular-material-data-table
 
 ================================================================
-For angular-messages (1.7.0)
+For angular-messages (1.7.5)
 ================================================================
 This product bundles the angular-messages library which is
 licensed under the MIT License.
@@ -710,7 +677,7 @@ For details, see https://github.com/angular/bower-angular-messages
 You can find a copy of the License at licenses/LICENSE-angular-messages
 
 ================================================================
-For angular-mocks (1.7.0)
+For angular-mocks (1.7.5)
 ================================================================
 This product bundles the angular-mocks library which is
 licensed under the MIT License.
@@ -718,7 +685,7 @@ For details, see https://github.com/angular/bower-angular-mocks
 You can find a copy of the License at licenses/LICENSE-angular-mocks
 
 ================================================================
-For angular-resource (1.7.0)
+For angular-resource (1.7.5)
 ================================================================
 This product bundles the angular-resource library which is
 licensed under the MIT License.
@@ -726,7 +693,7 @@ For details, see https://github.com/angular/bower-angular-resource
 You can find a copy of the License at licenses/LICENSE-angular-resource
 
 ================================================================
-For angular-sanitize (1.7.0)
+For angular-sanitize (1.7.5)
 ================================================================
 This product bundles the angular-sanitize library which is
 licensed under the MIT License.
@@ -734,7 +701,7 @@ For details, see https://github.com/angular/bower-angular-sanitize
 You can find a copy of the License at licenses/LICENSE-angular-sanitize
 
 ================================================================
-For angular-swagger-ui (565ed3eade)
+For angular-swagger-ui (0.4.4)
 ================================================================
 This product bundles the angular-swagger-ui library which is
 licensed under the MIT License.
@@ -774,7 +741,7 @@ For details, see https://github.com/angular-ui/angular-ui-router-bower
 You can find a copy of the License at licenses/LICENSE-angular-ui-router
 
 ================================================================
-For angular-yamljs (d052ed40f2)
+For angular-yamljs (0.0.1)
 ================================================================
 This product bundles the angular-yamljs library which is
 licensed under the MIT License.
@@ -782,7 +749,7 @@ For details, see https://github.com/mmumshad/angular-yamljs
 You can find a copy of the License at licenses/LICENSE-angular-yamljs
 
 ================================================================
-For bootstrap (1.7.0)
+For bootstrap (3.3.7)
 ================================================================
 This product bundles the bootstrap library which is
 licensed under the MIT License.
@@ -861,82 +828,3 @@ licensed under the MIT License.
 For details, see https://github.com/afuersch/css-percentage-circle
 You can find a copy of the License at licenses/LICENSE-css-percentage-circle
 
-================================================================
-For zap (4d45f9617f7d90f7a663ff21c7a4321dbe78098b)
-================================================================
-This product bundles the zap library which is licensed under the MIT License.
-For details, see https://github.com/uber-go/zap
-You can find a copy of the License at licenses/LICENSE-uber-go-zap
-
-================================================================
-For atomic (1ea20fb1cbb1cc08cbd0d913a96dead89aa18289)
-================================================================
-This product bundles the atomic library which is licensed under the MIT License.
-For details, see https://github.com/uber-go/atomic
-You can find a copy of the License at licenses/LICENSE-uber-go-atomic
-
-================================================================
-For multierr (3c4937480c32f4c13a875a1829af76c98ca3d40a)
-================================================================
-This product bundles the multierr library which is licensed under the MIT License.
-For details, see https://github.com/uber-go/multierr
-You can find a copy of the License at licenses/LICENSE-uber-go-multierr
-
-================================================================
-For lumberjack (a96e63847dc3c67d17befa69c303767e2f84e54f)
-================================================================
-This product bundles the lumberjack library which is licensed under the MIT License.
-For details, see https://github.com/natefinch/lumberjack
-You can find a copy of the License at licenses/LICENSE-natefinch-lumberjack
-
-================================================================
-For tablewriter (d4647c9c7a84d847478d890b816b7d8b62b0b279)
-================================================================
-This product bundles the tablewriter library which is licensed under the MIT License.
-For details, see https://github.com/olekukonko/tablewriter
-You can find a copy of the License at licenses/LICENSE-olekukonko-tablewriter
-
-================================================================
-For howeyc/gopass (bf9dde6d0d2c004a008c27aaee91170c786f6db8)
-================================================================
-This product bundles the howeyc/gopass library which is licensed under the ISC License.
-For details, see https://github.com/howeyc/gopass
-You can find a copy of the License at licenses/LICENSE-howeyc-gopass
-
-================================================================
-For imdario/mergo (6633656539c1639d9d78127b7d47c622b5d7b6dc)
-================================================================
-This product bundles imdario/mergo which is licensed under the 3-Clause BSD
-License.
-For details, see https://github.com/imdario/mergo
-You can find a copy of the License at licenses/LICENSE-imdario-mergo
-
-================================================================
-For hashicorp/golang-lru (0fb14efe8c47ae851c0034ed7a448854d3d34cf3)
-================================================================
-This product bundles the hashicorp/golang-lru library which is licensed under
-the MPL 2.0 License.
-For details, see https://github.com/hashicorp/golang-lru
-You can find a copy of the License at licenses/LICENSE-hashicorp-golang-lru
-
-================================================================
-For json-iterator/go (1.1.3)
-================================================================
-This product bundles the json-iterator/go library which is licensed under the MIT License.
-For details, see https://github.com/json-iterator/go
-You can find a copy of the License at licenses/LICENSE-json-iterator-go
-
-================================================================
-For valyala/bytebufferpool (master)
-================================================================
-This product bundles valyala/bytebufferpool which is licensed under the MIT License.
-For details, see https://github.com/valyala/bytebufferpool
-You can find a copy of the License at licenses/LICENSE-valyala-bytebufferpool
-
-================================================================
-For cheggaaa/pb (v1.0.25)
-================================================================
-This product bundles cheggaaa/pb which is licensed under the 3-Clause BSD
-License.
-For details, see https://github.com/cheggaaa/pb
-You can find a copy of the License at licenses/LICENSE-cheggaaa-pb
