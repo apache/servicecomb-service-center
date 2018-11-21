@@ -63,7 +63,7 @@ func (f *RevisionFilter) Init(ctx context.Context, parent *cache.Node) (node *ca
 
 	log.Warnf("the cache of finding instances api is broken, req[%s]!=cache[%s]",
 		requestRev, item.Rev)
-	item.Instances, item.broken = insts, true
+	item.Instances = insts
 	item.Broken()
 
 	node = cache.NewNode()

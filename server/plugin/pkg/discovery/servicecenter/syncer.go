@@ -215,7 +215,7 @@ func (c *Syncer) loop(ctx context.Context) {
 		}
 	}
 
-	log.Debug("service center client is stopped")
+	log.Debug("service center clusters syncer is stopped")
 }
 
 // unsafe
