@@ -84,7 +84,7 @@ func (c *Config) RegistryAddresses() []string {
 func Configuration() *Config {
 	configOnce.Do(func() {
 		var err error
-		defaultRegistryConfig.ClusterName = beego.AppConfig.DefaultString("manager_name", defaultClusterName)
+		defaultRegistryConfig.ClusterName = beego.AppConfig.DefaultString("manager_name", DefaultClusterName)
 		defaultRegistryConfig.ManagerAddress = beego.AppConfig.String("manager_addr")
 		defaultRegistryConfig.ClusterAddresses = beego.AppConfig.DefaultString("manager_cluster", "http://127.0.0.1:2379")
 		defaultRegistryConfig.InitClusters()

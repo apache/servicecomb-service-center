@@ -59,7 +59,7 @@ const (
 	defaultDialTimeout    = 10 * time.Second
 	defaultRequestTimeout = 30 * time.Second
 
-	defaultClusterName = "default"
+	DefaultClusterName = "default"
 )
 
 func WithTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
