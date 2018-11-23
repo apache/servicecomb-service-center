@@ -1,6 +1,6 @@
 ## scctl
 
-`scctl` enables user to view the list of MicroServices registered in SC.
+`scctl` enables user to view the list of MicroServices registered in service center(version 1.1.0+).
 You can view all the commands from [here](/scctl/pkg/plugin/README.md)
 
 ### QuickStart Guide
