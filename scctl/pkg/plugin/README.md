@@ -1,7 +1,7 @@
 scctl
 ========
 
-`scctl` is a command line client for service center.
+`scctl` is a command line client for service center(version 1.1.0+).
 
 ## Global options
 

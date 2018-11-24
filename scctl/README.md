@@ -1,13 +1,13 @@
 ## scctl
 
-`scctl` enables user to view the list of MicroServices registered in SC.
+`scctl` enables user to view the list of MicroServices registered in service center(version 1.1.0+).
 You can view all the commands from [here](/scctl/pkg/plugin/README.md)
 
 ### QuickStart Guide
 
 ##### Install
 Easiest way to get started with `scctl` is to download the release 
-from [here](https://dist.apache.org/repos/dist/dev/incubator/servicecomb/incubator-servicecomb-service-center/)
+from [`here`](http://servicecomb.apache.org/release/)
 and then untar/unzip it based on your OS.
 
 ##### Check the version

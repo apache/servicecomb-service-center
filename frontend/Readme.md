@@ -5,7 +5,8 @@ Service-Center UI also offers a unique feature of testing the Schemas of their M
 
 ### QuickStart Guide
 
-Easiest way to get started with Service-Center UI is to download the release from [here](https://dist.apache.org/repos/dist/dev/incubator/servicecomb/incubator-servicecomb-service-center/) and then untar/unzip it based on your OS and run start-frontend.sh/start-frontend.bat.
+Easiest way to get started with Service-Center UI is to download the release from
+[`here`](http://servicecomb.apache.org/release/) and then untar/unzip it based on your OS and run start-frontend.sh/start-frontend.bat.
 This will bring up the Service-Center UI on [http://127.0.0.1:30103](http://127.0.0.1:30103).
 
 Windows(apache-servicecomb-service-center-XXX-windows-amd64.zip):
