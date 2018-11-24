@@ -7,7 +7,7 @@ You can view all the commands from [here](/scctl/pkg/plugin/README.md)
 
 ##### Install
 Easiest way to get started with `scctl` is to download the release 
-from [here](https://dist.apache.org/repos/dist/dev/incubator/servicecomb/incubator-servicecomb-service-center/)
+from [`here`](http://servicecomb.apache.org/release/)
 and then untar/unzip it based on your OS.
 
 ##### Check the version
