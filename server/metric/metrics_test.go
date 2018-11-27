@@ -28,16 +28,16 @@ func TestDetails_ForEach(t *testing.T) {
 		t.Fatalf("TestDetails_ForEach failed")
 		return true
 	})
-	d.Put([]*dto.LabelPair{{Name: &n, Value: &v}, {Name: &n, Value: &v}}, 1)
+	d.put([]*dto.LabelPair{{Name: &n, Value: &v}, {Name: &n, Value: &v}}, 1)
 	d.ForEach(func(labels []*dto.LabelPair, v float64) (next bool) {
 		if len(labels) != 2 || v != 1 {
 			t.Fatalf("TestDetails_ForEach failed")
 		}
 		return true
 	})
-	d.Put([]*dto.LabelPair{{}}, 3)
-	d.Put([]*dto.LabelPair{{}}, 4)
-	d.Put(nil, 2)
+	d.put([]*dto.LabelPair{{}}, 3)
+	d.put([]*dto.LabelPair{{}}, 4)
+	d.put(nil, 2)
 	l := 0
 	d.ForEach(func(labels []*dto.LabelPair, v float64) (next bool) {
 		switch {
@@ -78,7 +78,7 @@ func TestDetails_ForEach(t *testing.T) {
 	if find {
 		t.Fatalf("TestMetrics_ForEach failed")
 	}
-	ms.Put("a", d)
+	ms.put("a", d)
 	if ms.Summary("a") != 0 {
 		t.Fatalf("TestMetrics_Summary failed")
 	}

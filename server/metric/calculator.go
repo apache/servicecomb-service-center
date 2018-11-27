@@ -55,14 +55,14 @@ func (c *CommonCalculator) Calc(mf *dto.MetricFamily) *Details {
 func metricGaugeOf(details *Details, m []*dto.Metric) {
 	for _, d := range m {
 		details.Summary += d.GetGauge().GetValue()
-		details.Put(d.GetLabel(), d.GetGauge().GetValue())
+		details.put(d.GetLabel(), d.GetGauge().GetValue())
 	}
 }
 
 func metricCounterOf(details *Details, m []*dto.Metric) {
 	for _, d := range m {
 		details.Summary += d.GetCounter().GetValue()
-		details.Put(d.GetLabel(), d.GetCounter().GetValue())
+		details.put(d.GetLabel(), d.GetCounter().GetValue())
 	}
 }
 
@@ -74,7 +74,7 @@ func metricSummaryOf(details *Details, m []*dto.Metric) {
 	for _, d := range m {
 		count += d.GetSummary().GetSampleCount()
 		sum += d.GetSummary().GetSampleSum()
-		details.Put(d.GetLabel(), d.GetSummary().GetSampleSum()/float64(d.GetSummary().GetSampleCount()))
+		details.put(d.GetLabel(), d.GetSummary().GetSampleSum()/float64(d.GetSummary().GetSampleCount()))
 	}
 
 	if count == 0 {
@@ -92,7 +92,7 @@ func metricHistogramOf(details *Details, m []*dto.Metric) {
 	for _, d := range m {
 		count += d.GetHistogram().GetSampleCount()
 		sum += d.GetHistogram().GetSampleSum()
-		details.Put(d.GetLabel(), d.GetHistogram().GetSampleSum()/float64(d.GetHistogram().GetSampleCount()))
+		details.put(d.GetLabel(), d.GetHistogram().GetSampleSum()/float64(d.GetHistogram().GetSampleCount()))
 	}
 
 	if count == 0 {
