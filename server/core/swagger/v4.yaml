@@ -1370,13 +1370,16 @@ paths:
           in: header
           type: string
           default: default
-        - name: project
-          in: path
-          required: true
+        - name: x-resource-revsion
+          in: header
           type: string
+          description: 客户端缓存的版本号,由上一次请求该API返回Header中获得;如请求版本号不为空且与服务端不匹配则服务端返回其最新的实例集合和版本号;如匹配则服务端返回304状态且Body为空。
         - name: X-ConsumerId
           in: header
           description: 微服务消费者的微服务唯一标识。
+          type: string
+        - name: project
+          in: path
           required: true
           type: string
         - name: appId
@@ -1407,6 +1410,56 @@ paths:
       responses:
         200:
           description: 查询成功
+          headers:
+            "X-Resource-Revision":
+              type: "string"
+              description: 返回集合的版本号,当集合内容发生变化,版本号随之变化
+          schema:
+            $ref: '#/definitions/GetInstancesResponse'
+        400:
+          description: 错误的请求
+          schema:
+            type: string
+        500:
+          description: 内部错误
+          schema:
+            type: string
+    put:
+      description: |
+        批量微服务实例发现接口
+      operationId: batchFind
+      parameters:
+        - name: x-domain-name
+          in: header
+          type: string
+          default: default
+        - name: x-resource-revsion
+          in: header
+          type: string
+          description: 客户端缓存的版本号,由上一次请求该API返回Header中获得;如请求版本号不为空且与服务端不匹配则服务端返回其最新的实例集合和版本号;如匹配则服务端返回304状态且Body为空。
+        - name: X-ConsumerId
+          in: header
+          description: 微服务消费者的微服务唯一标识。
+          type: string
+        - name: project
+          in: path
+          required: true
+          type: string
+        - name: services
+          in: body
+          description: 查询微服务的请求结构体
+          required: true
+          schema:
+            $ref: '#definitions/BatchFindRequest'
+      tags:
+        - instances
+      responses:
+        200:
+          description: 查询成功
+          headers:
+            "X-Resource-Revision":
+              type: "string"
+              description: 返回集合的版本号,当集合内容发生变化,版本号随之变化
           schema:
             $ref: '#/definitions/GetInstancesResponse'
         400:
@@ -1882,6 +1935,15 @@ definitions:
       serviceId:
         type: string
         description: 微服务唯一标识，创建实例时，以url里面的为准，不用这里的serviceId。
+      appId:
+        description: 应用app唯一标识。
+        type: string
+      serviceName:
+        description: 微服务名称。
+        type: string
+      environment:
+        type: string
+        description: 实例的environment。
       version:
         type: string
         description: 微服务版本号
@@ -1907,6 +1969,13 @@ definitions:
       modTimestamp:
         type: string
         description: 更新时间
+  BatchFindRequest:
+    type: object
+    properties:
+      services:
+        type: array
+        items:
+          $ref: '#/definitions/DependencyKey'
   CreateDependenciesRequest:
     type: object
     properties:
