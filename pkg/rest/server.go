@@ -17,7 +17,9 @@
 package rest
 
 import (
+	"compress/gzip"
 	"crypto/tls"
+	"github.com/NYTimes/gziphandler"
 	"github.com/apache/servicecomb-service-center/pkg/grace"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"net"
@@ -46,6 +48,8 @@ type ServerConfig struct {
 	GraceTimeout      time.Duration
 	MaxHeaderBytes    int
 	TLSConfig         *tls.Config
+	Compressed        bool
+	CompressMinBytes  int
 }
 
 func DefaultServerConfig() *ServerConfig {
@@ -57,6 +61,8 @@ func DefaultServerConfig() *ServerConfig {
 		KeepAliveTimeout:  1 * time.Minute,
 		GraceTimeout:      3 * time.Second,
 		MaxHeaderBytes:    16384,
+		Compressed:        true,
+		CompressMinBytes:  1400, // 1.4KB
 	}
 }
 
@@ -64,7 +70,7 @@ func NewServer(srvCfg *ServerConfig) *Server {
 	if srvCfg == nil {
 		srvCfg = DefaultServerConfig()
 	}
-	return &Server{
+	s := &Server{
 		Server: &http.Server{
 			Addr:              srvCfg.Addr,
 			Handler:           srvCfg.Handler,
@@ -80,6 +86,11 @@ func NewServer(srvCfg *ServerConfig) *Server {
 		state:            serverStateInit,
 		Network:          "tcp",
 	}
+	if srvCfg.Compressed && srvCfg.CompressMinBytes > 0 && srvCfg.Handler != nil {
+		wrapper, _ := gziphandler.NewGzipLevelAndMinSize(gzip.DefaultCompression, srvCfg.CompressMinBytes)
+		s.Handler = wrapper(srvCfg.Handler)
+	}
+	return s
 }
 
 type Server struct {

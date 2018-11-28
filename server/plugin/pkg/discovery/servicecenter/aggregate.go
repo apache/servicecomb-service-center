@@ -76,7 +76,9 @@ func (c *SCClientAggregate) GetScCache(ctx context.Context) (*model.Cache, map[s
 
 func (c *SCClientAggregate) cacheAppend(name string, setter model.Setter, getter model.Getter) {
 	getter.ForEach(func(_ int, v *model.KV) bool {
-		v.ClusterName = name
+		if len(v.ClusterName) == 0 || v.ClusterName == registry.DefaultClusterName {
+			v.ClusterName = name
+		}
 		setter.SetValue(v)
 		return true
 	})
