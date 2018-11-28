@@ -18,20 +18,19 @@ package metric
 
 import (
 	"github.com/apache/servicecomb-service-center/pkg/buffer"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	dto "github.com/prometheus/client_model/go"
 	"strings"
 )
 
 func NewMetrics() *Metrics {
 	return &Metrics{
-		mapper: util.NewConcurrentMap(0),
+		mapper: make(map[string]*Details),
 	}
 }
 
 func NewDetails() *Details {
 	return &Details{
-		mapper: util.NewConcurrentMap(0),
+		mapper: make(map[string]float64),
 		buffer: buffer.NewPool(bufferSize),
 	}
 }
@@ -41,7 +40,7 @@ type Details struct {
 	// Summary is the calculation results of the details
 	Summary float64
 
-	mapper *util.ConcurrentMap
+	mapper map[string]float64
 	buffer *buffer.Pool
 }
 
@@ -71,52 +70,52 @@ func (cm *Details) toLabels(key string) (p []*dto.LabelPair) {
 }
 
 func (cm *Details) Get(labels []*dto.LabelPair) (val float64) {
-	if v, ok := cm.mapper.Get(cm.toKey(labels)); ok {
-		val = v.(float64)
+	if v, ok := cm.mapper[cm.toKey(labels)]; ok {
+		val = v
 	}
 	return
 }
 
-func (cm *Details) Put(labels []*dto.LabelPair, val float64) {
-	cm.mapper.Put(cm.toKey(labels), val)
+func (cm *Details) put(labels []*dto.LabelPair, val float64) {
+	cm.mapper[cm.toKey(labels)] = val
 	return
 }
 
 func (cm *Details) ForEach(f func(labels []*dto.LabelPair, v float64) (next bool)) {
-	cm.mapper.ForEach(func(item util.MapItem) (next bool) {
-		k, _ := item.Key.(string)
-		v, _ := item.Value.(float64)
-		return f(cm.toLabels(k), v)
-	})
+	for k, v := range cm.mapper {
+		if !f(cm.toLabels(k), v) {
+			break
+		}
+	}
 }
 
 // Metrics is the struct to hold the Details objects store and index by metric name
 type Metrics struct {
-	mapper *util.ConcurrentMap
+	mapper map[string]*Details
 }
 
-func (cm *Metrics) Put(key string, val *Details) {
-	cm.mapper.Put(key, val)
+func (cm *Metrics) put(key string, val *Details) {
+	cm.mapper[key] = val
 }
 
 func (cm *Metrics) Get(key string) (val *Details) {
-	if v, ok := cm.mapper.Get(key); ok {
-		val = v.(*Details)
+	if v, ok := cm.mapper[key]; ok {
+		val = v
 	}
 	return
 }
 
 func (cm *Metrics) ForEach(f func(k string, v *Details) (next bool)) {
-	cm.mapper.ForEach(func(item util.MapItem) (next bool) {
-		k, _ := item.Key.(string)
-		v, _ := item.Value.(*Details)
-		return f(k, v)
-	})
+	for k, v := range cm.mapper {
+		if !f(k, v) {
+			break
+		}
+	}
 }
 
 func (cm *Metrics) Summary(key string) (sum float64) {
-	if v, ok := cm.mapper.Get(key); ok {
-		sum = v.(*Details).Summary
+	if v, ok := cm.mapper[key]; ok {
+		sum = v.Summary
 	}
 	return
 }

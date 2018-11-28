@@ -26,6 +26,7 @@ import (
 	"time"
 )
 
+// Gatherer is the reader of sc metrics
 var Gatherer *MetricsGatherer
 
 func init() {
@@ -83,13 +84,16 @@ func (mm *MetricsGatherer) Collect() error {
 		return err
 	}
 
+	records := NewMetrics()
 	for _, mf := range mfs {
 		name := mf.GetName()
 		if _, ok := SysMetrics.Get(name); strings.Index(name, familyNamePrefix) == 0 || ok {
 			if d := Calculate(mf); d != nil {
-				mm.Records.Put(strings.TrimPrefix(name, familyNamePrefix), d)
+				records.put(strings.TrimPrefix(name, familyNamePrefix), d)
 			}
 		}
 	}
+	// clean the old cache here
+	mm.Records = records
 	return nil
 }
