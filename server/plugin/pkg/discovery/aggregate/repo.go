@@ -18,6 +18,7 @@ package aggregate
 import (
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 )
 
 func init() {
@@ -32,5 +33,12 @@ func (r *AggregateRepository) New(t discovery.Type, cfg *discovery.Config) disco
 }
 
 func NewRepository() mgr.PluginInstance {
+	InitConfigs()
 	return &AggregateRepository{}
+}
+
+func InitConfigs() {
+	mgr.DISCOVERY.ActiveConfigs().
+		Set("config", registry.Configuration()).
+		Set("aggregateMode", repos)
 }

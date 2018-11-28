@@ -18,6 +18,7 @@ package etcd
 import (
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 )
 
 func init() {
@@ -33,5 +34,11 @@ func (r *EtcdRepository) New(t discovery.Type, cfg *discovery.Config) discovery.
 }
 
 func NewRepository() mgr.PluginInstance {
+	InitConfigs()
 	return &EtcdRepository{}
+}
+
+func InitConfigs() {
+	mgr.DISCOVERY.ActiveConfigs().
+		Set("config", registry.Configuration())
 }

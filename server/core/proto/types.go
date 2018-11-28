@@ -47,8 +47,8 @@ type ServerConfig struct {
 	CompactIndexDelta int64  `json:"-"`
 	CompactInterval   string `json:"-"`
 
-	EnablePProf bool `json:"-"`
-	EnableCache bool `json:"-"`
+	EnablePProf bool `json:"enablePProf"`
+	EnableCache bool `json:"enableCache"`
 
 	LogRotateSize  int64  `json:"-"`
 	LogBackupCount int64  `json:"-"`
@@ -60,7 +60,7 @@ type ServerConfig struct {
 	PluginsDir string          `json:"-"`
 	Plugins    util.JSONObject `json:"plugins"`
 
-	SelfRegister bool `json:"-"`
+	SelfRegister bool `json:"selfRegister"`
 }
 
 type ServerInformation struct {

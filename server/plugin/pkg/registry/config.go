@@ -30,15 +30,14 @@ var (
 )
 
 type Config struct {
-	SslEnabled       bool
-	EmbedMode        string
-	ManagerAddress   string
-	ClusterName      string
-	ClusterAddresses string   // the raw string of cluster configuration
-	Clusters         Clusters // parsed from ClusterAddresses
-	DialTimeout      time.Duration
-	RequestTimeOut   time.Duration
-	AutoSyncInterval time.Duration
+	SslEnabled       bool          `json:"-"`
+	ManagerAddress   string        `json:"manageAddress,omitempty"`
+	ClusterName      string        `json:"manageName,omitempty"`
+	ClusterAddresses string        `json:"manageClusters,omitempty"` // the raw string of cluster configuration
+	Clusters         Clusters      `json:"-"`                        // parsed from ClusterAddresses
+	DialTimeout      time.Duration `json:"connectTimeout"`
+	RequestTimeOut   time.Duration `json:"registryTimeout"`
+	AutoSyncInterval time.Duration `json:"autoSyncInterval"`
 }
 
 func (c *Config) InitClusters() {
