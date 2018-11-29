@@ -14,25 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package notification
+package notify
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
-	"golang.org/x/net/context"
 	"testing"
 	"time"
 )
 
 func TestGetNotifyService(t *testing.T) {
-	n := NotifyType(999)
-	if n.String() != "NotifyType999" {
-		t.Fatalf("TestGetNotifyService failed")
-	}
-
-	notifyService := &NotifyService{
-		isClose:   true,
-		goroutine: gopool.New(context.Background()),
-	}
+	notifyService := NewNotifyService()
 	if notifyService == nil {
 		t.Fatalf("TestGetNotifyService failed")
 	}
@@ -44,11 +34,12 @@ func TestGetNotifyService(t *testing.T) {
 	if err == nil {
 		t.Fatalf("TestGetNotifyService failed")
 	}
-	err = notifyService.AddJob(nil)
+	err = notifyService.Publish(nil)
 	if err == nil {
 		t.Fatalf("TestGetNotifyService failed")
 	}
 
+	INSTANCE := RegisterType("INSTANCE", 1)
 	notifyService.Start()
 	notifyService.Start()
 	if notifyService.Closed() != false {
@@ -65,25 +56,27 @@ func TestGetNotifyService(t *testing.T) {
 	if err == nil {
 		t.Fatalf("TestGetNotifyService failed")
 	}
+	notifyService.RemoveSubscriber(s)
+
 	s = NewSubscriber(INSTANCE, "s", "g")
 	err = notifyService.AddSubscriber(s)
 	if err != nil {
-		t.Fatalf("TestGetNotifyService failed")
+		t.Fatalf("TestGetNotifyService failed, %v", err)
 	}
-	j := &BaseNotifyJob{INSTANCE, "s", "g"}
-	err = notifyService.AddJob(j)
+	j := &baseEvent{INSTANCE, "s", "g"}
+	err = notifyService.Publish(j)
 	if err != nil {
 		t.Fatalf("TestGetNotifyService failed")
 	}
-	err = notifyService.AddJob(NewNotifyServiceHealthCheckJob(NewNotifyServiceHealthChecker()))
+	err = notifyService.Publish(NewNotifyServiceHealthCheckJob(NewNotifyServiceHealthChecker()))
+	if err != nil {
+		t.Fatalf("TestGetNotifyService failed")
+	}
+	err = notifyService.Publish(NewNotifyServiceHealthCheckJob(s))
 	if err != nil {
 		t.Fatalf("TestGetNotifyService failed")
 	}
 	<-time.After(time.Second)
-	err = notifyService.AddJob(NewNotifyServiceHealthCheckJob(s))
-	if err != nil {
-		t.Fatalf("TestGetNotifyService failed")
-	}
 	notifyService.Stop()
 	if notifyService.Closed() != true {
 		t.Fatalf("TestGetNotifyService failed")

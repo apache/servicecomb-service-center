@@ -14,21 +14,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package notification
+package notify
 
-import "testing"
+import (
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"golang.org/x/net/context"
+	"testing"
+)
 
 func TestHandleWatchJob(t *testing.T) {
-	defer func() { recover() }()
-	w := NewListWatcher("g", "s", nil)
+	defer log.Recover()
+	w := NewInstanceEventListWatcher("g", "s", nil)
 	w.Job <- nil
 	err := HandleWatchJob(w, nil)
 	if err == nil {
 		t.Fatalf("TestHandleWatchJob failed")
 	}
-	w.Job <- NewWatchJob("g", "s", 1, nil)
+	w.Job <- NewInstanceEvent("g", "s", 1, nil)
 	err = HandleWatchJob(w, nil)
-	if err != nil {
-		t.Fatalf("TestHandleWatchJob failed")
+	t.Fatalf("TestHandleWatchJob failed")
+}
+
+func TestDoStreamListAndWatch(t *testing.T) {
+	err := DoStreamListAndWatch(context.Background(), "s", nil, nil)
+	if err == nil {
+		t.Fatal("TestDoStreamListAndWatch failed", err)
 	}
 }

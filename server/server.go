@@ -21,11 +21,12 @@ import (
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	nf "github.com/apache/servicecomb-service-center/pkg/notify"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/mux"
+	"github.com/apache/servicecomb-service-center/server/notify"
 	"github.com/apache/servicecomb-service-center/server/plugin"
-	nf "github.com/apache/servicecomb-service-center/server/service/notification"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"github.com/apache/servicecomb-service-center/version"
 	"github.com/astaxie/beego"
@@ -132,7 +133,7 @@ func (s *ServiceCenterServer) compactBackendService() {
 
 func (s *ServiceCenterServer) initialize() {
 	s.store = backend.Store()
-	s.notifyService = nf.GetNotifyService()
+	s.notifyService = notify.NotifyCenter()
 	s.apiServer = GetAPIServer()
 	s.goroutine = gopool.New(context.Background())
 

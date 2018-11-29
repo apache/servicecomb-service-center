@@ -14,25 +14,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package notification
+package notify
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/queue"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"golang.org/x/net/context"
 )
 
 type Processor struct {
+	*queue.TaskQueue
+
 	name     string
 	subjects *util.ConcurrentMap
-	queue    chan NotifyJob
+	queue    chan Event
 }
 
 func (p *Processor) Name() string {
 	return p.name
 }
 
-func (p *Processor) Notify(job NotifyJob) {
+func (p *Processor) Accept(job Event) {
+	p.Add(queue.Task{Object: job})
+}
+
+func (p *Processor) Handle(ctx context.Context, obj interface{}) {
+	p.Notify(obj.(Event))
+}
+
+func (p *Processor) Notify(job Event) {
 	if itf, ok := p.subjects.Get(job.Subject()); ok {
 		itf.(*Subject).Notify(job)
 	}
@@ -79,29 +89,12 @@ func (p *Processor) Clear() {
 	p.subjects.Clear()
 }
 
-func (p *Processor) Accept(job NotifyJob) {
-	defer log.Recover()
-	p.queue <- job
-}
-
-func (p *Processor) Do(ctx context.Context) {
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case job, ok := <-p.queue:
-			if !ok {
-				return
-			}
-			p.Notify(job)
-		}
+func NewProcessor(name string, queueSize int) *Processor {
+	p := &Processor{
+		TaskQueue: queue.NewTaskQueue(queueSize),
+		name:      name,
+		subjects:  util.NewConcurrentMap(0),
 	}
-}
-
-func NewProcessor(name string, queue int) *Processor {
-	return &Processor{
-		name:     name,
-		subjects: util.NewConcurrentMap(0),
-		queue:    make(chan NotifyJob, queue),
-	}
+	p.AddWorker(p)
+	return p
 }

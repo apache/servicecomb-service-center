@@ -14,29 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package notification
+package notify
 
 import (
 	"errors"
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/util"
-	"golang.org/x/net/context"
 	"sync"
 )
 
-var notifyService *NotifyService
-
-func init() {
-	notifyService = &NotifyService{
-		isClose:   true,
-		goroutine: gopool.New(context.Background()),
-	}
-}
-
 type NotifyService struct {
-	processors *util.ConcurrentMap
-	goroutine  *gopool.Pool
+	processors map[Type]*Processor
 	err        chan error
 	closeMux   sync.RWMutex
 	isClose    bool
@@ -47,10 +34,9 @@ func (s *NotifyService) Err() <-chan error {
 }
 
 func (s *NotifyService) init() {
-	s.processors = util.NewConcurrentMap(int(typeEnd))
 	s.err = make(chan error, 1)
-	for i := NotifyType(0); i != typeEnd; i++ {
-		s.processors.Put(i, NewProcessor(i.String(), i.QueueSize()))
+	for _, t := range Types() {
+		s.processors[t] = NewProcessor(t.String(), t.QueueSize())
 	}
 }
 
@@ -67,12 +53,9 @@ func (s *NotifyService) Start() {
 	// 错误subscriber清理
 	s.AddSubscriber(NewNotifyServiceHealthChecker())
 
-	log.Debugf("notify service is started")
+	s.startProcessors()
 
-	s.processors.ForEach(func(item util.MapItem) (next bool) {
-		s.goroutine.Do(item.Value.(*Processor).Do)
-		return true
-	})
+	log.Debugf("notify service is started")
 }
 
 func (s *NotifyService) AddSubscriber(n Subscriber) error {
@@ -80,45 +63,51 @@ func (s *NotifyService) AddSubscriber(n Subscriber) error {
 		return errors.New("server is shutting down")
 	}
 
-	itf, ok := s.processors.Get(n.Type())
+	p, ok := s.processors[n.Type()]
 	if !ok {
 		return errors.New("Unknown subscribe type")
 	}
 	n.SetService(s)
 	n.OnAccept()
 
-	itf.(*Processor).AddSubscriber(n)
+	p.AddSubscriber(n)
 	return nil
 }
 
 func (s *NotifyService) RemoveSubscriber(n Subscriber) {
-	itf, ok := s.processors.Get(n.Type())
+	p, ok := s.processors[n.Type()]
 	if !ok {
 		return
 	}
 
-	itf.(*Processor).Remove(n)
+	p.Remove(n)
 	n.Close()
 }
 
-func (s *NotifyService) RemoveAllSubscribers() {
-	s.processors.ForEach(func(item util.MapItem) (next bool) {
-		item.Value.(*Processor).Clear()
-		return true
-	})
+func (s *NotifyService) startProcessors() {
+	for _, p := range s.processors {
+		p.Run()
+	}
+}
+
+func (s *NotifyService) stopProcessors() {
+	for _, p := range s.processors {
+		p.Clear()
+		p.Stop()
+	}
 }
 
 //通知内容塞到队列里
-func (s *NotifyService) AddJob(job NotifyJob) error {
+func (s *NotifyService) Publish(job Event) error {
 	if s.Closed() {
 		return errors.New("add notify job failed for server shutdown")
 	}
 
-	itf, ok := s.processors.Get(job.Type())
+	p, ok := s.processors[job.Type()]
 	if !ok {
 		return errors.New("Unknown job type")
 	}
-	itf.(*Processor).Accept(job)
+	p.Accept(job)
 	return nil
 }
 
@@ -137,15 +126,16 @@ func (s *NotifyService) Stop() {
 	s.isClose = true
 	s.closeMux.Unlock()
 
-	s.goroutine.Close(true)
-
-	s.RemoveAllSubscribers()
+	s.stopProcessors()
 
 	close(s.err)
 
 	log.Debug("notify service stopped")
 }
 
-func GetNotifyService() *NotifyService {
-	return notifyService
+func NewNotifyService() *NotifyService {
+	return &NotifyService{
+		processors: make(map[Type]*Processor),
+		isClose:    true,
+	}
 }

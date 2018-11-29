@@ -20,9 +20,8 @@ import (
 	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	apt "github.com/apache/servicecomb-service-center/server/core"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
-	nf "github.com/apache/servicecomb-service-center/server/service/notification"
+	"github.com/apache/servicecomb-service-center/server/notify"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"github.com/gorilla/websocket"
 	"golang.org/x/net/context"
@@ -40,34 +39,31 @@ func (s *InstanceService) WatchPreOpera(ctx context.Context, in *pb.WatchInstanc
 }
 
 func (s *InstanceService) Watch(in *pb.WatchInstanceRequest, stream pb.ServiceInstanceCtrl_WatchServer) error {
-	var err error
-	if err = s.WatchPreOpera(stream.Context(), in); err != nil {
+	log.Infof("new a stream list and watch with service[%s]", in.SelfServiceId)
+	if err := s.WatchPreOpera(stream.Context(), in); err != nil {
 		log.Errorf(err, "service[%s] establish watch failed: invalid params", in.SelfServiceId)
 		return err
 	}
-	domainProject := util.ParseDomainProject(stream.Context())
-	watcher := nf.NewListWatcher(in.SelfServiceId, apt.GetInstanceRootKey(domainProject)+"/", nil)
-	err = nf.GetNotifyService().AddSubscriber(watcher)
-	log.Infof("watcher[%s/%s] start watch instance status", watcher.Subject(), watcher.Group())
-	return nf.HandleWatchJob(watcher, stream)
+
+	return notify.DoStreamListAndWatch(stream.Context(), in.SelfServiceId, nil, stream)
 }
 
 func (s *InstanceService) WebSocketWatch(ctx context.Context, in *pb.WatchInstanceRequest, conn *websocket.Conn) {
 	log.Infof("new a web socket watch with service[%s]", in.SelfServiceId)
 	if err := s.WatchPreOpera(ctx, in); err != nil {
-		nf.EstablishWebSocketError(conn, err)
+		notify.EstablishWebSocketError(conn, err)
 		return
 	}
-	nf.DoWebSocketListAndWatch(ctx, in.SelfServiceId, nil, conn)
+	notify.DoWebSocketListAndWatch(ctx, in.SelfServiceId, nil, conn)
 }
 
 func (s *InstanceService) WebSocketListAndWatch(ctx context.Context, in *pb.WatchInstanceRequest, conn *websocket.Conn) {
 	log.Infof("new a web socket list and watch with service[%s]", in.SelfServiceId)
 	if err := s.WatchPreOpera(ctx, in); err != nil {
-		nf.EstablishWebSocketError(conn, err)
+		notify.EstablishWebSocketError(conn, err)
 		return
 	}
-	nf.DoWebSocketListAndWatch(ctx, in.SelfServiceId, func() ([]*pb.WatchInstanceResponse, int64) {
+	notify.DoWebSocketListAndWatch(ctx, in.SelfServiceId, func() ([]*pb.WatchInstanceResponse, int64) {
 		return serviceUtil.QueryAllProvidersInstances(ctx, in.SelfServiceId)
 	}, conn)
 }

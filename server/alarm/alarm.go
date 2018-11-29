@@ -16,7 +16,8 @@
 package alarm
 
 import (
-	nf "github.com/apache/servicecomb-service-center/server/service/notification"
+	nf "github.com/apache/servicecomb-service-center/pkg/notify"
+	"github.com/apache/servicecomb-service-center/server/notify"
 	"sync/atomic"
 )
 
@@ -80,5 +81,5 @@ func Alarm(id ID, fields ...Field) error {
 	for _, f := range fields {
 		ae.fields[f.Key] = f.Value
 	}
-	return nf.GetNotifyService().Publish(ae)
+	return notify.NotifyCenter().Publish(ae)
 }

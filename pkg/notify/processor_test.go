@@ -14,31 +14,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package notification
+package notify
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"testing"
 	"time"
 )
 
 type mockSubscriberChan struct {
-	*BaseSubscriber
-	job chan NotifyJob
+	Subscriber
+	job chan Event
 }
 
-func (s *mockSubscriberChan) OnMessage(job NotifyJob) {
+func (s *mockSubscriberChan) OnMessage(job Event) {
 	s.job <- job
 }
 
 func TestProcessor_Do(t *testing.T) {
+	INSTANCE := RegisterType("INSTANCE", 1)
 	delay := 50 * time.Millisecond
-	mock1 := &mockSubscriberChan{BaseSubscriber: NewSubscriber(INSTANCE, "s1", "g1"),
-		job: make(chan NotifyJob, 1)}
-	mock2 := &mockSubscriberChan{BaseSubscriber: NewSubscriber(INSTANCE, "s1", "g2"),
-		job: make(chan NotifyJob, 1)}
+	mock1 := &mockSubscriberChan{Subscriber: NewSubscriber(INSTANCE, "s1", "g1"),
+		job: make(chan Event, 1)}
+	mock2 := &mockSubscriberChan{Subscriber: NewSubscriber(INSTANCE, "s1", "g2"),
+		job: make(chan Event, 1)}
 	p := NewProcessor("p1", 0)
-	gopool.Go(p.Do)
 	if p.Name() != "p1" {
 		t.Fatalf("TestProcessor_Do")
 	}
@@ -62,8 +61,8 @@ func TestProcessor_Do(t *testing.T) {
 	}
 	p.AddSubscriber(mock1)
 	p.AddSubscriber(mock2)
-	job := &BaseNotifyJob{group: "g1"}
-	p.Accept(job)
+	job := &baseEvent{group: "g1"}
+	p.Handle(nil, job)
 	select {
 	case <-mock1.job:
 		t.Fatalf("TestProcessor_Do")
@@ -71,7 +70,7 @@ func TestProcessor_Do(t *testing.T) {
 	}
 	job.subject = "s1"
 	job.group = "g3"
-	p.Accept(job)
+	p.Handle(nil, job)
 	select {
 	case <-mock1.job:
 		t.Fatalf("TestProcessor_Do")
@@ -79,7 +78,7 @@ func TestProcessor_Do(t *testing.T) {
 	}
 	job.subject = "s1"
 	job.group = "g1"
-	p.Accept(job)
+	p.Handle(nil, job)
 	select {
 	case j := <-mock1.job:
 		if j != job {
@@ -95,7 +94,7 @@ func TestProcessor_Do(t *testing.T) {
 	}
 	job.subject = "s1"
 	job.group = ""
-	p.Accept(job)
+	p.Handle(nil, job)
 	select {
 	case j := <-mock1.job:
 		if j != job {

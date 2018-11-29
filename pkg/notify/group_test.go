@@ -14,20 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package notification
+package notify
 
 import "testing"
 
 type mockSubscriber struct {
-	*BaseSubscriber
-	job NotifyJob
+	Subscriber
+	job Event
 }
 
-func (s *mockSubscriber) OnMessage(job NotifyJob) {
+func (s *mockSubscriber) OnMessage(job Event) {
 	s.job = job
 }
 
 func TestGroup_Add(t *testing.T) {
+	INSTANCE := RegisterType("INSTANCE", 1)
 	m := NewSubscriber(INSTANCE, "s1", "g1")
 	g := NewGroup("g1")
 	if g.Name() != "g1" {
@@ -39,7 +40,7 @@ func TestGroup_Add(t *testing.T) {
 	if g.AddSubscriber(NewSubscriber(INSTANCE, "s1", "g1")) == m {
 		t.Fatalf("TestGroup_Add failed")
 	}
-	same := *m
+	same := *(m.(*baseSubscriber))
 	if g.AddSubscriber(&same) != m {
 		t.Fatalf("TestGroup_Add failed")
 	}
@@ -54,14 +55,14 @@ func TestGroup_Add(t *testing.T) {
 		t.Fatalf("TestGroup_Add failed")
 	}
 
-	mock := &mockSubscriber{BaseSubscriber: NewSubscriber(INSTANCE, "s1", "g1")}
+	mock := &mockSubscriber{Subscriber: NewSubscriber(INSTANCE, "s1", "g1")}
 	if g.AddSubscriber(mock) != mock {
 		t.Fatalf("TestGroup_Add failed")
 	}
 	if g.Subscribers(mock.Id()) != mock {
 		t.Fatalf("TestGroup_Add failed")
 	}
-	job := &BaseNotifyJob{nType: INSTANCE}
+	job := &baseEvent{nType: INSTANCE}
 	g.Notify(job)
 	if mock.job != job {
 		t.Fatalf("TestGroup_Add failed")

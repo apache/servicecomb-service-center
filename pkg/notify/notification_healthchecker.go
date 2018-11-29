@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package notification
+package notify
 
 import "github.com/apache/servicecomb-service-center/pkg/log"
 
@@ -25,15 +25,15 @@ const (
 
 //Notifier 健康检查
 type NotifyServiceHealthChecker struct {
-	BaseSubscriber
+	Subscriber
 }
 
 type NotifyServiceHealthCheckJob struct {
-	*BaseNotifyJob
+	Event
 	ErrorSubscriber Subscriber
 }
 
-func (s *NotifyServiceHealthChecker) OnMessage(job NotifyJob) {
+func (s *NotifyServiceHealthChecker) OnMessage(job Event) {
 	j := job.(*NotifyServiceHealthCheckJob)
 	err := j.ErrorSubscriber.Err()
 
@@ -43,28 +43,20 @@ func (s *NotifyServiceHealthChecker) OnMessage(job NotifyJob) {
 		return
 	}
 
-	log.Debugf("notification service remove %s watcher, error: %s, subject: %s, group: %s",
-		j.ErrorSubscriber.Type(), err.Error(), j.ErrorSubscriber.Subject(), j.ErrorSubscriber.Group())
+	log.Debugf("notification service remove %s watcher, error: %v, subject: %s, group: %s",
+		j.ErrorSubscriber.Type(), err, j.ErrorSubscriber.Subject(), j.ErrorSubscriber.Group())
 	s.Service().RemoveSubscriber(j.ErrorSubscriber)
 }
 
 func NewNotifyServiceHealthChecker() *NotifyServiceHealthChecker {
 	return &NotifyServiceHealthChecker{
-		BaseSubscriber: BaseSubscriber{
-			group:   NOTIFY_SERVER_CHECKER_NAME,
-			subject: NOTIFY_SERVER_CHECK_SUBJECT,
-			nType:   NOTIFTY,
-		},
+		Subscriber: NewSubscriber(NOTIFTY, NOTIFY_SERVER_CHECK_SUBJECT, NOTIFY_SERVER_CHECKER_NAME),
 	}
 }
 
 func NewNotifyServiceHealthCheckJob(s Subscriber) *NotifyServiceHealthCheckJob {
 	return &NotifyServiceHealthCheckJob{
-		BaseNotifyJob: &BaseNotifyJob{
-			group:   NOTIFY_SERVER_CHECKER_NAME,
-			subject: NOTIFY_SERVER_CHECK_SUBJECT,
-			nType:   NOTIFTY,
-		},
+		Event:           NewEvent(NOTIFTY, NOTIFY_SERVER_CHECK_SUBJECT, NOTIFY_SERVER_CHECKER_NAME),
 		ErrorSubscriber: s,
 	}
 }
