@@ -1954,7 +1954,7 @@ definitions:
       modTimestamp:
         type: string
         description: 更新时间
-  FindRequest:
+  FindService:
     type: object
     properties:
       service:
@@ -1968,7 +1968,7 @@ definitions:
       services:
         type: array
         items:
-          $ref: '#/definitions/FindRequest'
+          $ref: '#/definitions/FindService'
   FindResult:
     type: object
     properties:

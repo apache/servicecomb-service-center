@@ -24,7 +24,10 @@ import (
 type ServiceInstanceCtrlServerEx interface {
 	ServiceInstanceCtrlServer
 
+	BatchFind(ctx context.Context, in *BatchFindInstancesRequest) (*BatchFindInstancesResponse, error)
+
 	WebSocketWatch(ctx context.Context, in *WatchInstanceRequest, conn *websocket.Conn)
 	WebSocketListAndWatch(ctx context.Context, in *WatchInstanceRequest, conn *websocket.Conn)
+
 	ClusterHealth(ctx context.Context) (*GetInstancesResponse, error)
 }
