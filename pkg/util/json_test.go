@@ -23,7 +23,7 @@ import (
 
 func TestNewServerInformation(t *testing.T) {
 	var c JSONObject
-	c = make(JSONObject)
+	c = NewJSONObject()
 	if !c.Bool("a", true) {
 		t.Fatalf("TestNewServerInformation failed")
 	}

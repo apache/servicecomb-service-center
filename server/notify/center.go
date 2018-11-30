@@ -13,42 +13,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package alarm
+package notify
 
 import (
-	nf "github.com/apache/servicecomb-service-center/pkg/notify"
-	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/pkg/notify"
 )
 
-type ID string
+var INSTANCE = notify.RegisterType("INSTANCE", InstanceEventQueueSize)
+var notifyService *notify.NotifyService
 
-type AlarmEvent struct {
-	nf.Event `json:"-"`
-	Id       ID              `json:"id"`
-	Fields   util.JSONObject `json:"fields,omitempty"`
+func init() {
+	notifyService = notify.NewNotifyService()
 }
 
-func (ae *AlarmEvent) FieldBool(key string) bool {
-	v, _ := ae.Fields[key].(bool)
-	return v
-}
-
-func (ae *AlarmEvent) FieldString(key string) string {
-	v, _ := ae.Fields[key].(string)
-	return v
-}
-
-func (ae *AlarmEvent) FieldInt64(key string) int64 {
-	v, _ := ae.Fields[key].(int64)
-	return v
-}
-
-func (ae *AlarmEvent) FieldInt(key string) int {
-	v, _ := ae.Fields[key].(int)
-	return v
-}
-
-func (ae *AlarmEvent) FieldFloat64(key string) float64 {
-	v, _ := ae.Fields[key].(float64)
-	return v
+func NotifyCenter() *notify.NotifyService {
+	return notifyService
 }

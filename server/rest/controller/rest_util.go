@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/alarm"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/error"
 	"net/http"
@@ -33,6 +34,10 @@ func WriteError(w http.ResponseWriter, code int32, detail string) {
 	w.Header().Set(rest.HEADER_CONTENT_TYPE, rest.CONTENT_TYPE_JSON)
 	w.WriteHeader(err.StatusCode())
 	fmt.Fprintln(w, util.BytesToStringWithNoCopy(err.Marshal()))
+
+	if err.InternalError() {
+		alarm.AlarmCenter().Alarm(alarm.InternalError, alarm.FieldString("detail", detail))
+	}
 }
 
 func WriteResponse(w http.ResponseWriter, resp *pb.Response, obj interface{}) {

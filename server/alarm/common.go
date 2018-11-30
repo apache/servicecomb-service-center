@@ -15,40 +15,16 @@
 
 package alarm
 
-import (
-	nf "github.com/apache/servicecomb-service-center/pkg/notify"
-	"github.com/apache/servicecomb-service-center/pkg/util"
+const (
+	BackendConnectionRefuse ID = "BackendConnectionRefuse"
+	ServerOverload          ID = "ServerOverload"
+	ServiceQuotaLimit       ID = "ServiceQuotaLimit"
+	InstanceQuotaLimit      ID = "InstanceQuotaLimit"
+	DiagnoseFailure         ID = "DiagnoseFailure"
+	InternalError           ID = "InternalError"
 )
 
-type ID string
-
-type AlarmEvent struct {
-	nf.Event `json:"-"`
-	Id       ID              `json:"id"`
-	Fields   util.JSONObject `json:"fields,omitempty"`
-}
-
-func (ae *AlarmEvent) FieldBool(key string) bool {
-	v, _ := ae.Fields[key].(bool)
-	return v
-}
-
-func (ae *AlarmEvent) FieldString(key string) string {
-	v, _ := ae.Fields[key].(string)
-	return v
-}
-
-func (ae *AlarmEvent) FieldInt64(key string) int64 {
-	v, _ := ae.Fields[key].(int64)
-	return v
-}
-
-func (ae *AlarmEvent) FieldInt(key string) int {
-	v, _ := ae.Fields[key].(int)
-	return v
-}
-
-func (ae *AlarmEvent) FieldFloat64(key string) float64 {
-	v, _ := ae.Fields[key].(float64)
-	return v
-}
+const (
+	Subject = "__ALARM_SUBJECT__"
+	Group   = "__ALARM_GROUP__"
+)

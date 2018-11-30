@@ -18,8 +18,10 @@ package admin
 
 import (
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/admin/model"
+	"github.com/apache/servicecomb-service-center/server/alarm"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
@@ -59,9 +61,7 @@ type AdminService struct {
 }
 
 func (service *AdminService) Dump(ctx context.Context, in *model.DumpRequest) (*model.DumpResponse, error) {
-
 	domainProject := util.ParseDomainProject(ctx)
-	var cache model.Cache
 
 	if !core.IsDefaultDomainProject(domainProject) {
 		return &model.DumpResponse{
@@ -69,18 +69,50 @@ func (service *AdminService) Dump(ctx context.Context, in *model.DumpRequest) (*
 		}, nil
 	}
 
-	service.dumpAll(ctx, &cache)
+	resp := &model.DumpResponse{
+		Response: pb.CreateResponse(pb.Response_SUCCESS, "Admin dump successfully"),
+	}
 
-	return &model.DumpResponse{
-		Response:     pb.CreateResponse(pb.Response_SUCCESS, "Admin dump successfully"),
-		Info:         version.Ver(),
-		AppConfig:    configs,
-		Environments: environments,
-		Cache:        &cache,
-	}, nil
+	if len(in.Options) == 0 {
+		service.dump(ctx, "cache", resp)
+		return resp, nil
+	}
+
+	options := make(map[string]struct{}, len(in.Options))
+	for _, option := range in.Options {
+		if option == "all" {
+			service.dump(ctx, "all", resp)
+			return resp, nil
+		}
+		options[option] = struct{}{}
+	}
+	for option := range options {
+		service.dump(ctx, option, resp)
+	}
+	return resp, nil
 }
 
-func (service *AdminService) dumpAll(ctx context.Context, cache *model.Cache) {
+func (service *AdminService) dump(ctx context.Context, option string, resp *model.DumpResponse) {
+	switch option {
+	case "info":
+		resp.Info = version.Ver()
+	case "config":
+		resp.AppConfig = configs
+	case "env":
+		resp.Environments = environments
+	case "cache":
+		var cache model.Cache
+		service.dumpAllCache(ctx, &cache)
+		resp.Cache = &cache
+	case "all":
+		service.dump(ctx, "info", resp)
+		service.dump(ctx, "config", resp)
+		service.dump(ctx, "env", resp)
+		service.dump(ctx, "cache", resp)
+	}
+}
+
+func (service *AdminService) dumpAllCache(ctx context.Context, cache *model.Cache) {
 	gopool.New(ctx, gopool.Configure().Workers(2)).
 		Do(func(_ context.Context) { setValue(backend.Store().Service(), &cache.Microservices) }).
 		Do(func(_ context.Context) { setValue(backend.Store().ServiceIndex(), &cache.Indexes) }).
@@ -110,4 +142,16 @@ func (service *AdminService) Clusters(ctx context.Context, in *model.ClustersReq
 	return &model.ClustersResponse{
 		Clusters: registry.Configuration().Clusters,
 	}, nil
+}
+
+func (service *AdminService) AlarmList(ctx context.Context, in *model.AlarmListRequest) (*model.AlarmListResponse, error) {
+	return &model.AlarmListResponse{
+		Alarms: alarm.AlarmCenter().AlarmList(),
+	}, nil
+}
+
+func (service *AdminService) ClearAlarm(ctx context.Context, in *model.ClearAlarmRequest) (*model.ClearAlarmResponse, error) {
+	alarm.AlarmCenter().Clear()
+	log.Infof("service center alarms are cleared")
+	return &model.ClearAlarmResponse{}, nil
 }

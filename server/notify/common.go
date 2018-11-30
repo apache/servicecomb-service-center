@@ -15,10 +15,7 @@
 
 package notify
 
-import (
-	"github.com/apache/servicecomb-service-center/pkg/notify"
-	"time"
-)
+import "time"
 
 const (
 	AddJobTimeout          = 1 * time.Second
@@ -26,14 +23,3 @@ const (
 	HeartbeatTimeout       = 30 * time.Second
 	InstanceEventQueueSize = 5000
 )
-
-var INSTANCE = notify.RegisterType("INSTANCE", InstanceEventQueueSize)
-var notifyService *notify.NotifyService
-
-func init() {
-	notifyService = notify.NewNotifyService()
-}
-
-func NotifyCenter() *notify.NotifyService {
-	return notifyService
-}

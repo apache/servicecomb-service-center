@@ -1571,7 +1571,7 @@ paths:
     get:
       description: |
         查询单个服务的所有信息。
-      operationId: GetServiceDetail
+      operationId: getServiceDetail
       parameters:
         - name: x-domain-name
           in: header
@@ -1606,7 +1606,7 @@ paths:
     get:
       description: |
         查询单个服务的所有信息。
-      operationId: GetServicesInfo
+      operationId: getServicesInfo
       parameters:
         - name: x-domain-name
           in: header
@@ -1641,7 +1641,7 @@ paths:
     get:
       description: |
         查询服务间的关系。
-      operationId: GetGraph
+      operationId: getGraph
       parameters:
         - name: x-domain-name
           in: header
@@ -1673,7 +1673,7 @@ paths:
     get:
       description: |
         查询所有appId。
-      operationId: GetApplications
+      operationId: getApplications
       parameters:
         - name: x-domain-name
           in: header
@@ -1723,6 +1723,11 @@ paths:
           description: default项目
           required: true
           type: string
+        - name: options
+          in: query
+          default: cache
+          description: 枚举值有:info,config,env,cache和all
+          type: string
       tags:
         - admin
       responses:
@@ -1759,6 +1764,53 @@ paths:
           description: clusters information
           schema:
             $ref: '#/definitions/ClustersResponse'
+  /v4/{project}/admin/alarms:
+    get:
+      description: |
+        Return the alarms list of Service Center
+      operationId: alarmList
+      parameters:
+        - name: x-domain-name
+          in: header
+          type: string
+          default: default
+          description: default租户
+          required: true
+        - name: project
+          in: path
+          default: default
+          description: default项目
+          required: true
+          type: string
+      tags:
+        - admin
+      responses:
+        200:
+          description: alarms information
+          schema:
+            $ref: '#/definitions/AlarmList'
+    delete:
+      description: |
+        Clear the alarms list of Service Center
+      operationId: clearAlarm
+      parameters:
+        - name: x-domain-name
+          in: header
+          type: string
+          default: default
+          description: default租户
+          required: true
+        - name: project
+          in: path
+          default: default
+          description: default项目
+          required: true
+          type: string
+      tags:
+        - admin
+      responses:
+        200:
+          description: cleared
 definitions:
   Version:
     type: object
@@ -2609,3 +2661,18 @@ definitions:
         type: string
       detail:
         type: string
+  AlarmList:
+    type: object
+    description: alarms information
+    additionalProperties:
+      type: array
+      items:
+        $ref: '#/definitions/Alarm'
+  Alarm:
+    type: object
+    description: alarm information
+    properties:
+      id:
+        type: string
+      fields:
+        $ref: '#/definitions/Properties'

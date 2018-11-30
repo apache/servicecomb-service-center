@@ -35,7 +35,7 @@ type Subscriber interface {
 	Close()
 	OnAccept()
 	// The event bus will callback this function, so it must be non-blocked.
-	OnMessage(job Event)
+	OnMessage(Event)
 }
 
 type baseSubscriber struct {
