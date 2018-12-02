@@ -60,6 +60,7 @@ func FindInstanceReqValidator() *validate.Validator {
 func BatchFindInstanceReqValidator() *validate.Validator {
 	return batchFindInstanceReqValidator.Init(func(v *validate.Validator) {
 		var findServiceValidator validate.Validator
+		findServiceValidator.AddRule("Service", &validate.ValidateRule{Min: 1})
 		findServiceValidator.AddSub("Service", ExistenceReqValidator())
 		v.AddRule("ConsumerServiceId", GetInstanceReqValidator().GetRule("ConsumerServiceId"))
 		v.AddRule("Services", &validate.ValidateRule{Min: 1})

@@ -20,6 +20,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	scerr "github.com/apache/servicecomb-service-center/server/error"
 	"golang.org/x/net/context"
 	"testing"
 )
@@ -113,5 +114,79 @@ func TestUpdateInstance(t *testing.T) {
 	err := UpdateInstance(util.SetContext(context.Background(), CTX_NOCACHE, "1"), "", &pb.MicroServiceInstance{})
 	if err == nil {
 		t.Fatalf(`UpdateInstance CTX_NOCACHE failed`)
+	}
+}
+
+func TestAppendFindResponse(t *testing.T) {
+	ctx := context.Background()
+	var (
+		find              pb.FindInstancesResponse
+		updatedResult     []*pb.FindResult
+		notModifiedResult []int64
+		failedResult      *pb.FindFailedResult
+	)
+	AppendFindResponse(ctx, 1, &find, &updatedResult, &notModifiedResult, &failedResult)
+	if updatedResult == nil || notModifiedResult != nil || failedResult != nil {
+		t.Fatal("TestAppendFindResponse failed")
+	}
+	if updatedResult[0].Index != 1 {
+		t.Fatal("TestAppendFindResponse failed")
+	}
+
+	updatedResult = nil
+	cloneCtx := context.WithValue(ctx, CTX_RESPONSE_REVISION, "1")
+	AppendFindResponse(cloneCtx, 1, &find, &updatedResult, &notModifiedResult, &failedResult)
+	if updatedResult == nil || notModifiedResult != nil || failedResult != nil {
+		t.Fatal("TestAppendFindResponse failed")
+	}
+	if updatedResult[0].Index != 1 || updatedResult[0].Rev != "1" {
+		t.Fatal("TestAppendFindResponse failed")
+	}
+
+	updatedResult = nil
+	cloneCtx = context.WithValue(ctx, CTX_REQUEST_REVISION, "1")
+	cloneCtx = context.WithValue(cloneCtx, CTX_RESPONSE_REVISION, "1")
+	AppendFindResponse(cloneCtx, 1, &find, &updatedResult, &notModifiedResult, &failedResult)
+	if updatedResult != nil || notModifiedResult == nil || failedResult != nil {
+		t.Fatal("TestAppendFindResponse failed")
+	}
+	if notModifiedResult[0] != 1 {
+		t.Fatal("TestAppendFindResponse failed")
+	}
+
+	notModifiedResult = nil
+	find.Response = pb.CreateResponse(scerr.ErrInternal, "test")
+	AppendFindResponse(ctx, 1, &find, &updatedResult, &notModifiedResult, &failedResult)
+	if updatedResult != nil || notModifiedResult != nil || failedResult == nil {
+		t.Fatal("TestAppendFindResponse failed")
+	}
+	if failedResult.Error.Code != scerr.ErrInternal {
+		t.Fatal("TestAppendFindResponse failed")
+	}
+	find.Response = pb.CreateResponse(scerr.ErrInvalidParams, "test")
+	AppendFindResponse(ctx, 2, &find, &updatedResult, &notModifiedResult, &failedResult)
+	if updatedResult != nil || notModifiedResult != nil || failedResult == nil {
+		t.Fatal("TestAppendFindResponse failed")
+	}
+	if failedResult.Error.Code != scerr.ErrInternal {
+		t.Fatal("TestAppendFindResponse failed")
+	}
+
+	failedResult = nil
+	find.Response = nil
+	AppendFindResponse(ctx, 1, &find, &updatedResult, &notModifiedResult, &failedResult)
+	AppendFindResponse(ctx, 2, &find, &updatedResult, &notModifiedResult, &failedResult)
+	cloneCtx = context.WithValue(ctx, CTX_REQUEST_REVISION, "1")
+	cloneCtx = context.WithValue(cloneCtx, CTX_RESPONSE_REVISION, "1")
+	AppendFindResponse(cloneCtx, 3, &find, &updatedResult, &notModifiedResult, &failedResult)
+	AppendFindResponse(cloneCtx, 4, &find, &updatedResult, &notModifiedResult, &failedResult)
+	find.Response = pb.CreateResponse(scerr.ErrInternal, "test")
+	AppendFindResponse(ctx, 5, &find, &updatedResult, &notModifiedResult, &failedResult)
+	AppendFindResponse(ctx, 6, &find, &updatedResult, &notModifiedResult, &failedResult)
+	if updatedResult == nil || notModifiedResult == nil || failedResult == nil {
+		t.Fatal("TestAppendFindResponse failed")
+	}
+	if len(updatedResult) != 2 || len(notModifiedResult) != 2 || len(failedResult.Indexes) != 2 {
+		t.Fatal("TestAppendFindResponse failed")
 	}
 }
