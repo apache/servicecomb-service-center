@@ -48,7 +48,7 @@ cp -rp $PACKAGE_DIR/conf $PACKAGE_DIR/service-center start.sh service-center
 chmod 500 service-center/start.sh service-center/service-center
 
 # store the base image name and version
-BASE_IMAGE=${BASE_IMAGE:-"ubuntu"}
+BASE_IMAGE=${BASE_IMAGE:-"alpine"}
 
 BASE_IMAGE_VERSION=${BASE_IMAGE_VERSION:-"latest"}
 

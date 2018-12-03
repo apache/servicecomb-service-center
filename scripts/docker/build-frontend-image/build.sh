@@ -48,7 +48,7 @@ cp -rp $PACKAGE_DIR/app $PACKAGE_DIR/conf $PACKAGE_DIR/frontend start.sh fronten
 chmod 500 frontend/start.sh frontend/frontend
 
 # store the base image name and version
-BASE_IMAGE=${BASE_IMAGE:-"ubuntu"}
+BASE_IMAGE=${BASE_IMAGE:-"alpine"}
 
 BASE_IMAGE_VERSION=${BASE_IMAGE_VERSION:-"latest"}
 
