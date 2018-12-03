@@ -26,8 +26,6 @@ const (
 	// force re-list
 	DEFAULT_FORCE_LIST_INTERVAL = 4
 	DEFAULT_METRICS_INTERVAL    = 30 * time.Second
-	DEFAULT_COMPACT_TIMES       = 2
-	DEFAULT_COMPACT_TIMEOUT     = 5 * time.Minute
 
 	minWaitInterval = 1 * time.Second
 	eventBlockSize  = 1000

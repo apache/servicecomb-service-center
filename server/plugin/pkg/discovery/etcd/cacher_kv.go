@@ -36,8 +36,7 @@ import (
 type KvCacher struct {
 	Cfg *discovery.Config
 
-	latestListRev int64
-	reListCount   int
+	reListCount int
 
 	ready     chan struct{}
 	lw        ListWatch
@@ -53,7 +52,6 @@ func (c *KvCacher) Config() *discovery.Config {
 
 func (c *KvCacher) needList() bool {
 	rev := c.lw.Revision()
-	// init stage or there is a backend error
 	if rev == 0 {
 		c.reListCount = 0
 		return true
@@ -71,7 +69,6 @@ func (c *KvCacher) doList(cfg ListWatchConfig) error {
 	if err != nil {
 		return err
 	}
-	c.latestListRev = c.lw.Revision()
 
 	kvs := resp.Kvs
 	start := time.Now()
@@ -103,11 +100,19 @@ func (c *KvCacher) ListAndWatch(ctx context.Context) error {
 		Timeout: c.Cfg.Timeout,
 		Context: ctx,
 	}
+
+	// the scenario need to list etcd:
+	// 1. Initial: cache is building, the lister's revision is 0.
+	// 2. Runtime: error occurs in previous watch operation, the lister's revision is set to 0.
+	// 3. Runtime: no event comes in watch operation over DEFAULT_FORCE_LIST_INTERVAL times.
 	if c.needList() {
-		if err := c.doList(cfg); err != nil && !c.IsReady() {
-			// cacher is not ready, so it need to retry util the cache is created
-			return err
+		if err := c.doList(cfg); err != nil && (!c.IsReady() || c.lw.Revision() == 0) {
+			return err // do retry to list etcd
 		}
+		// keep going to next step:
+		// 1. doList return OK.
+		// 2. some traps in etcd client, like the limitation of max response body(4MB),
+		//    doList always return error. So call doWatch to compensate it if cacher is ready.
 	}
 
 	util.SafeCloseChan(c.ready)

@@ -87,7 +87,7 @@ func TestNewKvCacher(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	// case: cause list internal error
+	// case: cause list internal error before initialized
 	cr.refresh(ctx)
 	if cr.IsReady() {
 		t.Fatalf("TestNewKvCacher failed")
@@ -336,6 +336,7 @@ func TestNewKvCacher(t *testing.T) {
 		evts[string(evt.KV.Key)] = evt
 	})
 	cr.refresh(ctx)
+	*cr.Cfg = old
 	// check all events
 	for i := 0; i < eventBlockSize+1; i++ {
 		s := strconv.Itoa(i)
@@ -349,6 +350,21 @@ func TestNewKvCacher(t *testing.T) {
 		t.Fatalf("TestNewKvCacher failed, %v %v", evts, evt)
 	}
 	delete(evts, string(data.Key))
+
+	// case: cacher is ready and the next list failed, prevent to watch with rev = 0
+	if !cr.IsReady() {
+		t.Fatalf("TestNewKvCacher failed")
+	}
+	lw.Rev = 0            // watch failed
+	lw.ListResponse = nil // the next list
+	lw.Bus <- test
+	old = *cr.Cfg
+	cr.Cfg.WithEventFunc(func(evt discovery.KvEvent) {
+		t.Fatalf("TestNewKvCacher failed, %v", evt)
+	})
+	cr.refresh(ctx)
+	*cr.Cfg = old
+	<-lw.Bus
 }
 
 func BenchmarkFilter(b *testing.B) {
