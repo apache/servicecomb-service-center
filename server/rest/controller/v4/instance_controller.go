@@ -38,6 +38,7 @@ type MicroServiceInstanceService struct {
 func (this *MicroServiceInstanceService) URLPatterns() []rest.Route {
 	return []rest.Route{
 		{rest.HTTP_METHOD_GET, "/v4/:project/registry/instances", this.FindInstances},
+		{rest.HTTP_METHOD_POST, "/v4/:project/registry/instances", this.BatchFindInstances},
 		{rest.HTTP_METHOD_GET, "/v4/:project/registry/microservices/:serviceId/instances", this.GetInstances},
 		{rest.HTTP_METHOD_GET, "/v4/:project/registry/microservices/:serviceId/instances/:instanceId", this.GetOneInstance},
 		{rest.HTTP_METHOD_POST, "/v4/:project/registry/microservices/:serviceId/instances", this.RegisterInstance},
@@ -151,6 +152,29 @@ func (this *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r 
 		return
 	}
 
+	controller.WriteResponse(w, respInternal, resp)
+}
+
+func (this *MicroServiceInstanceService) BatchFindInstances(w http.ResponseWriter, r *http.Request) {
+	message, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Error("read body failed", err)
+		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
+		return
+	}
+
+	request := &pb.BatchFindInstancesRequest{}
+	err = json.Unmarshal(message, request)
+	if err != nil {
+		log.Errorf(err, "Invalid json: %s", util.BytesToStringWithNoCopy(message))
+		controller.WriteError(w, scerr.ErrInvalidParams, "Unmarshal error")
+		return
+	}
+	request.ConsumerServiceId = r.Header.Get("X-ConsumerId")
+	ctx := util.SetTargetDomainProject(r.Context(), r.Header.Get("X-Domain-Name"), r.URL.Query().Get(":project"))
+	resp, _ := core.InstanceAPI.BatchFind(ctx, request)
+	respInternal := resp.Response
+	resp.Response = nil
 	controller.WriteResponse(w, respInternal, resp)
 }
 

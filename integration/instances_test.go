@@ -348,6 +348,52 @@ var _ = Describe("MicroService Api Test", func() {
 				rev = resp.Header.Get("X-Resource-Revision")
 				Expect(rev).NotTo(BeEmpty())
 			})
+
+			It("Batch Find Micro-service Instance", func() {
+				notExistsService := map[string]interface{}{
+					"service": map[string]interface{}{
+						"appId":       serviceAppId,
+						"serviceName": "notexisted",
+						"version":     serviceVersion,
+					},
+				}
+				provider := map[string]interface{}{
+					"service": map[string]interface{}{
+						"appId":       serviceAppId,
+						"serviceName": serviceName,
+						"version":     serviceVersion,
+					},
+				}
+				findRequest := map[string]interface{}{
+					"services": []map[string]interface{}{
+						provider,
+						notExistsService,
+					},
+				}
+				body, _ := json.Marshal(findRequest)
+				bodyBuf := bytes.NewReader(body)
+				req, _ := http.NewRequest(POST, SCURL+FINDINSTANCE, bodyBuf)
+				req.Header.Set("X-Domain-Name", "default")
+				req.Header.Set("X-ConsumerId", serviceId)
+				resp, _ := scclient.Do(req)
+				respbody, _ := ioutil.ReadAll(resp.Body)
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				servicesStruct := map[string][]map[string]interface{}{}
+				json.Unmarshal(respbody, &servicesStruct)
+				failed := false
+				for _, services := range servicesStruct["failed"] {
+					a := services["indexes"].([]interface{})[0] == 1.0
+					b := services["error"].(map[string]interface{})["errorCode"] == "400012"
+					if a && b {
+						failed = true
+						break
+					}
+				}
+				Expect(failed).To(Equal(true))
+				Expect(servicesStruct["updated"][0]["index"]).To(Equal(0.0))
+				Expect(len(servicesStruct["updated"][0]["instances"].([]interface{}))).
+					ToNot(Equal(0))
+			})
 		})
 
 		By("Update Micro-Service Instance Information API's", func() {

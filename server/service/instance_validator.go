@@ -26,6 +26,7 @@ import (
 
 var (
 	findInstanceReqValidator        validate.Validator
+	batchFindInstanceReqValidator   validate.Validator
 	getInstanceReqValidator         validate.Validator
 	updateInstanceReqValidator      validate.Validator
 	registerInstanceReqValidator    validate.Validator
@@ -53,6 +54,17 @@ func FindInstanceReqValidator() *validate.Validator {
 		v.AddRule("VersionRule", ExistenceReqValidator().GetRule("Version"))
 		v.AddRule("Tags", UpdateTagReqValidator().GetRule("Key"))
 		v.AddRule("Environment", MicroServiceKeyValidator().GetRule("Environment"))
+	})
+}
+
+func BatchFindInstanceReqValidator() *validate.Validator {
+	return batchFindInstanceReqValidator.Init(func(v *validate.Validator) {
+		var findServiceValidator validate.Validator
+		findServiceValidator.AddRule("Service", &validate.ValidateRule{Min: 1})
+		findServiceValidator.AddSub("Service", ExistenceReqValidator())
+		v.AddRule("ConsumerServiceId", GetInstanceReqValidator().GetRule("ConsumerServiceId"))
+		v.AddRule("Services", &validate.ValidateRule{Min: 1})
+		v.AddSub("Services", &findServiceValidator)
 	})
 }
 

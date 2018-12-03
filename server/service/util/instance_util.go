@@ -272,3 +272,27 @@ func UpdateInstance(ctx context.Context, domainProject string, instance *pb.Micr
 	}
 	return nil
 }
+
+func AppendFindResponse(ctx context.Context, index int64, find *pb.FindInstancesResponse,
+	updatedResult *[]*pb.FindResult, notModifiedResult *[]int64, failedResult **pb.FindFailedResult) {
+	if code := find.GetResponse().GetCode(); code != pb.Response_SUCCESS {
+		if *failedResult == nil {
+			*failedResult = &pb.FindFailedResult{
+				Error: scerr.NewError(code, find.GetResponse().GetMessage()),
+			}
+		}
+		(*failedResult).Indexes = append((*failedResult).Indexes, index)
+		return
+	}
+	iv, _ := ctx.Value(CTX_REQUEST_REVISION).(string)
+	ov, _ := ctx.Value(CTX_RESPONSE_REVISION).(string)
+	if len(iv) > 0 && iv == ov {
+		*notModifiedResult = append(*notModifiedResult, index)
+		return
+	}
+	*updatedResult = append(*updatedResult, &pb.FindResult{
+		Index:     index,
+		Instances: find.Instances,
+		Rev:       ov,
+	})
+}

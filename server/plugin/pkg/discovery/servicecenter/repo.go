@@ -18,6 +18,7 @@ package servicecenter
 import (
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 )
 
 func init() {
@@ -32,5 +33,11 @@ func (r *ServiceCenterRepository) New(t discovery.Type, cfg *discovery.Config) d
 }
 
 func NewRepository() mgr.PluginInstance {
+	InitConfigs()
 	return &ServiceCenterRepository{}
+}
+
+func InitConfigs() {
+	mgr.DISCOVERY.ActiveConfigs().
+		Set("config", registry.Configuration())
 }

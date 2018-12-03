@@ -1370,13 +1370,16 @@ paths:
           in: header
           type: string
           default: default
-        - name: project
-          in: path
-          required: true
+        - name: x-resource-revsion
+          in: header
           type: string
+          description: 客户端缓存的版本号,由上一次请求该API返回Header中获得;如请求版本号不为空且与服务端不匹配则服务端返回其最新的实例集合和版本号;如匹配则服务端返回304状态且Body为空。
         - name: X-ConsumerId
           in: header
           description: 微服务消费者的微服务唯一标识。
+          type: string
+        - name: project
+          in: path
           required: true
           type: string
         - name: appId
@@ -1407,8 +1410,50 @@ paths:
       responses:
         200:
           description: 查询成功
+          headers:
+            "X-Resource-Revision":
+              type: "string"
+              description: 返回集合的版本号,当集合内容发生变化,版本号随之变化
           schema:
             $ref: '#/definitions/GetInstancesResponse'
+        400:
+          description: 错误的请求
+          schema:
+            type: string
+        500:
+          description: 内部错误
+          schema:
+            type: string
+    post:
+      description: |
+        批量微服务实例发现接口
+      operationId: batchFind
+      parameters:
+        - name: x-domain-name
+          in: header
+          type: string
+          default: default
+        - name: X-ConsumerId
+          in: header
+          description: 微服务消费者的微服务唯一标识。
+          type: string
+        - name: project
+          in: path
+          required: true
+          type: string
+        - name: services
+          in: body
+          description: 查询微服务的请求结构体
+          required: true
+          schema:
+            $ref: '#/definitions/BatchFindRequest'
+      tags:
+        - instances
+      responses:
+        200:
+          description: 查询成功
+          schema:
+            $ref: '#/definitions/BatchFindResponse'
         400:
           description: 错误的请求
           schema:
@@ -1692,6 +1737,8 @@ definitions:
         type: string
       arch:
         type: string
+      config:
+        $ref: '#/definitions/Config'
   Properties:
     type: object
     description: 扩展属性
@@ -1907,6 +1954,60 @@ definitions:
       modTimestamp:
         type: string
         description: 更新时间
+  FindService:
+    type: object
+    properties:
+      service:
+        $ref: '#definitions/DependencyKey'
+      rev:
+        type: string
+        description: 客户端缓存的版本号。
+  BatchFindRequest:
+    type: object
+    properties:
+      services:
+        type: array
+        items:
+          $ref: '#/definitions/FindService'
+  FindResult:
+    type: object
+    properties:
+      index:
+        type: integer
+        description: 与请求数组对应的索引。
+      rev:
+        type: string
+        description: 服务端返回集合版本,如跟客户端缓存版本号一致,则instances为空。
+      instances:
+        type: array
+        items:
+          $ref: '#/definitions/MicroServiceInstance'
+  FindFailedResult:
+    type: object
+    properties:
+      indexes:
+        type: array
+        items:
+          type: integer
+        description: 与请求数组对应的索引集合。
+      error:
+        $ref: '#/definitions/Error'
+  BatchFindResponse:
+    type: object
+    properties:
+      failed:
+        type: array
+        items:
+          $ref: '#/definitions/FindFailedResult'
+      notModified:
+        type: array
+        items:
+          type: integer
+        description: 与请求数组对应的索引集合。
+      updated:
+        type: array
+        items:
+          $ref: '#/definitions/FindResult'
   CreateDependenciesRequest:
     type: object
     properties:
@@ -2413,16 +2514,12 @@ definitions:
         type: string
       sslCiphers:
         type: string
-      autoSyncInterval:
-        type: string
-      compactIndexDelta:
-        type: integer
-      compactInterval:
-        type: string
-      logRotateSize:
-        type: integer
-      logBackupCount:
-        type: integer
+      enablePProf:
+        type: boolean
+      enableCache:
+        type: boolean
+      selfRegister:
+        type: boolean
   DumpResponse:
     type: object
     properties:
@@ -2446,3 +2543,12 @@ definitions:
     properties:
       clusters:
         $ref: '#/definitions/Clusters'
+  Error:
+    type: object
+    properties:
+      errorCode:
+        type: string
+      errorMessage:
+        type: string
+      detail:
+        type: string

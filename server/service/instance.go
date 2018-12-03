@@ -616,6 +616,46 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 	}, nil
 }
 
+func (s *InstanceService) BatchFind(ctx context.Context, in *pb.BatchFindInstancesRequest) (*pb.BatchFindInstancesResponse, error) {
+	err := Validate(in)
+	if err != nil {
+		log.Errorf(err, "batch find instance failed: invalid parameters")
+		return &pb.BatchFindInstancesResponse{
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+		}, nil
+	}
+
+	response := &pb.BatchFindInstancesResponse{
+		Response: pb.CreateResponse(pb.Response_SUCCESS, "Batch query service instances successfully."),
+	}
+	failedResult := make(map[int32]*pb.FindFailedResult)
+	for index, key := range in.Services {
+		cloneCtx := util.SetContext(ctx, serviceUtil.CTX_REQUEST_REVISION, key.Rev)
+		resp, err := s.Find(cloneCtx, &pb.FindInstancesRequest{
+			ConsumerServiceId: in.ConsumerServiceId,
+			AppId:             key.Service.AppId,
+			ServiceName:       key.Service.ServiceName,
+			VersionRule:       key.Service.Version,
+			Environment:       key.Service.Environment,
+		})
+		if err != nil {
+			return &pb.BatchFindInstancesResponse{
+				Response: resp.Response,
+			}, err
+		}
+		failed, ok := failedResult[resp.GetResponse().GetCode()]
+		serviceUtil.AppendFindResponse(cloneCtx, int64(index), resp,
+			&response.Updated, &response.NotModified, &failed)
+		if !ok && failed != nil {
+			failedResult[resp.GetResponse().GetCode()] = failed
+		}
+	}
+	for _, result := range failedResult {
+		response.Failed = append(response.Failed, result)
+	}
+	return response, nil
+}
+
 func (s *InstanceService) reshapeProviderKey(ctx context.Context, provider *pb.MicroServiceKey, providerId string) (*pb.MicroServiceKey, error) {
 	//维护version的规则,service name 可能是别名，所以重新获取
 	providerService, err := serviceUtil.GetService(ctx, provider.Tenant, providerId)

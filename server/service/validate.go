@@ -74,6 +74,8 @@ func Validate(v interface{}) error {
 		return RegisterInstanceReqValidator().Validate(v)
 	case *pb.FindInstancesRequest:
 		return FindInstanceReqValidator().Validate(v)
+	case *pb.BatchFindInstancesRequest:
+		return BatchFindInstanceReqValidator().Validate(v)
 	case *pb.HeartbeatRequest, *pb.UnregisterInstanceRequest:
 		return HeartbeatReqValidator().Validate(v)
 	case *pb.UpdateInstancePropsRequest:
