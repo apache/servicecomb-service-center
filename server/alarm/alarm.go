@@ -22,8 +22,11 @@ import (
 
 type ID string
 
+type Status string
+
 type AlarmEvent struct {
 	nf.Event `json:"-"`
+	Status   Status          `json:"status"`
 	Id       ID              `json:"id"`
 	Fields   util.JSONObject `json:"fields,omitempty"`
 }

@@ -151,7 +151,7 @@ func (service *AdminService) AlarmList(ctx context.Context, in *model.AlarmListR
 }
 
 func (service *AdminService) ClearAlarm(ctx context.Context, in *model.ClearAlarmRequest) (*model.ClearAlarmResponse, error) {
-	alarm.AlarmCenter().Clear()
+	alarm.AlarmCenter().ClearAll()
 	log.Infof("service center alarms are cleared")
 	return &model.ClearAlarmResponse{}, nil
 }

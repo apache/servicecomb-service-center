@@ -35,6 +35,20 @@ type Center struct {
 func (ac *Center) Alarm(id ID, fields ...Field) error {
 	ae := &AlarmEvent{
 		Event:  nf.NewEvent(nf.NOTIFTY, Subject, ""),
+		Status: TypeActivated,
+		Id:     id,
+		Fields: util.NewJSONObject(),
+	}
+	for _, f := range fields {
+		ae.Fields[f.Key] = f.Value
+	}
+	return notify.NotifyCenter().Publish(ae)
+}
+
+func (ac *Center) Clear(id ID, fields ...Field) error {
+	ae := &AlarmEvent{
+		Event:  nf.NewEvent(nf.NOTIFTY, Subject, ""),
+		Status: TypeCleared,
 		Id:     id,
 		Fields: util.NewJSONObject(),
 	}
@@ -52,7 +66,7 @@ func (ac *Center) AlarmList() (ls []*AlarmEvent) {
 	return
 }
 
-func (ac *Center) Clear() {
+func (ac *Center) ClearAll() {
 	ac.alarms = util.ConcurrentMap{}
 	return
 }

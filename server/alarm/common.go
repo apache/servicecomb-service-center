@@ -16,12 +16,17 @@
 package alarm
 
 const (
-	BackendConnectionRefuse ID = "BackendConnectionRefuse"
-	ServerOverload          ID = "ServerOverload"
-	ServiceQuotaLimit       ID = "ServiceQuotaLimit"
-	InstanceQuotaLimit      ID = "InstanceQuotaLimit"
-	DiagnoseFailure         ID = "DiagnoseFailure"
-	InternalError           ID = "InternalError"
+	TypeActivated Status = "ACTIVATED"
+	TypeCleared   Status = "CLEARED"
+)
+
+const (
+	IdBackendConnectionRefuse ID = "BackendConnectionRefuse"
+	IdServerOverload          ID = "ServerOverload"
+	IdServiceQuotaLimit       ID = "ServiceQuotaLimit"
+	IdInstanceQuotaLimit      ID = "InstanceQuotaLimit"
+	IdDiagnoseFailure         ID = "DiagnoseFailure"
+	IdInternalError           ID = "InternalError"
 )
 
 const (
