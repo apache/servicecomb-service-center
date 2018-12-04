@@ -19,6 +19,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/alarm"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"golang.org/x/net/context"
 	"k8s.io/api/core/v1"
@@ -54,9 +55,7 @@ type K8sClient struct {
 	goroutine *gopool.Pool
 }
 
-func (c *K8sClient) init() {
-	var err error
-
+func (c *K8sClient) init() (err error) {
 	c.ready = make(chan struct{})
 	c.stopCh = make(chan struct{})
 	c.goroutine = gopool.New(context.Background())
@@ -78,6 +77,7 @@ func (c *K8sClient) init() {
 
 	// append ipIndex build function
 	c.AppendEventFunc(TypePod, c.onPodEvent)
+	return
 }
 
 func (c *K8sClient) newListWatcher(t K8sType, lister cache.SharedIndexInformer) (lw ListWatcher) {
@@ -222,6 +222,13 @@ func (c *K8sClient) GetNodeByPod(pod *v1.Pod) (node *v1.Node) {
 }
 
 func (c *K8sClient) Run() {
+	if err := c.init(); err != nil {
+		alarm.Raise(alarm.IdBackendConnectionRefuse,
+			alarm.AdditionalContext("%v", err))
+		return
+	}
+	alarm.Clear(alarm.IdBackendConnectionRefuse)
+
 	c.goroutine.
 		Do(func(_ context.Context) { c.services.Run(c.stopCh) }).
 		Do(func(_ context.Context) { c.endpoints.Run(c.stopCh) }).
@@ -250,7 +257,6 @@ func (c *K8sClient) Ready() <-chan struct{} {
 func Kubernetes() *K8sClient {
 	clientOnce.Do(func() {
 		client = &K8sClient{}
-		client.init()
 		client.Run()
 	})
 	return client

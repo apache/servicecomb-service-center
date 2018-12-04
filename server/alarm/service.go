@@ -16,6 +16,7 @@
 package alarm
 
 import (
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	nf "github.com/apache/servicecomb-service-center/pkg/notify"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/notify"
@@ -23,19 +24,19 @@ import (
 )
 
 var (
-	center *Center
-	once   sync.Once
+	service *AlarmService
+	once    sync.Once
 )
 
-type Center struct {
+type AlarmService struct {
 	nf.Subscriber
 	alarms util.ConcurrentMap
 }
 
-func (ac *Center) Alarm(id ID, fields ...Field) error {
+func (ac *AlarmService) Raise(id ID, fields ...Field) error {
 	ae := &AlarmEvent{
 		Event:  nf.NewEvent(nf.NOTIFTY, Subject, ""),
-		Status: TypeActivated,
+		Status: Activated,
 		Id:     id,
 		Fields: util.NewJSONObject(),
 	}
@@ -45,20 +46,16 @@ func (ac *Center) Alarm(id ID, fields ...Field) error {
 	return notify.NotifyCenter().Publish(ae)
 }
 
-func (ac *Center) Clear(id ID, fields ...Field) error {
+func (ac *AlarmService) Clear(id ID) error {
 	ae := &AlarmEvent{
 		Event:  nf.NewEvent(nf.NOTIFTY, Subject, ""),
-		Status: TypeCleared,
+		Status: Cleared,
 		Id:     id,
-		Fields: util.NewJSONObject(),
-	}
-	for _, f := range fields {
-		ae.Fields[f.Key] = f.Value
 	}
 	return notify.NotifyCenter().Publish(ae)
 }
 
-func (ac *Center) AlarmList() (ls []*AlarmEvent) {
+func (ac *AlarmService) ListAll() (ls []*AlarmEvent) {
 	ac.alarms.ForEach(func(item util.MapItem) (next bool) {
 		ls = append(ls, item.Value.(*AlarmEvent))
 		return true
@@ -66,27 +63,54 @@ func (ac *Center) AlarmList() (ls []*AlarmEvent) {
 	return
 }
 
-func (ac *Center) ClearAll() {
+func (ac *AlarmService) ClearAll() {
 	ac.alarms = util.ConcurrentMap{}
 	return
 }
 
-func (ac *Center) OnMessage(evt nf.Event) {
+func (ac *AlarmService) OnMessage(evt nf.Event) {
 	alarm := evt.(*AlarmEvent)
-	ac.alarms.Put(alarm.Id, alarm)
+	switch alarm.Status {
+	case Cleared:
+		if itf, ok := ac.alarms.Get(alarm.Id); ok {
+			if exist := itf.(*AlarmEvent); exist.Status != Cleared {
+				exist.Status = Cleared
+				alarm = exist
+			}
+		}
+	default:
+		ac.alarms.Put(alarm.Id, alarm)
+	}
+	log.Debugf("alarm[%s] %s, %v", alarm.Id, alarm.Status, alarm.Fields)
 }
 
-func NewAlarmCenter() *Center {
-	c := &Center{
+func NewAlarmService() *AlarmService {
+	c := &AlarmService{
 		Subscriber: nf.NewSubscriber(nf.NOTIFTY, Subject, Group),
 	}
 	notify.NotifyCenter().AddSubscriber(c)
 	return c
 }
 
-func AlarmCenter() *Center {
+func AlarmCenter() *AlarmService {
 	once.Do(func() {
-		center = NewAlarmCenter()
+		service = NewAlarmService()
 	})
-	return center
+	return service
+}
+
+func ListAll() []*AlarmEvent {
+	return AlarmCenter().ListAll()
+}
+
+func Raise(id ID, fields ...Field) error {
+	return AlarmCenter().Raise(id, fields...)
+}
+
+func Clear(id ID) error {
+	return AlarmCenter().Clear(id)
+}
+
+func ClearAll() {
+	AlarmCenter().ClearAll()
 }

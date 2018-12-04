@@ -24,17 +24,11 @@ import (
 
 type NotifyService struct {
 	processors map[Type]*Processor
-	err        chan error
 	closeMux   sync.RWMutex
 	isClose    bool
 }
 
-func (s *NotifyService) Err() <-chan error {
-	return s.err
-}
-
 func (s *NotifyService) init() {
-	s.err = make(chan error, 1)
 	for _, t := range Types() {
 		s.processors[t] = NewProcessor(t.String(), t.QueueSize())
 	}
@@ -60,12 +54,16 @@ func (s *NotifyService) Start() {
 
 func (s *NotifyService) AddSubscriber(n Subscriber) error {
 	if s.Closed() {
-		return errors.New("server is shutting down")
+		err := errors.New("server is shutting down")
+		log.Errorf(err, "add %s subscriber[%s/%s] failed", n.Type(), n.Subject(), n.Group())
+		return err
 	}
 
 	p, ok := s.processors[n.Type()]
 	if !ok {
-		return errors.New("Unknown subscribe type")
+		err := errors.New("Unknown subscribe type")
+		log.Errorf(err, "add %s subscriber[%s/%s] failed", n.Type(), n.Subject(), n.Group())
+		return err
 	}
 	n.SetService(s)
 	n.OnAccept()
@@ -127,8 +125,6 @@ func (s *NotifyService) Stop() {
 	s.closeMux.Unlock()
 
 	s.stopProcessors()
-
-	close(s.err)
 
 	log.Debug("notify service stopped")
 }

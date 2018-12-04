@@ -15,6 +15,8 @@
 
 package alarm
 
+import "fmt"
+
 type Field struct {
 	Key   string
 	Value interface{}
@@ -38,4 +40,8 @@ func FieldInt(key string, v int) Field {
 
 func FieldFloat64(key string, v float64) Field {
 	return Field{Key: key, Value: v}
+}
+
+func AdditionalContext(format string, args ...interface{}) Field {
+	return FieldString(FieldAdditionalContext, fmt.Sprintf(format, args...))
 }

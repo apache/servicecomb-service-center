@@ -38,28 +38,22 @@ import (
 const buildin = "buildin"
 
 type ServiceCenterServer struct {
-	apiServer     *APIServer
+	apiService    *APIServer
 	notifyService *nf.NotifyService
-	store         *backend.KvStore
+	cacheService  *backend.KvStore
 	goroutine     *gopool.Pool
 }
 
 func (s *ServiceCenterServer) Run() {
 	s.initialize()
 
-	s.startNotifyService()
-
-	s.startApiServer()
+	s.startServices()
 
 	s.waitForQuit()
 }
 
 func (s *ServiceCenterServer) waitForQuit() {
-	var err error
-	select {
-	case err = <-s.apiServer.Err():
-	case err = <-s.notifyService.Err():
-	}
+	err := <-s.apiService.Err()
 	if err != nil {
 		log.Errorf(err, "service center catch errors")
 	}
@@ -132,33 +126,38 @@ func (s *ServiceCenterServer) compactBackendService() {
 }
 
 func (s *ServiceCenterServer) initialize() {
-	s.store = backend.Store()
+	s.cacheService = backend.Store()
+	s.apiService = GetAPIServer()
 	s.notifyService = notify.NotifyCenter()
-	s.apiServer = GetAPIServer()
 	s.goroutine = gopool.New(context.Background())
+}
+
+func (s *ServiceCenterServer) startServices() {
+	// notifications
+	s.notifyService.Start()
 
 	// load server plugins
 	plugin.LoadPlugins()
 
-	// cache mechanism
-	s.store.Run()
-	<-s.store.Ready()
-
+	// check version
 	if core.ServerInfo.Config.SelfRegister {
-		// check version
 		s.loadOrUpgradeServerVersion()
 	}
+
+	// cache mechanism
+	s.cacheService.Run()
+	<-s.cacheService.Ready()
+
+	// compact backend automatically
 	if buildin != beego.AppConfig.DefaultString("registry_plugin", buildin) {
-		// compact backend automatically
 		s.compactBackendService()
 	}
+
+	// api service
+	s.startApiService()
 }
 
-func (s *ServiceCenterServer) startNotifyService() {
-	s.notifyService.Start()
-}
-
-func (s *ServiceCenterServer) startApiServer() {
+func (s *ServiceCenterServer) startApiService() {
 	restIp := beego.AppConfig.String("httpaddr")
 	restPort := beego.AppConfig.String("httpport")
 	rpcIp := beego.AppConfig.DefaultString("rpcaddr", "")
@@ -170,22 +169,22 @@ func (s *ServiceCenterServer) startApiServer() {
 		log.Errorf(err, "parse hostname failed")
 	}
 	core.Instance.HostName = host
-	s.apiServer.AddListener(REST, restIp, restPort)
-	s.apiServer.AddListener(RPC, rpcIp, rpcPort)
-	s.apiServer.Start()
+	s.apiService.AddListener(REST, restIp, restPort)
+	s.apiService.AddListener(RPC, rpcIp, rpcPort)
+	s.apiService.Start()
 }
 
 func (s *ServiceCenterServer) Stop() {
-	if s.apiServer != nil {
-		s.apiServer.Stop()
+	if s.apiService != nil {
+		s.apiService.Stop()
 	}
 
 	if s.notifyService != nil {
 		s.notifyService.Stop()
 	}
 
-	if s.store != nil {
-		s.store.Stop()
+	if s.cacheService != nil {
+		s.cacheService.Stop()
 	}
 
 	s.goroutine.Close(true)

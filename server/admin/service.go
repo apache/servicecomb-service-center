@@ -146,12 +146,12 @@ func (service *AdminService) Clusters(ctx context.Context, in *model.ClustersReq
 
 func (service *AdminService) AlarmList(ctx context.Context, in *model.AlarmListRequest) (*model.AlarmListResponse, error) {
 	return &model.AlarmListResponse{
-		Alarms: alarm.AlarmCenter().AlarmList(),
+		Alarms: alarm.ListAll(),
 	}, nil
 }
 
 func (service *AdminService) ClearAlarm(ctx context.Context, in *model.ClearAlarmRequest) (*model.ClearAlarmResponse, error) {
-	alarm.AlarmCenter().ClearAll()
+	alarm.ClearAll()
 	log.Infof("service center alarms are cleared")
 	return &model.ClearAlarmResponse{}, nil
 }

@@ -24,6 +24,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/alarm"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 	"github.com/coreos/etcd/clientv3"
@@ -112,15 +113,21 @@ func (c *EtcdClient) newClient() (*clientv3.Client, error) {
 		TLS:              c.TLSConfig,
 		AutoSyncInterval: 0,
 	})
+	defer func() {
+		if err != nil {
+			alarm.Raise(alarm.IdBackendConnectionRefuse, alarm.AdditionalContext("%v", err))
+
+			if client != nil {
+				client.Close()
+			}
+			return
+		}
+		alarm.Clear(alarm.IdBackendConnectionRefuse)
+	}()
+
 	if err != nil {
 		return nil, err
 	}
-
-	defer func() {
-		if err != nil {
-			client.Close()
-		}
-	}()
 
 	ctx, _ := context.WithTimeout(client.Ctx(), healthCheckTimeout)
 	resp, err := client.MemberList(ctx)
@@ -712,6 +719,7 @@ hcLoop:
 						continue
 					}
 				}
+
 				retries, start = healthCheckRetryTimes, time.Now()
 				continue hcLoop
 			}

@@ -21,6 +21,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/admin/model"
+	"github.com/apache/servicecomb-service-center/server/alarm"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
@@ -53,6 +54,13 @@ func (c *Syncer) Sync(ctx context.Context) error {
 		err := fmt.Errorf("%v", errs)
 		log.Errorf(err, "sync failed")
 		return err
+	}
+
+	if len(errs) == 0 {
+		alarm.Clear(alarm.IdBackendConnectionRefuse)
+	} else {
+		alarm.Raise(alarm.IdBackendConnectionRefuse,
+			alarm.AdditionalContext("%v", errs))
 	}
 
 	// microservice

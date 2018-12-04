@@ -16,8 +16,8 @@
 package alarm
 
 const (
-	TypeActivated Status = "ACTIVATED"
-	TypeCleared   Status = "CLEARED"
+	Activated Status = "ACTIVATED"
+	Cleared   Status = "CLEARED"
 )
 
 const (
@@ -27,6 +27,10 @@ const (
 	IdInstanceQuotaLimit      ID = "InstanceQuotaLimit"
 	IdDiagnoseFailure         ID = "DiagnoseFailure"
 	IdInternalError           ID = "InternalError"
+)
+
+const (
+	FieldAdditionalContext = "detail"
 )
 
 const (

@@ -36,7 +36,7 @@ func WriteError(w http.ResponseWriter, code int32, detail string) {
 	fmt.Fprintln(w, util.BytesToStringWithNoCopy(err.Marshal()))
 
 	if err.InternalError() {
-		alarm.AlarmCenter().Alarm(alarm.IdInternalError, alarm.FieldString("detail", detail))
+		alarm.Raise(alarm.IdInternalError, alarm.AdditionalContext(detail))
 	}
 }
 

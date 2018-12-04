@@ -178,8 +178,8 @@ func (c *KvCacher) refresh(ctx context.Context) {
 	for {
 		nextPeriod := minWaitInterval
 		if err := c.ListAndWatch(ctx); err != nil {
-			nextPeriod = util.GetBackoff().Delay(retries)
 			retries++
+			nextPeriod = util.GetBackoff().Delay(retries)
 		} else {
 			retries = 0
 		}
