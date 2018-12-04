@@ -16,7 +16,7 @@
 package model
 
 import (
-	"github.com/apache/servicecomb-service-center/server/alarm"
+	"github.com/apache/servicecomb-service-center/server/alarm/model"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 )
@@ -26,7 +26,7 @@ type AlarmListRequest struct {
 
 type AlarmListResponse struct {
 	Response *pb.Response        `json:"response,omitempty"`
-	Alarms   []*alarm.AlarmEvent `json:"alarms,omitempty"`
+	Alarms   []*model.AlarmEvent `json:"alarms,omitempty"`
 }
 
 type ClustersRequest struct {

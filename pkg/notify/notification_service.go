@@ -53,6 +53,11 @@ func (s *NotifyService) Start() {
 }
 
 func (s *NotifyService) AddSubscriber(n Subscriber) error {
+	if n == nil {
+		err := errors.New("required Subscriber")
+		log.Errorf(err, "add subscriber failed")
+		return err
+	}
 	if s.Closed() {
 		err := errors.New("server is shutting down")
 		log.Errorf(err, "add %s subscriber[%s/%s] failed", n.Type(), n.Subject(), n.Group())

@@ -19,6 +19,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	nf "github.com/apache/servicecomb-service-center/pkg/notify"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/alarm/model"
 	"github.com/apache/servicecomb-service-center/server/notify"
 	"sync"
 )
@@ -33,8 +34,8 @@ type AlarmService struct {
 	alarms util.ConcurrentMap
 }
 
-func (ac *AlarmService) Raise(id ID, fields ...Field) error {
-	ae := &AlarmEvent{
+func (ac *AlarmService) Raise(id model.ID, fields ...model.Field) error {
+	ae := &model.AlarmEvent{
 		Event:  nf.NewEvent(nf.NOTIFTY, Subject, ""),
 		Status: Activated,
 		Id:     id,
@@ -46,8 +47,8 @@ func (ac *AlarmService) Raise(id ID, fields ...Field) error {
 	return notify.NotifyCenter().Publish(ae)
 }
 
-func (ac *AlarmService) Clear(id ID) error {
-	ae := &AlarmEvent{
+func (ac *AlarmService) Clear(id model.ID) error {
+	ae := &model.AlarmEvent{
 		Event:  nf.NewEvent(nf.NOTIFTY, Subject, ""),
 		Status: Cleared,
 		Id:     id,
@@ -55,9 +56,9 @@ func (ac *AlarmService) Clear(id ID) error {
 	return notify.NotifyCenter().Publish(ae)
 }
 
-func (ac *AlarmService) ListAll() (ls []*AlarmEvent) {
+func (ac *AlarmService) ListAll() (ls []*model.AlarmEvent) {
 	ac.alarms.ForEach(func(item util.MapItem) (next bool) {
-		ls = append(ls, item.Value.(*AlarmEvent))
+		ls = append(ls, item.Value.(*model.AlarmEvent))
 		return true
 	})
 	return
@@ -69,11 +70,11 @@ func (ac *AlarmService) ClearAll() {
 }
 
 func (ac *AlarmService) OnMessage(evt nf.Event) {
-	alarm := evt.(*AlarmEvent)
+	alarm := evt.(*model.AlarmEvent)
 	switch alarm.Status {
 	case Cleared:
 		if itf, ok := ac.alarms.Get(alarm.Id); ok {
-			if exist := itf.(*AlarmEvent); exist.Status != Cleared {
+			if exist := itf.(*model.AlarmEvent); exist.Status != Cleared {
 				exist.Status = Cleared
 				alarm = exist
 			}
@@ -97,20 +98,4 @@ func AlarmCenter() *AlarmService {
 		service = NewAlarmService()
 	})
 	return service
-}
-
-func ListAll() []*AlarmEvent {
-	return AlarmCenter().ListAll()
-}
-
-func Raise(id ID, fields ...Field) error {
-	return AlarmCenter().Raise(id, fields...)
-}
-
-func Clear(id ID) error {
-	return AlarmCenter().Clear(id)
-}
-
-func ClearAll() {
-	AlarmCenter().ClearAll()
 }

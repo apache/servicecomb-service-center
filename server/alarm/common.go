@@ -15,18 +15,19 @@
 
 package alarm
 
-const (
-	Activated Status = "ACTIVATED"
-	Cleared   Status = "CLEARED"
+import (
+	"fmt"
+	"github.com/apache/servicecomb-service-center/server/alarm/model"
 )
 
 const (
-	IdBackendConnectionRefuse ID = "BackendConnectionRefuse"
-	IdServerOverload          ID = "ServerOverload"
-	IdServiceQuotaLimit       ID = "ServiceQuotaLimit"
-	IdInstanceQuotaLimit      ID = "InstanceQuotaLimit"
-	IdDiagnoseFailure         ID = "DiagnoseFailure"
-	IdInternalError           ID = "InternalError"
+	Activated model.Status = "ACTIVATED"
+	Cleared   model.Status = "CLEARED"
+)
+
+const (
+	IdBackendConnectionRefuse model.ID = "BackendConnectionRefuse"
+	IdInternalError           model.ID = "InternalError"
 )
 
 const (
@@ -37,3 +38,43 @@ const (
 	Subject = "__ALARM_SUBJECT__"
 	Group   = "__ALARM_GROUP__"
 )
+
+func FieldBool(key string, v bool) model.Field {
+	return model.Field{Key: key, Value: v}
+}
+
+func FieldString(key string, v string) model.Field {
+	return model.Field{Key: key, Value: v}
+}
+
+func FieldInt64(key string, v int64) model.Field {
+	return model.Field{Key: key, Value: v}
+}
+
+func FieldInt(key string, v int) model.Field {
+	return model.Field{Key: key, Value: v}
+}
+
+func FieldFloat64(key string, v float64) model.Field {
+	return model.Field{Key: key, Value: v}
+}
+
+func AdditionalContext(format string, args ...interface{}) model.Field {
+	return FieldString(FieldAdditionalContext, fmt.Sprintf(format, args...))
+}
+
+func ListAll() []*model.AlarmEvent {
+	return AlarmCenter().ListAll()
+}
+
+func Raise(id model.ID, fields ...model.Field) error {
+	return AlarmCenter().Raise(id, fields...)
+}
+
+func Clear(id model.ID) error {
+	return AlarmCenter().Clear(id)
+}
+
+func ClearAll() {
+	AlarmCenter().ClearAll()
+}

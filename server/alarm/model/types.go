@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package alarm
+package model
 
 import (
 	nf "github.com/apache/servicecomb-service-center/pkg/notify"
@@ -23,6 +23,11 @@ import (
 type ID string
 
 type Status string
+
+type Field struct {
+	Key   string
+	Value interface{}
+}
 
 type AlarmEvent struct {
 	nf.Event `json:"-"`

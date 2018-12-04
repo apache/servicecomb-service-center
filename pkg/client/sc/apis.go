@@ -213,7 +213,7 @@ func (c *SCClient) HealthCheck(ctx context.Context) *scerr.Error {
 	headers.Set("X-Domain-Name", "default")
 	resp, err := c.RestDoWithContext(ctx, http.MethodGet, apiHealthURL, headers, nil)
 	if err != nil {
-		return scerr.NewError(scerr.ErrUnavailableBackend, err.Error())
+		return scerr.NewError(scerr.ErrInternal, err.Error())
 	}
 	defer resp.Body.Close()
 

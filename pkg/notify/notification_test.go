@@ -45,11 +45,6 @@ func TestGetNotifyService(t *testing.T) {
 	if notifyService.Closed() != false {
 		t.Fatalf("TestGetNotifyService failed")
 	}
-	select {
-	case <-notifyService.Err():
-		t.Fatalf("TestGetNotifyService failed")
-	default:
-	}
 
 	s := NewSubscriber(-1, "s", "g")
 	err = notifyService.AddSubscriber(s)

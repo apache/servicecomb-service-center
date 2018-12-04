@@ -13,35 +13,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package alarm
+package health
 
-import "fmt"
+import (
+	"errors"
+	"github.com/apache/servicecomb-service-center/server/alarm"
+)
 
-type Field struct {
-	Key   string
-	Value interface{}
+var healthChecker HealthChecker = &DefaultHealthChecker{}
+
+type HealthChecker interface {
+	Healthy() error
 }
 
-func FieldBool(key string, v bool) Field {
-	return Field{Key: key, Value: v}
+type DefaultHealthChecker struct {
 }
 
-func FieldString(key string, v string) Field {
-	return Field{Key: key, Value: v}
+func (hc *DefaultHealthChecker) Healthy() error {
+	for _, a := range alarm.ListAll() {
+		if a.Id == alarm.IdBackendConnectionRefuse && a.Status != alarm.Cleared {
+			return errors.New(a.FieldString(alarm.FieldAdditionalContext))
+		}
+	}
+	return nil
 }
 
-func FieldInt64(key string, v int64) Field {
-	return Field{Key: key, Value: v}
+func SetGlobalHealthChecker(hc HealthChecker) {
+	healthChecker = hc
 }
 
-func FieldInt(key string, v int) Field {
-	return Field{Key: key, Value: v}
-}
-
-func FieldFloat64(key string, v float64) Field {
-	return Field{Key: key, Value: v}
-}
-
-func AdditionalContext(format string, args ...interface{}) Field {
-	return FieldString(FieldAdditionalContext, fmt.Sprintf(format, args...))
+func GlobalHealthChecker() HealthChecker {
+	return healthChecker
 }
