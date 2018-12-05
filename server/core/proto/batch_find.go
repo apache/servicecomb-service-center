@@ -27,7 +27,7 @@ type FindService struct {
 type FindResult struct {
 	Index     int64                   `protobuf:"varint,1,opt,name=index" json:"index"`
 	Rev       string                  `protobuf:"bytes,2,opt,name=rev" json:"rev"`
-	Instances []*MicroServiceInstance `protobuf:"bytes,3,rep,name=instances" json:"instances"`
+	Instances []*MicroServiceInstance `protobuf:"bytes,3,rep,name=instances" json:"instances,omitempty"`
 }
 
 type FindFailedResult struct {
