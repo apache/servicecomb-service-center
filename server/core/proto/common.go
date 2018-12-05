@@ -32,6 +32,7 @@ const (
 	MSI_UP           string = "UP"
 	MSI_DOWN         string = "DOWN"
 	MSI_STARTING     string = "STARTING"
+	MSI_TESTING      string = "TESTING"
 	MSI_OUTOFSERVICE string = "OUTOFSERVICE"
 
 	CHECK_BY_HEARTBEAT string = "push"
