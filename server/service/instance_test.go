@@ -622,9 +622,41 @@ var _ = Describe("'Instance' service", func() {
 				respUpdateStatus, err := instanceResource.UpdateStatus(getContext(), &pb.UpdateInstanceStatusRequest{
 					ServiceId:  serviceId,
 					InstanceId: instanceId,
+					Status:     pb.MSI_DOWN,
+				})
+				Expect(err).To(BeNil())
+				Expect(respUpdateStatus.Response.Code).To(Equal(pb.Response_SUCCESS))
+
+				respUpdateStatus, err = instanceResource.UpdateStatus(getContext(), &pb.UpdateInstanceStatusRequest{
+					ServiceId:  serviceId,
+					InstanceId: instanceId,
+					Status:     pb.MSI_OUTOFSERVICE,
+				})
+				Expect(err).To(BeNil())
+				Expect(respUpdateStatus.Response.Code).To(Equal(pb.Response_SUCCESS))
+
+				respUpdateStatus, err = instanceResource.UpdateStatus(getContext(), &pb.UpdateInstanceStatusRequest{
+					ServiceId:  serviceId,
+					InstanceId: instanceId,
 					Status:     pb.MSI_STARTING,
 				})
+				Expect(err).To(BeNil())
+				Expect(respUpdateStatus.Response.Code).To(Equal(pb.Response_SUCCESS))
 
+				respUpdateStatus, err = instanceResource.UpdateStatus(getContext(), &pb.UpdateInstanceStatusRequest{
+					ServiceId:  serviceId,
+					InstanceId: instanceId,
+					Status:     pb.MSI_TESTING,
+				})
+
+				Expect(err).To(BeNil())
+				Expect(respUpdateStatus.Response.Code).To(Equal(pb.Response_SUCCESS))
+
+				respUpdateStatus, err = instanceResource.UpdateStatus(getContext(), &pb.UpdateInstanceStatusRequest{
+					ServiceId:  serviceId,
+					InstanceId: instanceId,
+					Status:     pb.MSI_UP,
+				})
 				Expect(err).To(BeNil())
 				Expect(respUpdateStatus.Response.Code).To(Equal(pb.Response_SUCCESS))
 

@@ -36,9 +36,9 @@ var (
 
 var (
 	instStatusRegex, _ = regexp.Compile("^(" + util.StringJoin([]string{
-		pb.MSI_UP, pb.MSI_DOWN, pb.MSI_STARTING, pb.MSI_OUTOFSERVICE}, "|") + ")?$")
+		pb.MSI_UP, pb.MSI_DOWN, pb.MSI_STARTING, pb.MSI_TESTING, pb.MSI_OUTOFSERVICE}, "|") + ")?$")
 	updateInstStatusRegex, _ = regexp.Compile("^(" + util.StringJoin([]string{
-		pb.MSI_UP, pb.MSI_DOWN, pb.MSI_STARTING, pb.MSI_OUTOFSERVICE}, "|") + ")$")
+		pb.MSI_UP, pb.MSI_DOWN, pb.MSI_STARTING, pb.MSI_TESTING, pb.MSI_OUTOFSERVICE}, "|") + ")$")
 	hbModeRegex, _               = regexp.Compile(`^(push|pull)$`)
 	urlRegex, _                  = regexp.Compile(`^\S*$`)
 	epRegex, _                   = regexp.Compile(`\S+`)
