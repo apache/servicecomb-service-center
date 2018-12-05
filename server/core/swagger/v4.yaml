@@ -50,11 +50,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/health:
     get:
       description: |
@@ -78,11 +78,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{serviceId}:
     get:
       description: |
@@ -112,11 +112,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
     delete:
       description: |
         删除一个微服务定义及其相关信息，同时注销其所有实例信息。
@@ -148,11 +148,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices:
     get:
       description: |
@@ -177,11 +177,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
     post:
       description: |
         在注册微服务实例前需要创建服务静态信息，之后注册的微服务实例根据service id这个字段与静态信息关联，一个服务对应对多个实例。
@@ -212,11 +212,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
     delete:
       description: |
         批量删除指定的微服务定义及其相关信息，同时注销其所有实例信息。
@@ -236,15 +236,17 @@ paths:
         - microservices
       responses:
         200:
-          description: 更新成功
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/DelServicesResponse'
         400:
           description: 错误的请求
           schema:
-            $ref: '#/definitions/DelServicesResponse'
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{serviceId}/properties:
     put:
       description: |
@@ -278,11 +280,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{serviceId}/tags:
     post:
       description: |
@@ -317,11 +319,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
     get:
       description: |
         获取serviceId的微服务的tag
@@ -352,11 +354,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-                type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{serviceId}/tags/{key}:
     put:
       description: |
@@ -395,11 +397,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
     delete:
       description: |
         为serviceId的微服务删除tags
@@ -433,11 +435,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{serviceId}/rules:
     post:
       description: |
@@ -474,11 +476,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
     get:
       description: |
         获取serviceId的服务的黑白名单信息。
@@ -509,11 +511,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{serviceId}/rules/{rule_id}:
     put:
       description: |
@@ -555,11 +557,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
     delete:
       description: |
         为serviceId的服务删除黑白名单。
@@ -595,11 +597,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{serviceId}/schemas/{schemaId}:
     get:
       description: |
@@ -638,11 +640,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
     put:
       description: |
         根据schemaId更新微服务的访问契约内容。
@@ -682,11 +684,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
     delete:
       description: |
         删除微服务的一个schema信息。
@@ -720,11 +722,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{serviceId}/schemas:
     post:
       description: |
@@ -759,11 +761,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
     get:
       description: |
         批量查询所有schemas和summary。
@@ -798,11 +800,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/dependencies:
     post:
       description: |
@@ -833,11 +835,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
     put:
       description: |
         覆盖式修改服务间的依赖关系，consumer的version必须是确定的版本，serviceName不能为*，consumer必须是已存在的服务，provider可以是还未创建的。
@@ -867,11 +869,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{consumerId}/providers:
     get:
       description: |
@@ -911,11 +913,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{providerId}/consumers:
     get:
       description: |
@@ -955,11 +957,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/existence:
     get:
       description: |
@@ -1023,11 +1025,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{serviceId}/instances:
     post:
       description: |
@@ -1064,11 +1066,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
     get:
       description: |
         实例注册后可以根据 service_id 发现该微服务的所有实例。
@@ -1111,11 +1113,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{serviceId}/instances/{instanceId}:
     delete:
       description: |
@@ -1148,11 +1150,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
     get:
       description: |
         实例注册后可以根据 service_id和serviceId获取该实例的详细信息。
@@ -1200,11 +1202,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{serviceId}/instances/{instanceId}/properties:
     put:
       description: |
@@ -1243,11 +1245,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{serviceId}/instances/{instanceId}/status:
     put:
       description: |
@@ -1285,11 +1287,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{serviceId}/instances/{instanceId}/heartbeat:
     put:
       description: |
@@ -1322,11 +1324,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/heartbeats:
     put:
       description: |
@@ -1359,7 +1361,7 @@ paths:
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/instances:
     get:
       description: |
@@ -1419,11 +1421,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
     post:
       description: |
         批量微服务实例发现接口
@@ -1457,11 +1459,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{serviceId}/watcher:
     get:
       description: |
@@ -1491,11 +1493,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{serviceId}/listwatcher:
     get:
       description: |
@@ -1524,11 +1526,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/govern/microservices/{serviceId}:
     get:
       description: |
@@ -1559,11 +1561,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/govern/microservices:
     get:
       description: |
@@ -1594,11 +1596,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/govern/relations:
     get:
       description: |
@@ -1626,11 +1628,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/govern/apps:
     get:
       description: |
@@ -1662,11 +1664,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/admin/dump:
     get:
       description: |
@@ -1695,7 +1697,7 @@ paths:
         403:
           description: Forbidden
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/admin/clusters:
     get:
       description: |
@@ -1958,7 +1960,7 @@ definitions:
     type: object
     properties:
       service:
-        $ref: '#definitions/DependencyKey'
+        $ref: '#/definitions/DependencyKey'
       rev:
         type: string
         description: 客户端缓存的版本号。
