@@ -394,44 +394,88 @@ func getHeartbeatFunc(ctx context.Context, domainProject string, instancesHbRst 
 }
 
 func (s *InstanceService) GetOneInstance(ctx context.Context, in *pb.GetOneInstanceRequest) (*pb.GetOneInstanceResponse, error) {
-	if err := Validate(in); err != nil {
+	err := Validate(in)
+	if err != nil {
 		log.Errorf(err, "get instance failed: invalid parameters")
 		return &pb.GetOneInstanceResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
-	cpFunc := func() string {
-		return fmt.Sprintf("consumer[%s] get provider instance[%s/%s]",
-			in.ConsumerServiceId, in.ProviderServiceId, in.ProviderInstanceId)
+	domainProject := util.ParseDomainProject(ctx)
+
+	service := &pb.MicroService{}
+	if len(in.ConsumerServiceId) > 0 {
+		service, err = serviceUtil.GetService(ctx, domainProject, in.ConsumerServiceId)
+		if err != nil {
+			log.Errorf(err, "get consumer failed, consumer[%s] find provider instance[%s/%s]",
+				in.ConsumerServiceId, in.ProviderServiceId, in.ProviderInstanceId)
+			return &pb.GetOneInstanceResponse{
+				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			}, err
+		}
+		if service == nil {
+			log.Errorf(nil, "consumer does not exist, consumer[%s] find provider instance[%s/%s]",
+				in.ConsumerServiceId, in.ProviderServiceId, in.ProviderInstanceId)
+			return &pb.GetOneInstanceResponse{
+				Response: pb.CreateResponse(scerr.ErrServiceNotExists,
+					fmt.Sprintf("Consumer[%s] does not exist.", in.ConsumerServiceId)),
+			}, nil
+		}
 	}
 
-	if checkErr := s.getInstancePreCheck(ctx, in.ProviderServiceId, in.ConsumerServiceId, in.Tags); checkErr != nil {
-		log.Errorf(checkErr, "%s failed: pre check failed", cpFunc())
-		resp := &pb.GetOneInstanceResponse{
-			Response: pb.CreateResponseWithSCErr(checkErr),
-		}
-		if checkErr.InternalError() {
-			return resp, checkErr
-		}
-		return resp, nil
-	}
-
-	serviceId := in.ProviderServiceId
-	instanceId := in.ProviderInstanceId
-	instance, err := serviceUtil.GetInstance(ctx, util.ParseTargetDomainProject(ctx), serviceId, instanceId)
+	provider, err := serviceUtil.GetService(ctx, domainProject, in.ProviderServiceId)
 	if err != nil {
-		log.Errorf(err, "%s failed: get instance failed", cpFunc())
+		log.Errorf(err, "get provider failed, consumer[%s] find provider instance[%s/%s]",
+			in.ConsumerServiceId, in.ProviderServiceId, in.ProviderInstanceId)
 		return &pb.GetOneInstanceResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
-	if instance == nil {
-		log.Errorf(nil, "%s failed: instance does not exist", cpFunc())
+	if provider == nil {
+		log.Errorf(nil, "provider does not exist, consumer[%s] find provider instance[%s/%s]",
+			in.ConsumerServiceId, in.ProviderServiceId, in.ProviderInstanceId)
 		return &pb.GetOneInstanceResponse{
-			Response: pb.CreateResponse(scerr.ErrInstanceNotExists, "Service instance does not exist."),
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists,
+				fmt.Sprintf("Provider[%s] does not exist.", in.ProviderServiceId)),
 		}, nil
 	}
+
+	findFlag := func() string {
+		return fmt.Sprintf("Consumer[%s][%s/%s/%s/%s] find provider[%s][%s/%s/%s/%s] instance[%s]",
+			in.ConsumerServiceId, service.Environment, service.AppId, service.ServiceName, service.Version,
+			provider.ServiceId, provider.Environment, provider.AppId, provider.ServiceName, provider.Version,
+			in.ProviderInstanceId)
+	}
+
+	var item *cache.VersionRuleCacheItem
+	rev, _ := ctx.Value(serviceUtil.CTX_REQUEST_REVISION).(string)
+	item, err = cache.FindInstances.GetOne(ctx, service, pb.MicroServiceToKey(domainProject, provider),
+		&pb.HeartbeatSetElement{
+			ServiceId: in.ProviderServiceId, InstanceId: in.ProviderInstanceId,
+		}, in.Tags, rev)
+	if err != nil {
+		log.Errorf(err, "FindInstancesCache.GetOne failed, %s failed", findFlag())
+		return &pb.GetOneInstanceResponse{
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+	if item == nil {
+		mes := fmt.Errorf("%s failed, provider instance does not exist.", findFlag())
+		log.Errorf(mes, "FindInstancesCache.GetOne failed")
+		return &pb.GetOneInstanceResponse{
+			Response: pb.CreateResponse(scerr.ErrInstanceNotExists, mes.Error()),
+		}, nil
+	}
+
+	var instance *pb.MicroServiceInstance
+	if len(item.Instances) > 0 {
+		instance = item.Instances[0]
+	}
+	if rev == item.Rev {
+		instance = nil // for gRPC
+	}
+	ctx = util.SetContext(ctx, serviceUtil.CTX_RESPONSE_REVISION, item.Rev)
 
 	return &pb.GetOneInstanceResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Get instance successfully."),
@@ -626,8 +670,12 @@ func (s *InstanceService) BatchFind(ctx context.Context, in *pb.BatchFindInstanc
 	}
 
 	response := &pb.BatchFindInstancesResponse{
-		Response: pb.CreateResponse(pb.Response_SUCCESS, "Batch query service instances successfully."),
+		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Batch query service instances successfully."),
+		Services:  &pb.BatchFindResult{},
+		Instances: &pb.BatchFindResult{},
 	}
+
+	// find services
 	failedResult := make(map[int32]*pb.FindFailedResult)
 	for index, key := range in.Services {
 		cloneCtx := util.SetContext(ctx, serviceUtil.CTX_REQUEST_REVISION, key.Rev)
@@ -644,15 +692,41 @@ func (s *InstanceService) BatchFind(ctx context.Context, in *pb.BatchFindInstanc
 			}, err
 		}
 		failed, ok := failedResult[resp.GetResponse().GetCode()]
-		serviceUtil.AppendFindResponse(cloneCtx, int64(index), resp,
-			&response.Updated, &response.NotModified, &failed)
+		serviceUtil.AppendFindResponse(cloneCtx, int64(index), resp.GetResponse(), resp.GetInstances(),
+			&response.Services.Updated, &response.Services.NotModified, &failed)
 		if !ok && failed != nil {
 			failedResult[resp.GetResponse().GetCode()] = failed
 		}
 	}
 	for _, result := range failedResult {
-		response.Failed = append(response.Failed, result)
+		response.Services.Failed = append(response.Services.Failed, result)
 	}
+
+	// find instance
+	failedResult = make(map[int32]*pb.FindFailedResult)
+	for index, key := range in.Instances {
+		cloneCtx := util.SetContext(ctx, serviceUtil.CTX_REQUEST_REVISION, key.Rev)
+		resp, err := s.GetOneInstance(cloneCtx, &pb.GetOneInstanceRequest{
+			ConsumerServiceId:  in.ConsumerServiceId,
+			ProviderServiceId:  key.Instance.ServiceId,
+			ProviderInstanceId: key.Instance.InstanceId,
+		})
+		if err != nil {
+			return &pb.BatchFindInstancesResponse{
+				Response: resp.Response,
+			}, err
+		}
+		failed, ok := failedResult[resp.GetResponse().GetCode()]
+		serviceUtil.AppendFindResponse(cloneCtx, int64(index), resp.GetResponse(), []*pb.MicroServiceInstance{resp.GetInstance()},
+			&response.Instances.Updated, &response.Instances.NotModified, &failed)
+		if !ok && failed != nil {
+			failedResult[resp.GetResponse().GetCode()] = failed
+		}
+	}
+	for _, result := range failedResult {
+		response.Instances.Failed = append(response.Instances.Failed, result)
+	}
+
 	return response, nil
 }
 

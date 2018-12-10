@@ -27,6 +27,7 @@ import (
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
 	"sort"
+	"strconv"
 )
 
 var clustersIndex = make(map[string]int)
@@ -46,14 +47,30 @@ type InstancesFilter struct {
 }
 
 func (f *InstancesFilter) Name(ctx context.Context, _ *cache.Node) string {
+	instanceKey, ok := ctx.Value(CTX_FIND_PROVIDER_INSTANCE).(*pb.HeartbeatSetElement)
+	if ok {
+		return instanceKey.InstanceId
+	}
 	return ""
 }
 
 func (f *InstancesFilter) Init(ctx context.Context, parent *cache.Node) (node *cache.Node, err error) {
 	pCopy := *parent.Cache.Get(CACHE_FIND).(*VersionRuleCacheItem)
-	pCopy.Instances, pCopy.Rev, err = f.FindInstances(ctx, pCopy.ServiceIds)
-	if err != nil {
-		return
+	provider := ctx.Value(CTX_FIND_PROVIDER).(*pb.MicroServiceKey)
+
+	instanceKey, ok := ctx.Value(CTX_FIND_PROVIDER_INSTANCE).(*pb.HeartbeatSetElement)
+	if ok {
+		var instance *pb.MicroServiceInstance
+		instance, pCopy.Rev, err = f.FindInstance(ctx, provider, instanceKey)
+		if instance == nil || err != nil {
+			return
+		}
+		pCopy.Instances = append(pCopy.Instances, instance)
+	} else {
+		pCopy.Instances, pCopy.Rev, err = f.FindInstances(ctx, provider, pCopy.ServiceIds)
+		if err != nil {
+			return
+		}
 	}
 
 	pCopy.InitBrokenQueue()
@@ -62,8 +79,26 @@ func (f *InstancesFilter) Init(ctx context.Context, parent *cache.Node) (node *c
 	return
 }
 
-func (f *InstancesFilter) FindInstances(ctx context.Context, serviceIds []string) (instances []*pb.MicroServiceInstance, rev string, err error) {
-	provider := ctx.Value(CTX_FIND_PROVIDER).(*pb.MicroServiceKey)
+func (f *InstancesFilter) FindInstance(ctx context.Context, provider *pb.MicroServiceKey, instanceKey *pb.HeartbeatSetElement) (instance *pb.MicroServiceInstance, rev string, err error) {
+	key := apt.GenerateInstanceKey(provider.Tenant, instanceKey.ServiceId, instanceKey.InstanceId)
+	opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(key))
+	resp, err := backend.Store().Instance().Search(ctx, opts...)
+	if err != nil {
+		consumer := ctx.Value(CTX_FIND_CONSUMER).(*pb.MicroService)
+		findFlag := fmt.Sprintf("consumer '%s' find provider %s/%s/%s", consumer.ServiceId,
+			provider.AppId, provider.ServiceName, provider.Version)
+		log.Errorf(err, "Store.Instance.Search failed, %s", findFlag)
+		return nil, "", err
+	}
+	if len(resp.Kvs) == 0 {
+		return
+	}
+
+	kv := resp.Kvs[0]
+	return kv.Value.(*pb.MicroServiceInstance), strconv.FormatInt(kv.Version, 10), nil
+}
+
+func (f *InstancesFilter) FindInstances(ctx context.Context, provider *pb.MicroServiceKey, serviceIds []string) (instances []*pb.MicroServiceInstance, rev string, err error) {
 	var (
 		maxRevs = make([]int64, len(clustersIndex))
 		counts  = make([]int64, len(clustersIndex))
@@ -76,7 +111,7 @@ func (f *InstancesFilter) FindInstances(ctx context.Context, serviceIds []string
 			consumer := ctx.Value(CTX_FIND_CONSUMER).(*pb.MicroService)
 			findFlag := fmt.Sprintf("consumer '%s' find provider %s/%s/%s", consumer.ServiceId,
 				provider.AppId, provider.ServiceName, provider.Version)
-			log.Errorf(err, "Instance().Search failed, %s", findFlag)
+			log.Errorf(err, "Store.Instance.Search failed, %s", findFlag)
 			return nil, "", err
 		}
 

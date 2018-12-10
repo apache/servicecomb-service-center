@@ -24,6 +24,11 @@ type FindService struct {
 	Rev     string           `protobuf:"bytes,2,opt,name=rev" json:"rev,omitempty"`
 }
 
+type FindInstance struct {
+	Instance *HeartbeatSetElement `protobuf:"bytes,1,opt,name=instance" json:"instance"`
+	Rev      string               `protobuf:"bytes,2,opt,name=rev" json:"rev,omitempty"`
+}
+
 type FindResult struct {
 	Index     int64                   `protobuf:"varint,1,opt,name=index" json:"index"`
 	Rev       string                  `protobuf:"bytes,2,opt,name=rev" json:"rev"`
@@ -35,14 +40,20 @@ type FindFailedResult struct {
 	Error   *scerr.Error `protobuf:"bytes,2,opt,name=error" json:"error"`
 }
 
-type BatchFindInstancesRequest struct {
-	ConsumerServiceId string         `protobuf:"bytes,1,opt,name=consumerServiceId" json:"consumerServiceId,omitempty"`
-	Services          []*FindService `protobuf:"bytes,2,rep,name=services" json:"services"`
-}
-
-type BatchFindInstancesResponse struct {
-	Response    *Response           `protobuf:"bytes,1,opt,name=response" json:"response,omitempty"`
+type BatchFindResult struct {
 	Failed      []*FindFailedResult `protobuf:"bytes,2,rep,name=failed" json:"failed,omitempty"`
 	NotModified []int64             `protobuf:"varint,3,rep,packed,name=notModified" json:"notModified,omitempty"`
 	Updated     []*FindResult       `protobuf:"bytes,4,rep,name=updated" json:"updated,omitempty"`
+}
+
+type BatchFindInstancesRequest struct {
+	ConsumerServiceId string          `protobuf:"bytes,1,opt,name=consumerServiceId" json:"consumerServiceId,omitempty"`
+	Services          []*FindService  `protobuf:"bytes,2,rep,name=services" json:"services,omitempty"`
+	Instances         []*FindInstance `protobuf:"bytes,3,rep,name=instances" json:"instances,omitempty"`
+}
+
+type BatchFindInstancesResponse struct {
+	Response  *Response        `protobuf:"bytes,1,opt,name=response" json:"response,omitempty"`
+	Services  *BatchFindResult `protobuf:"bytes,2,rep,name=services" json:"services,omitempty"`
+	Instances *BatchFindResult `protobuf:"bytes,3,rep,name=instances" json:"instances,omitempty"`
 }

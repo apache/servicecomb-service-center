@@ -42,10 +42,9 @@ func init() {
 }
 
 type VersionRuleCacheItem struct {
-	VersionRule string
-	ServiceIds  []string
-	Instances   []*pb.MicroServiceInstance
-	Rev         string
+	ServiceIds []string
+	Instances  []*pb.MicroServiceInstance
+	Rev        string
 
 	broken bool
 	queue  chan struct{}
@@ -86,6 +85,12 @@ func (f *FindInstancesCache) Get(ctx context.Context, consumer *pb.MicroService,
 		return nil, err
 	}
 	return node.Cache.Get(CACHE_FIND).(*VersionRuleCacheItem), nil
+}
+
+func (f *FindInstancesCache) GetOne(ctx context.Context, consumer *pb.MicroService, provider *pb.MicroServiceKey,
+	instanceKey *pb.HeartbeatSetElement, tags []string, rev string) (*VersionRuleCacheItem, error) {
+	cloneCtx := context.WithValue(ctx, CTX_FIND_PROVIDER_INSTANCE, instanceKey)
+	return f.Get(cloneCtx, consumer, provider, tags, rev)
 }
 
 func (f *FindInstancesCache) Remove(provider *pb.MicroServiceKey) {

@@ -20,6 +20,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/cache"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
 )
@@ -55,14 +56,15 @@ func (f *RevisionFilter) Init(ctx context.Context, parent *cache.Node) (node *ca
 	cloneCtx := util.CloneContext(ctx)
 	cloneCtx = util.SetContext(cloneCtx, serviceUtil.CTX_NOCACHE, "1")
 
-	insts, _, err := f.FindInstances(cloneCtx, item.ServiceIds)
+	provider := ctx.Value(CTX_FIND_PROVIDER).(*pb.MicroServiceKey)
+	insts, _, err := f.FindInstances(cloneCtx, provider, item.ServiceIds)
 	if err != nil {
 		item.InitBrokenQueue()
 		return nil, err
 	}
 
-	log.Warnf("the cache of finding instances api is broken, req[%s]!=cache[%s]",
-		requestRev, item.Rev)
+	log.Warnf("the cache of finding instances api is broken, req[%s]!=cache[%s][%s]",
+		requestRev, item.Rev, parent.Name)
 	item.Instances = insts
 	item.Broken()
 
