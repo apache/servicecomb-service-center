@@ -41,9 +41,9 @@ type FindFailedResult struct {
 }
 
 type BatchFindResult struct {
-	Failed      []*FindFailedResult `protobuf:"bytes,2,rep,name=failed" json:"failed,omitempty"`
-	NotModified []int64             `protobuf:"varint,3,rep,packed,name=notModified" json:"notModified,omitempty"`
-	Updated     []*FindResult       `protobuf:"bytes,4,rep,name=updated" json:"updated,omitempty"`
+	Failed      []*FindFailedResult `protobuf:"bytes,1,rep,name=failed" json:"failed,omitempty"`
+	NotModified []int64             `protobuf:"varint,2,rep,packed,name=notModified" json:"notModified,omitempty"`
+	Updated     []*FindResult       `protobuf:"bytes,3,rep,name=updated" json:"updated,omitempty"`
 }
 
 type BatchFindInstancesRequest struct {

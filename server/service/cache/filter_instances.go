@@ -56,10 +56,15 @@ func (f *InstancesFilter) Name(ctx context.Context, _ *cache.Node) string {
 
 func (f *InstancesFilter) Init(ctx context.Context, parent *cache.Node) (node *cache.Node, err error) {
 	pCopy := *parent.Cache.Get(CACHE_FIND).(*VersionRuleCacheItem)
+
 	provider := ctx.Value(CTX_FIND_PROVIDER).(*pb.MicroServiceKey)
 
 	instanceKey, ok := ctx.Value(CTX_FIND_PROVIDER_INSTANCE).(*pb.HeartbeatSetElement)
 	if ok {
+		if len(pCopy.ServiceIds) == 0 {
+			// can not find by instanceKey.ServiceId after pre-filters init
+			return
+		}
 		var instance *pb.MicroServiceInstance
 		instance, pCopy.Rev, err = f.FindInstance(ctx, provider, instanceKey)
 		if instance == nil || err != nil {

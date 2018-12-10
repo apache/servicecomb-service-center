@@ -460,7 +460,7 @@ func (s *InstanceService) GetOneInstance(ctx context.Context, in *pb.GetOneInsta
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
-	if item == nil {
+	if item == nil || len(item.Instances) == 0 {
 		mes := fmt.Errorf("%s failed, provider instance does not exist.", findFlag())
 		log.Errorf(mes, "FindInstancesCache.GetOne failed")
 		return &pb.GetOneInstanceResponse{
@@ -468,10 +468,7 @@ func (s *InstanceService) GetOneInstance(ctx context.Context, in *pb.GetOneInsta
 		}, nil
 	}
 
-	var instance *pb.MicroServiceInstance
-	if len(item.Instances) > 0 {
-		instance = item.Instances[0]
-	}
+	instance := item.Instances[0]
 	if rev == item.Rev {
 		instance = nil // for gRPC
 	}
@@ -661,6 +658,14 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 }
 
 func (s *InstanceService) BatchFind(ctx context.Context, in *pb.BatchFindInstancesRequest) (*pb.BatchFindInstancesResponse, error) {
+	if len(in.Services) == 0 && len(in.Instances) == 0 {
+		err := errors.New("Required services or instances")
+		log.Errorf(err, "batch find instance failed: invalid parameters")
+		return &pb.BatchFindInstancesResponse{
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+		}, nil
+	}
+
 	err := Validate(in)
 	if err != nil {
 		log.Errorf(err, "batch find instance failed: invalid parameters")
