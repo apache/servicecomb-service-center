@@ -20,7 +20,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/cache"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
 )
@@ -39,36 +38,34 @@ func (f *RevisionFilter) Name(ctx context.Context, parent *cache.Node) string {
 }
 
 func (f *RevisionFilter) Init(ctx context.Context, parent *cache.Node) (node *cache.Node, err error) {
-	item := parent.Cache.Get(CACHE_FIND).(*VersionRuleCacheItem)
+	pCache := parent.Cache.Get(CACHE_FIND).(*VersionRuleCacheItem)
 	requestRev := ctx.Value(CTX_FIND_REQUEST_REV).(string)
-	if len(requestRev) == 0 || requestRev == item.Rev {
+	if len(requestRev) == 0 || requestRev == pCache.Rev {
 		node = cache.NewNode()
-		node.Cache.Set(CACHE_FIND, item)
+		node.Cache.Set(CACHE_FIND, pCache)
 		return
 	}
 
-	if item.BrokenWait() {
+	if pCache.BrokenWait() {
 		node = cache.NewNode()
-		node.Cache.Set(CACHE_FIND, item)
+		node.Cache.Set(CACHE_FIND, pCache)
 		return
 	}
 
 	cloneCtx := util.CloneContext(ctx)
 	cloneCtx = util.SetContext(cloneCtx, serviceUtil.CTX_NOCACHE, "1")
-
-	provider := ctx.Value(CTX_FIND_PROVIDER).(*pb.MicroServiceKey)
-	insts, _, err := f.FindInstances(cloneCtx, provider, item.ServiceIds)
+	insts, _, err := f.Find(cloneCtx, parent)
 	if err != nil {
-		item.InitBrokenQueue()
+		pCache.InitBrokenQueue()
 		return nil, err
 	}
 
 	log.Warnf("the cache of finding instances api is broken, req[%s]!=cache[%s][%s]",
-		requestRev, item.Rev, parent.Name)
-	item.Instances = insts
-	item.Broken()
+		requestRev, pCache.Rev, parent.Name)
+	pCache.Instances = insts
+	pCache.Broken()
 
 	node = cache.NewNode()
-	node.Cache.Set(CACHE_FIND, item)
+	node.Cache.Set(CACHE_FIND, pCache)
 	return
 }

@@ -221,6 +221,14 @@ func (this *MicroServiceInstanceService) GetInstances(w http.ResponseWriter, r *
 	resp, _ := core.InstanceAPI.GetInstances(r.Context(), request)
 	respInternal := resp.Response
 	resp.Response = nil
+
+	iv, _ := r.Context().Value(serviceUtil.CTX_REQUEST_REVISION).(string)
+	ov, _ := r.Context().Value(serviceUtil.CTX_RESPONSE_REVISION).(string)
+	w.Header().Set(serviceUtil.HEADER_REV, ov)
+	if len(iv) > 0 && iv == ov {
+		w.WriteHeader(http.StatusNotModified)
+		return
+	}
 	controller.WriteResponse(w, respInternal, resp)
 }
 

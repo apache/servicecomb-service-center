@@ -87,7 +87,7 @@ func (f *FindInstancesCache) Get(ctx context.Context, consumer *pb.MicroService,
 	return node.Cache.Get(CACHE_FIND).(*VersionRuleCacheItem), nil
 }
 
-func (f *FindInstancesCache) GetOne(ctx context.Context, consumer *pb.MicroService, provider *pb.MicroServiceKey,
+func (f *FindInstancesCache) GetWithProviderId(ctx context.Context, consumer *pb.MicroService, provider *pb.MicroServiceKey,
 	instanceKey *pb.HeartbeatSetElement, tags []string, rev string) (*VersionRuleCacheItem, error) {
 	cloneCtx := context.WithValue(ctx, CTX_FIND_PROVIDER_INSTANCE, instanceKey)
 	return f.Get(cloneCtx, consumer, provider, tags, rev)

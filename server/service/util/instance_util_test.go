@@ -125,7 +125,7 @@ func TestAppendFindResponse(t *testing.T) {
 		notModifiedResult []int64
 		failedResult      *pb.FindFailedResult
 	)
-	AppendFindResponse(ctx, 1, &find, &updatedResult, &notModifiedResult, &failedResult)
+	AppendFindResponse(ctx, 1, find.GetResponse(), find.Instances, &updatedResult, &notModifiedResult, &failedResult)
 	if updatedResult == nil || notModifiedResult != nil || failedResult != nil {
 		t.Fatal("TestAppendFindResponse failed")
 	}
@@ -135,7 +135,7 @@ func TestAppendFindResponse(t *testing.T) {
 
 	updatedResult = nil
 	cloneCtx := context.WithValue(ctx, CTX_RESPONSE_REVISION, "1")
-	AppendFindResponse(cloneCtx, 1, &find, &updatedResult, &notModifiedResult, &failedResult)
+	AppendFindResponse(cloneCtx, 1, find.GetResponse(), find.Instances, &updatedResult, &notModifiedResult, &failedResult)
 	if updatedResult == nil || notModifiedResult != nil || failedResult != nil {
 		t.Fatal("TestAppendFindResponse failed")
 	}
@@ -146,7 +146,7 @@ func TestAppendFindResponse(t *testing.T) {
 	updatedResult = nil
 	cloneCtx = context.WithValue(ctx, CTX_REQUEST_REVISION, "1")
 	cloneCtx = context.WithValue(cloneCtx, CTX_RESPONSE_REVISION, "1")
-	AppendFindResponse(cloneCtx, 1, &find, &updatedResult, &notModifiedResult, &failedResult)
+	AppendFindResponse(cloneCtx, 1, find.GetResponse(), find.Instances, &updatedResult, &notModifiedResult, &failedResult)
 	if updatedResult != nil || notModifiedResult == nil || failedResult != nil {
 		t.Fatal("TestAppendFindResponse failed")
 	}
@@ -156,7 +156,7 @@ func TestAppendFindResponse(t *testing.T) {
 
 	notModifiedResult = nil
 	find.Response = pb.CreateResponse(scerr.ErrInternal, "test")
-	AppendFindResponse(ctx, 1, &find, &updatedResult, &notModifiedResult, &failedResult)
+	AppendFindResponse(ctx, 1, find.GetResponse(), find.Instances, &updatedResult, &notModifiedResult, &failedResult)
 	if updatedResult != nil || notModifiedResult != nil || failedResult == nil {
 		t.Fatal("TestAppendFindResponse failed")
 	}
@@ -164,7 +164,7 @@ func TestAppendFindResponse(t *testing.T) {
 		t.Fatal("TestAppendFindResponse failed")
 	}
 	find.Response = pb.CreateResponse(scerr.ErrInvalidParams, "test")
-	AppendFindResponse(ctx, 2, &find, &updatedResult, &notModifiedResult, &failedResult)
+	AppendFindResponse(ctx, 2, find.GetResponse(), find.Instances, &updatedResult, &notModifiedResult, &failedResult)
 	if updatedResult != nil || notModifiedResult != nil || failedResult == nil {
 		t.Fatal("TestAppendFindResponse failed")
 	}
@@ -174,15 +174,15 @@ func TestAppendFindResponse(t *testing.T) {
 
 	failedResult = nil
 	find.Response = nil
-	AppendFindResponse(ctx, 1, &find, &updatedResult, &notModifiedResult, &failedResult)
-	AppendFindResponse(ctx, 2, &find, &updatedResult, &notModifiedResult, &failedResult)
+	AppendFindResponse(ctx, 1, find.GetResponse(), find.Instances, &updatedResult, &notModifiedResult, &failedResult)
+	AppendFindResponse(ctx, 2, find.GetResponse(), find.Instances, &updatedResult, &notModifiedResult, &failedResult)
 	cloneCtx = context.WithValue(ctx, CTX_REQUEST_REVISION, "1")
 	cloneCtx = context.WithValue(cloneCtx, CTX_RESPONSE_REVISION, "1")
-	AppendFindResponse(cloneCtx, 3, &find, &updatedResult, &notModifiedResult, &failedResult)
-	AppendFindResponse(cloneCtx, 4, &find, &updatedResult, &notModifiedResult, &failedResult)
+	AppendFindResponse(cloneCtx, 3, find.GetResponse(), find.Instances, &updatedResult, &notModifiedResult, &failedResult)
+	AppendFindResponse(cloneCtx, 4, find.GetResponse(), find.Instances, &updatedResult, &notModifiedResult, &failedResult)
 	find.Response = pb.CreateResponse(scerr.ErrInternal, "test")
-	AppendFindResponse(ctx, 5, &find, &updatedResult, &notModifiedResult, &failedResult)
-	AppendFindResponse(ctx, 6, &find, &updatedResult, &notModifiedResult, &failedResult)
+	AppendFindResponse(ctx, 5, find.GetResponse(), find.Instances, &updatedResult, &notModifiedResult, &failedResult)
+	AppendFindResponse(ctx, 6, find.GetResponse(), find.Instances, &updatedResult, &notModifiedResult, &failedResult)
 	if updatedResult == nil || notModifiedResult == nil || failedResult == nil {
 		t.Fatal("TestAppendFindResponse failed")
 	}

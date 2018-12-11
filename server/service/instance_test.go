@@ -1928,7 +1928,7 @@ var _ = Describe("'Instance' service", func() {
 					Expect(respFind.Response.Code).To(Equal(code))
 				}
 
-				UTFunc(serviceId3, scerr.ErrPermissionDeny)
+				UTFunc(serviceId3, scerr.ErrServiceNotExists)
 
 				UTFunc(serviceId1, pb.Response_SUCCESS)
 

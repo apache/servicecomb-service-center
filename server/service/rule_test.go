@@ -681,7 +681,7 @@ var _ = Describe("'Rule' service", func() {
 					ProviderServiceId: providerBlack,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).To(Equal(scerr.ErrPermissionDeny))
+				Expect(resp.Response.Code).To(Equal(scerr.ErrServiceNotExists))
 
 				By("consumer tag in black list")
 				resp, err = instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
@@ -689,7 +689,7 @@ var _ = Describe("'Rule' service", func() {
 					ProviderServiceId: providerBlack,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).To(Equal(scerr.ErrPermissionDeny))
+				Expect(resp.Response.Code).To(Equal(scerr.ErrServiceNotExists))
 
 				By("find should return 200 even if consumer permission deny")
 				respFind, err := instanceResource.Find(getContext(), &pb.FindInstancesRequest{
@@ -725,7 +725,7 @@ var _ = Describe("'Rule' service", func() {
 					ProviderServiceId: providerWhite,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).To(Equal(scerr.ErrPermissionDeny))
+				Expect(resp.Response.Code).To(Equal(scerr.ErrServiceNotExists))
 
 				By("consumer version in white list")
 				resp, err = instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
