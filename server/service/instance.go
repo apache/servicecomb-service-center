@@ -698,12 +698,34 @@ func (s *InstanceService) BatchFind(ctx context.Context, in *pb.BatchFindInstanc
 	}
 
 	response := &pb.BatchFindInstancesResponse{
-		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Batch query service instances successfully."),
-		Services:  &pb.BatchFindResult{},
-		Instances: &pb.BatchFindResult{},
+		Response: pb.CreateResponse(pb.Response_SUCCESS, "Batch query service instances successfully."),
 	}
 
 	// find services
+	response.Services, err = s.batchFindServices(ctx, in)
+	if err != nil {
+		return &pb.BatchFindInstancesResponse{
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+
+	// find instance
+	response.Instances, err = s.batchFindInstances(ctx, in)
+	if err != nil {
+		return &pb.BatchFindInstancesResponse{
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+
+	return response, nil
+}
+
+func (s *InstanceService) batchFindServices(ctx context.Context, in *pb.BatchFindInstancesRequest) (*pb.BatchFindResult, error) {
+	if len(in.Services) == 0 {
+		return nil, nil
+	}
+
+	services := &pb.BatchFindResult{}
 	failedResult := make(map[int32]*pb.FindFailedResult)
 	for index, key := range in.Services {
 		cloneCtx := util.SetContext(ctx, serviceUtil.CTX_REQUEST_REVISION, key.Rev)
@@ -715,23 +737,28 @@ func (s *InstanceService) BatchFind(ctx context.Context, in *pb.BatchFindInstanc
 			Environment:       key.Service.Environment,
 		})
 		if err != nil {
-			return &pb.BatchFindInstancesResponse{
-				Response: resp.Response,
-			}, err
+			return nil, err
 		}
 		failed, ok := failedResult[resp.GetResponse().GetCode()]
 		serviceUtil.AppendFindResponse(cloneCtx, int64(index), resp.GetResponse(), resp.GetInstances(),
-			&response.Services.Updated, &response.Services.NotModified, &failed)
+			&services.Updated, &services.NotModified, &failed)
 		if !ok && failed != nil {
 			failedResult[resp.GetResponse().GetCode()] = failed
 		}
 	}
 	for _, result := range failedResult {
-		response.Services.Failed = append(response.Services.Failed, result)
+		services.Failed = append(services.Failed, result)
+	}
+	return services, nil
+}
+
+func (s *InstanceService) batchFindInstances(ctx context.Context, in *pb.BatchFindInstancesRequest) (*pb.BatchFindResult, error) {
+	if len(in.Instances) == 0 {
+		return nil, nil
 	}
 
-	// find instance
-	failedResult = make(map[int32]*pb.FindFailedResult)
+	instances := &pb.BatchFindResult{}
+	failedResult := make(map[int32]*pb.FindFailedResult)
 	for index, key := range in.Instances {
 		cloneCtx := util.SetContext(ctx, serviceUtil.CTX_REQUEST_REVISION, key.Rev)
 		resp, err := s.GetOneInstance(cloneCtx, &pb.GetOneInstanceRequest{
@@ -740,22 +767,19 @@ func (s *InstanceService) BatchFind(ctx context.Context, in *pb.BatchFindInstanc
 			ProviderInstanceId: key.Instance.InstanceId,
 		})
 		if err != nil {
-			return &pb.BatchFindInstancesResponse{
-				Response: resp.Response,
-			}, err
+			return nil, err
 		}
 		failed, ok := failedResult[resp.GetResponse().GetCode()]
 		serviceUtil.AppendFindResponse(cloneCtx, int64(index), resp.GetResponse(), []*pb.MicroServiceInstance{resp.GetInstance()},
-			&response.Instances.Updated, &response.Instances.NotModified, &failed)
+			&instances.Updated, &instances.NotModified, &failed)
 		if !ok && failed != nil {
 			failedResult[resp.GetResponse().GetCode()] = failed
 		}
 	}
 	for _, result := range failedResult {
-		response.Instances.Failed = append(response.Instances.Failed, result)
+		instances.Failed = append(instances.Failed, result)
 	}
-
-	return response, nil
+	return instances, nil
 }
 
 func (s *InstanceService) reshapeProviderKey(ctx context.Context, provider *pb.MicroServiceKey, providerId string) (*pb.MicroServiceKey, error) {
