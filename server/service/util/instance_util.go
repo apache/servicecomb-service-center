@@ -273,12 +273,12 @@ func UpdateInstance(ctx context.Context, domainProject string, instance *pb.Micr
 	return nil
 }
 
-func AppendFindResponse(ctx context.Context, index int64, find *pb.FindInstancesResponse,
+func AppendFindResponse(ctx context.Context, index int64, resp *pb.Response, instances []*pb.MicroServiceInstance,
 	updatedResult *[]*pb.FindResult, notModifiedResult *[]int64, failedResult **pb.FindFailedResult) {
-	if code := find.GetResponse().GetCode(); code != pb.Response_SUCCESS {
+	if code := resp.GetCode(); code != pb.Response_SUCCESS {
 		if *failedResult == nil {
 			*failedResult = &pb.FindFailedResult{
-				Error: scerr.NewError(code, find.GetResponse().GetMessage()),
+				Error: scerr.NewError(code, resp.GetMessage()),
 			}
 		}
 		(*failedResult).Indexes = append((*failedResult).Indexes, index)
@@ -292,7 +292,7 @@ func AppendFindResponse(ctx context.Context, index int64, find *pb.FindInstances
 	}
 	*updatedResult = append(*updatedResult, &pb.FindResult{
 		Index:     index,
-		Instances: find.Instances,
+		Instances: instances,
 		Rev:       ov,
 	})
 }

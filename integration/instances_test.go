@@ -364,10 +364,26 @@ var _ = Describe("MicroService Api Test", func() {
 						"version":     serviceVersion,
 					},
 				}
+				notExistsInstance := map[string]interface{}{
+					"instance": map[string]interface{}{
+						"serviceId":  serviceId,
+						"instanceId": "notexisted",
+					},
+				}
+				providerInstance := map[string]interface{}{
+					"instance": map[string]interface{}{
+						"serviceId":  serviceId,
+						"instanceId": serviceInstanceID,
+					},
+				}
 				findRequest := map[string]interface{}{
 					"services": []map[string]interface{}{
 						provider,
 						notExistsService,
+					},
+					"instances": []map[string]interface{}{
+						providerInstance,
+						notExistsInstance,
 					},
 				}
 				body, _ := json.Marshal(findRequest)
@@ -378,8 +394,10 @@ var _ = Describe("MicroService Api Test", func() {
 				resp, _ := scclient.Do(req)
 				respbody, _ := ioutil.ReadAll(resp.Body)
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
-				servicesStruct := map[string][]map[string]interface{}{}
-				json.Unmarshal(respbody, &servicesStruct)
+				respStruct := map[string]map[string][]map[string]interface{}{}
+				json.Unmarshal(respbody, &respStruct)
+				servicesStruct := respStruct["services"]
+				instancesStruct := respStruct["instances"]
 				failed := false
 				for _, services := range servicesStruct["failed"] {
 					a := services["indexes"].([]interface{})[0] == 1.0
@@ -392,6 +410,19 @@ var _ = Describe("MicroService Api Test", func() {
 				Expect(failed).To(Equal(true))
 				Expect(servicesStruct["updated"][0]["index"]).To(Equal(0.0))
 				Expect(len(servicesStruct["updated"][0]["instances"].([]interface{}))).
+					ToNot(Equal(0))
+				failed = false
+				for _, instances := range instancesStruct["failed"] {
+					a := instances["indexes"].([]interface{})[0] == 1.0
+					b := instances["error"].(map[string]interface{})["errorCode"] == "400017"
+					if a && b {
+						failed = true
+						break
+					}
+				}
+				Expect(failed).To(Equal(true))
+				Expect(instancesStruct["updated"][0]["index"]).To(Equal(0.0))
+				Expect(len(instancesStruct["updated"][0]["instances"].([]interface{}))).
 					ToNot(Equal(0))
 			})
 		})

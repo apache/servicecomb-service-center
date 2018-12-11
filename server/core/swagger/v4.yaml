@@ -1964,6 +1964,14 @@ definitions:
       rev:
         type: string
         description: 客户端缓存的版本号。
+  FindInstance:
+    type: object
+    properties:
+      instance:
+        $ref: '#/definitions/HeartbeatSetElement'
+      rev:
+        type: string
+        description: 客户端缓存的版本号。
   BatchFindRequest:
     type: object
     properties:
@@ -1971,6 +1979,10 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/FindService'
+      instances:
+        type: array
+        items:
+          $ref: '#/definitions/FindInstance'
   FindResult:
     type: object
     properties:
@@ -1994,7 +2006,7 @@ definitions:
         description: 与请求数组对应的索引集合。
       error:
         $ref: '#/definitions/Error'
-  BatchFindResponse:
+  BatchFindResult:
     type: object
     properties:
       failed:
@@ -2010,6 +2022,13 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/FindResult'
+  BatchFindResponse:
+    type: object
+    properties:
+      services:
+        $ref: '#/definitions/BatchFindResult'
+      instances:
+        $ref: '#/definitions/BatchFindResult'
   CreateDependenciesRequest:
     type: object
     properties:

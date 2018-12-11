@@ -34,6 +34,15 @@ func (f *VersionRuleFilter) Name(ctx context.Context, _ *cache.Node) string {
 }
 
 func (f *VersionRuleFilter) Init(ctx context.Context, parent *cache.Node) (node *cache.Node, err error) {
+	instance, ok := ctx.Value(CTX_FIND_PROVIDER_INSTANCE).(*pb.HeartbeatSetElement)
+	if ok {
+		node = cache.NewNode()
+		node.Cache.Set(CACHE_FIND, &VersionRuleCacheItem{
+			ServiceIds: []string{instance.ServiceId},
+		})
+		return
+	}
+
 	provider := ctx.Value(CTX_FIND_PROVIDER).(*pb.MicroServiceKey)
 	// 版本规则
 	ids, exist, err := serviceUtil.FindServiceIds(ctx, provider.Version, provider)
@@ -41,7 +50,7 @@ func (f *VersionRuleFilter) Init(ctx context.Context, parent *cache.Node) (node 
 		consumer := ctx.Value(CTX_FIND_CONSUMER).(*pb.MicroService)
 		findFlag := fmt.Sprintf("consumer '%s' find provider %s/%s/%s", consumer.ServiceId,
 			provider.AppId, provider.ServiceName, provider.Version)
-		log.Errorf(err, "VersionRuleFilter failed, %s", findFlag)
+		log.Errorf(err, "FindServiceIds failed, %s", findFlag)
 		return
 	}
 	if !exist {
@@ -50,8 +59,7 @@ func (f *VersionRuleFilter) Init(ctx context.Context, parent *cache.Node) (node 
 
 	node = cache.NewNode()
 	node.Cache.Set(CACHE_FIND, &VersionRuleCacheItem{
-		VersionRule: provider.Version,
-		ServiceIds:  ids,
+		ServiceIds: ids,
 	})
 	return
 }
