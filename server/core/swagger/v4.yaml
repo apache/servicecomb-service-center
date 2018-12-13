@@ -1088,7 +1088,6 @@ paths:
         - name: X-ConsumerId
           in: header
           description: 微服务消费者的微服务唯一标识。
-          required: true
           type: string
         - name: serviceId
           in: path
@@ -1103,13 +1102,27 @@ paths:
           in: query
           description: 实例的environment。
           type: string
+        - name: rev
+          in: query
+          description: 客户端缓存版本号。
+          type: string
       tags:
         - instances
       responses:
         200:
           description: 查询成功
+          headers:
+            "X-Resource-Revision":
+              type: "string"
+              description: 返回集合的版本号,当集合内容发生变化,版本号随之变化
           schema:
             $ref: '#/definitions/GetInstancesResponse'
+        304:
+          description: 查询实例集合与客户端一致
+          headers:
+            "X-Resource-Revision":
+              type: "string"
+              description: 返回集合的版本号,当集合内容发生变化,版本号随之变化
         400:
           description: 错误的请求
           schema:
@@ -1168,7 +1181,6 @@ paths:
         - name: X-ConsumerId
           in: header
           description: 微服务消费者的微服务唯一标识。
-          required: true
           type: string
         - name: project
           in: path
@@ -1192,13 +1204,27 @@ paths:
           in: query
           description: 实例的environment。
           type: string
+        - name: rev
+          in: query
+          description: 客户端缓存版本号。
+          type: string
       tags:
         - instances
       responses:
         200:
           description: 查询成功
+          headers:
+            "X-Resource-Revision":
+              type: "string"
+              description: 返回集合的版本号,当集合内容发生变化,版本号随之变化
           schema:
             $ref: '#/definitions/GetOneInstanceResponse'
+        304:
+          description: 查询实例集合与客户端一致
+          headers:
+            "X-Resource-Revision":
+              type: "string"
+              description: 返回集合的版本号,当集合内容发生变化,版本号随之变化
         400:
           description: 错误的请求
           schema:
@@ -1407,6 +1433,10 @@ paths:
           in: query
           description: 实例的environment。
           type: string
+        - name: rev
+          in: query
+          description: 客户端缓存版本号。
+          type: string
       tags:
         - instances
       responses:
@@ -1418,6 +1448,12 @@ paths:
               description: 返回集合的版本号,当集合内容发生变化,版本号随之变化
           schema:
             $ref: '#/definitions/GetInstancesResponse'
+        304:
+          description: 查询实例集合与客户端一致
+          headers:
+            "X-Resource-Revision":
+              type: "string"
+              description: 返回集合的版本号,当集合内容发生变化,版本号随之变化
         400:
           description: 错误的请求
           schema:
