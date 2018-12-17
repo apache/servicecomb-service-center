@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -99,24 +100,26 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	instance := in.GetInstance()
 
 	//允许自定义id
-	//如果没填写 并且endpoints沒重復，則产生新的全局instance id
-	oldInstanceId, checkErr := serviceUtil.InstanceExist(ctx, in.Instance)
-	if checkErr != nil {
-		log.Errorf(checkErr, "service[%s]'s instance existence check failed, endpoints %v, host '%s', operator %s",
-			instance.ServiceId, instance.Endpoints, instance.HostName, remoteIP)
-		resp := pb.CreateResponseWithSCErr(checkErr)
-		if checkErr.InternalError() {
-			return &pb.RegisterInstanceResponse{Response: resp}, checkErr
+	if len(instance.InstanceId) > 0 {
+		// keep alive the lease ttl
+		resp, err := s.Heartbeat(ctx, &pb.HeartbeatRequest{ServiceId: instance.ServiceId, InstanceId: instance.InstanceId})
+		switch resp.Response.Code {
+		case pb.Response_SUCCESS:
+			log.Infof("register instance successful, reuse instance[%s/%s], operator %s",
+				instance.ServiceId, instance.InstanceId, remoteIP)
+			return &pb.RegisterInstanceResponse{
+				Response:   resp.GetResponse(),
+				InstanceId: instance.InstanceId,
+			}, nil
+		case scerr.ErrInstanceNotExists:
+			// register a new one
+		default:
+			log.Errorf(err, "register instance failed, reuse instance[%s/%s], operator %s",
+				instance.ServiceId, instance.InstanceId, remoteIP)
+			return &pb.RegisterInstanceResponse{
+				Response: resp.GetResponse(),
+			}, err
 		}
-		return &pb.RegisterInstanceResponse{Response: resp}, nil
-	}
-	if len(oldInstanceId) > 0 {
-		log.Infof("register instance successful, reuse instance[%s/%s], operator %s",
-			instance.ServiceId, oldInstanceId, remoteIP)
-		return &pb.RegisterInstanceResponse{
-			Response:   pb.CreateResponse(pb.Response_SUCCESS, "instance already exists"),
-			InstanceId: oldInstanceId,
-		}, nil
 	}
 
 	if err := s.preProcessRegisterInstance(ctx, instance); err != nil {
@@ -236,31 +239,16 @@ func (s *InstanceService) Unregister(ctx context.Context, in *pb.UnregisterInsta
 
 	instanceFlag := util.StringJoin([]string{serviceId, instanceId}, "/")
 
-	isExist, err := serviceUtil.InstanceExistById(ctx, domainProject, serviceId, instanceId)
+	err := revokeInstance(ctx, domainProject, serviceId, instanceId)
 	if err != nil {
-		log.Errorf(err, "unregister instance failed, instance[%s], operator %s: query instance failed", instanceFlag, remoteIP)
-		return &pb.UnregisterInstanceResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
-		}, err
-	}
-	if !isExist {
-		log.Errorf(nil, "unregister instance failed, instance[%s], operator %s: instance not exist", instanceFlag, remoteIP)
-		return &pb.UnregisterInstanceResponse{
-			Response: pb.CreateResponse(scerr.ErrInstanceNotExists, "Service instance does not exist."),
-		}, nil
-	}
-
-	err, isInnerErr := revokeInstance(ctx, domainProject, serviceId, instanceId)
-	if err != nil {
-		log.Errorf(nil, "unregister instance failed, instance[%s], operator %s: revoke instance failed", instanceFlag, remoteIP)
-		if isInnerErr {
-			return &pb.UnregisterInstanceResponse{
-				Response: pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
-			}, err
+		log.Errorf(err, "unregister instance failed, instance[%s], operator %s: revoke instance failed", instanceFlag, remoteIP)
+		resp := &pb.UnregisterInstanceResponse{
+			Response: pb.CreateResponseWithSCErr(err),
 		}
-		return &pb.UnregisterInstanceResponse{
-			Response: pb.CreateResponse(scerr.ErrInstanceNotExists, err.Error()),
-		}, nil
+		if err.InternalError() {
+			return resp, err
+		}
+		return resp, nil
 	}
 
 	log.Infof("unregister instance[%s], operator %s", instanceFlag, remoteIP)
@@ -269,20 +257,23 @@ func (s *InstanceService) Unregister(ctx context.Context, in *pb.UnregisterInsta
 	}, nil
 }
 
-func revokeInstance(ctx context.Context, domainProject string, serviceId string, instanceId string) (error, bool) {
+func revokeInstance(ctx context.Context, domainProject string, serviceId string, instanceId string) *scerr.Error {
 	leaseID, err := serviceUtil.GetLeaseId(ctx, domainProject, serviceId, instanceId)
 	if err != nil {
-		return err, true
+		return scerr.NewError(scerr.ErrUnavailableBackend, err.Error())
 	}
 	if leaseID == -1 {
-		return errors.New("instance's leaseId not exist."), false
+		return scerr.NewError(scerr.ErrInstanceNotExists, "Instance's leaseId not exist.")
 	}
 
 	err = backend.Registry().LeaseRevoke(ctx, leaseID)
 	if err != nil {
-		return err, true
+		if _, ok := err.(errorsEx.InternalError); !ok {
+			return scerr.NewError(scerr.ErrInstanceNotExists, err.Error())
+		}
+		return scerr.NewError(scerr.ErrUnavailableBackend, err.Error())
 	}
-	return nil, false
+	return nil
 }
 
 func (s *InstanceService) Heartbeat(ctx context.Context, in *pb.HeartbeatRequest) (*pb.HeartbeatResponse, error) {
@@ -298,18 +289,17 @@ func (s *InstanceService) Heartbeat(ctx context.Context, in *pb.HeartbeatRequest
 	domainProject := util.ParseDomainProject(ctx)
 	instanceFlag := util.StringJoin([]string{in.ServiceId, in.InstanceId}, "/")
 
-	_, ttl, err, isInnerErr := serviceUtil.HeartbeatUtil(ctx, domainProject, in.ServiceId, in.InstanceId)
+	_, ttl, err := serviceUtil.HeartbeatUtil(ctx, domainProject, in.ServiceId, in.InstanceId)
 	if err != nil {
-		log.Errorf(err, "heartbeat failed, instance[%s], internal error '%v'. operator %s",
-			instanceFlag, isInnerErr, remoteIP)
-		if isInnerErr {
-			return &pb.HeartbeatResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
-			}, err
+		log.Errorf(err, "heartbeat failed, instance[%s]. operator %s",
+			instanceFlag, remoteIP)
+		resp := &pb.HeartbeatResponse{
+			Response: pb.CreateResponseWithSCErr(err),
 		}
-		return &pb.HeartbeatResponse{
-			Response: pb.CreateResponse(scerr.ErrInstanceNotExists, "Service instance does not exist."),
-		}, nil
+		if err.InternalError() {
+			return resp, err
+		}
+		return resp, nil
 	}
 
 	if ttl == 0 {
@@ -384,7 +374,7 @@ func getHeartbeatFunc(ctx context.Context, domainProject string, instancesHbRst 
 			InstanceId: element.InstanceId,
 			ErrMessage: "",
 		}
-		_, _, err, _ := serviceUtil.HeartbeatUtil(ctx, domainProject, element.ServiceId, element.InstanceId)
+		_, _, err := serviceUtil.HeartbeatUtil(ctx, domainProject, element.ServiceId, element.InstanceId)
 		if err != nil {
 			hbRst.ErrMessage = err.Error()
 			log.Errorf(err, "heartbeat set failed, %s/%s", element.ServiceId, element.InstanceId)

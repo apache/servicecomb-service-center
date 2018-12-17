@@ -20,17 +20,21 @@ import (
 	"errors"
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
+	scerr "github.com/apache/servicecomb-service-center/server/error"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 	"golang.org/x/net/context"
 )
 
-func HeartbeatUtil(ctx context.Context, domainProject string, serviceId string, instanceId string) (leaseID int64, ttl int64, err error, isInnerErr bool) {
-	leaseID, err = GetLeaseId(ctx, domainProject, serviceId, instanceId)
+func HeartbeatUtil(ctx context.Context, domainProject string, serviceId string, instanceId string) (leaseID int64, ttl int64, _ *scerr.Error) {
+	leaseID, err := GetLeaseId(ctx, domainProject, serviceId, instanceId)
 	if err != nil {
-		return leaseID, ttl, err, true
+		return leaseID, ttl, scerr.NewError(scerr.ErrUnavailableBackend, err.Error())
 	}
 	ttl, err = KeepAliveLease(ctx, domainProject, serviceId, instanceId, leaseID)
-	return leaseID, ttl, err, false
+	if err != nil {
+		return leaseID, ttl, scerr.NewError(scerr.ErrInstanceNotExists, err.Error())
+	}
+	return leaseID, ttl, nil
 }
 
 func KeepAliveLease(ctx context.Context, domainProject, serviceId, instanceId string, leaseID int64) (ttl int64, err error) {

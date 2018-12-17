@@ -100,35 +100,6 @@ func GetInstanceCountOfOneService(ctx context.Context, domainProject string, ser
 	return resp.Count, nil
 }
 
-func InstanceExistById(ctx context.Context, domainProject string, serviceId string, instanceId string) (bool, error) {
-	opts := append(FromContext(ctx),
-		registry.WithStrKey(apt.GenerateInstanceKey(domainProject, serviceId, instanceId)),
-		registry.WithCountOnly())
-	resp, err := backend.Store().Instance().Search(ctx, opts...)
-	if err != nil {
-		return false, err
-	}
-	if resp.Count <= 0 {
-		return false, nil
-	}
-	return true, nil
-}
-
-func InstanceExist(ctx context.Context, instance *pb.MicroServiceInstance) (string, *scerr.Error) {
-	domainProject := util.ParseDomainProject(ctx)
-	// check id index
-	if len(instance.InstanceId) > 0 {
-		exist, err := InstanceExistById(ctx, domainProject, instance.ServiceId, instance.InstanceId)
-		if err != nil {
-			return "", scerr.NewError(scerr.ErrInternal, err.Error())
-		}
-		if exist {
-			return instance.InstanceId, nil
-		}
-	}
-	return "", nil
-}
-
 type EndpointIndexValue struct {
 	serviceId  string
 	instanceId string
