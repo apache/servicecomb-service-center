@@ -43,7 +43,6 @@ func (s *NotifyService) Start() {
 	s.isClose = false
 	s.closeMux.Unlock()
 
-	s.init()
 	// 错误subscriber清理
 	s.AddSubscriber(NewNotifyServiceHealthChecker())
 
@@ -58,15 +57,10 @@ func (s *NotifyService) AddSubscriber(n Subscriber) error {
 		log.Errorf(err, "add subscriber failed")
 		return err
 	}
-	if s.Closed() {
-		err := errors.New("server is shutting down")
-		log.Errorf(err, "add %s subscriber[%s/%s] failed", n.Type(), n.Subject(), n.Group())
-		return err
-	}
 
 	p, ok := s.processors[n.Type()]
 	if !ok {
-		err := errors.New("Unknown subscribe type")
+		err := errors.New("unknown subscribe type")
 		log.Errorf(err, "add %s subscriber[%s/%s] failed", n.Type(), n.Subject(), n.Group())
 		return err
 	}
@@ -135,8 +129,10 @@ func (s *NotifyService) Stop() {
 }
 
 func NewNotifyService() *NotifyService {
-	return &NotifyService{
+	ns := &NotifyService{
 		processors: make(map[Type]*Processor),
 		isClose:    true,
 	}
+	ns.init()
+	return ns
 }

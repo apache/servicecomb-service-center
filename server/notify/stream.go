@@ -31,6 +31,8 @@ func HandleWatchJob(watcher *InstanceEventListWatcher, stream pb.ServiceInstance
 	defer timer.Stop()
 	for {
 		select {
+		case <-stream.Context().Done():
+			return
 		case <-timer.C:
 			timer.Reset(HeartbeatTimeout)
 

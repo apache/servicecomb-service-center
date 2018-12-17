@@ -77,7 +77,7 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 		watcher: w,
 	}
 	err := ws.Init()
-	if err == nil {
+	if err != nil {
 		t.Fatalf("TestPublisher_Run")
 	}
 
@@ -100,10 +100,6 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 		}
 	}()
 
-	err = ws.Init()
-	if err != nil {
-		t.Fatalf("TestPublisher_Run")
-	}
 	go ws.HandleWatchWebSocketControlMessage()
 
 	w.OnMessage(nil)

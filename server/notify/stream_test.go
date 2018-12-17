@@ -36,8 +36,7 @@ func TestHandleWatchJob(t *testing.T) {
 }
 
 func TestDoStreamListAndWatch(t *testing.T) {
+	defer log.Recover()
 	err := DoStreamListAndWatch(context.Background(), "s", nil, nil)
-	if err == nil {
-		t.Fatal("TestDoStreamListAndWatch failed", err)
-	}
+	t.Fatal("TestDoStreamListAndWatch failed", err)
 }

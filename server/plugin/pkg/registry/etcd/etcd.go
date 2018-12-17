@@ -120,9 +120,7 @@ func (c *EtcdClient) newClient() (*clientv3.Client, error) {
 			if client != nil {
 				client.Close()
 			}
-			return
 		}
-		alarm.Clear(alarm.IdBackendConnectionRefuse)
 	}()
 
 	if err != nil {
@@ -719,6 +717,8 @@ hcLoop:
 						continue
 					}
 				}
+
+				alarm.Clear(alarm.IdBackendConnectionRefuse)
 
 				retries, start = healthCheckRetryTimes, time.Now()
 				continue hcLoop

@@ -41,19 +41,18 @@ func (h *InstanceEventHandler) Type() discovery.Type {
 func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
 	action := evt.Type
 	providerId, providerInstanceId, domainProject := apt.GetInfoFromInstKV(evt.KV.Key)
-
+	idx := strings.Index(domainProject, "/")
+	domainName := domainProject[:idx]
 	switch action {
 	case pb.EVT_INIT:
-		metrics.ReportInstances(1)
+		metrics.ReportInstances(domainName, 1)
 		return
 	case pb.EVT_CREATE:
-		metrics.ReportInstances(1)
+		metrics.ReportInstances(domainName, 1)
 	case pb.EVT_DELETE:
-		metrics.ReportInstances(-1)
-
-		splited := strings.Split(domainProject, "/")
-		if len(splited) == 2 && !apt.IsDefaultDomainProject(domainProject) {
-			domainName, projectName := splited[0], splited[1]
+		metrics.ReportInstances(domainName, -1)
+		if !apt.IsDefaultDomainProject(domainProject) {
+			projectName := domainProject[idx+1:]
 			serviceUtil.RemandInstanceQuota(
 				util.SetDomainProject(context.Background(), domainName, projectName))
 		}

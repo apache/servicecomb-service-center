@@ -22,6 +22,8 @@ import (
 )
 
 func TestGetNotifyService(t *testing.T) {
+	INSTANCE := RegisterType("INSTANCE", 1)
+
 	notifyService := NewNotifyService()
 	if notifyService == nil {
 		t.Fatalf("TestGetNotifyService failed")
@@ -39,7 +41,6 @@ func TestGetNotifyService(t *testing.T) {
 		t.Fatalf("TestGetNotifyService failed")
 	}
 
-	INSTANCE := RegisterType("INSTANCE", 1)
 	notifyService.Start()
 	notifyService.Start()
 	if notifyService.Closed() != false {

@@ -43,16 +43,17 @@ func (h *ServiceEventHandler) OnEvent(evt discovery.KvEvent) {
 
 	switch evt.Type {
 	case pb.EVT_INIT, pb.EVT_CREATE:
-		metrics.ReportServices(fn, fv, 1)
-
-		newDomain := domainProject[:strings.Index(domainProject, "/")]
-		newProject := domainProject[strings.Index(domainProject, "/")+1:]
+		idx := strings.Index(domainProject, "/")
+		newDomain := domainProject[:idx]
+		newProject := domainProject[idx+1:]
 		err := serviceUtil.NewDomainProject(context.Background(), newDomain, newProject)
 		if err != nil {
 			log.Errorf(err, "new domain[%s] or project[%s] failed", newDomain, newProject)
 		}
+		metrics.ReportServices(newDomain, fn, fv, 1)
 	case pb.EVT_DELETE:
-		metrics.ReportServices(fn, fv, -1)
+		domainName := domainProject[:strings.Index(domainProject, "/")]
+		metrics.ReportServices(domainName, fn, fv, -1)
 	default:
 	}
 
