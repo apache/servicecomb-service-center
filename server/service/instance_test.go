@@ -86,6 +86,21 @@ var _ = Describe("'Instance' service", func() {
 				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 				Expect(resp.InstanceId).To(Not(Equal("")))
 
+				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+					Instance: &pb.MicroServiceInstance{
+						InstanceId: "customId",
+						ServiceId:  serviceId1,
+						Endpoints: []string{
+							"createInstance:127.0.0.1:8080",
+						},
+						HostName: "UT-HOST",
+						Status:   pb.MSI_UP,
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.InstanceId).To(Equal("customId"))
+
 				By("status is nil")
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{

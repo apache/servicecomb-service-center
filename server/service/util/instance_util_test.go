@@ -18,7 +18,6 @@ package util
 
 import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/servicecomb-service-center/server/error"
 	"golang.org/x/net/context"
@@ -63,29 +62,6 @@ func TestGetInstance(t *testing.T) {
 	_, err = queryServiceInstancesKvs(context.Background(), "", 0)
 	if err != nil {
 		t.Fatalf(`queryServiceInstancesKvs failed`)
-	}
-}
-
-func TestInstanceExistById(t *testing.T) {
-	_, err := InstanceExistById(context.Background(), "", "", "")
-	if err != nil {
-		t.Fatalf(`InstanceExistById failed`)
-	}
-}
-
-func TestInstanceExist(t *testing.T) {
-	_, err := InstanceExist(context.Background(), &proto.MicroServiceInstance{
-		ServiceId: "a",
-	})
-	if err != nil {
-		t.Fatalf(`InstanceExist endpoint failed`)
-	}
-	_, err = InstanceExist(context.Background(), &proto.MicroServiceInstance{
-		ServiceId:  "a",
-		InstanceId: "a",
-	})
-	if err != nil {
-		t.Fatalf(`InstanceExist instanceId failed`)
 	}
 }
 

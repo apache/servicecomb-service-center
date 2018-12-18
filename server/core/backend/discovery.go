@@ -175,6 +175,8 @@ func (s *KvStore) DependencyQueue() discovery.Adaptor           { return s.Adapt
 func (s *KvStore) Domain() discovery.Adaptor                    { return s.Adaptors(DOMAIN) }
 func (s *KvStore) Project() discovery.Adaptor                   { return s.Adaptors(PROJECT) }
 
+// KeepAlive will always return ok when registry is unavailable
+// unless the registry response is LeaseNotFound
 func (s *KvStore) KeepAlive(ctx context.Context, opts ...registry.PluginOpOption) (int64, error) {
 	op := registry.OpPut(opts...)
 
