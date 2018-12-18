@@ -36,7 +36,7 @@ var (
 			Subsystem: "db",
 			Name:      "service_total",
 			Help:      "Gauge of microservice created in Service Center",
-		}, []string{"instance", "framework", "frameworkVersion"})
+		}, []string{"instance", "framework", "frameworkVersion", "domain"})
 
 	instanceCounter = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -44,7 +44,7 @@ var (
 			Subsystem: "db",
 			Name:      "instance_total",
 			Help:      "Gauge of microservice created in Service Center",
-		}, []string{"instance"})
+		}, []string{"instance", "domain"})
 )
 
 func init() {
@@ -56,12 +56,12 @@ func ReportDomains(c float64) {
 	domainCounter.WithLabelValues(instance).Add(c)
 }
 
-func ReportServices(framework, frameworkVersion string, c float64) {
+func ReportServices(domain, framework, frameworkVersion string, c float64) {
 	instance := metric.InstanceName()
-	serviceCounter.WithLabelValues(instance, framework, frameworkVersion).Add(c)
+	serviceCounter.WithLabelValues(instance, framework, frameworkVersion, domain).Add(c)
 }
 
-func ReportInstances(c float64) {
+func ReportInstances(domain string, c float64) {
 	instance := metric.InstanceName()
-	instanceCounter.WithLabelValues(instance).Add(c)
+	instanceCounter.WithLabelValues(instance, domain).Add(c)
 }

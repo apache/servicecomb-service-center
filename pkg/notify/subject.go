@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package notification
+package notify
 
 import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -29,7 +29,7 @@ func (s *Subject) Name() string {
 	return s.name
 }
 
-func (s *Subject) Notify(job NotifyJob) {
+func (s *Subject) Notify(job Event) {
 	if len(job.Group()) == 0 {
 		s.groups.ForEach(func(item util.MapItem) (next bool) {
 			item.Value.(*Group).Notify(job)

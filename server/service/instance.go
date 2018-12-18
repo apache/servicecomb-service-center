@@ -28,6 +28,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/servicecomb-service-center/server/error"
+	"github.com/apache/servicecomb-service-center/server/health"
 	"github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
@@ -874,6 +875,12 @@ func (s *InstanceService) UpdateInstanceProperties(ctx context.Context, in *pb.U
 }
 
 func (s *InstanceService) ClusterHealth(ctx context.Context) (*pb.GetInstancesResponse, error) {
+	if err := health.GlobalHealthChecker().Healthy(); err != nil {
+		return &pb.GetInstancesResponse{
+			Response: pb.CreateResponse(scerr.ErrUnhealthy, err.Error()),
+		}, nil
+	}
+
 	domainProject := apt.REGISTRY_DOMAIN_PROJECT
 	serviceId, err := serviceUtil.GetServiceId(ctx, &pb.MicroServiceKey{
 		AppId:       apt.Service.AppId,

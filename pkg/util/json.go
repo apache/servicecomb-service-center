@@ -74,3 +74,7 @@ func toString(v interface{}) string {
 		return fmt.Sprintf("%#v", v)
 	}
 }
+
+func NewJSONObject() JSONObject {
+	return make(JSONObject)
+}

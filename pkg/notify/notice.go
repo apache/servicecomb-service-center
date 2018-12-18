@@ -14,21 +14,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package notification
+package notify
 
-import "testing"
+type Event interface {
+	Type() Type
+	Subject() string // required!
+	Group() string   // broadcast all the subscriber of the same subject if group is empty
+}
 
-func TestHandleWatchJob(t *testing.T) {
-	defer func() { recover() }()
-	w := NewListWatcher("g", "s", nil)
-	w.Job <- nil
-	err := HandleWatchJob(w, nil)
-	if err == nil {
-		t.Fatalf("TestHandleWatchJob failed")
-	}
-	w.Job <- NewWatchJob("g", "s", 1, nil)
-	err = HandleWatchJob(w, nil)
-	if err != nil {
-		t.Fatalf("TestHandleWatchJob failed")
-	}
+type baseEvent struct {
+	nType   Type
+	subject string
+	group   string
+}
+
+func (s *baseEvent) Type() Type {
+	return s.nType
+}
+
+func (s *baseEvent) Subject() string {
+	return s.subject
+}
+
+func (s *baseEvent) Group() string {
+	return s.group
+}
+
+func NewEvent(t Type, s string, g string) Event {
+	return &baseEvent{t, s, g}
 }

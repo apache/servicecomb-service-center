@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package notification
+package notify
 
 import (
 	"encoding/json"
@@ -34,14 +34,14 @@ type WebSocket struct {
 	ticker *time.Ticker
 	conn   *websocket.Conn
 	// watcher subscribe the notification service event
-	watcher         *ListWatcher
+	watcher         *InstanceEventListWatcher
 	needPingWatcher bool
 	free            chan struct{}
 	closed          chan struct{}
 }
 
 func (wh *WebSocket) Init() error {
-	wh.ticker = time.NewTicker(DEFAULT_HEARTBEAT_INTERVAL)
+	wh.ticker = time.NewTicker(HeartbeatTimeout)
 	wh.needPingWatcher = true
 	wh.free = make(chan struct{}, 1)
 	wh.closed = make(chan struct{})
@@ -51,7 +51,7 @@ func (wh *WebSocket) Init() error {
 	remoteAddr := wh.conn.RemoteAddr().String()
 
 	// put in notification service queue
-	if err := GetNotifyService().AddSubscriber(wh.watcher); err != nil {
+	if err := NotifyCenter().AddSubscriber(wh.watcher); err != nil {
 		err = fmt.Errorf("establish[%s] websocket watch failed: notify service error, %s",
 			remoteAddr, err.Error())
 		log.Errorf(nil, err.Error())
@@ -72,7 +72,7 @@ func (wh *WebSocket) Init() error {
 }
 
 func (wh *WebSocket) Timeout() time.Duration {
-	return DEFAULT_SEND_TIMEOUT
+	return SendTimeout
 }
 
 func (wh *WebSocket) heartbeat(messageType int) error {
@@ -194,8 +194,8 @@ func (wh *WebSocket) HandleWatchWebSocketJob(o interface{}) {
 			remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
 		wh.heartbeat(websocket.PingMessage)
 		return
-	case *WatchJob:
-		job := o.(*WatchJob)
+	case *InstanceEvent:
+		job := o.(*InstanceEvent)
 		resp := job.Response
 
 		providerFlag := fmt.Sprintf("%s/%s/%s", resp.Key.AppId, resp.Key.ServiceName, resp.Key.Version)
@@ -253,7 +253,7 @@ func DoWebSocketListAndWatch(ctx context.Context, serviceId string, f func() ([]
 	socket := &WebSocket{
 		ctx:     ctx,
 		conn:    conn,
-		watcher: NewListWatcher(serviceId, apt.GetInstanceRootKey(domainProject)+"/", f),
+		watcher: NewInstanceEventListWatcher(serviceId, apt.GetInstanceRootKey(domainProject)+"/", f),
 	}
 	process(socket)
 }

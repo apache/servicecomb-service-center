@@ -14,50 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package notification
+package notify
 
-import (
-	"strconv"
-	"time"
+const (
+	DefaultQueueSize = 1000
 )
 
 const (
-	DEFAULT_MAX_QUEUE          = 1000
-	DEFAULT_ADD_JOB_TIMEOUT    = 1 * time.Second
-	DEFAULT_SEND_TIMEOUT       = 5 * time.Second
-	DEFAULT_HEARTBEAT_INTERVAL = 30 * time.Second
+	NOTIFTY Type = iota
 )
-
-const (
-	NOTIFTY NotifyType = iota
-	INSTANCE
-	typeEnd
-)
-
-type NotifyType int
-
-func (nt NotifyType) String() string {
-	if int(nt) < len(notifyTypeNames) {
-		return notifyTypeNames[nt]
-	}
-	return "NotifyType" + strconv.Itoa(int(nt))
-}
-
-func (nt NotifyType) QueueSize() (s int) {
-	if int(nt) < len(notifyTypeQueues) {
-		s = notifyTypeQueues[nt]
-	}
-	if s <= 0 {
-		s = DEFAULT_MAX_QUEUE
-	}
-	return
-}
-
-var notifyTypeNames = []string{
-	NOTIFTY:  "NOTIFTY",
-	INSTANCE: "INSTANCE",
-}
-
-var notifyTypeQueues = []int{
-	INSTANCE: 100 * 1000,
-}

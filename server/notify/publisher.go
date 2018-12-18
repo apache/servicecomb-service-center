@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package notification
+package notify
 
 import (
 	"github.com/apache/servicecomb-service-center/pkg/gopool"

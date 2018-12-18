@@ -23,9 +23,9 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/notify"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
 	"github.com/apache/servicecomb-service-center/server/service/cache"
-	nf "github.com/apache/servicecomb-service-center/server/service/notification"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
 )
@@ -106,7 +106,7 @@ func (h *TagEventHandler) OnEvent(evt discovery.KvEvent) {
 
 	consumerId, domainProject := core.GetInfoFromTagKV(evt.KV.Key)
 
-	if nf.GetNotifyService().Closed() {
+	if notify.NotifyCenter().Closed() {
 		log.Warnf("caught [%s] service tags[%s/%s] event, but notify service is closed",
 			action, consumerId, evt.KV.Value)
 		return

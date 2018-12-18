@@ -22,10 +22,10 @@ import (
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/notify"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
 	"github.com/apache/servicecomb-service-center/server/service/cache"
 	"github.com/apache/servicecomb-service-center/server/service/metrics"
-	nf "github.com/apache/servicecomb-service-center/server/service/notification"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
 	"strings"
@@ -41,25 +41,24 @@ func (h *InstanceEventHandler) Type() discovery.Type {
 func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
 	action := evt.Type
 	providerId, providerInstanceId, domainProject := apt.GetInfoFromInstKV(evt.KV.Key)
-
+	idx := strings.Index(domainProject, "/")
+	domainName := domainProject[:idx]
 	switch action {
 	case pb.EVT_INIT:
-		metrics.ReportInstances(1)
+		metrics.ReportInstances(domainName, 1)
 		return
 	case pb.EVT_CREATE:
-		metrics.ReportInstances(1)
+		metrics.ReportInstances(domainName, 1)
 	case pb.EVT_DELETE:
-		metrics.ReportInstances(-1)
-
-		splited := strings.Split(domainProject, "/")
-		if len(splited) == 2 && !apt.IsDefaultDomainProject(domainProject) {
-			domainName, projectName := splited[0], splited[1]
+		metrics.ReportInstances(domainName, -1)
+		if !apt.IsDefaultDomainProject(domainProject) {
+			projectName := domainProject[idx+1:]
 			serviceUtil.RemandInstanceQuota(
 				util.SetDomainProject(context.Background(), domainName, projectName))
 		}
 	}
 
-	if nf.GetNotifyService().Closed() {
+	if notify.NotifyCenter().Closed() {
 		log.Warnf("caught [%s] instance[%s/%s] event, but notify service is closed",
 			action, providerId, providerInstanceId)
 		return
@@ -110,7 +109,7 @@ func PublishInstanceEvent(domainProject string, action pb.EventType, serviceKey 
 	}
 	for _, consumerId := range subscribers {
 		// TODO add超时怎么处理？
-		job := nf.NewWatchJob(consumerId, apt.GetInstanceRootKey(domainProject)+"/", rev, response)
-		nf.GetNotifyService().AddJob(job)
+		job := notify.NewInstanceEvent(consumerId, apt.GetInstanceRootKey(domainProject)+"/", rev, response)
+		notify.NotifyCenter().Publish(job)
 	}
 }

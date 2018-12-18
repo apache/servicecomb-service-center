@@ -52,7 +52,7 @@ func HealthCommandFunc(_ *cobra.Command, args []string) {
 	scErr := scClient.HealthCheck(context.Background())
 	if scErr != nil {
 		switch scErr.Code {
-		case scerr.ErrUnavailableBackend:
+		case scerr.ErrInternal:
 			cmd.StopAndExit(ExistUnavailable, scErr)
 		default:
 			cmd.StopAndExit(ExistAbnormal, scErr)

@@ -14,28 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package notification
+package notify
 
-type NotifyJob interface {
-	Type() NotifyType
-	Group() string
-	Subject() string
+import (
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"golang.org/x/net/context"
+	"testing"
+)
+
+func TestHandleWatchJob(t *testing.T) {
+	defer log.Recover()
+	w := NewInstanceEventListWatcher("g", "s", nil)
+	w.Job <- nil
+	err := HandleWatchJob(w, nil)
+	if err == nil {
+		t.Fatalf("TestHandleWatchJob failed")
+	}
+	w.Job <- NewInstanceEvent("g", "s", 1, nil)
+	err = HandleWatchJob(w, nil)
+	t.Fatalf("TestHandleWatchJob failed")
 }
 
-type BaseNotifyJob struct {
-	nType   NotifyType
-	subject string
-	group   string
-}
-
-func (s *BaseNotifyJob) Type() NotifyType {
-	return s.nType
-}
-
-func (s *BaseNotifyJob) Group() string {
-	return s.group
-}
-
-func (s *BaseNotifyJob) Subject() string {
-	return s.subject
+func TestDoStreamListAndWatch(t *testing.T) {
+	defer log.Recover()
+	err := DoStreamListAndWatch(context.Background(), "s", nil, nil)
+	t.Fatal("TestDoStreamListAndWatch failed", err)
 }

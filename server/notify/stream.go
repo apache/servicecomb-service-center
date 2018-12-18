@@ -14,23 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package notification
+package notify
 
 import (
 	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	apt "github.com/apache/servicecomb-service-center/server/core"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"golang.org/x/net/context"
 	"time"
 )
 
-func HandleWatchJob(watcher *ListWatcher, stream pb.ServiceInstanceCtrl_WatchServer) (err error) {
-	timer := time.NewTimer(DEFAULT_HEARTBEAT_INTERVAL)
+func HandleWatchJob(watcher *InstanceEventListWatcher, stream pb.ServiceInstanceCtrl_WatchServer) (err error) {
+	timer := time.NewTimer(HeartbeatTimeout)
 	defer timer.Stop()
 	for {
 		select {
+		case <-stream.Context().Done():
+			return
 		case <-timer.C:
-			timer.Reset(DEFAULT_HEARTBEAT_INTERVAL)
+			timer.Reset(HeartbeatTimeout)
 
 			// TODO grpc 长连接心跳？
 		case job := <-watcher.Job:
@@ -52,7 +56,17 @@ func HandleWatchJob(watcher *ListWatcher, stream pb.ServiceInstanceCtrl_WatchSer
 				return
 			}
 
-			util.ResetTimer(timer, DEFAULT_HEARTBEAT_INTERVAL)
+			util.ResetTimer(timer, HeartbeatTimeout)
 		}
 	}
+}
+
+func DoStreamListAndWatch(ctx context.Context, serviceId string, f func() ([]*pb.WatchInstanceResponse, int64), stream pb.ServiceInstanceCtrl_WatchServer) error {
+	domainProject := util.ParseDomainProject(ctx)
+	watcher := NewInstanceEventListWatcher(serviceId, apt.GetInstanceRootKey(domainProject)+"/", f)
+	err := NotifyCenter().AddSubscriber(watcher)
+	if err != nil {
+		return err
+	}
+	return HandleWatchJob(watcher, stream)
 }

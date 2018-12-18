@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package notification
+package notify
 
 import (
 	"errors"
@@ -25,7 +25,7 @@ type Subscriber interface {
 	Id() string
 	Subject() string
 	Group() string
-	Type() NotifyType
+	Type() Type
 	Service() *NotifyService
 	SetService(*NotifyService)
 
@@ -35,34 +35,34 @@ type Subscriber interface {
 	Close()
 	OnAccept()
 	// The event bus will callback this function, so it must be non-blocked.
-	OnMessage(job NotifyJob)
+	OnMessage(Event)
 }
 
-type BaseSubscriber struct {
+type baseSubscriber struct {
+	nType   Type
 	id      string
 	subject string
 	group   string
-	nType   NotifyType
 	service *NotifyService
 	err     error
 }
 
-func (s *BaseSubscriber) Id() string                    { return s.id }
-func (s *BaseSubscriber) Subject() string               { return s.subject }
-func (s *BaseSubscriber) Group() string                 { return s.group }
-func (s *BaseSubscriber) Type() NotifyType              { return s.nType }
-func (s *BaseSubscriber) Service() *NotifyService       { return s.service }
-func (s *BaseSubscriber) SetService(svc *NotifyService) { s.service = svc }
-func (s *BaseSubscriber) Err() error                    { return s.err }
-func (s *BaseSubscriber) SetError(err error)            { s.err = err }
-func (s *BaseSubscriber) Close()                        {}
-func (s *BaseSubscriber) OnAccept()                     {}
-func (s *BaseSubscriber) OnMessage(job NotifyJob) {
+func (s *baseSubscriber) Id() string                    { return s.id }
+func (s *baseSubscriber) Subject() string               { return s.subject }
+func (s *baseSubscriber) Group() string                 { return s.group }
+func (s *baseSubscriber) Type() Type                    { return s.nType }
+func (s *baseSubscriber) Service() *NotifyService       { return s.service }
+func (s *baseSubscriber) SetService(svc *NotifyService) { s.service = svc }
+func (s *baseSubscriber) Err() error                    { return s.err }
+func (s *baseSubscriber) SetError(err error)            { s.err = err }
+func (s *baseSubscriber) Close()                        {}
+func (s *baseSubscriber) OnAccept()                     {}
+func (s *baseSubscriber) OnMessage(job Event) {
 	s.SetError(errors.New("do not call base notifier OnMessage method"))
 }
 
-func NewSubscriber(nType NotifyType, subject, group string) *BaseSubscriber {
-	return &BaseSubscriber{
+func NewSubscriber(nType Type, subject, group string) Subscriber {
+	return &baseSubscriber{
 		id:      util.GenerateUuid(),
 		group:   group,
 		subject: subject,

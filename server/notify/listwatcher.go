@@ -14,38 +14,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package notification
+package notify
 
 import (
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/notify"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"golang.org/x/net/context"
 	"time"
 )
 
 // 状态变化推送
-type WatchJob struct {
-	*BaseNotifyJob
+type InstanceEvent struct {
+	notify.Event
 	Revision int64
 	Response *pb.WatchInstanceResponse
 }
 
-type ListWatcher struct {
-	*BaseSubscriber
-	Job          chan *WatchJob
+type InstanceEventListWatcher struct {
+	notify.Subscriber
+	Job          chan *InstanceEvent
 	ListRevision int64
 	ListFunc     func() (results []*pb.WatchInstanceResponse, rev int64)
 	listCh       chan struct{}
 }
 
-func (s *ListWatcher) SetError(err error) {
-	s.BaseSubscriber.SetError(err)
+func (s *InstanceEventListWatcher) SetError(err error) {
+	s.Subscriber.SetError(err)
 	// 触发清理job
-	s.Service().AddJob(NewNotifyServiceHealthCheckJob(s))
+	s.Service().Publish(notify.NewNotifyServiceHealthCheckJob(s))
 }
 
-func (w *ListWatcher) OnAccept() {
+func (w *InstanceEventListWatcher) OnAccept() {
 	if w.Err() != nil {
 		return
 	}
@@ -53,7 +54,7 @@ func (w *ListWatcher) OnAccept() {
 	gopool.Go(w.listAndPublishJobs)
 }
 
-func (w *ListWatcher) listAndPublishJobs(_ context.Context) {
+func (w *InstanceEventListWatcher) listAndPublishJobs(_ context.Context) {
 	defer close(w.listCh)
 	if w.ListFunc == nil {
 		return
@@ -61,17 +62,17 @@ func (w *ListWatcher) listAndPublishJobs(_ context.Context) {
 	results, rev := w.ListFunc()
 	w.ListRevision = rev
 	for _, response := range results {
-		w.sendMessage(NewWatchJob(w.Group(), w.Subject(), w.ListRevision, response))
+		w.sendMessage(NewInstanceEvent(w.Group(), w.Subject(), w.ListRevision, response))
 	}
 }
 
 //被通知
-func (w *ListWatcher) OnMessage(job NotifyJob) {
+func (w *InstanceEventListWatcher) OnMessage(job notify.Event) {
 	if w.Err() != nil {
 		return
 	}
 
-	wJob, ok := job.(*WatchJob)
+	wJob, ok := job.(*InstanceEvent)
 	if !ok {
 		return
 	}
@@ -98,7 +99,7 @@ func (w *ListWatcher) OnMessage(job NotifyJob) {
 	w.sendMessage(wJob)
 }
 
-func (w *ListWatcher) sendMessage(job *WatchJob) {
+func (w *InstanceEventListWatcher) sendMessage(job *InstanceEvent) {
 	defer log.Recover()
 	select {
 	case w.Job <- job:
@@ -115,33 +116,29 @@ func (w *ListWatcher) sendMessage(job *WatchJob) {
 	}
 }
 
-func (w *ListWatcher) Timeout() time.Duration {
-	return DEFAULT_ADD_JOB_TIMEOUT
+func (w *InstanceEventListWatcher) Timeout() time.Duration {
+	return AddJobTimeout
 }
 
-func (w *ListWatcher) Close() {
+func (w *InstanceEventListWatcher) Close() {
 	close(w.Job)
 }
 
-func NewWatchJob(group, subject string, rev int64, response *pb.WatchInstanceResponse) *WatchJob {
-	return &WatchJob{
-		BaseNotifyJob: &BaseNotifyJob{
-			group:   group,
-			subject: subject,
-			nType:   INSTANCE,
-		},
+func NewInstanceEvent(group, subject string, rev int64, response *pb.WatchInstanceResponse) *InstanceEvent {
+	return &InstanceEvent{
+		Event:    notify.NewEvent(INSTANCE, subject, group),
 		Revision: rev,
 		Response: response,
 	}
 }
 
-func NewListWatcher(group string, subject string,
-	listFunc func() (results []*pb.WatchInstanceResponse, rev int64)) *ListWatcher {
-	watcher := &ListWatcher{
-		BaseSubscriber: NewSubscriber(INSTANCE, subject, group),
-		Job:            make(chan *WatchJob, DEFAULT_MAX_QUEUE),
-		ListFunc:       listFunc,
-		listCh:         make(chan struct{}),
+func NewInstanceEventListWatcher(group string, subject string,
+	listFunc func() (results []*pb.WatchInstanceResponse, rev int64)) *InstanceEventListWatcher {
+	watcher := &InstanceEventListWatcher{
+		Subscriber: notify.NewSubscriber(INSTANCE, subject, group),
+		Job:        make(chan *InstanceEvent, INSTANCE.QueueSize()),
+		ListFunc:   listFunc,
+		listCh:     make(chan struct{}),
 	}
 	return watcher
 }
