@@ -715,12 +715,13 @@ func (s *InstanceService) batchFindServices(ctx context.Context, in *pb.BatchFin
 	if len(in.Services) == 0 {
 		return nil, nil
 	}
+	cloneCtx := util.CloneContext(ctx)
 
 	services := &pb.BatchFindResult{}
 	failedResult := make(map[int32]*pb.FindFailedResult)
 	for index, key := range in.Services {
-		cloneCtx := util.SetContext(ctx, serviceUtil.CTX_REQUEST_REVISION, key.Rev)
-		resp, err := s.Find(cloneCtx, &pb.FindInstancesRequest{
+		findCtx := util.SetContext(cloneCtx, serviceUtil.CTX_REQUEST_REVISION, key.Rev)
+		resp, err := s.Find(findCtx, &pb.FindInstancesRequest{
 			ConsumerServiceId: in.ConsumerServiceId,
 			AppId:             key.Service.AppId,
 			ServiceName:       key.Service.ServiceName,
@@ -731,7 +732,7 @@ func (s *InstanceService) batchFindServices(ctx context.Context, in *pb.BatchFin
 			return nil, err
 		}
 		failed, ok := failedResult[resp.GetResponse().GetCode()]
-		serviceUtil.AppendFindResponse(cloneCtx, int64(index), resp.GetResponse(), resp.GetInstances(),
+		serviceUtil.AppendFindResponse(findCtx, int64(index), resp.GetResponse(), resp.GetInstances(),
 			&services.Updated, &services.NotModified, &failed)
 		if !ok && failed != nil {
 			failedResult[resp.GetResponse().GetCode()] = failed
@@ -747,12 +748,15 @@ func (s *InstanceService) batchFindInstances(ctx context.Context, in *pb.BatchFi
 	if len(in.Instances) == 0 {
 		return nil, nil
 	}
+	cloneCtx := util.CloneContext(ctx)
+	// can not find the shared provider instances
+	cloneCtx = util.SetTargetDomainProject(cloneCtx, util.ParseDomain(ctx), util.ParseProject(ctx))
 
 	instances := &pb.BatchFindResult{}
 	failedResult := make(map[int32]*pb.FindFailedResult)
 	for index, key := range in.Instances {
-		cloneCtx := util.SetContext(ctx, serviceUtil.CTX_REQUEST_REVISION, key.Rev)
-		resp, err := s.GetOneInstance(cloneCtx, &pb.GetOneInstanceRequest{
+		getCtx := util.SetContext(cloneCtx, serviceUtil.CTX_REQUEST_REVISION, key.Rev)
+		resp, err := s.GetOneInstance(getCtx, &pb.GetOneInstanceRequest{
 			ConsumerServiceId:  in.ConsumerServiceId,
 			ProviderServiceId:  key.Instance.ServiceId,
 			ProviderInstanceId: key.Instance.InstanceId,
@@ -761,7 +765,7 @@ func (s *InstanceService) batchFindInstances(ctx context.Context, in *pb.BatchFi
 			return nil, err
 		}
 		failed, ok := failedResult[resp.GetResponse().GetCode()]
-		serviceUtil.AppendFindResponse(cloneCtx, int64(index), resp.GetResponse(), []*pb.MicroServiceInstance{resp.GetInstance()},
+		serviceUtil.AppendFindResponse(getCtx, int64(index), resp.GetResponse(), []*pb.MicroServiceInstance{resp.GetInstance()},
 			&instances.Updated, &instances.NotModified, &failed)
 		if !ok && failed != nil {
 			failedResult[resp.GetResponse().GetCode()] = failed
