@@ -38,6 +38,7 @@ var GETPROCONDEPENDENCY = "/v4/default/registry/microservices/:providerId/consum
 
 // Instance API's
 var FINDINSTANCE = "/v4/default/registry/instances"
+var INSTANCEACTION = "/v4/default/registry/instances/action"
 var GETINSTANCE = "/v4/default/registry/microservices/:serviceId/instances"
 var GETINSTANCEBYINSTANCEID = "/v4/default/registry/microservices/:serviceId/instances/:instanceId"
 var REGISTERINSTANCE = "/v4/default/registry/microservices/:serviceId/instances"

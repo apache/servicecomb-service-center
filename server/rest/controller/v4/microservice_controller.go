@@ -57,7 +57,7 @@ func (this *MicroServiceService) Register(w http.ResponseWriter, r *http.Request
 	var request pb.CreateServiceRequest
 	err = json.Unmarshal(message, &request)
 	if err != nil {
-		log.Errorf(err, "Invalid json: %s", util.BytesToStringWithNoCopy(message))
+		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
@@ -79,7 +79,7 @@ func (this *MicroServiceService) Update(w http.ResponseWriter, r *http.Request) 
 	}
 	err = json.Unmarshal(message, request)
 	if err != nil {
-		log.Errorf(err, "Invalid json: %s", util.BytesToStringWithNoCopy(message))
+		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
@@ -155,7 +155,7 @@ func (this *MicroServiceService) UnregisterServices(w http.ResponseWriter, r *ht
 
 	err = json.Unmarshal(message, request)
 	if err != nil {
-		log.Errorf(err, "Invalid json: %s", util.BytesToStringWithNoCopy(message))
+		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}

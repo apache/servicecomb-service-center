@@ -69,7 +69,7 @@ func (this *SchemaService) ModifySchema(w http.ResponseWriter, r *http.Request) 
 	request := &pb.ModifySchemaRequest{}
 	err = json.Unmarshal(message, request)
 	if err != nil {
-		log.Errorf(err, "Invalid json: %s", util.BytesToStringWithNoCopy(message))
+		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
@@ -91,7 +91,7 @@ func (this *SchemaService) ModifySchemas(w http.ResponseWriter, r *http.Request)
 	request := &pb.ModifySchemasRequest{}
 	err = json.Unmarshal(message, request)
 	if err != nil {
-		log.Errorf(err, "Invalid json: %s", util.BytesToStringWithNoCopy(message))
+		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}

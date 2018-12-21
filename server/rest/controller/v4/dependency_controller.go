@@ -52,7 +52,7 @@ func (this *DependencyService) AddDependenciesForMicroServices(w http.ResponseWr
 	request := &pb.AddDependenciesRequest{}
 	err = json.Unmarshal(requestBody, request)
 	if err != nil {
-		log.Errorf(err, "Invalid json: %s", util.BytesToStringWithNoCopy(requestBody))
+		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(requestBody))
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
@@ -71,7 +71,7 @@ func (this *DependencyService) CreateDependenciesForMicroServices(w http.Respons
 	request := &pb.CreateDependenciesRequest{}
 	err = json.Unmarshal(requestBody, request)
 	if err != nil {
-		log.Errorf(err, "Invalid json: %s", util.BytesToStringWithNoCopy(requestBody))
+		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(requestBody))
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}

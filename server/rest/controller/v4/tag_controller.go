@@ -53,7 +53,7 @@ func (this *TagService) AddTags(w http.ResponseWriter, r *http.Request) {
 	var tags map[string]map[string]string
 	err = json.Unmarshal(message, &tags)
 	if err != nil {
-		log.Errorf(err, "Invalid json: %s", util.BytesToStringWithNoCopy(message))
+		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}

@@ -1462,6 +1462,7 @@ paths:
           description: 内部错误
           schema:
             $ref: '#/definitions/Error'
+  /v4/{project}/registry/instances/action:
     post:
       description: |
         批量微服务实例发现接口
@@ -1479,7 +1480,12 @@ paths:
           in: path
           required: true
           type: string
-        - name: services
+        - name: type
+          in: query
+          required: true
+          type: string
+          description: 操作
+        - name: request
           in: body
           description: 查询微服务的请求结构体
           required: true
