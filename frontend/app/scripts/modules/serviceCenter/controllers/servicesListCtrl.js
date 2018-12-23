@@ -51,20 +51,24 @@ angular.module('serviceCenter.sc', [])
                     name: 'All Status'
                 },
                 {
-                    id: 'UP',
-                    name: 'Up'
-                },
-                {
-                    id: 'DOWN',
-                    name: 'Down'
-                },
-                {
                     id: 'STARTING',
                     name: 'Starting'
                 },
                 {
+                    id: 'TESTING',
+                    name: 'Testing'
+                },
+                {
+                    id: 'UP',
+                    name: 'Up'
+                },
+                {
                     id: 'OUTOFSERVICE',
                     name: 'Out of service'
+                },
+                {
+                    id: 'DOWN',
+                    name: 'Down'
                 }
             ];
 
