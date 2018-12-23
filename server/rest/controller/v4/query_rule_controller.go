@@ -52,7 +52,7 @@ func (this *RuleService) AddRule(w http.ResponseWriter, r *http.Request) {
 	rule := map[string][]*pb.AddOrUpdateServiceRule{}
 	err = json.Unmarshal(message, &rule)
 	if err != nil {
-		log.Errorf(err, "Invalid json: %s", util.BytesToStringWithNoCopy(message))
+		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
@@ -89,7 +89,7 @@ func (this *RuleService) UpdateRule(w http.ResponseWriter, r *http.Request) {
 	rule := pb.AddOrUpdateServiceRule{}
 	err = json.Unmarshal(message, &rule)
 	if err != nil {
-		log.Errorf(err, "Invalid json: %s", util.BytesToStringWithNoCopy(message))
+		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}

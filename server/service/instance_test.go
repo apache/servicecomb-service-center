@@ -1927,6 +1927,41 @@ var _ = Describe("'Instance' service", func() {
 				Expect(len(respFind.Services.Updated[0].Instances)).To(Equal(1))
 				Expect(respFind.Services.Updated[0].Instances[0].InstanceId).To(Equal(instanceId5))
 
+				respFind, err = instanceResource.BatchFind(
+					util.SetTargetDomainProject(
+						util.SetDomainProject(util.CloneContext(getContext()), "user", "user"),
+						"default", "default"),
+					&pb.BatchFindInstancesRequest{
+						ConsumerServiceId: serviceId6,
+						Instances: []*pb.FindInstance{
+							{
+								Instance: &pb.HeartbeatSetElement{
+									ServiceId:  serviceId5,
+									InstanceId: instanceId5,
+								},
+							},
+						},
+					})
+				Expect(err).To(BeNil())
+				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respFind.Instances.Failed[0].Error.Code).To(Equal(scerr.ErrServiceNotExists))
+
+				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
+					ConsumerServiceId: serviceId7,
+					Instances: []*pb.FindInstance{
+						{
+							Instance: &pb.HeartbeatSetElement{
+								ServiceId:  serviceId5,
+								InstanceId: instanceId5,
+							},
+						},
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(len(respFind.Instances.Updated[0].Instances)).To(Equal(1))
+				Expect(respFind.Instances.Updated[0].Instances[0].InstanceId).To(Equal(instanceId5))
+
 				core.Service.Environment = pb.ENV_DEV
 			})
 		})

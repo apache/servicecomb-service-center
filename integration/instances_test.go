@@ -387,11 +387,19 @@ var _ = Describe("MicroService Api Test", func() {
 					},
 				}
 				body, _ := json.Marshal(findRequest)
-				bodyBuf := bytes.NewReader(body)
-				req, _ := http.NewRequest(POST, SCURL+FINDINSTANCE, bodyBuf)
+
+				req, _ := http.NewRequest(POST, SCURL+INSTANCEACTION, bytes.NewReader(body))
 				req.Header.Set("X-Domain-Name", "default")
 				req.Header.Set("X-ConsumerId", serviceId)
 				resp, _ := scclient.Do(req)
+				ioutil.ReadAll(resp.Body)
+				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
+
+				bodyBuf := bytes.NewReader(body)
+				req, _ = http.NewRequest(POST, SCURL+INSTANCEACTION+"?type=query", bodyBuf)
+				req.Header.Set("X-Domain-Name", "default")
+				req.Header.Set("X-ConsumerId", serviceId)
+				resp, _ = scclient.Do(req)
 				respbody, _ := ioutil.ReadAll(resp.Body)
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 				respStruct := map[string]map[string][]map[string]interface{}{}
