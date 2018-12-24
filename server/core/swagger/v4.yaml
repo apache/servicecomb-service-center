@@ -1302,7 +1302,7 @@ paths:
           type: string
         - name: value
           in: query
-          description: 实例状态 UP在线OUTOFSERVICE摘机STARTING正在启动DOWN下线。
+          description: 实例状态: UP在线,OUTOFSERVICE摘机,STARTING正在启动,DOWN下线,TESTING拨测状态。
           required: true
           type: string
       tags:

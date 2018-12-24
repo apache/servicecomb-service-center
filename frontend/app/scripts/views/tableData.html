@@ -59,9 +59,10 @@ limitations under the License.
                             </span>
                         <span ng-if="key == 'status'">
                                 <div ng-if="value == 'UP'" class="serviceStatus up" ng-class="{'outofservice' : appData.instances == 0}">{{value}}</div>
-                                <div ng-if="value == 'DOWN'" class="serviceStatus down">{{value}}</div>
                                 <div ng-if="value == 'STARTING'" class="serviceStatus starting">{{value}}</div>
+                                <div ng-if="value == 'TESTING'" class="serviceStatus testing">{{value}}</div>
                                 <div ng-if="value == 'OUTOFSERVICE'" class="serviceStatus outofservice">{{value}}</div>
+                                <div ng-if="value == 'DOWN'" class="serviceStatus down">{{value}}</div>
                             </span>
                         <span ng-if="key == 'operation'">
                                 <md-button class="md-icon-button" ng-disabled="appData.instances != 0" ng-click="remove(appData.serviceId, appData.instances)" aria-label="{{ 'delete' | translate }}" title="{{ 'delete' | translate }}">

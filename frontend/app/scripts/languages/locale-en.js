@@ -48,6 +48,7 @@ angular.module('serviceCenter')
         "down": "Down",
         "starting": "Starting",
         "outOfService": "Out Of Service",
+        "testing": "Testing",
         "dashboard": "Dashboard",
         "getSchema": "Get Schema",
         "error": "Error",

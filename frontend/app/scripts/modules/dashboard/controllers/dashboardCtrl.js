@@ -49,21 +49,27 @@ angular.module('serviceCenter.dashboard', [])
                 },
                 {
                     count: 0,
+                    title: "testing",
+                    percent: 0,
+                    status: "TESTING"
+                },
+                {
+                    count: 0,
                     title: "up",
                     percent: 0,
                     status: "UP"
                 },
                 {
                     count: 0,
-                    title: "down",
-                    percent: 0,
-                    status: "DOWN"
-                },
-                {
-                    count: 0,
                     title: "outOfService",
                     percent: 0,
                     status: "OUTOFSERVICE"
+                },
+                {
+                    count: 0,
+                    title: "down",
+                    percent: 0,
+                    status: "DOWN"
                 }
             ];
 
@@ -71,6 +77,7 @@ angular.module('serviceCenter.dashboard', [])
             $scope.stoppedServices = [];
             $scope.startingServices = [];
             $scope.outOfServiceServices = [];
+            $scope.testingServices = [];
 
             $scope.totalProviders = [];
             $scope.totalConsumers = [];
@@ -103,6 +110,9 @@ angular.module('serviceCenter.dashboard', [])
                                 }
                                 if (instance.status == "OUTOFSERVICE") {
                                     $scope.outOfServiceServices.push(services);
+                                }
+                                if (instance.status == "TESTING") {
+                                    $scope.testingServices.push(services);
                                 }
                             });
                             $scope.dashboardInfo[1].count = $scope.dashboardInfo[1].count + services.instances.length;
@@ -138,14 +148,16 @@ angular.module('serviceCenter.dashboard', [])
                     });
 
                     $scope.instanceStat[0].percent = Math.round($scope.startingServices.length / $scope.dashboardInfo[1].count) * 100;
-                    $scope.instanceStat[1].percent = Math.round($scope.runningServices.length / $scope.dashboardInfo[1].count) * 100;
-                    $scope.instanceStat[2].percent = Math.round($scope.stoppedServices.length / $scope.dashboardInfo[1].count) * 100;
+                    $scope.instanceStat[1].percent = Math.round($scope.testingServices.length / $scope.dashboardInfo[1].count) * 100;
+                    $scope.instanceStat[2].percent = Math.round($scope.runningServices.length / $scope.dashboardInfo[1].count) * 100;
                     $scope.instanceStat[3].percent = Math.round($scope.outOfServiceServices.length / $scope.dashboardInfo[1].count) * 100;
+                    $scope.instanceStat[4].percent = Math.round($scope.stoppedServices.length / $scope.dashboardInfo[1].count) * 100;
 
                     $scope.instanceStat[0].count = $scope.startingServices.length;
-                    $scope.instanceStat[1].count = $scope.runningServices.length;
-                    $scope.instanceStat[2].count = $scope.stoppedServices.length;
+                    $scope.instanceStat[1].count = $scope.testingServices.length;
+                    $scope.instanceStat[2].count = $scope.runningServices.length;
                     $scope.instanceStat[3].count = $scope.outOfServiceServices.length;
+                    $scope.instanceStat[4].count = $scope.stoppedServices.length;
 
                     $scope.dashboardInfo[2].count = $scope.totalProviders.length;
                     $scope.dashboardInfo[3].count = $scope.totalConsumers.length;

@@ -48,6 +48,7 @@ angular.module('serviceCenter')
         "down": "离线",
         "starting": "初始化",
         "outOfService": "暂停服务",
+        "testing": "拨测",
         "dashboard": "仪表板",
         "getSchema": "获取契约",
         "error": "错误",

@@ -1182,7 +1182,7 @@ instanceID可定制,如果定制了，再次注册就直接全内容覆盖。如
     <div class="field-items">
       <div class="param">value (required)</div>
 
-      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; 实例状态 UP在线OUTOFSERVICE摘机STARTING正在启动DOWN下线。 </div>
+      <div class="param-desc"><span class="param-type">Query Parameter</span> &mdash; 实例状态: UP在线,OUTOFSERVICE摘机,STARTING正在启动,DOWN下线,TESTING拨测状态。 </div>
     </div>  <!-- field-items -->
 
 
@@ -3578,7 +3578,7 @@ instanceID可定制,如果定制了，再次注册就直接全内容覆盖。如
 <div class="param">serviceId (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> 微服务唯一标识，创建实例时，以url里面的为准，不用这里的serviceId。 </div>
 <div class="param">hostName </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span>  </div>
 <div class="param">endpoints (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">array[String]</a></span>  </div>
-<div class="param">status </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> 实例状态，UP|DOWN|STARTING|OUTOFSERVICE </div>
+<div class="param">status </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> 实例状态，UP|DOWN|STARTING|OUTOFSERVICE|TESTING </div>
 <div class="param">properties (optional)</div><div class="param-desc"><span class="param-type"><a href="#Properties">Properties</a></span>  </div>
 <div class="param">healthCheck (optional)</div><div class="param-desc"><span class="param-type"><a href="#HealthCheck">HealthCheck</a></span>  </div>
 <div class="param">environment </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> development|testing|acceptance|production </div>
@@ -3614,7 +3614,7 @@ instanceID可定制,如果定制了，再次注册就直接全内容覆盖。如
       <div class="param">instanceId (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> 实例ID,不填写会自动填充 </div>
 <div class="param">hostName </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> 机器的hostname </div>
 <div class="param">endpoints (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">array[String]</a></span>  </div>
-<div class="param">status </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> 实例状态，UP|DOWN|STARTING|OUTOFSERVICE </div>
+<div class="param">status </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> 实例状态，UP|DOWN|STARTING|OUTOFSERVICE|TESTING </div>
 <div class="param">properties (optional)</div><div class="param-desc"><span class="param-type"><a href="#Properties">Properties</a></span>  </div>
 <div class="param">healthCheck (optional)</div><div class="param-desc"><span class="param-type"><a href="#HealthCheck">HealthCheck</a></span>  </div>
 <div class="param">environment </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> development|testing|acceptance|production </div>
