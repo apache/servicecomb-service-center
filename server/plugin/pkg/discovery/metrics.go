@@ -14,28 +14,49 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package etcd
+package discovery
 
 import (
 	"github.com/apache/servicecomb-service-center/server/metric"
 	"github.com/prometheus/client_golang/prometheus"
+	"time"
+)
+
+const (
+	success = "SUCCESS"
+	failure = "FAILURE"
 )
 
 var (
-	backendCounter = prometheus.NewGaugeVec(
+	eventsCounter = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: metric.FamilyName,
 			Subsystem: "db",
-			Name:      "backend_total",
-			Help:      "Gauge of the backend instance",
+			Name:      "backend_event_total",
+			Help:      "Counter of backend events",
+		}, []string{"instance"})
+
+	eventsLatency = prometheus.NewSummaryVec(
+		prometheus.SummaryOpts{
+			Namespace:  metric.FamilyName,
+			Subsystem:  "db",
+			Name:       "backend_event_durations_microseconds",
+			Help:       "Latency of backend events processing",
+			Objectives: prometheus.DefObjectives,
 		}, []string{"instance"})
 )
 
 func init() {
-	prometheus.MustRegister(backendCounter)
+	prometheus.MustRegister(eventsCounter, eventsLatency)
 }
 
-func ReportBackendInstance(c int) {
+func ReportProcessEventCompleted(evts []KvEvent, start time.Time) {
+	l := float64(len(evts))
+	if l == 0 {
+		return
+	}
 	instance := metric.InstanceName()
-	backendCounter.WithLabelValues(instance).Set(float64(c))
+	elapsed := float64(time.Since(start).Nanoseconds()) / float64(time.Microsecond)
+	eventsLatency.WithLabelValues(instance).Observe(elapsed / l)
+	eventsCounter.WithLabelValues(instance).Add(l)
 }

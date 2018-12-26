@@ -16,16 +16,20 @@
  */
 package notify
 
+import "time"
+
 type Event interface {
 	Type() Type
 	Subject() string // required!
 	Group() string   // broadcast all the subscriber of the same subject if group is empty
+	CreateAt() time.Time
 }
 
 type baseEvent struct {
-	nType   Type
-	subject string
-	group   string
+	nType    Type
+	subject  string
+	group    string
+	createAt time.Time
 }
 
 func (s *baseEvent) Type() Type {
@@ -40,6 +44,10 @@ func (s *baseEvent) Group() string {
 	return s.group
 }
 
+func (s *baseEvent) CreateAt() time.Time {
+	return s.createAt
+}
+
 func NewEvent(t Type, s string, g string) Event {
-	return &baseEvent{t, s, g}
+	return &baseEvent{t, s, g, time.Now()}
 }

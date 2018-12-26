@@ -49,6 +49,7 @@ func HandleWatchJob(watcher *InstanceEventListWatcher, stream pb.ServiceInstance
 				watcher.Subject(), watcher.Group())
 
 			err = stream.Send(resp)
+			ReportPublishCompleted(INSTANCE.String(), err, job.CreateAt())
 			if err != nil {
 				log.Errorf(err, "send message error, subject: %s, group: %s",
 					watcher.Subject(), watcher.Group())

@@ -44,6 +44,7 @@ func (lat *LeaseTask) Key() string {
 func (lat *LeaseTask) Do(ctx context.Context) (err error) {
 	recv, start := lat.ReceiveTime(), time.Now()
 	lat.TTL, err = lat.Client.LeaseRenew(ctx, lat.LeaseID)
+	ReportHeartbeatCompleted(err, recv)
 	if err != nil {
 		log.Errorf(err, "[%s]task[%s] renew lease[%d] failed(recv: %s, send: %s)",
 			time.Now().Sub(recv),

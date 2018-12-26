@@ -34,6 +34,8 @@ const (
 	DEFAULT_LOCK_TTL    = 60
 	DEFAULT_RETRY_TIMES = 3
 	ROOT_PATH           = "/cse/etcdsync"
+
+	OperationGlobalLock = "GLOBAL_LOCK"
 )
 
 type DLockFactory struct {
@@ -44,8 +46,9 @@ type DLockFactory struct {
 }
 
 type DLock struct {
-	builder *DLockFactory
-	id      string
+	builder  *DLockFactory
+	id       string
+	createAt time.Time
 }
 
 var (
@@ -77,9 +80,11 @@ func (m *DLockFactory) NewDLock(wait bool) (l *DLock, err error) {
 	if !IsDebug {
 		m.mutex.Lock()
 	}
+	now := time.Now()
 	l = &DLock{
-		builder: m,
-		id:      fmt.Sprintf("%v-%v-%v", hostname, pid, time.Now().Format("20060102-15:04:05.999999999")),
+		builder:  m,
+		id:       fmt.Sprintf("%v-%v-%v", hostname, pid, now.Format("20060102-15:04:05.999999999")),
+		createAt: now,
 	}
 	for try := 1; try <= DEFAULT_RETRY_TIMES; try++ {
 		err = l.Lock(wait)
@@ -168,6 +173,7 @@ func (m *DLock) Unlock() (err error) {
 		if !IsDebug {
 			m.builder.mutex.Unlock()
 		}
+		registry.ReportBackendOperationCompleted(OperationGlobalLock, nil, m.createAt)
 	}()
 
 	opts := []registry.PluginOpOption{

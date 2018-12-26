@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package backend
+package registry
 
 import (
 	"github.com/apache/servicecomb-service-center/server/metric"
@@ -28,48 +28,48 @@ const (
 )
 
 var (
-	scCounter = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
+	backendCounter = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
 			Namespace: metric.FamilyName,
 			Subsystem: "db",
-			Name:      "sc_total",
-			Help:      "Counter of the Service Center instance",
+			Name:      "backend_total",
+			Help:      "Gauge of the backend instance",
 		}, []string{"instance"})
 
-	heartbeatCounter = prometheus.NewCounterVec(
+	operationCounter = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Namespace: metric.FamilyName,
 			Subsystem: "db",
-			Name:      "heartbeat_total",
-			Help:      "Counter of heartbeat renew",
-		}, []string{"instance", "status"})
+			Name:      "backend_operation_total",
+			Help:      "Counter of backend operation",
+		}, []string{"instance", "operation", "status"})
 
-	heartbeatLatency = prometheus.NewSummaryVec(
+	operationLatency = prometheus.NewSummaryVec(
 		prometheus.SummaryOpts{
 			Namespace:  metric.FamilyName,
 			Subsystem:  "db",
-			Name:       "heartbeat_durations_microseconds",
-			Help:       "Latency of heartbeat renew",
+			Name:       "backend_operation_durations_microseconds",
+			Help:       "Latency of backend operation",
 			Objectives: prometheus.DefObjectives,
-		}, []string{"instance", "status"})
+		}, []string{"instance", "operation", "status"})
 )
 
 func init() {
-	prometheus.MustRegister(scCounter, heartbeatCounter, heartbeatLatency)
+	prometheus.MustRegister(backendCounter, operationCounter, operationLatency)
 }
 
-func ReportScInstance() {
+func ReportBackendInstance(c int) {
 	instance := metric.InstanceName()
-	scCounter.WithLabelValues(instance).Add(1)
+	backendCounter.WithLabelValues(instance).Set(float64(c))
 }
 
-func ReportHeartbeatCompleted(err error, start time.Time) {
+func ReportBackendOperationCompleted(operation string, err error, start time.Time) {
 	instance := metric.InstanceName()
 	elapsed := float64(time.Since(start).Nanoseconds()) / float64(time.Microsecond)
 	status := success
 	if err != nil {
 		status = failure
 	}
-	heartbeatLatency.WithLabelValues(instance, status).Observe(elapsed)
-	heartbeatCounter.WithLabelValues(instance, status).Inc()
+	operationLatency.WithLabelValues(instance, operation, status).Observe(elapsed)
+	operationCounter.WithLabelValues(instance, operation, status).Inc()
 }
