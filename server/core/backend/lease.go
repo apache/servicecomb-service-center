@@ -19,6 +19,7 @@ package backend
 import (
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	simple "github.com/apache/servicecomb-service-center/pkg/time"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 	"golang.org/x/net/context"
@@ -32,8 +33,7 @@ type LeaseTask struct {
 	LeaseID int64
 	TTL     int64
 
-	recvSec  int64
-	recvNsec int64
+	recvTime simple.Time
 	err      error
 }
 
@@ -78,17 +78,15 @@ func (lat *LeaseTask) Err() error {
 }
 
 func (lat *LeaseTask) ReceiveTime() time.Time {
-	return time.Unix(lat.recvSec, lat.recvNsec).Local()
+	return lat.recvTime.Local()
 }
 
 func NewLeaseAsyncTask(op registry.PluginOp) *LeaseTask {
-	now := time.Now().UTC()
 	return &LeaseTask{
 		Client:   Registry(),
 		key:      ToLeaseAsyncTaskKey(util.BytesToStringWithNoCopy(op.Key)),
 		LeaseID:  op.Lease,
-		recvSec:  now.Unix(),
-		recvNsec: int64(now.Nanosecond()),
+		recvTime: simple.FromTime(time.Now()),
 	}
 }
 

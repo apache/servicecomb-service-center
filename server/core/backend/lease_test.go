@@ -19,6 +19,7 @@ package backend
 import (
 	"fmt"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
+	simple "github.com/apache/servicecomb-service-center/pkg/time"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry/buildin"
 	"golang.org/x/net/context"
 	"testing"
@@ -38,14 +39,12 @@ func (c *mockRegistry) LeaseRenew(ctx context.Context, leaseID int64) (TTL int64
 }
 
 func TestLeaseTask_Do(t *testing.T) {
-	now := time.Now().UTC()
 	c := &mockRegistry{}
 	lt := &LeaseTask{
 		Client:   c,
 		key:      ToLeaseAsyncTaskKey("/a"),
 		LeaseID:  1,
-		recvSec:  now.Unix(),
-		recvNsec: int64(now.Nanosecond()),
+		recvTime: simple.FromTime(time.Now()),
 	}
 
 	c.LeaseErr = errorsEx.InternalError("lease not found")

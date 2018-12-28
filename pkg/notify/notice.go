@@ -16,7 +16,10 @@
  */
 package notify
 
-import "time"
+import (
+	simple "github.com/apache/servicecomb-service-center/pkg/time"
+	"time"
+)
 
 type Event interface {
 	Type() Type
@@ -29,7 +32,7 @@ type baseEvent struct {
 	nType    Type
 	subject  string
 	group    string
-	createAt time.Time
+	createAt simple.Time
 }
 
 func (s *baseEvent) Type() Type {
@@ -45,9 +48,9 @@ func (s *baseEvent) Group() string {
 }
 
 func (s *baseEvent) CreateAt() time.Time {
-	return s.createAt
+	return s.createAt.Local()
 }
 
 func NewEvent(t Type, s string, g string) Event {
-	return &baseEvent{t, s, g, time.Now()}
+	return &baseEvent{t, s, g, simple.FromTime(time.Now())}
 }
