@@ -39,13 +39,6 @@ import (
 	"time"
 )
 
-const (
-	// here will new an etcd connection after about 30s(=5s * 3 + (backoff:8s))
-	// when the connected etcd member was hung but tcp is still alive
-	healthCheckTimeout    = 5 * time.Second
-	healthCheckRetryTimes = 3
-)
-
 var firstEndpoint string
 
 func init() {
@@ -133,7 +126,7 @@ func (c *EtcdClient) newClient() (*clientv3.Client, error) {
 		return nil, err
 	}
 
-	ReportBackendInstance(len(resp.Members))
+	registry.ReportBackendInstance(len(resp.Members))
 
 	if len(c.Endpoints) == 1 {
 		// no need to check remote endpoints
@@ -192,6 +185,7 @@ func (c *EtcdClient) Compact(ctx context.Context, reserve int64) error {
 
 	t := time.Now()
 	_, err := c.Client.Compact(ctx, revToCompact, clientv3.WithCompactPhysical())
+	registry.ReportBackendOperationCompleted(OperationCompact, err, t)
 	if err != nil {
 		log.Errorf(err, "compact %s failed, revision is %d(current: %d, reserve %d)",
 			eps, revToCompact, curRev, reserve)
@@ -460,12 +454,13 @@ func (c *EtcdClient) Do(ctx context.Context, opts ...registry.PluginOpOption) (*
 
 	start := time.Now()
 	op := registry.OptionsToOp(opts...)
-
 	span := TracingBegin(ctx, "etcd:do", op)
-	defer TracingEnd(span, err)
-
 	otCtx, cancel := registry.WithTimeout(ctx)
-	defer cancel()
+	defer func() {
+		registry.ReportBackendOperationCompleted(op.Action.String(), err, start)
+		TracingEnd(span, err)
+		cancel()
+	}()
 
 	switch op.Action {
 	case registry.Get:
@@ -539,9 +534,6 @@ func (c *EtcdClient) Txn(ctx context.Context, opts []registry.PluginOp) (*regist
 func (c *EtcdClient) TxnWithCmp(ctx context.Context, success []registry.PluginOp, cmps []registry.CompareOp, fail []registry.PluginOp) (*registry.PluginResponse, error) {
 	var err error
 
-	otCtx, cancel := registry.WithTimeout(ctx)
-	defer cancel()
-
 	start := time.Now()
 	etcdCmps := c.toCompares(cmps)
 	etcdSuccessOps := c.toTxnRequest(success)
@@ -555,7 +547,12 @@ func (c *EtcdClient) TxnWithCmp(ctx context.Context, success []registry.PluginOp
 	}
 
 	span := TracingBegin(ctx, "etcd:txn", traceOps[0])
-	defer TracingEnd(span, err)
+	otCtx, cancel := registry.WithTimeout(ctx)
+	defer func() {
+		registry.ReportBackendOperationCompleted(OperationTxn, err, start)
+		TracingEnd(span, err)
+		cancel()
+	}()
 
 	kvc := clientv3.NewKV(c.Client)
 	txn := kvc.Txn(otCtx)
@@ -592,13 +589,16 @@ func (c *EtcdClient) TxnWithCmp(ctx context.Context, success []registry.PluginOp
 
 func (c *EtcdClient) LeaseGrant(ctx context.Context, TTL int64) (int64, error) {
 	var err error
+
+	start := time.Now()
 	span := TracingBegin(ctx, "etcd:grant",
 		registry.PluginOp{Action: registry.Put, Key: util.StringToBytesWithNoCopy(strconv.FormatInt(TTL, 10))})
-	defer TracingEnd(span, err)
-
 	otCtx, cancel := registry.WithTimeout(ctx)
-	defer cancel()
-	start := time.Now()
+	defer func() {
+		registry.ReportBackendOperationCompleted(OperationLeaseGrant, err, start)
+		TracingEnd(span, err)
+		cancel()
+	}()
 	etcdResp, err := c.Client.Grant(otCtx, TTL)
 	if err != nil {
 		return 0, err
@@ -609,13 +609,17 @@ func (c *EtcdClient) LeaseGrant(ctx context.Context, TTL int64) (int64, error) {
 
 func (c *EtcdClient) LeaseRenew(ctx context.Context, leaseID int64) (int64, error) {
 	var err error
+
+	start := time.Now()
 	span := TracingBegin(ctx, "etcd:keepalive",
 		registry.PluginOp{Action: registry.Put, Key: util.StringToBytesWithNoCopy(strconv.FormatInt(leaseID, 10))})
-	defer TracingEnd(span, err)
-
 	otCtx, cancel := registry.WithTimeout(ctx)
-	defer cancel()
-	start := time.Now()
+	defer func() {
+		registry.ReportBackendOperationCompleted(OperationLeaseRenew, err, start)
+		TracingEnd(span, err)
+		cancel()
+	}()
+
 	etcdResp, err := c.Client.KeepAliveOnce(otCtx, clientv3.LeaseID(leaseID))
 	if err != nil {
 		if err.Error() == grpc.ErrorDesc(rpctypes.ErrGRPCLeaseNotFound) {
@@ -629,13 +633,17 @@ func (c *EtcdClient) LeaseRenew(ctx context.Context, leaseID int64) (int64, erro
 
 func (c *EtcdClient) LeaseRevoke(ctx context.Context, leaseID int64) error {
 	var err error
+
+	start := time.Now()
 	span := TracingBegin(ctx, "etcd:revoke",
 		registry.PluginOp{Action: registry.Delete, Key: util.StringToBytesWithNoCopy(strconv.FormatInt(leaseID, 10))})
-	defer TracingEnd(span, err)
-
 	otCtx, cancel := registry.WithTimeout(ctx)
-	defer cancel()
-	start := time.Now()
+	defer func() {
+		registry.ReportBackendOperationCompleted(OperationLeaseRevoke, err, start)
+		TracingEnd(span, err)
+		cancel()
+	}()
+
 	_, err = c.Client.Revoke(otCtx, clientv3.LeaseID(leaseID))
 	if err != nil {
 		if err.Error() == grpc.ErrorDesc(rpctypes.ErrGRPCLeaseNotFound) {
@@ -767,7 +775,12 @@ func (c *EtcdClient) parseEndpoints() {
 }
 
 func (c *EtcdClient) SyncMembers(ctx context.Context) error {
-	if err := c.Client.Sync(ctx); err != nil && err != c.Client.Ctx().Err() {
+	var err error
+
+	start := time.Now()
+	defer registry.ReportBackendOperationCompleted(OperationSyncMembers, err, start)
+
+	if err = c.Client.Sync(ctx); err != nil && err != c.Client.Ctx().Err() {
 		return err
 	}
 	return nil

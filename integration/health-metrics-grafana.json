@@ -109,7 +109,7 @@
       },
       "gridPos": {
         "h": 3,
-        "w": 4,
+        "w": 3,
         "x": 0,
         "y": 0
       },
@@ -192,10 +192,10 @@
       "gridPos": {
         "h": 3,
         "w": 3,
-        "x": 4,
+        "x": 3,
         "y": 0
       },
-      "id": 26,
+      "id": 19,
       "interval": null,
       "links": [],
       "mappingType": 1,
@@ -233,7 +233,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "max(service_center_db_domain_total{job=\"service-center\"})",
+          "expr": "max(service_center_db_backend_total{job=\"service-center\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 2,
@@ -241,7 +241,7 @@
         }
       ],
       "thresholds": "",
-      "title": "Domain Volume",
+      "title": "Backends",
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -263,7 +263,7 @@
       "gridPos": {
         "h": 5,
         "w": 8,
-        "x": 7,
+        "x": 6,
         "y": 0
       },
       "height": "",
@@ -358,7 +358,7 @@
       "gridPos": {
         "h": 5,
         "w": 9,
-        "x": 15,
+        "x": 14,
         "y": 0
       },
       "id": 25,
@@ -412,11 +412,11 @@
       },
       "gridPos": {
         "h": 3,
-        "w": 4,
+        "w": 3,
         "x": 0,
         "y": 3
       },
-      "id": 19,
+      "id": 26,
       "interval": null,
       "links": [],
       "mappingType": 1,
@@ -454,7 +454,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "max(service_center_db_backend_total{job=\"service-center\"})",
+          "expr": "max(service_center_db_domain_total{job=\"service-center\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 2,
@@ -462,7 +462,7 @@
         }
       ],
       "thresholds": "",
-      "title": "Backends",
+      "title": "Domain Volume",
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -495,10 +495,10 @@
       "gridPos": {
         "h": 3,
         "w": 3,
-        "x": 4,
+        "x": 3,
         "y": 3
       },
-      "id": 20,
+      "id": 21,
       "interval": null,
       "links": [],
       "mappingType": 1,
@@ -533,10 +533,10 @@
         "lineColor": "rgb(31, 120, 193)",
         "show": false
       },
-      "tableColumn": "",
+      "tableColumn": "Value",
       "targets": [
         {
-          "expr": "max(sum(service_center_db_service_total{job=\"service-center\"}) by (instance))",
+          "expr": "max(service_center_db_instance_total{job=\"service-center\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 2,
@@ -544,7 +544,7 @@
         }
       ],
       "thresholds": "",
-      "title": "Microservice Volume",
+      "title": "Instance Volume",
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -566,7 +566,7 @@
       "gridPos": {
         "h": 5,
         "w": 8,
-        "x": 7,
+        "x": 6,
         "y": 5
       },
       "height": "",
@@ -663,7 +663,7 @@
       "gridPos": {
         "h": 5,
         "w": 3,
-        "x": 15,
+        "x": 14,
         "y": 5
       },
       "id": 31,
@@ -712,7 +712,7 @@
       "gridPos": {
         "h": 5,
         "w": 3,
-        "x": 18,
+        "x": 17,
         "y": 5
       },
       "id": 32,
@@ -761,7 +761,7 @@
       "gridPos": {
         "h": 5,
         "w": 3,
-        "x": 21,
+        "x": 20,
         "y": 5
       },
       "id": 33,
@@ -816,10 +816,92 @@
       "gridPos": {
         "h": 3,
         "w": 3,
-        "x": 4,
+        "x": 0,
         "y": 6
       },
-      "id": 21,
+      "id": 20,
+      "interval": null,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [
+        {
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "minSpan": 4,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "postfix": "",
+      "postfixFontSize": "50%",
+      "prefix": "",
+      "prefixFontSize": "50%",
+      "rangeMaps": [
+        {
+          "from": "null",
+          "text": "N/A",
+          "to": "null"
+        }
+      ],
+      "sparkline": {
+        "fillColor": "rgba(31, 118, 189, 0.18)",
+        "full": true,
+        "lineColor": "rgb(31, 120, 193)",
+        "show": false
+      },
+      "tableColumn": "",
+      "targets": [
+        {
+          "expr": "max(sum(service_center_db_service_total{job=\"service-center\"}) by (instance))",
+          "format": "time_series",
+          "instant": false,
+          "intervalFactor": 2,
+          "refId": "A"
+        }
+      ],
+      "thresholds": "",
+      "title": "Microservice Volume",
+      "type": "singlestat",
+      "valueFontSize": "80%",
+      "valueMaps": [
+        {
+          "op": "=",
+          "text": "N/A",
+          "value": "null"
+        }
+      ],
+      "valueName": "current"
+    },
+    {
+      "cacheTimeout": null,
+      "colorBackground": false,
+      "colorValue": false,
+      "colors": [
+        "#299c46",
+        "rgba(237, 129, 40, 0.89)",
+        "#d44a3a"
+      ],
+      "datasource": "${DS_LOCAL}",
+      "format": "none",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 3,
+        "x": 3,
+        "y": 6
+      },
+      "id": 39,
       "interval": null,
       "links": [],
       "mappingType": 1,
@@ -857,7 +939,7 @@
       "tableColumn": "Value",
       "targets": [
         {
-          "expr": "max(service_center_db_instance_total{job=\"service-center\"})",
+          "expr": "max(service_center_db_schema_total{job=\"service-center\"})",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 2,
@@ -865,7 +947,7 @@
         }
       ],
       "thresholds": "",
-      "title": "Instance Volume",
+      "title": "Schema Volume",
       "type": "singlestat",
       "valueFontSize": "80%",
       "valueMaps": [
@@ -1403,6 +1485,96 @@
       }
     },
     {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "${DS_LOCAL}",
+      "fill": 1,
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 8,
+        "y": 19
+      },
+      "height": "",
+      "id": 34,
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "max": true,
+        "min": true,
+        "show": true,
+        "sort": null,
+        "sortDesc": null,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "minSpan": 4,
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "max(avg_over_time(service_center_db_heartbeat_durations_microseconds{job=\"service-center\"}[1m])) by (status)",
+          "format": "time_series",
+          "instant": false,
+          "intervalFactor": 2,
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Heartbeat Latency",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "µs",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
       "content": "<div class=\"text-center dashboard-header\">\n  <span>INSTANCE METRICS</span>\n</div>\n",
       "gridPos": {
         "h": 3,
@@ -1569,6 +1741,13 @@
           "intervalFactor": 2,
           "legendFormat": "{{instance}}> {{method}} {{api}}",
           "refId": "A"
+        },
+        {
+          "expr": "sum(irate(service_center_db_heartbeat_total{job=\"service-center\"}[1m])) by (instance)",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "{{instance}}> RENEW Lease",
+          "refId": "B"
         }
       ],
       "thresholds": [],
@@ -1667,7 +1846,7 @@
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Read Latency",
+      "title": "API Read Latency",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -1756,12 +1935,409 @@
           "intervalFactor": 2,
           "legendFormat": "{{instance}}> {{method}} {{api}}",
           "refId": "A"
+        },
+        {
+          "expr": "max(avg_over_time(service_center_db_heartbeat_durations_microseconds{job=\"service-center\"}[1m])) by (instance)",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "{{instance}}> RENEW Lease",
+          "refId": "B"
         }
       ],
       "thresholds": [],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Write Latency",
+      "title": "API Write Latency",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "transparent": false,
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "µs",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "${DS_LOCAL}",
+      "fill": 1,
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 0,
+        "y": 34
+      },
+      "height": "",
+      "id": 35,
+      "legend": {
+        "alignAsTable": false,
+        "avg": false,
+        "current": false,
+        "hideEmpty": true,
+        "hideZero": true,
+        "max": false,
+        "min": false,
+        "rightSide": false,
+        "show": false,
+        "sort": "avg",
+        "sortDesc": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "minSpan": 4,
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum(service_center_notify_publish_total{job=\"service-center\"}) by (instance,source)",
+          "format": "time_series",
+          "instant": false,
+          "intervalFactor": 2,
+          "legendFormat": "{{instance}}> {{source}}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(service_center_db_backend_event_total{job=\"service-center\"}) by (instance)",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "{{instance}}> BACKEND",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Events Total",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "transparent": false,
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": 0,
+          "format": "none",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "${DS_LOCAL}",
+      "fill": 1,
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 6,
+        "y": 34
+      },
+      "height": "",
+      "id": 36,
+      "legend": {
+        "alignAsTable": false,
+        "avg": true,
+        "current": false,
+        "hideEmpty": true,
+        "hideZero": true,
+        "max": true,
+        "min": true,
+        "rightSide": true,
+        "show": false,
+        "sort": "avg",
+        "sortDesc": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "minSpan": 4,
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "max(avg_over_time(service_center_notify_publish_durations_microseconds{job=\"service-center\"}[1m])) by (instance,source)",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "{{instance}}> {{source}}",
+          "refId": "B"
+        },
+        {
+          "expr": "max(avg_over_time(service_center_db_backend_event_durations_microseconds{job=\"service-center\"}[1m])) by (instance)",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "{{instance}}> BACKEND",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Events Latency",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "transparent": false,
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "µs",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "${DS_LOCAL}",
+      "fill": 1,
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 12,
+        "y": 34
+      },
+      "height": "",
+      "id": 37,
+      "legend": {
+        "alignAsTable": false,
+        "avg": false,
+        "current": false,
+        "hideEmpty": true,
+        "hideZero": true,
+        "max": false,
+        "min": false,
+        "rightSide": false,
+        "show": false,
+        "sort": "avg",
+        "sortDesc": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "minSpan": 4,
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum(service_center_db_backend_operation_total{job=\"service-center\"}) by (instance,operation)",
+          "format": "time_series",
+          "instant": false,
+          "intervalFactor": 2,
+          "legendFormat": "{{instance}}> {{operation}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Backend Operation Total",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "transparent": false,
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": 0,
+          "format": "none",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "${DS_LOCAL}",
+      "fill": 1,
+      "gridPos": {
+        "h": 6,
+        "w": 6,
+        "x": 18,
+        "y": 34
+      },
+      "height": "",
+      "id": 38,
+      "legend": {
+        "alignAsTable": false,
+        "avg": true,
+        "current": false,
+        "hideEmpty": true,
+        "hideZero": true,
+        "max": true,
+        "min": true,
+        "rightSide": true,
+        "show": false,
+        "sort": "avg",
+        "sortDesc": true,
+        "total": false,
+        "values": true
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "minSpan": 4,
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 5,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "max(avg_over_time(service_center_db_backend_operation_durations_microseconds{job=\"service-center\"}[1m])) by (instance,operation)",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "{{instance}}> {{operation}}",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Backend Operation Latency",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -1805,7 +2381,7 @@
         "h": 3,
         "w": 24,
         "x": 0,
-        "y": 34
+        "y": 40
       },
       "height": "1px",
       "id": 4,
@@ -1826,7 +2402,7 @@
         "h": 7,
         "w": 8,
         "x": 0,
-        "y": 37
+        "y": 43
       },
       "height": "",
       "id": 2,
@@ -1915,7 +2491,7 @@
         "h": 7,
         "w": 8,
         "x": 8,
-        "y": 37
+        "y": 43
       },
       "height": "",
       "id": 9,
@@ -2002,7 +2578,7 @@
         "h": 7,
         "w": 8,
         "x": 16,
-        "y": 37
+        "y": 43
       },
       "height": "",
       "id": 8,
@@ -2089,7 +2665,7 @@
         "h": 7,
         "w": 8,
         "x": 0,
-        "y": 44
+        "y": 50
       },
       "id": 5,
       "legend": {
@@ -2174,7 +2750,7 @@
         "h": 7,
         "w": 8,
         "x": 8,
-        "y": 44
+        "y": 50
       },
       "id": 6,
       "legend": {
@@ -2259,7 +2835,7 @@
         "h": 7,
         "w": 8,
         "x": 16,
-        "y": 44
+        "y": 50
       },
       "id": 14,
       "legend": {
@@ -2344,7 +2920,7 @@
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 51
+        "y": 57
       },
       "id": 7,
       "legend": {
@@ -2437,7 +3013,7 @@
     "list": []
   },
   "time": {
-    "from": "now-5m",
+    "from": "now-15m",
     "to": "now"
   },
   "timepicker": {
@@ -2468,5 +3044,5 @@
   "timezone": "",
   "title": "ServiceCenter",
   "uid": "Zg6NoHGiz",
-  "version": 47
+  "version": 15
 }

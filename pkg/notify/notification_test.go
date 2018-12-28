@@ -59,7 +59,7 @@ func TestGetNotifyService(t *testing.T) {
 	if err != nil {
 		t.Fatalf("TestGetNotifyService failed, %v", err)
 	}
-	j := &baseEvent{INSTANCE, "s", "g"}
+	j := &baseEvent{INSTANCE, "s", "g", time.Now()}
 	err = notifyService.Publish(j)
 	if err != nil {
 		t.Fatalf("TestGetNotifyService failed")

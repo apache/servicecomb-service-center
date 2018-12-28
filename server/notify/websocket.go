@@ -169,8 +169,11 @@ func (wh *WebSocket) Pick() interface{} {
 func (wh *WebSocket) HandleWatchWebSocketJob(o interface{}) {
 	defer wh.SetReady()
 
-	remoteAddr := wh.conn.RemoteAddr().String()
-	var message []byte
+	var (
+		job        *InstanceEvent
+		message    []byte
+		remoteAddr = wh.conn.RemoteAddr().String()
+	)
 
 	switch o.(type) {
 	case error:
@@ -195,7 +198,7 @@ func (wh *WebSocket) HandleWatchWebSocketJob(o interface{}) {
 		wh.heartbeat(websocket.PingMessage)
 		return
 	case *InstanceEvent:
-		job := o.(*InstanceEvent)
+		job = o.(*InstanceEvent)
 		resp := job.Response
 
 		providerFlag := fmt.Sprintf("%s/%s/%s", resp.Key.AppId, resp.Key.ServiceName, resp.Key.Version)
@@ -227,6 +230,9 @@ func (wh *WebSocket) HandleWatchWebSocketJob(o interface{}) {
 	}
 
 	err := wh.conn.WriteMessage(websocket.TextMessage, message)
+	if job != nil {
+		ReportPublishCompleted(INSTANCE.String(), err, job.CreateAt())
+	}
 	if err != nil {
 		log.Errorf(err, "watcher[%s] catch an err, subject: %s, group: %s",
 			remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
