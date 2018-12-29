@@ -37,6 +37,10 @@ type APIReporter struct {
 
 func (r *APIReporter) Report() {
 	details := metric.Gatherer.Records.Get(httpRequestTotal)
+	if details == nil {
+		return
+	}
+
 	defer func() { r.cache = details }()
 
 	if r.cache == nil {

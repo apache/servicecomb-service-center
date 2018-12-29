@@ -17,6 +17,7 @@
 package notify
 
 import (
+	simple "github.com/apache/servicecomb-service-center/pkg/time"
 	"testing"
 	"time"
 )
@@ -59,7 +60,7 @@ func TestGetNotifyService(t *testing.T) {
 	if err != nil {
 		t.Fatalf("TestGetNotifyService failed, %v", err)
 	}
-	j := &baseEvent{INSTANCE, "s", "g", time.Now()}
+	j := &baseEvent{INSTANCE, "s", "g", simple.FromTime(time.Now())}
 	err = notifyService.Publish(j)
 	if err != nil {
 		t.Fatalf("TestGetNotifyService failed")
