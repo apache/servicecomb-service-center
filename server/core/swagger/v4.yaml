@@ -1484,7 +1484,7 @@ paths:
           in: query
           required: true
           type: string
-          description: 操作
+          description: 操作，目前仅有“query”，表示查询
         - name: request
           in: body
           description: 查询微服务的请求结构体
