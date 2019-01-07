@@ -75,4 +75,7 @@ func TestSetSharedMode(t *testing.T) {
 	if !IsShared(&proto.MicroServiceKey{Tenant: "default/default", AppId: "default", ServiceName: "shared"}) {
 		t.Fatalf("TestSetSharedMode failed")
 	}
+	if !IsShared(&proto.MicroServiceKey{Tenant: "default/default", AppId: "default", Alias: "shared"}) {
+		t.Fatalf("TestSetSharedMode failed")
+	}
 }
