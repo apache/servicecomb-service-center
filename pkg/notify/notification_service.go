@@ -24,14 +24,31 @@ import (
 
 type NotifyService struct {
 	processors map[Type]*Processor
-	closeMux   sync.RWMutex
+	mux        sync.RWMutex
 	isClose    bool
 }
 
-func (s *NotifyService) init() {
-	for _, t := range Types() {
-		s.processors[t] = NewProcessor(t.String(), t.QueueSize())
+func (s *NotifyService) newProcessor(t Type) *Processor {
+	s.mux.RLock()
+	p, ok := s.processors[t]
+	if ok {
+		s.mux.RUnlock()
+		return p
 	}
+	s.mux.RUnlock()
+
+	s.mux.Lock()
+	p, ok = s.processors[t]
+	if ok {
+		s.mux.Unlock()
+		return p
+	}
+	p = NewProcessor(t.String(), t.QueueSize())
+	s.processors[t] = p
+	s.mux.Unlock()
+
+	p.Run()
+	return p
 }
 
 func (s *NotifyService) Start() {
@@ -39,14 +56,12 @@ func (s *NotifyService) Start() {
 		log.Warnf("notify service is already running")
 		return
 	}
-	s.closeMux.Lock()
+	s.mux.Lock()
 	s.isClose = false
-	s.closeMux.Unlock()
+	s.mux.Unlock()
 
 	// 错误subscriber清理
 	s.AddSubscriber(NewNotifyServiceHealthChecker())
-
-	s.startProcessors()
 
 	log.Debugf("notify service is started")
 }
@@ -58,12 +73,7 @@ func (s *NotifyService) AddSubscriber(n Subscriber) error {
 		return err
 	}
 
-	p, ok := s.processors[n.Type()]
-	if !ok {
-		err := errors.New("unknown subscribe type")
-		log.Errorf(err, "add %s subscriber[%s/%s] failed", n.Type(), n.Subject(), n.Group())
-		return err
-	}
+	p := s.newProcessor(n.Type())
 	n.SetService(s)
 	n.OnAccept()
 
@@ -72,26 +82,25 @@ func (s *NotifyService) AddSubscriber(n Subscriber) error {
 }
 
 func (s *NotifyService) RemoveSubscriber(n Subscriber) {
+	s.mux.RLock()
 	p, ok := s.processors[n.Type()]
 	if !ok {
+		s.mux.RUnlock()
 		return
 	}
+	s.mux.RUnlock()
 
 	p.Remove(n)
 	n.Close()
 }
 
-func (s *NotifyService) startProcessors() {
-	for _, p := range s.processors {
-		p.Run()
-	}
-}
-
 func (s *NotifyService) stopProcessors() {
+	s.mux.RLock()
 	for _, p := range s.processors {
 		p.Clear()
 		p.Stop()
 	}
+	s.mux.RUnlock()
 }
 
 //通知内容塞到队列里
@@ -100,18 +109,21 @@ func (s *NotifyService) Publish(job Event) error {
 		return errors.New("add notify job failed for server shutdown")
 	}
 
+	s.mux.RLock()
 	p, ok := s.processors[job.Type()]
 	if !ok {
+		s.mux.RUnlock()
 		return errors.New("Unknown job type")
 	}
+	s.mux.RUnlock()
 	p.Accept(job)
 	return nil
 }
 
 func (s *NotifyService) Closed() (b bool) {
-	s.closeMux.RLock()
+	s.mux.RLock()
 	b = s.isClose
-	s.closeMux.RUnlock()
+	s.mux.RUnlock()
 	return
 }
 
@@ -119,9 +131,9 @@ func (s *NotifyService) Stop() {
 	if s.Closed() {
 		return
 	}
-	s.closeMux.Lock()
+	s.mux.Lock()
 	s.isClose = true
-	s.closeMux.Unlock()
+	s.mux.Unlock()
 
 	s.stopProcessors()
 
@@ -129,10 +141,8 @@ func (s *NotifyService) Stop() {
 }
 
 func NewNotifyService() *NotifyService {
-	ns := &NotifyService{
+	return &NotifyService{
 		processors: make(map[Type]*Processor),
 		isClose:    true,
 	}
-	ns.init()
-	return ns
 }
