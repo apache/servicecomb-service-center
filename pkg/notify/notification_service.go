@@ -73,6 +73,12 @@ func (s *NotifyService) AddSubscriber(n Subscriber) error {
 		return err
 	}
 
+	if !n.Type().IsValid() {
+		err := errors.New("unknown subscribe type")
+		log.Errorf(err, "add %s subscriber[%s/%s] failed", n.Type(), n.Subject(), n.Group())
+		return err
+	}
+
 	p := s.newProcessor(n.Type())
 	n.SetService(s)
 	n.OnAccept()

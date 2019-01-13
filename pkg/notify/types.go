@@ -20,20 +20,24 @@ import "strconv"
 type Type int
 
 func (nt Type) String() string {
-	if int(nt) < len(typeNames) {
+	if nt.IsValid() {
 		return typeNames[nt]
 	}
 	return "Type" + strconv.Itoa(int(nt))
 }
 
 func (nt Type) QueueSize() (s int) {
-	if int(nt) < len(typeQueues) {
+	if nt.IsValid() {
 		s = typeQueues[nt]
 	}
 	if s <= 0 {
 		s = DefaultQueueSize
 	}
 	return
+}
+
+func (nt Type) IsValid() bool {
+	return nt >= 0 && int(nt) < len(typeQueues)
 }
 
 var typeNames = []string{

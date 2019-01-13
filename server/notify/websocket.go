@@ -41,7 +41,7 @@ type WebSocket struct {
 }
 
 func (wh *WebSocket) Init() error {
-	wh.ticker = time.NewTicker(HeartbeatTimeout)
+	wh.ticker = time.NewTicker(HeartbeatInterval)
 	wh.needPingWatcher = true
 	wh.free = make(chan struct{}, 1)
 	wh.closed = make(chan struct{})
@@ -71,12 +71,16 @@ func (wh *WebSocket) Init() error {
 	return nil
 }
 
-func (wh *WebSocket) Timeout() time.Duration {
+func (wh *WebSocket) ReadTimeout() time.Duration {
+	return ReadTimeout
+}
+
+func (wh *WebSocket) SendTimeout() time.Duration {
 	return SendTimeout
 }
 
 func (wh *WebSocket) heartbeat(messageType int) error {
-	err := wh.conn.WriteControl(messageType, []byte{}, time.Now().Add(wh.Timeout()))
+	err := wh.conn.WriteControl(messageType, []byte{}, time.Now().Add(wh.SendTimeout()))
 	if err != nil {
 		messageTypeName := "Ping"
 		if messageType == websocket.PongMessage {
@@ -94,6 +98,7 @@ func (wh *WebSocket) HandleWatchWebSocketControlMessage() {
 	remoteAddr := wh.conn.RemoteAddr().String()
 	// PING
 	wh.conn.SetPingHandler(func(message string) error {
+		defer wh.conn.SetReadDeadline(time.Now().Add(wh.ReadTimeout()))
 		if wh.needPingWatcher {
 			log.Infof("received 'Ping' message '%s' from watcher[%s], no longer send 'Ping' to it, subject: %s, group: %s",
 				message, remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
@@ -103,6 +108,7 @@ func (wh *WebSocket) HandleWatchWebSocketControlMessage() {
 	})
 	// PONG
 	wh.conn.SetPongHandler(func(message string) error {
+		defer wh.conn.SetReadDeadline(time.Now().Add(wh.ReadTimeout()))
 		log.Debugf("received 'Pong' message '%s' from watcher[%s], subject: %s, group: %s",
 			message, remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
 		return nil
@@ -114,6 +120,8 @@ func (wh *WebSocket) HandleWatchWebSocketControlMessage() {
 		return wh.sendClose(code, text)
 	})
 
+	wh.conn.SetReadLimit(ReadMaxBody)
+	wh.conn.SetReadDeadline(time.Now().Add(wh.ReadTimeout()))
 	for {
 		_, _, err := wh.conn.ReadMessage()
 		if err != nil {
@@ -130,7 +138,7 @@ func (wh *WebSocket) sendClose(code int, text string) error {
 	if code != websocket.CloseNoStatusReceived {
 		message = websocket.FormatCloseMessage(code, text)
 	}
-	err := wh.conn.WriteControl(websocket.CloseMessage, message, time.Now().Add(wh.Timeout()))
+	err := wh.conn.WriteControl(websocket.CloseMessage, message, time.Now().Add(wh.SendTimeout()))
 	if err != nil {
 		log.Errorf(err, "watcher[%s] catch an err, subject: %s, group: %s",
 			remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
@@ -229,7 +237,7 @@ func (wh *WebSocket) HandleWatchWebSocketJob(o interface{}) {
 	default:
 	}
 
-	err := wh.conn.WriteMessage(websocket.TextMessage, message)
+	err := wh.WriteMessage(message)
 	if job != nil {
 		ReportPublishCompleted(INSTANCE.String(), err, job.CreateAt())
 	}
@@ -237,6 +245,11 @@ func (wh *WebSocket) HandleWatchWebSocketJob(o interface{}) {
 		log.Errorf(err, "watcher[%s] catch an err, subject: %s, group: %s",
 			remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
 	}
+}
+
+func (wh *WebSocket) WriteMessage(message []byte) error {
+	wh.conn.SetWriteDeadline(time.Now().Add(wh.SendTimeout()))
+	return wh.conn.WriteMessage(websocket.TextMessage, message)
 }
 
 func (wh *WebSocket) Ready() <-chan struct{} {
