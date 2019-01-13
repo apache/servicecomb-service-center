@@ -17,16 +17,18 @@ package health
 
 import (
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/metric"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/procfs"
 	"golang.org/x/net/context"
-	"os"
+	"runtime"
 	"time"
 )
 
+const durationReportCPUUsage = 3 * time.Second
+
 var (
-	cpu = prometheus.NewGaugeVec(
+	cpuGauge = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: metric.FamilyName,
 			Subsystem: "process",
@@ -36,29 +38,25 @@ var (
 )
 
 func init() {
-	prometheus.MustRegister(cpu)
-	gopool.Go(func(ctx context.Context) {
-		var (
-			cpuTotal float64
-			cpuProc  float64
-		)
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(3 * time.Second):
-				p, _ := procfs.NewProc(os.Getpid())
-				stat, _ := procfs.NewStat()
-				pstat, _ := p.NewStat()
-				ct := stat.CPUTotal.User + stat.CPUTotal.Nice + stat.CPUTotal.System +
-					stat.CPUTotal.Idle + stat.CPUTotal.Iowait + stat.CPUTotal.IRQ +
-					stat.CPUTotal.SoftIRQ + stat.CPUTotal.Steal + stat.CPUTotal.Guest
-				pt := float64(pstat.UTime+pstat.STime+pstat.CUTime+pstat.CSTime) / 100
-				cpu.WithLabelValues(metric.InstanceName()).Set(
-					(pt - cpuProc) * float64(len(stat.CPU)) / (ct - cpuTotal))
-				cpuTotal, cpuProc = ct, pt
-			}
+	prometheus.MustRegister(cpuGauge)
+	gopool.Go(AutoReportCPUUsage)
+}
 
+func AutoReportCPUUsage(ctx context.Context) {
+	var (
+		cpuTotal float64
+		cpuProc  float64
+		cpus     = runtime.NumCPU()
+	)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(durationReportCPUUsage):
+			pt, ct := util.GetProcCPUUsage()
+			cpuGauge.WithLabelValues(metric.InstanceName()).Set(
+				(pt - cpuProc) * float64(cpus) / (ct - cpuTotal))
+			cpuTotal, cpuProc = ct, pt
 		}
-	})
+	}
 }

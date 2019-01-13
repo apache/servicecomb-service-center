@@ -27,14 +27,14 @@ import (
 )
 
 func HandleWatchJob(watcher *InstanceEventListWatcher, stream pb.ServiceInstanceCtrl_WatchServer) (err error) {
-	timer := time.NewTimer(HeartbeatTimeout)
+	timer := time.NewTimer(HeartbeatInterval)
 	defer timer.Stop()
 	for {
 		select {
 		case <-stream.Context().Done():
 			return
 		case <-timer.C:
-			timer.Reset(HeartbeatTimeout)
+			timer.Reset(HeartbeatInterval)
 
 			// TODO grpc 长连接心跳？
 		case job := <-watcher.Job:
@@ -57,7 +57,7 @@ func HandleWatchJob(watcher *InstanceEventListWatcher, stream pb.ServiceInstance
 				return
 			}
 
-			util.ResetTimer(timer, HeartbeatTimeout)
+			util.ResetTimer(timer, HeartbeatInterval)
 		}
 	}
 }
