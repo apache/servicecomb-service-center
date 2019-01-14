@@ -13,15 +13,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package notify
+package util
 
-import "time"
+import "testing"
 
-const (
-	AddJobTimeout          = 1 * time.Second
-	HeartbeatInterval      = 30 * time.Second
-	ReadTimeout            = HeartbeatInterval * 4
-	SendTimeout            = 5 * time.Second
-	InstanceEventQueueSize = 5000
-	ReadMaxBody            = 64
-)
+func TestGetProcCPUUsage(t *testing.T) {
+	p, c := GetProcCPUUsage()
+	if p < 0 || c <= 0 || p >= c {
+		t.Fatal("TestGetProcCPUUsage", p, c)
+	}
+}

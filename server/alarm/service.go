@@ -36,7 +36,7 @@ type AlarmService struct {
 
 func (ac *AlarmService) Raise(id model.ID, fields ...model.Field) error {
 	ae := &model.AlarmEvent{
-		Event:  nf.NewEvent(nf.NOTIFTY, Subject, ""),
+		Event:  nf.NewEvent(ALARM, Subject, ""),
 		Status: Activated,
 		Id:     id,
 		Fields: util.NewJSONObject(),
@@ -49,7 +49,7 @@ func (ac *AlarmService) Raise(id model.ID, fields ...model.Field) error {
 
 func (ac *AlarmService) Clear(id model.ID) error {
 	ae := &model.AlarmEvent{
-		Event:  nf.NewEvent(nf.NOTIFTY, Subject, ""),
+		Event:  nf.NewEvent(ALARM, Subject, ""),
 		Status: Cleared,
 		Id:     id,
 	}
@@ -87,7 +87,7 @@ func (ac *AlarmService) OnMessage(evt nf.Event) {
 
 func NewAlarmService() *AlarmService {
 	c := &AlarmService{
-		Subscriber: nf.NewSubscriber(nf.NOTIFTY, Subject, Group),
+		Subscriber: nf.NewSubscriber(ALARM, Subject, Group),
 	}
 	notify.NotifyCenter().AddSubscriber(c)
 	return c

@@ -39,8 +39,9 @@ const (
 	REGISTRY_PROJECT        = "default"
 	REGISTRY_DOMAIN_PROJECT = "default/default"
 
-	REGISTRY_APP_ID       = "default"
-	REGISTRY_SERVICE_NAME = "SERVICECENTER"
+	REGISTRY_APP_ID        = "default"
+	REGISTRY_SERVICE_NAME  = "SERVICECENTER"
+	REGISTRY_SERVICE_ALIAS = "SERVICECENTER"
 
 	REGISTRY_DEFAULT_LEASE_RENEWALINTERVAL int32 = 30
 	REGISTRY_DEFAULT_LEASE_RETRYTIMES      int32 = 3
@@ -60,6 +61,7 @@ func prepareSelfRegistration() {
 		Environment: pb.ENV_PROD,
 		AppId:       REGISTRY_APP_ID,
 		ServiceName: REGISTRY_SERVICE_NAME,
+		Alias:       REGISTRY_SERVICE_ALIAS,
 		Version:     version.Ver().Version,
 		Status:      pb.MS_UP,
 		Level:       "BACK",
@@ -114,6 +116,9 @@ func IsShared(key *pb.MicroServiceKey) bool {
 		return false
 	}
 	_, ok := sharedServiceNames[key.ServiceName]
+	if !ok {
+		_, ok = sharedServiceNames[key.Alias]
+	}
 	return ok
 }
 

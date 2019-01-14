@@ -17,6 +17,7 @@
 package util
 
 import (
+	"github.com/prometheus/procfs"
 	"os"
 	"strconv"
 	"unsafe"
@@ -71,4 +72,15 @@ func GetEnvString(name string, def string) string {
 		return env
 	}
 	return def
+}
+
+func GetProcCPUUsage() (pt float64, ct float64) {
+	p, _ := procfs.NewProc(os.Getpid())
+	stat, _ := procfs.NewStat()
+	pstat, _ := p.NewStat()
+	ct = stat.CPUTotal.User + stat.CPUTotal.Nice + stat.CPUTotal.System +
+		stat.CPUTotal.Idle + stat.CPUTotal.Iowait + stat.CPUTotal.IRQ +
+		stat.CPUTotal.SoftIRQ + stat.CPUTotal.Steal + stat.CPUTotal.Guest
+	pt = float64(pstat.UTime+pstat.STime+pstat.CUTime+pstat.CSTime) / 100
+	return
 }
