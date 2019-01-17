@@ -45,21 +45,22 @@ func GetSSLPath(path string) string {
 	return os.ExpandEnv(filepath.Join("$SSL_ROOT", path))
 }
 
-func GetPassphase() (pass string, decrypt string) {
+func GetPassphase() (decrypt string) {
 	passphase, err := ioutil.ReadFile(GetSSLPath("cert_pwd"))
 	if err != nil {
 		log.Errorf(err, "read file cert_pwd failed.")
 	}
 
-	pass = util.BytesToStringWithNoCopy(passphase)
-	if len(pass) > 0 {
-		decrypt, err = plugin.Plugins().Cipher().Decrypt(pass)
+	decrypt = util.BytesToStringWithNoCopy(passphase)
+	if len(decrypt) > 0 {
+		tmp, err := plugin.Plugins().Cipher().Decrypt(decrypt)
 		if err != nil {
-			log.Errorf(err, "decrypt ssl passphase(%d) failed.", len(pass))
-			decrypt = ""
+			log.Errorf(err, "decrypt ssl passphase(%d) failed.", len(decrypt))
+		} else {
+			decrypt = tmp
 		}
 	}
-	return pass, decrypt
+	return decrypt
 }
 
 func GetClientTLSConfig() (_ *tls.Config, err error) {
@@ -69,7 +70,7 @@ func GetClientTLSConfig() (_ *tls.Config, err error) {
 		return clientTLSConfig, nil
 	}
 
-	passphase, decrypt := GetPassphase()
+	passphase := GetPassphase()
 
 	opts := append(tlsutil.DefaultClientTLSOptions(),
 		tlsutil.WithVerifyPeer(core.ServerInfo.Config.SslVerifyPeer),
@@ -79,7 +80,7 @@ func GetClientTLSConfig() (_ *tls.Config, err error) {
 				beego.AppConfig.DefaultString("ssl_client_min_version", core.ServerInfo.Config.SslMinVersion)),
 			tls.VersionTLS12),
 		tlsutil.WithCipherSuits(tlsutil.ParseDefaultSSLCipherSuites(beego.AppConfig.String("ssl_client_ciphers"))),
-		tlsutil.WithKeyPass(decrypt),
+		tlsutil.WithKeyPass(passphase),
 		tlsutil.WithCA(GetSSLPath("trust.cer")),
 		tlsutil.WithCert(GetSSLPath("server.cer")),
 		tlsutil.WithKey(GetSSLPath("server_key.pem")),
@@ -103,13 +104,13 @@ func GetServerTLSConfig() (_ *tls.Config, err error) {
 		return serverTLSConfig, nil
 	}
 
-	passphase, decrypt := GetPassphase()
+	passphase := GetPassphase()
 
 	opts := append(tlsutil.DefaultServerTLSOptions(),
 		tlsutil.WithVerifyPeer(core.ServerInfo.Config.SslVerifyPeer),
 		tlsutil.WithVersion(tlsutil.ParseSSLProtocol(core.ServerInfo.Config.SslMinVersion), tls.VersionTLS12),
 		tlsutil.WithCipherSuits(tlsutil.ParseDefaultSSLCipherSuites(core.ServerInfo.Config.SslCiphers)),
-		tlsutil.WithKeyPass(decrypt),
+		tlsutil.WithKeyPass(passphase),
 		tlsutil.WithCA(GetSSLPath("trust.cer")),
 		tlsutil.WithCert(GetSSLPath("server.cer")),
 		tlsutil.WithKey(GetSSLPath("server_key.pem")),
