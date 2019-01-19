@@ -24,7 +24,7 @@ require (
 	github.com/cheggaaa/pb v1.0.25
 	github.com/cockroachdb/cmux v0.0.0-20170110192607-30d10be49292 // indirect
 	github.com/coreos/bbolt v1.3.1-coreos.6 // indirect
-	github.com/coreos/etcd v3.3.10+incompatible
+	github.com/coreos/etcd v3.3.6+incompatible
 	github.com/coreos/go-semver v0.2.0 // indirect
 	github.com/coreos/go-systemd v0.0.0-20180828140353-eee3db372b31 // indirect
 	github.com/coreos/pkg v0.0.0-20180108230652-97fdf19511ea // v4

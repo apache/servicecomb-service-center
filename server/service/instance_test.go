@@ -39,7 +39,6 @@ var _ = Describe("'Instance' service", func() {
 	Describe("execute 'register' operartion", func() {
 		var (
 			serviceId1 string
-			serviceId2 string
 		)
 
 		It("should be passed", func() {
@@ -55,19 +54,6 @@ var _ = Describe("'Instance' service", func() {
 			Expect(err).To(BeNil())
 			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
 			serviceId1 = respCreate.ServiceId
-
-			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-				Service: &pb.MicroService{
-					ServiceName: "create_instance_service",
-					AppId:       "create_instance",
-					Version:     "1.0.1",
-					Level:       "FRONT",
-					Status:      pb.MS_UP,
-				},
-			})
-			Expect(err).To(BeNil())
-			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
-			serviceId2 = respCreate.ServiceId
 		})
 
 		Context("when register a instance", func() {
@@ -564,14 +550,10 @@ var _ = Describe("'Instance' service", func() {
 	})
 
 	Describe("execute 'clusterHealth' operartion", func() {
-		var (
-			scServiceId string
-		)
 
 		It("should be passed", func() {
 			resp, err := serviceResource.Create(getContext(), core.CreateServiceRequest())
 			Expect(err).To(BeNil())
-			scServiceId = resp.ServiceId
 			Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 		})
 
