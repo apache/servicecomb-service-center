@@ -26,13 +26,14 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
+	"github.com/coreos/etcd/compactor"
 	"github.com/coreos/etcd/embed"
+	"github.com/coreos/etcd/etcdserver"
 	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
 	"github.com/coreos/etcd/etcdserver/etcdserverpb"
 	"github.com/coreos/etcd/lease"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	"net/url"
 	"strings"
 	"time"
@@ -108,11 +109,11 @@ func (s *EtcdEmbed) toPutRequest(op registry.PluginOp) *etcdserverpb.PutRequest 
 		valueBytes = op.Value
 	}
 	return &etcdserverpb.PutRequest{
-		Key:    op.Key,
-		Value:  valueBytes,
-		PrevKv: op.PrevKV,
-		Lease:  op.Lease,
-		// TODO WithIgnoreLease support
+		Key:         op.Key,
+		Value:       valueBytes,
+		PrevKv:      op.PrevKV,
+		Lease:       op.Lease,
+		IgnoreLease: op.IgnoreLease,
 	}
 }
 
@@ -339,6 +340,11 @@ func (s *EtcdEmbed) TxnWithCmp(ctx context.Context, success []registry.PluginOp,
 	}
 	resp, err := s.Embed.Server.Txn(otCtx, txnRequest)
 	if err != nil {
+		if err.Error() == rpctypes.ErrKeyNotFound.Error() {
+			// etcd return ErrKeyNotFound if key does not exist and
+			// the PUT options contain WithIgnoreLease
+			return &registry.PluginResponse{Succeeded: false}, nil
+		}
 		return nil, err
 	}
 
@@ -376,7 +382,7 @@ func (s *EtcdEmbed) LeaseRenew(ctx context.Context, leaseID int64) (int64, error
 	defer cancel()
 	ttl, err := s.Embed.Server.LeaseRenew(otCtx, lease.LeaseID(leaseID))
 	if err != nil {
-		if err.Error() == grpc.ErrorDesc(rpctypes.ErrGRPCLeaseNotFound) {
+		if err.Error() == rpctypes.ErrLeaseNotFound.Error() {
 			return 0, err
 		}
 		return 0, errorsEx.RaiseError(err)
@@ -391,7 +397,7 @@ func (s *EtcdEmbed) LeaseRevoke(ctx context.Context, leaseID int64) error {
 		ID: leaseID,
 	})
 	if err != nil {
-		if err.Error() == grpc.ErrorDesc(rpctypes.ErrGRPCLeaseNotFound) {
+		if err.Error() == rpctypes.ErrLeaseNotFound.Error() {
 			return err
 		}
 		return errorsEx.RaiseError(err)
@@ -549,14 +555,15 @@ func getEmbedInstance() mgr.PluginInstance {
 	}
 
 	serverCfg := embed.NewConfig()
+	serverCfg.EnableV2 = false
+	serverCfg.EnablePprof = false
+	serverCfg.QuotaBackendBytes = etcdserver.MaxQuotaBytes
 	// TODO 不支持使用TLS通信
 	// 存储目录，相对于工作目录
 	serverCfg.Dir = "data"
-
 	// 集群支持
 	serverCfg.Name = hostName
 	serverCfg.InitialCluster = registry.Configuration().ClusterAddresses
-
 	// 1. 管理端口
 	urls, err := parseURL(mgrAddrs)
 	if err != nil {
@@ -566,16 +573,15 @@ func getEmbedInstance() mgr.PluginInstance {
 	}
 	serverCfg.LPUrls = urls
 	serverCfg.APUrls = urls
-
 	// 2. 业务端口，关闭默认2379端口
 	serverCfg.LCUrls = nil
 	serverCfg.ACUrls = nil
+	// 自动压缩历史, 1 hour
+	serverCfg.AutoCompactionMode = compactor.ModePeriodic
+	serverCfg.AutoCompactionRetention = "1h"
 
 	log.Debugf("--initial-cluster %s --initial-advertise-peer-urls %s --listen-peer-urls %s",
 		serverCfg.InitialCluster, mgrAddrs, mgrAddrs)
-
-	// 自动压缩历史, 1 hour
-	serverCfg.AutoCompactionRetention = 1
 
 	etcd, err := embed.StartEtcd(serverCfg)
 	if err != nil {

@@ -32,7 +32,6 @@ import (
 	"github.com/coreos/etcd/etcdserver/etcdserverpb"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 	"net/url"
 	"strconv"
 	"strings"
@@ -101,10 +100,10 @@ func (c *EtcdClient) Initialize() (err error) {
 
 func (c *EtcdClient) newClient() (*clientv3.Client, error) {
 	client, err := clientv3.New(clientv3.Config{
-		Endpoints:        c.Endpoints,
-		DialTimeout:      c.DialTimeout,
-		TLS:              c.TLSConfig,
-		AutoSyncInterval: 0,
+		Endpoints:          c.Endpoints,
+		DialTimeout:        c.DialTimeout,
+		TLS:                c.TLSConfig,
+		MaxCallRecvMsgSize: maxRecvMsgSize,
 	})
 	defer func() {
 		if err != nil {
@@ -269,7 +268,7 @@ func (c *EtcdClient) toPutRequest(op registry.PluginOp) []clientv3.OpOption {
 		opts = append(opts, clientv3.WithLease(clientv3.LeaseID(op.Lease)))
 	}
 	if op.IgnoreLease {
-		// TODO WithIgnoreLease support
+		opts = append(opts, clientv3.WithIgnoreLease())
 	}
 	return opts
 }
@@ -565,6 +564,11 @@ func (c *EtcdClient) TxnWithCmp(ctx context.Context, success []registry.PluginOp
 	}
 	resp, err := txn.Commit()
 	if err != nil {
+		if err.Error() == rpctypes.ErrKeyNotFound.Error() {
+			// etcd return ErrKeyNotFound if key does not exist and
+			// the PUT options contain WithIgnoreLease
+			return &registry.PluginResponse{Succeeded: false}, nil
+		}
 		return nil, err
 	}
 	log.LogNilOrWarnf(start, "registry client txn {if(%v): %s, then: %d, else: %d}, rev: %d",
@@ -622,7 +626,7 @@ func (c *EtcdClient) LeaseRenew(ctx context.Context, leaseID int64) (int64, erro
 
 	etcdResp, err := c.Client.KeepAliveOnce(otCtx, clientv3.LeaseID(leaseID))
 	if err != nil {
-		if err.Error() == grpc.ErrorDesc(rpctypes.ErrGRPCLeaseNotFound) {
+		if err.Error() == rpctypes.ErrLeaseNotFound.Error() {
 			return 0, err
 		}
 		return 0, errorsEx.RaiseError(err)
@@ -646,7 +650,7 @@ func (c *EtcdClient) LeaseRevoke(ctx context.Context, leaseID int64) error {
 
 	_, err = c.Client.Revoke(otCtx, clientv3.LeaseID(leaseID))
 	if err != nil {
-		if err.Error() == grpc.ErrorDesc(rpctypes.ErrGRPCLeaseNotFound) {
+		if err.Error() == rpctypes.ErrLeaseNotFound.Error() {
 			return err
 		}
 		return errorsEx.RaiseError(err)
