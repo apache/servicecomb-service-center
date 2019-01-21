@@ -28,7 +28,7 @@ func TestClientLogger_Print(t *testing.T) {
 			defer func() {
 				recover()
 			}()
-			l.Fatalln("%s", "b")
+			l.Fatalln("a", "b")
 		}()
 		l.Fatalf("%s", "b")
 	}()

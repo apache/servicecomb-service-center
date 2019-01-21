@@ -6,11 +6,10 @@ services:
   - docker
 
 go:
-  - 1.9.2
+  - 1.11
 
 before_install:
   - go get github.com/mattn/goveralls
-  - curl https://glide.sh/get | sh
   - curl -sL https://deb.nodesource.com/setup_8.x | sudo bash -
   - sudo apt-get install -y nodejs
   - npm install -g bower
@@ -20,7 +19,8 @@ before_script:
   - rsync -az ${TRAVIS_BUILD_DIR}/ $HOME/gopath/src/github.com/apache/servicecomb-service-center/
   - export TRAVIS_BUILD_DIR=$HOME/gopath/src/github.com/apache/servicecomb-service-center
   - cd $HOME/gopath/src/github.com/apache/servicecomb-service-center
-  - glide install
+  - GO111MODULE=on go mod download
+  - GO111MODULE=on go mod vendor
   
 install: true
 

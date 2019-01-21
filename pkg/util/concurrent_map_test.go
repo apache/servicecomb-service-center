@@ -110,13 +110,12 @@ func TestConcurrentMap_Fetch(t *testing.T) {
 }
 
 func BenchmarkConcurrentMap_Get(b *testing.B) {
-	var v interface{}
 	cm := ConcurrentMap{}
 	cm.Put("a", "1")
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			v, _ = cm.Get("a")
+			_, _ = cm.Get("a")
 		}
 	})
 	b.ReportAllocs()

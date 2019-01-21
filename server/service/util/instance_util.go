@@ -210,14 +210,6 @@ func queryServiceInstancesKvs(ctx context.Context, serviceId string, rev int64) 
 }
 
 func UpdateInstance(ctx context.Context, domainProject string, instance *pb.MicroServiceInstance) *scerr.Error {
-	leaseID, err := GetLeaseId(ctx, domainProject, instance.ServiceId, instance.InstanceId)
-	if err != nil {
-		return scerr.NewError(scerr.ErrInternal, err.Error())
-	}
-	if leaseID == -1 {
-		return scerr.NewError(scerr.ErrInstanceNotExists, "Instance's leaseId not exist.")
-	}
-
 	instance.ModTimestamp = strconv.FormatInt(time.Now().Unix(), 10)
 	data, err := json.Marshal(instance)
 	if err != nil {
@@ -225,12 +217,11 @@ func UpdateInstance(ctx context.Context, domainProject string, instance *pb.Micr
 	}
 
 	key := apt.GenerateInstanceKey(domainProject, instance.ServiceId, instance.InstanceId)
-
 	resp, err := backend.Registry().TxnWithCmp(ctx,
 		[]registry.PluginOp{registry.OpPut(
 			registry.WithStrKey(key),
 			registry.WithValue(data),
-			registry.WithLease(leaseID))},
+			registry.WithIgnoreLease())},
 		[]registry.CompareOp{registry.OpCmp(
 			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, instance.ServiceId))),
 			registry.CMP_NOT_EQUAL, 0)},
@@ -239,7 +230,7 @@ func UpdateInstance(ctx context.Context, domainProject string, instance *pb.Micr
 		return scerr.NewError(scerr.ErrUnavailableBackend, err.Error())
 	}
 	if !resp.Succeeded {
-		return scerr.NewError(scerr.ErrServiceNotExists, "Service does not exist.")
+		return scerr.NewError(scerr.ErrInstanceNotExists, "Instance does not exist.")
 	}
 	return nil
 }
