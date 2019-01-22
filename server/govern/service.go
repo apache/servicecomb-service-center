@@ -63,7 +63,7 @@ func (governService *GovernService) GetServicesInfo(ctx context.Context, in *pb.
 	var st *pb.Statistics
 	if _, ok := optionMap["statistics"]; ok {
 		var err error
-		st, err = statistics(ctx)
+		st, err = statistics(ctx, in.WithShared)
 		if err != nil {
 			return &pb.GetServicesInfoResponse{
 				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
@@ -89,6 +89,9 @@ func (governService *GovernService) GetServicesInfo(ctx context.Context, in *pb.
 	allServiceDetails := make([]*pb.ServiceDetail, 0, len(services))
 	domainProject := util.ParseDomainProject(ctx)
 	for _, service := range services {
+		if !in.WithShared && apt.IsShared(pb.MicroServiceToKey(domainProject, service)) {
+			continue
+		}
 		if len(in.AppId) > 0 {
 			if in.AppId != service.AppId {
 				continue
@@ -210,6 +213,9 @@ func (governService *GovernService) GetApplications(ctx context.Context, in *pb.
 	appMap := make(map[string]struct{}, l)
 	for _, kv := range resp.Kvs {
 		key := apt.GetInfoFromSvcIndexKV(kv.Key)
+		if !in.WithShared && apt.IsShared(key) {
+			continue
+		}
 		if _, ok := appMap[key.AppId]; ok {
 			continue
 		}
@@ -352,7 +358,7 @@ func getServiceDetailUtil(ctx context.Context, serviceDetailOpt ServiceDetailOpt
 	return serviceDetail, nil
 }
 
-func statistics(ctx context.Context) (*pb.Statistics, error) {
+func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 	result := &pb.Statistics{
 		Services:  &pb.StService{},
 		Instances: &pb.StInstance{},
@@ -376,6 +382,9 @@ func statistics(ctx context.Context) (*pb.Statistics, error) {
 	svcIdToNonVerKey := make(map[string]string, respSvc.Count)
 	for _, kv := range respSvc.Kvs {
 		key := apt.GetInfoFromSvcIndexKV(kv.Key)
+		if !withShared && apt.IsShared(key) {
+			continue
+		}
 		if _, ok := app[key.AppId]; !ok {
 			app[key.AppId] = struct{}{}
 		}
@@ -393,7 +402,7 @@ func statistics(ctx context.Context) (*pb.Statistics, error) {
 
 	respGetInstanceCountByDomain := make(chan GetInstanceCountByDomainResponse, 1)
 	gopool.Go(func(_ context.Context) {
-		getInstanceCountByDomain(ctx, respGetInstanceCountByDomain)
+		getInstanceCountByDomain(ctx, svcIdToNonVerKey, respGetInstanceCountByDomain)
 	})
 
 	// instance
@@ -414,11 +423,11 @@ func statistics(ctx context.Context) (*pb.Statistics, error) {
 		if !ok {
 			continue
 		}
+		result.Instances.Count++
 		if _, ok := onlineServices[key]; !ok {
 			onlineServices[key] = struct{}{}
 		}
 	}
-	result.Instances.Count = respIns.Count
 	result.Services.OnlineCount = int64(len(onlineServices))
 
 	data := <-respGetInstanceCountByDomain
@@ -427,7 +436,7 @@ func statistics(ctx context.Context) (*pb.Statistics, error) {
 		return nil, data.err
 	}
 	result.Instances.CountByDomain = data.countByDomain
-	return result, err
+	return result, nil
 }
 
 type GetInstanceCountByDomainResponse struct {
@@ -435,20 +444,30 @@ type GetInstanceCountByDomainResponse struct {
 	countByDomain int64
 }
 
-func getInstanceCountByDomain(ctx context.Context, resp chan GetInstanceCountByDomainResponse) {
+func getInstanceCountByDomain(ctx context.Context, svcIdToNonVerKey map[string]string, resp chan GetInstanceCountByDomainResponse) {
 	domainId := util.ParseDomain(ctx)
 	key := apt.GetInstanceRootKey(domainId) + "/"
 	instOpts := append([]registry.PluginOpOption{},
 		registry.WithStrKey(key),
 		registry.WithPrefix(),
-		registry.WithKeyOnly(),
-		registry.WithCountOnly())
+		registry.WithKeyOnly())
 	respIns, err := backend.Store().Instance().Search(ctx, instOpts...)
+	ret := GetInstanceCountByDomainResponse{
+		err: err,
+	}
+
 	if err != nil {
 		log.Errorf(err, "get number of instances by domain[%s]", domainId)
+	} else {
+		for _, kv := range respIns.Kvs {
+			serviceId, _, _ := apt.GetInfoFromInstKV(kv.Key)
+			_, ok := svcIdToNonVerKey[serviceId]
+			if !ok {
+				continue
+			}
+			ret.countByDomain++
+		}
 	}
-	resp <- GetInstanceCountByDomainResponse{
-		err:           err,
-		countByDomain: respIns.Count,
-	}
+
+	resp <- ret
 }

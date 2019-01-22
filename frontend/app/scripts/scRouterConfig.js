@@ -57,11 +57,11 @@ angular.module('serviceCenter.router', [])
                         $(".loader").show();
                         var serviceId = $stateParams.serviceId;
                         var deferred = $q.defer();
-                        var url = apiConstant.api.microservice.url;
-                        var method = apiConstant.api.microservice.method;
+                        var url = apiConstant.api.allServices.url;
+                        var method = apiConstant.api.allServices.method;
                         httpService.apiRequest(url, method, null, null, null).then(function(response) {
                             $(".loader").hide();
-                            if (response && response.data && response.data.services) {
+                            if (response && response.data && response.data.allServicesDetail) {
                                 deferred.resolve(response);
                             } else {
                                 deferred.resolve(response);
@@ -119,11 +119,11 @@ angular.module('serviceCenter.router', [])
                     servicesList: ['$q', 'httpService', 'apiConstant', function($q, httpService, apiConstant) {
                         $(".loader").show();
                         var deferred = $q.defer();
-                        var url = apiConstant.api.microservice.url;
-                        var method = apiConstant.api.microservice.method;
+                        var url = apiConstant.api.allServices.url;
+                        var method = apiConstant.api.allServices.method;
                         httpService.apiRequest(url, method, null, null, null).then(function(response) {
                             $(".loader").hide();
-                            if (response && response.data && response.data.services) {
+                            if (response && response.data && response.data.allServicesDetail) {
                                 deferred.resolve(response);
                             } else {
                                 deferred.resolve(response);

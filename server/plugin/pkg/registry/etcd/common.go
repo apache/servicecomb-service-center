@@ -26,7 +26,9 @@ const (
 	healthCheckTimeout    = 5 * time.Second
 	healthCheckRetryTimes = 3
 
-	maxRecvMsgSize = math.MaxInt64
+	// see github.com/coreos/etcd/clientv3/options.go
+	// maxSendMsgSize = 2MB
+	maxRecvMsgSize = math.MaxInt32
 )
 
 const (

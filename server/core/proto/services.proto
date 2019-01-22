@@ -134,6 +134,7 @@ message GetServicesInfoRequest {
     string appId = 2;
     string serviceName = 3;
     bool countOnly = 4;
+    bool withShared = 5;
 }
 
 message GetServicesInfoResponse {
@@ -603,6 +604,7 @@ message DelServicesResponse {
 
 message GetAppsRequest {
     string environment = 1;
+    bool withShared = 2;
 }
 
 message GetAppsResponse {
