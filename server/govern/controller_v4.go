@@ -21,6 +21,7 @@ import (
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/servicecomb-service-center/server/error"
@@ -45,9 +46,14 @@ func (governService *GovernServiceControllerV4) URLPatterns() []rest.Route {
 
 // GetGraph 获取依赖连接图详细依赖关系
 func (governService *GovernServiceControllerV4) GetGraph(w http.ResponseWriter, r *http.Request) {
-	var graph Graph
+	var (
+		graph      Graph
+		withShared = util.StringTRUE(r.URL.Query().Get("withShared"))
+	)
 	request := &pb.GetServicesRequest{}
 	ctx := r.Context()
+	domainProject := util.ParseDomainProject(ctx)
+
 	resp, err := core.ServiceAPI.GetServices(ctx, request)
 	if err != nil {
 		controller.WriteError(w, scerr.ErrInternal, err.Error())
@@ -57,12 +63,18 @@ func (governService *GovernServiceControllerV4) GetGraph(w http.ResponseWriter, 
 	if len(services) <= 0 {
 		return
 	}
-	nodes := make([]Node, len(services))
-	for index, service := range services {
-		nodes[index].Name = service.ServiceName
-		nodes[index].Id = service.ServiceId
-		nodes[index].AppID = service.AppId
-		nodes[index].Version = service.Version
+	nodes := make([]Node, 0, len(services))
+	for _, service := range services {
+		if !withShared && core.IsShared(pb.MicroServiceToKey(domainProject, service)) {
+			continue
+		}
+
+		var node Node
+		node.Name = service.ServiceName
+		node.Id = service.ServiceId
+		node.AppID = service.AppId
+		node.Version = service.Version
+		nodes = append(nodes, node)
 
 		proRequest := &pb.GetDependenciesRequest{
 			ServiceId:  service.ServiceId,
@@ -91,7 +103,7 @@ func (governService *GovernServiceControllerV4) GetGraph(w http.ResponseWriter, 
 				continue
 			}
 			line := Line{}
-			line.From = nodes[index]
+			line.From = node
 			line.To.Name = child.ServiceName
 			line.To.Id = child.ServiceId
 			graph.Lines = append(graph.Lines, line)
@@ -123,6 +135,7 @@ func (governService *GovernServiceControllerV4) GetAllServicesInfo(w http.Respon
 	request.Options = strings.Split(optsStr, ",")
 	request.AppId = query.Get("appId")
 	request.ServiceName = query.Get("serviceName")
+	request.WithShared = util.StringTRUE(query.Get("withShared"))
 	countOnly := query.Get("countOnly")
 	if countOnly != "0" && countOnly != "1" && strings.TrimSpace(countOnly) != "" {
 		controller.WriteError(w, scerr.ErrInvalidParams, "parameter countOnly must be 1 or 0")
@@ -141,7 +154,9 @@ func (governService *GovernServiceControllerV4) GetAllServicesInfo(w http.Respon
 func (governService *GovernServiceControllerV4) GetAllApplications(w http.ResponseWriter, r *http.Request) {
 	request := &pb.GetAppsRequest{}
 	ctx := r.Context()
-	request.Environment = r.URL.Query().Get("env")
+	query := r.URL.Query()
+	request.Environment = query.Get("env")
+	request.WithShared = util.StringTRUE(query.Get("withShared"))
 	resp, _ := GovernServiceAPI.GetApplications(ctx, request)
 
 	respInternal := resp.Response

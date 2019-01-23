@@ -26,10 +26,11 @@ angular.module('serviceCenter.sc')
             var addresses = [];
             var instances = [];
             var promises = [];
-            if (servicesList && servicesList.data && servicesList.data.services) {
-                servicesList.data.services.forEach(function(services) {
-                    if (services.serviceId == serviceId) {
-                        $scope.schemaName = services.schemas || [];
+            if (servicesList && servicesList.data && servicesList.data.allServicesDetail) {
+                servicesList.data.allServicesDetail.forEach(function(serviceDetail) {
+                    var service = serviceDetail.microService;
+                    if (service.serviceId == serviceId) {
+                        $scope.schemaName = service.schemas || [];
                     }
                 });
             }

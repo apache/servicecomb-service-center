@@ -20,16 +20,17 @@ angular.module('serviceCenter.sc')
 	 '$stateParams','serviceInfo' ,function($scope, httpService, commonService, $q, apiConstant, $state, $stateParams, serviceInfo){
 
 			var serviceId = $stateParams.serviceId;
-			if(serviceInfo && serviceInfo.data && serviceInfo.data.services){
-				serviceInfo.data.services.forEach(function(services){
-	                if(services.serviceId == serviceId){
+			if(serviceInfo && serviceInfo.data && serviceInfo.data.allServicesDetail){
+				serviceInfo.data.allServicesDetail.forEach(function(serviceDetail){
+					var service = serviceDetail.microService;
+	                if(service.serviceId == serviceId){
 	                    $scope.serviceDetail = {
-	                        serviceName: services.serviceName,
-	                        status: services.status,
-	                        appId: services.appId,
-	                        version: services.version,
-	                        createdAt: commonService.timeFormat(services.timestamp),
-	                        serviceId: services.serviceId
+	                        serviceName: service.serviceName,
+	                        status: service.status,
+	                        appId: service.appId,
+	                        version: service.version,
+	                        createdAt: commonService.timeFormat(service.timestamp),
+	                        serviceId: service.serviceId
 	                    };
 	                }
             	});
