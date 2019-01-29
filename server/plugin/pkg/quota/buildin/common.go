@@ -85,11 +85,9 @@ func resourceLimitHandler(ctx context.Context, res *quota.ApplyQuotaResource) (i
 
 	switch res.QuotaType {
 	case quota.MicroServiceInstanceQuotaType:
-		key = core.GetInstanceRootKey("")
-		indexer = backend.Store().Instance()
+		return globalCounter.InstanceCount, nil
 	case quota.MicroServiceQuotaType:
-		key = core.GetServiceRootKey("")
-		indexer = backend.Store().Service()
+		return globalCounter.ServiceCount, nil
 	case quota.RuleQuotaType:
 		key = core.GenerateServiceRuleKey(domainProject, serviceId, "")
 		indexer = backend.Store().Rule()

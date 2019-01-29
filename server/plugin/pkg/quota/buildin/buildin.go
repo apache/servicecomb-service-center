@@ -20,11 +20,13 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/quota"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/quota/counter"
 	"golang.org/x/net/context"
 )
 
 func init() {
 	mgr.RegisterPlugin(mgr.Plugin{mgr.QUOTA, "buildin", New})
+	counter.RegisterCounterListener("buildin")
 }
 
 func New() mgr.PluginInstance {

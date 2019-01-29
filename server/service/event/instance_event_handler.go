@@ -40,6 +40,7 @@ func (h *InstanceEventHandler) Type() discovery.Type {
 
 func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
 	action := evt.Type
+	instance := evt.KV.Value.(*pb.MicroServiceInstance)
 	providerId, providerInstanceId, domainProject := apt.GetInfoFromInstKV(evt.KV.Key)
 	idx := strings.Index(domainProject, "/")
 	domainName := domainProject[:idx]
@@ -59,8 +60,8 @@ func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
 	}
 
 	if notify.NotifyCenter().Closed() {
-		log.Warnf("caught [%s] instance[%s/%s] event, but notify service is closed",
-			action, providerId, providerInstanceId)
+		log.Warnf("caught [%s] instance[%s/%s] event, endpoints %v, but notify service is closed",
+			action, providerId, providerInstanceId, instance.Endpoints)
 		return
 	}
 
@@ -70,13 +71,14 @@ func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
 		serviceUtil.CTX_GLOBAL, "1")
 	ms, err := serviceUtil.GetService(ctx, domainProject, providerId)
 	if ms == nil {
-		log.Errorf(err, "caught [%s] instance[%s/%s] event, get cached provider's file failed",
-			action, providerId, providerInstanceId)
+		log.Errorf(err, "caught [%s] instance[%s/%s] event, endpoints %v, get cached provider's file failed",
+			action, providerId, providerInstanceId, instance.Endpoints)
 		return
 	}
 
-	log.Infof("caught [%s] service[%s][%s/%s/%s/%s] instance[%s] event",
-		action, providerId, ms.Environment, ms.AppId, ms.ServiceName, ms.Version, providerInstanceId)
+	log.Infof("caught [%s] service[%s][%s/%s/%s/%s] instance[%s] event, endpoints %v",
+		action, providerId, ms.Environment, ms.AppId, ms.ServiceName, ms.Version,
+		providerInstanceId, instance.Endpoints)
 
 	// 查询所有consumer
 	consumerIds, _, err := serviceUtil.GetAllConsumerIds(ctx, domainProject, ms)
@@ -87,7 +89,7 @@ func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
 	}
 
 	PublishInstanceEvent(domainProject, action, pb.MicroServiceToKey(domainProject, ms),
-		evt.KV.Value.(*pb.MicroServiceInstance), evt.Revision, consumerIds)
+		instance, evt.Revision, consumerIds)
 }
 
 func NewInstanceEventHandler() *InstanceEventHandler {
