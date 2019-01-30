@@ -18,6 +18,7 @@ package event
 
 import (
 	"fmt"
+	"github.com/apache/servicecomb-service-center/pkg/backoff"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/queue"
@@ -53,10 +54,10 @@ func (h *DependencyEventHandler) notify() {
 	h.signals.Put(struct{}{})
 }
 
-func (h *DependencyEventHandler) backoff(backoff func(), retries int) int {
-	if backoff != nil {
-		<-time.After(util.GetBackoff().Delay(retries))
-		backoff()
+func (h *DependencyEventHandler) backoff(f func(), retries int) int {
+	if f != nil {
+		<-time.After(backoff.GetBackoff().Delay(retries))
+		f()
 	}
 	return retries + 1
 }

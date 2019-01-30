@@ -19,9 +19,9 @@ package backend
 import (
 	"errors"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/pkg/backoff"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin"
@@ -77,7 +77,7 @@ func RegistryEngine() *registryEngine {
 				return engineInstance
 			}
 
-			t := util.GetBackoff().Delay(i)
+			t := backoff.GetBackoff().Delay(i)
 			log.Errorf(nil, "initialize service center failed, retry after %s", t)
 			<-time.After(t)
 		}

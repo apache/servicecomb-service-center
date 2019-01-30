@@ -20,6 +20,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/pkg/backoff"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -720,7 +721,7 @@ hcLoop:
 			for i := 0; i < retries; i++ {
 				ctx, _ := context.WithTimeout(c.Client.Ctx(), healthCheckTimeout)
 				if err = c.SyncMembers(ctx); err != nil {
-					d := util.GetBackoff().Delay(i)
+					d := backoff.GetBackoff().Delay(i)
 					log.Errorf(err, "retry to sync members from etcd %s after %s", c.Endpoints, d)
 					select {
 					case <-pctx.Done():
