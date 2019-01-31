@@ -19,6 +19,7 @@ package etcd
 import (
 	"errors"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/pkg/backoff"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -179,7 +180,7 @@ func (c *KvCacher) refresh(ctx context.Context) {
 		nextPeriod := minWaitInterval
 		if err := c.ListAndWatch(ctx); err != nil {
 			retries++
-			nextPeriod = util.GetBackoff().Delay(retries)
+			nextPeriod = backoff.GetBackoff().Delay(retries)
 		} else {
 			retries = 0
 		}
