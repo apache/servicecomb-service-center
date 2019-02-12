@@ -88,15 +88,14 @@ func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
 		return
 	}
 
-	PublishInstanceEvent(domainProject, action, pb.MicroServiceToKey(domainProject, ms),
-		instance, evt.Revision, consumerIds)
+	PublishInstanceEvent(evt, domainProject, pb.MicroServiceToKey(domainProject, ms), consumerIds)
 }
 
 func NewInstanceEventHandler() *InstanceEventHandler {
 	return &InstanceEventHandler{}
 }
 
-func PublishInstanceEvent(domainProject string, action pb.EventType, serviceKey *pb.MicroServiceKey, instance *pb.MicroServiceInstance, rev int64, subscribers []string) {
+func PublishInstanceEvent(evt discovery.KvEvent, domainProject string, serviceKey *pb.MicroServiceKey, subscribers []string) {
 	defer cache.FindInstances.Remove(serviceKey)
 
 	if len(subscribers) == 0 {
@@ -105,13 +104,13 @@ func PublishInstanceEvent(domainProject string, action pb.EventType, serviceKey 
 
 	response := &pb.WatchInstanceResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Watch instance successfully."),
-		Action:   string(action),
+		Action:   string(evt.Type),
 		Key:      serviceKey,
-		Instance: instance,
+		Instance: evt.KV.Value.(*pb.MicroServiceInstance),
 	}
 	for _, consumerId := range subscribers {
 		// TODO add超时怎么处理？
-		job := notify.NewInstanceEvent(consumerId, apt.GetInstanceRootKey(domainProject)+"/", rev, response)
+		job := notify.NewInstanceEventWithTime(consumerId, domainProject, evt.Revision, evt.CreateAt, response)
 		notify.NotifyCenter().Publish(job)
 	}
 }

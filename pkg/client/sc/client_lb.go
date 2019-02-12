@@ -16,9 +16,11 @@
 package sc
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/backoff"
+	"errors"
+	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/lb"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"golang.org/x/net/context"
 	"net/http"
 )
@@ -46,9 +48,18 @@ func (c *LBClient) Next() string {
 }
 
 func (c *LBClient) RestDoWithContext(ctx context.Context, method string, api string, headers http.Header, body []byte) (resp *http.Response, err error) {
-	err = backoff.DelayIn(c.Retries, func() (rerr error) {
-		resp, rerr = c.HttpDoWithContext(ctx, method, c.Next()+api, headers, body)
-		return
-	})
+	var errs []string
+	for i := 0; i < c.Retries; i++ {
+		addr := c.Next()
+		resp, err = c.HttpDoWithContext(ctx, method, addr+api, headers, body)
+		if err != nil {
+			errs = append(errs, fmt.Sprintf("[%s]: %s", addr, err.Error()))
+			continue
+		}
+		break
+	}
+	if err != nil {
+		err = errors.New(util.StringJoin(errs, ", "))
+	}
 	return
 }

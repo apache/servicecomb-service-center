@@ -20,6 +20,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/notify"
+	simple "github.com/apache/servicecomb-service-center/pkg/time"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"golang.org/x/net/context"
 	"time"
@@ -124,18 +125,26 @@ func (w *InstanceEventListWatcher) Close() {
 	close(w.Job)
 }
 
-func NewInstanceEvent(group, subject string, rev int64, response *pb.WatchInstanceResponse) *InstanceEvent {
+func NewInstanceEvent(serviceId, domainProject string, rev int64, response *pb.WatchInstanceResponse) *InstanceEvent {
 	return &InstanceEvent{
-		Event:    notify.NewEvent(INSTANCE, subject, group),
+		Event:    notify.NewEvent(INSTANCE, domainProject, serviceId),
 		Revision: rev,
 		Response: response,
 	}
 }
 
-func NewInstanceEventListWatcher(group string, subject string,
+func NewInstanceEventWithTime(serviceId, domainProject string, rev int64, createAt simple.Time, response *pb.WatchInstanceResponse) *InstanceEvent {
+	return &InstanceEvent{
+		Event:    notify.NewEventWithTime(INSTANCE, domainProject, serviceId, createAt),
+		Revision: rev,
+		Response: response,
+	}
+}
+
+func NewInstanceEventListWatcher(serviceId, domainProject string,
 	listFunc func() (results []*pb.WatchInstanceResponse, rev int64)) *InstanceEventListWatcher {
 	watcher := &InstanceEventListWatcher{
-		Subscriber: notify.NewSubscriber(INSTANCE, subject, group),
+		Subscriber: notify.NewSubscriber(INSTANCE, domainProject, serviceId),
 		Job:        make(chan *InstanceEvent, INSTANCE.QueueSize()),
 		ListFunc:   listFunc,
 		listCh:     make(chan struct{}),

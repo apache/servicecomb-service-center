@@ -21,12 +21,14 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/pkg/buffer"
 	"github.com/apache/servicecomb-service-center/pkg/tlsutil"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"golang.org/x/net/context"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"os"
 	"strings"
@@ -118,10 +120,15 @@ func (client *URLClient) HttpDoWithContext(ctx context.Context, method string, r
 	req = req.WithContext(ctx)
 	req.Header = headers
 
+	DumpClient(req, nil)
+
 	resp, err = client.Client.Do(req)
 	if err != nil {
 		return nil, err
 	}
+
+	DumpClient(nil, resp)
+
 	switch resp.Header.Get(HEADER_CONTENT_ENCODING) {
 	case "gzip":
 		reader, err := NewGZipBodyReader(resp.Body)
@@ -133,30 +140,37 @@ func (client *URLClient) HttpDoWithContext(ctx context.Context, method string, r
 		resp.Body = reader
 	}
 
-	if os.Getenv("DEBUG_MODE") == "1" {
-		fmt.Println("--- BEGIN ---")
-		fmt.Printf("> %s %s %s\n", req.Method, req.URL.RequestURI(), req.Proto)
-		for key, header := range req.Header {
-			for _, value := range header {
-				fmt.Printf("> %s: %s\n", key, value)
-			}
-		}
-		fmt.Println(">")
-		fmt.Println(util.BytesToStringWithNoCopy(body))
-		fmt.Printf("< %s %s\n", resp.Proto, resp.Status)
-		for key, header := range resp.Header {
-			for _, value := range header {
-				fmt.Printf("< %s: %s\n", key, value)
-			}
-		}
-		fmt.Println("<")
-		fmt.Println("--- END ---")
-	}
 	return resp, nil
+}
+
+func DumpClient(req *http.Request, resp *http.Response) {
+	if !util.StringTRUE(os.Getenv("DEBUG_MODE")) {
+		return
+	}
+
+	if req != nil {
+		b, _ := httputil.DumpRequestOut(req, true)
+		buffer.ReadLine(bytes.NewBuffer(b), func(line string) bool {
+			fmt.Println(">", line)
+			return true
+		})
+	}
+
+	if resp != nil {
+		b, _ := httputil.DumpResponse(resp, true)
+		buffer.ReadLine(bytes.NewBuffer(b), func(line string) bool {
+			fmt.Println("<", line)
+			return true
+		})
+	}
 }
 
 func (client *URLClient) HttpDo(method string, rawURL string, headers http.Header, body []byte) (resp *http.Response, err error) {
 	return client.HttpDoWithContext(context.Background(), method, rawURL, headers, body)
+}
+
+func DefaultURLClientOption() URLClientOption {
+	return defaultURLClientOption
 }
 
 func setOptionDefaultValue(o *URLClientOption) URLClientOption {

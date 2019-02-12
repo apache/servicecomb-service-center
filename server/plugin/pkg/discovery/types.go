@@ -18,10 +18,12 @@ package discovery
 import (
 	"encoding/json"
 	"fmt"
+	simple "github.com/apache/servicecomb-service-center/pkg/time"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 	"strconv"
+	"time"
 )
 
 var (
@@ -85,6 +87,7 @@ type KvEvent struct {
 	Revision int64
 	Type     pb.EventType
 	KV       *KeyValue
+	CreateAt simple.Time
 }
 
 type KvEventFunc func(evt KvEvent)
@@ -92,4 +95,8 @@ type KvEventFunc func(evt KvEvent)
 type KvEventHandler interface {
 	Type() Type
 	OnEvent(evt KvEvent)
+}
+
+func NewKvEvent(action pb.EventType, kv *KeyValue, rev int64) KvEvent {
+	return KvEvent{Type: action, KV: kv, Revision: rev, CreateAt: simple.FromTime(time.Now())}
 }
