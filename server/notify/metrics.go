@@ -16,6 +16,7 @@
 package notify
 
 import (
+	"github.com/apache/servicecomb-service-center/pkg/notify"
 	"github.com/apache/servicecomb-service-center/server/metric"
 	"github.com/prometheus/client_golang/prometheus"
 	"time"
@@ -49,13 +50,13 @@ func init() {
 	prometheus.MustRegister(notifyCounter, notifyLatency)
 }
 
-func ReportPublishCompleted(source string, err error, start time.Time) {
+func ReportPublishCompleted(evt notify.Event, err error) {
 	instance := metric.InstanceName()
-	elapsed := float64(time.Since(start).Nanoseconds()) / float64(time.Microsecond)
+	elapsed := float64(time.Since(evt.CreateAt()).Nanoseconds()) / float64(time.Microsecond)
 	status := success
 	if err != nil {
 		status = failure
 	}
-	notifyLatency.WithLabelValues(instance, source, status).Observe(elapsed)
-	notifyCounter.WithLabelValues(instance, source, status).Inc()
+	notifyLatency.WithLabelValues(instance, evt.Type().String(), status).Observe(elapsed)
+	notifyCounter.WithLabelValues(instance, evt.Type().String(), status).Inc()
 }

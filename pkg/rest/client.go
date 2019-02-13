@@ -120,14 +120,14 @@ func (client *URLClient) HttpDoWithContext(ctx context.Context, method string, r
 	req = req.WithContext(ctx)
 	req.Header = headers
 
-	DumpClient(req, nil)
+	DumpRequestOut(req)
 
 	resp, err = client.Client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
-	DumpClient(nil, resp)
+	DumpResponse(resp)
 
 	switch resp.Header.Get(HEADER_CONTENT_ENCODING) {
 	case "gzip":
@@ -143,26 +143,28 @@ func (client *URLClient) HttpDoWithContext(ctx context.Context, method string, r
 	return resp, nil
 }
 
-func DumpClient(req *http.Request, resp *http.Response) {
-	if !util.StringTRUE(os.Getenv("DEBUG_MODE")) {
+func DumpRequestOut(req *http.Request) {
+	if req == nil || !util.StringTRUE(os.Getenv("DEBUG_MODE")) {
 		return
 	}
 
-	if req != nil {
-		b, _ := httputil.DumpRequestOut(req, true)
-		buffer.ReadLine(bytes.NewBuffer(b), func(line string) bool {
-			fmt.Println(">", line)
-			return true
-		})
+	b, _ := httputil.DumpRequestOut(req, true)
+	buffer.ReadLine(bytes.NewBuffer(b), func(line string) bool {
+		fmt.Println(">", line)
+		return true
+	})
+}
+
+func DumpResponse(resp *http.Response) {
+	if resp == nil || !util.StringTRUE(os.Getenv("DEBUG_MODE")) {
+		return
 	}
 
-	if resp != nil {
-		b, _ := httputil.DumpResponse(resp, true)
-		buffer.ReadLine(bytes.NewBuffer(b), func(line string) bool {
-			fmt.Println("<", line)
-			return true
-		})
-	}
+	b, _ := httputil.DumpResponse(resp, true)
+	buffer.ReadLine(bytes.NewBuffer(b), func(line string) bool {
+		fmt.Println("<", line)
+		return true
+	})
 }
 
 func (client *URLClient) HttpDo(method string, rawURL string, headers http.Header, body []byte) (resp *http.Response, err error) {

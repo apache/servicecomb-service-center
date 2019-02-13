@@ -52,7 +52,7 @@ func (s *baseEvent) CreateAt() time.Time {
 }
 
 func NewEvent(t Type, s, g string) Event {
-	return &baseEvent{t, s, g, simple.FromTime(time.Now())}
+	return NewEventWithTime(t, s, g, simple.FromTime(time.Now()))
 }
 
 func NewEventWithTime(t Type, s, g string, now simple.Time) Event {

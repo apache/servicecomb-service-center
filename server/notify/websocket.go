@@ -238,7 +238,7 @@ func (wh *WebSocket) HandleWatchWebSocketJob(o interface{}) {
 
 	err := wh.WriteMessage(message)
 	if job != nil {
-		ReportPublishCompleted(INSTANCE.String(), err, job.CreateAt())
+		ReportPublishCompleted(job, err)
 	}
 	if err != nil {
 		log.Errorf(err, "watcher[%s] catch an err, subject: %s, group: %s",

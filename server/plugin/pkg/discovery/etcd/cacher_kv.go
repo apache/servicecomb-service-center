@@ -356,7 +356,6 @@ func (c *KvCacher) deferHandle(ctx context.Context) {
 }
 
 func (c *KvCacher) onEvents(evts []discovery.KvEvent) {
-	start := time.Now()
 	init := !c.IsReady()
 	for i, evt := range evts {
 		key := util.BytesToStringWithNoCopy(evt.KV.Key)
@@ -394,7 +393,7 @@ func (c *KvCacher) onEvents(evts []discovery.KvEvent) {
 
 	c.notify(evts)
 
-	discovery.ReportProcessEventCompleted(evts, start)
+	discovery.ReportProcessEventCompleted(c.Cfg.Key, evts)
 }
 
 func (c *KvCacher) notify(evts []discovery.KvEvent) {
