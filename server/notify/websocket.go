@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	apt "github.com/apache/servicecomb-service-center/server/core"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"github.com/gorilla/websocket"
@@ -239,7 +238,7 @@ func (wh *WebSocket) HandleWatchWebSocketJob(o interface{}) {
 
 	err := wh.WriteMessage(message)
 	if job != nil {
-		ReportPublishCompleted(INSTANCE.String(), err, job.CreateAt())
+		ReportPublishCompleted(job, err)
 	}
 	if err != nil {
 		log.Errorf(err, "watcher[%s] catch an err, subject: %s, group: %s",
@@ -272,7 +271,7 @@ func DoWebSocketListAndWatch(ctx context.Context, serviceId string, f func() ([]
 	socket := &WebSocket{
 		ctx:     ctx,
 		conn:    conn,
-		watcher: NewInstanceEventListWatcher(serviceId, apt.GetInstanceRootKey(domainProject)+"/", f),
+		watcher: NewInstanceEventListWatcher(serviceId, domainProject, f),
 	}
 	process(socket)
 }

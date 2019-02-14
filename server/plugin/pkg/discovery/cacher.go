@@ -40,7 +40,7 @@ func (c *CommonCacher) Notify(action proto.EventType, key string, kv *KeyValue) 
 	default:
 		c.cache.Put(key, kv)
 	}
-	c.OnEvent(KvEvent{Type: action, KV: kv, Revision: kv.ModRevision})
+	c.OnEvent(NewKvEvent(action, kv, kv.ModRevision))
 }
 
 func (c *CommonCacher) OnEvent(evt KvEvent) {

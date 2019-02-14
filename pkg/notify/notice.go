@@ -51,6 +51,10 @@ func (s *baseEvent) CreateAt() time.Time {
 	return s.createAt.Local()
 }
 
-func NewEvent(t Type, s string, g string) Event {
-	return &baseEvent{t, s, g, simple.FromTime(time.Now())}
+func NewEvent(t Type, s, g string) Event {
+	return NewEventWithTime(t, s, g, simple.FromTime(time.Now()))
+}
+
+func NewEventWithTime(t Type, s, g string, now simple.Time) Event {
+	return &baseEvent{t, s, g, now}
 }

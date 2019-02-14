@@ -31,12 +31,13 @@ import (
 )
 
 type TagsChangedTask struct {
+	discovery.KvEvent
+
 	key string
 	err error
 
 	DomainProject string
-	consumerId    string
-	Rev           int64
+	ConsumerId    string
 }
 
 func (apt *TagsChangedTask) Key() string {
@@ -44,7 +45,7 @@ func (apt *TagsChangedTask) Key() string {
 }
 
 func (apt *TagsChangedTask) Do(ctx context.Context) error {
-	apt.err = apt.publish(ctx, apt.DomainProject, apt.consumerId, apt.Rev)
+	apt.err = apt.publish(ctx, apt.DomainProject, apt.ConsumerId)
 	return apt.err
 }
 
@@ -52,7 +53,7 @@ func (apt *TagsChangedTask) Err() error {
 	return apt.err
 }
 
-func (apt *TagsChangedTask) publish(ctx context.Context, domainProject, consumerId string, rev int64) error {
+func (apt *TagsChangedTask) publish(ctx context.Context, domainProject, consumerId string) error {
 	ctx = context.WithValue(context.WithValue(ctx,
 		serviceUtil.CTX_CACHEONLY, "1"),
 		serviceUtil.CTX_GLOBAL, "1")
@@ -86,7 +87,7 @@ func (apt *TagsChangedTask) publish(ctx context.Context, domainProject, consumer
 		}
 
 		providerKey := pb.MicroServiceToKey(domainProject, provider)
-		PublishInstanceEvent(domainProject, pb.EVT_EXPIRE, providerKey, nil, rev, []string{consumerId})
+		PublishInstanceEvent(apt.KvEvent, domainProject, providerKey, []string{consumerId})
 	}
 	return nil
 }
@@ -114,18 +115,19 @@ func (h *TagEventHandler) OnEvent(evt discovery.KvEvent) {
 	log.Infof("caught [%s] service tags[%s/%s] event", action, consumerId, evt.KV.Value)
 
 	task.Service().Add(context.Background(),
-		NewTagsChangedAsyncTask(domainProject, consumerId, evt.Revision))
+		NewTagsChangedAsyncTask(domainProject, consumerId, evt))
 }
 
 func NewTagEventHandler() *TagEventHandler {
 	return &TagEventHandler{}
 }
 
-func NewTagsChangedAsyncTask(domainProject, consumerId string, rev int64) *TagsChangedTask {
+func NewTagsChangedAsyncTask(domainProject, consumerId string, evt discovery.KvEvent) *TagsChangedTask {
+	evt.Type = pb.EVT_EXPIRE
 	return &TagsChangedTask{
+		KvEvent:       evt,
 		key:           "TagsChangedAsyncTask_" + consumerId,
 		DomainProject: domainProject,
-		consumerId:    consumerId,
-		Rev:           rev,
+		ConsumerId:    consumerId,
 	}
 }

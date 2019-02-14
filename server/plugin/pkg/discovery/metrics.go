@@ -22,11 +22,6 @@ import (
 	"time"
 )
 
-const (
-	success = "SUCCESS"
-	failure = "FAILURE"
-)
-
 var (
 	eventsCounter = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -34,7 +29,7 @@ var (
 			Subsystem: "db",
 			Name:      "backend_event_total",
 			Help:      "Counter of backend events",
-		}, []string{"instance"})
+		}, []string{"instance", "prefix"})
 
 	eventsLatency = prometheus.NewSummaryVec(
 		prometheus.SummaryOpts{
@@ -43,20 +38,23 @@ var (
 			Name:       "backend_event_durations_microseconds",
 			Help:       "Latency of backend events processing",
 			Objectives: prometheus.DefObjectives,
-		}, []string{"instance"})
+		}, []string{"instance", "prefix"})
 )
 
 func init() {
 	prometheus.MustRegister(eventsCounter, eventsLatency)
 }
 
-func ReportProcessEventCompleted(evts []KvEvent, start time.Time) {
+func ReportProcessEventCompleted(prefix string, evts []KvEvent) {
 	l := float64(len(evts))
 	if l == 0 {
 		return
 	}
 	instance := metric.InstanceName()
-	elapsed := float64(time.Since(start).Nanoseconds()) / float64(time.Microsecond)
-	eventsLatency.WithLabelValues(instance).Observe(elapsed / l)
-	eventsCounter.WithLabelValues(instance).Add(l)
+	now := time.Now()
+	for _, evt := range evts {
+		elapsed := float64(now.Sub(evt.CreateAt.Local()).Nanoseconds()) / float64(time.Microsecond)
+		eventsLatency.WithLabelValues(instance, prefix).Observe(elapsed)
+	}
+	eventsCounter.WithLabelValues(instance, prefix).Add(l)
 }

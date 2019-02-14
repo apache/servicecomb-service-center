@@ -30,12 +30,13 @@ import (
 )
 
 type RulesChangedTask struct {
+	discovery.KvEvent
+
 	key string
 	err error
 
 	DomainProject string
 	ProviderId    string
-	Rev           int64
 }
 
 func (apt *RulesChangedTask) Key() string {
@@ -43,7 +44,7 @@ func (apt *RulesChangedTask) Key() string {
 }
 
 func (apt *RulesChangedTask) Do(ctx context.Context) error {
-	apt.err = apt.publish(ctx, apt.DomainProject, apt.ProviderId, apt.Rev)
+	apt.err = apt.publish(ctx, apt.DomainProject, apt.ProviderId)
 	return apt.err
 }
 
@@ -51,7 +52,7 @@ func (apt *RulesChangedTask) Err() error {
 	return apt.err
 }
 
-func (apt *RulesChangedTask) publish(ctx context.Context, domainProject, providerId string, rev int64) error {
+func (apt *RulesChangedTask) publish(ctx context.Context, domainProject, providerId string) error {
 	ctx = context.WithValue(context.WithValue(ctx,
 		serviceUtil.CTX_CACHEONLY, "1"),
 		serviceUtil.CTX_GLOBAL, "1")
@@ -74,7 +75,7 @@ func (apt *RulesChangedTask) publish(ctx context.Context, domainProject, provide
 	}
 	providerKey := pb.MicroServiceToKey(domainProject, provider)
 
-	PublishInstanceEvent(domainProject, pb.EVT_EXPIRE, providerKey, nil, rev, consumerIds)
+	PublishInstanceEvent(apt.KvEvent, domainProject, providerKey, consumerIds)
 	return nil
 }
 
@@ -100,18 +101,19 @@ func (h *RuleEventHandler) OnEvent(evt discovery.KvEvent) {
 	log.Infof("caught [%s] service rule[%s/%s] event", action, providerId, ruleId)
 
 	task.Service().Add(context.Background(),
-		NewRulesChangedAsyncTask(domainProject, providerId, evt.Revision))
+		NewRulesChangedAsyncTask(domainProject, providerId, evt))
 }
 
 func NewRuleEventHandler() *RuleEventHandler {
 	return &RuleEventHandler{}
 }
 
-func NewRulesChangedAsyncTask(domainProject, providerId string, rev int64) *RulesChangedTask {
+func NewRulesChangedAsyncTask(domainProject, providerId string, evt discovery.KvEvent) *RulesChangedTask {
+	evt.Type = pb.EVT_EXPIRE
 	return &RulesChangedTask{
+		KvEvent:       evt,
 		key:           "RulesChangedAsyncTask_" + providerId,
 		DomainProject: domainProject,
 		ProviderId:    providerId,
-		Rev:           rev,
 	}
 }
