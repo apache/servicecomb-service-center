@@ -268,12 +268,16 @@ func (wh *WebSocket) Stop() {
 
 func DoWebSocketListAndWatch(ctx context.Context, serviceId string, f func() ([]*pb.WatchInstanceResponse, int64), conn *websocket.Conn) {
 	domainProject := util.ParseDomainProject(ctx)
+	domain := util.ParseDomain(ctx)
 	socket := &WebSocket{
 		ctx:     ctx,
 		conn:    conn,
 		watcher: NewInstanceEventListWatcher(serviceId, domainProject, f),
 	}
+
+	ReportSubscriber(domain, Websocket, 1)
 	process(socket)
+	ReportSubscriber(domain, Websocket, -1)
 }
 
 func process(socket *WebSocket) {
