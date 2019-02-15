@@ -79,16 +79,16 @@ func (c *SCClient) UnregisterInstance(ctx context.Context, domainProject, servic
 	return nil
 }
 
-func (c *SCClient) DiscoveryInstances(ctx context.Context, domainProject, consumerId string, provider *pb.MicroService) ([]*pb.MicroServiceInstance, *scerr.Error) {
+func (c *SCClient) DiscoveryInstances(ctx context.Context, domainProject, consumerId, providerAppId, providerServiceName, providerVersionRule string) ([]*pb.MicroServiceInstance, *scerr.Error) {
 	domain, project := core.FromDomainProject(domainProject)
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 	headers.Set("X-ConsumerId", consumerId)
 
 	query := url.Values{}
-	query.Set("appId", provider.AppId)
-	query.Set("serviceName", provider.ServiceName)
-	query.Set("version", provider.Version)
+	query.Set("appId", providerAppId)
+	query.Set("serviceName", providerServiceName)
+	query.Set("version", providerVersionRule)
 
 	resp, err := c.RestDoWithContext(ctx, http.MethodGet,
 		fmt.Sprintf(apiDiscoveryInstancesURL, project)+"?"+c.parseQuery(ctx)+"&"+query.Encode(),

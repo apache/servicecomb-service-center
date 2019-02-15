@@ -17,12 +17,7 @@ const (
 	apiExistenceURL     = "/v4/%s/registry/existence"
 	apiMicroServicesURL = "/v4/%s/registry/microservices"
 	apiMicroServiceURL  = "/v4/%s/registry/microservices/%s"
-
-	MicroServiceType existenceType = "microservice"
-	SchemaType       existenceType = "schema"
 )
-
-type existenceType string
 
 func (c *SCClient) CreateService(ctx context.Context, domainProject string, service *pb.MicroService) (string, *scerr.Error) {
 	domain, project := core.FromDomainProject(domainProject)
@@ -84,39 +79,49 @@ func (c *SCClient) DeleteService(ctx context.Context, domainProject, serviceId s
 	return nil
 }
 
-func (c *SCClient) ServiceExistence(ctx context.Context, domainProject string, env existenceType, appId, serviceName, versionRule string) (string, *scerr.Error) {
-	domain, project := core.FromDomainProject(domainProject)
-	headers := c.CommonHeaders(ctx)
-	headers.Set("X-Domain-Name", domain)
-
+func (c *SCClient) ServiceExistence(ctx context.Context, domainProject string, appId, serviceName, versionRule, env string) (string, *scerr.Error) {
 	query := url.Values{}
-	query.Set("type", string(env))
+	query.Set("type", "microservice")
+	query.Set("env", env)
 	query.Set("appId", appId)
 	query.Set("serviceName", serviceName)
 	query.Set("version", versionRule)
+
+	resp, err := c.existence(ctx, domainProject, query)
+	if err != nil {
+		return "", err
+	}
+
+	return resp.ServiceId, nil
+}
+
+func (c *SCClient) existence(ctx context.Context, domainProject string, query url.Values) (*pb.GetExistenceResponse, *scerr.Error) {
+	domain, project := core.FromDomainProject(domainProject)
+	headers := c.CommonHeaders(ctx)
+	headers.Set("X-Domain-Name", domain)
 
 	resp, err := c.RestDoWithContext(ctx, http.MethodGet,
 		fmt.Sprintf(apiExistenceURL, project)+"?"+c.parseQuery(ctx)+"&"+query.Encode(),
 		headers, nil)
 	if err != nil {
-		return "", scerr.NewError(scerr.ErrInternal, err.Error())
+		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "", scerr.NewError(scerr.ErrInternal, err.Error())
+		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return "", c.toError(body)
+		return nil, c.toError(body)
 	}
 
 	existenceResp := &pb.GetExistenceResponse{}
 	err = json.Unmarshal(body, existenceResp)
 	if err != nil {
-		return "", scerr.NewError(scerr.ErrInternal, err.Error())
+		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
 	}
 
-	return existenceResp.ServiceId, nil
+	return existenceResp, nil
 }
