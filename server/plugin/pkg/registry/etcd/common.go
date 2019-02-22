@@ -26,6 +26,12 @@ const (
 	healthCheckTimeout    = 5 * time.Second
 	healthCheckRetryTimes = 3
 
+	// see google.golang.org/grpc/keepalive/keepalive.go
+	// after a duration of this time if the client doesn't see any activity
+	// it pings the server to see if the transport is still alive.
+	keepAliveTime    = 2 * time.Second
+	keepAliveTimeout = 5 * time.Second
+
 	// see github.com/coreos/etcd/clientv3/options.go
 	// maxSendMsgSize = 2MB
 	maxRecvMsgSize = math.MaxInt32

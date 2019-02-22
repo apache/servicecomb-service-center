@@ -148,6 +148,7 @@ func DumpRequestOut(req *http.Request) {
 		return
 	}
 
+	fmt.Println(">", req.URL.String())
 	b, _ := httputil.DumpRequestOut(req, true)
 	buffer.ReadLine(bytes.NewBuffer(b), func(line string) bool {
 		fmt.Println(">", line)
