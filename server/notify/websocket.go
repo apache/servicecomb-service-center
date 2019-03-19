@@ -200,9 +200,14 @@ func (wh *WebSocket) HandleWatchWebSocketJob(o interface{}) {
 			return
 		}
 
+		if err := wh.heartbeat(websocket.PingMessage); err != nil {
+			log.Errorf(err, "send 'Ping' message to watcher[%s] failed, subject: %s, group: %s",
+				remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
+			return
+		}
+
 		log.Debugf("send 'Ping' message to watcher[%s], subject: %s, group: %s",
 			remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
-		wh.heartbeat(websocket.PingMessage)
 		return
 	case *InstanceEvent:
 		job = o.(*InstanceEvent)

@@ -699,6 +699,11 @@ func (*BrokerService) PublishVerificationResults(ctx context.Context, in *broker
 	verificationDate := time.Now().Format(time.RFC3339)
 	verificationKey := GenerateBrokerVerificationKey(tenant, pactVersion.Id, lastNumber)
 	id, err := GetData(ctx, GetBrokerLatestVerificationIDKey())
+	if err != nil {
+		return &brokerpb.PublishVerificationResponse{
+			Response: pb.CreateResponse(scerr.ErrInternal, "get data error."),
+		}, err
+	}
 	verification := &brokerpb.Verification{
 		Id:               int32(id) + 1,
 		Number:           lastNumber,
@@ -786,6 +791,11 @@ func (*BrokerService) PublishPact(ctx context.Context, in *brokerpb.PublishPactR
 	}
 	if providerParticipant == nil {
 		id, err := GetData(ctx, GetBrokerLatestParticipantIDKey())
+		if err != nil {
+			return &brokerpb.PublishPactResponse{
+				Response: pb.CreateResponse(scerr.ErrInternal, "get data error."),
+			}, err
+		}
 		providerParticipant = &brokerpb.Participant{Id: int32(id) + 1, AppId: provider.AppId, ServiceName: provider.ServiceName}
 		response, err := CreateParticipant(PactLogger, ctx, providerParticipantKey, *providerParticipant)
 		if err != nil {
@@ -804,6 +814,11 @@ func (*BrokerService) PublishPact(ctx context.Context, in *brokerpb.PublishPactR
 	}
 	if consumerParticipant == nil {
 		id, err := GetData(ctx, GetBrokerLatestParticipantIDKey())
+		if err != nil {
+			return &brokerpb.PublishPactResponse{
+				Response: pb.CreateResponse(scerr.ErrInternal, "get data error."),
+			}, err
+		}
 		consumerParticipant = &brokerpb.Participant{Id: int32(id) + 1, AppId: consumer.AppId, ServiceName: consumer.ServiceName}
 		response, err := CreateParticipant(PactLogger, ctx, consumerParticipantKey, *consumerParticipant)
 		if err != nil {
@@ -825,6 +840,11 @@ func (*BrokerService) PublishPact(ctx context.Context, in *brokerpb.PublishPactR
 		PactLogger.Infof("Old version order: %d", order)
 		order++
 		id, err := GetData(ctx, GetBrokerLatestVersionIDKey())
+		if err != nil {
+			return &brokerpb.PublishPactResponse{
+				Response: pb.CreateResponse(scerr.ErrInternal, "get data error."),
+			}, err
+		}
 		version = &brokerpb.Version{Id: int32(id) + 1, Number: in.Version, ParticipantId: consumerParticipant.Id, Order: order}
 		response, err := CreateVersion(PactLogger, ctx, versionKey, *version)
 		if err != nil {
@@ -845,6 +865,11 @@ func (*BrokerService) PublishPact(ctx context.Context, in *brokerpb.PublishPactR
 	}
 	if pact == nil {
 		id, err := GetData(ctx, GetBrokerLatestPactIDKey())
+		if err != nil {
+			return &brokerpb.PublishPactResponse{
+				Response: pb.CreateResponse(scerr.ErrInternal, "get data error."),
+			}, err
+		}
 		pact = &brokerpb.Pact{Id: int32(id) + 1, ConsumerParticipantId: consumerParticipant.Id,
 			ProviderParticipantId: providerParticipant.Id, Sha: sha, Content: in.Pact}
 		response, err := CreatePact(PactLogger, ctx, pactKey, *pact)
@@ -864,6 +889,11 @@ func (*BrokerService) PublishPact(ctx context.Context, in *brokerpb.PublishPactR
 	}
 	if pactVersion == nil {
 		id, err := GetData(ctx, GetBrokerLatestPactVersionIDKey())
+		if err != nil {
+			return &brokerpb.PublishPactResponse{
+				Response: pb.CreateResponse(scerr.ErrInternal, "get data error."),
+			}, err
+		}
 		pactVersion = &brokerpb.PactVersion{Id: int32(id) + 1, VersionId: version.Id, PactId: pact.Id, ProviderParticipantId: providerParticipant.Id}
 		response, err := CreatePactVersion(PactLogger, ctx, pactVersionKey, *pactVersion)
 		if err != nil {
