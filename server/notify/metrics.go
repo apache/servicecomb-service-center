@@ -44,10 +44,18 @@ var (
 			Help:       "Latency of publishing instance events",
 			Objectives: prometheus.DefObjectives,
 		}, []string{"instance", "source", "status"})
+
+	subscriberGauge = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: metric.FamilyName,
+			Subsystem: "notify",
+			Name:      "subscriber_total",
+			Help:      "Gauge of subscribers",
+		}, []string{"instance", "domain", "scheme"})
 )
 
 func init() {
-	prometheus.MustRegister(notifyCounter, notifyLatency)
+	prometheus.MustRegister(notifyCounter, notifyLatency, subscriberGauge)
 }
 
 func ReportPublishCompleted(evt notify.Event, err error) {
@@ -59,4 +67,10 @@ func ReportPublishCompleted(evt notify.Event, err error) {
 	}
 	notifyLatency.WithLabelValues(instance, evt.Type().String(), status).Observe(elapsed)
 	notifyCounter.WithLabelValues(instance, evt.Type().String(), status).Inc()
+}
+
+func ReportSubscriber(domain, scheme string, n float64) {
+	instance := metric.InstanceName()
+
+	subscriberGauge.WithLabelValues(instance, domain, scheme).Add(n)
 }

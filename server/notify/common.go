@@ -24,4 +24,6 @@ const (
 	SendTimeout            = 5 * time.Second
 	InstanceEventQueueSize = 5000
 	ReadMaxBody            = 64
+	Websocket              = "Websocket"
+	GRPC                   = "gRPC"
 )

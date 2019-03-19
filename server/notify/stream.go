@@ -64,12 +64,16 @@ func HandleWatchJob(watcher *InstanceEventListWatcher, stream pb.ServiceInstance
 	}
 }
 
-func DoStreamListAndWatch(ctx context.Context, serviceId string, f func() ([]*pb.WatchInstanceResponse, int64), stream pb.ServiceInstanceCtrl_WatchServer) error {
+func DoStreamListAndWatch(ctx context.Context, serviceId string, f func() ([]*pb.WatchInstanceResponse, int64), stream pb.ServiceInstanceCtrl_WatchServer) (err error) {
 	domainProject := util.ParseDomainProject(ctx)
+	domain := util.ParseDomain(ctx)
 	watcher := NewInstanceEventListWatcher(serviceId, apt.GetInstanceRootKey(domainProject)+"/", f)
-	err := NotifyCenter().AddSubscriber(watcher)
+	err = NotifyCenter().AddSubscriber(watcher)
 	if err != nil {
-		return err
+		return
 	}
-	return HandleWatchJob(watcher, stream)
+	ReportSubscriber(domain, GRPC, 1)
+	err = HandleWatchJob(watcher, stream)
+	ReportSubscriber(domain, GRPC, -1)
+	return
 }
