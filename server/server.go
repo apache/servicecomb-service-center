@@ -88,7 +88,10 @@ func (s *ServiceCenterServer) loadOrUpgradeServerVersion() {
 	if s.needUpgrade() {
 		core.ServerInfo.Version = version.Ver().Version
 
-		UpgradeServerVersion()
+		if err := UpgradeServerVersion(); err != nil {
+			log.Errorf(err, "upgrade server version failed")
+			os.Exit(1)
+		}
 	}
 	lock.Unlock()
 }

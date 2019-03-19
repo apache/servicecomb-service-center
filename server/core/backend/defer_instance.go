@@ -62,7 +62,7 @@ func (iedh *InstanceEventDeferHandler) OnCondition(cache discovery.Cache, evts [
 	return true
 }
 
-func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt discovery.KvEvent) error {
+func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt discovery.KvEvent) {
 	kv := evt.KV
 	key := util.BytesToStringWithNoCopy(kv.Key)
 	_, ok := iedh.items[key]
@@ -75,7 +75,7 @@ func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt discovery.KvEvent) err
 		iedh.recover(evt)
 	case pb.EVT_DELETE:
 		if ok {
-			return nil
+			return
 		}
 
 		instance := kv.Value.(*pb.MicroServiceInstance)
@@ -88,7 +88,6 @@ func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt discovery.KvEvent) err
 			event: evt,
 		}
 	}
-	return nil
 }
 
 func (iedh *InstanceEventDeferHandler) HandleChan() <-chan discovery.KvEvent {

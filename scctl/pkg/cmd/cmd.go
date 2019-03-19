@@ -41,7 +41,9 @@ func init() {
 	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "make the operation more talkative")
 	rootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
 		if v, _ := cmd.Flags().GetBool("verbose"); v {
-			os.Setenv("DEBUG_MODE", "1")
+			if err := os.Setenv("DEBUG_MODE", "1"); err != nil {
+				StopAndExit(ExitError, err)
+			}
 		}
 		if d, err := time.ParseDuration(timeout); err == nil && d > 0 {
 			ScClientConfig.RequestTimeout = d

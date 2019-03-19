@@ -131,7 +131,9 @@ func (s *registryEngine) Stop() {
 	s.goroutine.Close(true)
 
 	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
-	s.unregisterInstance(ctx)
+	if err := s.unregisterInstance(ctx); err != nil {
+		log.Error("stop registry engine failed", err)
+	}
 }
 
 func (s *registryEngine) selfRegister(ctx context.Context) error {

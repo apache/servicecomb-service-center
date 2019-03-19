@@ -145,7 +145,7 @@ func getSubCommands(cmd *cobra.Command) []*cobra.Command {
 func UsageFunc(cmd *cobra.Command) error {
 	subCommands := getSubCommands(cmd)
 	tabOut := getTabOutWithWriter(os.Stdout)
-	commandUsageTemplate.Execute(tabOut, struct {
+	if err := commandUsageTemplate.Execute(tabOut, struct {
 		Cmd         *cobra.Command
 		LocalFlags  string
 		GlobalFlags string
@@ -157,9 +157,10 @@ func UsageFunc(cmd *cobra.Command) error {
 		toolFlagUsages(cmd.InheritedFlags()),
 		subCommands,
 		version.Ver().Version,
-	})
-	tabOut.Flush()
-	return nil
+	}); err != nil {
+		return err
+	}
+	return tabOut.Flush()
 }
 
 func getTabOutWithWriter(writer io.Writer) *tabwriter.Writer {
