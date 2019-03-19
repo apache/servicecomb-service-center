@@ -101,10 +101,12 @@ func (c *EtcdClient) Initialize() (err error) {
 
 func (c *EtcdClient) newClient() (*clientv3.Client, error) {
 	client, err := clientv3.New(clientv3.Config{
-		Endpoints:          c.Endpoints,
-		DialTimeout:        c.DialTimeout,
-		TLS:                c.TLSConfig,
-		MaxCallRecvMsgSize: maxRecvMsgSize,
+		Endpoints:            c.Endpoints,
+		DialTimeout:          c.DialTimeout,
+		TLS:                  c.TLSConfig,
+		MaxCallRecvMsgSize:   maxRecvMsgSize,
+		DialKeepAliveTime:    keepAliveTime,
+		DialKeepAliveTimeout: keepAliveTimeout,
 	})
 	defer func() {
 		if err != nil {
