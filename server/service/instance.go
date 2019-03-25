@@ -103,6 +103,11 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	//允许自定义id
 	if len(instance.InstanceId) > 0 {
 		// keep alive the lease ttl
+		// there are two reasons for sending a heartbeat here:
+		// 1. in the scenario the instance has been removed, 
+		//    the cast of registration operation can be reduced.
+		// 2. in the self-protection scenario, the instance is unhealthy 
+		//    and needs to be re-registered.
 		resp, err := s.Heartbeat(ctx, &pb.HeartbeatRequest{ServiceId: instance.ServiceId, InstanceId: instance.InstanceId})
 		switch resp.Response.Code {
 		case pb.Response_SUCCESS:
