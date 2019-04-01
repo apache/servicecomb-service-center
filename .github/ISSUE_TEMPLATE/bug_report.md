@@ -18,10 +18,15 @@ Steps to reproduce the behavior:
 **Expected behavior**
 A clear and concise description of what you expected to happen.
 
-**Platform (please complete the following information):**
+**Platform And Runtime (please complete the following information):**
+
+Platform
  - OS: [e.g. iOS]
  - Browser [e.g. chrome, safari]
  - Version [e.g. 22]
+
+Runtime
+ - Version [e.g. Go 1.11]
 
 **Additional context**
 Add any other context about the problem here.
