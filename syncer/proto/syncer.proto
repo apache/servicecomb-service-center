@@ -1,0 +1,25 @@
+syntax = "proto3";
+import "services.proto";
+//import "../../server/core/proto/services.proto";
+package proto;
+
+message PullRequest {
+    string serviceName = 1;
+    string options = 2;
+    string time = 3;
+}
+
+service Sync {
+    rpc Pull(PullRequest) returns (SyncData) {}
+}
+
+message SyncService {
+    string domainProject = 1;
+    MicroService service = 2;
+    repeated MicroServiceInstance instances = 3;
+}
+
+message SyncData {
+    repeated SyncService services  = 1;
+}
+
