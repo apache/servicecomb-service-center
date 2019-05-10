@@ -41,7 +41,7 @@ func OpenFile(path string) (*os.File, error)  {
 
 	dir := filepath.Dir(path)
 	if !IsDirExist(dir) {
-		err := os.MkdirAll(dir, 0440)
+		err := os.MkdirAll(dir, 0666)
 		if err != nil {
 			return nil , err
 		}
