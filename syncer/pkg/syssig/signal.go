@@ -37,6 +37,7 @@ var (
 	}
 )
 
+// Run start system signal listening
 func Run(ctx context.Context) {
 	once.Do(func() {
 		listenSignals := make([]os.Signal, 0, 10)
@@ -61,6 +62,7 @@ func Run(ctx context.Context) {
 	})
 }
 
+// AddSignalsHandler add system signal listener with types
 func AddSignalsHandler(handler func(), signals ...os.Signal) error {
 	for _, sig := range signals {
 		lock.RLock()
@@ -77,6 +79,7 @@ func AddSignalsHandler(handler func(), signals ...os.Signal) error {
 	return nil
 }
 
+// callbacks Callback system listeners
 func callbacks(signal os.Signal) []func() {
 	lock.RLock()
 	calls := handlerMap[signal]

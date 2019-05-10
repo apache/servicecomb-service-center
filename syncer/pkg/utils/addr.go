@@ -21,6 +21,7 @@ import (
 	"net"
 )
 
+// SplitHostPort returns the parts of the address and port. If the port does not exist, use defaultPort.
 func SplitHostPort(address string, defaultPort int) (string, int, error) {
 	_, _, err := net.SplitHostPort(address)
 	if ae, ok := err.(*net.AddrError); ok && ae.Err == "missing port in address" {

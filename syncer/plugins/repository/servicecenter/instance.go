@@ -22,6 +22,7 @@ import (
 	scpb "github.com/apache/servicecomb-service-center/server/core/proto"
 )
 
+// RegisterInstance register instance to servicecenter
 func (c *Client) RegisterInstance(ctx context.Context, domainProject, serviceId string, instance *scpb.MicroServiceInstance) (string, error) {
 	instanceID, err := c.cli.RegisterInstance(ctx, domainProject, serviceId, instance)
 	if err != nil {
@@ -30,6 +31,7 @@ func (c *Client) RegisterInstance(ctx context.Context, domainProject, serviceId 
 	return instanceID, nil
 }
 
+// UnregisterInstance unregister instance from servicecenter
 func (c *Client) UnregisterInstance(ctx context.Context, domainProject, serviceId, instanceId string) error {
 	err := c.cli.UnregisterInstance(ctx, domainProject, serviceId, instanceId)
 	if err != nil {
@@ -38,6 +40,7 @@ func (c *Client) UnregisterInstance(ctx context.Context, domainProject, serviceI
 	return nil
 }
 
+// DiscoveryInstances discoveries instances from servicecenter
 func (c *Client) DiscoveryInstances(ctx context.Context, domainProject, consumerId, providerAppId, providerServiceName, providerVersionRule string) ([]*scpb.MicroServiceInstance, error) {
 	instances, err := c.cli.DiscoveryInstances(ctx, domainProject, consumerId, providerAppId, providerServiceName, providerVersionRule)
 	if err != nil {
@@ -46,6 +49,7 @@ func (c *Client) DiscoveryInstances(ctx context.Context, domainProject, consumer
 	return instances, nil
 }
 
+// Heartbeat sends heartbeat to servicecenter
 func (c *Client) Heartbeat(ctx context.Context, domainProject, serviceId, instanceId string) error {
 	err := c.cli.Heartbeat(ctx, domainProject, serviceId, instanceId)
 	if err != nil {

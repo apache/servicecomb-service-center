@@ -23,11 +23,13 @@ import (
 	"google.golang.org/grpc"
 )
 
+// Client struct
 type Client struct {
 	addr string
 	cli  pb.SyncClient
 }
 
+// NewClient new grpc client
 func NewClient(addr string) (*Client, error) {
 	conn, err := grpc.Dial(addr, grpc.WithInsecure())
 	if err != nil {
@@ -36,6 +38,7 @@ func NewClient(addr string) (*Client, error) {
 	return &Client{cli: pb.NewSyncClient(conn), addr: addr}, nil
 }
 
+// Pull data to be synchronized from the specified datacenter
 func (c *Client) Pull(ctx context.Context) (*pb.SyncData, error) {
 	return c.cli.Pull(ctx, &pb.PullRequest{})
 }

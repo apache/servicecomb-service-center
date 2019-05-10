@@ -21,6 +21,7 @@ import (
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 )
 
+// exclude find out services data belonging to self
 func (s *store) exclude(data *pb.SyncData) {
 	mapping := s.cache.GetAllMapping()
 	services := make([]*pb.SyncService, 0, 10)
@@ -34,6 +35,7 @@ func (s *store) exclude(data *pb.SyncData) {
 	data.Services = services
 }
 
+// excludeInstances find out the instance data belonging to self, through the mapping table
 func (s *store) excludeInstances(ins []*scpb.MicroServiceInstance, mapping pb.SyncMapping) []*scpb.MicroServiceInstance {
 	is := make([]*scpb.MicroServiceInstance, 0, len(ins))
 	for _, item := range ins {

@@ -22,6 +22,7 @@ import (
 	scpb "github.com/apache/servicecomb-service-center/server/core/proto"
 )
 
+// CreateService creates the service of servicecenter
 func (c *Client) CreateService(ctx context.Context, domainProject string, service *scpb.MicroService) (string, error) {
 	serviceID, err := c.cli.CreateService(ctx, domainProject, service)
 	if err != nil {
@@ -30,6 +31,7 @@ func (c *Client) CreateService(ctx context.Context, domainProject string, servic
 	return serviceID, nil
 }
 
+// DeleteService deletes service from servicecenter
 func (c *Client) DeleteService(ctx context.Context, domainProject, serviceId string) error {
 	err := c.cli.DeleteService(ctx, domainProject, serviceId)
 	if err != nil {
@@ -38,6 +40,7 @@ func (c *Client) DeleteService(ctx context.Context, domainProject, serviceId str
 	return nil
 }
 
+// ServiceExistence Checkes service exists in servicecenter
 func (c *Client) ServiceExistence(ctx context.Context, domainProject string, service *scpb.MicroService) (string, error) {
 	serviceID, err := c.cli.ServiceExistence(ctx, domainProject, service.AppId, service.ServiceName, service.Version, service.Environment)
 	if err != nil {
