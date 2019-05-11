@@ -37,27 +37,37 @@ import (
 	"github.com/apache/servicecomb-service-center/syncer/plugins"
 )
 
+// tickHandler Timed task handler
 func tickHandler(ctx context.Context) {
 	events.Dispatch(events.NewContextEvent(notify.EventTicker, ctx))
 }
 
+// Server struct for syncer
 type Server struct {
-	conf   *config.Config
-	ending chan struct{}
+	// Stores the syncer configuration
+	conf *config.Config
 
-	tick   *ticker.TaskTicker
-	store  datacenter.Store
-	agent  *peer.Agent
+	//Set the task ticker
+	tick *ticker.TaskTicker
+
+	// store is the datacenter service
+	store datacenter.Store
+
+	// Wraps the serf agents
+	agent *peer.Agent
+
+	//Wraps the grpc server and client
 	broker *grpc.Broker
 }
 
+// NewServer new server with Config
 func NewServer(conf *config.Config) *Server {
 	return &Server{
-		conf:   conf,
-		ending: make(chan struct{}),
+		conf: conf,
 	}
 }
 
+// Run syncer Server
 func (s *Server) Run(ctx context.Context) {
 	s.initPlugin()
 
@@ -73,13 +83,18 @@ func (s *Server) Run(ctx context.Context) {
 	s.waitQuit(ctx)
 }
 
+// Stop Syncer Server
 func (s *Server) Stop() {
 	if s.tick != nil {
 		s.tick.Stop()
 	}
 
 	if s.agent != nil {
+		// removes the serf eventHandler
 		s.agent.DeregisterEventHandler(s)
+		//Leave from Serf
+		s.agent.Leave()
+		// closes this serf agent
 		s.agent.Shutdown()
 	}
 
@@ -91,23 +106,31 @@ func (s *Server) Stop() {
 		s.store.Stop()
 	}
 
+	// clears the event listeners
 	events.Clean()
+
+	// Closes all goroutines in the pool
 	gopool.CloseAndWait()
 }
 
+// initPlugin Initialize the plugin and load the external plugin according to the configuration
 func (s *Server) initPlugin() {
 	plugins.SetPluginConfig(plugins.PluginStorage.String(), s.conf.StoragePlugin)
 	plugins.SetPluginConfig(plugins.PluginRepository.String(), s.conf.RepositoryPlugin)
 	plugins.LoadPlugins()
 }
 
+// eventListen Start internal event listener
 func (s *Server) eventListen() {
+	// Register self as an event handler for serf
 	s.agent.RegisterEventHandler(s)
+
 	events.AddListener(notify.EventTicker, s.store)
 	events.AddListener(notify.EventDiscovery, s)
 	events.AddListener(notify.EventPullByPeer, s.store)
 }
 
+// initialization Initialize the starter of the syncer
 func (s *Server) initialization() (err error) {
 	s.tick = ticker.NewTaskTicker(s.conf.TickerInterval, tickHandler)
 
@@ -125,6 +148,7 @@ func (s *Server) initialization() (err error) {
 	return nil
 }
 
+// startServers Start all internal services
 func (s *Server) startServers(ctx context.Context) {
 	s.agent.Start(ctx)
 
@@ -140,6 +164,7 @@ func (s *Server) startServers(ctx context.Context) {
 	gopool.Go(s.tick.Start)
 }
 
+// waitQuit Waiting for system quit signal
 func (s *Server) waitQuit(ctx context.Context) {
 	err := syssig.AddSignalsHandler(func() {
 		s.Stop()
@@ -151,6 +176,7 @@ func (s *Server) waitQuit(ctx context.Context) {
 	syssig.Run(ctx)
 }
 
+// createLogFile create log file
 func createLogFile(logFile string) (fw io.Writer) {
 	fw = os.Stderr
 	if logFile == "" {

@@ -23,6 +23,7 @@ type contextEvent struct {
 	ctx  context.Context
 }
 
+// NewContextEvent new ContextEvent with kind and context
 func NewContextEvent(kind string, ctx context.Context) ContextEvent {
 	return &contextEvent{
 		kind: kind,
@@ -30,10 +31,12 @@ func NewContextEvent(kind string, ctx context.Context) ContextEvent {
 	}
 }
 
+// Type get event kind
 func (e *contextEvent) Type() string {
 	return e.kind
 }
 
+// Type get event context
 func (e *contextEvent) Context() context.Context {
 	return e.ctx
 }

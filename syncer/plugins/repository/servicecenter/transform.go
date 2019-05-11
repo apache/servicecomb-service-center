@@ -24,6 +24,7 @@ import (
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 )
 
+// transform servicecenter service cache to SyncData
 func transform(cache *model.Cache) (data *pb.SyncData) {
 	data = &pb.SyncData{Services: make([]*pb.SyncService, 0, 10)}
 	for _, svc := range cache.Microservices {
@@ -37,6 +38,7 @@ func transform(cache *model.Cache) (data *pb.SyncData) {
 	return
 }
 
+//  instancesFromService Extract instance information from the service cache of the servicecenter
 func instancesFromService(service *scpb.MicroService, instances []*model.Instance) []*scpb.MicroServiceInstance {
 	instList := make([]*scpb.MicroServiceInstance, 0, 10)
 	for _, inst := range instances {

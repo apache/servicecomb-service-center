@@ -27,6 +27,7 @@ import (
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 )
 
+// Store interface of datacenter
 type Store interface {
 	OnEvent(event events.ContextEvent)
 	LocalInfo() *pb.SyncData
@@ -38,6 +39,7 @@ type store struct {
 	cache storage.Repository
 }
 
+// NewStore new store with endpoints
 func NewStore(endpoints []string) (Store, error) {
 	repo, err := plugins.Plugins().Repository().New(endpoints)
 	if err != nil {
@@ -50,17 +52,20 @@ func NewStore(endpoints []string) (Store, error) {
 	}, nil
 }
 
+// Stop store
 func (s *store) Stop() {
-	if s.cache == nil{
+	if s.cache == nil {
 		return
 	}
 	s.cache.Stop()
 }
 
+// LocalInfo Get local datacenter information from cache
 func (s *store) LocalInfo() *pb.SyncData {
 	return s.cache.GetSyncData()
 }
 
+// OnEvent Handles events with internal type "ticker_trigger" or "pull_by_peer"
 func (s *store) OnEvent(event events.ContextEvent) {
 	switch event.Type() {
 	case notify.EventTicker:
@@ -71,6 +76,7 @@ func (s *store) OnEvent(event events.ContextEvent) {
 	}
 }
 
+// getLocalDataInfo get local datacenter information form repo
 func (s *store) getLocalDataInfo(event events.ContextEvent) {
 	ctx := event.Context()
 	data, err := s.repo.GetAll(ctx)
@@ -84,6 +90,7 @@ func (s *store) getLocalDataInfo(event events.ContextEvent) {
 	events.Dispatch(events.NewContextEvent(notify.EventDiscovery, nil))
 }
 
+// syncPeerDataInfo sync the datacenter information of other to local repo
 func (s *store) syncPeerDataInfo(event events.ContextEvent) {
 	ctx := event.Context()
 	nodeData, ok := ctx.Value(event.Type()).(*pb.NodeDataInfo)

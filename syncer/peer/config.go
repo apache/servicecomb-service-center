@@ -30,6 +30,7 @@ const (
 	DefaultRPCPort  = 30191
 )
 
+// DefaultConfig default config of peer
 func DefaultConfig() *Config {
 	agentConf := agent.DefaultConfig()
 	agentConf.BindAddr = fmt.Sprintf("0.0.0.0:%d", DefaultBindPort)
@@ -37,18 +38,22 @@ func DefaultConfig() *Config {
 	return &Config{Config: agentConf}
 }
 
+// Config struct
 type Config struct {
+	// config from serf agent
 	*agent.Config
 	RPCPort int `yaml:"-"`
 }
 
+// readConfigFile reads configuration from config file
 func (c *Config) readConfigFile(filepath string) error {
 	if filepath != "" {
-
+		// todo:
 	}
 	return nil
 }
 
+// convertToSerf convert peer.Config to serf.Config
 func (c *Config) convertToSerf() (*serf.Config, error) {
 	serfConf := serf.DefaultConfig()
 

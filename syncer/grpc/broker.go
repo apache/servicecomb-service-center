@@ -26,12 +26,16 @@ import (
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 )
 
+// Wraps the grpc server and client
 type Broker struct {
-	svr     *server.Server
+	svr *server.Server
+
+	// Client cache for different datacenters
 	clients map[string]*client.Client
 	lock    sync.RWMutex
 }
 
+// NewBroker new broker of grpc client and server
 func NewBroker(addr string, store datacenter.Store) *Broker {
 	return &Broker{
 		svr:     server.NewServer(addr, store),
@@ -39,19 +43,23 @@ func NewBroker(addr string, store datacenter.Store) *Broker {
 	}
 }
 
+// Run grpc broker
 func (b *Broker) Run() {
 	b.svr.Run()
 }
 
+// Stop grpc broker
 func (b *Broker) Stop() {
 	b.svr.Stop()
 }
 
+// Pull data to be synchronized from the specified datacenter
 func (b *Broker) Pull(ctx context.Context, addr string) (*pb.SyncData, error) {
 	cli := b.getClient(addr)
 	return cli.Pull(ctx)
 }
 
+// getClient Get the client from the client caches with addr
 func (b *Broker) getClient(addr string) *client.Client {
 	b.lock.RLock()
 	cli, ok := b.clients[addr]

@@ -23,6 +23,7 @@ import (
 	"time"
 )
 
+// TaskTicker task of ticker struct
 type TaskTicker struct {
 	interval time.Duration
 	handler  func(ctx context.Context)
@@ -30,6 +31,7 @@ type TaskTicker struct {
 	ticker   *time.Ticker
 }
 
+// NewTaskTicker new task ticker with interval
 func NewTaskTicker(interval int, handler func(ctx context.Context)) *TaskTicker {
 	return &TaskTicker{
 		interval: time.Second * time.Duration(interval),
@@ -37,6 +39,7 @@ func NewTaskTicker(interval int, handler func(ctx context.Context)) *TaskTicker 
 	}
 }
 
+// Start start task ticker
 func (t *TaskTicker) Start(ctx context.Context) {
 	t.once.Do(func() {
 		t.handler(ctx)
@@ -53,6 +56,7 @@ func (t *TaskTicker) Start(ctx context.Context) {
 	})
 }
 
+// Start stop task ticker
 func (t *TaskTicker) Stop() {
 	if t.ticker == nil{
 		return

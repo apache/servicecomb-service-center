@@ -23,10 +23,12 @@ import (
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 )
 
+// Adaptor the plugin adaptor of repository
 type Adaptor interface {
 	New(endpoints []string) (Repository, error)
 }
 
+// Repository datacenter interface
 type Repository interface {
 	GetAll(ctx context.Context) (*pb.SyncData, error)
 	CreateService(ctx context.Context, domainProject string, service *scpb.MicroService) (string, error)

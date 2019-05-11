@@ -28,21 +28,25 @@ var (
 	listenerMap = map[string][]Listener{}
 )
 
+// ContextEvent
 type ContextEvent interface {
 	Type() string
 	Context() context.Context
 }
 
+// Listener interface
 type Listener interface {
 	OnEvent(event ContextEvent)
 }
 
+// Clean clears listeners
 func Clean() {
 	lock.Lock()
 	listenerMap = map[string][]Listener{}
 	lock.Unlock()
 }
 
+// AddListener add listener with event type
 func AddListener(eventType string, listener Listener) {
 	lock.RLock()
 	list, ok := listenerMap[eventType]
@@ -57,6 +61,7 @@ func AddListener(eventType string, listener Listener) {
 	lock.Unlock()
 }
 
+// AddListener remove listener with event type
 func RemoveListener(eventType string, listener Listener) {
 	lock.RLock()
 	list, ok := listenerMap[eventType]
@@ -80,6 +85,7 @@ func RemoveListener(eventType string, listener Listener) {
 	lock.Unlock()
 }
 
+// Dispatch dispatches ContextEvent
 func Dispatch(event ContextEvent) {
 	lock.RLock()
 	list, ok := listenerMap[event.Type()]

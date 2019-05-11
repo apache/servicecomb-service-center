@@ -28,6 +28,7 @@ import (
 const PluginName = "servicecenter"
 
 func init() {
+	// Register self as a repository plugin
 	plugins.RegisterPlugin(&plugins.Plugin{
 		Kind: plugins.PluginRepository,
 		Name: PluginName,
@@ -41,6 +42,7 @@ func New() plugins.PluginInstance {
 	return &adaptor{}
 }
 
+// New repository with endpoints
 func (*adaptor) New(endpoints []string) (repository.Repository, error) {
 	cli, err := sc.NewSCClient(sc.Config{Endpoints: endpoints})
 	if err != nil {
@@ -53,6 +55,7 @@ type Client struct {
 	cli *sc.SCClient
 }
 
+// GetAll get adn transform servicecenter data to SyncData
 func (c *Client) GetAll(ctx context.Context) (*pb.SyncData, error) {
 	cache, err := c.cli.GetScCache(ctx)
 	if err != nil {

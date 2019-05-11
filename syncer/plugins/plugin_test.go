@@ -32,6 +32,8 @@ func mewMockStorage() PluginInstance { return &mockStorage{} }
 
 type mockStorage struct{}
 
+func (r *mockStorage) Stop() {}
+
 func (r *mockStorage) SaveSyncData(data *pb.SyncData) {}
 
 func (r *mockStorage) GetSyncData() (data *pb.SyncData) { return }

@@ -33,11 +33,21 @@ var (
 	DefaultTickerInterval = 30
 )
 
+// Config is the configuration that can be set for Syncer. Some of these
+// configurations are exposed as command-line flags.
 type Config struct {
+	// Wraps the serf config
 	*peer.Config
-	LogFile           string `yaml:"log_file"`
-	Mode              string `yaml:"mode"`
-	DCAddr            string `yaml:"dc_addr"`
+	LogFile string `yaml:"log_file"`
+
+	// Mode is the type of datacenter, currently supports "service-center"
+	Mode string `yaml:"mode"`
+
+	// DCAddr datacenter address, which is the service registry address.
+	// Cluster mode is supported, and multiple addresses are separated by an English ",".
+	DCAddr string `yaml:"dc_addr"`
+
+	// JoinAddr The management address of one gossip pool member.
 	JoinAddr          string `yaml:"join_addr"`
 	TickerInterval    int    `yaml:"ticker_interval"`
 	Profile           string `yaml:"profile"`
@@ -47,6 +57,7 @@ type Config struct {
 	RepositoryPlugin  string `json:"repository_plugin"`
 }
 
+// DefaultConfig returns the default config
 func DefaultConfig() *Config {
 	peerConf := peer.DefaultConfig()
 	hostname, err := os.Hostname()
@@ -66,6 +77,7 @@ func DefaultConfig() *Config {
 	}
 }
 
+// Verification Provide config verification
 func (c *Config) Verification() error {
 	ip, port, err := utils.SplitHostPort(c.BindAddr, peer.DefaultBindPort)
 	if err != nil {

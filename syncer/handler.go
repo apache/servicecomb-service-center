@@ -29,6 +29,7 @@ import (
 	"github.com/hashicorp/serf/serf"
 )
 
+// OnEvent Handles events with internal type "discovery_services"
 func (s *Server) OnEvent(event events.ContextEvent) {
 	data, _ := proto.Marshal(&pb.Member{
 		NodeName: s.conf.NodeName,
@@ -36,12 +37,14 @@ func (s *Server) OnEvent(event events.ContextEvent) {
 		Time:     fmt.Sprintf("%d", time.Now().UTC().Second()),
 	})
 
+	// sends a UserEvent on Serf, the event will be broadcast between members
 	err := s.agent.UserEvent(event.Type(), data, true)
 	if err != nil {
 		log.Errorf(err, "Syncer send user event failed")
 	}
 }
 
+// HandleEvent Handles events from serf
 func (s *Server) HandleEvent(event serf.Event) {
 	switch event.EventType() {
 	case serf.EventUser:
@@ -51,6 +54,7 @@ func (s *Server) HandleEvent(event serf.Event) {
 	}
 }
 
+// userEvent Handles "EventUser" notification events, no response required
 func (s *Server) userEvent(event serf.UserEvent) {
 	m := &pb.Member{}
 	err := proto.Unmarshal(event.Payload, m)
@@ -59,10 +63,12 @@ func (s *Server) userEvent(event serf.UserEvent) {
 		return
 	}
 
+	// excludes notifications from self, as the gossip protocol inevitably has redundant notifications
 	if s.agent.LocalMember().Name == m.NodeName {
 		return
 	}
 
+	// Get member information and get synchronized data from it
 	member := s.agent.Member(m.NodeName)
 	data, err := s.broker.Pull(context.Background(), fmt.Sprintf("%s:%d", member.Addr, m.RPCPort))
 	if err != nil {
@@ -73,6 +79,7 @@ func (s *Server) userEvent(event serf.UserEvent) {
 	events.Dispatch(events.NewContextEvent(notify.EventPullByPeer, ctx))
 }
 
+// queryEvent Handles "EventQuery" query events and respond if conditions are met
 func (s *Server) queryEvent(query *serf.Query) {
 	// todo: 按需获取实例信息
 }

@@ -1,5 +1,6 @@
 ServiceCenter Syncer
 -------
+[中文简介](./README-ZH.md)
 
 ### 1. What is ServiceCenter Syncer  
 Syncer is a multiple datacenters synchronization tool designed for large microservice architectures,supporting differ-structure datacenters.The project was born out of the belief that:  

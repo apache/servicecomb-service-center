@@ -24,12 +24,14 @@ import (
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 )
 
+// sync synchronize information from other datacenters
 func (s *store) sync(nodeData *pb.NodeDataInfo) {
 	allInstances, mapping := s.syncServiceInstances(nodeData.DataInfo.Services, s.cache.GetSyncMapping(nodeData.NodeName))
 	mapping = s.deleteInstances(allInstances, mapping)
 	s.cache.SaveSyncMapping(nodeData.NodeName, mapping)
 }
 
+// syncServiceInstances register instances from other datacenter
 func (s *store) syncServiceInstances(services []*pb.SyncService, mapping pb.SyncMapping) ([]*scpb.MicroServiceInstance, pb.SyncMapping) {
 	var err error
 	ctx := context.Background()
@@ -38,6 +40,8 @@ func (s *store) syncServiceInstances(services []*pb.SyncService, mapping pb.Sync
 		serviceID := ""
 		for _, inst := range svc.Instances {
 			allInstances = append(allInstances, inst)
+
+			// Send an instance heartbeat if the instance has already been registered
 			syncKey, ok := mapping[inst.InstanceId]
 			if ok && syncKey.InstanceID != ""{
 				err = s.repo.Heartbeat(ctx, svc.DomainProject, syncKey.ServiceID, syncKey.InstanceID)
@@ -47,6 +51,7 @@ func (s *store) syncServiceInstances(services []*pb.SyncService, mapping pb.Sync
 				continue
 			}
 
+			// Create microservice if the service to which the instance belongs does not exist
 			if serviceID == "" {
 				if serviceID, _ = s.repo.ServiceExistence(ctx, svc.DomainProject, svc.Service); serviceID == "" {
 					serviceID, err = s.repo.CreateService(ctx, svc.DomainProject, svc.Service)
@@ -56,6 +61,7 @@ func (s *store) syncServiceInstances(services []*pb.SyncService, mapping pb.Sync
 				}
 			}
 
+			// Register instance information when the instance does not exist
 			instanceID, err := s.repo.RegisterInstance(ctx, svc.DomainProject, serviceID, inst)
 			if err != nil {
 				log.Errorf(err, "Syncer create service failed")
@@ -72,6 +78,7 @@ func (s *store) syncServiceInstances(services []*pb.SyncService, mapping pb.Sync
 	return allInstances, mapping
 }
 
+// deleteInstances Unregister instances of mapping table that has been unregistered from other datacenter
 func (s *store) deleteInstances(ins []*scpb.MicroServiceInstance, mapping pb.SyncMapping) pb.SyncMapping {
 	ctx := context.Background()
 	nm := make(pb.SyncMapping)
