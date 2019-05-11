@@ -15,7 +15,7 @@ Syncer是一个多数据中心的同步工具，专为大型微服务架构设�
 
 ### 2. ServiceCenter Syncer架构
 Syncer的架构图如下：  
-![image](https://github.com/ChinX/ArticlePicture/blob/master/SyncerArchitecture.png?raw=true)  
+![image](./images/SyncerArchitecture.png?raw=true)  
 如图所示，我们可以看到被标记为“A”、"B"、“C”的三个数据中心。  
 - 在每个数据中心内，我们均部署了一套服务注册中心（ServiceCenter、Eurake或者其他）集群，该集群管理其所属数据中心的所有微服务实例，并且数据中心是彼此隔离的。同时我们在每个数据中心里各自部署了一个Syncer，它负责从注册中心发现实例，并向数据中心注册来自其他数据中心的实例信息。  
 - 在多个数据中心间，多个Syncer组成对等网络，维持一个Gossip池。Gossip协议的使用主要带来了以下便捷：

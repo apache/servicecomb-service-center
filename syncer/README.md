@@ -15,7 +15,7 @@ Syncer is a multiple datacenters synchronization tool designed for large microse
 
 ### 2. ServiceCenter Syncer Architecture
 The aerial view of Syncer looks like this:  
-![image](https://github.com/ChinX/ArticlePicture/blob/master/SyncerArchitecture.png?raw=true)  
+![image](./images/SyncerArchitecture.png?raw=true)  
 As shown in the figure,we can see that there are three datacenters, labeled "A" and "B" and "C". 
 - Within each datacenters, we have deployed a service registry (ServiceCenter, Eurake, or other) cluster that manages all microservice instances of the datacenter to which it belongs, and the datacenters are isolated from each other. At the same time, we deployed a Syncer in each datacenters, which is responsible for discovering instances from the registry and registering instance information from other datacenters to the current datacenter.
 - Between multiple datacenters, multiple Syncers form a peer-to-peer network that maintains a Gossip pool. The use of the Gossip protocol mainly brings the following conveniences:
