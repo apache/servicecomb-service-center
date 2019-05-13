@@ -14,17 +14,17 @@ import (
 type Server struct {
 	lsn   net.Listener
 	addr  string
-	store datacenter.Store
+	dataCenter datacenter.DataCenter
 }
 
 // NewServer new grpc server
-func NewServer(addr string, store datacenter.Store) *Server {
-	return &Server{addr: addr, store: store}
+func NewServer(addr string, dataCenter datacenter.DataCenter) *Server {
+	return &Server{addr: addr, dataCenter: dataCenter}
 }
 
 // Provide consumers with an interface to pull data
 func (s *Server) Pull(ctx context.Context, in *pb.PullRequest) (*pb.SyncData, error) {
-	return s.store.LocalInfo(), nil
+	return s.dataCenter.LocalInfo(), nil
 }
 
 // Stop grpc server

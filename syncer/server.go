@@ -29,7 +29,7 @@ import (
 	"github.com/apache/servicecomb-service-center/syncer/datacenter"
 	"github.com/apache/servicecomb-service-center/syncer/grpc"
 	"github.com/apache/servicecomb-service-center/syncer/notify"
-	"github.com/apache/servicecomb-service-center/syncer/peer"
+	"github.com/apache/servicecomb-service-center/syncer/serf"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/events"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/syssig"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/ticker"
@@ -51,10 +51,10 @@ type Server struct {
 	tick *ticker.TaskTicker
 
 	// store is the datacenter service
-	store datacenter.Store
+	dataCenter datacenter.DataCenter
 
 	// Wraps the serf agents
-	agent *peer.Agent
+	agent *serf.Agent
 
 	//Wraps the grpc server and client
 	broker *grpc.Broker
@@ -102,8 +102,8 @@ func (s *Server) Stop() {
 		s.broker.Stop()
 	}
 
-	if s.store != nil {
-		s.store.Stop()
+	if s.dataCenter != nil {
+		s.dataCenter.Stop()
 	}
 
 	// clears the event listeners
@@ -125,26 +125,26 @@ func (s *Server) eventListen() {
 	// Register self as an event handler for serf
 	s.agent.RegisterEventHandler(s)
 
-	events.AddListener(notify.EventTicker, s.store)
+	events.AddListener(notify.EventTicker, s.dataCenter)
 	events.AddListener(notify.EventDiscovery, s)
-	events.AddListener(notify.EventPullByPeer, s.store)
+	events.AddListener(notify.EventPullByPeer, s.dataCenter)
 }
 
 // initialization Initialize the starter of the syncer
 func (s *Server) initialization() (err error) {
 	s.tick = ticker.NewTaskTicker(s.conf.TickerInterval, tickHandler)
 
-	s.store, err = datacenter.NewStore(strings.Split(s.conf.DCAddr, ","))
+	s.dataCenter, err = datacenter.NewDataCenter(strings.Split(s.conf.DCAddr, ","))
 	if err != nil {
 		return err
 	}
 
-	s.agent, err = peer.Create(s.conf.Config, createLogFile(s.conf.LogFile))
+	s.agent, err = serf.Create(s.conf.Config, createLogFile(s.conf.LogFile))
 	if err != nil {
 		return err
 	}
 
-	s.broker = grpc.NewBroker(s.conf.RPCAddr, s.store)
+	s.broker = grpc.NewBroker(s.conf.RPCAddr, s.dataCenter)
 	return nil
 }
 

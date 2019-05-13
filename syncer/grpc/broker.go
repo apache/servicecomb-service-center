@@ -36,9 +36,9 @@ type Broker struct {
 }
 
 // NewBroker new broker of grpc client and server
-func NewBroker(addr string, store datacenter.Store) *Broker {
+func NewBroker(addr string, dataCenter datacenter.DataCenter) *Broker {
 	return &Broker{
-		svr:     server.NewServer(addr, store),
+		svr:     server.NewServer(addr, dataCenter),
 		clients: map[string]*client.Client{},
 	}
 }

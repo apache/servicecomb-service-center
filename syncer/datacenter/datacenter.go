@@ -28,7 +28,8 @@ import (
 )
 
 // Store interface of datacenter
-type Store interface {
+type DataCenter interface {
+	//
 	OnEvent(event events.ContextEvent)
 	LocalInfo() *pb.SyncData
 	Stop()
@@ -40,7 +41,7 @@ type store struct {
 }
 
 // NewStore new store with endpoints
-func NewStore(endpoints []string) (Store, error) {
+func NewDataCenter(endpoints []string) (DataCenter, error) {
 	repo, err := plugins.Plugins().Repository().New(endpoints)
 	if err != nil {
 		return nil, err

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package peer
+package serf
 
 import (
 	"fmt"
@@ -30,7 +30,7 @@ const (
 	DefaultRPCPort  = 30191
 )
 
-// DefaultConfig default config of peer
+// DefaultConfig default config
 func DefaultConfig() *Config {
 	agentConf := agent.DefaultConfig()
 	agentConf.BindAddr = fmt.Sprintf("0.0.0.0:%d", DefaultBindPort)
@@ -53,7 +53,7 @@ func (c *Config) readConfigFile(filepath string) error {
 	return nil
 }
 
-// convertToSerf convert peer.Config to serf.Config
+// convertToSerf convert Config to serf.Config
 func (c *Config) convertToSerf() (*serf.Config, error) {
 	serfConf := serf.DefaultConfig()
 

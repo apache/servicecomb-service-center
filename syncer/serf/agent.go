@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package peer
+package serf
 
 import (
 	"context"
@@ -33,31 +33,31 @@ type Agent struct {
 	conf *Config
 }
 
-// Create create peer agent with config
-func Create(peerConf *Config, logOutput io.Writer) (*Agent, error) {
+// Create create serf agent with config
+func Create(conf *Config, logOutput io.Writer) (*Agent, error) {
 	if logOutput == nil {
 		logOutput = os.Stderr
 	}
 
-	// peer config cover to serf config
-	serfConf, err := peerConf.convertToSerf()
+	// config cover to serf config
+	serfConf, err := conf.convertToSerf()
 	if err != nil {
 		return nil, err
 	}
 
 	// create serf agent with serf config
-	serfAgent, err := agent.Create(peerConf.Config, serfConf, logOutput)
+	serfAgent, err := agent.Create(conf.Config, serfConf, logOutput)
 	if err != nil {
 		return nil, err
 	}
-	return &Agent{Agent: serfAgent, conf: peerConf}, nil
+	return &Agent{Agent: serfAgent, conf: conf}, nil
 }
 
 // Start agent
 func (a *Agent) Start(ctx context.Context) {
 	err := a.Agent.Start()
 	if err != nil {
-		log.Errorf(err, "start peer agent failed")
+		log.Errorf(err, "start serf agent failed")
 	}
 
 	gopool.Go(func(ctx context.Context) {
