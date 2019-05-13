@@ -21,7 +21,7 @@ import (
 	"os"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/syncer/peer"
+	"github.com/apache/servicecomb-service-center/syncer/serf"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/utils"
 	"github.com/apache/servicecomb-service-center/syncer/plugins/repository/servicecenter"
 	"github.com/apache/servicecomb-service-center/syncer/plugins/storage/memory"
@@ -37,7 +37,7 @@ var (
 // configurations are exposed as command-line flags.
 type Config struct {
 	// Wraps the serf config
-	*peer.Config
+	*serf.Config
 	LogFile string `yaml:"log_file"`
 
 	// Mode is the type of datacenter, currently supports "service-center"
@@ -59,19 +59,19 @@ type Config struct {
 
 // DefaultConfig returns the default config
 func DefaultConfig() *Config {
-	peerConf := peer.DefaultConfig()
+	serfConf := serf.DefaultConfig()
 	hostname, err := os.Hostname()
 	if err != nil {
 		log.Errorf(err, "Error determining hostname: %s", err)
 		return nil
 	}
-	peerConf.NodeName = hostname
+	serfConf.NodeName = hostname
 	return &Config{
 		LogFile:          "./syncer.log",
 		Mode:             DefaultMode,
 		DCAddr:           fmt.Sprintf("127.0.0.1:%d", DefaultDCPort),
 		TickerInterval:   DefaultTickerInterval,
-		Config:           peerConf,
+		Config:           serfConf,
 		StoragePlugin:    memory.PluginName,
 		RepositoryPlugin: servicecenter.PluginName,
 	}
@@ -79,7 +79,7 @@ func DefaultConfig() *Config {
 
 // Verification Provide config verification
 func (c *Config) Verification() error {
-	ip, port, err := utils.SplitHostPort(c.BindAddr, peer.DefaultBindPort)
+	ip, port, err := utils.SplitHostPort(c.BindAddr, serf.DefaultBindPort)
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func (c *Config) Verification() error {
 		c.BindAddr = fmt.Sprintf("0.0.0.0:%d", port)
 	}
 
-	ip, port, err = utils.SplitHostPort(c.RPCAddr, peer.DefaultRPCPort)
+	ip, port, err = utils.SplitHostPort(c.RPCAddr, serf.DefaultRPCPort)
 	if err != nil {
 		return err
 	}
