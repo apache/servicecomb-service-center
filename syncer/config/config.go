@@ -18,13 +18,12 @@ package config
 
 import (
 	"fmt"
+	"github.com/apache/servicecomb-service-center/syncer/plugins/servicecenter"
 	"os"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/syncer/serf"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/utils"
-	"github.com/apache/servicecomb-service-center/syncer/plugins/repository/servicecenter"
-	"github.com/apache/servicecomb-service-center/syncer/plugins/storage/memory"
+	"github.com/apache/servicecomb-service-center/syncer/serf"
 )
 
 var (
@@ -53,8 +52,7 @@ type Config struct {
 	Profile           string `yaml:"profile"`
 	EnableCompression bool   `yaml:"enable_compression"`
 	AutoSync          bool   `yaml:"auto_sync"`
-	StoragePlugin     string `json:"storage_plugin"`
-	RepositoryPlugin  string `json:"repository_plugin"`
+	DatacenterPlugin  string `json:"datacenter_plugin"`
 }
 
 // DefaultConfig returns the default config
@@ -72,8 +70,7 @@ func DefaultConfig() *Config {
 		DCAddr:           fmt.Sprintf("127.0.0.1:%d", DefaultDCPort),
 		TickerInterval:   DefaultTickerInterval,
 		Config:           serfConf,
-		StoragePlugin:    memory.PluginName,
-		RepositoryPlugin: servicecenter.PluginName,
+		DatacenterPlugin: servicecenter.PluginName,
 	}
 }
 

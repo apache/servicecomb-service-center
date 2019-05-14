@@ -5,7 +5,6 @@ import (
 
 	scpb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/syncer/plugins"
-	"github.com/apache/servicecomb-service-center/syncer/plugins/repository"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 )
 
@@ -27,7 +26,7 @@ func New() plugins.PluginInstance {
 	return &adaptor{}
 }
 
-func (*adaptor) New(endpoints []string) (repository.Repository, error) {
+func (*adaptor) New(endpoints []string) (plugins.Repository, error) {
 	return &Client{}, nil
 }
 

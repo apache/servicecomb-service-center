@@ -22,11 +22,10 @@ import (
 )
 
 // exclude find out services data belonging to self
-func (s *store) exclude(data *pb.SyncData) {
-	mapping := s.cache.GetAllMapping()
+func (s *store) exclude(data *pb.SyncData, allMapping pb.SyncMapping) {
 	services := make([]*pb.SyncService, 0, 10)
 	for _, svc := range data.Services {
-		ins := s.excludeInstances(svc.Instances, mapping)
+		ins := s.excludeInstances(svc.Instances, allMapping)
 		if len(ins) > 0 {
 			svc.Instances = ins
 			services = append(services, svc)

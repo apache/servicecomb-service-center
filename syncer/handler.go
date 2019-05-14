@@ -19,18 +19,28 @@ package syncer
 import (
 	"context"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/log"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/syncer/notify"
-	"github.com/apache/servicecomb-service-center/syncer/pkg/events"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/syncer/grpc"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 	"github.com/gogo/protobuf/proto"
 	"github.com/hashicorp/serf/serf"
 )
 
-// OnEvent Handles events with internal type "discovery_services"
-func (s *Server) OnEvent(event events.ContextEvent) {
+const (
+	EventDiscovered = "discovered"
+)
+
+// tickHandler Timed task handler
+func (s *Server) tickHandler(ctx context.Context) {
+	allMapping := s.storage.GetAllMapping()
+	currData, err := s.dataCenter.GetSyncData(allMapping)
+	if err != nil {
+		log.Errorf(err, "Get sync data from datacenter failed: %s", err)
+		return
+	}
+	s.storage.SaveSyncData(currData)
 	data, _ := proto.Marshal(&pb.Member{
 		NodeName: s.conf.NodeName,
 		RPCPort:  int32(s.conf.RPCPort),
@@ -38,10 +48,15 @@ func (s *Server) OnEvent(event events.ContextEvent) {
 	})
 
 	// sends a UserEvent on Serf, the event will be broadcast between members
-	err := s.agent.UserEvent(event.Type(), data, true)
+	err = s.agent.UserEvent(EventDiscovered, data, true)
 	if err != nil {
 		log.Errorf(err, "Syncer send user event failed")
 	}
+}
+
+// GetData Sync Data to GRPC
+func (s *Server) GetData() *pb.SyncData {
+	return s.storage.GetSyncData()
 }
 
 // HandleEvent Handles events from serf
@@ -63,23 +78,33 @@ func (s *Server) userEvent(event serf.UserEvent) {
 		return
 	}
 
-	// excludes notifications from self, as the gossip protocol inevitably has redundant notifications
+	// Excludes notifications from self, as the gossip protocol inevitably has redundant notifications
 	if s.agent.LocalMember().Name == m.NodeName {
 		return
 	}
 
 	// Get member information and get synchronized data from it
 	member := s.agent.Member(m.NodeName)
-	data, err := s.broker.Pull(context.Background(), fmt.Sprintf("%s:%d", member.Addr, m.RPCPort))
+
+	cli := grpc.GetClient(fmt.Sprintf("%s:%d", member.Addr, m.RPCPort))
+	data, err := cli.Pull(context.Background())
 	if err != nil {
-		log.Errorf(err, "pull other serf instances failed, node name is '%s'", m.NodeName)
+		log.Errorf(err, "Pull other serf instances failed, node name is '%s'", m.NodeName)
 		return
 	}
-	ctx := context.WithValue(context.Background(), notify.EventPullBySerf, &pb.NodeDataInfo{NodeName: m.NodeName, DataInfo: data})
-	events.Dispatch(events.NewContextEvent(notify.EventPullBySerf, ctx))
+
+	mapping := s.storage.GetSyncMapping(m.NodeName)
+
+	mapping, err = s.dataCenter.SetSyncData(data, mapping)
+	if err != nil {
+		log.Errorf(err, "Set sync data to datacenter '%s' failed: %s", m.NodeName, err)
+		return
+	}
+
+	s.storage.SaveSyncMapping(m.NodeName, mapping)
 }
 
 // queryEvent Handles "EventQuery" query events and respond if conditions are met
 func (s *Server) queryEvent(query *serf.Query) {
-	// todo: 按需获取实例信息
+	// todo: Get instances requested
 }

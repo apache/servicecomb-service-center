@@ -1,4 +1,4 @@
-package memory
+package storage
 
 import (
 	"encoding/json"
@@ -7,36 +7,23 @@ import (
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/utils"
-
-	"github.com/apache/servicecomb-service-center/syncer/plugins"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 )
-
-const PluginName = "memory"
 
 var (
 	defaultMapping = make(pb.SyncMapping)
 	snapshotPath   = "./data/syncer-snapshot"
 )
 
-func init() {
-	// Register self as a storage plugin
-	plugins.RegisterPlugin(&plugins.Plugin{
-		Kind: plugins.PluginStorage,
-		Name: PluginName,
-		New:  New,
-	})
-}
-
-func New() plugins.PluginInstance {
-	return &Repo{
+func New() *Storage {
+	return &Storage{
 		syncData:    &pb.SyncData{},
 		intsMapping: loadSnapshot(),
 	}
 }
 
-// Repo Repository struct
-type Repo struct {
+// Storage of Syncer
+type Storage struct {
 	syncData *pb.SyncData
 
 	// mapping table for other datacenter instances
@@ -59,12 +46,12 @@ func loadSnapshot() map[string]pb.SyncMapping {
 	return mapping
 }
 
-func (r *Repo) Stop() {
+func (r *Storage) Stop() {
 	r.flush()
 }
 
 // flush Refresh the mapping table to the hard disk
-func (r *Repo) flush() {
+func (r *Storage) flush() {
 	data, err := json.Marshal(r.intsMapping)
 	if err != nil {
 		log.Warnf("marshal syncer snapshot failed, error: %s", err)
@@ -85,14 +72,14 @@ func (r *Repo) flush() {
 }
 
 // SaveSyncData Save self sync data
-func (r *Repo) SaveSyncData(data *pb.SyncData) {
+func (r *Storage) SaveSyncData(data *pb.SyncData) {
 	r.lock.Lock()
 	r.syncData = data
 	r.lock.Unlock()
 }
 
 // GetSyncData Get self sync data
-func (r *Repo) GetSyncData() (data *pb.SyncData) {
+func (r *Storage) GetSyncData() (data *pb.SyncData) {
 	r.lock.RLock()
 	data = &pb.SyncData{Services: r.syncData.Services[:]}
 	r.lock.RUnlock()
@@ -100,14 +87,14 @@ func (r *Repo) GetSyncData() (data *pb.SyncData) {
 }
 
 // SaveSyncMapping Save mapping table for other datacenter instances
-func (r *Repo) SaveSyncMapping(nodeName string, mapping pb.SyncMapping) {
+func (r *Storage) SaveSyncMapping(nodeName string, mapping pb.SyncMapping) {
 	r.lock.Lock()
 	r.intsMapping[nodeName] = mapping
 	r.lock.Unlock()
 }
 
 // GetSyncMapping Get mapping table for other datacenter instances
-func (r *Repo) GetSyncMapping(nodeName string) (mapping pb.SyncMapping) {
+func (r *Storage) GetSyncMapping(nodeName string) (mapping pb.SyncMapping) {
 	r.lock.RLock()
 	data, ok := r.intsMapping[nodeName]
 	if !ok {
@@ -118,7 +105,7 @@ func (r *Repo) GetSyncMapping(nodeName string) (mapping pb.SyncMapping) {
 }
 
 // GetAllMapping Get all mapping table for other datacenters instances
-func (r *Repo) GetAllMapping() (mapping pb.SyncMapping) {
+func (r *Storage) GetAllMapping() (mapping pb.SyncMapping) {
 	r.lock.RLock()
 	mapping = make(pb.SyncMapping)
 	for _, data := range r.intsMapping {

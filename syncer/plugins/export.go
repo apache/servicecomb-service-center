@@ -16,16 +16,10 @@
  */
 package plugins
 
-import (
-	"github.com/apache/servicecomb-service-center/syncer/plugins/repository"
-	"github.com/apache/servicecomb-service-center/syncer/plugins/storage"
-)
-
 type PluginType int
 
 const (
-	PluginStorage PluginType = iota
-	PluginRepository
+	PluginDatacenter PluginType = iota
 	pluginTotal
 
 	BUILDIN       = "buildin"
@@ -36,16 +30,13 @@ const (
 
 func (p PluginType) String() string {
 	switch p {
-	case PluginStorage:
-		return "storage"
-	case PluginRepository:
-		return "repository"
+	case PluginDatacenter:
+		return "datacenter"
 	default:
 		return ""
 	}
 }
 
-func (m Manager) Storage() storage.Repository { return m.Instance(PluginStorage).(storage.Repository) }
-func (m Manager) Repository() repository.Adaptor {
-	return m.Instance(PluginRepository).(repository.Adaptor)
+func (m Manager) Datacenter() Adaptor {
+	return m.Instance(PluginDatacenter).(Adaptor)
 }

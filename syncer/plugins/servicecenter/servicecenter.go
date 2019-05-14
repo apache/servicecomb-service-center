@@ -21,7 +21,6 @@ import (
 
 	"github.com/apache/servicecomb-service-center/pkg/client/sc"
 	"github.com/apache/servicecomb-service-center/syncer/plugins"
-	"github.com/apache/servicecomb-service-center/syncer/plugins/repository"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 )
 
@@ -30,7 +29,7 @@ const PluginName = "servicecenter"
 func init() {
 	// Register self as a repository plugin
 	plugins.RegisterPlugin(&plugins.Plugin{
-		Kind: plugins.PluginRepository,
+		Kind: plugins.PluginDatacenter,
 		Name: PluginName,
 		New:  New,
 	})
@@ -43,7 +42,7 @@ func New() plugins.PluginInstance {
 }
 
 // New repository with endpoints
-func (*adaptor) New(endpoints []string) (repository.Repository, error) {
+func (*adaptor) New(endpoints []string) (plugins.Datacenter, error) {
 	cli, err := sc.NewSCClient(sc.Config{Endpoints: endpoints})
 	if err != nil {
 		return nil, err
@@ -55,7 +54,7 @@ type Client struct {
 	cli *sc.SCClient
 }
 
-// GetAll get adn transform servicecenter data to SyncData
+// GetAll get and transform servicecenter data to SyncData
 func (c *Client) GetAll(ctx context.Context) (*pb.SyncData, error) {
 	cache, err := c.cli.GetScCache(ctx)
 	if err != nil {
