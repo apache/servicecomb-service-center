@@ -23,41 +23,37 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/apache/servicecomb-service-center/syncer/storage"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/syncer/config"
 	"github.com/apache/servicecomb-service-center/syncer/datacenter"
 	"github.com/apache/servicecomb-service-center/syncer/grpc"
-	"github.com/apache/servicecomb-service-center/syncer/notify"
-	"github.com/apache/servicecomb-service-center/syncer/serf"
-	"github.com/apache/servicecomb-service-center/syncer/pkg/events"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/syssig"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/ticker"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/utils"
 	"github.com/apache/servicecomb-service-center/syncer/plugins"
+	"github.com/apache/servicecomb-service-center/syncer/serf"
 )
-
-// tickHandler Timed task handler
-func tickHandler(ctx context.Context) {
-	events.Dispatch(events.NewContextEvent(notify.EventTicker, ctx))
-}
 
 // Server struct for syncer
 type Server struct {
-	// Stores the syncer configuration
+	// Syncer configuration
 	conf *config.Config
 
-	//Set the task ticker
+	// Ticker for Syncer
 	tick *ticker.TaskTicker
 
-	// store is the datacenter service
+	// Wrap the datacenter
 	dataCenter datacenter.DataCenter
 
-	// Wraps the serf agents
+	storage *storage.Storage
+
+	// Wraps the serf agent
 	agent *serf.Agent
 
-	//Wraps the grpc server and client
-	broker *grpc.Broker
+	// Wraps the grpc server
+	grpc *grpc.Server
 }
 
 // NewServer new server with Config
@@ -76,8 +72,9 @@ func (s *Server) Run(ctx context.Context) {
 		return
 	}
 
-	s.eventListen()
+	s.agent.RegisterEventHandler(s)
 
+	// Start serf/grpc/tick services
 	s.startServers(ctx)
 
 	s.waitQuit(ctx)
@@ -98,16 +95,9 @@ func (s *Server) Stop() {
 		s.agent.Shutdown()
 	}
 
-	if s.broker != nil {
-		s.broker.Stop()
+	if s.grpc != nil {
+		s.grpc.Stop()
 	}
-
-	if s.dataCenter != nil {
-		s.dataCenter.Stop()
-	}
-
-	// clears the event listeners
-	events.Clean()
 
 	// Closes all goroutines in the pool
 	gopool.CloseAndWait()
@@ -115,24 +105,15 @@ func (s *Server) Stop() {
 
 // initPlugin Initialize the plugin and load the external plugin according to the configuration
 func (s *Server) initPlugin() {
-	plugins.SetPluginConfig(plugins.PluginStorage.String(), s.conf.StoragePlugin)
-	plugins.SetPluginConfig(plugins.PluginRepository.String(), s.conf.RepositoryPlugin)
+	plugins.SetPluginConfig(plugins.PluginDatacenter.String(), s.conf.DatacenterPlugin)
 	plugins.LoadPlugins()
-}
-
-// eventListen Start internal event listener
-func (s *Server) eventListen() {
-	// Register self as an event handler for serf
-	s.agent.RegisterEventHandler(s)
-
-	events.AddListener(notify.EventTicker, s.dataCenter)
-	events.AddListener(notify.EventDiscovery, s)
-	events.AddListener(notify.EventPullBySerf, s.dataCenter)
 }
 
 // initialization Initialize the starter of the syncer
 func (s *Server) initialization() (err error) {
-	s.tick = ticker.NewTaskTicker(s.conf.TickerInterval, tickHandler)
+	s.storage = storage.New()
+
+	s.tick = ticker.NewTaskTicker(s.conf.TickerInterval, s.tickHandler)
 
 	s.dataCenter, err = datacenter.NewDataCenter(strings.Split(s.conf.DCAddr, ","))
 	if err != nil {
@@ -144,12 +125,13 @@ func (s *Server) initialization() (err error) {
 		return err
 	}
 
-	s.broker = grpc.NewBroker(s.conf.RPCAddr, s.dataCenter)
+	s.grpc = grpc.NewServer(s.conf.RPCAddr, s)
 	return nil
 }
 
 // startServers Start all internal services
 func (s *Server) startServers(ctx context.Context) {
+	// start serf agent service to wait for
 	s.agent.Start(ctx)
 
 	if s.conf.JoinAddr != "" {
@@ -159,7 +141,7 @@ func (s *Server) startServers(ctx context.Context) {
 		}
 	}
 
-	s.broker.Run()
+	s.grpc.Run()
 
 	gopool.Go(s.tick.Start)
 }

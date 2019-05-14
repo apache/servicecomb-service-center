@@ -14,13 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package client
+package grpc
 
 import (
 	"context"
+	"sync"
 
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 	"google.golang.org/grpc"
+)
+
+var (
+	clients map[string]*Client
+	lock    sync.RWMutex
 )
 
 // Client struct
@@ -29,8 +35,8 @@ type Client struct {
 	cli  pb.SyncClient
 }
 
-// NewClient new grpc client
-func NewClient(addr string) (*Client, error) {
+// newClient new grpc client
+func newClient(addr string) (*Client, error) {
 	conn, err := grpc.Dial(addr, grpc.WithInsecure())
 	if err != nil {
 		return nil, err
@@ -41,4 +47,22 @@ func NewClient(addr string) (*Client, error) {
 // Pull data to be synchronized from the specified datacenter
 func (c *Client) Pull(ctx context.Context) (*pb.SyncData, error) {
 	return c.cli.Pull(ctx, &pb.PullRequest{})
+}
+
+// GetClient Get the client from the client caches with addr
+func GetClient(addr string) *Client {
+	lock.RLock()
+	cli, ok := clients[addr]
+	lock.RUnlock()
+	if !ok {
+		nc, err := newClient(addr)
+		if err != nil {
+			return nil
+		}
+		cli = nc
+		lock.Lock()
+		clients[addr] = cli
+		lock.Unlock()
+	}
+	return cli
 }

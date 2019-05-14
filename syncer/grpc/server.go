@@ -1,30 +1,34 @@
-package server
+package grpc
 
 import (
 	"context"
 	"net"
 
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
-	"github.com/apache/servicecomb-service-center/syncer/datacenter"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 	"google.golang.org/grpc"
 )
 
+type GRPCHandler interface {
+	GetData() *pb.SyncData
+}
+type PullHandle func() *pb.SyncData
+
 // Server struct
 type Server struct {
-	lsn   net.Listener
-	addr  string
-	dataCenter datacenter.DataCenter
+	lsn     net.Listener
+	addr    string
+	handler GRPCHandler
 }
 
 // NewServer new grpc server
-func NewServer(addr string, dataCenter datacenter.DataCenter) *Server {
-	return &Server{addr: addr, dataCenter: dataCenter}
+func NewServer(addr string, handler GRPCHandler) *Server {
+	return &Server{addr: addr, handler: handler}
 }
 
 // Provide consumers with an interface to pull data
 func (s *Server) Pull(ctx context.Context, in *pb.PullRequest) (*pb.SyncData, error) {
-	return s.dataCenter.LocalInfo(), nil
+	return s.handler.GetData(), nil
 }
 
 // Stop grpc server

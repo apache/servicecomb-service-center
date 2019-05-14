@@ -17,87 +17,47 @@
 package datacenter
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/log"
+	"context"
 
-	"github.com/apache/servicecomb-service-center/syncer/notify"
-	"github.com/apache/servicecomb-service-center/syncer/pkg/events"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/syncer/plugins"
-	"github.com/apache/servicecomb-service-center/syncer/plugins/repository"
-	"github.com/apache/servicecomb-service-center/syncer/plugins/storage"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 )
 
 // Store interface of datacenter
 type DataCenter interface {
-	//
-	OnEvent(event events.ContextEvent)
-	LocalInfo() *pb.SyncData
-	Stop()
+	GetSyncData(allMapping pb.SyncMapping) (*pb.SyncData, error)
+	SetSyncData(*pb.SyncData, pb.SyncMapping) (pb.SyncMapping, error)
 }
 
 type store struct {
-	repo  repository.Repository
-	cache storage.Repository
+	datacenter plugins.Datacenter
 }
 
 // NewStore new store with endpoints
 func NewDataCenter(endpoints []string) (DataCenter, error) {
-	repo, err := plugins.Plugins().Repository().New(endpoints)
+	datacenter, err := plugins.Plugins().Datacenter().New(endpoints)
 	if err != nil {
 		return nil, err
 	}
 
 	return &store{
-		repo:  repo,
-		cache: plugins.Plugins().Storage(),
+		datacenter: datacenter,
 	}, nil
 }
 
-// Stop store
-func (s *store) Stop() {
-	if s.cache == nil {
-		return
-	}
-	s.cache.Stop()
-}
-
-// LocalInfo Get local datacenter information from cache
-func (s *store) LocalInfo() *pb.SyncData {
-	return s.cache.GetSyncData()
-}
-
-// OnEvent Handles events with internal type "ticker_trigger" or "pull_by_serf"
-func (s *store) OnEvent(event events.ContextEvent) {
-	switch event.Type() {
-	case notify.EventTicker:
-		s.getLocalDataInfo(event)
-	case notify.EventPullBySerf:
-		s.syncSerfDataInfo(event)
-	default:
-	}
-}
-
-// getLocalDataInfo get local datacenter information form repo
-func (s *store) getLocalDataInfo(event events.ContextEvent) {
-	ctx := event.Context()
-	data, err := s.repo.GetAll(ctx)
+// GetSyncData Get data from datacenter instance, excluded the data from other syncer
+func (s *store) GetSyncData(allMapping pb.SyncMapping) (*pb.SyncData, error) {
+	data, err := s.datacenter.GetAll(context.Background())
 	if err != nil {
 		log.Errorf(err, "Syncer discover instances failed")
-		return
+		return nil, err
 	}
-	s.exclude(data)
-	s.cache.SaveSyncData(data)
-
-	events.Dispatch(events.NewContextEvent(notify.EventDiscovery, nil))
+	s.exclude(data, allMapping)
+	return data, nil
 }
 
-// syncSerfDataInfo sync the datacenter information of other to local repo
-func (s *store) syncSerfDataInfo(event events.ContextEvent) {
-	ctx := event.Context()
-	nodeData, ok := ctx.Value(event.Type()).(*pb.NodeDataInfo)
-	if !ok {
-		log.Error("save serf info failed", nil)
-		return
-	}
-	s.sync(nodeData)
+// GetSyncData Get current datacenter information
+func (s *store) SetSyncData(data *pb.SyncData, mapping pb.SyncMapping) (pb.SyncMapping, error) {
+	return s.sync(data, mapping)
 }

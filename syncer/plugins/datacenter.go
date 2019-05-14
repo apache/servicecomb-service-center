@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package repository
+package plugins
 
 import (
 	"context"
@@ -25,11 +25,11 @@ import (
 
 // Adaptor the plugin adaptor of repository
 type Adaptor interface {
-	New(endpoints []string) (Repository, error)
+	New(endpoints []string) (Datacenter, error)
 }
 
-// Repository datacenter interface
-type Repository interface {
+// Datacenter datacenter interface
+type Datacenter interface {
 	GetAll(ctx context.Context) (*pb.SyncData, error)
 	CreateService(ctx context.Context, domainProject string, service *scpb.MicroService) (string, error)
 	DeleteService(ctx context.Context, domainProject, serviceId string) error
