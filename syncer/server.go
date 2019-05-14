@@ -127,7 +127,7 @@ func (s *Server) eventListen() {
 
 	events.AddListener(notify.EventTicker, s.dataCenter)
 	events.AddListener(notify.EventDiscovery, s)
-	events.AddListener(notify.EventPullByPeer, s.dataCenter)
+	events.AddListener(notify.EventPullBySerf, s.dataCenter)
 }
 
 // initialization Initialize the starter of the syncer
@@ -155,7 +155,7 @@ func (s *Server) startServers(ctx context.Context) {
 	if s.conf.JoinAddr != "" {
 		_, err := s.agent.Join([]string{s.conf.JoinAddr}, false)
 		if err != nil {
-			log.Errorf(err, "Syncer join peer cluster failed")
+			log.Errorf(err, "Syncer join serf cluster failed")
 		}
 	}
 
