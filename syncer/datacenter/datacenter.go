@@ -66,13 +66,13 @@ func (s *store) LocalInfo() *pb.SyncData {
 	return s.cache.GetSyncData()
 }
 
-// OnEvent Handles events with internal type "ticker_trigger" or "pull_by_peer"
+// OnEvent Handles events with internal type "ticker_trigger" or "pull_by_serf"
 func (s *store) OnEvent(event events.ContextEvent) {
 	switch event.Type() {
 	case notify.EventTicker:
 		s.getLocalDataInfo(event)
-	case notify.EventPullByPeer:
-		s.syncPeerDataInfo(event)
+	case notify.EventPullBySerf:
+		s.syncSerfDataInfo(event)
 	default:
 	}
 }
@@ -91,12 +91,12 @@ func (s *store) getLocalDataInfo(event events.ContextEvent) {
 	events.Dispatch(events.NewContextEvent(notify.EventDiscovery, nil))
 }
 
-// syncPeerDataInfo sync the datacenter information of other to local repo
-func (s *store) syncPeerDataInfo(event events.ContextEvent) {
+// syncSerfDataInfo sync the datacenter information of other to local repo
+func (s *store) syncSerfDataInfo(event events.ContextEvent) {
 	ctx := event.Context()
 	nodeData, ok := ctx.Value(event.Type()).(*pb.NodeDataInfo)
 	if !ok {
-		log.Error("save peer info failed", nil)
+		log.Error("save serf info failed", nil)
 		return
 	}
 	s.sync(nodeData)

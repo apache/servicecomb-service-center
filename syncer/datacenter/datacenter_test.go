@@ -58,21 +58,21 @@ func TestOnEvent(t *testing.T) {
 	store.OnEvent(events.NewContextEvent(notify.EventTicker, ctx))
 
 	data := store.LocalInfo()
-	ctx = context.WithValue(ctx, notify.EventPullByPeer, &pb.NodeDataInfo{NodeName: "testNode", DataInfo: data})
+	ctx = context.WithValue(ctx, notify.EventPullBySerf, &pb.NodeDataInfo{NodeName: "testNode", DataInfo: data})
 
 	testmock.SetRegisterInstance(func(ctx context.Context, domainProject, serviceId string, instance *proto.MicroServiceInstance) (s string, e error) {
 		return "", errors.New("test error")
 	})
-	store.OnEvent(events.NewContextEvent(notify.EventPullByPeer, ctx))
+	store.OnEvent(events.NewContextEvent(notify.EventPullBySerf, ctx))
 
 	testmock.SetRegisterInstance(nil)
-	store.OnEvent(events.NewContextEvent(notify.EventPullByPeer, ctx))
+	store.OnEvent(events.NewContextEvent(notify.EventPullBySerf, ctx))
 
-	store.OnEvent(events.NewContextEvent(notify.EventPullByPeer, ctx))
+	store.OnEvent(events.NewContextEvent(notify.EventPullBySerf, ctx))
 	testmock.SetHeartbeat(func(ctx context.Context, domainProject, serviceId, instanceId string) error {
 		return errors.New("test error")
 	})
-	store.OnEvent(events.NewContextEvent(notify.EventPullByPeer, ctx))
+	store.OnEvent(events.NewContextEvent(notify.EventPullBySerf, ctx))
 }
 
 func TestOnEventWrongData(t *testing.T) {
@@ -84,7 +84,7 @@ func TestOnEventWrongData(t *testing.T) {
 	}
 	ctx := context.Background()
 	store.OnEvent(events.NewContextEvent(notify.EventTicker, ctx))
-	store.OnEvent(events.NewContextEvent(notify.EventPullByPeer, ctx))
+	store.OnEvent(events.NewContextEvent(notify.EventPullBySerf, ctx))
 }
 
 func initPlugin(conf *config.Config) {

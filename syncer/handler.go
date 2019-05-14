@@ -72,11 +72,11 @@ func (s *Server) userEvent(event serf.UserEvent) {
 	member := s.agent.Member(m.NodeName)
 	data, err := s.broker.Pull(context.Background(), fmt.Sprintf("%s:%d", member.Addr, m.RPCPort))
 	if err != nil {
-		log.Errorf(err, "pull other peer instances failed, node name is '%s'", m.NodeName)
+		log.Errorf(err, "pull other serf instances failed, node name is '%s'", m.NodeName)
 		return
 	}
-	ctx := context.WithValue(context.Background(), notify.EventPullByPeer, &pb.NodeDataInfo{NodeName: m.NodeName, DataInfo: data})
-	events.Dispatch(events.NewContextEvent(notify.EventPullByPeer, ctx))
+	ctx := context.WithValue(context.Background(), notify.EventPullBySerf, &pb.NodeDataInfo{NodeName: m.NodeName, DataInfo: data})
+	events.Dispatch(events.NewContextEvent(notify.EventPullBySerf, ctx))
 }
 
 // queryEvent Handles "EventQuery" query events and respond if conditions are met
