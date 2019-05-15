@@ -1,3 +1,20 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package storage
 
 import (
@@ -39,7 +56,7 @@ func loadSnapshot() map[string]pb.SyncMapping {
 		log.Warnf("get syncer snapshot from '%s' failed, error: %s", snapshotPath, err)
 		return mapping
 	}
-	err = json.Unmarshal(data, mapping)
+	err = json.Unmarshal(data, &mapping)
 	if err != nil {
 		log.Warnf("unmarshal syncer snapshot failed, error: %s", err)
 	}
@@ -52,7 +69,7 @@ func (r *Storage) Stop() {
 
 // flush Refresh the mapping table to the hard disk
 func (r *Storage) flush() {
-	data, err := json.Marshal(r.intsMapping)
+	data, err := json.Marshal(&r.intsMapping)
 	if err != nil {
 		log.Warnf("marshal syncer snapshot failed, error: %s", err)
 		return
@@ -63,6 +80,7 @@ func (r *Storage) flush() {
 		log.Warnf("open syncer snapshot file '%s' failed, error: %s", snapshotPath, err)
 		return
 	}
+	defer f.Close()
 
 	_, err = f.Write(data)
 	if err != nil {

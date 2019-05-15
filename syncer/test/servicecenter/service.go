@@ -14,37 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package utils
+
+package servicecenter
 
 import (
-	"os"
-	"path/filepath"
+	"net/http"
 )
 
-// IsDirExist checks if a dir exists
-func IsDirExist(path string) bool {
-	fi, err := os.Stat(path)
-	return err == nil && fi.IsDir() || os.IsExist(err)
+func (m *mockServer) ServiceExistence(rw http.ResponseWriter, req *http.Request) {
+	rw.Write([]byte(`{
+    "serviceId": "4042a6a3e5a2893698ae363ea99a69eb63fc51cd"
+}`))
 }
 
-// IsFileExist checks if a file exists
-func IsFileExist(path string) bool {
-	fi, err := os.Stat(path)
-	return err == nil && !fi.IsDir() || os.IsExist(err)
+func (m *mockServer) CreateService(rw http.ResponseWriter, req *http.Request) {
+	rw.Write([]byte(`{
+    "serviceId": "4042a6a3e5a2893698ae363ea99a69eb63fc51cd"
+}`))
 }
 
-// OpenFile if file not exist auto create
-func OpenFile(path string) (*os.File, error)  {
-	if IsFileExist(path) {
-		return os.Create(path)
-	}
-
-	dir := filepath.Dir(path)
-	if !IsDirExist(dir) {
-		err := os.MkdirAll(dir, 0666)
-		if err != nil {
-			return nil , err
-		}
-	}
-	return os.Create(path)
+func (m *mockServer) DeleteService(rw http.ResponseWriter, req *http.Request) {
+	rw.Write([]byte(`{
+    "serviceId": "4042a6a3e5a2893698ae363ea99a69eb63fc51cc"
+}`))
 }
