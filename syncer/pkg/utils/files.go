@@ -36,7 +36,7 @@ func IsFileExist(path string) bool {
 // OpenFile if file not exist auto create
 func OpenFile(path string) (*os.File, error)  {
 	if IsFileExist(path) {
-		return os.Open(path)
+		return os.Create(path)
 	}
 
 	dir := filepath.Dir(path)

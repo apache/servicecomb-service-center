@@ -39,7 +39,7 @@ func loadSnapshot() map[string]pb.SyncMapping {
 		log.Warnf("get syncer snapshot from '%s' failed, error: %s", snapshotPath, err)
 		return mapping
 	}
-	err = json.Unmarshal(data, mapping)
+	err = json.Unmarshal(data, &mapping)
 	if err != nil {
 		log.Warnf("unmarshal syncer snapshot failed, error: %s", err)
 	}
@@ -52,7 +52,7 @@ func (r *Storage) Stop() {
 
 // flush Refresh the mapping table to the hard disk
 func (r *Storage) flush() {
-	data, err := json.Marshal(r.intsMapping)
+	data, err := json.Marshal(&r.intsMapping)
 	if err != nil {
 		log.Warnf("marshal syncer snapshot failed, error: %s", err)
 		return
@@ -63,6 +63,7 @@ func (r *Storage) flush() {
 		log.Warnf("open syncer snapshot file '%s' failed, error: %s", snapshotPath, err)
 		return
 	}
+	defer f.Close()
 
 	_, err = f.Write(data)
 	if err != nil {

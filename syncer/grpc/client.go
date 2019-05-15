@@ -25,7 +25,7 @@ import (
 )
 
 var (
-	clients map[string]*Client
+	clients = make(map[string]*Client)
 	lock    sync.RWMutex
 )
 
