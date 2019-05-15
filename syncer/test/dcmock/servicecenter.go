@@ -1,4 +1,4 @@
-package testmock
+package dcmock
 
 import (
 	"context"
@@ -10,11 +10,17 @@ import (
 
 const PluginName = "testmock"
 
-var scCacheHandler func(ctx context.Context) (*pb.SyncData, error)
+var (
+	scCacheHandler func(ctx context.Context) (*pb.SyncData, error)
+)
+
+func SetGetAll(handler func(ctx context.Context) (*pb.SyncData, error)) {
+	scCacheHandler = handler
+}
 
 func init() {
 	plugins.RegisterPlugin(&plugins.Plugin{
-		Kind: plugins.PluginRepository,
+		Kind: plugins.PluginDatacenter,
 		Name: PluginName,
 		New:  New,
 	})
@@ -26,14 +32,14 @@ func New() plugins.PluginInstance {
 	return &adaptor{}
 }
 
-func (*adaptor) New(endpoints []string) (plugins.Repository, error) {
-	return &Client{}, nil
+func (*adaptor) New(endpoints []string) (plugins.Datacenter, error) {
+	return &mockPlugin{}, nil
 }
 
-type Client struct {
+type mockPlugin struct {
 }
 
-func (c *Client) GetAll(ctx context.Context) (*pb.SyncData, error) {
+func (c *mockPlugin) GetAll(ctx context.Context) (*pb.SyncData, error) {
 	if scCacheHandler != nil {
 		return scCacheHandler(ctx)
 	}
