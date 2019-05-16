@@ -99,6 +99,10 @@ func (s *Server) Stop() {
 		s.grpc.Stop()
 	}
 
+	if s.storage != nil{
+		s.storage.Stop()
+	}
+
 	// Closes all goroutines in the pool
 	gopool.CloseAndWait()
 }

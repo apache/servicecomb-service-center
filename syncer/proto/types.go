@@ -16,17 +16,32 @@
  */
 package proto
 
-type SyncMapping map[string]*SyncServiceKey
+type SyncMapping []*MappingItem
 
-type SyncServiceKey struct {
+type MappingItem struct {
 	DomainProject string `json:"domain_project"`
-	ServiceID     string `json:"service_id"`
-	InstanceID    string `json:"instance_id"`
+	OrgServiceID  string `json:"org_service_id"`
+	OrgInstanceID string `json:"org_instance_id"`
+	CurServiceID  string `json:"cur_service_id"`
+	CurInstanceID string `json:"cur_instance_id"`
 }
 
-type NodeDataInfo struct {
-	NodeName string
-	DataInfo *SyncData
+func (s SyncMapping) OriginIndex(instanceID string) int {
+	for index, val := range s {
+		if val.OrgInstanceID == instanceID {
+			return index
+		}
+	}
+	return -1
+}
+
+func (s SyncMapping) CurrentIndex(instanceID string) int {
+	for index, val := range s {
+		if val.CurInstanceID == instanceID {
+			return index
+		}
+	}
+	return -1
 }
 
 type ServiceKey struct {

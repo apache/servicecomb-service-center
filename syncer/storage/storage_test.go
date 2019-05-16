@@ -61,26 +61,24 @@ func TestSyncMapping(t *testing.T) {
 	data = getSyncMapping(nodeName)
 	storage.SaveSyncMapping(nodeName, data)
 	nd := storage.GetSyncMapping(nodeName)
-	_, ok := nd[nodeName]
-	if !ok {
+
+	if index := nd.CurrentIndex(nodeName); index == -1 {
 		t.Error("save sync mapping failed!")
 	}
 
 	all := storage.GetAllMapping()
-	for key := range all {
-		if key == nodeName {
-			return
-		}
+	if index := all.CurrentIndex(nodeName); index == -1 {
+		t.Errorf("all mapping has not node name %s!", nodeName)
 	}
-
-	t.Errorf("all mapping has not node name %s!", nodeName)
 }
 
 func getSyncMapping(nodeName string) pb.SyncMapping {
-	return pb.SyncMapping{nodeName: &pb.SyncServiceKey{
+	return pb.SyncMapping{&pb.MappingItem{
 		DomainProject: "default/default",
-		ServiceID:     "5db1b794aa6f8a875d6e68110260b5491ee7e223",
-		InstanceID:    "4d41a637471f11e9888cfa163eca30e0",
+		OrgServiceID:  "5db1b794aa6f8a875d6e68110260b5491ee7e223",
+		OrgInstanceID: "4d41a637471f11e9888cfa163eca30e0",
+		CurServiceID:  nodeName,
+		CurInstanceID: nodeName,
 	}}
 }
 

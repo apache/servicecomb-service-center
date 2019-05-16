@@ -22,10 +22,10 @@ import (
 )
 
 // exclude find out services data belonging to self
-func (s *store) exclude(data *pb.SyncData, allMapping pb.SyncMapping) {
+func (s *store) exclude(data *pb.SyncData, curMapping pb.SyncMapping) {
 	services := make([]*pb.SyncService, 0, 10)
 	for _, svc := range data.Services {
-		ins := s.excludeInstances(svc.Instances, allMapping)
+		ins := s.excludeInstances(svc.Instances, curMapping)
 		if len(ins) > 0 {
 			svc.Instances = ins
 			services = append(services, svc)
@@ -35,19 +35,15 @@ func (s *store) exclude(data *pb.SyncData, allMapping pb.SyncMapping) {
 }
 
 // excludeInstances find out the instance data belonging to self, through the mapping table
-func (s *store) excludeInstances(ins []*scpb.MicroServiceInstance, mapping pb.SyncMapping) []*scpb.MicroServiceInstance {
-	is := make([]*scpb.MicroServiceInstance, 0, len(ins))
-	for _, item := range ins {
-		_, ok := mapping[item.InstanceId]
-		if ok {
-			if item.Status != "UP" {
-				delete(mapping, item.InstanceId)
-			}
+func (s *store) excludeInstances(ins []*scpb.MicroServiceInstance, curMapping pb.SyncMapping) []*scpb.MicroServiceInstance {
+	nis := make([]*scpb.MicroServiceInstance, 0, len(ins))
+	for _, inst := range ins {
+		if index := curMapping.CurrentIndex(inst.InstanceId); index != -1 {
 			continue
 		}
-		if item.Status == "UP" {
-			is = append(is, item)
+		if inst.Status == "UP" {
+			nis = append(nis, inst)
 		}
 	}
-	return is
+	return nis
 }
