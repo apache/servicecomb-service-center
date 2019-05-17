@@ -28,7 +28,7 @@ import (
 )
 
 var (
-	defaultMapping = make(pb.SyncMapping)
+	defaultMapping = make(pb.SyncMapping, 0)
 	snapshotPath   = "./data/syncer-snapshot"
 )
 
@@ -125,12 +125,10 @@ func (r *Storage) GetSyncMapping(nodeName string) (mapping pb.SyncMapping) {
 // GetAllMapping Get all mapping table for other datacenters instances
 func (r *Storage) GetAllMapping() (mapping pb.SyncMapping) {
 	r.lock.RLock()
-	mapping = make(pb.SyncMapping)
+	mapping = make(pb.SyncMapping, 0, 10)
 	for _, data := range r.intsMapping {
 		if data != nil {
-			for key, val := range data {
-				mapping[key] = val
-			}
+			mapping = append(mapping, data...)
 		}
 	}
 	r.lock.RUnlock()
