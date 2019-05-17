@@ -58,14 +58,14 @@ func TestClient_UnregisterInstance(t *testing.T) {
 func TestClient_DiscoveryInstances(t *testing.T) {
 	svr, repo := newServiceCenter(t)
 	_, err := repo.DiscoveryInstances(context.Background(), "default/deault",
-		"4042a6a3e5a2893698ae363ea99a69eb63fc51cd", "default","testservice", "1.0.1")
+		"4042a6a3e5a2893698ae363ea99a69eb63fc51cd", "default", "testservice", "1.0.1")
 	if err != nil {
 		t.Errorf("discovery instances failed, error: %s", err)
 	}
 
 	svr.Close()
 	_, err = repo.DiscoveryInstances(context.Background(), "default/deault",
-		"4042a6a3e5a2893698ae363ea99a69eb63fc51cd", "default","testservice", "1.0.1")
+		"4042a6a3e5a2893698ae363ea99a69eb63fc51cd", "default", "testservice", "1.0.1")
 	if err != nil {
 		t.Logf("discovery instances failed, error: %s", err)
 	}

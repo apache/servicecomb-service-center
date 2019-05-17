@@ -34,7 +34,7 @@ func IsFileExist(path string) bool {
 }
 
 // OpenFile if file not exist auto create
-func OpenFile(path string) (*os.File, error)  {
+func OpenFile(path string) (*os.File, error) {
 	if IsFileExist(path) {
 		return os.Create(path)
 	}
@@ -43,7 +43,7 @@ func OpenFile(path string) (*os.File, error)  {
 	if !IsDirExist(dir) {
 		err := os.MkdirAll(dir, 0666)
 		if err != nil {
-			return nil , err
+			return nil, err
 		}
 	}
 	return os.Create(path)
