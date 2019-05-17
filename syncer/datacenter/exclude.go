@@ -25,11 +25,8 @@ import (
 func (s *store) exclude(data *pb.SyncData, curMapping pb.SyncMapping) {
 	services := make([]*pb.SyncService, 0, 10)
 	for _, svc := range data.Services {
-		ins := s.excludeInstances(svc.Instances, curMapping)
-		if len(ins) > 0 {
-			svc.Instances = ins
-			services = append(services, svc)
-		}
+		svc.Instances = s.excludeInstances(svc.Instances, curMapping)
+		services = append(services, svc)
 	}
 	data.Services = services
 }
@@ -41,9 +38,7 @@ func (s *store) excludeInstances(ins []*scpb.MicroServiceInstance, curMapping pb
 		if index := curMapping.CurrentIndex(inst.InstanceId); index != -1 {
 			continue
 		}
-		if inst.Status == "UP" {
-			nis = append(nis, inst)
-		}
+		nis = append(nis, inst)
 	}
 	return nis
 }

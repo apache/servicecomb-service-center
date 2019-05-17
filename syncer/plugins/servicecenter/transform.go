@@ -27,8 +27,13 @@ import (
 // transform servicecenter service cache to SyncData
 func transform(cache *model.Cache) (data *pb.SyncData) {
 	data = &pb.SyncData{Services: make([]*pb.SyncService, 0, 10)}
+
 	for _, svc := range cache.Microservices {
 		instances := instancesFromService(svc.Value, cache.Instances)
+		if len(instances) == 0{
+			continue
+		}
+
 		data.Services = append(data.Services, &pb.SyncService{
 			DomainProject: strings.Join(strings.Split(svc.Key, "/")[4:6], "/"),
 			Service:       svc.Value,
@@ -42,6 +47,10 @@ func transform(cache *model.Cache) (data *pb.SyncData) {
 func instancesFromService(service *scpb.MicroService, instances []*model.Instance) []*scpb.MicroServiceInstance {
 	instList := make([]*scpb.MicroServiceInstance, 0, 10)
 	for _, inst := range instances {
+		if inst.Value.Status != "UP" {
+			continue
+		}
+
 		if inst.Value.ServiceId == service.ServiceId {
 			instList = append(instList, inst.Value)
 		}

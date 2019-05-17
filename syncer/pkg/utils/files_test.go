@@ -23,11 +23,11 @@ import (
 )
 
 func TestExist(t *testing.T) {
-	if IsDirExist("./test/file"){
+	if IsDirExist("./test/file") {
 		t.Error("dir exist failed")
 	}
 
-	if IsFileExist("./test/file"){
+	if IsFileExist("./test/file") {
 		t.Error("file exist failed")
 	}
 }

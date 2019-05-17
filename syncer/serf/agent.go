@@ -19,10 +19,10 @@ package serf
 import (
 	"context"
 	"io"
-	"github.com/apache/servicecomb-service-center/pkg/log"
 	"os"
 
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/hashicorp/serf/cmd/serf/command/agent"
 	"github.com/hashicorp/serf/serf"
 )

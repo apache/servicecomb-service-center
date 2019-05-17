@@ -23,7 +23,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/apache/servicecomb-service-center/syncer/storage"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/syncer/config"
@@ -34,6 +33,7 @@ import (
 	"github.com/apache/servicecomb-service-center/syncer/pkg/utils"
 	"github.com/apache/servicecomb-service-center/syncer/plugins"
 	"github.com/apache/servicecomb-service-center/syncer/serf"
+	"github.com/apache/servicecomb-service-center/syncer/storage"
 )
 
 // Server struct for syncer
@@ -99,7 +99,7 @@ func (s *Server) Stop() {
 		s.grpc.Stop()
 	}
 
-	if s.storage != nil{
+	if s.storage != nil {
 		s.storage.Stop()
 	}
 

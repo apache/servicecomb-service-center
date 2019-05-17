@@ -30,7 +30,7 @@ func TestNewTaskTicker(t *testing.T) {
 	go func() {
 		ticker.Start(ctx)
 	}()
-	time.Sleep(time.Second*3)
+	time.Sleep(time.Second * 3)
 	ticker.Stop()
 	cancel()
 }

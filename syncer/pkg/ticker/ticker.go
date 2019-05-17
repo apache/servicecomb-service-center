@@ -58,7 +58,7 @@ func (t *TaskTicker) Start(ctx context.Context) {
 
 // Start stop task ticker
 func (t *TaskTicker) Stop() {
-	if t.ticker == nil{
+	if t.ticker == nil {
 		return
 	}
 	t.ticker.Stop()
