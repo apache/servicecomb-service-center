@@ -5,7 +5,7 @@ output
 **/coverage.txt
 **/*.log
 
-service-center.iml
+*.iml
 .idea/
 **/*junit.xml
 **/*.exe
