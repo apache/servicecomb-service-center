@@ -30,7 +30,7 @@ func transform(cache *model.Cache) (data *pb.SyncData) {
 
 	for _, svc := range cache.Microservices {
 		instances := instancesFromService(svc.Value, cache.Instances)
-		if len(instances) == 0{
+		if len(instances) == 0 {
 			continue
 		}
 

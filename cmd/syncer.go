@@ -26,7 +26,7 @@ import (
 )
 
 var (
-	conf   = config.DefaultConfig()
+	conf         = config.DefaultConfig()
 	syncerServer *syncer.Server
 )
 
