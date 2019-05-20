@@ -748,6 +748,22 @@ For details, see https://github.com/imdario/mergo
 You can find a copy of the License at licenses/LICENSE-imdario-mergo
 
 ================================================================
+For hashicorp/memberlist (v0.1.3)
+================================================================
+This product bundles the hashicorp/memberlist library which is licensed under
+the MPL 2.0 License.
+For details, see https://github.com/hashicorp/memberlist
+You can find a copy of the License at licenses/LICENSE-hashicorp-memberlist
+
+================================================================
+For hashicorp/serf (v0.8.3)
+================================================================
+This product bundles the hashicorp/serf library which is licensed under
+the MPL 2.0 License.
+For details, see https://github.com/hashicorp/serf
+You can find a copy of the License at licenses/LICENSE-hashicorp-serf
+
+================================================================
 For hashicorp/golang-lru (20f1fb78b0740ba8c3cb143a61e86ba5c8669768)
 ================================================================
 This product bundles the hashicorp/golang-lru library which is licensed under
