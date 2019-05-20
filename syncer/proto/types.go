@@ -14,18 +14,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package main
+package proto
 
-import (
-	"log"
-	"os"
+type SyncMapping []*MappingItem
 
-	"github.com/apache/servicecomb-service-center/cmd"
-)
+type MappingItem struct {
+	DomainProject string `json:"domain_project"`
+	OrgServiceID  string `json:"org_service_id"`
+	OrgInstanceID string `json:"org_instance_id"`
+	CurServiceID  string `json:"cur_service_id"`
+	CurInstanceID string `json:"cur_instance_id"`
+}
 
-func main() {
-	if err := cmd.Execute(); err != nil {
-		log.Println(err)
-		os.Exit(-1)
+func (s SyncMapping) OriginIndex(instanceID string) int {
+	for index, val := range s {
+		if val.OrgInstanceID == instanceID {
+			return index
+		}
 	}
+	return -1
+}
+
+func (s SyncMapping) CurrentIndex(instanceID string) int {
+	for index, val := range s {
+		if val.CurInstanceID == instanceID {
+			return index
+		}
+	}
+	return -1
+}
+
+type ServiceKey struct {
+	ServiceName string
+	Version     string
 }

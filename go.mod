@@ -33,23 +33,22 @@ require (
 	github.com/eapache/go-resiliency v1.1.0 // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21 // indirect
 	github.com/eapache/queue v1.1.0 // indirect
-	github.com/fatih/color v1.7.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.7 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-chassis/paas-lager v0.0.0-20180727081842-50655443dc96
 	github.com/go-logfmt/logfmt v0.3.0 // indirect
-	github.com/gogo/protobuf v1.1.1 // indirect
+	github.com/gogo/protobuf v1.1.1
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b // indirect
 	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef // indirect
 	github.com/golang/protobuf v1.0.0
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
-	github.com/google/btree v0.0.0-20180813153112-4030bb1f1f0c // indirect
 	github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf // indirect
 	github.com/googleapis/gnostic v0.2.0 // indirect
 	github.com/gorilla/websocket v1.2.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.3.0 // indirect
-	github.com/hashicorp/golang-lru v0.5.0 // indirect
+	github.com/hashicorp/memberlist v0.1.3
+	github.com/hashicorp/serf v0.8.3
 	github.com/howeyc/gopass v0.0.0-20170109162249-bf9dde6d0d2c // indirect
 	github.com/hpcloud/tail v1.0.0 // indirect
 	github.com/imdario/mergo v0.3.6 // indirect
@@ -61,7 +60,6 @@ require (
 	github.com/kr/logfmt v0.0.0-20140226030751-b84e30acd515 // indirect
 	github.com/labstack/echo v3.2.2-0.20180316170059-a5d81b8d4a62+incompatible
 	github.com/labstack/gommon v0.2.1 // indirect
-	github.com/mattn/go-colorable v0.0.9 // indirect
 	github.com/mattn/go-isatty v0.0.4 // indirect
 	github.com/mattn/go-runewidth v0.0.3 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
@@ -97,7 +95,7 @@ require (
 	go.uber.org/atomic v1.3.2 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.9.0
-	golang.org/x/net v0.0.0-20180824152047-4bcd98cce591
+	golang.org/x/net v0.0.0-20181201002055-351d144fa1fc
 	golang.org/x/sync v0.0.0-20190227155943-e225da77a7e6 // indirect
 	golang.org/x/text v0.0.0-20170627122817-6353ef0f9243 // indirect
 	golang.org/x/time v0.0.0-20170424234030-8be79e1e0910 // indirect

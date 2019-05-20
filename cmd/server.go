@@ -14,18 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package main
+package cmd
 
 import (
-	"log"
-	"os"
-
-	"github.com/apache/servicecomb-service-center/cmd"
+	"github.com/apache/servicecomb-service-center/server"
+	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
+	_ "github.com/apache/servicecomb-service-center/server/init"
 )
 
-func main() {
-	if err := cmd.Execute(); err != nil {
-		log.Println(err)
-		os.Exit(-1)
-	}
+// runServiceCenter Runs the service-center service.
+func runServiceCenter() {
+	server.Run()
 }

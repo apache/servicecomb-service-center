@@ -14,18 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package main
+
+package servicecenter
 
 import (
-	"log"
-	"os"
-
-	"github.com/apache/servicecomb-service-center/cmd"
+	"net/http"
 )
 
-func main() {
-	if err := cmd.Execute(); err != nil {
-		log.Println(err)
-		os.Exit(-1)
-	}
+func (m *mockServer) ServiceExistence(rw http.ResponseWriter, req *http.Request) {
+	rw.Write([]byte(`{
+    "serviceId": "4042a6a3e5a2893698ae363ea99a69eb63fc51cd"
+}`))
+}
+
+func (m *mockServer) CreateService(rw http.ResponseWriter, req *http.Request) {
+	rw.Write([]byte(`{
+    "serviceId": "4042a6a3e5a2893698ae363ea99a69eb63fc51cd"
+}`))
+}
+
+func (m *mockServer) DeleteService(rw http.ResponseWriter, req *http.Request) {
+	rw.Write([]byte(`{
+    "serviceId": "4042a6a3e5a2893698ae363ea99a69eb63fc51cc"
+}`))
 }

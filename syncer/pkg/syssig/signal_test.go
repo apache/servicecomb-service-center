@@ -14,18 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package main
+package syssig
 
 import (
-	"log"
-	"os"
-
-	"github.com/apache/servicecomb-service-center/cmd"
+	"context"
+	"syscall"
+	"testing"
+	"time"
 )
 
-func main() {
-	if err := cmd.Execute(); err != nil {
-		log.Println(err)
-		os.Exit(-1)
-	}
+func TestSignalsHandler(t *testing.T) {
+	AddSignalsHandler(func() {}, syscall.SIGHUP, syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM)
+	AddSignalsHandler(func() {}, syscall.Signal(999))
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() { Run(ctx) }()
+	time.Sleep(time.Second)
+	cancel()
 }

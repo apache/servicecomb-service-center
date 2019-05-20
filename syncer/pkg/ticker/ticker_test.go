@@ -14,18 +14,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package main
+package ticker
 
 import (
-	"log"
-	"os"
-
-	"github.com/apache/servicecomb-service-center/cmd"
+	"context"
+	"testing"
+	"time"
 )
 
-func main() {
-	if err := cmd.Execute(); err != nil {
-		log.Println(err)
-		os.Exit(-1)
-	}
+func TestNewTaskTicker(t *testing.T) {
+	ticker := NewTaskTicker(2, func(ctx context.Context) {
+		t.Log("test new task ticker over")
+	})
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		ticker.Start(ctx)
+	}()
+	time.Sleep(time.Second * 3)
+	ticker.Stop()
+	cancel()
 }

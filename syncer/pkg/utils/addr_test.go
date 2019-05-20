@@ -14,18 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package main
+package utils
 
-import (
-	"log"
-	"os"
+import "testing"
 
-	"github.com/apache/servicecomb-service-center/cmd"
-)
-
-func main() {
-	if err := cmd.Execute(); err != nil {
-		log.Println(err)
-		os.Exit(-1)
+func TestSplitHostPort(t *testing.T) {
+	_, _, err := SplitHostPort("", 0)
+	if err != nil {
+		t.Logf("split host port failed, error: %s", err)
 	}
 }

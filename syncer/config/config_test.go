@@ -14,18 +14,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package main
+package config
 
-import (
-	"log"
-	"os"
+import "testing"
 
-	"github.com/apache/servicecomb-service-center/cmd"
-)
+func TestDefaultVerification(t *testing.T) {
+	conf := DefaultConfig()
+	conf.Verification()
+}
 
-func main() {
-	if err := cmd.Execute(); err != nil {
-		log.Println(err)
-		os.Exit(-1)
-	}
+func TestBindAddrVerification(t *testing.T) {
+	conf := DefaultConfig()
+	conf.BindAddr = "abcde"
+	conf.Verification()
+}
+
+func TestRPCAddrAddrVerification(t *testing.T) {
+	conf := DefaultConfig()
+	conf.RPCAddr = "abcde"
+	conf.Verification()
+}
+
+func TestLocalBindAddrVerification(t *testing.T) {
+	conf := DefaultConfig()
+	conf.BindAddr = "127.0.0.1"
+	conf.Verification()
+}
+
+func TestLocalRPCAddrVerification(t *testing.T) {
+	conf := DefaultConfig()
+	conf.RPCAddr = "127.0.0.1"
+	conf.Verification()
 }

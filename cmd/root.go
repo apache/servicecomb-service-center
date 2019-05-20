@@ -14,18 +14,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package main
+package cmd
 
 import (
-	"log"
 	"os"
 
-	"github.com/apache/servicecomb-service-center/cmd"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/spf13/cobra"
 )
 
-func main() {
-	if err := cmd.Execute(); err != nil {
-		log.Println(err)
-		os.Exit(-1)
+var rootCmd = &cobra.Command{
+	Use:   "service-center",
+	Short: "service-center is a data centers",
+}
+
+func Execute() error {
+	if len(os.Args) < 2 || os.Args[1] != syncerCmd.Use {
+		runServiceCenter()
+		return nil
 	}
+
+	err := rootCmd.Execute()
+	if err != nil {
+		log.Errorf(err, "root command execute failed")
+	}
+	return err
+
 }

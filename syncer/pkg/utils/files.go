@@ -14,18 +14,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package main
+package utils
 
 import (
-	"log"
 	"os"
-
-	"github.com/apache/servicecomb-service-center/cmd"
+	"path/filepath"
 )
 
-func main() {
-	if err := cmd.Execute(); err != nil {
-		log.Println(err)
-		os.Exit(-1)
+// IsDirExist checks if a dir exists
+func IsDirExist(path string) bool {
+	fi, err := os.Stat(path)
+	return err == nil && fi.IsDir() || os.IsExist(err)
+}
+
+// IsFileExist checks if a file exists
+func IsFileExist(path string) bool {
+	fi, err := os.Stat(path)
+	return err == nil && !fi.IsDir() || os.IsExist(err)
+}
+
+// OpenFile if file not exist auto create
+func OpenFile(path string) (*os.File, error) {
+	if IsFileExist(path) {
+		return os.Create(path)
 	}
+
+	dir := filepath.Dir(path)
+	if !IsDirExist(dir) {
+		err := os.MkdirAll(dir, 0666)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return os.Create(path)
 }

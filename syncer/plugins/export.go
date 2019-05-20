@@ -14,18 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package main
+package plugins
 
-import (
-	"log"
-	"os"
+type PluginType int
 
-	"github.com/apache/servicecomb-service-center/cmd"
+const (
+	PluginDatacenter PluginType = iota
+	pluginTotal
+
+	BUILDIN       = "buildin"
+	STATIC        = "static"
+	DYNAMIC       = "dynamic"
+	keyPluginName = "name"
 )
 
-func main() {
-	if err := cmd.Execute(); err != nil {
-		log.Println(err)
-		os.Exit(-1)
+func (p PluginType) String() string {
+	switch p {
+	case PluginDatacenter:
+		return "datacenter"
+	default:
+		return ""
 	}
+}
+
+func (m Manager) Datacenter() Adaptor {
+	return m.Instance(PluginDatacenter).(Adaptor)
 }

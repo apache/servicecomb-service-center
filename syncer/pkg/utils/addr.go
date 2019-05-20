@@ -14,18 +14,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package main
+package utils
 
 import (
-	"log"
-	"os"
-
-	"github.com/apache/servicecomb-service-center/cmd"
+	"fmt"
+	"net"
 )
 
-func main() {
-	if err := cmd.Execute(); err != nil {
-		log.Println(err)
-		os.Exit(-1)
+// SplitHostPort returns the parts of the address and port. If the port does not exist, use defaultPort.
+func SplitHostPort(address string, defaultPort int) (string, int, error) {
+	_, _, err := net.SplitHostPort(address)
+	if ae, ok := err.(*net.AddrError); ok && ae.Err == "missing port in address" {
+		address = fmt.Sprintf("%s:%d", address, defaultPort)
+		_, _, err = net.SplitHostPort(address)
 	}
+	if err != nil {
+		return "", 0, err
+	}
+
+	addr, err := net.ResolveTCPAddr("tcp", address)
+	if err != nil {
+		return "", 0, err
+	}
+
+	return addr.IP.String(), addr.Port, nil
 }
