@@ -68,10 +68,11 @@ $ go build -o service-center
   Example `--join 10.0.0.10:30191 `
 
 Suppose there are 2 Data centers, each of them with a Service-center cluster for microservices discovery and registry, as following,   
+
 | Datacenter                | Local address |
 | :-----------------------: | :-----------: |
 | http://10.0.0.10:30100    | 10.0.0.10     |
-| http://10.0.0.11:30100    | 10.0.0.11     |
+| http://10.0.0.11:30100    | 10.0.0.11     |   
 
 Start Service-center Syncer to enable communication between 2 data centers,
 
