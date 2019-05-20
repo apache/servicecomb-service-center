@@ -17,6 +17,7 @@
 - Microservices blacklist of cross data-center
 - Microservices whitelist of cross data-center
 - Management of on-demand data synchronization
+- Support read configuration from config file
 
 ## Reliable
 
