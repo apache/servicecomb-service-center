@@ -56,6 +56,7 @@ $ go build -o service-center
 - join：用于指定待加入的P2P网络，P2P中的任何成员的地址， 启动第一个Syncer时不需要该参数。   
 例：--join 10.0.0.10:30191  
 
+
 假设有2个数据中心，每个数据中心都有一个用于微服务发现和注册的服务中心集群，如下所示：   
 
 | Datacenter                | Local address |

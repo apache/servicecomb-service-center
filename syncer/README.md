@@ -67,12 +67,14 @@ $ go build -o service-center
   The address of any member of the P2P network, to enable itself join the specified P2P network, ignore this parameter when starting the first syncer on a P2P network.   
   Example `--join 10.0.0.10:30191 `
 
+
 Suppose there are 2 Data centers, each of them with a Service-center cluster for microservices discovery and registry, as following,   
 
 | Datacenter                | Local address |
 | :-----------------------: | :-----------: |
 | http://10.0.0.10:30100    | 10.0.0.10     |
 | http://10.0.0.11:30100    | 10.0.0.11     |   
+
 
 Start Service-center Syncer to enable communication between 2 data centers,
 
@@ -89,3 +91,4 @@ $ ./service-center syncer --dc-addr http://10.0.0.11:30100 --bind 10.0.0.11:3019
 
 **Verification**  
 30 seconds after registering a microservice to one of the Service-centers,  the information about it can be get from the other one.
+
