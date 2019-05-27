@@ -20,6 +20,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 	"google.golang.org/grpc"
 )
@@ -32,34 +33,45 @@ var (
 // Client struct
 type Client struct {
 	addr string
+	conn *grpc.ClientConn
 	cli  pb.SyncClient
 }
 
-// newClient new grpc client
-func newClient(addr string) (*Client, error) {
-	conn, err := grpc.Dial(addr, grpc.WithInsecure())
+func Pull(ctx context.Context, addr string) (*pb.SyncData, error) {
+	cli := getClient(addr)
+
+	//cli := pb.NewSyncClient(conn)
+	data, err := cli.cli.Pull(ctx, &pb.PullRequest{})
 	if err != nil {
-		return nil, err
+		log.Errorf(err, "Pull from grpc failed, going to close the client")
+		closeClient(addr)
 	}
-	return &Client{cli: pb.NewSyncClient(conn), addr: addr}, nil
+	return data, err
 }
 
-// Pull data to be synchronized from the specified datacenter
-func (c *Client) Pull(ctx context.Context) (*pb.SyncData, error) {
-	return c.cli.Pull(ctx, &pb.PullRequest{})
+func closeClient(addr string) {
+	lock.RLock()
+	cli, ok := clients[addr]
+	lock.RUnlock()
+	if ok {
+		cli.conn.Close()
+		lock.Lock()
+		delete(clients, addr)
+		lock.Unlock()
+	}
 }
 
 // GetClient Get the client from the client caches with addr
-func GetClient(addr string) *Client {
+func getClient(addr string) *Client {
 	lock.RLock()
 	cli, ok := clients[addr]
 	lock.RUnlock()
 	if !ok {
-		nc, err := newClient(addr)
+		conn, err := grpc.Dial(addr, grpc.WithInsecure())
 		if err != nil {
 			return nil
 		}
-		cli = nc
+		cli = &Client{conn: conn, cli: pb.NewSyncClient(conn), addr: addr}
 		lock.Lock()
 		clients[addr] = cli
 		lock.Unlock()

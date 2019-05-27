@@ -82,8 +82,7 @@ func (s *Server) userEvent(event serf.UserEvent) {
 	// Get member information and get synchronized data from it
 	member := s.agent.Member(m.NodeName)
 	// Get dta from remote member
-	cli := grpc.GetClient(fmt.Sprintf("%s:%d", member.Addr, m.RPCPort))
-	data, err := cli.Pull(context.Background())
+	data, err := grpc.Pull(context.Background(), fmt.Sprintf("%s:%d", member.Addr, m.RPCPort))
 	if err != nil {
 		log.Errorf(err, "Pull other serf instances failed, node name is '%s'", m.NodeName)
 		return

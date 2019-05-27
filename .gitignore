@@ -4,6 +4,7 @@ output
 **/coverage.out
 **/coverage.txt
 **/*.log
+syncer/syncer
 
 *.iml
 .idea/
