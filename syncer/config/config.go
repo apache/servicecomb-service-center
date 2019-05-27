@@ -18,11 +18,11 @@ package config
 
 import (
 	"fmt"
-	"github.com/apache/servicecomb-service-center/syncer/plugins/servicecenter"
 	"os"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/utils"
+	"github.com/apache/servicecomb-service-center/syncer/plugins/servicecenter"
 	"github.com/apache/servicecomb-service-center/syncer/serf"
 )
 
@@ -65,7 +65,6 @@ func DefaultConfig() *Config {
 	}
 	serfConf.NodeName = hostname
 	return &Config{
-		LogFile:          "./syncer.log",
 		Mode:             DefaultMode,
 		DCAddr:           fmt.Sprintf("127.0.0.1:%d", DefaultDCPort),
 		TickerInterval:   DefaultTickerInterval,

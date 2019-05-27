@@ -20,19 +20,18 @@ import (
 	"context"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/syncer"
 	"github.com/apache/servicecomb-service-center/syncer/config"
+	"github.com/apache/servicecomb-service-center/syncer/server"
 	"github.com/spf13/cobra"
 )
 
 var (
-	conf         = config.DefaultConfig()
-	syncerServer *syncer.Server
+	conf = config.DefaultConfig()
 )
 
 var syncerCmd = &cobra.Command{
-	Use:   "syncer",
-	Short: "Starts the syncer service",
+	Use:   "daemon",
+	Short: "Start a syncer daemon",
 	Run:   runSyncer,
 }
 
@@ -65,6 +64,5 @@ func runSyncer(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	syncerServer = syncer.NewServer(conf)
-	syncerServer.Run(context.Background())
+	server.NewServer(conf).Run(context.Background())
 }

@@ -16,16 +16,12 @@
  */
 package main
 
+import _ "github.com/apache/servicecomb-service-center/server/init"
+import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
 import (
-	"log"
-	"os"
-
-	"github.com/apache/servicecomb-service-center/cmd"
+	"github.com/apache/servicecomb-service-center/server"
 )
 
 func main() {
-	if err := cmd.Execute(); err != nil {
-		log.Println(err)
-		os.Exit(-1)
-	}
+	server.Run()
 }
