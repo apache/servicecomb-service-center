@@ -59,6 +59,7 @@ func loadSnapshot() map[string]pb.SyncMapping {
 	if err != nil {
 		log.Warnf("unmarshal syncer snapshot failed, error: %s", err)
 	}
+	log.Infof("Loaded maps from disk to storage, maps = %s", data)
 	return mapping
 }
 
@@ -86,6 +87,7 @@ func (s *Storage) flush() {
 		log.Warnf("flush syncer snapshot to '%s' failed, error: %s", snapshotPath, err)
 		return
 	}
+	log.Infof("Flushed maps to disk before exit, data = %s", data)
 }
 
 // UpdateData Update data to storage

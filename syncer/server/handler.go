@@ -34,6 +34,7 @@ const (
 
 // tickHandler Timed task handler
 func (s *Server) tickHandler(ctx context.Context) {
+	log.Debugf("Handle Tick")
 	// Flush data to the storage of datacenter
 	s.dataCenter.FlushData()
 
@@ -82,7 +83,9 @@ func (s *Server) userEvent(event serf.UserEvent) {
 	// Get member information and get synchronized data from it
 	member := s.agent.Member(m.NodeName)
 	// Get dta from remote member
-	data, err := grpc.Pull(context.Background(), fmt.Sprintf("%s:%d", member.Addr, m.RPCPort))
+	endpoint := fmt.Sprintf("%s:%d", member.Addr, m.RPCPort)
+	log.Debugf("Going to pull data from %s %s", m.NodeName, endpoint)
+	data, err := grpc.Pull(context.Background(), endpoint)
 	if err != nil {
 		log.Errorf(err, "Pull other serf instances failed, node name is '%s'", m.NodeName)
 		return

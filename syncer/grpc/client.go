@@ -40,7 +40,6 @@ type Client struct {
 func Pull(ctx context.Context, addr string) (*pb.SyncData, error) {
 	cli := getClient(addr)
 
-	//cli := pb.NewSyncClient(conn)
 	data, err := cli.cli.Pull(ctx, &pb.PullRequest{})
 	if err != nil {
 		log.Errorf(err, "Pull from grpc failed, going to close the client")
@@ -54,10 +53,12 @@ func closeClient(addr string) {
 	cli, ok := clients[addr]
 	lock.RUnlock()
 	if ok {
+
 		cli.conn.Close()
 		lock.Lock()
 		delete(clients, addr)
 		lock.Unlock()
+		log.Infof("Close grpc connection to %s", addr)
 	}
 }
 
@@ -67,6 +68,7 @@ func getClient(addr string) *Client {
 	cli, ok := clients[addr]
 	lock.RUnlock()
 	if !ok {
+		log.Infof("Create new grpc connection to %s", addr)
 		conn, err := grpc.Dial(addr, grpc.WithInsecure())
 		if err != nil {
 			return nil
