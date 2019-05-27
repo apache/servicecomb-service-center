@@ -21,24 +21,27 @@ import (
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 )
 
-// exclude find out services data belonging to self
-func (s *store) exclude(data *pb.SyncData, curMapping pb.SyncMapping) {
+// exclude instances from other datacenter, exclude the expired instances in the maps
+func (s *datacenter) exclude(data *pb.SyncData, mapping pb.SyncMapping) (*pb.SyncData, pb.SyncMapping) {
 	services := make([]*pb.SyncService, 0, 10)
+	maps := make(pb.SyncMapping, 0, len(mapping))
 	for _, svc := range data.Services {
-		svc.Instances = s.excludeInstances(svc.Instances, curMapping)
+
+		nis := make([]*scpb.MicroServiceInstance, 0, len(svc.Instances))
+		for _, inst := range svc.Instances {
+			if index := mapping.CurrentIndex(inst.InstanceId); index != -1 {
+				// exclude the expired instances in the maps
+				maps = append(maps, mapping[index])
+				continue
+			}
+			// exclude instances from other datacenter
+			nis = append(nis, inst)
+		}
+
+		svc.Instances = nis
 		services = append(services, svc)
 	}
 	data.Services = services
-}
 
-// excludeInstances find out the instance data belonging to self, through the mapping table
-func (s *store) excludeInstances(ins []*scpb.MicroServiceInstance, curMapping pb.SyncMapping) []*scpb.MicroServiceInstance {
-	nis := make([]*scpb.MicroServiceInstance, 0, len(ins))
-	for _, inst := range ins {
-		if index := curMapping.CurrentIndex(inst.InstanceId); index != -1 {
-			continue
-		}
-		nis = append(nis, inst)
-	}
-	return nis
+	return data, maps
 }

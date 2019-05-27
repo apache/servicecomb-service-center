@@ -34,29 +34,25 @@ const (
 
 // tickHandler Timed task handler
 func (s *Server) tickHandler(ctx context.Context) {
-	allMapping := s.storage.GetAllMapping()
-	currData, err := s.dataCenter.GetSyncData(allMapping)
-	if err != nil {
-		log.Errorf(err, "Get sync data from datacenter failed: %s", err)
-		return
-	}
-	s.storage.SaveSyncData(currData)
-	data, _ := proto.Marshal(&pb.Member{
+	// Flush data to the storage of datacenter
+	s.dataCenter.FlushData()
+
+	event, _ := proto.Marshal(&pb.Member{
 		NodeName: s.conf.NodeName,
 		RPCPort:  int32(s.conf.RPCPort),
 		Time:     fmt.Sprintf("%d", time.Now().UTC().Second()),
 	})
 
 	// sends a UserEvent on Serf, the event will be broadcast between members
-	err = s.agent.UserEvent(EventDiscovered, data, true)
+	err := s.agent.UserEvent(EventDiscovered, event, true)
 	if err != nil {
 		log.Errorf(err, "Syncer send user event failed")
 	}
 }
 
 // GetData Sync Data to GRPC
-func (s *Server) GetData() *pb.SyncData {
-	return s.storage.GetSyncData()
+func (s *Server) Discovery() *pb.SyncData {
+	return s.dataCenter.Discovery()
 }
 
 // HandleEvent Handles events from serf
@@ -85,23 +81,15 @@ func (s *Server) userEvent(event serf.UserEvent) {
 
 	// Get member information and get synchronized data from it
 	member := s.agent.Member(m.NodeName)
-
+	// Get dta from remote member
 	cli := grpc.GetClient(fmt.Sprintf("%s:%d", member.Addr, m.RPCPort))
 	data, err := cli.Pull(context.Background())
 	if err != nil {
 		log.Errorf(err, "Pull other serf instances failed, node name is '%s'", m.NodeName)
 		return
 	}
-
-	mapping := s.storage.GetSyncMapping(m.NodeName)
-
-	mapping, err = s.dataCenter.SetSyncData(data, mapping)
-	if err != nil {
-		log.Errorf(err, "Set sync data to datacenter '%s' failed: %s", m.NodeName, err)
-		return
-	}
-
-	s.storage.SaveSyncMapping(m.NodeName, mapping)
+	// Registry instances to datacenter and update storage of it
+	s.dataCenter.Registry(m.NodeName, data)
 }
 
 // queryEvent Handles "EventQuery" query events and respond if conditions are met

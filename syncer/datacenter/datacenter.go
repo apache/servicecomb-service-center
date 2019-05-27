@@ -26,38 +26,90 @@ import (
 
 // Store interface of datacenter
 type DataCenter interface {
-	GetSyncData(allMapping pb.SyncMapping) (*pb.SyncData, error)
-	SetSyncData(*pb.SyncData, pb.SyncMapping) (pb.SyncMapping, error)
+	FlushData()
+	Registry(nodeName string, data *pb.SyncData)
+	Discovery() *pb.SyncData
 }
 
-type store struct {
+type datacenter struct {
 	datacenter plugins.Datacenter
+	storage    Storage
+}
+
+type Storage interface {
+	GetData() (data *pb.SyncData)
+	UpdateData(data *pb.SyncData)
+	GetMaps() (maps pb.SyncMapping)
+	UpdateMaps(maps pb.SyncMapping)
+	GetMapByNode(nodeName string) (mapping pb.SyncMapping)
+	UpdateMapByNode(nodeName string, mapping pb.SyncMapping)
 }
 
 // NewStore new store with endpoints
-func NewDataCenter(endpoints []string) (DataCenter, error) {
-	datacenter, err := plugins.Plugins().Datacenter().New(endpoints)
+func NewDataCenter(endpoints []string, storage Storage) (DataCenter, error) {
+	dc, err := plugins.Plugins().Datacenter().New(endpoints)
 	if err != nil {
 		return nil, err
 	}
 
-	return &store{
-		datacenter: datacenter,
+	return &datacenter{
+		datacenter: dc,
+		storage:    storage,
 	}, nil
 }
 
-// GetSyncData Get data from datacenter instance, excluded the data from other syncer
-func (s *store) GetSyncData(allMapping pb.SyncMapping) (*pb.SyncData, error) {
+// FlushData flush data to datacenter, update mapping data
+func (s *datacenter) FlushData() {
 	data, err := s.datacenter.GetAll(context.Background())
 	if err != nil {
 		log.Errorf(err, "Syncer discover instances failed")
-		return nil, err
 	}
-	s.exclude(data, allMapping)
-	return data, nil
+
+	maps := s.storage.GetMaps()
+
+	data, maps = s.exclude(data, maps)
+	s.storage.UpdateData(data)
+	s.storage.UpdateMaps(maps)
 }
 
-// GetSyncData Get current datacenter information
-func (s *store) SetSyncData(data *pb.SyncData, mapping pb.SyncMapping) (pb.SyncMapping, error) {
-	return s.sync(data, mapping)
+// Registry registry data to the datacenter, update mapping data
+func (s *datacenter) Registry(nodeName string, data *pb.SyncData) {
+	mapping := s.storage.GetMapByNode(nodeName)
+	for _, svc := range data.Services {
+		log.Debugf("trying to do registration of service, serviceID = %s", svc.Service.ServiceId)
+		// If the svc is in the mapping, just do nothing, if not, created it in datacenter and get the new serviceID
+		svcID := s.createService(svc)
+		for _, inst := range svc.Instances {
+			// If inst is in the mapping, just heart beat it in datacenter
+			log.Debugf("trying to do registration of instance, instanceID = %s", inst.InstanceId)
+			if s.heartbeatInstances(mapping, inst) {
+				continue
+			}
+
+			// If inst is not in the mapping, that is because this the first time syncer get the instance data
+			// in this case, we should registry it to the datacenter and get the new instanceID
+			item := &pb.MappingItem{
+				DomainProject: svc.DomainProject,
+				OrgServiceID:  inst.ServiceId,
+				OrgInstanceID: inst.InstanceId,
+				CurServiceID:  svcID,
+				NodeName:      nodeName,
+			}
+			item.CurInstanceID = s.registryInstances(svc.DomainProject, svcID, inst)
+
+			// Use new serviceID and instanceID to update mapping data in this datacenter
+			if item.CurInstanceID != "" {
+				mapping = append(mapping, item)
+			}
+		}
+	}
+	// UnRegistry instances that is not in the data which means the instance in the mapping is no longer actived
+	mapping = s.unRegistryInstances(data, mapping)
+	// Update mapping data of the node to the storage of the datacenter
+	s.storage.UpdateMapByNode(nodeName, mapping)
+}
+
+// Discovery discovery data from storage
+func (s *datacenter) Discovery() *pb.SyncData {
+	return s.storage.GetData()
 }

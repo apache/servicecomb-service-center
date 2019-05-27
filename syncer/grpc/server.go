@@ -27,7 +27,7 @@ import (
 )
 
 type GRPCHandler interface {
-	GetData() *pb.SyncData
+	Discovery() *pb.SyncData
 }
 type PullHandle func() *pb.SyncData
 
@@ -45,7 +45,7 @@ func NewServer(addr string, handler GRPCHandler) *Server {
 
 // Provide consumers with an interface to pull data
 func (s *Server) Pull(ctx context.Context, in *pb.PullRequest) (*pb.SyncData, error) {
-	return s.handler.GetData(), nil
+	return s.handler.Discovery(), nil
 }
 
 // Stop grpc server

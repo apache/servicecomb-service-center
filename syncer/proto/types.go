@@ -19,6 +19,7 @@ package proto
 type SyncMapping []*MappingItem
 
 type MappingItem struct {
+	NodeName      string `json:"node_name"`
 	DomainProject string `json:"domain_project"`
 	OrgServiceID  string `json:"org_service_id"`
 	OrgInstanceID string `json:"org_instance_id"`
@@ -42,9 +43,4 @@ func (s SyncMapping) CurrentIndex(instanceID string) int {
 		}
 	}
 	return -1
-}
-
-type ServiceKey struct {
-	ServiceName string
-	Version     string
 }

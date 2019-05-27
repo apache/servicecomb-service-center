@@ -20,99 +20,77 @@ import (
 	"context"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	scpb "github.com/apache/servicecomb-service-center/server/core/proto"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 )
 
-// sync synchronize information from other datacenters
-func (s *store) sync(data *pb.SyncData, curMapping pb.SyncMapping) (pb.SyncMapping, error) {
-	orgMapping, curMapping := s.syncServiceInstances(data.Services, curMapping)
-	return s.deleteInstances(orgMapping, curMapping), nil
+// Send an instance heartbeat if the instance has already been registered
+func (s *datacenter) heartbeatInstances(mapping pb.SyncMapping, instance *scpb.MicroServiceInstance) bool {
+	index := mapping.OriginIndex(instance.InstanceId)
+	if index == -1 {
+		return false
+	}
+
+	item := mapping[index]
+	err := s.datacenter.Heartbeat(context.Background(), item.DomainProject, item.CurServiceID, item.CurInstanceID)
+	if err != nil {
+		log.Errorf(err, "Datacenter heartbeat instance failed")
+	}
+	log.Debugf("Instance %s is already exist, sent heartbeat to service-center")
+	instance.InstanceId = item.CurInstanceID
+	return true
 }
 
-// syncServiceInstances register instances from other datacenter
-func (s *store) syncServiceInstances(services []*pb.SyncService, curMapping pb.SyncMapping) (pb.SyncMapping, pb.SyncMapping) {
-	var err error
+func (s *datacenter) createService(service *pb.SyncService) string {
 	ctx := context.Background()
-	orgMapping := make([]*pb.MappingItem, 0, 10)
-
-	for _, svc := range services {
-		curServiceID := ""
-		for _, inst := range svc.Instances {
-			var item *pb.MappingItem
-
-			// Send an instance heartbeat if the instance has already been registered
-			if index := curMapping.OriginIndex(inst.InstanceId); index != -1 {
-				item = curMapping[index]
-				curServiceID = item.CurServiceID
-				err = s.datacenter.Heartbeat(ctx, item.DomainProject, item.CurServiceID, item.CurInstanceID)
-				if err != nil {
-					log.Errorf(err, "Syncer heartbeat instance failed")
-				} else {
-					orgMapping = append(orgMapping, item)
-				}
-				continue
-			}
-
-			// Create microservice if the service to which the instance belongs does not exist
-			if curServiceID == "" {
-				if curServiceID, _ = s.datacenter.ServiceExistence(ctx, svc.DomainProject, svc.Service); curServiceID == "" {
-					svc.Service.ServiceId = ""
-					curServiceID, err = s.datacenter.CreateService(ctx, svc.DomainProject, svc.Service)
-					if err != nil {
-						log.Errorf(err, "Syncer create service failed")
-						continue
-					}
-				}
-			}
-			// Register instance information when the instance does not exist
-			item = &pb.MappingItem{
-				DomainProject: svc.DomainProject,
-				OrgServiceID:  inst.ServiceId,
-				OrgInstanceID: inst.InstanceId,
-				CurServiceID:  curServiceID,
-			}
-			inst.ServiceId = curServiceID
-			inst.InstanceId = ""
-			curInstanceID, err := s.datacenter.RegisterInstance(ctx, svc.DomainProject, curServiceID, inst)
-			if err != nil {
-				log.Errorf(err, "Syncer create service failed")
-				continue
-			}
-
-			item.CurInstanceID = curInstanceID
-			orgMapping = append(orgMapping, item)
-			curMapping = append(curMapping, item)
-		}
+	serviceID, _ := s.datacenter.ServiceExistence(ctx, service.DomainProject, service.Service)
+	if serviceID != "" {
+		return serviceID
 	}
-	return orgMapping, curMapping
+	service.Service.ServiceId = ""
+	serviceID, err := s.datacenter.CreateService(ctx, service.DomainProject, service.Service)
+	if err != nil {
+		log.Errorf(err, "Datacenter create service failed")
+		return ""
+	}
+	log.Debugf("Create service successful, serviceID = %s", serviceID)
+	service.Service.ServiceId = serviceID
+	return serviceID
 }
 
-// deleteInstances Unregister instances of mapping table that has been unregistered from other datacenter
-func (s *store) deleteInstances(orgMapping, curMapping pb.SyncMapping) pb.SyncMapping {
-	l := 0
-	ol := len(orgMapping)
-	cl := len(curMapping)
-	if ol < cl {
-		l = cl - ol
-	} else {
-		l = ol - cl
+func (s *datacenter) registryInstances(domainProject, serviceId string, instance *scpb.MicroServiceInstance) string {
+	instance.ServiceId = serviceId
+	instance.InstanceId = ""
+	instanceID, err := s.datacenter.RegisterInstance(context.Background(), domainProject, serviceId, instance)
+	if err != nil {
+		log.Errorf(err, "Datacenter registry instance failed")
+		return ""
 	}
-	if l == 0 {
-		return curMapping
-	}
+	log.Debugf("Registered instance successful, instanceID = %s", instanceID)
+	instance.InstanceId = instanceID
+	return instanceID
+}
 
+// DeleteInstances Unregister instances of mapping table that has been unregistered from other datacenter
+func (s *datacenter) unRegistryInstances(data *pb.SyncData, mapping pb.SyncMapping) pb.SyncMapping {
 	ctx := context.Background()
-	nm := make(pb.SyncMapping, 0, l)
-	for _, val := range curMapping {
-		if index := orgMapping.CurrentIndex(val.CurInstanceID); index != -1 {
-			nm = append(nm, val)
-			continue
+	nm := make(pb.SyncMapping, 0, len(mapping))
+next:
+	for _, val := range mapping {
+		for _, svc := range data.Services {
+			for _, inst := range svc.Instances {
+				if val.CurInstanceID == inst.InstanceId {
+					nm = append(nm, val)
+					continue next
+				}
+			}
 		}
 
 		err := s.datacenter.UnregisterInstance(ctx, val.DomainProject, val.CurServiceID, val.CurInstanceID)
 		if err != nil {
-			log.Errorf(err, "Syncer delete service failed")
+			log.Errorf(err, "Datacenter delete instance failed")
 		}
+		log.Debugf("Unregistered instance, InstanceID = %s", val.CurInstanceID)
 	}
 	return nm
 }

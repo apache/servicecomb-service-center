@@ -34,18 +34,17 @@ var (
 
 func New() *Storage {
 	return &Storage{
-		syncData:    &pb.SyncData{},
-		intsMapping: loadSnapshot(),
+		data: &pb.SyncData{},
+		maps: loadSnapshot(),
 	}
 }
 
 // Storage of Syncer
 type Storage struct {
-	syncData *pb.SyncData
-
+	data *pb.SyncData
 	// mapping table for other datacenter instances
-	intsMapping map[string]pb.SyncMapping
-	lock        sync.RWMutex
+	maps map[string]pb.SyncMapping
+	lock sync.RWMutex
 }
 
 // loadSnapshot Load snapshot of mapping table
@@ -63,13 +62,13 @@ func loadSnapshot() map[string]pb.SyncMapping {
 	return mapping
 }
 
-func (r *Storage) Stop() {
-	r.flush()
+func (s *Storage) Stop() {
+	s.flush()
 }
 
 // flush Refresh the mapping table to the hard disk
-func (r *Storage) flush() {
-	data, err := json.Marshal(&r.intsMapping)
+func (s *Storage) flush() {
+	data, err := json.Marshal(&s.maps)
 	if err != nil {
 		log.Warnf("marshal syncer snapshot failed, error: %s", err)
 		return
@@ -89,48 +88,63 @@ func (r *Storage) flush() {
 	}
 }
 
-// SaveSyncData Save self sync data
-func (r *Storage) SaveSyncData(data *pb.SyncData) {
-	r.lock.Lock()
-	r.syncData = data
-	r.lock.Unlock()
+// UpdateData Update data to storage
+func (s *Storage) UpdateData(data *pb.SyncData) {
+	s.lock.Lock()
+	s.data = data
+	s.lock.Unlock()
 }
 
-// GetSyncData Get self sync data
-func (r *Storage) GetSyncData() (data *pb.SyncData) {
-	r.lock.RLock()
-	data = &pb.SyncData{Services: r.syncData.Services[:]}
-	r.lock.RUnlock()
+// GetData Get data from storage
+func (s *Storage) GetData() (data *pb.SyncData) {
+	s.lock.RLock()
+	data = s.data
+	s.lock.RUnlock()
 	return
 }
 
-// SaveSyncMapping Save mapping table for other datacenter instances
-func (r *Storage) SaveSyncMapping(nodeName string, mapping pb.SyncMapping) {
-	r.lock.Lock()
-	r.intsMapping[nodeName] = mapping
-	r.lock.Unlock()
+// UpdateMapByNode update map to storage by nodeName of other node
+func (s *Storage) UpdateMapByNode(nodeName string, mapping pb.SyncMapping) {
+	s.lock.Lock()
+	s.maps[nodeName] = mapping
+	s.lock.Unlock()
 }
 
-// GetSyncMapping Get mapping table for other datacenter instances
-func (r *Storage) GetSyncMapping(nodeName string) (mapping pb.SyncMapping) {
-	r.lock.RLock()
-	data, ok := r.intsMapping[nodeName]
+// GetMapByNode get map by nodeName of other node
+func (s *Storage) GetMapByNode(nodeName string) (mapping pb.SyncMapping) {
+	s.lock.RLock()
+	data, ok := s.maps[nodeName]
 	if !ok {
 		data = defaultMapping
 	}
-	r.lock.RUnlock()
+	s.lock.RUnlock()
 	return data
 }
 
-// GetAllMapping Get all mapping table for other datacenters instances
-func (r *Storage) GetAllMapping() (mapping pb.SyncMapping) {
-	r.lock.RLock()
+func (s *Storage) UpdateMaps(maps pb.SyncMapping) {
+	s.lock.Lock()
+	mappings := make(map[string]pb.SyncMapping)
+	for _, item := range maps {
+		mapping, ok := mappings[item.NodeName]
+		if !ok {
+			mapping = make(pb.SyncMapping, 0, 10)
+		}
+		mapping = append(mapping, item)
+		mappings[item.NodeName] = mapping
+	}
+	s.maps = mappings
+	s.lock.Unlock()
+}
+
+// GetMaps Get maps from storage
+func (s *Storage) GetMaps() (mapping pb.SyncMapping) {
+	s.lock.RLock()
 	mapping = make(pb.SyncMapping, 0, 10)
-	for _, data := range r.intsMapping {
+	for _, data := range s.maps {
 		if data != nil {
 			mapping = append(mapping, data...)
 		}
 	}
-	r.lock.RUnlock()
+	s.lock.RUnlock()
 	return
 }

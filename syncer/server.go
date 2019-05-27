@@ -119,7 +119,7 @@ func (s *Server) initialization() (err error) {
 
 	s.tick = ticker.NewTaskTicker(s.conf.TickerInterval, s.tickHandler)
 
-	s.dataCenter, err = datacenter.NewDataCenter(strings.Split(s.conf.DCAddr, ","))
+	s.dataCenter, err = datacenter.NewDataCenter(strings.Split(s.conf.DCAddr, ","), s.storage)
 	if err != nil {
 		return err
 	}
