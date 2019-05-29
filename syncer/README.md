@@ -42,7 +42,8 @@ $ GO111MODULE=on go mod download
 $ GO111MODULE=on go mod vendor
 
 # Build it
-$ go build -o service-center
+$ cd syncer
+$ go build
 ```
 
 ##### 3.3 Running ServiceCenter Syncer
@@ -81,13 +82,13 @@ Start Service-center Syncer to enable communication between 2 service centers,
 **Start the ServiceCenter Syner by executing the following command on the 10.0.0.10 machine**
 
 ```bash
-$ ./service-center syncer --dc-addr http://10.0.0.10:30100 --bind 10.0.0.10:30190 --rpc-addr 10.0.0.10:30191
+$ ./syncer daemon --dc-addr http://10.0.0.10:30100 --bind 10.0.0.10:30190 --rpc-addr 10.0.0.10:30191
 ```
 
 **Start the ServiceCenter Syncer by executing the following command on the 10.0.0.10 machine and join the 10.0.0.10 gossip pool**
 
 ```bash
-$ ./service-center syncer --dc-addr http://10.0.0.11:30100 --bind 10.0.0.11:30190 --rpc-addr 10.0.0.11:30191 --join 10.0.0.10:30191
+$ ./syncer daemon --dc-addr http://10.0.0.11:30100 --bind 10.0.0.11:30190 --rpc-addr 10.0.0.11:30191 --join 10.0.0.10:30191
 ```
 
 **Verification**  

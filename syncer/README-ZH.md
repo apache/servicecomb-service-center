@@ -42,7 +42,8 @@ $ GO111MODULE=on go mod download
 $ GO111MODULE=on go mod vendor
 
 # 编译
-$ go build -o service-center
+$ cd syncer
+$ go build
 ```
 
 ##### 3.3 启动ServiceCenter Syncer
@@ -69,12 +70,12 @@ $ go build -o service-center
 **在10.0.0.10的机器上执行以下命令启动ServiceCenter Syncer**
 
 ```bash
-$ ./service-center syncer --sc-addr http://10.0.0.10:30100 --bind 10.0.0.10:30190 --rpc-addr 10.0.0.10:30191
+$ ./syncer daemon --sc-addr http://10.0.0.10:30100 --bind 10.0.0.10:30190 --rpc-addr 10.0.0.10:30191
 ```
 
 **在10.0.0.10的机器上执行以下命令启动ServiceCenter Syncer，并加入10.0.0.10的gossip池**
 ```bash
-$ ./service-center syncer --sc-addr http://10.0.0.11:30100 --bind 10.0.0.11:30190 --rpc-addr 10.0.0.11:30191 --join 10.0.0.10:30191
+$ ./syncer daemon --sc-addr http://10.0.0.11:30100 --bind 10.0.0.11:30190 --rpc-addr 10.0.0.11:30191 --join 10.0.0.10:30191
 ```
 
 **结果验证**  
