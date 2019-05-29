@@ -63,6 +63,7 @@ func (s *datacenter) FlushData() {
 	data, err := s.datacenter.GetAll(context.Background())
 	if err != nil {
 		log.Errorf(err, "Syncer discover instances failed")
+		return
 	}
 
 	maps := s.storage.GetMaps()
