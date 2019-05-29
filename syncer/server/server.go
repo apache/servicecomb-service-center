@@ -26,7 +26,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/syncer/config"
-	"github.com/apache/servicecomb-service-center/syncer/datacenter"
+	"github.com/apache/servicecomb-service-center/syncer/servicecenter"
 	"github.com/apache/servicecomb-service-center/syncer/grpc"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/syssig"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/ticker"
@@ -44,8 +44,8 @@ type Server struct {
 	// Ticker for Syncer
 	tick *ticker.TaskTicker
 
-	// Wrap the datacenter
-	dataCenter datacenter.DataCenter
+	// Wrap the servicecenter
+	servicecenter servicecenter.Servicecenter
 
 	storage *storage.Storage
 
@@ -109,7 +109,7 @@ func (s *Server) Stop() {
 
 // initPlugin Initialize the plugin and load the external plugin according to the configuration
 func (s *Server) initPlugin() {
-	plugins.SetPluginConfig(plugins.PluginDatacenter.String(), s.conf.DatacenterPlugin)
+	plugins.SetPluginConfig(plugins.PluginServicecenter.String(), s.conf.ServicecenterPlugin)
 	plugins.LoadPlugins()
 }
 
@@ -119,7 +119,7 @@ func (s *Server) initialization() (err error) {
 
 	s.tick = ticker.NewTaskTicker(s.conf.TickerInterval, s.tickHandler)
 
-	s.dataCenter, err = datacenter.NewDataCenter(strings.Split(s.conf.DCAddr, ","), s.storage)
+	s.servicecenter, err = servicecenter.NewServicecenter(strings.Split(s.conf.SCAddr, ","), s.storage)
 	if err != nil {
 		return err
 	}

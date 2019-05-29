@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package datacenter
+package servicecenter
 
 import (
 	"context"
@@ -25,32 +25,32 @@ import (
 )
 
 // Send an instance heartbeat if the instance has already been registered
-func (s *datacenter) heartbeatInstances(mapping pb.SyncMapping, instance *scpb.MicroServiceInstance) bool {
+func (s *servicecenter) heartbeatInstances(mapping pb.SyncMapping, instance *scpb.MicroServiceInstance) bool {
 	index := mapping.OriginIndex(instance.InstanceId)
 	if index == -1 {
 		return false
 	}
 
 	item := mapping[index]
-	err := s.datacenter.Heartbeat(context.Background(), item.DomainProject, item.CurServiceID, item.CurInstanceID)
+	err := s.servicecenter.Heartbeat(context.Background(), item.DomainProject, item.CurServiceID, item.CurInstanceID)
 	if err != nil {
-		log.Errorf(err, "Datacenter heartbeat instance failed")
+		log.Errorf(err, "Servicecenter heartbeat instance failed")
 	}
 	log.Debugf("Instance %s is already exist, sent heartbeat to service-center")
 	instance.InstanceId = item.CurInstanceID
 	return true
 }
 
-func (s *datacenter) createService(service *pb.SyncService) string {
+func (s *servicecenter) createService(service *pb.SyncService) string {
 	ctx := context.Background()
-	serviceID, _ := s.datacenter.ServiceExistence(ctx, service.DomainProject, service.Service)
+	serviceID, _ := s.servicecenter.ServiceExistence(ctx, service.DomainProject, service.Service)
 	if serviceID != "" {
 		return serviceID
 	}
 	service.Service.ServiceId = ""
-	serviceID, err := s.datacenter.CreateService(ctx, service.DomainProject, service.Service)
+	serviceID, err := s.servicecenter.CreateService(ctx, service.DomainProject, service.Service)
 	if err != nil {
-		log.Errorf(err, "Datacenter create service failed")
+		log.Errorf(err, "Servicecenter create service failed")
 		return ""
 	}
 	log.Debugf("Create service successful, serviceID = %s", serviceID)
@@ -58,12 +58,12 @@ func (s *datacenter) createService(service *pb.SyncService) string {
 	return serviceID
 }
 
-func (s *datacenter) registryInstances(domainProject, serviceId string, instance *scpb.MicroServiceInstance) string {
+func (s *servicecenter) registryInstances(domainProject, serviceId string, instance *scpb.MicroServiceInstance) string {
 	instance.ServiceId = serviceId
 	instance.InstanceId = ""
-	instanceID, err := s.datacenter.RegisterInstance(context.Background(), domainProject, serviceId, instance)
+	instanceID, err := s.servicecenter.RegisterInstance(context.Background(), domainProject, serviceId, instance)
 	if err != nil {
-		log.Errorf(err, "Datacenter registry instance failed")
+		log.Errorf(err, "Servicecenter registry instance failed")
 		return ""
 	}
 	log.Debugf("Registered instance successful, instanceID = %s", instanceID)
@@ -71,8 +71,8 @@ func (s *datacenter) registryInstances(domainProject, serviceId string, instance
 	return instanceID
 }
 
-// DeleteInstances Unregister instances of mapping table that has been unregistered from other datacenter
-func (s *datacenter) unRegistryInstances(data *pb.SyncData, mapping pb.SyncMapping) pb.SyncMapping {
+// DeleteInstances Unregister instances of mapping table that has been unregistered from other servicecenter
+func (s *servicecenter) unRegistryInstances(data *pb.SyncData, mapping pb.SyncMapping) pb.SyncMapping {
 	ctx := context.Background()
 	nm := make(pb.SyncMapping, 0, len(mapping))
 next:
@@ -86,9 +86,9 @@ next:
 			}
 		}
 
-		err := s.datacenter.UnregisterInstance(ctx, val.DomainProject, val.CurServiceID, val.CurInstanceID)
+		err := s.servicecenter.UnregisterInstance(ctx, val.DomainProject, val.CurServiceID, val.CurInstanceID)
 		if err != nil {
-			log.Errorf(err, "Datacenter delete instance failed")
+			log.Errorf(err, "Servicecenter delete instance failed")
 		}
 		log.Debugf("Unregistered instance, InstanceID = %s", val.CurInstanceID)
 	}

@@ -35,8 +35,8 @@ const (
 // tickHandler Timed task handler
 func (s *Server) tickHandler(ctx context.Context) {
 	log.Debugf("Handle Tick")
-	// Flush data to the storage of datacenter
-	s.dataCenter.FlushData()
+	// Flush data to the storage of servicecenter
+	s.servicecenter.FlushData()
 
 	event, _ := proto.Marshal(&pb.Member{
 		NodeName: s.conf.NodeName,
@@ -53,7 +53,7 @@ func (s *Server) tickHandler(ctx context.Context) {
 
 // GetData Sync Data to GRPC
 func (s *Server) Discovery() *pb.SyncData {
-	return s.dataCenter.Discovery()
+	return s.servicecenter.Discovery()
 }
 
 // HandleEvent Handles events from serf
@@ -90,8 +90,8 @@ func (s *Server) userEvent(event serf.UserEvent) {
 		log.Errorf(err, "Pull other serf instances failed, node name is '%s'", m.NodeName)
 		return
 	}
-	// Registry instances to datacenter and update storage of it
-	s.dataCenter.Registry(m.NodeName, data)
+	// Registry instances to servicecenter and update storage of it
+	s.servicecenter.Registry(m.NodeName, data)
 }
 
 // queryEvent Handles "EventQuery" query events and respond if conditions are met

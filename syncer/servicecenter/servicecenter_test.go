@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package datacenter
+package servicecenter
 
 import (
 	"context"
@@ -29,19 +29,19 @@ import (
 	"github.com/apache/servicecomb-service-center/syncer/test/dcmock"
 )
 
-func TestNewDataCenter(t *testing.T) {
+func TestNewServicecenter(t *testing.T) {
 	defer func() {
 		err := recover()
 		if err != nil {
 			t.Log(err)
 		}
 	}()
-	_, err := NewDataCenter([]string{"127.0.0.1:30100"}, nil)
+	_, err := NewServicecenter([]string{"127.0.0.1:30100"}, nil)
 	if err != nil {
 		t.Log(err)
 	}
 
-	_, err = NewDataCenter([]string{"127.0.0.1:30100"}, nil)
+	_, err = NewServicecenter([]string{"127.0.0.1:30100"}, nil)
 	if err != nil {
 		t.Fatal(err)
 		return
@@ -50,9 +50,9 @@ func TestNewDataCenter(t *testing.T) {
 
 func TestOnEvent(t *testing.T) {
 	conf := config.DefaultConfig()
-	conf.DatacenterPlugin = dcmock.PluginName
+	conf.ServicecenterPlugin = dcmock.PluginName
 	initPlugin(conf)
-	dc, err := NewDataCenter([]string{"http://127.0.0.1:30100"}, storage.New())
+	dc, err := NewServicecenter([]string{"http://127.0.0.1:30100"}, storage.New())
 	if err != nil {
 		t.Fatal(err)
 		return
@@ -110,5 +110,5 @@ func TestOnEvent(t *testing.T) {
 }
 
 func initPlugin(conf *config.Config) {
-	plugins.SetPluginConfig(plugins.PluginDatacenter.String(), conf.DatacenterPlugin)
+	plugins.SetPluginConfig(plugins.PluginServicecenter.String(), conf.ServicecenterPlugin)
 }

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package datacenter
+package servicecenter
 
 import (
 	"context"
@@ -24,15 +24,15 @@ import (
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 )
 
-// Store interface of datacenter
-type DataCenter interface {
+// Store interface of servicecenter
+type Servicecenter interface {
 	FlushData()
 	Registry(nodeName string, data *pb.SyncData)
 	Discovery() *pb.SyncData
 }
 
-type datacenter struct {
-	datacenter plugins.Datacenter
+type servicecenter struct {
+	servicecenter plugins.Servicecenter
 	storage    Storage
 }
 
@@ -45,22 +45,22 @@ type Storage interface {
 	UpdateMapByNode(nodeName string, mapping pb.SyncMapping)
 }
 
-// NewStore new store with endpoints
-func NewDataCenter(endpoints []string, storage Storage) (DataCenter, error) {
-	dc, err := plugins.Plugins().Datacenter().New(endpoints)
+// NewServicecenter new store with endpoints
+func NewServicecenter(endpoints []string, storage Storage) (Servicecenter, error) {
+	dc, err := plugins.Plugins().Servicecenter().New(endpoints)
 	if err != nil {
 		return nil, err
 	}
 
-	return &datacenter{
-		datacenter: dc,
+	return &servicecenter{
+		servicecenter: dc,
 		storage:    storage,
 	}, nil
 }
 
-// FlushData flush data to datacenter, update mapping data
-func (s *datacenter) FlushData() {
-	data, err := s.datacenter.GetAll(context.Background())
+// FlushData flush data to servicecenter, update mapping data
+func (s *servicecenter) FlushData() {
+	data, err := s.servicecenter.GetAll(context.Background())
 	if err != nil {
 		log.Errorf(err, "Syncer discover instances failed")
 		return
@@ -73,22 +73,22 @@ func (s *datacenter) FlushData() {
 	s.storage.UpdateMaps(maps)
 }
 
-// Registry registry data to the datacenter, update mapping data
-func (s *datacenter) Registry(nodeName string, data *pb.SyncData) {
+// Registry registry data to the servicecenter, update mapping data
+func (s *servicecenter) Registry(nodeName string, data *pb.SyncData) {
 	mapping := s.storage.GetMapByNode(nodeName)
 	for _, svc := range data.Services {
 		log.Debugf("trying to do registration of service, serviceID = %s", svc.Service.ServiceId)
-		// If the svc is in the mapping, just do nothing, if not, created it in datacenter and get the new serviceID
+		// If the svc is in the mapping, just do nothing, if not, created it in servicecenter and get the new serviceID
 		svcID := s.createService(svc)
 		for _, inst := range svc.Instances {
-			// If inst is in the mapping, just heart beat it in datacenter
+			// If inst is in the mapping, just heart beat it in servicecenter
 			log.Debugf("trying to do registration of instance, instanceID = %s", inst.InstanceId)
 			if s.heartbeatInstances(mapping, inst) {
 				continue
 			}
 
 			// If inst is not in the mapping, that is because this the first time syncer get the instance data
-			// in this case, we should registry it to the datacenter and get the new instanceID
+			// in this case, we should registry it to the servicecenter and get the new instanceID
 			item := &pb.MappingItem{
 				DomainProject: svc.DomainProject,
 				OrgServiceID:  inst.ServiceId,
@@ -98,7 +98,7 @@ func (s *datacenter) Registry(nodeName string, data *pb.SyncData) {
 			}
 			item.CurInstanceID = s.registryInstances(svc.DomainProject, svcID, inst)
 
-			// Use new serviceID and instanceID to update mapping data in this datacenter
+			// Use new serviceID and instanceID to update mapping data in this servicecenter
 			if item.CurInstanceID != "" {
 				mapping = append(mapping, item)
 			}
@@ -106,11 +106,11 @@ func (s *datacenter) Registry(nodeName string, data *pb.SyncData) {
 	}
 	// UnRegistry instances that is not in the data which means the instance in the mapping is no longer actived
 	mapping = s.unRegistryInstances(data, mapping)
-	// Update mapping data of the node to the storage of the datacenter
+	// Update mapping data of the node to the storage of the servicecenter
 	s.storage.UpdateMapByNode(nodeName, mapping)
 }
 
 // Discovery discovery data from storage
-func (s *datacenter) Discovery() *pb.SyncData {
+func (s *servicecenter) Discovery() *pb.SyncData {
 	return s.storage.GetData()
 }

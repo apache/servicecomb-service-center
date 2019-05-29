@@ -53,8 +53,8 @@ func init() {
 	syncerCmd.Flags().StringVar(&conf.JoinAddr, "join", conf.JoinAddr,
 		"address to join the cluster by specifying at least one existing member")
 
-	syncerCmd.Flags().StringVar(&conf.DCAddr, "dc-addr", conf.DCAddr,
-		"address to monitor the data-center")
+	syncerCmd.Flags().StringVar(&conf.SCAddr, "sc-addr", conf.SCAddr,
+		"address to monitor the service-center")
 }
 
 // runSyncer Runs the Syncer service.

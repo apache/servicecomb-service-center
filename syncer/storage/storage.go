@@ -42,7 +42,7 @@ func New() *Storage {
 // Storage of Syncer
 type Storage struct {
 	data *pb.SyncData
-	// mapping table for other datacenter instances
+	// mapping table for other servicecenter instances
 	maps map[string]pb.SyncMapping
 	lock sync.RWMutex
 }

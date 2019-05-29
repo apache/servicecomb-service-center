@@ -29,7 +29,7 @@ const PluginName = "servicecenter"
 func init() {
 	// Register self as a repository plugin
 	plugins.RegisterPlugin(&plugins.Plugin{
-		Kind: plugins.PluginDatacenter,
+		Kind: plugins.PluginServicecenter,
 		Name: PluginName,
 		New:  New,
 	})
@@ -42,7 +42,7 @@ func New() plugins.PluginInstance {
 }
 
 // New repository with endpoints
-func (*adaptor) New(endpoints []string) (plugins.Datacenter, error) {
+func (*adaptor) New(endpoints []string) (plugins.Servicecenter, error) {
 	cli, err := sc.NewSCClient(sc.Config{Endpoints: endpoints})
 	if err != nil {
 		return nil, err

@@ -39,12 +39,12 @@ type Config struct {
 	*serf.Config
 	LogFile string `yaml:"log_file"`
 
-	// Mode is the type of datacenter, currently supports "service-center"
+	// Mode is the type of servicecenter, currently supports "service-center"
 	Mode string `yaml:"mode"`
 
-	// DCAddr datacenter address, which is the service registry address.
+	// SCAddr servicecenter address, which is the service registry address.
 	// Cluster mode is supported, and multiple addresses are separated by an English ",".
-	DCAddr string `yaml:"dc_addr"`
+	SCAddr string `yaml:"dc_addr"`
 
 	// JoinAddr The management address of one gossip pool member.
 	JoinAddr          string `yaml:"join_addr"`
@@ -52,7 +52,7 @@ type Config struct {
 	Profile           string `yaml:"profile"`
 	EnableCompression bool   `yaml:"enable_compression"`
 	AutoSync          bool   `yaml:"auto_sync"`
-	DatacenterPlugin  string `json:"datacenter_plugin"`
+	ServicecenterPlugin  string `json:"servicecenter_plugin"`
 }
 
 // DefaultConfig returns the default config
@@ -66,10 +66,10 @@ func DefaultConfig() *Config {
 	serfConf.NodeName = hostname
 	return &Config{
 		Mode:             DefaultMode,
-		DCAddr:           fmt.Sprintf("127.0.0.1:%d", DefaultDCPort),
+		SCAddr:           fmt.Sprintf("127.0.0.1:%d", DefaultDCPort),
 		TickerInterval:   DefaultTickerInterval,
 		Config:           serfConf,
-		DatacenterPlugin: servicecenter.PluginName,
+		ServicecenterPlugin: servicecenter.PluginName,
 	}
 }
 

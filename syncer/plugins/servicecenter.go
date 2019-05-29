@@ -25,11 +25,11 @@ import (
 
 // Adaptor the plugin adaptor of repository
 type Adaptor interface {
-	New(endpoints []string) (Datacenter, error)
+	New(endpoints []string) (Servicecenter, error)
 }
 
-// Datacenter datacenter interface
-type Datacenter interface {
+// Servicecenter servicecenter interface
+type Servicecenter interface {
 	GetAll(ctx context.Context) (*pb.SyncData, error)
 	CreateService(ctx context.Context, domainProject string, service *scpb.MicroService) (string, error)
 	DeleteService(ctx context.Context, domainProject, serviceId string) error

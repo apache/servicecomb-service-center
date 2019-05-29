@@ -14,15 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package datacenter
+package servicecenter
 
 import (
 	scpb "github.com/apache/servicecomb-service-center/server/core/proto"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 )
 
-// exclude instances from other datacenter, exclude the expired instances in the maps
-func (s *datacenter) exclude(data *pb.SyncData, mapping pb.SyncMapping) (*pb.SyncData, pb.SyncMapping) {
+// exclude instances from other servicecenter, exclude the expired instances in the maps
+func (s *servicecenter) exclude(data *pb.SyncData, mapping pb.SyncMapping) (*pb.SyncData, pb.SyncMapping) {
 	services := make([]*pb.SyncService, 0, 10)
 	maps := make(pb.SyncMapping, 0, len(mapping))
 	for _, svc := range data.Services {
@@ -34,7 +34,7 @@ func (s *datacenter) exclude(data *pb.SyncData, mapping pb.SyncMapping) (*pb.Syn
 				maps = append(maps, mapping[index])
 				continue
 			}
-			// exclude instances from other datacenter
+			// exclude instances from other servicecenter
 			nis = append(nis, inst)
 		}
 

@@ -31,7 +31,7 @@ func newAdaptor() PluginInstance { return &mockAdaptor{} }
 
 type mockAdaptor struct{}
 
-func (*mockAdaptor) New(endpoints []string) (Datacenter, error) {
+func (*mockAdaptor) New(endpoints []string) (Servicecenter, error) {
 	return &mockRepository{}, nil
 }
 
@@ -78,24 +78,24 @@ func TestManager_New(t *testing.T) {
 		t.Fatalf("get %s %s failed", notfound, BUILDIN)
 	}
 
-	instanceNil := pm.Instance(PluginDatacenter)
-	if instanceNil != pm.Instance(PluginDatacenter) {
-		t.Fatalf("instance storage plugin: %s failed", PluginDatacenter)
+	instanceNil := pm.Instance(PluginServicecenter)
+	if instanceNil != pm.Instance(PluginServicecenter) {
+		t.Fatalf("instance storage plugin: %s failed", PluginServicecenter)
 	}
 
-	getNil := pm.Get(PluginDatacenter, BUILDIN)
+	getNil := pm.Get(PluginServicecenter, BUILDIN)
 	if getNil != nil {
-		t.Fatalf("get %s %s failed", PluginDatacenter, BUILDIN)
+		t.Fatalf("get %s %s failed", PluginServicecenter, BUILDIN)
 	}
 
-	RegisterPlugin(&Plugin{Kind: PluginDatacenter, Name: "mock", New: newAdaptor})
-	SetPluginConfig(PluginDatacenter.String(), "mock")
+	RegisterPlugin(&Plugin{Kind: PluginServicecenter, Name: "mock", New: newAdaptor})
+	SetPluginConfig(PluginServicecenter.String(), "mock")
 
-	repositoryInstance := pm.Instance(PluginDatacenter)
-	if repositoryInstance != pm.Instance(PluginDatacenter) {
-		t.Fatalf("instance storage plugin: %s failed", PluginDatacenter)
+	repositoryInstance := pm.Instance(PluginServicecenter)
+	if repositoryInstance != pm.Instance(PluginServicecenter) {
+		t.Fatalf("instance storage plugin: %s failed", PluginServicecenter)
 	}
-	pm.Datacenter()
+	pm.Servicecenter()
 
 	RegisterPlugin(&Plugin{Kind: notfound, Name: "mock", New: func() PluginInstance { return &mockPlugin{} }})
 

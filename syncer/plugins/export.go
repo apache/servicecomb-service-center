@@ -19,7 +19,7 @@ package plugins
 type PluginType int
 
 const (
-	PluginDatacenter PluginType = iota
+	PluginServicecenter PluginType = iota
 	pluginTotal
 
 	BUILDIN       = "buildin"
@@ -30,13 +30,13 @@ const (
 
 func (p PluginType) String() string {
 	switch p {
-	case PluginDatacenter:
-		return "datacenter"
+	case PluginServicecenter:
+		return "servicecenter"
 	default:
 		return ""
 	}
 }
 
-func (m Manager) Datacenter() Adaptor {
-	return m.Instance(PluginDatacenter).(Adaptor)
+func (m Manager) Servicecenter() Adaptor {
+	return m.Instance(PluginServicecenter).(Adaptor)
 }

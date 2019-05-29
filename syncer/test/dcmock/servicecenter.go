@@ -37,7 +37,7 @@ func SetGetAll(handler func(ctx context.Context) (*pb.SyncData, error)) {
 
 func init() {
 	plugins.RegisterPlugin(&plugins.Plugin{
-		Kind: plugins.PluginDatacenter,
+		Kind: plugins.PluginServicecenter,
 		Name: PluginName,
 		New:  New,
 	})
@@ -49,7 +49,7 @@ func New() plugins.PluginInstance {
 	return &adaptor{}
 }
 
-func (*adaptor) New(endpoints []string) (plugins.Datacenter, error) {
+func (*adaptor) New(endpoints []string) (plugins.Servicecenter, error) {
 	return &mockPlugin{}, nil
 }
 

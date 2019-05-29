@@ -39,9 +39,9 @@ func TestClient_GetAll(t *testing.T) {
 	}
 }
 
-func newServiceCenter(t *testing.T) (*httptest.Server, plugins.Datacenter) {
-	plugins.SetPluginConfig(plugins.PluginDatacenter.String(), PluginName)
-	adaptor := plugins.Plugins().Datacenter()
+func newServiceCenter(t *testing.T) (*httptest.Server, plugins.Servicecenter) {
+	plugins.SetPluginConfig(plugins.PluginServicecenter.String(), PluginName)
+	adaptor := plugins.Plugins().Servicecenter()
 	if adaptor == nil {
 		t.Errorf("get repository adaptor %s failed", PluginName)
 	}
