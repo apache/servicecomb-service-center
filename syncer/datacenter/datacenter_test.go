@@ -19,6 +19,7 @@ package datacenter
 import (
 	"context"
 	"errors"
+	"github.com/apache/servicecomb-service-center/syncer/storage"
 	"testing"
 
 	"github.com/apache/servicecomb-service-center/server/core/proto"
@@ -35,12 +36,12 @@ func TestNewDataCenter(t *testing.T) {
 			t.Log(err)
 		}
 	}()
-	_, err := NewDataCenter([]string{"127.0.0.1:30100"})
+	_, err := NewDataCenter([]string{"127.0.0.1:30100"}, nil)
 	if err != nil {
 		t.Log(err)
 	}
 
-	_, err = NewDataCenter([]string{"127.0.0.1:30100"})
+	_, err = NewDataCenter([]string{"127.0.0.1:30100"}, nil)
 	if err != nil {
 		t.Fatal(err)
 		return
@@ -51,87 +52,61 @@ func TestOnEvent(t *testing.T) {
 	conf := config.DefaultConfig()
 	conf.DatacenterPlugin = dcmock.PluginName
 	initPlugin(conf)
-	dc, err := NewDataCenter([]string{"http://127.0.0.1:30100"})
+	dc, err := NewDataCenter([]string{"http://127.0.0.1:30100"}, storage.New())
 	if err != nil {
 		t.Fatal(err)
 		return
 	}
 
-	mapping := pb.SyncMapping{}
-
 	dcmock.SetGetAll(func(ctx context.Context) (data *pb.SyncData, e error) {
 		return nil, errors.New("test error")
 	})
 
-	data, err := dc.GetSyncData(mapping)
+	dc.FlushData()
+	data := dc.Discovery()
 	if err != nil {
 		t.Log(err)
 	}
 
 	dcmock.SetGetAll(nil)
 
-	data, err = dc.GetSyncData(mapping)
+	dc.FlushData()
+	data = dc.Discovery()
 	if err != nil {
 		t.Fatal(err)
 		return
 	}
 
-	_, err = dc.SetSyncData(data, mapping)
+	nodeName := "test_node"
+	dc.Registry(nodeName, data)
+
+	dcmock.SetGetAll(dcmock.NewGetAll)
+	dc.FlushData()
+	newData := dc.Discovery()
 	if err != nil {
 		t.Fatal(err)
 		return
 	}
+
+	dc.Registry(nodeName, newData)
 
 	dcmock.SetRegisterInstance(func(ctx context.Context, domainProject, serviceId string, instance *proto.MicroServiceInstance) (s string, e error) {
 		return "", errors.New("test error")
 	})
 
-	_, err = dc.SetSyncData(data, mapping)
-	if err != nil {
-		t.Log(err)
-	}
+	dc.Registry(nodeName, data)
 
 	dcmock.SetRegisterInstance(nil)
-	_, err = dc.SetSyncData(data, mapping)
-	if err != nil {
-		t.Log(err)
-	}
 
-	_, err = dc.SetSyncData(data, mapping)
-	if err != nil {
-		t.Log(err)
-	}
+	dc.Registry(nodeName, data)
+
+	dc.Registry(nodeName, data)
 
 	dcmock.SetHeartbeat(func(ctx context.Context, domainProject, serviceId, instanceId string) error {
 		return errors.New("test error")
 	})
-	_, err = dc.SetSyncData(data, mapping)
-	if err != nil {
-		t.Log(err)
-	}
-}
 
-func TestOnEventWrongData(t *testing.T) {
-	conf := config.DefaultConfig()
-	initPlugin(conf)
-	dc, err := NewDataCenter([]string{"127.0.0.2:30100"})
-	if err != nil {
-		t.Fatal(err)
-		return
-	}
-
-	mapping := pb.SyncMapping{}
-	data, err := dc.GetSyncData(mapping)
-	if err != nil {
-		t.Fatal(err)
-		return
-	}
-
-	_, err = dc.SetSyncData(data, mapping)
-	if err != nil {
-		t.Fatal(err)
-		return
-	}
+	dc.Registry(nodeName, data)
 }
 
 func initPlugin(conf *config.Config) {

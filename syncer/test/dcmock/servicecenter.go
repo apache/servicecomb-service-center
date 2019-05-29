@@ -56,6 +56,108 @@ func (*adaptor) New(endpoints []string) (plugins.Datacenter, error) {
 type mockPlugin struct {
 }
 
+func NewGetAll(ctx context.Context) (*pb.SyncData, error) {
+	return &pb.SyncData{
+		Services: []*pb.SyncService{
+			{
+				DomainProject: "default/default",
+				Service: &scpb.MicroService{
+					ServiceId:   "5db1b794aa6f8a875d6e68110260b5491ee7e223",
+					AppId:       "default",
+					ServiceName: "SERVICECENTER",
+					Version:     "1.1.0",
+					Level:       "BACK",
+					Schemas: []string{
+						"servicecenter.grpc.api.ServiceCtrl",
+						"servicecenter.grpc.api.ServiceInstanceCtrl",
+					},
+					Status: "UP",
+					Properties: map[string]string{
+						"allowCrossApp": "true",
+					},
+					Timestamp:    "1552626180",
+					ModTimestamp: "1552626180",
+					Environment:  "production",
+				},
+				Instances: []*scpb.MicroServiceInstance{
+					{
+						InstanceId: "4d41a637471f11e9888cfa163eca30ab",
+						ServiceId:  "5db1b794aa6f8a875d6e68110260b5491ee7e223",
+						Endpoints: []string{
+							"rest://127.0.0.1:30100/",
+						},
+						HostName: "testmock",
+						Status:   "UP",
+						HealthCheck: &scpb.HealthCheck{
+							Mode:     "push",
+							Interval: 30,
+							Times:    3,
+						},
+						Timestamp:    "1552653537",
+						ModTimestamp: "1552653537",
+						Version:      "1.1.0",
+					},{
+						InstanceId: "4d41a637471f11e9888cfa163eca30e0",
+						ServiceId:  "5db1b794aa6f8a875d6e68110260b5491ee7e223",
+						Endpoints: []string{
+							"rest://127.0.0.1:30100/",
+						},
+						HostName: "testmock",
+						Status:   "UP",
+						HealthCheck: &scpb.HealthCheck{
+							Mode:     "push",
+							Interval: 30,
+							Times:    3,
+						},
+						Timestamp:    "1552653537",
+						ModTimestamp: "1552653537",
+						Version:      "1.1.0",
+					},
+				},
+			},{
+				DomainProject: "default/default",
+				Service: &scpb.MicroService{
+					ServiceId:   "5db1b794aa6f8a875d6e68110260b5491ee7e211",
+					AppId:       "default",
+					ServiceName: "SERVICECENTER",
+					Version:     "1.1.0",
+					Level:       "BACK",
+					Schemas: []string{
+						"servicecenter.grpc.api.ServiceCtrl",
+						"servicecenter.grpc.api.ServiceInstanceCtrl",
+					},
+					Status: "UP",
+					Properties: map[string]string{
+						"allowCrossApp": "true",
+					},
+					Timestamp:    "1552626180",
+					ModTimestamp: "1552626180",
+					Environment:  "production",
+				},
+				Instances: []*scpb.MicroServiceInstance{
+					{
+						InstanceId: "4d41a637471f11e9888cfa163eca30ab",
+						ServiceId:  "5db1b794aa6f8a875d6e68110260b5491ee7e211",
+						Endpoints: []string{
+							"rest://127.0.0.1:30100/",
+						},
+						HostName: "testmock",
+						Status:   "UP",
+						HealthCheck: &scpb.HealthCheck{
+							Mode:     "push",
+							Interval: 30,
+							Times:    3,
+						},
+						Timestamp:    "1552653537",
+						ModTimestamp: "1552653537",
+						Version:      "1.1.0",
+					},
+				},
+			},
+		},
+	}, nil
+}
+
 func (c *mockPlugin) GetAll(ctx context.Context) (*pb.SyncData, error) {
 	if scCacheHandler != nil {
 		return scCacheHandler(ctx)

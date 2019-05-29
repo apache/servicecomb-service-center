@@ -19,6 +19,7 @@ vendor/**
 # for local UT
 **/conf/
 data
+syncer-data
 !etc/conf/
 frontend/app/bower_components
 etc/data/

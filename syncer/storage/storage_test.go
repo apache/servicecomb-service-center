@@ -32,13 +32,13 @@ func TestSyncData(t *testing.T) {
 		storage.Stop()
 		os.RemoveAll(filepath.Dir(snapshotPath))
 	}()
-	data := storage.GetSyncData()
+	data := storage.GetData()
 	if len(data.Services) > 0 {
 		t.Error("default sync data was wrong")
 	}
 	data = getSyncData()
-	storage.SaveSyncData(data)
-	nd := storage.GetSyncData()
+	storage.UpdateData(data)
+	nd := storage.GetData()
 	if nd == nil {
 		t.Error("save sync data failed!")
 	}
@@ -54,22 +54,24 @@ func TestSyncMapping(t *testing.T) {
 		os.RemoveAll(filepath.Dir(snapshotPath))
 	}()
 	nodeName := "testnode"
-	data := storage.GetSyncMapping(nodeName)
+	data := storage.GetMapByNode(nodeName)
 	if len(data) > 0 {
 		t.Error("default sync mapping was wrong")
 	}
 	data = getSyncMapping(nodeName)
-	storage.SaveSyncMapping(nodeName, data)
-	nd := storage.GetSyncMapping(nodeName)
+	storage.UpdateMapByNode(nodeName, data)
+	nd := storage.GetMapByNode(nodeName)
 
 	if index := nd.CurrentIndex(nodeName); index == -1 {
 		t.Error("save sync mapping failed!")
 	}
 
-	all := storage.GetAllMapping()
+	all := storage.GetMaps()
 	if index := all.CurrentIndex(nodeName); index == -1 {
 		t.Errorf("all mapping has not node name %s!", nodeName)
 	}
+
+	storage.UpdateMaps(all)
 }
 
 func getSyncMapping(nodeName string) pb.SyncMapping {
