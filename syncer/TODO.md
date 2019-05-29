@@ -10,13 +10,14 @@
 - Support Istio
 - Support K8S etcd
 - Support Consule
+- Support data synchronization cross datacenters
 
 ## Management
 
 - Lifecycle management of syncer cluster
-- Microservices blacklist of cross data-center
-- Microservices whitelist of cross data-center
-- Management of on-demand data synchronization
+- Microservices blacklist of cross service-center
+- Microservices whitelist of cross service-center-center
+- Management of on-demand service-center synchronization
 - Support read configuration from config file
 
 ## Reliable

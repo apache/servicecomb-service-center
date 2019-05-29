@@ -3,30 +3,30 @@ ServiceCenter Syncer
 [中文简介](./README-ZH.md)
 
 ### 1. What is ServiceCenter Syncer  
-Syncer is a multiple datacenters synchronization tool designed for large microservice architectures,supporting differ-structure datacenters. The project adheres to the following beliefst:  
+Syncer is a multiple servicecenters synchronization tool designed for large microservice architectures,supporting differ-structure servicecenters. The project adheres to the following beliefst:  
 - Transparent to the application. Regardless of whether the tool is running or not, it should not affect the original microservices.  
-- Provide peer-to-peer networks for multiple data-centers. Syncers are loosely coupled and members can  join and quit freely.  
-- Support for different data-centers. Plug-in form, users can easily implement plug-ins for different data-centers.
+- Provide peer-to-peer networks for multiple service-centers. Syncers are loosely coupled and members can  join and quit freely.  
+- Support for different service-centers. Plug-in form, users can easily implement plug-ins for different service-centers.
 
 ##### Glossary 
 - Gossip - Syncer  uses a gossip protocol by serf for inter-cluster broadcasts. The Gossip protocol uses UDP to indirectly force random propagation between cluster nodes, which is a viral propagation protocol.  
 - Serf - An implementation of the Gossip protocol, a tool for cluster member management, fault detection, and orchestration, which is distributed, fault tolerant and highly available. 
-- Data center - It can be a single microservice discovery and registration center or a cluster of microservice discovery and registration centers. We define a data center to be a network area with unified instances data.
+- service center - It can be a single microservice discovery and registration center or a cluster of microservice discovery and registration centers. We define a service center to be a network area with unified instances data.
 
 ### 2. ServiceCenter Syncer Architecture
 Syncer's runtime architecture diagram is as follows,
 ![image](./images/SyncerArchitecture.png?raw=true)  
-There are three data-centers, labeled "A" and "B" and "C". 
+There are three service-centers, labeled "A" and "B" and "C". 
 
-- Within each data center, a service registry (ServiceCenter, Eurake, or other) cluster is deployed that manages all microservice instances of the data center to which it belongs, and the data centers are isolated from each other. At the same time, a Syner cluster is deployed in each data center, which is responsible for discovering instances from the registry and registering instance information from other data centers to its own data centers.
-- Between multiple data centers, multiple Syncers form a peer-to-peer network that maintains a Gossip pool. The use of the Gossip protocol mainly brings the following conveniences, 
+- Within each service center, a service registry (ServiceCenter, Eurake, or other) cluster is deployed that manages all microservice instances of the service center to which it belongs, and the service centers are isolated from each other. At the same time, a Syner cluster is deployed in each service center, which is responsible for discovering instances from the registry and registering instance information from other service centers to its own service centers.
+- Between multiple service centers, multiple Syncers form a peer-to-peer network that maintains a Gossip pool. The use of the Gossip protocol mainly brings the following conveniences, 
    - Syncer only needs any pool member information to join the network, and the discovery of other member information is done automatically. 
    - The fault detection of members is distributed, and multiple members in the pool cooperate with each other, which is more accurate and perfect than simple heartbeat.
    - Provides cluster messaging, mainly for event notification of instances data.
--  Syncer provides RPC service for transmitting microservice instances information. When a Syncer receives event notifications from other members or queries across data centers, the data can be synchronized through the Pull and Push interfaces provided by the RPC service.  
+-  Syncer provides RPC service for transmitting microservice instances information. When a Syncer receives event notifications from other members or queries across service centers, the data can be synchronized through the Pull and Push interfaces provided by the RPC service.  
 
 ### 3. Quick Start
-##### 3.1 Getting & Running Data center
+##### 3.1 Getting & Running Service center
 
 Take Service-center as an example, reference to [ServiceCenter Quick Start](https://github.com/apache/servicecomb-service-center#quick-start)  
 
@@ -49,7 +49,7 @@ $ go build -o service-center
 ###### Parameter Description
 - dc-addr 
 
-  Data center address, which is the service registry address. Cluster mode is supported, and multiple addresses are separated by commas.   
+  Service center address, which is the service registry address. Cluster mode is supported, and multiple addresses are separated by commas.   
   Example `--dc-addr http://10.0.0.10:30100,http://10.0.0.11:30100`
 
 - bind
@@ -59,7 +59,7 @@ $ go build -o service-center
 
 - rpc-addr
 
-  Address of Syncer for data transmission, used to synchronize microservices data  between Syners.  
+  Address of Syncer for data transmission, used to synchronize microservices data  between Syncers.  
   Example `--rpc-addr 10.0.0.10:30191`
 
 - join
@@ -68,15 +68,15 @@ $ go build -o service-center
   Example `--join 10.0.0.10:30191 `
 
 
-Suppose there are 2 Data centers, each of them with a Service-center cluster for microservices discovery and registry, as following,   
+Suppose there are 2 Service centers, each of them with a Service-center cluster for microservices discovery and registry, as following,   
 
-| Datacenter                | Local address |
-| :-----------------------: | :-----------: |
-| http://10.0.0.10:30100    | 10.0.0.10     |
-| http://10.0.0.11:30100    | 10.0.0.11     |   
+|     Servicecenter      | Local address |
+| :--------------------: | :-----------: |
+| http://10.0.0.10:30100 |   10.0.0.10   |
+| http://10.0.0.11:30100 |   10.0.0.11   |
 
 
-Start Service-center Syncer to enable communication between 2 data centers,
+Start Service-center Syncer to enable communication between 2 service centers,
 
 **Start the ServiceCenter Syner by executing the following command on the 10.0.0.10 machine**
 
@@ -85,6 +85,7 @@ $ ./service-center syncer --dc-addr http://10.0.0.10:30100 --bind 10.0.0.10:3019
 ```
 
 **Start the ServiceCenter Syncer by executing the following command on the 10.0.0.10 machine and join the 10.0.0.10 gossip pool**
+
 ```bash
 $ ./service-center syncer --dc-addr http://10.0.0.11:30100 --bind 10.0.0.11:30190 --rpc-addr 10.0.0.11:30191 --join 10.0.0.10:30191
 ```
