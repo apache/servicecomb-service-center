@@ -18,24 +18,19 @@
 package storage
 
 import (
-	"encoding/json"
-	"io/ioutil"
 	"sync"
 
-	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/syncer/pkg/utils"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 )
 
 var (
 	defaultMapping = make(pb.SyncMapping, 0)
-	snapshotPath   = "./data/syncer-snapshot"
 )
 
 func New() *Storage {
 	return &Storage{
 		data: &pb.SyncData{},
-		maps: loadSnapshot(),
+		maps: make(map[string]pb.SyncMapping),
 	}
 }
 
@@ -45,49 +40,6 @@ type Storage struct {
 	// mapping table for other servicecenter instances
 	maps map[string]pb.SyncMapping
 	lock sync.RWMutex
-}
-
-// loadSnapshot Load snapshot of mapping table
-func loadSnapshot() map[string]pb.SyncMapping {
-	mapping := make(map[string]pb.SyncMapping)
-	data, err := ioutil.ReadFile(snapshotPath)
-	if err != nil {
-		log.Warnf("get syncer snapshot from '%s' failed, error: %s", snapshotPath, err)
-		return mapping
-	}
-	err = json.Unmarshal(data, &mapping)
-	if err != nil {
-		log.Warnf("unmarshal syncer snapshot failed, error: %s", err)
-	}
-	log.Infof("Loaded maps from disk to storage, maps = %s", data)
-	return mapping
-}
-
-func (s *Storage) Stop() {
-	s.flush()
-}
-
-// flush Refresh the mapping table to the hard disk
-func (s *Storage) flush() {
-	data, err := json.Marshal(&s.maps)
-	if err != nil {
-		log.Warnf("marshal syncer snapshot failed, error: %s", err)
-		return
-	}
-
-	f, err := utils.OpenFile(snapshotPath)
-	if err != nil {
-		log.Warnf("open syncer snapshot file '%s' failed, error: %s", snapshotPath, err)
-		return
-	}
-	defer f.Close()
-
-	_, err = f.Write(data)
-	if err != nil {
-		log.Warnf("flush syncer snapshot to '%s' failed, error: %s", snapshotPath, err)
-		return
-	}
-	log.Infof("Flushed maps to disk before exit, data = %s", data)
 }
 
 // UpdateData Update data to storage

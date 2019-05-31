@@ -23,3 +23,11 @@ message SyncData {
     repeated SyncService services  = 1;
 }
 
+message MappingEntry {
+    string nodeName = 1;
+    string domainProject = 2;
+    string orgServiceID = 3;
+    string orgInstanceID = 4;
+    string curServiceID = 5;
+    string curInstanceID = 6;
+}
