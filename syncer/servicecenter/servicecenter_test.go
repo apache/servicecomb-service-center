@@ -19,7 +19,6 @@ package servicecenter
 import (
 	"context"
 	"errors"
-	"github.com/apache/servicecomb-service-center/syncer/storage"
 	"testing"
 
 	"github.com/apache/servicecomb-service-center/server/core/proto"
@@ -27,6 +26,7 @@ import (
 	"github.com/apache/servicecomb-service-center/syncer/plugins"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 	"github.com/apache/servicecomb-service-center/syncer/test/dcmock"
+	storage "github.com/apache/servicecomb-service-center/syncer/test/sotrage"
 )
 
 func TestNewServicecenter(t *testing.T) {
