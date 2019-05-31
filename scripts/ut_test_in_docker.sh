@@ -46,6 +46,7 @@ echo "${green}Preparing the env for UT....${reset}"
 [ $? == 0 ] && ut_for_dir pkg
 [ $? == 0 ] && ut_for_dir server
 [ $? == 0 ] && ut_for_dir scctl
+[ $? == 0 ] && ut_for_dir syncer
 ret=$?
 
 if [ ${ret} == 0 ]; then

@@ -4,8 +4,9 @@ output
 **/coverage.out
 **/coverage.txt
 **/*.log
+syncer/syncer
 
-service-center.iml
+*.iml
 .idea/
 **/*junit.xml
 **/*.exe
@@ -17,6 +18,8 @@ vendor/**
 
 # for local UT
 **/conf/
+data
+syncer-data
 !etc/conf/
 frontend/app/bower_components
 etc/data/
