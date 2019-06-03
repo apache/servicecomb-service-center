@@ -16,7 +16,7 @@ Syncer是一个多服务中心的同步工具，专为大型微服务架构设�
 ### 2. ServiceCenter Syncer架构
 Syncer的运行时架构图如下：  
 ![image](./images/SyncerArchitecture.png?raw=true)  
-如图所示，我们可以看到被标记为“A”、"B"、“C”的三个服务中心。  
+如图所示，  
 
 - 在每个服务中心内，均部署了一套服务注册中心（ServiceCenter、Eurake或者其他）集群，该集群管理其所属服务中心的所有微服务实例，并且是彼此隔离的。同时在每个服務中心里各自部署了一个Syncer集群，它负责从注册中心发现实例，并向服务中心注册来自其他服务中心的实例信息。  
 - 在多个服务中心间，多个Syncer组成对等网络，维持一个Gossip池。Gossip协议的使用主要带来了以下便捷：
@@ -67,13 +67,14 @@ $ go build
 
 以下将启动两个Syncer来完成这两个服务中心之间的微服务数据同步:
 
-**在10.0.0.10的机器上执行以下命令启动ServiceCenter Syncer**
+**在10.0.0.10的机器上执行以下命令启动Syncer**
 
 ```bash
 $ ./syncer daemon --sc-addr http://10.0.0.10:30100 --bind 10.0.0.10:30190 --rpc-addr 10.0.0.10:30191
 ```
 
-**在10.0.0.10的机器上执行以下命令启动ServiceCenter Syncer，并加入10.0.0.10的gossip池**
+**在10.0.0.11的机器上执行以下命令启动Syncer，并加入10.0.0.10的gossip池**
+
 ```bash
 $ ./syncer daemon --sc-addr http://10.0.0.11:30100 --bind 10.0.0.11:30190 --rpc-addr 10.0.0.11:30191 --join 10.0.0.10:30191
 ```
