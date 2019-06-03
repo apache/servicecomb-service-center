@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package storage
+package mocksotrage
 
 import (
 	"sync"
