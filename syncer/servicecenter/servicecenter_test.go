@@ -23,10 +23,10 @@ import (
 
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/syncer/config"
+	"github.com/apache/servicecomb-service-center/syncer/pkg/mock/mockplugin"
+	"github.com/apache/servicecomb-service-center/syncer/pkg/mock/mocksotrage"
 	"github.com/apache/servicecomb-service-center/syncer/plugins"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
-	"github.com/apache/servicecomb-service-center/syncer/test/dcmock"
-	storage "github.com/apache/servicecomb-service-center/syncer/test/sotrage"
 )
 
 func TestNewServicecenter(t *testing.T) {
@@ -50,15 +50,15 @@ func TestNewServicecenter(t *testing.T) {
 
 func TestOnEvent(t *testing.T) {
 	conf := config.DefaultConfig()
-	conf.ServicecenterPlugin = dcmock.PluginName
+	conf.ServicecenterPlugin = mockplugin.PluginName
 	initPlugin(conf)
-	dc, err := NewServicecenter([]string{"http://127.0.0.1:30100"}, storage.New())
+	dc, err := NewServicecenter([]string{"http://127.0.0.1:30100"}, mocksotrage.New())
 	if err != nil {
 		t.Fatal(err)
 		return
 	}
 
-	dcmock.SetGetAll(func(ctx context.Context) (data *pb.SyncData, e error) {
+	mockplugin.SetGetAll(func(ctx context.Context) (data *pb.SyncData, e error) {
 		return nil, errors.New("test error")
 	})
 
@@ -68,7 +68,7 @@ func TestOnEvent(t *testing.T) {
 		t.Log(err)
 	}
 
-	dcmock.SetGetAll(nil)
+	mockplugin.SetGetAll(nil)
 
 	dc.FlushData()
 	data = dc.Discovery()
@@ -80,7 +80,7 @@ func TestOnEvent(t *testing.T) {
 	nodeName := "test_node"
 	dc.Registry(nodeName, data)
 
-	dcmock.SetGetAll(dcmock.NewGetAll)
+	mockplugin.SetGetAll(mockplugin.NewGetAll)
 	dc.FlushData()
 	newData := dc.Discovery()
 	if err != nil {
@@ -90,19 +90,19 @@ func TestOnEvent(t *testing.T) {
 
 	dc.Registry(nodeName, newData)
 
-	dcmock.SetRegisterInstance(func(ctx context.Context, domainProject, serviceId string, instance *proto.MicroServiceInstance) (s string, e error) {
+	mockplugin.SetRegisterInstance(func(ctx context.Context, domainProject, serviceId string, instance *proto.MicroServiceInstance) (s string, e error) {
 		return "", errors.New("test error")
 	})
 
 	dc.Registry(nodeName, data)
 
-	dcmock.SetRegisterInstance(nil)
+	mockplugin.SetRegisterInstance(nil)
 
 	dc.Registry(nodeName, data)
 
 	dc.Registry(nodeName, data)
 
-	dcmock.SetHeartbeat(func(ctx context.Context, domainProject, serviceId, instanceId string) error {
+	mockplugin.SetHeartbeat(func(ctx context.Context, domainProject, serviceId, instanceId string) error {
 		return errors.New("test error")
 	})
 
