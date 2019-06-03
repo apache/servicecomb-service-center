@@ -16,16 +16,7 @@
  */
 package proto
 
-type SyncMapping []*MappingItem
-
-type MappingItem struct {
-	NodeName      string `json:"node_name"`
-	DomainProject string `json:"domain_project"`
-	OrgServiceID  string `json:"org_service_id"`
-	OrgInstanceID string `json:"org_instance_id"`
-	CurServiceID  string `json:"cur_service_id"`
-	CurInstanceID string `json:"cur_instance_id"`
-}
+type SyncMapping []*MappingEntry
 
 func (s SyncMapping) OriginIndex(instanceID string) int {
 	for index, val := range s {

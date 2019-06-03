@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package servicecenter
+package mockservicecenter
 
 import (
 	"net/http"

@@ -21,8 +21,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/apache/servicecomb-service-center/syncer/pkg/mock/mockservicecenter"
 	"github.com/apache/servicecomb-service-center/syncer/plugins"
-	"github.com/apache/servicecomb-service-center/syncer/test/servicecenter"
 )
 
 func TestClient_GetAll(t *testing.T) {
@@ -45,7 +45,7 @@ func newServiceCenter(t *testing.T) (*httptest.Server, plugins.Servicecenter) {
 	if adaptor == nil {
 		t.Errorf("get repository adaptor %s failed", PluginName)
 	}
-	svr := servicecenter.NewMockServer()
+	svr := mockservicecenter.NewMockServer()
 	if svr == nil {
 		t.Error("new httptest server failed")
 	}
