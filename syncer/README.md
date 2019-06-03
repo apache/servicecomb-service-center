@@ -16,7 +16,7 @@ Syncer is a multiple servicecenters synchronization tool designed for large micr
 ### 2. ServiceCenter Syncer Architecture
 Syncer's runtime architecture diagram is as follows,
 ![image](./images/SyncerArchitecture.png?raw=true)  
-There are three service-centers, labeled "A" and "B" and "C". 
+There are three service-centers, 
 
 - Within each service center, a service registry (ServiceCenter, Eurake, or other) cluster is deployed that manages all microservice instances of the service center to which it belongs, and the service centers are isolated from each other. At the same time, a Syner cluster is deployed in each service center, which is responsible for discovering instances from the registry and registering instance information from other service centers to its own service centers.
 - Between multiple service centers, multiple Syncers form a peer-to-peer network that maintains a Gossip pool. The use of the Gossip protocol mainly brings the following conveniences, 
@@ -48,10 +48,10 @@ $ go build
 
 ##### 3.3 Running ServiceCenter Syncer
 ###### Parameter Description
-- dc-addr 
+- sc-addr 
 
   Service center address, which is the service registry address. Cluster mode is supported, and multiple addresses are separated by commas.   
-  Example `--dc-addr http://10.0.0.10:30100,http://10.0.0.11:30100`
+  Example `--sc-addr http://10.0.0.10:30100,http://10.0.0.11:30100`
 
 - bind
 
@@ -79,16 +79,16 @@ Suppose there are 2 Service centers, each of them with a Service-center cluster 
 
 Start Service-center Syncer to enable communication between 2 service centers,
 
-**Start the ServiceCenter Syner by executing the following command on the 10.0.0.10 machine**
+**Start Sycner 10.0.0.10 host**
 
 ```bash
-$ ./syncer daemon --dc-addr http://10.0.0.10:30100 --bind 10.0.0.10:30190 --rpc-addr 10.0.0.10:30191
+$ ./syncer daemon --sc-addr http://10.0.0.10:30100 --bind 10.0.0.10:30190 --rpc-addr 10.0.0.10:30191
 ```
 
-**Start the ServiceCenter Syncer by executing the following command on the 10.0.0.10 machine and join the 10.0.0.10 gossip pool**
+**Start Syncer on 10.0.0.11 host and join into 10.0.0.10 gossip pool**
 
 ```bash
-$ ./syncer daemon --dc-addr http://10.0.0.11:30100 --bind 10.0.0.11:30190 --rpc-addr 10.0.0.11:30191 --join 10.0.0.10:30191
+$ ./syncer daemon --sc-addr http://10.0.0.11:30100 --bind 10.0.0.11:30190 --rpc-addr 10.0.0.11:30191 --join 10.0.0.10:30191
 ```
 
 **Verification**  
