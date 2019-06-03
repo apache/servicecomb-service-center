@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package dcmock
+package mockplugin
 
 import (
 	"context"

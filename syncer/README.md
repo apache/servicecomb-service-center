@@ -85,7 +85,7 @@ Start Service-center Syncer to enable communication between 2 service centers,
 $ ./syncer daemon --sc-addr http://10.0.0.10:30100 --bind 10.0.0.10:30190 --rpc-addr 10.0.0.10:30191
 ```
 
-**Start Syncer on 10.0.0.10 host and join into 10.0.0.10 gossip pool**
+**Start Syncer on 10.0.0.11 host and join into 10.0.0.10 gossip pool**
 
 ```bash
 $ ./syncer daemon --sc-addr http://10.0.0.11:30100 --bind 10.0.0.11:30190 --rpc-addr 10.0.0.11:30191 --join 10.0.0.10:30191
