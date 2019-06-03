@@ -18,6 +18,7 @@
 package etcd
 
 import (
+	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/syncer/servicecenter"
 	"github.com/coreos/etcd/embed"
@@ -43,10 +44,16 @@ func (a *Agent) Run() error {
 		return err
 	}
 	select {
+	// Be returns when the server is readied
 	case <-etcd.Server.ReadyNotify():
 		log.Info("ready notify")
+
+	// Be returns when the server is stopped
 	case <-etcd.Server.StopNotify():
-		log.Info("stop notify")
+		err := errors.New("unknown error cause start etcd failed, check etcd")
+		log.Error("stop notify", err)
+		return err
+
 	case err = <-etcd.Err():
 		log.Error("start etcd failed", err)
 		return err
