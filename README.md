@@ -9,7 +9,7 @@ Apache ServiceComb Service-Center is a Restful based service-registry that provi
  - **Dependency**: Microservice dependency management
  - **Separated**: Separated microservice and microservice instance entity management
  - **Domains**: Logical multiple domains management
- - **Security**: White and back list configuration for service discovery
+ - **Security**: White and black list configuration for service discovery
  - **Discovery**: Support query instance by criteria
  - **Subscribe**: Use web socket to notify client about instance change events
  - **[`Portal`](/frontend)**: Awesome web portal
