@@ -94,3 +94,10 @@ $ ./syncer daemon --sc-addr http://10.0.0.11:30100 --bind 10.0.0.11:30190 --rpc-
 **Verification**  
 30 seconds after registering a microservice to one of the Service-centers,  the information about it can be get from the other one.
 
+### 4. Features
+
+Syncer is in developing progress, reference to [TODO](./TODO.md) to get more developing features. Supported features are listed as follows,
+
+- Data synchronization among multiple servicecomb-service-centers
+- Solidify the mapping table of micro-service instances into etcd
+

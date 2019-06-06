@@ -81,3 +81,10 @@ $ ./syncer daemon --sc-addr http://10.0.0.11:30100 --bind 10.0.0.11:30190 --rpc-
 
 **结果验证**  
 将微服务实例注册到其中一个ServiceCener后30秒，可以从每个ServiceCenter获取有关该实例的信息。
+
+### 4. 特性
+
+Syncer是一个开发中版本，在下面列出已支持的特性，更多开发中的特性请参考[TODO](./TODO-ZH.md)
+
+- 支持多个servicecomb-service-center 服务中心之间进行数据同步
+- 在etcd中固化存储微服务实例映射表
