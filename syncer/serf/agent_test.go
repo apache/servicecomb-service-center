@@ -17,7 +17,6 @@
 package serf
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -30,8 +29,7 @@ func TestAgent(t *testing.T) {
 	if err != nil {
 		t.Errorf("create agent failed, error: %s", err)
 	}
-	ctx, cancel := context.WithCancel(context.Background())
-	agent.Start(ctx)
+	agent.Start()
 
 	go func() {
 		agent.ShutdownCh()
@@ -72,5 +70,4 @@ func TestAgent(t *testing.T) {
 	if err != nil {
 		t.Errorf("angent shutdown failed, error: %s", err)
 	}
-	cancel()
 }
