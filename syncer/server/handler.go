@@ -76,7 +76,7 @@ func (s *Server) userEvent(event serf.UserEvent) {
 	}
 
 	// Excludes notifications from self, as the gossip protocol inevitably has redundant notifications
-	if s.agent.LocalMember().Name == m.NodeName {
+	if s.conf.NodeName == m.NodeName {
 		return
 	}
 

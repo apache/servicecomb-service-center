@@ -17,11 +17,9 @@
 package serf
 
 import (
-	"context"
 	"io"
 	"os"
 
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/hashicorp/serf/cmd/serf/command/agent"
 	"github.com/hashicorp/serf/serf"
@@ -54,19 +52,12 @@ func Create(conf *Config, logOutput io.Writer) (*Agent, error) {
 }
 
 // Start agent
-func (a *Agent) Start(ctx context.Context) {
+func (a *Agent) Start() error {
 	err := a.Agent.Start()
 	if err != nil {
 		log.Errorf(err, "start serf agent failed")
 	}
-
-	gopool.Go(func(ctx context.Context) {
-		select {
-		case <-ctx.Done():
-			a.Leave()
-			a.Shutdown()
-		}
-	})
+	return err
 }
 
 // Leave from Serf

@@ -26,7 +26,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/syncer/config"
-	"github.com/apache/servicecomb-service-center/syncer/servicecenter"
 	"github.com/apache/servicecomb-service-center/syncer/etcd"
 	"github.com/apache/servicecomb-service-center/syncer/grpc"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/syssig"
@@ -34,6 +33,7 @@ import (
 	"github.com/apache/servicecomb-service-center/syncer/pkg/utils"
 	"github.com/apache/servicecomb-service-center/syncer/plugins"
 	"github.com/apache/servicecomb-service-center/syncer/serf"
+	"github.com/apache/servicecomb-service-center/syncer/servicecenter"
 )
 
 // Server struct for syncer
@@ -67,15 +67,25 @@ func NewServer(conf *config.Config) *Server {
 func (s *Server) Run(ctx context.Context) {
 	s.initPlugin()
 
-	if err := s.initialization(); err != nil {
-		log.Errorf(err, "syncer server initialization faild: %s")
+	if err := s.runEtcd(); err != nil {
 		return
 	}
 
-	s.agent.RegisterEventHandler(s)
+	if err := s.runSerf(); err != nil {
+		return
+	}
 
-	// Start etcd/serf/grpc/tick services
-	s.startServers(ctx)
+	if err := s.runGrpc(); err != nil {
+		return
+	}
+
+	if err := s.createServiceCenter(); err != nil {
+		return
+	}
+
+	if err := s.runTicker(); err != nil {
+		return
+	}
 
 	s.waitQuit(ctx)
 }
@@ -113,44 +123,57 @@ func (s *Server) initPlugin() {
 	plugins.LoadPlugins()
 }
 
-// initialization Initialize the starter of the syncer
-func (s *Server) initialization() (err error) {
+func (s *Server) runEtcd() (err error) {
 	s.etcd = etcd.NewAgent(etcd.DefaultConfig())
-	if err := s.etcd.Run(); err != nil {
-		return err
+	if err = s.etcd.Run(); err != nil {
+		log.Errorf(err, "Run etcd failed, %s", err)
 	}
-
-	s.tick = ticker.NewTaskTicker(s.conf.TickerInterval, s.tickHandler)
-
-	s.servicecenter, err = servicecenter.NewServicecenter(strings.Split(s.conf.SCAddr, ","), s.etcd.Storage())
-	if err != nil {
-		return err
-	}
-
-	s.agent, err = serf.Create(s.conf.Config, createLogFile(s.conf.LogFile))
-	if err != nil {
-		return err
-	}
-
-	s.grpc = grpc.NewServer(s.conf.RPCAddr, s)
-	return nil
+	return
 }
 
-// startServers Start all internal services
-func (s *Server) startServers(ctx context.Context) {
-	// start serf agent service to wait for
-	s.agent.Start(ctx)
-
-	if s.conf.JoinAddr != "" {
-		_, err := s.agent.Join([]string{s.conf.JoinAddr}, false)
-		if err != nil {
-			log.Errorf(err, "Syncer join serf cluster failed")
-		}
+func (s *Server) runSerf() (err error) {
+	s.agent, err = serf.Create(s.conf.Config, createLogFile(s.conf.LogFile))
+	if err != nil {
+		log.Errorf(err, "Create serf failed, %s", err)
+		return
 	}
 
-	s.grpc.Run()
+	s.agent.RegisterEventHandler(s)
 
+	if err = s.agent.Start(); err != nil {
+		log.Errorf(err, "Start serf failed, %s", err)
+		return
+	}
+
+	if s.conf.JoinAddr != "" {
+		_, err = s.agent.Join([]string{s.conf.JoinAddr}, false)
+		if err != nil {
+			log.Errorf(err, "Join serf cluster failed, %s", err)
+		}
+	}
+	return
+}
+
+func (s *Server) runGrpc() (err error) {
+	s.grpc = grpc.NewServer(s.conf.RPCAddr, s)
+	if err = s.grpc.Run(); err != nil {
+		log.Errorf(err, "Run grpc failed, %s", err)
+	}
+	return err
+}
+
+func (s *Server) createServiceCenter() (err error) {
+	s.servicecenter, err = servicecenter.NewServicecenter(strings.Split(s.conf.SCAddr, ","), s.etcd.Storage())
+	if err != nil {
+		log.Errorf(err, "Create service center failed, %s", err)
+	}
+	return
+}
+
+func (s *Server) runTicker() error {
+	s.tick = ticker.NewTaskTicker(s.conf.TickerInterval, s.tickHandler)
 	gopool.Go(s.tick.Start)
+	return nil
 }
 
 // waitQuit Waiting for system quit signal
