@@ -17,8 +17,10 @@
 package serf
 
 import (
-	"io"
-	"os"
+	"context"
+	"errors"
+	"fmt"
+	"time"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/hashicorp/serf/cmd/serf/command/agent"
@@ -28,15 +30,13 @@ import (
 // Agent warps the serf agent
 type Agent struct {
 	*agent.Agent
-	conf *Config
+	conf    *Config
+	readyCh chan struct{}
+	errorCh chan error
 }
 
 // Create create serf agent with config
-func Create(conf *Config, logOutput io.Writer) (*Agent, error) {
-	if logOutput == nil {
-		logOutput = os.Stderr
-	}
-
+func Create(conf *Config) (*Agent, error) {
 	// config cover to serf config
 	serfConf, err := conf.convertToSerf()
 	if err != nil {
@@ -44,36 +44,67 @@ func Create(conf *Config, logOutput io.Writer) (*Agent, error) {
 	}
 
 	// create serf agent with serf config
-	serfAgent, err := agent.Create(conf.Config, serfConf, logOutput)
+	serfAgent, err := agent.Create(conf.Config, serfConf, nil)
 	if err != nil {
 		return nil, err
 	}
-	return &Agent{Agent: serfAgent, conf: conf}, nil
+	return &Agent{
+		Agent:   serfAgent,
+		conf:    conf,
+		readyCh: make(chan struct{}),
+		errorCh: make(chan error),
+	}, nil
 }
 
 // Start agent
-func (a *Agent) Start() error {
+func (a *Agent) Start(ctx context.Context) {
 	err := a.Agent.Start()
 	if err != nil {
 		log.Errorf(err, "start serf agent failed")
+		a.errorCh <- err
+		return
 	}
-	return err
+	a.RegisterEventHandler(a)
+
+	err = a.retryJoin(ctx)
+	if err != nil {
+		log.Errorf(err, "start serf agent failed")
+		if err != ctx.Err() && a.errorCh != nil {
+			a.errorCh <- err
+		}
+	}
 }
 
-// Leave from Serf
-func (a *Agent) Leave() error {
-	return a.Agent.Leave()
+// HandleEvent Handles events from serf
+func (a *Agent) HandleEvent(event serf.Event) {
+	if event.EventType() != serf.EventMemberJoin {
+		return
+	}
+
+	if a.conf.Mode == ModeCluster {
+		if len(a.GroupMembers(a.conf.ClusterName)) < groupExpect {
+			return
+		}
+	}
+	a.DeregisterEventHandler(a)
+	close(a.readyCh)
 }
 
-// Shutdown Serf server
-func (a *Agent) Shutdown() error {
-	return a.Agent.Shutdown()
+func (a *Agent) Ready() <-chan struct{} {
+	return a.readyCh
 }
 
-// ShutdownCh returns a channel that can be selected to wait
-// for the agent to perform a shutdown.
-func (a *Agent) ShutdownCh() <-chan struct{} {
-	return a.Agent.ShutdownCh()
+func (a *Agent) Error() <-chan error {
+	return a.errorCh
+}
+
+func (a *Agent) Stop() {
+	if a.errorCh != nil {
+		a.Leave()
+		a.Shutdown()
+		close(a.errorCh)
+		a.errorCh = nil
+	}
 }
 
 func (a *Agent) LocalMember() *serf.Member {
@@ -82,8 +113,21 @@ func (a *Agent) LocalMember() *serf.Member {
 		member := serfAgent.LocalMember()
 		return &member
 	}
-	serfAgent.State()
 	return nil
+}
+
+// GroupMembers returns a point-in-time snapshot of the members of by groupName
+func (a *Agent) GroupMembers(groupName string) (members []serf.Member) {
+	serfAgent := a.Agent.Serf()
+	if serfAgent != nil {
+		for _, member := range serfAgent.Members() {
+			fmt.Println("member: ", member.Tags[tagKeyCluster])
+			if member.Tags[tagKeyCluster] == a.conf.ClusterName {
+				members = append(members, member)
+			}
+		}
+	}
+	return
 }
 
 // Member get member information with node
@@ -110,11 +154,6 @@ func (a *Agent) Join(addrs []string, replay bool) (n int, err error) {
 	return a.Agent.Join(addrs, replay)
 }
 
-// ForceLeave forced to leave from serf
-func (a *Agent) ForceLeave(node string) error {
-	return a.Agent.ForceLeave(node)
-}
-
 // UserEvent sends a UserEvent on Serf
 func (a *Agent) UserEvent(name string, payload []byte, coalesce bool) error {
 	return a.Agent.UserEvent(name, payload, coalesce)
@@ -123,4 +162,38 @@ func (a *Agent) UserEvent(name string, payload []byte, coalesce bool) error {
 // Query sends a Query on Serf
 func (a *Agent) Query(name string, payload []byte, params *serf.QueryParam) (*serf.QueryResponse, error) {
 	return a.Agent.Query(name, payload, params)
+}
+
+func (a *Agent) retryJoin(ctx context.Context) (err error) {
+	if len(a.conf.RetryJoin) == 0 {
+		log.Infof("retry join mumber %d", len(a.conf.RetryJoin))
+		return nil
+	}
+
+	attempt := 0
+	ticker := time.NewTicker(a.conf.RetryInterval)
+	for {
+		log.Infof("serf: Joining cluster...(replay: %v)", a.conf.ReplayOnJoin)
+		var n int
+		n, err = a.Join(a.conf.RetryJoin, a.conf.ReplayOnJoin)
+		if err == nil {
+			log.Infof("serf: Join completed. Synced with %d initial agents", n)
+			break
+		}
+		attempt++
+		if a.conf.RetryMaxAttempts > 0 && attempt > a.conf.RetryMaxAttempts {
+			err = errors.New("serf: maximum retry join attempts made, exiting")
+			log.Errorf(err, err.Error())
+			break
+		}
+		select {
+		case <-ctx.Done():
+			err = ctx.Err()
+			goto done
+		case <-ticker.C:
+		}
+	}
+done:
+	ticker.Stop()
+	return
 }

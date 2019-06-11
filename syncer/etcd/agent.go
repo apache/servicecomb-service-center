@@ -18,7 +18,9 @@
 package etcd
 
 import (
+	"context"
 	"errors"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/syncer/servicecenter"
 	"github.com/coreos/etcd/embed"
@@ -30,36 +32,50 @@ type Agent struct {
 	conf    *Config
 	etcd    *embed.Etcd
 	storage servicecenter.Storage
+	readyCh chan struct{}
+	errorCh chan error
 }
 
 // NewAgent new etcd agent with config
 func NewAgent(conf *Config) *Agent {
-	return &Agent{conf: conf}
+	return &Agent{
+		conf:    conf,
+		readyCh: make(chan struct{}),
+		errorCh: make(chan error),
+	}
 }
 
-// Run etcd agent
-func (a *Agent) Run() error {
+// Start etcd agent
+func (a *Agent) Start(ctx context.Context) {
 	etcd, err := embed.StartEtcd(a.conf.Config)
+	if err == nil {
+		a.etcd = etcd
+		select {
+		// Be returns when the server is readied
+		case <-etcd.Server.ReadyNotify():
+			log.Info("start etcd success")
+			close(a.readyCh)
+		// Be returns when the server is stopped
+		case <-etcd.Server.StopNotify():
+			err = errors.New("unknown error cause start etcd failed, check etcd")
+		case err = <-etcd.Err():
+		case <-ctx.Done():
+			err = ctx.Err()
+		}
+	}
+
 	if err != nil {
-		return err
-	}
-	select {
-	// Be returns when the server is readied
-	case <-etcd.Server.ReadyNotify():
-		log.Info("ready notify")
-
-	// Be returns when the server is stopped
-	case <-etcd.Server.StopNotify():
-		err := errors.New("unknown error cause start etcd failed, check etcd")
-		log.Error("stop notify", err)
-		return err
-
-	case err = <-etcd.Err():
 		log.Error("start etcd failed", err)
-		return err
+		a.errorCh <- err
 	}
-	a.etcd = etcd
-	return nil
+}
+
+func (a *Agent) Ready() <-chan struct{} {
+	return a.readyCh
+}
+
+func (a *Agent) Error() <-chan error {
+	return a.errorCh
 }
 
 // Storage returns etcd storage
@@ -72,5 +88,7 @@ func (a *Agent) Storage() servicecenter.Storage {
 
 // Stop etcd agent
 func (a *Agent) Stop() {
-	a.etcd.Close()
+	if a.etcd != nil {
+		a.etcd.Close()
+	}
 }

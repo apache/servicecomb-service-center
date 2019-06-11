@@ -18,8 +18,7 @@ package server
 
 import (
 	"context"
-	"io"
-	"os"
+	"errors"
 	"strings"
 	"syscall"
 
@@ -30,11 +29,18 @@ import (
 	"github.com/apache/servicecomb-service-center/syncer/grpc"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/syssig"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/ticker"
-	"github.com/apache/servicecomb-service-center/syncer/pkg/utils"
 	"github.com/apache/servicecomb-service-center/syncer/plugins"
 	"github.com/apache/servicecomb-service-center/syncer/serf"
 	"github.com/apache/servicecomb-service-center/syncer/servicecenter"
 )
+
+var stopChanErr = errors.New("stopped syncer by stopCh")
+
+type moduleServer interface {
+	Start(ctx context.Context)
+	Ready() <-chan struct{}
+	Error() <-chan error
+}
 
 // Server struct for syncer
 type Server struct {
@@ -54,40 +60,55 @@ type Server struct {
 
 	// Wraps the grpc server
 	grpc *grpc.Server
+
+	stopCh chan struct{}
 }
 
 // NewServer new server with Config
 func NewServer(conf *config.Config) *Server {
 	return &Server{
-		conf: conf,
+		conf:   conf,
+		stopCh: make(chan struct{}),
 	}
 }
 
 // Run syncer Server
 func (s *Server) Run(ctx context.Context) {
+	var err error
 	s.initPlugin()
-
-	if err := s.runEtcd(); err != nil {
+	if err = s.initialization(); err != nil {
 		return
 	}
 
-	if err := s.runSerf(); err != nil {
+	gopool.Go(syssig.Run)
+
+	err = s.startModuleServer(s.agent)
+	if err != nil {
+		s.Stop()
 		return
 	}
 
-	if err := s.runGrpc(); err != nil {
+	err = s.startModuleServer(s.etcd)
+	if err != nil {
+		s.Stop()
 		return
 	}
 
-	if err := s.createServiceCenter(); err != nil {
+	err = s.startModuleServer(s.grpc)
+	if err != nil {
+		s.Stop()
 		return
 	}
 
-	if err := s.runTicker(); err != nil {
-		return
-	}
+	s.servicecenter.SetStorage(s.etcd.Storage())
 
-	s.waitQuit(ctx)
+	s.agent.RegisterEventHandler(s)
+
+	gopool.Go(s.tick.Start)
+	<-s.stopCh
+
+	s.Stop()
+	return
 }
 
 // Stop Syncer Server
@@ -99,10 +120,8 @@ func (s *Server) Stop() {
 	if s.agent != nil {
 		// removes the serf eventHandler
 		s.agent.DeregisterEventHandler(s)
-		//Leave from Serf
-		s.agent.Leave()
-		// closes this serf agent
-		s.agent.Shutdown()
+		//stop serf agent
+		s.agent.Stop()
 	}
 
 	if s.grpc != nil {
@@ -117,88 +136,50 @@ func (s *Server) Stop() {
 	gopool.CloseAndWait()
 }
 
-// initPlugin Initialize the plugin and load the external plugin according to the configuration
-func (s *Server) initPlugin() {
-	plugins.SetPluginConfig(plugins.PluginServicecenter.String(), s.conf.ServicecenterPlugin)
-	plugins.LoadPlugins()
-}
-
-func (s *Server) runEtcd() (err error) {
-	s.etcd = etcd.NewAgent(etcd.DefaultConfig())
-	if err = s.etcd.Run(); err != nil {
-		log.Errorf(err, "Run etcd failed, %s", err)
+func (s *Server) startModuleServer(module moduleServer) (err error) {
+	gopool.Go(module.Start)
+	select {
+	case <-module.Ready():
+	case err = <-module.Error():
+	case <-s.stopCh:
+		err = stopChanErr
 	}
-	return
+	return err
 }
 
-func (s *Server) runSerf() (err error) {
-	s.agent, err = serf.Create(s.conf.Config, createLogFile(s.conf.LogFile))
+// initialization Initialize the starter of the syncer
+func (s *Server) initialization() (err error) {
+	err = syssig.AddSignalsHandler(func() {
+		log.Info("close svr stop chan")
+		close(s.stopCh)
+	}, syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM)
+	if err != nil {
+		log.Error("listen system signal failed", err)
+		return
+	}
+
+	s.agent, err = serf.Create(s.conf.Config)
 	if err != nil {
 		log.Errorf(err, "Create serf failed, %s", err)
 		return
 	}
 
-	s.agent.RegisterEventHandler(s)
+	s.etcd = etcd.NewAgent(etcd.DefaultConfig())
 
-	if err = s.agent.Start(); err != nil {
-		log.Errorf(err, "Start serf failed, %s", err)
+	s.tick = ticker.NewTaskTicker(s.conf.TickerInterval, s.tickHandler)
+
+	s.servicecenter, err = servicecenter.NewServicecenter(strings.Split(s.conf.SCAddr, ","))
+	if err != nil {
+		log.Error("create servicecenter failed", err)
 		return
 	}
 
-	if s.conf.JoinAddr != "" {
-		_, err = s.agent.Join([]string{s.conf.JoinAddr}, false)
-		if err != nil {
-			log.Errorf(err, "Join serf cluster failed, %s", err)
-		}
-	}
-	return
-}
-
-func (s *Server) runGrpc() (err error) {
 	s.grpc = grpc.NewServer(s.conf.RPCAddr, s)
-	if err = s.grpc.Run(); err != nil {
-		log.Errorf(err, "Run grpc failed, %s", err)
-	}
-	return err
-}
-
-func (s *Server) createServiceCenter() (err error) {
-	s.servicecenter, err = servicecenter.NewServicecenter(strings.Split(s.conf.SCAddr, ","), s.etcd.Storage())
-	if err != nil {
-		log.Errorf(err, "Create service center failed, %s", err)
-	}
-	return
-}
-
-func (s *Server) runTicker() error {
-	s.tick = ticker.NewTaskTicker(s.conf.TickerInterval, s.tickHandler)
-	gopool.Go(s.tick.Start)
 	return nil
 }
 
-// waitQuit Waiting for system quit signal
-func (s *Server) waitQuit(ctx context.Context) {
-	err := syssig.AddSignalsHandler(func() {
-		s.Stop()
-	}, syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM)
-	if err != nil {
-		log.Errorf(err, "Syncer add signals handler failed")
-		return
-	}
-	syssig.Run(ctx)
-}
-
-// createLogFile create log file
-func createLogFile(logFile string) (fw io.Writer) {
-	fw = os.Stderr
-	if logFile == "" {
-		return
-	}
-
-	f, err := utils.OpenFile(logFile)
-	if err != nil {
-		log.Errorf(err, "Syncer open log file %s failed", logFile)
-		return
-	}
-	return f
+// initPlugin Initialize the plugin and load the external plugin according to the configuration
+func (s *Server) initPlugin() {
+	plugins.SetPluginConfig(plugins.PluginServicecenter.String(), s.conf.ServicecenterPlugin)
+	plugins.LoadPlugins()
 }

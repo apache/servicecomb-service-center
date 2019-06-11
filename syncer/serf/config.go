@@ -26,8 +26,13 @@ import (
 )
 
 const (
-	DefaultBindPort = 30190
-	DefaultRPCPort  = 30191
+	DefaultBindPort  = 30190
+	DefaultRPCPort   = 30191
+	ModeSingle       = "single"
+	ModeCluster      = "cluster"
+	retryMaxAttempts = 3
+	groupExpect      = 3
+	tagKeyCluster    = "syncer-cluster-name"
 )
 
 // DefaultConfig default config
@@ -35,14 +40,16 @@ func DefaultConfig() *Config {
 	agentConf := agent.DefaultConfig()
 	agentConf.BindAddr = fmt.Sprintf("0.0.0.0:%d", DefaultBindPort)
 	agentConf.RPCAddr = fmt.Sprintf("0.0.0.0:%d", DefaultRPCPort)
-	return &Config{Config: agentConf}
+	return &Config{Mode: ModeSingle, Config: agentConf}
 }
 
 // Config struct
 type Config struct {
 	// config from serf agent
 	*agent.Config
-	RPCPort int `yaml:"-"`
+	Mode        string `json:"mode"`
+	ClusterName string `json:"cluster_name"`
+	RPCPort     int    `yaml:"-"`
 }
 
 // readConfigFile reads configuration from config file
@@ -76,5 +83,13 @@ func (c *Config) convertToSerf() (*serf.Config, error) {
 	serfConf.MemberlistConfig.BindAddr = bindIP
 	serfConf.MemberlistConfig.BindPort = bindPort
 	serfConf.NodeName = c.NodeName
+
+	if c.ClusterName != "" {
+		serfConf.Tags = map[string]string{tagKeyCluster: c.ClusterName}
+	}
+
+	if c.Mode == ModeCluster && c.RetryMaxAttempts <= 0 {
+		c.RetryMaxAttempts = retryMaxAttempts
+	}
 	return serfConf, nil
 }

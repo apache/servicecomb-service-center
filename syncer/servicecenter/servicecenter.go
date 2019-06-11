@@ -26,6 +26,7 @@ import (
 
 // Store interface of servicecenter
 type Servicecenter interface {
+	SetStorage(storage Storage)
 	FlushData()
 	Registry(nodeName string, data *pb.SyncData)
 	Discovery() *pb.SyncData
@@ -33,7 +34,7 @@ type Servicecenter interface {
 
 type servicecenter struct {
 	servicecenter plugins.Servicecenter
-	storage    Storage
+	storage       Storage
 }
 
 type Storage interface {
@@ -46,7 +47,7 @@ type Storage interface {
 }
 
 // NewServicecenter new store with endpoints
-func NewServicecenter(endpoints []string, storage Storage) (Servicecenter, error) {
+func NewServicecenter(endpoints []string) (Servicecenter, error) {
 	dc, err := plugins.Plugins().Servicecenter().New(endpoints)
 	if err != nil {
 		return nil, err
@@ -54,8 +55,11 @@ func NewServicecenter(endpoints []string, storage Storage) (Servicecenter, error
 
 	return &servicecenter{
 		servicecenter: dc,
-		storage:    storage,
 	}, nil
+}
+
+func (s *servicecenter) SetStorage(storage Storage) {
+	s.storage = storage
 }
 
 // FlushData flush data to servicecenter, update mapping data
