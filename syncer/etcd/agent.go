@@ -55,9 +55,12 @@ func (a *Agent) Start(ctx context.Context) {
 		case <-etcd.Server.ReadyNotify():
 			log.Info("start etcd success")
 			close(a.readyCh)
+
 		// Be returns when the server is stopped
 		case <-etcd.Server.StopNotify():
 			err = errors.New("unknown error cause start etcd failed, check etcd")
+
+		// Returns an error when running goroutine fails in the etcd startup process
 		case err = <-etcd.Err():
 		case <-ctx.Done():
 			err = ctx.Err()
@@ -70,10 +73,12 @@ func (a *Agent) Start(ctx context.Context) {
 	}
 }
 
+// Ready Returns a channel that will be closed when etcd is ready
 func (a *Agent) Ready() <-chan struct{} {
 	return a.readyCh
 }
 
+// Error Returns a channel that will be transmit an etcd error
 func (a *Agent) Error() <-chan error {
 	return a.errorCh
 }

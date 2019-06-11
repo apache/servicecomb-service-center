@@ -21,11 +21,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/apache/servicecomb-service-center/syncer/pkg/mock/mocksotrage"
-
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/syncer/config"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/mock/mockplugin"
+	"github.com/apache/servicecomb-service-center/syncer/pkg/mock/mocksotrage"
 	"github.com/apache/servicecomb-service-center/syncer/plugins"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 )

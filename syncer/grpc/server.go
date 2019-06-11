@@ -85,10 +85,12 @@ func (s *Server) Start(ctx context.Context) {
 	close(s.readyCh)
 }
 
+// Ready Returns a channel that will be closed when grpc is ready
 func (s *Server) Ready() <-chan struct{} {
 	return s.readyCh
 }
 
+// Error Returns a channel that will be transmit a grpc error
 func (s *Server) Error() <-chan error {
 	return s.errorCh
 }

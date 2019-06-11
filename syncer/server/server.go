@@ -37,8 +37,14 @@ import (
 var stopChanErr = errors.New("stopped syncer by stopCh")
 
 type moduleServer interface {
+	// Starts launches the module server, the returned is not guaranteed that the server is ready
+	// The moduleServer.Ready() channel will be transmit a message when server completed
 	Start(ctx context.Context)
+
+	// Returns a channel that will be closed when the module server is ready
 	Ready() <-chan struct{}
+
+	// Returns a channel that will be transmit a module server error
 	Error() <-chan error
 }
 
@@ -61,6 +67,7 @@ type Server struct {
 	// Wraps the grpc server
 	grpc *grpc.Server
 
+	// The channel will be closed when receiving a system interrupt signal
 	stopCh chan struct{}
 }
 
@@ -80,6 +87,7 @@ func (s *Server) Run(ctx context.Context) {
 		return
 	}
 
+	// Start system signal listening, wait for user interrupt program
 	gopool.Go(syssig.Run)
 
 	err = s.startModuleServer(s.agent)

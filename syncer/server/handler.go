@@ -56,7 +56,8 @@ func (s *Server) Discovery() *pb.SyncData {
 	return s.servicecenter.Discovery()
 }
 
-// HandleEvent Handles events from serf
+// HandleEvent Handles serf.EventUser/serf.EventQuery,
+// used for message passing and processing between serf nodes
 func (s *Server) HandleEvent(event serf.Event) {
 	switch event.EventType() {
 	case serf.EventUser:

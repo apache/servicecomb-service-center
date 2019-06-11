@@ -19,7 +19,6 @@ package serf
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -75,7 +74,10 @@ func (a *Agent) Start(ctx context.Context) {
 	}
 }
 
-// HandleEvent Handles events from serf
+// HandleEvent Handles serf.EventMemberJoin events,
+// which will wait for members to join until the number of group members is equal to "groupExpect"
+// when the startup mode is "ModeCluster",
+// used for logical grouping of serf nodes
 func (a *Agent) HandleEvent(event serf.Event) {
 	if event.EventType() != serf.EventMemberJoin {
 		return
@@ -90,14 +92,17 @@ func (a *Agent) HandleEvent(event serf.Event) {
 	close(a.readyCh)
 }
 
+// Ready Returns a channel that will be closed when serf is ready
 func (a *Agent) Ready() <-chan struct{} {
 	return a.readyCh
 }
 
+// Error Returns a channel that will be transmit a serf error
 func (a *Agent) Error() <-chan error {
 	return a.errorCh
 }
 
+// Stop serf agent
 func (a *Agent) Stop() {
 	if a.errorCh != nil {
 		a.Leave()
@@ -107,6 +112,7 @@ func (a *Agent) Stop() {
 	}
 }
 
+// LocalMember returns the Member information for the local node
 func (a *Agent) LocalMember() *serf.Member {
 	serfAgent := a.Agent.Serf()
 	if serfAgent != nil {
@@ -121,7 +127,7 @@ func (a *Agent) GroupMembers(groupName string) (members []serf.Member) {
 	serfAgent := a.Agent.Serf()
 	if serfAgent != nil {
 		for _, member := range serfAgent.Members() {
-			fmt.Println("member: ", member.Tags[tagKeyCluster])
+			log.Infof("member = %s, groupName = %s", member.Name, member.Tags[tagKeyCluster])
 			if member.Tags[tagKeyCluster] == a.conf.ClusterName {
 				members = append(members, member)
 			}
@@ -170,17 +176,24 @@ func (a *Agent) retryJoin(ctx context.Context) (err error) {
 		return nil
 	}
 
+	// Count of attempts
 	attempt := 0
 	ticker := time.NewTicker(a.conf.RetryInterval)
 	for {
 		log.Infof("serf: Joining cluster...(replay: %v)", a.conf.ReplayOnJoin)
 		var n int
+
+		// Try to join the specified serf nodes
 		n, err = a.Join(a.conf.RetryJoin, a.conf.ReplayOnJoin)
 		if err == nil {
 			log.Infof("serf: Join completed. Synced with %d initial agents", n)
 			break
 		}
 		attempt++
+
+		// If RetryMaxAttempts is greater than 0, agent will exit
+		// and throw an error when the number of attempts exceeds RetryMaxAttempts,
+		// else agent will try to join other nodes until successful always
 		if a.conf.RetryMaxAttempts > 0 && attempt > a.conf.RetryMaxAttempts {
 			err = errors.New("serf: maximum retry join attempts made, exiting")
 			log.Errorf(err, err.Error())
@@ -190,6 +203,7 @@ func (a *Agent) retryJoin(ctx context.Context) (err error) {
 		case <-ctx.Done():
 			err = ctx.Err()
 			goto done
+		// Waiting for ticker to trigger
 		case <-ticker.C:
 		}
 	}
