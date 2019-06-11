@@ -21,10 +21,11 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/apache/servicecomb-service-center/syncer/pkg/mock/mocksotrage"
+
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/syncer/config"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/mock/mockplugin"
-	"github.com/apache/servicecomb-service-center/syncer/pkg/mock/mocksotrage"
 	"github.com/apache/servicecomb-service-center/syncer/plugins"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 )
@@ -36,12 +37,12 @@ func TestNewServicecenter(t *testing.T) {
 			t.Log(err)
 		}
 	}()
-	_, err := NewServicecenter([]string{"127.0.0.1:30100"}, nil)
+	_, err := NewServicecenter([]string{"127.0.0.1:30100"})
 	if err != nil {
 		t.Log(err)
 	}
 
-	_, err = NewServicecenter([]string{"127.0.0.1:30100"}, nil)
+	_, err = NewServicecenter([]string{"127.0.0.1:30100"})
 	if err != nil {
 		t.Fatal(err)
 		return
@@ -52,11 +53,12 @@ func TestOnEvent(t *testing.T) {
 	conf := config.DefaultConfig()
 	conf.ServicecenterPlugin = mockplugin.PluginName
 	initPlugin(conf)
-	dc, err := NewServicecenter([]string{"http://127.0.0.1:30100"}, mocksotrage.New())
+	dc, err := NewServicecenter([]string{"http://127.0.0.1:30100"})
 	if err != nil {
 		t.Fatal(err)
 		return
 	}
+	dc.SetStorage(mocksotrage.New())
 
 	mockplugin.SetGetAll(func(ctx context.Context) (data *pb.SyncData, e error) {
 		return nil, errors.New("test error")
