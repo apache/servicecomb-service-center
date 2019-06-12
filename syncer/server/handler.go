@@ -56,18 +56,22 @@ func (s *Server) Discovery() *pb.SyncData {
 	return s.servicecenter.Discovery()
 }
 
-// HandleEvent Handles events from serf
+// HandleEvent Handles serf.EventUser/serf.EventQuery,
+// used for message passing and processing between serf nodes
 func (s *Server) HandleEvent(event serf.Event) {
 	switch event.EventType() {
 	case serf.EventUser:
 		s.userEvent(event.(serf.UserEvent))
 	case serf.EventQuery:
 		s.queryEvent(event.(*serf.Query))
+	default:
+		log.Infof("serf event = %s", event)
 	}
 }
 
 // userEvent Handles "EventUser" notification events, no response required
 func (s *Server) userEvent(event serf.UserEvent) {
+	log.Info("serf user event")
 	m := &pb.Member{}
 	err := proto.Unmarshal(event.Payload, m)
 	if err != nil {
@@ -82,6 +86,10 @@ func (s *Server) userEvent(event serf.UserEvent) {
 
 	// Get member information and get synchronized data from it
 	member := s.agent.Member(m.NodeName)
+	if member == nil{
+		log.Warnf("serf member = %s is not found", m.NodeName)
+		return
+	}
 	// Get dta from remote member
 	endpoint := fmt.Sprintf("%s:%d", member.Addr, m.RPCPort)
 	log.Debugf("Going to pull data from %s %s", m.NodeName, endpoint)

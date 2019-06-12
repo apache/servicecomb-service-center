@@ -19,6 +19,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/utils"
@@ -27,7 +28,6 @@ import (
 )
 
 var (
-	DefaultMode           = "service-center"
 	DefaultDCPort         = 30100
 	DefaultTickerInterval = 30
 )
@@ -39,20 +39,17 @@ type Config struct {
 	*serf.Config
 	LogFile string `yaml:"log_file"`
 
-	// Mode is the type of servicecenter, currently supports "service-center"
-	Mode string `yaml:"mode"`
-
 	// SCAddr servicecenter address, which is the service registry address.
 	// Cluster mode is supported, and multiple addresses are separated by an English ",".
 	SCAddr string `yaml:"dc_addr"`
 
 	// JoinAddr The management address of one gossip pool member.
-	JoinAddr          string `yaml:"join_addr"`
-	TickerInterval    int    `yaml:"ticker_interval"`
-	Profile           string `yaml:"profile"`
-	EnableCompression bool   `yaml:"enable_compression"`
-	AutoSync          bool   `yaml:"auto_sync"`
-	ServicecenterPlugin  string `json:"servicecenter_plugin"`
+	JoinAddr            string `yaml:"join_addr"`
+	TickerInterval      int    `yaml:"ticker_interval"`
+	Profile             string `yaml:"profile"`
+	EnableCompression   bool   `yaml:"enable_compression"`
+	AutoSync            bool   `yaml:"auto_sync"`
+	ServicecenterPlugin string `json:"servicecenter_plugin"`
 }
 
 // DefaultConfig returns the default config
@@ -65,10 +62,9 @@ func DefaultConfig() *Config {
 	}
 	serfConf.NodeName = hostname
 	return &Config{
-		Mode:             DefaultMode,
-		SCAddr:           fmt.Sprintf("127.0.0.1:%d", DefaultDCPort),
-		TickerInterval:   DefaultTickerInterval,
-		Config:           serfConf,
+		SCAddr:              fmt.Sprintf("127.0.0.1:%d", DefaultDCPort),
+		TickerInterval:      DefaultTickerInterval,
+		Config:              serfConf,
 		ServicecenterPlugin: servicecenter.PluginName,
 	}
 }
@@ -90,6 +86,10 @@ func (c *Config) Verification() error {
 	c.RPCPort = port
 	if ip == "127.0.0.1" {
 		c.RPCAddr = fmt.Sprintf("0.0.0.0:%d", c.RPCPort)
+	}
+
+	if c.JoinAddr != "" {
+		c.RetryJoin = strings.Split(c.JoinAddr, ",")
 	}
 	return nil
 }

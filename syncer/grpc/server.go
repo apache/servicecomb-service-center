@@ -22,6 +22,7 @@ import (
 	"net"
 
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 	"google.golang.org/grpc"
 )
@@ -36,11 +37,18 @@ type Server struct {
 	lsn     net.Listener
 	addr    string
 	handler GRPCHandler
+	readyCh chan struct{}
+	errorCh chan error
 }
 
 // NewServer new grpc server
 func NewServer(addr string, handler GRPCHandler) *Server {
-	return &Server{addr: addr, handler: handler}
+	return &Server{
+		addr:    addr,
+		handler: handler,
+		readyCh: make(chan struct{}),
+		errorCh: make(chan error),
+	}
 }
 
 // Provide consumers with an interface to pull data
@@ -50,22 +58,39 @@ func (s *Server) Pull(ctx context.Context, in *pb.PullRequest) (*pb.SyncData, er
 
 // Stop grpc server
 func (s *Server) Stop() {
-	if s.lsn == nil {
-		return
+	if s.lsn != nil {
+		s.lsn.Close()
+		s.lsn = nil
 	}
-	s.lsn.Close()
 }
 
-// Run grpc server
-func (s *Server) Run() (err error) {
-	s.lsn, err = net.Listen("tcp", s.addr)
-	if err != nil {
-		return err
+// Start grpc server
+func (s *Server) Start(ctx context.Context) {
+	lsn, err := net.Listen("tcp", s.addr)
+	if err == nil {
+		svc := grpc.NewServer()
+		pb.RegisterSyncServer(svc, s)
+		s.lsn = lsn
+		gopool.Go(func(ctx context.Context) {
+			err = svc.Serve(s.lsn)
+		})
 	}
-	svc := grpc.NewServer()
-	pb.RegisterSyncServer(svc, s)
-	gopool.Go(func(ctx context.Context) {
-		svc.Serve(s.lsn)
-	})
-	return nil
+
+	if err != nil {
+		log.Error("start grpc failed", err)
+		s.errorCh <- err
+		return
+	}
+	log.Info("start grpc success")
+	close(s.readyCh)
+}
+
+// Ready Returns a channel that will be closed when grpc is ready
+func (s *Server) Ready() <-chan struct{} {
+	return s.readyCh
+}
+
+// Error Returns a channel that will be transmit a grpc error
+func (s *Server) Error() <-chan error {
+	return s.errorCh
 }

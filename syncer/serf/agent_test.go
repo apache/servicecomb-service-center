@@ -17,6 +17,7 @@
 package serf
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -25,12 +26,12 @@ import (
 
 func TestAgent(t *testing.T) {
 	conf := DefaultConfig()
-	agent, err := Create(conf, nil)
+	agent, err := Create(conf)
 	if err != nil {
 		t.Errorf("create agent failed, error: %s", err)
 	}
-	agent.Start()
-
+	agent.Start(context.Background())
+	<- agent.readyCh
 	go func() {
 		agent.ShutdownCh()
 	}()
