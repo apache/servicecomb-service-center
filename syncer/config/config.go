@@ -17,11 +17,13 @@
 package config
 
 import (
+	"crypto/md5"
 	"fmt"
 	"os"
 	"strings"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/syncer/etcd"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/utils"
 	"github.com/apache/servicecomb-service-center/syncer/plugins/servicecenter"
 	"github.com/apache/servicecomb-service-center/syncer/serf"
@@ -29,6 +31,7 @@ import (
 
 var (
 	DefaultDCPort         = 30100
+	DefaultClusterPort    = 30192
 	DefaultTickerInterval = 30
 )
 
@@ -37,6 +40,9 @@ var (
 type Config struct {
 	// Wraps the serf config
 	*serf.Config
+
+	// Wraps the etcd config
+	Etcd    *etcd.Config
 	LogFile string `yaml:"log_file"`
 
 	// SCAddr servicecenter address, which is the service registry address.
@@ -49,22 +55,25 @@ type Config struct {
 	Profile             string `yaml:"profile"`
 	EnableCompression   bool   `yaml:"enable_compression"`
 	AutoSync            bool   `yaml:"auto_sync"`
-	ServicecenterPlugin string `json:"servicecenter_plugin"`
+	ServicecenterPlugin string `yaml:"servicecenter_plugin"`
 }
 
 // DefaultConfig returns the default config
 func DefaultConfig() *Config {
 	serfConf := serf.DefaultConfig()
+	etcdConf := etcd.DefaultConfig()
 	hostname, err := os.Hostname()
 	if err != nil {
 		log.Errorf(err, "Error determining hostname: %s", err)
 		return nil
 	}
 	serfConf.NodeName = hostname
+	etcdConf.Name = hostname
 	return &Config{
 		SCAddr:              fmt.Sprintf("127.0.0.1:%d", DefaultDCPort),
 		TickerInterval:      DefaultTickerInterval,
 		Config:              serfConf,
+		Etcd:                etcdConf,
 		ServicecenterPlugin: servicecenter.PluginName,
 	}
 }
@@ -91,5 +100,11 @@ func (c *Config) Verification() error {
 	if c.JoinAddr != "" {
 		c.RetryJoin = strings.Split(c.JoinAddr, ",")
 	}
+
+	if c.ClusterName == "" {
+		c.ClusterName = fmt.Sprintf("%x", md5.Sum([]byte(c.SCAddr)))
+	}
+
+	c.Etcd.SetName(c.NodeName)
 	return nil
 }

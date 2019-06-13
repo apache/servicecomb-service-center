@@ -62,3 +62,8 @@ func DefaultConfig() *Config {
 	etcdConf.AutoCompactionRetention = "1h"
 	return &Config{Config: etcdConf}
 }
+
+func (c *Config)SetName(name string)  {
+	c.Name = name
+	c.Dir = defaultDataDir + name
+}

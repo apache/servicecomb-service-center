@@ -34,12 +34,16 @@ const (
 
 // tickHandler Timed task handler
 func (s *Server) tickHandler(ctx context.Context) {
+	log.Debugf("is leader: %v", s.etcd.IsLeader())
+	if !s.etcd.IsLeader() {
+		return
+	}
 	log.Debugf("Handle Tick")
 	// Flush data to the storage of servicecenter
 	s.servicecenter.FlushData()
 
 	event, _ := proto.Marshal(&pb.Member{
-		NodeName: s.conf.NodeName,
+		NodeName: s.conf.ClusterName,
 		RPCPort:  int32(s.conf.RPCPort),
 		Time:     fmt.Sprintf("%d", time.Now().UTC().Second()),
 	})
@@ -59,6 +63,11 @@ func (s *Server) Discovery() *pb.SyncData {
 // HandleEvent Handles serf.EventUser/serf.EventQuery,
 // used for message passing and processing between serf nodes
 func (s *Server) HandleEvent(event serf.Event) {
+	log.Debugf("is leader: %v", s.etcd.IsLeader())
+	if !s.etcd.IsLeader() {
+		return
+	}
+
 	switch event.EventType() {
 	case serf.EventUser:
 		s.userEvent(event.(serf.UserEvent))
@@ -71,7 +80,7 @@ func (s *Server) HandleEvent(event serf.Event) {
 
 // userEvent Handles "EventUser" notification events, no response required
 func (s *Server) userEvent(event serf.UserEvent) {
-	log.Info("serf user event")
+	log.Debug("Receive serf user event")
 	m := &pb.Member{}
 	err := proto.Unmarshal(event.Payload, m)
 	if err != nil {
@@ -80,18 +89,20 @@ func (s *Server) userEvent(event serf.UserEvent) {
 	}
 
 	// Excludes notifications from self, as the gossip protocol inevitably has redundant notifications
-	if s.conf.NodeName == m.NodeName {
+	if s.conf.ClusterName == m.NodeName {
 		return
 	}
 
 	// Get member information and get synchronized data from it
-	member := s.agent.Member(m.NodeName)
-	if member == nil{
+	members := s.agent.GroupMembers(m.NodeName)
+	if members == nil || len(members) == 0{
 		log.Warnf("serf member = %s is not found", m.NodeName)
 		return
 	}
+
+	// todo: grpc supports multi-address polling
 	// Get dta from remote member
-	endpoint := fmt.Sprintf("%s:%d", member.Addr, m.RPCPort)
+	endpoint := fmt.Sprintf("%s:%d", members[0].Addr, m.RPCPort)
 	log.Debugf("Going to pull data from %s %s", m.NodeName, endpoint)
 	data, err := grpc.Pull(context.Background(), endpoint)
 	if err != nil {

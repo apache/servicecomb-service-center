@@ -127,8 +127,8 @@ func (a *Agent) GroupMembers(groupName string) (members []serf.Member) {
 	serfAgent := a.Agent.Serf()
 	if serfAgent != nil {
 		for _, member := range serfAgent.Members() {
-			log.Infof("member = %s, groupName = %s", member.Name, member.Tags[tagKeyCluster])
-			if member.Tags[tagKeyCluster] == a.conf.ClusterName {
+			log.Debugf("member = %s, groupName = %s", member.Name, member.Tags[tagKeyClusterName])
+			if member.Tags[tagKeyClusterName] == groupName {
 				members = append(members, member)
 			}
 		}

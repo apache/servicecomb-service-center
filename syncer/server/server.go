@@ -19,6 +19,8 @@ package server
 import (
 	"context"
 	"errors"
+	"net/url"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -91,6 +93,12 @@ func (s *Server) Run(ctx context.Context) {
 	gopool.Go(syssig.Run)
 
 	err = s.startModuleServer(s.agent)
+	if err != nil {
+		s.Stop()
+		return
+	}
+
+	err = s.configureCluster()
 	if err != nil {
 		s.Stop()
 		return
@@ -172,7 +180,7 @@ func (s *Server) initialization() (err error) {
 		return
 	}
 
-	s.etcd = etcd.NewAgent(etcd.DefaultConfig())
+	s.etcd = etcd.NewAgent(s.conf.Etcd)
 
 	s.tick = ticker.NewTaskTicker(s.conf.TickerInterval, s.tickHandler)
 
@@ -190,4 +198,34 @@ func (s *Server) initialization() (err error) {
 func (s *Server) initPlugin() {
 	plugins.SetPluginConfig(plugins.PluginServicecenter.String(), s.conf.ServicecenterPlugin)
 	plugins.LoadPlugins()
+}
+
+// configureCluster Configuring the cluster by serf group member information
+func (s *Server) configureCluster() error {
+	proto := "http" // todo：Introduce tls config to manage protocol
+	initialCluster := ""
+
+	// get local member of serf
+	self := s.agent.LocalMember()
+	peerUrl, err := url.Parse(proto + "://" + self.Addr.String() + ":" + strconv.Itoa(s.conf.ClusterPort))
+	if err != nil {
+		log.Error("parse url from serf local member failed", err)
+		return err
+	}
+
+	// group members from serf as initial cluster members
+	for _, member := range s.agent.GroupMembers(s.conf.ClusterName) {
+		initialCluster += member.Name + "=" + proto + "://" + member.Addr.String() + ":" + member.Tags[serf.TagKeyClusterPort] + ","
+	}
+
+	leng := len(initialCluster)
+	if leng == 0 {
+		err = errors.New("serf group members is empty")
+		log.Error("etcd peer not found", err)
+		return err
+	}
+	s.conf.Etcd.APUrls = []url.URL{*peerUrl}
+	s.conf.Etcd.LPUrls = []url.URL{*peerUrl}
+	s.conf.Etcd.InitialCluster = initialCluster[:len(initialCluster)-1]
+	return nil
 }

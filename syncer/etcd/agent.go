@@ -97,3 +97,11 @@ func (a *Agent) Stop() {
 		a.etcd.Close()
 	}
 }
+
+// IsLeader Check leader
+func (a *Agent) IsLeader() bool {
+	if a.etcd == nil || a.etcd.Server == nil {
+		return false
+	}
+	return a.etcd.Server.Leader() == a.etcd.Server.ID()
+}
