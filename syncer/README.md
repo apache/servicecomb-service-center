@@ -113,17 +113,17 @@ Start 2 Syncer clusters on there host to synchronize microservice data between t
 - Start Syncer cluster on host 10.0.0.10
 
 ```bash
-./syncer daemon --sc-addr http://10.0.0.10:30100 --bind-addr 10.0.0.10:30190 --rpc-addr 10.0.0.10:30191 --mode cluster --node syncer01 --cluster-port 30201 --join-addr 10.0.0.10:30191
-./syncer daemon --sc-addr http://10.0.0.10:30100 --bind-addr 10.0.0.10:30290 --rpc-addr 10.0.0.10:30291 --mode cluster --node syncer01 --cluster-port 30202 --join-addr 10.0.0.10:30191
-./syncer daemon --sc-addr http://10.0.0.10:30100 --bind-addr 10.0.0.10:30390 --rpc-addr 10.0.0.10:30391 --mode cluster --node syncer01 --cluster-port 30203 --join-addr 10.0.0.10:30191
+$ ./syncer daemon --sc-addr http://10.0.0.10:30100 --bind-addr 10.0.0.10:30190 --rpc-addr 10.0.0.10:30191 --mode cluster --node syncer011 --cluster-port 30201 --join-addr 10.0.0.10:30191
+$ ./syncer daemon --sc-addr http://10.0.0.10:30100 --bind-addr 10.0.0.10:30290 --rpc-addr 10.0.0.10:30291 --mode cluster --node syncer012 --cluster-port 30202 --join-addr 10.0.0.10:30191
+$ ./syncer daemon --sc-addr http://10.0.0.10:30100 --bind-addr 10.0.0.10:30390 --rpc-addr 10.0.0.10:30391 --mode cluster --node syncer013 --cluster-port 30203 --join-addr 10.0.0.10:30191
 ```
 
 - Start Syncer cluster on host 10.0.0.11
 
 ```bash
-./syncer daemon --sc-addr http://10.0.0.11:30100 --bind-addr 10.0.0.11:30190 --rpc-addr 10.0.0.11:30191 --mode cluster --node syncer01 --cluster-port 30201 --join-addr 10.0.0.11:30191
-./syncer daemon --sc-addr http://10.0.0.11:30100 --bind-addr 10.0.0.11:30290 --rpc-addr 10.0.0.11:30291 --mode cluster --node syncer01 --cluster-port 30202 --join-addr 10.0.0.11:30191
-./syncer daemon --sc-addr http://10.0.0.11:30100 --bind-addr 10.0.0.11:30390 --rpc-addr 10.0.0.11:30391 --mode cluster --node syncer01 --cluster-port 30203 --join-addr 10.0.0.11:30191
+$ ./syncer daemon --sc-addr http://10.0.0.11:30100 --bind-addr 10.0.0.11:30190 --rpc-addr 10.0.0.11:30191 --mode cluster --node syncer021 --cluster-port 30201 --join-addr 10.0.0.11:30191
+$ ./syncer daemon --sc-addr http://10.0.0.11:30100 --bind-addr 10.0.0.11:30290 --rpc-addr 10.0.0.11:30291 --mode cluster --node syncer022 --cluster-port 30202 --join-addr 10.0.0.11:30191
+$ ./syncer daemon --sc-addr http://10.0.0.11:30100 --bind-addr 10.0.0.11:30390 --rpc-addr 10.0.0.11:30391 --mode cluster --node syncer023 --cluster-port 30203 --join-addr 10.0.0.11:30191
 ```
 
 **Verification**  
