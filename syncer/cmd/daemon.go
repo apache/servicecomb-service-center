@@ -44,17 +44,23 @@ func init() {
 	syncerCmd.Flags().StringVar(&conf.NodeName, "node", conf.NodeName,
 		"node name")
 
-	syncerCmd.Flags().StringVar(&conf.BindAddr, "bind", conf.BindAddr,
+	syncerCmd.Flags().StringVar(&conf.BindAddr, "bind-addr", conf.BindAddr,
 		"address to bind listeners to")
 
 	syncerCmd.Flags().StringVar(&conf.RPCAddr, "rpc-addr", conf.RPCAddr,
 		"port to bind RPC listener to")
 
-	syncerCmd.Flags().StringVar(&conf.JoinAddr, "join", conf.JoinAddr,
+	syncerCmd.Flags().StringVar(&conf.JoinAddr, "join-addr", conf.JoinAddr,
 		"address to join the cluster by specifying at least one existing member")
 
 	syncerCmd.Flags().StringVar(&conf.SCAddr, "sc-addr", conf.SCAddr,
 		"address to monitor the service-center")
+
+	syncerCmd.Flags().StringVar(&conf.ClusterName, "cluster-name", conf.ClusterName,
+		"name to group members into cluster")
+
+	syncerCmd.Flags().IntVar(&conf.ClusterPort, "cluster-port", conf.ClusterPort,
+		"port to communicate between cluster members")
 }
 
 // runSyncer Runs the Syncer service.

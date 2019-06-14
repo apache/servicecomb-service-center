@@ -18,6 +18,7 @@ package serf
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/apache/servicecomb-service-center/syncer/pkg/utils"
 	"github.com/hashicorp/memberlist"
@@ -26,13 +27,15 @@ import (
 )
 
 const (
-	DefaultBindPort  = 30190
-	DefaultRPCPort   = 30191
-	ModeSingle       = "single"
-	ModeCluster      = "cluster"
-	retryMaxAttempts = 3
-	groupExpect      = 3
-	tagKeyCluster    = "syncer-cluster-name"
+	DefaultBindPort    = 30190
+	DefaultRPCPort     = 30191
+	DefaultClusterPort = 30192
+	ModeSingle         = "single"
+	ModeCluster        = "cluster"
+	retryMaxAttempts   = 3
+	groupExpect        = 3
+	tagKeyClusterName  = "syncer-cluster-name"
+	TagKeyClusterPort  = "syncer-cluster-port"
 )
 
 // DefaultConfig default config
@@ -40,16 +43,25 @@ func DefaultConfig() *Config {
 	agentConf := agent.DefaultConfig()
 	agentConf.BindAddr = fmt.Sprintf("0.0.0.0:%d", DefaultBindPort)
 	agentConf.RPCAddr = fmt.Sprintf("0.0.0.0:%d", DefaultRPCPort)
-	return &Config{Mode: ModeSingle, Config: agentConf}
+	return &Config{
+		Mode:        ModeSingle,
+		Config:      agentConf,
+		ClusterPort: DefaultClusterPort,
+	}
 }
 
 // Config struct
 type Config struct {
 	// config from serf agent
 	*agent.Config
-	Mode        string `json:"mode"`
+	Mode string `json:"mode"`
+
+	// name to group members into cluster
 	ClusterName string `json:"cluster_name"`
-	RPCPort     int    `yaml:"-"`
+
+	// port to communicate between cluster members
+	ClusterPort int `yaml:"cluster_port"`
+	RPCPort     int `yaml:"-"`
 }
 
 // readConfigFile reads configuration from config file
@@ -85,7 +97,8 @@ func (c *Config) convertToSerf() (*serf.Config, error) {
 	serfConf.NodeName = c.NodeName
 
 	if c.ClusterName != "" {
-		serfConf.Tags = map[string]string{tagKeyCluster: c.ClusterName}
+		serfConf.Tags = map[string]string{tagKeyClusterName: c.ClusterName}
+		serfConf.Tags[TagKeyClusterPort] = strconv.Itoa(c.ClusterPort)
 	}
 
 	if c.Mode == ModeCluster && c.RetryMaxAttempts <= 0 {

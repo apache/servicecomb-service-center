@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package servicecenter
+package servicecenter_test
 
 import (
 	"context"
@@ -27,6 +27,7 @@ import (
 	"github.com/apache/servicecomb-service-center/syncer/pkg/mock/mocksotrage"
 	"github.com/apache/servicecomb-service-center/syncer/plugins"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
+	"github.com/apache/servicecomb-service-center/syncer/servicecenter"
 )
 
 func TestNewServicecenter(t *testing.T) {
@@ -36,12 +37,12 @@ func TestNewServicecenter(t *testing.T) {
 			t.Log(err)
 		}
 	}()
-	_, err := NewServicecenter([]string{"127.0.0.1:30100"})
+	_, err := servicecenter.NewServicecenter([]string{"127.0.0.1:30100"})
 	if err != nil {
 		t.Log(err)
 	}
 
-	_, err = NewServicecenter([]string{"127.0.0.1:30100"})
+	_, err = servicecenter.NewServicecenter([]string{"127.0.0.1:30100"})
 	if err != nil {
 		t.Fatal(err)
 		return
@@ -52,7 +53,7 @@ func TestOnEvent(t *testing.T) {
 	conf := config.DefaultConfig()
 	conf.ServicecenterPlugin = mockplugin.PluginName
 	initPlugin(conf)
-	dc, err := NewServicecenter([]string{"http://127.0.0.1:30100"})
+	dc, err := servicecenter.NewServicecenter([]string{"http://127.0.0.1:30100"})
 	if err != nil {
 		t.Fatal(err)
 		return
