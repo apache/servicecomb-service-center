@@ -94,8 +94,8 @@ next:
 	}
 }
 
-// UpdateMapByNode update map to storage by clusterName of other node
-func (s *storage) UpdateMapByNode(clusterName string, mapping pb.SyncMapping) {
+// UpdateMapByCluster update map to storage by clusterName of other cluster
+func (s *storage) UpdateMapByCluster(clusterName string, mapping pb.SyncMapping) {
 	newMaps := make(pb.SyncMapping, 0, len(mapping))
 	for _, val := range mapping {
 		key := mappingsKey + "/" + clusterName + "/" + val.OrgInstanceID
@@ -110,11 +110,11 @@ func (s *storage) UpdateMapByNode(clusterName string, mapping pb.SyncMapping) {
 		}
 		newMaps = append(newMaps, val)
 	}
-	s.cleanExpired(s.GetMapByNode(clusterName), newMaps)
+	s.cleanExpired(s.GetMapByCluster(clusterName), newMaps)
 }
 
-// GetMapByNode get map by clusterName of other node
-func (s *storage) GetMapByNode(clusterName string) (mapping pb.SyncMapping) {
+// GetMapByCluster get map by clusterName of other cluster
+func (s *storage) GetMapByCluster(clusterName string) (mapping pb.SyncMapping) {
 	maps := make(pb.SyncMapping, 0, 10)
 	s.getPrefixKey(mappingsKey+"/"+clusterName, func(key, val []byte) (next bool) {
 		next = true
