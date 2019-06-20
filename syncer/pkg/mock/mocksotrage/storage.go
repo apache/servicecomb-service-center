@@ -57,15 +57,15 @@ func (s *Storage) GetData() (data *pb.SyncData) {
 	return
 }
 
-// UpdateMapByNode update map to storage by clusterName of other node
-func (s *Storage) UpdateMapByNode(clusterName string, mapping pb.SyncMapping) {
+// UpdateMapByCluster update map to storage by clusterName of other cluster
+func (s *Storage) UpdateMapByCluster(clusterName string, mapping pb.SyncMapping) {
 	s.lock.Lock()
 	s.maps[clusterName] = mapping
 	s.lock.Unlock()
 }
 
-// GetMapByNode get map by clusterName of other node
-func (s *Storage) GetMapByNode(clusterName string) (mapping pb.SyncMapping) {
+// GetMapByCluster get map by clusterName of other cluster
+func (s *Storage) GetMapByCluster(clusterName string) (mapping pb.SyncMapping) {
 	s.lock.RLock()
 	data, ok := s.maps[clusterName]
 	if !ok {

@@ -42,8 +42,8 @@ type Storage interface {
 	UpdateData(data *pb.SyncData)
 	GetMaps() (maps pb.SyncMapping)
 	UpdateMaps(maps pb.SyncMapping)
-	GetMapByNode(clusterName string) (mapping pb.SyncMapping)
-	UpdateMapByNode(clusterName string, mapping pb.SyncMapping)
+	GetMapByCluster(clusterName string) (mapping pb.SyncMapping)
+	UpdateMapByCluster(clusterName string, mapping pb.SyncMapping)
 }
 
 // NewServicecenter new store with endpoints
@@ -79,7 +79,7 @@ func (s *servicecenter) FlushData() {
 
 // Registry registry data to the servicecenter, update mapping data
 func (s *servicecenter) Registry(clusterName string, data *pb.SyncData) {
-	mapping := s.storage.GetMapByNode(clusterName)
+	mapping := s.storage.GetMapByCluster(clusterName)
 	for _, svc := range data.Services {
 		log.Debugf("trying to do registration of service, serviceID = %s", svc.Service.ServiceId)
 		// If the svc is in the mapping, just do nothing, if not, created it in servicecenter and get the new serviceID
@@ -110,8 +110,8 @@ func (s *servicecenter) Registry(clusterName string, data *pb.SyncData) {
 	}
 	// UnRegistry instances that is not in the data which means the instance in the mapping is no longer actived
 	mapping = s.unRegistryInstances(data, mapping)
-	// Update mapping data of the node to the storage of the servicecenter
-	s.storage.UpdateMapByNode(clusterName, mapping)
+	// Update mapping data of the cluster to the storage of the servicecenter
+	s.storage.UpdateMapByCluster(clusterName, mapping)
 }
 
 // Discovery discovery data from storage

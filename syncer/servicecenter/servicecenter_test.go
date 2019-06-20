@@ -79,7 +79,7 @@ func TestOnEvent(t *testing.T) {
 		return
 	}
 
-	clusterName := "test_node"
+	clusterName := "test_cluster"
 	dc.Registry(clusterName, data)
 
 	mockplugin.SetGetAll(mockplugin.NewGetAll)
