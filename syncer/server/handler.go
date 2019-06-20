@@ -19,13 +19,13 @@ package server
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/syncer/grpc"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
-	"github.com/gogo/protobuf/proto"
 	"github.com/hashicorp/serf/serf"
+	myserf "github.com/apache/servicecomb-service-center/syncer/serf"
 )
 
 const (
@@ -42,14 +42,8 @@ func (s *Server) tickHandler(ctx context.Context) {
 	// Flush data to the storage of servicecenter
 	s.servicecenter.FlushData()
 
-	event, _ := proto.Marshal(&pb.Member{
-		NodeName: s.conf.ClusterName,
-		RPCPort:  int32(s.conf.RPCPort),
-		Time:     fmt.Sprintf("%d", time.Now().UTC().Second()),
-	})
-
 	// sends a UserEvent on Serf, the event will be broadcast between members
-	err := s.agent.UserEvent(EventDiscovered, event, true)
+	err := s.agent.UserEvent(EventDiscovered, util.StringToBytesWithNoCopy(s.conf.ClusterName), true)
 	if err != nil {
 		log.Errorf(err, "Syncer send user event failed")
 	}
@@ -81,36 +75,31 @@ func (s *Server) HandleEvent(event serf.Event) {
 // userEvent Handles "EventUser" notification events, no response required
 func (s *Server) userEvent(event serf.UserEvent) {
 	log.Debug("Receive serf user event")
-	m := &pb.Member{}
-	err := proto.Unmarshal(event.Payload, m)
-	if err != nil {
-		log.Errorf(err, "trigger user event '%s' handler failed", event.EventType())
-		return
-	}
+	clusterName := util.BytesToStringWithNoCopy(event.Payload)
 
 	// Excludes notifications from self, as the gossip protocol inevitably has redundant notifications
-	if s.conf.ClusterName == m.NodeName {
+	if s.conf.ClusterName == clusterName {
 		return
 	}
 
 	// Get member information and get synchronized data from it
-	members := s.agent.GroupMembers(m.NodeName)
-	if members == nil || len(members) == 0{
-		log.Warnf("serf member = %s is not found", m.NodeName)
+	members := s.agent.GroupMembers(clusterName)
+	if members == nil || len(members) == 0 {
+		log.Warnf("serf member = %s is not found", clusterName)
 		return
 	}
 
 	// todo: grpc supports multi-address polling
 	// Get dta from remote member
-	endpoint := fmt.Sprintf("%s:%d", members[0].Addr, m.RPCPort)
-	log.Debugf("Going to pull data from %s %s", m.NodeName, endpoint)
+	endpoint := fmt.Sprintf("%s:%s", members[0].Addr, members[0].Tags[myserf.TagKeyRPCPort])
+	log.Debugf("Going to pull data from %s %s", members[0].Name, endpoint)
 	data, err := grpc.Pull(context.Background(), endpoint)
 	if err != nil {
-		log.Errorf(err, "Pull other serf instances failed, node name is '%s'", m.NodeName)
+		log.Errorf(err, "Pull other serf instances failed, node name is '%s'", members[0].Name)
 		return
 	}
 	// Registry instances to servicecenter and update storage of it
-	s.servicecenter.Registry(m.NodeName, data)
+	s.servicecenter.Registry(clusterName, data)
 }
 
 // queryEvent Handles "EventQuery" query events and respond if conditions are met

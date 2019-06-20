@@ -36,6 +36,7 @@ const (
 	groupExpect        = 3
 	tagKeyClusterName  = "syncer-cluster-name"
 	TagKeyClusterPort  = "syncer-cluster-port"
+	TagKeyRPCPort      = "syncer-rpc-port"
 )
 
 // DefaultConfig default config
@@ -95,9 +96,10 @@ func (c *Config) convertToSerf() (*serf.Config, error) {
 	serfConf.MemberlistConfig.BindAddr = bindIP
 	serfConf.MemberlistConfig.BindPort = bindPort
 	serfConf.NodeName = c.NodeName
+	serfConf.Tags = map[string]string{TagKeyRPCPort: strconv.Itoa(c.RPCPort)}
 
 	if c.ClusterName != "" {
-		serfConf.Tags = map[string]string{tagKeyClusterName: c.ClusterName}
+		serfConf.Tags[tagKeyClusterName] = c.ClusterName
 		serfConf.Tags[TagKeyClusterPort] = strconv.Itoa(c.ClusterPort)
 	}
 

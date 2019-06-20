@@ -57,17 +57,17 @@ func (s *Storage) GetData() (data *pb.SyncData) {
 	return
 }
 
-// UpdateMapByNode update map to storage by nodeName of other node
-func (s *Storage) UpdateMapByNode(nodeName string, mapping pb.SyncMapping) {
+// UpdateMapByNode update map to storage by clusterName of other node
+func (s *Storage) UpdateMapByNode(clusterName string, mapping pb.SyncMapping) {
 	s.lock.Lock()
-	s.maps[nodeName] = mapping
+	s.maps[clusterName] = mapping
 	s.lock.Unlock()
 }
 
-// GetMapByNode get map by nodeName of other node
-func (s *Storage) GetMapByNode(nodeName string) (mapping pb.SyncMapping) {
+// GetMapByNode get map by clusterName of other node
+func (s *Storage) GetMapByNode(clusterName string) (mapping pb.SyncMapping) {
 	s.lock.RLock()
-	data, ok := s.maps[nodeName]
+	data, ok := s.maps[clusterName]
 	if !ok {
 		data = defaultMapping
 	}
@@ -79,12 +79,12 @@ func (s *Storage) UpdateMaps(maps pb.SyncMapping) {
 	s.lock.Lock()
 	mappings := make(map[string]pb.SyncMapping)
 	for _, item := range maps {
-		mapping, ok := mappings[item.NodeName]
+		mapping, ok := mappings[item.ClusterName]
 		if !ok {
 			mapping = make(pb.SyncMapping, 0, 10)
 		}
 		mapping = append(mapping, item)
-		mappings[item.NodeName] = mapping
+		mappings[item.ClusterName] = mapping
 	}
 	s.maps = mappings
 	s.lock.Unlock()

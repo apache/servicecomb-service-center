@@ -24,7 +24,7 @@ message SyncData {
 }
 
 message MappingEntry {
-    string nodeName = 1;
+    string clusterName = 1;
     string domainProject = 2;
     string orgServiceID = 3;
     string orgInstanceID = 4;
