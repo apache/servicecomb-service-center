@@ -87,18 +87,18 @@ next:
 				continue next
 			}
 		}
-		key := mappingsKey + "/" + entry.NodeName + "/" + entry.OrgInstanceID
+		key := mappingsKey + "/" + entry.ClusterName + "/" + entry.OrgInstanceID
 		if _, err := s.client.Delete(context.Background(), key); err != nil {
-			log.Errorf(err, "Delete instance nodeName=%s instanceID=%s failed", entry.NodeName, entry.OrgInstanceID)
+			log.Errorf(err, "Delete instance clusterName=%s instanceID=%s failed", entry.ClusterName, entry.OrgInstanceID)
 		}
 	}
 }
 
-// UpdateMapByNode update map to storage by nodeName of other node
-func (s *storage) UpdateMapByNode(nodeName string, mapping pb.SyncMapping) {
+// UpdateMapByNode update map to storage by clusterName of other node
+func (s *storage) UpdateMapByNode(clusterName string, mapping pb.SyncMapping) {
 	newMaps := make(pb.SyncMapping, 0, len(mapping))
 	for _, val := range mapping {
-		key := mappingsKey + "/" + nodeName + "/" + val.OrgInstanceID
+		key := mappingsKey + "/" + clusterName + "/" + val.OrgInstanceID
 		data, err := proto.Marshal(val)
 		if err != nil {
 			log.Errorf(err, "Proto marshal failed: %s", err)
@@ -110,13 +110,13 @@ func (s *storage) UpdateMapByNode(nodeName string, mapping pb.SyncMapping) {
 		}
 		newMaps = append(newMaps, val)
 	}
-	s.cleanExpired(s.GetMapByNode(nodeName), newMaps)
+	s.cleanExpired(s.GetMapByNode(clusterName), newMaps)
 }
 
-// GetMapByNode get map by nodeName of other node
-func (s *storage) GetMapByNode(nodeName string) (mapping pb.SyncMapping) {
+// GetMapByNode get map by clusterName of other node
+func (s *storage) GetMapByNode(clusterName string) (mapping pb.SyncMapping) {
 	maps := make(pb.SyncMapping, 0, 10)
-	s.getPrefixKey(mappingsKey+"/"+nodeName, func(key, val []byte) (next bool) {
+	s.getPrefixKey(mappingsKey+"/"+clusterName, func(key, val []byte) (next bool) {
 		next = true
 		item := &pb.MappingEntry{}
 		if err := proto.Unmarshal(val, item); err != nil {
@@ -135,7 +135,7 @@ func (s *storage) UpdateMaps(maps pb.SyncMapping) {
 	srcMaps := s.GetMaps()
 	mappings := make(pb.SyncMapping, 0, len(maps))
 	for _, val := range maps {
-		key := mappingsKey + "/" + val.NodeName + "/" + val.OrgInstanceID
+		key := mappingsKey + "/" + val.ClusterName + "/" + val.OrgInstanceID
 		data, err := proto.Marshal(val)
 		if err != nil {
 			log.Errorf(err, "Proto marshal failed: %s", err)

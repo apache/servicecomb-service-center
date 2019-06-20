@@ -79,8 +79,8 @@ func TestOnEvent(t *testing.T) {
 		return
 	}
 
-	nodeName := "test_node"
-	dc.Registry(nodeName, data)
+	clusterName := "test_node"
+	dc.Registry(clusterName, data)
 
 	mockplugin.SetGetAll(mockplugin.NewGetAll)
 	dc.FlushData()
@@ -90,25 +90,25 @@ func TestOnEvent(t *testing.T) {
 		return
 	}
 
-	dc.Registry(nodeName, newData)
+	dc.Registry(clusterName, newData)
 
 	mockplugin.SetRegisterInstance(func(ctx context.Context, domainProject, serviceId string, instance *proto.MicroServiceInstance) (s string, e error) {
 		return "", errors.New("test error")
 	})
 
-	dc.Registry(nodeName, data)
+	dc.Registry(clusterName, data)
 
 	mockplugin.SetRegisterInstance(nil)
 
-	dc.Registry(nodeName, data)
+	dc.Registry(clusterName, data)
 
-	dc.Registry(nodeName, data)
+	dc.Registry(clusterName, data)
 
 	mockplugin.SetHeartbeat(func(ctx context.Context, domainProject, serviceId, instanceId string) error {
 		return errors.New("test error")
 	})
 
-	dc.Registry(nodeName, data)
+	dc.Registry(clusterName, data)
 }
 
 func initPlugin(conf *config.Config) {

@@ -28,7 +28,7 @@ import (
 type Servicecenter interface {
 	SetStorage(storage Storage)
 	FlushData()
-	Registry(nodeName string, data *pb.SyncData)
+	Registry(clusterName string, data *pb.SyncData)
 	Discovery() *pb.SyncData
 }
 
@@ -42,8 +42,8 @@ type Storage interface {
 	UpdateData(data *pb.SyncData)
 	GetMaps() (maps pb.SyncMapping)
 	UpdateMaps(maps pb.SyncMapping)
-	GetMapByNode(nodeName string) (mapping pb.SyncMapping)
-	UpdateMapByNode(nodeName string, mapping pb.SyncMapping)
+	GetMapByNode(clusterName string) (mapping pb.SyncMapping)
+	UpdateMapByNode(clusterName string, mapping pb.SyncMapping)
 }
 
 // NewServicecenter new store with endpoints
@@ -78,8 +78,8 @@ func (s *servicecenter) FlushData() {
 }
 
 // Registry registry data to the servicecenter, update mapping data
-func (s *servicecenter) Registry(nodeName string, data *pb.SyncData) {
-	mapping := s.storage.GetMapByNode(nodeName)
+func (s *servicecenter) Registry(clusterName string, data *pb.SyncData) {
+	mapping := s.storage.GetMapByNode(clusterName)
 	for _, svc := range data.Services {
 		log.Debugf("trying to do registration of service, serviceID = %s", svc.Service.ServiceId)
 		// If the svc is in the mapping, just do nothing, if not, created it in servicecenter and get the new serviceID
@@ -98,7 +98,7 @@ func (s *servicecenter) Registry(nodeName string, data *pb.SyncData) {
 				OrgServiceID:  inst.ServiceId,
 				OrgInstanceID: inst.InstanceId,
 				CurServiceID:  svcID,
-				NodeName:      nodeName,
+				ClusterName:      clusterName,
 			}
 			item.CurInstanceID = s.registryInstances(svc.DomainProject, svcID, inst)
 
@@ -111,7 +111,7 @@ func (s *servicecenter) Registry(nodeName string, data *pb.SyncData) {
 	// UnRegistry instances that is not in the data which means the instance in the mapping is no longer actived
 	mapping = s.unRegistryInstances(data, mapping)
 	// Update mapping data of the node to the storage of the servicecenter
-	s.storage.UpdateMapByNode(nodeName, mapping)
+	s.storage.UpdateMapByNode(clusterName, mapping)
 }
 
 // Discovery discovery data from storage
