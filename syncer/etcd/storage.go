@@ -32,6 +32,8 @@ import (
 var (
 	// mappingsKey the key of instances mapping in etcd
 	mappingsKey = "/syncer/v1/mappings"
+	// servicesKey the key of service in etcd
+	servicesKey = "/syncer/v1/services"
 )
 
 type storage struct {
@@ -65,16 +67,12 @@ func (s *storage) getPrefixKey(prefix string, handler func(key, val []byte) (nex
 
 // UpdateData Update data to storage
 func (s *storage) UpdateData(data *pb.SyncData) {
-	s.lock.Lock()
-	s.data = data
-	s.lock.Unlock()
+	s.UpdateServices(data.Services)
 }
 
 // GetData Get data from storage
 func (s *storage) GetData() (data *pb.SyncData) {
-	s.lock.RLock()
-	data = s.data
-	s.lock.RUnlock()
+	data = &pb.SyncData{Services: s.GetServices()}
 	return
 }
 
@@ -92,6 +90,38 @@ next:
 			log.Errorf(err, "Delete instance clusterName=%s instanceID=%s failed", entry.ClusterName, entry.OrgInstanceID)
 		}
 	}
+}
+
+// UpdateServices Update services to storage
+func (s *storage) UpdateServices(services []*pb.SyncService) {
+	for _, val := range services {
+		key := servicesKey + "/" + val.Service.ServiceId
+		data, err := proto.Marshal(val)
+		if err != nil {
+			log.Errorf(err, "Proto marshal failed: %s", err)
+			continue
+		}
+		_, err = s.client.Put(context.Background(), key, util.BytesToStringWithNoCopy(data))
+		if err != nil {
+			log.Errorf(err, "Save service to etcd failed: %s", err)
+		}
+	}
+}
+
+// GetServices Get services from storage
+func (s *storage) GetServices() (services []*pb.SyncService) {
+	services = make([]*pb.SyncService, 0, 10)
+	s.getPrefixKey(servicesKey, func(key, val []byte) (next bool) {
+		next = true
+		item := &pb.SyncService{}
+		if err := proto.Unmarshal(val, item); err != nil {
+			log.Errorf(err, "Proto unmarshal '%s' failed: %s", val, err)
+			return
+		}
+		services = append(services, item)
+		return
+	})
+	return
 }
 
 // UpdateMapByCluster update map to storage by clusterName of other cluster
