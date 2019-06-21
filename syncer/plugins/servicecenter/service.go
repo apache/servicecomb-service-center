@@ -19,11 +19,13 @@ package servicecenter
 import (
 	"context"
 
-	scpb "github.com/apache/servicecomb-service-center/server/core/proto"
+	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 )
 
 // CreateService creates the service of servicecenter
-func (c *Client) CreateService(ctx context.Context, domainProject string, service *scpb.MicroService) (string, error) {
+func (c *Client) CreateService(ctx context.Context, domainProject string, syncService *pb.SyncService) (string, error) {
+	service := toService(syncService)
+	service.ServiceId = ""
 	serviceID, err := c.cli.CreateService(ctx, domainProject, service)
 	if err != nil {
 		return "", err
@@ -41,7 +43,8 @@ func (c *Client) DeleteService(ctx context.Context, domainProject, serviceId str
 }
 
 // ServiceExistence Checkes service exists in servicecenter
-func (c *Client) ServiceExistence(ctx context.Context, domainProject string, service *scpb.MicroService) (string, error) {
+func (c *Client) ServiceExistence(ctx context.Context, domainProject string, syncService *pb.SyncService) (string, error) {
+	service := toService(syncService)
 	serviceID, err := c.cli.ServiceExistence(ctx, domainProject, service.AppId, service.ServiceName, service.Version, service.Environment)
 	if err != nil {
 		return "", err

@@ -21,7 +21,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/syncer/config"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/mock/mockplugin"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/mock/mocksotrage"
@@ -92,7 +91,7 @@ func TestOnEvent(t *testing.T) {
 
 	dc.Registry(clusterName, newData)
 
-	mockplugin.SetRegisterInstance(func(ctx context.Context, domainProject, serviceId string, instance *proto.MicroServiceInstance) (s string, e error) {
+	mockplugin.SetRegisterInstance(func(ctx context.Context, domainProject, serviceId string, instance *pb.SyncInstance) (s string, e error) {
 		return "", errors.New("test error")
 	})
 

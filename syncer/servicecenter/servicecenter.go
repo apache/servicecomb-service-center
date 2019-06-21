@@ -18,6 +18,7 @@ package servicecenter
 
 import (
 	"context"
+	"errors"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/syncer/plugins"
@@ -80,32 +81,38 @@ func (s *servicecenter) FlushData() {
 // Registry registry data to the servicecenter, update mapping data
 func (s *servicecenter) Registry(clusterName string, data *pb.SyncData) {
 	mapping := s.storage.GetMapByCluster(clusterName)
-	for _, svc := range data.Services {
-		log.Debugf("trying to do registration of service, serviceID = %s", svc.Service.ServiceId)
+	for _, inst := range data.Instances {
+		svc := searchService(inst, data.Services)
+		if svc == nil {
+			err := errors.New("service does not exist")
+			log.Errorf(err, "servicecenter.Registry, serviceID = %s, instanceId = %s", inst.ServiceId, inst.InstanceId)
+			continue
+		}
+
 		// If the svc is in the mapping, just do nothing, if not, created it in servicecenter and get the new serviceID
 		svcID := s.createService(svc)
-		for _, inst := range svc.Instances {
-			// If inst is in the mapping, just heart beat it in servicecenter
-			log.Debugf("trying to do registration of instance, instanceID = %s", inst.InstanceId)
-			if s.heartbeatInstances(mapping, inst) {
-				continue
-			}
+		log.Debugf("create service success orgServiceID= %s, curServiceID = %s", inst.ServiceId, svcID)
 
-			// If inst is not in the mapping, that is because this the first time syncer get the instance data
-			// in this case, we should registry it to the servicecenter and get the new instanceID
-			item := &pb.MappingEntry{
-				DomainProject: svc.DomainProject,
-				OrgServiceID:  inst.ServiceId,
-				OrgInstanceID: inst.InstanceId,
-				CurServiceID:  svcID,
-				ClusterName:      clusterName,
-			}
-			item.CurInstanceID = s.registryInstances(svc.DomainProject, svcID, inst)
+		// If inst is in the mapping, just heart beat it in servicecenter
+		log.Debugf("trying to do registration of instance, instanceID = %s", inst.InstanceId)
+		if s.heartbeatInstances(mapping, inst) {
+			continue
+		}
 
-			// Use new serviceID and instanceID to update mapping data in this servicecenter
-			if item.CurInstanceID != "" {
-				mapping = append(mapping, item)
-			}
+		// If inst is not in the mapping, that is because this the first time syncer get the instance data
+		// in this case, we should registry it to the servicecenter and get the new instanceID
+		item := &pb.MappingEntry{
+			ClusterName:   clusterName,
+			DomainProject: svc.DomainProject,
+			OrgServiceID:  svc.ServiceId,
+			OrgInstanceID: inst.InstanceId,
+			CurServiceID:  svcID,
+			CurInstanceID: s.registryInstances(svc.DomainProject, svcID, inst),
+		}
+
+		// Use new serviceID and instanceID to update mapping data in this servicecenter
+		if item.CurInstanceID != "" {
+			mapping = append(mapping, item)
 		}
 	}
 	// UnRegistry instances that is not in the data which means the instance in the mapping is no longer actived

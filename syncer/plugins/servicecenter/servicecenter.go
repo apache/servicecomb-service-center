@@ -60,6 +60,5 @@ func (c *Client) GetAll(ctx context.Context) (*pb.SyncData, error) {
 	if err != nil {
 		return nil, err
 	}
-	return transform(cache), nil
-
+	return toSyncData(cache), nil
 }
