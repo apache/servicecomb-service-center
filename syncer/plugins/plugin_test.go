@@ -21,7 +21,6 @@ import (
 	"context"
 	"testing"
 
-	scpb "github.com/apache/servicecomb-service-center/server/core/proto"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 )
 
@@ -39,7 +38,7 @@ type mockRepository struct{}
 
 func (r *mockRepository) GetAll(ctx context.Context) (data *pb.SyncData, err error) { return }
 
-func (r *mockRepository) CreateService(ctx context.Context, domainProject string, service *scpb.MicroService) (str string, err error) {
+func (r *mockRepository) CreateService(ctx context.Context, domainProject string, service *pb.SyncService) (str string, err error) {
 	return
 }
 
@@ -47,19 +46,15 @@ func (r *mockRepository) DeleteService(ctx context.Context, domainProject, servi
 	return
 }
 
-func (r *mockRepository) ServiceExistence(ctx context.Context, domainProject string, service *scpb.MicroService) (str string, err error) {
+func (r *mockRepository) ServiceExistence(ctx context.Context, domainProject string, service *pb.SyncService) (str string, err error) {
 	return
 }
 
-func (r *mockRepository) RegisterInstance(ctx context.Context, domainProject, serviceId string, instance *scpb.MicroServiceInstance) (str string, err error) {
+func (r *mockRepository) RegisterInstance(ctx context.Context, domainProject, serviceId string, instance *pb.SyncInstance) (str string, err error) {
 	return
 }
 
 func (r *mockRepository) UnregisterInstance(ctx context.Context, domainProject, serviceId, instanceId string) (err error) {
-	return
-}
-
-func (r *mockRepository) DiscoveryInstances(ctx context.Context, domainProject, consumerId, providerAppId, providerServiceName, providerVersionRule string) (list []*scpb.MicroServiceInstance, err error) {
 	return
 }
 
@@ -71,7 +66,7 @@ func TestManager_New(t *testing.T) {
 	pm := Plugins()
 
 	notfound := PluginType(999)
-	notfound.String()
+	t.Log(notfound.String())
 
 	p := pm.Get(notfound, BUILDIN)
 	if p != nil {

@@ -20,7 +20,6 @@ package mockplugin
 import (
 	"context"
 
-	scpb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/syncer/plugins"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 )
@@ -60,99 +59,69 @@ func NewGetAll(ctx context.Context) (*pb.SyncData, error) {
 	return &pb.SyncData{
 		Services: []*pb.SyncService{
 			{
+				ServiceId: "5db1b794aa6f8a875d6e68110260b5491ee7e223",
+				App:       "default",
+				Name:      "SERVICECENTER",
+				Version:   "1.1.0",
+				Status:    pb.SyncService_UP,
 				DomainProject: "default/default",
-				Service: &scpb.MicroService{
-					ServiceId:   "5db1b794aa6f8a875d6e68110260b5491ee7e223",
-					AppId:       "default",
-					ServiceName: "SERVICECENTER",
-					Version:     "1.1.0",
-					Level:       "BACK",
-					Schemas: []string{
-						"servicecenter.grpc.api.ServiceCtrl",
-						"servicecenter.grpc.api.ServiceInstanceCtrl",
-					},
-					Status: "UP",
-					Properties: map[string]string{
-						"allowCrossApp": "true",
-					},
-					Timestamp:    "1552626180",
-					ModTimestamp: "1552626180",
-					Environment:  "production",
-				},
-				Instances: []*scpb.MicroServiceInstance{
-					{
-						InstanceId: "4d41a637471f11e9888cfa163eca30ab",
-						ServiceId:  "5db1b794aa6f8a875d6e68110260b5491ee7e223",
-						Endpoints: []string{
-							"rest://127.0.0.1:30100/",
-						},
-						HostName: "testmock",
-						Status:   "UP",
-						HealthCheck: &scpb.HealthCheck{
-							Mode:     "push",
-							Interval: 30,
-							Times:    3,
-						},
-						Timestamp:    "1552653537",
-						ModTimestamp: "1552653537",
-						Version:      "1.1.0",
-					},{
-						InstanceId: "4d41a637471f11e9888cfa163eca30e0",
-						ServiceId:  "5db1b794aa6f8a875d6e68110260b5491ee7e223",
-						Endpoints: []string{
-							"rest://127.0.0.1:30100/",
-						},
-						HostName: "testmock",
-						Status:   "UP",
-						HealthCheck: &scpb.HealthCheck{
-							Mode:     "push",
-							Interval: 30,
-							Times:    3,
-						},
-						Timestamp:    "1552653537",
-						ModTimestamp: "1552653537",
-						Version:      "1.1.0",
-					},
-				},
-			},{
+				PluginName: PluginName,
+			}, {
+				ServiceId: "5db1b794aa6f8a875d6e68110260b5491ee7e211",
+				App:       "default",
+				Name:      "SERVICECENTER",
+				Version:   "1.1.0",
+				Status:    pb.SyncService_UP,
 				DomainProject: "default/default",
-				Service: &scpb.MicroService{
-					ServiceId:   "5db1b794aa6f8a875d6e68110260b5491ee7e211",
-					AppId:       "default",
-					ServiceName: "SERVICECENTER",
-					Version:     "1.1.0",
-					Level:       "BACK",
-					Schemas: []string{
-						"servicecenter.grpc.api.ServiceCtrl",
-						"servicecenter.grpc.api.ServiceInstanceCtrl",
-					},
-					Status: "UP",
-					Properties: map[string]string{
-						"allowCrossApp": "true",
-					},
-					Timestamp:    "1552626180",
-					ModTimestamp: "1552626180",
-					Environment:  "production",
+				PluginName: PluginName,
+			},
+		},
+		Instances: []*pb.SyncInstance{
+			{
+				InstanceId: "4d41a637471f11e9888cfa163eca30ab",
+				ServiceId:  "5db1b794aa6f8a875d6e68110260b5491ee7e223",
+				Endpoints: []string{
+					"http://127.0.0.1:30100",
 				},
-				Instances: []*scpb.MicroServiceInstance{
-					{
-						InstanceId: "4d41a637471f11e9888cfa163eca30ab",
-						ServiceId:  "5db1b794aa6f8a875d6e68110260b5491ee7e211",
-						Endpoints: []string{
-							"rest://127.0.0.1:30100/",
-						},
-						HostName: "testmock",
-						Status:   "UP",
-						HealthCheck: &scpb.HealthCheck{
-							Mode:     "push",
-							Interval: 30,
-							Times:    3,
-						},
-						Timestamp:    "1552653537",
-						ModTimestamp: "1552653537",
-						Version:      "1.1.0",
-					},
+				HostName: "testmock",
+				Status:   pb.SyncInstance_UP,
+				HealthCheck: &pb.HealthCheck{
+					Mode:     pb.HealthCheck_PUSH,
+					Interval: 30,
+					Times:    3,
 				},
+				Version: "1.1.0",
+				PluginName: PluginName,
+			}, {
+				InstanceId: "4d41a637471f11e9888cfa163eca30e0",
+				ServiceId:  "5db1b794aa6f8a875d6e68110260b5491ee7e223",
+				Endpoints: []string{
+					"http://127.0.0.1:30100",
+				},
+				HostName: "testmock",
+				Status:   pb.SyncInstance_UP,
+				HealthCheck: &pb.HealthCheck{
+					Mode:     pb.HealthCheck_PUSH,
+					Interval: 30,
+					Times:    3,
+				},
+				Version: "1.1.0",
+				PluginName: PluginName,
+			}, {
+				InstanceId: "4d41a637471f11e9888cfa163eca30ab",
+				ServiceId:  "5db1b794aa6f8a875d6e68110260b5491ee7e211",
+				Endpoints: []string{
+					"http://127.0.0.1:30100",
+				},
+				HostName: "testmock",
+				Status:   pb.SyncInstance_UP,
+				HealthCheck: &pb.HealthCheck{
+					Mode:     pb.HealthCheck_PUSH,
+					Interval: 30,
+					Times:    3,
+				},
+				Version: "1.1.0",
+				PluginName: PluginName,
 			},
 		},
 	}, nil
@@ -165,44 +134,31 @@ func (c *mockPlugin) GetAll(ctx context.Context) (*pb.SyncData, error) {
 	return &pb.SyncData{
 		Services: []*pb.SyncService{
 			{
+				ServiceId: "5db1b794aa6f8a875d6e68110260b5491ee7e223",
+				App:       "default",
+				Name:      "SERVICECENTER",
+				Version:   "1.1.0",
+				Status:    pb.SyncService_UP,
 				DomainProject: "default/default",
-				Service: &scpb.MicroService{
-					ServiceId:   "5db1b794aa6f8a875d6e68110260b5491ee7e223",
-					AppId:       "default",
-					ServiceName: "SERVICECENTER",
-					Version:     "1.1.0",
-					Level:       "BACK",
-					Schemas: []string{
-						"servicecenter.grpc.api.ServiceCtrl",
-						"servicecenter.grpc.api.ServiceInstanceCtrl",
-					},
-					Status: "UP",
-					Properties: map[string]string{
-						"allowCrossApp": "true",
-					},
-					Timestamp:    "1552626180",
-					ModTimestamp: "1552626180",
-					Environment:  "production",
+				PluginName: PluginName,
+			},
+		},
+		Instances: []*pb.SyncInstance{
+			{
+				InstanceId: "4d41a637471f11e9888cfa163eca30e0",
+				ServiceId:  "5db1b794aa6f8a875d6e68110260b5491ee7e223",
+				Endpoints: []string{
+					"http://127.0.0.1:30100",
 				},
-				Instances: []*scpb.MicroServiceInstance{
-					{
-						InstanceId: "4d41a637471f11e9888cfa163eca30e0",
-						ServiceId:  "5db1b794aa6f8a875d6e68110260b5491ee7e223",
-						Endpoints: []string{
-							"rest://127.0.0.1:30100/",
-						},
-						HostName: "testmock",
-						Status:   "UP",
-						HealthCheck: &scpb.HealthCheck{
-							Mode:     "push",
-							Interval: 30,
-							Times:    3,
-						},
-						Timestamp:    "1552653537",
-						ModTimestamp: "1552653537",
-						Version:      "1.1.0",
-					},
+				HostName: "testmock",
+				Status:   pb.SyncInstance_UP,
+				HealthCheck: &pb.HealthCheck{
+					Mode:     pb.HealthCheck_PUSH,
+					Interval: 30,
+					Times:    3,
 				},
+				Version: "1.1.0",
+				PluginName: PluginName,
 			},
 		},
 	}, nil

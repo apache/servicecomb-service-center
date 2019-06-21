@@ -20,16 +20,16 @@ package mockplugin
 import (
 	"context"
 
-	scpb "github.com/apache/servicecomb-service-center/server/core/proto"
+	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 )
 
 var (
-	createServiceHandler func(ctx context.Context, domainProject string, service *scpb.MicroService) (string, error)
+	createServiceHandler func(ctx context.Context, domainProject string, service *pb.SyncService) (string, error)
 	deleteService        func(ctx context.Context, domainProject, serviceId string) error
-	serviceExistence     func(ctx context.Context, domainProject string, service *scpb.MicroService) (string, error)
+	serviceExistence     func(ctx context.Context, domainProject string, service *pb.SyncService) (string, error)
 )
 
-func SetCreateService(handler func(ctx context.Context, domainProject string, service *scpb.MicroService) (string, error)) {
+func SetCreateService(handler func(ctx context.Context, domainProject string, service *pb.SyncService) (string, error)) {
 	createServiceHandler = handler
 }
 
@@ -37,11 +37,11 @@ func SetDeleteService(handler func(ctx context.Context, domainProject, serviceId
 	deleteService = handler
 }
 
-func SetServiceExistence(handler func(ctx context.Context, domainProject string, service *scpb.MicroService) (string, error)) {
+func SetServiceExistence(handler func(ctx context.Context, domainProject string, source *pb.SyncService) (string, error)) {
 	serviceExistence = handler
 }
 
-func (c *mockPlugin) CreateService(ctx context.Context, domainProject string, service *scpb.MicroService) (string, error) {
+func (c *mockPlugin) CreateService(ctx context.Context, domainProject string, service *pb.SyncService) (string, error) {
 	if createServiceHandler != nil {
 		return createServiceHandler(ctx, domainProject, service)
 	}
@@ -55,7 +55,7 @@ func (c *mockPlugin) DeleteService(ctx context.Context, domainProject, serviceId
 	return nil
 }
 
-func (c *mockPlugin) ServiceExistence(ctx context.Context, domainProject string, service *scpb.MicroService) (string, error) {
+func (c *mockPlugin) ServiceExistence(ctx context.Context, domainProject string, service *pb.SyncService) (string, error) {
 	if serviceExistence != nil {
 		return serviceExistence(ctx, domainProject, service)
 	}
