@@ -1,9 +1,6 @@
 {
   "name": "Service-Center Management Console",
   "homepage": "https://github.com/apache/servicecomb-service-center",
-  "authors": [
-    "asifdxtreme <mohammad.asif.siddiqui1@huawei.com>"
-  ],
   "description": "Frontend to manage the micro-services",
   "main": "index.html",
   "license": "Apache 2.0",
