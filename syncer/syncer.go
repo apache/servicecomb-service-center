@@ -23,6 +23,7 @@ import (
 	"github.com/apache/servicecomb-service-center/syncer/cmd"
 )
 
+//go:generate protoc -I./proto/ --go_out=plugins=grpc:./proto/ ./proto/*.proto
 func main() {
 	if err := cmd.Execute(); err != nil {
 		log.Error("Failed to execute syncer command", err)
