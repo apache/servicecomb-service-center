@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package etcd
+package storage
 
 import (
 	"context"
@@ -24,7 +24,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
-	"github.com/apache/servicecomb-service-center/syncer/servicecenter"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/gogo/protobuf/proto"
 )
@@ -38,13 +37,22 @@ var (
 	instancesKey = "/syncer/v1/instances"
 )
 
+type Storage interface {
+	GetData() (data *pb.SyncData)
+	UpdateData(data *pb.SyncData)
+	GetMaps() (maps pb.SyncMapping)
+	UpdateMaps(maps pb.SyncMapping)
+	GetMapByCluster(clusterName string) (mapping pb.SyncMapping)
+	UpdateMapByCluster(clusterName string, mapping pb.SyncMapping)
+}
+
 type storage struct {
 	client *clientv3.Client
 	data   *pb.SyncData
 	lock   sync.RWMutex
 }
 
-func NewStorage(client *clientv3.Client) servicecenter.Storage {
+func NewStorage(client *clientv3.Client) Storage {
 	storage := &storage{
 		client: client,
 		data:   &pb.SyncData{},
