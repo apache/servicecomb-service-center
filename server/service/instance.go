@@ -36,8 +36,13 @@ import (
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
 	"math"
+	"os"
 	"strconv"
 	"time"
+)
+
+var (
+	ttlFromEnv, _ = strconv.ParseInt(os.Getenv("INSTANCE_TTL"), 10, 0)
 )
 
 type InstanceService struct {
@@ -104,9 +109,9 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	if len(instance.InstanceId) > 0 {
 		// keep alive the lease ttl
 		// there are two reasons for sending a heartbeat here:
-		// 1. in the scenario the instance has been removed, 
+		// 1. in the scenario the instance has been removed,
 		//    the cast of registration operation can be reduced.
-		// 2. in the self-protection scenario, the instance is unhealthy 
+		// 2. in the self-protection scenario, the instance is unhealthy
 		//    and needs to be re-registered.
 		resp, err := s.Heartbeat(ctx, &pb.HeartbeatRequest{ServiceId: instance.ServiceId, InstanceId: instance.InstanceId})
 		switch resp.Response.Code {
@@ -137,6 +142,9 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	}
 
 	ttl := int64(instance.HealthCheck.Interval * (instance.HealthCheck.Times + 1))
+	if ttlFromEnv > 0 {
+		ttl = ttlFromEnv
+	}
 	instanceFlag := fmt.Sprintf("ttl %ds, endpoints %v, host '%s', serviceId %s",
 		ttl, instance.Endpoints, instance.HostName, instance.ServiceId)
 
