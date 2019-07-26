@@ -20,11 +20,11 @@ package mocksotrage
 import (
 	"context"
 	"fmt"
-	"github.com/coreos/etcd/clientv3"
 	"net/url"
 	"os"
 
 	"github.com/apache/servicecomb-service-center/syncer/etcd"
+	"github.com/coreos/etcd/clientv3"
 )
 
 const (
@@ -54,7 +54,7 @@ func (m *MockServer) Storage() *clientv3.Client {
 	return m.etcd.Storage()
 }
 
-func (m *MockServer)Stop()  {
+func (m *MockServer) Stop() {
 	m.etcd.Stop()
 	os.RemoveAll(defaultDataDir)
 }
