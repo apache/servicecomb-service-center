@@ -56,14 +56,14 @@ func DefaultClientTLSOptions() []SSLConfigOption {
 	return []SSLConfigOption{
 		WithVerifyPeer(true),
 		WithVerifyHostName(true),
-		WithVersion(tls.VersionTLS12, tls.VersionTLS12),
+		WithVersion(tls.VersionTLS12, tls.VersionTLS13),
 	}
 }
 
 func DefaultServerTLSOptions() []SSLConfigOption {
 	return []SSLConfigOption{
 		WithVerifyPeer(true),
-		WithVersion(tls.VersionTLS12, tls.VersionTLS12),
+		WithVersion(tls.VersionTLS12, tls.VersionTLS13),
 		WithCipherSuits(TLS_CIPHER_SUITE),
 	}
 }

@@ -47,7 +47,7 @@ func TestGetServerTLSConfig(t *testing.T) {
 	pw, _ := ioutil.ReadFile(sslRoot + "cert_pwd")
 	opts := append(DefaultServerTLSOptions(),
 		WithVerifyPeer(true),
-		WithVersion(ParseSSLProtocol("TLSv1.0"), tls.VersionTLS12),
+		WithVersion(ParseSSLProtocol("TLSv1.0"), tls.VersionTLS13),
 		WithCipherSuits(ParseDefaultSSLCipherSuites("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384")),
 		WithKeyPass(string(pw)),
 		WithCA(sslRoot+"trust.cer"),
@@ -70,7 +70,7 @@ func TestGetServerTLSConfig(t *testing.T) {
 	if serverTLSConfig.MinVersion != tls.VersionTLS10 {
 		t.Fatalf("GetServerTLSConfig failed")
 	}
-	if serverTLSConfig.MaxVersion != tls.VersionTLS12 {
+	if serverTLSConfig.MaxVersion != tls.VersionTLS13 {
 		t.Fatalf("GetServerTLSConfig failed")
 	}
 	if serverTLSConfig.ClientAuth != tls.RequireAndVerifyClientCert {
@@ -83,7 +83,7 @@ func TestGetClientTLSConfig(t *testing.T) {
 	opts := append(DefaultServerTLSOptions(),
 		WithVerifyPeer(true),
 		WithVerifyHostName(false),
-		WithVersion(ParseSSLProtocol("TLSv1.0"), tls.VersionTLS12),
+		WithVersion(ParseSSLProtocol("TLSv1.0"), tls.VersionTLS13),
 		WithCipherSuits(ParseDefaultSSLCipherSuites("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384")),
 		WithKeyPass(string(pw)),
 		WithCA(sslRoot+"trust.cer"),
@@ -106,7 +106,7 @@ func TestGetClientTLSConfig(t *testing.T) {
 	if clientTLSConfig.MinVersion != tls.VersionTLS10 {
 		t.Fatalf("GetClientTLSConfig failed")
 	}
-	if clientTLSConfig.MaxVersion != tls.VersionTLS12 {
+	if clientTLSConfig.MaxVersion != tls.VersionTLS13{
 		t.Fatalf("GetClientTLSConfig failed")
 	}
 	if clientTLSConfig.InsecureSkipVerify != true {

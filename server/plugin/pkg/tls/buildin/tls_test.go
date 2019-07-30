@@ -48,7 +48,7 @@ func TestGetServerTLSConfig(t *testing.T) {
 	if serverTLSConfig.MinVersion != tls.VersionTLS12 {
 		t.Fatalf("GetServerTLSConfig failed")
 	}
-	if serverTLSConfig.MaxVersion != tls.VersionTLS12 {
+	if serverTLSConfig.MaxVersion != tls.VersionTLS13 {
 		t.Fatalf("GetServerTLSConfig failed")
 	}
 	if serverTLSConfig.ClientAuth != tls.RequireAndVerifyClientCert {
