@@ -29,7 +29,7 @@ import (
 
 // Store interface of servicecenter
 type Servicecenter interface {
-	SetStorage(storage *clientv3.Client)
+	SetStorageEngine(engine clientv3.KV)
 	FlushData()
 	Registry(clusterName string, data *pb.SyncData)
 	Discovery() *pb.SyncData
@@ -52,8 +52,8 @@ func NewServicecenter(endpoints []string) (Servicecenter, error) {
 	}, nil
 }
 
-func (s *servicecenter) SetStorage(client *clientv3.Client) {
-	s.storage = storage.NewStorage(client)
+func (s *servicecenter) SetStorageEngine(engine clientv3.KV) {
+	s.storage = storage.NewStorage(engine)
 }
 
 // FlushData flush data to servicecenter, update mapping data

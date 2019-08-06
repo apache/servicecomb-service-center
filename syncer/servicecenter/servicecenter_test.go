@@ -63,7 +63,7 @@ func TestOnEvent(t *testing.T) {
 		return
 	}
 	defer mockServer.Stop()
-	dc.SetStorage(mockServer.Storage())
+	dc.SetStorageEngine(mockServer.Storage())
 
 	mockplugin.SetGetAll(func(ctx context.Context) (data *pb.SyncData, e error) {
 		return nil, errors.New("test error")

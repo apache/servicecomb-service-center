@@ -47,14 +47,14 @@ type Storage interface {
 }
 
 type storage struct {
-	client *clientv3.Client
+	engine clientv3.KV
 	data   *pb.SyncData
 	lock   sync.RWMutex
 }
 
-func NewStorage(client *clientv3.Client) Storage {
+func NewStorage(engine clientv3.KV) Storage {
 	storage := &storage{
-		client: client,
+		engine: engine,
 		data:   &pb.SyncData{},
 	}
 	return storage
@@ -62,7 +62,7 @@ func NewStorage(client *clientv3.Client) Storage {
 
 // getPrefixKey Get data from etcd based on the prefix key
 func (s *storage) getPrefixKey(prefix string, handler func(key, val []byte) (next bool)) {
-	resp, err := s.client.Get(context.Background(), prefix, clientv3.WithPrefix())
+	resp, err := s.engine.Get(context.Background(), prefix, clientv3.WithPrefix())
 	if err != nil {
 		log.Errorf(err, "Get mapping from etcd failed: %s", err)
 		return
@@ -133,7 +133,7 @@ next:
 			}
 		}
 		key := mappingsKey + "/" + entry.ClusterName + "/" + entry.OrgInstanceID
-		if _, err := s.client.Delete(context.Background(), key); err != nil {
+		if _, err := s.engine.Delete(context.Background(), key); err != nil {
 			log.Errorf(err, "Delete instance clusterName=%s instanceID=%s failed", entry.ClusterName, entry.OrgInstanceID)
 		}
 
@@ -150,7 +150,7 @@ func (s *storage) UpdateServices(services []*pb.SyncService) {
 			log.Errorf(err, "Proto marshal failed: %s", err)
 			continue
 		}
-		_, err = s.client.Put(context.Background(), key, util.BytesToStringWithNoCopy(data))
+		_, err = s.engine.Put(context.Background(), key, util.BytesToStringWithNoCopy(data))
 		if err != nil {
 			log.Errorf(err, "Save service to etcd failed: %s", err)
 		}
@@ -183,7 +183,7 @@ func (s *storage) DeleteServices(services []*pb.SyncService) {
 // DeleteServices Delete services from storage
 func (s *storage) deleteService(serviceId string) {
 	key := servicesKey + "/" + serviceId
-	_, err := s.client.Delete(context.Background(), key)
+	_, err := s.engine.Delete(context.Background(), key)
 	if err != nil {
 		log.Errorf(err, "Delete service from etcd failed: %s", err)
 	}
@@ -198,7 +198,7 @@ func (s *storage) UpdateInstances(instances []*pb.SyncInstance) {
 			log.Errorf(err, "Proto marshal failed: %s", err)
 			continue
 		}
-		_, err = s.client.Put(context.Background(), key, util.BytesToStringWithNoCopy(data))
+		_, err = s.engine.Put(context.Background(), key, util.BytesToStringWithNoCopy(data))
 		if err != nil {
 			log.Errorf(err, "Save instance to etcd failed: %s", err)
 		}
@@ -230,7 +230,7 @@ func (s *storage) DeleteInstances(instances []*pb.SyncInstance) {
 
 func (s *storage) deleteInstance(instanceID string) {
 	key := instancesKey + "/" + instanceID
-	_, err := s.client.Delete(context.Background(), key)
+	_, err := s.engine.Delete(context.Background(), key)
 	if err != nil {
 		log.Errorf(err, "Delete instance from etcd failed: %s", err)
 	}
@@ -246,7 +246,7 @@ func (s *storage) UpdateMapByCluster(clusterName string, mapping pb.SyncMapping)
 			log.Errorf(err, "Proto marshal failed: %s", err)
 			continue
 		}
-		_, err = s.client.Put(context.Background(), key, util.BytesToStringWithNoCopy(data))
+		_, err = s.engine.Put(context.Background(), key, util.BytesToStringWithNoCopy(data))
 		if err != nil {
 			log.Errorf(err, "Save mapping to etcd failed: %s", err)
 		}
@@ -283,7 +283,7 @@ func (s *storage) UpdateMaps(maps pb.SyncMapping) {
 			log.Errorf(err, "Proto marshal failed: %s", err)
 			continue
 		}
-		_, err = s.client.Put(context.Background(), key, util.BytesToStringWithNoCopy(data))
+		_, err = s.engine.Put(context.Background(), key, util.BytesToStringWithNoCopy(data))
 		if err != nil {
 			log.Errorf(err, "Save mapping to etcd failed: %s", err)
 			continue

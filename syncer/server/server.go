@@ -116,7 +116,7 @@ func (s *Server) Run(ctx context.Context) {
 		return
 	}
 
-	s.servicecenter.SetStorage(s.etcd.Storage())
+	s.servicecenter.SetStorageEngine(s.etcd.Storage())
 
 	s.agent.RegisterEventHandler(s)
 
