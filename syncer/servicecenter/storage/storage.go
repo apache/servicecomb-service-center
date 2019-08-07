@@ -100,6 +100,7 @@ next:
 
 // cleanExpired clean the expired instances in the maps
 func (s *storage) cleanExpired(sources pb.SyncMapping, actives pb.SyncMapping) {
+	expires := make(pb.SyncMapping, 0, len(sources)-len(actives))
 next:
 	for _, entry := range sources {
 		for _, act := range actives {
@@ -107,30 +108,29 @@ next:
 				continue next
 			}
 		}
-
-		delOp := delMappingOp(entry.ClusterName, entry.OrgInstanceID)
-		if _, err := s.engine.Do(context.Background(),delOp); err != nil {
-			log.Errorf(err, "Delete instance clusterName=%s instanceID=%s failed", entry.ClusterName, entry.OrgInstanceID)
-		}
-
-		s.deleteInstance(entry.CurInstanceID)
+		expires = append(expires, entry)
 	}
+	if len(expires) == 0 {
+		return
+	}
+	s.deleteInstancesAndMaps(expires)
 }
 
 // UpdateServices Update services to storage
 func (s *storage) UpdateServices(services []*pb.SyncService) {
+	ops := make([]clientv3.Op, 0, len(services))
 	for _, val := range services {
-		data, err := proto.Marshal(val)
-		if err != nil {
-			log.Errorf(err, "Proto marshal failed: %s", err)
+		data, err1 := proto.Marshal(val)
+		if err1 != nil {
+			log.Errorf(err1, "Proto marshal failed: %s", err1)
 			continue
 		}
+		ops = append(ops, putServiceOp(val.ServiceId, data))
+	}
 
-		updateOp := putServiceOp(val.ServiceId, data)
-		_, err = s.engine.Do(context.Background(), updateOp)
-		if err != nil {
-			log.Errorf(err, "Save service to etcd failed: %s", err)
-		}
+	_, err := s.doTxn(ops)
+	if err != nil {
+		log.Errorf(err, "Save services to etcd failed: %s", err)
 	}
 }
 
@@ -152,34 +152,31 @@ func (s *storage) GetServices() (services []*pb.SyncService) {
 
 // DeleteServices Delete services from storage
 func (s *storage) DeleteServices(services []*pb.SyncService) {
+	ops := make([]clientv3.Op, 0, len(services))
 	for _, val := range services {
-		s.deleteService(val.ServiceId)
+		ops = append(ops, deleteServiceOp(val.ServiceId))
 	}
-}
-
-// DeleteServices Delete services from storage
-func (s *storage) deleteService(serviceId string) {
-	delOp := deleteServiceOp(serviceId)
-	_, err := s.engine.Do(context.Background(), delOp)
+	_, err := s.doTxn(ops)
 	if err != nil {
-		log.Errorf(err, "Delete service from etcd failed: %s", err)
+		log.Errorf(err, "Delete services from etcd failed: %s", err)
 	}
 }
 
 // UpdateInstances Update instances to storage
 func (s *storage) UpdateInstances(instances []*pb.SyncInstance) {
+	ops := make([]clientv3.Op, 0, len(instances))
 	for _, val := range instances {
-		data, err := proto.Marshal(val)
-		if err != nil {
-			log.Errorf(err, "Proto marshal failed: %s", err)
+		data, err1 := proto.Marshal(val)
+		if err1 != nil {
+			log.Errorf(err1, "Proto marshal failed: %s", err1)
 			continue
 		}
+		ops = append(ops, putInstanceOp(val.InstanceId, data))
+	}
 
-		updateOp := putInstanceOp(val.InstanceId, data)
-		_, err = s.engine.Do(context.Background(), updateOp)
-		if err != nil {
-			log.Errorf(err, "Save instance to etcd failed: %s", err)
-		}
+	_, err := s.doTxn(ops)
+	if err != nil {
+		log.Errorf(err, "Save instances to etcd failed: %s", err)
 	}
 }
 
@@ -201,37 +198,45 @@ func (s *storage) GetInstances() (instances []*pb.SyncInstance) {
 
 // DeleteInstances Delete instances from storage
 func (s *storage) DeleteInstances(instances []*pb.SyncInstance) {
+	ops := make([]clientv3.Op, 0, len(instances))
 	for _, val := range instances {
-		s.deleteInstance(val.InstanceId)
+		ops = append(ops, deleteInstanceOp(val.InstanceId))
+	}
+	_, err := s.doTxn(ops)
+	if err != nil {
+		log.Errorf(err, "Delete instances from etcd failed: %s", err)
 	}
 }
 
-func (s *storage) deleteInstance(instanceID string) {
-	delOp := deleteInstanceOp(instanceID)
-	_, err := s.engine.Do(context.Background(), delOp)
+func (s *storage) deleteInstancesAndMaps(mapping pb.SyncMapping) {
+	ops := make([]clientv3.Op, 0, len(mapping))
+	for _, val := range mapping {
+		ops = append(ops, deleteInstanceOp(val.CurInstanceID), delMappingOp(val.ClusterName, val.OrgInstanceID))
+	}
+	_, err := s.doTxn(ops)
 	if err != nil {
-		log.Errorf(err, "Delete instance from etcd failed: %s", err)
+		log.Errorf(err, "Delete instances and maps from etcd failed: %s", err)
 	}
 }
 
 // UpdateMapByCluster update map to storage by clusterName of other cluster
 func (s *storage) UpdateMapByCluster(clusterName string, mapping pb.SyncMapping) {
-	newMaps := make(pb.SyncMapping, 0, len(mapping))
+	ops := make([]clientv3.Op, 0, len(mapping))
 	for _, val := range mapping {
-		data, err := proto.Marshal(val)
-		if err != nil {
-			log.Errorf(err, "Proto marshal failed: %s", err)
+		data, err1 := proto.Marshal(val)
+		if err1 != nil {
+			log.Errorf(err1, "Proto marshal failed: %s", err1)
 			continue
 		}
-
-		putOp := putMappingOp(clusterName, val.OrgInstanceID, data)
-		_, err = s.engine.Do(context.Background(), putOp)
-		if err != nil {
-			log.Errorf(err, "Save mapping to etcd failed: %s", err)
-		}
-		newMaps = append(newMaps, val)
+		ops = append(ops, putMappingOp(val.ClusterName, val.OrgInstanceID, data))
 	}
-	s.cleanExpired(s.GetMapByCluster(clusterName), newMaps)
+
+	_, err := s.doTxn(ops)
+	if err != nil {
+		log.Errorf(err, "Save mappings to etcd failed: %s", err)
+		return
+	}
+	s.cleanExpired(s.GetMapByCluster(clusterName), mapping)
 }
 
 // GetMapByCluster get map by clusterName of other cluster
@@ -252,23 +257,22 @@ func (s *storage) GetMapByCluster(clusterName string) (mapping pb.SyncMapping) {
 // UpdateMaps update all maps to etcd
 func (s *storage) UpdateMaps(maps pb.SyncMapping) {
 	srcMaps := s.GetMaps()
-	mappings := make(pb.SyncMapping, 0, len(maps))
+	ops := make([]clientv3.Op, 0, len(maps))
 	for _, val := range maps {
-		data, err := proto.Marshal(val)
-		if err != nil {
-			log.Errorf(err, "Proto marshal failed: %s", err)
+		data, err1 := proto.Marshal(val)
+		if err1 != nil {
+			log.Errorf(err1, "Proto marshal failed: %s", err1)
 			continue
 		}
-
-		putOp := putMappingOp(val.ClusterName, val.OrgInstanceID, data)
-		_, err = s.engine.Do(context.Background(), putOp)
-		if err != nil {
-			log.Errorf(err, "Save mapping to etcd failed: %s", err)
-			continue
-		}
-		mappings = append(mappings, val)
+		ops = append(ops, putMappingOp(val.ClusterName, val.OrgInstanceID, data))
 	}
-	s.cleanExpired(srcMaps, mappings)
+
+	_, err := s.doTxn(ops)
+	if err != nil {
+		log.Errorf(err, "Save mappings to etcd failed: %s", err)
+		return
+	}
+	s.cleanExpired(srcMaps, maps)
 }
 
 // GetMaps Get maps from storage
@@ -305,4 +309,12 @@ func (s *storage) getValue(opt clientv3.Op, handler func(key, val []byte) (next 
 			break
 		}
 	}
+}
+
+func (s *storage) doTxn(opts []clientv3.Op) (resp *clientv3.TxnResponse, err error) {
+	resp, err = s.engine.Txn(context.Background()).Then(opts...).Commit()
+	if err != nil {
+		log.Errorf(err, "Do etcd transaction failed: %s", err)
+	}
+	return
 }
