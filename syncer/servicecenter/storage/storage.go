@@ -22,19 +22,9 @@ import (
 	"sync"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/gogo/protobuf/proto"
-)
-
-var (
-	// mappingsKey the key of instances mapping in etcd
-	mappingsKey = "/syncer/v1/mappings"
-	// servicesKey the key of service in etcd
-	servicesKey = "/syncer/v1/services"
-	// instancesKey the key of instance in etcd
-	instancesKey = "/syncer/v1/instances"
 )
 
 type Storage interface {
@@ -58,21 +48,6 @@ func NewStorage(engine clientv3.KV) Storage {
 		data:   &pb.SyncData{},
 	}
 	return storage
-}
-
-// getPrefixKey Get data from etcd based on the prefix key
-func (s *storage) getPrefixKey(prefix string, handler func(key, val []byte) (next bool)) {
-	resp, err := s.engine.Get(context.Background(), prefix, clientv3.WithPrefix())
-	if err != nil {
-		log.Errorf(err, "Get mapping from etcd failed: %s", err)
-		return
-	}
-
-	for _, kv := range resp.Kvs {
-		if !handler(kv.Key, kv.Value) {
-			break
-		}
-	}
 }
 
 // UpdateData Update data to storage
@@ -132,8 +107,9 @@ next:
 				continue next
 			}
 		}
-		key := mappingsKey + "/" + entry.ClusterName + "/" + entry.OrgInstanceID
-		if _, err := s.engine.Delete(context.Background(), key); err != nil {
+
+		delOp := delMappingOp(entry.ClusterName, entry.OrgInstanceID)
+		if _, err := s.engine.Do(context.Background(),delOp); err != nil {
 			log.Errorf(err, "Delete instance clusterName=%s instanceID=%s failed", entry.ClusterName, entry.OrgInstanceID)
 		}
 
@@ -144,13 +120,14 @@ next:
 // UpdateServices Update services to storage
 func (s *storage) UpdateServices(services []*pb.SyncService) {
 	for _, val := range services {
-		key := servicesKey + "/" + val.ServiceId
 		data, err := proto.Marshal(val)
 		if err != nil {
 			log.Errorf(err, "Proto marshal failed: %s", err)
 			continue
 		}
-		_, err = s.engine.Put(context.Background(), key, util.BytesToStringWithNoCopy(data))
+
+		updateOp := putServiceOp(val.ServiceId, data)
+		_, err = s.engine.Do(context.Background(), updateOp)
 		if err != nil {
 			log.Errorf(err, "Save service to etcd failed: %s", err)
 		}
@@ -160,7 +137,7 @@ func (s *storage) UpdateServices(services []*pb.SyncService) {
 // GetServices Get services from storage
 func (s *storage) GetServices() (services []*pb.SyncService) {
 	services = make([]*pb.SyncService, 0, 10)
-	s.getPrefixKey(servicesKey, func(key, val []byte) (next bool) {
+	s.getValue(getServicesOp(), func(key, val []byte) (next bool) {
 		next = true
 		item := &pb.SyncService{}
 		if err := proto.Unmarshal(val, item); err != nil {
@@ -182,8 +159,8 @@ func (s *storage) DeleteServices(services []*pb.SyncService) {
 
 // DeleteServices Delete services from storage
 func (s *storage) deleteService(serviceId string) {
-	key := servicesKey + "/" + serviceId
-	_, err := s.engine.Delete(context.Background(), key)
+	delOp := deleteServiceOp(serviceId)
+	_, err := s.engine.Do(context.Background(), delOp)
 	if err != nil {
 		log.Errorf(err, "Delete service from etcd failed: %s", err)
 	}
@@ -192,13 +169,14 @@ func (s *storage) deleteService(serviceId string) {
 // UpdateInstances Update instances to storage
 func (s *storage) UpdateInstances(instances []*pb.SyncInstance) {
 	for _, val := range instances {
-		key := instancesKey + "/" + val.InstanceId
 		data, err := proto.Marshal(val)
 		if err != nil {
 			log.Errorf(err, "Proto marshal failed: %s", err)
 			continue
 		}
-		_, err = s.engine.Put(context.Background(), key, util.BytesToStringWithNoCopy(data))
+
+		updateOp := putInstanceOp(val.InstanceId, data)
+		_, err = s.engine.Do(context.Background(), updateOp)
 		if err != nil {
 			log.Errorf(err, "Save instance to etcd failed: %s", err)
 		}
@@ -208,7 +186,7 @@ func (s *storage) UpdateInstances(instances []*pb.SyncInstance) {
 // GetInstances Get instances from storage
 func (s *storage) GetInstances() (instances []*pb.SyncInstance) {
 	instances = make([]*pb.SyncInstance, 0, 10)
-	s.getPrefixKey(instancesKey, func(key, val []byte) (next bool) {
+	s.getValue(getInstancesOp(), func(key, val []byte) (next bool) {
 		next = true
 		item := &pb.SyncInstance{}
 		if err := proto.Unmarshal(val, item); err != nil {
@@ -229,8 +207,8 @@ func (s *storage) DeleteInstances(instances []*pb.SyncInstance) {
 }
 
 func (s *storage) deleteInstance(instanceID string) {
-	key := instancesKey + "/" + instanceID
-	_, err := s.engine.Delete(context.Background(), key)
+	delOp := deleteInstanceOp(instanceID)
+	_, err := s.engine.Do(context.Background(), delOp)
 	if err != nil {
 		log.Errorf(err, "Delete instance from etcd failed: %s", err)
 	}
@@ -240,13 +218,14 @@ func (s *storage) deleteInstance(instanceID string) {
 func (s *storage) UpdateMapByCluster(clusterName string, mapping pb.SyncMapping) {
 	newMaps := make(pb.SyncMapping, 0, len(mapping))
 	for _, val := range mapping {
-		key := mappingsKey + "/" + clusterName + "/" + val.OrgInstanceID
 		data, err := proto.Marshal(val)
 		if err != nil {
 			log.Errorf(err, "Proto marshal failed: %s", err)
 			continue
 		}
-		_, err = s.engine.Put(context.Background(), key, util.BytesToStringWithNoCopy(data))
+
+		putOp := putMappingOp(clusterName, val.OrgInstanceID, data)
+		_, err = s.engine.Do(context.Background(), putOp)
 		if err != nil {
 			log.Errorf(err, "Save mapping to etcd failed: %s", err)
 		}
@@ -257,19 +236,17 @@ func (s *storage) UpdateMapByCluster(clusterName string, mapping pb.SyncMapping)
 
 // GetMapByCluster get map by clusterName of other cluster
 func (s *storage) GetMapByCluster(clusterName string) (mapping pb.SyncMapping) {
-	maps := make(pb.SyncMapping, 0, 10)
-	s.getPrefixKey(mappingsKey+"/"+clusterName, func(key, val []byte) (next bool) {
+	s.getValue(getClusterMappingsOp(clusterName), func(key, val []byte) (next bool) {
 		next = true
 		item := &pb.MappingEntry{}
 		if err := proto.Unmarshal(val, item); err != nil {
 			log.Errorf(err, "Proto unmarshal '%s' failed: %s", val, err)
 			return
 		}
-
-		maps = append(maps, item)
+		mapping = append(mapping, item)
 		return
 	})
-	return maps
+	return
 }
 
 // UpdateMaps update all maps to etcd
@@ -277,13 +254,14 @@ func (s *storage) UpdateMaps(maps pb.SyncMapping) {
 	srcMaps := s.GetMaps()
 	mappings := make(pb.SyncMapping, 0, len(maps))
 	for _, val := range maps {
-		key := mappingsKey + "/" + val.ClusterName + "/" + val.OrgInstanceID
 		data, err := proto.Marshal(val)
 		if err != nil {
 			log.Errorf(err, "Proto marshal failed: %s", err)
 			continue
 		}
-		_, err = s.engine.Put(context.Background(), key, util.BytesToStringWithNoCopy(data))
+
+		putOp := putMappingOp(val.ClusterName, val.OrgInstanceID, data)
+		_, err = s.engine.Do(context.Background(), putOp)
 		if err != nil {
 			log.Errorf(err, "Save mapping to etcd failed: %s", err)
 			continue
@@ -295,16 +273,36 @@ func (s *storage) UpdateMaps(maps pb.SyncMapping) {
 
 // GetMaps Get maps from storage
 func (s *storage) GetMaps() (mapping pb.SyncMapping) {
-	maps := make(pb.SyncMapping, 0, 10)
-	s.getPrefixKey(mappingsKey, func(key, val []byte) (next bool) {
+	s.getValue(getAllMappingsOp(), func(key, val []byte) (next bool) {
 		next = true
 		item := &pb.MappingEntry{}
 		if err := proto.Unmarshal(val, item); err != nil {
 			log.Errorf(err, "Proto unmarshal '%s' failed: %s", val, err)
 			return
 		}
-		maps = append(maps, item)
+		mapping = append(mapping, item)
 		return
 	})
-	return maps
+	return
+}
+
+// getValue Get value from etcd by key
+func (s *storage) getValue(opt clientv3.Op, handler func(key, val []byte) (next bool)) {
+	resp, err := s.engine.Do(context.Background(), opt)
+	if err != nil {
+		log.Errorf(err, "Do etcd operation failed: %s", err)
+		return
+	}
+
+	getResp := resp.Get()
+	if getResp == nil {
+		log.Error("Data from etcd is empty", nil)
+		return
+	}
+
+	for _, kv := range resp.Get().Kvs {
+		if !handler(kv.Key, kv.Value) {
+			break
+		}
+	}
 }
