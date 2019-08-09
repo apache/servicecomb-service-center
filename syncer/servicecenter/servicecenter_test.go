@@ -57,7 +57,13 @@ func TestOnEvent(t *testing.T) {
 		t.Fatal(err)
 		return
 	}
-	dc.SetStorage(mocksotrage.New())
+	mockServer, err := mocksotrage.NewKVServer()
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	defer mockServer.Stop()
+	dc.SetStorageEngine(mockServer.Storage())
 
 	mockplugin.SetGetAll(func(ctx context.Context) (data *pb.SyncData, e error) {
 		return nil, errors.New("test error")
