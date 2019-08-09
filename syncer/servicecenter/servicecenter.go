@@ -23,11 +23,13 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/syncer/plugins"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
+	"github.com/apache/servicecomb-service-center/syncer/servicecenter/storage"
+	"github.com/coreos/etcd/clientv3"
 )
 
 // Store interface of servicecenter
 type Servicecenter interface {
-	SetStorage(storage Storage)
+	SetStorageEngine(engine clientv3.KV)
 	FlushData()
 	Registry(clusterName string, data *pb.SyncData)
 	Discovery() *pb.SyncData
@@ -35,16 +37,7 @@ type Servicecenter interface {
 
 type servicecenter struct {
 	servicecenter plugins.Servicecenter
-	storage       Storage
-}
-
-type Storage interface {
-	GetData() (data *pb.SyncData)
-	UpdateData(data *pb.SyncData)
-	GetMaps() (maps pb.SyncMapping)
-	UpdateMaps(maps pb.SyncMapping)
-	GetMapByCluster(clusterName string) (mapping pb.SyncMapping)
-	UpdateMapByCluster(clusterName string, mapping pb.SyncMapping)
+	storage       storage.Storage
 }
 
 // NewServicecenter new store with endpoints
@@ -59,8 +52,8 @@ func NewServicecenter(endpoints []string) (Servicecenter, error) {
 	}, nil
 }
 
-func (s *servicecenter) SetStorage(storage Storage) {
-	s.storage = storage
+func (s *servicecenter) SetStorageEngine(engine clientv3.KV) {
+	s.storage = storage.NewStorage(engine)
 }
 
 // FlushData flush data to servicecenter, update mapping data

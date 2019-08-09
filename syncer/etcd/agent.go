@@ -22,7 +22,7 @@ import (
 	"errors"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/syncer/servicecenter"
+	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/embed"
 	"github.com/coreos/etcd/etcdserver/api/v3client"
 )
@@ -31,7 +31,6 @@ import (
 type Agent struct {
 	conf    *Config
 	etcd    *embed.Etcd
-	storage servicecenter.Storage
 	readyCh chan struct{}
 	errorCh chan error
 }
@@ -84,11 +83,8 @@ func (a *Agent) Error() <-chan error {
 }
 
 // Storage returns etcd storage
-func (a *Agent) Storage() servicecenter.Storage {
-	if a.storage == nil {
-		a.storage = NewStorage(v3client.New(a.etcd.Server))
-	}
-	return a.storage
+func (a *Agent) Storage() *clientv3.Client {
+	return v3client.New(a.etcd.Server)
 }
 
 // Stop etcd agent
