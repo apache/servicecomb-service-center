@@ -18,11 +18,13 @@ package grpc
 
 import (
 	"context"
+	"crypto/tls"
 	"sync"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 var (
@@ -37,8 +39,8 @@ type Client struct {
 	cli  pb.SyncClient
 }
 
-func Pull(ctx context.Context, addr string) (*pb.SyncData, error) {
-	cli := getClient(addr)
+func Pull(ctx context.Context, addr string, tlsConf *tls.Config) (*pb.SyncData, error) {
+	cli := getClient(addr, tlsConf)
 
 	data, err := cli.cli.Pull(ctx, &pb.PullRequest{})
 	if err != nil {
@@ -63,14 +65,24 @@ func closeClient(addr string) {
 }
 
 // GetClient Get the client from the client caches with addr
-func getClient(addr string) *Client {
+func getClient(addr string, tlsConf *tls.Config) *Client {
 	lock.RLock()
 	cli, ok := clients[addr]
 	lock.RUnlock()
 	if !ok {
+		var conn *grpc.ClientConn
+		var err error
+
 		log.Infof("Create new grpc connection to %s", addr)
-		conn, err := grpc.Dial(addr, grpc.WithInsecure())
+
+		if tlsConf != nil {
+			conn, err = grpc.Dial(addr, grpc.WithTransportCredentials(credentials.NewTLS(tlsConf)))
+		} else {
+			conn, err = grpc.Dial(addr, grpc.WithInsecure())
+		}
+
 		if err != nil {
+			log.Error("create grpc client conn failed", err)
 			return nil
 		}
 		cli = &Client{conn: conn, cli: pb.NewSyncClient(conn), addr: addr}

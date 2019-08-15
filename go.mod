@@ -107,7 +107,7 @@ require (
 	gopkg.in/karlseguin/expect.v1 v1.0.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
-	gopkg.in/yaml.v2 v2.2.1 // indirect
+	gopkg.in/yaml.v2 v2.2.1
 	k8s.io/api v0.0.0-20180601181742-8b7507fac302
 	k8s.io/apimachinery v0.0.0-20180601181227-17529ec7eadb
 	k8s.io/client-go v2.0.0-alpha.0.0.20180817174322-745ca8300397+incompatible
