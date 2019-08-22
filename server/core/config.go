@@ -17,18 +17,29 @@
 package core
 
 import (
+	"os"
+	"runtime"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/plugin"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/version"
 	"github.com/astaxie/beego"
-	"os"
-	"runtime"
 )
 
 const (
 	INIT_VERSION = "0"
+
+	defaultServiceRotateInterval = 12 * time.Hour
+	defaultServiceRotateTime     = 24 * time.Hour
+
+	minServiceRotateInterval = 1 * time.Second
+	minServiceRotateTime     = 1 * time.Second
+
+	maxServiceRotateInterval = 24 * time.Hour
+	maxServiceRotateTime     = 24 * 365 * time.Hour
 )
 
 var ServerInfo = pb.NewServerInformation()
@@ -54,6 +65,17 @@ func newInfo() pb.ServerInformation {
 	if maxLogBackupCount < 0 || maxLogBackupCount > 100 {
 		maxLogBackupCount = 50
 	}
+
+	serviceRotateInterval, err := time.ParseDuration(beego.AppConfig.String("service_rotate_interval"))
+	if err != nil || serviceRotateInterval < minServiceRotateInterval || serviceRotateInterval > maxServiceRotateInterval {
+		serviceRotateInterval = defaultServiceRotateInterval
+	}
+
+	ServiceRotateTime, err := time.ParseDuration(beego.AppConfig.String("service_rotate_time"))
+	if err != nil || ServiceRotateTime < minServiceRotateTime || ServiceRotateTime > maxServiceRotateTime {
+		ServiceRotateTime = defaultServiceRotateTime
+	}
+
 	return pb.ServerInformation{
 		Version: INIT_VERSION,
 		Config: pb.ServerConfig{
@@ -92,6 +114,10 @@ func newInfo() pb.ServerInformation {
 			EnablePProf:  beego.AppConfig.DefaultInt("enable_pprof", 0) != 0,
 			EnableCache:  beego.AppConfig.DefaultInt("enable_cache", 1) != 0,
 			SelfRegister: beego.AppConfig.DefaultInt("self_register", 1) != 0,
+
+			ServiceRotateEnabled:  beego.AppConfig.DefaultBool("service_rotate_enabled", false),
+			ServiceRotateInterval: serviceRotateInterval,
+			ServiceRotateTime:     ServiceRotateTime,
 		},
 	}
 }

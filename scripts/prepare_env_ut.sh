@@ -14,5 +14,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-cp -r etc/conf server/plugin/infra/tls/buildin
-echo "mode: atomic" > coverage.txt
+CURRENT_PATH=$(cd $(dirname $0);pwd)
+ROOT_PATH=$(dirname $CURRENT_PATH)
+
+mkdir -p $ROOT_PATH/server/plugin/infra/tls/buildin
+cp -r $ROOT_PATH/etc/conf $ROOT_PATH/server/plugin/infra/tls/buildin
+echo "mode: atomic" > $ROOT_PATH/coverage.txt
