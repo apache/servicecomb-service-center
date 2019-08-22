@@ -18,6 +18,8 @@ package util
 
 import (
 	"encoding/json"
+	"strings"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
@@ -27,6 +29,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
+
 	"golang.org/x/net/context"
 )
 
@@ -70,6 +73,43 @@ func getServicesRawData(ctx context.Context, domainProject string) ([]*discovery
 		return nil, err
 	}
 	return resp.Kvs, err
+}
+
+//GetAllServicesAcrossDomainProject get services of all domains, projects
+//the map's key is domainProject
+func GetAllServicesAcrossDomainProject(ctx context.Context) (map[string][]*pb.MicroService, error) {
+	key := apt.GetServiceRootKey("")
+	opts := append(FromContext(ctx),
+		registry.WithStrKey(key),
+		registry.WithPrefix())
+	serviceResp, err := backend.Store().Service().Search(ctx, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	services := make(map[string][]*pb.MicroService)
+	if len(serviceResp.Kvs) == 0 {
+		return services, nil
+	}
+
+	for _, value := range serviceResp.Kvs {
+		prefix := util.BytesToStringWithNoCopy(value.Key)
+		parts := strings.Split(prefix, apt.SPLIT)
+		if len(parts) != 7 {
+			continue
+		}
+		domainProject := parts[4] + apt.SPLIT + parts[5]
+		microService, ok := value.Value.(*pb.MicroService)
+		if !ok {
+			log.Error("backend data is not type *pb.MicroService", nil)
+			continue
+		}
+		if _, ok := services[domainProject]; !ok {
+			services[domainProject] = make([]*pb.MicroService, 0)
+		}
+		services[domainProject] = append(services[domainProject], microService)
+	}
+	return services, nil
 }
 
 func GetServicesByDomainProject(ctx context.Context, domainProject string) ([]*pb.MicroService, error) {

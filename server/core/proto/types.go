@@ -16,6 +16,8 @@
 package proto
 
 import (
+	"time"
+
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
@@ -61,6 +63,12 @@ type ServerConfig struct {
 	Plugins    util.JSONObject `json:"plugins"`
 
 	SelfRegister bool `json:"selfRegister"`
+
+	//clear no-instance services
+	ServiceClearEnabled  bool          `json:"serviceClearEnabled"`
+	ServiceClearInterval time.Duration `json:"serviceClearInterval"`
+	//if a service's existence time reaches this value, it can be cleared
+	ServiceClearTime time.Duration `json:"serviceClearTime"`
 }
 
 type ServerInformation struct {

@@ -17,18 +17,29 @@
 package core
 
 import (
+	"os"
+	"runtime"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/plugin"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/version"
 	"github.com/astaxie/beego"
-	"os"
-	"runtime"
 )
 
 const (
 	INIT_VERSION = "0"
+
+	defaultServiceClearInterval = 12 * time.Hour //0.5 day
+	defaultServiceClearTime     = 24 * time.Hour //1 day
+
+	minServiceClearInterval = 1 * time.Second
+	minServiceClearTime     = 1 * time.Second
+
+	maxServiceClearInterval = 24 * time.Hour       //1 day
+	maxServiceClearTime     = 24 * 365 * time.Hour //1 year
 )
 
 var ServerInfo = pb.NewServerInformation()
@@ -54,6 +65,17 @@ func newInfo() pb.ServerInformation {
 	if maxLogBackupCount < 0 || maxLogBackupCount > 100 {
 		maxLogBackupCount = 50
 	}
+
+	serviceClearInterval, err := time.ParseDuration(beego.AppConfig.String("service_clear_interval"))
+	if err != nil || serviceClearInterval < minServiceClearInterval || serviceClearInterval > maxServiceClearInterval {
+		serviceClearInterval = defaultServiceClearInterval
+	}
+
+	serviceClearTime, err := time.ParseDuration(beego.AppConfig.String("service_clear_time"))
+	if err != nil || serviceClearTime < minServiceClearTime || serviceClearTime > maxServiceClearTime {
+		serviceClearTime = defaultServiceClearTime
+	}
+
 	return pb.ServerInformation{
 		Version: INIT_VERSION,
 		Config: pb.ServerConfig{
@@ -92,6 +114,10 @@ func newInfo() pb.ServerInformation {
 			EnablePProf:  beego.AppConfig.DefaultInt("enable_pprof", 0) != 0,
 			EnableCache:  beego.AppConfig.DefaultInt("enable_cache", 1) != 0,
 			SelfRegister: beego.AppConfig.DefaultInt("self_register", 1) != 0,
+
+			ServiceClearEnabled:  beego.AppConfig.DefaultBool("service_clear_enabled", false),
+			ServiceClearInterval: serviceClearInterval,
+			ServiceClearTime:     serviceClearTime,
 		},
 	}
 }
