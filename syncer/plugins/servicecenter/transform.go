@@ -206,12 +206,16 @@ func toInstance(syncInstance *pb.SyncInstance) (instance *scpb.MicroServiceInsta
 			endpoint = strings.Replace(ep, "http://", "rest://", 1)
 		case "https":
 			endpoint = strings.Replace(ep, "https://", "rest://", 1) + "?sslEnabled=true"
+		case "rest":
+			endpoint = ep
+
 		}
 		instance.Endpoints = append(instance.Endpoints, endpoint)
 	}
 
-	if syncInstance.HealthCheck != nil {
+	if syncInstance.HealthCheck != nil && syncInstance.HealthCheck.Mode != pb.HealthCheck_UNKNOWN {
 		instance.HealthCheck = &scpb.HealthCheck{
+			Mode:     pb.HealthCheck_Modes_name[int32(syncInstance.HealthCheck.Mode)],
 			Port:     syncInstance.HealthCheck.Port,
 			Interval: syncInstance.HealthCheck.Interval,
 			Times:    syncInstance.HealthCheck.Times,

@@ -61,6 +61,9 @@ func init() {
 
 	syncerCmd.Flags().IntVar(&conf.ClusterPort, "cluster-port", conf.ClusterPort,
 		"port to communicate between cluster members")
+
+	syncerCmd.Flags().StringVar(&conf.ServicecenterPlugin, "sc-plugin", conf.ServicecenterPlugin,
+		"plugin name of servicecenter")
 }
 
 // runSyncer Runs the Syncer service.
