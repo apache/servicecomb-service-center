@@ -25,6 +25,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/syncer/etcd"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/utils"
+	_ "github.com/apache/servicecomb-service-center/syncer/plugins/eureka"
 	"github.com/apache/servicecomb-service-center/syncer/plugins/servicecenter"
 	"github.com/apache/servicecomb-service-center/syncer/serf"
 )
