@@ -63,9 +63,9 @@ func (h *DependencyEventHandler) backoff(f func(), retries int) int {
 }
 
 func (h *DependencyEventHandler) tryWithBackoff(success func() error, backoff func(), retries int) (error, int) {
-	lock, err := mux.Try(mux.DEP_QUEUE_LOCK)
+	lock, err := mux.Try(mux.DepQueueLock)
 	if err != nil {
-		log.Errorf(err, "try to lock %s failed", mux.DEP_QUEUE_LOCK)
+		log.Errorf(err, "try to lock %s failed", mux.DepQueueLock)
 		return err, h.backoff(backoff, retries)
 	}
 

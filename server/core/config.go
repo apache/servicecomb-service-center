@@ -17,18 +17,29 @@
 package core
 
 import (
+	"os"
+	"runtime"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/plugin"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/version"
 	"github.com/astaxie/beego"
-	"os"
-	"runtime"
 )
 
 const (
-	INIT_VERSION = "0"
+	InitVersion = "0"
+
+	defaultServiceClearInterval = 12 * time.Hour //0.5 day
+	defaultServiceTTL           = 24 * time.Hour //1 day
+
+	minServiceClearInterval = 30 * time.Second
+	minServiceTTL           = 30 * time.Second
+
+	maxServiceClearInterval = 24 * time.Hour       //1 day
+	maxServiceTTL           = 24 * 365 * time.Hour //1 year
 )
 
 var ServerInfo = pb.NewServerInformation()
@@ -54,8 +65,19 @@ func newInfo() pb.ServerInformation {
 	if maxLogBackupCount < 0 || maxLogBackupCount > 100 {
 		maxLogBackupCount = 50
 	}
+
+	serviceClearInterval, err := time.ParseDuration(os.Getenv("SERVICE_CLEAR_INTERVAL"))
+	if err != nil || serviceClearInterval < minServiceClearInterval || serviceClearInterval > maxServiceClearInterval {
+		serviceClearInterval = defaultServiceClearInterval
+	}
+
+	serviceTTL, err := time.ParseDuration(os.Getenv("SERVICE_TTL"))
+	if err != nil || serviceTTL < minServiceTTL || serviceTTL > maxServiceTTL {
+		serviceTTL = defaultServiceTTL
+	}
+
 	return pb.ServerInformation{
-		Version: INIT_VERSION,
+		Version: InitVersion,
 		Config: pb.ServerConfig{
 			MaxHeaderBytes: int64(beego.AppConfig.DefaultInt("max_header_bytes", 16384)),
 			MaxBodyBytes:   beego.AppConfig.DefaultInt64("max_body_bytes", 2097152),
@@ -92,6 +114,10 @@ func newInfo() pb.ServerInformation {
 			EnablePProf:  beego.AppConfig.DefaultInt("enable_pprof", 0) != 0,
 			EnableCache:  beego.AppConfig.DefaultInt("enable_cache", 1) != 0,
 			SelfRegister: beego.AppConfig.DefaultInt("self_register", 1) != 0,
+
+			ServiceClearEnabled:  os.Getenv("SERVICE_CLEAR_ENABLED") == "true",
+			ServiceClearInterval: serviceClearInterval,
+			ServiceTTL:           serviceTTL,
 		},
 	}
 }
