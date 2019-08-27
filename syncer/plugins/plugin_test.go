@@ -30,7 +30,7 @@ func newAdaptor() PluginInstance { return &mockAdaptor{} }
 
 type mockAdaptor struct{}
 
-func (*mockAdaptor) New(endpoints []string) (Servicecenter, error) {
+func (*mockAdaptor) New(opts ...SCConfigOption) (Servicecenter, error) {
 	return &mockRepository{}, nil
 }
 

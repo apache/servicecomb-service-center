@@ -41,8 +41,8 @@ type servicecenter struct {
 }
 
 // NewServicecenter new store with endpoints
-func NewServicecenter(endpoints []string) (Servicecenter, error) {
-	dc, err := plugins.Plugins().Servicecenter().New(endpoints)
+func NewServicecenter(opts ...plugins.SCConfigOption) (Servicecenter, error) {
+	dc, err := plugins.Plugins().Servicecenter().New(opts...)
 	if err != nil {
 		return nil, err
 	}

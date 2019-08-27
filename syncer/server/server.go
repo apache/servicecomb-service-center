@@ -21,7 +21,6 @@ import (
 	"errors"
 	"net/url"
 	"strconv"
-	"strings"
 	"syscall"
 
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
@@ -184,7 +183,7 @@ func (s *Server) initialization() (err error) {
 
 	s.tick = ticker.NewTaskTicker(s.conf.TickerInterval, s.tickHandler)
 
-	s.servicecenter, err = servicecenter.NewServicecenter(strings.Split(s.conf.SCAddr, ","))
+	s.servicecenter, err = servicecenter.NewServicecenter(s.conf.SC.SCConfigOps()...)
 	if err != nil {
 		log.Error("create servicecenter failed", err)
 		return
@@ -201,7 +200,7 @@ func (s *Server) initialization() (err error) {
 
 // initPlugin Initialize the plugin and load the external plugin according to the configuration
 func (s *Server) initPlugin() {
-	plugins.SetPluginConfig(plugins.PluginServicecenter.String(), s.conf.ServicecenterPlugin)
+	plugins.SetPluginConfig(plugins.PluginServicecenter.String(), s.conf.SC.Plugin)
 	plugins.LoadPlugins()
 }
 
