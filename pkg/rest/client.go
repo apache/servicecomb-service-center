@@ -45,8 +45,6 @@ var defaultURLClientOption = URLClientOption{
 	ConnsPerHost:          DEFAULT_CONN_POOL_PER_HOST_SIZE,
 }
 
-var defaultClientTLSOptions = tlsutil.DefaultClientTLSOptions()
-
 type URLClientOption struct {
 	SSLEnabled            bool
 	Compressed            bool
@@ -213,7 +211,7 @@ func GetURLClient(o URLClientOption) (client *URLClient, err error) {
 	}
 
 	if option.SSLEnabled {
-		opts := append(defaultClientTLSOptions,
+		opts := append(tlsutil.DefaultClientTLSOptions(),
 			tlsutil.WithVerifyPeer(option.VerifyPeer),
 			tlsutil.WithCA(option.CAFile),
 			tlsutil.WithCert(option.CertFile),
