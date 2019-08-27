@@ -19,6 +19,7 @@ package config
 import (
 	"crypto/md5"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 
@@ -28,12 +29,14 @@ import (
 	_ "github.com/apache/servicecomb-service-center/syncer/plugins/eureka"
 	"github.com/apache/servicecomb-service-center/syncer/plugins/servicecenter"
 	"github.com/apache/servicecomb-service-center/syncer/serf"
+	"gopkg.in/yaml.v2"
 )
 
 var (
 	DefaultDCPort         = 30100
 	DefaultClusterPort    = 30192
 	DefaultTickerInterval = 30
+	DefaultConfigPath     = "./conf/config.yaml"
 )
 
 // Config is the configuration that can be set for Syncer. Some of these
@@ -51,12 +54,13 @@ type Config struct {
 	SCAddr string `yaml:"dc_addr"`
 
 	// JoinAddr The management address of one gossip pool member.
-	JoinAddr            string `yaml:"join_addr"`
-	TickerInterval      int    `yaml:"ticker_interval"`
-	Profile             string `yaml:"profile"`
-	EnableCompression   bool   `yaml:"enable_compression"`
-	AutoSync            bool   `yaml:"auto_sync"`
-	ServicecenterPlugin string `yaml:"servicecenter_plugin"`
+	JoinAddr            string     `yaml:"join_addr"`
+	TickerInterval      int        `yaml:"ticker_interval"`
+	Profile             string     `yaml:"profile"`
+	EnableCompression   bool       `yaml:"enable_compression"`
+	AutoSync            bool       `yaml:"auto_sync"`
+	TLSConfig           *TLSConfig `yaml:"tls_config"`
+	ServicecenterPlugin string     `yaml:"servicecenter_plugin"`
 }
 
 // DefaultConfig returns the default config
@@ -75,12 +79,44 @@ func DefaultConfig() *Config {
 		TickerInterval:      DefaultTickerInterval,
 		Config:              serfConf,
 		Etcd:                etcdConf,
+		TLSConfig:           DefaultTLSConfig(),
 		ServicecenterPlugin: servicecenter.PluginName,
 	}
 }
 
-// Verification Provide config verification
-func (c *Config) Verification() error {
+// LoadConfig loads configuration from file
+func LoadConfig(filepath string) (*Config, error) {
+	if filepath == "" {
+		filepath = DefaultConfigPath
+	}
+	if !(utils.IsFileExist(filepath)) {
+		err := fmt.Errorf("file is not exist")
+		log.Errorf(err, "Load config from %s failed", filepath)
+		return nil, err
+	}
+
+	byteArr, err := ioutil.ReadFile(filepath)
+	if err != nil {
+		log.Errorf(err, "Load config from %s failed", filepath)
+		return nil, err
+	}
+
+	conf := &Config{}
+	err = yaml.Unmarshal(byteArr, conf)
+	if err != nil {
+		log.Errorf(err, "Unmarshal config file failed, content is %s", byteArr)
+		return nil, err
+	}
+	return conf, nil
+}
+
+// Merge other configuration into the current configuration
+func (c *Config) Merge(other *Config) {
+	c.TLSConfig.Merge("", other.TLSConfig)
+}
+
+// Verify Provide config verification
+func (c *Config) Verify() error {
 	ip, port, err := utils.SplitHostPort(c.BindAddr, serf.DefaultBindPort)
 	if err != nil {
 		return err
@@ -105,6 +141,8 @@ func (c *Config) Verification() error {
 	if c.ClusterName == "" {
 		c.ClusterName = fmt.Sprintf("%x", md5.Sum([]byte(c.SCAddr)))
 	}
+
+	c.TLSEnabled = c.TLSConfig.Enabled
 
 	c.Etcd.SetName(c.NodeName)
 	return nil

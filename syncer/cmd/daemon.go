@@ -26,7 +26,8 @@ import (
 )
 
 var (
-	conf = config.DefaultConfig()
+	conf       = config.DefaultConfig()
+	configFile = ""
 )
 
 var syncerCmd = &cobra.Command{
@@ -64,12 +65,24 @@ func init() {
 
 	syncerCmd.Flags().StringVar(&conf.ServicecenterPlugin, "sc-plugin", conf.ServicecenterPlugin,
 		"plugin name of servicecenter")
+
+	syncerCmd.Flags().StringVar(&configFile, "config", "",
+		"configuration from file")
 }
 
 // runSyncer Runs the Syncer service.
 func runSyncer(cmd *cobra.Command, args []string) {
-	if err := conf.Verification(); err != nil {
-		log.Errorf(err, "verification syncer config failed")
+	if configFile != "" {
+		fromFile, err := config.LoadConfig(configFile)
+		if err != nil {
+			log.Errorf(err, "load config file failed")
+			return
+		}
+		conf.Merge(fromFile)
+	}
+
+	if err := conf.Verify(); err != nil {
+		log.Errorf(err, "verify syncer config failed")
 		return
 	}
 

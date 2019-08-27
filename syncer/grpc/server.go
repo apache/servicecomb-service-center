@@ -19,12 +19,14 @@ package grpc
 
 import (
 	"context"
+	"crypto/tls"
 	"net"
 
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 type GRPCHandler interface {
@@ -39,15 +41,17 @@ type Server struct {
 	handler GRPCHandler
 	readyCh chan struct{}
 	errorCh chan error
+	tlsConf *tls.Config
 }
 
 // NewServer new grpc server
-func NewServer(addr string, handler GRPCHandler) *Server {
+func NewServer(addr string, handler GRPCHandler, tlsConf *tls.Config) *Server {
 	return &Server{
 		addr:    addr,
 		handler: handler,
 		readyCh: make(chan struct{}),
 		errorCh: make(chan error),
+		tlsConf: tlsConf,
 	}
 }
 
@@ -68,7 +72,13 @@ func (s *Server) Stop() {
 func (s *Server) Start(ctx context.Context) {
 	lsn, err := net.Listen("tcp", s.addr)
 	if err == nil {
-		svc := grpc.NewServer()
+		var svc *grpc.Server
+		if s.tlsConf != nil {
+			svc = grpc.NewServer(grpc.Creds(credentials.NewTLS(s.tlsConf)))
+		}else{
+			svc = grpc.NewServer()
+		}
+
 		pb.RegisterSyncServer(svc, s)
 		s.lsn = lsn
 		gopool.Go(func(ctx context.Context) {

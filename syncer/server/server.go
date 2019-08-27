@@ -190,7 +190,12 @@ func (s *Server) initialization() (err error) {
 		return
 	}
 
-	s.grpc = grpc.NewServer(s.conf.RPCAddr, s)
+	tlsConfig, err := s.conf.TLSConfig.ServerTlsConfig()
+	if err != nil {
+		log.Error("get grpc server tls config failed", err)
+		return
+	}
+	s.grpc = grpc.NewServer(s.conf.RPCAddr, s, tlsConfig)
 	return nil
 }
 

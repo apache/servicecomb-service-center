@@ -18,14 +18,16 @@ package server
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
+	"strconv"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/syncer/grpc"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
-	"github.com/hashicorp/serf/serf"
 	myserf "github.com/apache/servicecomb-service-center/syncer/serf"
+	"github.com/hashicorp/serf/serf"
 )
 
 const (
@@ -93,7 +95,21 @@ func (s *Server) userEvent(event serf.UserEvent) {
 	// Get dta from remote member
 	endpoint := fmt.Sprintf("%s:%s", members[0].Addr, members[0].Tags[myserf.TagKeyRPCPort])
 	log.Debugf("Going to pull data from %s %s", members[0].Name, endpoint)
-	data, err := grpc.Pull(context.Background(), endpoint)
+
+	enabled, err := strconv.ParseBool(members[0].Tags[myserf.TagKeyTLSEnabled])
+	if err != nil {
+		log.Warnf("get tls enabled failed, err = %s", err)
+	}
+	var tlsConfig *tls.Config
+	if enabled {
+		tlsConfig, err = s.conf.TLSConfig.ServerTlsConfig()
+		if err != nil {
+			log.Error("get grpc client tls config failed", err)
+			return
+		}
+	}
+
+	data, err := grpc.Pull(context.Background(), endpoint, tlsConfig)
 	if err != nil {
 		log.Errorf(err, "Pull other serf instances failed, node name is '%s'", members[0].Name)
 		return

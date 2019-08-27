@@ -37,6 +37,7 @@ const (
 	tagKeyClusterName  = "syncer-cluster-name"
 	TagKeyClusterPort  = "syncer-cluster-port"
 	TagKeyRPCPort      = "syncer-rpc-port"
+	TagKeyTLSEnabled   = "syncer-tls-enabled"
 )
 
 // DefaultConfig default config
@@ -61,8 +62,9 @@ type Config struct {
 	ClusterName string `json:"cluster_name"`
 
 	// port to communicate between cluster members
-	ClusterPort int `yaml:"cluster_port"`
-	RPCPort     int `yaml:"-"`
+	ClusterPort int  `yaml:"cluster_port"`
+	RPCPort     int  `yaml:"-"`
+	TLSEnabled  bool `json:"-"`
 }
 
 // readConfigFile reads configuration from config file
@@ -96,7 +98,10 @@ func (c *Config) convertToSerf() (*serf.Config, error) {
 	serfConf.MemberlistConfig.BindAddr = bindIP
 	serfConf.MemberlistConfig.BindPort = bindPort
 	serfConf.NodeName = c.NodeName
-	serfConf.Tags = map[string]string{TagKeyRPCPort: strconv.Itoa(c.RPCPort)}
+	serfConf.Tags = map[string]string{
+		TagKeyRPCPort:    strconv.Itoa(c.RPCPort),
+		TagKeyTLSEnabled: strconv.FormatBool(c.TLSEnabled),
+	}
 
 	if c.ClusterName != "" {
 		serfConf.Tags[tagKeyClusterName] = c.ClusterName
