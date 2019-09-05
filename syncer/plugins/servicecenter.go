@@ -24,7 +24,7 @@ import (
 
 // Adaptor the plugin adaptor of repository
 type Adaptor interface {
-	New(endpoints []string) (Servicecenter, error)
+	New(opts ...SCConfigOption) (Servicecenter, error)
 }
 
 // Servicecenter servicecenter interface

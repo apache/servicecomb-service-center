@@ -49,7 +49,8 @@ func newServiceCenter(t *testing.T) (*httptest.Server, plugins.Servicecenter) {
 	if svr == nil {
 		t.Error("new httptest server failed")
 	}
-	repo, err := adaptor.New([]string{svr.URL})
+
+	repo, err := adaptor.New(plugins.WithEndpoints([]string{svr.URL}))
 	if err != nil {
 		t.Errorf("new repository %s failed, error: %s", PluginName, err)
 	}

@@ -51,8 +51,8 @@ func New() plugins.PluginInstance {
 }
 
 // New repository with endpoints
-func (*adaptor) New(endpoints []string) (plugins.Servicecenter, error) {
-	cfg := sc.Config{Endpoints: endpoints}
+func (*adaptor) New(opts ...plugins.SCConfigOption) (plugins.Servicecenter, error) {
+	cfg := plugins.ToSCConfig(opts...)
 	client, err := sc.NewLBClient(cfg.Endpoints, cfg.Merge())
 	if err != nil {
 		return nil, err

@@ -42,8 +42,8 @@ func New() plugins.PluginInstance {
 }
 
 // New repository with endpoints
-func (*adaptor) New(endpoints []string) (plugins.Servicecenter, error) {
-	cli, err := sc.NewSCClient(sc.Config{Endpoints: endpoints})
+func (*adaptor) New(opts ...plugins.SCConfigOption) (plugins.Servicecenter, error) {
+	cli, err := sc.NewSCClient(plugins.ToSCConfig(opts...))
 	if err != nil {
 		return nil, err
 	}

@@ -48,7 +48,7 @@ func New() plugins.PluginInstance {
 	return &adaptor{}
 }
 
-func (*adaptor) New(endpoints []string) (plugins.Servicecenter, error) {
+func (*adaptor) New(opts ...plugins.SCConfigOption) (plugins.Servicecenter, error) {
 	return &mockPlugin{}, nil
 }
 

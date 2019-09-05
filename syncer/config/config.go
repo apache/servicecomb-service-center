@@ -26,6 +26,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/syncer/etcd"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/utils"
+	"github.com/apache/servicecomb-service-center/syncer/plugins"
 	_ "github.com/apache/servicecomb-service-center/syncer/plugins/eureka"
 	"github.com/apache/servicecomb-service-center/syncer/plugins/servicecenter"
 	"github.com/apache/servicecomb-service-center/syncer/serf"
@@ -37,6 +38,9 @@ var (
 	DefaultClusterPort    = 30192
 	DefaultTickerInterval = 30
 	DefaultConfigPath     = "./conf/config.yaml"
+
+	syncerName        = ""
+	servicecenterName = "servicecenter"
 )
 
 // Config is the configuration that can be set for Syncer. Some of these
@@ -49,18 +53,24 @@ type Config struct {
 	Etcd    *etcd.Config
 	LogFile string `yaml:"log_file"`
 
-	// SCAddr servicecenter address, which is the service registry address.
-	// Cluster mode is supported, and multiple addresses are separated by an English ",".
-	SCAddr string `yaml:"dc_addr"`
-
 	// JoinAddr The management address of one gossip pool member.
-	JoinAddr            string     `yaml:"join_addr"`
-	TickerInterval      int        `yaml:"ticker_interval"`
-	Profile             string     `yaml:"profile"`
-	EnableCompression   bool       `yaml:"enable_compression"`
-	AutoSync            bool       `yaml:"auto_sync"`
-	TLSConfig           *TLSConfig `yaml:"tls_config"`
-	ServicecenterPlugin string     `yaml:"servicecenter_plugin"`
+	JoinAddr          string         `yaml:"join_addr"`
+	TickerInterval    int            `yaml:"ticker_interval"`
+	Profile           string         `yaml:"profile"`
+	EnableCompression bool           `yaml:"enable_compression"`
+	AutoSync          bool           `yaml:"auto_sync"`
+	TLSConfig         *TLSConfig     `yaml:"tls_config"`
+	SC                *ServiceCenter `yaml:"servicecenter"`
+}
+
+// ServiceCenter configuration
+type ServiceCenter struct {
+	// Addr servicecenter address, which is the service registry address.
+	// Cluster mode is supported, and multiple addresses are separated by an English ",".
+	Addr      string     `yaml:"addr"`
+	Plugin    string     `yaml:"plugin"`
+	TLSConfig *TLSConfig `yaml:"tls_config"`
+	Endpoints []string   `yaml:"-"`
 }
 
 // DefaultConfig returns the default config
@@ -75,12 +85,15 @@ func DefaultConfig() *Config {
 	serfConf.NodeName = hostname
 	etcdConf.Name = hostname
 	return &Config{
-		SCAddr:              fmt.Sprintf("127.0.0.1:%d", DefaultDCPort),
-		TickerInterval:      DefaultTickerInterval,
-		Config:              serfConf,
-		Etcd:                etcdConf,
-		TLSConfig:           DefaultTLSConfig(),
-		ServicecenterPlugin: servicecenter.PluginName,
+		TickerInterval: DefaultTickerInterval,
+		Config:         serfConf,
+		Etcd:           etcdConf,
+		TLSConfig:      DefaultTLSConfig(),
+		SC: &ServiceCenter{
+			Addr:      fmt.Sprintf("127.0.0.1:%d", DefaultDCPort),
+			Plugin:    servicecenter.PluginName,
+			TLSConfig: NewTLSConfig(servicecenterName),
+		},
 	}
 }
 
@@ -112,7 +125,8 @@ func LoadConfig(filepath string) (*Config, error) {
 
 // Merge other configuration into the current configuration
 func (c *Config) Merge(other *Config) {
-	c.TLSConfig.Merge("", other.TLSConfig)
+	c.TLSConfig.Merge(syncerName, other.TLSConfig)
+	c.SC.TLSConfig.Merge(servicecenterName, other.SC.TLSConfig)
 }
 
 // Verify Provide config verification
@@ -139,11 +153,28 @@ func (c *Config) Verify() error {
 	}
 
 	if c.ClusterName == "" {
-		c.ClusterName = fmt.Sprintf("%x", md5.Sum([]byte(c.SCAddr)))
+		c.ClusterName = fmt.Sprintf("%x", md5.Sum([]byte(c.SC.Addr)))
 	}
 
 	c.TLSEnabled = c.TLSConfig.Enabled
 
+	c.SC.Endpoints = strings.Split(c.SC.Addr, ",")
+
 	c.Etcd.SetName(c.NodeName)
 	return nil
+}
+
+func (sc *ServiceCenter) SCConfigOps() []plugins.SCConfigOption {
+	opts := []plugins.SCConfigOption{plugins.WithEndpoints(strings.Split(sc.Addr, ","))}
+	if sc.TLSConfig.Enabled {
+		opts = append(opts,
+			plugins.WithTLSEnabled(sc.TLSConfig.Enabled),
+			plugins.WithTLSVerifyPeer(sc.TLSConfig.VerifyPeer),
+			plugins.WithTLSPassphrase(sc.TLSConfig.Passphrase),
+			plugins.WithTLSCAFile(sc.TLSConfig.CAFile),
+			plugins.WithTLSCertFile(sc.TLSConfig.CertFile),
+			plugins.WithTLSKeyFile(sc.TLSConfig.KeyFile),
+		)
+	}
+	return opts
 }

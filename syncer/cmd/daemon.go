@@ -54,7 +54,7 @@ func init() {
 	syncerCmd.Flags().StringVar(&conf.JoinAddr, "join-addr", conf.JoinAddr,
 		"address to join the cluster by specifying at least one existing member")
 
-	syncerCmd.Flags().StringVar(&conf.SCAddr, "sc-addr", conf.SCAddr,
+	syncerCmd.Flags().StringVar(&conf.SC.Addr, "sc-addr", conf.SC.Addr,
 		"address to monitor the service-center")
 
 	syncerCmd.Flags().StringVar(&conf.ClusterName, "cluster-name", conf.ClusterName,
@@ -63,7 +63,7 @@ func init() {
 	syncerCmd.Flags().IntVar(&conf.ClusterPort, "cluster-port", conf.ClusterPort,
 		"port to communicate between cluster members")
 
-	syncerCmd.Flags().StringVar(&conf.ServicecenterPlugin, "sc-plugin", conf.ServicecenterPlugin,
+	syncerCmd.Flags().StringVar(&conf.SC.Plugin, "sc-plugin", conf.SC.Plugin,
 		"plugin name of servicecenter")
 
 	syncerCmd.Flags().StringVar(&configFile, "config", "",
