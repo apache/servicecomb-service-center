@@ -119,7 +119,7 @@ func toZapConfig(c Config) zapcore.Core {
 			MaxSize:    c.LogRotateSize,
 			MaxBackups: c.LogBackupCount,
 			MaxAge:     c.LogBackupAge,
-			LocalTime:  false,
+			LocalTime:  true,
 			Compress:   true,
 		})
 	} else {
