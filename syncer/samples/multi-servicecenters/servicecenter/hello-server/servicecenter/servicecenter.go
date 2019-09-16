@@ -176,20 +176,17 @@ func watchAndRenewCaches(ctx context.Context, provider *MicroService) {
 		providerList := list.([]*proto.MicroServiceInstance)
 
 		renew := false
-		for i, l := 0, len(providerList); i < l; i++ {
-			if providerList[i].InstanceId == result.Instance.InstanceId {
-				if result.Action == "DELETE" {
-					if i < l-1 {
-						providerList = append(providerList[:i], providerList[i+1:]...)
-					} else {
-						providerList = providerList[:i]
-					}
-				} else {
-					providerList[i] = result.Instance
-				}
-				renew = true
-				break
+		for i, item := range providerList{
+			if item.InstanceId != result.Instance.InstanceId {
+				continue
 			}
+			if result.Action == "DELETE" {
+				providerList = append(providerList[:i], providerList[i+1:]...)
+			}else{
+				providerList[i] = result.Instance
+			}
+			renew = true
+			break
 		}
 		if !renew && result.Action != "DELETE" {
 			providerList = append(providerList, result.Instance)
