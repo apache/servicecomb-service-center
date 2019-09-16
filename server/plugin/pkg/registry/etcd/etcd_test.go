@@ -20,19 +20,24 @@ import _ "github.com/apache/servicecomb-service-center/server/plugin/pkg/tracing
 import _ "github.com/apache/servicecomb-service-center/server/plugin/pkg/security/buildin"
 import _ "github.com/apache/servicecomb-service-center/server/plugin/pkg/tls/buildin"
 import (
+	context2 "context"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
-	"github.com/apache/servicecomb-service-center/server/rpc"
-	"golang.org/x/net/context"
-	"google.golang.org/grpc/status"
-	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
+	"github.com/apache/servicecomb-service-center/server/rpc"
+
+	"github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/etcdserver/etcdserverpb"
+	"github.com/coreos/etcd/mvcc/mvccpb"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -746,6 +751,101 @@ func TestEtcdClient_Watch(t *testing.T) {
 	<-ch
 }
 
+type mockKVForPagine struct {
+	rangeCount int
+	countResp  *clientv3.GetResponse
+	rangeResp1 *clientv3.GetResponse
+	rangeResp2 *clientv3.GetResponse
+}
+
+func (m *mockKVForPagine) Put(ctx context2.Context, key, val string, opts ...clientv3.OpOption) (*clientv3.PutResponse, error) {
+	return nil, nil
+}
+
+func (m *mockKVForPagine) Get(ctx context2.Context, key string, opts ...clientv3.OpOption) (*clientv3.GetResponse, error) {
+	op := &clientv3.Op{}
+	for _, o := range opts {
+		o(op)
+	}
+	if op.IsCountOnly() {
+		return m.countResp, nil
+	}
+	if m.rangeCount == 0 {
+		m.rangeCount = 1
+		return m.rangeResp1, nil
+	}
+	return m.rangeResp2, nil
+}
+
+func (m *mockKVForPagine) Delete(ctx context2.Context, key string, opts ...clientv3.OpOption) (*clientv3.DeleteResponse, error) {
+	return nil, nil
+}
+
+func (m *mockKVForPagine) Compact(ctx context2.Context, rev int64, opts ...clientv3.CompactOption) (*clientv3.CompactResponse, error) {
+	return nil, nil
+}
+
+func (m *mockKVForPagine) Do(ctx context2.Context, op clientv3.Op) (clientv3.OpResponse, error) {
+	return clientv3.OpResponse{}, nil
+}
+
+func (m *mockKVForPagine) Txn(ctx context2.Context) clientv3.Txn {
+	return nil
+}
+
+// test scenario: db data decreases during paging.
+func TestEtcdClient_paging(t *testing.T) {
+	// key range: [startKey, endKey)
+	generateGetResp := func(startKey, endKey int) *clientv3.GetResponse {
+		resp := &clientv3.GetResponse{
+			Count: int64(endKey - startKey),
+			Header: &etcdserverpb.ResponseHeader{
+				Revision: 0,
+			},
+			Kvs: make([]*mvccpb.KeyValue, 0),
+		}
+		if resp.Count <= 0 {
+			return resp
+		}
+		for i := startKey; i < endKey; i++ {
+			kvPart := &mvccpb.KeyValue{
+				Key:   []byte(fmt.Sprint(i)),
+				Value: []byte(""),
+			}
+			resp.Kvs = append(resp.Kvs, kvPart)
+		}
+		return resp
+	}
+
+	mockKv := &mockKVForPagine{
+		rangeCount: 0,
+		// if count only, return 4097 kvs
+		countResp: generateGetResp(0, 4097),
+		// the first paging request, return 4096 kvs
+		rangeResp1: generateGetResp(0, 4096),
+		// the second paging request, return 0 kv
+		// meaning data decreases during paging
+		rangeResp2: generateGetResp(0, 0),
+	}
+	c := EtcdClient{
+		Client: &clientv3.Client{
+			KV: mockKv,
+		},
+	}
+
+	op := registry.PluginOp{
+		Offset: -1,
+		Limit:  registry.DEFAULT_PAGE_COUNT,
+	}
+	r, err := c.paging(context2.Background(), op)
+	if err != nil {
+		t.Fatalf("TestEtcdClient_paging failed, %#v", err)
+	}
+	if len(r.Kvs) <= 0 {
+		t.Fatalf("TestEtcdClient_paging failed")
+	}
+}
+
 func TestNewRegistry(t *testing.T) {
 	etcd := &EtcdClient{
 		Endpoints:        []string{endpoint, "0.0.0.0:2379"},
@@ -757,12 +857,6 @@ func TestNewRegistry(t *testing.T) {
 		// should be err, member list does not contain one of the endpoints.
 		t.Fatalf("TestEtcdClient failed, %#v", err)
 	}
-}
-
-type mockTLSHandler struct {
-}
-
-func (m *mockTLSHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func TestWithTLS(t *testing.T) {
