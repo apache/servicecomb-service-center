@@ -20,6 +20,11 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"net/url"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/pkg/backoff"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
@@ -28,15 +33,12 @@ import (
 	"github.com/apache/servicecomb-service-center/server/alarm"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
+
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
 	"github.com/coreos/etcd/etcdserver/etcdserverpb"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"golang.org/x/net/context"
-	"net/url"
-	"strconv"
-	"strings"
-	"time"
 )
 
 var firstEndpoint string
@@ -419,6 +421,9 @@ func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp) (*clientv
 		}
 
 		l := int64(len(recordResp.Kvs))
+		if l <= 0 { // no more data, data may decrease during paging
+			break
+		}
 		nextKey = util.BytesToStringWithNoCopy(recordResp.Kvs[l-1].Key)
 		if i < minPage {
 			// even through current page index less then the min page index,
