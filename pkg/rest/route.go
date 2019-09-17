@@ -19,15 +19,18 @@ package rest
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"net/url"
+	"reflect"
+	"strings"
+
 	"github.com/apache/servicecomb-service-center/pkg/chain"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"net/http"
-	"net/url"
-	"strings"
 )
 
+// URLPattern defines an uri pattern
 type URLPattern struct {
 	Method string
 	Path   string
@@ -39,6 +42,7 @@ type urlPatternHandler struct {
 	http.Handler
 }
 
+// Route is a http route
 type Route struct {
 	// Method is one of the following: GET,PUT,POST,DELETE
 	Method string
@@ -48,18 +52,72 @@ type Route struct {
 	Func func(w http.ResponseWriter, r *http.Request)
 }
 
-// HTTP request multiplexer
+// ROAServantService defines a group of Routes
+type ROAServantService interface {
+	URLPatterns() []Route
+}
+
+// ROAServerHandler is a HTTP request multiplexer
 // Attention:
 //   1. not thread-safe, must be initialized completely before serve http request
 //   2. redirect not supported
 type ROAServerHandler struct {
-	handlers map[string][]*urlPatternHandler
+	handlers  map[string][]*urlPatternHandler
+	chainName string
 }
 
+// NewROAServerHander news an ROAServerHandler
 func NewROAServerHander() *ROAServerHandler {
 	return &ROAServerHandler{
 		handlers: make(map[string][]*urlPatternHandler),
 	}
+}
+
+// RegisterServant registers a ROAServantService
+// servant must be an pointer to service object
+func (this *ROAServerHandler) RegisterServant(servant interface{}) {
+	val := reflect.ValueOf(servant)
+	ind := reflect.Indirect(val)
+	typ := ind.Type()
+	name := util.FileLastName(typ.PkgPath() + "." + typ.Name())
+	if val.Kind() != reflect.Ptr {
+		log.Errorf(nil, "<rest.RegisterServant> cannot use non-ptr servant struct `%s`", name)
+		return
+	}
+
+	urlPatternFunc := val.MethodByName("URLPatterns")
+	if !urlPatternFunc.IsValid() {
+		log.Errorf(nil, "<rest.RegisterServant> no 'URLPatterns' function in servant struct `%s`", name)
+		return
+	}
+
+	vals := urlPatternFunc.Call([]reflect.Value{})
+	if len(vals) <= 0 {
+		log.Errorf(nil, "<rest.RegisterServant> call 'URLPatterns' function failed in servant struct `%s`", name)
+		return
+	}
+
+	val0 := vals[0]
+	if !val.CanInterface() {
+		log.Errorf(nil, "<rest.RegisterServant> result of 'URLPatterns' function not interface type in servant struct `%s`", name)
+		return
+	}
+
+	if routes, ok := val0.Interface().([]Route); ok {
+		log.Infof("register servant %s", name)
+		for _, route := range routes {
+			err := this.addRoute(&route)
+			if err != nil {
+				log.Errorf(err, "register route failed.")
+			}
+		}
+	} else {
+		log.Errorf(nil, "<rest.RegisterServant> result of 'URLPatterns' function not []*Route type in servant struct `%s`", name)
+	}
+}
+
+func (this *ROAServerHandler) setChainName(name string) {
+	this.chainName = name
 }
 
 func (this *ROAServerHandler) addRoute(route *Route) (err error) {
@@ -77,6 +135,7 @@ func (this *ROAServerHandler) addRoute(route *Route) (err error) {
 	return nil
 }
 
+// ServeHTTP implements http.Handler
 func (this *ROAServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	for _, ph := range this.handlers[r.Method] {
 		if params, ok := ph.try(r.URL.Path); ok {
@@ -118,7 +177,7 @@ func (this *ROAServerHandler) serve(ph *urlPatternHandler, w http.ResponseWriter
 		*r = *nr
 	}
 
-	inv := chain.NewInvocation(ctx, chain.NewChain(SERVER_CHAIN_NAME, chain.Handlers(SERVER_CHAIN_NAME)))
+	inv := chain.NewInvocation(ctx, chain.NewChain(this.chainName, chain.Handlers(this.chainName)))
 	inv.WithContext(CTX_RESPONSE, w).
 		WithContext(CTX_REQUEST, r).
 		WithContext(CTX_MATCH_PATTERN, ph.Path).

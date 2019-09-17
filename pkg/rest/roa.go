@@ -17,10 +17,7 @@
 package rest
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	"net/http"
-	"reflect"
 )
 
 var (
@@ -28,58 +25,13 @@ var (
 )
 
 func init() {
-	initROAServerHandler()
-}
-
-type ROAServantService interface {
-	URLPatterns() []Route
-}
-
-func initROAServerHandler() *ROAServerHandler {
 	serverHandler = NewROAServerHander()
-	return serverHandler
+	serverHandler.setChainName(SERVER_CHAIN_NAME)
 }
 
-// servant must be an pointer to service object
+// RegisterServant registers a ROAServantService into serverHandler
 func RegisterServant(servant interface{}) {
-	val := reflect.ValueOf(servant)
-	ind := reflect.Indirect(val)
-	typ := ind.Type()
-	name := util.FileLastName(typ.PkgPath() + "." + typ.Name())
-	if val.Kind() != reflect.Ptr {
-		log.Errorf(nil, "<rest.RegisterServant> cannot use non-ptr servant struct `%s`", name)
-		return
-	}
-
-	urlPatternFunc := val.MethodByName("URLPatterns")
-	if !urlPatternFunc.IsValid() {
-		log.Errorf(nil, "<rest.RegisterServant> no 'URLPatterns' function in servant struct `%s`", name)
-		return
-	}
-
-	vals := urlPatternFunc.Call([]reflect.Value{})
-	if len(vals) <= 0 {
-		log.Errorf(nil, "<rest.RegisterServant> call 'URLPatterns' function failed in servant struct `%s`", name)
-		return
-	}
-
-	val0 := vals[0]
-	if !val.CanInterface() {
-		log.Errorf(nil, "<rest.RegisterServant> result of 'URLPatterns' function not interface type in servant struct `%s`", name)
-		return
-	}
-
-	if routes, ok := val0.Interface().([]Route); ok {
-		log.Infof("register servant %s", name)
-		for _, route := range routes {
-			err := serverHandler.addRoute(&route)
-			if err != nil {
-				log.Errorf(err, "register route failed.")
-			}
-		}
-	} else {
-		log.Errorf(nil, "<rest.RegisterServant> result of 'URLPatterns' function not []*Route type in servant struct `%s`", name)
-	}
+	serverHandler.RegisterServant(servant)
 }
 
 //GetRouter return the router fo REST service
