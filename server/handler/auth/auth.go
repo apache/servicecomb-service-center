@@ -46,5 +46,5 @@ func (h *AuthRequest) Handle(i *chain.Invocation) {
 }
 
 func RegisterHandlers() {
-	chain.RegisterHandler(rest.SERVER_CHAIN_NAME, &AuthRequest{})
+	chain.RegisterHandler(rest.ServerChainName, &AuthRequest{})
 }
