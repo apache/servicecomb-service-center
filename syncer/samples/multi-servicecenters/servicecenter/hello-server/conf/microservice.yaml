@@ -20,10 +20,10 @@ service: # 微服务配置
   version: 0.0.1
   instance: # 实例信息
     protocol: rest
-    listenAddress: 10.0.0.1:8091 #实例监听地址
+    listenAddress: 127.0.0.1:8091 #实例监听地址
 provider: # 服务端信息
   appId: eureka
   name: account-server
   version: 0.0.1
 registry:
-  address: http://10.0.0.1:30100 # service-center 地址
+  address: http://127.0.0.1:30100 # service-center 地址

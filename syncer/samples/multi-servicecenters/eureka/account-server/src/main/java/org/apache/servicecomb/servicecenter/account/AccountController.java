@@ -40,6 +40,7 @@ public class AccountController {
             return new ResponseEntity<>("password is empty", HttpStatus.UNAUTHORIZED);
         }
 
+        System.out.println("request from consumer, user is "+loginVO.user);
         // todo: check user and password
         return new ResponseEntity<>("welcome " + loginVO.user, HttpStatus.OK);
     }

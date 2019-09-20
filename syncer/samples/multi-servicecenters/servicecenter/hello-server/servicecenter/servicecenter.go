@@ -32,13 +32,15 @@ import (
 )
 
 var (
-	domainProject     string
-	cli               *sc.SCClient
-	once              sync.Once
-	heartbeatInterval = 30
-	providerCaches    = &sync.Map{}
-	service           *proto.MicroService
-	instance          *proto.MicroServiceInstance
+	domainProject         string
+	cli                   *sc.SCClient
+	once                  sync.Once
+	heartbeatInterval     = 30
+	providerCaches        = &sync.Map{}
+	service               *proto.MicroService
+	instance              *proto.MicroServiceInstance
+	retryDiscover         = 3
+	retryDiscoverInterval = 30
 )
 
 func Start(ctx context.Context, conf *Config) (err error) {
@@ -70,11 +72,23 @@ func Start(ctx context.Context, conf *Config) (err error) {
 			consumerID = service.ServiceId
 		}
 
+		for i := 0; i <= retryDiscover; i++ {
+			// 定时发送心跳
+			err1 := discoveryToCaches(ctx, consumerID, conf.Provider)
+			if err1 == nil {
+				err = nil
+				log.Infof("discovery provider success, appID = %s, name = %s, version = %s",
+					conf.Provider.AppID, conf.Provider.Name, conf.Provider.Version)
+				break
+			}
+			err = err1
+			log.Warnf("discovery provider failed, appID = %s, name = %s, version = %s",
+				conf.Provider.AppID, conf.Provider.Name, conf.Provider.Version)
+			log.Info("waiting for retry")
+			time.Sleep(time.Duration(retryDiscoverInterval) * time.Second)
 
-		err = discoveryToCaches(ctx, consumerID, conf.Provider)
-		if err != nil {
-			return
 		}
+
 		go watchAndRenewCaches(ctx, conf.Provider)
 	})
 	return
@@ -176,13 +190,13 @@ func watchAndRenewCaches(ctx context.Context, provider *MicroService) {
 		providerList := list.([]*proto.MicroServiceInstance)
 
 		renew := false
-		for i, item := range providerList{
+		for i, item := range providerList {
 			if item.InstanceId != result.Instance.InstanceId {
 				continue
 			}
 			if result.Action == "DELETE" {
 				providerList = append(providerList[:i], providerList[i+1:]...)
-			}else{
+			} else {
 				providerList[i] = result.Instance
 			}
 			renew = true

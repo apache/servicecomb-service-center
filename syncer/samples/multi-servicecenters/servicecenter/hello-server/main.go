@@ -50,13 +50,18 @@ func main() {
 		return
 	}
 	go syssig.Run(ctx)
+	go start(ctx, conf)
+	defer servicecenter.Stop(ctx)
 
-	err = servicecenter.Start(ctx, conf)
+	<-stopCh
+}
+
+func start(ctx context.Context, conf *servicecenter.Config)  {
+	err := servicecenter.Start(ctx, conf)
 	if err != nil {
-		log.Fatal("listen system signal failed", err)
+		log.Fatal("register and discovery from servicecenter failed", err)
 		return
 	}
-	defer servicecenter.Stop(ctx)
 
 	if conf.Provider != nil {
 		// check health
@@ -95,7 +100,6 @@ func main() {
 			}
 		}()
 	}
-	<-stopCh
 }
 
 func checkHealth(providerName string) (string, error) {
