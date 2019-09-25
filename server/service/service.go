@@ -17,8 +17,11 @@
 package service
 
 import (
+	"os"
+
 	"github.com/apache/servicecomb-service-center/pkg/rpc"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+
 	"google.golang.org/grpc"
 )
 
@@ -29,9 +32,7 @@ var (
 
 func init() {
 	instanceService = &InstanceService{}
-	serviceService = &MicroServiceService{
-		instanceService: instanceService,
-	}
+	serviceService = NewMicroServiceService(os.Getenv("SCHEMA_EDITABLE") == "true", instanceService)
 	rpc.RegisterService(RegisterGrpcServices)
 }
 
@@ -42,4 +43,11 @@ func RegisterGrpcServices(s *grpc.Server) {
 
 func AssembleResources() (pb.ServiceCtrlServer, pb.ServiceInstanceCtrlServerEx) {
 	return serviceService, instanceService
+}
+
+func NewMicroServiceService(schemaEditable bool, instCtrlServer pb.ServiceInstanceCtrlServerEx) *MicroServiceService {
+	return &MicroServiceService{
+		schemaEditable:  schemaEditable,
+		instanceService: instCtrlServer,
+	}
 }
