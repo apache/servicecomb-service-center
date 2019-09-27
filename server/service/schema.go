@@ -18,6 +18,8 @@ package service
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
@@ -29,8 +31,8 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
+
 	"golang.org/x/net/context"
-	"strings"
 )
 
 func (s *MicroServiceService) GetSchemaInfo(ctx context.Context, in *pb.GetSchemaRequest) (*pb.GetSchemaResponse, error) {
@@ -230,6 +232,18 @@ func (s *MicroServiceService) DeleteSchema(ctx context.Context, in *pb.DeleteSch
 	}, nil
 }
 
+// ModifySchemas covers all the schemas of a service.
+// To cover the old schemas, ModifySchemas adds new schemas into, delete and
+// modify the old schemas.
+// 1. When the service is in production environment and schema is not editable:
+// If the request contains a new schemaId (the number of schemaIds of
+// the service is also required to be 0, or the request will be rejected),
+// the new schemaId will be automatically added to the service information.
+// Schema is only allowed to add.
+// 2. Other cases:
+// If the request contains a new schemaId,
+// the new schemaId will be automatically added to the service information.
+// Schema is allowed to add/delete/modify.
 func (s *MicroServiceService) ModifySchemas(ctx context.Context, in *pb.ModifySchemasRequest) (*pb.ModifySchemasResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	err := Validate(in)
@@ -258,7 +272,7 @@ func (s *MicroServiceService) ModifySchemas(ctx context.Context, in *pb.ModifySc
 		}, nil
 	}
 
-	respErr := modifySchemas(ctx, domainProject, service, in.Schemas)
+	respErr := s.modifySchemas(ctx, domainProject, service, in.Schemas)
 	if respErr != nil {
 		log.Errorf(nil, "modify service[%s] schemas failed, operator: %s", serviceId, remoteIP)
 		resp := &pb.ModifySchemasResponse{
@@ -328,7 +342,7 @@ func schemasAnalysis(schemas []*pb.Schema, schemasFromDb []*pb.Schema, schemaIds
 	return needUpdateSchemas, needAddSchemas, needDeleteSchemas, nonExistSchemaIds
 }
 
-func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroService, schemas []*pb.Schema) *scerr.Error {
+func (s *MicroServiceService) modifySchemas(ctx context.Context, domainProject string, service *pb.MicroService, schemas []*pb.Schema) *scerr.Error {
 	remoteIP := util.GetIPFromContext(ctx)
 	serviceId := service.ServiceId
 	schemasFromDatabase, err := GetSchemasFromDatabase(ctx, domainProject, serviceId)
@@ -341,7 +355,7 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 	needUpdateSchemas, needAddSchemas, needDeleteSchemas, nonExistSchemaIds := schemasAnalysis(schemas, schemasFromDatabase, service.Schemas)
 
 	pluginOps := make([]registry.PluginOp, 0)
-	if len(service.Environment) == 0 || service.Environment == pb.ENV_PROD {
+	if !s.isSchemaEditable(service) {
 		if len(service.Schemas) == 0 {
 			res := quota.NewApplyQuotaResource(quota.SchemaQuotaType, domainProject, serviceId, int64(len(nonExistSchemaIds)))
 			rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
@@ -444,6 +458,10 @@ func modifySchemas(ctx context.Context, domainProject string, service *pb.MicroS
 	return nil
 }
 
+func (s *MicroServiceService) isSchemaEditable(service *pb.MicroService) bool {
+	return (len(service.Environment) != 0 && service.Environment != pb.ENV_PROD) || s.schemaEditable
+}
+
 func isExistSchemaId(service *pb.MicroService, schemas []*pb.Schema) bool {
 	serviceSchemaIds := service.Schemas
 	for _, schema := range schemas {
@@ -490,6 +508,16 @@ func GetSchemasFromDatabase(ctx context.Context, domainProject string, serviceId
 	return schemas, nil
 }
 
+// ModifySchema modifies a specific schema
+// 1. When the service is in production environment and schema is not editable:
+// If the request contains a new schemaId (the number of schemaIds of
+// the service is also required to be 0, or the request will be rejected),
+// the new schemaId will be automatically added to the service information.
+// Schema is only allowed to add.
+// 2. Other cases:
+// If the request contains a new schemaId,
+// the new schemaId will be automatically added to the service information.
+// Schema is allowed to add/modify.
 func (s *MicroServiceService) ModifySchema(ctx context.Context, request *pb.ModifySchemaRequest) (*pb.ModifySchemaResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	domainProject := util.ParseDomainProject(ctx)
@@ -578,7 +606,7 @@ func (s *MicroServiceService) modifySchema(ctx context.Context, serviceId string
 	var pluginOps []registry.PluginOp
 	isExist := isExistSchemaId(service, []*pb.Schema{schema})
 
-	if len(service.Environment) == 0 || service.Environment == pb.ENV_PROD {
+	if !s.isSchemaEditable(service) {
 		if len(service.Schemas) != 0 && !isExist {
 			return scerr.NewError(scerr.ErrUndefinedSchemaId, "Non-existent schemaId can't be added in "+pb.ENV_PROD)
 		}

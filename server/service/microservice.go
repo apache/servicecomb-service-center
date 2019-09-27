@@ -20,6 +20,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -33,12 +36,14 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/uuid"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
+
 	"golang.org/x/net/context"
-	"strconv"
-	"time"
 )
 
 type MicroServiceService struct {
+	// schemaEditable determines whether schema modification is allowed for
+	// services in production environment
+	schemaEditable  bool
 	instanceService pb.ServiceInstanceCtrlServerEx
 }
 
