@@ -21,10 +21,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/buffer"
-	"github.com/apache/servicecomb-service-center/pkg/tlsutil"
-	"github.com/apache/servicecomb-service-center/pkg/util"
-	"golang.org/x/net/context"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -33,6 +29,12 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/pkg/buffer"
+	"github.com/apache/servicecomb-service-center/pkg/tlsutil"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+
+	"golang.org/x/net/context"
 )
 
 var defaultURLClientOption = URLClientOption{

@@ -65,5 +65,5 @@ func IsSkip(url string) bool {
 }
 
 func RegisterHandlers() {
-	chain.RegisterHandler(roa.SERVER_CHAIN_NAME, &ContextHandler{})
+	chain.RegisterHandler(roa.ServerChainName, &ContextHandler{})
 }

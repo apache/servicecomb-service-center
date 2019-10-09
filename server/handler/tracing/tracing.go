@@ -45,5 +45,5 @@ func (h *TracingHandler) Handle(i *chain.Invocation) {
 }
 
 func RegisterHandlers() {
-	chain.RegisterHandler(rest.SERVER_CHAIN_NAME, &TracingHandler{})
+	chain.RegisterHandler(rest.ServerChainName, &TracingHandler{})
 }

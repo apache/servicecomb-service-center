@@ -58,5 +58,5 @@ func (l *CacheResponse) Handle(i *chain.Invocation) {
 }
 
 func RegisterHandlers() {
-	chain.RegisterHandler(rest.SERVER_CHAIN_NAME, &CacheResponse{})
+	chain.RegisterHandler(rest.ServerChainName, &CacheResponse{})
 }

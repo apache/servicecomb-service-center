@@ -42,5 +42,5 @@ func (h *MetricsHandler) Handle(i *chain.Invocation) {
 }
 
 func RegisterHandlers() {
-	chain.RegisterHandler(rest.SERVER_CHAIN_NAME, &MetricsHandler{})
+	chain.RegisterHandler(rest.ServerChainName, &MetricsHandler{})
 }
