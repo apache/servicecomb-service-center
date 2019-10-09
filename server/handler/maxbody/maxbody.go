@@ -66,5 +66,5 @@ func (c *MaxBodyHandler) Handle(i *chain.Invocation) {
 }
 
 func RegisterHandlers() {
-	chain.RegisterHandler(rest.SERVER_CHAIN_NAME, &MaxBodyHandler{})
+	chain.RegisterHandler(rest.ServerChainName, &MaxBodyHandler{})
 }

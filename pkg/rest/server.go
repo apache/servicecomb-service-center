@@ -19,15 +19,17 @@ package rest
 import (
 	"compress/gzip"
 	"crypto/tls"
-	"github.com/NYTimes/gziphandler"
-	"github.com/apache/servicecomb-service-center/pkg/grace"
-	"github.com/apache/servicecomb-service-center/pkg/log"
 	"net"
 	"net/http"
 	"os"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/pkg/grace"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+
+	"github.com/NYTimes/gziphandler"
 )
 
 const (

@@ -31,7 +31,7 @@ const (
 	CTX_MATCH_PATTERN = "_server_match_pattern"
 	CTX_MATCH_FUNC    = "_server_match_func"
 
-	SERVER_CHAIN_NAME = "_server_chain"
+	ServerChainName = "_server_chain"
 
 	HEADER_RESPONSE_STATUS = "X-Response-Status"
 
