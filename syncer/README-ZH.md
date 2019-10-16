@@ -15,7 +15,7 @@ Syncer是一个多服务中心的同步工具，专为大型微服务架构设�
 
 ### 2. ServiceCenter Syncer架构
 Syncer的运行时架构图如下：  
-![image](./images/SyncerArchitecture.png?raw=true&v=1)  
+![image](./images/SyncerArchitecture.png?raw=true&v=2)  
 如图所示，  
 
 - 在每个服务中心内，均部署了一套服务注册中心（ServiceCenter、Eurake或者其他）集群，该集群管理其所属服务中心的所有微服务实例，并且是彼此隔离的。同时在每个服務中心里各自部署了一个Syncer集群，它负责从注册中心发现实例，并向服务中心注册来自其他服务中心的实例信息。  

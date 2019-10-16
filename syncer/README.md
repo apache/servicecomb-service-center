@@ -15,7 +15,7 @@ Syncer is a multiple servicecenters synchronization tool designed for large micr
 
 ### 2. ServiceCenter Syncer Architecture
 Syncer's runtime architecture diagram is as follows,
-![image](./images/SyncerArchitecture.png?raw=true&v=1)  
+![image](./images/SyncerArchitecture.png?raw=true&v=2)  
 There are three service-centers, 
 
 - Within each service center, a service registry (ServiceCenter, Eurake, or other) cluster is deployed that manages all microservice instances of the service center to which it belongs, and the service centers are isolated from each other. At the same time, a Syner cluster is deployed in each service center, which is responsible for discovering instances from the registry and registering instance information from other service centers to its own service centers.
