@@ -18,7 +18,7 @@
 set -e
 
 ## Get the Release Number
-if [ $2 == "" ]; then
+if [[ $2 == "" ]]; then
     echo "Invalid version number....exiting...."
     exit 1
 else
@@ -73,6 +73,8 @@ build() {
     build_frontend
 
     build_scctl
+
+    build_syncer
 
     package
 }
