@@ -99,6 +99,23 @@ build_scctl() {
     cd -
 }
 
+build_syncer() {
+    local app=../$PACKAGE_PREFIX-$PACKAGE-$GOOS-$GOARCH
+    ## Build the syncer releases
+    cd syncer
+    export GIT_COMMIT=$(git log  --pretty=format:'%h' -n 1)
+    export BUILD_NUMBER=$RELEASE
+    local ldflags="${GO_LDFLAGS} -X 'github.com/apache/servicecomb-service-center/syncer/version.BUILD_TAG=$(date +%Y%m%d%H%M%S).$BUILD_NUMBER.$GIT_COMMIT'"
+    ldflags="${ldflags} -X 'github.com/apache/servicecomb-service-center/syncer/version.VERSION=$BUILD_NUMBER'"
+
+    local BINARY_NAME=$app/syncer
+    if [ "$GOOS" == "windows" ]; then
+        BINARY_NAME=${BINARY_NAME}.exe
+    fi
+    go build --ldflags "${ldflags}" -o $BINARY_NAME
+    cd -
+}
+
 sc_deps() {
     install_glide
 

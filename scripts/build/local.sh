@@ -42,6 +42,8 @@ personal_build() {
 
     build_scctl
 
+    build_syncer
+
     package
 }
 
