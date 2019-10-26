@@ -76,6 +76,19 @@ func newInfo() pb.ServerInformation {
 		serviceTTL = defaultServiceTTL
 	}
 
+	logLevelEnv := os.Getenv("SC_LOG_LEVEL")
+	logFilePathEnv := os.Getenv("SC_LOG_FILEPATH")
+
+	logFilePath := beego.AppConfig.String("logfile")
+	if logFilePathEnv!= ""{
+		logFilePath = logFilePathEnv
+	}
+
+	loglevel :=  beego.AppConfig.String("loglevel");
+	if logLevelEnv!= ""{
+		loglevel = logLevelEnv
+	}
+
 	return pb.ServerInformation{
 		Version: InitVersion,
 		Config: pb.ServerConfig{
@@ -103,8 +116,8 @@ func newInfo() pb.ServerInformation {
 
 			LogRotateSize:  maxLogFileSize,
 			LogBackupCount: maxLogBackupCount,
-			LogFilePath:    beego.AppConfig.String("logfile"),
-			LogLevel:       beego.AppConfig.String("loglevel"),
+			LogFilePath:    logFilePath,
+			LogLevel:       loglevel,
 			LogFormat:      beego.AppConfig.DefaultString("log_format", "text"),
 			LogSys:         beego.AppConfig.DefaultBool("log_sys", false),
 
