@@ -84,7 +84,7 @@ func getLogConflictFunc(t discovery.Type) func(origin, conflict *discovery.KeyVa
 func NewAggregator(t discovery.Type, cfg *discovery.Config) *Aggregator {
 	as := &Aggregator{Type: t}
 	for _, name := range repos {
-		repo := mgr.Plugins().Get(mgr.DISCOVERY, name).New().(discovery.AdaptorRepository)
+		repo := mgr.Plugins().Get(mgr.DISCOVERY, mgr.PluginImplName(name)).New().(discovery.AdaptorRepository)
 		as.Adaptors = append(as.Adaptors, repo.New(t, cfg))
 	}
 	as.Indexer = NewAggregatorIndexer(as)

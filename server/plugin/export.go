@@ -37,7 +37,7 @@ const (
 	TRACING
 	TLS
 	DISCOVERY
-	typeEnd
+	typeEnd // for counting
 )
 
 var pluginNames = map[PluginName]string{

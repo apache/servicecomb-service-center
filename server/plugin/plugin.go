@@ -17,11 +17,13 @@
 package plugin
 
 import (
+	"sync"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/plugin"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+
 	"github.com/astaxie/beego"
-	"sync"
 )
 
 var pluginMgr = &PluginManager{}
@@ -36,13 +38,17 @@ type wrapInstance struct {
 	lock     sync.RWMutex
 }
 
+// PluginManager manages plugin instance generation.
+// PluginManager keeps the plugin instance currently used by server
+// for every plugin interface.
 type PluginManager struct {
-	plugins   map[PluginName]map[string]*Plugin
+	plugins   map[PluginName]map[PluginImplName]*Plugin
 	instances map[PluginName]*wrapInstance
 }
 
+// Initialize initializes the struct
 func (pm *PluginManager) Initialize() {
-	pm.plugins = make(map[PluginName]map[string]*Plugin, int(typeEnd))
+	pm.plugins = make(map[PluginName]map[PluginImplName]*Plugin, int(typeEnd))
 	pm.instances = make(map[PluginName]*wrapInstance, int(typeEnd))
 
 	for t := PluginName(0); t != typeEnd; t++ {
@@ -50,24 +56,27 @@ func (pm *PluginManager) Initialize() {
 	}
 }
 
+// ReloadAll reloads all the plugin instances
 func (pm *PluginManager) ReloadAll() {
 	for pn := range pm.instances {
 		pm.Reload(pn)
 	}
 }
 
+// Register registers a 'Plugin'
 // unsafe
 func (pm *PluginManager) Register(p Plugin) {
 	m, ok := pm.plugins[p.PName]
 	if !ok {
-		m = make(map[string]*Plugin, 5)
+		m = make(map[PluginImplName]*Plugin, 5)
 	}
 	m[p.Name] = &p
 	pm.plugins[p.PName] = m
 	log.Infof("load '%s' plugin named '%s'", p.PName, p.Name)
 }
 
-func (pm *PluginManager) Get(pn PluginName, name string) *Plugin {
+// Get gets a 'Plugin'
+func (pm *PluginManager) Get(pn PluginName, name PluginImplName) *Plugin {
 	m, ok := pm.plugins[pn]
 	if !ok {
 		return nil
@@ -75,6 +84,19 @@ func (pm *PluginManager) Get(pn PluginName, name string) *Plugin {
 	return m[name]
 }
 
+// Instance gets an plugin instance.
+// What plugin instance you get is depended on the supplied go plugin files
+// (high priority) or the plugin config(low priority)
+//
+// The go plugin file should be {plugins_dir}/{PluginName}_plugin.so.
+// ('plugins_dir' must be configured as a valid path in service-center config.)
+// The plugin config in service-center config should be:
+// {PluginName}_plugin = {PluginImplName}
+//
+// e.g. For registry plugin, you can set a config in app.conf:
+// plugins_dir = /home, and supply a go plugin file: /home/registry_plugin.so;
+// or if you want to use etcd as registry, you can set a config in app.conf:
+// registry_plugin = etcd.
 func (pm *PluginManager) Instance(pn PluginName) PluginInstance {
 	wi := pm.instances[pn]
 	wi.lock.RLock()
@@ -95,6 +117,10 @@ func (pm *PluginManager) Instance(pn PluginName) PluginInstance {
 	return wi.instance
 }
 
+// New initializes and sets the instance of a plugin interface,
+// but not returns it.
+// Use 'Instance' if you want to get the plugin instance.
+// We suggest you to use 'Instance' instead of 'New'.
 func (pm *PluginManager) New(pn PluginName) {
 	var (
 		title = STATIC
@@ -104,6 +130,7 @@ func (pm *PluginManager) New(pn PluginName) {
 	wi := pm.instances[pn]
 	p := pm.existDynamicPlugin(pn)
 	if p != nil {
+		// Dynamic plugin has high priority.
 		wi.dynamic = true
 		title = DYNAMIC
 		f = p.New
@@ -115,7 +142,7 @@ func (pm *PluginManager) New(pn PluginName) {
 		}
 
 		name := beego.AppConfig.DefaultString(pn.String()+"_plugin", BUILDIN)
-		p, ok = m[name]
+		p, ok = m[PluginImplName(name)]
 		if !ok {
 			return
 		}
@@ -129,6 +156,7 @@ func (pm *PluginManager) New(pn PluginName) {
 	wi.instance = f()
 }
 
+// Reload reloads the instance of the specified plugin interface.
 func (pm *PluginManager) Reload(pn PluginName) {
 	wi := pm.instances[pn]
 	wi.lock.Lock()
@@ -149,14 +177,17 @@ func (pm *PluginManager) existDynamicPlugin(pn PluginName) *Plugin {
 	return nil
 }
 
+// Plugins returns the 'PluginManager'.
 func Plugins() *PluginManager {
 	return pluginMgr
 }
 
+// RegisterPlugin registers a 'Plugin'.
 func RegisterPlugin(p Plugin) {
 	Plugins().Register(p)
 }
 
+// LoadPlugins loads and sets all the plugin interfaces's instance.
 func LoadPlugins() {
 	for t := PluginName(0); t != typeEnd; t++ {
 		Plugins().Instance(t)
