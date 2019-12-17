@@ -159,8 +159,8 @@ func (t *TLSConfig) ServerTlsConfig() (*tls.Config, error) {
 		return t.serverTlsConfig, nil
 	}
 
-	opts := append(tlsutil.DefaultClientTLSOptions(), t.toOptions()...)
-	conf, err := tlsutil.GetClientTLSConfig(opts...)
+	opts := append(tlsutil.DefaultServerTLSOptions(), t.toOptions()...)
+	conf, err := tlsutil.GetServerTLSConfig(opts...)
 	if err != nil {
 		log.Error("get server tls config failed", err)
 	}

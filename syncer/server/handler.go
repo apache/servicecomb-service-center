@@ -102,7 +102,7 @@ func (s *Server) userEvent(event serf.UserEvent) {
 	}
 	var tlsConfig *tls.Config
 	if enabled {
-		tlsConfig, err = s.conf.TLSConfig.ServerTlsConfig()
+		tlsConfig, err = s.conf.TLSConfig.ClientTlsConfig()
 		if err != nil {
 			log.Error("get grpc client tls config failed", err)
 			return
