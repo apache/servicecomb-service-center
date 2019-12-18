@@ -16,15 +16,23 @@
 package plugin
 
 import (
+	"strconv"
+
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"strconv"
 )
 
-type PluginInstance interface{}
-
+// PluginName is an alias, it represents a plugin interface.
 type PluginName int
 
+// PluginImplName is an alias，it represents a plugin interface implementation.
+type PluginImplName string
+
+// PluginInstance is an instance of a plugin interface which is represented by
+// PluginName.
+type PluginInstance interface{}
+
+// String implements fmt.Stringer.
 func (pn PluginName) String() string {
 	if name, ok := pluginNames[pn]; ok {
 		return name
@@ -32,18 +40,22 @@ func (pn PluginName) String() string {
 	return "PLUGIN" + strconv.Itoa(int(pn))
 }
 
+// ActiveConfigs returns all the server's plugin config
 func (pn PluginName) ActiveConfigs() util.JSONObject {
 	return core.ServerInfo.Config.Plugins.Object(pn.String())
 }
 
+// ClearConfigs clears the server's plugin config
 func (pn PluginName) ClearConfigs() {
 	core.ServerInfo.Config.Plugins.Set(pn.String(), nil)
 }
 
+// Plugin generates a plugin instance
+// Plugin holds the 'PluginName' and 'PluginImplName'
+// to manage the plugin instance generation.
 type Plugin struct {
-	// plugin class name
 	PName PluginName
-	// plugin name
-	Name string
-	New  func() PluginInstance
+	Name  PluginImplName
+	// New news an instance of 'PName' represented plugin interface
+	New func() PluginInstance
 }
