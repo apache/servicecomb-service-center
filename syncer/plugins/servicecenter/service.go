@@ -19,7 +19,10 @@ package servicecenter
 import (
 	"context"
 
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	scpb "github.com/apache/servicecomb-service-center/server/core/proto"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
+	"github.com/gogo/protobuf/proto"
 )
 
 // CreateService creates the service of servicecenter
@@ -28,8 +31,28 @@ func (c *Client) CreateService(ctx context.Context, domainProject string, syncSe
 	service.ServiceId = ""
 	serviceID, err := c.cli.CreateService(ctx, domainProject, service)
 	if err != nil {
+		log.Debugf("create service err %v", err)
 		return "", err
 	}
+
+	matches := pb.Expansions(syncService.Expansions).Find(expansionSchema, map[string]string{})
+	if len(matches) > 0 {
+		schemas := make([]*scpb.Schema, 0, len(matches))
+		for _, expansion := range matches {
+			schema := &scpb.Schema{}
+			err1 := proto.Unmarshal(expansion.Bytes, schema)
+			if err1 != nil {
+				log.Errorf(err1, "proto unmarshal %s service schema, serviceID = %s, kind = %v, content = %v failed",
+					PluginName, serviceID, expansion.Kind, expansion.Bytes)
+			}
+			schemas = append(schemas, schema)
+		}
+		err2 := c.CreateSchemas(ctx, domainProject, serviceID, schemas)
+		if err2 != nil {
+			log.Errorf(err2, "create service schemas failed, serviceID = %s", serviceID)
+		}
+	}
+
 	return serviceID, nil
 }
 

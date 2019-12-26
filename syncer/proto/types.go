@@ -35,3 +35,25 @@ func (s SyncMapping) CurrentIndex(instanceID string) int {
 	}
 	return -1
 }
+
+type Expansions []*Expansion
+
+func (e Expansions) Find(kind string, labels map[string]string) Expansions {
+	matches := make(Expansions, 0, 10)
+	for _, expansion := range e {
+		if expansion.Kind != kind || !matchLabels(expansion.Labels, labels) {
+			continue
+		}
+		matches = append(matches, expansion)
+	}
+	return matches
+}
+
+func matchLabels(src, dst map[string]string) bool {
+	for key, val := range dst {
+		if src[key] != val {
+			return false
+		}
+	}
+	return true
+}

@@ -13,7 +13,7 @@ service Sync {
 
 message SyncData {
     repeated SyncService services = 1;
-    repeated SyncInstance Instances = 2;
+    repeated SyncInstance instances = 2;
 }
 
 message SyncService {
@@ -25,7 +25,7 @@ message SyncService {
     string domainProject = 6;
     string environment = 7;
     string pluginName = 8;
-    bytes expansion = 9;
+    repeated Expansion expansions = 9;
     enum Status {
         UNKNOWN = 0;
         UP = 1;
@@ -42,7 +42,7 @@ message SyncInstance {
     HealthCheck healthCheck = 6;
     string version = 7;
     string pluginName = 8;
-    bytes expansion = 9;
+    repeated Expansion expansions = 9;
     enum Status {
         UNKNOWN = 0;
         UP = 1;
@@ -50,6 +50,12 @@ message SyncInstance {
         STARTING = 3;
         OUTOFSERVICE = 4;
     }
+}
+
+message Expansion {
+    string kind = 1;
+    bytes bytes = 2;
+    map<string, string> labels = 3;
 }
 
 message HealthCheck {
