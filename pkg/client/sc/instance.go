@@ -31,6 +31,8 @@ import (
 const (
 	apiDiscoveryInstancesURL = "/v4/%s/registry/instances"
 	apiHeartbeatSetURL       = "/v4/%s/registry/heartbeats"
+	apiInstancesURL          = "/v4/%s/registry/microservices/%s/instances"
+	apiInstanceURL           = "/v4/%s/registry/microservices/%s/instances/%s"
 	apiInstanceHeartbeatURL  = "/v4/%s/registry/microservices/%s/instances/%s/heartbeat"
 )
 
@@ -190,4 +192,66 @@ func (c *SCClient) HeartbeatSet(ctx context.Context, domainProject string, insta
 	}
 
 	return instancesResp.Instances, nil
+}
+
+func (c *SCClient) GetInstancesByServiceId(ctx context.Context, domainProject, providerId, consumerId string) ([]*pb.MicroServiceInstance, *scerr.Error) {
+	domain, project := core.FromDomainProject(domainProject)
+	headers := c.CommonHeaders(ctx)
+	headers.Set("X-Domain-Name", domain)
+	headers.Set("X-ConsumerId", consumerId)
+	resp, err := c.RestDoWithContext(ctx, http.MethodGet,
+		fmt.Sprintf(apiInstancesURL, project, providerId)+"?"+c.parseQuery(ctx),
+		headers, nil)
+	if err != nil {
+		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, c.toError(body)
+	}
+
+	instancesResp := &pb.GetInstancesResponse{}
+	err = json.Unmarshal(body, instancesResp)
+	if err != nil {
+		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+	}
+
+	return instancesResp.Instances, nil
+}
+
+func (c *SCClient) GetInstanceByInstanceId(ctx context.Context, domainProject, providerId, instanceId, consumerId string) (*pb.MicroServiceInstance, *scerr.Error) {
+	domain, project := core.FromDomainProject(domainProject)
+	headers := c.CommonHeaders(ctx)
+	headers.Set("X-Domain-Name", domain)
+	headers.Set("X-ConsumerId", consumerId)
+	resp, err := c.RestDoWithContext(ctx, http.MethodGet,
+		fmt.Sprintf(apiInstanceURL, project, providerId, instanceId)+"?"+c.parseQuery(ctx),
+		headers, nil)
+	if err != nil {
+		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, c.toError(body)
+	}
+
+	instanceResp := &pb.GetOneInstanceResponse{}
+	err = json.Unmarshal(body, instanceResp)
+	if err != nil {
+		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+	}
+
+	return instanceResp.Instance, nil
 }
