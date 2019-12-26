@@ -43,6 +43,8 @@ const (
 	// defined in eureka "com.netflix.discovery.converters.jackson"，
 	// that is kept for backward compatibility
 	defaultDataCenterInfoClass = "com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo"
+
+	expansionDatasource = "datasource"
 )
 
 // toSyncData transform eureka service cache to SyncData
@@ -135,25 +137,32 @@ func toSyncInstance(serviceID string, instance *Instance) (syncInstance *pb.Sync
 		}
 	}
 
-	expansion, err := json.Marshal(instance)
+	content, err := json.Marshal(instance)
 	if err != nil {
 		log.Errorf(err, "transform sc service to syncer service failed: %s", err)
 		return
 	}
-	syncInstance.Expansion = expansion
+	syncInstance.Expansions = []*pb.Expansion{{
+		Kind:   expansionDatasource,
+		Bytes:  content,
+		Labels: map[string]string{},
+	}}
 	return
 }
 
 // toInstance transform SyncInstance to eureka instance
 func toInstance(serviceID string, syncInstance *pb.SyncInstance) (instance *Instance) {
 	instance = &Instance{}
-	if syncInstance.PluginName == PluginName && syncInstance.Expansion != nil {
-		err := json.Unmarshal(syncInstance.Expansion, instance)
-		if err == nil {
-			return
+	if syncInstance.PluginName == PluginName && len(syncInstance.Expansions) > 0 {
+		matches := pb.Expansions(syncInstance.Expansions).Find(expansionDatasource, map[string]string{})
+		if len(matches) > 0 {
+			err := json.Unmarshal(matches[0].Bytes, instance)
+			if err == nil {
+				return
+			}
+			log.Errorf(err, "proto unmarshal %s instance, instanceID = %s, kind = %v, content = %v failed",
+				PluginName, syncInstance.InstanceId, matches[0].Kind, matches[0].Bytes)
 		}
-		log.Errorf(err, "proto unmarshal %s instance, instanceID = %s, content = %v failed",
-			PluginName, syncInstance.InstanceId, syncInstance.Expansion)
 	}
 	instance.InstanceId = syncInstance.InstanceId
 	instance.APP = serviceID
@@ -198,7 +207,7 @@ func toInstance(serviceID string, syncInstance *pb.SyncInstance) (instance *Inst
 			instance.SecureVipAddress = ep
 		}
 	}
-	log.Error(ipAddr,errors.New("sc to eureka hostname failed"))
+	log.Error(ipAddr, errors.New("sc to eureka hostname failed"))
 	instance.IPAddr = ipAddr
 	instance.HostName = ipAddr
 

@@ -28,20 +28,26 @@ import (
 	"github.com/gogo/protobuf/proto"
 )
 
+const (
+	expansionDatasource = "datasource"
+	expansionSchema     = "schema"
+)
+
 // toSyncData transform service-center service cache to SyncData
-func toSyncData(cache *model.Cache) (data *pb.SyncData) {
+func toSyncData(cache *model.Cache, schemas []*scpb.Schema) (data *pb.SyncData) {
 	data = &pb.SyncData{
 		Services:  make([]*pb.SyncService, 0, len(cache.Microservices)),
 		Instances: make([]*pb.SyncInstance, 0, len(cache.Instances)),
 	}
 
 	for _, service := range cache.Microservices {
-		tenant := strings.Split(service.Key, "/")
-		if len(tenant) < 6 {
+		domainProject := getDomainProjectFromServiceKey(service.Key)
+		if domainProject == "" {
 			continue
 		}
 		syncService := toSyncService(service.Value)
-		syncService.DomainProject = strings.Join(tenant[4:6], "/")
+		syncService.DomainProject = domainProject
+		syncService.Expansions = append(syncService.Expansions, schemaExpansions(service.Value, schemas)...)
 
 		syncInstances := toSyncInstances(syncService.ServiceId, cache.Instances)
 		if len(syncInstances) == 0 {
@@ -73,12 +79,17 @@ func toSyncService(service *scpb.MicroService) (syncService *pb.SyncService) {
 		syncService.Status = pb.SyncService_UNKNOWN
 	}
 
-	expansion, err := proto.Marshal(service)
+	content, err := proto.Marshal(service)
 	if err != nil {
 		log.Errorf(err, "transform sc service to syncer service failed: %s", err)
 		return
 	}
-	syncService.Expansion = expansion
+
+	syncService.Expansions = []*pb.Expansion{{
+		Kind:   expansionDatasource,
+		Bytes:  content,
+		Labels: map[string]string{},
+	}}
 	return
 }
 
@@ -144,26 +155,53 @@ func toSyncInstance(serviceID string, instance *scpb.MicroServiceInstance) (sync
 		}
 	}
 
-	expansion, err := proto.Marshal(instance)
+	content, err := proto.Marshal(instance)
 	if err != nil {
-		log.Errorf(err, "transform sc service to syncer service failed: %s", err)
+		log.Errorf(err, "transform sc instance to syncer instance failed: %s", err)
 		return
 	}
-	syncInstance.Expansion = expansion
+
+	syncInstance.Expansions = []*pb.Expansion{{
+		Kind:   expansionDatasource,
+		Bytes:  content,
+		Labels: map[string]string{},
+	}}
+	return
+}
+
+func schemaExpansions(service *scpb.MicroService, schemas []*scpb.Schema) (expansions []*pb.Expansion) {
+	for _, val := range schemas {
+		if !inSlice(service.Schemas, val.SchemaId) {
+			continue
+		}
+
+		content, err := proto.Marshal(val)
+		if err != nil {
+			log.Errorf(err, "proto marshal schemas failed, app = %s, service = %s, version = %s datasource = %s",
+				service.AppId, service.ServiceName, service.Version, expansionSchema)
+			continue
+		}
+		expansions = append(expansions, &pb.Expansion{
+			Kind:   expansionSchema,
+			Bytes:  content,
+			Labels: map[string]string{},
+		})
+	}
 	return
 }
 
 // toService transform SyncService to service-center service
 func toService(syncService *pb.SyncService) (service *scpb.MicroService) {
 	service = &scpb.MicroService{}
-	if syncService.PluginName == PluginName && syncService.Expansion != nil {
-		err := proto.Unmarshal(syncService.Expansion, service)
-		if err == nil {
-			service.ServiceId = syncService.ServiceId
-			return
+	if syncService.PluginName == PluginName && len(syncService.Expansions) > 0 {
+		matches := pb.Expansions(syncService.Expansions).Find(expansionDatasource, map[string]string{})
+		if len(matches) > 0 {
+			err := proto.Unmarshal(matches[0].Bytes, service)
+			if err != nil {
+				log.Errorf(err, "proto unmarshal %s service, serviceID = %s, kind = %v, content = %v failed",
+					PluginName, service.ServiceId, matches[0].Kind, matches[0].Bytes)
+			}
 		}
-		log.Errorf(err, "proto unmarshal %s service, serviceID = %s, content = %v failed",
-			PluginName, syncService.ServiceId, syncService.Expansion)
 	}
 	service.AppId = syncService.App
 	service.ServiceId = syncService.ServiceId
@@ -177,15 +215,15 @@ func toService(syncService *pb.SyncService) (service *scpb.MicroService) {
 // toInstance transform SyncInstance to service-center instance
 func toInstance(syncInstance *pb.SyncInstance) (instance *scpb.MicroServiceInstance) {
 	instance = &scpb.MicroServiceInstance{}
-	if syncInstance.PluginName == PluginName && syncInstance.Expansion != nil {
-		err := proto.Unmarshal(syncInstance.Expansion, instance)
-		if err == nil {
-			instance.InstanceId = syncInstance.InstanceId
-			instance.ServiceId = syncInstance.ServiceId
-			return
+	if syncInstance.PluginName == PluginName && len(syncInstance.Expansions) > 0 {
+		matches := pb.Expansions(syncInstance.Expansions).Find(expansionDatasource, map[string]string{})
+		if len(matches) > 0 {
+			err := proto.Unmarshal(matches[0].Bytes, instance)
+			if err != nil {
+				log.Errorf(err, "proto unmarshal %s instance, instanceID = %s, kind = %v, content = %v failed",
+					PluginName, instance.InstanceId, matches[0].Kind, matches[0].Bytes)
+			}
 		}
-		log.Errorf(err, "proto unmarshal %s instance, instanceID = %s, content = %v failed",
-			PluginName, syncInstance.InstanceId, syncInstance.Expansion)
 	}
 	instance.InstanceId = syncInstance.InstanceId
 	instance.ServiceId = syncInstance.ServiceId
@@ -223,4 +261,21 @@ func toInstance(syncInstance *pb.SyncInstance) (instance *scpb.MicroServiceInsta
 		}
 	}
 	return
+}
+
+func getDomainProjectFromServiceKey(serviceKey string) string {
+	tenant := strings.Split(serviceKey, "/")
+	if len(tenant) < 6 {
+		return ""
+	}
+	return strings.Join(tenant[4:6], "/")
+}
+
+func inSlice(slice []string, val string) bool {
+	for _, item := range slice {
+		if item == val {
+			return true
+		}
+	}
+	return false
 }

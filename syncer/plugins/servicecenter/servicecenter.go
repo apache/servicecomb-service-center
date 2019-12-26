@@ -20,6 +20,8 @@ import (
 	"context"
 
 	"github.com/apache/servicecomb-service-center/pkg/client/sc"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	scpb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/syncer/plugins"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 )
@@ -60,5 +62,24 @@ func (c *Client) GetAll(ctx context.Context) (*pb.SyncData, error) {
 	if err != nil {
 		return nil, err
 	}
-	return toSyncData(cache), nil
+
+	schemas := make([]*scpb.Schema, 0, len(cache.Microservices))
+	for _, service := range cache.Microservices {
+		if len(service.Value.Schemas) == 0 {
+			continue
+		}
+
+		domainProject := getDomainProjectFromServiceKey(service.Key)
+		if domainProject == "" {
+			continue
+		}
+
+		ss, err := c.cli.GetSchemasByServiceId(ctx, domainProject, service.Value.ServiceId)
+		if err != nil {
+			log.Warnf("get schemas by serviceId failed: %s", err)
+			continue
+		}
+		schemas = append(schemas, ss...)
+	}
+	return toSyncData(cache, schemas), nil
 }
