@@ -125,8 +125,13 @@ func LoadConfig(filepath string) (*Config, error) {
 
 // Merge other configuration into the current configuration
 func (c *Config) Merge(other *Config) {
-	c.TLSConfig.Merge(syncerName, other.TLSConfig)
-	c.SC.TLSConfig.Merge(servicecenterName, other.SC.TLSConfig)
+	if c.TLSConfig != nil && other.TLSConfig != nil {
+		c.TLSConfig.Merge(syncerName, other.TLSConfig)
+	}
+
+	if c.SC != nil && c.SC.TLSConfig != nil && other.SC != nil && other.SC.TLSConfig != nil {
+		c.SC.TLSConfig.Merge(servicecenterName, other.SC.TLSConfig)
+	}
 }
 
 // Verify Provide config verification
