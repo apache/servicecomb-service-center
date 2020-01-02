@@ -131,19 +131,21 @@ func toSyncInstance(serviceID string, instance *scpb.MicroServiceInstance) (sync
 	}
 
 	for _, ep := range instance.Endpoints {
-		prefix := "http://"
+		endpoint := ep
 		addr, err := url.Parse(ep)
 		if err != nil {
 			log.Errorf(err, "parse sc instance endpoint failed: %s", err)
 			continue
 		}
 		if addr.Scheme == "rest" {
+			prefix := "http://"
 			b, _ := strconv.ParseBool(addr.Query().Get("sslEnabled"))
 			if b {
 				prefix = "https://"
 			}
+			endpoint = strings.Replace(ep, addr.Scheme+"://", prefix, 1)
 		}
-		syncInstance.Endpoints = append(syncInstance.Endpoints, strings.Replace(ep, addr.Scheme+"://", prefix, 1))
+		syncInstance.Endpoints = append(syncInstance.Endpoints, endpoint)
 	}
 
 	if instance.HealthCheck != nil {
@@ -193,14 +195,17 @@ func schemaExpansions(service *scpb.MicroService, schemas []*scpb.Schema) (expan
 // toService transform SyncService to service-center service
 func toService(syncService *pb.SyncService) (service *scpb.MicroService) {
 	service = &scpb.MicroService{}
+	var err error
 	if syncService.PluginName == PluginName && len(syncService.Expansions) > 0 {
 		matches := pb.Expansions(syncService.Expansions).Find(expansionDatasource, map[string]string{})
 		if len(matches) > 0 {
-			err := proto.Unmarshal(matches[0].Bytes, service)
-			if err != nil {
-				log.Errorf(err, "proto unmarshal %s service, serviceID = %s, kind = %v, content = %v failed",
-					PluginName, service.ServiceId, matches[0].Kind, matches[0].Bytes)
+			err = proto.Unmarshal(matches[0].Bytes, service)
+			if err == nil {
+				service.ServiceId = syncService.ServiceId
+				return
 			}
+			log.Errorf(err, "proto unmarshal %s service, serviceID = %s, kind = %v, content = %v failed",
+				PluginName, service.ServiceId, matches[0].Kind, matches[0].Bytes)
 		}
 	}
 	service.AppId = syncService.App
@@ -219,10 +224,14 @@ func toInstance(syncInstance *pb.SyncInstance) (instance *scpb.MicroServiceInsta
 		matches := pb.Expansions(syncInstance.Expansions).Find(expansionDatasource, map[string]string{})
 		if len(matches) > 0 {
 			err := proto.Unmarshal(matches[0].Bytes, instance)
-			if err != nil {
-				log.Errorf(err, "proto unmarshal %s instance, instanceID = %s, kind = %v, content = %v failed",
-					PluginName, instance.InstanceId, matches[0].Kind, matches[0].Bytes)
+			if err == nil {
+				instance.InstanceId = syncInstance.InstanceId
+				instance.ServiceId = syncInstance.ServiceId
+				return
 			}
+			log.Errorf(err, "proto unmarshal %s instance, instanceID = %s, kind = %v, content = %v failed",
+				PluginName, instance.InstanceId, matches[0].Kind, matches[0].Bytes)
+
 		}
 	}
 	instance.InstanceId = syncInstance.InstanceId
@@ -244,9 +253,8 @@ func toInstance(syncInstance *pb.SyncInstance) (instance *scpb.MicroServiceInsta
 			endpoint = strings.Replace(ep, "http://", "rest://", 1)
 		case "https":
 			endpoint = strings.Replace(ep, "https://", "rest://", 1) + "?sslEnabled=true"
-		case "rest":
+		case "rest", "highway":
 			endpoint = ep
-
 		}
 		instance.Endpoints = append(instance.Endpoints, endpoint)
 	}
