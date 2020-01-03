@@ -22,6 +22,9 @@ import (
 	"golang.org/x/net/context"
 )
 
+// AdaptorsIndexer implements discovery.Indexer.
+// AdaptorsIndexer is an aggregator of multi Indexers, and it aggregates all the
+// Indexers' data as it's result.
 type AdaptorsIndexer struct {
 	Adaptors []discovery.Adaptor
 }
@@ -52,10 +55,16 @@ func NewAdaptorsIndexer(as []discovery.Adaptor) *AdaptorsIndexer {
 	return &AdaptorsIndexer{Adaptors: as}
 }
 
+// AggregatorIndexer implements discovery.Indexer.
+// AggregatorIndexer consists of multi Indexers and it decides which Indexer to
+// use based on it's mechanism.
 type AggregatorIndexer struct {
+	// CacheIndexer searches data from all the adaptors's cache.
 	*discovery.CacheIndexer
+	// AdaptorsIndexer searches data from all the adaptors.
 	AdaptorsIndexer discovery.Indexer
-	LocalIndexer    discovery.Indexer
+	// LocalIndexer data from local adaptor.
+	LocalIndexer discovery.Indexer
 }
 
 func (i *AggregatorIndexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (resp *discovery.Response, err error) {

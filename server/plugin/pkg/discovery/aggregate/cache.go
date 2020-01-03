@@ -20,7 +20,9 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
 )
 
-type Cache []discovery.Cache
+// Cache implements CacheReader.
+// Cache is a multi-CacheReader, it reads cache from all CacheReaders.
+type Cache []discovery.CacheReader
 
 func (c Cache) Name() string {
 	if len(c) == 0 {
@@ -94,5 +96,3 @@ func (c Cache) ForEach(iter func(k string, v *discovery.KeyValue) (next bool)) {
 		})
 	}
 }
-func (c Cache) Put(k string, v *discovery.KeyValue) { return }
-func (c Cache) Remove(k string)                     { return }

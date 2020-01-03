@@ -23,14 +23,18 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
 )
 
-// Aggregator is a discovery service adaptor implement of one registry cluster
+// Aggregator implements discovery.Adaptor.
+// Aggregator is an aggregator of multi Adaptors, and it aggregates all the
+// Adaptors' data as it's result.
 type Aggregator struct {
+	// Indexer searches data from all the adapters
 	discovery.Indexer
 	Type     discovery.Type
 	Adaptors []discovery.Adaptor
 }
 
-func (as *Aggregator) Cache() discovery.Cache {
+// Cache gets all the adapters' cache
+func (as *Aggregator) Cache() discovery.CacheReader {
 	var cache Cache
 	for _, a := range as.Adaptors {
 		cache = append(cache, a.Cache())

@@ -17,7 +17,7 @@
 package discovery
 
 type DeferHandler interface {
-	OnCondition(Cache, []KvEvent) bool
+	OnCondition(CacheReader, []KvEvent) bool
 	HandleChan() <-chan KvEvent
 	Reset() bool
 }

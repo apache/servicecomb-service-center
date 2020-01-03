@@ -34,6 +34,12 @@ import (
 	"time"
 )
 
+// KvCacher implements discovery.Cacher.
+// KvCacher manages etcd cache.
+// To update cache, KvCacher watch etcd event and pull data periodly from etcd.
+// When the cache data changes, KvCacher creates events and notifies it's
+// subscribers.
+// Use Cfg to set it's behaviors.
 type KvCacher struct {
 	Cfg *discovery.Config
 
@@ -416,7 +422,7 @@ func (c *KvCacher) doParse(src *mvccpb.KeyValue) (kv *discovery.KeyValue) {
 	return
 }
 
-func (c *KvCacher) Cache() discovery.Cache {
+func (c *KvCacher) Cache() discovery.CacheReader {
 	return c.cache
 }
 

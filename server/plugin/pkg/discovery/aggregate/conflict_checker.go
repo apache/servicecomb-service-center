@@ -25,7 +25,7 @@ import (
 )
 
 type ConflictChecker struct {
-	Cache              discovery.Cache
+	Cache              discovery.CacheReader
 	ConflictHandleFunc func(origin, conflict *discovery.KeyValue)
 }
 
@@ -66,7 +66,7 @@ func (c *ConflictChecker) Check() {
 	}
 }
 
-func NewConflictChecker(cache discovery.Cache, f func(origin, conflict *discovery.KeyValue)) *ConflictChecker {
+func NewConflictChecker(cache discovery.CacheReader, f func(origin, conflict *discovery.KeyValue)) *ConflictChecker {
 	checker := &ConflictChecker{Cache: cache, ConflictHandleFunc: f}
 	gopool.Go(checker.Run)
 	return checker

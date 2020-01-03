@@ -35,7 +35,7 @@ type deferItem struct {
 type InstanceEventDeferHandler struct {
 	Percent float64
 
-	cache     discovery.Cache
+	cache     discovery.CacheReader
 	once      sync.Once
 	enabled   bool
 	items     map[string]*deferItem
@@ -44,7 +44,7 @@ type InstanceEventDeferHandler struct {
 	resetCh   chan struct{}
 }
 
-func (iedh *InstanceEventDeferHandler) OnCondition(cache discovery.Cache, evts []discovery.KvEvent) bool {
+func (iedh *InstanceEventDeferHandler) OnCondition(cache discovery.CacheReader, evts []discovery.KvEvent) bool {
 	if iedh.Percent <= 0 {
 		return false
 	}

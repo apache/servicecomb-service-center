@@ -16,19 +16,32 @@
  */
 package discovery
 
+// Cacher manages cache of some data source, e.g. etcd, kubernetes.
+// An user can do nothing but read the managed cache.
+type Cacher interface {
+	// Cache gets the cache that Cacher manages.
+	Cache() CacheReader
+}
+
+// Cache stores k-v data.
 type Cache interface {
-	Name() string
-	Size() int // the bytes size of the cache
-
-	Get(k string) *KeyValue
-	GetAll(arr *[]*KeyValue) int
-	GetPrefix(prefix string, arr *[]*KeyValue) int
-	ForEach(iter func(k string, v *KeyValue) (next bool))
-
+	CacheReader
+	// Put puts a k-v
 	Put(k string, v *KeyValue)
+	// Remove removes a k-v data
 	Remove(k string)
 }
 
-type Cacher interface {
-	Cache() Cache
+// CacheReader reads k-v data.
+type CacheReader interface {
+	Name() string // The name of implementation
+	Size() int    // the bytes size of the cache
+	// Get gets a value by input key
+	Get(k string) *KeyValue
+	// GetAll gets all the data stored in Cache
+	GetAll(arr *[]*KeyValue) int
+	// GetPrefix gets values by the key prefix
+	GetPrefix(prefix string, arr *[]*KeyValue) int
+	// ForEach executes the given function for each of the k-v
+	ForEach(iter func(k string, v *KeyValue) (next bool))
 }

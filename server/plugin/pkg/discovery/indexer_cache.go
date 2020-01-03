@@ -24,8 +24,10 @@ import (
 	"time"
 )
 
+// CacheIndexer implements discovery.Indexer.
+// CacheIndexer searches data from cache.
 type CacheIndexer struct {
-	Cache Cache
+	Cache CacheReader
 }
 
 func (i *CacheIndexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (resp *Response, _ error) {
@@ -74,7 +76,7 @@ func (i *CacheIndexer) searchByPrefix(op registry.PluginOp) *Response {
 	return resp
 }
 
-func NewCacheIndexer(cache Cache) *CacheIndexer {
+func NewCacheIndexer(cache CacheReader) *CacheIndexer {
 	return &CacheIndexer{
 		Cache: cache,
 	}

@@ -28,6 +28,8 @@ import (
 	"strings"
 )
 
+// EtcdIndexer implements discovery.Indexer.
+// EtcdIndexer searches data from etcd server.
 type EtcdIndexer struct {
 	Client registry.Registry
 	Parser pb.Parser
