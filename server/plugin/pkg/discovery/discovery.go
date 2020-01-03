@@ -16,16 +16,19 @@
  */
 package discovery
 
+// Adaptor is used to do service discovery.
+// To improve the performance, Adaptor may use cache firstly in
+// service discovery.
 type Adaptor interface {
 	Runnable
-	// Indexer is the key indexer of cache
+	// Indexer is used to search data from the registry.
 	Indexer
-	// Cacher is the cache manager to sync data from registry server
-	// and publish the cache event if cache changed
+	// Cacher is used to manage the registry's cache.
 	Cacher
 }
 
+// AdaptorRepository creates Adaptors
 type AdaptorRepository interface {
-	// New is the method new an instance of specify Type adaptor
+	// New news an instance of specify Type adaptor
 	New(t Type, cfg *Config) Adaptor
 }

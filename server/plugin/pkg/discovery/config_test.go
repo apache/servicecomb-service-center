@@ -24,7 +24,7 @@ import (
 type mockDeferHandler struct {
 }
 
-func (m *mockDeferHandler) OnCondition(Cache, []KvEvent) bool {
+func (m *mockDeferHandler) OnCondition(CacheReader, []KvEvent) bool {
 	return false
 }
 func (m *mockDeferHandler) HandleChan() <-chan KvEvent {

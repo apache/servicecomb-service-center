@@ -19,7 +19,8 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
 )
 
-// K8sAdaptor is a discovery service adaptor implement of one kubernetes cluster
+// K8sAdaptor implements discovery.Adaptor.
+// K8sAdaptor does service discovery with kubernetes as it's registry.
 type K8sAdaptor struct {
 	discovery.Cacher
 	discovery.Indexer

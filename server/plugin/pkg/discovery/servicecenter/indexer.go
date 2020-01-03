@@ -27,6 +27,9 @@ import (
 	"golang.org/x/net/context"
 )
 
+// ClusterIndexer implements discovery.Indexer.
+// ClusterIndexer searches data from cache(firstly) and
+// other service-centers(secondly).
 type ClusterIndexer struct {
 	*discovery.CacheIndexer
 	Client *SCClientAggregate

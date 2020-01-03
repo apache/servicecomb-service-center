@@ -20,7 +20,9 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
 )
 
-// ServiceCenterAdaptor is a discovery service adaptor implement of one kubernetes cluster
+// ServiceCenterAdaptor implements discovery.Adaptor.
+// ServiceCenterAdaptor does service discovery with other service-centers
+// as it's registry.
 type ServiceCenterAdaptor struct {
 	discovery.Cacher
 	discovery.Indexer

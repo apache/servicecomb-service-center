@@ -22,6 +22,8 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
 )
 
+// EtcdAdaptor implements discovery.Adaptor.
+// EtcdAdaptor does service discovery with etcd as it's registry.
 type EtcdAdaptor struct {
 	discovery.Cacher
 	discovery.Indexer

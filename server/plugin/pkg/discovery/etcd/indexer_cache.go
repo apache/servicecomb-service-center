@@ -24,6 +24,9 @@ import (
 	"golang.org/x/net/context"
 )
 
+// CacheIndexer implements discovery.Indexer.
+// CacheIndexer searches data from etcd cache(firstly) and
+// etcd server(secondly).
 type CacheIndexer struct {
 	*EtcdIndexer
 	*discovery.CacheIndexer

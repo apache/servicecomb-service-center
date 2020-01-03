@@ -21,6 +21,9 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 )
 
+// CommonCacher implements discovery.Cacher.
+// CommonCacher is universal to manage cache of any registry.
+// Use Cfg to set it's behavior.
 type CommonCacher struct {
 	Cfg *Config
 	// cache for indexer
@@ -29,7 +32,7 @@ type CommonCacher struct {
 	ready chan struct{}
 }
 
-func (c *CommonCacher) Cache() Cache {
+func (c *CommonCacher) Cache() CacheReader {
 	return c.cache
 }
 
