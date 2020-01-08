@@ -47,6 +47,7 @@ require (
 	github.com/gorilla/websocket v1.2.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.3.0 // indirect
+	github.com/hashicorp/mdns v1.0.1 // indirect
 	github.com/hashicorp/memberlist v0.1.3
 	github.com/hashicorp/serf v0.8.3
 	github.com/howeyc/gopass v0.0.0-20170109162249-bf9dde6d0d2c // indirect
