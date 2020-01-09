@@ -114,4 +114,3 @@ require (
 	k8s.io/client-go v2.0.0-alpha.0.0.20180817174322-745ca8300397+incompatible
 )
 
-go 1.13
