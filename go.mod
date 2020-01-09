@@ -12,7 +12,7 @@ replace (
 	google.golang.org/grpc v1.7.5 => github.com/grpc/grpc-go v1.7.5
 	k8s.io/api v0.0.0-20180601181742-8b7507fac302 => github.com/kubernetes/api v0.0.0-20180601181742-8b7507fac302
 	k8s.io/apimachinery v0.0.0-20180601181227-17529ec7eadb => github.com/kubernetes/apimachinery v0.0.0-20180601181227-17529ec7eadb
-	k8s.io/client-go v2.0.0-alpha.0.0.20180817174322-745ca8300397+incompatible => github.com/kubernetes/client-go v2.0.0-alpha.0.0.20180817174322-745ca8300397+incompatible
+	k8s.io/client-go v2.0.0-alpha.0.0.20180817174322-745ca8300397+incompatible => github.com/kubernetes/client-go v0.0.0-20180817174322-745ca8300397
 )
 
 require (
@@ -113,3 +113,5 @@ require (
 	k8s.io/apimachinery v0.0.0-20180601181227-17529ec7eadb
 	k8s.io/client-go v2.0.0-alpha.0.0.20180817174322-745ca8300397+incompatible
 )
+
+go 1.13
