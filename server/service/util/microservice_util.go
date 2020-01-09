@@ -18,14 +18,18 @@ package util
 
 import (
 	"encoding/json"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
-	"github.com/coreos/etcd/mvcc/mvccpb"
+	"strings"
+
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	apt "github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/backend"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/quota"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
+
 	"golang.org/x/net/context"
 )
 
@@ -43,16 +47,7 @@ func GetServiceWithRev(ctx context.Context, domain string, id string, rev int64)
 	if len(serviceResp.Kvs) == 0 {
 		return nil, nil
 	}
-	service := &pb.MicroService{}
-	err = json.Unmarshal(serviceResp.Kvs[0].Value, &service)
-	if err != nil {
-		return nil, err
-	}
-	return service, nil
-}
-
-func GetServiceInCache(ctx context.Context, domain string, id string) (*pb.MicroService, error) {
-	return GetService(util.SetContext(util.CloneContext(ctx), CTX_CACHEONLY, "1"), domain, id)
+	return serviceResp.Kvs[0].Value.(*pb.MicroService), nil
 }
 
 func GetService(ctx context.Context, domainProject string, serviceId string) (*pb.MicroService, error) {
@@ -65,15 +60,10 @@ func GetService(ctx context.Context, domainProject string, serviceId string) (*p
 	if len(serviceResp.Kvs) == 0 {
 		return nil, nil
 	}
-	service := &pb.MicroService{}
-	err = json.Unmarshal(serviceResp.Kvs[0].Value, &service)
-	if err != nil {
-		return nil, err
-	}
-	return service, nil
+	return serviceResp.Kvs[0].Value.(*pb.MicroService), nil
 }
 
-func GetServicesRawData(ctx context.Context, domainProject string) ([]*mvccpb.KeyValue, error) {
+func getServicesRawData(ctx context.Context, domainProject string) ([]*discovery.KeyValue, error) {
 	key := apt.GenerateServiceKey(domainProject, "")
 	opts := append(FromContext(ctx),
 		registry.WithStrKey(key),
@@ -85,19 +75,51 @@ func GetServicesRawData(ctx context.Context, domainProject string) ([]*mvccpb.Ke
 	return resp.Kvs, err
 }
 
-func GetServicesByDomain(ctx context.Context, domainProject string) ([]*pb.MicroService, error) {
-	kvs, err := GetServicesRawData(ctx, domainProject)
+//GetAllServicesAcrossDomainProject get services of all domains, projects
+//the map's key is domainProject
+func GetAllServicesAcrossDomainProject(ctx context.Context) (map[string][]*pb.MicroService, error) {
+	key := apt.GetServiceRootKey("")
+	opts := append(FromContext(ctx),
+		registry.WithStrKey(key),
+		registry.WithPrefix())
+	serviceResp, err := backend.Store().Service().Search(ctx, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	services := make(map[string][]*pb.MicroService)
+	if len(serviceResp.Kvs) == 0 {
+		return services, nil
+	}
+
+	for _, value := range serviceResp.Kvs {
+		prefix := util.BytesToStringWithNoCopy(value.Key)
+		parts := strings.Split(prefix, apt.SPLIT)
+		if len(parts) != 7 {
+			continue
+		}
+		domainProject := parts[4] + apt.SPLIT + parts[5]
+		microService, ok := value.Value.(*pb.MicroService)
+		if !ok {
+			log.Error("backend data is not type *pb.MicroService", nil)
+			continue
+		}
+		if _, ok := services[domainProject]; !ok {
+			services[domainProject] = make([]*pb.MicroService, 0)
+		}
+		services[domainProject] = append(services[domainProject], microService)
+	}
+	return services, nil
+}
+
+func GetServicesByDomainProject(ctx context.Context, domainProject string) ([]*pb.MicroService, error) {
+	kvs, err := getServicesRawData(ctx, domainProject)
 	if err != nil {
 		return nil, err
 	}
 	services := []*pb.MicroService{}
-	for _, kvs := range kvs {
-		service := &pb.MicroService{}
-		err := json.Unmarshal(kvs.Value, service)
-		if err != nil {
-			return nil, err
-		}
-		services = append(services, service)
+	for _, kv := range kvs {
+		services = append(services, kv.Value.(*pb.MicroService))
 	}
 	return services, nil
 }
@@ -109,8 +131,8 @@ func GetServiceId(ctx context.Context, key *pb.MicroServiceKey) (serviceId strin
 	}
 	if len(serviceId) == 0 {
 		// 别名查询
-		util.Logger().Debugf("could not search microservice %s/%s/%s id by field 'serviceName', now try field 'alias'.",
-			key.AppId, key.ServiceName, key.Version)
+		log.Debugf("could not search microservice[%s/%s/%s/%s] id by 'serviceName', now try 'alias'",
+			key.Environment, key.AppId, key.ServiceName, key.Version)
 		return searchServiceIdFromAlias(ctx, key)
 	}
 	return
@@ -125,7 +147,7 @@ func searchServiceId(ctx context.Context, key *pb.MicroServiceKey) (string, erro
 	if len(resp.Kvs) == 0 {
 		return "", nil
 	}
-	return util.BytesToStringWithNoCopy(resp.Kvs[0].Value), nil
+	return resp.Kvs[0].Value.(string), nil
 }
 
 func searchServiceIdFromAlias(ctx context.Context, key *pb.MicroServiceKey) (string, error) {
@@ -137,39 +159,45 @@ func searchServiceIdFromAlias(ctx context.Context, key *pb.MicroServiceKey) (str
 	if len(resp.Kvs) == 0 {
 		return "", nil
 	}
-	return util.BytesToStringWithNoCopy(resp.Kvs[0].Value), nil
+	return resp.Kvs[0].Value.(string), nil
 }
 
-func GetServiceAllVersions(ctx context.Context, key *pb.MicroServiceKey, alias bool) (*registry.PluginResponse, error) {
-	key.Version = ""
-	var prefix string
+func GetServiceAllVersions(ctx context.Context, key *pb.MicroServiceKey, alias bool) (*discovery.Response, error) {
+	copy := *key
+	copy.Version = ""
+	var (
+		prefix  string
+		indexer discovery.Indexer
+	)
 	if alias {
-		prefix = apt.GenerateServiceAliasKey(key)
+		prefix = apt.GenerateServiceAliasKey(&copy)
+		indexer = backend.Store().ServiceAlias()
 	} else {
-		prefix = apt.GenerateServiceIndexKey(key)
+		prefix = apt.GenerateServiceIndexKey(&copy)
+		indexer = backend.Store().ServiceIndex()
 	}
 	opts := append(FromContext(ctx),
 		registry.WithStrKey(prefix),
 		registry.WithPrefix(),
 		registry.WithDescendOrder())
-	resp, err := backend.Store().ServiceIndex().Search(ctx, opts...)
+	resp, err := indexer.Search(ctx, opts...)
 	return resp, err
 }
 
-func FindServiceIds(ctx context.Context, versionRule string, key *pb.MicroServiceKey) ([]string, error) {
+func FindServiceIds(ctx context.Context, versionRule string, key *pb.MicroServiceKey) ([]string, bool, error) {
 	// 版本规则
-	ids := []string{}
 	match := ParseVersionRule(versionRule)
 	if match == nil {
-		key.Version = versionRule
-		serviceId, err := GetServiceId(ctx, key)
+		copy := *key
+		copy.Version = versionRule
+		serviceId, err := GetServiceId(ctx, &copy)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		if len(serviceId) > 0 {
-			ids = append(ids, serviceId)
+			return []string{serviceId}, true, nil
 		}
-		return ids, nil
+		return nil, false, nil
 	}
 
 	searchAlias := false
@@ -178,17 +206,17 @@ func FindServiceIds(ctx context.Context, versionRule string, key *pb.MicroServic
 FIND_RULE:
 	resp, err := GetServiceAllVersions(ctx, key, searchAlias)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	if len(resp.Kvs) > 0 {
-		ids = match(resp.Kvs)
-	}
-	if len(ids) == 0 && alsoFindAlias {
+	if len(resp.Kvs) == 0 {
+		if !alsoFindAlias {
+			return nil, false, nil
+		}
 		searchAlias = true
 		alsoFindAlias = false
 		goto FIND_RULE
 	}
-	return ids, nil
+	return match(resp.Kvs), true, nil
 }
 
 func ServiceExist(ctx context.Context, domainProject string, serviceId string) bool {
@@ -204,7 +232,7 @@ func ServiceExist(ctx context.Context, domainProject string, serviceId string) b
 
 func GetAllServiceUtil(ctx context.Context) ([]*pb.MicroService, error) {
 	domainProject := util.ParseDomainProject(ctx)
-	services, err := GetServicesByDomain(ctx, domainProject)
+	services, err := GetServicesByDomainProject(ctx, domainProject)
 	if err != nil {
 		return nil, err
 	}
@@ -224,7 +252,7 @@ func UpdateService(domainProject string, serviceId string, service *pb.MicroServ
 	key := apt.GenerateServiceKey(domainProject, serviceId)
 	data, err := json.Marshal(service)
 	if err != nil {
-		util.Logger().Errorf(err, "marshal service failed.")
+		log.Errorf(err, "marshal service file failed")
 		return
 	}
 	opt = registry.OpPut(registry.WithStrKey(key), registry.WithValue(data))

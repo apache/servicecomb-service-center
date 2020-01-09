@@ -17,10 +17,9 @@
 package service_test
 
 import (
-	"fmt"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/quota/buildin"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	scerr "github.com/apache/servicecomb-service-center/server/error"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/quota"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"strconv"
@@ -201,7 +200,7 @@ var _ = Describe("'Rule' service", func() {
 
 		Context("when create rule out of gauge", func() {
 			It("should be failed", func() {
-				size := buildin.RULE_NUM_MAX_LIMIT_PER_SERVICE + 1
+				size := quota.DefaultRuleQuota + 1
 				rules := make([]*pb.AddOrUpdateServiceRule, 0, size)
 				for i := 0; i < size; i++ {
 					rules = append(rules, &pb.AddOrUpdateServiceRule{
@@ -537,8 +536,8 @@ var _ = Describe("'Rule' service", func() {
 
 				By("rules is invalid")
 				var arr []string
-				for i := 0; i < buildin.RULE_NUM_MAX_LIMIT_PER_SERVICE+1; i++ {
-					arr = append(arr, fmt.Sprint(i))
+				for i := 0; i < quota.DefaultRuleQuota+1; i++ {
+					arr = append(arr, strconv.Itoa(i))
 				}
 				respAddRule, err = serviceResource.DeleteRule(getContext(), &pb.DeleteServiceRulesRequest{
 					ServiceId: serviceId,
@@ -581,7 +580,7 @@ var _ = Describe("'Rule' service", func() {
 			respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 				Service: &pb.MicroService{
 					AppId:       "query_instance_tag",
-					ServiceName: "query_instance_tag_service",
+					ServiceName: "query_instance_version_consumer",
 					Version:     "1.0.0",
 					Level:       "FRONT",
 					Status:      pb.MS_UP,
@@ -656,7 +655,7 @@ var _ = Describe("'Rule' service", func() {
 			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 				Service: &pb.MicroService{
 					AppId:       "query_instance_tag",
-					ServiceName: "query_instance_tag_service",
+					ServiceName: "query_instance_tag_consumer",
 					Version:     "1.0.4",
 					Level:       "FRONT",
 					Status:      pb.MS_UP,
@@ -682,7 +681,7 @@ var _ = Describe("'Rule' service", func() {
 					ProviderServiceId: providerBlack,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).To(Equal(scerr.ErrPermissionDeny))
+				Expect(resp.Response.Code).To(Equal(scerr.ErrServiceNotExists))
 
 				By("consumer tag in black list")
 				resp, err = instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
@@ -690,7 +689,27 @@ var _ = Describe("'Rule' service", func() {
 					ProviderServiceId: providerBlack,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).To(Equal(scerr.ErrPermissionDeny))
+				Expect(resp.Response.Code).To(Equal(scerr.ErrServiceNotExists))
+
+				By("find should return 200 even if consumer permission deny")
+				respFind, err := instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: consumerVersion,
+					AppId:             "query_instance_tag",
+					ServiceName:       "query_instance_tag_service",
+					VersionRule:       "0+",
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(len(respFind.Instances)).To(Equal(0))
+				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: consumerTag,
+					AppId:             "query_instance_tag",
+					ServiceName:       "query_instance_tag_service",
+					VersionRule:       "0+",
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(len(respFind.Instances)).To(Equal(0))
 
 				By("consumer not in black list")
 				resp, err = instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
@@ -706,7 +725,7 @@ var _ = Describe("'Rule' service", func() {
 					ProviderServiceId: providerWhite,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).To(Equal(scerr.ErrPermissionDeny))
+				Expect(resp.Response.Code).To(Equal(scerr.ErrServiceNotExists))
 
 				By("consumer version in white list")
 				resp, err = instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{

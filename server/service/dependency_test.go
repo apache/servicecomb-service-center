@@ -17,12 +17,12 @@
 package service_test
 
 import (
-	"fmt"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
-	"github.com/apache/incubator-servicecomb-service-center/server/service/event"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	scerr "github.com/apache/servicecomb-service-center/server/error"
+	"github.com/apache/servicecomb-service-center/server/service/event"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"strconv"
 )
 
 var deh event.DependencyEventHandler
@@ -32,6 +32,7 @@ var _ = Describe("'Dependency' service", func() {
 		var (
 			consumerId1 string
 			consumerId2 string
+			consumerId3 string
 		)
 
 		It("should be passed", func() {
@@ -47,6 +48,19 @@ var _ = Describe("'Dependency' service", func() {
 			Expect(err).To(BeNil())
 			Expect(respCreateService.Response.Code).To(Equal(pb.Response_SUCCESS))
 			consumerId1 = respCreateService.ServiceId
+
+			respCreateService, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "create_dep_group",
+					ServiceName: "create_dep_consumer_all",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreateService.Response.Code).To(Equal(pb.Response_SUCCESS))
+			consumerId3 = respCreateService.ServiceId
 
 			respCreateService, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 				Service: &pb.MicroService{
@@ -356,7 +370,7 @@ var _ = Describe("'Dependency' service", func() {
 					deps = append(deps, &pb.ConsumerDependency{
 						Consumer: &pb.MicroServiceKey{
 							AppId:       "create_dep_group",
-							ServiceName: "create_dep_consumer" + fmt.Sprint(i),
+							ServiceName: "create_dep_consumer" + strconv.Itoa(i),
 							Version:     "1.0.0",
 						},
 						Providers: []*pb.MicroServiceKey{
@@ -443,12 +457,41 @@ var _ = Describe("'Dependency' service", func() {
 				respCreateDependency, err = serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
 					Dependencies: []*pb.ConsumerDependency{
 						{
-							Consumer: consumer,
+							Consumer: &pb.MicroServiceKey{
+								ServiceName: "create_dep_consumer_all",
+								AppId:       "create_dep_group",
+								Version:     "1.0.0",
+							},
 							Providers: []*pb.MicroServiceKey{
 								{
 									ServiceName: "*",
 								},
 							},
+						},
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(respCreateDependency.Response.Code).To(Equal(pb.Response_SUCCESS))
+
+				Expect(deh.Handle()).To(BeNil())
+
+				respPro, err = serviceResource.GetConsumerDependencies(getContext(), &pb.GetDependenciesRequest{
+					ServiceId: consumerId3,
+				})
+				Expect(err).To(BeNil())
+				Expect(respPro.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(len(respPro.Providers)).ToNot(Equal(0))
+
+				By("clean all")
+				respCreateDependency, err = serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
+					Dependencies: []*pb.ConsumerDependency{
+						{
+							Consumer: &pb.MicroServiceKey{
+								ServiceName: "create_dep_consumer_all",
+								AppId:       "create_dep_group",
+								Version:     "1.0.0",
+							},
+							Providers: nil,
 						},
 					},
 				})
@@ -476,7 +519,7 @@ var _ = Describe("'Dependency' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respCreateDependency.Response.Code).To(Equal(pb.Response_SUCCESS))
 
-				By("add 1.0.0-2.0.0")
+				By("add 1.0.0-2.0.0 to override *")
 				respCreateDependency, err = serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
 					Dependencies: []*pb.ConsumerDependency{
 						{
@@ -731,6 +774,8 @@ var _ = Describe("'Dependency' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 
+				Expect(deh.Handle()).To(BeNil())
+
 				respGetC, err = serviceResource.GetConsumerDependencies(getContext(), &pb.GetDependenciesRequest{
 					ServiceId: consumerId1,
 					NoSelf:    true,
@@ -738,6 +783,96 @@ var _ = Describe("'Dependency' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respGetC.Response.Code).To(Equal(pb.Response_SUCCESS))
 				Expect(len(respGetC.Providers)).To(Equal(1))
+
+				By("find before provider register")
+				resp, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: providerId2,
+					AppId:             "get_dep_group",
+					ServiceName:       "get_dep_finder",
+					VersionRule:       "1.0.0+",
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(scerr.ErrServiceNotExists))
+
+				respCreateF, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						AppId:       "get_dep_group",
+						ServiceName: "get_dep_finder",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Status:      pb.MS_UP,
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(respCreateF.Response.Code).To(Equal(pb.Response_SUCCESS))
+				finder1 := respCreateF.ServiceId
+
+				resp, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: providerId2,
+					AppId:             "get_dep_group",
+					ServiceName:       "get_dep_finder",
+					VersionRule:       "1.0.0+",
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+
+				Expect(deh.Handle()).To(BeNil())
+
+				respGetC, err = serviceResource.GetConsumerDependencies(getContext(), &pb.GetDependenciesRequest{
+					ServiceId: providerId2,
+				})
+				Expect(err).To(BeNil())
+				Expect(respGetC.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(len(respGetC.Providers)).To(Equal(1))
+				Expect(respGetC.Providers[0].ServiceId).To(Equal(finder1))
+
+				By("find after delete micro service")
+				respDelP, err := serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{
+					ServiceId: finder1, Force: true,
+				})
+				Expect(err).To(BeNil())
+				Expect(respDelP.Response.Code).To(Equal(pb.Response_SUCCESS))
+
+				Expect(deh.Handle()).To(BeNil())
+
+				respGetC, err = serviceResource.GetConsumerDependencies(getContext(), &pb.GetDependenciesRequest{
+					ServiceId: providerId2,
+				})
+				Expect(err).To(BeNil())
+				Expect(respGetC.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(len(respGetC.Providers)).To(Equal(0))
+
+				respCreateF, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceId:   finder1,
+						AppId:       "get_dep_group",
+						ServiceName: "get_dep_finder",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Status:      pb.MS_UP,
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(respCreateF.Response.Code).To(Equal(pb.Response_SUCCESS))
+
+				resp, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: providerId2,
+					AppId:             "get_dep_group",
+					ServiceName:       "get_dep_finder",
+					VersionRule:       "1.0.0+",
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+
+				Expect(deh.Handle()).To(BeNil())
+
+				respGetC, err = serviceResource.GetConsumerDependencies(getContext(), &pb.GetDependenciesRequest{
+					ServiceId: providerId2,
+				})
+				Expect(err).To(BeNil())
+				Expect(respGetC.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(len(respGetC.Providers)).To(Equal(1))
+				Expect(respGetC.Providers[0].ServiceId).To(Equal(finder1))
 			})
 		})
 	})

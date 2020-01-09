@@ -17,9 +17,9 @@
 package tracing
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/chain"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/pkg/chain"
+	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/server/plugin"
 	"net/http"
 	"strconv"
 )
@@ -45,5 +45,5 @@ func (h *TracingHandler) Handle(i *chain.Invocation) {
 }
 
 func RegisterHandlers() {
-	chain.RegisterHandler(rest.SERVER_CHAIN_NAME, &TracingHandler{})
+	chain.RegisterHandler(rest.ServerChainName, &TracingHandler{})
 }

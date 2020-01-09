@@ -17,9 +17,9 @@
 package context
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/chain"
-	roa "github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/pkg/chain"
+	roa "github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"net/http"
 )
 
@@ -65,5 +65,5 @@ func IsSkip(url string) bool {
 }
 
 func RegisterHandlers() {
-	chain.RegisterHandler(roa.SERVER_CHAIN_NAME, &ContextHandler{})
+	chain.RegisterHandler(roa.ServerChainName, &ContextHandler{})
 }

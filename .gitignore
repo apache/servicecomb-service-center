@@ -1,25 +1,33 @@
 bin/
 output
 **/*.coverprofile
+**/coverage.out
+**/coverage.txt
+**/*.log
+syncer/syncer
 
-service-center.iml
+*.iml
 .idea/
 **/*junit.xml
 **/*.exe
+**/*.tgz
+**/apache-servicecomb-service-center-*
 
 vendor/**
 !vendor/manifest
-!vendor/manifest/github.com/grpc-ecosystem/go-grpc-prometheus
-!vendor/manifest/github.com/grpc-ecosystem/grpc-gateway
 
 # for local UT
-server/service/conf/
-frontend/conf/
+**/conf/
+data
+syncer-data
+!etc/conf/
 frontend/app/bower_components
 etc/data/
 etc/ssl/
-integration/conf/
 frontend/bower_components/
 frontend/node_modules/
-server/govern/conf/
 tmp/
+glide.lock
+servicecomb-service-center
+go.sum
+service-center

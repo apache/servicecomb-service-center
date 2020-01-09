@@ -17,7 +17,9 @@
 package util
 
 import (
+	"os"
 	"testing"
+	"time"
 )
 
 func TestInt16ToInt64(t *testing.T) {
@@ -70,5 +72,103 @@ func TestFileLastName(t *testing.T) {
 	n = FileLastName("/")
 	if n != "/" {
 		t.Fatal("TestFileLastName 'b' failed", n)
+	}
+}
+
+func TestResetTimer(t *testing.T) {
+	timer := time.NewTimer(time.Microsecond)
+	ResetTimer(timer, time.Microsecond)
+	ResetTimer(timer, time.Second)
+	<-timer.C
+}
+
+func TestStringJoin(t *testing.T) {
+	if StringJoin([]string{"a", "b", "c"}, ",") != "a,b,c" {
+		t.Fatalf("TestStringJoin failed")
+	}
+	if StringJoin([]string{"a"}, ",") != "a" {
+		t.Fatalf("TestStringJoin failed")
+	}
+	if StringJoin([]string{"a", "b", "c"}, "") != "abc" {
+		t.Fatalf("TestStringJoin failed")
+	}
+	if StringJoin([]string{}, ",") != "" {
+		t.Fatalf("TestStringJoin failed")
+	}
+	if StringJoin(nil, ",") != "" {
+		t.Fatalf("TestStringJoin failed")
+	}
+}
+
+func TestStringToBytesWithNoCopy(t *testing.T) {
+	b := StringToBytesWithNoCopy("ab")
+	if b[0] != 'a' || b[1] != 'b' {
+		t.Fatalf("TestStringToBytesWithNoCopy failed")
+	}
+}
+
+func TestListToMap(t *testing.T) {
+	m := ListToMap(nil)
+	if m == nil || len(m) > 0 {
+		t.Fatalf("TestListToMap falied")
+	}
+	m = ListToMap([]string{})
+	if m == nil || len(m) > 0 {
+		t.Fatalf("TestListToMap falied")
+	}
+	m = ListToMap([]string{"a"})
+	if m == nil || len(m) != 1 || m["a"] != struct{}{} {
+		t.Fatalf("TestListToMap falied")
+	}
+}
+
+func TestSafeCloseChan(t *testing.T) {
+	var ch chan struct{}
+	SafeCloseChan(ch)
+	ch = make(chan struct{})
+	SafeCloseChan(ch)
+	SafeCloseChan(ch)
+}
+
+func TestSystemPackage(t *testing.T) {
+	if HostName() == "" {
+		t.Fatalf("TestSystemPackage failed")
+	}
+	if !PathExist("../../etc/conf/app.conf") {
+		t.Fatalf("TestSystemPackage failed")
+	}
+}
+
+func TestGetEnvInt(t *testing.T) {
+	os.Unsetenv("a")
+	if GetEnvInt("a", 1) != 1 {
+		t.Fatalf("TestGetEnvInt failed")
+	}
+	os.Setenv("a", "")
+	if GetEnvInt("a", 1) != 1 {
+		t.Fatalf("TestGetEnvInt failed")
+	}
+	os.Setenv("a", "x")
+	if GetEnvInt("a", 1) != 1 {
+		t.Fatalf("TestGetEnvInt failed")
+	}
+	os.Setenv("a", "2")
+	if GetEnvInt("a", 1) != 2 {
+		t.Fatalf("TestGetEnvInt failed")
+	}
+}
+
+func TestGetEnvString(t *testing.T) {
+	os.Unsetenv("a")
+	if GetEnvString("a", "1") != "1" {
+		t.Fatalf("TestGetEnvInt failed")
+	}
+	os.Setenv("a", "")
+	if GetEnvString("a", "1") != "" {
+		t.Fatalf("TestGetEnvInt failed")
+	}
+	os.Setenv("a", "2")
+	if GetEnvString("a", "1") != "2" {
+		t.Fatalf("TestGetEnvInt failed")
 	}
 }

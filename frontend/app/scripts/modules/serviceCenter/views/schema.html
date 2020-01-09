@@ -25,11 +25,12 @@ limitations under the License.
 			<td>{{ schema }}</td>
 			<td>
         		<div class="tooltip-wrapper inline" title="{{(noInstance ? ('noInstanceTip' | translate) : '')}}">
-					<md-button class="md-raised" ng-disabled="noInstance" ng-class="{schemaBtn: !noInstance}" ng-click="testSchema(schema)">
+					<a ng-class="{'disabled': noInstance}" ng-click="testSchema(schema)">
 						{{ "testSchema" | translate }}
-					</md-button>
+					</a>
 				</div>
-        		<md-button class="md-raised schemaBtn"  ng-click="downloadSchema(schema)" >{{ "download" | translate }} HTML</md-button>
+				<span>  |  </span>
+				<a ng-click="downloadSchema(schema)" >{{ "download" | translate }} HTML</a>
 			</td>
 		</tr>
 		<tr ng-if="schemaName.length == 0" class="text-center">
@@ -38,7 +39,7 @@ limitations under the License.
 	</tbody>
 </table>
 <div ng-if="schemaName.length > 0">
-	<md-button class="md-raised schemaBtn" ng-click="downloadAllSchema()">{{ "downloadAll" | translate }}</md-button>
+	<a ng-click="downloadAllSchema()">{{ "downloadAll" | translate }}</a>
 </div>
 <div id="singleTemplate" ng-hide="true">
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.3.2/swagger-ui.css">

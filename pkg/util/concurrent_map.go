@@ -1,19 +1,20 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// +build !go1.9
+
 package util
 
 import "sync"
@@ -38,23 +39,42 @@ func (cm *ConcurrentMap) init() {
 	cm.once.Do(cm.resize)
 }
 
-func (cm *ConcurrentMap) Put(key, val interface{}) (old interface{}) {
+func (cm *ConcurrentMap) Put(key, val interface{}) {
 	cm.init()
 	cm.mux.Lock()
-	old, cm.items[key] = cm.items[key], val
+	cm.items[key] = val
 	cm.mux.Unlock()
 	return
 }
 
-func (cm *ConcurrentMap) PutIfAbsent(key, val interface{}) (old interface{}) {
-	var b bool
+func (cm *ConcurrentMap) PutIfAbsent(key, val interface{}) (exist interface{}) {
 	cm.init()
 	cm.mux.Lock()
-	old, b = cm.items[key]
+	var b bool
+	exist, b = cm.items[key]
 	if !b {
-		cm.items[key] = val
+		cm.items[key], exist = val, val
 	}
 	cm.mux.Unlock()
+	return
+}
+
+func (cm *ConcurrentMap) Fetch(key interface{}, f func() (interface{}, error)) (exist interface{}, err error) {
+	cm.init()
+	cm.mux.RLock()
+	var b bool
+	exist, b = cm.items[key]
+	cm.mux.RUnlock()
+	if !b {
+		cm.mux.Lock()
+		exist, b = cm.items[key]
+		if !b {
+			if exist, err = f(); err == nil {
+				cm.items[key] = exist
+			}
+		}
+		cm.mux.Unlock()
+	}
 	return
 }
 
@@ -66,14 +86,10 @@ func (cm *ConcurrentMap) Get(key interface{}) (val interface{}, b bool) {
 	return
 }
 
-func (cm *ConcurrentMap) Remove(key interface{}) (old interface{}) {
-	var b bool
+func (cm *ConcurrentMap) Remove(key interface{}) {
 	cm.init()
 	cm.mux.Lock()
-	old, b = cm.items[key]
-	if b {
-		delete(cm.items, key)
-	}
+	delete(cm.items, key)
 	cm.mux.Unlock()
 	return
 }
@@ -96,25 +112,22 @@ func (cm *ConcurrentMap) ForEach(f func(item MapItem) (next bool)) {
 		return
 	}
 	// avoid dead lock in function 'f'
-	ch := make(chan MapItem, s)
+	ch := make([]MapItem, 0, s)
 	for k, v := range cm.items {
-		ch <- MapItem{k, v}
+		ch = append(ch, MapItem{k, v})
 	}
 	cm.mux.RUnlock()
 
-	for {
-		select {
-		case item := <-ch:
-			if b := f(item); b {
-				continue
-			}
-		default:
+	for _, i := range ch {
+		if b := f(i); b {
+			continue
 		}
 		break
 	}
-	close(ch)
 }
 
 func NewConcurrentMap(size int) *ConcurrentMap {
-	return &ConcurrentMap{size: size}
+	c := &ConcurrentMap{size: size}
+	c.init()
+	return c
 }

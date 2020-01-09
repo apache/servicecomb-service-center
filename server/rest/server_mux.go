@@ -17,21 +17,51 @@
 package rest
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"net/http"
 )
 
-var DefaultServerMux = http.NewServeMux()
+// The rest middleware design:
+//   http requests -> DefaultServerMux [ -> ROA router -> handler chain ] -> services
+// Usages:
+//   1. if use rest.RegisterServant:
+//      to register in ROA and requests will go through the handler chain
+//   2. if use RegisterServerHandleFunc or RegisterServerHandler:
+//      to register in ServeMux directly
+
+const defaultServeMux = "default"
+
+var (
+	DefaultServerMux = http.NewServeMux()
+	serveMuxMap      = map[string]*http.ServeMux{
+		defaultServeMux: DefaultServerMux,
+	}
+)
+
+func RegisterServeMux(name string) {
+	serveMuxMap[name] = http.NewServeMux()
+}
+
+func RegisterServeMuxHandleFunc(name, pattern string, f http.HandlerFunc) {
+	serveMuxMap[name].HandleFunc(pattern, f)
+
+	log.Infof("register serve mux '%s' http handle function %s(), pattern %s",
+		name, util.FuncName(f), pattern)
+}
+
+func RegisterServeMuxHandler(name, pattern string, h http.Handler) {
+	serveMuxMap[name].Handle(pattern, h)
+
+	t := util.Reflect(h).Type
+	log.Infof("register serve mux '%s' http handler %s/%s, pattern %s",
+		name, t.PkgPath(), t.Name(), pattern)
+}
 
 func RegisterServerHandleFunc(pattern string, f http.HandlerFunc) {
-	DefaultServerMux.HandleFunc(pattern, f)
-
-	util.Logger().Infof("register server http handle function %s(), pattern %s", util.FuncName(f), pattern)
+	RegisterServeMuxHandleFunc(defaultServeMux, pattern, f)
 }
 
 func RegisterServerHandler(pattern string, h http.Handler) {
-	DefaultServerMux.Handle(pattern, h)
-
-	t := util.ReflectObject(h).Type
-	util.Logger().Infof("register server http handler %s/%s, pattern %s", t.PkgPath(), t.Name(), pattern)
+	RegisterServeMuxHandler(defaultServeMux, pattern, h)
 }

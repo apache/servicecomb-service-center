@@ -22,7 +22,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/apache/incubator-servicecomb-service-center/frontend/schema"
+	"github.com/apache/servicecomb-service-center/frontend/schema"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 )

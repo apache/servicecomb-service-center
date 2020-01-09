@@ -22,6 +22,13 @@ import (
 	"time"
 )
 
+const (
+	CtxDomain        = "domain"
+	CtxProject       = "project"
+	CtxTargetDomain  = "target-domain"
+	CtxTargetProject = "target-project"
+)
+
 type StringContext struct {
 	parentCtx context.Context
 	kv        *ConcurrentMap
@@ -44,7 +51,10 @@ func (c *StringContext) Value(key interface{}) interface{} {
 	if !ok {
 		return c.parentCtx.Value(key)
 	}
-	v, _ := c.kv.Get(k)
+	v, ok := c.kv.Get(k)
+	if !ok {
+		return FromContext(c.parentCtx, k)
+	}
 	return v
 }
 
@@ -57,7 +67,7 @@ func NewStringContext(ctx context.Context) *StringContext {
 	if !ok {
 		strCtx = &StringContext{
 			parentCtx: ctx,
-			kv:        NewConcurrentMap(10),
+			kv:        NewConcurrentMap(0),
 		}
 	}
 	return strCtx
@@ -74,13 +84,13 @@ func CloneContext(ctx context.Context) context.Context {
 	if !ok {
 		return &StringContext{
 			parentCtx: ctx,
-			kv:        NewConcurrentMap(10),
+			kv:        NewConcurrentMap(0),
 		}
 	}
 
 	strCtx := &StringContext{
 		parentCtx: ctx,
-		kv:        NewConcurrentMap(old.kv.Size()),
+		kv:        NewConcurrentMap(0),
 	}
 
 	old.kv.ForEach(func(item MapItem) bool {
@@ -91,7 +101,10 @@ func CloneContext(ctx context.Context) context.Context {
 }
 
 func FromContext(ctx context.Context, key string) interface{} {
-	return ctx.Value(key)
+	if v := ctx.Value(key); v != nil {
+		return v
+	}
+	return FromMetadata(ctx, key)
 }
 
 func SetRequestContext(r *http.Request, key string, val interface{}) *http.Request {
@@ -113,7 +126,7 @@ func ParseTargetDomainProject(ctx context.Context) string {
 }
 
 func ParseDomain(ctx context.Context) string {
-	v, ok := FromContext(ctx, "domain").(string)
+	v, ok := FromContext(ctx, CtxDomain).(string)
 	if !ok {
 		return ""
 	}
@@ -121,7 +134,7 @@ func ParseDomain(ctx context.Context) string {
 }
 
 func ParseTargetDomain(ctx context.Context) string {
-	v, _ := FromContext(ctx, "target-domain").(string)
+	v, _ := FromContext(ctx, CtxTargetDomain).(string)
 	if len(v) == 0 {
 		return ParseDomain(ctx)
 	}
@@ -129,7 +142,7 @@ func ParseTargetDomain(ctx context.Context) string {
 }
 
 func ParseProject(ctx context.Context) string {
-	v, ok := FromContext(ctx, "project").(string)
+	v, ok := FromContext(ctx, CtxProject).(string)
 	if !ok {
 		return ""
 	}
@@ -137,7 +150,7 @@ func ParseProject(ctx context.Context) string {
 }
 
 func ParseTargetProject(ctx context.Context) string {
-	v, _ := FromContext(ctx, "target-project").(string)
+	v, _ := FromContext(ctx, CtxTargetProject).(string)
 	if len(v) == 0 {
 		return ParseProject(ctx)
 	}
@@ -145,19 +158,19 @@ func ParseTargetProject(ctx context.Context) string {
 }
 
 func SetDomain(ctx context.Context, domain string) context.Context {
-	return SetContext(ctx, "domain", domain)
+	return SetContext(ctx, CtxDomain, domain)
 }
 
 func SetProject(ctx context.Context, project string) context.Context {
-	return SetContext(ctx, "project", project)
+	return SetContext(ctx, CtxProject, project)
 }
 
 func SetTargetDomain(ctx context.Context, domain string) context.Context {
-	return SetContext(ctx, "target-domain", domain)
+	return SetContext(ctx, CtxTargetDomain, domain)
 }
 
 func SetTargetProject(ctx context.Context, project string) context.Context {
-	return SetContext(ctx, "target-project", project)
+	return SetContext(ctx, CtxTargetProject, project)
 }
 
 func SetDomainProject(ctx context.Context, domain string, project string) context.Context {

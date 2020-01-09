@@ -18,16 +18,10 @@ package rest
 
 import (
 	"crypto/tls"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	sctls "github.com/apache/incubator-servicecomb-service-center/server/tls"
-	"net/http"
+	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/plugin"
 	"time"
-)
-
-var (
-	defaultRESTfulServer *rest.Server
 )
 
 func LoadConfig() (srvCfg *rest.ServerConfig, err error) {
@@ -39,7 +33,7 @@ func LoadConfig() (srvCfg *rest.ServerConfig, err error) {
 	maxHeaderBytes := int(core.ServerInfo.Config.MaxHeaderBytes)
 	var tlsConfig *tls.Config
 	if core.ServerInfo.Config.SslEnabled {
-		tlsConfig, err = sctls.GetServerTLSConfig()
+		tlsConfig, err = plugin.Plugins().TLS().ServerConfig()
 		if err != nil {
 			return
 		}
@@ -50,49 +44,8 @@ func LoadConfig() (srvCfg *rest.ServerConfig, err error) {
 	srvCfg.WriteTimeout = writeTimeout
 	srvCfg.MaxHeaderBytes = maxHeaderBytes
 	srvCfg.TLSConfig = tlsConfig
+	srvCfg.Handler = DefaultServerMux
 	return
-}
-
-func newDefaultServer(addr string, handler http.Handler) error {
-	if defaultRESTfulServer != nil {
-		return nil
-	}
-	srvCfg, err := LoadConfig()
-	if err != nil {
-		return err
-	}
-	srvCfg.Handler = handler
-	defaultRESTfulServer = rest.NewServer(srvCfg)
-	util.Logger().Warnf(nil, "listen on server %s.", addr)
-
-	return nil
-}
-
-func ListenAndServeTLS(addr string, handler http.Handler) (err error) {
-	err = newDefaultServer(addr, handler)
-	if err != nil {
-		return err
-	}
-	// 证书已经在config里加载，这里不需要再重新加载
-	return defaultRESTfulServer.ListenAndServeTLS("", "")
-}
-func ListenAndServe(addr string, handler http.Handler) (err error) {
-	err = newDefaultServer(addr, handler)
-	if err != nil {
-		return err
-	}
-	return defaultRESTfulServer.ListenAndServe()
-}
-
-func GracefulStop() {
-	if defaultRESTfulServer == nil {
-		return
-	}
-	defaultRESTfulServer.Shutdown()
-}
-
-func DefaultServer() *rest.Server {
-	return defaultRESTfulServer
 }
 
 func NewServer(ipAddr string) (srv *rest.Server, err error) {
@@ -102,7 +55,6 @@ func NewServer(ipAddr string) (srv *rest.Server, err error) {
 	}
 	srvCfg.Addr = ipAddr
 	srv = rest.NewServer(srvCfg)
-	srv.Handler = DefaultServerMux
 
 	if srvCfg.TLSConfig == nil {
 		err = srv.Listen()

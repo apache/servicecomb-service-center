@@ -1,9 +1,6 @@
 {
   "name": "Service-Center Management Console",
-  "homepage": "https://github.com/apache/incubator-servicecomb-service-center",
-  "authors": [
-    "asifdxtreme <mohammad.asif.siddiqui1@huawei.com>"
-  ],
+  "homepage": "https://github.com/apache/servicecomb-service-center",
   "description": "Frontend to manage the micro-services",
   "main": "index.html",
   "license": "Apache 2.0",
@@ -18,7 +15,6 @@
     "angular-animate": "^1.4.0",
     "angular-aria": "^1.4.0",
     "angular-material-data-table": "^0.10.10",
-    "angular-chart.js": "^1.1.1",
     "angular-mocks": "^1.4.0",
     "angular-resource": "^1.4.0",
     "angular-sanitize": "^1.4.0",
@@ -30,6 +26,8 @@
     "js-yaml": "3.11.0",
     "jszip": "Stuk/jszip#^3.1.4",
     "swagger-ui": "3.3.2",
-    "angular-swagger-ui": "https://github.com/asifdxtreme/angular-swagger-ui.git#master"
+    "angular-swagger-ui": "https://github.com/asifdxtreme/angular-swagger-ui.git#master",
+    "css-percentage-circle": "https://github.com/afuersch/css-percentage-circle.git#c9f4ea10400cb321c424692868f9e712822cd4e6",
+    "vis": "^4.21.0"
   }
 }

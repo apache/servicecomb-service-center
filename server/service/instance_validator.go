@@ -17,15 +17,16 @@
 package service
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/validate"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/pkg/validate"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"math"
 	"regexp"
 )
 
 var (
 	findInstanceReqValidator        validate.Validator
+	batchFindInstanceReqValidator   validate.Validator
 	getInstanceReqValidator         validate.Validator
 	updateInstanceReqValidator      validate.Validator
 	registerInstanceReqValidator    validate.Validator
@@ -35,9 +36,9 @@ var (
 
 var (
 	instStatusRegex, _ = regexp.Compile("^(" + util.StringJoin([]string{
-		pb.MSI_UP, pb.MSI_DOWN, pb.MSI_STARTING, pb.MSI_OUTOFSERVICE}, "|") + ")?$")
+		pb.MSI_UP, pb.MSI_DOWN, pb.MSI_STARTING, pb.MSI_TESTING, pb.MSI_OUTOFSERVICE}, "|") + ")?$")
 	updateInstStatusRegex, _ = regexp.Compile("^(" + util.StringJoin([]string{
-		pb.MSI_UP, pb.MSI_DOWN, pb.MSI_STARTING, pb.MSI_OUTOFSERVICE}, "|") + ")$")
+		pb.MSI_UP, pb.MSI_DOWN, pb.MSI_STARTING, pb.MSI_TESTING, pb.MSI_OUTOFSERVICE}, "|") + ")$")
 	hbModeRegex, _               = regexp.Compile(`^(push|pull)$`)
 	urlRegex, _                  = regexp.Compile(`^\S*$`)
 	epRegex, _                   = regexp.Compile(`\S+`)
@@ -48,16 +49,31 @@ var (
 
 func FindInstanceReqValidator() *validate.Validator {
 	return findInstanceReqValidator.Init(func(v *validate.Validator) {
-		v.AddRule("ConsumerServiceId", GetServiceReqValidator().GetRule("ServiceId"))
+		v.AddRule("ConsumerServiceId", GetInstanceReqValidator().GetRule("ConsumerServiceId"))
 		v.AddRules(ExistenceReqValidator().GetRules())
 		v.AddRule("VersionRule", ExistenceReqValidator().GetRule("Version"))
 		v.AddRule("Tags", UpdateTagReqValidator().GetRule("Key"))
+		v.AddRule("Environment", MicroServiceKeyValidator().GetRule("Environment"))
+	})
+}
+
+func BatchFindInstanceReqValidator() *validate.Validator {
+	return batchFindInstanceReqValidator.Init(func(v *validate.Validator) {
+		var findServiceValidator validate.Validator
+		findServiceValidator.AddRule("Service", &validate.ValidateRule{Min: 1})
+		findServiceValidator.AddSub("Service", ExistenceReqValidator())
+		var findInstanceValidator validate.Validator
+		findInstanceValidator.AddRule("Instance", &validate.ValidateRule{Min: 1})
+		findInstanceValidator.AddSub("Instance", HeartbeatReqValidator())
+		v.AddRule("ConsumerServiceId", GetInstanceReqValidator().GetRule("ConsumerServiceId"))
+		v.AddSub("Services", &findServiceValidator)
+		v.AddSub("Instances", &findInstanceValidator)
 	})
 }
 
 func GetInstanceReqValidator() *validate.Validator {
 	return getInstanceReqValidator.Init(func(v *validate.Validator) {
-		v.AddRule("ConsumerServiceId", GetServiceReqValidator().GetRule("ServiceId"))
+		v.AddRule("ConsumerServiceId", &validate.ValidateRule{Max: 64, Regexp: serviceIdRegex})
 		v.AddRule("ProviderServiceId", GetServiceReqValidator().GetRule("ServiceId"))
 		v.AddRule("ProviderInstanceId", HeartbeatReqValidator().GetRule("InstanceId"))
 		v.AddRule("Tags", UpdateTagReqValidator().GetRule("Key"))
@@ -81,7 +97,6 @@ func UpdateInstanceReqValidator() *validate.Validator {
 func UpdateInstancePropsReqValidator() *validate.Validator {
 	return updateInstancePropsReqValidator.Init(func(v *validate.Validator) {
 		v.AddRules(heartbeatReqValidator.GetRules())
-		v.AddRule("Properties", UpdateServicePropsReqValidator().GetRule("Properties"))
 	})
 }
 

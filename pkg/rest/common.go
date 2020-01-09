@@ -31,23 +31,27 @@ const (
 	CTX_MATCH_PATTERN = "_server_match_pattern"
 	CTX_MATCH_FUNC    = "_server_match_func"
 
-	SERVER_CHAIN_NAME = "_server_chain"
+	ServerChainName = "_server_chain"
 
 	HEADER_RESPONSE_STATUS = "X-Response-Status"
 
 	HEADER_ALLOW            = "Allow"
+	HEADER_HOST             = "Host"
 	HEADER_SERVER           = "Server"
 	HEADER_CONTENT_TYPE     = "Content-Type"
 	HEADER_CONTENT_ENCODING = "Content-Encoding"
 	HEADER_ACCEPT           = "Accept"
 	HEADER_ACCEPT_ENCODING  = "Accept-Encoding"
 
+	ACCEPT_ANY  = "*/*"
 	ACCEPT_JSON = "application/json"
 
 	CONTENT_TYPE_JSON = "application/json; charset=UTF-8"
 	CONTENT_TYPE_TEXT = "text/plain; charset=UTF-8"
 
 	ENCODING_GZIP = "gzip"
+
+	DEFAULT_CONN_POOL_PER_HOST_SIZE = 5
 )
 
 func isValidMethod(method string) bool {

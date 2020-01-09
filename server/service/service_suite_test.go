@@ -16,16 +16,16 @@
  */
 package service_test
 
+// initialize
+import _ "github.com/apache/servicecomb-service-center/server/init"
+import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/quota/buildin"
-	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/quota/unlimit"
-	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/registry/etcd"
-	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/tracing/buildin"
-	_ "github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/uuid/buildin"
-	"github.com/apache/incubator-servicecomb-service-center/server/service"
-	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/core"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/service"
+	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
+	"github.com/astaxie/beego"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
@@ -34,10 +34,15 @@ import (
 )
 
 var serviceResource pb.ServiceCtrlServer
-var instanceResource pb.SerivceInstanceCtrlServerEx
+var instanceResource pb.ServiceInstanceCtrlServerEx
+
+func init() {
+	beego.AppConfig.Set("registry_plugin", "etcd")
+}
 
 var _ = BeforeSuite(func() {
 	//init plugin
+	core.ServerInfo.Config.EnableCache = false
 	serviceResource, instanceResource = service.AssembleResources()
 })
 

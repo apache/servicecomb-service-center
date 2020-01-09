@@ -18,12 +18,13 @@ package v4
 
 import (
 	"encoding/json"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
-	"github.com/apache/incubator-servicecomb-service-center/server/rest/controller"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/core"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	scerr "github.com/apache/servicecomb-service-center/server/error"
+	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -44,9 +45,10 @@ func (this *SchemaService) URLPatterns() []rest.Route {
 }
 
 func (this *SchemaService) GetSchemas(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
 	request := &pb.GetSchemaRequest{
-		ServiceId: r.URL.Query().Get(":serviceId"),
-		SchemaId:  r.URL.Query().Get(":schemaId"),
+		ServiceId: query.Get(":serviceId"),
+		SchemaId:  query.Get(":schemaId"),
 	}
 	resp, _ := core.ServiceAPI.GetSchemaInfo(r.Context(), request)
 	w.Header().Add("X-Schema-Summary", resp.SchemaSummary)
@@ -59,7 +61,7 @@ func (this *SchemaService) GetSchemas(w http.ResponseWriter, r *http.Request) {
 func (this *SchemaService) ModifySchema(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		util.Logger().Error("body err", err)
+		log.Error("read body failed", err)
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
@@ -67,12 +69,13 @@ func (this *SchemaService) ModifySchema(w http.ResponseWriter, r *http.Request) 
 	request := &pb.ModifySchemaRequest{}
 	err = json.Unmarshal(message, request)
 	if err != nil {
-		util.Logger().Error("Unmarshal error", err)
+		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
-	request.ServiceId = r.URL.Query().Get(":serviceId")
-	request.SchemaId = r.URL.Query().Get(":schemaId")
+	query := r.URL.Query()
+	request.ServiceId = query.Get(":serviceId")
+	request.SchemaId = query.Get(":schemaId")
 	resp, err := core.ServiceAPI.ModifySchema(r.Context(), request)
 	controller.WriteResponse(w, resp.Response, nil)
 }
@@ -80,7 +83,7 @@ func (this *SchemaService) ModifySchema(w http.ResponseWriter, r *http.Request) 
 func (this *SchemaService) ModifySchemas(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		util.Logger().Error("body err", err)
+		log.Error("read body failed", err)
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
@@ -88,7 +91,7 @@ func (this *SchemaService) ModifySchemas(w http.ResponseWriter, r *http.Request)
 	request := &pb.ModifySchemasRequest{}
 	err = json.Unmarshal(message, request)
 	if err != nil {
-		util.Logger().Error("Unmarshal error", err)
+		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
@@ -98,17 +101,19 @@ func (this *SchemaService) ModifySchemas(w http.ResponseWriter, r *http.Request)
 }
 
 func (this *SchemaService) DeleteSchemas(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
 	request := &pb.DeleteSchemaRequest{
-		ServiceId: r.URL.Query().Get(":serviceId"),
-		SchemaId:  r.URL.Query().Get(":schemaId"),
+		ServiceId: query.Get(":serviceId"),
+		SchemaId:  query.Get(":schemaId"),
 	}
 	resp, _ := core.ServiceAPI.DeleteSchema(r.Context(), request)
 	controller.WriteResponse(w, resp.Response, nil)
 }
 
 func (this *SchemaService) GetAllSchemas(w http.ResponseWriter, r *http.Request) {
-	withSchema := r.URL.Query().Get("withSchema")
-	serviceId := r.URL.Query().Get(":serviceId")
+	query := r.URL.Query()
+	withSchema := query.Get("withSchema")
+	serviceId := query.Get(":serviceId")
 	if withSchema != "0" && withSchema != "1" && strings.TrimSpace(withSchema) != "" {
 		controller.WriteError(w, scerr.ErrInvalidParams, "parameter withSchema must be 1 or 0")
 		return

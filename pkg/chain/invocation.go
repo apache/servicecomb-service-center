@@ -17,14 +17,16 @@
 package chain
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"golang.org/x/net/context"
 )
 
 type InvocationOption func(op InvocationOp) InvocationOp
 
 type InvocationOp struct {
-	Func  func(r Result)
+	Func  CallbackFunc
 	Async bool
 }
 
@@ -55,6 +57,12 @@ func (i *Invocation) WithContext(key string, val interface{}) *Invocation {
 	return i
 }
 
+// Next is the method to go next step in handler chain
+// WithFunc and WithAsyncFunc options can add customize callbacks in chain
+// and the callbacks seq like below
+// i.Success/Fail() -> CB1 ---> CB3 ----------> END           goroutine 0
+//                          \-> CB2(async) \                  goroutine 1
+//                                          \-> CB4(async)    goroutine 1 or 2
 func (i *Invocation) Next(opts ...InvocationOption) {
 	var op InvocationOp
 	for _, opt := range opts {
@@ -65,7 +73,7 @@ func (i *Invocation) Next(opts ...InvocationOption) {
 	i.chain.Next(i)
 }
 
-func (i *Invocation) setCallback(f func(r Result), async bool) {
+func (i *Invocation) setCallback(f CallbackFunc, async bool) {
 	if f == nil {
 		return
 	}
@@ -75,7 +83,6 @@ func (i *Invocation) setCallback(f func(r Result), async bool) {
 		i.Async = async
 		return
 	}
-
 	cb := i.Func
 	i.Func = func(r Result) {
 		cb(r)
@@ -83,12 +90,21 @@ func (i *Invocation) setCallback(f func(r Result), async bool) {
 	}
 }
 
-func callback(f func(r Result), async bool, r Result) {
+func callback(f CallbackFunc, async bool, r Result) {
 	c := Callback{Func: f, Async: async}
 	c.Invoke(r)
 }
 
-func (i *Invocation) Invoke(f func(r Result)) {
+func (i *Invocation) Invoke(f CallbackFunc) {
+	defer func() {
+		itf := recover()
+		if itf == nil {
+			return
+		}
+		log.LogPanic(itf)
+
+		i.Fail(errorsEx.RaiseError(itf))
+	}()
 	i.Func = f
 	i.chain.Next(i)
 }

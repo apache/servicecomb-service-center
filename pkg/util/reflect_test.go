@@ -18,7 +18,6 @@ package util
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
 )
 
@@ -34,47 +33,69 @@ type testField struct {
 
 func TestLoadStruct(t *testing.T) {
 	obj1 := testStru{}
-	v := ReflectObject(obj1)
+	v := Reflect(obj1)
 	if v.Type.String() != "util.testStru" {
 		t.Fatalf("TestLoadStruct failed, %s != 'testStru'", v.Type.String())
 	}
 	if len(v.Fields) != 4 {
 		t.Fatalf("TestLoadStruct failed, wrong count of fields")
 	}
+	if v.Name() != "pkg/util.testStru" || v.FullName != "github.com/apache/servicecomb-service-center/pkg/util.testStru" {
+		t.Fatalf("TestLoadStruct failed")
+	}
 	for _, f := range v.Fields {
 		fmt.Println(f.Name, f.Type.String())
 	}
 
 	obj2 := testStru{}
-	v = ReflectObject(obj2)
-	v = ReflectObject(&obj2)
-	v = ReflectObject(nil)
+	v1 := Reflect(obj2)
+	if v1.FullName != v.FullName {
+		t.Fatalf("TestLoadStruct failed")
+	}
+	v2 := Reflect(&obj2)
+	if v2.FullName != v.FullName {
+		t.Fatalf("TestLoadStruct failed")
+	}
+	v = Reflect(nil)
+	if v.FullName != "" {
+		t.Fatalf("TestLoadStruct failed")
+	}
+
+	if FuncName(TestLoadStruct) != "pkg/util.TestLoadStruct" {
+		t.Fatalf("TestLoadStruct failed")
+	}
+	f := TestLoadStruct
+	if FormatFuncName(FuncName(f)) != "TestLoadStruct" {
+		t.Fatalf("TestLoadStruct failed")
+	}
+}
+
+func TestSizeof(t *testing.T) {
+	s := &S{}
+	if Sizeof(s) != 8+152 {
+		t.Fatalf("TestSizeof failed")
+	}
 }
 
 func BenchmarkLoadStruct(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			ReflectObject(testStru{})
+			Reflect(testStru{})
 		}
 	})
 	b.ReportAllocs()
 	// 20000000	        86.9 ns/op	      32 B/op	       1 allocs/op
 }
 
-var (
-	sliceSize  = uint64(reflect.TypeOf(reflect.SliceHeader{}).Size())
-	stringSize = uint64(reflect.TypeOf(reflect.StringHeader{}).Size())
-)
-
 type S struct {
-	a  int
-	s  string
-	p  *S
-	m  map[int32]uint32
-	u  []uint64
-	ua [8]uint64
-	ch chan int
-	i  interface{}
+	a  int              // 8
+	s  string           // 16
+	p  *S               // 8
+	m  map[int32]uint32 // 8
+	u  []uint64         // 24
+	ua [8]uint64        // 64
+	ch chan int         // 8
+	i  interface{}      // 16
 }
 
 func BenchmarkSizeof(b *testing.B) {

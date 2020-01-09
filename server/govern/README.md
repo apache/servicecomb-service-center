@@ -3,10 +3,10 @@
 Service center(SC) support an extend modules mechanism that developers can new some features in SC easily. 
 
 ## Just 4 steps, you can add a module in service center
-1. Create a module(package) under the github.com/apache/incubator-servicecomb-service-center/server package.
+1. Create a module(package) under the github.com/apache/servicecomb-service-center/server package.
 1. Here you just need to implement the controller and service interfaces in your module.
 1. And register service to SC when the module initializes.
-1. Import the package in github.com/apache/incubator-servicecomb-service-center/server/bootstrap/bootstrap.go
+1. Import the package in github.com/apache/servicecomb-service-center/server/bootstrap/bootstrap.go
 
 ## Quit start for the RESTful module
 
@@ -17,7 +17,7 @@ package hello
 
 import (
 	"net/http"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/pkg/rest"
 )
 
 type HelloService struct {
@@ -43,7 +43,7 @@ Register the service in SC ROA framework when the module initializes.
 ```go
 package hello
 
-import roa "github.com/apache/incubator-servicecomb-service-center/pkg/rest"
+import roa "github.com/apache/servicecomb-service-center/pkg/rest"
 
 func init() {
     roa.RegisterServent(&HelloService{})
@@ -54,7 +54,7 @@ Modify [bootstarp.go](/server/bootstrap/bootstrap.go) file to import your module
 
 ```go
 // module
-import _ "github.com/apache/incubator-servicecomb-service-center/server/hello"
+import _ "github.com/apache/servicecomb-service-center/server/hello"
 ```
 
 ## About GRPC module

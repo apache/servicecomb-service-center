@@ -18,24 +18,26 @@ package service
 
 import (
 	"encoding/json"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
-	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	apt "github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/backend"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	scerr "github.com/apache/servicecomb-service-center/server/error"
+	"github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/quota"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
+	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
 	"strconv"
 	"time"
 )
 
 func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRulesRequest) (*pb.AddServiceRulesResponse, error) {
+	remoteIP := util.GetIPFromContext(ctx)
 	err := Validate(in)
 	if err != nil {
-		util.Logger().Errorf(err, "add rule failed, serviceId is %s.", in.ServiceId)
+		log.Errorf(err, "add service[%s] rule failed, operator: %s", in.ServiceId, remoteIP)
 		return &pb.AddServiceRulesResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
@@ -45,7 +47,8 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 
 	// service id存在性校验
 	if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId) {
-		util.Logger().Errorf(nil, "add rule failed, serviceId is %s: service not exist.", in.ServiceId)
+		log.Errorf(nil, "add service[%s] rule failed, service does not exist, operator: %s",
+			in.ServiceId, remoteIP)
 		return &pb.AddServiceRulesResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Service does not exist."),
 		}, nil
@@ -54,7 +57,7 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 	rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
 	errQuota := rst.Err
 	if errQuota != nil {
-		util.Logger().Errorf(errQuota, "")
+		log.Errorf(errQuota, "add service[%s] rule failed, operator: %s", in.ServiceId, remoteIP)
 		response := &pb.AddServiceRulesResponse{
 			Response: pb.CreateResponseWithSCErr(errQuota),
 		}
@@ -76,18 +79,19 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 		//黑白名单只能存在一种，黑名单 or 白名单
 		if len(ruleType) == 0 {
 			ruleType = rule.RuleType
-		} else {
-			if ruleType != rule.RuleType {
-				util.Logger().Errorf(nil, "add rule failed, serviceId is %s:can only exist one type, BLACK or WHITE.", in.ServiceId)
-				return &pb.AddServiceRulesResponse{
-					Response: pb.CreateResponse(scerr.ErrBlackAndWhiteRule, "Service can only contain one rule type, BLACK or WHITE."),
-				}, nil
-			}
+		} else if ruleType != rule.RuleType {
+			log.Errorf(nil, "add service[%s] rule failed, can not add different RuleType at the same time, operator: %s",
+				in.ServiceId, remoteIP)
+			return &pb.AddServiceRulesResponse{
+				Response: pb.CreateResponse(scerr.ErrBlackAndWhiteRule, "Service can only contain one rule type, BLACK or WHITE."),
+			}, nil
+
 		}
 
 		//同一服务，attribute和pattern确定一个rule
 		if serviceUtil.RuleExist(ctx, domainProject, in.ServiceId, rule.Attribute, rule.Pattern) {
-			util.Logger().Infof("This rule more exists, %s ", in.ServiceId)
+			log.Infof("service[%s] rule[%s/%s] already exists, operator: %s",
+				in.ServiceId, rule.Attribute, rule.Pattern, remoteIP)
 			continue
 		}
 
@@ -109,7 +113,8 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 
 		data, err := json.Marshal(ruleAdd)
 		if err != nil {
-			util.Logger().Errorf(err, "add rule failed, serviceId is %s: marshal rule failed.", in.ServiceId)
+			log.Errorf(err, "add service[%s] rule failed, marshal rule[%s/%s] failed, operator: %s",
+				in.ServiceId, ruleAdd.Attribute, ruleAdd.Pattern, remoteIP)
 			return &pb.AddServiceRulesResponse{
 				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 			}, err
@@ -119,7 +124,8 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 		opts = append(opts, registry.OpPut(registry.WithStrKey(indexKey), registry.WithStrValue(ruleAdd.RuleId)))
 	}
 	if len(opts) <= 0 {
-		util.Logger().Infof("add rule successful, serviceId is %s: rule already exists, no rules to add.", in.ServiceId)
+		log.Infof("add service[%s] rule successfully, no rules to add, operator: %s",
+			in.ServiceId, remoteIP)
 		return &pb.AddServiceRulesResponse{
 			Response: pb.CreateResponse(pb.Response_SUCCESS, "Service rules has been added."),
 		}, nil
@@ -131,19 +137,20 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 			registry.CMP_NOT_EQUAL, 0)},
 		nil)
 	if err != nil {
-		util.Logger().Errorf(err, "add rule failed, serviceId is %s: commit data into etcd failed.", in.ServiceId)
+		log.Errorf(err, "add service[%s] rule failed, operator: %s", in.ServiceId, remoteIP)
 		return &pb.AddServiceRulesResponse{
 			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
 		}, err
 	}
 	if !resp.Succeeded {
-		util.Logger().Errorf(nil, "add rule failed, serviceId is %s: service does not exist.", in.ServiceId)
+		log.Errorf(nil, "add service[%s] rule failed, service does not exist, operator: %s",
+			in.ServiceId, remoteIP)
 		return &pb.AddServiceRulesResponse{
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
-	util.Logger().Infof("add rule successful, serviceId %s, ruleIds %v.", in.ServiceId, ruleIds)
+	log.Infof("add service[%s] rule %v successfully, operator: %s", in.ServiceId, ruleIds, remoteIP)
 	return &pb.AddServiceRulesResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Add service rules successfully."),
 		RuleIds:  ruleIds,
@@ -151,9 +158,10 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 }
 
 func (s *MicroServiceService) UpdateRule(ctx context.Context, in *pb.UpdateServiceRuleRequest) (*pb.UpdateServiceRuleResponse, error) {
+	remoteIP := util.GetIPFromContext(ctx)
 	err := Validate(in)
 	if err != nil {
-		util.Logger().Errorf(err, "update rule failed, serviceId is %s, ruleId is %s.", in.ServiceId, in.RuleId)
+		log.Errorf(err, "update service rule[%s/%s] failed, operator: %s", in.ServiceId, in.RuleId, remoteIP)
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
@@ -163,7 +171,8 @@ func (s *MicroServiceService) UpdateRule(ctx context.Context, in *pb.UpdateServi
 
 	// service id存在性校验
 	if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId) {
-		util.Logger().Errorf(nil, "update rule failed, serviceId is %s, ruleId is %s: service not exist.", in.ServiceId, in.RuleId)
+		log.Errorf(nil, "update service rule[%s/%s] failed, service does not exist, operator: %s",
+			in.ServiceId, in.RuleId, remoteIP)
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
@@ -172,13 +181,15 @@ func (s *MicroServiceService) UpdateRule(ctx context.Context, in *pb.UpdateServi
 	//是否能改变ruleType
 	ruleType, ruleNum, err := serviceUtil.GetServiceRuleType(ctx, domainProject, in.ServiceId)
 	if err != nil {
-		util.Logger().Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: get rule type failed.", in.ServiceId, in.RuleId)
+		log.Errorf(err, "update service rule[%s/%s] failed, get rule type failed, operator: %s",
+			in.ServiceId, in.RuleId, remoteIP)
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 	if ruleNum >= 1 && ruleType != in.Rule.RuleType {
-		util.Logger().Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: rule type can exist one type, BLACK or WHITE.rule type is %s", in.ServiceId, in.RuleId, in.Rule.RuleType)
+		log.Errorf(err, "update service rule[%s/%s] failed, can only exist one type, current type is %s, operator: %s",
+			in.ServiceId, in.RuleId, ruleType, remoteIP)
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(scerr.ErrModifyRuleNotAllow, "Exist multiple rules,can not change rule type. Rule type is "+ruleType),
 		}, nil
@@ -186,46 +197,50 @@ func (s *MicroServiceService) UpdateRule(ctx context.Context, in *pb.UpdateServi
 
 	rule, err := serviceUtil.GetOneRule(ctx, domainProject, in.ServiceId, in.RuleId)
 	if err != nil {
-		util.Logger().Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: query service rule failed.", in.ServiceId, in.RuleId)
+		log.Errorf(err, "update service rule[%s/%s] failed, query service rule failed, operator: %s",
+			in.ServiceId, in.RuleId, remoteIP)
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 	if rule == nil {
-		util.Logger().Errorf(err, "update rule failed, serviceId is %s, ruleId is %s:this rule does not exist,can't update.", in.ServiceId, in.RuleId)
+		log.Errorf(err, "update service rule[%s/%s] failed, service rule does not exist, operator: %s",
+			in.ServiceId, in.RuleId, remoteIP)
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(scerr.ErrRuleNotExists, "This rule does not exist."),
 		}, nil
 	}
 
-	oldRulePatten := rule.Pattern
-	oldRuleAttr := rule.Attribute
+	copyRuleRef := *rule
+	oldRulePatten := copyRuleRef.Pattern
+	oldRuleAttr := copyRuleRef.Attribute
 	isChangeIndex := false
-	if rule.Attribute != in.GetRule().Attribute {
+	if copyRuleRef.Attribute != in.GetRule().Attribute {
 		isChangeIndex = true
-		rule.Attribute = in.GetRule().Attribute
+		copyRuleRef.Attribute = in.GetRule().Attribute
 	}
-	if rule.Pattern != in.GetRule().Pattern {
+	if copyRuleRef.Pattern != in.GetRule().Pattern {
 		isChangeIndex = true
-		rule.Pattern = in.GetRule().Pattern
+		copyRuleRef.Pattern = in.GetRule().Pattern
 	}
-	rule.RuleType = in.GetRule().RuleType
-	rule.Description = in.GetRule().Description
-	rule.ModTimestamp = strconv.FormatInt(time.Now().Unix(), 10)
+	copyRuleRef.RuleType = in.GetRule().RuleType
+	copyRuleRef.Description = in.GetRule().Description
+	copyRuleRef.ModTimestamp = strconv.FormatInt(time.Now().Unix(), 10)
 
 	key := apt.GenerateServiceRuleKey(domainProject, in.ServiceId, in.RuleId)
-	data, err := json.Marshal(rule)
+	data, err := json.Marshal(copyRuleRef)
 	if err != nil {
-		util.Logger().Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: marshal service rule failed.", in.ServiceId, in.RuleId)
+		log.Errorf(err, "update service rule[%s/%s] failed, marshal service rule failed, operator: %s",
+			in.ServiceId, in.RuleId, remoteIP)
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
-	opts := []registry.PluginOp{}
+	var opts []registry.PluginOp
 	if isChangeIndex {
 		//加入新的rule index
-		indexKey := apt.GenerateRuleIndexKey(domainProject, in.ServiceId, rule.Attribute, rule.Pattern)
-		opts = append(opts, registry.OpPut(registry.WithStrKey(indexKey), registry.WithStrValue(rule.RuleId)))
+		indexKey := apt.GenerateRuleIndexKey(domainProject, in.ServiceId, copyRuleRef.Attribute, copyRuleRef.Pattern)
+		opts = append(opts, registry.OpPut(registry.WithStrKey(indexKey), registry.WithStrValue(copyRuleRef.RuleId)))
 
 		//删除旧的rule index
 		oldIndexKey := apt.GenerateRuleIndexKey(domainProject, in.ServiceId, oldRuleAttr, oldRulePatten)
@@ -239,19 +254,20 @@ func (s *MicroServiceService) UpdateRule(ctx context.Context, in *pb.UpdateServi
 			registry.CMP_NOT_EQUAL, 0)},
 		nil)
 	if err != nil {
-		util.Logger().Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: commit data into etcd failed.", in.ServiceId, in.RuleId)
+		log.Errorf(err, "update service rule[%s/%s] failed, operator: %s", in.ServiceId, in.RuleId, remoteIP)
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
 		}, err
 	}
 	if !resp.Succeeded {
-		util.Logger().Errorf(err, "update rule failed, serviceId is %s, ruleId is %s: service does not exist.", in.ServiceId, in.RuleId)
+		log.Errorf(err, "update service rule[%s/%s] failed, service does not exist, operator: %s",
+			in.ServiceId, in.RuleId, remoteIP)
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
-	util.Logger().Infof("update rule successful: servieId is %s, ruleId is %s.", in.ServiceId, in.RuleId)
+	log.Infof("update service rule[%s/%s] successfully, operator: %s", in.ServiceId, in.RuleId, remoteIP)
 	return &pb.UpdateServiceRuleResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Get service rules successfully."),
 	}, nil
@@ -260,7 +276,7 @@ func (s *MicroServiceService) UpdateRule(ctx context.Context, in *pb.UpdateServi
 func (s *MicroServiceService) GetRule(ctx context.Context, in *pb.GetServiceRulesRequest) (*pb.GetServiceRulesResponse, error) {
 	err := Validate(in)
 	if err != nil {
-		util.Logger().Errorf(err, "get service rule failed, serviceId %s.", in.ServiceId)
+		log.Errorf(err, "get service[%s] rule failed", in.ServiceId)
 		return &pb.GetServiceRulesResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
@@ -270,7 +286,7 @@ func (s *MicroServiceService) GetRule(ctx context.Context, in *pb.GetServiceRule
 
 	// service id存在性校验
 	if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId) {
-		util.Logger().Errorf(nil, "get service rule failed, serviceId is %s: service not exist.", in.ServiceId)
+		log.Errorf(nil, "get service[%s] rule failed, service does not exist", in.ServiceId)
 		return &pb.GetServiceRulesResponse{
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
@@ -278,7 +294,7 @@ func (s *MicroServiceService) GetRule(ctx context.Context, in *pb.GetServiceRule
 
 	rules, err := serviceUtil.GetRulesUtil(ctx, domainProject, in.ServiceId)
 	if err != nil {
-		util.Logger().Errorf(err, "get service rule failed, serviceId is %s: get rule failed.", in.ServiceId)
+		log.Errorf(err, "get service[%s] rule failed", in.ServiceId)
 		return &pb.GetServiceRulesResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
@@ -291,9 +307,10 @@ func (s *MicroServiceService) GetRule(ctx context.Context, in *pb.GetServiceRule
 }
 
 func (s *MicroServiceService) DeleteRule(ctx context.Context, in *pb.DeleteServiceRulesRequest) (*pb.DeleteServiceRulesResponse, error) {
+	remoteIP := util.GetIPFromContext(ctx)
 	err := Validate(in)
 	if err != nil {
-		util.Logger().Errorf(err, "delete rule failed, serviceId is %s, ruleIds are %s.", in.ServiceId, in.RuleIds)
+		log.Errorf(err, "delete service[%s] rules %v failed, operator: %s", in.ServiceId, in.RuleIds, remoteIP)
 		return &pb.DeleteServiceRulesResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
@@ -303,7 +320,8 @@ func (s *MicroServiceService) DeleteRule(ctx context.Context, in *pb.DeleteServi
 
 	// service id存在性校验
 	if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId) {
-		util.Logger().Errorf(nil, "delete service rule failed, serviceId is %s, rule is %v: service does not exist.", in.ServiceId, in.RuleIds)
+		log.Errorf(nil, "delete service[%s] rules %v failed, service does not exist, operator: %s",
+			in.ServiceId, in.RuleIds, remoteIP)
 		return &pb.DeleteServiceRulesResponse{
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
@@ -314,16 +332,18 @@ func (s *MicroServiceService) DeleteRule(ctx context.Context, in *pb.DeleteServi
 	indexKey := ""
 	for _, ruleId := range in.RuleIds {
 		key = apt.GenerateServiceRuleKey(domainProject, in.ServiceId, ruleId)
-		util.Logger().Debugf("start delete service rule file: %s", key)
+		log.Debugf("start delete service rule file: %s", key)
 		data, err := serviceUtil.GetOneRule(ctx, domainProject, in.ServiceId, ruleId)
 		if err != nil {
-			util.Logger().Errorf(err, "delete service rule failed, serviceId is %s, rule is %v: get rule of ruleId %s failed.", in.ServiceId, in.RuleIds, ruleId)
+			log.Errorf(err, "delete service[%s] rules %v failed, get rule[%s] failed, operator: %s",
+				in.ServiceId, in.RuleIds, ruleId, remoteIP)
 			return &pb.DeleteServiceRulesResponse{
 				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 			}, err
 		}
 		if data == nil {
-			util.Logger().Errorf(nil, "delete service rule failed, serviceId is %s, rule is %v: ruleId %s not exist.", in.ServiceId, in.RuleIds, ruleId)
+			log.Errorf(nil, "delete service[%s] rules %v failed, rule[%s] does not exist, operator: %s",
+				in.ServiceId, in.RuleIds, ruleId, remoteIP)
 			return &pb.DeleteServiceRulesResponse{
 				Response: pb.CreateResponse(scerr.ErrRuleNotExists, "This rule does not exist."),
 			}, nil
@@ -334,7 +354,8 @@ func (s *MicroServiceService) DeleteRule(ctx context.Context, in *pb.DeleteServi
 			registry.OpDel(registry.WithStrKey(indexKey)))
 	}
 	if len(opts) <= 0 {
-		util.Logger().Errorf(nil, "delete service rule failed, serviceId is %s, rule is %v: rule has been deleted.", in.ServiceId, in.RuleIds)
+		log.Errorf(nil, "delete service[%s] rules %v failed, no rule has been deleted, operator: %s",
+			in.ServiceId, in.RuleIds, remoteIP)
 		return &pb.DeleteServiceRulesResponse{
 			Response: pb.CreateResponse(scerr.ErrRuleNotExists, "No service rule has been deleted."),
 		}, nil
@@ -346,19 +367,20 @@ func (s *MicroServiceService) DeleteRule(ctx context.Context, in *pb.DeleteServi
 			registry.CMP_NOT_EQUAL, 0)},
 		nil)
 	if err != nil {
-		util.Logger().Errorf(err, "delete service rule failed, serviceId is %s, rule is %v: commit data into etcd failed.", in.ServiceId, in.RuleIds)
+		log.Errorf(err, "delete service[%s] rules %v failed, operator: %s", in.ServiceId, in.RuleIds, remoteIP)
 		return &pb.DeleteServiceRulesResponse{
 			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
 		}, err
 	}
 	if !resp.Succeeded {
-		util.Logger().Errorf(err, "delete service rule failed, serviceId is %s, rule is %v: service does not exist.", in.ServiceId, in.RuleIds)
+		log.Errorf(err, "delete service[%s] rules %v failed, service does not exist, operator: %s",
+			in.ServiceId, in.RuleIds, remoteIP)
 		return &pb.DeleteServiceRulesResponse{
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
-	util.Logger().Infof("delete rule successful: serviceId %s, ruleIds %v", in.ServiceId, in.RuleIds)
+	log.Infof("delete service[%s] rules %v successfully, operator: %s", in.ServiceId, in.RuleIds, remoteIP)
 	return &pb.DeleteServiceRulesResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Delete service rules successfully."),
 	}, nil

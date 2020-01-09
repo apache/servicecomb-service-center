@@ -18,8 +18,8 @@ package service
 
 import (
 	"errors"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"reflect"
 )
 
@@ -74,6 +74,8 @@ func Validate(v interface{}) error {
 		return RegisterInstanceReqValidator().Validate(v)
 	case *pb.FindInstancesRequest:
 		return FindInstanceReqValidator().Validate(v)
+	case *pb.BatchFindInstancesRequest:
+		return BatchFindInstanceReqValidator().Validate(v)
 	case *pb.HeartbeatRequest, *pb.UnregisterInstanceRequest:
 		return HeartbeatReqValidator().Validate(v)
 	case *pb.UpdateInstancePropsRequest:
@@ -91,7 +93,7 @@ func Validate(v interface{}) error {
 	case *pb.GetAppsRequest:
 		return MicroServiceKeyValidator().Validate(v)
 	default:
-		util.Logger().Warnf(nil, "No validator for %T.", t)
+		log.Warnf("No validator for %T.", t)
 		return nil
 	}
 }

@@ -1,0 +1,81 @@
+syntax = "proto3";
+package proto;
+
+message PullRequest {
+    string serviceName = 1;
+    string options = 2;
+    string time = 3;
+}
+
+service Sync {
+    rpc Pull(PullRequest) returns (SyncData) {}
+}
+
+message SyncData {
+    repeated SyncService services = 1;
+    repeated SyncInstance Instances = 2;
+}
+
+message SyncService {
+    string serviceId = 1;
+    string app = 2;
+    string name = 3;
+    string version = 4;
+    Status status = 5;
+    string domainProject = 6;
+    string environment = 7;
+    string pluginName = 8;
+    bytes expansion = 9;
+    enum Status {
+        UNKNOWN = 0;
+        UP = 1;
+        DOWN = 2;
+    }
+}
+
+message SyncInstance {
+    string instanceId = 1;
+    string serviceId = 2;
+    repeated string endpoints = 3;
+    string hostName = 4;
+    Status status = 5;
+    HealthCheck healthCheck = 6;
+    string version = 7;
+    string pluginName = 8;
+    bytes expansion = 9;
+    enum Status {
+        UNKNOWN = 0;
+        UP = 1;
+        DOWN = 2;
+        STARTING = 3;
+        OUTOFSERVICE = 4;
+    }
+}
+
+message HealthCheck {
+    Modes mode = 1;
+    int32 port = 2;
+    int32 interval = 3;
+    int32 times = 4;
+    string url = 5;
+    enum Modes {
+        UNKNOWN = 0;
+        PUSH = 1;
+        PULL = 2;
+    }
+}
+
+//message Tenant {
+//    string domain = 1;
+//    string project = 2;
+//}
+
+message MappingEntry {
+    string clusterName = 1;
+    //    Tenant tenant = 2;
+    string domainProject = 2;
+    string orgServiceID = 3;
+    string orgInstanceID = 4;
+    string curServiceID = 5;
+    string curInstanceID = 6;
+}

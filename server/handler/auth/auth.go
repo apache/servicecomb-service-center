@@ -17,12 +17,12 @@
 package auth
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/chain"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
-	"github.com/apache/incubator-servicecomb-service-center/server/rest/controller"
+	"github.com/apache/servicecomb-service-center/pkg/chain"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/rest"
+	scerr "github.com/apache/servicecomb-service-center/server/error"
+	"github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	"net/http"
 )
 
@@ -37,7 +37,7 @@ func (h *AuthRequest) Handle(i *chain.Invocation) {
 		return
 	}
 
-	util.Logger().Errorf(err, "authenticate request failed, %s %s", r.Method, r.RequestURI)
+	log.Errorf(err, "authenticate request failed, %s %s", r.Method, r.RequestURI)
 
 	w := i.Context().Value(rest.CTX_RESPONSE).(http.ResponseWriter)
 	controller.WriteError(w, scerr.ErrUnauthorized, err.Error())
@@ -46,5 +46,5 @@ func (h *AuthRequest) Handle(i *chain.Invocation) {
 }
 
 func RegisterHandlers() {
-	chain.RegisterHandler(rest.SERVER_CHAIN_NAME, &AuthRequest{})
+	chain.RegisterHandler(rest.ServerChainName, &AuthRequest{})
 }

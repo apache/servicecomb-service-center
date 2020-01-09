@@ -17,13 +17,16 @@
 package event
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
 )
 
 func init() {
-	backend.AddEventHandler(NewServiceEventHandler())
-	backend.AddEventHandler(NewInstanceEventHandler())
-	backend.AddEventHandler(NewRuleEventHandler())
-	backend.AddEventHandler(NewTagEventHandler())
-	backend.AddEventHandler(NewDependencyEventHandler())
+	discovery.AddEventHandler(NewDomainEventHandler())
+	discovery.AddEventHandler(NewServiceEventHandler())
+	discovery.AddEventHandler(NewInstanceEventHandler())
+	discovery.AddEventHandler(NewRuleEventHandler())
+	discovery.AddEventHandler(NewTagEventHandler())
+	discovery.AddEventHandler(NewDependencyEventHandler())
+	discovery.AddEventHandler(NewDependencyRuleEventHandler())
+	discovery.AddEventHandler(NewSchemaSummaryEventHandler())
 }

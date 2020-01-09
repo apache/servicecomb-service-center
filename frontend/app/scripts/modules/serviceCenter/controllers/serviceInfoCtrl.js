@@ -20,16 +20,17 @@ angular.module('serviceCenter.sc')
 	 '$stateParams','serviceInfo' ,function($scope, httpService, commonService, $q, apiConstant, $state, $stateParams, serviceInfo){
 
 			var serviceId = $stateParams.serviceId;
-			if(serviceInfo && serviceInfo.data && serviceInfo.data.services){
-				serviceInfo.data.services.forEach(function(services){
-	                if(services.serviceId == serviceId){
+			if(serviceInfo && serviceInfo.data && serviceInfo.data.allServicesDetail){
+				serviceInfo.data.allServicesDetail.forEach(function(serviceDetail){
+					var service = serviceDetail.microService;
+	                if(service.serviceId == serviceId){
 	                    $scope.serviceDetail = {
-	                        serviceName: services.serviceName,
-	                        status: services.status,
-	                        appId: services.appId,
-	                        version: services.version,
-	                        createdAt: commonService.timeFormat(services.timestamp),
-	                        serviceId: services.serviceId
+	                        serviceName: service.serviceName,
+	                        status: service.status,
+	                        appId: service.appId,
+	                        version: service.version,
+	                        createdAt: commonService.timeFormat(service.timestamp),
+	                        serviceId: service.serviceId
 	                    };
 	                }
             	});
@@ -46,6 +47,9 @@ angular.module('serviceCenter.sc')
 			var providerUrl = apiConstant.api.provider.url;
 			var providerApi = providerUrl.replace('{{providerId}}', serviceId);
 			apis.push(providerApi);
+			var serviceUrl = apiConstant.api.particularService.url;
+			var particularServiceAPI = serviceUrl.replace('{{serviceId}}', serviceId);
+			apis.push(particularServiceAPI)
 
 			var promises =[];
 			for (var i = 0; i < apis.length; i++) {
@@ -59,10 +63,12 @@ angular.module('serviceCenter.sc')
 				$scope.instances = response[0].data.instances || [];
 				$scope.providers = response[1].data.providers || [];
 				$scope.consumers = response[2].data.consumers || [];
+				$scope.service = response[3].data.service || [];
 			},function(error){
 				$scope.instances = [];
 				$scope.providers = [];
 				$scope.consumers = [];
+				$scope.service = [];
 			});
 
 			$scope.getInstance = function(){
@@ -81,6 +87,12 @@ angular.module('serviceCenter.sc')
 				$state.go('sc.info.schema');
 			};
 
+			$scope.getProperties = function() {
+				$state.go('sc.info.properties');
+			};
+
+
+
 			$scope.convertTime = function(timestamp){
 				return commonService.timeFormat(timestamp);
 			};
@@ -98,6 +110,10 @@ angular.module('serviceCenter.sc')
                 if($state.current.name == "sc.info.schema"){
                     $scope.selectedTab = 3;
                 }
+                if($state.current.name == "sc.info.properties"){
+                    $scope.selectedTab = 4;
+                }
+
 			}
             $scope.getActiveTab();
 

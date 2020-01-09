@@ -22,28 +22,27 @@ import (
 	"syscall"
 )
 
-type restListener struct {
+type TcpListener struct {
 	net.Listener
 	stopCh chan error
 	closed bool
 	server *Server
 }
 
-func newRestListener(l net.Listener, srv *Server) (el *restListener) {
-	el = &restListener{
+func NewTcpListener(l net.Listener, srv *Server) (el *TcpListener) {
+	el = &TcpListener{
 		Listener: l,
 		stopCh:   make(chan error),
 		server:   srv,
 	}
 	go func() {
 		<-el.stopCh
-		el.closed = true
 		el.stopCh <- el.Listener.Close()
 	}()
 	return
 }
 
-func (rl *restListener) Accept() (c net.Conn, err error) {
+func (rl *TcpListener) Accept() (c net.Conn, err error) {
 	tc, err := rl.Listener.(*net.TCPListener).AcceptTCP()
 	if err != nil {
 		return
@@ -63,15 +62,16 @@ func (rl *restListener) Accept() (c net.Conn, err error) {
 	return
 }
 
-func (rl *restListener) Close() error {
+func (rl *TcpListener) Close() error {
 	if rl.closed {
 		return syscall.EINVAL
 	}
+	rl.closed = true
 	rl.stopCh <- nil
 	return <-rl.stopCh
 }
 
-func (rl *restListener) File() *os.File {
+func (rl *TcpListener) File() *os.File {
 	tl := rl.Listener.(*net.TCPListener)
 	fl, _ := tl.File()
 	return fl

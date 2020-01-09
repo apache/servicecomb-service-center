@@ -17,14 +17,14 @@
 package util
 
 import (
-	"encoding/json"
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	apt "github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/backend"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	scerr "github.com/apache/servicecomb-service-center/server/error"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 	"golang.org/x/net/context"
 	"reflect"
 	"regexp"
@@ -33,7 +33,6 @@ import (
 
 type RuleFilter struct {
 	DomainProject string
-	Provider      *pb.MicroService
 	ProviderRules []*pb.ServiceRule
 }
 
@@ -42,6 +41,10 @@ func (rf *RuleFilter) Filter(ctx context.Context, consumerId string) (bool, erro
 	consumer, err := GetService(copyCtx, rf.DomainProject, consumerId)
 	if consumer == nil {
 		return false, err
+	}
+
+	if len(rf.ProviderRules) == 0 {
+		return true, nil
 	}
 
 	tags, err := GetTagsUtils(copyCtx, rf.DomainProject, consumerId)
@@ -58,6 +61,30 @@ func (rf *RuleFilter) Filter(ctx context.Context, consumerId string) (bool, erro
 	return true, nil
 }
 
+func (rf *RuleFilter) FilterAll(ctx context.Context, consumerIds []string) (allow []string, deny []string, err error) {
+	l := len(consumerIds)
+	if l == 0 || len(rf.ProviderRules) == 0 {
+		return consumerIds, nil, nil
+	}
+
+	allowIdx, denyIdx := 0, l
+	consumers := make([]string, l)
+	for _, consumerId := range consumerIds {
+		ok, err := rf.Filter(ctx, consumerId)
+		if err != nil {
+			return nil, nil, err
+		}
+		if ok {
+			consumers[allowIdx] = consumerId
+			allowIdx++
+		} else {
+			denyIdx--
+			consumers[denyIdx] = consumerId
+		}
+	}
+	return consumers[:allowIdx], consumers[denyIdx:], nil
+}
+
 func GetRulesUtil(ctx context.Context, domainProject string, serviceId string) ([]*pb.ServiceRule, error) {
 	key := util.StringJoin([]string{
 		apt.GetServiceRuleRootKey(domainProject),
@@ -72,13 +99,8 @@ func GetRulesUtil(ctx context.Context, domainProject string, serviceId string) (
 	}
 
 	rules := []*pb.ServiceRule{}
-	for _, kvs := range resp.Kvs {
-		rule := &pb.ServiceRule{}
-		err := json.Unmarshal(kvs.Value, rule)
-		if err != nil {
-			return nil, err
-		}
-		rules = append(rules, rule)
+	for _, kv := range resp.Kvs {
+		rules = append(rules, kv.Value.(*pb.ServiceRule))
 	}
 	return rules, nil
 }
@@ -101,18 +123,13 @@ func GetServiceRuleType(ctx context.Context, domainProject string, serviceId str
 		registry.WithPrefix())
 	resp, err := backend.Store().Rule().Search(ctx, opts...)
 	if err != nil {
-		util.Logger().Errorf(err, "Get rule failed.%s", err.Error())
+		log.Errorf(err, "get service[%s] rule failed", serviceId)
 		return "", 0, err
 	}
 	if len(resp.Kvs) == 0 {
 		return "", 0, nil
 	}
-	rule := &pb.ServiceRule{}
-	err = json.Unmarshal(resp.Kvs[0].Value, rule)
-	if err != nil {
-		util.Logger().Errorf(err, "Unmarshal rule data failed.%s", err.Error())
-	}
-	return rule.RuleType, len(resp.Kvs), nil
+	return resp.Kvs[0].Value.(*pb.ServiceRule).RuleType, len(resp.Kvs), nil
 }
 
 func GetOneRule(ctx context.Context, domainProject, serviceId, ruleId string) (*pb.ServiceRule, error) {
@@ -120,20 +137,14 @@ func GetOneRule(ctx context.Context, domainProject, serviceId, ruleId string) (*
 		registry.WithStrKey(apt.GenerateServiceRuleKey(domainProject, serviceId, ruleId)))
 	resp, err := backend.Store().Rule().Search(ctx, opts...)
 	if err != nil {
-		util.Logger().Errorf(nil, "Get rule for service failed for %s.", err.Error())
+		log.Errorf(err, "get service rule[%s/%s]", serviceId, ruleId)
 		return nil, err
 	}
-	rule := &pb.ServiceRule{}
 	if len(resp.Kvs) == 0 {
-		util.Logger().Errorf(nil, "Get rule failed, ruleId is %s.", ruleId)
+		log.Errorf(nil, "get service rule[%s/%s] failed", serviceId, ruleId)
 		return nil, nil
 	}
-	err = json.Unmarshal(resp.Kvs[0].Value, rule)
-	if err != nil {
-		util.Logger().Errorf(nil, "unmarshal resp failed for %s.", err.Error())
-		return nil, err
-	}
-	return rule, nil
+	return resp.Kvs[0].Value.(*pb.ServiceRule), nil
 }
 
 func AllowAcrossDimension(ctx context.Context, providerService *pb.MicroService, consumerService *pb.MicroService) error {
@@ -183,8 +194,9 @@ func patternWhiteList(rulesOfProvider []*pb.ServiceRule, tagsOfConsumer map[stri
 
 		match, _ := regexp.MatchString(rule.Pattern, value)
 		if match {
-			util.Logger().Infof("consumer %s match white list, rule.Pattern is %s, value is %s",
-				consumerId, rule.Pattern, value)
+			log.Infof("consumer[%s][%s/%s/%s/%s] match white list, rule.Pattern is %s, value is %s",
+				consumerId, consumer.Environment, consumer.AppId, consumer.ServiceName, consumer.Version,
+				rule.Pattern, value)
 			return nil
 		}
 	}
@@ -196,13 +208,13 @@ func parsePattern(v reflect.Value, rule *pb.ServiceRule, tagsOfConsumer map[stri
 		key := rule.Attribute[4:]
 		value := tagsOfConsumer[key]
 		if len(value) == 0 {
-			util.Logger().Infof("can not find service %s tag '%s'", consumerId, key)
+			log.Infof("can not find service[%s] tag[%s]", consumerId, key)
 		}
 		return value, nil
 	}
 	key := v.FieldByName(rule.Attribute)
 	if !key.IsValid() {
-		util.Logger().Errorf(nil, "can not find service %s field '%s', rule %s",
+		log.Errorf(nil, "can not find service[%] field[%s], ruleId is %s",
 			consumerId, rule.Attribute, rule.RuleId)
 		return "", scerr.NewErrorf(scerr.ErrInternal, "Can not find field '%s'", rule.Attribute)
 	}
@@ -225,8 +237,9 @@ func patternBlackList(rulesOfProvider []*pb.ServiceRule, tagsOfConsumer map[stri
 
 		match, _ := regexp.MatchString(rule.Pattern, value)
 		if match {
-			util.Logger().Warnf(nil, "no permission to access, consumer %s match black list, rule.Pattern is %s, value is %s",
-				consumerId, rule.Pattern, value)
+			log.Warnf("no permission to access, consumer[%s][%s/%s/%s/%s] match black list, rule.Pattern is %s, value is %s",
+				consumerId, consumer.Environment, consumer.AppId, consumer.ServiceName, consumer.Version,
+				rule.Pattern, value)
 			return scerr.NewError(scerr.ErrPermissionDeny, "Found in black list")
 		}
 	}
@@ -234,6 +247,10 @@ func patternBlackList(rulesOfProvider []*pb.ServiceRule, tagsOfConsumer map[stri
 }
 
 func Accessible(ctx context.Context, consumerId string, providerId string) *scerr.Error {
+	if len(consumerId) == 0 {
+		return nil
+	}
+
 	domainProject := util.ParseDomainProject(ctx)
 	targetDomainProject := util.ParseTargetDomainProject(ctx)
 

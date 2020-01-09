@@ -16,17 +16,64 @@
  */
 package metric
 
-import "time"
-
-const (
-	defaultMetricsSize = 100
-	collectInterval    = 5 * time.Second
-
-	familyName = "service_center_"
+import (
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/astaxie/beego"
+	"net"
+	"os"
+	"sync"
+	"time"
 )
 
-var sysMetricNames = map[string]struct{}{
-	"process_resident_memory_bytes": {},
-	"process_cpu_seconds_total":     {},
-	"go_threads":                    {},
+const (
+	defaultCollectPeriod = 30 * time.Second
+	FamilyName           = "service_center"
+	familyNamePrefix     = FamilyName + "_"
+	bufferSize           = 1024
+)
+
+var (
+	// metrics collect period
+	Period = 30 * time.Second
+	// system metrics map
+	SysMetrics util.ConcurrentMap
+
+	getEndpointOnce sync.Once
+	instance        string
+)
+
+func init() {
+	Period = getPeriod()
+	SysMetrics.Put("process_resident_memory_bytes", struct{}{})
+	SysMetrics.Put("process_cpu_seconds_total", struct{}{})
+	SysMetrics.Put("go_threads", struct{}{})
+	SysMetrics.Put("go_goroutines", struct{}{})
+}
+
+func getPeriod() time.Duration {
+	inv := os.Getenv("METRICS_INTERVAL")
+	d, err := time.ParseDuration(inv)
+	if err == nil && d >= time.Second {
+		return d
+	}
+	return defaultCollectPeriod
+}
+
+func InstanceName() string {
+	getEndpointOnce.Do(func() {
+		restIp := beego.AppConfig.String("httpaddr")
+		restPort := beego.AppConfig.String("httpport")
+		if len(restIp) > 0 {
+			instance = net.JoinHostPort(restIp, restPort)
+			return
+		}
+
+		rpcIp := beego.AppConfig.String("rpcaddr")
+		rpcPort := beego.AppConfig.String("rpcport")
+		if len(rpcIp) > 0 {
+			instance = net.JoinHostPort(rpcIp, rpcPort)
+			return
+		}
+	})
+	return instance
 }

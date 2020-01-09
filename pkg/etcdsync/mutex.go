@@ -18,9 +18,11 @@ package etcdsync
 
 import (
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
+	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/core/backend"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 	"github.com/coreos/etcd/client"
 	"golang.org/x/net/context"
 	"os"
@@ -32,6 +34,8 @@ const (
 	DEFAULT_LOCK_TTL    = 60
 	DEFAULT_RETRY_TIMES = 3
 	ROOT_PATH           = "/cse/etcdsync"
+
+	OperationGlobalLock = "GLOBAL_LOCK"
 )
 
 type DLockFactory struct {
@@ -42,18 +46,20 @@ type DLockFactory struct {
 }
 
 type DLock struct {
-	builder *DLockFactory
-	id      string
+	builder  *DLockFactory
+	id       string
+	createAt time.Time
 }
 
 var (
 	globalMap = make(map[string]*DLockFactory)
 	globalMux sync.Mutex
 	IsDebug   bool
-	hostname  string = util.HostName()
-	pid       int    = os.Getpid()
+	hostname  = util.HostName()
+	pid       = os.Getpid()
 )
 
+// lock will not be release automatically if ttl = 0
 func NewLockFactory(key string, ttl int64) *DLockFactory {
 	if len(key) == 0 {
 		return nil
@@ -74,93 +80,102 @@ func (m *DLockFactory) NewDLock(wait bool) (l *DLock, err error) {
 	if !IsDebug {
 		m.mutex.Lock()
 	}
+	now := time.Now()
 	l = &DLock{
-		builder: m,
-		id:      fmt.Sprintf("%v-%v-%v", hostname, pid, time.Now().Format("20060102-15:04:05.999999999")),
+		builder:  m,
+		id:       fmt.Sprintf("%v-%v-%v", hostname, pid, now.Format("20060102-15:04:05.999999999")),
+		createAt: now,
 	}
 	for try := 1; try <= DEFAULT_RETRY_TIMES; try++ {
 		err = l.Lock(wait)
 		if err == nil {
-			return l, nil
+			return
 		}
 
 		if !wait {
-			l, err = nil, nil
 			break
 		}
-
-		if try <= DEFAULT_RETRY_TIMES {
-			util.Logger().Warnf(err, "Try to lock key %s again, id=%s", m.key, l.id)
-		} else {
-			util.Logger().Errorf(err, "Lock key %s failed, id=%s", m.key, l.id)
-		}
 	}
+	// failed
+	log.Errorf(err, "Lock key %s failed, id=%s", m.key, l.id)
+	l = nil
+
 	if !IsDebug {
 		m.mutex.Unlock()
 	}
-	return l, err
+	return
 }
 
 func (m *DLock) ID() string {
 	return m.id
 }
 
-func (m *DLock) Lock(wait bool) error {
+func (m *DLock) Lock(wait bool) (err error) {
 	opts := []registry.PluginOpOption{
 		registry.WithStrKey(m.builder.key),
 		registry.WithStrValue(m.id)}
 
-	for {
-		util.Logger().Infof("Trying to create a lock: key=%s, id=%s", m.builder.key, m.id)
+	log.Infof("Trying to create a lock: key=%s, id=%s", m.builder.key, m.id)
 
-		putOpts := opts
-		if m.builder.ttl > 0 {
-			leaseID, err := backend.Registry().LeaseGrant(m.builder.ctx, m.builder.ttl)
-			if err != nil {
-				return err
-			}
-			putOpts = append(opts, registry.WithLease(leaseID))
+	var leaseID int64
+	putOpts := opts
+	if m.builder.ttl > 0 {
+		leaseID, err = backend.Registry().LeaseGrant(m.builder.ctx, m.builder.ttl)
+		if err != nil {
+			return err
 		}
-		success, err := backend.Registry().PutNoOverride(m.builder.ctx, putOpts...)
-		if err == nil && success {
-			util.Logger().Infof("Create Lock OK, key=%s, id=%s", m.builder.key, m.id)
-			return nil
-		}
+		putOpts = append(opts, registry.WithLease(leaseID))
+	}
+	success, err := backend.Registry().PutNoOverride(m.builder.ctx, putOpts...)
+	if err == nil && success {
+		log.Infof("Create Lock OK, key=%s, id=%s", m.builder.key, m.id)
+		return nil
+	}
 
-		if !wait {
-			return fmt.Errorf("Key %s is locked by id=%s", m.builder.key, m.id)
-		}
+	if leaseID > 0 {
+		backend.Registry().LeaseRevoke(m.builder.ctx, leaseID)
+	}
 
-		util.Logger().Warnf(err, "Key %s is locked, waiting for other node releases it, id=%s", m.builder.key, m.id)
+	if m.builder.ttl == 0 || !wait {
+		return fmt.Errorf("Key %s is locked by id=%s", m.builder.key, m.id)
+	}
 
-		ctx, cancel := context.WithTimeout(m.builder.ctx, DEFAULT_LOCK_TTL*time.Second)
-		util.Go(func(context.Context) {
-			defer cancel()
-			err := backend.Registry().Watch(ctx,
-				registry.WithStrKey(m.builder.key),
-				registry.WithWatchCallback(
-					func(message string, evt *registry.PluginResponse) error {
-						if evt != nil && evt.Action == registry.Delete {
-							// break this for-loop, and try to create the node again.
-							return fmt.Errorf("Lock released")
-						}
-						return nil
-					}))
-			if err != nil {
-				util.Logger().Warnf(nil, "%s, key=%s, id=%s", err.Error(), m.builder.key, m.id)
-			}
-		})
-		select {
-		case <-ctx.Done():
-			continue // 可以重新尝试获取锁
-		case <-m.builder.ctx.Done():
-			cancel()
-			return m.builder.ctx.Err() // 机制错误，不应该超时的
+	log.Errorf(err, "Key %s is locked, waiting for other node releases it, id=%s", m.builder.key, m.id)
+
+	ctx, cancel := context.WithTimeout(m.builder.ctx, time.Duration(m.builder.ttl)*time.Second)
+	gopool.Go(func(context.Context) {
+		defer cancel()
+		err := backend.Registry().Watch(ctx,
+			registry.WithStrKey(m.builder.key),
+			registry.WithWatchCallback(
+				func(message string, evt *registry.PluginResponse) error {
+					if evt != nil && evt.Action == registry.Delete {
+						// break this for-loop, and try to create the node again.
+						return fmt.Errorf("Lock released")
+					}
+					return nil
+				}))
+		if err != nil {
+			log.Warnf("%s, key=%s, id=%s", err.Error(), m.builder.key, m.id)
 		}
+	})
+	select {
+	case <-ctx.Done():
+		return ctx.Err() // 可以重新尝试获取锁
+	case <-m.builder.ctx.Done():
+		cancel()
+		return m.builder.ctx.Err() // 机制错误，不应该超时的
 	}
 }
 
 func (m *DLock) Unlock() (err error) {
+	defer func() {
+		if !IsDebug {
+			m.builder.mutex.Unlock()
+		}
+		registry.ReportBackendOperationCompleted(OperationGlobalLock, nil, m.createAt)
+	}()
+
 	opts := []registry.PluginOpOption{
 		registry.DEL,
 		registry.WithStrKey(m.builder.key)}
@@ -168,23 +183,14 @@ func (m *DLock) Unlock() (err error) {
 	for i := 1; i <= DEFAULT_RETRY_TIMES; i++ {
 		_, err = backend.Registry().Do(m.builder.ctx, opts...)
 		if err == nil {
-			if !IsDebug {
-				m.builder.mutex.Unlock()
-			}
-			util.Logger().Infof("Delete lock OK, key=%s, id=%s", m.builder.key, m.id)
+			log.Infof("Delete lock OK, key=%s, id=%s", m.builder.key, m.id)
 			return nil
 		}
-		util.Logger().Errorf(err, "Delete lock falied, key=%s, id=%s", m.builder.key, m.id)
+		log.Errorf(err, "Delete lock failed, key=%s, id=%s", m.builder.key, m.id)
 		e, ok := err.(client.Error)
 		if ok && e.Code == client.ErrorCodeKeyNotFound {
-			if !IsDebug {
-				m.builder.mutex.Unlock()
-			}
 			return nil
 		}
-	}
-	if !IsDebug {
-		m.builder.mutex.Unlock()
 	}
 	return err
 }

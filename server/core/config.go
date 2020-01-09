@@ -17,13 +17,46 @@
 package core
 
 import (
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"os"
+	"runtime"
+	"time"
+
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/plugin"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/version"
 	"github.com/astaxie/beego"
 )
 
-var ServerInfo = newInfo()
+const (
+	InitVersion = "0"
 
-func newInfo() *pb.ServerInformation {
+	defaultServiceClearInterval = 12 * time.Hour //0.5 day
+	defaultServiceTTL           = 24 * time.Hour //1 day
+
+	minServiceClearInterval = 30 * time.Second
+	minServiceTTL           = 30 * time.Second
+
+	maxServiceClearInterval = 24 * time.Hour       //1 day
+	maxServiceTTL           = 24 * 365 * time.Hour //1 year
+)
+
+var ServerInfo = pb.NewServerInformation()
+
+func Configure() {
+	setCPUs()
+
+	*ServerInfo = newInfo()
+
+	plugin.SetPluginDir(ServerInfo.Config.PluginsDir)
+
+	initLogger()
+
+	version.Ver().Log()
+}
+
+func newInfo() pb.ServerInformation {
 	maxLogFileSize := beego.AppConfig.DefaultInt64("log_rotate_size", 20)
 	if maxLogFileSize <= 0 || maxLogFileSize > 50 {
 		maxLogFileSize = 20
@@ -32,9 +65,20 @@ func newInfo() *pb.ServerInformation {
 	if maxLogBackupCount < 0 || maxLogBackupCount > 100 {
 		maxLogBackupCount = 50
 	}
-	return &pb.ServerInformation{
-		Version: "0",
-		Config: &pb.ServerConfig{
+
+	serviceClearInterval, err := time.ParseDuration(os.Getenv("SERVICE_CLEAR_INTERVAL"))
+	if err != nil || serviceClearInterval < minServiceClearInterval || serviceClearInterval > maxServiceClearInterval {
+		serviceClearInterval = defaultServiceClearInterval
+	}
+
+	serviceTTL, err := time.ParseDuration(os.Getenv("SERVICE_TTL"))
+	if err != nil || serviceTTL < minServiceTTL || serviceTTL > maxServiceTTL {
+		serviceTTL = defaultServiceTTL
+	}
+
+	return pb.ServerInformation{
+		Version: InitVersion,
+		Config: pb.ServerConfig{
 			MaxHeaderBytes: int64(beego.AppConfig.DefaultInt("max_header_bytes", 16384)),
 			MaxBodyBytes:   beego.AppConfig.DefaultInt64("max_body_bytes", 2097152),
 
@@ -57,7 +101,6 @@ func newInfo() *pb.ServerInformation {
 			CompactIndexDelta: beego.AppConfig.DefaultInt64("compact_index_delta", 100),
 			CompactInterval:   beego.AppConfig.String("compact_interval"),
 
-			LoggerName:     beego.AppConfig.String("component_name"),
 			LogRotateSize:  maxLogFileSize,
 			LogBackupCount: maxLogBackupCount,
 			LogFilePath:    beego.AppConfig.String("logfile"),
@@ -66,9 +109,31 @@ func newInfo() *pb.ServerInformation {
 			LogSys:         beego.AppConfig.DefaultBool("log_sys", false),
 
 			PluginsDir: beego.AppConfig.DefaultString("plugins_dir", "./plugins"),
+			Plugins:    util.NewJSONObject(),
 
-			EnablePProf: beego.AppConfig.DefaultInt("enable_pprof", 0) != 0,
-			EnableCache: beego.AppConfig.DefaultInt("enable_cache", 1) != 0,
+			EnablePProf:  beego.AppConfig.DefaultInt("enable_pprof", 0) != 0,
+			EnableCache:  beego.AppConfig.DefaultInt("enable_cache", 1) != 0,
+			SelfRegister: beego.AppConfig.DefaultInt("self_register", 1) != 0,
+
+			ServiceClearEnabled:  os.Getenv("SERVICE_CLEAR_ENABLED") == "true",
+			ServiceClearInterval: serviceClearInterval,
+			ServiceTTL:           serviceTTL,
 		},
 	}
+}
+
+func setCPUs() {
+	cores := runtime.NumCPU()
+	runtime.GOMAXPROCS(cores)
+	log.Infof("service center is running simultaneously with %d CPU cores", cores)
+}
+
+func initLogger() {
+	log.SetGlobal(log.Config{
+		LoggerLevel:    ServerInfo.Config.LogLevel,
+		LoggerFile:     os.ExpandEnv(ServerInfo.Config.LogFilePath),
+		LogFormatText:  ServerInfo.Config.LogFormat == "text",
+		LogRotateSize:  int(ServerInfo.Config.LogRotateSize),
+		LogBackupCount: int(ServerInfo.Config.LogBackupCount),
+	})
 }

@@ -17,20 +17,23 @@
 package backend
 
 import (
-	errorsEx "github.com/apache/incubator-servicecomb-service-center/pkg/errors"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
+	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	simple "github.com/apache/servicecomb-service-center/pkg/time"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 	"golang.org/x/net/context"
 	"time"
 )
 
 type LeaseTask struct {
+	Client registry.Registry
+
 	key     string
 	LeaseID int64
 	TTL     int64
 
-	recvSec  int64
-	recvNsec int64
+	recvTime simple.Time
 	err      error
 }
 
@@ -40,14 +43,15 @@ func (lat *LeaseTask) Key() string {
 
 func (lat *LeaseTask) Do(ctx context.Context) (err error) {
 	recv, start := lat.ReceiveTime(), time.Now()
-	lat.TTL, err = Registry().LeaseRenew(ctx, lat.LeaseID)
+	lat.TTL, err = lat.Client.LeaseRenew(ctx, lat.LeaseID)
+	ReportHeartbeatCompleted(err, recv)
 	if err != nil {
-		util.Logger().Errorf(err, "[%s]renew lease %d failed(recv: %s, send: %s), key %s",
+		log.Errorf(err, "[%s]task[%s] renew lease[%d] failed(recv: %s, send: %s)",
 			time.Now().Sub(recv),
+			lat.Key(),
 			lat.LeaseID,
-			recv.Format(TIME_FORMAT),
-			start.Format(TIME_FORMAT),
-			lat.Key())
+			recv.Format(leaseProfTimeFmt),
+			start.Format(leaseProfTimeFmt))
 		if _, ok := err.(errorsEx.InternalError); !ok {
 			// it means lease not found if err is not the InternalError type
 			lat.err = err
@@ -56,11 +60,16 @@ func (lat *LeaseTask) Do(ctx context.Context) (err error) {
 	}
 
 	lat.err, err = nil, nil
-	util.LogNilOrWarnf(recv, "renew lease %d(recv: %s, send: %s), key %s",
-		lat.LeaseID,
-		recv.Format(TIME_FORMAT),
-		start.Format(TIME_FORMAT),
-		lat.Key())
+
+	cost := time.Now().Sub(recv)
+	if cost >= 2*time.Second {
+		log.Warnf("[%s]task[%s] renew lease[%d](recv: %s, send: %s)",
+			cost,
+			lat.Key(),
+			lat.LeaseID,
+			recv.Format(leaseProfTimeFmt),
+			start.Format(leaseProfTimeFmt))
+	}
 	return
 }
 
@@ -69,16 +78,15 @@ func (lat *LeaseTask) Err() error {
 }
 
 func (lat *LeaseTask) ReceiveTime() time.Time {
-	return time.Unix(lat.recvSec, lat.recvNsec).Local()
+	return lat.recvTime.Local()
 }
 
 func NewLeaseAsyncTask(op registry.PluginOp) *LeaseTask {
-	now := time.Now().UTC()
 	return &LeaseTask{
+		Client:   Registry(),
 		key:      ToLeaseAsyncTaskKey(util.BytesToStringWithNoCopy(op.Key)),
 		LeaseID:  op.Lease,
-		recvSec:  now.Unix(),
-		recvNsec: int64(now.Nanosecond()),
+		recvTime: simple.FromTime(time.Now()),
 	}
 }
 

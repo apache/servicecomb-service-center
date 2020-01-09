@@ -17,12 +17,13 @@
 package chain
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
 const CAP_SIZE = 10
 
-var handlersMap = make(map[string][]Handler, CAP_SIZE)
+var handlersMap = make(map[string][]Handler)
 
 type Handler interface {
 	Handle(i *Invocation)
@@ -36,8 +37,8 @@ func RegisterHandler(catalog string, h Handler) {
 	handlers = append(handlers, h)
 	handlersMap[catalog] = handlers
 
-	t := util.ReflectObject(h)
-	util.Logger().Infof("register handler[%s] %s/%s", catalog, t.Type.PkgPath(), t.Type.Name())
+	t := util.Reflect(h)
+	log.Infof("register chain handler[%s] %s", catalog, t.Name())
 }
 
 func Handlers(catalog string) []Handler {

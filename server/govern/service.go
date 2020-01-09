@@ -17,18 +17,20 @@
 package govern
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
-	"github.com/apache/incubator-servicecomb-service-center/server/service"
-	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
+	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	apt "github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/backend"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	scerr "github.com/apache/servicecomb-service-center/server/error"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
+	"github.com/apache/servicecomb-service-center/server/service"
+	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
 )
 
-var GovernServiceAPI pb.GovernServiceCtrlServerEx = &GovernService{}
+var GovernServiceAPI pb.GovernServiceCtrlServer = &GovernService{}
 
 type GovernService struct {
 }
@@ -41,7 +43,7 @@ type ServiceDetailOpt struct {
 }
 
 func (governService *GovernService) GetServicesInfo(ctx context.Context, in *pb.GetServicesInfoRequest) (*pb.GetServicesInfoResponse, error) {
-	util.SetContext(ctx, serviceUtil.CTX_CACHEONLY, "1")
+	ctx = util.SetContext(ctx, serviceUtil.CTX_CACHEONLY, "1")
 
 	optionMap := make(map[string]struct{}, len(in.Options))
 	for _, opt := range in.Options {
@@ -61,7 +63,7 @@ func (governService *GovernService) GetServicesInfo(ctx context.Context, in *pb.
 	var st *pb.Statistics
 	if _, ok := optionMap["statistics"]; ok {
 		var err error
-		st, err = statistics(ctx)
+		st, err = statistics(ctx, in.WithShared)
 		if err != nil {
 			return &pb.GetServicesInfoResponse{
 				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
@@ -78,7 +80,7 @@ func (governService *GovernService) GetServicesInfo(ctx context.Context, in *pb.
 	//获取所有服务
 	services, err := serviceUtil.GetAllServiceUtil(ctx)
 	if err != nil {
-		util.Logger().Errorf(err, "Get all services for govern service failed.")
+		log.Errorf(err, "get all services by domain failed")
 		return &pb.GetServicesInfoResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
@@ -87,6 +89,9 @@ func (governService *GovernService) GetServicesInfo(ctx context.Context, in *pb.
 	allServiceDetails := make([]*pb.ServiceDetail, 0, len(services))
 	domainProject := util.ParseDomainProject(ctx)
 	for _, service := range services {
+		if !in.WithShared && apt.IsShared(pb.MicroServiceToKey(domainProject, service)) {
+			continue
+		}
 		if len(in.AppId) > 0 {
 			if in.AppId != service.AppId {
 				continue
@@ -119,7 +124,7 @@ func (governService *GovernService) GetServicesInfo(ctx context.Context, in *pb.
 }
 
 func (governService *GovernService) GetServiceDetail(ctx context.Context, in *pb.GetServiceRequest) (*pb.GetServiceDetailResponse, error) {
-	util.SetContext(ctx, serviceUtil.CTX_CACHEONLY, "1")
+	ctx = util.SetContext(ctx, serviceUtil.CTX_CACHEONLY, "1")
 
 	domainProject := util.ParseDomainProject(ctx)
 	options := []string{"tags", "rules", "instances", "schemas", "dependencies"}
@@ -151,7 +156,8 @@ func (governService *GovernService) GetServiceDetail(ctx context.Context, in *pb
 	}
 	versions, err := getServiceAllVersions(ctx, key)
 	if err != nil {
-		util.Logger().Errorf(err, "Get service all version failed.")
+		log.Errorf(err, "get service[%s/%s/%s] all versions failed",
+			service.Environment, service.AppId, service.ServiceName)
 		return &pb.GetServiceDetailResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
@@ -206,7 +212,10 @@ func (governService *GovernService) GetApplications(ctx context.Context, in *pb.
 	apps := make([]string, 0, l)
 	appMap := make(map[string]struct{}, l)
 	for _, kv := range resp.Kvs {
-		key, _ := pb.GetInfoFromSvcIndexKV(kv)
+		key := apt.GetInfoFromSvcIndexKV(kv.Key)
+		if !in.WithShared && apt.IsShared(key) {
+			continue
+		}
 		if _, ok := appMap[key.AppId]; ok {
 			continue
 		}
@@ -221,8 +230,11 @@ func (governService *GovernService) GetApplications(ctx context.Context, in *pb.
 }
 
 func getServiceAllVersions(ctx context.Context, serviceKey *pb.MicroServiceKey) ([]string, error) {
-	versions := []string{}
-	key := apt.GenerateServiceIndexKey(serviceKey)
+	var versions []string
+
+	copyKey := *serviceKey
+	copyKey.Version = ""
+	key := apt.GenerateServiceIndexKey(&copyKey)
 
 	opts := append(serviceUtil.FromContext(ctx),
 		registry.WithStrKey(key),
@@ -236,7 +248,7 @@ func getServiceAllVersions(ctx context.Context, serviceKey *pb.MicroServiceKey) 
 		return versions, nil
 	}
 	for _, kv := range resp.Kvs {
-		key, _ := pb.GetInfoFromSvcIndexKV(kv)
+		key := apt.GetInfoFromSvcIndexKV(kv.Key)
 		versions = append(versions, key.Version)
 	}
 	return versions, nil
@@ -249,13 +261,13 @@ func getSchemaInfoUtil(ctx context.Context, domainProject string, serviceId stri
 		registry.WithStrKey(key),
 		registry.WithPrefix())
 	if err != nil {
-		util.Logger().Errorf(err, "Get schema failed")
+		log.Errorf(err, "get service[%s]'s schemas failed", serviceId)
 		return make([]*pb.Schema, 0), err
 	}
 	schemas := make([]*pb.Schema, 0, len(resp.Kvs))
 	for _, kv := range resp.Kvs {
 		schemaInfo := &pb.Schema{}
-		schemaInfo.Schema = util.BytesToStringWithNoCopy(kv.Value)
+		schemaInfo.Schema = util.BytesToStringWithNoCopy(kv.Value.([]byte))
 		schemaInfo.SchemaId = util.BytesToStringWithNoCopy(kv.Key[len(key):])
 		schemas = append(schemas, schemaInfo)
 	}
@@ -277,14 +289,14 @@ func getServiceDetailUtil(ctx context.Context, serviceDetailOpt ServiceDetailOpt
 		case "tags":
 			tags, err := serviceUtil.GetTagsUtils(ctx, domainProject, serviceId)
 			if err != nil {
-				util.Logger().Errorf(err, "Get all tags for govern service failed.")
+				log.Errorf(err, "get service[%s]'s all tags failed", serviceId)
 				return nil, err
 			}
 			serviceDetail.Tags = tags
 		case "rules":
 			rules, err := serviceUtil.GetRulesUtil(ctx, domainProject, serviceId)
 			if err != nil {
-				util.Logger().Errorf(err, "Get all rules for govern service failed.")
+				log.Errorf(err, "get service[%s]'s all rules failed", serviceId)
 				return nil, err
 			}
 			for _, rule := range rules {
@@ -295,7 +307,7 @@ func getServiceDetailUtil(ctx context.Context, serviceDetailOpt ServiceDetailOpt
 			if serviceDetailOpt.countOnly {
 				instanceCount, err := serviceUtil.GetInstanceCountOfOneService(ctx, domainProject, serviceId)
 				if err != nil {
-					util.Logger().Errorf(err, "Get service's instances count for govern service failed.")
+					log.Errorf(err, "get number of service[%s]'s instances failed", serviceId)
 					return nil, err
 				}
 				serviceDetail.Statics.Instances = &pb.StInstance{
@@ -304,14 +316,14 @@ func getServiceDetailUtil(ctx context.Context, serviceDetailOpt ServiceDetailOpt
 			}
 			instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, domainProject, serviceId)
 			if err != nil {
-				util.Logger().Errorf(err, "Get service's all instances for govern service failed.")
+				log.Errorf(err, "get service[%s]'s all instances failed", serviceId)
 				return nil, err
 			}
 			serviceDetail.Instances = instances
 		case "schemas":
 			schemas, err := getSchemaInfoUtil(ctx, domainProject, serviceId)
 			if err != nil {
-				util.Logger().Errorf(err, "Get service's all schemas for govern service failed.")
+				log.Errorf(err, "get service[%s]'s all schemas failed", serviceId)
 				return nil, err
 			}
 			serviceDetail.SchemaInfos = schemas
@@ -322,14 +334,16 @@ func getServiceDetailUtil(ctx context.Context, serviceDetailOpt ServiceDetailOpt
 				serviceUtil.WithoutSelfDependency(),
 				serviceUtil.WithSameDomainProject())
 			if err != nil {
-				util.Logger().Errorf(err, "Get service's all consumers for govern service failed.")
+				log.Errorf(err, "get service[%s][%s/%s/%s/%s]'s all consumers failed",
+					service.ServiceId, service.Environment, service.AppId, service.ServiceName, service.Version)
 				return nil, err
 			}
 			providers, err := dr.GetDependencyProviders(
 				serviceUtil.WithoutSelfDependency(),
 				serviceUtil.WithSameDomainProject())
 			if err != nil {
-				util.Logger().Errorf(err, "Get service's all providers for govern service failed.")
+				log.Errorf(err, "get service[%s][%s/%s/%s/%s]'s all providers failed",
+					service.ServiceId, service.Environment, service.AppId, service.ServiceName, service.Version)
 				return nil, err
 			}
 
@@ -338,13 +352,13 @@ func getServiceDetailUtil(ctx context.Context, serviceDetailOpt ServiceDetailOpt
 		case "":
 			continue
 		default:
-			util.Logger().Errorf(nil, "option %s from request is invalid.", opt)
+			log.Errorf(nil, "request option[%s] is invalid", opt)
 		}
 	}
 	return serviceDetail, nil
 }
 
-func statistics(ctx context.Context) (*pb.Statistics, error) {
+func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 	result := &pb.Statistics{
 		Services:  &pb.StService{},
 		Instances: &pb.StInstance{},
@@ -367,7 +381,10 @@ func statistics(ctx context.Context) (*pb.Statistics, error) {
 	svcWithNonVersion := make(map[string]struct{}, respSvc.Count)
 	svcIdToNonVerKey := make(map[string]string, respSvc.Count)
 	for _, kv := range respSvc.Kvs {
-		key, val := pb.GetInfoFromSvcIndexKV(kv)
+		key := apt.GetInfoFromSvcIndexKV(kv.Key)
+		if !withShared && apt.IsShared(key) {
+			continue
+		}
 		if _, ok := app[key.AppId]; !ok {
 			app[key.AppId] = struct{}{}
 		}
@@ -377,15 +394,15 @@ func statistics(ctx context.Context) (*pb.Statistics, error) {
 		if _, ok := svcWithNonVersion[svcWithNonVersionKey]; !ok {
 			svcWithNonVersion[svcWithNonVersionKey] = struct{}{}
 		}
-		svcIdToNonVerKey[util.BytesToStringWithNoCopy(val)] = svcWithNonVersionKey
+		svcIdToNonVerKey[kv.Value.(string)] = svcWithNonVersionKey
 	}
 
 	result.Services.Count = int64(len(svcWithNonVersion))
 	result.Apps.Count = int64(len(app))
 
 	respGetInstanceCountByDomain := make(chan GetInstanceCountByDomainResponse, 1)
-	util.Go(func(_ context.Context) {
-		getInstanceCountByDomain(ctx, respGetInstanceCountByDomain)
+	gopool.Go(func(_ context.Context) {
+		getInstanceCountByDomain(ctx, svcIdToNonVerKey, respGetInstanceCountByDomain)
 	})
 
 	// instance
@@ -401,16 +418,16 @@ func statistics(ctx context.Context) (*pb.Statistics, error) {
 
 	onlineServices := make(map[string]struct{}, respSvc.Count)
 	for _, kv := range respIns.Kvs {
-		serviceId, _, _, _ := pb.GetInfoFromInstKV(kv)
+		serviceId, _, _ := apt.GetInfoFromInstKV(kv.Key)
 		key, ok := svcIdToNonVerKey[serviceId]
 		if !ok {
 			continue
 		}
+		result.Instances.Count++
 		if _, ok := onlineServices[key]; !ok {
 			onlineServices[key] = struct{}{}
 		}
 	}
-	result.Instances.Count = respIns.Count
 	result.Services.OnlineCount = int64(len(onlineServices))
 
 	data := <-respGetInstanceCountByDomain
@@ -419,7 +436,7 @@ func statistics(ctx context.Context) (*pb.Statistics, error) {
 		return nil, data.err
 	}
 	result.Instances.CountByDomain = data.countByDomain
-	return result, err
+	return result, nil
 }
 
 type GetInstanceCountByDomainResponse struct {
@@ -427,20 +444,30 @@ type GetInstanceCountByDomainResponse struct {
 	countByDomain int64
 }
 
-func getInstanceCountByDomain(ctx context.Context, resp chan GetInstanceCountByDomainResponse) {
+func getInstanceCountByDomain(ctx context.Context, svcIdToNonVerKey map[string]string, resp chan GetInstanceCountByDomainResponse) {
 	domainId := util.ParseDomain(ctx)
 	key := apt.GetInstanceRootKey(domainId) + "/"
 	instOpts := append([]registry.PluginOpOption{},
 		registry.WithStrKey(key),
 		registry.WithPrefix(),
-		registry.WithKeyOnly(),
-		registry.WithCountOnly())
+		registry.WithKeyOnly())
 	respIns, err := backend.Store().Instance().Search(ctx, instOpts...)
+	ret := GetInstanceCountByDomainResponse{
+		err: err,
+	}
+
 	if err != nil {
-		util.Logger().Errorf(err, "get instance count under same domainId %s", domainId)
+		log.Errorf(err, "get number of instances by domain[%s]", domainId)
+	} else {
+		for _, kv := range respIns.Kvs {
+			serviceId, _, _ := apt.GetInfoFromInstKV(kv.Key)
+			_, ok := svcIdToNonVerKey[serviceId]
+			if !ok {
+				continue
+			}
+			ret.countByDomain++
+		}
 	}
-	resp <- GetInstanceCountByDomainResponse{
-		err:           err,
-		countByDomain: respIns.Count,
-	}
+
+	resp <- ret
 }

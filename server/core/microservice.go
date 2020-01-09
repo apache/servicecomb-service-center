@@ -17,9 +17,10 @@
 package core
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	"github.com/apache/incubator-servicecomb-service-center/version"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/version"
+	"github.com/astaxie/beego"
 	"golang.org/x/net/context"
 	"os"
 	"strings"
@@ -27,23 +28,26 @@ import (
 
 var (
 	ServiceAPI         pb.ServiceCtrlServer
-	InstanceAPI        pb.SerivceInstanceCtrlServerEx
+	InstanceAPI        pb.ServiceInstanceCtrlServerEx
 	Service            *pb.MicroService
 	Instance           *pb.MicroServiceInstance
 	sharedServiceNames map[string]struct{}
 )
 
 const (
-	REGISTRY_DOMAIN  = "default"
-	REGISTRY_PROJECT = "default"
+	REGISTRY_DOMAIN         = "default"
+	REGISTRY_PROJECT        = "default"
+	REGISTRY_DOMAIN_PROJECT = "default/default"
 
-	REGISTRY_APP_ID       = "default"
-	REGISTRY_SERVICE_NAME = "SERVICECENTER"
+	REGISTRY_APP_ID        = "default"
+	REGISTRY_SERVICE_NAME  = "SERVICECENTER"
+	REGISTRY_SERVICE_ALIAS = "SERVICECENTER"
 
 	REGISTRY_DEFAULT_LEASE_RENEWALINTERVAL int32 = 30
 	REGISTRY_DEFAULT_LEASE_RETRYTIMES      int32 = 3
 
-	IS_SC_SELF = "sc_self"
+	CTX_SC_SELF     = "_sc_self"
+	CTX_SC_REGISTRY = "_registryOnly"
 )
 
 func init() {
@@ -57,6 +61,7 @@ func prepareSelfRegistration() {
 		Environment: pb.ENV_PROD,
 		AppId:       REGISTRY_APP_ID,
 		ServiceName: REGISTRY_SERVICE_NAME,
+		Alias:       REGISTRY_SERVICE_ALIAS,
 		Version:     version.Ver().Version,
 		Status:      pb.MS_UP,
 		Level:       "BACK",
@@ -68,7 +73,7 @@ func prepareSelfRegistration() {
 			pb.PROP_ALLOW_CROSS_APP: "true",
 		},
 	}
-	if version.Ver().RunMode == "dev" {
+	if beego.BConfig.RunMode == "dev" {
 		Service.Environment = pb.ENV_DEV
 	}
 
@@ -83,17 +88,23 @@ func prepareSelfRegistration() {
 }
 
 func AddDefaultContextValue(ctx context.Context) context.Context {
-	return util.SetContext(
-		util.SetDomainProject(ctx, REGISTRY_DOMAIN, REGISTRY_PROJECT),
-		IS_SC_SELF, true)
+	return util.SetContext(util.SetContext(util.SetDomainProject(ctx,
+		REGISTRY_DOMAIN, REGISTRY_PROJECT),
+		CTX_SC_SELF, true),
+		CTX_SC_REGISTRY, "1")
 }
 
 func IsDefaultDomainProject(domainProject string) bool {
-	return domainProject == util.StringJoin([]string{REGISTRY_DOMAIN, REGISTRY_PROJECT}, "/")
+	return domainProject == REGISTRY_DOMAIN_PROJECT
 }
 
 func SetSharedMode() {
-	sharedServiceNames = util.ListToMap(strings.Split(os.Getenv("CSE_SHARED_SERVICES"), ","))
+	sharedServiceNames = make(map[string]struct{})
+	for _, s := range strings.Split(os.Getenv("CSE_SHARED_SERVICES"), ",") {
+		if len(s) > 0 {
+			sharedServiceNames[s] = struct{}{}
+		}
+	}
 	sharedServiceNames[Service.ServiceName] = struct{}{}
 }
 
@@ -105,21 +116,15 @@ func IsShared(key *pb.MicroServiceKey) bool {
 		return false
 	}
 	_, ok := sharedServiceNames[key.ServiceName]
+	if !ok {
+		_, ok = sharedServiceNames[key.Alias]
+	}
 	return ok
 }
 
-func IsSCKey(key *pb.MicroServiceKey) bool {
-	if !IsDefaultDomainProject(key.Tenant) {
-		return false
-	}
-	return key.AppId == Service.AppId && key.ServiceName == Service.ServiceName
-}
-
 func IsSCInstance(ctx context.Context) bool {
-	if ctx.Value(IS_SC_SELF) != nil && ctx.Value(IS_SC_SELF).(bool) {
-		return true
-	}
-	return false
+	b, _ := ctx.Value(CTX_SC_SELF).(bool)
+	return b
 }
 
 func GetExistenceRequest() *pb.GetExistenceRequest {
@@ -144,9 +149,7 @@ func CreateServiceRequest() *pb.CreateServiceRequest {
 	}
 }
 
-func RegisterInstanceRequest(hostName string, endpoints []string) *pb.RegisterInstanceRequest {
-	Instance.HostName = hostName
-	Instance.Endpoints = endpoints
+func RegisterInstanceRequest() *pb.RegisterInstanceRequest {
 	return &pb.RegisterInstanceRequest{
 		Instance: Instance,
 	}

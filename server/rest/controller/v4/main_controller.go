@@ -18,17 +18,19 @@ package v4
 
 import (
 	"encoding/json"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	"github.com/apache/incubator-servicecomb-service-center/server/rest/controller"
-	"github.com/apache/incubator-servicecomb-service-center/version"
+	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/server/core"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/rest/controller"
+	"github.com/apache/servicecomb-service-center/version"
 	"net/http"
+	"sync"
 )
 
 var (
 	versionJsonCache []byte
 	versionResp      *pb.Response
+	parseVersionOnce sync.Once
 )
 
 const API_VERSION = "4.0.0"
@@ -41,16 +43,6 @@ type Result struct {
 
 type MainService struct {
 	//
-}
-
-func init() {
-	result := Result{
-		version.Ver(),
-		API_VERSION,
-		core.ServerInfo.Config,
-	}
-	versionJsonCache, _ = json.Marshal(result)
-	versionResp = pb.CreateResponse(pb.Response_SUCCESS, "get version successfully")
 }
 
 func (this *MainService) URLPatterns() []rest.Route {
@@ -68,5 +60,14 @@ func (this *MainService) ClusterHealth(w http.ResponseWriter, r *http.Request) {
 }
 
 func (this *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
+	parseVersionOnce.Do(func() {
+		result := Result{
+			version.Ver(),
+			API_VERSION,
+			&core.ServerInfo.Config,
+		}
+		versionJsonCache, _ = json.Marshal(result)
+		versionResp = pb.CreateResponse(pb.Response_SUCCESS, "get version successfully")
+	})
 	controller.WriteJsonBytes(w, versionResp, versionJsonCache)
 }

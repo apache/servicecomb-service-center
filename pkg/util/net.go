@@ -33,21 +33,9 @@ type IpPort struct {
 func GetIPFromContext(ctx context.Context) string {
 	v, ok := FromContext(ctx, "x-remote-ip").(string)
 	if !ok {
-		return ""
+		return "UNKNOWN"
 	}
 	return v
-}
-
-func UrlEncode(keys map[string]string) string {
-	l := len(keys)
-	if l == 0 {
-		return ""
-	}
-	arr := make([]string, 0, l)
-	for k, v := range keys {
-		arr = append(arr, url.QueryEscape(k)+"="+url.QueryEscape(v))
-	}
-	return StringJoin(arr, "&")
 }
 
 func ParseEndpoint(ep string) (string, error) {
@@ -79,11 +67,7 @@ func GetRealIP(r *http.Request) string {
 			return ip
 		}
 	}
-	addrs := strings.Split(r.RemoteAddr, ":")
-	if len(addrs) > 0 {
-		return addrs[0]
-	}
-	return ""
+	return strings.Split(r.RemoteAddr, ":")[0]
 }
 
 func InetNtoIP(ipnr uint32) net.IP {

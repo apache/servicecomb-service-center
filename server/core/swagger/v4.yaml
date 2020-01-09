@@ -50,11 +50,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/health:
     get:
       description: |
@@ -78,11 +78,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{serviceId}:
     get:
       description: |
@@ -112,11 +112,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
     delete:
       description: |
         删除一个微服务定义及其相关信息，同时注销其所有实例信息。
@@ -148,11 +148,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices:
     get:
       description: |
@@ -177,11 +177,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
     post:
       description: |
         在注册微服务实例前需要创建服务静态信息，之后注册的微服务实例根据service id这个字段与静态信息关联，一个服务对应对多个实例。
@@ -212,11 +212,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
     delete:
       description: |
         批量删除指定的微服务定义及其相关信息，同时注销其所有实例信息。
@@ -236,15 +236,17 @@ paths:
         - microservices
       responses:
         200:
-          description: 更新成功
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/DelServicesResponse'
         400:
           description: 错误的请求
           schema:
-            $ref: '#/definitions/DelServicesResponse'
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{serviceId}/properties:
     put:
       description: |
@@ -278,11 +280,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{serviceId}/tags:
     post:
       description: |
@@ -310,18 +312,18 @@ paths:
             $ref: '#/definitions/Tags'
       tags:
         - microservices
-        - tag
+        - tags
       responses:
         200:
           description: 创建成功
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
     get:
       description: |
         获取serviceId的微服务的tag
@@ -343,7 +345,7 @@ paths:
           type: string
       tags:
         - microservices
-        - tag
+        - tags
       responses:
         200:
           description: 查询成功
@@ -352,11 +354,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-                type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{serviceId}/tags/{key}:
     put:
       description: |
@@ -388,18 +390,18 @@ paths:
           type: string
       tags:
         - microservices
-        - tag
+        - tags
       responses:
         200:
           description: 更新成功
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
     delete:
       description: |
         为serviceId的微服务删除tags
@@ -426,18 +428,18 @@ paths:
           type: string
       tags:
         - microservices
-        - tag
+        - tags
       responses:
         200:
           description: 删除成功
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{serviceId}/rules:
     post:
       description: |
@@ -465,7 +467,7 @@ paths:
             $ref: '#/definitions/AddRules'
       tags:
         - microservices
-        - rule
+        - rules
       responses:
         200:
           description: 创建成功
@@ -474,11 +476,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
     get:
       description: |
         获取serviceId的服务的黑白名单信息。
@@ -500,7 +502,7 @@ paths:
           type: string
       tags:
         - microservices
-        - rule
+        - rules
       responses:
         200:
           description: 查询成功
@@ -509,11 +511,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{serviceId}/rules/{rule_id}:
     put:
       description: |
@@ -546,7 +548,7 @@ paths:
             $ref: "#/definitions/AddOrUpdateRule"
       tags:
         - microservices
-        - rule
+        - rules
       responses:
         200:
           description: 修改成功
@@ -555,11 +557,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
     delete:
       description: |
         为serviceId的服务删除黑白名单。
@@ -586,7 +588,7 @@ paths:
           type: string
       tags:
         - microservices
-        - rule
+        - rules
       responses:
         200:
           description: 删除成功
@@ -595,11 +597,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{serviceId}/schemas/{schemaId}:
     get:
       description: |
@@ -626,7 +628,7 @@ paths:
           type: string
       tags:
         - microservices
-        - schema
+        - schemas
       responses:
         200:
           description: 查询成功,如果summary存在，则header里面的X-Schema-Summary的value为该schema对应的摘要
@@ -638,11 +640,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
     put:
       description: |
         根据schemaId更新微服务的访问契约内容。
@@ -675,18 +677,18 @@ paths:
             $ref: '#/definitions/CreateSchema'
       tags:
         - microservices
-        - schema
+        - schemas
       responses:
         200:
           description: 修改成功
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
     delete:
       description: |
         删除微服务的一个schema信息。
@@ -713,18 +715,18 @@ paths:
           type: string
       tags:
         - microservices
-        - schema
+        - schemas
       responses:
         200:
           description: 删除成功
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{serviceId}/schemas:
     post:
       description: |
@@ -752,18 +754,18 @@ paths:
             $ref: '#/definitions/ModifySchemasRequest'
       tags:
         - microservices
-        - schema
+        - schemas
       responses:
         200:
           description: 創建成功
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
     get:
       description: |
         批量查询所有schemas和summary。
@@ -789,7 +791,7 @@ paths:
           default: 0
       tags:
         - microservices
-        - schema
+        - schemas
       responses:
         200:
           description: 查询成功
@@ -798,11 +800,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/dependencies:
     post:
       description: |
@@ -824,7 +826,7 @@ paths:
           schema:
             $ref: '#/definitions/CreateDependenciesRequest'
       tags:
-        - dependency
+        - dependencies
       responses:
         200:
           description: 创建成功
@@ -833,11 +835,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
     put:
       description: |
         覆盖式修改服务间的依赖关系，consumer的version必须是确定的版本，serviceName不能为*，consumer必须是已存在的服务，provider可以是还未创建的。
@@ -858,7 +860,7 @@ paths:
           schema:
             $ref: '#/definitions/CreateDependenciesRequest'
       tags:
-        - dependency
+        - dependencies
       responses:
         200:
           description: 创建成功
@@ -867,11 +869,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{consumerId}/providers:
     get:
       description: |
@@ -902,7 +904,7 @@ paths:
           type: integer
           default: 0
       tags:
-        - dependency
+        - dependencies
       responses:
         200:
           description: 查询成功
@@ -911,11 +913,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{providerId}/consumers:
     get:
       description: |
@@ -946,7 +948,7 @@ paths:
           type: integer
           default: 0
       tags:
-        - dependency
+        - dependencies
       responses:
         200:
           description: 查询成功
@@ -955,11 +957,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/existence:
     get:
       description: |
@@ -1023,11 +1025,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{serviceId}/instances:
     post:
       description: |
@@ -1064,11 +1066,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
     get:
       description: |
         实例注册后可以根据 service_id 发现该微服务的所有实例。
@@ -1086,7 +1088,6 @@ paths:
         - name: X-ConsumerId
           in: header
           description: 微服务消费者的微服务唯一标识。
-          required: true
           type: string
         - name: serviceId
           in: path
@@ -1101,21 +1102,35 @@ paths:
           in: query
           description: 实例的environment。
           type: string
+        - name: rev
+          in: query
+          description: 客户端缓存版本号。
+          type: string
       tags:
         - instances
       responses:
         200:
           description: 查询成功
+          headers:
+            "X-Resource-Revision":
+              type: "string"
+              description: 返回集合的版本号,当集合内容发生变化,版本号随之变化
           schema:
             $ref: '#/definitions/GetInstancesResponse'
+        304:
+          description: 查询实例集合与客户端一致
+          headers:
+            "X-Resource-Revision":
+              type: "string"
+              description: 返回集合的版本号,当集合内容发生变化,版本号随之变化
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{serviceId}/instances/{instanceId}:
     delete:
       description: |
@@ -1148,11 +1163,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
     get:
       description: |
         实例注册后可以根据 service_id和serviceId获取该实例的详细信息。
@@ -1166,7 +1181,6 @@ paths:
         - name: X-ConsumerId
           in: header
           description: 微服务消费者的微服务唯一标识。
-          required: true
           type: string
         - name: project
           in: path
@@ -1190,21 +1204,35 @@ paths:
           in: query
           description: 实例的environment。
           type: string
+        - name: rev
+          in: query
+          description: 客户端缓存版本号。
+          type: string
       tags:
         - instances
       responses:
         200:
           description: 查询成功
+          headers:
+            "X-Resource-Revision":
+              type: "string"
+              description: 返回集合的版本号,当集合内容发生变化,版本号随之变化
           schema:
             $ref: '#/definitions/GetOneInstanceResponse'
+        304:
+          description: 查询实例集合与客户端一致
+          headers:
+            "X-Resource-Revision":
+              type: "string"
+              description: 返回集合的版本号,当集合内容发生变化,版本号随之变化
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{serviceId}/instances/{instanceId}/properties:
     put:
       description: |
@@ -1243,11 +1271,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{serviceId}/instances/{instanceId}/status:
     put:
       description: |
@@ -1274,7 +1302,7 @@ paths:
           type: string
         - name: value
           in: query
-          description: 实例状态 UP在线OUTOFSERVICE摘机STARTING正在启动DOWN下线。
+          description: 实例状态, UP在线,OUTOFSERVICE摘机,STARTING正在启动,DOWN下线,TESTING拨测状态。
           required: true
           type: string
       tags:
@@ -1285,11 +1313,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{serviceId}/instances/{instanceId}/heartbeat:
     put:
       description: |
@@ -1322,11 +1350,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/heartbeats:
     put:
       description: |
@@ -1359,7 +1387,7 @@ paths:
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/instances:
     get:
       description: |
@@ -1370,13 +1398,16 @@ paths:
           in: header
           type: string
           default: default
-        - name: project
-          in: path
-          required: true
+        - name: x-resource-revsion
+          in: header
           type: string
+          description: 客户端缓存的版本号,由上一次请求该API返回Header中获得;如请求版本号不为空且与服务端不匹配则服务端返回其最新的实例集合和版本号;如匹配则服务端返回304状态且Body为空。
         - name: X-ConsumerId
           in: header
           description: 微服务消费者的微服务唯一标识。
+          type: string
+        - name: project
+          in: path
           required: true
           type: string
         - name: appId
@@ -1402,21 +1433,79 @@ paths:
           in: query
           description: 实例的environment。
           type: string
+        - name: rev
+          in: query
+          description: 客户端缓存版本号。
+          type: string
+      tags:
+        - instances
+      responses:
+        200:
+          description: 查询成功
+          headers:
+            "X-Resource-Revision":
+              type: "string"
+              description: 返回集合的版本号,当集合内容发生变化,版本号随之变化
+          schema:
+            $ref: '#/definitions/GetInstancesResponse'
+        304:
+          description: 查询实例集合与客户端一致
+          headers:
+            "X-Resource-Revision":
+              type: "string"
+              description: 返回集合的版本号,当集合内容发生变化,版本号随之变化
+        400:
+          description: 错误的请求
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          description: 内部错误
+          schema:
+            $ref: '#/definitions/Error'
+  /v4/{project}/registry/instances/action:
+    post:
+      description: |
+        批量微服务实例发现接口
+      operationId: batchFind
+      parameters:
+        - name: x-domain-name
+          in: header
+          type: string
+          default: default
+        - name: X-ConsumerId
+          in: header
+          description: 微服务消费者的微服务唯一标识。
+          type: string
+        - name: project
+          in: path
+          required: true
+          type: string
+        - name: type
+          in: query
+          required: true
+          type: string
+          description: 操作，目前仅有“query”，表示查询
+        - name: request
+          in: body
+          description: 查询微服务的请求结构体
+          required: true
+          schema:
+            $ref: '#/definitions/BatchFindRequest'
       tags:
         - instances
       responses:
         200:
           description: 查询成功
           schema:
-            $ref: '#/definitions/GetInstancesResponse'
+            $ref: '#/definitions/BatchFindResponse'
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{serviceId}/watcher:
     get:
       description: |
@@ -1446,11 +1535,11 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{serviceId}/listwatcher:
     get:
       description: |
@@ -1479,16 +1568,16 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/govern/microservices/{serviceId}:
     get:
       description: |
         查询单个服务的所有信息。
-      operationId: GetServiceDetail
+      operationId: getServiceDetail
       parameters:
         - name: x-domain-name
           in: header
@@ -1514,16 +1603,16 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/govern/microservices:
     get:
       description: |
         查询单个服务的所有信息。
-      operationId: GetServicesInfo
+      operationId: getServicesInfo
       parameters:
         - name: x-domain-name
           in: header
@@ -1549,16 +1638,16 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/govern/relations:
     get:
       description: |
         查询服务间的关系。
-      operationId: GetGraph
+      operationId: getGraph
       parameters:
         - name: x-domain-name
           in: header
@@ -1581,16 +1670,16 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
   /v4/{project}/govern/apps:
     get:
       description: |
         查询所有appId。
-      operationId: GetApplications
+      operationId: getApplications
       parameters:
         - name: x-domain-name
           in: header
@@ -1617,11 +1706,117 @@ paths:
         400:
           description: 错误的请求
           schema:
-            type: string
+            $ref: '#/definitions/Error'
         500:
           description: 内部错误
           schema:
-            type: string
+            $ref: '#/definitions/Error'
+  /v4/{project}/admin/dump:
+    get:
+      description: |
+        Dump the information of service center runtime
+      operationId: dump
+      parameters:
+        - name: x-domain-name
+          in: header
+          type: string
+          default: default
+          description: default租户
+          required: true
+        - name: project
+          in: path
+          default: default
+          description: default项目
+          required: true
+          type: string
+        - name: options
+          in: query
+          default: cache
+          description: 枚举值有:info,config,env,cache和all
+          type: string
+      tags:
+        - admin
+      responses:
+        200:
+          description: dump information
+          schema:
+            $ref: '#/definitions/DumpResponse'
+        403:
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error'
+  /v4/{project}/admin/clusters:
+    get:
+      description: |
+        Return the registry clusters managed by Service Center
+      operationId: clusters
+      parameters:
+        - name: x-domain-name
+          in: header
+          type: string
+          default: default
+          description: default租户
+          required: true
+        - name: project
+          in: path
+          default: default
+          description: default项目
+          required: true
+          type: string
+      tags:
+        - admin
+      responses:
+        200:
+          description: clusters information
+          schema:
+            $ref: '#/definitions/ClustersResponse'
+  /v4/{project}/admin/alarms:
+    get:
+      description: |
+        Return the alarms list of Service Center
+      operationId: alarmList
+      parameters:
+        - name: x-domain-name
+          in: header
+          type: string
+          default: default
+          description: default租户
+          required: true
+        - name: project
+          in: path
+          default: default
+          description: default项目
+          required: true
+          type: string
+      tags:
+        - admin
+      responses:
+        200:
+          description: alarms information
+          schema:
+            $ref: '#/definitions/AlarmList'
+    delete:
+      description: |
+        Clear the alarms list of Service Center
+      operationId: clearAlarm
+      parameters:
+        - name: x-domain-name
+          in: header
+          type: string
+          default: default
+          description: default租户
+          required: true
+        - name: project
+          in: path
+          default: default
+          description: default项目
+          required: true
+          type: string
+      tags:
+        - admin
+      responses:
+        200:
+          description: cleared
 definitions:
   Version:
     type: object
@@ -1632,6 +1827,14 @@ definitions:
         type: string
       buildTag:
         type: string
+      goVersion:
+        type: string
+      os:
+        type: string
+      arch:
+        type: string
+      config:
+        $ref: '#/definitions/Config'
   Properties:
     type: object
     description: 扩展属性
@@ -1847,6 +2050,79 @@ definitions:
       modTimestamp:
         type: string
         description: 更新时间
+  FindService:
+    type: object
+    properties:
+      service:
+        $ref: '#/definitions/DependencyKey'
+      rev:
+        type: string
+        description: 客户端缓存的版本号。
+  FindInstance:
+    type: object
+    properties:
+      instance:
+        $ref: '#/definitions/HeartbeatSetElement'
+      rev:
+        type: string
+        description: 客户端缓存的版本号。
+  BatchFindRequest:
+    type: object
+    properties:
+      services:
+        type: array
+        items:
+          $ref: '#/definitions/FindService'
+      instances:
+        type: array
+        items:
+          $ref: '#/definitions/FindInstance'
+  FindResult:
+    type: object
+    properties:
+      index:
+        type: integer
+        description: 与请求数组对应的索引。
+      rev:
+        type: string
+        description: 服务端返回集合版本,如跟客户端缓存版本号一致,则instances为空。
+      instances:
+        type: array
+        items:
+          $ref: '#/definitions/MicroServiceInstance'
+  FindFailedResult:
+    type: object
+    properties:
+      indexes:
+        type: array
+        items:
+          type: integer
+        description: 与请求数组对应的索引集合。
+      error:
+        $ref: '#/definitions/Error'
+  BatchFindResult:
+    type: object
+    properties:
+      failed:
+        type: array
+        items:
+          $ref: '#/definitions/FindFailedResult'
+      notModified:
+        type: array
+        items:
+          type: integer
+        description: 与请求数组对应的索引集合。
+      updated:
+        type: array
+        items:
+          $ref: '#/definitions/FindResult'
+  BatchFindResponse:
+    type: object
+    properties:
+      services:
+        $ref: '#/definitions/BatchFindResult'
+      instances:
+        $ref: '#/definitions/BatchFindResult'
   CreateDependenciesRequest:
     type: object
     properties:
@@ -2224,3 +2500,185 @@ definitions:
        schema:
          description: shema
          type: string
+  MicroServiceKV:
+    type: object
+    properties:
+      key:
+        type: string
+      rev:
+        type: integer
+      value:
+        $ref: "#/definitions/MicroService"
+  MicroServiceInstanceKV:
+    type: object
+    properties:
+      key:
+        type: string
+      rev:
+        type: integer
+      value:
+        $ref: "#/definitions/MicroServiceInstance"
+  StringKV:
+    type: object
+    properties:
+      key:
+        type: string
+      rev:
+        type: integer
+      value:
+        type: string
+  MicroserviceTagKV:
+    type: object
+    properties:
+      key:
+        type: string
+      rev:
+        type: integer
+      value:
+        $ref: '#/definitions/Properties'
+  MicroserviceRuleKV:
+    type: object
+    properties:
+      key:
+        type: string
+      rev:
+        type: integer
+      value:
+        $ref: '#/definitions/Rule'
+  MicroServiceDependencyRule:
+    type: object
+    properties:
+      Dependency:
+        type: array
+        items:
+          $ref: '#/definitions/DependencyKey'
+  DependencyKV:
+    type: object
+    properties:
+      key:
+        type: string
+      rev:
+        type: integer
+      value:
+        $ref: '#/definitions/MicroServiceDependencyRule'
+  Cache:
+    type: object
+    properties:
+      services:
+        type: array
+        items:
+          $ref: "#/definitions/MicroServiceKV"
+      serviceIndexes:
+        type: array
+        items:
+          $ref: "#/definitions/StringKV"
+      serviceAliases:
+        type: array
+        items:
+          $ref: "#/definitions/StringKV"
+      serviceTags:
+        type: array
+        items:
+          $ref: "#/definitions/MicroserviceTagKV"
+      serviceRuleIndexes:
+        type: array
+        items:
+          $ref: "#/definitions/StringKV"
+      serviceRules:
+        type: array
+        items:
+          $ref: "#/definitions/MicroserviceRuleKV"
+      dependencyRules:
+        type: array
+        items:
+          $ref: "#/definitions/DependencyKV"
+      summaries:
+        type: array
+        items:
+          $ref: "#/definitions/StringKV"
+      instances:
+        type: array
+        items:
+          $ref: "#/definitions/MicroServiceInstanceKV"
+  Config:
+    type: object
+    properties:
+      maxHeaderBytes:
+        type: integer
+      maxBodyBytes:
+        type: integer
+      readHeaderTimeout:
+        type: string
+      readTimeout:
+        type: string
+      idleTimeout:
+        type: string
+      writeTimeout:
+        type: string
+      limitTTLUnit:
+        type: string
+      limitConnections:
+        type: integer
+      limitIPLookup:
+        type: string
+      sslEnabled:
+        type: string
+      sslMinVersion:
+        type: string
+      sslVerifyPeer:
+        type: string
+      sslCiphers:
+        type: string
+      enablePProf:
+        type: boolean
+      enableCache:
+        type: boolean
+      selfRegister:
+        type: boolean
+  DumpResponse:
+    type: object
+    properties:
+      info:
+        $ref: '#/definitions/Version'
+      config:
+        $ref: '#/definitions/Properties'
+      environments:
+        $ref: '#/definitions/Properties'
+      cache:
+        $ref: "#/definitions/Cache"
+  Clusters:
+    type: object
+    description: Clusters information
+    additionalProperties:
+      type: array
+      items:
+        type: string
+  ClustersResponse:
+    type: object
+    properties:
+      clusters:
+        $ref: '#/definitions/Clusters'
+  Error:
+    type: object
+    properties:
+      errorCode:
+        type: string
+      errorMessage:
+        type: string
+      detail:
+        type: string
+  AlarmList:
+    type: object
+    description: alarms information
+    additionalProperties:
+      type: array
+      items:
+        $ref: '#/definitions/Alarm'
+  Alarm:
+    type: object
+    description: alarm information
+    properties:
+      id:
+        type: string
+      fields:
+        $ref: '#/definitions/Properties'

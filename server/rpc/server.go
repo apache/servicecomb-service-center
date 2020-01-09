@@ -17,10 +17,10 @@
 package rpc
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/rpc"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	sctls "github.com/apache/incubator-servicecomb-service-center/server/tls"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/rpc"
+	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/plugin"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"net"
@@ -28,19 +28,19 @@ import (
 
 type Server struct {
 	*grpc.Server
-	innerListener net.Listener
+	Listener net.Listener
 }
 
 func (srv *Server) Serve() error {
-	return srv.Server.Serve(srv.innerListener)
+	return srv.Server.Serve(srv.Listener)
 }
 
 func NewServer(ipAddr string) (_ *Server, err error) {
 	var grpcSrv *grpc.Server
 	if core.ServerInfo.Config.SslEnabled {
-		tlsConfig, err := sctls.GetServerTLSConfig()
+		tlsConfig, err := plugin.Plugins().TLS().ServerConfig()
 		if err != nil {
-			util.Logger().Error("error to get server tls config", err)
+			log.Error("error to get server tls config", err)
 			return nil, err
 		}
 		creds := credentials.NewTLS(tlsConfig)
@@ -49,16 +49,16 @@ func NewServer(ipAddr string) (_ *Server, err error) {
 		grpcSrv = grpc.NewServer()
 	}
 
-	rpc.RegisterServer(grpcSrv)
+	rpc.RegisterGRpcServer(grpcSrv)
 
 	ls, err := net.Listen("tcp", ipAddr)
 	if err != nil {
-		util.Logger().Error("error to start Grpc API server "+ipAddr, err)
+		log.Error("error to start Grpc API server "+ipAddr, err)
 		return
 	}
 
 	return &Server{
-		Server:        grpcSrv,
-		innerListener: ls,
+		Server:   grpcSrv,
+		Listener: ls,
 	}, nil
 }

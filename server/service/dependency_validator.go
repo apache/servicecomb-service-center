@@ -17,8 +17,8 @@
 package service
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/validate"
-	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
+	"github.com/apache/servicecomb-service-center/pkg/validate"
+	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"regexp"
 )
 

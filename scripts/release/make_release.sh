@@ -15,8 +15,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -e
+
 ## Get the Release Number
-if [ $2 == "" ]; then
+if [[ $2 == "" ]]; then
     echo "Invalid version number....exiting...."
     exit 1
 else
@@ -24,7 +26,7 @@ else
 fi
 
 #Package prefix for the release directory
-PACKAGE_PREFIX=apache-servicecomb-incubating-service-center
+PACKAGE_PREFIX=apache-servicecomb-service-center
 
 ## Get the PACKAGE NUMBER
 if [ "X"$3 == "X" ]; then
@@ -41,6 +43,9 @@ case $1 in
  windows )
     OSNAME=windows ;;
 
+ mac )
+    OSNAME=mac ;;
+
  all )
     OSNAME=all ;;
 
@@ -50,20 +55,28 @@ case $1 in
 
 esac
 
-## Prepare the Configuration
-prepare_conf() {
-    set +e
-    rm -rf tmp
+## Get the arch type
+export GOARCH=${4:-"amd64"}
+export CGO_ENABLED=${CGO_ENABLED:-0} # prevent to compile cgo file
+export GO_EXTLINK_ENABLED=${GO_EXTLINK_ENABLED:-0} # do not use host linker
+export GO_LDFLAGS=${GO_LDFLAGS:-" -s -w"}
 
-    set -e
-    mkdir tmp
-    cp -r etc/conf tmp/
-    sed -i 's/# manager_name = \"sc-0\"/manager_name = \"sr-0\"/g' tmp/conf/app.conf
-    sed -i 's/# manager_addr = \"http:\/\/127.0.0.1:2380\"/manager_addr = \"http:\/\/127.0.0.1:2380\"/g' tmp/conf/app.conf
-    sed -i 's/# manager_cluster = \"sc-0=http:\/\/127.0.0.1:2380\"/manager_cluster = \"sr-0=http:\/\/127.0.0.1:2380\"/g' tmp/conf/app.conf
-    sed -i 's/manager_cluster = \"127.0.0.1:2379\"/# manager_cluster = \"127.0.0.1:2379\"/g' tmp/conf/app.conf
-    #sed -i s@"manager_cluster.*=.*$"@"manager_name = \"sr-0\"\nmanager_addr = \"http://127.0.0.1:2380\"\nmanager_cluster = \"sr-0=http://127.0.0.1:2380\""@g tmp/conf/app.conf
-    sed -i 's/registry_plugin = etcd/registry_plugin = embeded_etcd/g' tmp/conf/app.conf
+root_path=$(cd "$(dirname "$0")"; pwd)
+
+source ${root_path}/../build/tools.sh
+
+build() {
+    frontend_deps
+
+    build_service_center
+
+    build_frontend
+
+    build_scctl
+
+    build_syncer
+
+    package
 }
 
 # Build Linux Release
@@ -75,50 +88,9 @@ build_linux(){
         echo "Error in Making Linux Release.....Package Number not specified"
     fi
 
-    set +e
-    rm -rf $PACKAGE_PREFIX-$PACKAGE-linux-amd64
-    rm -rf $PACKAGE_PREFIX-$PACKAGE-linux-amd64.tar.gz
-
-    set -e
-    mkdir -p $PACKAGE_PREFIX-$PACKAGE-linux-amd64
-
-    ## Build the Service-Center releases
     export GOOS=linux
-    export GIT_COMMIT=$(git log  --pretty=format:'%h' -n 1)
-    export BUILD_NUMBER=$RELEASE
-    GO_LDFLAGS="${GO_LDFLAGS} -X 'github.com/apache/incubator-servicecomb-service-center/version.BUILD_TAG=$(date +%Y%m%d%H%M%S).$BUILD_NUMBER.$GIT_COMMIT'"
-    GO_LDFLAGS="${GO_LDFLAGS} -X 'github.com/apache/incubator-servicecomb-service-center/version.VERSION=$BUILD_NUMBER'"
-    go build --ldflags "${GO_LDFLAGS}" -o $PACKAGE_PREFIX-$PACKAGE-linux-amd64/service-center
 
-    ## Build Frontend Release
-    cd frontend
-    go build -o ../$PACKAGE_PREFIX-$PACKAGE-linux-amd64/frontend
-
-    ## Download the frontend dependencies using bower
-    cd app
-    bower install
-
-    cd ../..
-
-    prepare_conf
-
-    ## Copy the Service-Center Releases
-    cp -r tmp/conf $PACKAGE_PREFIX-$PACKAGE-linux-amd64/
-    cp -r scripts/release/LICENSE $PACKAGE_PREFIX-$PACKAGE-linux-amd64/
-    cp -r scripts/release/licenses $PACKAGE_PREFIX-$PACKAGE-linux-amd64/
-    cp -r scripts/release/NOTICE $PACKAGE_PREFIX-$PACKAGE-linux-amd64/
-    cp -r DISCLAIMER $PACKAGE_PREFIX-$PACKAGE-linux-amd64/
-    cp -r README.md $PACKAGE_PREFIX-$PACKAGE-linux-amd64/
-
-    ## Copy the frontend releases
-    cp -r frontend/app $PACKAGE_PREFIX-$PACKAGE-linux-amd64/
-
-    ## Copy Start Scripts
-    cp -r scripts/release/start_scripts/linux/* $PACKAGE_PREFIX-$PACKAGE-linux-amd64/
-    chmod +x $PACKAGE_PREFIX-$PACKAGE-linux-amd64/*.sh
-
-    ## Archive the release
-    tar -czvf $PACKAGE_PREFIX-$PACKAGE-linux-amd64.tar.gz $PACKAGE_PREFIX-$PACKAGE-linux-amd64
+    build
 }
 
 # Build Windows Release
@@ -130,51 +102,23 @@ build_windows(){
         echo "Error in Making Windows Release.....Package Number not specified"
     fi
 
-    set +e
-    rm -rf $PACKAGE_PREFIX-$PACKAGE-windows-amd64
-    rm -rf $PACKAGE_PREFIX-$PACKAGE-windows-amd64.zip
-
-    set -e
-    mkdir -p $PACKAGE_PREFIX-$PACKAGE-windows-amd64
-
-    ## Build Service-Center Release
     export GOOS=windows
-    export GIT_COMMIT=$(git log  --pretty=format:'%h' -n 1)
-    export BUILD_NUMBER=$RELEASE
-    GO_LDFLAGS="${GO_LDFLAGS} -X 'github.com/apache/incubator-servicecomb-service-center/version.BUILD_TAG=$(date +%Y%m%d%H%M%S).$BUILD_NUMBER.$GIT_COMMIT'"
-    GO_LDFLAGS="${GO_LDFLAGS} -X 'github.com/apache/incubator-servicecomb-service-center/version.VERSION=$BUILD_NUMBER'"
-    go build --ldflags "${GO_LDFLAGS}" -o service-center.exe
-    cp -r service-center.exe $PACKAGE_PREFIX-$PACKAGE-windows-amd64
 
-    ## Build Frontend release
-    cd frontend
-    go build -o frontend.exe
-    cp -r frontend.exe ../$PACKAGE_PREFIX-$PACKAGE-windows-amd64
+    build
+}
 
-    ## Download the frontend dependencies using bower
-    cd app
-    bower install
+# Build Mac Release
+build_mac(){
+    if [ "X"$RELEASE == "X" ] ; then
+         echo "Error in Making Mac Release.....Release Number not specified"
+    fi
+    if [ "X"$PACKAGE == "X" ]; then
+        echo "Error in Making Mac Release.....Package Number not specified"
+    fi
 
-    cd ../..
+    export GOOS=darwin
 
-    prepare_conf
-
-    ## Copy the service-center releases
-    cp -r tmp/conf $PACKAGE_PREFIX-$PACKAGE-windows-amd64/
-    cp -r scripts/release/LICENSE $PACKAGE_PREFIX-$PACKAGE-windows-amd64/
-    cp -r scripts/release/licenses $PACKAGE_PREFIX-$PACKAGE-windows-amd64/
-    cp -r scripts/release/NOTICE $PACKAGE_PREFIX-$PACKAGE-windows-amd64/
-    cp -r DISCLAIMER $PACKAGE_PREFIX-$PACKAGE-windows-amd64/
-    cp -r README.md $PACKAGE_PREFIX-$PACKAGE-windows-amd64/
-
-    ## Copy the Frontend releases
-    cp -r frontend/app $PACKAGE_PREFIX-$PACKAGE-windows-amd64/
-
-    ## Copy start scripts
-    cp -r scripts/release/start_scripts/windows/* $PACKAGE_PREFIX-$PACKAGE-windows-amd64/
-
-    ## Archive the Release
-    tar -czvf $PACKAGE_PREFIX-$PACKAGE-windows-amd64.tar.gz $PACKAGE_PREFIX-$PACKAGE-windows-amd64
+    build
 }
 
 ## Compile the binary
@@ -185,8 +129,12 @@ case $OSNAME in
  windows )
     build_windows ;;
 
+ mac )
+    build_mac ;;
+
  all )
     build_linux
-    build_windows ;;
+    build_windows
+    build_mac ;;
 
 esac

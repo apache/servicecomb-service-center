@@ -18,22 +18,24 @@ package service
 
 import (
 	"encoding/json"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin"
-	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	apt "github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/backend"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	scerr "github.com/apache/servicecomb-service-center/server/error"
+	"github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/quota"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
+	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
 )
 
 func (s *MicroServiceService) AddTags(ctx context.Context, in *pb.AddServiceTagsRequest) (*pb.AddServiceTagsResponse, error) {
+	remoteIP := util.GetIPFromContext(ctx)
 	err := Validate(in)
 	if err != nil {
-		util.Logger().Errorf(err, "add service tags failed, serviceId %s, tags %v: invalid parameters.", in.ServiceId, in.Tags)
+		log.Errorf(err, "add service[%s]'s tags %v failed, operator: %s", in.ServiceId, in.Tags, remoteIP)
 		return &pb.AddServiceTagsResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
@@ -42,18 +44,19 @@ func (s *MicroServiceService) AddTags(ctx context.Context, in *pb.AddServiceTags
 	domainProject := util.ParseDomainProject(ctx)
 	// service id存在性校验
 	if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId) {
-		util.Logger().Errorf(nil, "add service tags failed, serviceId %s, tags %v: service not exist.", in.ServiceId, in.Tags)
+		log.Errorf(nil, "add service[%s]'s tags %v failed, service does not exist, operator: %s",
+			in.ServiceId, in.Tags, remoteIP)
 		return &pb.AddServiceTagsResponse{
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
-	addTags := in.GetTags()
+	addTags := in.Tags
 	res := quota.NewApplyQuotaResource(quota.TagQuotaType, domainProject, in.ServiceId, int64(len(addTags)))
 	rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
 	errQuota := rst.Err
 	if errQuota != nil {
-		util.Logger().Errorf(errQuota, "add tag info failed, check resource num failed, %s", in.ServiceId)
+		log.Errorf(errQuota, "add service[%s]'s tags %v failed, operator: %s", in.ServiceId, addTags, remoteIP)
 		response := &pb.AddServiceTagsResponse{
 			Response: pb.CreateResponseWithSCErr(errQuota),
 		}
@@ -65,22 +68,23 @@ func (s *MicroServiceService) AddTags(ctx context.Context, in *pb.AddServiceTags
 
 	dataTags, err := serviceUtil.GetTagsUtils(ctx, domainProject, in.ServiceId)
 	if err != nil {
-		util.Logger().Errorf(err, "add service tags failed, serviceId %s, tags %v: get existed tag failed.", in.ServiceId, in.Tags)
+		log.Errorf(err, "add service[%s]'s tags %v failed, get existed tag failed, operator: %s",
+			in.ServiceId, addTags, remoteIP)
 		return &pb.AddServiceTagsResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
-	if len(dataTags) > 0 {
-		for key, value := range addTags {
-			dataTags[key] = value
+	for key, value := range dataTags {
+		if _, ok := addTags[key]; ok {
+			continue
 		}
-	} else {
-		dataTags = addTags
+		addTags[key] = value
 	}
+	dataTags = addTags
 
 	checkErr := serviceUtil.AddTagIntoETCD(ctx, domainProject, in.ServiceId, dataTags)
 	if checkErr != nil {
-		util.Logger().Errorf(checkErr, "add service tags failed, serviceId %s, tags %v", in.ServiceId, in.Tags)
+		log.Errorf(checkErr, "add service[%s]'s tags %v failed, operator: %s", in.ServiceId, in.Tags, remoteIP)
 		resp := &pb.AddServiceTagsResponse{
 			Response: pb.CreateResponseWithSCErr(checkErr),
 		}
@@ -90,17 +94,18 @@ func (s *MicroServiceService) AddTags(ctx context.Context, in *pb.AddServiceTags
 		return resp, nil
 	}
 
-	util.Logger().Infof("add service tags successful, serviceId %s, tags %v.", in.ServiceId, in.Tags)
+	log.Infof("add service[%s]'s tags %v successfully, operator: %s", in.ServiceId, in.Tags, remoteIP)
 	return &pb.AddServiceTagsResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Add service tags successfully."),
 	}, nil
 }
 
 func (s *MicroServiceService) UpdateTag(ctx context.Context, in *pb.UpdateServiceTagRequest) (*pb.UpdateServiceTagResponse, error) {
+	remoteIP := util.GetIPFromContext(ctx)
 	tagFlag := util.StringJoin([]string{in.Key, in.Value}, "/")
 	err := Validate(in)
 	if err != nil {
-		util.Logger().Errorf(err, "update service tag failed, serviceId %s, tag %s: invalid params.", in.ServiceId, tagFlag)
+		log.Errorf(err, "update service[%s]'s tag[%s] failed, operator: %s", in.ServiceId, tagFlag, remoteIP)
 		return &pb.UpdateServiceTagResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
@@ -109,7 +114,8 @@ func (s *MicroServiceService) UpdateTag(ctx context.Context, in *pb.UpdateServic
 	domainProject := util.ParseDomainProject(ctx)
 
 	if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId) {
-		util.Logger().Errorf(err, "update service tag failed, serviceId %s, tag %s: service not exist.", in.ServiceId, tagFlag)
+		log.Errorf(err, "update service[%s]'s tag[%s] failed, service does not exist, operator: %s",
+			in.ServiceId, tagFlag, remoteIP)
 		return &pb.UpdateServiceTagResponse{
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
@@ -117,23 +123,30 @@ func (s *MicroServiceService) UpdateTag(ctx context.Context, in *pb.UpdateServic
 
 	tags, err := serviceUtil.GetTagsUtils(ctx, domainProject, in.ServiceId)
 	if err != nil {
-		util.Logger().Errorf(err, "update service tag failed, serviceId %s, tag %s: get tag failed.", in.ServiceId, tagFlag)
+		log.Errorf(err, "update service[%s]'s tag[%s] failed, get tag failed, operator: %s",
+			in.ServiceId, tagFlag, remoteIP)
 		return &pb.UpdateServiceTagResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 	//check tag 是否存在
 	if _, ok := tags[in.Key]; !ok {
-		util.Logger().Errorf(nil, "update service tag failed, serviceId %s, tag %s: tag not exist, please add first.", in.ServiceId, tagFlag)
+		log.Errorf(nil, "update service[%s]'s tag[%s] failed, tag does not exist, operator: %s",
+			in.ServiceId, tagFlag, remoteIP)
 		return &pb.UpdateServiceTagResponse{
-			Response: pb.CreateResponse(scerr.ErrTagNotExists, "Update tag for service failed for update tags not exist, please add first."),
+			Response: pb.CreateResponse(scerr.ErrTagNotExists, "Tag does not exist, please add one first."),
 		}, nil
 	}
-	tags[in.Key] = in.Value
 
-	checkErr := serviceUtil.AddTagIntoETCD(ctx, domainProject, in.ServiceId, tags)
+	copyTags := make(map[string]string, len(tags))
+	for k, v := range tags {
+		copyTags[k] = v
+	}
+	copyTags[in.Key] = in.Value
+
+	checkErr := serviceUtil.AddTagIntoETCD(ctx, domainProject, in.ServiceId, copyTags)
 	if checkErr != nil {
-		util.Logger().Errorf(checkErr, "update service tag failed, serviceId %s, tag %s.", in.ServiceId, tagFlag)
+		log.Errorf(checkErr, "update service[%s]'s tag[%s] failed, operator: %s", in.ServiceId, tagFlag, remoteIP)
 		resp := &pb.UpdateServiceTagResponse{
 			Response: pb.CreateResponseWithSCErr(checkErr),
 		}
@@ -143,16 +156,17 @@ func (s *MicroServiceService) UpdateTag(ctx context.Context, in *pb.UpdateServic
 		return resp, nil
 	}
 
-	util.Logger().Infof("update tag successful, serviceId %s, tag %s.", in.ServiceId, tagFlag)
+	log.Infof("update service[%s]'s tag[%s] successfully, operator: %s", in.ServiceId, tagFlag, remoteIP)
 	return &pb.UpdateServiceTagResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Update service tag success."),
 	}, nil
 }
 
 func (s *MicroServiceService) DeleteTags(ctx context.Context, in *pb.DeleteServiceTagsRequest) (*pb.DeleteServiceTagsResponse, error) {
+	remoteIP := util.GetIPFromContext(ctx)
 	err := Validate(in)
 	if err != nil {
-		util.Logger().Errorf(err, "delete service tags failed, serviceId %s, tags %v: invalid params.", in.ServiceId, in.Keys)
+		log.Errorf(err, "delete service[%s]'s tags %v failed, operator: %s", in.ServiceId, in.Keys, remoteIP)
 		return &pb.DeleteServiceTagsResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
@@ -161,7 +175,8 @@ func (s *MicroServiceService) DeleteTags(ctx context.Context, in *pb.DeleteServi
 	domainProject := util.ParseDomainProject(ctx)
 
 	if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId) {
-		util.Logger().Errorf(nil, "delete service tags failed, serviceId %s, tags %v: service not exist.", in.ServiceId, in.Keys)
+		log.Errorf(nil, "delete service[%s]'s tags %v failed, service does not exist, operator: %s",
+			in.ServiceId, in.Keys, remoteIP)
 		return &pb.DeleteServiceTagsResponse{
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
@@ -169,25 +184,33 @@ func (s *MicroServiceService) DeleteTags(ctx context.Context, in *pb.DeleteServi
 
 	tags, err := serviceUtil.GetTagsUtils(ctx, domainProject, in.ServiceId)
 	if err != nil {
-		util.Logger().Errorf(err, "delete service tags failed, serviceId %s, tags %v: query service failed.", in.ServiceId, in.Keys)
+		log.Errorf(err, "delete service[%s]'s tags %v failed, get service tags failed, operator: %s",
+			in.ServiceId, in.Keys, remoteIP)
 		return &pb.DeleteServiceTagsResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
+
+	copyTags := make(map[string]string, len(tags))
+	for k, v := range tags {
+		copyTags[k] = v
+	}
 	for _, key := range in.Keys {
-		if _, ok := tags[key]; !ok {
-			util.Logger().Errorf(nil, "delete service tags failed, serviceId %s, tags %v: tag %s not exist.", in.ServiceId, in.Keys, key)
+		if _, ok := copyTags[key]; !ok {
+			log.Errorf(nil, "delete service[%s]'s tags %v failed, tag[%s] does not exist, operator: %s",
+				in.ServiceId, in.Keys, key, remoteIP)
 			return &pb.DeleteServiceTagsResponse{
 				Response: pb.CreateResponse(scerr.ErrTagNotExists, "Delete tags failed for this key "+key+" does not exist."),
 			}, nil
 		}
-		delete(tags, key)
+		delete(copyTags, key)
 	}
 
 	// tags 可能size == 0
-	data, err := json.Marshal(tags)
+	data, err := json.Marshal(copyTags)
 	if err != nil {
-		util.Logger().Errorf(err, "delete service tags failed, serviceId %s, tags %v: marshall service tag failed.", in.ServiceId, in.Keys)
+		log.Errorf(err, "delete service[%s]'s tags %v failed, marshall service tags failed, operator: %s",
+			in.ServiceId, in.Keys, remoteIP)
 		return &pb.DeleteServiceTagsResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
@@ -202,19 +225,21 @@ func (s *MicroServiceService) DeleteTags(ctx context.Context, in *pb.DeleteServi
 			registry.CMP_NOT_EQUAL, 0)},
 		nil)
 	if err != nil {
-		util.Logger().Errorf(err, "delete service tags failed, serviceId %s, tags %v: commit tag data into etcd failed.", in.ServiceId, in.Keys)
+		log.Errorf(err, "delete service[%s]'s tags %v failed, operator: %s",
+			in.ServiceId, in.Keys, remoteIP)
 		return &pb.DeleteServiceTagsResponse{
 			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
 		}, err
 	}
 	if !resp.Succeeded {
-		util.Logger().Errorf(err, "delete service properties failed, serviceId is %s, tags %v: service does not exist.", in.ServiceId, in.Keys)
+		log.Errorf(err, "delete service[%s]'s tags %v failed, service does not exist, operator: %s",
+			in.ServiceId, in.Keys, remoteIP)
 		return &pb.DeleteServiceTagsResponse{
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
-	util.Logger().Infof("delete service tags successful: serviceId %s, tag %v.", in.ServiceId, in.Keys)
+	log.Infof("delete service[%s]'s tags %v successfully, operator: %s", in.ServiceId, in.Keys, remoteIP)
 	return &pb.DeleteServiceTagsResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Delete service tags successfully."),
 	}, nil
@@ -223,7 +248,7 @@ func (s *MicroServiceService) DeleteTags(ctx context.Context, in *pb.DeleteServi
 func (s *MicroServiceService) GetTags(ctx context.Context, in *pb.GetServiceTagsRequest) (*pb.GetServiceTagsResponse, error) {
 	err := Validate(in)
 	if err != nil {
-		util.Logger().Errorf(err, "get service tags failed, serviceId %s: invalid parameters.", in.ServiceId)
+		log.Errorf(err, "get service[%s]'s tags failed", in.ServiceId)
 		return &pb.GetServiceTagsResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
@@ -232,7 +257,7 @@ func (s *MicroServiceService) GetTags(ctx context.Context, in *pb.GetServiceTags
 	domainProject := util.ParseDomainProject(ctx)
 
 	if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId) {
-		util.Logger().Errorf(err, "get service tags failed, serviceId %s: service not exist.", in.ServiceId)
+		log.Errorf(err, "get service[%s]'s tags failed, service does not exist", in.ServiceId)
 		return &pb.GetServiceTagsResponse{
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
@@ -240,7 +265,7 @@ func (s *MicroServiceService) GetTags(ctx context.Context, in *pb.GetServiceTags
 
 	tags, err := serviceUtil.GetTagsUtils(ctx, domainProject, in.ServiceId)
 	if err != nil {
-		util.Logger().Errorf(err, "get service tags failed, serviceId %s: get tag failed.", in.ServiceId)
+		log.Errorf(err, "get service[%s]'s tags failed, get tags failed", in.ServiceId)
 		return &pb.GetServiceTagsResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err

@@ -18,27 +18,80 @@ package util
 
 import (
 	"fmt"
-	"github.com/coreos/etcd/mvcc/mvccpb"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"sort"
 	"testing"
 )
 
+const VERSIONRULE_BASE = 5000
+
+func BenchmarkVersionRule_Latest_GetServicesIds(b *testing.B) {
+	var kvs = make([]*discovery.KeyValue, VERSIONRULE_BASE)
+	for i := 1; i <= VERSIONRULE_BASE; i++ {
+		kvs[i-1] = &discovery.KeyValue{
+			Key:   []byte(fmt.Sprintf("/service/ver/1.%d", i)),
+			Value: []byte(fmt.Sprintf("%d", i)),
+		}
+	}
+	b.N = VERSIONRULE_BASE
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		VersionRule(Latest).Match(kvs)
+	}
+	b.ReportAllocs()
+	// 5000	   7105020 ns/op	 2180198 B/op	   39068 allocs/op
+}
+
+func BenchmarkVersionRule_Range_GetServicesIds(b *testing.B) {
+	var kvs = make([]*discovery.KeyValue, VERSIONRULE_BASE)
+	for i := 1; i <= VERSIONRULE_BASE; i++ {
+		kvs[i-1] = &discovery.KeyValue{
+			Key:   []byte(fmt.Sprintf("/service/ver/1.%d", i)),
+			Value: []byte(fmt.Sprintf("%d", i)),
+		}
+	}
+	b.N = VERSIONRULE_BASE
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		VersionRule(Range).Match(kvs, fmt.Sprintf("1.%d", i), fmt.Sprintf("1.%d", i+VERSIONRULE_BASE/10))
+	}
+	b.ReportAllocs()
+	// 5000	   7244029 ns/op	 2287389 B/op	   39584 allocs/op
+}
+
+func BenchmarkVersionRule_AtLess_GetServicesIds(b *testing.B) {
+	var kvs = make([]*discovery.KeyValue, VERSIONRULE_BASE)
+	for i := 1; i <= VERSIONRULE_BASE; i++ {
+		kvs[i-1] = &discovery.KeyValue{
+			Key:   []byte(fmt.Sprintf("/service/ver/1.%d", i)),
+			Value: []byte(fmt.Sprintf("%d", i)),
+		}
+	}
+	b.N = VERSIONRULE_BASE
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		VersionRule(AtLess).Match(kvs, fmt.Sprintf("1.%d", i))
+	}
+	b.ReportAllocs()
+	// 5000	  11221098 ns/op	 3174720 B/op	   58064 allocs/op
+}
+
 func BenchmarkParseVersionRule(b *testing.B) {
 	f := ParseVersionRule("latest")
-	kvs := []*mvccpb.KeyValue{
+	kvs := []*discovery.KeyValue{
 		{
 			Key:   []byte("/service/ver/1.0.300"),
-			Value: []byte("1.0.300"),
+			Value: "1.0.300",
 		},
 		{
 			Key:   []byte("/service/ver/1.0.303"),
-			Value: []byte("1.0.303"),
+			Value: "1.0.303",
 		},
 		{
 			Key:   []byte("/service/ver/1.0.304"),
-			Value: []byte("1.0.304"),
+			Value: "1.0.304",
 		},
 	}
 	b.ResetTimer()
@@ -57,7 +110,7 @@ var _ = Describe("Version Rule sorter", func() {
 				kvs := []string{"1.0.0", "1.0.1"}
 				sort.Sort(&serviceKeySorter{
 					sortArr: kvs,
-					kvs:     make(map[string]*mvccpb.KeyValue),
+					kvs:     make(map[string]*discovery.KeyValue),
 					cmp:     Larger,
 				})
 				Expect(kvs[0]).To(Equal("1.0.1"))
@@ -67,7 +120,7 @@ var _ = Describe("Version Rule sorter", func() {
 				kvs := []string{"1.0.1", "1.0.0"}
 				sort.Sort(&serviceKeySorter{
 					sortArr: kvs,
-					kvs:     make(map[string]*mvccpb.KeyValue),
+					kvs:     make(map[string]*discovery.KeyValue),
 					cmp:     Larger,
 				})
 				Expect(kvs[0]).To(Equal("1.0.1"))
@@ -77,7 +130,7 @@ var _ = Describe("Version Rule sorter", func() {
 				kvs := []string{"1.0.0.0", "1.0.1"}
 				sort.Sort(&serviceKeySorter{
 					sortArr: kvs,
-					kvs:     make(map[string]*mvccpb.KeyValue),
+					kvs:     make(map[string]*discovery.KeyValue),
 					cmp:     Larger,
 				})
 				Expect(kvs[0]).To(Equal("1.0.1"))
@@ -87,7 +140,7 @@ var _ = Describe("Version Rule sorter", func() {
 				kvs := []string{"1.0.9", "1.0.10"}
 				sort.Sort(&serviceKeySorter{
 					sortArr: kvs,
-					kvs:     make(map[string]*mvccpb.KeyValue),
+					kvs:     make(map[string]*discovery.KeyValue),
 					cmp:     Larger,
 				})
 				Expect(kvs[0]).To(Equal("1.0.10"))
@@ -97,7 +150,7 @@ var _ = Describe("Version Rule sorter", func() {
 				kvs := []string{"1.10", "4"}
 				sort.Sort(&serviceKeySorter{
 					sortArr: kvs,
-					kvs:     make(map[string]*mvccpb.KeyValue),
+					kvs:     make(map[string]*discovery.KeyValue),
 					cmp:     Larger,
 				})
 				Expect(kvs[0]).To(Equal("4"))
@@ -109,7 +162,7 @@ var _ = Describe("Version Rule sorter", func() {
 				kvs := []string{"1.a", "1.0.1.a", ""}
 				sort.Sort(&serviceKeySorter{
 					sortArr: kvs,
-					kvs:     make(map[string]*mvccpb.KeyValue),
+					kvs:     make(map[string]*discovery.KeyValue),
 					cmp:     Larger,
 				})
 				Expect(kvs[0]).To(Equal("1.a"))
@@ -120,7 +173,7 @@ var _ = Describe("Version Rule sorter", func() {
 				kvs := []string{"1.0", "1.0.1.32768"}
 				sort.Sort(&serviceKeySorter{
 					sortArr: kvs,
-					kvs:     make(map[string]*mvccpb.KeyValue),
+					kvs:     make(map[string]*discovery.KeyValue),
 					cmp:     Larger,
 				})
 				Expect(kvs[0]).To(Equal("1.0"))
@@ -128,7 +181,7 @@ var _ = Describe("Version Rule sorter", func() {
 				kvs = []string{"1.0", "1.0.1.32767"}
 				sort.Sort(&serviceKeySorter{
 					sortArr: kvs,
-					kvs:     make(map[string]*mvccpb.KeyValue),
+					kvs:     make(map[string]*discovery.KeyValue),
 					cmp:     Larger,
 				})
 				Expect(kvs[0]).To(Equal("1.0.1.32767"))
@@ -138,12 +191,12 @@ var _ = Describe("Version Rule sorter", func() {
 	})
 	Describe("VersionRule", func() {
 		const count = 10
-		var kvs = [count]*mvccpb.KeyValue{}
+		var kvs = [count]*discovery.KeyValue{}
 		BeforeEach(func() {
 			for i := 1; i <= count; i++ {
-				kvs[i-1] = &mvccpb.KeyValue{
+				kvs[i-1] = &discovery.KeyValue{
 					Key:   []byte(fmt.Sprintf("/service/ver/1.%d", i)),
-					Value: []byte(fmt.Sprintf("%d", i)),
+					Value: fmt.Sprintf("%d", i),
 				}
 			}
 		})
@@ -277,6 +330,9 @@ var _ = Describe("Version Rule sorter", func() {
 				Expect(vr.MatchString("1.-.2")).To(BeFalse())
 				Expect(vr.MatchString("60000-1")).To(BeFalse())
 				Expect(vr.MatchString("1.1-2.2")).To(BeTrue())
+				Expect(vr.MatchString("1.1.1.1-2.2.2.2")).To(BeTrue())
+				Expect(vr.MatchString("1.1.1.1.1-2.2.2.2")).To(BeFalse())
+				Expect(vr.MatchString("1.1.1.1-2.2.2.2.2")).To(BeFalse())
 			})
 			It("AtLess", func() {
 				vr := NewVersionRegexp(false)
@@ -290,6 +346,8 @@ var _ = Describe("Version Rule sorter", func() {
 				Expect(vr.MatchString(".+")).To(BeFalse())
 				Expect(vr.MatchString("60000+")).To(BeFalse())
 				Expect(vr.MatchString("1.0+")).To(BeTrue())
+				Expect(vr.MatchString("1.0.0.0+")).To(BeTrue())
+				Expect(vr.MatchString("1.0.0.0.0+")).To(BeFalse())
 			})
 			It("Explicit", func() {
 				vr := NewVersionRegexp(false)
@@ -308,6 +366,8 @@ var _ = Describe("Version Rule sorter", func() {
 				Expect(vr.MatchString("1.")).To(BeFalse())
 				Expect(vr.MatchString(".1")).To(BeFalse())
 				Expect(vr.MatchString("1.4")).To(BeTrue())
+				Expect(vr.MatchString("1.4.0.0")).To(BeTrue())
+				Expect(vr.MatchString("1.4.0.0.0")).To(BeFalse())
 			})
 		})
 		Context("Exception", func() {

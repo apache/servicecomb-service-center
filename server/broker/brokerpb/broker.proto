@@ -1,0 +1,177 @@
+/*
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed //under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+*/
+
+syntax = "proto3";
+
+package brokerpb;
+
+import "github.com/apache/servicecomb-service-center/server/core/proto/services.proto";
+option go_package = "brokerpb";
+
+/*
+Definitions of objects
+*/
+
+message Participant {
+	int32 id = 1;
+	string appId = 2;
+	string serviceName = 3;
+}
+
+message Version {
+	int32 id = 1;
+	string number = 2;
+	int32 participantId = 3;
+	int32 order = 4;
+}
+
+message Pact {
+	int32 id = 1;
+	int32 consumerParticipantId = 2;
+	int32 providerParticipantId = 3;
+	bytes sha = 4;
+	bytes content = 5;
+}
+
+message PactVersion {
+	int32 id = 1;
+	int32 versionId = 2;
+	int32 pactId = 3;
+	int32 providerParticipantId = 4;
+}
+
+message Tag {
+	string name = 1;
+	int32 versionId = 2;
+}
+
+message PublishPactRequest {
+    string providerId = 1;
+    string consumerId = 2;
+    string version = 3;
+    bytes pact = 4;
+}
+
+message PublishPactResponse {
+	proto.Response response = 1;
+}
+
+message GetAllProviderPactsRequest {
+	string providerId = 1;
+  BaseBrokerRequest baseUrl = 2;
+}
+
+message ConsumerInfo {
+	string href = 1;
+	string name = 2;
+}
+
+message Links {
+	repeated ConsumerInfo pacts = 1;
+}
+
+message GetAllProviderPactsResponse {
+	proto.Response response = 1;
+	Links _links = 2;
+}
+
+message GetProviderConsumerVersionPactRequest {
+	string providerId = 1;
+	string consumerId = 2;
+	string version = 3;
+  BaseBrokerRequest baseUrl = 4;
+}
+
+message GetProviderConsumerVersionPactResponse {
+	proto.Response response = 1;
+	bytes pact = 2;
+}
+
+message Verification {
+	int32 id = 1;
+	int32 number = 2;
+	int32 pactVersionId = 3; // id of the version object
+	bool success = 4;
+	string providerVersion = 5;
+	string buildUrl = 6;
+	string verificationDate = 7;
+}
+
+message VerificationSummary {
+	repeated string successful = 1;
+	repeated string failed = 2;
+	repeated string unknown = 3;
+}
+
+message VerificationDetail {
+	string providerName = 1;
+	string providerApplicationVersion = 2;
+	bool success = 3;
+	string verificationDate = 4;
+}
+
+message VerificationDetails {
+	repeated VerificationDetail verificationResults = 1;
+}
+
+message VerificationResult {
+	bool success = 1;
+	VerificationSummary providerSummary = 2;
+	VerificationDetails _embedded = 3;
+}
+
+message PublishVerificationRequest {
+	string providerId = 1;
+	string consumerId = 2;
+	int32 pactId = 3;
+	bool success = 4;
+	string providerApplicationVersion = 5;
+}
+
+message PublishVerificationResponse {
+	proto.Response response = 1;
+	VerificationDetail confirmation = 2;
+}
+
+message RetrieveVerificationRequest {
+	string consumerId = 1;
+	string consumerVersion = 2;
+}
+
+message RetrieveVerificationResponse {
+	proto.Response response = 1;
+	VerificationResult result = 2;
+}
+
+message BaseBrokerRequest {
+	string hostAddress = 1;
+	string scheme = 2;
+}
+
+
+message BrokerAPIInfoEntry {
+	string href = 1;
+	string name = 2;
+	string title = 3;
+	bool templated = 4;
+}
+
+message BrokerHomeResponse {
+	proto.Response response = 1;
+	map<string, BrokerAPIInfoEntry> _links = 2;
+	repeated BrokerAPIInfoEntry curies = 3;
+}

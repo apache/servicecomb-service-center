@@ -19,12 +19,13 @@ package govern
 import (
 	"net/http"
 
-	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
-	"github.com/apache/incubator-servicecomb-service-center/server/rest/controller"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/core"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	scerr "github.com/apache/servicecomb-service-center/server/error"
+	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	"strings"
 )
 
@@ -43,45 +44,16 @@ func (governService *GovernServiceControllerV4) URLPatterns() []rest.Route {
 	}
 }
 
-//Node 节点信息
-type Node struct {
-	Id       string   `json:"id"`
-	Name     string   `json:"name"`
-	AppID    string   `json:"appId"`
-	Version  string   `json:"version"`
-	Type     string   `json:"type"`
-	Color    string   `json:"color"`
-	Position string   `json:"position"`
-	Visits   []string `json:"-"`
-}
-
-//Line 连接线信息
-type Line struct {
-	From        Node   `json:"from"`
-	To          Node   `json:"to"`
-	Type        string `json:"type"`
-	Color       string `json:"color"`
-	Description string `json:"descriptor"`
-}
-
-//Circle 环信息
-type Circle struct {
-	Nodes []Node `json:"nodes"`
-}
-
-//Graph 图全集信息
-type Graph struct {
-	Nodes   []Node   `json:"nodes"`
-	Lines   []Line   `json:"lines"`
-	Circles []Circle `json:"circles"`
-	Visits  []string `json:"-"`
-}
-
 // GetGraph 获取依赖连接图详细依赖关系
 func (governService *GovernServiceControllerV4) GetGraph(w http.ResponseWriter, r *http.Request) {
-	var graph Graph
+	var (
+		graph      Graph
+		withShared = util.StringTRUE(r.URL.Query().Get("withShared"))
+	)
 	request := &pb.GetServicesRequest{}
 	ctx := r.Context()
+	domainProject := util.ParseDomainProject(ctx)
+
 	resp, err := core.ServiceAPI.GetServices(ctx, request)
 	if err != nil {
 		controller.WriteError(w, scerr.ErrInternal, err.Error())
@@ -91,12 +63,18 @@ func (governService *GovernServiceControllerV4) GetGraph(w http.ResponseWriter, 
 	if len(services) <= 0 {
 		return
 	}
-	nodes := make([]Node, len(services))
-	for index, service := range services {
-		nodes[index].Name = service.ServiceName
-		nodes[index].Id = service.ServiceId
-		nodes[index].AppID = service.AppId
-		nodes[index].Version = service.Version
+	nodes := make([]Node, 0, len(services))
+	for _, service := range services {
+		if !withShared && core.IsShared(pb.MicroServiceToKey(domainProject, service)) {
+			continue
+		}
+
+		var node Node
+		node.Name = service.ServiceName
+		node.Id = service.ServiceId
+		node.AppID = service.AppId
+		node.Version = service.Version
+		nodes = append(nodes, node)
 
 		proRequest := &pb.GetDependenciesRequest{
 			ServiceId:  service.ServiceId,
@@ -105,7 +83,8 @@ func (governService *GovernServiceControllerV4) GetGraph(w http.ResponseWriter, 
 		}
 		proResp, err := core.ServiceAPI.GetConsumerDependencies(ctx, proRequest)
 		if err != nil {
-			util.Logger().Errorf(err, "get providers failed. service %s", service.ServiceId)
+			log.Errorf(err, "get service[%s/%s/%s/%s]'s providers failed",
+				service.Environment, service.AppId, service.ServiceName, service.Version)
 			controller.WriteResponse(w, proResp.Response, nil)
 			return
 		}
@@ -124,7 +103,7 @@ func (governService *GovernServiceControllerV4) GetGraph(w http.ResponseWriter, 
 				continue
 			}
 			line := Line{}
-			line.From = nodes[index]
+			line.From = node
 			line.To.Name = child.ServiceName
 			line.To.Id = child.ServiceId
 			graph.Lines = append(graph.Lines, line)
@@ -151,11 +130,13 @@ func (governService *GovernServiceControllerV4) GetServiceDetail(w http.Response
 func (governService *GovernServiceControllerV4) GetAllServicesInfo(w http.ResponseWriter, r *http.Request) {
 	request := &pb.GetServicesInfoRequest{}
 	ctx := r.Context()
-	optsStr := r.URL.Query().Get("options")
+	query := r.URL.Query()
+	optsStr := query.Get("options")
 	request.Options = strings.Split(optsStr, ",")
-	request.AppId = r.URL.Query().Get("appId")
-	request.ServiceName = r.URL.Query().Get("serviceName")
-	countOnly := r.URL.Query().Get("countOnly")
+	request.AppId = query.Get("appId")
+	request.ServiceName = query.Get("serviceName")
+	request.WithShared = util.StringTRUE(query.Get("withShared"))
+	countOnly := query.Get("countOnly")
 	if countOnly != "0" && countOnly != "1" && strings.TrimSpace(countOnly) != "" {
 		controller.WriteError(w, scerr.ErrInvalidParams, "parameter countOnly must be 1 or 0")
 		return
@@ -173,7 +154,9 @@ func (governService *GovernServiceControllerV4) GetAllServicesInfo(w http.Respon
 func (governService *GovernServiceControllerV4) GetAllApplications(w http.ResponseWriter, r *http.Request) {
 	request := &pb.GetAppsRequest{}
 	ctx := r.Context()
-	request.Environment = r.URL.Query().Get("env")
+	query := r.URL.Query()
+	request.Environment = query.Get("env")
+	request.WithShared = util.StringTRUE(query.Get("withShared"))
 	resp, _ := GovernServiceAPI.GetApplications(ctx, request)
 
 	respInternal := resp.Response

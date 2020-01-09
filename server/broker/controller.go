@@ -22,9 +22,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
-	"github.com/apache/incubator-servicecomb-service-center/server/rest/controller"
+	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/server/broker/brokerpb"
+	scerr "github.com/apache/servicecomb-service-center/server/error"
+	"github.com/apache/servicecomb-service-center/server/rest/controller"
 )
 
 const DEFAULT_SCHEME = "http"
@@ -60,7 +61,7 @@ func (brokerService *BrokerController) URLPatterns() []rest.Route {
 }
 
 func (brokerService *BrokerController) GetHome(w http.ResponseWriter, r *http.Request) {
-	request := &BaseBrokerRequest{
+	request := &brokerpb.BaseBrokerRequest{
 		HostAddress: r.Host,
 		Scheme:      getScheme(r),
 	}
@@ -78,10 +79,11 @@ func (*BrokerController) PublishPact(w http.ResponseWriter, r *http.Request) {
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
-	request := &PublishPactRequest{
-		ProviderId: r.URL.Query().Get(":providerId"),
-		ConsumerId: r.URL.Query().Get(":consumerId"),
-		Version:    r.URL.Query().Get(":number"),
+	query := r.URL.Query()
+	request := &brokerpb.PublishPactRequest{
+		ProviderId: query.Get(":providerId"),
+		ConsumerId: query.Get(":consumerId"),
+		Version:    query.Get(":number"),
 		Pact:       message,
 	}
 	PactLogger.Infof("PublishPact: providerId = %s, consumerId = %s, version = %s\n",
@@ -94,9 +96,9 @@ func (*BrokerController) PublishPact(w http.ResponseWriter, r *http.Request) {
 }
 
 func (*BrokerController) GetAllProviderPacts(w http.ResponseWriter, r *http.Request) {
-	request := &GetAllProviderPactsRequest{
+	request := &brokerpb.GetAllProviderPactsRequest{
 		ProviderId: r.URL.Query().Get(":providerId"),
-		BaseUrl: &BaseBrokerRequest{
+		BaseUrl: &brokerpb.BaseBrokerRequest{
 			HostAddress: r.Host,
 			Scheme:      getScheme(r),
 		},
@@ -104,6 +106,8 @@ func (*BrokerController) GetAllProviderPacts(w http.ResponseWriter, r *http.Requ
 	resp, err := BrokerServiceAPI.GetAllProviderPacts(r.Context(), request /*, href*/)
 	linksObj, err := json.Marshal(resp)
 	if err != nil {
+		PactLogger.Errorf(err, "invalid ProviderPacts")
+		controller.WriteError(w, scerr.ErrInternal, "Marshal error")
 		return
 	}
 	PactLogger.Infof("Pact info: %s\n", string(linksObj))
@@ -113,11 +117,12 @@ func (*BrokerController) GetAllProviderPacts(w http.ResponseWriter, r *http.Requ
 }
 
 func (*BrokerController) GetPactsOfProvider(w http.ResponseWriter, r *http.Request) {
-	request := &GetProviderConsumerVersionPactRequest{
-		ProviderId: r.URL.Query().Get(":providerId"),
-		ConsumerId: r.URL.Query().Get(":consumerId"),
-		Version:    r.URL.Query().Get(":number"),
-		BaseUrl: &BaseBrokerRequest{
+	query := r.URL.Query()
+	request := &brokerpb.GetProviderConsumerVersionPactRequest{
+		ProviderId: query.Get(":providerId"),
+		ConsumerId: query.Get(":consumerId"),
+		Version:    query.Get(":number"),
+		BaseUrl: &brokerpb.BaseBrokerRequest{
 			HostAddress: r.Host,
 			Scheme:      getScheme(r),
 		},
@@ -131,7 +136,7 @@ func (*BrokerController) GetPactsOfProvider(w http.ResponseWriter, r *http.Reque
 }
 
 func (*BrokerController) DeletePacts(w http.ResponseWriter, r *http.Request) {
-	resp, _ := BrokerServiceAPI.DeletePacts(r.Context(), &BaseBrokerRequest{
+	resp, _ := BrokerServiceAPI.DeletePacts(r.Context(), &brokerpb.BaseBrokerRequest{
 		HostAddress: r.Host,
 		Scheme:      getScheme(r),
 	})
@@ -145,16 +150,17 @@ func (*BrokerController) PublishVerificationResults(w http.ResponseWriter, r *ht
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
-	request := &PublishVerificationRequest{}
+	request := &brokerpb.PublishVerificationRequest{}
 	err = json.Unmarshal(requestBody, request)
 	if err != nil {
 		PactLogger.Error("Unmarshal error", err)
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
-	request.ProviderId = r.URL.Query().Get(":providerId")
-	request.ConsumerId = r.URL.Query().Get(":consumerId")
-	i, err := strconv.ParseInt(r.URL.Query().Get(":sha"), 10, 32)
+	query := r.URL.Query()
+	request.ProviderId = query.Get(":providerId")
+	request.ConsumerId = query.Get(":consumerId")
+	i, err := strconv.ParseInt(query.Get(":sha"), 10, 32)
 	if err != nil {
 		PactLogger.Error("Invalid pactId", err)
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
@@ -172,9 +178,10 @@ func (*BrokerController) PublishVerificationResults(w http.ResponseWriter, r *ht
 }
 
 func (*BrokerController) RetrieveVerificationResults(w http.ResponseWriter, r *http.Request) {
-	request := &RetrieveVerificationRequest{}
-	request.ConsumerId = r.URL.Query().Get(":consumerId")
-	request.ConsumerVersion = r.URL.Query().Get(":consumerVersion")
+	request := &brokerpb.RetrieveVerificationRequest{}
+	query := r.URL.Query()
+	request.ConsumerId = query.Get(":consumerId")
+	request.ConsumerVersion = query.Get(":consumerVersion")
 	PactLogger.Infof("Retrieve verification results for: %s, %s\n",
 		request.ConsumerId, request.ConsumerVersion)
 	resp, _ := BrokerServiceAPI.RetrieveVerificationResults(r.Context(), request)

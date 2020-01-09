@@ -17,25 +17,26 @@
 package event
 
 import (
-	"encoding/json"
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/async"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	nf "github.com/apache/incubator-servicecomb-service-center/server/service/notification"
-	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
-	"github.com/coreos/etcd/mvcc/mvccpb"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/task"
+	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/backend"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/notify"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
+	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
 )
 
 type RulesChangedTask struct {
+	discovery.KvEvent
+
 	key string
 	err error
 
 	DomainProject string
 	ProviderId    string
-	Rev           int64
 }
 
 func (apt *RulesChangedTask) Key() string {
@@ -43,7 +44,7 @@ func (apt *RulesChangedTask) Key() string {
 }
 
 func (apt *RulesChangedTask) Do(ctx context.Context) error {
-	apt.err = apt.publish(ctx, apt.DomainProject, apt.ProviderId, apt.Rev)
+	apt.err = apt.publish(ctx, apt.DomainProject, apt.ProviderId)
 	return apt.err
 }
 
@@ -51,78 +52,68 @@ func (apt *RulesChangedTask) Err() error {
 	return apt.err
 }
 
-func (apt *RulesChangedTask) publish(ctx context.Context, domainProject, providerId string, rev int64) error {
-	provider, err := serviceUtil.GetServiceInCache(ctx, domainProject, providerId)
+func (apt *RulesChangedTask) publish(ctx context.Context, domainProject, providerId string) error {
+	ctx = context.WithValue(context.WithValue(ctx,
+		serviceUtil.CTX_CACHEONLY, "1"),
+		serviceUtil.CTX_GLOBAL, "1")
+
+	provider, err := serviceUtil.GetService(ctx, domainProject, providerId)
 	if err != nil {
-		util.Logger().Errorf(err, "get provider %s service file failed", providerId)
+		log.Errorf(err, "get provider[%s] service file failed", providerId)
 		return err
 	}
 	if provider == nil {
-		util.Logger().Errorf(nil, "provider %s does not exist", providerId)
+		log.Errorf(nil, "provider[%s] does not exist", providerId)
 		return fmt.Errorf("provider %s does not exist", providerId)
 	}
 
-	consumerIds, err := serviceUtil.GetConsumersInCache(ctx, domainProject, provider)
+	consumerIds, err := serviceUtil.GetConsumerIds(ctx, domainProject, provider)
 	if err != nil {
-		util.Logger().Errorf(err, "get consumer services by provider %s failed", providerId)
+		log.Errorf(err, "get service[%s][%s/%s/%s/%s]'s consumerIds failed",
+			providerId, provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
 		return err
 	}
 	providerKey := pb.MicroServiceToKey(domainProject, provider)
 
-	nf.PublishInstanceEvent(domainProject, pb.EVT_EXPIRE, providerKey, nil, rev, consumerIds)
+	PublishInstanceEvent(apt.KvEvent, domainProject, providerKey, consumerIds)
 	return nil
 }
 
 type RuleEventHandler struct {
 }
 
-func (h *RuleEventHandler) Type() backend.StoreType {
+func (h *RuleEventHandler) Type() discovery.Type {
 	return backend.RULE
 }
 
-func (h *RuleEventHandler) OnEvent(evt backend.KvEvent) {
+func (h *RuleEventHandler) OnEvent(evt discovery.KvEvent) {
 	action := evt.Type
 	if action == pb.EVT_INIT {
 		return
 	}
 
-	kv := evt.Object.(*mvccpb.KeyValue)
-	providerId, ruleId, domainProject, data := pb.GetInfoFromRuleKV(kv)
-	if data == nil {
-		util.Logger().Errorf(nil,
-			"unmarshal service rule file failed, service %s rule %s [%s] event, data is nil",
-			providerId, ruleId, action)
+	providerId, ruleId, domainProject := core.GetInfoFromRuleKV(evt.KV.Key)
+	if notify.NotifyCenter().Closed() {
+		log.Warnf("caught [%s] service rule[%s/%s] event, but notify service is closed",
+			action, providerId, ruleId)
 		return
 	}
+	log.Infof("caught [%s] service rule[%s/%s] event", action, providerId, ruleId)
 
-	if nf.GetNotifyService().Closed() {
-		util.Logger().Warnf(nil, "caught service %s rule %s [%s] event, but notify service is closed",
-			providerId, ruleId, action)
-		return
-	}
-	util.Logger().Infof("caught service %s rule %s [%s] event", providerId, ruleId, action)
-
-	var rule pb.ServiceRule
-	err := json.Unmarshal(data, &rule)
-	if err != nil {
-		util.Logger().Errorf(err, "unmarshal service %s rule %s file failed",
-			providerId, ruleId)
-		return
-	}
-
-	async.Service().Add(context.Background(),
-		NewRulesChangedAsyncTask(domainProject, providerId, evt.Revision))
+	task.Service().Add(context.Background(),
+		NewRulesChangedAsyncTask(domainProject, providerId, evt))
 }
 
 func NewRuleEventHandler() *RuleEventHandler {
 	return &RuleEventHandler{}
 }
 
-func NewRulesChangedAsyncTask(domainProject, providerId string, rev int64) *RulesChangedTask {
+func NewRulesChangedAsyncTask(domainProject, providerId string, evt discovery.KvEvent) *RulesChangedTask {
+	evt.Type = pb.EVT_EXPIRE
 	return &RulesChangedTask{
+		KvEvent:       evt,
 		key:           "RulesChangedAsyncTask_" + providerId,
 		DomainProject: domainProject,
 		ProviderId:    providerId,
-		Rev:           rev,
 	}
 }

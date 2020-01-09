@@ -17,10 +17,24 @@
 package govern_test
 
 import (
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
+	"bytes"
+	"github.com/apache/servicecomb-service-center/server/core"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/govern"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
 )
+
+type mockGovernHandler struct {
+	Func func(w http.ResponseWriter, r *http.Request)
+}
+
+func (m *mockGovernHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	m.Func(w, r)
+}
 
 var _ = Describe("'Govern' service", func() {
 	Describe("execute 'get all' operation", func() {
@@ -63,6 +77,38 @@ var _ = Describe("'Govern' service", func() {
 				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 			})
 		})
+
+		Context("when get top graph", func() {
+			It("should be passed", func() {
+				respC, err := core.ServiceAPI.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						AppId:       "govern_service_group",
+						ServiceName: "govern_service_graph",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Status:      pb.MS_UP,
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(respC.Response.Code).To(Equal(pb.Response_SUCCESS))
+
+				svr := httptest.NewServer(&mockGovernHandler{func(w http.ResponseWriter, r *http.Request) {
+					ctrl := &govern.GovernServiceControllerV4{}
+					ctrl.GetGraph(w, r.WithContext(getContext()))
+				}})
+				defer svr.Close()
+
+				resp, err := http.Get(svr.URL)
+				Expect(err).To(BeNil())
+
+				body, err := ioutil.ReadAll(resp.Body)
+				resp.Body.Close()
+				Expect(err).To(BeNil())
+
+				Expect(string(body)).ToNot(Equal(""))
+				Expect(string(body)).ToNot(Equal("{}"))
+			})
+		})
 	})
 
 	Describe("execute 'get detail' operation", func() {
@@ -71,7 +117,7 @@ var _ = Describe("'Govern' service", func() {
 		)
 
 		It("should be passed", func() {
-			resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+			resp, err := core.ServiceAPI.Create(getContext(), &pb.CreateServiceRequest{
 				Service: &pb.MicroService{
 					AppId:       "govern_service_group",
 					ServiceName: "govern_service_name",
@@ -84,7 +130,7 @@ var _ = Describe("'Govern' service", func() {
 			Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 			serviceId = resp.ServiceId
 
-			serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
+			core.ServiceAPI.ModifySchema(getContext(), &pb.ModifySchemaRequest{
 				ServiceId: serviceId,
 				SchemaId:  "schemaId",
 				Schema:    "detail",
@@ -92,7 +138,7 @@ var _ = Describe("'Govern' service", func() {
 			Expect(err).To(BeNil())
 			Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 
-			instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+			core.InstanceAPI.Register(getContext(), &pb.RegisterInstanceRequest{
 				Instance: &pb.MicroServiceInstance{
 					ServiceId: serviceId,
 					Endpoints: []string{
@@ -124,7 +170,7 @@ var _ = Describe("'Govern' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respGetServiceDetail.Response.Code).To(Equal(pb.Response_SUCCESS))
 
-				respDelete, err := serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{
+				respDelete, err := core.ServiceAPI.Delete(getContext(), &pb.DeleteServiceRequest{
 					ServiceId: serviceId,
 					Force:     true,
 				})
@@ -162,6 +208,29 @@ var _ = Describe("'Govern' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+			})
+		})
+	})
+
+	Describe("execute all operations", func() {
+		Context("when request is valid", func() {
+			It("should be passed", func() {
+				var num int
+				ctrl := &govern.GovernServiceControllerV4{}
+				svr := httptest.NewServer(&mockGovernHandler{func(w http.ResponseWriter, r *http.Request) {
+					defer func() {
+						Expect(recover()).To(BeNil())
+					}()
+					route := ctrl.URLPatterns()[num]
+					r.Method = route.Method
+					route.Func(w, r)
+					num++
+				}})
+				defer svr.Close()
+
+				for range ctrl.URLPatterns() {
+					http.Post(svr.URL, "application/json", bytes.NewBuffer([]byte("{}")))
+				}
 			})
 		})
 	})

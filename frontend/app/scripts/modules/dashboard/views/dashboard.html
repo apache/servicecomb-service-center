@@ -14,67 +14,134 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License..
 -->
-<div class="row dashboard">
-    <div class="col-sm-12 col-md-12 pb10">
-      <div class="pull-right">
-        <i class="fa fa-clock-o"></i> <span class="updatedTime">{{ "updated" | translate }} {{ updatedTime }} </span>
-        <span ng-click="getAllServices()"><i class="fa fa-refresh dashboardRefresh"></i></span>
-      </div>
-    </div>
-    <div class="col-sm-12 col-md-12 col-lg-3" ng-repeat="info in dashboardInfo">
-        <div class="mainCard">
-            <div class="col-sm-3 col-md-3 col-lg-3 mainCardIcon {{ info.title }}">
-                <i class="fa {{ info.iconName }} fa-3x icon-color"></i>
-            </div>
-            <div class="col-sm-9 col-md-9">
-                <div class="row">
-                    <div class="col-sm-8 col-md-8 no-padding mainCardTitleStyle">
-                        <span class="mainCardTitle">{{ info.title | translate }}</span>
+<div class="col-sm-8 col-md-8 col-lg-9 pb-50">
+
+    <div class="panel panel-default">
+        <div class="panel-heading fw-600 h-42">
+            <span class="pull-left">{{ "serviceStatistics" | translate }}</span>
+            <span class="pull-right" ng-click="getAllServices()"><i class="fa fa-refresh"></i></span>
+        </div>
+        <div class="panel-body">
+            <div class="row m0">
+                <div data-ng-repeat="info in dashboardInfo track by $index" class="col-md-2 box">
+                    <div class="circle">
+                        <i class="{{info.iconName}} stat-icon-size"></i>
                     </div>
-                    <div class="col-sm-4 col-md-4 m5">
-                        <span class="mainCardCount">{{ info.count }}</span>
-                    </div>
+                    <p class="text-center">{{info.title | translate}} : {{info.count}}</p>
                 </div>
             </div>
         </div>
     </div>
-    <div class="row chartAlign">
-	 <div class="col-sm-12 col-md-12">
-        <div class="card">
-            <div class="header">
-                <h3 class="title">{{ "serviceStatistics" | translate }}</h3>       
-            </div>
-            <div class="content">
-            <div class="row">
-                <div class="col-md-6 servicesChart">
-                    <canvas class="chart chart-doughnut" chart-data="servicesChartData" chart-colors="colors" chart-labels="labels"></canvas> 
-                    <div class="chart-legend">
-                        <i class="fa fa-circle legendStarting"></i>{{ "starting" | translate }}
-                        <i class="fa fa-circle legendUp"></i> {{ "up" | translate }}
-                        <i class="fa fa-circle legendDown"></i> {{ "down" | translate }}
-                        <i class="fa fa-circle legendUnavailable"></i> {{ "outofservice" | translate }}
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="panel panel-default">
+                <div class="panel-heading fw-600 h-42">
+                    <span class="pull-left">{{ 'serviceList' | translate}}</span>
+                    <span class="pull-right badge badge-primary">{{dashboardInfo[0].count}}</span>
+                </div>
+                <div class="panel-body panel-body-height">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                            <tr>
+                                <th>{{ "serviceName" | translate }}</th>
+                                <th>{{ "version" | translate }}</th>
+                                <th>{{ "appId" | translate }}</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr data-ng-repeat="service in services | orderBy : 'serviceName' | limitTo : 3">
+                                <td>{{ service.serviceName }}</td>
+                                <td>{{ service.version }}</td>
+                                <td>{{ service.appId }}</td>
+                            </tr>
+                            <tr ng-if="services.length == 0">
+                                <td colspan="3">
+                                    <div class="no-data">
+                                        <p>{{ "noDataFound" | translate }}</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-                <div class="col-sm-6 col-md-6">
-                    <div class="row">
-                        <div class="col-sm-12 col-md-12 dashboardCount" ng-repeat="service in servicesStatusData">
-                            <div class="row" ng-click="goToServices(service.title)">
-                                <div class="col-xs-4 col-sm-6 col-md-3 statusIcon {{ service.title }}">
-                                    <i class="fa {{ service.iconName }} fa-3x icon-color"></i>
-                                </div>
-                                <div class="col-xs-4 col-sm-4 col-md-5 statusTitle">
-                                    <span>{{ service.title | translate }}</span>
-                                </div>
-                                <div class="col-xs-4 col-sm-2 col-md-4 statusCount">
-                                    <span class="pull-right">{{ service.count }}</span>
-                                </div>
-                            </div>
+                <div class="panel-footer h-42"><span class="pull-right"><a ui-sref="sc.allServices">{{ 'viewMoreInfo' | translate}}</a></span></div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="panel panel-default">
+                <div class="panel-heading fw-600 h-42">
+                    <span class="pull-left">{{ 'instanceList' | translate}}</span>
+                    <span class="pull-right badge badge-primary">{{dashboardInfo[1].count}}</span>
+                </div>
+                <div class="panel-body panel-body-height">
+                    <div class="table-responsive">
+                        <table class="table dashboardTable">
+                            <thead>
+                            <tr>
+                                <th class="columnA">{{ "instanceHostName" | translate }}</th>
+                                <th class="columnB">{{ "serviceName" | translate }}</th>
+                                <th class="columnC">{{ "appId" | translate }}</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr data-ng-repeat="instance in instances | orderBy : 'hostName' | limitTo : 3">
+                                <td class="columnA">{{ instance.hostName }}</td>
+                                <td class="columnB">{{ instance.serviceName }}</td>
+                                <td class="columnC">{{ instance.appId }}</td>
+                            </tr>
+                            <tr ng-if="instances.length == 0">
+                                <td colspan="3">
+                                    <div class="no-data">
+                                        <p>{{ "noDataFound" | translate }}</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="panel-footer h-42"><span class="pull-right"><a ui-sref="sc.instances">{{ 'viewMoreInfo' | translate}}</a></span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel panel-default">
+        <div class="panel-heading fw-600">{{ "serviceInstanceStatistics" | translate }}</div>
+        <div class="panel-body">
+            <div class="row m0">
+                <div class="col-md-2 box" data-ng-repeat="data in instanceStat">
+                    <div class="c100 p{{data.percent}}">
+                        <span class="pointer">{{data.percent}}%</span>
+                        <div class="slice">
+                            <div class="bar"></div>
+                            <div class="fill"></div>
                         </div>
                     </div>
+                    <br>
+                    <p class="ins-stat-title">{{data.title | translate}} : {{data.count}}</p>
                 </div>
             </div>
-            </div>
         </div>
-     </div>
     </div>
- </div>
+
+</div>
+<div class="col-sm-4 col-md-4 col-lg-3">
+    <div class="panel panel-default">
+        <div class="panel-heading fw-600"><span class="text-center block">{{ "userGuide.title" | translate }}</span></div>
+        <div class="panel-body">
+            <ul class="userGuide-list">
+                <li><a target="_blank" href="http://servicecomb.apache.org/docs/quick-start/">ServiceComb QuickStart</a></li>
+                <li><a target="_blank" href="http://servicecomb.apache.org/release/">ServiceComb Download links</a></li>
+                <li><a target="_blank" href="http://servicecomb.apache.org/year-archive/">ServiceComb Blogs</a></li>
+                <li><a target="_blank" href="http://servicecomb.apache.org/users/service-definition/">What is Service Definition?</a></li>
+                <li><a target="_blank" href="http://servicecomb.apache.org/users/service-contract/">What is Service Contract?</a></li>
+                <li><a target="_blank" href="http://servicecomb.apache.org/users/develop-with-springmvc/">Develop Applications using SpringMVC</a></li>
+                <li><a target="_blank" href="http://servicecomb.apache.org/docs/quick-start-dataconsistency/">Transaction Management</a></li>
+                <li><a target="_blank" href="https://github.com/apache?q=servicecomb">Fork us on Github</a></li>
+            </ul>
+        </div>
+    </div>
+</div>

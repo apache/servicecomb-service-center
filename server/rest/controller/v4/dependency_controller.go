@@ -18,12 +18,13 @@ package v4
 
 import (
 	"encoding/json"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
-	"github.com/apache/incubator-servicecomb-service-center/server/rest/controller"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/core"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	scerr "github.com/apache/servicecomb-service-center/server/error"
+	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	"io/ioutil"
 	"net/http"
 )
@@ -44,14 +45,14 @@ func (this *DependencyService) URLPatterns() []rest.Route {
 func (this *DependencyService) AddDependenciesForMicroServices(w http.ResponseWriter, r *http.Request) {
 	requestBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		util.Logger().Error("body err", err)
+		log.Error("read body failed", err)
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
 	request := &pb.AddDependenciesRequest{}
 	err = json.Unmarshal(requestBody, request)
 	if err != nil {
-		util.Logger().Error("Invalid json", err)
+		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(requestBody))
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
@@ -63,14 +64,14 @@ func (this *DependencyService) AddDependenciesForMicroServices(w http.ResponseWr
 func (this *DependencyService) CreateDependenciesForMicroServices(w http.ResponseWriter, r *http.Request) {
 	requestBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		util.Logger().Error("body err", err)
+		log.Error("read body failed", err)
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
 	request := &pb.CreateDependenciesRequest{}
 	err = json.Unmarshal(requestBody, request)
 	if err != nil {
-		util.Logger().Error("Invalid json", err)
+		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(requestBody))
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
@@ -80,10 +81,11 @@ func (this *DependencyService) CreateDependenciesForMicroServices(w http.Respons
 }
 
 func (this *DependencyService) GetConProDependencies(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
 	request := &pb.GetDependenciesRequest{
-		ServiceId:  r.URL.Query().Get(":consumerId"),
-		SameDomain: r.URL.Query().Get("sameDomain") == "1",
-		NoSelf:     r.URL.Query().Get("noSelf") == "1",
+		ServiceId:  query.Get(":consumerId"),
+		SameDomain: query.Get("sameDomain") == "1",
+		NoSelf:     query.Get("noSelf") == "1",
 	}
 	resp, _ := core.ServiceAPI.GetConsumerDependencies(r.Context(), request)
 	respInternal := resp.Response
@@ -92,10 +94,11 @@ func (this *DependencyService) GetConProDependencies(w http.ResponseWriter, r *h
 }
 
 func (this *DependencyService) GetProConDependencies(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
 	request := &pb.GetDependenciesRequest{
-		ServiceId:  r.URL.Query().Get(":providerId"),
-		SameDomain: r.URL.Query().Get("sameDomain") == "1",
-		NoSelf:     r.URL.Query().Get("noSelf") == "1",
+		ServiceId:  query.Get(":providerId"),
+		SameDomain: query.Get("sameDomain") == "1",
+		NoSelf:     query.Get("noSelf") == "1",
 	}
 	resp, _ := core.ServiceAPI.GetProviderDependencies(r.Context(), request)
 	respInternal := resp.Response

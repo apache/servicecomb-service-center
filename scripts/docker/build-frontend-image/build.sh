@@ -20,37 +20,45 @@ set -e
 umask 027
 
 SCRIPT_DIR=$(cd $(dirname $0); pwd)
-BASE_DIR=${SCRIPT_DIR}/../../..
 
+BASE_DIR=${SCRIPT_DIR}/../../../
+
+# build all
+PACKAGE=${1:-"latest"}
+
+PACKAGE_PREFIX=apache-servicecomb-service-center
+
+PACKAGE_DIR=$SCRIPT_DIR/../$PACKAGE_PREFIX-$PACKAGE-linux-amd64
+
+source ${SCRIPT_DIR}/../../build/tools.sh
+
+if [ ! -d $PACKAGE_DIR ]; then
+    docker_builder_pattern $BASE_DIR $SCRIPT_DIR/../
+fi
+
+# create image base dir
 mkdir -p $SCRIPT_DIR/frontend
 
-cd $BASE_DIR/frontend
-
-# make CGO_ENABLED=0 since busybox will not execute if it is dynamically linked
-export CGO_ENABLED=0
-export GOOS="linux"
-export GOARCH="amd64"
-
-# buils scfrontend
-go build -o $SCRIPT_DIR/frontend/scfrontend
-
-#go to the script directory
-#cd $SCRIPT_DIR
-
-# copy the app conf folders to build-frontend-image/frontend 
-cp -r app conf $BASE_DIR/scripts/frontend/start_linux.sh $SCRIPT_DIR/frontend
-
-chmod 755 $SCRIPT_DIR/frontend/start_linux.sh $SCRIPT_DIR/frontend/scfrontend
-
-sed -i "s|frontend_host_ip=127.0.0.1|frontend_host_ip=0.0.0.0|g" $SCRIPT_DIR/frontend/conf/app.conf
-
-#go to the script directory
+# go to the script directory
 cd $SCRIPT_DIR
-tar cf frontend.tar.gz frontend
+
+# copy the conf folder to build-frontend-image/frontend
+cp -rp $PACKAGE_DIR/app $PACKAGE_DIR/conf $PACKAGE_DIR/frontend start.sh frontend
+
+chmod 500 frontend/start.sh frontend/frontend
+
+# store the base image name and version
+BASE_IMAGE=${BASE_IMAGE:-"alpine"}
+
+BASE_IMAGE_VERSION=${BASE_IMAGE_VERSION:-"latest"}
+
 cp Dockerfile.tmpl Dockerfile
 
-docker build -t servicecomb/scfrontend .
-docker save servicecomb/scfrontend:latest |gzip >scfrontend-dev.tgz
+sed -i "s|{{.BASE_IMAGE}}|${BASE_IMAGE}|g" Dockerfile
+sed -i "s|{{.BASE_IMAGE_VERSION}}|${BASE_IMAGE_VERSION}|g" Dockerfile
+
+docker build --no-cache -t servicecomb/scfrontend:$PACKAGE .
+docker save servicecomb/scfrontend:$PACKAGE |gzip >scfrontend-dev.tgz
 
 # remove the frontend directory from the build-frontend-image path
-rm -rf frontend Dockerfile frontend.tar.gz
+rm -rf frontend Dockerfile

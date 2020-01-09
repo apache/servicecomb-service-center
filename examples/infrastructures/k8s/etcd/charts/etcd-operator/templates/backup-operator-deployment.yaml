@@ -1,0 +1,75 @@
+## ---------------------------------------------------------------------------
+## Licensed to the Apache Software Foundation (ASF) under one or more
+## contributor license agreements.  See the NOTICE file distributed with
+## this work for additional information regarding copyright ownership.
+## The ASF licenses this file to You under the Apache License, Version 2.0
+## (the "License"); you may not use this file except in compliance with
+## the License.  You may obtain a copy of the License at
+##
+##      http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+## See the License for the specific language governing permissions and
+## limitations under the License.
+## ---------------------------------------------------------------------------
+{{- if .Values.deployments.backupOperator }}
+---
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: {{ template "etcd-backup-operator.fullname" . }}
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    app: {{ template "etcd-backup-operator.name" . }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "etcd-backup-operator.fullname" . }}
+      release: {{ .Release.Name }}
+  replicas: {{ .Values.backupOperator.replicaCount }}
+  template:
+    metadata:
+      name: {{ template "etcd-backup-operator.fullname" . }}
+      labels:
+        app: {{ template "etcd-backup-operator.fullname" . }}
+        release: {{ .Release.Name }}
+    spec:
+      serviceAccountName: {{ template "etcd-backup-operator.serviceAccountName" . }}
+      containers:
+      - name: {{ .Values.backupOperator.name }}
+        image: "{{ .Values.backupOperator.image.repository }}:{{ .Values.backupOperator.image.tag }}"
+        imagePullPolicy: {{ .Values.backupOperator.image.pullPolicy }}
+        command:
+        - etcd-backup-operator
+{{- range $key, $value := .Values.backupOperator.commandArgs }}
+        - "--{{ $key }}={{ $value }}"
+{{- end }}
+        env:
+        - name: MY_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        resources:
+          limits:
+            cpu: {{ .Values.backupOperator.resources.cpu }}
+            memory: {{ .Values.backupOperator.resources.memory }}
+          requests:
+            cpu: {{ .Values.backupOperator.resources.cpu }}
+            memory: {{ .Values.backupOperator.resources.memory }}
+    {{- if .Values.backupOperator.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.backupOperator.nodeSelector | indent 8 }}
+    {{- end }}
+    {{- if .Values.backupOperator.tolerations }}
+      tolerations:
+{{ toYaml .Values.backupOperator.tolerations | indent 8 }}
+    {{- end }}
+{{- end }}

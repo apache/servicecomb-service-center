@@ -19,19 +19,25 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	"github.com/apache/incubator-servicecomb-service-center/server/error"
+	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/alarm"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/error"
 	"net/http"
+	"strconv"
 )
 
 func WriteError(w http.ResponseWriter, code int32, detail string) {
 	err := error.NewError(code, detail)
-	w.Header().Set(rest.HEADER_RESPONSE_STATUS, fmt.Sprint(err.StatusCode()))
+	w.Header().Set(rest.HEADER_RESPONSE_STATUS, strconv.Itoa(err.StatusCode()))
 	w.Header().Set(rest.HEADER_CONTENT_TYPE, rest.CONTENT_TYPE_JSON)
 	w.WriteHeader(err.StatusCode())
 	fmt.Fprintln(w, util.BytesToStringWithNoCopy(err.Marshal()))
+
+	if err.InternalError() {
+		alarm.Raise(alarm.IdInternalError, alarm.AdditionalContext(detail))
+	}
 }
 
 func WriteResponse(w http.ResponseWriter, resp *pb.Response, obj interface{}) {
@@ -41,7 +47,7 @@ func WriteResponse(w http.ResponseWriter, resp *pb.Response, obj interface{}) {
 	}
 
 	if obj == nil {
-		w.Header().Set(rest.HEADER_RESPONSE_STATUS, fmt.Sprint(http.StatusOK))
+		w.Header().Set(rest.HEADER_RESPONSE_STATUS, strconv.Itoa(http.StatusOK))
 		w.Header().Set(rest.HEADER_CONTENT_TYPE, rest.CONTENT_TYPE_TEXT)
 		w.WriteHeader(http.StatusOK)
 		return
@@ -52,7 +58,7 @@ func WriteResponse(w http.ResponseWriter, resp *pb.Response, obj interface{}) {
 		WriteError(w, error.ErrInternal, err.Error())
 		return
 	}
-	w.Header().Set(rest.HEADER_RESPONSE_STATUS, fmt.Sprint(http.StatusOK))
+	w.Header().Set(rest.HEADER_RESPONSE_STATUS, strconv.Itoa(http.StatusOK))
 	w.Header().Set(rest.HEADER_CONTENT_TYPE, rest.CONTENT_TYPE_JSON)
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintln(w, util.BytesToStringWithNoCopy(objJson))
@@ -60,7 +66,7 @@ func WriteResponse(w http.ResponseWriter, resp *pb.Response, obj interface{}) {
 
 func WriteJsonBytes(w http.ResponseWriter, resp *pb.Response, json []byte) {
 	if resp.GetCode() == pb.Response_SUCCESS {
-		w.Header().Set(rest.HEADER_RESPONSE_STATUS, fmt.Sprint(http.StatusOK))
+		w.Header().Set(rest.HEADER_RESPONSE_STATUS, strconv.Itoa(http.StatusOK))
 		w.Header().Set(rest.HEADER_CONTENT_TYPE, rest.CONTENT_TYPE_JSON)
 		w.WriteHeader(http.StatusOK)
 		w.Write(json)

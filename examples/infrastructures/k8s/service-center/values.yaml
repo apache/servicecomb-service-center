@@ -1,0 +1,86 @@
+## ---------------------------------------------------------------------------
+## Licensed to the Apache Software Foundation (ASF) under one or more
+## contributor license agreements.  See the NOTICE file distributed with
+## this work for additional information regarding copyright ownership.
+## The ASF licenses this file to You under the Apache License, Version 2.0
+## (the "License"); you may not use this file except in compliance with
+## the License.  You may obtain a copy of the License at
+##
+##      http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+## See the License for the specific language governing permissions and
+## limitations under the License.
+## ---------------------------------------------------------------------------
+
+# Default values for service-center.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+frontend:
+  deployment: true
+  replicaCount: 1
+  image:
+    repository: servicecomb/scfrontend
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    name: scfrontend
+    type: NodePort
+    externalPort: 30103
+    internalPort: 30103
+  resources: {}
+
+sc:
+  deployment: true
+  replicaCount: 1
+  discovery:
+    # support servicecenter, etcd, and aggregate discovery mode
+    type: aggregate
+    # the cluster urls list, can only support discovery type is "servicecenter" or "aggregate"
+    # e.g. clusters: "sc-0=http://service-center-1:30100,sc-1=http://service-center-2:30100"
+    clusters: "sc-0=http://127.0.0.1:2380"
+    # setting up the configuration of aggregator, only enabled when discovery type is "aggregate"
+    # e.g. aggregate: "k8s,servicecenter"
+    aggregate: "k8s,etcd"
+  registry:
+    enabled: false
+    # support embeded_etcd, etcd, and buildin registry mode
+    type: "embeded_etcd"
+    name: "sc-0"
+    addr: "http://127.0.0.1:2380"
+  image:
+    repository: servicecomb/service-center
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    name: service-center
+    type: ClusterIP
+    externalPort: 30100
+    internalPort: 30100
+
+  ingress:
+    enabled: false
+    # Used to create an Ingress record.
+    hosts:
+      - service-center.local
+    annotations:
+      # kubernetes.io/ingress.class: nginx
+      # kubernetes.io/tls-acme: "true"
+    tls:
+      # Secrets must be manually created in the namespace.
+      # - secretName: chart-example-tls
+      #   hosts:
+      #     - chart-example.local
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #  cpu: 100m
+    #  memory: 128Mi
+    # requests:
+    #  cpu: 100m
+    #  memory: 128Mi

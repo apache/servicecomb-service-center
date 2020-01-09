@@ -18,23 +18,34 @@
 package rest
 
 import (
-	roa "github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/interceptor"
 	"net/http"
 	"time"
+
+	roa "github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/interceptor"
 )
 
 const CTX_START_TIMESTAMP = "x-start-timestamp"
 
 func init() {
 	// api
-	RegisterServerHandler("/", &ServerHandler{})
+	RegisterServerHandler("/", NewServerHandler(roa.GetRouter()))
 }
 
+// NewServerHandler news a ServerHandler
+func NewServerHandler(h http.Handler) *ServerHandler {
+	return &ServerHandler{
+		Handler: h,
+	}
+}
+
+// ServerHandler is a http handler for service-center api
 type ServerHandler struct {
+	Handler http.Handler
 }
 
+// ServeHTTP implements http.Handler
 func (s *ServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	util.SetRequestContext(r, CTX_START_TIMESTAMP, time.Now())
 
@@ -43,7 +54,7 @@ func (s *ServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	roa.GetRouter().ServeHTTP(w, r)
+	s.Handler.ServeHTTP(w, r)
 
 	// CAUTION: There will be cause a concurrent problem,
 	// if here get/set the HTTP request headers.

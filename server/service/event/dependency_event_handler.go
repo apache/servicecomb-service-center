@@ -17,72 +17,81 @@
 package event
 
 import (
-	"encoding/json"
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
-	"github.com/apache/incubator-servicecomb-service-center/server/mux"
-	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
-	"github.com/coreos/etcd/mvcc/mvccpb"
+	"github.com/apache/servicecomb-service-center/pkg/backoff"
+	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/queue"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/backend"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/mux"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
+	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
 	"time"
 )
 
 type DependencyEventHandler struct {
-	signals *util.UniQueue
+	signals *queue.UniQueue
 }
 
-func (h *DependencyEventHandler) Type() backend.StoreType {
+func (h *DependencyEventHandler) Type() discovery.Type {
 	return backend.DEPENDENCY_QUEUE
 }
 
-func (h *DependencyEventHandler) OnEvent(evt backend.KvEvent) {
+func (h *DependencyEventHandler) OnEvent(evt discovery.KvEvent) {
 	action := evt.Type
 	if action != pb.EVT_CREATE && action != pb.EVT_UPDATE && action != pb.EVT_INIT {
 		return
 	}
+	h.notify()
+}
 
+func (h *DependencyEventHandler) notify() {
 	h.signals.Put(struct{}{})
 }
 
-func (h *DependencyEventHandler) loop() {
-	util.Go(func(ctx context.Context) {
-		retries := 0
-		delay := func() {
-			<-time.After(util.GetBackoff().Delay(retries))
-			retries++
+func (h *DependencyEventHandler) backoff(f func(), retries int) int {
+	if f != nil {
+		<-time.After(backoff.GetBackoff().Delay(retries))
+		f()
+	}
+	return retries + 1
+}
 
-			h.signals.Put(struct{}{})
-		}
+func (h *DependencyEventHandler) tryWithBackoff(success func() error, backoff func(), retries int) (error, int) {
+	lock, err := mux.Try(mux.DepQueueLock)
+	if err != nil {
+		log.Errorf(err, "try to lock %s failed", mux.DepQueueLock)
+		return err, h.backoff(backoff, retries)
+	}
+
+	if lock == nil {
+		return nil, 0
+	}
+
+	err = success()
+	lock.Unlock()
+	if err != nil {
+		log.Errorf(err, "handle dependency event failed")
+		return err, h.backoff(backoff, retries)
+	}
+
+	return nil, 0
+}
+
+func (h *DependencyEventHandler) eventLoop() {
+	gopool.Go(func(ctx context.Context) {
+		retries := 0
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			case <-h.signals.Chan():
-				lock, err := mux.Try(mux.DEP_QUEUE_LOCK)
-				if err != nil {
-					util.Logger().Errorf(err, "try to lock %s failed", mux.DEP_QUEUE_LOCK)
-					delay()
-					continue
-				}
-
-				if lock == nil {
-					retries = 0
-					continue
-				}
-
-				err = h.Handle()
-				lock.Unlock()
-				if err != nil {
-					util.Logger().Errorf(err, "handle dependency event failed")
-					delay()
-					continue
-				}
-
-				retries = 0
+				_, retries = h.tryWithBackoff(h.Handle, h.notify, retries)
 			}
 		}
 	})
@@ -90,11 +99,11 @@ func (h *DependencyEventHandler) loop() {
 
 type DependencyEventHandlerResource struct {
 	dep           *pb.ConsumerDependency
-	kv            *mvccpb.KeyValue
+	kv            *discovery.KeyValue
 	domainProject string
 }
 
-func NewDependencyEventHandlerResource(dep *pb.ConsumerDependency, kv *mvccpb.KeyValue, domainProject string) *DependencyEventHandlerResource {
+func NewDependencyEventHandlerResource(dep *pb.ConsumerDependency, kv *discovery.KeyValue, domainProject string) *DependencyEventHandlerResource {
 	return &DependencyEventHandlerResource{
 		dep,
 		kv,
@@ -126,25 +135,18 @@ func (h *DependencyEventHandler) Handle() error {
 		return nil
 	}
 
-	ctx := context.Background()
-
 	dependencyTree := util.NewTree(isAddToLeft)
 
+	cleanUpDomainProjects := make(map[string]struct{})
+	defer h.CleanUp(cleanUpDomainProjects)
+
 	for _, kv := range resp.Kvs {
-		r := &pb.ConsumerDependency{}
-		consumerId, domainProject, data := pb.GetInfoFromDependencyQueueKV(kv)
+		r := kv.Value.(*pb.ConsumerDependency)
 
-		err := json.Unmarshal(data, r)
-		if err != nil {
-			util.Logger().Errorf(err, "maintain dependency failed, unmarshal failed, consumer %s dependency: %s",
-				consumerId, util.BytesToStringWithNoCopy(data))
-
-			if err = h.removeKV(ctx, kv); err != nil {
-				return err
-			}
-			continue
+		_, domainProject, uuid := core.GetInfoFromDependencyQueueKV(kv.Key)
+		if uuid == core.DEPS_QUEUE_UUID {
+			cleanUpDomainProjects[domainProject] = struct{}{}
 		}
-
 		res := NewDependencyEventHandlerResource(r, kv, domainProject)
 
 		dependencyTree.AddNode(res)
@@ -154,10 +156,10 @@ func (h *DependencyEventHandler) Handle() error {
 }
 
 func (h *DependencyEventHandler) dependencyRuleHandle(res interface{}) error {
-	ctx := context.Background()
+	ctx := context.WithValue(context.Background(), serviceUtil.CTX_GLOBAL, "1")
 	dependencyEventHandlerRes := res.(*DependencyEventHandlerResource)
 	r := dependencyEventHandlerRes.dep
-	consumerFlag := util.StringJoin([]string{r.Consumer.AppId, r.Consumer.ServiceName, r.Consumer.Version}, "/")
+	consumerFlag := util.StringJoin([]string{r.Consumer.Environment, r.Consumer.AppId, r.Consumer.ServiceName, r.Consumer.Version}, "/")
 
 	domainProject := dependencyEventHandlerRes.domainProject
 	consumerInfo := pb.DependenciesToKeys([]*pb.MicroServiceKey{r.Consumer}, domainProject)[0]
@@ -175,20 +177,20 @@ func (h *DependencyEventHandler) dependencyRuleHandle(res interface{}) error {
 	}
 
 	if err != nil {
-		util.Logger().Errorf(err, "modify dependency rule failed, override: %t, consumer %s", r.Override, consumerFlag)
+		log.Errorf(err, "modify dependency rule failed, override: %t, consumer %s", r.Override, consumerFlag)
 		return fmt.Errorf("override: %t, consumer is %s, %s", r.Override, consumerFlag, err.Error())
 	}
 
 	if err = h.removeKV(ctx, dependencyEventHandlerRes.kv); err != nil {
-		util.Logger().Errorf(err, "remove dependency rule failed, override: %t, consumer %s", r.Override, consumerFlag)
+		log.Errorf(err, "remove dependency rule failed, override: %t, consumer %s", r.Override, consumerFlag)
 		return err
 	}
 
-	util.Logger().Infof("maintain dependency %v successfully, override: %t", r, r.Override)
+	log.Infof("maintain dependency [%v] successfully", r)
 	return nil
 }
 
-func (h *DependencyEventHandler) removeKV(ctx context.Context, kv *mvccpb.KeyValue) error {
+func (h *DependencyEventHandler) removeKV(ctx context.Context, kv *discovery.KeyValue) error {
 	dResp, err := backend.Registry().TxnWithCmp(ctx, []registry.PluginOp{registry.OpDel(registry.WithKey(kv.Key))},
 		[]registry.CompareOp{registry.OpCmp(registry.CmpVer(kv.Key), registry.CMP_EQUAL, kv.Version)},
 		nil)
@@ -196,15 +198,24 @@ func (h *DependencyEventHandler) removeKV(ctx context.Context, kv *mvccpb.KeyVal
 		return fmt.Errorf("can not remove the dependency %s request, %s", util.BytesToStringWithNoCopy(kv.Key), err.Error())
 	}
 	if !dResp.Succeeded {
-		util.Logger().Infof("the dependency %s request is changed", util.BytesToStringWithNoCopy(kv.Key))
+		log.Infof("the dependency %s request is changed", util.BytesToStringWithNoCopy(kv.Key))
 	}
 	return nil
 }
 
+func (h *DependencyEventHandler) CleanUp(domainProjects map[string]struct{}) {
+	for domainProject := range domainProjects {
+		ctx := context.WithValue(context.Background(), serviceUtil.CTX_GLOBAL, "1")
+		if err := serviceUtil.CleanUpDependencyRules(ctx, domainProject); err != nil {
+			log.Errorf(err, "clean up '%s' dependency rules failed", domainProject)
+		}
+	}
+}
+
 func NewDependencyEventHandler() *DependencyEventHandler {
 	h := &DependencyEventHandler{
-		signals: util.NewUniQueue(),
+		signals: queue.NewUniQueue(),
 	}
-	h.loop()
+	h.eventLoop()
 	return h
 }

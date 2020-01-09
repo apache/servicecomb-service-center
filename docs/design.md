@@ -1,10 +1,24 @@
 ## Service-Center Design
 
 Service-Center(SC) is a service registry that allows services to register their instance information and to discover providers of a given service.
-SC uses etcd to store all the information of micro-service and its instances. Below is the diagram stating the working principles and flow of SC.
+Generally, SC uses etcd to store all the information of micro-service and its instances.
+
+![architecture](/docs/aggregator-design.PNG)
+
+- **API Layer**: To expose the RESTful and gRPC service.
+- **Metedata**: The business logic to manage microservice, instance, schema, tag, dependency and ACL rules.
+- **Server Core**: Including data model, requests handle chain and so on.
+- **Aggregator**: It is the bridge between Core and Registry, includes the cache manager and indexer of registry.
+- **Registry Adaptor**: An abstract layer of registry, exposing a unified interface for upper layer calls.
+
+Below is the diagram stating the working principles and flow of SC.
 
 #### On StartUp
-Here we assume that micro-services are written using [java-chassis](https://github.com/ServiceComb/java-chassis) sdk. So when micro-service boots up then java-chassis sdk does the following list of tasks.
+Here describes a standard client registration process.
+We assume that micro-services are written using 
+[java-chassis](https://github.com/ServiceComb/java-chassis) sdk or 
+[go-chassis](https://github.com/go-chassis/go-chassis) sdk.
+So when micro-service boots up then java-chassis sdk does the following list of tasks.
 
 1. On startup provider registers the micro-service to SC if not registered earlier and also register its instance information like its Ip and Port on which instance is running.
 2. SC stores the provider information in etcd.
@@ -23,4 +37,4 @@ Provider instance regularly sends heartbeat signal every 30 seconds to SC, if SC
 Consumer watches the information of provider instances from SC and if there is any change then the cache is updated.  
 When Consumer needs to communicate to Provider then consumer reads endpoints of the provider instances from cache and do loadbalancing to communicate to Provider.
 
-Note: This document is in beta stage, feel free to contribute to this document.
+Note: Feel free to contribute to this document.

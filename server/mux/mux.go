@@ -17,7 +17,7 @@
 package mux
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/etcdsync"
+	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
 	"reflect"
 	"unsafe"
 )
@@ -33,8 +33,9 @@ func (m *MuxType) String() (s string) {
 }
 
 const (
-	GLOBAL_LOCK    MuxType = "/cse-sr/lock/global"
-	DEP_QUEUE_LOCK MuxType = "/cse-sr/lock/dep-queue"
+	GlobalLock       MuxType = "/cse-sr/lock/global"
+	DepQueueLock     MuxType = "/cse-sr/lock/dep-queue"
+	ServiceClearLock MuxType = "/cse-sr/lock/service-clear"
 )
 
 func Lock(t MuxType) (*etcdsync.DLock, error) {

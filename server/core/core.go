@@ -19,74 +19,40 @@ package core
 
 import (
 	"flag"
-	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/grace"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/plugin"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/version"
+	// import the grace package and parse grace cmd line
+	_ "github.com/apache/servicecomb-service-center/pkg/grace"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/version"
 	"os"
 	"os/signal"
-	"runtime"
 	"syscall"
 	"time"
 )
 
-func init() {
-	Initialize()
-}
-
 func Initialize() {
-	initCommandLine()
+	// parse the cmd line
+	ParseCommandLine()
 
-	plugin.SetPluginDir(ServerInfo.Config.PluginsDir)
-
-	initLogger()
-
-	printVersion()
+	// initialize configuration
+	Configure()
 
 	go handleSignals()
-
-	grace.Init()
 }
 
-func initCommandLine() {
+func ParseCommandLine() {
 	var printVer bool
 	flag.BoolVar(&printVer, "v", false, "Print the version and exit.")
-	flag.CommandLine.Init(os.Args[0], flag.ContinueOnError)
-	flag.CommandLine.Parse(os.Args[1:])
+	flag.Parse()
 
 	if printVer {
-		fmt.Printf("ServiceCenter version: %s\n", version.Ver().Version)
-		fmt.Printf("Build tag: %s\n", version.Ver().BuildTag)
-		fmt.Printf("Go version: %s\n", runtime.Version())
-		fmt.Printf("Go OS/Arch: %s/%s\n", runtime.GOOS, runtime.GOARCH)
+		version.Ver().Print()
 		os.Exit(0)
 	}
 }
 
-func printVersion() {
-	util.Logger().Infof("service center version: %s", version.Ver().Version)
-	util.Logger().Infof("Build tag: %s", version.Ver().BuildTag)
-	util.Logger().Infof("Go version: %s", runtime.Version())
-	util.Logger().Infof("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH)
-
-	cores := runtime.NumCPU()
-	runtime.GOMAXPROCS(cores)
-	util.Logger().Infof("service center is running simultaneously with %d CPU cores", cores)
-}
-
-func initLogger() {
-	util.InitGlobalLogger(util.LoggerConfig{
-		LoggerLevel:     ServerInfo.Config.LogLevel,
-		LoggerFile:      os.ExpandEnv(ServerInfo.Config.LogFilePath),
-		LogFormatText:   ServerInfo.Config.LogFormat == "text",
-		LogRotatePeriod: 30 * time.Second,
-		LogRotateSize:   int(ServerInfo.Config.LogRotateSize),
-		LogBackupCount:  int(ServerInfo.Config.LogBackupCount),
-	})
-}
-
 func handleSignals() {
+	defer log.Sync()
+
 	sigCh := make(chan os.Signal)
 	signal.Notify(sigCh,
 		syscall.SIGINT,
@@ -98,10 +64,10 @@ func handleSignals() {
 		switch sig {
 		case syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM:
 			<-time.After(wait)
-			util.Logger().Warnf(nil, "waiting for server response timed out(%s), force shutdown", wait)
+			log.Warnf("waiting for server response timed out(%s), force shutdown", wait)
 			os.Exit(1)
 		default:
-			util.Logger().Warnf(nil, "received signal '%v'", sig)
+			log.Warnf("received signal '%v'", sig)
 		}
 	}
 }

@@ -18,33 +18,42 @@ package util
 
 import (
 	"reflect"
+	"runtime"
+	"strings"
 	"sync"
 	"unsafe"
 )
 
 var (
-	reflector      *Reflector
-	sliceTypeSize  = uint64(reflect.TypeOf(reflect.SliceHeader{}).Size())
-	stringTypeSize = uint64(reflect.TypeOf(reflect.StringHeader{}).Size())
+	reflector *Reflector
+	unknown   = new(reflectObject)
 )
 
 func init() {
 	reflector = &Reflector{
-		types: make(map[*uintptr]reflectObject, 100),
+		types: make(map[*uintptr]*reflectObject),
 	}
 }
 
 type reflectObject struct {
-	Type   reflect.Type
+	// full name
+	FullName string
+	Type     reflect.Type
+	// if type is not struct, Fields is nil
 	Fields []reflect.StructField
 }
 
+// Name returns a short name of the object type
+func (o *reflectObject) Name() string {
+	return FileLastName(o.FullName)
+}
+
 type Reflector struct {
-	types map[*uintptr]reflectObject
+	types map[*uintptr]*reflectObject
 	mux   sync.RWMutex
 }
 
-func (r *Reflector) Load(obj interface{}) reflectObject {
+func (r *Reflector) Load(obj interface{}) *reflectObject {
 	r.mux.RLock()
 	itab := *(**uintptr)(unsafe.Pointer(&obj))
 	t, ok := r.types[itab]
@@ -60,38 +69,48 @@ func (r *Reflector) Load(obj interface{}) reflectObject {
 		return t
 	}
 
+	t = new(reflectObject)
 	v := reflect.ValueOf(obj)
 	if !v.IsValid() {
 		r.mux.Unlock()
-		return reflectObject{}
+		return unknown
 	}
 	switch v.Kind() {
 	case reflect.Ptr:
-		if v.IsNil() {
-			r.mux.Unlock()
-			return reflectObject{}
-		}
 		fallthrough
 	case reflect.Interface:
 		r.mux.Unlock()
-		return r.Load(v.Elem().Interface())
-	default:
-		t = reflectObject{
-			Type: reflect.TypeOf(obj),
+		if v.IsNil() {
+			return unknown
 		}
-	}
+		e := v.Elem()
+		if e.CanInterface() {
+			return r.Load(e.Interface())
+		}
+		return unknown
+	default:
+		t.Type = reflect.TypeOf(obj)
 
-	if v.Kind() != reflect.Struct {
-		r.mux.Unlock()
-		return t
-	}
-
-	fl := t.Type.NumField()
-	if fl > 0 {
-		t.Fields = make([]reflect.StructField, fl)
-		for i := 0; i < fl; i++ {
-			f := t.Type.Field(i)
-			t.Fields[i] = f
+		switch v.Kind() {
+		case reflect.Func:
+			r.mux.Unlock()
+			f := runtime.FuncForPC(v.Pointer())
+			if f == nil {
+				return unknown
+			}
+			t.FullName = f.Name()
+			return t
+		case reflect.Struct:
+			if fl := t.Type.NumField(); fl > 0 {
+				t.Fields = make([]reflect.StructField, fl)
+				for i := 0; i < fl; i++ {
+					f := t.Type.Field(i)
+					t.Fields[i] = f
+				}
+			}
+			fallthrough
+		default:
+			t.FullName = t.Type.PkgPath() + "." + t.Type.Name()
 		}
 	}
 	r.types[itab] = t
@@ -99,7 +118,7 @@ func (r *Reflector) Load(obj interface{}) reflectObject {
 	return t
 }
 
-func ReflectObject(obj interface{}) (s reflectObject) {
+func Reflect(obj interface{}) *reflectObject {
 	return reflector.Load(obj)
 }
 
@@ -180,4 +199,19 @@ func isValueType(kind reflect.Kind) bool {
 	default:
 		return false
 	}
+}
+
+func FormatFuncName(f string) string {
+	i := strings.LastIndex(f, "/")
+	j := strings.Index(f[i+1:], ".")
+	if j < 1 {
+		return "???"
+	}
+	_, fun := f[:i+j+1], f[i+j+2:]
+	i = strings.LastIndex(fun, ".")
+	return strings.TrimSuffix(fun[i+1:], "-fm") // trim the suffix of function closure name
+}
+
+func FuncName(f interface{}) string {
+	return Reflect(f).Name()
 }

@@ -17,7 +17,7 @@
 package util
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 	"golang.org/x/net/context"
 )
 
@@ -28,6 +28,9 @@ func FromContext(ctx context.Context) []registry.PluginOpOption {
 		opts = append(opts, registry.WithNoCache())
 	case ctx.Value(CTX_CACHEONLY) == "1":
 		opts = append(opts, registry.WithCacheOnly())
+	}
+	if ctx.Value(CTX_GLOBAL) == "1" {
+		opts = append(opts, registry.WithGlobal())
 	}
 	return opts
 }

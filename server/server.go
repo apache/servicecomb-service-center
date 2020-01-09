@@ -16,158 +16,109 @@
  */
 package server
 
-import _ "github.com/apache/incubator-servicecomb-service-center/server/service/event"
+import _ "github.com/apache/servicecomb-service-center/server/service/event"
 import (
-	"encoding/json"
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
-	"github.com/apache/incubator-servicecomb-service-center/server/mux"
-	nf "github.com/apache/incubator-servicecomb-service-center/server/service/notification"
-	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
-	"github.com/apache/incubator-servicecomb-service-center/version"
+	"os"
+	"time"
+
+	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	nf "github.com/apache/servicecomb-service-center/pkg/notify"
+	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/backend"
+	"github.com/apache/servicecomb-service-center/server/mux"
+	"github.com/apache/servicecomb-service-center/server/notify"
+	"github.com/apache/servicecomb-service-center/server/plugin"
+	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
+	"github.com/apache/servicecomb-service-center/server/task"
+	"github.com/apache/servicecomb-service-center/version"
 	"github.com/astaxie/beego"
 	"golang.org/x/net/context"
-	"net"
-	"net/url"
-	"os"
-	"strings"
-	"time"
 )
 
-var (
-	server *ServiceCenterServer
-)
-
-func init() {
-	server = &ServiceCenterServer{
-		store:         backend.Store(),
-		notifyService: nf.GetNotifyService(),
-		apiServer:     GetAPIServer(),
-		goroutine:     util.NewGo(context.Background()),
-	}
-}
+const buildin = "buildin"
 
 type ServiceCenterServer struct {
-	apiServer     *APIServer
+	apiService    *APIServer
 	notifyService *nf.NotifyService
-	store         *backend.KvStore
-	goroutine     *util.GoRoutine
+	cacheService  *backend.KvStore
+	goroutine     *gopool.Pool
 }
 
 func (s *ServiceCenterServer) Run() {
 	s.initialize()
 
-	s.startNotifyService()
-
-	s.startApiServer()
+	s.startServices()
 
 	s.waitForQuit()
 }
 
 func (s *ServiceCenterServer) waitForQuit() {
-	var err error
-	select {
-	case err = <-s.apiServer.Err():
-	case err = <-s.notifyService.Err():
-	}
+	err := <-s.apiService.Err()
 	if err != nil {
-		util.Logger().Errorf(err, "service center catch errors")
+		log.Errorf(err, "service center catch errors")
 	}
 
 	s.Stop()
-
-	util.Logger().Debugf("service center stopped")
-}
-
-func LoadServerInformation() error {
-	resp, err := backend.Registry().Do(context.Background(),
-		registry.GET, registry.WithStrKey(core.GetServerInfoKey()))
-	if err != nil {
-		return err
-	}
-	if len(resp.Kvs) == 0 {
-		return nil
-	}
-
-	err = json.Unmarshal(resp.Kvs[0].Value, core.ServerInfo)
-	if err != nil {
-		util.Logger().Errorf(err, "load system config failed, maybe incompatible")
-		return nil
-	}
-	return nil
-}
-
-func UpgradeServerVersion() error {
-	core.ServerInfo.Version = version.Ver().Version
-
-	bytes, err := json.Marshal(core.ServerInfo)
-	if err != nil {
-		return err
-	}
-	_, err = backend.Registry().Do(context.Background(),
-		registry.PUT, registry.WithStrKey(core.GetServerInfoKey()), registry.WithValue(bytes))
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (s *ServiceCenterServer) needUpgrade() bool {
-	if core.ServerInfo.Version == "0" {
-		err := LoadServerInformation()
-		if err != nil {
-			util.Logger().Errorf(err, "check version failed, can not load the system config")
-			return false
-		}
+	err := LoadServerVersion()
+	if err != nil {
+		log.Errorf(err, "check version failed, can not load the system config")
+		return false
 	}
-	return !serviceUtil.VersionMatchRule(core.ServerInfo.Version,
+
+	update := !serviceUtil.VersionMatchRule(core.ServerInfo.Version,
 		fmt.Sprintf("%s+", version.Ver().Version))
+	if !update && version.Ver().Version != core.ServerInfo.Version {
+		log.Warnf(
+			"there is a higher version '%s' in cluster, now running '%s' version may be incompatible",
+			core.ServerInfo.Version, version.Ver().Version)
+	}
+
+	return update
 }
 
-func (s *ServiceCenterServer) initialize() {
-	// check version
-	lock, err := mux.Lock(mux.GLOBAL_LOCK)
-	defer lock.Unlock()
+func (s *ServiceCenterServer) loadOrUpgradeServerVersion() {
+	lock, err := mux.Lock(mux.GlobalLock)
 	if err != nil {
-		util.Logger().Errorf(err, "wait for server ready failed")
+		log.Errorf(err, "wait for server ready failed")
 		os.Exit(1)
 	}
 	if s.needUpgrade() {
-		UpgradeServerVersion()
+		core.ServerInfo.Version = version.Ver().Version
+
+		if err := UpgradeServerVersion(); err != nil {
+			log.Errorf(err, "upgrade server version failed")
+			os.Exit(1)
+		}
 	}
-
-	// cache mechanism
-	s.store.Run()
-	<-s.store.Ready()
-
-	// auto compact backend
-	s.autoCompactBackend()
+	lock.Unlock()
 }
 
-func (s *ServiceCenterServer) autoCompactBackend() {
+func (s *ServiceCenterServer) compactBackendService() {
 	delta := core.ServerInfo.Config.CompactIndexDelta
 	if delta <= 0 || len(core.ServerInfo.Config.CompactInterval) == 0 {
 		return
 	}
 	interval, err := time.ParseDuration(core.ServerInfo.Config.CompactInterval)
 	if err != nil {
-		util.Logger().Errorf(err, "invalid compact interval %s, reset to default interval 12h", core.ServerInfo.Config.CompactInterval)
+		log.Errorf(err, "invalid compact interval %s, reset to default interval 12h", core.ServerInfo.Config.CompactInterval)
 		interval = 12 * time.Hour
 	}
 	s.goroutine.Do(func(ctx context.Context) {
-		util.Logger().Infof("enabled the automatic compact mechanism, compact once every %s, reserve %d",
+		log.Infof("enabled the automatic compact mechanism, compact once every %s, reserve %d",
 			core.ServerInfo.Config.CompactInterval, delta)
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			case <-time.After(interval):
-				lock, err := mux.Try(mux.GLOBAL_LOCK)
-				if lock == nil {
-					util.Logger().Warnf(err, "can not compact backend by this service center instance now")
+				lock, err := mux.Try(mux.GlobalLock)
+				if err != nil {
+					log.Errorf(err, "can not compact backend by this service center instance now")
 					continue
 				}
 
@@ -179,60 +130,108 @@ func (s *ServiceCenterServer) autoCompactBackend() {
 	})
 }
 
-func (s *ServiceCenterServer) startNotifyService() {
-	s.notifyService.Config = nf.NotifyServiceConfig{
-		AddTimeout:    30 * time.Second,
-		NotifyTimeout: 30 * time.Second,
-		MaxQueue:      100,
+// clear services who have no instance
+func (s *ServiceCenterServer) clearNoInstanceServices() {
+	if !core.ServerInfo.Config.ServiceClearEnabled {
+		return
 	}
-	s.notifyService.Start()
+	log.Infof("service clear enabled, interval: %s, service TTL: %s",
+		core.ServerInfo.Config.ServiceClearInterval,
+		core.ServerInfo.Config.ServiceTTL)
+
+	s.goroutine.Do(func(ctx context.Context) {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(core.ServerInfo.Config.ServiceClearInterval):
+				lock, err := mux.Try(mux.ServiceClearLock)
+				if err != nil {
+					log.Errorf(err, "can not clear no instance services by this service center instance now")
+					continue
+				}
+				err = task.ClearNoInstanceServices(core.ServerInfo.Config.ServiceTTL)
+				lock.Unlock()
+				if err != nil {
+					log.Errorf(err, "no-instance services cleanup failed")
+					continue
+				}
+				log.Info("no-instance services cleanup succeed")
+			}
+		}
+	})
 }
 
-func (s *ServiceCenterServer) startApiServer() {
+func (s *ServiceCenterServer) initialize() {
+	s.cacheService = backend.Store()
+	s.apiService = GetAPIServer()
+	s.notifyService = notify.NotifyCenter()
+	s.goroutine = gopool.New(context.Background())
+}
+
+func (s *ServiceCenterServer) startServices() {
+	// notifications
+	s.notifyService.Start()
+
+	// load server plugins
+	plugin.LoadPlugins()
+
+	// check version
+	if core.ServerInfo.Config.SelfRegister {
+		s.loadOrUpgradeServerVersion()
+	}
+
+	// cache mechanism
+	s.cacheService.Run()
+	<-s.cacheService.Ready()
+
+	if buildin != beego.AppConfig.DefaultString("registry_plugin", buildin) {
+		// compact backend automatically
+		s.compactBackendService()
+		// clean no-instance services automatically
+		s.clearNoInstanceServices()
+	}
+
+	// api service
+	s.startApiService()
+}
+
+func (s *ServiceCenterServer) startApiService() {
 	restIp := beego.AppConfig.String("httpaddr")
 	restPort := beego.AppConfig.String("httpport")
 	rpcIp := beego.AppConfig.DefaultString("rpcaddr", "")
 	rpcPort := beego.AppConfig.DefaultString("rpcport", "")
 
-	s.apiServer.HostName = fmt.Sprintf("%s_%s", core.ServerInfo.Config.LoggerName,
-		strings.Replace(restIp, ".", "_", -1))
-	s.addEndpoint(REST, restIp, restPort)
-	s.addEndpoint(RPC, rpcIp, rpcPort)
-	s.apiServer.Start()
-}
-
-func (s *ServiceCenterServer) addEndpoint(t APIType, ip, port string) {
-	if s.apiServer.Endpoints == nil {
-		s.apiServer.Listeners = map[APIType]string{}
-		s.apiServer.Endpoints = map[APIType]string{}
+	host, err := os.Hostname()
+	if err != nil {
+		host = restIp
+		log.Errorf(err, "parse hostname failed")
 	}
-	if len(ip) == 0 {
-		return
-	}
-	address := fmt.Sprintf("%s://%s/", t, net.JoinHostPort(url.PathEscape(ip), port))
-	if core.ServerInfo.Config.SslEnabled {
-		address += "?sslEnabled=true"
-	}
-	s.apiServer.Listeners[t] = net.JoinHostPort(ip, port)
-	s.apiServer.Endpoints[t] = address
+	core.Instance.HostName = host
+	s.apiService.AddListener(REST, restIp, restPort)
+	s.apiService.AddListener(RPC, rpcIp, rpcPort)
+	s.apiService.Start()
 }
 
 func (s *ServiceCenterServer) Stop() {
-	if s.apiServer != nil {
-		s.apiServer.Stop()
+	if s.apiService != nil {
+		s.apiService.Stop()
 	}
 
 	if s.notifyService != nil {
 		s.notifyService.Stop()
 	}
 
-	if s.store != nil {
-		s.store.Stop()
+	if s.cacheService != nil {
+		s.cacheService.Stop()
 	}
 
 	s.goroutine.Close(true)
-}
 
-func Run() {
-	server.Run()
+	gopool.CloseAndWait()
+
+	backend.Registry().Close()
+
+	log.Warnf("service center stopped")
+	log.Sync()
 }

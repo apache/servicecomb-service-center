@@ -1,75 +1,29 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package tlsutil
 
 import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"io/ioutil"
 	"strings"
 )
-
-var TLS_CIPHER_SUITE_MAP = map[string]uint16{
-	"TLS_RSA_WITH_AES_128_GCM_SHA256":       tls.TLS_RSA_WITH_AES_128_GCM_SHA256,
-	"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256": tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-	"TLS_RSA_WITH_AES_256_GCM_SHA384":       tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
-	"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384": tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-	"TLS_RSA_WITH_AES_128_CBC_SHA256":       tls.TLS_RSA_WITH_AES_128_CBC_SHA256,
-}
-
-var TLS_VERSION_MAP = map[string]uint16{
-	"TLSv1.0": tls.VersionTLS10,
-	"TLSv1.1": tls.VersionTLS11,
-	"TLSv1.2": tls.VersionTLS12,
-}
-
-type SSLConfig struct {
-	VerifyPeer     bool
-	VerifyHostName bool
-	CipherSuites   []uint16
-	MinVersion     uint16
-	MaxVersion     uint16
-	CACertFile     string
-	CertFile       string
-	KeyFile        string
-	KeyPassphase   string
-}
-
-type SSLConfigOption func(*SSLConfig)
-
-func WithVerifyPeer(b bool) SSLConfigOption      { return func(c *SSLConfig) { c.VerifyPeer = b } }
-func WithVerifyHostName(b bool) SSLConfigOption  { return func(c *SSLConfig) { c.VerifyHostName = b } }
-func WithCipherSuits(s []uint16) SSLConfigOption { return func(c *SSLConfig) { c.CipherSuites = s } }
-func WithVersion(min, max uint16) SSLConfigOption {
-	return func(c *SSLConfig) { c.MinVersion, c.MaxVersion = min, max }
-}
-func WithCert(f string) SSLConfigOption    { return func(c *SSLConfig) { c.CertFile = f } }
-func WithKey(k string) SSLConfigOption     { return func(c *SSLConfig) { c.KeyFile = k } }
-func WithKeyPass(p string) SSLConfigOption { return func(c *SSLConfig) { c.KeyPassphase = p } }
-func WithCA(f string) SSLConfigOption      { return func(c *SSLConfig) { c.CACertFile = f } }
-
-func toSSLConfig(opts ...SSLConfigOption) (op SSLConfig) {
-	for _, opt := range opts {
-		opt(&op)
-	}
-	return
-}
 
 func ParseSSLCipherSuites(ciphers string, permitTlsCipherSuiteMap map[string]uint16) []uint16 {
 	if len(ciphers) == 0 || len(permitTlsCipherSuiteMap) == 0 {
@@ -88,7 +42,7 @@ func ParseSSLCipherSuites(ciphers string, permitTlsCipherSuiteMap map[string]uin
 			cipherSuiteList = append(cipherSuiteList, cipherSuite)
 		} else {
 			// 配置算法不存在
-			util.Logger().Warnf(nil, "cipher %s not exist.", cipherSuiteName)
+			log.Warnf("cipher %s not exist.", cipherSuiteName)
 		}
 	}
 
@@ -104,7 +58,7 @@ func ParseSSLProtocol(sprotocol string) uint16 {
 	if protocol, ok := TLS_VERSION_MAP[sprotocol]; ok {
 		result = protocol
 	} else {
-		util.Logger().Warnf(nil, "invalid ssl minimal version(%s), use default.", sprotocol)
+		log.Warnf("invalid ssl minimal version(%s), use default.", sprotocol)
 	}
 
 	return result
@@ -114,7 +68,7 @@ func GetX509CACertPool(caCertFile string) (caCertPool *x509.CertPool, err error)
 	pool := x509.NewCertPool()
 	caCert, err := ioutil.ReadFile(caCertFile)
 	if err != nil {
-		util.Logger().Errorf(err, "read ca cert file %s failed.", caCertFile)
+		log.Errorf(err, "read ca cert file %s failed.", caCertFile)
 		return nil, err
 	}
 
@@ -125,29 +79,27 @@ func GetX509CACertPool(caCertFile string) (caCertPool *x509.CertPool, err error)
 func LoadTLSCertificate(certFile, keyFile, plainPassphase string) (tlsCert []tls.Certificate, err error) {
 	certContent, err := ioutil.ReadFile(certFile)
 	if err != nil {
-		util.Logger().Errorf(err, "read cert file %s failed.", certFile)
+		log.Errorf(err, "read cert file %s failed.", certFile)
 		return nil, err
 	}
 
 	keyContent, err := ioutil.ReadFile(keyFile)
 	if err != nil {
-		util.Logger().Errorf(err, "read key file %s failed.", keyFile)
+		log.Errorf(err, "read key file %s failed.", keyFile)
 		return nil, err
 	}
 
 	keyBlock, _ := pem.Decode(keyContent)
 	if keyBlock == nil {
-		util.Logger().Errorf(err, "decode key file %s failed.", keyFile)
+		log.Errorf(err, "decode key file %s failed.", keyFile)
 		return nil, err
 	}
 
 	if x509.IsEncryptedPEMBlock(keyBlock) {
 		plainPassphaseBytes := util.StringToBytesWithNoCopy(plainPassphase)
 		keyData, err := x509.DecryptPEMBlock(keyBlock, plainPassphaseBytes)
-		util.ClearStringMemory(&plainPassphase)
-		util.ClearByteMemory(plainPassphaseBytes)
 		if err != nil {
-			util.Logger().Errorf(err, "decrypt key file %s failed.", keyFile)
+			log.Errorf(err, "decrypt key file %s failed.", keyFile)
 			return nil, err
 		}
 
@@ -162,7 +114,7 @@ func LoadTLSCertificate(certFile, keyFile, plainPassphase string) (tlsCert []tls
 
 	cert, err := tls.X509KeyPair(certContent, keyContent)
 	if err != nil {
-		util.Logger().Errorf(err, "load X509 key pair from cert file %s with key file %s failed.", certFile, keyFile)
+		log.Errorf(err, "load X509 key pair from cert file %s with key file %s failed.", certFile, keyFile)
 		return nil, err
 	}
 
@@ -199,7 +151,7 @@ func GetClientTLSConfig(opts ...SSLConfigOption) (tlsConfig *tls.Config, err err
 		RootCAs:            pool,
 		Certificates:       certs,
 		CipherSuites:       cfg.CipherSuites,
-		InsecureSkipVerify: !cfg.VerifyHostName,
+		InsecureSkipVerify: !cfg.VerifyPeer || !cfg.VerifyHostName,
 		MinVersion:         cfg.MinVersion,
 		MaxVersion:         cfg.MaxVersion,
 	}
@@ -221,19 +173,23 @@ func GetServerTLSConfig(opts ...SSLConfigOption) (tlsConfig *tls.Config, err err
 	}
 
 	var certs []tls.Certificate
-	certs, err = LoadTLSCertificate(cfg.CertFile, cfg.KeyFile, cfg.KeyPassphase)
-	if err != nil {
-		return nil, err
+	if len(cfg.CertFile) > 0 {
+		certs, err = LoadTLSCertificate(cfg.CertFile, cfg.KeyFile, cfg.KeyPassphase)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	tlsConfig = &tls.Config{
 		ClientCAs:                pool,
 		Certificates:             certs,
 		CipherSuites:             cfg.CipherSuites,
+		CurvePreferences:         []tls.CurveID{tls.X25519, tls.CurveP256},
 		PreferServerCipherSuites: true,
 		ClientAuth:               clientAuthMode,
 		MinVersion:               cfg.MinVersion,
 		MaxVersion:               cfg.MaxVersion,
+		NextProtos:               []string{"h2", "http/1.1"},
 	}
 
 	return tlsConfig, nil

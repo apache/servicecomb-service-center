@@ -17,15 +17,19 @@
 package rest
 
 import (
+	"compress/gzip"
 	"crypto/tls"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/grace"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
 	"net"
 	"net/http"
 	"os"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/pkg/grace"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+
+	"github.com/NYTimes/gziphandler"
 )
 
 const (
@@ -46,6 +50,8 @@ type ServerConfig struct {
 	GraceTimeout      time.Duration
 	MaxHeaderBytes    int
 	TLSConfig         *tls.Config
+	Compressed        bool
+	CompressMinBytes  int
 }
 
 func DefaultServerConfig() *ServerConfig {
@@ -57,6 +63,8 @@ func DefaultServerConfig() *ServerConfig {
 		KeepAliveTimeout:  1 * time.Minute,
 		GraceTimeout:      3 * time.Second,
 		MaxHeaderBytes:    16384,
+		Compressed:        true,
+		CompressMinBytes:  1400, // 1.4KB
 	}
 }
 
@@ -64,7 +72,7 @@ func NewServer(srvCfg *ServerConfig) *Server {
 	if srvCfg == nil {
 		srvCfg = DefaultServerConfig()
 	}
-	return &Server{
+	s := &Server{
 		Server: &http.Server{
 			Addr:              srvCfg.Addr,
 			Handler:           srvCfg.Handler,
@@ -80,6 +88,11 @@ func NewServer(srvCfg *ServerConfig) *Server {
 		state:            serverStateInit,
 		Network:          "tcp",
 	}
+	if srvCfg.Compressed && srvCfg.CompressMinBytes > 0 && srvCfg.Handler != nil {
+		wrapper, _ := gziphandler.NewGzipLevelAndMinSize(gzip.DefaultCompression, srvCfg.CompressMinBytes)
+		s.Handler = wrapper(srvCfg.Handler)
+	}
+	return s
 }
 
 type Server struct {
@@ -89,9 +102,9 @@ type Server struct {
 	KeepaliveTimeout time.Duration
 	GraceTimeout     time.Duration
 
-	registerListener net.Listener
-	restListener     net.Listener
-	innerListener    *restListener
+	Listener    net.Listener
+	netListener net.Listener
+	tcpListener *TcpListener
 
 	conns int64
 	wg    sync.WaitGroup
@@ -102,22 +115,22 @@ func (srv *Server) Serve() (err error) {
 	defer func() {
 		srv.state = serverStateClosed
 	}()
-	defer util.RecoverAndReport()
+	defer log.Recover()
 	srv.state = serverStateRunning
-	err = srv.Server.Serve(srv.restListener)
-	util.Logger().Debugf("server serve failed(%s)", err)
+	err = srv.Server.Serve(srv.Listener)
+	log.Errorf(err, "rest server serve failed")
 	srv.wg.Wait()
 	return
 }
 
 func (srv *Server) AcceptOne() {
-	defer util.RecoverAndReport()
+	defer log.Recover()
 	srv.wg.Add(1)
 	atomic.AddInt64(&srv.conns, 1)
 }
 
 func (srv *Server) CloseOne() bool {
-	defer util.RecoverAndReport()
+	defer log.Recover()
 	for {
 		left := atomic.LoadInt64(&srv.conns)
 		if left <= 0 {
@@ -136,12 +149,12 @@ func (srv *Server) Listen() error {
 		addr = ":http"
 	}
 
-	l, err := srv.getListener(addr)
+	l, err := srv.getOrCreateListener(addr)
 	if err != nil {
 		return err
 	}
 
-	srv.restListener = newRestListener(l, srv)
+	srv.Listener = NewTcpListener(l, srv)
 	grace.RegisterFiles(addr, srv.File())
 	return nil
 }
@@ -152,13 +165,13 @@ func (srv *Server) ListenTLS() error {
 		addr = ":https"
 	}
 
-	l, err := srv.getListener(addr)
+	l, err := srv.getOrCreateListener(addr)
 	if err != nil {
 		return err
 	}
 
-	srv.innerListener = newRestListener(l, srv)
-	srv.restListener = tls.NewListener(srv.innerListener, srv.TLSConfig)
+	srv.tcpListener = NewTcpListener(l, srv)
+	srv.Listener = tls.NewListener(srv.tcpListener, srv.TLSConfig)
 	grace.RegisterFiles(addr, srv.File())
 	return nil
 }
@@ -181,7 +194,7 @@ func (srv *Server) ListenAndServeTLS(certFile, keyFile string) (err error) {
 		}
 	}
 	if srv.TLSConfig.NextProtos == nil {
-		srv.TLSConfig.NextProtos = []string{"http/1.1"}
+		srv.TLSConfig.NextProtos = []string{"h2", "http/1.1"}
 	}
 
 	err = srv.ListenTLS()
@@ -191,22 +204,19 @@ func (srv *Server) ListenAndServeTLS(certFile, keyFile string) (err error) {
 	return srv.Serve()
 }
 
+// RegisterListener register the instance created outside by net.Listen() in server
 func (srv *Server) RegisterListener(l net.Listener) {
-	srv.registerListener = l
+	srv.netListener = l
 }
 
-func (srv *Server) getListener(addr string) (l net.Listener, err error) {
-	l = srv.registerListener
-	if l != nil {
-		return
-	}
+func (srv *Server) getOrCreateListener(addr string) (l net.Listener, err error) {
 	if !grace.IsFork() {
-		return net.Listen(srv.Network, addr)
+		return srv.newListener(addr)
 	}
 
 	offset := grace.ExtraFileOrder(addr)
 	if offset < 0 {
-		return net.Listen(srv.Network, addr)
+		return srv.newListener(addr)
 	}
 
 	f := os.NewFile(uintptr(3+offset), "")
@@ -218,15 +228,23 @@ func (srv *Server) getListener(addr string) (l net.Listener, err error) {
 	return
 }
 
+func (srv *Server) newListener(addr string) (net.Listener, error) {
+	l := srv.netListener
+	if l != nil {
+		return l, nil
+	}
+	return net.Listen(srv.Network, addr)
+}
+
 func (srv *Server) Shutdown() {
 	if srv.state != serverStateRunning {
 		return
 	}
 
 	srv.state = serverStateTerminating
-	err := srv.restListener.Close()
+	err := srv.Listener.Close()
 	if err != nil {
-		util.Logger().Errorf(err, "server listener close failed")
+		log.Errorf(err, "server listener close failed")
 	}
 
 	if srv.GraceTimeout >= 0 {
@@ -255,19 +273,19 @@ func (srv *Server) gracefulStop(d time.Duration) {
 	}
 
 	if n != 0 {
-		util.Logger().Warnf(nil, "%s timed out, force close %d connection(s)", d, n)
+		log.Warnf("%s timed out, force close %d connection(s)", d, n)
 		err := srv.Server.Close()
 		if err != nil {
-			util.Logger().Warnf(err, "server close failed")
+			log.Errorf(err, "server close failed")
 		}
 	}
 }
 
 func (srv *Server) File() *os.File {
-	switch srv.restListener.(type) {
-	case *restListener:
-		return srv.restListener.(*restListener).File()
+	switch srv.Listener.(type) {
+	case *TcpListener:
+		return srv.Listener.(*TcpListener).File()
 	default:
-		return srv.innerListener.File()
+		return srv.tcpListener.File()
 	}
 }

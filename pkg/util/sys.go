@@ -17,7 +17,9 @@
 package util
 
 import (
+	"github.com/prometheus/procfs"
 	"os"
+	"strconv"
 	"unsafe"
 )
 
@@ -49,5 +51,36 @@ func HostName() (hostname string) {
 	if err != nil {
 		hostname = "UNKNOWN"
 	}
+	return
+}
+
+func GetEnvInt(name string, def int) int {
+	env, ok := os.LookupEnv(name)
+	if ok {
+		i64, err := strconv.ParseInt(env, 10, 0)
+		if err != nil {
+			return def
+		}
+		return int(i64)
+	}
+	return def
+}
+
+func GetEnvString(name string, def string) string {
+	env, ok := os.LookupEnv(name)
+	if ok {
+		return env
+	}
+	return def
+}
+
+func GetProcCPUUsage() (pt float64, ct float64) {
+	p, _ := procfs.NewProc(os.Getpid())
+	stat, _ := procfs.NewStat()
+	pstat, _ := p.NewStat()
+	ct = stat.CPUTotal.User + stat.CPUTotal.Nice + stat.CPUTotal.System +
+		stat.CPUTotal.Idle + stat.CPUTotal.Iowait + stat.CPUTotal.IRQ +
+		stat.CPUTotal.SoftIRQ + stat.CPUTotal.Steal + stat.CPUTotal.Guest
+	pt = float64(pstat.UTime+pstat.STime+pstat.CUTime+pstat.CSTime) / 100
 	return
 }

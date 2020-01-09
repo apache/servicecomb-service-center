@@ -17,7 +17,8 @@
 package metric
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	pm "github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/net/context"
 	"strings"
@@ -25,6 +26,7 @@ import (
 	"time"
 )
 
+// Gatherer is the reader of sc metrics
 var Gatherer *MetricsGatherer
 
 func init() {
@@ -54,22 +56,24 @@ func (mm *MetricsGatherer) Start() {
 	}
 	mm.closed = false
 
-	util.Go(mm.loop)
+	gopool.Go(mm.loop)
 
 	mm.lock.Unlock()
 }
 
 func (mm *MetricsGatherer) loop(ctx context.Context) {
-	ticker := time.NewTicker(collectInterval)
+	ticker := time.NewTicker(Period)
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
 			if err := mm.Collect(); err != nil {
-				util.Logger().Errorf(err, "metrics collect failed.")
+				log.Errorf(err, "metrics collect failed")
 				return
 			}
+
+			Report()
 		}
 	}
 }
@@ -80,11 +84,16 @@ func (mm *MetricsGatherer) Collect() error {
 		return err
 	}
 
+	records := NewMetrics()
 	for _, mf := range mfs {
 		name := mf.GetName()
-		if _, ok := sysMetricNames[name]; strings.Index(name, familyName) == 0 || ok {
-			mm.Records.Put(strings.TrimPrefix(name, familyName), util.MetricValueOf(mf))
+		if _, ok := SysMetrics.Get(name); strings.Index(name, familyNamePrefix) == 0 || ok {
+			if d := Calculate(mf); d != nil {
+				records.put(strings.TrimPrefix(name, familyNamePrefix), d)
+			}
 		}
 	}
+	// clean the old cache here
+	mm.Records = records
 	return nil
 }

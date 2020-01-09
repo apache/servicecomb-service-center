@@ -24,7 +24,7 @@ import (
 func TestHeartbeatUtil(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
-			t.FailNow()
+			t.Fatalf("TestHeartbeatUtil failed")
 		}
 	}()
 	HeartbeatUtil(context.Background(), "", "", "")
@@ -37,7 +37,7 @@ func TestKeepAliveLease(t *testing.T) {
 	}
 
 	_, err = KeepAliveLease(context.Background(), "", "", "", 0)
-	if err == nil {
+	if err != nil {
 		t.Fatalf("KeepAliveLease failed")
 	}
 }

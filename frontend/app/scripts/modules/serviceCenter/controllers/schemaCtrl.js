@@ -26,10 +26,11 @@ angular.module('serviceCenter.sc')
             var addresses = [];
             var instances = [];
             var promises = [];
-            if (servicesList && servicesList.data && servicesList.data.services) {
-                servicesList.data.services.forEach(function(services) {
-                    if (services.serviceId == serviceId) {
-                        $scope.schemaName = services.schemas || [];
+            if (servicesList && servicesList.data && servicesList.data.allServicesDetail) {
+                servicesList.data.allServicesDetail.forEach(function(serviceDetail) {
+                    var service = serviceDetail.microService;
+                    if (service.serviceId == serviceId) {
+                        $scope.schemaName = service.schemas || [];
                     }
                 });
             }
@@ -44,7 +45,7 @@ angular.module('serviceCenter.sc')
                     var headers = {
                         "X-ConsumerId": serviceId
                     };
-                    promises.push(httpService.apiRequest(url, method, null, headers, null));
+                    promises.push(httpService.apiRequest(url, method, null, headers, "nopopup"));
                 }
 
                 $q.all(promises).then(function(response) {
@@ -146,6 +147,7 @@ angular.module('serviceCenter.sc')
                 httpService.apiRequest(url, method, null, headers, "nopopup").then(function(response) {
                     if (response && response.data && response.data.schema) {
                         $scope.template = response.data.schema;
+                        $scope.template = $scope.template.replace(/\\\s/g, "");
                         $scope.json = YAML.parse($scope.template);
                         const ui = SwaggerUIBundle({
                             spec: $scope.json,
@@ -197,7 +199,7 @@ angular.module('serviceCenter.sc')
                                   </div>
                              </md-toolbar>
                              <md-dialog-content>
-                                <h3 class="text-center" style="margin-top:15px;">{{ "noSchemaAvailableToDownload" | translate }}</h3>
+                                <h4 class="text-center" style="margin-top:15px;">{{ "noSchemaAvailableToDownload" | translate }}</h4>
                              </md-dialog-content>
                              <md-dialog-actions layout="row">
                                 <span flex></span>
@@ -260,15 +262,10 @@ angular.module('serviceCenter.sc')
                             httpService.apiRequest(url, method, null, headers, "nopopup").then(function(response) {
                                 $(".loader").hide();
                                 if (response && response.data && response.data.schema) {
-                                    if ($scope.selectedAddress.indexOf("rest") != -1) {
-                                        var rest = $scope.selectedAddress.split(':');
-                                        var ip = rest[1].substring(2, rest[1].length) + ":" + rest[2].substring(0, 4);
-                                    }
-                                    if ($scope.selectedAddress.indexOf("highway") != -1) {
-                                        var highway = $scope.selectedAddress.split(':');
-                                        var ip = highway[1].substring(2, highway[1].length) + ":" + highway[2].substring(0, 4);
-                                    }
+                                    var arr = /^(?:\w+:\/\/)?([^\/?#]+)(.*)$/.exec($scope.selectedAddress);
+                                    var ip = arr[1];
                                     var schema = response.data.schema;
+                                    schema = schema.replace(/\\\s/g, "");
                                     var json = YAML.parse(schema);
                                     json.basePath = "/testSchema" + json.basePath;
                                     json.instanceIP = ip;

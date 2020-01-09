@@ -19,7 +19,7 @@ package integrationtest_test
 import (
 	"bytes"
 	"encoding/json"
-	. "github.com/apache/incubator-servicecomb-service-center/integration"
+	. "github.com/apache/servicecomb-service-center/integration"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/widuu/gojson"
@@ -66,7 +66,7 @@ var _ = Describe("MicroService Api Test", func() {
 			Expect(resp.StatusCode).To(Equal(http.StatusOK))
 			respbody, _ := ioutil.ReadAll(resp.Body)
 			serviceId = gojson.Json(string(respbody)).Get("serviceId").Tostring()
-			Expect(len(serviceId)).Should(BeNumerically("==", 32))
+			Expect(len(serviceId)).Should(BeNumerically("==", LengthUUID))
 
 			//Register MicroService Instance
 			endpoints := []string{"cse://127.0.0.1:9984"}
@@ -105,7 +105,7 @@ var _ = Describe("MicroService Api Test", func() {
 			Expect(resp.StatusCode).To(Equal(http.StatusOK))
 			respbody, _ = ioutil.ReadAll(resp.Body)
 			serviceInstanceID = gojson.Json(string(respbody)).Get("instanceId").Tostring()
-			Expect(len(serviceId)).Should(BeNumerically("==", 32))
+			Expect(len(serviceId)).Should(BeNumerically("==", LengthUUID))
 
 		})
 
@@ -259,7 +259,7 @@ func BenchmarkGovernance(b *testing.B) {
 	Expect(resp.StatusCode).To(Equal(http.StatusOK))
 	respbody, _ := ioutil.ReadAll(resp.Body)
 	serviceId := gojson.Json(string(respbody)).Get("serviceId").Tostring()
-	Expect(len(serviceId)).Should(BeNumerically("==", 32))
+	Expect(len(serviceId)).Should(BeNumerically("==", LengthUUID))
 
 	for i := 0; i < b.N; i++ {
 		url := strings.Replace(GETGOVERNANCESERVICEDETAILS, ":serviceId", serviceId, 1)

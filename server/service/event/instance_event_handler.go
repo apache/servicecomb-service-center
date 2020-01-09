@@ -17,14 +17,16 @@
 package event
 
 import (
-	"encoding/json"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	nf "github.com/apache/incubator-servicecomb-service-center/server/service/notification"
-	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
-	"github.com/coreos/etcd/mvcc/mvccpb"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	apt "github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/backend"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/notify"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
+	"github.com/apache/servicecomb-service-center/server/service/cache"
+	"github.com/apache/servicecomb-service-center/server/service/metrics"
+	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
 	"strings"
 )
@@ -32,75 +34,83 @@ import (
 type InstanceEventHandler struct {
 }
 
-func (h *InstanceEventHandler) Type() backend.StoreType {
+func (h *InstanceEventHandler) Type() discovery.Type {
 	return backend.INSTANCE
 }
 
-func (h *InstanceEventHandler) OnEvent(evt backend.KvEvent) {
+func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
 	action := evt.Type
-	if action == pb.EVT_INIT {
+	instance := evt.KV.Value.(*pb.MicroServiceInstance)
+	providerId, providerInstanceId, domainProject := apt.GetInfoFromInstKV(evt.KV.Key)
+	idx := strings.Index(domainProject, "/")
+	domainName := domainProject[:idx]
+	switch action {
+	case pb.EVT_INIT:
+		metrics.ReportInstances(domainName, 1)
 		return
-	}
-
-	kv := evt.Object.(*mvccpb.KeyValue)
-	providerId, providerInstanceId, domainProject, data := pb.GetInfoFromInstKV(kv)
-	if data == nil {
-		util.Logger().Errorf(nil,
-			"unmarshal provider service instance file failed, instance %s/%s [%s] event, data is nil",
-			providerId, providerInstanceId, action)
-		return
-	}
-	if action == pb.EVT_DELETE {
-		splited := strings.Split(domainProject, "/")
-		if len(splited) == 2 && !apt.IsDefaultDomainProject(domainProject) {
-			domainName := splited[0]
-			projectName := splited[1]
-			ctx := util.SetDomainProject(context.Background(), domainName, projectName)
-			serviceUtil.RemandInstanceQuota(ctx)
+	case pb.EVT_CREATE:
+		metrics.ReportInstances(domainName, 1)
+	case pb.EVT_DELETE:
+		metrics.ReportInstances(domainName, -1)
+		if !apt.IsDefaultDomainProject(domainProject) {
+			projectName := domainProject[idx+1:]
+			serviceUtil.RemandInstanceQuota(
+				util.SetDomainProject(context.Background(), domainName, projectName))
 		}
 	}
 
-	if nf.GetNotifyService().Closed() {
-		util.Logger().Warnf(nil, "caught instance %s/%s [%s] event, but notify service is closed",
-			providerId, providerInstanceId, action)
+	if notify.NotifyCenter().Closed() {
+		log.Warnf("caught [%s] instance[%s/%s] event, endpoints %v, but notify service is closed",
+			action, providerId, providerInstanceId, instance.Endpoints)
 		return
 	}
-	util.Logger().Infof("caught instance %s/%s [%s] event", providerId, providerInstanceId, action)
 
 	// 查询服务版本信息
-	ms, err := serviceUtil.GetServiceInCache(context.Background(), domainProject, providerId)
+	ctx := context.WithValue(context.WithValue(context.Background(),
+		serviceUtil.CTX_CACHEONLY, "1"),
+		serviceUtil.CTX_GLOBAL, "1")
+	ms, err := serviceUtil.GetService(ctx, domainProject, providerId)
 	if ms == nil {
-		util.Logger().Warnf(err, "get provider service %s/%s id in cache failed",
-			providerId, providerInstanceId)
+		log.Errorf(err, "caught [%s] instance[%s/%s] event, endpoints %v, get cached provider's file failed",
+			action, providerId, providerInstanceId, instance.Endpoints)
 		return
 	}
+
+	log.Infof("caught [%s] service[%s][%s/%s/%s/%s] instance[%s] event, endpoints %v",
+		action, providerId, ms.Environment, ms.AppId, ms.ServiceName, ms.Version,
+		providerInstanceId, instance.Endpoints)
 
 	// 查询所有consumer
-	consumerIds, _, err := serviceUtil.GetConsumerIdsByProvider(context.Background(), domainProject, ms)
+	consumerIds, _, err := serviceUtil.GetAllConsumerIds(ctx, domainProject, ms)
 	if err != nil {
-		util.Logger().Errorf(err, "query service %s consumers failed", providerId)
-		return
-	}
-	if len(consumerIds) == 0 {
+		log.Errorf(err, "get service[%s][%s/%s/%s/%s]'s consumerIds failed",
+			providerId, ms.Environment, ms.AppId, ms.ServiceName, ms.Version)
 		return
 	}
 
-	var instance pb.MicroServiceInstance
-	err = json.Unmarshal(data, &instance)
-	if err != nil {
-		util.Logger().Errorf(err, "unmarshal provider service instance %s/%s file failed",
-			providerId, providerInstanceId)
-		return
-	}
-
-	nf.PublishInstanceEvent(domainProject, action, &pb.MicroServiceKey{
-		Environment: ms.Environment,
-		AppId:       ms.AppId,
-		ServiceName: ms.ServiceName,
-		Version:     ms.Version,
-	}, &instance, evt.Revision, consumerIds)
+	PublishInstanceEvent(evt, domainProject, pb.MicroServiceToKey(domainProject, ms), consumerIds)
 }
 
 func NewInstanceEventHandler() *InstanceEventHandler {
 	return &InstanceEventHandler{}
+}
+
+func PublishInstanceEvent(evt discovery.KvEvent, domainProject string, serviceKey *pb.MicroServiceKey, subscribers []string) {
+	defer cache.FindInstances.Remove(serviceKey)
+
+	if len(subscribers) == 0 {
+		return
+	}
+
+	response := &pb.WatchInstanceResponse{
+		Response: pb.CreateResponse(pb.Response_SUCCESS, "Watch instance successfully."),
+		Action:   string(evt.Type),
+		Key:      serviceKey,
+		Instance: evt.KV.Value.(*pb.MicroServiceInstance),
+	}
+	for _, consumerId := range subscribers {
+		// TODO add超时怎么处理？
+		job := notify.NewInstanceEventWithTime(consumerId, domainProject, evt.Revision, evt.CreateAt, response)
+		notify.NotifyCenter().Publish(job)
+	}
 }

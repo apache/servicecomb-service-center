@@ -16,33 +16,33 @@ limitations under the License.
 -->
 <nav class="navbar navbar-fixed-top">
     <div class="navbar-header">
-      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
-        <span class="sr-only">Toggle navigation</span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-      </button>
-      <img class="logo" src="images/sc.png" alt="loading..">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+        </button>
+        <img class="logo" src="images/sc.png" alt="loading..">
     </div>
 
     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-      <ul class="nav navbar-nav navbar-right">
-        <li><span class="tenant">{{ "tenant" | translate }}</span></li>
-        <li>
-        <div layout-gt-sm="row" class="navbar-right-header">
-          <md-input-container class="md-block" flex-gt-sm>
-            <input  id="tenant"  ng-model="tenant" aria-label="tenant" autocomplete="off">
-          </md-input-container>
+        <ul class="nav navbar-nav navbar-right">
+            <li><span class="tenant">{{ "tenant" | translate }}</span></li>
+            <li>
+                <div layout-gt-sm="row" class="navbar-right-header h-50">
+                    <md-input-container class="md-block" flex-gt-sm>
+                        <input id="tenant" ng-model="tenant" aria-label="tenant" autocomplete="off">
+                    </md-input-container>
 
-          <md-input-container class="md-block" flex-gt-sm>
-            <md-select ng-model="language" aria-label="language" ng-change="selectLang(language)">
-              <md-option id="lang-option" value="en">English</md-option>
-              <md-option value="cz">{{ "chinese" | translate }}</md-option>
-            </md-select>
-          </md-input-container>
-        </div>
-        </li>
-      </ul>
+                    <md-input-container class="md-block" flex-gt-sm>
+                        <md-select ng-model="language" aria-label="language" ng-change="selectLang(language)" ng-init="selectLang(language)">
+                            <md-option id="lang-option" value="en">English</md-option>
+                            <md-option value="zh">{{ "chinese" | translate }}</md-option>
+                        </md-select>
+                    </md-input-container>
+                </div>
+            </li>
+        </ul>
     </div>
 </nav>
 <div class="sidebar-wrapper md-whiteframe-3dp">
@@ -52,20 +52,25 @@ limitations under the License.
             <span class="brand"> {{ "serviceCenter" | translate }}</span>
         </li>
         <li>
-            <a ui-sref="sc.dashboard" ui-sref-active="active"><i class="fa fa-desktop" aria-hidden="true"></i>    {{ "dashboard" | translate }}</a>
+            <a ui-sref="sc.dashboard" ui-sref-active="active"><i class="fa fa-desktop" aria-hidden="true"></i> {{ "dashboard" | translate }}</a>
         </li>
         <li>
-            <a ui-sref="sc.allServices"  ui-sref-active="active" ng-class="[{active: $state.current.name === 'sc.info.instance'},
+            <a ui-sref="sc.allServices" ui-sref-active="active" ng-class="[{active: $state.current.name === 'sc.info.instance'},
             {activeProvider: $state.current.name === 'sc.info.provider'}, {activeConsumer: $state.current.name === 'sc.info.consumer'},
-            {schemaTab: $state.current.name === 'sc.info.schema'}]"><i class="fa fa-bars" aria-hidden="true"></i>    {{ "services" | translate }}</a>
+            {schemaTab: $state.current.name === 'sc.info.schema'},{activeProperties: $state.current.name === 'sc.info.properties'}]"><i class="fa fa-cog" aria-hidden="true"></i> {{ "services" | translate }}</a>
+        </li>
+        <li>
+            <a ui-sref="sc.instances" ui-sref-active="active"><i class="fa fa-cogs" aria-hidden="true"></i> {{ "instances" | translate }}</a>
+        </li>
+        <li>
+            <a ui-sref="sc.topology" ui-sref-active="active"><i class="fa fa-sitemap" aria-hidden="true"></i> {{ "topology" | translate }}</a>
         </li>
     </ul>
 </div>
 <div class="bodyContent">
-  <div ui-view="base">
-  </div>
-  <footer class="mainFooter">
-    <h5 class="text-center">{{ "copyright" | translate }}&copy;{{ "footerValue" | translate }}</h5>
-  </footer>
+    <div ui-view="base">
+    </div>
+    <footer class="mainFooter">
+        <h5 class="text-center">{{ "copyright" | translate }}&copy;{{ "footerValue" | translate }}</h5>
+    </footer>
 </div>
-

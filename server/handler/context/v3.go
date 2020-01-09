@@ -18,8 +18,9 @@ package context
 
 import (
 	"errors"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/core"
 	"net/http"
 	"strings"
 )
@@ -44,14 +45,14 @@ func (v *v3Context) Do(r *http.Request) error {
 
 		if len(domain) == 0 {
 			err := errors.New("Header does not contain domain.")
-			util.Logger().Errorf(err, "Invalid Request URI %s", r.RequestURI)
+			log.Errorf(err, "Invalid Request URI %s", r.RequestURI)
 			return err
 		}
-		util.SetDomain(r.Context(), domain)
+		util.SetRequestContext(r, util.CtxDomain, domain)
 	}
 
 	if len(project) == 0 {
-		util.SetProject(r.Context(), core.REGISTRY_PROJECT)
+		util.SetRequestContext(r, util.CtxProject, core.REGISTRY_PROJECT)
 	}
 
 	return nil

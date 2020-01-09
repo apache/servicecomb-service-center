@@ -19,16 +19,16 @@ angular.module('serviceCenter')
 	.constant('apiConstant', {
             // v4 api's
 		api : {
-            microservice: {
-                url: 'v4/default/registry/microservices',
-                method: 'GET'
-            },
             instances: {
                 url: 'v4/default/registry/microservices/{{serviceId}}/instances',
                 method: 'GET'
             },
             consumer: {
                 url: 'v4/default/registry/microservices/{{consumerId}}/providers',
+                method: 'GET'
+            },
+            particularService: {
+                url: 'v4/default/registry/microservices/{{serviceId}}',
                 method: 'GET'
             },
             provider: {
@@ -40,7 +40,7 @@ angular.module('serviceCenter')
                 method: 'GET'
             },
             allServices: {
-                url: 'v4/default/govern/microservices?options=instances,dependencies',
+                url: 'v4/default/govern/microservices?options=instances,dependencies&withShared=true',
                 method: 'GET'
             },
             deleteService: {

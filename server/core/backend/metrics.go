@@ -17,40 +17,59 @@
 package backend
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/metric"
 	"github.com/prometheus/client_golang/prometheus"
-	"sync"
+	"time"
+)
+
+const (
+	success = "SUCCESS"
+	failure = "FAILURE"
 )
 
 var (
-	cacheSizeGauge = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Namespace: "service_center",
-			Subsystem: "local",
-			Name:      "cache_size_bytes",
-			Help:      "Local cache size summary of backend store",
-		}, []string{"instance", "resource", "type"})
-)
+	scCounter = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: metric.FamilyName,
+			Subsystem: "db",
+			Name:      "sc_total",
+			Help:      "Counter of the Service Center instance",
+		}, []string{"instance"})
 
-var (
-	instance string
-	once     sync.Once
+	heartbeatCounter = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: metric.FamilyName,
+			Subsystem: "db",
+			Name:      "heartbeat_total",
+			Help:      "Counter of heartbeat renew",
+		}, []string{"instance", "status"})
+
+	heartbeatLatency = prometheus.NewSummaryVec(
+		prometheus.SummaryOpts{
+			Namespace:  metric.FamilyName,
+			Subsystem:  "db",
+			Name:       "heartbeat_durations_microseconds",
+			Help:       "Latency of heartbeat renew",
+			Objectives: prometheus.DefObjectives,
+		}, []string{"instance", "status"})
 )
 
 func init() {
-	prometheus.MustRegister(cacheSizeGauge)
+	prometheus.MustRegister(scCounter, heartbeatCounter, heartbeatLatency)
 }
 
-func ReportCacheMetrics(resource, t string, obj interface{}) {
-	if len(core.Instance.Endpoints) == 0 || len(resource) == 0 {
-		// endpoints list will be empty when initializing
-		// resource may be empty when report SCHEMA
-		return
-	}
+func ReportScInstance() {
+	instance := metric.InstanceName()
+	scCounter.WithLabelValues(instance).Add(1)
+}
 
-	once.Do(func() {
-		instance, _ = util.ParseEndpoint(core.Instance.Endpoints[0])
-	})
-	cacheSizeGauge.WithLabelValues(instance, resource, t).Set(float64(util.Sizeof(obj)))
+func ReportHeartbeatCompleted(err error, start time.Time) {
+	instance := metric.InstanceName()
+	elapsed := float64(time.Since(start).Nanoseconds()) / float64(time.Microsecond)
+	status := success
+	if err != nil {
+		status = failure
+	}
+	heartbeatLatency.WithLabelValues(instance, status).Observe(elapsed)
+	heartbeatCounter.WithLabelValues(instance, status).Inc()
 }

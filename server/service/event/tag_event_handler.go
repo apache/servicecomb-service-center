@@ -17,25 +17,27 @@
 package event
 
 import (
-	"encoding/json"
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/async"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	nf "github.com/apache/incubator-servicecomb-service-center/server/service/notification"
-	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
-	"github.com/coreos/etcd/mvcc/mvccpb"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/task"
+	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/backend"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/notify"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
+	"github.com/apache/servicecomb-service-center/server/service/cache"
+	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
 )
 
 type TagsChangedTask struct {
+	discovery.KvEvent
+
 	key string
 	err error
 
 	DomainProject string
-	consumerId    string
-	Rev           int64
+	ConsumerId    string
 }
 
 func (apt *TagsChangedTask) Key() string {
@@ -43,7 +45,7 @@ func (apt *TagsChangedTask) Key() string {
 }
 
 func (apt *TagsChangedTask) Do(ctx context.Context) error {
-	apt.err = apt.publish(ctx, apt.DomainProject, apt.consumerId, apt.Rev)
+	apt.err = apt.publish(ctx, apt.DomainProject, apt.ConsumerId)
 	return apt.err
 }
 
@@ -51,35 +53,41 @@ func (apt *TagsChangedTask) Err() error {
 	return apt.err
 }
 
-func (apt *TagsChangedTask) publish(ctx context.Context, domainProject, consumerId string, rev int64) error {
-	consumer, err := serviceUtil.GetServiceInCache(ctx, domainProject, consumerId)
+func (apt *TagsChangedTask) publish(ctx context.Context, domainProject, consumerId string) error {
+	ctx = context.WithValue(context.WithValue(ctx,
+		serviceUtil.CTX_CACHEONLY, "1"),
+		serviceUtil.CTX_GLOBAL, "1")
+
+	consumer, err := serviceUtil.GetService(ctx, domainProject, consumerId)
 	if err != nil {
-		util.Logger().Errorf(err, "get comsumer for publish event %s failed", consumerId)
+		log.Errorf(err, "get consumer[%s] for publish event failed", consumerId)
 		return err
 	}
 	if consumer == nil {
-		util.Logger().Errorf(nil, "service not exist, %s", consumerId)
-		return fmt.Errorf("service not exist, %s", consumerId)
+		log.Errorf(nil, "consumer[%s] does not exist", consumerId)
+		return fmt.Errorf("consumer[%s] does not exist", consumerId)
 	}
-	providerIds, err := serviceUtil.GetProvidersInCache(ctx, domainProject, consumer)
+
+	serviceKey := pb.MicroServiceToKey(domainProject, consumer)
+	cache.FindInstances.Remove(serviceKey)
+
+	providerIds, err := serviceUtil.GetProviderIds(ctx, domainProject, consumer)
 	if err != nil {
-		util.Logger().Errorf(err, "get provider services by consumer %s failed", consumerId)
+		log.Errorf(err, "get service[%s][%s/%s/%s/%s]'s providerIds failed",
+			consumerId, consumer.Environment, consumer.AppId, consumer.ServiceName, consumer.Version)
 		return err
 	}
 
 	for _, providerId := range providerIds {
-		provider, err := serviceUtil.GetServiceInCache(ctx, domainProject, providerId)
+		provider, err := serviceUtil.GetService(ctx, domainProject, providerId)
 		if provider == nil {
-			util.Logger().Warnf(err, "get service %s file failed", providerId)
+			log.Errorf(err, "get service[%s][%s/%s/%s/%s]'s provider[%s] file failed",
+				consumerId, consumer.Environment, consumer.AppId, consumer.ServiceName, consumer.Version, providerId)
 			continue
 		}
-		nf.PublishInstanceEvent(domainProject, pb.EVT_EXPIRE,
-			&pb.MicroServiceKey{
-				Environment: provider.Environment,
-				AppId:       provider.AppId,
-				ServiceName: provider.ServiceName,
-				Version:     provider.Version,
-			}, nil, rev, []string{consumerId})
+
+		providerKey := pb.MicroServiceToKey(domainProject, provider)
+		PublishInstanceEvent(apt.KvEvent, domainProject, providerKey, []string{consumerId})
 	}
 	return nil
 }
@@ -87,52 +95,39 @@ func (apt *TagsChangedTask) publish(ctx context.Context, domainProject, consumer
 type TagEventHandler struct {
 }
 
-func (h *TagEventHandler) Type() backend.StoreType {
+func (h *TagEventHandler) Type() discovery.Type {
 	return backend.SERVICE_TAG
 }
 
-func (h *TagEventHandler) OnEvent(evt backend.KvEvent) {
+func (h *TagEventHandler) OnEvent(evt discovery.KvEvent) {
 	action := evt.Type
 	if action == pb.EVT_INIT {
 		return
 	}
 
-	kv := evt.Object.(*mvccpb.KeyValue)
-	consumerId, domainProject, data := pb.GetInfoFromTagKV(kv)
-	if data == nil {
-		util.Logger().Errorf(nil,
-			"unmarshal service rule file failed, service %s tags [%s] event, data is nil",
-			consumerId, action)
+	consumerId, domainProject := core.GetInfoFromTagKV(evt.KV.Key)
+
+	if notify.NotifyCenter().Closed() {
+		log.Warnf("caught [%s] service tags[%s/%s] event, but notify service is closed",
+			action, consumerId, evt.KV.Value)
 		return
 	}
+	log.Infof("caught [%s] service tags[%s/%s] event", action, consumerId, evt.KV.Value)
 
-	if nf.GetNotifyService().Closed() {
-		util.Logger().Warnf(nil, "caught service %s tags [%s] event, but notify service is closed",
-			consumerId, action)
-		return
-	}
-	util.Logger().Infof("caught service %s tags [%s] event", consumerId, action)
-
-	var rule pb.ServiceRule
-	err := json.Unmarshal(data, &rule)
-	if err != nil {
-		util.Logger().Errorf(err, "unmarshal service %s tags file failed", consumerId)
-		return
-	}
-
-	async.Service().Add(context.Background(),
-		NewTagsChangedAsyncTask(domainProject, consumerId, evt.Revision))
+	task.Service().Add(context.Background(),
+		NewTagsChangedAsyncTask(domainProject, consumerId, evt))
 }
 
 func NewTagEventHandler() *TagEventHandler {
 	return &TagEventHandler{}
 }
 
-func NewTagsChangedAsyncTask(domainProject, consumerId string, rev int64) *TagsChangedTask {
+func NewTagsChangedAsyncTask(domainProject, consumerId string, evt discovery.KvEvent) *TagsChangedTask {
+	evt.Type = pb.EVT_EXPIRE
 	return &TagsChangedTask{
+		KvEvent:       evt,
 		key:           "TagsChangedAsyncTask_" + consumerId,
 		DomainProject: domainProject,
-		consumerId:    consumerId,
-		Rev:           rev,
+		ConsumerId:    consumerId,
 	}
 }

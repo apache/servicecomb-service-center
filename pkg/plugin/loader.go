@@ -18,7 +18,7 @@ package plugin
 
 import (
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -49,7 +49,7 @@ func (pm *Loader) Init() {
 
 	err := pm.ReloadPlugins()
 	if len(pm.Plugins) == 0 {
-		util.Logger().Warnf(err, "no any plugin has been loaded.")
+		log.Errorf(err, "no any plugin has been loaded")
 	}
 }
 
@@ -59,7 +59,7 @@ func (pm *Loader) ReloadPlugins() error {
 		dir, _ = os.Getwd()
 	}
 	if len(dir) == 0 {
-		return fmt.Errorf("'plugins_dir' is unset.")
+		return fmt.Errorf("'plugins_dir' is unset")
 	}
 
 	files, err := ioutil.ReadDir(dir)
@@ -83,7 +83,7 @@ func (pm *Loader) ReloadPlugins() error {
 		if err != nil {
 			return fmt.Errorf("load plugin '%s' error for %s", submatchs[1], err.Error())
 		}
-		util.Logger().Infof("load plugin '%s' successfully.", submatchs[1])
+		log.Infof("load plugin '%s' successfully", submatchs[1])
 
 		pm.mux.Lock()
 		pm.Plugins[submatchs[1]] = &wrapPlugin{p, make(map[string]plugin.Symbol, 10)}
@@ -97,7 +97,7 @@ func (pm *Loader) Find(pluginName, funcName string) (plugin.Symbol, error) {
 	w, ok := pm.Plugins[pluginName]
 	if !ok {
 		pm.mux.RUnlock()
-		return nil, fmt.Errorf("can not find plugin '%s'.", pluginName)
+		return nil, fmt.Errorf("can not find plugin '%s'", pluginName)
 	}
 
 	f, ok := w.funcs[funcName]

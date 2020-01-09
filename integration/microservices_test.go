@@ -22,7 +22,7 @@ import (
 
 	"bytes"
 	"encoding/json"
-	. "github.com/apache/incubator-servicecomb-service-center/integration"
+	. "github.com/apache/servicecomb-service-center/integration"
 	"github.com/widuu/gojson"
 	"io/ioutil"
 	"math/rand"
@@ -70,7 +70,7 @@ var _ = Describe("MicroService Api Test", func() {
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 				respbody, _ := ioutil.ReadAll(resp.Body)
 				serviceId = gojson.Json(string(respbody)).Get("serviceId").Tostring()
-				Expect(len(serviceId)).Should(BeNumerically("==", 32))
+				Expect(len(serviceId)).Should(BeNumerically("==", LengthUUID))
 
 				// UNRegister Service
 				url := strings.Replace(UNREGISTERMICROSERVICE, ":serviceId", serviceId, 1)
@@ -112,7 +112,7 @@ var _ = Describe("MicroService Api Test", func() {
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 				respbody, _ := ioutil.ReadAll(resp.Body)
 				serviceId = gojson.Json(string(respbody)).Get("serviceId").Tostring()
-				Expect(len(serviceId)).Should(BeNumerically("==", 32))
+				Expect(len(serviceId)).Should(BeNumerically("==", LengthUUID))
 			})
 
 			AfterEach(func() {
@@ -410,9 +410,21 @@ var _ = Describe("MicroService Api Test", func() {
 					// Validate the dependency creation
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
 
-					<-time.After(time.Second)
+					// add new dependency
+					dependency["providers"] = []interface{}{consumer}
+					body, _ = json.Marshal(bodyParams)
+					bodyBuf = bytes.NewReader(body)
+					req, _ = http.NewRequest(POST, SCURL+CREATEDEPENDENCIES, bodyBuf)
+					req.Header.Set("X-Domain-Name", "default")
+					resp, err = scclient.Do(req)
+					Expect(err).To(BeNil())
+					defer resp.Body.Close()
+
+					// Validate the dependency creation
+					Expect(resp.StatusCode).To(Equal(http.StatusOK))
 
 					//Get Provider by ConsumerID
+					<-time.After(time.Second)
 					url := strings.Replace(GETCONPRODEPENDENCY, ":consumerId", consumerServiceID, 1)
 					req, _ = http.NewRequest(GET, SCURL+url, nil)
 					req.Header.Set("X-Domain-Name", "default")
@@ -432,7 +444,6 @@ var _ = Describe("MicroService Api Test", func() {
 					Expect(foundMicroService).To(Equal(true))
 
 					//Get Consumer by ProviderID
-
 					url = strings.Replace(GETPROCONDEPENDENCY, ":providerId", serviceId, 1)
 					req, _ = http.NewRequest(GET, SCURL+url, nil)
 					req.Header.Set("X-Domain-Name", "default")
@@ -451,19 +462,7 @@ var _ = Describe("MicroService Api Test", func() {
 					}
 					Expect(foundMicroService).To(Equal(true))
 
-					providersArray = []interface{}{consumer}
-					body, _ = json.Marshal(bodyParams)
-					bodyBuf = bytes.NewReader(body)
-					req, _ = http.NewRequest(POST, SCURL+CREATEDEPENDENCIES, bodyBuf)
-					req.Header.Set("X-Domain-Name", "default")
-					resp, err = scclient.Do(req)
-					Expect(err).To(BeNil())
-					defer resp.Body.Close()
-
-					// Validate the dependency creation
-					Expect(resp.StatusCode).To(Equal(http.StatusOK))
-
-					//Get Provider by ConsumerID
+					//Get new dependency by ConsumerID
 					url = strings.Replace(GETCONPRODEPENDENCY, ":consumerId", consumerServiceID, 1)
 					req, _ = http.NewRequest(GET, SCURL+url, nil)
 					req.Header.Set("X-Domain-Name", "default")
@@ -475,12 +474,37 @@ var _ = Describe("MicroService Api Test", func() {
 					json.Unmarshal(respbody, &servicesStruct)
 					foundMicroService = false
 					for _, services := range servicesStruct["providers"] {
-						if services["serviceName"] == serviceName {
+						if services["serviceName"] == consumerAppName {
 							foundMicroService = true
 							break
 						}
 					}
 					Expect(foundMicroService).To(Equal(true))
+
+					// override the dependency
+					dependency["providers"] = []interface{}{}
+					body, _ = json.Marshal(bodyParams)
+					bodyBuf = bytes.NewReader(body)
+					req, _ = http.NewRequest(UPDATE, SCURL+CREATEDEPENDENCIES, bodyBuf)
+					req.Header.Set("X-Domain-Name", "default")
+					resp, err = scclient.Do(req)
+					Expect(err).To(BeNil())
+					defer resp.Body.Close()
+
+					// Validate the dependency creation
+					Expect(resp.StatusCode).To(Equal(http.StatusOK))
+
+					//Get Provider by ConsumerID again
+					<-time.After(time.Second)
+					url = strings.Replace(GETCONPRODEPENDENCY, ":consumerId", consumerServiceID, 1)
+					req, _ = http.NewRequest(GET, SCURL+url, nil)
+					req.Header.Set("X-Domain-Name", "default")
+					resp, _ = scclient.Do(req)
+					respbody, _ = ioutil.ReadAll(resp.Body)
+					Expect(resp.StatusCode).To(Equal(http.StatusOK))
+					servicesStruct = map[string][]map[string]interface{}{}
+					json.Unmarshal(respbody, &servicesStruct)
+					Expect(len(servicesStruct["providers"])).To(Equal(0))
 
 					//Delete Consumer and Provider
 					url = strings.Replace(UNREGISTERMICROSERVICE, ":serviceId", consumerServiceID, 1)
@@ -498,7 +522,6 @@ var _ = Describe("MicroService Api Test", func() {
 				})
 
 				It("Invalid scenario for GET Providers and Consumers", func() {
-
 					//Get Provider by ConsumerID
 					url := strings.Replace(GETCONPRODEPENDENCY, ":consumerId", "wrongID", 1)
 					req, _ := http.NewRequest(GET, SCURL+url, nil)
@@ -550,7 +573,7 @@ func BenchmarkRegisterMicroServiceAndDelete(b *testing.B) {
 		Expect(resp.StatusCode).To(Equal(http.StatusOK))
 		respbody, _ := ioutil.ReadAll(resp.Body)
 		serviceId := gojson.Json(string(respbody)).Get("serviceId").Tostring()
-		Expect(len(serviceId)).Should(BeNumerically("==", 32))
+		Expect(len(serviceId)).Should(BeNumerically("==", LengthUUID))
 		if serviceId != "" {
 			url := strings.Replace(UNREGISTERMICROSERVICE, ":serviceId", serviceId, 1)
 			req, _ := http.NewRequest(DELETE, SCURL+url, nil)

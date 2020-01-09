@@ -5,7 +5,7 @@ If you want to raise a PR in this repo then you can follow the below guidelines 
 1. Make your changes in your local code.
 2. Once your changes are done the clone the code from ServiceComb
 ```
-git clone http://github.com/apache/incubator-servicecomb-service-center.git
+git clone http://github.com/apache/servicecomb-service-center.git
 cd service-center
 git remote add fork http://github.com/{YOURFORKNAME}/service-center.git
 git checkout -b {YOURFEATURENAME}

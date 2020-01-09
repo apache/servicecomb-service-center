@@ -23,6 +23,13 @@ set -e
 red=`tput setaf 1`
 green=`tput setaf 2`
 reset=`tput sgr0`
+
+ut_for_dir() {
+    local name=$1
+    echo "${green}Running UT for Service-Center $name${reset}"
+    bash -x ./scripts/ut.sh $name
+}
+
 echo "${green}Starting Unit Testing for Service Center${reset}"
 
 echo "${green}Starting etcd in docker${reset}"
@@ -36,10 +43,13 @@ echo "${green}Etcd is running......${reset}"
 echo "${green}Preparing the env for UT....${reset}"
 ./scripts/prepare_env_ut.sh
 
-echo "${green}Running UT for Service-Center server"
-bash -x ./scripts/ut.sh server/service
-  
-if [ $? == 0 ]; then
+[ $? == 0 ] && ut_for_dir pkg
+[ $? == 0 ] && ut_for_dir server
+[ $? == 0 ] && ut_for_dir scctl
+[ $? == 0 ] && ut_for_dir syncer
+ret=$?
+
+if [ ${ret} == 0 ]; then
 	echo "${green}All the unit test passed..${reset}"
 	echo "${green}Coverage is created in the file ./coverage.txt${reset}"
 else

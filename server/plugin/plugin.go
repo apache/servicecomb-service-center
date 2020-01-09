@@ -17,43 +17,14 @@
 package plugin
 
 import (
-	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/plugin"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/auditlog"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/auth"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/quota"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/security"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/tracing"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/uuid"
-	"github.com/astaxie/beego"
-	pg "plugin"
 	"sync"
+
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/plugin"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+
+	"github.com/astaxie/beego"
 )
-
-const BUILDIN = "buildin"
-
-const (
-	UUID PluginName = iota
-	AUDIT_LOG
-	AUTH
-	CIPHER
-	QUOTA
-	REGISTRY
-	TRACING
-	typeEnd
-)
-
-var pluginNames = map[PluginName]string{
-	UUID:      "uuid",
-	AUDIT_LOG: "auditlog",
-	AUTH:      "auth",
-	CIPHER:    "cipher",
-	QUOTA:     "quota",
-	REGISTRY:  "registry",
-	TRACING:   "trace",
-}
 
 var pluginMgr = &PluginManager{}
 
@@ -61,63 +32,51 @@ func init() {
 	pluginMgr.Initialize()
 }
 
-type PluginName int
-
-func (pn PluginName) String() string {
-	if name, ok := pluginNames[pn]; ok {
-		return name
-	}
-	return "PLUGIN" + fmt.Sprint(pn)
-}
-
-type Plugin struct {
-	PName PluginName
-	Name  string
-	New   func() PluginInstance
-}
-
-type PluginInstance interface{}
-
 type wrapInstance struct {
 	dynamic  bool
 	instance PluginInstance
 	lock     sync.RWMutex
 }
 
+// PluginManager manages plugin instance generation.
+// PluginManager keeps the plugin instance currently used by server
+// for every plugin interface.
 type PluginManager struct {
-	plugins   map[PluginName]map[string]*Plugin
+	plugins   map[PluginName]map[PluginImplName]*Plugin
 	instances map[PluginName]*wrapInstance
 }
 
+// Initialize initializes the struct
 func (pm *PluginManager) Initialize() {
-	pm.plugins = make(map[PluginName]map[string]*Plugin, int(typeEnd))
+	pm.plugins = make(map[PluginName]map[PluginImplName]*Plugin, int(typeEnd))
 	pm.instances = make(map[PluginName]*wrapInstance, int(typeEnd))
 
 	for t := PluginName(0); t != typeEnd; t++ {
-		pluginMgr.instances[t] = &wrapInstance{}
+		pm.instances[t] = &wrapInstance{}
 	}
 }
 
+// ReloadAll reloads all the plugin instances
 func (pm *PluginManager) ReloadAll() {
-	for _, i := range pm.instances {
-		i.lock.Lock()
-		i.instance = nil
-		i.lock.Unlock()
+	for pn := range pm.instances {
+		pm.Reload(pn)
 	}
 }
 
+// Register registers a 'Plugin'
 // unsafe
 func (pm *PluginManager) Register(p Plugin) {
 	m, ok := pm.plugins[p.PName]
 	if !ok {
-		m = make(map[string]*Plugin, 5)
+		m = make(map[PluginImplName]*Plugin, 5)
 	}
 	m[p.Name] = &p
 	pm.plugins[p.PName] = m
-	util.Logger().Infof("load '%s' plugin named '%s'", p.PName, p.Name)
+	log.Infof("load '%s' plugin named '%s'", p.PName, p.Name)
 }
 
-func (pm *PluginManager) Get(pn PluginName, name string) *Plugin {
+// Get gets a 'Plugin'
+func (pm *PluginManager) Get(pn PluginName, name PluginImplName) *Plugin {
 	m, ok := pm.plugins[pn]
 	if !ok {
 		return nil
@@ -125,6 +84,19 @@ func (pm *PluginManager) Get(pn PluginName, name string) *Plugin {
 	return m[name]
 }
 
+// Instance gets an plugin instance.
+// What plugin instance you get is depended on the supplied go plugin files
+// (high priority) or the plugin config(low priority)
+//
+// The go plugin file should be {plugins_dir}/{PluginName}_plugin.so.
+// ('plugins_dir' must be configured as a valid path in service-center config.)
+// The plugin config in service-center config should be:
+// {PluginName}_plugin = {PluginImplName}
+//
+// e.g. For registry plugin, you can set a config in app.conf:
+// plugins_dir = /home, and supply a go plugin file: /home/registry_plugin.so;
+// or if you want to use etcd as registry, you can set a config in app.conf:
+// registry_plugin = etcd.
 func (pm *PluginManager) Instance(pn PluginName) PluginInstance {
 	wi := pm.instances[pn]
 	wi.lock.RLock()
@@ -145,17 +117,22 @@ func (pm *PluginManager) Instance(pn PluginName) PluginInstance {
 	return wi.instance
 }
 
+// New initializes and sets the instance of a plugin interface,
+// but not returns it.
+// Use 'Instance' if you want to get the plugin instance.
+// We suggest you to use 'Instance' instead of 'New'.
 func (pm *PluginManager) New(pn PluginName) {
 	var (
-		title = "static"
+		title = STATIC
 		f     func() PluginInstance
 	)
 
 	wi := pm.instances[pn]
 	p := pm.existDynamicPlugin(pn)
 	if p != nil {
+		// Dynamic plugin has high priority.
 		wi.dynamic = true
-		title = "dynamic"
+		title = DYNAMIC
 		f = p.New
 	} else {
 		wi.dynamic = false
@@ -165,22 +142,26 @@ func (pm *PluginManager) New(pn PluginName) {
 		}
 
 		name := beego.AppConfig.DefaultString(pn.String()+"_plugin", BUILDIN)
-		p, ok = m[name]
+		p, ok = m[PluginImplName(name)]
 		if !ok {
 			return
 		}
 
 		f = p.New
+		pn.ActiveConfigs().Set(keyPluginName, name)
 	}
-	util.Logger().Infof("new '%s' instance from '%s' %s plugin", p.Name, p.PName, title)
+	log.Infof("call %s '%s' plugin %s(), new a '%s' instance",
+		title, p.PName, util.FuncName(f), p.Name)
 
 	wi.instance = f()
 }
 
+// Reload reloads the instance of the specified plugin interface.
 func (pm *PluginManager) Reload(pn PluginName) {
 	wi := pm.instances[pn]
 	wi.lock.Lock()
 	wi.instance = nil
+	pn.ClearConfigs()
 	wi.lock.Unlock()
 }
 
@@ -189,56 +170,26 @@ func (pm *PluginManager) existDynamicPlugin(pn PluginName) *Plugin {
 	if !ok {
 		return nil
 	}
+	// 'buildin' implement of all plugins should call DynamicPluginFunc()
 	if plugin.PluginLoader().Exist(pn.String()) {
 		return m[BUILDIN]
 	}
 	return nil
 }
 
-func (pm *PluginManager) Registry() registry.Registry {
-	return pm.Instance(REGISTRY).(registry.Registry)
-}
-
-func (pm *PluginManager) UUID() uuid.UUID {
-	return pm.Instance(UUID).(uuid.UUID)
-}
-
-func (pm *PluginManager) AuditLog() auditlog.AuditLogger {
-	return pm.Instance(AUDIT_LOG).(auditlog.AuditLogger)
-}
-
-func (pm *PluginManager) Auth() auth.Auth {
-	return pm.Instance(AUTH).(auth.Auth)
-}
-
-func (pm *PluginManager) Cipher() security.Cipher {
-	return pm.Instance(CIPHER).(security.Cipher)
-}
-
-func (pm *PluginManager) Quota() quota.QuotaManager {
-	return pm.Instance(QUOTA).(quota.QuotaManager)
-}
-
-func (pm *PluginManager) Tracing() tracing.Tracing {
-	return pm.Instance(TRACING).(tracing.Tracing)
-}
-
+// Plugins returns the 'PluginManager'.
 func Plugins() *PluginManager {
 	return pluginMgr
 }
 
+// RegisterPlugin registers a 'Plugin'.
 func RegisterPlugin(p Plugin) {
 	Plugins().Register(p)
 }
 
-func DynamicPluginFunc(pn PluginName, funcName string) pg.Symbol {
-	if wi := Plugins().instances[pn]; !wi.dynamic {
-		return nil
+// LoadPlugins loads and sets all the plugin interfaces's instance.
+func LoadPlugins() {
+	for t := PluginName(0); t != typeEnd; t++ {
+		Plugins().Instance(t)
 	}
-
-	f, err := plugin.FindFunc(pn.String(), funcName)
-	if err != nil {
-		util.Logger().Errorf(err, "plugin '%s': not implemented function '%s'.", pn, funcName)
-	}
-	return f
 }

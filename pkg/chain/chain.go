@@ -16,11 +16,6 @@
  */
 package chain
 
-import (
-	errorsEx "github.com/apache/incubator-servicecomb-service-center/pkg/errors"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-)
-
 type Chain struct {
 	name         string
 	handlers     []Handler
@@ -38,16 +33,6 @@ func (c *Chain) Name() string {
 }
 
 func (c *Chain) syncNext(i *Invocation) {
-	defer func() {
-		itf := recover()
-		if itf == nil {
-			return
-		}
-		util.LogPanic(itf)
-
-		i.Fail(errorsEx.RaiseError(itf))
-	}()
-
 	if c.currentIndex >= len(c.handlers)-1 {
 		i.Success()
 		return

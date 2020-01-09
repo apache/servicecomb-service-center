@@ -18,11 +18,12 @@ package util
 
 import (
 	"encoding/json"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	apt "github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/backend"
+	scerr "github.com/apache/servicecomb-service-center/server/error"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 	"golang.org/x/net/context"
 )
 
@@ -53,18 +54,12 @@ func GetTagsUtils(ctx context.Context, domainProject, serviceId string) (tags ma
 	opts := append(FromContext(ctx), registry.WithStrKey(key))
 	resp, err := backend.Store().ServiceTag().Search(ctx, opts...)
 	if err != nil {
-		util.Logger().Errorf(err, "get service %s tags file failed", key)
+		log.Errorf(err, "get service[%s] tags file failed", serviceId)
 		return tags, err
 	}
 
-	l := len(resp.Kvs)
-	if l != 0 {
-		tags = make(map[string]string, l)
-		err = json.Unmarshal(resp.Kvs[0].Value, &tags)
-		if err != nil {
-			util.Logger().Errorf(err, "unmarshal service %s tags file failed", key)
-			return nil, err
-		}
+	if len(resp.Kvs) != 0 {
+		tags = resp.Kvs[0].Value.(map[string]string)
 	}
 	return tags, nil
 }

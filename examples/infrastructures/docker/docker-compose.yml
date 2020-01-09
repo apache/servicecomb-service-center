@@ -1,0 +1,67 @@
+## ---------------------------------------------------------------------------
+## Licensed to the Apache Software Foundation (ASF) under one or more
+## contributor license agreements.  See the NOTICE file distributed with
+## this work for additional information regarding copyright ownership.
+## The ASF licenses this file to You under the Apache License, Version 2.0
+## (the "License"); you may not use this file except in compliance with
+## the License.  You may obtain a copy of the License at
+##
+##      http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+## See the License for the specific language governing permissions and
+## limitations under the License.
+## ---------------------------------------------------------------------------
+version: '3'
+services:
+  prometheus:
+    depends_on:
+      - service-center
+    image: 'prom/prometheus:latest'
+    # restart: always
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  grafana:
+    depends_on:
+      - prometheus
+    image: 'grafana/grafana:latest'
+    # restart: always
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+
+  #etcd:
+  #  image: 'quay.io/coreos/etcd:latest'
+  #  # restart: always
+  #  environment:
+  #    ETCD_ADVERTISE_CLIENT_URLS: http://etcd:2379
+  #    ETCD_LISTEN_CLIENT_URLS: http://0.0.0.0:2379
+  #    ETCD_INITIAL_ADVERTISE_PEER_URLS: http://etcd:2380
+  #    ETCD_LISTEN_PEER_URLS: http://0.0.0.0:2380
+  #    ETCD_INITIAL_CLUSTER: default=http://etcd:2380
+
+  service-center:
+    image: 'servicecomb/service-center:latest'
+    # restart: always
+    ports:
+      - "30100:30100"
+  #  environment:
+  #    BACKEND_ADDRESS: etcd:2379
+
+  scfrontend:
+    depends_on:
+      - service-center
+    image: 'servicecomb/scfrontend:latest'
+    # restart: always
+    ports:
+      - "30103:30103"
+    environment:
+      SC_ADDRESS: http://service-center:30100
+volumes:
+  grafana_data:

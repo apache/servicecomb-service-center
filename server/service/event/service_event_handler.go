@@ -17,11 +17,14 @@
 package event
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
-	"github.com/coreos/etcd/mvcc/mvccpb"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/backend"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
+	"github.com/apache/servicecomb-service-center/server/service/cache"
+	"github.com/apache/servicecomb-service-center/server/service/metrics"
+	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
 	"strings"
 )
@@ -29,32 +32,52 @@ import (
 type ServiceEventHandler struct {
 }
 
-func (h *ServiceEventHandler) Type() backend.StoreType {
+func (h *ServiceEventHandler) Type() discovery.Type {
 	return backend.SERVICE
 }
 
-func (h *ServiceEventHandler) OnEvent(evt backend.KvEvent) {
-	action := evt.Type
-	if action != pb.EVT_CREATE && action != pb.EVT_INIT {
+func (h *ServiceEventHandler) OnEvent(evt discovery.KvEvent) {
+	ms := evt.KV.Value.(*pb.MicroService)
+	_, domainProject := core.GetInfoFromSvcKV(evt.KV.Key)
+	fn, fv := getFramework(ms)
+
+	switch evt.Type {
+	case pb.EVT_INIT, pb.EVT_CREATE:
+		idx := strings.Index(domainProject, "/")
+		newDomain := domainProject[:idx]
+		newProject := domainProject[idx+1:]
+		err := serviceUtil.NewDomainProject(context.Background(), newDomain, newProject)
+		if err != nil {
+			log.Errorf(err, "new domain[%s] or project[%s] failed", newDomain, newProject)
+		}
+		metrics.ReportServices(newDomain, fn, fv, 1)
+	case pb.EVT_DELETE:
+		domainName := domainProject[:strings.Index(domainProject, "/")]
+		metrics.ReportServices(domainName, fn, fv, -1)
+	default:
+	}
+
+	if evt.Type == pb.EVT_INIT {
 		return
 	}
 
-	kv := evt.Object.(*mvccpb.KeyValue)
-	serviceId, domainProject, data := pb.GetInfoFromSvcKV(kv)
-	if data == nil {
-		util.Logger().Errorf(nil,
-			"unmarshal service file failed, service %s [%s] event, data is nil",
-			serviceId, action)
-		return
-	}
+	log.Infof("caught [%s] service[%s][%s/%s/%s/%s] event",
+		evt.Type, ms.ServiceId, ms.Environment, ms.AppId, ms.ServiceName, ms.Version)
 
-	newDomain := domainProject[:strings.Index(domainProject, "/")]
-	newProject := domainProject[strings.Index(domainProject, "/")+1:]
-	err := serviceUtil.NewDomainProject(context.Background(), newDomain, newProject)
-	if err != nil {
-		util.Logger().Errorf(err, "new domain(%s) or project(%s) failed", newDomain, newProject)
-		return
+	// cache
+	providerKey := pb.MicroServiceToKey(domainProject, ms)
+	cache.FindInstances.Remove(providerKey)
+}
+
+func getFramework(ms *pb.MicroService) (string, string) {
+	if ms.Framework != nil && len(ms.Framework.Name) > 0 {
+		version := ms.Framework.Version
+		if len(ms.Framework.Version) == 0 {
+			version = "UNKNOWN"
+		}
+		return ms.Framework.Name, version
 	}
+	return "UNKNOWN", "UNKNOWN"
 }
 
 func NewServiceEventHandler() *ServiceEventHandler {

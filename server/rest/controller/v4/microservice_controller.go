@@ -18,12 +18,13 @@ package v4
 
 import (
 	"encoding/json"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/rest"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
-	"github.com/apache/incubator-servicecomb-service-center/server/rest/controller"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/core"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	scerr "github.com/apache/servicecomb-service-center/server/error"
+	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	"io/ioutil"
 	"net/http"
 )
@@ -49,14 +50,14 @@ func (this *MicroServiceService) URLPatterns() []rest.Route {
 func (this *MicroServiceService) Register(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		util.Logger().Error("body err", err)
+		log.Error("read body failed", err)
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
 	var request pb.CreateServiceRequest
 	err = json.Unmarshal(message, &request)
 	if err != nil {
-		util.Logger().Error("Unmarshal error", err)
+		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
@@ -69,7 +70,7 @@ func (this *MicroServiceService) Register(w http.ResponseWriter, r *http.Request
 func (this *MicroServiceService) Update(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		util.Logger().Error("body err", err)
+		log.Error("read body failed", err)
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
@@ -78,7 +79,7 @@ func (this *MicroServiceService) Update(w http.ResponseWriter, r *http.Request) 
 	}
 	err = json.Unmarshal(message, request)
 	if err != nil {
-		util.Logger().Error("Unmarshal error", err)
+		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
@@ -87,8 +88,9 @@ func (this *MicroServiceService) Update(w http.ResponseWriter, r *http.Request) 
 }
 
 func (this *MicroServiceService) Unregister(w http.ResponseWriter, r *http.Request) {
-	serviceId := r.URL.Query().Get(":serviceId")
-	force := r.URL.Query().Get("force")
+	query := r.URL.Query()
+	serviceId := query.Get(":serviceId")
+	force := query.Get("force")
 
 	b, ok := trueOrFalse[force]
 	if force != "" && !ok {
@@ -113,14 +115,15 @@ func (this *MicroServiceService) GetServices(w http.ResponseWriter, r *http.Requ
 }
 
 func (this *MicroServiceService) GetExistence(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
 	request := &pb.GetExistenceRequest{
-		Type:        r.URL.Query().Get("type"),
-		Environment: r.URL.Query().Get("env"),
-		AppId:       r.URL.Query().Get("appId"),
-		ServiceName: r.URL.Query().Get("serviceName"),
-		Version:     r.URL.Query().Get("version"),
-		ServiceId:   r.URL.Query().Get("serviceId"),
-		SchemaId:    r.URL.Query().Get("schemaId"),
+		Type:        query.Get("type"),
+		Environment: query.Get("env"),
+		AppId:       query.Get("appId"),
+		ServiceName: query.Get("serviceName"),
+		Version:     query.Get("version"),
+		ServiceId:   query.Get("serviceId"),
+		SchemaId:    query.Get("schemaId"),
 	}
 	resp, _ := core.ServiceAPI.Exist(r.Context(), request)
 	w.Header().Add("X-Schema-Summary", resp.Summary)
@@ -141,18 +144,18 @@ func (this *MicroServiceService) GetServiceOne(w http.ResponseWriter, r *http.Re
 }
 
 func (this *MicroServiceService) UnregisterServices(w http.ResponseWriter, r *http.Request) {
-	request_body, err := ioutil.ReadAll(r.Body)
+	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		util.Logger().Error("body ,err", err)
+		log.Error("read body failed", err)
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
 
 	request := &pb.DelServicesRequest{}
 
-	err = json.Unmarshal(request_body, request)
+	err = json.Unmarshal(message, request)
 	if err != nil {
-		util.Logger().Error("unmarshal ,err ", err)
+		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}

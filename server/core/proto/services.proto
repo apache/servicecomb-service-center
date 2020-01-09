@@ -17,7 +17,7 @@
 
 syntax = "proto3";
 
-package com.huawei.paas.cse.serviceregistry.api;
+package proto;
 
 option go_package = "proto";
 option java_package = "com.huawei.paas.cse.serviceregistry.api";
@@ -134,6 +134,7 @@ message GetServicesInfoRequest {
     string appId = 2;
     string serviceName = 3;
     bool countOnly = 4;
+    bool withShared = 5;
 }
 
 message GetServicesInfoResponse {
@@ -424,6 +425,7 @@ message FindInstancesRequest {
     string serviceName = 3;
     string versionRule = 4; // version rule
     repeated string tags = 5;
+    string environment = 6;
 }
 
 message FindInstancesResponse {
@@ -602,6 +604,7 @@ message DelServicesResponse {
 
 message GetAppsRequest {
     string environment = 1;
+    bool withShared = 2;
 }
 
 message GetAppsResponse {

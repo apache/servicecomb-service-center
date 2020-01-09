@@ -14,23 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package broker
+package broker_test
 
 import (
 	"fmt"
 
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	serviceUtil "github.com/apache/incubator-servicecomb-service-center/server/service/util"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/broker"
+	"github.com/apache/servicecomb-service-center/server/broker/brokerpb"
+	"github.com/apache/servicecomb-service-center/server/core"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"golang.org/x/net/context"
 )
 
 const (
-	TEST_BROKER_NO_SERVICE_ID      = "noServiceId"
-	TEST_BROKER_NO_VERSION         = "noVersion"
-	TEST_BROKER_TOO_LONG_SERVICEID = "addasdfasaddasdfasaddasdfasaddasdfasaddasdfasaddasdfasaddasdfasadafd"
+	TEST_BROKER_NO_SERVICE_ID = "noServiceId"
+	TEST_BROKER_NO_VERSION    = "noVersion"
 	//Consumer
 	TEST_BROKER_CONSUMER_VERSION = "4.0.0"
 	TEST_BROKER_CONSUMER_NAME    = "broker_name_consumer"
@@ -51,7 +53,7 @@ var _ = Describe("BrokerController", func() {
 				fmt.Println("UT===========PublishPact")
 
 				//(1) create consumer service
-				resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				resp, err := core.ServiceAPI.Create(getContext(), &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
 						ServiceName: TEST_BROKER_CONSUMER_NAME,
 						AppId:       TEST_BROKER_CONSUMER_APP,
@@ -69,7 +71,7 @@ var _ = Describe("BrokerController", func() {
 				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 
 				//(2) create provider service
-				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				resp, err = core.ServiceAPI.Create(getContext(), &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
 						ServiceName: TEST_BROKER_PROVIDER_NAME,
 						AppId:       TEST_BROKER_PROVIDER_APP,
@@ -88,7 +90,7 @@ var _ = Describe("BrokerController", func() {
 
 				//(3) publish a pact between two services
 				respPublishPact, err := brokerResource.PublishPact(getContext(),
-					&PublishPactRequest{
+					&brokerpb.PublishPactRequest{
 						ProviderId: providerServiceId,
 						ConsumerId: consumerServiceId,
 						Version:    TEST_BROKER_CONSUMER_VERSION,
@@ -103,7 +105,7 @@ var _ = Describe("BrokerController", func() {
 				fmt.Println("UT===========PublishPact, no provider serviceID")
 
 				//publish a pact between two services
-				respPublishPact, _ := brokerResource.PublishPact(getContext(), &PublishPactRequest{
+				respPublishPact, _ := brokerResource.PublishPact(getContext(), &brokerpb.PublishPactRequest{
 					ProviderId: TEST_BROKER_NO_SERVICE_ID,
 					ConsumerId: consumerServiceId,
 					Version:    TEST_BROKER_CONSUMER_VERSION,
@@ -117,7 +119,7 @@ var _ = Describe("BrokerController", func() {
 				fmt.Println("UT===========PublishPact, no consumer serviceID")
 
 				//publish a pact between two services
-				respPublishPact, _ := brokerResource.PublishPact(getContext(), &PublishPactRequest{
+				respPublishPact, _ := brokerResource.PublishPact(getContext(), &brokerpb.PublishPactRequest{
 					ProviderId: providerServiceId,
 					ConsumerId: TEST_BROKER_NO_SERVICE_ID,
 					Version:    TEST_BROKER_CONSUMER_VERSION,
@@ -131,7 +133,7 @@ var _ = Describe("BrokerController", func() {
 				fmt.Println("UT===========PublishPact, no consumer Version")
 
 				//publish a pact between two services
-				respPublishPact, _ := brokerResource.PublishPact(getContext(), &PublishPactRequest{
+				respPublishPact, _ := brokerResource.PublishPact(getContext(), &brokerpb.PublishPactRequest{
 					ProviderId: providerServiceId,
 					ConsumerId: consumerServiceId,
 					Version:    TEST_BROKER_NO_VERSION,
@@ -144,7 +146,7 @@ var _ = Describe("BrokerController", func() {
 			It("GetBrokerHome", func() {
 				fmt.Println("UT===========GetBrokerHome")
 
-				respGetHome, _ := brokerResource.GetBrokerHome(getContext(), &BaseBrokerRequest{
+				respGetHome, _ := brokerResource.GetBrokerHome(getContext(), &brokerpb.BaseBrokerRequest{
 					HostAddress: "localhost",
 					Scheme:      "http",
 				})
@@ -157,9 +159,9 @@ var _ = Describe("BrokerController", func() {
 				fmt.Println("UT===========GetBrokerAllProviderPacts")
 
 				respGetAllProviderPacts, _ := brokerResource.GetAllProviderPacts(getContext(),
-					&GetAllProviderPactsRequest{
+					&brokerpb.GetAllProviderPactsRequest{
 						ProviderId: providerServiceId,
-						BaseUrl: &BaseBrokerRequest{
+						BaseUrl: &brokerpb.BaseBrokerRequest{
 							HostAddress: "localhost",
 							Scheme:      "http",
 						}})
@@ -172,11 +174,11 @@ var _ = Describe("BrokerController", func() {
 				fmt.Println("UT===========GetBrokerPactsOfProvider")
 
 				respGetAllProviderPacts, _ := brokerResource.GetPactsOfProvider(getContext(),
-					&GetProviderConsumerVersionPactRequest{
+					&brokerpb.GetProviderConsumerVersionPactRequest{
 						ProviderId: providerServiceId,
 						ConsumerId: consumerServiceId,
 						Version:    TEST_BROKER_CONSUMER_VERSION,
-						BaseUrl: &BaseBrokerRequest{
+						BaseUrl: &brokerpb.BaseBrokerRequest{
 							HostAddress: "localhost",
 							Scheme:      "http",
 						}})
@@ -185,6 +187,51 @@ var _ = Describe("BrokerController", func() {
 				Expect(respGetAllProviderPacts.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
 			})
 
+			It("PublishVerificationResults", func() {
+				fmt.Println("UT===========PublishVerificationResults")
+
+				id, err := broker.GetData(context.Background(), broker.GetBrokerLatestPactIDKey())
+				Expect(err).To(BeNil())
+				respResults, err := brokerResource.PublishVerificationResults(getContext(),
+					&brokerpb.PublishVerificationRequest{
+						ProviderId: providerServiceId,
+						ConsumerId: consumerServiceId,
+						PactId:     int32(id),
+						ProviderApplicationVersion: TEST_BROKER_PROVIDER_VERSION,
+					})
+
+				Expect(respResults).NotTo(BeNil())
+				Expect(respResults.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			})
+
+			It("RetrieveVerificationResults", func() {
+				fmt.Println("UT===========RetrieveVerificationResults")
+
+				respVerification, _ := brokerResource.RetrieveVerificationResults(getContext(),
+					&brokerpb.RetrieveVerificationRequest{
+						ConsumerId:      consumerServiceId,
+						ConsumerVersion: TEST_BROKER_CONSUMER_VERSION,
+					})
+
+				Expect(respVerification).NotTo(BeNil())
+				Expect(respVerification.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			})
+
+			It("RetrieveProviderPacts", func() {
+				fmt.Println("UT===========RetrieveProviderPacts")
+
+				respProviderPact, _ := brokerResource.RetrieveProviderPacts(getContext(),
+					&brokerpb.GetAllProviderPactsRequest{
+						ProviderId: providerServiceId,
+						BaseUrl: &brokerpb.BaseBrokerRequest{
+							HostAddress: "localhost",
+							Scheme:      "http",
+						},
+					})
+
+				Expect(respProviderPact).NotTo(BeNil())
+				Expect(respProviderPact.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+			})
 		})
 	})
 })

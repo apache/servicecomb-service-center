@@ -18,7 +18,7 @@ package cors
 
 import (
 	"errors"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/rs/cors"
 	"net/http"
 )
@@ -35,7 +35,7 @@ func init() {
 func Intercept(w http.ResponseWriter, r *http.Request) (err error) {
 	CORS.HandlerFunc(w, r)
 	if r.Method == "OPTIONS" {
-		util.Logger().Debugf("identify the current request is a CORS, url: %s", r.RequestURI)
+		log.Debugf("identify the current request is a CORS, url: %s", r.RequestURI)
 		err = errors.New("Handle the preflight request")
 	}
 	return

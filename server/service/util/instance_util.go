@@ -17,15 +17,17 @@
 package util
 
 import (
+	"crypto/sha1"
 	"encoding/json"
 	"fmt"
-	"github.com/apache/incubator-servicecomb-service-center/pkg/util"
-	apt "github.com/apache/incubator-servicecomb-service-center/server/core"
-	"github.com/apache/incubator-servicecomb-service-center/server/core/backend"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
-	"github.com/apache/incubator-servicecomb-service-center/server/infra/registry"
-	"github.com/coreos/etcd/mvcc/mvccpb"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	apt "github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/backend"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	scerr "github.com/apache/servicecomb-service-center/server/error"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 	"golang.org/x/net/context"
 	"strconv"
 	"strings"
@@ -42,7 +44,7 @@ func GetLeaseId(ctx context.Context, domainProject string, serviceId string, ins
 	if len(resp.Kvs) <= 0 {
 		return -1, nil
 	}
-	leaseID, _ := strconv.ParseInt(util.BytesToStringWithNoCopy(resp.Kvs[0].Value), 10, 64)
+	leaseID, _ := strconv.ParseInt(resp.Kvs[0].Value.(string), 10, 64)
 	return leaseID, nil
 }
 
@@ -58,78 +60,14 @@ func GetInstance(ctx context.Context, domainProject string, serviceId string, in
 		return nil, nil
 	}
 
-	var instance *pb.MicroServiceInstance
-	err = json.Unmarshal(resp.Kvs[0].Value, &instance)
-	if err != nil {
-		return nil, err
-	}
-	return instance, nil
+	return resp.Kvs[0].Value.(*pb.MicroServiceInstance), nil
 }
 
-func GetAllInstancesOfServices(ctx context.Context, domainProject string, ids []string) (instances []*pb.MicroServiceInstance, err error) {
-	cloneCtx := util.CloneContext(ctx)
-	noCache, cacheOnly := ctx.Value(CTX_NOCACHE) == "1", ctx.Value(CTX_CACHEONLY) == "1"
-
-	rev, _ := cloneCtx.Value(CTX_REQUEST_REVISION).(int64)
-	if !noCache && !cacheOnly && rev > 0 {
-		// force to find in cache at first time when rev > 0
-		util.SetContext(cloneCtx, CTX_CACHEONLY, "1")
+func FormatRevision(revs, counts []int64) (s string) {
+	for i, rev := range revs {
+		s += fmt.Sprintf("%d.%d,", rev, counts[i])
 	}
-
-	var (
-		max int64
-		kvs []*mvccpb.KeyValue
-	)
-	for i := 0; i < 2; i++ {
-		for _, serviceId := range ids {
-			key := apt.GenerateInstanceKey(domainProject, serviceId, "")
-			opts := append(FromContext(cloneCtx), registry.WithStrKey(key), registry.WithPrefix())
-			resp, err := backend.Store().Instance().Search(cloneCtx, opts...)
-			if err != nil {
-				return nil, err
-			}
-
-			if len(resp.Kvs) > 0 {
-				kvs = append(kvs, resp.Kvs...)
-			}
-			if cmax := resp.MaxModRevision(); max < cmax {
-				max = cmax
-			}
-		}
-
-		if noCache || cacheOnly || rev == 0 {
-			break
-		}
-
-		if rev == max {
-			// return not modified
-			kvs = kvs[:0]
-			break
-		}
-
-		if rev < max || i != 0 {
-			break
-		}
-
-		kvs = kvs[:0]
-		// find from remote server at second time
-		util.SetContext(util.SetContext(cloneCtx,
-			CTX_CACHEONLY, ""),
-			CTX_NOCACHE, "1")
-	}
-
-	for _, kv := range kvs {
-		instance := &pb.MicroServiceInstance{}
-		err := json.Unmarshal(kv.Value, instance)
-		if err != nil {
-			return nil, fmt.Errorf("unmarshal %s faild, %s",
-				util.BytesToStringWithNoCopy(kv.Key), err.Error())
-		}
-		instances = append(instances, instance)
-	}
-
-	util.SetContext(ctx, CTX_RESPONSE_REVISION, max)
-	return
+	return fmt.Sprintf("%x", sha1.Sum(util.StringToBytesWithNoCopy(s)))
 }
 
 func GetAllInstancesOfOneService(ctx context.Context, domainProject string, serviceId string) ([]*pb.MicroServiceInstance, error) {
@@ -137,19 +75,13 @@ func GetAllInstancesOfOneService(ctx context.Context, domainProject string, serv
 	opts := append(FromContext(ctx), registry.WithStrKey(key), registry.WithPrefix())
 	resp, err := backend.Store().Instance().Search(ctx, opts...)
 	if err != nil {
-		util.Logger().Errorf(err, "Get instance of service %s from etcd failed.", serviceId)
+		log.Errorf(err, "get service[%s]'s instances failed", serviceId)
 		return nil, err
 	}
 
 	instances := make([]*pb.MicroServiceInstance, 0, len(resp.Kvs))
-	for _, kvs := range resp.Kvs {
-		instance := &pb.MicroServiceInstance{}
-		err := json.Unmarshal(kvs.Value, instance)
-		if err != nil {
-			util.Logger().Errorf(err, "Unmarshal instance of service %s failed.", serviceId)
-			return nil, err
-		}
-		instances = append(instances, instance)
+	for _, kv := range resp.Kvs {
+		instances = append(instances, kv.Value.(*pb.MicroServiceInstance))
 	}
 	return instances, nil
 }
@@ -162,39 +94,10 @@ func GetInstanceCountOfOneService(ctx context.Context, domainProject string, ser
 		registry.WithCountOnly())
 	resp, err := backend.Store().Instance().Search(ctx, opts...)
 	if err != nil {
-		util.Logger().Errorf(err, "Get instance count of service %s from etcd failed.", serviceId)
+		log.Errorf(err, "get number of service[%s]'s instances failed", serviceId)
 		return 0, err
 	}
 	return resp.Count, nil
-}
-
-func InstanceExistById(ctx context.Context, domainProject string, serviceId string, instanceId string) (bool, error) {
-	opts := append(FromContext(ctx),
-		registry.WithStrKey(apt.GenerateInstanceKey(domainProject, serviceId, instanceId)),
-		registry.WithCountOnly())
-	resp, err := backend.Store().Instance().Search(ctx, opts...)
-	if err != nil {
-		return false, err
-	}
-	if resp.Count <= 0 {
-		return false, nil
-	}
-	return true, nil
-}
-
-func InstanceExist(ctx context.Context, instance *pb.MicroServiceInstance) (string, *scerr.Error) {
-	domainProject := util.ParseDomainProject(ctx)
-	// check id index
-	if len(instance.InstanceId) > 0 {
-		exist, err := InstanceExistById(ctx, domainProject, instance.ServiceId, instance.InstanceId)
-		if err != nil {
-			return "", scerr.NewError(scerr.ErrInternal, err.Error())
-		}
-		if exist {
-			return instance.InstanceId, nil
-		}
-	}
-	return "", nil
 }
 
 type EndpointIndexValue struct {
@@ -220,15 +123,15 @@ func DeleteServiceAllInstances(ctx context.Context, serviceId string) error {
 		registry.WithPrefix(),
 		registry.WithNoCache())
 	if err != nil {
-		util.Logger().Errorf(err, "delete service %s all instance failed: get instance lease failed.", serviceId)
+		log.Errorf(err, "delete all of service[%s]'s instances failed: get instance lease failed", serviceId)
 		return err
 	}
 	if resp.Count <= 0 {
-		util.Logger().Warnf(nil, "service %s has no deployment of instance.", serviceId)
+		log.Warnf("service[%s] has no deployment of instance.", serviceId)
 		return nil
 	}
 	for _, v := range resp.Kvs {
-		leaseID, _ := strconv.ParseInt(util.BytesToStringWithNoCopy(v.Value), 10, 64)
+		leaseID, _ := strconv.ParseInt(v.Value.(string), 10, 64)
 		backend.Registry().LeaseRevoke(ctx, leaseID)
 	}
 	return nil
@@ -241,16 +144,16 @@ func QueryAllProvidersInstances(ctx context.Context, selfServiceId string) (resu
 
 	service, err := GetService(ctx, domainProject, selfServiceId)
 	if err != nil {
-		util.Logger().Errorf(err, "get service %s failed", selfServiceId)
+		log.Errorf(err, "get service[%s]'s file failed", selfServiceId)
 		return
 	}
 	if service == nil {
-		util.Logger().Errorf(nil, "service not exist, %s", selfServiceId)
+		log.Errorf(nil, "service[%s] does not exist", selfServiceId)
 		return
 	}
-	providerIds, _, err := GetProviderIdsByConsumer(ctx, domainProject, service)
+	providerIds, _, err := GetAllProviderIds(ctx, domainProject, service)
 	if err != nil {
-		util.Logger().Errorf(err, "get service %s providers id set failed.", selfServiceId)
+		log.Errorf(err, "get service[%s]'s providerIds failed", selfServiceId)
 		return
 	}
 
@@ -259,31 +162,22 @@ func QueryAllProvidersInstances(ctx context.Context, selfServiceId string) (resu
 	for _, providerId := range providerIds {
 		service, err := GetServiceWithRev(ctx, domainProject, providerId, rev)
 		if err != nil {
-			util.Logger().Errorf(err, "get service %s provider service %s file with revision %d failed.",
+			log.Errorf(err, "get service[%s]'s provider[%s] file with revision %d failed",
 				selfServiceId, providerId, rev)
 			return
 		}
 		if service == nil {
 			continue
 		}
-		util.Logger().Debugf("query provider service %v with revision %d.", service, rev)
 
 		kvs, err := queryServiceInstancesKvs(ctx, providerId, rev)
 		if err != nil {
-			util.Logger().Errorf(err, "get service %s provider %s instances with revision %d failed.",
+			log.Errorf(err, "get service[%s]'s provider[%s] instances with revision %d failed",
 				selfServiceId, providerId, rev)
 			return
 		}
 
-		util.Logger().Debugf("query provider service %s instances[%d] with revision %d.", providerId, len(kvs), rev)
 		for _, kv := range kvs {
-			instance := &pb.MicroServiceInstance{}
-			err := json.Unmarshal(kv.Value, instance)
-			if err != nil {
-				util.Logger().Errorf(err, "unmarshal instance of service %s with revision %d failed.",
-					providerId, rev)
-				return
-			}
 			results = append(results, &pb.WatchInstanceResponse{
 				Response: pb.CreateResponse(pb.Response_SUCCESS, "List instance successfully."),
 				Action:   string(pb.EVT_INIT),
@@ -293,14 +187,14 @@ func QueryAllProvidersInstances(ctx context.Context, selfServiceId string) (resu
 					ServiceName: service.ServiceName,
 					Version:     service.Version,
 				},
-				Instance: instance,
+				Instance: kv.Value.(*pb.MicroServiceInstance),
 			})
 		}
 	}
 	return
 }
 
-func queryServiceInstancesKvs(ctx context.Context, serviceId string, rev int64) ([]*mvccpb.KeyValue, error) {
+func queryServiceInstancesKvs(ctx context.Context, serviceId string, rev int64) ([]*discovery.KeyValue, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	key := apt.GenerateInstanceKey(domainProject, serviceId, "")
 	resp, err := backend.Store().Instance().Search(ctx,
@@ -308,7 +202,7 @@ func queryServiceInstancesKvs(ctx context.Context, serviceId string, rev int64) 
 		registry.WithPrefix(),
 		registry.WithRev(rev))
 	if err != nil {
-		util.Logger().Errorf(err, "query instance of service %s with revision %d from etcd failed.",
+		log.Errorf(err, "get service[%s]'s instances with revision %d failed",
 			serviceId, rev)
 		return nil, err
 	}
@@ -345,7 +239,31 @@ func UpdateInstance(ctx context.Context, domainProject string, instance *pb.Micr
 		return scerr.NewError(scerr.ErrUnavailableBackend, err.Error())
 	}
 	if !resp.Succeeded {
-		return scerr.NewError(scerr.ErrServiceNotExists, "Service does not exist.")
+		return scerr.NewError(scerr.ErrInstanceNotExists, "Instance does not exist.")
 	}
 	return nil
+}
+
+func AppendFindResponse(ctx context.Context, index int64, resp *pb.Response, instances []*pb.MicroServiceInstance,
+	updatedResult *[]*pb.FindResult, notModifiedResult *[]int64, failedResult **pb.FindFailedResult) {
+	if code := resp.GetCode(); code != pb.Response_SUCCESS {
+		if *failedResult == nil {
+			*failedResult = &pb.FindFailedResult{
+				Error: scerr.NewError(code, resp.GetMessage()),
+			}
+		}
+		(*failedResult).Indexes = append((*failedResult).Indexes, index)
+		return
+	}
+	iv, _ := ctx.Value(CTX_REQUEST_REVISION).(string)
+	ov, _ := ctx.Value(CTX_RESPONSE_REVISION).(string)
+	if len(iv) > 0 && iv == ov {
+		*notModifiedResult = append(*notModifiedResult, index)
+		return
+	}
+	*updatedResult = append(*updatedResult, &pb.FindResult{
+		Index:     index,
+		Instances: instances,
+		Rev:       ov,
+	})
 }

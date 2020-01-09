@@ -17,14 +17,16 @@
 package service_test
 
 import (
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/quota/buildin"
-	"github.com/apache/incubator-servicecomb-service-center/server/service"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"strconv"
 	"strings"
+
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	scerr "github.com/apache/servicecomb-service-center/server/error"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/quota"
+	"github.com/apache/servicecomb-service-center/server/service"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 const (
@@ -208,7 +210,7 @@ var _ = Describe("'Schema' service", func() {
 		})
 
 		Context("when create schemas out of gauge", func() {
-			size := buildin.SCHEMA_NUM_MAX_LIMIT_PER_SERVICE + 1
+			size := quota.DefaultSchemaQuota + 1
 			schemaIds := make([]string, 0, size)
 			schemas := make([]*pb.Schema, 0, size)
 			for i := 0; i < size; i++ {
@@ -234,14 +236,14 @@ var _ = Describe("'Schema' service", func() {
 				By("batch modify schemas 2")
 				respCreateSchemas, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
 					ServiceId: serviceIdDev,
-					Schemas:   schemas[:buildin.SCHEMA_NUM_MAX_LIMIT_PER_SERVICE],
+					Schemas:   schemas[:quota.DefaultSchemaQuota],
 				})
 				Expect(err).To(BeNil())
 				Expect(respCreateSchemas.Response.Code).To(Equal(pb.Response_SUCCESS))
 
 				By("modify one schema")
 				respCreateService := &pb.ModifySchemaResponse{}
-				schema := schemas[buildin.SCHEMA_NUM_MAX_LIMIT_PER_SERVICE]
+				schema := schemas[quota.DefaultSchemaQuota]
 				respCreateService, err = serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
 					ServiceId: serviceIdDev,
 					SchemaId:  schema.SchemaId,
@@ -842,6 +844,146 @@ var _ = Describe("'Schema' service", func() {
 					ServiceId: serviceIdPro2,
 					SchemaId:  "first_schemaId",
 					Schema:    "first_schema",
+				})
+				Expect(err).To(BeNil())
+				Expect(respModifySchema.Response.Code).To(Equal(pb.Response_SUCCESS))
+			})
+		})
+
+		Context("when add a schemaId in prod env, schema editable is set in the meanwhile", func() {
+			var (
+				serviceIdPro1 string
+			)
+
+			It("create service, should pass", func() {
+				respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						AppId:       "add_a_schemaId_prod_schema_lock",
+						ServiceName: "add_a_schemaId_prod_schema_lock_service",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Status:      pb.MS_UP,
+						Environment: pb.ENV_PROD,
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(respCreateService.Response.Code).To(Equal(pb.Response_SUCCESS))
+				serviceIdPro1 = respCreateService.ServiceId
+			})
+
+			It("add a schema with new schemaId, should pass", func() {
+				By("add schemas")
+				schemas := []*pb.Schema{
+					{
+						SchemaId: "first_schemaId",
+						Schema:   "first_schema",
+						Summary:  "first0summary",
+					},
+				}
+				respModifySchemas, err := serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+					ServiceId: serviceIdPro1,
+					Schemas:   schemas,
+				})
+				Expect(err).To(BeNil())
+				Expect(respModifySchemas.Response.Code).To(Equal(pb.Response_SUCCESS))
+
+				respGetOne, err := serviceResource.GetOne(getContext(), &pb.GetServiceRequest{
+					ServiceId: serviceIdPro1,
+				})
+				Expect(err).To(BeNil())
+				Expect(respGetOne.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respGetOne.Service.Schemas).To(Equal([]string{"first_schemaId"}))
+
+				schemas = []*pb.Schema{
+					{
+						SchemaId: "second_schemaId",
+						Schema:   "second_schema",
+						Summary:  "second0summary",
+					},
+				}
+				By("schema edit not allowed, add a schema with new schemaId should fail")
+				localServiceResource := service.NewMicroServiceService(false, instanceResource)
+				respModifySchemas, err = localServiceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+					ServiceId: serviceIdPro1,
+					Schemas:   schemas,
+				})
+				Expect(err).To(BeNil())
+				Expect(respModifySchemas.Response.Code).To(Equal(scerr.ErrUndefinedSchemaId))
+
+				By("schema edit allowed, add a schema with new schemaId should success")
+
+				localServiceResource = service.NewMicroServiceService(true, instanceResource)
+				respModifySchemas, err = localServiceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+					ServiceId: serviceIdPro1,
+					Schemas:   schemas,
+				})
+				Expect(err).To(BeNil())
+				Expect(respModifySchemas.Response.Code).To(Equal(pb.Response_SUCCESS))
+			})
+		})
+
+		Context("when modify a schema in prod env, schema editable is set in the meanwhile", func() {
+			var (
+				serviceIdPro1 string
+			)
+
+			It("create service, should pass", func() {
+				respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						AppId:       "modify_a_schema_prod_schema_lock",
+						ServiceName: "modify_a_schema_prod_schema_lock_service",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Status:      pb.MS_UP,
+						Environment: pb.ENV_PROD,
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(respCreateService.Response.Code).To(Equal(pb.Response_SUCCESS))
+				serviceIdPro1 = respCreateService.ServiceId
+			})
+
+			It("add schemas, should pass", func() {
+				By("add schemas")
+				schemas := []*pb.Schema{
+					{
+						SchemaId: "first_schemaId",
+						Schema:   "first_schema",
+						Summary:  "first0summary",
+					},
+				}
+				respModifySchemas, err := serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+					ServiceId: serviceIdPro1,
+					Schemas:   schemas,
+				})
+				Expect(err).To(BeNil())
+				Expect(respModifySchemas.Response.Code).To(Equal(pb.Response_SUCCESS))
+
+				respGetOne, err := serviceResource.GetOne(getContext(), &pb.GetServiceRequest{
+					ServiceId: serviceIdPro1,
+				})
+				Expect(err).To(BeNil())
+				Expect(respGetOne.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respGetOne.Service.Schemas).To(Equal([]string{"first_schemaId"}))
+
+				By("schema edit not allowed, modify a schema should fail")
+				localServiceResource := service.NewMicroServiceService(false, instanceResource)
+				respModifySchema, err := localServiceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
+					ServiceId: serviceIdPro1,
+					SchemaId:  schemas[0].SchemaId,
+					Summary:   schemas[0].Summary,
+					Schema:    schemas[0].SchemaId,
+				})
+				Expect(err).To(BeNil())
+				Expect(respModifySchema.Response.Code).To(Equal(scerr.ErrModifySchemaNotAllow))
+
+				By("schema edit allowed, modify a schema should success")
+				localServiceResource = service.NewMicroServiceService(true, instanceResource)
+				respModifySchema, err = localServiceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
+					ServiceId: serviceIdPro1,
+					SchemaId:  schemas[0].SchemaId,
+					Summary:   schemas[0].Summary,
+					Schema:    schemas[0].SchemaId,
 				})
 				Expect(err).To(BeNil())
 				Expect(respModifySchema.Response.Code).To(Equal(pb.Response_SUCCESS))

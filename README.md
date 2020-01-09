@@ -1,28 +1,34 @@
-# Apache-Incubator-ServiceComb-Service-Center 
-[![Build Status](https://www.travis-ci.org/apache/incubator-servicecomb-service-center.svg?branch=master)](https://www.travis-ci.org/apache/incubator-servicecomb-service-center)  [![Coverage Status](https://coveralls.io/repos/github/apache/incubator-servicecomb-service-center/badge.svg?branch=master)](https://coveralls.io/github/apache/incubator-servicecomb-service-center?branch=master)  [![Go Report Card](https://goreportcard.com/badge/github.com/apache/incubator-servicecomb-service-center)](https://goreportcard.com/report/github.com/apache/incubator-servicecomb-service-center) [![GoDoc](https://godoc.org/github.com/apache/incubator-servicecomb-service-center?status.svg)](https://godoc.org/github.com/apache/incubator-servicecomb-service-center)  [![HitCount](http://hits.dwyl.io/apache/incubator-servicecomb-service-center.svg)](http://hits.dwyl.io/apache/incubator-servicecomb-service-center)  
+# Apache-ServiceComb-Service-Center
+[![Build Status](https://www.travis-ci.org/apache/servicecomb-service-center.svg?branch=master)](https://www.travis-ci.org/apache/servicecomb-service-center)  [![Coverage Status](https://coveralls.io/repos/github/apache/servicecomb-service-center/badge.svg?branch=master)](https://coveralls.io/github/apache/servicecomb-service-center?branch=master)  [![Go Report Card](https://goreportcard.com/badge/github.com/apache/servicecomb-service-center)](https://goreportcard.com/report/github.com/apache/servicecomb-service-center) [![GoDoc](https://godoc.org/github.com/apache/servicecomb-service-center?status.svg)](https://godoc.org/github.com/apache/servicecomb-service-center)  [![HitCount](http://hits.dwyl.io/apache/servicecomb-service-center.svg)](http://hits.dwyl.io/apache/servicecomb-service-center) [![Gitter](https://img.shields.io/badge/ServiceComb-Gitter-ff69b4.svg)](https://gitter.im/ServiceCombUsers/Lobby)  
 
-Apache ServiceComb (incubating) Service-Center is a Restful based service-registry that provides micro-services discovery and micro-service management. It is based on Open API format and provides features like service-discovery, fault-tolerance, dynamic routing, notify subscription and scalable by design. It has high performance cache design and separate entity management for micro-services and their instances. It provides out of box support for metrics and tracing. It has a web portal to manage the micro-services.  
+Apache ServiceComb Service-Center is a Restful based service-registry that provides micro-services discovery and micro-service management. It is based on Open API format and provides features like service-discovery, fault-tolerance, dynamic routing, notify subscription and scalable by design. It has high performance cache design and separate entity management for micro-services and their instances. It provides out of box support for metrics and tracing. It has a web portal to manage the micro-services.  
 
 ## Features
- - **Open API**: API doc(Open API format) management for microservice
+ - **[`Open API`](/server/core/swagger/v4.yaml)**: API doc(Open API format) management for microservice
  - **Metadata**: Metadata management for both microservice and microservice instance
  - **Dependency**: Microservice dependency management
- - **Seperated**: Seperated microservice and microservice instance entity management
+ - **Separated**: Separated microservice and microservice instance entity management
  - **Domains**: Logical multiple domains management
- - **Security**: White and back list configuration for service discovery
- - **Discovery**: Support query instance by criteria 
+ - **Security**: White and black list configuration for service discovery
+ - **Discovery**: Support query instance by criteria
  - **Subscribe**: Use web socket to notify client about instance change events
- - **Portal**: Awesome  [web portal](/frontend)
+ - **[`Portal`](/frontend)**: Awesome web portal
  - **Fault tolerance**: Multiple fault tolerance mechanism and design in the architecture
  - **Performance**: Performance/Caching design
- - **Metrics**: Able to expose Prometheus metric API automatically
- - **Tracing**: Able to report tracing data to Zipkin server
- 
+ - **[`Metrics`](/docs/integration-grafana.md)**: Able to expose Prometheus metric API automatically
+ - **[`Tracing`](/docs/tracing.md)**: Able to report tracing data to Zipkin server
+ - **[`Pluginable`](/docs/plugin.md)**: Able to load custom authentication, tls and other dynamic libraries
+ - **[`CLI`](/scctl/README.md)**: Easy to control service center
+ - **[`Kubernetes`](/docs/kubeclusters.md)**: Embrace kubernetes ecosystem and support multi cluster service discovery
+ - **[`Datacenters`](/docs/multidcs.md)**: Additional layer of abstraction to clusters deployed in multiple datacenters
+ - **[`Aggregation`](/docs/aggregate.md)**: Able to aggregate microservices from multiple registry platforms and
+    support platform registry and client side registry at the same time
+
 ## Documentation
 
-Project documentation is available on the [ServiceComb website][servicecomb-website]. You can also find some development guide [here](/docs).
+Project documentation is available on the [ServiceComb website][servicecomb-website]. You can also find full document [`here`](/docs/README.md).
 
-[servicecomb-website]: http://servicecomb.incubator.apache.org/
+[servicecomb-website]: http://servicecomb.apache.org/
 
 ## Quick Start
 
@@ -30,18 +36,18 @@ Project documentation is available on the [ServiceComb website][servicecomb-webs
 
 The easiest way to get Service Center is to use one of the pre-built release binaries which are available for Linux, Windows and Docker.
 
-[github-release]: http://servicecomb.incubator.apache.org/release/
+[github-release]: http://servicecomb.apache.org/release/
 
 ### Running Service Center using the Release
 
 You can download our latest release from [ServiceComb Website][github-release].When you get these release, you can execute the start script to run Service Center.
 
-Windows(apache-incubator-servicecomb-service-center-XXX-windows-amd64.zip):
+Windows(apache-servicecomb-service-center-XXX-windows-amd64.zip):
 ```
 start-service-center.bat
 ```
 
-Linux(apache-incubator-servicecomb-service-center-XXXX-linux-amd64.tar.gz):
+Linux(apache-servicecomb-service-center-XXXX-linux-amd64.tar.gz):
 ```sh
 ./start-service-center.sh
 ```
@@ -77,20 +83,31 @@ httpport = 30100
 
 ### Building & Running Service-Center from source
 
+Requirements
+
++ [Go](https://golang.org) version 1.8+ is required to build the latest version of Service-Center.
+
 Download the Code
 ```sh
-git clone https://github.com/apache/incubator-servicecomb-service-center.git $GOPATH/src/github.com/apache/incubator-servicecomb-service-center
-cd $GOPATH/src/github.com/apache/incubator-servicecomb-service-center
+git clone https://github.com/apache/servicecomb-service-center.git $GOPATH/src/github.com/apache/servicecomb-service-center
+cd $GOPATH/src/github.com/apache/servicecomb-service-center
 ```
 
 Dependencies
 
-We use gvt for dependency management, please follow below steps to download all the dependency.
+By default, we use [glide](https://glide.sh)(version: 0.13+) to manage dependencies. If the go version greater then `go1.11`,
+you can download dependencies directly using command `go mod`. Please follow below steps to
+download all the dependency.
+
 ```sh
-go get github.com/FiloSottile/gvt
-gvt restore
+# greater then go1.11
+GO111MODULE=on go mod download
+GO111MODULE=on go mod vendor
+
+# lower than go1.11
+curl https://glide.sh/get | sh
+glide install
 ```
-If you face any issue in downloading the dependency because of insecure connection then you can use ```gvt restore -precaire```
 
 Build the Service-Center
 
@@ -106,7 +123,7 @@ tar -xvf etcd-v3.1.8-linux-amd64.tar.gz
 cd etcd-v3.1.8-linux-amd64
 ./etcd
 
-cd $GOPATH/src/github.com/apache/incubator-servicecomb-service-center
+cd $GOPATH/src/github.com/apache/servicecomb-service-center
 cp -r ./etc/conf .
 ./service-center
 ```
@@ -119,17 +136,17 @@ This will bring up Service Center listening on ip/port 127.0.0.1:30100 for servi
 You can download our latest release from ServiceComb Website and then untar it and run start-frontend.sh/start-frontend.bat.
 This will bring up the Service-Center UI on [http://127.0.0.1:30103](http://127.0.0.1:30103).
 
-Windows(apache-incubator-servicecomb-service-center-XXX-windows-amd64.zip):
+Windows(apache-servicecomb-service-center-XXX-windows-amd64.zip):
 ```
 start-frontend.bat
 ```
 
-Linux(apache-incubator-servicecomb-service-center-XXXX-linux-amd64.tar.gz):
+Linux(apache-servicecomb-service-center-XXXX-linux-amd64.tar.gz):
 ```sh
 ./start-frontend.sh
 ```
 
-Note: By default frontend runs on 127.0.0.1, if you want to change this then you can change it in `conf/app.conf`. 
+Note: By default frontend runs on 127.0.0.1, if you want to change this then you can change it in `conf/app.conf`.
 ```
 frontend_host_ip=127.0.0.1
 frontend_host_port=30103
@@ -139,7 +156,7 @@ You can follow the guide over [here](frontend/Readme.md#running-ui-from-source-c
 
 ## Get The Latest Release
 
-[Download Service Center](http://servicecomb.incubator.apache.org/release/service-center-downloads/)
+[Download Service Center](http://servicecomb.apache.org/release/service-center-downloads/)
 
 ## Contact
 
@@ -147,8 +164,21 @@ Bugs: [issues](https://issues.apache.org/jira/browse/SCB)
 
 ## Contributing
 
-See [Contribution guide](/docs/contribution.md) for details on submitting patches and the contribution workflow.
+See [Contribution guide](/CONTRIBUTING.md) for details on submitting patches and the contribution workflow.
 
 ## Reporting Issues
 
 See reporting bugs for details about reporting any issues.
+
+## License
+Licensed under an [Apache 2.0 license](LICENSE).
+
+## Export Notice
+
+This distribution includes cryptographic software. The country in which you currently reside may have restrictions on the import, possession, use, and/or re-export to another country, of encryption software. BEFORE using any encryption software, please check your country's laws, regulations and policies concerning the import, possession, or use, and re-export of encryption software, to see if this is permitted. See <http://www.wassenaar.org/> for more information.
+
+The Apache Software Foundation has classified this software as Export Commodity Control Number (ECCN) 5D002, which includes information security software using or performing cryptographic functions with asymmetric algorithms. The form and manner of this Apache Software Foundation distribution makes it eligible for export under the "publicly available" Section 742.15(b) exemption (see the BIS Export Administration Regulations, Section 742.15(b)) for both object code and source code.
+
+The following provides more details on the included cryptographic software:
+  * golang crypto https://github.com/golang/go/tree/master/src/crypto
+  * The transport between server and client can be configured to use TLS  

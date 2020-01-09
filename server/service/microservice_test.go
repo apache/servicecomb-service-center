@@ -17,10 +17,10 @@
 package service_test
 
 import (
-	"github.com/apache/incubator-servicecomb-service-center/server/core"
-	pb "github.com/apache/incubator-servicecomb-service-center/server/core/proto"
-	scerr "github.com/apache/incubator-servicecomb-service-center/server/error"
-	"github.com/apache/incubator-servicecomb-service-center/server/plugin/infra/quota/buildin"
+	"github.com/apache/servicecomb-service-center/server/core"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	scerr "github.com/apache/servicecomb-service-center/server/error"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/quota"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"strconv"
@@ -52,7 +52,7 @@ var _ = Describe("'Micro-service' service", func() {
 
 		Context("all max", func() {
 			It("should be passed", func() {
-				size := buildin.SCHEMA_NUM_MAX_LIMIT_PER_SERVICE + 1
+				size := quota.DefaultSchemaQuota + 1
 				paths := make([]*pb.ServicePath, 0, size)
 				properties := make(map[string]string, size)
 				for i := 0; i < size; i++ {
@@ -64,7 +64,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Service: &pb.MicroService{
 						AppId:       TOO_LONG_APPID[:len(TOO_LONG_APPID)-1],
 						ServiceName: TOO_LONG_SERVICENAME[:len(TOO_LONG_SERVICENAME)-1],
-						Version:     "32767.32767.32767",
+						Version:     "32767.32767.32767.32767",
 						Alias:       TOO_LONG_ALIAS[:len(TOO_LONG_ALIAS)-1],
 						Level:       "BACK",
 						Status:      "UP",
@@ -213,7 +213,8 @@ var _ = Describe("'Micro-service' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).To(Equal(scerr.ErrServiceAlreadyExists))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.ServiceId).To(Equal(sameId))
 
 				By("the same alias")
 				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
@@ -230,9 +231,64 @@ var _ = Describe("'Micro-service' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).To(Equal(scerr.ErrServiceAlreadyExists))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.ServiceId).To(Equal(sameId))
+
+				By("the same serviceId and the same serviceName")
+				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceId:   sameId,
+						ServiceName: "some-relay",
+						Alias:       "sr1",
+						AppId:       "default",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Schemas: []string{
+							"xxxxxxxx",
+						},
+						Status: "UP",
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.ServiceId).To(Equal(sameId))
+
+				By("the same serviceId and the same alias")
+				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceId:   sameId,
+						ServiceName: "some-relay1",
+						Alias:       "sr",
+						AppId:       "default",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Schemas: []string{
+							"xxxxxxxx",
+						},
+						Status: "UP",
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.ServiceId).To(Equal(sameId))
 
 				By("the same service key but with diff serviceId")
+				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceId:   "customId",
+						ServiceName: "some-relay",
+						Alias:       "sr1",
+						AppId:       "default",
+						Version:     "1.0.0",
+						Level:       "FRONT",
+						Schemas: []string{
+							"xxxxxxxx",
+						},
+						Status: "UP",
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(scerr.ErrServiceAlreadyExists))
 				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
 						ServiceId:   "customId",
@@ -250,12 +306,12 @@ var _ = Describe("'Micro-service' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).To(Equal(scerr.ErrServiceAlreadyExists))
 
-				By("the same serviceId")
+				By("the same service id but with diff key")
 				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
 						ServiceId:   sameId,
-						ServiceName: "some-relay1",
-						Alias:       "sr",
+						ServiceName: "some-relay2",
+						Alias:       "sr2",
 						AppId:       "default",
 						Version:     "1.0.0",
 						Level:       "FRONT",
@@ -431,6 +487,20 @@ var _ = Describe("'Micro-service' service", func() {
 						AppId:       "default",
 						ServiceName: "service-validate",
 						Version:     "1.32768.0",
+						Level:       "BACK",
+						Status:      "UP",
+					},
+				}
+				resp, err = serviceResource.Create(getContext(), r)
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
+
+				By("invalid version 4")
+				r = &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						AppId:       "default",
+						ServiceName: "service-validate",
+						Version:     "1.1.0.0.0",
 						Level:       "BACK",
 						Status:      "UP",
 					},
@@ -784,6 +854,14 @@ var _ = Describe("'Micro-service' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
+				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
+					Type:        "microservice",
+					AppId:       "default",
+					ServiceName: "exist-invalid-version",
+					Version:     "3.0.0.0.0",
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
 
 				By("version is empty")
 				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
@@ -830,6 +908,24 @@ var _ = Describe("'Micro-service' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.Code).To(Equal(scerr.ErrServiceNotExists))
+
+				By("version mismatch")
+				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
+					Type:        "microservice",
+					AppId:       "exist_appId",
+					ServiceName: "exist_service",
+					Version:     "2.0.0",
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(scerr.ErrServiceNotExists))
+				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
+					Type:        "microservice",
+					AppId:       "exist_appId",
+					ServiceName: "exist_service",
+					Version:     "0.0.0-1.0.0",
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.Code).To(Equal(scerr.ErrServiceVersionNotExists))
 			})
 		})
 
@@ -1005,15 +1101,15 @@ var _ = Describe("'Micro-service' service", func() {
 			})
 		})
 
-		Context("when property is nil or empty", func() {
-			It("should be failed", func() {
+		Context("when remove the properties", func() {
+			It("should be pass", func() {
 				r := &pb.UpdateServicePropsRequest{
 					ServiceId:  serviceId,
 					Properties: nil,
 				}
 				resp, err := serviceResource.UpdateProperties(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 
 				r = &pb.UpdateServicePropsRequest{
 					ServiceId:  "",
