@@ -31,6 +31,7 @@ type KvCache struct {
 	name  string
 	store map[string]map[string]*KeyValue
 	rwMux sync.RWMutex
+	dirty bool
 }
 
 func (c *KvCache) Name() string {
@@ -80,11 +81,19 @@ func (c *KvCache) Remove(key string) {
 	c.rwMux.Unlock()
 }
 
+func (c *KvCache) MarkDirty() {
+	c.dirty = true
+	log.Warnf("Cache[%s] is marked dirty!", c.name)
+}
+
+func (c *KvCache) Dirty() bool { return c.dirty }
+
 func (c *KvCache) Clear() {
 	c.rwMux.Lock()
+	c.dirty = false
 	c.store = make(map[string]map[string]*KeyValue)
 	c.rwMux.Unlock()
-	log.Warnf("Cache[%s] clear!", c.name)
+	log.Warnf("Cache[%s] is clear!", c.name)
 }
 
 func (c *KvCache) ForEach(iter func(k string, v *KeyValue) (next bool)) {
