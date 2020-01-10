@@ -120,10 +120,11 @@ func (s *KvStore) autoClearCache(ctx context.Context) {
 				cache, ok := s.getOrCreateAdaptor(t).Cache().(discovery.Cache)
 				if !ok {
 					log.Error("the discovery adaptor does not implement the Cache", nil)
-					break
+					continue
 				}
 				cache.MarkDirty()
 			}
+			log.Warnf("caches are marked dirty!")
 		}
 	}
 }

@@ -77,20 +77,21 @@ func (c *KvCacher) doList(cfg ListWatchConfig) error {
 		return err
 	}
 
+	rev := c.lw.Revision()
 	kvs := resp.Kvs
 	start := time.Now()
 	defer log.LogDebugOrWarnf(start, "finish to cache key %s, %d items, rev: %d",
-		c.Cfg.Key, len(kvs), c.lw.Revision())
-
-	// calc and return the diff between cache and ETCD
-	evts := c.filter(c.lw.Revision(), kvs)
+		c.Cfg.Key, len(kvs), rev)
 
 	// just reset the cacher if cache marked dirty
 	if c.cache.Dirty() {
-		c.reset(evts)
+		c.reset(rev, kvs)
+		log.Warnf("Cache[%s] is reset!", c.cache.Name())
 		return nil
 	}
 
+	// calc and return the diff between cache and ETCD
+	evts := c.filter(rev, kvs)
 	// there is no change between List() and cache, then stop the self preservation
 	if ec, kc := len(evts), len(kvs); c.Cfg.DeferHandler != nil && ec == 0 && kc != 0 &&
 		c.Cfg.DeferHandler.Reset() {
@@ -103,7 +104,7 @@ func (c *KvCacher) doList(cfg ListWatchConfig) error {
 	return nil
 }
 
-func (c *KvCacher) reset(evts []discovery.KvEvent) {
+func (c *KvCacher) reset(rev int64, kvs []*mvccpb.KeyValue) {
 	if c.Cfg.DeferHandler != nil {
 		c.Cfg.DeferHandler.Reset()
 	}
@@ -112,7 +113,7 @@ func (c *KvCacher) reset(evts []discovery.KvEvent) {
 	c.cache.Clear()
 	// do not notify when cacher is dirty status,
 	// otherwise, too many events will notify to downstream.
-	c.buildCache(evts)
+	c.buildCache(c.filter(rev, kvs))
 }
 
 func (c *KvCacher) doWatch(cfg ListWatchConfig) error {

@@ -17,7 +17,6 @@
 package discovery
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"strings"
 	"sync"
@@ -83,7 +82,6 @@ func (c *KvCache) Remove(key string) {
 
 func (c *KvCache) MarkDirty() {
 	c.dirty = true
-	log.Warnf("Cache[%s] is marked dirty!", c.name)
 }
 
 func (c *KvCache) Dirty() bool { return c.dirty }
@@ -93,7 +91,6 @@ func (c *KvCache) Clear() {
 	c.dirty = false
 	c.store = make(map[string]map[string]*KeyValue)
 	c.rwMux.Unlock()
-	log.Warnf("Cache[%s] is clear!", c.name)
 }
 
 func (c *KvCache) ForEach(iter func(k string, v *KeyValue) (next bool)) {
