@@ -102,6 +102,7 @@ func (c *KvCacher) doWatch(cfg ListWatchConfig) error {
 func (c *KvCacher) ListAndWatch(ctx context.Context) error {
 	c.mux.Lock()
 	defer c.mux.Unlock()
+	defer log.Recover() // ensure ListAndWatch never raise panic
 
 	cfg := ListWatchConfig{
 		Timeout: c.Cfg.Timeout,
@@ -147,7 +148,7 @@ func (c *KvCacher) handleWatcher(watcher Watcher) error {
 			case resp.Action == registry.Delete:
 				evt.Type = proto.EVT_DELETE
 				if kv.Value == nil {
-					// it will happen in embed mode, and then need to get the cache value to unmarshal
+					// it will happen in embed mode, and then need to get the cache value not unmarshal
 					evt.KV = c.cache.Get(util.BytesToStringWithNoCopy(kv.Key))
 				} else {
 					evt.KV = c.doParse(kv)
@@ -157,6 +158,7 @@ func (c *KvCacher) handleWatcher(watcher Watcher) error {
 				continue
 			}
 			if evt.KV == nil {
+				log.Errorf(nil, "failed to parse KeyValue %v", kv)
 				continue
 			}
 			evts = append(evts, evt)
@@ -320,7 +322,18 @@ func (c *KvCacher) deferHandle(ctx context.Context) {
 	if c.Cfg.DeferHandler == nil {
 		return
 	}
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			c.handleDeferEvents(ctx)
+		}
+	}
+}
 
+func (c *KvCacher) handleDeferEvents(ctx context.Context) {
+	defer log.Recover()
 	var (
 		evts = make([]discovery.KvEvent, eventBlockSize)
 		i    int

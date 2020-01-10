@@ -208,3 +208,18 @@ func getEvents(t *testing.T, iedh *InstanceEventDeferHandler) {
 		break
 	}
 }
+
+func TestConvert(t *testing.T) {
+	value := discovery.NewKeyValue()
+	_, ok := value.Value.(*pb.MicroServiceInstance)
+	if ok {
+		t.Fatal("TestConvert failed")
+	}
+
+	var inst *pb.MicroServiceInstance = nil
+	value.Value = inst
+	_, ok = value.Value.(*pb.MicroServiceInstance)
+	if !ok {
+		t.Fatal("TestConvert failed")
+	}
+}

@@ -39,7 +39,6 @@ type mockCache struct {
 func (n *mockCache) Name() string                          { return "NULL" }
 func (n *mockCache) Size() int                             { return 0 }
 func (n *mockCache) GetAll(arr *[]*discovery.KeyValue) int { return 0 }
-
 func (n *mockCache) Get(k string) *discovery.KeyValue {
 	if k == n.Key {
 		return n.KV
@@ -68,6 +67,7 @@ func (n *mockCache) Remove(k string) {
 		n.KV = nil
 	}
 }
+func (n *mockCache) Clear() {}
 
 func TestNewKvCacher(t *testing.T) {
 	w := &mockWatcher{}

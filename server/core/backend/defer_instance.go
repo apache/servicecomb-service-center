@@ -63,6 +63,10 @@ func (iedh *InstanceEventDeferHandler) OnCondition(cache discovery.CacheReader, 
 }
 
 func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt discovery.KvEvent) {
+	if evt.KV == nil {
+		log.Errorf(nil, "defer or recover a %s nil KV", evt.Type)
+		return
+	}
 	kv := evt.KV
 	key := util.BytesToStringWithNoCopy(kv.Key)
 	_, ok := iedh.items[key]
@@ -79,6 +83,10 @@ func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt discovery.KvEvent) {
 		}
 
 		instance := kv.Value.(*pb.MicroServiceInstance)
+		if instance == nil {
+			log.Errorf(nil, "defer or recover a %s nil Value, KV is %v", evt.Type, kv)
+			return
+		}
 		ttl := instance.HealthCheck.Interval * (instance.HealthCheck.Times + 1)
 		if ttl <= 0 || ttl > selfPreservationMaxTTL {
 			ttl = selfPreservationMaxTTL
