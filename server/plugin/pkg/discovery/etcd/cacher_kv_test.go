@@ -67,9 +67,7 @@ func (n *mockCache) Remove(k string) {
 		n.KV = nil
 	}
 }
-func (n *mockCache) MarkDirty()  {}
-func (n *mockCache) Dirty() bool { return false }
-func (n *mockCache) Clear()      {}
+func (n *mockCache) Clear() {}
 
 func TestNewKvCacher(t *testing.T) {
 	w := &mockWatcher{}
