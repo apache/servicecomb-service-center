@@ -79,17 +79,40 @@ func (c *KvCacher) doList(cfg ListWatchConfig) error {
 
 	kvs := resp.Kvs
 	start := time.Now()
+	defer log.LogDebugOrWarnf(start, "finish to cache key %s, %d items, rev: %d",
+		c.Cfg.Key, len(kvs), c.lw.Revision())
+
+	// calc and return the diff between cache and ETCD
 	evts := c.filter(c.lw.Revision(), kvs)
+
+	// just reset the cacher if cache marked dirty
+	if c.cache.Dirty() {
+		c.reset(evts)
+		return nil
+	}
+
+	// there is no change between List() and cache, then stop the self preservation
 	if ec, kc := len(evts), len(kvs); c.Cfg.DeferHandler != nil && ec == 0 && kc != 0 &&
 		c.Cfg.DeferHandler.Reset() {
 		log.Warnf("most of the protected data(%d/%d) are recovered",
 			kc, c.cache.GetAll(nil))
 	}
-	c.sync(evts)
-	log.LogDebugOrWarnf(start, "finish to cache key %s, %d items, rev: %d",
-		c.Cfg.Key, len(kvs), c.lw.Revision())
 
+	// notify the subscribers
+	c.sync(evts)
 	return nil
+}
+
+func (c *KvCacher) reset(evts []discovery.KvEvent) {
+	if c.Cfg.DeferHandler != nil {
+		c.Cfg.DeferHandler.Reset()
+	}
+	// clear cache before Set is safe, because the watch operation is stop,
+	// but here will make all API requests go to ETCD directly.
+	c.cache.Clear()
+	// do not notify when cacher is dirty status,
+	// otherwise, too many events will notify to downstream.
+	c.buildCache(evts)
 }
 
 func (c *KvCacher) doWatch(cfg ListWatchConfig) error {
@@ -112,7 +135,7 @@ func (c *KvCacher) ListAndWatch(ctx context.Context) error {
 	// the scenario need to list etcd:
 	// 1. Initial: cache is building, the lister's revision is 0.
 	// 2. Runtime: error occurs in previous watch operation, the lister's revision is set to 0.
-	// 3. Runtime: no event comes in watch operation over DEFAULT_FORCE_LIST_INTERVAL times.
+	// 3. Runtime: watch operation timed out over DEFAULT_FORCE_LIST_INTERVAL times.
 	if c.needList() {
 		if err := c.doList(cfg); err != nil && (!c.IsReady() || c.lw.Revision() == 0) {
 			return err // do retry to list etcd
@@ -375,6 +398,11 @@ func (c *KvCacher) handleDeferEvents(ctx context.Context) {
 }
 
 func (c *KvCacher) onEvents(evts []discovery.KvEvent) {
+	c.buildCache(evts)
+	c.notify(evts)
+}
+
+func (c *KvCacher) buildCache(evts []discovery.KvEvent) {
 	init := !c.IsReady()
 	for i, evt := range evts {
 		key := util.BytesToStringWithNoCopy(evt.KV.Key)
@@ -409,9 +437,6 @@ func (c *KvCacher) onEvents(evts []discovery.KvEvent) {
 			evts[i] = evt
 		}
 	}
-
-	c.notify(evts)
-
 	discovery.ReportProcessEventCompleted(c.Cfg.Key, evts)
 }
 

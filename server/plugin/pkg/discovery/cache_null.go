@@ -32,6 +32,8 @@ func (n *nullCache) GetPrefix(prefix string, arr *[]*KeyValue) int        { retu
 func (n *nullCache) ForEach(iter func(k string, v *KeyValue) (next bool)) {}
 func (n *nullCache) Put(k string, v *KeyValue)                            {}
 func (n *nullCache) Remove(k string)                                      {}
+func (n *nullCache) MarkDirty()                                           {}
+func (n *nullCache) Dirty() bool                                          { return false }
 func (n *nullCache) Clear()                                               {}
 
 type nullCacher struct {

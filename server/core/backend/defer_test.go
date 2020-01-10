@@ -41,7 +41,6 @@ func (n *mockCache) GetAll(arr *[]*discovery.KeyValue) (i int) {
 func (n *mockCache) GetPrefix(prefix string, arr *[]*discovery.KeyValue) int        { return 0 }
 func (n *mockCache) ForEach(iter func(k string, v *discovery.KeyValue) (next bool)) {}
 func (n *mockCache) Put(k string, v *discovery.KeyValue)                            { n.c[k] = v }
-func (n *mockCache) Remove(k string)                                                { delete(n.c, k) }
 
 func TestInstanceEventDeferHandler_OnCondition(t *testing.T) {
 	iedh := &InstanceEventDeferHandler{
