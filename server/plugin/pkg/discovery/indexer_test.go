@@ -49,7 +49,6 @@ func (n *mockCache) Put(k string, v *KeyValue) {
 	n.Key = k
 	n.KV = v
 }
-func (n *mockCache) Remove(k string) {}
 
 func TestCacheIndexer_Search(t *testing.T) {
 	c := &mockCache{}

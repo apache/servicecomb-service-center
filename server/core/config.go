@@ -37,6 +37,7 @@ const (
 
 	minServiceClearInterval = 30 * time.Second
 	minServiceTTL           = 30 * time.Second
+	minCacheTTL             = 5 * time.Minute
 
 	maxServiceClearInterval = 24 * time.Hour       //1 day
 	maxServiceTTL           = 24 * 365 * time.Hour //1 year
@@ -76,6 +77,12 @@ func newInfo() pb.ServerInformation {
 		serviceTTL = defaultServiceTTL
 	}
 
+	cacheTTL, err := time.ParseDuration(
+		util.GetEnvString("CACHE_TTL", beego.AppConfig.DefaultString("cache_ttl", "")))
+	if err == nil && cacheTTL < minCacheTTL {
+		cacheTTL = minCacheTTL
+	}
+
 	return pb.ServerInformation{
 		Version: InitVersion,
 		Config: pb.ServerConfig{
@@ -113,6 +120,7 @@ func newInfo() pb.ServerInformation {
 
 			EnablePProf:  beego.AppConfig.DefaultInt("enable_pprof", 0) != 0,
 			EnableCache:  beego.AppConfig.DefaultInt("enable_cache", 1) != 0,
+			CacheTTL:     cacheTTL,
 			SelfRegister: beego.AppConfig.DefaultInt("self_register", 1) != 0,
 
 			ServiceClearEnabled:  os.Getenv("SERVICE_CLEAR_ENABLED") == "true",

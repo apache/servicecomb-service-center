@@ -30,6 +30,12 @@ type Cache interface {
 	Put(k string, v *KeyValue)
 	// Remove removes a k-v data
 	Remove(k string)
+	// MarkDirty mark k-v data dirty
+	MarkDirty()
+	// Dirty k-v data is dirty or not
+	Dirty() bool
+	// Clear clear all k-v data
+	Clear()
 }
 
 // CacheReader reads k-v data.
