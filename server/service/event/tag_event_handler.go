@@ -92,6 +92,9 @@ func (apt *TagsChangedTask) publish(ctx context.Context, domainProject, consumer
 	return nil
 }
 
+// TagEventHandler is the handler to handle:
+// 1. publish the EVT_EXPIRE event to subscribers when tag is changed
+// 2. reset the find instance cache
 type TagEventHandler struct {
 }
 

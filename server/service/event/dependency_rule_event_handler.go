@@ -25,6 +25,8 @@ import (
 	"github.com/apache/servicecomb-service-center/server/service/cache"
 )
 
+// DependencyRuleEventHandler reset the find instances cache
+// when provider dependency rule is changed
 type DependencyRuleEventHandler struct {
 }
 

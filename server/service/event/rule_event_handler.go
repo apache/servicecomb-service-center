@@ -79,6 +79,9 @@ func (apt *RulesChangedTask) publish(ctx context.Context, domainProject, provide
 	return nil
 }
 
+// RuleEventHandler is the handler to handle:
+// 1. publish the EVT_EXPIRE event to subscribers when rule is changed
+// 2. reset the find instance cache
 type RuleEventHandler struct {
 }
 

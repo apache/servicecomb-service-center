@@ -31,6 +31,8 @@ var (
 	SharedServiceIds util.ConcurrentMap
 )
 
+// ServiceIndexEventHandler counting the number of services
+// Deprecated: Use metrics instead.
 type ServiceIndexEventHandler struct {
 }
 
@@ -58,6 +60,8 @@ func NewServiceIndexEventHandler() *ServiceIndexEventHandler {
 	return &ServiceIndexEventHandler{}
 }
 
+// InstanceEventHandler counting the number of instances
+// Deprecated: Use metrics instead.
 type InstanceEventHandler struct {
 	SharedServiceIds map[string]struct{}
 }

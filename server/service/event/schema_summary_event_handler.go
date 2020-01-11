@@ -25,6 +25,7 @@ import (
 	"strings"
 )
 
+// SchemaSummaryEventHandler report schema metrics
 type SchemaSummaryEventHandler struct {
 }
 
