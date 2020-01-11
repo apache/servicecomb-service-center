@@ -31,6 +31,11 @@ import (
 	"strings"
 )
 
+const (
+	increaseOne = 1
+	decreaseOne = -1
+)
+
 type InstanceEventHandler struct {
 }
 
@@ -46,10 +51,10 @@ func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
 	domainName := domainProject[:idx]
 	projectName := domainProject[idx+1:]
 
-	var add float64 = 1
+	var count float64 = increaseOne
 	switch action {
 	case pb.EVT_INIT:
-		metrics.ReportInstances(domainName, add)
+		metrics.ReportInstances(domainName, count)
 		ms := serviceUtil.GetServiceFromCache(domainProject, providerId)
 		if ms == nil {
 			log.Warnf("caught [%s] instance[%s/%s] event, endpoints %v, get cached provider's file failed",
@@ -57,13 +62,13 @@ func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
 			return
 		}
 		frameworkName, frameworkVersion := getFramework(ms)
-		metrics.ReportFramework(domainName, projectName, frameworkName, frameworkVersion, add)
+		metrics.ReportFramework(domainName, projectName, frameworkName, frameworkVersion, count)
 		return
 	case pb.EVT_CREATE:
-		metrics.ReportInstances(domainName, add)
+		metrics.ReportInstances(domainName, count)
 	case pb.EVT_DELETE:
-		add = -1
-		metrics.ReportInstances(domainName, add)
+		count = decreaseOne
+		metrics.ReportInstances(domainName, count)
 		if !apt.IsDefaultDomainProject(domainProject) {
 			projectName := domainProject[idx+1:]
 			serviceUtil.RemandInstanceQuota(
@@ -89,7 +94,7 @@ func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
 	}
 
 	frameworkName, frameworkVersion := getFramework(ms)
-	metrics.ReportFramework(domainName, projectName, frameworkName, frameworkVersion, add)
+	metrics.ReportFramework(domainName, projectName, frameworkName, frameworkVersion, count)
 
 	log.Infof("caught [%s] service[%s][%s/%s/%s/%s] instance[%s] event, endpoints %v",
 		action, providerId, ms.Environment, ms.AppId, ms.ServiceName, ms.Version,
