@@ -52,7 +52,6 @@ func (i *CacheIndexer) Search(ctx context.Context, opts ...registry.PluginOpOpti
 	if resp.Count > 0 || op.CacheOnly() {
 		return resp, nil
 	}
-
 	return i.EtcdIndexer.Search(ctx, opts...)
 }
 

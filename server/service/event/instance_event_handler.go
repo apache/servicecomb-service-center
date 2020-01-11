@@ -36,6 +36,11 @@ const (
 	decreaseOne = -1
 )
 
+// InstanceEventHandler is the handler to handle:
+// 1. report instance metrics
+// 2. recover the instance quota
+// 3. publish the instance events to the subscribers
+// 4. reset the find instance cache
 type InstanceEventHandler struct {
 }
 

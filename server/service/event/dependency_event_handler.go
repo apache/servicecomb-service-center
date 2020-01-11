@@ -34,6 +34,10 @@ import (
 	"time"
 )
 
+const defaultEventHandleInterval = 5 * time.Minute
+
+// DependencyEventHandler add or remove the service dependencies
+// when user call find instance api or dependence operation api
 type DependencyEventHandler struct {
 	signals *queue.UniQueue
 }
@@ -63,6 +67,7 @@ func (h *DependencyEventHandler) backoff(f func(), retries int) int {
 }
 
 func (h *DependencyEventHandler) tryWithBackoff(success func() error, backoff func(), retries int) (error, int) {
+	defer log.Recover()
 	lock, err := mux.Try(mux.DepQueueLock)
 	if err != nil {
 		log.Errorf(err, "try to lock %s failed", mux.DepQueueLock)
@@ -73,8 +78,8 @@ func (h *DependencyEventHandler) tryWithBackoff(success func() error, backoff fu
 		return nil, 0
 	}
 
+	defer lock.Unlock()
 	err = success()
-	lock.Unlock()
 	if err != nil {
 		log.Errorf(err, "handle dependency event failed")
 		return err, h.backoff(backoff, retries)
@@ -85,6 +90,12 @@ func (h *DependencyEventHandler) tryWithBackoff(success func() error, backoff fu
 
 func (h *DependencyEventHandler) eventLoop() {
 	gopool.Go(func(ctx context.Context) {
+		// the events will lose, need to handle dependence records periodically
+		period := defaultEventHandleInterval
+		if core.ServerInfo.Config.CacheTTL > 0 {
+			period = core.ServerInfo.Config.CacheTTL
+		}
+		timer := time.NewTimer(period)
 		retries := 0
 		for {
 			select {
@@ -92,6 +103,10 @@ func (h *DependencyEventHandler) eventLoop() {
 				return
 			case <-h.signals.Chan():
 				_, retries = h.tryWithBackoff(h.Handle, h.notify, retries)
+				util.ResetTimer(timer, period)
+			case <-timer.C:
+				h.notify()
+				timer.Reset(period)
 			}
 		}
 	})

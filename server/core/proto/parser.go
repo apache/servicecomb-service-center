@@ -17,7 +17,13 @@ package proto
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+)
+
+var (
+	errParseNilPoint  = errors.New("parse nil point")
+	errTargetNilPoint = errors.New("target is nil point")
 )
 
 // new
@@ -40,21 +46,33 @@ type ParseValueFunc func(src []byte, dist interface{}) error
 
 var (
 	UnParse ParseValueFunc = func(src []byte, dist interface{}) error {
+		if err := check(src, dist); err != nil {
+			return err
+		}
 		d := dist.(*interface{})
 		*d = src
 		return nil
 	}
 	TextUnmarshal ParseValueFunc = func(src []byte, dist interface{}) error {
+		if err := check(src, dist); err != nil {
+			return err
+		}
 		d := dist.(*interface{})
 		*d = util.BytesToStringWithNoCopy(src)
 		return nil
 	}
 	MapUnmarshal ParseValueFunc = func(src []byte, dist interface{}) error {
+		if err := check(src, dist); err != nil {
+			return err
+		}
 		d := dist.(*interface{})
 		m := (*d).(map[string]string)
 		return json.Unmarshal(src, &m)
 	}
 	JsonUnmarshal ParseValueFunc = func(src []byte, dist interface{}) error {
+		if err := check(src, dist); err != nil {
+			return err
+		}
 		d := dist.(*interface{})
 		return json.Unmarshal(src, *d)
 	}
@@ -89,3 +107,13 @@ var (
 	DependencyRuleParser  = &CommonParser{newDependencyRule, JsonUnmarshal}
 	DependencyQueueParser = &CommonParser{newDependencyQueue, JsonUnmarshal}
 )
+
+func check(src []byte, dist interface{}) error {
+	if src == nil {
+		return errParseNilPoint
+	}
+	if dist == nil {
+		return errTargetNilPoint
+	}
+	return nil
+}

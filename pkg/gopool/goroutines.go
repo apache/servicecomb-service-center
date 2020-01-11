@@ -75,6 +75,7 @@ func (g *Pool) execute(f func(ctx context.Context)) {
 	f(g.ctx)
 }
 
+// Do pick one idle goroutine to do the f once
 func (g *Pool) Do(f func(context.Context)) *Pool {
 	defer log.Recover()
 	select {

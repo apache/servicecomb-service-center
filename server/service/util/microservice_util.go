@@ -110,11 +110,8 @@ func GetAllServicesAcrossDomainProject(ctx context.Context) (map[string][]*pb.Mi
 		domainProject := parts[4] + apt.SPLIT + parts[5]
 		microService, ok := value.Value.(*pb.MicroService)
 		if !ok {
-			log.Error("backend data is not type *pb.MicroService", nil)
+			log.Errorf(nil, "backend key[%s]'s value is not type *pb.MicroService", prefix)
 			continue
-		}
-		if _, ok := services[domainProject]; !ok {
-			services[domainProject] = make([]*pb.MicroService, 0)
 		}
 		services[domainProject] = append(services[domainProject], microService)
 	}
