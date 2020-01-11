@@ -29,6 +29,10 @@ import (
 	"strings"
 )
 
+// ServiceEventHandler is the handler to handle:
+// 1. report service metrics
+// 2. save the new domain & project mapping
+// 3. reset the find instance cache
 type ServiceEventHandler struct {
 }
 

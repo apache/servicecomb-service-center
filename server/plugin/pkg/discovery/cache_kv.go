@@ -20,19 +20,17 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"strings"
 	"sync"
-	"time"
 )
 
 // KvCache implements Cache.
 // KvCache is dedicated to stores service discovery data,
 // e.g. service, instance, lease.
 type KvCache struct {
-	Cfg         *Config
-	name        string
-	store       map[string]map[string]*KeyValue
-	rwMux       sync.RWMutex
-	lastRefresh time.Time
-	lastMaxSize int
+	Cfg   *Config
+	name  string
+	store map[string]map[string]*KeyValue
+	rwMux sync.RWMutex
+	dirty bool
 }
 
 func (c *KvCache) Name() string {
@@ -79,6 +77,19 @@ func (c *KvCache) Put(key string, v *KeyValue) {
 func (c *KvCache) Remove(key string) {
 	c.rwMux.Lock()
 	c.deletePrefixKey(key)
+	c.rwMux.Unlock()
+}
+
+func (c *KvCache) MarkDirty() {
+	c.dirty = true
+}
+
+func (c *KvCache) Dirty() bool { return c.dirty }
+
+func (c *KvCache) Clear() {
+	c.rwMux.Lock()
+	c.dirty = false
+	c.store = make(map[string]map[string]*KeyValue)
 	c.rwMux.Unlock()
 }
 
@@ -176,9 +187,8 @@ func (c *KvCache) deletePrefixKey(key string) {
 
 func NewKvCache(name string, cfg *Config) *KvCache {
 	return &KvCache{
-		Cfg:         cfg,
-		name:        name,
-		store:       make(map[string]map[string]*KeyValue),
-		lastRefresh: time.Now(),
+		Cfg:   cfg,
+		name:  name,
+		store: make(map[string]map[string]*KeyValue),
 	}
 }

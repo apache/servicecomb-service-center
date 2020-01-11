@@ -23,6 +23,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/service/metrics"
 )
 
+// DomainEventHandler report domain & project total number
 type DomainEventHandler struct {
 }
 

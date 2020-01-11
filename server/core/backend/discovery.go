@@ -22,11 +22,13 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/task"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 	"golang.org/x/net/context"
 	"sync"
+	"time"
 )
 
 var store = &KvStore{}
@@ -84,6 +86,7 @@ func (s *KvStore) getOrCreateAdaptor(t discovery.Type) discovery.Adaptor {
 
 func (s *KvStore) Run() {
 	s.goroutine.Do(s.store)
+	s.goroutine.Do(s.autoClearCache)
 	s.taskService.Run()
 }
 
@@ -100,6 +103,30 @@ func (s *KvStore) store(ctx context.Context) {
 	util.SafeCloseChan(s.ready)
 
 	log.Debugf("all adaptors are ready")
+}
+
+func (s *KvStore) autoClearCache(ctx context.Context) {
+	if core.ServerInfo.Config.CacheTTL == 0 {
+		return
+	}
+
+	log.Infof("start auto clear cache in %v", core.ServerInfo.Config.CacheTTL)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(core.ServerInfo.Config.CacheTTL):
+			for _, t := range discovery.Types {
+				cache, ok := s.getOrCreateAdaptor(t).Cache().(discovery.Cache)
+				if !ok {
+					log.Error("the discovery adaptor does not implement the Cache", nil)
+					continue
+				}
+				cache.MarkDirty()
+			}
+			log.Warnf("caches are marked dirty!")
+		}
+	}
 }
 
 func (s *KvStore) closed() bool {

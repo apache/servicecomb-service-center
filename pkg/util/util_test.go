@@ -172,3 +172,10 @@ func TestGetEnvString(t *testing.T) {
 		t.Fatalf("TestGetEnvInt failed")
 	}
 }
+
+func TestBytesToStringWithNoCopy(t *testing.T) {
+	s := BytesToStringWithNoCopy(nil)
+	if s != "" {
+		t.Fatal("TestBytesToStringWithNoCopy failed")
+	}
+}
