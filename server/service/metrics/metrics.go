@@ -21,12 +21,21 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+// keys of gauge
+const (
+	KeyDomainTotal    = "domain_total"
+	KeyServiceTotal   = "service_total"
+	KeyInstanceTotal  = "instance_total"
+	KeySchemaTotal    = "schema_total"
+	KeyFrameworkTotal = "framework_total"
+)
+
 var (
 	domainCounter = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: metric.FamilyName,
 			Subsystem: "db",
-			Name:      "domain_total",
+			Name:      KeyDomainTotal,
 			Help:      "Gauge of domain created in Service Center",
 		}, []string{"instance"})
 
@@ -34,7 +43,7 @@ var (
 		prometheus.GaugeOpts{
 			Namespace: metric.FamilyName,
 			Subsystem: "db",
-			Name:      "service_total",
+			Name:      KeyServiceTotal,
 			Help:      "Gauge of microservice created in Service Center",
 		}, []string{"instance", "framework", "frameworkVersion", "domain"})
 
@@ -42,7 +51,7 @@ var (
 		prometheus.GaugeOpts{
 			Namespace: metric.FamilyName,
 			Subsystem: "db",
-			Name:      "instance_total",
+			Name:      KeyInstanceTotal,
 			Help:      "Gauge of microservice created in Service Center",
 		}, []string{"instance", "domain"})
 
@@ -50,13 +59,21 @@ var (
 		prometheus.GaugeOpts{
 			Namespace: metric.FamilyName,
 			Subsystem: "db",
-			Name:      "schema_total",
+			Name:      KeySchemaTotal,
 			Help:      "Gauge of schema created in Service Center",
 		}, []string{"instance", "domain"})
+
+	frameworkCounter = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: metric.FamilyName,
+			Subsystem: "db",
+			Name:      KeyFrameworkTotal,
+			Help:      "Gauge of client framework info in Service Center",
+		}, []string{"domainName", "projectName", "framework", "frameworkVersion"})
 )
 
 func init() {
-	prometheus.MustRegister(domainCounter, serviceCounter, instanceCounter, schemaCounter)
+	prometheus.MustRegister(domainCounter, serviceCounter, instanceCounter, schemaCounter, frameworkCounter)
 }
 
 func ReportDomains(c float64) {
@@ -77,4 +94,8 @@ func ReportInstances(domain string, c float64) {
 func ReportSchemas(domain string, c float64) {
 	instance := metric.InstanceName()
 	schemaCounter.WithLabelValues(instance, domain).Add(c)
+}
+
+func ReportFramework(domainName, projectName string, framework, frameworkVersion string, c float64) {
+	frameworkCounter.WithLabelValues(domainName, projectName, framework, frameworkVersion).Add(c)
 }

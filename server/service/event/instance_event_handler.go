@@ -31,6 +31,11 @@ import (
 	"strings"
 )
 
+const (
+	increaseOne = 1
+	decreaseOne = -1
+)
+
 // InstanceEventHandler is the handler to handle:
 // 1. report instance metrics
 // 2. recover the instance quota
@@ -49,14 +54,26 @@ func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
 	providerId, providerInstanceId, domainProject := apt.GetInfoFromInstKV(evt.KV.Key)
 	idx := strings.Index(domainProject, "/")
 	domainName := domainProject[:idx]
+	projectName := domainProject[idx+1:]
+
+	var count float64 = increaseOne
 	switch action {
 	case pb.EVT_INIT:
-		metrics.ReportInstances(domainName, 1)
+		metrics.ReportInstances(domainName, count)
+		ms := serviceUtil.GetServiceFromCache(domainProject, providerId)
+		if ms == nil {
+			log.Warnf("caught [%s] instance[%s/%s] event, endpoints %v, get cached provider's file failed",
+				action, providerId, providerInstanceId, instance.Endpoints)
+			return
+		}
+		frameworkName, frameworkVersion := getFramework(ms)
+		metrics.ReportFramework(domainName, projectName, frameworkName, frameworkVersion, count)
 		return
 	case pb.EVT_CREATE:
-		metrics.ReportInstances(domainName, 1)
+		metrics.ReportInstances(domainName, count)
 	case pb.EVT_DELETE:
-		metrics.ReportInstances(domainName, -1)
+		count = decreaseOne
+		metrics.ReportInstances(domainName, count)
 		if !apt.IsDefaultDomainProject(domainProject) {
 			projectName := domainProject[idx+1:]
 			serviceUtil.RemandInstanceQuota(
@@ -80,6 +97,9 @@ func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
 			action, providerId, providerInstanceId, instance.Endpoints)
 		return
 	}
+
+	frameworkName, frameworkVersion := getFramework(ms)
+	metrics.ReportFramework(domainName, projectName, frameworkName, frameworkVersion, count)
 
 	log.Infof("caught [%s] service[%s][%s/%s/%s/%s] instance[%s] event, endpoints %v",
 		action, providerId, ms.Environment, ms.AppId, ms.ServiceName, ms.Version,
@@ -116,6 +136,9 @@ func PublishInstanceEvent(evt discovery.KvEvent, domainProject string, serviceKe
 	for _, consumerId := range subscribers {
 		// TODO add超时怎么处理？
 		job := notify.NewInstanceEventWithTime(consumerId, domainProject, evt.Revision, evt.CreateAt, response)
-		notify.NotifyCenter().Publish(job)
+		err := notify.NotifyCenter().Publish(job)
+		if err != nil {
+			log.Errorf(err, "publish job failed")
+		}
 	}
 }
