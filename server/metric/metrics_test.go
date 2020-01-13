@@ -97,8 +97,7 @@ func TestDetails_ForEach(t *testing.T) {
 
 func TestToRawData(t *testing.T) {
 	type Hello struct {
-		A     string  `json:"a"`
-		Count float64 `json:"count"`
+		A string `json:"a"`
 	}
 	result := new(Hello)
 	a := "a"
@@ -106,9 +105,9 @@ func TestToRawData(t *testing.T) {
 	labels := []*dto.LabelPair{
 		{Name: &a, Value: &b},
 	}
-	ToRawData(result, labels, 5)
+	ToRawData(result, labels)
 
-	if result.A != "b" || result.Count != 5 {
+	if result.A != "b" {
 		t.Fatalf("To raw data failed, %v", *result)
 	}
 

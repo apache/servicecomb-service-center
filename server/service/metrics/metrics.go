@@ -89,11 +89,10 @@ var (
 )
 
 type FrameworkCounter struct {
-	DomainName       string  `json:"domainName"`
-	ProjectName      string  `json:"projectName"`
-	FrameWork        string  `json:"framework"`
-	FrameworkVersion string  `json:"frameworkVersion"`
-	Count            float64 `json:"count"`
+	DomainName       string `json:"domainName"`
+	ProjectName      string `json:"projectName"`
+	FrameWork        string `json:"framework"`
+	FrameworkVersion string `json:"frameworkVersion"`
 }
 
 func init() {

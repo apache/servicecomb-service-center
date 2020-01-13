@@ -122,24 +122,12 @@ func (cm *Metrics) Summary(key string) (sum float64) {
 	return
 }
 
-// ParseMetricsWithKey parses info from records
-func ParseMetricsWithKey(key string, scan func(labels []*dto.LabelPair, v float64) (next bool)) {
-	data := Gatherer.Records.Get(key)
-	if data == nil {
-		return
-	}
-
-	data.ForEach(func(labels []*dto.LabelPair, v float64) (next bool) {
-		return scan(labels, v)
-	})
-}
-
 const (
-	labelCount = "count"
+	tagJson = "json"
 )
 
 // ToRawData parses result form labels
-func ToRawData(result interface{}, labels []*dto.LabelPair, v float64) {
+func ToRawData(result interface{}, labels []*dto.LabelPair) {
 	if reflect.TypeOf(result).Kind() != reflect.Ptr {
 		return
 	}
@@ -148,16 +136,12 @@ func ToRawData(result interface{}, labels []*dto.LabelPair, v float64) {
 	value := reflect.ValueOf(result).Elem()
 
 	for i := 0; i < t.NumField(); i++ {
-		tag := t.Field(i).Tag.Get("json")
-
-		kind := t.Kind()
-		if tag == labelCount && kind != reflect.Float64 {
-			value.Field(i).SetFloat(v)
+		if t.Field(i).Type.Kind() != reflect.String {
 			continue
 		}
-
+		tag := t.Field(i).Tag.Get(tagJson)
 		for _, label := range labels {
-			if *label.Name == tag && kind != reflect.String {
+			if *label.Name == tag {
 				value.Field(i).SetString(*label.Value)
 			}
 		}
@@ -174,10 +158,7 @@ func ToLabelNames(structure interface{}) []string {
 	num := t.NumField()
 	labelNames := make([]string, 0, num)
 	for i := 0; i < num; i++ {
-		tag := t.Field(i).Tag.Get("json")
-		if tag == labelCount {
-			continue
-		}
+		tag := t.Field(i).Tag.Get(tagJson)
 		labelNames = append(labelNames, tag)
 	}
 	return labelNames
