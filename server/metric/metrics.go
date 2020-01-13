@@ -128,18 +128,19 @@ const (
 
 // ToRawData parses result form labels
 func ToRawData(result interface{}, labels []*dto.LabelPair) {
-	if reflect.TypeOf(result).Kind() != reflect.Ptr {
+	t := reflect.TypeOf(result)
+	if t.Kind() != reflect.Ptr {
 		return
 	}
 
-	t := reflect.TypeOf(result).Elem()
+	elem := t.Elem()
 	value := reflect.ValueOf(result).Elem()
 
-	for i := 0; i < t.NumField(); i++ {
-		if t.Field(i).Type.Kind() != reflect.String {
+	for i := 0; i < elem.NumField(); i++ {
+		if elem.Field(i).Type.Kind() != reflect.String {
 			continue
 		}
-		tag := t.Field(i).Tag.Get(tagJson)
+		tag := elem.Field(i).Tag.Get(tagJson)
 		for _, label := range labels {
 			if *label.Name == tag {
 				value.Field(i).SetString(*label.Value)
