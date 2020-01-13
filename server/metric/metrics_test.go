@@ -18,6 +18,7 @@ package metric
 
 import (
 	dto "github.com/prometheus/client_model/go"
+	"reflect"
 	"testing"
 )
 
@@ -91,5 +92,28 @@ func TestDetails_ForEach(t *testing.T) {
 	})
 	if !find {
 		t.Fatalf("TestMetrics_ForEach failed")
+	}
+}
+
+func TestToRawData(t *testing.T) {
+	type Hello struct {
+		A     string  `json:"a"`
+		Count float64 `json:"count"`
+	}
+	result := new(Hello)
+	a := "a"
+	b := "b"
+	labels := []*dto.LabelPair{
+		{Name: &a, Value: &b},
+	}
+	ToRawData(result, labels, 5)
+
+	if result.A != "b" || result.Count != 5 {
+		t.Fatalf("To raw data failed, %v", *result)
+	}
+
+	data := ToLabelNames(Hello{})
+	if !reflect.DeepEqual(data, []string{"a"}) {
+		t.Fatalf("to label names failed")
 	}
 }

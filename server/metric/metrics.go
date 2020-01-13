@@ -17,9 +17,11 @@
 package metric
 
 import (
+	"reflect"
+	"strings"
+
 	"github.com/apache/servicecomb-service-center/pkg/buffer"
 	dto "github.com/prometheus/client_model/go"
-	"strings"
 )
 
 func NewMetrics() *Metrics {
@@ -118,4 +120,65 @@ func (cm *Metrics) Summary(key string) (sum float64) {
 		sum = v.Summary
 	}
 	return
+}
+
+// ParseMetricsWithKey parses info from records
+func ParseMetricsWithKey(key string, scan func(labels []*dto.LabelPair, v float64) (next bool)) {
+	data := Gatherer.Records.Get(key)
+	if data == nil {
+		return
+	}
+
+	data.ForEach(func(labels []*dto.LabelPair, v float64) (next bool) {
+		return scan(labels, v)
+	})
+}
+
+const (
+	labelCount = "count"
+)
+
+// ToRawData parses result form labels
+func ToRawData(result interface{}, labels []*dto.LabelPair, v float64) {
+	if reflect.TypeOf(result).Kind() != reflect.Ptr {
+		return
+	}
+
+	t := reflect.TypeOf(result).Elem()
+	value := reflect.ValueOf(result).Elem()
+
+	for i := 0; i < t.NumField(); i++ {
+		tag := t.Field(i).Tag.Get("json")
+
+		kind := t.Kind()
+		if tag == labelCount && kind != reflect.Float64 {
+			value.Field(i).SetFloat(v)
+			continue
+		}
+
+		for _, label := range labels {
+			if *label.Name == tag && kind != reflect.String {
+				value.Field(i).SetString(*label.Value)
+			}
+		}
+	}
+}
+
+// ToLabelNames returns label names, count is special label of v of func ForEach
+func ToLabelNames(structure interface{}) []string {
+	t := reflect.TypeOf(structure)
+	if t.Kind() != reflect.Struct {
+		return nil
+	}
+
+	num := t.NumField()
+	labelNames := make([]string, 0, num)
+	for i := 0; i < num; i++ {
+		tag := t.Field(i).Tag.Get("json")
+		if tag == labelCount {
+			continue
+		}
+		labelNames = append(labelNames, tag)
+	}
+	return labelNames
 }
