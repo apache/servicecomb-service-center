@@ -38,14 +38,6 @@ func Key(name string) string {
 	return util.StringJoin([]string{SubSystem, name}, "_")
 }
 
-type GaugeOptsWrapper struct {
-	prometheus.GaugeOpts
-}
-
-func (w *GaugeOptsWrapper) Key() string {
-	return util.StringJoin([]string{w.Subsystem, w.Name}, "_")
-}
-
 var (
 	domainCounter = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -85,10 +77,11 @@ var (
 			Subsystem: SubSystem,
 			Name:      KeyFrameworkTotal,
 			Help:      "Gauge of client framework info in Service Center",
-		}, metric.ToLabelNames(FrameworkCounter{}))
+		}, metric.ToLabelNames(Framework{}))
 )
 
-type FrameworkCounter struct {
+// Framework return framework info.
+type Framework struct {
 	DomainName       string `json:"domainName"`
 	ProjectName      string `json:"projectName"`
 	FrameWork        string `json:"framework"`
