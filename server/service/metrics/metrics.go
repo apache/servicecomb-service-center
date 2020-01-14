@@ -17,6 +17,7 @@
 package metrics
 
 import (
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/metric"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -28,13 +29,20 @@ const (
 	KeyInstanceTotal  = "instance_total"
 	KeySchemaTotal    = "schema_total"
 	KeyFrameworkTotal = "framework_total"
+
+	SubSystem = "db"
 )
+
+// Key return metrics key
+func Key(name string) string {
+	return util.StringJoin([]string{SubSystem, name}, "_")
+}
 
 var (
 	domainCounter = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: metric.FamilyName,
-			Subsystem: "db",
+			Subsystem: SubSystem,
 			Name:      KeyDomainTotal,
 			Help:      "Gauge of domain created in Service Center",
 		}, []string{"instance"})
@@ -50,7 +58,7 @@ var (
 	instanceCounter = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: metric.FamilyName,
-			Subsystem: "db",
+			Subsystem: SubSystem,
 			Name:      KeyInstanceTotal,
 			Help:      "Gauge of microservice created in Service Center",
 		}, []string{"instance", "domain"})
@@ -58,7 +66,7 @@ var (
 	schemaCounter = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: metric.FamilyName,
-			Subsystem: "db",
+			Subsystem: SubSystem,
 			Name:      KeySchemaTotal,
 			Help:      "Gauge of schema created in Service Center",
 		}, []string{"instance", "domain"})
@@ -66,11 +74,19 @@ var (
 	frameworkCounter = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: metric.FamilyName,
-			Subsystem: "db",
+			Subsystem: SubSystem,
 			Name:      KeyFrameworkTotal,
 			Help:      "Gauge of client framework info in Service Center",
-		}, []string{"domainName", "projectName", "framework", "frameworkVersion"})
+		}, metric.ToLabelNames(Framework{}))
 )
+
+// Framework return framework info.
+type Framework struct {
+	DomainName       string `json:"domainName"`
+	ProjectName      string `json:"projectName"`
+	FrameWork        string `json:"framework"`
+	FrameworkVersion string `json:"frameworkVersion"`
+}
 
 func init() {
 	prometheus.MustRegister(domainCounter, serviceCounter, instanceCounter, schemaCounter, frameworkCounter)
