@@ -61,6 +61,9 @@ type Config struct {
 	// days
 	LogBackupAge int
 	CallerSkip   int
+	EnableTime   bool // whether to record time
+	EnableLevel  bool // whether to record level
+	EnableCaller bool // whether to record caller
 }
 
 func (cfg Config) WithCallerSkip(s int) Config {
@@ -78,6 +81,9 @@ func Configure() Config {
 		LoggerLevel:   defaultLogLevel,
 		LogFormatText: true,
 		CallerSkip:    globalCallerSkip,
+		EnableTime:    true,
+		EnableLevel:   true,
+		EnableCaller:  true,
 	}
 }
 
@@ -105,6 +111,16 @@ func toZapConfig(c Config) zapcore.Core {
 		EncodeDuration: zapcore.StringDurationEncoder,
 		EncodeCaller:   zapcore.ShortCallerEncoder,
 		EncodeName:     zapcore.FullNameEncoder,
+	}
+	if !c.EnableCaller {
+		format.CallerKey = ""
+	}
+	if !c.EnableLevel {
+		format.LevelKey = ""
+		levelEnabler = func(_ zapcore.Level) bool { return true }
+	}
+	if !c.EnableTime {
+		format.TimeKey = ""
 	}
 	var enc zapcore.Encoder
 	if c.LogFormatText {
@@ -222,11 +238,12 @@ func (l *Logger) Sync() {
 }
 
 func NewLogger(cfg Config) *Logger {
-	l := zap.New(toZapConfig(cfg),
-		zap.ErrorOutput(StderrSyncer),
-		zap.AddCaller(),
-		zap.AddCallerSkip(cfg.CallerSkip),
-	)
+	opts := make([]zap.Option, 0)
+	opts = append(opts, zap.ErrorOutput(StderrSyncer))
+	if cfg.EnableCaller {
+		opts = append(opts, zap.AddCaller(), zap.AddCallerSkip(cfg.CallerSkip))
+	}
+	l := zap.New(toZapConfig(cfg), opts...)
 	return &Logger{
 		Config:    cfg,
 		zapLogger: l,
