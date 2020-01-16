@@ -13,8 +13,16 @@ import (
 )
 
 func TestHandler(t *testing.T) {
+	// add white list apis, ignore
 	l := log.NewLogger(log.Config{})
-	h := accesslog.NewAccessLogHandler(l, map[string]struct{}{})
+	h := accesslog.NewAccessLogHandler(l)
+	testAPI := "testAPI"
+	h.AddWhiteListAPIs(testAPI)
+	if !h.ShouldIgnoreAPI(testAPI) {
+		t.Fatalf("Should ignore API: %s", testAPI)
+	}
+
+	// handle
 	inv := &chain.Invocation{}
 	ctx := context.Background()
 	inv.Init(ctx, chain.NewChain("c", []chain.Handler{}))

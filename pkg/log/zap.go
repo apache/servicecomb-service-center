@@ -61,9 +61,9 @@ type Config struct {
 	// days
 	LogBackupAge int
 	CallerSkip   int
-	EnableTime   bool // whether to record time
-	EnableLevel  bool // whether to record level
-	EnableCaller bool // whether to record caller
+	NoTime       bool // if true, not record time
+	NoLevel      bool // if true, not record level
+	NoCaller     bool // if true, not record caller
 }
 
 func (cfg Config) WithCallerSkip(s int) Config {
@@ -76,14 +76,26 @@ func (cfg Config) WithFile(path string) Config {
 	return cfg
 }
 
+func (cfg Config) WithNoTime(b bool) Config {
+	cfg.NoTime = b
+	return cfg
+}
+
+func (cfg Config) WithNoLevel(b bool) Config {
+	cfg.NoLevel = b
+	return cfg
+}
+
+func (cfg Config) WithNoCaller(b bool) Config {
+	cfg.NoCaller = b
+	return cfg
+}
+
 func Configure() Config {
 	return Config{
 		LoggerLevel:   defaultLogLevel,
 		LogFormatText: true,
 		CallerSkip:    globalCallerSkip,
-		EnableTime:    true,
-		EnableLevel:   true,
-		EnableCaller:  true,
 	}
 }
 
@@ -112,14 +124,14 @@ func toZapConfig(c Config) zapcore.Core {
 		EncodeCaller:   zapcore.ShortCallerEncoder,
 		EncodeName:     zapcore.FullNameEncoder,
 	}
-	if !c.EnableCaller {
+	if c.NoCaller {
 		format.CallerKey = ""
 	}
-	if !c.EnableLevel {
+	if c.NoLevel {
 		format.LevelKey = ""
 		levelEnabler = func(_ zapcore.Level) bool { return true }
 	}
-	if !c.EnableTime {
+	if c.NoTime {
 		format.TimeKey = ""
 	}
 	var enc zapcore.Encoder
@@ -238,9 +250,9 @@ func (l *Logger) Sync() {
 }
 
 func NewLogger(cfg Config) *Logger {
-	opts := make([]zap.Option, 0)
-	opts = append(opts, zap.ErrorOutput(StderrSyncer))
-	if cfg.EnableCaller {
+	opts := make([]zap.Option, 1)
+	opts[0] = zap.ErrorOutput(StderrSyncer)
+	if !cfg.NoCaller {
 		opts = append(opts, zap.AddCaller(), zap.AddCallerSkip(cfg.CallerSkip))
 	}
 	l := zap.New(toZapConfig(cfg), opts...)

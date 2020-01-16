@@ -32,16 +32,32 @@ import (
 )
 
 // Handler implements chain.Handler
-// Handler records access log
+// Handler records access log.
+// Make sure to complete the initialization before handling the request.
 type Handler struct {
 	logger        *log.Logger
 	whiteListAPIs map[string]struct{} // not record access log
 }
 
+// AddWhiteListAPIs adds APIs to white list, where the APIs will be ignored
+// in access log.
+// Not safe for concurrent use.
+func (h *Handler) AddWhiteListAPIs(apis ...string) {
+	for _, api := range apis {
+		h.whiteListAPIs[api] = struct{}{}
+	}
+}
+
+// ShouldIgnoreAPI judges whether the API should be ignored in access log.
+func (h *Handler) ShouldIgnoreAPI(api string) bool {
+	_, ok := h.whiteListAPIs[api]
+	return ok
+}
+
 // Handle handles the request
-func (l *Handler) Handle(i *chain.Invocation) {
+func (h *Handler) Handle(i *chain.Invocation) {
 	matchPattern := i.Context().Value(rest.CTX_MATCH_PATTERN).(string)
-	if _, ok := l.whiteListAPIs[matchPattern]; ok {
+	if h.ShouldIgnoreAPI(matchPattern) {
 		i.Next()
 		return
 	}
@@ -60,7 +76,7 @@ func (l *Handler) Handle(i *chain.Invocation) {
 		statusCode := w.Header().Get(rest.HEADER_RESPONSE_STATUS)
 		// format:  remoteIp requestReceiveTime "method requestUri proto" statusCode requestBodySize delay(ms)
 		// example: 127.0.0.1 2006-01-02T15:04:05.000Z07:00 "GET /v4/default/registry/microservices HTTP/1.1" 200 0 0
-		l.logger.Infof("%s %s \"%s %s %s\" %s %d %s",
+		h.logger.Infof("%s %s \"%s %s %s\" %s %d %s",
 			util.GetIPFromContext(i.Context()),
 			startTimeStr,
 			r.Method,
@@ -73,10 +89,10 @@ func (l *Handler) Handle(i *chain.Invocation) {
 }
 
 // NewAccessLogHandler creates a Handler
-func NewAccessLogHandler(l *log.Logger, m map[string]struct{}) *Handler {
+func NewAccessLogHandler(l *log.Logger) *Handler {
 	return &Handler{
 		logger:        l,
-		whiteListAPIs: m}
+		whiteListAPIs: make(map[string]struct{}, 0)}
 }
 
 // RegisterHandlers registers an access log handler to the handler chain
@@ -89,10 +105,17 @@ func RegisterHandlers() {
 		LogFormatText:  true,
 		LogRotateSize:  int(core.ServerInfo.Config.LogRotateSize),
 		LogBackupCount: int(core.ServerInfo.Config.LogBackupCount),
+		NoCaller:       true,
+		NoTime:         true,
+		NoLevel:        true,
 	})
-	whiteListAPIs := make(map[string]struct{}, 0)
+	h := NewAccessLogHandler(logger)
 	// no access log for heartbeat
-	whiteListAPIs["/v4/:project/registry/microservices/:serviceId/instances/:instanceId/heartbeat"] = struct{}{}
-	h := NewAccessLogHandler(logger, whiteListAPIs)
+	h.AddWhiteListAPIs(
+		"/v4/:project/registry/microservices/:serviceId/instances/:instanceId/heartbeat",
+		"/v4/:project/registry/heartbeats",
+		"/registry/v3/microservices/:serviceId/instances/:instanceId/heartbeat",
+		"/registry/v3/heartbeats",
+		"")
 	chain.RegisterHandler(rest.ServerChainName, h)
 }

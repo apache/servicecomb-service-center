@@ -99,9 +99,6 @@ func init() {
 		LogFormatText:  core.ServerInfo.Config.LogFormat == "text",
 		LogRotateSize:  int(core.ServerInfo.Config.LogRotateSize),
 		LogBackupCount: int(core.ServerInfo.Config.LogBackupCount),
-		EnableCaller:   true,
-		EnableTime:     true,
-		EnableLevel:    true,
 	})
 }
 

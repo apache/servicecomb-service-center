@@ -147,8 +147,5 @@ func initLogger() {
 		LogFormatText:  ServerInfo.Config.LogFormat == "text",
 		LogRotateSize:  int(ServerInfo.Config.LogRotateSize),
 		LogBackupCount: int(ServerInfo.Config.LogBackupCount),
-		EnableLevel:    true,
-		EnableCaller:   true,
-		EnableTime:     true,
 	})
 }
