@@ -37,8 +37,8 @@ const (
 )
 
 var (
-	StdoutSyncer = zapcore.AddSync(os.Stdout)
-	StderrSyncer = zapcore.AddSync(os.Stderr)
+	StdoutSyncer = zapcore.Lock(os.Stdout)
+	StderrSyncer = zapcore.Lock(os.Stderr)
 
 	zapLevelMap = map[string]zapcore.Level{
 		"DEBUG": zap.DebugLevel,
@@ -237,6 +237,7 @@ func (l *Logger) Recover(r interface{}, callerSkip int) {
 		e.Caller.TrimmedPath(),
 		r,
 		e.Stack)
+	StderrSyncer.Sync() // sync immediately, for server may exit abnormally
 	if err := l.zapLogger.Core().With([]zap.Field{zap.Reflect("recover", r)}).Write(e, nil); err != nil {
 		fmt.Fprintf(StderrSyncer, "%s\tERROR\t%v\n", time.Now().Format("2006-01-02T15:04:05.000Z0700"), err)
 		fmt.Fprintln(StderrSyncer, util.BytesToStringWithNoCopy(debug.Stack()))
@@ -247,6 +248,8 @@ func (l *Logger) Recover(r interface{}, callerSkip int) {
 
 func (l *Logger) Sync() {
 	l.zapLogger.Sync()
+	StderrSyncer.Sync()
+	StdoutSyncer.Sync()
 }
 
 func NewLogger(cfg Config) *Logger {
