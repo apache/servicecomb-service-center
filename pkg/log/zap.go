@@ -19,15 +19,17 @@ package log
 
 import (
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/natefinch/lumberjack"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"os"
 	"runtime"
 	"runtime/debug"
 	"strings"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/pkg/util"
+
+	"github.com/natefinch/lumberjack"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 const (
@@ -201,6 +203,12 @@ func (l *Logger) Recover(r interface{}, callerSkip int) {
 		Caller: zapcore.NewEntryCaller(runtime.Caller(callerSkip + 1)),
 		Stack:  zap.Stack("stack").String,
 	}
+	// recover logs also output to stderr
+	fmt.Fprintf(StderrSyncer, "%s\tPANIC\t%s\t%s\n%v\n",
+		e.Time.Format("2006-01-02T15:04:05.000Z0700"),
+		e.Caller.TrimmedPath(),
+		r,
+		e.Stack)
 	if err := l.zapLogger.Core().With([]zap.Field{zap.Reflect("recover", r)}).Write(e, nil); err != nil {
 		fmt.Fprintf(StderrSyncer, "%s\tERROR\t%v\n", time.Now().Format("2006-01-02T15:04:05.000Z0700"), err)
 		fmt.Fprintln(StderrSyncer, util.BytesToStringWithNoCopy(debug.Stack()))
