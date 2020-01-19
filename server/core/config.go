@@ -82,6 +82,8 @@ func newInfo() pb.ServerInformation {
 	if err == nil && cacheTTL < minCacheTTL {
 		cacheTTL = minCacheTTL
 	}
+	accessLogFileFromConfig := beego.AppConfig.DefaultString("access_log_file", "./access.log")
+	accessLogFile := util.GetEnvString("SC_ACCESS_LOG_FILE", accessLogFileFromConfig)
 
 	return pb.ServerInformation{
 		Version: InitVersion,
@@ -108,12 +110,14 @@ func newInfo() pb.ServerInformation {
 			CompactIndexDelta: beego.AppConfig.DefaultInt64("compact_index_delta", 100),
 			CompactInterval:   beego.AppConfig.String("compact_interval"),
 
-			LogRotateSize:  maxLogFileSize,
-			LogBackupCount: maxLogBackupCount,
-			LogFilePath:    beego.AppConfig.String("logfile"),
-			LogLevel:       beego.AppConfig.String("loglevel"),
-			LogFormat:      beego.AppConfig.DefaultString("log_format", "text"),
-			LogSys:         beego.AppConfig.DefaultBool("log_sys", false),
+			LogRotateSize:   maxLogFileSize,
+			LogBackupCount:  maxLogBackupCount,
+			LogFilePath:     beego.AppConfig.String("logfile"),
+			LogLevel:        beego.AppConfig.String("loglevel"),
+			LogFormat:       beego.AppConfig.DefaultString("log_format", "text"),
+			LogSys:          beego.AppConfig.DefaultBool("log_sys", false),
+			EnableAccessLog: beego.AppConfig.String("enable_access_log") == "true",
+			AccessLogFile:   accessLogFile,
 
 			PluginsDir: beego.AppConfig.DefaultString("plugins_dir", "./plugins"),
 			Plugins:    util.NewJSONObject(),

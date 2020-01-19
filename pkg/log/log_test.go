@@ -84,6 +84,11 @@ func TestNewLogger(t *testing.T) {
 	l.Fatal("a", nil)
 }
 
+func TestNewLoggerWithEmptyConfig(t *testing.T) {
+	l := NewLogger(Config{})
+	l.Info("a")
+}
+
 func TestLogPanic(t *testing.T) {
 	defer func() {
 		defer func() {

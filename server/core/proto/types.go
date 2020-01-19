@@ -52,12 +52,14 @@ type ServerConfig struct {
 	EnablePProf bool `json:"enablePProf"`
 	EnableCache bool `json:"enableCache"`
 
-	LogRotateSize  int64  `json:"-"`
-	LogBackupCount int64  `json:"-"`
-	LogFilePath    string `json:"-"`
-	LogLevel       string `json:"-"`
-	LogFormat      string `json:"-"`
-	LogSys         bool   `json:"-"`
+	LogRotateSize   int64  `json:"-"`
+	LogBackupCount  int64  `json:"-"`
+	LogFilePath     string `json:"-"`
+	LogLevel        string `json:"-"`
+	LogFormat       string `json:"-"`
+	LogSys          bool   `json:"-"`
+	EnableAccessLog bool   `json:"-"`
+	AccessLogFile   string `json:"-"`
 
 	PluginsDir string          `json:"-"`
 	Plugins    util.JSONObject `json:"plugins"`

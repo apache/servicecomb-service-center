@@ -65,6 +65,7 @@ import _ "github.com/apache/servicecomb-service-center/server/metric"
 
 import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/server/handler/accesslog"
 	"github.com/apache/servicecomb-service-center/server/handler/auth"
 	"github.com/apache/servicecomb-service-center/server/handler/cache"
 	"github.com/apache/servicecomb-service-center/server/handler/context"
@@ -84,6 +85,7 @@ func init() {
 	interceptor.RegisterInterceptFunc(cors.Intercept)
 
 	// handle requests after routing.
+	accesslog.RegisterHandlers()
 	maxbody.RegisterHandlers()
 	metric.RegisterHandlers()
 	tracing.RegisterHandlers()

@@ -37,8 +37,8 @@ const (
 )
 
 var (
-	StdoutSyncer = zapcore.AddSync(os.Stdout)
-	StderrSyncer = zapcore.AddSync(os.Stderr)
+	StdoutSyncer = zapcore.Lock(os.Stdout)
+	StderrSyncer = zapcore.Lock(os.Stderr)
 
 	zapLevelMap = map[string]zapcore.Level{
 		"DEBUG": zap.DebugLevel,
@@ -61,6 +61,9 @@ type Config struct {
 	// days
 	LogBackupAge int
 	CallerSkip   int
+	NoTime       bool // if true, not record time
+	NoLevel      bool // if true, not record level
+	NoCaller     bool // if true, not record caller
 }
 
 func (cfg Config) WithCallerSkip(s int) Config {
@@ -70,6 +73,21 @@ func (cfg Config) WithCallerSkip(s int) Config {
 
 func (cfg Config) WithFile(path string) Config {
 	cfg.LoggerFile = path
+	return cfg
+}
+
+func (cfg Config) WithNoTime(b bool) Config {
+	cfg.NoTime = b
+	return cfg
+}
+
+func (cfg Config) WithNoLevel(b bool) Config {
+	cfg.NoLevel = b
+	return cfg
+}
+
+func (cfg Config) WithNoCaller(b bool) Config {
+	cfg.NoCaller = b
 	return cfg
 }
 
@@ -105,6 +123,16 @@ func toZapConfig(c Config) zapcore.Core {
 		EncodeDuration: zapcore.StringDurationEncoder,
 		EncodeCaller:   zapcore.ShortCallerEncoder,
 		EncodeName:     zapcore.FullNameEncoder,
+	}
+	if c.NoCaller {
+		format.CallerKey = ""
+	}
+	if c.NoLevel {
+		format.LevelKey = ""
+		levelEnabler = func(_ zapcore.Level) bool { return true }
+	}
+	if c.NoTime {
+		format.TimeKey = ""
 	}
 	var enc zapcore.Encoder
 	if c.LogFormatText {
@@ -209,6 +237,7 @@ func (l *Logger) Recover(r interface{}, callerSkip int) {
 		e.Caller.TrimmedPath(),
 		r,
 		e.Stack)
+	StderrSyncer.Sync() // sync immediately, for server may exit abnormally
 	if err := l.zapLogger.Core().With([]zap.Field{zap.Reflect("recover", r)}).Write(e, nil); err != nil {
 		fmt.Fprintf(StderrSyncer, "%s\tERROR\t%v\n", time.Now().Format("2006-01-02T15:04:05.000Z0700"), err)
 		fmt.Fprintln(StderrSyncer, util.BytesToStringWithNoCopy(debug.Stack()))
@@ -219,14 +248,17 @@ func (l *Logger) Recover(r interface{}, callerSkip int) {
 
 func (l *Logger) Sync() {
 	l.zapLogger.Sync()
+	StderrSyncer.Sync()
+	StdoutSyncer.Sync()
 }
 
 func NewLogger(cfg Config) *Logger {
-	l := zap.New(toZapConfig(cfg),
-		zap.ErrorOutput(StderrSyncer),
-		zap.AddCaller(),
-		zap.AddCallerSkip(cfg.CallerSkip),
-	)
+	opts := make([]zap.Option, 1)
+	opts[0] = zap.ErrorOutput(StderrSyncer)
+	if !cfg.NoCaller {
+		opts = append(opts, zap.AddCaller(), zap.AddCallerSkip(cfg.CallerSkip))
+	}
+	l := zap.New(toZapConfig(cfg), opts...)
 	return &Logger{
 		Config:    cfg,
 		zapLogger: l,
