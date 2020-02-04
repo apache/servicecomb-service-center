@@ -18,6 +18,7 @@ package server
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"net/url"
 	"strconv"
@@ -25,14 +26,20 @@ import (
 
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/tlsutil"
 	"github.com/apache/servicecomb-service-center/syncer/config"
 	"github.com/apache/servicecomb-service-center/syncer/etcd"
 	"github.com/apache/servicecomb-service-center/syncer/grpc"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/syssig"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/ticker"
+	"github.com/apache/servicecomb-service-center/syncer/pkg/utils"
 	"github.com/apache/servicecomb-service-center/syncer/plugins"
 	"github.com/apache/servicecomb-service-center/syncer/serf"
 	"github.com/apache/servicecomb-service-center/syncer/servicecenter"
+
+	// import plugins
+	_ "github.com/apache/servicecomb-service-center/syncer/plugins/eureka"
+	_ "github.com/apache/servicecomb-service-center/syncer/plugins/servicecenter"
 )
 
 var stopChanErr = errors.New("stopped syncer by stopCh")
@@ -60,7 +67,8 @@ type Server struct {
 	// Wrap the servicecenter
 	servicecenter servicecenter.Servicecenter
 
-	etcd *etcd.Agent
+	etcd     *etcd.Agent
+	etcdConf *etcd.Config
 
 	// Wraps the serf agent
 	agent *serf.Agent
@@ -118,8 +126,10 @@ func (s *Server) Run(ctx context.Context) {
 	s.servicecenter.SetStorageEngine(s.etcd.Storage())
 
 	s.agent.RegisterEventHandler(s)
-
 	gopool.Go(s.tick.Start)
+
+	log.Info("start service done")
+
 	<-s.stopCh
 
 	s.Stop()
@@ -173,52 +183,63 @@ func (s *Server) initialization() (err error) {
 		return
 	}
 
-	s.agent, err = serf.Create(s.conf.Config)
+	s.agent, err = serf.Create(convertSerfConfig(s.conf))
 	if err != nil {
 		log.Errorf(err, "Create serf failed, %s", err)
 		return
 	}
 
-	s.etcd = etcd.NewAgent(s.conf.Etcd)
+	s.etcdConf = convertEtcdConfig(s.conf)
+	s.etcd = etcd.NewAgent(s.etcdConf)
 
-	s.tick = ticker.NewTaskTicker(s.conf.TickerInterval, s.tickHandler)
+	s.tick = ticker.NewTaskTicker(convertTickerInterval(s.conf), s.tickHandler)
 
-	s.servicecenter, err = servicecenter.NewServicecenter(s.conf.SC.SCConfigOps()...)
+	s.servicecenter, err = servicecenter.NewServicecenter(convertSCConfigOption(s.conf)...)
 	if err != nil {
 		log.Error("create servicecenter failed", err)
 		return
 	}
 
-	tlsConfig, err := s.conf.TLSConfig.ServerTlsConfig()
-	if err != nil {
-		log.Error("get grpc server tls config failed", err)
-		return
+	var tlsConfig *tls.Config
+	if s.conf.Listener.TLSMount.Enabled {
+		conf := s.conf.GetTLSConfig(s.conf.Listener.TLSMount.Name)
+		sslOps := append(tlsutil.DefaultServerTLSOptions(), tlsConfigToOptions(conf)...)
+		tlsConfig, err = tlsutil.GetServerTLSConfig(sslOps...)
+		if err != nil {
+			log.Error("get grpc server tls config failed", err)
+			return
+		}
 	}
-	s.grpc = grpc.NewServer(s.conf.RPCAddr, s, tlsConfig)
+
+	s.grpc = grpc.NewServer(s.conf.Listener.RPCAddr, s, tlsConfig)
 	return nil
 }
 
 // initPlugin Initialize the plugin and load the external plugin according to the configuration
 func (s *Server) initPlugin() {
-	plugins.SetPluginConfig(plugins.PluginServicecenter.String(), s.conf.SC.Plugin)
+	plugins.SetPluginConfig(plugins.PluginServicecenter.String(), s.conf.Registry.Plugin)
 	plugins.LoadPlugins()
 }
 
 // configureCluster Configuring the cluster by serf group member information
 func (s *Server) configureCluster() error {
-	proto := "http" // todo：Introduce tls config to manage protocol
+	proto := "http"
+	if s.conf.Listener.TLSMount.Enabled {
+		proto = "https"
+	}
 	initialCluster := ""
 
 	// get local member of serf
 	self := s.agent.LocalMember()
-	peerUrl, err := url.Parse(proto + "://" + self.Addr.String() + ":" + strconv.Itoa(s.conf.ClusterPort))
+	_, peerPort, _ := utils.SplitAddress(s.conf.Listener.PeerAddr)
+	peerUrl, err := url.Parse(proto + "://" + self.Addr.String() + ":" + strconv.Itoa(peerPort))
 	if err != nil {
 		log.Error("parse url from serf local member failed", err)
 		return err
 	}
 
 	// group members from serf as initial cluster members
-	for _, member := range s.agent.GroupMembers(s.conf.ClusterName) {
+	for _, member := range s.agent.GroupMembers(s.conf.Cluster) {
 		initialCluster += member.Name + "=" + proto + "://" + member.Addr.String() + ":" + member.Tags[serf.TagKeyClusterPort] + ","
 	}
 
@@ -228,8 +249,8 @@ func (s *Server) configureCluster() error {
 		log.Error("etcd peer not found", err)
 		return err
 	}
-	s.conf.Etcd.APUrls = []url.URL{*peerUrl}
-	s.conf.Etcd.LPUrls = []url.URL{*peerUrl}
-	s.conf.Etcd.InitialCluster = initialCluster[:len(initialCluster)-1]
+	s.etcdConf.APUrls = []url.URL{*peerUrl}
+	s.etcdConf.LPUrls = []url.URL{*peerUrl}
+	s.etcdConf.InitialCluster = initialCluster[:len(initialCluster)-1]
 	return nil
 }
