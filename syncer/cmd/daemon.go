@@ -26,7 +26,7 @@ import (
 )
 
 var (
-	conf       = config.DefaultConfig()
+	conf       = &config.Config{}
 	configFile = ""
 )
 
@@ -42,28 +42,28 @@ func init() {
 	syncerCmd.Flags().StringVar(&conf.Mode, "mode", conf.Mode,
 		"run mode")
 
-	syncerCmd.Flags().StringVar(&conf.NodeName, "node", conf.NodeName,
+	syncerCmd.Flags().StringVar(&conf.Node, "node", conf.Node,
 		"node name")
 
-	syncerCmd.Flags().StringVar(&conf.BindAddr, "bind-addr", conf.BindAddr,
-		"address to bind listeners to")
+	syncerCmd.Flags().StringVar(&conf.Cluster, "cluster", conf.Cluster,
+		"cluster name")
 
-	syncerCmd.Flags().StringVar(&conf.RPCAddr, "rpc-addr", conf.RPCAddr,
-		"port to bind RPC listener to")
+	syncerCmd.Flags().StringVar(&conf.Listener.BindAddr, "bind-addr", conf.Listener.BindAddr,
+		"address used to network with other Syncers")
 
-	syncerCmd.Flags().StringVar(&conf.JoinAddr, "join-addr", conf.JoinAddr,
-		"address to join the cluster by specifying at least one existing member")
+	syncerCmd.Flags().StringVar(&conf.Listener.RPCAddr, "rpc-addr", conf.Listener.RPCAddr,
+		"port used to synchronize data with other Syncers")
 
-	syncerCmd.Flags().StringVar(&conf.SC.Addr, "sc-addr", conf.SC.Addr,
-		"address to monitor the service-center")
+	syncerCmd.Flags().StringVar(&conf.Listener.PeerAddr, "peer-addr", conf.Listener.PeerAddr,
+		"port used to communicate with other cluster members")
 
-	syncerCmd.Flags().StringVar(&conf.ClusterName, "cluster-name", conf.ClusterName,
-		"name to group members into cluster")
+	syncerCmd.Flags().StringVar(&conf.Join.Address, "join", "",
+		"address to join the network by specifying at least one existing member")
 
-	syncerCmd.Flags().IntVar(&conf.ClusterPort, "cluster-port", conf.ClusterPort,
-		"port to communicate between cluster members")
+	syncerCmd.Flags().StringVar(&conf.Registry.Address, "registry", conf.Registry.Address,
+		"address to monitor the registry")
 
-	syncerCmd.Flags().StringVar(&conf.SC.Plugin, "sc-plugin", conf.SC.Plugin,
+	syncerCmd.Flags().StringVar(&conf.Registry.Plugin, "plugin", conf.Registry.Plugin,
 		"plugin name of servicecenter")
 
 	syncerCmd.Flags().StringVar(&configFile, "config", "",
@@ -72,16 +72,26 @@ func init() {
 
 // runSyncer Runs the Syncer service.
 func runSyncer(cmd *cobra.Command, args []string) {
+	if conf.Join.Address != "" {
+		conf.Join.Enabled = true
+	}
+
+	defaultConfig := config.DefaultConfig()
+
 	if configFile != "" {
 		fromFile, err := config.LoadConfig(configFile)
 		if err != nil {
 			log.Errorf(err, "load config file failed")
 			return
 		}
-		conf.Merge(fromFile)
+		if fromFile != nil {
+			*defaultConfig = config.Merge(*defaultConfig, *fromFile)
+		}
 	}
 
-	if err := conf.Verify(); err != nil {
+	*conf = config.Merge(*defaultConfig, *conf)
+	err := config.Verify(conf)
+	if err != nil {
 		log.Errorf(err, "verify syncer config failed")
 		return
 	}

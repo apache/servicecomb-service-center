@@ -52,7 +52,7 @@ func TestNewServicecenter(t *testing.T) {
 
 func TestOnEvent(t *testing.T) {
 	conf := config.DefaultConfig()
-	conf.SC.Plugin = mockplugin.PluginName
+	conf.Registry.Plugin = mockplugin.PluginName
 	initPlugin(conf)
 	dc, err := servicecenter.NewServicecenter(
 		plugins.WithEndpoints([]string{"127.0.0.1:30100"}))
@@ -120,5 +120,5 @@ func TestOnEvent(t *testing.T) {
 }
 
 func initPlugin(conf *config.Config) {
-	plugins.SetPluginConfig(plugins.PluginServicecenter.String(), conf.SC.Plugin)
+	plugins.SetPluginConfig(plugins.PluginServicecenter.String(), conf.Registry.Plugin)
 }

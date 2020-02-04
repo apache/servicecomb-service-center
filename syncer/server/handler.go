@@ -23,6 +23,7 @@ import (
 	"strconv"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/tlsutil"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/syncer/grpc"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
@@ -45,7 +46,7 @@ func (s *Server) tickHandler(ctx context.Context) {
 	s.servicecenter.FlushData()
 
 	// sends a UserEvent on Serf, the event will be broadcast between members
-	err := s.agent.UserEvent(EventDiscovered, util.StringToBytesWithNoCopy(s.conf.ClusterName), true)
+	err := s.agent.UserEvent(EventDiscovered, util.StringToBytesWithNoCopy(s.conf.Cluster), true)
 	if err != nil {
 		log.Errorf(err, "Syncer send user event failed")
 	}
@@ -63,7 +64,6 @@ func (s *Server) HandleEvent(event serf.Event) {
 	if !s.etcd.IsLeader() {
 		return
 	}
-
 	switch event.EventType() {
 	case serf.EventUser:
 		s.userEvent(event.(serf.UserEvent))
@@ -80,7 +80,7 @@ func (s *Server) userEvent(event serf.UserEvent) {
 	clusterName := util.BytesToStringWithNoCopy(event.Payload)
 
 	// Excludes notifications from self, as the gossip protocol inevitably has redundant notifications
-	if s.conf.ClusterName == clusterName {
+	if s.conf.Cluster == clusterName {
 		return
 	}
 
@@ -102,7 +102,9 @@ func (s *Server) userEvent(event serf.UserEvent) {
 	}
 	var tlsConfig *tls.Config
 	if enabled {
-		tlsConfig, err = s.conf.TLSConfig.ClientTlsConfig()
+		conf := s.conf.GetTLSConfig(s.conf.Listener.TLSMount.Name)
+		sslOps := append(tlsutil.DefaultClientTLSOptions(), tlsConfigToOptions(conf)...)
+		tlsConfig, err = tlsutil.GetClientTLSConfig(sslOps...)
 		if err != nil {
 			log.Error("get grpc client tls config failed", err)
 			return
