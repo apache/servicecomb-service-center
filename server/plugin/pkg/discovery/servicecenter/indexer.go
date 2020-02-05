@@ -24,6 +24,7 @@ import (
 	scerr "github.com/apache/servicecomb-service-center/server/error"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
+
 	"golang.org/x/net/context"
 )
 
@@ -104,6 +105,13 @@ func (i *ClusterIndexer) searchInstances(ctx context.Context, op registry.Plugin
 		return nil, scErr
 	}
 	return resp, nil
+}
+
+// Creditable implements discovery.Indexer.Creditable.
+// ClusterIndexer's search result's are not creditable as SCClientAggregate
+// ignores sc clients' errors.
+func (i *ClusterIndexer) Creditable() bool {
+	return false
 }
 
 func NewClusterIndexer(t discovery.Type, cache discovery.Cache) *ClusterIndexer {

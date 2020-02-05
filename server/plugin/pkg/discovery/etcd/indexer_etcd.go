@@ -18,14 +18,16 @@ package etcd
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
+
 	"golang.org/x/net/context"
-	"strings"
 )
 
 // EtcdIndexer implements discovery.Indexer.
@@ -79,6 +81,11 @@ func (i *EtcdIndexer) Search(ctx context.Context, opts ...registry.PluginOpOptio
 	}
 	r.Kvs = kvs
 	return
+}
+
+// Creditable implements discovery.Indexer.Creditable.
+func (i *EtcdIndexer) Creditable() bool {
+	return true
 }
 
 func NewEtcdIndexer(root string, p pb.Parser) (indexer *EtcdIndexer) {

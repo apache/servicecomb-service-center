@@ -18,9 +18,11 @@ package etcd
 
 import (
 	"fmt"
+
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
+
 	"golang.org/x/net/context"
 )
 
@@ -53,6 +55,11 @@ func (i *CacheIndexer) Search(ctx context.Context, opts ...registry.PluginOpOpti
 		return resp, nil
 	}
 	return i.EtcdIndexer.Search(ctx, opts...)
+}
+
+// Creditable implements discovery.Indexer.Creditable.
+func (i *CacheIndexer) Creditable() bool {
+	return i.EtcdIndexer.Creditable()
 }
 
 func NewCacheIndexer(cfg *discovery.Config, cache discovery.Cache) *CacheIndexer {

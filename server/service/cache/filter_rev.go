@@ -20,6 +20,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/cache"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/core/backend"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"golang.org/x/net/context"
 )
@@ -40,7 +41,10 @@ func (f *RevisionFilter) Name(ctx context.Context, parent *cache.Node) string {
 func (f *RevisionFilter) Init(ctx context.Context, parent *cache.Node) (node *cache.Node, err error) {
 	pCache := parent.Cache.Get(CACHE_FIND).(*VersionRuleCacheItem)
 	requestRev := ctx.Value(CTX_FIND_REQUEST_REV).(string)
-	if len(requestRev) == 0 || requestRev == pCache.Rev {
+	// Use cache only and not call the backend directly when Indexer is not
+	// creditable
+	if len(requestRev) == 0 || requestRev == pCache.Rev ||
+		!(backend.Store().Instance().Creditable()) {
 		node = cache.NewNode()
 		node.Cache.Set(CACHE_FIND, pCache)
 		return

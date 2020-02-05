@@ -17,11 +17,13 @@
 package discovery
 
 import (
+	"time"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
+
 	"golang.org/x/net/context"
-	"time"
 )
 
 // CacheIndexer implements discovery.Indexer.
@@ -74,6 +76,11 @@ func (i *CacheIndexer) searchByPrefix(op registry.PluginOp) *Response {
 
 	resp.Kvs = kvs
 	return resp
+}
+
+// Creditable implements discovery.Indexer.Creditable.
+func (i *CacheIndexer) Creditable() bool {
+	return true
 }
 
 func NewCacheIndexer(cache CacheReader) *CacheIndexer {

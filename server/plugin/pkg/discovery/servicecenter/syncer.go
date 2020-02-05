@@ -17,6 +17,9 @@ package servicecenter
 
 import (
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -27,9 +30,8 @@ import (
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
+
 	"golang.org/x/net/context"
-	"sync"
-	"time"
 )
 
 var (
@@ -48,20 +50,18 @@ func (c *Syncer) Initialize() {
 	c.Client = GetOrCreateSCClient()
 }
 
-func (c *Syncer) Sync(ctx context.Context) error {
+func (c *Syncer) Sync(ctx context.Context) {
 	cache, errs := c.Client.GetScCache(ctx)
-	if cache == nil && len(errs) > 0 {
+	if len(errs) > 0 {
 		err := fmt.Errorf("%v", errs)
-		log.Errorf(err, "sync failed")
-		return err
-	}
-
-	if len(errs) == 0 {
-		alarm.Clear(alarm.IdBackendConnectionRefuse)
-	} else {
+		log.Errorf(err, "Sync catches errors")
 		alarm.Raise(alarm.IdBackendConnectionRefuse,
-			alarm.AdditionalContext("%v", errs))
+			alarm.AdditionalContext(err.Error()))
+		if cache == nil {
+			return
+		}
 	}
+	alarm.Clear(alarm.IdBackendConnectionRefuse)
 
 	// microservice
 	serviceCacher, ok := c.cachers[backend.SERVICE]
@@ -102,7 +102,6 @@ func (c *Syncer) Sync(ctx context.Context) error {
 	if ok {
 		c.check(instCacher, &cache.Instances, errs)
 	}
-	return nil
 }
 
 func (c *Syncer) check(local *ServiceCenterCacher, remote model.Getter, skipClusters map[string]error) {
