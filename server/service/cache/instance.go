@@ -37,7 +37,7 @@ func init() {
 		&TagsFilter{},
 		&AccessibleFilter{},
 		&InstancesFilter{},
-		&RevisionFilter{},
+		&ConsistencyFilter{},
 	)
 }
 

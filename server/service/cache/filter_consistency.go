@@ -22,14 +22,17 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
+
 	"golang.org/x/net/context"
 )
 
-type RevisionFilter struct {
+// ConsistencyFilter improves consistency.
+// Scenario: cache maybe different between several service-centers.
+type ConsistencyFilter struct {
 	InstancesFilter
 }
 
-func (f *RevisionFilter) Name(ctx context.Context, parent *cache.Node) string {
+func (f *ConsistencyFilter) Name(ctx context.Context, parent *cache.Node) string {
 	item := parent.Cache.Get(CACHE_FIND).(*VersionRuleCacheItem)
 	requestRev := ctx.Value(CTX_FIND_REQUEST_REV).(string)
 	if len(requestRev) == 0 || requestRev == item.Rev {
@@ -38,11 +41,16 @@ func (f *RevisionFilter) Name(ctx context.Context, parent *cache.Node) string {
 	return requestRev
 }
 
-func (f *RevisionFilter) Init(ctx context.Context, parent *cache.Node) (node *cache.Node, err error) {
+// Init generates cache.
+// We think cache inconsistency happens and correction is needed only when the
+// revision in the request is not empty and different from the revision of
+// parent cache. To correct inconsistency, RevisionFilter skips cache and get
+// data from the backend directly to response.
+// It's impossible to guarantee consistency if the backend is not creditable,
+// thus in this condition RevisionFilter uses cache only.
+func (f *ConsistencyFilter) Init(ctx context.Context, parent *cache.Node) (node *cache.Node, err error) {
 	pCache := parent.Cache.Get(CACHE_FIND).(*VersionRuleCacheItem)
 	requestRev := ctx.Value(CTX_FIND_REQUEST_REV).(string)
-	// Use cache only and not call the backend directly when Indexer is not
-	// creditable
 	if len(requestRev) == 0 || requestRev == pCache.Rev ||
 		!(backend.Store().Instance().Creditable()) {
 		node = cache.NewNode()
