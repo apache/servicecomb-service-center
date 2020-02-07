@@ -41,9 +41,9 @@ var defaultURLClientOption = URLClientOption{
 	Compressed:            true,
 	VerifyPeer:            true,
 	SSLVersion:            tls.VersionTLS12,
-	HandshakeTimeout:      30 * time.Second,
-	ResponseHeaderTimeout: 180 * time.Second,
-	RequestTimeout:        300 * time.Second,
+	HandshakeTimeout:      10 * time.Second,
+	ResponseHeaderTimeout: 30 * time.Second,
+	RequestTimeout:        60 * time.Second,
 	ConnsPerHost:          DEFAULT_CONN_POOL_PER_HOST_SIZE,
 }
 

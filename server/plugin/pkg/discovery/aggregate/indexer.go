@@ -19,6 +19,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
+
 	"golang.org/x/net/context"
 )
 
@@ -29,6 +30,11 @@ type AdaptorsIndexer struct {
 	Adaptors []discovery.Adaptor
 }
 
+// Search implements discovery.Indexer.Search.
+// AdaptorsIndexer ignores the errors during search to ensure availability, so
+// it always searches successfully, no matter how many Adaptors are abnormal.
+// But at the cost of that, AdaptorsIndexer doesn't guarantee the correctness
+// of the search results.
 func (i *AdaptorsIndexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (*discovery.Response, error) {
 	var (
 		response discovery.Response
@@ -51,6 +57,14 @@ func (i *AdaptorsIndexer) Search(ctx context.Context, opts ...registry.PluginOpO
 	return &response, nil
 }
 
+// Creditable implements discovery.Indexer.Creditable.
+// AdaptorsIndexer's search result's are not creditable as it ignores the
+// errors. In other words, AdaptorsIndexer makes the best efforts to search
+// data, but it does not ensure the correctness.
+func (i *AdaptorsIndexer) Creditable() bool {
+	return false
+}
+
 func NewAdaptorsIndexer(as []discovery.Adaptor) *AdaptorsIndexer {
 	return &AdaptorsIndexer{Adaptors: as}
 }
@@ -67,6 +81,7 @@ type AggregatorIndexer struct {
 	LocalIndexer discovery.Indexer
 }
 
+// Search implements discovery.Indexer.Search.
 func (i *AggregatorIndexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (resp *discovery.Response, err error) {
 	op := registry.OpGet(opts...)
 
@@ -93,6 +108,13 @@ func (i *AggregatorIndexer) search(ctx context.Context, opts ...registry.PluginO
 	}
 
 	return i.AdaptorsIndexer.Search(ctx, opts...)
+}
+
+// Creditable implements discovery.Indexer.Creditable.
+func (i *AggregatorIndexer) Creditable() bool {
+	return i.AdaptorsIndexer.Creditable() &&
+		i.LocalIndexer.Creditable() &&
+		i.CacheIndexer.Creditable()
 }
 
 func NewAggregatorIndexer(as *Aggregator) *AggregatorIndexer {
