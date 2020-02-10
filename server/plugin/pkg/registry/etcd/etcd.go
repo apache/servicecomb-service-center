@@ -106,6 +106,7 @@ func (c *EtcdClient) newClient() (*clientv3.Client, error) {
 		Endpoints:            c.Endpoints,
 		DialTimeout:          c.DialTimeout,
 		TLS:                  c.TLSConfig,
+		MaxCallSendMsgSize:   maxSendMsgSize,
 		MaxCallRecvMsgSize:   maxRecvMsgSize,
 		DialKeepAliveTime:    keepAliveTime,
 		DialKeepAliveTimeout: keepAliveTimeout,
