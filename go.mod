@@ -33,9 +33,9 @@ require (
 	github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21 // indirect
 	github.com/eapache/queue v1.1.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
-	github.com/go-chassis/paas-lager v0.0.0-20180727081842-50655443dc96
+	github.com/go-chassis/paas-lager v1.1.1
 	github.com/go-logfmt/logfmt v0.3.0 // indirect
-	github.com/go-mesh/openlogging v0.0.0-20180905092207-9cc15d7752d3 // indirect
+	github.com/go-mesh/openlogging v1.0.1 // indirect
 	github.com/gogo/protobuf v1.1.1 // indirect
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b // indirect
 	github.com/golang/protobuf v1.0.0
