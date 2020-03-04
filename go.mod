@@ -25,7 +25,7 @@ require (
 	github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973 // indirect
 	github.com/cheggaaa/pb v1.0.25
 	github.com/coreos/bbolt v1.3.3 // indirect
-	github.com/coreos/etcd v3.3.6+incompatible
+	github.com/coreos/etcd v3.3.8+incompatible
 	github.com/coreos/go-semver v0.2.0 // indirect
 	github.com/coreos/go-systemd v0.0.0-20180828140353-eee3db372b31 // indirect
 	github.com/coreos/pkg v0.0.0-20180108230652-97fdf19511ea // v4
@@ -113,4 +113,3 @@ require (
 	k8s.io/apimachinery v0.0.0-20180601181227-17529ec7eadb
 	k8s.io/client-go v2.0.0-alpha.0.0.20180817174322-745ca8300397+incompatible
 )
-
