@@ -40,7 +40,7 @@ type Server struct {
 	addr    string
 	handler GRPCHandler
 	readyCh chan struct{}
-	errorCh chan error
+	stopCh  chan struct{}
 	tlsConf *tls.Config
 }
 
@@ -50,7 +50,7 @@ func NewServer(addr string, handler GRPCHandler, tlsConf *tls.Config) *Server {
 		addr:    addr,
 		handler: handler,
 		readyCh: make(chan struct{}),
-		errorCh: make(chan error),
+		stopCh:  make(chan struct{}),
 		tlsConf: tlsConf,
 	}
 }
@@ -75,7 +75,7 @@ func (s *Server) Start(ctx context.Context) {
 		var svc *grpc.Server
 		if s.tlsConf != nil {
 			svc = grpc.NewServer(grpc.Creds(credentials.NewTLS(s.tlsConf)))
-		}else{
+		} else {
 			svc = grpc.NewServer()
 		}
 
@@ -88,7 +88,7 @@ func (s *Server) Start(ctx context.Context) {
 
 	if err != nil {
 		log.Error("start grpc failed", err)
-		s.errorCh <- err
+		close(s.stopCh)
 		return
 	}
 	log.Info("start grpc success")
@@ -100,7 +100,7 @@ func (s *Server) Ready() <-chan struct{} {
 	return s.readyCh
 }
 
-// Error Returns a channel that will be transmit a grpc error
-func (s *Server) Error() <-chan error {
-	return s.errorCh
+// Error Returns a channel that will be closed a grpc is stopped
+func (s *Server) Stopped() <-chan struct{} {
+	return s.stopCh
 }

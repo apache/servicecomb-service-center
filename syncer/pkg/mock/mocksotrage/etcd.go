@@ -19,6 +19,7 @@ package mocksotrage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -42,10 +43,8 @@ func NewKVServer() (svr *MockServer, err error) {
 	go agent.Start(context.Background())
 	select {
 	case <-agent.Ready():
-	case err = <-agent.Error():
-	}
-	if err != nil {
-		return nil, err
+	case <-agent.Stopped():
+		return nil, errors.New("start etcd mock server failed")
 	}
 	return &MockServer{agent}, nil
 }

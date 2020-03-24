@@ -56,8 +56,8 @@ type moduleServer interface {
 	// Returns a channel that will be closed when the module server is ready
 	Ready() <-chan struct{}
 
-	// Returns a channel that will be transmit a module server error
-	Error() <-chan error
+	// Returns a channel that will be closed when the module server is stopped
+	Stopped() <-chan struct{}
 }
 
 // Server struct for syncer
@@ -105,25 +105,21 @@ func (s *Server) Run(ctx context.Context) {
 
 	err = s.startModuleServer(s.agent)
 	if err != nil {
-		s.Stop()
 		return
 	}
 
 	err = s.configureCluster()
 	if err != nil {
-		s.Stop()
 		return
 	}
 
 	err = s.startModuleServer(s.etcd)
 	if err != nil {
-		s.Stop()
 		return
 	}
 
 	err = s.startModuleServer(s.grpc)
 	if err != nil {
-		s.Stop()
 		return
 	}
 
@@ -170,11 +166,12 @@ func (s *Server) startModuleServer(module moduleServer) (err error) {
 	gopool.Go(module.Start)
 	select {
 	case <-module.Ready():
-	case err = <-module.Error():
+		return nil
+	case <-module.Stopped():
 	case <-s.stopCh:
-		err = stopChanErr
 	}
-	return err
+	s.Stop()
+	return stopChanErr
 }
 
 // initialization Initialize the starter of the syncer

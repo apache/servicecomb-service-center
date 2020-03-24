@@ -32,7 +32,7 @@ type Agent struct {
 	conf    *Config
 	etcd    *embed.Etcd
 	readyCh chan struct{}
-	errorCh chan error
+	stopCh  chan struct{}
 }
 
 // NewAgent new etcd agent with config
@@ -40,7 +40,7 @@ func NewAgent(conf *Config) *Agent {
 	return &Agent{
 		conf:    conf,
 		readyCh: make(chan struct{}),
-		errorCh: make(chan error),
+		stopCh:  make(chan struct{}),
 	}
 }
 
@@ -62,13 +62,13 @@ func (a *Agent) Start(ctx context.Context) {
 		// Returns an error when running goroutine fails in the etcd startup process
 		case err = <-etcd.Err():
 		case <-ctx.Done():
-			err = ctx.Err()
+			err = errors.New("cancel etcd server from context")
 		}
 	}
 
 	if err != nil {
 		log.Error("start etcd failed", err)
-		a.errorCh <- err
+		close(a.stopCh)
 	}
 }
 
@@ -77,9 +77,9 @@ func (a *Agent) Ready() <-chan struct{} {
 	return a.readyCh
 }
 
-// Error Returns a channel that will be transmit an etcd error
-func (a *Agent) Error() <-chan error {
-	return a.errorCh
+// Error Returns a channel that will be closed when etcd is stopped
+func (a *Agent) Stopped() <-chan struct{} {
+	return a.stopCh
 }
 
 // Storage returns etcd storage

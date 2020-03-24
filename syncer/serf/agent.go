@@ -31,7 +31,7 @@ type Agent struct {
 	*agent.Agent
 	conf    *Config
 	readyCh chan struct{}
-	errorCh chan error
+	stopCh  chan struct{}
 }
 
 // Create create serf agent with config
@@ -51,26 +51,21 @@ func Create(conf *Config) (*Agent, error) {
 		Agent:   serfAgent,
 		conf:    conf,
 		readyCh: make(chan struct{}),
-		errorCh: make(chan error),
+		stopCh:  make(chan struct{}),
 	}, nil
 }
 
 // Start agent
 func (a *Agent) Start(ctx context.Context) {
 	err := a.Agent.Start()
-	if err != nil {
-		log.Errorf(err, "start serf agent failed")
-		a.errorCh <- err
-		return
+	if err == nil {
+		a.RegisterEventHandler(a)
+		err = a.retryJoin(ctx)
 	}
-	a.RegisterEventHandler(a)
 
-	err = a.retryJoin(ctx)
 	if err != nil {
 		log.Errorf(err, "start serf agent failed")
-		if err != ctx.Err() && a.errorCh != nil {
-			a.errorCh <- err
-		}
+		close(a.stopCh)
 	}
 }
 
@@ -97,19 +92,15 @@ func (a *Agent) Ready() <-chan struct{} {
 	return a.readyCh
 }
 
-// Error Returns a channel that will be transmit a serf error
-func (a *Agent) Error() <-chan error {
-	return a.errorCh
+// Error Returns a channel that will be closed when serf is stopped
+func (a *Agent) Stopped() <-chan struct{} {
+	return a.stopCh
 }
 
 // Stop serf agent
 func (a *Agent) Stop() {
-	if a.errorCh != nil {
-		a.Leave()
-		a.Shutdown()
-		close(a.errorCh)
-		a.errorCh = nil
-	}
+	a.Leave()
+	a.Shutdown()
 }
 
 // LocalMember returns the Member information for the local node
