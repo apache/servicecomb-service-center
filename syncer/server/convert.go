@@ -29,6 +29,7 @@ import (
 	"github.com/apache/servicecomb-service-center/syncer/pkg/utils"
 	"github.com/apache/servicecomb-service-center/syncer/plugins"
 	"github.com/apache/servicecomb-service-center/syncer/serf"
+	"github.com/apache/servicecomb-service-center/syncer/task"
 )
 
 func convertSerfConfig(c *config.Config) *serf.Config {
@@ -64,16 +65,12 @@ func convertEtcdConfig(c *config.Config) *etcd.Config {
 	return conf
 }
 
-func convertTickerInterval(c *config.Config) int {
-	strNum := ""
+func convertTaskOptions(c *config.Config) []task.Option {
+	opts := make([]task.Option, 0, len(c.Task.Params))
 	for _, label := range c.Task.Params {
-		if label.Key == "interval" {
-			strNum = label.Value
-			break
-		}
+		opts = append(opts, task.WithAddKV(label.Key, label.Value))
 	}
-	interval, _ := time.ParseDuration(strNum)
-	return int(interval.Seconds())
+	return opts
 }
 
 func convertSCConfigOption(c *config.Config) []plugins.SCConfigOption {
