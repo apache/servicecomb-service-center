@@ -31,15 +31,19 @@ import (
 	"github.com/apache/servicecomb-service-center/syncer/etcd"
 	"github.com/apache/servicecomb-service-center/syncer/grpc"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/syssig"
-	"github.com/apache/servicecomb-service-center/syncer/pkg/ticker"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/utils"
 	"github.com/apache/servicecomb-service-center/syncer/plugins"
 	"github.com/apache/servicecomb-service-center/syncer/serf"
 	"github.com/apache/servicecomb-service-center/syncer/servicecenter"
+	"github.com/apache/servicecomb-service-center/syncer/task"
 
 	// import plugins
 	_ "github.com/apache/servicecomb-service-center/syncer/plugins/eureka"
 	_ "github.com/apache/servicecomb-service-center/syncer/plugins/servicecenter"
+
+	// import task
+	_ "github.com/apache/servicecomb-service-center/syncer/task/idle"
+	_ "github.com/apache/servicecomb-service-center/syncer/task/ticker"
 )
 
 var stopChanErr = errors.New("stopped syncer by stopCh")
@@ -61,8 +65,8 @@ type Server struct {
 	// Syncer configuration
 	conf *config.Config
 
-	// Ticker for Syncer
-	tick *ticker.TaskTicker
+	// task for discovery
+	task task.Tasker
 
 	// Wrap the servicecenter
 	servicecenter servicecenter.Servicecenter
@@ -126,7 +130,12 @@ func (s *Server) Run(ctx context.Context) {
 	s.servicecenter.SetStorageEngine(s.etcd.Storage())
 
 	s.agent.RegisterEventHandler(s)
-	gopool.Go(s.tick.Start)
+
+	s.task.Handle(func() {
+		s.tickHandler(ctx)
+	})
+
+	s.task.Run(ctx)
 
 	log.Info("start service done")
 
@@ -138,10 +147,6 @@ func (s *Server) Run(ctx context.Context) {
 
 // Stop Syncer Server
 func (s *Server) Stop() {
-	if s.tick != nil {
-		s.tick.Stop()
-	}
-
 	if s.agent != nil {
 		// removes the serf eventHandler
 		s.agent.DeregisterEventHandler(s)
@@ -192,7 +197,11 @@ func (s *Server) initialization() (err error) {
 	s.etcdConf = convertEtcdConfig(s.conf)
 	s.etcd = etcd.NewAgent(s.etcdConf)
 
-	s.tick = ticker.NewTaskTicker(convertTickerInterval(s.conf), s.tickHandler)
+	s.task, err = task.GenerateTasker(s.conf.Task.Kind, convertTaskOptions(s.conf)...)
+	if err != nil {
+		log.Errorf(err, "Create tasker failed, %s", err)
+		return
+	}
 
 	s.servicecenter, err = servicecenter.NewServicecenter(convertSCConfigOption(s.conf)...)
 	if err != nil {
