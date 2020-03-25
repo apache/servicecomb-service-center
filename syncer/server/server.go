@@ -14,13 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package server
 
 import (
 	"context"
 	"crypto/tls"
 	"errors"
-	"net/url"
 	"strconv"
 	"syscall"
 
@@ -62,6 +62,8 @@ type moduleServer interface {
 
 // Server struct for syncer
 type Server struct {
+	ctx    context.Context
+	cancel context.CancelFunc
 	// Syncer configuration
 	conf *config.Config
 
@@ -71,8 +73,7 @@ type Server struct {
 	// Wrap the servicecenter
 	servicecenter servicecenter.Servicecenter
 
-	etcd     *etcd.Agent
-	etcdConf *etcd.Config
+	etcd *etcd.Server
 
 	// Wraps the serf agent
 	agent *serf.Agent
@@ -86,7 +87,10 @@ type Server struct {
 
 // NewServer new server with Config
 func NewServer(conf *config.Config) *Server {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Server{
+		ctx:    ctx,
+		cancel: cancel,
 		conf:   conf,
 		stopCh: make(chan struct{}),
 	}
@@ -158,6 +162,8 @@ func (s *Server) Stop() {
 		s.etcd.Stop()
 	}
 
+	s.cancel()
+
 	// Closes all goroutines in the pool
 	gopool.CloseAndWait()
 }
@@ -191,8 +197,11 @@ func (s *Server) initialization() (err error) {
 		return
 	}
 
-	s.etcdConf = convertEtcdConfig(s.conf)
-	s.etcd = etcd.NewAgent(s.etcdConf)
+	s.etcd, err = etcd.NewServer(convertEtcdOptions(s.conf)...)
+	if err != nil {
+		log.Errorf(err, "Create etcd failed, %s", err)
+		return
+	}
 
 	s.task, err = task.GenerateTasker(s.conf.Task.Kind, convertTaskOptions(s.conf)...)
 	if err != nil {
@@ -229,34 +238,15 @@ func (s *Server) initPlugin() {
 
 // configureCluster Configuring the cluster by serf group member information
 func (s *Server) configureCluster() error {
-	proto := "http"
-	if s.conf.Listener.TLSMount.Enabled {
-		proto = "https"
-	}
-	initialCluster := ""
-
 	// get local member of serf
 	self := s.agent.LocalMember()
 	_, peerPort, _ := utils.SplitAddress(s.conf.Listener.PeerAddr)
-	peerUrl, err := url.Parse(proto + "://" + self.Addr.String() + ":" + strconv.Itoa(peerPort))
-	if err != nil {
-		log.Error("parse url from serf local member failed", err)
-		return err
-	}
+	ops := []etcd.Option{etcd.WithPeerAddr(self.Addr.String() + ":" + strconv.Itoa(peerPort))}
 
 	// group members from serf as initial cluster members
 	for _, member := range s.agent.GroupMembers(s.conf.Cluster) {
-		initialCluster += member.Name + "=" + proto + "://" + member.Addr.String() + ":" + member.Tags[serf.TagKeyClusterPort] + ","
+		ops = append(ops, etcd.WithAddPeers(member.Name, member.Addr.String()+":"+member.Tags[serf.TagKeyClusterPort]))
 	}
 
-	leng := len(initialCluster)
-	if leng == 0 {
-		err = errors.New("serf group members is empty")
-		log.Error("etcd peer not found", err)
-		return err
-	}
-	s.etcdConf.APUrls = []url.URL{*peerUrl}
-	s.etcdConf.LPUrls = []url.URL{*peerUrl}
-	s.etcdConf.InitialCluster = initialCluster[:len(initialCluster)-1]
-	return nil
+	return s.etcd.AddOptions(ops...)
 }

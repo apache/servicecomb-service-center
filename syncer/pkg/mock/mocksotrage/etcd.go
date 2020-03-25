@@ -20,8 +20,6 @@ package mocksotrage
 import (
 	"context"
 	"errors"
-	"fmt"
-	"net/url"
 	"os"
 
 	"github.com/apache/servicecomb-service-center/syncer/etcd"
@@ -31,15 +29,18 @@ import (
 const (
 	defaultName           = "etcd_mock"
 	defaultDataDir        = "mock-data/"
-	defaultListenPeerAddr = "http://127.0.0.1:30993"
+	defaultListenPeerAddr = "127.0.0.1:30993"
 )
 
 type MockServer struct {
-	etcd *etcd.Agent
+	etcd *etcd.Server
 }
 
 func NewKVServer() (svr *MockServer, err error) {
-	agent := etcd.NewAgent(defaultConfig())
+	agent, err1 := etcd.NewServer(defaultOptions()...)
+	if err1 != nil {
+		return nil, err
+	}
 	go agent.Start(context.Background())
 	select {
 	case <-agent.Ready():
@@ -58,13 +59,10 @@ func (m *MockServer) Stop() {
 	os.RemoveAll(defaultDataDir)
 }
 
-func defaultConfig() *etcd.Config {
-	peer, _ := url.Parse(defaultListenPeerAddr)
-	conf := etcd.DefaultConfig()
-	conf.Name = defaultName
-	conf.Dir = defaultDataDir + defaultName
-	conf.APUrls = []url.URL{*peer}
-	conf.LPUrls = []url.URL{*peer}
-	conf.InitialCluster = fmt.Sprintf("%s=%s", defaultName, defaultListenPeerAddr)
-	return conf
+func defaultOptions() []etcd.Option {
+	return []etcd.Option{
+		etcd.WithPeerAddr(defaultListenPeerAddr),
+		etcd.WithName(defaultName),
+		etcd.WithDataDir(defaultDataDir + defaultName),
+	}
 }

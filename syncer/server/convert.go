@@ -19,7 +19,6 @@ package server
 
 import (
 	"crypto/tls"
-	"net/url"
 	"strings"
 	"time"
 
@@ -49,20 +48,12 @@ func convertSerfConfig(c *config.Config) *serf.Config {
 	return conf
 }
 
-func convertEtcdConfig(c *config.Config) *etcd.Config {
-	conf := etcd.DefaultConfig()
-	conf.Name = c.Node
-	conf.Dir = c.DataDir
-	proto := "http://"
-
-	if c.Listener.TLSMount.Enabled {
-		proto = "https://"
+func convertEtcdOptions(c *config.Config) []etcd.Option {
+	return []etcd.Option{
+		etcd.WithName(c.Node),
+		etcd.WithDataDir(c.DataDir),
+		etcd.WithPeerAddr(c.Listener.PeerAddr),
 	}
-
-	peer, _ := url.Parse(proto + c.Listener.PeerAddr)
-	conf.APUrls = []url.URL{*peer}
-	conf.LPUrls = []url.URL{*peer}
-	return conf
 }
 
 func convertTaskOptions(c *config.Config) []task.Option {
