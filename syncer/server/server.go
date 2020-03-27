@@ -19,23 +19,24 @@ package server
 
 import (
 	"context"
-	"crypto/tls"
 	"errors"
 	"strconv"
 	"syscall"
 
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/tlsutil"
+	"github.com/apache/servicecomb-service-center/pkg/rpc"
 	"github.com/apache/servicecomb-service-center/syncer/config"
 	"github.com/apache/servicecomb-service-center/syncer/etcd"
 	"github.com/apache/servicecomb-service-center/syncer/grpc"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/syssig"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/utils"
 	"github.com/apache/servicecomb-service-center/syncer/plugins"
+	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 	"github.com/apache/servicecomb-service-center/syncer/serf"
 	"github.com/apache/servicecomb-service-center/syncer/servicecenter"
 	"github.com/apache/servicecomb-service-center/syncer/task"
+	ggrpc "google.golang.org/grpc"
 
 	// import plugins
 	_ "github.com/apache/servicecomb-service-center/syncer/plugins/eureka"
@@ -180,6 +181,10 @@ func (s *Server) initialization() (err error) {
 		return
 	}
 
+	rpc.RegisterService(func(svr *ggrpc.Server) {
+		pb.RegisterSyncServer(svr, s)
+	})
+
 	s.serf = serf.NewServer(convertSerfOptions(s.conf)...)
 	s.serf.OnceEventHandler(serf.NewEventHandler(serf.MemberJoinFilter(), s.waitClusterMembers))
 
@@ -201,18 +206,12 @@ func (s *Server) initialization() (err error) {
 		return
 	}
 
-	var tlsConfig *tls.Config
-	if s.conf.Listener.TLSMount.Enabled {
-		conf := s.conf.GetTLSConfig(s.conf.Listener.TLSMount.Name)
-		sslOps := append(tlsutil.DefaultServerTLSOptions(), tlsConfigToOptions(conf)...)
-		tlsConfig, err = tlsutil.GetServerTLSConfig(sslOps...)
-		if err != nil {
-			log.Error("get grpc server tls config failed", err)
-			return
-		}
+	s.grpc, err = grpc.NewServer(convertGRPCOptions(s.conf)...)
+	if err != nil {
+		log.Error("create grpc failed", err)
+		return
 	}
 
-	s.grpc = grpc.NewServer(s.conf.Listener.RPCAddr, s, tlsConfig)
 	return nil
 }
 

@@ -25,6 +25,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/tlsutil"
 	"github.com/apache/servicecomb-service-center/syncer/config"
 	"github.com/apache/servicecomb-service-center/syncer/etcd"
+	"github.com/apache/servicecomb-service-center/syncer/grpc"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/utils"
 	"github.com/apache/servicecomb-service-center/syncer/plugins"
 	"github.com/apache/servicecomb-service-center/syncer/serf"
@@ -67,6 +68,22 @@ func convertEtcdOptions(c *config.Config) []etcd.Option {
 		etcd.WithDataDir(c.DataDir),
 		etcd.WithPeerAddr(c.Listener.PeerAddr),
 	}
+}
+
+func convertGRPCOptions(c *config.Config) []grpc.Option {
+	opts := []grpc.Option{
+		grpc.WithAddr(c.Listener.RPCAddr),
+	}
+	if c.Listener.TLSMount.Enabled {
+		conf := c.GetTLSConfig(c.Listener.TLSMount.Name)
+		sslOps := append(tlsutil.DefaultServerTLSOptions(), tlsConfigToOptions(conf)...)
+		tlsConf, err := tlsutil.GetServerTLSConfig(sslOps...)
+		if err != nil {
+
+		}
+		opts = append(opts, grpc.WithTLSConfig(tlsConf))
+	}
+	return opts
 }
 
 func convertTaskOptions(c *config.Config) []task.Option {
