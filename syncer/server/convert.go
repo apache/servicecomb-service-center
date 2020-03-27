@@ -19,8 +19,8 @@ package server
 
 import (
 	"crypto/tls"
+	"strconv"
 	"strings"
-	"time"
 
 	"github.com/apache/servicecomb-service-center/pkg/tlsutil"
 	"github.com/apache/servicecomb-service-center/syncer/config"
@@ -31,21 +31,34 @@ import (
 	"github.com/apache/servicecomb-service-center/syncer/task"
 )
 
-func convertSerfConfig(c *config.Config) *serf.Config {
-	conf := serf.DefaultConfig()
-	conf.NodeName = c.Node
-	conf.ClusterName = c.Cluster
-	conf.Mode = c.Mode
-	conf.TLSEnabled = c.Listener.TLSMount.Enabled
-	conf.BindAddr = c.Listener.BindAddr
-	_, conf.ClusterPort, _ = utils.ResolveAddr(c.Listener.PeerAddr)
-	_, conf.RPCPort, _ = utils.ResolveAddr(c.Listener.RPCAddr)
-	if c.Join.Enabled {
-		conf.RetryJoin = strings.Split(c.Join.Address, ",")
-		conf.RetryInterval, _ = time.ParseDuration(c.Join.RetryInterval)
-		conf.RetryMaxAttempts = c.Join.RetryMax
+const (
+	tagKeyClusterName = "syncer-cluster-name"
+	tagKeyClusterPort = "syncer-cluster-port"
+	tagKeyRPCPort     = "syncer-rpc-port"
+	tagKeyTLSEnabled  = "syncer-tls-enabled"
+
+	groupExpect = 3
+)
+
+func convertSerfOptions(c *config.Config) []serf.Option {
+	bindHost, bindPort, _ := utils.ResolveAddr(c.Listener.BindAddr)
+	_, rpcPort, _ := utils.ResolveAddr(c.Listener.RPCAddr)
+	opts := []serf.Option{
+		serf.WithNode(c.Node),
+		serf.WithBindAddr(bindHost),
+		serf.WithBindPort(bindPort),
+		serf.WithAddTag(tagKeyRPCPort, strconv.Itoa(rpcPort)),
+		serf.WithAddTag(tagKeyTLSEnabled, strconv.FormatBool(c.Listener.TLSMount.Enabled)),
 	}
-	return conf
+
+	if c.Cluster != "" {
+		_, peerPort, _ := utils.ResolveAddr(c.Listener.PeerAddr)
+		opts = append(opts,
+			serf.WithAddTag(tagKeyClusterName, c.Cluster),
+			serf.WithAddTag(tagKeyClusterPort, strconv.Itoa(peerPort)),
+		)
+	}
+	return opts
 }
 
 func convertEtcdOptions(c *config.Config) []etcd.Option {

@@ -76,7 +76,7 @@ type Server struct {
 	etcd *etcd.Server
 
 	// Wraps the serf agent
-	agent *serf.Agent
+	serf *serf.Server
 
 	// Wraps the grpc server
 	grpc *grpc.Server
@@ -107,12 +107,7 @@ func (s *Server) Run(ctx context.Context) {
 	// Start system signal listening, wait for user interrupt program
 	gopool.Go(syssig.Run)
 
-	err = s.startModuleServer(s.agent)
-	if err != nil {
-		return
-	}
-
-	err = s.configureCluster()
+	err = s.startModuleServer(s.serf)
 	if err != nil {
 		return
 	}
@@ -129,11 +124,7 @@ func (s *Server) Run(ctx context.Context) {
 
 	s.servicecenter.SetStorageEngine(s.etcd.Storage())
 
-	s.agent.RegisterEventHandler(s)
-
-	s.task.Handle(func() {
-		s.tickHandler(ctx)
-	})
+	s.task.Handle(s.tickHandler)
 
 	s.task.Run(ctx)
 
@@ -147,11 +138,9 @@ func (s *Server) Run(ctx context.Context) {
 
 // Stop Syncer Server
 func (s *Server) Stop() {
-	if s.agent != nil {
-		// removes the serf eventHandler
-		s.agent.DeregisterEventHandler(s)
+	if s.serf != nil {
 		//stop serf agent
-		s.agent.Stop()
+		s.serf.Stop()
 	}
 
 	if s.grpc != nil {
@@ -191,11 +180,8 @@ func (s *Server) initialization() (err error) {
 		return
 	}
 
-	s.agent, err = serf.Create(convertSerfConfig(s.conf))
-	if err != nil {
-		log.Errorf(err, "Create serf failed, %s", err)
-		return
-	}
+	s.serf = serf.NewServer(convertSerfOptions(s.conf)...)
+	s.serf.OnceEventHandler(serf.NewEventHandler(serf.MemberJoinFilter(), s.waitClusterMembers))
 
 	s.etcd, err = etcd.NewServer(convertEtcdOptions(s.conf)...)
 	if err != nil {
@@ -236,16 +222,34 @@ func (s *Server) initPlugin() {
 	plugins.LoadPlugins()
 }
 
+func (s *Server) waitClusterMembers(data ...[]byte) bool {
+	if s.conf.Mode == config.ModeCluster {
+		tags := map[string]string{tagKeyClusterName: s.conf.Cluster}
+		if len(s.serf.MembersByTags(tags)) < groupExpect {
+			return false
+		}
+		err := s.configureCluster()
+		if err != nil {
+			log.Error("configure cluster failed", err)
+			s.Stop()
+			return false
+		}
+	}
+	s.serf.AddEventHandler(serf.NewEventHandler(serf.UserEventFilter(EventDiscovered), s.userEvent))
+	return true
+}
+
 // configureCluster Configuring the cluster by serf group member information
 func (s *Server) configureCluster() error {
 	// get local member of serf
-	self := s.agent.LocalMember()
+	self := s.serf.LocalMember()
 	_, peerPort, _ := utils.SplitAddress(s.conf.Listener.PeerAddr)
 	ops := []etcd.Option{etcd.WithPeerAddr(self.Addr.String() + ":" + strconv.Itoa(peerPort))}
 
 	// group members from serf as initial cluster members
-	for _, member := range s.agent.GroupMembers(s.conf.Cluster) {
-		ops = append(ops, etcd.WithAddPeers(member.Name, member.Addr.String()+":"+member.Tags[serf.TagKeyClusterPort]))
+	tags := map[string]string{tagKeyClusterName: s.conf.Cluster}
+	for _, member := range s.serf.MembersByTags(tags) {
+		ops = append(ops, etcd.WithAddPeers(member.Name, member.Addr.String()+":"+member.Tags[tagKeyClusterPort]))
 	}
 
 	return s.etcd.AddOptions(ops...)
