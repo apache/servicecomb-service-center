@@ -15,41 +15,34 @@
  * limitations under the License.
  */
 
-package utils
+package grpc
 
 import (
-	"sync"
-	"sync/atomic"
+	"crypto/tls"
 )
 
-// AtomicBool struct
-type AtomicBool struct {
-	m      sync.Mutex
-	status uint32
+type config struct {
+	addr      string
+	tlsConfig *tls.Config
 }
 
-// NewAtomicBool returns an atomic bool
-func NewAtomicBool(b bool) *AtomicBool {
-	var status uint32
-	if b {
-		status = 1
+// Option to grpc config
+type Option func(*config)
+
+// WithAddr returns address option
+func WithAddr(addr string) Option {
+	return func(c *config) { c.addr = addr }
+}
+
+// WithTLSConfig returns tls config option
+func WithTLSConfig(conf *tls.Config) Option {
+	return func(c *config) { c.tlsConfig = conf }
+}
+
+func toGRPCConfig(ops ...Option) *config {
+	conf := &config{}
+	for _, op := range ops {
+		op(conf)
 	}
-	return &AtomicBool{status: status}
-}
-
-// Bool returns a bool value
-func (a *AtomicBool) Bool() bool {
-	return atomic.LoadUint32(&a.status)&1 == 1
-}
-
-// DoToReverse Do something and reverse the status
-func (a *AtomicBool) DoToReverse(when bool, fn func()) {
-	if a.Bool() != when {
-		return
-	}
-
-	a.m.Lock()
-	atomic.StoreUint32(&a.status, a.status^1)
-	fn()
-	a.m.Unlock()
+	return conf
 }

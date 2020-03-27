@@ -26,7 +26,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/tlsutil"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/syncer/grpc"
+	"github.com/apache/servicecomb-service-center/syncer/client"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 )
 
@@ -51,9 +51,9 @@ func (s *Server) tickHandler() {
 	}
 }
 
-// Discovery discovery sync data from servicecenter
-func (s *Server) Discovery() *pb.SyncData {
-	return s.servicecenter.Discovery()
+// Pull returns sync data of servicecenter
+func (s *Server) Pull(context.Context, *pb.PullRequest) (*pb.SyncData, error) {
+	return s.servicecenter.Discovery(), nil
 }
 
 // userEvent Handles "EventUser" notification events, no response required
@@ -94,7 +94,8 @@ func (s *Server) userEvent(data ...[]byte) (success bool) {
 		}
 	}
 
-	syncData, err := grpc.Pull(context.Background(), endpoint, tlsConfig)
+	cli := client.NewSyncClient(endpoint, tlsConfig)
+	syncData, err := cli.Pull(context.Background())
 	if err != nil {
 		log.Errorf(err, "Pull other serf instances failed, node name is '%s'", members[0].Name)
 		return
