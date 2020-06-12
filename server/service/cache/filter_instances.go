@@ -17,6 +17,7 @@
 package cache
 
 import (
+	"context"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/cache"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -25,7 +26,6 @@ import (
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
-	"golang.org/x/net/context"
 	"sort"
 )
 

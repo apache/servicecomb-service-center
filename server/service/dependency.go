@@ -17,6 +17,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -27,7 +28,6 @@ import (
 	scerr "github.com/apache/servicecomb-service-center/server/error"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
-	"golang.org/x/net/context"
 )
 
 func (s *MicroServiceService) AddDependenciesForMicroServices(ctx context.Context, in *pb.AddDependenciesRequest) (*pb.AddDependenciesResponse, error) {

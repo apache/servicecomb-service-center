@@ -17,6 +17,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -28,7 +29,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
-	"golang.org/x/net/context"
 	"strconv"
 	"time"
 )

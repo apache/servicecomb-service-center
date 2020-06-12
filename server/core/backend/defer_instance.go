@@ -17,12 +17,12 @@
 package backend
 
 import (
+	"context"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
-	"golang.org/x/net/context"
 	"sync"
 	"time"
 )

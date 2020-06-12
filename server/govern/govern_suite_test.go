@@ -17,9 +17,9 @@
 package govern_test
 
 // initialize
-import _ "github.com/apache/servicecomb-service-center/server/init"
 import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
 import (
+	"context"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
@@ -30,12 +30,13 @@ import (
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
-	"golang.org/x/net/context"
 	"testing"
 )
 
 func init() {
 	beego.AppConfig.Set("registry_plugin", "etcd")
+	testing.Init()
+	core.Initialize()
 }
 
 func TestGovern(t *testing.T) {

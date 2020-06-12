@@ -17,8 +17,8 @@
 package cache
 
 import (
+	"context"
 	"github.com/apache/servicecomb-service-center/pkg/cache"
-	"golang.org/x/net/context"
 )
 
 type ConsumerFilter struct {

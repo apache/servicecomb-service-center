@@ -17,11 +17,11 @@
 package backend
 
 import (
+	"context"
 	"fmt"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	simple "github.com/apache/servicecomb-service-center/pkg/time"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry/buildin"
-	"golang.org/x/net/context"
 	"testing"
 	"time"
 )

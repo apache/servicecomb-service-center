@@ -17,6 +17,7 @@
 package etcd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
@@ -25,7 +26,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"golang.org/x/net/context"
 	"math/rand"
 	"strconv"
 	"testing"

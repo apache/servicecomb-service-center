@@ -17,6 +17,7 @@
 package event
 
 import (
+	"context"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
@@ -25,7 +26,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/service/cache"
 	"github.com/apache/servicecomb-service-center/server/service/metrics"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
-	"golang.org/x/net/context"
 	"strings"
 )
 

@@ -16,7 +16,7 @@
  */
 package task
 
-import "golang.org/x/net/context"
+import "context"
 
 type Task interface {
 	Key() string

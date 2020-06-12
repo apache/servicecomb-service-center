@@ -17,11 +17,11 @@
 package backend
 
 import (
+	"context"
 	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/task"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
-	"golang.org/x/net/context"
 	"testing"
 )
 

@@ -23,7 +23,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core/backend"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 // ConsistencyFilter improves consistency.

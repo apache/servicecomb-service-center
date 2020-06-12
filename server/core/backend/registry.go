@@ -17,6 +17,7 @@
 package backend
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/backoff"
@@ -26,7 +27,6 @@ import (
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
-	"golang.org/x/net/context"
 	"sync"
 	"time"
 )

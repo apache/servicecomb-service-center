@@ -32,7 +32,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 func (s *MicroServiceService) GetSchemaInfo(ctx context.Context, in *pb.GetSchemaRequest) (*pb.GetSchemaResponse, error) {

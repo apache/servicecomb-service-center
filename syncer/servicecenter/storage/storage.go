@@ -130,7 +130,7 @@ next:
 		}
 
 		delOp := delMappingOp(entry.ClusterName, entry.OrgInstanceID)
-		if _, err := s.engine.Do(context.Background(),delOp); err != nil {
+		if _, err := s.engine.Do(context.Background(), delOp); err != nil {
 			log.Errorf(err, "Delete instance clusterName=%s instanceID=%s failed", entry.ClusterName, entry.OrgInstanceID)
 		}
 

@@ -16,7 +16,6 @@
  */
 package broker_test
 
-import _ "github.com/apache/servicecomb-service-center/server/init"
 import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
 import (
 	"github.com/apache/servicecomb-service-center/server/broker"
@@ -31,6 +30,8 @@ import (
 
 func init() {
 	beego.AppConfig.Set("registry_plugin", "etcd")
+	testing.Init()
+	core.Initialize()
 }
 
 var brokerResource = broker.BrokerServiceAPI

@@ -17,8 +17,8 @@
 package notify
 
 import (
+	"context"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
-	"golang.org/x/net/context"
 	"sync"
 	"time"
 )

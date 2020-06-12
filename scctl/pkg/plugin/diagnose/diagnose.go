@@ -17,6 +17,7 @@ package diagnose
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/client/etcd"
 	"github.com/apache/servicecomb-service-center/pkg/client/sc"
@@ -25,7 +26,6 @@ import (
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/spf13/cobra"
-	"golang.org/x/net/context"
 )
 
 const (

@@ -16,7 +16,7 @@
  */
 package uuid
 
-import "golang.org/x/net/context"
+import "context"
 
 const ContextKey = "_uuid_key"
 

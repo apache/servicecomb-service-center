@@ -16,6 +16,7 @@
 package instance
 
 import (
+	"context"
 	"github.com/apache/servicecomb-service-center/pkg/client/sc"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/model"
@@ -24,7 +25,6 @@ import (
 	admin "github.com/apache/servicecomb-service-center/server/admin/model"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/spf13/cobra"
-	"golang.org/x/net/context"
 	"strings"
 )
 

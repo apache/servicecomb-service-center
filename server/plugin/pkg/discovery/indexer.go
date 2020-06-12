@@ -19,7 +19,7 @@ package discovery
 import (
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 // Indexer searches k-v data.

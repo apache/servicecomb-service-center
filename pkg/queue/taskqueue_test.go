@@ -16,7 +16,7 @@
 package queue
 
 import (
-	"golang.org/x/net/context"
+	"context"
 	"testing"
 )
 

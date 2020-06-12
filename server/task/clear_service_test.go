@@ -16,7 +16,6 @@
 package task_test
 
 // initialize
-import _ "github.com/apache/servicecomb-service-center/server/init"
 import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
 import _ "github.com/apache/servicecomb-service-center/server"
 
@@ -36,6 +35,11 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
+
+func init() {
+	testing.Init()
+	apt.Initialize()
+}
 
 var _ = BeforeSuite(func() {
 	beego.AppConfig.Set("registry_plugin", "etcd")
@@ -146,3 +150,7 @@ var _ = Describe("clear service", func() {
 	Describe("domain project 1", serviceClearCheckFunc("default1", "default"))
 	Describe("domain project 2", serviceClearCheckFunc("default2", "default"))
 })
+var _ = func() bool {
+
+	return true
+}()

@@ -17,6 +17,7 @@
 package govern
 
 import (
+	"context"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -27,7 +28,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/service"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
-	"golang.org/x/net/context"
 )
 
 var GovernServiceAPI pb.GovernServiceCtrlServer = &GovernService{}

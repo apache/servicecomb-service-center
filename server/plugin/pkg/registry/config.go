@@ -40,7 +40,8 @@ type Config struct {
 	AutoSyncInterval time.Duration `json:"autoSyncInterval"`
 }
 
-func (c *Config) InitClusters() {
+//InitClusterInfo re-org address info with node name
+func (c *Config) InitClusterInfo() {
 	c.Clusters = make(Clusters)
 	// sc-0=http(s)://host1:port1,http(s)://host2:port2,sc-1=http(s)://host3:port3
 	kvs := strings.Split(c.ClusterAddresses, "=")
@@ -86,7 +87,7 @@ func Configuration() *Config {
 		defaultRegistryConfig.ClusterName = beego.AppConfig.DefaultString("manager_name", DefaultClusterName)
 		defaultRegistryConfig.ManagerAddress = beego.AppConfig.String("manager_addr")
 		defaultRegistryConfig.ClusterAddresses = beego.AppConfig.DefaultString("manager_cluster", "http://127.0.0.1:2379")
-		defaultRegistryConfig.InitClusters()
+		defaultRegistryConfig.InitClusterInfo()
 
 		registryAddresses := strings.Join(defaultRegistryConfig.RegistryAddresses(), ",")
 		defaultRegistryConfig.SslEnabled = core.ServerInfo.Config.SslEnabled &&

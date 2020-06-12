@@ -17,10 +17,10 @@
 package buildin
 
 import (
+	"context"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
-	"golang.org/x/net/context"
 	"os"
 	"testing"
 	"time"

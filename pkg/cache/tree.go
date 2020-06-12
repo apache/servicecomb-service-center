@@ -17,9 +17,9 @@
 package cache
 
 import (
+	"context"
 	"errors"
 	"github.com/karlseguin/ccache"
-	"golang.org/x/net/context"
 	"sync"
 )
 

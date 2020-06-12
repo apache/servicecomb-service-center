@@ -17,10 +17,10 @@
 package etcd
 
 import (
+	"context"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
-	"golang.org/x/net/context"
 )
 
 type innerListWatch struct {

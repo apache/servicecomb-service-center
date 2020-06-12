@@ -25,11 +25,6 @@ type Reporter interface {
 	Report()
 }
 
-type noopReporter struct {
-}
-
-func (*noopReporter) Report() {}
-
 func RegisterReporter(name string, r Reporter) {
 	reporters[name] = r
 	log.Infof("register metrics reporter '%s'", name)

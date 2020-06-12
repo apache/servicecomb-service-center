@@ -16,12 +16,12 @@
 package version
 
 import (
+	"context"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/client/sc"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/version"
 	"github.com/spf13/cobra"
-	"golang.org/x/net/context"
 )
 
 var (

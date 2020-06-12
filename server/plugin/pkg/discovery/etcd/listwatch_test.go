@@ -17,11 +17,11 @@
 package etcd
 
 import (
+	"context"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry/buildin"
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"golang.org/x/net/context"
 	"testing"
 	"time"
 )

@@ -17,6 +17,7 @@
 package util
 
 import (
+	"context"
 	"crypto/sha1"
 	"encoding/json"
 	"fmt"
@@ -28,7 +29,6 @@ import (
 	scerr "github.com/apache/servicecomb-service-center/server/error"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
-	"golang.org/x/net/context"
 	"strconv"
 	"strings"
 	"time"

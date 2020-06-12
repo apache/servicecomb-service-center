@@ -14,25 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package buildin
+package buildin_test
 
 import (
 	"crypto/tls"
 	"github.com/apache/servicecomb-service-center/server/core"
 	_ "github.com/apache/servicecomb-service-center/server/plugin/pkg/security/buildin"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/tls/buildin"
+	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
 )
 
 func init() {
+	testing.Init()
 	core.Initialize()
-
 	sslRoot := "../../../../../examples/service_center/ssl/"
 	os.Setenv("SSL_ROOT", sslRoot)
 }
 
 func TestGetServerTLSConfig(t *testing.T) {
-	serverTLSConfig, err := GetServerTLSConfig()
+	serverTLSConfig, err := buildin.GetServerTLSConfig()
 	if err != nil {
 		t.Fatalf("GetServerTLSConfig failed")
 	}
@@ -48,16 +50,12 @@ func TestGetServerTLSConfig(t *testing.T) {
 	if serverTLSConfig.MinVersion != tls.VersionTLS12 {
 		t.Fatalf("GetServerTLSConfig failed")
 	}
-	if serverTLSConfig.MaxVersion != tls.VersionTLS12 {
-		t.Fatalf("GetServerTLSConfig failed")
-	}
-	if serverTLSConfig.ClientAuth != tls.RequireAndVerifyClientCert {
-		t.Fatalf("GetServerTLSConfig failed")
-	}
+	assert.Equal(t, int(serverTLSConfig.MaxVersion), int(tls.VersionTLS13))
+	assert.Equal(t, serverTLSConfig.ClientAuth, tls.RequireAndVerifyClientCert)
 }
 
 func TestGetClientTLSConfig(t *testing.T) {
-	clientTLSConfig, err := GetClientTLSConfig()
+	clientTLSConfig, err := buildin.GetClientTLSConfig()
 	if err != nil {
 		t.Fatalf("GetClientTLSConfig failed")
 	}
@@ -73,9 +71,7 @@ func TestGetClientTLSConfig(t *testing.T) {
 	if clientTLSConfig.MinVersion != tls.VersionTLS12 {
 		t.Fatalf("GetClientTLSConfig failed")
 	}
-	if clientTLSConfig.MaxVersion != tls.VersionTLS12 {
-		t.Fatalf("GetClientTLSConfig failed")
-	}
+	assert.Equal(t, int(clientTLSConfig.MaxVersion), tls.VersionTLS13)
 	if clientTLSConfig.InsecureSkipVerify != true {
 		t.Fatalf("GetClientTLSConfig failed")
 	}

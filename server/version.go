@@ -17,12 +17,12 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
-	"golang.org/x/net/context"
 )
 
 func LoadServerVersion() error {

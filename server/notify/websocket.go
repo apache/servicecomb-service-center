@@ -17,6 +17,7 @@
 package notify
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -24,7 +25,6 @@ import (
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"github.com/gorilla/websocket"
-	"golang.org/x/net/context"
 	"time"
 )
 

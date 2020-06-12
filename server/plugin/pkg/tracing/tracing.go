@@ -17,8 +17,8 @@
 package tracing
 
 import (
+	"context"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
-	"golang.org/x/net/context"
 )
 
 const CTX_TRACE_SPAN = "x-trace-span"

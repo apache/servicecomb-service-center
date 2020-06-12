@@ -17,12 +17,12 @@
 package util
 
 import (
+	"context"
 	"errors"
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
 	scerr "github.com/apache/servicecomb-service-center/server/error"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
-	"golang.org/x/net/context"
 )
 
 func HeartbeatUtil(ctx context.Context, domainProject string, serviceId string, instanceId string) (leaseID int64, ttl int64, _ *scerr.Error) {

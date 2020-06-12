@@ -17,9 +17,9 @@
 package gopool
 
 import (
+	"context"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"golang.org/x/net/context"
 	"sync"
 	"time"
 )

@@ -34,11 +34,11 @@ import (
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 
+	"context"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
 	"github.com/coreos/etcd/etcdserver/etcdserverpb"
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"golang.org/x/net/context"
 )
 
 var firstEndpoint string
@@ -718,38 +718,35 @@ func (c *EtcdClient) HealthCheck() {
 }
 
 func (c *EtcdClient) healthCheckLoop(pctx context.Context) {
-	retries, start := healthCheckRetryTimes, time.Now()
-hcLoop:
+	retries, start := 0, time.Now()
+	d := c.AutoSyncInterval
 	for {
 		select {
 		case <-pctx.Done():
 			return
-		case <-time.After(c.AutoSyncInterval):
+		case <-time.After(d):
 			var err error
-			for i := 0; i < retries; i++ {
-				ctx, _ := context.WithTimeout(c.Client.Ctx(), healthCheckTimeout)
-				if err = c.SyncMembers(ctx); err != nil {
-					d := backoff.GetBackoff().Delay(i)
-					log.Errorf(err, "retry to sync members from etcd %s after %s", c.Endpoints, d)
-					select {
-					case <-pctx.Done():
-						return
-					case <-time.After(d):
-						continue
-					}
+			ctx, _ := context.WithTimeout(c.Client.Ctx(), healthCheckTimeout)
+			if err = c.SyncMembers(ctx); err != nil {
+				d := backoff.GetBackoff().Delay(retries)
+				retries++
+				log.Errorf(err, "retry to sync members from etcd %s after %s", c.Endpoints, d)
+				select {
+				case <-pctx.Done():
+					return
+				default:
+					continue
 				}
-
-				alarm.Clear(alarm.IdBackendConnectionRefuse)
-
-				retries, start = healthCheckRetryTimes, time.Now()
-				continue hcLoop
-			}
-
-			retries = 1 // fail fast
-			if cerr := c.ReOpen(); cerr != nil {
-				log.Errorf(cerr, "retry to health check etcd %s after %s", c.Endpoints, c.AutoSyncInterval)
 			} else {
-				log.Infof("[%s]re-connected to etcd %s", time.Now().Sub(start), c.Endpoints)
+				log.Info("sync members ok.")
+				alarm.Clear(alarm.IdBackendConnectionRefuse)
+				if cerr := c.ReOpen(); cerr != nil {
+					log.Errorf(cerr, "retry to health check etcd %s after %s", c.Endpoints, c.AutoSyncInterval)
+				} else {
+					log.Infof("[%s]re-connected to etcd %s", time.Now().Sub(start), c.Endpoints)
+					continue
+				}
+				return
 			}
 		}
 	}

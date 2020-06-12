@@ -14,51 +14,69 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package etcdsync
+package etcdsync_test
 
 import (
 	"fmt"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
+	"github.com/astaxie/beego"
+	"github.com/stretchr/testify/assert"
+	"testing"
+
+	_ "github.com/apache/servicecomb-service-center/server/plugin/pkg/registry/etcd"
+	_ "github.com/apache/servicecomb-service-center/server/plugin/pkg/tracing/buildin"
 )
 
-var _ = Describe("Mutex", func() {
-	Context("normal", func() {
-		It("TestLockTimeout", func() {
-			m1 := NewLockFactory("key1", 5)
-			m2 := NewLockFactory("key1", 1)
-			l1, err := m1.NewDLock(true)
-			Expect(l1).ToNot(BeNil())
-			Expect(err).To(BeNil())
+func init() {
+	beego.AppConfig.Set("registry_plugin", "etcd")
+	//init plugin
+	etcdsync.IsDebug = true
+}
 
-			fmt.Println("UT===================m1 locked")
-			ch := make(chan bool)
-			go func() {
-				l2, err := m2.NewDLock(false)
-				Expect(l2).To(BeNil())
-				Expect(err).ToNot(BeNil())
-				fmt.Println("UT===================m2 try failed")
+func TestLock(t *testing.T) {
+	m1, err := etcdsync.Lock("key1", 5, true)
+	assert.NoError(t, err)
+	assert.NotNil(t, m1)
+	t.Log("m1 locked")
 
-				l2, err = m2.NewDLock(true) // 1s * 3
-				Expect(l2).To(BeNil())
-				Expect(err).ToNot(BeNil())
-				fmt.Println("UT===================m2 timed out")
-				ch <- true
-			}()
-			<-ch
+	ch := make(chan bool)
+	go func() {
+		m2, err := etcdsync.Lock("key1", 1, false)
 
-			m3 := NewLockFactory("key1", 2)
-			l3, err := m3.NewDLock(true)
-			Expect(l3).ToNot(BeNil())
-			Expect(err).To(BeNil())
+		assert.Nil(t, m2)
+		assert.Error(t, err)
+		fmt.Println("m2 try failed")
 
-			fmt.Println("UT===================m3 locked")
-			err = l3.Unlock()
-			Expect(err).To(BeNil())
+		m2, err = etcdsync.Lock("key1", 1, true)
+		assert.Nil(t, m2)
+		assert.Error(t, err)
+		fmt.Println("m2 timed out")
+		ch <- true
+	}()
+	<-ch
 
-			err = l1.Unlock()
-			Expect(err).To(BeNil())
-			fmt.Println("UT===================m1 unlocked")
-		})
+	m3, err := etcdsync.Lock("key1", 2, true)
+	assert.NoError(t, err)
+	assert.NotNil(t, m3)
+
+	fmt.Println("m3 locked")
+	err = m3.Unlock()
+	assert.NoError(t, err)
+
+	err = m1.Unlock()
+	assert.NoError(t, err)
+	fmt.Println("m1 unlocked")
+}
+func BenchmarkLock(b *testing.B) {
+	var g = 0
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			lock, _ := etcdsync.Lock("/test", -1, true)
+			//do something
+			g += 1
+			fmt.Println(g)
+			lock.Unlock()
+		}
 	})
-})
+	fmt.Println("Parallel:", b.N)
+}

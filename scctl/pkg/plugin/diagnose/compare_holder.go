@@ -16,12 +16,12 @@
 package diagnose
 
 import (
+	"context"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/server/admin/model"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"golang.org/x/net/context"
 )
 
 type CompareHolder interface {

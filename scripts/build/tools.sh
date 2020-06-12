@@ -22,31 +22,6 @@ fail() {
 	exit 1
 }
 
-install_glide() {
-    set +e
-    GLIDE=$(which glide)
-    if [ "$?" == "1" ]; then
-        set -e
-        curl https://glide.sh/get | sh
-    else
-        set -e
-    fi
-}
-
-install_bower() {
-    set +e
-    BOWER=$(which bower)
-    if [ "$?" == "1" ]; then
-        set -e
-
-        curl -sL https://deb.nodesource.com/setup_8.x | bash -
-        apt-get install -y nodejs
-
-        npm install -g bower
-    else
-        set -e
-    fi
-}
 
 build_service_center() {
     local app=$PACKAGE_PREFIX-$PACKAGE-$GOOS-$GOARCH
@@ -71,16 +46,6 @@ build_service_center() {
     go build --ldflags "${ldflags}" -o $BINARY_NAME
 }
 
-build_frontend() {
-    ## Build Frontend Release
-    cd frontend
-    local BINARY_NAME=$PACKAGE_PREFIX-$PACKAGE-$GOOS-$GOARCH/frontend
-    if [ "$GOOS" == "windows" ]; then
-        BINARY_NAME=${BINARY_NAME}.exe
-    fi
-    go build --ldflags "${GO_LDFLAGS}" -o ../$BINARY_NAME
-    cd -
-}
 
 build_scctl() {
     local app=../$PACKAGE_PREFIX-$PACKAGE-$GOOS-$GOARCH
@@ -116,20 +81,7 @@ build_syncer() {
     cd -
 }
 
-sc_deps() {
-    install_glide
 
-    glide install
-}
-
-frontend_deps() {
-    install_bower
-
-    ## Download the frontend dependencies using bower
-    cd frontend/app
-    bower install --allow-root
-    cd ../..
-}
 
 ## Prepare the Configuration and Make package
 package() {

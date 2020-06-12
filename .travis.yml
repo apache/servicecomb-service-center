@@ -6,7 +6,7 @@ services:
   - docker
 
 go:
-  - 1.11
+  - 1.14
 
 before_install:
   - go get github.com/mattn/goveralls

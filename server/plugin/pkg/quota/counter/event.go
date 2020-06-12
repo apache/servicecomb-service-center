@@ -16,6 +16,7 @@
 package counter
 
 import (
+	"context"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
@@ -24,7 +25,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"github.com/astaxie/beego"
-	"golang.org/x/net/context"
 )
 
 var (

@@ -16,7 +16,10 @@
  */
 package etcd
 
-import _ "github.com/apache/servicecomb-service-center/server/plugin/pkg/tracing/buildin"
+import (
+	_ "github.com/apache/servicecomb-service-center/server/plugin/pkg/tracing/buildin"
+	"github.com/stretchr/testify/assert"
+)
 import _ "github.com/apache/servicecomb-service-center/server/plugin/pkg/security/buildin"
 import _ "github.com/apache/servicecomb-service-center/server/plugin/pkg/tls/buildin"
 import (
@@ -33,10 +36,10 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/rpc"
 
+	"context"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/etcdserver/etcdserverpb"
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc/status"
 )
 
@@ -49,19 +52,24 @@ var (
 )
 
 func TestInitCluster(t *testing.T) {
-	registry.Configuration().ClusterAddresses = "127.0.0.1:2379"
-	registry.Configuration().InitClusters()
-	if strings.Join(registry.Configuration().RegistryAddresses(), ",") != "127.0.0.1:2379" {
-		t.Fatalf("TestInitCluster failed, %v", registry.Configuration().RegistryAddresses())
-	}
-	registry.Configuration().ClusterAddresses = "127.0.0.1:2379,127.0.0.2:2379"
-	registry.Configuration().InitClusters()
-	if strings.Join(registry.Configuration().RegistryAddresses(), ",") != "127.0.0.1:2379,127.0.0.2:2379" {
-		t.Fatalf("TestInitCluster failed, %v", registry.Configuration().RegistryAddresses())
-	}
+	t.Run("normal", func(t *testing.T) {
+		registry.Configuration().ClusterAddresses = "127.0.0.1:2379"
+		registry.Configuration().InitClusterInfo()
+		if strings.Join(registry.Configuration().RegistryAddresses(), ",") != "127.0.0.1:2379" {
+			t.Fatalf("TestInitCluster failed, %v", registry.Configuration().RegistryAddresses())
+		}
+	})
+	t.Run("not normal2", func(t *testing.T) {
+		registry.Configuration().ClusterAddresses = "127.0.0.1:2379,127.0.0.2:2379"
+		registry.Configuration().InitClusterInfo()
+		if strings.Join(registry.Configuration().RegistryAddresses(), ",") != "127.0.0.1:2379,127.0.0.2:2379" {
+			t.Fatalf("TestInitCluster failed, %v", registry.Configuration().RegistryAddresses())
+		}
+	})
+
 	registry.Configuration().ClusterName = "sc-0"
 	registry.Configuration().ClusterAddresses = "sc-0=127.0.0.1:2379,127.0.0.2:2379"
-	registry.Configuration().InitClusters()
+	registry.Configuration().InitClusterInfo()
 	if strings.Join(registry.Configuration().RegistryAddresses(), ",") != "127.0.0.1:2379,127.0.0.2:2379" {
 		t.Fatalf("TestInitCluster failed, %v", registry.Configuration().RegistryAddresses())
 	}
@@ -70,7 +78,7 @@ func TestInitCluster(t *testing.T) {
 	}
 	registry.Configuration().ClusterName = "sc-0"
 	registry.Configuration().ClusterAddresses = "sc-1=127.0.0.1:2379,127.0.0.2:2379,sc-2=127.0.0.3:2379"
-	registry.Configuration().InitClusters()
+	registry.Configuration().InitClusterInfo()
 	if strings.Join(registry.Configuration().RegistryAddresses(), ",") != "" {
 		t.Fatalf("TestInitCluster failed, %v", registry.Configuration().RegistryAddresses())
 	}
@@ -82,7 +90,7 @@ func TestInitCluster(t *testing.T) {
 	}
 	registry.Configuration().ClusterName = "sc-0"
 	registry.Configuration().ClusterAddresses = "sc-0=127.0.0.1:2379,sc-1=127.0.0.3:2379,127.0.0.4:2379"
-	registry.Configuration().InitClusters()
+	registry.Configuration().InitClusterInfo()
 	if strings.Join(registry.Configuration().RegistryAddresses(), ",") != "127.0.0.1:2379" {
 		t.Fatalf("TestInitCluster failed, %v", registry.Configuration().RegistryAddresses())
 	}
@@ -92,7 +100,7 @@ func TestInitCluster(t *testing.T) {
 	registry.Configuration().ClusterName = "sc-0"
 	registry.Configuration().ManagerAddress = "127.0.0.1:2379,127.0.0.2:2379"
 	registry.Configuration().ClusterAddresses = "sc-0=127.0.0.1:30100,sc-1=127.0.0.2:30100"
-	registry.Configuration().InitClusters()
+	registry.Configuration().InitClusterInfo()
 	if strings.Join(registry.Configuration().RegistryAddresses(), ",") != "127.0.0.1:2379,127.0.0.2:2379" {
 		t.Fatalf("TestInitCluster failed, %v", registry.Configuration().RegistryAddresses())
 	}
@@ -105,20 +113,20 @@ func TestEtcdClient(t *testing.T) {
 	registry.Configuration().ClusterName = ""
 	registry.Configuration().ManagerAddress = ""
 	registry.Configuration().ClusterAddresses = endpoint
-	registry.Configuration().InitClusters()
+	registry.Configuration().InitClusterInfo()
 
-	etcd := &EtcdClient{
+	etcdc := &EtcdClient{
 		Endpoints:   []string{endpoint},
 		DialTimeout: dialTimeout,
 	}
-	err := etcd.Initialize()
+	err := etcdc.Initialize()
 	if err != nil {
 		t.Fatalf("TestEtcdClient failed, %#v", err)
 	}
-	defer etcd.Close()
+	defer etcdc.Close()
 
 	select {
-	case <-etcd.Ready():
+	case <-etcdc.Ready():
 	default:
 		t.Fatalf("TestEtcdClient failed")
 	}
@@ -131,7 +139,7 @@ func TestEtcdClient(t *testing.T) {
 	old1 := registry.Configuration().ClusterAddresses
 	old2 := registry.Configuration().DialTimeout
 	registry.Configuration().ClusterAddresses = "x"
-	registry.Configuration().InitClusters()
+	registry.Configuration().InitClusterInfo()
 	registry.Configuration().DialTimeout = dialTimeout
 	inst = NewRegistry()
 	if inst == nil {
@@ -143,76 +151,76 @@ func TestEtcdClient(t *testing.T) {
 		t.Fatalf("TestEtcdClient failed, %#v", err)
 	}
 	registry.Configuration().ClusterAddresses = old1
-	registry.Configuration().InitClusters()
+	registry.Configuration().InitClusterInfo()
 	registry.Configuration().DialTimeout = old2
 
-	// case: etcd do
+	// case: etcdc do
 	// put
-	resp, err := etcd.Do(context.Background(), registry.PUT, registry.WithStrKey("/test_range/b"),
+	resp, err := etcdc.Do(context.Background(), registry.PUT, registry.WithStrKey("/test_range/b"),
 		registry.WithStrValue("b"))
 	if err != nil || !resp.Succeeded {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
-	resp, err = etcd.Do(context.Background(), registry.GET, registry.WithStrKey("/test_range/b"))
+	resp, err = etcdc.Do(context.Background(), registry.GET, registry.WithStrKey("/test_range/b"))
 	if err != nil || !resp.Succeeded || resp.Count != 1 ||
 		string(resp.Kvs[0].Key) != "/test_range/b" || string(resp.Kvs[0].Value) != "b" {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
 
-	resp, err = etcd.Do(context.Background(), registry.PUT, registry.WithStrKey("/test_range/a"),
+	resp, err = etcdc.Do(context.Background(), registry.PUT, registry.WithStrKey("/test_range/a"),
 		registry.WithStrValue("a"))
 	if err != nil || !resp.Succeeded {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
-	resp, err = etcd.Do(context.Background(), registry.GET, registry.WithStrKey("/test_range/a"),
+	resp, err = etcdc.Do(context.Background(), registry.GET, registry.WithStrKey("/test_range/a"),
 		registry.WithKeyOnly())
 	if err != nil || !resp.Succeeded || resp.Count != 1 ||
 		string(resp.Kvs[0].Key) != "/test_range/a" || resp.Kvs[0].Value != nil {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
-	resp, err = etcd.Do(context.Background(), registry.GET, registry.WithStrKey("/test_range/a"),
+	resp, err = etcdc.Do(context.Background(), registry.GET, registry.WithStrKey("/test_range/a"),
 		registry.WithCountOnly())
 	if err != nil || !resp.Succeeded || resp.Count != 1 || resp.Kvs != nil {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
 
-	resp, err = etcd.Do(context.Background(), registry.PUT, registry.WithStrKey("/test_range/c"),
+	resp, err = etcdc.Do(context.Background(), registry.PUT, registry.WithStrKey("/test_range/c"),
 		registry.WithStrValue("c"))
 	if err != nil || !resp.Succeeded {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
-	resp, err = etcd.Do(context.Background(), registry.PUT, registry.WithStrKey("/test_range/d"),
+	resp, err = etcdc.Do(context.Background(), registry.PUT, registry.WithStrKey("/test_range/d"),
 		registry.WithStrValue("d"))
 	if err != nil || !resp.Succeeded {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
-	resp, err = etcd.Do(context.Background(), registry.PUT, registry.WithStrKey("/test_range/dd"),
+	resp, err = etcdc.Do(context.Background(), registry.PUT, registry.WithStrKey("/test_range/dd"),
 		registry.WithStrValue("dd"))
 	if err != nil || !resp.Succeeded {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
 	// get prefix
-	resp, err = etcd.Do(context.Background(), registry.GET, registry.WithStrKey("/test_range/d"),
+	resp, err = etcdc.Do(context.Background(), registry.GET, registry.WithStrKey("/test_range/d"),
 		registry.WithPrefix())
 	if err != nil || !resp.Succeeded || resp.Count != 2 ||
 		string(resp.Kvs[0].Key) != "/test_range/d" || string(resp.Kvs[0].Value) != "d" ||
 		string(resp.Kvs[1].Key) != "/test_range/dd" || string(resp.Kvs[1].Value) != "dd" {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
-	resp, err = etcd.Do(context.Background(), registry.GET, registry.WithStrKey("/test_range/d"),
+	resp, err = etcdc.Do(context.Background(), registry.GET, registry.WithStrKey("/test_range/d"),
 		registry.WithPrefix(), registry.WithKeyOnly())
 	if err != nil || !resp.Succeeded || resp.Count != 2 ||
 		string(resp.Kvs[0].Key) != "/test_range/d" || resp.Kvs[0].Value != nil ||
 		string(resp.Kvs[1].Key) != "/test_range/dd" || resp.Kvs[1].Value != nil {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
-	resp, err = etcd.Do(context.Background(), registry.GET, registry.WithStrKey("/test_range/d"),
+	resp, err = etcdc.Do(context.Background(), registry.GET, registry.WithStrKey("/test_range/d"),
 		registry.WithPrefix(), registry.WithCountOnly())
 	if err != nil || !resp.Succeeded || resp.Count != 2 || resp.Kvs != nil {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
 	// get range
-	resp, err = etcd.Do(context.Background(), registry.GET,
+	resp, err = etcdc.Do(context.Background(), registry.GET,
 		registry.WithStrKey("/test_range/b"),
 		registry.WithStrEndKey("/test_range/dd")) // [b, dd) !!!
 	if err != nil || !resp.Succeeded || resp.Count != 3 ||
@@ -221,7 +229,7 @@ func TestEtcdClient(t *testing.T) {
 		string(resp.Kvs[2].Key) != "/test_range/d" || string(resp.Kvs[2].Value) != "d" {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
-	resp, err = etcd.Do(context.Background(), registry.GET,
+	resp, err = etcdc.Do(context.Background(), registry.GET,
 		registry.WithStrKey("/test_range/b"),
 		registry.WithStrEndKey("/test_range/dd"), registry.WithKeyOnly()) // [b, dd) !!!
 	if err != nil || !resp.Succeeded || resp.Count != 3 ||
@@ -230,14 +238,14 @@ func TestEtcdClient(t *testing.T) {
 		string(resp.Kvs[2].Key) != "/test_range/d" || resp.Kvs[2].Value != nil {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
-	resp, err = etcd.Do(context.Background(), registry.GET,
+	resp, err = etcdc.Do(context.Background(), registry.GET,
 		registry.WithStrKey("/test_range/b"),
 		registry.WithStrEndKey("/test_range/dd"), registry.WithCountOnly()) // [b, dd) !!!
 	if err != nil || !resp.Succeeded || resp.Count != 3 || resp.Kvs != nil {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
 	// get prefix paging
-	resp, err = etcd.Do(context.Background(), registry.GET,
+	resp, err = etcdc.Do(context.Background(), registry.GET,
 		registry.WithStrKey("/test_range/"), registry.WithPrefix(),
 		registry.WithOffset(2), registry.WithLimit(2))
 	if err != nil || !resp.Succeeded || resp.Count != 5 || len(resp.Kvs) != 2 ||
@@ -245,14 +253,14 @@ func TestEtcdClient(t *testing.T) {
 		string(resp.Kvs[1].Key) != "/test_range/d" || string(resp.Kvs[1].Value) != "d" {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
-	resp, err = etcd.Do(context.Background(), registry.GET,
+	resp, err = etcdc.Do(context.Background(), registry.GET,
 		registry.WithStrKey("/test_range/"), registry.WithPrefix(), registry.WithKeyOnly(),
 		registry.WithOffset(4), registry.WithLimit(2))
 	if err != nil || !resp.Succeeded || resp.Count != 5 || len(resp.Kvs) != 1 ||
 		string(resp.Kvs[0].Key) != "/test_range/dd" || resp.Kvs[0].Value != nil {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
-	resp, err = etcd.Do(context.Background(), registry.GET,
+	resp, err = etcdc.Do(context.Background(), registry.GET,
 		registry.WithStrKey("/test_range/d"), registry.WithPrefix(), registry.WithKeyOnly(),
 		registry.WithOffset(0), registry.WithLimit(2))
 	if err != nil || !resp.Succeeded || resp.Count != 2 || len(resp.Kvs) != 2 ||
@@ -260,27 +268,27 @@ func TestEtcdClient(t *testing.T) {
 		string(resp.Kvs[1].Key) != "/test_range/dd" || resp.Kvs[1].Value != nil {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
-	resp, err = etcd.Do(context.Background(), registry.GET,
+	resp, err = etcdc.Do(context.Background(), registry.GET,
 		registry.WithStrKey("/test_range/"), registry.WithPrefix(), registry.WithCountOnly(),
 		registry.WithOffset(2), registry.WithLimit(2))
 	if err != nil || !resp.Succeeded || resp.Count != 5 || resp.Kvs != nil {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
-	resp, err = etcd.Do(context.Background(), registry.GET,
+	resp, err = etcdc.Do(context.Background(), registry.GET,
 		registry.WithStrKey("/test_range/"), registry.WithPrefix(),
 		registry.WithOffset(6), registry.WithLimit(2))
 	if err != nil || !resp.Succeeded || resp.Count != 5 || len(resp.Kvs) != 0 {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
 	// if offset < -1, just paging by limit
-	resp, err = etcd.Do(context.Background(), registry.GET,
+	resp, err = etcdc.Do(context.Background(), registry.GET,
 		registry.WithStrKey("/test_range/"), registry.WithPrefix(),
 		registry.WithOffset(-2), registry.WithLimit(2))
 	if err != nil || !resp.Succeeded || resp.Count != 5 || len(resp.Kvs) != 5 {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
 	// get range paging
-	resp, err = etcd.Do(context.Background(), registry.GET,
+	resp, err = etcdc.Do(context.Background(), registry.GET,
 		registry.WithStrKey("/test_range/b"),
 		registry.WithStrEndKey("/test_range/dd"),
 		registry.WithOffset(2), registry.WithLimit(2))
@@ -288,7 +296,7 @@ func TestEtcdClient(t *testing.T) {
 		string(resp.Kvs[0].Key) != "/test_range/d" {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
-	resp, err = etcd.Do(context.Background(), registry.GET,
+	resp, err = etcdc.Do(context.Background(), registry.GET,
 		registry.WithStrKey("/test_range/a"),
 		registry.WithStrEndKey("/test_range/dd"),
 		registry.WithOffset(2), registry.WithLimit(2))
@@ -297,7 +305,7 @@ func TestEtcdClient(t *testing.T) {
 		string(resp.Kvs[1].Key) != "/test_range/d" {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
-	resp, err = etcd.Do(context.Background(), registry.GET,
+	resp, err = etcdc.Do(context.Background(), registry.GET,
 		registry.WithStrKey("/test_range/a"),
 		registry.WithStrEndKey("/test_range/dd"), registry.WithKeyOnly(),
 		registry.WithOffset(2), registry.WithLimit(2))
@@ -306,21 +314,21 @@ func TestEtcdClient(t *testing.T) {
 		string(resp.Kvs[1].Key) != "/test_range/d" || resp.Kvs[1].Value != nil {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
-	resp, err = etcd.Do(context.Background(), registry.GET,
+	resp, err = etcdc.Do(context.Background(), registry.GET,
 		registry.WithStrKey("/test_range/a"),
 		registry.WithStrEndKey("/test_range/dd"), registry.WithCountOnly(),
 		registry.WithOffset(2), registry.WithLimit(2))
 	if err != nil || !resp.Succeeded || resp.Count != 4 || resp.Kvs != nil {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
-	resp, err = etcd.Do(context.Background(), registry.GET,
+	resp, err = etcdc.Do(context.Background(), registry.GET,
 		registry.WithStrKey("/test_range/b"),
 		registry.WithStrEndKey("/test_range/dd"),
 		registry.WithOffset(5), registry.WithLimit(2))
 	if err != nil || !resp.Succeeded || resp.Count != 3 || len(resp.Kvs) != 0 {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
-	resp, err = etcd.Do(context.Background(), registry.GET,
+	resp, err = etcdc.Do(context.Background(), registry.GET,
 		registry.WithStrKey("/test_range/a"),
 		registry.WithStrEndKey("/test_range/dd"),
 		registry.WithOffset(4), registry.WithLimit(2))
@@ -328,24 +336,24 @@ func TestEtcdClient(t *testing.T) {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
 	// delete range
-	resp, err = etcd.Do(context.Background(), registry.DEL,
+	resp, err = etcdc.Do(context.Background(), registry.DEL,
 		registry.WithStrKey("/test_range/b"),
 		registry.WithStrEndKey("/test_range/dd")) // [b, d) !!!
 	if err != nil || !resp.Succeeded {
 		t.Fatalf("TestEtcdClient_Delete failed, %#v", err)
 	}
-	resp, err = etcd.Do(context.Background(), registry.GET, registry.WithStrKey("/test_range/"),
+	resp, err = etcdc.Do(context.Background(), registry.GET, registry.WithStrKey("/test_range/"),
 		registry.WithPrefix())
 	if err != nil || !resp.Succeeded || len(resp.Kvs) != 2 || string(resp.Kvs[1].Key) != "/test_range/dd" {
 		t.Fatalf("TestEtcdClient_Delete failed, %#v", resp.Kvs)
 	}
 	// delete prefix
-	resp, err = etcd.Do(context.Background(), registry.DEL, registry.WithStrKey("/test_range/"),
+	resp, err = etcdc.Do(context.Background(), registry.DEL, registry.WithStrKey("/test_range/"),
 		registry.WithPrefix())
 	if err != nil || !resp.Succeeded {
 		t.Fatalf("TestEtcdClient_Delete failed, %#v", err)
 	}
-	resp, err = etcd.Do(context.Background(), registry.GET, registry.WithStrKey("/test_range/"),
+	resp, err = etcdc.Do(context.Background(), registry.GET, registry.WithStrKey("/test_range/"),
 		registry.WithPrefix())
 	if err != nil || !resp.Succeeded || resp.Count != 0 {
 		t.Fatalf("TestEtcdClient_Delete failed, %#v", err)
@@ -358,7 +366,7 @@ func TestEtcdClient(t *testing.T) {
 		v := strconv.Itoa(i)
 		go func() {
 			defer wg.Done()
-			resp, err = etcd.Do(context.Background(), registry.PUT, registry.WithStrKey("/test_page/"+v),
+			resp, err = etcdc.Do(context.Background(), registry.PUT, registry.WithStrKey("/test_page/"+v),
 				registry.WithStrValue(v))
 			if err != nil || !resp.Succeeded {
 				t.Fatalf("TestEtcdClient_Do failed, %#v", err)
@@ -366,14 +374,14 @@ func TestEtcdClient(t *testing.T) {
 		}()
 	}
 	wg.Wait()
-	resp, err = etcd.Do(context.Background(), registry.GET,
+	resp, err = etcdc.Do(context.Background(), registry.GET,
 		registry.WithStrKey("/test_page/"),
 		registry.WithStrEndKey("/test_page/9999"))
 	if err != nil || !resp.Succeeded || resp.Count != registry.DEFAULT_PAGE_COUNT+1 ||
 		len(resp.Kvs) != registry.DEFAULT_PAGE_COUNT+1 {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
-	resp, err = etcd.Do(context.Background(), registry.GET,
+	resp, err = etcdc.Do(context.Background(), registry.GET,
 		registry.WithStrKey("/test_page/"), registry.WithPrefix(), registry.WithDescendOrder())
 	if err != nil || !resp.Succeeded || resp.Count != registry.DEFAULT_PAGE_COUNT+1 ||
 		len(resp.Kvs) != registry.DEFAULT_PAGE_COUNT+1 ||
@@ -381,13 +389,13 @@ func TestEtcdClient(t *testing.T) {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
 	// delete range
-	resp, err = etcd.Do(context.Background(), registry.DEL,
+	resp, err = etcdc.Do(context.Background(), registry.DEL,
 		registry.WithStrKey("/test_page/"),
 		registry.WithStrEndKey("/test_page/9999"))
 	if err != nil || !resp.Succeeded {
 		t.Fatalf("TestEtcdClient_Delete failed, %#v", err)
 	}
-	resp, err = etcd.Do(context.Background(), registry.GET,
+	resp, err = etcdc.Do(context.Background(), registry.GET,
 		registry.WithStrKey("/test_page/"), registry.WithPrefix())
 	if err != nil || !resp.Succeeded || resp.Count != 0 {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
@@ -535,59 +543,47 @@ func TestEtcdClient_LeaseRenew(t *testing.T) {
 }
 
 func TestEtcdClient_HealthCheck(t *testing.T) {
-	etcd := &EtcdClient{
+	etcdc := &EtcdClient{
 		Endpoints:        []string{endpoint},
 		DialTimeout:      dialTimeout,
 		AutoSyncInterval: time.Millisecond,
 	}
-	err := etcd.Initialize()
-	if err != nil {
-		t.Fatalf("TestEtcdClient failed, %#v", err)
-	}
-	defer etcd.Close()
+	err := etcdc.Initialize()
+	assert.NoError(t, err)
+	defer etcdc.Close()
 
-	err = etcd.ReOpen()
-	if err != nil {
-		t.Fatalf("TestEtcdClient failed, %#v", err)
-	}
+	err = etcdc.ReOpen()
+	assert.NoError(t, err)
 	ctx, _ := context.WithTimeout(context.Background(), dialTimeout)
-	err = etcd.SyncMembers(ctx)
-	if err != nil {
-		t.Fatalf("TestEtcdClient failed, %#v", err)
-	}
-	etcd.Endpoints = []string{"x"}
-	err = etcd.ReOpen()
-	if err == nil {
-		t.Fatalf("TestEtcdClient failed, %#v", err)
-	}
-	ctx, _ = context.WithTimeout(context.Background(), dialTimeout)
-	err = etcd.SyncMembers(ctx)
-	if err != nil {
-		t.Fatalf("TestEtcdClient failed, %#v", err)
-	}
-	etcd.Endpoints = []string{endpoint}
+	err = etcdc.SyncMembers(ctx)
+	assert.NoError(t, err)
+	etcdc.Endpoints = []string{"x"}
+	err = etcdc.ReOpen()
+	assert.Error(t, err)
 
-	etcd.Close()
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-	go func() {
-		for {
-			select {
-			case <-time.After(time.Second):
-				_, err = etcd.Do(context.Background(), registry.GET,
-					registry.WithStrKey("/test_health/"))
-				if err != nil {
-					continue
-				}
-			case <-ctx.Done():
-			}
+	t.Run("before check", func(t *testing.T) {
+		ctx, _ = context.WithTimeout(context.Background(), dialTimeout)
+		err = etcdc.SyncMembers(ctx)
+		assert.NoError(t, err)
+	})
+
+	etcdc.Endpoints = []string{endpoint}
+
+	etcdc.Close()
+	ctx, _ = context.WithTimeout(context.Background(), 1*time.Second)
+	go etcdc.healthCheckLoop(ctx)
+	for {
+		_, err = etcdc.Do(context.Background(), registry.GET,
+			registry.WithStrKey("/test_health/"))
+		if err != nil {
+			time.Sleep(1 * time.Second)
+			continue
+		} else {
 			break
 		}
-		if err != nil {
-			t.Fatalf("TestEtcdClient failed, %#v", err)
-		}
-		cancel()
-	}()
-	etcd.healthCheckLoop(ctx)
+	}
+	assert.NoError(t, err)
+
 }
 
 func TestEtcdClient_Watch(t *testing.T) {

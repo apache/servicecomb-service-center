@@ -41,7 +41,7 @@ func (c *LBClient) WebsocketDial(ctx context.Context, api string, headers http.H
 		} else {
 			addr.Scheme = "ws"
 		}
-		conn, _, err = dialer.Dial(addr.String() + api, headers)
+		conn, _, err = dialer.Dial(addr.String()+api, headers)
 		if err == nil {
 			break
 		}

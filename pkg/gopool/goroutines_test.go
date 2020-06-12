@@ -17,8 +17,8 @@
 package gopool
 
 import (
+	"context"
 	"fmt"
-	"golang.org/x/net/context"
 	"sync"
 	"testing"
 	"time"

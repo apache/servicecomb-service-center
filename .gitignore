@@ -27,7 +27,5 @@ etc/ssl/
 frontend/bower_components/
 frontend/node_modules/
 tmp/
-glide.lock
 servicecomb-service-center
-go.sum
 service-center

@@ -17,6 +17,7 @@
 package admin
 
 import (
+	"context"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -30,7 +31,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 	"github.com/apache/servicecomb-service-center/version"
 	"github.com/astaxie/beego"
-	"golang.org/x/net/context"
 	"os"
 	"strings"
 )

@@ -19,8 +19,8 @@ package task
 import (
 	"testing"
 
+	"context"
 	"errors"
-	"golang.org/x/net/context"
 	"time"
 )
 

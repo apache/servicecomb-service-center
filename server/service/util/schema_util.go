@@ -17,9 +17,9 @@
 package util
 
 import (
+	"context"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
-	"golang.org/x/net/context"
 )
 
 func CheckSchemaInfoExist(ctx context.Context, key string) (bool, error) {

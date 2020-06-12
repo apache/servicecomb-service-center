@@ -16,11 +16,11 @@
 package health
 
 import (
+	"context"
 	"github.com/apache/servicecomb-service-center/pkg/client/sc"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
 	scerr "github.com/apache/servicecomb-service-center/server/error"
 	"github.com/spf13/cobra"
-	"golang.org/x/net/context"
 )
 
 const (

@@ -17,6 +17,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -34,7 +35,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/service/cache"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
-	"golang.org/x/net/context"
 	"math"
 	"os"
 	"strconv"
