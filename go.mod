@@ -35,8 +35,9 @@ require (
 	github.com/eapache/queue v1.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.7 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
-	github.com/go-chassis/paas-lager v0.0.0-20180727081842-50655443dc96
+	github.com/go-chassis/paas-lager v1.1.1
 	github.com/go-logfmt/logfmt v0.3.0 // indirect
+	github.com/go-mesh/openlogging v1.0.1 // indirect
 	github.com/gogo/protobuf v1.1.1
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b // indirect
 	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef // indirect
