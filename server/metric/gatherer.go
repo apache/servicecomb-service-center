@@ -17,10 +17,10 @@
 package metric
 
 import (
+	"context"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	pm "github.com/prometheus/client_golang/prometheus"
-	"golang.org/x/net/context"
+	"github.com/prometheus/client_golang/prometheus"
 	"strings"
 	"sync"
 	"time"
@@ -79,7 +79,7 @@ func (mm *MetricsGatherer) loop(ctx context.Context) {
 }
 
 func (mm *MetricsGatherer) Collect() error {
-	mfs, err := pm.DefaultGatherer.Gather()
+	mfs, err := prometheus.DefaultGatherer.Gather()
 	if err != nil {
 		return err
 	}

@@ -17,11 +17,11 @@
 package service_test
 
 import (
+	"context"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/service"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"testing"
 )

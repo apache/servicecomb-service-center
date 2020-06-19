@@ -16,12 +16,12 @@
 package sc
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/lb"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"golang.org/x/net/context"
 	"net/http"
 )
 

@@ -16,6 +16,7 @@
 package service
 
 import (
+	"context"
 	"github.com/apache/servicecomb-service-center/pkg/client/sc"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
@@ -24,7 +25,6 @@ import (
 	"github.com/apache/servicecomb-service-center/scctl/pkg/writer"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/spf13/cobra"
-	"golang.org/x/net/context"
 	"strings"
 )
 

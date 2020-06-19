@@ -17,10 +17,10 @@
 package notify
 
 import (
+	"context"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	simple "github.com/apache/servicecomb-service-center/pkg/time"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"testing"
 	"time"

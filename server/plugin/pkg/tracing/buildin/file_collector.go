@@ -18,6 +18,7 @@ package buildin
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
@@ -25,7 +26,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
-	"golang.org/x/net/context"
 	"os"
 	"strings"
 	"time"

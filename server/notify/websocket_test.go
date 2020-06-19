@@ -16,10 +16,10 @@
  */
 package notify
 
-import _ "github.com/apache/servicecomb-service-center/server/init"
 import (
 	"context"
 	"errors"
+	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	_ "github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery/etcd"
 	_ "github.com/apache/servicecomb-service-center/server/plugin/pkg/registry/buildin"
@@ -36,6 +36,10 @@ var closeCh = make(chan struct{})
 type watcherConn struct {
 }
 
+func init() {
+	testing.Init()
+	core.Initialize()
+}
 func (h *watcherConn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var upgrader = websocket.Upgrader{}
 	conn, _ := upgrader.Upgrade(w, r, nil)

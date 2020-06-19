@@ -95,7 +95,6 @@ cd $GOPATH/src/github.com/apache/servicecomb-service-center
 
 Dependencies
 
-By default, we use [glide](https://glide.sh)(version: 0.13+) to manage dependencies. If the go version greater then `go1.11`,
 you can download dependencies directly using command `go mod`. Please follow below steps to
 download all the dependency.
 
@@ -103,10 +102,6 @@ download all the dependency.
 # greater then go1.11
 GO111MODULE=on go mod download
 GO111MODULE=on go mod vendor
-
-# lower than go1.11
-curl https://glide.sh/get | sh
-glide install
 ```
 
 Build the Service-Center

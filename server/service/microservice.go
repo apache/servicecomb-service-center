@@ -37,7 +37,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/uuid"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 type MicroServiceService struct {

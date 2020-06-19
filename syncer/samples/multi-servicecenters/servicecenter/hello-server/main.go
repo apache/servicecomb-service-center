@@ -56,7 +56,7 @@ func main() {
 	<-stopCh
 }
 
-func start(ctx context.Context, conf *servicecenter.Config)  {
+func start(ctx context.Context, conf *servicecenter.Config) {
 	err := servicecenter.Start(ctx, conf)
 	if err != nil {
 		log.Fatal("register and discovery from servicecenter failed", err)

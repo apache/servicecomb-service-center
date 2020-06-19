@@ -16,6 +16,7 @@
 package schema
 
 import (
+	"context"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/client/sc"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
@@ -25,7 +26,6 @@ import (
 	adminModel "github.com/apache/servicecomb-service-center/server/admin/model"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/spf13/cobra"
-	"golang.org/x/net/context"
 	"io"
 	"io/ioutil"
 	"os"

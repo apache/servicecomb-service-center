@@ -3,7 +3,7 @@
 ## example
 
 ```go
-lock, _ := etcdsync.Lock("/test", true)
+lock, _ := etcdsync.Lock("/test",-1, true)
 defer lock.Unlock()
 //do something
 g += 1

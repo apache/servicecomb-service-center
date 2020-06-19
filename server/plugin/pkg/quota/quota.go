@@ -17,9 +17,9 @@
 package quota
 
 import (
+	"context"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	scerr "github.com/apache/servicecomb-service-center/server/error"
-	"golang.org/x/net/context"
 	"strconv"
 )
 

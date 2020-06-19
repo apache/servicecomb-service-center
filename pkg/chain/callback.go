@@ -17,9 +17,9 @@
 package chain
 
 import (
+	"context"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"golang.org/x/net/context"
 )
 
 var pool = gopool.New(context.Background())

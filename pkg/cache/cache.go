@@ -17,7 +17,7 @@
 package cache
 
 import (
-	"golang.org/x/net/context"
+	"context"
 	"sync"
 )
 

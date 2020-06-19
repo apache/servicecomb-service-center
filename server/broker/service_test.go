@@ -19,6 +19,7 @@ package broker_test
 import (
 	"fmt"
 
+	"context"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/broker"
 	"github.com/apache/servicecomb-service-center/server/broker/brokerpb"
@@ -27,7 +28,6 @@ import (
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"golang.org/x/net/context"
 )
 
 const (
@@ -194,9 +194,9 @@ var _ = Describe("BrokerController", func() {
 				Expect(err).To(BeNil())
 				respResults, err := brokerResource.PublishVerificationResults(getContext(),
 					&brokerpb.PublishVerificationRequest{
-						ProviderId: providerServiceId,
-						ConsumerId: consumerServiceId,
-						PactId:     int32(id),
+						ProviderId:                 providerServiceId,
+						ConsumerId:                 consumerServiceId,
+						PactId:                     int32(id),
 						ProviderApplicationVersion: TEST_BROKER_PROVIDER_VERSION,
 					})
 

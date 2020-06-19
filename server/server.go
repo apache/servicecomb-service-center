@@ -22,6 +22,7 @@ import (
 	"os"
 	"time"
 
+	"context"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	nf "github.com/apache/servicecomb-service-center/pkg/notify"
@@ -34,7 +35,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/task"
 	"github.com/apache/servicecomb-service-center/version"
 	"github.com/astaxie/beego"
-	"golang.org/x/net/context"
 )
 
 const buildin = "buildin"
@@ -83,6 +83,7 @@ func (s *ServiceCenterServer) needUpgrade() bool {
 
 func (s *ServiceCenterServer) loadOrUpgradeServerVersion() {
 	lock, err := mux.Lock(mux.GlobalLock)
+
 	if err != nil {
 		log.Errorf(err, "wait for server ready failed")
 		os.Exit(1)

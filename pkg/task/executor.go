@@ -17,10 +17,10 @@
 package task
 
 import (
+	"context"
 	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/queue"
-	"golang.org/x/net/context"
 )
 
 type Executor struct {

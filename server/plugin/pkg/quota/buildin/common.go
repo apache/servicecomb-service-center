@@ -17,6 +17,7 @@
 package buildin
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -28,7 +29,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
-	"golang.org/x/net/context"
 )
 
 type GetCurUsedNum func(context.Context, *quota.ApplyQuotaResource) (int64, error)

@@ -34,7 +34,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/tlsutil"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 var defaultURLClientOption = URLClientOption{

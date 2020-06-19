@@ -17,33 +17,42 @@
 package admin_test
 
 import (
+	"context"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/admin"
 	"github.com/apache/servicecomb-service-center/server/admin/model"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/servicecomb-service-center/server/error"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"golang.org/x/net/context"
+	mgr "github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery/etcd"
+	etcd2 "github.com/apache/servicecomb-service-center/server/plugin/pkg/registry/etcd"
+	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
+	"github.com/astaxie/beego"
+	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
-var _ = Describe("'Admin' service", func() {
-	Describe("execute 'dump' operation", func() {
-		Context("when get all", func() {
-			It("should be passed", func() {
-				resp, err := admin.AdminServiceAPI.Dump(getContext(), &model.DumpRequest{})
-				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
-			})
-		})
-		Context("when get by domain project", func() {
-			It("should be passed", func() {
-				resp, err := admin.AdminServiceAPI.Dump(
-					util.SetDomainProject(context.Background(), "x", "x"),
-					&model.DumpRequest{})
-				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).To(Equal(scerr.ErrForbidden))
-			})
-		})
-	})
-})
+func init() {
+	beego.AppConfig.Set("registry_plugin", "etcd")
+	mgr.RegisterPlugin(mgr.Plugin{mgr.REGISTRY, "etcd", etcd2.NewRegistry})
+	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "buildin", etcd.NewRepository})
+	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "etcd", etcd.NewRepository})
+}
+func TestAdminService_Dump(t *testing.T) {
+	t.Log("execute 'dump' operation,when get all,should be passed")
+	resp, err := admin.AdminServiceAPI.Dump(getContext(), &model.DumpRequest{})
+	assert.NoError(t, err)
+	assert.Equal(t, pb.Response_SUCCESS, resp.Response.Code)
+	t.Log("execute 'dump' operation,when get by domain project,should be passed")
+	resp, err = admin.AdminServiceAPI.Dump(
+		util.SetDomainProject(context.Background(), "x", "x"),
+		&model.DumpRequest{})
+	assert.NoError(t, err)
+	assert.Equal(t, scerr.ErrForbidden, resp.Response.Code)
+}
+
+func getContext() context.Context {
+	return util.SetContext(
+		util.SetDomainProject(context.Background(), "default", "default"),
+		serviceUtil.CTX_NOCACHE, "1")
+}

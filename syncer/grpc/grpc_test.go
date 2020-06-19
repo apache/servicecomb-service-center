@@ -29,9 +29,9 @@ import (
 	ggrpc "google.golang.org/grpc"
 )
 
-type testServer struct {}
+type testServer struct{}
 
-func (t *testServer) Pull(context.Context, *pb.PullRequest) (*pb.SyncData, error){
+func (t *testServer) Pull(context.Context, *pb.PullRequest) (*pb.SyncData, error) {
 	return &pb.SyncData{}, nil
 }
 

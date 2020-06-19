@@ -148,7 +148,7 @@ func TestVerify(t *testing.T) {
 
 	params := conf.Task.Params
 	conf.Task.Kind = ""
-	conf.Task.Params = []Label{{Key: "test", Value:"test"}, {Key:defaultTaskKey, Value: "3mams"}}
+	conf.Task.Params = []Label{{Key: "test", Value: "test"}, {Key: defaultTaskKey, Value: "3mams"}}
 	err = Verify(conf)
 	conf.Task.Params = params
 	assert.NotNil(t, err)

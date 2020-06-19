@@ -27,10 +27,9 @@ var (
 	registerInstance   func(ctx context.Context, domainProject, serviceId string, instance *pb.SyncInstance) (string, error)
 	unregisterInstance func(ctx context.Context, domainProject, serviceId, instanceId string) error
 	heartbeat          func(ctx context.Context, domainProject, serviceId, instanceId string) error
-
 )
 
-func SetRegisterInstance(handler  func(ctx context.Context, domainProject, serviceId string, instance *pb.SyncInstance) (string, error)) {
+func SetRegisterInstance(handler func(ctx context.Context, domainProject, serviceId string, instance *pb.SyncInstance) (string, error)) {
 	registerInstance = handler
 }
 

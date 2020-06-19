@@ -16,9 +16,9 @@
 package buildin
 
 import (
+	"context"
 	"errors"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/quota"
-	"golang.org/x/net/context"
 	"testing"
 )
 

@@ -17,8 +17,8 @@
 package queue
 
 import (
+	"context"
 	"fmt"
-	"golang.org/x/net/context"
 	"sync/atomic"
 	"testing"
 	"time"

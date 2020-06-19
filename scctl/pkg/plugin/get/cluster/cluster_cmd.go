@@ -16,12 +16,12 @@
 package cluster
 
 import (
+	"context"
 	"github.com/apache/servicecomb-service-center/pkg/client/sc"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/plugin/get"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/writer"
 	"github.com/spf13/cobra"
-	"golang.org/x/net/context"
 )
 
 func init() {

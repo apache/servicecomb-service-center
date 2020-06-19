@@ -16,6 +16,7 @@
 package servicecenter
 
 import (
+	"context"
 	"crypto/tls"
 	"github.com/apache/servicecomb-service-center/pkg/client/sc"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -26,7 +27,6 @@ import (
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
-	"golang.org/x/net/context"
 	"strings"
 	"sync"
 )

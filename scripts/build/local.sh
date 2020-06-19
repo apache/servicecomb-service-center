@@ -34,11 +34,8 @@ script_path=$(cd "$(dirname "$0")"; pwd)
 source ${script_path}/tools.sh
 
 personal_build() {
-    source ${script_path}/deps.sh
 
     build_service_center
-
-    build_frontend
 
     build_scctl
 

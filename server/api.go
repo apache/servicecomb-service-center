@@ -17,6 +17,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/grace"
@@ -27,7 +28,6 @@ import (
 	rs "github.com/apache/servicecomb-service-center/server/rest"
 	"github.com/apache/servicecomb-service-center/server/rpc"
 	"github.com/apache/servicecomb-service-center/server/service"
-	"golang.org/x/net/context"
 	"net"
 	"strconv"
 )

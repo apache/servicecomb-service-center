@@ -17,9 +17,9 @@
 package queue
 
 import (
+	"context"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"golang.org/x/net/context"
 )
 
 type UniQueue struct {

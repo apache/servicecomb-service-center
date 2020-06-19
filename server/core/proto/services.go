@@ -17,8 +17,8 @@
 package proto
 
 import (
+	"context"
 	"github.com/gorilla/websocket"
-	"golang.org/x/net/context"
 )
 
 type ServiceInstanceCtrlServerEx interface {

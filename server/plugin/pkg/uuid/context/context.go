@@ -18,13 +18,13 @@
 package context
 
 import (
+	"context"
 	"crypto/sha1"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/uuid"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/uuid/buildin"
-	"golang.org/x/net/context"
 )
 
 func init() {

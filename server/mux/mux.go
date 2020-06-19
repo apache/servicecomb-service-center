@@ -39,9 +39,9 @@ const (
 )
 
 func Lock(t MuxType) (*etcdsync.DLock, error) {
-	return etcdsync.Lock(t.String(), true)
+	return etcdsync.Lock(t.String(), -1, true)
 }
 
 func Try(t MuxType) (*etcdsync.DLock, error) {
-	return etcdsync.Lock(t.String(), false)
+	return etcdsync.Lock(t.String(), -1, false)
 }

@@ -17,6 +17,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -24,7 +25,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/notify"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"github.com/gorilla/websocket"
-	"golang.org/x/net/context"
 )
 
 func (s *InstanceService) WatchPreOpera(ctx context.Context, in *pb.WatchInstanceRequest) error {

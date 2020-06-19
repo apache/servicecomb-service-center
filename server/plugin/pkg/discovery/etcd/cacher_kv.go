@@ -17,6 +17,7 @@
 package etcd
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/backoff"
@@ -29,7 +30,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"golang.org/x/net/context"
 	"sync"
 	"time"
 )

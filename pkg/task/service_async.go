@@ -17,11 +17,11 @@
 package task
 
 import (
+	"context"
 	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"golang.org/x/net/context"
 	"sync"
 	"sync/atomic"
 	"time"
