@@ -17,8 +17,6 @@
 package context
 
 import (
-	"errors"
-	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"net/http"
@@ -40,9 +38,7 @@ func (v *v4Context) Do(r *http.Request) error {
 	if len(domain) == 0 {
 		domain = r.Header.Get("X-Domain-Name")
 		if len(domain) == 0 {
-			err := errors.New("Header does not contain domain.")
-			log.Errorf(err, "Invalid Request URI %s", r.RequestURI)
-			return err
+			domain = "default"
 		}
 		util.SetRequestContext(r, util.CtxDomain, domain)
 	}

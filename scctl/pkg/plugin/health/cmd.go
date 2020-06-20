@@ -19,7 +19,7 @@ import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/client/sc"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
-	scerr "github.com/apache/servicecomb-service-center/server/error"
+	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/spf13/cobra"
 )
 

@@ -21,10 +21,10 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
-	"github.com/apache/servicecomb-service-center/server/plugin/pkg/security"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/tls"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/tracing"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/uuid"
+	"github.com/go-chassis/foundation/security"
 )
 
 const (

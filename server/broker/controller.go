@@ -24,8 +24,8 @@ import (
 
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/broker/brokerpb"
-	scerr "github.com/apache/servicecomb-service-center/server/error"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
+	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 )
 
 const DEFAULT_SCHEME = "http"
@@ -132,7 +132,7 @@ func (*BrokerController) GetPactsOfProvider(w http.ResponseWriter, r *http.Reque
 	respInternal := resp.Response
 	resp.Response = nil
 	//controller.WriteResponse(w, respInternal, resp.Pact)
-	controller.WriteJsonBytes(w, respInternal, resp.Pact)
+	controller.WriteJsonIfSuccess(w, respInternal, resp.Pact)
 }
 
 func (*BrokerController) DeletePacts(w http.ResponseWriter, r *http.Request) {

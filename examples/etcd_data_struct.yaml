@@ -1,0 +1,17 @@
+/cse-sr/domains/default: |
+/cse-sr/accounts/{account_name}: |
+/cse-sr/inst/files/default/default/{service_id}/{instsance_id}: |
+  {"instanceId":"b0ffb9feb22a11eaa76a08002706c83e","serviceId":"7062417bf9ebd4c646bb23059003cea42180894a",
+  "endpoints":["rest://127.0.0.1:30100/"],"hostName":"tian-VirtualBox","status":"UP",
+  "healthCheck":{"mode":"push","interval":30,"times":3},"timestamp":"1592570701","modTimestamp":"1592570701","version":"0.0.1"}
+/cse-sr/inst/leases/default/default/{service_id}/{instsance_id}: |
+  7587847170149911364
+/cse-sr/ms/alias/default/default/development/default/SERVICECENTER/0.0.1: |
+  {service_id}
+/cse-sr/ms/files/default/default/{service_id}: |
+  {"serviceId":"7062417bf9ebd4c646bb23059003cea42180894a","appId":"default","serviceName":"SERVICECENTER","version":"0.0.1","level":"BACK",
+  "schemas":["servicecenter.grpc.api.ServiceCtrl","servicecenter.grpc.api.ServiceInstanceCtrl"],"status":"UP",
+  "properties":{"allowCrossApp":"true"},"timestamp":"1592570701","alias":"SERVICECENTER","modTimestamp":"1592570701","environment":"development"}
+/cse-sr/ms/indexes/default/default/development/default/SERVICECENTER/0.0.1: |
+  {service_id}
+/cse-sr/projects/default/default:

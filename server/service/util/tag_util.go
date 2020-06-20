@@ -23,8 +23,8 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
-	scerr "github.com/apache/servicecomb-service-center/server/error"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
+	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 )
 
 func AddTagIntoETCD(ctx context.Context, domainProject string, serviceId string, dataTags map[string]string) *scerr.Error {

@@ -9,3 +9,4 @@ User Guides
    user-guides/security-tls.md
    user-guides/sc-cluster.rst
    user-guides/integration-grafana.md
+   user-guides/rbac.md

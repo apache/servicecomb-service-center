@@ -21,8 +21,8 @@ import (
 	"strings"
 
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
-	scerr "github.com/apache/servicecomb-service-center/server/error"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/quota"
+	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/server/service"
 
 	. "github.com/onsi/ginkgo"

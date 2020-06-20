@@ -17,6 +17,7 @@
 package core
 
 import (
+	"github.com/go-chassis/go-archaius"
 	"os"
 	"runtime"
 	"time"
@@ -41,11 +42,17 @@ const (
 
 	maxServiceClearInterval = 24 * time.Hour       //1 day
 	maxServiceTTL           = 24 * 365 * time.Hour //1 year
+
 )
 
 var ServerInfo = pb.NewServerInformation()
 
 func Configure() {
+	err := archaius.Init(archaius.WithMemorySource(), archaius.WithENVSource())
+	if err != nil {
+		log.Fatal("can not init archaius", err)
+	}
+
 	setCPUs()
 
 	*ServerInfo = newInfo()
@@ -55,6 +62,7 @@ func Configure() {
 	initLogger()
 
 	version.Ver().Log()
+
 }
 
 func newInfo() pb.ServerInformation {
