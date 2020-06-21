@@ -46,7 +46,7 @@ package hello
 import roa "github.com/apache/servicecomb-service-center/pkg/rest"
 
 func init() {
-    roa.RegisterServent(&HelloService{})
+    roa.RegisterServant(&HelloService{})
 }
 ```
 
