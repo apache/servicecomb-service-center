@@ -1,7 +1,7 @@
 # Development Guide
 
 This chapter is about how to implement the feature of micro-service discovery with ServiceCenter,
-and you can get more detail at [here](/server/core/swagger/v3.yaml)
+and you can get more detail at [here](https://github.com/apache/servicecomb-service-center/blob/master/server/core/swagger/v3.yaml)
 
 ## Micro-service registration
 ```bash

@@ -1,5 +1,4 @@
-Integrate with Kubernetes
--------
+# Integrate with Kubernetes
 
 A simple demo to deploy ServiceCenter Cluster in Kubernetes.
 ServiceCenter supports two deploy modes: `Platform Registration` and `Client Side Registration`
@@ -86,7 +85,7 @@ By default, the ServiceCenter frontend use `NodePort` service type to deploy in 
 
 1. You can execute the command `kubectl get pod`, to check all pods are running.
 1. You can also point your browser to `http://${NODE}:30103` to view the dashboard of ServiceCenter.
-1. (Recommended) You can use [`scctl`](/scctl) tool to list micro-service information.
+1. (Recommended) You can use [scctl](https://github.com/apache/servicecomb-service-center/tree/master/scctl) tool to list micro-service information.
 
 ```bash
 # ./scctl get svc --addr http://servicecomb-service-center:30100 -owide
