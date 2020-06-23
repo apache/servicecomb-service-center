@@ -1,4 +1,6 @@
-### PR raising Guide
+# PR raising Guide
+
+### Steps
 
 If you want to raise a PR in this repo then you can follow the below guidelines to avoid conflicts.
 

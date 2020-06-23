@@ -29,3 +29,7 @@ frontend/node_modules/
 tmp/
 servicecomb-service-center
 service-center
+
+docs/_build
+docs/_static
+docs/_templates

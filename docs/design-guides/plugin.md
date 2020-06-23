@@ -3,7 +3,7 @@
 1. Go version 1.8(+)
 1. Compile service-center with GO_EXTLINK_ENABLED=1 and CGO_ENABLED=1
 1. The plugin file name must has suffix '_plugin.so'
-1. All plugin interface files are in [infra](/server/infra) package
+1. All plugin interface files are in [plugin](https://github.com/apache/servicecomb-service-center/blob/master/server/plugin) package
 
 ## Plug-in names
 1. **auth**: Customize authentication of service-center.
@@ -18,7 +18,7 @@
 
 ### Step 1: code auth.go
 
-auth.go is the implement from [auth interface](/server/infra/auth/auth.go)
+auth.go is the implement from [auth interface](https://github.com/apache/servicecomb-service-center/blob/master/server/plugin/pkg/auth/auth.go)
 
 ```go
 package main

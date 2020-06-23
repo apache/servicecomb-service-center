@@ -1,4 +1,4 @@
-## Release Notes
+# Release Notes
 
 ### Apache ServiceComb Service-Center (incubating) version 1.0.0
 

@@ -7,7 +7,9 @@ trace_plugin='buildin' # or empty
 
 ## To zipkin server
 
-![zipkin](/docs/tracing-server.PNG)
+```eval_rst
+.. image:: tracing-server.PNG
+```
 
 ### Add the zipkin server endpoint
 ```
@@ -21,7 +23,9 @@ export TRACING_SERVER_ADDRESS=http://127.0.0.1:9411 # zipkin server endpoint
 
 ## To file
 
-![file](/docs/tracing-file.PNG)
+```eval_rst
+.. image:: tracing-file.PNG
+```
 
 ### Customize the path of trace data file
 ```

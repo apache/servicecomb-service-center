@@ -1,10 +1,10 @@
-## Service-Center Release
+# Service-Center Release
 
 #### Release Notes
- - [Service-Center-1.1.0 Release Notes](/docs/release/releaseNotes-1.1.0.md)
- - [Service-Center-1.0.0 Release Notes](/docs/release/releaseNotes-1.0.0.md)
- - [Service-Center-1.0.0-m1 Release Notes](/docs/release/releaseNotes-1.0.0-m1.md)
- - [Service-Center-1.0.0-m2 Release Notes](/docs/release/releaseNotes-1.0.0-m2.md)
+ - [Service-Center-1.1.0 Release Notes](releaseNotes-1.1.0.md)
+ - [Service-Center-1.0.0 Release Notes](releaseNotes-1.0.0.md)
+ - [Service-Center-1.0.0-m1 Release Notes](releaseNotes-1.0.0-m1.md)
+ - [Service-Center-1.0.0-m2 Release Notes](releaseNotes-1.0.0-m2.md)
  
 
 #### Running Apache Rat tool
@@ -41,6 +41,6 @@ Below is the list of the files which has been excluded from the list of RAT tool
  - cert_pwd server.cer trust.cer :  Skip ssl files
  - *.tpl : Ignore template files
  - glide.yaml go.mod go.sum : Skip dependency config files 
-You can access the latest RAT report [here](/docs/release/rat-report)  
+You can access the latest RAT report [here](/rat-report)  
  
  
