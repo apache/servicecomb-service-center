@@ -54,5 +54,5 @@ func (this *MainService) URLPatterns() []rest.Route {
 }
 
 func (this *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
-	controller.WriteJsonBytes(w, versionResp, versionJsonCache)
+	controller.WriteJsonIfSuccess(w, versionResp, versionJsonCache)
 }

@@ -81,7 +81,7 @@ func createService(domain string, project string, name string, withInstance bool
 	}
 	if withInstance {
 		svc.Instances = []*pb.MicroServiceInstance{
-			&pb.MicroServiceInstance{
+			{
 				Endpoints: []string{"http://127.0.0.1:80"},
 				HostName:  "1",
 			},

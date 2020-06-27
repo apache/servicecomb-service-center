@@ -69,5 +69,5 @@ func (this *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
 		versionJsonCache, _ = json.Marshal(result)
 		versionResp = pb.CreateResponse(pb.Response_SUCCESS, "get version successfully")
 	})
-	controller.WriteJsonBytes(w, versionResp, versionJsonCache)
+	controller.WriteJsonIfSuccess(w, versionResp, versionJsonCache)
 }

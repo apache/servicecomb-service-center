@@ -32,7 +32,7 @@ const (
 	keepAliveTime    = 2 * time.Second
 	keepAliveTimeout = 5 * time.Second
 
-	// see github.com/coreos/etcd/clientv3/options.go
+	// see go.etcd.io/etcd/clientv3/options.go
 	maxSendMsgSize = 10 * 1024 * 1024 // 10MB
 	maxRecvMsgSize = math.MaxInt32
 )

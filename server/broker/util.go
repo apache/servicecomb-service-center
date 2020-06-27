@@ -19,6 +19,7 @@ package broker
 import (
 	"context"
 	"encoding/json"
+	"github.com/apache/servicecomb-service-center/server/service/kv"
 	"math"
 	"net/url"
 	"strconv"
@@ -30,8 +31,8 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
-	scerr "github.com/apache/servicecomb-service-center/server/error"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
+	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"path/filepath"
 )
@@ -257,13 +258,6 @@ func GetData(ctx context.Context, key string) (int, error) {
 	return id, nil
 }
 
-func StoreData(ctx context.Context, key string, value string) error {
-	_, err := backend.Registry().Do(ctx, registry.PUT,
-		registry.WithStrKey(key),
-		registry.WithValue([]byte(value)))
-	return err
-}
-
 func CreateParticipant(pactLogger *log.Logger, ctx context.Context, participantKey string, participant brokerpb.Participant) (*brokerpb.PublishPactResponse, error) {
 	data, err := json.Marshal(participant)
 	if err != nil {
@@ -287,7 +281,7 @@ func CreateParticipant(pactLogger *log.Logger, ctx context.Context, participantK
 	k := GetBrokerLatestParticipantIDKey()
 	v := strconv.Itoa(int(participant.Id))
 	PactLogger.Infof("Inserting (%s, %s)", k, v)
-	err = StoreData(ctx, k, v)
+	err = kv.Put(ctx, k, v)
 	if err != nil {
 		PactLogger.Errorf(nil, "pact publish failed, participant cannot be created.")
 		return &brokerpb.PublishPactResponse{
@@ -320,7 +314,7 @@ func CreateVersion(pactLogger *log.Logger, ctx context.Context, versionKey strin
 	k := GetBrokerLatestVersionIDKey()
 	v := strconv.Itoa(int(version.Id))
 	PactLogger.Infof("Inserting (%s, %s)", k, v)
-	err = StoreData(ctx, k, v)
+	err = kv.Put(ctx, k, v)
 	if err != nil {
 		PactLogger.Errorf(nil, "pact publish failed, version cannot be created.")
 		return &brokerpb.PublishPactResponse{
@@ -355,7 +349,7 @@ func CreatePact(pactLogger *log.Logger, ctx context.Context,
 	k := GetBrokerLatestPactIDKey()
 	v := strconv.Itoa(int(pact.Id))
 	PactLogger.Infof("Inserting (%s, %s)", k, v)
-	err = StoreData(ctx, k, v)
+	err = kv.Put(ctx, k, v)
 	if err != nil {
 		PactLogger.Errorf(nil, "pact publish failed, pact cannot be created.")
 		return &brokerpb.PublishPactResponse{
@@ -386,7 +380,7 @@ func CreatePactVersion(pactLogger *log.Logger, ctx context.Context, pactVersionK
 	k := GetBrokerLatestPactVersionIDKey()
 	v := strconv.Itoa(int(pactVersion.Id))
 	PactLogger.Infof("Inserting (%s, %s)", k, v)
-	err = StoreData(ctx, k, v)
+	err = kv.Put(ctx, k, v)
 	if err != nil {
 		PactLogger.Errorf(nil, "pact publish failed, pact version cannot be created.")
 		return &brokerpb.PublishPactResponse{
@@ -419,7 +413,7 @@ func CreateVerification(pactLogger *log.Logger, ctx context.Context,
 	k := GetBrokerLatestVerificationIDKey()
 	v := strconv.Itoa(int(verification.Id))
 	PactLogger.Infof("Inserting (%s, %s)", k, v)
-	err = StoreData(ctx, k, v)
+	err = kv.Put(ctx, k, v)
 	if err != nil {
 		PactLogger.Errorf(nil, "verification result publish failed, verification result cannot be created.")
 		return &brokerpb.PublishVerificationResponse{

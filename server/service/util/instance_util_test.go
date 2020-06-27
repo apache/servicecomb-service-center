@@ -20,7 +20,7 @@ import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
-	scerr "github.com/apache/servicecomb-service-center/server/error"
+	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"testing"
 )
 

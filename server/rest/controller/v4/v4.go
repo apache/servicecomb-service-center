@@ -18,6 +18,7 @@ package v4
 
 import (
 	roa "github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/server/service/rbac"
 )
 
 func init() {
@@ -25,6 +26,9 @@ func init() {
 }
 
 func initRouter() {
+	if rbac.Enabled() {
+		roa.RegisterServant(&AuthResource{})
+	}
 	roa.RegisterServant(&MainService{})
 	roa.RegisterServant(&MicroServiceService{})
 	roa.RegisterServant(&SchemaService{})

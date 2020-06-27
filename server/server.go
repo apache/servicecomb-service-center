@@ -16,7 +16,10 @@
  */
 package server
 
-import _ "github.com/apache/servicecomb-service-center/server/service/event"
+import (
+	_ "github.com/apache/servicecomb-service-center/server/service/event"
+	"github.com/apache/servicecomb-service-center/server/service/rbac"
+)
 import (
 	"fmt"
 	"os"
@@ -38,6 +41,12 @@ import (
 )
 
 const buildin = "buildin"
+
+var server ServiceCenterServer
+
+func Run() {
+	server.Run()
+}
 
 type ServiceCenterServer struct {
 	apiService    *APIServer
@@ -176,7 +185,7 @@ func (s *ServiceCenterServer) startServices() {
 
 	// load server plugins
 	plugin.LoadPlugins()
-
+	rbac.Init()
 	// check version
 	if core.ServerInfo.Config.SelfRegister {
 		s.loadOrUpgradeServerVersion()

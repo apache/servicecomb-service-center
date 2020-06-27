@@ -313,7 +313,19 @@ func GenerateDomainKey(domain string) string {
 		domain,
 	}, SPLIT)
 }
-
+func GenerateAccountKey(name string) string {
+	return util.StringJoin([]string{
+		GetRootKey(),
+		"accounts",
+		name,
+	}, SPLIT)
+}
+func GenerateRBACSecretKey() string {
+	return util.StringJoin([]string{
+		GetRootKey(),
+		"rbac/secret",
+	}, SPLIT)
+}
 func GetServerInfoKey() string {
 	return util.StringJoin([]string{
 		GetRootKey(),

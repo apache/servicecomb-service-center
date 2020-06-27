@@ -23,13 +23,13 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/alarm"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/error"
+	"github.com/apache/servicecomb-service-center/server/scerror"
 	"net/http"
 	"strconv"
 )
 
 func WriteError(w http.ResponseWriter, code int32, detail string) {
-	err := error.NewError(code, detail)
+	err := scerror.NewError(code, detail)
 	w.Header().Set(rest.HEADER_RESPONSE_STATUS, strconv.Itoa(err.StatusCode()))
 	w.Header().Set(rest.HEADER_CONTENT_TYPE, rest.CONTENT_TYPE_JSON)
 	w.WriteHeader(err.StatusCode())
@@ -55,7 +55,7 @@ func WriteResponse(w http.ResponseWriter, resp *pb.Response, obj interface{}) {
 
 	objJson, err := json.Marshal(obj)
 	if err != nil {
-		WriteError(w, error.ErrInternal, err.Error())
+		WriteError(w, scerror.ErrInternal, err.Error())
 		return
 	}
 	w.Header().Set(rest.HEADER_RESPONSE_STATUS, strconv.Itoa(http.StatusOK))
@@ -64,13 +64,18 @@ func WriteResponse(w http.ResponseWriter, resp *pb.Response, obj interface{}) {
 	fmt.Fprintln(w, util.BytesToStringWithNoCopy(objJson))
 }
 
-func WriteJsonBytes(w http.ResponseWriter, resp *pb.Response, json []byte) {
+func WriteJsonIfSuccess(w http.ResponseWriter, resp *pb.Response, json []byte) {
 	if resp.GetCode() == pb.Response_SUCCESS {
-		w.Header().Set(rest.HEADER_RESPONSE_STATUS, strconv.Itoa(http.StatusOK))
-		w.Header().Set(rest.HEADER_CONTENT_TYPE, rest.CONTENT_TYPE_JSON)
-		w.WriteHeader(http.StatusOK)
-		w.Write(json)
+		WriteJson(w, json)
 		return
 	}
 	WriteError(w, resp.GetCode(), resp.GetMessage())
+}
+
+//WriteJson simply write json
+func WriteJson(w http.ResponseWriter, json []byte) {
+	w.Header().Set(rest.HEADER_RESPONSE_STATUS, strconv.Itoa(http.StatusOK))
+	w.Header().Set(rest.HEADER_CONTENT_TYPE, rest.CONTENT_TYPE_JSON)
+	w.WriteHeader(http.StatusOK)
+	w.Write(json)
 }

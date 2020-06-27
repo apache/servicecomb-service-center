@@ -14,10 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package server
 
-var server ServiceCenterServer
+package model
 
-func Run() {
-	server.Run()
+type Account struct {
+	Name     string `json:"name,omitempty"`
+	Password string `json:"password,omitempty"`
+}
+
+type Token struct {
+	TokenStr string `json:"token,omitempty"`
 }

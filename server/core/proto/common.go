@@ -16,7 +16,7 @@
 package proto
 
 import (
-	scerr "github.com/apache/servicecomb-service-center/server/error"
+	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 )
 
 const (

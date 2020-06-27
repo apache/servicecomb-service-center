@@ -17,9 +17,16 @@ package core
 
 import (
 	"github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
+func TestGenerateAccountKey(t *testing.T) {
+	assert.Equal(t, "/cse-sr/accounts/admin", GenerateAccountKey("admin"))
+}
+func TestGenerateAccountSecretKey(t *testing.T) {
+	assert.Equal(t, "/cse-sr/rbac/secret", GenerateRBACSecretKey())
+}
 func TestGenerateDependencyRuleKey(t *testing.T) {
 	// consumer
 	k := GenerateConsumerDependencyRuleKey("a", nil)

@@ -20,9 +20,6 @@ set +e
 export c_name="etcd"
 docker rm -f $c_name
 set -e
-red=`tput setaf 1`
-green=`tput setaf 2`
-reset=`tput sgr0`
 
 ut_for_dir() {
     local name=$1

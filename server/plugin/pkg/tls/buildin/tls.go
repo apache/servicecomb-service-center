@@ -22,7 +22,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/tlsutil"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/server/service/cipher"
 	"github.com/astaxie/beego"
 	"io/ioutil"
 	"os"
@@ -53,7 +53,7 @@ func GetPassphase() (decrypt string) {
 
 	decrypt = util.BytesToStringWithNoCopy(passphase)
 	if len(decrypt) > 0 {
-		tmp, err := plugin.Plugins().Cipher().Decrypt(decrypt)
+		tmp, err := cipher.Decrypt(decrypt)
 		if err != nil {
 			log.Errorf(err, "decrypt ssl passphase(%d) failed.", len(decrypt))
 		} else {

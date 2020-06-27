@@ -26,8 +26,6 @@ install: true
 
 jobs:
   include:
-    - stage: Building Service Center
-      script: bash -x scripts/build/local.sh
     - stage: Unit Testing
       script: bash -x scripts/ut_test_in_docker.sh && $HOME/gopath/bin/goveralls -coverprofile=coverage.txt -service=travis-ci
     - stage: Integration Testing

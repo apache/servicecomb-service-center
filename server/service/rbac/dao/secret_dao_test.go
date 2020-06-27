@@ -14,10 +14,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package security
 
-type Cipher interface {
-	Encrypt(src string) (string, error)
+package dao_test
 
-	Decrypt(src string) (string, error)
+import (
+	"context"
+	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
+	"github.com/stretchr/testify/assert"
+	"testing"
+)
+
+func TestOverrideSecret(t *testing.T) {
+	err := dao.OverrideSecret(context.Background(), "sk")
+	assert.NoError(t, err)
+	s, err := dao.GetSecret(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(t, "sk", string(s))
+	b, err := dao.SecretExist(context.Background())
+	assert.NoError(t, err)
+	assert.True(t, b)
 }
