@@ -19,6 +19,7 @@ package rbac_test
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/pkg/model"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery/etcd"
 	etcd2 "github.com/apache/servicecomb-service-center/server/plugin/pkg/registry/etcd"
@@ -38,7 +39,8 @@ import (
 func init() {
 	beego.AppConfig.Set("registry_plugin", "etcd")
 	beego.AppConfig.Set("rbac_enabled", "true")
-	beego.AppConfig.Set("rbac_rsa_pub_key_file", "./rbac.pub")
+	beego.AppConfig.Set(rbac.PubFilePath, "./rbac.pub")
+	beego.AppConfig.Set("rbac_rsa_private_key_file", "./private.key")
 	mgr.RegisterPlugin(mgr.Plugin{mgr.REGISTRY, "etcd", etcd2.NewRegistry})
 	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "buildin", etcd.NewRepository})
 	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "etcd", etcd.NewRepository})
@@ -55,22 +57,17 @@ func TestInitRBAC(t *testing.T) {
 
 	b, err := secret.RSAPrivate2Bytes(pri)
 	assert.NoError(t, err)
-	archaius.Set(rbac.InitPrivate, string(b))
-
+	ioutil.WriteFile("./private.key", b, 0600)
 	b, err = secret.RSAPublicKey2Bytes(pub)
 	err = ioutil.WriteFile("./rbac.pub", b, 0600)
 	assert.NoError(t, err)
 
-	archaius.Set(rbac.InitRoot, "root")
 	archaius.Set(rbac.InitPassword, "root")
 
 	rbac.Init()
 	a, err := dao.GetAccount(context.Background(), "root")
 	assert.NoError(t, err)
 	assert.Equal(t, "root", a.Name)
-	s, err := dao.GetSecret(context.Background())
-	assert.NoError(t, err)
-	assert.NotEmpty(t, s)
 
 	t.Run("login and authenticate", func(t *testing.T) {
 		token, err := authr.Login(context.Background(), "root", "root")
@@ -83,5 +80,22 @@ func TestInitRBAC(t *testing.T) {
 
 	t.Run("second time init", func(t *testing.T) {
 		rbac.Init()
+	})
+
+	t.Run("change pwd,admin can change any one password", func(t *testing.T) {
+		dao.CreateAccount(context.Background(), &model.Account{Name: "a", Password: "123"})
+		err := rbac.ChangePassword(context.Background(), model.RoleAdmin, "admin", &model.Account{Name: "a", Password: "1234"})
+		assert.NoError(t, err)
+		a, err := dao.GetAccount(context.Background(), "a")
+		assert.NoError(t, err)
+		assert.Equal(t, "1234", a.Password)
+	})
+	t.Run("change own password", func(t *testing.T) {
+		dao.CreateAccount(context.Background(), &model.Account{Name: "b", Password: "123"})
+		err := rbac.ChangePassword(context.Background(), "", "b", &model.Account{CurrentPassword: "123", Password: "1234"})
+		assert.NoError(t, err)
+		a, err := dao.GetAccount(context.Background(), "b")
+		assert.NoError(t, err)
+		assert.Equal(t, "1234", a.Password)
 	})
 }

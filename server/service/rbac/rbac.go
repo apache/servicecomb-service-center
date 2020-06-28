@@ -20,6 +20,7 @@ package rbac
 import (
 	"context"
 	"crypto/rsa"
+	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/model"
 	"github.com/apache/servicecomb-service-center/server/service/cipher"
@@ -28,14 +29,18 @@ import (
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-chassis/security/authr"
 	"github.com/go-chassis/go-chassis/security/secret"
-	"io"
-	"os"
+	"io/ioutil"
 )
 
 const (
-	InitRoot     = "SC_INIT_ROOT_USERNAME"
+	RootName     = "root"
 	InitPassword = "SC_INIT_ROOT_PASSWORD"
-	InitPrivate  = "SC_INIT_PRIVATE_KEY"
+	PubFilePath  = "rbac_rsa_public_key_file"
+)
+
+var (
+	ErrInputCurrentPassword = errors.New("current password should not be empty")
+	ErrInputChangeAccount   = errors.New("can not change other account password")
 )
 
 //Init decide whether enable rbac function and save root account to db
@@ -49,43 +54,42 @@ func Init() {
 	if err != nil {
 		log.Fatal("can not enable auth module", err)
 	}
-	admin := archaius.GetString(InitRoot, "")
-	if admin == "" {
-		log.Fatal("can not enable rbac, root is empty", nil)
-		return
-	}
-	accountExist, err := dao.AccountExist(context.Background(), admin)
+	accountExist, err := dao.AccountExist(context.Background(), RootName)
 	if err != nil {
 		log.Fatal("can not enable auth module", err)
 	}
 	if !accountExist {
-		initFirstTime(admin)
+		initFirstTime(RootName)
 	}
-	overrideSecretKey()
+	readPrivateKey()
 	readPublicKey()
 	log.Info("rbac is enabled")
 }
 
 //readPublicKey read key to memory
-func readPublicKey() {
-	pf := beego.AppConfig.String("rbac_rsa_pub_key_file")
+func readPrivateKey() {
+	pf := beego.AppConfig.String("rbac_rsa_private_key_file")
 	// 打开文件
-	fp, err := os.Open(pf)
+	data, err := ioutil.ReadFile(pf)
+	if err != nil {
+		log.Fatal("can not read private key", err)
+		return
+	}
+	archaius.Set("rbac_private_key", string(data))
+	log.Info("read private key success")
+}
+
+//readPublicKey read key to memory
+func readPublicKey() {
+	pf := beego.AppConfig.String(PubFilePath)
+	// 打开文件
+	content, err := ioutil.ReadFile(pf)
 	if err != nil {
 		log.Fatal("can not find public key", err)
 		return
 	}
-	defer fp.Close()
-	buf := make([]byte, 1024)
-	for {
-		// 循环读取文件
-		_, err := fp.Read(buf)
-		if err == io.EOF { // io.EOF表示文件末尾
-			break
-		}
-
-	}
-	archaius.Set("rbac_public_key", string(buf))
+	archaius.Set("rbac_public_key", string(content))
+	log.Info("read public key success")
 }
 func initFirstTime(admin string) {
 	//handle root account
@@ -93,13 +97,10 @@ func initFirstTime(admin string) {
 	if pwd == "" {
 		log.Fatal("can not enable rbac, password is empty", nil)
 	}
-	pwd, err := cipher.Encrypt(pwd)
-	if err != nil {
-		log.Fatal("can not enable rbac, encryption failed", err)
-	}
 	if err := dao.CreateAccount(context.Background(), &model.Account{
 		Name:     admin,
 		Password: pwd,
+		Role:     model.RoleAdmin,
 	}); err != nil {
 		if err == dao.ErrDuplicated {
 			log.Info("rbac is enabled")
@@ -110,18 +111,6 @@ func initFirstTime(admin string) {
 	log.Info("root account init success")
 }
 
-//should override key on each start procedure,
-//so that a system such as kubernetes can use secret to distribute a new secret to revoke the old one
-func overrideSecretKey() {
-	secret := archaius.GetString(InitPrivate, "")
-	if secret == "" {
-		log.Fatal("can not enable rbac, secret is empty", nil)
-	}
-	if err := dao.OverrideSecret(context.Background(), secret); err != nil {
-		log.Fatal("can not save secret", err)
-	}
-
-}
 func Enabled() bool {
 	return beego.AppConfig.DefaultBool("rbac_enabled", false)
 }
@@ -131,23 +120,19 @@ func PublicKey() string {
 	return archaius.GetString("rbac_public_key", "")
 }
 
-//GetSecretStr return decrypted secret
-func GetSecretStr(ctx context.Context) (string, error) {
-	sk, err := dao.GetSecret(ctx)
+//privateKey get decrypted private key to verify a token
+func privateKey() (string, error) {
+	ep := archaius.GetString("rbac_private_key", "")
+	p, err := cipher.Decrypt(ep)
 	if err != nil {
 		return "", err
 	}
-	skStr, err := cipher.Decrypt(string(sk))
-	if err != nil {
-		log.Error("can not decrypt:", err)
-		return "", err
-	}
-	return skStr, nil
+	return p, nil
 }
 
 //GetPrivateKey return rsa key instance
-func GetPrivateKey(ctx context.Context) (*rsa.PrivateKey, error) {
-	sk, err := GetSecretStr(ctx)
+func GetPrivateKey() (*rsa.PrivateKey, error) {
+	sk, err := privateKey()
 	if err != nil {
 		return nil, err
 	}
@@ -157,4 +142,52 @@ func GetPrivateKey(ctx context.Context) (*rsa.PrivateKey, error) {
 		return nil, err
 	}
 	return p, nil
+}
+
+func ChangePassword(ctx context.Context, changerRole, changerName string, a *model.Account) error {
+	if a.Name != "" {
+		if changerRole != model.RoleAdmin { //need to check password mismatch. but admin role can change any user password without supply current password
+			log.Error("can not change other account pwd", nil)
+			return ErrInputChangeAccount
+		}
+		return changePasswordForcibly(ctx, a.Name, a.Password)
+	} else {
+		if a.CurrentPassword == "" {
+			log.Error("current pwd is empty", nil)
+			return ErrInputCurrentPassword
+		}
+		return changePassword(ctx, changerName, a.CurrentPassword, a.Password)
+	}
+}
+func changePasswordForcibly(ctx context.Context, name, pwd string) error {
+	old, err := dao.GetAccount(ctx, name)
+	if err != nil {
+		log.Error("can not change pwd", err)
+		return err
+	}
+	old.Password = pwd
+	err = dao.EditAccount(ctx, old)
+	if err != nil {
+		log.Error("can not change pwd", err)
+		return err
+	}
+	return nil
+}
+func changePassword(ctx context.Context, name, currentPassword, pwd string) error {
+	old, err := dao.GetAccount(ctx, name)
+	if err != nil {
+		log.Error("can not change pwd", err)
+		return err
+	}
+	if old.Password != currentPassword {
+		log.Error("current pwd is wrong", nil)
+		return errors.New("can not change pwd")
+	}
+	old.Password = pwd
+	err = dao.EditAccount(ctx, old)
+	if err != nil {
+		log.Error("can not change pwd", err)
+		return err
+	}
+	return nil
 }

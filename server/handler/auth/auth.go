@@ -17,6 +17,7 @@
 package auth
 
 import (
+	"context"
 	"github.com/apache/servicecomb-service-center/pkg/chain"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
@@ -63,15 +64,20 @@ func (h *Handler) Handle(i *chain.Invocation) {
 	}
 	to := s[1]
 	//TODO rbac
-	_, err := authr.Authenticate(i.Context(), to)
-	if err == nil {
-		log.Info("user access")
-		i.Next()
+	claims, err := authr.Authenticate(i.Context(), to)
+	if err != nil {
+		log.Errorf(err, "authenticate request failed, %s %s", req.Method, req.RequestURI)
+		controller.WriteError(w, scerr.ErrUnauthorized, err.Error())
+		i.Fail(nil)
 		return
 	}
-	log.Errorf(err, "authenticate request failed, %s %s", req.Method, req.RequestURI)
-	controller.WriteError(w, scerr.ErrUnauthorized, err.Error())
-	i.Fail(nil)
+	log.Info("user access")
+	req2 := req.WithContext(context.WithValue(req.Context(), "accountInfo", claims))
+
+	*req = *req2
+	i.Next()
+	return
+
 }
 func mustAuth(req *http.Request) bool {
 	if strings.Contains(req.URL.Path, "/v4/token") {

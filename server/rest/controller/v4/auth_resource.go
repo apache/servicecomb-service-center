@@ -19,12 +19,14 @@ package v4
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/model"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	"github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
+	"github.com/apache/servicecomb-service-center/server/service/util"
 	"github.com/go-chassis/go-chassis/security/authr"
 	"io/ioutil"
 	"net/http"
@@ -37,9 +39,58 @@ type AuthResource struct {
 func (r *AuthResource) URLPatterns() []rest.Route {
 	return []rest.Route{
 		{http.MethodPost, "/v4/token", r.Login},
+		{http.MethodPut, "/v4/account-password", r.ChangePassword},
 	}
 }
-
+func (r *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request) {
+	body, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		log.Error("read body err", err)
+		controller.WriteError(w, scerror.ErrInternal, err.Error())
+		return
+	}
+	a := &model.Account{}
+	if err = json.Unmarshal(body, a); err != nil {
+		log.Error("json err", err)
+		controller.WriteError(w, scerror.ErrInvalidParams, err.Error())
+		return
+	}
+	if a.Password == "" {
+		controller.WriteError(w, scerror.ErrInvalidParams, "new password is empty")
+		return
+	}
+	claims := req.Context().Value("accountInfo")
+	m, ok := claims.(map[string]interface{})
+	if !ok {
+		log.Error("claims convert failed", errors.New(util.ErrMsgConvert))
+		controller.WriteError(w, scerror.ErrInvalidParams, util.ErrMsgConvert)
+		return
+	}
+	accountNameI := m[rbac.ClaimsUser]
+	changer, ok := accountNameI.(string)
+	if !ok {
+		log.Error("claims convert failed", errors.New(util.ErrMsgConvert))
+		controller.WriteError(w, scerror.ErrInternal, util.ErrMsgConvert)
+		return
+	}
+	roleI := m[rbac.ClaimsRole]
+	role, ok := roleI.(string)
+	if !ok {
+		log.Error("claims convert failed", errors.New(util.ErrMsgConvert))
+		controller.WriteError(w, scerror.ErrInternal, util.ErrMsgConvert)
+		return
+	}
+	if role == "" {
+		controller.WriteError(w, scerror.ErrInvalidParams, "role is empty")
+		return
+	}
+	err = rbac.ChangePassword(context.TODO(), role, changer, a)
+	if err != nil {
+		log.Error("change password failed", err)
+		controller.WriteError(w, scerror.ErrInternal, err.Error())
+		return
+	}
+}
 func (r *AuthResource) Login(w http.ResponseWriter, req *http.Request) {
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
