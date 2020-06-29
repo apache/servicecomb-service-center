@@ -13,12 +13,11 @@ openssl rsa -in private.key -pubout -out public.key
 ```
 
 2.edit app.conf
-
-can revoke private.key after each cluster restart,
 ```ini
 rbac_enabled = true
-rbac_rsa_public_key_file = ./public.key
-rbac_rsa_private_key_file = ./private.key
+rbac_rsa_public_key_file = ./public.key # rsa key pairs
+rbac_rsa_private_key_file = ./private.key # rsa key pairs
+auth_plugin = buildin # must set to buildin
 ```
 3.root account
 before you start server, you need to set env to set your root account password.  
