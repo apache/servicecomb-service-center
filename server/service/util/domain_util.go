@@ -22,8 +22,8 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
-	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
-	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
+	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
+	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	"strings"
 )
 

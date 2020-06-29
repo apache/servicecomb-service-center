@@ -30,7 +30,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/broker/brokerpb"
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
+	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 )

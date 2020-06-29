@@ -22,7 +22,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
+	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/service/cache"
 	"github.com/apache/servicecomb-service-center/server/service/metrics"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"

@@ -20,7 +20,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/pkg/validate"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/plugin/pkg/quota"
+	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"regexp"
 )

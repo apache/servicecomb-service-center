@@ -18,7 +18,7 @@ package util
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
+	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 )
 
 func FromContext(ctx context.Context) []registry.PluginOpOption {

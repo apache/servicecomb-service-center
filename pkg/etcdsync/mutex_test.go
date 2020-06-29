@@ -23,8 +23,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"testing"
 
-	_ "github.com/apache/servicecomb-service-center/server/plugin/pkg/registry/etcd"
-	_ "github.com/apache/servicecomb-service-center/server/plugin/pkg/tracing/buildin"
+	_ "github.com/apache/servicecomb-service-center/server/plugin/registry/etcd"
+	_ "github.com/apache/servicecomb-service-center/server/plugin/tracing/buildin"
 )
 
 func init() {

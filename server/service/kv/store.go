@@ -24,7 +24,7 @@ import (
 	"github.com/coreos/etcd/mvcc/mvccpb"
 
 	"github.com/apache/servicecomb-service-center/server/core/backend"
-	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
+	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 )
 
 var ErrNotUnique = errors.New("kv result is not unique")

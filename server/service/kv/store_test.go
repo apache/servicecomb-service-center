@@ -20,9 +20,9 @@ package kv_test
 import (
 	"context"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
-	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery/etcd"
-	etcd2 "github.com/apache/servicecomb-service-center/server/plugin/pkg/registry/etcd"
-	"github.com/apache/servicecomb-service-center/server/plugin/pkg/tracing/buildin"
+	"github.com/apache/servicecomb-service-center/server/plugin/discovery/etcd"
+	etcd2 "github.com/apache/servicecomb-service-center/server/plugin/registry/etcd"
+	"github.com/apache/servicecomb-service-center/server/plugin/tracing/buildin"
 	"github.com/apache/servicecomb-service-center/server/service/kv"
 	"github.com/astaxie/beego"
 	"github.com/stretchr/testify/assert"

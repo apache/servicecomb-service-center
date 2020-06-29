@@ -18,7 +18,7 @@ package util
 
 import (
 	"fmt"
-	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
+	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"sort"

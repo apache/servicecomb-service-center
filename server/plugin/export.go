@@ -16,14 +16,14 @@
 package plugin
 
 import (
-	"github.com/apache/servicecomb-service-center/server/plugin/pkg/auditlog"
-	"github.com/apache/servicecomb-service-center/server/plugin/pkg/auth"
-	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
-	"github.com/apache/servicecomb-service-center/server/plugin/pkg/quota"
-	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
-	"github.com/apache/servicecomb-service-center/server/plugin/pkg/tls"
-	"github.com/apache/servicecomb-service-center/server/plugin/pkg/tracing"
-	"github.com/apache/servicecomb-service-center/server/plugin/pkg/uuid"
+	"github.com/apache/servicecomb-service-center/server/plugin/auditlog"
+	"github.com/apache/servicecomb-service-center/server/plugin/auth"
+	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
+	"github.com/apache/servicecomb-service-center/server/plugin/quota"
+	"github.com/apache/servicecomb-service-center/server/plugin/registry"
+	"github.com/apache/servicecomb-service-center/server/plugin/tls"
+	"github.com/apache/servicecomb-service-center/server/plugin/tracing"
+	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 	"github.com/go-chassis/foundation/security"
 )
 
