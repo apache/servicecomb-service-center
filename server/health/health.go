@@ -20,9 +20,9 @@ import (
 	"github.com/apache/servicecomb-service-center/server/alarm"
 )
 
-var healthChecker HealthChecker = &DefaultHealthChecker{}
+var healthChecker Checker = &DefaultHealthChecker{}
 
-type HealthChecker interface {
+type Checker interface {
 	Healthy() error
 }
 
@@ -38,10 +38,10 @@ func (hc *DefaultHealthChecker) Healthy() error {
 	return nil
 }
 
-func SetGlobalHealthChecker(hc HealthChecker) {
+func SetGlobalHealthChecker(hc Checker) {
 	healthChecker = hc
 }
 
-func GlobalHealthChecker() HealthChecker {
+func GlobalHealthChecker() Checker {
 	return healthChecker
 }

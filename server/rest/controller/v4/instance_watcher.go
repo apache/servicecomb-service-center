@@ -41,14 +41,10 @@ func upgrade(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error) {
 		CheckOrigin: func(r *http.Request) bool {
 			return true
 		},
-		/*Error: func(w http.ResponseWriter, r *http.Request, status int, reason error) {
-
-		  },*/
 	}
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Error("upgrade failed", err)
-		// controller.WriteError(w, scerr.ErrInternal, "Upgrade error")
 	}
 	return conn, err
 }

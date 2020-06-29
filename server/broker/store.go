@@ -18,7 +18,7 @@ package broker
 
 import (
 	"github.com/apache/servicecomb-service-center/server/core/backend"
-	"github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery"
+	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 )
 
 var (

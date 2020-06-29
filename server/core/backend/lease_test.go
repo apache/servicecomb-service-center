@@ -21,7 +21,7 @@ import (
 	"fmt"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	simple "github.com/apache/servicecomb-service-center/pkg/time"
-	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry/buildin"
+	"github.com/apache/servicecomb-service-center/server/plugin/registry/buildin"
 	"testing"
 	"time"
 )

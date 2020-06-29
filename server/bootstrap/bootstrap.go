@@ -21,35 +21,35 @@ import _ "github.com/apache/servicecomb-service-center/server/rest/controller/v3
 import _ "github.com/apache/servicecomb-service-center/server/rest/controller/v4"
 
 // registry
-import _ "github.com/apache/servicecomb-service-center/server/plugin/pkg/registry/buildin"
-import _ "github.com/apache/servicecomb-service-center/server/plugin/pkg/registry/etcd"
-import _ "github.com/apache/servicecomb-service-center/server/plugin/pkg/registry/embededetcd"
+import _ "github.com/apache/servicecomb-service-center/server/plugin/registry/buildin"
+import _ "github.com/apache/servicecomb-service-center/server/plugin/registry/etcd"
+import _ "github.com/apache/servicecomb-service-center/server/plugin/registry/embededetcd"
 
 // discovery
-import _ "github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery/aggregate"
-import _ "github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery/servicecenter"
-import _ "github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery/etcd"
-import _ "github.com/apache/servicecomb-service-center/server/plugin/pkg/discovery/k8s"
+import _ "github.com/apache/servicecomb-service-center/server/plugin/discovery/aggregate"
+import _ "github.com/apache/servicecomb-service-center/server/plugin/discovery/servicecenter"
+import _ "github.com/apache/servicecomb-service-center/server/plugin/discovery/etcd"
+import _ "github.com/apache/servicecomb-service-center/server/plugin/discovery/k8s"
 
 // cipher
-import _ "github.com/apache/servicecomb-service-center/server/plugin/pkg/security/buildin"
+import _ "github.com/apache/servicecomb-service-center/server/plugin/security/buildin"
 
 // quota
-import _ "github.com/apache/servicecomb-service-center/server/plugin/pkg/quota/buildin"
-import _ "github.com/apache/servicecomb-service-center/server/plugin/pkg/quota/unlimit"
+import _ "github.com/apache/servicecomb-service-center/server/plugin/quota/buildin"
+import _ "github.com/apache/servicecomb-service-center/server/plugin/quota/unlimit"
 
 // auth
-import _ "github.com/apache/servicecomb-service-center/server/plugin/pkg/auth/buildin"
+import _ "github.com/apache/servicecomb-service-center/server/plugin/auth/buildin"
 
 // uuid
-import _ "github.com/apache/servicecomb-service-center/server/plugin/pkg/uuid/buildin"
-import _ "github.com/apache/servicecomb-service-center/server/plugin/pkg/uuid/context"
+import _ "github.com/apache/servicecomb-service-center/server/plugin/uuid/buildin"
+import _ "github.com/apache/servicecomb-service-center/server/plugin/uuid/context"
 
 // tracing
-import _ "github.com/apache/servicecomb-service-center/server/plugin/pkg/tracing/buildin"
+import _ "github.com/apache/servicecomb-service-center/server/plugin/tracing/buildin"
 
 // tls
-import _ "github.com/apache/servicecomb-service-center/server/plugin/pkg/tls/buildin"
+import _ "github.com/apache/servicecomb-service-center/server/plugin/tls/buildin"
 
 // module 'govern'
 import _ "github.com/apache/servicecomb-service-center/server/govern"

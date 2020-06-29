@@ -19,7 +19,7 @@ package util
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
-	"github.com/apache/servicecomb-service-center/server/plugin/pkg/registry"
+	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 )
 
 func CheckSchemaInfoExist(ctx context.Context, key string) (bool, error) {

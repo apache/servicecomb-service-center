@@ -21,7 +21,7 @@ require (
 	github.com/eapache/queue v1.1.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-chassis/foundation v0.1.1-0.20191113114104-2b05871e9ec4
-	github.com/go-chassis/go-archaius v1.3.1
+	github.com/go-chassis/go-archaius v1.3.2
 	github.com/go-chassis/go-chassis v0.0.0-20200624080301-8af281f0f75b
 	github.com/go-chassis/paas-lager v1.1.1
 	github.com/gogo/protobuf v1.2.2-0.20190723190241-65acae22fc9d
