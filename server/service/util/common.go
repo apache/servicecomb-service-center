@@ -24,3 +24,7 @@ const (
 	CTX_REQUEST_REVISION  = "requestRev"
 	CTX_RESPONSE_REVISION = "responseRev"
 )
+
+const (
+	ErrMsgConvert = "type convert error"
+)

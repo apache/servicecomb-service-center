@@ -30,6 +30,7 @@ import (
 )
 
 var ErrDuplicated = errors.New("account is duplicated")
+var ErrCanNotEdit = errors.New("account can not be edited")
 
 //CreateAccount save 2 kv
 //1. account info
@@ -85,4 +86,31 @@ func AccountExist(ctx context.Context, name string) (bool, error) {
 		return false, err
 	}
 	return exist, nil
+}
+
+//CreateAccount save 2 kv
+//1. account info
+func EditAccount(ctx context.Context, a *model.Account) error {
+	key := core.GenerateAccountKey(a.Name)
+	exist, err := kv.Exist(ctx, key)
+	if err != nil {
+		log.Errorf(err, "can not edit account info")
+		return err
+	}
+	if !exist {
+		return ErrCanNotEdit
+	}
+
+	value, err := json.Marshal(a)
+	if err != nil {
+		log.Errorf(err, "account info is invalid")
+		return err
+	}
+	err = kv.PutBytes(ctx, key, value)
+	if err != nil {
+		log.Errorf(err, "can not edit account info")
+		return err
+	}
+
+	return nil
 }

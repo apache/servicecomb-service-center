@@ -17,11 +17,17 @@
 
 package model
 
-type Account struct {
-	Name     string `json:"name,omitempty"`
-	Password string `json:"password,omitempty"`
-}
+const (
+	RoleAdmin   = "admin"
+	RoleAuditor = "auditor"
+)
 
+type Account struct {
+	Name            string `json:"name,omitempty"`
+	Password        string `json:"password,omitempty"`
+	Role            string `json:"role,omitempty"`
+	CurrentPassword string `json:"currentPassword,omitempty"`
+}
 type Token struct {
 	TokenStr string `json:"token,omitempty"`
 }

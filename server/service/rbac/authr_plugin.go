@@ -31,7 +31,8 @@ import (
 var ErrUnauthorized = errors.New("wrong user name or password")
 
 const (
-	ClaimsUser = "user"
+	ClaimsUser = "account"
+	ClaimsRole = "role"
 )
 
 //EmbeddedAuthenticator is sc default auth plugin, RBAC data is persisted in etcd
@@ -57,12 +58,13 @@ func (a *EmbeddedAuthenticator) Login(ctx context.Context, user string, password
 		return "", err
 	}
 	if user == account.Name && password == account.Password {
-		secret, err := GetPrivateKey(ctx)
+		secret, err := GetPrivateKey()
 		if err != nil {
 			return "", err
 		}
 		tokenStr, err := token.Sign(map[string]interface{}{
-			ClaimsUser: user, //TODO more claims for RBAC, for example role name
+			ClaimsUser: user,
+			ClaimsRole: account.Role, //TODO more claims for RBAC, for example rule config
 		},
 			secret,
 			token.WithExpTime("30m"),

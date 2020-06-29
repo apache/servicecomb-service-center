@@ -13,23 +13,27 @@ openssl rsa -in private.key -pubout -out public.key
 ```
 
 2.edit app.conf
+
+can revoke private.key after each cluster restart,
 ```ini
 rbac_enabled = true
-rbac_rsa_pub_key_file = ./public.key
+rbac_rsa_public_key_file = ./public.key
+rbac_rsa_private_key_file = ./private.key
 ```
+3.root account
+before you start server, you need to set env to set your root account password.  
 
-before you start server, you need to set env to set your root account.  
-can revoke private.key after each cluster restart,can not revoke root name and password
 ```sh
-export SC_INIT_ROOT_USERNAME=root  
 export SC_INIT_ROOT_PASSWORD=rootpwd
-export SC_INIT_PRIVATE_KEY=`cat private.key`
 ```
-at the first time service center cluster init, it will use this env to setup rbac module.
+at the first time service center cluster init, it will use this env to setup rbac module. you can not revoke password after cluster start
+
+the root account name is "root"
 
 To securely distribute your root account and private key, 
 you can use kubernetes [secret](https://kubernetes.io/zh/docs/tasks/inject-data-application/distribute-credentials-secure/)
 ### Generate a token 
+token is the only credential to access rest API, before you access any API, you need to get a token
 ```shell script
 curl -X POST \
   http://127.0.0.1:30100/v4/token \
@@ -42,12 +46,27 @@ will return a token, token will expired after 30m
 ```
 
 ### Authentication
-in each request you must add token to  http header
+in each request you must add token to  http header:
+```
 Authorization: Bear {token}
-
+```
 for example:
 ```shell script
 curl -X GET \
   'http://127.0.0.1:30100/v4/default/registry/microservices/{service-id}/instances' \
   -H 'Authorization: Bear eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1OTI4OTQ1NTEsInVzZXIiOiJyb290In0.FfLOSvVmHT9qCZSe_6iPf4gNjbXLwCrkXxKHsdJoQ8w' 
 ```
+
+### Change password
+You must supply current password and token to update to new password
+curl -X PUT \
+  http://127.0.0.1:30100/v4/account-password \
+  -H 'Authorization: Bear eyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2NvdW50Ijoicm9vdCIsImV4cCI6MTU5MzMyOTE3OSwicm9sZSI6IiJ9.OR_uruuLds1wz10_J4gDEA-L9Ma_1RrHiKEA6CS-Nilv6hHB5KyhZ9_4qqf_c0iia4uKryAGHKsXUvrjOE51tz4QCXlgCmddrkYuLQsnDezXhV3TIqzdl4R_cy8h2cZo8O_b_q7eU2Iemd6x7BJE49SLgNiP5LTXCVct5Qm_GiXYTaM4dbHIJ01V-EPmNQuBr1vKdfNa8cqWtASSp9IEkFx1YpzhFacQgmfoiSGHvxQYZldQXuAh60ZXLBDexGu6jGnG39MqVNRysvHTpZRqxZWBhmEn5DeXpgKu-zlakJMjeEma4zcN-H0MumE-nMlBT5kjKWVr1DOdtOyJI6i786ZpS0wWHV4VOxpSursoKsW_XuTZCMM8LTBgdy5icCuHUXvvWXYJxPks9Pq3DcFjPlY3IuXyfokEWxGvrAF6jzglgSrNTiRkoNBKVktEapDyrpyWfktp22mhvWF6GuNoUzztxFPJblH-TXdudzWeqx-gV1lsRPSMsW8-oq6pxJfeb-b0PNM8vAIbwvv8an4T5iNMBZMz7J9NbpVCaj5eLcgfUXktyb8eWSfANhYMxY9kQN9dHZlkASAW-sjehi-rBXYJ8aCL4EbLzrYlmFWoN0z25dxvAxmWaPRQED3METYyZHvV_G4DSQf0cB2Oer_YdoRa6HWmxnTlz0HwPEq55PM' \
+  -d '{
+	"currentPassword":"rootpwd",
+	"password":"123"
+}'
+### Roles TODO
+currently, you can not custom and manage any role and role policy. there is only 1 build in roles
+- admin: able to do anything, including manage account, even change other account password
+- service: able to call most of API except account management.
