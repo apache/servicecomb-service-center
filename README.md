@@ -1,7 +1,16 @@
 # Apache-ServiceComb-Service-Center
 [![Build Status](https://www.travis-ci.org/apache/servicecomb-service-center.svg?branch=master)](https://www.travis-ci.org/apache/servicecomb-service-center)  [![Coverage Status](https://coveralls.io/repos/github/apache/servicecomb-service-center/badge.svg?branch=master)](https://coveralls.io/github/apache/servicecomb-service-center?branch=master)  [![Go Report Card](https://goreportcard.com/badge/github.com/apache/servicecomb-service-center)](https://goreportcard.com/report/github.com/apache/servicecomb-service-center) [![GoDoc](https://godoc.org/github.com/apache/servicecomb-service-center?status.svg)](https://godoc.org/github.com/apache/servicecomb-service-center)  [![HitCount](http://hits.dwyl.io/apache/servicecomb-service-center.svg)](http://hits.dwyl.io/apache/servicecomb-service-center) [![Gitter](https://img.shields.io/badge/ServiceComb-Gitter-ff69b4.svg)](https://gitter.im/ServiceCombUsers/Lobby)  
 
-Apache ServiceComb Service-Center is a Restful based service-registry that provides micro-services discovery and micro-service management. It is based on Open API format and provides features like service-discovery, fault-tolerance, dynamic routing, notify subscription and scalable by design. It has high performance cache design and separate entity management for micro-services and their instances. It provides out of box support for metrics and tracing. It has a web portal to manage the micro-services.  
+Apache ServiceComb Service-Center is a Restful based service-registry that provides micro-services discovery and micro-service management. 
+It is based on Open API format and provides features like service-discovery, 
+fault-tolerance, dynamic routing, notify subscription and scalable by design. 
+It has high performance cache design and separate entity management for micro-services and their instances. 
+It provides out of box support for metrics and tracing. It has a web portal to manage the micro-services.  
+
+# Components
+- server: a http server which provide restful API
+- scctl: CLI of server
+- syncer: multiple service centers cluster synchronization tool, designed for large microservice architectures
 
 ## Features
  - **[`Open API`](/server/core/swagger/v4.yaml)**: API doc(Open API format) management for microservice
@@ -107,7 +116,7 @@ GO111MODULE=on go mod vendor
 Build the Service-Center
 
 ```sh
-go build -o service-center
+go build -o service-center github.com/apache/servicecomb-service-center/cmd/scserver
 ```
 
 First, you need to run a etcd(version: 3.x) as a database service and then modify the etcd IP and port in the Service Center configuration file (./etc/conf/app.conf : manager_cluster).
@@ -118,7 +127,7 @@ tar -xvf etcd-v3.1.8-linux-amd64.tar.gz
 cd etcd-v3.1.8-linux-amd64
 ./etcd
 
-cd $GOPATH/src/github.com/apache/servicecomb-service-center
+cd servicecomb-service-center
 cp -r ./etc/conf .
 ./service-center
 ```

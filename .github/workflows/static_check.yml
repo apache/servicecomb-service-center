@@ -5,19 +5,32 @@ jobs:
     name: Merge check
     runs-on: ubuntu-latest
     steps:
-
     - name: Set up Go 1.13
       uses: actions/setup-go@v1
       with:
         go-version: 1.13
       id: go
-
     - name: Check out code into the Go module directory
       uses: actions/checkout@v1
-
-    - name: Build
-      run: go build -v .
-
+    - name: build
+      run: |
+        bash -x scripts/build/local.sh
+    - name: UT
+      run: |
+        bash -x scripts/ut_test_in_docker.sh
+    - name: Integration Testing
+      run: |
+        bash -x scripts/integration_test.sh
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Set up Go 1.13
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.13
+      id: go
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v1
     - name: Fmt
       run: |
         bash scripts/ci/formatChecker.sh
@@ -29,12 +42,3 @@ jobs:
       run: |
         go get github.com/fzipp/gocyclo
         bash scripts/ci/goCycloChecker.sh
-    - name: build
-      run: |
-        bash -x scripts/build/local.sh
-    - name: UT
-      run: |
-        bash -x scripts/ut_test_in_docker.sh
-    - name: Integration Testing
-      run: |
-        bash -x scripts/integration_test.sh
