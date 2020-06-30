@@ -17,7 +17,7 @@
 package etcd
 
 import (
-	_ "github.com/apache/servicecomb-service-center/server/plugin/tracing/buildin"
+	_ "github.com/apache/servicecomb-service-center/server/plugin/tracing/pzipkin"
 	"github.com/stretchr/testify/assert"
 )
 import _ "github.com/apache/servicecomb-service-center/server/plugin/security/buildin"

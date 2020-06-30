@@ -32,7 +32,7 @@ func (r *ServiceCenterRepository) New(t discovery.Type, cfg *discovery.Config) d
 	return NewServiceCenterAdaptor(t, cfg)
 }
 
-func NewRepository() mgr.PluginInstance {
+func NewRepository() mgr.Instance {
 	InitConfigs()
 	return &ServiceCenterRepository{}
 }

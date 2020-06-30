@@ -72,7 +72,7 @@ func (ec *BuildinRegistry) Compact(ctx context.Context, reserve int64) error {
 func (ec *BuildinRegistry) Close() {
 }
 
-func NewRegistry() mgr.PluginInstance {
+func NewRegistry() mgr.Instance {
 	return &BuildinRegistry{
 		ready: make(chan int),
 	}

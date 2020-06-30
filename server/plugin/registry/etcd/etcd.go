@@ -853,7 +853,7 @@ func callback(action registry.ActionType, rev int64, kvs []*mvccpb.KeyValue, cb 
 	})
 }
 
-func NewRegistry() mgr.PluginInstance {
+func NewRegistry() mgr.Instance {
 	log.Warnf("enable etcd registry mode")
 
 	inst := &EtcdClient{}

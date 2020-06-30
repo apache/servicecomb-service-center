@@ -526,7 +526,7 @@ func callback(action registry.ActionType, rev int64, kvs []*mvccpb.KeyValue, cb 
 	})
 }
 
-func getEmbedInstance() mgr.PluginInstance {
+func getEmbedInstance() mgr.Instance {
 	log.Warnf("enable embedded registry mode")
 
 	hostName := "sc-0"

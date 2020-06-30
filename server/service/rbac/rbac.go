@@ -30,6 +30,7 @@ import (
 	"github.com/go-chassis/go-chassis/security/authr"
 	"github.com/go-chassis/go-chassis/security/secret"
 	"io/ioutil"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
@@ -142,4 +143,13 @@ func GetPrivateKey() (*rsa.PrivateKey, error) {
 		return nil, err
 	}
 	return p, nil
+}
+
+var whiteAPIList = sets.NewString("/health", "/version", "/v4/token")
+
+func Add2WhiteAPIList(path string) {
+	whiteAPIList.Insert(path)
+}
+func WhiteAPIList() sets.String {
+	return whiteAPIList
 }
