@@ -19,6 +19,7 @@ require (
 	github.com/eapache/go-resiliency v1.1.0 // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21 // indirect
 	github.com/eapache/queue v1.1.0 // indirect
+	github.com/fzipp/gocyclo v0.0.0-20150627053110-6acd4345c835 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-chassis/foundation v0.1.1-0.20191113114104-2b05871e9ec4
 	github.com/go-chassis/go-archaius v1.3.2
