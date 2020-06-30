@@ -17,80 +17,34 @@
 package auth
 
 import (
-	"context"
 	"github.com/apache/servicecomb-service-center/pkg/chain"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
-	"github.com/apache/servicecomb-service-center/server/service/rbac"
-	"github.com/go-chassis/go-chassis/security/authr"
-	"github.com/go-chassis/go-chassis/server/restful"
+	"github.com/apache/servicecomb-service-center/server/scerror"
 	"net/http"
-	"strings"
 )
 
 type Handler struct {
 }
 
 func (h *Handler) Handle(i *chain.Invocation) {
-	if !rbac.Enabled() {
+	r := i.Context().Value(rest.CTX_REQUEST).(*http.Request)
+	err := plugin.Plugins().Auth().Identify(r)
+	if err == nil {
 		i.Next()
 		return
 	}
+
+	log.Errorf(err, "authenticate request failed, %s %s", r.Method, r.RequestURI)
+
 	w := i.Context().Value(rest.CTX_RESPONSE).(http.ResponseWriter)
-	req, ok := i.Context().Value(rest.CTX_REQUEST).(*http.Request)
-	if !ok {
-		controller.WriteError(w, scerr.ErrUnauthorized, "internal error")
-		i.Fail(nil)
-		return
-	}
-	if !mustAuth(req) {
-		i.Next()
-		return
-	}
+	controller.WriteError(w, scerror.ErrUnauthorized, err.Error())
 
-	v := req.Header.Get(restful.HeaderAuth)
-	if v == "" {
-		controller.WriteError(w, scerr.ErrUnauthorized, "should provide token in header")
-		i.Fail(nil)
-		return
-	}
-	s := strings.Split(v, " ")
-	if len(s) != 2 {
-		controller.WriteError(w, scerr.ErrUnauthorized, "invalid auth header")
-		i.Fail(nil)
-		return
-	}
-	to := s[1]
-	//TODO rbac
-	claims, err := authr.Authenticate(i.Context(), to)
-	if err != nil {
-		log.Errorf(err, "authenticate request failed, %s %s", req.Method, req.RequestURI)
-		controller.WriteError(w, scerr.ErrUnauthorized, err.Error())
-		i.Fail(nil)
-		return
-	}
-	log.Info("user access")
-	req2 := req.WithContext(context.WithValue(req.Context(), "accountInfo", claims))
-
-	*req = *req2
-	i.Next()
-	return
-
+	i.Fail(nil)
 }
-func mustAuth(req *http.Request) bool {
-	if strings.Contains(req.URL.Path, "/v4/token") {
-		return false
-	}
-	if strings.Contains(req.URL.Path, "/health") {
-		return false
-	}
-	if strings.Contains(req.URL.Path, "/version") {
-		return false
-	}
-	return true
-}
+
 func RegisterHandlers() {
 	chain.RegisterHandler(rest.ServerChainName, &Handler{})
 }
