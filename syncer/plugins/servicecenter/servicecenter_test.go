@@ -26,13 +26,12 @@ import (
 )
 
 func TestClient_GetAll(t *testing.T) {
-	svr, sc := newServiceCenter(t)
+	_, sc := newServiceCenter(t)
 	_, err := sc.GetAll(context.Background())
 	if err != nil {
 		t.Errorf("get all from %s server failed, error: %s", PluginName, err)
 	}
 
-	svr.Close()
 	_, err = sc.GetAll(context.Background())
 	if err != nil {
 		t.Logf("get all from %s server failed, error: %s", PluginName, err)

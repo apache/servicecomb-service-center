@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package v4
 
 import (
@@ -34,17 +35,17 @@ type SchemaService struct {
 	//
 }
 
-func (this *SchemaService) URLPatterns() []rest.Route {
+func (s *SchemaService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTP_METHOD_GET, "/v4/:project/registry/microservices/:serviceId/schemas/:schemaId", this.GetSchemas},
-		{rest.HTTP_METHOD_PUT, "/v4/:project/registry/microservices/:serviceId/schemas/:schemaId", this.ModifySchema},
-		{rest.HTTP_METHOD_DELETE, "/v4/:project/registry/microservices/:serviceId/schemas/:schemaId", this.DeleteSchemas},
-		{rest.HTTP_METHOD_POST, "/v4/:project/registry/microservices/:serviceId/schemas", this.ModifySchemas},
-		{rest.HTTP_METHOD_GET, "/v4/:project/registry/microservices/:serviceId/schemas", this.GetAllSchemas},
+		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/microservices/:serviceId/schemas/:schemaId", Func: s.GetSchemas},
+		{Method: rest.HTTPMethodPut, Path: "/v4/:project/registry/microservices/:serviceId/schemas/:schemaId", Func: s.ModifySchema},
+		{Method: rest.HTTPMethodDelete, Path: "/v4/:project/registry/microservices/:serviceId/schemas/:schemaId", Func: s.DeleteSchemas},
+		{Method: rest.HTTPMethodPost, Path: "/v4/:project/registry/microservices/:serviceId/schemas", Func: s.ModifySchemas},
+		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/microservices/:serviceId/schemas", Func: s.GetAllSchemas},
 	}
 }
 
-func (this *SchemaService) GetSchemas(w http.ResponseWriter, r *http.Request) {
+func (s *SchemaService) GetSchemas(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	request := &pb.GetSchemaRequest{
 		ServiceId: query.Get(":serviceId"),
@@ -58,7 +59,7 @@ func (this *SchemaService) GetSchemas(w http.ResponseWriter, r *http.Request) {
 	controller.WriteResponse(w, respInternal, resp)
 }
 
-func (this *SchemaService) ModifySchema(w http.ResponseWriter, r *http.Request) {
+func (s *SchemaService) ModifySchema(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
@@ -77,17 +78,22 @@ func (this *SchemaService) ModifySchema(w http.ResponseWriter, r *http.Request) 
 	request.ServiceId = query.Get(":serviceId")
 	request.SchemaId = query.Get(":schemaId")
 	resp, err := core.ServiceAPI.ModifySchema(r.Context(), request)
+	if err != nil {
+		log.Errorf(err, "can not update schema")
+		controller.WriteError(w, scerr.ErrInternal, "can not update schema")
+		return
+	}
 	controller.WriteResponse(w, resp.Response, nil)
 }
 
-func (this *SchemaService) ModifySchemas(w http.ResponseWriter, r *http.Request) {
+func (s *SchemaService) ModifySchemas(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
-	serviceId := r.URL.Query().Get(":serviceId")
+	serviceID := r.URL.Query().Get(":serviceId")
 	request := &pb.ModifySchemasRequest{}
 	err = json.Unmarshal(message, request)
 	if err != nil {
@@ -95,12 +101,17 @@ func (this *SchemaService) ModifySchemas(w http.ResponseWriter, r *http.Request)
 		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
 		return
 	}
-	request.ServiceId = serviceId
+	request.ServiceId = serviceID
 	resp, err := core.ServiceAPI.ModifySchemas(r.Context(), request)
+	if err != nil {
+		log.Errorf(err, "can not update schema")
+		controller.WriteError(w, scerr.ErrInternal, "can not update schema")
+		return
+	}
 	controller.WriteResponse(w, resp.Response, nil)
 }
 
-func (this *SchemaService) DeleteSchemas(w http.ResponseWriter, r *http.Request) {
+func (s *SchemaService) DeleteSchemas(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	request := &pb.DeleteSchemaRequest{
 		ServiceId: query.Get(":serviceId"),
@@ -110,16 +121,16 @@ func (this *SchemaService) DeleteSchemas(w http.ResponseWriter, r *http.Request)
 	controller.WriteResponse(w, resp.Response, nil)
 }
 
-func (this *SchemaService) GetAllSchemas(w http.ResponseWriter, r *http.Request) {
+func (s *SchemaService) GetAllSchemas(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	withSchema := query.Get("withSchema")
-	serviceId := query.Get(":serviceId")
+	serviceID := query.Get(":serviceId")
 	if withSchema != "0" && withSchema != "1" && strings.TrimSpace(withSchema) != "" {
 		controller.WriteError(w, scerr.ErrInvalidParams, "parameter withSchema must be 1 or 0")
 		return
 	}
 	request := &pb.GetAllSchemaRequest{
-		ServiceId:  serviceId,
+		ServiceId:  serviceID,
 		WithSchema: withSchema == "1",
 	}
 	resp, _ := core.ServiceAPI.GetAllSchemaInfo(r.Context(), request)

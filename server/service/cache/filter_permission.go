@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package cache
 
 import (
@@ -29,28 +30,28 @@ type AccessibleFilter struct {
 }
 
 func (f *AccessibleFilter) Name(ctx context.Context, _ *cache.Node) string {
-	consumer := ctx.Value(CTX_FIND_CONSUMER).(*pb.MicroService)
+	consumer := ctx.Value(CtxFindConsumer).(*pb.MicroService)
 	return consumer.ServiceId
 }
 
 func (f *AccessibleFilter) Init(ctx context.Context, parent *cache.Node) (node *cache.Node, err error) {
 	var ids []string
-	consumerId := ctx.Value(CTX_FIND_CONSUMER).(*pb.MicroService).ServiceId
-	pCopy := *parent.Cache.Get(CACHE_FIND).(*VersionRuleCacheItem)
-	for _, providerServiceId := range pCopy.ServiceIds {
-		if err := serviceUtil.Accessible(ctx, consumerId, providerServiceId); err != nil {
-			provider := ctx.Value(CTX_FIND_PROVIDER).(*pb.MicroServiceKey)
-			findFlag := fmt.Sprintf("consumer '%s' find provider %s/%s/%s", consumerId,
+	consumerID := ctx.Value(CtxFindConsumer).(*pb.MicroService).ServiceId
+	pCopy := *parent.Cache.Get(Find).(*VersionRuleCacheItem)
+	for _, providerServiceID := range pCopy.ServiceIds {
+		if err := serviceUtil.Accessible(ctx, consumerID, providerServiceID); err != nil {
+			provider := ctx.Value(CtxFindProvider).(*pb.MicroServiceKey)
+			findFlag := fmt.Sprintf("consumer '%s' find provider %s/%s/%s", consumerID,
 				provider.AppId, provider.ServiceName, provider.Version)
 			log.Errorf(err, "AccessibleFilter failed, %s", findFlag)
 			continue
 		}
-		ids = append(ids, providerServiceId)
+		ids = append(ids, providerServiceID)
 	}
 
 	pCopy.ServiceIds = ids
 
 	node = cache.NewNode()
-	node.Cache.Set(CACHE_FIND, &pCopy)
+	node.Cache.Set(Find, &pCopy)
 	return
 }

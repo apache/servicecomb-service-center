@@ -61,13 +61,13 @@ func TestInetNtoa(t *testing.T) {
 }
 
 func TestParseIpPort(t *testing.T) {
-	ipPort := ParseIpPort("0.0.0.0")
+	ipPort := ParseIPPort("0.0.0.0")
 	if ipPort.IP != "0.0.0.0" || ipPort.Port != 0 {
-		t.Fatalf("ParseIpPort(0.0.0.0) error")
+		t.Fatalf("ParseIPPort(0.0.0.0) error")
 	}
-	ipPort = ParseIpPort("0.0.0.0:1")
+	ipPort = ParseIPPort("0.0.0.0:1")
 	if ipPort.IP != "0.0.0.0" || ipPort.Port != 1 {
-		t.Fatalf("ParseIpPort(0.0.0.0) error")
+		t.Fatalf("ParseIPPort(0.0.0.0) error")
 	}
 }
 

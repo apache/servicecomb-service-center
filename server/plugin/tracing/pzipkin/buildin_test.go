@@ -53,7 +53,7 @@ func TestZipkin_XBegin(t *testing.T) {
 		t.Fatalf("TestZipkin_XBegin failed")
 	}
 
-	req = req.WithContext(context.WithValue(req.Context(), tracing.CTX_TRACE_SPAN, span))
+	req = req.WithContext(context.WithValue(req.Context(), tracing.CtxTraceSpan, span))
 	span = zk.ClientBegin("x", req)
 	if span == nil {
 		t.Fatalf("TestZipkin_XBegin failed")

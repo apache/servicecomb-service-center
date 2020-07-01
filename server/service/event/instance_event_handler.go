@@ -51,7 +51,7 @@ func (h *InstanceEventHandler) Type() discovery.Type {
 func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
 	action := evt.Type
 	instance := evt.KV.Value.(*pb.MicroServiceInstance)
-	providerId, providerInstanceId, domainProject := apt.GetInfoFromInstKV(evt.KV.Key)
+	providerID, providerInstanceID, domainProject := apt.GetInfoFromInstKV(evt.KV.Key)
 	idx := strings.Index(domainProject, "/")
 	domainName := domainProject[:idx]
 	projectName := domainProject[idx+1:]
@@ -60,10 +60,10 @@ func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
 	switch action {
 	case pb.EVT_INIT:
 		metrics.ReportInstances(domainName, count)
-		ms := serviceUtil.GetServiceFromCache(domainProject, providerId)
+		ms := serviceUtil.GetServiceFromCache(domainProject, providerID)
 		if ms == nil {
 			log.Warnf("caught [%s] instance[%s/%s] event, endpoints %v, get cached provider's file failed",
-				action, providerId, providerInstanceId, instance.Endpoints)
+				action, providerID, providerInstanceID, instance.Endpoints)
 			return
 		}
 		frameworkName, frameworkVersion := getFramework(ms)
@@ -81,20 +81,20 @@ func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
 		}
 	}
 
-	if notify.NotifyCenter().Closed() {
+	if notify.GetNotifyCenter().Closed() {
 		log.Warnf("caught [%s] instance[%s/%s] event, endpoints %v, but notify service is closed",
-			action, providerId, providerInstanceId, instance.Endpoints)
+			action, providerID, providerInstanceID, instance.Endpoints)
 		return
 	}
 
 	// 查询服务版本信息
 	ctx := context.WithValue(context.WithValue(context.Background(),
-		serviceUtil.CTX_CACHEONLY, "1"),
-		serviceUtil.CTX_GLOBAL, "1")
-	ms, err := serviceUtil.GetService(ctx, domainProject, providerId)
+		util.CtxCacheOnly, "1"),
+		util.CtxGlobal, "1")
+	ms, err := serviceUtil.GetService(ctx, domainProject, providerID)
 	if ms == nil {
 		log.Errorf(err, "caught [%s] instance[%s/%s] event, endpoints %v, get cached provider's file failed",
-			action, providerId, providerInstanceId, instance.Endpoints)
+			action, providerID, providerInstanceID, instance.Endpoints)
 		return
 	}
 
@@ -102,18 +102,18 @@ func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
 	metrics.ReportFramework(domainName, projectName, frameworkName, frameworkVersion, count)
 
 	log.Infof("caught [%s] service[%s][%s/%s/%s/%s] instance[%s] event, endpoints %v",
-		action, providerId, ms.Environment, ms.AppId, ms.ServiceName, ms.Version,
-		providerInstanceId, instance.Endpoints)
+		action, providerID, ms.Environment, ms.AppId, ms.ServiceName, ms.Version,
+		providerInstanceID, instance.Endpoints)
 
 	// 查询所有consumer
-	consumerIds, _, err := serviceUtil.GetAllConsumerIds(ctx, domainProject, ms)
+	consumerIDs, _, err := serviceUtil.GetAllConsumerIds(ctx, domainProject, ms)
 	if err != nil {
-		log.Errorf(err, "get service[%s][%s/%s/%s/%s]'s consumerIds failed",
-			providerId, ms.Environment, ms.AppId, ms.ServiceName, ms.Version)
+		log.Errorf(err, "get service[%s][%s/%s/%s/%s]'s consumerIDs failed",
+			providerID, ms.Environment, ms.AppId, ms.ServiceName, ms.Version)
 		return
 	}
 
-	PublishInstanceEvent(evt, domainProject, pb.MicroServiceToKey(domainProject, ms), consumerIds)
+	PublishInstanceEvent(evt, domainProject, pb.MicroServiceToKey(domainProject, ms), consumerIDs)
 }
 
 func NewInstanceEventHandler() *InstanceEventHandler {
@@ -133,10 +133,10 @@ func PublishInstanceEvent(evt discovery.KvEvent, domainProject string, serviceKe
 		Key:      serviceKey,
 		Instance: evt.KV.Value.(*pb.MicroServiceInstance),
 	}
-	for _, consumerId := range subscribers {
+	for _, consumerID := range subscribers {
 		// TODO add超时怎么处理？
-		job := notify.NewInstanceEventWithTime(consumerId, domainProject, evt.Revision, evt.CreateAt, response)
-		err := notify.NotifyCenter().Publish(job)
+		job := notify.NewInstanceEventWithTime(consumerID, domainProject, evt.Revision, evt.CreateAt, response)
+		err := notify.GetNotifyCenter().Publish(job)
 		if err != nil {
 			log.Errorf(err, "publish job failed")
 		}

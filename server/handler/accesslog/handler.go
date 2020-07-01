@@ -56,24 +56,24 @@ func (h *Handler) ShouldIgnoreAPI(api string) bool {
 
 // Handle handles the request
 func (h *Handler) Handle(i *chain.Invocation) {
-	matchPattern := i.Context().Value(rest.CTX_MATCH_PATTERN).(string)
+	matchPattern := i.Context().Value(rest.CtxMatchPattern).(string)
 	if h.ShouldIgnoreAPI(matchPattern) {
 		i.Next()
 		return
 	}
 	startTimeStr := "unknown"
-	start, ok := i.Context().Value(svr.CTX_START_TIMESTAMP).(time.Time)
+	start, ok := i.Context().Value(svr.CtxStartTimestamp).(time.Time)
 	if ok {
 		startTimeStr = start.Format("2006-01-02T15:04:05.000Z07:00")
 	}
-	r := i.Context().Value(rest.CTX_REQUEST).(*http.Request)
-	w := i.Context().Value(rest.CTX_RESPONSE).(http.ResponseWriter)
+	r := i.Context().Value(rest.CtxRequest).(*http.Request)
+	w := i.Context().Value(rest.CtxResponse).(http.ResponseWriter)
 	i.Next(chain.WithAsyncFunc(func(_ chain.Result) {
 		delayByMillisecond := "unknown"
 		if ok {
 			delayByMillisecond = fmt.Sprintf("%d", time.Since(start)/time.Millisecond)
 		}
-		statusCode := w.Header().Get(rest.HEADER_RESPONSE_STATUS)
+		statusCode := w.Header().Get(rest.HeaderResponseStatus)
 		// format:  remoteIp requestReceiveTime "method requestUri proto" statusCode requestBodySize delay(ms)
 		// example: 127.0.0.1 2006-01-02T15:04:05.000Z07:00 "GET /v4/default/registry/microservices HTTP/1.1" 200 0 0
 		h.logger.Infof("%s %s \"%s %s %s\" %s %d %s",
@@ -92,7 +92,7 @@ func (h *Handler) Handle(i *chain.Invocation) {
 func NewAccessLogHandler(l *log.Logger) *Handler {
 	return &Handler{
 		logger:        l,
-		whiteListAPIs: make(map[string]struct{}, 0)}
+		whiteListAPIs: make(map[string]struct{})}
 }
 
 // RegisterHandlers registers an access log handler to the handler chain

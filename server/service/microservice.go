@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package service
 
 import (
@@ -48,8 +49,8 @@ type MicroServiceService struct {
 }
 
 const (
-	EXIST_TYPE_MICROSERVICE = "microservice"
-	EXIST_TYPE_SCHEMA       = "schema"
+	ExistTypeMicroservice = "microservice"
+	ExistTypeSchema       = "schema"
 )
 
 func (s *MicroServiceService) Create(ctx context.Context, in *pb.CreateServiceRequest) (*pb.CreateServiceResponse, error) {
@@ -66,7 +67,7 @@ func (s *MicroServiceService) Create(ctx context.Context, in *pb.CreateServiceRe
 		return rsp, err
 	}
 
-	if s.isCreateServiceEx(in) == false {
+	if !s.isCreateServiceEx(in) {
 		return rsp, err
 	}
 
@@ -119,10 +120,10 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 	index := apt.GenerateServiceIndexKey(serviceKey)
 
 	// 产生全局service id
-	requestServiceId := service.ServiceId
-	if len(requestServiceId) == 0 {
+	requestServiceID := service.ServiceId
+	if len(requestServiceID) == 0 {
 		ctx = util.SetContext(ctx, uuid.ContextKey, index)
-		service.ServiceId = plugin.Plugins().UUID().GetServiceId(ctx)
+		service.ServiceId = plugin.Plugins().UUID().GetServiceID(ctx)
 	}
 	service.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
 	service.ModTimestamp = service.Timestamp
@@ -146,8 +147,8 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 		registry.OpPut(registry.WithKey(indexBytes), registry.WithStrValue(service.ServiceId)),
 	}
 	uniqueCmpOpts := []registry.CompareOp{
-		registry.OpCmp(registry.CmpVer(indexBytes), registry.CMP_EQUAL, 0),
-		registry.OpCmp(registry.CmpVer(keyBytes), registry.CMP_EQUAL, 0),
+		registry.OpCmp(registry.CmpVer(indexBytes), registry.CmpEqual, 0),
+		registry.OpCmp(registry.CmpVer(keyBytes), registry.CmpEqual, 0),
 	}
 	failOpts := []registry.PluginOp{
 		registry.OpGet(registry.WithKey(indexBytes)),
@@ -156,7 +157,7 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 	if len(serviceKey.Alias) > 0 {
 		opts = append(opts, registry.OpPut(registry.WithKey(aliasBytes), registry.WithStrValue(service.ServiceId)))
 		uniqueCmpOpts = append(uniqueCmpOpts,
-			registry.OpCmp(registry.CmpVer(aliasBytes), registry.CMP_EQUAL, 0))
+			registry.OpCmp(registry.CmpVer(aliasBytes), registry.CmpEqual, 0))
 		failOpts = append(failOpts, registry.OpGet(registry.WithKey(aliasBytes)))
 	}
 
@@ -169,14 +170,14 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 		}, err
 	}
 	if !resp.Succeeded {
-		if len(requestServiceId) != 0 {
+		if len(requestServiceID) != 0 {
 			if len(resp.Kvs) == 0 ||
-				requestServiceId != util.BytesToStringWithNoCopy(resp.Kvs[0].Value) {
+				requestServiceID != util.BytesToStringWithNoCopy(resp.Kvs[0].Value) {
 				log.Warnf("create micro-service[%s] failed, service already exists, operator: %s",
 					serviceFlag, remoteIP)
 				return &pb.CreateServiceResponse{
 					Response: pb.CreateResponse(scerr.ErrServiceAlreadyExists,
-						"ServiceId conflict or found the same service with different id."),
+						"ServiceID conflict or found the same service with different id."),
 				}, nil
 			}
 		}
@@ -190,12 +191,12 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 			}, nil
 		}
 
-		serviceIdInner := util.BytesToStringWithNoCopy(resp.Kvs[0].Value)
+		serviceIDInner := util.BytesToStringWithNoCopy(resp.Kvs[0].Value)
 		log.Warnf("create micro-service[%s][%s] failed, service already exists, operator: %s",
-			serviceIdInner, serviceFlag, remoteIP)
+			serviceIDInner, serviceFlag, remoteIP)
 		return &pb.CreateServiceResponse{
 			Response:  pb.CreateResponse(pb.Response_SUCCESS, "register service successfully"),
-			ServiceId: serviceIdInner,
+			ServiceId: serviceIDInner,
 		}, nil
 	}
 
@@ -221,7 +222,7 @@ func checkQuota(ctx context.Context, domainProject string) *quota.ApplyQuotaResu
 	return rst
 }
 
-func (s *MicroServiceService) DeleteServicePri(ctx context.Context, serviceId string, force bool) (*pb.Response, error) {
+func (s *MicroServiceService) DeleteServicePri(ctx context.Context, serviceID string, force bool) (*pb.Response, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	domainProject := util.ParseDomainProject(ctx)
 
@@ -230,22 +231,22 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, serviceId st
 		title = "force delete"
 	}
 
-	if serviceId == apt.Service.ServiceId {
+	if serviceID == apt.Service.ServiceId {
 		err := errors.New("not allow to delete service center")
-		log.Errorf(err, "%s micro-service[%s] failed, operator: %s", title, serviceId, remoteIP)
+		log.Errorf(err, "%s micro-service[%s] failed, operator: %s", title, serviceID, remoteIP)
 		return pb.CreateResponse(scerr.ErrInvalidParams, err.Error()), nil
 	}
 
-	service, err := serviceUtil.GetService(ctx, domainProject, serviceId)
+	service, err := serviceUtil.GetService(ctx, domainProject, serviceID)
 	if err != nil {
 		log.Errorf(err, "%s micro-service[%s] failed, get service file failed, operator: %s",
-			title, serviceId, remoteIP)
+			title, serviceID, remoteIP)
 		return pb.CreateResponse(scerr.ErrInternal, err.Error()), err
 	}
 
 	if service == nil {
 		log.Errorf(err, "%s micro-service[%s] failed, service does not exist, operator: %s",
-			title, serviceId, remoteIP)
+			title, serviceID, remoteIP)
 		return pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."), nil
 	}
 
@@ -255,34 +256,34 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, serviceId st
 		services, err := dr.GetDependencyConsumerIds()
 		if err != nil {
 			log.Errorf(err, "delete micro-service[%s] failed, get service dependency failed, operator: %s",
-				serviceId, remoteIP)
+				serviceID, remoteIP)
 			return pb.CreateResponse(scerr.ErrInternal, err.Error()), err
 		}
-		if l := len(services); l > 1 || (l == 1 && services[0] != serviceId) {
+		if l := len(services); l > 1 || (l == 1 && services[0] != serviceID) {
 			log.Errorf(nil, "delete micro-service[%s] failed, other services[%d] depend on it, operator: %s",
-				serviceId, l, remoteIP)
+				serviceID, l, remoteIP)
 			return pb.CreateResponse(scerr.ErrDependedOnConsumer, "Can not delete this service, other service rely it."), err
 		}
 
-		instancesKey := apt.GenerateInstanceKey(domainProject, serviceId, "")
+		instancesKey := apt.GenerateInstanceKey(domainProject, serviceID, "")
 		rsp, err := backend.Store().Instance().Search(ctx,
 			registry.WithStrKey(instancesKey),
 			registry.WithPrefix(),
 			registry.WithCountOnly())
 		if err != nil {
 			log.Errorf(err, "delete micro-service[%s] failed, get instances failed, operator: %s",
-				serviceId, remoteIP)
+				serviceID, remoteIP)
 			return pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()), err
 		}
 
 		if rsp.Count > 0 {
 			log.Errorf(nil, "delete micro-service[%s] failed, service deployed instances[%s], operator: %s",
-				serviceId, rsp.Count, remoteIP)
+				serviceID, rsp.Count, remoteIP)
 			return pb.CreateResponse(scerr.ErrDeployedInstance, "Can not delete the service deployed instance(s)."), err
 		}
 	}
 
-	serviceIdKey := apt.GenerateServiceKey(domainProject, serviceId)
+	serviceIDKey := apt.GenerateServiceKey(domainProject, serviceID)
 	serviceKey := &pb.MicroServiceKey{
 		Tenant:      domainProject,
 		Environment: service.Environment,
@@ -294,72 +295,72 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, serviceId st
 	opts := []registry.PluginOp{
 		registry.OpDel(registry.WithStrKey(apt.GenerateServiceIndexKey(serviceKey))),
 		registry.OpDel(registry.WithStrKey(apt.GenerateServiceAliasKey(serviceKey))),
-		registry.OpDel(registry.WithStrKey(serviceIdKey)),
+		registry.OpDel(registry.WithStrKey(serviceIDKey)),
 	}
 
 	//删除依赖规则
-	optDeleteDep, err := serviceUtil.DeleteDependencyForDeleteService(domainProject, serviceId, serviceKey)
+	optDeleteDep, err := serviceUtil.DeleteDependencyForDeleteService(domainProject, serviceID, serviceKey)
 	if err != nil {
 		log.Errorf(err, "%s micro-service[%s] failed, delete dependency failed, operator: %s",
-			title, serviceId, remoteIP)
+			title, serviceID, remoteIP)
 		return pb.CreateResponse(scerr.ErrInternal, err.Error()), err
 	}
 	opts = append(opts, optDeleteDep)
 
 	//删除黑白名单
 	opts = append(opts, registry.OpDel(
-		registry.WithStrKey(apt.GenerateServiceRuleKey(domainProject, serviceId, "")),
+		registry.WithStrKey(apt.GenerateServiceRuleKey(domainProject, serviceID, "")),
 		registry.WithPrefix()))
 	opts = append(opts, registry.OpDel(registry.WithStrKey(
-		util.StringJoin([]string{apt.GetServiceRuleIndexRootKey(domainProject), serviceId, ""}, "/")),
+		util.StringJoin([]string{apt.GetServiceRuleIndexRootKey(domainProject), serviceID, ""}, "/")),
 		registry.WithPrefix()))
 
 	//删除schemas
 	opts = append(opts, registry.OpDel(
-		registry.WithStrKey(apt.GenerateServiceSchemaKey(domainProject, serviceId, "")),
+		registry.WithStrKey(apt.GenerateServiceSchemaKey(domainProject, serviceID, "")),
 		registry.WithPrefix()))
 	opts = append(opts, registry.OpDel(
-		registry.WithStrKey(apt.GenerateServiceSchemaSummaryKey(domainProject, serviceId, "")),
+		registry.WithStrKey(apt.GenerateServiceSchemaSummaryKey(domainProject, serviceID, "")),
 		registry.WithPrefix()))
 
 	//删除tags
 	opts = append(opts, registry.OpDel(
-		registry.WithStrKey(apt.GenerateServiceTagKey(domainProject, serviceId))))
+		registry.WithStrKey(apt.GenerateServiceTagKey(domainProject, serviceID))))
 
 	//删除instances
 	opts = append(opts, registry.OpDel(
-		registry.WithStrKey(apt.GenerateInstanceKey(domainProject, serviceId, "")),
+		registry.WithStrKey(apt.GenerateInstanceKey(domainProject, serviceID, "")),
 		registry.WithPrefix()))
 	opts = append(opts, registry.OpDel(
-		registry.WithStrKey(apt.GenerateInstanceLeaseKey(domainProject, serviceId, "")),
+		registry.WithStrKey(apt.GenerateInstanceLeaseKey(domainProject, serviceID, "")),
 		registry.WithPrefix()))
 
 	//删除实例
-	err = serviceUtil.DeleteServiceAllInstances(ctx, serviceId)
+	err = serviceUtil.DeleteServiceAllInstances(ctx, serviceID)
 	if err != nil {
 		log.Errorf(err, "%s micro-service[%s] failed, revoke all instances failed, operator: %s",
-			title, serviceId, remoteIP)
+			title, serviceID, remoteIP)
 		return pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()), err
 	}
 
 	resp, err := backend.Registry().TxnWithCmp(ctx, opts,
 		[]registry.CompareOp{registry.OpCmp(
-			registry.CmpVer(util.StringToBytesWithNoCopy(serviceIdKey)),
-			registry.CMP_NOT_EQUAL, 0)},
+			registry.CmpVer(util.StringToBytesWithNoCopy(serviceIDKey)),
+			registry.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
-		log.Errorf(err, "%s micro-service[%s] failed, operator: %s", title, serviceId, remoteIP)
+		log.Errorf(err, "%s micro-service[%s] failed, operator: %s", title, serviceID, remoteIP)
 		return pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()), err
 	}
 	if !resp.Succeeded {
 		log.Errorf(err, "%s micro-service[%s] failed, service does not exist, operator: %s",
-			title, serviceId, remoteIP)
+			title, serviceID, remoteIP)
 		return pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."), nil
 	}
 
 	serviceUtil.RemandServiceQuota(ctx)
 
-	log.Infof("%s micro-service[%s] successfully, operator: %s", title, serviceId, remoteIP)
+	log.Infof("%s micro-service[%s] successfully, operator: %s", title, serviceID, remoteIP)
 	return pb.CreateResponse(pb.Response_SUCCESS, "Unregister service successfully."), nil
 }
 
@@ -384,9 +385,9 @@ func (s *MicroServiceService) DeleteServices(ctx context.Context, request *pb.De
 	remoteIP := util.GetIPFromContext(ctx)
 	// 合法性检查
 	if len(request.ServiceIds) == 0 {
-		log.Errorf(nil, "delete all micro-services failed, 'serviceIds' is empty, operator: %s", remoteIP)
+		log.Errorf(nil, "delete all micro-services failed, 'serviceIDs' is empty, operator: %s", remoteIP)
 		return &pb.DelServicesResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "'serviceIds' is empty"),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, "'serviceIDs' is empty"),
 			Services: nil,
 		}, nil
 	}
@@ -395,33 +396,33 @@ func (s *MicroServiceService) DeleteServices(ctx context.Context, request *pb.De
 	nuoMultilCount := 0
 	// 批量删除服务
 	serviceRespChan := make(chan *pb.DelServicesRspInfo, len(request.ServiceIds))
-	for _, serviceId := range request.ServiceIds {
+	for _, serviceID := range request.ServiceIds {
 		//ServiceId重复性检查
-		if _, ok := existFlag[serviceId]; ok {
-			log.Warnf("duplicate micro-service[%s] serviceId, operator: %s", serviceId, remoteIP)
+		if _, ok := existFlag[serviceID]; ok {
+			log.Warnf("duplicate micro-service[%s] serviceID, operator: %s", serviceID, remoteIP)
 			continue
 		} else {
-			existFlag[serviceId] = true
+			existFlag[serviceID] = true
 			nuoMultilCount++
 		}
 
 		//检查服务ID合法性
 		in := &pb.DeleteServiceRequest{
-			ServiceId: serviceId,
+			ServiceId: serviceID,
 			Force:     request.Force,
 		}
 		err := Validate(in)
 		if err != nil {
 			log.Errorf(err, "delete micro-service[%s] failed, operator: %s", in.ServiceId, remoteIP)
 			serviceRespChan <- &pb.DelServicesRspInfo{
-				ServiceId:  serviceId,
+				ServiceId:  serviceID,
 				ErrMessage: err.Error(),
 			}
 			continue
 		}
 
 		//执行删除服务操作
-		gopool.Go(s.getDeleteServiceFunc(ctx, serviceId, request.Force, serviceRespChan))
+		gopool.Go(s.getDeleteServiceFunc(ctx, serviceID, request.Force, serviceRespChan))
 	}
 
 	//获取批量删除服务的结果
@@ -440,7 +441,7 @@ func (s *MicroServiceService) DeleteServices(ctx context.Context, request *pb.De
 		}
 	}
 
-	log.Infof("Batch delete micro-services by serviceIds[%d]: %v, result code: %d, operator: %s",
+	log.Infof("Batch delete micro-services by serviceIDs[%d]: %v, result code: %d, operator: %s",
 		len(request.ServiceIds), request.ServiceIds, responseCode, remoteIP)
 
 	resp := &pb.DelServicesResponse{
@@ -454,13 +455,13 @@ func (s *MicroServiceService) DeleteServices(ctx context.Context, request *pb.De
 	return resp, nil
 }
 
-func (s *MicroServiceService) getDeleteServiceFunc(ctx context.Context, serviceId string, force bool, serviceRespChan chan<- *pb.DelServicesRspInfo) func(context.Context) {
+func (s *MicroServiceService) getDeleteServiceFunc(ctx context.Context, serviceID string, force bool, serviceRespChan chan<- *pb.DelServicesRspInfo) func(context.Context) {
 	return func(_ context.Context) {
 		serviceRst := &pb.DelServicesRspInfo{
-			ServiceId:  serviceId,
+			ServiceId:  serviceID,
 			ErrMessage: "",
 		}
-		resp, err := s.DeleteServicePri(ctx, serviceId, force)
+		resp, err := s.DeleteServicePri(ctx, serviceID, force)
 		if err != nil {
 			serviceRst.ErrMessage = err.Error()
 		} else if resp.Code != pb.Response_SUCCESS {
@@ -562,7 +563,7 @@ func (s *MicroServiceService) UpdateProperties(ctx context.Context, in *pb.Updat
 		[]registry.PluginOp{registry.OpPut(registry.WithStrKey(key), registry.WithValue(data))},
 		[]registry.CompareOp{registry.OpCmp(
 			registry.CmpVer(util.StringToBytesWithNoCopy(key)),
-			registry.CMP_NOT_EQUAL, 0)},
+			registry.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		log.Errorf(err, "update service[%s] properties failed, operator: %s", in.ServiceId, remoteIP)
@@ -587,7 +588,7 @@ func (s *MicroServiceService) UpdateProperties(ctx context.Context, in *pb.Updat
 func (s *MicroServiceService) Exist(ctx context.Context, in *pb.GetExistenceRequest) (*pb.GetExistenceResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	switch in.Type {
-	case EXIST_TYPE_MICROSERVICE:
+	case ExistTypeMicroservice:
 		err := ExistenceReqValidator().Validate(in)
 		serviceFlag := util.StringJoin([]string{in.Environment, in.AppId, in.ServiceName, in.Version}, "/")
 		if err != nil {
@@ -606,7 +607,7 @@ func (s *MicroServiceService) Exist(ctx context.Context, in *pb.GetExistenceRequ
 			Tenant:      domainProject,
 		})
 		if err != nil {
-			log.Errorf(err, "micro-service[%s] exist failed, find serviceIds failed", serviceFlag)
+			log.Errorf(err, "micro-service[%s] exist failed, find serviceIDs failed", serviceFlag)
 			return &pb.GetExistenceResponse{
 				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 			}, err
@@ -627,7 +628,7 @@ func (s *MicroServiceService) Exist(ctx context.Context, in *pb.GetExistenceRequ
 			Response:  pb.CreateResponse(pb.Response_SUCCESS, "get service id successfully."),
 			ServiceId: ids[0], // 约定多个时，取较新版本
 		}, nil
-	case EXIST_TYPE_SCHEMA:
+	case ExistTypeSchema:
 		err := GetSchemaReqValidator().Validate(in)
 		if err != nil {
 			log.Errorf(err, "schema[%s/%s] exist failed", in.ServiceId, in.SchemaId)
@@ -677,9 +678,9 @@ func (s *MicroServiceService) Exist(ctx context.Context, in *pb.GetExistenceRequ
 	}
 }
 
-func (s *MicroServiceService) CreateServiceEx(ctx context.Context, in *pb.CreateServiceRequest, serviceId string) (*pb.CreateServiceResponse, error) {
+func (s *MicroServiceService) CreateServiceEx(ctx context.Context, in *pb.CreateServiceRequest, serviceID string) (*pb.CreateServiceResponse, error) {
 	result := &pb.CreateServiceResponse{
-		ServiceId: serviceId,
+		ServiceId: serviceID,
 		Response:  &pb.Response{},
 	}
 	var chanLen int = 0
@@ -689,7 +690,7 @@ func (s *MicroServiceService) CreateServiceEx(ctx context.Context, in *pb.Create
 		chanLen++
 		gopool.Go(func(_ context.Context) {
 			req := &pb.AddServiceRulesRequest{
-				ServiceId: serviceId,
+				ServiceId: serviceID,
 				Rules:     in.Rules,
 			}
 			chanRsp := &pb.Response{}
@@ -709,7 +710,7 @@ func (s *MicroServiceService) CreateServiceEx(ctx context.Context, in *pb.Create
 		chanLen++
 		gopool.Go(func(_ context.Context) {
 			req := &pb.AddServiceTagsRequest{
-				ServiceId: serviceId,
+				ServiceId: serviceID,
 				Tags:      in.Tags,
 			}
 			chanRsp := &pb.Response{}
@@ -733,7 +734,7 @@ func (s *MicroServiceService) CreateServiceEx(ctx context.Context, in *pb.Create
 				req := &pb.RegisterInstanceRequest{
 					Instance: ins,
 				}
-				req.Instance.ServiceId = serviceId
+				req.Instance.ServiceId = serviceID
 				rsp, err := s.instanceService.Register(ctx, req)
 				if err != nil {
 					chanRsp.Message += fmt.Sprintf("{instance:%v,result:%s}", ins.Endpoints, err.Error())
@@ -766,7 +767,7 @@ func (s *MicroServiceService) CreateServiceEx(ctx context.Context, in *pb.Create
 		result.Response.Code = pb.Response_SUCCESS
 	}
 
-	log.Infof("createServiceEx, serviceId: %s, result code: %s, operator: %s",
+	log.Infof("createServiceEx, serviceID: %s, result code: %s, operator: %s",
 		result.ServiceId, result.Response.Message, util.GetIPFromContext(ctx))
 	return result, nil
 }

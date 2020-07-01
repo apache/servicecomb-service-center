@@ -134,7 +134,7 @@ func TestGetInfoFromKV(t *testing.T) {
 		AppId:       "c",
 		ServiceName: "*",
 	})))
-	if dt != DEPS_PROVIDER || k == nil || k.AppId != "" || k.ServiceName != "*" {
+	if dt != DepsProvider || k == nil || k.AppId != "" || k.ServiceName != "*" {
 		t.Fatalf("TestGetInfoFromKV failed")
 	}
 
@@ -144,7 +144,7 @@ func TestGetInfoFromKV(t *testing.T) {
 		ServiceName: "d",
 		Version:     "e",
 	})))
-	if dt != DEPS_PROVIDER || k == nil || k.AppId != "c" || k.ServiceName != "d" {
+	if dt != DepsProvider || k == nil || k.AppId != "c" || k.ServiceName != "d" {
 		t.Fatalf("TestGetInfoFromKV failed")
 	}
 

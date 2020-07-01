@@ -30,8 +30,8 @@ type ServiceCacher struct {
 func (c *ServiceCacher) onServiceEvent(evt K8sEvent) {
 	svc := evt.Object.(*v1.Service)
 	domainProject := Kubernetes().GetDomainProject()
-	serviceId := generateServiceId(domainProject, svc)
-	key := core.GenerateServiceKey(domainProject, serviceId)
+	serviceID := generateServiceID(domainProject, svc)
+	key := core.GenerateServiceKey(domainProject, serviceID)
 
 	if !ShouldRegisterService(svc) {
 		kv := c.Cache().Get(key)

@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package auth
 
 import (
@@ -30,7 +31,7 @@ type Handler struct {
 }
 
 func (h *Handler) Handle(i *chain.Invocation) {
-	r := i.Context().Value(rest.CTX_REQUEST).(*http.Request)
+	r := i.Context().Value(rest.CtxRequest).(*http.Request)
 	err := plugin.Plugins().Auth().Identify(r)
 	if err == nil {
 		i.Next()
@@ -39,7 +40,7 @@ func (h *Handler) Handle(i *chain.Invocation) {
 
 	log.Errorf(err, "authenticate request failed, %s %s", r.Method, r.RequestURI)
 
-	w := i.Context().Value(rest.CTX_RESPONSE).(http.ResponseWriter)
+	w := i.Context().Value(rest.CtxResponse).(http.ResponseWriter)
 	controller.WriteError(w, scerror.ErrUnauthorized, err.Error())
 
 	i.Fail(nil)

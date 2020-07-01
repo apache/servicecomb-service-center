@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package context
 
 import (
@@ -23,16 +24,16 @@ import (
 	"net/http"
 )
 
-type ContextHandler struct {
+type Handler struct {
 }
 
-func (c *ContextHandler) Handle(i *chain.Invocation) {
+func (c *Handler) Handle(i *chain.Invocation) {
 	var (
 		err     error
 		v3      v3Context
 		v4      v4Context
-		r       = i.Context().Value(roa.CTX_REQUEST).(*http.Request)
-		pattern = i.Context().Value(roa.CTX_MATCH_PATTERN).(string)
+		r       = i.Context().Value(roa.CtxRequest).(*http.Request)
+		pattern = i.Context().Value(roa.CtxMatchPattern).(string)
 	)
 
 	switch {
@@ -65,5 +66,5 @@ func IsSkip(url string) bool {
 }
 
 func RegisterHandlers() {
-	chain.RegisterHandler(roa.ServerChainName, &ContextHandler{})
+	chain.RegisterHandler(roa.ServerChainName, &Handler{})
 }

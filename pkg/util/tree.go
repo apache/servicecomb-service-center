@@ -14,16 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package util
 
-//The tree is binary sort tree
-type tree struct {
+//The Tree is binary sort Tree
+type Tree struct {
 	root        *Node
 	isAddToLeft func(node *Node, addRes interface{}) bool
 }
 
-func NewTree(isAddToLeft func(node *Node, addRes interface{}) bool) *tree {
-	return &tree{
+func NewTree(isAddToLeft func(node *Node, addRes interface{}) bool) *Tree {
+	return &Tree{
 		isAddToLeft: isAddToLeft,
 	}
 }
@@ -33,16 +34,16 @@ type Node struct {
 	left, right *Node
 }
 
-func (t *tree) GetRoot() *Node {
+func (t *Tree) GetRoot() *Node {
 	return t.root
 }
 
-//add res into tree
-func (t *tree) AddNode(res interface{}) *Node {
+//add res into Tree
+func (t *Tree) AddNode(res interface{}) *Node {
 	return t.addNode(t.root, res)
 }
 
-func (t *tree) addNode(n *Node, res interface{}) *Node {
+func (t *Tree) addNode(n *Node, res interface{}) *Node {
 	if n == nil {
 		n = new(Node)
 		n.Res = res
@@ -60,7 +61,7 @@ func (t *tree) addNode(n *Node, res interface{}) *Node {
 }
 
 //middle oder traversal, handle is the func that deals with the res, n is the start node to traversal
-func (t *tree) InOrderTraversal(n *Node, handle func(res interface{}) error) error {
+func (t *Tree) InOrderTraversal(n *Node, handle func(res interface{}) error) error {
 	if n == nil {
 		return nil
 	}

@@ -21,7 +21,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
-	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"math"
@@ -1564,7 +1563,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId4))
 
 				By("find with rev")
-				ctx := util.SetContext(getContext(), serviceUtil.CTX_NOCACHE, "")
+				ctx := util.SetContext(getContext(), util.CtxNocache, "")
 				respFind, err = instanceResource.Find(ctx, &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId8,
 					AppId:             "query_instance",
@@ -1573,11 +1572,11 @@ var _ = Describe("'Instance' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
-				rev, _ := ctx.Value(serviceUtil.CTX_RESPONSE_REVISION).(string)
+				rev, _ := ctx.Value(util.CtxResponseRevision).(string)
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId8))
 				Expect(len(rev)).NotTo(Equal(0))
 
-				util.SetContext(ctx, serviceUtil.CTX_REQUEST_REVISION, "x")
+				util.SetContext(ctx, util.CtxRequestRevision, "x")
 				respFind, err = instanceResource.Find(ctx, &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId8,
 					AppId:             "query_instance",
@@ -1587,9 +1586,9 @@ var _ = Describe("'Instance' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId8))
-				Expect(ctx.Value(serviceUtil.CTX_RESPONSE_REVISION)).To(Equal(rev))
+				Expect(ctx.Value(util.CtxResponseRevision)).To(Equal(rev))
 
-				util.SetContext(ctx, serviceUtil.CTX_REQUEST_REVISION, rev)
+				util.SetContext(ctx, util.CtxRequestRevision, rev)
 				respFind, err = instanceResource.Find(ctx, &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId8,
 					AppId:             "query_instance",
@@ -1599,7 +1598,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
 				Expect(len(respFind.Instances)).To(Equal(0))
-				Expect(ctx.Value(serviceUtil.CTX_RESPONSE_REVISION)).To(Equal(rev))
+				Expect(ctx.Value(util.CtxResponseRevision)).To(Equal(rev))
 
 				By("find should return 200 even if consumer is diff apps")
 				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
@@ -1744,7 +1743,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Services.Updated[0].Instances[0].InstanceId).To(Equal(instanceId4))
 
 				By("find with rev")
-				ctx := util.SetContext(getContext(), serviceUtil.CTX_NOCACHE, "")
+				ctx := util.SetContext(getContext(), util.CtxNocache, "")
 				respFind, err = instanceResource.BatchFind(ctx, &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId8,
 					Services: []*pb.FindService{

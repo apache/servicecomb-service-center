@@ -75,7 +75,7 @@ func TestSetPluginDir(t *testing.T) {
 }
 
 func TestPluginLoader(t *testing.T) {
-	loader := PluginLoader()
+	loader := GetLoader()
 	if loader == nil {
 		t.Fatalf(`TestPluginLoader failed`)
 	}

@@ -30,22 +30,22 @@ import (
 	"context"
 )
 
-// EtcdIndexer implements discovery.Indexer.
-// EtcdIndexer searches data from etcd server.
-type EtcdIndexer struct {
+// Indexer implements discovery.Indexer.
+// Indexer searches data from etcd server.
+type Indexer struct {
 	Client registry.Registry
 	Parser pb.Parser
 	Root   string
 }
 
-func (i *EtcdIndexer) CheckPrefix(key string) error {
+func (i *Indexer) CheckPrefix(key string) error {
 	if strings.Index(key, i.Root) != 0 {
 		return fmt.Errorf("search '%s' mismatch pattern %s", key, i.Root)
 	}
 	return nil
 }
 
-func (i *EtcdIndexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (r *discovery.Response, err error) {
+func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (r *discovery.Response, err error) {
 	op := registry.OpGet(opts...)
 	key := util.BytesToStringWithNoCopy(op.Key)
 
@@ -84,10 +84,10 @@ func (i *EtcdIndexer) Search(ctx context.Context, opts ...registry.PluginOpOptio
 }
 
 // Creditable implements discovery.Indexer.Creditable.
-func (i *EtcdIndexer) Creditable() bool {
+func (i *Indexer) Creditable() bool {
 	return true
 }
 
-func NewEtcdIndexer(root string, p pb.Parser) (indexer *EtcdIndexer) {
-	return &EtcdIndexer{Client: backend.Registry(), Parser: p, Root: root}
+func NewEtcdIndexer(root string, p pb.Parser) (indexer *Indexer) {
+	return &Indexer{Client: backend.Registry(), Parser: p, Root: root}
 }

@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package core
 
 import (
@@ -35,19 +36,19 @@ var (
 )
 
 const (
-	REGISTRY_DOMAIN         = "default"
-	REGISTRY_PROJECT        = "default"
-	REGISTRY_DOMAIN_PROJECT = "default/default"
+	RegistryDomain        = "default"
+	RegistryProject       = "default"
+	RegistryDomainProject = "default/default"
 
-	REGISTRY_APP_ID        = "default"
-	REGISTRY_SERVICE_NAME  = "SERVICECENTER"
-	REGISTRY_SERVICE_ALIAS = "SERVICECENTER"
+	RegistryAppID        = "default"
+	RegistryServiceName  = "SERVICECENTER"
+	RegistryServiceAlias = "SERVICECENTER"
 
-	REGISTRY_DEFAULT_LEASE_RENEWALINTERVAL int32 = 30
-	REGISTRY_DEFAULT_LEASE_RETRYTIMES      int32 = 3
+	RegistryDefaultLeaseRenewalinterval int32 = 30
+	RegistryDefaultLeaseRetrytimes      int32 = 3
 
-	CTX_SC_SELF     = "_sc_self"
-	CTX_SC_REGISTRY = "_registryOnly"
+	CtxScSelf     = "_sc_self"
+	CtxScRegistry = "_registryOnly"
 )
 
 func init() {
@@ -59,9 +60,9 @@ func init() {
 func prepareSelfRegistration() {
 	Service = &pb.MicroService{
 		Environment: pb.ENV_PROD,
-		AppId:       REGISTRY_APP_ID,
-		ServiceName: REGISTRY_SERVICE_NAME,
-		Alias:       REGISTRY_SERVICE_ALIAS,
+		AppId:       RegistryAppID,
+		ServiceName: RegistryServiceName,
+		Alias:       RegistryServiceAlias,
 		Version:     version.Ver().Version,
 		Status:      pb.MS_UP,
 		Level:       "BACK",
@@ -81,21 +82,21 @@ func prepareSelfRegistration() {
 		Status: pb.MSI_UP,
 		HealthCheck: &pb.HealthCheck{
 			Mode:     pb.CHECK_BY_HEARTBEAT,
-			Interval: REGISTRY_DEFAULT_LEASE_RENEWALINTERVAL,
-			Times:    REGISTRY_DEFAULT_LEASE_RETRYTIMES,
+			Interval: RegistryDefaultLeaseRenewalinterval,
+			Times:    RegistryDefaultLeaseRetrytimes,
 		},
 	}
 }
 
 func AddDefaultContextValue(ctx context.Context) context.Context {
 	return util.SetContext(util.SetContext(util.SetDomainProject(ctx,
-		REGISTRY_DOMAIN, REGISTRY_PROJECT),
-		CTX_SC_SELF, true),
-		CTX_SC_REGISTRY, "1")
+		RegistryDomain, RegistryProject),
+		CtxScSelf, true),
+		CtxScRegistry, "1")
 }
 
 func IsDefaultDomainProject(domainProject string) bool {
-	return domainProject == REGISTRY_DOMAIN_PROJECT
+	return domainProject == RegistryDomainProject
 }
 
 func SetSharedMode() {
@@ -112,7 +113,7 @@ func IsShared(key *pb.MicroServiceKey) bool {
 	if !IsDefaultDomainProject(key.Tenant) {
 		return false
 	}
-	if key.AppId != REGISTRY_APP_ID {
+	if key.AppId != RegistryAppID {
 		return false
 	}
 	_, ok := sharedServiceNames[key.ServiceName]
@@ -123,7 +124,7 @@ func IsShared(key *pb.MicroServiceKey) bool {
 }
 
 func IsSCInstance(ctx context.Context) bool {
-	b, _ := ctx.Value(CTX_SC_SELF).(bool)
+	b, _ := ctx.Value(CtxScSelf).(bool)
 	return b
 }
 
@@ -137,9 +138,9 @@ func GetExistenceRequest() *pb.GetExistenceRequest {
 	}
 }
 
-func GetServiceRequest(serviceId string) *pb.GetServiceRequest {
+func GetServiceRequest(serviceID string) *pb.GetServiceRequest {
 	return &pb.GetServiceRequest{
-		ServiceId: serviceId,
+		ServiceId: serviceID,
 	}
 }
 

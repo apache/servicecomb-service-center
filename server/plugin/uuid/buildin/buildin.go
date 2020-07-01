@@ -24,28 +24,28 @@ import (
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{mgr.UUID, "buildin", New})
+	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.UUID, Name: "buildin", New: New})
 }
 
 func New() mgr.Instance {
-	return &BuildinUUID{}
+	return &UUID{}
 }
 
-type BuildinUUID struct {
+type UUID struct {
 }
 
-func (du *BuildinUUID) GetServiceId(_ context.Context) string {
-	df, ok := mgr.DynamicPluginFunc(mgr.UUID, "GetServiceId").(func() string)
+func (du *UUID) GetServiceID(_ context.Context) string {
+	df, ok := mgr.DynamicPluginFunc(mgr.UUID, "GetServiceID").(func() string)
 	if ok {
 		return df()
 	}
-	return util.GenerateUuid()
+	return util.GenerateUUID()
 }
 
-func (du *BuildinUUID) GetInstanceId(_ context.Context) string {
-	df, ok := mgr.DynamicPluginFunc(mgr.UUID, "GetInstanceId").(func() string)
+func (du *UUID) GetInstanceID(_ context.Context) string {
+	df, ok := mgr.DynamicPluginFunc(mgr.UUID, "GetInstanceID").(func() string)
 	if ok {
 		return df()
 	}
-	return util.GenerateUuid()
+	return util.GenerateUUID()
 }

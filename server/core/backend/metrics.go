@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backend
 
 import (
@@ -50,7 +51,7 @@ var (
 			Subsystem:  "db",
 			Name:       "heartbeat_durations_microseconds",
 			Help:       "Latency of heartbeat renew",
-			Objectives: prometheus.DefObjectives,
+			Objectives: metric.Pxx,
 		}, []string{"instance", "status"})
 )
 

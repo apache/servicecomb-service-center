@@ -20,10 +20,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/apache/servicecomb-service-center/pkg/client/sc"
 	"io/ioutil"
 	"net/http"
 
-	"github.com/apache/servicecomb-service-center/pkg/client/sc"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/syncer/plugins"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"

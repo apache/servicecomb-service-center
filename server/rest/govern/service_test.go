@@ -20,7 +20,7 @@ import (
 	"bytes"
 	"github.com/apache/servicecomb-service-center/server/core"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/govern"
+	"github.com/apache/servicecomb-service-center/server/rest/govern"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"io/ioutil"
@@ -93,7 +93,7 @@ var _ = Describe("'Govern' service", func() {
 				Expect(respC.Response.Code).To(Equal(pb.Response_SUCCESS))
 
 				svr := httptest.NewServer(&mockGovernHandler{func(w http.ResponseWriter, r *http.Request) {
-					ctrl := &govern.GovernServiceControllerV4{}
+					ctrl := &govern.ResourceV4{}
 					ctrl.GetGraph(w, r.WithContext(getContext()))
 				}})
 				defer svr.Close()
@@ -216,7 +216,7 @@ var _ = Describe("'Govern' service", func() {
 		Context("when request is valid", func() {
 			It("should be passed", func() {
 				var num int
-				ctrl := &govern.GovernServiceControllerV4{}
+				ctrl := &govern.ResourceV4{}
 				svr := httptest.NewServer(&mockGovernHandler{func(w http.ResponseWriter, r *http.Request) {
 					defer func() {
 						Expect(recover()).To(BeNil())

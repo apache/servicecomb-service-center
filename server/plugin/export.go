@@ -29,7 +29,7 @@ import (
 
 const (
 	UUID Name = iota
-	AUDIT_LOG
+	AuditLog
 	AUTH
 	CIPHER
 	QUOTA
@@ -42,7 +42,7 @@ const (
 
 var pluginNames = map[Name]string{
 	UUID:      "uuid",
-	AUDIT_LOG: "auditlog",
+	AuditLog:  "auditlog",
 	AUTH:      "auth",
 	CIPHER:    "cipher",
 	QUOTA:     "quota",
@@ -60,10 +60,10 @@ func (pm *Manager) Registry() registry.Registry {
 }
 func (pm *Manager) UUID() uuid.UUID { return pm.Instance(UUID).(uuid.UUID) }
 func (pm *Manager) AuditLog() auditlog.AuditLogger {
-	return pm.Instance(AUDIT_LOG).(auditlog.AuditLogger)
+	return pm.Instance(AuditLog).(auditlog.AuditLogger)
 }
 func (pm *Manager) Auth() auth.Auth              { return pm.Instance(AUTH).(auth.Auth) }
 func (pm *Manager) Cipher() security.Cipher      { return pm.Instance(CIPHER).(security.Cipher) }
-func (pm *Manager) Quota() quota.QuotaManager    { return pm.Instance(QUOTA).(quota.QuotaManager) }
+func (pm *Manager) Quota() quota.Manager         { return pm.Instance(QUOTA).(quota.Manager) }
 func (pm *Manager) Tracing() (v tracing.Tracing) { return pm.Instance(TRACING).(tracing.Tracing) }
 func (pm *Manager) TLS() tls.TLS                 { return pm.Instance(TLS).(tls.TLS) }

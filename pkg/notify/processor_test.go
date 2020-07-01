@@ -45,7 +45,7 @@ func TestProcessor_Do(t *testing.T) {
 		t.Fatalf("TestProcessor_Do")
 	}
 	p.AddSubscriber(mock1)
-	if p.Subjects(mock1.Subject()).Groups(mock1.Group()).Subscribers(mock1.Id()) != mock1 {
+	if p.Subjects(mock1.Subject()).Groups(mock1.Group()).Subscribers(mock1.ID()) != mock1 {
 		t.Fatalf("TestProcessor_Do")
 	}
 	p.Remove(NewSubscriber(INSTANCE, "s2", "g1"))

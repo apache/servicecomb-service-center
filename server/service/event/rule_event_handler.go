@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/task"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
@@ -36,7 +37,7 @@ type RulesChangedTask struct {
 	err error
 
 	DomainProject string
-	ProviderId    string
+	ProviderID    string
 }
 
 func (apt *RulesChangedTask) Key() string {
@@ -44,7 +45,7 @@ func (apt *RulesChangedTask) Key() string {
 }
 
 func (apt *RulesChangedTask) Do(ctx context.Context) error {
-	apt.err = apt.publish(ctx, apt.DomainProject, apt.ProviderId)
+	apt.err = apt.publish(ctx, apt.DomainProject, apt.ProviderID)
 	return apt.err
 }
 
@@ -52,25 +53,25 @@ func (apt *RulesChangedTask) Err() error {
 	return apt.err
 }
 
-func (apt *RulesChangedTask) publish(ctx context.Context, domainProject, providerId string) error {
+func (apt *RulesChangedTask) publish(ctx context.Context, domainProject, providerID string) error {
 	ctx = context.WithValue(context.WithValue(ctx,
-		serviceUtil.CTX_CACHEONLY, "1"),
-		serviceUtil.CTX_GLOBAL, "1")
+		util.CtxCacheOnly, "1"),
+		util.CtxGlobal, "1")
 
-	provider, err := serviceUtil.GetService(ctx, domainProject, providerId)
+	provider, err := serviceUtil.GetService(ctx, domainProject, providerID)
 	if err != nil {
-		log.Errorf(err, "get provider[%s] service file failed", providerId)
+		log.Errorf(err, "get provider[%s] service file failed", providerID)
 		return err
 	}
 	if provider == nil {
-		log.Errorf(nil, "provider[%s] does not exist", providerId)
-		return fmt.Errorf("provider %s does not exist", providerId)
+		log.Errorf(nil, "provider[%s] does not exist", providerID)
+		return fmt.Errorf("provider %s does not exist", providerID)
 	}
 
 	consumerIds, err := serviceUtil.GetConsumerIds(ctx, domainProject, provider)
 	if err != nil {
 		log.Errorf(err, "get service[%s][%s/%s/%s/%s]'s consumerIds failed",
-			providerId, provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
+			providerID, provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
 		return err
 	}
 	providerKey := pb.MicroServiceToKey(domainProject, provider)
@@ -95,28 +96,31 @@ func (h *RuleEventHandler) OnEvent(evt discovery.KvEvent) {
 		return
 	}
 
-	providerId, ruleId, domainProject := core.GetInfoFromRuleKV(evt.KV.Key)
-	if notify.NotifyCenter().Closed() {
+	providerID, ruleID, domainProject := core.GetInfoFromRuleKV(evt.KV.Key)
+	if notify.GetNotifyCenter().Closed() {
 		log.Warnf("caught [%s] service rule[%s/%s] event, but notify service is closed",
-			action, providerId, ruleId)
+			action, providerID, ruleID)
 		return
 	}
-	log.Infof("caught [%s] service rule[%s/%s] event", action, providerId, ruleId)
+	log.Infof("caught [%s] service rule[%s/%s] event", action, providerID, ruleID)
 
-	task.Service().Add(context.Background(),
-		NewRulesChangedAsyncTask(domainProject, providerId, evt))
+	err := task.GetService().Add(context.Background(),
+		NewRulesChangedAsyncTask(domainProject, providerID, evt))
+	if err != nil {
+		log.Error("", err)
+	}
 }
 
 func NewRuleEventHandler() *RuleEventHandler {
 	return &RuleEventHandler{}
 }
 
-func NewRulesChangedAsyncTask(domainProject, providerId string, evt discovery.KvEvent) *RulesChangedTask {
+func NewRulesChangedAsyncTask(domainProject, providerID string, evt discovery.KvEvent) *RulesChangedTask {
 	evt.Type = pb.EVT_EXPIRE
 	return &RulesChangedTask{
 		KvEvent:       evt,
-		key:           "RulesChangedAsyncTask_" + providerId,
+		key:           "RulesChangedAsyncTask_" + providerID,
 		DomainProject: domainProject,
-		ProviderId:    providerId,
+		ProviderID:    providerID,
 	}
 }

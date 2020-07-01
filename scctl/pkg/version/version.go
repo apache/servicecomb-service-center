@@ -30,7 +30,7 @@ var (
 	TOOL_NAME = "scctl"
 )
 
-var versionSet version.VersionSet
+var versionSet version.Set
 
 func init() {
 	versionSet.Version = VERSION
@@ -38,6 +38,6 @@ func init() {
 	versionSet.LoadRuntimeInfo()
 }
 
-func Ver() *version.VersionSet {
+func Ver() *version.Set {
 	return &versionSet
 }

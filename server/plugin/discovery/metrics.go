@@ -37,7 +37,7 @@ var (
 			Subsystem:  "db",
 			Name:       "backend_event_durations_microseconds",
 			Help:       "Latency of backend events processing",
-			Objectives: prometheus.DefObjectives,
+			Objectives: metric.Pxx,
 		}, []string{"instance", "prefix"})
 )
 

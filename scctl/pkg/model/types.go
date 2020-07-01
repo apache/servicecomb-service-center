@@ -16,8 +16,8 @@
 package model
 
 import (
+	"github.com/apache/servicecomb-service-center/pkg/model"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/admin/model"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"strconv"
@@ -78,7 +78,7 @@ func (s *Service) UpdateTimestamp(t string) {
 }
 
 func (s *Service) Age() time.Duration {
-	return time.Now().Sub(time.Unix(s.Timestamp, 0).Local())
+	return time.Since(time.Unix(s.Timestamp, 0).Local())
 }
 
 type Instance struct {
@@ -118,5 +118,5 @@ func (s *Instance) UpdateTimestamp(t string) {
 }
 
 func (s *Instance) Age() time.Duration {
-	return time.Now().Sub(time.Unix(s.Timestamp, 0).Local())
+	return time.Since(time.Unix(s.Timestamp, 0).Local())
 }

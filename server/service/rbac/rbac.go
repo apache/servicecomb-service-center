@@ -76,7 +76,10 @@ func readPrivateKey() {
 		log.Fatal("can not read private key", err)
 		return
 	}
-	archaius.Set("rbac_private_key", string(data))
+	err = archaius.Set("rbac_private_key", string(data))
+	if err != nil {
+		log.Fatal("can not init rbac", err)
+	}
 	log.Info("read private key success")
 }
 
@@ -89,7 +92,10 @@ func readPublicKey() {
 		log.Fatal("can not find public key", err)
 		return
 	}
-	archaius.Set("rbac_public_key", string(content))
+	err = archaius.Set("rbac_public_key", string(content))
+	if err != nil {
+		log.Fatal("", err)
+	}
 	log.Info("read public key success")
 }
 func initFirstTime(admin string) {

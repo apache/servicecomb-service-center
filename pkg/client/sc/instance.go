@@ -36,7 +36,7 @@ const (
 	apiInstanceHeartbeatURL  = "/v4/%s/registry/microservices/%s/instances/%s/heartbeat"
 )
 
-func (c *SCClient) RegisterInstance(ctx context.Context, domainProject, serviceId string, instance *pb.MicroServiceInstance) (string, *scerr.Error) {
+func (c *Client) RegisterInstance(ctx context.Context, domainProject, serviceID string, instance *pb.MicroServiceInstance) (string, *scerr.Error) {
 	domain, project := core.FromDomainProject(domainProject)
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
@@ -47,7 +47,7 @@ func (c *SCClient) RegisterInstance(ctx context.Context, domainProject, serviceI
 	}
 
 	resp, err := c.RestDoWithContext(ctx, http.MethodPost,
-		fmt.Sprintf(apiInstancesURL, project, serviceId),
+		fmt.Sprintf(apiInstancesURL, project, serviceID),
 		headers, reqBody)
 	if err != nil {
 		return "", scerr.NewError(scerr.ErrInternal, err.Error())
@@ -71,13 +71,13 @@ func (c *SCClient) RegisterInstance(ctx context.Context, domainProject, serviceI
 	return instancesResp.InstanceId, nil
 }
 
-func (c *SCClient) UnregisterInstance(ctx context.Context, domainProject, serviceId, instanceId string) *scerr.Error {
+func (c *Client) UnregisterInstance(ctx context.Context, domainProject, serviceID, instanceID string) *scerr.Error {
 	domain, project := core.FromDomainProject(domainProject)
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 
 	resp, err := c.RestDoWithContext(ctx, http.MethodDelete,
-		fmt.Sprintf(apiInstanceURL, project, serviceId, instanceId),
+		fmt.Sprintf(apiInstanceURL, project, serviceID, instanceID),
 		headers, nil)
 	if err != nil {
 		return scerr.NewError(scerr.ErrInternal, err.Error())
@@ -96,14 +96,14 @@ func (c *SCClient) UnregisterInstance(ctx context.Context, domainProject, servic
 	return nil
 }
 
-func (c *SCClient) DiscoveryInstances(ctx context.Context, domainProject, consumerId, providerAppId, providerServiceName, providerVersionRule string) ([]*pb.MicroServiceInstance, *scerr.Error) {
+func (c *Client) DiscoveryInstances(ctx context.Context, domainProject, consumerID, providerAppID, providerServiceName, providerVersionRule string) ([]*pb.MicroServiceInstance, *scerr.Error) {
 	domain, project := core.FromDomainProject(domainProject)
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
-	headers.Set("X-ConsumerId", consumerId)
+	headers.Set("X-ConsumerId", consumerID)
 
 	query := url.Values{}
-	query.Set("appId", providerAppId)
+	query.Set("appId", providerAppID)
 	query.Set("serviceName", providerServiceName)
 	query.Set("version", providerVersionRule)
 
@@ -133,13 +133,13 @@ func (c *SCClient) DiscoveryInstances(ctx context.Context, domainProject, consum
 	return instancesResp.Instances, nil
 }
 
-func (c *SCClient) Heartbeat(ctx context.Context, domainProject, serviceId, instanceId string) *scerr.Error {
+func (c *Client) Heartbeat(ctx context.Context, domainProject, serviceID, instanceID string) *scerr.Error {
 	domain, project := core.FromDomainProject(domainProject)
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 
 	resp, err := c.RestDoWithContext(ctx, http.MethodPut,
-		fmt.Sprintf(apiInstanceHeartbeatURL, project, serviceId, instanceId),
+		fmt.Sprintf(apiInstanceHeartbeatURL, project, serviceID, instanceID),
 		headers, nil)
 	if err != nil {
 		return scerr.NewError(scerr.ErrInternal, err.Error())
@@ -158,7 +158,7 @@ func (c *SCClient) Heartbeat(ctx context.Context, domainProject, serviceId, inst
 	return nil
 }
 
-func (c *SCClient) HeartbeatSet(ctx context.Context, domainProject string, instances ...*pb.HeartbeatSetElement) ([]*pb.InstanceHbRst, *scerr.Error) {
+func (c *Client) HeartbeatSet(ctx context.Context, domainProject string, instances ...*pb.HeartbeatSetElement) ([]*pb.InstanceHbRst, *scerr.Error) {
 	domain, project := core.FromDomainProject(domainProject)
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
@@ -194,13 +194,13 @@ func (c *SCClient) HeartbeatSet(ctx context.Context, domainProject string, insta
 	return instancesResp.Instances, nil
 }
 
-func (c *SCClient) GetInstancesByServiceId(ctx context.Context, domainProject, providerId, consumerId string) ([]*pb.MicroServiceInstance, *scerr.Error) {
+func (c *Client) GetInstancesByServiceID(ctx context.Context, domainProject, providerID, consumerID string) ([]*pb.MicroServiceInstance, *scerr.Error) {
 	domain, project := core.FromDomainProject(domainProject)
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
-	headers.Set("X-ConsumerId", consumerId)
+	headers.Set("X-ConsumerId", consumerID)
 	resp, err := c.RestDoWithContext(ctx, http.MethodGet,
-		fmt.Sprintf(apiInstancesURL, project, providerId)+"?"+c.parseQuery(ctx),
+		fmt.Sprintf(apiInstancesURL, project, providerID)+"?"+c.parseQuery(ctx),
 		headers, nil)
 	if err != nil {
 		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
@@ -225,13 +225,13 @@ func (c *SCClient) GetInstancesByServiceId(ctx context.Context, domainProject, p
 	return instancesResp.Instances, nil
 }
 
-func (c *SCClient) GetInstanceByInstanceId(ctx context.Context, domainProject, providerId, instanceId, consumerId string) (*pb.MicroServiceInstance, *scerr.Error) {
+func (c *Client) GetInstanceByInstanceID(ctx context.Context, domainProject, providerID, instanceID, consumerID string) (*pb.MicroServiceInstance, *scerr.Error) {
 	domain, project := core.FromDomainProject(domainProject)
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
-	headers.Set("X-ConsumerId", consumerId)
+	headers.Set("X-ConsumerId", consumerID)
 	resp, err := c.RestDoWithContext(ctx, http.MethodGet,
-		fmt.Sprintf(apiInstanceURL, project, providerId, instanceId)+"?"+c.parseQuery(ctx),
+		fmt.Sprintf(apiInstanceURL, project, providerID, instanceID)+"?"+c.parseQuery(ctx),
 		headers, nil)
 	if err != nil {
 		return nil, scerr.NewError(scerr.ErrInternal, err.Error())

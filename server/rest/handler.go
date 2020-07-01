@@ -26,7 +26,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/interceptor"
 )
 
-const CTX_START_TIMESTAMP = "x-start-timestamp"
+const CtxStartTimestamp = "x-start-timestamp"
 
 func init() {
 	// api
@@ -47,7 +47,7 @@ type ServerHandler struct {
 
 // ServeHTTP implements http.Handler
 func (s *ServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	util.SetRequestContext(r, CTX_START_TIMESTAMP, time.Now())
+	util.SetRequestContext(r, CtxStartTimestamp, time.Now())
 
 	err := interceptor.InvokeInterceptors(w, r)
 	if err != nil {

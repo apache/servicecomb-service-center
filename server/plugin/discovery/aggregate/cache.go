@@ -79,7 +79,7 @@ func (c Cache) append(tmp []*discovery.KeyValue, arr *[]*discovery.KeyValue,
 		if arr != nil {
 			*arr = append(*arr, kv)
 		}
-		s += 1
+		s++
 	}
 	return
 }

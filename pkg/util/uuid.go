@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package util
 
 import (
@@ -23,6 +24,6 @@ import (
 
 const DASH = "-"
 
-func GenerateUuid() string {
+func GenerateUUID() string {
 	return strings.Replace(uuid.NewV1().String(), string(DASH), "", -1)
 }

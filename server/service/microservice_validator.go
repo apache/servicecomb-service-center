@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package service
 
 import (
@@ -45,61 +46,61 @@ var (
 	pathRegex, _       = regexp.Compile(`^[A-Za-z0-9.,?'\\/+&amp;%$#=~_\-@{}]*$`)
 	levelRegex, _      = regexp.Compile(`^(FRONT|MIDDLE|BACK)$`)
 	statusRegex, _     = regexp.Compile("^(" + pb.MS_UP + "|" + pb.MS_DOWN + ")?$")
-	serviceIdRegex, _  = regexp.Compile(`^\S*$`)
+	serviceIDRegex, _  = regexp.Compile(`^\S*$`)
 	aliasRegex, _      = regexp.Compile(`^[a-zA-Z0-9_\-.:]*$`)
 	registerByRegex, _ = regexp.Compile("^(" + util.StringJoin([]string{pb.REGISTERBY_SDK, pb.REGISTERBY_SIDECAR, pb.REGISTERBY_PLATFORM}, "|") + ")*$")
 	envRegex, _        = regexp.Compile("^(" + util.StringJoin([]string{
 		pb.ENV_DEV, pb.ENV_TEST, pb.ENV_ACCEPT, pb.ENV_PROD}, "|") + ")*$")
-	schemaIdRegex, _ = regexp.Compile(`^[a-zA-Z0-9]{1,160}$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]{0,158}[a-zA-Z0-9]$`)
+	schemaIDRegex, _ = regexp.Compile(`^[a-zA-Z0-9]{1,160}$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]{0,158}[a-zA-Z0-9]$`)
 )
 
 func MicroServiceKeyValidator() *validate.Validator {
 	return microServiceKeyValidator.Init(func(v *validate.Validator) {
-		v.AddRule("Environment", &validate.ValidateRule{Regexp: envRegex})
-		v.AddRule("AppId", &validate.ValidateRule{Min: 1, Max: 160, Regexp: nameRegex})
-		v.AddRule("ServiceName", &validate.ValidateRule{Min: 1, Max: 128, Regexp: nameRegex})
-		v.AddRule("Version", &validate.ValidateRule{Min: 1, Max: 64, Regexp: versionRegex})
+		v.AddRule("Environment", &validate.Rule{Regexp: envRegex})
+		v.AddRule("AppId", &validate.Rule{Min: 1, Max: 160, Regexp: nameRegex})
+		v.AddRule("ServiceName", &validate.Rule{Min: 1, Max: 128, Regexp: nameRegex})
+		v.AddRule("Version", &validate.Rule{Min: 1, Max: 64, Regexp: versionRegex})
 	})
 }
 
 func ExistenceReqValidator() *validate.Validator {
 	return existenceReqValidator.Init(func(v *validate.Validator) {
 		v.AddRules(MicroServiceKeyValidator().GetRules())
-		v.AddRule("ServiceName", &validate.ValidateRule{Min: 1, Max: 160 + 1 + 128, Regexp: serviceNameForFindRegex})
-		v.AddRule("Version", &validate.ValidateRule{Min: 1, Max: 129, Regexp: versionFuzzyRegex})
+		v.AddRule("ServiceName", &validate.Rule{Min: 1, Max: 160 + 1 + 128, Regexp: serviceNameForFindRegex})
+		v.AddRule("Version", &validate.Rule{Min: 1, Max: 129, Regexp: versionFuzzyRegex})
 	})
 }
 
 func GetServiceReqValidator() *validate.Validator {
 	return getServiceReqValidator.Init(func(v *validate.Validator) {
-		v.AddRule("ServiceId", &validate.ValidateRule{Min: 1, Max: 64, Regexp: serviceIdRegex})
+		v.AddRule("ServiceId", &validate.Rule{Min: 1, Max: 64, Regexp: serviceIDRegex})
 	})
 }
 
 func CreateServiceReqValidator() *validate.Validator {
 	return createServiceReqValidator.Init(func(v *validate.Validator) {
 		var pathValidator validate.Validator
-		pathValidator.AddRule("Path", &validate.ValidateRule{Regexp: pathRegex})
+		pathValidator.AddRule("Path", &validate.Rule{Regexp: pathRegex})
 
 		var frameworkValidator validate.Validator
-		frameworkValidator.AddRule("Name", &validate.ValidateRule{Max: 64, Regexp: nameRegex})
-		frameworkValidator.AddRule("Version", &validate.ValidateRule{Max: 64})
+		frameworkValidator.AddRule("Name", &validate.Rule{Max: 64, Regexp: nameRegex})
+		frameworkValidator.AddRule("Version", &validate.Rule{Max: 64})
 
 		var microServiceValidator validate.Validator
 		microServiceValidator.AddRules(MicroServiceKeyValidator().GetRules())
-		microServiceValidator.AddRule("AppId", &validate.ValidateRule{Max: 160, Regexp: nameRegex})
-		microServiceValidator.AddRule("Version", &validate.ValidateRule{Max: 64, Regexp: versionRegex})
-		microServiceValidator.AddRule("ServiceId", &validate.ValidateRule{Max: 64, Regexp: serviceIdRegex})
-		microServiceValidator.AddRule("Description", &validate.ValidateRule{Max: 256})
-		microServiceValidator.AddRule("Level", &validate.ValidateRule{Regexp: levelRegex})
-		microServiceValidator.AddRule("Status", &validate.ValidateRule{Regexp: statusRegex})
-		microServiceValidator.AddRule("Schemas", &validate.ValidateRule{Max: quota.DefaultSchemaQuota, Regexp: schemaIdRegex})
+		microServiceValidator.AddRule("AppId", &validate.Rule{Max: 160, Regexp: nameRegex})
+		microServiceValidator.AddRule("Version", &validate.Rule{Max: 64, Regexp: versionRegex})
+		microServiceValidator.AddRule("ServiceId", &validate.Rule{Max: 64, Regexp: serviceIDRegex})
+		microServiceValidator.AddRule("Description", &validate.Rule{Max: 256})
+		microServiceValidator.AddRule("Level", &validate.Rule{Regexp: levelRegex})
+		microServiceValidator.AddRule("Status", &validate.Rule{Regexp: statusRegex})
+		microServiceValidator.AddRule("Schemas", &validate.Rule{Max: quota.DefaultSchemaQuota, Regexp: schemaIDRegex})
 		microServiceValidator.AddSub("Paths", &pathValidator)
-		microServiceValidator.AddRule("Alias", &validate.ValidateRule{Max: 128, Regexp: aliasRegex})
-		microServiceValidator.AddRule("RegisterBy", &validate.ValidateRule{Max: 64, Regexp: registerByRegex})
+		microServiceValidator.AddRule("Alias", &validate.Rule{Max: 128, Regexp: aliasRegex})
+		microServiceValidator.AddRule("RegisterBy", &validate.Rule{Max: 64, Regexp: registerByRegex})
 		microServiceValidator.AddSub("Framework", &frameworkValidator)
 
-		v.AddRule("Service", &validate.ValidateRule{Min: 1})
+		v.AddRule("Service", &validate.Rule{Min: 1})
 		v.AddSub("Service", &microServiceValidator)
 	})
 

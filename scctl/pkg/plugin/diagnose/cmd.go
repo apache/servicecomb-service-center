@@ -16,8 +16,8 @@
 package diagnose
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/client/etcd"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/scctl/etcd"
 	root "github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
 	"github.com/spf13/cobra"
 	"path/filepath"

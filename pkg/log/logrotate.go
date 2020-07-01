@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package log
 
 import (
@@ -54,7 +55,6 @@ func removeExceededFiles(path string, baseFileName string,
 	if maxKeptCount < 0 {
 		return
 	}
-	fileList := make([]string, 0, 2*maxKeptCount)
 	var pat string
 	if rotateStage == "rollover" {
 		//rotated file, svc.log.20060102150405000
@@ -205,10 +205,10 @@ func doBackup(fPath string, MaxBackupCount int) {
 	removeExceededFiles(filepath.Dir(fPath), filepath.Base(fPath), MaxBackupCount, "backup")
 }
 
-func LogRotateFile(file string, MaxFileSize int, MaxBackupCount int) {
+func RotateFile(file string, MaxFileSize int, MaxBackupCount int) {
 	defer func() {
 		if e := recover(); e != nil {
-			Errorf(nil, "LogRotate file %s catch an exception, err: %v.", EscapPath(file), e)
+			Errorf(nil, "Rotate file %s catch an exception, err: %v.", EscapPath(file), e)
 		}
 	}()
 
@@ -219,11 +219,11 @@ func LogRotateFile(file string, MaxFileSize int, MaxBackupCount int) {
 //path:			where log files need rollover
 //MaxFileSize: 		MaxSize of a file before rotate. By M Bytes.
 //MaxBackupCount: 	Max counts to keep of a log's backup files.
-func LogRotate(path string, MaxFileSize int, MaxBackupCount int) {
+func Rotate(path string, MaxFileSize int, MaxBackupCount int) {
 	//filter .log .trace files
 	defer func() {
 		if e := recover(); e != nil {
-			Errorf(nil, "LogRotate catch an exception, err: %v.", e)
+			Errorf(nil, "Rotate catch an exception, err: %v.", e)
 		}
 	}()
 
@@ -235,7 +235,7 @@ func LogRotate(path string, MaxFileSize int, MaxBackupCount int) {
 	}
 
 	for _, file := range fileList {
-		LogRotateFile(file, MaxFileSize, MaxBackupCount)
+		RotateFile(file, MaxFileSize, MaxBackupCount)
 	}
 }
 

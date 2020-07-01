@@ -22,34 +22,34 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 )
 
-// EtcdAdaptor implements discovery.Adaptor.
-// EtcdAdaptor does service discovery with etcd as it's registry.
-type EtcdAdaptor struct {
+// Adaptor implements discovery.Adaptor.
+// Adaptor does service discovery with etcd as it's registry.
+type Adaptor struct {
 	discovery.Cacher
 	discovery.Indexer
 }
 
-func (se *EtcdAdaptor) Run() {
+func (se *Adaptor) Run() {
 	if r, ok := se.Cacher.(discovery.Runnable); ok {
 		r.Run()
 	}
 }
 
-func (se *EtcdAdaptor) Stop() {
+func (se *Adaptor) Stop() {
 	if r, ok := se.Cacher.(discovery.Runnable); ok {
 		r.Stop()
 	}
 }
 
-func (se *EtcdAdaptor) Ready() <-chan struct{} {
+func (se *Adaptor) Ready() <-chan struct{} {
 	if r, ok := se.Cacher.(discovery.Runnable); ok {
 		return r.Ready()
 	}
 	return closedCh
 }
 
-func NewEtcdAdaptor(name string, cfg *discovery.Config) *EtcdAdaptor {
-	var adaptor EtcdAdaptor
+func NewEtcdAdaptor(name string, cfg *discovery.Config) *Adaptor {
+	var adaptor Adaptor
 	switch {
 	case core.ServerInfo.Config.EnableCache && cfg.InitSize > 0:
 		cache := discovery.NewKvCache(name, cfg)

@@ -63,22 +63,22 @@ func (as *Aggregator) Ready() <-chan struct{} {
 
 func getLogConflictFunc(t discovery.Type) func(origin, conflict *discovery.KeyValue) {
 	switch t {
-	case backend.SERVICE_INDEX:
+	case backend.ServiceIndex:
 		return func(origin, conflict *discovery.KeyValue) {
-			if serviceId, conflictId := origin.Value.(string), conflict.Value.(string); conflictId != serviceId {
+			if serviceID, conflictID := origin.Value.(string), conflict.Value.(string); conflictID != serviceID {
 				key := core.GetInfoFromSvcIndexKV(conflict.Key)
 				log.Warnf("conflict! can not merge microservice index[%s][%s][%s/%s/%s/%s], found one[%s] in cluster[%s]",
-					conflict.ClusterName, conflictId, key.Environment, key.AppId, key.ServiceName, key.Version,
-					serviceId, origin.ClusterName)
+					conflict.ClusterName, conflictID, key.Environment, key.AppId, key.ServiceName, key.Version,
+					serviceID, origin.ClusterName)
 			}
 		}
-	case backend.SERVICE_ALIAS:
+	case backend.ServiceAlias:
 		return func(origin, conflict *discovery.KeyValue) {
-			if serviceId, conflictId := origin.Value.(string), conflict.Value.(string); conflictId != serviceId {
+			if serviceID, conflictID := origin.Value.(string), conflict.Value.(string); conflictID != serviceID {
 				key := core.GetInfoFromSvcAliasKV(conflict.Key)
 				log.Warnf("conflict! can not merge microservice alias[%s][%s][%s/%s/%s/%s], found one[%s] in cluster[%s]",
-					conflict.ClusterName, conflictId, key.Environment, key.AppId, key.ServiceName, key.Version,
-					serviceId, origin.ClusterName)
+					conflict.ClusterName, conflictID, key.Environment, key.AppId, key.ServiceName, key.Version,
+					serviceID, origin.ClusterName)
 			}
 		}
 	}
@@ -94,7 +94,7 @@ func NewAggregator(t discovery.Type, cfg *discovery.Config) *Aggregator {
 	as.Indexer = NewAggregatorIndexer(as)
 
 	switch t {
-	case backend.SERVICE_INDEX, backend.SERVICE_ALIAS:
+	case backend.ServiceIndex, backend.ServiceAlias:
 		NewConflictChecker(as.Cache(), getLogConflictFunc(t))
 	}
 	return as

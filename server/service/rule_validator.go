@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package service
 
 import (
@@ -43,9 +44,9 @@ func GetRulesReqValidator() *validate.Validator {
 func UpdateRuleReqValidator() *validate.Validator {
 	return updateRuleReqValidator.Init(func(v *validate.Validator) {
 		var ruleValidator validate.Validator
-		ruleValidator.AddRule("RuleType", &validate.ValidateRule{Regexp: ruleRegex})
-		ruleValidator.AddRule("Attribute", &validate.ValidateRule{Regexp: ruleAttrRegex})
-		ruleValidator.AddRule("Pattern", &validate.ValidateRule{Min: 1, Max: 64})
+		ruleValidator.AddRule("RuleType", &validate.Rule{Regexp: ruleRegex})
+		ruleValidator.AddRule("Attribute", &validate.Rule{Regexp: ruleAttrRegex})
+		ruleValidator.AddRule("Pattern", &validate.Rule{Min: 1, Max: 64})
 		ruleValidator.AddRule("Description", CreateServiceReqValidator().GetSub("Service").GetRule("Description"))
 
 		v.AddRule("ServiceId", GetServiceReqValidator().GetRule("ServiceId"))
@@ -57,7 +58,7 @@ func UpdateRuleReqValidator() *validate.Validator {
 func AddRulesReqValidator() *validate.Validator {
 	return addRulesReqValidator.Init(func(v *validate.Validator) {
 		v.AddRule("ServiceId", GetServiceReqValidator().GetRule("ServiceId"))
-		v.AddRule("Rules", &validate.ValidateRule{Min: 1, Max: quota.DefaultRuleQuota})
+		v.AddRule("Rules", &validate.Rule{Min: 1, Max: quota.DefaultRuleQuota})
 		v.AddSub("Rules", UpdateRuleReqValidator().GetSub("Rule"))
 	})
 }
@@ -65,6 +66,6 @@ func AddRulesReqValidator() *validate.Validator {
 func DeleteRulesReqValidator() *validate.Validator {
 	return deleteRulesReqValidator.Init(func(v *validate.Validator) {
 		v.AddRule("ServiceId", GetServiceReqValidator().GetRule("ServiceId"))
-		v.AddRule("RuleIds", &validate.ValidateRule{Min: 1, Max: quota.DefaultRuleQuota})
+		v.AddRule("RuleIds", &validate.Rule{Min: 1, Max: quota.DefaultRuleQuota})
 	})
 }

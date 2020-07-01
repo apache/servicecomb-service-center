@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package validate
 
 import (
@@ -23,14 +24,14 @@ import (
 	"unicode/utf8"
 )
 
-type ValidateRule struct {
+type Rule struct {
 	Min    int
 	Max    int
-	Regexp ValidateFunc
+	Regexp Method
 	Hide   bool // if true, do not print the value when return invalid result
 }
 
-func (v *ValidateRule) String() string {
+func (v *Rule) String() string {
 	arr := [4]string{}
 	s := arr[:0]
 	if v.Min != 0 {
@@ -45,7 +46,7 @@ func (v *ValidateRule) String() string {
 	return "{" + util.StringJoin(s, ", ") + "}"
 }
 
-func (v *ValidateRule) Match(s interface{}) (ok bool, invalidValue interface{}) {
+func (v *Rule) Match(s interface{}) (ok bool, invalidValue interface{}) {
 	invalidValue = s
 	var invalid bool
 	sv := reflect.ValueOf(s)
@@ -87,7 +88,7 @@ func (v *ValidateRule) Match(s interface{}) (ok bool, invalidValue interface{}) 
 	if v.Regexp != nil && !invalid {
 		switch k {
 		case reflect.Map:
-			itemV := ValidateRule{
+			itemV := Rule{
 				Regexp: v.Regexp,
 			}
 			keys := sv.MapKeys()
@@ -104,7 +105,7 @@ func (v *ValidateRule) Match(s interface{}) (ok bool, invalidValue interface{}) 
 				}
 			}
 		case reflect.Slice, reflect.Array:
-			itemV := ValidateRule{
+			itemV := Rule{
 				Regexp: v.Regexp,
 			}
 			for i, l := 0, sv.Len(); i < l; i++ {

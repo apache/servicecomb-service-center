@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package etcdsync
 
 import (
@@ -31,9 +32,9 @@ import (
 )
 
 const (
-	DEFAULT_LOCK_TTL    = 60
-	DEFAULT_RETRY_TIMES = 3
-	ROOT_PATH           = "/cse/etcdsync"
+	DefaultLockTTL    = 60
+	DefaultRetryTimes = 3
+	RootPath          = "/cse/etcdsync"
 
 	OperationGlobalLock = "GLOBAL_LOCK"
 )
@@ -48,11 +49,9 @@ type DLock struct {
 }
 
 var (
-	globalMux sync.Mutex
-	IsDebug   bool
-	hostname  = util.HostName()
-	pid       = os.Getpid()
-	mutex     = new(sync.Mutex)
+	IsDebug  bool
+	hostname = util.HostName()
+	pid      = os.Getpid()
 )
 
 func NewDLock(key string, ttl int64, wait bool) (l *DLock, err error) {
@@ -60,7 +59,7 @@ func NewDLock(key string, ttl int64, wait bool) (l *DLock, err error) {
 		return nil, nil
 	}
 	if ttl < 1 {
-		ttl = DEFAULT_LOCK_TTL
+		ttl = DefaultLockTTL
 	}
 
 	now := time.Now()
@@ -72,7 +71,7 @@ func NewDLock(key string, ttl int64, wait bool) (l *DLock, err error) {
 		createAt: now,
 		mutex:    &sync.Mutex{},
 	}
-	for try := 1; try <= DEFAULT_RETRY_TIMES; try++ {
+	for try := 1; try <= DefaultRetryTimes; try++ {
 		err = l.Lock(wait)
 		if err == nil {
 			return
@@ -119,7 +118,10 @@ func (m *DLock) Lock(wait bool) (err error) {
 	}
 
 	if leaseID > 0 {
-		backend.Registry().LeaseRevoke(m.ctx, leaseID)
+		err = backend.Registry().LeaseRevoke(m.ctx, leaseID)
+		if err != nil {
+			return err
+		}
 	}
 
 	if m.ttl == 0 || !wait {
@@ -167,7 +169,7 @@ func (m *DLock) Unlock() (err error) {
 		registry.DEL,
 		registry.WithStrKey(m.key)}
 
-	for i := 1; i <= DEFAULT_RETRY_TIMES; i++ {
+	for i := 1; i <= DefaultRetryTimes; i++ {
 		_, err = backend.Registry().Do(m.ctx, opts...)
 		if err == nil {
 			log.Infof("Delete lock OK, key=%s, id=%s", m.key, m.id)
@@ -183,5 +185,5 @@ func (m *DLock) Unlock() (err error) {
 }
 
 func Lock(key string, ttl int64, wait bool) (*DLock, error) {
-	return NewDLock(fmt.Sprintf("%s%s", ROOT_PATH, key), ttl, wait)
+	return NewDLock(fmt.Sprintf("%s%s", RootPath, key), ttl, wait)
 }

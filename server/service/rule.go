@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package service
 
 import (
@@ -73,7 +74,7 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
-	ruleIds := make([]string, 0, len(in.Rules))
+	ruleIDs := make([]string, 0, len(in.Rules))
 	opts := make([]registry.PluginOp, 0, 2*len(in.Rules))
 	for _, rule := range in.Rules {
 		//黑白名单只能存在一种，黑名单 or 白名单
@@ -98,7 +99,7 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 		// 产生全局rule id
 		timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 		ruleAdd := &pb.ServiceRule{
-			RuleId:       util.GenerateUuid(),
+			RuleId:       util.GenerateUUID(),
 			RuleType:     rule.RuleType,
 			Attribute:    rule.Attribute,
 			Pattern:      rule.Pattern,
@@ -109,7 +110,7 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 
 		key := apt.GenerateServiceRuleKey(domainProject, in.ServiceId, ruleAdd.RuleId)
 		indexKey := apt.GenerateRuleIndexKey(domainProject, in.ServiceId, ruleAdd.Attribute, ruleAdd.Pattern)
-		ruleIds = append(ruleIds, ruleAdd.RuleId)
+		ruleIDs = append(ruleIDs, ruleAdd.RuleId)
 
 		data, err := json.Marshal(ruleAdd)
 		if err != nil {
@@ -134,7 +135,7 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 	resp, err := backend.BatchCommitWithCmp(ctx, opts,
 		[]registry.CompareOp{registry.OpCmp(
 			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, in.ServiceId))),
-			registry.CMP_NOT_EQUAL, 0)},
+			registry.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		log.Errorf(err, "add service[%s] rule failed, operator: %s", in.ServiceId, remoteIP)
@@ -150,10 +151,10 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 		}, nil
 	}
 
-	log.Infof("add service[%s] rule %v successfully, operator: %s", in.ServiceId, ruleIds, remoteIP)
+	log.Infof("add service[%s] rule %v successfully, operator: %s", in.ServiceId, ruleIDs, remoteIP)
 	return &pb.AddServiceRulesResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Add service rules successfully."),
-		RuleIds:  ruleIds,
+		RuleIds:  ruleIDs,
 	}, nil
 }
 
@@ -251,7 +252,7 @@ func (s *MicroServiceService) UpdateRule(ctx context.Context, in *pb.UpdateServi
 	resp, err := backend.Registry().TxnWithCmp(ctx, opts,
 		[]registry.CompareOp{registry.OpCmp(
 			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, in.ServiceId))),
-			registry.CMP_NOT_EQUAL, 0)},
+			registry.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		log.Errorf(err, "update service rule[%s/%s] failed, operator: %s", in.ServiceId, in.RuleId, remoteIP)
@@ -330,20 +331,20 @@ func (s *MicroServiceService) DeleteRule(ctx context.Context, in *pb.DeleteServi
 	opts := []registry.PluginOp{}
 	key := ""
 	indexKey := ""
-	for _, ruleId := range in.RuleIds {
-		key = apt.GenerateServiceRuleKey(domainProject, in.ServiceId, ruleId)
+	for _, ruleID := range in.RuleIds {
+		key = apt.GenerateServiceRuleKey(domainProject, in.ServiceId, ruleID)
 		log.Debugf("start delete service rule file: %s", key)
-		data, err := serviceUtil.GetOneRule(ctx, domainProject, in.ServiceId, ruleId)
+		data, err := serviceUtil.GetOneRule(ctx, domainProject, in.ServiceId, ruleID)
 		if err != nil {
 			log.Errorf(err, "delete service[%s] rules %v failed, get rule[%s] failed, operator: %s",
-				in.ServiceId, in.RuleIds, ruleId, remoteIP)
+				in.ServiceId, in.RuleIds, ruleID, remoteIP)
 			return &pb.DeleteServiceRulesResponse{
 				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 			}, err
 		}
 		if data == nil {
 			log.Errorf(nil, "delete service[%s] rules %v failed, rule[%s] does not exist, operator: %s",
-				in.ServiceId, in.RuleIds, ruleId, remoteIP)
+				in.ServiceId, in.RuleIds, ruleID, remoteIP)
 			return &pb.DeleteServiceRulesResponse{
 				Response: pb.CreateResponse(scerr.ErrRuleNotExists, "This rule does not exist."),
 			}, nil
@@ -364,7 +365,7 @@ func (s *MicroServiceService) DeleteRule(ctx context.Context, in *pb.DeleteServi
 	resp, err := backend.BatchCommitWithCmp(ctx, opts,
 		[]registry.CompareOp{registry.OpCmp(
 			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, in.ServiceId))),
-			registry.CMP_NOT_EQUAL, 0)},
+			registry.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		log.Errorf(err, "delete service[%s] rules %v failed, operator: %s", in.ServiceId, in.RuleIds, remoteIP)

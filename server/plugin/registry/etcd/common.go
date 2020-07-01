@@ -23,8 +23,7 @@ import (
 const (
 	// here will new an etcd connection after about 30s(=5s * 3 + (backoff:8s))
 	// when the connected etcd member was hung but tcp is still alive
-	healthCheckTimeout    = 5 * time.Second
-	healthCheckRetryTimes = 3
+	healthCheckTimeout = 5 * time.Second
 
 	// see google.golang.org/grpc/keepalive/keepalive.go
 	// after a duration of this time if the client doesn't see any activity

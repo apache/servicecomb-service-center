@@ -18,11 +18,11 @@ package instance
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/client/sc"
+	model2 "github.com/apache/servicecomb-service-center/pkg/model"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/model"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/plugin/get"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/writer"
-	admin "github.com/apache/servicecomb-service-center/server/admin/model"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/spf13/cobra"
 	"strings"
@@ -53,7 +53,7 @@ func InstanceCommandFunc(_ *cobra.Command, args []string) {
 		cmd.StopAndExit(cmd.ExitError, scErr)
 	}
 
-	svcMap := make(map[string]*admin.Microservice)
+	svcMap := make(map[string]*model2.Microservice)
 	for _, ms := range cache.Microservices {
 		svcMap[ms.Value.ServiceId] = ms
 	}

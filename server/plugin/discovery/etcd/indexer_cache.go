@@ -30,7 +30,7 @@ import (
 // CacheIndexer searches data from etcd cache(firstly) and
 // etcd server(secondly).
 type CacheIndexer struct {
-	*EtcdIndexer
+	*Indexer
 	*discovery.CacheIndexer
 }
 
@@ -39,7 +39,7 @@ func (i *CacheIndexer) Search(ctx context.Context, opts ...registry.PluginOpOpti
 	key := util.BytesToStringWithNoCopy(op.Key)
 
 	if op.NoCache() {
-		return i.EtcdIndexer.Search(ctx, opts...)
+		return i.Indexer.Search(ctx, opts...)
 	}
 
 	if err := i.CheckPrefix(key); err != nil {
@@ -54,17 +54,17 @@ func (i *CacheIndexer) Search(ctx context.Context, opts ...registry.PluginOpOpti
 	if resp.Count > 0 || op.CacheOnly() {
 		return resp, nil
 	}
-	return i.EtcdIndexer.Search(ctx, opts...)
+	return i.Indexer.Search(ctx, opts...)
 }
 
 // Creditable implements discovery.Indexer.Creditable.
 func (i *CacheIndexer) Creditable() bool {
-	return i.EtcdIndexer.Creditable()
+	return i.Indexer.Creditable()
 }
 
 func NewCacheIndexer(cfg *discovery.Config, cache discovery.Cache) *CacheIndexer {
 	return &CacheIndexer{
-		EtcdIndexer:  NewEtcdIndexer(cfg.Key, cfg.Parser),
+		Indexer:      NewEtcdIndexer(cfg.Key, cfg.Parser),
 		CacheIndexer: discovery.NewCacheIndexer(cache),
 	}
 }

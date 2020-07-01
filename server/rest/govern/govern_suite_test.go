@@ -23,9 +23,8 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/govern"
+	"github.com/apache/servicecomb-service-center/server/rest/govern"
 	"github.com/apache/servicecomb-service-center/server/service"
-	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"github.com/astaxie/beego"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
@@ -50,11 +49,11 @@ var governService pb.GovernServiceCtrlServer
 var _ = BeforeSuite(func() {
 	//init plugin
 	core.ServiceAPI, core.InstanceAPI = service.AssembleResources()
-	governService = govern.GovernServiceAPI
+	governService = govern.ServiceAPI
 })
 
 func getContext() context.Context {
 	return util.SetContext(
 		util.SetDomainProject(context.Background(), "default", "default"),
-		serviceUtil.CTX_NOCACHE, "1")
+		util.CtxNocache, "1")
 }

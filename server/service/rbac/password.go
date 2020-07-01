@@ -33,13 +33,13 @@ func ChangePassword(ctx context.Context, changerRole, changerName string, a *mod
 			return ErrInputChangeAccount
 		}
 		return changePasswordForcibly(ctx, a.Name, a.Password)
-	} else {
-		if a.CurrentPassword == "" {
-			log.Error("current pwd is empty", nil)
-			return ErrInputCurrentPassword
-		}
-		return changePassword(ctx, changerName, a.CurrentPassword, a.Password)
 	}
+	if a.CurrentPassword == "" {
+		log.Error("current pwd is empty", nil)
+		return ErrInputCurrentPassword
+	}
+	return changePassword(ctx, changerName, a.CurrentPassword, a.Password)
+
 }
 func changePasswordForcibly(ctx context.Context, name, pwd string) error {
 	old, err := dao.GetAccount(ctx, name)

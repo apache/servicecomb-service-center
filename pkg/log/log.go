@@ -73,7 +73,7 @@ func runLogDirRotate(cfg Config) {
 	go func() {
 		for {
 			<-time.After(defaultLogRotatePeriod)
-			LogRotate(filepath.Dir(cfg.LoggerFile), cfg.LogRotateSize, cfg.LogBackupCount)
+			Rotate(filepath.Dir(cfg.LoggerFile), cfg.LogRotateSize, cfg.LogBackupCount)
 		}
 	}()
 }

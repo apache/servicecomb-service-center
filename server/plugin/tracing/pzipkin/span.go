@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package pzipkin
 
 import (
@@ -59,12 +60,12 @@ type Endpoint struct {
 }
 
 func (s *Span) FromZipkinSpan(span *zipkincore.Span) {
-	traceId := new(types.TraceID)
-	traceId.Low = uint64(span.TraceID)
+	traceID := new(types.TraceID)
+	traceID.Low = uint64(span.TraceID)
 	if span.TraceIDHigh != nil {
-		traceId.High = uint64(*(span.TraceIDHigh))
+		traceID.High = uint64(*(span.TraceIDHigh))
 	}
-	s.TraceID = traceId.ToHex()
+	s.TraceID = traceID.ToHex()
 	s.Duration = span.Duration
 
 	s.ID = strconv.FormatUint(uint64(span.ID), 16)

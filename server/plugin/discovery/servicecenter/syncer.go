@@ -17,13 +17,13 @@ package servicecenter
 
 import (
 	"fmt"
+	"github.com/apache/servicecomb-service-center/pkg/model"
 	"sync"
 	"time"
 
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/admin/model"
 	"github.com/apache/servicecomb-service-center/server/alarm"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
@@ -42,11 +42,11 @@ var (
 type Syncer struct {
 	Client *SCClientAggregate
 
-	cachers map[discovery.Type]*ServiceCenterCacher
+	cachers map[discovery.Type]*Cacher
 }
 
 func (c *Syncer) Initialize() {
-	c.cachers = make(map[discovery.Type]*ServiceCenterCacher)
+	c.cachers = make(map[discovery.Type]*Cacher)
 	c.Client = GetOrCreateSCClient()
 }
 
@@ -55,29 +55,34 @@ func (c *Syncer) Sync(ctx context.Context) {
 	if len(errs) > 0 {
 		err := fmt.Errorf("%v", errs)
 		log.Errorf(err, "Sync catches errors")
-		alarm.Raise(alarm.IdBackendConnectionRefuse,
+		err = alarm.Raise(alarm.IDBackendConnectionRefuse,
 			alarm.AdditionalContext(err.Error()))
+		if err != nil {
+			log.Error("", err)
+		}
 		if cache == nil {
 			return
 		}
 	}
-	alarm.Clear(alarm.IdBackendConnectionRefuse)
-
+	err := alarm.Clear(alarm.IDBackendConnectionRefuse)
+	if err != nil {
+		log.Error("", err)
+	}
 	// microservice
 	serviceCacher, ok := c.cachers[backend.SERVICE]
 	if ok {
 		c.check(serviceCacher, &cache.Microservices, errs)
 	}
-	indexCacher, ok := c.cachers[backend.SERVICE_INDEX]
+	indexCacher, ok := c.cachers[backend.ServiceIndex]
 	if ok {
 		c.checkWithConflictHandleFunc(indexCacher, &cache.Indexes, errs, c.logConflictFunc)
 	}
-	aliasCacher, ok := c.cachers[backend.SERVICE_ALIAS]
+	aliasCacher, ok := c.cachers[backend.ServiceAlias]
 	if ok {
 		c.checkWithConflictHandleFunc(aliasCacher, &cache.Aliases, errs, c.logConflictFunc)
 	}
 	// microservice meta
-	tagCacher, ok := c.cachers[backend.SERVICE_TAG]
+	tagCacher, ok := c.cachers[backend.ServiceTag]
 	if ok {
 		c.check(tagCacher, &cache.Tags, errs)
 	}
@@ -85,15 +90,15 @@ func (c *Syncer) Sync(ctx context.Context) {
 	if ok {
 		c.check(ruleCacher, &cache.Rules, errs)
 	}
-	ruleIndexCacher, ok := c.cachers[backend.RULE_INDEX]
+	ruleIndexCacher, ok := c.cachers[backend.RuleIndex]
 	if ok {
 		c.check(ruleIndexCacher, &cache.RuleIndexes, errs)
 	}
-	depRuleCacher, ok := c.cachers[backend.DEPENDENCY_RULE]
+	depRuleCacher, ok := c.cachers[backend.DependencyRule]
 	if ok {
 		c.check(depRuleCacher, &cache.DependencyRules, errs)
 	}
-	schemaSummaryCacher, ok := c.cachers[backend.SCHEMA_SUMMARY]
+	schemaSummaryCacher, ok := c.cachers[backend.SchemaSummary]
 	if ok {
 		c.check(schemaSummaryCacher, &cache.Summaries, errs)
 	}
@@ -104,11 +109,11 @@ func (c *Syncer) Sync(ctx context.Context) {
 	}
 }
 
-func (c *Syncer) check(local *ServiceCenterCacher, remote model.Getter, skipClusters map[string]error) {
+func (c *Syncer) check(local *Cacher, remote model.Getter, skipClusters map[string]error) {
 	c.checkWithConflictHandleFunc(local, remote, skipClusters, c.skipHandleFunc)
 }
 
-func (c *Syncer) checkWithConflictHandleFunc(local *ServiceCenterCacher, remote model.Getter, skipClusters map[string]error,
+func (c *Syncer) checkWithConflictHandleFunc(local *Cacher, remote model.Getter, skipClusters map[string]error,
 	conflictHandleFunc func(origin *model.KV, conflict model.Getter, index int)) {
 	exists := make(map[string]*model.KV)
 	remote.ForEach(func(i int, v *model.KV) bool {
@@ -183,20 +188,20 @@ func (c *Syncer) logConflictFunc(origin *model.KV, conflict model.Getter, index 
 	case *model.MicroserviceIndexSlice:
 		slice := conflict.(*model.MicroserviceIndexSlice)
 		kv := (*slice)[index]
-		if serviceId := origin.Value.(string); kv.Value != serviceId {
+		if serviceID := origin.Value.(string); kv.Value != serviceID {
 			key := core.GetInfoFromSvcIndexKV(util.StringToBytesWithNoCopy(kv.Key))
 			log.Warnf("conflict! can not merge microservice index[%s][%s][%s/%s/%s/%s], found one[%s] in cluster[%s]",
 				kv.ClusterName, kv.Value, key.Environment, key.AppId, key.ServiceName, key.Version,
-				serviceId, origin.ClusterName)
+				serviceID, origin.ClusterName)
 		}
 	case *model.MicroserviceAliasSlice:
 		slice := conflict.(*model.MicroserviceAliasSlice)
 		kv := (*slice)[index]
-		if serviceId := origin.Value.(string); kv.Value != serviceId {
+		if serviceID := origin.Value.(string); kv.Value != serviceID {
 			key := core.GetInfoFromSvcAliasKV(util.StringToBytesWithNoCopy(kv.Key))
 			log.Warnf("conflict! can not merge microservice alias[%s][%s][%s/%s/%s/%s], found one[%s] in cluster[%s]",
 				kv.ClusterName, kv.Value, key.Environment, key.AppId, key.ServiceName, key.Version,
-				serviceId, origin.ClusterName)
+				serviceID, origin.ClusterName)
 		}
 	}
 }
@@ -226,7 +231,7 @@ func (c *Syncer) loop(ctx context.Context) {
 }
 
 // unsafe
-func (c *Syncer) AddCacher(t discovery.Type, cacher *ServiceCenterCacher) {
+func (c *Syncer) AddCacher(t discovery.Type, cacher *Cacher) {
 	c.cachers[t] = cacher
 }
 

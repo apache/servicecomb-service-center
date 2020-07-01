@@ -19,8 +19,7 @@ import (
 	"crypto/tls"
 )
 
-// const
-var TLS_CIPHER_SUITE_MAP = map[string]uint16{
+var TLSCipherSuiteMap = map[string]uint16{
 	"TLS_RSA_WITH_AES_128_GCM_SHA256":       tls.TLS_RSA_WITH_AES_128_GCM_SHA256,
 	"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256": tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
 	"TLS_RSA_WITH_AES_256_GCM_SHA384":       tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
@@ -28,7 +27,7 @@ var TLS_CIPHER_SUITE_MAP = map[string]uint16{
 	"TLS_RSA_WITH_AES_128_CBC_SHA256":       tls.TLS_RSA_WITH_AES_128_CBC_SHA256,
 }
 
-var TLS_VERSION_MAP = map[string]uint16{
+var TLSVersionMap = map[string]uint16{
 	"TLSv1.0": tls.VersionTLS10,
 	"TLSv1.1": tls.VersionTLS11,
 	"TLSv1.2": tls.VersionTLS12,
@@ -43,7 +42,7 @@ func TLSCipherSuits() []uint16 {
 	if cipherSuite != nil {
 		return cipherSuite
 	}
-	for _, c := range TLS_CIPHER_SUITE_MAP {
+	for _, c := range TLSCipherSuiteMap {
 		cipherSuite = append(cipherSuite, c)
 	}
 	return cipherSuite

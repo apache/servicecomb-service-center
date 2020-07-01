@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package service
 
 import (
@@ -71,13 +72,13 @@ func (s *MicroServiceService) AddOrUpdateDependencies(ctx context.Context, depen
 			return rsp.Response, nil
 		}
 
-		consumerId, err := serviceUtil.GetServiceId(ctx, consumerInfo)
+		consumerID, err := serviceUtil.GetServiceID(ctx, consumerInfo)
 		if err != nil {
 			log.Errorf(err, "put request into dependency queue failed, override: %t, get consumer[%s] id failed",
 				override, consumerFlag)
 			return pb.CreateResponse(scerr.ErrInternal, err.Error()), err
 		}
-		if len(consumerId) == 0 {
+		if len(consumerID) == 0 {
 			log.Errorf(nil, "put request into dependency queue failed, override: %t, consumer[%s] does not exist",
 				override, consumerFlag)
 			return pb.CreateResponse(scerr.ErrServiceNotExists, fmt.Sprintf("Consumer %s does not exist.", consumerFlag)), nil
@@ -91,11 +92,11 @@ func (s *MicroServiceService) AddOrUpdateDependencies(ctx context.Context, depen
 			return pb.CreateResponse(scerr.ErrInternal, err.Error()), err
 		}
 
-		id := apt.DEPS_QUEUE_UUID
+		id := apt.DepsQueueUUID
 		if !override {
-			id = util.GenerateUuid()
+			id = util.GenerateUUID()
 		}
-		key := apt.GenerateConsumerDependencyQueueKey(domainProject, consumerId, id)
+		key := apt.GenerateConsumerDependencyQueueKey(domainProject, consumerID, id)
 		opts = append(opts, registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)))
 	}
 
@@ -119,15 +120,15 @@ func (s *MicroServiceService) GetProviderDependencies(ctx context.Context, in *p
 		}, nil
 	}
 	domainProject := util.ParseDomainProject(ctx)
-	providerServiceId := in.ServiceId
+	providerServiceID := in.ServiceId
 
-	provider, err := serviceUtil.GetService(ctx, domainProject, providerServiceId)
+	provider, err := serviceUtil.GetService(ctx, domainProject, providerServiceID)
 	if err != nil {
-		log.Errorf(err, "GetProviderDependencies failed, provider is %s", providerServiceId)
+		log.Errorf(err, "GetProviderDependencies failed, provider is %s", providerServiceID)
 		return nil, err
 	}
 	if provider == nil {
-		log.Errorf(err, "GetProviderDependencies failed for provider[%s] does not exist", providerServiceId)
+		log.Errorf(err, "GetProviderDependencies failed for provider[%s] does not exist", providerServiceID)
 		return &pb.GetProDependenciesResponse{
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Provider does not exist"),
 		}, nil
@@ -156,18 +157,18 @@ func (s *MicroServiceService) GetConsumerDependencies(ctx context.Context, in *p
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
-	consumerId := in.ServiceId
+	consumerID := in.ServiceId
 	domainProject := util.ParseDomainProject(ctx)
 
-	consumer, err := serviceUtil.GetService(ctx, domainProject, consumerId)
+	consumer, err := serviceUtil.GetService(ctx, domainProject, consumerID)
 	if err != nil {
-		log.Errorf(err, "GetConsumerDependencies failed, consumer is %s", consumerId)
+		log.Errorf(err, "GetConsumerDependencies failed, consumer is %s", consumerID)
 		return &pb.GetConDependenciesResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 	if consumer == nil {
-		log.Errorf(err, "GetConsumerDependencies failed for consumer[%s] does not exist", consumerId)
+		log.Errorf(err, "GetConsumerDependencies failed for consumer[%s] does not exist", consumerID)
 		return &pb.GetConDependenciesResponse{
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Consumer does not exist"),
 		}, nil

@@ -78,11 +78,11 @@ func (i *ClusterIndexer) searchSchemas(ctx context.Context, op registry.PluginOp
 		resp  *discovery.Response
 		scErr *scerr.Error
 	)
-	domainProject, serviceId, schemaId := core.GetInfoFromSchemaKV(op.Key)
-	if op.Prefix && len(schemaId) == 0 {
-		resp, scErr = i.Client.GetSchemasByServiceId(ctx, domainProject, serviceId)
+	domainProject, serviceID, schemaID := core.GetInfoFromSchemaKV(op.Key)
+	if op.Prefix && len(schemaID) == 0 {
+		resp, scErr = i.Client.GetSchemasByServiceID(ctx, domainProject, serviceID)
 	} else {
-		resp, scErr = i.Client.GetSchemaBySchemaId(ctx, domainProject, serviceId, schemaId)
+		resp, scErr = i.Client.GetSchemaBySchemaID(ctx, domainProject, serviceID, schemaID)
 	}
 	if scErr != nil {
 		return nil, scErr
@@ -95,11 +95,11 @@ func (i *ClusterIndexer) searchInstances(ctx context.Context, op registry.Plugin
 		resp  *discovery.Response
 		scErr *scerr.Error
 	)
-	serviceId, instanceId, domainProject := core.GetInfoFromInstKV(op.Key)
-	if op.Prefix && len(instanceId) == 0 {
-		resp, scErr = i.Client.GetInstancesByServiceId(ctx, domainProject, serviceId, "")
+	serviceID, instanceID, domainProject := core.GetInfoFromInstKV(op.Key)
+	if op.Prefix && len(instanceID) == 0 {
+		resp, scErr = i.Client.GetInstancesByServiceID(ctx, domainProject, serviceID, "")
 	} else {
-		resp, scErr = i.Client.GetInstanceByInstanceId(ctx, domainProject, serviceId, instanceId, "")
+		resp, scErr = i.Client.GetInstanceByInstanceID(ctx, domainProject, serviceID, instanceID, "")
 	}
 	if scErr != nil {
 		return nil, scErr

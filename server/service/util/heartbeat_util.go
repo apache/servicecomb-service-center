@@ -25,24 +25,24 @@ import (
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 )
 
-func HeartbeatUtil(ctx context.Context, domainProject string, serviceId string, instanceId string) (leaseID int64, ttl int64, _ *scerr.Error) {
-	leaseID, err := GetLeaseId(ctx, domainProject, serviceId, instanceId)
+func HeartbeatUtil(ctx context.Context, domainProject string, serviceID string, instanceID string) (leaseID int64, ttl int64, _ *scerr.Error) {
+	leaseID, err := GetLeaseID(ctx, domainProject, serviceID, instanceID)
 	if err != nil {
 		return leaseID, ttl, scerr.NewError(scerr.ErrUnavailableBackend, err.Error())
 	}
-	ttl, err = KeepAliveLease(ctx, domainProject, serviceId, instanceId, leaseID)
+	ttl, err = KeepAliveLease(ctx, domainProject, serviceID, instanceID, leaseID)
 	if err != nil {
 		return leaseID, ttl, scerr.NewError(scerr.ErrInstanceNotExists, err.Error())
 	}
 	return leaseID, ttl, nil
 }
 
-func KeepAliveLease(ctx context.Context, domainProject, serviceId, instanceId string, leaseID int64) (ttl int64, err error) {
+func KeepAliveLease(ctx context.Context, domainProject, serviceID, instanceID string, leaseID int64) (ttl int64, err error) {
 	if leaseID == -1 {
-		return ttl, errors.New("leaseId not exist, instance not exist.")
+		return ttl, errors.New("leaseId not exist, instance not exist")
 	}
 	ttl, err = backend.Store().KeepAlive(ctx,
-		registry.WithStrKey(apt.GenerateInstanceLeaseKey(domainProject, serviceId, instanceId)),
+		registry.WithStrKey(apt.GenerateInstanceLeaseKey(domainProject, serviceID, instanceID)),
 		registry.WithLease(leaseID))
 	if err != nil {
 		return ttl, err

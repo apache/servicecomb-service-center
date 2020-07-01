@@ -21,6 +21,6 @@ import (
 )
 
 const (
-	DEFAULT_TIMEOUT         = 30 * time.Second
-	DEFAULT_CACHE_INIT_SIZE = 100
+	DefaultTimeout       = 30 * time.Second
+	DefaultCacheInitSize = 100
 )

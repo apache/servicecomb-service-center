@@ -27,12 +27,12 @@ type MicroServiceService struct {
 
 func (this *MicroServiceService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTP_METHOD_GET, "/registry/v3/existence", this.GetExistence},
-		{rest.HTTP_METHOD_GET, "/registry/v3/microservices", this.GetServices},
-		{rest.HTTP_METHOD_GET, "/registry/v3/microservices/:serviceId", this.GetServiceOne},
-		{rest.HTTP_METHOD_POST, "/registry/v3/microservices", this.Register},
-		{rest.HTTP_METHOD_PUT, "/registry/v3/microservices/:serviceId/properties", this.Update},
-		{rest.HTTP_METHOD_DELETE, "/registry/v3/microservices/:serviceId", this.Unregister},
-		{rest.HTTP_METHOD_DELETE, "/registry/v3/microservices", this.UnregisterServices},
+		{rest.HTTPMethodGet, "/registry/v3/existence", this.GetExistence},
+		{rest.HTTPMethodGet, "/registry/v3/microservices", this.GetServices},
+		{rest.HTTPMethodGet, "/registry/v3/microservices/:serviceId", this.GetServiceOne},
+		{rest.HTTPMethodPost, "/registry/v3/microservices", this.Register},
+		{rest.HTTPMethodPut, "/registry/v3/microservices/:serviceId/properties", this.Update},
+		{rest.HTTPMethodDelete, "/registry/v3/microservices/:serviceId", this.Unregister},
+		{rest.HTTPMethodDelete, "/registry/v3/microservices", this.UnregisterServices},
 	}
 }

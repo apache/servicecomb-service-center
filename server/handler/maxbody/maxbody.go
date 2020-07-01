@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package maxbody
 
 import (
@@ -43,18 +44,18 @@ var resourcesMap = map[string]int64{
 	"/v4/:project/registry/microservices/:serviceId/instances/:instanceId/properties": propertiesSize,
 }
 
-type MaxBodyHandler struct {
+type Handler struct {
 }
 
-func (c *MaxBodyHandler) Handle(i *chain.Invocation) {
-	r := i.Context().Value(rest.CTX_REQUEST).(*http.Request)
+func (c *Handler) Handle(i *chain.Invocation) {
+	r := i.Context().Value(rest.CtxRequest).(*http.Request)
 	if r.Method == http.MethodGet {
 		i.Next()
 		return
 	}
 
-	w, pattern := i.Context().Value(rest.CTX_RESPONSE).(http.ResponseWriter),
-		i.Context().Value(rest.CTX_MATCH_PATTERN).(string)
+	w, pattern := i.Context().Value(rest.CtxResponse).(http.ResponseWriter),
+		i.Context().Value(rest.CtxMatchPattern).(string)
 	v, ok := resourcesMap[pattern]
 	if !ok {
 		v = core.ServerInfo.Config.MaxBodyBytes
@@ -66,5 +67,5 @@ func (c *MaxBodyHandler) Handle(i *chain.Invocation) {
 }
 
 func RegisterHandlers() {
-	chain.RegisterHandler(rest.ServerChainName, &MaxBodyHandler{})
+	chain.RegisterHandler(rest.ServerChainName, &Handler{})
 }

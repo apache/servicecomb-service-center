@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package log
 
 import (
@@ -69,16 +70,16 @@ func Sync() {
 	logger.Sync()
 }
 
-func LogNilOrWarnf(start time.Time, format string, args ...interface{}) {
-	cost := time.Now().Sub(start)
+func NilOrWarnf(start time.Time, format string, args ...interface{}) {
+	cost := time.Since(start)
 	if cost < time.Second {
 		return
 	}
 	logger.Warnf("[%s]%s", cost, fmt.Sprintf(format, args...))
 }
 
-func LogDebugOrWarnf(start time.Time, format string, args ...interface{}) {
-	cost := time.Now().Sub(start)
+func DebugOrWarnf(start time.Time, format string, args ...interface{}) {
+	cost := time.Since(start)
 	if cost < time.Second {
 		logger.Debugf("[%s]%s", cost, fmt.Sprintf(format, args...))
 		return
@@ -86,8 +87,8 @@ func LogDebugOrWarnf(start time.Time, format string, args ...interface{}) {
 	logger.Warnf("[%s]%s", cost, fmt.Sprintf(format, args...))
 }
 
-func LogInfoOrWarnf(start time.Time, format string, args ...interface{}) {
-	cost := time.Now().Sub(start)
+func InfoOrWarnf(start time.Time, format string, args ...interface{}) {
+	cost := time.Since(start)
 	if cost < time.Second {
 		logger.Infof("[%s]%s", cost, fmt.Sprintf(format, args...))
 		return
@@ -95,16 +96,15 @@ func LogInfoOrWarnf(start time.Time, format string, args ...interface{}) {
 	logger.Warnf("[%s]%s", cost, fmt.Sprintf(format, args...))
 }
 
-// LogPanic is a function can only be called in defer function.
-func LogPanic(r interface{}) {
-	logger.Recover(r, 3) // LogPanic()<-Recover()<-panic()<-final caller
+// Panic is a function can only be called in defer function.
+func Panic(r interface{}) {
+	logger.Recover(r, 3) // Panic()<-Recover()<-panic()<-final caller
 }
 
 // Recover is a function call recover() and print the stack in log
 // Please call this function like 'defer log.Recover()' in your code
 func Recover() {
 	if r := recover(); r != nil {
-		LogPanic(r)
+		Panic(r)
 	}
-	return
 }

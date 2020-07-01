@@ -31,7 +31,7 @@ func (c *ServiceIndexCacher) onServiceEvent(evt K8sEvent) {
 	svc := evt.Object.(*v1.Service)
 	domainProject := Kubernetes().GetDomainProject()
 	indexKey := core.GenerateServiceIndexKey(generateServiceKey(domainProject, svc))
-	serviceId := generateServiceId(domainProject, svc)
+	serviceID := generateServiceID(domainProject, svc)
 
 	if !ShouldRegisterService(svc) {
 		kv := c.Cache().Get(indexKey)
@@ -43,7 +43,7 @@ func (c *ServiceIndexCacher) onServiceEvent(evt K8sEvent) {
 
 	switch evt.EventType {
 	case pb.EVT_CREATE:
-		kv := AsKeyValue(indexKey, serviceId, svc.ResourceVersion)
+		kv := AsKeyValue(indexKey, serviceID, svc.ResourceVersion)
 		c.Notify(evt.EventType, indexKey, kv)
 	case pb.EVT_UPDATE:
 	case pb.EVT_DELETE:

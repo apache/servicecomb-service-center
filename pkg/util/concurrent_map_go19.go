@@ -33,7 +33,6 @@ func (cm *ConcurrentMap) Put(key, val interface{}) {
 	cm.fetchLock.RLock()
 	cm.mapper.Store(key, val)
 	cm.fetchLock.RUnlock()
-	return
 }
 
 func (cm *ConcurrentMap) PutIfAbsent(key, val interface{}) (exist interface{}) {

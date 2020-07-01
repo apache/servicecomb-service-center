@@ -14,17 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package util
 
-const (
-	HEADER_REV            = "X-Resource-Revision"
-	CTX_GLOBAL            = "global"
-	CTX_NOCACHE           = "noCache"
-	CTX_CACHEONLY         = "cacheOnly"
-	CTX_REQUEST_REVISION  = "requestRev"
-	CTX_RESPONSE_REVISION = "responseRev"
+package govern
+
+import (
+	roa "github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/pkg/rpc"
+	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"google.golang.org/grpc"
 )
 
-const (
-	ErrMsgConvert = "type convert error"
-)
+func init() {
+	registerGRPC()
+
+	registerREST()
+}
+
+func registerGRPC() {
+	rpc.RegisterService(func(s *grpc.Server) {
+		pb.RegisterGovernServiceCtrlServer(s, ServiceAPI)
+	})
+}
+
+func registerREST() {
+	roa.RegisterServant(&ResourceV3{})
+	roa.RegisterServant(&ResourceV4{})
+}

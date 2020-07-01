@@ -34,7 +34,7 @@ type Config struct {
 }
 
 func (cfg *Config) Merge() rest.URLClientOption {
-	ssl := strings.Index(cfg.Endpoints[0], "https://") >= 0
+	ssl := strings.Contains(cfg.Endpoints[0], "https://")
 	if ssl && len(cfg.CertKeyPWD) == 0 && len(cfg.CertKeyPWDPath) > 0 {
 		content, _ := ioutil.ReadFile(cfg.CertKeyPWDPath)
 		cfg.CertKeyPWD = string(content)

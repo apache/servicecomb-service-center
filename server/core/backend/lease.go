@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backend
 
 import (
@@ -47,7 +48,7 @@ func (lat *LeaseTask) Do(ctx context.Context) (err error) {
 	ReportHeartbeatCompleted(err, recv)
 	if err != nil {
 		log.Errorf(err, "[%s]task[%s] renew lease[%d] failed(recv: %s, send: %s)",
-			time.Now().Sub(recv),
+			time.Since(recv),
 			lat.Key(),
 			lat.LeaseID,
 			recv.Format(leaseProfTimeFmt),
@@ -61,7 +62,7 @@ func (lat *LeaseTask) Do(ctx context.Context) (err error) {
 
 	lat.err, err = nil, nil
 
-	cost := time.Now().Sub(recv)
+	cost := time.Since(recv)
 	if cost >= 2*time.Second {
 		log.Warnf("[%s]task[%s] renew lease[%d](recv: %s, send: %s)",
 			cost,

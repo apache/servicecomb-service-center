@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package plugin
 
 import (
@@ -130,15 +131,15 @@ func SetPluginDir(dir string) {
 	loader.Dir = dir
 }
 
-func PluginLoader() *Loader {
+func GetLoader() *Loader {
 	once.Do(loader.Init)
 	return &loader
 }
 
 func Reload() error {
-	return PluginLoader().ReloadPlugins()
+	return GetLoader().ReloadPlugins()
 }
 
 func FindFunc(pluginName, funcName string) (plugin.Symbol, error) {
-	return PluginLoader().Find(pluginName, funcName)
+	return GetLoader().Find(pluginName, funcName)
 }

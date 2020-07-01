@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package context
 
 import (
@@ -46,7 +47,7 @@ func (v *v4Context) Do(r *http.Request) error {
 	if len(project) == 0 {
 		project = r.URL.Query().Get(":project")
 		if len(project) == 0 {
-			project = core.REGISTRY_PROJECT
+			project = core.RegistryProject
 		}
 		util.SetRequestContext(r, util.CtxProject, project)
 	}

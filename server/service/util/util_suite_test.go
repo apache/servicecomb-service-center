@@ -96,29 +96,29 @@ func TestServiceExist(t *testing.T) {
 			t.Fatalf("TestServiceExist failed")
 		}
 	}()
-	serviceUtil.ServiceExist(util.SetContext(context.Background(), serviceUtil.CTX_CACHEONLY, "1"), "", "")
+	serviceUtil.ServiceExist(util.SetContext(context.Background(), util.CtxCacheOnly, "1"), "", "")
 }
 
 func TestFromContext(t *testing.T) {
-	ctx := context.WithValue(context.Background(), serviceUtil.CTX_NOCACHE, "1")
+	ctx := context.WithValue(context.Background(), util.CtxNocache, "1")
 	opts := serviceUtil.FromContext(ctx)
 	if len(opts) == 0 {
 		t.Fatalf("TestFromContext failed")
 	}
 
 	op := registry.OptionsToOp(opts...)
-	if op.Mode != registry.MODE_NO_CACHE {
+	if op.Mode != registry.ModeNoCache {
 		t.Fatalf("TestFromContext failed")
 	}
 
-	ctx = context.WithValue(context.Background(), serviceUtil.CTX_CACHEONLY, "1")
+	ctx = context.WithValue(context.Background(), util.CtxCacheOnly, "1")
 	opts = serviceUtil.FromContext(ctx)
 	if len(opts) == 0 {
 		t.Fatalf("TestFromContext failed")
 	}
 
 	op = registry.OptionsToOp(opts...)
-	if op.Mode != registry.MODE_CACHE {
+	if op.Mode != registry.ModeCache {
 		t.Fatalf("TestFromContext failed")
 	}
 }

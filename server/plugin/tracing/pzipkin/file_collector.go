@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package pzipkin
 
 import (
@@ -79,8 +80,14 @@ func (f *FileCollector) write(batch []*zipkincore.Span) (c int) {
 			log.Errorf(err, "marshal span failed")
 			continue
 		}
-		w.Write(b)
-		w.Write(newLine[:])
+		_, err = w.Write(b)
+		if err != nil {
+			log.Error("", err)
+		}
+		_, err = w.Write(newLine[:])
+		if err != nil {
+			log.Error("", err)
+		}
 		c++
 	}
 	if err := w.Flush(); err != nil {
@@ -156,7 +163,7 @@ func (f *FileCollector) Run() {
 				}
 			case <-t.C:
 				if time.Now().After(nr) {
-					log.LogRotateFile(f.Fd.Name(),
+					log.RotateFile(f.Fd.Name(),
 						int(core.ServerInfo.Config.LogRotateSize),
 						int(core.ServerInfo.Config.LogBackupCount),
 					)

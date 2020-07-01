@@ -51,7 +51,7 @@ func (c *LBClient) RestDoWithContext(ctx context.Context, method string, api str
 	var errs []string
 	for i := 0; i < c.Retries; i++ {
 		addr := c.Next()
-		resp, err = c.HttpDoWithContext(ctx, method, addr+api, headers, body)
+		resp, err = c.HTTPDoWithContext(ctx, method, addr+api, headers, body)
 		if err != nil {
 			errs = append(errs, fmt.Sprintf("[%s]: %s", addr, err.Error()))
 			continue

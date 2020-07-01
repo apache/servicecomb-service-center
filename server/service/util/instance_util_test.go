@@ -40,9 +40,9 @@ func TestFormatRevision(t *testing.T) {
 }
 
 func TestGetLeaseId(t *testing.T) {
-	_, err := GetLeaseId(context.Background(), "", "", "")
+	_, err := GetLeaseID(context.Background(), "", "", "")
 	if err != nil {
-		t.Fatalf(`GetLeaseId failed`)
+		t.Fatalf(`GetLeaseID failed`)
 	}
 }
 
@@ -74,7 +74,7 @@ func TestDeleteServiceAllInstances(t *testing.T) {
 
 func TestParseEndpointValue(t *testing.T) {
 	epv := ParseEndpointIndexValue([]byte("x/y"))
-	if epv.serviceId != "x" || epv.instanceId != "y" {
+	if epv.serviceID != "x" || epv.instanceID != "y" {
 		t.Fatalf(`ParseEndpointIndexValue failed`)
 	}
 }
@@ -87,7 +87,7 @@ func TestGetInstanceCountOfOneService(t *testing.T) {
 }
 
 func TestUpdateInstance(t *testing.T) {
-	err := UpdateInstance(util.SetContext(context.Background(), CTX_NOCACHE, "1"), "", &pb.MicroServiceInstance{})
+	err := UpdateInstance(util.SetContext(context.Background(), util.CtxNocache, "1"), "", &pb.MicroServiceInstance{})
 	if err == nil {
 		t.Fatalf(`UpdateInstance CTX_NOCACHE failed`)
 	}
@@ -110,7 +110,7 @@ func TestAppendFindResponse(t *testing.T) {
 	}
 
 	updatedResult = nil
-	cloneCtx := context.WithValue(ctx, CTX_RESPONSE_REVISION, "1")
+	cloneCtx := context.WithValue(ctx, util.CtxResponseRevision, "1")
 	AppendFindResponse(cloneCtx, 1, find.GetResponse(), find.Instances, &updatedResult, &notModifiedResult, &failedResult)
 	if updatedResult == nil || notModifiedResult != nil || failedResult != nil {
 		t.Fatal("TestAppendFindResponse failed")
@@ -120,8 +120,8 @@ func TestAppendFindResponse(t *testing.T) {
 	}
 
 	updatedResult = nil
-	cloneCtx = context.WithValue(ctx, CTX_REQUEST_REVISION, "1")
-	cloneCtx = context.WithValue(cloneCtx, CTX_RESPONSE_REVISION, "1")
+	cloneCtx = context.WithValue(ctx, util.CtxRequestRevision, "1")
+	cloneCtx = context.WithValue(cloneCtx, util.CtxResponseRevision, "1")
 	AppendFindResponse(cloneCtx, 1, find.GetResponse(), find.Instances, &updatedResult, &notModifiedResult, &failedResult)
 	if updatedResult != nil || notModifiedResult == nil || failedResult != nil {
 		t.Fatal("TestAppendFindResponse failed")
@@ -152,8 +152,8 @@ func TestAppendFindResponse(t *testing.T) {
 	find.Response = nil
 	AppendFindResponse(ctx, 1, find.GetResponse(), find.Instances, &updatedResult, &notModifiedResult, &failedResult)
 	AppendFindResponse(ctx, 2, find.GetResponse(), find.Instances, &updatedResult, &notModifiedResult, &failedResult)
-	cloneCtx = context.WithValue(ctx, CTX_REQUEST_REVISION, "1")
-	cloneCtx = context.WithValue(cloneCtx, CTX_RESPONSE_REVISION, "1")
+	cloneCtx = context.WithValue(ctx, util.CtxRequestRevision, "1")
+	cloneCtx = context.WithValue(cloneCtx, util.CtxResponseRevision, "1")
 	AppendFindResponse(cloneCtx, 3, find.GetResponse(), find.Instances, &updatedResult, &notModifiedResult, &failedResult)
 	AppendFindResponse(cloneCtx, 4, find.GetResponse(), find.Instances, &updatedResult, &notModifiedResult, &failedResult)
 	find.Response = pb.CreateResponse(scerr.ErrInternal, "test")

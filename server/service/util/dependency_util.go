@@ -45,12 +45,12 @@ func GetConsumerIds(ctx context.Context, domainProject string, provider *pb.Micr
 func GetProviderIds(ctx context.Context, domainProject string, consumer *pb.MicroService) ([]string, error) {
 	// 查询所有provider
 	dr := NewConsumerDependencyRelation(ctx, domainProject, consumer)
-	providerIds, err := dr.GetDependencyProviderIds()
+	providerIDs, err := dr.GetDependencyProviderIds()
 	if err != nil {
-		log.Errorf(err, "get service[%s]'s providerIds failed", consumer.ServiceId)
+		log.Errorf(err, "get service[%s]'s providerIDs failed", consumer.ServiceId)
 		return nil, err
 	}
-	return providerIds, nil
+	return providerIDs, nil
 }
 
 // GetAllConsumerIds is the function get from dependency rule and filter with service rules
@@ -86,24 +86,24 @@ func getConsumerIdsWithFilter(ctx context.Context, domainProject string, provide
 }
 
 func GetAllProviderIds(ctx context.Context, domainProject string, service *pb.MicroService) (allow []string, deny []string, _ error) {
-	providerIdsInCache, err := GetProviderIds(ctx, domainProject, service)
+	providerIDsInCache, err := GetProviderIds(ctx, domainProject, service)
 	if err != nil {
 		return nil, nil, err
 	}
-	l := len(providerIdsInCache)
+	l := len(providerIDsInCache)
 	rf := RuleFilter{
 		DomainProject: domainProject,
 	}
 	allowIdx, denyIdx := 0, l
-	providerIds := make([]string, l)
-	copyCtx := util.SetContext(util.CloneContext(ctx), CTX_CACHEONLY, "1")
-	for _, providerId := range providerIdsInCache {
-		providerRules, err := GetRulesUtil(copyCtx, domainProject, providerId)
+	providerIDs := make([]string, l)
+	copyCtx := util.SetContext(util.CloneContext(ctx), util.CtxCacheOnly, "1")
+	for _, providerID := range providerIDsInCache {
+		providerRules, err := GetRulesUtil(copyCtx, domainProject, providerID)
 		if err != nil {
 			return nil, nil, err
 		}
 		if len(providerRules) == 0 {
-			providerIds[allowIdx] = providerId
+			providerIDs[allowIdx] = providerID
 			allowIdx++
 			continue
 		}
@@ -113,14 +113,14 @@ func GetAllProviderIds(ctx context.Context, domainProject string, service *pb.Mi
 			return nil, nil, err
 		}
 		if ok {
-			providerIds[allowIdx] = providerId
+			providerIDs[allowIdx] = providerID
 			allowIdx++
 		} else {
 			denyIdx--
-			providerIds[denyIdx] = providerId
+			providerIDs[denyIdx] = providerID
 		}
 	}
-	return providerIds[:allowIdx], providerIds[denyIdx:], nil
+	return providerIDs[:allowIdx], providerIDs[denyIdx:], nil
 }
 
 func DependencyRuleExist(ctx context.Context, provider *pb.MicroServiceKey, consumer *pb.MicroServiceKey) (bool, error) {
@@ -179,7 +179,7 @@ func AddServiceVersionRule(ctx context.Context, domainProject string, consumer *
 	key := apt.GenerateConsumerDependencyQueueKey(domainProject, consumer.ServiceId, id)
 	resp, err := backend.Registry().TxnWithCmp(ctx,
 		nil,
-		[]registry.CompareOp{registry.OpCmp(registry.CmpStrVal(key), registry.CMP_EQUAL, util.BytesToStringWithNoCopy(data))},
+		[]registry.CompareOp{registry.OpCmp(registry.CmpStrVal(key), registry.CmpEqual, util.BytesToStringWithNoCopy(data))},
 		[]registry.PluginOp{registry.OpPut(registry.WithStrKey(key), registry.WithValue(data))})
 	if err != nil {
 		return err
@@ -212,10 +212,7 @@ func TransferToMicroServiceDependency(ctx context.Context, key string) (*pb.Micr
 func equalServiceDependency(serviceA *pb.MicroServiceKey, serviceB *pb.MicroServiceKey) bool {
 	stringA := toString(serviceA)
 	stringB := toString(serviceB)
-	if stringA == stringB {
-		return true
-	}
-	return false
+	return stringA == stringB
 }
 
 func diffServiceVersion(serviceA *pb.MicroServiceKey, serviceB *pb.MicroServiceKey) bool {
@@ -346,7 +343,7 @@ func isNeedUpdate(services []*pb.MicroServiceKey, service *pb.MicroServiceKey) *
 
 func containServiceDependency(services []*pb.MicroServiceKey, service *pb.MicroServiceKey) (bool, error) {
 	if services == nil || service == nil {
-		return false, errors.New("Invalid params input.")
+		return false, errors.New("invalid params input")
 	}
 	for _, value := range services {
 		rst := equalServiceDependency(service, value)
@@ -386,16 +383,15 @@ func ParamsChecker(consumerInfo *pb.MicroServiceKey, providersInfo []*pb.MicroSe
 		providerInfo.Version = ""
 		if _, ok := flag[toString(providerInfo)]; ok {
 			return BadParamsResponse("Invalid request body for provider info.Duplicate provider or (serviceName and appId is same).")
-		} else {
-			flag[toString(providerInfo)] = true
 		}
+		flag[toString(providerInfo)] = true
 		providerInfo.Version = version
 	}
 	return nil
 }
 
-func DeleteDependencyForDeleteService(domainProject string, serviceId string, service *pb.MicroServiceKey) (registry.PluginOp, error) {
-	key := apt.GenerateConsumerDependencyQueueKey(domainProject, serviceId, apt.DEPS_QUEUE_UUID)
+func DeleteDependencyForDeleteService(domainProject string, serviceID string, service *pb.MicroServiceKey) (registry.PluginOp, error) {
+	key := apt.GenerateConsumerDependencyQueueKey(domainProject, serviceID, apt.DepsQueueUUID)
 	conDep := new(pb.ConsumerDependency)
 	conDep.Consumer = service
 	conDep.Providers = []*pb.MicroServiceKey{}

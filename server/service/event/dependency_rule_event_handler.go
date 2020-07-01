@@ -31,7 +31,7 @@ type DependencyRuleEventHandler struct {
 }
 
 func (h *DependencyRuleEventHandler) Type() discovery.Type {
-	return backend.DEPENDENCY_RULE
+	return backend.DependencyRule
 }
 
 func (h *DependencyRuleEventHandler) OnEvent(evt discovery.KvEvent) {
@@ -40,7 +40,7 @@ func (h *DependencyRuleEventHandler) OnEvent(evt discovery.KvEvent) {
 		return
 	}
 	t, providerKey := core.GetInfoFromDependencyRuleKV(evt.KV.Key)
-	if t != core.DEPS_PROVIDER {
+	if t != core.DepsProvider {
 		return
 	}
 	log.Debugf("caught [%s] provider rule[%s/%s/%s/%s] event",

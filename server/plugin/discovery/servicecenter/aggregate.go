@@ -20,8 +20,8 @@ import (
 	"crypto/tls"
 	"github.com/apache/servicecomb-service-center/pkg/client/sc"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/model"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/admin/model"
 	"github.com/apache/servicecomb-service-center/server/core"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
@@ -37,7 +37,7 @@ var (
 	clientTLS  *tls.Config
 )
 
-type SCClientAggregate []*sc.SCClient
+type SCClientAggregate []*sc.Client
 
 func getClientTLS() (*tls.Config, error) {
 	if clientTLS != nil {
@@ -84,12 +84,12 @@ func (c *SCClientAggregate) cacheAppend(name string, setter model.Setter, getter
 	})
 }
 
-func (c *SCClientAggregate) GetSchemasByServiceId(ctx context.Context, domainProject, serviceId string) (*discovery.Response, *scerr.Error) {
+func (c *SCClientAggregate) GetSchemasByServiceID(ctx context.Context, domainProject, serviceID string) (*discovery.Response, *scerr.Error) {
 	var response discovery.Response
 	for _, client := range *c {
-		schemas, err := client.GetSchemasByServiceId(ctx, domainProject, serviceId)
+		schemas, err := client.GetSchemasByServiceID(ctx, domainProject, serviceID)
 		if err != nil && err.InternalError() {
-			log.Errorf(err, "get schema by serviceId[%s/%s] failed", domainProject, serviceId)
+			log.Errorf(err, "get schema by serviceID[%s/%s] failed", domainProject, serviceID)
 			continue
 		}
 		if schemas == nil {
@@ -98,7 +98,7 @@ func (c *SCClientAggregate) GetSchemasByServiceId(ctx context.Context, domainPro
 		response.Count = int64(len(schemas))
 		for _, schema := range schemas {
 			response.Kvs = append(response.Kvs, &discovery.KeyValue{
-				Key:         []byte(core.GenerateServiceSchemaKey(domainProject, serviceId, schema.SchemaId)),
+				Key:         []byte(core.GenerateServiceSchemaKey(domainProject, serviceID, schema.SchemaId)),
 				Value:       util.StringToBytesWithNoCopy(schema.Schema),
 				ModRevision: 0,
 				ClusterName: client.Cfg.Name,
@@ -109,12 +109,12 @@ func (c *SCClientAggregate) GetSchemasByServiceId(ctx context.Context, domainPro
 	return &response, nil
 }
 
-func (c *SCClientAggregate) GetSchemaBySchemaId(ctx context.Context, domainProject, serviceId, schemaId string) (*discovery.Response, *scerr.Error) {
+func (c *SCClientAggregate) GetSchemaBySchemaID(ctx context.Context, domainProject, serviceID, schemaID string) (*discovery.Response, *scerr.Error) {
 	var response discovery.Response
 	for _, client := range *c {
-		schema, err := client.GetSchemaBySchemaId(ctx, domainProject, serviceId, schemaId)
+		schema, err := client.GetSchemaBySchemaID(ctx, domainProject, serviceID, schemaID)
 		if err != nil && err.InternalError() {
-			log.Errorf(err, "get schema by serviceId[%s/%s] failed", domainProject, serviceId)
+			log.Errorf(err, "get schema by serviceID[%s/%s] failed", domainProject, serviceID)
 			continue
 		}
 		if schema == nil {
@@ -122,7 +122,7 @@ func (c *SCClientAggregate) GetSchemaBySchemaId(ctx context.Context, domainProje
 		}
 		response.Count = 1
 		response.Kvs = append(response.Kvs, &discovery.KeyValue{
-			Key:         []byte(core.GenerateServiceSchemaKey(domainProject, serviceId, schema.SchemaId)),
+			Key:         []byte(core.GenerateServiceSchemaKey(domainProject, serviceID, schema.SchemaId)),
 			Value:       util.StringToBytesWithNoCopy(schema.Schema),
 			ModRevision: 0,
 			ClusterName: client.Cfg.Name,
@@ -132,12 +132,12 @@ func (c *SCClientAggregate) GetSchemaBySchemaId(ctx context.Context, domainProje
 	return &response, nil
 }
 
-func (c *SCClientAggregate) GetInstancesByServiceId(ctx context.Context, domainProject, providerId, consumerId string) (*discovery.Response, *scerr.Error) {
+func (c *SCClientAggregate) GetInstancesByServiceID(ctx context.Context, domainProject, providerID, consumerID string) (*discovery.Response, *scerr.Error) {
 	var response discovery.Response
 	for _, client := range *c {
-		insts, err := client.GetInstancesByServiceId(ctx, domainProject, providerId, consumerId)
+		insts, err := client.GetInstancesByServiceID(ctx, domainProject, providerID, consumerID)
 		if err != nil && err.InternalError() {
-			log.Errorf(err, "consumer[%s] get provider[%s/%s] instances failed", consumerId, domainProject, providerId)
+			log.Errorf(err, "consumer[%s] get provider[%s/%s] instances failed", consumerID, domainProject, providerID)
 			continue
 		}
 		if insts == nil {
@@ -146,7 +146,7 @@ func (c *SCClientAggregate) GetInstancesByServiceId(ctx context.Context, domainP
 		response.Count = int64(len(insts))
 		for _, instance := range insts {
 			response.Kvs = append(response.Kvs, &discovery.KeyValue{
-				Key:         []byte(core.GenerateInstanceKey(domainProject, providerId, instance.InstanceId)),
+				Key:         []byte(core.GenerateInstanceKey(domainProject, providerID, instance.InstanceId)),
 				Value:       instance,
 				ModRevision: 0,
 				ClusterName: client.Cfg.Name,
@@ -156,12 +156,12 @@ func (c *SCClientAggregate) GetInstancesByServiceId(ctx context.Context, domainP
 	return &response, nil
 }
 
-func (c *SCClientAggregate) GetInstanceByInstanceId(ctx context.Context, domainProject, providerId, instanceId, consumerId string) (*discovery.Response, *scerr.Error) {
+func (c *SCClientAggregate) GetInstanceByInstanceID(ctx context.Context, domainProject, providerID, instanceID, consumerID string) (*discovery.Response, *scerr.Error) {
 	var response discovery.Response
 	for _, client := range *c {
-		instance, err := client.GetInstanceByInstanceId(ctx, domainProject, providerId, instanceId, consumerId)
+		instance, err := client.GetInstanceByInstanceID(ctx, domainProject, providerID, instanceID, consumerID)
 		if err != nil && err.InternalError() {
-			log.Errorf(err, "consumer[%s] get provider[%s/%s] instances failed", consumerId, domainProject, providerId)
+			log.Errorf(err, "consumer[%s] get provider[%s/%s] instances failed", consumerID, domainProject, providerID)
 			continue
 		}
 		if instance == nil {
@@ -169,7 +169,7 @@ func (c *SCClientAggregate) GetInstanceByInstanceId(ctx context.Context, domainP
 		}
 		response.Count = 1
 		response.Kvs = append(response.Kvs, &discovery.KeyValue{
-			Key:         []byte(core.GenerateInstanceKey(domainProject, providerId, instance.InstanceId)),
+			Key:         []byte(core.GenerateInstanceKey(domainProject, providerID, instance.InstanceId)),
 			Value:       instance,
 			ModRevision: 0,
 			ClusterName: client.Cfg.Name,
@@ -194,7 +194,7 @@ func GetOrCreateSCClient() *SCClientAggregate {
 			}
 			client.Timeout = registry.Configuration().RequestTimeOut
 			// TLS
-			if strings.Index(endpoints[0], "https") >= 0 {
+			if strings.Contains(endpoints[0], "https") {
 				client.TLS, err = getClientTLS()
 				if err != nil {
 					log.Errorf(err, "get service center[%s]%v tls config failed", name, endpoints)

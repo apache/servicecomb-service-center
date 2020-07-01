@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package notify
 
 import (
@@ -22,13 +23,13 @@ import (
 	"sync"
 )
 
-type NotifyService struct {
+type Service struct {
 	processors map[Type]*Processor
 	mux        sync.RWMutex
 	isClose    bool
 }
 
-func (s *NotifyService) newProcessor(t Type) *Processor {
+func (s *Service) newProcessor(t Type) *Processor {
 	s.mux.RLock()
 	p, ok := s.processors[t]
 	if ok {
@@ -51,7 +52,7 @@ func (s *NotifyService) newProcessor(t Type) *Processor {
 	return p
 }
 
-func (s *NotifyService) Start() {
+func (s *Service) Start() {
 	if !s.Closed() {
 		log.Warnf("notify service is already running")
 		return
@@ -61,12 +62,15 @@ func (s *NotifyService) Start() {
 	s.mux.Unlock()
 
 	// 错误subscriber清理
-	s.AddSubscriber(NewNotifyServiceHealthChecker())
+	err := s.AddSubscriber(NewNotifyServiceHealthChecker())
+	if err != nil {
+		log.Error("", err)
+	}
 
 	log.Debugf("notify service is started")
 }
 
-func (s *NotifyService) AddSubscriber(n Subscriber) error {
+func (s *Service) AddSubscriber(n Subscriber) error {
 	if n == nil {
 		err := errors.New("required Subscriber")
 		log.Errorf(err, "add subscriber failed")
@@ -87,7 +91,7 @@ func (s *NotifyService) AddSubscriber(n Subscriber) error {
 	return nil
 }
 
-func (s *NotifyService) RemoveSubscriber(n Subscriber) {
+func (s *Service) RemoveSubscriber(n Subscriber) {
 	s.mux.RLock()
 	p, ok := s.processors[n.Type()]
 	if !ok {
@@ -100,7 +104,7 @@ func (s *NotifyService) RemoveSubscriber(n Subscriber) {
 	n.Close()
 }
 
-func (s *NotifyService) stopProcessors() {
+func (s *Service) stopProcessors() {
 	s.mux.RLock()
 	for _, p := range s.processors {
 		p.Clear()
@@ -110,7 +114,7 @@ func (s *NotifyService) stopProcessors() {
 }
 
 //通知内容塞到队列里
-func (s *NotifyService) Publish(job Event) error {
+func (s *Service) Publish(job Event) error {
 	if s.Closed() {
 		return errors.New("add notify job failed for server shutdown")
 	}
@@ -126,14 +130,14 @@ func (s *NotifyService) Publish(job Event) error {
 	return nil
 }
 
-func (s *NotifyService) Closed() (b bool) {
+func (s *Service) Closed() (b bool) {
 	s.mux.RLock()
 	b = s.isClose
 	s.mux.RUnlock()
 	return
 }
 
-func (s *NotifyService) Stop() {
+func (s *Service) Stop() {
 	if s.Closed() {
 		return
 	}
@@ -146,8 +150,8 @@ func (s *NotifyService) Stop() {
 	log.Debug("notify service stopped")
 }
 
-func NewNotifyService() *NotifyService {
-	return &NotifyService{
+func NewNotifyService() *Service {
+	return &Service{
 		processors: make(map[Type]*Processor),
 		isClose:    true,
 	}

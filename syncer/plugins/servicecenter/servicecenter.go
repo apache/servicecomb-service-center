@@ -18,8 +18,8 @@ package servicecenter
 
 import (
 	"context"
-
 	"github.com/apache/servicecomb-service-center/pkg/client/sc"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	scpb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/syncer/plugins"
@@ -53,7 +53,7 @@ func (*adaptor) New(opts ...plugins.SCConfigOption) (plugins.Servicecenter, erro
 }
 
 type Client struct {
-	cli *sc.SCClient
+	cli *sc.Client
 }
 
 // GetAll get and transform servicecenter data to SyncData
@@ -74,7 +74,7 @@ func (c *Client) GetAll(ctx context.Context) (*pb.SyncData, error) {
 			continue
 		}
 
-		ss, err := c.cli.GetSchemasByServiceId(ctx, domainProject, service.Value.ServiceId)
+		ss, err := c.cli.GetSchemasByServiceID(ctx, domainProject, service.Value.ServiceId)
 		if err != nil {
 			log.Warnf("get schemas by serviceId failed: %s", err)
 			continue

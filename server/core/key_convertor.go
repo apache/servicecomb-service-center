@@ -26,25 +26,25 @@ func KvToResponse(key []byte) (keys []string) {
 	return strings.Split(util.BytesToStringWithNoCopy(key), SPLIT)
 }
 
-func GetInfoFromSvcKV(key []byte) (serviceId, domainProject string) {
+func GetInfoFromSvcKV(key []byte) (serviceID, domainProject string) {
 	keys := KvToResponse(key)
 	l := len(keys)
 	if l < 4 {
 		return
 	}
-	serviceId = keys[l-1]
+	serviceID = keys[l-1]
 	domainProject = fmt.Sprintf("%s/%s", keys[l-3], keys[l-2])
 	return
 }
 
-func GetInfoFromInstKV(key []byte) (serviceId, instanceId, domainProject string) {
+func GetInfoFromInstKV(key []byte) (serviceID, instanceID, domainProject string) {
 	keys := KvToResponse(key)
 	l := len(keys)
 	if l < 4 {
 		return
 	}
-	serviceId = keys[l-2]
-	instanceId = keys[l-1]
+	serviceID = keys[l-2]
+	instanceID = keys[l-1]
 	domainProject = fmt.Sprintf("%s/%s", keys[l-4], keys[l-3])
 	return
 }
@@ -69,25 +69,25 @@ func GetInfoFromProjectKV(key []byte) (domainProject string) {
 	return
 }
 
-func GetInfoFromRuleKV(key []byte) (serviceId, ruleId, domainProject string) {
+func GetInfoFromRuleKV(key []byte) (serviceID, ruleID, domainProject string) {
 	keys := KvToResponse(key)
 	l := len(keys)
 	if l < 4 {
 		return
 	}
-	serviceId = keys[l-2]
-	ruleId = keys[l-1]
+	serviceID = keys[l-2]
+	ruleID = keys[l-1]
 	domainProject = fmt.Sprintf("%s/%s", keys[l-4], keys[l-3])
 	return
 }
 
-func GetInfoFromTagKV(key []byte) (serviceId, domainProject string) {
+func GetInfoFromTagKV(key []byte) (serviceID, domainProject string) {
 	keys := KvToResponse(key)
 	l := len(keys)
 	if l < 3 {
 		return
 	}
-	serviceId = keys[l-1]
+	serviceID = keys[l-1]
 	domainProject = fmt.Sprintf("%s/%s", keys[l-3], keys[l-2])
 	return
 }
@@ -112,7 +112,7 @@ func GetInfoFromSvcAliasKV(key []byte) *pb.MicroServiceKey {
 	return GetInfoFromSvcIndexKV(key)
 }
 
-func GetInfoFromSchemaSummaryKV(key []byte) (domainProject, serviceId, schemaId string) {
+func GetInfoFromSchemaSummaryKV(key []byte) (domainProject, serviceID, schemaID string) {
 	keys := KvToResponse(key)
 	l := len(keys)
 	if l < 4 {
@@ -122,7 +122,7 @@ func GetInfoFromSchemaSummaryKV(key []byte) (domainProject, serviceId, schemaId 
 	return domainProject, keys[l-2], keys[l-1]
 }
 
-func GetInfoFromSchemaKV(key []byte) (domainProject, serviceId, schemaId string) {
+func GetInfoFromSchemaKV(key []byte) (domainProject, serviceID, schemaID string) {
 	keys := KvToResponse(key)
 	l := len(keys)
 	if l < 4 {
@@ -132,13 +132,13 @@ func GetInfoFromSchemaKV(key []byte) (domainProject, serviceId, schemaId string)
 	return domainProject, keys[l-2], keys[l-1]
 }
 
-func GetInfoFromDependencyQueueKV(key []byte) (consumerId, domainProject, uuid string) {
+func GetInfoFromDependencyQueueKV(key []byte) (consumerID, domainProject, uuid string) {
 	keys := KvToResponse(key)
 	l := len(keys)
 	if l < 4 {
 		return
 	}
-	consumerId = keys[l-2]
+	consumerID = keys[l-2]
 	domainProject = fmt.Sprintf("%s/%s", keys[l-4], keys[l-3])
 	uuid = keys[l-1]
 	return

@@ -26,7 +26,7 @@ func TestNewLogger(t *testing.T) {
 	l := NewLogger(Configure())
 	defer func() {
 		r := recover()
-		LogPanic(r)
+		Panic(r)
 		l.Recover(r, 3)
 		defer func() {
 			l.Recover(recover(), 3)
@@ -74,12 +74,12 @@ func TestNewLogger(t *testing.T) {
 	Sync()
 	l.Sync()
 
-	LogNilOrWarnf(time.Now(), "a")
-	LogNilOrWarnf(time.Now().Add(-time.Second), "a")
-	LogDebugOrWarnf(time.Now(), "a")
-	LogDebugOrWarnf(time.Now().Add(-time.Second), "a")
-	LogInfoOrWarnf(time.Now(), "a")
-	LogInfoOrWarnf(time.Now().Add(-time.Second), "a")
+	NilOrWarnf(time.Now(), "a")
+	NilOrWarnf(time.Now().Add(-time.Second), "a")
+	DebugOrWarnf(time.Now(), "a")
+	DebugOrWarnf(time.Now().Add(-time.Second), "a")
+	InfoOrWarnf(time.Now(), "a")
+	InfoOrWarnf(time.Now().Add(-time.Second), "a")
 
 	l.Fatal("a", nil)
 }
@@ -92,7 +92,7 @@ func TestNewLoggerWithEmptyConfig(t *testing.T) {
 func TestLogPanic(t *testing.T) {
 	defer func() {
 		defer func() {
-			LogPanic(recover())
+			Panic(recover())
 		}()
 		panic("bbb")
 	}()

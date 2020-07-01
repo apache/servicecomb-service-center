@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package rest
 
 import (
@@ -21,37 +22,34 @@ import (
 )
 
 const (
-	HTTP_METHOD_GET    = http.MethodGet
-	HTTP_METHOD_PUT    = http.MethodPut
-	HTTP_METHOD_POST   = http.MethodPost
-	HTTP_METHOD_DELETE = http.MethodDelete
+	HTTPMethodGet    = http.MethodGet
+	HTTPMethodPut    = http.MethodPut
+	HTTPMethodPost   = http.MethodPost
+	HTTPMethodDelete = http.MethodDelete
 
-	CTX_RESPONSE      = "_server_response"
-	CTX_REQUEST       = "_server_request"
-	CTX_MATCH_PATTERN = "_server_match_pattern"
-	CTX_MATCH_FUNC    = "_server_match_func"
+	CtxResponse     = "_server_response"
+	CtxRequest      = "_server_request"
+	CtxMatchPattern = "_server_match_pattern"
+	CtxMatchFunc    = "_server_match_func"
 
 	ServerChainName = "_server_chain"
 
-	HEADER_RESPONSE_STATUS = "X-Response-Status"
+	HeaderResponseStatus = "X-Response-Status"
 
-	HEADER_ALLOW            = "Allow"
-	HEADER_HOST             = "Host"
-	HEADER_SERVER           = "Server"
-	HEADER_CONTENT_TYPE     = "Content-Type"
-	HEADER_CONTENT_ENCODING = "Content-Encoding"
-	HEADER_ACCEPT           = "Accept"
-	HEADER_ACCEPT_ENCODING  = "Accept-Encoding"
+	HeaderAllow           = "Allow"
+	HeaderHost            = "Host"
+	HeaderServer          = "Server"
+	HeaderContentType     = "Content-Type"
+	HeaderContentEncoding = "Content-Encoding"
+	HeaderAccept          = "Accept"
+	HeaderAcceptEncoding  = "Accept-Encoding"
 
-	ACCEPT_ANY  = "*/*"
-	ACCEPT_JSON = "application/json"
+	AcceptAny = "*/*"
 
-	CONTENT_TYPE_JSON = "application/json; charset=UTF-8"
-	CONTENT_TYPE_TEXT = "text/plain; charset=UTF-8"
+	ContentTypeJSON = "application/json; charset=UTF-8"
+	ContentTypeText = "text/plain; charset=UTF-8"
 
-	ENCODING_GZIP = "gzip"
-
-	DEFAULT_CONN_POOL_PER_HOST_SIZE = 5
+	DefaultConnPoolPerHostSize = 5
 )
 
 func isValidMethod(method string) bool {

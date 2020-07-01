@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package util
 
 import (
@@ -25,7 +26,7 @@ import (
 	"strings"
 )
 
-type IpPort struct {
+type IPPort struct {
 	IP   string
 	Port uint16
 }
@@ -46,13 +47,13 @@ func ParseEndpoint(ep string) (string, error) {
 	return u.Host, nil
 }
 
-func ParseIpPort(addr string) IpPort {
+func ParseIPPort(addr string) IPPort {
 	idx := strings.LastIndex(addr, ":")
 	if idx == -1 {
-		return IpPort{addr, 0}
+		return IPPort{addr, 0}
 	}
 	p, _ := strconv.Atoi(addr[idx+1:])
-	return IpPort{addr[:idx], uint16(p)}
+	return IPPort{addr[:idx], uint16(p)}
 }
 
 func GetRealIP(r *http.Request) string {

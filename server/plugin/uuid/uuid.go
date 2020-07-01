@@ -14,13 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package uuid
 
-import "context"
+import (
+	"context"
+)
 
 const ContextKey = "_uuid_key"
 
 type UUID interface {
-	GetServiceId(ctx context.Context) string
-	GetInstanceId(ctx context.Context) string
+	GetServiceID(ctx context.Context) string
+	GetInstanceID(ctx context.Context) string
 }

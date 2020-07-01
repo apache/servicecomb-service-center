@@ -106,8 +106,8 @@ func UUID(id types.UID) string {
 	return strings.Replace(string(id), "-", "", -1)
 }
 
-func generateServiceId(domainProject string, svc *v1.Service) string {
+func generateServiceID(domainProject string, svc *v1.Service) string {
 	indexKey := core.GenerateServiceIndexKey(generateServiceKey(domainProject, svc))
 	ctx := context.WithValue(context.Background(), uuid.ContextKey, indexKey)
-	return mgr.Plugins().UUID().GetServiceId(ctx)
+	return mgr.Plugins().UUID().GetServiceID(ctx)
 }

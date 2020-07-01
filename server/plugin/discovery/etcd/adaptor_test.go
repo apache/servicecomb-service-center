@@ -25,7 +25,7 @@ import (
 func TestNewKvEntity(t *testing.T) {
 	core.ServerInfo.Config.EnableCache = false
 	i := NewEtcdAdaptor("a", discovery.Configure().WithInitSize(1))
-	if _, ok := i.Indexer.(*EtcdIndexer); !ok {
+	if _, ok := i.Indexer.(*Indexer); !ok {
 		t.Fatalf("TestNewIndexer failed")
 	}
 	core.ServerInfo.Config.EnableCache = true
@@ -35,7 +35,7 @@ func TestNewKvEntity(t *testing.T) {
 	i.Stop()
 
 	i = NewEtcdAdaptor("a", discovery.Configure().WithInitSize(0))
-	if _, ok := i.Indexer.(*EtcdIndexer); !ok {
+	if _, ok := i.Indexer.(*Indexer); !ok {
 		t.Fatalf("TestNewIndexer failed")
 	}
 
@@ -50,8 +50,8 @@ func TestNewKvEntity(t *testing.T) {
 
 func TestNewRepository(t *testing.T) {
 	repo := NewRepository()
-	i := repo.(*EtcdRepository).New(0, discovery.Configure())
-	if _, ok := i.(*EtcdAdaptor); !ok {
+	i := repo.(*Repository).New(0, discovery.Configure())
+	if _, ok := i.(*Adaptor); !ok {
 		t.Fatalf("TestNewIndexer failed")
 	}
 }

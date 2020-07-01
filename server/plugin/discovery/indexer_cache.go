@@ -72,7 +72,7 @@ func (i *CacheIndexer) searchByPrefix(op registry.PluginOp) *Response {
 	t := time.Now()
 	kvs := make([]*KeyValue, 0, resp.Count)
 	i.Cache.GetPrefix(prefix, &kvs)
-	log.LogNilOrWarnf(t, "too long to index data[%d] from cache '%s'", len(kvs), i.Cache.Name())
+	log.NilOrWarnf(t, "too long to index data[%d] from cache '%s'", len(kvs), i.Cache.Name())
 
 	resp.Kvs = kvs
 	return resp

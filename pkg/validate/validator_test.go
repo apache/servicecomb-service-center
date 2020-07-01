@@ -52,7 +52,7 @@ func TestValidator_Validate(t *testing.T) {
 
 	s := new(S)
 
-	v.AddRule("A", &ValidateRule{Min: 1, Max: 2})
+	v.AddRule("A", &Rule{Min: 1, Max: 2})
 	err := v.Validate(s)
 	if err == nil {
 		t.Fatalf("validate failed")
@@ -76,7 +76,7 @@ func TestValidator_Validate(t *testing.T) {
 	}
 
 	r, _ := regexp.Compile(`^\d*$`)
-	v.AddRule("B", &ValidateRule{Min: 1, Max: 2, Regexp: r})
+	v.AddRule("B", &Rule{Min: 1, Max: 2, Regexp: r})
 	err = v.Validate(s)
 	if err == nil {
 		t.Fatalf("validate failed")
@@ -99,7 +99,7 @@ func TestValidator_Validate(t *testing.T) {
 		t.Fatalf("validate failed, %s", err.Error())
 	}
 
-	v.AddRule("D", &ValidateRule{Regexp: r})
+	v.AddRule("D", &Rule{Regexp: r})
 	err = v.Validate(s)
 	if err != nil {
 		t.Fatalf("validate failed, %s", err.Error())
@@ -116,7 +116,7 @@ func TestValidator_Validate(t *testing.T) {
 		t.Fatalf("validate failed, %s", err.Error())
 	}
 
-	v.AddRule("E", &ValidateRule{Min: 1, Max: 2, Regexp: r})
+	v.AddRule("E", &Rule{Min: 1, Max: 2, Regexp: r})
 	err = v.Validate(s)
 	if err == nil {
 		t.Fatalf("validate failed")
@@ -139,7 +139,7 @@ func TestValidator_Validate(t *testing.T) {
 		t.Fatalf("validate failed, %s", err.Error())
 	}
 
-	v.AddRule("F", &ValidateRule{Min: 1, Max: 2, Regexp: r})
+	v.AddRule("F", &Rule{Min: 1, Max: 2, Regexp: r})
 	err = v.Validate(s)
 	if err == nil {
 		t.Fatalf("validate failed")
@@ -170,7 +170,7 @@ func TestValidator_Validate(t *testing.T) {
 
 	// sub struct
 	pr, _ := regexp.Compile(`^[a-z]*$`)
-	v.AddRule("G", &ValidateRule{Regexp: pr})
+	v.AddRule("G", &Rule{Regexp: pr})
 	v.AddSub("G", &v)
 	err = v.Validate(s)
 	if err == nil {
@@ -196,7 +196,7 @@ func TestValidator_Validate(t *testing.T) {
 
 	// just check sub
 	var hv Validator
-	hv.AddRule("H", &ValidateRule{Min: 1, Max: 2, Regexp: pr})
+	hv.AddRule("H", &Rule{Min: 1, Max: 2, Regexp: pr})
 	v.AddSub("H", &hv)
 	err = v.Validate(s)
 	if err != nil {
@@ -204,7 +204,7 @@ func TestValidator_Validate(t *testing.T) {
 	}
 
 	// also check nil pointer
-	v.AddRule("H", &ValidateRule{Min: 1, Max: 2, Regexp: pr})
+	v.AddRule("H", &Rule{Min: 1, Max: 2, Regexp: pr})
 	v.AddSub("H", &v)
 	err = v.Validate(s)
 	if err == nil {
@@ -234,7 +234,7 @@ func TestValidator_Validate(t *testing.T) {
 		t.Fatalf("validate failed, %s", err.Error())
 	}
 
-	v.AddRule("I", &ValidateRule{Regexp: pr})
+	v.AddRule("I", &Rule{Regexp: pr})
 	v.AddSub("I", &v)
 	err = v.Validate(s)
 	if err == nil {
@@ -264,7 +264,7 @@ func TestValidator_Validate(t *testing.T) {
 		t.Fatalf("validate failed, %s", err.Error())
 	}
 
-	v.AddRule("J", &ValidateRule{Min: 1, Max: 2, Regexp: pr})
+	v.AddRule("J", &Rule{Min: 1, Max: 2, Regexp: pr})
 	v.AddSub("J", &v)
 	err = v.Validate(s)
 	if err == nil {
@@ -300,7 +300,7 @@ func TestValidator_Validate(t *testing.T) {
 		t.Fatalf("validate failed, %s", err.Error())
 	}
 
-	v.AddRule("K", &ValidateRule{Min: 1, Regexp: pr})
+	v.AddRule("K", &Rule{Min: 1, Regexp: pr})
 	v.AddSub("K", &v)
 	err = v.Validate(s)
 	if err == nil {
@@ -330,7 +330,7 @@ func TestValidator_Validate(t *testing.T) {
 		t.Fatalf("validate failed, %s", err.Error())
 	}
 
-	v.AddRule("L", &ValidateRule{Min: 1, Max: 2, Regexp: pr})
+	v.AddRule("L", &Rule{Min: 1, Max: 2, Regexp: pr})
 	v.AddSub("L", &v)
 	err = v.Validate(s)
 	if err == nil {
@@ -366,7 +366,7 @@ func TestValidator_Validate(t *testing.T) {
 		t.Fatalf("validate failed, %s", err.Error())
 	}
 
-	v.AddRule("M", &ValidateRule{Min: 1, Max: 2, Regexp: pr})
+	v.AddRule("M", &Rule{Min: 1, Max: 2, Regexp: pr})
 	v.AddSub("M", &v)
 	err = v.Validate(s)
 	if err == nil {
@@ -402,7 +402,7 @@ func TestValidator_Validate(t *testing.T) {
 		t.Fatalf("validate failed, %s", err.Error())
 	}
 
-	v.AddRule("N", &ValidateRule{Min: 1, Max: 2, Regexp: pr})
+	v.AddRule("N", &Rule{Min: 1, Max: 2, Regexp: pr})
 	v.AddSub("N", &v)
 	err = v.Validate(s)
 	if err == nil {
@@ -438,9 +438,9 @@ func TestValidator_Validate(t *testing.T) {
 		t.Fatalf("validate failed, %s", err.Error())
 	}
 
-	v.AddRule("O", &ValidateRule{Min: 1, Max: 2, Regexp: pr})
+	v.AddRule("O", &Rule{Min: 1, Max: 2, Regexp: pr})
 	v.AddSub("O", &v)
-	v.AddRule("CH", &ValidateRule{Min: 1, Max: 2, Regexp: pr})
+	v.AddRule("CH", &Rule{Min: 1, Max: 2, Regexp: pr})
 	v.AddSub("CH", &v)
 	err = v.Validate(s)
 	if err == nil {

@@ -30,7 +30,7 @@ type SchemaSummaryEventHandler struct {
 }
 
 func (h *SchemaSummaryEventHandler) Type() discovery.Type {
-	return backend.SCHEMA_SUMMARY
+	return backend.SchemaSummary
 }
 
 func (h *SchemaSummaryEventHandler) OnEvent(evt discovery.KvEvent) {

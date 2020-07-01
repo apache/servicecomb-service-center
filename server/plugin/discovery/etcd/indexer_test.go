@@ -28,7 +28,7 @@ import (
 func TestEtcdIndexer_Search(t *testing.T) {
 	data := &registry.PluginResponse{Revision: 1}
 	c := &mockRegistry{}
-	i := &EtcdIndexer{Client: c, Root: "/", Parser: pb.BytesParser}
+	i := &Indexer{Client: c, Root: "/", Parser: pb.BytesParser}
 
 	// case: key does not contain prefix
 	resp, err := i.Search(context.Background(), registry.WithStrKey("a"))
@@ -87,7 +87,7 @@ func TestCacheIndexer_Search(t *testing.T) {
 		Count:    1,
 	}}
 	i := &CacheIndexer{
-		EtcdIndexer: &EtcdIndexer{
+		Indexer: &Indexer{
 			Root:   "/",
 			Client: cli,
 		},

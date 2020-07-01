@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package v4
 
 import (
@@ -26,7 +27,6 @@ import (
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
-	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -36,21 +36,21 @@ type MicroServiceInstanceService struct {
 	//
 }
 
-func (this *MicroServiceInstanceService) URLPatterns() []rest.Route {
+func (s *MicroServiceInstanceService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTP_METHOD_GET, "/v4/:project/registry/instances", this.FindInstances},
-		{rest.HTTP_METHOD_POST, "/v4/:project/registry/instances/action", this.InstancesAction},
-		{rest.HTTP_METHOD_GET, "/v4/:project/registry/microservices/:serviceId/instances", this.GetInstances},
-		{rest.HTTP_METHOD_GET, "/v4/:project/registry/microservices/:serviceId/instances/:instanceId", this.GetOneInstance},
-		{rest.HTTP_METHOD_POST, "/v4/:project/registry/microservices/:serviceId/instances", this.RegisterInstance},
-		{rest.HTTP_METHOD_DELETE, "/v4/:project/registry/microservices/:serviceId/instances/:instanceId", this.UnregisterInstance},
-		{rest.HTTP_METHOD_PUT, "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/properties", this.UpdateMetadata},
-		{rest.HTTP_METHOD_PUT, "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/status", this.UpdateStatus},
-		{rest.HTTP_METHOD_PUT, "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/heartbeat", this.Heartbeat},
-		{rest.HTTP_METHOD_PUT, "/v4/:project/registry/heartbeats", this.HeartbeatSet},
+		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/instances", Func: s.FindInstances},
+		{Method: rest.HTTPMethodPost, Path: "/v4/:project/registry/instances/action", Func: s.InstancesAction},
+		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/microservices/:serviceId/instances", Func: s.GetInstances},
+		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId", Func: s.GetOneInstance},
+		{Method: rest.HTTPMethodPost, Path: "/v4/:project/registry/microservices/:serviceId/instances", Func: s.RegisterInstance},
+		{Method: rest.HTTPMethodDelete, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId", Func: s.UnregisterInstance},
+		{Method: rest.HTTPMethodPut, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/properties", Func: s.UpdateMetadata},
+		{Method: rest.HTTPMethodPut, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/status", Func: s.UpdateStatus},
+		{Method: rest.HTTPMethodPut, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/heartbeat", Func: s.Heartbeat},
+		{Method: rest.HTTPMethodPut, Path: "/v4/:project/registry/heartbeats", Func: s.HeartbeatSet},
 	}
 }
-func (this *MicroServiceInstanceService) RegisterInstance(w http.ResponseWriter, r *http.Request) {
+func (s *MicroServiceInstanceService) RegisterInstance(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
@@ -70,13 +70,18 @@ func (this *MicroServiceInstanceService) RegisterInstance(w http.ResponseWriter,
 	}
 
 	resp, err := core.InstanceAPI.Register(r.Context(), request)
+	if err != nil {
+		log.Errorf(err, "register instance failed")
+		controller.WriteError(w, scerr.ErrInternal, "register instance failed")
+		return
+	}
 	respInternal := resp.Response
 	resp.Response = nil
 	controller.WriteResponse(w, respInternal, resp)
 }
 
 //TODO 什么样的服务允许更新服务心跳，只能是本服务才可以更新自己，如何屏蔽其他服务伪造的心跳更新？
-func (this *MicroServiceInstanceService) Heartbeat(w http.ResponseWriter, r *http.Request) {
+func (s *MicroServiceInstanceService) Heartbeat(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	request := &pb.HeartbeatRequest{
 		ServiceId:  query.Get(":serviceId"),
@@ -86,7 +91,7 @@ func (this *MicroServiceInstanceService) Heartbeat(w http.ResponseWriter, r *htt
 	controller.WriteResponse(w, resp.Response, nil)
 }
 
-func (this *MicroServiceInstanceService) HeartbeatSet(w http.ResponseWriter, r *http.Request) {
+func (s *MicroServiceInstanceService) HeartbeatSet(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
@@ -110,10 +115,9 @@ func (this *MicroServiceInstanceService) HeartbeatSet(w http.ResponseWriter, r *
 	respInternal := resp.Response
 	resp.Response = nil
 	controller.WriteResponse(w, respInternal, resp)
-	return
 }
 
-func (this *MicroServiceInstanceService) UnregisterInstance(w http.ResponseWriter, r *http.Request) {
+func (s *MicroServiceInstanceService) UnregisterInstance(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	request := &pb.UnregisterInstanceRequest{
 		ServiceId:  query.Get(":serviceId"),
@@ -123,7 +127,7 @@ func (this *MicroServiceInstanceService) UnregisterInstance(w http.ResponseWrite
 	controller.WriteResponse(w, resp.Response, nil)
 }
 
-func (this *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r *http.Request) {
+func (s *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r *http.Request) {
 	var ids []string
 	query := r.URL.Query()
 	keys := query.Get("tags")
@@ -145,9 +149,9 @@ func (this *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r 
 	respInternal := resp.Response
 	resp.Response = nil
 
-	iv, _ := ctx.Value(serviceUtil.CTX_REQUEST_REVISION).(string)
-	ov, _ := ctx.Value(serviceUtil.CTX_RESPONSE_REVISION).(string)
-	w.Header().Set(serviceUtil.HEADER_REV, ov)
+	iv, _ := ctx.Value(util.CtxRequestRevision).(string)
+	ov, _ := ctx.Value(util.CtxResponseRevision).(string)
+	w.Header().Set(util.HeaderRev, ov)
 	if len(iv) > 0 && iv == ov {
 		w.WriteHeader(http.StatusNotModified)
 		return
@@ -156,7 +160,7 @@ func (this *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r 
 	controller.WriteResponse(w, respInternal, resp)
 }
 
-func (this *MicroServiceInstanceService) InstancesAction(w http.ResponseWriter, r *http.Request) {
+func (s *MicroServiceInstanceService) InstancesAction(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
@@ -187,7 +191,7 @@ func (this *MicroServiceInstanceService) InstancesAction(w http.ResponseWriter, 
 	}
 }
 
-func (this *MicroServiceInstanceService) GetOneInstance(w http.ResponseWriter, r *http.Request) {
+func (s *MicroServiceInstanceService) GetOneInstance(w http.ResponseWriter, r *http.Request) {
 	var ids []string
 	query := r.URL.Query()
 	keys := query.Get("tags")
@@ -205,9 +209,9 @@ func (this *MicroServiceInstanceService) GetOneInstance(w http.ResponseWriter, r
 	respInternal := resp.Response
 	resp.Response = nil
 
-	iv, _ := r.Context().Value(serviceUtil.CTX_REQUEST_REVISION).(string)
-	ov, _ := r.Context().Value(serviceUtil.CTX_RESPONSE_REVISION).(string)
-	w.Header().Set(serviceUtil.HEADER_REV, ov)
+	iv, _ := r.Context().Value(util.CtxRequestRevision).(string)
+	ov, _ := r.Context().Value(util.CtxResponseRevision).(string)
+	w.Header().Set(util.HeaderRev, ov)
 	if len(iv) > 0 && iv == ov {
 		w.WriteHeader(http.StatusNotModified)
 		return
@@ -215,7 +219,7 @@ func (this *MicroServiceInstanceService) GetOneInstance(w http.ResponseWriter, r
 	controller.WriteResponse(w, respInternal, resp)
 }
 
-func (this *MicroServiceInstanceService) GetInstances(w http.ResponseWriter, r *http.Request) {
+func (s *MicroServiceInstanceService) GetInstances(w http.ResponseWriter, r *http.Request) {
 	var ids []string
 	query := r.URL.Query()
 	keys := query.Get("tags")
@@ -231,9 +235,9 @@ func (this *MicroServiceInstanceService) GetInstances(w http.ResponseWriter, r *
 	respInternal := resp.Response
 	resp.Response = nil
 
-	iv, _ := r.Context().Value(serviceUtil.CTX_REQUEST_REVISION).(string)
-	ov, _ := r.Context().Value(serviceUtil.CTX_RESPONSE_REVISION).(string)
-	w.Header().Set(serviceUtil.HEADER_REV, ov)
+	iv, _ := r.Context().Value(util.CtxRequestRevision).(string)
+	ov, _ := r.Context().Value(util.CtxResponseRevision).(string)
+	w.Header().Set(util.HeaderRev, ov)
 	if len(iv) > 0 && iv == ov {
 		w.WriteHeader(http.StatusNotModified)
 		return
@@ -241,7 +245,7 @@ func (this *MicroServiceInstanceService) GetInstances(w http.ResponseWriter, r *
 	controller.WriteResponse(w, respInternal, resp)
 }
 
-func (this *MicroServiceInstanceService) UpdateStatus(w http.ResponseWriter, r *http.Request) {
+func (s *MicroServiceInstanceService) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	status := query.Get("value")
 	request := &pb.UpdateInstanceStatusRequest{
@@ -253,7 +257,7 @@ func (this *MicroServiceInstanceService) UpdateStatus(w http.ResponseWriter, r *
 	controller.WriteResponse(w, resp.Response, nil)
 }
 
-func (this *MicroServiceInstanceService) UpdateMetadata(w http.ResponseWriter, r *http.Request) {
+func (s *MicroServiceInstanceService) UpdateMetadata(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -272,5 +276,9 @@ func (this *MicroServiceInstanceService) UpdateMetadata(w http.ResponseWriter, r
 		return
 	}
 	resp, err := core.InstanceAPI.UpdateInstanceProperties(r.Context(), request)
+	if err != nil {
+		log.Errorf(err, "can not update instance")
+		controller.WriteError(w, scerr.ErrInternal, "can not update instance")
+	}
 	controller.WriteResponse(w, resp.Response, nil)
 }

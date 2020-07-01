@@ -35,7 +35,7 @@ const (
 	apiSchemaURL  = "/v4/%s/registry/microservices/%s/schemas/%s"
 )
 
-func (c *SCClient) CreateSchemas(ctx context.Context, domainProject, serviceId string, schemas []*pb.Schema) *scerr.Error {
+func (c *Client) CreateSchemas(ctx context.Context, domainProject, serviceID string, schemas []*pb.Schema) *scerr.Error {
 	domain, project := core.FromDomainProject(domainProject)
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
@@ -46,13 +46,13 @@ func (c *SCClient) CreateSchemas(ctx context.Context, domainProject, serviceId s
 		}
 	}
 
-	reqBody, err := json.Marshal(&pb.ModifySchemasRequest{ServiceId: serviceId, Schemas: schemas})
+	reqBody, err := json.Marshal(&pb.ModifySchemasRequest{ServiceId: serviceID, Schemas: schemas})
 	if err != nil {
 		return scerr.NewError(scerr.ErrInternal, err.Error())
 	}
 
 	resp, err := c.RestDoWithContext(ctx, http.MethodPost,
-		fmt.Sprintf(apiSchemasURL, project, serviceId),
+		fmt.Sprintf(apiSchemasURL, project, serviceID),
 		headers, reqBody)
 	if err != nil {
 		return scerr.NewError(scerr.ErrInternal, err.Error())
@@ -70,14 +70,14 @@ func (c *SCClient) CreateSchemas(ctx context.Context, domainProject, serviceId s
 	return nil
 }
 
-func (c *SCClient) UpdateSchema(ctx context.Context, domainProject, serviceId string, schemaId string, schema string) *scerr.Error {
+func (c *Client) UpdateSchema(ctx context.Context, domainProject, serviceID string, schemaID string, schema string) *scerr.Error {
 	domain, project := core.FromDomainProject(domainProject)
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 
 	reqBody, err := json.Marshal(&pb.ModifySchemaRequest{
-		ServiceId: serviceId,
-		SchemaId:  schemaId,
+		ServiceId: serviceID,
+		SchemaId:  schemaID,
 		Schema:    schema,
 		Summary:   schemaSummary(schema),
 	})
@@ -86,7 +86,7 @@ func (c *SCClient) UpdateSchema(ctx context.Context, domainProject, serviceId st
 	}
 
 	resp, err := c.RestDoWithContext(ctx, http.MethodPut,
-		fmt.Sprintf(apiSchemaURL, project, serviceId, schemaId),
+		fmt.Sprintf(apiSchemaURL, project, serviceID, schemaID),
 		headers, reqBody)
 	if err != nil {
 		return scerr.NewError(scerr.ErrInternal, err.Error())
@@ -104,18 +104,18 @@ func (c *SCClient) UpdateSchema(ctx context.Context, domainProject, serviceId st
 	return nil
 }
 
-func (c *SCClient) DeleteSchema(ctx context.Context, domainProject, serviceId string, schemaId string) *scerr.Error {
+func (c *Client) DeleteSchema(ctx context.Context, domainProject, serviceID string, schemaID string) *scerr.Error {
 	domain, project := core.FromDomainProject(domainProject)
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 
-	reqBody, err := json.Marshal(&pb.DeleteSchemaRequest{ServiceId: serviceId, SchemaId: schemaId})
+	reqBody, err := json.Marshal(&pb.DeleteSchemaRequest{ServiceId: serviceID, SchemaId: schemaID})
 	if err != nil {
 		return scerr.NewError(scerr.ErrInternal, err.Error())
 	}
 
 	resp, err := c.RestDoWithContext(ctx, http.MethodDelete,
-		fmt.Sprintf(apiSchemaURL, project, serviceId, schemaId),
+		fmt.Sprintf(apiSchemaURL, project, serviceID, schemaID),
 		headers, reqBody)
 	if err != nil {
 		return scerr.NewError(scerr.ErrInternal, err.Error())
@@ -133,12 +133,12 @@ func (c *SCClient) DeleteSchema(ctx context.Context, domainProject, serviceId st
 	return nil
 }
 
-func (c *SCClient) GetSchemasByServiceId(ctx context.Context, domainProject, serviceId string) ([]*pb.Schema, *scerr.Error) {
+func (c *Client) GetSchemasByServiceID(ctx context.Context, domainProject, serviceID string) ([]*pb.Schema, *scerr.Error) {
 	domain, project := core.FromDomainProject(domainProject)
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 	resp, err := c.RestDoWithContext(ctx, http.MethodGet,
-		fmt.Sprintf(apiSchemasURL, project, serviceId)+"?withSchema=1&"+c.parseQuery(ctx),
+		fmt.Sprintf(apiSchemasURL, project, serviceID)+"?withSchema=1&"+c.parseQuery(ctx),
 		headers, nil)
 	if err != nil {
 		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
@@ -163,12 +163,12 @@ func (c *SCClient) GetSchemasByServiceId(ctx context.Context, domainProject, ser
 	return schemas.Schemas, nil
 }
 
-func (c *SCClient) GetSchemaBySchemaId(ctx context.Context, domainProject, serviceId, schemaId string) (*pb.Schema, *scerr.Error) {
+func (c *Client) GetSchemaBySchemaID(ctx context.Context, domainProject, serviceID, schemaID string) (*pb.Schema, *scerr.Error) {
 	domain, project := core.FromDomainProject(domainProject)
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 	resp, err := c.RestDoWithContext(ctx, http.MethodGet,
-		fmt.Sprintf(apiSchemaURL, project, serviceId, schemaId)+"?"+c.parseQuery(ctx),
+		fmt.Sprintf(apiSchemaURL, project, serviceID, schemaID)+"?"+c.parseQuery(ctx),
 		headers, nil)
 	if err != nil {
 		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
@@ -191,7 +191,7 @@ func (c *SCClient) GetSchemaBySchemaId(ctx context.Context, domainProject, servi
 	}
 
 	return &pb.Schema{
-		SchemaId: schemaId,
+		SchemaId: schemaID,
 		Schema:   schema.Schema,
 		Summary:  schema.SchemaSummary,
 	}, nil

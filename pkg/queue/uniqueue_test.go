@@ -55,7 +55,7 @@ func TestUniQueue_Get(t *testing.T) {
 	ctx, _ := context.WithTimeout(context.Background(), time.Second)
 	start := time.Now()
 	item := uq.Get(ctx)
-	if time.Now().Sub(start) < time.Second || item != nil {
+	if time.Since(start) < time.Second || item != nil {
 		t.Fatalf("Get should be timed out, result: %v", item)
 	}
 

@@ -275,7 +275,7 @@ var _ = Describe("MicroService Api Test", func() {
 				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
 			})
 
-			It("Find Micro-Service Instance by ServiceId", func() {
+			It("Find Micro-Service Instance by ServiceID", func() {
 				url := strings.Replace(GETINSTANCE, ":serviceId", serviceId, 1)
 				req, _ := http.NewRequest(GET, SCURL+url, nil)
 				req.Header.Set("X-Domain-Name", "default")
@@ -295,7 +295,7 @@ var _ = Describe("MicroService Api Test", func() {
 				Expect(foundMicroServiceInstance).To(Equal(true))
 			})
 
-			It("Find Micro-Service Instance by Invalid ServiceId", func() {
+			It("Find Micro-Service Instance by Invalid ServiceID", func() {
 				url := strings.Replace(GETINSTANCE, ":serviceId", "XX", 1)
 				req, _ := http.NewRequest(GET, SCURL+url, nil)
 				req.Header.Set("X-Domain-Name", "default")

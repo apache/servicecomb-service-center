@@ -31,12 +31,12 @@ var (
 	versionResp      *pb.Response
 )
 
-const API_VERSION = "3.0.0"
+const APIVersion = "3.0.0"
 
 func init() {
 	result := v4.Result{
-		VersionSet: version.Ver(),
-		ApiVersion: API_VERSION,
+		Set:        version.Ver(),
+		APIVersion: APIVersion,
 	}
 	versionJsonCache, _ = json.Marshal(result)
 	versionResp = pb.CreateResponse(pb.Response_SUCCESS, "get version successfully")
@@ -46,13 +46,13 @@ type MainService struct {
 	v4.MainService
 }
 
-func (this *MainService) URLPatterns() []rest.Route {
+func (s *MainService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTP_METHOD_GET, "/version", this.GetVersion},
-		{rest.HTTP_METHOD_GET, "/health", this.ClusterHealth},
+		{rest.HTTPMethodGet, "/version", s.GetVersion},
+		{rest.HTTPMethodGet, "/health", s.ClusterHealth},
 	}
 }
 
-func (this *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
-	controller.WriteJsonIfSuccess(w, versionResp, versionJsonCache)
+func (s *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
+	controller.WriteJSONIfSuccess(w, versionResp, versionJsonCache)
 }

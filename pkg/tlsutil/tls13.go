@@ -21,6 +21,6 @@ import "crypto/tls"
 
 func init() {
 	// Add TLS 1.3 version
-	TLS_VERSION_MAP["TLSv1.3"] = tls.VersionTLS13
+	TLSVersionMap["TLSv1.3"] = tls.VersionTLS13
 	MaxSupportedTLSVersion = tls.VersionTLS13
 }

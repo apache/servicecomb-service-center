@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package version
 
 import (
@@ -23,15 +24,15 @@ import (
 )
 
 var (
-	// no need to modify
+	// VERSION no need to modify
 	// please use:
 	// 	go build -ldflags "-X github.com/apache/servicecomb-service-center/version.VERSION=x.x.x"
 	// to set these values.
-	VERSION   = "0.0.1"
-	BUILD_TAG = "Not provided"
+	VERSION  = "0.0.1"
+	BuildTag = "Not provided"
 )
 
-type VersionSet struct {
+type Set struct {
 	Version   string `json:"version"`
 	BuildTag  string `json:"buildTag"`
 	GoVersion string `json:"goVersion"`
@@ -39,34 +40,34 @@ type VersionSet struct {
 	Arch      string `json:"arch"`
 }
 
-func (vs *VersionSet) Print() {
+func (vs *Set) Print() {
 	fmt.Printf("Version: %s\n", vs.Version)
 	fmt.Printf("Build tag: %s\n", vs.BuildTag)
 	fmt.Printf("Go version: %s\n", vs.GoVersion)
 	fmt.Printf("OS/Arch: %s/%s\n", vs.OS, vs.Arch)
 }
 
-func (vs *VersionSet) Log() {
+func (vs *Set) Log() {
 	log.Infof("Version: %s", vs.Version)
 	log.Infof("Build tag: %s", vs.BuildTag)
 	log.Infof("Go version: %s", vs.GoVersion)
 	log.Infof("OS/Arch: %s/%s", vs.OS, vs.Arch)
 }
 
-func (vs *VersionSet) LoadRuntimeInfo() {
+func (vs *Set) LoadRuntimeInfo() {
 	vs.GoVersion = runtime.Version()
 	vs.OS = runtime.GOOS
 	vs.Arch = runtime.GOARCH
 }
 
-var versionSet VersionSet
+var versionSet Set
 
 func init() {
 	versionSet.Version = VERSION
-	versionSet.BuildTag = BUILD_TAG
+	versionSet.BuildTag = BuildTag
 	versionSet.LoadRuntimeInfo()
 }
 
-func Ver() *VersionSet {
+func Ver() *Set {
 	return &versionSet
 }

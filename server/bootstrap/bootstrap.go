@@ -16,51 +16,57 @@
  */
 package bootstrap
 
-// rest
+//rest v3 api
 import _ "github.com/apache/servicecomb-service-center/server/rest/controller/v3"
+
+// rest v4 api
 import _ "github.com/apache/servicecomb-service-center/server/rest/controller/v4"
 
-// registry
+//registry is buildin
 import _ "github.com/apache/servicecomb-service-center/server/plugin/registry/buildin"
+
+//registry etcd
 import _ "github.com/apache/servicecomb-service-center/server/plugin/registry/etcd"
+
+//registry etcd
 import _ "github.com/apache/servicecomb-service-center/server/plugin/registry/embededetcd"
 
-// discovery
+//discovery
 import _ "github.com/apache/servicecomb-service-center/server/plugin/discovery/aggregate"
 import _ "github.com/apache/servicecomb-service-center/server/plugin/discovery/servicecenter"
 import _ "github.com/apache/servicecomb-service-center/server/plugin/discovery/etcd"
 import _ "github.com/apache/servicecomb-service-center/server/plugin/discovery/k8s"
 
-// cipher
+//cipher
 import _ "github.com/apache/servicecomb-service-center/server/plugin/security/buildin"
 
-// quota
+//quota
 import _ "github.com/apache/servicecomb-service-center/server/plugin/quota/buildin"
 import _ "github.com/apache/servicecomb-service-center/server/plugin/quota/unlimit"
 
-// auth
+//auth
 import _ "github.com/apache/servicecomb-service-center/server/plugin/auth/buildin"
 
-// uuid
+//uuid
 import _ "github.com/apache/servicecomb-service-center/server/plugin/uuid/buildin"
 import _ "github.com/apache/servicecomb-service-center/server/plugin/uuid/context"
 
-// tracing
+//tracing
 import _ "github.com/apache/servicecomb-service-center/server/plugin/tracing/pzipkin"
 
-// tls
+//tls
 import _ "github.com/apache/servicecomb-service-center/server/plugin/tls/buildin"
 
-// module 'govern'
-import _ "github.com/apache/servicecomb-service-center/server/govern"
+//module 'govern'
+import _ "github.com/apache/servicecomb-service-center/server/rest/govern"
 
-// module 'broker'
+//module 'broker'
 import _ "github.com/apache/servicecomb-service-center/server/broker"
 
-// module 'admin'
-import _ "github.com/apache/servicecomb-service-center/server/admin"
+//module 'admin'
+import _ "github.com/apache/servicecomb-service-center/server/rest/admin"
 
-// metrics
+//metrics
 import _ "github.com/apache/servicecomb-service-center/server/metric"
 
 import (

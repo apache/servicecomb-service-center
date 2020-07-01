@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package metric
 
 import (
@@ -33,9 +34,9 @@ const (
 )
 
 var (
-	// metrics collect period
+	// Period is metrics collect period
 	Period = 30 * time.Second
-	// system metrics map
+	// SysMetrics map
 	SysMetrics util.ConcurrentMap
 
 	getEndpointOnce sync.Once
@@ -61,17 +62,17 @@ func getPeriod() time.Duration {
 
 func InstanceName() string {
 	getEndpointOnce.Do(func() {
-		restIp := beego.AppConfig.String("httpaddr")
+		restIP := beego.AppConfig.String("httpaddr")
 		restPort := beego.AppConfig.String("httpport")
-		if len(restIp) > 0 {
-			instance = net.JoinHostPort(restIp, restPort)
+		if len(restIP) > 0 {
+			instance = net.JoinHostPort(restIP, restPort)
 			return
 		}
 
-		rpcIp := beego.AppConfig.String("rpcaddr")
+		rpcIP := beego.AppConfig.String("rpcaddr")
 		rpcPort := beego.AppConfig.String("rpcport")
-		if len(rpcIp) > 0 {
-			instance = net.JoinHostPort(rpcIp, rpcPort)
+		if len(rpcIP) > 0 {
+			instance = net.JoinHostPort(rpcIP, rpcPort)
 			return
 		}
 	})

@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package rest
 
 import (
@@ -104,7 +105,7 @@ type Server struct {
 
 	Listener    net.Listener
 	netListener net.Listener
-	tcpListener *TcpListener
+	tcpListener *TCPListener
 
 	conns int64
 	wg    sync.WaitGroup
@@ -154,7 +155,7 @@ func (srv *Server) Listen() error {
 		return err
 	}
 
-	srv.Listener = NewTcpListener(l, srv)
+	srv.Listener = NewTCPListener(l, srv)
 	grace.RegisterFiles(addr, srv.File())
 	return nil
 }
@@ -170,7 +171,7 @@ func (srv *Server) ListenTLS() error {
 		return err
 	}
 
-	srv.tcpListener = NewTcpListener(l, srv)
+	srv.tcpListener = NewTCPListener(l, srv)
 	srv.Listener = tls.NewListener(srv.tcpListener, srv.TLSConfig)
 	grace.RegisterFiles(addr, srv.File())
 	return nil
@@ -283,8 +284,8 @@ func (srv *Server) gracefulStop(d time.Duration) {
 
 func (srv *Server) File() *os.File {
 	switch srv.Listener.(type) {
-	case *TcpListener:
-		return srv.Listener.(*TcpListener).File()
+	case *TCPListener:
+		return srv.Listener.(*TCPListener).File()
 	default:
 		return srv.tcpListener.File()
 	}

@@ -47,11 +47,11 @@ func TestGroup_Add(t *testing.T) {
 	if g.Size() != 2 {
 		t.Fatalf("TestGroup_Add failed")
 	}
-	g.Remove(m.Id())
+	g.Remove(m.ID())
 	if g.Size() != 1 {
 		t.Fatalf("TestGroup_Add failed")
 	}
-	if g.Subscribers(m.Id()) == m {
+	if g.Subscribers(m.ID()) == m {
 		t.Fatalf("TestGroup_Add failed")
 	}
 
@@ -59,7 +59,7 @@ func TestGroup_Add(t *testing.T) {
 	if g.AddSubscriber(mock) != mock {
 		t.Fatalf("TestGroup_Add failed")
 	}
-	if g.Subscribers(mock.Id()) != mock {
+	if g.Subscribers(mock.ID()) != mock {
 		t.Fatalf("TestGroup_Add failed")
 	}
 	job := &baseEvent{nType: INSTANCE}

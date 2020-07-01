@@ -13,7 +13,9 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
+
 package task
 
 import "context"
@@ -24,7 +26,7 @@ type Task interface {
 	Err() error
 }
 
-type TaskService interface {
+type Service interface {
 	Add(ctx context.Context, task Task) error
 	LatestHandled(key string) (Task, error)
 

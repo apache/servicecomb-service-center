@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package chain
 
 import (
@@ -21,7 +22,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
-const CAP_SIZE = 10
+const CapSize = 10
 
 var handlersMap = make(map[string][]Handler)
 
@@ -32,7 +33,7 @@ type Handler interface {
 func RegisterHandler(catalog string, h Handler) {
 	handlers, ok := handlersMap[catalog]
 	if !ok {
-		handlers = make([]Handler, 0, CAP_SIZE)
+		handlers = make([]Handler, 0, CapSize)
 	}
 	handlers = append(handlers, h)
 	handlersMap[catalog] = handlers

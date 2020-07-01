@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package queue
 
 import (
@@ -42,7 +43,7 @@ func (uq *UniQueue) Chan() <-chan interface{} {
 func (uq *UniQueue) Put(value interface{}) (e error) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.LogPanic(r)
+			log.Panic(r)
 
 			e = fmt.Errorf("%v", r)
 		}

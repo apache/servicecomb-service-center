@@ -14,22 +14,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package govern
 
-import (
-	"github.com/apache/servicecomb-service-center/pkg/rest"
-)
-
-// GovernService 治理相关接口服务
-type GovernServiceControllerV3 struct {
-	GovernServiceControllerV4
+//Node 节点信息
+type Node struct {
+	ID       string   `json:"id"`
+	Name     string   `json:"name"`
+	AppID    string   `json:"appId"`
+	Version  string   `json:"version"`
+	Type     string   `json:"type"`
+	Color    string   `json:"color"`
+	Position string   `json:"position"`
+	Visits   []string `json:"-"`
 }
 
-// URLPatterns 路由
-func (governService *GovernServiceControllerV3) URLPatterns() []rest.Route {
-	return []rest.Route{
-		{rest.HTTP_METHOD_GET, "/registry/v3/govern/service/:serviceId", governService.GetServiceDetail},
-		{rest.HTTP_METHOD_GET, "/registry/v3/govern/relation", governService.GetGraph},
-		{rest.HTTP_METHOD_GET, "/registry/v3/govern/services", governService.GetAllServicesInfo},
-	}
+//Line 连接线信息
+type Line struct {
+	From        Node   `json:"from"`
+	To          Node   `json:"to"`
+	Type        string `json:"type"`
+	Color       string `json:"color"`
+	Description string `json:"descriptor"`
+}
+
+//Circle 环信息
+type Circle struct {
+	Nodes []Node `json:"nodes"`
+}
+
+//Graph 图全集信息
+type Graph struct {
+	Nodes   []Node   `json:"nodes"`
+	Lines   []Line   `json:"lines"`
+	Circles []Circle `json:"circles"`
+	Visits  []string `json:"-"`
 }

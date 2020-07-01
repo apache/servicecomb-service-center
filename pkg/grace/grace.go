@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package grace
 
 import (
@@ -112,25 +113,21 @@ func fireSignalHook(ppFlag int, sig os.Signal) {
 }
 
 func handleSignals() {
-	var sig os.Signal
 
-	sigCh := make(chan os.Signal)
+	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, registerSignals...)
 
-	for {
-		select {
-		case sig = <-sigCh:
-			fireSignalHook(PreSignal, sig)
-			switch sig {
-			case syscall.SIGHUP:
-				log.Debugf("received signal '%v', now forking", sig)
-				err := fork()
-				if err != nil {
-					log.Errorf(err, "fork a process failed")
-				}
+	for sig := range sigCh {
+		fireSignalHook(PreSignal, sig)
+		switch sig {
+		case syscall.SIGHUP:
+			log.Debugf("received signal '%v', now forking", sig)
+			err := fork()
+			if err != nil {
+				log.Errorf(err, "fork a process failed")
 			}
-			fireSignalHook(PostSignal, sig)
 		}
+		fireSignalHook(PostSignal, sig)
 	}
 }
 

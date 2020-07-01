@@ -32,9 +32,9 @@ func (c *Client) CreateSchemas(ctx context.Context, domainProject, serviceId str
 	return nil
 }
 
-// GetSchemasByServiceId Get schemas by serviceId from servicecenter
+// GetSchemasByServiceID Get schemas by serviceId from servicecenter
 func (c *Client) GetSchemasByServiceId(ctx context.Context, domainProject, serviceId string) ([]*pb.Schema, error) {
-	schemas, err := c.cli.GetSchemasByServiceId(ctx, domainProject, serviceId)
+	schemas, err := c.cli.GetSchemasByServiceID(ctx, domainProject, serviceId)
 	if err != nil {
 		return nil, err
 	}

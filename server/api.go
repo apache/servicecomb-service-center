@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package server
 
 import (
@@ -193,7 +194,7 @@ func (s *APIServer) Start() {
 	}
 
 	// 自注册
-	err = backend.RegistryEngine().Start()
+	err = backend.GetRegistryEngine().Start()
 	if err != nil {
 		s.err <- err
 		return
@@ -207,7 +208,7 @@ func (s *APIServer) Stop() {
 	s.isClose = true
 
 	if !s.forked && core.ServerInfo.Config.SelfRegister {
-		backend.RegistryEngine().Stop()
+		backend.GetRegistryEngine().Stop()
 	}
 
 	if s.restSrv != nil {

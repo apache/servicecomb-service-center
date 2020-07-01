@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package tracing
 
 import (
@@ -24,18 +25,18 @@ import (
 	"strconv"
 )
 
-type TracingHandler struct {
+type Handler struct {
 }
 
-func (h *TracingHandler) Handle(i *chain.Invocation) {
-	w, r, op := i.Context().Value(rest.CTX_RESPONSE).(http.ResponseWriter),
-		i.Context().Value(rest.CTX_REQUEST).(*http.Request),
-		i.Context().Value(rest.CTX_MATCH_FUNC).(string)
+func (h *Handler) Handle(i *chain.Invocation) {
+	w, r, op := i.Context().Value(rest.CtxResponse).(http.ResponseWriter),
+		i.Context().Value(rest.CtxRequest).(*http.Request),
+		i.Context().Value(rest.CtxMatchFunc).(string)
 
 	span := plugin.Plugins().Tracing().ServerBegin(op, r)
 
 	i.Next(chain.WithAsyncFunc(func(ret chain.Result) {
-		statusCode := w.Header().Get(rest.HEADER_RESPONSE_STATUS)
+		statusCode := w.Header().Get(rest.HeaderResponseStatus)
 		code, _ := strconv.ParseInt(statusCode, 10, 64)
 		if code == 0 {
 			code = 200
@@ -45,5 +46,5 @@ func (h *TracingHandler) Handle(i *chain.Invocation) {
 }
 
 func RegisterHandlers() {
-	chain.RegisterHandler(rest.ServerChainName, &TracingHandler{})
+	chain.RegisterHandler(rest.ServerChainName, &Handler{})
 }

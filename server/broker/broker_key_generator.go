@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package broker
 
 import (
@@ -23,21 +24,21 @@ import (
 )
 
 const (
-	BROKER_ROOT_KEY              = "cse-pact"
-	BROKER_PARTICIPANT_KEY       = "participant"
-	BROKER_VERSION_KEY           = "version"
-	BROKER_PACT_KEY              = "pact"
-	BROKER_PACT_VERSION_KEY      = "pact-version"
-	BROKER_PACT_TAG_KEY          = "pact-tag"
-	BROKER_PACT_VERIFICATION_KEY = "verification"
-	BROKER_PACT_LATEST           = "latest"
+	BrokerRootKey             = "cse-pact"
+	BrokerParticipantKey      = "participant"
+	BrokerVersionKey          = "version"
+	BrokerPactKey             = "pact"
+	BrokerPactVersionKey      = "pact-version"
+	BrokerPactTagKey          = "pact-tag"
+	BrokerPactVerificationKey = "verification"
+	BrokerPactLatest          = "latest"
 )
 
 // GetBrokerRootKey returns url (/cse-pact)
 func GetBrokerRootKey() string {
 	return util.StringJoin([]string{
 		"",
-		BROKER_ROOT_KEY,
+		BrokerRootKey,
 	}, "/")
 }
 
@@ -45,7 +46,7 @@ func GetBrokerRootKey() string {
 func GetBrokerLatestKey(tenant string) string {
 	return util.StringJoin([]string{
 		GetBrokerRootKey(),
-		BROKER_PACT_LATEST,
+		BrokerPactLatest,
 		tenant,
 	}, "/")
 }
@@ -54,16 +55,16 @@ func GetBrokerLatestKey(tenant string) string {
 func GetBrokerParticipantKey(tenant string) string {
 	return util.StringJoin([]string{
 		GetBrokerRootKey(),
-		BROKER_PARTICIPANT_KEY,
+		BrokerParticipantKey,
 		tenant,
 	}, "/")
 }
 
 //GenerateBrokerParticipantKey returns the participant key
-func GenerateBrokerParticipantKey(tenant string, appId string, serviceName string) string {
+func GenerateBrokerParticipantKey(tenant string, appID string, serviceName string) string {
 	return util.StringJoin([]string{
 		GetBrokerParticipantKey(tenant),
-		appId,
+		appID,
 		serviceName,
 	}, "/")
 }
@@ -72,17 +73,17 @@ func GenerateBrokerParticipantKey(tenant string, appId string, serviceName strin
 func GetBrokerVersionKey(tenant string) string {
 	return util.StringJoin([]string{
 		GetBrokerRootKey(),
-		BROKER_VERSION_KEY,
+		BrokerVersionKey,
 		tenant,
 	}, "/")
 }
 
 //GenerateBrokerVersionKey returns the version key
-func GenerateBrokerVersionKey(tenant string, number string, participantId int32) string {
+func GenerateBrokerVersionKey(tenant string, number string, participantID int32) string {
 	return util.StringJoin([]string{
 		GetBrokerVersionKey(tenant),
 		number,
-		strconv.Itoa(int(participantId)),
+		strconv.Itoa(int(participantID)),
 	}, "/")
 }
 
@@ -90,18 +91,18 @@ func GenerateBrokerVersionKey(tenant string, number string, participantId int32)
 func GetBrokerPactKey(tenant string) string {
 	return util.StringJoin([]string{
 		GetBrokerRootKey(),
-		BROKER_PACT_KEY,
+		BrokerPactKey,
 		tenant,
 	}, "/")
 }
 
 //GenerateBrokerPactKey returns the pact key
-func GenerateBrokerPactKey(tenant string, consumerParticipantId int32,
-	providerParticipantId int32, sha []byte) string {
+func GenerateBrokerPactKey(tenant string, consumerParticipantID int32,
+	providerParticipantID int32, sha []byte) string {
 	return util.StringJoin([]string{
 		GetBrokerPactKey(tenant),
-		strconv.Itoa(int(consumerParticipantId)),
-		strconv.Itoa(int(providerParticipantId)),
+		strconv.Itoa(int(consumerParticipantID)),
+		strconv.Itoa(int(providerParticipantID)),
 		string(sha),
 	}, "/")
 }
@@ -110,17 +111,17 @@ func GenerateBrokerPactKey(tenant string, consumerParticipantId int32,
 func GetBrokerPactVersionKey(tenant string) string {
 	return util.StringJoin([]string{
 		GetBrokerRootKey(),
-		BROKER_PACT_VERSION_KEY,
+		BrokerPactVersionKey,
 		tenant,
 	}, "/")
 }
 
 //GenerateBrokerPactVersionKey returns the pact version root key
-func GenerateBrokerPactVersionKey(tenant string, versionId int32, pactId int32) string {
+func GenerateBrokerPactVersionKey(tenant string, versionID int32, pactID int32) string {
 	return util.StringJoin([]string{
 		GetBrokerPactVersionKey(tenant),
-		strconv.Itoa(int(versionId)),
-		strconv.Itoa(int(pactId)),
+		strconv.Itoa(int(versionID)),
+		strconv.Itoa(int(pactID)),
 	}, "/")
 }
 
@@ -128,16 +129,16 @@ func GenerateBrokerPactVersionKey(tenant string, versionId int32, pactId int32) 
 func GetBrokerTagKey(tenant string) string {
 	return util.StringJoin([]string{
 		GetBrokerRootKey(),
-		BROKER_PACT_TAG_KEY,
+		BrokerPactTagKey,
 		tenant,
 	}, "/")
 }
 
 //GenerateBrokerTagKey returns the broker tag key
-func GenerateBrokerTagKey(tenant string, versionId int32) string {
+func GenerateBrokerTagKey(tenant string, versionID int32) string {
 	return util.StringJoin([]string{
 		GetBrokerTagKey(tenant),
-		strconv.Itoa(int(versionId)),
+		strconv.Itoa(int(versionID)),
 	}, "/")
 }
 
@@ -145,16 +146,16 @@ func GenerateBrokerTagKey(tenant string, versionId int32) string {
 func GetBrokerVerificationKey(tenant string) string {
 	return util.StringJoin([]string{
 		GetBrokerRootKey(),
-		BROKER_PACT_VERIFICATION_KEY,
+		BrokerPactVerificationKey,
 		tenant,
 	}, "/")
 }
 
 //GenerateBrokerVerificationKey returns he verification key
-func GenerateBrokerVerificationKey(tenant string, pactVersionId int32, number int32) string {
+func GenerateBrokerVerificationKey(tenant string, pactVersionID int32, number int32) string {
 	return util.StringJoin([]string{
 		GetBrokerVerificationKey(tenant),
-		strconv.Itoa(int(pactVersionId)),
+		strconv.Itoa(int(pactVersionID)),
 		strconv.Itoa(int(number)),
 	}, "/")
 }
@@ -163,7 +164,7 @@ func GenerateBrokerVerificationKey(tenant string, pactVersionId int32, number in
 func GetBrokerLatestParticipantIDKey() string {
 	return util.StringJoin([]string{
 		GetBrokerLatestKey("default"),
-		BROKER_PARTICIPANT_KEY,
+		BrokerParticipantKey,
 	}, "/")
 }
 
@@ -171,7 +172,7 @@ func GetBrokerLatestParticipantIDKey() string {
 func GetBrokerLatestVersionIDKey() string {
 	return util.StringJoin([]string{
 		GetBrokerLatestKey("default"),
-		BROKER_VERSION_KEY,
+		BrokerVersionKey,
 	}, "/")
 }
 
@@ -179,7 +180,7 @@ func GetBrokerLatestVersionIDKey() string {
 func GetBrokerLatestPactIDKey() string {
 	return util.StringJoin([]string{
 		GetBrokerLatestKey("default"),
-		BROKER_PACT_KEY,
+		BrokerPactKey,
 	}, "/")
 }
 
@@ -187,7 +188,7 @@ func GetBrokerLatestPactIDKey() string {
 func GetBrokerLatestPactVersionIDKey() string {
 	return util.StringJoin([]string{
 		GetBrokerLatestKey("default"),
-		BROKER_PACT_VERSION_KEY,
+		BrokerPactVersionKey,
 	}, "/")
 }
 
@@ -195,6 +196,6 @@ func GetBrokerLatestPactVersionIDKey() string {
 func GetBrokerLatestVerificationIDKey() string {
 	return util.StringJoin([]string{
 		GetBrokerLatestKey("default"),
-		BROKER_PACT_VERIFICATION_KEY,
+		BrokerPactVerificationKey,
 	}, "/")
 }

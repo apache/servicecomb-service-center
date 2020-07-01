@@ -130,7 +130,7 @@ func (m Manager) existDynamicPlugin(pn PluginType) *Plugin {
 		return nil
 	}
 	// 'buildin' implement of all plugins should call DynamicPluginFunc()
-	if plugin.PluginLoader().Exist(pn.String()) {
+	if plugin.GetLoader().Exist(pn.String()) {
 		return pm.plugins[BUILDIN]
 	}
 	return nil

@@ -19,11 +19,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/client/sc"
+	model2 "github.com/apache/servicecomb-service-center/pkg/model"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/model"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/plugin/get"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/progress-bar"
-	adminModel "github.com/apache/servicecomb-service-center/server/admin/model"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/spf13/cobra"
 	"io"
@@ -62,15 +62,15 @@ func NewSchemaCommand(parent *cobra.Command) *cobra.Command {
 }
 
 // schemas/[${domain}/][${project}/][${env}/]${app}/${microservice}.${version}/${schemaId}.yaml
-func saveDirectory(root string, ms *adminModel.Microservice) string {
+func saveDirectory(root string, ms *model2.Microservice) string {
 	if len(root) == 0 {
 		return ""
 	}
 	domain, project := core.FromDomainProject(model.GetDomainProject(ms))
-	if domain == core.REGISTRY_DOMAIN {
+	if domain == core.RegistryDomain {
 		domain = ""
 	}
-	if project == core.REGISTRY_DOMAIN {
+	if project == core.RegistryDomain {
 		project = ""
 	}
 	return filepath.Join(root, "schemas", domain, project, ms.Value.Environment, ms.Value.AppId, ms.Value.ServiceName+".v"+ms.Value.Version)
@@ -110,7 +110,7 @@ func SchemaCommandFunc(_ *cobra.Command, args []string) {
 			continue
 		}
 
-		schemas, err := scClient.GetSchemasByServiceId(context.Background(), domainProject, ms.Value.ServiceId)
+		schemas, err := scClient.GetSchemasByServiceID(context.Background(), domainProject, ms.Value.ServiceId)
 		if err != nil {
 			cmd.StopAndExit(cmd.ExitError, err)
 		}

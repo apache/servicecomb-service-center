@@ -37,7 +37,7 @@ type ServiceIndexEventHandler struct {
 }
 
 func (h *ServiceIndexEventHandler) Type() discovery.Type {
-	return backend.SERVICE_INDEX
+	return backend.ServiceIndex
 }
 
 func (h *ServiceIndexEventHandler) OnEvent(evt discovery.KvEvent) {
@@ -71,16 +71,16 @@ func (h *InstanceEventHandler) Type() discovery.Type {
 }
 
 func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
-	serviceId, _, domainProject := core.GetInfoFromInstKV(evt.KV.Key)
-	key := domainProject + core.SPLIT + serviceId
+	serviceID, _, domainProject := core.GetInfoFromInstKV(evt.KV.Key)
+	key := domainProject + core.SPLIT + serviceID
 	if _, ok := SharedServiceIds.Get(key); ok {
 		return
 	}
 
 	switch evt.Type {
 	case pb.EVT_INIT, pb.EVT_CREATE:
-		if domainProject == core.REGISTRY_DOMAIN_PROJECT {
-			service, err := serviceUtil.GetService(context.Background(), domainProject, serviceId)
+		if domainProject == core.RegistryDomainProject {
+			service, err := serviceUtil.GetService(context.Background(), domainProject, serviceID)
 			if service == nil || err != nil {
 				log.Errorf(err, "GetService[%s] failed", key)
 				return

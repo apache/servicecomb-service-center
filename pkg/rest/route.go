@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package rest
 
 import (
@@ -166,7 +167,7 @@ func (roa *ROAServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Add(HEADER_ALLOW, util.StringJoin(allowed, ", "))
+	w.Header().Add(HeaderAllow, util.StringJoin(allowed, ", "))
 	http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 }
 
@@ -178,17 +179,17 @@ func (roa *ROAServerHandler) serve(ph *urlPatternHandler, w http.ResponseWriter,
 	}
 
 	inv := chain.NewInvocation(ctx, chain.NewChain(roa.chainName, chain.Handlers(roa.chainName)))
-	inv.WithContext(CTX_RESPONSE, w).
-		WithContext(CTX_REQUEST, r).
-		WithContext(CTX_MATCH_PATTERN, ph.Path).
-		WithContext(CTX_MATCH_FUNC, ph.Name).
+	inv.WithContext(CtxResponse, w).
+		WithContext(CtxRequest, r).
+		WithContext(CtxMatchPattern, ph.Path).
+		WithContext(CtxMatchFunc, ph.Name).
 		Invoke(
 			func(ret chain.Result) {
 				defer func() {
 					err := ret.Err
 					itf := recover()
 					if itf != nil {
-						log.LogPanic(itf)
+						log.Panic(itf)
 
 						err = errorsEx.RaiseError(itf)
 					}

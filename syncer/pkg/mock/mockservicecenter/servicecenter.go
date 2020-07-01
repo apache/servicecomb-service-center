@@ -44,14 +44,14 @@ type mockServer struct{}
 
 func (m *mockServer) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTP_METHOD_GET, "/v4/:project/admin/dump", m.GetAll},
-		{rest.HTTP_METHOD_GET, "/v4/:project/registry/existence", m.ServiceExistence},
-		{rest.HTTP_METHOD_POST, "/v4/:project/registry/microservices", m.CreateService},
-		{rest.HTTP_METHOD_DELETE, "/v4/:project/registry/microservices/:serviceId", m.DeleteService},
-		{rest.HTTP_METHOD_GET, "/v4/:project/registry/instances", m.DiscoveryInstances},
-		{rest.HTTP_METHOD_POST, "/v4/:project/registry/microservices/:serviceId/instances", m.RegisterInstance},
-		{rest.HTTP_METHOD_DELETE, "/v4/:project/registry/microservices/:serviceId/instances/:instanceId", m.UnregisterInstance},
-		{rest.HTTP_METHOD_PUT, "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/heartbeat", m.Heartbeat},
+		{rest.HTTPMethodGet, "/v4/:project/admin/dump", m.GetAll},
+		{rest.HTTPMethodGet, "/v4/:project/registry/existence", m.ServiceExistence},
+		{rest.HTTPMethodPost, "/v4/:project/registry/microservices", m.CreateService},
+		{rest.HTTPMethodDelete, "/v4/:project/registry/microservices/:serviceId", m.DeleteService},
+		{rest.HTTPMethodGet, "/v4/:project/registry/instances", m.DiscoveryInstances},
+		{rest.HTTPMethodPost, "/v4/:project/registry/microservices/:serviceId/instances", m.RegisterInstance},
+		{rest.HTTPMethodDelete, "/v4/:project/registry/microservices/:serviceId/instances/:instanceId", m.UnregisterInstance},
+		{rest.HTTPMethodPut, "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/heartbeat", m.Heartbeat},
 	}
 }
 

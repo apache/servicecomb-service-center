@@ -27,14 +27,14 @@ type MicroServiceInstanceService struct {
 
 func (this *MicroServiceInstanceService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTP_METHOD_GET, "/registry/v3/instances", this.FindInstances},
-		{rest.HTTP_METHOD_GET, "/registry/v3/microservices/:serviceId/instances", this.GetInstances},
-		{rest.HTTP_METHOD_GET, "/registry/v3/microservices/:serviceId/instances/:instanceId", this.GetOneInstance},
-		{rest.HTTP_METHOD_POST, "/registry/v3/microservices/:serviceId/instances", this.RegisterInstance},
-		{rest.HTTP_METHOD_DELETE, "/registry/v3/microservices/:serviceId/instances/:instanceId", this.UnregisterInstance},
-		{rest.HTTP_METHOD_PUT, "/registry/v3/microservices/:serviceId/instances/:instanceId/properties", this.UpdateMetadata},
-		{rest.HTTP_METHOD_PUT, "/registry/v3/microservices/:serviceId/instances/:instanceId/status", this.UpdateStatus},
-		{rest.HTTP_METHOD_PUT, "/registry/v3/microservices/:serviceId/instances/:instanceId/heartbeat", this.Heartbeat},
-		{rest.HTTP_METHOD_PUT, "/registry/v3/heartbeats", this.HeartbeatSet},
+		{rest.HTTPMethodGet, "/registry/v3/instances", this.FindInstances},
+		{rest.HTTPMethodGet, "/registry/v3/microservices/:serviceId/instances", this.GetInstances},
+		{rest.HTTPMethodGet, "/registry/v3/microservices/:serviceId/instances/:instanceId", this.GetOneInstance},
+		{rest.HTTPMethodPost, "/registry/v3/microservices/:serviceId/instances", this.RegisterInstance},
+		{rest.HTTPMethodDelete, "/registry/v3/microservices/:serviceId/instances/:instanceId", this.UnregisterInstance},
+		{rest.HTTPMethodPut, "/registry/v3/microservices/:serviceId/instances/:instanceId/properties", this.UpdateMetadata},
+		{rest.HTTPMethodPut, "/registry/v3/microservices/:serviceId/instances/:instanceId/status", this.UpdateStatus},
+		{rest.HTTPMethodPut, "/registry/v3/microservices/:serviceId/instances/:instanceId/heartbeat", this.Heartbeat},
+		{rest.HTTPMethodPut, "/registry/v3/heartbeats", this.HeartbeatSet},
 	}
 }

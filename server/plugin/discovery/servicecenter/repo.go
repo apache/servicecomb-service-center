@@ -22,19 +22,19 @@ import (
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "servicecenter", NewRepository})
+	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.DISCOVERY, Name: "servicecenter", New: NewRepository})
 }
 
-type ServiceCenterRepository struct {
+type Repository struct {
 }
 
-func (r *ServiceCenterRepository) New(t discovery.Type, cfg *discovery.Config) discovery.Adaptor {
+func (r *Repository) New(t discovery.Type, cfg *discovery.Config) discovery.Adaptor {
 	return NewServiceCenterAdaptor(t, cfg)
 }
 
 func NewRepository() mgr.Instance {
 	InitConfigs()
-	return &ServiceCenterRepository{}
+	return &Repository{}
 }
 
 func InitConfigs() {

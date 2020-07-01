@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package notify
 
 import (
@@ -41,10 +42,13 @@ type InstanceEventListWatcher struct {
 	listCh       chan struct{}
 }
 
-func (s *InstanceEventListWatcher) SetError(err error) {
-	s.Subscriber.SetError(err)
+func (w *InstanceEventListWatcher) SetError(err error) {
+	w.Subscriber.SetError(err)
 	// 触发清理job
-	s.Service().Publish(notify.NewNotifyServiceHealthCheckJob(s))
+	e := w.Service().Publish(notify.NewNotifyServiceHealthCheckJob(w))
+	if e != nil {
+		log.Error("", e)
+	}
 }
 
 func (w *InstanceEventListWatcher) OnAccept() {
@@ -125,26 +129,26 @@ func (w *InstanceEventListWatcher) Close() {
 	close(w.Job)
 }
 
-func NewInstanceEvent(serviceId, domainProject string, rev int64, response *pb.WatchInstanceResponse) *InstanceEvent {
+func NewInstanceEvent(serviceID, domainProject string, rev int64, response *pb.WatchInstanceResponse) *InstanceEvent {
 	return &InstanceEvent{
-		Event:    notify.NewEvent(INSTANCE, domainProject, serviceId),
+		Event:    notify.NewEvent(INSTANCE, domainProject, serviceID),
 		Revision: rev,
 		Response: response,
 	}
 }
 
-func NewInstanceEventWithTime(serviceId, domainProject string, rev int64, createAt simple.Time, response *pb.WatchInstanceResponse) *InstanceEvent {
+func NewInstanceEventWithTime(serviceID, domainProject string, rev int64, createAt simple.Time, response *pb.WatchInstanceResponse) *InstanceEvent {
 	return &InstanceEvent{
-		Event:    notify.NewEventWithTime(INSTANCE, domainProject, serviceId, createAt),
+		Event:    notify.NewEventWithTime(INSTANCE, domainProject, serviceID, createAt),
 		Revision: rev,
 		Response: response,
 	}
 }
 
-func NewInstanceEventListWatcher(serviceId, domainProject string,
+func NewInstanceEventListWatcher(serviceID, domainProject string,
 	listFunc func() (results []*pb.WatchInstanceResponse, rev int64)) *InstanceEventListWatcher {
 	watcher := &InstanceEventListWatcher{
-		Subscriber: notify.NewSubscriber(INSTANCE, domainProject, serviceId),
+		Subscriber: notify.NewSubscriber(INSTANCE, domainProject, serviceID),
 		Job:        make(chan *InstanceEvent, INSTANCE.QueueSize()),
 		ListFunc:   listFunc,
 		listCh:     make(chan struct{}),

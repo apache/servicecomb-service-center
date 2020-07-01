@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package chain
 
 import (
@@ -101,7 +102,7 @@ func (i *Invocation) Invoke(f CallbackFunc) {
 		if itf == nil {
 			return
 		}
-		log.LogPanic(itf)
+		log.Panic(itf)
 
 		i.Fail(errorsEx.RaiseError(itf))
 	}()

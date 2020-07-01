@@ -27,9 +27,9 @@ type RuleService struct {
 
 func (this *RuleService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTP_METHOD_POST, "/registry/v3/microservices/:serviceId/rules", this.AddRule},
-		{rest.HTTP_METHOD_GET, "/registry/v3/microservices/:serviceId/rules", this.GetRules},
-		{rest.HTTP_METHOD_PUT, "/registry/v3/microservices/:serviceId/rules/:rule_id", this.UpdateRule},
-		{rest.HTTP_METHOD_DELETE, "/registry/v3/microservices/:serviceId/rules/:rule_id", this.DeleteRule},
+		{rest.HTTPMethodPost, "/registry/v3/microservices/:serviceId/rules", this.AddRule},
+		{rest.HTTPMethodGet, "/registry/v3/microservices/:serviceId/rules", this.GetRules},
+		{rest.HTTPMethodPut, "/registry/v3/microservices/:serviceId/rules/:rule_id", this.UpdateRule},
+		{rest.HTTPMethodDelete, "/registry/v3/microservices/:serviceId/rules/:rule_id", this.DeleteRule},
 	}
 }

@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package unlimit
 
 import (
@@ -25,7 +26,7 @@ import (
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{mgr.QUOTA, "unlimit", New})
+	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.QUOTA, Name: "unlimit", New: New})
 
 	quataType := beego.AppConfig.DefaultString("quota_plugin", "")
 	if quataType != "unlimit" {

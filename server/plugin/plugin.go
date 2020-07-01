@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package plugin
 
 import (
@@ -171,7 +172,7 @@ func (pm *Manager) existDynamicPlugin(pn Name) *Plugin {
 		return nil
 	}
 	// 'buildin' implement of all plugins should call DynamicPluginFunc()
-	if plugin.PluginLoader().Exist(pn.String()) {
+	if plugin.GetLoader().Exist(pn.String()) {
 		return m[BUILDIN]
 	}
 	return nil

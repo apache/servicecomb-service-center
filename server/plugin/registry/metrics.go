@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package registry
 
 import (
@@ -50,7 +51,7 @@ var (
 			Subsystem:  "db",
 			Name:       "backend_operation_durations_microseconds",
 			Help:       "Latency of backend operation",
-			Objectives: prometheus.DefObjectives,
+			Objectives: metric.Pxx,
 		}, []string{"instance", "operation", "status"})
 )
 

@@ -30,7 +30,7 @@ func NewEtcdClient(cfg Config) (*clientv3.Client, error) {
 		cliTls    *tls.Config
 	)
 	for _, ip := range endpoints {
-		if strings.Index(ip, "https://") >= 0 {
+		if strings.Contains(ip, "https://") {
 			if len(cfg.CertKeyPWD) == 0 && len(cfg.CertKeyPWDPath) > 0 {
 				content, _ := ioutil.ReadFile(cfg.CertKeyPWDPath)
 				cfg.CertKeyPWD = string(content)
