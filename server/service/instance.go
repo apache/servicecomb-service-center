@@ -35,7 +35,6 @@ import (
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/server/service/cache"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
-	"math"
 	"os"
 	"strconv"
 	"time"
@@ -74,7 +73,7 @@ func (s *InstanceService) preProcessRegisterInstance(ctx context.Context, instan
 		switch instance.HealthCheck.Mode {
 		case pb.CHECK_BY_HEARTBEAT:
 			d := instance.HealthCheck.Interval * (instance.HealthCheck.Times + 1)
-			if d <= 0 || d >= math.MaxInt32 {
+			if d <= 0 {
 				return scerr.NewError(scerr.ErrInvalidParams, "Invalid 'healthCheck' settings in request body.")
 			}
 		case pb.CHECK_BY_PLATFORM:
@@ -476,7 +475,7 @@ func (s *InstanceService) GetOneInstance(ctx context.Context, in *pb.GetOneInsta
 	if rev == item.Rev {
 		instance = nil // for gRPC
 	}
-	ctx = util.SetContext(ctx, serviceUtil.CTX_RESPONSE_REVISION, item.Rev)
+	_ = util.SetContext(ctx, serviceUtil.CTX_RESPONSE_REVISION, item.Rev)
 
 	return &pb.GetOneInstanceResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Get instance successfully."),
@@ -562,7 +561,7 @@ func (s *InstanceService) GetInstances(ctx context.Context, in *pb.GetInstancesR
 	if rev == item.Rev {
 		instances = nil // for gRPC
 	}
-	ctx = util.SetContext(ctx, serviceUtil.CTX_RESPONSE_REVISION, item.Rev)
+	_ = util.SetContext(ctx, serviceUtil.CTX_RESPONSE_REVISION, item.Rev)
 
 	return &pb.GetInstancesResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Query service instances successfully."),
@@ -655,6 +654,9 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		len(item.ServiceIds) > 0 &&
 		!cache.DependencyRule.ExistVersionRule(ctx, in.ConsumerServiceId, provider) {
 		provider, err = s.reshapeProviderKey(ctx, provider, item.ServiceIds[0])
+		if err != nil {
+			return nil, err
+		}
 		if provider != nil {
 			err = serviceUtil.AddServiceVersionRule(ctx, domainProject, service, provider)
 		} else {
@@ -677,7 +679,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		instances = nil // for gRPC
 	}
 	// TODO support gRPC output context
-	ctx = util.SetContext(ctx, serviceUtil.CTX_RESPONSE_REVISION, item.Rev)
+	_ = util.SetContext(ctx, serviceUtil.CTX_RESPONSE_REVISION, item.Rev)
 	return &pb.FindInstancesResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Query service instances successfully."),
 		Instances: instances,

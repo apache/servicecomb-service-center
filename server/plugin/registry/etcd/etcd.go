@@ -125,7 +125,8 @@ func (c *EtcdClient) newClient() (*clientv3.Client, error) {
 		return nil, err
 	}
 
-	ctx, _ := context.WithTimeout(client.Ctx(), healthCheckTimeout)
+	ctx, cancel := context.WithTimeout(client.Ctx(), healthCheckTimeout)
+	defer cancel()
 	resp, err := client.MemberList(ctx)
 	if err != nil {
 		return nil, err
@@ -853,7 +854,7 @@ func callback(action registry.ActionType, rev int64, kvs []*mvccpb.KeyValue, cb 
 	})
 }
 
-func NewRegistry() mgr.PluginInstance {
+func NewRegistry() mgr.Instance {
 	log.Warnf("enable etcd registry mode")
 
 	inst := &EtcdClient{}

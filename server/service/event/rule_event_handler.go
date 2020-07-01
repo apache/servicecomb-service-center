@@ -103,8 +103,11 @@ func (h *RuleEventHandler) OnEvent(evt discovery.KvEvent) {
 	}
 	log.Infof("caught [%s] service rule[%s/%s] event", action, providerId, ruleId)
 
-	task.Service().Add(context.Background(),
+	err := task.Service().Add(context.Background(),
 		NewRulesChangedAsyncTask(domainProject, providerId, evt))
+	if err != nil {
+		log.Error("", err)
+	}
 }
 
 func NewRuleEventHandler() *RuleEventHandler {

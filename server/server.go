@@ -105,7 +105,10 @@ func (s *ServiceCenterServer) loadOrUpgradeServerVersion() {
 			os.Exit(1)
 		}
 	}
-	lock.Unlock()
+	err = lock.Unlock()
+	if err != nil {
+		log.Error("", err)
+	}
 }
 
 func (s *ServiceCenterServer) compactBackendService() {
@@ -132,7 +135,10 @@ func (s *ServiceCenterServer) compactBackendService() {
 					continue
 				}
 
-				backend.Registry().Compact(ctx, delta)
+				err = backend.Registry().Compact(ctx, delta)
+				if err != nil {
+					log.Error("", err)
+				}
 
 				lock.Unlock()
 			}

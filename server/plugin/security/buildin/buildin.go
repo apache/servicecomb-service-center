@@ -21,10 +21,10 @@ import (
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{mgr.CIPHER, "buildin", New})
+	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.CIPHER, Name: "buildin", New: New})
 }
 
-func New() mgr.PluginInstance {
+func New() mgr.Instance {
 	return &DefaultCipher{}
 }
 

@@ -48,8 +48,8 @@ type MicroServiceService struct {
 }
 
 const (
-	EXIST_TYPE_MICROSERVICE = "microservice"
-	EXIST_TYPE_SCHEMA       = "schema"
+	ExistTypeMicroservice = "microservice"
+	ExistTypeSchema       = "schema"
 )
 
 func (s *MicroServiceService) Create(ctx context.Context, in *pb.CreateServiceRequest) (*pb.CreateServiceResponse, error) {
@@ -66,7 +66,7 @@ func (s *MicroServiceService) Create(ctx context.Context, in *pb.CreateServiceRe
 		return rsp, err
 	}
 
-	if s.isCreateServiceEx(in) == false {
+	if !s.isCreateServiceEx(in) {
 		return rsp, err
 	}
 
@@ -587,7 +587,7 @@ func (s *MicroServiceService) UpdateProperties(ctx context.Context, in *pb.Updat
 func (s *MicroServiceService) Exist(ctx context.Context, in *pb.GetExistenceRequest) (*pb.GetExistenceResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	switch in.Type {
-	case EXIST_TYPE_MICROSERVICE:
+	case ExistTypeMicroservice:
 		err := ExistenceReqValidator().Validate(in)
 		serviceFlag := util.StringJoin([]string{in.Environment, in.AppId, in.ServiceName, in.Version}, "/")
 		if err != nil {
@@ -627,7 +627,7 @@ func (s *MicroServiceService) Exist(ctx context.Context, in *pb.GetExistenceRequ
 			Response:  pb.CreateResponse(pb.Response_SUCCESS, "get service id successfully."),
 			ServiceId: ids[0], // 约定多个时，取较新版本
 		}, nil
-	case EXIST_TYPE_SCHEMA:
+	case ExistTypeSchema:
 		err := GetSchemaReqValidator().Validate(in)
 		if err != nil {
 			log.Errorf(err, "schema[%s/%s] exist failed", in.ServiceId, in.SchemaId)

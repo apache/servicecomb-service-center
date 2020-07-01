@@ -27,7 +27,6 @@ type Processor struct {
 
 	name     string
 	subjects *util.ConcurrentMap
-	queue    chan Event
 }
 
 func (p *Processor) Name() string {

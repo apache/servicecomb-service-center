@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/queue"
 )
 
@@ -49,7 +50,10 @@ func (s *Executor) Execute() {
 		}
 		s.pool.Do(func(ctx context.Context) {
 			at := task.(Task)
-			at.Do(ctx)
+			err := at.Do(ctx)
+			if err != nil {
+				log.Error("", err)
+			}
 			s.latestTask = at
 		})
 	default:

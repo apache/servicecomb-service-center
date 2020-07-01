@@ -22,6 +22,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/metric"
 	rest2 "github.com/apache/servicecomb-service-center/server/rest"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
 	"strconv"
 	"strings"
@@ -51,7 +52,7 @@ var (
 			Subsystem:  "http",
 			Name:       "request_durations_microseconds",
 			Help:       "HTTP request latency summary of ROA handler",
-			Objectives: prometheus.DefObjectives,
+			Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
 		}, []string{"method", "instance", "api", "domain"})
 
 	queryPerSeconds = prometheus.NewGaugeVec(
@@ -66,7 +67,7 @@ var (
 func init() {
 	prometheus.MustRegister(incomingRequests, successfulRequests, reqDurations, queryPerSeconds)
 
-	rest2.RegisterServerHandler("/metrics", prometheus.Handler())
+	rest2.RegisterServerHandler("/metrics", promhttp.Handler())
 }
 
 func ReportRequestCompleted(w http.ResponseWriter, r *http.Request, start time.Time) {

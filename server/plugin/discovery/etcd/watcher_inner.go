@@ -40,6 +40,7 @@ func (w *innerWatcher) EventBus() <-chan *registry.PluginResponse {
 func (w *innerWatcher) process(_ context.Context) {
 	stopCh := make(chan struct{})
 	ctx, cancel := context.WithTimeout(w.Cfg.Context, w.Cfg.Timeout)
+	defer cancel()
 	gopool.Go(func(_ context.Context) {
 		defer close(stopCh)
 		w.lw.DoWatch(ctx, w.sendEvent)
@@ -49,8 +50,6 @@ func (w *innerWatcher) process(_ context.Context) {
 	case <-stopCh:
 		// timed out or exception
 		w.Stop()
-	case <-w.stopCh:
-		cancel()
 	}
 }
 

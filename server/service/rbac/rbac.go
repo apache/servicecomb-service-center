@@ -30,6 +30,7 @@ import (
 	"github.com/go-chassis/go-chassis/security/authr"
 	"github.com/go-chassis/go-chassis/security/secret"
 	"io/ioutil"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
@@ -75,7 +76,10 @@ func readPrivateKey() {
 		log.Fatal("can not read private key", err)
 		return
 	}
-	archaius.Set("rbac_private_key", string(data))
+	err = archaius.Set("rbac_private_key", string(data))
+	if err != nil {
+		log.Fatal("can not init rbac", err)
+	}
 	log.Info("read private key success")
 }
 
@@ -142,4 +146,13 @@ func GetPrivateKey() (*rsa.PrivateKey, error) {
 		return nil, err
 	}
 	return p, nil
+}
+
+var whiteAPIList = sets.NewString("/health", "/version", "/v4/token")
+
+func Add2WhiteAPIList(path string) {
+	whiteAPIList.Insert(path)
+}
+func WhiteAPIList() sets.String {
+	return whiteAPIList
 }

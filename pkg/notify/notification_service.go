@@ -61,7 +61,10 @@ func (s *NotifyService) Start() {
 	s.mux.Unlock()
 
 	// 错误subscriber清理
-	s.AddSubscriber(NewNotifyServiceHealthChecker())
+	err := s.AddSubscriber(NewNotifyServiceHealthChecker())
+	if err != nil {
+		log.Error("", err)
+	}
 
 	log.Debugf("notify service is started")
 }

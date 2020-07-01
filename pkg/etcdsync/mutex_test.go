@@ -24,7 +24,7 @@ import (
 	"testing"
 
 	_ "github.com/apache/servicecomb-service-center/server/plugin/registry/etcd"
-	_ "github.com/apache/servicecomb-service-center/server/plugin/tracing/buildin"
+	_ "github.com/apache/servicecomb-service-center/server/plugin/tracing/pzipkin"
 )
 
 func init() {

@@ -95,7 +95,7 @@ func BatchCommitWithCmp(ctx context.Context, opts []registry.PluginOp,
 	cmp []registry.CompareOp, fail []registry.PluginOp) (resp *registry.PluginResponse, err error) {
 	lenOpts := len(opts)
 	tmpLen := lenOpts
-	tmpOpts := []registry.PluginOp{}
+	var tmpOpts []registry.PluginOp
 	for i := 0; tmpLen > 0; i++ {
 		tmpLen = lenOpts - (i+1)*MAX_TXN_NUMBER_ONE_TIME
 		if tmpLen > 0 {
@@ -130,7 +130,8 @@ func (s *registryEngine) Start() error {
 func (s *registryEngine) Stop() {
 	s.goroutine.Close(true)
 
-	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
 	if err := s.unregisterInstance(ctx); err != nil {
 		log.Error("stop registry engine failed", err)
 	}

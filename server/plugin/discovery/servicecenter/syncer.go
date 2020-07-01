@@ -17,13 +17,13 @@ package servicecenter
 
 import (
 	"fmt"
+	model2 "github.com/apache/servicecomb-service-center/pkg/model"
 	"sync"
 	"time"
 
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/admin/model"
 	"github.com/apache/servicecomb-service-center/server/alarm"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
@@ -55,14 +55,19 @@ func (c *Syncer) Sync(ctx context.Context) {
 	if len(errs) > 0 {
 		err := fmt.Errorf("%v", errs)
 		log.Errorf(err, "Sync catches errors")
-		alarm.Raise(alarm.IdBackendConnectionRefuse,
+		err = alarm.Raise(alarm.IdBackendConnectionRefuse,
 			alarm.AdditionalContext(err.Error()))
+		if err != nil {
+			log.Error("", err)
+		}
 		if cache == nil {
 			return
 		}
 	}
-	alarm.Clear(alarm.IdBackendConnectionRefuse)
-
+	err := alarm.Clear(alarm.IdBackendConnectionRefuse)
+	if err != nil {
+		log.Error("", err)
+	}
 	// microservice
 	serviceCacher, ok := c.cachers[backend.SERVICE]
 	if ok {
@@ -104,14 +109,14 @@ func (c *Syncer) Sync(ctx context.Context) {
 	}
 }
 
-func (c *Syncer) check(local *ServiceCenterCacher, remote model.Getter, skipClusters map[string]error) {
+func (c *Syncer) check(local *ServiceCenterCacher, remote model2.Getter, skipClusters map[string]error) {
 	c.checkWithConflictHandleFunc(local, remote, skipClusters, c.skipHandleFunc)
 }
 
-func (c *Syncer) checkWithConflictHandleFunc(local *ServiceCenterCacher, remote model.Getter, skipClusters map[string]error,
-	conflictHandleFunc func(origin *model.KV, conflict model.Getter, index int)) {
-	exists := make(map[string]*model.KV)
-	remote.ForEach(func(i int, v *model.KV) bool {
+func (c *Syncer) checkWithConflictHandleFunc(local *ServiceCenterCacher, remote model2.Getter, skipClusters map[string]error,
+	conflictHandleFunc func(origin *model2.KV, conflict model2.Getter, index int)) {
+	exists := make(map[string]*model2.KV)
+	remote.ForEach(func(i int, v *model2.KV) bool {
 		// because the result of the remote return may contain the same data as
 		// the local cache of the current SC. So we need to ignore it and
 		// prevent the aggregation result from increasing.
@@ -153,7 +158,7 @@ func (c *Syncer) checkWithConflictHandleFunc(local *ServiceCenterCacher, remote 
 	var deletes []*discovery.KeyValue
 	local.Cache().ForEach(func(key string, v *discovery.KeyValue) (next bool) {
 		var exist bool
-		remote.ForEach(func(_ int, v *model.KV) bool {
+		remote.ForEach(func(_ int, v *model2.KV) bool {
 			if v.ClusterName == registry.Configuration().ClusterName {
 				return true
 			}
@@ -175,13 +180,13 @@ func (c *Syncer) checkWithConflictHandleFunc(local *ServiceCenterCacher, remote 
 	}
 }
 
-func (c *Syncer) skipHandleFunc(origin *model.KV, conflict model.Getter, index int) {
+func (c *Syncer) skipHandleFunc(origin *model2.KV, conflict model2.Getter, index int) {
 }
 
-func (c *Syncer) logConflictFunc(origin *model.KV, conflict model.Getter, index int) {
+func (c *Syncer) logConflictFunc(origin *model2.KV, conflict model2.Getter, index int) {
 	switch conflict.(type) {
-	case *model.MicroserviceIndexSlice:
-		slice := conflict.(*model.MicroserviceIndexSlice)
+	case *model2.MicroserviceIndexSlice:
+		slice := conflict.(*model2.MicroserviceIndexSlice)
 		kv := (*slice)[index]
 		if serviceId := origin.Value.(string); kv.Value != serviceId {
 			key := core.GetInfoFromSvcIndexKV(util.StringToBytesWithNoCopy(kv.Key))
@@ -189,8 +194,8 @@ func (c *Syncer) logConflictFunc(origin *model.KV, conflict model.Getter, index 
 				kv.ClusterName, kv.Value, key.Environment, key.AppId, key.ServiceName, key.Version,
 				serviceId, origin.ClusterName)
 		}
-	case *model.MicroserviceAliasSlice:
-		slice := conflict.(*model.MicroserviceAliasSlice)
+	case *model2.MicroserviceAliasSlice:
+		slice := conflict.(*model2.MicroserviceAliasSlice)
 		kv := (*slice)[index]
 		if serviceId := origin.Value.(string); kv.Value != serviceId {
 			key := core.GetInfoFromSvcAliasKV(util.StringToBytesWithNoCopy(kv.Key))

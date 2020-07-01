@@ -117,8 +117,11 @@ func (h *TagEventHandler) OnEvent(evt discovery.KvEvent) {
 	}
 	log.Infof("caught [%s] service tags[%s/%s] event", action, consumerId, evt.KV.Value)
 
-	task.Service().Add(context.Background(),
+	err := task.Service().Add(context.Background(),
 		NewTagsChangedAsyncTask(domainProject, consumerId, evt))
+	if err != nil {
+		log.Error("", err)
+	}
 }
 
 func NewTagEventHandler() *TagEventHandler {

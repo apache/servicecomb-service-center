@@ -21,6 +21,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -133,7 +134,11 @@ func (client *URLClient) HttpDoWithContext(ctx context.Context, method string, r
 	case "gzip":
 		reader, err := NewGZipBodyReader(resp.Body)
 		if err != nil {
-			io.Copy(ioutil.Discard, resp.Body)
+			_, err = io.Copy(ioutil.Discard, resp.Body)
+			if err != nil {
+				log.Error("", err)
+				return nil, err
+			}
 			resp.Body.Close()
 			return nil, err
 		}
@@ -150,10 +155,13 @@ func DumpRequestOut(req *http.Request) {
 
 	fmt.Println(">", req.URL.String())
 	b, _ := httputil.DumpRequestOut(req, true)
-	buffer.ReadLine(bytes.NewBuffer(b), func(line string) bool {
+	err := buffer.ReadLine(bytes.NewBuffer(b), func(line string) bool {
 		fmt.Println(">", line)
 		return true
 	})
+	if err != nil {
+		log.Error("", err)
+	}
 }
 
 func DumpResponse(resp *http.Response) {
@@ -162,10 +170,13 @@ func DumpResponse(resp *http.Response) {
 	}
 
 	b, _ := httputil.DumpResponse(resp, true)
-	buffer.ReadLine(bytes.NewBuffer(b), func(line string) bool {
+	err := buffer.ReadLine(bytes.NewBuffer(b), func(line string) bool {
 		fmt.Println("<", line)
 		return true
 	})
+	if err != nil {
+		log.Error("", err)
+	}
 }
 
 func (client *URLClient) HttpDo(method string, rawURL string, headers http.Header, body []byte) (resp *http.Response, err error) {

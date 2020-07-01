@@ -40,8 +40,8 @@ import (
 var PactLogger *log.Logger
 
 const (
-	BROKER_HOME_URL                      = "/"
-	BROKER_PARTICIPANTS_URL              = "/participants"
+	BrokerHomeUrl                        = "/"
+	BrokerParticipantsUrl                = "/participants"
 	BROKER_PARTICIPANT_URL               = "/participants/:participantId"
 	BROKER_PARTY_VERSIONS_URL            = "/participants/:participantId/versions"
 	BROKER_PARTY_LATEST_VERSION_URL      = "/participants/:participantId/versions/latest"
@@ -51,21 +51,21 @@ const (
 	BROKER_PROVIDER_LATEST_PACTS_TAG_URL = "/pacts/provider/:providerId/latest/:tag"
 	BROKER_PACTS_LATEST_URL              = "/pacts/latest"
 
-	BROKER_PUBLISH_URL              = "/pacts/provider/:providerId/consumer/:consumerId/version/:number"
-	BROKER_PUBLISH_VERIFICATION_URL = "/pacts/provider/:providerId/consumer/:consumerId/pact-version/:pact/verification-results"
-	BROKER_WEBHOOHS_URL             = "/webhooks"
+	BrokerPublishUrl             = "/pacts/provider/:providerId/consumer/:consumerId/version/:number"
+	BrokerPublishVerificationUrl = "/pacts/provider/:providerId/consumer/:consumerId/pact-version/:pact/verification-results"
+	BrokerWebhoohsUrl            = "/webhooks"
 
-	BROKER_CURIES_URL = "/doc/:rel"
+	BrokerCuriesUrl = "/doc/:rel"
 )
 
 var brokerAPILinksValues = map[string]string{
-	"self":                              BROKER_HOME_URL,
-	"pb:publish-pact":                   BROKER_PUBLISH_URL,
+	"self":                              BrokerHomeUrl,
+	"pb:publish-pact":                   BrokerPublishUrl,
 	"pb:latest-pact-versions":           BROKER_PACTS_LATEST_URL,
-	"pb:pacticipants":                   BROKER_PARTICIPANTS_URL,
+	"pb:pacticipants":                   BrokerParticipantsUrl,
 	"pb:latest-provider-pacts":          BROKER_PROVIDER_LATEST_PACTS_URL,
 	"pb:latest-provider-pacts-with-tag": BROKER_PROVIDER_LATEST_PACTS_TAG_URL,
-	"pb:webhooks":                       BROKER_WEBHOOHS_URL,
+	"pb:webhooks":                       BrokerWebhoohsUrl,
 }
 
 var brokerAPILinksTempl = map[string]bool{
@@ -132,9 +132,7 @@ func GetBrokerHomeLinksAPIS(scheme string, host string, apiKey string) string {
 
 //CreateBrokerHomeResponse create the templated broker home response
 func CreateBrokerHomeResponse(host string, scheme string) *brokerpb.BrokerHomeResponse {
-
-	var apiEntries map[string]*brokerpb.BrokerAPIInfoEntry
-	apiEntries = make(map[string]*brokerpb.BrokerAPIInfoEntry)
+	apiEntries := make(map[string]*brokerpb.BrokerAPIInfoEntry)
 
 	for k := range brokerAPILinksValues {
 		apiEntries[k] = &brokerpb.BrokerAPIInfoEntry{
@@ -147,7 +145,7 @@ func CreateBrokerHomeResponse(host string, scheme string) *brokerpb.BrokerHomeRe
 	curies := []*brokerpb.BrokerAPIInfoEntry{}
 	curies = append(curies, &brokerpb.BrokerAPIInfoEntry{
 		Name: "pb",
-		Href: GenerateBrokerAPIPath(scheme, host, BROKER_CURIES_URL,
+		Href: GenerateBrokerAPIPath(scheme, host, BrokerCuriesUrl,
 			strings.NewReplacer(":rel", "{rel}")),
 	})
 

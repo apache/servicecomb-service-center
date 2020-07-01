@@ -27,7 +27,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
-	"sync"
 	"time"
 )
 
@@ -42,7 +41,6 @@ type KvStore struct {
 	AddOns      map[discovery.Type]AddOn
 	adaptors    util.ConcurrentMap
 	taskService task.TaskService
-	lock        sync.RWMutex
 	ready       chan struct{}
 	goroutine   *gopool.Pool
 	isClose     bool
@@ -50,7 +48,7 @@ type KvStore struct {
 }
 
 func (s *KvStore) Initialize() {
-	s.AddOns = make(map[discovery.Type]AddOn, 0)
+	s.AddOns = make(map[discovery.Type]AddOn)
 	s.taskService = task.NewTaskService()
 	s.ready = make(chan struct{})
 	s.goroutine = gopool.New(context.Background())
@@ -127,10 +125,6 @@ func (s *KvStore) autoClearCache(ctx context.Context) {
 			log.Warnf("caches are marked dirty!")
 		}
 	}
-}
-
-func (s *KvStore) closed() bool {
-	return s.isClose
 }
 
 func (s *KvStore) Stop() {

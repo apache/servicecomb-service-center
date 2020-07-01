@@ -71,7 +71,7 @@ func (*BrokerService) GetPactsOfProvider(ctx context.Context,
 	}
 
 	urlValue := GenerateBrokerAPIPath(in.BaseUrl.Scheme, in.BaseUrl.HostAddress,
-		BROKER_PUBLISH_VERIFICATION_URL,
+		BrokerPublishVerificationUrl,
 		strings.NewReplacer(":providerId", in.ProviderId,
 			":consumerId", in.ConsumerId,
 			":pact", strconv.FormatInt(int64(pactId), 10)))
@@ -231,7 +231,7 @@ func (*BrokerService) RetrieveProviderPacts(ctx context.Context,
 		PactLogger.Infof("[RetrieveProviderPacts] Consumer microservice found: %s", consumerId)
 
 		urlValue := GenerateBrokerAPIPath(in.BaseUrl.Scheme, in.BaseUrl.HostAddress,
-			BROKER_PUBLISH_URL,
+			BrokerPublishUrl,
 			strings.NewReplacer(":providerId", in.ProviderId,
 				":consumerId", consumerId,
 				":number", consumerVersion))
@@ -384,7 +384,7 @@ func (*BrokerService) GetAllProviderPacts(ctx context.Context,
 		PactLogger.Infof("[RetrieveProviderPacts] Consumer microservice found: %s", consumerId)
 
 		urlValue := GenerateBrokerAPIPath(in.BaseUrl.Scheme, in.BaseUrl.HostAddress,
-			BROKER_PUBLISH_URL,
+			BrokerPublishUrl,
 			strings.NewReplacer(":providerId", in.ProviderId,
 				":consumerId", consumerId,
 				":number", consumerVersion))
@@ -568,7 +568,7 @@ func (*BrokerService) RetrieveVerificationResults(ctx context.Context, in *broke
 			VerificationDate:           lastVerificationResult.VerificationDate,
 		}
 		verificationDetailsArr = append(verificationDetailsArr, verificationDetail)
-		if verificationDetail.Success == true {
+		if verificationDetail.Success {
 			successfuls = append(successfuls, providerName)
 		} else {
 			fails = append(fails, providerName)
@@ -650,7 +650,7 @@ func (*BrokerService) PublishVerificationResults(ctx context.Context, in *broker
 			pactExists = true
 		}
 	}
-	if pactExists == false {
+	if !pactExists {
 		PactLogger.Errorf(nil, "verification result publish request failed, pact does not exists.")
 		return &brokerpb.PublishVerificationResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, "pact does not exists."),

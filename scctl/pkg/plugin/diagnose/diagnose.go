@@ -19,10 +19,10 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/client/etcd"
 	"github.com/apache/servicecomb-service-center/pkg/client/sc"
+	model2 "github.com/apache/servicecomb-service-center/pkg/model"
+	"github.com/apache/servicecomb-service-center/scctl/etcd"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
-	"github.com/apache/servicecomb-service-center/server/admin/model"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/spf13/cobra"
@@ -97,7 +97,7 @@ func setResponse(ctx context.Context, etcdClient *clientv3.Client, key, prefix s
 	return nil
 }
 
-func diagnose(cache *model.Cache, etcdResp etcdResponse) (err error, details string) {
+func diagnose(cache *model2.Cache, etcdResp etcdResponse) (err error, details string) {
 	var (
 		service  = ServiceCompareHolder{Cache: cache.Microservices, Kvs: etcdResp[service]}
 		instance = InstanceCompareHolder{Cache: cache.Instances, Kvs: etcdResp[instance]}

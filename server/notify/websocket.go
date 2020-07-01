@@ -182,13 +182,12 @@ func (wh *WebSocket) HandleWatchWebSocketJob(o interface{}) {
 		remoteAddr = wh.conn.RemoteAddr().String()
 	)
 
-	switch o.(type) {
+	switch o := o.(type) {
 	case error:
-		err := o.(error)
-		log.Errorf(err, "watcher[%s] catch an err, subject: %s, group: %s",
+		log.Errorf(o, "watcher[%s] catch an err, subject: %s, group: %s",
 			remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
 
-		message = util.StringToBytesWithNoCopy(fmt.Sprintf("watcher catch an err: %s", err.Error()))
+		message = util.StringToBytesWithNoCopy(fmt.Sprintf("watcher catch an err: %s", o.Error()))
 	case time.Time:
 		domainProject := util.ParseDomainProject(wh.ctx)
 		if !serviceUtil.ServiceExist(wh.ctx, domainProject, wh.watcher.Group()) {
@@ -210,8 +209,7 @@ func (wh *WebSocket) HandleWatchWebSocketJob(o interface{}) {
 			remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
 		return
 	case *InstanceEvent:
-		job = o.(*InstanceEvent)
-		resp := job.Response
+		resp := o.Response
 
 		providerFlag := fmt.Sprintf("%s/%s/%s", resp.Key.AppId, resp.Key.ServiceName, resp.Key.Version)
 		if resp.Action != string(pb.EVT_EXPIRE) {

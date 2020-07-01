@@ -110,7 +110,7 @@ func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAl
 	}
 
 	schemasList := service.Schemas
-	if schemasList == nil || len(schemasList) == 0 {
+	if len(schemasList) == 0 {
 		return &pb.GetAllSchemaResponse{
 			Response: pb.CreateResponse(pb.Response_SUCCESS, "Do not have this schema info."),
 			Schemas:  []*pb.Schema{},

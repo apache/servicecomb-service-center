@@ -104,6 +104,11 @@ func (*BrokerController) GetAllProviderPacts(w http.ResponseWriter, r *http.Requ
 		},
 	}
 	resp, err := BrokerServiceAPI.GetAllProviderPacts(r.Context(), request /*, href*/)
+	if err != nil {
+		PactLogger.Errorf(err, "can not get pacts")
+		controller.WriteError(w, scerr.ErrInternal, "can not get pacts")
+		return
+	}
 	linksObj, err := json.Marshal(resp)
 	if err != nil {
 		PactLogger.Errorf(err, "invalid ProviderPacts")

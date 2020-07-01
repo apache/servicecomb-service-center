@@ -16,7 +16,12 @@
  */
 package auth
 
-import "net/http"
+import (
+	"errors"
+	"net/http"
+)
+
+var ErrNoHeader = errors.New("should provide Authorization header")
 
 type Auth interface {
 	Identify(r *http.Request) error

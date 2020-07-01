@@ -91,7 +91,7 @@ func Configuration() *Config {
 
 		registryAddresses := strings.Join(defaultRegistryConfig.RegistryAddresses(), ",")
 		defaultRegistryConfig.SslEnabled = core.ServerInfo.Config.SslEnabled &&
-			strings.Index(strings.ToLower(registryAddresses), "https://") >= 0
+			strings.Contains(strings.ToLower(registryAddresses), "https://")
 
 		defaultRegistryConfig.DialTimeout, err = time.ParseDuration(beego.AppConfig.DefaultString("connect_timeout", "10s"))
 		if err != nil {

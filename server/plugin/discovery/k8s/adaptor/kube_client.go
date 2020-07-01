@@ -223,12 +223,17 @@ func (c *K8sClient) GetNodeByPod(pod *v1.Pod) (node *v1.Node) {
 
 func (c *K8sClient) Run() {
 	if err := c.init(); err != nil {
-		alarm.Raise(alarm.IdBackendConnectionRefuse,
+		err = alarm.Raise(alarm.IdBackendConnectionRefuse,
 			alarm.AdditionalContext("%v", err))
+		if err != nil {
+			log.Error("", err)
+		}
 		return
 	}
-	alarm.Clear(alarm.IdBackendConnectionRefuse)
-
+	err := alarm.Clear(alarm.IdBackendConnectionRefuse)
+	if err != nil {
+		log.Error("", err)
+	}
 	c.goroutine.
 		Do(func(_ context.Context) { c.services.Run(c.stopCh) }).
 		Do(func(_ context.Context) { c.endpoints.Run(c.stopCh) }).

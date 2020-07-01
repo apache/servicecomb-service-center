@@ -80,7 +80,6 @@ func (cm *Details) Get(labels []*dto.LabelPair) (val float64) {
 
 func (cm *Details) put(labels []*dto.LabelPair, val float64) {
 	cm.mapper[cm.toKey(labels)] = val
-	return
 }
 
 func (cm *Details) ForEach(f func(labels []*dto.LabelPair, v float64) (next bool)) {

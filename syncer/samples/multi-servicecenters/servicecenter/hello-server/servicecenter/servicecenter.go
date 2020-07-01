@@ -20,12 +20,12 @@ package servicecenter
 import (
 	"context"
 	"fmt"
+	client2 "github.com/apache/servicecomb-service-center/pkg/client/sc"
 	"net/http"
 	"net/url"
 	"sync"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/pkg/client/sc"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/ticker"
@@ -33,7 +33,7 @@ import (
 
 var (
 	domainProject         string
-	cli                   *sc.SCClient
+	cli                   *client2.SCClient
 	once                  sync.Once
 	heartbeatInterval     = 30
 	providerCaches        = &sync.Map{}
@@ -45,7 +45,7 @@ var (
 
 func Start(ctx context.Context, conf *Config) (err error) {
 	once.Do(func() {
-		cli, err = sc.NewSCClient(sc.Config{Endpoints: conf.Registry.Endpoints})
+		cli, err = client2.NewSCClient(client2.Config{Endpoints: conf.Registry.Endpoints})
 		if err != nil {
 			log.Error("new service center client failed", err)
 			return
@@ -116,7 +116,7 @@ func Do(ctx context.Context, method, addr string, headers http.Header, body []by
 	}
 	endpoints, err := serverNameToEndpoints(raw.Hostname())
 
-	client, err := sc.NewLBClient(endpoints, (&sc.Config{Endpoints: endpoints}).Merge())
+	client, err := client2.NewLBClient(endpoints, (&client2.Config{Endpoints: endpoints}).Merge())
 	if err != nil {
 		return nil, err
 	}

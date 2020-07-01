@@ -99,10 +99,7 @@ func (e *Error) StatusCode() int {
 }
 
 func (e *Error) InternalError() bool {
-	if e.Code >= 500000 {
-		return true
-	}
-	return false
+	return e.Code >= 500000
 }
 
 func NewError(code int32, detail string) *Error {

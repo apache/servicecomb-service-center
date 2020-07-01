@@ -34,9 +34,7 @@ type Tree struct {
 
 func (t *Tree) AddFilter(fs ...Filter) *Tree {
 	t.lock.Lock()
-	for _, f := range fs {
-		t.filters = append(t.filters, f)
-	}
+	t.filters = append(t.filters, fs...)
 	t.lock.Unlock()
 	return t
 }

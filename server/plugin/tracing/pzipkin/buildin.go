@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package buildin
+package pzipkin
 
 import (
 	"context"
@@ -36,7 +36,7 @@ func init() {
 	mgr.RegisterPlugin(mgr.Plugin{mgr.TRACING, "buildin", New})
 }
 
-func New() mgr.PluginInstance {
+func New() mgr.Instance {
 	return &Zipkin{}
 }
 
@@ -48,9 +48,9 @@ func (zp *Zipkin) ServerBegin(operationName string, itf tracing.Request) tracing
 		span opentracing.Span
 		ctx  context.Context
 	)
-	switch itf.(type) {
+	switch itf := itf.(type) {
 	case *http.Request:
-		r := itf.(*http.Request)
+		r := itf
 		ctx = r.Context()
 
 		wireContext, err := ZipkinTracer().Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
@@ -75,7 +75,7 @@ func (zp *Zipkin) ServerBegin(operationName string, itf tracing.Request) tracing
 		return nil
 	}
 
-	ctx = util.SetContext(ctx, tracing.CTX_TRACE_SPAN, span)
+	_ = util.SetContext(ctx, tracing.CTX_TRACE_SPAN, span)
 	return span
 }
 
@@ -148,10 +148,13 @@ func (zp *Zipkin) ClientBegin(operationName string, itf tracing.Request) tracing
 			log.Errorf(err, "tracer inject request failed")
 		}
 		// inject context
-		carrier.ForeachKey(func(key, val string) error {
+		err := carrier.ForeachKey(func(key, val string) error {
 			ctx = util.SetContext(ctx, key, val)
 			return nil
 		})
+		if err != nil {
+			log.Error("", err)
+		}
 	default:
 		return nil
 	}

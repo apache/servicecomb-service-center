@@ -212,10 +212,7 @@ func TransferToMicroServiceDependency(ctx context.Context, key string) (*pb.Micr
 func equalServiceDependency(serviceA *pb.MicroServiceKey, serviceB *pb.MicroServiceKey) bool {
 	stringA := toString(serviceA)
 	stringB := toString(serviceB)
-	if stringA == stringB {
-		return true
-	}
-	return false
+	return stringA == stringB
 }
 
 func diffServiceVersion(serviceA *pb.MicroServiceKey, serviceB *pb.MicroServiceKey) bool {

@@ -19,12 +19,13 @@ package rbac_test
 
 import (
 	"context"
+	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/model"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery/etcd"
 	etcd2 "github.com/apache/servicecomb-service-center/server/plugin/registry/etcd"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/buildin"
-	"github.com/apache/servicecomb-service-center/server/plugin/tracing/buildin"
+	"github.com/apache/servicecomb-service-center/server/plugin/tracing/pzipkin"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 	"github.com/astaxie/beego"
@@ -45,7 +46,7 @@ func init() {
 	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "buildin", etcd.NewRepository})
 	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "etcd", etcd.NewRepository})
 	mgr.RegisterPlugin(mgr.Plugin{mgr.CIPHER, "buildin", plain.New})
-	mgr.RegisterPlugin(mgr.Plugin{mgr.TRACING, "buildin", buildin.New})
+	mgr.RegisterPlugin(mgr.Plugin{mgr.TRACING, "buildin", pzipkin.New})
 }
 
 func TestInitRBAC(t *testing.T) {
@@ -72,7 +73,7 @@ func TestInitRBAC(t *testing.T) {
 	t.Run("login and authenticate", func(t *testing.T) {
 		token, err := authr.Login(context.Background(), "root", "root")
 		assert.NoError(t, err)
-		t.Log(token)
+		fmt.Println("token:", token)
 		claims, err := authr.Authenticate(context.Background(), token)
 		assert.NoError(t, err)
 		assert.Equal(t, "root", claims.(map[string]interface{})[rbac.ClaimsUser])

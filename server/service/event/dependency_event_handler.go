@@ -55,7 +55,10 @@ func (h *DependencyEventHandler) OnEvent(evt discovery.KvEvent) {
 }
 
 func (h *DependencyEventHandler) notify() {
-	h.signals.Put(struct{}{})
+	err := h.signals.Put(struct{}{})
+	if err != nil {
+		log.Error("", err)
+	}
 }
 
 func (h *DependencyEventHandler) backoff(f func(), retries int) int {
@@ -129,10 +132,7 @@ func NewDependencyEventHandlerResource(dep *pb.ConsumerDependency, kv *discovery
 func isAddToLeft(centerNode *util.Node, addRes interface{}) bool {
 	res := addRes.(*DependencyEventHandlerResource)
 	compareRes := centerNode.Res.(*DependencyEventHandlerResource)
-	if res.kv.ModRevision > compareRes.kv.ModRevision {
-		return false
-	}
-	return true
+	return res.kv.ModRevision <= compareRes.kv.ModRevision
 }
 
 func (h *DependencyEventHandler) Handle() error {

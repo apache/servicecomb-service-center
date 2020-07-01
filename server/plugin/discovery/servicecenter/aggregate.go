@@ -18,10 +18,10 @@ package servicecenter
 import (
 	"context"
 	"crypto/tls"
-	"github.com/apache/servicecomb-service-center/pkg/client/sc"
+	client2 "github.com/apache/servicecomb-service-center/pkg/client/sc"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	model2 "github.com/apache/servicecomb-service-center/pkg/model"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/admin/model"
 	"github.com/apache/servicecomb-service-center/server/core"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
@@ -37,7 +37,7 @@ var (
 	clientTLS  *tls.Config
 )
 
-type SCClientAggregate []*sc.SCClient
+type SCClientAggregate []*client2.SCClient
 
 func getClientTLS() (*tls.Config, error) {
 	if clientTLS != nil {
@@ -48,8 +48,8 @@ func getClientTLS() (*tls.Config, error) {
 	return clientTLS, err
 }
 
-func (c *SCClientAggregate) GetScCache(ctx context.Context) (*model.Cache, map[string]error) {
-	var caches *model.Cache
+func (c *SCClientAggregate) GetScCache(ctx context.Context) (*model2.Cache, map[string]error) {
+	var caches *model2.Cache
 	errs := make(map[string]error)
 	for _, client := range *c {
 		cache, err := client.GetScCache(ctx)
@@ -59,7 +59,7 @@ func (c *SCClientAggregate) GetScCache(ctx context.Context) (*model.Cache, map[s
 		}
 
 		if caches == nil {
-			caches = &model.Cache{}
+			caches = &model2.Cache{}
 		}
 		c.cacheAppend(client.Cfg.Name, &caches.Microservices, &cache.Microservices)
 		c.cacheAppend(client.Cfg.Name, &caches.Indexes, &cache.Indexes)
@@ -74,8 +74,8 @@ func (c *SCClientAggregate) GetScCache(ctx context.Context) (*model.Cache, map[s
 	return caches, errs
 }
 
-func (c *SCClientAggregate) cacheAppend(name string, setter model.Setter, getter model.Getter) {
-	getter.ForEach(func(_ int, v *model.KV) bool {
+func (c *SCClientAggregate) cacheAppend(name string, setter model2.Setter, getter model2.Getter) {
+	getter.ForEach(func(_ int, v *model2.KV) bool {
 		if len(v.ClusterName) == 0 || v.ClusterName == registry.DefaultClusterName {
 			v.ClusterName = name
 		}
@@ -187,14 +187,14 @@ func GetOrCreateSCClient() *SCClientAggregate {
 			if len(name) == 0 || name == registry.Configuration().ClusterName {
 				continue
 			}
-			client, err := sc.NewSCClient(sc.Config{Name: name, Endpoints: endpoints})
+			client, err := client2.NewSCClient(client2.Config{Name: name, Endpoints: endpoints})
 			if err != nil {
 				log.Errorf(err, "new service center[%s]%v client failed", name, endpoints)
 				continue
 			}
 			client.Timeout = registry.Configuration().RequestTimeOut
 			// TLS
-			if strings.Index(endpoints[0], "https") >= 0 {
+			if strings.Contains(endpoints[0], "https") {
 				client.TLS, err = getClientTLS()
 				if err != nil {
 					log.Errorf(err, "get service center[%s]%v tls config failed", name, endpoints)

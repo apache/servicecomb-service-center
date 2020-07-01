@@ -32,7 +32,7 @@ func (r *AggregateRepository) New(t discovery.Type, cfg *discovery.Config) disco
 	return NewAggregator(t, cfg)
 }
 
-func NewRepository() mgr.PluginInstance {
+func NewRepository() mgr.Instance {
 	InitConfigs()
 	return &AggregateRepository{}
 }

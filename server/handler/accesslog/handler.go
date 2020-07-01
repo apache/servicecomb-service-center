@@ -92,7 +92,7 @@ func (h *Handler) Handle(i *chain.Invocation) {
 func NewAccessLogHandler(l *log.Logger) *Handler {
 	return &Handler{
 		logger:        l,
-		whiteListAPIs: make(map[string]struct{}, 0)}
+		whiteListAPIs: make(map[string]struct{})}
 }
 
 // RegisterHandlers registers an access log handler to the handler chain

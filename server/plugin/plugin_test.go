@@ -30,7 +30,7 @@ func (*mockAuthPlugin) Identify(r *http.Request) error {
 }
 
 func TestPluginManager_New(t *testing.T) {
-	pm := &PluginManager{}
+	pm := &Manager{}
 	pm.Initialize()
 
 	p := pm.Get(AUTH, "buildin")
@@ -39,7 +39,7 @@ func TestPluginManager_New(t *testing.T) {
 	}
 
 	times := 0
-	fn := func() PluginInstance {
+	fn := func() Instance {
 		times++
 		AUTH.ActiveConfigs().Set("a", "a")
 		return &mockAuthPlugin{times}
@@ -66,8 +66,8 @@ func TestPluginManager_New(t *testing.T) {
 			t.Fatalf("TestPluginManager_New failed")
 		}
 	}()
-	RegisterPlugin(Plugin{PluginName(999), "999", nil})
-	DynamicPluginFunc(PluginName(999), "999")
+	RegisterPlugin(Plugin{Name(999), "999", nil})
+	DynamicPluginFunc(Name(999), "999")
 
 	LoadPlugins()
 }

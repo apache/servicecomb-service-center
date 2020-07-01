@@ -52,7 +52,7 @@ func GetAllDomain(ctx context.Context) ([]string, error) {
 
 	domain := ""
 	instByDomain := ""
-	arrTmp := []string{}
+	var arrTmp []string
 	for _, kv := range kvs {
 		arrTmp = strings.Split(util.BytesToStringWithNoCopy(kv.Key), "/")
 		domain = arrTmp[len(arrTmp)-1]

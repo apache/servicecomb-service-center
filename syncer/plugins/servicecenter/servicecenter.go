@@ -18,8 +18,8 @@ package servicecenter
 
 import (
 	"context"
-
 	"github.com/apache/servicecomb-service-center/pkg/client/sc"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	scpb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/syncer/plugins"
@@ -45,7 +45,7 @@ func New() plugins.PluginInstance {
 
 // New repository with endpoints
 func (*adaptor) New(opts ...plugins.SCConfigOption) (plugins.Servicecenter, error) {
-	cli, err := sc.NewSCClient(plugins.ToSCConfig(opts...))
+	cli, err := client.NewSCClient(plugins.ToSCConfig(opts...))
 	if err != nil {
 		return nil, err
 	}

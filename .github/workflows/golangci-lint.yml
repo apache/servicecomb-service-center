@@ -1,0 +1,13 @@
+name: golangci-lint
+on: [push, pull_request]
+jobs:
+  golangci:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v1
+        with:
+          version: v1.27
+          args: --skip-dirs=examples,syncer,frontend,server/core/proto,scctl,integration --out-format=colored-line-number --enable golint,gocyclo --skip-files=.*_test.go$

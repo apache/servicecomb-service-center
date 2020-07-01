@@ -58,6 +58,9 @@ func (this *DependencyService) AddDependenciesForMicroServices(w http.ResponseWr
 	}
 
 	resp, err := core.ServiceAPI.AddDependenciesForMicroServices(r.Context(), request)
+	if err != nil {
+		controller.WriteError(w, scerr.ErrInternal, err.Error())
+	}
 	controller.WriteResponse(w, resp.Response, nil)
 }
 
@@ -77,6 +80,9 @@ func (this *DependencyService) CreateDependenciesForMicroServices(w http.Respons
 	}
 
 	resp, err := core.ServiceAPI.CreateDependenciesForMicroServices(r.Context(), request)
+	if err != nil {
+		controller.WriteError(w, scerr.ErrInternal, err.Error())
+	}
 	controller.WriteResponse(w, resp.Response, nil)
 }
 

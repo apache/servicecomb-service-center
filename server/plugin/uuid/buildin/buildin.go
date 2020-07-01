@@ -27,7 +27,7 @@ func init() {
 	mgr.RegisterPlugin(mgr.Plugin{mgr.UUID, "buildin", New})
 }
 
-func New() mgr.PluginInstance {
+func New() mgr.Instance {
 	return &BuildinUUID{}
 }
 

@@ -37,7 +37,6 @@ const (
 	TagQuotaType
 	MicroServiceQuotaType
 	MicroServiceInstanceQuotaType
-	typeEnd
 )
 
 var (

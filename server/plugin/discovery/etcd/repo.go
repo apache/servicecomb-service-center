@@ -33,7 +33,7 @@ func (r *EtcdRepository) New(t discovery.Type, cfg *discovery.Config) discovery.
 	return NewEtcdAdaptor(t.String(), cfg)
 }
 
-func NewRepository() mgr.PluginInstance {
+func NewRepository() mgr.Instance {
 	InitConfigs()
 	return &EtcdRepository{}
 }

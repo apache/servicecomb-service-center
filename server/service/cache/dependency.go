@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package cache
 
 import (
@@ -42,16 +43,16 @@ type DependencyRuleCache struct {
 	*cache.Tree
 }
 
-func (f *DependencyRuleCache) ExistVersionRule(ctx context.Context, consumerId string, provider *pb.MicroServiceKey) bool {
+func (f *DependencyRuleCache) ExistVersionRule(ctx context.Context, consumerID string, provider *pb.MicroServiceKey) bool {
 	cloneCtx := context.WithValue(context.WithValue(ctx,
-		CTX_FIND_CONSUMER, consumerId),
-		CTX_FIND_PROVIDER, provider)
+		CtxFindConsumer, consumerID),
+		CtxFindProvider, provider)
 
 	node, _ := f.Tree.Get(cloneCtx, cache.Options().Temporary(ctx.Value(serviceUtil.CTX_NOCACHE) == "1"))
 	if node == nil {
 		return false
 	}
-	v := node.Cache.Get(CACHE_DEP).(*DependencyRuleItem)
+	v := node.Cache.Get(Dep).(*DependencyRuleItem)
 	if v.VersionRule != provider.Version {
 		v.VersionRule = provider.Version
 		return false
@@ -60,5 +61,5 @@ func (f *DependencyRuleCache) ExistVersionRule(ctx context.Context, consumerId s
 }
 
 func (f *DependencyRuleCache) Remove(provider *pb.MicroServiceKey) {
-	f.Tree.Remove(context.WithValue(context.Background(), CTX_FIND_PROVIDER, provider))
+	f.Tree.Remove(context.WithValue(context.Background(), CtxFindProvider, provider))
 }

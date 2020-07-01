@@ -58,6 +58,7 @@ curl -X GET \
 
 ### Change password
 You must supply current password and token to update to new password
+```shell script
 curl -X PUT \
   http://127.0.0.1:30100/v4/account-password \
   -H 'Authorization: Bear eyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2NvdW50Ijoicm9vdCIsImV4cCI6MTU5MzMyOTE3OSwicm9sZSI6IiJ9.OR_uruuLds1wz10_J4gDEA-L9Ma_1RrHiKEA6CS-Nilv6hHB5KyhZ9_4qqf_c0iia4uKryAGHKsXUvrjOE51tz4QCXlgCmddrkYuLQsnDezXhV3TIqzdl4R_cy8h2cZo8O_b_q7eU2Iemd6x7BJE49SLgNiP5LTXCVct5Qm_GiXYTaM4dbHIJ01V-EPmNQuBr1vKdfNa8cqWtASSp9IEkFx1YpzhFacQgmfoiSGHvxQYZldQXuAh60ZXLBDexGu6jGnG39MqVNRysvHTpZRqxZWBhmEn5DeXpgKu-zlakJMjeEma4zcN-H0MumE-nMlBT5kjKWVr1DOdtOyJI6i786ZpS0wWHV4VOxpSursoKsW_XuTZCMM8LTBgdy5icCuHUXvvWXYJxPks9Pq3DcFjPlY3IuXyfokEWxGvrAF6jzglgSrNTiRkoNBKVktEapDyrpyWfktp22mhvWF6GuNoUzztxFPJblH-TXdudzWeqx-gV1lsRPSMsW8-oq6pxJfeb-b0PNM8vAIbwvv8an4T5iNMBZMz7J9NbpVCaj5eLcgfUXktyb8eWSfANhYMxY9kQN9dHZlkASAW-sjehi-rBXYJ8aCL4EbLzrYlmFWoN0z25dxvAxmWaPRQED3METYyZHvV_G4DSQf0cB2Oer_YdoRa6HWmxnTlz0HwPEq55PM' \
@@ -65,6 +66,8 @@ curl -X PUT \
 	"currentPassword":"rootpwd",
 	"password":"123"
 }'
+```
+
 ### Roles TODO
 currently, you can not custom and manage any role and role policy. there is only 1 build in roles
 - admin: able to do anything, including manage account, even change other account password

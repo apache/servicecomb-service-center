@@ -25,7 +25,7 @@ func init() {
 	mgr.RegisterPlugin(mgr.Plugin{mgr.TLS, "buildin", New})
 }
 
-func New() mgr.PluginInstance {
+func New() mgr.Instance {
 	return &DefaultTLS{}
 }
 

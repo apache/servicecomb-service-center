@@ -19,6 +19,7 @@ package log
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"runtime"
 	"runtime/debug"
@@ -247,9 +248,18 @@ func (l *Logger) Recover(r interface{}, callerSkip int) {
 }
 
 func (l *Logger) Sync() {
-	l.zapLogger.Sync()
-	StderrSyncer.Sync()
-	StdoutSyncer.Sync()
+	err := l.zapLogger.Sync()
+	if err != nil {
+		log.Println(err)
+	}
+	err = StderrSyncer.Sync()
+	if err != nil {
+		log.Println(err)
+	}
+	err = StdoutSyncer.Sync()
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 func NewLogger(cfg Config) *Logger {

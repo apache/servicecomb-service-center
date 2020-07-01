@@ -20,8 +20,8 @@ import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	model2 "github.com/apache/servicecomb-service-center/pkg/model"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/admin/model"
 	"github.com/apache/servicecomb-service-center/server/alarm"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
@@ -60,16 +60,16 @@ func init() {
 type AdminService struct {
 }
 
-func (service *AdminService) Dump(ctx context.Context, in *model.DumpRequest) (*model.DumpResponse, error) {
+func (service *AdminService) Dump(ctx context.Context, in *model2.DumpRequest) (*model2.DumpResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 
 	if !core.IsDefaultDomainProject(domainProject) {
-		return &model.DumpResponse{
+		return &model2.DumpResponse{
 			Response: pb.CreateResponse(scerr.ErrForbidden, "Required admin permission"),
 		}, nil
 	}
 
-	resp := &model.DumpResponse{
+	resp := &model2.DumpResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Admin dump successfully"),
 	}
 
@@ -92,7 +92,7 @@ func (service *AdminService) Dump(ctx context.Context, in *model.DumpRequest) (*
 	return resp, nil
 }
 
-func (service *AdminService) dump(ctx context.Context, option string, resp *model.DumpResponse) {
+func (service *AdminService) dump(ctx context.Context, option string, resp *model2.DumpResponse) {
 	switch option {
 	case "info":
 		resp.Info = version.Ver()
@@ -101,7 +101,7 @@ func (service *AdminService) dump(ctx context.Context, option string, resp *mode
 	case "env":
 		resp.Environments = environments
 	case "cache":
-		var cache model.Cache
+		var cache model2.Cache
 		service.dumpAllCache(ctx, &cache)
 		resp.Cache = &cache
 	case "all":
@@ -112,7 +112,7 @@ func (service *AdminService) dump(ctx context.Context, option string, resp *mode
 	}
 }
 
-func (service *AdminService) dumpAllCache(ctx context.Context, cache *model.Cache) {
+func (service *AdminService) dumpAllCache(ctx context.Context, cache *model2.Cache) {
 	gopool.New(ctx, gopool.Configure().Workers(2)).
 		Do(func(_ context.Context) { setValue(backend.Store().Service(), &cache.Microservices) }).
 		Do(func(_ context.Context) { setValue(backend.Store().ServiceIndex(), &cache.Indexes) }).
@@ -126,9 +126,9 @@ func (service *AdminService) dumpAllCache(ctx context.Context, cache *model.Cach
 		Done()
 }
 
-func setValue(e discovery.Adaptor, setter model.Setter) {
+func setValue(e discovery.Adaptor, setter model2.Setter) {
 	e.Cache().ForEach(func(k string, kv *discovery.KeyValue) (next bool) {
-		setter.SetValue(&model.KV{
+		setter.SetValue(&model2.KV{
 			Key:         k,
 			Rev:         kv.ModRevision,
 			Value:       kv.Value,
@@ -138,20 +138,20 @@ func setValue(e discovery.Adaptor, setter model.Setter) {
 	})
 }
 
-func (service *AdminService) Clusters(ctx context.Context, in *model.ClustersRequest) (*model.ClustersResponse, error) {
-	return &model.ClustersResponse{
+func (service *AdminService) Clusters(ctx context.Context, in *model2.ClustersRequest) (*model2.ClustersResponse, error) {
+	return &model2.ClustersResponse{
 		Clusters: registry.Configuration().Clusters,
 	}, nil
 }
 
-func (service *AdminService) AlarmList(ctx context.Context, in *model.AlarmListRequest) (*model.AlarmListResponse, error) {
-	return &model.AlarmListResponse{
+func (service *AdminService) AlarmList(ctx context.Context, in *model2.AlarmListRequest) (*model2.AlarmListResponse, error) {
+	return &model2.AlarmListResponse{
 		Alarms: alarm.ListAll(),
 	}, nil
 }
 
-func (service *AdminService) ClearAlarm(ctx context.Context, in *model.ClearAlarmRequest) (*model.ClearAlarmResponse, error) {
+func (service *AdminService) ClearAlarm(ctx context.Context, in *model2.ClearAlarmRequest) (*model2.ClearAlarmResponse, error) {
 	alarm.ClearAll()
 	log.Infof("service center alarms are cleared")
-	return &model.ClearAlarmResponse{}, nil
+	return &model2.ClearAlarmResponse{}, nil
 }

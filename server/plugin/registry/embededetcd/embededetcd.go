@@ -14,11 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package embededetcd
 
 import (
 	"context"
-	"crypto/tls"
 	"errors"
 	"fmt"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
@@ -38,8 +38,6 @@ import (
 	"strings"
 	"time"
 )
-
-var embedTLSConfig *tls.Config
 
 func init() {
 	mgr.RegisterPlugin(mgr.Plugin{mgr.REGISTRY, "embeded_etcd", getEmbedInstance})
@@ -526,7 +524,7 @@ func callback(action registry.ActionType, rev int64, kvs []*mvccpb.KeyValue, cb 
 	})
 }
 
-func getEmbedInstance() mgr.PluginInstance {
+func getEmbedInstance() mgr.Instance {
 	log.Warnf("enable embedded registry mode")
 
 	hostName := "sc-0"
@@ -545,13 +543,7 @@ func getEmbedInstance() mgr.PluginInstance {
 	}
 
 	if registry.Configuration().SslEnabled {
-		var err error
-		embedTLSConfig, err = mgr.Plugins().TLS().ServerConfig()
-		if err != nil {
-			log.Error("get service center tls config failed", err)
-			inst.err <- err
-			return inst
-		}
+		log.Info("config no use for embedded etcd")
 	}
 
 	serverCfg := embed.NewConfig()

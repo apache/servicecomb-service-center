@@ -70,7 +70,7 @@ func Sync() {
 }
 
 func LogNilOrWarnf(start time.Time, format string, args ...interface{}) {
-	cost := time.Now().Sub(start)
+	cost := time.Since(start)
 	if cost < time.Second {
 		return
 	}

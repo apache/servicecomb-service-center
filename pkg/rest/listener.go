@@ -49,8 +49,13 @@ func (rl *TcpListener) Accept() (c net.Conn, err error) {
 	}
 
 	if rl.server.KeepaliveTimeout > 0 {
-		tc.SetKeepAlive(true)
-		tc.SetKeepAlivePeriod(rl.server.KeepaliveTimeout)
+		if err := tc.SetKeepAlive(true); err != nil {
+			return nil, err
+		}
+		err = tc.SetKeepAlivePeriod(rl.server.KeepaliveTimeout)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	c = restConn{

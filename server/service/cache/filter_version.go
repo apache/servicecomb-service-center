@@ -29,25 +29,25 @@ type VersionRuleFilter struct {
 }
 
 func (f *VersionRuleFilter) Name(ctx context.Context, _ *cache.Node) string {
-	provider := ctx.Value(CTX_FIND_PROVIDER).(*pb.MicroServiceKey)
+	provider := ctx.Value(CtxFindProvider).(*pb.MicroServiceKey)
 	return provider.Version
 }
 
 func (f *VersionRuleFilter) Init(ctx context.Context, parent *cache.Node) (node *cache.Node, err error) {
-	instance, ok := ctx.Value(CTX_FIND_PROVIDER_INSTANCE).(*pb.HeartbeatSetElement)
+	instance, ok := ctx.Value(CtxFindProviderInstance).(*pb.HeartbeatSetElement)
 	if ok {
 		node = cache.NewNode()
-		node.Cache.Set(CACHE_FIND, &VersionRuleCacheItem{
+		node.Cache.Set(Find, &VersionRuleCacheItem{
 			ServiceIds: []string{instance.ServiceId},
 		})
 		return
 	}
 
-	provider := ctx.Value(CTX_FIND_PROVIDER).(*pb.MicroServiceKey)
+	provider := ctx.Value(CtxFindProvider).(*pb.MicroServiceKey)
 	// 版本规则
 	ids, exist, err := serviceUtil.FindServiceIds(ctx, provider.Version, provider)
 	if err != nil {
-		consumer := ctx.Value(CTX_FIND_CONSUMER).(*pb.MicroService)
+		consumer := ctx.Value(CtxFindConsumer).(*pb.MicroService)
 		findFlag := fmt.Sprintf("consumer '%s' find provider %s/%s/%s", consumer.ServiceId,
 			provider.AppId, provider.ServiceName, provider.Version)
 		log.Errorf(err, "FindServiceIds failed, %s", findFlag)
@@ -58,7 +58,7 @@ func (f *VersionRuleFilter) Init(ctx context.Context, parent *cache.Node) (node 
 	}
 
 	node = cache.NewNode()
-	node.Cache.Set(CACHE_FIND, &VersionRuleCacheItem{
+	node.Cache.Set(Find, &VersionRuleCacheItem{
 		ServiceIds: ids,
 	})
 	return

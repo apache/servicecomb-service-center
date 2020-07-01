@@ -29,51 +29,51 @@ var (
 
 func init() {
 	close(closeCh)
-	mgr.RegisterPlugin(mgr.Plugin{mgr.REGISTRY, "buildin", NewRegistry})
+	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.REGISTRY, Name: "buildin", New: NewRegistry})
 }
 
-type BuildinRegistry struct {
+type Registry struct {
 	ready chan int
 }
 
-func (ec *BuildinRegistry) Err() (err <-chan error) {
+func (ec *Registry) Err() (err <-chan error) {
 	return
 }
-func (ec *BuildinRegistry) Ready() <-chan struct{} {
+func (ec *Registry) Ready() <-chan struct{} {
 	return closeCh
 }
-func (ec *BuildinRegistry) PutNoOverride(ctx context.Context, opts ...registry.PluginOpOption) (bool, error) {
+func (ec *Registry) PutNoOverride(ctx context.Context, opts ...registry.PluginOpOption) (bool, error) {
 	return false, nil
 }
-func (ec *BuildinRegistry) Do(ctx context.Context, opts ...registry.PluginOpOption) (*registry.PluginResponse, error) {
+func (ec *Registry) Do(ctx context.Context, opts ...registry.PluginOpOption) (*registry.PluginResponse, error) {
 	return noResponse, nil
 }
-func (ec *BuildinRegistry) Txn(ctx context.Context, ops []registry.PluginOp) (*registry.PluginResponse, error) {
+func (ec *Registry) Txn(ctx context.Context, ops []registry.PluginOp) (*registry.PluginResponse, error) {
 	return noResponse, nil
 }
-func (ec *BuildinRegistry) TxnWithCmp(ctx context.Context, success []registry.PluginOp, cmp []registry.CompareOp, fail []registry.PluginOp) (*registry.PluginResponse, error) {
+func (ec *Registry) TxnWithCmp(ctx context.Context, success []registry.PluginOp, cmp []registry.CompareOp, fail []registry.PluginOp) (*registry.PluginResponse, error) {
 	return noResponse, nil
 }
-func (ec *BuildinRegistry) LeaseGrant(ctx context.Context, TTL int64) (leaseID int64, err error) {
+func (ec *Registry) LeaseGrant(ctx context.Context, TTL int64) (leaseID int64, err error) {
 	return 0, nil
 }
-func (ec *BuildinRegistry) LeaseRenew(ctx context.Context, leaseID int64) (TTL int64, err error) {
+func (ec *Registry) LeaseRenew(ctx context.Context, leaseID int64) (TTL int64, err error) {
 	return 0, nil
 }
-func (ec *BuildinRegistry) LeaseRevoke(ctx context.Context, leaseID int64) error {
+func (ec *Registry) LeaseRevoke(ctx context.Context, leaseID int64) error {
 	return nil
 }
-func (ec *BuildinRegistry) Watch(ctx context.Context, opts ...registry.PluginOpOption) error {
+func (ec *Registry) Watch(ctx context.Context, opts ...registry.PluginOpOption) error {
 	return nil
 }
-func (ec *BuildinRegistry) Compact(ctx context.Context, reserve int64) error {
+func (ec *Registry) Compact(ctx context.Context, reserve int64) error {
 	return nil
 }
-func (ec *BuildinRegistry) Close() {
+func (ec *Registry) Close() {
 }
 
-func NewRegistry() mgr.PluginInstance {
-	return &BuildinRegistry{
+func NewRegistry() mgr.Instance {
+	return &Registry{
 		ready: make(chan int),
 	}
 }

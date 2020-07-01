@@ -17,10 +17,10 @@
 package admin
 
 import (
+	model2 "github.com/apache/servicecomb-service-center/pkg/model"
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/rest"
-	"github.com/apache/servicecomb-service-center/server/admin/model"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	"strings"
 )
@@ -32,10 +32,10 @@ type AdminServiceControllerV4 struct {
 // URLPatterns 路由
 func (ctrl *AdminServiceControllerV4) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTP_METHOD_GET, "/v4/:project/admin/alarms", ctrl.AlarmList},
-		{rest.HTTP_METHOD_DELETE, "/v4/:project/admin/alarms", ctrl.ClearAlarm},
-		{rest.HTTP_METHOD_GET, "/v4/:project/admin/dump", ctrl.Dump},
-		{rest.HTTP_METHOD_GET, "/v4/:project/admin/clusters", ctrl.Clusters},
+		{Method: rest.HTTP_METHOD_GET, Path: "/v4/:project/admin/alarms", Func: ctrl.AlarmList},
+		{Method: rest.HTTP_METHOD_DELETE, Path: "/v4/:project/admin/alarms", Func: ctrl.ClearAlarm},
+		{Method: rest.HTTP_METHOD_GET, Path: "/v4/:project/admin/dump", Func: ctrl.Dump},
+		{Method: rest.HTTP_METHOD_GET, Path: "/v4/:project/admin/clusters", Func: ctrl.Clusters},
 	}
 }
 
@@ -45,7 +45,7 @@ func (ctrl *AdminServiceControllerV4) Dump(w http.ResponseWriter, r *http.Reques
 	if s := strings.TrimSpace(query.Get("options")); len(s) > 0 {
 		options = strings.Split(s, ",")
 	}
-	request := &model.DumpRequest{
+	request := &model2.DumpRequest{
 		Options: options,
 	}
 	ctx := r.Context()
@@ -57,7 +57,7 @@ func (ctrl *AdminServiceControllerV4) Dump(w http.ResponseWriter, r *http.Reques
 }
 
 func (ctrl *AdminServiceControllerV4) Clusters(w http.ResponseWriter, r *http.Request) {
-	request := &model.ClustersRequest{}
+	request := &model2.ClustersRequest{}
 	ctx := r.Context()
 	resp, _ := AdminServiceAPI.Clusters(ctx, request)
 
@@ -67,7 +67,7 @@ func (ctrl *AdminServiceControllerV4) Clusters(w http.ResponseWriter, r *http.Re
 }
 
 func (ctrl *AdminServiceControllerV4) AlarmList(w http.ResponseWriter, r *http.Request) {
-	request := &model.AlarmListRequest{}
+	request := &model2.AlarmListRequest{}
 	ctx := r.Context()
 	resp, _ := AdminServiceAPI.AlarmList(ctx, request)
 
@@ -77,7 +77,7 @@ func (ctrl *AdminServiceControllerV4) AlarmList(w http.ResponseWriter, r *http.R
 }
 
 func (ctrl *AdminServiceControllerV4) ClearAlarm(w http.ResponseWriter, r *http.Request) {
-	request := &model.ClearAlarmRequest{}
+	request := &model2.ClearAlarmRequest{}
 	ctx := r.Context()
 	resp, _ := AdminServiceAPI.ClearAlarm(ctx, request)
 	controller.WriteResponse(w, resp.Response, nil)

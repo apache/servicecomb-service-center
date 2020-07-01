@@ -16,8 +16,8 @@
 package model
 
 import (
+	model2 "github.com/apache/servicecomb-service-center/pkg/model"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/admin/model"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"strconv"
@@ -26,12 +26,12 @@ import (
 
 func GetDomainProject(resouce interface{}) (domainProject string) {
 	switch resouce.(type) {
-	case *model.Microservice:
+	case *model2.Microservice:
 		_, domainProject = core.GetInfoFromSvcKV(
-			util.StringToBytesWithNoCopy(resouce.(*model.Microservice).Key))
-	case *model.Instance:
+			util.StringToBytesWithNoCopy(resouce.(*model2.Microservice).Key))
+	case *model2.Instance:
 		_, _, domainProject = core.GetInfoFromInstKV(
-			util.StringToBytesWithNoCopy(resouce.(*model.Instance).Key))
+			util.StringToBytesWithNoCopy(resouce.(*model2.Instance).Key))
 	}
 	return
 }

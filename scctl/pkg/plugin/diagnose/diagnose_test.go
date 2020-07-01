@@ -17,32 +17,32 @@ package diagnose
 
 import (
 	"fmt"
-	"github.com/apache/servicecomb-service-center/server/admin/model"
+	model2 "github.com/apache/servicecomb-service-center/pkg/model"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"testing"
 )
 
 func TestNewDiagnoseCommand(t *testing.T) {
-	services := model.MicroserviceSlice{
-		model.NewMicroservice(&model.KV{Key: "1", Rev: 1,
+	services := model2.MicroserviceSlice{
+		model2.NewMicroservice(&model2.KV{Key: "1", Rev: 1,
 			Value: &proto.MicroService{
 				ServiceId: "667570b6842411e89c66286ed488de36", AppId: "app", ServiceName: "name1", Version: "0.0.1",
 			}}), // greater
-		model.NewMicroservice(&model.KV{Key: "6", Rev: 1,
+		model2.NewMicroservice(&model2.KV{Key: "6", Rev: 1,
 			Value: &proto.MicroService{
 				ServiceId: "667570b6842411e89c66286ed488de36", AppId: "app", ServiceName: "name2", Version: "0.0.1",
 			}}), // greater
-		model.NewMicroservice(&model.KV{Key: "2", Rev: 1, Value: &proto.MicroService{ServiceId: "2"}}), // mismatch
-		model.NewMicroservice(&model.KV{Key: "4", Rev: 2, Value: &proto.MicroService{ServiceId: "4"}}), // pass
+		model2.NewMicroservice(&model2.KV{Key: "2", Rev: 1, Value: &proto.MicroService{ServiceId: "2"}}), // mismatch
+		model2.NewMicroservice(&model2.KV{Key: "4", Rev: 2, Value: &proto.MicroService{ServiceId: "4"}}), // pass
 	}
-	instances := model.InstanceSlice{
-		model.NewInstance(&model.KV{Key: "1", Rev: 1,
+	instances := model2.InstanceSlice{
+		model2.NewInstance(&model2.KV{Key: "1", Rev: 1,
 			Value: &proto.MicroServiceInstance{
 				ServiceId: "667570b6842411e89c66286ed488de36", InstanceId: "667570b6842411e89c66286ed488de36", Version: "0.0.1",
 				Endpoints: []string{"rest://127.0.0.1:8080"},
 			}}), // greater
-		model.NewInstance(&model.KV{Key: "2", Rev: 1,
+		model2.NewInstance(&model2.KV{Key: "2", Rev: 1,
 			Value: &proto.MicroServiceInstance{
 				ServiceId: "667570b6842411e89c66286ed488de36", InstanceId: "667570b6842411e89c66286ed488de36", Version: "0.0.1",
 				Endpoints: []string{"rest://127.0.0.2:8080"},
@@ -56,7 +56,7 @@ func TestNewDiagnoseCommand(t *testing.T) {
 	}
 
 	//for {
-	err, details := diagnose(&model.Cache{Microservices: services, Instances: instances}, etcdResponse{service: kvs})
+	err, details := diagnose(&model2.Cache{Microservices: services, Instances: instances}, etcdResponse{service: kvs})
 	if err == nil || len(details) == 0 {
 		t.Fatalf("TestNewDiagnoseCommand failed")
 	}

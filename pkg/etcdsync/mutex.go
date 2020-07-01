@@ -48,11 +48,9 @@ type DLock struct {
 }
 
 var (
-	globalMux sync.Mutex
-	IsDebug   bool
-	hostname  = util.HostName()
-	pid       = os.Getpid()
-	mutex     = new(sync.Mutex)
+	IsDebug  bool
+	hostname = util.HostName()
+	pid      = os.Getpid()
 )
 
 func NewDLock(key string, ttl int64, wait bool) (l *DLock, err error) {
@@ -119,7 +117,10 @@ func (m *DLock) Lock(wait bool) (err error) {
 	}
 
 	if leaseID > 0 {
-		backend.Registry().LeaseRevoke(m.ctx, leaseID)
+		err = backend.Registry().LeaseRevoke(m.ctx, leaseID)
+		if err != nil {
+			return err
+		}
 	}
 
 	if m.ttl == 0 || !wait {

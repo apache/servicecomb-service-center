@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buildin
+package pzipkin
 
 import (
 	"github.com/openzipkin/zipkin-go-opentracing"
