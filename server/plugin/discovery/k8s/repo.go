@@ -34,6 +34,6 @@ func (r *K8sRepository) New(t discovery.Type, cfg *discovery.Config) discovery.A
 	return adaptor.NewK8sAdaptor(t, cfg)
 }
 
-func NewRepository() mgr.PluginInstance {
+func NewRepository() mgr.Instance {
 	return &K8sRepository{}
 }

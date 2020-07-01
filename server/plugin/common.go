@@ -29,7 +29,7 @@ const (
 )
 
 // DynamicPluginFunc should be called in buildin implement
-func DynamicPluginFunc(pn PluginName, funcName string) pg.Symbol {
+func DynamicPluginFunc(pn Name, funcName string) pg.Symbol {
 	if wi, ok := Plugins().instances[pn]; ok && !wi.dynamic {
 		return nil
 	}

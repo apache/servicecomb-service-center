@@ -22,18 +22,18 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core"
 )
 
-// PluginName is an alias, it represents a plugin interface.
-type PluginName int
+// Name is an alias, it represents a plugin interface.
+type Name int
 
-// PluginImplName is an alias，it represents a plugin interface implementation.
-type PluginImplName string
+// ImplName is an alias，it represents a plugin interface implementation.
+type ImplName string
 
-// PluginInstance is an instance of a plugin interface which is represented by
-// PluginName.
-type PluginInstance interface{}
+// Instance is an instance of a plugin interface which is represented by
+// Name.
+type Instance interface{}
 
 // String implements fmt.Stringer.
-func (pn PluginName) String() string {
+func (pn Name) String() string {
 	if name, ok := pluginNames[pn]; ok {
 		return name
 	}
@@ -41,21 +41,21 @@ func (pn PluginName) String() string {
 }
 
 // ActiveConfigs returns all the server's plugin config
-func (pn PluginName) ActiveConfigs() util.JSONObject {
+func (pn Name) ActiveConfigs() util.JSONObject {
 	return core.ServerInfo.Config.Plugins.Object(pn.String())
 }
 
 // ClearConfigs clears the server's plugin config
-func (pn PluginName) ClearConfigs() {
+func (pn Name) ClearConfigs() {
 	core.ServerInfo.Config.Plugins.Set(pn.String(), nil)
 }
 
 // Plugin generates a plugin instance
-// Plugin holds the 'PluginName' and 'PluginImplName'
+// Plugin holds the 'Name' and 'ImplName'
 // to manage the plugin instance generation.
 type Plugin struct {
-	PName PluginName
-	Name  PluginImplName
+	PName Name
+	Name  ImplName
 	// New news an instance of 'PName' represented plugin interface
-	New func() PluginInstance
+	New func() Instance
 }

@@ -46,7 +46,7 @@ import _ "github.com/apache/servicecomb-service-center/server/plugin/uuid/buildi
 import _ "github.com/apache/servicecomb-service-center/server/plugin/uuid/context"
 
 // tracing
-import _ "github.com/apache/servicecomb-service-center/server/plugin/tracing/buildin"
+import _ "github.com/apache/servicecomb-service-center/server/plugin/tracing/pzipkin"
 
 // tls
 import _ "github.com/apache/servicecomb-service-center/server/plugin/tls/buildin"

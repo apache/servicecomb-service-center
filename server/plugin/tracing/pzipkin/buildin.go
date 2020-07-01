@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package buildin
+package pzipkin
 
 import (
 	"context"
@@ -36,7 +36,7 @@ func init() {
 	mgr.RegisterPlugin(mgr.Plugin{mgr.TRACING, "buildin", New})
 }
 
-func New() mgr.PluginInstance {
+func New() mgr.Instance {
 	return &Zipkin{}
 }
 

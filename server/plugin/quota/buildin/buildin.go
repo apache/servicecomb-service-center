@@ -29,7 +29,7 @@ func init() {
 	counter.RegisterCounterListener("buildin")
 }
 
-func New() mgr.PluginInstance {
+func New() mgr.Instance {
 	InitConfigs()
 	log.Infof("quota init, service: %d, instance: %d, schema: %d/service, tag: %d/service, rule: %d/service",
 		quota.DefaultServiceQuota, quota.DefaultInstanceQuota,

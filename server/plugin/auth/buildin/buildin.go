@@ -21,6 +21,7 @@ import (
 	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/server/plugin/auth"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/go-chassis/go-chassis/security/authr"
 	"github.com/go-chassis/go-chassis/server/restful"
@@ -29,10 +30,10 @@ import (
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{mgr.AUTH, "buildin", New})
+	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.AUTH, Name: "buildin", New: New})
 }
 
-func New() mgr.PluginInstance {
+func New() mgr.Instance {
 	return &TokenAuthenticator{}
 }
 
@@ -49,7 +50,7 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 
 	v := req.Header.Get(restful.HeaderAuth)
 	if v == "" {
-		return errors.New("should provide token in header")
+		return auth.ErrNoHeader
 	}
 	s := strings.Split(v, " ")
 	if len(s) != 2 {
@@ -68,14 +69,10 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 	return nil
 }
 func mustAuth(req *http.Request) bool {
-	if strings.Contains(req.URL.Path, "/v4/token") {
-		return false
-	}
-	if strings.Contains(req.URL.Path, "/health") {
-		return false
-	}
-	if strings.Contains(req.URL.Path, "/version") {
-		return false
+	for v := range rbac.WhiteAPIList() {
+		if strings.Contains(req.URL.Path, v) {
+			return false
+		}
 	}
 	return true
 }
