@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package buildin
 
 import (
@@ -25,7 +26,7 @@ import (
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{mgr.QUOTA, "buildin", New})
+	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.QUOTA, Name: "buildin", New: New})
 	counter.RegisterCounterListener("buildin")
 }
 
@@ -34,14 +35,14 @@ func New() mgr.Instance {
 	log.Infof("quota init, service: %d, instance: %d, schema: %d/service, tag: %d/service, rule: %d/service",
 		quota.DefaultServiceQuota, quota.DefaultInstanceQuota,
 		quota.DefaultSchemaQuota, quota.DefaultTagQuota, quota.DefaultRuleQuota)
-	return &BuildInQuota{}
+	return &Quota{}
 }
 
-type BuildInQuota struct {
+type Quota struct {
 }
 
 //申请配额sourceType serviceinstance servicetype
-func (q *BuildInQuota) Apply4Quotas(ctx context.Context, res *quota.ApplyQuotaResource) *quota.ApplyQuotaResult {
+func (q *Quota) Apply4Quotas(ctx context.Context, res *quota.ApplyQuotaResource) *quota.ApplyQuotaResult {
 	df, ok := mgr.DynamicPluginFunc(mgr.QUOTA, "Apply4Quotas").(func(context.Context, *quota.ApplyQuotaResource) *quota.ApplyQuotaResult)
 	if ok {
 		return df(ctx, res)
@@ -51,7 +52,7 @@ func (q *BuildInQuota) Apply4Quotas(ctx context.Context, res *quota.ApplyQuotaRe
 }
 
 //向配额中心上报配额使用量
-func (q *BuildInQuota) RemandQuotas(ctx context.Context, quotaType quota.ResourceType) {
+func (q *Quota) RemandQuotas(ctx context.Context, quotaType quota.ResourceType) {
 	df, ok := mgr.DynamicPluginFunc(mgr.QUOTA, "RemandQuotas").(func(context.Context, quota.ResourceType))
 	if ok {
 		df(ctx, quotaType)

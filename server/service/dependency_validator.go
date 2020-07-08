@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package service
 
 import (
@@ -33,11 +34,11 @@ var (
 )
 
 func defaultDependencyValidator() *validate.Validator {
-	appIdRule := *(MicroServiceKeyValidator().GetRule("AppId"))
-	appIdRule.Min = 0
+	appIDRule := *(MicroServiceKeyValidator().GetRule("AppId"))
+	appIDRule.Min = 0
 	serviceNameRule := *(MicroServiceKeyValidator().GetRule("ServiceName"))
 	serviceNameRule.Regexp = nameFuzzyRegex
-	versionRule := &validate.ValidateRule{Max: 128, Regexp: &serviceUtil.VersionRegexp{Fuzzy: true, Regex: versionAllowEmptyRegex}}
+	versionRule := &validate.Rule{Max: 128, Regexp: &serviceUtil.VersionRegexp{Fuzzy: true, Regex: versionAllowEmptyRegex}}
 
 	var (
 		consumerMsValidator validate.Validator
@@ -46,12 +47,12 @@ func defaultDependencyValidator() *validate.Validator {
 	consumerMsValidator.AddRules(MicroServiceKeyValidator().GetRules())
 
 	providerMsValidator.AddRules(MicroServiceKeyValidator().GetRules())
-	providerMsValidator.AddRule("AppId", &appIdRule)
+	providerMsValidator.AddRule("AppId", &appIDRule)
 	providerMsValidator.AddRule("ServiceName", &serviceNameRule)
 	providerMsValidator.AddRule("Version", versionRule)
 
 	var dependenciesValidator validate.Validator
-	dependenciesValidator.AddRule("Consumer", &validate.ValidateRule{Min: 1})
+	dependenciesValidator.AddRule("Consumer", &validate.Rule{Min: 1})
 	dependenciesValidator.AddSub("Consumer", &consumerMsValidator)
 	dependenciesValidator.AddSub("Providers", &providerMsValidator)
 
@@ -61,15 +62,15 @@ func defaultDependencyValidator() *validate.Validator {
 func AddDependenciesReqValidator() *validate.Validator {
 	return addDependenciesReqValidator.Init(func(v *validate.Validator) {
 		dep := defaultDependencyValidator()
-		dep.AddRule("Providers", &validate.ValidateRule{Min: 1})
-		v.AddRule("Dependencies", &validate.ValidateRule{Min: 1, Max: 100})
+		dep.AddRule("Providers", &validate.Rule{Min: 1})
+		v.AddRule("Dependencies", &validate.Rule{Min: 1, Max: 100})
 		v.AddSub("Dependencies", dep)
 	})
 }
 
 func CreateDependenciesReqValidator() *validate.Validator {
 	return overwriteDependenciesReqValidator.Init(func(v *validate.Validator) {
-		v.AddRule("Dependencies", &validate.ValidateRule{Min: 1, Max: 100})
+		v.AddRule("Dependencies", &validate.Rule{Min: 1, Max: 100})
 		v.AddSub("Dependencies", defaultDependencyValidator())
 	})
 }

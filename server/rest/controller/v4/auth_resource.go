@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package v4
 
 import (
@@ -23,10 +24,10 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/model"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
+	util2 "github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	"github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
-	"github.com/apache/servicecomb-service-center/server/service/util"
 	"github.com/go-chassis/go-chassis/security/authr"
 	"io/ioutil"
 	"net/http"
@@ -38,8 +39,8 @@ type AuthResource struct {
 //URLPatterns define htp pattern
 func (r *AuthResource) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{http.MethodPost, "/v4/token", r.Login},
-		{http.MethodPut, "/v4/account-password", r.ChangePassword},
+		{Method: http.MethodPost, Path: "/v4/token", Func: r.Login},
+		{Method: http.MethodPut, Path: "/v4/account-password", Func: r.ChangePassword},
 	}
 }
 func (r *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request) {
@@ -59,25 +60,25 @@ func (r *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request) 
 		controller.WriteError(w, scerror.ErrInvalidParams, "new password is empty")
 		return
 	}
-	claims := req.Context().Value("accountInfo")
+	claims := rbac.FromContext(req.Context())
 	m, ok := claims.(map[string]interface{})
 	if !ok {
-		log.Error("claims convert failed", errors.New(util.ErrMsgConvert))
-		controller.WriteError(w, scerror.ErrInvalidParams, util.ErrMsgConvert)
+		log.Error("claims convert failed", errors.New(util2.ErrMsgConvert))
+		controller.WriteError(w, scerror.ErrInvalidParams, util2.ErrMsgConvert)
 		return
 	}
 	accountNameI := m[rbac.ClaimsUser]
 	changer, ok := accountNameI.(string)
 	if !ok {
-		log.Error("claims convert failed", errors.New(util.ErrMsgConvert))
-		controller.WriteError(w, scerror.ErrInternal, util.ErrMsgConvert)
+		log.Error("claims convert failed", errors.New(util2.ErrMsgConvert))
+		controller.WriteError(w, scerror.ErrInternal, util2.ErrMsgConvert)
 		return
 	}
 	roleI := m[rbac.ClaimsRole]
 	role, ok := roleI.(string)
 	if !ok {
-		log.Error("claims convert failed", errors.New(util.ErrMsgConvert))
-		controller.WriteError(w, scerror.ErrInternal, util.ErrMsgConvert)
+		log.Error("claims convert failed", errors.New(util2.ErrMsgConvert))
+		controller.WriteError(w, scerror.ErrInternal, util2.ErrMsgConvert)
 		return
 	}
 	if role == "" {
@@ -122,5 +123,5 @@ func (r *AuthResource) Login(w http.ResponseWriter, req *http.Request) {
 		controller.WriteError(w, scerror.ErrInvalidParams, err.Error())
 		return
 	}
-	controller.WriteJson(w, b)
+	controller.WriteJSON(w, b)
 }

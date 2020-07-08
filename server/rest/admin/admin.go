@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package admin
 
 import (
@@ -25,5 +26,5 @@ func init() {
 }
 
 func registerREST() {
-	roa.RegisterServant(&AdminServiceControllerV4{})
+	roa.RegisterServant(&ControllerV4{})
 }

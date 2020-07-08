@@ -14,38 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package govern
 
-//Node 节点信息
-type Node struct {
-	Id       string   `json:"id"`
-	Name     string   `json:"name"`
-	AppID    string   `json:"appId"`
-	Version  string   `json:"version"`
-	Type     string   `json:"type"`
-	Color    string   `json:"color"`
-	Position string   `json:"position"`
-	Visits   []string `json:"-"`
+package rbac
+
+import "context"
+
+// key is an unexported type for keys defined in this package.
+// This prevents collisions with keys defined in other packages.
+type key string
+
+// accountKey is the key for user.User values in Contexts. It is
+// unexported; clients use user.NewContext and user.FromContext
+// instead of using this key directly.
+var accountKey key
+
+// NewContext returns a new Context that carries value claims.
+func NewContext(ctx context.Context, claims interface{}) context.Context {
+	return context.WithValue(ctx, accountKey, claims)
 }
 
-//Line 连接线信息
-type Line struct {
-	From        Node   `json:"from"`
-	To          Node   `json:"to"`
-	Type        string `json:"type"`
-	Color       string `json:"color"`
-	Description string `json:"descriptor"`
-}
-
-//Circle 环信息
-type Circle struct {
-	Nodes []Node `json:"nodes"`
-}
-
-//Graph 图全集信息
-type Graph struct {
-	Nodes   []Node   `json:"nodes"`
-	Lines   []Line   `json:"lines"`
-	Circles []Circle `json:"circles"`
-	Visits  []string `json:"-"`
+// FromContext returns the account value stored in ctx, if any.
+func FromContext(ctx context.Context) interface{} {
+	a := ctx.Value(accountKey)
+	return a
 }

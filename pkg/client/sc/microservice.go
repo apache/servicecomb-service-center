@@ -34,7 +34,7 @@ const (
 	apiMicroServiceURL  = "/v4/%s/registry/microservices/%s"
 )
 
-func (c *SCClient) CreateService(ctx context.Context, domainProject string, service *pb.MicroService) (string, *scerr.Error) {
+func (c *Client) CreateService(ctx context.Context, domainProject string, service *pb.MicroService) (string, *scerr.Error) {
 	domain, project := core.FromDomainProject(domainProject)
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
@@ -69,13 +69,13 @@ func (c *SCClient) CreateService(ctx context.Context, domainProject string, serv
 	return serviceResp.ServiceId, nil
 }
 
-func (c *SCClient) DeleteService(ctx context.Context, domainProject, serviceId string) *scerr.Error {
+func (c *Client) DeleteService(ctx context.Context, domainProject, serviceID string) *scerr.Error {
 	domain, project := core.FromDomainProject(domainProject)
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 
 	resp, err := c.RestDoWithContext(ctx, http.MethodDelete,
-		fmt.Sprintf(apiMicroServiceURL, project, serviceId),
+		fmt.Sprintf(apiMicroServiceURL, project, serviceID),
 		headers, nil)
 	if err != nil {
 		return scerr.NewError(scerr.ErrInternal, err.Error())
@@ -94,11 +94,11 @@ func (c *SCClient) DeleteService(ctx context.Context, domainProject, serviceId s
 	return nil
 }
 
-func (c *SCClient) ServiceExistence(ctx context.Context, domainProject string, appId, serviceName, versionRule, env string) (string, *scerr.Error) {
+func (c *Client) ServiceExistence(ctx context.Context, domainProject string, appID, serviceName, versionRule, env string) (string, *scerr.Error) {
 	query := url.Values{}
 	query.Set("type", "microservice")
 	query.Set("env", env)
-	query.Set("appId", appId)
+	query.Set("appID", appID)
 	query.Set("serviceName", serviceName)
 	query.Set("version", versionRule)
 
@@ -110,7 +110,7 @@ func (c *SCClient) ServiceExistence(ctx context.Context, domainProject string, a
 	return resp.ServiceId, nil
 }
 
-func (c *SCClient) existence(ctx context.Context, domainProject string, query url.Values) (*pb.GetExistenceResponse, *scerr.Error) {
+func (c *Client) existence(ctx context.Context, domainProject string, query url.Values) (*pb.GetExistenceResponse, *scerr.Error) {
 	domain, project := core.FromDomainProject(domainProject)
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)

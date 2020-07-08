@@ -64,7 +64,7 @@ func (c *KvCacher) needList() bool {
 		return true
 	}
 	c.reListCount++
-	if c.reListCount < DEFAULT_FORCE_LIST_INTERVAL {
+	if c.reListCount < DefaultForceListInterval {
 		return false
 	}
 	c.reListCount = 0
@@ -80,7 +80,7 @@ func (c *KvCacher) doList(cfg ListWatchConfig) error {
 	rev := c.lw.Revision()
 	kvs := resp.Kvs
 	start := time.Now()
-	defer log.LogDebugOrWarnf(start, "finish to cache key %s, %d items, rev: %d",
+	defer log.DebugOrWarnf(start, "finish to cache key %s, %d items, rev: %d",
 		c.Cfg.Key, len(kvs), rev)
 
 	// just reset the cacher if cache marked dirty
@@ -188,7 +188,7 @@ func (c *KvCacher) handleWatcher(watcher Watcher) error {
 			evts = append(evts, evt)
 		}
 		c.sync(evts)
-		log.LogDebugOrWarnf(start, "finish to handle %d events, prefix: %s, rev: %d",
+		log.DebugOrWarnf(start, "finish to handle %d events, prefix: %s, rev: %d",
 			len(evts), c.Cfg.Key, rev)
 	}
 	return nil
@@ -496,7 +496,7 @@ func (c *KvCacher) reportMetrics(ctx context.Context) {
 	if !core.ServerInfo.Config.EnablePProf {
 		return
 	}
-	timer := time.NewTimer(DEFAULT_METRICS_INTERVAL)
+	timer := time.NewTimer(DefaultMetricsInterval)
 	defer timer.Stop()
 	for {
 		select {
@@ -504,7 +504,7 @@ func (c *KvCacher) reportMetrics(ctx context.Context) {
 			return
 		case <-timer.C:
 			ReportCacheSize(c.cache.Name(), "raw", c.cache.Size())
-			timer.Reset(DEFAULT_METRICS_INTERVAL)
+			timer.Reset(DefaultMetricsInterval)
 		}
 	}
 }

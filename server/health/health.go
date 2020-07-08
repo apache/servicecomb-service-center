@@ -31,7 +31,7 @@ type DefaultHealthChecker struct {
 
 func (hc *DefaultHealthChecker) Healthy() error {
 	for _, a := range alarm.ListAll() {
-		if a.Id == alarm.IdBackendConnectionRefuse && a.Status != alarm.Cleared {
+		if a.ID == alarm.IDBackendConnectionRefuse && a.Status != alarm.Cleared {
 			return errors.New(a.FieldString(alarm.FieldAdditionalContext))
 		}
 	}

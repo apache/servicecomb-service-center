@@ -14,9 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package server
 
 import (
+	//plugin
 	_ "github.com/apache/servicecomb-service-center/server/service/event"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
 )
@@ -50,7 +52,7 @@ func Run() {
 
 type ServiceCenterServer struct {
 	apiService    *APIServer
-	notifyService *nf.NotifyService
+	notifyService *nf.Service
 	cacheService  *backend.KvStore
 	goroutine     *gopool.Pool
 }
@@ -105,7 +107,10 @@ func (s *ServiceCenterServer) loadOrUpgradeServerVersion() {
 			os.Exit(1)
 		}
 	}
-	lock.Unlock()
+	err = lock.Unlock()
+	if err != nil {
+		log.Error("", err)
+	}
 }
 
 func (s *ServiceCenterServer) compactBackendService() {
@@ -132,9 +137,14 @@ func (s *ServiceCenterServer) compactBackendService() {
 					continue
 				}
 
-				backend.Registry().Compact(ctx, delta)
+				err = backend.Registry().Compact(ctx, delta)
+				if err != nil {
+					log.Error("", err)
+				}
 
-				lock.Unlock()
+				if err := lock.Unlock(); err != nil {
+					log.Error("", err)
+				}
 			}
 		}
 	})
@@ -161,7 +171,9 @@ func (s *ServiceCenterServer) clearNoInstanceServices() {
 					continue
 				}
 				err = task.ClearNoInstanceServices(core.ServerInfo.Config.ServiceTTL)
-				lock.Unlock()
+				if err := lock.Unlock(); err != nil {
+					log.Error("", err)
+				}
 				if err != nil {
 					log.Errorf(err, "no-instance services cleanup failed")
 					continue
@@ -175,7 +187,7 @@ func (s *ServiceCenterServer) clearNoInstanceServices() {
 func (s *ServiceCenterServer) initialize() {
 	s.cacheService = backend.Store()
 	s.apiService = GetAPIServer()
-	s.notifyService = notify.NotifyCenter()
+	s.notifyService = notify.GetNotifyCenter()
 	s.goroutine = gopool.New(context.Background())
 }
 
@@ -203,23 +215,23 @@ func (s *ServiceCenterServer) startServices() {
 	}
 
 	// api service
-	s.startApiService()
+	s.startAPIService()
 }
 
-func (s *ServiceCenterServer) startApiService() {
-	restIp := beego.AppConfig.String("httpaddr")
+func (s *ServiceCenterServer) startAPIService() {
+	restIP := beego.AppConfig.String("httpaddr")
 	restPort := beego.AppConfig.String("httpport")
-	rpcIp := beego.AppConfig.DefaultString("rpcaddr", "")
+	rpcIP := beego.AppConfig.DefaultString("rpcaddr", "")
 	rpcPort := beego.AppConfig.DefaultString("rpcport", "")
 
 	host, err := os.Hostname()
 	if err != nil {
-		host = restIp
+		host = restIP
 		log.Errorf(err, "parse hostname failed")
 	}
 	core.Instance.HostName = host
-	s.apiService.AddListener(REST, restIp, restPort)
-	s.apiService.AddListener(RPC, rpcIp, rpcPort)
+	s.apiService.AddListener(REST, restIP, restPort)
+	s.apiService.AddListener(RPC, rpcIP, rpcPort)
 	s.apiService.Start()
 }
 

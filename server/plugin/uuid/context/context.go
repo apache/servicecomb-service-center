@@ -28,18 +28,18 @@ import (
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{mgr.UUID, "context", New})
+	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.UUID, Name: "context", New: New})
 }
 
 func New() mgr.Instance {
-	return &ContextUUID{}
+	return &UUID{}
 }
 
-type ContextUUID struct {
-	buildin.BuildinUUID
+type UUID struct {
+	buildin.UUID
 }
 
-func (cu *ContextUUID) fromContext(ctx context.Context) string {
+func (cu *UUID) fromContext(ctx context.Context) string {
 	key, ok := ctx.Value(uuid.ContextKey).(string)
 	if !ok {
 		return ""
@@ -47,10 +47,10 @@ func (cu *ContextUUID) fromContext(ctx context.Context) string {
 	return key
 }
 
-func (cu *ContextUUID) GetServiceId(ctx context.Context) string {
+func (cu *UUID) GetServiceID(ctx context.Context) string {
 	content := cu.fromContext(ctx)
 	if len(content) == 0 {
-		return cu.BuildinUUID.GetServiceId(ctx)
+		return cu.UUID.GetServiceID(ctx)
 	}
 	return fmt.Sprintf("%x", sha1.Sum(util.StringToBytesWithNoCopy(content)))
 }

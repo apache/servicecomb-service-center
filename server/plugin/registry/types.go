@@ -40,11 +40,11 @@ type CacheMode int
 
 func (cm CacheMode) String() string {
 	switch cm {
-	case MODE_BOTH:
+	case ModeBoth:
 		return "MODE_BOTH"
-	case MODE_CACHE:
+	case ModeCache:
 		return "MODE_CACHE"
-	case MODE_NO_CACHE:
+	case ModeNoCache:
 		return "MODE_NO_CACHE"
 	default:
 		return "MODE" + strconv.Itoa(int(cm))
@@ -55,11 +55,11 @@ type SortOrder int
 
 func (so SortOrder) String() string {
 	switch so {
-	case SORT_NONE:
+	case SortNone:
 		return "SORT_NONE"
-	case SORT_ASCEND:
+	case SortAscend:
 		return "SORT_ASCEND"
-	case SORT_DESCEND:
+	case SortDescend:
 		return "SORT_DESCEND"
 	default:
 		return "SORT" + strconv.Itoa(int(so))
@@ -70,13 +70,13 @@ type CompareType int
 
 func (ct CompareType) String() string {
 	switch ct {
-	case CMP_VERSION:
+	case CmpVersion:
 		return "CMP_VERSION"
-	case CMP_CREATE:
+	case CmpCreate:
 		return "CMP_CREATE"
-	case CMP_MOD:
+	case CmpMod:
 		return "CMP_MOD"
-	case CMP_VALUE:
+	case CmpValue:
 		return "CMP_VALUE"
 	default:
 		return "CMP_TYPE" + strconv.Itoa(int(ct))
@@ -87,13 +87,13 @@ type CompareResult int
 
 func (cr CompareResult) String() string {
 	switch cr {
-	case CMP_EQUAL:
+	case CmpEqual:
 		return "CMP_EQUAL"
-	case CMP_GREATER:
+	case CmpGreater:
 		return "CMP_GREATER"
-	case CMP_LESS:
+	case CmpLess:
 		return "CMP_LESS"
-	case CMP_NOT_EQUAL:
+	case CmpNotEqual:
 		return "CMP_NOT_EQUAL"
 	default:
 		return "CMP_RESULT" + strconv.Itoa(int(cr))

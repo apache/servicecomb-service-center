@@ -27,9 +27,9 @@ func TestLogRotate(t *testing.T) {
 		t.Fatal("pathReplacer failed", s)
 	}
 
-	LogRotate("../../etc", 1, 1)
+	Rotate("../../etc", 1, 1)
 
-	LogRotateFile("../../etc/conf/app.conf", 1, 1)
+	RotateFile("../../etc/conf/app.conf", 1, 1)
 
 	if err := compressFile(
 		"../../etc/conf/app.conf",

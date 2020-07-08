@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package broker
 
 import (
@@ -25,10 +26,10 @@ var (
 	PARTICIPANT  discovery.Type
 	VERSION      discovery.Type
 	PACT         discovery.Type
-	PACT_VERSION discovery.Type
-	PACT_TAG     discovery.Type
+	PactVersion  discovery.Type
+	PactTag      discovery.Type
 	VERIFICATION discovery.Type
-	PACT_LATEST  discovery.Type
+	PactLatest   discovery.Type
 )
 
 var brokerKvStore = &BKvStore{}
@@ -40,13 +41,13 @@ func init() {
 		discovery.Configure().WithPrefix(GetBrokerVersionKey(""))))
 	PACT = backend.Store().MustInstall(backend.NewAddOn("PACT",
 		discovery.Configure().WithPrefix(GetBrokerPactKey(""))))
-	PACT_VERSION = backend.Store().MustInstall(backend.NewAddOn("PACT_VERSION",
+	PactVersion = backend.Store().MustInstall(backend.NewAddOn("PACT_VERSION",
 		discovery.Configure().WithPrefix(GetBrokerPactVersionKey(""))))
-	PACT_TAG = backend.Store().MustInstall(backend.NewAddOn("PACT_TAG",
+	PactTag = backend.Store().MustInstall(backend.NewAddOn("PACT_TAG",
 		discovery.Configure().WithPrefix(GetBrokerTagKey(""))))
 	VERIFICATION = backend.Store().MustInstall(backend.NewAddOn("VERIFICATION",
 		discovery.Configure().WithPrefix(GetBrokerVerificationKey(""))))
-	PACT_LATEST = backend.Store().MustInstall(backend.NewAddOn("PACT_LATEST",
+	PactLatest = backend.Store().MustInstall(backend.NewAddOn("PACT_LATEST",
 		discovery.Configure().WithPrefix(GetBrokerLatestKey(""))))
 }
 
@@ -66,11 +67,11 @@ func (s *BKvStore) Pact() discovery.Indexer {
 }
 
 func (s *BKvStore) PactVersion() discovery.Indexer {
-	return backend.Store().Adaptors(PACT_VERSION)
+	return backend.Store().Adaptors(PactVersion)
 }
 
 func (s *BKvStore) PactTag() discovery.Indexer {
-	return backend.Store().Adaptors(PACT_TAG)
+	return backend.Store().Adaptors(PactTag)
 }
 
 func (s *BKvStore) Verification() discovery.Indexer {
@@ -78,7 +79,7 @@ func (s *BKvStore) Verification() discovery.Indexer {
 }
 
 func (s *BKvStore) PactLatest() discovery.Indexer {
-	return backend.Store().Adaptors(PACT_LATEST)
+	return backend.Store().Adaptors(PactLatest)
 }
 
 func Store() *BKvStore {

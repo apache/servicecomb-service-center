@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package validate
 
 import (
@@ -25,7 +26,7 @@ import (
 )
 
 type Validator struct {
-	rules map[string](*ValidateRule)
+	rules map[string](*Rule)
 	subs  map[string](*Validator)
 	once  sync.Once
 }
@@ -37,25 +38,25 @@ func (v *Validator) Init(f func(*Validator)) *Validator {
 	return v
 }
 
-func (v *Validator) GetRule(name string) *ValidateRule {
+func (v *Validator) GetRule(name string) *Rule {
 	if v.rules == nil {
 		return nil
 	}
 	return v.rules[name]
 }
 
-func (v *Validator) AddRule(name string, rule *ValidateRule) {
+func (v *Validator) AddRule(name string, rule *Rule) {
 	if v.rules == nil {
-		v.rules = make(map[string](*ValidateRule))
+		v.rules = make(map[string](*Rule))
 	}
 	v.rules[name] = rule
 }
 
-func (v *Validator) GetRules() map[string](*ValidateRule) {
+func (v *Validator) GetRules() map[string](*Rule) {
 	return v.rules
 }
 
-func (v *Validator) AddRules(in map[string](*ValidateRule)) {
+func (v *Validator) AddRules(in map[string](*Rule)) {
 	if len(in) == 0 {
 		return
 	}

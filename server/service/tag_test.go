@@ -17,6 +17,7 @@
 package service_test
 
 import (
+	"fmt"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
@@ -27,11 +28,11 @@ import (
 )
 
 var (
-	TOO_LONG_TAG = strings.Repeat("x", 65)
+	TooLongTag = strings.Repeat("x", 65)
 )
 
 var _ = Describe("'Tag' service", func() {
-	Describe("execute 'create' operartion", func() {
+	Describe("execute 'create' operation", func() {
 		var (
 			serviceId1 string
 			serviceId2 string
@@ -296,7 +297,7 @@ var _ = Describe("'Tag' service", func() {
 				By("tag key is invalid")
 				resp, err = serviceResource.UpdateTag(getContext(), &pb.UpdateServiceTagRequest{
 					ServiceId: serviceId,
-					Key:       TOO_LONG_TAG,
+					Key:       TooLongTag,
 					Value:     "v",
 				})
 				Expect(err).To(BeNil())
@@ -472,6 +473,8 @@ var _ = Describe("'Tag' service", func() {
 					ServiceId: "",
 					Keys:      []string{"a", "b"},
 				})
+				fmt.Println(err)
+				fmt.Println(respAddTags.Response)
 				Expect(err).To(BeNil())
 				Expect(respAddTags.Response.Code).To(Equal(scerr.ErrInvalidParams))
 
@@ -507,7 +510,7 @@ var _ = Describe("'Tag' service", func() {
 				By("tag key is invalid")
 				respAddTags, err = serviceResource.DeleteTags(getContext(), &pb.DeleteServiceTagsRequest{
 					ServiceId: serviceId,
-					Keys:      []string{TOO_LONG_TAG},
+					Keys:      []string{TooLongTag},
 				})
 				Expect(err).To(BeNil())
 				Expect(respAddTags.Response.Code).To(Equal(scerr.ErrInvalidParams))

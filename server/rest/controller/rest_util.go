@@ -14,11 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package controller
 
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/alarm"
@@ -30,13 +32,16 @@ import (
 
 func WriteError(w http.ResponseWriter, code int32, detail string) {
 	err := scerror.NewError(code, detail)
-	w.Header().Set(rest.HEADER_RESPONSE_STATUS, strconv.Itoa(err.StatusCode()))
-	w.Header().Set(rest.HEADER_CONTENT_TYPE, rest.CONTENT_TYPE_JSON)
+	w.Header().Set(rest.HeaderResponseStatus, strconv.Itoa(err.StatusCode()))
+	w.Header().Set(rest.HeaderContentType, rest.ContentTypeJSON)
 	w.WriteHeader(err.StatusCode())
 	fmt.Fprintln(w, util.BytesToStringWithNoCopy(err.Marshal()))
 
 	if err.InternalError() {
-		alarm.Raise(alarm.IdInternalError, alarm.AdditionalContext(detail))
+		err := alarm.Raise(alarm.IDInternalError, alarm.AdditionalContext(detail))
+		if err != nil {
+			log.Error("", err)
+		}
 	}
 }
 
@@ -47,35 +52,38 @@ func WriteResponse(w http.ResponseWriter, resp *pb.Response, obj interface{}) {
 	}
 
 	if obj == nil {
-		w.Header().Set(rest.HEADER_RESPONSE_STATUS, strconv.Itoa(http.StatusOK))
-		w.Header().Set(rest.HEADER_CONTENT_TYPE, rest.CONTENT_TYPE_TEXT)
+		w.Header().Set(rest.HeaderResponseStatus, strconv.Itoa(http.StatusOK))
+		w.Header().Set(rest.HeaderContentType, rest.ContentTypeText)
 		w.WriteHeader(http.StatusOK)
 		return
 	}
 
-	objJson, err := json.Marshal(obj)
+	b, err := json.Marshal(obj)
 	if err != nil {
 		WriteError(w, scerror.ErrInternal, err.Error())
 		return
 	}
-	w.Header().Set(rest.HEADER_RESPONSE_STATUS, strconv.Itoa(http.StatusOK))
-	w.Header().Set(rest.HEADER_CONTENT_TYPE, rest.CONTENT_TYPE_JSON)
+	w.Header().Set(rest.HeaderResponseStatus, strconv.Itoa(http.StatusOK))
+	w.Header().Set(rest.HeaderContentType, rest.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintln(w, util.BytesToStringWithNoCopy(objJson))
+	fmt.Fprintln(w, util.BytesToStringWithNoCopy(b))
 }
 
-func WriteJsonIfSuccess(w http.ResponseWriter, resp *pb.Response, json []byte) {
+func WriteJSONIfSuccess(w http.ResponseWriter, resp *pb.Response, json []byte) {
 	if resp.GetCode() == pb.Response_SUCCESS {
-		WriteJson(w, json)
+		WriteJSON(w, json)
 		return
 	}
 	WriteError(w, resp.GetCode(), resp.GetMessage())
 }
 
-//WriteJson simply write json
-func WriteJson(w http.ResponseWriter, json []byte) {
-	w.Header().Set(rest.HEADER_RESPONSE_STATUS, strconv.Itoa(http.StatusOK))
-	w.Header().Set(rest.HEADER_CONTENT_TYPE, rest.CONTENT_TYPE_JSON)
+//WriteJSON simply write json
+func WriteJSON(w http.ResponseWriter, json []byte) {
+	w.Header().Set(rest.HeaderResponseStatus, strconv.Itoa(http.StatusOK))
+	w.Header().Set(rest.HeaderContentType, rest.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
-	w.Write(json)
+	_, err := w.Write(json)
+	if err != nil {
+		log.Error("", err)
+	}
 }

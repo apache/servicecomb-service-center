@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package broker
 
 import (
@@ -35,12 +36,12 @@ import (
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 )
 
-var BrokerServiceAPI = &BrokerService{}
+var ServiceAPI = &Service{}
 
-type BrokerService struct {
+type Service struct {
 }
 
-func (*BrokerService) GetBrokerHome(ctx context.Context,
+func (*Service) GetBrokerHome(ctx context.Context,
 	in *brokerpb.BaseBrokerRequest) (*brokerpb.BrokerHomeResponse, error) {
 
 	if in == nil || len(in.HostAddress) == 0 {
@@ -53,13 +54,13 @@ func (*BrokerService) GetBrokerHome(ctx context.Context,
 	return GetBrokerHomeResponse(in.HostAddress, in.Scheme), nil
 }
 
-func (*BrokerService) GetPactsOfProvider(ctx context.Context,
+func (*Service) GetPactsOfProvider(ctx context.Context,
 	in *brokerpb.GetProviderConsumerVersionPactRequest) (*brokerpb.GetProviderConsumerVersionPactResponse, error) {
 	PactLogger.Infof("GetPactsOfProvider: (%s, %s, %s)\n",
 		in.ProviderId, in.ConsumerId, in.Version)
 
-	resp, pactId, err := RetrieveProviderConsumerPact(ctx, in)
-	if err != nil || resp.GetPact() == nil || pactId == -1 {
+	resp, pactID, err := RetrieveProviderConsumerPact(ctx, in)
+	if err != nil || resp.GetPact() == nil || pactID == -1 {
 		var message string
 		if resp != nil {
 			message = resp.Response.Message
@@ -71,10 +72,10 @@ func (*BrokerService) GetPactsOfProvider(ctx context.Context,
 	}
 
 	urlValue := GenerateBrokerAPIPath(in.BaseUrl.Scheme, in.BaseUrl.HostAddress,
-		BROKER_PUBLISH_VERIFICATION_URL,
+		PublishVerificationURL,
 		strings.NewReplacer(":providerId", in.ProviderId,
-			":consumerId", in.ConsumerId,
-			":pact", strconv.FormatInt(int64(pactId), 10)))
+			":consumerID", in.ConsumerId,
+			":pact", strconv.FormatInt(int64(pactID), 10)))
 
 	links := ",\"_links\": {" +
 		"\"pb:publish-verification-results\": {" +
@@ -97,7 +98,7 @@ func (*BrokerService) GetPactsOfProvider(ctx context.Context,
 
 }
 
-func (*BrokerService) DeletePacts(ctx context.Context,
+func (*Service) DeletePacts(ctx context.Context,
 	in *brokerpb.BaseBrokerRequest) (*pb.Response, error) {
 
 	resp, err := DeletePactData(ctx, in)
@@ -105,7 +106,7 @@ func (*BrokerService) DeletePacts(ctx context.Context,
 	return resp, err
 }
 
-func (*BrokerService) RetrieveProviderPacts(ctx context.Context,
+func (*Service) RetrieveProviderPacts(ctx context.Context,
 	in *brokerpb.GetAllProviderPactsRequest) (*brokerpb.GetAllProviderPactsResponse, error) {
 	if in == nil || len(in.ProviderId) == 0 {
 		PactLogger.Errorf(nil, "all provider pact retrieve request failed: invalid params.")
@@ -219,7 +220,7 @@ func (*BrokerService) RetrieveProviderPacts(ctx context.Context,
 		}
 		PactLogger.Infof("[RetrieveProviderPacts] Consumer found: (%d, %s, %s)", participant.Id, participant.AppId, participant.ServiceName)
 		consumerVersion := participantToVersionObj[participant.Id].Number
-		consumerId, err := serviceUtil.GetServiceId(ctx, &pb.MicroServiceKey{
+		consumerID, err := serviceUtil.GetServiceID(ctx, &pb.MicroServiceKey{
 			Tenant:      tenant,
 			AppId:       participant.AppId,
 			ServiceName: participant.ServiceName,
@@ -228,28 +229,28 @@ func (*BrokerService) RetrieveProviderPacts(ctx context.Context,
 		if err != nil {
 			return nil, err
 		}
-		PactLogger.Infof("[RetrieveProviderPacts] Consumer microservice found: %s", consumerId)
+		PactLogger.Infof("[RetrieveProviderPacts] Consumer microservice found: %s", consumerID)
 
 		urlValue := GenerateBrokerAPIPath(in.BaseUrl.Scheme, in.BaseUrl.HostAddress,
-			BROKER_PUBLISH_URL,
+			PublishURL,
 			strings.NewReplacer(":providerId", in.ProviderId,
-				":consumerId", consumerId,
+				":consumerID", consumerID,
 				":number", consumerVersion))
 
 		consumerInfo := &brokerpb.ConsumerInfo{
 			Href: urlValue,
-			Name: consumerId,
+			Name: consumerID,
 		}
 		consumerInfoArr = append(consumerInfoArr, consumerInfo)
 	}
 	links := &brokerpb.Links{
 		Pacts: consumerInfoArr,
 	}
-	resJson, err := json.Marshal(links)
+	resJSON, err := json.Marshal(links)
 	if err != nil {
 		return nil, err
 	}
-	PactLogger.Infof("Json : %s", string(resJson))
+	PactLogger.Infof("Json : %s", string(resJSON))
 	response := &brokerpb.GetAllProviderPactsResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "retrieve provider pact info succeeded."),
 		XLinks:   links,
@@ -257,7 +258,7 @@ func (*BrokerService) RetrieveProviderPacts(ctx context.Context,
 	return response, nil
 }
 
-func (*BrokerService) GetAllProviderPacts(ctx context.Context,
+func (*Service) GetAllProviderPacts(ctx context.Context,
 	in *brokerpb.GetAllProviderPactsRequest) (*brokerpb.GetAllProviderPactsResponse, error) {
 
 	if in == nil || len(in.ProviderId) == 0 {
@@ -372,7 +373,7 @@ func (*BrokerService) GetAllProviderPacts(ctx context.Context,
 		}
 		PactLogger.Infof("[RetrieveProviderPacts] Consumer found: (%d, %s, %s)", participant.Id, participant.AppId, participant.ServiceName)
 		consumerVersion := participantToVersionObj[participant.Id].Number
-		consumerId, err := serviceUtil.GetServiceId(ctx, &pb.MicroServiceKey{
+		consumerID, err := serviceUtil.GetServiceID(ctx, &pb.MicroServiceKey{
 			Tenant:      tenant,
 			AppId:       participant.AppId,
 			ServiceName: participant.ServiceName,
@@ -381,28 +382,28 @@ func (*BrokerService) GetAllProviderPacts(ctx context.Context,
 		if err != nil {
 			return nil, err
 		}
-		PactLogger.Infof("[RetrieveProviderPacts] Consumer microservice found: %s", consumerId)
+		PactLogger.Infof("[RetrieveProviderPacts] Consumer microservice found: %s", consumerID)
 
 		urlValue := GenerateBrokerAPIPath(in.BaseUrl.Scheme, in.BaseUrl.HostAddress,
-			BROKER_PUBLISH_URL,
+			PublishURL,
 			strings.NewReplacer(":providerId", in.ProviderId,
-				":consumerId", consumerId,
+				":consumerID", consumerID,
 				":number", consumerVersion))
 
 		consumerInfo := &brokerpb.ConsumerInfo{
 			Href: urlValue,
-			Name: consumerId,
+			Name: consumerID,
 		}
 		consumerInfoArr = append(consumerInfoArr, consumerInfo)
 	}
 	links := &brokerpb.Links{
 		Pacts: consumerInfoArr,
 	}
-	resJson, err := json.Marshal(links)
+	resJSON, err := json.Marshal(links)
 	if err != nil {
 		return nil, err
 	}
-	PactLogger.Infof("Json : %s", string(resJson))
+	PactLogger.Infof("Json : %s", string(resJSON))
 	response := &brokerpb.GetAllProviderPactsResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "retrieve provider pact info succeeded."),
 		XLinks:   links,
@@ -410,7 +411,7 @@ func (*BrokerService) GetAllProviderPacts(ctx context.Context,
 	return response, nil
 }
 
-func (*BrokerService) RetrieveVerificationResults(ctx context.Context, in *brokerpb.RetrieveVerificationRequest) (*brokerpb.RetrieveVerificationResponse, error) {
+func (*Service) RetrieveVerificationResults(ctx context.Context, in *brokerpb.RetrieveVerificationRequest) (*brokerpb.RetrieveVerificationResponse, error) {
 	if in == nil || len(in.ConsumerId) == 0 || len(in.ConsumerVersion) == 0 {
 		PactLogger.Errorf(nil, "verification result retrieve request failed: invalid params.")
 		return &brokerpb.RetrieveVerificationResponse{
@@ -420,13 +421,13 @@ func (*BrokerService) RetrieveVerificationResults(ctx context.Context, in *broke
 	tenant := GetDefaultTenantProject()
 	consumer, err := serviceUtil.GetService(ctx, tenant, in.ConsumerId)
 	if err != nil {
-		PactLogger.Errorf(err, "verification result retrieve request failed, consumerId is %s: query consumer failed.", in.ConsumerId)
+		PactLogger.Errorf(err, "verification result retrieve request failed, consumerID is %s: query consumer failed.", in.ConsumerId)
 		return &brokerpb.RetrieveVerificationResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Query consumer failed."),
 		}, err
 	}
 	if consumer == nil {
-		PactLogger.Errorf(nil, "verification result retrieve request failed, consumerId is %s: consumer not exist.", in.ConsumerId)
+		PactLogger.Errorf(nil, "verification result retrieve request failed, consumerID is %s: consumer not exist.", in.ConsumerId)
 		return &brokerpb.RetrieveVerificationResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Consumer does not exist."),
 		}, nil
@@ -568,7 +569,7 @@ func (*BrokerService) RetrieveVerificationResults(ctx context.Context, in *broke
 			VerificationDate:           lastVerificationResult.VerificationDate,
 		}
 		verificationDetailsArr = append(verificationDetailsArr, verificationDetail)
-		if verificationDetail.Success == true {
+		if verificationDetail.Success {
 			successfuls = append(successfuls, providerName)
 		} else {
 			fails = append(fails, providerName)
@@ -585,7 +586,7 @@ func (*BrokerService) RetrieveVerificationResults(ctx context.Context, in *broke
 	}, nil
 }
 
-func (*BrokerService) PublishVerificationResults(ctx context.Context, in *brokerpb.PublishVerificationRequest) (*brokerpb.PublishVerificationResponse, error) {
+func (*Service) PublishVerificationResults(ctx context.Context, in *brokerpb.PublishVerificationRequest) (*brokerpb.PublishVerificationResponse, error) {
 	if in == nil || len(in.ProviderId) == 0 || len(in.ConsumerId) == 0 {
 		PactLogger.Errorf(nil, "verification result publish request failed: invalid params.")
 		return &brokerpb.PublishVerificationResponse{
@@ -595,13 +596,13 @@ func (*BrokerService) PublishVerificationResults(ctx context.Context, in *broker
 	tenant := GetDefaultTenantProject()
 	consumer, err := serviceUtil.GetService(ctx, tenant, in.ConsumerId)
 	if err != nil {
-		PactLogger.Errorf(err, "verification result publish request failed, consumerId is %s: query consumer failed.", in.ConsumerId)
+		PactLogger.Errorf(err, "verification result publish request failed, consumerID is %s: query consumer failed.", in.ConsumerId)
 		return &brokerpb.PublishVerificationResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Query consumer failed."),
 		}, err
 	}
 	if consumer == nil {
-		PactLogger.Errorf(nil, "verification result publish request failed, consumerId is %s: consumer not exist.", in.ConsumerId)
+		PactLogger.Errorf(nil, "verification result publish request failed, consumerID is %s: consumer not exist.", in.ConsumerId)
 		return &brokerpb.PublishVerificationResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Consumer does not exist."),
 		}, nil
@@ -650,7 +651,7 @@ func (*BrokerService) PublishVerificationResults(ctx context.Context, in *broker
 			pactExists = true
 		}
 	}
-	if pactExists == false {
+	if !pactExists {
 		PactLogger.Errorf(nil, "verification result publish request failed, pact does not exists.")
 		return &brokerpb.PublishVerificationResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, "pact does not exists."),
@@ -713,7 +714,7 @@ func (*BrokerService) PublishVerificationResults(ctx context.Context, in *broker
 		BuildUrl:         "",
 		VerificationDate: verificationDate,
 	}
-	response, err := CreateVerification(PactLogger, ctx, verificationKey, *verification)
+	response, err := CreateVerification(ctx, verificationKey, *verification)
 	if err != nil {
 		return response, err
 	}
@@ -733,8 +734,8 @@ func (*BrokerService) PublishVerificationResults(ctx context.Context, in *broker
 	}, nil
 }
 
-func (*BrokerService) PublishPact(ctx context.Context, in *brokerpb.PublishPactRequest) (*brokerpb.PublishPactResponse, error) {
-	if in == nil || len(in.ProviderId) == 0 || len(in.ConsumerId) == 0 || len(in.Version) == 0 || len(in.Pact) == 0 {
+func (*Service) PublishPact(ctx context.Context, in *brokerpb.PublishPactRequest) (*brokerpb.PublishPactResponse, error) {
+	if InvalidInput(in) {
 		PactLogger.Errorf(nil, "pact publish request failed: invalid params.")
 		return &brokerpb.PublishPactResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
@@ -758,13 +759,13 @@ func (*BrokerService) PublishPact(ctx context.Context, in *brokerpb.PublishPactR
 	PactLogger.Infof("Provider service found: (%s, %s, %s, %s)", provider.ServiceId, provider.AppId, provider.ServiceName, provider.Version)
 	consumer, err := serviceUtil.GetService(ctx, tenant, in.ConsumerId)
 	if err != nil {
-		PactLogger.Errorf(err, "pact publish failed, consumerId is %s: query consumer failed.", in.ConsumerId)
+		PactLogger.Errorf(err, "pact publish failed, consumerID is %s: query consumer failed.", in.ConsumerId)
 		return &brokerpb.PublishPactResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Query consumer failed."),
 		}, err
 	}
 	if consumer == nil {
-		PactLogger.Errorf(nil, "pact publish failed, consumerId is %s: consumer not exist.", in.ConsumerId)
+		PactLogger.Errorf(nil, "pact publish failed, consumerID is %s: consumer not exist.", in.ConsumerId)
 		return &brokerpb.PublishPactResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Consumer does not exist."),
 		}, nil
@@ -797,7 +798,7 @@ func (*BrokerService) PublishPact(ctx context.Context, in *brokerpb.PublishPactR
 			}, err
 		}
 		providerParticipant = &brokerpb.Participant{Id: int32(id) + 1, AppId: provider.AppId, ServiceName: provider.ServiceName}
-		response, err := CreateParticipant(PactLogger, ctx, providerParticipantKey, *providerParticipant)
+		response, err := CreateParticipant(ctx, providerParticipantKey, *providerParticipant)
 		if err != nil {
 			return response, err
 		}
@@ -820,7 +821,7 @@ func (*BrokerService) PublishPact(ctx context.Context, in *brokerpb.PublishPactR
 			}, err
 		}
 		consumerParticipant = &brokerpb.Participant{Id: int32(id) + 1, AppId: consumer.AppId, ServiceName: consumer.ServiceName}
-		response, err := CreateParticipant(PactLogger, ctx, consumerParticipantKey, *consumerParticipant)
+		response, err := CreateParticipant(ctx, consumerParticipantKey, *consumerParticipant)
 		if err != nil {
 			return response, err
 		}
@@ -846,7 +847,7 @@ func (*BrokerService) PublishPact(ctx context.Context, in *brokerpb.PublishPactR
 			}, err
 		}
 		version = &brokerpb.Version{Id: int32(id) + 1, Number: in.Version, ParticipantId: consumerParticipant.Id, Order: order}
-		response, err := CreateVersion(PactLogger, ctx, versionKey, *version)
+		response, err := CreateVersion(ctx, versionKey, *version)
 		if err != nil {
 			return response, err
 		}
@@ -872,7 +873,7 @@ func (*BrokerService) PublishPact(ctx context.Context, in *brokerpb.PublishPactR
 		}
 		pact = &brokerpb.Pact{Id: int32(id) + 1, ConsumerParticipantId: consumerParticipant.Id,
 			ProviderParticipantId: providerParticipant.Id, Sha: sha, Content: in.Pact}
-		response, err := CreatePact(PactLogger, ctx, pactKey, *pact)
+		response, err := CreatePact(ctx, pactKey, *pact)
 		if err != nil {
 			return response, err
 		}
@@ -895,7 +896,7 @@ func (*BrokerService) PublishPact(ctx context.Context, in *brokerpb.PublishPactR
 			}, err
 		}
 		pactVersion = &brokerpb.PactVersion{Id: int32(id) + 1, VersionId: version.Id, PactId: pact.Id, ProviderParticipantId: providerParticipant.Id}
-		response, err := CreatePactVersion(PactLogger, ctx, pactVersionKey, *pactVersion)
+		response, err := CreatePactVersion(ctx, pactVersionKey, *pactVersion)
 		if err != nil {
 			return response, err
 		}
@@ -905,4 +906,8 @@ func (*BrokerService) PublishPact(ctx context.Context, in *brokerpb.PublishPactR
 	return &brokerpb.PublishPactResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Pact published successfully."),
 	}, nil
+}
+
+func InvalidInput(in *brokerpb.PublishPactRequest) bool {
+	return in == nil || len(in.ProviderId) == 0 || len(in.ConsumerId) == 0 || len(in.Version) == 0 || len(in.Pact) == 0
 }

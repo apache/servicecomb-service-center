@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package service
 
 import (
@@ -29,11 +30,11 @@ import (
 
 func (s *InstanceService) WatchPreOpera(ctx context.Context, in *pb.WatchInstanceRequest) error {
 	if in == nil || len(in.SelfServiceId) == 0 {
-		return errors.New("Request format invalid.")
+		return errors.New("request format invalid")
 	}
 	domainProject := util.ParseDomainProject(ctx)
 	if !serviceUtil.ServiceExist(ctx, domainProject, in.SelfServiceId) {
-		return errors.New("Service does not exist.")
+		return errors.New("service does not exist")
 	}
 	return nil
 }

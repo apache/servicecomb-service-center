@@ -25,7 +25,7 @@ func BuildCacher(t discovery.Type, cfg *discovery.Config, cache discovery.Cache)
 	switch t {
 	case backend.SERVICE:
 		return NewServiceCacher(kc)
-	case backend.SERVICE_INDEX:
+	case backend.ServiceIndex:
 		return NewServiceIndexCacher(kc)
 	case backend.INSTANCE:
 		return NewInstanceCacher(kc)

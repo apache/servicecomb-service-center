@@ -14,49 +14,49 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package cache
 
 import (
 	"github.com/apache/servicecomb-service-center/pkg/chain"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"net/http"
 )
 
-type CacheResponse struct {
+type Handler struct {
 }
 
-func (l *CacheResponse) Handle(i *chain.Invocation) {
+func (l *Handler) Handle(i *chain.Invocation) {
 	defer i.Next()
 
-	r := i.Context().Value(rest.CTX_REQUEST).(*http.Request)
+	r := i.Context().Value(rest.CtxRequest).(*http.Request)
 	query := r.URL.Query()
 
-	global := util.StringTRUE(query.Get(serviceUtil.CTX_GLOBAL))
+	global := util.StringTRUE(query.Get(string(util.CtxGlobal)))
 	if global && r.Method == http.MethodGet {
-		i.WithContext(serviceUtil.CTX_GLOBAL, "1")
+		i.WithContext(util.CtxGlobal, "1")
 	}
 
-	noCache := util.StringTRUE(query.Get(serviceUtil.CTX_NOCACHE))
+	noCache := util.StringTRUE(query.Get(util.CtxNocache))
 	if noCache {
-		i.WithContext(serviceUtil.CTX_NOCACHE, "1")
+		i.WithContext(util.CtxNocache, "1")
 		return
 	}
 
-	cacheOnly := util.StringTRUE(query.Get(serviceUtil.CTX_CACHEONLY))
+	cacheOnly := util.StringTRUE(query.Get(string(util.CtxCacheOnly)))
 	if cacheOnly {
-		i.WithContext(serviceUtil.CTX_CACHEONLY, "1")
+		i.WithContext(util.CtxCacheOnly, "1")
 		return
 	}
 
 	rev := query.Get("rev")
 	if len(rev) > 0 {
-		i.WithContext(serviceUtil.CTX_REQUEST_REVISION, rev)
+		i.WithContext(util.CtxRequestRevision, rev)
 		return
 	}
 }
 
 func RegisterHandlers() {
-	chain.RegisterHandler(rest.ServerChainName, &CacheResponse{})
+	chain.RegisterHandler(rest.ServerChainName, &Handler{})
 }

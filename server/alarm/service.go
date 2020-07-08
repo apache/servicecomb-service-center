@@ -25,38 +25,38 @@ import (
 )
 
 var (
-	service *AlarmService
+	service *Service
 	once    sync.Once
 )
 
-type AlarmService struct {
+type Service struct {
 	nf.Subscriber
 	alarms util.ConcurrentMap
 }
 
-func (ac *AlarmService) Raise(id model.ID, fields ...model.Field) error {
+func (ac *Service) Raise(id model.ID, fields ...model.Field) error {
 	ae := &model.AlarmEvent{
 		Event:  nf.NewEvent(ALARM, Subject, ""),
 		Status: Activated,
-		Id:     id,
+		ID:     id,
 		Fields: util.NewJSONObject(),
 	}
 	for _, f := range fields {
 		ae.Fields[f.Key] = f.Value
 	}
-	return notify.NotifyCenter().Publish(ae)
+	return notify.GetNotifyCenter().Publish(ae)
 }
 
-func (ac *AlarmService) Clear(id model.ID) error {
+func (ac *Service) Clear(id model.ID) error {
 	ae := &model.AlarmEvent{
 		Event:  nf.NewEvent(ALARM, Subject, ""),
 		Status: Cleared,
-		Id:     id,
+		ID:     id,
 	}
-	return notify.NotifyCenter().Publish(ae)
+	return notify.GetNotifyCenter().Publish(ae)
 }
 
-func (ac *AlarmService) ListAll() (ls []*model.AlarmEvent) {
+func (ac *Service) ListAll() (ls []*model.AlarmEvent) {
 	ac.alarms.ForEach(func(item util.MapItem) (next bool) {
 		ls = append(ls, item.Value.(*model.AlarmEvent))
 		return true
@@ -64,36 +64,38 @@ func (ac *AlarmService) ListAll() (ls []*model.AlarmEvent) {
 	return
 }
 
-func (ac *AlarmService) ClearAll() {
+func (ac *Service) ClearAll() {
 	ac.alarms = util.ConcurrentMap{}
-	return
 }
 
-func (ac *AlarmService) OnMessage(evt nf.Event) {
+func (ac *Service) OnMessage(evt nf.Event) {
 	alarm := evt.(*model.AlarmEvent)
 	switch alarm.Status {
 	case Cleared:
-		if itf, ok := ac.alarms.Get(alarm.Id); ok {
+		if itf, ok := ac.alarms.Get(alarm.ID); ok {
 			if exist := itf.(*model.AlarmEvent); exist.Status != Cleared {
 				exist.Status = Cleared
 				alarm = exist
 			}
 		}
 	default:
-		ac.alarms.Put(alarm.Id, alarm)
+		ac.alarms.Put(alarm.ID, alarm)
 	}
-	log.Debugf("alarm[%s] %s, %v", alarm.Id, alarm.Status, alarm.Fields)
+	log.Debugf("alarm[%s] %s, %v", alarm.ID, alarm.Status, alarm.Fields)
 }
 
-func NewAlarmService() *AlarmService {
-	c := &AlarmService{
+func NewAlarmService() *Service {
+	c := &Service{
 		Subscriber: nf.NewSubscriber(ALARM, Subject, Group),
 	}
-	notify.NotifyCenter().AddSubscriber(c)
+	err := notify.GetNotifyCenter().AddSubscriber(c)
+	if err != nil {
+		log.Error("", err)
+	}
 	return c
 }
 
-func AlarmCenter() *AlarmService {
+func Center() *Service {
 	once.Do(func() {
 		service = NewAlarmService()
 	})

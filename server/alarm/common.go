@@ -27,8 +27,8 @@ const (
 )
 
 const (
-	IdBackendConnectionRefuse model.ID = "BackendConnectionRefuse"
-	IdInternalError           model.ID = "InternalError"
+	IDBackendConnectionRefuse model.ID = "BackendConnectionRefuse"
+	IDInternalError           model.ID = "InternalError"
 )
 
 const (
@@ -67,17 +67,17 @@ func AdditionalContext(format string, args ...interface{}) model.Field {
 }
 
 func ListAll() []*model.AlarmEvent {
-	return AlarmCenter().ListAll()
+	return Center().ListAll()
 }
 
 func Raise(id model.ID, fields ...model.Field) error {
-	return AlarmCenter().Raise(id, fields...)
+	return Center().Raise(id, fields...)
 }
 
 func Clear(id model.ID) error {
-	return AlarmCenter().Clear(id)
+	return Center().Clear(id)
 }
 
 func ClearAll() {
-	AlarmCenter().ClearAll()
+	Center().ClearAll()
 }

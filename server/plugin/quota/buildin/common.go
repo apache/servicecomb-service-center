@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package buildin
 
 import (
@@ -81,7 +82,7 @@ func resourceLimitHandler(ctx context.Context, res *quota.ApplyQuotaResource) (i
 	var indexer discovery.Indexer
 
 	domainProject := res.DomainProject
-	serviceId := res.ServiceId
+	serviceID := res.ServiceID
 
 	switch res.QuotaType {
 	case quota.MicroServiceInstanceQuotaType:
@@ -89,13 +90,13 @@ func resourceLimitHandler(ctx context.Context, res *quota.ApplyQuotaResource) (i
 	case quota.MicroServiceQuotaType:
 		return globalCounter.ServiceCount, nil
 	case quota.RuleQuotaType:
-		key = core.GenerateServiceRuleKey(domainProject, serviceId, "")
+		key = core.GenerateServiceRuleKey(domainProject, serviceID, "")
 		indexer = backend.Store().Rule()
 	case quota.SchemaQuotaType:
-		key = core.GenerateServiceSchemaKey(domainProject, serviceId, "")
+		key = core.GenerateServiceSchemaKey(domainProject, serviceID, "")
 		indexer = backend.Store().Schema()
 	case quota.TagQuotaType:
-		tags, err := serviceUtil.GetTagsUtils(ctx, domainProject, serviceId)
+		tags, err := serviceUtil.GetTagsUtils(ctx, domainProject, serviceID)
 		if err != nil {
 			return 0, err
 		}

@@ -14,10 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package broker
 
 import (
 	"encoding/json"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -28,51 +30,51 @@ import (
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 )
 
-const DEFAULT_SCHEME = "http"
+const DefaultScheme = "http"
 
-type BrokerController struct {
+type Controller struct {
 }
 
-func (brokerService *BrokerController) URLPatterns() []rest.Route {
+func (brokerService *Controller) URLPatterns() []rest.Route {
 	return []rest.Route{
 		// for handling broker requests
-		{rest.HTTP_METHOD_GET,
-			"/",
-			brokerService.GetHome},
-		{rest.HTTP_METHOD_PUT,
-			"/pacts/provider/:providerId/consumer/:consumerId/version/:number",
-			brokerService.PublishPact},
-		{rest.HTTP_METHOD_GET,
-			"/pacts/provider/:providerId/latest",
-			brokerService.GetAllProviderPacts},
-		{rest.HTTP_METHOD_GET,
-			"/pacts/provider/:providerId/consumer/:consumerId/version/:number",
-			brokerService.GetPactsOfProvider},
-		{rest.HTTP_METHOD_DELETE,
-			"/pacts/delete",
-			brokerService.DeletePacts},
-		{rest.HTTP_METHOD_POST,
-			"/pacts/provider/:providerId/consumer/:consumerId/pact-version/:sha/verification-results",
-			brokerService.PublishVerificationResults},
-		{rest.HTTP_METHOD_GET,
-			"/verification-results/consumer/:consumerId/version/:consumerVersion/latest",
-			brokerService.RetrieveVerificationResults},
+		{Method: http.MethodGet,
+			Path: "/",
+			Func: brokerService.GetHome},
+		{Method: rest.HTTPMethodPut,
+			Path: "/pacts/provider/:providerId/consumer/:consumerId/version/:number",
+			Func: brokerService.PublishPact},
+		{Method: http.MethodGet,
+			Path: "/pacts/provider/:providerId/latest",
+			Func: brokerService.GetAllProviderPacts},
+		{Method: http.MethodGet,
+			Path: "/pacts/provider/:providerId/consumer/:consumerId/version/:number",
+			Func: brokerService.GetPactsOfProvider},
+		{Method: rest.HTTPMethodDelete,
+			Path: "/pacts/delete",
+			Func: brokerService.DeletePacts},
+		{Method: rest.HTTPMethodPost,
+			Path: "/pacts/provider/:providerId/consumer/:consumerId/pact-version/:sha/verification-results",
+			Func: brokerService.PublishVerificationResults},
+		{Method: http.MethodGet,
+			Path: "/verification-results/consumer/:consumerId/version/:consumerVersion/latest",
+			Func: brokerService.RetrieveVerificationResults},
 	}
 }
 
-func (brokerService *BrokerController) GetHome(w http.ResponseWriter, r *http.Request) {
+func (brokerService *Controller) GetHome(w http.ResponseWriter, r *http.Request) {
 	request := &brokerpb.BaseBrokerRequest{
 		HostAddress: r.Host,
 		Scheme:      getScheme(r),
 	}
-	resp, _ := BrokerServiceAPI.GetBrokerHome(r.Context(), request)
+	resp, _ := ServiceAPI.GetBrokerHome(r.Context(), request)
 
 	respInternal := resp.Response
 	resp.Response = nil
 	controller.WriteResponse(w, respInternal, resp)
 }
 
-func (*BrokerController) PublishPact(w http.ResponseWriter, r *http.Request) {
+func (*Controller) PublishPact(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		PactLogger.Error("body err\n", err)
@@ -88,14 +90,18 @@ func (*BrokerController) PublishPact(w http.ResponseWriter, r *http.Request) {
 	}
 	PactLogger.Infof("PublishPact: providerId = %s, consumerId = %s, version = %s\n",
 		request.ProviderId, request.ConsumerId, request.Version)
-	resp, err := BrokerServiceAPI.PublishPact(r.Context(), request)
-
+	resp, err := ServiceAPI.PublishPact(r.Context(), request)
+	if err != nil {
+		log.Errorf(err, "can not push pact")
+		controller.WriteError(w, scerr.ErrInternal, "can not push pact")
+		return
+	}
 	respInternal := resp.Response
 	resp.Response = nil
 	controller.WriteResponse(w, respInternal, resp)
 }
 
-func (*BrokerController) GetAllProviderPacts(w http.ResponseWriter, r *http.Request) {
+func (*Controller) GetAllProviderPacts(w http.ResponseWriter, r *http.Request) {
 	request := &brokerpb.GetAllProviderPactsRequest{
 		ProviderId: r.URL.Query().Get(":providerId"),
 		BaseUrl: &brokerpb.BaseBrokerRequest{
@@ -103,7 +109,12 @@ func (*BrokerController) GetAllProviderPacts(w http.ResponseWriter, r *http.Requ
 			Scheme:      getScheme(r),
 		},
 	}
-	resp, err := BrokerServiceAPI.GetAllProviderPacts(r.Context(), request /*, href*/)
+	resp, err := ServiceAPI.GetAllProviderPacts(r.Context(), request /*, href*/)
+	if err != nil {
+		PactLogger.Errorf(err, "can not get pacts")
+		controller.WriteError(w, scerr.ErrInternal, "can not get pacts")
+		return
+	}
 	linksObj, err := json.Marshal(resp)
 	if err != nil {
 		PactLogger.Errorf(err, "invalid ProviderPacts")
@@ -116,7 +127,7 @@ func (*BrokerController) GetAllProviderPacts(w http.ResponseWriter, r *http.Requ
 	controller.WriteResponse(w, respInternal, resp)
 }
 
-func (*BrokerController) GetPactsOfProvider(w http.ResponseWriter, r *http.Request) {
+func (*Controller) GetPactsOfProvider(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	request := &brokerpb.GetProviderConsumerVersionPactRequest{
 		ProviderId: query.Get(":providerId"),
@@ -128,22 +139,22 @@ func (*BrokerController) GetPactsOfProvider(w http.ResponseWriter, r *http.Reque
 		},
 	}
 
-	resp, _ := BrokerServiceAPI.GetPactsOfProvider(r.Context(), request)
+	resp, _ := ServiceAPI.GetPactsOfProvider(r.Context(), request)
 	respInternal := resp.Response
 	resp.Response = nil
 	//controller.WriteResponse(w, respInternal, resp.Pact)
-	controller.WriteJsonIfSuccess(w, respInternal, resp.Pact)
+	controller.WriteJSONIfSuccess(w, respInternal, resp.Pact)
 }
 
-func (*BrokerController) DeletePacts(w http.ResponseWriter, r *http.Request) {
-	resp, _ := BrokerServiceAPI.DeletePacts(r.Context(), &brokerpb.BaseBrokerRequest{
+func (*Controller) DeletePacts(w http.ResponseWriter, r *http.Request) {
+	resp, _ := ServiceAPI.DeletePacts(r.Context(), &brokerpb.BaseBrokerRequest{
 		HostAddress: r.Host,
 		Scheme:      getScheme(r),
 	})
 	controller.WriteResponse(w, resp, nil)
 }
 
-func (*BrokerController) PublishVerificationResults(w http.ResponseWriter, r *http.Request) {
+func (*Controller) PublishVerificationResults(w http.ResponseWriter, r *http.Request) {
 	requestBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		PactLogger.Error("body err", err)
@@ -170,21 +181,26 @@ func (*BrokerController) PublishVerificationResults(w http.ResponseWriter, r *ht
 	PactLogger.Infof("PublishVerificationResults: %s, %s, %d, %t, %s\n",
 		request.ProviderId, request.ConsumerId, request.PactId, request.Success,
 		request.ProviderApplicationVersion)
-	resp, err := BrokerServiceAPI.PublishVerificationResults(r.Context(),
+	resp, err := ServiceAPI.PublishVerificationResults(r.Context(),
 		request)
+	if err != nil {
+		PactLogger.Error("publish failed", err)
+		controller.WriteError(w, scerr.ErrInternal, "publish failed")
+		return
+	}
 	respInternal := resp.Response
 	resp.Response = nil
 	controller.WriteResponse(w, respInternal, resp)
 }
 
-func (*BrokerController) RetrieveVerificationResults(w http.ResponseWriter, r *http.Request) {
+func (*Controller) RetrieveVerificationResults(w http.ResponseWriter, r *http.Request) {
 	request := &brokerpb.RetrieveVerificationRequest{}
 	query := r.URL.Query()
 	request.ConsumerId = query.Get(":consumerId")
 	request.ConsumerVersion = query.Get(":consumerVersion")
 	PactLogger.Infof("Retrieve verification results for: %s, %s\n",
 		request.ConsumerId, request.ConsumerVersion)
-	resp, _ := BrokerServiceAPI.RetrieveVerificationResults(r.Context(), request)
+	resp, _ := ServiceAPI.RetrieveVerificationResults(r.Context(), request)
 	respInternal := resp.Response
 	resp.Response = nil
 	controller.WriteResponse(w, respInternal, resp)
@@ -192,7 +208,7 @@ func (*BrokerController) RetrieveVerificationResults(w http.ResponseWriter, r *h
 
 func getScheme(r *http.Request) string {
 	if len(r.URL.Scheme) < 1 {
-		return DEFAULT_SCHEME
+		return DefaultScheme
 	}
 	return r.URL.Scheme
 }

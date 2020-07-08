@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package metric
 
 import (
@@ -23,6 +24,9 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/buffer"
 	dto "github.com/prometheus/client_model/go"
 )
+
+// Pxx represents p99 p90 p50
+var Pxx = map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001}
 
 func NewMetrics() *Metrics {
 	return &Metrics{
@@ -80,7 +84,6 @@ func (cm *Details) Get(labels []*dto.LabelPair) (val float64) {
 
 func (cm *Details) put(labels []*dto.LabelPair, val float64) {
 	cm.mapper[cm.toKey(labels)] = val
-	return
 }
 
 func (cm *Details) ForEach(f func(labels []*dto.LabelPair, v float64) (next bool)) {
@@ -123,7 +126,7 @@ func (cm *Metrics) Summary(key string) (sum float64) {
 }
 
 const (
-	tagJson = "json"
+	tagJSON = "json"
 )
 
 // ToRawData parses result form labels
@@ -140,7 +143,7 @@ func ToRawData(result interface{}, labels []*dto.LabelPair) {
 		if elem.Field(i).Type.Kind() != reflect.String {
 			continue
 		}
-		tag := elem.Field(i).Tag.Get(tagJson)
+		tag := elem.Field(i).Tag.Get(tagJSON)
 		for _, label := range labels {
 			if *label.Name == tag {
 				value.Field(i).SetString(*label.Value)
@@ -159,7 +162,7 @@ func ToLabelNames(structure interface{}) []string {
 	num := t.NumField()
 	labelNames := make([]string, 0, num)
 	for i := 0; i < num; i++ {
-		tag := t.Field(i).Tag.Get(tagJson)
+		tag := t.Field(i).Tag.Get(tagJSON)
 		labelNames = append(labelNames, tag)
 	}
 	return labelNames

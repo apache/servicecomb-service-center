@@ -19,6 +19,7 @@ package log
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"runtime"
 	"runtime/debug"
@@ -156,7 +157,7 @@ func toZapConfig(c Config) zapcore.Core {
 		syncer = StdoutSyncer
 	}
 
-	zap.NewDevelopment()
+	//zap.NewDevelopment()
 	return zapcore.NewCore(enc, syncer, levelEnabler)
 }
 
@@ -237,19 +238,34 @@ func (l *Logger) Recover(r interface{}, callerSkip int) {
 		e.Caller.TrimmedPath(),
 		r,
 		e.Stack)
-	StderrSyncer.Sync() // sync immediately, for server may exit abnormally
+	err := StderrSyncer.Sync() // sync immediately, for server may exit abnormally
+	if err != nil {
+		log.Println(err)
+	}
 	if err := l.zapLogger.Core().With([]zap.Field{zap.Reflect("recover", r)}).Write(e, nil); err != nil {
 		fmt.Fprintf(StderrSyncer, "%s\tERROR\t%v\n", time.Now().Format("2006-01-02T15:04:05.000Z0700"), err)
 		fmt.Fprintln(StderrSyncer, util.BytesToStringWithNoCopy(debug.Stack()))
-		StderrSyncer.Sync()
+		err = StderrSyncer.Sync()
+		if err != nil {
+			log.Println(err)
+		}
 		return
 	}
 }
 
 func (l *Logger) Sync() {
-	l.zapLogger.Sync()
-	StderrSyncer.Sync()
-	StdoutSyncer.Sync()
+	err := l.zapLogger.Sync()
+	if err != nil {
+		log.Println(err)
+	}
+	err = StderrSyncer.Sync()
+	if err != nil {
+		log.Println(err)
+	}
+	err = StdoutSyncer.Sync()
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 func NewLogger(cfg Config) *Logger {

@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package notify
 
 import (
@@ -50,7 +51,7 @@ func (wh *WebSocket) Init() error {
 	remoteAddr := wh.conn.RemoteAddr().String()
 
 	// put in notification service queue
-	if err := NotifyCenter().AddSubscriber(wh.watcher); err != nil {
+	if err := GetNotifyCenter().AddSubscriber(wh.watcher); err != nil {
 		err = fmt.Errorf("establish[%s] websocket watch failed: notify service error, %s",
 			remoteAddr, err.Error())
 		log.Errorf(nil, err.Error())
@@ -97,7 +98,12 @@ func (wh *WebSocket) HandleWatchWebSocketControlMessage() {
 	remoteAddr := wh.conn.RemoteAddr().String()
 	// PING
 	wh.conn.SetPingHandler(func(message string) error {
-		defer wh.conn.SetReadDeadline(time.Now().Add(wh.ReadTimeout()))
+		defer func() {
+			err := wh.conn.SetReadDeadline(time.Now().Add(wh.ReadTimeout()))
+			if err != nil {
+				log.Error("", err)
+			}
+		}()
 		if wh.needPingWatcher {
 			log.Infof("received 'Ping' message '%s' from watcher[%s], no longer send 'Ping' to it, subject: %s, group: %s",
 				message, remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
@@ -107,7 +113,12 @@ func (wh *WebSocket) HandleWatchWebSocketControlMessage() {
 	})
 	// PONG
 	wh.conn.SetPongHandler(func(message string) error {
-		defer wh.conn.SetReadDeadline(time.Now().Add(wh.ReadTimeout()))
+		defer func() {
+			err := wh.conn.SetReadDeadline(time.Now().Add(wh.ReadTimeout()))
+			if err != nil {
+				log.Error("", err)
+			}
+		}()
 		log.Debugf("received 'Pong' message '%s' from watcher[%s], subject: %s, group: %s",
 			message, remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
 		return nil
@@ -120,7 +131,10 @@ func (wh *WebSocket) HandleWatchWebSocketControlMessage() {
 	})
 
 	wh.conn.SetReadLimit(ReadMaxBody)
-	wh.conn.SetReadDeadline(time.Now().Add(wh.ReadTimeout()))
+	err := wh.conn.SetReadDeadline(time.Now().Add(wh.ReadTimeout()))
+	if err != nil {
+		log.Error("", err)
+	}
 	for {
 		_, _, err := wh.conn.ReadMessage()
 		if err != nil {
@@ -182,13 +196,12 @@ func (wh *WebSocket) HandleWatchWebSocketJob(o interface{}) {
 		remoteAddr = wh.conn.RemoteAddr().String()
 	)
 
-	switch o.(type) {
+	switch o := o.(type) {
 	case error:
-		err := o.(error)
-		log.Errorf(err, "watcher[%s] catch an err, subject: %s, group: %s",
+		log.Errorf(o, "watcher[%s] catch an err, subject: %s, group: %s",
 			remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
 
-		message = util.StringToBytesWithNoCopy(fmt.Sprintf("watcher catch an err: %s", err.Error()))
+		message = util.StringToBytesWithNoCopy(fmt.Sprintf("watcher catch an err: %s", o.Error()))
 	case time.Time:
 		domainProject := util.ParseDomainProject(wh.ctx)
 		if !serviceUtil.ServiceExist(wh.ctx, domainProject, wh.watcher.Group()) {
@@ -210,8 +223,7 @@ func (wh *WebSocket) HandleWatchWebSocketJob(o interface{}) {
 			remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
 		return
 	case *InstanceEvent:
-		job = o.(*InstanceEvent)
-		resp := job.Response
+		resp := o.Response
 
 		providerFlag := fmt.Sprintf("%s/%s/%s", resp.Key.AppId, resp.Key.ServiceName, resp.Key.Version)
 		if resp.Action != string(pb.EVT_EXPIRE) {
@@ -252,7 +264,10 @@ func (wh *WebSocket) HandleWatchWebSocketJob(o interface{}) {
 }
 
 func (wh *WebSocket) WriteMessage(message []byte) error {
-	wh.conn.SetWriteDeadline(time.Now().Add(wh.SendTimeout()))
+	err := wh.conn.SetWriteDeadline(time.Now().Add(wh.SendTimeout()))
+	if err != nil {
+		return err
+	}
 	return wh.conn.WriteMessage(websocket.TextMessage, message)
 }
 
@@ -271,13 +286,13 @@ func (wh *WebSocket) Stop() {
 	close(wh.closed)
 }
 
-func DoWebSocketListAndWatch(ctx context.Context, serviceId string, f func() ([]*pb.WatchInstanceResponse, int64), conn *websocket.Conn) {
+func DoWebSocketListAndWatch(ctx context.Context, serviceID string, f func() ([]*pb.WatchInstanceResponse, int64), conn *websocket.Conn) {
 	domainProject := util.ParseDomainProject(ctx)
 	domain := util.ParseDomain(ctx)
 	socket := &WebSocket{
 		ctx:     ctx,
 		conn:    conn,
-		watcher: NewInstanceEventListWatcher(serviceId, domainProject, f),
+		watcher: NewInstanceEventListWatcher(serviceID, domainProject, f),
 	}
 
 	ReportSubscriber(domain, Websocket, 1)

@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package cache
 
 import (
@@ -34,9 +35,7 @@ type Tree struct {
 
 func (t *Tree) AddFilter(fs ...Filter) *Tree {
 	t.lock.Lock()
-	for _, f := range fs {
-		t.filters = append(t.filters, f)
-	}
+	t.filters = append(t.filters, fs...)
 	t.lock.Unlock()
 	return t
 }

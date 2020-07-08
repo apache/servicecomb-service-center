@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package etcd
 
 import (
@@ -45,10 +46,10 @@ var firstEndpoint string
 
 func init() {
 	clientv3.SetLogger(&clientLogger{})
-	mgr.RegisterPlugin(mgr.Plugin{mgr.REGISTRY, "etcd", NewRegistry})
+	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.REGISTRY, Name: "etcd", New: NewRegistry})
 }
 
-type EtcdClient struct {
+type Client struct {
 	Client *clientv3.Client
 
 	Endpoints        []string
@@ -61,7 +62,7 @@ type EtcdClient struct {
 	goroutine *gopool.Pool
 }
 
-func (c *EtcdClient) Initialize() (err error) {
+func (c *Client) Initialize() (err error) {
 	c.err = make(chan error, 1)
 	c.ready = make(chan struct{})
 	c.goroutine = gopool.New(context.Background())
@@ -101,7 +102,7 @@ func (c *EtcdClient) Initialize() (err error) {
 	return
 }
 
-func (c *EtcdClient) newClient() (*clientv3.Client, error) {
+func (c *Client) newClient() (*clientv3.Client, error) {
 	client, err := clientv3.New(clientv3.Config{
 		Endpoints:            c.Endpoints,
 		DialTimeout:          c.DialTimeout,
@@ -113,7 +114,10 @@ func (c *EtcdClient) newClient() (*clientv3.Client, error) {
 	})
 	defer func() {
 		if err != nil {
-			alarm.Raise(alarm.IdBackendConnectionRefuse, alarm.AdditionalContext("%v", err))
+			err = alarm.Raise(alarm.IDBackendConnectionRefuse, alarm.AdditionalContext("%v", err))
+			if err != nil {
+				log.Error("", err)
+			}
 
 			if client != nil {
 				client.Close()
@@ -125,7 +129,8 @@ func (c *EtcdClient) newClient() (*clientv3.Client, error) {
 		return nil, err
 	}
 
-	ctx, _ := context.WithTimeout(client.Ctx(), healthCheckTimeout)
+	ctx, cancel := context.WithTimeout(client.Ctx(), healthCheckTimeout)
+	defer cancel()
 	resp, err := client.MemberList(ctx)
 	if err != nil {
 		return nil, err
@@ -161,15 +166,15 @@ epLoop:
 	return client, nil
 }
 
-func (c *EtcdClient) Err() <-chan error {
+func (c *Client) Err() <-chan error {
 	return c.err
 }
 
-func (c *EtcdClient) Ready() <-chan struct{} {
+func (c *Client) Ready() <-chan struct{} {
 	return c.ready
 }
 
-func (c *EtcdClient) Close() {
+func (c *Client) Close() {
 	c.goroutine.Close(true)
 
 	if c.Client != nil {
@@ -178,7 +183,7 @@ func (c *EtcdClient) Close() {
 	log.Debugf("etcd client stopped")
 }
 
-func (c *EtcdClient) Compact(ctx context.Context, reserve int64) error {
+func (c *Client) Compact(ctx context.Context, reserve int64) error {
 	eps := c.Client.Endpoints()
 	curRev := c.getLeaderCurrentRevision(ctx)
 
@@ -196,7 +201,7 @@ func (c *EtcdClient) Compact(ctx context.Context, reserve int64) error {
 			eps, revToCompact, curRev, reserve)
 		return err
 	}
-	log.LogInfoOrWarnf(t, "compacted %s, revision is %d(current: %d, reserve %d)", eps, revToCompact, curRev, reserve)
+	log.InfoOrWarnf(t, "compacted %s, revision is %d(current: %d, reserve %d)", eps, revToCompact, curRev, reserve)
 
 	// TODO can not defrag! because backend will always be unavailable when space in used is too large.
 	/*for _, ep := range eps {
@@ -206,13 +211,13 @@ func (c *EtcdClient) Compact(ctx context.Context, reserve int64) error {
 			log.Errorf(err, "Defrag %s failed", ep)
 			continue
 		}
-		log.LogInfoOrWarnf(t, "Defraged %s", ep)
+		log.InfoOrWarnf(t, "Defraged %s", ep)
 	}*/
 
 	return nil
 }
 
-func (c *EtcdClient) getLeaderCurrentRevision(ctx context.Context) int64 {
+func (c *Client) getLeaderCurrentRevision(ctx context.Context) int64 {
 	eps := c.Client.Endpoints()
 	curRev := int64(0)
 	for _, ep := range eps {
@@ -237,7 +242,7 @@ func max(n1, n2 int64) int64 {
 	return n2
 }
 
-func (c *EtcdClient) toGetRequest(op registry.PluginOp) []clientv3.OpOption {
+func (c *Client) toGetRequest(op registry.PluginOp) []clientv3.OpOption {
 	var opts []clientv3.OpOption
 	if op.Prefix {
 		opts = append(opts, clientv3.WithPrefix())
@@ -257,15 +262,15 @@ func (c *EtcdClient) toGetRequest(op registry.PluginOp) []clientv3.OpOption {
 		opts = append(opts, clientv3.WithRev(op.Revision))
 	}
 	switch op.SortOrder {
-	case registry.SORT_ASCEND:
+	case registry.SortAscend:
 		opts = append(opts, clientv3.WithSort(clientv3.SortByKey, clientv3.SortAscend))
-	case registry.SORT_DESCEND:
+	case registry.SortDescend:
 		opts = append(opts, clientv3.WithSort(clientv3.SortByKey, clientv3.SortDescend))
 	}
 	return opts
 }
 
-func (c *EtcdClient) toPutRequest(op registry.PluginOp) []clientv3.OpOption {
+func (c *Client) toPutRequest(op registry.PluginOp) []clientv3.OpOption {
 	var opts []clientv3.OpOption
 	if op.PrevKV {
 		opts = append(opts, clientv3.WithPrevKV())
@@ -279,7 +284,7 @@ func (c *EtcdClient) toPutRequest(op registry.PluginOp) []clientv3.OpOption {
 	return opts
 }
 
-func (c *EtcdClient) toDeleteRequest(op registry.PluginOp) []clientv3.OpOption {
+func (c *Client) toDeleteRequest(op registry.PluginOp) []clientv3.OpOption {
 	var opts []clientv3.OpOption
 	if op.Prefix {
 		opts = append(opts, clientv3.WithPrefix())
@@ -292,7 +297,7 @@ func (c *EtcdClient) toDeleteRequest(op registry.PluginOp) []clientv3.OpOption {
 	return opts
 }
 
-func (c *EtcdClient) toTxnRequest(opts []registry.PluginOp) []clientv3.Op {
+func (c *Client) toTxnRequest(opts []registry.PluginOp) []clientv3.Op {
 	var etcdOps []clientv3.Op
 	for _, op := range opts {
 		switch op.Action {
@@ -311,30 +316,30 @@ func (c *EtcdClient) toTxnRequest(opts []registry.PluginOp) []clientv3.Op {
 	return etcdOps
 }
 
-func (c *EtcdClient) toCompares(cmps []registry.CompareOp) []clientv3.Cmp {
+func (c *Client) toCompares(cmps []registry.CompareOp) []clientv3.Cmp {
 	var etcdCmps []clientv3.Cmp
 	for _, cmp := range cmps {
 		var cmpType clientv3.Cmp
 		var cmpResult string
 		key := util.BytesToStringWithNoCopy(cmp.Key)
 		switch cmp.Type {
-		case registry.CMP_VERSION:
+		case registry.CmpVersion:
 			cmpType = clientv3.Version(key)
-		case registry.CMP_CREATE:
+		case registry.CmpCreate:
 			cmpType = clientv3.CreateRevision(key)
-		case registry.CMP_MOD:
+		case registry.CmpMod:
 			cmpType = clientv3.ModRevision(key)
-		case registry.CMP_VALUE:
+		case registry.CmpValue:
 			cmpType = clientv3.Value(key)
 		}
 		switch cmp.Result {
-		case registry.CMP_EQUAL:
+		case registry.CmpEqual:
 			cmpResult = "="
-		case registry.CMP_GREATER:
+		case registry.CmpGreater:
 			cmpResult = ">"
-		case registry.CMP_LESS:
+		case registry.CmpLess:
 			cmpResult = "<"
-		case registry.CMP_NOT_EQUAL:
+		case registry.CmpNotEqual:
 			cmpResult = "!="
 		}
 		etcdCmps = append(etcdCmps, clientv3.Compare(cmpType, cmpResult, cmp.Value))
@@ -342,10 +347,10 @@ func (c *EtcdClient) toCompares(cmps []registry.CompareOp) []clientv3.Cmp {
 	return etcdCmps
 }
 
-func (c *EtcdClient) PutNoOverride(ctx context.Context, opts ...registry.PluginOpOption) (bool, error) {
+func (c *Client) PutNoOverride(ctx context.Context, opts ...registry.PluginOpOption) (bool, error) {
 	op := registry.OpPut(opts...)
 	resp, err := c.TxnWithCmp(ctx, []registry.PluginOp{op}, []registry.CompareOp{
-		registry.OpCmp(registry.CmpCreateRev(op.Key), registry.CMP_EQUAL, 0),
+		registry.OpCmp(registry.CmpCreateRev(op.Key), registry.CmpEqual, 0),
 	}, nil)
 	if err != nil {
 		log.Errorf(err, "PutNoOverride %s failed", op.Key)
@@ -354,7 +359,7 @@ func (c *EtcdClient) PutNoOverride(ctx context.Context, opts ...registry.PluginO
 	return resp.Succeeded, nil
 }
 
-func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp) (*clientv3.GetResponse, error) {
+func (c *Client) paging(ctx context.Context, op registry.PluginOp) (*clientv3.GetResponse, error) {
 	var etcdResp *clientv3.GetResponse
 	key := util.BytesToStringWithNoCopy(op.Key)
 
@@ -373,7 +378,7 @@ func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp) (*clientv
 
 	tempOp.CountOnly = false
 	tempOp.Prefix = false
-	tempOp.SortOrder = registry.SORT_ASCEND
+	tempOp.SortOrder = registry.SortAscend
 	tempOp.EndKey = op.EndKey
 	if len(op.EndKey) == 0 {
 		tempOp.EndKey = util.StringToBytesWithNoCopy(clientv3.GetPrefixRangeEnd(key))
@@ -412,7 +417,7 @@ func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp) (*clientv
 			limit = remainCount
 		}
 		if i != 0 {
-			limit += 1
+			limit++
 			start = 1
 		}
 		ops := append(baseOps, clientv3.WithLimit(int64(limit)))
@@ -435,12 +440,12 @@ func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp) (*clientv
 	}
 
 	if op.Offset == -1 {
-		log.LogInfoOrWarnf(start, "get too many KeyValues(%s) from etcd, now paging.(%d vs %d)",
+		log.InfoOrWarnf(start, "get too many KeyValues(%s) from etcd, now paging.(%d vs %d)",
 			key, recordCount, op.Limit)
 	}
 
 	// too slow
-	if op.SortOrder == registry.SORT_DESCEND {
+	if op.SortOrder == registry.SortDescend {
 		t := time.Now()
 		for i, l := 0, len(etcdResp.Kvs); i < l; i++ {
 			last := l - i - 1
@@ -449,12 +454,12 @@ func (c *EtcdClient) paging(ctx context.Context, op registry.PluginOp) (*clientv
 			}
 			etcdResp.Kvs[i], etcdResp.Kvs[last] = etcdResp.Kvs[last], etcdResp.Kvs[i]
 		}
-		log.LogNilOrWarnf(t, "sorted descend %d KeyValues(%s)", recordCount, key)
+		log.NilOrWarnf(t, "sorted descend %d KeyValues(%s)", recordCount, key)
 	}
 	return etcdResp, nil
 }
 
-func (c *EtcdClient) Do(ctx context.Context, opts ...registry.PluginOpOption) (*registry.PluginResponse, error) {
+func (c *Client) Do(ctx context.Context, opts ...registry.PluginOpOption) (*registry.PluginResponse, error) {
 	var (
 		err  error
 		resp *registry.PluginResponse
@@ -524,11 +529,11 @@ func (c *EtcdClient) Do(ctx context.Context, opts ...registry.PluginOpOption) (*
 
 	resp.Succeeded = true
 
-	log.LogNilOrWarnf(start, "registry client do %s", op)
+	log.NilOrWarnf(start, "registry client do %s", op)
 	return resp, nil
 }
 
-func (c *EtcdClient) Txn(ctx context.Context, opts []registry.PluginOp) (*registry.PluginResponse, error) {
+func (c *Client) Txn(ctx context.Context, opts []registry.PluginOp) (*registry.PluginResponse, error) {
 	resp, err := c.TxnWithCmp(ctx, opts, nil, nil)
 	if err != nil {
 		return nil, err
@@ -539,7 +544,7 @@ func (c *EtcdClient) Txn(ctx context.Context, opts []registry.PluginOp) (*regist
 	}, nil
 }
 
-func (c *EtcdClient) TxnWithCmp(ctx context.Context, success []registry.PluginOp, cmps []registry.CompareOp, fail []registry.PluginOp) (*registry.PluginResponse, error) {
+func (c *Client) TxnWithCmp(ctx context.Context, success []registry.PluginOp, cmps []registry.CompareOp, fail []registry.PluginOp) (*registry.PluginResponse, error) {
 	var err error
 
 	start := time.Now()
@@ -580,7 +585,7 @@ func (c *EtcdClient) TxnWithCmp(ctx context.Context, success []registry.PluginOp
 		}
 		return nil, err
 	}
-	log.LogNilOrWarnf(start, "registry client txn {if(%v): %s, then: %d, else: %d}, rev: %d",
+	log.NilOrWarnf(start, "registry client txn {if(%v): %s, then: %d, else: %d}, rev: %d",
 		resp.Succeeded, cmps, len(success), len(fail), resp.Header.Revision)
 
 	var rangeResponse etcdserverpb.RangeResponse
@@ -600,7 +605,7 @@ func (c *EtcdClient) TxnWithCmp(ctx context.Context, success []registry.PluginOp
 	}, nil
 }
 
-func (c *EtcdClient) LeaseGrant(ctx context.Context, TTL int64) (int64, error) {
+func (c *Client) LeaseGrant(ctx context.Context, TTL int64) (int64, error) {
 	var err error
 
 	start := time.Now()
@@ -616,11 +621,11 @@ func (c *EtcdClient) LeaseGrant(ctx context.Context, TTL int64) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	log.LogNilOrWarnf(start, "registry client grant lease %ds", TTL)
+	log.NilOrWarnf(start, "registry client grant lease %ds", TTL)
 	return int64(etcdResp.ID), nil
 }
 
-func (c *EtcdClient) LeaseRenew(ctx context.Context, leaseID int64) (int64, error) {
+func (c *Client) LeaseRenew(ctx context.Context, leaseID int64) (int64, error) {
 	var err error
 
 	start := time.Now()
@@ -640,11 +645,11 @@ func (c *EtcdClient) LeaseRenew(ctx context.Context, leaseID int64) (int64, erro
 		}
 		return 0, errorsEx.RaiseError(err)
 	}
-	log.LogNilOrWarnf(start, "registry client renew lease %d", leaseID)
+	log.NilOrWarnf(start, "registry client renew lease %d", leaseID)
 	return etcdResp.TTL, nil
 }
 
-func (c *EtcdClient) LeaseRevoke(ctx context.Context, leaseID int64) error {
+func (c *Client) LeaseRevoke(ctx context.Context, leaseID int64) error {
 	var err error
 
 	start := time.Now()
@@ -664,11 +669,11 @@ func (c *EtcdClient) LeaseRevoke(ctx context.Context, leaseID int64) error {
 		}
 		return errorsEx.RaiseError(err)
 	}
-	log.LogNilOrWarnf(start, "registry client revoke lease %d", leaseID)
+	log.NilOrWarnf(start, "registry client revoke lease %d", leaseID)
 	return nil
 }
 
-func (c *EtcdClient) Watch(ctx context.Context, opts ...registry.PluginOpOption) (err error) {
+func (c *Client) Watch(ctx context.Context, opts ...registry.PluginOpOption) (err error) {
 	op := registry.OpGet(opts...)
 
 	n := len(op.Key)
@@ -711,13 +716,13 @@ func (c *EtcdClient) Watch(ctx context.Context, opts ...registry.PluginOpOption)
 	return fmt.Errorf("no key has been watched")
 }
 
-func (c *EtcdClient) HealthCheck() {
+func (c *Client) HealthCheck() {
 	if c.AutoSyncInterval >= time.Second {
 		c.goroutine.Do(c.healthCheckLoop)
 	}
 }
 
-func (c *EtcdClient) healthCheckLoop(pctx context.Context) {
+func (c *Client) healthCheckLoop(pctx context.Context) {
 	retries, start := 0, time.Now()
 	d := c.AutoSyncInterval
 	for {
@@ -726,7 +731,8 @@ func (c *EtcdClient) healthCheckLoop(pctx context.Context) {
 			return
 		case <-time.After(d):
 			var err error
-			ctx, _ := context.WithTimeout(c.Client.Ctx(), healthCheckTimeout)
+			ctx, cancel := context.WithTimeout(c.Client.Ctx(), healthCheckTimeout)
+			defer cancel()
 			if err = c.SyncMembers(ctx); err != nil {
 				d := backoff.GetBackoff().Delay(retries)
 				retries++
@@ -739,20 +745,23 @@ func (c *EtcdClient) healthCheckLoop(pctx context.Context) {
 				}
 			} else {
 				log.Info("sync members ok.")
-				alarm.Clear(alarm.IdBackendConnectionRefuse)
+				if err := alarm.Clear(alarm.IDBackendConnectionRefuse); err != nil {
+					log.Error("", err)
+				}
 				if cerr := c.ReOpen(); cerr != nil {
 					log.Errorf(cerr, "retry to health check etcd %s after %s", c.Endpoints, c.AutoSyncInterval)
 				} else {
-					log.Infof("[%s]re-connected to etcd %s", time.Now().Sub(start), c.Endpoints)
+					log.Infof("[%s]re-connected to etcd %s", time.Since(start), c.Endpoints)
 					continue
 				}
 				return
 			}
+
 		}
 	}
 }
 
-func (c *EtcdClient) ReOpen() error {
+func (c *Client) ReOpen() error {
 	client, cerr := c.newClient()
 	if cerr != nil {
 		log.Errorf(cerr, "create a new connection to etcd %v failed",
@@ -767,7 +776,7 @@ func (c *EtcdClient) ReOpen() error {
 	return nil
 }
 
-func (c *EtcdClient) parseEndpoints() {
+func (c *Client) parseEndpoints() {
 	// use the default cluster endpoints
 	addrs := registry.Configuration().RegistryAddresses()
 
@@ -784,7 +793,7 @@ func (c *EtcdClient) parseEndpoints() {
 	c.Endpoints = endpoints
 }
 
-func (c *EtcdClient) SyncMembers(ctx context.Context) error {
+func (c *Client) SyncMembers(ctx context.Context) error {
 	var err error
 
 	start := time.Now()
@@ -856,7 +865,7 @@ func callback(action registry.ActionType, rev int64, kvs []*mvccpb.KeyValue, cb 
 func NewRegistry() mgr.Instance {
 	log.Warnf("enable etcd registry mode")
 
-	inst := &EtcdClient{}
+	inst := &Client{}
 	if err := inst.Initialize(); err != nil {
 		inst.err <- err
 		return inst

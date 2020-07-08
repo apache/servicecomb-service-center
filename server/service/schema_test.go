@@ -520,10 +520,10 @@ var _ = Describe("'Schema' service", func() {
 					Schemas:   schemas,
 				})
 				Expect(err).To(BeNil())
-				Expect(respModifySchemas.Response.Code).To(Equal(scerr.ErrUndefinedSchemaId))
+				Expect(respModifySchemas.Response.Code).To(Equal(scerr.ErrUndefinedSchemaID))
 
 				respExist, err := serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
-					Type:      service.EXIST_TYPE_SCHEMA,
+					Type:      service.ExistTypeSchema,
 					ServiceId: serviceIdPro1,
 					SchemaId:  "first_schemaId",
 				})
@@ -559,7 +559,7 @@ var _ = Describe("'Schema' service", func() {
 				Expect(respModifySchemas.Response.Code).To(Equal(pb.Response_SUCCESS))
 
 				respExist, err := serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
-					Type:      service.EXIST_TYPE_SCHEMA,
+					Type:      service.ExistTypeSchema,
 					ServiceId: serviceIdPro2,
 					SchemaId:  "first_schemaId",
 				})
@@ -908,7 +908,7 @@ var _ = Describe("'Schema' service", func() {
 					Schemas:   schemas,
 				})
 				Expect(err).To(BeNil())
-				Expect(respModifySchemas.Response.Code).To(Equal(scerr.ErrUndefinedSchemaId))
+				Expect(respModifySchemas.Response.Code).To(Equal(scerr.ErrUndefinedSchemaID))
 
 				By("schema edit allowed, add a schema with new schemaId should success")
 

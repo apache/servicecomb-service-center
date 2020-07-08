@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package v4
 
 import (
@@ -34,16 +35,16 @@ type TagService struct {
 	//
 }
 
-func (this *TagService) URLPatterns() []rest.Route {
+func (s *TagService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTP_METHOD_POST, "/v4/:project/registry/microservices/:serviceId/tags", this.AddTags},
-		{rest.HTTP_METHOD_PUT, "/v4/:project/registry/microservices/:serviceId/tags/:key", this.UpdateTag},
-		{rest.HTTP_METHOD_GET, "/v4/:project/registry/microservices/:serviceId/tags", this.GetTags},
-		{rest.HTTP_METHOD_DELETE, "/v4/:project/registry/microservices/:serviceId/tags/:key", this.DeleteTags},
+		{Method: rest.HTTPMethodPost, Path: "/v4/:project/registry/microservices/:serviceId/tags", Func: s.AddTags},
+		{Method: rest.HTTPMethodPut, Path: "/v4/:project/registry/microservices/:serviceId/tags/:key", Func: s.UpdateTag},
+		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/microservices/:serviceId/tags", Func: s.GetTags},
+		{Method: rest.HTTPMethodDelete, Path: "/v4/:project/registry/microservices/:serviceId/tags/:key", Func: s.DeleteTags},
 	}
 }
 
-func (this *TagService) AddTags(w http.ResponseWriter, r *http.Request) {
+func (s *TagService) AddTags(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
@@ -62,10 +63,15 @@ func (this *TagService) AddTags(w http.ResponseWriter, r *http.Request) {
 		ServiceId: r.URL.Query().Get(":serviceId"),
 		Tags:      tags["tags"],
 	})
+	if err != nil {
+		log.Errorf(err, "can not add tag")
+		controller.WriteError(w, scerr.ErrInternal, "can not add tag")
+		return
+	}
 	controller.WriteResponse(w, resp.Response, nil)
 }
 
-func (this *TagService) UpdateTag(w http.ResponseWriter, r *http.Request) {
+func (s *TagService) UpdateTag(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	resp, _ := core.ServiceAPI.UpdateTag(r.Context(), &pb.UpdateServiceTagRequest{
 		ServiceId: query.Get(":serviceId"),
@@ -75,7 +81,7 @@ func (this *TagService) UpdateTag(w http.ResponseWriter, r *http.Request) {
 	controller.WriteResponse(w, resp.Response, nil)
 }
 
-func (this *TagService) GetTags(w http.ResponseWriter, r *http.Request) {
+func (s *TagService) GetTags(w http.ResponseWriter, r *http.Request) {
 	resp, _ := core.ServiceAPI.GetTags(r.Context(), &pb.GetServiceTagsRequest{
 		ServiceId: r.URL.Query().Get(":serviceId"),
 	})
@@ -84,7 +90,7 @@ func (this *TagService) GetTags(w http.ResponseWriter, r *http.Request) {
 	controller.WriteResponse(w, respInternal, resp)
 }
 
-func (this *TagService) DeleteTags(w http.ResponseWriter, r *http.Request) {
+func (s *TagService) DeleteTags(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	keys := query.Get(":key")
 	ids := strings.Split(keys, ",")

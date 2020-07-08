@@ -20,12 +20,12 @@ import (
 )
 
 var INSTANCE = notify.RegisterType("INSTANCE", InstanceEventQueueSize)
-var notifyService *notify.NotifyService
+var notifyService *notify.Service
 
 func init() {
 	notifyService = notify.NewNotifyService()
 }
 
-func NotifyCenter() *notify.NotifyService {
+func GetNotifyCenter() *notify.Service {
 	return notifyService
 }

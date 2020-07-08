@@ -23,19 +23,19 @@ import (
 )
 
 func TestDefaultHealthChecker_Healthy(t *testing.T) {
-	notify.NotifyCenter().Start()
+	notify.GetNotifyCenter().Start()
 
 	// normal case
 	var hc DefaultHealthChecker
 	if err := hc.Healthy(); err != nil {
 		t.Fatal("TestDefaultHealthChecker_Healthy failed", err)
 	}
-	alarm.Raise(alarm.IdBackendConnectionRefuse, alarm.AdditionalContext("a"))
+	alarm.Raise(alarm.IDBackendConnectionRefuse, alarm.AdditionalContext("a"))
 	time.Sleep(time.Second)
 	if err := hc.Healthy(); err == nil || err.Error() != "a" {
 		t.Fatal("TestDefaultHealthChecker_Healthy failed", err)
 	}
-	alarm.Clear(alarm.IdBackendConnectionRefuse)
+	alarm.Clear(alarm.IDBackendConnectionRefuse)
 	time.Sleep(time.Second)
 	if err := hc.Healthy(); err != nil {
 		t.Fatal("TestDefaultHealthChecker_Healthy failed", err)

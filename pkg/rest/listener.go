@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package rest
 
 import (
@@ -22,15 +23,15 @@ import (
 	"syscall"
 )
 
-type TcpListener struct {
+type TCPListener struct {
 	net.Listener
 	stopCh chan error
 	closed bool
 	server *Server
 }
 
-func NewTcpListener(l net.Listener, srv *Server) (el *TcpListener) {
-	el = &TcpListener{
+func NewTCPListener(l net.Listener, srv *Server) (el *TCPListener) {
+	el = &TCPListener{
 		Listener: l,
 		stopCh:   make(chan error),
 		server:   srv,
@@ -42,15 +43,20 @@ func NewTcpListener(l net.Listener, srv *Server) (el *TcpListener) {
 	return
 }
 
-func (rl *TcpListener) Accept() (c net.Conn, err error) {
+func (rl *TCPListener) Accept() (c net.Conn, err error) {
 	tc, err := rl.Listener.(*net.TCPListener).AcceptTCP()
 	if err != nil {
 		return
 	}
 
 	if rl.server.KeepaliveTimeout > 0 {
-		tc.SetKeepAlive(true)
-		tc.SetKeepAlivePeriod(rl.server.KeepaliveTimeout)
+		if err := tc.SetKeepAlive(true); err != nil {
+			return nil, err
+		}
+		err = tc.SetKeepAlivePeriod(rl.server.KeepaliveTimeout)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	c = restConn{
@@ -62,7 +68,7 @@ func (rl *TcpListener) Accept() (c net.Conn, err error) {
 	return
 }
 
-func (rl *TcpListener) Close() error {
+func (rl *TCPListener) Close() error {
 	if rl.closed {
 		return syscall.EINVAL
 	}
@@ -71,7 +77,7 @@ func (rl *TcpListener) Close() error {
 	return <-rl.stopCh
 }
 
-func (rl *TcpListener) File() *os.File {
+func (rl *TCPListener) File() *os.File {
 	tl := rl.Listener.(*net.TCPListener)
 	fl, _ := tl.File()
 	return fl

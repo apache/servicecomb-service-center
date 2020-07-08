@@ -14,14 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package admin
 
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/model"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/admin/model"
 	"github.com/apache/servicecomb-service-center/server/alarm"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
@@ -36,7 +37,7 @@ import (
 )
 
 var (
-	AdminServiceAPI = &AdminService{}
+	AdminServiceAPI = &Service{}
 	configs         map[string]string
 	environments    = make(map[string]string)
 )
@@ -57,10 +58,10 @@ func init() {
 	}
 }
 
-type AdminService struct {
+type Service struct {
 }
 
-func (service *AdminService) Dump(ctx context.Context, in *model.DumpRequest) (*model.DumpResponse, error) {
+func (service *Service) Dump(ctx context.Context, in *model.DumpRequest) (*model.DumpResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 
 	if !core.IsDefaultDomainProject(domainProject) {
@@ -92,7 +93,7 @@ func (service *AdminService) Dump(ctx context.Context, in *model.DumpRequest) (*
 	return resp, nil
 }
 
-func (service *AdminService) dump(ctx context.Context, option string, resp *model.DumpResponse) {
+func (service *Service) dump(ctx context.Context, option string, resp *model.DumpResponse) {
 	switch option {
 	case "info":
 		resp.Info = version.Ver()
@@ -112,7 +113,7 @@ func (service *AdminService) dump(ctx context.Context, option string, resp *mode
 	}
 }
 
-func (service *AdminService) dumpAllCache(ctx context.Context, cache *model.Cache) {
+func (service *Service) dumpAllCache(ctx context.Context, cache *model.Cache) {
 	gopool.New(ctx, gopool.Configure().Workers(2)).
 		Do(func(_ context.Context) { setValue(backend.Store().Service(), &cache.Microservices) }).
 		Do(func(_ context.Context) { setValue(backend.Store().ServiceIndex(), &cache.Indexes) }).
@@ -138,19 +139,19 @@ func setValue(e discovery.Adaptor, setter model.Setter) {
 	})
 }
 
-func (service *AdminService) Clusters(ctx context.Context, in *model.ClustersRequest) (*model.ClustersResponse, error) {
+func (service *Service) Clusters(ctx context.Context, in *model.ClustersRequest) (*model.ClustersResponse, error) {
 	return &model.ClustersResponse{
 		Clusters: registry.Configuration().Clusters,
 	}, nil
 }
 
-func (service *AdminService) AlarmList(ctx context.Context, in *model.AlarmListRequest) (*model.AlarmListResponse, error) {
+func (service *Service) AlarmList(ctx context.Context, in *model.AlarmListRequest) (*model.AlarmListResponse, error) {
 	return &model.AlarmListResponse{
 		Alarms: alarm.ListAll(),
 	}, nil
 }
 
-func (service *AdminService) ClearAlarm(ctx context.Context, in *model.ClearAlarmRequest) (*model.ClearAlarmResponse, error) {
+func (service *Service) ClearAlarm(ctx context.Context, in *model.ClearAlarmRequest) (*model.ClearAlarmResponse, error) {
 	alarm.ClearAll()
 	log.Infof("service center alarms are cleared")
 	return &model.ClearAlarmResponse{}, nil

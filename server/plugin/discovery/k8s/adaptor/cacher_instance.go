@@ -33,14 +33,14 @@ type InstanceCacher struct {
 func (c *InstanceCacher) onServiceEvent(evt K8sEvent) {
 	svc := evt.Object.(*v1.Service)
 	domainProject := Kubernetes().GetDomainProject()
-	serviceId := generateServiceId(domainProject, svc)
+	serviceID := generateServiceID(domainProject, svc)
 
 	switch evt.EventType {
 	case pb.EVT_DELETE:
-		c.deleteInstances(domainProject, serviceId)
+		c.deleteInstances(domainProject, serviceID)
 	case pb.EVT_UPDATE:
 		if !ShouldRegisterService(svc) {
-			c.deleteInstances(domainProject, serviceId)
+			c.deleteInstances(domainProject, serviceID)
 			return
 		}
 		ep := Kubernetes().GetEndpoints(svc.Namespace, svc.Name)
@@ -48,9 +48,9 @@ func (c *InstanceCacher) onServiceEvent(evt K8sEvent) {
 	}
 }
 
-func (c *InstanceCacher) getInstances(domainProject, serviceId string) (m map[string]*discovery.KeyValue) {
+func (c *InstanceCacher) getInstances(domainProject, serviceID string) (m map[string]*discovery.KeyValue) {
 	var arr []*discovery.KeyValue
-	key := core.GenerateInstanceKey(domainProject, serviceId, "")
+	key := core.GenerateInstanceKey(domainProject, serviceID, "")
 	if l := c.Cache().GetPrefix(key, &arr); l > 0 {
 		m = make(map[string]*discovery.KeyValue, l)
 		for _, kv := range arr {
@@ -60,9 +60,9 @@ func (c *InstanceCacher) getInstances(domainProject, serviceId string) (m map[st
 	return
 }
 
-func (c *InstanceCacher) deleteInstances(domainProject, serviceId string) {
+func (c *InstanceCacher) deleteInstances(domainProject, serviceID string) {
 	var kvs []*discovery.KeyValue
-	c.Cache().GetPrefix(core.GenerateInstanceKey(domainProject, serviceId, ""), &kvs)
+	c.Cache().GetPrefix(core.GenerateInstanceKey(domainProject, serviceID, ""), &kvs)
 	for _, kv := range kvs {
 		key := util.BytesToStringWithNoCopy(kv.Key)
 		c.Notify(pb.EVT_DELETE, key, kv)
@@ -78,9 +78,9 @@ func (c *InstanceCacher) onEndpointsEvent(evt K8sEvent) {
 	}
 
 	domainProject := Kubernetes().GetDomainProject()
-	serviceId := generateServiceId(domainProject, svc)
+	serviceID := generateServiceID(domainProject, svc)
 
-	oldKvs := c.getInstances(domainProject, serviceId)
+	oldKvs := c.getInstances(domainProject, serviceID)
 	newKvs := make(map[string]*discovery.KeyValue)
 	for _, ss := range ep.Subsets {
 		for _, ea := range ss.Addresses {
@@ -89,8 +89,8 @@ func (c *InstanceCacher) onEndpointsEvent(evt K8sEvent) {
 				continue
 			}
 
-			instanceId := UUID(pod.UID)
-			key := core.GenerateInstanceKey(Kubernetes().GetDomainProject(), serviceId, instanceId)
+			instanceID := UUID(pod.UID)
+			key := core.GenerateInstanceKey(Kubernetes().GetDomainProject(), serviceID, instanceID)
 			switch evt.EventType {
 			case pb.EVT_CREATE, pb.EVT_UPDATE:
 				if pod.Status.Phase != v1.PodRunning {
@@ -103,8 +103,8 @@ func (c *InstanceCacher) onEndpointsEvent(evt K8sEvent) {
 				}
 
 				inst := &pb.MicroServiceInstance{
-					InstanceId:     instanceId,
-					ServiceId:      serviceId,
+					InstanceId:     instanceID,
+					ServiceId:      serviceID,
 					HostName:       pod.Name,
 					Status:         pb.MSI_UP,
 					DataCenterInfo: &pb.DataCenterInfo{},

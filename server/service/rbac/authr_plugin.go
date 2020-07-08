@@ -37,7 +37,6 @@ const (
 
 //EmbeddedAuthenticator is sc default auth plugin, RBAC data is persisted in etcd
 type EmbeddedAuthenticator struct {
-	secret []byte
 }
 
 func newEmbeddedAuthenticator(opts *authr.Options) (authr.Authenticator, error) {

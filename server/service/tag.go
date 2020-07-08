@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package service
 
 import (
@@ -222,7 +223,7 @@ func (s *MicroServiceService) DeleteTags(ctx context.Context, in *pb.DeleteServi
 		[]registry.PluginOp{registry.OpPut(registry.WithStrKey(key), registry.WithValue(data))},
 		[]registry.CompareOp{registry.OpCmp(
 			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, in.ServiceId))),
-			registry.CMP_NOT_EQUAL, 0)},
+			registry.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		log.Errorf(err, "delete service[%s]'s tags %v failed, operator: %s",

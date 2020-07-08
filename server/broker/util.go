@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package broker
 
 import (
@@ -40,32 +41,27 @@ import (
 var PactLogger *log.Logger
 
 const (
-	BROKER_HOME_URL                      = "/"
-	BROKER_PARTICIPANTS_URL              = "/participants"
-	BROKER_PARTICIPANT_URL               = "/participants/:participantId"
-	BROKER_PARTY_VERSIONS_URL            = "/participants/:participantId/versions"
-	BROKER_PARTY_LATEST_VERSION_URL      = "/participants/:participantId/versions/latest"
-	BROKER_PARTY_VERSION_URL             = "/participants/:participantId/versions/:number"
-	BROKER_PROVIDER_URL                  = "/pacts/provider"
-	BROKER_PROVIDER_LATEST_PACTS_URL     = "/pacts/provider/:providerId/latest"
-	BROKER_PROVIDER_LATEST_PACTS_TAG_URL = "/pacts/provider/:providerId/latest/:tag"
-	BROKER_PACTS_LATEST_URL              = "/pacts/latest"
+	HomeURL                   = "/"
+	ParticipantsURL           = "/participants"
+	ProviderLatestPactsURL    = "/pacts/provider/:providerId/latest"
+	ProviderLatestPactsTagURL = "/pacts/provider/:providerId/latest/:tag"
+	PactsLatestURL            = "/pacts/latest"
 
-	BROKER_PUBLISH_URL              = "/pacts/provider/:providerId/consumer/:consumerId/version/:number"
-	BROKER_PUBLISH_VERIFICATION_URL = "/pacts/provider/:providerId/consumer/:consumerId/pact-version/:pact/verification-results"
-	BROKER_WEBHOOHS_URL             = "/webhooks"
+	PublishURL             = "/pacts/provider/:providerId/consumer/:consumerId/version/:number"
+	PublishVerificationURL = "/pacts/provider/:providerId/consumer/:consumerId/pact-version/:pact/verification-results"
+	WebhooksURL            = "/webhooks"
 
-	BROKER_CURIES_URL = "/doc/:rel"
+	CuriesURL = "/doc/:rel"
 )
 
 var brokerAPILinksValues = map[string]string{
-	"self":                              BROKER_HOME_URL,
-	"pb:publish-pact":                   BROKER_PUBLISH_URL,
-	"pb:latest-pact-versions":           BROKER_PACTS_LATEST_URL,
-	"pb:pacticipants":                   BROKER_PARTICIPANTS_URL,
-	"pb:latest-provider-pacts":          BROKER_PROVIDER_LATEST_PACTS_URL,
-	"pb:latest-provider-pacts-with-tag": BROKER_PROVIDER_LATEST_PACTS_TAG_URL,
-	"pb:webhooks":                       BROKER_WEBHOOHS_URL,
+	"self":                              HomeURL,
+	"pb:publish-pact":                   PublishURL,
+	"pb:latest-pact-versions":           PactsLatestURL,
+	"pb:pacticipants":                   ParticipantsURL,
+	"pb:latest-provider-pacts":          ProviderLatestPactsURL,
+	"pb:latest-provider-pacts-with-tag": ProviderLatestPactsTagURL,
+	"pb:webhooks":                       WebhooksURL,
 }
 
 var brokerAPILinksTempl = map[string]bool{
@@ -132,9 +128,7 @@ func GetBrokerHomeLinksAPIS(scheme string, host string, apiKey string) string {
 
 //CreateBrokerHomeResponse create the templated broker home response
 func CreateBrokerHomeResponse(host string, scheme string) *brokerpb.BrokerHomeResponse {
-
-	var apiEntries map[string]*brokerpb.BrokerAPIInfoEntry
-	apiEntries = make(map[string]*brokerpb.BrokerAPIInfoEntry)
+	apiEntries := make(map[string]*brokerpb.BrokerAPIInfoEntry)
 
 	for k := range brokerAPILinksValues {
 		apiEntries[k] = &brokerpb.BrokerAPIInfoEntry{
@@ -147,7 +141,7 @@ func CreateBrokerHomeResponse(host string, scheme string) *brokerpb.BrokerHomeRe
 	curies := []*brokerpb.BrokerAPIInfoEntry{}
 	curies = append(curies, &brokerpb.BrokerAPIInfoEntry{
 		Name: "pb",
-		Href: GenerateBrokerAPIPath(scheme, host, BROKER_CURIES_URL,
+		Href: GenerateBrokerAPIPath(scheme, host, CuriesURL,
 			strings.NewReplacer(":rel", "{rel}")),
 	})
 
@@ -167,9 +161,9 @@ func GetBrokerHomeResponse(host string, scheme string) *brokerpb.BrokerHomeRespo
 	return brokerResp
 }
 
-func GetParticipant(ctx context.Context, domain string, appId string,
+func GetParticipant(ctx context.Context, domain string, appID string,
 	serviceName string) (*brokerpb.Participant, error) {
-	key := GenerateBrokerParticipantKey(domain, appId, serviceName)
+	key := GenerateBrokerParticipantKey(domain, appID, serviceName)
 	participants, err := Store().Participant().Search(ctx, registry.WithStrKey(key))
 	if err != nil {
 		return nil, err
@@ -188,8 +182,8 @@ func GetParticipant(ctx context.Context, domain string, appId string,
 }
 
 func GetVersion(ctx context.Context, domain string, number string,
-	participantId int32) (*brokerpb.Version, error) {
-	key := GenerateBrokerVersionKey(domain, number, participantId)
+	participantID int32) (*brokerpb.Version, error) {
+	key := GenerateBrokerVersionKey(domain, number, participantID)
 	versions, err := Store().Version().Search(ctx, registry.WithStrKey(key))
 	if err != nil {
 		return nil, err
@@ -206,8 +200,8 @@ func GetVersion(ctx context.Context, domain string, number string,
 	return version, nil
 }
 
-func GetPact(ctx context.Context, domain string, consumerParticipantId int32, producerParticipantId int32, sha []byte) (*brokerpb.Pact, error) {
-	key := GenerateBrokerPactKey(domain, consumerParticipantId, producerParticipantId, sha)
+func GetPact(ctx context.Context, domain string, consumerParticipantID int32, producerParticipantID int32, sha []byte) (*brokerpb.Pact, error) {
+	key := GenerateBrokerPactKey(domain, consumerParticipantID, producerParticipantID, sha)
 	versions, err := Store().Pact().Search(ctx, registry.WithStrKey(key))
 	if err != nil {
 		return nil, err
@@ -224,9 +218,9 @@ func GetPact(ctx context.Context, domain string, consumerParticipantId int32, pr
 	return pact, nil
 }
 
-func GetPactVersion(ctx context.Context, domain string, versionId int32,
-	pactId int32) (*brokerpb.PactVersion, error) {
-	key := GenerateBrokerPactVersionKey(domain, versionId, pactId)
+func GetPactVersion(ctx context.Context, domain string, versionID int32,
+	pactID int32) (*brokerpb.PactVersion, error) {
+	key := GenerateBrokerPactVersionKey(domain, versionID, pactID)
 	versions, err := Store().PactVersion().Search(ctx, registry.WithStrKey(key))
 	if err != nil {
 		return nil, err
@@ -258,7 +252,7 @@ func GetData(ctx context.Context, key string) (int, error) {
 	return id, nil
 }
 
-func CreateParticipant(pactLogger *log.Logger, ctx context.Context, participantKey string, participant brokerpb.Participant) (*brokerpb.PublishPactResponse, error) {
+func CreateParticipant(ctx context.Context, participantKey string, participant brokerpb.Participant) (*brokerpb.PublishPactResponse, error) {
 	data, err := json.Marshal(participant)
 	if err != nil {
 		PactLogger.Errorf(nil, "pact publish failed, participant cannot be created.")
@@ -292,7 +286,7 @@ func CreateParticipant(pactLogger *log.Logger, ctx context.Context, participantK
 	return nil, nil
 }
 
-func CreateVersion(pactLogger *log.Logger, ctx context.Context, versionKey string,
+func CreateVersion(ctx context.Context, versionKey string,
 	version brokerpb.Version) (*brokerpb.PublishPactResponse, error) {
 	data, err := json.Marshal(version)
 	if err != nil {
@@ -325,7 +319,7 @@ func CreateVersion(pactLogger *log.Logger, ctx context.Context, versionKey strin
 	return nil, nil
 }
 
-func CreatePact(pactLogger *log.Logger, ctx context.Context,
+func CreatePact(ctx context.Context,
 	pactKey string, pact brokerpb.Pact) (*brokerpb.PublishPactResponse, error) {
 	data, err := json.Marshal(pact)
 	if err != nil {
@@ -360,7 +354,7 @@ func CreatePact(pactLogger *log.Logger, ctx context.Context,
 	return nil, nil
 }
 
-func CreatePactVersion(pactLogger *log.Logger, ctx context.Context, pactVersionKey string, pactVersion brokerpb.PactVersion) (*brokerpb.PublishPactResponse, error) {
+func CreatePactVersion(ctx context.Context, pactVersionKey string, pactVersion brokerpb.PactVersion) (*brokerpb.PublishPactResponse, error) {
 	data, err := json.Marshal(pactVersion)
 	if err != nil {
 		PactLogger.Errorf(nil, "pact publish failed, pact version cannot be created.")
@@ -391,7 +385,7 @@ func CreatePactVersion(pactLogger *log.Logger, ctx context.Context, pactVersionK
 	return nil, nil
 }
 
-func CreateVerification(pactLogger *log.Logger, ctx context.Context,
+func CreateVerification(ctx context.Context,
 	verificationKey string, verification brokerpb.Verification) (*brokerpb.PublishVerificationResponse, error) {
 	data, err := json.Marshal(verification)
 	if err != nil {
@@ -425,7 +419,7 @@ func CreateVerification(pactLogger *log.Logger, ctx context.Context,
 }
 
 func GetLastestVersionNumberForParticipant(ctx context.Context,
-	tenant string, participantId int32) int32 {
+	tenant string, participantID int32) int32 {
 	key := util.StringJoin([]string{
 		GetBrokerVersionKey(tenant), ""}, "/")
 	versions, err := Store().Version().Search(ctx,
@@ -442,7 +436,7 @@ func GetLastestVersionNumberForParticipant(ctx context.Context,
 		if err != nil {
 			return -1
 		}
-		if version.ParticipantId != participantId {
+		if version.ParticipantId != participantID {
 			continue
 		}
 		if version.Order > order {
@@ -508,7 +502,7 @@ func RetrieveProviderConsumerPact(ctx context.Context,
 		}, -1, err
 	}
 	// Get or create version
-	//versionKey := apt.GenerateBrokerVersionKey(tenant, in.Version, consumerParticipant.Id)
+	//versionKey := apt.GenerateBrokerVersionKey(tenant, in.Version, consumerParticipant.ID)
 	version, err := GetVersion(ctx, tenant, in.Version, consumerParticipant.Id)
 	if err != nil || version == nil {
 		PactLogger.Errorf(nil, "pact retrieve failed, version cannot be searched.")
@@ -532,7 +526,7 @@ func RetrieveProviderConsumerPact(ctx context.Context,
 		PactLogger.Info("[RetrieveProviderPact] No pact version found, sorry")
 		return nil, -1, nil
 	}
-	pactIds := make(map[int32]int32)
+	pactIDs := make(map[int32]int32)
 	for i := 0; i < len(pactVersions.Kvs); i++ {
 		pactVersion := &brokerpb.PactVersion{}
 		err = json.Unmarshal(pactVersions.Kvs[i].Value.([]byte), pactVersion)
@@ -542,10 +536,10 @@ func RetrieveProviderConsumerPact(ctx context.Context,
 		// Obviously true, but checking it anyways
 		if pactVersion.VersionId == version.Id {
 			pactid := pactVersion.PactId
-			pactIds[pactid] = pactid
+			pactIDs[pactid] = pactid
 		}
 	}
-	if len(pactIds) == 0 {
+	if len(pactIDs) == 0 {
 		PactLogger.Errorf(nil, "pact retrieve failed, pact cannot be found.")
 		return &brokerpb.GetProviderConsumerVersionPactResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, "pact cannot be found."),
@@ -573,7 +567,7 @@ func RetrieveProviderConsumerPact(ctx context.Context,
 		if err != nil {
 			return nil, -1, err
 		}
-		if _, ok := pactIds[pactObj.Id]; ok {
+		if _, ok := pactIDs[pactObj.Id]; ok {
 			//PactLogger.Infof("pact retrieve succeeded, found pact: %s", string(pactObj.Content))
 			return &brokerpb.GetProviderConsumerVersionPactResponse{
 				Response: pb.CreateResponse(pb.Response_SUCCESS, "pact found."),

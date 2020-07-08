@@ -152,11 +152,11 @@ func TestNewKvCacher(t *testing.T) {
 	}
 
 	// case re-list and over no event times
-	for i := 0; i < DEFAULT_FORCE_LIST_INTERVAL; i++ {
+	for i := 0; i < DefaultForceListInterval; i++ {
 		lw.Bus <- nil
 	}
 	evt.KV = nil
-	for i := 0; i < DEFAULT_FORCE_LIST_INTERVAL; i++ {
+	for i := 0; i < DefaultForceListInterval; i++ {
 		cr.refresh(ctx)
 	}
 	// check event
@@ -170,11 +170,11 @@ func TestNewKvCacher(t *testing.T) {
 	}
 
 	lw.ListResponse = &registry.PluginResponse{Revision: 5}
-	for i := 0; i < DEFAULT_FORCE_LIST_INTERVAL; i++ {
+	for i := 0; i < DefaultForceListInterval; i++ {
 		lw.Bus <- nil
 	}
 	evt.KV = nil
-	for i := 0; i < DEFAULT_FORCE_LIST_INTERVAL; i++ {
+	for i := 0; i < DefaultForceListInterval; i++ {
 		cr.refresh(ctx)
 	}
 	// check event

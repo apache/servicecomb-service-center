@@ -28,7 +28,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
-	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"github.com/apache/servicecomb-service-center/server/task"
 	"github.com/astaxie/beego"
 
@@ -67,7 +66,7 @@ func TestTask(t *testing.T) {
 func getContext(domain string, project string) context.Context {
 	return util.SetContext(
 		util.SetDomainProject(context.Background(), domain, project),
-		serviceUtil.CTX_NOCACHE, "1")
+		util.CtxNocache, "1")
 }
 
 func createService(domain string, project string, name string, withInstance bool, shouldClear bool) {

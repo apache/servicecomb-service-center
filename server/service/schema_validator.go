@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package service
 
 import (
@@ -29,14 +30,14 @@ var (
 )
 
 var (
-	schemaIdUnlimitedRegex, _ = regexp.Compile(`^[a-zA-Z0-9]+$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]*[a-zA-Z0-9]$`)
+	schemaIDUnlimitedRegex, _ = regexp.Compile(`^[a-zA-Z0-9]+$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]*[a-zA-Z0-9]$`)
 	schemaSummaryRegex, _     = regexp.Compile(`^[a-zA-Z0-9]*$`)
 )
 
 func GetSchemaReqValidator() *validate.Validator {
 	return getSchemaReqValidator.Init(func(v *validate.Validator) {
 		v.AddRule("ServiceId", GetServiceReqValidator().GetRule("ServiceId"))
-		v.AddRule("SchemaId", &validate.ValidateRule{Min: 1, Max: 160, Regexp: schemaIdUnlimitedRegex})
+		v.AddRule("SchemaId", &validate.Rule{Min: 1, Max: 160, Regexp: schemaIDUnlimitedRegex})
 	})
 }
 
@@ -44,11 +45,11 @@ func ModifySchemasReqValidator() *validate.Validator {
 	return modifySchemasReqValidator.Init(func(v *validate.Validator) {
 		var subSchemaValidator validate.Validator
 		subSchemaValidator.AddRule("SchemaId", GetSchemaReqValidator().GetRule("SchemaId"))
-		subSchemaValidator.AddRule("Summary", &validate.ValidateRule{Min: 1, Max: 128, Regexp: schemaSummaryRegex})
-		subSchemaValidator.AddRule("Schema", &validate.ValidateRule{Min: 1})
+		subSchemaValidator.AddRule("Summary", &validate.Rule{Min: 1, Max: 128, Regexp: schemaSummaryRegex})
+		subSchemaValidator.AddRule("Schema", &validate.Rule{Min: 1})
 
 		v.AddRule("ServiceId", GetServiceReqValidator().GetRule("ServiceId"))
-		v.AddRule("Schemas", &validate.ValidateRule{Min: 1, Max: quota.DefaultSchemaQuota})
+		v.AddRule("Schemas", &validate.Rule{Min: 1, Max: quota.DefaultSchemaQuota})
 		v.AddSub("Schemas", &subSchemaValidator)
 	})
 }
@@ -58,6 +59,6 @@ func ModifySchemaReqValidator() *validate.Validator {
 		v.AddRules(ModifySchemasReqValidator().GetSub("Schemas").GetRules())
 		v.AddRule("ServiceId", GetServiceReqValidator().GetRule("ServiceId"))
 		// forward compatibility: allow empty
-		v.AddRule("Summary", &validate.ValidateRule{Max: 128, Regexp: schemaSummaryRegex})
+		v.AddRule("Summary", &validate.Rule{Max: 128, Regexp: schemaSummaryRegex})
 	})
 }

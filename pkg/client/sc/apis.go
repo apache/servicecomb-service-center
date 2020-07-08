@@ -21,8 +21,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/apache/servicecomb-service-center/pkg/model"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/admin/model"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/version"
@@ -37,7 +37,7 @@ const (
 	QueryGlobal = "global"
 )
 
-func (c *SCClient) toError(body []byte) *scerr.Error {
+func (c *Client) toError(body []byte) *scerr.Error {
 	message := new(scerr.Error)
 	err := json.Unmarshal(body, message)
 	if err != nil {
@@ -46,7 +46,7 @@ func (c *SCClient) toError(body []byte) *scerr.Error {
 	return message
 }
 
-func (c *SCClient) parseQuery(ctx context.Context) (q string) {
+func (c *Client) parseQuery(ctx context.Context) (q string) {
 	switch {
 	case ctx.Value(QueryGlobal) == "1":
 		q += "global=true"
@@ -56,7 +56,7 @@ func (c *SCClient) parseQuery(ctx context.Context) (q string) {
 	return
 }
 
-func (c *SCClient) GetScVersion(ctx context.Context) (*version.VersionSet, *scerr.Error) {
+func (c *Client) GetScVersion(ctx context.Context) (*version.Set, *scerr.Error) {
 	resp, err := c.RestDoWithContext(ctx, http.MethodGet, apiVersionURL, c.CommonHeaders(ctx), nil)
 	if err != nil {
 		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
@@ -72,7 +72,7 @@ func (c *SCClient) GetScVersion(ctx context.Context) (*version.VersionSet, *scer
 		return nil, c.toError(body)
 	}
 
-	v := &version.VersionSet{}
+	v := &version.Set{}
 	err = json.Unmarshal(body, v)
 	if err != nil {
 		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
@@ -81,7 +81,7 @@ func (c *SCClient) GetScVersion(ctx context.Context) (*version.VersionSet, *scer
 	return v, nil
 }
 
-func (c *SCClient) GetScCache(ctx context.Context) (*model.Cache, *scerr.Error) {
+func (c *Client) GetScCache(ctx context.Context) (*model.Cache, *scerr.Error) {
 	headers := c.CommonHeaders(ctx)
 	// only default domain has admin permission
 	headers.Set("X-Domain-Name", "default")
@@ -109,7 +109,7 @@ func (c *SCClient) GetScCache(ctx context.Context) (*model.Cache, *scerr.Error) 
 	return dump.Cache, nil
 }
 
-func (c *SCClient) GetClusters(ctx context.Context) (registry.Clusters, *scerr.Error) {
+func (c *Client) GetClusters(ctx context.Context) (registry.Clusters, *scerr.Error) {
 	headers := c.CommonHeaders(ctx)
 	// only default domain has admin permission
 	headers.Set("X-Domain-Name", "default")
@@ -137,7 +137,7 @@ func (c *SCClient) GetClusters(ctx context.Context) (registry.Clusters, *scerr.E
 	return clusters.Clusters, nil
 }
 
-func (c *SCClient) HealthCheck(ctx context.Context) *scerr.Error {
+func (c *Client) HealthCheck(ctx context.Context) *scerr.Error {
 	headers := c.CommonHeaders(ctx)
 	// only default domain has admin permission
 	headers.Set("X-Domain-Name", "default")

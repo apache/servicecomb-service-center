@@ -26,10 +26,10 @@ func TestHandler(t *testing.T) {
 	inv := &chain.Invocation{}
 	ctx := context.Background()
 	inv.Init(ctx, chain.NewChain("c", []chain.Handler{}))
-	inv.WithContext(rest.CTX_MATCH_PATTERN, "/a")
+	inv.WithContext(rest.CtxMatchPattern, "/a")
 	r, _ := http.NewRequest(http.MethodGet, "http://127.0.0.1:80/a", nil)
 	w := httptest.NewRecorder()
-	inv.WithContext(rest.CTX_REQUEST, r)
-	inv.WithContext(rest.CTX_RESPONSE, w)
+	inv.WithContext(rest.CtxRequest, r)
+	inv.WithContext(rest.CtxResponse, w)
 	h.Handle(inv)
 }

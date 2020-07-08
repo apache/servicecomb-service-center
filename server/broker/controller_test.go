@@ -24,7 +24,7 @@ import (
 )
 
 var (
-	ctrl = &BrokerController{}
+	ctrl = &Controller{}
 	num  int
 )
 

@@ -14,9 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package validate
 
-type ValidateFunc interface {
+type Method interface {
 	MatchString(s string) bool
 	String() string
 }

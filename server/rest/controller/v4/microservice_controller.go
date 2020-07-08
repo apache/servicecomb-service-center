@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package v4
 
 import (
@@ -35,19 +36,19 @@ type MicroServiceService struct {
 	//
 }
 
-func (this *MicroServiceService) URLPatterns() []rest.Route {
+func (s *MicroServiceService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTP_METHOD_GET, "/v4/:project/registry/existence", this.GetExistence},
-		{rest.HTTP_METHOD_GET, "/v4/:project/registry/microservices", this.GetServices},
-		{rest.HTTP_METHOD_GET, "/v4/:project/registry/microservices/:serviceId", this.GetServiceOne},
-		{rest.HTTP_METHOD_POST, "/v4/:project/registry/microservices", this.Register},
-		{rest.HTTP_METHOD_PUT, "/v4/:project/registry/microservices/:serviceId/properties", this.Update},
-		{rest.HTTP_METHOD_DELETE, "/v4/:project/registry/microservices/:serviceId", this.Unregister},
-		{rest.HTTP_METHOD_DELETE, "/v4/:project/registry/microservices", this.UnregisterServices},
+		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/existence", Func: s.GetExistence},
+		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/microservices", Func: s.GetServices},
+		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/microservices/:serviceId", Func: s.GetServiceOne},
+		{Method: rest.HTTPMethodPost, Path: "/v4/:project/registry/microservices", Func: s.Register},
+		{Method: rest.HTTPMethodPut, Path: "/v4/:project/registry/microservices/:serviceId/properties", Func: s.Update},
+		{Method: rest.HTTPMethodDelete, Path: "/v4/:project/registry/microservices/:serviceId", Func: s.Unregister},
+		{Method: rest.HTTPMethodDelete, Path: "/v4/:project/registry/microservices", Func: s.UnregisterServices},
 	}
 }
 
-func (this *MicroServiceService) Register(w http.ResponseWriter, r *http.Request) {
+func (s *MicroServiceService) Register(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
@@ -62,12 +63,17 @@ func (this *MicroServiceService) Register(w http.ResponseWriter, r *http.Request
 		return
 	}
 	resp, err := core.ServiceAPI.Create(r.Context(), &request)
+	if err != nil {
+		log.Errorf(err, "create service failed")
+		controller.WriteError(w, scerr.ErrInternal, err.Error())
+		return
+	}
 	respInternal := resp.Response
 	resp.Response = nil
 	controller.WriteResponse(w, respInternal, resp)
 }
 
-func (this *MicroServiceService) Update(w http.ResponseWriter, r *http.Request) {
+func (s *MicroServiceService) Update(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
@@ -84,12 +90,17 @@ func (this *MicroServiceService) Update(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	resp, err := core.ServiceAPI.UpdateProperties(r.Context(), request)
+	if err != nil {
+		log.Errorf(err, "can not update service")
+		controller.WriteError(w, scerr.ErrInternal, "can not update service")
+		return
+	}
 	controller.WriteResponse(w, resp.Response, nil)
 }
 
-func (this *MicroServiceService) Unregister(w http.ResponseWriter, r *http.Request) {
+func (s *MicroServiceService) Unregister(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	serviceId := query.Get(":serviceId")
+	serviceID := query.Get(":serviceId")
 	force := query.Get("force")
 
 	b, ok := trueOrFalse[force]
@@ -99,14 +110,14 @@ func (this *MicroServiceService) Unregister(w http.ResponseWriter, r *http.Reque
 	}
 
 	request := &pb.DeleteServiceRequest{
-		ServiceId: serviceId,
+		ServiceId: serviceID,
 		Force:     b,
 	}
 	resp, _ := core.ServiceAPI.Delete(r.Context(), request)
 	controller.WriteResponse(w, resp.Response, nil)
 }
 
-func (this *MicroServiceService) GetServices(w http.ResponseWriter, r *http.Request) {
+func (s *MicroServiceService) GetServices(w http.ResponseWriter, r *http.Request) {
 	request := &pb.GetServicesRequest{}
 	resp, _ := core.ServiceAPI.GetServices(r.Context(), request)
 	respInternal := resp.Response
@@ -114,7 +125,7 @@ func (this *MicroServiceService) GetServices(w http.ResponseWriter, r *http.Requ
 	controller.WriteResponse(w, respInternal, resp)
 }
 
-func (this *MicroServiceService) GetExistence(w http.ResponseWriter, r *http.Request) {
+func (s *MicroServiceService) GetExistence(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	request := &pb.GetExistenceRequest{
 		Type:        query.Get("type"),
@@ -133,7 +144,7 @@ func (this *MicroServiceService) GetExistence(w http.ResponseWriter, r *http.Req
 	controller.WriteResponse(w, respInternal, resp)
 }
 
-func (this *MicroServiceService) GetServiceOne(w http.ResponseWriter, r *http.Request) {
+func (s *MicroServiceService) GetServiceOne(w http.ResponseWriter, r *http.Request) {
 	request := &pb.GetServiceRequest{
 		ServiceId: r.URL.Query().Get(":serviceId"),
 	}
@@ -143,7 +154,7 @@ func (this *MicroServiceService) GetServiceOne(w http.ResponseWriter, r *http.Re
 	controller.WriteResponse(w, respInternal, resp)
 }
 
-func (this *MicroServiceService) UnregisterServices(w http.ResponseWriter, r *http.Request) {
+func (s *MicroServiceService) UnregisterServices(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
@@ -161,6 +172,11 @@ func (this *MicroServiceService) UnregisterServices(w http.ResponseWriter, r *ht
 	}
 
 	resp, err := core.ServiceAPI.DeleteServices(r.Context(), request)
+	if err != nil {
+		log.Errorf(err, "delete service failed")
+		controller.WriteError(w, scerr.ErrInternal, "delete service failed")
+		return
+	}
 	respInternal := resp.Response
 	resp.Response = nil
 	controller.WriteResponse(w, respInternal, resp)

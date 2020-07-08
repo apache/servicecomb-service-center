@@ -14,10 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package buildin
 
 import (
-	"context"
 	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
@@ -63,8 +63,7 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 		log.Errorf(err, "authenticate request failed, %s %s", req.Method, req.RequestURI)
 		return err
 	}
-	log.Info("user access")
-	req2 := req.WithContext(context.WithValue(req.Context(), "accountInfo", claims))
+	req2 := req.WithContext(rbac.NewContext(req.Context(), claims))
 	*req = *req2
 	return nil
 }

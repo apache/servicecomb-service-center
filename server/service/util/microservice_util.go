@@ -50,8 +50,8 @@ func GetServiceWithRev(ctx context.Context, domain string, id string, rev int64)
 	return serviceResp.Kvs[0].Value.(*pb.MicroService), nil
 }
 
-func GetService(ctx context.Context, domainProject string, serviceId string) (*pb.MicroService, error) {
-	key := apt.GenerateServiceKey(domainProject, serviceId)
+func GetService(ctx context.Context, domainProject string, serviceID string) (*pb.MicroService, error) {
+	key := apt.GenerateServiceKey(domainProject, serviceID)
 	opts := append(FromContext(ctx), registry.WithStrKey(key))
 	serviceResp, err := backend.Store().Service().Search(ctx, opts...)
 	if err != nil {
@@ -66,8 +66,8 @@ func GetService(ctx context.Context, domainProject string, serviceId string) (*p
 // GetServiceFromCache gets service from cache
 func GetServiceFromCache(domainProject string, serviceID string) *pb.MicroService {
 	ctx := context.WithValue(context.WithValue(context.Background(),
-		CTX_CACHEONLY, "1"),
-		CTX_GLOBAL, "1")
+		util.CtxCacheOnly, "1"),
+		util.CtxGlobal, "1")
 	svc, _ := GetService(ctx, domainProject, serviceID)
 	return svc
 }
@@ -130,21 +130,21 @@ func GetServicesByDomainProject(ctx context.Context, domainProject string) ([]*p
 	return services, nil
 }
 
-func GetServiceId(ctx context.Context, key *pb.MicroServiceKey) (serviceId string, err error) {
-	serviceId, err = searchServiceId(ctx, key)
+func GetServiceID(ctx context.Context, key *pb.MicroServiceKey) (serviceID string, err error) {
+	serviceID, err = searchServiceID(ctx, key)
 	if err != nil {
 		return
 	}
-	if len(serviceId) == 0 {
+	if len(serviceID) == 0 {
 		// 别名查询
 		log.Debugf("could not search microservice[%s/%s/%s/%s] id by 'serviceName', now try 'alias'",
 			key.Environment, key.AppId, key.ServiceName, key.Version)
-		return searchServiceIdFromAlias(ctx, key)
+		return searchServiceIDFromAlias(ctx, key)
 	}
 	return
 }
 
-func searchServiceId(ctx context.Context, key *pb.MicroServiceKey) (string, error) {
+func searchServiceID(ctx context.Context, key *pb.MicroServiceKey) (string, error) {
 	opts := append(FromContext(ctx), registry.WithStrKey(apt.GenerateServiceIndexKey(key)))
 	resp, err := backend.Store().ServiceIndex().Search(ctx, opts...)
 	if err != nil {
@@ -156,7 +156,7 @@ func searchServiceId(ctx context.Context, key *pb.MicroServiceKey) (string, erro
 	return resp.Kvs[0].Value.(string), nil
 }
 
-func searchServiceIdFromAlias(ctx context.Context, key *pb.MicroServiceKey) (string, error) {
+func searchServiceIDFromAlias(ctx context.Context, key *pb.MicroServiceKey) (string, error) {
 	opts := append(FromContext(ctx), registry.WithStrKey(apt.GenerateServiceAliasKey(key)))
 	resp, err := backend.Store().ServiceAlias().Search(ctx, opts...)
 	if err != nil {
@@ -196,12 +196,12 @@ func FindServiceIds(ctx context.Context, versionRule string, key *pb.MicroServic
 	if match == nil {
 		copy := *key
 		copy.Version = versionRule
-		serviceId, err := GetServiceId(ctx, &copy)
+		serviceID, err := GetServiceID(ctx, &copy)
 		if err != nil {
 			return nil, false, err
 		}
-		if len(serviceId) > 0 {
-			return []string{serviceId}, true, nil
+		if len(serviceID) > 0 {
+			return []string{serviceID}, true, nil
 		}
 		return nil, false, nil
 	}
@@ -225,9 +225,9 @@ FIND_RULE:
 	return match(resp.Kvs), true, nil
 }
 
-func ServiceExist(ctx context.Context, domainProject string, serviceId string) bool {
+func ServiceExist(ctx context.Context, domainProject string, serviceID string) bool {
 	opts := append(FromContext(ctx),
-		registry.WithStrKey(apt.GenerateServiceKey(domainProject, serviceId)),
+		registry.WithStrKey(apt.GenerateServiceKey(domainProject, serviceID)),
 		registry.WithCountOnly())
 	resp, err := backend.Store().Service().Search(ctx, opts...)
 	if err != nil || resp.Count == 0 {
@@ -253,9 +253,9 @@ func RemandInstanceQuota(ctx context.Context) {
 	plugin.Plugins().Quota().RemandQuotas(ctx, quota.MicroServiceInstanceQuotaType)
 }
 
-func UpdateService(domainProject string, serviceId string, service *pb.MicroService) (opt registry.PluginOp, err error) {
+func UpdateService(domainProject string, serviceID string, service *pb.MicroService) (opt registry.PluginOp, err error) {
 	opt = registry.PluginOp{}
-	key := apt.GenerateServiceKey(domainProject, serviceId)
+	key := apt.GenerateServiceKey(domainProject, serviceID)
 	data, err := json.Marshal(service)
 	if err != nil {
 		log.Errorf(err, "marshal service file failed")

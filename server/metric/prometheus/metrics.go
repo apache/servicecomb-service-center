@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package prometheus
 
 import (
@@ -22,6 +23,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/metric"
 	rest2 "github.com/apache/servicecomb-service-center/server/rest"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
 	"strconv"
 	"strings"
@@ -51,7 +53,7 @@ var (
 			Subsystem:  "http",
 			Name:       "request_durations_microseconds",
 			Help:       "HTTP request latency summary of ROA handler",
-			Objectives: prometheus.DefObjectives,
+			Objectives: metric.Pxx,
 		}, []string{"method", "instance", "api", "domain"})
 
 	queryPerSeconds = prometheus.NewGaugeVec(
@@ -66,13 +68,13 @@ var (
 func init() {
 	prometheus.MustRegister(incomingRequests, successfulRequests, reqDurations, queryPerSeconds)
 
-	rest2.RegisterServerHandler("/metrics", prometheus.Handler())
+	rest2.RegisterServerHandler("/metrics", promhttp.Handler())
 }
 
 func ReportRequestCompleted(w http.ResponseWriter, r *http.Request, start time.Time) {
 	instance := metric.InstanceName()
 	elapsed := float64(time.Since(start).Nanoseconds()) / float64(time.Microsecond)
-	route, _ := r.Context().Value(rest.CTX_MATCH_FUNC).(string)
+	route, _ := r.Context().Value(rest.CtxMatchFunc).(string)
 	domain := util.ParseDomain(r.Context())
 
 	if strings.Index(r.Method, "WATCH") != 0 {
@@ -89,7 +91,7 @@ func ReportRequestCompleted(w http.ResponseWriter, r *http.Request, start time.T
 }
 
 func codeOf(h http.Header) (bool, string) {
-	statusCode := h.Get(rest.HEADER_RESPONSE_STATUS)
+	statusCode := h.Get(rest.HeaderResponseStatus)
 	if statusCode == "" {
 		return true, "200"
 	}

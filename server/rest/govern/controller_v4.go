@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package govern
 
 import (
@@ -29,23 +30,23 @@ import (
 	"strings"
 )
 
-// GovernService 治理相关接口服务
-type GovernServiceControllerV4 struct {
+// Service 治理相关接口服务
+type ResourceV4 struct {
 	//
 }
 
 // URLPatterns 路由
-func (governService *GovernServiceControllerV4) URLPatterns() []rest.Route {
+func (governService *ResourceV4) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTP_METHOD_GET, "/v4/:project/govern/microservices/:serviceId", governService.GetServiceDetail},
-		{rest.HTTP_METHOD_GET, "/v4/:project/govern/relations", governService.GetGraph},
-		{rest.HTTP_METHOD_GET, "/v4/:project/govern/microservices", governService.GetAllServicesInfo},
-		{rest.HTTP_METHOD_GET, "/v4/:project/govern/apps", governService.GetAllApplications},
+		{Method: rest.HTTPMethodGet, Path: "/v4/:project/govern/microservices/:serviceId", Func: governService.GetServiceDetail},
+		{Method: rest.HTTPMethodGet, Path: "/v4/:project/govern/relations", Func: governService.GetGraph},
+		{Method: rest.HTTPMethodGet, Path: "/v4/:project/govern/microservices", Func: governService.GetAllServicesInfo},
+		{Method: rest.HTTPMethodGet, Path: "/v4/:project/govern/apps", Func: governService.GetAllApplications},
 	}
 }
 
 // GetGraph 获取依赖连接图详细依赖关系
-func (governService *GovernServiceControllerV4) GetGraph(w http.ResponseWriter, r *http.Request) {
+func (governService *ResourceV4) GetGraph(w http.ResponseWriter, r *http.Request) {
 	var (
 		graph      Graph
 		withShared = util.StringTRUE(r.URL.Query().Get("withShared"))
@@ -71,7 +72,7 @@ func (governService *GovernServiceControllerV4) GetGraph(w http.ResponseWriter, 
 
 		var node Node
 		node.Name = service.ServiceName
-		node.Id = service.ServiceId
+		node.ID = service.ServiceId
 		node.AppID = service.AppId
 		node.Version = service.Version
 		nodes = append(nodes, node)
@@ -105,7 +106,7 @@ func (governService *GovernServiceControllerV4) GetGraph(w http.ResponseWriter, 
 			line := Line{}
 			line.From = node
 			line.To.Name = child.ServiceName
-			line.To.Id = child.ServiceId
+			line.To.ID = child.ServiceId
 			graph.Lines = append(graph.Lines, line)
 		}
 	}
@@ -114,20 +115,20 @@ func (governService *GovernServiceControllerV4) GetGraph(w http.ResponseWriter, 
 }
 
 // GetServiceDetail 查询服务详细信息
-func (governService *GovernServiceControllerV4) GetServiceDetail(w http.ResponseWriter, r *http.Request) {
+func (governService *ResourceV4) GetServiceDetail(w http.ResponseWriter, r *http.Request) {
 	serviceID := r.URL.Query().Get(":serviceId")
 	request := &pb.GetServiceRequest{
 		ServiceId: serviceID,
 	}
 	ctx := r.Context()
-	resp, _ := GovernServiceAPI.GetServiceDetail(ctx, request)
+	resp, _ := ServiceAPI.GetServiceDetail(ctx, request)
 
 	respInternal := resp.Response
 	resp.Response = nil
 	controller.WriteResponse(w, respInternal, resp)
 }
 
-func (governService *GovernServiceControllerV4) GetAllServicesInfo(w http.ResponseWriter, r *http.Request) {
+func (governService *ResourceV4) GetAllServicesInfo(w http.ResponseWriter, r *http.Request) {
 	request := &pb.GetServicesInfoRequest{}
 	ctx := r.Context()
 	query := r.URL.Query()
@@ -144,20 +145,20 @@ func (governService *GovernServiceControllerV4) GetAllServicesInfo(w http.Respon
 	if countOnly == "1" {
 		request.CountOnly = true
 	}
-	resp, _ := GovernServiceAPI.GetServicesInfo(ctx, request)
+	resp, _ := ServiceAPI.GetServicesInfo(ctx, request)
 
 	respInternal := resp.Response
 	resp.Response = nil
 	controller.WriteResponse(w, respInternal, resp)
 }
 
-func (governService *GovernServiceControllerV4) GetAllApplications(w http.ResponseWriter, r *http.Request) {
+func (governService *ResourceV4) GetAllApplications(w http.ResponseWriter, r *http.Request) {
 	request := &pb.GetAppsRequest{}
 	ctx := r.Context()
 	query := r.URL.Query()
 	request.Environment = query.Get("env")
 	request.WithShared = util.StringTRUE(query.Get("withShared"))
-	resp, _ := GovernServiceAPI.GetApplications(ctx, request)
+	resp, _ := ServiceAPI.GetApplications(ctx, request)
 
 	respInternal := resp.Response
 	resp.Response = nil

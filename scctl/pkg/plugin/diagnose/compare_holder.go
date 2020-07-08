@@ -19,7 +19,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
-	"github.com/apache/servicecomb-service-center/server/admin/model"
+	"github.com/apache/servicecomb-service-center/pkg/model"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 )

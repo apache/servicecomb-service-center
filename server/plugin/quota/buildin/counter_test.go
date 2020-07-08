@@ -23,9 +23,9 @@ import (
 func TestGlobalCounter_OnCreate(t *testing.T) {
 	var counter GlobalCounter
 	counter.OnCreate(backend.SERVICE, "a/b")
-	counter.OnCreate(backend.SERVICE_INDEX, "a/b")
+	counter.OnCreate(backend.ServiceIndex, "a/b")
 	counter.OnCreate(backend.INSTANCE, "a/b")
-	counter.OnCreate(backend.SERVICE_INDEX, "a/b")
+	counter.OnCreate(backend.ServiceIndex, "a/b")
 	counter.OnCreate(backend.INSTANCE, "a/b")
 	if counter.ServiceCount != 2 || counter.InstanceCount != 2 {
 		t.Fatal("TestGlobalCounter_OnCreate failed", counter)
@@ -35,14 +35,14 @@ func TestGlobalCounter_OnCreate(t *testing.T) {
 func TestGlobalCounter_OnDelete(t *testing.T) {
 	var counter GlobalCounter
 	counter.OnDelete(backend.SERVICE, "a/b")
-	counter.OnDelete(backend.SERVICE_INDEX, "a/b")
+	counter.OnDelete(backend.ServiceIndex, "a/b")
 	counter.OnDelete(backend.INSTANCE, "a/b")
 	if counter.ServiceCount != 0 || counter.InstanceCount != 0 {
 		t.Fatal("TestGlobalCounter_OnDelete failed", counter)
 	}
-	counter.OnCreate(backend.SERVICE_INDEX, "a/b")
+	counter.OnCreate(backend.ServiceIndex, "a/b")
 	counter.OnCreate(backend.INSTANCE, "a/b")
-	counter.OnDelete(backend.SERVICE_INDEX, "a/b")
+	counter.OnDelete(backend.ServiceIndex, "a/b")
 	counter.OnDelete(backend.INSTANCE, "a/b")
 	if counter.ServiceCount != 0 || counter.InstanceCount != 0 {
 		t.Fatal("TestGlobalCounter_OnDelete failed", counter)

@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package service
 
 import (
@@ -35,7 +36,6 @@ import (
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/server/service/cache"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
-	"math"
 	"os"
 	"strconv"
 	"time"
@@ -54,15 +54,15 @@ func (s *InstanceService) preProcessRegisterInstance(ctx context.Context, instan
 	}
 
 	if len(instance.InstanceId) == 0 {
-		instance.InstanceId = plugin.Plugins().UUID().GetInstanceId(ctx)
+		instance.InstanceId = plugin.Plugins().UUID().GetInstanceID(ctx)
 	}
 
 	instance.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
 	instance.ModTimestamp = instance.Timestamp
 
 	// 这里应该根据租约计时
-	renewalInterval := apt.REGISTRY_DEFAULT_LEASE_RENEWALINTERVAL
-	retryTimes := apt.REGISTRY_DEFAULT_LEASE_RETRYTIMES
+	renewalInterval := apt.RegistryDefaultLeaseRenewalinterval
+	retryTimes := apt.RegistryDefaultLeaseRetrytimes
 	if instance.GetHealthCheck() == nil {
 		instance.HealthCheck = &pb.HealthCheck{
 			Mode:     pb.CHECK_BY_HEARTBEAT,
@@ -74,7 +74,7 @@ func (s *InstanceService) preProcessRegisterInstance(ctx context.Context, instan
 		switch instance.HealthCheck.Mode {
 		case pb.CHECK_BY_HEARTBEAT:
 			d := instance.HealthCheck.Interval * (instance.HealthCheck.Times + 1)
-			if d <= 0 || d >= math.MaxInt32 {
+			if d <= 0 {
 				return scerr.NewError(scerr.ErrInvalidParams, "Invalid 'healthCheck' settings in request body.")
 			}
 		case pb.CHECK_BY_PLATFORM:
@@ -87,7 +87,7 @@ func (s *InstanceService) preProcessRegisterInstance(ctx context.Context, instan
 	domainProject := util.ParseDomainProject(ctx)
 	service, err := serviceUtil.GetService(ctx, domainProject, instance.ServiceId)
 	if service == nil || err != nil {
-		return scerr.NewError(scerr.ErrServiceNotExists, "Invalid 'serviceId' in request body.")
+		return scerr.NewError(scerr.ErrServiceNotExists, "Invalid 'serviceID' in request body.")
 	}
 	instance.Version = service.Version
 	return nil
@@ -145,7 +145,7 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	if ttlFromEnv > 0 {
 		ttl = ttlFromEnv
 	}
-	instanceFlag := fmt.Sprintf("ttl %ds, endpoints %v, host '%s', serviceId %s",
+	instanceFlag := fmt.Sprintf("ttl %ds, endpoints %v, host '%s', serviceID %s",
 		ttl, instance.Endpoints, instance.HostName, instance.ServiceId)
 
 	//先以domain/project的方式组装
@@ -171,12 +171,12 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 		}
 	}
 
-	instanceId := instance.InstanceId
+	instanceID := instance.InstanceId
 	data, err := json.Marshal(instance)
 	if err != nil {
 		log.Errorf(err,
-			"register instance failed, %s, instanceId %s, operator %s",
-			instanceFlag, instanceId, remoteIP)
+			"register instance failed, %s, instanceID %s, operator %s",
+			instanceFlag, instanceID, remoteIP)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
@@ -191,8 +191,8 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	}
 
 	// build the request options
-	key := apt.GenerateInstanceKey(domainProject, instance.ServiceId, instanceId)
-	hbKey := apt.GenerateInstanceLeaseKey(domainProject, instance.ServiceId, instanceId)
+	key := apt.GenerateInstanceKey(domainProject, instance.ServiceId, instanceID)
+	hbKey := apt.GenerateInstanceLeaseKey(domainProject, instance.ServiceId, instanceID)
 
 	opts := []registry.PluginOp{
 		registry.OpPut(registry.WithStrKey(key), registry.WithValue(data),
@@ -204,20 +204,20 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	resp, err := backend.Registry().TxnWithCmp(ctx, opts,
 		[]registry.CompareOp{registry.OpCmp(
 			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, instance.ServiceId))),
-			registry.CMP_NOT_EQUAL, 0)},
+			registry.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		log.Errorf(err,
-			"register instance failed, %s, instanceId %s, operator %s",
-			instanceFlag, instanceId, remoteIP)
+			"register instance failed, %s, instanceID %s, operator %s",
+			instanceFlag, instanceID, remoteIP)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
 		}, err
 	}
 	if !resp.Succeeded {
 		log.Errorf(nil,
-			"register instance failed, %s, instanceId %s, operator %s: service does not exist",
-			instanceFlag, instanceId, remoteIP)
+			"register instance failed, %s, instanceID %s, operator %s: service does not exist",
+			instanceFlag, instanceID, remoteIP)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
@@ -225,15 +225,15 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 
 	if err := reporter.ReportUsedQuota(ctx); err != nil {
 		log.Errorf(err,
-			"register instance failed, %s, instanceId %s, operator %s",
-			instanceFlag, instanceId, remoteIP)
+			"register instance failed, %s, instanceID %s, operator %s",
+			instanceFlag, instanceID, remoteIP)
 	}
 
-	log.Infof("register instance %s, instanceId %s, operator %s",
-		instanceFlag, instanceId, remoteIP)
+	log.Infof("register instance %s, instanceID %s, operator %s",
+		instanceFlag, instanceID, remoteIP)
 	return &pb.RegisterInstanceResponse{
 		Response:   pb.CreateResponse(pb.Response_SUCCESS, "Register service instance successfully."),
-		InstanceId: instanceId,
+		InstanceId: instanceID,
 	}, nil
 }
 
@@ -248,12 +248,12 @@ func (s *InstanceService) Unregister(ctx context.Context, in *pb.UnregisterInsta
 	}
 
 	domainProject := util.ParseDomainProject(ctx)
-	serviceId := in.ServiceId
-	instanceId := in.InstanceId
+	serviceID := in.ServiceId
+	instanceID := in.InstanceId
 
-	instanceFlag := util.StringJoin([]string{serviceId, instanceId}, "/")
+	instanceFlag := util.StringJoin([]string{serviceID, instanceID}, "/")
 
-	err := revokeInstance(ctx, domainProject, serviceId, instanceId)
+	err := revokeInstance(ctx, domainProject, serviceID, instanceID)
 	if err != nil {
 		log.Errorf(err, "unregister instance failed, instance[%s], operator %s: revoke instance failed", instanceFlag, remoteIP)
 		resp := &pb.UnregisterInstanceResponse{
@@ -271,8 +271,8 @@ func (s *InstanceService) Unregister(ctx context.Context, in *pb.UnregisterInsta
 	}, nil
 }
 
-func revokeInstance(ctx context.Context, domainProject string, serviceId string, instanceId string) *scerr.Error {
-	leaseID, err := serviceUtil.GetLeaseId(ctx, domainProject, serviceId, instanceId)
+func revokeInstance(ctx context.Context, domainProject string, serviceID string, instanceID string) *scerr.Error {
+	leaseID, err := serviceUtil.GetLeaseID(ctx, domainProject, serviceID, instanceID)
 	if err != nil {
 		return scerr.NewError(scerr.ErrUnavailableBackend, err.Error())
 	}
@@ -372,13 +372,12 @@ func (s *InstanceService) HeartbeatSet(ctx context.Context, in *pb.HeartbeatSetR
 			Response:  pb.CreateResponse(pb.Response_SUCCESS, "Heartbeat set successfully."),
 			Instances: instanceHbRstArr,
 		}, nil
-	} else {
-		log.Errorf(nil, "batch update heartbeats failed, %v", in.Instances)
-		return &pb.HeartbeatSetResponse{
-			Response:  pb.CreateResponse(scerr.ErrInstanceNotExists, "Heartbeat set failed."),
-			Instances: instanceHbRstArr,
-		}, nil
 	}
+	log.Errorf(nil, "batch update heartbeats failed, %v", in.Instances)
+	return &pb.HeartbeatSetResponse{
+		Response:  pb.CreateResponse(scerr.ErrInstanceNotExists, "Heartbeat set failed."),
+		Instances: instanceHbRstArr,
+	}, nil
 }
 
 func getHeartbeatFunc(ctx context.Context, domainProject string, instancesHbRst chan<- *pb.InstanceHbRst, element *pb.HeartbeatSetElement) func(context.Context) {
@@ -453,20 +452,20 @@ func (s *InstanceService) GetOneInstance(ctx context.Context, in *pb.GetOneInsta
 	}
 
 	var item *cache.VersionRuleCacheItem
-	rev, _ := ctx.Value(serviceUtil.CTX_REQUEST_REVISION).(string)
-	item, err = cache.FindInstances.GetWithProviderId(ctx, service, pb.MicroServiceToKey(domainProject, provider),
+	rev, _ := ctx.Value(util.CtxRequestRevision).(string)
+	item, err = cache.FindInstances.GetWithProviderID(ctx, service, pb.MicroServiceToKey(domainProject, provider),
 		&pb.HeartbeatSetElement{
 			ServiceId: in.ProviderServiceId, InstanceId: in.ProviderInstanceId,
 		}, in.Tags, rev)
 	if err != nil {
-		log.Errorf(err, "FindInstances.GetWithProviderId failed, %s failed", findFlag())
+		log.Errorf(err, "FindInstances.GetWithProviderID failed, %s failed", findFlag())
 		return &pb.GetOneInstanceResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 	if item == nil || len(item.Instances) == 0 {
-		mes := fmt.Errorf("%s failed, provider instance does not exist.", findFlag())
-		log.Errorf(mes, "FindInstances.GetWithProviderId failed")
+		mes := fmt.Errorf("%s failed, provider instance does not exist", findFlag())
+		log.Errorf(mes, "FindInstances.GetWithProviderID failed")
 		return &pb.GetOneInstanceResponse{
 			Response: pb.CreateResponse(scerr.ErrInstanceNotExists, mes.Error()),
 		}, nil
@@ -476,7 +475,7 @@ func (s *InstanceService) GetOneInstance(ctx context.Context, in *pb.GetOneInsta
 	if rev == item.Rev {
 		instance = nil // for gRPC
 	}
-	ctx = util.SetContext(ctx, serviceUtil.CTX_RESPONSE_REVISION, item.Rev)
+	_ = util.SetContext(ctx, util.CtxResponseRevision, item.Rev)
 
 	return &pb.GetOneInstanceResponse{
 		Response: pb.CreateResponse(pb.Response_SUCCESS, "Get instance successfully."),
@@ -539,20 +538,20 @@ func (s *InstanceService) GetInstances(ctx context.Context, in *pb.GetInstancesR
 	}
 
 	var item *cache.VersionRuleCacheItem
-	rev, _ := ctx.Value(serviceUtil.CTX_REQUEST_REVISION).(string)
-	item, err = cache.FindInstances.GetWithProviderId(ctx, service, pb.MicroServiceToKey(domainProject, provider),
+	rev, _ := ctx.Value(util.CtxRequestRevision).(string)
+	item, err = cache.FindInstances.GetWithProviderID(ctx, service, pb.MicroServiceToKey(domainProject, provider),
 		&pb.HeartbeatSetElement{
 			ServiceId: in.ProviderServiceId,
 		}, in.Tags, rev)
 	if err != nil {
-		log.Errorf(err, "FindInstances.GetWithProviderId failed, %s failed", findFlag())
+		log.Errorf(err, "FindInstances.GetWithProviderID failed, %s failed", findFlag())
 		return &pb.GetInstancesResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 	if item == nil || len(item.ServiceIds) == 0 {
-		mes := fmt.Errorf("%s failed, provider instance does not exist.", findFlag())
-		log.Errorf(mes, "FindInstances.GetWithProviderId failed")
+		mes := fmt.Errorf("%s failed, provider instance does not exist", findFlag())
+		log.Errorf(mes, "FindInstances.GetWithProviderID failed")
 		return &pb.GetInstancesResponse{
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, mes.Error()),
 		}, nil
@@ -562,7 +561,7 @@ func (s *InstanceService) GetInstances(ctx context.Context, in *pb.GetInstancesR
 	if rev == item.Rev {
 		instances = nil // for gRPC
 	}
-	ctx = util.SetContext(ctx, serviceUtil.CTX_RESPONSE_REVISION, item.Rev)
+	_ = util.SetContext(ctx, util.CtxResponseRevision, item.Rev)
 
 	return &pb.GetInstancesResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Query service instances successfully."),
@@ -634,7 +633,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 
 	// cache
 	var item *cache.VersionRuleCacheItem
-	rev, _ := ctx.Value(serviceUtil.CTX_REQUEST_REVISION).(string)
+	rev, _ := ctx.Value(util.CtxRequestRevision).(string)
 	item, err = cache.FindInstances.Get(ctx, service, provider, in.Tags, rev)
 	if err != nil {
 		log.Errorf(err, "FindInstancesCache.Get failed, %s failed", findFlag())
@@ -643,7 +642,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		}, err
 	}
 	if item == nil {
-		mes := fmt.Errorf("%s failed, provider does not exist.", findFlag())
+		mes := fmt.Errorf("%s failed, provider does not exist", findFlag())
 		log.Errorf(mes, "FindInstancesCache.Get failed")
 		return &pb.FindInstancesResponse{
 			Response: pb.CreateResponse(scerr.ErrServiceNotExists, mes.Error()),
@@ -655,10 +654,13 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		len(item.ServiceIds) > 0 &&
 		!cache.DependencyRule.ExistVersionRule(ctx, in.ConsumerServiceId, provider) {
 		provider, err = s.reshapeProviderKey(ctx, provider, item.ServiceIds[0])
+		if err != nil {
+			return nil, err
+		}
 		if provider != nil {
 			err = serviceUtil.AddServiceVersionRule(ctx, domainProject, service, provider)
 		} else {
-			mes := fmt.Errorf("%s failed, provider does not exist.", findFlag())
+			mes := fmt.Errorf("%s failed, provider does not exist", findFlag())
 			log.Errorf(mes, "AddServiceVersionRule failed")
 			return &pb.FindInstancesResponse{
 				Response: pb.CreateResponse(scerr.ErrServiceNotExists, mes.Error()),
@@ -677,7 +679,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		instances = nil // for gRPC
 	}
 	// TODO support gRPC output context
-	ctx = util.SetContext(ctx, serviceUtil.CTX_RESPONSE_REVISION, item.Rev)
+	_ = util.SetContext(ctx, util.CtxResponseRevision, item.Rev)
 	return &pb.FindInstancesResponse{
 		Response:  pb.CreateResponse(pb.Response_SUCCESS, "Query service instances successfully."),
 		Instances: instances,
@@ -733,7 +735,7 @@ func (s *InstanceService) batchFindServices(ctx context.Context, in *pb.BatchFin
 	services := &pb.BatchFindResult{}
 	failedResult := make(map[int32]*pb.FindFailedResult)
 	for index, key := range in.Services {
-		findCtx := util.SetContext(cloneCtx, serviceUtil.CTX_REQUEST_REVISION, key.Rev)
+		findCtx := util.SetContext(cloneCtx, util.CtxRequestRevision, key.Rev)
 		resp, err := s.Find(findCtx, &pb.FindInstancesRequest{
 			ConsumerServiceId: in.ConsumerServiceId,
 			AppId:             key.Service.AppId,
@@ -768,7 +770,7 @@ func (s *InstanceService) batchFindInstances(ctx context.Context, in *pb.BatchFi
 	instances := &pb.BatchFindResult{}
 	failedResult := make(map[int32]*pb.FindFailedResult)
 	for index, key := range in.Instances {
-		getCtx := util.SetContext(cloneCtx, serviceUtil.CTX_REQUEST_REVISION, key.Rev)
+		getCtx := util.SetContext(cloneCtx, util.CtxRequestRevision, key.Rev)
 		resp, err := s.GetOneInstance(getCtx, &pb.GetOneInstanceRequest{
 			ConsumerServiceId:  in.ConsumerServiceId,
 			ProviderServiceId:  key.Instance.ServiceId,
@@ -790,9 +792,9 @@ func (s *InstanceService) batchFindInstances(ctx context.Context, in *pb.BatchFi
 	return instances, nil
 }
 
-func (s *InstanceService) reshapeProviderKey(ctx context.Context, provider *pb.MicroServiceKey, providerId string) (*pb.MicroServiceKey, error) {
+func (s *InstanceService) reshapeProviderKey(ctx context.Context, provider *pb.MicroServiceKey, providerID string) (*pb.MicroServiceKey, error) {
 	//维护version的规则,service name 可能是别名，所以重新获取
-	providerService, err := serviceUtil.GetService(ctx, provider.Tenant, providerId)
+	providerService, err := serviceUtil.GetService(ctx, provider.Tenant, providerID)
 	if providerService == nil {
 		return nil, err
 	}
@@ -898,8 +900,8 @@ func (s *InstanceService) ClusterHealth(ctx context.Context) (*pb.GetInstancesRe
 		}, nil
 	}
 
-	domainProject := apt.REGISTRY_DOMAIN_PROJECT
-	serviceId, err := serviceUtil.GetServiceId(ctx, &pb.MicroServiceKey{
+	domainProject := apt.RegistryDomainProject
+	serviceID, err := serviceUtil.GetServiceID(ctx, &pb.MicroServiceKey{
 		AppId:       apt.Service.AppId,
 		Environment: apt.Service.Environment,
 		ServiceName: apt.Service.ServiceName,
@@ -908,24 +910,24 @@ func (s *InstanceService) ClusterHealth(ctx context.Context) (*pb.GetInstancesRe
 	})
 
 	if err != nil {
-		log.Errorf(err, "health check failed: get service center[%s/%s/%s/%s]'s serviceId failed",
+		log.Errorf(err, "health check failed: get service center[%s/%s/%s/%s]'s serviceID failed",
 			apt.Service.Environment, apt.Service.AppId, apt.Service.ServiceName, apt.Service.Version)
 		return &pb.GetInstancesResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
-	if len(serviceId) == 0 {
-		log.Errorf(nil, "health check failed: service center[%s/%s/%s/%s]'s serviceId does not exist",
+	if len(serviceID) == 0 {
+		log.Errorf(nil, "health check failed: service center[%s/%s/%s/%s]'s serviceID does not exist",
 			apt.Service.Environment, apt.Service.AppId, apt.Service.ServiceName, apt.Service.Version)
 		return &pb.GetInstancesResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "ServiceCenter's serviceId not exist."),
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "ServiceCenter's serviceID not exist."),
 		}, nil
 	}
 
-	instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, domainProject, serviceId)
+	instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, domainProject, serviceID)
 	if err != nil {
 		log.Errorf(err, "health check failed: get service center[%s][%s/%s/%s/%s]'s instances failed",
-			serviceId, apt.Service.Environment, apt.Service.AppId, apt.Service.ServiceName, apt.Service.Version)
+			serviceID, apt.Service.Environment, apt.Service.AppId, apt.Service.ServiceName, apt.Service.Version)
 		return &pb.GetInstancesResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err

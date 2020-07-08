@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package service
 
 import (
@@ -42,13 +43,13 @@ func GetTagsReqValidator() *validate.Validator {
 func AddTagsReqValidator() *validate.Validator {
 	return addTagsReqValidator.Init(func(v *validate.Validator) {
 		v.AddRule("ServiceId", GetServiceReqValidator().GetRule("ServiceId"))
-		v.AddRule("Tags", &validate.ValidateRule{Min: 1, Max: quota.DefaultTagQuota, Regexp: tagRegex})
+		v.AddRule("Tags", &validate.Rule{Min: 1, Max: quota.DefaultTagQuota, Regexp: tagRegex})
 	})
 }
 
 func UpdateTagReqValidator() *validate.Validator {
 	return updateTagReqValidator.Init(func(v *validate.Validator) {
-		tagRule := &validate.ValidateRule{Regexp: tagRegex}
+		tagRule := &validate.Rule{Regexp: tagRegex}
 		v.AddRule("ServiceId", GetServiceReqValidator().GetRule("ServiceId"))
 		v.AddRule("Key", tagRule)
 		v.AddRule("Value", tagRule)
@@ -58,6 +59,6 @@ func UpdateTagReqValidator() *validate.Validator {
 func DeleteTagReqValidator() *validate.Validator {
 	return deleteTagReqValidator.Init(func(v *validate.Validator) {
 		v.AddRule("ServiceId", GetServiceReqValidator().GetRule("ServiceId"))
-		v.AddRule("Keys", &validate.ValidateRule{Min: 1, Max: quota.DefaultTagQuota, Regexp: tagRegex})
+		v.AddRule("Keys", &validate.Rule{Min: 1, Max: quota.DefaultTagQuota, Regexp: tagRegex})
 	})
 }

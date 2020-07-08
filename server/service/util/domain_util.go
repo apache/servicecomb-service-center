@@ -52,7 +52,7 @@ func GetAllDomain(ctx context.Context) ([]string, error) {
 
 	domain := ""
 	instByDomain := ""
-	arrTmp := []string{}
+	var arrTmp []string
 	for _, kv := range kvs {
 		arrTmp = strings.Split(util.BytesToStringWithNoCopy(kv.Key), "/")
 		domain = arrTmp[len(arrTmp)-1]
@@ -103,7 +103,7 @@ func NewProject(ctx context.Context, domain, project string) (bool, error) {
 }
 
 func NewDomainProject(ctx context.Context, domain, project string) error {
-	copyCtx := util.SetContext(util.CloneContext(ctx), CTX_CACHEONLY, "1")
+	copyCtx := util.SetContext(util.CloneContext(ctx), util.CtxCacheOnly, "1")
 	ok, err := DomainExist(copyCtx, domain)
 	if !ok && err == nil {
 		ok, err = NewDomain(ctx, domain)

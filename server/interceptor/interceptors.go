@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package interceptor
 
 import (
@@ -25,14 +26,14 @@ import (
 
 var interceptors []*Interception
 
-type InterceptorFunc func(http.ResponseWriter, *http.Request) error
+type Intercept func(http.ResponseWriter, *http.Request) error
 
-func (f InterceptorFunc) Name() string {
+func (f Intercept) Name() string {
 	return util.FuncName(f)
 }
 
 type Interception struct {
-	function InterceptorFunc
+	function Intercept
 }
 
 func (i Interception) Invoke(w http.ResponseWriter, req *http.Request) error {
@@ -43,7 +44,7 @@ func init() {
 	interceptors = make([]*Interception, 0, 10)
 }
 
-func RegisterInterceptFunc(intc InterceptorFunc) {
+func RegisterInterceptFunc(intc Intercept) {
 	interceptors = append(interceptors, &Interception{
 		function: intc,
 	})
@@ -55,7 +56,7 @@ func InvokeInterceptors(w http.ResponseWriter, req *http.Request) (err error) {
 	var intc *Interception
 	defer func() {
 		if itf := recover(); itf != nil {
-			log.LogPanic(itf)
+			log.Panic(itf)
 
 			err = errorsEx.RaiseError(itf)
 

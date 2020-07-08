@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package access
 
 import (
@@ -34,12 +35,15 @@ func init() {
 }
 
 func Intercept(w http.ResponseWriter, r *http.Request) error {
-	w.Header().Add(rest.HEADER_SERVER, serverName)
+	w.Header().Add(rest.HeaderServer, serverName)
 
 	if !validate.IsRequestURI(r.RequestURI) {
 		err := fmt.Errorf("Invalid Request URI %s", r.RequestURI)
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write(util.StringToBytesWithNoCopy(err.Error()))
+		_, err = w.Write(util.StringToBytesWithNoCopy(err.Error()))
+		if err != nil {
+			return err
+		}
 		return err
 	}
 	return nil

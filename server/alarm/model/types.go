@@ -32,7 +32,7 @@ type Field struct {
 type AlarmEvent struct {
 	nf.Event `json:"-"`
 	Status   Status          `json:"status"`
-	Id       ID              `json:"id"`
+	ID       ID              `json:"id"`
 	Fields   util.JSONObject `json:"fields,omitempty"`
 }
 

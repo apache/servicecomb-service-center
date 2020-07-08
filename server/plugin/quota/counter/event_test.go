@@ -30,7 +30,7 @@ type mockCounter struct {
 
 func (c *mockCounter) OnCreate(t discovery.Type, domainProject string) {
 	switch t {
-	case backend.SERVICE_INDEX:
+	case backend.ServiceIndex:
 		c.ServiceCount++
 	case backend.INSTANCE:
 		c.InstanceCount++
@@ -41,7 +41,7 @@ func (c *mockCounter) OnCreate(t discovery.Type, domainProject string) {
 
 func (c *mockCounter) OnDelete(t discovery.Type, domainProject string) {
 	switch t {
-	case backend.SERVICE_INDEX:
+	case backend.ServiceIndex:
 		c.ServiceCount--
 	case backend.INSTANCE:
 		c.InstanceCount--
@@ -61,10 +61,10 @@ func TestNewServiceIndexEventHandler(t *testing.T) {
 			Type: proto.EVT_INIT,
 			KV: &discovery.KeyValue{
 				Key: []byte(core.GenerateServiceIndexKey(&proto.MicroServiceKey{
-					Tenant:      core.REGISTRY_DOMAIN_PROJECT,
+					Tenant:      core.RegistryDomainProject,
 					Project:     "",
-					AppId:       core.REGISTRY_APP_ID,
-					ServiceName: core.REGISTRY_SERVICE_NAME,
+					AppId:       core.RegistryAppID,
+					ServiceName: core.RegistryServiceName,
 					Version:     "e",
 					Environment: "f",
 					Alias:       "g",
@@ -76,10 +76,10 @@ func TestNewServiceIndexEventHandler(t *testing.T) {
 			Type: proto.EVT_UPDATE,
 			KV: &discovery.KeyValue{
 				Key: []byte(core.GenerateServiceIndexKey(&proto.MicroServiceKey{
-					Tenant:      core.REGISTRY_DOMAIN_PROJECT,
+					Tenant:      core.RegistryDomainProject,
 					Project:     "",
-					AppId:       core.REGISTRY_APP_ID,
-					ServiceName: core.REGISTRY_SERVICE_NAME,
+					AppId:       core.RegistryAppID,
+					ServiceName: core.RegistryServiceName,
 					Version:     "e",
 					Environment: "f",
 					Alias:       "g",
@@ -91,10 +91,10 @@ func TestNewServiceIndexEventHandler(t *testing.T) {
 			Type: proto.EVT_DELETE,
 			KV: &discovery.KeyValue{
 				Key: []byte(core.GenerateServiceIndexKey(&proto.MicroServiceKey{
-					Tenant:      core.REGISTRY_DOMAIN_PROJECT,
+					Tenant:      core.RegistryDomainProject,
 					Project:     "",
-					AppId:       core.REGISTRY_APP_ID,
-					ServiceName: core.REGISTRY_SERVICE_NAME,
+					AppId:       core.RegistryAppID,
+					ServiceName: core.RegistryServiceName,
 					Version:     "e",
 					Environment: "f",
 					Alias:       "g",
@@ -106,10 +106,10 @@ func TestNewServiceIndexEventHandler(t *testing.T) {
 			Type: proto.EVT_CREATE,
 			KV: &discovery.KeyValue{
 				Key: []byte(core.GenerateServiceIndexKey(&proto.MicroServiceKey{
-					Tenant:      core.REGISTRY_DOMAIN_PROJECT,
+					Tenant:      core.RegistryDomainProject,
 					Project:     "",
-					AppId:       core.REGISTRY_APP_ID,
-					ServiceName: core.REGISTRY_SERVICE_NAME,
+					AppId:       core.RegistryAppID,
+					ServiceName: core.RegistryServiceName,
 					Version:     "e",
 					Environment: "f",
 					Alias:       "g",
@@ -191,33 +191,33 @@ func TestNewInstanceEventHandler(t *testing.T) {
 	var counter = mockCounter{}
 	RegisterCounter(&counter)
 	h := NewInstanceEventHandler()
-	SharedServiceIds.Put(core.REGISTRY_DOMAIN_PROJECT+core.SPLIT+"2", struct{}{})
+	SharedServiceIds.Put(core.RegistryDomainProject+core.SPLIT+"2", struct{}{})
 	cases := []discovery.KvEvent{
 		{
 			Type: proto.EVT_INIT,
 			KV: &discovery.KeyValue{
-				Key:   []byte(core.GenerateInstanceKey(core.REGISTRY_DOMAIN_PROJECT, "2", "1")),
+				Key:   []byte(core.GenerateInstanceKey(core.RegistryDomainProject, "2", "1")),
 				Value: nil,
 			},
 		},
 		{
 			Type: proto.EVT_UPDATE,
 			KV: &discovery.KeyValue{
-				Key:   []byte(core.GenerateInstanceKey(core.REGISTRY_DOMAIN_PROJECT, "2", "1")),
+				Key:   []byte(core.GenerateInstanceKey(core.RegistryDomainProject, "2", "1")),
 				Value: nil,
 			},
 		},
 		{
 			Type: proto.EVT_CREATE,
 			KV: &discovery.KeyValue{
-				Key:   []byte(core.GenerateInstanceKey(core.REGISTRY_DOMAIN_PROJECT, "2", "1")),
+				Key:   []byte(core.GenerateInstanceKey(core.RegistryDomainProject, "2", "1")),
 				Value: nil,
 			},
 		},
 		{
 			Type: proto.EVT_DELETE,
 			KV: &discovery.KeyValue{
-				Key:   []byte(core.GenerateInstanceKey(core.REGISTRY_DOMAIN_PROJECT, "2", "1")),
+				Key:   []byte(core.GenerateInstanceKey(core.RegistryDomainProject, "2", "1")),
 				Value: nil,
 			},
 		},

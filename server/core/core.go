@@ -53,10 +53,9 @@ func ParseCommandLine() {
 func handleSignals() {
 	defer log.Sync()
 
-	sigCh := make(chan os.Signal)
+	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh,
 		syscall.SIGINT,
-		syscall.SIGKILL,
 		syscall.SIGTERM,
 	)
 	wait := 5 * time.Second

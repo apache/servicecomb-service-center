@@ -24,16 +24,16 @@ import (
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "k8s", NewRepository})
+	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.DISCOVERY, Name: "k8s", New: NewRepository})
 }
 
-type K8sRepository struct {
+type Repository struct {
 }
 
-func (r *K8sRepository) New(t discovery.Type, cfg *discovery.Config) discovery.Adaptor {
+func (r *Repository) New(t discovery.Type, cfg *discovery.Config) discovery.Adaptor {
 	return adaptor.NewK8sAdaptor(t, cfg)
 }
 
 func NewRepository() mgr.Instance {
-	return &K8sRepository{}
+	return &Repository{}
 }

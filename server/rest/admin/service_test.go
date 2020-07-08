@@ -18,15 +18,14 @@ package admin_test
 
 import (
 	"context"
+	model2 "github.com/apache/servicecomb-service-center/pkg/model"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/admin"
-	"github.com/apache/servicecomb-service-center/server/admin/model"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery/etcd"
 	etcd2 "github.com/apache/servicecomb-service-center/server/plugin/registry/etcd"
+	"github.com/apache/servicecomb-service-center/server/rest/admin"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
-	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"github.com/astaxie/beego"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -40,13 +39,13 @@ func init() {
 }
 func TestAdminService_Dump(t *testing.T) {
 	t.Log("execute 'dump' operation,when get all,should be passed")
-	resp, err := admin.AdminServiceAPI.Dump(getContext(), &model.DumpRequest{})
+	resp, err := admin.AdminServiceAPI.Dump(getContext(), &model2.DumpRequest{})
 	assert.NoError(t, err)
 	assert.Equal(t, pb.Response_SUCCESS, resp.Response.Code)
 	t.Log("execute 'dump' operation,when get by domain project,should be passed")
 	resp, err = admin.AdminServiceAPI.Dump(
 		util.SetDomainProject(context.Background(), "x", "x"),
-		&model.DumpRequest{})
+		&model2.DumpRequest{})
 	assert.NoError(t, err)
 	assert.Equal(t, scerr.ErrForbidden, resp.Response.Code)
 }
@@ -54,5 +53,5 @@ func TestAdminService_Dump(t *testing.T) {
 func getContext() context.Context {
 	return util.SetContext(
 		util.SetDomainProject(context.Background(), "default", "default"),
-		serviceUtil.CTX_NOCACHE, "1")
+		util.CtxNocache, "1")
 }

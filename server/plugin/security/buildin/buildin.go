@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package plain
 
 import (
@@ -21,7 +22,7 @@ import (
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{mgr.CIPHER, "buildin", New})
+	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.CIPHER, Name: "buildin", New: New})
 }
 
 func New() mgr.Instance {

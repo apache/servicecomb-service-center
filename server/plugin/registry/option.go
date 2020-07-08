@@ -41,10 +41,10 @@ type PluginOp struct {
 }
 
 func (op PluginOp) String() string {
-	return op.FormatUrlParams()
+	return op.FormatURLParams()
 }
 
-func (op PluginOp) FormatUrlParams() string {
+func (op PluginOp) FormatURLParams() string {
 	var buf bytes.Buffer
 	buf.WriteString("action=")
 	buf.WriteString(op.Action.String())
@@ -72,7 +72,7 @@ func (op PluginOp) FormatUrlParams() string {
 	if op.CountOnly {
 		buf.WriteString("&countOnly=true")
 	}
-	if op.SortOrder != SORT_NONE {
+	if op.SortOrder != SortNone {
 		buf.WriteString("&sort=")
 		buf.WriteString(op.SortOrder.String())
 	}
@@ -95,13 +95,13 @@ func (op PluginOp) FormatUrlParams() string {
 }
 
 func (op PluginOp) NoCache() bool {
-	return op.Mode == MODE_NO_CACHE ||
+	return op.Mode == ModeNoCache ||
 		op.Revision > 0 ||
 		(op.Offset >= 0 && op.Limit > 0)
 }
 
 func (op PluginOp) CacheOnly() bool {
-	return op.Mode == MODE_CACHE
+	return op.Mode == ModeCache
 }
 
 type Operation func(...PluginOpOption) (op PluginOp)
@@ -122,13 +122,13 @@ func WithLease(leaseID int64) PluginOpOption { return func(op *PluginOp) { op.Le
 func WithKeyOnly() PluginOpOption            { return func(op *PluginOp) { op.KeyOnly = true } }
 func WithCountOnly() PluginOpOption          { return func(op *PluginOp) { op.CountOnly = true } }
 func WithGlobal() PluginOpOption             { return func(op *PluginOp) { op.Global = true } }
-func WithNoneOrder() PluginOpOption          { return func(op *PluginOp) { op.SortOrder = SORT_NONE } }
-func WithAscendOrder() PluginOpOption        { return func(op *PluginOp) { op.SortOrder = SORT_ASCEND } }
-func WithDescendOrder() PluginOpOption       { return func(op *PluginOp) { op.SortOrder = SORT_DESCEND } }
+func WithNoneOrder() PluginOpOption          { return func(op *PluginOp) { op.SortOrder = SortNone } }
+func WithAscendOrder() PluginOpOption        { return func(op *PluginOp) { op.SortOrder = SortAscend } }
+func WithDescendOrder() PluginOpOption       { return func(op *PluginOp) { op.SortOrder = SortDescend } }
 func WithRev(revision int64) PluginOpOption  { return func(op *PluginOp) { op.Revision = revision } }
 func WithIgnoreLease() PluginOpOption        { return func(op *PluginOp) { op.IgnoreLease = true } }
-func WithCacheOnly() PluginOpOption          { return func(op *PluginOp) { op.Mode = MODE_CACHE } }
-func WithNoCache() PluginOpOption            { return func(op *PluginOp) { op.Mode = MODE_NO_CACHE } }
+func WithCacheOnly() PluginOpOption          { return func(op *PluginOp) { op.Mode = ModeCache } }
+func WithNoCache() PluginOpOption            { return func(op *PluginOp) { op.Mode = ModeNoCache } }
 func WithWatchCallback(f WatchCallback) PluginOpOption {
 	return func(op *PluginOp) { op.WatchCallback = f }
 }
@@ -162,7 +162,7 @@ func OptionsToOp(opts ...PluginOpOption) (op PluginOp) {
 	}
 	if op.Limit == 0 {
 		op.Offset = -1
-		op.Limit = DEFAULT_PAGE_COUNT
+		op.Limit = DefaultPageCount
 	}
 	return
 }
@@ -184,16 +184,16 @@ func (op CompareOp) String() string {
 type CompareOperation func(op *CompareOp)
 
 func CmpVer(key []byte) CompareOperation {
-	return func(op *CompareOp) { op.Key = key; op.Type = CMP_VERSION }
+	return func(op *CompareOp) { op.Key = key; op.Type = CmpVersion }
 }
 func CmpCreateRev(key []byte) CompareOperation {
-	return func(op *CompareOp) { op.Key = key; op.Type = CMP_CREATE }
+	return func(op *CompareOp) { op.Key = key; op.Type = CmpCreate }
 }
 func CmpModRev(key []byte) CompareOperation {
-	return func(op *CompareOp) { op.Key = key; op.Type = CMP_MOD }
+	return func(op *CompareOp) { op.Key = key; op.Type = CmpMod }
 }
 func CmpVal(key []byte) CompareOperation {
-	return func(op *CompareOp) { op.Key = key; op.Type = CMP_VALUE }
+	return func(op *CompareOp) { op.Key = key; op.Type = CmpValue }
 }
 func CmpStrVer(key string) CompareOperation       { return CmpVer([]byte(key)) }
 func CmpStrCreateRev(key string) CompareOperation { return CmpCreateRev([]byte(key)) }

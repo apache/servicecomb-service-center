@@ -20,44 +20,43 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 )
 
-// ServiceCenterAdaptor implements discovery.Adaptor.
-// ServiceCenterAdaptor does service discovery with other service-centers
+// Adaptor implements discovery.Adaptor.
+// Adaptor does service discovery with other service-centers
 // as it's registry.
-type ServiceCenterAdaptor struct {
+type Adaptor struct {
 	discovery.Cacher
 	discovery.Indexer
 }
 
-func (se *ServiceCenterAdaptor) Run() {
+func (se *Adaptor) Run() {
 	if r, ok := se.Cacher.(discovery.Runnable); ok {
 		r.Run()
 	}
 }
 
-func (se *ServiceCenterAdaptor) Stop() {
+func (se *Adaptor) Stop() {
 	if r, ok := se.Cacher.(discovery.Runnable); ok {
 		r.Stop()
 	}
 }
 
-func (se *ServiceCenterAdaptor) Ready() <-chan struct{} {
+func (se *Adaptor) Ready() <-chan struct{} {
 	if r, ok := se.Cacher.(discovery.Runnable); ok {
 		return r.Ready()
 	}
 	return closedCh
 }
 
-func NewServiceCenterAdaptor(t discovery.Type, cfg *discovery.Config) *ServiceCenterAdaptor {
+func NewServiceCenterAdaptor(t discovery.Type, cfg *discovery.Config) *Adaptor {
 	if t == backend.SCHEMA {
-		return &ServiceCenterAdaptor{
+		return &Adaptor{
 			Indexer: NewClusterIndexer(t, discovery.NullCache),
 			Cacher:  discovery.NullCacher,
 		}
-	} else {
-		cache := discovery.NewKvCache(t.String(), cfg)
-		return &ServiceCenterAdaptor{
-			Indexer: NewClusterIndexer(t, cache),
-			Cacher:  BuildCacher(t, cfg, cache),
-		}
+	}
+	cache := discovery.NewKvCache(t.String(), cfg)
+	return &Adaptor{
+		Indexer: NewClusterIndexer(t, cache),
+		Cacher:  BuildCacher(t, cfg, cache),
 	}
 }

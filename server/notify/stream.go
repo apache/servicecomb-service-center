@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package notify
 
 import (
@@ -44,31 +45,32 @@ func HandleWatchJob(watcher *InstanceEventListWatcher, stream pb.ServiceInstance
 					watcher.Subject(), watcher.Group())
 				return
 			}
-			resp := job.Response
-			log.Infof("event is coming in, watcher, subject: %s, group: %s",
-				watcher.Subject(), watcher.Group())
-
-			err = stream.Send(resp)
-			if job != nil {
-				ReportPublishCompleted(job, err)
-			}
-			if err != nil {
-				log.Errorf(err, "send message error, subject: %s, group: %s",
+			if job.Response != nil {
+				resp := job.Response
+				log.Infof("event is coming in, watcher, subject: %s, group: %s",
 					watcher.Subject(), watcher.Group())
-				watcher.SetError(err)
-				return
-			}
 
-			util.ResetTimer(timer, HeartbeatInterval)
+				err = stream.Send(resp)
+				if job != nil {
+					ReportPublishCompleted(job, err)
+				}
+				if err != nil {
+					log.Errorf(err, "send message error, subject: %s, group: %s",
+						watcher.Subject(), watcher.Group())
+					watcher.SetError(err)
+					return
+				}
+				util.ResetTimer(timer, HeartbeatInterval)
+			}
 		}
 	}
 }
 
-func DoStreamListAndWatch(ctx context.Context, serviceId string, f func() ([]*pb.WatchInstanceResponse, int64), stream pb.ServiceInstanceCtrl_WatchServer) (err error) {
+func DoStreamListAndWatch(ctx context.Context, serviceID string, f func() ([]*pb.WatchInstanceResponse, int64), stream pb.ServiceInstanceCtrl_WatchServer) (err error) {
 	domainProject := util.ParseDomainProject(ctx)
 	domain := util.ParseDomain(ctx)
-	watcher := NewInstanceEventListWatcher(serviceId, apt.GetInstanceRootKey(domainProject)+"/", f)
-	err = NotifyCenter().AddSubscriber(watcher)
+	watcher := NewInstanceEventListWatcher(serviceID, apt.GetInstanceRootKey(domainProject)+"/", f)
+	err = GetNotifyCenter().AddSubscriber(watcher)
 	if err != nil {
 		return
 	}

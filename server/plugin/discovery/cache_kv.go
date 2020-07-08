@@ -48,7 +48,7 @@ func (c *KvCache) Get(key string) (v *KeyValue) {
 	c.rwMux.RLock()
 	prefix := c.prefix(key)
 	if p, ok := c.store[prefix]; ok {
-		v, _ = p[key]
+		v = p[key]
 	}
 	c.rwMux.RUnlock()
 	return

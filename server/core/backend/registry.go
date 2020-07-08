@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backend
 
 import (
@@ -32,16 +33,16 @@ import (
 )
 
 var (
-	engineInstance *registryEngine
+	engineInstance *RegistryEngine
 	singletonLock  sync.Mutex
 )
 
 const (
 	// the same as v3rpc.MaxOpsPerTxn = 128
-	MAX_TXN_NUMBER_ONE_TIME = 128
+	MaxTxnNumberOneTime = 128
 )
 
-func NewEngine() (*registryEngine, error) {
+func NewEngine() (*RegistryEngine, error) {
 	instance := plugin.Plugins().Registry()
 	if instance == nil {
 		return nil, errors.New("register center client plugin does not exist")
@@ -52,17 +53,17 @@ func NewEngine() (*registryEngine, error) {
 		return nil, err
 	case <-instance.Ready():
 	}
-	return &registryEngine{
+	return &RegistryEngine{
 		Registry:  instance,
 		goroutine: gopool.New(context.Background()),
 	}, nil
 }
 
 func Registry() registry.Registry {
-	return RegistryEngine()
+	return GetRegistryEngine()
 }
 
-func RegistryEngine() *registryEngine {
+func GetRegistryEngine() *RegistryEngine {
 	if engineInstance == nil {
 		singletonLock.Lock()
 		for i := 0; engineInstance == nil; i++ {
@@ -95,13 +96,13 @@ func BatchCommitWithCmp(ctx context.Context, opts []registry.PluginOp,
 	cmp []registry.CompareOp, fail []registry.PluginOp) (resp *registry.PluginResponse, err error) {
 	lenOpts := len(opts)
 	tmpLen := lenOpts
-	tmpOpts := []registry.PluginOp{}
+	var tmpOpts []registry.PluginOp
 	for i := 0; tmpLen > 0; i++ {
-		tmpLen = lenOpts - (i+1)*MAX_TXN_NUMBER_ONE_TIME
+		tmpLen = lenOpts - (i+1)*MaxTxnNumberOneTime
 		if tmpLen > 0 {
-			tmpOpts = opts[i*MAX_TXN_NUMBER_ONE_TIME : (i+1)*MAX_TXN_NUMBER_ONE_TIME]
+			tmpOpts = opts[i*MaxTxnNumberOneTime : (i+1)*MaxTxnNumberOneTime]
 		} else {
-			tmpOpts = opts[i*MAX_TXN_NUMBER_ONE_TIME : lenOpts]
+			tmpOpts = opts[i*MaxTxnNumberOneTime : lenOpts]
 		}
 		resp, err = Registry().TxnWithCmp(ctx, tmpOpts, cmp, fail)
 		if err != nil || !resp.Succeeded {
@@ -111,12 +112,12 @@ func BatchCommitWithCmp(ctx context.Context, opts []registry.PluginOp,
 	return
 }
 
-type registryEngine struct {
+type RegistryEngine struct {
 	registry.Registry
 	goroutine *gopool.Pool
 }
 
-func (s *registryEngine) Start() error {
+func (s *RegistryEngine) Start() error {
 	err := s.selfRegister(context.Background())
 	if err != nil {
 		return err
@@ -127,16 +128,17 @@ func (s *registryEngine) Start() error {
 	return nil
 }
 
-func (s *registryEngine) Stop() {
+func (s *RegistryEngine) Stop() {
 	s.goroutine.Close(true)
 
-	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
 	if err := s.unregisterInstance(ctx); err != nil {
 		log.Error("stop registry engine failed", err)
 	}
 }
 
-func (s *registryEngine) selfRegister(ctx context.Context) error {
+func (s *RegistryEngine) selfRegister(ctx context.Context) error {
 	err := s.registryService(context.Background())
 	if err != nil {
 		return err
@@ -145,7 +147,7 @@ func (s *registryEngine) selfRegister(ctx context.Context) error {
 	return s.registryInstance(context.Background())
 }
 
-func (s *registryEngine) registryService(pCtx context.Context) error {
+func (s *RegistryEngine) registryService(pCtx context.Context) error {
 	ctx := core.AddDefaultContextValue(pCtx)
 	respE, err := core.ServiceAPI.Exist(ctx, core.GetExistenceRequest())
 	if err != nil {
@@ -157,7 +159,7 @@ func (s *registryEngine) registryService(pCtx context.Context) error {
 		respG, err := core.ServiceAPI.GetOne(ctx, core.GetServiceRequest(respE.ServiceId))
 		if respG.Response.Code != pb.Response_SUCCESS {
 			log.Errorf(err, "query service center service[%s] info failed", respE.ServiceId)
-			return fmt.Errorf("service center service file lost.")
+			return fmt.Errorf("service center service file lost")
 		}
 		core.Service = respG.Service
 		return nil
@@ -173,13 +175,17 @@ func (s *registryEngine) registryService(pCtx context.Context) error {
 	return nil
 }
 
-func (s *registryEngine) registryInstance(pCtx context.Context) error {
+func (s *RegistryEngine) registryInstance(pCtx context.Context) error {
 	core.Instance.InstanceId = ""
 	core.Instance.ServiceId = core.Service.ServiceId
 
 	ctx := core.AddDefaultContextValue(pCtx)
 
 	respI, err := core.InstanceAPI.Register(ctx, core.RegisterInstanceRequest())
+	if err != nil {
+		log.Error("register failed", err)
+		return err
+	}
 	if respI.Response.Code != pb.Response_SUCCESS {
 		err = fmt.Errorf("register service center[%s] instance failed, %s",
 			core.Instance.ServiceId, respI.Response.Message)
@@ -192,12 +198,16 @@ func (s *registryEngine) registryInstance(pCtx context.Context) error {
 	return nil
 }
 
-func (s *registryEngine) unregisterInstance(pCtx context.Context) error {
+func (s *RegistryEngine) unregisterInstance(pCtx context.Context) error {
 	if len(core.Instance.InstanceId) == 0 {
 		return nil
 	}
 	ctx := core.AddDefaultContextValue(pCtx)
 	respI, err := core.InstanceAPI.Unregister(ctx, core.UnregisterInstanceRequest())
+	if err != nil {
+		log.Error("unregister failed", err)
+		return err
+	}
 	if respI.Response.Code != pb.Response_SUCCESS {
 		err = fmt.Errorf("unregister service center instance[%s/%s] failed, %s",
 			core.Instance.ServiceId, core.Instance.InstanceId, respI.Response.Message)
@@ -209,9 +219,13 @@ func (s *registryEngine) unregisterInstance(pCtx context.Context) error {
 	return nil
 }
 
-func (s *registryEngine) sendHeartBeat(pCtx context.Context) {
+func (s *RegistryEngine) sendHeartBeat(pCtx context.Context) {
 	ctx := core.AddDefaultContextValue(pCtx)
 	respI, err := core.InstanceAPI.Heartbeat(ctx, core.HeartbeatRequest())
+	if err != nil {
+		log.Error("sen heartbeat failed", err)
+		return
+	}
 	if respI.Response.Code == pb.Response_SUCCESS {
 		log.Debugf("update service center instance[%s/%s] heartbeat",
 			core.Instance.ServiceId, core.Instance.InstanceId)
@@ -228,7 +242,7 @@ func (s *registryEngine) sendHeartBeat(pCtx context.Context) {
 	}
 }
 
-func (s *registryEngine) heartBeatService() {
+func (s *RegistryEngine) heartBeatService() {
 	s.goroutine.Do(func(ctx context.Context) {
 		for {
 			select {

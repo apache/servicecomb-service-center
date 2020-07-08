@@ -31,7 +31,8 @@ type innerListWatch struct {
 }
 
 func (lw *innerListWatch) List(op ListWatchConfig) (*registry.PluginResponse, error) {
-	otCtx, _ := context.WithTimeout(op.Context, op.Timeout)
+	otCtx, cancel := context.WithTimeout(op.Context, op.Timeout)
+	defer cancel()
 	resp, err := lw.Client.Do(otCtx, registry.WatchPrefixOpOptions(lw.Prefix)...)
 	if err != nil {
 		log.Errorf(err, "list prefix %s failed, current rev: %d", lw.Prefix, lw.Revision())

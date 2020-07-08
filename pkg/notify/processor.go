@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package notify
 
 import (
@@ -27,7 +28,6 @@ type Processor struct {
 
 	name     string
 	subjects *util.ConcurrentMap
-	queue    chan Event
 }
 
 func (p *Processor) Name() string {
@@ -75,7 +75,7 @@ func (p *Processor) Remove(n Subscriber) {
 		return
 	}
 
-	g.Remove(n.Id())
+	g.Remove(n.ID())
 
 	if g.Size() == 0 {
 		s.Remove(g.Name())

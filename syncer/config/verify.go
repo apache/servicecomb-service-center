@@ -194,7 +194,7 @@ func verifyTLSConfig(conf *TLSConfig) (err error) {
 	}
 
 	for _, cipher := range conf.Ciphers {
-		if _, ok := tlsutil.TLS_CIPHER_SUITE_MAP[cipher]; !ok {
+		if _, ok := tlsutil.TLSCipherSuiteMap[cipher]; !ok {
 			err = errors.Errorf("cipher %s not exist", cipher)
 			return
 		}

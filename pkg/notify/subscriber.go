@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package notify
 
 import (
@@ -22,12 +23,12 @@ import (
 )
 
 type Subscriber interface {
-	Id() string
+	ID() string
 	Subject() string
 	Group() string
 	Type() Type
-	Service() *NotifyService
-	SetService(*NotifyService)
+	Service() *Service
+	SetService(*Service)
 
 	Err() error
 	SetError(err error)
@@ -43,27 +44,27 @@ type baseSubscriber struct {
 	id      string
 	subject string
 	group   string
-	service *NotifyService
+	service *Service
 	err     error
 }
 
-func (s *baseSubscriber) Id() string                    { return s.id }
-func (s *baseSubscriber) Subject() string               { return s.subject }
-func (s *baseSubscriber) Group() string                 { return s.group }
-func (s *baseSubscriber) Type() Type                    { return s.nType }
-func (s *baseSubscriber) Service() *NotifyService       { return s.service }
-func (s *baseSubscriber) SetService(svc *NotifyService) { s.service = svc }
-func (s *baseSubscriber) Err() error                    { return s.err }
-func (s *baseSubscriber) SetError(err error)            { s.err = err }
-func (s *baseSubscriber) Close()                        {}
-func (s *baseSubscriber) OnAccept()                     {}
+func (s *baseSubscriber) ID() string              { return s.id }
+func (s *baseSubscriber) Subject() string         { return s.subject }
+func (s *baseSubscriber) Group() string           { return s.group }
+func (s *baseSubscriber) Type() Type              { return s.nType }
+func (s *baseSubscriber) Service() *Service       { return s.service }
+func (s *baseSubscriber) SetService(svc *Service) { s.service = svc }
+func (s *baseSubscriber) Err() error              { return s.err }
+func (s *baseSubscriber) SetError(err error)      { s.err = err }
+func (s *baseSubscriber) Close()                  {}
+func (s *baseSubscriber) OnAccept()               {}
 func (s *baseSubscriber) OnMessage(job Event) {
 	s.SetError(errors.New("do not call base notifier OnMessage method"))
 }
 
 func NewSubscriber(nType Type, subject, group string) Subscriber {
 	return &baseSubscriber{
-		id:      util.GenerateUuid(),
+		id:      util.GenerateUUID(),
 		group:   group,
 		subject: subject,
 		nType:   nType,

@@ -49,9 +49,11 @@ func (w *innerWatcher) process(_ context.Context) {
 	case <-stopCh:
 		// timed out or exception
 		w.Stop()
+		cancel()
 	case <-w.stopCh:
 		cancel()
 	}
+
 }
 
 func (w *innerWatcher) sendEvent(resp *registry.PluginResponse) {

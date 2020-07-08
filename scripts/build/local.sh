@@ -49,7 +49,7 @@ build_service_center() {
     ## Build the Service-Center releases
     export GIT_COMMIT=$(git log  --pretty=format:'%h' -n 1)
     export BUILD_NUMBER=$RELEASE
-    local ldflags="${GO_LDFLAGS} -X 'github.com/apache/servicecomb-service-center/version.BUILD_TAG=$(date +%Y%m%d%H%M%S).$BUILD_NUMBER.$GIT_COMMIT'"
+    local ldflags="${GO_LDFLAGS} -X 'github.com/apache/servicecomb-service-center/version.BuildTag=$(date +%Y%m%d%H%M%S).$BUILD_NUMBER.$GIT_COMMIT'"
     ldflags="${ldflags} -X 'github.com/apache/servicecomb-service-center/version.VERSION=$BUILD_NUMBER'"
     local BINARY_NAME=$app/service-center
     if [ "$GOOS" == "windows" ]; then

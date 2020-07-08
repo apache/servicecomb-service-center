@@ -14,11 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package embededetcd
 
 import (
 	"context"
-	"crypto/tls"
 	"errors"
 	"fmt"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
@@ -39,10 +39,8 @@ import (
 	"time"
 )
 
-var embedTLSConfig *tls.Config
-
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{mgr.REGISTRY, "embeded_etcd", getEmbedInstance})
+	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.REGISTRY, Name: "embeded_etcd", New: getEmbedInstance})
 }
 
 type EtcdEmbed struct {
@@ -76,7 +74,7 @@ func (s *EtcdEmbed) getPrefixEndKey(prefix []byte) []byte {
 		endBytes[l] = 1
 		return endBytes
 	}
-	endBytes[l-1] += 1
+	endBytes[l-1]++
 	return endBytes[:l]
 }
 
@@ -87,9 +85,9 @@ func (s *EtcdEmbed) toGetRequest(op registry.PluginOp) *etcdserverpb.RangeReques
 	}
 	order := etcdserverpb.RangeRequest_NONE
 	switch op.SortOrder {
-	case registry.SORT_ASCEND:
+	case registry.SortAscend:
 		order = etcdserverpb.RangeRequest_ASCEND
-	case registry.SORT_DESCEND:
+	case registry.SortDescend:
 		order = etcdserverpb.RangeRequest_DESCEND
 	}
 	return &etcdserverpb.RangeRequest{
@@ -163,7 +161,7 @@ func (s *EtcdEmbed) toCompares(cmps []registry.CompareOp) []*etcdserverpb.Compar
 			Key: cmp.Key,
 		}
 		switch cmp.Type {
-		case registry.CMP_VERSION:
+		case registry.CmpVersion:
 			var version int64
 			if cmp.Value != nil {
 				if v, ok := cmp.Value.(int64); ok {
@@ -174,7 +172,7 @@ func (s *EtcdEmbed) toCompares(cmps []registry.CompareOp) []*etcdserverpb.Compar
 			compare.TargetUnion = &etcdserverpb.Compare_Version{
 				Version: version,
 			}
-		case registry.CMP_CREATE:
+		case registry.CmpCreate:
 			var revision int64
 			if cmp.Value != nil {
 				if v, ok := cmp.Value.(int64); ok {
@@ -185,7 +183,7 @@ func (s *EtcdEmbed) toCompares(cmps []registry.CompareOp) []*etcdserverpb.Compar
 			compare.TargetUnion = &etcdserverpb.Compare_CreateRevision{
 				CreateRevision: revision,
 			}
-		case registry.CMP_MOD:
+		case registry.CmpMod:
 			var revision int64
 			if cmp.Value != nil {
 				if v, ok := cmp.Value.(int64); ok {
@@ -196,7 +194,7 @@ func (s *EtcdEmbed) toCompares(cmps []registry.CompareOp) []*etcdserverpb.Compar
 			compare.TargetUnion = &etcdserverpb.Compare_ModRevision{
 				ModRevision: revision,
 			}
-		case registry.CMP_VALUE:
+		case registry.CmpValue:
 			var value []byte
 			if cmp.Value != nil {
 				if v, ok := cmp.Value.([]byte); ok {
@@ -209,13 +207,13 @@ func (s *EtcdEmbed) toCompares(cmps []registry.CompareOp) []*etcdserverpb.Compar
 			}
 		}
 		switch cmp.Result {
-		case registry.CMP_EQUAL:
+		case registry.CmpEqual:
 			compare.Result = etcdserverpb.Compare_EQUAL
-		case registry.CMP_GREATER:
+		case registry.CmpGreater:
 			compare.Result = etcdserverpb.Compare_GREATER
-		case registry.CMP_LESS:
+		case registry.CmpLess:
 			compare.Result = etcdserverpb.Compare_LESS
-		case registry.CMP_NOT_EQUAL:
+		case registry.CmpNotEqual:
 			compare.Result = etcdserverpb.Compare_NOT_EQUAL
 		}
 		etcdCmps = append(etcdCmps, compare)
@@ -256,7 +254,7 @@ func (s *EtcdEmbed) getLeaderCurrentRevision(ctx context.Context) int64 {
 func (s *EtcdEmbed) PutNoOverride(ctx context.Context, opts ...registry.PluginOpOption) (bool, error) {
 	op := registry.OpPut(opts...)
 	resp, err := s.TxnWithCmp(ctx, []registry.PluginOp{op}, []registry.CompareOp{
-		registry.OpCmp(registry.CmpCreateRev(op.Key), registry.CMP_EQUAL, 0),
+		registry.OpCmp(registry.CmpCreateRev(op.Key), registry.CmpEqual, 0),
 	}, nil)
 	log.Debugf("response %s %v %v", op.Key, resp.Succeeded, resp.Revision)
 	if err != nil {
@@ -422,8 +420,11 @@ func (s *EtcdEmbed) Watch(ctx context.Context, opts ...registry.PluginOpOption) 
 			keyBytes = s.getPrefixEndKey(util.StringToBytesWithNoCopy(key))
 		}
 		watchID := ws.Watch(op.Key, keyBytes, op.Revision)
-		defer ws.Cancel(watchID)
-
+		defer func() {
+			if err := ws.Cancel(watchID); err != nil {
+				log.Error("", err)
+			}
+		}()
 		responses := ws.Chan()
 		for {
 			select {
@@ -545,13 +546,7 @@ func getEmbedInstance() mgr.Instance {
 	}
 
 	if registry.Configuration().SslEnabled {
-		var err error
-		embedTLSConfig, err = mgr.Plugins().TLS().ServerConfig()
-		if err != nil {
-			log.Error("get service center tls config failed", err)
-			inst.err <- err
-			return inst
-		}
+		log.Info("config no use for embedded etcd")
 	}
 
 	serverCfg := embed.NewConfig()

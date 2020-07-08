@@ -19,8 +19,8 @@ import (
 	"bytes"
 	"compress/gzip"
 	"crypto/tls"
-	"errors"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -44,7 +44,7 @@ var defaultURLClientOption = URLClientOption{
 	HandshakeTimeout:      10 * time.Second,
 	ResponseHeaderTimeout: 30 * time.Second,
 	RequestTimeout:        60 * time.Second,
-	ConnsPerHost:          DEFAULT_CONN_POOL_PER_HOST_SIZE,
+	ConnsPerHost:          DefaultConnPoolPerHostSize,
 }
 
 type URLClientOption struct {
@@ -88,7 +88,7 @@ type URLClient struct {
 	Cfg URLClientOption
 }
 
-func (client *URLClient) HttpDoWithContext(ctx context.Context, method string, rawURL string, headers http.Header, body []byte) (resp *http.Response, err error) {
+func (client *URLClient) HTTPDoWithContext(ctx context.Context, method string, rawURL string, headers http.Header, body []byte) (resp *http.Response, err error) {
 	if strings.HasPrefix(rawURL, "https") {
 		if transport, ok := client.Client.Transport.(*http.Transport); ok {
 			transport.TLSClientConfig = client.TLS
@@ -99,23 +99,23 @@ func (client *URLClient) HttpDoWithContext(ctx context.Context, method string, r
 		headers = make(http.Header)
 	}
 
-	if _, ok := headers[HEADER_HOST]; !ok {
+	if _, ok := headers[HeaderHost]; !ok {
 		parsedURL, err := url.Parse(rawURL)
 		if err != nil {
 			return nil, err
 		}
-		headers.Set(HEADER_HOST, parsedURL.Host)
+		headers.Set(HeaderHost, parsedURL.Host)
 	}
-	if _, ok := headers[HEADER_ACCEPT]; !ok {
-		headers.Set(HEADER_ACCEPT, ACCEPT_ANY)
+	if _, ok := headers[HeaderAccept]; !ok {
+		headers.Set(HeaderAccept, AcceptAny)
 	}
-	if _, ok := headers[HEADER_ACCEPT_ENCODING]; !ok && client.Cfg.Compressed {
-		headers.Set(HEADER_ACCEPT_ENCODING, "deflate, gzip")
+	if _, ok := headers[HeaderAcceptEncoding]; !ok && client.Cfg.Compressed {
+		headers.Set(HeaderAcceptEncoding, "deflate, gzip")
 	}
 
 	req, err := http.NewRequest(method, rawURL, bytes.NewBuffer(body))
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("create request failed: %s", err.Error()))
+		return nil, fmt.Errorf("create request failed: %s", err.Error())
 	}
 	req = req.WithContext(ctx)
 	req.Header = headers
@@ -126,14 +126,18 @@ func (client *URLClient) HttpDoWithContext(ctx context.Context, method string, r
 	if err != nil {
 		return nil, err
 	}
-
 	DumpResponse(resp)
 
-	switch resp.Header.Get(HEADER_CONTENT_ENCODING) {
+	switch resp.Header.Get(HeaderContentEncoding) {
 	case "gzip":
 		reader, err := NewGZipBodyReader(resp.Body)
 		if err != nil {
-			io.Copy(ioutil.Discard, resp.Body)
+			_, err = io.Copy(ioutil.Discard, resp.Body)
+			if err != nil {
+				log.Error("", err)
+				resp.Body.Close()
+				return nil, err
+			}
 			resp.Body.Close()
 			return nil, err
 		}
@@ -150,10 +154,13 @@ func DumpRequestOut(req *http.Request) {
 
 	fmt.Println(">", req.URL.String())
 	b, _ := httputil.DumpRequestOut(req, true)
-	buffer.ReadLine(bytes.NewBuffer(b), func(line string) bool {
+	err := buffer.ReadLine(bytes.NewBuffer(b), func(line string) bool {
 		fmt.Println(">", line)
 		return true
 	})
+	if err != nil {
+		log.Error("", err)
+	}
 }
 
 func DumpResponse(resp *http.Response) {
@@ -162,14 +169,17 @@ func DumpResponse(resp *http.Response) {
 	}
 
 	b, _ := httputil.DumpResponse(resp, true)
-	buffer.ReadLine(bytes.NewBuffer(b), func(line string) bool {
+	err := buffer.ReadLine(bytes.NewBuffer(b), func(line string) bool {
 		fmt.Println("<", line)
 		return true
 	})
+	if err != nil {
+		log.Error("", err)
+	}
 }
 
-func (client *URLClient) HttpDo(method string, rawURL string, headers http.Header, body []byte) (resp *http.Response, err error) {
-	return client.HttpDoWithContext(context.Background(), method, rawURL, headers, body)
+func (client *URLClient) HTTPDo(method string, rawURL string, headers http.Header, body []byte) (resp *http.Response, err error) {
+	return client.HTTPDoWithContext(context.Background(), method, rawURL, headers, body)
 }
 
 func DefaultURLClientOption() URLClientOption {

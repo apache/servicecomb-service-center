@@ -43,7 +43,7 @@ type DependencyEventHandler struct {
 }
 
 func (h *DependencyEventHandler) Type() discovery.Type {
-	return backend.DEPENDENCY_QUEUE
+	return backend.DependencyQueue
 }
 
 func (h *DependencyEventHandler) OnEvent(evt discovery.KvEvent) {
@@ -55,7 +55,10 @@ func (h *DependencyEventHandler) OnEvent(evt discovery.KvEvent) {
 }
 
 func (h *DependencyEventHandler) notify() {
-	h.signals.Put(struct{}{})
+	err := h.signals.Put(struct{}{})
+	if err != nil {
+		log.Error("", err)
+	}
 }
 
 func (h *DependencyEventHandler) backoff(f func(), retries int) int {
@@ -66,26 +69,30 @@ func (h *DependencyEventHandler) backoff(f func(), retries int) int {
 	return retries + 1
 }
 
-func (h *DependencyEventHandler) tryWithBackoff(success func() error, backoff func(), retries int) (error, int) {
+func (h *DependencyEventHandler) tryWithBackoff(success func() error, backoff func(), retries int) (int, error) {
 	defer log.Recover()
 	lock, err := mux.Try(mux.DepQueueLock)
 	if err != nil {
 		log.Errorf(err, "try to lock %s failed", mux.DepQueueLock)
-		return err, h.backoff(backoff, retries)
+		return h.backoff(backoff, retries), err
 	}
 
 	if lock == nil {
-		return nil, 0
+		return 0, nil
 	}
 
-	defer lock.Unlock()
+	defer func() {
+		if err := lock.Unlock(); err != nil {
+			log.Error("", err)
+		}
+	}()
 	err = success()
 	if err != nil {
 		log.Errorf(err, "handle dependency event failed")
-		return err, h.backoff(backoff, retries)
+		return h.backoff(backoff, retries), err
 	}
 
-	return nil, 0
+	return 0, nil
 }
 
 func (h *DependencyEventHandler) eventLoop() {
@@ -102,7 +109,10 @@ func (h *DependencyEventHandler) eventLoop() {
 			case <-ctx.Done():
 				return
 			case <-h.signals.Chan():
-				_, retries = h.tryWithBackoff(h.Handle, h.notify, retries)
+				_, err := h.tryWithBackoff(h.Handle, h.notify, retries)
+				if err != nil {
+					log.Error("", err)
+				}
 				util.ResetTimer(timer, period)
 			case <-timer.C:
 				h.notify()
@@ -129,10 +139,7 @@ func NewDependencyEventHandlerResource(dep *pb.ConsumerDependency, kv *discovery
 func isAddToLeft(centerNode *util.Node, addRes interface{}) bool {
 	res := addRes.(*DependencyEventHandlerResource)
 	compareRes := centerNode.Res.(*DependencyEventHandlerResource)
-	if res.kv.ModRevision > compareRes.kv.ModRevision {
-		return false
-	}
-	return true
+	return res.kv.ModRevision <= compareRes.kv.ModRevision
 }
 
 func (h *DependencyEventHandler) Handle() error {
@@ -159,7 +166,7 @@ func (h *DependencyEventHandler) Handle() error {
 		r := kv.Value.(*pb.ConsumerDependency)
 
 		_, domainProject, uuid := core.GetInfoFromDependencyQueueKV(kv.Key)
-		if uuid == core.DEPS_QUEUE_UUID {
+		if uuid == core.DepsQueueUUID {
 			cleanUpDomainProjects[domainProject] = struct{}{}
 		}
 		res := NewDependencyEventHandlerResource(r, kv, domainProject)
@@ -171,7 +178,7 @@ func (h *DependencyEventHandler) Handle() error {
 }
 
 func (h *DependencyEventHandler) dependencyRuleHandle(res interface{}) error {
-	ctx := context.WithValue(context.Background(), serviceUtil.CTX_GLOBAL, "1")
+	ctx := context.WithValue(context.Background(), util.CtxGlobal, "1")
 	dependencyEventHandlerRes := res.(*DependencyEventHandlerResource)
 	r := dependencyEventHandlerRes.dep
 	consumerFlag := util.StringJoin([]string{r.Consumer.Environment, r.Consumer.AppId, r.Consumer.ServiceName, r.Consumer.Version}, "/")
@@ -207,7 +214,7 @@ func (h *DependencyEventHandler) dependencyRuleHandle(res interface{}) error {
 
 func (h *DependencyEventHandler) removeKV(ctx context.Context, kv *discovery.KeyValue) error {
 	dResp, err := backend.Registry().TxnWithCmp(ctx, []registry.PluginOp{registry.OpDel(registry.WithKey(kv.Key))},
-		[]registry.CompareOp{registry.OpCmp(registry.CmpVer(kv.Key), registry.CMP_EQUAL, kv.Version)},
+		[]registry.CompareOp{registry.OpCmp(registry.CmpVer(kv.Key), registry.CmpEqual, kv.Version)},
 		nil)
 	if err != nil {
 		return fmt.Errorf("can not remove the dependency %s request, %s", util.BytesToStringWithNoCopy(kv.Key), err.Error())
@@ -220,7 +227,7 @@ func (h *DependencyEventHandler) removeKV(ctx context.Context, kv *discovery.Key
 
 func (h *DependencyEventHandler) CleanUp(domainProjects map[string]struct{}) {
 	for domainProject := range domainProjects {
-		ctx := context.WithValue(context.Background(), serviceUtil.CTX_GLOBAL, "1")
+		ctx := context.WithValue(context.Background(), util.CtxGlobal, "1")
 		if err := serviceUtil.CleanUpDependencyRules(ctx, domainProject); err != nil {
 			log.Errorf(err, "clean up '%s' dependency rules failed", domainProject)
 		}

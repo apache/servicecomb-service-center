@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package mux
 
 import (
@@ -22,9 +23,9 @@ import (
 	"unsafe"
 )
 
-type MuxType string
+type Type string
 
-func (m *MuxType) String() (s string) {
+func (m *Type) String() (s string) {
 	pMT := (*reflect.StringHeader)(unsafe.Pointer(m))
 	pStr := (*reflect.StringHeader)(unsafe.Pointer(&s))
 	pStr.Data = pMT.Data
@@ -33,15 +34,15 @@ func (m *MuxType) String() (s string) {
 }
 
 const (
-	GlobalLock       MuxType = "/cse-sr/lock/global"
-	DepQueueLock     MuxType = "/cse-sr/lock/dep-queue"
-	ServiceClearLock MuxType = "/cse-sr/lock/service-clear"
+	GlobalLock       Type = "/cse-sr/lock/global"
+	DepQueueLock     Type = "/cse-sr/lock/dep-queue"
+	ServiceClearLock Type = "/cse-sr/lock/service-clear"
 )
 
-func Lock(t MuxType) (*etcdsync.DLock, error) {
+func Lock(t Type) (*etcdsync.DLock, error) {
 	return etcdsync.Lock(t.String(), -1, true)
 }
 
-func Try(t MuxType) (*etcdsync.DLock, error) {
+func Try(t Type) (*etcdsync.DLock, error) {
 	return etcdsync.Lock(t.String(), -1, false)
 }

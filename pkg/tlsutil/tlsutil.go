@@ -25,8 +25,8 @@ import (
 	"strings"
 )
 
-func ParseSSLCipherSuites(ciphers string, permitTlsCipherSuiteMap map[string]uint16) []uint16 {
-	if len(ciphers) == 0 || len(permitTlsCipherSuiteMap) == 0 {
+func ParseSSLCipherSuites(ciphers string, permitTLSCipherSuiteMap map[string]uint16) []uint16 {
+	if len(ciphers) == 0 || len(permitTLSCipherSuiteMap) == 0 {
 		return nil
 	}
 
@@ -38,7 +38,7 @@ func ParseSSLCipherSuites(ciphers string, permitTlsCipherSuiteMap map[string]uin
 			continue
 		}
 
-		if cipherSuite, ok := permitTlsCipherSuiteMap[cipherSuiteName]; ok {
+		if cipherSuite, ok := permitTLSCipherSuiteMap[cipherSuiteName]; ok {
 			cipherSuiteList = append(cipherSuiteList, cipherSuite)
 		} else {
 			// 配置算法不存在
@@ -50,12 +50,12 @@ func ParseSSLCipherSuites(ciphers string, permitTlsCipherSuiteMap map[string]uin
 }
 
 func ParseDefaultSSLCipherSuites(ciphers string) []uint16 {
-	return ParseSSLCipherSuites(ciphers, TLS_CIPHER_SUITE_MAP)
+	return ParseSSLCipherSuites(ciphers, TLSCipherSuiteMap)
 }
 
 func ParseSSLProtocol(sprotocol string) uint16 {
 	var result uint16 = tls.VersionTLS12
-	if protocol, ok := TLS_VERSION_MAP[sprotocol]; ok {
+	if protocol, ok := TLSVersionMap[sprotocol]; ok {
 		result = protocol
 	} else {
 		log.Warnf("invalid ssl minimal version(%s), use default.", sprotocol)

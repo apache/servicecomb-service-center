@@ -240,7 +240,7 @@ func TestDependency(t *testing.T) {
 		t.Fatalf(`DependencyRelation_getServiceByMicroServiceKey failed`)
 	}
 
-	_, err = dr.getConsumerOfSameServiceNameAndAppId(&proto.MicroServiceKey{})
+	_, err = dr.getConsumerOfSameServiceNameAndAppID(&proto.MicroServiceKey{})
 	if err != nil {
 		t.Fatalf(`DependencyRelation_getConsumerOfSameServiceNameAndAppId failed`)
 	}

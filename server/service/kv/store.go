@@ -70,3 +70,11 @@ func Exist(ctx context.Context, key string) (bool, error) {
 	}
 	return true, nil
 }
+func Delete(ctx context.Context, key string) (bool, error) {
+	resp, err := backend.Registry().Do(ctx, registry.DEL,
+		registry.WithStrKey(key))
+	if err != nil {
+		return false, err
+	}
+	return resp.Count != 0, nil
+}

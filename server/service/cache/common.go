@@ -14,15 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package cache
 
-const (
-	CTX_FIND_CONSUMER          = "_consumer"
-	CTX_FIND_PROVIDER          = "_provider"
-	CTX_FIND_PROVIDER_INSTANCE = "_provider_instance"
-	CTX_FIND_TAGS              = "_tags"
-	CTX_FIND_REQUEST_REV       = "_rev"
+type ContextKey string
 
-	CACHE_FIND = "_find"
-	CACHE_DEP  = "_dep"
+const (
+	CtxFindConsumer         ContextKey = "_consumer"
+	CtxFindProvider         ContextKey = "_provider"
+	CtxFindProviderInstance ContextKey = "_provider_instance"
+	CtxFindTags             ContextKey = "_tags"
+	CtxFindRequestRev       ContextKey = "_rev"
+
+	Find = "_find"
+	Dep  = "_dep"
 )

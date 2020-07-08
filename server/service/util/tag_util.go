@@ -27,8 +27,8 @@ import (
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 )
 
-func AddTagIntoETCD(ctx context.Context, domainProject string, serviceId string, dataTags map[string]string) *scerr.Error {
-	key := apt.GenerateServiceTagKey(domainProject, serviceId)
+func AddTagIntoETCD(ctx context.Context, domainProject string, serviceID string, dataTags map[string]string) *scerr.Error {
+	key := apt.GenerateServiceTagKey(domainProject, serviceID)
 	data, err := json.Marshal(dataTags)
 	if err != nil {
 		return scerr.NewError(scerr.ErrInternal, err.Error())
@@ -37,8 +37,8 @@ func AddTagIntoETCD(ctx context.Context, domainProject string, serviceId string,
 	resp, err := backend.Registry().TxnWithCmp(ctx,
 		[]registry.PluginOp{registry.OpPut(registry.WithStrKey(key), registry.WithValue(data))},
 		[]registry.CompareOp{registry.OpCmp(
-			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, serviceId))),
-			registry.CMP_NOT_EQUAL, 0)},
+			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, serviceID))),
+			registry.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		return scerr.NewError(scerr.ErrUnavailableBackend, err.Error())
@@ -49,12 +49,12 @@ func AddTagIntoETCD(ctx context.Context, domainProject string, serviceId string,
 	return nil
 }
 
-func GetTagsUtils(ctx context.Context, domainProject, serviceId string) (tags map[string]string, err error) {
-	key := apt.GenerateServiceTagKey(domainProject, serviceId)
+func GetTagsUtils(ctx context.Context, domainProject, serviceID string) (tags map[string]string, err error) {
+	key := apt.GenerateServiceTagKey(domainProject, serviceID)
 	opts := append(FromContext(ctx), registry.WithStrKey(key))
 	resp, err := backend.Store().ServiceTag().Search(ctx, opts...)
 	if err != nil {
-		log.Errorf(err, "get service[%s] tags file failed", serviceId)
+		log.Errorf(err, "get service[%s] tags file failed", serviceID)
 		return tags, err
 	}
 

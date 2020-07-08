@@ -27,7 +27,7 @@ import (
 )
 
 type mockRegistry struct {
-	*buildin.BuildinRegistry
+	*buildin.Registry
 	Response *registry.PluginResponse
 }
 

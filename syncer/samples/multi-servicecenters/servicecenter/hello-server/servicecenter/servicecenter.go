@@ -20,20 +20,19 @@ package servicecenter
 import (
 	"context"
 	"fmt"
-	"net/http"
-	"net/url"
-	"sync"
-	"time"
-
 	"github.com/apache/servicecomb-service-center/pkg/client/sc"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/ticker"
+	"net/http"
+	"net/url"
+	"sync"
+	"time"
 )
 
 var (
 	domainProject         string
-	cli                   *sc.SCClient
+	cli                   *sc.Client
 	once                  sync.Once
 	heartbeatInterval     = 30
 	providerCaches        = &sync.Map{}

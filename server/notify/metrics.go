@@ -42,7 +42,7 @@ var (
 			Subsystem:  "notify",
 			Name:       "publish_durations_microseconds",
 			Help:       "Latency of publishing instance events",
-			Objectives: prometheus.DefObjectives,
+			Objectives: metric.Pxx,
 		}, []string{"instance", "source", "status"})
 
 	subscriberGauge = prometheus.NewGaugeVec(

@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package notify
 
 import (
@@ -45,7 +46,7 @@ func (g *Group) Subscribers(name string) Subscriber {
 }
 
 func (g *Group) AddSubscriber(subscriber Subscriber) Subscriber {
-	return g.subscribers.PutIfAbsent(subscriber.Id(), subscriber).(Subscriber)
+	return g.subscribers.PutIfAbsent(subscriber.ID(), subscriber).(Subscriber)
 }
 
 func (g *Group) Remove(name string) {

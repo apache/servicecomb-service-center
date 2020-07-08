@@ -19,16 +19,16 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 )
 
-type ServiceCenterCacher struct {
+type Cacher struct {
 	*discovery.CommonCacher
 }
 
-func (c *ServiceCenterCacher) Ready() <-chan struct{} {
+func (c *Cacher) Ready() <-chan struct{} {
 	return closedCh
 }
 
-func NewServiceCenterCacher(cfg *discovery.Config, cache discovery.Cache) *ServiceCenterCacher {
-	return &ServiceCenterCacher{
+func NewServiceCenterCacher(cfg *discovery.Config, cache discovery.Cache) *Cacher {
+	return &Cacher{
 		CommonCacher: discovery.NewCommonCacher(cfg, cache),
 	}
 }

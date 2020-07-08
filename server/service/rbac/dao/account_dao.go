@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 //Package rbac is dao layer API to help service center manage account, policy and role info
 package dao
 
@@ -39,7 +40,12 @@ func CreateAccount(ctx context.Context, a *model.Account) error {
 	if err != nil {
 		return fmt.Errorf("account %s is creating", a.Name)
 	}
-	defer lock.Unlock()
+	defer func() {
+		err := lock.Unlock()
+		if err != nil {
+			log.Errorf(err, "can not release account lock")
+		}
+	}()
 	key := core.GenerateAccountKey(a.Name)
 	exist, err := kv.Exist(ctx, key)
 	if err != nil {
@@ -81,6 +87,14 @@ func GetAccount(ctx context.Context, name string) (*model.Account, error) {
 }
 func AccountExist(ctx context.Context, name string) (bool, error) {
 	exist, err := kv.Exist(ctx, core.GenerateAccountKey(name))
+	if err != nil {
+		log.Errorf(err, "can not get account info")
+		return false, err
+	}
+	return exist, nil
+}
+func DeleteAccount(ctx context.Context, name string) (bool, error) {
+	exist, err := kv.Delete(ctx, core.GenerateAccountKey(name))
 	if err != nil {
 		log.Errorf(err, "can not get account info")
 		return false, err

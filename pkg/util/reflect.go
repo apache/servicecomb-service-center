@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package util
 
 import (
@@ -26,16 +27,16 @@ import (
 
 var (
 	reflector *Reflector
-	unknown   = new(reflectObject)
+	unknown   = new(ReflectObject)
 )
 
 func init() {
 	reflector = &Reflector{
-		types: make(map[*uintptr]*reflectObject),
+		types: make(map[*uintptr]*ReflectObject),
 	}
 }
 
-type reflectObject struct {
+type ReflectObject struct {
 	// full name
 	FullName string
 	Type     reflect.Type
@@ -44,16 +45,16 @@ type reflectObject struct {
 }
 
 // Name returns a short name of the object type
-func (o *reflectObject) Name() string {
+func (o *ReflectObject) Name() string {
 	return FileLastName(o.FullName)
 }
 
 type Reflector struct {
-	types map[*uintptr]*reflectObject
+	types map[*uintptr]*ReflectObject
 	mux   sync.RWMutex
 }
 
-func (r *Reflector) Load(obj interface{}) *reflectObject {
+func (r *Reflector) Load(obj interface{}) *ReflectObject {
 	r.mux.RLock()
 	itab := *(**uintptr)(unsafe.Pointer(&obj))
 	t, ok := r.types[itab]
@@ -69,7 +70,7 @@ func (r *Reflector) Load(obj interface{}) *reflectObject {
 		return t
 	}
 
-	t = new(reflectObject)
+	t = new(ReflectObject)
 	v := reflect.ValueOf(obj)
 	if !v.IsValid() {
 		r.mux.Unlock()
@@ -118,7 +119,7 @@ func (r *Reflector) Load(obj interface{}) *reflectObject {
 	return t
 }
 
-func Reflect(obj interface{}) *reflectObject {
+func Reflect(obj interface{}) *ReflectObject {
 	return reflector.Load(obj)
 }
 

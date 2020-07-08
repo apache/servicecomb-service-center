@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package service
 
 import (
@@ -60,10 +61,10 @@ func FindInstanceReqValidator() *validate.Validator {
 func BatchFindInstanceReqValidator() *validate.Validator {
 	return batchFindInstanceReqValidator.Init(func(v *validate.Validator) {
 		var findServiceValidator validate.Validator
-		findServiceValidator.AddRule("Service", &validate.ValidateRule{Min: 1})
+		findServiceValidator.AddRule("Service", &validate.Rule{Min: 1})
 		findServiceValidator.AddSub("Service", ExistenceReqValidator())
 		var findInstanceValidator validate.Validator
-		findInstanceValidator.AddRule("Instance", &validate.ValidateRule{Min: 1})
+		findInstanceValidator.AddRule("Instance", &validate.Rule{Min: 1})
 		findInstanceValidator.AddSub("Instance", HeartbeatReqValidator())
 		v.AddRule("ConsumerServiceId", GetInstanceReqValidator().GetRule("ConsumerServiceId"))
 		v.AddSub("Services", &findServiceValidator)
@@ -73,7 +74,7 @@ func BatchFindInstanceReqValidator() *validate.Validator {
 
 func GetInstanceReqValidator() *validate.Validator {
 	return getInstanceReqValidator.Init(func(v *validate.Validator) {
-		v.AddRule("ConsumerServiceId", &validate.ValidateRule{Max: 64, Regexp: serviceIdRegex})
+		v.AddRule("ConsumerServiceId", &validate.Rule{Max: 64, Regexp: serviceIDRegex})
 		v.AddRule("ProviderServiceId", GetServiceReqValidator().GetRule("ServiceId"))
 		v.AddRule("ProviderInstanceId", HeartbeatReqValidator().GetRule("InstanceId"))
 		v.AddRule("Tags", UpdateTagReqValidator().GetRule("Key"))
@@ -83,14 +84,14 @@ func GetInstanceReqValidator() *validate.Validator {
 func HeartbeatReqValidator() *validate.Validator {
 	return heartbeatReqValidator.Init(func(v *validate.Validator) {
 		v.AddRule("ServiceId", GetServiceReqValidator().GetRule("ServiceId"))
-		v.AddRule("InstanceId", &validate.ValidateRule{Min: 1, Max: 64, Regexp: simpleNameAllowEmptyRegex})
+		v.AddRule("InstanceId", &validate.Rule{Min: 1, Max: 64, Regexp: simpleNameAllowEmptyRegex})
 	})
 }
 
 func UpdateInstanceReqValidator() *validate.Validator {
 	return updateInstanceReqValidator.Init(func(v *validate.Validator) {
 		v.AddRules(heartbeatReqValidator.GetRules())
-		v.AddRule("Status", &validate.ValidateRule{Regexp: updateInstStatusRegex})
+		v.AddRule("Status", &validate.Rule{Regexp: updateInstStatusRegex})
 	})
 }
 
@@ -103,28 +104,28 @@ func UpdateInstancePropsReqValidator() *validate.Validator {
 func RegisterInstanceReqValidator() *validate.Validator {
 	return registerInstanceReqValidator.Init(func(v *validate.Validator) {
 		var healthCheckInfoValidator validate.Validator
-		healthCheckInfoValidator.AddRule("Mode", &validate.ValidateRule{Regexp: hbModeRegex})
-		healthCheckInfoValidator.AddRule("Port", &validate.ValidateRule{Max: math.MaxUint16, Min: 0})
-		healthCheckInfoValidator.AddRule("Times", &validate.ValidateRule{Max: math.MaxInt32})
-		healthCheckInfoValidator.AddRule("Interval", &validate.ValidateRule{Min: 1, Max: math.MaxInt32})
-		healthCheckInfoValidator.AddRule("Url", &validate.ValidateRule{Regexp: urlRegex})
+		healthCheckInfoValidator.AddRule("Mode", &validate.Rule{Regexp: hbModeRegex})
+		healthCheckInfoValidator.AddRule("Port", &validate.Rule{Max: math.MaxUint16, Min: 0})
+		healthCheckInfoValidator.AddRule("Times", &validate.Rule{Max: math.MaxInt32})
+		healthCheckInfoValidator.AddRule("Interval", &validate.Rule{Min: 1, Max: math.MaxInt32})
+		healthCheckInfoValidator.AddRule("Url", &validate.Rule{Regexp: urlRegex})
 
 		var dataCenterInfoValidator validate.Validator
-		dataCenterInfoValidator.AddRule("Name", &validate.ValidateRule{Min: 1, Max: 128, Regexp: simpleNameRegex})
-		dataCenterInfoValidator.AddRule("Region", &validate.ValidateRule{Min: 1, Max: 128, Regexp: regionRegex})
-		dataCenterInfoValidator.AddRule("AvailableZone", &validate.ValidateRule{Min: 1, Max: 128, Regexp: regionRegex})
+		dataCenterInfoValidator.AddRule("Name", &validate.Rule{Min: 1, Max: 128, Regexp: simpleNameRegex})
+		dataCenterInfoValidator.AddRule("Region", &validate.Rule{Min: 1, Max: 128, Regexp: regionRegex})
+		dataCenterInfoValidator.AddRule("AvailableZone", &validate.Rule{Min: 1, Max: 128, Regexp: regionRegex})
 
 		var microServiceInstanceValidator validate.Validator
-		microServiceInstanceValidator.AddRule("InstanceId", &validate.ValidateRule{Max: 64, Regexp: simpleNameAllowEmptyRegex})
+		microServiceInstanceValidator.AddRule("InstanceId", &validate.Rule{Max: 64, Regexp: simpleNameAllowEmptyRegex})
 		microServiceInstanceValidator.AddRule("ServiceId", GetServiceReqValidator().GetRule("ServiceId"))
 		// allow empty endpoint register for client only
-		microServiceInstanceValidator.AddRule("Endpoints", &validate.ValidateRule{Regexp: epRegex})
-		microServiceInstanceValidator.AddRule("HostName", &validate.ValidateRule{Max: 64, Min: 1, Regexp: epRegex})
+		microServiceInstanceValidator.AddRule("Endpoints", &validate.Rule{Regexp: epRegex})
+		microServiceInstanceValidator.AddRule("HostName", &validate.Rule{Max: 64, Min: 1, Regexp: epRegex})
 		microServiceInstanceValidator.AddSub("HealthCheck", &healthCheckInfoValidator)
-		microServiceInstanceValidator.AddRule("Status", &validate.ValidateRule{Regexp: instStatusRegex})
+		microServiceInstanceValidator.AddRule("Status", &validate.Rule{Regexp: instStatusRegex})
 		microServiceInstanceValidator.AddSub("DataCenterInfo", &dataCenterInfoValidator)
 
-		v.AddRule("Instance", &validate.ValidateRule{Min: 1})
+		v.AddRule("Instance", &validate.Rule{Min: 1})
 		v.AddSub("Instance", &microServiceInstanceValidator)
 	})
 }

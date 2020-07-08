@@ -34,7 +34,7 @@ type GlobalCounter struct {
 
 func (c *GlobalCounter) OnCreate(t discovery.Type, domainProject string) {
 	switch t {
-	case backend.SERVICE_INDEX:
+	case backend.ServiceIndex:
 		c.ServiceCount++
 	case backend.INSTANCE:
 		c.InstanceCount++
@@ -43,7 +43,7 @@ func (c *GlobalCounter) OnCreate(t discovery.Type, domainProject string) {
 
 func (c *GlobalCounter) OnDelete(t discovery.Type, domainProject string) {
 	switch t {
-	case backend.SERVICE_INDEX:
+	case backend.ServiceIndex:
 		if c.ServiceCount == 0 {
 			return
 		}

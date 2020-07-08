@@ -88,9 +88,9 @@ func (cfg *Config) WithParser(parser pb.Parser) *Config {
 func Configure() *Config {
 	return &Config{
 		Key:      "/",
-		Timeout:  DEFAULT_TIMEOUT,
+		Timeout:  DefaultTimeout,
 		Period:   time.Second,
-		InitSize: DEFAULT_CACHE_INIT_SIZE,
+		InitSize: DefaultCacheInitSize,
 		Parser:   pb.BytesParser,
 	}
 }

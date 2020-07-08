@@ -24,8 +24,8 @@ import (
 
 const (
 	// force re-list
-	DEFAULT_FORCE_LIST_INTERVAL = 4
-	DEFAULT_METRICS_INTERVAL    = 30 * time.Second
+	DefaultForceListInterval = 4
+	DefaultMetricsInterval   = 30 * time.Second
 
 	minWaitInterval = 1 * time.Second
 	eventBlockSize  = 1000

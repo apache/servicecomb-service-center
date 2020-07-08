@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package v4
 
 import (
@@ -33,16 +34,16 @@ type DependencyService struct {
 	//
 }
 
-func (this *DependencyService) URLPatterns() []rest.Route {
+func (s *DependencyService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTP_METHOD_POST, "/v4/:project/registry/dependencies", this.AddDependenciesForMicroServices},
-		{rest.HTTP_METHOD_PUT, "/v4/:project/registry/dependencies", this.CreateDependenciesForMicroServices},
-		{rest.HTTP_METHOD_GET, "/v4/:project/registry/microservices/:consumerId/providers", this.GetConProDependencies},
-		{rest.HTTP_METHOD_GET, "/v4/:project/registry/microservices/:providerId/consumers", this.GetProConDependencies},
+		{Method: rest.HTTPMethodPost, Path: "/v4/:project/registry/dependencies", Func: s.AddDependenciesForMicroServices},
+		{Method: rest.HTTPMethodPut, Path: "/v4/:project/registry/dependencies", Func: s.CreateDependenciesForMicroServices},
+		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/microservices/:consumerId/providers", Func: s.GetConProDependencies},
+		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/microservices/:providerId/consumers", Func: s.GetProConDependencies},
 	}
 }
 
-func (this *DependencyService) AddDependenciesForMicroServices(w http.ResponseWriter, r *http.Request) {
+func (s *DependencyService) AddDependenciesForMicroServices(w http.ResponseWriter, r *http.Request) {
 	requestBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
@@ -58,10 +59,13 @@ func (this *DependencyService) AddDependenciesForMicroServices(w http.ResponseWr
 	}
 
 	resp, err := core.ServiceAPI.AddDependenciesForMicroServices(r.Context(), request)
+	if err != nil {
+		controller.WriteError(w, scerr.ErrInternal, err.Error())
+	}
 	controller.WriteResponse(w, resp.Response, nil)
 }
 
-func (this *DependencyService) CreateDependenciesForMicroServices(w http.ResponseWriter, r *http.Request) {
+func (s *DependencyService) CreateDependenciesForMicroServices(w http.ResponseWriter, r *http.Request) {
 	requestBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
@@ -77,10 +81,13 @@ func (this *DependencyService) CreateDependenciesForMicroServices(w http.Respons
 	}
 
 	resp, err := core.ServiceAPI.CreateDependenciesForMicroServices(r.Context(), request)
+	if err != nil {
+		controller.WriteError(w, scerr.ErrInternal, err.Error())
+	}
 	controller.WriteResponse(w, resp.Response, nil)
 }
 
-func (this *DependencyService) GetConProDependencies(w http.ResponseWriter, r *http.Request) {
+func (s *DependencyService) GetConProDependencies(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	request := &pb.GetDependenciesRequest{
 		ServiceId:  query.Get(":consumerId"),
@@ -93,7 +100,7 @@ func (this *DependencyService) GetConProDependencies(w http.ResponseWriter, r *h
 	controller.WriteResponse(w, respInternal, resp)
 }
 
-func (this *DependencyService) GetProConDependencies(w http.ResponseWriter, r *http.Request) {
+func (s *DependencyService) GetProConDependencies(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	request := &pb.GetDependenciesRequest{
 		ServiceId:  query.Get(":providerId"),

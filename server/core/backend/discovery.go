@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backend
 
 import (
@@ -27,7 +28,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
-	"sync"
 	"time"
 )
 
@@ -41,8 +41,7 @@ func init() {
 type KvStore struct {
 	AddOns      map[discovery.Type]AddOn
 	adaptors    util.ConcurrentMap
-	taskService task.TaskService
-	lock        sync.RWMutex
+	taskService task.Service
 	ready       chan struct{}
 	goroutine   *gopool.Pool
 	isClose     bool
@@ -50,7 +49,7 @@ type KvStore struct {
 }
 
 func (s *KvStore) Initialize() {
-	s.AddOns = make(map[discovery.Type]AddOn, 0)
+	s.AddOns = make(map[discovery.Type]AddOn)
 	s.taskService = task.NewTaskService()
 	s.ready = make(chan struct{})
 	s.goroutine = gopool.New(context.Background())
@@ -129,10 +128,6 @@ func (s *KvStore) autoClearCache(ctx context.Context) {
 	}
 }
 
-func (s *KvStore) closed() bool {
-	return s.isClose
-}
-
 func (s *KvStore) Stop() {
 	if s.isClose {
 		return
@@ -188,17 +183,17 @@ func (s *KvStore) MustInstall(addOn AddOn) discovery.Type {
 
 func (s *KvStore) Adaptors(id discovery.Type) discovery.Adaptor { return s.getOrCreateAdaptor(id) }
 func (s *KvStore) Service() discovery.Adaptor                   { return s.Adaptors(SERVICE) }
-func (s *KvStore) SchemaSummary() discovery.Adaptor             { return s.Adaptors(SCHEMA_SUMMARY) }
+func (s *KvStore) SchemaSummary() discovery.Adaptor             { return s.Adaptors(SchemaSummary) }
 func (s *KvStore) Instance() discovery.Adaptor                  { return s.Adaptors(INSTANCE) }
 func (s *KvStore) Lease() discovery.Adaptor                     { return s.Adaptors(LEASE) }
-func (s *KvStore) ServiceIndex() discovery.Adaptor              { return s.Adaptors(SERVICE_INDEX) }
-func (s *KvStore) ServiceAlias() discovery.Adaptor              { return s.Adaptors(SERVICE_ALIAS) }
-func (s *KvStore) ServiceTag() discovery.Adaptor                { return s.Adaptors(SERVICE_TAG) }
+func (s *KvStore) ServiceIndex() discovery.Adaptor              { return s.Adaptors(ServiceIndex) }
+func (s *KvStore) ServiceAlias() discovery.Adaptor              { return s.Adaptors(ServiceAlias) }
+func (s *KvStore) ServiceTag() discovery.Adaptor                { return s.Adaptors(ServiceTag) }
 func (s *KvStore) Rule() discovery.Adaptor                      { return s.Adaptors(RULE) }
-func (s *KvStore) RuleIndex() discovery.Adaptor                 { return s.Adaptors(RULE_INDEX) }
+func (s *KvStore) RuleIndex() discovery.Adaptor                 { return s.Adaptors(RuleIndex) }
 func (s *KvStore) Schema() discovery.Adaptor                    { return s.Adaptors(SCHEMA) }
-func (s *KvStore) DependencyRule() discovery.Adaptor            { return s.Adaptors(DEPENDENCY_RULE) }
-func (s *KvStore) DependencyQueue() discovery.Adaptor           { return s.Adaptors(DEPENDENCY_QUEUE) }
+func (s *KvStore) DependencyRule() discovery.Adaptor            { return s.Adaptors(DependencyRule) }
+func (s *KvStore) DependencyQueue() discovery.Adaptor           { return s.Adaptors(DependencyQueue) }
 func (s *KvStore) Domain() discovery.Adaptor                    { return s.Adaptors(DOMAIN) }
 func (s *KvStore) Project() discovery.Adaptor                   { return s.Adaptors(PROJECT) }
 
@@ -208,7 +203,7 @@ func (s *KvStore) KeepAlive(ctx context.Context, opts ...registry.PluginOpOption
 	op := registry.OpPut(opts...)
 
 	t := NewLeaseAsyncTask(op)
-	if op.Mode == registry.MODE_NO_CACHE {
+	if op.Mode == registry.ModeNoCache {
 		log.Debugf("keep alive lease WitchNoCache, request etcd server, op: %s", op)
 		err := t.Do(ctx)
 		ttl := t.TTL

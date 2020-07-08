@@ -28,16 +28,15 @@ import (
 )
 
 const (
-	apiWatcherURL        = "/v4/%s/registry/microservices/%s/watcher"
-	apiListAndWatcherURL = "/v4/%s/registry/microservices/%s/listwatcher"
+	apiWatcherURL = "/v4/%s/registry/microservices/%s/watcher"
 )
 
-func (c *SCClient) Watch(ctx context.Context, domainProject, selfServiceId string, callback func(*pb.WatchInstanceResponse)) *scerr.Error {
+func (c *Client) Watch(ctx context.Context, domainProject, selfServiceID string, callback func(*pb.WatchInstanceResponse)) *scerr.Error {
 	domain, project := core.FromDomainProject(domainProject)
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 
-	conn, err := c.WebsocketDial(ctx, fmt.Sprintf(apiWatcherURL, project, selfServiceId), headers)
+	conn, err := c.WebsocketDial(ctx, fmt.Sprintf(apiWatcherURL, project, selfServiceID), headers)
 	if err != nil {
 		return scerr.NewError(scerr.ErrInternal, err.Error())
 	}

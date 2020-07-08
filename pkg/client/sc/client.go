@@ -20,20 +20,20 @@ import (
 	"net/http"
 )
 
-func NewSCClient(cfg Config) (*SCClient, error) {
+func NewSCClient(cfg Config) (*Client, error) {
 	client, err := NewLBClient(cfg.Endpoints, cfg.Merge())
 	if err != nil {
 		return nil, err
 	}
-	return &SCClient{LBClient: client, Cfg: cfg}, nil
+	return &Client{LBClient: client, Cfg: cfg}, nil
 }
 
-type SCClient struct {
+type Client struct {
 	*LBClient
 	Cfg Config
 }
 
-func (c *SCClient) CommonHeaders(ctx context.Context) http.Header {
+func (c *Client) CommonHeaders(ctx context.Context) http.Header {
 	var headers = make(http.Header)
 	// TODO overwrote by context values
 	if len(c.Cfg.Token) > 0 {

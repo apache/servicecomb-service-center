@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package v4
 
 import (
@@ -34,15 +35,15 @@ type RuleService struct {
 	//
 }
 
-func (this *RuleService) URLPatterns() []rest.Route {
+func (s *RuleService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTP_METHOD_POST, "/v4/:project/registry/microservices/:serviceId/rules", this.AddRule},
-		{rest.HTTP_METHOD_GET, "/v4/:project/registry/microservices/:serviceId/rules", this.GetRules},
-		{rest.HTTP_METHOD_PUT, "/v4/:project/registry/microservices/:serviceId/rules/:rule_id", this.UpdateRule},
-		{rest.HTTP_METHOD_DELETE, "/v4/:project/registry/microservices/:serviceId/rules/:rule_id", this.DeleteRule},
+		{Method: rest.HTTPMethodPost, Path: "/v4/:project/registry/microservices/:serviceId/rules", Func: s.AddRule},
+		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/microservices/:serviceId/rules", Func: s.GetRules},
+		{Method: rest.HTTPMethodPut, Path: "/v4/:project/registry/microservices/:serviceId/rules/:rule_id", Func: s.UpdateRule},
+		{Method: rest.HTTPMethodDelete, Path: "/v4/:project/registry/microservices/:serviceId/rules/:rule_id", Func: s.DeleteRule},
 	}
 }
-func (this *RuleService) AddRule(w http.ResponseWriter, r *http.Request) {
+func (s *RuleService) AddRule(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
@@ -61,15 +62,20 @@ func (this *RuleService) AddRule(w http.ResponseWriter, r *http.Request) {
 		ServiceId: r.URL.Query().Get(":serviceId"),
 		Rules:     rule["rules"],
 	})
+	if err != nil {
+		log.Errorf(err, "add rule failed")
+		controller.WriteError(w, scerr.ErrInternal, "add rule failed")
+		return
+	}
 	respInternal := resp.Response
 	resp.Response = nil
 	controller.WriteResponse(w, respInternal, resp)
 }
 
-func (this *RuleService) DeleteRule(w http.ResponseWriter, r *http.Request) {
+func (s *RuleService) DeleteRule(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	rule_id := query.Get(":rule_id")
-	ids := strings.Split(rule_id, ",")
+	id := query.Get(":rule_id")
+	ids := strings.Split(id, ",")
 
 	resp, _ := core.ServiceAPI.DeleteRule(r.Context(), &pb.DeleteServiceRulesRequest{
 		ServiceId: query.Get(":serviceId"),
@@ -78,7 +84,7 @@ func (this *RuleService) DeleteRule(w http.ResponseWriter, r *http.Request) {
 	controller.WriteResponse(w, resp.Response, nil)
 }
 
-func (this *RuleService) UpdateRule(w http.ResponseWriter, r *http.Request) {
+func (s *RuleService) UpdateRule(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
@@ -99,10 +105,15 @@ func (this *RuleService) UpdateRule(w http.ResponseWriter, r *http.Request) {
 		RuleId:    query.Get(":rule_id"),
 		Rule:      &rule,
 	})
+	if err != nil {
+		log.Errorf(err, "update rule failed")
+		controller.WriteError(w, scerr.ErrInternal, "update rule failed")
+		return
+	}
 	controller.WriteResponse(w, resp.Response, nil)
 }
 
-func (this *RuleService) GetRules(w http.ResponseWriter, r *http.Request) {
+func (s *RuleService) GetRules(w http.ResponseWriter, r *http.Request) {
 	resp, _ := core.ServiceAPI.GetRule(r.Context(), &pb.GetServiceRulesRequest{
 		ServiceId: r.URL.Query().Get(":serviceId"),
 	})

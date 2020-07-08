@@ -47,14 +47,14 @@ func (st Type) String() string {
 	return "TYPE" + strconv.Itoa(int(st))
 }
 
-func RegisterType(name string) (newId Type, err error) {
+func RegisterType(name string) (newID Type, err error) {
 	for _, n := range Types {
 		if n.String() == name {
 			return TypeError, fmt.Errorf("redeclare store type '%s'", n)
 		}
 	}
-	newId = Type(len(Types))
-	Types = append(Types, newId)
+	newID = Type(len(Types))
+	Types = append(Types, newID)
 	typeNames = append(typeNames, name)
 	return
 }

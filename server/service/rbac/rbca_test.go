@@ -19,6 +19,7 @@ package rbac_test
 
 import (
 	"context"
+	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/model"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery/etcd"
@@ -64,6 +65,9 @@ func TestInitRBAC(t *testing.T) {
 
 	archaius.Set(rbac.InitPassword, "root")
 
+	dao.DeleteAccount(context.Background(), "root")
+	dao.DeleteAccount(context.Background(), "b")
+
 	rbac.Init()
 	a, err := dao.GetAccount(context.Background(), "root")
 	assert.NoError(t, err)
@@ -72,7 +76,8 @@ func TestInitRBAC(t *testing.T) {
 	t.Run("login and authenticate", func(t *testing.T) {
 		token, err := authr.Login(context.Background(), "root", "root")
 		assert.NoError(t, err)
-		t.Log(token)
+		fmt.Println("err:", err)
+		fmt.Println("token:", token)
 		claims, err := authr.Authenticate(context.Background(), token)
 		assert.NoError(t, err)
 		assert.Equal(t, "root", claims.(map[string]interface{})[rbac.ClaimsUser])
@@ -90,12 +95,14 @@ func TestInitRBAC(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "1234", a.Password)
 	})
-	t.Run("change own password", func(t *testing.T) {
+	t.Run("change self password", func(t *testing.T) {
 		dao.CreateAccount(context.Background(), &model.Account{Name: "b", Password: "123"})
 		err := rbac.ChangePassword(context.Background(), "", "b", &model.Account{CurrentPassword: "123", Password: "1234"})
 		assert.NoError(t, err)
 		a, err := dao.GetAccount(context.Background(), "b")
 		assert.NoError(t, err)
 		assert.Equal(t, "1234", a.Password)
+
 	})
+
 }

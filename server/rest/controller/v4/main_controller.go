@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package v4
 
 import (
@@ -28,16 +29,16 @@ import (
 )
 
 var (
-	versionJsonCache []byte
+	versionJSONCache []byte
 	versionResp      *pb.Response
 	parseVersionOnce sync.Once
 )
 
-const API_VERSION = "4.0.0"
+const APIVersion = "4.0.0"
 
 type Result struct {
-	*version.VersionSet
-	ApiVersion string           `json:"apiVersion"`
+	*version.Set
+	APIVersion string           `json:"apiVersion"`
 	Config     *pb.ServerConfig `json:"config,omitempty"`
 }
 
@@ -45,29 +46,29 @@ type MainService struct {
 	//
 }
 
-func (this *MainService) URLPatterns() []rest.Route {
+func (s *MainService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTP_METHOD_GET, "/v4/:project/registry/version", this.GetVersion},
-		{rest.HTTP_METHOD_GET, "/v4/:project/registry/health", this.ClusterHealth},
+		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/version", Func: s.GetVersion},
+		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/health", Func: s.ClusterHealth},
 	}
 }
 
-func (this *MainService) ClusterHealth(w http.ResponseWriter, r *http.Request) {
+func (s *MainService) ClusterHealth(w http.ResponseWriter, r *http.Request) {
 	resp, _ := core.InstanceAPI.ClusterHealth(r.Context())
 	respInternal := resp.Response
 	resp.Response = nil
 	controller.WriteResponse(w, respInternal, resp)
 }
 
-func (this *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
+func (s *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
 	parseVersionOnce.Do(func() {
 		result := Result{
 			version.Ver(),
-			API_VERSION,
+			APIVersion,
 			&core.ServerInfo.Config,
 		}
-		versionJsonCache, _ = json.Marshal(result)
+		versionJSONCache, _ = json.Marshal(result)
 		versionResp = pb.CreateResponse(pb.Response_SUCCESS, "get version successfully")
 	})
-	controller.WriteJsonIfSuccess(w, versionResp, versionJsonCache)
+	controller.WriteJSONIfSuccess(w, versionResp, versionJSONCache)
 }

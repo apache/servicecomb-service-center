@@ -85,7 +85,7 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 		t.Fatalf("TestPublisher_Run")
 	}
 
-	NotifyCenter().Start()
+	GetNotifyCenter().Start()
 
 	go func() {
 		DoWebSocketListAndWatch(context.Background(), "", nil, conn)
@@ -109,7 +109,7 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 	w.OnMessage(nil)
 	w.OnMessage(&InstanceEvent{})
 
-	NotifyCenter().Publish(NewInstanceEvent("g", "s", 1, &proto.WatchInstanceResponse{
+	GetNotifyCenter().Publish(NewInstanceEvent("g", "s", 1, &proto.WatchInstanceResponse{
 		Response: proto.CreateResponse(proto.Response_SUCCESS, "ok"),
 		Action:   string(proto.EVT_CREATE),
 		Key:      &proto.MicroServiceKey{},

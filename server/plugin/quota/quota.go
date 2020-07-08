@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package quota
 
 import (
@@ -37,7 +38,6 @@ const (
 	TagQuotaType
 	MicroServiceQuotaType
 	MicroServiceInstanceQuotaType
-	typeEnd
 )
 
 var (
@@ -51,7 +51,7 @@ var (
 type ApplyQuotaResult struct {
 	Err *scerr.Error
 
-	reporter QuotaReporter
+	reporter Reporter
 }
 
 func (r *ApplyQuotaResult) ReportUsedQuota(ctx context.Context) error {
@@ -68,7 +68,7 @@ func (r *ApplyQuotaResult) Close(ctx context.Context) {
 	r.reporter.Close(ctx)
 }
 
-func NewApplyQuotaResult(reporter QuotaReporter, err *scerr.Error) *ApplyQuotaResult {
+func NewApplyQuotaResult(reporter Reporter, err *scerr.Error) *ApplyQuotaResult {
 	return &ApplyQuotaResult{
 		reporter: reporter,
 		Err:      err,
@@ -78,25 +78,25 @@ func NewApplyQuotaResult(reporter QuotaReporter, err *scerr.Error) *ApplyQuotaRe
 type ApplyQuotaResource struct {
 	QuotaType     ResourceType
 	DomainProject string
-	ServiceId     string
+	ServiceID     string
 	QuotaSize     int64
 }
 
-func NewApplyQuotaResource(quotaType ResourceType, domainProject, serviceId string, quotaSize int64) *ApplyQuotaResource {
+func NewApplyQuotaResource(quotaType ResourceType, domainProject, serviceID string, quotaSize int64) *ApplyQuotaResource {
 	return &ApplyQuotaResource{
 		quotaType,
 		domainProject,
-		serviceId,
+		serviceID,
 		quotaSize,
 	}
 }
 
-type QuotaManager interface {
+type Manager interface {
 	Apply4Quotas(ctx context.Context, res *ApplyQuotaResource) *ApplyQuotaResult
 	RemandQuotas(ctx context.Context, quotaType ResourceType)
 }
 
-type QuotaReporter interface {
+type Reporter interface {
 	ReportUsedQuota(ctx context.Context) error
 	Close(ctx context.Context)
 }

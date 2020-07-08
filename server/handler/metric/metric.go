@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package metric
 
 import (
@@ -31,14 +32,14 @@ type MetricsHandler struct {
 
 func (h *MetricsHandler) Handle(i *chain.Invocation) {
 	i.Next(chain.WithAsyncFunc(func(ret chain.Result) {
-		start, ok := i.Context().Value(svr.CTX_START_TIMESTAMP).(time.Time)
+		start, ok := i.Context().Value(svr.CtxStartTimestamp).(time.Time)
 		if !ok {
 			return
 		}
-		w, r := i.Context().Value(rest.CTX_RESPONSE).(http.ResponseWriter),
-			i.Context().Value(rest.CTX_REQUEST).(*http.Request)
+		w, r := i.Context().Value(rest.CtxResponse).(http.ResponseWriter),
+			i.Context().Value(rest.CtxRequest).(*http.Request)
 		prometheus.ReportRequestCompleted(w, r, start)
-		log.LogNilOrWarnf(start, "%s %s", r.Method, r.RequestURI)
+		log.NilOrWarnf(start, "%s %s", r.Method, r.RequestURI)
 	}))
 }
 

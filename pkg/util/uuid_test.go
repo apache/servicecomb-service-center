@@ -22,7 +22,7 @@ import (
 )
 
 func TestGenerateUuid(t *testing.T) {
-	uuid := GenerateUuid()
+	uuid := GenerateUUID()
 	if len(uuid) == 0 || strings.Contains(uuid, "-") {
 		t.Fatalf("TestGenerateUuid failed")
 	}

@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package scerror
 
 import (
@@ -30,7 +31,7 @@ var errors = map[int32]string{
 	ErrServiceVersionNotExists: "Micro-service version does not exist",
 	ErrDeployedInstance:        "Micro-service has deployed instance(s)",
 	ErrDependedOnConsumer:      "Consumer(s) depends on this micro-service",
-	ErrUndefinedSchemaId:       "Undefined schema id",
+	ErrUndefinedSchemaID:       "Undefined schema id",
 	ErrModifySchemaNotAllow:    "Not allowed to modify schema",
 	ErrSchemaNotExists:         "Schema does not exist",
 	ErrInstanceNotExists:       "Instance does not exist",
@@ -55,7 +56,7 @@ const (
 	ErrServiceAlreadyExists    int32 = 400010
 	ErrServiceNotExists        int32 = 400012
 	ErrDeployedInstance        int32 = 400013
-	ErrUndefinedSchemaId       int32 = 400014
+	ErrUndefinedSchemaID       int32 = 400014
 	ErrModifySchemaNotAllow    int32 = 400015
 	ErrSchemaNotExists         int32 = 400016
 	ErrInstanceNotExists       int32 = 400017
@@ -99,10 +100,7 @@ func (e *Error) StatusCode() int {
 }
 
 func (e *Error) InternalError() bool {
-	if e.Code >= 500000 {
-		return true
-	}
-	return false
+	return e.Code >= 500000
 }
 
 func NewError(code int32, detail string) *Error {

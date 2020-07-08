@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package pzipkin
 
 import (
@@ -33,7 +34,7 @@ import (
 var once sync.Once
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{mgr.TRACING, "buildin", New})
+	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.TRACING, Name: "buildin", New: New})
 }
 
 func New() mgr.Instance {
@@ -48,9 +49,9 @@ func (zp *Zipkin) ServerBegin(operationName string, itf tracing.Request) tracing
 		span opentracing.Span
 		ctx  context.Context
 	)
-	switch itf.(type) {
+	switch itf := itf.(type) {
 	case *http.Request:
-		r := itf.(*http.Request)
+		r := itf
 		ctx = r.Context()
 
 		wireContext, err := ZipkinTracer().Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
@@ -75,7 +76,7 @@ func (zp *Zipkin) ServerBegin(operationName string, itf tracing.Request) tracing
 		return nil
 	}
 
-	ctx = util.SetContext(ctx, tracing.CTX_TRACE_SPAN, span)
+	_ = util.SetContext(ctx, tracing.CtxTraceSpan, span)
 	return span
 }
 
@@ -97,7 +98,7 @@ func (zp *Zipkin) ClientBegin(operationName string, itf tracing.Request) tracing
 		r := itf.(*http.Request)
 		ctx := r.Context()
 
-		parentSpan, ok := ctx.Value(tracing.CTX_TRACE_SPAN).(opentracing.Span)
+		parentSpan, ok := ctx.Value(tracing.CtxTraceSpan).(opentracing.Span)
 		if !ok {
 			return nil
 		}
@@ -123,12 +124,12 @@ func (zp *Zipkin) ClientBegin(operationName string, itf tracing.Request) tracing
 		r := itf.(*tracing.RegistryRequest)
 		ctx := r.Ctx
 
-		parentSpan, ok := ctx.Value(tracing.CTX_TRACE_SPAN).(opentracing.Span)
+		parentSpan, ok := ctx.Value(tracing.CtxTraceSpan).(opentracing.Span)
 		if !ok {
 			return nil
 		}
 
-		u, _ := url.Parse(r.Endpoint + "/?" + r.Options.FormatUrlParams())
+		u, _ := url.Parse(r.Endpoint + "/?" + r.Options.FormatURLParams())
 
 		span = ZipkinTracer().StartSpan(operationName, opentracing.ChildOf(parentSpan.Context()))
 		ext.SpanKindRPCClient.Set(span)
@@ -148,10 +149,13 @@ func (zp *Zipkin) ClientBegin(operationName string, itf tracing.Request) tracing
 			log.Errorf(err, "tracer inject request failed")
 		}
 		// inject context
-		carrier.ForeachKey(func(key, val string) error {
+		err := carrier.ForeachKey(func(key, val string) error {
 			ctx = util.SetContext(ctx, key, val)
 			return nil
 		})
+		if err != nil {
+			log.Error("", err)
+		}
 	default:
 		return nil
 	}

@@ -27,34 +27,34 @@ const (
 )
 
 const (
-	SORT_NONE SortOrder = iota
-	SORT_ASCEND
-	SORT_DESCEND
+	SortNone SortOrder = iota
+	SortAscend
+	SortDescend
 )
 
 const (
-	CMP_VERSION CompareType = iota
-	CMP_CREATE
-	CMP_MOD
-	CMP_VALUE
+	CmpVersion CompareType = iota
+	CmpCreate
+	CmpMod
+	CmpValue
 )
 
 const (
-	CMP_EQUAL CompareResult = iota
-	CMP_GREATER
-	CMP_LESS
-	CMP_NOT_EQUAL
+	CmpEqual CompareResult = iota
+	CmpGreater
+	CmpLess
+	CmpNotEqual
 )
 
 const (
-	MODE_BOTH CacheMode = iota
-	MODE_CACHE
-	MODE_NO_CACHE
+	ModeBoth CacheMode = iota
+	ModeCache
+	ModeNoCache
 )
 
 const (
 	// grpc does not allow to transport a large body more then 4MB in a request
-	DEFAULT_PAGE_COUNT = 4096
+	DefaultPageCount = 4096
 	// the timeout dial to etcd
 	defaultDialTimeout    = 10 * time.Second
 	defaultRequestTimeout = 30 * time.Second

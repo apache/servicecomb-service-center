@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package v4
 
 import (
@@ -29,10 +30,10 @@ type WatchService struct {
 	//
 }
 
-func (this *WatchService) URLPatterns() []rest.Route {
+func (s *WatchService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTP_METHOD_GET, "/v4/:project/registry/microservices/:serviceId/watcher", this.Watch},
-		{rest.HTTP_METHOD_GET, "/v4/:project/registry/microservices/:serviceId/listwatcher", this.ListAndWatch},
+		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/microservices/:serviceId/watcher", Func: s.Watch},
+		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/microservices/:serviceId/listwatcher", Func: s.ListAndWatch},
 	}
 }
 
@@ -49,7 +50,7 @@ func upgrade(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error) {
 	return conn, err
 }
 
-func (this *WatchService) Watch(w http.ResponseWriter, r *http.Request) {
+func (s *WatchService) Watch(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrade(w, r)
 	if err != nil {
 		return
@@ -62,7 +63,7 @@ func (this *WatchService) Watch(w http.ResponseWriter, r *http.Request) {
 	}, conn)
 }
 
-func (this *WatchService) ListAndWatch(w http.ResponseWriter, r *http.Request) {
+func (s *WatchService) ListAndWatch(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrade(w, r)
 	if err != nil {
 		return

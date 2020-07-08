@@ -25,7 +25,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/broker/brokerpb"
 	"github.com/apache/servicecomb-service-center/server/core"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
-	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -46,7 +45,7 @@ const (
 var consumerServiceId string
 var providerServiceId string
 
-var _ = Describe("BrokerController", func() {
+var _ = Describe("Controller", func() {
 	Describe("brokerDependency", func() {
 		Context("normal", func() {
 			It("PublishPact", func() {
@@ -240,6 +239,6 @@ func getContext() context.Context {
 	ctx := context.TODO()
 	ctx = util.SetContext(ctx, "domain", "default")
 	ctx = util.SetContext(ctx, "project", "default")
-	ctx = util.SetContext(ctx, serviceUtil.CTX_NOCACHE, "1")
+	ctx = util.SetContext(ctx, util.CtxNocache, "1")
 	return ctx
 }

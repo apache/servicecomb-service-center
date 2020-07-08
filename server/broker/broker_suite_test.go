@@ -34,7 +34,7 @@ func init() {
 	core.Initialize()
 }
 
-var brokerResource = broker.BrokerServiceAPI
+var brokerResource = broker.ServiceAPI
 
 var _ = BeforeSuite(func() {
 	//init plugin
