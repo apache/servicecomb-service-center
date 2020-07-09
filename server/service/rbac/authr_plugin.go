@@ -21,6 +21,7 @@ import (
 	"context"
 	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/server/service/cipher"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 	"github.com/dgrijalva/jwt-go"
@@ -29,11 +30,6 @@ import (
 )
 
 var ErrUnauthorized = errors.New("wrong user name or password")
-
-const (
-	ClaimsUser = "account"
-	ClaimsRole = "role"
-)
 
 //EmbeddedAuthenticator is sc default auth plugin, RBAC data is persisted in etcd
 type EmbeddedAuthenticator struct {
@@ -62,8 +58,8 @@ func (a *EmbeddedAuthenticator) Login(ctx context.Context, user string, password
 			return "", err
 		}
 		tokenStr, err := token.Sign(map[string]interface{}{
-			ClaimsUser: user,
-			ClaimsRole: account.Role, //TODO more claims for RBAC, for example rule config
+			rbacframe.ClaimsUser: user,
+			rbacframe.ClaimsRole: account.Role, //TODO more claims for RBAC, for example rule config
 		},
 			secret,
 			token.WithExpTime("30m"),
@@ -77,20 +73,14 @@ func (a *EmbeddedAuthenticator) Login(ctx context.Context, user string, password
 	return "", ErrUnauthorized
 }
 func (a *EmbeddedAuthenticator) Authenticate(ctx context.Context, tokenStr string) (interface{}, error) {
-	claims, err := token.Verify(tokenStr, func(claims interface{}, method token.SigningMethod) (interface{}, error) {
-		p, err := jwt.ParseRSAPublicKeyFromPEM([]byte(PublicKey()))
-		if err != nil {
-			log.Error("can not parse public key", err)
-			return nil, err
-		}
-		return p, nil
-	})
+	p, err := jwt.ParseRSAPublicKeyFromPEM([]byte(PublicKey()))
 	if err != nil {
-		log.Error("verify token failed", err)
+		log.Error("can not parse public key", err)
 		return nil, err
 	}
-	return claims, nil
+	return rbacframe.Authenticate(tokenStr, p)
 }
+
 func init() {
 	authr.Install("default", newEmbeddedAuthenticator)
 }

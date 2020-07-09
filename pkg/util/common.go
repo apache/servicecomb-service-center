@@ -25,7 +25,3 @@ const (
 	CtxRequestRevision  = "requestRev"
 	CtxResponseRevision = "responseRev"
 )
-
-const (
-	ErrMsgConvert = "type convert error"
-)

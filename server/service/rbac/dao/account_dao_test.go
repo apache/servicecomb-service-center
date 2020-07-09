@@ -19,7 +19,7 @@ package dao_test
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/pkg/model"
+	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery/etcd"
 	etcd2 "github.com/apache/servicecomb-service-center/server/plugin/registry/etcd"
@@ -39,7 +39,7 @@ func init() {
 
 }
 func TestAccountDao_CreateAccount(t *testing.T) {
-	_ = dao.CreateAccount(context.Background(), &model.Account{Name: "admin", Password: "pwd"})
+	_ = dao.CreateAccount(context.Background(), &rbacframe.Account{Name: "admin", Password: "pwd"})
 	t.Run("get account", func(t *testing.T) {
 		r, err := dao.GetAccount(context.Background(), "admin")
 		assert.NoError(t, err)

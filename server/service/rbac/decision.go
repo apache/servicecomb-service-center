@@ -15,12 +15,30 @@
  * limitations under the License.
  */
 
-package auth
+package rbac
 
 import (
-	"net/http"
+	"context"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 )
 
-type Auth interface {
-	Identify(r *http.Request) error
+func Allow(ctx context.Context, role, project, resource, verbs string) (bool, error) {
+	r := dao.GetRole(ctx, role)
+	if r == nil {
+		log.Warn("empty role info")
+		return false, nil
+	}
+	ps := r.Permissions
+	if len(ps) == 0 {
+		log.Warn("role has no any permissions")
+		return false, nil
+	}
+	p, ok := ps[resource]
+	if !ok || p == nil {
+		log.Warn("role is not allowed to access resource")
+		return false, nil
+	}
+	//TODO check verbs and project
+	return true, nil
 }

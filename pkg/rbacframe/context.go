@@ -15,9 +15,12 @@
  * limitations under the License.
  */
 
-package rbac
+package rbacframe
 
-import "context"
+import (
+	"context"
+	"k8s.io/apimachinery/pkg/util/sets"
+)
 
 // key is an unexported type for keys defined in this package.
 // This prevents collisions with keys defined in other packages.
@@ -37,4 +40,13 @@ func NewContext(ctx context.Context, claims interface{}) context.Context {
 func FromContext(ctx context.Context) interface{} {
 	a := ctx.Value(accountKey)
 	return a
+}
+
+var whiteAPIList = sets.NewString()
+
+func Add2WhiteAPIList(path ...string) {
+	whiteAPIList.Insert(path...)
+}
+func MustAuth(url string) bool {
+	return !whiteAPIList.Has(url)
 }

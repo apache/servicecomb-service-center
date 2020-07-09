@@ -15,12 +15,24 @@
  * limitations under the License.
  */
 
-package auth
+package dao
 
 import (
-	"net/http"
+	"context"
+	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 )
 
-type Auth interface {
-	Identify(r *http.Request) error
+//TODO delete dead code and use etcd
+var roleMap = map[string]*rbacframe.Role{
+	"admin": {Permissions: map[string]*rbacframe.Permission{
+		"account": {Verbs: []string{"*"}},
+		"service": {Verbs: []string{"*"}},
+	}},
+	"developer": {Permissions: map[string]*rbacframe.Permission{
+		"service": {Verbs: []string{"*"}},
+	}},
+}
+
+func GetRole(ctx context.Context, role string) *rbacframe.Role {
+	return roleMap[role]
 }

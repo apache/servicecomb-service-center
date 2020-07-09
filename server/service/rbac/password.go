@@ -20,15 +20,15 @@ package rbac
 import (
 	"context"
 	"errors"
+	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/model"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 )
 
-func ChangePassword(ctx context.Context, changerRole, changerName string, a *model.Account) error {
+func ChangePassword(ctx context.Context, changerRole, changerName string, a *rbacframe.Account) error {
 	if a.Name != "" {
-		if changerRole != model.RoleAdmin { //need to check password mismatch. but admin role can change any user password without supply current password
+		if changerRole != rbacframe.RoleAdmin { //need to check password mismatch. but admin role can change any user password without supply current password
 			log.Error("can not change other account pwd", nil)
 			return ErrInputChangeAccount
 		}
@@ -64,6 +64,9 @@ func changePassword(ctx context.Context, name, currentPassword, pwd string) erro
 	if old.Password != currentPassword {
 		log.Error("current pwd is wrong", nil)
 		return errors.New("can not change pwd")
+	}
+	if currentPassword == pwd {
+		return errors.New("the password can not be same as old one")
 	}
 	old.Password = pwd
 	err = dao.EditAccount(ctx, old)

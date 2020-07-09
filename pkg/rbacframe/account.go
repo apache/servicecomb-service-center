@@ -15,12 +15,29 @@
  * limitations under the License.
  */
 
-package auth
+package rbacframe
 
-import (
-	"net/http"
+const (
+	RoleAdmin = "admin"
 )
 
-type Auth interface {
-	Identify(r *http.Request) error
+type Account struct {
+	Name            string `json:"name,omitempty"`
+	Password        string `json:"password,omitempty"`
+	Role            string `json:"role,omitempty"`
+	TokenExpiryTime string `json:"tokenExpiryTime,omitempty"`
+	CurrentPassword string `json:"currentPassword,omitempty"`
+}
+
+type Token struct {
+	TokenStr string `json:"token,omitempty"`
+}
+
+type Role struct {
+	Project     []string
+	Permissions map[string]*Permission
+}
+type Permission struct {
+	IDs   []string // TODO make IDs checked by rbac
+	Verbs []string
 }

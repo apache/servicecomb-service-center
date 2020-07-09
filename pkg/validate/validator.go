@@ -26,8 +26,8 @@ import (
 )
 
 type Validator struct {
-	rules map[string](*Rule)
-	subs  map[string](*Validator)
+	rules map[string]*Rule
+	subs  map[string]*Validator
 	once  sync.Once
 }
 
