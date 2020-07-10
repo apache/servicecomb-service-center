@@ -20,17 +20,30 @@ package service
 import (
 	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
+	"github.com/apache/servicecomb-service-center/pkg/validate"
 	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"reflect"
+	"regexp"
 )
 
+var createAccountValidator = &validate.Validator{}
+var changePWDValidator = &validate.Validator{}
+
+func init() {
+	var roleRegex, _ = regexp.Compile(`^$|^(admin|developer)$`)
+	var accountRegex, _ = regexp.Compile(`^[a-zA-Z]\w{5,15}$`)
+	createAccountValidator.AddRule("Name", &validate.Rule{Regexp: accountRegex})
+	createAccountValidator.AddRule("Role", &validate.Rule{Regexp: roleRegex})
+	createAccountValidator.AddRule("Password", &validate.Rule{Regexp: &validate.PasswordChecker{}})
+
+	changePWDValidator.AddRule("CurrentPassword", &validate.Rule{Min: 8})
+	changePWDValidator.AddRule("Password", &validate.Rule{Regexp: &validate.PasswordChecker{}})
+}
 func Validate(v interface{}) error {
-	if v == nil {
-		return errors.New("data is nil")
-	}
-	sv := reflect.ValueOf(v)
-	if sv.Kind() == reflect.Ptr && sv.IsNil() {
-		return errors.New("pointer is nil")
+	err := baseCheck(v)
+	if err != nil {
+		return err
 	}
 	switch t := v.(type) {
 	case *pb.CreateServiceRequest:
@@ -41,12 +54,10 @@ func Validate(v interface{}) error {
 		return GetServiceReqValidator().Validate(v)
 	case *pb.UpdateServicePropsRequest:
 		return UpdateServicePropsReqValidator().Validate(v)
-
 	case *pb.CreateDependenciesRequest:
 		return CreateDependenciesReqValidator().Validate(v)
 	case *pb.AddDependenciesRequest:
 		return AddDependenciesReqValidator().Validate(v)
-
 	case *pb.GetServiceTagsRequest:
 		return GetTagsReqValidator().Validate(v)
 	case *pb.AddServiceTagsRequest:
@@ -55,7 +66,6 @@ func Validate(v interface{}) error {
 		return UpdateTagReqValidator().Validate(v)
 	case *pb.DeleteServiceTagsRequest:
 		return DeleteTagReqValidator().Validate(v)
-
 	case *pb.GetAllSchemaRequest:
 		return GetSchemaReqValidator().Validate(v)
 	case *pb.GetSchemaRequest,
@@ -65,7 +75,6 @@ func Validate(v interface{}) error {
 		return ModifySchemaReqValidator().Validate(v)
 	case *pb.ModifySchemasRequest:
 		return ModifySchemasReqValidator().Validate(v)
-
 	case *pb.GetOneInstanceRequest,
 		*pb.GetInstancesRequest:
 		return GetInstanceReqValidator().Validate(v)
@@ -81,7 +90,6 @@ func Validate(v interface{}) error {
 		return HeartbeatReqValidator().Validate(v)
 	case *pb.UpdateInstancePropsRequest:
 		return UpdateInstancePropsReqValidator().Validate(v)
-
 	case *pb.GetServiceRulesRequest:
 		return GetRulesReqValidator().Validate(v)
 	case *pb.AddServiceRulesRequest:
@@ -90,11 +98,35 @@ func Validate(v interface{}) error {
 		return UpdateRuleReqValidator().Validate(v)
 	case *pb.DeleteServiceRulesRequest:
 		return DeleteRulesReqValidator().Validate(v)
-
 	case *pb.GetAppsRequest:
 		return MicroServiceKeyValidator().Validate(v)
 	default:
 		log.Warnf("No validator for %T.", t)
 		return nil
 	}
+}
+
+func baseCheck(v interface{}) error {
+	if v == nil {
+		return errors.New("data is nil")
+	}
+	sv := reflect.ValueOf(v)
+	if sv.Kind() == reflect.Ptr && sv.IsNil() {
+		return errors.New("pointer is nil")
+	}
+	return nil
+}
+func ValidateCreateAccount(a *rbacframe.Account) error {
+	err := baseCheck(a)
+	if err != nil {
+		return err
+	}
+	return createAccountValidator.Validate(a)
+}
+func ValidateChangePWD(a *rbacframe.Account) error {
+	err := baseCheck(a)
+	if err != nil {
+		return err
+	}
+	return changePWDValidator.Validate(a)
 }

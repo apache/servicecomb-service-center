@@ -15,19 +15,38 @@
  * limitations under the License.
  */
 
-package model
+package validate
 
-const (
-	RoleAdmin   = "admin"
-	RoleAuditor = "auditor"
-)
+import "unicode"
 
-type Account struct {
-	Name            string `json:"name,omitempty"`
-	Password        string `json:"password,omitempty"`
-	Role            string `json:"role,omitempty"`
-	CurrentPassword string `json:"currentPassword,omitempty"`
+type PasswordChecker struct {
 }
-type Token struct {
-	TokenStr string `json:"token,omitempty"`
+
+func (p *PasswordChecker) MatchString(s string) bool {
+	var (
+		hasMinLen  = false
+		hasUpper   = false
+		hasLower   = false
+		hasNumber  = false
+		hasSpecial = false
+	)
+	if len(s) >= 8 {
+		hasMinLen = true
+	}
+	for _, char := range s {
+		switch {
+		case unicode.IsUpper(char):
+			hasUpper = true
+		case unicode.IsLower(char):
+			hasLower = true
+		case unicode.IsNumber(char):
+			hasNumber = true
+		case unicode.IsPunct(char) || unicode.IsSymbol(char):
+			hasSpecial = true
+		}
+	}
+	return hasMinLen && hasUpper && hasLower && hasNumber && hasSpecial
+}
+func (p *PasswordChecker) String() string {
+	return "password"
 }

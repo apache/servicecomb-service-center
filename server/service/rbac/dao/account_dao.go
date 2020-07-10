@@ -25,7 +25,7 @@ import (
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/model"
+	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/service/kv"
 )
@@ -35,7 +35,7 @@ var ErrCanNotEdit = errors.New("account can not be edited")
 
 //CreateAccount save 2 kv
 //1. account info
-func CreateAccount(ctx context.Context, a *model.Account) error {
+func CreateAccount(ctx context.Context, a *rbacframe.Account) error {
 	lock, err := etcdsync.Lock("/account-creating/"+a.Name, -1, false)
 	if err != nil {
 		return fmt.Errorf("account %s is creating", a.Name)
@@ -70,14 +70,14 @@ func CreateAccount(ctx context.Context, a *model.Account) error {
 	return nil
 }
 
-func GetAccount(ctx context.Context, name string) (*model.Account, error) {
+func GetAccount(ctx context.Context, name string) (*rbacframe.Account, error) {
 	key := core.GenerateAccountKey(name)
 	r, err := kv.Get(ctx, key)
 	if err != nil {
 		log.Errorf(err, "can not get account info")
 		return nil, err
 	}
-	a := &model.Account{}
+	a := &rbacframe.Account{}
 	err = json.Unmarshal(r.Value, a)
 	if err != nil {
 		log.Errorf(err, "account info is invalid")
@@ -104,7 +104,7 @@ func DeleteAccount(ctx context.Context, name string) (bool, error) {
 
 //CreateAccount save 2 kv
 //1. account info
-func EditAccount(ctx context.Context, a *model.Account) error {
+func EditAccount(ctx context.Context, a *rbacframe.Account) error {
 	key := core.GenerateAccountKey(a.Name)
 	exist, err := kv.Exist(ctx, key)
 	if err != nil {

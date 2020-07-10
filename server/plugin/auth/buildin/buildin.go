@@ -18,11 +18,14 @@
 package buildin
 
 import (
+	"context"
 	"errors"
+	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
-	"github.com/apache/servicecomb-service-center/server/plugin/auth"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
+	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 	"github.com/go-chassis/go-chassis/security/authr"
 	"github.com/go-chassis/go-chassis/server/restful"
 	"net/http"
@@ -44,34 +47,48 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 	if !rbac.Enabled() {
 		return nil
 	}
-	if !mustAuth(req) {
+	if !rbacframe.MustAuth(req.URL.Path) {
 		return nil
 	}
 
 	v := req.Header.Get(restful.HeaderAuth)
 	if v == "" {
-		return auth.ErrNoHeader
+		return rbacframe.ErrNoHeader
 	}
 	s := strings.Split(v, " ")
 	if len(s) != 2 {
-		return errors.New("invalid auth header")
+		return rbacframe.ErrInvalidHeader
 	}
 	to := s[1]
-	//TODO rbac
+
 	claims, err := authr.Authenticate(req.Context(), to)
 	if err != nil {
 		log.Errorf(err, "authenticate request failed, %s %s", req.Method, req.RequestURI)
 		return err
 	}
-	req2 := req.WithContext(rbac.NewContext(req.Context(), claims))
+	//TODO rbac
+	m, ok := claims.(map[string]interface{})
+	if !ok {
+		log.Error("claims convert failed", rbacframe.ErrConvertErr)
+		return rbacframe.ErrConvertErr
+	}
+	role := m[rbacframe.ClaimsRole]
+	roleName, ok := role.(string)
+	if !ok {
+		log.Error("role convert failed", rbacframe.ErrConvertErr)
+		return rbacframe.ErrConvertErr
+	}
+	r := dao.GetResource(context.TODO(), req.URL.Path)
+	//TODO add verbs
+	allow, err := rbac.Allow(context.TODO(), roleName, req.URL.Query().Get(":project"), r, "")
+	if err != nil {
+		log.Error("", err)
+		return errors.New(errorsEx.ErrMsgRolePerm)
+	}
+	if !allow {
+		return errors.New(errorsEx.ErrMsgNoPerm)
+	}
+	req2 := req.WithContext(rbacframe.NewContext(req.Context(), claims))
 	*req = *req2
 	return nil
-}
-func mustAuth(req *http.Request) bool {
-	for v := range rbac.WhiteAPIList() {
-		if strings.Contains(req.URL.Path, v) {
-			return false
-		}
-	}
-	return true
 }

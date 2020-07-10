@@ -20,7 +20,7 @@ package rbac_test
 import (
 	"context"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/model"
+	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery/etcd"
 	etcd2 "github.com/apache/servicecomb-service-center/server/plugin/registry/etcd"
@@ -80,7 +80,7 @@ func TestInitRBAC(t *testing.T) {
 		fmt.Println("token:", token)
 		claims, err := authr.Authenticate(context.Background(), token)
 		assert.NoError(t, err)
-		assert.Equal(t, "root", claims.(map[string]interface{})[rbac.ClaimsUser])
+		assert.Equal(t, "root", claims.(map[string]interface{})[rbacframe.ClaimsUser])
 	})
 
 	t.Run("second time init", func(t *testing.T) {
@@ -88,16 +88,16 @@ func TestInitRBAC(t *testing.T) {
 	})
 
 	t.Run("change pwd,admin can change any one password", func(t *testing.T) {
-		dao.CreateAccount(context.Background(), &model.Account{Name: "a", Password: "123"})
-		err := rbac.ChangePassword(context.Background(), model.RoleAdmin, "admin", &model.Account{Name: "a", Password: "1234"})
+		dao.CreateAccount(context.Background(), &rbacframe.Account{Name: "a", Password: "123"})
+		err := rbac.ChangePassword(context.Background(), rbacframe.RoleAdmin, "admin", &rbacframe.Account{Name: "a", Password: "1234"})
 		assert.NoError(t, err)
 		a, err := dao.GetAccount(context.Background(), "a")
 		assert.NoError(t, err)
 		assert.Equal(t, "1234", a.Password)
 	})
 	t.Run("change self password", func(t *testing.T) {
-		dao.CreateAccount(context.Background(), &model.Account{Name: "b", Password: "123"})
-		err := rbac.ChangePassword(context.Background(), "", "b", &model.Account{CurrentPassword: "123", Password: "1234"})
+		dao.CreateAccount(context.Background(), &rbacframe.Account{Name: "b", Password: "123"})
+		err := rbac.ChangePassword(context.Background(), "", "b", &rbacframe.Account{CurrentPassword: "123", Password: "1234"})
 		assert.NoError(t, err)
 		a, err := dao.GetAccount(context.Background(), "b")
 		assert.NoError(t, err)

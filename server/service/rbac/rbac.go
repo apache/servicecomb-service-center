@@ -22,7 +22,7 @@ import (
 	"crypto/rsa"
 	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/model"
+	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/server/service/cipher"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 	"github.com/astaxie/beego"
@@ -30,7 +30,6 @@ import (
 	"github.com/go-chassis/go-chassis/security/authr"
 	"github.com/go-chassis/go-chassis/security/secret"
 	"io/ioutil"
-	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
@@ -64,6 +63,7 @@ func Init() {
 	}
 	readPrivateKey()
 	readPublicKey()
+	rbacframe.Add2WhiteAPIList("/health", "/version", "/v4/token")
 	log.Info("rbac is enabled")
 }
 
@@ -104,10 +104,10 @@ func initFirstTime(admin string) {
 	if pwd == "" {
 		log.Fatal("can not enable rbac, password is empty", nil)
 	}
-	if err := dao.CreateAccount(context.Background(), &model.Account{
+	if err := dao.CreateAccount(context.Background(), &rbacframe.Account{
 		Name:     admin,
 		Password: pwd,
-		Role:     model.RoleAdmin,
+		Role:     rbacframe.RoleAdmin,
 	}); err != nil {
 		if err == dao.ErrDuplicated {
 			log.Info("rbac is enabled")
@@ -149,13 +149,4 @@ func GetPrivateKey() (*rsa.PrivateKey, error) {
 		return nil, err
 	}
 	return p, nil
-}
-
-var whiteAPIList = sets.NewString("/health", "/version", "/v4/token")
-
-func Add2WhiteAPIList(path string) {
-	whiteAPIList.Insert(path)
-}
-func WhiteAPIList() sets.String {
-	return whiteAPIList
 }

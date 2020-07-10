@@ -15,12 +15,17 @@
  * limitations under the License.
  */
 
-package auth
+package rbacframe
 
 import (
-	"net/http"
+	"errors"
 )
 
-type Auth interface {
-	Identify(r *http.Request) error
-}
+var (
+	ErrInvalidHeader = errors.New("invalid auth header")
+	ErrNoHeader      = errors.New("should provide Authorization header")
+	ErrInvalidCtx    = errors.New("invalid context")
+
+	ErrConvertErr = errors.New(MsgConvertErr)
+	MsgConvertErr = "type convert error"
+)

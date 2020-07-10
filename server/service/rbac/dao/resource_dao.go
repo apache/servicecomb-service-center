@@ -15,12 +15,22 @@
  * limitations under the License.
  */
 
-package auth
+package dao
 
-import (
-	"net/http"
-)
+import "context"
 
-type Auth interface {
-	Identify(r *http.Request) error
+//TODO save to etcd
+//TODO now simply write dead code "*" to map all other API except account and role to service, should define resource for every API in future
+var resourceMap = map[string]string{
+	"/v4/account": "account",
+	"/v4/role":    "account",
+	"*":           "service",
+}
+
+func GetResource(ctx context.Context, API string) string {
+	r, ok := resourceMap[API]
+	if !ok {
+		return resourceMap["*"]
+	}
+	return r
 }

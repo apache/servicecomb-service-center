@@ -15,12 +15,28 @@
  * limitations under the License.
  */
 
-package auth
+package rbac_test
 
 import (
-	"net/http"
+	"context"
+	"github.com/apache/servicecomb-service-center/server/service/rbac"
+	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
-type Auth interface {
-	Identify(r *http.Request) error
+func TestAllow(t *testing.T) {
+	t.Run("admin can operate any resource", func(t *testing.T) {
+		ok, _ := rbac.Allow(context.TODO(), "admin", "default", "account", "create")
+		assert.True(t, ok)
+		ok, _ = rbac.Allow(context.TODO(), "admin", "default", "service", "create")
+		assert.True(t, ok)
+	})
+	t.Run("developer can not operate account", func(t *testing.T) {
+		ok, _ := rbac.Allow(context.TODO(), "developer", "default", "account", "create")
+		assert.False(t, ok)
+	})
+	t.Run("developer can not operate service", func(t *testing.T) {
+		ok, _ := rbac.Allow(context.TODO(), "developer", "default", "service", "create")
+		assert.True(t, ok)
+	})
 }

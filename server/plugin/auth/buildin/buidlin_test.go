@@ -18,17 +18,21 @@
 package buildin_test
 
 import (
+	"context"
+	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
-	"github.com/apache/servicecomb-service-center/server/plugin/auth"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth/buildin"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery/etcd"
 	etcd2 "github.com/apache/servicecomb-service-center/server/plugin/registry/etcd"
 	plain "github.com/apache/servicecomb-service-center/server/plugin/security/buildin"
 	"github.com/apache/servicecomb-service-center/server/plugin/tracing/pzipkin"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
+	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 	"github.com/astaxie/beego"
 	"github.com/go-chassis/go-archaius"
+	"github.com/go-chassis/go-chassis/security/authr"
 	"github.com/go-chassis/go-chassis/security/secret"
+	"github.com/go-chassis/go-chassis/server/restful"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
@@ -49,6 +53,8 @@ func init() {
 
 }
 func TestTokenAuthenticator_Identify(t *testing.T) {
+	dao.DeleteAccount(context.TODO(), "root")
+	dao.DeleteAccount(context.TODO(), "non-admin")
 	t.Run("init rbac", func(t *testing.T) {
 		err := archaius.Init(archaius.WithMemorySource(), archaius.WithENVSource())
 		assert.NoError(t, err)
@@ -69,8 +75,46 @@ func TestTokenAuthenticator_Identify(t *testing.T) {
 	})
 	a := buildin.New()
 	ta := a.(*buildin.TokenAuthenticator)
-	r := httptest.NewRequest(http.MethodGet, "/any", nil)
-	err := ta.Identify(r)
-	t.Log(err)
-	assert.Equal(t, auth.ErrNoHeader, err)
+
+	t.Run("without auth header should failed", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodGet, "/any", nil)
+		err := ta.Identify(r)
+		t.Log(err)
+		assert.Equal(t, rbacframe.ErrNoHeader, err)
+	})
+
+	t.Run("with wrong auth header should failed", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodGet, "/any", nil)
+		r.Header.Set(restful.HeaderAuth, "Bear")
+		err := ta.Identify(r)
+		t.Log(err)
+		assert.Equal(t, rbacframe.ErrInvalidHeader, err)
+	})
+
+	t.Run("with valid header and invalid token, should failed", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodGet, "/any", nil)
+		r.Header.Set(restful.HeaderAuth, "Bear fake_token")
+		err := ta.Identify(r)
+		t.Log(err)
+		assert.Error(t, err)
+	})
+	t.Run("valid admin token, should be able to operate account", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodGet, "/v4/account", nil)
+		to, err := authr.Login(context.TODO(), "root", "root")
+		assert.NoError(t, err)
+		r.Header.Set(restful.HeaderAuth, "Bear "+to)
+		err = ta.Identify(r)
+		assert.NoError(t, err)
+	})
+	t.Run("valid normal token, should no be able to operate account", func(t *testing.T) {
+		err := dao.CreateAccount(context.TODO(), &rbacframe.Account{Name: "non-admin", Password: "123", Role: "developer"})
+		assert.NoError(t, err)
+		r := httptest.NewRequest(http.MethodGet, "/v4/account", nil)
+		to, err := authr.Login(context.TODO(), "non-admin", "123")
+		assert.NoError(t, err)
+		r.Header.Set(restful.HeaderAuth, "Bear "+to)
+		err = ta.Identify(r)
+		t.Log(err)
+		assert.Error(t, err)
+	})
 }

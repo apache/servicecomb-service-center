@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-package auth
+package errors
 
-import (
-	"net/http"
+const (
+	ErrMsgJSON = "json is invalid"
+
+	ErrMsgCreateAccount = "create account failed"
+	ErrMsgRolePerm      = "check role permissions failed"
+	ErrMsgNoPerm        = "no permission to operate"
 )
-
-type Auth interface {
-	Identify(r *http.Request) error
-}
