@@ -279,13 +279,6 @@ func (m *PublishPactRequest) GetConsumerId() string {
 	return ""
 }
 
-func (m *PublishPactRequest) GetVersion() string {
-	if m != nil {
-		return m.Version
-	}
-	return ""
-}
-
 func (m *PublishPactRequest) GetPact() []byte {
 	if m != nil {
 		return m.Pact
@@ -301,13 +294,6 @@ func (m *PublishPactResponse) Reset()                    { *m = PublishPactRespo
 func (m *PublishPactResponse) String() string            { return proto.CompactTextString(m) }
 func (*PublishPactResponse) ProtoMessage()               {}
 func (*PublishPactResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{6} }
-
-func (m *PublishPactResponse) GetResponse() *proto1.Response {
-	if m != nil {
-		return m.Response
-	}
-	return nil
-}
 
 type GetAllProviderPactsRequest struct {
 	ProviderId string             `protobuf:"bytes,1,opt,name=providerId" json:"providerId,omitempty"`
@@ -383,13 +369,6 @@ func (m *GetAllProviderPactsResponse) String() string            { return proto.
 func (*GetAllProviderPactsResponse) ProtoMessage()               {}
 func (*GetAllProviderPactsResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{10} }
 
-func (m *GetAllProviderPactsResponse) GetResponse() *proto1.Response {
-	if m != nil {
-		return m.Response
-	}
-	return nil
-}
-
 func (m *GetAllProviderPactsResponse) GetXLinks() *Links {
 	if m != nil {
 		return m.XLinks
@@ -425,13 +404,6 @@ func (m *GetProviderConsumerVersionPactRequest) GetConsumerId() string {
 	return ""
 }
 
-func (m *GetProviderConsumerVersionPactRequest) GetVersion() string {
-	if m != nil {
-		return m.Version
-	}
-	return ""
-}
-
 func (m *GetProviderConsumerVersionPactRequest) GetBaseUrl() *BaseBrokerRequest {
 	if m != nil {
 		return m.BaseUrl
@@ -451,13 +423,6 @@ func (m *GetProviderConsumerVersionPactResponse) String() string { return proto.
 func (*GetProviderConsumerVersionPactResponse) ProtoMessage()    {}
 func (*GetProviderConsumerVersionPactResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor0, []int{12}
-}
-
-func (m *GetProviderConsumerVersionPactResponse) GetResponse() *proto1.Response {
-	if m != nil {
-		return m.Response
-	}
-	return nil
 }
 
 func (m *GetProviderConsumerVersionPactResponse) GetPact() []byte {
@@ -709,13 +674,6 @@ func (m *PublishVerificationResponse) String() string            { return proto.
 func (*PublishVerificationResponse) ProtoMessage()               {}
 func (*PublishVerificationResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{19} }
 
-func (m *PublishVerificationResponse) GetResponse() *proto1.Response {
-	if m != nil {
-		return m.Response
-	}
-	return nil
-}
-
 func (m *PublishVerificationResponse) GetConfirmation() *VerificationDetail {
 	if m != nil {
 		return m.Confirmation
@@ -756,13 +714,6 @@ func (m *RetrieveVerificationResponse) Reset()                    { *m = Retriev
 func (m *RetrieveVerificationResponse) String() string            { return proto.CompactTextString(m) }
 func (*RetrieveVerificationResponse) ProtoMessage()               {}
 func (*RetrieveVerificationResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{21} }
-
-func (m *RetrieveVerificationResponse) GetResponse() *proto1.Response {
-	if m != nil {
-		return m.Response
-	}
-	return nil
-}
 
 func (m *RetrieveVerificationResponse) GetResult() *VerificationResult {
 	if m != nil {
@@ -845,13 +796,6 @@ func (m *BrokerHomeResponse) Reset()                    { *m = BrokerHomeRespons
 func (m *BrokerHomeResponse) String() string            { return proto.CompactTextString(m) }
 func (*BrokerHomeResponse) ProtoMessage()               {}
 func (*BrokerHomeResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{24} }
-
-func (m *BrokerHomeResponse) GetResponse() *proto1.Response {
-	if m != nil {
-		return m.Response
-	}
-	return nil
-}
 
 func (m *BrokerHomeResponse) GetXLinks() map[string]*BrokerAPIInfoEntry {
 	if m != nil {

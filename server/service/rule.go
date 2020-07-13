@@ -216,16 +216,16 @@ func (s *MicroServiceService) UpdateRule(ctx context.Context, in *pb.UpdateServi
 	oldRulePatten := copyRuleRef.Pattern
 	oldRuleAttr := copyRuleRef.Attribute
 	isChangeIndex := false
-	if copyRuleRef.Attribute != in.GetRule().Attribute {
+	if copyRuleRef.Attribute != in.Rule.Attribute {
 		isChangeIndex = true
-		copyRuleRef.Attribute = in.GetRule().Attribute
+		copyRuleRef.Attribute = in.Rule.Attribute
 	}
-	if copyRuleRef.Pattern != in.GetRule().Pattern {
+	if copyRuleRef.Pattern != in.Rule.Pattern {
 		isChangeIndex = true
-		copyRuleRef.Pattern = in.GetRule().Pattern
+		copyRuleRef.Pattern = in.Rule.Pattern
 	}
-	copyRuleRef.RuleType = in.GetRule().RuleType
-	copyRuleRef.Description = in.GetRule().Description
+	copyRuleRef.RuleType = in.Rule.RuleType
+	copyRuleRef.Description = in.Rule.Description
 	copyRuleRef.ModTimestamp = strconv.FormatInt(time.Now().Unix(), 10)
 
 	key := apt.GenerateServiceRuleKey(domainProject, in.ServiceId, in.RuleId)

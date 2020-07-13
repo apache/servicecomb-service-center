@@ -28,6 +28,8 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/service/kv"
+	stringutil "github.com/go-chassis/foundation/string"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var ErrDuplicated = errors.New("account is duplicated")
@@ -55,7 +57,12 @@ func CreateAccount(ctx context.Context, a *rbacframe.Account) error {
 	if exist {
 		return ErrDuplicated
 	}
-
+	hash, err := bcrypt.GenerateFromPassword([]byte(a.Password), 14)
+	if err != nil {
+		log.Errorf(err, "pwd hash failed")
+		return err
+	}
+	a.Password = stringutil.Bytes2str(hash)
 	value, err := json.Marshal(a)
 	if err != nil {
 		log.Errorf(err, "account info is invalid")
@@ -80,7 +87,7 @@ func GetAccount(ctx context.Context, name string) (*rbacframe.Account, error) {
 	a := &rbacframe.Account{}
 	err = json.Unmarshal(r.Value, a)
 	if err != nil {
-		log.Errorf(err, "account info is invalid")
+		log.Errorf(err, "account info is invalid format")
 		return nil, err
 	}
 	return a, nil

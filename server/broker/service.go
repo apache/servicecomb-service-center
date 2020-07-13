@@ -67,7 +67,7 @@ func (*Service) GetPactsOfProvider(ctx context.Context,
 		}
 		PactLogger.Errorf(err, "Get pacts of provider failed: %s\n", message)
 		return &brokerpb.GetProviderConsumerVersionPactResponse{
-			Response: resp.GetResponse(),
+			Response: resp.Response,
 		}, err
 	}
 
@@ -772,7 +772,7 @@ func (*Service) PublishPact(ctx context.Context, in *brokerpb.PublishPactRequest
 	}
 
 	// check that the consumer has that vesion in the url
-	if strings.Compare(consumer.GetVersion(), in.Version) != 0 {
+	if strings.Compare(consumer.Version, in.Version) != 0 {
 		log.Errorf(nil,
 			"pact publish failed, version (%s) does not exist for consmer", in.Version)
 		return &brokerpb.PublishPactResponse{

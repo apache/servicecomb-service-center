@@ -22,7 +22,6 @@ import (
 	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
-	"github.com/apache/servicecomb-service-center/server/service/cipher"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-chassis/go-chassis/security/authr"
@@ -44,15 +43,21 @@ func (a *EmbeddedAuthenticator) Login(ctx context.Context, user string, password
 	if user == "default" {
 		return "", ErrUnauthorized
 	}
+	exist, err := dao.AccountExist(ctx, user)
+	if err != nil {
+		log.Error("check account err", err)
+		return "", err
+	}
+	if !exist {
+		return "", ErrUnauthorized
+	}
 	account, err := dao.GetAccount(ctx, user)
 	if err != nil {
+		log.Error("get account err", err)
 		return "", err
 	}
-	account.Password, err = cipher.Decrypt(account.Password)
-	if err != nil {
-		return "", err
-	}
-	if user == account.Name && password == account.Password {
+	same := SamePassword(account.Password, password)
+	if user == account.Name && same {
 		secret, err := GetPrivateKey()
 		if err != nil {
 			return "", err

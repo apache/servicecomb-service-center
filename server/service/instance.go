@@ -63,7 +63,7 @@ func (s *InstanceService) preProcessRegisterInstance(ctx context.Context, instan
 	// 这里应该根据租约计时
 	renewalInterval := apt.RegistryDefaultLeaseRenewalinterval
 	retryTimes := apt.RegistryDefaultLeaseRetrytimes
-	if instance.GetHealthCheck() == nil {
+	if instance.HealthCheck == nil {
 		instance.HealthCheck = &pb.HealthCheck{
 			Mode:     pb.CHECK_BY_HEARTBEAT,
 			Interval: renewalInterval,
@@ -103,7 +103,7 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 		}, nil
 	}
 
-	instance := in.GetInstance()
+	instance := in.Instance
 
 	//允许自定义id
 	if len(instance.InstanceId) > 0 {
@@ -119,7 +119,7 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 			log.Infof("register instance successful, reuse instance[%s/%s], operator %s",
 				instance.ServiceId, instance.InstanceId, remoteIP)
 			return &pb.RegisterInstanceResponse{
-				Response:   resp.GetResponse(),
+				Response:   resp.Response,
 				InstanceId: instance.InstanceId,
 			}, nil
 		case scerr.ErrInstanceNotExists:
@@ -128,7 +128,7 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 			log.Errorf(err, "register instance failed, reuse instance[%s/%s], operator %s",
 				instance.ServiceId, instance.InstanceId, remoteIP)
 			return &pb.RegisterInstanceResponse{
-				Response: resp.GetResponse(),
+				Response: resp.Response,
 			}, err
 		}
 	}
@@ -746,11 +746,11 @@ func (s *InstanceService) batchFindServices(ctx context.Context, in *pb.BatchFin
 		if err != nil {
 			return nil, err
 		}
-		failed, ok := failedResult[resp.GetResponse().GetCode()]
-		serviceUtil.AppendFindResponse(findCtx, int64(index), resp.GetResponse(), resp.GetInstances(),
+		failed, ok := failedResult[resp.Response.GetCode()]
+		serviceUtil.AppendFindResponse(findCtx, int64(index), resp.Response, resp.Instances,
 			&services.Updated, &services.NotModified, &failed)
 		if !ok && failed != nil {
-			failedResult[resp.GetResponse().GetCode()] = failed
+			failedResult[resp.Response.GetCode()] = failed
 		}
 	}
 	for _, result := range failedResult {
@@ -779,11 +779,11 @@ func (s *InstanceService) batchFindInstances(ctx context.Context, in *pb.BatchFi
 		if err != nil {
 			return nil, err
 		}
-		failed, ok := failedResult[resp.GetResponse().GetCode()]
-		serviceUtil.AppendFindResponse(getCtx, int64(index), resp.GetResponse(), []*pb.MicroServiceInstance{resp.GetInstance()},
+		failed, ok := failedResult[resp.Response.GetCode()]
+		serviceUtil.AppendFindResponse(getCtx, int64(index), resp.Response, []*pb.MicroServiceInstance{resp.Instance},
 			&instances.Updated, &instances.NotModified, &failed)
 		if !ok && failed != nil {
-			failedResult[resp.GetResponse().GetCode()] = failed
+			failedResult[resp.Response.GetCode()] = failed
 		}
 	}
 	for _, result := range failedResult {

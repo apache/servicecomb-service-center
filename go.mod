@@ -75,6 +75,7 @@ require (
 	go.etcd.io/bbolt v1.3.4 // indirect
 	go.etcd.io/etcd v3.3.22+incompatible
 	go.uber.org/zap v1.10.0
+	golang.org/x/crypto v0.0.0-20190820162420-60c769a6c586
 	google.golang.org/grpc v1.19.0
 	gopkg.in/cheggaaa/pb.v1 v1.0.28 // indirect
 	gopkg.in/karlseguin/expect.v1 v1.0.1 // indirect
