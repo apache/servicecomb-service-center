@@ -91,7 +91,7 @@ func TestInitRBAC(t *testing.T) {
 	t.Run("change self password", func(t *testing.T) {
 		err := dao.CreateAccount(context.Background(), &rbacframe.Account{Name: "b", Password: "Complicated_password1"})
 		assert.NoError(t, err)
-		err = rbac.ChangePassword(context.Background(), "", "b", &rbacframe.Account{CurrentPassword: "Complicated_password1", Password: "Complicated_password2"})
+		err = rbac.ChangePassword(context.Background(), "", "b", &rbacframe.Account{Name: "b", CurrentPassword: "Complicated_password1", Password: "Complicated_password2"})
 		assert.NoError(t, err)
 		a, err := dao.GetAccount(context.Background(), "b")
 		assert.NoError(t, err)

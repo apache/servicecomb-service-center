@@ -72,12 +72,25 @@ func TestAuthResource_Login(t *testing.T) {
 		rest.GetRouter().ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
-	t.Run("dev_account login", func(t *testing.T) {
+	t.Run("invalid password", func(t *testing.T) {
+		b, _ := json.Marshal(&rbacframe.Account{Name: "root", Password: "Complicated_password"})
+
+		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
+		w := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+	})
+	t.Run("dev_account login and change pwd", func(t *testing.T) {
 		b, _ := json.Marshal(&rbacframe.Account{Name: "dev_account", Password: "Complicated_password1"})
 
 		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
 		w := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
+		jsonbody := w.Body.Bytes()
+		to := &rbacframe.Token{}
+		json.Unmarshal(jsonbody, to)
+
 	})
+
 }

@@ -37,8 +37,8 @@ func init() {
 	createAccountValidator.AddRule("Role", &validate.Rule{Regexp: roleRegex})
 	createAccountValidator.AddRule("Password", &validate.Rule{Regexp: &validate.PasswordChecker{}})
 
-	changePWDValidator.AddRule("CurrentPassword", &validate.Rule{Min: 8})
 	changePWDValidator.AddRule("Password", &validate.Rule{Regexp: &validate.PasswordChecker{}})
+	changePWDValidator.AddRule("Name", &validate.Rule{Regexp: accountRegex})
 }
 func Validate(v interface{}) error {
 	err := baseCheck(v)
