@@ -28,18 +28,18 @@ import (
 )
 
 func ChangePassword(ctx context.Context, changerRole, changerName string, a *rbacframe.Account) error {
-	if a.Name != "" {
-		if changerRole != rbacframe.RoleAdmin { //need to check password mismatch. but admin role can change any user password without supply current password
-			log.Error("can not change other account pwd", nil)
-			return ErrNoPermChangeAccount
+	if changerName == a.Name {
+		if a.CurrentPassword == "" {
+			log.Error("current pwd is empty", nil)
+			return ErrEmptyCurrentPassword
 		}
-		return changePasswordForcibly(ctx, a.Name, a.Password)
+		return changePassword(ctx, changerName, a.CurrentPassword, a.Password)
 	}
-	if a.CurrentPassword == "" {
-		log.Error("current pwd is empty", nil)
-		return ErrEmptyCurrentPassword
+	if changerRole != rbacframe.RoleAdmin { //need to check password mismatch. but admin role can change any user password without supply current password
+		log.Error("can not change other account pwd", nil)
+		return ErrNoPermChangeAccount
 	}
-	return changePassword(ctx, changerName, a.CurrentPassword, a.Password)
+	return changePasswordForcibly(ctx, a.Name, a.Password)
 
 }
 func changePasswordForcibly(ctx context.Context, name, pwd string) error {
@@ -65,7 +65,7 @@ func changePassword(ctx context.Context, name, currentPassword, pwd string) erro
 	}
 	same := SamePassword(old.Password, currentPassword)
 	if !same {
-		log.Error("current pwd is wrong", nil)
+		log.Error("current password is wrong", nil)
 		return ErrWrongPassword
 	}
 	err = doChangePassword(ctx, old, pwd)

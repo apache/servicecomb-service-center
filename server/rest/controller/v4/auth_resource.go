@@ -42,7 +42,7 @@ func (r *AuthResource) URLPatterns() []rest.Route {
 	return []rest.Route{
 		{Method: http.MethodPost, Path: "/v4/token", Func: r.Login},
 		{Method: http.MethodPost, Path: "/v4/account", Func: r.CreateAccount},
-		{Method: http.MethodPut, Path: "/v4/reset-password", Func: r.ChangePassword},
+		{Method: http.MethodPost, Path: "/v4/account/:name/password", Func: r.ChangePassword},
 	}
 }
 func (r *AuthResource) CreateAccount(w http.ResponseWriter, req *http.Request) {
@@ -87,6 +87,7 @@ func (r *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request) 
 		controller.WriteError(w, scerror.ErrInvalidParams, errorsEx.ErrMsgJSON)
 		return
 	}
+	a.Name = req.URL.Query().Get(":name")
 	err = service.ValidateChangePWD(a)
 	if err != nil {
 		controller.WriteError(w, scerror.ErrInvalidParams, err.Error())
