@@ -42,7 +42,7 @@ func (r *AuthResource) URLPatterns() []rest.Route {
 	return []rest.Route{
 		{Method: http.MethodPost, Path: "/v4/token", Func: r.Login},
 		{Method: http.MethodPost, Path: "/v4/account", Func: r.CreateAccount},
-		{Method: http.MethodPut, Path: "/v4/account-password", Func: r.ChangePassword},
+		{Method: http.MethodPut, Path: "/v4/reset-password", Func: r.ChangePassword},
 	}
 }
 func (r *AuthResource) CreateAccount(w http.ResponseWriter, req *http.Request) {
@@ -65,6 +65,10 @@ func (r *AuthResource) CreateAccount(w http.ResponseWriter, req *http.Request) {
 	}
 	err = dao.CreateAccount(context.TODO(), a)
 	if err != nil {
+		if err == dao.ErrDuplicated {
+			controller.WriteError(w, scerror.ErrConflictAccount, "")
+			return
+		}
 		log.Error(errorsEx.ErrMsgCreateAccount, err)
 		controller.WriteError(w, scerror.ErrInternal, errorsEx.ErrMsgCreateAccount)
 		return
@@ -95,6 +99,12 @@ func (r *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request) 
 	}
 	err = rbac.ChangePassword(context.TODO(), changer.Role, changer.Name, a)
 	if err != nil {
+		if err == rbac.ErrSamePassword ||
+			err == rbac.ErrWrongPassword || err == rbac.ErrEmptyCurrentPassword ||
+			err == rbac.ErrNoPermChangeAccount {
+			controller.WriteError(w, scerror.ErrInvalidParams, err.Error())
+			return
+		}
 		log.Error("change password failed", err)
 		controller.WriteError(w, scerror.ErrInternal, err.Error())
 		return

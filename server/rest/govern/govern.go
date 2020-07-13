@@ -19,21 +19,10 @@ package govern
 
 import (
 	roa "github.com/apache/servicecomb-service-center/pkg/rest"
-	"github.com/apache/servicecomb-service-center/pkg/rpc"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
-	"google.golang.org/grpc"
 )
 
 func init() {
-	registerGRPC()
-
 	registerREST()
-}
-
-func registerGRPC() {
-	rpc.RegisterService(func(s *grpc.Server) {
-		pb.RegisterGovernServiceCtrlServer(s, ServiceAPI)
-	})
 }
 
 func registerREST() {

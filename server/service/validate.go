@@ -32,7 +32,7 @@ var changePWDValidator = &validate.Validator{}
 
 func init() {
 	var roleRegex, _ = regexp.Compile(`^$|^(admin|developer)$`)
-	var accountRegex, _ = regexp.Compile(`^[a-zA-Z]\w{5,15}$`)
+	var accountRegex, _ = regexp.Compile(`^[a-zA-Z]\w{3,15}$`)
 	createAccountValidator.AddRule("Name", &validate.Rule{Regexp: accountRegex})
 	createAccountValidator.AddRule("Role", &validate.Rule{Regexp: roleRegex})
 	createAccountValidator.AddRule("Password", &validate.Rule{Regexp: &validate.PasswordChecker{}})

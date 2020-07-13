@@ -20,12 +20,14 @@ rbac_rsa_private_key_file = ./private.key # rsa key pairs
 auth_plugin = buildin # must set to buildin
 ```
 3.root account
+
 before you start server, you need to set env to set your root account password.  
 
 ```sh
 export SC_INIT_ROOT_PASSWORD=rootpwd
 ```
-at the first time service center cluster init, it will use this env to setup rbac module. you can not revoke password after cluster start
+at the first time service center cluster init, it will use this password to setup rbac module. 
+you can revoke password by rest API after cluster started. but you can not use this env to revoke password after cluster started.
 
 the root account name is "root"
 
@@ -47,21 +49,21 @@ will return a token, token will expired after 30m
 ### Authentication
 in each request you must add token to  http header:
 ```
-Authorization: Bear {token}
+Authorization: Bearer {token}
 ```
 for example:
 ```shell script
 curl -X GET \
   'http://127.0.0.1:30100/v4/default/registry/microservices/{service-id}/instances' \
-  -H 'Authorization: Bear eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1OTI4OTQ1NTEsInVzZXIiOiJyb290In0.FfLOSvVmHT9qCZSe_6iPf4gNjbXLwCrkXxKHsdJoQ8w' 
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1OTI4OTQ1NTEsInVzZXIiOiJyb290In0.FfLOSvVmHT9qCZSe_6iPf4gNjbXLwCrkXxKHsdJoQ8w' 
 ```
 
 ### Change password
 You must supply current password and token to update to new password
 ```shell script
 curl -X PUT \
-  http://127.0.0.1:30100/v4/account-password \
-  -H 'Authorization: Bear {your_token}' \
+  http://127.0.0.1:30100/v4/reset-password \
+  -H 'Authorization: Bearer {your_token}' \
   -d '{
 	"currentPassword":"rootpwd",
 	"password":"123"
@@ -73,7 +75,7 @@ curl -X PUT \
 curl -X POST \
   http://127.0.0.1:30100/v4/account \
   -H 'Accept: */*' \
-  -H 'Authorization: Bear {your_token}' \
+  -H 'Authorization: Bearer {your_token}' \
   -H 'Content-Type: application/json' \
   -d '{
 	"name":"peter",
@@ -85,4 +87,4 @@ curl -X POST \
 ### Roles 
 currently, you can not custom and manage any role and role policy. there is only 2 build in roles. rbac feature is in early development stage.
 - admin: able to do anything, including manage account, even change other account password
-- service: able to call most of API except account management.
+- developer: able to call most of API except account management. except account management

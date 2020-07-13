@@ -60,7 +60,7 @@ func (governService *ResourceV4) GetGraph(w http.ResponseWriter, r *http.Request
 		controller.WriteError(w, scerr.ErrInternal, err.Error())
 		return
 	}
-	services := resp.GetServices()
+	services := resp.Services
 	if len(services) <= 0 {
 		return
 	}
