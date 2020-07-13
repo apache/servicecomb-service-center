@@ -131,5 +131,5 @@ Since client is not a service, we check its running log.
    2018/09/29 10:30:25 AddEmploy ------------------------------ employList:<name:"One" phone:"15989351111" >
 
 
-.. _Multiple Datacenters: multidcs.rst
+.. _Multiple Datacenters: https://service-center.readthedocs.io/en/latest/dev-guides/multidcs.html
 .. _here: https://github.com/apache/servicecomb-service-center/tree/master/scctl/examples/infrastructures/k8s

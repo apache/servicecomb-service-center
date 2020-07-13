@@ -18,7 +18,7 @@
 
 ### Step 1: code auth.go
 
-auth.go is the implement from [auth interface](https://github.com/apache/servicecomb-service-center/blob/master/server/plugin/pkg/auth/auth.go)
+auth.go is the implement from [auth interface](https://github.com/apache/servicecomb-service-center/blob/master/server/plugin/auth/auth.go)
 
 ```go
 package main
