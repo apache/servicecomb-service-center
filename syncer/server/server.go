@@ -40,7 +40,6 @@ import (
 
 	// import plugins
 	_ "github.com/apache/servicecomb-service-center/syncer/plugins/eureka"
-	_ "github.com/apache/servicecomb-service-center/syncer/plugins/servicecenter"
 
 	// import task
 	_ "github.com/apache/servicecomb-service-center/syncer/task/idle"

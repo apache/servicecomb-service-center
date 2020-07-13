@@ -48,6 +48,7 @@ var errors = map[int32]string{
 	ErrUnavailableQuota:        "Quota service is unavailable",
 	ErrEndpointAlreadyExists:   "Endpoint is already belong to other service",
 	ErrForbidden:               "Forbidden",
+	ErrConflictAccount:         "account name is duplicated",
 }
 
 const (
@@ -70,11 +71,16 @@ const (
 	ErrEndpointAlreadyExists   int32 = 400025
 	ErrServiceVersionNotExists int32 = 400026
 	ErrNotEnoughQuota          int32 = 400100
-	ErrUnauthorized            int32 = 401002
-	ErrForbidden               int32 = 403001
-	ErrInternal                int32 = 500003
-	ErrUnavailableBackend      int32 = 500011
-	ErrUnavailableQuota        int32 = 500101
+
+	ErrUnauthorized int32 = 401002
+
+	ErrForbidden int32 = 403001
+
+	ErrConflictAccount int32 = 409001
+
+	ErrInternal           int32 = 500003
+	ErrUnavailableBackend int32 = 500011
+	ErrUnavailableQuota   int32 = 500101
 )
 
 type Error struct {

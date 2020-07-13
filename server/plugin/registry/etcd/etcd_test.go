@@ -25,22 +25,18 @@ import _ "github.com/apache/servicecomb-service-center/server/plugin/tls/buildin
 import (
 	context2 "context"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
-	"github.com/apache/servicecomb-service-center/server/rpc"
 
 	"context"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/etcdserver/etcdserverpb"
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"google.golang.org/grpc/status"
 )
 
 const (
@@ -853,36 +849,4 @@ func TestNewRegistry(t *testing.T) {
 		// should be err, member list does not contain one of the endpoints.
 		t.Fatalf("TestEtcdClient failed, %#v", err)
 	}
-}
-
-func TestWithTLS(t *testing.T) {
-	sslRoot := "../../../../examples/service_center/ssl/"
-	os.Setenv("SSL_ROOT", sslRoot)
-
-	core.ServerInfo.Config.SslEnabled = true
-	registry.Configuration().SslEnabled = true
-	defer func() {
-		core.ServerInfo.Config.SslEnabled = false
-		registry.Configuration().SslEnabled = false
-		os.Setenv("SSL_ROOT", "")
-	}()
-
-	svr, err := rpc.NewServer("127.0.0.1:0")
-	go func() {
-		svr.Serve()
-	}()
-	defer svr.Stop()
-
-	etcd := &Client{
-		DialTimeout: dialTimeout,
-		Endpoints:   []string{svr.Listener.Addr().String()},
-	}
-
-	err = etcd.Initialize()
-	// initialize the etcd client will check member list firstly,
-	// so will raise an grpc error but not TLS errors.
-	if _, ok := status.FromError(err); !ok {
-		t.Fatalf("TestEtcdClient failed, %#v", err)
-	}
-	defer etcd.Close()
 }

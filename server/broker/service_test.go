@@ -67,7 +67,7 @@ var _ = Describe("Controller", func() {
 
 				Expect(err).To(BeNil())
 				consumerServiceId = resp.ServiceId
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 
 				//(2) create provider service
 				resp, err = core.ServiceAPI.Create(getContext(), &pb.CreateServiceRequest{
@@ -85,7 +85,7 @@ var _ = Describe("Controller", func() {
 				})
 				Expect(err).To(BeNil())
 				providerServiceId = resp.ServiceId
-				Expect(resp.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
 
 				//(3) publish a pact between two services
 				respPublishPact, err := brokerResource.PublishPact(getContext(),
@@ -97,7 +97,7 @@ var _ = Describe("Controller", func() {
 					})
 
 				Expect(err).To(BeNil())
-				Expect(respPublishPact.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respPublishPact.Response.Code).To(Equal(pb.Response_SUCCESS))
 			})
 
 			It("PublishPact-noProviderServiceId", func() {
@@ -111,7 +111,7 @@ var _ = Describe("Controller", func() {
 					Pact:       []byte("hello"),
 				})
 
-				Expect(respPublishPact.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respPublishPact.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("PublishPact-noConumerServiceId", func() {
@@ -125,7 +125,7 @@ var _ = Describe("Controller", func() {
 					Pact:       []byte("hello"),
 				})
 
-				Expect(respPublishPact.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respPublishPact.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("PublishPact-noConumerVersion", func() {
@@ -139,7 +139,7 @@ var _ = Describe("Controller", func() {
 					Pact:       []byte("hello"),
 				})
 
-				Expect(respPublishPact.GetResponse().Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respPublishPact.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
 			})
 
 			It("GetBrokerHome", func() {
@@ -166,7 +166,7 @@ var _ = Describe("Controller", func() {
 						}})
 
 				Expect(respGetAllProviderPacts).NotTo(BeNil())
-				Expect(respGetAllProviderPacts.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respGetAllProviderPacts.Response.Code).To(Equal(pb.Response_SUCCESS))
 			})
 
 			It("GetBrokerPactsOfProvider", func() {
@@ -183,7 +183,7 @@ var _ = Describe("Controller", func() {
 						}})
 
 				Expect(respGetAllProviderPacts).NotTo(BeNil())
-				Expect(respGetAllProviderPacts.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respGetAllProviderPacts.Response.Code).To(Equal(pb.Response_SUCCESS))
 			})
 
 			It("PublishVerificationResults", func() {
@@ -200,7 +200,7 @@ var _ = Describe("Controller", func() {
 					})
 
 				Expect(respResults).NotTo(BeNil())
-				Expect(respResults.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respResults.Response.Code).To(Equal(pb.Response_SUCCESS))
 			})
 
 			It("RetrieveVerificationResults", func() {
@@ -213,7 +213,7 @@ var _ = Describe("Controller", func() {
 					})
 
 				Expect(respVerification).NotTo(BeNil())
-				Expect(respVerification.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respVerification.Response.Code).To(Equal(pb.Response_SUCCESS))
 			})
 
 			It("RetrieveProviderPacts", func() {
@@ -229,7 +229,7 @@ var _ = Describe("Controller", func() {
 					})
 
 				Expect(respProviderPact).NotTo(BeNil())
-				Expect(respProviderPact.GetResponse().Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respProviderPact.Response.Code).To(Equal(pb.Response_SUCCESS))
 			})
 		})
 	})

@@ -69,7 +69,7 @@ func TestTokenAuthenticator_Identify(t *testing.T) {
 		err = ioutil.WriteFile("./rbac.pub", b, 0600)
 		assert.NoError(t, err)
 
-		archaius.Set(rbac.InitPassword, "root")
+		archaius.Set(rbac.InitPassword, "Complicated_password1")
 
 		rbac.Init()
 	})
@@ -100,17 +100,17 @@ func TestTokenAuthenticator_Identify(t *testing.T) {
 	})
 	t.Run("valid admin token, should be able to operate account", func(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "/v4/account", nil)
-		to, err := authr.Login(context.TODO(), "root", "root")
+		to, err := authr.Login(context.TODO(), "root", "Complicated_password1")
 		assert.NoError(t, err)
 		r.Header.Set(restful.HeaderAuth, "Bear "+to)
 		err = ta.Identify(r)
 		assert.NoError(t, err)
 	})
 	t.Run("valid normal token, should no be able to operate account", func(t *testing.T) {
-		err := dao.CreateAccount(context.TODO(), &rbacframe.Account{Name: "non-admin", Password: "123", Role: "developer"})
+		err := dao.CreateAccount(context.TODO(), &rbacframe.Account{Name: "non-admin", Password: "Complicated_password1", Role: "developer"})
 		assert.NoError(t, err)
 		r := httptest.NewRequest(http.MethodGet, "/v4/account", nil)
-		to, err := authr.Login(context.TODO(), "non-admin", "123")
+		to, err := authr.Login(context.TODO(), "non-admin", "Complicated_password1")
 		assert.NoError(t, err)
 		r.Header.Set(restful.HeaderAuth, "Bear "+to)
 		err = ta.Identify(r)

@@ -10,12 +10,11 @@ It provides out of box support for metrics and tracing. It has a web portal to m
 # Components
 - server: a http server which provide restful API
 - scctl: CLI of server
-- syncer: multiple service centers cluster synchronization tool, designed for large microservice architectures
+- syncer: alpha feature. multiple cluster synchronization tool, designed for large microservice architectures
 
 ## Features
  - **[`Open API`](/server/core/swagger/v4.yaml)**: API doc(Open API format) management for microservice
  - **Metadata**: Metadata management for both microservice and microservice instance
- - **Dependency**: Microservice dependency management
  - **Separated**: Separated microservice and microservice instance entity management
  - **Domains**: Logical multiple domains management
  - **Security**: White and black list configuration for service discovery

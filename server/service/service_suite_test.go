@@ -62,5 +62,4 @@ func TestRegisterGrpcServices(t *testing.T) {
 	defer func() {
 		recover()
 	}()
-	service.RegisterGrpcServices(nil)
 }

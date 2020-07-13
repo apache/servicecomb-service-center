@@ -65,7 +65,7 @@ func (s *MicroServiceInstanceService) RegisterInstance(w http.ResponseWriter, r 
 		controller.WriteError(w, scerr.ErrInvalidParams, "Unmarshal error")
 		return
 	}
-	if request.GetInstance() != nil {
+	if request.Instance != nil {
 		request.Instance.ServiceId = r.URL.Query().Get(":serviceId")
 	}
 

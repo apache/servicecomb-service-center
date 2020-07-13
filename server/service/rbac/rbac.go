@@ -23,6 +23,7 @@ import (
 	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
+	"github.com/apache/servicecomb-service-center/server/service"
 	"github.com/apache/servicecomb-service-center/server/service/cipher"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 	"github.com/astaxie/beego"
@@ -39,8 +40,10 @@ const (
 )
 
 var (
-	ErrInputCurrentPassword = errors.New("current password should not be empty")
-	ErrInputChangeAccount   = errors.New("can not change other account password")
+	ErrEmptyCurrentPassword = errors.New("current password should not be empty")
+	ErrNoPermChangeAccount  = errors.New("can not change other account password")
+	ErrWrongPassword        = errors.New("current pwd is wrong")
+	ErrSamePassword         = errors.New("the password can not be same as old one")
 )
 
 //Init decide whether enable rbac function and save root account to db
@@ -104,11 +107,17 @@ func initFirstTime(admin string) {
 	if pwd == "" {
 		log.Fatal("can not enable rbac, password is empty", nil)
 	}
-	if err := dao.CreateAccount(context.Background(), &rbacframe.Account{
+	a := &rbacframe.Account{
 		Name:     admin,
 		Password: pwd,
 		Role:     rbacframe.RoleAdmin,
-	}); err != nil {
+	}
+	err := service.ValidateCreateAccount(a)
+	if err != nil {
+		log.Fatal("invalid pwd", err)
+		return
+	}
+	if err := dao.CreateAccount(context.Background(), a); err != nil {
 		if err == dao.ErrDuplicated {
 			log.Info("rbac is enabled")
 			return
@@ -128,21 +137,18 @@ func PublicKey() string {
 }
 
 //privateKey get decrypted private key to verify a token
-func privateKey() (string, error) {
+func privateKey() string {
 	ep := archaius.GetString("rbac_private_key", "")
 	p, err := cipher.Decrypt(ep)
 	if err != nil {
-		return "", err
+		return ep
 	}
-	return p, nil
+	return p
 }
 
 //GetPrivateKey return rsa key instance
 func GetPrivateKey() (*rsa.PrivateKey, error) {
-	sk, err := privateKey()
-	if err != nil {
-		return nil, err
-	}
+	sk := privateKey()
 	p, err := secret.ParseRSAPrivateKey(sk)
 	if err != nil {
 		log.Error("can not get key:", err)

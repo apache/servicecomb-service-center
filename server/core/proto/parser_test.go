@@ -17,6 +17,7 @@
 package proto
 
 import (
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
@@ -86,17 +87,17 @@ func TestParseValueTypeFunc(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ServiceParser.Unmarshal failed, %s", err.Error())
 	}
-	if v, ok := r.(*MicroService); !ok || v.ServiceName != "abc" {
-		t.Fatalf("ServiceParser.Unmarshal failed, %s", v)
-	}
+	v, ok := r.(*MicroService)
+	assert.True(t, ok)
+	assert.Equal(t, "abc", v.ServiceName)
 
 	r, err = InstanceParser.Unmarshal([]byte(`{"hostName": "abc"}`))
 	if err != nil {
 		t.Fatalf("InstanceParser.Unmarshal failed, %s", err.Error())
 	}
-	if v, ok := r.(*MicroServiceInstance); !ok || v.HostName != "abc" {
-		t.Fatalf("InstanceParser.Unmarshal failed, %s", v)
-	}
+	mi, ok := r.(*MicroServiceInstance)
+	assert.True(t, ok)
+	assert.Equal(t, "abc", mi.HostName)
 
 	r, err = RuleParser.Unmarshal([]byte(`{"ruleId": "abc"}`))
 	if err != nil {
@@ -110,7 +111,7 @@ func TestParseValueTypeFunc(t *testing.T) {
 	if err != nil {
 		t.Fatalf("DependencyRuleParser.Unmarshal failed, %s", err.Error())
 	}
-	if v, ok := r.(*MicroServiceDependency); !ok || v.Dependency[0].ServiceName != "zhqClient" {
-		t.Fatalf("DependencyRuleParser.Unmarshal failed, %s", v)
-	}
+	md, ok := r.(*MicroServiceDependency)
+	assert.True(t, ok)
+	assert.Equal(t, "zhqClient", md.Dependency[0].ServiceName)
 }
