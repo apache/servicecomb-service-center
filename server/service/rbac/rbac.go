@@ -137,21 +137,18 @@ func PublicKey() string {
 }
 
 //privateKey get decrypted private key to verify a token
-func privateKey() (string, error) {
+func privateKey() string {
 	ep := archaius.GetString("rbac_private_key", "")
 	p, err := cipher.Decrypt(ep)
 	if err != nil {
-		return "", err
+		return ep
 	}
-	return p, nil
+	return p
 }
 
 //GetPrivateKey return rsa key instance
 func GetPrivateKey() (*rsa.PrivateKey, error) {
-	sk, err := privateKey()
-	if err != nil {
-		return nil, err
-	}
+	sk := privateKey()
 	p, err := secret.ParseRSAPrivateKey(sk)
 	if err != nil {
 		log.Error("can not get key:", err)
