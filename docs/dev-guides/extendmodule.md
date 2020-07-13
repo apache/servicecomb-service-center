@@ -59,4 +59,4 @@ import _ "github.com/apache/servicecomb-service-center/server/hello"
 
 ## About GRPC module
 
-To see [govern](https://github.com/apache/servicecomb-service-center/tree/master/server/govern) module for help.
+To see [govern](https://github.com/apache/servicecomb-service-center/tree/master/server/rest/govern) module for help.

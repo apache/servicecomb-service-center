@@ -144,11 +144,11 @@ Since client is not a service, we check its running log.
    2018/09/29 10:30:25 AddEmploy ------------------------------ employList:<name:"One" phone:"15989351111" >
 
 
-.. _this: ../user-guides/sc-cluster.rst
-.. _scctl: ../intro/scctl.md
+.. _this: https://service-center.readthedocs.io/en/latest/user-guides/sc-cluster.html
+.. _scctl: https://service-center.readthedocs.io/en/latest/intro/scctl.html#scctl
 .. _cluster command: https://github.com/apache/servicecomb-service-center/blob/master/scctl/pkg/plugin/README.md#cluster-options
 .. _example: https://github.com/go-chassis/go-chassis/tree/master/examples/discovery
 .. _go-chassis: https://github.com/go-chassis/go-chassis
 .. _java-chassis: https://github.com/apache/servicecomb-java-chassis
-.. _here: multidcs2.rst
+.. _here: https://service-center.readthedocs.io/en/latest/dev-guides/multidcs2.html
 

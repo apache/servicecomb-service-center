@@ -140,9 +140,9 @@ Since ``springmvc-client`` is not a service, we check its running log.
    [2018-10-19 23:04:42,800/CST][main][INFO]............. test finished ............ org.apache.servicecomb.demo.TestMgr.summary(TestMgr.java:83)
 
 
-.. _multiple data center: multidcs.rst
+.. _multiple data center: https://service-center.readthedocs.io/en/latest/dev-guides/multidcs.html
 .. _java-chassis: https://github.com/apache/servicecomb-java-chassis
 .. _this: https://github.com/coreos/etcd/blob/master/Documentation/op-guide/container.md
-.. _scctl: ../scctl/README.md
+.. _scctl: https://service-center.readthedocs.io/en/latest/intro/scctl.html#scctl
 .. _cluster command: https://github.com/apache/servicecomb-service-center/tree/master/scctl/pkg/plugin/README.md#cluster-options
 .. _example: https://github.com/apache/servicecomb-java-chassis/tree/master/demo/demo-springmvc

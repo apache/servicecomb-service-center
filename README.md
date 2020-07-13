@@ -24,18 +24,18 @@ It provides out of box support for metrics and tracing. It has a web portal to m
  - **[`Portal`](/frontend)**: Awesome web portal
  - **Fault tolerance**: Multiple fault tolerance mechanism and design in the architecture
  - **Performance**: Performance/Caching design
- - **[`Metrics`](/docs/integration-grafana.md)**: Able to expose Prometheus metric API automatically
- - **[`Tracing`](/docs/tracing.md)**: Able to report tracing data to Zipkin server
- - **[`Pluginable`](/docs/plugin.md)**: Able to load custom authentication, tls and other dynamic libraries
- - **[`CLI`](/scctl/README.md)**: Easy to control service center
- - **[`Kubernetes`](/docs/kubeclusters.md)**: Embrace kubernetes ecosystem and support multi cluster service discovery
- - **[`Datacenters`](/docs/multidcs.md)**: Additional layer of abstraction to clusters deployed in multiple datacenters
- - **[`Aggregation`](/docs/aggregate.md)**: Able to aggregate microservices from multiple registry platforms and
+ - **[`Metrics`](/docs/user-guides/integration-grafana.md)**: Able to expose Prometheus metric API automatically
+ - **[`Tracing`](/docs/plugins-tracing/tracing.md)**: Able to report tracing data to Zipkin server
+ - **[`Pluginable`](/docs/design-guides/plugin.md)**: Able to load custom authentication, tls and other dynamic libraries
+ - **[`CLI`](/docs/intro/scctl.md)**: Easy to control service center
+ - **[`Kubernetes`](/docs/dev-guides/kubeclusters.rst)**: Embrace kubernetes ecosystem and support multi cluster service discovery
+ - **[`Datacenters`](/docs/dev-guides/multidcs.rst)**: Additional layer of abstraction to clusters deployed in multiple datacenters
+ - **[`Aggregation`](/docs/design-guides/aggregator-design.PNG)**: Able to aggregate microservices from multiple registry platforms and
     support platform registry and client side registry at the same time
 
 ## Documentation
 
-Project documentation is available on the [ServiceComb website][servicecomb-website]. You can also find full document [`here`](/docs/README.md).
+Project documentation is available on the [ServiceComb website][servicecomb-website]. You can also find full document [`here`](/docs).
 
 [servicecomb-website]: http://servicecomb.apache.org/
 
