@@ -19,19 +19,12 @@
 package test
 
 import (
-	mgr "github.com/apache/servicecomb-service-center/server/plugin"
-	"github.com/apache/servicecomb-service-center/server/plugin/discovery/etcd"
-	etcd2 "github.com/apache/servicecomb-service-center/server/plugin/registry/etcd"
-	plain "github.com/apache/servicecomb-service-center/server/plugin/security/buildin"
-	"github.com/apache/servicecomb-service-center/server/plugin/tracing/pzipkin"
+	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
+	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/astaxie/beego"
 )
 
 func init() {
 	beego.AppConfig.Set("registry_plugin", "etcd")
-	mgr.RegisterPlugin(mgr.Plugin{mgr.REGISTRY, "etcd", etcd2.NewRegistry})
-	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "buildin", etcd.NewRepository})
-	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "etcd", etcd.NewRepository})
-	mgr.RegisterPlugin(mgr.Plugin{mgr.CIPHER, "buildin", plain.New})
-	mgr.RegisterPlugin(mgr.Plugin{mgr.TRACING, "buildin", pzipkin.New})
+	core.ServerInfo.Config.MaxBodyBytes = 2097152
 }

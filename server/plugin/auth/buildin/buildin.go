@@ -50,7 +50,6 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 	if !rbacframe.MustAuth(req.URL.Path) {
 		return nil
 	}
-
 	v := req.Header.Get(restful.HeaderAuth)
 	if v == "" {
 		return rbacframe.ErrNoHeader

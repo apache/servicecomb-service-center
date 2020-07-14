@@ -12,12 +12,14 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-chassis/security/secret"
+	"github.com/go-chassis/go-chassis/server/restful"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	_ "github.com/apache/servicecomb-service-center/server/handler/auth"
 	_ "github.com/apache/servicecomb-service-center/test"
 )
 
@@ -80,17 +82,53 @@ func TestAuthResource_Login(t *testing.T) {
 		rest.GetRouter().ServeHTTP(w, r)
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
 	})
-	t.Run("dev_account login and change pwd", func(t *testing.T) {
+	t.Run("dev_account login and change pwd,then login again", func(t *testing.T) {
 		b, _ := json.Marshal(&rbacframe.Account{Name: "dev_account", Password: "Complicated_password1"})
 
 		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
 		w := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
-		jsonbody := w.Body.Bytes()
 		to := &rbacframe.Token{}
-		json.Unmarshal(jsonbody, to)
+		json.Unmarshal(w.Body.Bytes(), to)
+
+		b2, _ := json.Marshal(&rbacframe.Account{CurrentPassword: "Complicated_password1", Password: "Complicated_password2"})
+		r, _ = http.NewRequest(http.MethodPost, "/v4/account/dev_account/password", bytes.NewBuffer(b2))
+		r.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
+		w = httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		b3, _ := json.Marshal(&rbacframe.Account{Name: "dev_account", Password: "Complicated_password2"})
+		r, _ = http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b3))
+		w = httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+	t.Run("bock user dev_account", func(t *testing.T) {
+		b, _ := json.Marshal(&rbacframe.Account{Name: "dev_account", Password: "Complicated_password1"})
+
+		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
+		w := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+
+		r, _ = http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
+		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+
+		r, _ = http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
+		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+
+		r, _ = http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
+		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+
+		w = httptest.NewRecorder()
+		r, _ = http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
+		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusForbidden, w.Code)
 
 	})
-
 }
