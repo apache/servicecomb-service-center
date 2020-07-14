@@ -24,6 +24,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	"github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/server/service"
@@ -75,6 +76,12 @@ func (r *AuthResource) CreateAccount(w http.ResponseWriter, req *http.Request) {
 	}
 }
 func (r *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request) {
+	ip := util.GetRealIP(req)
+	if rbac.IsBanned(ip) {
+		log.Warn("ip is banned:" + ip)
+		controller.WriteError(w, scerror.ErrForbidden, "")
+		return
+	}
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		log.Error("read body err", err)
@@ -101,8 +108,13 @@ func (r *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request) 
 	err = rbac.ChangePassword(context.TODO(), changer.Role, changer.Name, a)
 	if err != nil {
 		if err == rbac.ErrSamePassword ||
-			err == rbac.ErrWrongPassword || err == rbac.ErrEmptyCurrentPassword ||
+			err == rbac.ErrEmptyCurrentPassword ||
 			err == rbac.ErrNoPermChangeAccount {
+			controller.WriteError(w, scerror.ErrInvalidParams, err.Error())
+			return
+		}
+		if err == rbac.ErrWrongPassword {
+			rbac.CountFailure(ip)
 			controller.WriteError(w, scerror.ErrInvalidParams, err.Error())
 			return
 		}
@@ -113,6 +125,12 @@ func (r *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request) 
 }
 
 func (r *AuthResource) Login(w http.ResponseWriter, req *http.Request) {
+	ip := util.GetRealIP(req)
+	if rbac.IsBanned(ip) {
+		log.Warn("ip is banned:" + ip)
+		controller.WriteError(w, scerror.ErrForbidden, "")
+		return
+	}
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		log.Error("read body err", err)
@@ -129,6 +147,7 @@ func (r *AuthResource) Login(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		if err == rbac.ErrUnauthorized {
 			log.Error("not authorized", err)
+			rbac.CountFailure(ip)
 			controller.WriteError(w, scerror.ErrUnauthorized, err.Error())
 			return
 		}

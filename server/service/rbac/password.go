@@ -92,5 +92,8 @@ func doChangePassword(ctx context.Context, old *rbacframe.Account, pwd string) e
 
 func SamePassword(hashedPwd, pwd string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hashedPwd), []byte(pwd))
+	if err == bcrypt.ErrMismatchedHashAndPassword {
+		log.Warn("incorrect password attempts")
+	}
 	return err == nil
 }
