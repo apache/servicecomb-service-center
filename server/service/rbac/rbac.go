@@ -66,7 +66,7 @@ func Init() {
 	}
 	readPrivateKey()
 	readPublicKey()
-	rbacframe.Add2WhiteAPIList("/health", "/version", "/v4/token")
+	rbacframe.Add2WhiteAPIList("/v4/token")
 	log.Info("rbac is enabled")
 }
 

@@ -23,6 +23,7 @@ import (
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
+	"github.com/apache/servicecomb-service-center/pkg/rest"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
@@ -47,7 +48,8 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 	if !rbac.Enabled() {
 		return nil
 	}
-	if !rbacframe.MustAuth(req.URL.Path) {
+	pattern, ok := req.Context().Value(rest.CtxMatchPattern).(string)
+	if ok && !rbacframe.MustAuth(pattern) {
 		return nil
 	}
 	v := req.Header.Get(restful.HeaderAuth)

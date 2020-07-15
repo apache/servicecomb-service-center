@@ -19,6 +19,7 @@ package rbacframe
 
 import (
 	"context"
+	context2 "github.com/apache/servicecomb-service-center/server/handler/context"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -47,6 +48,10 @@ var whiteAPIList = sets.NewString()
 func Add2WhiteAPIList(path ...string) {
 	whiteAPIList.Insert(path...)
 }
-func MustAuth(url string) bool {
-	return !whiteAPIList.Has(url)
+
+func MustAuth(pattern string) bool {
+	if whiteAPIList.Has(pattern) {
+		return false
+	}
+	return !context2.IsSkip(pattern)
 }
