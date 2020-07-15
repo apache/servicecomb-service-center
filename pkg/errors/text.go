@@ -18,9 +18,10 @@
 package errors
 
 const (
-	ErrMsgJSON = "json is invalid"
+	MsgJSON = "json is invalid"
 
-	ErrMsgCreateAccount = "create account failed"
-	ErrMsgRolePerm      = "check role permissions failed"
-	ErrMsgNoPerm        = "no permission to operate"
+	MsgOperateAccountFailed = "operate account failed"
+	MsgGetAccountFailed     = "get account failed"
+	MsgRolePerm             = "check role permissions failed"
+	MsgNoPerm               = "no permission to operate"
 )

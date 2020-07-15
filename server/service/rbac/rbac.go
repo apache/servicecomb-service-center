@@ -38,6 +38,9 @@ const (
 	InitPassword = "SC_INIT_ROOT_PASSWORD"
 	PubFilePath  = "rbac_rsa_public_key_file"
 )
+const (
+	ResourceAccount = "account"
+)
 
 var (
 	ErrEmptyCurrentPassword = errors.New("current password should not be empty")
@@ -53,6 +56,7 @@ func Init() {
 		log.Info("rbac is disabled")
 		return
 	}
+	initResourceMap()
 	err := authr.Init()
 	if err != nil {
 		log.Fatal("can not enable auth module", err)
@@ -68,6 +72,13 @@ func Init() {
 	readPublicKey()
 	rbacframe.Add2WhiteAPIList("/v4/token")
 	log.Info("rbac is enabled")
+}
+func initResourceMap() {
+	rbacframe.MapResource("/v4/account", ResourceAccount)
+	rbacframe.MapResource("/v4/account/:name", ResourceAccount)
+	rbacframe.MapResource("/v4/role", "role")
+	//TODO now simply write dead code "*" to map all other API except account and role to service, should define resource for every API in future
+	rbacframe.MapResource("*", "service")
 }
 
 //readPublicKey read key to memory

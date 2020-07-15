@@ -98,7 +98,7 @@ func TestTokenAuthenticator_Identify(t *testing.T) {
 		t.Log(err)
 		assert.Error(t, err)
 	})
-	t.Run("valid admin token, should be able to operate account", func(t *testing.T) {
+	t.Run("valid admin token, should be able to get account", func(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "/v4/account", nil)
 		to, err := authr.Login(context.TODO(), "root", "Complicated_password1")
 		assert.NoError(t, err)
@@ -106,7 +106,7 @@ func TestTokenAuthenticator_Identify(t *testing.T) {
 		err = ta.Identify(r)
 		assert.NoError(t, err)
 	})
-	t.Run("valid normal token, should no be able to operate account", func(t *testing.T) {
+	t.Run("valid normal token, should no be able to get account", func(t *testing.T) {
 		err := dao.CreateAccount(context.TODO(), &rbacframe.Account{Name: "non-admin", Password: "Complicated_password1", Role: "developer"})
 		assert.NoError(t, err)
 		r := httptest.NewRequest(http.MethodGet, "/v4/account", nil)
@@ -116,5 +116,22 @@ func TestTokenAuthenticator_Identify(t *testing.T) {
 		err = ta.Identify(r)
 		t.Log(err)
 		assert.Error(t, err)
+	})
+	t.Run("valid normal token, should no be able to delete account", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodDelete, "/v4/account", nil)
+		to, err := authr.Login(context.TODO(), "non-admin", "Complicated_password1")
+		assert.NoError(t, err)
+		r.Header.Set(restful.HeaderAuth, "Bear "+to)
+		err = ta.Identify(r)
+		t.Log(err)
+		assert.Error(t, err)
+	})
+	t.Run("valid admin token, should be able to delete account", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodDelete, "/v4/account", nil)
+		to, err := authr.Login(context.TODO(), "root", "Complicated_password1")
+		assert.NoError(t, err)
+		r.Header.Set(restful.HeaderAuth, "Bear "+to)
+		err = ta.Identify(r)
+		assert.NoError(t, err)
 	})
 }

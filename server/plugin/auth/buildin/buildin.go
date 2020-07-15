@@ -26,7 +26,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
-	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 	"github.com/go-chassis/go-chassis/security/authr"
 	"github.com/go-chassis/go-chassis/server/restful"
 	"net/http"
@@ -67,7 +66,6 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 		log.Errorf(err, "authenticate request failed, %s %s", req.Method, req.RequestURI)
 		return err
 	}
-	//TODO rbac
 	m, ok := claims.(map[string]interface{})
 	if !ok {
 		log.Error("claims convert failed", rbacframe.ErrConvertErr)
@@ -79,17 +77,38 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 		log.Error("role convert failed", rbacframe.ErrConvertErr)
 		return rbacframe.ErrConvertErr
 	}
-	r := dao.GetResource(context.TODO(), req.URL.Path)
-	//TODO add verbs
-	allow, err := rbac.Allow(context.TODO(), roleName, req.URL.Query().Get(":project"), r, "")
-	if err != nil {
-		log.Error("", err)
-		return errors.New(errorsEx.ErrMsgRolePerm)
+	var apiPattern string
+	a := req.Context().Value(rest.CtxMatchPattern)
+	if a == nil { //handle exception
+		apiPattern = req.URL.Path
+		log.Warn("can not find api pattern")
+	} else {
+		apiPattern = a.(string)
 	}
-	if !allow {
-		return errors.New(errorsEx.ErrMsgNoPerm)
+	err = checkPerm(roleName, apiPattern)
+	if err != nil {
+		return err
 	}
 	req2 := req.WithContext(rbacframe.NewContext(req.Context(), claims))
 	*req = *req2
+	return nil
+}
+
+//this method decouple business code and perm checks
+func checkPerm(roleName, apiPattern string) error {
+	resource := rbacframe.GetResource(apiPattern)
+	if resource == "" {
+		//fast fail, no need to access role storage
+		return errors.New(errorsEx.MsgNoPerm)
+	}
+	//TODO add verbs,project
+	allow, err := rbac.Allow(context.TODO(), roleName, "", resource, "")
+	if err != nil {
+		log.Error("", err)
+		return errors.New(errorsEx.MsgRolePerm)
+	}
+	if !allow {
+		return errors.New(errorsEx.MsgNoPerm)
+	}
 	return nil
 }

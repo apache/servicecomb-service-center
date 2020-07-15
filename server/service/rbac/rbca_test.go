@@ -98,5 +98,10 @@ func TestInitRBAC(t *testing.T) {
 		assert.True(t, rbac.SamePassword(a.Password, "Complicated_password2"))
 
 	})
+	t.Run("list kv", func(t *testing.T) {
+		_, n, err := dao.ListAccount(context.TODO())
+		assert.NoError(t, err)
+		assert.Greater(t, n, int64(2))
+	})
 
 }
