@@ -26,6 +26,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/service/kv"
 	stringutil "github.com/go-chassis/foundation/string"
@@ -63,6 +64,7 @@ func CreateAccount(ctx context.Context, a *rbacframe.Account) error {
 		return err
 	}
 	a.Password = stringutil.Bytes2str(hash)
+	a.ID = util.GenerateUUID()
 	value, err := json.Marshal(a)
 	if err != nil {
 		log.Errorf(err, "account info is invalid")
@@ -73,7 +75,7 @@ func CreateAccount(ctx context.Context, a *rbacframe.Account) error {
 		log.Errorf(err, "can not save account info")
 		return err
 	}
-
+	log.Info("create new account: " + a.ID)
 	return nil
 }
 
@@ -87,10 +89,30 @@ func GetAccount(ctx context.Context, name string) (*rbacframe.Account, error) {
 	a := &rbacframe.Account{}
 	err = json.Unmarshal(r.Value, a)
 	if err != nil {
-		log.Errorf(err, "account info is invalid format")
+		log.Errorf(err, "account info format invalid")
 		return nil, err
 	}
 	return a, nil
+}
+func ListAccount(ctx context.Context) ([]*rbacframe.Account, int64, error) {
+	key := core.GenerateAccountKey("")
+	r, n, err := kv.List(ctx, key)
+	if err != nil {
+		log.Errorf(err, "can not get account info")
+		return nil, 0, err
+	}
+	as := make([]*rbacframe.Account, 0, n)
+	for _, v := range r {
+		a := &rbacframe.Account{}
+		err = json.Unmarshal(v.Value, a)
+		if err != nil {
+			log.Error("account info format invalid:", err)
+			continue //do not fail if some account is invalid
+		}
+		a.Password = ""
+		as = append(as, a)
+	}
+	return as, n, nil
 }
 func AccountExist(ctx context.Context, name string) (bool, error) {
 	exist, err := kv.Exist(ctx, core.GenerateAccountKey(name))
@@ -106,6 +128,7 @@ func DeleteAccount(ctx context.Context, name string) (bool, error) {
 		log.Errorf(err, "can not get account info")
 		return false, err
 	}
+	log.Info("account is deleted")
 	return exist, nil
 }
 
@@ -132,6 +155,6 @@ func EditAccount(ctx context.Context, a *rbacframe.Account) error {
 		log.Errorf(err, "can not edit account info")
 		return err
 	}
-
+	log.Info("account is edit")
 	return nil
 }

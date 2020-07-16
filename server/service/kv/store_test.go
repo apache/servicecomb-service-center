@@ -59,4 +59,15 @@ func TestStoreData(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "value", string(r.Value))
 	})
+
+	t.Run("put many and list", func(t *testing.T) {
+		err := kv.Put(context.Background(), "/test/1", "value1")
+		assert.NoError(t, err)
+		err = kv.Put(context.Background(), "/test/2", "value2")
+		assert.NoError(t, err)
+		kvs, n, err := kv.List(context.Background(), "/test")
+		assert.NoError(t, err)
+		assert.Equal(t, int64(2), n)
+		t.Log(kvs)
+	})
 }

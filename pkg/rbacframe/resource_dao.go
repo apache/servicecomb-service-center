@@ -15,22 +15,23 @@
  * limitations under the License.
  */
 
-package dao
+package rbacframe
 
-import "context"
+//as a user, he only understand resource of this system,
+//but to decouple authorization code from business code,
+//a middleware should handle all the authorization logic, and this middleware only understand rest API,
+//a resource mapping helps to do it.
+var resourceMap = map[string]string{}
 
-//TODO save to etcd
-//TODO now simply write dead code "*" to map all other API except account and role to service, should define resource for every API in future
-var resourceMap = map[string]string{
-	"/v4/account": "account",
-	"/v4/role":    "account",
-	"*":           "service",
-}
-
-func GetResource(ctx context.Context, API string) string {
-	r, ok := resourceMap[API]
+func GetResource(api string) string {
+	r, ok := resourceMap[api]
 	if !ok {
 		return resourceMap["*"]
 	}
 	return r
+}
+
+//MapResource save the mapping from api to resource
+func MapResource(api, resource string) {
+	resourceMap[api] = resource
 }

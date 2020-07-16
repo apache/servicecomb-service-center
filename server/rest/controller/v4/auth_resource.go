@@ -43,6 +43,9 @@ func (r *AuthResource) URLPatterns() []rest.Route {
 	return []rest.Route{
 		{Method: http.MethodPost, Path: "/v4/token", Func: r.Login},
 		{Method: http.MethodPost, Path: "/v4/account", Func: r.CreateAccount},
+		{Method: http.MethodGet, Path: "/v4/account", Func: r.ListAccount},
+		{Method: http.MethodGet, Path: "/v4/account/:name", Func: r.GetAccount},
+		{Method: http.MethodDelete, Path: "/v4/account/:name", Func: r.DeleteAccount},
 		{Method: http.MethodPost, Path: "/v4/account/:name/password", Func: r.ChangePassword},
 	}
 }
@@ -56,7 +59,7 @@ func (r *AuthResource) CreateAccount(w http.ResponseWriter, req *http.Request) {
 	a := &rbacframe.Account{}
 	if err = json.Unmarshal(body, a); err != nil {
 		log.Error("json err", err)
-		controller.WriteError(w, scerror.ErrInvalidParams, errorsEx.ErrMsgJSON)
+		controller.WriteError(w, scerror.ErrInvalidParams, errorsEx.MsgJSON)
 		return
 	}
 	err = service.ValidateCreateAccount(a)
@@ -70,10 +73,54 @@ func (r *AuthResource) CreateAccount(w http.ResponseWriter, req *http.Request) {
 			controller.WriteError(w, scerror.ErrConflictAccount, "")
 			return
 		}
-		log.Error(errorsEx.ErrMsgCreateAccount, err)
-		controller.WriteError(w, scerror.ErrInternal, errorsEx.ErrMsgCreateAccount)
+		log.Error(errorsEx.MsgOperateAccountFailed, err)
+		controller.WriteError(w, scerror.ErrInternal, errorsEx.MsgOperateAccountFailed)
 		return
 	}
+}
+func (r *AuthResource) DeleteAccount(w http.ResponseWriter, req *http.Request) {
+	_, err := dao.DeleteAccount(context.TODO(), req.URL.Query().Get(":name"))
+	if err != nil {
+		log.Error(errorsEx.MsgOperateAccountFailed, err)
+		controller.WriteError(w, scerror.ErrInternal, errorsEx.MsgOperateAccountFailed)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+func (r *AuthResource) ListAccount(w http.ResponseWriter, req *http.Request) {
+	as, n, err := dao.ListAccount(context.TODO())
+	if err != nil {
+		log.Error(errorsEx.MsgGetAccountFailed, err)
+		controller.WriteError(w, scerror.ErrInternal, errorsEx.MsgGetAccountFailed)
+		return
+	}
+	resp := &rbacframe.AccountResponse{
+		Total:    n,
+		Accounts: as,
+	}
+	b, err := json.Marshal(resp)
+	if err != nil {
+		log.Error(errorsEx.MsgJSON, err)
+		controller.WriteError(w, scerror.ErrInternal, errorsEx.MsgJSON)
+		return
+	}
+	controller.WriteJSON(w, b)
+}
+func (r *AuthResource) GetAccount(w http.ResponseWriter, req *http.Request) {
+	a, err := dao.GetAccount(context.TODO(), req.URL.Query().Get(":name"))
+	if err != nil {
+		log.Error(errorsEx.MsgGetAccountFailed, err)
+		controller.WriteError(w, scerror.ErrInternal, errorsEx.MsgGetAccountFailed)
+		return
+	}
+	a.Password = ""
+	b, err := json.Marshal(a)
+	if err != nil {
+		log.Error(errorsEx.MsgJSON, err)
+		controller.WriteError(w, scerror.ErrInternal, errorsEx.MsgJSON)
+		return
+	}
+	controller.WriteJSON(w, b)
 }
 func (r *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request) {
 	ip := util.GetRealIP(req)
@@ -91,7 +138,7 @@ func (r *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request) 
 	a := &rbacframe.Account{}
 	if err = json.Unmarshal(body, a); err != nil {
 		log.Error("json err", err)
-		controller.WriteError(w, scerror.ErrInvalidParams, errorsEx.ErrMsgJSON)
+		controller.WriteError(w, scerror.ErrInvalidParams, errorsEx.MsgJSON)
 		return
 	}
 	a.Name = req.URL.Query().Get(":name")

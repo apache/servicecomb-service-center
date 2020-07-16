@@ -105,6 +105,92 @@ func TestAuthResource_Login(t *testing.T) {
 		rest.GetRouter().ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
+
+}
+func TestAuthResource_DeleteAccount(t *testing.T) {
+	t.Run("dev_account can not even delete him self", func(t *testing.T) {
+		b, _ := json.Marshal(&rbacframe.Account{Name: "dev_account", Password: "Complicated_password2"})
+
+		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
+		w := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusOK, w.Code)
+		to := &rbacframe.Token{}
+		json.Unmarshal(w.Body.Bytes(), to)
+
+		r2, _ := http.NewRequest(http.MethodDelete, "/v4/account/dev_account", nil)
+		r2.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
+		w2 := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w2, r2)
+		assert.Equal(t, http.StatusUnauthorized, w2.Code)
+	})
+	t.Run("root can delete account", func(t *testing.T) {
+		b, _ := json.Marshal(&rbacframe.Account{Name: "root", Password: "Complicated_password1"})
+		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
+		w := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusOK, w.Code)
+		to := &rbacframe.Token{}
+		json.Unmarshal(w.Body.Bytes(), to)
+
+		b, _ = json.Marshal(&rbacframe.Account{Name: "delete_account", Password: "Complicated_password1"})
+		r2, _ := http.NewRequest(http.MethodPost, "/v4/account", bytes.NewBuffer(b))
+		r2.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
+		w2 := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w2, r2)
+		assert.Equal(t, http.StatusOK, w2.Code)
+
+		r3, _ := http.NewRequest(http.MethodDelete, "/v4/account/delete_account", nil)
+		r3.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
+		w3 := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w3, r3)
+		assert.Equal(t, http.StatusNoContent, w3.Code)
+	})
+}
+func TestAuthResource_GetAccount(t *testing.T) {
+	t.Run("get account", func(t *testing.T) {
+		b, _ := json.Marshal(&rbacframe.Account{Name: "root", Password: "Complicated_password1"})
+		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
+		w := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusOK, w.Code)
+		to := &rbacframe.Token{}
+		json.Unmarshal(w.Body.Bytes(), to)
+
+		r3, _ := http.NewRequest(http.MethodGet, "/v4/account/dev_account", nil)
+		r3.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
+		w3 := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w3, r3)
+		assert.Equal(t, http.StatusOK, w3.Code)
+
+		a := &rbacframe.Account{}
+		json.Unmarshal(w3.Body.Bytes(), a)
+		assert.Equal(t, "dev_account", a.Name)
+		assert.Equal(t, "developer", a.Role)
+		assert.Empty(t, a.Password)
+	})
+	t.Run("list account", func(t *testing.T) {
+		b, _ := json.Marshal(&rbacframe.Account{Name: "root", Password: "Complicated_password1"})
+		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
+		w := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusOK, w.Code)
+		to := &rbacframe.Token{}
+		json.Unmarshal(w.Body.Bytes(), to)
+
+		r3, _ := http.NewRequest(http.MethodGet, "/v4/account", nil)
+		r3.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
+		w3 := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w3, r3)
+		assert.Equal(t, http.StatusOK, w3.Code)
+
+		a := &rbacframe.AccountResponse{}
+		json.Unmarshal(w3.Body.Bytes(), a)
+		assert.Greater(t, a.Total, int64(2))
+		assert.Empty(t, a.Accounts[0].Password)
+	})
+}
+func TestAuthResource_Login2(t *testing.T) {
 	t.Run("bock user dev_account", func(t *testing.T) {
 		b, _ := json.Marshal(&rbacframe.Account{Name: "dev_account", Password: "Complicated_password1"})
 
