@@ -23,7 +23,7 @@ require (
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-chassis/foundation v0.1.1-0.20191113114104-2b05871e9ec4
 	github.com/go-chassis/go-archaius v1.3.2
-	github.com/go-chassis/go-chassis v0.0.0-20200709095636-48e710908928
+	github.com/go-chassis/go-chassis v0.0.0-20200716073336-4183d5dd1246
 	github.com/go-chassis/paas-lager v1.1.1
 	github.com/gogo/protobuf v1.2.2-0.20190723190241-65acae22fc9d
 	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef // indirect

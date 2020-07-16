@@ -190,7 +190,16 @@ func (r *AuthResource) Login(w http.ResponseWriter, req *http.Request) {
 		controller.WriteError(w, scerror.ErrInvalidParams, err.Error())
 		return
 	}
-	t, err := authr.Login(context.TODO(), a.Name, a.Password)
+	err = service.ValidateAccountLogin(a)
+	if err != nil {
+		controller.WriteError(w, scerror.ErrInvalidParams, err.Error())
+		return
+	}
+	if a.TokenExpirationTime == "" {
+		a.TokenExpirationTime = "30m"
+	}
+	t, err := authr.Login(context.TODO(), a.Name, a.Password,
+		authr.ExpireAfter(a.TokenExpirationTime))
 	if err != nil {
 		if err == rbac.ErrUnauthorized {
 			log.Error("not authorized", err)
