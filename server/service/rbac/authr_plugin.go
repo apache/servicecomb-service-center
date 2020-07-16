@@ -39,9 +39,10 @@ func newEmbeddedAuthenticator(opts *authr.Options) (authr.Authenticator, error) 
 }
 
 //Login check db user and password,will verify and return token for valid account
-func (a *EmbeddedAuthenticator) Login(ctx context.Context, user string, password string) (string, error) {
-	if user == "default" {
-		return "", ErrUnauthorized
+func (a *EmbeddedAuthenticator) Login(ctx context.Context, user string, password string, opts ...authr.LoginOption) (string, error) {
+	opt := &authr.LoginOptions{}
+	for _, o := range opts {
+		o(opt)
 	}
 	exist, err := dao.AccountExist(ctx, user)
 	if err != nil {
@@ -64,10 +65,10 @@ func (a *EmbeddedAuthenticator) Login(ctx context.Context, user string, password
 		}
 		tokenStr, err := token.Sign(map[string]interface{}{
 			rbacframe.ClaimsUser: user,
-			rbacframe.ClaimsRole: account.Role, //TODO more claims for RBAC, for example rule config
+			rbacframe.ClaimsRole: account.Role,
 		},
 			secret,
-			token.WithExpTime("30m"),
+			token.WithExpTime(opt.ExpireAfter),
 			token.WithSigningMethod(token.RS512)) //TODO config for each user
 		if err != nil {
 			log.Errorf(err, "can not sign a token")

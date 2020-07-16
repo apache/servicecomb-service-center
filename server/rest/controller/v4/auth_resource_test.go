@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	_ "github.com/apache/servicecomb-service-center/server/handler/auth"
 	_ "github.com/apache/servicecomb-service-center/test"
@@ -188,6 +189,23 @@ func TestAuthResource_GetAccount(t *testing.T) {
 		json.Unmarshal(w3.Body.Bytes(), a)
 		assert.Greater(t, a.Total, int64(2))
 		assert.Empty(t, a.Accounts[0].Password)
+	})
+
+	t.Run("get a short expiration token", func(t *testing.T) {
+		b, _ := json.Marshal(&rbacframe.Account{Name: "root", Password: "Complicated_password1", TokenExpirationTime: "10s"})
+		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
+		w := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusOK, w.Code)
+		to := &rbacframe.Token{}
+		json.Unmarshal(w.Body.Bytes(), to)
+
+		time.Sleep(11 * time.Second)
+		r3, _ := http.NewRequest(http.MethodGet, "/v4/account", nil)
+		r3.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
+		w3 := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w3, r3)
+		assert.Equal(t, http.StatusUnauthorized, w3.Code)
 	})
 }
 func TestAuthResource_Login2(t *testing.T) {

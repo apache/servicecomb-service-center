@@ -27,13 +27,13 @@ type AccountResponse struct {
 }
 
 type Account struct {
-	ID              string `json:"id,omitempty"`
-	Name            string `json:"name,omitempty"`
-	Password        string `json:"password,omitempty"`
-	Role            string `json:"role,omitempty"`
-	TokenExpiryTime string `json:"tokenExpiryTime,omitempty"`
-	CurrentPassword string `json:"currentPassword,omitempty"`
-	Status          string `json:"status,omitempty"`
+	ID                  string `json:"id,omitempty"`
+	Name                string `json:"name,omitempty"`
+	Password            string `json:"password,omitempty"`
+	Role                string `json:"role,omitempty"`
+	TokenExpirationTime string `json:"tokenExpirationTime,omitempty"`
+	CurrentPassword     string `json:"currentPassword,omitempty"`
+	Status              string `json:"status,omitempty"`
 }
 
 type Token struct {
