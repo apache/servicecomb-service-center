@@ -5,5 +5,5 @@ Tracing Plugins
    :maxdepth: 4
    :glob:
 
-   plugins-tracing/tracing.md
+   plugins-tracing/tracing.rst
 

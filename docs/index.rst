@@ -33,11 +33,3 @@ Welcome to servicecomb-service-center's documentation!
    :caption: Release Version
 
    release
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

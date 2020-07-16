@@ -5,6 +5,6 @@ Design Guides
    :maxdepth: 4
    :glob:
 
-   design-guides/design.md
+   design-guides/design.rst
    design-guides/plugin.md
 
