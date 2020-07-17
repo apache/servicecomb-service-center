@@ -8,5 +8,5 @@ User Guides
    user-guides/pr-raising-guide.md
    user-guides/security-tls.md
    user-guides/sc-cluster.rst
-   user-guides/integration-grafana.md
+   user-guides/integration-grafana.rst
    user-guides/rbac.md

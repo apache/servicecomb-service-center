@@ -23,18 +23,18 @@ It provides out of box support for metrics and tracing. It has a web portal to m
  - **[`Portal`](/frontend)**: Awesome web portal
  - **Fault tolerance**: Multiple fault tolerance mechanism and design in the architecture
  - **Performance**: Performance/Caching design
- - **[`Metrics`](/docs/user-guides/integration-grafana.md)**: Able to expose Prometheus metric API automatically
- - **[`Tracing`](/docs/plugins-tracing/tracing.md)**: Able to report tracing data to Zipkin server
- - **[`Pluginable`](/docs/design-guides/plugin.md)**: Able to load custom authentication, tls and other dynamic libraries
- - **[`CLI`](/docs/intro/scctl.md)**: Easy to control service center
- - **[`Kubernetes`](/docs/dev-guides/kubeclusters.rst)**: Embrace kubernetes ecosystem and support multi cluster service discovery
- - **[`Datacenters`](/docs/dev-guides/multidcs.rst)**: Additional layer of abstraction to clusters deployed in multiple datacenters
- - **[`Aggregation`](/docs/design-guides/aggregator-design.PNG)**: Able to aggregate microservices from multiple registry platforms and
+ - **[`Metrics`](https://service-center.readthedocs.io/en/latest/user-guides/integration-grafana.html)**: Able to expose Prometheus metric API automatically
+ - **[`Tracing`](https://service-center.readthedocs.io/en/latest/plugins-tracing/tracing.html)**: Able to report tracing data to Zipkin server
+ - **[`Pluginable`](https://service-center.readthedocs.io/en/latest/design-guides/plugin.html)**: Able to load custom authentication, tls and other dynamic libraries
+ - **[`CLI`](https://service-center.readthedocs.io/en/latest/intro/scctl.html)**: Easy to control service center
+ - **[`Kubernetes`](https://service-center.readthedocs.io/en/latest/dev-guides/kubeclusters.html)**: Embrace kubernetes ecosystem and support multi cluster service discovery
+ - **[`Datacenters`](https://service-center.readthedocs.io/en/latest/dev-guides/multidcs.html)**: Additional layer of abstraction to clusters deployed in multiple datacenters
+ - **[`Aggregation`](https://service-center.readthedocs.io/en/latest/design-guides/design.html)**: Able to aggregate microservices from multiple registry platforms and
     support platform registry and client side registry at the same time
 
 ## Documentation
 
-Project documentation is available on the [ServiceComb website][servicecomb-website]. You can also find full document [`here`](/docs).
+Project documentation is available on the [ServiceComb website][servicecomb-website]. You can also find full document [`here`](https://service-center.readthedocs.io/).
 
 [servicecomb-website]: http://servicecomb.apache.org/
 
