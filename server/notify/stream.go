@@ -21,13 +21,14 @@ import (
 	"context"
 	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"time"
 )
 
-func HandleWatchJob(watcher *InstanceEventListWatcher, stream pb.ServiceInstanceCtrl_WatchServer) (err error) {
+func HandleWatchJob(watcher *InstanceEventListWatcher, stream proto.ServiceInstanceCtrl_WatchServer) (err error) {
 	timer := time.NewTimer(HeartbeatInterval)
 	defer timer.Stop()
 	for {
@@ -66,7 +67,7 @@ func HandleWatchJob(watcher *InstanceEventListWatcher, stream pb.ServiceInstance
 	}
 }
 
-func DoStreamListAndWatch(ctx context.Context, serviceID string, f func() ([]*pb.WatchInstanceResponse, int64), stream pb.ServiceInstanceCtrl_WatchServer) (err error) {
+func DoStreamListAndWatch(ctx context.Context, serviceID string, f func() ([]*pb.WatchInstanceResponse, int64), stream proto.ServiceInstanceCtrl_WatchServer) (err error) {
 	domainProject := util.ParseDomainProject(ctx)
 	domain := util.ParseDomain(ctx)
 	watcher := NewInstanceEventListWatcher(serviceID, apt.GetInstanceRootKey(domainProject)+"/", f)

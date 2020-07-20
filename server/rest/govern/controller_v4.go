@@ -18,13 +18,14 @@
 package govern
 
 import (
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"strings"
@@ -66,7 +67,7 @@ func (governService *ResourceV4) GetGraph(w http.ResponseWriter, r *http.Request
 	}
 	nodes := make([]Node, 0, len(services))
 	for _, service := range services {
-		if !withShared && core.IsShared(pb.MicroServiceToKey(domainProject, service)) {
+		if !withShared && core.IsShared(proto.MicroServiceToKey(domainProject, service)) {
 			continue
 		}
 

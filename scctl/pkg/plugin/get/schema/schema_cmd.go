@@ -18,7 +18,7 @@ package schema
 import (
 	"context"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/client/sc"
+	"github.com/apache/servicecomb-service-center/client"
 	model2 "github.com/apache/servicecomb-service-center/pkg/model"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/model"
@@ -77,7 +77,7 @@ func saveDirectory(root string, ms *model2.Microservice) string {
 }
 
 func SchemaCommandFunc(_ *cobra.Command, args []string) {
-	scClient, err := sc.NewSCClient(cmd.ScClientConfig)
+	scClient, err := client.NewSCClient(cmd.ScClientConfig)
 	if err != nil {
 		cmd.StopAndExit(cmd.ExitError, err)
 	}
@@ -109,8 +109,8 @@ func SchemaCommandFunc(_ *cobra.Command, args []string) {
 		if len(Version) > 0 && ms.Value.Version != Version {
 			continue
 		}
-
-		schemas, err := scClient.GetSchemasByServiceID(context.Background(), domainProject, ms.Value.ServiceId)
+		dp := strings.Split(domainProject, "/")
+		schemas, err := scClient.GetSchemasByServiceID(context.Background(), dp[0], dp[1], ms.Value.ServiceId)
 		if err != nil {
 			cmd.StopAndExit(cmd.ExitError, err)
 		}

@@ -16,8 +16,9 @@
 package adaptor
 
 import (
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"k8s.io/api/core/v1"
 	"net/url"
@@ -81,9 +82,9 @@ func generateServiceKey(domainProject string, svc *v1.Service) *pb.MicroServiceK
 	return &pb.MicroServiceKey{
 		Tenant:      domainProject,
 		Environment: getLabel(svc.Labels, LabelEnvironment, ""),
-		AppId:       getLabel(svc.Labels, LabelApp, pb.APP_ID),
+		AppId:       getLabel(svc.Labels, LabelApp, proto.APP_ID),
 		ServiceName: svc.Name,
-		Version:     getLabel(svc.Labels, LabelVersion, pb.VERSION),
+		Version:     getLabel(svc.Labels, LabelVersion, proto.VERSION),
 	}
 }
 
@@ -91,9 +92,9 @@ func FromK8sService(domainProject string, svc *v1.Service) (ms *pb.MicroService)
 	ms = &pb.MicroService{
 		ServiceId:   generateServiceID(domainProject, svc),
 		Environment: getLabel(svc.Labels, LabelEnvironment, ""),
-		AppId:       getLabel(svc.Labels, LabelApp, pb.APP_ID),
+		AppId:       getLabel(svc.Labels, LabelApp, proto.APP_ID),
 		ServiceName: svc.Name,
-		Version:     getLabel(svc.Labels, LabelVersion, pb.VERSION),
+		Version:     getLabel(svc.Labels, LabelVersion, proto.VERSION),
 		Level:       "BACK",
 		Status:      pb.MS_UP,
 		Framework: &pb.FrameWorkProperty{

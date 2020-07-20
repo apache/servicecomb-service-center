@@ -18,13 +18,14 @@ package util
 
 import (
 	"encoding/json"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"strings"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
@@ -293,10 +294,10 @@ func GetOneDomainProjectInstanceCount(ctx context.Context, domainProject string)
 
 func SetServiceDefaultValue(service *pb.MicroService) {
 	if len(service.AppId) == 0 {
-		service.AppId = pb.APP_ID
+		service.AppId = proto.APP_ID
 	}
 	if len(service.Version) == 0 {
-		service.Version = pb.VERSION
+		service.Version = proto.VERSION
 	}
 	if len(service.Level) == 0 {
 		service.Level = "BACK"

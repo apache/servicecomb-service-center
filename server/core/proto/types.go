@@ -21,12 +21,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
-type EventType string
-
-type MicroServiceDependency struct {
-	Dependency []*MicroServiceKey `json:"Dependency,omitempty"`
-}
-
 type ServerConfig struct {
 	MaxHeaderBytes int64 `json:"maxHeaderBytes"`
 	MaxBodyBytes   int64 `json:"maxBodyBytes"`

@@ -19,13 +19,14 @@ package service
 
 import (
 	"fmt"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"strings"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
@@ -41,7 +42,7 @@ func (s *MicroServiceService) GetSchemaInfo(ctx context.Context, in *pb.GetSchem
 	if err != nil {
 		log.Errorf(nil, "get schema[%s/%s] failed", in.ServiceId, in.SchemaId)
 		return &pb.GetSchemaResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: proto.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -50,7 +51,7 @@ func (s *MicroServiceService) GetSchemaInfo(ctx context.Context, in *pb.GetSchem
 	if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId) {
 		log.Errorf(nil, "get schema[%s/%s] failed, service does not exist", in.ServiceId, in.SchemaId)
 		return &pb.GetSchemaResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
@@ -60,13 +61,13 @@ func (s *MicroServiceService) GetSchemaInfo(ctx context.Context, in *pb.GetSchem
 	if errDo != nil {
 		log.Errorf(errDo, "get schema[%s/%s] failed", in.ServiceId, in.SchemaId)
 		return &pb.GetSchemaResponse{
-			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, errDo.Error()),
+			Response: proto.CreateResponse(scerr.ErrUnavailableBackend, errDo.Error()),
 		}, errDo
 	}
 	if resp.Count == 0 {
 		log.Errorf(errDo, "get schema[%s/%s] failed, schema does not exists", in.ServiceId, in.SchemaId)
 		return &pb.GetSchemaResponse{
-			Response: pb.CreateResponse(scerr.ErrSchemaNotExists, "Do not have this schema info."),
+			Response: proto.CreateResponse(scerr.ErrSchemaNotExists, "Do not have this schema info."),
 		}, nil
 	}
 
@@ -74,12 +75,12 @@ func (s *MicroServiceService) GetSchemaInfo(ctx context.Context, in *pb.GetSchem
 	if err != nil {
 		log.Errorf(err, "get schema[%s/%s] failed, get schema summary failed", in.ServiceId, in.SchemaId)
 		return &pb.GetSchemaResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 
 	return &pb.GetSchemaResponse{
-		Response:      pb.CreateResponse(pb.Response_SUCCESS, "Get schema info successfully."),
+		Response:      proto.CreateResponse(proto.Response_SUCCESS, "Get schema info successfully."),
 		Schema:        util.BytesToStringWithNoCopy(resp.Kvs[0].Value.([]byte)),
 		SchemaSummary: schemaSummary,
 	}, nil
@@ -90,7 +91,7 @@ func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAl
 	if err != nil {
 		log.Errorf(nil, "get service[%s] all schemas failed", in.ServiceId)
 		return &pb.GetAllSchemaResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: proto.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -100,20 +101,20 @@ func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAl
 	if err != nil {
 		log.Errorf(err, "get service[%s] all schemas failed, get service failed", in.ServiceId)
 		return &pb.GetAllSchemaResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 	if service == nil {
 		log.Errorf(nil, "get service[%s] all schemas failed, service does not exist", in.ServiceId)
 		return &pb.GetAllSchemaResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
 	schemasList := service.Schemas
 	if len(schemasList) == 0 {
 		return &pb.GetAllSchemaResponse{
-			Response: pb.CreateResponse(pb.Response_SUCCESS, "Do not have this schema info."),
+			Response: proto.CreateResponse(proto.Response_SUCCESS, "Do not have this schema info."),
 			Schemas:  []*pb.Schema{},
 		}, nil
 	}
@@ -124,7 +125,7 @@ func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAl
 	if errDo != nil {
 		log.Errorf(errDo, "get service[%s] all schema summaries failed", in.ServiceId)
 		return &pb.GetAllSchemaResponse{
-			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, errDo.Error()),
+			Response: proto.CreateResponse(scerr.ErrUnavailableBackend, errDo.Error()),
 		}, errDo
 	}
 
@@ -136,7 +137,7 @@ func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAl
 		if errDo != nil {
 			log.Errorf(errDo, "get service[%s] all schemas failed", in.ServiceId)
 			return &pb.GetAllSchemaResponse{
-				Response: pb.CreateResponse(scerr.ErrUnavailableBackend, errDo.Error()),
+				Response: proto.CreateResponse(scerr.ErrUnavailableBackend, errDo.Error()),
 			}, errDo
 		}
 	}
@@ -162,7 +163,7 @@ func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAl
 	}
 
 	return &pb.GetAllSchemaResponse{
-		Response: pb.CreateResponse(pb.Response_SUCCESS, "Get all schema info successfully."),
+		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get all schema info successfully."),
 		Schemas:  schemas,
 	}, nil
 
@@ -174,7 +175,7 @@ func (s *MicroServiceService) DeleteSchema(ctx context.Context, in *pb.DeleteSch
 	if err != nil {
 		log.Errorf(err, "delete schema[%s/%s] failed, operator: %s", in.ServiceId, in.SchemaId, remoteIP)
 		return &pb.DeleteSchemaResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: proto.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 	domainProject := util.ParseDomainProject(ctx)
@@ -183,7 +184,7 @@ func (s *MicroServiceService) DeleteSchema(ctx context.Context, in *pb.DeleteSch
 		log.Errorf(nil, "delete schema[%s/%s] failed, service does not exist, operator: %s",
 			in.ServiceId, in.SchemaId, remoteIP)
 		return &pb.DeleteSchemaResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
@@ -192,14 +193,14 @@ func (s *MicroServiceService) DeleteSchema(ctx context.Context, in *pb.DeleteSch
 	if err != nil {
 		log.Errorf(err, "delete schema[%s/%s] failed, operator: %s", in.ServiceId, in.SchemaId, remoteIP)
 		return &pb.DeleteSchemaResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 	if !exist {
 		log.Errorf(nil, "delete schema[%s/%s] failed, schema does not exist, operator: %s",
 			in.ServiceId, in.SchemaId, remoteIP)
 		return &pb.DeleteSchemaResponse{
-			Response: pb.CreateResponse(scerr.ErrSchemaNotExists, "Schema info does not exist."),
+			Response: proto.CreateResponse(scerr.ErrSchemaNotExists, "Schema info does not exist."),
 		}, nil
 	}
 	epSummaryKey := apt.GenerateServiceSchemaSummaryKey(domainProject, in.ServiceId, in.SchemaId)
@@ -216,20 +217,20 @@ func (s *MicroServiceService) DeleteSchema(ctx context.Context, in *pb.DeleteSch
 	if errDo != nil {
 		log.Errorf(errDo, "delete schema[%s/%s] failed, operator: %s", in.ServiceId, in.SchemaId, remoteIP)
 		return &pb.DeleteSchemaResponse{
-			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, errDo.Error()),
+			Response: proto.CreateResponse(scerr.ErrUnavailableBackend, errDo.Error()),
 		}, errDo
 	}
 	if !resp.Succeeded {
 		log.Errorf(nil, "delete schema[%s/%s] failed, service does not exist, operator: %s",
 			in.ServiceId, in.SchemaId, remoteIP)
 		return &pb.DeleteSchemaResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
 	log.Infof("delete schema[%s/%s] info successfully, operator: %s", in.ServiceId, in.SchemaId, remoteIP)
 	return &pb.DeleteSchemaResponse{
-		Response: pb.CreateResponse(pb.Response_SUCCESS, "Delete schema info successfully."),
+		Response: proto.CreateResponse(proto.Response_SUCCESS, "Delete schema info successfully."),
 	}, nil
 }
 
@@ -251,7 +252,7 @@ func (s *MicroServiceService) ModifySchemas(ctx context.Context, in *pb.ModifySc
 	if err != nil {
 		log.Errorf(err, "modify service[%s] schemas failed, operator: %s", in.ServiceId, remoteIP)
 		return &pb.ModifySchemasResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Invalid request."),
+			Response: proto.CreateResponse(scerr.ErrInvalidParams, "Invalid request."),
 		}, nil
 	}
 	serviceID := in.ServiceId
@@ -262,14 +263,14 @@ func (s *MicroServiceService) ModifySchemas(ctx context.Context, in *pb.ModifySc
 	if err != nil {
 		log.Errorf(err, "modify service[%s] schemas failed, get service failed, operator: %s", serviceID, remoteIP)
 		return &pb.ModifySchemasResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 	if service == nil {
 		log.Errorf(nil, "modify service[%s] schemas failed, service does not exist, operator: %s",
 			serviceID, remoteIP)
 		return &pb.ModifySchemasResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
@@ -277,7 +278,7 @@ func (s *MicroServiceService) ModifySchemas(ctx context.Context, in *pb.ModifySc
 	if respErr != nil {
 		log.Errorf(nil, "modify service[%s] schemas failed, operator: %s", serviceID, remoteIP)
 		resp := &pb.ModifySchemasResponse{
-			Response: pb.CreateResponseWithSCErr(respErr),
+			Response: proto.CreateResponseWithSCErr(respErr),
 		}
 		if respErr.InternalError() {
 			return resp, respErr
@@ -286,7 +287,7 @@ func (s *MicroServiceService) ModifySchemas(ctx context.Context, in *pb.ModifySc
 	}
 
 	return &pb.ModifySchemasResponse{
-		Response: pb.CreateResponse(pb.Response_SUCCESS, "modify schemas info successfully."),
+		Response: proto.CreateResponse(proto.Response_SUCCESS, "modify schemas info successfully."),
 	}, nil
 }
 
@@ -525,7 +526,7 @@ func (s *MicroServiceService) ModifySchema(ctx context.Context, request *pb.Modi
 	respErr := s.canModifySchema(ctx, domainProject, request)
 	if respErr != nil {
 		resp := &pb.ModifySchemaResponse{
-			Response: pb.CreateResponseWithSCErr(respErr),
+			Response: proto.CreateResponseWithSCErr(respErr),
 		}
 		if respErr.InternalError() {
 			return resp, respErr
@@ -545,7 +546,7 @@ func (s *MicroServiceService) ModifySchema(ctx context.Context, request *pb.Modi
 	if err != nil {
 		log.Errorf(err, "modify schema[%s/%s] failed, operator: %s", serviceID, schemaID, remoteIP)
 		resp := &pb.ModifySchemaResponse{
-			Response: pb.CreateResponseWithSCErr(err),
+			Response: proto.CreateResponseWithSCErr(err),
 		}
 		if err.InternalError() {
 			return resp, err
@@ -555,7 +556,7 @@ func (s *MicroServiceService) ModifySchema(ctx context.Context, request *pb.Modi
 
 	log.Infof("modify schema[%s/%s] successfully, operator: %s", serviceID, schemaID, remoteIP)
 	return &pb.ModifySchemaResponse{
-		Response: pb.CreateResponse(pb.Response_SUCCESS, "modify schema info success"),
+		Response: proto.CreateResponse(proto.Response_SUCCESS, "modify schema info success"),
 	}, nil
 }
 

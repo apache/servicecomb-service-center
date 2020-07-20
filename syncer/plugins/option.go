@@ -18,7 +18,7 @@
 package plugins
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/client/sc"
+	"github.com/apache/servicecomb-service-center/client"
 )
 
 type scOption struct {
@@ -61,12 +61,12 @@ func WithTLSKeyFile(tlsKeyFile string) SCConfigOption {
 	return func(c *scOption) { c.tlsKeyFile = tlsKeyFile }
 }
 
-func ToSCConfig(opts ...SCConfigOption) sc.Config {
+func ToSCConfig(opts ...SCConfigOption) client.Config {
 	op := scOption{}
 	for _, opt := range opts {
 		opt(&op)
 	}
-	conf := sc.Config{Endpoints: op.endpoints}
+	conf := client.Config{Endpoints: op.endpoints}
 	if op.tlsEnabled {
 		conf.VerifyPeer = op.tlsVerifyPeer
 		conf.CAFile = op.tlsCAFile

@@ -21,17 +21,18 @@ import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/server/service"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 )
 
-var ServiceAPI pb.GovernServiceCtrlServer = &Service{}
+var ServiceAPI proto.GovernServiceCtrlServer = &Service{}
 
 type Service struct {
 }
@@ -67,12 +68,12 @@ func (governService *Service) GetServicesInfo(ctx context.Context, in *pb.GetSer
 		st, err = statistics(ctx, in.WithShared)
 		if err != nil {
 			return &pb.GetServicesInfoResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+				Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
 			}, err
 		}
 		if len(optionMap) == 1 {
 			return &pb.GetServicesInfoResponse{
-				Response:   pb.CreateResponse(pb.Response_SUCCESS, "Statistics successfully."),
+				Response:   proto.CreateResponse(proto.Response_SUCCESS, "Statistics successfully."),
 				Statistics: st,
 			}, nil
 		}
@@ -83,14 +84,14 @@ func (governService *Service) GetServicesInfo(ctx context.Context, in *pb.GetSer
 	if err != nil {
 		log.Errorf(err, "get all services by domain failed")
 		return &pb.GetServicesInfoResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 
 	allServiceDetails := make([]*pb.ServiceDetail, 0, len(services))
 	domainProject := util.ParseDomainProject(ctx)
 	for _, service := range services {
-		if !in.WithShared && apt.IsShared(pb.MicroServiceToKey(domainProject, service)) {
+		if !in.WithShared && apt.IsShared(proto.MicroServiceToKey(domainProject, service)) {
 			continue
 		}
 		if len(in.AppId) > 0 {
@@ -110,7 +111,7 @@ func (governService *Service) GetServicesInfo(ctx context.Context, in *pb.GetSer
 		})
 		if err != nil {
 			return &pb.GetServicesInfoResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+				Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
 			}, err
 		}
 		serviceDetail.MicroService = service
@@ -118,7 +119,7 @@ func (governService *Service) GetServicesInfo(ctx context.Context, in *pb.GetSer
 	}
 
 	return &pb.GetServicesInfoResponse{
-		Response:          pb.CreateResponse(pb.Response_SUCCESS, "Get services info successfully."),
+		Response:          proto.CreateResponse(proto.Response_SUCCESS, "Get services info successfully."),
 		AllServicesDetail: allServiceDetails,
 		Statistics:        st,
 	}, nil
@@ -132,19 +133,19 @@ func (governService *Service) GetServiceDetail(ctx context.Context, in *pb.GetSe
 
 	if len(in.ServiceId) == 0 {
 		return &pb.GetServiceDetailResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Invalid request for getting service detail."),
+			Response: proto.CreateResponse(scerr.ErrInvalidParams, "Invalid request for getting service detail."),
 		}, nil
 	}
 
 	service, err := serviceUtil.GetService(ctx, domainProject, in.ServiceId)
 	if service == nil {
 		return &pb.GetServiceDetailResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 	if err != nil {
 		return &pb.GetServiceDetailResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 
@@ -160,7 +161,7 @@ func (governService *Service) GetServiceDetail(ctx context.Context, in *pb.GetSe
 		log.Errorf(err, "get service[%s/%s/%s] all versions failed",
 			service.Environment, service.AppId, service.ServiceName)
 		return &pb.GetServiceDetailResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 
@@ -171,14 +172,14 @@ func (governService *Service) GetServiceDetail(ctx context.Context, in *pb.GetSe
 	})
 	if err != nil {
 		return &pb.GetServiceDetailResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 
 	serviceInfo.MicroService = service
 	serviceInfo.MicroServiceVersions = versions
 	return &pb.GetServiceDetailResponse{
-		Response: pb.CreateResponse(pb.Response_SUCCESS, "Get service successfully."),
+		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get service successfully."),
 		Service:  serviceInfo,
 	}, nil
 }
@@ -187,7 +188,7 @@ func (governService *Service) GetApplications(ctx context.Context, in *pb.GetApp
 	err := service.Validate(in)
 	if err != nil {
 		return &pb.GetAppsResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: proto.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -206,7 +207,7 @@ func (governService *Service) GetApplications(ctx context.Context, in *pb.GetApp
 	l := len(resp.Kvs)
 	if l == 0 {
 		return &pb.GetAppsResponse{
-			Response: pb.CreateResponse(pb.Response_SUCCESS, "Get all applications successfully."),
+			Response: proto.CreateResponse(proto.Response_SUCCESS, "Get all applications successfully."),
 		}, nil
 	}
 
@@ -225,7 +226,7 @@ func (governService *Service) GetApplications(ctx context.Context, in *pb.GetApp
 	}
 
 	return &pb.GetAppsResponse{
-		Response: pb.CreateResponse(pb.Response_SUCCESS, "Get all applications successfully."),
+		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get all applications successfully."),
 		AppIds:   apps,
 	}, nil
 }

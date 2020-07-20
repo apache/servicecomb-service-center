@@ -26,7 +26,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/alarm"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
@@ -66,12 +66,12 @@ func (service *Service) Dump(ctx context.Context, in *model.DumpRequest) (*model
 
 	if !core.IsDefaultDomainProject(domainProject) {
 		return &model.DumpResponse{
-			Response: pb.CreateResponse(scerr.ErrForbidden, "Required admin permission"),
+			Response: proto.CreateResponse(scerr.ErrForbidden, "Required admin permission"),
 		}, nil
 	}
 
 	resp := &model.DumpResponse{
-		Response: pb.CreateResponse(pb.Response_SUCCESS, "Admin dump successfully"),
+		Response: proto.CreateResponse(proto.Response_SUCCESS, "Admin dump successfully"),
 	}
 
 	if len(in.Options) == 0 {

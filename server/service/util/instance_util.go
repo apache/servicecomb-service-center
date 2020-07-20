@@ -22,10 +22,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
+	rmodel "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
@@ -182,8 +184,8 @@ func QueryAllProvidersInstances(ctx context.Context, selfServiceID string) (resu
 
 		for _, kv := range kvs {
 			results = append(results, &pb.WatchInstanceResponse{
-				Response: pb.CreateResponse(pb.Response_SUCCESS, "List instance successfully."),
-				Action:   string(pb.EVT_INIT),
+				Response: proto.CreateResponse(proto.Response_SUCCESS, "List instance successfully."),
+				Action:   string(rmodel.EVT_INIT),
 				Key: &pb.MicroServiceKey{
 					Environment: service.Environment,
 					AppId:       service.AppId,
@@ -249,7 +251,7 @@ func UpdateInstance(ctx context.Context, domainProject string, instance *pb.Micr
 
 func AppendFindResponse(ctx context.Context, index int64, resp *pb.Response, instances []*pb.MicroServiceInstance,
 	updatedResult *[]*pb.FindResult, notModifiedResult *[]int64, failedResult **pb.FindFailedResult) {
-	if code := resp.GetCode(); code != pb.Response_SUCCESS {
+	if code := resp.GetCode(); code != proto.Response_SUCCESS {
 		if *failedResult == nil {
 			*failedResult = &pb.FindFailedResult{
 				Error: scerr.NewError(code, resp.GetMessage()),

@@ -18,7 +18,7 @@ package discovery
 
 import (
 	"fmt"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"time"
 )
 
@@ -30,7 +30,7 @@ type Config struct {
 	Period       time.Duration
 	DeferHandler DeferHandler
 	OnEvent      KvEventFunc
-	Parser       pb.Parser
+	Parser       proto.Parser
 }
 
 func (cfg *Config) String() string {
@@ -80,7 +80,7 @@ func (cfg *Config) AppendEventFunc(f KvEventFunc) *Config {
 	return cfg
 }
 
-func (cfg *Config) WithParser(parser pb.Parser) *Config {
+func (cfg *Config) WithParser(parser proto.Parser) *Config {
 	cfg.Parser = parser
 	return cfg
 }
@@ -91,6 +91,6 @@ func Configure() *Config {
 		Timeout:  DefaultTimeout,
 		Period:   time.Second,
 		InitSize: DefaultCacheInitSize,
-		Parser:   pb.BytesParser,
+		Parser:   proto.BytesParser,
 	}
 }

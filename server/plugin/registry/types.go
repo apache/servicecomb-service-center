@@ -121,5 +121,3 @@ func (pr *PluginResponse) String() string {
 	return fmt.Sprintf("{action: %s, count: %d/%d, rev: %d, succeed: %v}",
 		pr.Action, len(pr.Kvs), pr.Count, pr.Revision, pr.Succeeded)
 }
-
-type Clusters map[string][]string

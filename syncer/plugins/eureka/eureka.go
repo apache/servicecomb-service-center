@@ -20,7 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/apache/servicecomb-service-center/pkg/client/sc"
+	"github.com/apache/servicecomb-service-center/client"
 	"io/ioutil"
 	"net/http"
 
@@ -53,7 +53,7 @@ func New() plugins.PluginInstance {
 // New repository with endpoints
 func (*adaptor) New(opts ...plugins.SCConfigOption) (plugins.Servicecenter, error) {
 	cfg := plugins.ToSCConfig(opts...)
-	client, err := sc.NewLBClient(cfg.Endpoints, cfg.Merge())
+	client, err := client.NewLBClient(cfg.Endpoints, cfg.Merge())
 	if err != nil {
 		return nil, err
 	}
@@ -61,8 +61,8 @@ func (*adaptor) New(opts ...plugins.SCConfigOption) (plugins.Servicecenter, erro
 }
 
 type Client struct {
-	*sc.LBClient
-	Cfg sc.Config
+	*client.LBClient
+	Cfg client.Config
 }
 
 // GetAll get and transform eureka data to SyncData

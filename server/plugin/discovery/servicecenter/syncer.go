@@ -18,6 +18,7 @@ package servicecenter
 import (
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/model"
+	proto "github.com/apache/servicecomb-service-center/pkg/registry"
 	"sync"
 	"time"
 
@@ -27,7 +28,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/alarm"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 
@@ -139,18 +139,18 @@ func (c *Syncer) checkWithConflictHandleFunc(local *Cacher, remote model.Getter,
 		case old == nil:
 			newKv.Version = 1
 			newKv.CreateRevision = v.Rev
-			local.Notify(pb.EVT_CREATE, v.Key, newKv)
+			local.Notify(proto.EVT_CREATE, v.Key, newKv)
 		case old.ModRevision != v.Rev:
 			// if connect to some cluster failed, then skip to notify changes
 			// of these clusters to prevent publish the wrong changes events of kvs.
 			if err, ok := skipClusters[old.ClusterName]; ok {
 				log.Errorf(err, "cluster[%s] temporarily unavailable, skip cluster[%s] event %s %s",
-					old.ClusterName, v.ClusterName, pb.EVT_UPDATE, v.Key)
+					old.ClusterName, v.ClusterName, proto.EVT_UPDATE, v.Key)
 				break
 			}
 			newKv.Version = 1 + old.Version
 			newKv.CreateRevision = old.CreateRevision
-			local.Notify(pb.EVT_UPDATE, v.Key, newKv)
+			local.Notify(proto.EVT_UPDATE, v.Key, newKv)
 		}
 		return true
 	})
@@ -168,7 +168,7 @@ func (c *Syncer) checkWithConflictHandleFunc(local *Cacher, remote model.Getter,
 		if !exist {
 			if err, ok := skipClusters[v.ClusterName]; ok {
 				log.Errorf(err, "cluster[%s] temporarily unavailable, skip event %s %s",
-					v.ClusterName, pb.EVT_DELETE, v.Key)
+					v.ClusterName, proto.EVT_DELETE, v.Key)
 				return true
 			}
 			deletes = append(deletes, v)
@@ -176,7 +176,7 @@ func (c *Syncer) checkWithConflictHandleFunc(local *Cacher, remote model.Getter,
 		return true
 	})
 	for _, v := range deletes {
-		local.Notify(pb.EVT_DELETE, util.BytesToStringWithNoCopy(v.Key), v)
+		local.Notify(proto.EVT_DELETE, util.BytesToStringWithNoCopy(v.Key), v)
 	}
 }
 

@@ -16,9 +16,10 @@
 package adaptor
 
 import (
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"k8s.io/api/core/v1"
 	"reflect"
@@ -109,7 +110,7 @@ func (c *InstanceCacher) onEndpointsEvent(evt K8sEvent) {
 					Status:         pb.MSI_UP,
 					DataCenterInfo: &pb.DataCenterInfo{},
 					Timestamp:      strconv.FormatInt(pod.CreationTimestamp.Unix(), 10),
-					Version:        getLabel(svc.Labels, LabelVersion, pb.VERSION),
+					Version:        getLabel(svc.Labels, LabelVersion, proto.VERSION),
 					Properties: map[string]string{
 						PropNodeIP: pod.Status.HostIP,
 					},

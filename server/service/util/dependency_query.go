@@ -20,10 +20,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	"strings"
 )
@@ -120,7 +121,7 @@ func (dr *DependencyRelation) getProviderKeys() ([]*pb.MicroServiceKey, error) {
 	if dr.consumer == nil {
 		return nil, fmt.Errorf("Invalid consumer")
 	}
-	consumerMicroServiceKey := pb.MicroServiceToKey(dr.domainProject, dr.consumer)
+	consumerMicroServiceKey := proto.MicroServiceToKey(dr.domainProject, dr.consumer)
 
 	conKey := apt.GenerateConsumerDependencyRuleKey(dr.domainProject, consumerMicroServiceKey)
 	consumerDependency, err := TransferToMicroServiceDependency(dr.ctx, conKey)
@@ -256,7 +257,7 @@ func (dr *DependencyRelation) getDependencyConsumersOfProvider() ([]*pb.MicroSer
 	if dr.provider == nil {
 		return nil, fmt.Errorf("Invalid provider")
 	}
-	providerService := pb.MicroServiceToKey(dr.domainProject, dr.provider)
+	providerService := proto.MicroServiceToKey(dr.domainProject, dr.provider)
 	consumerDependAllList, err := dr.getConsumerOfDependAllServices()
 	if err != nil {
 		log.Errorf(err, "get consumers that depend on all services failed, %s", dr.provider.ServiceId)
@@ -274,7 +275,7 @@ func (dr *DependencyRelation) getDependencyConsumersOfProvider() ([]*pb.MicroSer
 }
 
 func (dr *DependencyRelation) getConsumerOfDependAllServices() ([]*pb.MicroServiceKey, error) {
-	providerService := pb.MicroServiceToKey(dr.domainProject, dr.provider)
+	providerService := proto.MicroServiceToKey(dr.domainProject, dr.provider)
 	providerService.ServiceName = "*"
 	relyAllKey := apt.GenerateProviderDependencyRuleKey(dr.domainProject, providerService)
 	opts := append(FromContext(dr.ctx), registry.WithStrKey(relyAllKey))

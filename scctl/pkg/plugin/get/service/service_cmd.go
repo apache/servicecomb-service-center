@@ -17,7 +17,7 @@ package service
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/pkg/client/sc"
+	"github.com/apache/servicecomb-service-center/client"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/model"
@@ -45,7 +45,7 @@ func NewServiceCommand(parent *cobra.Command) *cobra.Command {
 }
 
 func ServiceCommandFunc(_ *cobra.Command, args []string) {
-	scClient, err := sc.NewSCClient(cmd.ScClientConfig)
+	scClient, err := client.NewSCClient(cmd.ScClientConfig)
 	if err != nil {
 		cmd.StopAndExit(cmd.ExitError, err)
 	}

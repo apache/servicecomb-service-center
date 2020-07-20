@@ -18,14 +18,13 @@
 package service
 
 import (
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"os"
-
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 )
 
 var (
-	serviceService  pb.ServiceCtrlServer
-	instanceService pb.ServiceInstanceCtrlServerEx
+	serviceService  proto.ServiceCtrlServer
+	instanceService proto.ServiceInstanceCtrlServerEx
 )
 
 func init() {
@@ -33,11 +32,11 @@ func init() {
 	serviceService = NewMicroServiceService(os.Getenv("SCHEMA_EDITABLE") == "true", instanceService)
 }
 
-func AssembleResources() (pb.ServiceCtrlServer, pb.ServiceInstanceCtrlServerEx) {
+func AssembleResources() (proto.ServiceCtrlServer, proto.ServiceInstanceCtrlServerEx) {
 	return serviceService, instanceService
 }
 
-func NewMicroServiceService(schemaEditable bool, instCtrlServer pb.ServiceInstanceCtrlServerEx) *MicroServiceService {
+func NewMicroServiceService(schemaEditable bool, instCtrlServer proto.ServiceInstanceCtrlServerEx) *MicroServiceService {
 	return &MicroServiceService{
 		schemaEditable:  schemaEditable,
 		instanceService: instCtrlServer,

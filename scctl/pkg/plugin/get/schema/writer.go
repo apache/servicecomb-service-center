@@ -16,7 +16,7 @@
 package schema
 
 import (
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"os"
 	"path/filepath"
 )

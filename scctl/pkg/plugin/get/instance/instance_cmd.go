@@ -17,7 +17,7 @@ package instance
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/pkg/client/sc"
+	"github.com/apache/servicecomb-service-center/client"
 	model2 "github.com/apache/servicecomb-service-center/pkg/model"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/model"
@@ -44,7 +44,7 @@ func NewInstanceCommand(parent *cobra.Command) *cobra.Command {
 }
 
 func InstanceCommandFunc(_ *cobra.Command, args []string) {
-	scClient, err := sc.NewSCClient(cmd.ScClientConfig)
+	scClient, err := client.NewSCClient(cmd.ScClientConfig)
 	if err != nil {
 		cmd.StopAndExit(cmd.ExitError, err)
 	}

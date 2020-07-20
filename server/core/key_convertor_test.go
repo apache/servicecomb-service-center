@@ -17,7 +17,7 @@
 package core
 
 import (
-	"github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"testing"
 )
 
@@ -78,7 +78,7 @@ func TestGetInfoFromKV(t *testing.T) {
 		t.Fatalf("TestGetInfoFromKV failed")
 	}
 
-	key := GetInfoFromSvcIndexKV([]byte(GenerateServiceIndexKey(&proto.MicroServiceKey{
+	key := GetInfoFromSvcIndexKV([]byte(GenerateServiceIndexKey(&registry.MicroServiceKey{
 		Tenant:      "a/b",
 		Project:     "",
 		AppId:       "c",
@@ -129,7 +129,7 @@ func TestGetInfoFromKV(t *testing.T) {
 		t.Fatalf("TestGetInfoFromKV failed")
 	}
 
-	dt, k := GetInfoFromDependencyRuleKV([]byte(GenerateProviderDependencyRuleKey("a/b", &proto.MicroServiceKey{
+	dt, k := GetInfoFromDependencyRuleKV([]byte(GenerateProviderDependencyRuleKey("a/b", &registry.MicroServiceKey{
 		Tenant:      "a/b",
 		AppId:       "c",
 		ServiceName: "*",
@@ -138,7 +138,7 @@ func TestGetInfoFromKV(t *testing.T) {
 		t.Fatalf("TestGetInfoFromKV failed")
 	}
 
-	dt, k = GetInfoFromDependencyRuleKV([]byte(GenerateProviderDependencyRuleKey("a/b", &proto.MicroServiceKey{
+	dt, k = GetInfoFromDependencyRuleKV([]byte(GenerateProviderDependencyRuleKey("a/b", &registry.MicroServiceKey{
 		Tenant:      "a/b",
 		AppId:       "c",
 		ServiceName: "d",

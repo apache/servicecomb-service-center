@@ -20,7 +20,7 @@ import (
 	"context"
 	model2 "github.com/apache/servicecomb-service-center/pkg/model"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery/etcd"
 	etcd2 "github.com/apache/servicecomb-service-center/server/plugin/registry/etcd"
@@ -41,13 +41,13 @@ func TestAdminService_Dump(t *testing.T) {
 	t.Log("execute 'dump' operation,when get all,should be passed")
 	resp, err := admin.AdminServiceAPI.Dump(getContext(), &model2.DumpRequest{})
 	assert.NoError(t, err)
-	assert.Equal(t, pb.Response_SUCCESS, resp.Response.Code)
+	assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
 	t.Log("execute 'dump' operation,when get by domain project,should be passed")
 	resp, err = admin.AdminServiceAPI.Dump(
 		util.SetDomainProject(context.Background(), "x", "x"),
 		&model2.DumpRequest{})
 	assert.NoError(t, err)
-	assert.Equal(t, scerr.ErrForbidden, resp.Response.Code)
+	assert.Equal(t, scerr.ErrForbidden, resp.Response.GetCode())
 }
 
 func getContext() context.Context {

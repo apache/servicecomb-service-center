@@ -17,7 +17,7 @@ package health
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/pkg/client/sc"
+	"github.com/apache/servicecomb-service-center/client"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/spf13/cobra"
@@ -45,7 +45,7 @@ func NewHealthCommand(parent *cobra.Command) *cobra.Command {
 }
 
 func HealthCommandFunc(_ *cobra.Command, args []string) {
-	scClient, err := sc.NewSCClient(cmd.ScClientConfig)
+	scClient, err := client.NewSCClient(cmd.ScClientConfig)
 	if err != nil {
 		cmd.StopAndExit(ExistInternal, err)
 	}

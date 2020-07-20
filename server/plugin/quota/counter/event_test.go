@@ -16,9 +16,9 @@
 package counter
 
 import (
+	registry2 "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"testing"
 )
@@ -58,9 +58,9 @@ func TestNewServiceIndexEventHandler(t *testing.T) {
 
 	cases := []discovery.KvEvent{
 		{
-			Type: proto.EVT_INIT,
+			Type: registry2.EVT_INIT,
 			KV: &discovery.KeyValue{
-				Key: []byte(core.GenerateServiceIndexKey(&proto.MicroServiceKey{
+				Key: []byte(core.GenerateServiceIndexKey(&registry2.MicroServiceKey{
 					Tenant:      core.RegistryDomainProject,
 					Project:     "",
 					AppId:       core.RegistryAppID,
@@ -73,9 +73,9 @@ func TestNewServiceIndexEventHandler(t *testing.T) {
 			},
 		},
 		{
-			Type: proto.EVT_UPDATE,
+			Type: registry2.EVT_UPDATE,
 			KV: &discovery.KeyValue{
-				Key: []byte(core.GenerateServiceIndexKey(&proto.MicroServiceKey{
+				Key: []byte(core.GenerateServiceIndexKey(&registry2.MicroServiceKey{
 					Tenant:      core.RegistryDomainProject,
 					Project:     "",
 					AppId:       core.RegistryAppID,
@@ -88,9 +88,9 @@ func TestNewServiceIndexEventHandler(t *testing.T) {
 			},
 		},
 		{
-			Type: proto.EVT_DELETE,
+			Type: registry2.EVT_DELETE,
 			KV: &discovery.KeyValue{
-				Key: []byte(core.GenerateServiceIndexKey(&proto.MicroServiceKey{
+				Key: []byte(core.GenerateServiceIndexKey(&registry2.MicroServiceKey{
 					Tenant:      core.RegistryDomainProject,
 					Project:     "",
 					AppId:       core.RegistryAppID,
@@ -103,9 +103,9 @@ func TestNewServiceIndexEventHandler(t *testing.T) {
 			},
 		},
 		{
-			Type: proto.EVT_CREATE,
+			Type: registry2.EVT_CREATE,
 			KV: &discovery.KeyValue{
-				Key: []byte(core.GenerateServiceIndexKey(&proto.MicroServiceKey{
+				Key: []byte(core.GenerateServiceIndexKey(&registry2.MicroServiceKey{
 					Tenant:      core.RegistryDomainProject,
 					Project:     "",
 					AppId:       core.RegistryAppID,
@@ -118,9 +118,9 @@ func TestNewServiceIndexEventHandler(t *testing.T) {
 			},
 		},
 		{
-			Type: proto.EVT_INIT,
+			Type: registry2.EVT_INIT,
 			KV: &discovery.KeyValue{
-				Key: []byte(core.GenerateServiceIndexKey(&proto.MicroServiceKey{
+				Key: []byte(core.GenerateServiceIndexKey(&registry2.MicroServiceKey{
 					Tenant:      "a/b",
 					Project:     "",
 					AppId:       "c",
@@ -133,9 +133,9 @@ func TestNewServiceIndexEventHandler(t *testing.T) {
 			},
 		},
 		{
-			Type: proto.EVT_DELETE,
+			Type: registry2.EVT_DELETE,
 			KV: &discovery.KeyValue{
-				Key: []byte(core.GenerateServiceIndexKey(&proto.MicroServiceKey{
+				Key: []byte(core.GenerateServiceIndexKey(&registry2.MicroServiceKey{
 					Tenant:      "a/b",
 					Project:     "",
 					AppId:       "c",
@@ -148,9 +148,9 @@ func TestNewServiceIndexEventHandler(t *testing.T) {
 			},
 		},
 		{
-			Type: proto.EVT_UPDATE,
+			Type: registry2.EVT_UPDATE,
 			KV: &discovery.KeyValue{
-				Key: []byte(core.GenerateServiceIndexKey(&proto.MicroServiceKey{
+				Key: []byte(core.GenerateServiceIndexKey(&registry2.MicroServiceKey{
 					Tenant:      "a/b",
 					Project:     "",
 					AppId:       "c",
@@ -163,9 +163,9 @@ func TestNewServiceIndexEventHandler(t *testing.T) {
 			},
 		},
 		{
-			Type: proto.EVT_CREATE,
+			Type: registry2.EVT_CREATE,
 			KV: &discovery.KeyValue{
-				Key: []byte(core.GenerateServiceIndexKey(&proto.MicroServiceKey{
+				Key: []byte(core.GenerateServiceIndexKey(&registry2.MicroServiceKey{
 					Tenant:      "a/b",
 					Project:     "",
 					AppId:       "c",
@@ -194,56 +194,56 @@ func TestNewInstanceEventHandler(t *testing.T) {
 	SharedServiceIds.Put(core.RegistryDomainProject+core.SPLIT+"2", struct{}{})
 	cases := []discovery.KvEvent{
 		{
-			Type: proto.EVT_INIT,
+			Type: registry2.EVT_INIT,
 			KV: &discovery.KeyValue{
 				Key:   []byte(core.GenerateInstanceKey(core.RegistryDomainProject, "2", "1")),
 				Value: nil,
 			},
 		},
 		{
-			Type: proto.EVT_UPDATE,
+			Type: registry2.EVT_UPDATE,
 			KV: &discovery.KeyValue{
 				Key:   []byte(core.GenerateInstanceKey(core.RegistryDomainProject, "2", "1")),
 				Value: nil,
 			},
 		},
 		{
-			Type: proto.EVT_CREATE,
+			Type: registry2.EVT_CREATE,
 			KV: &discovery.KeyValue{
 				Key:   []byte(core.GenerateInstanceKey(core.RegistryDomainProject, "2", "1")),
 				Value: nil,
 			},
 		},
 		{
-			Type: proto.EVT_DELETE,
+			Type: registry2.EVT_DELETE,
 			KV: &discovery.KeyValue{
 				Key:   []byte(core.GenerateInstanceKey(core.RegistryDomainProject, "2", "1")),
 				Value: nil,
 			},
 		},
 		{
-			Type: proto.EVT_INIT,
+			Type: registry2.EVT_INIT,
 			KV: &discovery.KeyValue{
 				Key:   []byte(core.GenerateInstanceKey("a/b", "1", "1")),
 				Value: nil,
 			},
 		},
 		{
-			Type: proto.EVT_DELETE,
+			Type: registry2.EVT_DELETE,
 			KV: &discovery.KeyValue{
 				Key:   []byte(core.GenerateInstanceKey("a/b", "1", "1")),
 				Value: nil,
 			},
 		},
 		{
-			Type: proto.EVT_UPDATE,
+			Type: registry2.EVT_UPDATE,
 			KV: &discovery.KeyValue{
 				Key:   []byte(core.GenerateInstanceKey("a/b", "1", "1")),
 				Value: nil,
 			},
 		},
 		{
-			Type: proto.EVT_CREATE,
+			Type: registry2.EVT_CREATE,
 			KV: &discovery.KeyValue{
 				Key:   []byte(core.GenerateInstanceKey("a/b", "1", "1")),
 				Value: nil,

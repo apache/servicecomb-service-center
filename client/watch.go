@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sc
+package client
 
 import (
 	"context"
@@ -21,8 +21,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/apache/servicecomb-service-center/server/core"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/gorilla/websocket"
 )
@@ -31,8 +30,7 @@ const (
 	apiWatcherURL = "/v4/%s/registry/microservices/%s/watcher"
 )
 
-func (c *Client) Watch(ctx context.Context, domainProject, selfServiceID string, callback func(*pb.WatchInstanceResponse)) *scerr.Error {
-	domain, project := core.FromDomainProject(domainProject)
+func (c *Client) Watch(ctx context.Context, domain, project, selfServiceID string, callback func(*pb.WatchInstanceResponse)) *scerr.Error {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 

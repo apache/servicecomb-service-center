@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/cache"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 )
 

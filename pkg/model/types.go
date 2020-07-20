@@ -16,16 +16,16 @@
 package model
 
 import (
+	"github.com/apache/servicecomb-service-center/pkg/registry"
+	"github.com/apache/servicecomb-service-center/pkg/types"
 	"github.com/apache/servicecomb-service-center/server/alarm/model"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 )
 
 type AlarmListRequest struct {
 }
 
 type AlarmListResponse struct {
-	Response *pb.Response        `json:"response,omitempty"`
+	Response *registry.Response  `json:"response,omitempty"`
 	Alarms   []*model.AlarmEvent `json:"alarms,omitempty"`
 }
 
@@ -33,13 +33,13 @@ type ClustersRequest struct {
 }
 
 type ClustersResponse struct {
-	Response *pb.Response      `json:"response,omitempty"`
-	Clusters registry.Clusters `json:"clusters,omitempty"`
+	Response *registry.Response `json:"response,omitempty"`
+	Clusters types.Clusters     `json:"clusters,omitempty"`
 }
 
 type ClearAlarmRequest struct {
 }
 
 type ClearAlarmResponse struct {
-	Response *pb.Response `json:"response,omitempty"`
+	Response *registry.Response `json:"response,omitempty"`
 }

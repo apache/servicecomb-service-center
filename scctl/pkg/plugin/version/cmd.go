@@ -18,7 +18,7 @@ package version
 import (
 	"context"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/client/sc"
+	"github.com/apache/servicecomb-service-center/client"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/version"
 	"github.com/spf13/cobra"
@@ -48,7 +48,7 @@ func VersionCommandFunc(_ *cobra.Command, _ []string) {
 	fmt.Print(version.TOOL_NAME, " ")
 	version.Ver().Print()
 
-	scClient, err := sc.NewSCClient(cmd.ScClientConfig)
+	scClient, err := client.NewSCClient(cmd.ScClientConfig)
 	if err != nil {
 		return
 	}

@@ -21,8 +21,9 @@ import (
 	"context"
 	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/notify"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"github.com/gorilla/websocket"
@@ -39,7 +40,7 @@ func (s *InstanceService) WatchPreOpera(ctx context.Context, in *pb.WatchInstanc
 	return nil
 }
 
-func (s *InstanceService) Watch(in *pb.WatchInstanceRequest, stream pb.ServiceInstanceCtrl_WatchServer) error {
+func (s *InstanceService) Watch(in *pb.WatchInstanceRequest, stream proto.ServiceInstanceCtrl_WatchServer) error {
 	log.Infof("new a stream list and watch with service[%s]", in.SelfServiceId)
 	if err := s.WatchPreOpera(stream.Context(), in); err != nil {
 		log.Errorf(err, "service[%s] establish watch failed: invalid params", in.SelfServiceId)

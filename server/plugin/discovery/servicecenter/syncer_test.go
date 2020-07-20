@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	model2 "github.com/apache/servicecomb-service-center/pkg/model"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
+	registry2 "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	"testing"
@@ -42,7 +42,7 @@ func TestClusterIndexer_Sync(t *testing.T) {
 
 	// case: CREATE
 	cfg.WithEventFunc(func(evt discovery.KvEvent) {
-		if evt.Type != proto.EVT_CREATE {
+		if evt.Type != registry2.EVT_CREATE {
 			t.Fatalf("TestClusterIndexer_Sync failed, %v", evt)
 		}
 		fmt.Println(evt)
@@ -55,7 +55,7 @@ func TestClusterIndexer_Sync(t *testing.T) {
 
 	// case: UPDATE
 	cfg.WithEventFunc(func(evt discovery.KvEvent) {
-		if evt.Type != proto.EVT_UPDATE {
+		if evt.Type != registry2.EVT_UPDATE {
 			t.Fatalf("TestClusterIndexer_Sync failed, %v", evt)
 		}
 		fmt.Println(evt)
@@ -119,7 +119,7 @@ func TestClusterIndexer_Sync(t *testing.T) {
 	// case: DELETE
 	cfg.WithEventFunc(func(evt discovery.KvEvent) {
 		fmt.Println(evt)
-		if evt.Type != proto.EVT_DELETE {
+		if evt.Type != registry2.EVT_DELETE {
 			t.Fatalf("TestClusterIndexer_Sync failed, %v", evt)
 		}
 	})
@@ -130,7 +130,7 @@ func TestClusterIndexer_Sync(t *testing.T) {
 
 	// case: CREATE again and set cluster to local cluster name
 	cfg.WithEventFunc(func(evt discovery.KvEvent) {
-		if evt.Type != proto.EVT_CREATE {
+		if evt.Type != registry2.EVT_CREATE {
 			t.Fatalf("TestClusterIndexer_Sync failed, %v", evt)
 		}
 		fmt.Println(evt)
@@ -143,7 +143,7 @@ func TestClusterIndexer_Sync(t *testing.T) {
 
 	// case: UPDATE but skip local cluster
 	cfg.WithEventFunc(func(evt discovery.KvEvent) {
-		if evt.Type != proto.EVT_UPDATE && evt.KV.Value != "aa" {
+		if evt.Type != registry2.EVT_UPDATE && evt.KV.Value != "aa" {
 			t.Fatalf("TestClusterIndexer_Sync failed, %v", evt)
 		}
 		fmt.Println(evt)

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package sc
+package client
 
 import (
 	"context"
@@ -25,8 +25,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/apache/servicecomb-service-center/server/core"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 )
 
@@ -35,8 +34,7 @@ const (
 	apiSchemaURL  = "/v4/%s/registry/microservices/%s/schemas/%s"
 )
 
-func (c *Client) CreateSchemas(ctx context.Context, domainProject, serviceID string, schemas []*pb.Schema) *scerr.Error {
-	domain, project := core.FromDomainProject(domainProject)
+func (c *Client) CreateSchemas(ctx context.Context, domain, project, serviceID string, schemas []*pb.Schema) *scerr.Error {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 
@@ -70,8 +68,7 @@ func (c *Client) CreateSchemas(ctx context.Context, domainProject, serviceID str
 	return nil
 }
 
-func (c *Client) UpdateSchema(ctx context.Context, domainProject, serviceID string, schemaID string, schema string) *scerr.Error {
-	domain, project := core.FromDomainProject(domainProject)
+func (c *Client) UpdateSchema(ctx context.Context, domain, project, serviceID string, schemaID string, schema string) *scerr.Error {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 
@@ -104,8 +101,7 @@ func (c *Client) UpdateSchema(ctx context.Context, domainProject, serviceID stri
 	return nil
 }
 
-func (c *Client) DeleteSchema(ctx context.Context, domainProject, serviceID string, schemaID string) *scerr.Error {
-	domain, project := core.FromDomainProject(domainProject)
+func (c *Client) DeleteSchema(ctx context.Context, domain, project, serviceID string, schemaID string) *scerr.Error {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 
@@ -133,8 +129,7 @@ func (c *Client) DeleteSchema(ctx context.Context, domainProject, serviceID stri
 	return nil
 }
 
-func (c *Client) GetSchemasByServiceID(ctx context.Context, domainProject, serviceID string) ([]*pb.Schema, *scerr.Error) {
-	domain, project := core.FromDomainProject(domainProject)
+func (c *Client) GetSchemasByServiceID(ctx context.Context, domain, project, serviceID string) ([]*pb.Schema, *scerr.Error) {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 	resp, err := c.RestDoWithContext(ctx, http.MethodGet,
@@ -163,8 +158,7 @@ func (c *Client) GetSchemasByServiceID(ctx context.Context, domainProject, servi
 	return schemas.Schemas, nil
 }
 
-func (c *Client) GetSchemaBySchemaID(ctx context.Context, domainProject, serviceID, schemaID string) (*pb.Schema, *scerr.Error) {
-	domain, project := core.FromDomainProject(domainProject)
+func (c *Client) GetSchemaBySchemaID(ctx context.Context, domain, project, serviceID, schemaID string) (*pb.Schema, *scerr.Error) {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 	resp, err := c.RestDoWithContext(ctx, http.MethodGet,

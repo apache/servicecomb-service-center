@@ -16,7 +16,7 @@
 package etcd
 
 import (
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"time"
@@ -38,7 +38,7 @@ func init() {
 	close(closedCh)
 }
 
-func FromEtcdKeyValue(dist *discovery.KeyValue, src *mvccpb.KeyValue, parser pb.Parser) (err error) {
+func FromEtcdKeyValue(dist *discovery.KeyValue, src *mvccpb.KeyValue, parser proto.Parser) (err error) {
 	dist.Key = src.Key
 	dist.Version = src.Version
 	dist.CreateRevision = src.CreateRevision

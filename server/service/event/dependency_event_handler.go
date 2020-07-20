@@ -23,10 +23,11 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/queue"
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/mux"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
@@ -184,8 +185,8 @@ func (h *DependencyEventHandler) dependencyRuleHandle(res interface{}) error {
 	consumerFlag := util.StringJoin([]string{r.Consumer.Environment, r.Consumer.AppId, r.Consumer.ServiceName, r.Consumer.Version}, "/")
 
 	domainProject := dependencyEventHandlerRes.domainProject
-	consumerInfo := pb.DependenciesToKeys([]*pb.MicroServiceKey{r.Consumer}, domainProject)[0]
-	providersInfo := pb.DependenciesToKeys(r.Providers, domainProject)
+	consumerInfo := proto.DependenciesToKeys([]*pb.MicroServiceKey{r.Consumer}, domainProject)[0]
+	providersInfo := proto.DependenciesToKeys(r.Providers, domainProject)
 
 	var dep serviceUtil.Dependency
 	var err error

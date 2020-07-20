@@ -25,7 +25,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/core"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	"sync"
@@ -154,10 +154,10 @@ func (s *RegistryEngine) registryService(pCtx context.Context) error {
 		log.Error("query service center existence failed", err)
 		return err
 	}
-	if respE.Response.Code == pb.Response_SUCCESS {
+	if respE.Response.GetCode() == proto.Response_SUCCESS {
 		log.Warnf("service center service[%s] already registered", respE.ServiceId)
 		respG, err := core.ServiceAPI.GetOne(ctx, core.GetServiceRequest(respE.ServiceId))
-		if respG.Response.Code != pb.Response_SUCCESS {
+		if respG.Response.GetCode() != proto.Response_SUCCESS {
 			log.Errorf(err, "query service center service[%s] info failed", respE.ServiceId)
 			return fmt.Errorf("service center service file lost")
 		}
@@ -186,9 +186,9 @@ func (s *RegistryEngine) registryInstance(pCtx context.Context) error {
 		log.Error("register failed", err)
 		return err
 	}
-	if respI.Response.Code != pb.Response_SUCCESS {
+	if respI.Response.GetCode() != proto.Response_SUCCESS {
 		err = fmt.Errorf("register service center[%s] instance failed, %s",
-			core.Instance.ServiceId, respI.Response.Message)
+			core.Instance.ServiceId, respI.Response.GetMessage())
 		log.Error(err.Error(), nil)
 		return err
 	}
@@ -208,9 +208,9 @@ func (s *RegistryEngine) unregisterInstance(pCtx context.Context) error {
 		log.Error("unregister failed", err)
 		return err
 	}
-	if respI.Response.Code != pb.Response_SUCCESS {
+	if respI.Response.GetCode() != proto.Response_SUCCESS {
 		err = fmt.Errorf("unregister service center instance[%s/%s] failed, %s",
-			core.Instance.ServiceId, core.Instance.InstanceId, respI.Response.Message)
+			core.Instance.ServiceId, core.Instance.InstanceId, respI.Response.GetMessage())
 		log.Error(err.Error(), nil)
 		return err
 	}
@@ -226,7 +226,7 @@ func (s *RegistryEngine) sendHeartBeat(pCtx context.Context) {
 		log.Error("sen heartbeat failed", err)
 		return
 	}
-	if respI.Response.Code == pb.Response_SUCCESS {
+	if respI.Response.GetCode() == proto.Response_SUCCESS {
 		log.Debugf("update service center instance[%s/%s] heartbeat",
 			core.Instance.ServiceId, core.Instance.InstanceId)
 		return

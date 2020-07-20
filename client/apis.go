@@ -13,17 +13,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sc
+package client
 
 import (
 	"context"
 	"encoding/json"
+
 	"io/ioutil"
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/model"
+	"github.com/apache/servicecomb-service-center/pkg/types"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/version"
 )
@@ -109,7 +110,7 @@ func (c *Client) GetScCache(ctx context.Context) (*model.Cache, *scerr.Error) {
 	return dump.Cache, nil
 }
 
-func (c *Client) GetClusters(ctx context.Context) (registry.Clusters, *scerr.Error) {
+func (c *Client) GetClusters(ctx context.Context) (types.Clusters, *scerr.Error) {
 	headers := c.CommonHeaders(ctx)
 	// only default domain has admin permission
 	headers.Set("X-Domain-Name", "default")

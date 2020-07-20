@@ -17,6 +17,7 @@
 package proto
 
 import (
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -63,7 +64,7 @@ func TestParseInnerValueTypeFunc(t *testing.T) {
 		t.Fatalf("MapParser.Unmarshal failed")
 	}
 
-	var m interface{} = new(MicroService)
+	var m interface{} = new(registry.MicroService)
 	err = JsonUnmarshal(nil, nil)
 	if err == nil {
 		t.Fatalf("JsonUnmarshal failed")
@@ -72,7 +73,7 @@ func TestParseInnerValueTypeFunc(t *testing.T) {
 	if err != nil {
 		t.Fatalf("MapParser.Unmarshal failed, %v", err)
 	}
-	if m.(*MicroService).ServiceName != "abc" {
+	if m.(*registry.MicroService).ServiceName != "abc" {
 		t.Fatalf("MapParser.Unmarshal failed, %s", m)
 	}
 }
@@ -87,7 +88,7 @@ func TestParseValueTypeFunc(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ServiceParser.Unmarshal failed, %s", err.Error())
 	}
-	v, ok := r.(*MicroService)
+	v, ok := r.(*registry.MicroService)
 	assert.True(t, ok)
 	assert.Equal(t, "abc", v.ServiceName)
 
@@ -95,7 +96,7 @@ func TestParseValueTypeFunc(t *testing.T) {
 	if err != nil {
 		t.Fatalf("InstanceParser.Unmarshal failed, %s", err.Error())
 	}
-	mi, ok := r.(*MicroServiceInstance)
+	mi, ok := r.(*registry.MicroServiceInstance)
 	assert.True(t, ok)
 	assert.Equal(t, "abc", mi.HostName)
 
@@ -103,7 +104,7 @@ func TestParseValueTypeFunc(t *testing.T) {
 	if err != nil {
 		t.Fatalf("RuleParser.Unmarshal failed, %s", err.Error())
 	}
-	if v, ok := r.(*ServiceRule); !ok || v.RuleId != "abc" {
+	if v, ok := r.(*registry.ServiceRule); !ok || v.RuleId != "abc" {
 		t.Fatalf("RuleParser.Unmarshal failed, %s", v)
 	}
 
@@ -111,7 +112,7 @@ func TestParseValueTypeFunc(t *testing.T) {
 	if err != nil {
 		t.Fatalf("DependencyRuleParser.Unmarshal failed, %s", err.Error())
 	}
-	md, ok := r.(*MicroServiceDependency)
+	md, ok := r.(*registry.MicroServiceDependency)
 	assert.True(t, ok)
 	assert.Equal(t, "zhqClient", md.Dependency[0].ServiceName)
 }

@@ -10,4 +10,4 @@ jobs:
         uses: golangci/golangci-lint-action@v1
         with:
           version: v1.27
-          args: --timeout=5m --skip-dirs=test,pkg/cache,server/plugin/discovery,server/service/event,server/service/util,server/bootstrap,server/notify,server/rest/controller/v3,server/broker/brokerpb,examples,syncer,frontend,scctl,integration,server/core/proto --out-format=colored-line-number --enable golint,gocyclo --skip-files=.*_test.go$
+          args: --timeout=5m --skip-dirs=server/core/proto,test,pkg/cache,server/plugin/discovery,server/service/event,server/service/util,server/bootstrap,server/notify,server/rest/controller/v3,server/broker/brokerpb,examples,syncer,frontend,scctl,integration,pkg/registry --out-format=colored-line-number --enable golint,gocyclo --skip-files=.*_test.go$

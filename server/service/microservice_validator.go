@@ -18,9 +18,9 @@
 package service
 
 import (
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/pkg/validate"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"regexp"
@@ -45,12 +45,12 @@ var (
 	versionFuzzyRegex  = serviceUtil.NewVersionRegexp(true)
 	pathRegex, _       = regexp.Compile(`^[A-Za-z0-9.,?'\\/+&amp;%$#=~_\-@{}]*$`)
 	levelRegex, _      = regexp.Compile(`^(FRONT|MIDDLE|BACK)$`)
-	statusRegex, _     = regexp.Compile("^(" + pb.MS_UP + "|" + pb.MS_DOWN + ")?$")
+	statusRegex, _     = regexp.Compile("^(" + registry.MS_UP + "|" + registry.MS_DOWN + ")?$")
 	serviceIDRegex, _  = regexp.Compile(`^\S*$`)
 	aliasRegex, _      = regexp.Compile(`^[a-zA-Z0-9_\-.:]*$`)
-	registerByRegex, _ = regexp.Compile("^(" + util.StringJoin([]string{pb.REGISTERBY_SDK, pb.REGISTERBY_SIDECAR, pb.REGISTERBY_PLATFORM}, "|") + ")*$")
+	registerByRegex, _ = regexp.Compile("^(" + util.StringJoin([]string{registry.REGISTERBY_SDK, registry.REGISTERBY_SIDECAR, registry.REGISTERBY_PLATFORM}, "|") + ")*$")
 	envRegex, _        = regexp.Compile("^(" + util.StringJoin([]string{
-		pb.ENV_DEV, pb.ENV_TEST, pb.ENV_ACCEPT, pb.ENV_PROD}, "|") + ")*$")
+		registry.ENV_DEV, registry.ENV_TEST, registry.ENV_ACCEPT, registry.ENV_PROD}, "|") + ")*$")
 	schemaIDRegex, _ = regexp.Compile(`^[a-zA-Z0-9]{1,160}$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]{0,158}[a-zA-Z0-9]$`)
 )
 

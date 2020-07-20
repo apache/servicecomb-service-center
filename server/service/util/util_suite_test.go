@@ -24,8 +24,8 @@ import (
 
 import (
 	"context"
+	proto "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	. "github.com/onsi/ginkgo"

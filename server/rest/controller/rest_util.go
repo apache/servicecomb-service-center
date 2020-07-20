@@ -21,10 +21,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/alarm"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/scerror"
 	"net/http"
 	"strconv"
@@ -46,7 +47,7 @@ func WriteError(w http.ResponseWriter, code int32, detail string) {
 }
 
 func WriteResponse(w http.ResponseWriter, resp *pb.Response, obj interface{}) {
-	if resp != nil && resp.GetCode() != pb.Response_SUCCESS {
+	if resp != nil && resp.GetCode() != proto.Response_SUCCESS {
 		WriteError(w, resp.GetCode(), resp.GetMessage())
 		return
 	}
@@ -70,7 +71,7 @@ func WriteResponse(w http.ResponseWriter, resp *pb.Response, obj interface{}) {
 }
 
 func WriteJSONIfSuccess(w http.ResponseWriter, resp *pb.Response, json []byte) {
-	if resp.GetCode() == pb.Response_SUCCESS {
+	if resp.GetCode() == proto.Response_SUCCESS {
 		WriteJSON(w, json)
 		return
 	}

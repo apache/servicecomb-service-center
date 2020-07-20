@@ -17,7 +17,7 @@ package cluster
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/pkg/client/sc"
+	"github.com/apache/servicecomb-service-center/client"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/plugin/get"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/writer"
@@ -40,7 +40,7 @@ func NewClusterCommand(parent *cobra.Command) *cobra.Command {
 }
 
 func ClusterCommandFunc(_ *cobra.Command, args []string) {
-	scClient, err := sc.NewSCClient(cmd.ScClientConfig)
+	scClient, err := client.NewSCClient(cmd.ScClientConfig)
 	if err != nil {
 		cmd.StopAndExit(cmd.ExitError, err)
 	}

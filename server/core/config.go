@@ -18,6 +18,7 @@
 package core
 
 import (
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/go-chassis/go-archaius"
 	"os"
 	"runtime"
@@ -26,7 +27,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/plugin"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/version"
 	"github.com/astaxie/beego"
 )
@@ -46,7 +46,7 @@ const (
 
 )
 
-var ServerInfo = pb.NewServerInformation()
+var ServerInfo = proto.NewServerInformation()
 
 func Configure() {
 	err := archaius.Init(archaius.WithMemorySource(), archaius.WithENVSource())
@@ -66,7 +66,7 @@ func Configure() {
 
 }
 
-func newInfo() pb.ServerInformation {
+func newInfo() proto.ServerInformation {
 	maxLogFileSize := beego.AppConfig.DefaultInt64("log_rotate_size", 20)
 	if maxLogFileSize <= 0 || maxLogFileSize > 50 {
 		maxLogFileSize = 20
@@ -94,9 +94,9 @@ func newInfo() pb.ServerInformation {
 	accessLogFileFromConfig := beego.AppConfig.DefaultString("access_log_file", "./access.log")
 	accessLogFile := util.GetEnvString("SC_ACCESS_LOG_FILE", accessLogFileFromConfig)
 
-	return pb.ServerInformation{
+	return proto.ServerInformation{
 		Version: InitVersion,
-		Config: pb.ServerConfig{
+		Config: proto.ServerConfig{
 			MaxHeaderBytes: int64(beego.AppConfig.DefaultInt("max_header_bytes", 16384)),
 			MaxBodyBytes:   beego.AppConfig.DefaultInt64("max_body_bytes", 2097152),
 

@@ -18,14 +18,15 @@ package task
 import (
 	"context"
 	"errors"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 )
 
@@ -77,7 +78,7 @@ func ClearNoInstanceServices(serviceTTL time.Duration) error {
 				log.Errorf(err, "clear service failed, %s", svcCtxStr)
 				continue
 			}
-			if delSvcResp.Response.GetCode() != pb.Response_SUCCESS {
+			if delSvcResp.Response.GetCode() != proto.Response_SUCCESS {
 				log.Errorf(nil, "clear service failed, %s, %s", delSvcResp.Response.GetMessage(), svcCtxStr)
 				continue
 			}
@@ -111,7 +112,7 @@ func shouldClear(ctx context.Context, timeLimitStamp string, svc *pb.MicroServic
 	if err != nil {
 		return false, err
 	}
-	if getInstsResp.Response.GetCode() != pb.Response_SUCCESS {
+	if getInstsResp.Response.GetCode() != proto.Response_SUCCESS {
 		return false, errors.New("get instance failed: " + getInstsResp.Response.GetMessage())
 	}
 	//ignore a service if it has instances

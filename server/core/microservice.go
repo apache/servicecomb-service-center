@@ -19,8 +19,9 @@ package core
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/version"
 	"github.com/astaxie/beego"
 	"os"
@@ -28,10 +29,10 @@ import (
 )
 
 var (
-	ServiceAPI         pb.ServiceCtrlServer
-	InstanceAPI        pb.ServiceInstanceCtrlServerEx
-	Service            *pb.MicroService
-	Instance           *pb.MicroServiceInstance
+	ServiceAPI         proto.ServiceCtrlServer
+	InstanceAPI        proto.ServiceInstanceCtrlServerEx
+	Service            *registry.MicroService
+	Instance           *registry.MicroServiceInstance
 	sharedServiceNames map[string]struct{}
 )
 
@@ -58,30 +59,30 @@ func init() {
 }
 
 func prepareSelfRegistration() {
-	Service = &pb.MicroService{
-		Environment: pb.ENV_PROD,
+	Service = &registry.MicroService{
+		Environment: registry.ENV_PROD,
 		AppId:       RegistryAppID,
 		ServiceName: RegistryServiceName,
 		Alias:       RegistryServiceAlias,
 		Version:     version.Ver().Version,
-		Status:      pb.MS_UP,
+		Status:      registry.MS_UP,
 		Level:       "BACK",
 		Schemas: []string{
 			"servicecenter.grpc.api.ServiceCtrl",
 			"servicecenter.grpc.api.ServiceInstanceCtrl",
 		},
 		Properties: map[string]string{
-			pb.PROP_ALLOW_CROSS_APP: "true",
+			proto.PROP_ALLOW_CROSS_APP: "true",
 		},
 	}
 	if beego.BConfig.RunMode == "dev" {
-		Service.Environment = pb.ENV_DEV
+		Service.Environment = registry.ENV_DEV
 	}
 
-	Instance = &pb.MicroServiceInstance{
-		Status: pb.MSI_UP,
-		HealthCheck: &pb.HealthCheck{
-			Mode:     pb.CHECK_BY_HEARTBEAT,
+	Instance = &registry.MicroServiceInstance{
+		Status: registry.MSI_UP,
+		HealthCheck: &registry.HealthCheck{
+			Mode:     registry.CHECK_BY_HEARTBEAT,
 			Interval: RegistryDefaultLeaseRenewalinterval,
 			Times:    RegistryDefaultLeaseRetrytimes,
 		},
@@ -109,7 +110,7 @@ func SetSharedMode() {
 	sharedServiceNames[Service.ServiceName] = struct{}{}
 }
 
-func IsShared(key *pb.MicroServiceKey) bool {
+func IsShared(key *registry.MicroServiceKey) bool {
 	if !IsDefaultDomainProject(key.Tenant) {
 		return false
 	}
@@ -128,9 +129,9 @@ func IsSCInstance(ctx context.Context) bool {
 	return b
 }
 
-func GetExistenceRequest() *pb.GetExistenceRequest {
-	return &pb.GetExistenceRequest{
-		Type:        pb.EXISTENCE_MS,
+func GetExistenceRequest() *registry.GetExistenceRequest {
+	return &registry.GetExistenceRequest{
+		Type:        proto.EXISTENCE_MS,
 		Environment: Service.Environment,
 		AppId:       Service.AppId,
 		ServiceName: Service.ServiceName,
@@ -138,33 +139,33 @@ func GetExistenceRequest() *pb.GetExistenceRequest {
 	}
 }
 
-func GetServiceRequest(serviceID string) *pb.GetServiceRequest {
-	return &pb.GetServiceRequest{
+func GetServiceRequest(serviceID string) *registry.GetServiceRequest {
+	return &registry.GetServiceRequest{
 		ServiceId: serviceID,
 	}
 }
 
-func CreateServiceRequest() *pb.CreateServiceRequest {
-	return &pb.CreateServiceRequest{
+func CreateServiceRequest() *registry.CreateServiceRequest {
+	return &registry.CreateServiceRequest{
 		Service: Service,
 	}
 }
 
-func RegisterInstanceRequest() *pb.RegisterInstanceRequest {
-	return &pb.RegisterInstanceRequest{
+func RegisterInstanceRequest() *registry.RegisterInstanceRequest {
+	return &registry.RegisterInstanceRequest{
 		Instance: Instance,
 	}
 }
 
-func UnregisterInstanceRequest() *pb.UnregisterInstanceRequest {
-	return &pb.UnregisterInstanceRequest{
+func UnregisterInstanceRequest() *registry.UnregisterInstanceRequest {
+	return &registry.UnregisterInstanceRequest{
 		ServiceId:  Instance.ServiceId,
 		InstanceId: Instance.InstanceId,
 	}
 }
 
-func HeartbeatRequest() *pb.HeartbeatRequest {
-	return &pb.HeartbeatRequest{
+func HeartbeatRequest() *registry.HeartbeatRequest {
+	return &registry.HeartbeatRequest{
 		ServiceId:  Instance.ServiceId,
 		InstanceId: Instance.InstanceId,
 	}

@@ -62,7 +62,7 @@ curl -X GET \
 You must supply current password and token to update to new password
 ```shell script
 curl -X PUT \
-  http://127.0.0.1:30100/v4/reset-password \
+  http://127.0.0.1:30100/v4/account/root/password \
   -H 'Authorization: Bearer {your_token}' \
   -d '{
 	"currentPassword":"rootpwd",
